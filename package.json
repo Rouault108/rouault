@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "web-test-runner \"test/**/*.test.js\" --node-resolve"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +23,7 @@
     "@swc/cli": "0.7.10",
     "@swc/core": "1.15.8",
     "@tsconfig/strictest": "2.0.8",
+    "@web/test-runner": "0.20.2",
     "playwright": "1.57.0",
     "rehype-katex": "7.0.1",
     "remark-emoji": "5.0.2",
