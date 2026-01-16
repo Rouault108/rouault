@@ -15,7 +15,8 @@
     "@lion/ui": "0.15.3",
     "@lit-labs/ssr": "4.0.0",
     "lit": "3.3.2",
-    "pagefind": "1.4.0"
+    "pagefind": "1.4.0",
+    "prismjs": "1.30.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.11",
