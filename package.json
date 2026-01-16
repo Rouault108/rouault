@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.11",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "velite": "0.3.1"
   }
 }
