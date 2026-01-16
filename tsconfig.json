@@ -1,7 +1,11 @@
 {
   "extends": "@tsconfig/strictest/tsconfig.json",
   "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "baseUrl": ".",
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
   }
 }
