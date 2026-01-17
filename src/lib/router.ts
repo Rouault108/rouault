@@ -1,5 +1,5 @@
 /**
- * Simple router implementation using View Transitions API
+ * シンプルなView Transition APIを利用したルーター
  */
 
 export class Router {
@@ -7,19 +7,30 @@ export class Router {
         this.init();
     }
 
+    /**
+     * イベントリスナー設定
+     */
     private init() {
         window.addEventListener('popstate', (e) => this.handleNavigation(window.location.pathname));
         document.addEventListener('click', (e) => this.handleAnchorClick(e));
 
-        // Initial load
+        // 初期ロード
         this.handleNavigation(window.location.pathname);
     }
 
+    /**
+     * リンククリックイベントハンドラー
+     * 以下の場合はSPA遷移を行わない
+     * - target属性がある場合（新規タブで開く場合など）
+     * - download属性がある場合（ダウンロードする場合）
+     * - rel属性がexternalの場合（同一サイト内のリンクであってもSPA遷移を行いたくないリンク　例：/notes/hoge.pdfや/notes/hoge.zipなど）
+     * - href属性がhttpから始まる場合（スキームを明示してある絶対外部リンク）
+     * - href属性が#から始まる場合（ページ内リンク）
+     * @param e 
+     */
     private handleAnchorClick(e: MouseEvent) {
         const anchor = (e.target as HTMLElement).closest('a');
         if (!anchor) return;
-
-        // Ignore external links or special targets
         if (anchor.target || anchor.hasAttribute('download') || anchor.getAttribute('rel') === 'external') return;
 
         const href = anchor.getAttribute('href');
@@ -30,8 +41,12 @@ export class Router {
         this.handleNavigation(href);
     }
 
+    /**
+     * View Transitions APIを利用したページ遷移を行う非同期関数
+     * @param url 遷移先のURL
+     */
     private async handleNavigation(url: string) {
-        // Fallback for browsers without View Transition support
+        // View Transition APIをサポートしていないブラウザはフォールバック
         if (!document.startViewTransition) {
             await this.updateContent(url);
             return;
@@ -48,6 +63,10 @@ export class Router {
         }
     }
 
+    /**
+     * コンテンツの更新を行う非同期関数
+     * @param url 遷移先のURL
+     */
     private async updateContent(url: string) {
         try {
             const response = await fetch(url);
@@ -60,19 +79,20 @@ export class Router {
             const newContent = doc.querySelector('main')?.innerHTML;
             if (!newContent) throw new Error('No main content found in response');
 
-            // Update title
+            // タイトルを更新先のタイトルに変更
             document.title = doc.title;
 
-            // Update main content
+            // メインコンテンツを更新先のコンテンツに変更
             if (this.outlet) {
                 this.outlet.innerHTML = newContent;
             }
 
-            // Re-initialize scripts or components if needed here
+            // 必要に応じてスクリプトやコンポーネントを再初期化
 
         } catch (err) {
             console.error('Navigation failed:', err);
             if (this.outlet) {
+                // 404ページ仮実装
                 this.outlet.innerHTML = '<h1>404 - Not Found</h1><p>Failed to load content.</p>';
             }
         }
