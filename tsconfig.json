@@ -11,5 +11,5 @@
     "useDefineForClassFields": false,
     "typeRoots": ["./node_modules/@types", "./types"]
   },
-  "include": ["src/**/*", "eleventy.config.ts", "types/**/*"]
+  "include": ["src/**/*", "eleventy.config.ts", "types/**/*", "test/**/*"]
 }
