@@ -27,6 +27,7 @@
     "@web/dev-server-esbuild": "1.0.4",
     "@web/test-runner": "0.20.2",
     "@web/test-runner-playwright": "0.11.1",
+    "esbuild": "0.27.2",
     "playwright": "1.57.0",
     "rehype-katex": "7.0.1",
     "remark-emoji": "5.0.2",
