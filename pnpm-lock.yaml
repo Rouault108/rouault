@@ -27,6 +27,9 @@ importers:
         specifier: 1.30.0
         version: 1.30.0
     devDependencies:
+      '@11ty/eleventy-plugin-vite':
+        specifier: 7.0.0
+        version: 7.0.0(terser@5.46.0)(tsx@4.21.0)
       '@biomejs/biome':
         specifier: 2.3.11
         version: 2.3.11
@@ -100,6 +103,10 @@ packages:
 
   '@11ty/eleventy-plugin-bundle@3.0.7':
     resolution: {integrity: sha512-QK1tRFBhQdZASnYU8GMzpTdsMMFLVAkuU0gVVILqNyp09xJJZb81kAS3AFrNrwBCsgLxTdWHJ8N64+OTTsoKkA==}
+    engines: {node: '>=18'}
+
+  '@11ty/eleventy-plugin-vite@7.0.0':
+    resolution: {integrity: sha512-NVhdsRjGJBkm/sMmzu2J8dP5pRNRlyQYeTCDnnQo4N7DAdxsHDPk3t2pweSVTlmCKIu3EPLG2FsDfDB68MQsBA==}
     engines: {node: '>=18'}
 
   '@11ty/eleventy-utils@2.0.7':
@@ -3447,6 +3454,23 @@ snapshots:
     transitivePeerDependencies:
       - posthtml
       - supports-color
+
+  '@11ty/eleventy-plugin-vite@7.0.0(terser@5.46.0)(tsx@4.21.0)':
+    dependencies:
+      '@11ty/eleventy-utils': 2.0.7
+      vite: 7.3.1(terser@5.46.0)(tsx@4.21.0)
+    transitivePeerDependencies:
+      - '@types/node'
+      - jiti
+      - less
+      - lightningcss
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - yaml
 
   '@11ty/eleventy-utils@2.0.7': {}
 
