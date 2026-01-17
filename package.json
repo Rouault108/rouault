@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "web-test-runner \"test/**/*.test.js\" --node-resolve"
+    "test": "web-test-runner"
   },
   "keywords": [],
   "author": "",
@@ -25,6 +25,7 @@
     "@swc/cli": "0.7.10",
     "@swc/core": "1.15.8",
     "@tsconfig/strictest": "2.0.8",
+    "@types/mocha": "10.0.10",
     "@web/dev-server-esbuild": "1.0.4",
     "@web/test-runner": "0.20.2",
     "playwright": "1.57.0",
