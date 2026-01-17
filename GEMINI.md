@@ -35,7 +35,7 @@
 
 ### ツール
 - **リンター/フォーマッター**: Biome (`@biomejs/biome`)
-- **コンパイラ**: SWC (`@swc/core`, `@swc/cli`)
+- **コンパイラ**: esbuild (`esbuild`)
 - **UI開発**: Storybook (`storybook`)
 
 ### インフラストラクチャ
