@@ -22,11 +22,11 @@ export class Router {
      * リンククリックイベントハンドラー
      * 以下の場合はSPA遷移を行わない
      * - target属性がある場合（新規タブで開く場合など）
-     * - download属性がある場合（ダウンロードする場合）
-     * - rel属性がexternalの場合（同一サイト内のリンクであってもSPA遷移を行いたくないリンク　例：/notes/hoge.pdfや/notes/hoge.zipなど）
+     * - download属性がある場合（ファイルダウンロードの場合）
+     * - rel属性がexternalの場合（外部リンクや、明示的にページ全体をリロードしたいリンク）
      * - href属性がhttpから始まる場合（スキームを明示してある絶対外部リンク）
      * - href属性が#から始まる場合（ページ内リンク）
-     * @param e 
+     * @param e マウスイベント
      */
     private handleAnchorClick(e: MouseEvent) {
         const anchor = (e.target as HTMLElement).closest('a');
