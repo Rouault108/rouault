@@ -17,9 +17,6 @@ importers:
       lit:
         specifier: 3.3.2
         version: 3.3.2
-      pagefind:
-        specifier: 1.4.0
-        version: 1.4.0
       prismjs:
         specifier: 1.30.0
         version: 1.30.0
@@ -54,6 +51,9 @@ importers:
       '@web/test-runner-playwright':
         specifier: 0.11.1
         version: 0.11.1
+      pagefind:
+        specifier: 1.4.0
+        version: 1.4.0
       playwright:
         specifier: 1.57.0
         version: 1.57.0
