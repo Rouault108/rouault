@@ -7,5 +7,7 @@
     "baseUrl": ".",
     "outDir": "./dist",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "experimentalDecorators": false,
+    "useDefineForClassFields": false,
   }
 }
