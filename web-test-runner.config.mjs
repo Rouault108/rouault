@@ -15,8 +15,8 @@ plugins: [
   ],
   browsers: [
     playwrightLauncher({ product: 'chromium' }),
-    // playwrightLauncher({ product: 'firefox' }),
-    // playwrightLauncher({ product: 'webkit' }),
+    playwrightLauncher({ product: 'firefox' }),
+    playwrightLauncher({ product: 'webkit' }),
   ],
   testFramework: {
     config: {
