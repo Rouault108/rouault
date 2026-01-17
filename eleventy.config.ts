@@ -23,10 +23,24 @@ export default function (eleventyConfig: UserConfig) {
     // Veliteリソース管理
     eleventyConfig.on('eleventy.before', async () => {
         const isServing = process.argv.includes('--serve');
-        await build({
-            clean: !isServing,
-            watch: isServing,
-        });
+
+        try {
+            await build({
+                clean: !isServing,
+                watch: isServing,
+            });
+        } catch (err) {
+            console.error('❌ Velite build failed:', err);
+
+            // 本番ビルド時は失敗させる（CI/CDで検知するため）
+            if (!isServing) {
+                console.error('Exiting due to build failure in production mode.');
+                process.exit(1);
+            }
+
+            // 開発時は警告のみで継続（部分的なエラーを許容）
+            console.warn('⚠️  Continuing in development mode despite errors.');
+        }
     });
 
     // Viteバンドルと開発サーバーの使用
