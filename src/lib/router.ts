@@ -87,7 +87,8 @@ export class Router {
                 this.outlet.innerHTML = newContent;
             }
 
-            // 必要に応じてスクリプトやコンポーネントを再初期化
+            // コンテンツ差し替え後の再初期化処理
+            this.reinitializeScripts();
 
         } catch (err) {
             console.error('Navigation failed:', err);
@@ -96,5 +97,30 @@ export class Router {
                 this.outlet.innerHTML = '<h1>404 - Not Found</h1><p>Failed to load content.</p>';
             }
         }
+    }
+
+    /**
+     * SPA遷移後の再初期化処理
+     * コンテンツを差し替えた後、以下の処理を行う：
+     * - PrismJS のシンタックスハイライト
+     * - Pagefind の検索 UI 初期化
+     * - スクロール位置のリセット
+     */
+    private reinitializeScripts() {
+        // シンタックスハイライトの再適用
+        if (typeof window.Prism !== 'undefined') {
+            window.Prism.highlightAll();
+        }
+
+        // Pagefind 検索 UI の初期化（検索ページの場合）
+        const searchContainer = this.outlet.querySelector('#search');
+        if (searchContainer && typeof window.PagefindUI !== 'undefined') {
+            new window.PagefindUI({ element: searchContainer });
+        }
+
+        // スクロール位置をトップにリセット
+        window.scrollTo(0, 0);
+
+        // 今後、他のライブラリやコンポーネントの初期化が必要になったらここに追加
     }
 }
