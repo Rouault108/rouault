@@ -13,7 +13,6 @@
   "license": "ISC",
   "packageManager": "pnpm@10.6.2",
   "dependencies": {
-    "@11ty/eleventy": "3.1.2",
     "@lion/ui": "0.15.3",
     "@lit-labs/ssr": "4.0.0",
     "lit": "3.3.2",
@@ -21,6 +20,7 @@
     "prismjs": "1.30.0"
   },
   "devDependencies": {
+    "@11ty/eleventy": "3.1.2",
     "@11ty/eleventy-plugin-vite": "7.0.0",
     "@biomejs/biome": "2.3.11",
     "@esm-bundle/chai": "4.3.4-fix.0",
