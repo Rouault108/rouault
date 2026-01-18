@@ -89,6 +89,15 @@ export default defineConfig(
     },
   },
 
+  // 5. テスト専用設定
+  {
+    files: ['test/**/*.ts'],
+    rules: {
+      // ChaiのAssertionスタイル（expect(x).to.be.true）を許可
+      '@typescript-eslint/no-unused-expressions': 'off',
+    },
+  },
+
   // 5. 整形
   prettier,
 );
