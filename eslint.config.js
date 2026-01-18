@@ -38,27 +38,27 @@ export default defineConfig(
   // 4. カスタムルール
   {
     files: ['src/**/*.ts', 'test/**/*.ts'],
-    plugins: {'lit-a11y': litA11y},
+    plugins: { 'lit-a11y': litA11y },
     rules: {
       // 未使用変数の厳格な管理
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-      
+
       // Lit関連の厳格化
       'lit/no-legacy-template-syntax': 'error',
       'lit/no-value-attribute': 'error',
       'lit/attribute-value-entities': 'error',
       'lit/no-invalid-html': 'error',
-      
+
       // 堅牢性を高める一般ルール
       'no-console': ['warn', { allow: ['warn', 'error', 'info', 'group', 'groupEnd'] }],
-      'eqeqeq': ['error', 'always'],
-      
+      eqeqeq: ['error', 'always'],
+
       // TypeScript 厳格化の念押し
       '@typescript-eslint/no-explicit-any': 'error',
-      
+
       // 不必要な型キャストを禁止し、型の安全性を高める
       '@typescript-eslint/no-unnecessary-type-assertion': 'error',
-      
+
       // Litのプロパティ定義での不整合を防ぐ
       'lit/binding-positions': 'error',
 
@@ -86,10 +86,10 @@ export default defineConfig(
       'lit-a11y/role-has-required-aria-attrs': 'error',
       'lit-a11y/scope': 'error',
       'lit-a11y/tabindex-no-positive': 'error',
-      'lit-a11y/valid-lang': 'error'
+      'lit-a11y/valid-lang': 'error',
     },
   },
 
   // 5. 整形
-  prettier
+  prettier,
 );

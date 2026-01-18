@@ -1,19 +1,19 @@
 export interface BaseLayoutData {
-    title?: string;
-    content: string;
+  title?: string;
+  content: string;
 }
 
 export class BaseLayout {
-    data() {
-        return {
-            title: 'Rouault',
-        };
-    }
+  data() {
+    return {
+      title: 'Rouault',
+    };
+  }
 
-    render(data: BaseLayoutData) {
-        const title = data.title ? `${data.title} - Rouault` : 'Rouault';
+  render(data: BaseLayoutData) {
+    const title = data.title ? `${data.title} - Rouault` : 'Rouault';
 
-        return `
+    return `
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -44,7 +44,7 @@ export class BaseLayout {
 </body>
 </html>
     `.trim();
-    }
+  }
 }
 
 export default BaseLayout;

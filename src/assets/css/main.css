@@ -1,18 +1,18 @@
-@import "./tokens.css";
-@import "./error.css";
+@import './tokens.css';
+@import './error.css';
 
 *,
 *::before,
 *::after {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 body {
-    margin: 0;
-    font-family: var(--font-family-base);
-    background-color: var(--color-background-body);
-    color: var(--color-text-main);
-    line-height: 1.6;
+  margin: 0;
+  font-family: var(--font-family-base);
+  background-color: var(--color-background-body);
+  color: var(--color-text-main);
+  line-height: 1.6;
 }
 
 h1,
@@ -21,23 +21,23 @@ h3,
 h4,
 h5,
 h6 {
-    line-height: 1.2;
-    margin-top: var(--space-xl);
-    margin-bottom: var(--space-m);
+  line-height: 1.2;
+  margin-top: var(--space-xl);
+  margin-bottom: var(--space-m);
 }
 
 p {
-    margin-bottom: var(--space-m);
+  margin-bottom: var(--space-m);
 }
 
 a {
-    color: var(--color-primary);
-    text-decoration-line: underline;
-    text-underline-offset: 2px;
-    text-decoration-thickness: 1px;
+  color: var(--color-primary);
+  text-decoration-line: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
 }
 
 a:hover {
-    color: var(--color-primary-dark);
-    text-decoration-thickness: 2px;
+  color: var(--color-primary-dark);
+  text-decoration-thickness: 2px;
 }

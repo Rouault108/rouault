@@ -1,23 +1,23 @@
 import { notes } from '../../.velite/index.js';
 
 export class NotesPage {
-    data() {
-        return {
-            layout: 'base',
-            title: 'Notes',
-            permalink: '/notes/index.html',
-        };
-    }
+  data() {
+    return {
+      layout: 'base',
+      title: 'Notes',
+      permalink: '/notes/index.html',
+    };
+  }
 
-    render() {
-        return `
+  render() {
+    return `
 <div class="note-list">
   <h1>Notes</h1>
   
   <ul class="notes-grid">
     ${notes
-        .map(
-            (note) => `
+      .map(
+        (note) => `
       <li class="note-card">
         <a href="${note.permalink}">
           <h2>${note.title}</h2>
@@ -25,13 +25,13 @@ export class NotesPage {
           ${note.excerpt ? `<p>${note.excerpt}</p>` : ''}
         </a>
       </li>
-    `
-        )
-        .join('')}
+    `,
+      )
+      .join('')}
   </ul>
 </div>
     `.trim();
-    }
+  }
 }
 
 export default NotesPage;

@@ -1,5 +1,5 @@
 ---
-title: "First Note"
+title: 'First Note'
 date: 2026-01-17
 ---
 
@@ -8,10 +8,11 @@ date: 2026-01-17
 This is a sample note to verify the content loading pipeline.
 
 ## Features to test
+
 - Markdown rendering
 - Syntax highlighting
   ```typescript
-  const greeting = "Hello";
+  const greeting = 'Hello';
   console.log(greeting);
   ```
 - Math rendering (Katex)

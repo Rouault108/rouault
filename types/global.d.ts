@@ -6,8 +6,8 @@
  * PrismJS のグローバル API
  */
 interface Prism {
-    highlightAll(): void;
-    highlightElement(element: Element): void;
+  highlightAll(): void;
+  highlightElement(element: Element): void;
 }
 
 /**
@@ -21,10 +21,10 @@ interface PagefindUIInstance {}
  * Window オブジェクトの型拡張
  */
 declare global {
-    interface Window {
-        Prism?: Prism;
-        PagefindUI?: PagefindUIConstructor;
-    }
+  interface Window {
+    Prism?: Prism;
+    PagefindUI?: PagefindUIConstructor;
+  }
 }
 
 export {};

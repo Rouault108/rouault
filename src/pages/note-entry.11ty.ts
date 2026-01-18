@@ -4,29 +4,29 @@ import { notes } from '../../.velite/index.js';
  * ノートの一覧ページ
  */
 export class NoteEntryPage {
-    data() {
-        return {
-            layout: 'base',
-            pagination: {
-                data: 'notes_data',
-                size: 1,
-                alias: 'note',
-            },
-            permalink: (data: any) => data.note.slug + '/index.html', // Output: /notes/slug/index.html
-        };
-    }
+  data() {
+    return {
+      layout: 'base',
+      pagination: {
+        data: 'notes_data',
+        size: 1,
+        alias: 'note',
+      },
+      permalink: (data: any) => data.note.slug + '/index.html', // Output: /notes/slug/index.html
+    };
+  }
 
-    // Veliteデータを11tyデータカスケードに注入
-    async before() {
-        return {
-            notes_data: notes,
-        };
-    }
+  // Veliteデータを11tyデータカスケードに注入
+  async before() {
+    return {
+      notes_data: notes,
+    };
+  }
 
-    render(data: any) {
-        const { note } = data;
+  render(data: any) {
+    const { note } = data;
 
-        return `
+    return `
 <article class="note-entry">
   <header class="note-header">
     <h1>${note.title}</h1>
@@ -44,7 +44,7 @@ export class NoteEntryPage {
   </nav>
 </article>
     `.trim();
-    }
+  }
 }
 
 export default NoteEntryPage;
