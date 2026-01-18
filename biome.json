@@ -16,7 +16,6 @@
         "useTemplate": "warn"
       },
       "suspicious": {
-        "noExplicitAny": "off",
         "noDoubleEquals": "warn",
         "noEmptyBlockStatements": "warn",
         "noDebugger": "warn"
