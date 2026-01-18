@@ -69,8 +69,8 @@ describe('ErrorHandler', () => {
         status: 600,
         ok: false,
         statusText: 'Unknown Status',
-      }as Response;
-      
+      } as Response;
+
       const error = classifyHttpError(response);
 
       expect(error.type).to.equal(ErrorType.UNKNOWN);
