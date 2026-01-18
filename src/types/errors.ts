@@ -51,7 +51,9 @@ export class RouaultError extends Error {
     this.statusCode = statusCode;
     this.originalError = originalError;
 
-    // スタックトレースを適切に設定（V8環境用）
+    // V8環境（Chrome, Node.js）用のスタックトレース調整
+    // 非V8ブラウザでは存在しない可能性があるためチェックが必要
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- 環境依存によるランタイムエラー防止のため
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, RouaultError);
     }
