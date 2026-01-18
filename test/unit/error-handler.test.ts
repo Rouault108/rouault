@@ -65,7 +65,12 @@ describe('ErrorHandler', () => {
 
     it('予期しないステータスコードを UNKNOWN として分類すること', () => {
       // 600は未定義のステータスコード
-      const response = new Response('Unknown Status', { status: 600 });
+      const response = {
+        status: 600,
+        ok: false,
+        statusText: 'Unknown Status',
+      }as Response;
+      
       const error = classifyHttpError(response);
 
       expect(error.type).to.equal(ErrorType.UNKNOWN);
@@ -237,9 +242,9 @@ describe('ErrorHandler', () => {
   });
 
   describe('ErrorHandler クラス', () => {
-    it('handleFetchError() が HTTP エラーを分類すること', async () => {
+    it('handleFetchError() が HTTP エラーを分類すること', () => {
       const response = new Response('Not Found', { status: 404 });
-      const error = await ErrorHandler.handleFetchError(response);
+      const error = ErrorHandler.handleFetchError(response);
 
       expect(error).to.be.instanceOf(RouaultError);
       expect(error.type).to.equal(ErrorType.NOT_FOUND);
