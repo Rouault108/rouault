@@ -1,13 +1,12 @@
 import path from 'node:path';
-import type { UserConfig } from '@11ty/eleventy';
 import EleventyVitePlugin from '@11ty/eleventy-plugin-vite';
 import { build } from 'velite';
 
 /**
  * VeliteとViteを組み合わせた11tyの設定
- * @param eleventyConfig 11tyの設定オブジェクト
+ * @param {import('@11ty/eleventy').UserConfig} eleventyConfig 11tyの設定オブジェクト
  */
-export default function (eleventyConfig: UserConfig) {
+export default function (eleventyConfig) {
   // 11ty.ts を 11ty.js エンジンで処理するようにマッピング
   eleventyConfig.addExtension('11ty.ts', {
     key: '11ty.js',
