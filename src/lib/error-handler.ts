@@ -15,7 +15,7 @@ export function classifyHttpError(response: Response): RouaultError {
     return new RouaultError(ErrorType.NOT_FOUND, 'ページが見つかりません', status);
   }
 
-  if (status >= 500) {
+  if (status >= 500 && status < 600) {
     return new RouaultError(
       ErrorType.SERVER,
       'サーバーエラーが発生しました。しばらくしてから再度お試しください。',
@@ -23,7 +23,7 @@ export function classifyHttpError(response: Response): RouaultError {
     );
   }
 
-  if (status >= 400) {
+  if (status >= 400 && status < 500) {
     return new RouaultError(ErrorType.CLIENT, 'ページの読み込みに失敗しました', status);
   }
 
