@@ -3,7 +3,7 @@ import './components/hello-world.ts';
 
 /*
  * アプリケーションのクライアントサイドエントリーポイント（ルーターの初期化）
-*/
+ */
 const mainContent = document.getElementById('main-content');
 if (mainContent) {
     new Router(mainContent);

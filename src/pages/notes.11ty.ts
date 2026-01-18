@@ -5,7 +5,7 @@ export class NotesPage {
         return {
             layout: 'base',
             title: 'Notes',
-            permalink: '/notes/index.html'
+            permalink: '/notes/index.html',
         };
     }
 
@@ -15,7 +15,9 @@ export class NotesPage {
   <h1>Notes</h1>
   
   <ul class="notes-grid">
-    ${notes.map(note => `
+    ${notes
+        .map(
+            (note) => `
       <li class="note-card">
         <a href="${note.permalink}">
           <h2>${note.title}</h2>
@@ -23,7 +25,9 @@ export class NotesPage {
           ${note.excerpt ? `<p>${note.excerpt}</p>` : ''}
         </a>
       </li>
-    `).join('')}
+    `
+        )
+        .join('')}
   </ul>
 </div>
     `.trim();

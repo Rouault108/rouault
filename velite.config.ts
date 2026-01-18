@@ -1,23 +1,25 @@
-import { defineConfig, defineCollection, s } from 'velite'
-import remarkGfm from 'remark-gfm'
-import remarkMath from 'remark-math'
-import rehypeKatex from 'rehype-katex'
-import remarkEmoji from 'remark-emoji'
-import remarkSupersub from 'remark-supersub'
+import rehypeKatex from 'rehype-katex';
+import remarkEmoji from 'remark-emoji';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import remarkSupersub from 'remark-supersub';
+import { defineCollection, defineConfig, s } from 'velite';
 
 const notes = defineCollection({
     name: 'Note',
     pattern: 'notes/**/*.md',
-    schema: s.object({
-        title: s.string().optional(),
-        slug: s.path(),
-        date: s.isodate().optional(),
-        updated: s.isodate().optional(),
-        content: s.markdown(),
-        excerpt: s.excerpt().optional(),
-        toc: s.toc().optional(),
-    }).transform(data => ({ ...data, permalink: `/notes/${data.slug}` }))
-})
+    schema: s
+        .object({
+            title: s.string().optional(),
+            slug: s.path(),
+            date: s.isodate().optional(),
+            updated: s.isodate().optional(),
+            content: s.markdown(),
+            excerpt: s.excerpt().optional(),
+            toc: s.toc().optional(),
+        })
+        .transform((data) => ({ ...data, permalink: `/notes/${data.slug}` })),
+});
 
 export default defineConfig({
     root: 'content',
@@ -26,7 +28,7 @@ export default defineConfig({
         assets: 'dist/static',
         base: '/static/',
         name: '[name]-[hash:6].[ext]',
-        clean: true
+        clean: true,
     },
     collections: { notes },
     markdown: {
@@ -36,8 +38,6 @@ export default defineConfig({
             remarkEmoji as any,
             remarkSupersub,
         ],
-        rehypePlugins: [
-            rehypeKatex,
-        ]
-    }
-})
+        rehypePlugins: [rehypeKatex],
+    },
+});

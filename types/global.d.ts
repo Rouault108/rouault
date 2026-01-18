@@ -13,13 +13,9 @@ interface Prism {
 /**
  * Pagefind UI のグローバル API
  */
-interface PagefindUIConstructor {
-    new(options: { element: Element | string }): PagefindUIInstance;
-}
+type PagefindUIConstructor = new (options: { element: Element | string }) => PagefindUIInstance;
 
-interface PagefindUIInstance {
-    // 必要に応じて追加のメソッドを定義
-}
+interface PagefindUIInstance {}
 
 /**
  * Window オブジェクトの型拡張
@@ -31,4 +27,4 @@ declare global {
     }
 }
 
-export { };
+export {};

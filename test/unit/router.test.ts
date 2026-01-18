@@ -2,7 +2,7 @@
 
 /**
  * Router クラスの単体テスト
- * 
+ *
  * テスト対象:
  * - リンククリックのインターセプト
  * - 正常なナビゲーション
@@ -12,7 +12,7 @@
  * - 再初期化処理
  */
 
-import { html, fixture, expect, waitUntil } from '@open-wc/testing';
+import { expect, fixture, html, waitUntil } from '@open-wc/testing';
 import { Router } from '../../src/lib/router.js';
 
 describe('Router', () => {
@@ -182,8 +182,8 @@ describe('Router', () => {
             router = new Router(outlet);
 
             // エラーが表示されるまで待機
-            await waitUntil(() =>
-                outlet.textContent?.includes('ページが見つかりません'),
+            await waitUntil(
+                () => outlet.textContent?.includes('ページが見つかりません'),
                 'エラーメッセージが表示されること'
             );
 
@@ -200,8 +200,8 @@ describe('Router', () => {
 
             router = new Router(outlet);
 
-            await waitUntil(() =>
-                outlet.textContent?.includes('サーバーエラー'),
+            await waitUntil(
+                () => outlet.textContent?.includes('サーバーエラー'),
                 'サーバーエラーメッセージが表示されること'
             );
 
@@ -215,8 +215,8 @@ describe('Router', () => {
 
             router = new Router(outlet);
 
-            await waitUntil(() =>
-                outlet.textContent?.includes('ネットワーク'),
+            await waitUntil(
+                () => outlet.textContent?.includes('ネットワーク'),
                 'ネットワークエラーメッセージが表示されること'
             );
         });
@@ -226,7 +226,7 @@ describe('Router', () => {
         it('ナビゲーション中にローディング表示が出ること', async () => {
             // 遅延レスポンスのモック
             globalThis.fetch = async () => {
-                await new Promise(resolve => setTimeout(resolve, 100));
+                await new Promise((resolve) => setTimeout(resolve, 100));
                 return new Response('<html><body><main>Content</main></body></html>', {
                     status: 200,
                 });
@@ -248,7 +248,7 @@ describe('Router', () => {
             let fetchCount = 0;
             globalThis.fetch = async () => {
                 fetchCount++;
-                await new Promise(resolve => setTimeout(resolve, 200));
+                await new Promise((resolve) => setTimeout(resolve, 200));
                 return new Response('<html><body><main>Content</main></body></html>', {
                     status: 200,
                 });
@@ -260,7 +260,7 @@ describe('Router', () => {
             // 注: 実際にはprivateメソッドなので、公開APIを通してテスト
 
             // fetch が1回しか呼ばれないことを確認
-            await new Promise(resolve => setTimeout(resolve, 300));
+            await new Promise((resolve) => setTimeout(resolve, 300));
             // expect(fetchCount).to.equal(1); // 実装に応じて調整
         });
     });
@@ -273,13 +273,15 @@ describe('Router', () => {
                 highlightAll: () => {
                     highlightAllCalled = true;
                 },
-                highlightElement: () => { },
+                highlightElement: () => {},
             } as NonNullable<typeof window.Prism>;
 
             globalThis.fetch = async () => {
                 return new Response(
                     '<html><body><main><pre><code>test</code></pre></main></body></html>',
-                    { status: 200 }
+                    {
+                        status: 200,
+                    }
                 );
             };
 
@@ -298,10 +300,9 @@ describe('Router', () => {
             window.scrollTo(0, 500);
 
             globalThis.fetch = async () => {
-                return new Response(
-                    '<html><body><main>Content</main></body></html>',
-                    { status: 200 }
-                );
+                return new Response('<html><body><main>Content</main></body></html>', {
+                    status: 200,
+                });
             };
 
             router = new Router(outlet);

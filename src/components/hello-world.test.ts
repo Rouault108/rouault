@@ -1,4 +1,4 @@
-import { html, fixture, expect } from '@open-wc/testing';
+import { expect, fixture, html } from '@open-wc/testing';
 import './hello-world.js';
 import type { HelloWorld } from './hello-world.js';
 

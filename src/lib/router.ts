@@ -2,13 +2,7 @@
  * シンプルなView Transition APIを利用したルーター
  */
 
-import { ErrorHandler, classifyHttpError } from './error-handler.js';
-import { ErrorType, RouaultError } from '../types/errors.js';
-
 export class Router {
-    /** ローディング状態を管理 */
-    private isLoading = false;
-
     constructor(private outlet: HTMLElement) {
         this.init();
     }
@@ -18,7 +12,7 @@ export class Router {
      */
     private init() {
         window.addEventListener('popstate', (e) => this.handleNavigation(window.location.pathname));
-        document.addEventListener('click', (e) => this.handleAnchorClick(e));
+        document.addEventListener('click', (e) => { this.handleAnchorClick(e); });
 
         // 初期ロード
         this.handleNavigation(window.location.pathname);
@@ -37,7 +31,12 @@ export class Router {
     private handleAnchorClick(e: MouseEvent) {
         const anchor = (e.target as HTMLElement).closest('a');
         if (!anchor) return;
-        if (anchor.target || anchor.hasAttribute('download') || anchor.getAttribute('rel') === 'external') return;
+        if (
+            anchor.target ||
+            anchor.hasAttribute('download') ||
+            anchor.getAttribute('rel') === 'external'
+        )
+            return;
 
         const href = anchor.getAttribute('href');
         if (!href || href.startsWith('http') || href.startsWith('#')) return;
@@ -52,12 +51,6 @@ export class Router {
      * @param url 遷移先のURL
      */
     private async handleNavigation(url: string) {
-        // 既にローディング中の場合はスキップ
-        if (this.isLoading) {
-            console.warn('Navigation already in progress');
-            return;
-        }
-
         // View Transition APIをサポートしていないブラウザはフォールバック
         if (!document.startViewTransition) {
             await this.updateContent(url);
@@ -71,8 +64,7 @@ export class Router {
         try {
             await transition.finished;
         } catch (e) {
-            // View Transition 自体のエラー（通常は発生しない）
-            ErrorHandler.handle(e, 'ViewTransition');
+            console.error('Transition failed', e);
         }
     }
 
@@ -81,105 +73,34 @@ export class Router {
      * @param url 遷移先のURL
      */
     private async updateContent(url: string) {
-        this.isLoading = true;
-        this.showLoadingState();
-
         try {
-            // フェッチ実行
             const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-            // HTTPエラーのチェック
-            if (!response.ok) {
-                const error = classifyHttpError(response);
-                throw error;
-            }
-
-            // HTMLテキストの取得
             const text = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(text, 'text/html');
 
-            // HTMLのパース
-            let doc: Document;
-            try {
-                const parser = new DOMParser();
-                doc = parser.parseFromString(text, 'text/html');
-            } catch (parseError) {
-                throw new RouaultError(
-                    ErrorType.PARSE,
-                    'コンテンツの解析に失敗しました',
-                    undefined,
-                    parseError instanceof Error ? parseError : undefined
-                );
-            }
-
-            // メインコンテンツの抽出
             const newContent = doc.querySelector('main')?.innerHTML;
-            if (!newContent) {
-                throw new RouaultError(
-                    ErrorType.PARSE,
-                    'ページのコンテンツが見つかりません',
-                    response.status
-                );
-            }
+            if (!newContent) throw new Error('No main content found in response');
 
-            // タイトルの更新
-            const newTitle = doc.title;
-            if (newTitle) {
-                document.title = newTitle;
-            }
+            // タイトルを更新先のタイトルに変更
+            document.title = doc.title;
 
-            // コンテンツの差し替え
+            // メインコンテンツを更新先のコンテンツに変更
             if (this.outlet) {
                 this.outlet.innerHTML = newContent;
             }
 
-            // 再初期化処理
+            // コンテンツ差し替え後の再初期化処理
             this.reinitializeScripts();
-
         } catch (err) {
-            // エラーハンドリング
-            this.showErrorState(err);
-        } finally {
-            this.isLoading = false;
+            console.error('Navigation failed:', err);
+            if (this.outlet) {
+                // 404ページ仮実装
+                this.outlet.innerHTML = '<h1>404 - Not Found</h1><p>Failed to load content.</p>';
+            }
         }
-    }
-
-    /**
-     * ローディング状態を表示
-     */
-    private showLoadingState() {
-        if (!this.outlet) return;
-
-        // 既存のコンテンツの上に半透明のローディング表示を追加
-        const loadingOverlay = document.createElement('div');
-        loadingOverlay.className = 'loading-overlay';
-        loadingOverlay.setAttribute('aria-live', 'polite');
-        loadingOverlay.setAttribute('aria-busy', 'true');
-        loadingOverlay.innerHTML = `
-            <div class="loading-spinner" role="status">
-                <span class="visually-hidden">読み込み中...</span>
-            </div>
-        `;
-
-        // アニメーション用にわずかに遅延
-        requestAnimationFrame(() => {
-            loadingOverlay.classList.add('visible');
-        });
-
-        this.outlet.appendChild(loadingOverlay);
-    }
-
-    /**
-     * エラー状態を表示
-     */
-    private showErrorState(error: unknown) {
-        if (!this.outlet) return;
-
-        // エラーをHTML形式で表示
-        const errorHTML = ErrorHandler.toHTML(error);
-        this.outlet.innerHTML = errorHTML;
-
-        // エラーログ出力
-        ErrorHandler.handle(error, 'Router.updateContent');
     }
 
     /**

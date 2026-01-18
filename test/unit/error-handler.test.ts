@@ -1,6 +1,6 @@
 /**
  * ErrorHandler ユーティリティの単体テスト
- * 
+ *
  * テスト対象:
  * - classifyHttpError()
  * - classifyError()
@@ -10,11 +10,11 @@
 
 import { expect } from '@open-wc/testing';
 import {
-    classifyHttpError,
     classifyError,
+    classifyHttpError,
+    ErrorHandler,
     generateErrorHTML,
     logError,
-    ErrorHandler,
 } from '../../src/lib/error-handler.js';
 import { ErrorType, RouaultError } from '../../src/types/errors.js';
 
@@ -75,11 +75,7 @@ describe('ErrorHandler', () => {
 
     describe('classifyError()', () => {
         it('RouaultError はそのまま返すこと', () => {
-            const originalError = new RouaultError(
-                ErrorType.NOT_FOUND,
-                'Test Error',
-                404
-            );
+            const originalError = new RouaultError(ErrorType.NOT_FOUND, 'Test Error', 404);
             const result = classifyError(originalError);
 
             expect(result).to.equal(originalError);
@@ -212,19 +208,6 @@ describe('ErrorHandler', () => {
     });
 
     describe('logError()', () => {
-        let consoleErrorSpy: sinon.SinonSpy;
-        let consoleGroupSpy: sinon.SinonSpy;
-        let consoleGroupEndSpy: sinon.SinonSpy;
-
-        beforeEach(() => {
-            // console のスパイを設定（実際にはsinonが必要）
-            // Web Test Runner では chai-spies などを使用
-        });
-
-        afterEach(() => {
-            // スパイのクリーンアップ
-        });
-
         it('エラー情報をコンソールに出力すること', () => {
             const appError = {
                 type: ErrorType.NOT_FOUND,

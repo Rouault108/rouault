@@ -1,17 +1,16 @@
-import { build } from 'velite';
-import EleventyVitePlugin from '@11ty/eleventy-plugin-vite';
-import path from "node:path";
-
+import path from 'node:path';
 import type { UserConfig } from '@11ty/eleventy';
+import EleventyVitePlugin from '@11ty/eleventy-plugin-vite';
+import { build } from 'velite';
 
 /**
  * VeliteとViteを組み合わせた11tyの設定
  * @param eleventyConfig 11tyの設定オブジェクト
-*/
+ */
 export default function (eleventyConfig: UserConfig) {
     // 11ty.ts を 11ty.js エンジンで処理するようにマッピング
-    eleventyConfig.addExtension("11ty.ts", {
-        key: "11ty.js",
+    eleventyConfig.addExtension('11ty.ts', {
+        key: '11ty.js',
     });
 
     // 静的アセットのコピー
@@ -58,10 +57,10 @@ export default function (eleventyConfig: UserConfig) {
             resolve: {
                 alias: {
                     // "/src" へのアクセスを、実際の src ディレクトリへ転送する
-                    "/src": path.resolve(process.cwd(), "src"),
+                    '/src': path.resolve(process.cwd(), 'src'),
                 },
             },
-        }
+        },
     });
 
     return {
@@ -74,4 +73,4 @@ export default function (eleventyConfig: UserConfig) {
         },
         templateFormats: ['md', 'njk', 'html', '11ty.ts'],
     };
-};
+}

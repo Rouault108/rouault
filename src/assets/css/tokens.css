@@ -1,47 +1,51 @@
 :root {
-  /* Color Palette - HSL based for easy theming */
-  /* Primary - Deep Blue / Indigo */
-  --color-primary-hue: 220;
-  --color-primary-sat: 90%;
-  --color-primary-lightness: 55%;
-  --color-primary: hsl(var(--color-primary-hue), var(--color-primary-sat), var(--color-primary-lightness));
-  --color-primary-dark: hsl(var(--color-primary-hue), var(--color-primary-sat), 40%);
-  --color-primary-light: hsl(var(--color-primary-hue), var(--color-primary-sat), 95%);
+    /* Color Palette - HSL based for easy theming */
+    /* Primary - Deep Blue / Indigo */
+    --color-primary-hue: 220;
+    --color-primary-sat: 90%;
+    --color-primary-lightness: 55%;
+    --color-primary: hsl(
+        var(--color-primary-hue),
+        var(--color-primary-sat),
+        var(--color-primary-lightness)
+    );
+    --color-primary-dark: hsl(var(--color-primary-hue), var(--color-primary-sat), 40%);
+    --color-primary-light: hsl(var(--color-primary-hue), var(--color-primary-sat), 95%);
 
-  /* Neutral / Text */
-  --color-text-main: hsl(220, 10%, 15%);
-  --color-text-muted: hsl(220, 10%, 40%);
-  --color-background-body: hsl(220, 20%, 98%);
-  --color-background-surface: hsl(0, 0%, 100%);
+    /* Neutral / Text */
+    --color-text-main: hsl(220, 10%, 15%);
+    --color-text-muted: hsl(220, 10%, 40%);
+    --color-background-body: hsl(220, 20%, 98%);
+    --color-background-surface: hsl(0, 0%, 100%);
 
-  /* Spacing System */
-  --space-xs: 0.25rem;
-  --space-s: 0.5rem;
-  --space-m: 1rem;
-  --space-l: 1.5rem;
-  --space-xl: 2rem;
-  --space-2xl: 3rem;
+    /* Spacing System */
+    --space-xs: 0.25rem;
+    --space-s: 0.5rem;
+    --space-m: 1rem;
+    --space-l: 1.5rem;
+    --space-xl: 2rem;
+    --space-2xl: 3rem;
 
-  /* Typography */
-  --font-family-base: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-family-mono: 'Fira Code', monospace;
-  
-  --font-size-s: 0.875rem;
-  --font-size-m: 1rem;
-  --font-size-l: 1.25rem;
-  --font-size-xl: 1.5rem;
-  --font-size-2xl: 2rem;
+    /* Typography */
+    --font-family-base: "Inter", system-ui, -apple-system, sans-serif;
+    --font-family-mono: "Fira Code", monospace;
 
-  /* Radius */
-  --radius-m: 8px;
-  --radius-l: 12px;
+    --font-size-s: 0.875rem;
+    --font-size-m: 1rem;
+    --font-size-l: 1.25rem;
+    --font-size-xl: 1.5rem;
+    --font-size-2xl: 2rem;
+
+    /* Radius */
+    --radius-m: 8px;
+    --radius-l: 12px;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --color-text-main: hsl(220, 10%, 95%);
-    --color-text-muted: hsl(220, 10%, 70%);
-    --color-background-body: hsl(220, 20%, 10%);
-    --color-background-surface: hsl(220, 15%, 16%);
-  }
+    :root {
+        --color-text-main: hsl(220, 10%, 95%);
+        --color-text-muted: hsl(220, 10%, 70%);
+        --color-background-body: hsl(220, 20%, 10%);
+        --color-background-surface: hsl(220, 15%, 16%);
+    }
 }

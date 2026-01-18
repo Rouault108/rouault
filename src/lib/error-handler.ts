@@ -3,7 +3,7 @@
  * アプリケーション全体で統一されたエラー処理を提供
  */
 
-import { ErrorType, RouaultError, type AppError } from '../types/errors.js';
+import { type AppError, ErrorType, RouaultError } from '../types/errors.js';
 
 /**
  * HTTPレスポンスからエラーを分類
@@ -12,11 +12,7 @@ export function classifyHttpError(response: Response): RouaultError {
     const { status } = response;
 
     if (status === 404) {
-        return new RouaultError(
-            ErrorType.NOT_FOUND,
-            'ページが見つかりません',
-            status
-        );
+        return new RouaultError(ErrorType.NOT_FOUND, 'ページが見つかりません', status);
     }
 
     if (status >= 500) {
@@ -28,11 +24,7 @@ export function classifyHttpError(response: Response): RouaultError {
     }
 
     if (status >= 400) {
-        return new RouaultError(
-            ErrorType.CLIENT,
-            'ページの読み込みに失敗しました',
-            status
-        );
+        return new RouaultError(ErrorType.CLIENT, 'ページの読み込みに失敗しました', status);
     }
 
     return new RouaultError(
@@ -116,14 +108,15 @@ export function generateErrorHTML(error: AppError): string {
     <div class="error-content">
         <h1>${statusText}</h1>
         <p class="error-message">${error.message}</p>
-        ${error.type === ErrorType.NOT_FOUND
-            ? `
+        ${
+            error.type === ErrorType.NOT_FOUND
+                ? `
         <nav class="error-actions">
             <a href="/" class="button button-primary">ホームに戻る</a>
             <a href="/notes" class="button button-secondary">ノート一覧</a>
         </nav>
         `
-            : `
+                : `
         <nav class="error-actions">
             <button onclick="history.back()" class="button button-primary">戻る</button>
             <button onclick="location.reload()" class="button button-secondary">再読み込み</button>
@@ -138,7 +131,7 @@ export function generateErrorHTML(error: AppError): string {
 /**
  * エラーをコンソールに記録（開発環境では詳細表示）
  */
-export function logError(error: AppError, context?: string | undefined): void {
+export function logError(error: AppError, context?: string  ): void {
     // ブラウザ環境では process.env が存在しないため、try-catch で安全に判定
     let isDevelopment = false;
     try {
@@ -179,9 +172,7 @@ export class ErrorHandler {
     /**
      * fetchエラーを処理
      */
-    static async handleFetchError(
-        response: Response
-    ): Promise<RouaultError> {
+    static async handleFetchError(response: Response): Promise<RouaultError> {
         if (!response.ok) {
             return classifyHttpError(response);
         }
@@ -202,7 +193,7 @@ export class ErrorHandler {
      * エラーを表示用HTMLに変換
      */
     static toHTML(error: unknown): string {
-        const appError = this.handle(error);
+        const appError = ErrorHandler.handle(error);
         return generateErrorHTML(appError);
     }
 }
