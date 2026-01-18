@@ -9,9 +9,9 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix && prettier --write .",
     "format": "prettier --write .",
-    "dev": "pnpm exec node --experimental-strip-types ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts --serve",
-    "build": "pnpm exec node --experimental-strip-types ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts && pagefind --site dist",
-    "start": "pnpm exec node --experimental-strip-types ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts --serve"
+    "dev": "eleventy --config=eleventy.config.js --serve",
+    "build": "eleventy --config=eleventy.config.js && pagefind --site dist",
+    "start": "eleventy --config=eleventy.config.js --serve"
   },
   "keywords": [],
   "author": "",
