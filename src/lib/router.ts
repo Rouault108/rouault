@@ -11,13 +11,15 @@ export class Router {
    * イベントリスナー設定
    */
   private init() {
-    window.addEventListener('popstate', () => this.handleNavigation(window.location.pathname));
+    window.addEventListener('popstate', () => {
+      void this.handleNavigation(window.location.pathname);
+    });
     document.addEventListener('click', (e) => {
       this.handleAnchorClick(e);
     });
 
     // 初期ロード
-    this.handleNavigation(window.location.pathname);
+    void this.handleNavigation(window.location.pathname);
   }
 
   /**
@@ -45,7 +47,7 @@ export class Router {
 
     e.preventDefault();
     window.history.pushState({}, '', href);
-    this.handleNavigation(href);
+    void this.handleNavigation(href);
   }
 
   /**
@@ -77,7 +79,7 @@ export class Router {
   private async updateContent(url: string) {
     try {
       const response = await fetch(url);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${String(response.status)}`);
 
       const text = await response.text();
       const parser = new DOMParser();
@@ -90,18 +92,13 @@ export class Router {
       document.title = doc.title;
 
       // メインコンテンツを更新先のコンテンツに変更
-      if (this.outlet) {
-        this.outlet.innerHTML = newContent;
-      }
+      this.outlet.innerHTML = newContent;
 
       // コンテンツ差し替え後の再初期化処理
       this.reinitializeScripts();
     } catch (err) {
       console.error('Navigation failed:', err);
-      if (this.outlet) {
-        // 404ページ仮実装
-        this.outlet.innerHTML = '<h1>404 - Not Found</h1><p>Failed to load content.</p>';
-      }
+      this.outlet.innerHTML = '<h1>404 - Not Found</h1><p>Failed to load content.</p>';
     }
   }
 
