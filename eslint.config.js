@@ -1,3 +1,4 @@
+import { defineConfig } from 'eslint/config';
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import lit from 'eslint-plugin-lit';
@@ -6,7 +7,7 @@ import wc from 'eslint-plugin-wc';
 import prettier from 'eslint-config-prettier';
 import globals from 'globals';
 
-export default tseslint.config(
+export default defineConfig(
   // 1. 無視設定
   {
     ignores: ['dist/', '.velite/', 'node_modules/', '*.config.js', '*.config.ts'],
@@ -17,7 +18,6 @@ export default tseslint.config(
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
   lit.configs['flat/recommended'],
-  litA11y.configs['flat/recommended'],
   wc.configs['flat/recommended'],
 
   // 3. 言語・パーサー設定
@@ -38,6 +38,7 @@ export default tseslint.config(
   // 4. カスタムルール
   {
     files: ['src/**/*.ts', 'test/**/*.ts'],
+    plugins: {'lit-a11y': litA11y},
     rules: {
       // 未使用変数の厳格な管理
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
@@ -65,6 +66,27 @@ export default tseslint.config(
       'wc/tag-name-matches-class': 'error',
       'wc/no-constructor-attributes': 'error',
       'wc/no-invalid-element-name': 'error',
+
+      // Lit-a11y
+      'lit-a11y/alt-text': 'error',
+      'lit-a11y/anchor-is-valid': 'error',
+      'lit-a11y/aria-activedescendant-has-tabindex': 'error',
+      'lit-a11y/aria-attr-valid-value': 'error',
+      'lit-a11y/aria-attrs': 'error',
+      'lit-a11y/aria-unsupported-elements': 'error',
+      'lit-a11y/autocomplete-valid': 'error',
+      'lit-a11y/click-events-have-key-events': 'error',
+      'lit-a11y/iframe-title': 'error',
+      'lit-a11y/img-redundant-alt': 'error',
+      'lit-a11y/mouse-events-have-key-events': 'error',
+      'lit-a11y/no-access-key': 'error',
+      'lit-a11y/no-autofocus': 'error',
+      'lit-a11y/no-distracting-elements': 'error',
+      'lit-a11y/no-redundant-role': 'error',
+      'lit-a11y/role-has-required-aria-attrs': 'error',
+      'lit-a11y/scope': 'error',
+      'lit-a11y/tabindex-no-positive': 'error',
+      'lit-a11y/valid-lang': 'error'
     },
   },
 
