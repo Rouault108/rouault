@@ -11,7 +11,7 @@ export class Router {
    * イベントリスナー設定
    */
   private init() {
-    window.addEventListener('popstate', (e) => this.handleNavigation(window.location.pathname));
+    window.addEventListener('popstate', () => this.handleNavigation(window.location.pathname));
     document.addEventListener('click', (e) => {
       this.handleAnchorClick(e);
     });
