@@ -50,7 +50,7 @@ export default defineConfig(
       'lit/no-invalid-html': 'error',
       
       // 堅牢性を高める一般ルール
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-console': ['warn', { allow: ['warn', 'error', 'info', 'group', 'groupEnd'] }],
       'eqeqeq': ['error', 'always'],
       
       // TypeScript 厳格化の念押し
