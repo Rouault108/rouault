@@ -28,7 +28,7 @@ importers:
         specifier: 7.0.0
         version: 7.0.0(@types/node@24.10.9)(terser@5.46.0)(tsx@4.21.0)
       '@eslint/js':
-        specifier: 9.39.2
+        specifier: ~9.39.2
         version: 9.39.2
       '@esm-bundle/chai':
         specifier: 4.3.4-fix.0
@@ -55,19 +55,22 @@ importers:
         specifier: 0.11.1
         version: 0.11.1
       eslint:
-        specifier: 9.39.2
+        specifier: ~9.39.2
         version: 9.39.2
       eslint-config-prettier:
-        specifier: 10.1.8
+        specifier: ~10.1.8
         version: 10.1.8(eslint@9.39.2)
       eslint-plugin-lit:
-        specifier: 2.1.1
+        specifier: ~2.1.1
         version: 2.1.1(eslint@9.39.2)
       eslint-plugin-lit-a11y:
-        specifier: 5.1.1
+        specifier: ~5.1.1
         version: 5.1.1(eslint@9.39.2)
+      eslint-plugin-wc:
+        specifier: 3.0.2
+        version: 3.0.2(eslint@9.39.2)
       globals:
-        specifier: 17.0.0
+        specifier: ~17.0.0
         version: 17.0.0
       pagefind:
         specifier: 1.4.0
@@ -76,7 +79,7 @@ importers:
         specifier: 1.57.0
         version: 1.57.0
       prettier:
-        specifier: 3.8.0
+        specifier: ~3.8.0
         version: 3.8.0
       rehype-katex:
         specifier: ~7.0.1
@@ -103,7 +106,7 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
       typescript-eslint:
-        specifier: 8.53.0
+        specifier: ~8.53.0
         version: 8.53.0(eslint@9.39.2)(typescript@5.9.3)
       velite:
         specifier: 0.3.1
@@ -1914,6 +1917,11 @@ packages:
     peerDependencies:
       eslint: '>= 8'
 
+  eslint-plugin-wc@3.0.2:
+    resolution: {integrity: sha512-siwTrxPTw6GU2JmP3faInw8nhi0ZCnKsiSRM3j7EAkZmBTGYdDAToeseLYsvPrc5Urp/vPz+g7Ewh7XcICLxww==}
+    peerDependencies:
+      eslint: '>=8.40.0'
+
   eslint-rule-extender@0.0.1:
     resolution: {integrity: sha512-F0j1Twve3lamL3J0rRSVAynlp58sDPG39JFcQrM+u9Na7PmCgiPHNODh6YE9mduaGcsn3NBqbf6LZRj0cLr8Ng==}
     engines: {node: '>=10'}
@@ -2388,6 +2396,9 @@ packages:
     resolution: {integrity: sha512-+Pgi+vMuUNkJyExiMBt5IlFoMyKnr5zhJ4Uspz58WOhBF5QoIZkFyNHIbBAtHwzVAgk5RtndVNsDRN61/mmDqg==}
     engines: {node: '>=12'}
 
+  is-potential-custom-element-name@1.0.1:
+    resolution: {integrity: sha512-bCYeRA2rVibKZd+s2625gGnGF/t7DSqDs4dP7CrLA1m7jKWz6pps0LpYLJN8Q64HtmPKJ1hrN3nzPNKFEKOUiQ==}
+
   is-regex@1.2.1:
     resolution: {integrity: sha512-MjYsKHO5O7mCsmRGxWcLWheFqN9DJ/2TmngvjKXihe6efViPqc274+Fx/4fYj/r03+ESvBdTXK0V6tA3rgez1g==}
     engines: {node: '>= 0.4'}
@@ -2395,6 +2406,9 @@ packages:
   is-stream@2.0.1:
     resolution: {integrity: sha512-hFoiJiTl63nn+kstHGBtewWSKnQLpyb155KHheA1l39uvtO9nWIop1p3udqPcUd/xbF1VLMO4n7OI6p7RbngDg==}
     engines: {node: '>=8'}
+
+  is-valid-element-name@1.0.0:
+    resolution: {integrity: sha512-GZITEJY2LkSjQfaIPBha7eyZv+ge0PhBR7KITeCCWvy7VBQrCUdFkvpI+HrAPQjVtVjy1LvlEkqQTHckoszruw==}
 
   is-wsl@2.2.0:
     resolution: {integrity: sha512-fKzAra0rGJUUBwGBgNkHZuToZcn+TtXHpeCgmkMJMMYx1sQDYaCSyjJBSCa2nH1DGm7s3n1oBnohoVTBaN7Lww==}
@@ -2426,6 +2440,9 @@ packages:
   istanbul-reports@3.2.0:
     resolution: {integrity: sha512-HGYWWS/ehqTV3xN10i23tkPkpH46MLCIMFNCaaKNavAXTF1RkqxawEPtnjnGZ6XKSInBKkiOA5BKS+aZiY3AvA==}
     engines: {node: '>=8'}
+
+  js-levenshtein-esm@2.0.0:
+    resolution: {integrity: sha512-1n4LEPOL4wRXY8rOQcuA7Iuaphe5xCMayvufCzlLAi+hRsnBRDbSS6XPuV58CBVJxj5D9ApFLyjQ7KzFToyHBw==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -5607,6 +5624,12 @@ snapshots:
       parse5: 6.0.1
       parse5-htmlparser2-tree-adapter: 6.0.1
 
+  eslint-plugin-wc@3.0.2(eslint@9.39.2):
+    dependencies:
+      eslint: 9.39.2
+      is-valid-element-name: 1.0.0
+      js-levenshtein-esm: 2.0.0
+
   eslint-rule-extender@0.0.1: {}
 
   eslint-scope@8.4.0:
@@ -6178,6 +6201,8 @@ snapshots:
 
   is-plain-obj@4.1.0: {}
 
+  is-potential-custom-element-name@1.0.1: {}
+
   is-regex@1.2.1:
     dependencies:
       call-bound: 1.0.4
@@ -6186,6 +6211,10 @@ snapshots:
       hasown: 2.0.2
 
   is-stream@2.0.1: {}
+
+  is-valid-element-name@1.0.0:
+    dependencies:
+      is-potential-custom-element-name: 1.0.1
 
   is-wsl@2.2.0:
     dependencies:
@@ -6213,6 +6242,8 @@ snapshots:
     dependencies:
       html-escaper: 2.0.2
       istanbul-lib-report: 3.0.1
+
+  js-levenshtein-esm@2.0.0: {}
 
   js-tokens@4.0.0: {}
 
