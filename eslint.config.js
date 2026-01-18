@@ -10,7 +10,7 @@ import globals from 'globals';
 export default defineConfig(
   // 1. 無視設定
   {
-    ignores: ['dist/', '.velite/', 'node_modules/', '*.config.js', '*.config.ts'],
+    ignores: ['dist/', '.velite/', 'node_modules/', '*.config.js', '*.config.ts', '*.config.mjs'],
   },
 
   // 2. 基本的な推奨設定
