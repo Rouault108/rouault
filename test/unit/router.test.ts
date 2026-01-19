@@ -31,10 +31,10 @@ describe('Router', () => {
 
 		// history API のモック（SecurityErrorを防ぐため）
 		history.pushState = (_data: unknown, _unused: string, _url?: string | URL | null) => {
-			// mock
+			// mock: 何もしない（SecurityErrorを防ぐだけ）
 		};
 		history.replaceState = (_data: unknown, _unused: string, _url?: string | URL | null) => {
-			// mock
+			// mock: 何もしない（SecurityErrorを防ぐだけ）
 		};
 
 		// View Transition API のモック
@@ -865,9 +865,19 @@ describe('Router', () => {
 		});
 
 		it('6.7 タイムアウト時に適切なメッセージを表示すること', async () => {
-			globalThis.fetch = async () => {
-				await new Promise((resolve) => setTimeout(resolve, 100000)); // 長時間待機
-				return new Response('Should timeout', { status: 200 });
+			globalThis.fetch = async (_input: RequestInfo | URL, init?: RequestInit) => {
+				return new Promise((resolve, reject) => {
+					const timeoutId = setTimeout(() => {
+						resolve(new Response('Should timeout', { status: 200 }));
+					}, 100000); // 長時間待機
+
+					if (init?.signal) {
+						init.signal.addEventListener('abort', () => {
+							clearTimeout(timeoutId);
+							reject(new DOMException('Aborted', 'AbortError'));
+						});
+					}
+				});
 			};
 
 			router = new Router(outlet);
