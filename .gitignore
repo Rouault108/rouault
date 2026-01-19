@@ -2,3 +2,4 @@
 dist
 .velite
 node_modules
+test-results
