@@ -57,6 +57,7 @@ export default function (eleventyConfig) {
         alias: {
           // "/src" へのアクセスを、実際の src ディレクトリへ転送する
           '/src': path.resolve(process.cwd(), 'src'),
+          '@': path.resolve(process.cwd(), 'src'),
         },
       },
     },

@@ -9,7 +9,11 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "experimentalDecorators": false,
     "useDefineForClassFields": false,
-    "typeRoots": ["./node_modules/@types", "./types"]
+    "typeRoots": ["./node_modules/@types", "./types"],
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "resolveJsonModule": true
   },
   "include": ["src/**/*", "eleventy.config.ts", "types/**/*", "test/**/*"]
 }
