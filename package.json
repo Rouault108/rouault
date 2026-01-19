@@ -5,13 +5,14 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
+    "analyze": "cem analyze --litelement",
     "test": "web-test-runner",
     "test:e2e": "playwright test",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix && prettier --write .",
     "format": "prettier --write .",
-    "storybook": "storybook dev",
-    "storybook:build": "storybook build",
+    "storybook": "cem analyze && storybook dev",
+    "storybook:build": "cem analyze && storybook build",
     "dev": "eleventy --config=eleventy.config.js --serve",
     "build": "eleventy --config=eleventy.config.js && pagefind --site dist",
     "start": "eleventy --config=eleventy.config.js --serve"
