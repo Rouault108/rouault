@@ -43,12 +43,13 @@ describe('Router', () => {
 		const mockTransition: Document['startViewTransition'] = (
 			callback?: ViewTransitionUpdateCallback | StartViewTransitionOptions,
 		) => {
-			// コールバックの即時実行
+			// コールバックを非同期実行し、完了を追跡
 			const updateCallback =
 				typeof callback === 'function' ? callback : callback?.update;
-			if (updateCallback) {
-				void Promise.resolve(updateCallback());
-			}
+			
+			const callbackPromise = updateCallback 
+				? Promise.resolve(updateCallback())
+				: Promise.resolve();
 
 			// typesのモックオブジェクトを作成
 			const typesArray = typeof callback === 'object' && callback?.types ? callback.types : [];
@@ -82,9 +83,10 @@ describe('Router', () => {
 			} as ViewTransitionTypeSet;
 
 			return {
-				finished: Promise.resolve(),
-				ready: Promise.resolve(),
-				updateCallbackDone: Promise.resolve(),
+				// コールバック完了後にresolve
+				finished: callbackPromise,
+				ready: callbackPromise,
+				updateCallbackDone: callbackPromise,
 				skipTransition: () => {
 					// mock
 				},
@@ -103,7 +105,7 @@ describe('Router', () => {
 
 		// ルーターのクリーンアップ
 		if (router) {
-			router.destroy?.();
+			router.destroy();
 		}
 	});
 
@@ -133,7 +135,7 @@ describe('Router', () => {
 
 		it('1.3 destroy() メソッドでイベントリスナーが解除されること', async () => {
 			router = new Router(outlet);
-			router.destroy?.();
+			router.destroy();
 
 			// destroyされた後はリンククリックがインターセプトされない
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/test">Test Link</a> `);
