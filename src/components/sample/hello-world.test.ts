@@ -1,5 +1,5 @@
 import { expect, fixture, html } from '@open-wc/testing';
-import './hello-world.js';
+import '../hello-world.js';
 import type { HelloWorld } from './hello-world.js';
 
 describe('HelloWorld Component', () => {

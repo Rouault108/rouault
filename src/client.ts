@@ -1,5 +1,5 @@
 import { Router } from './lib/router.js';
-import './components/hello-world.ts';
+import './components/sample/hello-world.js';
 
 /*
  * アプリケーションのクライアントサイドエントリーポイント（ルーターの初期化）
