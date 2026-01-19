@@ -1,4 +1,5 @@
 .vscode
+.agent
 dist
 .velite
 node_modules
