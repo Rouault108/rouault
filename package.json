@@ -10,6 +10,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix && prettier --write .",
     "format": "prettier --write .",
+    "storybook": "storybook dev",
+    "storybook:build": "storybook build",
     "dev": "eleventy --config=eleventy.config.js --serve",
     "build": "eleventy --config=eleventy.config.js && pagefind --site dist",
     "start": "eleventy --config=eleventy.config.js --serve"
