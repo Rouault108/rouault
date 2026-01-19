@@ -6,14 +6,14 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "analyze": "cem analyze --litelement",
+    "analyze": "cem analyze --litelement --config cem.config.mjs",
     "test": "web-test-runner",
     "test:e2e": "playwright test",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix && prettier --write .",
     "format": "prettier --write .",
-    "storybook": "cem analyze && storybook dev",
-    "storybook:build": "cem analyze && storybook build",
+    "storybook": "cem analyze --config cem.config.mjs && storybook dev",
+    "storybook:build": "cem analyze --config cem.config.mjs && storybook build",
     "dev": "eleventy --config=eleventy.config.js --serve",
     "build": "eleventy --config=eleventy.config.js && pagefind --site dist",
     "start": "eleventy --config=eleventy.config.js --serve"
