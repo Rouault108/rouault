@@ -1,6 +1,7 @@
 {
   "name": "Rouault",
   "version": "1.0.0",
+  "customElements": "custom-elements.json",
   "description": "",
   "type": "module",
   "main": "index.js",
