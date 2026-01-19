@@ -6,3 +6,5 @@ dist
 node_modules
 test-results
 playwright-report
+
+custom-elements.json
