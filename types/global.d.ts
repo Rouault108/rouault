@@ -15,6 +15,7 @@ interface Prism {
  */
 type PagefindUIConstructor = new (options: { element: Element | string }) => PagefindUIInstance;
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface PagefindUIInstance {}
 
 /**
@@ -27,18 +28,6 @@ declare global {
   interface Window {
     Prism?: Prism;
     PagefindUI?: PagefindUIConstructor;
-  }
-
-  /**
-   * View Transition API のグローバル API
-   * 2026年1月時点で型定義がないため、一時的に型定義を追加
-   */
-  interface Document {
-    startViewTransition?: (callback: () => Promise<void>) => {
-      finished: Promise<void>;
-      updateCallbackDone: Promise<void>;
-      ready: Promise<void>;
-    };
   }
 }
 
