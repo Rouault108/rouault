@@ -22,19 +22,19 @@ describe('Router', () => {
 		// テスト用のアウトレット要素を作成
 		outlet = await fixture<HTMLElement>(html` <main id="test-outlet">Initial Content</main> `);
 
-		// fetch のモックを保存
+		// fetch のオリジナルを保存
 		originalFetch = globalThis.fetch;
 
-		// history API のモックを保存
+		// history API のオリジナルを保存
 		originalPushState = history.pushState;
 		originalReplaceState = history.replaceState;
 
 		// history API のモック（SecurityErrorを防ぐため）
 		history.pushState = (_data: unknown, _unused: string, _url?: string | URL | null) => {
-			// モック実装: 何もしない
+			// mock
 		};
 		history.replaceState = (_data: unknown, _unused: string, _url?: string | URL | null) => {
-			// モック実装: 何もしない
+			// mock
 		};
 
 		// View Transition API のモック
@@ -43,7 +43,7 @@ describe('Router', () => {
 		const mockTransition: Document['startViewTransition'] = (
 			callback?: ViewTransitionUpdateCallback | StartViewTransitionOptions,
 		) => {
-			// コールバックを実行
+			// コールバックの即時実行
 			const updateCallback =
 				typeof callback === 'function' ? callback : callback?.update;
 			if (updateCallback) {
@@ -52,9 +52,32 @@ describe('Router', () => {
 
 			// typesのモックオブジェクトを作成
 			const typesArray = typeof callback === 'object' && callback?.types ? callback.types : [];
+			const backingSet = new Set(typesArray);
+
 			const mockTypes = {
-				forEach(callbackfn: (value: string, key: string, parent: ViewTransitionTypeSet) => void) {
-					typesArray.forEach((type) => callbackfn(type, type, mockTypes as ViewTransitionTypeSet));
+				// Setの標準メソッドをデリゲート
+				add: (value: string) => {
+					backingSet.add(value);
+					return mockTypes;
+				},
+				clear: () => backingSet.clear(),
+				delete: (value: string) => backingSet.delete(value),
+				has: (value: string) => backingSet.has(value),
+				entries: () => backingSet.entries(),
+				keys: () => backingSet.keys(),
+				values: () => backingSet.values(),
+				[Symbol.iterator]: () => backingSet[Symbol.iterator](),
+				get size() {
+					return backingSet.size;
+				},
+
+				// ViewTransitionTypeSetのforEachは第3引数に自身の参照が必要
+				forEach(
+					callbackfn: (value: string, key: string, parent: ViewTransitionTypeSet) => void,
+				) {
+					backingSet.forEach((value, key) =>
+						callbackfn(value, key, mockTypes as ViewTransitionTypeSet),
+					);
 				},
 			} as ViewTransitionTypeSet;
 
