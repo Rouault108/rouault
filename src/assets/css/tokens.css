@@ -157,8 +157,13 @@
  * ダークモード
  * =========================================================================== */
 
+/* ===========================================================================
+ * ダークモード
+ * OS設定 (prefers-color-scheme) または 明示的なクラス指定 (data-theme="dark")
+ * =========================================================================== */
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     /* 基本色 */
     --color-background: #0a0a0a;
     --color-background-subtle: #171717;
@@ -180,6 +185,29 @@
     --bg-surface-2: #262626;
     --bg-surface-3: #404040;
   }
+}
+
+:root[data-theme="dark"] {
+  /* 基本色 */
+  --color-background: #0a0a0a;
+  --color-background-subtle: #171717;
+  --color-foreground: #ededed;
+  --color-foreground-muted: #a1a1aa;
+  
+  /* プライマリ & アクセント */
+  --color-primary: #60a5fa;
+  --color-primary-hover: #93c5fd;
+  --color-accent: #a78bfa;
+  
+  /* ボーダー */
+  --color-border: #27272a;
+  --color-border-hover: #3f3f46;
+  
+  /* Elevation Tones（高さの表現） */
+  --bg-surface-0: #0a0a0a;
+  --bg-surface-1: #171717;
+  --bg-surface-2: #262626;
+  --bg-surface-3: #404040;
 }
 
 /* ===========================================================================
