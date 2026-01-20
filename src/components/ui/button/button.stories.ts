@@ -144,6 +144,20 @@ export const Disabled: Story = {
 };
 
 /**
+ * Loading (読み込み中)
+ */
+export const Loading: Story = {
+  args: {
+    variant: 'primary',
+  },
+  render: (args) => html`
+    <ui-button variant="${args['variant']}" size="${args['size'] || 'md'}" loading>
+      送信中...
+    </ui-button>
+  `,
+};
+
+/**
  * アイコン付きボタン (Prefix/Suffix)
  */
 export const WithIcon: Story = {

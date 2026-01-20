@@ -21,7 +21,7 @@ export class UiButton extends LionButton {
           --bg-hover:   hsl(var(--btn-h), var(--btn-s), calc(var(--btn-l) - 5%));
           --bg-active:  hsl(var(--btn-h), var(--btn-s), calc(var(--btn-l) - 10%));
           
-          --text-default: #ffffff;
+          --text-default: var(--color-background); /* Light: White, Dark: Black */
           --text-disabled: hsl(220, 10%, 60%);
           
           --border-color: transparent;
@@ -159,6 +159,29 @@ export class UiButton extends LionButton {
         }
 
         /* -------------------------------------------------------------
+         * Loading (読み込み中)
+         * ------------------------------------------------------------- */
+        :host([loading]) {
+          cursor: wait;
+          pointer-events: none;
+          opacity: 0.8;
+        }
+        
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+
+        .spinner {
+          display: block;
+          width: 1em;
+          height: 1em;
+          border: 2px solid currentColor;
+          border-right-color: transparent;
+          border-radius: 50%;
+          animation: spin 0.75s linear infinite;
+        }
+
+        /* -------------------------------------------------------------
          * サイズ (Sizes)
          * ------------------------------------------------------------- */
 
@@ -198,7 +221,7 @@ export class UiButton extends LionButton {
          * ------------------------------------------------------------- */
         
         /* アイコンの色をテキスト色に強制的に合わせる */
-        ::slotted(*) {
+        ::slotted(svg) {
           fill: none;
           stroke: currentColor;
         }
@@ -226,11 +249,17 @@ export class UiButton extends LionButton {
   @property({ type: String, reflect: true })
   align: 'center' | 'start' | 'between' = 'center';
 
+  @property({ type: Boolean, reflect: true })
+  loading = false;
+
   public override render() {
     return html`
-      <slot name="prefix"></slot>
+      ${this.loading 
+        ? html`<span class="spinner" aria-label="loading"></span>` 
+        : html`<slot name="prefix"></slot>`
+      }
       <slot></slot>
-      <slot name="suffix"></slot>
+      ${!this.loading ? html`<slot name="suffix"></slot>` : ''}
     `;
   }
 }
