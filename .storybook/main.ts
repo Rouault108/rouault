@@ -2,7 +2,7 @@ import type { StorybookConfig } from '@storybook/web-components-vite';
 
 const config: StorybookConfig = {
   // 1. Storyファイルの検索パターン
-  stories: ['../src/**/*.md', '../src/**/*.stories.@(js|ts)'],
+  stories: ['../src/**/*.stories.@(js|ts)'],
 
   // 2. アドオンの登録
   addons: [
