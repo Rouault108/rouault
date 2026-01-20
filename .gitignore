@@ -1,6 +1,5 @@
 .vscode
 .agent
-.storybook
 .velite
 dist
 node_modules
@@ -8,3 +7,5 @@ test-results
 playwright-report
 
 custom-elements.json
+*.log
+.DS_Store
