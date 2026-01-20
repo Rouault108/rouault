@@ -8,6 +8,7 @@
   "scripts": {
     "analyze": "cem analyze --litelement --config cem.config.mjs",
     "test": "web-test-runner",
+    "test:storybook": "",
     "test:e2e": "playwright test",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix && prettier --write .",
@@ -45,6 +46,8 @@
     "@tsconfig/strictest": "~2.0.8",
     "@types/mocha": "~10.0.10",
     "@types/node": "~24.10.9",
+    "@vitest/browser": "4.0.17",
+    "@vitest/browser-playwright": "4.0.17",
     "@web/dev-server-esbuild": "1.0.4",
     "@web/test-runner": "0.20.2",
     "@web/test-runner-playwright": "0.11.1",
@@ -67,6 +70,7 @@
     "typescript": "5.9.3",
     "typescript-eslint": "~8.53.0",
     "velite": "0.3.1",
-    "vite": "7.3.1"
+    "vite": "7.3.1",
+    "vitest": "4.0.17"
   }
 }
