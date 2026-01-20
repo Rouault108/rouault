@@ -39,12 +39,11 @@ export default defineConfig({
           // ブラウザモードを有効化 (Shadow DOM の完全なサポートのため)
           browser: {
             enabled: true,
-            // Playwright を使用 (既にプロジェクトに導入済み)
+            // Playwright を使用
             provider: playwright({}),
             // ヘッドレスでCI/自動テストに最適化
             headless: true,
-            // Chromium のみで実行 (必要に応じて firefox, webkit を追加可能)
-            instances: [{ browser: 'chromium' }],
+            instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }]
           },
 
           // Storybook の設定を Vitest に適用するセットアップファイル
