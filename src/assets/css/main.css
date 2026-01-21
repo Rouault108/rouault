@@ -8,9 +8,9 @@
 
 body {
   margin: 0;
-  font-family: var(--font-family-base);
-  background-color: var(--color-background-body);
-  color: var(--color-text-main);
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
   line-height: 1.6;
 }
 
@@ -21,12 +21,13 @@ h4,
 h5,
 h6 {
   line-height: 1.2;
-  margin-top: var(--space-xl);
-  margin-bottom: var(--space-m);
+  margin-top: var(--space-8, 2rem);
+  margin-bottom: var(--space-4, 1rem);
+  font-weight: var(--font-bold, 700);
 }
 
 p {
-  margin-bottom: var(--space-m);
+  margin-bottom: var(--space-4, 1rem);
 }
 
 a {
@@ -34,9 +35,10 @@ a {
   text-decoration-line: underline;
   text-underline-offset: 2px;
   text-decoration-thickness: 1px;
+  transition: color 0.2s ease-out;
 }
 
 a:hover {
-  color: var(--color-primary-dark);
+  color: var(--color-primary-hover);
   text-decoration-thickness: 2px;
 }
