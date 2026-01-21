@@ -34,6 +34,15 @@
   --color-error: hsl(0, 84%, 60%);     /* 赤 */
   --color-info: hsl(217, 91%, 60%);    /* 青 */
   
+  /* アルファチャネル付きカラー（フォーカスリング用） */
+  --color-primary-alpha-10: rgba(59, 130, 246, 0.1);
+  --color-error-alpha-10: rgba(239, 68, 68, 0.1);
+  
+  /* フォーカスリング */
+  --ring-primary: 0 0 0 3px var(--color-primary-alpha-10);
+  --ring-error: 0 0 0 3px var(--color-error-alpha-10);
+  --ring-offset: 2px;
+  
   /* グラデーション */
   --gradient-hero: linear-gradient(135deg, var(--color-primary), var(--color-accent));
   --gradient-text: linear-gradient(90deg, #3b82f6, #8b5cf6);
@@ -151,6 +160,13 @@
   --bp-lg: 1024px;
   --bp-xl: 1280px;
   --bp-2xl: 1536px;
+  
+  /* -----------------------------------------------------------------------
+   * i18n（多言語対応）- テキスト定義
+   * ----------------------------------------------------------------------- */
+  
+  /* 必須マーカー（日本語） */
+  --text-required-marker: ' 必須';
 }
 
 /* ===========================================================================
