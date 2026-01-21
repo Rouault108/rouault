@@ -1,7 +1,7 @@
 import { html } from 'lit';
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { expect, userEvent, fn } from 'storybook/test';
-import './button.js';
+import './button.ts';
 
 const meta: Meta = {
   title: 'Components/UiButton',
