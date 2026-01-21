@@ -15,6 +15,7 @@ export class UiCard extends LitElement {
           border-radius: var(--radius-lg, 8px);
           background-color: var(--color-background);
           color: var(--color-foreground);
+          font-family: var(--font-sans, system-ui, sans-serif);
           
           /* モーション */
           transition: 
