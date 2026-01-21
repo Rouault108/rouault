@@ -1,6 +1,14 @@
 import { setCustomElementsManifest } from '@storybook/web-components-vite';
 import customElements from '../custom-elements.json';
 
+
+// Fontsource - セルフホストフォント（unicode-range分割済み）
+// Noto Sans JP: Variable フォント（400-900）
+import '@fontsource-variable/noto-sans-jp';
+// JetBrains Mono: コードブロック用
+import '@fontsource/jetbrains-mono/400.css';
+import '@fontsource/jetbrains-mono/700.css';
+
 // スタイルシートの読み込み
 import '../src/assets/css/tokens.css';
 import '../src/assets/css/main.css';

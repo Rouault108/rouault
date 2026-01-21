@@ -28,6 +28,8 @@
   "license": "ISC",
   "packageManager": "pnpm@10.6.2",
   "dependencies": {
+    "@fontsource-variable/noto-sans-jp": "5.2.10",
+    "@fontsource/jetbrains-mono": "5.2.8",
     "@lion/ui": "~0.15.3",
     "@lit-labs/ssr": "~4.0.0",
     "@storybook/addon-interactions": "8.6.14",
