@@ -197,7 +197,7 @@ export class UiButton extends LionButton {
         :host([size="md"]) {
           font-size: var(--text-sm, 0.875rem); /* 14px */
           padding: 0 var(--space-4, 1rem);
-          height: 2.5rem; /* 40px */
+          height: var(--space-10, 2.5rem); /* 40px */
           border-radius: var(--radius-md, 6px);
         }
 
@@ -205,7 +205,7 @@ export class UiButton extends LionButton {
         :host([size="lg"]) {
           font-size: var(--text-base, 1rem); /* 16px */
           padding: 0 var(--space-6, 1.5rem); /* 24px */
-          height: 3rem; /* 48px */
+          height: var(--space-12, 3rem); /* 48px */
           border-radius: var(--radius-lg, 8px);
         }
 
