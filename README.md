@@ -379,6 +379,41 @@ permalinks.json をコミット（自動）
 
 ---
 
+## 🏭 レンダリング戦略 (SSG/SSR)
+
+### コンセプト: Hybrid SSG + Client Hydration
+
+本プロジェクトでは **SSG (Static Site Generation)** を基本としつつ、`@lit-labs/ssr` を活用して Web Components をビルド時にプリレンダリングします。
+
+### アーキテクチャ判断
+
+1.  **`@lit-labs/ssr` の用途**
+    *   **SSG 目的で使用**: リクエスト毎の動的レンダリング（SSR）ではなく、Eleventy のビルドプロセス内で Lit コンポーネントを HTML 文字列に変換するために使用します。
+    *   **ハイドレーション**: クライアント側で Lit がロードされると、既存の Declarative Shadow DOM を「活性化」（Hydration）し、インタラクティブになります。
+
+2.  **擬似的な ISR (Incremental Static Regeneration)**
+    *   Cloudflare Pages の **「Git プッシュごとの自動ビルド」** を活用します。
+    *   コンテンツ更新頻度が比較的低いため、動的な ISR（Next.js のようなオンデマンド再生成）ではなく、修正のたびに静的ファイルを全生成する SSG で十分と判断しました。
+    *   これにより、CDN エッジからの超高速配信（TTFB の最小化）と、最新コンテンツの維持を両立します。
+
+3.  **SSR (リクエスト時生成) を採用しない理由**
+    *   個人メモという性質上、ユーザーごとに異なる動的コンテンツが少ないため。
+    *   検索機能（Pagefind）やナビゲーションはクライアントサイドで効率的に動作するため。
+
+### レンダリングフロー
+
+```mermaid
+graph TD
+    A[Markdown Content] -->|Eleventy Build| B(Static HTML Generation)
+    C[Lit Components] -->|@lit-labs/ssr| B
+    B --> D[Cloudflare Pages / CDN]
+    D -->|Request| E[Browser]
+    E -->|Declarative Shadow DOM| F[Fast FCP]
+    G[Client JS] -->|Hydration| H[Interactive UI]
+```
+
+---
+
 ## 📂 プロジェクト構造
 
 ```plaintext
