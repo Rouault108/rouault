@@ -100,6 +100,26 @@ export class UiCard extends LitElement {
           display: none;
         }
 
+        /* スロット内の要素のマージンをリセット
+         * main.css のグローバルな見出しスタイル (margin-top: 32px) を上書きするため !important が必要 */
+        .card-header ::slotted(h1),
+        .card-header ::slotted(h2),
+        .card-header ::slotted(h3),
+        .card-header ::slotted(h4),
+        .card-header ::slotted(h5),
+        .card-header ::slotted(h6),
+        .card-header ::slotted(p),
+        .card-body ::slotted(h1),
+        .card-body ::slotted(h2),
+        .card-body ::slotted(h3),
+        .card-body ::slotted(h4),
+        .card-body ::slotted(h5),
+        .card-body ::slotted(h6),
+        .card-body ::slotted(p),
+        .card-footer ::slotted(p) {
+          margin: 0 !important;
+        }
+
         .card-media {
           overflow: hidden;
           /* デフォルト(Vertical)の角丸 */
@@ -127,7 +147,7 @@ export class UiCard extends LitElement {
           justify-content: center;
         }
 
-        .card-media:empty {
+        .card-media[hidden] {
           display: none;
         }
 
@@ -217,19 +237,19 @@ export class UiCard extends LitElement {
         :host([padding="sm"]) {
           --card-padding-y: var(--space-3, 0.75rem); /* 12px */
           --card-header-gap: var(--space-2, 0.5rem);
-          --card-footer-gap: var(--space-3, 0.75rem); /* 広げる: 0.5rem -> 0.75rem */
+          --card-footer-gap: var(--space-3, 0.75rem);
         }
 
         :host([padding="md"]) {
           --card-padding-y: var(--space-5, 1.25rem); /* 20px */
           --card-header-gap: var(--space-3, 0.75rem);
-          --card-footer-gap: var(--space-5, 1.25rem); /* 広げる: 0.75rem -> 1.25rem */
+          --card-footer-gap: var(--space-5, 1.25rem);
         }
 
         :host([padding="lg"]) {
           --card-padding-y: var(--space-8, 2rem); /* 32px */
           --card-header-gap: var(--space-4, 1rem);
-          --card-footer-gap: var(--space-8, 2rem); /* 広げる: 1rem -> 2rem */
+          --card-footer-gap: var(--space-8, 2rem);
         }
 
         /* -------------------------------------------------------------
@@ -242,7 +262,7 @@ export class UiCard extends LitElement {
         }
 
         :host([interactive]:hover) {
-          transform: translateY(-2px);
+          transform: translateY(-1px); /* Linear/Raycast風の繊細な動き */
         }
 
         :host([interactive][variant="elevated"]:hover) {
@@ -289,6 +309,9 @@ export class UiCard extends LitElement {
   @state()
   private _hasFooterContent = false;
 
+  @state()
+  private _hasMediaContent = false;
+
   // インタラクティブ機能の提供（Reactive Controller）
   private _clickable = new ClickableController(this, () => this.interactive);
 
@@ -307,11 +330,16 @@ export class UiCard extends LitElement {
     this._hasFooterContent = slot.assignedNodes({ flatten: true }).length > 0;
   }
 
+  private _onMediaSlotChange(e: Event) {
+    const slot = e.target as HTMLSlotElement;
+    this._hasMediaContent = slot.assignedNodes({ flatten: true }).length > 0;
+  }
+
   override render() {
     return html`
       <div class="card-container" part="container">
-        <div class="card-media" part="media">
-          <slot name="media"></slot>
+        <div class="card-media" part="media" ?hidden="${!this._hasMediaContent}">
+          <slot name="media" @slotchange="${this._onMediaSlotChange}"></slot>
         </div>
         
         <div class="card-content">
