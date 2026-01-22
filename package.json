@@ -33,6 +33,7 @@
     "@lion/ui": "~0.15.3",
     "@lit-labs/ssr": "~4.0.0",
     "@storybook/addon-interactions": "8.6.14",
+    "iconify-icon": "3.0.2",
     "lit": "~3.3.2",
     "prismjs": "~1.30.0"
   },
@@ -42,6 +43,7 @@
     "@custom-elements-manifest/analyzer": "0.11.0",
     "@eslint/js": "~9.39.2",
     "@esm-bundle/chai": "4.3.4-fix.0",
+    "@iconify-json/lucide": "1.2.86",
     "@open-wc/testing": "4.0.0",
     "@playwright/test": "1.57.0",
     "@storybook/addon-a11y": "10.1.11",
