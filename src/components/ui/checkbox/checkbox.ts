@@ -302,10 +302,27 @@ export class UiCheckbox extends LitElement {
     );
   }
 
-  private _handleClick(e: MouseEvent) {
+  override connectedCallback() {
+    super.connectedCallback();
+    this.addEventListener('click', this._handleHostClick);
+  }
+
+  override disconnectedCallback() {
+    super.disconnectedCallback();
+    this.removeEventListener('click', this._handleHostClick);
+  }
+
+  private _handleHostClick(e: MouseEvent) {
     if (this.disabled) {
       e.preventDefault();
       e.stopPropagation();
+      return;
+    }
+
+    // イベントの発生元がネイティブinputなら、処理済みなので無視（無限ループ防止）
+    // Shadow DOM 内のイベントなので composedPath() を使用
+    const path = e.composedPath();
+    if (path.includes(this._nativeInput)) {
       return;
     }
 
@@ -347,7 +364,6 @@ export class UiCheckbox extends LitElement {
       />
       <div
         class="checkbox-wrapper"
-        @click=${this._handleClick}
         @keydown=${this._handleKeyDown}
       >
         <div class="checkbox" role="presentation">
