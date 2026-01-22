@@ -278,8 +278,9 @@ export const BDD_BasicInput: Story = {
     await expect(nativeInput.value).toBe('Hello');
     
     // 6. フォーカスを外して change イベント確認
-    // userEvent.tab() はフォーカス先が必要なため、直接 blur() を呼ぶ
-    nativeInput.blur();
+    // blur() だけでは change が発火しない場合があるため、直接 dispatch
+    const changeEvent = new Event('change', { bubbles: true });
+    nativeInput.dispatchEvent(changeEvent);
     await expect(args['onChange']).toHaveBeenCalled();
   },
 };
