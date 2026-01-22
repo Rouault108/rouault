@@ -255,7 +255,8 @@
   }
 }
 
-:root[data-theme="dark"] {
+:root[data-theme="dark"],
+[data-theme="dark"] {
   /* 基本色 */
   --color-background: #0a0a0a;
   --color-background-subtle: #171717;
