@@ -622,13 +622,11 @@ export const DarkMode: Story = {
     backgrounds: { default: 'dark' },
   },
   decorators: [
-    (story) => {
-      const wrapper = document.createElement('div');
-      wrapper.setAttribute('data-theme', 'dark');
-      wrapper.style.padding = '1rem';
-      wrapper.innerHTML = story() as string;
-      return wrapper;
-    },
+    (story) => html`
+      <div data-theme="dark" style="padding: 1rem; background: var(--color-background); color: var(--color-foreground);">
+        ${story()}
+      </div>
+    `,
   ],
   args: {
     size: 'md',
