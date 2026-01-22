@@ -47,6 +47,20 @@
   --gradient-hero: linear-gradient(135deg, var(--color-primary), var(--color-accent));
   --gradient-text: linear-gradient(90deg, #3b82f6, #8b5cf6);
   --glow-primary: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.15), transparent 70%);
+
+  /* -----------------------------------------------------------------------
+   * カテゴリタグ用カラー
+   * ----------------------------------------------------------------------- */
+  --tag-music: #8b5cf6;       /* Violet */
+  --tag-literature: #d97706;  /* Amber */
+  --tag-art: #ec4899;         /* Pink */
+  --tag-cs: #0ea5e9;          /* Sky */
+  --tag-economics: #10b981;   /* Emerald */
+  --tag-sociology: #14b8a6;   /* Teal */
+  --tag-politics: #ef4444;    /* Red */
+  --tag-law: #475569;         /* Slate */
+  --tag-math: #6366f1;        /* Indigo */
+  --tag-default: #6b7280;     /* Gray */
   
   /* -----------------------------------------------------------------------
    * タイポグラフィ
@@ -196,6 +210,18 @@
     --bg-surface-1: #171717;
     --bg-surface-2: #262626;
     --bg-surface-3: #404040;
+
+    /* カテゴリタグ用カラー（ダークモード） */
+    --tag-music: #a78bfa;
+    --tag-literature: #fbbf24;
+    --tag-art: #f472b6;
+    --tag-cs: #38bdf8;
+    --tag-economics: #34d399;
+    --tag-sociology: #2dd4bf;
+    --tag-politics: #f87171;
+    --tag-law: #94a3b8;
+    --tag-math: #818cf8;
+    --tag-default: #9ca3af;
   }
 }
 
@@ -220,6 +246,18 @@
   --bg-surface-1: #171717;
   --bg-surface-2: #262626;
   --bg-surface-3: #404040;
+
+  /* カテゴリタグ用カラー（ダークモード） */
+  --tag-music: #a78bfa;
+  --tag-literature: #fbbf24;
+  --tag-art: #f472b6;
+  --tag-cs: #38bdf8;
+  --tag-economics: #34d399;
+  --tag-sociology: #2dd4bf;
+  --tag-politics: #f87171;
+  --tag-law: #94a3b8;
+  --tag-math: #818cf8;
+  --tag-default: #9ca3af;
 }
 
 /* ===========================================================================
