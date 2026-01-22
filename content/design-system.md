@@ -380,8 +380,8 @@ RouaultのデザインシステムはVitestやNext.jsドキュメントに触発
 }
 
 .button:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-1px); /* 1px: Linear/Raycast風の繊細な動き */
+  box-shadow: var(--shadow-md);
 }
 
 .button:active {
@@ -389,13 +389,15 @@ RouaultのデザインシステムはVitestやNext.jsドキュメントに触発
 }
 ```
 
+> **注意:** Ghost バリアントはホバー時のシャドウなし（`box-shadow: none`）
+
 #### カード出現
 
 ```css
 @keyframes fade-in-up {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(12px); /* 12px: Linear風の控えめな動き */
   }
   to {
     opacity: 1;
@@ -414,6 +416,9 @@ RouaultのデザインシステムはVitestやNext.jsドキュメントに触発
 ```
 
 #### グラデーション背景アニメーション
+
+> **使用方針:** ヒーローセクション専用。高密度ドキュメントサイトでは控えめに使用するか、完全に省略することも検討。
+> Linear/Raycast のような「静かで集中できる」UI では、無限ループアニメーションは控えめに。
 
 ```css
 @keyframes gradient-shift {
@@ -452,7 +457,7 @@ RouaultのデザインシステムはVitestやNext.jsドキュメントに触発
 .skeleton {
   background-color: var(--color-background-subtle);
   border-radius: var(--radius-sm);
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; /* 1.5s: より機敏な印象 */
 }
 ```
 
@@ -544,10 +549,22 @@ RouaultのデザインシステムはVitestやNext.jsドキュメントに触発
 |------|------|
 | **形状** | `radius-md` (6px) の角丸長方形 |
 | **スタイル** | **Subtle**（薄い背景 + 濃い文字）をデフォルト、高密度・コンパクト設計 |
-| **ホバー** | 内側に繊細なボーダーが出現（`box-shadow inset`）、浮き上がりなし |
+| **ホバー** | 内側に繊細なボーダーが出現、浮き上がりなし |
+| **フォーカス** | `currentColor` でアウトライン（タグ色で表示） |
 | **動作** | クリックでタグ一覧ページへ遷移 |
 | **色分け** | ジャンルごと（下表参照） |
 | **正規化** | JSONファイルで正規化マッピング定義 |
+
+**ホバーエフェクト詳細:**
+```css
+:host([variant="subtle"][href]) .tag:hover {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent);
+}
+```
+
+> **フォーカスリングの方針:**
+> タグはジャンルの色がアイデンティティの一部であるため、フォーカスリングには `--color-primary` ではなく `currentColor`（タグの色）を使用。
+> これにより、音楽タグは紫のフォーカスリング、文学タグはオレンジのフォーカスリングになる。
 
 #### ジャンル別カラー
 
@@ -588,14 +605,25 @@ RouaultのデザインシステムはVitestやNext.jsドキュメントに触発
 
 ### インタラクティブ要素の状態
 
-| 状態 | 視覚的変化 |
-|------|------------|
-| **Default** | 基本スタイル |
-| **Hover** | 明度変化 + 微細な上昇 + シャドウ強化 |
-| **Focus** | アウトライン（2px solid primary） + オフセット |
-| **Active** | 押し込み効果（scale または translate） |
-| **Disabled** | 低コントラスト + cursor: not-allowed |
-| **Loading** | スピナー + 操作無効化 |
+| 状態 | 視覚的変化 | 適用対象 |
+|------|------------|----------|
+| **Default** | 基本スタイル | 全て |
+| **Hover** | 明度変化 + 微細な上昇 + シャドウ強化 | **ボタンのみ** |
+| **Hover** | 背景色微変 or ボーダー出現 | タグ、リストアイテム |
+| **Focus** | アウトライン（2px solid）+ オフセット | 全て |
+| **Active** | 押し込み効果（scale または translate） | ボタンのみ |
+| **Disabled** | 低コントラスト + cursor: not-allowed | 全て |
+| **Loading** | スピナー + 操作無効化 | ボタンのみ |
+
+### トランジション対象プロパティ
+
+| 要素 | トランジション対象プロパティ |
+|------|---------------------------|
+| ボタン | `background-color`, `color`, `border-color`, `transform`, `box-shadow` |
+| インプット | `border-color`, `background-color`, `box-shadow` |
+| タグ | `background-color`, `box-shadow` |
+| リンク | `color`, `text-decoration` |
+| リストアイテム | `background-color` |
 
 ### フォーム要素（Inputs）
 
@@ -660,6 +688,24 @@ RouaultのデザインシステムはVitestやNext.jsドキュメントに触発
 | **シャドウ** | `--shadow-lg` |
 | **アニメーション** | `fade-in-down` (200ms, ease-out) |
 | **Z-index** | `--z-dropdown` (200) |
+
+**アニメーション詳細:**
+```css
+@keyframes fade-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.popover[open] {
+  animation: fade-in-down var(--duration-normal) var(--ease-out);
+}
+```
 
 ### トースト（通知）
 
