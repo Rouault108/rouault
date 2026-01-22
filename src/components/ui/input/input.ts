@@ -31,8 +31,8 @@ export class UiInput extends LitElement {
      * ラベル
      * ------------------------------------------------------------- */
     .label {
-      font-size: var(--text-sm, 0.875rem);
-      font-weight: var(--font-bold, 700);
+      font-size: var(--text-sm, 0.8125rem); /* 13px - High Density */
+      font-weight: var(--font-semibold, 600);
       color: var(--color-foreground);
       margin-bottom: var(--space-3, 0.75rem);
       display: inline-block;

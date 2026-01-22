@@ -158,6 +158,20 @@ export class UiButton extends LionButton {
           border-color: transparent;
         }
 
+        /* Danger (削除、破壊的アクション) */
+        :host([variant="danger"]) {
+          --btn-h: 0; /* Red */
+          --btn-s: 84%;
+          --btn-l: 60%;
+          
+          --bg-default: hsl(var(--btn-h), var(--btn-s), var(--btn-l));
+          --bg-hover:   hsl(var(--btn-h), var(--btn-s), calc(var(--btn-l) - 5%));
+          --bg-active:  hsl(var(--btn-h), var(--btn-s), calc(var(--btn-l) - 10%));
+          
+          --text-default: white;
+          --outline-color: hsl(var(--btn-h), var(--btn-s), calc(var(--btn-l) + 10%));
+        }
+
         /* -------------------------------------------------------------
          * Loading (読み込み中)
          * ------------------------------------------------------------- */
@@ -188,14 +202,14 @@ export class UiButton extends LionButton {
         /* Small (sm) - Compact & Dense */
         :host([size="sm"]) {
           font-size: var(--text-xs, 0.75rem); /* 12px */
-          padding: 0 var(--space-2, 0.75rem); /* Height固定に近いアプローチ */
+          padding: 0 var(--space-3, 0.75rem);
           height: 1.75rem; /* 28px */
           border-radius: var(--radius-sm, 4px);
         }
 
-        /* Medium (md) - Default (Standard UI) */
+        /* Medium (md) - Default (High Density) */
         :host([size="md"]) {
-          font-size: var(--text-sm, 0.875rem); /* 14px */
+          font-size: var(--text-base, 0.875rem); /* 14px */
           padding: 0 var(--space-4, 1rem);
           height: var(--space-10, 2.5rem); /* 40px */
           border-radius: var(--radius-md, 6px);
@@ -203,8 +217,8 @@ export class UiButton extends LionButton {
 
         /* Large (lg) - Prominent but Refined */
         :host([size="lg"]) {
-          font-size: var(--text-base, 1rem); /* 16px */
-          padding: 0 var(--space-6, 1.5rem); /* 24px */
+          font-size: var(--text-lg, 1rem); /* 16px */
+          padding: 0 var(--space-6, 1.5rem);
           height: var(--space-12, 3rem); /* 48px */
           border-radius: var(--radius-lg, 8px);
         }
@@ -241,7 +255,7 @@ export class UiButton extends LionButton {
   }
 
   @property({ type: String, reflect: true })
-  variant: 'primary' | 'secondary' | 'outline' | 'ghost' = 'primary';
+  variant: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' = 'primary';
 
   @property({ type: String, reflect: true })
   size: 'sm' | 'md' | 'lg' = 'md';
