@@ -250,6 +250,75 @@ export class UiButton extends LionButton {
           height: 1.2em;
           flex-shrink: 0; /* テキストが長くてもアイコンは縮まない */
         }
+
+        /* -------------------------------------------------------------
+         * ダークモード対応
+         * Elevation Tones に基づく背景色とコントラスト改善
+         * ------------------------------------------------------------- */
+        
+        /* OS設定によるダークモード */
+        @media (prefers-color-scheme: dark) {
+          :host {
+            --text-default: var(--color-foreground, #ededed);
+          }
+
+          :host([variant="secondary"]) {
+            --bg-default: var(--bg-surface-1, #171717);
+            --bg-hover: var(--bg-surface-2, #262626);
+            --bg-active: var(--bg-surface-3, #404040);
+            --text-default: var(--color-foreground, #ededed);
+            --border-color: var(--color-border, #27272a);
+          }
+
+          :host([variant="outline"]) {
+            --bg-hover: hsla(var(--btn-h), 60%, 50%, 0.15);
+            --bg-active: hsla(var(--btn-h), 60%, 50%, 0.25);
+            --text-default: var(--color-primary, #60a5fa);
+            --border-color: var(--color-primary, #60a5fa);
+          }
+
+          :host([variant="ghost"]) {
+            --bg-hover: var(--bg-surface-1, #171717);
+            --bg-active: var(--bg-surface-2, #262626);
+            --text-default: var(--color-foreground, #ededed);
+          }
+
+          :host([disabled]) {
+            --btn-bg: var(--bg-surface-1, #171717);
+            --btn-text: var(--color-foreground-muted, #a1a1aa);
+          }
+        }
+
+        /* data-theme="dark" 属性によるダークモード対応 */
+        :host-context([data-theme="dark"]) {
+          --text-default: var(--color-foreground, #ededed);
+        }
+
+        :host-context([data-theme="dark"]):host([variant="secondary"]) {
+          --bg-default: var(--bg-surface-1, #171717);
+          --bg-hover: var(--bg-surface-2, #262626);
+          --bg-active: var(--bg-surface-3, #404040);
+          --text-default: var(--color-foreground, #ededed);
+          --border-color: var(--color-border, #27272a);
+        }
+
+        :host-context([data-theme="dark"]):host([variant="outline"]) {
+          --bg-hover: hsla(var(--btn-h), 60%, 50%, 0.15);
+          --bg-active: hsla(var(--btn-h), 60%, 50%, 0.25);
+          --text-default: var(--color-primary, #60a5fa);
+          --border-color: var(--color-primary, #60a5fa);
+        }
+
+        :host-context([data-theme="dark"]):host([variant="ghost"]) {
+          --bg-hover: var(--bg-surface-1, #171717);
+          --bg-active: var(--bg-surface-2, #262626);
+          --text-default: var(--color-foreground, #ededed);
+        }
+
+        :host-context([data-theme="dark"]):host([disabled]) {
+          --btn-bg: var(--bg-surface-1, #171717);
+          --btn-text: var(--color-foreground-muted, #a1a1aa);
+        }
       `
     ];
   }

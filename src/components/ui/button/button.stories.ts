@@ -196,6 +196,37 @@ export const WithIcon: Story = {
 };
 
 /**
+ * ダークモード
+ */
+export const DarkMode: Story = {
+  parameters: {
+    backgrounds: { default: 'dark' },
+  },
+  decorators: [
+    (story) => html`
+      <div data-theme="dark" style="padding: 1rem; background: var(--color-background); color: var(--color-foreground);">
+        ${story()}
+      </div>
+    `,
+  ],
+  render: () => html`
+    <div style="display: flex; flex-direction: column; gap: 1rem; align-items: flex-start;">
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <ui-button variant="primary">Primary</ui-button>
+        <ui-button variant="secondary">Secondary</ui-button>
+        <ui-button variant="outline">Outline</ui-button>
+        <ui-button variant="ghost">Ghost</ui-button>
+        <ui-button variant="danger">Danger</ui-button>
+      </div>
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <ui-button variant="primary" disabled>Disabled</ui-button>
+        <ui-button variant="outline" loading>Loading</ui-button>
+      </div>
+    </div>
+  `,
+};
+
+/**
  * BDD シナリオテスト: インタラクション検証
  * - 表示確認
  * - クリックイベントの発火確認
