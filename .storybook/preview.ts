@@ -13,6 +13,9 @@ import '@fontsource/jetbrains-mono/700.css';
 import '../src/assets/css/tokens.css';
 import '../src/assets/css/main.css';
 
+// Iconify アイコンのセットアップ（Lucide アイコンをオフラインで使用可能に）
+import '../src/lib/icons';
+
 setCustomElementsManifest(customElements);
 
 import type { Preview } from '@storybook/web-components';
