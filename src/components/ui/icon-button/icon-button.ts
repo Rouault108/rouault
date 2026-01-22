@@ -8,9 +8,9 @@ export class UiIconButton extends LitElement {
       /* -------------------------------------------------------------
        * 基本カラー設定 & 変数定義
        * ------------------------------------------------------------- */
-      --btn-h: var(--color-primary-hue, 220);
-      --btn-s: var(--color-primary-sat, 90%);
-      --btn-l: var(--color-primary-lightness, 55%);
+      --btn-h: var(--color-primary-hue, 217);
+      --btn-s: var(--color-primary-sat, 75%);
+      --btn-l: var(--color-primary-lightness, 50%);
       
       /* 状態ごとの色 (デフォルト) - Primary */
       --bg-default: hsl(var(--btn-h), var(--btn-s), var(--btn-l));
@@ -54,7 +54,7 @@ export class UiIconButton extends LitElement {
       background-color: var(--btn-bg);
       color: var(--btn-text);
       border: 1px solid var(--btn-border);
-      border-radius: var(--radius-md, 6px);
+      border-radius: var(--radius-lg, 8px);
       
       cursor: pointer;
       text-decoration: none;
@@ -141,10 +141,15 @@ export class UiIconButton extends LitElement {
     :host([variant="secondary"]) {
       --bg-default: var(--color-background);
       --bg-hover: var(--color-background-subtle);
-      --bg-active: hsl(220, 15%, 90%);
+      --bg-active: hsl(220, 15%, 88%);
       --text-default: var(--color-foreground);
       --border-color: var(--color-border);
       --outline-color: var(--color-primary);
+    }
+
+    :host([variant="secondary"]) .icon-button:hover {
+      box-shadow: none;
+      transform: translateY(0);
     }
 
     /* Ghost */
@@ -164,8 +169,8 @@ export class UiIconButton extends LitElement {
     /* Outlined */
     :host([variant="outlined"]) {
       --bg-default: transparent;
-      --bg-hover: rgba(var(--primary-rgb), 0.1);
-      --bg-active: rgba(var(--primary-rgb), 0.2);
+      --bg-hover: hsl(var(--btn-h), 100%, 97%);
+      --bg-active: hsl(var(--btn-h), 100%, 94%);
       --text-default: var(--color-primary);
       --border-color: var(--color-primary);
       --outline-color: var(--color-primary);
@@ -173,6 +178,7 @@ export class UiIconButton extends LitElement {
 
     :host([variant="outlined"]) .icon-button:hover {
       box-shadow: none;
+      transform: translateY(0);
     }
 
     /* Danger */
@@ -185,6 +191,54 @@ export class UiIconButton extends LitElement {
       --bg-active: hsl(var(--btn-h), var(--btn-s), calc(var(--btn-l) - 10%));
       --text-default: white;
       --outline-color: hsl(var(--btn-h), var(--btn-s), calc(var(--btn-l) + 10%));
+    }
+
+    /* -------------------------------------------------------------
+     * ダークモード対応
+     * Elevation Tones に基づく背景色とコントラスト改善
+     * ------------------------------------------------------------- */
+    @media (prefers-color-scheme: dark) {
+      :host([variant="secondary"]) {
+        --bg-default: var(--bg-surface-1, #171717);
+        --bg-hover: var(--bg-surface-2, #262626);
+        --bg-active: var(--bg-surface-3, #404040);
+        --border-color: var(--color-border, #27272a);
+      }
+
+      :host([variant="ghost"]) {
+        --bg-hover: var(--bg-surface-1, #171717);
+        --bg-active: var(--bg-surface-2, #262626);
+      }
+
+      :host([variant="outlined"]) {
+        --bg-hover: hsl(var(--btn-h), 50%, 15%);
+        --bg-active: hsl(var(--btn-h), 50%, 20%);
+        --text-default: var(--color-primary, #60a5fa);
+        --border-color: var(--color-primary, #60a5fa);
+      }
+    }
+
+    /* data-theme="dark" 属性によるダークモード対応 */
+    :host-context([data-theme="dark"]) :host([variant="secondary"]),
+    :host([variant="secondary"]):host-context([data-theme="dark"]) {
+      --bg-default: var(--bg-surface-1, #171717);
+      --bg-hover: var(--bg-surface-2, #262626);
+      --bg-active: var(--bg-surface-3, #404040);
+      --border-color: var(--color-border, #27272a);
+    }
+
+    :host-context([data-theme="dark"]) :host([variant="ghost"]),
+    :host([variant="ghost"]):host-context([data-theme="dark"]) {
+      --bg-hover: var(--bg-surface-1, #171717);
+      --bg-active: var(--bg-surface-2, #262626);
+    }
+
+    :host-context([data-theme="dark"]) :host([variant="outlined"]),
+    :host([variant="outlined"]):host-context([data-theme="dark"]) {
+      --bg-hover: hsl(var(--btn-h), 50%, 15%);
+      --bg-active: hsl(var(--btn-h), 50%, 20%);
+      --text-default: var(--color-primary, #60a5fa);
+      --border-color: var(--color-primary, #60a5fa);
     }
 
     /* -------------------------------------------------------------
