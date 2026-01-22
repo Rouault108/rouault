@@ -72,7 +72,16 @@ export class ClickableController implements ReactiveController {
     // Enter または Space でクリックイベントを発火
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault(); // Space のスクロールを防ぐ
-      this.host.click();
+      
+      // this.host.click() だとテスト環境でイベントが捕捉されない場合があるため、
+      // 明示的に MouseEvent を発火させる
+      const clickEvent = new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+        composed: true,
+      });
+      this.host.dispatchEvent(clickEvent);
     }
   };
 }

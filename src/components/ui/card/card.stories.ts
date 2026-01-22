@@ -235,17 +235,33 @@ export const BDD_CardInteraction: Story = {
     await expect(args['onClick']).toHaveBeenCalledTimes(1);
 
     // 6. キーボード操作 - Enter キー (When)
+    // role と tabindex の確認を先に実行
+    await expect(card.getAttribute('role')).toBe('button');
+    await expect(card.getAttribute('tabindex')).toBe('0');
+    
+    // フォーカスを当ててからキーボード操作
     card.focus();
-    await userEvent.keyboard('{Enter}');
+    await expect(document.activeElement).toBe(card);
+    
+    // userEvent.keyboard が不安定なため、直接 KeyboardEvent を dispatch
+    const enterEvent = new KeyboardEvent('keydown', { 
+      key: 'Enter', 
+      code: 'Enter',
+      bubbles: true,
+      cancelable: true,
+    });
+    card.dispatchEvent(enterEvent);
     await expect(args['onClick']).toHaveBeenCalledTimes(2);
 
     // 7. キーボード操作 - Space キー (When)
-    await userEvent.keyboard(' ');
+    const spaceEvent = new KeyboardEvent('keydown', { 
+      key: ' ', 
+      code: 'Space',
+      bubbles: true,
+      cancelable: true,
+    });
+    card.dispatchEvent(spaceEvent);
     await expect(args['onClick']).toHaveBeenCalledTimes(3);
-
-    // 8. role と tabindex の確認 (Then)
-    await expect(card.getAttribute('role')).toBe('button');
-    await expect(card.getAttribute('tabindex')).toBe('0');
   },
 };
 

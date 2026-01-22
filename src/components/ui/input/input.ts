@@ -340,21 +340,24 @@ export class UiInput extends LitElement {
     }));
   }
 
-  private _onChange(_e: Event) {
+  private _onChange(e: Event) {
+    e.stopPropagation();
     this.dispatchEvent(new Event('change', {
       bubbles: true,
       composed: true,
     }));
   }
 
-  private _onFocus(_e: FocusEvent) {
+  private _onFocus(e: FocusEvent) {
+    e.stopPropagation();
     this.dispatchEvent(new Event('focus', {
       bubbles: true,
       composed: true,
     }));
   }
 
-  private _onBlur(_e: FocusEvent) {
+  private _onBlur(e: FocusEvent) {
+    e.stopPropagation();
     this.dispatchEvent(new Event('blur', {
       bubbles: true,
       composed: true,
