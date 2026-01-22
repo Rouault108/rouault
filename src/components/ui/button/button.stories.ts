@@ -10,7 +10,7 @@ const meta: Meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['primary', 'secondary', 'outline', 'ghost'],
+      options: ['primary', 'secondary', 'outline', 'ghost', 'danger'],
       description: 'ボタンのスタイルバリアント',
     },
     disabled: {
@@ -130,6 +130,17 @@ export const Ghost: Story = {
     disabled: false,
   },
   render: (args) => html`<ui-button variant="${args['variant']}" size="${args['size'] || 'md'}">メニュー</ui-button>`,
+};
+
+/**
+ * Dangerバリアント (削除、破壊的アクション用)
+ */
+export const Danger: Story = {
+  args: {
+    variant: 'danger',
+    disabled: false,
+  },
+  render: (args) => html`<ui-button variant="${args['variant']}" size="${args['size'] || 'md'}">削除する</ui-button>`,
 };
 
 /**
