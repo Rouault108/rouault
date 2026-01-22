@@ -205,14 +205,11 @@ export const DarkMode: Story = {
     backgrounds: { default: 'dark' },
   },
   decorators: [
-    (story) => {
-      // ダークモードトークンを適用
-      const wrapper = document.createElement('div');
-      wrapper.setAttribute('data-theme', 'dark');
-      wrapper.style.padding = '1rem';
-      wrapper.innerHTML = story() as string;
-      return wrapper;
-    },
+    (story) => html`
+      <div data-theme="dark" style="padding: 1rem; background: var(--color-background); color: var(--color-foreground);">
+        ${story()}
+      </div>
+    `,
   ],
   render: () => html`
     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; max-width: 600px;">

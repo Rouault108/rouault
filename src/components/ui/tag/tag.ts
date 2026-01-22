@@ -217,6 +217,60 @@ export class UiTag extends LitElement {
       width: 14px;
       height: 14px;
     }
+
+    /* -------------------------------------------------------------
+     * ダークモード対応
+     * コントラスト改善のため、テキスト色を明るくする
+     * ------------------------------------------------------------- */
+    
+    /* OS設定によるダークモード */
+    @media (prefers-color-scheme: dark) {
+      /* Subtle バリアントの背景を少し濃くし、テキストをより明るく */
+      :host([variant="subtle"]) .tag {
+        background-color: color-mix(in srgb, var(--tag-bg) 20%, transparent);
+        color: color-mix(in srgb, var(--tag-bg) 100%, white 40%);
+      }
+
+      /* Outlined バリアントのテキストを明るく */
+      :host([variant="outlined"]) .tag {
+        color: color-mix(in srgb, var(--tag-bg) 100%, white 30%);
+        border-color: color-mix(in srgb, var(--tag-bg) 100%, white 20%);
+      }
+
+      /* グレー系（law, default）は特に明るくする */
+      :host([color="law"][variant="subtle"]) .tag,
+      :host([color="default"][variant="subtle"]) .tag {
+        color: var(--color-foreground, #ededed);
+      }
+
+      :host([color="law"][variant="outlined"]) .tag,
+      :host([color="default"][variant="outlined"]) .tag {
+        color: var(--color-foreground, #ededed);
+        border-color: var(--color-foreground-muted, #a1a1aa);
+      }
+    }
+
+    /* data-theme="dark" 属性によるダークモード対応 */
+    :host-context([data-theme="dark"]) .tag:is(:host([variant="subtle"]) *) {
+      background-color: color-mix(in srgb, var(--tag-bg) 20%, transparent);
+      color: color-mix(in srgb, var(--tag-bg) 100%, white 40%);
+    }
+
+    :host-context([data-theme="dark"]) .tag:is(:host([variant="outlined"]) *) {
+      color: color-mix(in srgb, var(--tag-bg) 100%, white 30%);
+      border-color: color-mix(in srgb, var(--tag-bg) 100%, white 20%);
+    }
+
+    :host-context([data-theme="dark"]):host([color="law"][variant="subtle"]) .tag,
+    :host-context([data-theme="dark"]):host([color="default"][variant="subtle"]) .tag {
+      color: var(--color-foreground, #ededed);
+    }
+
+    :host-context([data-theme="dark"]):host([color="law"][variant="outlined"]) .tag,
+    :host-context([data-theme="dark"]):host([color="default"][variant="outlined"]) .tag {
+      color: var(--color-foreground, #ededed);
+      border-color: var(--color-foreground-muted, #a1a1aa);
+    }
   `;
 
   @property({ type: String, reflect: true })

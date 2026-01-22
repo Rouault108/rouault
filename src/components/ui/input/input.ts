@@ -115,9 +115,8 @@ export class UiInput extends LitElement {
     /* Outlined - Focus */
     :host([variant="outlined"]:not([disabled]):not([readonly])) .input-wrapper:focus-within {
       border-color: var(--color-primary);
-      box-shadow: var(--ring-primary);
-      outline: 2px solid var(--color-primary);
-      outline-offset: var(--ring-offset, 2px);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
+      outline: none;
     }
 
     /* Filled - Hover */
@@ -129,10 +128,10 @@ export class UiInput extends LitElement {
     /* Filled - Focus */
     :host([variant="filled"]:not([disabled]):not([readonly])) .input-wrapper:focus-within {
       border-bottom-color: var(--color-primary);
+      border-bottom-width: 2px; /* 太さを強調 */
       background-color: var(--color-background);
-      box-shadow: var(--ring-primary);
-      outline: 2px solid var(--color-primary);
-      outline-offset: var(--ring-offset, 2px);
+      outline: none; /* 全体の枠線を削除 */
+      box-shadow: none;
     }
 
     /* Standard - Hover */
@@ -144,8 +143,8 @@ export class UiInput extends LitElement {
     :host([variant="standard"]:not([disabled]):not([readonly])) .input-wrapper:focus-within {
       border-bottom-color: var(--color-primary);
       border-bottom-width: 2px;
-      outline: 2px solid var(--color-primary);
-      outline-offset: var(--ring-offset, 2px);
+      outline: none; /* 全体の枠線を削除 */
+      box-shadow: none;
     }
 
     /* -------------------------------------------------------------
@@ -260,13 +259,83 @@ export class UiInput extends LitElement {
 
     :host([error]:not([disabled]):not([readonly])) .input-wrapper:focus-within {
       border-color: var(--color-error, #ef4444);
-      box-shadow: var(--ring-error);
-      outline: 2px solid var(--color-error);
-      outline-offset: var(--ring-offset, 2px);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error, #ef4444) 15%, transparent);
+      outline: none;
     }
 
     :host([error]) .label {
       color: var(--color-error, #ef4444);
+    }
+
+    /* -------------------------------------------------------------
+     * ダークモード対応
+     * Elevation Tones に基づく背景色とコントラスト改善
+     * ------------------------------------------------------------- */
+    
+    /* OS設定によるダークモード */
+    @media (prefers-color-scheme: dark) {
+      /* Outlined - ダークモード時は背景を少し明るく */
+      :host([variant="outlined"]) .input-wrapper {
+        background-color: var(--bg-surface-0, #0a0a0a);
+        border-color: var(--color-border, #27272a);
+      }
+
+      /* Filled - Elevation Tone を使用 */
+      :host([variant="filled"]) .input-wrapper {
+        background-color: var(--bg-surface-1, #171717);
+        border-bottom-color: var(--color-border, #27272a);
+      }
+
+      /* Standard - 下線を明るく */
+      :host([variant="standard"]) .input-wrapper {
+        border-bottom-color: var(--color-border, #27272a);
+      }
+
+      /* Disabled - Elevation Tone を使用 */
+      :host([disabled]) .input-wrapper {
+        background-color: var(--bg-surface-1, #171717);
+        border-color: var(--color-border, #27272a);
+      }
+
+      /* Readonly - Elevation Tone を使用 */
+      :host([readonly]) .input-wrapper {
+        background-color: var(--bg-surface-1, #171717);
+      }
+
+      /* プレースホルダーのコントラスト改善 */
+      .native-input::placeholder {
+        color: var(--color-foreground-muted, #a1a1aa);
+        opacity: 0.8;
+      }
+    }
+
+    /* data-theme="dark" 属性によるダークモード対応 */
+    :host-context([data-theme="dark"]):host([variant="outlined"]) .input-wrapper {
+      background-color: var(--bg-surface-0, #0a0a0a);
+      border-color: var(--color-border, #27272a);
+    }
+
+    :host-context([data-theme="dark"]):host([variant="filled"]) .input-wrapper {
+      background-color: var(--bg-surface-1, #171717);
+      border-bottom-color: var(--color-border, #27272a);
+    }
+
+    :host-context([data-theme="dark"]):host([variant="standard"]) .input-wrapper {
+      border-bottom-color: var(--color-border, #27272a);
+    }
+
+    :host-context([data-theme="dark"]):host([disabled]) .input-wrapper {
+      background-color: var(--bg-surface-1, #171717);
+      border-color: var(--color-border, #27272a);
+    }
+
+    :host-context([data-theme="dark"]):host([readonly]) .input-wrapper {
+      background-color: var(--bg-surface-1, #171717);
+    }
+
+    :host-context([data-theme="dark"]) .native-input::placeholder {
+      color: var(--color-foreground-muted, #a1a1aa);
+      opacity: 0.8;
     }
   `;
 

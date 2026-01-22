@@ -240,6 +240,48 @@ export const Password: Story = {
 };
 
 /**
+ * ダークモード
+ */
+export const DarkMode: Story = {
+  parameters: {
+    backgrounds: { default: 'dark' },
+  },
+  decorators: [
+    (story) => html`
+      <div data-theme="dark" style="padding: 1rem; background: var(--color-background); color: var(--color-foreground);">
+        ${story()}
+      </div>
+    `,
+  ],
+  render: () => html`
+    <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 400px;">
+      <ui-input
+        variant="outlined"
+        label="Outlined"
+        placeholder="ダークモードのOutlined"
+      ></ui-input>
+      <ui-input
+        variant="filled"
+        label="Filled"
+        placeholder="ダークモードのFilled"
+      ></ui-input>
+      <ui-input
+        variant="standard"
+        label="Standard"
+        placeholder="ダークモードのStandard"
+      ></ui-input>
+      <ui-input
+        label="エラー"
+        value="無効な入力"
+        error
+        errorText="エラー時の色を確認してください"
+      ></ui-input>
+      <ui-input label="無効" placeholder="Disabled" disabled></ui-input>
+    </div>
+  `,
+};
+
+/**
  * BDD シナリオテスト: 基本的な入力操作
  */
 export const BDD_BasicInput: Story = {

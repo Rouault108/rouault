@@ -204,6 +204,45 @@ export const PaddingVariations: Story = {
 };
 
 /**
+ * ダークモード
+ */
+export const DarkMode: Story = {
+  parameters: {
+    backgrounds: { default: 'dark' },
+  },
+  decorators: [
+    (story) => html`
+      <div data-theme="dark" style="padding: 1rem; background: var(--color-background); color: var(--color-foreground);">
+        ${story()}
+      </div>
+    `,
+  ],
+  render: () => html`
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+      <ui-card variant="elevated" padding="md">
+        <h3 slot="header">Elevated</h3>
+        <p>ダークモードでは背景色が調整され、浮き上がって見えます。</p>
+      </ui-card>
+      
+      <ui-card variant="outlined" padding="md">
+        <h3 slot="header">Outlined</h3>
+        <p>ボーダーカラーもダークモード仕様になります。</p>
+      </ui-card>
+      
+      <ui-card variant="filled" padding="md">
+        <h3 slot="header">Filled</h3>
+        <p>塗りつぶしスタイルです。</p>
+      </ui-card>
+      
+      <ui-card variant="elevated" padding="md" interactive @click="${() => {}}">
+        <h3 slot="header">Interactive</h3>
+        <p>ホバー時のエフェクトも確認してください。</p>
+      </ui-card>
+    </div>
+  `,
+};
+
+/**
  * BDD シナリオテスト: インタラクティブカードのクリック検証
  */
 export const BDD_CardInteraction: Story = {
