@@ -14,6 +14,11 @@
   --color-foreground: #111827;
   --color-foreground-muted: #6b7280;
   
+  /* RGB値（透明度操作用） */
+  --bg-rgb: 255, 255, 255;
+  --fg-rgb: 17, 24, 39;
+  --primary-rgb: 59, 130, 246;
+  
   /* プライマリカラー（HSL ベース） */
   --color-primary-hue: 220;
   --color-primary-sat: 90%;
@@ -142,6 +147,21 @@
   --duration-slow: 300ms;
   --duration-slower: 500ms;
   
+  /* -----------------------------------------------------------------------
+   * レイアウト（Dimensions）
+   * ----------------------------------------------------------------------- */
+  --header-height: 48px;
+  --sidebar-width: 240px;
+  --toc-width: 200px;
+  --content-max-width: 720px;
+  
+  /* -----------------------------------------------------------------------
+   * サーフェス & テクスチャ
+   * ----------------------------------------------------------------------- */
+  --glass-panel-bg: rgba(var(--bg-rgb), 0.8);
+  --glass-panel-filter: blur(12px);
+  --border-transparent: rgba(229, 231, 235, 0.5); /* #e5e7eb base */
+
   /* イージング */
   --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
   --ease-in: cubic-bezier(0.32, 0, 0.67, 0);
@@ -212,6 +232,15 @@
     --bg-surface-2: #262626;
     --bg-surface-3: #404040;
 
+    /* RGB値（ダークモード） */
+    --bg-rgb: 10, 10, 10;
+    --fg-rgb: 237, 237, 237;
+    --primary-rgb: 96, 165, 250;
+    
+    /* サーフェス（ダークモード） */
+    --glass-panel-bg: rgba(10, 10, 10, 0.7);
+    --border-transparent: rgba(39, 39, 42, 0.5); /* #27272a base */
+
     /* カテゴリタグ用カラー（ダークモード） */
     --tag-music: #a78bfa;
     --tag-literature: #fbbf24;
@@ -247,6 +276,15 @@
   --bg-surface-1: #171717;
   --bg-surface-2: #262626;
   --bg-surface-3: #404040;
+  
+  /* RGB値（ダークモード） */
+  --bg-rgb: 10, 10, 10;
+  --fg-rgb: 237, 237, 237;
+  --primary-rgb: 96, 165, 250;
+  
+  /* サーフェス（ダークモード） */
+  --glass-panel-bg: rgba(10, 10, 10, 0.7);
+  --border-transparent: rgba(39, 39, 42, 0.5);
 
   /* カテゴリタグ用カラー（ダークモード） */
   --tag-music: #a78bfa;
