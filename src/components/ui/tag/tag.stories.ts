@@ -182,6 +182,55 @@ export const Disabled: Story = {
 };
 
 /**
+ * フォーカス状態（キーボードナビゲーション）
+ */
+export const Focus: Story = {
+  render: () => html`
+    <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+      <p style="margin-bottom: 0.5rem; color: var(--color-foreground-muted); font-size: 13px;">
+        Tab キーでフォーカスを移動してください：
+      </p>
+      <ui-tag color="music" href="/tags/music">音楽</ui-tag>
+      <ui-tag color="literature" href="/tags/literature">文学</ui-tag>
+      <ui-tag color="cs" href="/tags/cs">計算機科学</ui-tag>
+    </div>
+  `,
+};
+
+/**
+ * ダークモード
+ */
+export const DarkMode: Story = {
+  parameters: {
+    backgrounds: { default: 'dark' },
+  },
+  decorators: [
+    (story) => {
+      // ダークモードトークンを適用
+      const wrapper = document.createElement('div');
+      wrapper.setAttribute('data-theme', 'dark');
+      wrapper.style.padding = '1rem';
+      wrapper.innerHTML = story() as string;
+      return wrapper;
+    },
+  ],
+  render: () => html`
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; max-width: 600px;">
+      <ui-tag color="music">音楽</ui-tag>
+      <ui-tag color="literature">文学</ui-tag>
+      <ui-tag color="art">美術</ui-tag>
+      <ui-tag color="cs">計算機科学</ui-tag>
+      <ui-tag color="economics">経済学</ui-tag>
+      <ui-tag color="sociology">社会学</ui-tag>
+      <ui-tag color="politics">政治学</ui-tag>
+      <ui-tag color="law">法学</ui-tag>
+      <ui-tag color="math">数学</ui-tag>
+      <ui-tag color="default">その他</ui-tag>
+    </div>
+  `,
+};
+
+/**
  * 複合例（実際の使用例）
  */
 export const RealWorldExample: Story = {

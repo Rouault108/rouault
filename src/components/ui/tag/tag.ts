@@ -38,10 +38,6 @@ export class UiTag extends LitElement {
         box-shadow var(--motion-duration, 200ms) var(--motion-easing, ease-out);
     }
 
-    /* リンクの場合のホバー効果 */
-    :host([href]) .tag:hover {
-      /* transformなし。背景色やボーダーのみ変化 */
-    }
 
     /* フォーカス状態 */
     .tag:focus-visible {
@@ -79,7 +75,7 @@ export class UiTag extends LitElement {
     }
 
     :host([variant="solid"][href]) .tag:hover {
-      filter: brightness(1.1);
+      background-color: color-mix(in oklch, var(--tag-bg) 90%, white);
     }
 
     /* Outlined（枠線のみ） */
@@ -195,19 +191,31 @@ export class UiTag extends LitElement {
     :host([size="sm"]) .dismiss-button {
       width: 12px;
       height: 12px;
-      font-size: 10px;
+    }
+
+    :host([size="sm"]) .dismiss-button svg {
+      width: 10px;
+      height: 10px;
     }
 
     :host([size="md"]) .dismiss-button {
       width: 14px;
       height: 14px;
-      font-size: 12px;
+    }
+
+    :host([size="md"]) .dismiss-button svg {
+      width: 12px;
+      height: 12px;
     }
 
     :host([size="lg"]) .dismiss-button {
       width: 16px;
       height: 16px;
-      font-size: 14px;
+    }
+
+    :host([size="lg"]) .dismiss-button svg {
+      width: 14px;
+      height: 14px;
     }
   `;
 
@@ -232,6 +240,12 @@ export class UiTag extends LitElement {
 
   @property({ type: Boolean, reflect: true })
   dismissible = false;
+
+  @property({ type: String })
+  dismissLabel = '削除';
+
+  @property({ type: String })
+  override ariaLabel = '';
 
   @property({ type: Boolean, reflect: true })
   disabled = false;
@@ -268,15 +282,8 @@ export class UiTag extends LitElement {
   private _onClick(e: Event) {
     if (this.disabled) {
       e.preventDefault();
-      return;
     }
-
-    this.dispatchEvent(
-      new CustomEvent('click', {
-        bubbles: true,
-        composed: true,
-      })
-    );
+    // ネイティブの click イベントがすでに伝播するため、カスタムイベントは不要
   }
 
   override render() {
@@ -292,10 +299,21 @@ export class UiTag extends LitElement {
         ? html`
             <button
               class="dismiss-button"
-              aria-label="削除"
+              aria-label="${this.dismissLabel}"
               @click="${this._onDismiss}"
             >
-              ✕
+              <svg
+                width="1em"
+                height="1em"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
             </button>
           `
         : nothing}
@@ -306,8 +324,8 @@ export class UiTag extends LitElement {
         <a
           class="tag"
           href="${this.href}"
+          title="${this.ariaLabel || this.textContent?.trim()}"
           @click="${this._onClick}"
-          tabindex="0"
         >
           ${content}
         </a>
