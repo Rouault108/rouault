@@ -179,11 +179,14 @@ draft: false                    # true でドラフトアイコン表示（デ�
 
 ## 🎭 アイコン
 
-| 用途 | ライブラリ |
-|------|------------|
-| 一般アイコン | [Iconify - Lucide](https://icon-sets.iconify.design/lucide/) |
+| 用途 | ライブラリ / 手法 |
+|------|-------------------|
+| 一般アイコン（コンテンツ・ナビゲーション） | [Iconify - Lucide](https://icon-sets.iconify.design/lucide/) |
+| UI内部装飾（コンポーネント内蔵） | **インライン SVG** (Lucide準拠パス) |
 | 技術ロゴ（優先） | [Devicon](https://devicon.dev/) |
 | 技術ロゴ（フォールバック） | [Simple Icons](https://simpleicons.org/) |
+
+> **Note**: コンポーネントの自己完結性と描画パフォーマンス（FOUC防止）を優先するため、`ui-dropdown` の矢印や `ui-checkbox` のチェックマークなど、UIに組み込まれる固定的なアイコンには **インラインSVG** を使用します。パスデータは Lucide アイコンのものを使用し、デザインの一貫性を保ちます。
 
 ## UI
 
@@ -597,11 +600,10 @@ pnpm lint:fix
 
 | コンポーネント | 説明 | 状態 |
 |---------------|------|------|
-| `ui-checkbox` | チェックボックス（タスクリスト、フィルター用） |  |
-| `ui-radio` | ラジオボタン（単一選択） |  |
-| `ui-radio-group` | ラジオボタングループ |  |
-| `ui-toggle` / `ui-switch` | トグルスイッチ（テーマ切替、設定用） |  |
-| `ui-select` / `ui-dropdown` | ドロップダウン選択 |  |
+| `ui-checkbox` | チェックボックス（タスクリスト、フィルター用） | ✅ |
+| `ui-radio` | ラジオボタン（単一選択） | ✅ |
+| `ui-toggle` | トグルスイッチ（テーマ切替、設定用） | ✅ |
+| `ui-dropdown` | ドロップダウン選択 |  |
 | `ui-textarea` | 複数行テキスト入力（将来の編集機能用） |  |
 
 #### ナビゲーション & アクション
