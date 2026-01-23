@@ -264,20 +264,29 @@ export const BDD_KeyboardNavigation: Story = {
     const tabs = canvas.getByTestId('tabs') as UiTabs;
     await tabs.updateComplete;
     
-    const tablist = tabs.shadowRoot?.querySelector('[role="tablist"]') as HTMLElement;
+
     
     await step('右矢印キーで次のタブへ移動', async () => {
-      tablist.focus();
-      tablist.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+      const tab1 = canvas.getByTestId('tab-1') as HTMLElement;
+      const tab1Button = tab1.shadowRoot?.querySelector('button') as HTMLElement;
+      tab1Button.focus();
+      tab1Button.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, composed: true }));
+      
       await new Promise(resolve => setTimeout(resolve, 50));
+      await tabs.updateComplete;
       
       const tab2 = canvas.getByTestId('tab-2') as HTMLElement;
       await expect(tab2.shadowRoot?.querySelector('[role="tab"]')?.getAttribute('aria-selected')).toBe('true');
     });
     
     await step('左矢印キーで前のタブへ移動', async () => {
-      tablist.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+      const tab2 = canvas.getByTestId('tab-2') as HTMLElement;
+      const tab2Button = tab2.shadowRoot?.querySelector('button') as HTMLElement;
+      tab2Button.focus(); // 念のため
+      tab2Button.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, composed: true }));
+      
       await new Promise(resolve => setTimeout(resolve, 50));
+      await tabs.updateComplete;
       
       const tab1 = canvas.getByTestId('tab-1') as HTMLElement;
       await expect(tab1.shadowRoot?.querySelector('[role="tab"]')?.getAttribute('aria-selected')).toBe('true');
