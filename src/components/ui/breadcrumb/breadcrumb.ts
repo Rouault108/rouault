@@ -44,7 +44,7 @@ export class UiBreadcrumb extends LitElement {
   @property({ type: String, reflect: true })
   separator: 'chevron' | 'slash' | 'arrow' = 'chevron';
 
-  @property({ type: String })
+  @property({ type: String, attribute: 'aria-label' })
   override ariaLabel = 'パンくずリスト';
 
   override render() {
@@ -294,7 +294,7 @@ export class UiBreadcrumbItem extends LitElement {
   @property({ type: Boolean, reflect: true })
   collapsed = false;
 
-  @property({ type: String })
+  @property({ type: String, attribute: 'collapsed-aria-label' })
   collapsedAriaLabel = '省略されたパンくずを表示';
 
   @property({ type: Boolean })
