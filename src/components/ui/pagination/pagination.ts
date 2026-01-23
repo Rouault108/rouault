@@ -1,10 +1,11 @@
 import { LitElement, css, html, nothing } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
 
 /**
  * ui-pagination - アクセシブルなページネーションコンポーネント
  *
  * @fires page-change - ページが変更されたときに発火 { detail: { page: number } }
+ * @fires page-hover - ページ番号にホバーしたときに発火 { detail: { page: number } }
  *
  * @cssprop --pagination-gap - ページネーションアイテム間のギャップ
  * @cssprop --pagination-button-size - ページボタンのサイズ
@@ -194,6 +195,11 @@ export class UiPagination extends LitElement {
   @property({ type: Number, attribute: 'sibling-count' })
   siblingCount = 1;
 
+  @state()
+  private _isMobile = false;
+
+  private _resizeObserver: ResizeObserver | null = null;
+
   @property({ type: String, reflect: true })
   variant: 'default' | 'compact' = 'default';
 
@@ -215,6 +221,52 @@ export class UiPagination extends LitElement {
   @property({ type: String, attribute: 'last-label' })
   lastLabel = '最後のページ';
 
+  override connectedCallback() {
+    super.connectedCallback();
+    this._setupResizeObserver();
+  }
+
+  override disconnectedCallback() {
+    super.disconnectedCallback();
+    if (this._resizeObserver) {
+      this._resizeObserver.disconnect();
+      this._resizeObserver = null;
+    }
+  }
+
+  private _setupResizeObserver() {
+    // コンポーネントの幅に基づいてモバイル表示を判定
+    this._resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        // 約 600px 以下をモバイルとみなして siblingCount を減らす
+        this._isMobile = entry.contentRect.width < 600;
+        this.requestUpdate();
+      }
+    });
+    this._resizeObserver.observe(this);
+  }
+
+  private _handleKeyDown(e: KeyboardEvent) {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      this._handlePageChange(this.currentPage - 1);
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      this._handlePageChange(this.currentPage + 1);
+    }
+  }
+
+  private _handlePageHover(page: number) {
+    // プリフェッチ等の最適化のためのイベント
+    this.dispatchEvent(
+      new CustomEvent('page-hover', {
+        detail: { page },
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
   private _handlePageChange(page: number) {
     if (page < 1 || page > this.totalPages || page === this.currentPage) {
       return;
@@ -235,7 +287,10 @@ export class UiPagination extends LitElement {
    */
   private _generatePageNumbers(): (number | 'ellipsis')[] {
     const pages: (number | 'ellipsis')[] = [];
-    const { currentPage, totalPages, siblingCount } = this;
+    const { currentPage, totalPages } = this;
+    
+    // モバイル時は siblingCount を 0（現在ページのみ）、そうでなければ設定値を使用
+    const effectiveSiblingCount = this._isMobile ? 0 : this.siblingCount;
 
     // 総ページ数が少ない場合はすべて表示
     if (totalPages <= 7) {
@@ -249,8 +304,8 @@ export class UiPagination extends LitElement {
     pages.push(1);
 
     // 現在のページ周辺の範囲を計算
-    const leftSiblingIndex = Math.max(currentPage - siblingCount, 2);
-    const rightSiblingIndex = Math.min(currentPage + siblingCount, totalPages - 1);
+    const leftSiblingIndex = Math.max(currentPage - effectiveSiblingCount, 2);
+    const rightSiblingIndex = Math.min(currentPage + effectiveSiblingCount, totalPages - 1);
 
     // 左側の省略記号
     const showLeftEllipsis = leftSiblingIndex > 2;
@@ -318,7 +373,12 @@ export class UiPagination extends LitElement {
     const isLastPage = this.currentPage === this.totalPages;
 
     return html`
-      <nav aria-label="${this.ariaLabel}" role="navigation">
+      <nav 
+        aria-label="${this.ariaLabel}" 
+        role="navigation"
+        tabindex="0"
+        @keydown=${this._handleKeyDown}
+      >
         ${this.showFirstLast
           ? html`
               <button
@@ -349,6 +409,7 @@ export class UiPagination extends LitElement {
           return html`
             <button
               @click=${() => this._handlePageChange(page)}
+              @mouseenter=${() => this._handlePageHover(page)}
               aria-current=${page === this.currentPage ? 'page' : nothing}
               aria-label="${page === this.currentPage ? `現在のページ、${page}` : `ページ ${page}`}"
             >

@@ -30,6 +30,20 @@ const meta: Meta = {
       control: 'boolean',
       description: '最初/最後のページへのボタンを表示',
     },
+    paginationGap: {
+      control: 'text',
+      description: 'ページネーションアイテム間のギャップ（CSS Custom Property: --pagination-gap）',
+      table: {
+        category: 'CSS Custom Properties',
+      },
+    },
+    paginationButtonSize: {
+      control: 'text',
+      description: 'ページボタンのサイズ（CSS Custom Property: --pagination-button-size）',
+      table: {
+        category: 'CSS Custom Properties',
+      },
+    },
   },
 };
 export default meta;
@@ -62,19 +76,34 @@ export const Default: Story = {
     siblingCount: 1,
     variant: 'default',
     showFirstLast: false,
+    paginationGap: '',
+    paginationButtonSize: '',
   },
-  render: (args) => html`
-    <ui-pagination
-      current-page="${args['currentPage']}"
-      total-pages="${args['totalPages']}"
-      sibling-count="${args['siblingCount']}"
-      variant="${args['variant']}"
-      ?show-first-last="${args['showFirstLast']}"
-      @page-change="${(e: CustomEvent) => {
-        console.log('Page changed to:', e.detail.page);
-      }}"
-    ></ui-pagination>
-  `,
+  render: (args) => {
+    const customStyles = [
+      args['paginationGap'] ? `--pagination-gap: ${args['paginationGap']}` : '',
+      args['paginationButtonSize'] ? `--pagination-button-size: ${args['paginationButtonSize']}` : '',
+    ]
+      .filter(Boolean)
+      .join('; ');
+
+    return html`
+      <ui-pagination
+        style="${customStyles}"
+        current-page="${args['currentPage']}"
+        total-pages="${args['totalPages']}"
+        sibling-count="${args['siblingCount']}"
+        variant="${args['variant']}"
+        ?show-first-last="${args['showFirstLast']}"
+        @page-change="${(e: CustomEvent) => {
+          console.log('Page changed to:', e.detail.page);
+        }}"
+        @page-hover="${(e: CustomEvent) => {
+          console.log('Page hover:', e.detail.page);
+        }}"
+      ></ui-pagination>
+    `;
+  },
 };
 
 /**
@@ -514,5 +543,85 @@ export const BDD_Internationalization: Story = {
     const nextButton = pagination.shadowRoot?.querySelector('[aria-label="Next page"]');
     await expect(prevButton).toBeTruthy();
     await expect(nextButton).toBeTruthy();
+  },
+};
+
+/**
+ * BDD: キーボードナビゲーション
+ */
+export const BDD_KeyboardNavigation: Story = {
+  tags: ['test'],
+  render: () => html`
+    <ui-pagination
+      data-testid="pagination"
+      current-page="5"
+      total-pages="10"
+    ></ui-pagination>
+  `,
+  async play({ canvasElement, step }) {
+    const canvas = within(canvasElement);
+    const pagination = canvas.getByTestId('pagination') as UiPagination;
+    await pagination.updateComplete;
+    
+    const nav = pagination.shadowRoot?.querySelector('nav') as HTMLElement;
+    const currentButton = pagination.shadowRoot?.querySelector('[aria-current="page"]') as HTMLButtonElement;
+    
+    // イベントリスナーの設定
+    let lastEventPage = 0;
+    pagination.addEventListener('page-change', ((e: CustomEvent) => {
+      lastEventPage = e.detail.page;
+    }) as EventListener);
+
+    await step('右矢印キーで次のページへ移動', async () => {
+      // フォーカスを設定してキーイベントを発火
+      currentButton.focus();
+      nav.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+      await new Promise(resolve => setTimeout(resolve, 50));
+      await expect(lastEventPage).toBe(6);
+    });
+
+    await step('左矢印キーで前のページへ移動', async () => {
+      // フォーカスを設定してキーイベントを発火
+      currentButton.focus();
+      nav.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+      await new Promise(resolve => setTimeout(resolve, 50));
+      await expect(lastEventPage).toBe(4);
+    });
+  },
+};
+
+/**
+ * BDD: ページホバーイベント
+ */
+export const BDD_PageHover: Story = {
+  tags: ['test'],
+  render: () => html`
+    <ui-pagination
+      data-testid="pagination"
+      current-page="5"
+      total-pages="10"
+    ></ui-pagination>
+  `,
+  async play({ canvasElement }) {
+    const canvas = within(canvasElement);
+    const pagination = canvas.getByTestId('pagination') as UiPagination;
+    await pagination.updateComplete;
+    
+    // イベントリスナーの設定
+    let hoveredPage = 0;
+    pagination.addEventListener('page-hover', ((e: CustomEvent) => {
+      hoveredPage = e.detail.page;
+    }) as EventListener);
+
+    // ページ番号ボタンを取得してホバーイベントをシミュレート
+    const pageButton = pagination.shadowRoot?.querySelector('button[aria-label*="ページ 6"]') as HTMLElement;
+    await expect(pageButton).toBeTruthy();
+    
+    // マウスエンターイベントをディスパッチ
+    pageButton?.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    // page-hover イベントが発火し、正しいページ番号が渡されている
+    await expect(hoveredPage).toBe(6);
   },
 };
