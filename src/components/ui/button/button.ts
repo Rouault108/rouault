@@ -1,12 +1,14 @@
 import { LionButton } from '@lion/ui/button.js';
 import { css, html, type CSSResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { srOnlyStyle } from '../../../styles/a11y.js';
 
 @customElement('ui-button')
 export class UiButton extends LionButton {
   static override get styles(): CSSResult[] {
     return [
       ...super.styles,
+      srOnlyStyle,
       css`
         :host {
           /* -------------------------------------------------------------
@@ -335,10 +337,16 @@ export class UiButton extends LionButton {
   @property({ type: Boolean, reflect: true })
   loading = false;
 
+  @property({ type: String })
+  loadingLabel = '読み込み中';
+
   public override render() {
     return html`
       ${this.loading 
-        ? html`<span class="spinner" aria-label="loading"></span>` 
+        ? html`
+            <span class="spinner" role="status" aria-hidden="true"></span>
+            <span class="sr-only">${this.loadingLabel}</span>
+          ` 
         : html`<slot name="prefix"></slot>`
       }
       <slot></slot>
