@@ -4,7 +4,7 @@ import { expect, userEvent, within } from 'storybook/test';
 import './dropdown.ts';
 
 const meta: Meta = {
-  title: 'Components/UiDropdown',
+  title: 'Components/Dropdown',
   component: 'ui-dropdown',
   tags: ['autodocs'],
   argTypes: {

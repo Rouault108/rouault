@@ -4,7 +4,7 @@ import { expect, userEvent, within } from 'storybook/test';
 import './toggle.ts';
 
 const meta: Meta = {
-  title: 'Components/UiToggle',
+  title: 'Components/Toggle',
   component: 'ui-toggle',
   tags: ['autodocs'],
   argTypes: {

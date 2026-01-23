@@ -4,7 +4,7 @@ import { expect, userEvent, fn } from 'storybook/test';
 import './input.ts';
 
 const meta: Meta = {
-  title: 'Components/UiInput',
+  title: 'Components/Input',
   component: 'ui-input',
   tags: ['autodocs'],
   argTypes: {

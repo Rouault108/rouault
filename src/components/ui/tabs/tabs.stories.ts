@@ -5,7 +5,7 @@ import type { UiTabs } from './tabs.ts';
 import './tabs';
 
 const meta: Meta = {
-  title: 'Components/UiTabs',
+  title: 'Components/Tabs',
   component: 'ui-tabs',
   tags: ['autodocs'],
   argTypes: {

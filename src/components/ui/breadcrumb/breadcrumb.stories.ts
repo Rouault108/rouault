@@ -4,7 +4,7 @@ import { expect, within } from 'storybook/test';
 import './breadcrumb.ts';
 
 const meta: Meta = {
-  title: 'Components/UiBreadcrumb',
+  title: 'Components/Breadcrumb',
   component: 'ui-breadcrumb',
   tags: ['autodocs'],
   argTypes: {

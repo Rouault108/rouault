@@ -5,7 +5,7 @@ import { UiPagination } from './pagination';
 import './pagination';
 
 const meta: Meta = {
-  title: 'Components/UiPagination',
+  title: 'Components/Pagination',
   component: 'ui-pagination',
   tags: ['autodocs'],
   argTypes: {

@@ -4,7 +4,7 @@ import { expect, userEvent, within } from 'storybook/test';
 import './tag.ts';
 
 const meta: Meta = {
-  title: 'Components/UiTag',
+  title: 'Components/Tag',
   component: 'ui-tag',
   tags: ['autodocs'],
   argTypes: {

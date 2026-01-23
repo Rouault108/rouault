@@ -4,7 +4,7 @@ import { expect, userEvent, fn } from 'storybook/test';
 import './button.ts';
 
 const meta: Meta = {
-  title: 'Components/UiButton',
+  title: 'Components/Button',
   component: 'ui-button',
   tags: ['autodocs'],
   argTypes: {

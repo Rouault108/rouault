@@ -6,7 +6,7 @@ import './dropdown-menu';
 import '../button/button';
 
 const meta: Meta = {
-  title: 'Components/UiDropdownMenu',
+  title: 'Components/DropdownMenu',
   component: 'ui-dropdown-menu',
   tags: ['autodocs'],
   argTypes: {

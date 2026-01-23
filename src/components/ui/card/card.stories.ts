@@ -4,7 +4,7 @@ import { expect, userEvent, fn } from 'storybook/test';
 import './card.js';
 
 const meta: Meta = {
-  title: 'Components/UiCard',
+  title: 'Components/Card',
   component: 'ui-card',
   tags: ['autodocs'],
   argTypes: {

@@ -4,7 +4,7 @@ import { expect, userEvent, within } from 'storybook/test';
 import './checkbox.ts';
 
 const meta: Meta = {
-  title: 'Components/UiCheckbox',
+  title: 'Components/Checkbox',
   component: 'ui-checkbox',
   tags: ['autodocs'],
   argTypes: {

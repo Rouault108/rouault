@@ -4,7 +4,7 @@ import { expect, userEvent, within } from 'storybook/test';
 import './icon-button.ts';
 
 const meta: Meta = {
-  title: 'Components/UiIconButton',
+  title: 'Components/IconButton',
   component: 'ui-icon-button',
   tags: ['autodocs'],
   argTypes: {

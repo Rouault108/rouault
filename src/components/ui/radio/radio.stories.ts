@@ -4,7 +4,7 @@ import { expect, userEvent, within } from 'storybook/test';
 import './radio.ts';
 
 const meta: Meta = {
-  title: 'Components/UiRadio',
+  title: 'Components/Radio',
   component: 'ui-radio',
   tags: ['autodocs'],
   argTypes: {

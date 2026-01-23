@@ -4,7 +4,7 @@ import { expect, userEvent, within } from 'storybook/test';
 import './link.ts';
 
 const meta: Meta = {
-  title: 'Components/UiLink',
+  title: 'Components/Link',
   component: 'ui-link',
   tags: ['autodocs'],
   argTypes: {

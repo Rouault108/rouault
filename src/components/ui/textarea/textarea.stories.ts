@@ -4,7 +4,7 @@ import { expect, userEvent, within } from 'storybook/test';
 import './textarea.ts';
 
 const meta: Meta = {
-  title: 'Components/UiTextarea',
+  title: 'Components/Textarea',
   component: 'ui-textarea',
   tags: ['autodocs'],
   argTypes: {
