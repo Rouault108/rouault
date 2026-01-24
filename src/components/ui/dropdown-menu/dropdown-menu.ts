@@ -324,7 +324,7 @@ export class UiMenuItem extends LitElement {
       color: var(--color-foreground, #111827);
       font-family: inherit;
       font-size: var(--text-sm, 0.875rem);
-      line-height: 1.5;
+      line-height: var(--line-height-normal, 1.5);
       cursor: pointer;
       user-select: none;
       width: 100%;

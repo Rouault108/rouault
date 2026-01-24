@@ -22,7 +22,7 @@ export class UiTextarea extends LitElement {
       width: 100%;
       font-family: var(--font-sans, system-ui, sans-serif);
       font-size: var(--text-base, 0.875rem);
-      line-height: 1.5;
+      line-height: var(--line-height-normal, 1.5);
     }
 
     /* -------------------------------------------------------------

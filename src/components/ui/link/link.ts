@@ -26,7 +26,7 @@ export class UiLink extends LitElement {
       gap: var(--space-1, 0.25rem);
       font-family: var(--font-sans, system-ui, sans-serif);
       font-size: var(--text-base, 0.875rem);
-      line-height: 1.5;
+      line-height: var(--line-height-normal, 1.5);
     }
 
     /* -------------------------------------------------------------

@@ -51,7 +51,7 @@ export class UiButton extends LionButton {
           cursor: pointer;
           font-family: var(--font-sans, inherit);
           font-size: var(--text-base, 1rem); /* 16px */
-          line-height: 1.5;
+          line-height: var(--line-height-normal, 1.5);
           font-weight: var(--font-medium, 500);
           text-decoration: none;
           

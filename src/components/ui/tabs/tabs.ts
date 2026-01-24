@@ -372,7 +372,7 @@ export class UiTab extends LitElement {
       font-family: inherit;
       font-size: var(--text-sm, 0.875rem);
       font-weight: var(--font-medium, 500);
-      line-height: 1.5;
+      line-height: var(--line-height-normal, 1.5);
       cursor: pointer;
       user-select: none;
       position: relative;

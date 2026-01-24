@@ -29,7 +29,7 @@ export class UiTag extends LitElement {
       gap: var(--space-1, 0.25rem);
       border-radius: var(--radius-md, 0.375rem);
       font-weight: var(--font-medium, 500);
-      line-height: 1; /* 垂直中央揃えのため */
+      line-height: var(--line-height-none, 1); /* 垂直中央揃えのため */
       white-space: nowrap;
       text-decoration: none;
       transition:

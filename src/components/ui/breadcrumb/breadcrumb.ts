@@ -20,7 +20,7 @@ export class UiBreadcrumb extends LitElement {
       display: block;
       font-family: var(--font-sans, system-ui, sans-serif);
       font-size: var(--text-sm, 0.8125rem);
-      line-height: 1.5;
+      line-height: var(--line-height-normal, 1.5);
     }
 
     /* -------------------------------------------------------------
@@ -145,7 +145,7 @@ export class UiBreadcrumbItem extends LitElement {
       font-family: inherit;
       font-size: inherit;
       font-weight: var(--font-medium, 500);
-      line-height: 1;
+      line-height: var(--line-height-none, 1);
       
       cursor: pointer;
       

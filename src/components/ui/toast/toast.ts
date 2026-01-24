@@ -109,7 +109,7 @@ export class UiToast extends LitElement {
       font-size: var(--text-base, 0.875rem);
       font-weight: var(--font-semibold, 600);
       color: var(--color-foreground, #111827);
-      line-height: 1.25;
+      line-height: var(--line-height-tight, 1.25);
       letter-spacing: -0.01em;
     }
 
