@@ -93,6 +93,14 @@
   --font-semibold: 600;
   --font-bold: 700;
   
+  /* 行送り（Line Height） */
+  --line-height-none: 1;        /* アイコン、バッジ、単行要素 */
+  --line-height-tight: 1.25;    /* 見出し、UI要素（高密度） */
+  --line-height-snug: 1.375;    /* 小見出し、リード文 */
+  --line-height-normal: 1.5;    /* 本文（デフォルト） */
+  --line-height-relaxed: 1.6;   /* 読みやすさ重視の本文、バナー */
+  --line-height-loose: 2;       /* 詩、引用、特殊レイアウト */
+  
   /* アイコンサイズ */
   --icon-sm: 16px;
   --icon-md: 20px;
