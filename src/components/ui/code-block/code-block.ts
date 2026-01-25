@@ -23,7 +23,7 @@ import langGo from 'shiki/langs/go.mjs';
 import langJava from 'shiki/langs/java.mjs';
 import langCpp from 'shiki/langs/cpp.mjs';
 import langC from 'shiki/langs/c.mjs';
-import lnagCsharp from 'shiki/langs/csharp.mjs';
+import langCsharp from 'shiki/langs/csharp.mjs';
 import langPhp from 'shiki/langs/php.mjs';
 import langRuby from 'shiki/langs/ruby.mjs';
 import langSwift from 'shiki/langs/swift.mjs';
@@ -63,7 +63,7 @@ async function getHighlighter() {
         langJava,
         langCpp,
         langC,
-        lnagCsharp,
+        langCsharp,
         langPhp,
         langRuby,
         langSwift,
