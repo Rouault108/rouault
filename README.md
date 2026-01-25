@@ -603,29 +603,36 @@ pnpm lint:fix
 | `ui-checkbox` | チェックボックス（タスクリスト、フィルター用） | ✅ |
 | `ui-radio` | ラジオボタン（単一選択） | ✅ |
 | `ui-toggle` | トグルスイッチ（テーマ切替、設定用） | ✅ |
-| `ui-dropdown` | ドロップダウン選択 |  |
-| `ui-textarea` | 複数行テキスト入力（将来の編集機能用） |  |
+| `ui-dropdown` | ドロップダウン選択 | ✅ |
+| `ui-textarea` | 複数行テキスト入力（将来の編集機能用） | ✅ |
+| `ui-select` | セレクトボックス |  |
+| `ui-slider` | スライダー |  |
+| `ui-switch` | スイッチ |  |
+| `ui-range` | レンジ |  |
+| `ui-meter` | メーター |  |
+| `ui-rating` | レーティング |  |
+
 
 #### ナビゲーション & アクション
 
 | コンポーネント | 説明 | 状態 |
 |---------------|------|------|
 | `ui-icon-button` | アイコンのみのボタン（検索、テーマ切替など） | ✅ |
-| `ui-link` | スタイル付きリンク |  |
-| `ui-breadcrumb` | パンくずリスト |  |
-| `ui-pagination` | ページネーション |  |
-| `ui-tabs` | タブ切り替え |  |
-| `ui-menu` / `ui-dropdown-menu` | ドロップダウンメニュー（ヘッダーナビ用） |  |
+| `ui-link` | スタイル付きリンク | ✅ |
+| `ui-breadcrumb` | パンくずリスト | ✅ |
+| `ui-pagination` | ページネーション | ✅ |
+| `ui-tabs` | タブ切り替え | ✅ |
+| `ui-menu` / `ui-dropdown-menu` | ドロップダウンメニュー（ヘッダーナビ用） | ✅ |
 
 #### フィードバック & オーバーレイ
 
 | コンポーネント | 説明 | 状態 |
 |---------------|------|------|
-| `ui-toast` | トースト通知 |  |
-| `ui-modal` / `ui-dialog` | モーダルダイアログ |  |
+| `ui-toast` | トースト通知 | ✅ |
+| `ui-modal` | モーダルダイアログ | ✅ |
 | `ui-popover` | ポップオーバー |  |
 | `ui-tooltip` | ツールチップ |  |
-| `ui-alert` / `ui-banner` | アラート/バナー（アーカイブ警告など） |  |
+| `ui-banner` | バナー（アーカイブ警告など） | ✅ |
 | `ui-spinner` | ローディングスピナー |  |
 | `ui-skeleton` | スケルトンローディング |  |
 | `ui-progress` | プログレスバー（読書進捗など） |  |
@@ -634,25 +641,27 @@ pnpm lint:fix
 
 | コンポーネント | 説明 | 状態 |
 |---------------|------|------|
-| `ui-code-inline` | インラインコード (`<code>`) |  |
-| `ui-code-block` | コードブロック（シンタックスハイライト付き） |  |
+| `ui-code` | インラインコード (`<code>`) | ✅ |
+| `ui-code-block` | コードブロック（シンタックスハイライト付き） | ✅ |
+| `ui-code-group` | コードグループ（コードブロックを束ねる） | ✅ |
+| `ui-preview` | コードブロックのプレビュー表示（code-groupの上位） Reset機能も実装 |  |
+| `ui-file-tree` | ディレクトリ構造のツリー表示（YAML形式で記述すると出力） |  |
 | `ui-blockquote` | 引用ブロック |  |
-| `ui-callout` / `ui-admonition` | 注意書き、ヒント、警告などのコールアウト |  |
-| `ui-table` | テーブルスタイリング |  |
-| `ui-list` | リスト (ul, ol) スタイリング |  |
+| `ui-callout` | 注意書き、ヒント、警告などのコールアウト | ✅ |
+| `ui-table` | テーブルスタイリング | ✅ |
+| `ui-list` | リスト (ul, ol) スタイリング | ✅ |
 | `ui-task-list` | タスクリスト（チェックボックス付きリスト） |  |
-| `ui-heading` | 見出しスタイリング (h1-h6) |  |
+| `ui-heading` | 見出しスタイリング (h1-h6) | ✅ |
 | `ui-divider` / `ui-hr` | 水平区切り線 |  |
 | `ui-kbd` | キーボードショートカット表示 |  |
 | `ui-mark` | ハイライトテキスト |  |
 
 #### レイアウト補助
 
-| コンポーネント | 説明 |
-|---------------|------|
-| `ui-badge` | バッジ（ドラフトアイコン、カウンターなど） |
-| `ui-avatar` | アバター（将来の著者表示用） |
-| `ui-copy-button` | コピーボタン（URL、コードブロック用） |
+| コンポーネント | 説明 | 状態 |
+|---------------|------|------|
+| `ui-badge` | バッジ（ドラフトアイコン、カウンターなど） | |
+| `ui-avatar` | アバター（将来の著者表示用） | |
 
 ---
 
@@ -660,16 +669,16 @@ pnpm lint:fix
 
 **目標**: Markdown コンテンツを読み込み、基本的なページとして表示できる状態にする。
 
-| タスク | 依存 |
-|--------|------|
-| Velite 設定・スキーマ定義 | - |
-| フロントマター検証 (Zod) | Velite |
-| `content/` ディレクトリ構造のサンプル作成 | Velite |
-| `_config.json` による並び順制御 | Velite |
-| Eleventy + Velite 統合 | 両方 |
-| 基本レイアウトテンプレート (1カラム) | Eleventy |
-| Markdown → HTML 変換パイプライン | - |
-| remark/rehype プラグイン設定 (GFM, 数式, 絵文字) | パイプライン |
+| タスク | 依存 | 状態 |
+|--------|------|------|
+| Velite 設定・スキーマ定義 | - | |
+| フロントマター検証 (Zod) | Velite | |
+| `content/` ディレクトリ構造のサンプル作成 | Velite | |
+| `_config.json` による並び順制御 | Velite | |
+| Eleventy + Velite 統合 | 両方 | |
+| 基本レイアウトテンプレート (1カラム) | Eleventy | |
+| Markdown → HTML 変換パイプライン（例えば`<pre><code>`を除く通常の`<code>`を`ui-code`に変換するrehypeプラグインを実装） | - | |
+| remark/rehype プラグイン設定 (GFM, 数式, 絵文字) | パイプライン | |
 
 ---
 
@@ -677,17 +686,17 @@ pnpm lint:fix
 
 **目標**: 3カラムレイアウト（サイドバー + メイン + TOC）を実装し、レスポンシブ対応を行う。
 
-| タスク | 依存 |
-|--------|------|
-| `layout-header` コンポーネント | - |
-| `layout-sidebar` コンポーネント (階層選択) | Velite |
-| `layout-toc` コンポーネント (目次) | - |
-| `layout-footer` コンポーネント | - |
-| 3カラムグリッドレイアウト (CSS Grid) | 全レイアウト |
-| レスポンシブブレークポイント実装 | グリッド |
-| モバイル: スティッキー TOC | TOC |
-| モバイル: フローティングサイドバーボタン | サイドバー |
-| スキップリンク | - |
+| タスク | 依存 | 状態 |
+|--------|------|------|
+| `layout-header` コンポーネント | - | |
+| `layout-sidebar` コンポーネント (階層選択) | Velite | |
+| `layout-toc` コンポーネント (目次) | - | |
+| `layout-footer` コンポーネント | - | |
+| 3カラムグリッドレイアウト (CSS Grid) | 全レイアウト | |
+| レスポンシブブレークポイント実装 | グリッド | |
+| モバイル: スティッキー TOC | TOC | |
+| モバイル: フローティングサイドバーボタン | サイドバー | |
+| スキップリンク | - | |
 
 ---
 
@@ -695,15 +704,15 @@ pnpm lint:fix
 
 **目標**: SPA ルーターを実装し、View Transitions API による滑らかなページ遷移を実現する。
 
-| タスク | 依存 |
-|--------|------|
-| カスタムルーター設計 | - |
-| `fetch` によるコンテンツ取得 | ルーター |
-| `document.startViewTransition()` 統合 | ルーター |
-| 履歴管理 (History API) | ルーター |
-| サイドバー ↔ メイン連携 | サイドバー, ルーター |
-| 階層選択の状態保持 (localStorage) | サイドバー |
-| パンくずリスト (`ui-breadcrumb`) | ルーター |
+| タスク | 依存 | 状態 |
+|--------|------|------|
+| カスタムルーター設計 | - | |
+| `fetch` によるコンテンツ取得 | ルーター | |
+| `document.startViewTransition()` 統合 | ルーター | |
+| 履歴管理 (History API) | ルーター | |
+| サイドバー ↔ メイン連携 | サイドバー, ルーター | |
+| 階層選択の状態保持 (localStorage) | サイドバー | |
+| パンくずリスト (`ui-breadcrumb`) | ルーター | |
 
 ---
 
@@ -711,14 +720,14 @@ pnpm lint:fix
 
 **目標**: Pagefind を統合し、日本語対応の全文検索を実現する。
 
-| タスク | 依存 |
-|--------|------|
-| Pagefind ビルド統合 | フェーズ1 完了 |
-| 検索 UI (`ui-search`) | `ui-input` |
-| 検索結果表示 | 検索 UI |
-| `Intl.Segmenter` による日本語分かち書き | Pagefind |
-| タグフィルター連携 (AND 条件) | 検索, タグ |
-| 検索結果ページ (タグ一覧ページ兼用) | 検索結果 |
+| タスク | 依存 | 状態 |
+|--------|------|------|
+| Pagefind ビルド統合 | フェーズ1 完了 | |
+| 検索 UI (`ui-search`) | `ui-input` | |
+| 検索結果表示 | 検索 UI | |
+| `Intl.Segmenter` による日本語分かち書き | Pagefind | |
+| タグフィルター連携 (AND 条件) | 検索, タグ | |
+| 検索結果ページ (タグ一覧ページ兼用) | 検索結果 | |
 
 ---
 
@@ -726,13 +735,13 @@ pnpm lint:fix
 
 **目標**: `@lit-labs/ssr` を Eleventy ビルドに統合し、Web Components をプリレンダリングする。
 
-| タスク | 依存 |
-|--------|------|
-| `@lit-labs/ssr` セットアップ | - |
-| Eleventy Transform での Lit レンダリング | SSR |
-| Declarative Shadow DOM 出力 | SSR |
-| クライアントハイドレーション検証 | SSR |
-| ビルドパフォーマンス最適化 | SSR 統合後 |
+| タスク | 依存 | 状態 |
+|--------|------|------|
+| `@lit-labs/ssr` セットアップ | - | |
+| Eleventy Transform での Lit レンダリング | SSR | |
+| Declarative Shadow DOM 出力 | SSR | |
+| クライアントハイドレーション検証 | SSR | |
+| ビルドパフォーマンス最適化 | SSR 統合後 | |
 
 ---
 
@@ -742,33 +751,34 @@ pnpm lint:fix
 
 #### 6-A: コードハイライト
 
-| タスク | 依存 |
-|--------|------|
-| Shiki 統合 (ビルド時) | - |
-| Dual theme (light/dark) CSS 切り替え | Shiki |
-| 行番号・行ハイライト | Shiki |
-| コピーボタン (`ui-copy-button`) | - |
-| PrismJS フォールバック | - |
+| タスク | 依存 | 状態 |
+|--------|------|------|
+| Shiki 統合 (ビルド時) | - | |
+| Dual theme (light/dark) CSS 切り替え | Shiki | |
+| 行番号・行ハイライト | Shiki | |
+| コピーボタン (`ui-copy-button`) | - | |
+| PrismJS フォールバック | - | |
+| Twoslashの静的ビルド時生成設定 | - | |
 
 #### 6-B: 楽譜表示 (LilyPond)
 
-| タスク | 依存 |
-|--------|------|
-| GitHub Actions ワークフロー設計 | - |
-| LilyPond → SVG 変換スクリプト | ワークフロー |
-| ハッシュ比較による増分生成 | スクリプト |
-| SVG 内 `<title>`, `<desc>` 埋め込み | スクリプト |
-| エラー時の SVG 出力 | スクリプト |
+| タスク | 依存 | 状態 |
+|--------|------|------|
+| GitHub Actions ワークフロー設計 | - | |
+| LilyPond → SVG 変換スクリプト | ワークフロー | |
+| ハッシュ比較による増分生成 | スクリプト | |
+| SVG 内 `<title>`, `<desc>` 埋め込み | スクリプト | |
+| エラー時の SVG 出力 | スクリプト | |
 
 #### 6-C: 対訳表示
 
-| タスク | 依存 |
-|--------|------|
-| 独自マークアップパーサー | - |
-| PC: ホバー翻訳ポップアップ (`ui-popover`) | パーサー |
-| モバイル: インターリニア表示 | パーサー |
-| 表示切替トグル (`ui-toggle`) | 両モード |
-| `lang` 属性対応 | パーサー |
+| タスク | 依存 | 状態 |
+|--------|------|------|
+| 独自マークアップパーサー | - | |
+| PC: ホバー翻訳ポップアップ (`ui-popover`) | パーサー | |
+| モバイル: インターリニア表示 | パーサー | |
+| 表示切替トグル (`ui-toggle`) | 両モード | |
+| `lang` 属性対応 | パーサー | |
 
 ---
 
@@ -776,15 +786,15 @@ pnpm lint:fix
 
 **目標**: 恒久的リンク（Permanent URL）を実装し、コンテンツのバージョン管理を行う。
 
-| タスク | 依存 |
-|--------|------|
-| `permalinks.json` スキーマ設計 | - |
-| 正規化処理 (LF, 空白除去, SHA-256) | - |
-| Cloudflare R2 バケット設定 | - |
-| GitHub Actions: アーカイブ生成ワークフロー | R2, 正規化 |
-| Cloudflare Workers: `/archives/{hash}` ハンドラー | R2 |
-| UI: Permanent URL コピーボタン (`ui-copy-button`) | - |
-| UI: アーカイブ警告バナー (`ui-alert`) | Workers |
+| タスク | 依存 | 状態 |
+|--------|------|------|
+| `permalinks.json` スキーマ設計 | - | |
+| 正規化処理 (LF, 空白除去, SHA-256) | - | |
+| Cloudflare R2 バケット設定 | - | |
+| GitHub Actions: アーカイブ生成ワークフロー | R2, 正規化 | |
+| Cloudflare Workers: `/archives/{hash}` ハンドラー | R2 | |
+| UI: Permanent URL コピーボタン (`ui-copy-button`) | - | |
+| UI: アーカイブ警告バナー (`ui-alert`) | Workers | |
 
 ---
 
@@ -792,13 +802,13 @@ pnpm lint:fix
 
 **目標**: Cloudflare Access による認証を設定し、本番環境にデプロイする。
 
-| タスク | 依存 |
-|--------|------|
-| Cloudflare Pages プロジェクト作成 | - |
-| Cloudflare Access 設定 (Zero Trust) | Pages |
-| 自動デプロイ (GitHub 連携) | Pages |
-| 404 カスタムページ | - |
-| OGP / Twitter Card 画像生成 | - |
+| タスク | 依存 | 状態 |
+|--------|------|------|
+| Cloudflare Pages プロジェクト作成 | - | |
+| Cloudflare Access 設定 (Zero Trust) | Pages | |
+| 自動デプロイ (GitHub 連携) | Pages | |
+| 404 カスタムページ | - | |
+| OGP / Twitter Card 画像生成 | - | |
 
 ---
 
@@ -806,15 +816,15 @@ pnpm lint:fix
 
 **目標**: WCAG 2.1 Level AA 準拠を検証し、E2E テストを整備する。
 
-| タスク | 依存 |
-|--------|------|
-| axe-core / Storybook a11y アドオンによる検証 | 全コンポーネント |
-| フォーカス管理の検証 | - |
-| カラーコントラスト検証 | - |
-| `prefers-reduced-motion` 対応確認 | - |
-| スクリーンリーダーテスト (VoiceOver/NVDA) | - |
-| Playwright E2E テストスイート作成 | 全フェーズ |
-| パフォーマンス監査 (Lighthouse) | デプロイ後 |
+| タスク | 依存 | 状態 |
+|--------|------|------|
+| axe-core / Storybook a11y アドオンによる検証 | 全コンポーネント | |
+| フォーカス管理の検証 | - | |
+| カラーコントラスト検証 | - | |
+| `prefers-reduced-motion` 対応確認 | - | |
+| スクリーンリーダーテスト (VoiceOver/NVDA) | - | |
+| Playwright E2E テストスイート作成 | 全フェーズ | |
+| パフォーマンス監査 (Lighthouse) | デプロイ後 | |
 
 ---
 
