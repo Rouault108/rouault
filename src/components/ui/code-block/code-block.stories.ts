@@ -416,13 +416,15 @@ ${jsCode}
 
     // Clipboard APIをモック
     const originalClipboard = navigator.clipboard;
-    Object.assign(navigator, {
-      clipboard: {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: {
         writeText: async (text: string) => {
           // コピーされたテキストを検証
           await expect(text).toBe(jsCode);
         },
       },
+      configurable: true,
+      writable: true,
     });
 
     const copyButton = codeBlock.shadowRoot?.querySelector('.action-button[aria-label*="コピー"]') as HTMLElement;
@@ -439,7 +441,10 @@ ${jsCode}
     await expect(copiedButton).toBeInTheDocument();
 
     // クリーンアップ
-    Object.assign(navigator, { clipboard: originalClipboard });
+    Object.defineProperty(navigator, 'clipboard', {
+      value: originalClipboard,
+      configurable: true,
+    });
   },
 };
 
