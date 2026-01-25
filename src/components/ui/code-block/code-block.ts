@@ -1,0 +1,767 @@
+import { LitElement, css, html, nothing } from 'lit';
+import { customElement, property, state } from 'lit/decorators.js';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+
+// Shiki Core imports
+import { createHighlighterCore, type HighlighterCore } from 'shiki/core';
+import { createOnigurumaEngine } from 'shiki/engine/oniguruma';
+import { transformerNotationDiff } from '@shikijs/transformers';
+import getWasm from 'shiki/wasm';
+
+// Languages (必要なものだけ厳選)
+import langJavascript from 'shiki/langs/javascript.mjs';
+import langTypescript from 'shiki/langs/typescript.mjs';
+import langHtml from 'shiki/langs/html.mjs';
+import langCss from 'shiki/langs/css.mjs';
+import langJson from 'shiki/langs/json.mjs';
+import langMarkdown from 'shiki/langs/markdown.mjs';
+import langBash from 'shiki/langs/bash.mjs';
+import langYaml from 'shiki/langs/yaml.mjs';
+
+// Themes
+import themeGithubLight from 'shiki/themes/github-light.mjs';
+import themeGithubDark from 'shiki/themes/github-dark.mjs';
+
+// マジックナンバー定数
+const COPY_FEEDBACK_DURATION = 2000;
+const COPY_ICON_DELAY = 300;
+// @ts-expect-error: 将来的にCSS内のハードコード値を置換する際に使用
+const COLLAPSE_OVERLAY_HEIGHT = 120;
+
+// シングルトンハイライター（複数コンポーネントで共有）
+let highlighterPromise: Promise<HighlighterCore> | null = null;
+
+async function getHighlighter() {
+  if (!highlighterPromise) {
+    highlighterPromise = createHighlighterCore({
+      themes: [themeGithubLight, themeGithubDark],
+      langs: [
+        langJavascript,
+        langTypescript,
+        langHtml,
+        langCss,
+        langJson,
+        langMarkdown,
+        langBash,
+        langYaml
+      ],
+      engine: createOnigurumaEngine(getWasm),
+    });
+  }
+  return highlighterPromise;
+}
+
+/**
+ * highlightLines用カスタムTransformer
+ * 例: "1,3-5,8" -> [1, 3, 4, 5, 8]
+ */
+function parseHighlightLines(spec: string): Set<number> {
+  const lines = new Set<number>();
+  if (!spec) return lines;
+  
+  const parts = spec.split(',').map(s => s.trim());
+  for (const part of parts) {
+    if (part.includes('-')) {
+      const [startStr, endStr] = part.split('-');
+      const start = Number(startStr);
+      const end = Number(endStr);
+      if (!isNaN(start) && !isNaN(end)) {
+        for (let i = start; i <= end; i++) {
+          lines.add(i);
+        }
+      }
+    } else {
+      const lineNum = Number(part);
+      if (!isNaN(lineNum)) {
+        lines.add(lineNum);
+      }
+    }
+  }
+  return lines;
+}
+
+function createTransformerHighlightLines(highlightLines: string) {
+  const linesToHighlight = parseHighlightLines(highlightLines);
+  
+  return {
+    name: 'highlight-lines',
+    line(node: any, line: number) {
+      if (linesToHighlight.has(line)) {
+        node.properties.className = node.properties.className || [];
+        node.properties.className.push('highlighted');
+      }
+    }
+  };
+}
+
+/**
+ * Diff行のアクセシビリティ対応Transformer
+ */
+function transformerDiffAria() {
+  return {
+    name: 'diff-aria',
+    line(node: any) {
+      const classes = node.properties.className || [];
+      if (classes.includes('diff')) {
+        if (classes.includes('add')) {
+          node.properties['aria-label'] = '追加行';
+        } else if (classes.includes('remove')) {
+          node.properties['aria-label'] = '削除行';
+        }
+      }
+    }
+  };
+}
+
+/**
+ * ui-code-block - コードブロック表示用コンポーネント (Shiki版)
+ * 
+ * @element ui-code-block
+ * @fires code-copied - コードがコピーされた時に発火
+ * 
+ * @slot - コードの内容
+ */
+@customElement('ui-code-block')
+export class UiCodeBlock extends LitElement {
+  @state()
+  private _isLoading = true;
+
+  static override styles = css`
+    /* Shiki Dual Theme Integration */
+    /* デフォルト (Light) */
+    .code-content pre, 
+    .code-content code,
+    .code-content span {
+      color: var(--shiki-light);
+    }
+
+    /* ダークモード: OS設定 (ただしdata-theme="light"を除く) */
+    @media (prefers-color-scheme: dark) {
+      :host(:not([data-theme="light"])) .code-content pre,
+      :host(:not([data-theme="light"])) .code-content code,
+      :host(:not([data-theme="light"])) .code-content span {
+        color: var(--shiki-dark);
+      }
+    }
+
+    /* 明示的なダークモード (data-theme="dark") */
+    :host-context([data-theme="dark"]) .code-content pre,
+    :host-context([data-theme="dark"]) .code-content code,
+    :host-context([data-theme="dark"]) .code-content span {
+      color: var(--shiki-dark);
+    }
+
+    :host {
+      display: block;
+      /* Shiki背景色を使用、フォールバックとしてデザインシステムの変数を使用 */
+      --code-bg: var(--shiki-light-bg, var(--color-background-subtle, #f9fafb));
+      --code-header-bg: var(--color-background, #ffffff);
+      --code-border: var(--color-border, #e5e7eb);
+      --code-text: var(--color-foreground, #111827);
+      --code-line-number: var(--color-foreground-muted, #a1a1aa);
+      --code-highlight-bg: rgba(59, 130, 246, 0.1);
+      
+      /* デザイントークン（design-system.md準拠） */
+      --duration-normal: 200ms;
+      --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
+    }
+
+    /* ダークモード背景 */
+    @media (prefers-color-scheme: dark) {
+      :host(:not([data-theme="light"])) {
+        --code-bg: var(--shiki-dark-bg, var(--color-background-subtle, #171717));
+        --code-header-bg: var(--color-background, #0a0a0a);
+      }
+    }
+
+    :host-context([data-theme="dark"]) {
+      --code-bg: var(--shiki-dark-bg, var(--color-background-subtle, #171717));
+      --code-header-bg: var(--color-background, #0a0a0a);
+    }
+
+    /* コードブロックコンテナ */
+    .code-block {
+      border: 1px solid var(--code-border);
+      border-radius: var(--radius-lg, 0.5rem);
+      background-color: var(--code-bg);
+      position: relative;
+    }
+
+    /* ヘッダー */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2, 0.5rem);
+      font-size: var(--text-xs, 0.75rem);
+      color: var(--code-line-number);
+    }
+
+    /* ヘッダーアクション（ボタン群） */
+    .header-actions {
+      display: flex;
+      gap: 0.25rem;
+      align-items: center;
+    }
+
+    .language {
+      font-family: var(--font-mono, 'JetBrains Mono', monospace);
+      text-transform: uppercase;
+      font-weight: var(--font-semibold, 600);
+      letter-spacing: 0.05em;
+    }
+
+    .filename {
+      font-family: var(--font-mono, 'JetBrains Mono', monospace);
+      color: var(--code-text);
+    }
+
+    .filename::before {
+      content: '—';
+      margin-right: var(--space-2, 0.5rem);
+      color: var(--code-line-number);
+    }
+
+    /* アクションボタン（コピー・折り返し） */
+    .action-button {
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      background: var(--code-header-bg);
+      border: 1px solid var(--code-border);
+      border-radius: var(--radius-md, 0.375rem);
+      color: var(--code-line-number);
+      cursor: pointer;
+      transition: all var(--duration-normal) var(--ease-out);
+      opacity: 0;
+      transform: translateY(-2px);
+    }
+
+    .code-block:hover .action-button,
+    .action-button:focus-visible,
+    .action-button.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .action-button:hover {
+      background-color: var(--code-bg);
+      color: var(--code-text);
+      border-color: var(--code-text);
+    }
+
+    .action-button:focus-visible {
+      outline: 2px solid var(--color-primary, #3b82f6);
+      outline-offset: 2px;
+    }
+
+    /* アクティブ状態 */
+    .action-button.active {
+      color: var(--code-text);
+      background-color: var(--code-bg);
+      border-color: var(--code-text);
+    }
+
+    .action-button.copied {
+      color: var(--color-success, #22c55e);
+      border-color: var(--color-success, #22c55e);
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .action-button iconify-icon {
+      font-size: 16px;
+    }
+
+    /* アクセシビリティ: コピー通知 */
+    .copy-feedback {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* prefers-reduced-motion 対応 */
+    @media (prefers-reduced-motion: reduce) {
+      .action-button {
+        transition: none;
+      }
+    }
+
+    /* コードエリア */
+    .code-wrapper {
+      display: flex;
+      overflow-x: auto;
+      font-size: var(--text-sm, 0.8125rem);
+      line-height: var(--line-height-relaxed, 1.6);
+      /* ヘッダー分の余白 */
+      padding-top: var(--space-8, 2rem); 
+      background-color: var(--shiki-bg, var(--code-bg));
+    }
+
+    .line-numbers {
+      display: flex;
+      flex-direction: column;
+      padding: var(--space-3, 0.75rem) 0;
+      padding-left: var(--space-3, 0.75rem);
+      user-select: none;
+      text-align: right;
+      min-width: 3ch;
+      /* 固定背景 */
+      background-color: var(--shiki-bg, var(--code-bg)); 
+      position: sticky;
+      left: 0;
+      z-index: 1;
+    }
+
+    .line-number {
+      color: var(--code-line-number);
+      font-family: var(--font-mono, 'JetBrains Mono', monospace);
+      font-size: inherit;
+      line-height: inherit;
+    }
+
+    .code-content {
+      flex: 1;
+      padding: var(--space-3, 0.75rem);
+    }
+
+    .code-content.with-line-numbers {
+      padding-left: var(--space-2, 0.5rem);
+    }
+
+    /* コード折り返し */
+    .code-content.word-wrap {
+      overflow-wrap: anywhere;
+    }
+    
+    .code-content.word-wrap .line {
+      width: 100%;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* Shikiが出力するpre/code */
+    pre.shiki {
+      margin: 0;
+      padding: 0;
+      background-color: transparent !important; /* コンテナ側で背景色を管理 */
+      font-family: var(--font-mono, 'JetBrains Mono', monospace);
+      font-size: inherit;
+      line-height: inherit;
+    }
+
+    code {
+      display: block;
+      font-size: 0; /* テキストノード（改行）を視覚的に消去 */
+      font-family: inherit;
+      line-height: inherit;
+    }
+
+    /* ローディング状態 */
+    .loading {
+      padding: var(--space-4, 1rem);
+      color: var(--code-line-number);
+      font-family: var(--font-mono, monospace);
+      font-size: var(--text-sm, 0.8125rem);
+    }
+
+    /* 行ハイライト */
+    .line.highlighted {
+      background-color: var(--code-highlight-bg);
+      border-left: 2px solid var(--color-primary, #3b82f6);
+    }
+
+    /* 折りたたみ機能 */
+    .collapse-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 120px;
+      background: linear-gradient(to bottom, transparent, var(--code-bg));
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: var(--space-4, 1rem);
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .collapse-button {
+      pointer-events: auto;
+      background-color: var(--code-header-bg);
+      border: 1px solid var(--code-border);
+      color: var(--code-text);
+      font-family: var(--font-sans, system-ui, sans-serif);
+      font-size: var(--text-xs, 0.75rem);
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      transition: all 0.2s;
+    }
+
+    .collapse-button:hover {
+      background-color: var(--code-bg);
+      border-color: var(--code-line-number);
+    }
+
+    .code-wrapper.collapsed {
+      overflow: hidden;
+    }
+
+    /* Diff Styling */
+    .line {
+      display: block;
+      min-width: 100%;
+      width: fit-content;
+      padding: 0 var(--space-2, 0.5rem);
+      box-sizing: border-box;
+      position: relative;
+      font-size: var(--text-sm, 0.8125rem); /* code の font-size: 0 を打ち消す */
+    }
+
+    /* Diffがある場合のみ、全行の左パディングをあける（ガター確保） */
+    .has-diff .line {
+      padding-left: calc(var(--space-2, 0.5rem) + 1.2em);
+    }
+
+    .line.diff.add {
+      background-color: var(--color-diff-add-bg, rgba(34, 197, 94, 0.1));
+      border-left: 2px solid var(--color-success, #22c55e);
+    }
+
+    .line.diff.remove {
+      background-color: var(--color-diff-remove-bg, rgba(239, 68, 68, 0.1));
+      border-left: 2px solid var(--color-error, #ef4444);
+    }
+    
+    /* アクセシビリティ記号 (+/-) */
+    .line.diff::before {
+      position: absolute;
+      left: 0.5rem; /* ボーダーの右側 */
+      top: 0;
+      width: 1em;
+      text-align: center;
+      font-family: var(--font-mono, monospace);
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .line.diff.add::before {
+      content: '+';
+      color: var(--color-success, #22c55e);
+    }
+
+    .line.diff.remove::before {
+      content: '-';
+      color: var(--color-error, #ef4444);
+    }
+
+    /* ダークモード対応 */
+    @media (prefers-color-scheme: dark) {
+      :host:not([data-theme="light"]) {
+        --code-bg: var(--color-background-subtle, #171717);
+        --code-header-bg: var(--color-background, #0a0a0a);
+        --code-border: var(--color-border, #27272a);
+        --code-text: var(--color-foreground, #ededed);
+        --code-line-number: var(--color-foreground-muted, #a1a1aa);
+      }
+    }
+
+    :host-context([data-theme="dark"]) {
+      --code-bg: var(--color-background-subtle, #171717);
+      --code-header-bg: var(--color-background, #0a0a0a);
+      --code-border: var(--color-border, #27272a);
+      --code-text: var(--color-foreground, #ededed);
+      --code-line-number: var(--color-foreground-muted, #a1a1aa);
+    }
+  `;
+
+  @property({ type: String })
+  language = 'javascript'; // plaintextの代わりにデフォルトをjsにしておく方が無難
+
+  @property({ type: String })
+  filename = '';
+
+  @property({ type: Boolean })
+  showLineNumbers = false;
+
+  @property({ type: String })
+  highlightLines = '';
+
+  @property({ type: Boolean })
+  rawHtml = false;
+
+  @property({ type: Boolean })
+  collapsible = false;
+
+  @property({ type: Number })
+  maxHeight = 300;
+
+  @state()
+  private _copied = false;
+
+  @state()
+  private _iconState: 'copy' | 'check' = 'copy';
+
+  @state()
+  private _copyFeedback = '';
+
+  @state()
+  private _isExpanded = false;
+
+  @state()
+  private _wordWrap = false;
+
+  @state()
+  private _hasDiff = false;
+
+  @state()
+  private _code = '';
+
+  @state()
+  private _highlightedCode = '';
+
+
+
+  override connectedCallback() {
+    super.connectedCallback();
+    this._extractCode();
+  }
+
+  override disconnectedCallback() {
+    super.disconnectedCallback();
+  }
+
+  override updated(changedProperties: Map<string, any>) {
+    super.updated(changedProperties);
+    // コードや言語が変わったら再ハイライト
+    if (changedProperties.has('language')) {
+      // rawHtmlモード以外の場合のみ再ハイライト
+      if (!this.rawHtml) {
+        this._highlightCode();
+      }
+    }
+  }
+
+  private async _extractCode() {
+    // textContentの取得タイミングによって空になることがあるため、少し待つか
+    // slotchangeイベントを監視するのがベターだが、簡易的に
+    this._code = this.textContent?.trim() || '';
+
+    if (this.rawHtml) {
+      // HTMLモード: スロットの中身をHTMLとしてそのまま使う
+      // light DOMのHTML構造を取得
+      this._highlightedCode = this.innerHTML;
+      this._isLoading = false;
+      return;
+    }
+    
+    // ハイライト実行
+    await this._highlightCode();
+  }
+
+  private async _highlightCode() {
+    if (!this._code) return;
+
+    this._isLoading = true;
+    try {
+      const highlighter = await getHighlighter();
+      
+      const transformers = [
+        transformerNotationDiff(),
+        transformerDiffAria(),
+      ];
+
+      // highlightLinesが指定されている場合は追加
+      if (this.highlightLines) {
+        transformers.push(createTransformerHighlightLines(this.highlightLines));
+      }
+
+      // Dual Theme: CSS変数を使用してLight/Darkを切り替え
+      const html = highlighter.codeToHtml(this._code, {
+        lang: this.language,
+        themes: {
+          light: 'github-light',
+          dark: 'github-dark'
+        },
+        defaultColor: false, // 背景色はCSSで制御
+        transformers,
+      });
+
+      this._highlightedCode = html;
+      this._hasDiff = html.includes('class="line diff'); // 簡易判定
+    } catch (e) {
+      console.error('Shiki highlight error:', e);
+      // フォールバック: 生コードを表示
+      this._highlightedCode = `<pre><code>${this._escapeHtml(this._code)}</code></pre>`;
+    } finally {
+      this._isLoading = false;
+    }
+  }
+
+  private _escapeHtml(text: string) {
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  private _getLineNumbers() {
+    const lines = this._code.split('\n');
+    return lines.map((_, index) => index + 1);
+  }
+
+  private async _handleCopy() {
+    try {
+      await navigator.clipboard.writeText(this._code);
+      this._copied = true;
+      this._iconState = 'check';
+      
+      this.dispatchEvent(new CustomEvent('code-copied', {
+        bubbles: true,
+        composed: true,
+        detail: { code: this._code },
+      }));
+
+      // アクセシビリティ: スクリーンリーダー通知
+      this._copyFeedback = 'コードをコピーしました';
+      setTimeout(() => {
+        this._copyFeedback = '';
+      }, 100);
+
+      setTimeout(() => {
+        this._copied = false;
+        // フェードアウト完了後にアイコンを戻す
+        setTimeout(() => {
+          this._iconState = 'copy';
+        }, COPY_ICON_DELAY);
+      }, COPY_FEEDBACK_DURATION);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  }
+
+  override render() {
+    const lineNumbers = this._getLineNumbers();
+    const isCollapsed = this.collapsible && !this._isExpanded;
+
+    return html`
+      <div class="code-block">
+        <div class="header">
+          <div class="header-left">
+            <span class="language">${this.language}</span>
+            ${this.filename ? html`<span class="filename">${this.filename}</span>` : nothing}
+          </div>
+          
+          <div class="header-actions">
+            <button 
+              class="action-button ${this._wordWrap ? 'active' : ''}"
+              @click=${() => this._wordWrap = !this._wordWrap}
+              aria-label=${this._wordWrap ? '折り返しを無効にする' : '折り返しを有効にする'}
+              aria-pressed="${this._wordWrap}"
+            >
+              <iconify-icon icon="lucide:wrap-text"></iconify-icon>
+            </button>
+
+            <button 
+              class="action-button ${this._copied ? 'copied' : ''}"
+              @click=${this._handleCopy}
+              aria-label="コードをコピー"
+            >
+              ${this._iconState === 'check' 
+                ? html`<iconify-icon icon="lucide:check"></iconify-icon>` 
+                : html`<iconify-icon icon="lucide:clipboard"></iconify-icon>`
+              }
+            </button>
+          </div>
+        </div>
+
+        <div 
+          class="code-wrapper ${isCollapsed ? 'collapsed' : ''}"
+          style=${isCollapsed ? `max-height: ${this.maxHeight}px;` : ''}
+        >
+          ${this.showLineNumbers ? html`
+            <div class="line-numbers">
+              ${lineNumbers.map(num => html`<span class="line-number">${num}</span>`)}
+            </div>
+          ` : nothing}
+
+          <div class="code-content ${this.showLineNumbers ? 'with-line-numbers' : ''} ${this._hasDiff ? 'has-diff' : ''} ${this._wordWrap ? 'word-wrap' : ''}">
+            ${this._isLoading 
+              ? html`<div class="loading">Loading...</div>` 
+              : html`${unsafeHTML(this._highlightedCode)}`
+            }
+          </div>
+
+          ${isCollapsed ? html`
+            <div class="collapse-overlay">
+              <button 
+                class="collapse-button" 
+                @click=${() => this._isExpanded = true}
+                aria-expanded="false"
+              >
+                Show more
+                <iconify-icon icon="lucide:chevron-down"></iconify-icon>
+              </button>
+            </div>
+          ` : nothing}
+        </div>
+        
+        ${this.collapsible && this._isExpanded ? html`
+          <div style="display: flex; justify-content: center; padding-bottom: 0.5rem; background-color: var(--code-bg);">
+            <button 
+              class="collapse-button" 
+              @click=${() => this._isExpanded = false}
+              aria-expanded="true"
+            >
+              Show less
+              <iconify-icon icon="lucide:chevron-up"></iconify-icon>
+            </button>
+          </div>
+        ` : nothing}
+      </div>
+
+      <!-- アクセシビリティ: コピー通知 -->
+      <div class="copy-feedback" aria-live="polite" aria-atomic="true">
+        ${this._copyFeedback}
+      </div>
+
+      <slot style="display: none;" @slotchange=${this._extractCode}></slot>
+    `;
+  }
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'ui-code-block': UiCodeBlock;
+  }
+}
