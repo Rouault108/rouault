@@ -41,8 +41,9 @@ export class UiTabs extends LitElement {
       transform: translateX(var(--indicator-left, 0px));
       width: var(--indicator-width, 0px);
       transition:
-        transform var(--motion-duration, 200ms) var(--motion-easing, ease-out),
-        width var(--motion-duration, 200ms) var(--motion-easing, ease-out);
+        transform var(--motion-duration, 200ms) var(--motion-easing, cubic-bezier(0.33, 1, 0.68, 1)),
+        width var(--motion-duration, 200ms) var(--motion-easing, cubic-bezier(0.33, 1, 0.68, 1));
+      pointer-events: none;
     }
 
     /* Segmented variant */
@@ -67,9 +68,10 @@ export class UiTabs extends LitElement {
       transform: translateX(var(--indicator-left, 0px));
       width: var(--indicator-width, 0px);
       transition:
-        transform var(--motion-duration, 200ms) var(--motion-easing, ease-out),
-        width var(--motion-duration, 200ms) var(--motion-easing, ease-out);
+        transform var(--motion-duration, 200ms) var(--motion-easing, cubic-bezier(0.33, 1, 0.68, 1)),
+        width var(--motion-duration, 200ms) var(--motion-easing, cubic-bezier(0.33, 1, 0.68, 1));
       z-index: 0;
+      pointer-events: none;
     }
 
     /* Dark mode */
@@ -183,7 +185,7 @@ export class UiTabs extends LitElement {
     this._resizeObserver = new ResizeObserver(() => {
       // ウィンドウサイズ変更時にインジケーターを更新
       if (this._selectedTabId) {
-        this._updateActiveIndicator();
+        requestAnimationFrame(() => this._updateActiveIndicator());
       }
     });
     this._resizeObserver.observe(this);
@@ -257,14 +259,16 @@ export class UiTabs extends LitElement {
       return;
     }
 
-    const tablistRect = this.shadowRoot?.querySelector('[role="tablist"]')?.getBoundingClientRect();
-    const tabRect = selectedTab.getBoundingClientRect();
+    const tablist = this.shadowRoot?.querySelector('[role="tablist"]');
+    if (!tablist) return;
 
-    if (!tablistRect) return;
+    const tablistRect = tablist.getBoundingClientRect();
+    const tabRect = selectedTab.getBoundingClientRect();
+    const scrollLeft = tablist.scrollLeft;
 
     if (this.variant === 'underline') {
-      // Underline型: タブリストの左端からの相対位置
-      const left = tabRect.left - tablistRect.left;
+      // Underline型: タブリストの左端からの相対位置 + スクロール量
+      const left = tabRect.left - tablistRect.left + scrollLeft;
       const width = tabRect.width;
 
       this.style.setProperty('--indicator-left', `${left}px`);
@@ -272,9 +276,9 @@ export class UiTabs extends LitElement {
     } else if (this.variant === 'segmented') {
       // Segmented型: パディング分を考慮
       const padding = parseFloat(getComputedStyle(this).getPropertyValue('--space-1') || '0.25rem');
-      const paddingPx = padding * 16; // remをpxに変換（仮定: 1rem = 16px）
+      const paddingPx = padding * 16;
       
-      const left = tabRect.left - tablistRect.left - paddingPx;
+      const left = tabRect.left - tablistRect.left + scrollLeft - paddingPx;
       const width = tabRect.width;
 
       this.style.setProperty('--indicator-left', `${left}px`);
