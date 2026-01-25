@@ -17,6 +17,19 @@ import langJson from 'shiki/langs/json.mjs';
 import langMarkdown from 'shiki/langs/markdown.mjs';
 import langBash from 'shiki/langs/bash.mjs';
 import langYaml from 'shiki/langs/yaml.mjs';
+import langRust from 'shiki/langs/rust.mjs';
+import langPython from 'shiki/langs/python.mjs';
+import langGo from 'shiki/langs/go.mjs';
+import langJava from 'shiki/langs/java.mjs';
+import langCpp from 'shiki/langs/cpp.mjs';
+import langC from 'shiki/langs/c.mjs';
+import lnagCsharp from 'shiki/langs/csharp.mjs';
+import langPhp from 'shiki/langs/php.mjs';
+import langRuby from 'shiki/langs/ruby.mjs';
+import langSwift from 'shiki/langs/swift.mjs';
+import langKotlin from 'shiki/langs/kotlin.mjs';
+import langR from 'shiki/langs/r.mjs';
+import langScala from 'shiki/langs/scala.mjs';
 
 // Themes
 import themeGithubLight from 'shiki/themes/github-light.mjs';
@@ -43,7 +56,20 @@ async function getHighlighter() {
         langJson,
         langMarkdown,
         langBash,
-        langYaml
+        langYaml,
+        langRust,
+        langPython,
+        langGo,
+        langJava,
+        langCpp,
+        langC,
+        lnagCsharp,
+        langPhp,
+        langRuby,
+        langSwift,
+        langKotlin,
+        langR,
+        langScala,
       ],
       engine: createOnigurumaEngine(getWasm),
     });
