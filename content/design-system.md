@@ -2,7 +2,7 @@
 
 ## 概要
 
-RouaultのデザインシステムはVitestやNext.jsドキュメントに触発された、モダンでワクワクするようなユーザー体験を提供することを目指しています。アクセシビリティを最優先としながら、洗練されたアニメーションと直感的なインタラクションを通じて、コンテンツへの没入感を高めます。
+RouaultのデザインシステムはLinearやRaycastのドキュメントに触発された、静謐で集中できるデザインと、プロフェッショナルなユーザー体験を提供することを目指しています。アクセシビリティを最優先としながら、洗練されたアニメーションと直感的なインタラクションを通じて、コンテンツへの没入感を高めます。
 
 ### デザイン原則
 
@@ -31,6 +31,20 @@ RouaultのデザインシステムはVitestやNext.jsドキュメントに触発
 
 - **フォーカスリング**: `:focus-visible` には必ず `outline-offset: 2px` を設定し、コンテンツとの分離を明確にする。
 - **コントラスト**: テキストと背景のコントラスト比は 4.5:1 以上（大きな文字は 3:1 以上）を確保する。
+- **ハイコントラストモード対応**: `prefers-contrast: more` を尊重し、ボーダーやフォーカスリングを強調表示する。
+
+```css
+@media (prefers-contrast: more) {
+  :root {
+    --color-border: #888888;
+    --color-border-hover: #666666;
+  }
+
+  :focus-visible {
+    outline-width: 3px;
+  }
+}
+```
 
 
 ---
@@ -85,20 +99,27 @@ RouaultのデザインシステムはVitestやNext.jsドキュメントに触発
 
 ### セマンティックカラー（状態色）
 
-| トークン（役割） | 色相 (Hue) | 用途 |
-|------------------|------------|------|
-| `--color-success` | 緑 (142) | 完了、成功、有効 |
-| `--color-warning` | 黄 (48) | 注意、非推奨、処理中 |
-| `--color-error` | 赤 (0) | エラー、削除、危険 |
-| `--color-info` | 青 (217) | 情報通知、ヒント |
+| トークン | ライトモード | ダークモード | 用途 |
+|----------|--------------|--------------|------|
+| `--color-success` | `#16a34a` | `#22c55e` | 完了、成功、有効 |
+| `--color-success-bg` | `#dcfce7` | `#14532d` | 成功メッセージ背景 |
+| `--color-warning` | `#ca8a04` | `#facc15` | 注意、非推奨、処理中 |
+| `--color-warning-bg` | `#fef9c3` | `#422006` | 警告メッセージ背景 |
+| `--color-error` | `#dc2626` | `#ef4444` | エラー、削除、危険 |
+| `--color-error-bg` | `#fee2e2` | `#450a0a` | エラーメッセージ背景 |
+| `--color-info` | `#2563eb` | `#60a5fa` | 情報通知、ヒント |
+| `--color-info-bg` | `#dbeafe` | `#172554` | 情報メッセージ背景 |
 
 ### リンクスタイル
 
 | 状態 | スタイル |
 |------|----------|
-| **Default** | `color: var(--color-primary); text-decoration: none;` |
-| **Hover** | `color: var(--color-primary-hover); text-decoration: underline;` |
+| **Default** | `color: var(--color-primary); text-decoration: underline; text-underline-offset: 2px;` |
+| **Hover** | `color: var(--color-primary-hover); text-decoration-thickness: 2px;` |
 | **Focus** | `outline: 2px solid var(--color-primary); outline-offset: 2px;` |
+| **Visited** | `color: var(--color-accent);` |
+
+> **アクセシビリティ注記:** リンクは常に下線を表示します。これにより、色覚特性に依存しないリンクの識別が可能になります（WCAG 1.4.1）。`text-underline-offset: 2px` で読みやすさを確保。
 
 ### グラデーション
 
@@ -106,12 +127,14 @@ RouaultのデザインシステムはVitestやNext.jsドキュメントに触発
 /* ヒーローセクション用 */
 --gradient-hero: linear-gradient(135deg, var(--color-primary), var(--color-accent));
 
-/* テキストグラデーション */
---gradient-text: linear-gradient(90deg, #3b82f6, #8b5cf6);
+/* テキストグラデーション（ライトモード） */
+--gradient-text: linear-gradient(90deg, var(--color-primary), var(--color-accent));
 
-/* 背景グロー効果 */
---glow-primary: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.15), transparent 70%);
+/* 背景グロー効果（控えめに設定 — 静謐なデザインのため） */
+--glow-primary: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.08), transparent 70%);
 ```
+
+> **設計意図:** グロー効果の不透明度は8%に抑え、「静謐で集中できるデザイン」を維持。15%以上は視覚的ノイズとなるため非推奨。
 
 ### ダークモード表現（Elevation Tones）
 
@@ -129,12 +152,17 @@ RouaultのデザインシステムはVitestやNext.jsドキュメントに触発
 コンポーネントの色は純色ではなく、HSL値 (`--h`, `--s`, `--l`) をベースに計算します。これにより、色相を変更するだけで全てのステート（Hover, Activeなど）の濃淡バリエーションが自動生成され、統一感のあるデザインが可能になります。
 
 ```css
-/* 定義例 */
---h: 220; --s: 90%; --l: 55%;
+/* 定義例: --h は単位なしの数値（degを付けない） */
+--h: 220;
+--s: 90%;
+--l: 55%;
 
---bg-default: hsl(var(--h), var(--s), var(--l));
---bg-hover:   hsl(var(--h), var(--s), calc(var(--l) - 5%)); /* 自動計算 */
+--bg-default: hsl(var(--h) var(--s) var(--l));
+--bg-hover:   hsl(var(--h) var(--s) calc(var(--l) - 5%)); /* 自動計算 */
+--bg-active:  hsl(var(--h) var(--s) calc(var(--l) - 10%));
 ```
+
+> **注意:** CSSの`hsl()`関数ではカンマなしのスペース区切り構文を推奨。`--h`は単位なしの数値とし、`hsl()`内で自動的にdegとして解釈されます。
 
 ---
 
@@ -164,6 +192,39 @@ RouaultのデザインシステムはVitestやNext.jsドキュメントに触発
   }
 }
 ```
+
+---
+
+### 本文幅（Prose Width）
+
+記事本文や長文コンテンツの可読性を確保するため、テキストの最大幅を制限します。
+
+```css
+.prose {
+  max-width: 65ch; /* 最適な可読性のための幅 */
+  margin-inline: auto;
+}
+
+/* 画像やコードブロックは幅制限を解除 */
+.prose img,
+.prose pre,
+.prose table {
+  max-width: none;
+  width: calc(100% + var(--space-8));
+  margin-inline: calc(-1 * var(--space-4));
+}
+
+@media (min-width: 768px) {
+  .prose img,
+  .prose pre,
+  .prose table {
+    width: calc(100% + var(--space-16));
+    margin-inline: calc(-1 * var(--space-8));
+  }
+}
+```
+
+> **設計意図:** `65ch`（約65文字幅）は可読性研究に基づく最適な行長。「コンテンツへの没入感」を高める重要な要素。画像やコードブロックは親コンテナまで拡張し、視覚的な変化を提供。
 
 ---
 
@@ -242,7 +303,7 @@ RouaultのデザインシステムはVitestやNext.jsドキュメントに触発
 | `--text-2xl` | 1.5rem (24px) | 2rem | セクション見出し |
 | `--text-3xl` | 1.875rem (30px) | 2.25rem | ページ見出し |
 | `--text-4xl` | 2.25rem (36px) | 2.5rem | ヒーロー見出し |
-| `--text-5xl` | 3rem (48px) | 1.2 | 特大見出し |
+| `--text-5xl` | 3rem (48px) | 3.6rem | 特大見出し |
 
 ### 見出しスケール (Heading Scale)
 
@@ -301,15 +362,28 @@ RouaultのデザインシステムはVitestやNext.jsドキュメントに触発
 
 ## シャドウ
 
+### ライトモード
+
 | トークン | 値 | 用途 |
 |----------|-----|------|
 | `--shadow-sm` | `0 1px 2px rgba(0, 0, 0, 0.05)` | 微細な浮遊感 |
 | `--shadow-md` | `0 4px 6px -1px rgba(0, 0, 0, 0.1)` | カード、ボタン |
 | `--shadow-lg` | `0 10px 15px -3px rgba(0, 0, 0, 0.1)` | ドロップダウン |
 | `--shadow-xl` | `0 20px 25px -5px rgba(0, 0, 0, 0.1)` | モーダル |
-| `--shadow-glow` | `0 0 40px rgba(59, 130, 246, 0.3)` | グロー効果 |
+| `--shadow-glow` | `0 0 40px rgba(59, 130, 246, 0.15)` | グロー効果（控えめ） |
 
-**ダークモードでの注意**: ダークモードでは `rgba(0,0,0,...)` ベースの影は視認しにくいため、**Elevation Tones（背景色の明度差）** で高さを表現し、シャドウは補助的に使用するか省略します。
+### ダークモード
+
+ダークモードでは影が見えにくいため、主に **Elevation Tones（背景色の明度差）** で高さを表現します。シャドウは補助的に使用。
+
+| トークン | 値 | 用途 |
+|----------|-----|------|
+| `--shadow-dark-sm` | `0 1px 2px rgba(0, 0, 0, 0.3)` | 微細な浮遊感 |
+| `--shadow-dark-md` | `0 4px 8px rgba(0, 0, 0, 0.4)` | カード、ボタン |
+| `--shadow-dark-lg` | `0 8px 16px rgba(0, 0, 0, 0.5)` | ドロップダウン |
+| `--shadow-dark-glow` | `0 0 40px rgba(96, 165, 250, 0.12)` | グロー効果（ダーク調整済み） |
+
+> **実装指針:** JavaScriptまたはCSSの`prefers-color-scheme`でモードを検出し、適切なシャドウ変数を適用すること。ダークモードではシャドウよりも`--bg-surface-*`の使用を優先。
 
 ---
 
@@ -333,13 +407,15 @@ RouaultのデザインシステムはVitestやNext.jsドキュメントに触発
 
 ### Easing（イージング）
 
-| トークン | 値 | 用途 |
-|----------|-----|------|
-| `--ease-out` | `cubic-bezier(0.33, 1, 0.68, 1)` | 要素の出現 |
-| `--ease-in` | `cubic-bezier(0.32, 0, 0.67, 0)` | 要素の退場 |
-| `--ease-in-out` | `cubic-bezier(0.65, 0, 0.35, 1)` | 状態変化 |
-| `--ease-bounce` | `cubic-bezier(0.34, 1.56, 0.64, 1)` | 楽しいインタラクション |
-| `--ease-spring` | `cubic-bezier(0.175, 0.885, 0.32, 1.275)` | 弾むような動き |
+| トークン | 値 | 用途 | 制限 |
+|----------|-----|------|------|
+| `--ease-out` | `cubic-bezier(0.33, 1, 0.68, 1)` | 要素の出現 | — |
+| `--ease-in` | `cubic-bezier(0.32, 0, 0.67, 1)` | 要素の退場 | — |
+| `--ease-in-out` | `cubic-bezier(0.65, 0, 0.35, 1)` | 状態変化 | — |
+| `--ease-bounce` | `cubic-bezier(0.34, 1.56, 0.64, 1)` | 弾むインタラクション | **ボタン・トグル限定** |
+| `--ease-spring` | `cubic-bezier(0.175, 0.885, 0.32, 1.275)` | 弾むような動き | **ボタン・トグル限定** |
+
+> **重要:** `--ease-bounce` と `--ease-spring` は「静謐で集中できるデザイン」の原則に基づき、使用を厳しく制限します。アクションボタンやトグルスイッチなど、ユーザーが能動的に操作する要素のみに使用。カード、リスト、ナビゲーション要素には使用禁止。
 
 ### prefers-reduced-motion 対応
 
@@ -354,7 +430,7 @@ RouaultのデザインシステムはVitestやNext.jsドキュメントに触発
 @media (prefers-reduced-motion: reduce) {
   :root {
     --motion-duration: 0ms;
-    --motion-easing: linear;
+    --motion-easing: linear; /* 注: 下記参照 */
   }
 
   *,
@@ -366,6 +442,8 @@ RouaultのデザインシステムはVitestやNext.jsドキュメントに触発
   }
 }
 ```
+
+> **linearを使用する理由:** `prefers-reduced-motion: reduce` 時はアニメーションが実質的になくなる（`duration: 0.01ms`）ため、イージングは機能しません。`linear` を指定することで、CSS計算を最小化しパフォーマンスを最適化します。これはRaycastの「linearは無限ループ以外で避ける」ガイドラインと矛盾しません（モーション自体が無効なため）。
 
 ### アニメーション例
 
@@ -417,10 +495,14 @@ RouaultのデザインシステムはVitestやNext.jsドキュメントに触発
 
 #### グラデーション背景アニメーション
 
-> **使用方針:** ヒーローセクション専用。高密度ドキュメントサイトでは控えめに使用するか、完全に省略することも検討。
-> Linear/Raycast のような「静かで集中できる」UI では、無限ループアニメーションは控えめに。
+> **⚠️ 非推奨:** Linear/Raycast のような「静かで集中できる」UI では、**無限ループアニメーションは原則として使用しない**ことを推奨します。
+> どうしても必要な場合は、以下の制限を遵守:
+> - ヒーローセクションのみに限定
+> - 最低15秒以上の長いサイクル
+> - `prefers-reduced-motion: reduce` で完全に無効化
 
 ```css
+/* 非推奨: 使用する場合のみ参考 */
 @keyframes gradient-shift {
   0%, 100% {
     background-position: 0% 50%;
@@ -443,6 +525,8 @@ RouaultのデザインシステムはVitestやNext.jsドキュメントに触発
   }
 }
 ```
+
+> **推奨代替案:** 静的なグラデーション背景を使用し、`:hover` や `scroll` トリガーで微細な変化を加える。
 
 #### ローディング（Skeleton）
 
@@ -633,13 +717,23 @@ RouaultのデザインシステムはVitestやNext.jsドキュメントに触発
 | **Hover** | `border-color: var(--color-border-hover);` |
 | **Focus** | `border-color: var(--color-primary); outline: 2px solid var(--color-primary); outline-offset: 2px;` |
 | **Error** | `border-color: var(--color-error); outline-color: var(--color-error);` |
-| **Disabled** | `background: var(--color-background-subtle); opacity: 0.6; cursor: not-allowed;` |
+| **Disabled** | `background: var(--color-disabled-bg); color: var(--color-disabled-text); cursor: not-allowed;` |
+
+**Disabled状態の色定義:**
+
+| トークン | ライトモード | ダークモード | 説明 |
+|----------|--------------|--------------|------|
+| `--color-disabled-bg` | `#f3f4f6` | `#27272a` | Disabled背景 |
+| `--color-disabled-text` | `#9ca3af` | `#52525b` | Disabledテキスト |
+| `--color-disabled-border` | `#d1d5db` | `#3f3f46` | Disabledボーダー |
+
+> **コントラスト注記:** Disabled状態でもコントラスト比 3:1 以上を確保。`opacity` による一律の減少ではなく、明示的な色定義でアクセシビリティを保証。
 
 ```css
-/* プレースホルダー */
+/* プレースホルダー: コントラスト保証済みの色を使用 */
 ::placeholder {
   color: var(--color-foreground-muted);
-  opacity: 0.7;
+  /* opacityは使用しない — コントラスト比が保証された色を直接指定 */
 }
 ```
 
@@ -719,13 +813,15 @@ RouaultのデザインシステムはVitestやNext.jsドキュメントに触発
 
 ### ダイアログ / モーダル
 
-| 項目 | 仕様 |
-|------|------|
-| **オーバーレイ** | `rgba(0, 0, 0, 0.5)` |
-| **背景** | `--bg-surface-3` (ダーク) / `--color-background` (ライト) |
-| **角丸** | `--radius-xl` (12px) |
-| **幅** | 480px (default), `100% - 32px` (mobile) |
-| **Z-index** | `--z-modal` (400) |
+| 項目 | ライトモード | ダークモード |
+|------|--------------|------------|
+| **オーバーレイ** | `rgba(0, 0, 0, 0.5)` | `rgba(0, 0, 0, 0.7)` |
+| **背景** | `--color-background` | `--bg-surface-3` |
+| **角丸** | `--radius-xl` (12px) | `--radius-xl` (12px) |
+| **幅** | 480px (default), `100% - 32px` (mobile) | 同左 |
+| **Z-index** | `--z-modal` (400) | `--z-modal` (400) |
+
+> **ダークモード注記:** ダークモードではオーバーレイの不透明度を70%に引き上げ、背景との区別を明確に。`--bg-surface-3` の明るめの背景色を使用し、モーダルの視認性を確保。
 
 ### 空状態 (Empty State)
 
@@ -821,15 +917,105 @@ SPAライクな滑らかな画面遷移を実現するためのガイドライ�
 
 ---
 
+## Progressive Enhancement（段階的機能強化）
+
+デザイン原則4に基づき、基本機能は常に動作し、拡張機能は対応ブラウザでのみ適用されます。JavaScript無効時や古いブラウザでもコンテンツは閲覧可能です。
+
+### View Transitions のフォールバック
+
+```javascript
+// View Transitions API の検出と段階的適用
+if (document.startViewTransition) {
+  document.startViewTransition(() => updateDOM());
+} else {
+  // 非対応ブラウザでは即座にDOMを更新
+  updateDOM();
+}
+```
+
+### CSS機能検出 (@supports)
+
+```css
+/* backdrop-filter のフォールバック */
+.glass-panel {
+  background: var(--color-background); /* フォールバック */
+}
+
+@supports (backdrop-filter: blur(12px)) {
+  .glass-panel {
+    background: rgba(var(--bg-rgb), 0.8);
+    backdrop-filter: blur(12px);
+  }
+}
+
+/* Subgrid のフォールバック */
+.grid-child {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* フォールバック */
+}
+
+@supports (grid-template-columns: subgrid) {
+  .grid-child {
+    grid-template-columns: subgrid;
+  }
+}
+```
+
+### JavaScript無効時の対応
+
+- **コンテンツ**: サーバーサイドレンダリング（SSR/SSG）により、JavaScript無効でもコンテンツは表示される。
+- **ナビゲーション**: 標準の `<a>` リンクを使用し、JS無効時も遷移可能。
+- **インタラクション**: 検索やフィルタ機能はJSを必要とするが、コンテンツ一覧は静的に生成されアクセス可能。
+
+```html
+<!-- noscript によるフォールバックメッセージ -->
+<noscript>
+  <style>
+    .js-only { display: none !important; }
+  </style>
+  <p class="noscript-notice">検索・フィルタ機能にはJavaScriptが必要です。</p>
+</noscript>
+```
+
+### ブラウザ互換性戦略
+
+| 機能 | 対応ブラウザ | フォールバック |
+|------|-------------|---------------|
+| View Transitions | Chrome 111+, Edge 111+ | 即座のDOM更新、アニメーションなし |
+| `backdrop-filter` | 主要ブラウザ | 不透明な背景色 |
+| CSS `:has()` | 主要ブラウザ | JavaScript による代替 |
+| `color-mix()` | 主要ブラウザ | 事前計算された色値 |
+
+---
+
 ## 実装チェックリスト
 
+### Accessibility First
+- [ ] コントラスト比 4.5:1 以上を確保
+- [ ] フォーカス状態の実装（`:focus-visible`）
+- [ ] スクリーンリーダー対応（`.sr-only`、ARIA属性）
+- [ ] `prefers-contrast: more` 対応
+
+### Design Tokens & Theming
 - [ ] CSS Custom Properties（トークン）を定義
 - [ ] ダークモード対応（`prefers-color-scheme`）
 - [ ] Elevation Tones（ダークモード）の実装
-- [ ] モーション設定（`prefers-reduced-motion`対応済み）
-- [ ] フォーカス状態の実装（`:focus-visible`）
+
+### Delightful Motion
+- [ ] トランジション/アニメーションの実装
+- [ ] `prefers-reduced-motion` 対応
+- [ ] View Transitions によるページ遷移アニメーション
+
+### Layout & Structure
 - [ ] グリッドシステムの適用
 - [ ] ネストされた角丸の法則の遵守
 - [ ] レスポンシブレイアウト
+
+### Progressive Enhancement
+- [ ] JavaScript無効時のフォールバック確認
+- [ ] `@supports` による機能検出の実装
+- [ ] View Transitions の非対応ブラウザ対応
+- [ ] `backdrop-filter` のフォールバック
+
+### Integration
 - [ ] Lion UI コンポーネントへのスタイル適用
-- [ ] View Transitions によるページ遷移アニメーション
