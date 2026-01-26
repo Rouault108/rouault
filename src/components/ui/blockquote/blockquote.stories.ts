@@ -253,3 +253,51 @@ export const BDD_SemanticHTML: Story = {
     await expect(blockquoteElement?.getAttribute('cite')).toBe('https://example.com');
   },
 };
+
+/**
+ * BDD: 空のcite属性の処理テスト
+ * ifDefined が正しく機能し、空文字列の場合は属性自体が出力されないことを確認
+ */
+export const BDD_EmptyCiteHandling: Story = {
+  tags: ['test'],
+  render: () => html`
+    <ui-blockquote data-testid="blockquote-empty-cite" cite="">
+      <p>Quote with empty cite</p>
+    </ui-blockquote>
+  `,
+  async play({ canvasElement }) {
+    const canvas = within(canvasElement);
+    const blockquote = canvas.getByTestId('blockquote-empty-cite') as UiBlockquote;
+
+    await blockquote.updateComplete;
+
+    const blockquoteElement = blockquote.shadowRoot?.querySelector('blockquote');
+    // cite属性が存在しないことを確認 (nullまたは属性なし)
+    await expect(blockquoteElement?.hasAttribute('cite')).toBe(false);
+  },
+};
+
+/**
+ * BDD: リンクフォーカスアクセシビリティテスト
+ * リンクが存在する場合、キーボードでフォーカス可能であることを確認
+ */
+export const BDD_LinkFocus: Story = {
+  tags: ['test'],
+  render: () => html`
+    <ui-blockquote data-testid="blockquote-link" cite="https://example.com" author="Linked Author">
+      <p>Link focus test</p>
+    </ui-blockquote>
+  `,
+  async play({ canvasElement }) {
+    const canvas = within(canvasElement);
+    const blockquote = canvas.getByTestId('blockquote-link') as UiBlockquote;
+    await blockquote.updateComplete;
+
+    const footerLink = blockquote.shadowRoot?.querySelector('footer a') as HTMLElement;
+    await expect(footerLink).toBeTruthy();
+    
+    // リンクがフォーカス可能かチェック
+    footerLink.focus();
+    await expect(blockquote.shadowRoot?.activeElement).toBe(footerLink);
+  },
+};

@@ -1,148 +1,185 @@
 import { LitElement, css, html } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 
 /**
- * ui-blockquote - 引用ブロックコンポーネント
+ * ui-blockquote - セマンティックな引用ブロック
  * 
- * Markdownやコンテンツ内の引用をLinear/Raycast風にスタイリングします
+ * Markdownやコンテンツ内の引用をDesign Systemに基づいてスタイリングします。
+ * アクセシビリティを考慮し、セマンティックなマークアップと適切なコントラスト比、
+ * およびReduced Motionへの対応を提供します。
  * 
  * @element ui-blockquote
  * 
- * @slot - 引用内容
+ * @slot - 引用内容（<p>要素を推奨）
+ * 
+ * @property variant - スタイルバリアント ('default' | 'highlighted' | 'bordered')
+ * @property cite - 引用元URL。指定しない場合は属性が出力されません。
+ * @property author - 著者名
+ * @property source - 出典名
+ * 
+ * @csspart blockquote - 引用ブロック本体
+ * @csspart footer - 著者情報フッター
+ * @csspart author - 著者名
+ * @csspart source - 出典元
+ * 
+ * @cssprop --blockquote-bg - 背景色（HSL計算ベース）
+ * @cssprop --blockquote-border-color - ボーダー色
+ * @cssprop --blockquote-text-color - テキスト色
+ * @cssprop --blockquote-footer-color - フッターテキスト色
  */
 @customElement('ui-blockquote')
 export class UiBlockquote extends LitElement {
   static override styles = css`
     :host {
       display: block;
-      margin: 1.5rem 0;
+      margin: 0;
+
+      /* -------------------------------------------------------------
+       * HSL Color Workflow & Design Tokens
+       * ------------------------------------------------------------- */
+      /* デフォルトはPrimaryの色相を使用し、落ち着いたトーンに調整 */
+      --blockquote-h: var(--color-primary-hue, 220);
+      --blockquote-s: 30%; /* 落ち着いた彩度 */
+      --blockquote-l: 96%; /* Light mode background lightness */
+      
+      --blockquote-bg: hsl(var(--blockquote-h) var(--blockquote-s) var(--blockquote-l));
+      --blockquote-border-color: var(--color-primary, #3b82f6);
+      --blockquote-text-color: var(--color-foreground, #111827);
+      --blockquote-footer-color: var(--color-foreground-muted, #6b7280);
     }
 
     blockquote {
       margin: 0;
-      padding: 1rem 1.5rem;
-      border-left: 3px solid var(--blockquote-border-color, var(--color-primary, #3b82f6));
-      background-color: var(--blockquote-bg, rgba(0, 0, 0, 0.02));
-      font-size: 1rem;
-      line-height: 1.7;
-      color: var(--color-foreground, #0a0a0a);
+      padding: var(--space-4) var(--space-6);
+      border-left: 3px solid var(--blockquote-border-color);
+      background-color: var(--blockquote-bg);
+      font-size: var(--text-base, 0.875rem);
+      line-height: var(--line-height-relaxed, 1.6);
+      color: var(--blockquote-text-color);
+      border-radius: var(--radius-sm);
+      transition: 
+        background-color var(--motion-duration, 200ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)),
+        border-color var(--motion-duration, 200ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)),
+        color var(--motion-duration, 200ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
     }
 
-    /* バリアント: デフォルト */
+    /* -------------------------------------------------------------
+     * Variants
+     * ------------------------------------------------------------- */
+
+    /* Default (Simple) */
     :host([variant="default"]) blockquote,
     :host(:not([variant])) blockquote {
       background-color: transparent;
     }
 
-    /* バリアント: ハイライト */
-    :host([variant="highlighted"]) blockquote {
-      background-color: var(--blockquote-bg, rgba(0, 0, 0, 0.03));
-    }
-
-    /* バリアント: ボーダー */
+    /* Bordered */
     :host([variant="bordered"]) blockquote {
       border: 1px solid var(--color-border, #e5e7eb);
-      border-left: 3px solid var(--blockquote-border-color, var(--color-primary, #3b82f6));
-      background-color: var(--blockquote-bg, rgba(0, 0, 0, 0.01));
+      border-left: 3px solid var(--blockquote-border-color);
+      
+      /* Lighter background for bordered variant */
+      --blockquote-l: 98%;
+      background-color: hsl(var(--blockquote-h) var(--blockquote-s) var(--blockquote-l));
     }
 
-    /* スロットコンテンツのスタイリング */
+    /* -------------------------------------------------------------
+     * Dark Mode Support
+     * ------------------------------------------------------------- */
+    
+    @media (prefers-color-scheme: dark) {
+      :host {
+        --blockquote-l: 12%; /* Dark mode background lightness */
+        --blockquote-text-color: var(--color-foreground, #ededed);
+        --blockquote-footer-color: var(--color-foreground-muted, #a1a1aa);
+      }
+      
+      :host([variant="bordered"]) blockquote {
+        --blockquote-l: 10%;
+        border-color: var(--color-border, #27272a);
+      }
+    }
+
+    /* Explicit Dark Theme Overrides (data-theme="dark") */
+    :host([data-theme="dark"]) {
+      --blockquote-l: 12%;
+      --blockquote-text-color: var(--color-foreground, #ededed);
+      --blockquote-footer-color: var(--color-foreground-muted, #a1a1aa);
+      --blockquote-bg: hsl(var(--blockquote-h) var(--blockquote-s) var(--blockquote-l));
+    }
+    
+    :host([data-theme="dark"][variant="bordered"]) blockquote {
+      --blockquote-l: 10%;
+      border-color: var(--color-border, #27272a);
+      background-color: hsl(var(--blockquote-h) var(--blockquote-s) var(--blockquote-l));
+    }
+
+    /* -------------------------------------------------------------
+     * Content Styling
+     * ------------------------------------------------------------- */
+     
     ::slotted(p) {
       margin: 0;
-      margin-bottom: 0.75rem;
+      margin-bottom: var(--space-3, 0.75rem);
     }
 
     ::slotted(p:last-child) {
       margin-bottom: 0;
     }
 
-    /* フッター（著者情報） */
+    /* -------------------------------------------------------------
+     * Footer (Author Info)
+     * ------------------------------------------------------------- */
+    
     footer {
-      margin-top: 1rem;
-      font-size: 0.875rem;
-      color: var(--color-foreground-muted, #6b7280);
+      margin-top: var(--space-4, 1rem);
+      font-size: var(--text-sm, 0.8125rem);
+      color: var(--blockquote-footer-color);
       font-style: normal;
     }
 
     .author {
-      font-weight: 500;
-      color: var(--color-foreground, #0a0a0a);
+      font-weight: var(--font-medium, 500);
+      color: var(--blockquote-text-color);
     }
 
     .source {
-      margin-left: 0.5rem;
+      margin-left: var(--space-2, 0.5rem);
     }
-
+    
     .source::before {
       content: "— ";
     }
 
-    /* cite リンク */
+    /* Links within cite */
     a {
       color: inherit;
       text-decoration: none;
       transition: color 100ms ease-out;
+      border-bottom: 1px solid transparent; /* Accessibility: Link visibility */
     }
 
     a:hover {
       color: var(--color-primary, #3b82f6);
+      border-color: var(--color-primary, #3b82f6);
+    }
+    
+    a:focus-visible {
+      outline: 2px solid var(--color-primary, #3b82f6);
+      outline-offset: 2px;
+      border-radius: 2px;
     }
 
-    /* ダークモード */
-    @media (prefers-color-scheme: dark) {
-      :host(:not([data-theme="light"])) blockquote {
-        --blockquote-bg: rgba(255, 255, 255, 0.03);
-        color: var(--color-foreground, #ededed);
+    /* -------------------------------------------------------------
+     * Accessibility: Reduced Motion
+     * ------------------------------------------------------------- */
+    @media (prefers-reduced-motion: reduce) {
+      blockquote, 
+      a,
+      ::slotted(*) {
+        transition-duration: 0.01ms !important;
       }
-
-      :host(:not([data-theme="light"])[variant="default"]) blockquote,
-      :host(:not([data-theme="light"]):not([variant])) blockquote {
-        background-color: transparent;
-      }
-
-      :host(:not([data-theme="light"])[variant="highlighted"]) blockquote {
-        background-color: rgba(255, 255, 255, 0.05);
-      }
-
-      :host(:not([data-theme="light"])[variant="bordered"]) blockquote {
-        border-color: var(--color-border, rgba(255, 255, 255, 0.1));
-        background-color: rgba(255, 255, 255, 0.02);
-      }
-
-      :host(:not([data-theme="light"])) .author {
-        color: var(--color-foreground, #ededed);
-      }
-
-      :host(:not([data-theme="light"])) footer {
-        color: var(--color-foreground-muted, #a1a1aa);
-      }
-    }
-
-    :host-context([data-theme="dark"]) blockquote {
-      --blockquote-bg: rgba(255, 255, 255, 0.03);
-      color: var(--color-foreground, #ededed);
-    }
-
-    :host-context([data-theme="dark"][variant="default"]) blockquote,
-    :host-context([data-theme="dark"]:not([variant])) blockquote {
-      background-color: transparent;
-    }
-
-    :host-context([data-theme="dark"][variant="highlighted"]) blockquote {
-      background-color: rgba(255, 255, 255, 0.05);
-    }
-
-    :host-context([data-theme="dark"][variant="bordered"]) blockquote {
-      border-color: var(--color-border, rgba(255, 255, 255, 0.1));
-      background-color: rgba(255, 255, 255, 0.02);
-    }
-
-    :host-context([data-theme="dark"]) .author {
-      color: var(--color-foreground, #ededed);
-    }
-
-    :host-context([data-theme="dark"]) footer {
-      color: var(--color-foreground-muted, #a1a1aa);
     }
   `;
 
@@ -160,7 +197,7 @@ export class UiBlockquote extends LitElement {
 
   override render() {
     return html`
-      <blockquote cite=${this.cite || ''}>
+      <blockquote part="blockquote" cite=${ifDefined(this.cite || undefined)}>
         <slot></slot>
         ${this.renderFooter()}
       </blockquote>
@@ -173,7 +210,7 @@ export class UiBlockquote extends LitElement {
     }
 
     return html`
-      <footer>
+      <footer part="footer">
         ${this.cite
           ? html`<a href=${this.cite} target="_blank" rel="noopener noreferrer">${this.renderCitation()}</a>`
           : this.renderCitation()}
@@ -185,18 +222,18 @@ export class UiBlockquote extends LitElement {
     if (this.author && this.source) {
       return html`
         <cite>
-          <span class="author">${this.author}</span>
-          <span class="source">${this.source}</span>
+          <span class="author" part="author">${this.author}</span>
+          <span class="source" part="source">${this.source}</span>
         </cite>
       `;
     }
 
     if (this.author) {
-      return html`<cite class="author">${this.author}</cite>`;
+      return html`<cite class="author" part="author">${this.author}</cite>`;
     }
 
     if (this.source) {
-      return html`<cite class="source">${this.source}</cite>`;
+      return html`<cite class="source" part="source">${this.source}</cite>`;
     }
 
     return '';
