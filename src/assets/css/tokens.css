@@ -19,6 +19,33 @@
   --color-primary-sat: 90%;
   --color-primary-lightness: 55%;
 
+  /* セカンダリー（Neutral/Grayish Blue） */
+  --color-secondary-hue: 220;
+  --color-secondary-sat: 14%;
+  --color-secondary-lightness: 45%;
+
+  /* セマンティックカラー（HSL Components） */
+  
+  /* Success (Deep Emerald) */
+  --color-success-hue: 142;
+  --color-success-sat: 72%;
+  --color-success-lightness: 29%; 
+
+  /* Warning (Amber/Orange) */
+  --color-warning-hue: 35;
+  --color-warning-sat: 90%;
+  --color-warning-lightness: 37%;
+
+  /* Error (Red) */
+  --color-error-hue: 0;
+  --color-error-sat: 72%;
+  --color-error-lightness: 51%;
+
+  /* Important (Violet) */
+  --color-important-hue: 262;
+  --color-important-sat: 83%;
+  --color-important-lightness: 58%;
+
   --bg-rgb: 255, 255, 255;
   --fg-rgb: 17, 24, 39;
   --primary-rgb: 59, 130, 246;
