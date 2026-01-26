@@ -2,6 +2,7 @@ import { LionButton } from '@lion/ui/button.js';
 import { css, html, type CSSResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { srOnlyStyle } from '../../../styles/a11y.js';
+import { t } from '../../../lib/i18n.js';
 
 @customElement('ui-button')
 export class UiButton extends LionButton {
@@ -19,9 +20,9 @@ export class UiButton extends LionButton {
           --btn-l: var(--color-primary-lightness, 55%);
           
           /* 状態ごとの色 (デフォルト) - Primary */
-          --bg-default: hsl(var(--btn-h), var(--btn-s), var(--btn-l));
-          --bg-hover:   hsl(var(--btn-h), var(--btn-s), calc(var(--btn-l) - 5%));
-          --bg-active:  hsl(var(--btn-h), var(--btn-s), calc(var(--btn-l) - 10%));
+          --bg-default: hsl(var(--btn-h) var(--btn-s) var(--btn-l));
+          --bg-hover:   hsl(var(--btn-h) var(--btn-s) calc(var(--btn-l) - 5%));
+          --bg-active:  hsl(var(--btn-h) var(--btn-s) calc(var(--btn-l) - 10%));
           
           --text-default: var(--color-background); /* Light: White, Dark: Black */
           --text-disabled: hsl(220, 10%, 60%);
@@ -50,7 +51,7 @@ export class UiButton extends LionButton {
           
           cursor: pointer;
           font-family: var(--font-sans, inherit);
-          font-size: var(--text-base, 1rem); /* 16px */
+          font-size: var(--text-base, 0.875rem); /* 14px */
           line-height: var(--line-height-normal, 1.5);
           font-weight: var(--font-medium, 500);
           text-decoration: none;
@@ -95,9 +96,9 @@ export class UiButton extends LionButton {
 
         /* 5-6. Disabled / Inactive (無効) */
         :host([disabled]) {
-          --btn-bg: hsl(220, 15%, 93%);
-          --btn-text: var(--text-disabled);
-          --btn-border: transparent;
+          --btn-bg: var(--color-disabled-bg);
+          --btn-text: var(--color-disabled-text);
+          --btn-border: var(--color-disabled-border);
           
           background-color: var(--btn-bg);
           color: var(--btn-text);
@@ -115,15 +116,15 @@ export class UiButton extends LionButton {
 
         /* Secondary (セカンダリ) */
         :host([variant="secondary"]) {
-          --btn-h: 220;
-          --btn-s: 14%;
-          --btn-l: 45%; /* グレー系 */
+          --btn-h: var(--color-secondary-hue);
+          --btn-s: var(--color-secondary-sat);
+          --btn-l: var(--color-secondary-lightness);
           
-          --bg-default: hsl(var(--btn-h), var(--btn-s), var(--btn-l));
-          --bg-hover:   hsl(var(--btn-h), var(--btn-s), 40%);
-          --bg-active:  hsl(var(--btn-h), var(--btn-s), 35%);
+          --bg-default: hsl(var(--btn-h) var(--btn-s) var(--btn-l));
+          --bg-hover:   hsl(var(--btn-h) var(--btn-s) 40%);
+          --bg-active:  hsl(var(--btn-h) var(--btn-s) 35%);
           
-          --outline-color: hsl(var(--btn-h), var(--btn-s), 60%);
+          --outline-color: hsl(var(--btn-h) var(--btn-s) 60%);
         }
 
         /* Outline (アウトライン) */
@@ -162,16 +163,16 @@ export class UiButton extends LionButton {
 
         /* Danger (削除、破壊的アクション) */
         :host([variant="danger"]) {
-          --btn-h: 0; /* Red */
-          --btn-s: 84%;
-          --btn-l: 60%;
+          --btn-h: var(--color-error-hue);
+          --btn-s: var(--color-error-sat);
+          --btn-l: var(--color-error-lightness);
           
-          --bg-default: hsl(var(--btn-h), var(--btn-s), var(--btn-l));
-          --bg-hover:   hsl(var(--btn-h), var(--btn-s), calc(var(--btn-l) - 5%));
-          --bg-active:  hsl(var(--btn-h), var(--btn-s), calc(var(--btn-l) - 10%));
+          --bg-default: hsl(var(--btn-h) var(--btn-s) var(--btn-l));
+          --bg-hover:   hsl(var(--btn-h) var(--btn-s) calc(var(--btn-l) - 5%));
+          --bg-active:  hsl(var(--btn-h) var(--btn-s) calc(var(--btn-l) - 10%));
           
-          --text-default: white;
-          --outline-color: hsl(var(--btn-h), var(--btn-s), calc(var(--btn-l) + 10%));
+          --text-default: var(--color-background);
+          --outline-color: hsl(var(--btn-h) var(--btn-s) calc(var(--btn-l) + 10%));
         }
 
         /* -------------------------------------------------------------
@@ -195,6 +196,14 @@ export class UiButton extends LionButton {
           border-right-color: transparent;
           border-radius: 50%;
           animation: spin 0.75s linear infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .spinner {
+            animation: none;
+          }
+          :host {
+            transition-duration: 0.01ms !important;
+          }
         }
 
         /* -------------------------------------------------------------
@@ -290,37 +299,6 @@ export class UiButton extends LionButton {
             --btn-text: var(--color-foreground-muted, #a1a1aa);
           }
         }
-
-        /* data-theme="dark" 属性によるダークモード対応 */
-        :host-context([data-theme="dark"]) {
-          --text-default: var(--color-foreground, #ededed);
-        }
-
-        :host-context([data-theme="dark"]):host([variant="secondary"]) {
-          --bg-default: var(--bg-surface-1, #171717);
-          --bg-hover: var(--bg-surface-2, #262626);
-          --bg-active: var(--bg-surface-3, #404040);
-          --text-default: var(--color-foreground, #ededed);
-          --border-color: var(--color-border, #27272a);
-        }
-
-        :host-context([data-theme="dark"]):host([variant="outline"]) {
-          --bg-hover: hsla(var(--btn-h), 60%, 50%, 0.15);
-          --bg-active: hsla(var(--btn-h), 60%, 50%, 0.25);
-          --text-default: var(--color-primary, #60a5fa);
-          --border-color: var(--color-primary, #60a5fa);
-        }
-
-        :host-context([data-theme="dark"]):host([variant="ghost"]) {
-          --bg-hover: var(--bg-surface-1, #171717);
-          --bg-active: var(--bg-surface-2, #262626);
-          --text-default: var(--color-foreground, #ededed);
-        }
-
-        :host-context([data-theme="dark"]):host([disabled]) {
-          --btn-bg: var(--bg-surface-1, #171717);
-          --btn-text: var(--color-foreground-muted, #a1a1aa);
-        }
       `
     ];
   }
@@ -338,13 +316,13 @@ export class UiButton extends LionButton {
   loading = false;
 
   @property({ type: String })
-  loadingLabel = '読み込み中';
+  loadingLabel = t('button.loading');
 
   public override render() {
     return html`
       ${this.loading 
         ? html`
-            <span class="spinner" role="status" aria-hidden="true"></span>
+            <span class="spinner" aria-hidden="true"></span>
             <span class="sr-only">${this.loadingLabel}</span>
           ` 
         : html`<slot name="prefix"></slot>`

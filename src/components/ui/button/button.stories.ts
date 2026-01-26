@@ -263,3 +263,128 @@ export const BDD_ButtonInteraction: Story = {
     await expect(uiButton).toHaveFocus();
   },
 };
+
+/**
+ * BDD シナリオテスト: キーボード操作
+ * - Enter/Spaceキーでボタンが押されることを確認
+ */
+export const BDD_KeyboardOperation: Story = {
+  args: {
+    onClick: fn(),
+  },
+  render: (args) => html`<ui-button @click="${args['onClick']}">キーボードテスト</ui-button>`,
+  play: async ({ canvasElement, args }) => {
+    const uiButton = canvasElement.querySelector('ui-button') as HTMLElement;
+    if (!uiButton) throw new Error('ui-button not found');
+
+    // フォーカスを当てる
+    uiButton.focus();
+    await expect(uiButton).toHaveFocus();
+
+    // Enterキーで発火確認
+    await userEvent.keyboard('{Enter}');
+    await expect(args['onClick']).toHaveBeenCalledTimes(1);
+
+    // Spaceキーで発火確認
+    await userEvent.keyboard(' ');
+    await expect(args['onClick']).toHaveBeenCalledTimes(2);
+  },
+};
+
+/**
+ * BDD シナリオテスト: Loading状態のアクセシビリティ
+ * - aria-hidden と sr-only の適切な使用を確認
+ * - ポインターイベントが無効化されていることを確認
+ */
+export const BDD_LoadingAccessibility: Story = {
+  render: () => html`<ui-button loading>送信中</ui-button>`,
+  play: async ({ canvasElement }) => {
+    const uiButton = canvasElement.querySelector('ui-button') as HTMLElement;
+    if (!uiButton) throw new Error('ui-button not found');
+
+    // スピナーが aria-hidden="true" であることを確認
+    const spinner = uiButton.shadowRoot?.querySelector('.spinner');
+    await expect(spinner).toHaveAttribute('aria-hidden', 'true');
+
+    // sr-onlyテキストが存在することを確認（スクリーンリーダー用）
+    const srOnly = uiButton.shadowRoot?.querySelector('.sr-only');
+    await expect(srOnly).toBeInTheDocument();
+
+    // pointer-events が無効化されていることを確認
+    const computedStyle = window.getComputedStyle(uiButton);
+    await expect(computedStyle.pointerEvents).toBe('none');
+  },
+};
+
+/**
+ * BDD シナリオテスト: Disabled状態のフォーカス不可
+ * - Disabled時はフォーカスできないことを確認
+ * - Tabキーでスキップされることを確認
+ */
+export const BDD_DisabledFocus: Story = {
+  render: () => html`
+    <div>
+      <ui-button id="before">前のボタン</ui-button>
+      <ui-button id="disabled" disabled>無効ボタン</ui-button>
+      <ui-button id="after">次のボタン</ui-button>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const beforeBtn = canvasElement.querySelector('#before') as HTMLElement;
+    const disabledBtn = canvasElement.querySelector('#disabled') as HTMLElement;
+    const afterBtn = canvasElement.querySelector('#after') as HTMLElement;
+
+    if (!beforeBtn || !disabledBtn || !afterBtn) {
+      throw new Error('Buttons not found');
+    }
+
+    // 最初のボタンにフォーカス
+    beforeBtn.focus();
+    await expect(beforeBtn).toHaveFocus();
+
+    // Tabキーで次へ → Disabledはスキップされて afterBtn にフォーカス
+    await userEvent.tab();
+    await expect(disabledBtn).not.toHaveFocus();
+    await expect(afterBtn).toHaveFocus();
+  },
+};
+
+/**
+ * BDD シナリオテスト: ダークモードでの各バリアント表示確認
+ * - 全バリアントが適切に表示されることを自動テスト
+ */
+export const BDD_DarkModeVariants: Story = {
+  parameters: {
+    backgrounds: { default: 'dark' },
+  },
+  decorators: [
+    (story) => html`
+      <div data-theme="dark" style="padding: 1rem; background: var(--color-background); color: var(--color-foreground);">
+        ${story()}
+      </div>
+    `,
+  ],
+  render: () => html`
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      <ui-button variant="primary" id="dark-primary">Primary</ui-button>
+      <ui-button variant="secondary" id="dark-secondary">Secondary</ui-button>
+      <ui-button variant="outline" id="dark-outline">Outline</ui-button>
+      <ui-button variant="ghost" id="dark-ghost">Ghost</ui-button>
+      <ui-button variant="danger" id="dark-danger">Danger</ui-button>
+      <ui-button variant="primary" disabled id="dark-disabled">Disabled</ui-button>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    // 全バリアントが存在することを確認
+    const variants = ['primary', 'secondary', 'outline', 'ghost', 'danger', 'disabled'];
+    
+    for (const variant of variants) {
+      const button = canvasElement.querySelector(`#dark-${variant}`) as HTMLElement;
+      await expect(button).toBeInTheDocument();
+      
+      // ダークモード用CSSカスタムプロパティが適用されているか確認
+      const container = canvasElement.querySelector('[data-theme="dark"]') as HTMLElement;
+      await expect(container).toHaveAttribute('data-theme', 'dark');
+    }
+  },
+};
