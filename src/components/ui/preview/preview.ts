@@ -47,10 +47,10 @@ export class UiPreview extends LitElement {
       display: block;
       
       /* Design Tokens - Spacing (design-system.md) */
-      --preview-toggle-size: var(--space-8, 2rem); /* 32px */
-      --preview-min-height: calc(var(--space-8, 2rem) * 3.75); /* 120px */
-      --preview-area-padding: var(--space-6, 1.5rem);
-      --preview-container-radius: var(--radius-lg, 0.5rem);
+      --preview-toggle-size: var(--space-8);
+      --preview-min-height: calc(var(--space-8) * 3.75);
+      --preview-area-padding: var(--space-6);
+      --preview-container-radius: var(--radius-lg);
       
       /* Design Tokens - Motion */
       --motion-duration: var(--duration-normal);
@@ -209,20 +209,20 @@ export class UiPreview extends LitElement {
     /* Code Toggle Button - Ghost/Minimal Style */
     .code-toggle-button {
       position: absolute;
-      top: var(--space-3, 0.75rem);
-      right: var(--space-3, 0.75rem);
+      top: var(--space-3);
+      right: var(--space-3);
       z-index: 10;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: var(--space-1, 0.25rem);
+      gap: var(--space-1);
       width: var(--preview-toggle-size);
       height: var(--preview-toggle-size);
       padding: 0;
       background: var(--toggle-bg);
       color: var(--toggle-color);
       border: 1px solid var(--toggle-border);
-      border-radius: var(--radius-md, 0.375rem);
+      border-radius: var(--radius-md);
       cursor: pointer;
       transition: 
         background-color var(--motion-duration) var(--motion-easing),
@@ -236,7 +236,7 @@ export class UiPreview extends LitElement {
       background: var(--toggle-bg-hover);
       color: var(--toggle-color-hover);
       border-color: var(--toggle-border-hover);
-      box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+      box-shadow: var(--shadow-sm);
     }
 
     .code-toggle-button:active {
@@ -246,7 +246,7 @@ export class UiPreview extends LitElement {
     }
 
     .code-toggle-button:focus-visible {
-      outline: 2px solid var(--color-primary, #3b82f6);
+      outline: 2px solid var(--color-primary);
       outline-offset: 2px;
       background: var(--toggle-bg-hover);
       color: var(--toggle-color-hover);
@@ -262,7 +262,7 @@ export class UiPreview extends LitElement {
 
     /* Icon - Using Design Token */
     .code-toggle-button iconify-icon {
-      font-size: var(--icon-md, 20px);
+      font-size: var(--icon-md);
     }
 
     /* Accessibility: Reduced Motion */
