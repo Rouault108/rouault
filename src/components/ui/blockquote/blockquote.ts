@@ -38,15 +38,14 @@ export class UiBlockquote extends LitElement {
       /* -------------------------------------------------------------
        * HSL Color Workflow & Design Tokens
        * ------------------------------------------------------------- */
-      /* デフォルトはPrimaryの色相を使用し、落ち着いたトーンに調整 */
-      --blockquote-h: var(--color-primary-hue, 220);
-      --blockquote-s: 30%; /* 落ち着いた彩度 */
-      --blockquote-l: 96%; /* Light mode background lightness */
+      --blockquote-h: var(--color-primary-hue);
+      --blockquote-s: 30%;
+      --blockquote-l: 96%;
       
       --blockquote-bg: hsl(var(--blockquote-h) var(--blockquote-s) var(--blockquote-l));
-      --blockquote-border-color: var(--color-primary, #3b82f6);
-      --blockquote-text-color: var(--color-foreground, #111827);
-      --blockquote-footer-color: var(--color-foreground-muted, #6b7280);
+      --blockquote-border-color: var(--color-primary);
+      --blockquote-text-color: var(--color-foreground);
+      --blockquote-footer-color: var(--color-foreground-muted);
     }
 
     blockquote {
@@ -54,14 +53,14 @@ export class UiBlockquote extends LitElement {
       padding: var(--space-4) var(--space-6);
       border-left: 3px solid var(--blockquote-border-color);
       background-color: var(--blockquote-bg);
-      font-size: var(--text-base, 0.875rem);
-      line-height: var(--line-height-relaxed, 1.6);
+      font-size: var(--text-base);
+      line-height: var(--line-height-relaxed);
       color: var(--blockquote-text-color);
       border-radius: var(--radius-sm);
       transition: 
-        background-color var(--motion-duration, 200ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)),
-        border-color var(--motion-duration, 200ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)),
-        color var(--motion-duration, 200ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
+        background-color var(--motion-duration) var(--ease-out),
+        border-color var(--motion-duration) var(--ease-out),
+        color var(--motion-duration) var(--ease-out);
     }
 
     /* -------------------------------------------------------------
@@ -76,7 +75,7 @@ export class UiBlockquote extends LitElement {
 
     /* Bordered */
     :host([variant="bordered"]) blockquote {
-      border: 1px solid var(--color-border, #e5e7eb);
+      border: 1px solid var(--color-border);
       border-left: 3px solid var(--blockquote-border-color);
       
       /* Lighter background for bordered variant */
@@ -90,28 +89,28 @@ export class UiBlockquote extends LitElement {
     
     @media (prefers-color-scheme: dark) {
       :host {
-        --blockquote-l: 12%; /* Dark mode background lightness */
-        --blockquote-text-color: var(--color-foreground, #ededed);
-        --blockquote-footer-color: var(--color-foreground-muted, #a1a1aa);
+        --blockquote-l: 12%;
+        --blockquote-text-color: var(--color-foreground);
+        --blockquote-footer-color: var(--color-foreground-muted);
       }
       
       :host([variant="bordered"]) blockquote {
         --blockquote-l: 10%;
-        border-color: var(--color-border, #27272a);
+        border-color: var(--color-border);
       }
     }
 
     /* Explicit Dark Theme Overrides (data-theme="dark") */
     :host([data-theme="dark"]) {
       --blockquote-l: 12%;
-      --blockquote-text-color: var(--color-foreground, #ededed);
-      --blockquote-footer-color: var(--color-foreground-muted, #a1a1aa);
+      --blockquote-text-color: var(--color-foreground);
+      --blockquote-footer-color: var(--color-foreground-muted);
       --blockquote-bg: hsl(var(--blockquote-h) var(--blockquote-s) var(--blockquote-l));
     }
     
     :host([data-theme="dark"][variant="bordered"]) blockquote {
       --blockquote-l: 10%;
-      border-color: var(--color-border, #27272a);
+      border-color: var(--color-border);
       background-color: hsl(var(--blockquote-h) var(--blockquote-s) var(--blockquote-l));
     }
 
@@ -121,7 +120,7 @@ export class UiBlockquote extends LitElement {
      
     ::slotted(p) {
       margin: 0;
-      margin-bottom: var(--space-3, 0.75rem);
+      margin-bottom: var(--space-3);
     }
 
     ::slotted(p:last-child) {
@@ -133,19 +132,19 @@ export class UiBlockquote extends LitElement {
      * ------------------------------------------------------------- */
     
     footer {
-      margin-top: var(--space-4, 1rem);
-      font-size: var(--text-sm, 0.8125rem);
+      margin-top: var(--space-4);
+      font-size: var(--text-sm);
       color: var(--blockquote-footer-color);
       font-style: normal;
     }
 
     .author {
-      font-weight: var(--font-medium, 500);
+      font-weight: var(--font-medium);
       color: var(--blockquote-text-color);
     }
 
     .source {
-      margin-left: var(--space-2, 0.5rem);
+      margin-left: var(--space-2);
     }
     
     .source::before {
@@ -157,16 +156,16 @@ export class UiBlockquote extends LitElement {
       color: inherit;
       text-decoration: none;
       transition: color 100ms ease-out;
-      border-bottom: 1px solid transparent; /* Accessibility: Link visibility */
+      border-bottom: 1px solid transparent;
     }
 
     a:hover {
-      color: var(--color-primary, #3b82f6);
-      border-color: var(--color-primary, #3b82f6);
+      color: var(--color-primary);
+      border-color: var(--color-primary);
     }
     
     a:focus-visible {
-      outline: 2px solid var(--color-primary, #3b82f6);
+      outline: 2px solid var(--color-primary);
       outline-offset: 2px;
       border-radius: 2px;
     }

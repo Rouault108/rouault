@@ -15,9 +15,9 @@ export class UiButton extends LionButton {
           /* -------------------------------------------------------------
            * 基本カラー設定 & 変数定義
            * ------------------------------------------------------------- */
-          --btn-h: var(--color-primary-hue, 220);
-          --btn-s: var(--color-primary-sat, 90%);
-          --btn-l: var(--color-primary-lightness, 55%);
+          --btn-h: var(--color-primary-hue);
+          --btn-s: var(--color-primary-sat);
+          --btn-l: var(--color-primary-lightness);
           
           /* 状態ごとの色 (デフォルト) - Primary */
           --bg-default: hsl(var(--btn-h) var(--btn-s) var(--btn-l));
@@ -41,29 +41,29 @@ export class UiButton extends LionButton {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          gap: var(--space-2, 0.5rem); /* アイコンとテキストの間隔 */
+          gap: var(--space-2); /* アイコンとテキストの間隔 */
           
           background-color: var(--btn-bg);
           color: var(--btn-text);
           border: 1px solid var(--btn-border);
-          border-radius: var(--radius-md, 6px); /* デザインシステムトークン */
-          padding: var(--space-2, 0.5rem) var(--space-4, 1rem); /* 8px 16px */
+          border-radius: var(--radius-md);
+          padding: var(--space-2) var(--space-4);
           
           cursor: pointer;
-          font-family: var(--font-sans, inherit);
-          font-size: var(--text-base, 0.875rem); /* 14px */
-          line-height: var(--line-height-normal, 1.5);
-          font-weight: var(--font-medium, 500);
+          font-family: var(--font-sans);
+          font-size: var(--text-base);
+          line-height: var(--line-height-normal);
+          font-weight: var(--font-medium);
           text-decoration: none;
           
           /* モーション（デザインシステムトークン使用） */
           transition: 
-            background-color var(--motion-duration, 200ms) var(--ease-out, ease-out),
-            color var(--motion-duration, 200ms) var(--ease-out, ease-out),
-            border-color var(--motion-duration, 200ms) var(--ease-out, ease-out),
-            transform var(--duration-fast, 100ms) var(--ease-out, ease-out),
-            box-shadow var(--motion-duration, 200ms) var(--ease-out, ease-out),
-            opacity var(--motion-duration, 200ms) var(--ease-out, ease-out);
+            background-color var(--motion-duration) var(--ease-out),
+            color var(--motion-duration) var(--ease-out),
+            border-color var(--motion-duration) var(--ease-out),
+            transform var(--duration-fast) var(--ease-out),
+            box-shadow var(--motion-duration) var(--ease-out),
+            opacity var(--motion-duration) var(--ease-out);
         }
 
         /* -------------------------------------------------------------
@@ -74,17 +74,17 @@ export class UiButton extends LionButton {
         :host(:hover:not([disabled])) {
           background-color: var(--bg-hover);
           transform: translateY(-1px);
-          box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1)); /* デザインシステムトークン */
-          z-index: var(--z-base, 1);
+          box-shadow: var(--shadow-md);
+          z-index: var(--z-base);
         }
 
         /* 3. Focus (フォーカス) */
         :host(:focus:not([disabled])),
         :host(:focus-visible:not([disabled])) {
           outline: 2px solid var(--outline-color);
-          outline-offset: 2px; /* デザインシステム推奨値 */
+          outline-offset: 2px;
           position: relative;
-          z-index: calc(var(--z-base, 0) + 2);
+          z-index: calc(var(--z-base) + 2);
         }
 
         /* 4. Active / Pressed (押し込み中) */
@@ -212,26 +212,26 @@ export class UiButton extends LionButton {
 
         /* Small (sm) - Compact & Dense */
         :host([size="sm"]) {
-          font-size: var(--text-xs, 0.75rem); /* 12px */
-          padding: 0 var(--space-3, 0.75rem);
-          height: 1.75rem; /* 28px */
-          border-radius: var(--radius-sm, 4px);
+          font-size: var(--text-xs);
+          padding: 0 var(--space-3);
+          height: 1.75rem;
+          border-radius: var(--radius-sm);
         }
 
         /* Medium (md) - Default (High Density) */
         :host([size="md"]) {
-          font-size: var(--text-base, 0.875rem); /* 14px */
-          padding: 0 var(--space-4, 1rem);
-          height: var(--space-10, 2.5rem); /* 40px */
-          border-radius: var(--radius-md, 6px);
+          font-size: var(--text-base);
+          padding: 0 var(--space-4);
+          height: var(--space-10);
+          border-radius: var(--radius-md);
         }
 
         /* Large (lg) - Prominent but Refined */
         :host([size="lg"]) {
-          font-size: var(--text-lg, 1rem); /* 16px */
-          padding: 0 var(--space-6, 1.5rem);
-          height: var(--space-12, 3rem); /* 48px */
-          border-radius: var(--radius-lg, 8px);
+          font-size: var(--text-lg);
+          padding: 0 var(--space-6);
+          height: var(--space-12);
+          border-radius: var(--radius-lg);
         }
 
         /* -------------------------------------------------------------
@@ -270,33 +270,33 @@ export class UiButton extends LionButton {
         /* OS設定によるダークモード */
         @media (prefers-color-scheme: dark) {
           :host {
-            --text-default: var(--color-foreground, #ededed);
+            --text-default: var(--color-foreground);
           }
 
           :host([variant="secondary"]) {
-            --bg-default: var(--bg-surface-1, #171717);
-            --bg-hover: var(--bg-surface-2, #262626);
-            --bg-active: var(--bg-surface-3, #404040);
-            --text-default: var(--color-foreground, #ededed);
-            --border-color: var(--color-border, #27272a);
+            --bg-default: var(--bg-surface-1);
+            --bg-hover: var(--bg-surface-2);
+            --bg-active: var(--bg-surface-3);
+            --text-default: var(--color-foreground);
+            --border-color: var(--color-border);
           }
 
           :host([variant="outline"]) {
             --bg-hover: hsla(var(--btn-h), 60%, 50%, 0.15);
             --bg-active: hsla(var(--btn-h), 60%, 50%, 0.25);
-            --text-default: var(--color-primary, #60a5fa);
-            --border-color: var(--color-primary, #60a5fa);
+            --text-default: var(--color-primary);
+            --border-color: var(--color-primary);
           }
 
           :host([variant="ghost"]) {
-            --bg-hover: var(--bg-surface-1, #171717);
-            --bg-active: var(--bg-surface-2, #262626);
-            --text-default: var(--color-foreground, #ededed);
+            --bg-hover: var(--bg-surface-1);
+            --bg-active: var(--bg-surface-2);
+            --text-default: var(--color-foreground);
           }
 
           :host([disabled]) {
-            --btn-bg: var(--bg-surface-1, #171717);
-            --btn-text: var(--color-foreground-muted, #a1a1aa);
+            --btn-bg: var(--bg-surface-1);
+            --btn-text: var(--color-foreground-muted);
           }
         }
       `

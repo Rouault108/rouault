@@ -31,7 +31,7 @@ export class UiBanner extends LitElement {
 
     /* フェードアウトアニメーション */
     :host([closing]) .banner {
-      animation: fade-out var(--duration-fast, 100ms) var(--ease-in, ease-in) forwards;
+      animation: fade-out var(--duration-fast) var(--ease-in) forwards;
     }
 
     @keyframes fade-out {
@@ -56,14 +56,14 @@ export class UiBanner extends LitElement {
     .banner {
       display: flex;
       align-items: flex-start;
-      gap: var(--space-3, 0.75rem);
-      padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
       background-color: var(--banner-bg);
       border: 1px solid var(--banner-border);
-      border-radius: var(--radius-lg, 0.5rem);
+      border-radius: var(--radius-lg);
       color: var(--banner-text);
-      font-size: var(--text-sm, 0.8125rem);
-      line-height: var(--line-height-relaxed, 1.6);
+      font-size: var(--text-sm);
+      line-height: var(--line-height-relaxed);
     }
 
     /* アイコンエリア */
@@ -72,13 +72,13 @@ export class UiBanner extends LitElement {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: var(--icon-sm, 16px);
-      height: calc(1em * var(--line-height-relaxed, 1.6));
+      width: var(--icon-sm);
+      height: calc(1em * var(--line-height-relaxed));
       color: var(--banner-icon);
     }
 
     .icon iconify-icon {
-      font-size: var(--icon-sm, 16px);
+      font-size: var(--icon-sm);
       line-height: 1;
     }
 
@@ -92,7 +92,7 @@ export class UiBanner extends LitElement {
       /* リンクの色はボーダー色ではなく、アイコンと同じ濃い色を使う方が視認性が良い */
       color: var(--banner-icon);
       text-decoration: underline;
-      font-weight: var(--font-medium, 500);
+      font-weight: var(--font-medium);
     }
 
     .content ::slotted(a:hover) {
@@ -100,7 +100,7 @@ export class UiBanner extends LitElement {
     }
 
     .content ::slotted(strong) {
-      font-weight: var(--font-semibold, 600);
+      font-weight: var(--font-semibold);
     }
 
     /* アクションエリア */
@@ -108,7 +108,7 @@ export class UiBanner extends LitElement {
       flex-shrink: 0;
       display: flex;
       align-items: center;
-      gap: var(--space-2, 0.5rem);
+      gap: var(--space-2);
     }
 
     /* 閉じるボタン */
@@ -119,13 +119,13 @@ export class UiBanner extends LitElement {
       --bg-active: rgba(0, 0, 0, 0.1);
       
       /* 行の高さに合わせて中央配置 */
-      height: calc(1em * var(--line-height-relaxed, 1.6));
+      height: calc(1em * var(--line-height-relaxed));
       display: flex;
       align-items: center;
     }
 
     .close-button iconify-icon {
-      font-size: var(--icon-sm, 16px);
+      font-size: var(--icon-sm);
     }
 
     /* バリアント: Success */
