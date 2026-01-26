@@ -18,26 +18,31 @@ export class UiBreadcrumb extends LitElement {
      * ------------------------------------------------------------- */
     :host {
       display: block;
-      font-family: var(--font-sans, system-ui, sans-serif);
-      font-size: var(--text-sm, 0.8125rem);
-      line-height: var(--line-height-normal, 1.5);
+      font-family: var(--font-sans);
+      font-size: var(--text-sm);
+      line-height: var(--line-height-normal);
     }
 
     /* -------------------------------------------------------------
      * ナビゲーション
      * ------------------------------------------------------------- */
     nav {
+      display: block;
+    }
+
+    /* リスト要素 */
+    ol {
       display: flex;
       align-items: center;
       flex-wrap: wrap;
       gap: 0;
+      margin: 0;
+      padding: 0;
+      list-style: none;
     }
 
-    /* -------------------------------------------------------------
-     * スロット
-     * ------------------------------------------------------------- */
-    ::slotted(ui-breadcrumb-item:not(:last-child))::after {
-      content: '';
+    li {
+      display: contents;
     }
   `;
 
@@ -50,7 +55,9 @@ export class UiBreadcrumb extends LitElement {
   override render() {
     return html`
       <nav aria-label="${this.ariaLabel}">
-        <slot></slot>
+        <ol>
+          <li><slot></slot></li>
+        </ol>
       </nav>
     `;
   }
@@ -71,13 +78,18 @@ export class UiBreadcrumbItem extends LitElement {
      * ホスト要素
      * ------------------------------------------------------------- */
     :host {
+      display: list-item;
+      list-style: none;
+      font-family: var(--font-sans);
+      font-size: inherit;
+      line-height: inherit;
+    }
+
+    /* コンテナ */
+    .item-container {
       display: inline-flex;
       align-items: center;
       gap: 0;
-      font-family: var(--font-sans, system-ui, sans-serif);
-      font-size: inherit;
-      line-height: inherit;
-      position: relative;
     }
 
     /* -------------------------------------------------------------
@@ -85,88 +97,115 @@ export class UiBreadcrumbItem extends LitElement {
      * ------------------------------------------------------------- */
     a {
       display: block;
+      position: relative;
       padding: var(--item-padding, 0);
       
-      color: var(--color-foreground-muted, #6b7280);
+      color: var(--color-foreground-muted);
       text-decoration: none;
-      font-weight: var(--font-normal, 400);
+      font-weight: var(--font-normal);
       
       border-radius: var(--item-border-radius, 0);
       
       transition: 
-        color var(--motion-duration, 200ms) var(--ease-out, ease-out),
-        background-color var(--motion-duration, 200ms) var(--ease-out, ease-out);
+        color var(--motion-duration) var(--motion-easing),
+        background-color var(--motion-duration) var(--motion-easing);
       
       cursor: pointer;
     }
 
-    a:hover {
-      color: var(--color-foreground, #111827);
-      background-color: var(--item-bg-hover, transparent);
-      text-decoration: underline;
-      text-underline-offset: 0.2em;
+    a::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 1px;
+      background: currentColor;
+      transition: width var(--motion-duration) var(--motion-easing);
     }
 
-    /* ドロップダウン内のアイテムは下線なし */
+    a:hover {
+      color: var(--color-foreground);
+      background-color: var(--item-bg-hover, transparent);
+    }
+
+    a:hover::after {
+      width: 100%;
+    }
+
+    /* ドロップダウン内のアイテムは下線なし、背景変化のみ */
+    :host([slot="item"]) a::after {
+      display: none;
+    }
+
+    :host([slot="item"]) a {
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-sm);
+    }
+
     :host([slot="item"]) a:hover {
-      text-decoration: none;
-      background-color: var(--color-background-subtle, #f3f4f6);
+      background-color: var(--breadcrumb-dropdown-item-hover-bg);
     }
 
     a:focus-visible {
-      outline: 2px solid var(--color-primary, #3b82f6);
+      outline: 2px solid var(--color-primary);
       outline-offset: 2px;
-      border-radius: var(--radius-sm, 0.25rem);
+      border-radius: var(--radius-sm);
     }
 
     /* -------------------------------------------------------------
-     * 現在のページ（リンクではない）
+     * 現在のページ
      * ------------------------------------------------------------- */
     .current {
-      color: var(--color-foreground, #111827);
-      font-weight: var(--font-medium, 500);
+      color: var(--color-foreground);
+      font-weight: var(--font-medium);
     }
 
     /* -------------------------------------------------------------
-     * 省略ボタン（ゴーストスタイル - テキストと同じ高さ）
+     * 省略ボタン
      * ------------------------------------------------------------- */
     .collapsed-button {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       
-      padding: 0;
+      min-width: 2rem;
+      height: 1.5rem;
+      padding: 0 var(--space-2);
       
-      background: transparent;
-      border: none;
-      border-radius: var(--radius-sm, 0.25rem);
+      background: var(--color-background-subtle);
+      border: 1px solid transparent;
+      border-radius: var(--radius-md);
       
-      color: var(--color-foreground-muted, #6b7280);
+      color: var(--color-foreground-muted);
       font-family: inherit;
       font-size: inherit;
-      font-weight: var(--font-medium, 500);
-      line-height: var(--line-height-none, 1);
+      font-weight: var(--font-medium);
+      line-height: var(--line-height-none);
       
       cursor: pointer;
       
       transition: 
-        color var(--motion-duration, 200ms) var(--motion-easing, ease-out),
-        background-color var(--motion-duration, 200ms) var(--motion-easing, ease-out);
+        color var(--motion-duration) var(--motion-easing),
+        background-color var(--motion-duration) var(--motion-easing),
+        border-color var(--motion-duration) var(--motion-easing);
     }
 
     .collapsed-button:hover {
-      background-color: var(--color-background-subtle, #f3f4f6);
-      color: var(--color-foreground, #111827);
+      background-color: var(--color-border);
+      border-color: var(--color-border-hover);
+      color: var(--color-foreground);
     }
 
     .collapsed-button:focus-visible {
-      outline: 2px solid var(--color-primary, #3b82f6);
+      outline: 2px solid var(--color-primary);
       outline-offset: 2px;
     }
 
     .collapsed-button[aria-expanded="true"] {
-      background-color: var(--color-background-subtle, #f3f4f6);
-      color: var(--color-foreground, #111827);
+      background-color: var(--color-border);
+      border-color: var(--color-border-hover);
+      color: var(--color-foreground);
     }
 
     /* -------------------------------------------------------------
@@ -174,32 +213,33 @@ export class UiBreadcrumbItem extends LitElement {
      * ------------------------------------------------------------- */
     .dropdown {
       position: absolute;
-      top: calc(100% + var(--space-1, 0.25rem));
+      top: calc(100% + var(--space-1));
       left: 50%;
-      transform: translateX(-50%) translateY(-0.25rem);
-      z-index: var(--z-dropdown, 200);
+      transform: translateX(-50%) translateY(-4px) scale(0.98);
+      transform-origin: top center;
+      z-index: var(--z-dropdown);
       
       min-width: 150px;
       width: max-content;
       
-      background: var(--color-background, #ffffff);
-      border: 1px solid var(--color-border, #e5e7eb);
-      border-radius: var(--radius-lg, 0.5rem);
-      box-shadow: var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1));
+      background: var(--breadcrumb-dropdown-bg);
+      border: 1px solid var(--breadcrumb-dropdown-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--breadcrumb-dropdown-shadow);
       
-      padding: var(--space-1, 0.25rem);
+      padding: var(--space-1);
       
       opacity: 0;
       pointer-events: none;
       
       transition:
-        opacity var(--motion-duration, 200ms) var(--motion-easing, ease-out),
-        transform var(--motion-duration, 200ms) var(--motion-easing, ease-out);
+        opacity var(--motion-duration) var(--motion-easing),
+        transform var(--motion-duration) var(--motion-easing);
     }
 
     .dropdown.open {
       opacity: 1;
-      transform: translateX(-50%) translateY(0);
+      transform: translateX(-50%) translateY(0) scale(1);
       pointer-events: auto;
     }
 
@@ -211,16 +251,10 @@ export class UiBreadcrumbItem extends LitElement {
       margin: 0;
     }
 
-    /* ドロップダウン内のアイテムはセパレーターを非表示（特異度を上げて!importantを回避） */
+    /* ドロップダウン内のアイテムはセパレーターを非表示 */
     :host([slot="item"]:last-child) .separator,
     :host([slot="item"]:not(:last-child)) .separator {
       display: none;
-    }
-
-    /* スロット内のアイテムにホバー効果を適用するためのグローバルスタイル */
-    :host([collapsed]) ::slotted(ui-breadcrumb-item[slot="item"]) {
-      --item-padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
-      --item-border-radius: var(--radius-sm, 0.25rem);
     }
 
     /* -------------------------------------------------------------
@@ -229,9 +263,9 @@ export class UiBreadcrumbItem extends LitElement {
     .separator {
       display: inline-flex;
       align-items: center;
-      color: var(--color-foreground-muted, #6b7280);
+      color: var(--color-foreground-muted);
       flex-shrink: 0;
-      margin: 0 var(--space-2, 0.5rem);
+      margin: 0 var(--space-2);
     }
 
     .separator svg {
@@ -246,31 +280,22 @@ export class UiBreadcrumbItem extends LitElement {
     }
 
     /* -------------------------------------------------------------
-     * ダークモード対応（グローバルトークンを使用）
+     * ダークモード対応（CSSカスタムプロパティでグローバル制御）
      * ------------------------------------------------------------- */
+    :host {
+      --breadcrumb-dropdown-bg: var(--color-background);
+      --breadcrumb-dropdown-border: var(--color-border);
+      --breadcrumb-dropdown-shadow: var(--shadow-lg);
+      --breadcrumb-dropdown-item-hover-bg: var(--color-background-subtle);
+    }
+
     @media (prefers-color-scheme: dark) {
-      /* ドロップダウン内のホバー背景 */
-      :host([slot="item"]) a:hover {
-        background-color: var(--bg-surface-2, #262626);
+      :host {
+        --breadcrumb-dropdown-bg: var(--bg-surface-2);
+        --breadcrumb-dropdown-border: var(--color-border);
+        --breadcrumb-dropdown-shadow: var(--shadow-dark-lg);
+        --breadcrumb-dropdown-item-hover-bg: var(--bg-surface-3);
       }
-
-      /* ドロップダウン本体の背景とシャドウ */
-      .dropdown {
-        background: var(--bg-surface-2, #262626);
-        border-color: var(--color-border, #27272a);
-        box-shadow: var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.3));
-      }
-    }
-
-    /* data-theme="dark" 対応 */
-    :host-context([data-theme='dark']):host([slot="item"]) a:hover {
-      background-color: var(--bg-surface-2, #262626);
-    }
-
-    :host-context([data-theme='dark']) .dropdown {
-      background: var(--bg-surface-2, #262626);
-      border-color: var(--color-border, #27272a);
-      box-shadow: var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.3));
     }
 
     /* -------------------------------------------------------------
@@ -278,6 +303,7 @@ export class UiBreadcrumbItem extends LitElement {
      * ------------------------------------------------------------- */
     @media (prefers-reduced-motion: reduce) {
       a,
+      a::after,
       .collapsed-button,
       .dropdown {
         transition: none;
@@ -318,16 +344,20 @@ export class UiBreadcrumbItem extends LitElement {
     if (this._dropdownOpen) {
       // ドロップダウンを開いたら最初のアイテムにフォーカス
       this.updateComplete.then(() => {
-        const dropdown = this.shadowRoot?.querySelector('.dropdown');
-        const firstItem = dropdown?.querySelector('ui-breadcrumb-item');
-        const firstLink = firstItem?.shadowRoot?.querySelector('a');
-        (firstLink as HTMLElement)?.focus();
+        this._focusFirstItem();
       });
     }
   }
 
   private _closeDropdown() {
     this._dropdownOpen = false;
+  }
+
+  private _getDropdownItems(): UiBreadcrumbItem[] {
+    const slot = this.shadowRoot?.querySelector('slot[name="item"]') as HTMLSlotElement;
+    if (!slot) return [];
+    return slot.assignedElements({ flatten: true })
+      .filter((el): el is UiBreadcrumbItem => el.tagName.toLowerCase() === 'ui-breadcrumb-item');
   }
 
   private _handleKeyDown(e: KeyboardEvent) {
@@ -338,55 +368,122 @@ export class UiBreadcrumbItem extends LitElement {
       const button = this.shadowRoot?.querySelector('.collapsed-button') as HTMLElement;
       button?.focus();
     } else if ((e.key === 'Enter' || e.key === ' ') && !this._dropdownOpen) {
-      e.preventDefault();
-      this._toggleDropdown();
-    } else if (e.key === 'ArrowDown' && this._dropdownOpen) {
-      e.preventDefault();
-      this._focusNextItem();
-    } else if (e.key === 'ArrowUp' && this._dropdownOpen) {
-      e.preventDefault();
-      this._focusPreviousItem();
+      // ボタン上でのイベントかチェック
+      const isButton = (e.target as HTMLElement).classList.contains('collapsed-button') || 
+                       (e.composedPath()[0] as HTMLElement).classList.contains('collapsed-button');
+      
+      if (isButton) {
+        e.preventDefault();
+        this._toggleDropdown();
+      }
+    } else if (this._dropdownOpen) {
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          this._focusNextItem();
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          this._focusPreviousItem();
+          break;
+        case 'Home':
+          e.preventDefault();
+          this._focusFirstItem();
+          break;
+        case 'End':
+          e.preventDefault();
+          this._focusLastItem();
+          break;
+        case 'Tab':
+          // ドロップダウンが開いている状態でTabを押したら閉じる（フォーカスが外れるため）
+          this._closeDropdown();
+          break;
+      }
+    }
+  }
+
+  private _focusFirstItem() {
+    const items = this._getDropdownItems();
+    if (items.length > 0) {
+      this._focusItemInShadow(items[0]!);
+    }
+  }
+
+  private _focusLastItem() {
+    const items = this._getDropdownItems();
+    if (items.length > 0) {
+      this._focusItemInShadow(items[items.length - 1]!);
+    }
+  }
+
+  private _focusItemInShadow(item: UiBreadcrumbItem) {
+    // アイテム内のaタグ、またはアイテム自体にフォーカス
+    const link = item?.shadowRoot?.querySelector('a');
+    if (link) {
+      (link as HTMLElement).focus();
+    } else {
+      item.focus();
     }
   }
 
   private _focusNextItem() {
-    const dropdown = this.shadowRoot?.querySelector('.dropdown');
-    const items = Array.from(dropdown?.querySelectorAll('ui-breadcrumb-item') || []);
-    const currentFocus = this.shadowRoot?.activeElement;
+    const items = this._getDropdownItems();
+    if (items.length === 0) return;
+
+    const currentFocus = this._getCurrentFocusedItem(items);
     
-    for (let i = 0; i < items.length; i++) {
-      const link = items[i]?.shadowRoot?.querySelector('a');
-      if (link === currentFocus) {
-        const nextItem = items[i + 1];
-        if (nextItem) {
-          const nextLink = nextItem?.shadowRoot?.querySelector('a') as HTMLElement;
-          nextLink?.focus();
-        }
-        return;
-      }
+    if (!currentFocus) {
+      // フォーカスがドロップダウン内にない場合は最初を選択
+      this._focusFirstItem();
+      return;
+    }
+
+    const currentIndex = items.indexOf(currentFocus);
+    if (currentIndex < items.length - 1) {
+      this._focusItemInShadow(items[currentIndex + 1]!);
+    } else {
+      // ループさせるか、止めるか。通常メニューはループしないことが多いが、利便性のためループさせる
+      this._focusFirstItem();
     }
   }
 
   private _focusPreviousItem() {
-    const dropdown = this.shadowRoot?.querySelector('.dropdown');
-    const items = Array.from(dropdown?.querySelectorAll('ui-breadcrumb-item') || []);
-    const currentFocus = this.shadowRoot?.activeElement;
+    const items = this._getDropdownItems();
+    if (items.length === 0) return;
+
+    const currentFocus = this._getCurrentFocusedItem(items);
     
-    for (let i = items.length - 1; i >= 0; i--) {
-      const link = items[i]?.shadowRoot?.querySelector('a');
-      if (link === currentFocus) {
-        const prevItem = items[i - 1];
-        if (prevItem) {
-          const prevLink = prevItem?.shadowRoot?.querySelector('a') as HTMLElement;
-          prevLink?.focus();
-        } else {
-          // 最初のアイテムの場合、ボタンにフォーカスを戻す
-          const button = this.shadowRoot?.querySelector('.collapsed-button') as HTMLElement;
-          button?.focus();
-        }
-        return;
+    if (!currentFocus) {
+      this._focusLastItem();
+      return;
+    }
+
+    const currentIndex = items.indexOf(currentFocus);
+    if (currentIndex > 0) {
+      this._focusItemInShadow(items[currentIndex - 1]!);
+    } else {
+      // 最初のアイテムで上を押したら最後のアイテムへ（ループ）
+      this._focusLastItem();
+    }
+  }
+
+  private _getCurrentFocusedItem(items: UiBreadcrumbItem[]): UiBreadcrumbItem | null {
+    // shadowRootをまたいでアクティブな要素を探すのは難しいが、
+    // assignedElementsのそれぞれについて、その中にフォーカスがあるかチェックする
+    
+    // document.activeElement から activeElement を掘り下げていく
+    let active = document.activeElement;
+    while (active && active.shadowRoot && active.shadowRoot.activeElement) {
+      active = active.shadowRoot.activeElement;
+    }
+    
+    // active が items のいずれかの ShadowRoot 内にあるか、あるいは item そのものか確認
+    for (const item of items) {
+      if (item === active || (item.shadowRoot && item.shadowRoot.contains(active))) {
+        return item;
       }
     }
+    return null;
   }
 
   override connectedCallback() {
