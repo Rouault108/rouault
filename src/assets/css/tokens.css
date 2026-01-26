@@ -14,15 +14,14 @@
   --color-foreground: #111827;
   --color-foreground-muted: #6b7280;
   
-  /* RGB値（透明度操作用） */
-  --bg-rgb: 255, 255, 255;
-  --fg-rgb: 17, 24, 39;
-  --primary-rgb: 59, 130, 246;
-  
-  /* プライマリカラー（HSL ベース） */
+  /* HSL値（カンマなし・単位なし） */
   --color-primary-hue: 220;
   --color-primary-sat: 90%;
   --color-primary-lightness: 55%;
+
+  --bg-rgb: 255, 255, 255;
+  --fg-rgb: 17, 24, 39;
+  --primary-rgb: 59, 130, 246;
   --color-primary: #3b82f6;
   --color-primary-hover: #2563eb;
   
@@ -33,15 +32,24 @@
   --color-border: #e5e7eb;
   --color-border-hover: #d1d5db;
   
-  /* セマンティックカラー（状態色） */
-  --color-success: hsl(142, 71%, 45%); /* 緑 */
-  --color-warning: hsl(48, 96%, 53%);  /* 黄 */
-  --color-error: hsl(0, 84%, 60%);     /* 赤 */
-  --color-info: hsl(217, 91%, 60%);    /* 青 */
+  /* セマンティックカラー（状態色 - Light） */
+  --color-success: #16a34a;
+  --color-success-bg: #dcfce7;
+  --color-warning: #ca8a04;
+  --color-warning-bg: #fef9c3;
+  --color-error: #dc2626;
+  --color-error-bg: #fee2e2;
+  --color-info: #2563eb;
+  --color-info-bg: #dbeafe;
+
+  /* Disabled状態 */
+  --color-disabled-bg: #f3f4f6;
+  --color-disabled-text: #9ca3af;
+  --color-disabled-border: #d1d5db;
   
   /* アルファチャネル付きカラー（フォーカスリング用） */
   --color-primary-alpha-10: rgba(59, 130, 246, 0.1);
-  --color-error-alpha-10: rgba(239, 68, 68, 0.1);
+  --color-error-alpha-10: rgba(220, 38, 38, 0.1);
   
   /* フォーカスリング */
   --ring-primary: 0 0 0 3px var(--color-primary-alpha-10);
@@ -50,8 +58,8 @@
   
   /* グラデーション */
   --gradient-hero: linear-gradient(135deg, var(--color-primary), var(--color-accent));
-  --gradient-text: linear-gradient(90deg, #3b82f6, #8b5cf6);
-  --glow-primary: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.15), transparent 70%);
+  --gradient-text: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  --glow-primary: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.08), transparent 70%);
 
   /* -----------------------------------------------------------------------
    * カテゴリタグ用カラー
@@ -72,7 +80,7 @@
    * ----------------------------------------------------------------------- */
   
   /* フォントファミリー */
-  --font-sans: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
   
   /* フォントサイズ */
@@ -100,6 +108,7 @@
   --line-height-normal: 1.5;    /* 本文（デフォルト） */
   --line-height-relaxed: 1.6;   /* 読みやすさ重視の本文、バナー */
   --line-height-loose: 2;       /* 詩、引用、特殊レイアウト */
+  --line-height-5xl: 3.6rem;    /* 特大見出し用 */
   
   /* アイコンサイズ */
   --icon-sm: 16px;
@@ -142,7 +151,10 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  --shadow-glow: 0 0 40px rgba(59, 130, 246, 0.3);
+  --shadow-glow: 0 0 40px rgba(59, 130, 246, 0.15); /* 控えめな調整 */
+  
+  /* モーダルオーバーレイ（Light） */
+  --overlay-bg: rgba(0, 0, 0, 0.5);
   
   /* -----------------------------------------------------------------------
    * モーション（アニメーション）
@@ -172,7 +184,7 @@
 
   /* イージング */
   --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
-  --ease-in: cubic-bezier(0.32, 0, 0.67, 0);
+  --ease-in: cubic-bezier(0.32, 0, 0.67, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -248,6 +260,31 @@
     /* サーフェス（ダークモード） */
     --glass-panel-bg: rgba(10, 10, 10, 0.7);
     --border-transparent: rgba(39, 39, 42, 0.5); /* #27272a base */
+    
+    /* セマンティックカラー（状態色 - Dark） */
+    --color-success: #22c55e;
+    --color-success-bg: #14532d;
+    --color-warning: #facc15;
+    --color-warning-bg: #422006;
+    --color-error: #ef4444;
+    --color-error-bg: #450a0a;
+    --color-info: #60a5fa;
+    --color-info-bg: #172554;
+
+    /* Disabled状態（Dark） */
+    --color-disabled-bg: #27272a;
+    --color-disabled-text: #52525b;
+    --color-disabled-border: #3f3f46;
+
+    /* シャドウ（Dark - 変数上書き） */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+    --shadow-glow: 0 0 40px rgba(96, 165, 250, 0.12);
+
+    /* モーダルオーバーレイ（Dark） */
+    --overlay-bg: rgba(0, 0, 0, 0.7);
 
     /* カテゴリタグ用カラー（ダークモード） */
     --tag-music: #a78bfa;
@@ -294,6 +331,31 @@
   /* サーフェス（ダークモード） */
   --glass-panel-bg: rgba(10, 10, 10, 0.7);
   --border-transparent: rgba(39, 39, 42, 0.5);
+
+  /* セマンティックカラー（状態色 - Dark） */
+  --color-success: #22c55e;
+  --color-success-bg: #14532d;
+  --color-warning: #facc15;
+  --color-warning-bg: #422006;
+  --color-error: #ef4444;
+  --color-error-bg: #450a0a;
+  --color-info: #60a5fa;
+  --color-info-bg: #172554;
+
+  /* Disabled状態（Dark） */
+  --color-disabled-bg: #27272a;
+  --color-disabled-text: #52525b;
+  --color-disabled-border: #3f3f46;
+
+  /* シャドウ（Dark - 変数上書き） */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 40px rgba(96, 165, 250, 0.12);
+
+  /* モーダルオーバーレイ（Dark） */
+  --overlay-bg: rgba(0, 0, 0, 0.7);
 
   /* カテゴリタグ用カラー（ダークモード） */
   --tag-music: #a78bfa;
