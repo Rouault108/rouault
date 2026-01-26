@@ -155,7 +155,7 @@ export const DarkMode: Story = {
 /**
  * ダークモード（全バリアント）
  */
-export const DarkMode_AllVariants: Story = {
+export const AllVariantsDarkMode: Story = {
   render: () => html`
     <div data-theme="dark" style="background: #0a0a0a; padding: 2rem; display: flex; flex-direction: column; gap: var(--space-3);">
       <ui-banner variant="info" dismissible>
@@ -195,14 +195,30 @@ export const BDD_Dismissible: Story = {
     const closeButton = banner.shadowRoot?.querySelector('[aria-label*="閉じる"]') as HTMLElement;
     await expect(closeButton).toBeInTheDocument();
 
+    // animationendイベントを待機するPromise
+    const animationEndPromise = new Promise<void>((resolve) => {
+      const bannerElement = banner.shadowRoot?.querySelector('.banner');
+      if (bannerElement) {
+        bannerElement.addEventListener('animationend', () => resolve(), { once: true });
+      } else {
+        // フォールバック: アニメーションがない場合は即座に解決
+        resolve();
+      }
+    });
+
     // クリックして閉じる
     await userEvent.click(closeButton);
 
-    // 少し待機（アニメーションがある場合）
-    await new Promise(resolve => setTimeout(resolve, 300));
+    // アニメーション完了を待機（最大1秒でタイムアウト）
+    await Promise.race([
+      animationEndPromise,
+      new Promise(resolve => setTimeout(resolve, 1000))
+    ]);
+
+    // 少し追加で待機してDOMの更新を確保
+    await new Promise(resolve => setTimeout(resolve, 50));
 
     // バナーがDOMから削除される、または非表示になる
-    // （実装によっては display: none または削除される）
     const isHidden = banner.hasAttribute('hidden') || banner.style.display === 'none';
     await expect(isHidden || !banner.isConnected).toBe(true);
   },
@@ -214,7 +230,7 @@ export const BDD_Dismissible: Story = {
 export const BDD_Accessibility: Story = {
   tags: ['test'],
   render: () => html`
-    <ui-banner data-testid="a11y-banner" variant="error">
+    <ui-banner data-testid="a11y-banner" variant="error" dismissible>
       エラーメッセージ
     </ui-banner>
   `,
@@ -229,6 +245,44 @@ export const BDD_Accessibility: Story = {
     // aria-live が設定されているか
     const ariaLive = banner.getAttribute('aria-live');
     await expect(ariaLive).toBeTruthy();
+
+    // 閉じるボタンのaria-label確認
+    const closeButton = banner.shadowRoot?.querySelector('[aria-label]') as HTMLElement;
+    await expect(closeButton).toHaveAttribute('aria-label');
+    
+    const ariaLabel = closeButton.getAttribute('aria-label');
+    await expect(ariaLabel).toBeTruthy();
+    await expect(ariaLabel).toContain('閉じる');
+  },
+};
+
+/**
+ * BDD: キーボード操作（Escape キー）
+ */
+export const BDD_KeyboardEscape: Story = {
+  tags: ['test'],
+  render: () => html`
+    <ui-banner data-testid="keyboard-banner" variant="info" dismissible>
+      Escapeキーで閉じることができます
+    </ui-banner>
+  `,
+  async play({ canvasElement }) {
+    const canvas = within(canvasElement);
+    const banner = canvas.getByTestId('keyboard-banner') as UiBanner;
+
+    // 初期状態確認
+    await expect(banner).toBeInTheDocument();
+    await expect(banner.hasAttribute('hidden')).toBe(false);
+
+    // Escapeキーを押下
+    await userEvent.keyboard('{Escape}');
+
+    // アニメーション完了を待機
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // バナーが非表示になる
+    const isHidden = banner.hasAttribute('hidden') || banner.style.display === 'none';
+    await expect(isHidden).toBe(true);
   },
 };
 
@@ -254,7 +308,8 @@ export const BDD_CloseEvent: Story = {
     const closeButton = banner.shadowRoot?.querySelector('[aria-label*="閉じる"]') as HTMLElement;
     await userEvent.click(closeButton);
 
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // イベントは即座に発火するはず（アニメーション完了を待たない）
+    await new Promise(resolve => setTimeout(resolve, 10));
     
     // イベントが発火したか
     await expect(eventFired).toBe(true);
