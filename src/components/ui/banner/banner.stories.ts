@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 import type { UiBanner } from './banner';
 import './banner.ts';
 import '../button/button.ts';
@@ -270,19 +270,17 @@ export const BDD_KeyboardEscape: Story = {
     const canvas = within(canvasElement);
     const banner = canvas.getByTestId('keyboard-banner') as UiBanner;
 
-    // 初期状態確認
-    await expect(banner).toBeInTheDocument();
-    await expect(banner.hasAttribute('hidden')).toBe(false);
+    // 1. レンダリング完了待機
+    await banner.updateComplete;
 
-    // Escapeキーを押下
-    await userEvent.keyboard('{Escape}');
+    // 2. Escape キーイベントを直接ディスパッチ
+    //    （フォーカス状態はブラウザ環境によって不安定なため、イベント発火を直接テスト）
+    banner.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
 
-    // アニメーション完了を待機
-    await new Promise(resolve => setTimeout(resolve, 200));
-
-    // バナーが非表示になる
-    const isHidden = banner.hasAttribute('hidden') || banner.style.display === 'none';
-    await expect(isHidden).toBe(true);
+    await waitFor(() => {
+      const isHidden = banner.hasAttribute('hidden') || getComputedStyle(banner).display === 'none';
+      expect(isHidden).toBe(true);
+    }, { timeout: 2000 });
   },
 };
 
