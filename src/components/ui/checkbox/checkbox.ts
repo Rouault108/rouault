@@ -7,10 +7,12 @@ import { live } from 'lit/directives/live.js';
  *
  * @slot - ラベルテキスト
  *
- * @cssprop --checkbox-size - チェックボックスのサイズ
- * @cssprop --checkbox-border-color - ボーダーカラー
- * @cssprop --checkbox-bg-color - 背景色
- * @cssprop --checkbox-check-color - チェックマークの色
+ * @cssprop --checkbox-size - チェックボックスのサイズ (デフォルト: 20px)
+ * @cssprop --checkbox-bg - 背景色 (デフォルト: --color-background)
+ * @cssprop --checkbox-border - ボーダーの色 (デフォルト: --color-border)
+ * @cssprop --checkbox-bg-active - チェック時の背景色 (デフォルト: --color-primary)
+ * @cssprop --checkbox-border-active - チェック時のボーダーの色 (デフォルト: --color-primary)
+ * @cssprop --checkbox-check-color - チェックマークの色 (デフォルト: white)
  */
 @customElement('ui-checkbox')
 export class UiCheckbox extends LitElement {
@@ -21,48 +23,62 @@ export class UiCheckbox extends LitElement {
     :host {
       display: inline-flex;
       align-items: center;
-      gap: var(--space-2, 0.5rem);
+      gap: var(--space-2);
       cursor: pointer;
       user-select: none;
       font-family: var(--font-sans, system-ui, sans-serif);
-      font-size: var(--text-base, 0.875rem);
-      line-height: var(--line-height-normal, 1.5);
-      color: var(--color-foreground, #111827);
+      font-size: var(--text-base);
+      line-height: var(--line-height-normal);
+      color: var(--color-foreground);
 
-      /* デザインシステムのトークン */
-      --checkbox-border-width: 1.5px;
-      --checkbox-border-radius: var(--radius-sm, 0.25rem);
-      --checkbox-transition: var(--motion-duration, 200ms) var(--ease-out, ease-out);
+      /* 公開 CSS API */
+      --checkbox-size: 20px;
+      --checkbox-bg: var(--color-background);
+      --checkbox-border: var(--color-border);
+      --checkbox-border-active: var(--color-primary);
+      --checkbox-bg-active: var(--color-primary);
+      --checkbox-check-color: #ffffff;
+      
+      /* 内部デザイントークン */
+      --_border-width: 1.5px;
+      --_radius: var(--radius-sm);
+      --_transition: var(--motion-duration, 200ms) var(--ease-out);
+      --_scale-pressed: 0.95;
     }
 
     :host([disabled]) {
       cursor: not-allowed;
-      opacity: 0.5;
+      opacity: 0.6;
     }
 
     /* -------------------------------------------------------------
-     * Hidden Native Input（アクセシビリティ用）
+     * 非表示のネイティブ入力 (SR Only パターン)
      * ------------------------------------------------------------- */
     .native-input {
       position: absolute;
-      opacity: 0;
-      width: 0;
-      height: 0;
-      pointer-events: none;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+      pointer-events: none; /* クリックイベントはホストでハンドルするため */
     }
 
     /* -------------------------------------------------------------
-     * チェックボックスコンテナ
+     * チェックボックスコンテナ (Wrapper)
      * ------------------------------------------------------------- */
     .checkbox-wrapper {
       display: inline-flex;
       align-items: center;
-      gap: var(--space-2, 0.5rem);
-      cursor: inherit;
+      gap: var(--space-2);
+      isolate: isolate; /* 重なり順の制御 */
     }
 
     /* -------------------------------------------------------------
-     * チェックボックス本体
+     * チェックボックス本体 (Visual Box)
      * ------------------------------------------------------------- */
     .checkbox {
       position: relative;
@@ -71,110 +87,104 @@ export class UiCheckbox extends LitElement {
       justify-content: center;
       flex-shrink: 0;
       
-      width: var(--checkbox-size, 20px);
-      height: var(--checkbox-size, 20px);
+      width: var(--checkbox-size);
+      height: var(--checkbox-size);
       
-      background-color: var(--checkbox-bg-color, var(--color-background, #ffffff));
-      border: var(--checkbox-border-width) solid var(--checkbox-border-color, var(--color-border, #e5e7eb));
-      border-radius: var(--checkbox-border-radius);
+      background-color: var(--checkbox-bg);
+      border: var(--_border-width) solid var(--checkbox-border);
+      border-radius: var(--_radius);
       
       transition:
-        background-color var(--checkbox-transition),
-        border-color var(--checkbox-transition),
-        box-shadow var(--checkbox-transition);
+        background-color var(--_transition),
+        border-color var(--_transition),
+        box-shadow var(--_transition),
+        transform var(--_transition);
     }
 
-    /* Hover */
-    :host(:not([disabled])) .checkbox-wrapper:hover .checkbox {
-      border-color: var(--color-primary, #3b82f6);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #3b82f6) 15%, transparent);
+    /* ホバー状態 (静謐なインタラクション) */
+    @media (hover: hover) {
+      :host(:not([disabled])) .checkbox-wrapper:hover .checkbox {
+        border-color: var(--checkbox-border-active);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
+      }
     }
 
-    /* Focus */
+    /* アクティブ状態 (押し込み) */
+    :host(:not([disabled]):active) .checkbox {
+      transform: scale(var(--_scale-pressed));
+    }
+
+    /* フォーカス状態 */
     .native-input:focus-visible ~ .checkbox-wrapper .checkbox {
-      outline: 2px solid var(--color-primary, #3b82f6);
+      outline: 2px solid var(--color-primary);
       outline-offset: 2px;
-      box-shadow: none; /* ホバーのリングを消す */
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 20%, transparent);
     }
 
-    /* Checked */
+    /* チェックおよび不確定状態 */
     :host([checked]) .checkbox,
     :host([indeterminate]) .checkbox {
-      background-color: var(--color-primary, #3b82f6);
-      border-color: var(--color-primary, #3b82f6);
+      background-color: var(--checkbox-bg-active);
+      border-color: var(--checkbox-border-active);
     }
 
-    /* Invalid */
+    /* 無効な状態 (Invalid) */
     :host([invalid]) .checkbox {
-      border-color: var(--color-error, #ef4444);
+      border-color: var(--color-error);
     }
 
     :host([invalid]) .checkbox-wrapper:hover .checkbox {
-      border-color: var(--color-error, #ef4444);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error, #ef4444) 15%, transparent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error) 15%, transparent);
     }
 
-    /* Disabled */
+    /* 無効状態 (Disabled) */
     :host([disabled]) .checkbox {
-      background-color: var(--color-background-subtle, #f9fafb);
-      border-color: var(--color-border, #e5e7eb);
-      cursor: not-allowed;
-    }
-
-    :host([disabled][checked]) .checkbox,
-    :host([disabled][indeterminate]) .checkbox {
-      background-color: var(--color-background-subtle, #f9fafb);
-      opacity: 0.5;
+      background-color: var(--color-background-subtle);
+      border-color: var(--color-border);
+      pointer-events: none;
     }
 
     /* -------------------------------------------------------------
-     * チェックマーク
+     * チェックマーク & Indeterminateマーク
      * ------------------------------------------------------------- */
-    .checkmark {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      opacity: 0;
-      transform: scale(0.8);
-      transition:
-        opacity var(--checkbox-transition),
-        transform var(--checkbox-transition);
-    }
-
-    :host([checked]) .checkmark {
-      opacity: 1;
-      transform: scale(1);
-    }
-
-    /* Indeterminate マーク（ハイフン）*/
+    .checkmark,
     .indeterminate-mark {
       position: absolute;
-      width: 60%;
-      height: 2px;
-      background-color: white;
-      opacity: 0;
-      transform: scale(0.8);
-      transition:
-        opacity var(--checkbox-transition),
-        transform var(--checkbox-transition);
-    }
-
-    :host([indeterminate]) .indeterminate-mark {
-      opacity: 1;
-      transform: scale(1);
-    }
-
-    /* チェックマークアイコン（Iconify使用） */
-    .checkmark iconify-icon {
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
+      color: var(--checkbox-check-color);
+      opacity: 0;
+      transform: scale(0.6) translateY(2px);
+      transition:
+        opacity var(--_transition),
+        transform var(--_transition);
+      pointer-events: none;
+    }
+
+    .checkmark svg {
+      width: 70%;
+      height: 70%;
+    }
+
+    .indeterminate-mark::after {
+      content: '';
+      display: block;
+      width: 60%;
+      height: 2px;
+      background-color: currentColor;
+      border-radius: 1px;
+    }
+
+    /* アクティブ時のシンボル表示 */
+    :host([checked]) .checkmark,
+    :host([indeterminate]) .indeterminate-mark {
+      opacity: 1;
+      transform: scale(1) translateY(0);
     }
 
     /* -------------------------------------------------------------
@@ -182,7 +192,13 @@ export class UiCheckbox extends LitElement {
      * ------------------------------------------------------------- */
     .label {
       flex: 1;
-      cursor: inherit;
+      cursor: pointer;
+      color: currentColor;
+    }
+    
+    :host([disabled]) .label {
+      cursor: not-allowed;
+      color: var(--color-foreground-muted);
     }
 
     /* -------------------------------------------------------------
@@ -190,55 +206,17 @@ export class UiCheckbox extends LitElement {
      * ------------------------------------------------------------- */
     :host([size='sm']) {
       --checkbox-size: 16px;
-      font-size: var(--text-sm, 0.8125rem);
+      font-size: var(--text-sm);
     }
 
     :host([size='md']) {
       --checkbox-size: 20px;
-      font-size: var(--text-base, 0.875rem);
+      font-size: var(--text-base);
     }
 
     :host([size='lg']) {
       --checkbox-size: 24px;
-      font-size: var(--text-lg, 1rem);
-    }
-
-    /* -------------------------------------------------------------
-     * ダークモード対応
-     * ------------------------------------------------------------- */
-    @media (prefers-color-scheme: dark) {
-      :host {
-        color: var(--color-foreground, #ededed);
-        --checkbox-bg-color: var(--bg-surface-1, #171717);
-        --checkbox-border-color: var(--color-border, #27272a);
-      }
-
-      :host([checked]) .checkbox,
-      :host([indeterminate]) .checkbox {
-        background-color: var(--color-primary, #60a5fa);
-        border-color: var(--color-primary, #60a5fa);
-      }
-
-      :host([disabled]) .checkbox {
-        background-color: var(--bg-surface-1, #171717);
-      }
-    }
-
-    /* data-theme="dark" 対応 */
-    :host-context([data-theme='dark']) {
-      color: var(--color-foreground, #ededed);
-      --checkbox-bg-color: var(--bg-surface-1, #171717);
-      --checkbox-border-color: var(--color-border, #27272a);
-    }
-
-    :host-context([data-theme='dark']):host([checked]) .checkbox,
-    :host-context([data-theme='dark']):host([indeterminate]) .checkbox {
-      background-color: var(--color-primary, #60a5fa);
-      border-color: var(--color-primary, #60a5fa);
-    }
-
-    :host-context([data-theme='dark']):host([disabled]) .checkbox {
-      background-color: var(--bg-surface-1, #171717);
+      font-size: var(--text-lg);
     }
 
     /* -------------------------------------------------------------
@@ -246,13 +224,28 @@ export class UiCheckbox extends LitElement {
      * ------------------------------------------------------------- */
     @media (prefers-reduced-motion: reduce) {
       :host {
-        --checkbox-transition: 0ms;
+        --_transition: 0ms;
       }
+    }
 
-      .checkbox,
-      .checkmark,
-      .indeterminate-mark {
-        transition: none;
+    /* -------------------------------------------------------------
+     * prefers-contrast: more 対応
+     * ------------------------------------------------------------- */
+    @media (prefers-contrast: more) {
+      :host {
+        --checkbox-border: WindowText;
+        --checkbox-bg-active: WindowText;
+        --checkbox-check-color: Window;
+      }
+      
+      .checkbox {
+        border-width: 2px;
+      }
+      
+      .native-input:focus-visible ~ .checkbox-wrapper .checkbox {
+        outline-width: 3px;
+        outline-style: solid;
+        outline-color: Highlight;
       }
     }
   `;
@@ -290,9 +283,8 @@ export class UiCheckbox extends LitElement {
 
     const target = e.target as HTMLInputElement;
     this.checked = target.checked;
-    this.indeterminate = false; // チェック時に indeterminate を解除
+    this.indeterminate = false; // チェック時はindeterminateを解除
 
-    // カスタムイベントを発火
     this.dispatchEvent(
       new CustomEvent('change', {
         detail: { checked: this.checked, value: this.value },
@@ -319,33 +311,17 @@ export class UiCheckbox extends LitElement {
       return;
     }
 
-    // イベントの発生元がネイティブinputなら、処理済みなので無視（無限ループ防止）
-    // Shadow DOM 内のイベントなので composedPath() を使用
     const path = e.composedPath();
     if (path.includes(this._nativeInput)) {
       return;
     }
 
-    // ネイティブ input をクリック
     this._nativeInput.click();
-  }
-
-  private _handleKeyDown(e: KeyboardEvent) {
-    if (this.disabled) {
-      return;
-    }
-
-    // Space キーでトグル
-    if (e.key === ' ' || e.key === 'Spacebar') {
-      e.preventDefault();
-      this._nativeInput.click();
-    }
   }
 
   override updated(changedProperties: Map<string, unknown>) {
     super.updated(changedProperties);
 
-    // indeterminate プロパティは DOM 属性ではなく JavaScript プロパティなので手動設定
     if (changedProperties.has('indeterminate')) {
       this._nativeInput.indeterminate = this.indeterminate;
     }
@@ -361,17 +337,13 @@ export class UiCheckbox extends LitElement {
         .value=${this.value}
         name=${this.name}
         @change=${this._handleChange}
+        aria-hidden="false" 
       />
-      <div
-        class="checkbox-wrapper"
-        @keydown=${this._handleKeyDown}
-      >
-        <div class="checkbox" role="presentation">
-          <!-- チェックマーク（Iconify） -->
+      <div class="checkbox-wrapper">
+        <div class="checkbox">
           <span class="checkmark" aria-hidden="true">
             <iconify-icon icon="lucide:check" width="100%" height="100%"></iconify-icon>
           </span>
-          <!-- Indeterminate マーク -->
           <span class="indeterminate-mark" aria-hidden="true"></span>
         </div>
         <span class="label">

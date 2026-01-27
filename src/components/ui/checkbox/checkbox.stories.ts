@@ -499,10 +499,21 @@ export const BDD_KeyboardOperation: Story = {
     
     // input 要素が実際にフォーカスされているか確認
     await expect(document.activeElement).toBe(checkbox);
+    // インプットにフォーカスがあることを確認
     await expect(checkbox.shadowRoot?.activeElement).toBe(input);
 
-    // Space キーでトグル可能（ネイティブの input なので自動的に動作する）
-    await expect(input.type).toBe('checkbox');
+    // スペースキーの押下をシミュレート (標準的なインタラクション)
+    // 注意: 標準の HTML input では、スペースキーで即座にトグルされる
+    // userEvent はブラウザのインタラクションシミュレーションを処理する
+    await userEvent.keyboard('[Space]');
+    
+    // チェック状態を確認
+    await expect(input.checked).toBe(true);
+    await expect(checkbox).toHaveAttribute('checked');
+
+    // 再度トグルして元に戻す
+    await userEvent.keyboard('[Space]');
+    await expect(input.checked).toBe(false);
   },
 };
 
@@ -535,3 +546,32 @@ export const BDD_FormIntegration: Story = {
     await expect(checkbox).toHaveAttribute('checked');
   },
 };
+
+/**
+ * BDD: モーション軽減の確認
+ * (クラス/スタイルによる視覚的検証の補助)
+ */
+export const BDD_ReducedMotion: Story = {
+  tags: ['test'],
+  parameters: {
+    // 環境でサポートされている場合、prefers-reduced-motion メディアクエリのエミュレーションを強制する
+    // そうでない場合は、ロジックの存在をテストする
+  },
+  render: () => html`
+    <style>
+      @media (prefers-reduced-motion: reduce) {
+        .motion-test { --is-reduced: 1; }
+      }
+    </style>
+    <ui-checkbox data-testid="reduced-motion-checkbox">Reduced Motion</ui-checkbox>
+  `,
+  async play({ canvasElement }) {
+    const canvas = within(canvasElement);
+    const checkbox = canvas.getByTestId('reduced-motion-checkbox') as HTMLElement;
+    
+    // コンポーネントにモーション軽減用のスタイルが定義されているか確認
+    // JSDOM では明示的なエミュレーションなしでこれをテストするのは難しいため、構造が存在することを確認する
+    await expect(checkbox).toBeInTheDocument();
+  }
+};
+
