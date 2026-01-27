@@ -118,9 +118,38 @@
    * タイポグラフィ
    * ----------------------------------------------------------------------- */
   
-  /* フォントファミリー */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  /* フォントファミリー
+   * 
+   * 【設計意図】
+   * - Noto Sans JP を最優先: 日本語主体のコンテンツに最適化
+   * - Variable Font 採用: ウェイト調整の柔軟性とファイルサイズの最適化
+   * - システムフォントフォールバック: 和文対応を考慮した順序
+   * 
+   * 【和欧混植の戦略】
+   * - Noto Sans JP は欧文グリフも含むため、和欧統一感が確保される
+   * - Inter は含めない（重複とフォント切替コストを回避）
+   * - フォールバックは日本語対応のシステムフォントを優先
+   */
+  --font-sans: 
+    'Noto Sans JP Variable',
+    'Noto Sans JP',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Hiragino Sans',            /* macOS 日本語 */
+    'Hiragino Kaku Gothic ProN',
+    'Yu Gothic UI',             /* Windows 日本語 */
+    'Segoe UI',
+    'Meiryo',
+    sans-serif;
+    
+  /* 等幅フォント（コードブロック、ターミナル用）*/
+  --font-mono: 
+    'JetBrains Mono', 
+    'Fira Code',
+    'Consolas',
+    'Liberation Mono',
+    'Courier New',
+    monospace;
   
   /* フォントサイズ */
   --text-2xs: 0.625rem;  /* 10px */
