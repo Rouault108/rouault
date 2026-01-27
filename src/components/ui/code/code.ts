@@ -27,17 +27,11 @@ export class UiCode extends LitElement {
   static override styles = css`
     /* =====================================================================
      * ホスト要素（ui-code）
-     * 
-     * CSS変数はShadow DOM境界を越えて継承されるため、tokens.cssで
-     * 定義されたテーマ変数が自動的に適用される。
      * ===================================================================== */
     :host {
       display: inline;
       
-      /* デフォルトカラー
-       * tokens.cssで定義された変数を参照。
-       * Light/Darkモードの切り替えは親要素の[data-theme]または
-       * @media (prefers-color-scheme)によって自動的に行われる。 */
+      /* デフォルトカラー（Light Mode） */
       --code-bg: var(--color-background-subtle);
       --code-text: var(--color-foreground);
       --code-border: var(--color-border);
@@ -69,9 +63,6 @@ export class UiCode extends LitElement {
 
     /* =====================================================================
      * バリアント: Primary（強調）
-     * 
-     * var(--color-primary)は tokens.css で Light/Dark が自動切替される。
-     * コンポーネント側でモードを意識する必要はない。
      * ===================================================================== */
     :host([variant="primary"]) {
       --code-bg: color-mix(
