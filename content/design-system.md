@@ -269,10 +269,56 @@ RouaultのデザインシステムはLinearやRaycastのドキュメントに触
 
 ### フォントファミリー
 
+RouaultはLinear/Raycastをインスピレーション元としていますが、**日本語主体のコンテンツ**という本質的な違いがあります。そのため、欧文フォント（Inter）ではなく、日本語に最適化されたフォント戦略を採用します。
+
 ```css
---font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
---font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+--font-sans: 
+  'Noto Sans JP Variable',
+  'Noto Sans JP',
+  -apple-system,
+  BlinkMacSystemFont,
+  'Hiragino Sans',
+  'Hiragino Kaku Gothic ProN',
+  'Yu Gothic UI',
+  'Segoe UI',
+  'Meiryo',
+  sans-serif;
+
+--font-mono: 
+  'JetBrains Mono', 
+  'Fira Code', 
+  'Consolas',
+  'Liberation Mono',
+  'Courier New',
+  monospace;
 ```
+
+#### 設計意図
+
+| 項目 | 選択理由 |
+|------|----------|
+| **Noto Sans JP** | Google開発の高品質な日本語フォント。欧文グリフも含むため和欧混植時の統一感が高い。 |
+| **Variable Font** | ウェイト400-900を1ファイルで提供。ファイルサイズとデザイン柔軟性の最適バランス。 |
+| **和文優先フォールバック** | システムフォントも日本語対応を優先順位化（Hiragino Sans, Yu Gothic UIなど）。 |
+
+#### 和欧混植（Multilingual Typography）
+
+日本語と英数字が混在するテキストにおいて、視覚的統一感を確保するための調整：
+
+```css
+body {
+  letter-spacing: 0.02em; /* 和欧間の微調整 */
+}
+
+h1, h2, h3 {
+  letter-spacing: -0.02em; /* 見出しは詰めて密度を高める */
+}
+
+.prose {
+  letter-spacing: 0; /* 本文は詰めず、自然な可読性を優先 */
+}
+```
+
 
 ### アイコン（Iconography）
 
