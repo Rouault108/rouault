@@ -14,19 +14,20 @@ body {
   line-height: 1.6;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+/* 記事本文用スタイル (.prose 配下のみ適用) */
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
   line-height: 1.2;
   margin-top: var(--space-8, 2rem);
   margin-bottom: var(--space-4, 1rem);
   font-weight: var(--font-bold, 700);
 }
 
-p {
+.prose p {
   margin-bottom: var(--space-4, 1rem);
 }
 
