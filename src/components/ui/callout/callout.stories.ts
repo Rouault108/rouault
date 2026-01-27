@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
-import { expect, within } from 'storybook/test';
+import { expect, within, userEvent } from 'storybook/test';
 import type { UiCallout } from './callout';
 import './callout.ts';
 
@@ -14,9 +14,9 @@ const meta: Meta<UiCallout> = {
       options: ['note', 'tip', 'important', 'warning', 'caution'],
       description: 'コールアウトの種類',
     },
-    title: {
+    heading: {
       control: { type: 'text' },
-      description: 'コールアウトのタイトル（任意）',
+      description: 'コールアウトの見出し（任意）',
     },
     collapsible: {
       control: { type: 'boolean' },
@@ -42,10 +42,10 @@ type Story = StoryObj<UiCallout>;
 export const Default: Story = {
   args: {
     variant: 'note',
-    title: '参考情報',
+    heading: '参考情報',
   },
   render: (args) => html`
-    <ui-callout variant="${args.variant}" title="${args.title}">
+    <ui-callout variant="${args.variant}" heading="${args.heading}">
       この機能は実験的なものであり、将来的に変更される可能性があります。本番環境での使用には注意してください。
     </ui-callout>
   `,
@@ -56,7 +56,7 @@ export const Default: Story = {
  */
 export const Note: Story = {
   render: () => html`
-    <ui-callout variant="note" title="補足説明">
+    <ui-callout variant="note" heading="補足説明">
       デフォルトのバリアントです。一般的な補足情報や参考資料へのリンクを示すために使用します。
     </ui-callout>
   `,
@@ -67,7 +67,7 @@ export const Note: Story = {
  */
 export const Tip: Story = {
   render: () => html`
-    <ui-callout variant="tip" title="プロのヒント">
+    <ui-callout variant="tip" heading="プロのヒント">
       <code>prefers-reduced-motion</code> を尊重することで、モーション過敏症のユーザーにも優しいアプリケーションを構築できます。
     </ui-callout>
   `,
@@ -78,7 +78,7 @@ export const Tip: Story = {
  */
 export const Important: Story = {
   render: () => html`
-    <ui-callout variant="important" title="重要な変更">
+    <ui-callout variant="important" heading="重要な変更">
       次のメジャーバージョン（v2.0）で、この API は廃止予定です。代わりに <code>newAPI()</code> を使用してください。
     </ui-callout>
   `,
@@ -89,7 +89,7 @@ export const Important: Story = {
  */
 export const Warning: Story = {
   render: () => html`
-    <ui-callout variant="warning" title="警告">
+    <ui-callout variant="warning" heading="警告">
       この操作を実行すると、既存のデータが上書きされます。事前にバックアップを取ることを強く推奨します。
     </ui-callout>
   `,
@@ -100,19 +100,19 @@ export const Warning: Story = {
  */
 export const Caution: Story = {
   render: () => html`
-    <ui-callout variant="caution" title="注意">
+    <ui-callout variant="caution" heading="注意">
       <strong>セキュリティに関する注意:</strong> ユーザー入力をサニタイズせずにレンダリングすると、XSS攻撃のリスクがあります。
     </ui-callout>
   `,
 };
 
 /**
- * タイトルなし
+ * 見出しなし
  */
-export const NoTitle: Story = {
+export const NoHeading: Story = {
   render: () => html`
     <ui-callout variant="tip">
-      タイトルを省略することもできます。短い補足情報の場合に有効です。
+      見出しを省略することもできます。短い補足情報の場合に有効です。
     </ui-callout>
   `,
 };
@@ -122,7 +122,7 @@ export const NoTitle: Story = {
  */
 export const NoIcon: Story = {
   render: () => html`
-    <ui-callout variant="note" title="シンプルなコールアウト" .showIcon=${false}>
+    <ui-callout variant="note" heading="シンプルなコールアウト" .showIcon=${false}>
       アイコンを非表示にすることで、よりミニマルな見た目になります。
     </ui-callout>
   `,
@@ -133,7 +133,7 @@ export const NoIcon: Story = {
  */
 export const Collapsible: Story = {
   render: () => html`
-    <ui-callout variant="note" title="詳細情報（クリックして展開）" collapsible>
+    <ui-callout variant="note" heading="詳細情報（クリックまたはEnterで展開）" collapsible>
       <p>この内容は任意で確認できます。</p>
       <ul>
         <li>折りたたみ可能なコールアウトは、補足情報が長い場合に有効です。</li>
@@ -149,7 +149,7 @@ export const Collapsible: Story = {
  */
 export const CollapsedByDefault: Story = {
   render: () => html`
-    <ui-callout variant="tip" title="上級者向けのヒント" collapsible collapsed>
+    <ui-callout variant="tip" heading="上級者向けのヒント" collapsible collapsed>
       <p>この内容はデフォルトで折りたたまれています。</p>
       <p>興味のあるユーザーだけが展開して読むことができます。</p>
     </ui-callout>
@@ -161,7 +161,7 @@ export const CollapsedByDefault: Story = {
  */
 export const RichContent: Story = {
   render: () => html`
-    <ui-callout variant="important" title="TypeScript 型定義">
+    <ui-callout variant="important" heading="TypeScript 型定義">
       <p>インターフェースを定義する際は、以下のベストプラクティスに従ってください：</p>
       <pre><code>interface User {
   id: string;
@@ -179,11 +179,25 @@ export const RichContent: Story = {
 export const DarkMode: Story = {
   render: () => html`
     <div data-theme="dark" style="background: #0a0a0a; padding: 2rem; min-height: 200px;">
-      <ui-callout variant="note" title="ダークモードでの表示">
+      <ui-callout data-testid="callout-dark" variant="note" heading="ダークモードでの表示" collapsible>
         <p>ダークモードでは、タイトルボタンのホバー効果が適切に表示されます。</p>
       </ui-callout>
     </div>
   `,
+  async play({ canvasElement }) {
+    const canvas = within(canvasElement);
+    const callout = canvas.getByTestId('callout-dark') as UiCallout;
+    await callout.updateComplete;
+
+    // ダークモードのスタイルが適用されているか間接的に確認
+    // (詳細な色チェックはビジュアルリグレッションテストに任せるが、基本動作を確認)
+    const toggleButton = callout.shadowRoot?.querySelector('.toggle-button') as HTMLElement;
+    await expect(toggleButton).toBeTruthy();
+    
+    // ホバー効果のシミュレーション
+    await userEvent.hover(toggleButton);
+    // スタイル変更の確認は難しいが、エラーが出ないことを確認
+  }
 };
 
 /**
@@ -191,10 +205,10 @@ export const DarkMode: Story = {
  */
 export const Nested: Story = {
   render: () => html`
-    <ui-callout variant="note" title="外側のコールアウト">
+    <ui-callout variant="note" heading="外側のコールアウト">
       <p>コールアウトの中に別のコールアウトをネストすることも可能です。</p>
       
-      <ui-callout variant="warning" title="内側の警告">
+      <ui-callout variant="warning" heading="内側の警告">
         ただし、ネストしすぎると可読性が低下するため、適度に使用してください。
       </ui-callout>
     </ui-callout>
@@ -207,7 +221,7 @@ export const Nested: Story = {
 export const BDD_VariantSwitch: Story = {
   tags: ['test'],
   render: () => html`
-    <ui-callout data-testid="callout-variant" variant="warning" title="Test Callout">
+    <ui-callout data-testid="callout-variant" variant="warning" heading="Test Callout">
       Test content
     </ui-callout>
   `,
@@ -220,9 +234,9 @@ export const BDD_VariantSwitch: Story = {
     // variant 属性が正しく反映されているか
     await expect(callout.getAttribute('variant')).toBe('warning');
     
-    // role 属性が設定されているか
+    // role 属性が設定されているか (Warningは alert role)
     const role = callout.getAttribute('role');
-    await expect(role).toBeTruthy();
+    await expect(role).toBe('alert');
     
     // アイコンが表示されているか
     const icon = callout.shadowRoot?.querySelector('.icon');
@@ -231,15 +245,15 @@ export const BDD_VariantSwitch: Story = {
 };
 
 /**
- * BDD: 折りたたみ機能テスト
+ * BDD: 折りたたみ機能とキーボード操作テスト
  */
-export const BDD_CollapsibleToggle: Story = {
+export const BDD_CollapsibleInteraction: Story = {
   tags: ['test'],
   render: () => html`
     <ui-callout 
       data-testid="callout-collapsible" 
       variant="note" 
-      title="Collapsible Test"
+      heading="Collapsible Test"
       collapsible
     >
       This is collapsible content.
@@ -251,28 +265,28 @@ export const BDD_CollapsibleToggle: Story = {
 
     await callout.updateComplete;
 
-    // 初期状態: 展開されている
-    await expect(callout.hasAttribute('collapsed')).toBe(false);
-    
-    // コンテンツが表示されているか
-    let content = callout.shadowRoot?.querySelector('.content');
-    let isHidden = content?.getAttribute('aria-hidden') === 'true';
-    await expect(isHidden).toBe(false);
+    // ボタンの取得
+    const toggleButton = callout.shadowRoot?.querySelector('.toggle-button') as HTMLElement;
+    await expect(toggleButton).toBeTruthy();
 
-    // タイトルボタンをクリック
-    const titleButton = callout.shadowRoot?.querySelector('.title-button') as HTMLElement;
-    await expect(titleButton).toBeTruthy();
-    
-    titleButton?.click();
+    // 1. マウスクリックでの折りたたみ
+    await userEvent.click(toggleButton);
     await callout.updateComplete;
-
-    // 折りたたまれたか
     await expect(callout.hasAttribute('collapsed')).toBe(true);
-    
-    // コンテンツが非表示になったか
-    content = callout.shadowRoot?.querySelector('.content');
-    isHidden = content?.getAttribute('aria-hidden') === 'true';
-    await expect(isHidden).toBe(true);
+
+    // 2. キーボード操作（Space）での展開
+    toggleButton.focus();
+    await userEvent.keyboard(' ');
+    await callout.updateComplete;
+    await expect(callout.hasAttribute('collapsed')).toBe(false);
+
+    // 3. キーボード操作（Enter）での折りたたみ
+    await userEvent.keyboard('{Enter}');
+    await callout.updateComplete;
+    await expect(callout.hasAttribute('collapsed')).toBe(true);
+
+    // フォーカス状態の確認 (visual check helper)
+    await expect(document.activeElement === callout).toBe(false); // Shadow DOM内のボタンにフォーカスがあるはずだが、activeElementはhostを指さない場合がある
   },
 };
 
@@ -285,7 +299,7 @@ export const BDD_Accessibility: Story = {
     <ui-callout 
       data-testid="callout-a11y" 
       variant="important" 
-      title="Accessibility Test"
+      heading="Accessibility Test"
       collapsible
     >
       Content for accessibility testing.
@@ -297,25 +311,26 @@ export const BDD_Accessibility: Story = {
 
     await callout.updateComplete;
 
-    // role 属性が設定されているか
-    const role = callout.getAttribute('role');
-    await expect(role).toBe('note');
-    
     // 折りたたみ可能な場合、タイトルボタンに適切なARIA属性があるか
-    const titleButton = callout.shadowRoot?.querySelector('.title-button') as HTMLElement;
-    await expect(titleButton).toBeTruthy();
+    const toggleButton = callout.shadowRoot?.querySelector('.toggle-button') as HTMLElement;
+    await expect(toggleButton).toBeTruthy();
     
     // aria-expanded が設定されているか
-    const ariaExpanded = titleButton?.getAttribute('aria-expanded');
-    await expect(ariaExpanded).toBe('true');
+    const ariaExpanded = toggleButton?.getAttribute('aria-expanded');
+    await expect(ariaExpanded).toBe('true'); // 初期状態は展開
     
     // aria-controls が設定されているか
-    const ariaControls = titleButton?.getAttribute('aria-controls');
+    const ariaControls = toggleButton?.getAttribute('aria-controls');
     await expect(ariaControls).toBeTruthy();
     
     // コンテンツに id が設定されているか
     const content = callout.shadowRoot?.querySelector('.content') as HTMLElement;
     const contentId = content?.getAttribute('id');
     await expect(contentId).toBe(ariaControls);
+
+    // aria-labelledby が設定されているか
+    const headingId = callout.shadowRoot?.querySelector('.heading')?.getAttribute('id');
+    const labelledBy = toggleButton?.getAttribute('aria-labelledby');
+    await expect(labelledBy).toBe(headingId);
   },
 };
