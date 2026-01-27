@@ -1,6 +1,6 @@
 import { LitElement, css, html, type CSSResult, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import { ClickableController } from '../../../lib/controllers/clickable-controller.js';
+import { classMap } from 'lit/directives/class-map.js';
 
 @customElement('ui-card')
 export class UiCard extends LitElement {
@@ -12,17 +12,20 @@ export class UiCard extends LitElement {
            * 基本スタイル
            * ------------------------------------------------------------- */
           display: block;
-          border-radius: var(--radius-lg, 8px);
+          border-radius: var(--radius-lg);
           background-color: var(--color-background);
           color: var(--color-foreground);
-          font-family: var(--font-sans, system-ui, sans-serif);
+          font-family: var(--font-sans);
           
           /* モーション */
           transition: 
-            transform var(--motion-duration, 200ms) var(--motion-easing, ease-out),
-            box-shadow var(--motion-duration, 200ms) var(--motion-easing, ease-out),
-            background-color var(--motion-duration, 200ms) var(--motion-easing, ease-out),
-            border-color var(--motion-duration, 200ms) var(--motion-easing, ease-out);
+            transform var(--motion-duration) var(--motion-easing),
+            box-shadow var(--motion-duration) var(--motion-easing),
+            background-color var(--motion-duration) var(--motion-easing),
+            border-color var(--motion-duration) var(--motion-easing);
+
+          /* Nested Radius 計算用: Paddingを引いた内側の角丸 */
+          --_inner-radius: calc(var(--radius-lg) - var(--card-padding-x));
         }
 
         /* コンテナ（内部構造） */
@@ -30,6 +33,10 @@ export class UiCard extends LitElement {
           display: flex;
           flex-direction: column;
           height: 100%;
+          border-radius: inherit;
+          text-decoration: none;
+          color: inherit;
+          outline: none;
         }
         
         /* コンテンツラッパー（Header + Body + Footer） */
@@ -46,11 +53,11 @@ export class UiCard extends LitElement {
          * ------------------------------------------------------------- */
         
         :host {
-          --card-padding-x: var(--space-6, 1.5rem); /* 24px - デフォルト左右 */
-          --card-padding-y: var(--space-6, 1.5rem); /* 24px - デフォルト上下 */
+          --card-padding-x: var(--space-6); /* 24px - デフォルト左右 */
+          --card-padding-y: var(--space-6); /* 24px - デフォルト上下 */
           
-          --card-header-gap: var(--space-4, 1rem); /* HeaderとBodyの間 */
-          --card-footer-gap: var(--space-4, 1rem); /* FooterとBodyの間 */
+          --card-header-gap: var(--space-4); /* HeaderとBodyの間 */
+          --card-footer-gap: var(--space-4); /* FooterとBodyの間 */
         }
 
         .card-header {
@@ -95,13 +102,18 @@ export class UiCard extends LitElement {
          * スロット要素の基本挙動
          * ------------------------------------------------------------- */
 
+        /**
+         * 非表示制御
+         * content/design-system.md の規定「視覚的に情報を隠す場合は .sr-only クラスを使用し、display: none は使用しない」
+         * に対する例外: コンテンツが存在しないスロットラッパー自体はレイアウト崩れを防ぐため完全に削除する。
+         * これはアクセシビリティ上の隠蔽ではなく、構造上の不在であるため display: none が適切。
+         */
         .card-header[hidden],
         .card-footer[hidden] {
           display: none;
         }
 
         /* スロット内の要素のマージンをリセット
-         * main.css のグローバルな見出しスタイル (margin-top: 32px) を上書きするため !important が必要 */
         .card-header ::slotted(h1),
         .card-header ::slotted(h2),
         .card-header ::slotted(h3),
@@ -117,13 +129,15 @@ export class UiCard extends LitElement {
         .card-body ::slotted(h6),
         .card-body ::slotted(p),
         .card-footer ::slotted(p) {
-          margin: 0 !important;
+          margin: 0;
         }
 
         .card-media {
           overflow: hidden;
-          /* デフォルト(Vertical)の角丸 */
-          border-radius: var(--radius-lg, 8px) var(--radius-lg, 8px) 0 0;
+          /* デフォルト(Vertical)の角丸 - Nested Radius 適用 */
+          /* padding が無い(0)の場合は外側と同じ角丸、paddingがある場合は計算値を適用したいが、
+             Vertical配置のMediaは通常「カードの端まである」デザインなので、上部は外側の角丸を継承するのが自然 */
+          border-radius: var(--radius-lg) var(--radius-lg) 0 0;
           
           /* Flexアイテムとしての挙動（Horizontal時などに重要） */
           display: flex; 
@@ -153,7 +167,7 @@ export class UiCard extends LitElement {
 
         /* 最初の要素がメディアなら角丸を上部のみに (Vertical) */
         :host(:not([orientation="horizontal"])) .card-media:first-child {
-          border-radius: var(--radius-lg, 8px) var(--radius-lg, 8px) 0 0;
+          border-radius: var(--radius-lg) var(--radius-lg) 0 0;
         }
 
         /* メディアがあるときは、他のセクションの上部角丸を削除 (Vertical) */
@@ -176,7 +190,7 @@ export class UiCard extends LitElement {
           height: auto; /* Flexboxのstretchにより親の高さに追従 */
           min-height: 200px; /* 最小高さ確保 */
           flex-shrink: 0;
-          border-radius: var(--radius-lg, 8px) 0 0 var(--radius-lg, 8px); /* 左側のみ角丸 */
+          border-radius: var(--radius-lg) 0 0 var(--radius-lg); /* 左側のみ角丸 */
         }
         
         :host([orientation="horizontal"]) .card-content {
@@ -190,22 +204,24 @@ export class UiCard extends LitElement {
          * バリアント (Variants)
          * ------------------------------------------------------------- */
 
-        /* Elevated (デフォルト) - 影付き */
+        /* Elevated (デフォルト) - 属性なし or elevated */
+        :host(:not([variant])),
         :host([variant="elevated"]) {
-          box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+          box-shadow: var(--shadow-md);
           border: none;
         }
 
         /* ダークモード時は影ではなく Elevation Tones で高さを表現 */
         @media (prefers-color-scheme: dark) {
+          :host(:not([variant]):not([data-theme="light"])),
           :host([variant="elevated"]:not([data-theme="light"])) {
-            background-color: var(--bg-surface-1, var(--color-background-subtle));
+            background-color: var(--bg-surface-1);
             box-shadow: none;
           }
         }
 
         :root[data-theme="dark"] :host([variant="elevated"]) {
-          background-color: var(--bg-surface-1, var(--color-background-subtle));
+          background-color: var(--bg-surface-1);
           box-shadow: none;
         }
 
@@ -235,56 +251,82 @@ export class UiCard extends LitElement {
         }
 
         :host([padding="sm"]) {
-          --card-padding-y: var(--space-3, 0.75rem); /* 12px */
-          --card-header-gap: var(--space-2, 0.5rem);
-          --card-footer-gap: var(--space-3, 0.75rem);
+          --card-padding-y: var(--space-3); /* 12px */
+          --card-header-gap: var(--space-2);
+          --card-footer-gap: var(--space-3);
         }
 
         :host([padding="md"]) {
-          --card-padding-y: var(--space-5, 1.25rem); /* 20px */
-          --card-header-gap: var(--space-3, 0.75rem);
-          --card-footer-gap: var(--space-5, 1.25rem);
+          --card-padding-y: var(--space-5); /* 20px */
+          --card-header-gap: var(--space-3);
+          --card-footer-gap: var(--space-5);
         }
 
         :host([padding="lg"]) {
-          --card-padding-y: var(--space-8, 2rem); /* 32px */
-          --card-header-gap: var(--space-4, 1rem);
-          --card-footer-gap: var(--space-8, 2rem);
+          --card-padding-y: var(--space-8); /* 32px */
+          --card-header-gap: var(--space-4);
+          --card-footer-gap: var(--space-8);
         }
 
         /* -------------------------------------------------------------
-         * インタラクティブ (Interactive)
+         * インタラクティブ (Interactive / Link)
          * ------------------------------------------------------------- */
 
-        :host([interactive]) {
+        :host([interactive]),
+        :host([href]) {
           cursor: pointer;
-          user-select: none;
         }
 
-        :host([interactive]:hover) {
-          transform: translateY(-1px); /* Linear/Raycast風の繊細な動き */
+        /* Elevated Hover - シャドウを強調 */
+        :host([interactive][variant="elevated"]:hover),
+        :host([interactive]:not([variant]):hover),
+        :host([href][variant="elevated"]:hover),
+        :host([href]:not([variant]):hover) {
+          box-shadow: var(--shadow-lg);
         }
 
-        :host([interactive][variant="elevated"]:hover) {
-          box-shadow: var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1));
-        }
-
-        :host([interactive][variant="outlined"]:hover) {
+        /* Outlined Hover - ボーダー色変更 + 微細なシャドウ */
+        :host([interactive][variant="outlined"]:hover),
+        :host([href][variant="outlined"]:hover) {
           border-color: var(--color-border-hover);
+          box-shadow: var(--shadow-sm);
         }
 
-        :host([interactive][variant="filled"]:hover) {
-          background-color: var(--color-background);
+        /* Filled Hover - 背景維持 + シャドウ追加 */
+        :host([interactive][variant="filled"]:hover),
+        :host([href][variant="filled"]:hover) {
+          box-shadow: var(--shadow-md);
         }
 
-        :host([interactive]:active) {
-          transform: translateY(0);
+        :host([interactive]:active),
+        :host([href]:active) {
+          box-shadow: var(--shadow-sm);
         }
 
-        /* フォーカス（キーボードナビゲーション対応） */
-        :host([interactive]:focus-visible) {
+        /* フォーカス（キーボードナビゲーション対応） 
+           リンク時(aタグ)は、aタグ自体にフォーカスが当たるが、
+           :host側でスタイルを見せたい場合は focus-within 等を活用するか、
+           aタグのスタイルを消して:hostにフォーカスリングを出すか。
+           ここでは :focus-visible を :host に適用し、内部の a タグは outline: none とする方針が一般的だが、
+           Shadow DOM 内の a タグにフォーカスが当たるため :host:focus-within で反応させる。
+        */
+        :host([interactive]:focus-visible),
+        :host([href]:focus-within) {
           outline: 2px solid var(--color-primary);
           outline-offset: 2px;
+        }
+
+        // ハイコントラストモード対応
+        @media (prefers-contrast: more) {
+          :host([variant="elevated"]),
+          :host(:not([variant])) {
+            border: 2px solid var(--color-border);
+          }
+          
+          :host([interactive]:focus-visible),
+          :host([href]:focus-within) {
+            outline-width: 3px;
+          }
         }
       `
     ];
@@ -296,8 +338,27 @@ export class UiCard extends LitElement {
   @property({ type: String, reflect: true })
   padding: 'none' | 'sm' | 'md' | 'lg' = 'md';
 
+  /**
+   * カードをインタラクティブ（クリック可能）にします。
+   * ホバーエフェクトが適用されます。
+   * href プロパティがある場合は自動的に true として扱われます。
+   */
   @property({ type: Boolean, reflect: true })
   interactive = false;
+
+  /**
+   * リンク先 URL。
+   * 指定された場合、カード全体がリンク（<a>）としてレンダリングされます。
+   * アクセシビリティの観点から、カード全体をクリック可能にする場合はこのプロパティを使用してください。
+   */
+  @property({ type: String, reflect: true })
+  href?: string;
+
+  /**
+   * リンクのターゲット（例: _blank）
+   */
+  @property({ type: String, reflect: true })
+  target?: '_blank' | '_self' | '_parent' | '_top';
 
   @property({ type: String, reflect: true })
   orientation: 'vertical' | 'horizontal' = 'vertical';
@@ -311,14 +372,6 @@ export class UiCard extends LitElement {
 
   @state()
   private _hasMediaContent = false;
-
-  // インタラクティブ機能の提供（Reactive Controller）
-  private _clickable = new ClickableController(this, () => this.interactive);
-
-  override updated(changedProperties: PropertyValues) {
-    super.updated(changedProperties);
-    // ClickableController が自動的に interactive の変更を監視
-  }
 
   private _onHeaderSlotChange(e: Event) {
     const slot = e.target as HTMLSlotElement;
@@ -336,23 +389,44 @@ export class UiCard extends LitElement {
   }
 
   override render() {
+    // 実際にレンダリングされる内部コンテンツ
+    const content = html`
+      <div class="card-media" part="media" ?hidden="${!this._hasMediaContent}">
+        <slot name="media" @slotchange="${this._onMediaSlotChange}"></slot>
+      </div>
+      
+      <div class="card-content">
+        <div class="card-header" part="header" ?hidden="${!this._hasHeaderContent}">
+          <slot name="header" @slotchange="${this._onHeaderSlotChange}"></slot>
+        </div>
+        <div class="card-body" part="body">
+          <slot></slot>
+        </div>
+        <div class="card-footer" part="footer" ?hidden="${!this._hasFooterContent}">
+          <slot name="footer" @slotchange="${this._onFooterSlotChange}"></slot>
+        </div>
+      </div>
+    `;
+
+    // リンク機能の提供
+    // アクセシビリティの観点から、クリック可能なカードは <a> タグでラップする
+    if (this.href) {
+      return html`
+        <a 
+          class="card-container" 
+          part="container"
+          href="${this.href}"
+          target="${this.target || ''}"
+          rel="${this.target === '_blank' ? 'noopener noreferrer' : ''}"
+        >
+          ${content}
+        </a>
+      `;
+    }
+
     return html`
       <div class="card-container" part="container">
-        <div class="card-media" part="media" ?hidden="${!this._hasMediaContent}">
-          <slot name="media" @slotchange="${this._onMediaSlotChange}"></slot>
-        </div>
-        
-        <div class="card-content">
-          <div class="card-header" part="header" ?hidden="${!this._hasHeaderContent}">
-            <slot name="header" @slotchange="${this._onHeaderSlotChange}"></slot>
-          </div>
-          <div class="card-body" part="body">
-            <slot></slot>
-          </div>
-          <div class="card-footer" part="footer" ?hidden="${!this._hasFooterContent}">
-            <slot name="footer" @slotchange="${this._onFooterSlotChange}"></slot>
-          </div>
-        </div>
+        ${content}
       </div>
     `;
   }

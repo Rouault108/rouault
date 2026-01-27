@@ -1,7 +1,8 @@
 import { html } from 'lit';
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { expect, userEvent, fn } from 'storybook/test';
+import { expect, fn } from 'storybook/test';
 import './card.js';
+import '../button/button.js';
 
 const meta: Meta = {
   title: 'Components/Card',
@@ -26,6 +27,15 @@ const meta: Meta = {
     interactive: {
       control: 'boolean',
       description: 'クリック可能（ホバーエフェクト付き）',
+    },
+    href: {
+      control: 'text',
+      description: 'リンク先URL（指定時は<a>タグとしてレンダリング）',
+    },
+    target: {
+      control: 'select',
+      options: ['_self', '_blank', '_parent', '_top'],
+      description: 'リンクのターゲット',
     },
     onClick: { action: 'clicked' },
   },
@@ -137,7 +147,33 @@ export const Interactive: Story = {
       style="max-width: 300px;"
     >
       <h3 slot="header">クリック可能なカード</h3>
-      <p>マウスをホバーすると浮き上がります。</p>
+      <p>マウスをホバーすると浮き上がります。セマンティックなボタンではありません。</p>
+    </ui-card>
+  `,
+};
+
+/**
+ * リンクカード (href指定)
+ * アクセシビリティに配慮し、カード全体をクリック可能にする場合はこちらを使用
+ */
+export const Link: Story = {
+  args: {
+    variant: 'elevated',
+    padding: 'md',
+    href: 'https://example.com',
+    target: '_blank',
+  },
+  render: (args) => html`
+    <ui-card 
+      variant="${args['variant']}" 
+      padding="${args['padding']}"
+      href="${args['href']}"
+      target="${args['target']}"
+      style="max-width: 300px;"
+    >
+      <h3 slot="header">リンクカード</h3>
+      <p>href属性を指定すると、自動的に&lt;a&gt;タグでラップされ、適切なアクセシビリティが提供されます。</p>
+      <div slot="footer" style="color: var(--color-primary);">Read More &rarr;</div>
     </ui-card>
   `,
 };
@@ -245,91 +281,60 @@ export const DarkMode: Story = {
 /**
  * BDD シナリオテスト: インタラクティブカードのクリック検証
  */
-export const BDD_CardInteraction: Story = {
+/**
+ * BDD シナリオテスト: リンクカードの構造検証
+ */
+export const BDD_LinkBehavior: Story = {
   args: {
-    onClick: fn(),
+    href: 'https://example.com',
+    target: '_blank',
   },
   render: (args) => html`
-    <ui-card interactive @click="${args['onClick']}">
-      <h3 slot="header">テストカード</h3>
-      <p>このカードはクリック可能です</p>
+    <ui-card href="${args['href']}" target="${args['target']}">
+      <h3 slot="header">リンクテスト</h3>
+      <p>Shadow DOM内のリンク構造をテストします</p>
     </ui-card>
   `,
-  play: async ({ canvasElement, args }) => {
-    // 1. 要素の取得
+  play: async ({ canvasElement }) => {
     const card = canvasElement.querySelector('ui-card') as HTMLElement;
-    if (!card) throw new Error('ui-card not found');
-
-    // 2. 表示確認 (Then)
-    await expect(card).toBeInTheDocument();
-    await expect(card).toHaveTextContent('テストカード');
-
-    // 3. interactive 属性の確認
-    await expect(card.hasAttribute('interactive')).toBe(true);
-
-    // 4. マウスクリック操作 (When)
-    await userEvent.click(card);
-
-    // 5. イベント発火確認 (Then)
-    await expect(args['onClick']).toHaveBeenCalledTimes(1);
-
-    // 6. キーボード操作 - Enter キー (When)
-    // role と tabindex の確認を先に実行
-    await expect(card.getAttribute('role')).toBe('button');
-    await expect(card.getAttribute('tabindex')).toBe('0');
     
-    // フォーカスを当ててからキーボード操作
-    card.focus();
-    await expect(document.activeElement).toBe(card);
+    // Shadow DOMへのアクセスが必要なため、test-runner上での動作確認には注意が必要
+    // StorybookのinteractionsテストではShadow DOMもクエリ可能
     
-    // userEvent.keyboard が不安定なため、直接 KeyboardEvent を dispatch
-    const enterEvent = new KeyboardEvent('keydown', { 
-      key: 'Enter', 
-      code: 'Enter',
-      bubbles: true,
-      cancelable: true,
-    });
-    card.dispatchEvent(enterEvent);
-    await expect(args['onClick']).toHaveBeenCalledTimes(2);
-
-    // 7. キーボード操作 - Space キー (When)
-    const spaceEvent = new KeyboardEvent('keydown', { 
-      key: ' ', 
-      code: 'Space',
-      bubbles: true,
-      cancelable: true,
-    });
-    card.dispatchEvent(spaceEvent);
-    await expect(args['onClick']).toHaveBeenCalledTimes(3);
+    // 1. interactive属性が自動的に付与されているか
+    // (card.tsの実装では href があれば interactive の属性反映はないが、スタイルはあたる)
+    // 実装: :host([href]) でスタイル制御しているため interactive 属性は必須ではない
+    
+    // 2. 内部リンクの確認
+    if (card.shadowRoot) {
+      const link = card.shadowRoot.querySelector('a');
+      await expect(link).not.toBeNull();
+      await expect(link?.getAttribute('href')).toBe('https://example.com');
+      await expect(link?.getAttribute('target')).toBe('_blank');
+      await expect(link?.getAttribute('rel')).toContain('noopener');
+    }
   },
 };
 
 /**
- * BDD シナリオテスト: 非インタラクティブカードはクリックイベントを発火しない
+ * BDD シナリオテスト: 非インタラクティブカードのスタイル検証
  */
 export const BDD_NonInteractiveCard: Story = {
-  args: {
-    onClick: fn(),
-  },
-  render: (args) => html`
-    <ui-card @click="${args['onClick']}">
+  render: () => html`
+    <ui-card>
       <h3 slot="header">非インタラクティブ</h3>
-      <p>interactive属性がないため、クリックしても反応しません</p>
+      <p>ポインターカーソルにならないことを確認します</p>
     </ui-card>
   `,
-  play: async ({ canvasElement, args }) => {
+  play: async ({ canvasElement }) => {
     const card = canvasElement.querySelector('ui-card') as HTMLElement;
-    if (!card) throw new Error('ui-card not found');
-
-    // interactive 属性がないことを確認
-    await expect(card.hasAttribute('interactive')).toBe(false);
-
-    // クリックしてもイベントは発火しない
-    // （clickイベント自体は伝播するが、カード側で特別な処理はしない想定）
-    await userEvent.click(card);
     
-    // このテストは onClick が設定されているので発火する
-    // 実際のアプリでは interactive でない場合は onClick を設定しない想定
-    await expect(args['onClick']).toHaveBeenCalled();
+    // カーソルのスタイル確認
+    const computedStyle = window.getComputedStyle(card);
+    await expect(computedStyle.cursor).not.toBe('pointer');
+
+    // role, tabindex がないことの確認
+    await expect(card.hasAttribute('role')).toBe(false);
+    await expect(card.hasAttribute('tabindex')).toBe(false);
   },
 };
