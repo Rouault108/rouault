@@ -76,6 +76,11 @@
   --color-important-bg: #f3e8ff;
   --color-important-text: #6b21a8;
 
+  /* プライマリ背景色（サーフェス用の控えめな色） */
+  --color-primary-bg: hsl(var(--color-primary-hue), 30%, 96%);
+  /* プライマリ背景上のテキスト色 */
+  --color-primary-text: #1e40af;
+
   /* Disabled状態 */
   --color-disabled-bg: #f3f4f6;
   --color-disabled-text: #9ca3af;
@@ -323,6 +328,10 @@
     --color-important-bg: #3b0764;
     --color-important-text: #d8b4fe; /* Purple 300 - ダークモード用 */
 
+    /* プライマリ背景色 */
+    --color-primary-bg: hsl(var(--color-primary-hue), 30%, 12%);
+    --color-primary-text: #93c5fd;
+
     /* Disabled状態（Dark） */
     --color-disabled-bg: #27272a;
     --color-disabled-text: #52525b;
@@ -397,6 +406,13 @@
   --color-info: #60a5fa;
   --color-info-bg: #172554;
   --color-info-text: #93c5fd; /* Blue 300 - ダークモード用 */
+  --color-important: #c084fc;
+  --color-important-bg: #3b0764;
+  --color-important-text: #d8b4fe; /* Purple 300 - ダークモード用 */
+
+  /* プライマリ背景色 */
+  --color-primary-bg: hsl(var(--color-primary-hue), 30%, 12%);
+  --color-primary-text: #93c5fd;
 
   /* Disabled状態（Dark） */
   --color-disabled-bg: #27272a;
