@@ -91,9 +91,9 @@
   --color-error-alpha-10: rgba(220, 38, 38, 0.1);
   
   /* フォーカスリング */
-  --ring-primary: 0 0 0 3px var(--color-primary-alpha-10);
-  --ring-error: 0 0 0 3px var(--color-error-alpha-10);
-  --ring-offset: 2px;
+  --ring-primary: 0 0 0 var(--focus-ring-width) var(--color-primary-alpha-10);
+  --ring-error: 0 0 0 var(--focus-ring-width) var(--color-error-alpha-10);
+  --ring-offset: var(--focus-ring-offset);
   
   /* グラデーション */
   --gradient-hero: linear-gradient(135deg, var(--color-primary), var(--color-accent));
@@ -148,6 +148,14 @@
   --line-height-relaxed: 1.6;   /* 読みやすさ重視の本文、バナー */
   --line-height-loose: 2;       /* 詩、引用、特殊レイアウト */
   --line-height-5xl: 3.6rem;    /* 特大見出し用 */
+  
+  /* 字間（Tracking / Letter Spacing） */
+  --tracking-tighter: -0.05em;  /* 特大見出し、密度重視 */
+  --tracking-tight: -0.025em;   /* 見出し用 (H1-H3) - 知的な引き締め */
+  --tracking-normal: 0em;       /* 本文用 */
+  --tracking-wide: 0.025em;     /* 小さなUIテキスト */
+  --tracking-wider: 0.05em;     /* 大文字（ALL CAPS）ラベル */
+  --tracking-widest: 0.1em;     /* 装飾的な極小テキスト */
   
   /* アイコンサイズ */
   --icon-sm: 16px;
@@ -215,12 +223,71 @@
   --toc-width: 200px;
   --content-max-width: 720px;
   
+  /* Prose Width（可読長） */
+  --prose-width: 65ch;             /* Standard optimal reading length */
+  --prose-width-narrow: 45ch;      /* Narrow columns / sidebars */
+  --prose-width-wide: 80ch;        /* Documentation / wide tables */
+
+  /* -----------------------------------------------------------------------
+   * インタラクション装飾（Interaction Styles）
+   * ----------------------------------------------------------------------- */
+  
+  /* リンク装飾 */
+  --link-decoration-thickness: 1px;
+  --link-underline-offset: 2px;
+  --link-decoration-hover-thickness: 2px;
+  
+  /* フォーカスリング設計 */
+  --focus-ring-width: 3px;
+  --focus-ring-offset: 2px;
+  
   /* -----------------------------------------------------------------------
    * サーフェス & テクスチャ
    * ----------------------------------------------------------------------- */
   --glass-panel-bg: rgba(var(--bg-rgb), 0.8);
   --glass-panel-filter: blur(12px);
   --border-transparent: rgba(229, 231, 235, 0.5); /* #e5e7eb base */
+  
+  /* 汎用インタラクション背景色（Light） */
+  --color-surface-hover: rgba(0, 0, 0, 0.04);
+  --color-surface-active: rgba(0, 0, 0, 0.08);
+  --color-surface-selected: rgba(59, 130, 246, 0.08); /* Primary alpha */
+
+  /* -----------------------------------------------------------------------
+   * 質感・インタラクション（Micro-Interactions）
+   * ----------------------------------------------------------------------- */
+
+  /* 不透明度（Opacity） */
+  --opacity-0: 0;
+  --opacity-5: 0.05;
+  --opacity-10: 0.1;
+  --opacity-20: 0.2;
+  --opacity-30: 0.3;      /* Icon subtle */
+  --opacity-40: 0.4;
+  --opacity-50: 0.5;      /* Disabled */
+  --opacity-60: 0.6;
+  --opacity-70: 0.7;
+  --opacity-80: 0.8;      /* Hover effect base */
+  --opacity-90: 0.9;
+  --opacity-100: 1;
+
+  /* ぼかし強度（Blur） */
+  --blur-none: 0;
+  --blur-sm: 4px;         /* 控えめなフロスト */
+  --blur-md: 8px;         /* 標準的なグラス */
+  --blur-lg: 12px;        /* 重厚なグラス（オーバーレイ） */
+  --blur-xl: 16px;        /* 背景の拡散 */
+  --blur-2xl: 40px;       /* 抽象的なグラデーション */
+
+  /* スケール（Interaction Scale） */
+  --scale-active: 0.96;   /* ボタン押下 */
+  --scale-overlay: 0.95;  /* モーダル表示開始 */
+  --scale-subtle: 0.98;   /* カード押下 */
+
+  /* ボーダー幅（Border Width） */
+  --border-width-1: 1px;  /* 標準のボーダー */
+  --border-width-2: 2px;  /* フォーカスリング、アクティブ状態 */
+  --border-width-3: 3px;  /* 強調フォーカス */
 
   /* イージング */
   --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
@@ -343,6 +410,11 @@
     --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
     --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
     --shadow-glow: 0 0 40px rgba(96, 165, 250, 0.12);
+    
+    /* 汎用インタラクション背景色（Dark） */
+    --color-surface-hover: rgba(255, 255, 255, 0.05);
+    --color-surface-active: rgba(255, 255, 255, 0.1);
+    --color-surface-selected: rgba(96, 165, 250, 0.15); /* Primary alpha */
 
     /* モーダルオーバーレイ（Dark） */
     --overlay-bg: rgba(0, 0, 0, 0.7);
@@ -425,6 +497,11 @@
   --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
   --shadow-glow: 0 0 40px rgba(96, 165, 250, 0.12);
+  
+  /* 汎用インタラクション背景色（Dark） */
+  --color-surface-hover: rgba(255, 255, 255, 0.05);
+  --color-surface-active: rgba(255, 255, 255, 0.1);
+  --color-surface-selected: rgba(96, 165, 250, 0.15); /* Primary alpha */
 
   /* モーダルオーバーレイ（Dark） */
   --overlay-bg: rgba(0, 0, 0, 0.7);
