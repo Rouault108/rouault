@@ -1,6 +1,5 @@
-import { LitElement, css, html, type CSSResult, type PropertyValues } from 'lit';
+import { LitElement, css, html, type CSSResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import { classMap } from 'lit/directives/class-map.js';
 
 @customElement('ui-card')
 export class UiCard extends LitElement {
