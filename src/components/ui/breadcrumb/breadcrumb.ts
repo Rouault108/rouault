@@ -80,6 +80,7 @@ export class UiBreadcrumbItem extends LitElement {
     :host {
       display: inline-flex;
       align-items: center;
+      position: relative;
       list-style: none;
       font-family: var(--font-sans);
       font-size: inherit;
@@ -141,13 +142,20 @@ export class UiBreadcrumbItem extends LitElement {
     }
 
     :host([slot="item"]) a {
+      display: flex;
+      width: 100%;
       padding: var(--space-2) var(--space-3);
       border-radius: var(--radius-sm);
-      width: 100%; /* ドロップダウン内では幅いっぱいに */
+      box-sizing: border-box;
     }
 
     :host([slot="item"]) a:hover {
       background-color: var(--breadcrumb-dropdown-item-hover-bg);
+    }
+    
+    /* ドロップダウン内アイテムのフォーカスリング調整 */
+    :host([slot="item"]) a:focus-visible {
+      outline-offset: -2px; /* 内側に描画してはみ出しを防ぐ */
     }
 
     a:focus-visible {
@@ -174,13 +182,13 @@ export class UiBreadcrumbItem extends LitElement {
       align-items: center;
       justify-content: center;
       
-      min-width: 2rem;
+      min-width: 1.75rem;
       height: 1.5rem;
-      padding: 0 var(--space-2);
+      padding: 0 var(--space-1);
       
-      background: var(--color-background-subtle);
+      background: transparent;
       border: 1px solid transparent;
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-sm);
       
       color: var(--color-foreground-muted);
       font-family: inherit;
@@ -197,19 +205,19 @@ export class UiBreadcrumbItem extends LitElement {
     }
 
     .collapsed-button:hover {
-      background-color: var(--color-border);
-      border-color: var(--color-border-hover);
+      background-color: var(--color-background-subtle);
       color: var(--color-foreground);
     }
 
     .collapsed-button:focus-visible {
       outline: 2px solid var(--color-primary);
       outline-offset: 2px;
+      border-radius: var(--radius-sm);
     }
 
+    /* ドロップダウン展開中はアクティブ状態を維持 */
     .collapsed-button[aria-expanded="true"] {
-      background-color: var(--color-border);
-      border-color: var(--color-border-hover);
+      background-color: var(--color-background-subtle);
       color: var(--color-foreground);
     }
 
@@ -218,7 +226,7 @@ export class UiBreadcrumbItem extends LitElement {
      * ------------------------------------------------------------- */
     .dropdown {
       position: absolute;
-      top: calc(100% + var(--space-1));
+      top: calc(100% + var(--space-2));
       left: 50%;
       transform: translateX(-50%) translateY(-4px) scale(0.98);
       transform-origin: top center;
@@ -551,7 +559,10 @@ export class UiBreadcrumbItem extends LitElement {
         >
           …
         </button>
-        <div class="dropdown ${this._dropdownOpen ? 'open' : ''}">
+        <div 
+          class="dropdown ${this._dropdownOpen ? 'open' : ''}"
+          @keydown=${this._handleKeyDown}
+        >
           <slot name="item"></slot>
         </div>
         ${this._getSeparator()}
