@@ -73,24 +73,19 @@ export class UiButton extends LionButton {
         /* 2. Hover (マウスオーバー) */
         :host(:hover:not([disabled])) {
           background-color: var(--bg-hover);
-          transform: translateY(-1px);
-          box-shadow: var(--shadow-md);
-          z-index: var(--z-base);
+          box-shadow: var(--shadow-sm);
         }
 
         /* 3. Focus (フォーカス) */
-        :host(:focus:not([disabled])),
         :host(:focus-visible:not([disabled])) {
           outline: 2px solid var(--outline-color);
           outline-offset: 2px;
           position: relative;
-          z-index: calc(var(--z-base) + 2);
         }
 
         /* 4. Active / Pressed (押し込み中) */
         :host(:active:not([disabled])) {
           background-color: var(--bg-active);
-          transform: translateY(0);
           box-shadow: none;
         }
 
