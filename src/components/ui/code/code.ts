@@ -4,133 +4,171 @@ import { customElement, property } from 'lit/decorators.js';
 /**
  * ui-code - インラインコード表示用コンポーネント
  * 
+ * インラインコードのマークアップに使用される、アクセシブルでセマンティックなコンポーネント。
+ * 複数のバリアントを通じて、コードの文脈（成功、警告、エラーなど）を視覚的に伝達。
+ * 
  * @element ui-code
  * 
- * @slot - コードの内容
+ * @slot - コードの内容（テキストノード）
  * 
- * @cssprop --code-bg - 背景色
- * @cssprop --code-text - テキスト色
- * @cssprop --code-border - ボーダー色
+ * @cssprop --code-bg - 背景色（カスタム可能）
+ * @cssprop --code-text - テキスト色（カスタム可能）
+ * @cssprop --code-border - ボーダー色（カスタム可能）
+ * 
+ * @example
+ * ```html
+ * <p>コマンド <ui-code>npm install</ui-code> を実行してください。</p>
+ * <p>変数 <ui-code variant="primary">userName</ui-code> を使用します。</p>
+ * <p>エラー: <ui-code variant="error">undefined is not a function</ui-code></p>
+ * ```
  */
 @customElement('ui-code')
 export class UiCode extends LitElement {
   static override styles = css`
+    /* =====================================================================
+     * ホスト要素（ui-code）
+     * 
+     * CSS変数はShadow DOM境界を越えて継承されるため、tokens.cssで
+     * 定義されたテーマ変数が自動的に適用される。
+     * ===================================================================== */
     :host {
       display: inline;
-      /* デフォルトカラー */
-      --code-bg: var(--color-background-subtle, #f9fafb);
-      --code-text: var(--color-foreground, #111827);
-      --code-border: var(--color-border, #e5e7eb);
+      
+      /* デフォルトカラー
+       * tokens.cssで定義された変数を参照。
+       * Light/Darkモードの切り替えは親要素の[data-theme]または
+       * @media (prefers-color-scheme)によって自動的に行われる。 */
+      --code-bg: var(--color-background-subtle);
+      --code-text: var(--color-foreground);
+      --code-border: var(--color-border);
     }
 
-    /* コードコンテナ */
+    /* =====================================================================
+     * コードコンテナ（.code）
+     * ===================================================================== */
     .code {
       display: inline;
-      padding: 0.125rem 0.375rem; /* 2px 6px */
+      padding: calc(var(--space-1) / 2) var(--space-2);
       background-color: var(--code-bg);
-      border: 1px solid var(--code-border);
-      border-radius: 3px; /* トークンにないためハードコーディング */
+      border: var(--border-width-1) solid var(--code-border);
+      border-radius: var(--radius-sm);
       color: var(--code-text);
-      font-family: var(--font-mono, 'JetBrains Mono', monospace);
-      font-size: 0.9em; /* 親要素のフォントサイズの90% */
-      line-height: var(--line-height-none, 1);
-      white-space: nowrap;
-      word-break: break-all;
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      letter-spacing: var(--tracking-tight);
+      line-height: inherit;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+      
+      /* Delightful Motion: テーマ切替時のトランジション */
+      transition:
+        background-color var(--motion-duration) var(--motion-easing),
+        color var(--motion-duration) var(--motion-easing),
+        border-color var(--motion-duration) var(--motion-easing);
     }
 
-    /* バリアント: Primary */
+    /* =====================================================================
+     * バリアント: Primary（強調）
+     * 
+     * var(--color-primary)は tokens.css で Light/Dark が自動切替される。
+     * コンポーネント側でモードを意識する必要はない。
+     * ===================================================================== */
     :host([variant="primary"]) {
-      --code-bg: color-mix(in srgb, var(--color-primary, #3b82f6), transparent 92%);
-      --code-text: var(--color-primary, #3b82f6);
-      --code-border: color-mix(in srgb, var(--color-primary, #3b82f6), transparent 70%);
+      --code-bg: color-mix(
+        in srgb,
+        var(--color-primary) 8%,
+        transparent
+      );
+      --code-text: var(--color-primary);
+      --code-border: color-mix(
+        in srgb,
+        var(--color-primary) 30%,
+        transparent
+      );
     }
 
-    /* バリアント: Success */
+    /* =====================================================================
+     * バリアント: Success（成功、正しい例）
+     * ===================================================================== */
     :host([variant="success"]) {
-      --code-bg: color-mix(in srgb, var(--color-success, #22c55e), transparent 92%);
-      --code-text: var(--color-success-text, #166534);
-      --code-border: color-mix(in srgb, var(--color-success, #22c55e), transparent 70%);
+      --code-bg: color-mix(
+        in srgb,
+        var(--color-success) 8%,
+        transparent
+      );
+      --code-text: var(--color-success-text);
+      --code-border: color-mix(
+        in srgb,
+        var(--color-success) 30%,
+        transparent
+      );
     }
 
-    /* バリアント: Warning */
-    /* tokens.cssに Amber 600 の定義がないため、アクセシビリティ向上のため直接指定 */
+    /* =====================================================================
+     * バリアント: Warning（警告、非推奨）
+     * ===================================================================== */
     :host([variant="warning"]) {
-      --code-bg: color-mix(in srgb, #d97706, transparent 92%);
-      --code-text: var(--color-warning-text, #92400e);
-      --code-border: color-mix(in srgb, #d97706, transparent 70%);
+      --code-bg: color-mix(
+        in srgb,
+        var(--color-warning) 8%,
+        transparent
+      );
+      --code-text: var(--color-warning-text);
+      --code-border: color-mix(
+        in srgb,
+        var(--color-warning) 30%,
+        transparent
+      );
     }
 
-    /* バリアント: Error */
+    /* =====================================================================
+     * バリアント: Error（エラー、間違った例）
+     * ===================================================================== */
     :host([variant="error"]) {
-      --code-bg: color-mix(in srgb, var(--color-error, #ef4444), transparent 92%);
-      --code-text: var(--color-error-text, #991b1b);
-      --code-border: color-mix(in srgb, var(--color-error, #ef4444), transparent 70%);
+      --code-bg: color-mix(
+        in srgb,
+        var(--color-error) 8%,
+        transparent
+      );
+      --code-text: var(--color-error-text);
+      --code-border: color-mix(
+        in srgb,
+        var(--color-error) 30%,
+        transparent
+      );
     }
 
-    /* ダークモード対応 */
-    @media (prefers-color-scheme: dark) {
-      :host:not([data-theme="light"]) {
-        --code-bg: var(--color-background-subtle, #171717);
-        --code-text: var(--color-foreground, #ededed);
-        --code-border: var(--color-border, #27272a);
-      }
-
-      :host([variant="primary"]):not([data-theme="light"]) {
-        --code-bg: color-mix(in srgb, var(--color-primary, #60a5fa), transparent 88%);
-        --code-text: var(--color-primary, #60a5fa);
-        --code-border: color-mix(in srgb, var(--color-primary, #60a5fa), transparent 70%);
-      }
-
-      :host([variant="success"]):not([data-theme="light"]) {
-        --code-bg: color-mix(in srgb, var(--color-success, #4ade80), transparent 88%);
-        --code-text: #86efac; /* tokens.css未定義のため直接指定 */
-        --code-border: color-mix(in srgb, var(--color-success, #4ade80), transparent 70%);
-      }
-
-      :host([variant="warning"]):not([data-theme="light"]) {
-        --code-bg: color-mix(in srgb, #fbbf24, transparent 88%); /* tokens.css未定義 */
-        --code-text: #fcd34d; /* tokens.css未定義 */
-        --code-border: color-mix(in srgb, #fbbf24, transparent 70%);
-      }
-
-      :host([variant="error"]):not([data-theme="light"]) {
-        --code-bg: color-mix(in srgb, var(--color-error, #f87171), transparent 88%);
-        --code-text: #fca5a5; /* tokens.css未定義のため直接指定 */
-        --code-border: color-mix(in srgb, var(--color-error, #f87171), transparent 70%);
+    /* =====================================================================
+     * アクセシビリティ: ハイコントラストモード対応
+     * prefers-contrast: more の場合、ボーダーを強調
+     * ===================================================================== */
+    @media (prefers-contrast: more) {
+      .code {
+        border-width: var(--border-width-2);
+        --code-border: var(--color-border-hover);
       }
     }
 
-    :host-context([data-theme="dark"]) {
-      --code-bg: var(--color-background-subtle, #171717);
-      --code-text: var(--color-foreground, #ededed);
-      --code-border: var(--color-border, #27272a);
-    }
-
-    :host-context([data-theme="dark"]):host([variant="primary"]) {
-      --code-bg: color-mix(in srgb, var(--color-primary, #60a5fa), transparent 88%);
-      --code-text: var(--color-primary, #60a5fa);
-      --code-border: color-mix(in srgb, var(--color-primary, #60a5fa), transparent 70%);
-    }
-
-    :host-context([data-theme="dark"]):host([variant="success"]) {
-      --code-bg: color-mix(in srgb, var(--color-success, #4ade80), transparent 88%);
-      --code-text: #86efac; /* tokens.css未定義のため直接指定 */
-      --code-border: color-mix(in srgb, var(--color-success, #4ade80), transparent 70%);
-    }
-
-    :host-context([data-theme="dark"]):host([variant="warning"]) {
-      --code-bg: color-mix(in srgb, #fbbf24, transparent 88%); /* tokens.css未定義 */
-      --code-text: #fcd34d; /* tokens.css未定義 */
-      --code-border: color-mix(in srgb, #fbbf24, transparent 70%);
-    }
-
-    :host-context([data-theme="dark"]):host([variant="error"]) {
-      --code-bg: color-mix(in srgb, var(--color-error, #f87171), transparent 88%);
-      --code-text: #fca5a5; /* tokens.css未定義のため直接指定 */
-      --code-border: color-mix(in srgb, var(--color-error, #f87171), transparent 70%);
+    /* =====================================================================
+     * モーション軽減（prefers-reduced-motion）
+     * アニメーションを無効化してアクセシビリティを確保
+     * ===================================================================== */
+    @media (prefers-reduced-motion: reduce) {
+      .code {
+        transition: none;
+      }
     }
   `;
 
+  /**
+   * コードのバリアント（見た目の種類）
+   * 
+   * - `default`: 標準スタイル
+   * - `primary`: 強調表示（変数名など）
+   * - `success`: 成功・正しい例
+   * - `warning`: 警告・非推奨
+   * - `error`: エラー・間違った例
+   */
   @property({ type: String, reflect: true })
   variant: 'default' | 'primary' | 'success' | 'warning' | 'error' = 'default';
 
