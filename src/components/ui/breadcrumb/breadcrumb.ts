@@ -78,7 +78,8 @@ export class UiBreadcrumbItem extends LitElement {
      * ホスト要素
      * ------------------------------------------------------------- */
     :host {
-      display: list-item;
+      display: inline-flex;
+      align-items: center;
       list-style: none;
       font-family: var(--font-sans);
       font-size: inherit;
@@ -96,7 +97,8 @@ export class UiBreadcrumbItem extends LitElement {
      * リンク要素
      * ------------------------------------------------------------- */
     a {
-      display: block;
+      display: inline-flex;
+      align-items: center;
       position: relative;
       padding: var(--item-padding, 0);
       
@@ -141,6 +143,7 @@ export class UiBreadcrumbItem extends LitElement {
     :host([slot="item"]) a {
       padding: var(--space-2) var(--space-3);
       border-radius: var(--radius-sm);
+      width: 100%; /* ドロップダウン内では幅いっぱいに */
     }
 
     :host([slot="item"]) a:hover {
@@ -157,6 +160,8 @@ export class UiBreadcrumbItem extends LitElement {
      * 現在のページ
      * ------------------------------------------------------------- */
     .current {
+      display: inline-flex;
+      align-items: center;
       color: var(--color-foreground);
       font-weight: var(--font-medium);
     }
