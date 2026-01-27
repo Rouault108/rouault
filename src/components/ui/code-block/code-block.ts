@@ -1,9 +1,10 @@
 import { LitElement, css, html, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+import { t } from '../../../lib/i18n';
 
 // Shiki Core imports
-import { createHighlighterCore, type HighlighterCore } from 'shiki/core';
+import { createHighlighterCore, type HighlighterCore, type ShikiTransformer } from 'shiki/core';
 import { createOnigurumaEngine } from 'shiki/engine/oniguruma';
 import { transformerNotationDiff } from '@shikijs/transformers';
 import getWasm from 'shiki/wasm';
@@ -37,9 +38,8 @@ import themeGithubDark from 'shiki/themes/github-dark.mjs';
 
 // マジックナンバー定数
 const COPY_FEEDBACK_DURATION = 2000;
+const COPY_FEEDBACK_SR_DURATION = 500; // スクリーンリーダー用のフィードバック表示時間
 const COPY_ICON_DELAY = 300;
-// @ts-expect-error: 将来的にCSS内のハードコード値を置換する際に使用
-const COLLAPSE_OVERLAY_HEIGHT = 120;
 
 // シングルトンハイライター（複数コンポーネントで共有）
 let highlighterPromise: Promise<HighlighterCore> | null = null;
@@ -106,15 +106,16 @@ function parseHighlightLines(spec: string): Set<number> {
   return lines;
 }
 
-function createTransformerHighlightLines(highlightLines: string) {
+
+
+function createTransformerHighlightLines(highlightLines: string): ShikiTransformer {
   const linesToHighlight = parseHighlightLines(highlightLines);
   
   return {
     name: 'highlight-lines',
     line(node: any, line: number) {
       if (linesToHighlight.has(line)) {
-        node.properties.className = node.properties.className || [];
-        node.properties.className.push('highlighted');
+        this.addClassToHast(node, 'highlighted');
       }
     }
   };
@@ -123,18 +124,36 @@ function createTransformerHighlightLines(highlightLines: string) {
 /**
  * Diff行のアクセシビリティ対応Transformer
  */
-function transformerDiffAria() {
+function transformerDiffAria(): ShikiTransformer {
   return {
     name: 'diff-aria',
     line(node: any) {
-      const classes = node.properties.className || [];
+      // HASTのクラスリズトは文字列または配列の可能性がある
+      // this.addClassToHastのようなhelperがないため、安全にチェック
+      const props = node.properties || {};
+      const classValue = props['class'] || [];
+      const classes = Array.isArray(classValue) ? classValue : String(classValue).split(' ');
+      
       if (classes.includes('diff')) {
         if (classes.includes('add')) {
-          node.properties['aria-label'] = '追加行';
+          props['aria-label'] = '追加行';
         } else if (classes.includes('remove')) {
-          node.properties['aria-label'] = '削除行';
+          props['aria-label'] = '削除行';
         }
       }
+    }
+  };
+}
+
+/**
+ * 全ての行に 'line' クラスを付与するTransformer
+ * これにより CSS の .line セレクタが正しく機能するようになる
+ */
+function transformerAddLineClass(): ShikiTransformer {
+  return {
+    name: 'add-line-class',
+    line(node: any) {
+      this.addClassToHast(node, 'line');
     }
   };
 }
@@ -180,35 +199,31 @@ export class UiCodeBlock extends LitElement {
     :host {
       display: block;
       /* Shiki背景色を使用、フォールバックとしてデザインシステムの変数を使用 */
-      --code-bg: var(--shiki-light-bg, var(--color-background-subtle, #f9fafb));
-      --code-header-bg: var(--color-background, #ffffff);
-      --code-border: var(--color-border, #e5e7eb);
-      --code-text: var(--color-foreground, #111827);
-      --code-line-number: var(--color-foreground-muted, #a1a1aa);
-      --code-highlight-bg: rgba(59, 130, 246, 0.1);
-      
-      /* デザイントークン（design-system.md準拠） */
-      --duration-normal: 200ms;
-      --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
+      --code-bg: var(--shiki-light-bg, var(--color-background-subtle));
+      --code-header-bg: var(--color-background);
+      --code-border: var(--color-border);
+      --code-text: var(--color-foreground);
+      --code-line-number: var(--color-foreground-muted);
+      --code-highlight-bg: var(--color-primary-alpha-10);
     }
 
     /* ダークモード背景 */
     @media (prefers-color-scheme: dark) {
       :host(:not([data-theme="light"])) {
-        --code-bg: var(--shiki-dark-bg, var(--color-background-subtle, #171717));
-        --code-header-bg: var(--color-background, #0a0a0a);
+        --code-bg: var(--shiki-dark-bg, var(--color-background-subtle));
+        --code-header-bg: var(--color-background);
       }
     }
 
     :host-context([data-theme="dark"]) {
-      --code-bg: var(--shiki-dark-bg, var(--color-background-subtle, #171717));
-      --code-header-bg: var(--color-background, #0a0a0a);
+      --code-bg: var(--shiki-dark-bg, var(--color-background-subtle));
+      --code-header-bg: var(--color-background);
     }
 
     /* コードブロックコンテナ */
     .code-block {
       border: 1px solid var(--code-border);
-      border-radius: var(--radius-lg, 0.5rem);
+      border-radius: var(--radius-lg);
       background-color: var(--code-bg);
       position: relative;
     }
@@ -218,7 +233,7 @@ export class UiCodeBlock extends LitElement {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+      padding: var(--space-2) var(--space-3);
       position: absolute;
       top: 0;
       left: 0;
@@ -230,33 +245,33 @@ export class UiCodeBlock extends LitElement {
     .header-left {
       display: flex;
       align-items: center;
-      gap: var(--space-2, 0.5rem);
-      font-size: var(--text-xs, 0.75rem);
+      gap: var(--space-2);
+      font-size: var(--text-xs);
       color: var(--code-line-number);
     }
 
     /* ヘッダーアクション（ボタン群） */
     .header-actions {
       display: flex;
-      gap: 0.25rem;
+      gap: var(--space-1);
       align-items: center;
     }
 
     .language {
-      font-family: var(--font-mono, 'JetBrains Mono', monospace);
+      font-family: var(--font-mono);
       text-transform: uppercase;
-      font-weight: var(--font-semibold, 600);
-      letter-spacing: 0.05em;
+      font-weight: var(--font-semibold);
+      letter-spacing: var(--tracking-wider);
     }
 
     .filename {
-      font-family: var(--font-mono, 'JetBrains Mono', monospace);
+      font-family: var(--font-mono);
       color: var(--code-text);
     }
 
     .filename::before {
       content: '—';
-      margin-right: var(--space-2, 0.5rem);
+      margin-right: var(--space-2);
       color: var(--code-line-number);
     }
 
@@ -266,15 +281,15 @@ export class UiCodeBlock extends LitElement {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 28px;
-      height: 28px;
+      width: var(--button-size-sm);
+      height: var(--button-size-sm);
       padding: 0;
       background: var(--code-header-bg);
-      border: 1px solid var(--code-border);
-      border-radius: var(--radius-md, 0.375rem);
+      border: var(--border-width-1) solid var(--code-border);
+      border-radius: var(--radius-md);
       color: var(--code-line-number);
       cursor: pointer;
-      transition: all var(--duration-normal) var(--ease-out);
+      transition: all var(--motion-duration) var(--motion-easing);
       opacity: 0;
       transform: translateY(-2px);
     }
@@ -293,8 +308,8 @@ export class UiCodeBlock extends LitElement {
     }
 
     .action-button:focus-visible {
-      outline: 2px solid var(--color-primary, #3b82f6);
-      outline-offset: 2px;
+      outline: var(--focus-ring-width) solid var(--color-primary);
+      outline-offset: var(--focus-ring-offset);
     }
 
     /* アクティブ状態 */
@@ -305,14 +320,14 @@ export class UiCodeBlock extends LitElement {
     }
 
     .action-button.copied {
-      color: var(--color-success, #22c55e);
-      border-color: var(--color-success, #22c55e);
+      color: var(--color-success);
+      border-color: var(--color-success);
       opacity: 1;
       transform: translateY(0);
     }
     
     .action-button iconify-icon {
-      font-size: 16px;
+      font-size: var(--icon-sm);
     }
 
     /* アクセシビリティ: コピー通知 */
@@ -339,18 +354,18 @@ export class UiCodeBlock extends LitElement {
     .code-wrapper {
       display: flex;
       overflow-x: auto;
-      font-size: var(--text-sm, 0.8125rem);
-      line-height: var(--line-height-relaxed, 1.6);
+      font-size: var(--text-sm);
+      line-height: var(--line-height-relaxed);
       /* ヘッダー分の余白 */
-      padding-top: var(--space-8, 2rem); 
+      padding-top: var(--space-8); 
       background-color: var(--shiki-bg, var(--code-bg));
     }
 
     .line-numbers {
       display: flex;
       flex-direction: column;
-      padding: var(--space-3, 0.75rem) 0;
-      padding-left: var(--space-3, 0.75rem);
+      padding: var(--space-3) 0;
+      padding-left: var(--space-3);
       user-select: none;
       text-align: right;
       min-width: 3ch;
@@ -363,18 +378,18 @@ export class UiCodeBlock extends LitElement {
 
     .line-number {
       color: var(--code-line-number);
-      font-family: var(--font-mono, 'JetBrains Mono', monospace);
+      font-family: var(--font-mono);
       font-size: inherit;
       line-height: inherit;
     }
 
     .code-content {
       flex: 1;
-      padding: var(--space-3, 0.75rem);
+      padding: var(--space-3);
     }
 
     .code-content.with-line-numbers {
-      padding-left: var(--space-2, 0.5rem);
+      padding-left: var(--space-2);
     }
 
     /* コード折り返し */
@@ -389,11 +404,11 @@ export class UiCodeBlock extends LitElement {
     }
 
     /* Shikiが出力するpre/code */
-    pre.shiki {
+    :host pre.shiki {
       margin: 0;
       padding: 0;
-      background-color: transparent !important; /* コンテナ側で背景色を管理 */
-      font-family: var(--font-mono, 'JetBrains Mono', monospace);
+      background-color: transparent;
+      font-family: var(--font-mono);
       font-size: inherit;
       line-height: inherit;
     }
@@ -407,16 +422,16 @@ export class UiCodeBlock extends LitElement {
 
     /* ローディング状態 */
     .loading {
-      padding: var(--space-4, 1rem);
+      padding: var(--space-4);
       color: var(--code-line-number);
-      font-family: var(--font-mono, monospace);
-      font-size: var(--text-sm, 0.8125rem);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
     }
 
     /* 行ハイライト */
     .line.highlighted {
       background-color: var(--code-highlight-bg);
-      border-left: 2px solid var(--color-primary, #3b82f6);
+      border-left: var(--border-width-2) solid var(--color-primary);
     }
 
     /* 折りたたみ機能 */
@@ -425,12 +440,12 @@ export class UiCodeBlock extends LitElement {
       bottom: 0;
       left: 0;
       right: 0;
-      height: 120px;
+      height: var(--collapse-overlay-height, 120px);
       background: linear-gradient(to bottom, transparent, var(--code-bg));
       display: flex;
       align-items: flex-end;
       justify-content: center;
-      padding-bottom: var(--space-4, 1rem);
+      padding-bottom: var(--space-4);
       z-index: 5;
       pointer-events: none;
     }
@@ -438,18 +453,18 @@ export class UiCodeBlock extends LitElement {
     .collapse-button {
       pointer-events: auto;
       background-color: var(--code-header-bg);
-      border: 1px solid var(--code-border);
+      border: var(--border-width-1) solid var(--code-border);
       color: var(--code-text);
-      font-family: var(--font-sans, system-ui, sans-serif);
-      font-size: var(--text-xs, 0.75rem);
-      padding: 0.25rem 0.75rem;
-      border-radius: 999px;
+      font-family: var(--font-sans);
+      font-size: var(--text-xs);
+      padding: var(--space-1) var(--space-3);
+      border-radius: var(--radius-full);
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 0.25rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      transition: all 0.2s;
+      gap: var(--space-1);
+      box-shadow: var(--shadow-sm);
+      transition: all var(--motion-duration) var(--motion-easing);
     }
 
     .collapse-button:hover {
@@ -466,25 +481,25 @@ export class UiCodeBlock extends LitElement {
       display: block;
       min-width: 100%;
       width: fit-content;
-      padding: 0 var(--space-2, 0.5rem);
+      padding: 0 var(--space-2);
       box-sizing: border-box;
       position: relative;
-      font-size: var(--text-sm, 0.8125rem); /* code の font-size: 0 を打ち消す */
+      font-size: var(--text-sm); /* code の font-size: 0 を打ち消す */
     }
 
     /* Diffがある場合のみ、全行の左パディングをあける（ガター確保） */
     .has-diff .line {
-      padding-left: calc(var(--space-2, 0.5rem) + 1.2em);
+      padding-left: calc(var(--space-2) + 1.2em);
     }
 
     .line.diff.add {
-      background-color: var(--color-diff-add-bg, rgba(34, 197, 94, 0.1));
-      border-left: 2px solid var(--color-success, #22c55e);
+      background-color: var(--color-diff-add-bg);
+      border-left: var(--border-width-2) solid var(--color-success);
     }
 
     .line.diff.remove {
-      background-color: var(--color-diff-remove-bg, rgba(239, 68, 68, 0.1));
-      border-left: 2px solid var(--color-error, #ef4444);
+      background-color: var(--color-diff-remove-bg);
+      border-left: var(--border-width-2) solid var(--color-error);
     }
     
     /* アクセシビリティ記号 (+/-) */
@@ -494,38 +509,36 @@ export class UiCodeBlock extends LitElement {
       top: 0;
       width: 1em;
       text-align: center;
-      font-family: var(--font-mono, monospace);
+      font-family: var(--font-mono);
       opacity: 0.6;
       pointer-events: none;
     }
 
     .line.diff.add::before {
       content: '+';
-      color: var(--color-success, #22c55e);
+      color: var(--color-success);
     }
 
     .line.diff.remove::before {
       content: '-';
-      color: var(--color-error, #ef4444);
+      color: var(--color-error);
     }
 
-    /* ダークモード対応 */
-    @media (prefers-color-scheme: dark) {
-      :host:not([data-theme="light"]) {
-        --code-bg: var(--color-background-subtle, #171717);
-        --code-header-bg: var(--color-background, #0a0a0a);
-        --code-border: var(--color-border, #27272a);
-        --code-text: var(--color-foreground, #ededed);
-        --code-line-number: var(--color-foreground-muted, #a1a1aa);
+    
+    /* ハイコントラストモード対応 */
+    @media (prefers-contrast: more) {
+      .action-button:focus-visible {
+        outline-width: 3px;
       }
-    }
-
-    :host-context([data-theme="dark"]) {
-      --code-bg: var(--color-background-subtle, #171717);
-      --code-header-bg: var(--color-background, #0a0a0a);
-      --code-border: var(--color-border, #27272a);
-      --code-text: var(--color-foreground, #ededed);
-      --code-line-number: var(--color-foreground-muted, #a1a1aa);
+      
+      .line.highlighted {
+        border-left-width: 3px;
+      }
+      
+      .line.diff.add,
+      .line.diff.remove {
+        border-left-width: 3px;
+      }
     }
   `;
 
@@ -535,19 +548,19 @@ export class UiCodeBlock extends LitElement {
   @property({ type: String })
   filename = '';
 
-  @property({ type: Boolean })
+  @property({ type: Boolean, attribute: 'show-line-numbers' })
   showLineNumbers = false;
 
-  @property({ type: String })
+  @property({ type: String, attribute: 'highlight-lines' })
   highlightLines = '';
 
-  @property({ type: Boolean })
+  @property({ type: Boolean, attribute: 'raw-html' })
   rawHtml = false;
 
   @property({ type: Boolean })
   collapsible = false;
 
-  @property({ type: Number })
+  @property({ type: Number, attribute: 'max-height' })
   maxHeight = 300;
 
   @state()
@@ -574,10 +587,18 @@ export class UiCodeBlock extends LitElement {
   @state()
   private _highlightedCode = '';
 
+  // レースコンディションを防ぐためのバージョン管理
+  private _highlightVersion = 0;
+
 
 
   override connectedCallback() {
     super.connectedCallback();
+  }
+
+  override firstUpdated() {
+    // 全ての属性が反映された後に初期化
+    // slotchangeイベントでも呼ばれるが、highlightLinesが既に設定されている
     this._extractCode();
   }
 
@@ -585,13 +606,18 @@ export class UiCodeBlock extends LitElement {
     super.disconnectedCallback();
   }
 
-  override updated(changedProperties: Map<string, any>) {
+  override async updated(changedProperties: Map<string, any>) {
     super.updated(changedProperties);
     // コードや言語が変わったら再ハイライト
-    if (changedProperties.has('language')) {
+    // コード関連のプロパティが変わったら再ハイライト
+    if (
+      changedProperties.has('language') || 
+      changedProperties.has('highlightLines') ||
+      changedProperties.has('showLineNumbers')
+    ) {
       // rawHtmlモード以外の場合のみ再ハイライト
       if (!this.rawHtml) {
-        this._highlightCode();
+        await this._highlightCode();
       }
     }
   }
@@ -600,6 +626,9 @@ export class UiCodeBlock extends LitElement {
     // textContentの取得タイミングによって空になることがあるため、少し待つか
     // slotchangeイベントを監視するのがベターだが、簡易的に
     this._code = this.textContent?.trim() || '';
+
+    // 空の場合は処理しない（slotchangeなどで再試行されるのを待つ）
+    if (!this._code) return;
 
     if (this.rawHtml) {
       // HTMLモード: スロットの中身をHTMLとしてそのまま使う
@@ -616,11 +645,18 @@ export class UiCodeBlock extends LitElement {
   private async _highlightCode() {
     if (!this._code) return;
 
+    // レースコンディション防止: 最新の呼び出しのみが結果を適用
+    const currentVersion = ++this._highlightVersion;
+
     this._isLoading = true;
     try {
       const highlighter = await getHighlighter();
       
+      // 古いバージョンの呼び出しは中断
+      if (currentVersion !== this._highlightVersion) return;
+
       const transformers = [
+        transformerAddLineClass(), // 必須: 全行に .line を付与
         transformerNotationDiff(),
         transformerDiffAria(),
       ];
@@ -641,6 +677,9 @@ export class UiCodeBlock extends LitElement {
         transformers,
       });
 
+      // 古いバージョンの呼び出しは結果を適用しない
+      if (currentVersion !== this._highlightVersion) return;
+
       this._highlightedCode = html;
       this._hasDiff = html.includes('class="line diff'); // 簡易判定
     } catch (e) {
@@ -648,7 +687,10 @@ export class UiCodeBlock extends LitElement {
       // フォールバック: 生コードを表示
       this._highlightedCode = `<pre><code>${this._escapeHtml(this._code)}</code></pre>`;
     } finally {
-      this._isLoading = false;
+      // 最新バージョンのみローディング状態を解除
+      if (currentVersion === this._highlightVersion) {
+        this._isLoading = false;
+      }
     }
   }
 
@@ -679,10 +721,10 @@ export class UiCodeBlock extends LitElement {
       }));
 
       // アクセシビリティ: スクリーンリーダー通知
-      this._copyFeedback = 'コードをコピーしました';
+      this._copyFeedback = t('codeblock.copied');
       setTimeout(() => {
         this._copyFeedback = '';
-      }, 100);
+      }, COPY_FEEDBACK_SR_DURATION);
 
       setTimeout(() => {
         this._copied = false;
@@ -712,7 +754,7 @@ export class UiCodeBlock extends LitElement {
             <button 
               class="action-button ${this._wordWrap ? 'active' : ''}"
               @click=${() => this._wordWrap = !this._wordWrap}
-              aria-label=${this._wordWrap ? '折り返しを無効にする' : '折り返しを有効にする'}
+              aria-label=${this._wordWrap ? t('codeblock.disableWordWrap') : t('codeblock.enableWordWrap')}
               aria-pressed="${this._wordWrap}"
             >
               <iconify-icon icon="lucide:wrap-text"></iconify-icon>
@@ -721,7 +763,7 @@ export class UiCodeBlock extends LitElement {
             <button 
               class="action-button ${this._copied ? 'copied' : ''}"
               @click=${this._handleCopy}
-              aria-label="コードをコピー"
+              aria-label=${t('codeblock.copy')}
             >
               ${this._iconState === 'check' 
                 ? html`<iconify-icon icon="lucide:check"></iconify-icon>` 
@@ -755,7 +797,7 @@ export class UiCodeBlock extends LitElement {
                 @click=${() => this._isExpanded = true}
                 aria-expanded="false"
               >
-                Show more
+                ${t('codeblock.showMore')}
                 <iconify-icon icon="lucide:chevron-down"></iconify-icon>
               </button>
             </div>
@@ -763,13 +805,13 @@ export class UiCodeBlock extends LitElement {
         </div>
         
         ${this.collapsible && this._isExpanded ? html`
-          <div style="display: flex; justify-content: center; padding-bottom: 0.5rem; background-color: var(--code-bg);">
+          <div style="display: flex; justify-content: center; padding-bottom: var(--space-2); background-color: var(--code-bg);">
             <button 
               class="collapse-button" 
               @click=${() => this._isExpanded = false}
               aria-expanded="true"
             >
-              Show less
+              ${t('codeblock.showLess')}
               <iconify-icon icon="lucide:chevron-up"></iconify-icon>
             </button>
           </div>
