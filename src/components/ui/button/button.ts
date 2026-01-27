@@ -78,14 +78,15 @@ export class UiButton extends LionButton {
 
         /* 3. Focus (フォーカス) */
         :host(:focus-visible:not([disabled])) {
-          outline: 2px solid var(--outline-color);
-          outline-offset: 2px;
+          outline: var(--focus-ring-width) solid var(--outline-color);
+          outline-offset: var(--focus-ring-offset);
           position: relative;
         }
 
         /* 4. Active / Pressed (押し込み中) */
         :host(:active:not([disabled])) {
           background-color: var(--bg-active);
+          transform: scale(var(--scale-active));
           box-shadow: none;
         }
 
@@ -140,8 +141,8 @@ export class UiButton extends LionButton {
         /* Ghost (ゴースト) - ナビゲーション用 */
         :host([variant="ghost"]) {
           --bg-default: transparent;
-          --bg-hover:   hsla(var(--btn-h), var(--btn-s), var(--btn-l), 0.08);
-          --bg-active:  hsla(var(--btn-h), var(--btn-s), var(--btn-l), 0.15);
+          --bg-hover:   var(--color-surface-hover);
+          --bg-active:  var(--color-surface-active);
           
           --text-default: hsl(var(--btn-h), var(--btn-s), var(--btn-l));
           --border-color: transparent;

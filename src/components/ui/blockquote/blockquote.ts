@@ -47,7 +47,7 @@ export class UiBlockquote extends LitElement {
     blockquote {
       margin: 0;
       padding: var(--space-4) var(--space-6);
-      border-left: 3px solid var(--blockquote-border-color);
+      border-left: var(--border-width-3) solid var(--blockquote-border-color);
       background-color: var(--blockquote-bg);
       font-size: var(--text-base);
       line-height: var(--line-height-relaxed);
@@ -117,8 +117,8 @@ export class UiBlockquote extends LitElement {
     a {
       color: inherit;
       text-decoration: none;
-      transition: color 100ms ease-out;
-      border-bottom: 1px solid transparent;
+      transition: color var(--duration-fast) ease-out;
+      border-bottom: var(--link-decoration-thickness) solid transparent;
     }
 
     a:hover {
@@ -127,9 +127,9 @@ export class UiBlockquote extends LitElement {
     }
     
     a:focus-visible {
-      outline: 2px solid var(--color-primary);
-      outline-offset: 2px;
-      border-radius: 2px;
+      outline: var(--focus-ring-width) solid var(--color-primary);
+      outline-offset: var(--focus-ring-offset);
+      border-radius: var(--radius-sm);
     }
 
     /* -------------------------------------------------------------

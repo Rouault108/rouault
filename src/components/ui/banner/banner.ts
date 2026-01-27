@@ -92,11 +92,13 @@ export class UiBanner extends LitElement {
       /* リンクの色はボーダー色ではなく、アイコンと同じ濃い色を使う方が視認性が良い */
       color: var(--banner-icon);
       text-decoration: underline;
+      text-decoration-thickness: var(--link-decoration-thickness);
+      text-underline-offset: var(--link-underline-offset);
       font-weight: var(--font-medium);
     }
 
     .content ::slotted(a:hover) {
-      text-decoration: none;
+      text-decoration-thickness: var(--link-decoration-hover-thickness);
     }
 
     .content ::slotted(strong) {
@@ -115,8 +117,8 @@ export class UiBanner extends LitElement {
     .close-button {
       flex-shrink: 0;
       /* ui-icon-button のスタイル上書き */
-      --bg-hover: rgba(0, 0, 0, 0.05);
-      --bg-active: rgba(0, 0, 0, 0.1);
+      --bg-hover: var(--color-surface-hover);
+      --bg-active: var(--color-surface-active);
       
       /* 行の高さに合わせて中央配置 */
       height: calc(1em * var(--line-height-relaxed));

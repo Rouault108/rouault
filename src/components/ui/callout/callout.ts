@@ -23,7 +23,7 @@ export class UiCallout extends LitElement {
       --_c-text: var(--color-foreground);
       
       /* アニメーション設定 */
-      --_anim-duration: 150ms;
+      --_anim-duration: var(--duration-fast);
       --_anim-ease: var(--ease-out);
     }
 
@@ -131,23 +131,18 @@ export class UiCallout extends LitElement {
       padding: var(--space-1);
       width: calc(100% + var(--space-2));
 
-      transition: background-color 100ms var(--ease-out);
+      transition: background-color var(--duration-fast) var(--ease-out);
     }
 
     .toggle-button:hover {
-      background-color: rgba(0, 0, 0, 0.03);
+      background-color: var(--color-surface-hover);
     }
 
-    /* ダークモードでのホバー */
-    @media (prefers-color-scheme: dark) {
-      .toggle-button:hover {
-        background-color: rgba(255, 255, 255, 0.05);
-      }
-    }
-
+    /* ダークモードのホバー色はトークンで統一されているためメディアクエリ削除 */
+    
     .toggle-button:focus-visible {
-      outline: 2px solid var(--color-primary); /* デザインシステム準拠 */
-      outline-offset: 2px;
+      outline: var(--focus-ring-width) solid var(--color-primary);
+      outline-offset: var(--focus-ring-offset);
     }
 
     /* ハイコントラストモードでのフォーカス */
@@ -218,17 +213,13 @@ export class UiCallout extends LitElement {
     }
     .content ::slotted(code) {
       padding: 0.125rem var(--space-1);
-      background-color: rgba(0, 0, 0, 0.05);
+      background-color: var(--color-surface-active);
       border-radius: var(--radius-sm);
       font-family: var(--font-mono);
       font-size: 0.9em;
     }
 
-    @media (prefers-color-scheme: dark) {
-      .content ::slotted(code) {
-        background-color: rgba(255, 255, 255, 0.1);
-      }
-    }
+    /* ダークモードも同じトークンで自動対応 */
     
     @media (prefers-reduced-motion: reduce) {
       .header,

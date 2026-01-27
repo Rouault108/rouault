@@ -40,10 +40,10 @@ export class UiCheckbox extends LitElement {
       --checkbox-check-color: #ffffff;
       
       /* 内部デザイントークン */
-      --_border-width: 1.5px;
+      --_border-width: var(--border-width-2);
       --_radius: var(--radius-sm);
       --_transition: var(--motion-duration, 200ms) var(--ease-out);
-      --_scale-pressed: 0.95;
+      --_scale-pressed: var(--scale-active);
     }
 
     :host([disabled]) {
@@ -116,8 +116,8 @@ export class UiCheckbox extends LitElement {
 
     /* フォーカス状態 */
     .native-input:focus-visible ~ .checkbox-wrapper .checkbox {
-      outline: 2px solid var(--color-primary);
-      outline-offset: 2px;
+      outline: var(--focus-ring-width) solid var(--color-primary);
+      outline-offset: var(--focus-ring-offset);
       box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 20%, transparent);
     }
 

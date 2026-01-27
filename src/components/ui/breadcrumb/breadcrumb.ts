@@ -159,8 +159,8 @@ export class UiBreadcrumbItem extends LitElement {
     }
 
     a:focus-visible {
-      outline: 2px solid var(--color-primary);
-      outline-offset: 2px;
+      outline: var(--focus-ring-width) solid var(--color-primary);
+      outline-offset: var(--focus-ring-offset);
       border-radius: var(--radius-sm);
     }
 
@@ -205,13 +205,13 @@ export class UiBreadcrumbItem extends LitElement {
     }
 
     .collapsed-button:hover {
-      background-color: var(--color-background-subtle);
+      background-color: var(--color-surface-hover);
       color: var(--color-foreground);
     }
 
     .collapsed-button:focus-visible {
-      outline: 2px solid var(--color-primary);
-      outline-offset: 2px;
+      outline: var(--focus-ring-width) solid var(--color-primary);
+      outline-offset: var(--focus-ring-offset);
       border-radius: var(--radius-sm);
     }
 
@@ -299,7 +299,7 @@ export class UiBreadcrumbItem extends LitElement {
       --breadcrumb-dropdown-bg: var(--color-background);
       --breadcrumb-dropdown-border: var(--color-border);
       --breadcrumb-dropdown-shadow: var(--shadow-lg);
-      --breadcrumb-dropdown-item-hover-bg: var(--color-background-subtle);
+      --breadcrumb-dropdown-item-hover-bg: var(--color-surface-hover);
     }
 
     @media (prefers-color-scheme: dark) {
@@ -307,7 +307,7 @@ export class UiBreadcrumbItem extends LitElement {
         --breadcrumb-dropdown-bg: var(--bg-surface-2);
         --breadcrumb-dropdown-border: var(--color-border);
         --breadcrumb-dropdown-shadow: var(--shadow-dark-lg);
-        --breadcrumb-dropdown-item-hover-bg: var(--bg-surface-3);
+        --breadcrumb-dropdown-item-hover-bg: var(--color-surface-hover);
       }
     }
 
