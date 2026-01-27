@@ -75,6 +75,10 @@
   --color-important: #9333ea;
   --color-important-bg: #f3e8ff;
   --color-important-text: #6b21a8;
+  
+  /* Diff背景色 */
+  --color-diff-add-bg: rgba(34, 197, 94, 0.1);
+  --color-diff-remove-bg: rgba(239, 68, 68, 0.1);
 
   /* プライマリ背景色（サーフェス用の控えめな色） */
   --color-primary-bg: hsl(var(--color-primary-hue), 30%, 96%);
@@ -191,6 +195,11 @@
   --icon-md: 20px;
   --icon-lg: 24px;
   --icon-xl: 32px;
+  
+  /* ボタンサイズ */
+  --button-size-sm: 28px;
+  --button-size-md: 36px;
+  --button-size-lg: 44px;
   
   /* -----------------------------------------------------------------------
    * スペーシング（4px 基準）
@@ -423,6 +432,10 @@
     --color-important: #c084fc;
     --color-important-bg: #3b0764;
     --color-important-text: #d8b4fe; /* Purple 300 - ダークモード用 */
+    
+    /* Diff背景色（Dark） */
+    --color-diff-add-bg: rgba(34, 197, 94, 0.15);
+    --color-diff-remove-bg: rgba(239, 68, 68, 0.15);
 
     /* プライマリ背景色 */
     --color-primary-bg: hsl(var(--color-primary-hue), 30%, 12%);
@@ -510,6 +523,10 @@
   --color-important: #c084fc;
   --color-important-bg: #3b0764;
   --color-important-text: #d8b4fe; /* Purple 300 - ダークモード用 */
+  
+  /* Diff背景色（Dark） */
+  --color-diff-add-bg: rgba(34, 197, 94, 0.15);
+  --color-diff-remove-bg: rgba(239, 68, 68, 0.15);
 
   /* プライマリ背景色 */
   --color-primary-bg: hsl(var(--color-primary-hue), 30%, 12%);
