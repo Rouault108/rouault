@@ -38,11 +38,7 @@ export class UiBlockquote extends LitElement {
       /* -------------------------------------------------------------
        * HSL Color Workflow & Design Tokens
        * ------------------------------------------------------------- */
-      --blockquote-h: var(--color-primary-hue);
-      --blockquote-s: 30%;
-      --blockquote-l: 96%;
-      
-      --blockquote-bg: hsl(var(--blockquote-h) var(--blockquote-s) var(--blockquote-l));
+      --blockquote-bg: var(--color-primary-bg);
       --blockquote-border-color: var(--color-primary);
       --blockquote-text-color: var(--color-foreground);
       --blockquote-footer-color: var(--color-foreground-muted);
@@ -73,45 +69,11 @@ export class UiBlockquote extends LitElement {
       background-color: transparent;
     }
 
-    /* Bordered */
+    /* Bordered (背景色は Highlighted と同じ --color-primary-bg を使用、微差は統一) */
     :host([variant="bordered"]) blockquote {
       border: 1px solid var(--color-border);
       border-left: 3px solid var(--blockquote-border-color);
-      
-      /* Lighter background for bordered variant */
-      --blockquote-l: 98%;
-      background-color: hsl(var(--blockquote-h) var(--blockquote-s) var(--blockquote-l));
-    }
-
-    /* -------------------------------------------------------------
-     * Dark Mode Support
-     * ------------------------------------------------------------- */
-    
-    @media (prefers-color-scheme: dark) {
-      :host {
-        --blockquote-l: 12%;
-        --blockquote-text-color: var(--color-foreground);
-        --blockquote-footer-color: var(--color-foreground-muted);
-      }
-      
-      :host([variant="bordered"]) blockquote {
-        --blockquote-l: 10%;
-        border-color: var(--color-border);
-      }
-    }
-
-    /* Explicit Dark Theme Overrides (data-theme="dark") */
-    :host([data-theme="dark"]) {
-      --blockquote-l: 12%;
-      --blockquote-text-color: var(--color-foreground);
-      --blockquote-footer-color: var(--color-foreground-muted);
-      --blockquote-bg: hsl(var(--blockquote-h) var(--blockquote-s) var(--blockquote-l));
-    }
-    
-    :host([data-theme="dark"][variant="bordered"]) blockquote {
-      --blockquote-l: 10%;
-      border-color: var(--color-border);
-      background-color: hsl(var(--blockquote-h) var(--blockquote-s) var(--blockquote-l));
+      background-color: var(--blockquote-bg);
     }
 
     /* -------------------------------------------------------------
