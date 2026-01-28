@@ -246,7 +246,17 @@ export class UiButton extends LionButton {
           flex-shrink: 0; /* テキストが長くてもアイコンは縮まない */
         }
 
-
+        /* -------------------------------------------------------------
+         * ハイコントラストモード (Windows High Contrast / Force Colors)
+         * ------------------------------------------------------------- */
+        @media (forced-colors: active) {
+          :host([disabled]) {
+            /* 無効時はシステム定義の無効色 (GrayText) を強制 */
+            color: GrayText;
+            border-color: GrayText;
+            opacity: 1;
+          }
+        }
       `
     ];
   }
