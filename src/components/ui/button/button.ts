@@ -25,7 +25,7 @@ export class UiButton extends LionButton {
           --border-color: var(--btn-primary-border);
           
           /* Focus Ring Base Color */
-          --outline-color: var(--color-primary);
+          --outline-color: var(--focus-ring-color);
 
           /* 現在適用されている変数 */
           --btn-bg: var(--bg-default);
