@@ -13,22 +13,19 @@ export class UiButton extends LionButton {
       css`
         :host {
           /* -------------------------------------------------------------
-           * 基本カラー設定 & 変数定義
+           * 基本カラー設定 (コンポーネントトークン参照)
            * ------------------------------------------------------------- */
-          --btn-h: var(--color-primary-hue);
-          --btn-s: var(--color-primary-sat);
-          --btn-l: var(--color-primary-lightness);
           
-          /* 状態ごとの色 (デフォルト) - Primary */
-          --bg-default: hsl(var(--btn-h) var(--btn-s) var(--btn-l));
-          --bg-hover:   hsl(var(--btn-h) var(--btn-s) calc(var(--btn-l) - 5%));
-          --bg-active:  hsl(var(--btn-h) var(--btn-s) calc(var(--btn-l) - 10%));
+          /* Default (Primary) Variables */
+          --bg-default: var(--btn-primary-bg);
+          --bg-hover:   var(--btn-primary-bg-hover);
+          --bg-active:  var(--btn-primary-bg-active);
           
-          --text-default: var(--color-background); /* Light: White, Dark: Black */
-          --text-disabled: hsl(220, 10%, 60%);
+          --text-default: var(--btn-primary-text);
+          --border-color: var(--btn-primary-border);
           
-          --border-color: transparent;
-          --outline-color: hsl(var(--btn-h), var(--btn-s), calc(var(--btn-l) + 10%));
+          /* Focus Ring Base Color */
+          --outline-color: var(--color-primary);
 
           /* 現在適用されている変数 */
           --btn-bg: var(--bg-default);
@@ -90,15 +87,11 @@ export class UiButton extends LionButton {
           box-shadow: none;
         }
 
-        /* 5-6. Disabled / Inactive (無効) */
+        /* 5. Disabled / Inactive (無効) */
         :host([disabled]) {
-          --btn-bg: var(--color-disabled-bg);
-          --btn-text: var(--color-disabled-text);
-          --btn-border: var(--color-disabled-border);
-          
-          background-color: var(--btn-bg);
-          color: var(--btn-text);
-          border-color: var(--btn-border);
+          --btn-bg: var(--btn-disabled-bg);
+          --btn-text: var(--btn-disabled-text);
+          --btn-border: var(--btn-disabled-border);
           
           cursor: not-allowed;
           opacity: 0.8;
@@ -112,40 +105,38 @@ export class UiButton extends LionButton {
 
         /* Secondary (セカンダリ) */
         :host([variant="secondary"]) {
-          --btn-h: var(--color-secondary-hue);
-          --btn-s: var(--color-secondary-sat);
-          --btn-l: var(--color-secondary-lightness);
+          --bg-default: var(--btn-secondary-bg);
+          --bg-hover:   var(--btn-secondary-bg-hover);
+          --bg-active:  var(--btn-secondary-bg-active);
           
-          --bg-default: hsl(var(--btn-h) var(--btn-s) var(--btn-l));
-          --bg-hover:   hsl(var(--btn-h) var(--btn-s) 40%);
-          --bg-active:  hsl(var(--btn-h) var(--btn-s) 35%);
-          
-          --outline-color: hsl(var(--btn-h) var(--btn-s) 60%);
+          --text-default: var(--btn-secondary-text);
+          --border-color: var(--btn-secondary-border);
+          --outline-color: var(--btn-secondary-outline);
         }
 
         /* Outline (アウトライン) */
         :host([variant="outline"]) {
-          --bg-default: transparent;
-          --bg-hover:   hsla(var(--btn-h), var(--btn-s), var(--btn-l), 0.1);
-          --bg-active:  hsla(var(--btn-h), var(--btn-s), var(--btn-l), 0.2);
+          --bg-default: var(--btn-outline-bg);
+          --bg-hover:   var(--btn-outline-bg-hover);
+          --bg-active:  var(--btn-outline-bg-active);
           
-          --text-default: hsl(var(--btn-h), var(--btn-s), var(--btn-l));
-          --border-color: hsl(var(--btn-h), var(--btn-s), var(--btn-l));
+          --text-default: var(--btn-outline-text);
+          --border-color: var(--btn-outline-border);
         }
         
         :host([variant="outline"][disabled]) {
            background-color: transparent;
-           border-color: var(--text-disabled);
+           border-color: var(--btn-disabled-text);
         }
 
         /* Ghost (ゴースト) - ナビゲーション用 */
         :host([variant="ghost"]) {
-          --bg-default: transparent;
-          --bg-hover:   var(--color-surface-hover);
-          --bg-active:  var(--color-surface-active);
+          --bg-default: var(--btn-ghost-bg);
+          --bg-hover:   var(--btn-ghost-bg-hover);
+          --bg-active:  var(--btn-ghost-bg-active);
           
-          --text-default: hsl(var(--btn-h), var(--btn-s), var(--btn-l));
-          --border-color: transparent;
+          --text-default: var(--btn-ghost-text);
+          --border-color: var(--btn-ghost-border);
         }
 
         :host([variant="ghost"]:hover:not([disabled])) {
@@ -159,16 +150,13 @@ export class UiButton extends LionButton {
 
         /* Danger (削除、破壊的アクション) */
         :host([variant="danger"]) {
-          --btn-h: var(--color-error-hue);
-          --btn-s: var(--color-error-sat);
-          --btn-l: var(--color-error-lightness);
+          --bg-default: var(--btn-danger-bg);
+          --bg-hover:   var(--btn-danger-bg-hover);
+          --bg-active:  var(--btn-danger-bg-active);
           
-          --bg-default: hsl(var(--btn-h) var(--btn-s) var(--btn-l));
-          --bg-hover:   hsl(var(--btn-h) var(--btn-s) calc(var(--btn-l) - 5%));
-          --bg-active:  hsl(var(--btn-h) var(--btn-s) calc(var(--btn-l) - 10%));
-          
-          --text-default: var(--color-background);
-          --outline-color: hsl(var(--btn-h) var(--btn-s) calc(var(--btn-l) + 10%));
+          --text-default: var(--btn-danger-text);
+          --border-color: var(--btn-danger-border);
+          --outline-color: var(--btn-danger-outline);
         }
 
         /* -------------------------------------------------------------
@@ -258,43 +246,7 @@ export class UiButton extends LionButton {
           flex-shrink: 0; /* テキストが長くてもアイコンは縮まない */
         }
 
-        /* -------------------------------------------------------------
-         * ダークモード対応
-         * Elevation Tones に基づく背景色とコントラスト改善
-         * ------------------------------------------------------------- */
-        
-        /* OS設定によるダークモード */
-        @media (prefers-color-scheme: dark) {
-          :host {
-            --text-default: var(--color-foreground);
-          }
 
-          :host([variant="secondary"]) {
-            --bg-default: var(--bg-surface-1);
-            --bg-hover: var(--bg-surface-2);
-            --bg-active: var(--bg-surface-3);
-            --text-default: var(--color-foreground);
-            --border-color: var(--color-border);
-          }
-
-          :host([variant="outline"]) {
-            --bg-hover: hsla(var(--btn-h), 60%, 50%, 0.15);
-            --bg-active: hsla(var(--btn-h), 60%, 50%, 0.25);
-            --text-default: var(--color-primary);
-            --border-color: var(--color-primary);
-          }
-
-          :host([variant="ghost"]) {
-            --bg-hover: var(--bg-surface-1);
-            --bg-active: var(--bg-surface-2);
-            --text-default: var(--color-foreground);
-          }
-
-          :host([disabled]) {
-            --btn-bg: var(--bg-surface-1);
-            --btn-text: var(--color-foreground-muted);
-          }
-        }
       `
     ];
   }
