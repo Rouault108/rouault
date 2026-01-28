@@ -221,8 +221,10 @@ export const BDD_VariantAttribute: Story = {
 
     await divider.updateComplete;
 
-    // variant 属性が正しく反映されているか
-    await expect(divider.getAttribute('variant')).toBe('dashed');
+    const hr = divider.shadowRoot?.querySelector('hr');
+    const styles = getComputedStyle(hr!);
+    await expect(styles.borderTopStyle).toBe('dashed');
+    await expect(styles.borderTopWidth).toBe('1px');
   },
 };
 
@@ -269,5 +271,170 @@ export const BDD_AriaAttributes: Story = {
     await expect(hrElement).toBeTruthy();
     await expect(hrElement?.getAttribute('role')).toBe('separator');
     await expect(hrElement?.getAttribute('aria-orientation')).toBe('horizontal');
+  },
+};
+
+/**
+ * BDD: Thickness（太さ）計算値テスト
+ */
+export const BDD_ThicknessValues: Story = {
+  tags: ['test'],
+  render: () => html`
+    <div>
+      <ui-divider data-testid="divider-thin" thickness="thin"></ui-divider>
+      <ui-divider data-testid="divider-normal" thickness="normal"></ui-divider>
+      <ui-divider data-testid="divider-thick" thickness="thick"></ui-divider>
+    </div>
+  `,
+  async play({ canvasElement }) {
+    const canvas = within(canvasElement);
+
+    const dividerThin = canvas.getByTestId('divider-thin') as UiDivider;
+    const dividerNormal = canvas.getByTestId('divider-normal') as UiDivider;
+    const dividerThick = canvas.getByTestId('divider-thick') as UiDivider;
+
+    await Promise.all([
+      dividerThin.updateComplete,
+      dividerNormal.updateComplete,
+      dividerThick.updateComplete,
+    ]);
+
+    // Thin (1px)
+    const hrThin = dividerThin.shadowRoot?.querySelector('hr');
+    const stylesThin = getComputedStyle(hrThin!);
+    await expect(stylesThin.height).toBe('1px');
+
+    // Normal (2px)
+    const hrNormal = dividerNormal.shadowRoot?.querySelector('hr');
+    const stylesNormal = getComputedStyle(hrNormal!);
+    await expect(stylesNormal.height).toBe('2px');
+
+    // Thick (3px)
+    const hrThick = dividerThick.shadowRoot?.querySelector('hr');
+    const stylesThick = getComputedStyle(hrThick!);
+    await expect(stylesThick.height).toBe('3px');
+  },
+};
+
+/**
+ * BDD: Spacing（スペーシング）計算値テスト
+ */
+export const BDD_SpacingValues: Story = {
+  tags: ['test'],
+  render: () => html`
+    <div>
+      <ui-divider data-testid="divider-tight" spacing="tight"></ui-divider>
+      <ui-divider data-testid="divider-normal" spacing="normal"></ui-divider>
+      <ui-divider data-testid="divider-loose" spacing="loose"></ui-divider>
+    </div>
+  `,
+  async play({ canvasElement }) {
+    const canvas = within(canvasElement);
+
+    const dividerTight = canvas.getByTestId('divider-tight') as UiDivider;
+    const dividerNormal = canvas.getByTestId('divider-normal') as UiDivider;
+    const dividerLoose = canvas.getByTestId('divider-loose') as UiDivider;
+
+    await Promise.all([
+      dividerTight.updateComplete,
+      dividerNormal.updateComplete,
+      dividerLoose.updateComplete,
+    ]);
+
+    // Tight (0.75rem = 12px)
+    const stylesTight = getComputedStyle(dividerTight);
+    await expect(stylesTight.marginTop).toBe('12px');
+    await expect(stylesTight.marginBottom).toBe('12px');
+
+    // Normal (1.5rem = 24px)
+    const stylesNormal = getComputedStyle(dividerNormal);
+    await expect(stylesNormal.marginTop).toBe('24px');
+    await expect(stylesNormal.marginBottom).toBe('24px');
+
+    // Loose (3rem = 48px)
+    const stylesLoose = getComputedStyle(dividerLoose);
+    await expect(stylesLoose.marginTop).toBe('48px');
+    await expect(stylesLoose.marginBottom).toBe('48px');
+  },
+};
+
+/**
+ * BDD: Gradient Opacity テスト
+ */
+export const BDD_GradientOpacity: Story = {
+  tags: ['test'],
+  render: () => html`
+    <ui-divider data-testid="divider-gradient" variant="gradient"></ui-divider>
+  `,
+  async play({ canvasElement }) {
+    const canvas = within(canvasElement);
+    const divider = canvas.getByTestId('divider-gradient') as UiDivider;
+
+    await divider.updateComplete;
+
+    const hr = divider.shadowRoot?.querySelector('hr');
+    const styles = getComputedStyle(hr!);
+    
+    // opacity: var(--opacity-30) = 0.3
+    await expect(styles.opacity).toBe('0.3');
+  },
+};
+
+/**
+ * BDD: ラベル付きDividerのARIA構造テスト
+ */
+export const BDD_LabeledDividerARIA: Story = {
+  tags: ['test'],
+  render: () => html`
+    <ui-divider data-testid="divider-labeled" label="Section"></ui-divider>
+  `,
+  async play({ canvasElement }) {
+    const canvas = within(canvasElement);
+    const divider = canvas.getByTestId('divider-labeled') as UiDivider;
+
+    await divider.updateComplete;
+
+    // コンテナがrole="separator"を持つ
+    const container = divider.shadowRoot?.querySelector('.divider-container');
+    await expect(container?.getAttribute('role')).toBe('separator');
+    await expect(container?.getAttribute('aria-orientation')).toBe('horizontal');
+
+    // hr要素はaria-hidden="true"
+    const hrElements = divider.shadowRoot?.querySelectorAll('hr');
+    await expect(hrElements?.length).toBe(2);
+    hrElements?.forEach(hr => {
+      expect(hr.getAttribute('aria-hidden')).toBe('true');
+    });
+
+    // ラベルが表示されている
+    const label = divider.shadowRoot?.querySelector('.divider-label');
+    await expect(label?.textContent?.trim()).toBe('Section');
+  },
+};
+
+/**
+ * BDD: トランジション設定テスト
+ */
+export const BDD_TransitionProperties: Story = {
+  tags: ['test'],
+  render: () => html`
+    <ui-divider data-testid="divider-transition"></ui-divider>
+  `,
+  async play({ canvasElement }) {
+    const canvas = within(canvasElement);
+    const divider = canvas.getByTestId('divider-transition') as UiDivider;
+
+    await divider.updateComplete;
+
+    const hr = divider.shadowRoot?.querySelector('hr');
+    const styles = getComputedStyle(hr!);
+
+    // トランジションプロパティが設定されているか
+    const transitionProperty = styles.transitionProperty;
+    
+    // 'background-color', 'border-color', 'opacity' が含まれているか
+    await expect(transitionProperty).toContain('background-color');
+    await expect(transitionProperty).toContain('border-color');
+    await expect(transitionProperty).toContain('opacity');
   },
 };

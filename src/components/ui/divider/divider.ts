@@ -16,20 +16,21 @@ export class UiDivider extends LitElement {
     :host {
       display: block;
       width: 100%;
+      --line-thickness: var(--border-width-1);
     }
 
     /* スペーシング */
     :host([spacing="tight"]) {
-      margin: 0.75rem 0;
+      margin: var(--space-3) var(--space-none);
     }
 
     :host([spacing="normal"]),
     :host(:not([spacing])) {
-      margin: 1.5rem 0;
+      margin: var(--space-6) var(--space-none);
     }
 
     :host([spacing="loose"]) {
-      margin: 3rem 0;
+      margin: var(--space-12) var(--space-none);
     }
 
     .divider-container {
@@ -43,83 +44,73 @@ export class UiDivider extends LitElement {
     hr {
       flex: 1;
       border: none;
-      margin: 0;
-      height: 1px;
-      background-color: var(--divider-color, rgba(0, 0, 0, 0.1));
+      margin: var(--space-none);
+      height: var(--line-thickness);
+      background-color: var(--color-border);
+      transition:
+        background-color var(--motion-duration) var(--motion-easing),
+        border-color var(--motion-duration) var(--motion-easing),
+        opacity var(--motion-duration) var(--motion-easing);
     }
 
-    /* 太さバリエーション */
-    :host([thickness="thin"]) hr,
-    :host(:not([thickness])) hr {
-      height: 1px;
+    /* 太さの定義 */
+    :host([thickness="thin"]),
+    :host(:not([thickness])) {
+      --line-thickness: var(--border-width-1);
     }
 
-    :host([thickness="normal"]) hr {
-      height: 2px;
+    :host([thickness="normal"]) {
+      --line-thickness: var(--border-width-2);
     }
 
-    :host([thickness="thick"]) hr {
-      height: 3px;
+    :host([thickness="thick"]) {
+      --line-thickness: var(--border-width-3);
     }
 
     /* スタイルバリアント */
     :host([variant="dashed"]) hr {
       background: none;
-      border-top: 1px dashed var(--divider-color, rgba(0, 0, 0, 0.1));
+      height: 0;
+      border-top-style: dashed;
+      border-top-width: var(--line-thickness);
+      border-top-color: var(--color-border);
     }
 
     :host([variant="dotted"]) hr {
       background: none;
-      border-top: 1px dotted var(--divider-color, rgba(0, 0, 0, 0.1));
+      height: 0;
+      border-top-style: dotted;
+      border-top-width: var(--line-thickness);
+      border-top-color: var(--color-border);
     }
 
     :host([variant="gradient"]) hr {
       background: linear-gradient(
         90deg,
         transparent 0%,
-        var(--color-primary, #3b82f6) 20%,
-        var(--color-accent, #8b5cf6) 80%,
+        var(--color-primary) 20%,
+        var(--color-accent) 80%,
         transparent 100%
       );
-      opacity: 0.3;
+      opacity: var(--opacity-30);
     }
 
     /* ラベル付きディバイダー */
     .divider-label {
-      padding: 0 1rem;
-      font-size: 0.75rem;
-      font-weight: 500;
+      padding: var(--space-none) var(--space-4);
+      font-size: var(--text-xs);
+      font-weight: var(--font-medium);
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--color-foreground-muted, #6b7280);
+      letter-spacing: var(--tracking-wider);
+      color: var(--color-foreground-muted);
       white-space: nowrap;
-      background-color: var(--color-background, #ffffff);
+      background-color: var(--color-background);
     }
-
-    /* ラベルがある場合の線 */
-    :host([label]) .divider-container hr {
-      flex: 1;
-    }
-
-    /* ダークモード */
-    @media (prefers-color-scheme: dark) {
-      :host(:not([data-theme="light"])) {
-        --divider-color: rgba(255, 255, 255, 0.1);
+    @media (prefers-contrast: more) {
+      hr {
+        height: var(--border-width-2);
+        background-color: var(--color-foreground-muted);
       }
-
-      :host(:not([data-theme="light"])) .divider-label {
-        color: var(--color-foreground-muted, #a1a1aa);
-        background-color: var(--color-background, #0a0a0a);
-      }
-    }
-
-    :host-context([data-theme="dark"]) {
-      --divider-color: rgba(255, 255, 255, 0.1);
-    }
-
-    :host-context([data-theme="dark"]) .divider-label {
-      color: var(--color-foreground-muted, #a1a1aa);
-      background-color: var(--color-background, #0a0a0a);
     }
   `;
 
