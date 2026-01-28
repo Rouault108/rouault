@@ -591,3 +591,311 @@ export const BDD_FormIntegration: Story = {
     await expect(select.value).toBe('jp');
   },
 };
+
+/**
+ * BDD: ダークモードスタイル検証
+ */
+export const BDD_DarkModeStyles: Story = {
+  tags: ['test'],
+  parameters: {
+    backgrounds: { default: 'dark' },
+  },
+  decorators: [
+    (story) => html`
+      <div data-theme="dark" style="padding: 1rem; background: var(--color-background); color: var(--color-foreground);">
+        ${story()}
+      </div>
+    `,
+  ],
+  render: () => html`
+    <ui-dropdown data-testid="dark-dropdown" label="ダークモード" name="dark-test">
+      <option value="opt1">オプション 1</option>
+      <option value="opt2">オプション 2</option>
+    </ui-dropdown>
+  `,
+  async play({ canvasElement }) {
+    const canvas = within(canvasElement);
+    const dropdown = canvas.getByTestId('dark-dropdown') as HTMLElement;
+    const select = dropdown.shadowRoot?.querySelector('select') as HTMLSelectElement;
+
+    // ドロップダウンが正しくレンダリングされている
+    await expect(dropdown).toBeInTheDocument();
+    await expect(select).toBeInTheDocument();
+
+    // ダークモード用のCSS変数が適用されているかは視覚的に確認
+    // (スナップショットテストや視覚回帰テストで検証推奨)
+  },
+};
+
+/**
+ * BDD: prefers-reduced-motion 対応検証
+ */
+export const BDD_ReducedMotion: Story = {
+  tags: ['test'],
+  render: () => html`
+    <style>
+      @media (prefers-reduced-motion: reduce) {
+        .reduced-motion-test * {
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+    <div class="reduced-motion-test">
+      <ui-dropdown data-testid="reduced-motion-dropdown" label="モーション軽減" name="motion-test">
+        <option value="opt1">オプション 1</option>
+        <option value="opt2">オプション 2</option>
+      </ui-dropdown>
+    </div>
+  `,
+  async play({ canvasElement }) {
+    const canvas = within(canvasElement);
+    const dropdown = canvas.getByTestId('reduced-motion-dropdown') as HTMLElement;
+    
+    // コンポーネントが正しくレンダリングされている
+    await expect(dropdown).toBeInTheDocument();
+
+    // トランジションが無効化されているかは視覚的に確認
+    // (Cypressなどでアニメーション時間を検証することも可能)
+  },
+};
+
+/**
+ * BDD: Invalid状態の視覚検証
+ */
+export const BDD_InvalidState: Story = {
+  tags: ['test'],
+  render: () => html`
+    <ui-dropdown 
+      data-testid="invalid-dropdown" 
+      label="必須フィールド"
+      name="invalid-test"
+      invalid
+      errorMessage="このフィールドは必須です"
+    >
+      <option value="">選択してください</option>
+      <option value="opt1">オプション 1</option>
+      <option value="opt2">オプション 2</option>
+    </ui-dropdown>
+  `,
+  async play({ canvasElement }) {
+    const canvas = within(canvasElement);
+    const dropdown = canvas.getByTestId('invalid-dropdown') as HTMLElement;
+    const select = dropdown.shadowRoot?.querySelector('select') as HTMLSelectElement;
+    const errorMessage = dropdown.shadowRoot?.querySelector('.error-message');
+    const arrowIcon = dropdown.shadowRoot?.querySelector('.arrow-icon');
+
+    // invalid 属性が設定されている
+    await expect(dropdown).toHaveAttribute('invalid');
+
+    // aria-invalid が設定されている
+    await expect(select.getAttribute('aria-invalid')).toBe('true');
+
+    // エラーメッセージが表示されている
+    await expect(errorMessage).toBeInTheDocument();
+    await expect(errorMessage?.textContent).toBe('このフィールドは必須です');
+
+    // aria-describedby がエラーメッセージを参照している
+    await expect(select.getAttribute('aria-describedby')).toContain('error-message');
+
+    // 矢印アイコンがエラー色になっている（視覚的確認推奨）
+    await expect(arrowIcon).toBeInTheDocument();
+  },
+};
+
+/**
+ * BDD: ヘルパーテキスト表示
+ */
+export const BDD_HelperText: Story = {
+  tags: ['test'],
+  render: () => html`
+    <ui-dropdown 
+      data-testid="helper-dropdown" 
+      label="国"
+      name="helper-test"
+      helper="お住まいの国を選択してください"
+    >
+      <option value="">選択してください</option>
+      <option value="jp">日本</option>
+      <option value="us">アメリカ</option>
+    </ui-dropdown>
+  `,
+  async play({ canvasElement }) {
+    const canvas = within(canvasElement);
+    const dropdown = canvas.getByTestId('helper-dropdown') as HTMLElement;
+    const select = dropdown.shadowRoot?.querySelector('select') as HTMLSelectElement;
+    const helperText = dropdown.shadowRoot?.querySelector('.helper-text');
+
+    // ヘルパーテキストが表示されている
+    await expect(helperText).toBeInTheDocument();
+    await expect(helperText?.textContent).toBe('お住まいの国を選択してください');
+
+    // aria-describedby がヘルパーテキストを参照している
+    await expect(select.getAttribute('aria-describedby')).toContain('helper-text');
+  },
+};
+
+/**
+ * BDD: キーボードナビゲーション
+ */
+export const BDD_KeyboardNavigation: Story = {
+  tags: ['test'],
+  render: () => html`
+    <ui-dropdown data-testid="keyboard-dropdown" label="キーボードテスト" name="keyboard-test">
+      <option value="">選択してください</option>
+      <option value="opt1">オプション 1</option>
+      <option value="opt2">オプション 2</option>
+      <option value="opt3">オプション 3</option>
+    </ui-dropdown>
+  `,
+  async play({ canvasElement }) {
+    const canvas = within(canvasElement);
+    const dropdown = canvas.getByTestId('keyboard-dropdown') as HTMLElement;
+    const select = dropdown.shadowRoot?.querySelector('select') as HTMLSelectElement;
+
+    // Tabキーでフォーカス
+    await userEvent.tab();
+    
+    // フォーカスされているか確認
+    await expect(dropdown.shadowRoot?.activeElement).toBe(select);
+
+    // 初期値は空
+    await expect(select.value).toBe('');
+
+    // 矢印キーで選択（下矢印）
+    await userEvent.keyboard('{ArrowDown}');
+    await expect(select.value).toBe('opt1');
+
+    await userEvent.keyboard('{ArrowDown}');
+    await expect(select.value).toBe('opt2');
+
+    // 上矢印で戻る
+    await userEvent.keyboard('{ArrowUp}');
+    await expect(select.value).toBe('opt1');
+  },
+};
+
+/**
+ * BDD: Optgroup サポート
+ */
+export const BDD_OptgroupSupport: Story = {
+  tags: ['test'],
+  render: () => html`
+    <ui-dropdown data-testid="optgroup-dropdown" label="カテゴリ別" name="optgroup-test">
+      <option value="">選択してください</option>
+      <optgroup label="果物">
+        <option value="apple">りんご</option>
+        <option value="banana">バナナ</option>
+      </optgroup>
+      <optgroup label="野菜">
+        <option value="carrot">にんじん</option>
+        <option value="potato">じゃがいも</option>
+      </optgroup>
+    </ui-dropdown>
+  `,
+  async play({ canvasElement }) {
+    const canvas = within(canvasElement);
+    const dropdown = canvas.getByTestId('optgroup-dropdown') as HTMLElement;
+    const select = dropdown.shadowRoot?.querySelector('select') as HTMLSelectElement;
+
+    // optgroup が正しく同期されている
+    const optgroups = select.querySelectorAll('optgroup');
+    await expect(optgroups.length).toBe(2);
+    
+    if (optgroups[0] && optgroups[1]) {
+      await expect(optgroups[0].label).toBe('果物');
+      await expect(optgroups[1].label).toBe('野菜');
+    }
+
+    // オプションが正しく配置されている
+    const options = select.querySelectorAll('option');
+    await expect(options.length).toBeGreaterThan(4); // placeholder + 4 items
+  },
+};
+
+/**
+ * BDD: ハイコントラストモード
+ */
+export const BDD_HighContrastMode: Story = {
+  tags: ['test'],
+  parameters: {
+    docs: {
+      description: {
+        story: 'Windows High Contrast Mode での表示を確認します。実際のテストはWindows環境で手動で行う必要があります。',
+      },
+    },
+  },
+  render: () => html`
+    <style>
+      /* ハイコントラストモードをシミュレート */
+      @media (forced-colors: active) {
+        .high-contrast-test select {
+          border: 2px solid ButtonBorder;
+        }
+      }
+    </style>
+    <div class="high-contrast-test">
+      <ui-dropdown data-testid="high-contrast-dropdown" label="ハイコントラスト" name="contrast-test">
+        <option value="opt1">オプション 1</option>
+        <option value="opt2">オプション 2</option>
+      </ui-dropdown>
+    </div>
+  `,
+  async play({ canvasElement }) {
+    const canvas = within(canvasElement);
+    const dropdown = canvas.getByTestId('high-contrast-dropdown') as HTMLElement;
+    
+    // コンポーネントが正しくレンダリングされている
+    await expect(dropdown).toBeInTheDocument();
+
+    // 実際のハイコントラストモード対応は、Windows環境での手動テストで確認
+  },
+};
+
+/**
+ * BDD: 動的オプション更新
+ */
+export const BDD_DynamicOptions: Story = {
+  tags: ['test'],
+  render: () => html`
+    <div>
+      <ui-dropdown data-testid="dynamic-dropdown" label="動的更新" name="dynamic-test">
+        <option value="initial">初期オプション</option>
+      </ui-dropdown>
+      <button 
+        data-testid="add-option-button"
+        @click=${(e: Event) => {
+          const dropdown = (e.target as HTMLElement).parentElement?.querySelector('ui-dropdown');
+          if (dropdown) {
+            const newOption = document.createElement('option');
+            newOption.value = 'new';
+            newOption.textContent = '新しいオプション';
+            dropdown.appendChild(newOption);
+          }
+        }}
+      >
+        オプション追加
+      </button>
+    </div>
+  `,
+  async play({ canvasElement }) {
+    const canvas = within(canvasElement);
+    const dropdown = canvas.getByTestId('dynamic-dropdown') as HTMLElement;
+    const select = dropdown.shadowRoot?.querySelector('select') as HTMLSelectElement;
+    const addButton = canvas.getByTestId('add-option-button') as HTMLButtonElement;
+
+    // 初期状態: 1つのオプションのみ
+    const initialOptions = select.querySelectorAll('option');
+    await expect(initialOptions.length).toBe(1);
+
+    // オプションを追加
+    await userEvent.click(addButton);
+
+    // 少し待機（slotchangeイベントの処理を待つ）
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // 新しいオプションが追加されている
+    const updatedOptions = select.querySelectorAll('option');
+    await expect(updatedOptions.length).toBe(2);
+    await expect(updatedOptions[1]?.value).toBe('new');
+  },
+};

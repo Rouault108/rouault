@@ -1,4 +1,4 @@
-import { LitElement, css, html } from 'lit';
+import { LitElement, css, html, nothing } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
 
 /**
@@ -20,10 +20,11 @@ export class UiDropdown extends LitElement {
      * ------------------------------------------------------------- */
     :host {
       display: inline-block;
-      width: 100%;
-      font-family: var(--font-sans, system-ui, sans-serif);
-      font-size: var(--text-base, 0.875rem);
-      line-height: var(--line-height-normal, 1.5);
+      width: auto;
+      max-width: 100%;
+      font-family: var(--font-sans);
+      font-size: var(--text-base);
+      line-height: var(--line-height-normal);
     }
 
     /* -------------------------------------------------------------
@@ -33,26 +34,26 @@ export class UiDropdown extends LitElement {
       position: relative;
       display: flex;
       flex-direction: column;
-      gap: var(--space-1, 0.25rem);
+      gap: var(--space-1);
     }
 
     /* -------------------------------------------------------------
      * ラベル
      * ------------------------------------------------------------- */
     .label {
-      font-size: var(--text-sm, 0.8125rem);
-      font-weight: var(--font-medium, 500);
-      color: var(--color-foreground, #111827);
-      padding-left: var(--space-1, 0.25rem);
-      transition: color var(--motion-duration, 200ms) var(--ease-out, ease-out);
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      color: var(--color-foreground);
+      padding-left: var(--space-1);
+      transition: color var(--motion-duration) var(--ease-out);
     }
 
     :host([invalid]) .label {
-      color: var(--color-error, #ef4444);
+      color: var(--color-error);
     }
 
     :host([disabled]) .label {
-      opacity: 0.5;
+      opacity: var(--opacity-50);
     }
 
     /* -------------------------------------------------------------
@@ -61,7 +62,8 @@ export class UiDropdown extends LitElement {
     .select-wrapper {
       position: relative;
       display: inline-flex;
-      width: 100%;
+      width: auto;
+      max-width: 100%;
     }
 
     /* -------------------------------------------------------------
@@ -69,95 +71,111 @@ export class UiDropdown extends LitElement {
      * ------------------------------------------------------------- */
     select {
       appearance: none;
-      width: 100%;
-      padding: var(--input-padding-y, 0.625rem) var(--input-padding-x, 0.875rem);
-      padding-right: 2.5rem; /* 矢印アイコンのスペース */
+      width: auto;
+      max-width: 100%;
+      padding: var(--input-padding-y, var(--space-2)) var(--input-padding-x, var(--space-3));
+      padding-right: calc(var(--space-4) + var(--icon-md)); /* 矢印アイコンのスペース */
       
       font-family: inherit;
       font-size: inherit;
       line-height: inherit;
-      color: var(--color-foreground, #111827);
+      color: var(--color-foreground);
       
-      background-color: var(--input-bg, white);
-      border: 1.5px solid var(--color-border, #d1d5db);
-      border-radius: var(--radius-md, 0.5rem);
+      background-color: var(--input-bg);
+      border: var(--border-width-2) solid var(--color-border);
+      border-radius: var(--radius-md);
       
       cursor: pointer;
       
       transition:
-        border-color var(--motion-duration, 200ms) var(--ease-out, ease-out),
-        background-color var(--motion-duration, 200ms) var(--ease-out, ease-out),
-        box-shadow var(--motion-duration, 200ms) var(--ease-out, ease-out);
+        border-color var(--motion-duration) var(--ease-out),
+        background-color var(--motion-duration) var(--ease-out),
+        box-shadow var(--motion-duration) var(--ease-out);
     }
 
     select:hover:not(:disabled) {
-      border-color: var(--color-border-hover, #9ca3af);
+      border-color: var(--color-border-hover);
     }
 
-    select:focus {
+    select:focus,
+    select:active,
+    select:focus-visible {
       outline: none;
-      border-color: var(--color-primary, #3b82f6);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #3b82f6) 15%, transparent);
+    }
+
+    select:focus-visible {
+      border-color: var(--color-primary);
+      outline: var(--focus-ring-width) solid var(--focus-ring-color);
+      outline-offset: var(--focus-ring-offset);
     }
 
     select:disabled {
       cursor: not-allowed;
-      opacity: 0.5;
-      background-color: var(--color-background-subtle, #f9fafb);
+      opacity: var(--opacity-50);
+      background-color: var(--color-background-subtle);
     }
 
-    /* Placeholder (first option with empty value) */
+    /* プレースホルダー */
     select option[value=""] {
-      color: var(--color-foreground-muted, #6b7280);
+      color: var(--color-foreground-muted);
     }
 
-    /* -------------------------------------------------------------
-     * カスタム矢印アイコン
-     * ------------------------------------------------------------- */
-    .arrow-icon {
+    .arrow-icon-wrapper {
       position: absolute;
-      right: 0.875rem;
-      top: 50%;
-      transform: translateY(-50%);
+      right: var(--input-padding-x, var(--space-3));
+      display: flex;
+      top: 0;
+      align-items: center;
+      justify-content: center;
+      width: var(--icon-md);
+      height: 100%;
+      color: var(--color-foreground-muted);
+      transition: color var(--motion-duration) var(--ease-out);
       pointer-events: none;
-      width: 1rem;
-      height: 1rem;
-      color: var(--color-foreground-muted, #6b7280);
-      transition: transform var(--motion-duration, 200ms) var(--ease-out, ease-out);
     }
 
-    select:focus ~ .arrow-icon {
-      color: var(--color-primary, #3b82f6);
+    .arrow-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: var(--icon-md);
+      height: var(--icon-md);
+      color: var(--color-foreground-muted);
+      transition: color var(--motion-duration) var(--ease-out);
     }
 
-    :host([disabled]) .arrow-icon {
-      opacity: 0.5;
+    select:focus-visible ~ .arrow-icon-wrapper .arrow-icon {
+      color: var(--color-primary);
+    }
+
+    :host([disabled]) .arrow-icon-wrapper {
+      opacity: var(--opacity-50);
     }
 
     /* -------------------------------------------------------------
      * バリアント: Outlined（デフォルト）
      * ------------------------------------------------------------- */
     :host([variant='outlined']) select {
-      background-color: var(--input-bg, white);
-      border: 1.5px solid var(--color-border, #d1d5db);
+      background-color: var(--input-bg);
+      border: var(--border-width-2) solid var(--color-border);
     }
 
     /* -------------------------------------------------------------
      * バリアント: Filled
      * ------------------------------------------------------------- */
     :host([variant='filled']) select {
-      background-color: var(--color-background-subtle, #f3f4f6);
-      border: 1.5px solid transparent;
+      background-color: var(--color-background-subtle);
+      border: var(--border-width-2) solid transparent;
     }
 
     :host([variant='filled']) select:hover:not(:disabled) {
-      background-color: var(--color-background-muted, #e5e7eb);
+      background-color: var(--color-background-muted);
       border-color: transparent;
     }
 
-    :host([variant='filled']) select:focus {
-      background-color: var(--input-bg, white);
-      border-color: var(--color-primary, #3b82f6);
+    :host([variant='filled']) select:focus-visible {
+      background-color: var(--input-bg);
+      border-color: var(--color-primary);
     }
 
     /* -------------------------------------------------------------
@@ -166,177 +184,185 @@ export class UiDropdown extends LitElement {
     :host([variant='standard']) select {
       background-color: transparent;
       border: none;
-      border-bottom: 1.5px solid var(--color-border, #d1d5db);
+      border-bottom: var(--border-width-2) solid var(--color-border);
       border-radius: 0;
       padding-left: 0;
+      padding-right: calc(var(--icon-md) + var(--space-2)); /* 矢印との間隔を確保 */
     }
 
     :host([variant='standard']) select:hover:not(:disabled) {
-      border-bottom-color: var(--color-border-hover, #9ca3af);
+      border-bottom-color: var(--color-border-hover);
     }
 
-    :host([variant='standard']) select:focus {
-      border-bottom-color: var(--color-primary, #3b82f6);
+    :host([variant='standard']) select:focus-visible {
+      border-bottom-color: var(--color-primary);
+      outline: none; /* Standardはアンダーライン変化のみ、またはカスタムリング */
       box-shadow: none;
     }
-
-    :host([variant='standard']) .arrow-icon {
-      right: 0;
+    
+    :host([variant='standard']) .arrow-icon-wrapper {
+      right: var(--space-none);
     }
 
     :host([variant='standard']) .label {
-      padding-left: 0;
+      padding-left: var(--space-none);
     }
 
     /* -------------------------------------------------------------
      * Invalid（エラー）状態
      * ------------------------------------------------------------- */
     :host([invalid]) select {
-      border-color: var(--color-error, #ef4444);
+      border-color: var(--color-error);
     }
 
-    :host([invalid]) select:focus {
-      border-color: var(--color-error, #ef4444);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error, #ef4444) 15%, transparent);
+    :host([invalid]) select:focus-visible {
+      border-color: var(--color-error);
+      outline: var(--focus-ring-width) solid rgba(220, 38, 38, 0.5);
+      outline-offset: var(--focus-ring-offset);
+      box-shadow: none;
     }
 
-    :host([invalid]) .arrow-icon {
-      color: var(--color-error, #ef4444);
+    :host([invalid]) .arrow-icon-wrapper {
+      color: var(--color-error);
     }
 
     /* Standard バリアントの Invalid 状態は下線のみ */
     :host([variant='standard'][invalid]) select {
-      border-bottom-color: var(--color-error, #ef4444);
+      border-bottom-color: var(--color-error);
+    }
+
+    /* -------------------------------------------------------------
+     * ヘルパーテキスト & エラーメッセージ
+     * ------------------------------------------------------------- */
+    .helper-text,
+    .error-message {
+      font-size: var(--text-xs);
+      padding-left: var(--space-1);
+      margin-top: var(--space-1);
+      transition: color var(--motion-duration) var(--ease-out);
+    }
+
+    .helper-text {
+      color: var(--color-foreground-muted);
+    }
+
+    .error-message {
+      color: var(--color-error);
+      font-weight: var(--font-medium);
+    }
+
+    :host([variant='standard']) .helper-text,
+    :host([variant='standard']) .error-message {
+      padding-left: var(--space-none);
     }
 
     /* -------------------------------------------------------------
      * サイズバリエーション
      * ------------------------------------------------------------- */
     :host([size='sm']) {
-      font-size: var(--text-sm, 0.8125rem);
+      font-size: var(--text-sm);
+      --input-padding-y: var(--space-2);
+      --input-padding-x: var(--space-3);
     }
 
     :host([size='sm']) select {
-      --input-padding-y: 0.5rem;
-      --input-padding-x: 0.75rem;
-      padding-right: 2rem;
+      padding-right: calc(var(--icon-sm) + var(--space-4));
     }
 
+    :host([size='sm']) .arrow-icon-wrapper {
+      width: var(--icon-sm);
+      height: var(--icon-sm);
+    }
+    
     :host([size='sm']) .arrow-icon {
-      right: 0.75rem;
-      width: 0.875rem;
-      height: 0.875rem;
+      width: var(--icon-sm);
+      height: var(--icon-sm);
+    }
+
+    :host([size='sm'][variant='standard']) select {
+      padding-right: calc(var(--icon-sm) + var(--space-2));
     }
 
     :host([size='md']) {
-      font-size: var(--text-base, 0.875rem);
+      font-size: var(--text-base);
+      --input-padding-y: var(--space-2);
+      --input-padding-x: var(--space-3);
     }
 
     :host([size='md']) select {
-      --input-padding-y: 0.625rem;
-      --input-padding-x: 0.875rem;
+      padding-right: calc(var(--icon-md) + var(--space-4));
+    }
+
+    :host([size='md'][variant='standard']) select {
+      padding-right: calc(var(--icon-md) + var(--space-2));
     }
 
     :host([size='lg']) {
-      font-size: var(--text-lg, 1rem);
+      font-size: var(--text-lg);
+      --input-padding-y: var(--space-3);
+      --input-padding-x: var(--space-4);
     }
 
     :host([size='lg']) select {
-      --input-padding-y: 0.75rem;
-      --input-padding-x: 1rem;
-      padding-right: 3rem;
+      padding-right: calc(var(--icon-lg) + var(--space-4));
     }
 
+    :host([size='lg']) .arrow-icon-wrapper {
+      width: var(--icon-lg);
+      height: var(--icon-lg);
+    }
+    
     :host([size='lg']) .arrow-icon {
-      right: 1rem;
-      width: 1.125rem;
-      height: 1.125rem;
+      width: var(--icon-lg);
+      height: var(--icon-lg);
+    }
+
+    :host([size='lg'][variant='standard']) select {
+      padding-right: calc(var(--icon-lg) + var(--space-2));
     }
 
     /* -------------------------------------------------------------
-     * ダークモード対応
+     * ハイコントラストモード対応
      * ------------------------------------------------------------- */
-    @media (prefers-color-scheme: dark) {
-      .label {
-        color: var(--color-foreground, #ededed);
-      }
-
+    @media (prefers-contrast: more) {
       select {
-        color: var(--color-foreground, #ededed);
-        background-color: var(--bg-surface-0, #0a0a0a);
-        border-color: var(--color-border-hover, #3f3f46);
+        border-width: var(--border-width-2);
       }
 
-      select:hover:not(:disabled) {
-        border-color: var(--color-border, #52525b);
+      select:focus-visible {
+        outline: var(--border-width-3) solid var(--color-primary);
+        outline-offset: var(--focus-ring-offset);
+      }
+
+      :host([invalid]) select:focus-visible {
+        outline-color: var(--color-error);
+      }
+    }
+
+    /* Windows High Contrast Mode */
+    @media (forced-colors: active) {
+      select {
+        border: var(--border-width-2) solid ButtonBorder;
+      }
+
+      select:focus-visible {
+        outline: var(--border-width-3) solid Highlight;
       }
 
       select:disabled {
-        background-color: var(--bg-surface-1, #171717);
-        border-color: var(--color-border, #27272a);
+        color: GrayText;
+        border-color: GrayText;
+        opacity: 1;
       }
 
-      :host([variant='filled']) select {
-        background-color: var(--bg-surface-1, #171717);
+      .arrow-icon-wrapper {
+        color: ButtonText;
       }
 
-      :host([variant='filled']) select:hover:not(:disabled) {
-        background-color: var(--bg-surface-2, #262626);
+      :host([disabled]) .arrow-icon-wrapper {
+        color: GrayText;
+        opacity: 1;
       }
-
-      :host([variant='filled']) select:focus {
-        background-color: var(--bg-surface-0, #0a0a0a);
-      }
-
-      :host([invalid]) select {
-        border-color: var(--color-error, #ef4444);
-      }
-
-      :host([disabled][invalid]) select {
-        background-color: var(--bg-surface-1, #171717);
-        border-color: var(--color-border, #27272a);
-      }
-    }
-
-    /* data-theme="dark" 対応 */
-    :host-context([data-theme='dark']) .label {
-      color: var(--color-foreground, #ededed);
-    }
-
-    :host-context([data-theme='dark']) select {
-      color: var(--color-foreground, #ededed);
-      background-color: var(--bg-surface-0, #0a0a0a);
-      border-color: var(--color-border-hover, #3f3f46);
-    }
-
-    :host-context([data-theme='dark']) select:hover:not(:disabled) {
-      border-color: var(--color-border, #52525b);
-    }
-
-    :host-context([data-theme='dark']) select:disabled {
-      background-color: var(--bg-surface-1, #171717);
-      border-color: var(--color-border, #27272a);
-    }
-
-    :host-context([data-theme='dark']):host([variant='filled']) select {
-      background-color: var(--bg-surface-1, #171717);
-    }
-
-    :host-context([data-theme='dark']):host([variant='filled']) select:hover:not(:disabled) {
-      background-color: var(--bg-surface-2, #262626);
-    }
-
-    :host-context([data-theme='dark']):host([variant='filled']) select:focus {
-      background-color: var(--bg-surface-0, #0a0a0a);
-    }
-
-    :host-context([data-theme='dark']):host([invalid]) select {
-      border-color: var(--color-error, #ef4444);
-    }
-
-    :host-context([data-theme='dark']):host([disabled][invalid]) select {
-      background-color: var(--bg-surface-1, #171717);
-      border-color: var(--color-border, #27272a);
     }
 
     /* -------------------------------------------------------------
@@ -344,6 +370,7 @@ export class UiDropdown extends LitElement {
      * ------------------------------------------------------------- */
     @media (prefers-reduced-motion: reduce) {
       select,
+      .arrow-icon-wrapper,
       .arrow-icon,
       .label {
         transition: none;
@@ -372,31 +399,51 @@ export class UiDropdown extends LitElement {
   @property({ type: String })
   value = '';
 
+  @property({ type: String })
+  helper = '';
+
+  @property({ type: String })
+  errorMessage = '';
+
   @query('select')
   private _selectElement!: HTMLSelectElement;
 
   override firstUpdated() {
-    // スロットから option 要素を取得して select に反映
+    // 初期オプション同期
+    this._syncOptions();
+  }
+
+  /**
+   * スロットから option 要素を同期
+   * slotchange イベントで動的更新にも対応
+   */
+  private _handleSlotChange() {
     this._syncOptions();
   }
 
   private _syncOptions() {
     const slot = this.shadowRoot?.querySelector('slot');
-    if (!slot) return;
+    if (!slot || !this._selectElement) return;
 
     const assignedNodes = slot.assignedNodes({ flatten: true });
     const options = assignedNodes.filter(
-      (node) => node.nodeName === 'OPTION'
-    ) as HTMLOptionElement[];
+      (node) => node.nodeName === 'OPTION' || node.nodeName === 'OPTGROUP'
+    ) as (HTMLOptionElement | HTMLOptGroupElement)[];
 
-    // option 要素を select に追加
-    options.forEach((option) => {
-      const clonedOption = option.cloneNode(true) as HTMLOptionElement;
-      this._selectElement.appendChild(clonedOption);
+    // 既存のオプションをクリア（デフォルトスロット由来のもののみ）
+    this._selectElement.innerHTML = '';
+
+    // option/optgroup 要素を select に追加
+    options.forEach((element) => {
+      const clonedElement = element.cloneNode(true) as typeof element;
+      this._selectElement.appendChild(clonedElement);
     });
 
     // selected 属性を持つオプションを検出
-    const selectedOption = options.find((opt) => opt.hasAttribute('selected'));
+    const selectedOption = options.find(
+      (el) => el.nodeName === 'OPTION' && (el as HTMLOptionElement).hasAttribute('selected')
+    ) as HTMLOptionElement | undefined;
+    
     if (selectedOption && !this.value) {
       this.value = selectedOption.value;
     }
@@ -421,11 +468,29 @@ export class UiDropdown extends LitElement {
     );
   }
 
+  /**
+   * aria-describedby の動的計算
+   */
+  private _getAriaDescribedBy(): string | undefined {
+    const ids: string[] = [];
+    
+    if (this.invalid && this.errorMessage) {
+      ids.push('error-message');
+    } else if (this.helper) {
+      ids.push('helper-text');
+    }
+
+    return ids.length > 0 ? ids.join(' ') : undefined;
+  }
+
   override render() {
+    const ariaDescribedBy = this._getAriaDescribedBy();
+    const ariaLabelledBy = this.label ? 'label' : undefined;
+
     return html`
       <div class="dropdown-container">
         ${this.label
-          ? html`<label class="label" for="select">${this.label}</label>`
+          ? html`<label class="label" id="label" for="select">${this.label}</label>`
           : ''}
         <div class="select-wrapper">
           <select
@@ -434,28 +499,33 @@ export class UiDropdown extends LitElement {
             name=${this.name}
             @change=${this._handleChange}
             aria-invalid="${this.invalid}"
+            aria-describedby=${ariaDescribedBy || nothing}
+            aria-labelledby=${ariaLabelledBy || nothing}
           >
             <!-- スロットから option を同期するため、ここは空 -->
           </select>
-          <!-- カスタム矢印アイコン（SVG） -->
-          <svg
-            class="arrow-icon"
-            viewBox="0 0 16 16"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-          >
-            <path
-              d="M4 6L8 10L12 6"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
+          <!-- カスタム矢印アイコン（iconify-lucide） -->
+          <div class="arrow-icon-wrapper">
+            <iconify-icon
+              class="arrow-icon"
+              icon="lucide:chevron-down"
+              aria-hidden="true"
+            ></iconify-icon>
+          </div>
         </div>
+        
+        <!-- ヘルパーテキスト（エラーがない場合のみ表示） -->
+        ${!this.invalid && this.helper
+          ? html`<div class="helper-text" id="helper-text">${this.helper}</div>`
+          : ''}
+        
+        <!-- エラーメッセージ（invalid状態の場合のみ表示） -->
+        ${this.invalid && this.errorMessage
+          ? html`<div class="error-message" id="error-message" role="alert">${this.errorMessage}</div>`
+          : ''}
+        
         <!-- hidden slot for option elements -->
-        <slot style="display: none;"></slot>
+        <slot style="display: none;" @slotchange=${this._handleSlotChange}></slot>
       </div>
     `;
   }
