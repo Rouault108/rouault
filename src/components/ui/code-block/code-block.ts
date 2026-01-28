@@ -190,9 +190,9 @@ export class UiCodeBlock extends LitElement {
     }
 
     /* 明示的なダークモード (data-theme="dark") */
-    :host-context([data-theme="dark"]) .code-content pre,
-    :host-context([data-theme="dark"]) .code-content code,
-    :host-context([data-theme="dark"]) .code-content span {
+    :host([data-theme="dark"]) .code-content pre,
+    :host([data-theme="dark"]) .code-content code,
+    :host([data-theme="dark"]) .code-content span {
       color: var(--shiki-dark);
     }
 
@@ -215,7 +215,7 @@ export class UiCodeBlock extends LitElement {
       }
     }
 
-    :host-context([data-theme="dark"]) {
+    :host([data-theme="dark"]) {
       --code-bg: var(--shiki-dark-bg, var(--color-background-subtle));
       --code-header-bg: var(--color-background);
     }
@@ -592,8 +592,11 @@ export class UiCodeBlock extends LitElement {
 
 
 
+  private _observer: MutationObserver | null = null;
+
   override connectedCallback() {
     super.connectedCallback();
+    this._setupThemeObserver();
   }
 
   override firstUpdated() {
@@ -604,6 +607,26 @@ export class UiCodeBlock extends LitElement {
 
   override disconnectedCallback() {
     super.disconnectedCallback();
+    this._observer?.disconnect();
+  }
+
+  private _setupThemeObserver() {
+    const syncTheme = () => {
+      const theme = document.documentElement.getAttribute('data-theme');
+      if (theme) {
+        this.setAttribute('data-theme', theme);
+      } else {
+        this.removeAttribute('data-theme');
+      }
+    };
+
+    syncTheme();
+
+    this._observer = new MutationObserver(syncTheme);
+    this._observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme']
+    });
   }
 
   override async updated(changedProperties: Map<string, any>) {
