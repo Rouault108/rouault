@@ -1,13 +1,38 @@
-import { LitElement, css, html } from 'lit';
+import { LitElement, css, html, type PropertyValues } from 'lit';
 import { customElement, property, state, query } from 'lit/decorators.js';
+import { t } from '../../../lib/i18n.js';
 
 /**
  * ui-code-group - コードブロックグループ（タブ切り替え）
  * 
- * @element ui-code-group
- * @fires tab-change - タブが変更された時に発火
+ * Linear/Raycast風のモダンなタブインターフェースを提供します。
+ * WAI-ARIA Tabsパターンに完全準拠。
  * 
- * @slot - コードブロック（ui-code-block）
+ * ## 機能
+ * - スライディングインジケーター付きタブ切り替え
+ * - フルキーボードナビゲーション（Arrow, Home, End, Escape）
+ * - ダークモード・ハイコントラストモード対応
+ * - prefers-reduced-motion 対応
+ * 
+ * ## キーボード操作
+ * - `ArrowLeft/Right`: タブ間を移動（ラップアラウンド）
+ * - `Home/End`: 最初/最後のタブへジャンプ
+ * - `Tab`: タブパネル内のフォーカス可能な要素（ボタンなど）へ移動
+ * - `Escape`: タブパネル内の要素から対応するタブボタンへフォーカス復帰
+ * 
+ * @element ui-code-group
+ * @fires tab-change - タブが変更された時に発火 `{ activeTab: number, label: string }`
+ * 
+ * @slot - コードブロック（ui-code-block）要素を配置
+ * 
+ * @example
+ * ```html
+ * <ui-code-group .labels=${['npm', 'yarn', 'pnpm']}>
+ *   <ui-code-block language="bash">npm install</ui-code-block>
+ *   <ui-code-block language="bash">yarn add</ui-code-block>
+ *   <ui-code-block language="bash">pnpm add</ui-code-block>
+ * </ui-code-group>
+ * ```
  */
 @customElement('ui-code-group')
 export class UiCodeGroup extends LitElement {
@@ -15,49 +40,19 @@ export class UiCodeGroup extends LitElement {
     :host {
       display: block;
       
-      /* Local CSS variables (design-system.md準拠) */
-      --duration-normal: 200ms;
-      --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
-      
-      /* ダークモード対応（変数で一元管理） */
-      --code-group-bg: var(--color-background-subtle, #f9fafb);
-      --code-group-border: var(--color-border, #e5e7eb);
-      --tabs-bg: var(--color-background, #ffffff);
-      --tabs-border: var(--color-border, #e5e7eb);
-      --tab-color: var(--color-foreground-muted, #6b7280);
-      --tab-color-hover: var(--color-foreground, #111827);
-      --tab-color-active: var(--color-primary, #3b82f6);
-      --indicator-bg: var(--color-primary, #3b82f6);
-    }
-
-    /* ダークモード変数オーバーライド */
-    @media (prefers-color-scheme: dark) {
-      :host(:not([data-theme="light"])) {
-        --code-group-bg: var(--color-background-subtle, #171717);
-        --code-group-border: var(--color-border, #27272a);
-        --tabs-bg: var(--color-background, #0a0a0a);
-        --tabs-border: var(--color-border, #27272a);
-        --tab-color: var(--color-foreground-muted, #a1a1aa);
-        --tab-color-hover: var(--color-foreground, #ededed);
-        --tab-color-active: var(--color-primary, #60a5fa);
-        --indicator-bg: var(--color-primary, #60a5fa);
-      }
-    }
-
-    :host-context([data-theme="dark"]) {
-      --code-group-bg: var(--color-background-subtle, #171717);
-      --code-group-border: var(--color-border, #27272a);
-      --tabs-bg: var(--color-background, #0a0a0a);
-      --tabs-border: var(--color-border, #27272a);
-      --tab-color: var(--color-foreground-muted, #a1a1aa);
-      --tab-color-hover: var(--color-foreground, #ededed);
-      --tab-color-active: var(--color-primary, #60a5fa);
-      --indicator-bg: var(--color-primary, #60a5fa);
+      --code-group-bg: var(--color-background-subtle);
+      --code-group-border: var(--color-border);
+      --tabs-bg: var(--color-background);
+      --tabs-border: var(--color-border);
+      --tab-color: var(--color-foreground-muted);
+      --tab-color-hover: var(--color-foreground);
+      --tab-color-active: var(--color-primary);
+      --indicator-bg: var(--color-primary);
     }
 
     .code-group {
-      border: 1px solid var(--code-group-border);
-      border-radius: var(--radius-lg, 0.5rem);
+      border: var(--border-width-1) solid var(--code-group-border);
+      border-radius: var(--radius-lg);
       background-color: var(--code-group-bg);
       overflow: hidden;
     }
@@ -65,10 +60,10 @@ export class UiCodeGroup extends LitElement {
     /* タブリスト */
     .tabs {
       display: flex;
-      gap: var(--space-1, 0.25rem); /* Linear風: タブ間に適度な余白 */
+      gap: var(--space-1);
       background-color: var(--tabs-bg);
-      border-bottom: 1px solid var(--tabs-border);
-      padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem) 0;
+      border-bottom: var(--border-width-1) solid var(--tabs-border);
+      padding: var(--space-1) var(--space-2) 0;
       position: relative; /* インジケーター配置用 */
       overflow-x: auto; /* 横スクロール対応 */
       scrollbar-width: none; /* スクロールバー隠し */
@@ -81,10 +76,10 @@ export class UiCodeGroup extends LitElement {
     /* タブボタン */
     .tab {
       position: relative;
-      padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
-      font-family: var(--font-sans, system-ui, sans-serif);
-      font-size: var(--text-sm, 0.8125rem);
-      font-weight: var(--font-medium, 500);
+      padding: var(--space-2) var(--space-4);
+      font-family: var(--font-sans);
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
       color: var(--tab-color);
       background: transparent;
       border: none;
@@ -100,16 +95,16 @@ export class UiCodeGroup extends LitElement {
       color: var(--tab-color-hover);
     }
 
-    /* クリック時の押し込みアニメーション（Linear/Raycast準拠） */
+    /* クリック時の押し込みアニメーション */
     .tab:active {
-      transform: scale(0.98);
+      transform: var(--scale-subtle);
     }
 
-    /* フォーカスリング（design-system.md準拠: outline-offset: 2px） */
+    /* フォーカスリング */
     .tab:focus-visible {
-      outline: 2px solid var(--color-primary, #3b82f6);
-      outline-offset: 2px;
-      border-radius: var(--radius-sm, 0.25rem);
+      outline: var(--focus-ring-width) solid var(--color-primary);
+      outline-offset: var(--focus-ring-offset);
+      border-radius: var(--radius-sm);
       z-index: 10;
     }
 
@@ -128,8 +123,8 @@ export class UiCodeGroup extends LitElement {
       transition: 
         transform var(--duration-normal) var(--ease-out),
         width var(--duration-normal) var(--ease-out);
-      transform: translateX(var(--indicator-x, 0));
-      width: var(--indicator-width, 0);
+      transform: translateX(var(--indicator-x));
+      width: var(--indicator-width);
       pointer-events: none;
       z-index: 2;
     }
@@ -139,6 +134,16 @@ export class UiCodeGroup extends LitElement {
       .tab,
       .indicator {
         transition: none;
+      }
+    }
+
+    @media (prefers-contrast: more) {
+      .tab:focus-visible {
+        outline-width: var(--focus-ring-width);
+      }
+      
+      .code-group {
+        border-width: 2px;
       }
     }
 
@@ -157,9 +162,6 @@ export class UiCodeGroup extends LitElement {
 
   @property({ type: Number })
   activeTab = 0;
-
-  @property({ type: String, attribute: 'aria-label' })
-  override ariaLabel = 'コードサンプル';
 
   @state()
   private _tabCount = 0;
@@ -188,7 +190,7 @@ export class UiCodeGroup extends LitElement {
     this._resizeObserver?.disconnect();
   }
   
-  override updated(changedProperties: Map<string, any>) {
+  override updated(changedProperties: PropertyValues<this>) {
     super.updated(changedProperties);
     if (changedProperties.has('activeTab')) {
       this._updateIndicator();
@@ -240,7 +242,12 @@ export class UiCodeGroup extends LitElement {
       
       // ラベルが未設定の場合、要素数に合わせてデフォルトラベルを生成
       if (this.labels.length === 0) {
-        this.labels = children.map((_, i) => `Tab ${i + 1}`);
+        this.labels = children.map((el, i) => {
+          const codeBlock = el as HTMLElement;
+          return codeBlock.getAttribute('filename') 
+              || codeBlock.getAttribute('language') 
+              || `Tab ${i + 1}`;
+        });
       }
     }
     
@@ -301,6 +308,19 @@ export class UiCodeGroup extends LitElement {
     }));
   }
 
+  /**
+   * タブパネル内でEscapeキーが押された時のハンドラー
+   * 対応するタブボタンにフォーカスを戻す（フォーカストラップ）
+   */
+  private _handlePanelKeyDown(e: KeyboardEvent, panelIndex: number) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      const tabs = this.shadowRoot?.querySelectorAll('[role="tab"]');
+      const targetTab = tabs?.[panelIndex] as HTMLElement;
+      targetTab?.focus();
+    }
+  }
+
   override render() {
     return html`
       <div class="code-group">
@@ -308,7 +328,7 @@ export class UiCodeGroup extends LitElement {
         <div 
           class="tabs" 
           role="tablist" 
-          aria-label="${this.ariaLabel}"
+          aria-label="${t('codegroup.codeSample')}"
           @keydown=${this._handleKeyDown}
         >
           ${this.labels.map((label, index) => html`
@@ -335,6 +355,7 @@ export class UiCodeGroup extends LitElement {
             aria-labelledby="tab-${index}"
             aria-hidden="${this.activeTab !== index}"
             class="tab-panel"
+            @keydown=${(e: KeyboardEvent) => this._handlePanelKeyDown(e, index)}
           >
             <slot name="panel-${index}"></slot>
           </div>
