@@ -322,6 +322,29 @@ export class UiBreadcrumbItem extends LitElement {
         transition: none;
       }
     }
+
+    /* -------------------------------------------------------------
+     * Accessibility: High Contrast Mode (Windows)
+     * ------------------------------------------------------------- */
+    @media (forced-colors: active) {
+      .collapsed-button {
+        border: 1px solid ButtonText;
+      }
+      
+      .collapsed-button:hover,
+      .collapsed-button[aria-expanded="true"] {
+        border: 1px solid Highlight;
+      }
+      
+      .dropdown {
+        border: 1px solid CanvasText;
+      }
+      
+      :host([slot="item"]) a:hover,
+      :host([slot="item"]) a:focus-visible {
+        outline: 2px solid Highlight;
+      }
+    }
   `;
 
   @property({ type: String })

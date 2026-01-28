@@ -327,6 +327,21 @@ export class UiCard extends LitElement {
             outline-width: 3px;
           }
         }
+
+        /* Windows High Contrast Mode */
+        @media (forced-colors: active) {
+          /* 影や背景が消えるため、必ずボーダーを表示 */
+          :host {
+            border: 1px solid CanvasText;
+          }
+          
+          /* インタラクティブなカードのフォーカスリング */
+          :host([interactive]:focus-visible),
+          :host([href]:focus-within) {
+            outline: 3px solid Highlight;
+            outline-offset: 2px;
+          }
+        }
       `
     ];
   }

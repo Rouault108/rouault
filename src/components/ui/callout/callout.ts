@@ -219,14 +219,35 @@ export class UiCallout extends LitElement {
       font-size: 0.9em;
     }
 
-    /* ダークモードも同じトークンで自動対応 */
-    
+    /* Reduced Motion */
     @media (prefers-reduced-motion: reduce) {
       .header,
       .toggle-button,
       .chevron,
       .content-wrapper {
         transition: none;
+      }
+    }
+
+    /* High Contrast Mode (Windows) */
+    @media (forced-colors: active) {
+      .callout {
+        /* color-mixのボーダーが見えなくなるため、システムカラーで上書き */
+        border: 2px solid CanvasText;
+      }
+      
+      .icon {
+        color: CanvasText;
+      }
+      
+      /* Variantごとの強調（可能であれば） */
+      :host([variant="important"]) .callout,
+      :host([variant="caution"]) .callout {
+        border-color: Highlight;
+      }
+      
+      .toggle-button:focus-visible {
+        outline: 2px solid ButtonText;
       }
     }
   `;

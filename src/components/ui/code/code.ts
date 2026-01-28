@@ -140,6 +140,14 @@ export class UiCode extends LitElement {
       }
     }
 
+    /* Windows High Contrast Mode (forced-colors) */
+    @media (forced-colors: active) {
+      .code {
+        /* 背景色が消えるため、ボーダーで囲む */
+        border: 1px solid CanvasText;
+      }
+    }
+
     /* =====================================================================
      * モーション軽減（prefers-reduced-motion）
      * アニメーションを無効化してアクセシビリティを確保

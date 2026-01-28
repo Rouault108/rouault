@@ -142,6 +142,24 @@ export class UiBlockquote extends LitElement {
         transition-duration: 0.01ms !important;
       }
     }
+
+    /* -------------------------------------------------------------
+     * Accessibility: High Contrast Mode (Windows)
+     * ------------------------------------------------------------- */
+    @media (forced-colors: active) {
+      blockquote {
+        /* 左側のボーダーを強制的に表示 */
+        border-left-color: CanvasText;
+        /* 背景色が消えるため、囲み枠を追加して領域を明確化 */
+        border: 1px solid CanvasText;
+        border-left-width: 4px;
+      }
+      
+      :host([variant="bordered"]) blockquote {
+        border: 1px solid CanvasText;
+        border-left-width: 4px;
+      }
+    }
   `;
 
   @property({ type: String, reflect: true })

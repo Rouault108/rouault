@@ -525,7 +525,7 @@ export class UiCodeBlock extends LitElement {
     }
 
     
-    /* ハイコントラストモード対応 */
+    /* ハイコントラストモード対応 (prefers-contrast) */
     @media (prefers-contrast: more) {
       .action-button:focus-visible {
         outline-width: 3px;
@@ -538,6 +538,42 @@ export class UiCodeBlock extends LitElement {
       .line.diff.add,
       .line.diff.remove {
         border-left-width: 3px;
+      }
+    }
+
+    /* Windows High Contrast Mode (forced-colors) */
+    @media (forced-colors: active) {
+      .code-block,
+      .action-button,
+      .collapse-button {
+        border: 1px solid CanvasText;
+      }
+
+      /* 行ハイライト: 背景色がないためボーダーで示す */
+      .line.highlighted {
+        border-left: 4px solid Highlight;
+      }
+
+      /* diff: 色ではなく記号で判別可能だが、ボーダーも補強する */
+      .line.diff.add {
+        border-left: 4px solid Highlight; /* 追加はハイライト */
+      }
+      
+      .line.diff.remove {
+        border-left: 4px solid CanvasText; /* 削除は通常テキスト色（あるいはGrayText） */
+      }
+      
+      /* Diff記号の色強制 */
+      .line.diff.add::before {
+        color: Highlight;
+      }
+      
+      .line.diff.remove::before {
+        color: CanvasText;
+      }
+      
+      .action-button:focus-visible {
+         outline: 3px solid Highlight;
       }
     }
   `;

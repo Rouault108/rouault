@@ -112,6 +112,25 @@ export class UiDivider extends LitElement {
         background-color: var(--color-foreground-muted);
       }
     }
+
+    /* Windows High Contrast Mode (forced-colors) */
+    @media (forced-colors: active) {
+      hr {
+        /* 背景色による線は消えるため、ボーダーに置換 */
+        background-color: transparent;
+        border-top: 1px solid CanvasText;
+        height: 0;
+      }
+      
+      /* 太さのバリエーション対応 */
+      :host([thickness="normal"]) hr {
+        border-top-width: 2px;
+      }
+      
+      :host([thickness="thick"]) hr {
+        border-top-width: 3px;
+      }
+    }
   `;
 
   @property({ type: String, reflect: true })

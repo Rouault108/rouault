@@ -45,13 +45,6 @@ export class UiBanner extends LitElement {
       }
     }
 
-    @media (prefers-reduced-motion: reduce) {
-      :host([closing]) .banner {
-        animation: none;
-        opacity: 0;
-      }
-    }
-
     /* バナーコンテナ */
     .banner {
       display: flex;
@@ -152,6 +145,32 @@ export class UiBanner extends LitElement {
       --banner-border: color-mix(in srgb, var(--color-error), transparent 90%);
       --banner-text: var(--color-error-text);
       --banner-icon: var(--color-error);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      :host([closing]) .banner {
+        animation: none;
+        opacity: 0;
+      }
+    }
+
+    /* ハイコントラストモード (Windows High Contrast / forced-colors) */
+    @media (forced-colors: active) {
+      .banner {
+        border: 1px solid CanvasText;
+        forced-color-adjust: none;
+        color: CanvasText;
+        background-color: Canvas;
+      }
+      
+      .icon {
+        color: CanvasText;
+      }
+      
+      /* リンクの視認性確保 */
+      .content ::slotted(a) {
+        color: LinkText;
+      }
     }
   `;
 

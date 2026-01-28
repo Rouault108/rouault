@@ -147,6 +147,25 @@ export class UiCodeGroup extends LitElement {
       }
     }
 
+    /* Windows High Contrast Mode (forced-colors) */
+    @media (forced-colors: active) {
+      .code-group {
+        border: 1px solid CanvasText;
+      }
+      
+      /* インジケーター (div) は背景色が消えるため、borderで代用 */
+      .indicator {
+        background-color: transparent;
+        border-bottom: 2px solid Highlight;
+        height: 0;
+      }
+      
+      /* アクティブタブのテキスト色 */
+      .tab[aria-selected="true"] {
+        color: Highlight;
+      }
+    }
+
     /* タブパネル */
     .tab-panel {
       display: none;

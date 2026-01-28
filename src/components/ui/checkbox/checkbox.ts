@@ -248,6 +248,43 @@ export class UiCheckbox extends LitElement {
         outline-color: Highlight;
       }
     }
+
+    /* -------------------------------------------------------------
+     * forced-colors 対応 (Windows High Contrast)
+     * ------------------------------------------------------------- */
+    @media (forced-colors: active) {
+      .checkbox {
+        border: 1px solid CanvasText;
+        background-color: Canvas;
+      }
+      
+      :host([checked]) .checkbox,
+      :host([indeterminate]) .checkbox {
+        background-color: Highlight;
+        border-color: Highlight;
+      }
+      
+      .checkmark,
+      .indeterminate-mark,
+      .indeterminate-mark::after {
+        color: HighlightText;
+      }
+      
+      :host([disabled]) .checkbox {
+        border-color: GrayText;
+        background-color: Canvas;
+      }
+      
+      :host([disabled]) .checkmark,
+      :host([disabled]) .indeterminate-mark {
+        color: GrayText;
+      }
+      
+      /* フォーカスリングの強制 */
+      .native-input:focus-visible ~ .checkbox-wrapper .checkbox {
+        outline: 3px solid CanvasText;
+      }
+    }
   `;
 
   @property({ type: Boolean, reflect: true })
