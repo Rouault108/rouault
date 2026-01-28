@@ -16,7 +16,7 @@ export class UiButton extends LionButton {
            * 基本カラー設定 (コンポーネントトークン参照)
            * ------------------------------------------------------------- */
           
-          /* Default (Primary) Variables */
+          /* デフォルト（プライマリ）変数 */
           --bg-default: var(--btn-primary-bg);
           --bg-hover:   var(--btn-primary-bg-hover);
           --bg-active:  var(--btn-primary-bg-active);
@@ -24,7 +24,7 @@ export class UiButton extends LionButton {
           --text-default: var(--btn-primary-text);
           --border-color: var(--btn-primary-border);
           
-          /* Focus Ring Base Color */
+          /* フォーカスリングのベースカラー */
           --outline-color: var(--focus-ring-color);
 
           /* 現在適用されている変数 */
@@ -194,7 +194,7 @@ export class UiButton extends LionButton {
          * サイズ (Sizes)
          * ------------------------------------------------------------- */
 
-        /* Small (sm) - Compact & Dense */
+        /* Small (sm) - コンパクトで高密度 */
         :host([size="sm"]) {
           font-size: var(--text-xs);
           padding: 0 var(--space-3);
@@ -202,7 +202,7 @@ export class UiButton extends LionButton {
           border-radius: var(--radius-sm);
         }
 
-        /* Medium (md) - Default (High Density) */
+        /* Medium (md) - デフォルト（高密度） */
         :host([size="md"]) {
           font-size: var(--text-base);
           padding: 0 var(--space-4);
@@ -210,7 +210,7 @@ export class UiButton extends LionButton {
           border-radius: var(--radius-md);
         }
 
-        /* Large (lg) - Prominent but Refined */
+        /* Large (lg) - 目立つが洗練されたサイズ */
         :host([size="lg"]) {
           font-size: var(--text-lg);
           padding: 0 var(--space-6);
