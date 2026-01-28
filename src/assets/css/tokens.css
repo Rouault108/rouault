@@ -1,6 +1,5 @@
 /* =========================================================================
  * Rouault Design System - CSS Tokens
- * Based on: content/design-system.md
  * ========================================================================= */
 
 :root {
@@ -531,7 +530,6 @@
     --btn-secondary-bg-active: var(--bg-surface-3);
     --btn-secondary-text: var(--color-foreground);
     --btn-secondary-border: var(--color-border);
-    /* Secondary Outline color is used for focus ring usually, keep default or adjust if needed */
 
     /* Outline */
     --btn-outline-bg-hover: hsla(var(--color-primary-hue), 60%, 50%, 0.15);
@@ -547,7 +545,6 @@
     /* Disabled */
     --btn-disabled-bg: var(--bg-surface-1);
     --btn-disabled-text: var(--color-foreground-muted);
-    /* Border remains from global disabled var or handled by component structure */
   }
 }
 
