@@ -367,6 +367,53 @@
   
   /* 必須マーカー（日本語） */
   --text-required-marker: ' 必須';
+
+  /* -----------------------------------------------------------------------
+   * コンポーネントトークン: Button
+   * コンポーネント側での複雑な計算やメディアクエリを避けるための定義
+   * ----------------------------------------------------------------------- */
+  
+  /* Primary (Default) */
+  --btn-primary-bg: hsl(var(--color-primary-hue) var(--color-primary-sat) var(--color-primary-lightness));
+  --btn-primary-bg-hover: hsl(var(--color-primary-hue) var(--color-primary-sat) calc(var(--color-primary-lightness) - 5%));
+  --btn-primary-bg-active: hsl(var(--color-primary-hue) var(--color-primary-sat) calc(var(--color-primary-lightness) - 10%));
+  --btn-primary-text: #ffffff;
+  --btn-primary-border: transparent;
+  
+  /* Secondary */
+  --btn-secondary-bg: hsl(var(--color-secondary-hue) var(--color-secondary-sat) var(--color-secondary-lightness));
+  --btn-secondary-bg-hover: hsl(var(--color-secondary-hue) var(--color-secondary-sat) 40%);
+  --btn-secondary-bg-active: hsl(var(--color-secondary-hue) var(--color-secondary-sat) 35%);
+  --btn-secondary-text: #ffffff;
+  --btn-secondary-border: transparent;
+  --btn-secondary-outline: hsl(var(--color-secondary-hue) var(--color-secondary-sat) 60%);
+
+  /* Outline */
+  --btn-outline-bg: transparent;
+  --btn-outline-bg-hover: hsla(var(--color-primary-hue), var(--color-primary-sat), var(--color-primary-lightness), 0.1);
+  --btn-outline-bg-active: hsla(var(--color-primary-hue), var(--color-primary-sat), var(--color-primary-lightness), 0.2);
+  --btn-outline-text: hsl(var(--color-primary-hue), var(--color-primary-sat), var(--color-primary-lightness));
+  --btn-outline-border: hsl(var(--color-primary-hue), var(--color-primary-sat), var(--color-primary-lightness));
+
+  /* Ghost */
+  --btn-ghost-bg: transparent;
+  --btn-ghost-bg-hover: var(--color-surface-hover);
+  --btn-ghost-bg-active: var(--color-surface-active);
+  --btn-ghost-text: hsl(var(--color-primary-hue), var(--color-primary-sat), var(--color-primary-lightness));
+  --btn-ghost-border: transparent;
+
+  /* Danger */
+  --btn-danger-bg: hsl(var(--color-error-hue) var(--color-error-sat) var(--color-error-lightness));
+  --btn-danger-bg-hover: hsl(var(--color-error-hue) var(--color-error-sat) calc(var(--color-error-lightness) - 5%));
+  --btn-danger-bg-active: hsl(var(--color-error-hue) var(--color-error-sat) calc(var(--color-error-lightness) - 10%));
+  --btn-danger-text: #ffffff;
+  --btn-danger-border: transparent;
+  --btn-danger-outline: hsl(var(--color-error-hue) var(--color-error-sat) calc(var(--color-error-lightness) + 10%));
+
+  /* Disabled */
+  --btn-disabled-bg: var(--color-disabled-bg);
+  --btn-disabled-text: var(--color-disabled-text);
+  --btn-disabled-border: var(--color-disabled-border);
 }
 
 /* ===========================================================================
@@ -472,6 +519,35 @@
     --tag-law: #94a3b8;
     --tag-math: #818cf8;
     --tag-default: #9ca3af;
+
+    /* コンポーネントトークン: Button (Dark) */
+    
+    /* Primary */
+    --btn-primary-text: var(--color-foreground);
+
+    /* Secondary */
+    --btn-secondary-bg: var(--bg-surface-1);
+    --btn-secondary-bg-hover: var(--bg-surface-2);
+    --btn-secondary-bg-active: var(--bg-surface-3);
+    --btn-secondary-text: var(--color-foreground);
+    --btn-secondary-border: var(--color-border);
+    /* Secondary Outline color is used for focus ring usually, keep default or adjust if needed */
+
+    /* Outline */
+    --btn-outline-bg-hover: hsla(var(--color-primary-hue), 60%, 50%, 0.15);
+    --btn-outline-bg-active: hsla(var(--color-primary-hue), 60%, 50%, 0.25);
+    --btn-outline-text: var(--color-primary);
+    --btn-outline-border: var(--color-primary);
+
+    /* Ghost */
+    --btn-ghost-bg-hover: var(--bg-surface-1);
+    --btn-ghost-bg-active: var(--bg-surface-2);
+    --btn-ghost-text: var(--color-foreground);
+
+    /* Disabled */
+    --btn-disabled-bg: var(--bg-surface-1);
+    --btn-disabled-text: var(--color-foreground-muted);
+    /* Border remains from global disabled var or handled by component structure */
   }
 }
 
@@ -563,6 +639,33 @@
   --tag-law: #94a3b8;
   --tag-math: #818cf8;
   --tag-default: #9ca3af;
+
+  /* コンポーネントトークン: Button (Dark via data-theme) */
+  
+  /* Primary */
+  --btn-primary-text: var(--color-foreground);
+
+  /* Secondary */
+  --btn-secondary-bg: var(--bg-surface-1);
+  --btn-secondary-bg-hover: var(--bg-surface-2);
+  --btn-secondary-bg-active: var(--bg-surface-3);
+  --btn-secondary-text: var(--color-foreground);
+  --btn-secondary-border: var(--color-border);
+
+  /* Outline */
+  --btn-outline-bg-hover: hsla(var(--color-primary-hue), 60%, 50%, 0.15);
+  --btn-outline-bg-active: hsla(var(--color-primary-hue), 60%, 50%, 0.25);
+  --btn-outline-text: var(--color-primary);
+  --btn-outline-border: var(--color-primary);
+
+  /* Ghost */
+  --btn-ghost-bg-hover: var(--bg-surface-1);
+  --btn-ghost-bg-active: var(--bg-surface-2);
+  --btn-ghost-text: var(--color-foreground);
+
+  /* Disabled */
+  --btn-disabled-bg: var(--bg-surface-1);
+  --btn-disabled-text: var(--color-foreground-muted);
 }
 
 /* ===========================================================================
