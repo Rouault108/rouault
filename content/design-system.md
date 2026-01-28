@@ -31,17 +31,37 @@ RouaultのデザインシステムはLinearやRaycastのドキュメントに触
 
 - **フォーカスリング**: `:focus-visible` には必ず `outline-offset: 2px` を設定し、コンテンツとの分離を明確にする。
 - **コントラスト**: テキストと背景のコントラスト比は 4.5:1 以上（大きな文字は 3:1 以上）を確保する。
-- **ハイコントラストモード対応**: `prefers-contrast: more` を尊重し、ボーダーやフォーカスリングを強調表示する。
+- **ハイコントラストモード対応**:
+  - **`prefers-contrast: more`** (macOS等): ユーザーのコントラスト設定を尊重し、変数を再定義してコントラストを強化する。
+  - **`forced-colors: active`** (Windows): システムカラーが強制されるモード。**`box-shadow` が無効化される**ため、境界線やフォーカスリングが消えないよう `outline` や透明ボーダー（`border: 1px solid transparent`）を活用して可視性を確保する。
 
 ```css
+/* macOS: コントラスト設定（好みの反映） */
 @media (prefers-contrast: more) {
   :root {
     --color-border: #888888;
     --color-border-hover: #666666;
   }
+}
 
+/* Windows: ハイコントラストテーマ（色の強制） */
+@media (forced-colors: active) {
+  :root {
+    --color-border: CanvasText;
+    --color-primary: Highlight;
+    --btn-primary-bg: ButtonText;
+    --btn-primary-text: ButtonFace;
+  }
+  
   :focus-visible {
-    outline-width: 3px;
+    /* box-shadowによるリングは消えるため、実線のアウトラインを強制 */
+    outline: 3px solid CanvasText;
+    box-shadow: none;
+  }
+
+  /* ボーダーがないと境界が消える要素への対策 */
+  .card, .button {
+    border: 1px solid ButtonText;
   }
 }
 ```
