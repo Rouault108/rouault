@@ -683,3 +683,41 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ===========================================================================
+ * ハイコントラストモード (Windows High Contrast / forced-colors)
+ * =========================================================================== */
+
+@media (forced-colors: active) {
+  :root {
+    /* システムカラーの強制 */
+    --color-background: Canvas;
+    --color-background-subtle: Canvas;
+    --color-foreground: CanvasText;
+    --color-foreground-muted: CanvasText;
+    
+    --color-border: CanvasText;
+    --color-border-hover: Highlight;
+    
+    --color-primary: Highlight;
+    --color-primary-hover: Highlight;
+    --color-primary-text: HighlightText;
+    
+    /* ボタン */
+    --btn-primary-bg: ButtonText;
+    --btn-primary-text: ButtonFace;
+    --btn-secondary-border: ButtonText;
+    --btn-outline-border: ButtonText;
+    --btn-outline-text: ButtonText;
+    
+    /* フォーカスリング */
+    --focus-ring-width: 2px;
+  }
+  
+  /* box-shadowは無効化されるため、アウトラインを強制 */
+  :focus-visible {
+    outline: 3px solid CanvasText;
+    outline-offset: 2px;
+    box-shadow: none !important;
+  }
+}
