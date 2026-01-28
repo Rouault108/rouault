@@ -91,12 +91,9 @@
   
   /* アルファチャネル付きカラー（フォーカスリング用） */
   --color-primary-alpha-10: rgba(59, 130, 246, 0.1);
+  --color-primary-alpha-20: rgba(59, 130, 246, 0.2);
   --color-error-alpha-10: rgba(220, 38, 38, 0.1);
-  
-  /* フォーカスリング */
-  --ring-primary: 0 0 0 var(--focus-ring-width) var(--color-primary-alpha-10);
-  --ring-error: 0 0 0 var(--focus-ring-width) var(--color-error-alpha-10);
-  --ring-offset: var(--focus-ring-offset);
+  --color-error-alpha-20: rgba(220, 38, 38, 0.2);
   
   /* グラデーション */
   --gradient-hero: linear-gradient(135deg, var(--color-primary), var(--color-accent));
@@ -275,8 +272,10 @@
   --link-decoration-hover-thickness: 2px;
   
   /* フォーカスリング設計 */
-  --focus-ring-width: 3px;
+  --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
+  --focus-ring-opacity: 0.5;
+  --focus-ring-color: rgba(59, 130, 246, 0.5); /* Blue-500 with 50% opacity */
   
   /* -----------------------------------------------------------------------
    * サーフェス & テクスチャ
