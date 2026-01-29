@@ -96,7 +96,7 @@ export class UiButton extends LionButton {
           cursor: not-allowed;
           opacity: 0.8;
           transform: none;
-          pointer-events: none;
+          pointer-events: auto;
         }
 
         /* -------------------------------------------------------------
