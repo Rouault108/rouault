@@ -291,3 +291,9 @@ export class UiButton extends LionButton {
   }
 }
 
+declare global {
+  interface HTMLElementTagNameMap {
+    'ui-button': UiButton;
+  }
+}
+
