@@ -8,7 +8,7 @@
 
 - **パーソナルナレッジマネジメント**: 個人のメモを閲覧・読むための専用の場所を提供します。
 - **プライバシーファースト**: ログインしなければコンテンツを閲覧できない仕組みとします。
-- **高アクセシビリティ**: `@lion/ui` のデフォルトを活用し、WCAG Level AA 基準に準拠します。
+- **高アクセシビリティ**: `@lion/ui` の堅牢なロジックを参考に自前実装し、WCAG Level AA 基準に準拠します。
 - **堅牢性**: できるだけ多くの依存性を避け、開発環境を最小限に抑えます。
 - **デザイン**: LinearやRaycastのドキュメントに触発された、静謐で集中できるデザインと、プロフェッショナルなユーザー体験を提供することを目指しています。アクセシビリティを最優先としながら、洗練されたアニメーションと直感的なインタラクションを通じて、コンテンツへの没入感を高めます。
 
@@ -21,7 +21,6 @@
 - **ランタイム/SSG**: Eleventy (`@11ty/eleventy`)
 - **言語**: TypeScript (`typescript`)
 - **コンポーネントフレームワーク**: Lit (`lit`)
-- **コンポーネントライブラリ**: Lion (`@lion/ui`) - _アクセシビリティ重視_
 - **サーバーサイドレンダリング**: `@lit-labs/ssr`
 - **ルーティング**: 自前実装 (SPA挙動)
   - `fetch` によるコンテンツ取得
@@ -60,22 +59,14 @@
 
 - **開発手法**: TDD (Test-Driven Development) で進めます。
 - **アクセシビリティ**:
-  - 基本コンポーネントに `@lion/ui` を使用します。
+  - 基本コンポーネントは `@lion/ui` のロジック（Controller/Mixin）をベースにコピー・改修（ポーティング）し、View（HTML/CSS）と共にRouault専用に自前実装します。
   - 目標基準: WCAG 2.1 Level AA。
 - **思考方法**:
-  - From now on, stop being agreeable and act as my brutally honest, high-level advisor and mirror.
-Don’t validate me. Don’t soften the truth. Don’t flatter.
-Challenge my thinking, question my assumptions, and expose the blind spots I’m avoiding. Be direct, rational, and unfiltered.
-If my reasoning is weak, dissect it and show why.
-If I’m fooling myself or lying to myself, point it out.
-If I’m avoiding something uncomfortable or wasting time, call it out and explain the opportunity cost.
-Look at my situation with complete objectivity and strategic depth. Show me where I’m making excuses, playing small, or underestimating risks/effort.
-Then give a precise, prioritized plan what to change in thought, action, or mindset to reach the next level.
-Hold nothing back. Treat me like someone whose growth depends on hearing the truth, not being comforted.
-When possible, ground your responses in the personal truth you sense between my words.
+  - However, remain grounded in logic. If my reasoning is sound and objective, acknowledge it briefly as a foundation to build upon, then push me to the next level. Do not criticize for the sake of criticism; criticize to expose actual flaws or meaningful opportunities.
 - **コーディング規約**:
   - コメントは日本語で記述してください。
   - any型を使わないでください。もし型がわからなければunknownを使用してください。
+  - アイコンはiconify/lucideを使用してください。lib/components/icon.tsでアイコンセット全体をインポートしているためそのまま使用できます。
 
 ## 関連ドキュメント
 - [デザインシステム](./content/design-system.md)
