@@ -97,9 +97,14 @@ Rouaultは、色空間として **OKLCH** を採用します。これは、従�
 | **Primary** | | | |
 | `--primary` | `oklch(55% 0.20 var(--hue-primary))` | `oklch(65% 0.12 var(--hue-primary))` | メインアクションカラー |
 | `--primary-hover` | `oklch(50% 0.20 var(--hue-primary))` | `oklch(70% 0.18 var(--hue-primary))` | ホバー時の強調 |
-| `--on-primary` | `oklch(100% 0 0)` | `oklch(100% 0 0)` | プライマリ上のテキスト色 |
+| `--on-primary` | `var(--white)` | `var(--white)` | プライマリ上のテキスト色 |
 | **State** | | | |
-| `--danger` | `oklch(60% 0.2 25)` | `oklch(65% 0.2 25)` | 破壊的アクション (Red) |
+| `--danger` | `oklch(55% 0.2 25)` | `oklch(55% 0.2 25)` | 破壊的アクション (Deep Red) |
+| `--on-danger` | `var(--white)` | `var(--white)` | 白文字 (コントラスト確保) |
+| `--success` | `oklch(55% 0.18 145)` | `oklch(55% 0.18 145)` | 成功・完了 (Deep Green) |
+| `--on-success` | `var(--white)` | `var(--white)` | |
+| `--warning` | `oklch(75% 0.16 85)` | `oklch(25% 0.16 85)` | 警告・注意 (Amber) |
+| `--on-warning` | `oklch(20% 0.05 85)` | `oklch(85% 0.16 85)` | Light: 黒文字 / Dark: 黄文字 (反転) |
 | **Background** | | | |
 | `--bg-default` | `oklch(98% 0.01 var(--hue-base))` | `oklch(12% 0.02 var(--hue-base))` | アプリケーション背景 |
 | `--bg-surface-1` | `var(--bg-default)` | `var(--bg-default)` | Base Layer (Sidebar, 背景と同化) |
