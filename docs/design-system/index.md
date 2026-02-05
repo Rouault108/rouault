@@ -81,7 +81,9 @@ Rouaultは、色空間として **OKLCH** を採用します。これは、従�
 | トークン | 値 | 説明 |
 | :--- | :--- | :--- |
 | `--chroma-neutral` | `0.01` | 無彩色（グレー）の彩度 |
+| `--chroma-subtle` | `0.04` | 微細な彩度（Subtle UI背景用） |
 | `--chroma-ui` | `0.12` | UIカラーの彩度 |
+| `--chroma-high` | `0.20` | **強調・アクション**。Primary, Dangerなどの最も強い色。 |
 | `--focus-ring-width` | `2px` | フォーカスリングの太さ |
 | `--focus-ring-offset` | `2px` | フォーカスリングのオフセット |
 | `--focus-ring-color` | `var(--primary)` | フォーカスリングの色 |
@@ -96,11 +98,11 @@ Rouaultは、色空間として **OKLCH** を採用します。これは、従�
 | トークン | Light Value | Dark Value | 役割 / 説明 |
 | :--- | :--- | :--- | :--- |
 | **Primary** | | | |
-| `--primary` | `oklch(55% 0.20 var(--hue-primary))` | `oklch(65% 0.12 var(--hue-primary))` | メインアクションカラー |
-| `--primary-hover` | `oklch(50% 0.20 var(--hue-primary))` | `oklch(70% 0.18 var(--hue-primary))` | ホバー時の強調 |
+| `--primary` | `oklch(55% var(--chroma-high) var(--hue-primary))` | `oklch(65% 0.12 var(--hue-primary))` | メインアクションカラー |
+| `--primary-hover` | `oklch(50% var(--chroma-high) var(--hue-primary))` | `oklch(70% 0.18 var(--hue-primary))` | ホバー時の強調 |
 | `--on-primary` | `var(--white)` | `var(--white)` | プライマリ上のテキスト色 |
 | **State** | | | |
-| `--danger` | `oklch(55% 0.2 25)` | `oklch(55% 0.2 25)` | 破壊的アクション (Deep Red) |
+| `--danger` | `oklch(55% var(--chroma-high) 25)` | `oklch(55% 0.2 25)` | 破壊的アクション (Deep Red) |
 | `--on-danger` | `var(--white)` | `var(--white)` | 白文字 (コントラスト確保) |
 | `--success` | `oklch(55% 0.18 145)` | `oklch(55% 0.18 145)` | 成功・完了 (Deep Green) |
 | `--on-success` | `var(--white)` | `var(--white)` | |
