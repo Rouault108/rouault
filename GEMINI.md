@@ -31,7 +31,7 @@
 - **コンテンツエンジン**: Velite (`velite`) - _型安全なコンテンツコレクション_
 - **データソース**: Markdownファイル
 - **検索**: Pagefind (`pagefind`)
-- **シンタックスハイライト**: PrismJS (`prismjs`)
+- **シンタックスハイライト**: Shiki (`shiki`)
 - **Markdown処理**:
   - `remark-gfm` (GitHub Flavored Markdown)
   - `remark-math` & `rehype-katex` (数式サポート)
