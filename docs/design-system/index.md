@@ -254,9 +254,9 @@ h1, h2, h3, .ui-label {
 | `--text-2xs` | 0.6875rem (11px) | 1rem | 極小ラベル |
 | `--text-xs` | 0.75rem (12px) | 1rem | キャプション、バッジ |
 | `--text-sm` | 0.8125rem (13px) | 1.25rem | 補助テキスト、メタ情報 |
-| `--text-base` | 0.875rem (14px) | 1.5rem | **本文（デフォルト）** |
-| `--text-lg` | 1rem (16px) | 1.5rem | リード文 |
-| `--text-xl` | 1.125rem (18px) | 1.75rem | 小見出し |
+| `--text-base` | 0.875rem (14px) | 1.5rem | **UI本文（App Default）** |
+| `--text-lg` | 1rem (16px) | 1.5rem | **記事本文（Prose Body）** |
+| `--text-xl` | 1.125rem (18px) | 1.75rem | 小見出し, リード文（Abstract） |
 | `--text-2xl` | 1.5rem (24px) | 2rem | セクション見出し |
 | `--text-3xl` | 1.875rem (30px) | 2.25rem | ページ見出し |
 | `--text-4xl` | 2.25rem (36px) | 2.5rem | ヒーロー見出し |
