@@ -121,6 +121,10 @@ Rouaultは、色空間として **OKLCH** を採用します。これは、従�
 | `--bg-surface-active`| `var(--bg-active)` | `var(--bg-active)` | リスト行選択状態 |
 | `--focus-ring-color-subtle` | `oklch(65% 0.12 var(--hue-primary))` | `oklch(53% 0.12 var(--hue-primary))` | **移動中のフォーカス**。3:1コントラスト保証。 |
 | `--bg-danger-subtle` | `oklch(96% 0.03 25)` | `oklch(25% 0.05 25)` | エラー背景 |
+| `--bg-warning-subtle` | `oklch(96% 0.04 85)` | `oklch(25% 0.05 85)` | 警告背景 |
+| `--bg-success-subtle` | `oklch(96% 0.04 145)` | `oklch(25% 0.05 145)` | 成功背景 |
+| `--bg-tip-subtle` | `oklch(96% 0.04 var(--hue-primary))` | `oklch(25% 0.05 var(--hue-primary))` | Tip (Primary) 背景 |
+| `--bg-note-subtle` | `oklch(96% 0.01 var(--hue-base))` | `oklch(20% 0.02 var(--hue-base))` | Note (Default) 背景 |
 | **Foreground** | | | |
 | `--fg-default` | `oklch(20% 0.03 var(--hue-base))` | `oklch(90% 0.01 var(--hue-base))` | 本文、主要テキスト |
 | `--fg-muted` | `oklch(45% 0.02 var(--hue-base))` | `oklch(65% 0.01 var(--hue-base))` | メタデータ、アイコン |
