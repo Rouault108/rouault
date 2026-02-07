@@ -526,6 +526,7 @@ scrollbar-color: var(--scrollbar-thumb) transparent;
 
 | トークン | 値 | 説明 |
 | :--- | :--- | :--- |
+| `--blur-sm` | `2px` | **微小ブラー**。文脈を残しつつノイズを除去する (Context Retention)。 |
 | `--blur-md` | `12px` | **標準ブラー**。コンテンツの可読性を維持しつつ階層を示す最適値。 |
 | `--blur-lg` | `24px` | **強ブラー**。モーダル背景など、コンテキストを完全に分離する場合に使用。 |
 
