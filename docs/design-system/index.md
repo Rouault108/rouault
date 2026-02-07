@@ -103,11 +103,11 @@ Rouaultは、色空間として **OKLCH** を採用します。これは、従�
 | `--on-primary` | `var(--white)` | `var(--white)` | プライマリ上のテキスト色 |
 | **State** | | | |
 | `--danger` | `oklch(55% var(--chroma-high) 25)` | `oklch(55% 0.2 25)` | 破壊的アクション (Deep Red) |
-| `--on-danger` | `var(--white)` | `var(--white)` | 白文字 (コントラスト確保) |
+| `--on-danger` | `var(--white)` | `var(--white)` | 白文字 (Fill背景上の文字) |
 | `--success` | `oklch(55% 0.18 145)` | `oklch(55% 0.18 145)` | 成功・完了 (Deep Green) |
-| `--on-success` | `var(--white)` | `var(--white)` | |
+| `--on-success` | `var(--white)` | `var(--white)` | 白文字 (Fill背景上の文字) |
 | `--warning` | `oklch(75% 0.16 85)` | `oklch(25% 0.16 85)` | 警告・注意 (Amber) |
-| `--on-warning` | `oklch(20% 0.05 85)` | `oklch(85% 0.16 85)` | Light: 黒文字 / Dark: 黄文字 (反転) |
+| `--on-warning` | `oklch(20% 0.05 85)` | `oklch(85% 0.16 85)` | Light: 黒文字 / Dark: 黄文字 (Fill背景上の文字) |
 | **Background** | | | |
 | `--bg-default` | `oklch(98% 0.01 var(--hue-base))` | `oklch(12% 0.02 var(--hue-base))` | アプリケーション背景 |
 | `--bg-surface-1` | `var(--bg-default)` | `var(--bg-default)` | Base Layer (Sidebar, 背景と同化) |
@@ -130,6 +130,11 @@ Rouaultは、色空間として **OKLCH** を採用します。これは、従�
 | `--fg-muted` | `oklch(45% 0.02 var(--hue-base))` | `oklch(65% 0.01 var(--hue-base))` | メタデータ、アイコン |
 | `--fg-subtle` | `oklch(60% 0.01 var(--hue-base))` | `oklch(50% 0.01 var(--hue-base))` | プレースホルダー |
 | `--fg-on-primary` | `var(--on-primary)` | `var(--on-primary)` | |
+| **Foreground (Semantic)** | | | |
+| `--fg-warning` | `oklch(55% 0.16 85)` | `oklch(85% 0.16 85)` | **警告文字・アイコン**。（白/Subtle背景用） |
+| `--fg-success` | `var(--success)` | `var(--success)` | **成功文字・アイコン**。（白/Subtle背景用） |
+| `--fg-danger` | `var(--danger)` | `var(--danger)` | **危険文字・アイコン**。（白/Subtle背景用） |
+| `--fg-info` | `var(--primary)` | `var(--primary)` | **情報文字・アイコン**。（白/Subtle背景用） |
 | **Border** | | | |
 | `--border-default` | `oklch(20% 0.03 var(--hue-base) / 0.12)` | `oklch(90% 0.01 var(--hue-base) / 0.12)` | 標準ボーダー |
 | `--border-muted` | `oklch(20% 0.03 var(--hue-base) / 0.06)` | `oklch(90% 0.01 var(--hue-base) / 0.06)` | Mutedボーダー |
