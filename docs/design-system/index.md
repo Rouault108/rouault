@@ -115,7 +115,7 @@ Rouaultは、色空間として **OKLCH** を採用します。これは、従�
 | `--bg-surface-3` | `oklch(100% 0 0)` | `oklch(22% 0.02 var(--hue-base))` | Highest (Modal) |
 | **Fill** | | | |
 | `--bg-fill-muted` | `oklch(96% 0.01 var(--hue-base))` | `oklch(9% 0.02 var(--hue-base))` | 入力フォーム、コードブロック背景 |
-| `--bg-fill-neutral` | `oklch(from var(--fg-default) l c h / 0.12)` | `oklch(from var(--fg-default) l c h / 0.12)` | **構造的背景**。トラック、スケルトンなど。 |
+| `--bg-fill-neutral` | `oklch(from var(--fg-default) l c h / 0.12)` | `oklch(from var(--fg-default) l c h / 0.12)` | **構造的背景**。プログレスバー、スケルトンなど。 |
 | **Interaction** | | | |
 | `--bg-hover` | `oklch(from var(--fg-default) l c h / 0.05)` | `oklch(from var(--fg-default) l c h / 0.05)` | ホバー (`from --fg-default`) |
 | `--bg-active` | `oklch(from var(--primary) l c h / 0.08)` | `oklch(from var(--primary) l c h / 0.15)` | アクティブ (`from --primary`) |
