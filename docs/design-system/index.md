@@ -190,20 +190,20 @@ Linearのような洗練された質感を維持するため、**Delta（補正�
 
 RouaultはLinearをインスピレーション元としていますが、**日本語主体のコンテンツ**という本質的な違いがあります。そのため、欧文フォント（Inter）ではなく、日本語に最適化されたフォント戦略を採用します。
 
-| トークン | 定義 |
-| :--- | :--- |
-| `--font-sans` | `'Noto Sans JP Variable', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', 'Segoe UI', 'Meiryo', sans-serif` |
-| `--font-mono` | `'JetBrains Mono', 'Fira Code', 'Consolas', 'Liberation Mono', 'Courier New', monospace` |
-| `--font-serif` | `'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', serif` |
+| トークン | 定義 | 使用方針 |
+| :--- | :--- | :--- |
+| `--font-sans` | `'Noto Sans JP Variable', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', 'Segoe UI', 'Meiryo', sans-serif` | **デフォルト**。UI、本文（`.prose`）、見出しなど、あらゆる場所で使用する。 |
+| `--font-mono` | `'JetBrains Mono', 'Fira Code', 'Consolas', 'Liberation Mono', 'Courier New', monospace` | コードブロック、インラインコードで使用する。 |
+| `--font-serif` | `'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', serif` | **オプション（将来の拡張）**。文学作品など特定ジャンルでのみ使用を検討。現在は未使用。 |
 
 **設計意図**
 
 | 項目 | 選択理由 |
 |------|----------|
-| **Noto Sans JP** | Google開発の高品質な日本語フォント。欧文グリフも含むため和欧混植時の統一感が高い。 |
+| **Noto Sans JP（デフォルト採用）** | Google開発の高品質な日本語フォント。欧文グリフも含むため和欧混植時の統一感が高い。**画面メディアにおける視認性と可読性を最優先**し、CS、数学、文学など多様なコンテンツジャンルに対応可能。 |
 | **Variable Font** | ウェイト400-900を1ファイルで提供。ファイルサイズとデザイン柔軟性の最適バランス。 |
 | **和文優先フォールバック** | システムフォントも日本語対応を優先順位化（Hiragino Sans, Yu Gothic UIなど）。 |
-| **Noto Serif JP** | 文学作品などの長文コンテンツ（Prose）において、情緒と没入感を高めるために採用。 |
+| **Noto Serif JP（保留）** | 将来的に、文学作品など特定ジャンルで情緒と没入感を高めたい場合の拡張オプションとして定義を残す。現在のRouaultでは、原則4「普遍的な明瞭さ」を優先し、全コンテンツでSans JPを使用する。 |
 
 **和欧混植 (Multilingual Typography)**
 
