@@ -194,6 +194,7 @@ RouaultはLinearをインスピレーション元としていますが、**日�
 | :--- | :--- |
 | `--font-sans` | `'Noto Sans JP Variable', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', 'Segoe UI', 'Meiryo', sans-serif` |
 | `--font-mono` | `'JetBrains Mono', 'Fira Code', 'Consolas', 'Liberation Mono', 'Courier New', monospace` |
+| `--font-serif` | `'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', serif` |
 
 **設計意図**
 
@@ -202,6 +203,7 @@ RouaultはLinearをインスピレーション元としていますが、**日�
 | **Noto Sans JP** | Google開発の高品質な日本語フォント。欧文グリフも含むため和欧混植時の統一感が高い。 |
 | **Variable Font** | ウェイト400-900を1ファイルで提供。ファイルサイズとデザイン柔軟性の最適バランス。 |
 | **和文優先フォールバック** | システムフォントも日本語対応を優先順位化（Hiragino Sans, Yu Gothic UIなど）。 |
+| **Noto Serif JP** | 文学作品などの長文コンテンツ（Prose）において、情緒と没入感を高めるために採用。 |
 
 **和欧混植 (Multilingual Typography)**
 
