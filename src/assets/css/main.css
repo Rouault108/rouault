@@ -5,7 +5,7 @@
 /* Noto Sans JP Variable Font
  * - 可変フォントにより、400-900の全ウェイトを1ファイルで提供
  * - 日本語主体のコンテンツに最適化された設計
- * - Interとの和欧混植で視覚的統一感を確保 */
+ * - 欧文グリフも含むため和欧混植時の統一感が高い */
 @import '@fontsource-variable/noto-sans-jp';
 
 /* Inter Variable Font（欧文用）
@@ -15,7 +15,38 @@
 @import './tokens.css';
 
 /* ===========================================================================
- * グローバルリセット
+ * View Transitions API サポート
+ * =========================================================================== */
+
+@supports (view-transition-name: root) {
+  @view-transition {
+    navigation: auto;
+  }
+
+  ::view-transition-group(*) {
+    animation-duration: 0.2s;
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+/* 非対応ブラウザではシンプルなフェード */
+@supports not (view-transition-name: root) {
+  .page-transition {
+    animation: fade-in var(--duration-normal) var(--ease-out);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ===========================================================================
+ * Box Sizing Reset
  * =========================================================================== */
 
 *,
@@ -25,58 +56,850 @@
 }
 
 /* ===========================================================================
- * ベーススタイル
+ * Document & Body
  * =========================================================================== */
+
+html {
+  /* アンカー移動時にヘッダー分のスペースを確保 */
+  scroll-padding-top: calc(var(--header-height) + var(--space-4));
+  /* スクロールを滑らかに */
+  scroll-behavior: smooth;
+}
+
+/* reduced-motion時は即座に移動 */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
 
 body {
   margin: 0;
   font-family: var(--font-sans);
-  background-color: var(--color-background);
-  color: var(--color-foreground);
+  font-size: var(--text-base);
+  font-weight: var(--font-normal);
   line-height: var(--line-height-normal);
-  
-  /* 和欧混植時の字間調整
-   * 日本語とラテン文字の視覚的バランスを最適化 */
-  letter-spacing: 0.02em;
+  color: var(--fg-default);
+  background: var(--bg-default);
+  /* 和文フォントのデフォルトの字送りを維持 */
+  letter-spacing: 0;
+  /* テキスト選択時の背景色 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* 記事本文用スタイル (.prose 配下のみ適用) */
+/* ===========================================================================
+ * Typography - Headings
+ * =========================================================================== */
 
-/* 本文コンテナ: 和文の自然な可読性を優先 */
-.prose {
-  letter-spacing: 0; /* 日本語本文は詰めず自然な間隔 */
-}
-
-/* 見出し: 密度を高めてプロフェッショナルな印象 */
-.prose h1,
-.prose h2,
-.prose h3,
-.prose h4,
-.prose h5,
-.prose h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-weight: var(--font-bold);
   line-height: var(--line-height-tight);
-  margin-top: var(--space-8, 2rem);
-  margin-bottom: var(--space-4, 1rem);
-  font-weight: var(--font-bold, 700);
-  letter-spacing: var(--tracking-tight); /* -0.025em: 見出しを引き締める */
+  /* 見出しは文字を詰めて密度を高める */
+  letter-spacing: var(--tracking-tight);
+  /* 和文の文字詰めを有効化 */
+  font-feature-settings: 'palt';
 }
 
-.prose p {
-  margin-bottom: var(--space-4, 1rem);
+h1 {
+  font-size: var(--text-4xl);
+  font-weight: var(--font-bold);
 }
 
-/* リンク */
+h2 {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-semibold);
+}
+
+h3 {
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+}
+
+h4 {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  letter-spacing: var(--tracking-normal);
+}
+
+/* ===========================================================================
+ * Typography - Body Text
+ * =========================================================================== */
+
+p {
+  margin: 0;
+}
+
+/* Prose（記事本文）コンテナ */
+.prose {
+  font-size: var(--text-lg);
+  line-height: var(--line-height-relaxed);
+  max-width: var(--width-reading);
+  margin-inline: auto;
+  /* 本文は詰めず、自然な可読性を優先 */
+  letter-spacing: 0;
+}
+
+/* Proseコンテナ内のメディア要素はテキスト幅を超えて拡張 */
+.prose img,
+.prose pre,
+.prose table,
+.prose video {
+  max-width: none;
+}
+
+/* Mobile: コンテナより広く */
+@media (max-width: 767px) {
+  /* --bp-md */
+  .prose img,
+  .prose pre,
+  .prose table,
+  .prose video {
+    width: calc(100% + var(--space-8));
+    margin-inline: var(--space-n4);
+  }
+}
+
+/* Desktop: さらに広く強調 */
+@media (min-width: 768px) {
+  /* --bp-md */
+  .prose img,
+  .prose pre,
+  .prose table,
+  .prose video {
+    width: calc(100% + var(--space-16));
+    margin-inline: var(--space-n8);
+  }
+}
+
+/* ===========================================================================
+ * Links
+ * =========================================================================== */
+
+/* グローバルリンク（デフォルト） */
 a {
-  color: var(--color-primary);
-  text-decoration-line: underline;
-  text-underline-offset: var(--link-underline-offset, 2px);
-  text-decoration-thickness: var(--link-decoration-thickness, 1px);
-  transition: 
-    color var(--motion-duration) var(--motion-easing),
-    text-decoration-thickness var(--motion-duration) var(--motion-easing);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
 }
 
 a:hover {
-  color: var(--color-primary-hover);
-  text-decoration-thickness: var(--link-decoration-hover-thickness, 2px);
+  opacity: 0.8;
+}
+
+a:focus-visible {
+  outline-style: solid;
+  outline-width: var(--focus-ring-width);
+  outline-offset: var(--focus-ring-offset);
+  outline-color: var(--focus-ring-color);
+  animation: var(--animation-focus);
+}
+
+/* ===========================================================================
+ * Prose Links（記事本文内のリンク）
+ * @see docs/design-system/components.md - Prose Link仕様
+ * =========================================================================== */
+
+/* Base Style - href属性を持ち、クラスを持たないリンクのみ対象 */
+.prose a[href]:not([class]) {
+  cursor: pointer;
+  color: var(--fg-default); /* 本文色を維持し、読むリズムを優先 */
+  text-decoration: underline;
+  text-underline-offset: 0.15em; /* Noto Sans JPのベースラインに最適化 */
+  
+  /* Fallback: Relative Color Syntax 非対応ブラウザ用 (Chrome <119, Firefox <128) */
+  text-decoration-color: var(--primary);
+  /* Modern: Relative Color Syntax 対応ブラウザ用 */
+  text-decoration-color: var(--link-decoration-color);
+  
+  text-decoration-thickness: var(--border-width); /* UI全体の線幅との一貫性 */
+  
+  transition:
+    text-decoration-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+  
+  /* 改行時もスタイルを行ごとに適用（Firefox未サポート、Progressive Enhancement） */
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* Hover状態 - テキストと下線の両方を色付け */
+.prose a[href]:not([class]):hover {
+  color: var(--primary-hover);
+  text-decoration-color: var(--primary-hover);
+}
+
+/* Focus-Visible状態 - テキスト色は変更せず、フォーカスリングのみで状態を示す */
+.prose a[href]:not([class]):focus-visible {
+  outline-style: solid;
+  outline-width: var(--focus-ring-width);
+  outline-offset: var(--focus-ring-offset);
+  outline-color: var(--focus-ring-color);
+  border-radius: var(--radius-sm); /* line-heightに対して適切な角丸 */
+  animation: var(--animation-focus);
+  
+  /* テキスト色はデフォルトのまま */
+  color: var(--fg-default);
+  text-decoration-color: var(--primary);
+}
+
+/* Visited状態 - 個人メモでは既読管理より読むリズムを優先 */
+.prose a[href]:not([class]):visited {
+  color: var(--fg-default);
+  text-decoration-color: var(--link-decoration-color);
+}
+
+/* Touch (No Hover) 判定 - タッチデバイスでは発見可能性を優先 */
+@media (hover: none) {
+  .prose a[href]:not([class]) {
+    color: var(--primary);
+    text-decoration-color: var(--link-decoration-color-touch);
+  }
+}
+
+/* ===========================================================================
+ * Contextual Links（UIリンク）
+ * @see docs/design-system/components.md - Contextual Link仕様
+ * 
+ * カード、サイドバー等のUIコンポーネント内に配置される
+ * ナビゲーションやアクションを目的としたリンク。
+ * Prose Link（読み物内）とは明確に区別される。
+ * =========================================================================== */
+
+/**
+ * Base Style
+ * - デフォルトは Nav バリアント（ニュートラル）
+ * - Prose Linkと同じ下線オフセット・太さを共有し一貫性を保証
+ */
+.ui-link,
+.card:not(.prose) a,
+.sidebar:not(.prose) a {
+  cursor: pointer;
+  color: var(--fg-default);
+  text-decoration: none;
+  text-underline-offset: 0.15em; /* Noto Sans JPのベースラインに最適化 */
+  text-decoration-thickness: var(--border-width); /* UI全体の線幅との一貫性 */
+  font-weight: var(--font-medium); /* 周辺テキストより一段階強調 */
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    text-decoration-color var(--duration-fast) var(--ease-out);
+}
+
+/* Hover: 下線追加 + プライマリカラーへ変化 */
+.ui-link:hover,
+.card:not(.prose) a:hover,
+.sidebar:not(.prose) a:hover {
+  color: var(--primary);
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+}
+
+/* Active: Tactile Feedback（ボタンと同様のスケール変化） */
+.ui-link:active,
+.card:not(.prose) a:active,
+.sidebar:not(.prose) a:active {
+  transform: scale(var(--scale-pressed));
+}
+
+/* Focus-Visible: Adaptive Focusリング */
+.ui-link:focus-visible,
+.card:not(.prose) a:focus-visible,
+.sidebar:not(.prose) a:focus-visible {
+  outline-style: solid;
+  outline-width: var(--focus-ring-width);
+  outline-offset: var(--focus-ring-offset);
+  outline-color: var(--focus-ring-color);
+  border-radius: var(--radius-sm); /* 短いラベル/アイコンに適した最小角丸 */
+  animation: var(--animation-focus);
+}
+
+/* Visited: UIの透明化を優先、Default状態と統合 */
+.ui-link:visited,
+.card:not(.prose) a:visited,
+.sidebar:not(.prose) a:visited {
+  color: var(--fg-default);
+}
+
+/* ---------------------------------------------------------------------------
+ * Action Variant - ユーザーに操作を促す強いリンク
+ * 「編集」「作成」などの明確なアクション
+ * --------------------------------------------------------------------------- */
+.ui-link.link-action,
+.link-action {
+  color: var(--primary);
+}
+
+.ui-link.link-action:hover,
+.link-action:hover {
+  color: var(--primary-hover);
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+}
+
+/* ---------------------------------------------------------------------------
+ * Subtle Variant - メタデータ、日付、タグ等
+ * 控えめに存在を示唆し、ホバーで明確化
+ * 
+ * 注意: --bg-default または --bg-surface-2 上でのみ使用可能
+ *       --bg-fill-muted (3.8:1) では WCAG AA 未達
+ * --------------------------------------------------------------------------- */
+.ui-link.link-subtle,
+.link-subtle {
+  color: var(--fg-muted);
+  font-weight: var(--font-normal); /* Subtleは強調しない */
+  text-decoration: none;
+}
+
+.ui-link.link-subtle:hover,
+.link-subtle:hover {
+  color: var(--fg-default);
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+}
+
+.ui-link.link-subtle:focus-visible,
+.link-subtle:focus-visible {
+  outline-style: solid;
+  outline-width: var(--focus-ring-width);
+  outline-offset: var(--focus-ring-offset);
+  outline-color: var(--focus-ring-color);
+  border-radius: var(--radius-sm);
+  animation: var(--animation-focus);
+  color: var(--fg-muted);
+  text-decoration: underline;
+}
+
+.ui-link.link-subtle:visited,
+.link-subtle:visited {
+  color: var(--fg-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * Touch (No Hover) 判定
+ * タッチデバイスではホバーによる発見可能性が得られないため、
+ * デフォルト状態から視覚的ヒントを強化
+ * --------------------------------------------------------------------------- */
+@media (hover: none) {
+  /* Nav バリアント: デフォルトで色付き */
+  .ui-link,
+  .card:not(.prose) a,
+  .sidebar:not(.prose) a {
+    color: var(--primary);
+  }
+  
+  /* Subtle バリアント: 発見可能性を優先し、fg-default に格上げ */
+  .ui-link.link-subtle,
+  .link-subtle {
+    color: var(--fg-default);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Block Link (Card Action)
+ * カード全体をリンク化する Stretched Link パターン
+ * 
+ * 使用条件:
+ * - 親コンテナ（.card 等）に position: relative が必須
+ * - 内部の別リンク/ボタンには position: relative + z-index: 2 以上を設定
+ * --------------------------------------------------------------------------- */
+.card-link::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+}
+
+/* Block Link (card-link) にフォーカス時、親カード全体を強調 */
+.card:has(.card-link:focus-visible) {
+  outline-style: solid;
+  outline-width: var(--focus-ring-width);
+  outline-offset: var(--focus-ring-offset);
+  outline-color: var(--focus-ring-color);
+  border-radius: var(--radius-md);
+  animation: var(--animation-focus);
+}
+
+/* card-link 自体のフォーカスリングは非表示（親カードに委譲） */
+.card-link:focus-visible {
+  outline: none;
+}
+
+/* ===========================================================================
+ * Forced Colors Mode - Contextual Links
+ * =========================================================================== */
+
+@media (forced-colors: active) {
+  .ui-link,
+  .card:not(.prose) a,
+  .sidebar:not(.prose) a {
+    color: LinkText;
+    text-decoration-color: currentColor;
+  }
+  
+  .ui-link:visited,
+  .card:not(.prose) a:visited,
+  .sidebar:not(.prose) a:visited {
+    color: VisitedText;
+  }
+  
+  /* Action バリアント: ボタンとして扱う */
+  .ui-link.link-action,
+  .link-action {
+    color: ButtonText;
+    border: var(--border-width) solid ButtonText;
+    padding: var(--space-1) var(--space-2);
+  }
+}
+
+/* ===========================================================================
+ * Print Styles - Contextual Links
+ * =========================================================================== */
+
+@media print {
+  /* ナビゲーションリンク: 印刷時は非表示（ページ内でのみ意味を持つため） */
+  .sidebar a,
+  .ui-link.link-nav {
+    display: none;
+  }
+  
+  /* アクションリンク: 外部URLの場合のみ展開 */
+  .ui-link.link-action[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.875em;
+    color: var(--fg-muted);
+    text-decoration: none;
+  }
+  
+  /* カード内リンク: 下線を表示し、リンクであることを明示 */
+  .card a {
+    text-decoration: underline;
+    text-decoration-color: currentColor;
+  }
+}
+
+/* ===========================================================================
+ * Forced Colors Mode - Prose Links
+ * =========================================================================== */
+
+@media (forced-colors: active) {
+  .prose a[href]:not([class]) {
+    color: LinkText;
+    text-decoration-color: currentColor;
+  }
+  
+  .prose a[href]:not([class]):visited {
+    color: VisitedText;
+  }
+}
+
+/* ===========================================================================
+ * Print Styles - Prose Links
+ * =========================================================================== */
+
+@media print {
+  /* 外部リンク（http/https）のURLを表示 */
+  .prose a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.875em;
+    color: var(--fg-muted);
+    text-decoration: none;
+  }
+  
+  /* 内部リンク（相対パス、アンカー）はURL展開しない */
+  .prose a[href^="#"]::after,
+  .prose a[href^="/"]::after {
+    content: none;
+  }
+  
+  /* 下線は常に表示し、リンクであることを明示 */
+  .prose a[href]:not([class]) {
+    text-decoration: underline;
+    text-decoration-color: currentColor;
+  }
+}
+
+/* ===========================================================================
+ * Focus Visible (Global)
+ * =========================================================================== */
+
+:focus-visible {
+  outline-style: solid;
+  outline-width: var(--focus-ring-width);
+  outline-offset: var(--focus-ring-offset);
+  outline-color: var(--focus-ring-color);
+  animation: var(--animation-focus);
+}
+
+/* ===========================================================================
+ * Scrollbar Styling
+ * =========================================================================== */
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+/* WebKit / Chromium */
+*::-webkit-scrollbar {
+  width: var(--scrollbar-width);
+  height: var(--scrollbar-width);
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  /* 透明なボーダーでパディングを作り、視覚的な幅を細くする */
+  border: 4px solid transparent;
+  background-clip: content-box;
+  border-radius: var(--radius-full);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+/* ===========================================================================
+ * Utility Classes
+ * =========================================================================== */
+
+/* Screen Reader Only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Glass Panel：ヘッダー、フローティングパネル用 */
+.glass-panel {
+  /* Baseline: 明確な境界線による構造化 */
+  background: var(--bg-default);
+  border: 1px solid var(--border-default);
+}
+
+@supports (backdrop-filter: blur(12px)) {
+  .glass-panel {
+    /* Enhanced: 背後のコンテキストを感じさせる透過性 */
+    background: oklch(from var(--bg-default) l c h / 0.85);
+    backdrop-filter: blur(var(--blur-md));
+    -webkit-backdrop-filter: blur(var(--blur-md));
+
+    /* Edge Highlight: 1pxの光の反射を表現 */
+    box-shadow:
+      inset 0 1px 0 0 oklch(100% 0 0 / 0.05),
+      inset 0 0 0 1px oklch(100% 0 0 / 0.03);
+  }
+}
+
+/* Dark Mode時の調整 */
+@media (prefers-color-scheme: dark) {
+  @supports (backdrop-filter: blur(12px)) {
+    .glass-panel {
+      box-shadow:
+        inset 0 1px 0 0 oklch(100% 0 0 / 0.08),
+        inset 0 0 0 1px oklch(100% 0 0 / 0.05);
+    }
+  }
+}
+
+/* Skeleton UI */
+.skeleton {
+  background: var(--skeleton-bg);
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--skeleton-shimmer),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+  }
+}
+
+/* ===========================================================================
+ * Layout System
+ * =========================================================================== */
+
+/* Container */
+.container {
+  width: 100%;
+  max-width: var(--bp-xl);
+  margin-inline: auto;
+  padding-inline: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  /* --bp-md */
+  .container {
+    padding-inline: var(--space-8);
+  }
+}
+
+/* Reading Container */
+.container-reading {
+  max-width: var(--width-reading);
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  /* --bp-md */
+  .container-reading {
+    padding-inline: var(--space-8);
+  }
+}
+
+/* ===========================================================================
+ * Application Shell
+ * =========================================================================== */
+
+.app-shell {
+  display: grid;
+  grid-template-columns:
+    var(--sidebar-width)
+    minmax(0, 1fr)
+    var(--aside-width);
+  grid-template-rows: var(--header-height) 1fr;
+  min-height: 100vh;
+}
+
+/* Mobile/Tablet: シングルカラム */
+@media (max-width: 1279px) {
+  /* --bp-xl */
+  .app-shell {
+    grid-template-columns: 100%;
+  }
+
+  .aside-toc {
+    display: none;
+  }
+}
+
+/* Sidebar & TOC: Sticky配置と内部スクロール */
+.sidebar-nav,
+.aside-toc {
+  position: sticky;
+  top: var(--header-height);
+  max-height: calc(100vh - var(--header-height));
+  overflow-y: auto;
+  /* 親へのスクロール連鎖防止 */
+  overscroll-behavior: contain;
+}
+
+/* Main Content: 読むための物理的制約 */
+.main-content {
+  width: 100%;
+  max-width: var(--width-reading);
+  margin-inline: auto;
+}
+
+/* ===========================================================================
+ * Disabled State (グローバル)
+ * =========================================================================== */
+
+button:disabled,
+input:disabled,
+[aria-disabled='true'] {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Forced Colors Modeでの対応 */
+@media (forced-colors: active) {
+  button:disabled,
+  [aria-disabled='true'] {
+    opacity: 1;
+    color: GrayText;
+  }
+
+  /* ボーダーレスなデザインでも境界線を明確化 */
+  .card,
+  .button {
+    border: var(--border-width) solid CanvasText;
+  }
+}
+
+/* ===========================================================================
+ * Print Styles
+ * =========================================================================== */
+
+@media print {
+  /* レイアウトのリセット */
+  body {
+    background: white;
+    color: black;
+    font-size: 12pt;
+    line-height: 1.5;
+  }
+
+  /* ナビゲーション・UIコントロールの非表示 */
+  header,
+  nav,
+  aside,
+  footer,
+  .sidebar,
+  .header,
+  .toc,
+  .ui-button,
+  .ui-search-trigger,
+  .ui-dropdown {
+    display: none !important;
+  }
+
+  /* コンテンツ幅のリセット */
+  main,
+  .prose,
+  .container {
+    max-width: 100% !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* 装飾の除去 */
+  * {
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* 境界線は構造を示すため残す */
+  table,
+  th,
+  td,
+  blockquote,
+  pre {
+    border-color: #000 !important;
+  }
+
+  /* リンクの処理（グローバル） */
+  a {
+    color: #000;
+    text-decoration: underline;
+  }
+
+  /* タイポグラフィの最適化 */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  h1 {
+    font-size: 24pt;
+    margin-top: 0;
+  }
+  h2 {
+    font-size: 18pt;
+  }
+  h3 {
+    font-size: 14pt;
+  }
+  h4 {
+    font-size: 12pt;
+    font-weight: 700;
+  }
+
+  p,
+  li {
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* コードブロックとテーブル */
+  pre,
+  code,
+  blockquote,
+  table {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  pre {
+    border: 1px solid #ccc;
+    padding: 8pt;
+    font-size: 9pt;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  code {
+    background: #f5f5f5 !important;
+    padding: 2pt 4pt;
+    border: 1px solid #ddd;
+    font-size: 10pt;
+  }
+
+  /* 画像とメディア */
+  img {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* 動画や埋め込みコンテンツは非表示 */
+  video,
+  iframe,
+  embed,
+  object {
+    display: none;
+  }
+
+  /* ページ設定 */
+  @page {
+    margin: 2cm;
+  }
+}
+
+/* ===========================================================================
+ * Dark Mode - Media Brightness Adjustment
+ * =========================================================================== */
+
+@media (prefers-color-scheme: dark) {
+  img,
+  video {
+    /* 画像・動画の眩しさを抑える */
+    filter: brightness(var(--brightness-dimmed));
+  }
 }

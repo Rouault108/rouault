@@ -1,722 +1,582 @@
-/* =========================================================================
- * Rouault Design System - CSS Tokens
- * ========================================================================= */
+/* ===========================================================================
+ * Rouault Design System - Design Tokens
+ * 
+ * このファイルは index.md で定義された全てのデザイントークンを含みます。
+ * Primitive Tokens (基礎値) と Semantic Tokens (意味論的トークン) を定義します。
+ * 
+ * @see docs/design-system/index.md
+ * =========================================================================== */
 
 :root {
-  /* -----------------------------------------------------------------------
-   * カラーシステム - ライトモード
-   * ----------------------------------------------------------------------- */
-  
-  /* 基本色（Background & Foreground） */
-  --color-background: #ffffff;
-  --color-background-subtle: #f9fafb;
-  --color-foreground: #111827;
-  --color-foreground-muted: #6b7280;
-  
-  /* HSL値（カンマなし・単位なし） */
-  --color-primary-hue: 220;
-  --color-primary-sat: 90%;
-  --color-primary-lightness: 55%;
+  /* =========================================================================
+   * Primitive Tokens - Chroma (彩度)
+   * ========================================================================= */
+  --chroma-neutral: 0.01;
+  --chroma-subtle: 0.04;
+  --chroma-ui: 0.12;
+  --chroma-high: 0.2;
 
-  /* セカンダリー（Neutral/Grayish Blue） */
-  --color-secondary-hue: 220;
-  --color-secondary-sat: 14%;
-  --color-secondary-lightness: 45%;
+  /* =========================================================================
+   * Primitive Tokens - Hue (色相)
+   * ========================================================================= */
+  --hue-primary: 250;
+  --hue-base: 250;
 
-  /* セマンティックカラー（HSL Components） */
-  
-  /* Success (Deep Emerald) */
-  --color-success-hue: 142;
-  --color-success-sat: 72%;
-  --color-success-lightness: 29%; 
+  /* =========================================================================
+   * Primitive Tokens - Fixed Colors
+   * ========================================================================= */
+  --white: oklch(100% 0 0);
+  --black: oklch(0% 0 0);
+  --border-transparent: oklch(0% 0 0 / 0);
 
-  /* Warning (Amber/Orange) */
-  --color-warning-hue: 35;
-  --color-warning-sat: 90%;
-  --color-warning-lightness: 37%;
+  /* =========================================================================
+   * Primitive Tokens - Delta Corrections
+   * ========================================================================= */
+  --delta-l: 0%;
+  --delta-l-literature: 5%; /* 黄色系の明度補正 */
 
-  /* Error (Red) */
-  --color-error-hue: 0;
-  --color-error-sat: 72%;
-  --color-error-lightness: 51%;
+  /* =========================================================================
+   * Primitive Tokens - Opacity Modifiers
+   * ========================================================================= */
+  --opacity-link-subtle: 0.4;
+  --opacity-link: 0.6;
+  --opacity-link-touch: 0.75;
+  --opacity-scrim: 0.6;
+  --opacity-disabled: 0.5;
 
-  /* Important (Violet) */
-  --color-important-hue: 262;
-  --color-important-sat: 83%;
-  --color-important-lightness: 58%;
+  /* =========================================================================
+   * Primitive Tokens - Effects & Filters
+   * ========================================================================= */
+  --brightness-dimmed: 0.85;
+  --blur-sm: 2px;
+  --blur-md: 12px;
+  --blur-lg: 24px;
 
-  --bg-rgb: 255, 255, 255;
-  --fg-rgb: 17, 24, 39;
-  --primary-rgb: 59, 130, 246;
-  --color-primary: #3b82f6;
-  --color-primary-hover: #2563eb;
-  
-  /* アクセントカラー */
-  --color-accent: #8b5cf6;
-  
-  /* ボーダー */
-  --color-border: #e5e7eb;
-  --color-border-hover: #d1d5db;
-  
-  /* セマンティックカラー（状態色 - Light） */
-  --color-success: #16a34a;
-  --color-success-bg: #dcfce7;
-  --color-success-text: #166534;
-  --color-warning: #ca8a04;
-  --color-warning-bg: #fef9c3;
-  --color-warning-text: #92400e;
-  --color-error: #dc2626;
-  --color-error-bg: #fee2e2;
-  --color-error-text: #991b1b;
-  --color-info: #2563eb;
-  --color-info-bg: #dbeafe;
-  --color-info-text: #1e40af;
-  --color-important: #9333ea;
-  --color-important-bg: #f3e8ff;
-  --color-important-text: #6b21a8;
-  
-  /* Diff背景色 */
-  --color-diff-add-bg: rgba(34, 197, 94, 0.1);
-  --color-diff-remove-bg: rgba(239, 68, 68, 0.1);
+  /* =========================================================================
+   * Semantic Tokens - Primary (Light Mode)
+   * ========================================================================= */
+  --primary: oklch(55% var(--chroma-high) var(--hue-primary));
+  --primary-hover: oklch(50% var(--chroma-high) var(--hue-primary));
+  --on-primary: var(--white);
 
-  /* プライマリ背景色（サーフェス用の控えめな色） */
-  --color-primary-bg: hsl(var(--color-primary-hue), 30%, 96%);
-  /* プライマリ背景上のテキスト色 */
-  --color-primary-text: #1e40af;
+  /* =========================================================================
+   * Semantic Tokens - State Colors (Light Mode)
+   * ========================================================================= */
+  --danger: oklch(55% var(--chroma-high) 25);
+  --on-danger: var(--white);
+  --success: oklch(55% 0.18 145);
+  --on-success: var(--white);
+  --warning: oklch(75% 0.16 85);
+  --on-warning: oklch(20% 0.05 85);
 
-  /* Disabled状態 */
-  --color-disabled-bg: #f3f4f6;
-  --color-disabled-text: #9ca3af;
-  --color-disabled-border: #d1d5db;
-  
-  /* アルファチャネル付きカラー（フォーカスリング用） */
-  --color-primary-alpha-10: rgba(59, 130, 246, 0.1);
-  --color-primary-alpha-20: rgba(59, 130, 246, 0.2);
-  --color-error-alpha-10: rgba(220, 38, 38, 0.1);
-  --color-error-alpha-20: rgba(220, 38, 38, 0.2);
-  
-  /* グラデーション */
-  --gradient-hero: linear-gradient(135deg, var(--color-primary), var(--color-accent));
-  --gradient-text: linear-gradient(90deg, var(--color-primary), var(--color-accent));
-  --glow-primary: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.08), transparent 70%);
+  /* =========================================================================
+   * Semantic Tokens - Background (Light Mode)
+   * ========================================================================= */
+  --bg-default: oklch(98% 0.01 var(--hue-base));
+  --bg-surface-1: var(--bg-default);
+  --bg-surface-2: oklch(100% 0 0);
+  --bg-surface-3: oklch(100% 0 0);
 
-  /* -----------------------------------------------------------------------
-   * カテゴリタグ用カラー
-   * ----------------------------------------------------------------------- */
-  --tag-music: #8b5cf6;       /* Violet */
-  --tag-literature: #d97706;  /* Amber */
-  --tag-art: #ec4899;         /* Pink */
-  --tag-cs: #0ea5e9;          /* Sky */
-  --tag-economics: #10b981;   /* Emerald */
-  --tag-sociology: #14b8a6;   /* Teal */
-  --tag-politics: #ef4444;    /* Red */
-  --tag-law: #475569;         /* Slate */
-  --tag-math: #6366f1;        /* Indigo */
-  --tag-default: #6b7280;     /* Gray */
-  
-  /* -----------------------------------------------------------------------
-   * タイポグラフィ
-   * ----------------------------------------------------------------------- */
-  
-  /* フォントファミリー
-   * 
-   * 【設計意図】
-   * - Noto Sans JP を最優先: 日本語主体のコンテンツに最適化
-   * - Variable Font 採用: ウェイト調整の柔軟性とファイルサイズの最適化
-   * - システムフォントフォールバック: 和文対応を考慮した順序
-   * 
-   * 【和欧混植の戦略】
-   * - Noto Sans JP は欧文グリフも含むため、和欧統一感が確保される
-   * - Inter は含めない（重複とフォント切替コストを回避）
-   * - フォールバックは日本語対応のシステムフォントを優先
-   */
-  --font-sans: 
-    'Noto Sans JP Variable',
-    'Noto Sans JP',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Hiragino Sans',            /* macOS 日本語 */
-    'Hiragino Kaku Gothic ProN',
-    'Yu Gothic UI',             /* Windows 日本語 */
-    'Segoe UI',
-    'Meiryo',
-    sans-serif;
-    
-  /* 等幅フォント（コードブロック、ターミナル用）*/
-  --font-mono: 
-    'JetBrains Mono', 
-    'Fira Code',
-    'Consolas',
-    'Liberation Mono',
-    'Courier New',
-    monospace;
-  
-  /* フォントサイズ */
-  --text-2xs: 0.625rem;  /* 10px */
-  --text-xs: 0.75rem;    /* 12px */
-  --text-sm: 0.8125rem;  /* 13px */
-  --text-base: 0.875rem; /* 14px (Default) */
-  --text-lg: 1rem;       /* 16px */
-  --text-xl: 1.125rem;   /* 18px */
-  --text-2xl: 1.5rem;    /* 24px */
-  --text-3xl: 1.875rem;  /* 30px */
-  --text-4xl: 2.25rem;   /* 36px */
-  --text-5xl: 3rem;      /* 48px */
-  
-  /* フォントウェイト */
+  /* =========================================================================
+   * Semantic Tokens - Fill (Light Mode)
+   * ========================================================================= */
+  --bg-fill-muted: oklch(96% 0.01 var(--hue-base));
+  --bg-fill-neutral: oklch(from var(--fg-default) l c h / 0.12);
+
+  /* =========================================================================
+   * Semantic Tokens - Interaction (Light Mode)
+   * ========================================================================= */
+  --bg-hover: oklch(from var(--fg-default) l c h / 0.05);
+  --bg-active: oklch(from var(--primary) l c h / 0.08);
+  --bg-surface-active: var(--bg-active);
+  --focus-ring-color-subtle: oklch(65% 0.12 var(--hue-primary));
+
+  --bg-danger-subtle: oklch(96% 0.03 25);
+  --bg-warning-subtle: oklch(96% 0.04 85);
+  --bg-highlight-subtle: oklch(96% 0.04 65);
+  --bg-success-subtle: oklch(96% 0.04 145);
+  --bg-tip-subtle: oklch(96% 0.04 var(--hue-primary));
+  --bg-note-subtle: oklch(96% 0.01 var(--hue-base));
+
+  /* =========================================================================
+   * Semantic Tokens - Foreground (Light Mode)
+   * ========================================================================= */
+  --fg-default: oklch(20% 0.03 var(--hue-base));
+  --fg-muted: oklch(45% 0.02 var(--hue-base));
+  --fg-subtle: oklch(60% 0.01 var(--hue-base));
+  --fg-on-primary: var(--on-primary);
+
+  /* =========================================================================
+   * Semantic Tokens - Foreground Semantic (Light Mode)
+   * ========================================================================= */
+  --fg-warning: oklch(55% 0.16 85);
+  --fg-success: var(--success);
+  --fg-danger: var(--danger);
+  --fg-info: var(--primary);
+
+  /* =========================================================================
+   * Semantic Tokens - Link Decoration Colors (Light Mode)
+   * ========================================================================= */
+  --link-decoration-color: oklch(from var(--primary) l c h / var(--opacity-link));
+  --link-decoration-color-touch: oklch(from var(--primary) l c h / var(--opacity-link-touch));
+
+  /* =========================================================================
+   * Semantic Tokens - Border (Light Mode)
+   * ========================================================================= */
+  --border-default: oklch(20% 0.03 var(--hue-base) / 0.12);
+  --border-muted: oklch(20% 0.03 var(--hue-base) / 0.06);
+  --border-ghost: oklch(20% 0.03 var(--hue-base) / 0.04);
+  --border-danger: oklch(72% 0.15 25);
+  --border-on-inverted: oklch(from var(--bg-default) l c h / 0.2);
+
+  /* =========================================================================
+   * Semantic Tokens - Focus Ring
+   * ========================================================================= */
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+  --focus-ring-color: var(--primary);
+
+  /* =========================================================================
+   * Primitive Tokens - Shadows (Light Mode)
+   * ========================================================================= */
+  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px oklch(0% 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px oklch(0% 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px oklch(0% 0 0 / 0.1);
+  --shadow-glow: 0 0 8px oklch(55% 0.22 var(--hue-primary) / 0.6);
+
+  /* =========================================================================
+   * Semantic Tokens - Elevation (Light Mode)
+   * ========================================================================= */
+  --elevation-sm: var(--shadow-sm);
+  --elevation-md: var(--shadow-md);
+  --elevation-lg: var(--shadow-lg);
+  --elevation-xl: var(--shadow-xl);
+  --elevation-glow: var(--shadow-glow);
+
+  /* =========================================================================
+   * RGB Fallback (Light Mode)
+   * backdrop-filter 等で rgba() が必要な場合の近似値
+   * ========================================================================= */
+  --bg-default-rgb: 250, 250, 251;
+  --bg-surface-2-rgb: 255, 255, 255;
+
+  /* =========================================================================
+   * Typography - Font Family
+   * ========================================================================= */
+  --font-sans: 'Noto Sans JP Variable', 'Noto Sans JP', -apple-system,
+    BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN',
+    'Yu Gothic UI', 'Segoe UI', 'Meiryo', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Liberation Mono',
+    'Courier New', monospace;
+  --font-serif: 'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho',
+    'YuMincho', serif;
+
+  /* =========================================================================
+   * Typography - Font Weight
+   * ========================================================================= */
   --font-normal: 400;
   --font-medium: 500;
   --font-semibold: 600;
   --font-bold: 700;
-  
-  /* 行送り（Line Height） */
-  --line-height-none: 1;        /* アイコン、バッジ、単行要素 */
-  --line-height-tight: 1.25;    /* 見出し、UI要素（高密度） */
-  --line-height-snug: 1.375;    /* 小見出し、リード文 */
-  --line-height-normal: 1.5;    /* 本文（デフォルト） */
-  --line-height-relaxed: 1.6;   /* 読みやすさ重視の本文、バナー */
-  --line-height-loose: 2;       /* 詩、引用、特殊レイアウト */
-  --line-height-5xl: 3.6rem;    /* 特大見出し用 */
-  
-  /* 字間（Tracking / Letter Spacing） */
-  --tracking-tighter: -0.05em;  /* 特大見出し、密度重視 */
-  --tracking-tight: -0.025em;   /* 見出し用 (H1-H3) - 知的な引き締め */
-  --tracking-normal: 0em;       /* 本文用 */
-  --tracking-wide: 0.025em;     /* 小さなUIテキスト */
-  --tracking-wider: 0.05em;     /* 大文字（ALL CAPS）ラベル */
-  --tracking-widest: 0.1em;     /* 装飾的な極小テキスト */
-  
-  /* アイコンサイズ */
-  --icon-sm: 16px;
+
+  /* =========================================================================
+   * Typography - Font Size
+   * ========================================================================= */
+  --text-2xs: 0.6875rem; /* 11px */
+  --text-xs: 0.75rem; /* 12px */
+  --text-sm: 0.8125rem; /* 13px */
+  --text-base: 0.875rem; /* 14px */
+  --text-lg: 1rem; /* 16px */
+  --text-xl: 1.125rem; /* 18px */
+  --text-2xl: 1.5rem; /* 24px */
+  --text-3xl: 1.875rem; /* 30px */
+  --text-4xl: 2.25rem; /* 36px */
+  --text-5xl: 3rem; /* 48px */
+
+  /* =========================================================================
+   * Typography - Tracking (Letter Spacing)
+   * ========================================================================= */
+  --tracking-tighter: -0.05em;
+  --tracking-tight: -0.025em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.025em;
+  --tracking-wider: 0.05em;
+
+  /* =========================================================================
+   * Typography - Line Height
+   * ========================================================================= */
+  --line-height-none: 1;
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* =========================================================================
+   * Typography - Reading Width
+   * ========================================================================= */
+  --width-reading: 65ch;
+  --width-reading-fallback: 42rem; /* 672px */
+
+  /* =========================================================================
+   * Icons
+   * ========================================================================= */
+  --icon-xs: 12px;
+  --icon-sm: 14px;
+  --icon-base: 16px;
   --icon-md: 20px;
   --icon-lg: 24px;
   --icon-xl: 32px;
-  
-  /* ボタンサイズ */
-  --button-size-sm: 28px;
-  --button-size-md: 36px;
-  --button-size-lg: 44px;
-  
-  /* -----------------------------------------------------------------------
-   * スペーシング（4px 基準）
-   * ----------------------------------------------------------------------- */
-  
-  --space-none: 0;
-  --space-1: 0.25rem;  /* 4px */
-  --space-2: 0.5rem;   /* 8px */
-  --space-3: 0.75rem;  /* 12px */
-  --space-4: 1rem;     /* 16px */
-  --space-5: 1.25rem;  /* 20px */
-  --space-6: 1.5rem;   /* 24px */
-  --space-8: 2rem;     /* 32px */
-  --space-10: 2.5rem;  /* 40px */
-  --space-12: 3rem;    /* 48px */
-  --space-16: 4rem;    /* 64px */
-  --space-20: 5rem;    /* 80px */
-  
-  /* -----------------------------------------------------------------------
-   * 角丸（Border Radius）
-   * ----------------------------------------------------------------------- */
-  
-  --radius-sm: 0.25rem;   /* 4px */
-  --radius-md: 0.375rem;  /* 6px */
-  --radius-lg: 0.5rem;    /* 8px */
-  --radius-xl: 0.75rem;   /* 12px */
-  --radius-2xl: 1rem;     /* 16px */
+
+  /* =========================================================================
+   * UI Control Dimensions
+   * ========================================================================= */
+  --control-height-2xs: 16px;
+  --control-height-xs: 20px;
+  --control-height-sm: 24px;
+  --control-height-md: 32px;
+  --control-height-lg: 40px;
+  --control-min-touch: 44px;
+
+  /* =========================================================================
+   * Spacing
+   * ========================================================================= */
+  --space-1: 0.25rem; /* 4px */
+  --space-2: 0.5rem; /* 8px */
+  --space-3: 0.75rem; /* 12px */
+  --space-4: 1rem; /* 16px */
+  --space-6: 1.5rem; /* 24px */
+  --space-8: 2rem; /* 32px */
+  --space-12: 3rem; /* 48px */
+  --space-16: 4rem; /* 64px */
+  --space-20: 5rem; /* 80px */
+
+  /* =========================================================================
+   * Negative Spacing
+   * ========================================================================= */
+  --space-n4: calc(-1 * var(--space-4));
+  --space-n8: calc(-1 * var(--space-8));
+
+  /* =========================================================================
+   * Border - Width
+   * ========================================================================= */
+  --border-width: 1px;
+  --border-width-thick: 2px;
+
+  /* =========================================================================
+   * Border - Semantic Borders
+   * ========================================================================= */
+  --border-subtle: var(--border-width) solid var(--border-default);
+  --border-style-ghost: var(--border-width) solid var(--border-ghost);
+
+  /* =========================================================================
+   * Border Radius
+   * ========================================================================= */
+  --radius-sm: 0.25rem; /* 4px */
+  --radius-md: 0.375rem; /* 6px */
+  --radius-xl: 0.75rem; /* 12px */
   --radius-full: 9999px;
-  
-  /* -----------------------------------------------------------------------
-   * シャドウ
-   * ----------------------------------------------------------------------- */
-  
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  --shadow-glow: 0 0 40px rgba(59, 130, 246, 0.15); /* 控えめな調整 */
-  
-  /* モーダルオーバーレイ（Light） */
-  --overlay-bg: rgba(0, 0, 0, 0.5);
-  
-  /* -----------------------------------------------------------------------
-   * モーション（アニメーション）
-   * ----------------------------------------------------------------------- */
-  
-  /* 持続時間 */
+
+  /* =========================================================================
+   * Scrollbar
+   * ========================================================================= */
+  --scrollbar-width: 12px;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: var(--fg-subtle);
+  --scrollbar-thumb-hover: var(--fg-muted);
+
+  /* =========================================================================
+   * Motion - Duration
+   * ========================================================================= */
   --duration-instant: 0ms;
-  --duration-fast: 100ms;
-  --duration-normal: 200ms;
-  --duration-slow: 300ms;
-  --duration-slower: 500ms;
-  
-  /* -----------------------------------------------------------------------
-   * レイアウト（Dimensions）
-   * ----------------------------------------------------------------------- */
-  --header-height: 48px;
-  --sidebar-width: 240px;
-  --toc-width: 200px;
-  --content-max-width: 720px;
-  
-  /* Prose Width（可読長） */
-  --prose-width: 65ch;             /* Standard optimal reading length */
-  --prose-width-narrow: 45ch;      /* Narrow columns / sidebars */
-  --prose-width-wide: 80ch;        /* Documentation / wide tables */
+  --duration-fast: 70ms;
+  --duration-normal: 150ms;
+  --duration-slow: 200ms;
+  --duration-slower: 300ms;
 
-  /* -----------------------------------------------------------------------
-   * インタラクション装飾（Interaction Styles）
-   * ----------------------------------------------------------------------- */
-  
-  /* リンク装飾 */
-  --link-decoration-thickness: 1px;
-  --link-underline-offset: 2px;
-  --link-decoration-hover-thickness: 2px;
-  
-  /* フォーカスリング設計 */
-  --focus-ring-width: 2px;
-  --focus-ring-offset: 2px;
-  --focus-ring-opacity: 0.5;
-  --focus-ring-color: rgba(59, 130, 246, 0.5); /* Blue-500 with 50% opacity */
-  
-  /* -----------------------------------------------------------------------
-   * サーフェス & テクスチャ
-   * ----------------------------------------------------------------------- */
-  --glass-panel-bg: rgba(var(--bg-rgb), 0.8);
-  --glass-panel-filter: blur(12px);
-  --border-transparent: rgba(229, 231, 235, 0.5); /* #e5e7eb base */
-  
-  /* 汎用インタラクション背景色（Light） */
-  --color-surface-hover: rgba(0, 0, 0, 0.04);
-  --color-surface-active: rgba(0, 0, 0, 0.08);
-  --color-surface-selected: rgba(59, 130, 246, 0.08); /* Primary alpha */
-
-  /* -----------------------------------------------------------------------
-   * 質感・インタラクション（Micro-Interactions）
-   * ----------------------------------------------------------------------- */
-
-  /* 不透明度（Opacity） */
-  --opacity-0: 0;
-  --opacity-5: 0.05;
-  --opacity-10: 0.1;
-  --opacity-20: 0.2;
-  --opacity-30: 0.3;      /* Icon subtle */
-  --opacity-40: 0.4;
-  --opacity-50: 0.5;      /* Disabled */
-  --opacity-60: 0.6;
-  --opacity-70: 0.7;
-  --opacity-80: 0.8;      /* Hover effect base */
-  --opacity-90: 0.9;
-  --opacity-100: 1;
-
-  /* ぼかし強度（Blur） */
-  --blur-none: 0;
-  --blur-sm: 4px;         /* 控えめなフロスト */
-  --blur-md: 8px;         /* 標準的なグラス */
-  --blur-lg: 12px;        /* 重厚なグラス（オーバーレイ） */
-  --blur-xl: 16px;        /* 背景の拡散 */
-  --blur-2xl: 40px;       /* 抽象的なグラデーション */
-
-  /* スケール（Interaction Scale） */
-  --scale-active: 0.96;   /* ボタン押下 */
-  --scale-overlay: 0.95;  /* モーダル表示開始 */
-  --scale-subtle: 0.98;   /* カード押下 */
-
-  /* ボーダー幅（Border Width） */
-  --border-width-1: 1px;  /* 標準のボーダー */
-  --border-width-2: 2px;  /* フォーカスリング、アクティブ状態 */
-  --border-width-3: 3px;  /* 強調フォーカス */
-
-  /* イージング */
+  /* =========================================================================
+   * Motion - Easing
+   * ========================================================================= */
   --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
   --ease-in: cubic-bezier(0.32, 0, 0.67, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  
-  /* デフォルト設定 */
-  --motion-duration: var(--duration-normal);
-  --motion-easing: var(--ease-out);
-  
-  /* -----------------------------------------------------------------------
-   * レイヤー構造（Z-index Scale）
-   * ----------------------------------------------------------------------- */
-  
-  --z-negative: -1;
-  --z-base: 0;
-  --z-sticky: 100;
-  --z-dropdown: 200;
-  --z-overlay: 300;
-  --z-modal: 400;
-  --z-toast: 500;
-  --z-critical: 900;
-  
-  /* -----------------------------------------------------------------------
-   * レスポンシブ（Breakpoints）
-   * ----------------------------------------------------------------------- */
-  
+  --ease-spring: linear(
+    0,
+    0.009,
+    0.035 2.1%,
+    0.141 4.4%,
+    0.723 12.9%,
+    0.938 16.7%,
+    1.017,
+    1.077,
+    1.121,
+    1.149 24.3%,
+    1.159,
+    1.163,
+    1.161,
+    1.154 29.9%,
+    1.129 32.8%,
+    1.051 39.6%,
+    1.017 43.1%,
+    0.991,
+    0.977 51%,
+    0.974 53.8%,
+    0.975 57.1%,
+    0.997 69.8%,
+    1.003 76.9%,
+    1.004 83.8%,
+    1
+  );
+
+  /* =========================================================================
+   * Motion - Scale
+   * ========================================================================= */
+  --scale-pressed: 0.96;
+  --scale-enter: 0.98;
+  --scale-hover-sm: 1.02;
+  --scale-hover-lg: 1.1;
+  --scale-dragging: 1.15;
+
+  /* =========================================================================
+   * Layout Dimensions
+   * ========================================================================= */
+  --header-height: 48px;
+  --sidebar-width: 240px;
+  --aside-width: 240px;
+
+  /* =========================================================================
+   * Breakpoints
+   * ========================================================================= */
   --bp-sm: 640px;
   --bp-md: 768px;
   --bp-lg: 1024px;
   --bp-xl: 1280px;
   --bp-2xl: 1536px;
-  
-  /* -----------------------------------------------------------------------
-   * i18n（多言語対応）- テキスト定義
-   * ----------------------------------------------------------------------- */
-  
-  /* 必須マーカー（日本語） */
-  --text-required-marker: ' 必須';
 
-  /* -----------------------------------------------------------------------
-   * コンポーネントトークン: Button
-   * コンポーネント側での複雑な計算やメディアクエリを避けるための定義
-   * ----------------------------------------------------------------------- */
-  
-  /* Primary (Default) */
-  --btn-primary-bg: hsl(var(--color-primary-hue) var(--color-primary-sat) var(--color-primary-lightness));
-  --btn-primary-bg-hover: hsl(var(--color-primary-hue) var(--color-primary-sat) calc(var(--color-primary-lightness) - 5%));
-  --btn-primary-bg-active: hsl(var(--color-primary-hue) var(--color-primary-sat) calc(var(--color-primary-lightness) - 10%));
-  --btn-primary-text: #ffffff;
-  --btn-primary-border: transparent;
-  
-  /* Secondary */
-  --btn-secondary-bg: hsl(var(--color-secondary-hue) var(--color-secondary-sat) var(--color-secondary-lightness));
-  --btn-secondary-bg-hover: hsl(var(--color-secondary-hue) var(--color-secondary-sat) 40%);
-  --btn-secondary-bg-active: hsl(var(--color-secondary-hue) var(--color-secondary-sat) 35%);
-  --btn-secondary-text: #ffffff;
-  --btn-secondary-border: transparent;
-  --btn-secondary-outline: hsl(var(--color-secondary-hue) var(--color-secondary-sat) 60%);
+  /* =========================================================================
+   * Z-index Scale
+   * ========================================================================= */
+  --z-negative: -1;
+  --z-base: 0;
+  --z-fixed: 100;
+  --z-backdrop: 200;
+  --z-modal: 300;
+  --z-popover: 400;
+  --z-toast: 500;
+  --z-max: 1000;
 
-  /* Outline */
-  --btn-outline-bg: transparent;
-  --btn-outline-bg-hover: hsla(var(--color-primary-hue), var(--color-primary-sat), var(--color-primary-lightness), 0.1);
-  --btn-outline-bg-active: hsla(var(--color-primary-hue), var(--color-primary-sat), var(--color-primary-lightness), 0.2);
-  --btn-outline-text: hsl(var(--color-primary-hue), var(--color-primary-sat), var(--color-primary-lightness));
-  --btn-outline-border: hsl(var(--color-primary-hue), var(--color-primary-sat), var(--color-primary-lightness));
+  /* =========================================================================
+   * Skeleton UI
+   * ========================================================================= */
+  --skeleton-bg: var(--bg-fill-neutral);
+  --skeleton-shimmer: oklch(from var(--bg-fill-neutral) calc(l + 5%) c h);
 
-  /* Ghost */
-  --btn-ghost-bg: transparent;
-  --btn-ghost-bg-hover: var(--color-surface-hover);
-  --btn-ghost-bg-active: var(--color-surface-active);
-  --btn-ghost-text: hsl(var(--color-primary-hue), var(--color-primary-sat), var(--color-primary-lightness));
-  --btn-ghost-border: transparent;
-
-  /* Danger */
-  --btn-danger-bg: hsl(var(--color-error-hue) var(--color-error-sat) var(--color-error-lightness));
-  --btn-danger-bg-hover: hsl(var(--color-error-hue) var(--color-error-sat) calc(var(--color-error-lightness) - 5%));
-  --btn-danger-bg-active: hsl(var(--color-error-hue) var(--color-error-sat) calc(var(--color-error-lightness) - 10%));
-  --btn-danger-text: #ffffff;
-  --btn-danger-border: transparent;
-  --btn-danger-outline: hsl(var(--color-error-hue) var(--color-error-sat) calc(var(--color-error-lightness) + 10%));
-
-  /* Disabled */
-  --btn-disabled-bg: var(--color-disabled-bg);
-  --btn-disabled-text: var(--color-disabled-text);
-  --btn-disabled-border: var(--color-disabled-border);
+  /* =========================================================================
+   * Focus Animation
+   * ========================================================================= */
+  --animation-focus: adaptive-focus 200ms var(--ease-out) forwards;
 }
 
-/* ===========================================================================
- * ダークモード
- * OS設定 (prefers-color-scheme) または 明示的なクラス指定 (data-theme="dark")
- * =========================================================================== */
+/* =============================================================================
+ * Dark Mode Overrides
+ * ============================================================================= */
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    /* 基本色 */
-    --color-background: #0a0a0a;
-    --color-background-subtle: #171717;
-    --color-foreground: #ededed;
-    --color-foreground-muted: #a1a1aa;
-    
-    /* プライマリ & アクセント */
-    --color-primary: #60a5fa;
-    --color-primary-hover: #93c5fd;
-    --color-accent: #a78bfa;
-    
-    /* ボーダー */
-    --color-border: #27272a;
-    --color-border-hover: #3f3f46;
-    
-    /* Elevation Tones（高さの表現） */
-    --bg-surface-0: #0a0a0a;
-    --bg-surface-1: #171717;
-    --bg-surface-2: #262626;
-    --bg-surface-3: #404040;
+  :root {
+    /* =========================================================================
+     * Semantic Tokens - Primary (Dark Mode)
+     * ========================================================================= */
+    --primary: oklch(65% 0.12 var(--hue-primary));
+    --primary-hover: oklch(70% 0.18 var(--hue-primary));
+    --on-primary: var(--white);
 
-    /* RGB値（ダークモード） */
-    --bg-rgb: 10, 10, 10;
-    --fg-rgb: 237, 237, 237;
-    --primary-rgb: 96, 165, 250;
-    
-    /* サーフェス（ダークモード） */
-    --glass-panel-bg: rgba(10, 10, 10, 0.7);
-    --border-transparent: rgba(39, 39, 42, 0.5); /* #27272a base */
-    
-    /* セマンティックカラー（状態色 - Dark） */
-    --color-success: #22c55e;
-    --color-success-bg: #14532d;
-    --color-success-text: #86efac; /* Green 300 - ダークモード用 */
-    --color-warning: #facc15;
-    --color-warning-bg: #422006;
-    --color-warning-text: #fcd34d; /* Yellow 300 - ダークモード用 */
-    --color-error: #ef4444;
-    --color-error-bg: #450a0a;
-    --color-error-text: #fca5a5; /* Red 300 - ダークモード用 */
-  /* セマンティックカラー（状態色 - Dark） */
-    --color-success: #22c55e;
-    --color-success-bg: #14532d;
-    --color-success-text: #86efac; /* Green 300 - ダークモード用 */
-    --color-warning: #facc15;
-    --color-warning-bg: #422006;
-    --color-warning-text: #fcd34d; /* Yellow 300 - ダークモード用 */
-    --color-error: #ef4444;
-    --color-error-bg: #450a0a;
-    --color-error-text: #fca5a5; /* Red 300 - ダークモード用 */
-    --color-info: #60a5fa;
-    --color-info-bg: #172554;
-    --color-info-text: #93c5fd; /* Blue 300 - ダークモード用 */
-    --color-important: #c084fc;
-    --color-important-bg: #3b0764;
-    --color-important-text: #d8b4fe; /* Purple 300 - ダークモード用 */
-    
-    /* Diff背景色（Dark） */
-    --color-diff-add-bg: rgba(34, 197, 94, 0.15);
-    --color-diff-remove-bg: rgba(239, 68, 68, 0.15);
+    /* =========================================================================
+     * Semantic Tokens - State Colors (Dark Mode)
+     * ========================================================================= */
+    --danger: oklch(55% 0.2 25);
+    --on-danger: var(--white);
+    --success: oklch(55% 0.18 145);
+    --on-success: var(--white);
+    --warning: oklch(25% 0.16 85);
+    --on-warning: oklch(85% 0.16 85);
 
-    /* プライマリ背景色 */
-    --color-primary-bg: hsl(var(--color-primary-hue), 30%, 12%);
-    --color-primary-text: #93c5fd;
+    /* =========================================================================
+     * Semantic Tokens - Background (Dark Mode)
+     * ========================================================================= */
+    --bg-default: oklch(12% 0.02 var(--hue-base));
+    --bg-surface-1: var(--bg-default);
+    --bg-surface-2: oklch(17% 0.02 var(--hue-base));
+    --bg-surface-3: oklch(22% 0.02 var(--hue-base));
 
-    /* Disabled状態（Dark） */
-    --color-disabled-bg: #27272a;
-    --color-disabled-text: #52525b;
-    --color-disabled-border: #3f3f46;
+    /* =========================================================================
+     * Semantic Tokens - Fill (Dark Mode)
+     * ========================================================================= */
+    --bg-fill-muted: oklch(9% 0.02 var(--hue-base));
+    /* --bg-fill-neutral: oklch(from var(--fg-default) l c h / 0.12); */
+    /* 上記は Light と同じ相対色構文を使用 */
 
-    /* シャドウ（Dark - 変数上書き） */
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
-    --shadow-glow: 0 0 40px rgba(96, 165, 250, 0.12);
-    
-    /* 汎用インタラクション背景色（Dark） */
-    --color-surface-hover: rgba(255, 255, 255, 0.05);
-    --color-surface-active: rgba(255, 255, 255, 0.1);
-    --color-surface-selected: rgba(96, 165, 250, 0.15); /* Primary alpha */
+    /* =========================================================================
+     * Semantic Tokens - Interaction (Dark Mode)
+     * ========================================================================= */
+    /* --bg-hover: oklch(from var(--fg-default) l c h / 0.05); */
+    /* 上記は Light と同じ相対色構文を使用 */
+    --bg-active: oklch(from var(--primary) l c h / 0.15);
+    --bg-surface-active: var(--bg-active);
+    --focus-ring-color-subtle: oklch(53% 0.12 var(--hue-primary));
 
-    /* モーダルオーバーレイ（Dark） */
-    --overlay-bg: rgba(0, 0, 0, 0.7);
+    --bg-danger-subtle: oklch(25% 0.05 25);
+    --bg-warning-subtle: oklch(25% 0.05 85);
+    --bg-highlight-subtle: oklch(25% 0.05 65);
+    --bg-success-subtle: oklch(25% 0.05 145);
+    --bg-tip-subtle: oklch(25% 0.05 var(--hue-primary));
+    --bg-note-subtle: oklch(20% 0.02 var(--hue-base));
 
-    /* カテゴリタグ用カラー（ダークモード） */
-    --tag-music: #a78bfa;
-    --tag-literature: #fbbf24;
-    --tag-art: #f472b6;
-    --tag-cs: #38bdf8;
-    --tag-economics: #34d399;
-    --tag-sociology: #2dd4bf;
-    --tag-politics: #f87171;
-    --tag-law: #94a3b8;
-    --tag-math: #818cf8;
-    --tag-default: #9ca3af;
+    /* =========================================================================
+     * Semantic Tokens - Foreground (Dark Mode)
+     * ========================================================================= */
+    --fg-default: oklch(90% 0.01 var(--hue-base));
+    --fg-muted: oklch(65% 0.01 var(--hue-base));
+    --fg-subtle: oklch(50% 0.01 var(--hue-base));
+    --fg-on-primary: var(--on-primary);
 
-    /* コンポーネントトークン: Button (Dark) */
-    
-    /* Primary */
-    --btn-primary-text: var(--color-foreground);
+    /* =========================================================================
+     * Semantic Tokens - Foreground Semantic (Dark Mode)
+     * ========================================================================= */
+    --fg-warning: oklch(85% 0.16 85);
+    --fg-success: var(--success);
+    --fg-danger: var(--danger);
+    --fg-info: var(--primary);
 
-    /* Secondary */
-    --btn-secondary-bg: var(--bg-surface-1);
-    --btn-secondary-bg-hover: var(--bg-surface-2);
-    --btn-secondary-bg-active: var(--bg-surface-3);
-    --btn-secondary-text: var(--color-foreground);
-    --btn-secondary-border: var(--color-border);
+    /* =========================================================================
+     * Semantic Tokens - Border (Dark Mode)
+     * ========================================================================= */
+    --border-default: oklch(90% 0.01 var(--hue-base) / 0.12);
+    --border-muted: oklch(90% 0.01 var(--hue-base) / 0.06);
+    --border-ghost: oklch(90% 0.01 var(--hue-base) / 0.04);
+    --border-danger: oklch(35% 0.1 25);
 
-    /* Outline */
-    --btn-outline-bg-hover: hsla(var(--color-primary-hue), 60%, 50%, 0.15);
-    --btn-outline-bg-active: hsla(var(--color-primary-hue), 60%, 50%, 0.25);
-    --btn-outline-text: var(--color-primary);
-    --btn-outline-border: var(--color-primary);
+    /* =========================================================================
+     * Primitive Tokens - Shadows (Dark Mode)
+     * ========================================================================= */
+    --shadow-dark-sm: 0 1px 2px oklch(0% 0 0 / 0.3);
+    --shadow-dark-md: 0 4px 8px oklch(0% 0 0 / 0.4);
+    --shadow-dark-lg: 0 8px 16px oklch(0% 0 0 / 0.5);
+    --shadow-dark-glow: 0 0 12px oklch(65% 0.18 var(--hue-primary) / 0.5);
 
-    /* Ghost */
-    --btn-ghost-bg-hover: var(--bg-surface-1);
-    --btn-ghost-bg-active: var(--bg-surface-2);
-    --btn-ghost-text: var(--color-foreground);
+    /* =========================================================================
+     * Semantic Tokens - Elevation (Dark Mode)
+     * ========================================================================= */
+    --elevation-sm: var(--shadow-dark-sm);
+    --elevation-md: var(--shadow-dark-md);
+    --elevation-lg: var(--shadow-dark-lg);
+    /* --elevation-xl は Light/Dark 共通のため変更なし */
+    --elevation-glow: var(--shadow-dark-glow);
 
-    /* Disabled */
-    --btn-disabled-bg: var(--bg-surface-1);
-    --btn-disabled-text: var(--color-foreground-muted);
+    /* =========================================================================
+     * RGB Fallback (Dark Mode)
+     * ========================================================================= */
+    --bg-default-rgb: 28, 29, 33;
+    --bg-surface-2-rgb: 40, 42, 47;
   }
 }
 
-:root[data-theme="dark"],
-[data-theme="dark"] {
-  /* 基本色 */
-  --color-background: #0a0a0a;
-  --color-background-subtle: #171717;
-  --color-foreground: #ededed;
-  --color-foreground-muted: #a1a1aa;
-  
-  /* プライマリ & アクセント */
-  --color-primary: #60a5fa;
-  --color-primary-hover: #93c5fd;
-  --color-accent: #a78bfa;
-  
-  /* ボーダー */
-  --color-border: #27272a;
-  --color-border-hover: #3f3f46;
-  
-  /* Elevation Tones（高さの表現） */
-  --bg-surface-0: #0a0a0a;
-  --bg-surface-1: #171717;
-  --bg-surface-2: #262626;
-  --bg-surface-3: #404040;
-  
-  /* RGB値（ダークモード） */
-  --bg-rgb: 10, 10, 10;
-  --fg-rgb: 237, 237, 237;
-  --primary-rgb: 96, 165, 250;
-  
-  /* サーフェス（ダークモード） */
-  --glass-panel-bg: rgba(10, 10, 10, 0.7);
-  --border-transparent: rgba(39, 39, 42, 0.5);
+/* =============================================================================
+ * Forced Colors Mode (High Contrast)
+ * ============================================================================= */
 
-  /* セマンティックカラー（状態色 - Dark） */
-  --color-success: #22c55e;
-  --color-success-bg: #14532d;
-  --color-success-text: #86efac; /* Green 300 - ダークモード用 */
-  --color-warning: #facc15;
-  --color-warning-bg: #422006;
-  --color-warning-text: #fcd34d; /* Yellow 300 - ダークモード用 */
-  --color-error: #ef4444;
-  --color-error-bg: #450a0a;
-  --color-error-text: #fca5a5; /* Red 300 - ダークモード用 */
-  --color-info: #60a5fa;
-  --color-info-bg: #172554;
-  --color-info-text: #93c5fd; /* Blue 300 - ダークモード用 */
-  --color-important: #c084fc;
-  --color-important-bg: #3b0764;
-  --color-important-text: #d8b4fe; /* Purple 300 - ダークモード用 */
-  
-  /* Diff背景色（Dark） */
-  --color-diff-add-bg: rgba(34, 197, 94, 0.15);
-  --color-diff-remove-bg: rgba(239, 68, 68, 0.15);
+@media (forced-colors: active) {
+  :root {
+    /* システムカラーにマッピング */
+    --fg-default: CanvasText;
+    --bg-default: Canvas;
+    --primary: Highlight;
+    --primary-hover: Highlight;
+    --on-primary: HighlightText;
+    --border-default: CanvasText;
+    --fg-muted: GrayText;
+    --border-muted: GrayText;
+    --danger: CanvasText;
+    --on-danger: Canvas;
+    --bg-surface-2: Canvas;
+    --bg-surface-active: Highlight;
+  }
 
-  /* プライマリ背景色 */
-  --color-primary-bg: hsl(var(--color-primary-hue), 30%, 12%);
-  --color-primary-text: #93c5fd;
+  :focus-visible {
+    /* box-shadowは消失するため、実線のアウトラインを強制 */
+    outline: 3px solid CanvasText;
+    box-shadow: none;
+  }
 
-  /* Disabled状態（Dark） */
-  --color-disabled-bg: #27272a;
-  --color-disabled-text: #52525b;
-  --color-disabled-border: #3f3f46;
-
-  /* シャドウ（Dark - 変数上書き） */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
-  --shadow-glow: 0 0 40px rgba(96, 165, 250, 0.12);
-  
-  /* 汎用インタラクション背景色（Dark） */
-  --color-surface-hover: rgba(255, 255, 255, 0.05);
-  --color-surface-active: rgba(255, 255, 255, 0.1);
-  --color-surface-selected: rgba(96, 165, 250, 0.15); /* Primary alpha */
-
-  /* モーダルオーバーレイ（Dark） */
-  --overlay-bg: rgba(0, 0, 0, 0.7);
-
-  /* カテゴリタグ用カラー（ダークモード） */
-  --tag-music: #a78bfa;
-  --tag-literature: #fbbf24;
-  --tag-art: #f472b6;
-  --tag-cs: #38bdf8;
-  --tag-economics: #34d399;
-  --tag-sociology: #2dd4bf;
-  --tag-politics: #f87171;
-  --tag-law: #94a3b8;
-  --tag-math: #818cf8;
-  --tag-default: #9ca3af;
-
-  /* コンポーネントトークン: Button (Dark via data-theme) */
-  
-  /* Primary */
-  --btn-primary-text: var(--color-foreground);
-
-  /* Secondary */
-  --btn-secondary-bg: var(--bg-surface-1);
-  --btn-secondary-bg-hover: var(--bg-surface-2);
-  --btn-secondary-bg-active: var(--bg-surface-3);
-  --btn-secondary-text: var(--color-foreground);
-  --btn-secondary-border: var(--color-border);
-
-  /* Outline */
-  --btn-outline-bg-hover: hsla(var(--color-primary-hue), 60%, 50%, 0.15);
-  --btn-outline-bg-active: hsla(var(--color-primary-hue), 60%, 50%, 0.25);
-  --btn-outline-text: var(--color-primary);
-  --btn-outline-border: var(--color-primary);
-
-  /* Ghost */
-  --btn-ghost-bg-hover: var(--bg-surface-1);
-  --btn-ghost-bg-active: var(--bg-surface-2);
-  --btn-ghost-text: var(--color-foreground);
-
-  /* Disabled */
-  --btn-disabled-bg: var(--bg-surface-1);
-  --btn-disabled-text: var(--color-foreground-muted);
+  /* 選択状態を背景色だけでなく境界でも示す */
+  [aria-selected='true'],
+  .active {
+    outline: 2px solid CanvasText;
+    outline-offset: -2px;
+  }
 }
 
-/* ===========================================================================
- * モーション軽減（Accessibility）
- * =========================================================================== */
+/* =============================================================================
+ * Reduced Motion
+ * ============================================================================= */
 
 @media (prefers-reduced-motion: reduce) {
   :root {
     --motion-duration: 0ms;
     --motion-easing: linear;
   }
-  
+
+  /* すべてのアニメーションを強制停止 */
   *,
   *::before,
   *::after {
+    transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  }
+
+  /* フォーカスアニメーションは即座に最終色を適用 */
+  :focus-visible {
+    animation: none;
+    outline-color: var(--focus-ring-color);
   }
 }
 
-/* ===========================================================================
- * ハイコントラストモード (Windows High Contrast / forced-colors)
- * =========================================================================== */
+/* =============================================================================
+ * Focus Keyframes
+ * ============================================================================= */
 
-@media (forced-colors: active) {
-  :root {
-    /* システムカラーの強制 */
-    --color-background: Canvas;
-    --color-background-subtle: Canvas;
-    --color-foreground: CanvasText;
-    --color-foreground-muted: CanvasText;
-    
-    --color-border: CanvasText;
-    --color-border-hover: Highlight;
-    
-    --color-primary: Highlight;
-    --color-primary-hover: Highlight;
-    --color-primary-text: HighlightText;
-    
-    /* ボタン */
-    --btn-primary-bg: ButtonText;
-    --btn-primary-text: ButtonFace;
-    --btn-secondary-border: ButtonText;
-    --btn-outline-border: ButtonText;
-    --btn-outline-text: ButtonText;
-    
-    /* フォーカスリング */
-    --focus-ring-width: 2px;
+/* Adaptive Focus Animation: 移動中は控えめ、停止時に強調 */
+@keyframes adaptive-focus {
+  0%,
+  25% {
+    outline-color: var(--focus-ring-color-subtle);
   }
-  
-  /* box-shadowは無効化されるため、アウトラインを強制 */
-  :focus-visible {
-    outline: 3px solid CanvasText;
-    outline-offset: 2px;
-    box-shadow: none !important;
+  100% {
+    outline-color: var(--focus-ring-color);
+  }
+}
+
+/* =============================================================================
+ * Flash Animation (Tactile Feedback)
+ * ============================================================================= */
+
+@keyframes flash {
+  0% {
+    background-color: var(--bg-surface-active);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* =============================================================================
+ * Shimmer Animation (Skeleton UI)
+ * ============================================================================= */
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
   }
 }
