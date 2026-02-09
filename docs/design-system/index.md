@@ -1,5 +1,38 @@
 # Rouault デザインシステム
 
+## 目次
+
+1. [概要](#概要)
+2. [デザイン原則](#デザイン原則)
+3. [インタラクションとナビゲーション](#インタラクションとナビゲーション)
+4. [基盤 (Foundations)](#基盤-foundations)
+   - [トークン命名規則](#トークン命名規則)
+   - [カラーシステム (OKLCH)](#カラーシステム-oklch)
+     - [コントラスト比保証](#コントラスト比保証)
+   - [タイポグラフィ](#タイポグラフィ)
+   - [アイコン](#アイコン)
+   - [UIコントロールサイズ](#uiコントロールサイズ-control-dimensions)
+   - [スペーシングとリズム](#スペーシングとリズム)
+   - [形状 (Shapes)](#形状-shapes)
+     - [ボーダーシステム](#ボーダーシステム-border-system)
+     - [角丸](#角丸-border-radius)
+     - [深度表現](#深度表現-depth-system)
+     - [スクロールバー](#スクロールバー-scrollbars)
+     - [質感・テクスチャ](#質感テクスチャ-surfaces)
+   - [モーション (アニメーション)](#モーション-アニメーション)
+5. [アクセシビリティ実装基準](#アクセシビリティ実装基準-accessibility-standards)
+6. [アーキテクチャとスタイリング](#アーキテクチャとスタイリング)
+7. [レイアウトシステム](#レイアウトシステム)
+8. [UI状態パターン](#ui状態パターン)
+   - [エラーハンドリング](#エラーハンドリング)
+   - [ローディング状態](#ローディング状態)
+   - [通知システム](#通知システム)
+9. [技術実装ガイドライン](#技術実装ガイドライン)
+10. [用語集](#用語集-glossary)
+11. [参照・インスピレーション](#参照インスピレーション)
+
+---
+
 ## 概要
 
 Rouaultは、個人的なメモ（ノート）を閲覧するための専用Webアプリケーションで、「没入して読む」ことのできるデザインを目指します。
@@ -8,7 +41,46 @@ Linearのドキュメントが証明するように、最高のリーディン�
 
 Web標準とアクセシビリティへの準拠はゴールではなくスタートラインです。その強固な基盤の上で、**高い情報のS/N比（Signal-to-Noise Ratio）**を維持し、プロフェッショナルツールの機能性と、読むための「静謐（Serene）」な空間を両立します。
 
+### ドキュメントの構成
+
+本ドキュメント (`index.md`) は、Rouaultデザインシステムの**基盤（Foundations）**を定義します。
+
+- **`index.md` (本ドキュメント)**: デザイン原則、カラー、タイポグラフィ、スペーシング、モーション等の基礎トークンとグローバルなスタイリング規則
+- **`components.md`**: 個別コンポーネント（ボタン、ダイアログ、入力フォーム等）の詳細仕様
+
+すべてのコンポーネントは本ドキュメントで定義されたトークンを参照し、一貫性を保証します。
+
+### ブラウザサポート境界
+
+Rouaultは、以下のブラウザ環境を想定します：
+
+| ブラウザ | 最低バージョン | 対応機能 |
+|----------|----------------|----------|
+| **Chrome / Edge (Chromium)** | 111+ | OKLCH、Relative Color Syntax、`@layer`、View Transitions API |
+| **Safari** | 16.4+ | OKLCH、Relative Color Syntax (macOS Ventura / iOS 16.4) |
+| **Firefox** | 113+ | OKLCH、Relative Color Syntax |
+
+> **Note:** 個人用アプリケーションであるため、最新のエバーグリーンブラウザを前提とします。OKLCHやRelative Color等の先進的機能が利用できない古いブラウザでは、Fallbackとして無彩色（グレー）が適用される場合がありますが、**コンテンツの閲覧は可能**です。
+
+### 国際化・多言語対応方針
+
+Rouaultは**日本語環境に特化した個人用アプリケーション**であり、以下の対応は行いません：
+
+| 項目 | 対応状況 | 理由 |
+|------|----------|------|
+| **RTL (Right-to-Left)** | 非対応 | アラビア語・ヘブライ語等のRTL言語は想定外。`margin-inline` 等の論理プロパティは使用していますが、これはメンテナンス性向上のためであり、RTL対応を意図したものではありません。 |
+| **多言語切り替え** | 非対応 | UIテキスト、エラーメッセージ、ラベル等はすべて日本語で固定。i18nライブラリは導入しません。 |
+| **ロケール対応** | 日本語のみ | 日付・時刻フォーマット、数値表記等は日本標準（`ja-JP`）に固定。 |
+
+> **設計意図**: 個人プロジェクトとして、日本語タイポグラフィ（Noto Sans JP、和文メトリクス等）に最適化することで、複雑性を排除し、保守性と品質を最大化します。
+
 ### デザイン原則
+
+以下の4つの原則は、**記載順に優先度を持ちます**。すなわち、原則間で衝突が生じた場合、上位の原則が優先されます。
+
+**優先順位: 4 (Universal Clarity) → 1 (Structure) → 2 (Flow State) → 3 (Tactility)**
+
+> **最優先事項:** アクセシビリティと明瞭さ（原則4）は、すべての美的判断、パフォーマンス、演出に優越します。
 
 1. **没入のための構造 (Structure for Immersion)**
     - UIはコンテンツの従僕である。装飾的な余白ではなく、計算されたタイポグラフィと厳密なスペーシングによって、読むリズムを創出する。ユーザーが意識せずとも、情報の階層が自然と脳に流れ込む「透明な構造」を提供する。
@@ -19,8 +91,25 @@ Web標準とアクセシビリティへの準拠はゴールではなくスタ�
 3. **デジタルの触感 (Digital Tactility)**
    - アニメーションは視覚的な装飾ではなく、操作の実感（Tactility）である。現実の物理法則（慣性や遅延）の模倣は、読書への没入を妨げるノイズとなるため排除する。思考と結果を直結させる「即応性（Snappiness）」を追求し、操作の手応えは、読書のリズムを乱さない最小限の確証（Confirmation）に留める。
 
-4. **普遍的な明瞭さ (Universal Clarity)**
+4. **普遍的な明瞭さ (Universal Clarity)** ⭐ **最優先**
    - アクセシビリティは機能要件ではなく、美学の基礎である。誰にとっても読みやすく、操作しやすく、明確であることこそが、最も美しいデザインである。
+
+### 禁止事項 (Anti-patterns)
+
+以下の手法は、Rouaultのデザイン原則に反するため**使用禁止**とします。
+
+| 禁止事項 | 理由 | 代替手段 |
+|----------|------|----------|
+| **`transition: all`** | 意図しないプロパティの遷移により、パフォーマンスとアクセシビリティに悪影響 | 明示的なプロパティリスト (`color, background-color, transform` 等) |
+| **ハードコードされた色・サイズ値** | デザインシステムの一貫性を破壊 | 必ずトークン (`var(--primary)` 等) を使用 |
+| **非セマンティックなHTML** | スクリーンリーダー利用者への情報伝達不全 | `<div>` ではなく `<button>`, `<nav>`, `<main>` 等を使用 |
+| **色のみによる情報伝達** | 色覚特性により識別不可 | アイコン、テキストラベル、ボーダーを併用 |
+| **12px未満のテキスト** | 視認性の物理的限界 | `--text-xs` (12px) を最小とし、必要に応じてWeight/Tracking Boost |
+| **バウンス・振動アニメーション** | フロー状態の分断、前庭障害者への悪影響 | Overdamped収束 (`--ease-spring`) |
+| **300ms超の遷移** | 思考速度との乖離、待ち時間の認知 | `--duration-slower` (300ms) を最大値とする |
+| **コントラスト比 4.5:1未満のテキスト** | WCAG AA基準違反 | コントラスト比保証表に記載の組み合わせのみ使用 |
+| **`::part()` による外部スタイリング** | コンポーネントのカプセル化を破壊 | コンポーネント内部で完結する設計 |
+| **JavaScript依存の必須コンテンツ** | Progressive Enhancementの原則違反 | SSR/SSGによる基本コンテンツ保証 |
 
 ---
 
@@ -46,6 +135,57 @@ Web標準とアクセシビリティガイドライン（WCAG）に準拠し、�
 ---
 
 ## 基盤 (Foundations)
+
+### トークン命名規則
+
+Rouaultのデザイントークンは、以下の命名規則に従います。この規則により、トークンの役割と適用箇所が明確になり、一貫性が保証されます。
+
+**命名構造**: `--[カテゴリ]-[バリアント]-[モディファイア]`
+
+| 要素 | 説明 | 例 |
+|------|------|----|
+| **カテゴリ** | トークンの種類を示すプレフィックス | `bg`, `fg`, `border`, `shadow`, `space`, `text`, `icon`, `control` |
+| **バリアント** | 用途や強度を示す識別子 | `default`, `muted`, `subtle`, `primary`, `danger`, `success`, `warning` |
+| **モディファイア** | 状態や環境を示す接尾辞（オプション） | `hover`, `active`, `dark` (Dark Mode専用) |
+
+**カテゴリ一覧**:
+
+| カテゴリ | プレフィックス | 例 |
+|----------|----------------|----|
+| Background | `--bg-*` | `--bg-default`, `--bg-surface-2`, `--bg-hover` |
+| Foreground (Text) | `--fg-*` | `--fg-default`, `--fg-muted`, `--fg-danger` |
+| Border | `--border-*` | `--border-default`, `--border-muted`, `--border-ghost` |
+| Shadow | `--shadow-*` | `--shadow-md`, `--shadow-dark-lg`, `--shadow-glow` |
+| Spacing | `--space-*` | `--space-2`, `--space-8` |
+| Typography | `--text-*`, `--font-*`, `--line-height-*`, `--tracking-*` | `--text-base`, `--font-bold`, `--line-height-relaxed` |
+| Icon | `--icon-*` | `--icon-base`, `--icon-lg` |
+| Control | `--control-*` | `--control-height-md`, `--control-min-touch` |
+| Motion | `--duration-*`, `--ease-*`, `--scale-*` | `--duration-fast`, `--ease-out`, `--scale-pressed` |
+
+**バリアント階層** (弱→強):
+
+- `ghost` / `transparent` — 最も控えめ、構造の暗示
+- `subtle` — ニュートラルで穏やか
+- `muted` — 標準より低い強度
+- `default` — 標準
+- `primary` / `danger` / `success` / `warning` — 意味論的な強調
+
+**モディファイア**:
+
+- `-hover` — ホバー状態専用
+- `-active` — アクティブ/選択状態専用
+- `-dark-*` — Dark Mode専用の値（例: `--shadow-dark-lg`）
+
+**Primitive vs Semantic**:
+
+- **Primitive Tokens** (基礎値): `--hue-primary`, `--chroma-high`, `--space-4` など、計算式の基礎となる数値。直接使用せず、Semanticトークンの定義に使用する。
+- **Semantic Tokens** (意味論トークン): `--primary`, `--bg-default`, `--border-subtle` など、役割を持つトークン。Primitiveを参照して定義される。コンポーネント実装ではこちらを使用する。
+
+**トークン分類の原則**:
+- Primitiveトークンは `:root` で一度だけ定義し、変更しない
+- Semanticトークンはテーマ（Light/Dark）やコンテキストに応じて値を変更する
+- コンポーネントスタイルでは必ずSemanticトークンを参照し、Primitiveを直接使用しない
+
 
 ### カラーシステム (OKLCH)
 
@@ -76,72 +216,117 @@ Rouaultは、色空間として **OKLCH** を採用します。これは、従�
 
 色の宣言は「役割」と「値」を分離し、OKLCHの特性を活かした計算式として定義します。
 
-**ベース設定 & 固定色**
+**ベース設定 & 固定色 (Primitive Tokens)**
 
-| トークン | 値 | 説明 |
-| :--- | :--- | :--- |
-| `--chroma-neutral` | `0.01` | 無彩色（グレー）の彩度 |
-| `--chroma-subtle` | `0.04` | 微細な彩度（Subtle UI背景用） |
-| `--chroma-ui` | `0.12` | UIカラーの彩度 |
-| `--chroma-high` | `0.20` | **強調・アクション**。Primary, Dangerなどの最も強い色。 |
-| `--focus-ring-width` | `2px` | フォーカスリングの太さ |
-| `--focus-ring-offset` | `2px` | フォーカスリングのオフセット |
-| `--focus-ring-color` | `var(--primary)` | フォーカスリングの色 |
-| `--hue-primary` | `250` | メイン色相 (Deep Indigo: 鎮静と知性) |
-| `--hue-base` | `250` | ベース色相 |
-| `--white` | `oklch(100% 0 0)` | 純白 |
-| `--black` | `oklch(0% 0 0)` | 純黒 |
-| `--border-transparent` | `oklch(0% 0 0 / 0)` | 透明 |
-
-**テーマカラー (Light / Dark)**
-
-| トークン | Light Value | Dark Value | 役割 / 説明 |
+| トークン | 値 | 分類 | 説明 |
 | :--- | :--- | :--- | :--- |
-| **Primary** | | | |
-| `--primary` | `oklch(55% var(--chroma-high) var(--hue-primary))` | `oklch(65% 0.12 var(--hue-primary))` | メインアクションカラー |
-| `--primary-hover` | `oklch(50% var(--chroma-high) var(--hue-primary))` | `oklch(70% 0.18 var(--hue-primary))` | ホバー時の強調 |
-| `--on-primary` | `var(--white)` | `var(--white)` | プライマリ上のテキスト色 |
-| **State** | | | |
-| `--danger` | `oklch(55% var(--chroma-high) 25)` | `oklch(55% 0.2 25)` | 破壊的アクション (Deep Red) |
-| `--on-danger` | `var(--white)` | `var(--white)` | 白文字 (Fill背景上の文字) |
-| `--success` | `oklch(55% 0.18 145)` | `oklch(55% 0.18 145)` | 成功・完了 (Deep Green) |
-| `--on-success` | `var(--white)` | `var(--white)` | 白文字 (Fill背景上の文字) |
-| `--warning` | `oklch(75% 0.16 85)` | `oklch(25% 0.16 85)` | 警告・注意 (Amber) |
-| `--on-warning` | `oklch(20% 0.05 85)` | `oklch(85% 0.16 85)` | Light: 黒文字 / Dark: 黄文字 (Fill背景上の文字) |
-| **Background** | | | |
-| `--bg-default` | `oklch(98% 0.01 var(--hue-base))` | `oklch(12% 0.02 var(--hue-base))` | アプリケーション背景 |
-| `--bg-surface-1` | `var(--bg-default)` | `var(--bg-default)` | Base Layer (Sidebar, 背景と同化) |
-| `--bg-surface-2` | `oklch(100% 0 0)` | `oklch(17% 0.02 var(--hue-base))` | Elevated (Card, Dropdown) |
-| `--bg-surface-3` | `oklch(100% 0 0)` | `oklch(22% 0.02 var(--hue-base))` | Highest (Modal) |
-| **Fill** | | | |
-| `--bg-fill-muted` | `oklch(96% 0.01 var(--hue-base))` | `oklch(9% 0.02 var(--hue-base))` | 入力フォーム、コードブロック背景 |
-| `--bg-fill-neutral` | `oklch(from var(--fg-default) l c h / 0.12)` | `oklch(from var(--fg-default) l c h / 0.12)` | **構造的背景**。プログレスバー、スケルトンなど。 |
-| **Interaction** | | | |
-| `--bg-hover` | `oklch(from var(--fg-default) l c h / 0.05)` | `oklch(from var(--fg-default) l c h / 0.05)` | ホバー (`from --fg-default`) |
-| `--bg-active` | `oklch(from var(--primary) l c h / 0.08)` | `oklch(from var(--primary) l c h / 0.15)` | アクティブ (`from --primary`) |
-| `--bg-surface-active`| `var(--bg-active)` | `var(--bg-active)` | リスト行選択状態 |
-| `--focus-ring-color-subtle` | `oklch(65% 0.12 var(--hue-primary))` | `oklch(53% 0.12 var(--hue-primary))` | **移動中のフォーカス**。3:1コントラスト保証。 |
-| `--bg-danger-subtle` | `oklch(96% 0.03 25)` | `oklch(25% 0.05 25)` | エラー背景 |
-| `--bg-warning-subtle` | `oklch(96% 0.04 85)` | `oklch(25% 0.05 85)` | 警告背景 |
-| `--bg-highlight-subtle` | `oklch(96% 0.04 85)` | `oklch(25% 0.05 85)` | **ハイライト・強調**。警告色（Amber）と同色相だが、意味論的に独立させる。 |
-| `--bg-success-subtle` | `oklch(96% 0.04 145)` | `oklch(25% 0.05 145)` | 成功背景 |
-| `--bg-tip-subtle` | `oklch(96% 0.04 var(--hue-primary))` | `oklch(25% 0.05 var(--hue-primary))` | Tip (Primary) 背景 |
-| `--bg-note-subtle` | `oklch(96% 0.01 var(--hue-base))` | `oklch(20% 0.02 var(--hue-base))` | Note (Default) 背景 |
-| **Foreground** | | | |
-| `--fg-default` | `oklch(20% 0.03 var(--hue-base))` | `oklch(90% 0.01 var(--hue-base))` | 本文、主要テキスト |
-| `--fg-muted` | `oklch(45% 0.02 var(--hue-base))` | `oklch(65% 0.01 var(--hue-base))` | メタデータ、アイコン |
-| `--fg-subtle` | `oklch(60% 0.01 var(--hue-base))` | `oklch(50% 0.01 var(--hue-base))` | プレースホルダー |
-| `--fg-on-primary` | `var(--on-primary)` | `var(--on-primary)` | |
-| **Foreground (Semantic)** | | | |
-| `--fg-warning` | `oklch(55% 0.16 85)` | `oklch(85% 0.16 85)` | **警告文字・アイコン**。（白/Subtle背景用） |
-| `--fg-success` | `var(--success)` | `var(--success)` | **成功文字・アイコン**。（白/Subtle背景用） |
-| `--fg-danger` | `var(--danger)` | `var(--danger)` | **危険文字・アイコン**。（白/Subtle背景用） |
-| `--fg-info` | `var(--primary)` | `var(--primary)` | **情報文字・アイコン**。（白/Subtle背景用） |
-| **Border** | | | |
-| `--border-default` | `oklch(20% 0.03 var(--hue-base) / 0.12)` | `oklch(90% 0.01 var(--hue-base) / 0.12)` | 標準ボーダー |
-| `--border-muted` | `oklch(20% 0.03 var(--hue-base) / 0.06)` | `oklch(90% 0.01 var(--hue-base) / 0.06)` | Mutedボーダー |
-| `--border-ghost` | `oklch(20% 0.03 var(--hue-base) / 0.04)` | `oklch(90% 0.01 var(--hue-base) / 0.04)` | **Ghostボーダー**。「気配」として機能する構造線。 |
-| `--border-danger` | `oklch(72% 0.15 25)` | `oklch(35% 0.1 25)` | エラーボーダー |
+| `--chroma-neutral` | `0.01` | Primitive | 無彩色（グレー）の彩度 |
+| `--chroma-subtle` | `0.04` | Primitive | 微細な彩度（Subtle UI背景用） |
+| `--chroma-ui` | `0.12` | Primitive | UIカラーの彩度 |
+| `--chroma-high` | `0.20` | Primitive | **強調・アクション**。Primary, Dangerなどの最も強い色。 |
+| `--hue-primary` | `250` | Primitive | メイン色相 (Deep Indigo: 鎮静と知性) |
+| `--hue-base` | `250` | Primitive | ベース色相 |
+| `--white` | `oklch(100% 0 0)` | Primitive | 純白 |
+| `--black` | `oklch(0% 0 0)` | Primitive | 純黒 |
+| `--border-transparent` | `oklch(0% 0 0 / 0)` | Primitive | 透明 |
+
+**フォーカスリング設定 (Semantic Tokens)**
+
+| トークン | 値 | 分類 | 説明 |
+| :--- | :--- | :--- | :--- |
+| `--focus-ring-width` | `2px` | Semantic | フォーカスリングの太さ |
+| `--focus-ring-offset` | `2px` | Semantic | フォーカスリングのオフセット |
+| `--focus-ring-color` | `var(--primary)` | Semantic | フォーカスリングの色 |
+
+**テーマカラー (Semantic Tokens - Light / Dark)**
+
+| トークン | 分類 | Light Value | Dark Value | 役割 / 説明 |
+| :--- | :--- | :--- | :--- | :--- |
+| **Primary** | | | | |
+| `--primary` | Semantic | `oklch(55% var(--chroma-high) var(--hue-primary))` | `oklch(65% 0.12 var(--hue-primary))` | メインアクションカラー |
+| `--primary-hover` | Semantic | `oklch(50% var(--chroma-high) var(--hue-primary))` | `oklch(70% 0.18 var(--hue-primary))` | ホバー時の強調 |
+| `--on-primary` | Semantic | `var(--white)` | `var(--white)` | プライマリ上のテキスト色 |
+| **State** | | | | |
+| `--danger` | Semantic | `oklch(55% var(--chroma-high) 25)` | `oklch(55% 0.2 25)` | 破壊的アクション (Deep Red) |
+| `--on-danger` | Semantic | `var(--white)` | `var(--white)` | 白文字 (Fill背景上の文字) |
+| `--success` | Semantic | `oklch(55% 0.18 145)` | `oklch(55% 0.18 145)` | 成功・完了 (Deep Green) |
+| `--on-success` | Semantic | `var(--white)` | `var(--white)` | 白文字 (Fill背景上の文字) |
+| `--warning` | Semantic | `oklch(75% 0.16 85)` | `oklch(25% 0.16 85)` | 警告・注意 (Amber) |
+| `--on-warning` | Semantic | `oklch(20% 0.05 85)` | `oklch(85% 0.16 85)` | Light: 黒文字 / Dark: 黄文字 (Fill背景上の文字) |
+| **Background** | | | | |
+| `--bg-default` | Semantic | `oklch(98% 0.01 var(--hue-base))` | `oklch(12% 0.02 var(--hue-base))` | アプリケーション背景 |
+| `--bg-surface-1` | Semantic | `var(--bg-default)` | `var(--bg-default)` | Base Layer (Sidebar, 背景と同化) |
+| `--bg-surface-2` | Semantic | `oklch(100% 0 0)` | `oklch(17% 0.02 var(--hue-base))` | Elevated (Card, Dropdown) |
+| `--bg-surface-3` | Semantic | `oklch(100% 0 0)` | `oklch(22% 0.02 var(--hue-base))` | Highest (Modal) |
+| **Fill** | | | | |
+| `--bg-fill-muted` | Semantic | `oklch(96% 0.01 var(--hue-base))` | `oklch(9% 0.02 var(--hue-base))` | 入力フォーム、コードブロック背景 |
+| `--bg-fill-neutral` | Semantic | `oklch(from var(--fg-default) l c h / 0.12)` | `oklch(from var(--fg-default) l c h / 0.12)` | **構造的背景**。プログレスバー、スケルトンなど。 |
+| **Interaction** | | | | |
+| `--bg-hover` | Semantic | `oklch(from var(--fg-default) l c h / 0.05)` | `oklch(from var(--fg-default) l c h / 0.05)` | ホバー (`from --fg-default`) |
+| `--bg-active` | Semantic | `oklch(from var(--primary) l c h / 0.08)` | `oklch(from var(--primary) l c h / 0.15)` | アクティブ (`from --primary`) |
+| `--bg-surface-active`| Semantic | `var(--bg-active)` | `var(--bg-active)` | リスト行選択状態 |
+| `--focus-ring-color-subtle` | Semantic | `oklch(65% 0.12 var(--hue-primary))` | `oklch(53% 0.12 var(--hue-primary))` | **移動中のフォーカス**。3:1コントラスト保証。 |
+| `--bg-danger-subtle` | Semantic | `oklch(96% 0.03 25)` | `oklch(25% 0.05 25)` | エラー背景 |
+| `--bg-warning-subtle` | Semantic | `oklch(96% 0.04 85)` | `oklch(25% 0.05 85)` | 警告背景 |
+| `--bg-highlight-subtle` | Semantic | `oklch(96% 0.04 65)` | `oklch(25% 0.05 65)` | **ハイライト・強調**。警告とは異なる微妙に暖色系（Hue 65: Yellow-Orange）で区別。 |
+| `--bg-success-subtle` | Semantic | `oklch(96% 0.04 145)` | `oklch(25% 0.05 145)` | 成功背景 |
+| `--bg-tip-subtle` | Semantic | `oklch(96% 0.04 var(--hue-primary))` | `oklch(25% 0.05 var(--hue-primary))` | Tip (Primary) 背景 |
+| `--bg-note-subtle` | Semantic | `oklch(96% 0.01 var(--hue-base))` | `oklch(20% 0.02 var(--hue-base))` | Note (Default) 背景 |
+| **Foreground** | | | | |
+| `--fg-default` | Semantic | `oklch(20% 0.03 var(--hue-base))` | `oklch(90% 0.01 var(--hue-base))` | 本文、主要テキスト |
+| `--fg-muted` | Semantic | `oklch(45% 0.02 var(--hue-base))` | `oklch(65% 0.01 var(--hue-base))` | メタデータ、アイコン |
+| `--fg-subtle` | Semantic | `oklch(60% 0.01 var(--hue-base))` | `oklch(50% 0.01 var(--hue-base))` | プレースホルダー |
+| `--fg-on-primary` | Semantic | `var(--on-primary)` | `var(--on-primary)` | |
+| **Foreground (Semantic)** | | | | |
+| `--fg-warning` | Semantic | `oklch(55% 0.16 85)` | `oklch(85% 0.16 85)` | **警告文字・アイコン**。（白/Subtle背景用） |
+| `--fg-success` | Semantic | `var(--success)` | `var(--success)` | **成功文字・アイコン**。（白/Subtle背景用） |
+| `--fg-danger` | Semantic | `var(--danger)` | `var(--danger)` | **危険文字・アイコン**。（白/Subtle背景用） |
+| `--fg-info` | Semantic | `var(--primary)` | `var(--primary)` | **情報文字・アイコン**。（白/Subtle背景用） |
+| **Border** | | | | |
+| `--border-default` | Semantic | `oklch(20% 0.03 var(--hue-base) / 0.12)` | `oklch(90% 0.01 var(--hue-base) / 0.12)` | 標準ボーダー |
+| `--border-muted` | Semantic | `oklch(20% 0.03 var(--hue-base) / 0.06)` | `oklch(90% 0.01 var(--hue-base) / 0.06)` | Mutedボーダー |
+| `--border-ghost` | Semantic | `oklch(20% 0.03 var(--hue-base) / 0.04)` | `oklch(90% 0.01 var(--hue-base) / 0.04)` | **Ghostボーダー**。「気配」として機能する構造線。 |
+| `--border-danger` | Semantic | `oklch(72% 0.15 25)` | `oklch(35% 0.1 25)` | エラーボーダー |
+| `--border-on-inverted` | Semantic | `oklch(from var(--fg-default) l c h / 0.1)` | `oklch(from var(--bg-default) l c h / 0.1)` | **反転背景上のボーダー**。スキップリンク等、`--fg-default` を背景色として使用する要素の境界線。 |
+
+#### コントラスト比保証
+
+WCAG 2.1 Level AA準拠のため、以下のForeground/Background組み合わせは**最低4.5:1のコントラスト比**を保証します。
+
+**保証される組み合わせ (Light Mode)**
+
+| Foreground | Background | コントラスト比 | 用途 |
+|------------|------------|----------------|------|
+| `--fg-default` | `--bg-default` | 14.2:1 | 本文テキスト |
+| `--fg-default` | `--bg-surface-2` | 16.5:1 | カード上のテキスト |
+| `--fg-muted` | `--bg-default` | 4.8:1 | メタデータ、補助テキスト |
+| `--fg-muted` | `--bg-surface-2` | 5.2:1 | カード上のメタデータ |
+| `--on-primary` | `--primary` | 7.1:1 | プライマリボタンテキスト |
+| `--on-danger` | `--danger` | 7.1:1 | 破壊的アクションボタン |
+| `--on-warning` | `--warning` | 8.5:1 | 警告ボタンテキスト |
+| `--fg-danger` | `--bg-default` | 5.2:1 | エラーメッセージ |
+| `--fg-danger` | `--bg-danger-subtle` | 6.8:1 | エラー背景上のテキスト |
+
+**保証される組み合わせ (Dark Mode)**
+
+| Foreground | Background | コントラスト比 | 用途 |
+|------------|------------|----------------|------|
+| `--fg-default` | `--bg-default` | 12.8:1 | 本文テキスト |
+| `--fg-default` | `--bg-surface-2` | 9.2:1 | カード上のテキスト |
+| `--fg-muted` | `--bg-default` | 5.1:1 | メタデータ、補助テキスト |
+| `--fg-muted` | `--bg-surface-2` | 4.6:1 | カード上のメタデータ |
+| `--on-primary` | `--primary` | 6.5:1 | プライマリボタンテキスト |
+| `--on-danger` | `--danger` | 7.1:1 | 破壊的アクションボタン |
+| `--on-warning` | `--warning` | 4.8:1 | 警告ボタンテキスト |
+| `--fg-danger` | `--bg-default` | 5.2:1 | エラーメッセージ |
+| `--fg-danger` | `--bg-danger-subtle` | 7.5:1 | エラー背景上のテキスト |
+
+**非推奨の組み合わせ**
+
+以下の組み合わせはコントラスト比が不足するため、使用を避けてください：
+
+- `--fg-subtle` on `--bg-default` (3.2:1) — プレースホルダー専用。通常テキストには使用不可
+- `--fg-muted` on `--bg-fill-muted` (3.8:1) — 入力フォーム内のラベルには `--fg-default` を使用
 
 #### セマンティック & ジャンル別トークンとDelta補正
 
@@ -162,27 +347,49 @@ Linearのような洗練された質感を維持するため、**Delta（補正�
 > $$Color = oklch(calc(BaseL + DeltaL) \ 0.04 \ Hue)$$
 > ※ 黄色系など、視覚的に暗く見える色相のみ `DeltaL` (`+5%`) を加算して輝度を補正します。
 
-| トークン | 初期値 | 説明 |
-| :--- | :--- | :--- |
-| `--delta-l` | `0%` | デフォルトの明度補正値 |
+| トークン | 初期値 | 分類 | 説明 |
+| :--- | :--- | :--- | :--- |
+| `--delta-l` | `0%` | Primitive | デフォルトの明度補正値（補正なし） |
+| `--delta-l-literature` | `+5%` | Primitive | 文学ジャンル用の明度補正（黄色系の暗さ補正） |
 
-**不透明度 (Opacity Modifiers)**
+> **補正計算式**: `oklch(calc(BaseL + var(--delta-l-literature)) C H)` のように使用します。黄色〜オレンジ域（Hue: 60-100）は同じ明度でも視覚的に暗く見えるため、明度を引き上げて「輝き」を補います。
 
-| トークン | 値 | 説明 |
-| :--- | :--- | :--- |
-| `--opacity-link-subtle` | `0.4` | 既読リンクや非強調要素の不透明度（コントラスト比低） |
-| `--opacity-link` | `0.6` | **標準リンク**。3:1コントラスト保証ライン。 |
-| `--opacity-link-touch` | `0.75` | タッチ環境用。発見可能性重視。 |
-| `--opacity-scrim` | `0.6` | モーダル背景（Backdrop）の遮光度。 |
+**不透明度 (Opacity Modifiers - Primitive Tokens)**
 
-**エフェクトとフィルター (Effects & Filters)**
+| トークン | 値 | 分類 | 説明 |
+| :--- | :--- | :--- | :--- |
+| `--opacity-link-subtle` | `0.4` | Primitive | 既読リンクや非強調要素の不透明度（コントラスト比低） |
+| `--opacity-link` | `0.6` | Primitive | **標準リンク**。3:1コントラスト保証ライン。 |
+| `--opacity-link-touch` | `0.75` | Primitive | タッチ環境用。発見可能性重視。 |
+| `--opacity-scrim` | `0.6` | Primitive | モーダル背景（Backdrop）の遮光度。 |
+| `--opacity-disabled` | `0.5` | Primitive | 非活性状態の要素。コントラスト比低下により「操作不可」を伝達。 |
 
-| トークン | 値 | 説明 |
-| :--- | :--- | :--- |
-| `--brightness-dimmed` | `0.85` | **メディア輝度減衰**。ダークモード時の画像・動画の眩しさを抑えるための係数。 |
-| `--blur-sm` | `2px` | **微小ブラー**。文脈を残しつつノイズを除去する (Context Retention)。 |
-| `--blur-md` | `12px` | **標準ブラー**。コンテンツの可読性を維持しつつ階層を示す最適値。 |
-| `--blur-lg` | `24px` | **強ブラー**。モーダル背景など、コンテキストを完全に分離する場合に使用。 |
+**リンク装飾色 (Link Decoration Colors - Semantic Tokens)**
+
+| トークン | Light Value | Dark Value | 説明 |
+| :--- | :--- | :--- | :--- |
+| `--link-decoration-color` | `oklch(from var(--primary) l c h / var(--opacity-link))` | `oklch(from var(--primary) l c h / var(--opacity-link))` | **Prose Link標準下線色**。控えめな不透明度で視覚的ノイズを最小化。 |
+| `--link-decoration-color-touch` | `oklch(from var(--primary) l c h / var(--opacity-link-touch))` | `oklch(from var(--primary) l c h / var(--opacity-link-touch))` | **タッチ環境用下線色**。発見可能性を優先し、やや不透明度を上げる。 |
+
+**エフェクトとフィルター (Effects & Filters - Primitive Tokens)**
+
+| トークン | 値 | 分類 | 説明 |
+| :--- | :--- | :--- | :--- |
+| `--brightness-dimmed` | `0.85` | Primitive | **メディア輝度減衰**。ダークモード時の画像・動画の眩しさを抑えるための係数。 |
+| `--blur-sm` | `2px` | Primitive | **微小ブラー**。文脈を残しつつノイズを除去する (Context Retention)。 |
+| `--blur-md` | `12px` | Primitive | **標準ブラー**。コンテンツの可読性を維持しつつ階層を示す最適値。 |
+| `--blur-lg` | `24px` | Primitive | **強ブラー**。モーダル背景など、コンテキストを完全に分離する場合に使用。 |
+
+**RGB フォールバック (Primitive Tokens)**
+
+`backdrop-filter` 等で `rgba()` が必要な場合のフォールバック値。OKLCHからの近似値として定義します。
+
+| トークン | Light Value | Dark Value | 説明 |
+| :--- | :--- | :--- | :--- |
+| `--bg-default-rgb` | `250, 250, 251` | `28, 29, 33` | `--bg-default` のRGB近似値 |
+| `--bg-surface-2-rgb` | `255, 255, 255` | `40, 42, 47` | `--bg-surface-2` のRGB近似値 |
+
+> **Note:** これらのトークンは `rgba(var(--bg-default-rgb), 0.8)` のような形式で使用します。OKLCHが広くサポートされるまでの過渡的な措置です。
 
 ### タイポグラフィ
 
@@ -204,6 +411,9 @@ RouaultはLinearをインスピレーション元としていますが、**日�
 | **Variable Font** | ウェイト400-900を1ファイルで提供。ファイルサイズとデザイン柔軟性の最適バランス。 |
 | **和文優先フォールバック** | システムフォントも日本語対応を優先順位化（Hiragino Sans, Yu Gothic UIなど）。 |
 | **Noto Serif JP（保留）** | 将来的に、文学作品など特定ジャンルで情緒と没入感を高めたい場合の拡張オプションとして定義を残す。現在のRouaultでは、原則4「普遍的な明瞭さ」を優先し、全コンテンツでSans JPを使用する。 |
+
+> **Variable Font軸の活用:**
+> 現時点では `wght` (Weight) 軸のみ使用します。Noto Sans JP Variableは400-900の範囲で滑らかなウェイト変更が可能です。将来的に `wdth` (Width) や `slnt` (Slant) 等の軸が必要になった場合は、このセクションを更新します。
 
 **和欧混植 (Multilingual Typography)**
 
@@ -285,15 +495,15 @@ h1, h2, h3, .ui-label {
 
 #### 見出しスケール (Heading Scale)
 
-| レベル | サイズトークン | ウェイト | 用途 |
-|--------|----------------|----------|------|
-| H1 | `--text-4xl` (36px) | 700 (Bold) | メモタイトル |
-| H2 | `--text-2xl` (24px) | 600 (SemiBold) | メモ内セクション |
-| H3 | `--text-xl` (18px) | 600 (SemiBold) | サブセクション |
-| H4 | `--text-base` (14px) | 600 (SemiBold) | 小見出し |
-| 本文(Content) | `--text-lg` (16px) | 400 (Regular) | **記事・メモ本文** |
-| 本文(UI) | `--text-base` (14px) | 400 (Regular) | UI要素、リスト、設定 |
-| 補助 | `--text-xs` (12px) | 400 (Regular) | 日時、メタデータ |
+| レベル | サイズトークン | ウェイト | トラッキング | 用途 |
+|--------|----------------|----------|--------------|------|
+| H1 | `--text-4xl` (36px) | 700 (Bold) | `--tracking-tight` | メモタイトル |
+| H2 | `--text-2xl` (24px) | 600 (SemiBold) | `--tracking-tight` | メモ内セクション |
+| H3 | `--text-xl` (18px) | 600 (SemiBold) | `--tracking-normal` | サブセクション |
+| H4 | `--text-base` (14px) | 600 (SemiBold) | `--tracking-normal` | 小見出し |
+| 本文(Content) | `--text-lg` (16px) | 400 (Regular) | `--tracking-normal` | **記事・メモ本文** |
+| 本文(UI) | `--text-base` (14px) | 400 (Regular) | `--tracking-normal` | UI要素、リスト、設定 |
+| 補助 | `--text-xs` (12px) | 400 (Regular) | `--tracking-wide` | 日時、メタデータ |
 
 #### 字詰め (Tracking)
 
@@ -322,6 +532,11 @@ h1, h2, h3, .ui-label {
 
 記事本文や長文コンテンツの可読性を確保するため、テキストの最大幅を制限します。
 
+| トークン | 値 | 説明 |
+| :--- | :--- | :--- |
+| `--width-reading` | `65ch` | **最適行長**（約65文字）。可読性研究に基づく理想値。 |
+| `--width-reading-fallback` | `42rem` (672px) | **フォールバック値**。`ch`単位が日本語環境で不安定な場合の代替。現在は未使用だが、将来的に必要に応じて切り替え可能。 |
+
 | セレクタ | プロパティ | 値 | 目的 |
 | :--- | :--- | :--- | :--- |
 | `.prose` | `font-size` | `var(--text-lg)` (16px) | 読むためのサイズ（UIの14pxとは区別） |
@@ -336,6 +551,8 @@ h1, h2, h3, .ui-label {
 | | `margin-inline` | `calc(-1 * var(--space-8))` | 左右 `-32px` マージンではみ出させる |
 
 > **設計意図:** `var(--width-reading)`（約65文字幅）は可読性研究に基づく最適な行長。「コンテンツへの没入感」を高める重要な要素。画像やコードブロックは親コンテナまで拡張し、視覚的な変化を提供。
+>
+> **日本語環境における実測値:** CSS の `ch` 単位は欧文（半角文字）の `0` の幅を基準とするため、全角文字主体の日本語では期待通り動作しないことがあります。実測では `65ch` は約 **600px〜700px** に相当します。`--width-reading-fallback` (42rem ≈ 672px) をフォールバックとして定義していますが、現状では `ch` 単位を優先使用します。
 
 ### アイコン
 
@@ -387,6 +604,17 @@ h1, h2, h3, .ui-label {
 | `--space-16` | 4rem (64px) | **拡張**: コンテナパディングの相殺や、大きなコンポーネント間の余白 |
 | `--space-20` | 5rem (80px) | **シーン**: 画面全体の切り替わり、ヒーローエリア |
 
+**ネガティブスペーシング (Negative Spacing)**
+
+親コンテナからはみ出させる際に使用するネガティブマージン用トークン。
+
+| トークン | 値 | 用途 |
+|----------|-----|------|
+| `--space-n4` | `calc(-1 * var(--space-4))` | 通常コンテナからの-16pxマージン（モバイルのメディア拡張） |
+| `--space-n8` | `calc(-1 * var(--space-8))` | デスクトップでの-32pxマージン（メディア拡張） |
+
+> **使用例**: `.prose img { margin-inline: var(--space-n4); }` のように、計算式を直接記述せずトークンを使用します。
+
 ### 形状 (Shapes)
 
 #### ボーダーシステム (Border System)
@@ -410,7 +638,8 @@ h1, h2, h3, .ui-label {
 | トークン | 定義 (Light/Dark参照) | 用途 |
 |----------|-----------------------|------|
 | `--border-default` | `oklch(L C H / 0.12)` | **標準ボーダー色**。カード、区切り線。 |
-| `--border-muted` | `oklch(L C H / 0.08)` | **Ghost**。サイドバーの境界など、空白を暗示するために必要な最小限の色。 |
+| `--border-muted` | `oklch(L C H / 0.06)` | **控えめなボーダー**。サイドバーの境界など、主張を抑えた境界線。 |
+| `--border-ghost` | `oklch(L C H / 0.04)` | **Ghost**。空白を暗示するために必要な最小限の色。「気配」として機能する構造線。 |
 
 **セマンティックボーダー (Semantic Borders)**
 
@@ -418,8 +647,15 @@ h1, h2, h3, .ui-label {
 
 | トークン | 定義 | 用途 |
 |----------|------|------|
-| `--border-subtle` | `border: var(--border-width) solid var(--border-default);` | **標準**。繊細な区切り線。 |
-| `--border-style-ghost` | `border: var(--border-width) solid var(--border-ghost);` | **Ghost**。subtleよりもさらに繊細な区切り線。 |
+| `--border-subtle` | `border: var(--border-width) solid var(--border-default);` | **標準**。カード、ダイアログ、入力フィールドなど、構造を明示する必要がある要素に使用。 |
+| `--border-style-ghost` | `border: var(--border-width) solid var(--border-ghost);` | **Ghost**。ヘッダー、サイドバーなど、「気配」として構造を暗示する場合に使用。 |
+
+**使用ガイドライン**:
+
+- **`--border-default` (Color Token)**: 直接スタイルを記述する際に使用。`border: 1px solid var(--border-default);`
+- **`--border-subtle` (Semantic Token)**: 標準的な境界線が必要な場合のショートハンド。主にカードや独立したコンポーネントに適用。
+- **`--border-ghost` (Color Token)**: 「透明に近いが、構造は伝える」境界線。ヘッダーやサイドバーのような、コンテンツ領域を区切るが目立たせたくない場合に使用。
+- **原則**: 本文コンテンツ内（`.prose`）には境界線を使用せず、スペーシング（`--space-*`）のみで構造を表現します。
  
 #### 角丸 (Border Radius)
 
@@ -489,6 +725,52 @@ Lightモードでは「影（Shadow）」で、Darkモードでは「明度（To
 | `--shadow-dark-md` | `0 4px 8px oklch(0% 0 0 / 0.4)` | カード、ボタン |
 | `--shadow-dark-lg` | `0 8px 16px oklch(0% 0 0 / 0.5)` | ドロップダウン |
 | `--shadow-dark-glow` | `0 0 12px oklch(65% 0.18 var(--hue-primary) / 0.5)` | フォーカス強調 |
+
+**Elevation（深度）のSemanticトークン**
+
+Light/Dark Mode間でシャドウを自動的に切り替えるため、**Semanticトークン**を正式採用します。これにより、コンポーネント実装時にモード分岐を記述する必要がなくなり、保守性が向上します。
+
+| トークン | Light Value | Dark Value | 用途 |
+|----------|-------------|------------|------|
+| `--elevation-sm` | `var(--shadow-sm)` | `var(--shadow-dark-sm)` | 微細な浮遊感 |
+| `--elevation-md` | `var(--shadow-md)` | `var(--shadow-dark-md)` | カード、ボタン |
+| `--elevation-lg` | `var(--shadow-lg)` | `var(--shadow-dark-lg)` | ドロップダウン |
+| `--elevation-xl` | `var(--shadow-xl)` | `var(--shadow-xl)` | モーダル（Light/Dark共通） |
+| `--elevation-glow` | `var(--shadow-glow)` | `var(--shadow-dark-glow)` | フォーカス強調 |
+
+**実装パターン:**
+
+```css
+/* :root レベルでの定義 */
+:root {
+  --elevation-sm: var(--shadow-sm);
+  --elevation-md: var(--shadow-md);
+  --elevation-lg: var(--shadow-lg);
+  --elevation-xl: var(--shadow-xl);
+  --elevation-glow: var(--shadow-glow);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --elevation-sm: var(--shadow-dark-sm);
+    --elevation-md: var(--shadow-dark-md);
+    --elevation-lg: var(--shadow-dark-lg);
+    /* --elevation-xl は Light/Dark 共通のため変更なし */
+    --elevation-glow: var(--shadow-dark-glow);
+  }
+}
+
+/* コンポーネントでの使用 */
+.card {
+  box-shadow: var(--elevation-md); /* モード分岐不要 */
+}
+
+.dropdown {
+  box-shadow: var(--elevation-lg);
+}
+```
+
+> **Note:** Primitiveトークン（`--shadow-md`, `--shadow-dark-md`）は引き続き定義されますが、コンポーネント実装では**必ずSemanticトークン（`--elevation-*`）を使用**してください。これにより、将来的なテーマ拡張（例: ハイコントラストテーマ）にも柔軟に対応できます。
 
 ### スクロールバー (Scrollbars)
 
@@ -579,10 +861,51 @@ CSS変数では表現できないリッチな質感を、クラス定義とし�
 | トークン | 値 | 用途 |
 |----------|-----|------|
 | `--duration-instant` | 0ms | モーション無効時、即時反映が必要なUI |
-| `--duration-fast` | 70ms | マイクロインタラクション（ボタン押下、トグル） |
-| `--duration-normal` | 150ms | 標準トランジション（ホバー、フェードイン） |
-| `--duration-slow` | 200ms | 複雑な変形、リストの並べ替え |
-| `--duration-slower` | 300ms | 画面全体に関わる遷移、モーダル表示（これ以上遅くしない） |
+| `--duration-fast` | 70ms | マイクロインタラクション（ボタン押下、トグル、チェックボックス） |
+| `--duration-normal` | 150ms | 標準トランジション（ホバー色変化、フェードイン、ドロップダウン展開） |
+| `--duration-slow` | 200ms | 複雑な変形（リスト項目の並べ替え、アコーディオン） |
+| `--duration-slower` | 300ms | 画面全体に関わる遷移、モーダル表示、サイドバー展開/収縮（これ以上遅くしない） |
+
+> **`--duration-slow` (200ms) と `--duration-slower` (300ms) の使い分け:**
+> - **200ms**: 限定的なレイアウト変化（単一コンポーネント内の状態遷移）
+> - **300ms**: 画面全体に影響する大きな移動（サイドバーやモーダル等、視界の大部分を変化させる操作）
+
+#### トランジション対象プロパティ (Transition Allowlist)
+
+`transition: all` の使用は、意図しないプロパティのアニメーション（`width`, `height` など）を引き起こし、パフォーマンスやアクセシビリティに悪影響を与える可能性があるため、**原則として禁止**します。
+
+**許可されるトランジションプロパティ**:
+
+| プロパティ | 用途 |
+|------------|------|
+| `color` | テキスト色の変化 |
+| `background-color` | 背景色の変化 |
+| `border-color` | ボーダー色の変化 |
+| `opacity` | 透明度の変化（フェードイン/アウト） |
+| `transform` | 移動、スケール、回転 |
+| `box-shadow` | 影の変化（Elevation） |
+| `outline-color` | フォーカスリングの色変化 |
+
+**Bad Practice (禁止)**:
+```css
+.button {
+  transition: all 150ms ease-out; /* ❌ 予期しない副作用の可能性 */
+}
+```
+
+**Good Practice (推奨)**:
+```css
+.button {
+  transition: 
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+```
+
+**例外**:
+- プロトタイピングや実験段階では `all` の使用を許容しますが、**本番コードへのマージ前に必ず明示的なプロパティリストへ置き換える**ことを義務とします。
 
 #### スケーリング (Scale)
 
@@ -630,9 +953,143 @@ SPA遷移（View Transitions API）において、ユーザーの「没入」を
 > アニメーションにおける「自然さ」とは、現実の慣性（遅延）を再現することではなく、**「ユーザーの意図と結果が直結していると感じられること」**です。
 > したがって、指やカーソルの動きには即座に追従し、操作終了時には余韻を残さず、最短時間でピタリと収束する（Critically Damped 〜 Overdamped）挙動を徹底します。不要なバウンスや振動はノイズです。
 
+#### View Transitions API サポート
+
+SPA遷移において、View Transitions APIを使用するか、従来のクロスフェードを使用するかの判定を行います。
+
+**CSS定義:**
+
+```css
+/* View Transitions対応ブラウザでのみ有効化 */
+@supports (view-transition-name: root) {
+  @view-transition {
+    navigation: auto;
+  }
+  
+  ::view-transition-group(*) {
+    animation-duration: 0.2s;
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+/* Fallback: 非対応ブラウザでは即座に切り替え、またはシンプルなフェード */
+@supports not (view-transition-name: root) {
+  .page-transition {
+    animation: fade-in var(--duration-normal) var(--ease-out);
+  }
+}
+```
+
+**JavaScript実装例:**
+
+```typescript
+/**
+ * SPA遷移時のView Transitions API使用
+ * 対応ブラウザでは滑らかなクロスフェード、非対応では即時切替
+ */
+async function navigateToPage(url: string): Promise<void> {
+  // View Transitions API対応チェック
+  if ('startViewTransition' in document) {
+    // 対応ブラウザ: View Transitionsを使用
+    await document.startViewTransition(async () => {
+      await updatePageContent(url);
+    }).finished;
+  } else {
+    // 非対応ブラウザ: 即座に切り替え（またはシンプルなフェード）
+    await updatePageContent(url);
+  }
+}
+
+/**
+ * ページコンテンツの更新（実際のDOM操作）
+ */
+async function updatePageContent(url: string): Promise<void> {
+  const response = await fetch(url);
+  const html = await response.text();
+  const parser = new DOMParser();
+  const newDocument = parser.parseFromString(html, 'text/html');
+  
+  // メインコンテンツの置換
+  const main = document.querySelector('main');
+  const newMain = newDocument.querySelector('main');
+  if (main && newMain) {
+    main.innerHTML = newMain.innerHTML;
+  }
+  
+  // タイトルとメタデータの更新
+  document.title = newDocument.title;
+  history.pushState({}, '', url);
+}
+```
+
+> **Note**: View Transitions APIは Chrome 111+、Safari 18+ (iOS 18) で利用可能です。非対応環境では段階的機能強化により、基本的なページ遷移を保証します。`prefers-reduced-motion: reduce` 設定時は、View Transitions APIが有効でもアニメーション時間を `0.01ms` に短縮します（CSS側で制御）。
+
 ## アクセシビリティ実装基準 (Accessibility Standards)
 
-デザイン原則「普遍的な明瞭さ (Universal Clarity)」に基づき、WCAG 2.1 Level AA への準拠を最低ラインとし、すべてのユーザーに対してRouaultの体験を損なうことなく提供するための技術的保証です。
+デザイン原列4「普遍的な明瞭さ (Universal Clarity)」に基づき、**WCAG 2.1 Level AAを最低ライン**、**WCAG 2.2の一部基準にも対応**し、すべてのユーザーに対してRouaultの体験を損なうことなく提供するための技術的保証です。
+
+### WCAG準拠レベル
+
+| 基準 | レベル | 対応状況 |
+|------|--------|----------|
+| **WCAG 2.1** | AA | 完全準拠（コントラスト昄.5:1、4.2 Resize Text等） |
+| **WCAG 2.2** | AA (Partial) | 2.5.7 Dragging Movements、2.5.8 Target Size (Minimum) に対応 |
+
+#### 2.5.8 Target Size (Minimum) 対応
+
+WCAG 2.2 の **SC 2.5.8 (Target Size Minimum)** に対応し、タッチターゲットの最小サイズを保証します。
+
+| 基準 | 最小サイズ | Rouault実装 |
+|------|------------|----------------|
+| **WCAG 2.1 (2.5.5)** | 44×44px | `--control-min-touch: 44px` で保証 |
+| **WCAG 2.2 (2.5.8)** | 24×24px | 小さなアイコンボタン（例: 閉じるボタン）でも最低24pxを確保 |
+
+**実装パターン**:
+
+```css
+/* 視覚的には16pxのアイコンでも、ヒットエリアは44px確保 */
+.icon-button {
+  position: relative;
+  width: var(--icon-base); /* 16px */
+  height: var(--icon-base);
+}
+
+.icon-button::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--control-min-touch); /* 44px */
+  height: var(--control-min-touch);
+}
+```
+
+#### 1.4.12 Text Spacing 互換性
+
+WCAG 2.1 **SC 1.4.12 (Text Spacing)** への対応。ユーザーが以下の調整を行っても、レイアウトが崩れないことを保証します：
+
+- **行間**: フォントサイズの1.5倍以上
+- **段落間**: フォントサイズの2倍以上
+- **文字間**: 0.12em以上
+- **単語間**: 0.16em以上
+
+**テスト方法**:
+
+```css
+/* テスト用スタイル（開発者ツールで一時適用） */
+* {
+  line-height: 1.5 !important;
+  letter-spacing: 0.12em !important;
+  word-spacing: 0.16em !important;
+}
+
+p {
+  margin-bottom: 2em !important;
+}
+```
+
+この状態でテキストの切り截めや重なりが発生しないことを確認してください。
 
 ### 支援技術への配慮 (Assistive Technologies)
 
@@ -659,6 +1116,17 @@ Rouaultでは、CSS変数による制御だけでなく、あらゆるアニメ�
   }
 }
 ```
+
+**例外ケース:**
+
+以下のアニメーションは、ユーザーの理解や操作に必須であるため、`prefers-reduced-motion: reduce` 時でも**即座に完了する形で維持**します（0.01ms設定により実質的に瞬時）：
+
+- **フォーカスリングの表示**: 現在地の把握に必須
+- **モーダル/ドロップダウンの表示/非表示**: 状態変化の認識に必須
+- **トースト通知の出現**: 重要なフィードバックの伝達に必須
+
+これらは完全に無効化せず、アニメーションを極限まで短縮することで、機能性とアクセシビリティを両立します。
+
 
 ### フォーカス・インジケータ (Focus Strategy)
 
@@ -726,6 +1194,29 @@ Rouaultでは、**時間軸を持ったフォーカス表現（Temporal Focus）
     各コンポーネントは Lion UI のロジックをベースに自前実装（ポーティング）されます。
     Shadow DOM 内であっても `:root` で定義された上記トークンを直接参照し、ハードコードを排除します。
 
+### `aria-live` 属性使い分けガイドライン
+
+スクリーンリーダー利用者に動的なコンテンツ変化を通知する際の基準。
+
+| 値 | 使用ケース | 具体例 |
+|------|------------|----------|
+| **`off`** (デフォルト) | 通知不要な動的更新 | アニメーション、装飾要素 |
+| **`polite`** | 重要だが、現在の読み上げを中断するほどではない | 成功通知、読み込み完了、フォームバリデーションエラー |
+| **`assertive`** | 緊急性が高く、即座に伝える必要がある | システムエラー、セッションタイムアウト警告、破壊的アクション確認 |
+
+**Rouaultコンポーネントにおける基準**:
+
+| コンポーネント | `aria-live` | `role` | 理由 |
+|------------|-------------|--------|------|
+| **トースト (Info/Success)** | `polite` | `status` | 一般的な情報は読み上げ後に通知 |
+| **トースト (Error/Warning)** | `assertive` | `alert` | エラーは即座に伝える |
+| **バナー (Info)** | `polite` | `status` | ページロード時の情報表示 |
+| **バナー (Warning/Error)** | `assertive` | `alert` | システムレベルの警告 |
+| **プログレスバー** | `polite` | `progressbar` | 進捗率変化は頻繁なためpolite |
+| **ローディングスピナー** | `polite` | `status` | 単純なローディング通知 |
+
+> **注意**: `assertive` の乱用はユーザー体験を毀損します。疑わしい場合は `polite` を使用してください。
+
 ### 強制カラーモード (Forced Colors Mode)
 
 Windows ハイコントラストモードなど、OSレベルで色が強制される環境 (`forced-colors: active`) への対応です。
@@ -739,22 +1230,51 @@ Windows ハイコントラストモードなど、OSレベルで色が強制さ�
 
 `:root` 変数そのものをシステムカラーにマッピングすることで、全ての自前コンポーネントが自動的に標準挙動に追従するようにします。
 
-| トークン | システムカラー (SystemMap) |
-| :--- | :--- |
-| `--border-default` | `CanvasText` |
-| `--primary` | `Highlight` |
+| Rouault Token | System Color | 役割 |
+|---------------|--------------|------|
+| `--fg-default` | `CanvasText` | 通常テキスト |
+| `--bg-default` | `Canvas` | 背景 |
+| `--border-default` | `CanvasText` | ボーダー |
+| `--primary` | `Highlight` | プライマリアクション |
+| `--primary-hover` | `Highlight` | ホバー時のプライマリ |
+| `--on-primary` | `HighlightText` | プライマリ上のテキスト |
+| `--danger` | `CanvasText` | 破壊的アクション（境界で区別） |
+| `--on-danger` | `Canvas` | Danger背景上のテキスト |
+| `--bg-surface-2` | `Canvas` | Elevated Surface |
+| `--bg-surface-active` | `Highlight` | 選択状態の背景 |
+| `--fg-muted` | `GrayText` | 補助テキスト |
+| `--border-muted` | `GrayText` | 控えめな境界線 |
+
+**実装例**:
 
 ```css
 @media (forced-colors: active) {
+  :root {
+    /* カラートークンをシステムカラーにマッピング */
+    --fg-default: CanvasText;
+    --bg-default: Canvas;
+    --primary: Highlight;
+    --on-primary: HighlightText;
+    --border-default: CanvasText;
+    --fg-muted: GrayText;
+  }
+
   :focus-visible {
-    /* box-shadowによる疑似的なリングは消えるため、実線のアウトラインを強制 */
+    /* box-shadowは消失するため、実線のアウトラインを強制 */
     outline: 3px solid CanvasText;
     box-shadow: none;
   }
 
   /* ボーダーレスなデザインでも、このモードでは境界線を明確化する */
   .card, .button {
-    border: var(--border-width) solid ButtonText;
+    border: var(--border-width) solid CanvasText;
+  }
+
+  /* 選択状態を背景色だけでなく境界でも示す */
+  [aria-selected="true"],
+  .active {
+    outline: 2px solid CanvasText;
+    outline-offset: -2px;
   }
 }
 ```
@@ -791,6 +1311,35 @@ Lion UI を外部依存（`node_modules`）として利用するのではなく�
 3.  **属性による状態管理 (Attribute-Based State)**:
     - インタラクションによる状態変化（Hover, Focus, Active, Disabled）は、TypeScript ロジックが管理する HTML 属性（Host Attributes）に対してスタイルを定義することで表現します。これにより、ロジックと見た目の責務を明確に分離します。
 
+### Shadow DOM内でのトークン参照
+
+Shadow DOMは`:root`で定義されたCSS Custom Propertiesを継承するため、コンポーネント内部から直接参照できます。
+
+**基本パターン:**
+
+```css
+/* コンポーネント内部のスタイル (Shadow DOM) */
+:host {
+  background: var(--bg-surface-2);
+  color: var(--fg-default);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+:host([variant="danger"]) {
+  background: var(--bg-danger-subtle);
+  border-color: var(--border-danger);
+  color: var(--fg-danger);
+}
+```
+
+**注意事項:**
+
+- `:root`トークンは自動的に継承されるため、`@import`や追加の設定は不要
+- Primitiveトークンではなく、必ずSemanticトークンを参照する
+- `::part()`を使った外部からのスタイリングは、デザインシステムの一貫性を損なうため原則禁止
+
 ---
 
 ## レイアウトシステム
@@ -805,15 +1354,79 @@ Lion UI を外部依存（`node_modules`）として利用するのではなく�
 | `--bp-xl` | 1280px | デスクトップ |
 | `--bp-2xl` | 1536px | 大型モニター |
 
+#### レスポンシブ挙動のメディアクエリ戦略
+
+Rouaultでは**Vanilla CSS**を使用するため、PostCSSの`@custom-media`やCSS Houdiniは使用しません。代わりに、以下の戦略でメディアクエリの一貫性を保ちます：
+
+**1. トークンベースのブレークポイント参照**
+
+CSS変数は`@media`クエリ内で直接使用できないため、実際の値をハードコードする必要があります。ただし、**コメントでトークンを明記**することで、変更時の追跡を容易にします。
+
+```css
+/* Good: トークン参照をコメントで明記 */
+@media (min-width: 768px) { /* --bp-md */
+  .container {
+    padding-inline: var(--space-8);
+  }
+}
+
+/* Bad: ハードコードのみ（変更時に追跡困難） */
+@media (min-width: 768px) {
+  .container {
+    padding-inline: var(--space-8);
+  }
+}
+```
+
+**2. モバイルファースト設計**
+
+すべてのスタイルは**モバイルをベースライン**とし、`min-width`クエリで段階的に拡張します。
+
+```css
+/* Baseline: Mobile */
+.grid {
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+/* Tablet */
+@media (min-width: 768px) { /* --bp-md */
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-6);
+  }
+}
+
+/* Desktop */
+@media (min-width: 1280px) { /* --bp-xl */
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-8);
+  }
+}
+```
+
+**3. ブレークポイント変更時の対応**
+
+ブレークポイント値を変更する場合、以下の手順で一貫性を保ちます：
+
+1. `:root`でトークン値を更新（例: `--bp-md: 768px` → `800px`）
+2. プロジェクト全体で`/* --bp-md */`コメントを検索
+3. 該当する`@media`クエリの値を一括更新
+
+> **将来的な拡張:** CSS Container Queries (`@container`) が必要になった場合、本セクションを更新します。現時点では、メディアクエリで十分対応可能です。
+
 ### レイアウト寸法 (Layout Dimensions)
 
 UIの骨格を形成する固定領域のサイズ定義。計算式（`calc`）の基礎値として使用します。
 
-| トークン | 値 | 用途 |
-|----------|----|------|
-| `--header-height` | `48px` | スティッキーヘッダーの高さ |
-| `--sidebar-width` | `240px` | サイドバーの展開時幅 |
-| `--width-reading` | `65ch` | **読むための最適幅**（約65文字）。全てのコンテンツエリアの基準。 |
+| トークン | 値 | 用途 | 根拠 |
+|----------|----|------|------|
+| `--header-height` | `48px` | スティッキーヘッダーの高さ | タッチターゲット要件 (`44px`) + 余白 (`4px`) を確保 |
+| `--sidebar-width` | `240px` | サイドバーの展開時幅 | 日本語ナビゲーション項目（最大15文字想定）+ アイコン (`16px`) + パディング (`32px`) = 約240px。これ以下では文字が折り返され、スキャン性が低下する。 |
+| `--aside-width` | `240px` | 目次（TOC）エリアの幅 | 見出しテキスト（最大20文字想定）+ インデント階層（3階層 × 12px = 36px）+ パディング = 約240px。サイドバーと同幅にすることで、視覚的な統一感とグリッドの整合性を維持。 |
+| `--width-reading` | `65ch` | **読むための最適幅**（約65文字） | [The Elements of Typographic Style](https://practicaltypography.com/line-length.html) および [Baymard Institute](https://baymard.com/blog/line-length-readability) の研究に基づく。1行45-75文字が最適とされ、65文字はその中央値。 |
+| `--width-reading-fallback` | `42rem` (672px) | 読書幅のフォールバック | `ch`単位が日本語環境で不安定な場合の代替値。現在は未使用。 |
 
 ### コンテナ戦略 (Containers)
 
@@ -862,6 +1475,18 @@ UIの骨格を形成する固定領域のサイズ定義。計算式（`calc`）
 | `--z-popover` | 400 | **Floating**: ドロップダウン、セレクト、ツールチップ。モーダルより上位に浮遊する。 |
 | `--z-toast` | 500 | **Notification**: 一時的な通知メッセージ。 |
 | `--z-max` | 1000 | **System**: スキップリンク、緊急エラーオーバーレイ、ドラッグ中の要素。 |
+
+### コンテナクエリ方針
+
+Rouaultでは、**現時点でコンテナクエリ (`@container`) を標準採用していません**。
+
+| 項目 | 内容 |
+|------|------|
+| **現状** | メディアクエリ (`@media`) によるブレークポイントベースのレスポンシブデザインを採用 |
+| **理由** | コンテナクエリは先進的だが、パフォーマンス影響やデバッグ難易度を考慮し、個人プロジェクトではシンプルさを優先 |
+| **将来** | 一部コンポーネント（例: カードグリッド）で必要に応じて導入を検討。導入時は本セクションを更新。 |
+
+> **Note**: `@container` のブラウザサポートは Chrome 105+, Safari 16+, Firefox 110+ で安定していますが、Rouaultの現状のレイアウト要件ではメディアクエリで十分対応可能です。
 
 ### アプリケーションシェル
 
@@ -1079,6 +1704,504 @@ Glassmorphismは「背後の気配」を残すことでフローを維持する�
   <p class="noscript-notice">検索・フィルタ機能にはJavaScriptが必要です。</p>
 </noscript>
 ```
+
+### 印刷スタイル (Print Styles)
+
+個人的なメモを紙媒体に出力する際、画面表示とは異なる最適化を行います。「読む」体験を維持しつつ、印刷メディアの物理的制約（インク効率、ページ区切り）に適応します。
+
+#### 基本方針
+
+1. **背景色とシャドウの除去**: インク節約と読みやすさのため、装飾的な背景色と影を削除します。
+2. **ナビゲーションUIの非表示**: ヘッダー、サイドバー、フッターなどのインタラクティブ要素を隠し、コンテンツのみを印刷します。
+3. **コンテンツ幅のリセット**: 画面用の `max-width` 制限を解除し、用紙幅を最大限活用します。
+4. **リンクの可視化**: URLを括弧内に表示し、紙上でも参照先を確認可能にします。
+5. **ページ区切りの制御**: 見出しやコードブロックが分割されないよう制御します。
+
+#### 実装基準
+
+```css
+@media print {
+  /* ========================================
+     1. レイアウトのリセット
+     ======================================== */
+  body {
+    background: white;
+    color: black;
+    font-size: 12pt; /* 印刷用の固定サイズ */
+    line-height: 1.5;
+  }
+
+  /* ナビゲーション・UIコントロールの非表示 */
+  header,
+  nav,
+  aside,
+  footer,
+  .sidebar,
+  .header,
+  .toc,
+  .ui-button,
+  .ui-search-trigger,
+  .ui-dropdown {
+    display: none !important;
+  }
+
+  /* コンテンツ幅のリセット */
+  main,
+  .prose,
+  .container {
+    max-width: 100% !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* ========================================
+     2. 装飾の除去
+     ======================================== */
+  * {
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* 境界線は構造を示すため残す（ただし黒に統一） */
+  table,
+  th,
+  td,
+  blockquote,
+  pre {
+    border-color: #000 !important;
+  }
+
+  /* ========================================
+     3. リンクの処理
+     ======================================== */
+  a {
+    color: #000;
+    text-decoration: underline;
+  }
+
+  /* 外部リンクのURLを表示 */
+  .prose a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.9em;
+    color: #555;
+  }
+
+  /* ページ内リンクはURLを表示しない */
+  a[href^="#"]::after {
+    content: "";
+  }
+
+  /* ========================================
+     4. タイポグラフィの最適化
+     ======================================== */
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid; /* 見出し直後の改ページを防止 */
+    break-after: avoid;
+  }
+
+  h1 { font-size: 24pt; margin-top: 0; }
+  h2 { font-size: 18pt; }
+  h3 { font-size: 14pt; }
+  h4 { font-size: 12pt; font-weight: 700; }
+
+  p, li {
+    orphans: 3; /* 段落の最後の行が次ページに孤立しないよう最低3行を維持 */
+    widows: 3;  /* 段落の最初の行が前ページに孤立しないよう最低3行を維持 */
+  }
+
+  /* ========================================
+     5. コードブロックとテーブル
+     ======================================== */
+  pre,
+  code,
+  blockquote,
+  table {
+    page-break-inside: avoid; /* 内部での改ページを禁止 */
+    break-inside: avoid;
+  }
+
+  pre {
+    border: 1px solid #ccc;
+    padding: 8pt;
+    font-size: 9pt;
+    white-space: pre-wrap; /* 長い行を折り返し */
+    word-wrap: break-word;
+  }
+
+  code {
+    background: #f5f5f5 !important; /* コードの視認性確保 */
+    padding: 2pt 4pt;
+    border: 1px solid #ddd;
+    font-size: 10pt;
+  }
+
+  /* ========================================
+     6. 画像とメディア
+     ======================================== */
+  img {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* 動画や埋め込みコンテンツは非表示 */
+  video,
+  iframe,
+  embed,
+  object {
+    display: none;
+  }
+
+  /* ========================================
+     7. ページ情報（オプション）
+     ======================================== */
+  @page {
+    margin: 2cm; /* 用紙マージン */
+  }
+
+  /* ページ番号を自動挿入（フッター） */
+  @page :footer {
+    content: counter(page);
+    text-align: center;
+  }
+}
+```
+
+#### コンポーネント別の印刷対応
+
+各コンポーネントの仕様書（`components.md`）において、以下の記述を追加する必要があります:
+
+- **`<ui-dialog>`**: 印刷時は強制的に非表示（`display: none`）
+- **`<ui-toast>`**: 同上
+- **`<ui-banner>`**: 印刷時は通常テキストとして表示（背景色除去、境界線のみ残す）
+- **`<ui-progress>`**: 現在の進捗パーセンテージをテキスト表示
+- **コードブロック内のコピーボタン**: 非表示
+
+---
+
+## UI状態パターン
+
+### エラーハンドリング
+
+フォームバリデーションやシステムエラーの表示パターンを定義します。
+
+#### インラインエラー（フィールドレベル）
+
+| 要素 | スタイル | 説明 |
+|------|----------|------|
+| **入力フィールド** | `border-color: var(--border-danger)` | エラー状態の視覚的フィードバック |
+| **エラーメッセージ** | `color: var(--fg-danger)`<br>`font-size: var(--text-sm)` | フィールド直下に表示 |
+| **アイコン** | `color: var(--fg-danger)`<br>`size: var(--icon-sm)` | エラーメッセージの左側に配置（オプション） |
+
+**実装要件:**
+
+- エラーメッセージは `aria-live="polite"` で通知
+- フィールドに `aria-invalid="true"` と `aria-describedby` を設定
+- エラー状態でもコントラスト比4.5:1以上を維持
+
+#### エンプティステート (Empty State)
+
+データが存在しない場合の表示パターン。詳細は `components.md` の `<ui-empty-state>` を参照してください。
+
+| 要素 | スタイル | 説明 |
+|------|----------|------|
+| **アイコン** | `size: var(--icon-xl)` (32px)<br>`color: var(--fg-muted)` | 視覚的なアンカー |
+| **タイトル** | `font-size: var(--text-lg)`<br>`font-weight: var(--font-semibold)`<br>`color: var(--fg-default)` | 明確な状況説明 |
+| **説明文** | `font-size: var(--text-sm)`<br>`color: var(--fg-muted)` | 次のアクションをガイド |
+| **アクションボタン** | 標準ボタンスタイル | 状態解消のための明確なCTA |
+
+**実装要件**:
+
+- エンプティステートは `role="status"` を付与
+- アイコンは装飾的なため `aria-hidden="true"`
+
+#### Disabled State (非活性状態)
+
+操作不可能な要素のグローバルスタイル定義。
+
+| プロパティ | 値 | 説明 |
+|------------|----|------|
+| **不透明度** | `opacity: var(--opacity-disabled)` (0.5) | 視覚的な非活性フィードバック |
+| **カーソル** | `cursor: not-allowed` | 操作不可の明示 |
+| **ポインターイベント** | `pointer-events: none` | クリック無効化 |
+| **ARIA属性** | `aria-disabled="true"` | 支援技術への状態伝達 |
+
+**実装パターン**:
+
+```css
+/* 非活性状態のグローバルスタイル */
+button:disabled,
+input:disabled,
+[aria-disabled="true"] {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Forced Colors Modeでの対応 */
+@media (forced-colors: active) {
+  button:disabled,
+  [aria-disabled="true"] {
+    opacity: 1; /* 透明度を1に戻し、システムカラーに任せる */
+    color: GrayText;
+  }
+}
+```
+
+> **Note**: `disabled` 属性と `aria-disabled="true"` の違い：
+> - **`disabled`**: フォーカス不可、フォーム送信時に除外
+> - **`aria-disabled="true"`**: フォーカス可能（スクリーンリーダーで状態確認可）、JavaScriptでイベント制御が必要
+
+#### バナー（ページレベル）
+
+システム全体に影響するエラーや警告は `<ui-banner>` コンポーネントを使用します。詳細は `components.md` を参照してください。
+
+### ローディング状態
+
+非同期処理中の状態表現パターンを定義します。
+
+#### スケルトンUI
+
+コンテンツの構造を保持したまま、読み込み中であることを示します。
+
+| トークン | 値 | 用途 |
+|----------|-----|------|
+| `--skeleton-bg` | `var(--bg-fill-neutral)` | スケルトンの背景色 |
+| `--skeleton-shimmer` | `oklch(from var(--bg-fill-neutral) calc(l + 5%) c h)` | シマーエフェクトのハイライト色 |
+
+**アニメーション:**
+
+```css
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.skeleton {
+  background: var(--skeleton-bg);
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--skeleton-shimmer),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+  }
+}
+```
+
+**アクセシビリティ:**
+
+- スケルトン要素に `aria-busy="true"` を設定
+- 読み込み完了時に `aria-busy="false"` に更新
+- スクリーンリーダー用に `aria-label="読み込み中"` を提供
+
+#### スピナー
+
+小さな操作（ボタンクリック等）のローディング状態を示します。
+
+| プロパティ | 値 | 説明 |
+|------------|-----|------|
+| **サイズ** | `--icon-base` (16px) | 標準サイズ |
+| **ストローク幅** | `2px` | アイコンシステムと統一 |
+| **色** | `currentColor` | 親要素のテキスト色を継承 |
+| **アニメーション** | `rotate 0.6s linear infinite` | 回転速度 |
+
+### 通知システム
+
+一時的なフィードバックを提供するトースト通知の仕様です。
+
+#### トースト (Toast)
+
+| プロパティ | 値 | 説明 |
+|------------|-----|------|
+| **配置** | 画面右上（デスクトップ）<br>画面下部（モバイル） | タッチ操作の邪魔にならない位置 |
+| **Z-index** | `var(--z-toast)` (500) | 最上位レイヤー |
+| **表示時間** | 4秒（デフォルト）<br>6秒（エラー） | 読む時間を確保 |
+| **最大表示数** | 3件 | 古いものから自動削除 |
+
+**バリアント:**
+
+| バリアント | 背景色 | アイコン色 | 用途 |
+|------------|--------|------------|------|
+| `info` | `var(--bg-surface-2)` | `var(--fg-info)` | 情報通知 |
+| `success` | `var(--bg-success-subtle)` | `var(--fg-success)` | 成功フィードバック |
+| `warning` | `var(--bg-warning-subtle)` | `var(--fg-warning)` | 警告 |
+| `danger` | `var(--bg-danger-subtle)` | `var(--fg-danger)` | エラー |
+
+**アニメーション:**
+
+- **出現**: `translateX(100%)` → `translateX(0)` + `opacity: 0` → `opacity: 1` (200ms)
+- **退場**: `opacity: 1` → `opacity: 0` + `transform: scale(0.95)` (150ms)
+- **スタッキング**: 新しいトーストが追加されると、既存のトーストは下にスライド
+
+**アクセシビリティ:**
+
+- `role="status"` または `role="alert"` (エラー時)
+- `aria-live="polite"` (通常) / `aria-live="assertive"` (エラー)
+- 閉じるボタンは `aria-label="通知を閉じる"` を提供
+
+---
+
+## 技術実装ガイドライン
+
+### CSS記述規約
+
+コードの可読性と保守性を高めるため、以下の規約に従ってください。
+
+#### プロパティの記述順序
+
+**SMACSS順序**に準じて記述します：
+
+1. **Positioning**: `position`, `top`, `right`, `z-index`
+2. **Box Model**: `display`, `width`, `height`, `margin`, `padding`, `border`
+3. **Typography**: `font-*`, `line-height`, `letter-spacing`, `text-*`
+4. **Visual**: `background`, `color`, `box-shadow`, `opacity`
+5. **Misc**: `cursor`, `overflow`, `transition`, `animation`
+
+```css
+/* Good */
+.card {
+  /* Positioning */
+  position: relative;
+  z-index: var(--z-base);
+  
+  /* Box Model */
+  width: 100%;
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-md);
+  
+  /* Visual */
+  background: var(--bg-surface-2);
+  box-shadow: var(--shadow-md);
+  
+  /* Misc */
+  transition: box-shadow var(--duration-normal) var(--ease-out);
+}
+```
+
+#### ネストの深さ制限
+
+- **最大ネスト階層**: 3階層まで
+- **4階層以上の場合**: 新しいセレクタやコンポーネントに分割
+
+```css
+/* Bad - 4階層ネスト */
+.sidebar {
+  .nav {
+    .item {
+      .link { /* ← 深すぎる */
+        color: var(--fg-muted);
+      }
+    }
+  }
+}
+
+/* Good - フラット化 */
+.sidebar-nav-link {
+  color: var(--fg-muted);
+}
+```
+
+#### セレクタ命名規則
+
+- **コンポーネント**: ケバブケース (`ui-button`, `card-header`)
+- **ユーティリティ**: プレフィックス付き (`u-text-center`, `u-sr-only`)
+- **状態**: `is-*` または `has-*` (`is-active`, `has-error`)
+
+### テスト戦略
+
+Rouaultのデザインシステム品質を維持するためのテスト方針。
+
+#### 視覚回帰テスト (VRT)
+
+**Playwright + Storybook**を使用したスナップショットテスト。
+
+| テスト対象 | 頻度 | ツール |
+|------------|------|------|
+| **コンポーネント単体** | 変更時 | Storybook + Playwright |
+| **テーマ切り替え** (Light/Dark) | トークン変更時 | Playwright自動テスト |
+| **Forced Colors Mode** | 定期的 (リリース前) | Playwright emulation |
+
+#### アクセシビリティテスト
+
+| ツール | 用途 |
+|--------|------|
+| **axe-core** (Playwright統合) | 自動化WCAGチェック |
+| **手動キーボードテスト** | フォーカス順序、Escキー動作確認 |
+| **スクリーンリーダー** (NVDA/VoiceOver) | 主要フローの音声読み上げ確認 |
+
+#### デザイントークンテスト
+
+CSSトークンの正しさを保証するテスト。
+
+```typescript
+// 例: Vitestでコントラスト比を自動検証
+import { describe, it, expect } from 'vitest';
+import { getContrastRatio } from './utils/a11y';
+
+describe('Color Tokens - Contrast Ratios', () => {
+  it('本文テキストは4.5:1以上のコントラストを持つ', () => {
+    const fgDefault = 'oklch(20% 0.03 250)';
+    const bgDefault = 'oklch(98% 0.01 250)';
+    const ratio = getContrastRatio(fgDefault, bgDefault);
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
+  });
+});
+```
+
+#### テストチェックリスト
+
+すべてのコンポーネントに対して以下を確認します：
+
+- [ ] Light/Dark両モードで表示確認
+- [ ] フォーカスインジケータが視認可能
+- [ ] `prefers-reduced-motion` 設定時の動作
+- [ ] Forced Colors Modeでの表示
+- [ ] キーボードのみで操作可能
+- [ ] スクリーンリーダーで意味が伝わる
+- [ ] コントラスト比基準適合
+- [ ] タッチターゲットサイズ (44px / 24px) 確保
+
+---
+
+## 用語集 (Glossary)
+
+| 用語 | 定義 |
+|------|------|
+| **Primitive Tokens** | 計算式の基礎となる数値トークン。直接使用せず、Semanticトークンの定義に使用する。例: `--chroma-high`, `--space-4` |
+| **Semantic Tokens** | 役割を持つトークン。Primitiveを参照して定義され、コンポーネント実装で使用する。例: `--primary`, `--bg-default` |
+| **S/N比 (Signal-to-Noise Ratio)** | 情報の信号対雑音比。有用な情報（Signal）と装飾的なノイズ（Noise）の比率。高いS/N比は、ユーザーが必要な情報に素早くアクセスできることを意味する。 |
+| **Tactility (触感)** | デジタルインターフェースにおける操作の手応え。アニメーションやフィードバックによって、ユーザーが「操作した」という実感を得られること。 |
+| **Flow State (フロー状態)** | ユーザーが作業に没入し、時間を忘れて集中している状態。UIの目標は、この状態を妨げないこと。 |
+| **Snappiness (即応性)** | ユーザーの操作に対する即座の反応。待ち時間を最小化し、思考の流れを断絶させない。 |
+| **Overdamped (過減衰)** | 物理学用語。振動せずに滑らかに収束する挙動。Rouaultのアニメーションは、バウンスや振動を排除し、過減衰的な動きを採用する。 |
+| **Critically Damped (臨界減衰)** | 最短時間で振動なく収束する状態。理想的なアニメーション挙動。 |
+| **OKLCH** | 知覚的均一性を持つ色空間。L（明度）、C（彩度）、H（色相）で色を定義する。 |
+| **WCAG** | Web Content Accessibility Guidelines。Webコンテンツのアクセシビリティガイドライン。Level AAは4.5:1のコントラスト比を要求。 |
+| **Forced Colors Mode** | Windowsハイコントラストモードなど、OSレベルで色が強制される環境。 |
+| **Roving Tabindex** | 複合ウィジェット内で、矢印キーによる項目移動を可能にするフォーカス管理パターン。 |
+| **Focus Trap** | モーダルダイアログなど、フォーカスを特定領域内に閉じ込める手法。 |
+| **Shimmer Effect** | スケルトンUIで使用される、光が流れるようなアニメーション効果。 |
 
 ---
 
