@@ -191,9 +191,11 @@ export const Default: Story = {
       throw new Error(`Expected href to be '#main-content', got '${anchor.getAttribute('href')}'`);
     }
 
-    // テスト: 正しいaria-label属性が設定されていること
-    if (anchor.getAttribute('aria-label') !== 'メインコンテンツへスキップ') {
-      throw new Error(`Expected aria-label to be 'メインコンテンツへスキップ', got '${anchor.getAttribute('aria-label')}'`);
+    // テスト: 正しいテキストコンテンツが設定されていること
+    // Note: アンカー要素はテキストコンテンツを持つため、aria-labelは冗長であり設定されない
+    const anchorText = anchor.textContent?.trim();
+    if (anchorText !== 'メインコンテンツへスキップ') {
+      throw new Error(`Expected text content to be 'メインコンテンツへスキップ', got '${anchorText}'`);
     }
 
     // テスト: ターゲット要素が存在し、tabindex="-1"が設定されていること
@@ -278,8 +280,10 @@ export const CustomTarget: Story = {
     }
 
     // テスト: カスタムラベルが正しく設定されていること
-    if (anchor.getAttribute('aria-label') !== 'カスタムコンテンツへスキップ') {
-      throw new Error(`Expected aria-label to be 'カスタムコンテンツへスキップ', got '${anchor.getAttribute('aria-label')}'`);
+    // Note: アンカー要素はテキストコンテンツを持つため、aria-labelは冗長であり設定されない
+    const anchorText = anchor.textContent?.trim();
+    if (anchorText !== 'カスタムコンテンツへスキップ') {
+      throw new Error(`Expected text content to be 'カスタムコンテンツへスキップ', got '${anchorText}'`);
     }
 
     // テスト: カスタムターゲット要素が存在すること
