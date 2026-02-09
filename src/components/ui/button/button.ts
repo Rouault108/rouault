@@ -459,6 +459,30 @@ export class Button extends LitElement {
     }
   }
 
+  /**
+   * 内部ボタンのクリックハンドラ
+   * Shadow DOM 境界を越えてフォーム送信/リセットを行う
+   */
+  private _handleClick(e: Event): void {
+    // disabled または loading 状態の場合は何もしない
+    if (this.disabled || this.loading) {
+      e.preventDefault();
+      return;
+    }
+
+    // type="submit" の場合、フォームオーナーに送信をリクエスト
+    if (this.type === 'submit' && this._internals.form) {
+      e.preventDefault();
+      this._internals.form.requestSubmit();
+    }
+
+    // type="reset" の場合、フォームオーナーをリセット
+    if (this.type === 'reset' && this._internals.form) {
+      e.preventDefault();
+      this._internals.form.reset();
+    }
+  }
+
   override render() {
     const classes = {
       [`variant-${this.variant}`]: true,
@@ -473,11 +497,12 @@ export class Button extends LitElement {
         ?disabled="${this.disabled || this.loading}"
         aria-busy="${this.loading}"
         class="${classMap(classes)}"
+        @click="${this._handleClick}"
       >
         <span class="label" part="label">
           <slot></slot>
         </span>
-        
+
         ${this.loading
           ? html`
               <span class="spinner" part="spinner">
