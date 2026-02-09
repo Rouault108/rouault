@@ -127,7 +127,7 @@ export class SkipLink extends LitElement {
    * @default "#main-content"
    */
   @property({ attribute: 'href', type: String })
-  accessor href = '#main-content';
+  href = '#main-content';
 
   /**
    * 表示ラベル
@@ -135,7 +135,7 @@ export class SkipLink extends LitElement {
    * @default "メインコンテンツへスキップ"
    */
   @property({ type: String })
-  accessor label = 'メインコンテンツへスキップ';
+  label = 'メインコンテンツへスキップ';
 
   override render() {
     return html`

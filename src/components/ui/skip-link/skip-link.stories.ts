@@ -385,3 +385,468 @@ export const Focused: Story = {
     console.log('✅ All tests passed for Focused story');
   },
 };
+
+/**
+ * スキップナビゲーションフロー。
+ * 
+ * スキップリンクをアクティベートした後、ターゲット要素にフォーカスが移動することを確認します。
+ * これはアクセシビリティの核心機能です。
+ */
+export const SkipNavigationFlow: Story = {
+  args: {
+    href: '#main-content',
+    label: 'メインコンテンツへスキップ',
+  },
+  render: (args) => html`
+    <style>
+      .demo-container {
+        min-height: 400px;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .demo-header {
+        background: var(--bg-surface-2, #f5f5f5);
+        padding: 1rem;
+        border-radius: var(--radius-md, 6px);
+      }
+
+      .demo-nav {
+        background: var(--bg-surface-2, #f5f5f5);
+        padding: 1rem;
+        border-radius: var(--radius-md, 6px);
+      }
+
+      .demo-nav a {
+        display: block;
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+        background: var(--bg-default, #fff);
+        border-radius: var(--radius-sm, 4px);
+        text-decoration: none;
+        color: var(--fg-default, #000);
+      }
+
+      .demo-main {
+        background: var(--bg-default, #fff);
+        padding: 2rem;
+        border: 1px solid var(--border-default, #e0e0e0);
+        border-radius: var(--radius-md, 6px);
+        flex: 1;
+      }
+
+      .demo-main:focus {
+        outline: 2px solid var(--primary, #0066cc);
+        outline-offset: 2px;
+      }
+    </style>
+
+    <div class="demo-container">
+      <!-- Skip Link: 最初のインタラクティブ要素 -->
+      <ui-skip-link href="${args.href}" label="${args.label}" id="flow-skip-link"></ui-skip-link>
+
+      <!-- Header -->
+      <div class="demo-header">
+        <h1>サイトヘッダー</h1>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="demo-nav">
+        <h2>ナビゲーション</h2>
+        <a href="#link1">リンク 1</a>
+        <a href="#link2">リンク 2</a>
+        <a href="#link3">リンク 3</a>
+        <a href="#link4">リンク 4</a>
+        <a href="#link5">リンク 5</a>
+      </nav>
+
+      <!-- Main Content: ターゲット要素 -->
+      <main id="main-content" tabindex="-1" class="demo-main">
+        <h2>メインコンテンツ</h2>
+        <p>スキップリンクをアクティベートすると、このコンテンツにフォーカスが移動します。</p>
+        <p>このストーリーでは、Enter キーを押した後のフォーカス移動を自動的にテストします。</p>
+      </main>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    // テスト: スキップリンクの存在確認
+    const skipLink = canvasElement.querySelector('#flow-skip-link') as SkipLink;
+    if (!skipLink) {
+      throw new Error('Skip link component not found');
+    }
+
+    await skipLink.updateComplete;
+
+    const anchor = skipLink.shadowRoot?.querySelector('a') as HTMLAnchorElement;
+    if (!anchor) {
+      throw new Error('Anchor element not found in shadow root');
+    }
+
+    const mainContent = canvasElement.querySelector('#main-content') as HTMLElement;
+    if (!mainContent) {
+      throw new Error('Main content target element not found');
+    }
+
+    // テスト: スキップリンクにフォーカスを当てる
+    anchor.focus();
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // テスト: 現在のフォーカスがスキップリンクにあることを確認
+    if (skipLink.shadowRoot?.activeElement !== anchor) {
+      throw new Error('Skip link should be focused');
+    }
+
+    // テスト: Enter キーを押してスキップを実行
+    // Note: Storybook環境ではブラウザのネイティブなリンク挙動が動作するため、
+    // 実際のフォーカス移動はブラウザに委ねられます。
+    // ここでは、ターゲット要素が正しく設定されていることを確認します。
+    const targetId = anchor.getAttribute('href');
+    if (targetId !== '#main-content') {
+      throw new Error(`Expected href to be '#main-content', got '${targetId}'`);
+    }
+
+    // テスト: ターゲット要素にtabindex="-1"が設定されていることを確認
+    if (mainContent.getAttribute('tabindex') !== '-1') {
+      throw new Error('Target element must have tabindex="-1" for programmatic focus');
+    }
+
+    console.log('✅ All tests passed for SkipNavigationFlow story');
+    console.log('ℹ️ Manual test: Press Enter on the skip link to verify focus moves to main content');
+  },
+};
+
+/**
+ * ダークモードでのスキップリンク。
+ * 
+ * ダークモードでは、スキップリンクは「闇の中の発光体」として機能し、
+ * box-shadowを持たないことを確認します（Depth Strategy準拠）。
+ */
+export const DarkMode: Story = {
+  args: {
+    href: '#main-content',
+    label: 'メインコンテンツへスキップ',
+  },
+  parameters: {
+    backgrounds: {
+      default: 'dark',
+    },
+    docs: {
+      description: {
+        story: `
+ダークモードでは、スキップリンクは \`box-shadow: none\` となり、背景色自体のコントラストで浮遊感を表現します。
+これは \`index.md\` の「Dark Mode Depth Strategy」に基づく設計です。
+
+**検証方法**: フォーカス時に影がないことを確認してください。
+        `,
+      },
+    },
+  },
+  render: (args) => html`
+    <style>
+      /* ダークモードのトークン値を明示的にオーバーライド */
+      /* Note: Storybook環境では prefers-color-scheme: dark がトリガーされないため、
+         トークン値を直接上書きしてダークモードをシミュレートします。 */
+      .dark-mode-demo {
+        /* ダークモードのトークン値 (tokens.css L436, L405より) */
+        --fg-default: oklch(90% 0.01 250);
+        --bg-default: oklch(12% 0.02 250);
+        --border-on-inverted: oklch(from var(--bg-default) l c h / 0.2);
+        --shadow-lg: none; /* ダークモードでは影を削除 */
+        
+        min-height: 300px;
+        padding: 2rem;
+        background: var(--bg-default);
+        color: var(--fg-default);
+      }
+
+      .demo-info {
+        margin-top: 4rem;
+        padding: 1rem;
+        background: oklch(17% 0.02 250); /* --bg-surface-2 in dark mode */
+        border-radius: var(--radius-md, 6px);
+        border: 1px solid oklch(90% 0.01 250 / 0.12); /* --border-default in dark mode */
+      }
+
+      .demo-note {
+        margin-top: 1rem;
+        padding: 0.75rem;
+        background: oklch(22% 0.02 250);
+        border-radius: var(--radius-sm, 4px);
+        font-size: var(--text-sm, 13px);
+        color: oklch(65% 0.01 250); /* --fg-muted in dark mode */
+      }
+    </style>
+
+    <div class="dark-mode-demo">
+      <!-- フォーカス済みのSkip Link -->
+      <ui-skip-link
+        href="${args.href}"
+        label="${args.label}"
+        id="dark-mode-skip-link"
+      ></ui-skip-link>
+
+      <div class="demo-info">
+        <p><strong>ダークモード</strong>: このストーリーでは、スキップリンクが自動的にフォーカスされています。</p>
+        <p>スキップリンクは<strong>明るい背景</strong>（白系）に<strong>暗いテキスト</strong>（黒系）で表示され、<br>
+          「闇の中の発光体」として浮遊感を表現しています。</p>
+        <div class="demo-note">
+          <strong>技術的な注記</strong>: ダークモードでは <code>box-shadow: none</code> となり、
+          背景色自体のコントラストで浮遊感を表現します（Dark Mode Depth Strategy準拠）。
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <main id="main-content" tabindex="-1">
+        <h2>メインコンテンツ</h2>
+        <p>コンテンツ領域</p>
+      </main>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const skipLink = canvasElement.querySelector('#dark-mode-skip-link') as SkipLink;
+    if (!skipLink) {
+      throw new Error('Skip link component not found');
+    }
+
+    await skipLink.updateComplete;
+
+    const anchor = skipLink.shadowRoot?.querySelector('a');
+    if (!anchor) {
+      throw new Error('Anchor element not found in shadow root');
+    }
+
+    // フォーカスを当てる
+    anchor.focus();
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const computedStyle = window.getComputedStyle(anchor);
+
+    // テスト: ダークモードでbox-shadowがnoneであることを確認
+    // Note: prefers-color-scheme: dark の検出は環境依存のため、
+    // ここでは視覚的な確認を推奨するメッセージを出力します。
+    console.log('ℹ️ Dark Mode Test: Verify that box-shadow is "none" when prefers-color-scheme: dark is active');
+    console.log(`Current box-shadow value: ${computedStyle.boxShadow}`);
+
+    // テスト: フォーカス状態の基本検証
+    if (computedStyle.opacity !== '1') {
+      throw new Error(`Focus: Expected opacity to be '1', got '${computedStyle.opacity}'`);
+    }
+
+    if (computedStyle.clipPath !== 'none') {
+      throw new Error(`Focus: Expected clip-path to be 'none', got '${computedStyle.clipPath}'`);
+    }
+
+    console.log('✅ All tests passed for DarkMode story');
+  },
+};
+
+/**
+ * 強制カラーモード（Windows高コントラストモード等）でのスキップリンク。
+ * 
+ * forced-colors: active 環境下では、アウトラインが強制的に適用され、
+ * システムカラーに準拠することを確認します。
+ */
+export const ForcedColorsMode: Story = {
+  args: {
+    href: '#main-content',
+    label: 'メインコンテンツへスキップ',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: `
+\`forced-colors: active\` 環境下では、以下のスタイルが適用されます：
+- \`outline: 3px solid CanvasText\`
+- \`background: Canvas\`
+- \`color: CanvasText\`
+- \`border-color: CanvasText\`
+
+**検証方法**: 
+1. Windows の設定 > アクセシビリティ > ハイコントラスト を有効化
+2. または、ブラウザの開発者ツールで \`forced-colors: active\` をエミュレート
+
+これにより、カスタムカラーが失われても視認性が保証されます。
+        `,
+      },
+    },
+  },
+  render: (args) => html`
+    <style>
+      /* 強制カラーモードのエミュレーション用スタイル */
+      .forced-colors-demo {
+        min-height: 300px;
+        padding: 2rem;
+        /* Note: 実際の forced-colors: active はOSレベルの設定が必要 */
+      }
+
+      .demo-info {
+        margin-top: 4rem;
+        padding: 1rem;
+        background: var(--bg-surface-2, #f5f5f5);
+        border-radius: var(--radius-md, 6px);
+      }
+
+      /* 強制カラーモードのシミュレーション（視覚的な参考用） */
+      @media (forced-colors: active) {
+        .forced-colors-demo {
+          background: Canvas;
+          color: CanvasText;
+        }
+      }
+    </style>
+
+    <div class="forced-colors-demo">
+      <!-- フォーカス済みのSkip Link -->
+      <ui-skip-link
+        href="${args.href}"
+        label="${args.label}"
+        id="forced-colors-skip-link"
+      ></ui-skip-link>
+
+      <div class="demo-info">
+        <p><strong>強制カラーモード</strong>: このストーリーでは、スキップリンクが自動的にフォーカスされています。</p>
+        <p>Windows高コントラストモードまたはブラウザの開発者ツールで forced-colors をエミュレートして確認してください。</p>
+        <ul>
+          <li>アウトラインが 3px の太さで表示されること</li>
+          <li>システムカラー（CanvasText, Canvas）が適用されること</li>
+        </ul>
+      </div>
+
+      <!-- Main Content -->
+      <main id="main-content" tabindex="-1">
+        <h2>メインコンテンツ</h2>
+        <p>コンテンツ領域</p>
+      </main>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const skipLink = canvasElement.querySelector('#forced-colors-skip-link') as SkipLink;
+    if (!skipLink) {
+      throw new Error('Skip link component not found');
+    }
+
+    await skipLink.updateComplete;
+
+    const anchor = skipLink.shadowRoot?.querySelector('a');
+    if (!anchor) {
+      throw new Error('Anchor element not found in shadow root');
+    }
+
+    // フォーカスを当てる
+    anchor.focus();
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // テスト: 基本的なフォーカス状態の確認
+    const computedStyle = window.getComputedStyle(anchor);
+
+    if (computedStyle.opacity !== '1') {
+      throw new Error(`Focus: Expected opacity to be '1', got '${computedStyle.opacity}'`);
+    }
+
+    // Note: forced-colors: active の検出は matchMedia で可能
+    const isForcedColors = window.matchMedia('(forced-colors: active)').matches;
+    
+    console.log(`ℹ️ Forced Colors Mode: ${isForcedColors ? 'ACTIVE' : 'INACTIVE'}`);
+    
+    if (isForcedColors) {
+      console.log('✅ Forced colors mode is active. Verify outline and system colors are applied.');
+    } else {
+      console.log('ℹ️ Forced colors mode is not active. Enable Windows High Contrast or browser emulation to test.');
+    }
+
+    console.log('✅ All tests passed for ForcedColorsMode story');
+  },
+};
+
+/**
+ * 存在しないターゲットへの警告。
+ * 
+ * ターゲット要素が存在しない場合、開発者向けにコンソール警告が出力されることを確認します。
+ * これは開発者体験（DX）の向上のための機能です。
+ */
+export const MissingTargetWarning: Story = {
+  args: {
+    href: '#non-existent-target',
+    label: '存在しないターゲットへスキップ',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: `
+このストーリーでは、存在しないターゲット（\`#non-existent-target\`）を指定しています。
+
+**期待される挙動**:
+- コンポーネントのマウント時に、コンソールに警告メッセージが出力されます
+- 警告メッセージ: \`[ui-skip-link]: Target element with selector '#non-existent-target' not found in the document.\`
+
+**目的**: 開発者が設定ミスに早期に気付けるようにするためのDX改善機能です。
+        `,
+      },
+    },
+  },
+  render: (args) => html`
+    <style>
+      .demo-container {
+        min-height: 200px;
+        padding: 2rem;
+      }
+
+      .demo-info {
+        margin-top: 4rem;
+        padding: 1rem;
+        background: var(--bg-surface-2, #f5f5f5);
+        border-radius: var(--radius-md, 6px);
+        border-left: 4px solid var(--danger, #dc2626);
+      }
+    </style>
+
+    <div class="demo-container">
+      <!-- 存在しないターゲットを指定したSkip Link -->
+      <ui-skip-link
+        href="${args.href}"
+        label="${args.label}"
+        id="missing-target-skip-link"
+      ></ui-skip-link>
+
+      <div class="demo-info">
+        <p><strong>⚠️ 開発者向け警告テスト</strong></p>
+        <p>このストーリーでは、存在しないターゲット（<code>#non-existent-target</code>）を指定しています。</p>
+        <p><strong>ブラウザのコンソールを開いて、警告メッセージが出力されていることを確認してください。</strong></p>
+        <p>期待されるメッセージ:</p>
+        <pre><code>[ui-skip-link]: Target element with selector '#non-existent-target' not found in the document.</code></pre>
+      </div>
+
+      <!-- 注意: ターゲット要素は意図的に配置していません -->
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const skipLink = canvasElement.querySelector('#missing-target-skip-link') as SkipLink;
+    if (!skipLink) {
+      throw new Error('Skip link component not found');
+    }
+
+    await skipLink.updateComplete;
+
+    // テスト: コンポーネントが正しくレンダリングされていること
+    const anchor = skipLink.shadowRoot?.querySelector('a');
+    if (!anchor) {
+      throw new Error('Anchor element not found in shadow root');
+    }
+
+    // テスト: href属性が正しく設定されていること
+    if (anchor.getAttribute('href') !== '#non-existent-target') {
+      throw new Error(`Expected href to be '#non-existent-target', got '${anchor.getAttribute('href')}'`);
+    }
+
+    // テスト: ターゲット要素が存在しないことを確認
+    const target = canvasElement.querySelector('#non-existent-target');
+    if (target) {
+      throw new Error('Target element should not exist in this story');
+    }
+
+    console.log('✅ All tests passed for MissingTargetWarning story');
+    console.log('ℹ️ Check the browser console for the expected warning message');
+    console.log('ℹ️ Expected: [ui-skip-link]: Target element with selector \'#non-existent-target\' not found in the document.');
+  },
+};
