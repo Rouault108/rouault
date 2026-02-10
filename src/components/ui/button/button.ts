@@ -4,14 +4,14 @@ import { classMap } from 'lit/directives/class-map.js';
 
 /**
  * ボタン (Button) コンポーネント
- * 
+ *
  * アクションの優先度を視覚的な「重さ（Weight）」で制御します。
  * 「静謐さ」を保つため、画面内に Primary（塗りつぶし）ボタンは原則1つのみとし、
  * 残りは Secondary または Ghost を使用することで視覚的ノイズを極限まで抑制します。
- * 
+ *
  * @slot - ボタンのラベルテキストまたはコンテンツ（アイコンを含む）
  * @slot spinner - ローディングスピナー（カスタマイズ時に使用）
- * 
+ *
  * @property {string} variant - 視覚的強度を決定するバリアント
  * @property {string} size - ボタンのサイズ
  * @property {boolean} iconOnly - アイコンのみのボタン（aria-label必須）
@@ -19,9 +19,9 @@ import { classMap } from 'lit/directives/class-map.js';
  * @property {boolean} disabled - 不活性状態
  * @property {string} type - フォーム内での挙動制御
  * @property {string} form - フォームオーナーの明示
- * 
+ *
  * @fires click - ボタンがクリックされた時
- * 
+ *
  * @cssprop --primary - プライマリカラー
  * @cssprop --primary-hover - プライマリカラーのホバー状態
  * @cssprop --on-primary - プライマリカラー上のテキスト色
@@ -56,27 +56,27 @@ import { classMap } from 'lit/directives/class-map.js';
  * @cssprop --focus-ring-color - フォーカスリング色
  * @cssprop --focus-ring-offset - フォーカスリングオフセット
  * @cssprop --animation-focus - Adaptive Focusアニメーション
- * 
+ *
  * @csspart button - 内部のbutton要素
  * @csspart label - ラベルのスパン要素
  * @csspart spinner - スピナーのコンテナ
- * 
+ *
  * @example
  * ```html
  * <!-- デフォルト（Secondary） -->
  * <ui-button>保存</ui-button>
- * 
+ *
  * <!-- プライマリ -->
  * <ui-button variant="primary">送信</ui-button>
- * 
+ *
  * <!-- フォーム送信 -->
  * <ui-button type="submit" variant="primary">保存</ui-button>
- * 
+ *
  * <!-- アイコンのみ -->
  * <ui-button icon-only aria-label="設定を開く">
  *   <iconify-icon icon="lucide:settings"></iconify-icon>
  * </ui-button>
- * 
+ *
  * <!-- ローディング状態 -->
  * <ui-button loading>保存中...</ui-button>
  * ```
@@ -95,23 +95,23 @@ export class Button extends LitElement {
       align-items: center;
       justify-content: center;
       position: relative;
-      
+
       /* Border & Radius */
       border-radius: var(--radius-md, 6px);
       border: none;
-      
+
       /* Typography */
       font-family: var(--font-sans);
       font-weight: var(--font-medium, 500);
       font-size: inherit;
-      font-feature-settings: "palt";
+      font-feature-settings: 'palt';
       letter-spacing: 0.02em;
       line-height: 1;
-      
+
       /* Interaction */
       cursor: pointer;
       user-select: none;
-      
+
       /* Transition: 明示的なプロパティリストを使用 */
       transition:
         background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
@@ -142,7 +142,7 @@ export class Button extends LitElement {
     }
 
     /* --- Size Variants --- */
-    
+
     /* Small */
     .size-sm {
       height: var(--control-height-sm, 28px);
@@ -183,12 +183,14 @@ export class Button extends LitElement {
     }
 
     /* --- Variant Styles --- */
-    
+
     /* Primary */
     .variant-primary {
       background: var(--primary, oklch(60% 0.15 250));
       color: var(--on-primary, oklch(100% 0 0));
-      box-shadow: inset 0 1px 0 0 oklch(100% 0 0 / 0.15), var(--shadow-md, 0 2px 8px oklch(0% 0 0 / 0.12));
+      box-shadow:
+        inset 0 1px 0 0 oklch(100% 0 0 / 0.15),
+        var(--shadow-md, 0 2px 8px oklch(0% 0 0 / 0.12));
     }
 
     .variant-primary:hover:not(:disabled) {
@@ -210,7 +212,9 @@ export class Button extends LitElement {
     /* Dark Mode: Edge Highlight for Secondary */
     @media (prefers-color-scheme: dark) {
       .variant-secondary {
-        box-shadow: inset 0 1px 0 0 oklch(100% 0 0 / 0.1), var(--shadow-sm, 0 1px 2px oklch(0% 0 0 / 0.05));
+        box-shadow:
+          inset 0 1px 0 0 oklch(100% 0 0 / 0.1),
+          var(--shadow-sm, 0 1px 2px oklch(0% 0 0 / 0.05));
       }
     }
 
@@ -239,7 +243,8 @@ export class Button extends LitElement {
     .variant-danger {
       background: var(--bg-danger-subtle, oklch(from var(--danger, oklch(55% 0.2 28)) l c h / 0.1));
       color: var(--danger, oklch(55% 0.2 28));
-      border: var(--border-width, 1px) solid var(--border-danger, oklch(from var(--danger, oklch(55% 0.2 28)) l c h / 0.3));
+      border: var(--border-width, 1px) solid
+        var(--border-danger, oklch(from var(--danger, oklch(55% 0.2 28)) l c h / 0.3));
     }
 
     .variant-danger:hover:not(:disabled) {
@@ -248,7 +253,7 @@ export class Button extends LitElement {
     }
 
     /* --- Loading State --- */
-    
+
     /* ラベルを非表示にしつつ幅を維持 */
     .label {
       display: inline-flex;
@@ -256,7 +261,7 @@ export class Button extends LitElement {
       gap: inherit;
     }
 
-    button[aria-busy="true"] .label {
+    button[aria-busy='true'] .label {
       visibility: hidden;
     }
 
@@ -269,7 +274,7 @@ export class Button extends LitElement {
       justify-content: center;
     }
 
-    button[aria-busy="true"] .spinner {
+    button[aria-busy='true'] .spinner {
       display: flex;
     }
 
@@ -302,7 +307,7 @@ export class Button extends LitElement {
     }
 
     /* --- Print Styles --- */
-    
+
     @media print {
       button {
         box-shadow: none !important;
@@ -323,13 +328,13 @@ export class Button extends LitElement {
         display: none;
       }
 
-      button[aria-busy="true"] {
+      button[aria-busy='true'] {
         display: none;
       }
     }
 
     /* --- Forced Colors Mode --- */
-    
+
     @media (forced-colors: active) {
       button {
         border: var(--border-width, 1px) solid CanvasText;
@@ -348,7 +353,7 @@ export class Button extends LitElement {
         box-shadow: none;
       }
 
-      button[aria-selected="true"],
+      button[aria-selected='true'],
       button.active {
         outline: 2px solid CanvasText;
         outline-offset: -2px;
@@ -356,7 +361,7 @@ export class Button extends LitElement {
     }
 
     /* --- Touch Target (最低44×44px) --- */
-    
+
     /* ボタンが小さい場合に疑似要素でタッチ領域を拡張 */
     button::after {
       content: '';
@@ -390,9 +395,8 @@ export class Button extends LitElement {
 
   /**
    * アイコンのみのボタン（正方形を強制）
-   * @type {boolean}
    * @default false
-   * 
+   *
    * **重要**: icon-only を true にする場合は、aria-label を必ず設定してください。
    */
   @property({ type: Boolean, attribute: 'icon-only', reflect: true })
@@ -400,7 +404,6 @@ export class Button extends LitElement {
 
   /**
    * 処理中状態
-   * @type {boolean}
    * @default false
    */
   @property({ type: Boolean, reflect: true })
@@ -408,7 +411,6 @@ export class Button extends LitElement {
 
   /**
    * 不活性状態
-   * @type {boolean}
    * @default false
    */
   @property({ type: Boolean, reflect: true })
@@ -418,7 +420,7 @@ export class Button extends LitElement {
    * フォーム内での挙動制御
    * @type {'button' | 'submit' | 'reset'}
    * @default 'button'
-   * 
+   *
    * **注意**: ネイティブ <button> と異なり、デフォルトは 'button' です。
    * フォーム送信に使用する場合は type="submit" を明示してください。
    */
@@ -446,7 +448,7 @@ export class Button extends LitElement {
     if (this.iconOnly && !this.getAttribute('aria-label')) {
       console.error(
         '[ui-button]: icon-only="true" の場合、aria-label は必須です。アクセシビリティのために代替テキストを提供してください。',
-        this
+        this,
       );
     }
 
@@ -454,7 +456,7 @@ export class Button extends LitElement {
     if (this.size === 'lg') {
       console.warn(
         '[ui-button]: size="lg" は非推奨です。デザインレビューなしでの使用を禁止します。md サイズに variant="primary" を組み合わせることを検討してください。',
-        this
+        this,
       );
     }
   }
