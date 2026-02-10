@@ -97,11 +97,11 @@
   --bg-success-subtle: oklch(96% 0.04 145);
   --bg-tip-subtle: oklch(96% 0.04 var(--hue-primary));
   --bg-note-subtle: oklch(96% 0.01 var(--hue-base));
-
-  /* =========================================================================
+  --bg-table-ruler: oklch(from var(--fg-default) l c h / 0.08)
+    /* =========================================================================
    * Semantic Tokens - Foreground (Light Mode)
    * ========================================================================= */
-  --fg-default: oklch(20% 0.03 var(--hue-base));
+    --fg-default: oklch(20% 0.03 var(--hue-base));
   --fg-muted: oklch(45% 0.02 var(--hue-base));
   --fg-subtle: oklch(60% 0.01 var(--hue-base));
   --fg-on-primary: var(--on-primary);
@@ -164,13 +164,12 @@
   /* =========================================================================
    * Typography - Font Family
    * ========================================================================= */
-  --font-sans: 'Noto Sans JP Variable', 'Noto Sans JP', -apple-system,
-    BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN',
-    'Yu Gothic UI', 'Segoe UI', 'Meiryo', sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Liberation Mono',
-    'Courier New', monospace;
-  --font-serif: 'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho',
-    'YuMincho', serif;
+  --font-sans:
+    'Noto Sans JP Variable', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Hiragino Sans',
+    'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', 'Segoe UI', 'Meiryo', sans-serif;
+  --font-mono:
+    'JetBrains Mono', 'Fira Code', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
+  --font-serif: 'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', serif;
 
   /* =========================================================================
    * Typography - Font Weight
@@ -434,11 +433,11 @@
     --bg-success-subtle: oklch(25% 0.05 145);
     --bg-tip-subtle: oklch(25% 0.05 var(--hue-primary));
     --bg-note-subtle: oklch(20% 0.02 var(--hue-base));
-
-    /* =========================================================================
+    --bg-table-ruler: oklch(from var(--fg-default) l c h / 0.08)
+      /* =========================================================================
      * Semantic Tokens - Foreground (Dark Mode)
      * ========================================================================= */
-    --fg-default: oklch(90% 0.01 var(--hue-base));
+      --fg-default: oklch(90% 0.01 var(--hue-base));
     --fg-muted: oklch(65% 0.01 var(--hue-base));
     --fg-subtle: oklch(50% 0.01 var(--hue-base));
     --fg-on-primary: var(--on-primary);

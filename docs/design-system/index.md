@@ -265,6 +265,7 @@ Rouaultは、色空間として **OKLCH** を採用します。これは、従�
 | `--bg-hover` | Semantic | `oklch(from var(--fg-default) l c h / 0.05)` | `oklch(from var(--fg-default) l c h / 0.05)` | ホバー (`from --fg-default`) |
 | `--bg-active` | Semantic | `oklch(from var(--primary) l c h / 0.08)` | `oklch(from var(--primary) l c h / 0.15)` | アクティブ (`from --primary`) |
 | `--bg-surface-active`| Semantic | `var(--bg-active)` | `var(--bg-active)` | リスト行選択状態 |
+| `--bg-table-ruler` | Semantic | `oklch(from var(--fg-default) l c h / 0.08)` | `oklch(from var(--fg-default) l c h / 0.08)` | **テーブル行のActive Ruler**。高密度データ閲覧における行識別性を確保するため、`--bg-hover` より強いコントラストを持つ専用トークン。 |
 | `--focus-ring-color-subtle` | Semantic | `oklch(65% 0.12 var(--hue-primary))` | `oklch(53% 0.12 var(--hue-primary))` | **移動中のフォーカス**。3:1コントラスト保証。 |
 | `--bg-danger-subtle` | Semantic | `oklch(96% 0.03 25)` | `oklch(25% 0.05 25)` | エラー背景 |
 | `--bg-warning-subtle` | Semantic | `oklch(96% 0.04 85)` | `oklch(25% 0.05 85)` | 警告背景 |
