@@ -3883,8 +3883,9 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
         - **Conflict Resolution**: 目次項目のクリックによる移動中は、Observerの監視を一時的に **停止（Pause）** し、`active-id` を即座にクリック対象へ固定します。スクロール完了後に監視を再開することで、移動中のインジケーターの明滅（Flickering）を防ぎます。
 - **Interaction**:
     - **Smooth Scroll**:
-        - 原則として JS制御により、移動距離に関わらず一定時間（`--duration-slower` 以内）で完了するカスタムスクロールを実装し、即応性を保証します。
+        - 原則として JS制御により、移動距離に応じた適応的アニメーション時間（最大 `--duration-slower` = 300ms）で完了するカスタムスクロールを実装し、即応性を保証します。隣接セクションへの小さな移動では短時間（例: 100ms）、大きな移動でも300msを超えないよう制御します。
         - **Reduced Motion**: ユーザー設定 `prefers-reduced-motion: reduce` が有効な場合、アニメーションを完全に無効化し、即座にジャンプします。
+    - **Keyboard Navigation**: 標準のTab順序ナビゲーションに従います。Roving Tabindex（矢印キーナビゲーション）は使用しません。
 
 **3. 技術仕様とAPI (Technical Specs)**
 
@@ -3901,17 +3902,18 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
     - Top: `calc(var(--header-height) + var(--space-8))`
     - Width: レイアウトコンテキストに従う（原則 `100%` または `fit-content`）
 - **Item**:
-    - **Indicator Track (Active Pill)**: 
-        - **Structure**: `border` プロパティではなく、`::before` 疑似要素を左端に絶対配置 (`width: 2px`) することで、インジケーターを独立したオブジェクトとして扱います。
+    - **Indicator Track (Active Pill)**:
+        - **Structure**: `border` プロパティではなく、`::before` 疑似要素を左端に絶対配置 (`width: var(--border-width-thick)` = 2px) することで、インジケーターを独立したオブジェクトとして扱います。
         - **Shape**: `border-radius: var(--radius-full)`。単なる線ではなく「オブジェクト」として扱います。
-        - **Transition Strategy**: 
+        - **Transition Strategy**:
             - **Scroll Driven**: スクロールによるアクティブ切り替え時は、アニメーション時間を **ゼロ (`--duration-instant`)** とし、遅延なく現在地を反映させます（計器としての正確性）。遅れてついてくるスプリングアニメーションは情報の同期ズレ（Lag）となるため禁止します。
-            - **Jump / Click**: クリックジャンプ時は、`opacity` と `scaleY` を用いた微細なフェードイン（`--duration-fast`）を行い、「着地した」という物理的な確信（Confirmation）を与えます。
+            - **Jump / Click**: クリックジャンプ時は、`opacity` のフェードイン（`--duration-fast`）を行い、「着地した」という物理的な確信（Confirmation）を与えます。
     - Typography: `--text-sm` (13px), Weight 400
         - **Note**: `index.md` の "Small Text Rule" (12px以下への補正義務) を回避するため、あえて `--text-sm` (13px) を採用します。これにより、Weightを `400` に保ったまま `--fg-muted` を使用することを可能にし、視覚的な静謐さと可読性を両立させます。
-    - Color (Default): `--fg-muted` (WCAG AA準拠)
+    - Color (Default): `--fg-muted` (WCAG AA準拠: `--bg-default` に対して 4.8:1)
     - Color (Hover): `--fg-default` (背景色は変更せず、文字色のみで反応を返し、ノイズを抑える)
-    - Color (Active): `--primary` ("今ここを読んでいる"という確信)
+    - Color (Active): `--primary` (WCAG AA準拠: Light Mode `--bg-default` に対して 7.1:1)
+    - Color (Focus): Adaptive Focus適用。`:focus-visible` 時に `outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: var(--focus-ring-offset);` + `animation: var(--animation-focus);` を使用し、移動中は控えめ、停止時に強調する時間軸フォーカス表現を実現します。
     - Padding Left: `calc(var(--level) * var(--space-2) + var(--space-3))`
         - **Note**: `var(--level)` は表示上の相対階層（0 start）として正規化した値を適用します（例: H2=0, H3=1...）。
 
@@ -3921,18 +3923,28 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
     - サイドバーへ追従配置（Sticky）。
 - **Mobile (< lg)**:
     - **Trigger**: スティッキーヘッダーの右端に「目次アイコン (`List`)」を配置します。
+        - **Note**: ヘッダーの既存要素（検索トリガー、ユーザーメニュー）との配置関係については、ヘッダーコンポーネント仕様を参照してください。目次アイコンは検索トリガーとユーザーメニューの間に配置し、モバイル画面幅でのレイアウト優先順位はヘッダー仕様に準じます。
     - **Presentation**: アイコンタップにより、画面下部からスライドインする **Bottom Sheet (Sheet Modal)** として展開します。
-        - **Dimming**: 背景（記事本文）は `--z-overlay` で暗くし、フォーカスをシートへ移動させます。
+        - **Z-index**: オーバーレイは `--z-backdrop` (200)、シート本体は `--z-modal` (300) を使用し、index.md の Z-index体系に準拠します。
+        - **Dimming**: 背景（記事本文）を `background-color: oklch(0% 0 0 / var(--opacity-scrim))` で暗くし、フォーカスをシートへ移動させます。
         - **Digital Tactility**: 下方向へのスワイプで閉じるジェスチャーをサポートしますが、**背景（Overlay）クリック**による閉じる挙動を基本とし、操作の堅牢性を担保します。
-        - **Selection**: 項目タップ後、シートは即座に閉じ、該当箇所へスムーズスクロールします。
+        - **Animation**:
+            - **Default**: スライドインアニメーション（`transform: translateY(0)` from `translateY(100%)`）は `--duration-slower` (300ms) を使用。
+            - **Reduced Motion**: `prefers-reduced-motion: reduce` 時は、スライドアニメーションを無効化し、即座に表示/非表示します（`--duration-instant`）。スワイプジェスチャーは引き続きサポートしますが、視覚的な追従アニメーションは排除します。
+        - **Selection**: 項目タップ後、シートを閉じるアニメーション（または即座に非表示）を開始し、**閉じアニメーション完了後**に該当箇所へスムーズスクロールを実行します。これにより、視覚的な複雑性を回避し、ユーザーの認知負荷を低減します。
 
 **6. アクセシビリティ (A11y)**
 
 - **Structure**: `nav` > `ul` > `li` > `a` (ネイティブリンク)
 - **Label**: `nav` に `aria-label="Table of Contents"` を付与。
 - **Current**: アクティブなリンクに `aria-current="location"` を設定。
+- **Focus Management**:
+    - デスクトップ: 標準のTab順序ナビゲーション。Roving Tabindexは使用しない。
+    - モバイル (Bottom Sheet): シート展開時にフォーカスを内部へ移動させ、Focus Trapを適用。`Esc` キーでシートを閉じ、トリガー（目次アイコン）へフォーカスを戻します。
+- **Reduced Motion**: `prefers-reduced-motion: reduce` 時、すべてのアニメーション（Smooth Scroll、Bottom Sheetのスライドイン、インジケーターのフェードイン）を無効化し、即座に状態遷移します。
 - **Forced Colors Mode**:
-    - **Indicator Visibility**: `forced-colors: active` 環境では背景色が消失するため、アクティブなインジケーター (`::before`) には `background-color` ではなく **`border: 2px solid Highlight`** (または `CanvasText`) を適用し、現在地を物理的に可視化します。
+    - **Indicator Visibility**: `forced-colors: active` 環境では背景色が消失するため、アクティブなインジケーター (`::before`) には `background-color` ではなく **`border: var(--border-width-thick) solid Highlight`** を適用し、現在地を物理的に可視化します。
+    - **Text Color**: index.md のシステムカラーマッピングに従い、`--fg-default` → `CanvasText`、`--fg-muted` → `GrayText`、`--primary` → `Highlight` が自動適用されます。
 
 #### テーブル (Table) `<ui-table>`
 
@@ -3950,51 +3962,112 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 
 **3. 技術仕様とAPI (Technical Specs)**
 
-| プロパティ | 属性 | 型/値 | 説明 |
-|------------|------|-------|------|
-| `density` | `density` | `'compact' \| 'normal'` | 行の高さ密度。 |
-| `colspan` / `rowspan` | - | - | **Support**. <br>**Long Table Strategy**: 行数が多く `rowspan` を使用する場合は、意味のまとまりごとに `<tbody>` 要素を分割することを推奨します。システムは `tbody` 間の境界線を強調 (`border-width-thick`) し、意味的なまとまり（Chunking）を提供します。 |
+| プロパティ | 属性 | 型/値 | デフォルト | 説明 |
+|------------|------|-------|-----------|------|
+| `density` | `density` | `'compact' \| 'normal'` | `'normal'` | 行の高さ密度。 |
+| `colspan` / `rowspan` | - | - | - | **Support**. <br>**Long Table Strategy**: 行数が多く `rowspan` を使用する場合は、意味のまとまりごとに `<tbody>` 要素を分割することを推奨します。システムは `tbody` 間の境界線を強調 (`border-width-thick`) し、意味的なまとまり（Chunking）を提供します。 |
+| `<tfoot>` | - | - | - | **現時点ではサポート対象外**。集計行・サマリー行が必要な場合は、`<tbody>` 末尾に通常の `<tr>` として配置し、必要に応じて `font-weight: var(--font-medium)` で強調することを推奨します。将来的にサポートを追加する場合は、このセクションを更新します。 |
 
 **4. スタイリングとトークンマッピング (Style & Tokens)**
 
+- **Table**:
+    - **Border Model**: `border-collapse: collapse` (ボーダーを統合し、シンプルな横線構造を実現)
+    - **Border Spacing**: `border-spacing: 0` (collapse時のフォールバック)
 - **Header (`th`)**:
     - Font: `--text-xs`, `font-weight: var(--font-medium)`
     - Letter Spacing: `var(--tracking-wide)` (Small Text Rule準拠)
     - Color: `--fg-muted`
     - Vertical Align: `bottom`
+    - Padding:
+        - **Normal**: `var(--space-3) var(--space-4)` (12px 16px)
+        - **Compact**: `var(--space-2) var(--space-4)` (8px 16px)
     - Border: `var(--border-width-thick) solid var(--border-default)` (ヘッダーとボディの明確な区分)
 - **Cell (`td`)**:
     - Font:
-        - **Normal**: `--text-base` (14px) / `padding: 12px 16px`
-        - **Compact**: `--text-sm` (13px) / `padding: 8px 16px`
+        - **Normal**: `--text-base` (14px)
+        - **Compact**: `--text-sm` (13px)
     - Color: `--fg-default`
-    - Font Feature: `"tnum"` (数値の等幅表示)
     - Vertical Align: `top` (長文折り返し時の可読性確保)
-        - **Truncation Strategy**:
-            - **Desktop**: 行の高さ（Rhythm）を一定に保つため、`max-width` を指定の上、`text-overflow: ellipsis` で省略し、`<ui-tooltip>` で補完することを標準とします。
-            - **Mobile / Touch**: ホバー操作ができないため、**省略設定を強制解除（Wrap）**し、全てのテキストを可視化します。リズムより情報へのアクセス性を優先します。
+    - Padding:
+        - **Normal**: `var(--space-3) var(--space-4)` (12px 16px)
+        - **Compact**: `var(--space-2) var(--space-4)` (8px 16px)
+    - **Truncation Strategy**:
+        - **Desktop**: 行の高さ（Rhythm）を一定に保つため、`max-width` を指定の上、`text-overflow: ellipsis` で省略し、`<ui-tooltip>` で補完することを標準とします。
+        - **Mobile / Touch**: ホバー操作ができないため、**省略設定を強制解除（Wrap）**し、全てのテキストを可視化します。リズムより情報へのアクセス性を優先します。
     - **Alignment Support**: Markdown互換のため、`th`/`td` の `align` 属性（`left`/`center`/`right`）をCSSでサポートします。
-        - **Automatic Optimization**: `align="right"` が指定されたセルには、数値とみなして自動的に `"tnum"` (等幅数値) を適用します。これにより、クラス指定なしで美しい数値リストを実現します。
+        - **Note**: `align` 属性はHTML5で非推奨（deprecated）ですが、Markdown生成コンテンツとの互換性のために例外的にサポートします。新規実装では代わりにCSSクラス（`.text-left`, `.text-center`, `.text-right`）の使用を推奨します。
+        - **Automatic Optimization**: `align="right"` が指定されたセルには、数値とみなして自動的に `font-feature-settings: "tnum"` (等幅数値) を適用します。これにより、クラス指定なしで美しい数値リストを実現します。
 - **Row (`tr`)**:
     - Border: `var(--border-width) solid var(--border-default)`
-    - **Hover (Active Ruler)**: `background-color: var(--bg-hover)` (縦線がないため、現在行を示す動的な定規として機能させます)
-        - **Note**: 高密度なデータ閲覧において「行」の識別性は重要です。標準の `--bg-hover` が薄すぎて Active Ruler として機能しない場合は、例外的にコントラストを高めた色（例: opacity `0.08`）への調整を許容します。
+    - Transition: `background-color var(--duration-fast) var(--ease-out)` (スムーズなホバー体験)
+    - **Hover (Active Ruler)**: `background-color: var(--bg-table-ruler)` (縦線がないため、現在行を示す動的な定規として機能させます)
+        - **Token Definition**: テーブル専用のActive Rulerトークン `--bg-table-ruler` を以下のように定義します:
+            - **Light Mode**: `oklch(from var(--fg-default) l c h / 0.08)` (標準の `--bg-hover` より強いコントラスト)
+            - **Dark Mode**: `oklch(from var(--fg-default) l c h / 0.08)` (同上)
+        - **Rationale**: 高密度なデータ閲覧において「行」の識別性は重要です。標準の `--bg-hover` (opacity `0.05`) では視覚的な定規として機能しないため、テーブル専用のトークンで例外的に強調します。
+        - **Touch Device Consideration**: タッチデバイスでは `:hover` の挙動が不安定（タップ後に残留）であるため、Active Rulerはマウス環境でのみ有効化します。タッチ環境では `:hover` スタイルを無効化し、代わりにセル間の十分なスペーシングとボーダーによる構造の明確化に依存します。
 - **Caption (`caption`)**:
     - Position: `caption-side: top` (左寄せ配置)
     - Font: `--text-xs`, `color: var(--fg-muted)`
-    - Padding: `--space-2` 0
+    - Padding: `var(--space-2) 0`
     - Text Align: `left`
-- **Density Variants (Padding)**:
-    - **Normal**: `padding: var(--space-3) var(--space-4)` (12px 16px)
-    - **Compact**: `padding: var(--space-2) var(--space-4)` (8px 16px)
+- **Scrollable Wrapper (`.table-container`)**:
+    - `overflow-x: auto`
+    - `overflow-y: visible` (垂直方向は内容に応じて伸縮)
+    - `:focus-visible` スタイル:
+        - `outline: var(--focus-ring-width) solid var(--focus-ring-color)`
+        - `outline-offset: var(--focus-ring-offset)`
+        - `animation: var(--animation-focus)` (Adaptive Focus: 移動中はSubtle、停止時にPrimaryへ強調)
+        - **Rationale**: `tabindex="0"` によるキーボードフォーカス可能要素であるため、視覚的インジケータは必須です。基盤ドキュメントのTemporal Focus戦略に準拠します。
 
 **5. アクセシビリティ (A11y)**
 
 - **Caption**: `<caption>` 要素でテーブルのタイトルを提供。
 - **Scope**: `th` に `scope="col"` または `scope="row"` を明示。
 - **Scrollable Wrapper**: 横スクロールが発生するコンテナには必ず `tabindex="0"` と `role="region"`、および適切な `aria-label` を付与し、キーボード操作によるスクロールを保証します。
+    - フォーカス可能要素として、`:focus-visible` スタイル（アウトライン）の適用が必須です（上記「Scrollable Wrapper」スタイル参照）。
+- **Sorting (Future Extension)**: ソート機能を追加する場合は、`th` に `aria-sort` 属性（`ascending`/`descending`/`none`）を付与し、現在のソート状態を支援技術に伝達してください。
 - **Forced Colors Mode**:
     - 透過ボーダーが消失するのを防ぐため、`forced-colors: active` 時は `tr` のボーダーを `1px solid ButtonText` (または `CanvasText`) に強制し、構造の可視性を維持します。
+
+**6. `.prose` コンテキストとの統合**
+
+テーブルが `.prose` 内に配置された場合、基盤ドキュメント（本文幅制限の解除とはみ出し挙動）に従い、以下のスタイルが自動適用されます:
+
+```css
+.prose table {
+  max-width: none; /* リーディング幅（--width-reading）の制限を解除 */
+
+  /* モバイル: コンテナよりやや広く */
+  width: calc(100% + var(--space-8)); /* +32px */
+  margin-inline: calc(-1 * var(--space-4)); /* -16px */
+
+  /* デスクトップ (768px以上): さらに広く強調 */
+  @media (min-width: 768px) { /* --bp-md */
+    width: calc(100% + var(--space-16)); /* +64px */
+    margin-inline: calc(-1 * var(--space-8)); /* -32px */
+  }
+}
+```
+
+- **Rationale**: 本文テキスト（約65文字幅）に対してテーブルを視覚的に拡張し、「データの広がり」を表現します。横スクロールが必要な場合は、`.table-container` ラッパーと組み合わせて使用します。
+- **Wrapper Integration**: `.prose` 内で横スクロールが必要な場合の統合パターン:
+
+```html
+<div class="prose">
+  <p>本文テキスト...</p>
+
+  <div class="table-container" tabindex="0" role="region" aria-label="データテーブル">
+    <table>
+      <!-- テーブル内容 -->
+    </table>
+  </div>
+
+  <p>続きの本文...</p>
+</div>
+```
+
+この場合、`.table-container` に対してもはみ出しスタイルが適用され、横スクロールとレイアウト拡張が両立します。
 
 #### カード (Card) `<ui-card>`
 
@@ -4030,20 +4103,22 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
     - **Outlined** (Default):
         - Border: `var(--border-width) solid var(--border-default)`
         - Background: `transparent` (または `var(--bg-surface-1)`)
+        - Shadow: `none`
         - **Interaction Logic**: Hover時に物理的な浮遊を表現するため、**Lifted (浮上)** 状態へ遷移します。Shadowを獲得し、背景が不透明化しますが、Elevatedバリアント（`surface-2`）とは異なり、Base層（`surface-1`）の色を維持します。
     - **Elevated**:
         - Border: `none` (**Note**: Darkモードでも枠線は引かず、ToneとEdge Highlightのみで階層を表現します)
         - Background: `var(--bg-surface-2)` (**Note**: index.md定義の通り、Base層より一段階明るいトーンを使用)
-        - Shadow: `var(--shadow-md)` (Light) / `var(--shadow-dark-md)` (Dark)
+        - Shadow: `var(--elevation-md)` (Semanticトークン。Light/Dark自動切替)
         - **Edge Highlight (Dark)**: `box-shadow: inset 0 1px 0 0 oklch(100% 0 0 / 0.1)` (上部のハイライトでエッジを立たせる)
+        - **Note**: シャドウはSemanticトークン `--elevation-md` を使用することで、Light/Dark間の分岐記述を不要にし、将来のテーマ拡張にも対応します。
     - **Flat** (Filled):
-        - Background: `var(--bg-surface-2)`
+        - Background: `var(--bg-fill-muted)` (**Rationale**: 影なしで領域を明示する際は、構造的背景色である `--bg-fill-muted` を使用します。`--bg-surface-2` はElevated（影あり）コンテキスト専用です。)
         - Border: `none`
         - Shadow: `none`
-        - **Use Case**: 影による強調を必要としないが、領域としての明確な視覚的分離が必要な場合に使用。
+        - **Use Case**: 影による強調を必要としないが、領域としての明確な視覚的分離が必要な場合に使用。入力フォーム背景やコードブロックと同等の視覚的重みを持ちます。
     - **Ghost**:
         - Background: `transparent`
-        - Border: `1px solid var(--border-ghost)`
+        - Border: `var(--border-width) solid var(--border-ghost)` (トークン `--border-width` を使用)
 - **Interaction (Clickable only)**:
     - **Hover & Focus**:
         - **Trigger**: マウスホバー時 (`:hover`) および、キーボード操作で内部要素にフォーカスがある時 (`:focus-within`)。
@@ -4054,21 +4129,70 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
             - Animation: `var(--animation-focus)` (系統合されたAdaptive Focusを適用)
         - **Tactility (Scale)**:
             - Scale: `scale(var(--scale-hover-sm))` (1.02倍)
-            - Transition: `transform var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out), border-color var(--duration-normal) linear`
+            - Transition: `transform var(--duration-normal) var(--ease-out), background-color var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out), border-color var(--duration-normal) linear`
+            - **Reduced Motion**: `prefers-reduced-motion: reduce` 時は、`transform: none` とし、スケール変化を無効化します。トランジション時間は `transition-duration: var(--duration-instant)` (0ms) に短縮され、色変化のみが瞬時に適用されます。
         - **State Mutation**:
-            - **Elevated**: Shadowが `var(--shadow-md)` から `var(--shadow-lg)` へ強化。
-            - **Outlined**: 
+            - **Elevated**: Shadowが `var(--elevation-md)` から `var(--elevation-lg)` へ強化。
+            - **Outlined**:
                 - **Physicality**: 浮遊により「枠」から「物体（面）」へ変化し、背景が不透明化します。
                 - Background: `transparent` -> `var(--bg-surface-1)`
-                - Shadow: `none` -> `var(--shadow-lg)` (浮上)
+                - Shadow: `none` -> `var(--elevation-lg)` (浮上)
                 - Border: `var(--border-default)` -> `var(--border-muted)` (浮上により輪郭線が光に溶け込む演出)
 
 **5. アクセシビリティ (A11y)**
 
 - **Role**: コンテンツに応じて `article` (独立記事), `section` (節), または `div` (単なるラッパー) を適切に使い分けること。
-- **Focus**: 
+- **Focus**:
     - **Functional Focus**: `clickable` な場合、カード全体ではなく、内部の主要リンクまたはアクションボタンにフォーカスを当てる構造にします（Focusable Container Anti-patternの回避）。
     - **Visual Unification**: 上記の通り、CSS `:focus-within` を用いて、視覚的にはカード全体をハイライトすることで、操作性と実装の堅牢性を両立させます。
+- **Forced Colors Mode** (`forced-colors: active`):
+    - Windows ハイコントラストモード等、OSレベルで色が強制される環境では、シャドウと背景色が消失します。以下の対応により構造を維持します。
+    - **全バリアントに境界線を強制付与**:
+        ```css
+        @media (forced-colors: active) {
+          ui-card {
+            border: var(--border-width) solid CanvasText !important;
+          }
+        }
+        ```
+    - **Elevated / Flat variant**: 通常時は `border: none` ですが、このモードでは明示的なボーダーを追加することで、カードの存在を認識可能にします。
+    - **選択状態**: `clickable` かつ選択状態のカードには、アウトラインを追加します。
+        ```css
+        @media (forced-colors: active) {
+          ui-card[clickable]:hover,
+          ui-card[clickable][aria-selected="true"] {
+            outline: 2px solid Highlight;
+            outline-offset: -2px;
+          }
+        }
+        ```
+- **Print Styles**:
+    - 印刷時はシャドウと背景色を除去し、インク効率と可読性を優先します。
+    - **Outlined / Ghost variant**: ボーダーは構造を示すため、黒色 (`#000`) に変換して保持します。
+    - **Elevated / Flat variant**: 背景色を透明化し、ボーダーを追加します（`border: 1px solid #000`）。
+    - **実装例**:
+        ```css
+        @media print {
+          ui-card {
+            box-shadow: none !important;
+            background: transparent !important;
+            break-inside: avoid; /* カードがページ分割されないよう制御 */
+          }
+
+          /* Elevated/Flatバリアントに境界線を追加 */
+          ui-card[variant="elevated"],
+          ui-card[variant="flat"] {
+            border: 1px solid #000 !important;
+          }
+        }
+        ```
+
+**6. 実装ノート (Implementation Notes)**
+
+- **Semanticトークン準拠**: シャドウはPrimitiveトークン (`--shadow-md`, `--shadow-dark-md`) ではなく、**必ずSemanticトークン (`--elevation-md`, `--elevation-lg`) を使用**してください。これによりLight/Dark間の分岐記述が不要になり、将来のテーマ拡張（ハイコントラストテーマ等）にも柔軟に対応できます。
+- **トランジション対象**: `background-color` を明示的に含めることで、Outlined variantのHover時の背景変化が滑らかに遷移します。
+- **モーション軽減**: `prefers-reduced-motion: reduce` 時は、グローバルルールで `transition-duration: 0.01ms` が適用されますが、加えて `transform: none` を明示的に指定することで、スケール変化を完全に無効化し、色変化のみを瞬時に適用します。
+- **Flat variantの背景色**: `--bg-fill-muted` を使用することで、「構造的背景色」としての意味論的な役割を明確化します。`--bg-surface-2` はElevated（影あり）コンテキスト専用です。
 
 #### タブ (Tabs) `<ui-tabs>`
 
