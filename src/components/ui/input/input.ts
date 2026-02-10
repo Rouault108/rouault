@@ -470,6 +470,17 @@ export class Input extends LitElement {
     );
   }
 
+  private _handleKeyDown(e: KeyboardEvent): void {
+    // IME変換中でないEnterキーの押下のみ処理
+    if (e.key === 'Enter' && !e.isComposing) {
+      if (this._internals.form) {
+        // フォームバリデーションを行い、問題なければ送信
+        // これにより、標準のinput要素でEnterを押した際（最初のsubmitボタンをクリック）と同様の挙動を実現
+        this._internals.form.requestSubmit();
+      }
+    }
+  }
+
   private _handleFocus(): void {
     this.dispatchEvent(
       new FocusEvent('focus', {
@@ -504,10 +515,10 @@ export class Input extends LitElement {
     };
 
     // aria-describedby の値を決定
-    const describedBy = this.error && this.errorMessage 
-      ? this._errorId 
-      : this.helpText 
-        ? this._helpId 
+    const describedBy = this.error && this.errorMessage
+      ? this._errorId
+      : this.helpText
+        ? this._helpId
         : undefined;
 
     return html`
@@ -534,6 +545,7 @@ export class Input extends LitElement {
         class="${classMap(inputClasses)}"
         @input="${this._handleInput}"
         @change="${this._handleChange}"
+        @keydown="${this._handleKeyDown}"
         @focus="${this._handleFocus}"
         @blur="${this._handleBlur}"
       />
@@ -604,7 +616,7 @@ export class Input extends LitElement {
 
     // 内部inputのバリデーション状態を取得
     const validity = this._input.validity;
-    
+
     if (!validity.valid) {
       // バリデーションエラーがある場合、ElementInternalsに反映
       this._internals.setValidity(
