@@ -376,9 +376,9 @@ export class Input extends LitElement {
   private readonly _supportedTypes = ['text', 'email', 'password', 'number', 'tel', 'url', 'search'];
 
   // 一意なIDを生成（レンダリング毎の再生成を防止）
-  private readonly _inputId = `input-${Math.random().toString(36).substr(2, 9)}`;
-  private readonly _errorId = `error-${Math.random().toString(36).substr(2, 9)}`;
-  private readonly _helpId = `help-${Math.random().toString(36).substr(2, 9)}`;
+  private readonly _inputId = `input-${Math.random().toString(36).substring(2, 11)}`;
+  private readonly _errorId = `error-${Math.random().toString(36).substring(2, 11)}`;
+  private readonly _helpId = `help-${Math.random().toString(36).substring(2, 11)}`;
 
   constructor() {
     super();
@@ -423,7 +423,9 @@ export class Input extends LitElement {
     // バリデーション関連のプロパティが変更された場合、バリデーション状態を同期
     const validationProps = ['value', 'required', 'pattern', 'minlength', 'maxlength', 'type'];
     if (validationProps.some(prop => changedProperties.has(prop))) {
-      this.updateComplete.then(() => this._syncNativeValidation());
+      void this.updateComplete.then(() => {
+        this._syncNativeValidation();
+      });
     }
 
     // エラー表示状態の更新
@@ -444,7 +446,7 @@ export class Input extends LitElement {
     }
   }
 
-  private _handleInput(e: Event): void {
+  private _handleInput = (e: Event): void => {
     const input = e.target as HTMLInputElement;
     this.value = input.value;
 
@@ -457,7 +459,7 @@ export class Input extends LitElement {
     );
   }
 
-  private _handleChange(e: Event): void {
+  private _handleChange = (e: Event): void => {
     const input = e.target as HTMLInputElement;
     this.value = input.value;
 
@@ -470,7 +472,7 @@ export class Input extends LitElement {
     );
   }
 
-  private _handleKeyDown(e: KeyboardEvent): void {
+  private _handleKeyDown = (e: KeyboardEvent): void => {
     // IME変換中でないEnterキーの押下のみ処理
     if (e.key === 'Enter' && !e.isComposing) {
       if (this._internals.form) {
@@ -481,7 +483,7 @@ export class Input extends LitElement {
     }
   }
 
-  private _handleFocus(): void {
+  private _handleFocus = (): void => {
     this.dispatchEvent(
       new FocusEvent('focus', {
         bubbles: true,
@@ -490,7 +492,7 @@ export class Input extends LitElement {
     );
   }
 
-  private _handleBlur(): void {
+  private _handleBlur = (): void => {
     this.dispatchEvent(
       new FocusEvent('blur', {
         bubbles: true,
@@ -536,8 +538,8 @@ export class Input extends LitElement {
         ?readonly="${this.readonly}"
         ?required="${this.required}"
         pattern="${this.pattern || nothing}"
-        minlength="${this.minlength || nothing}"
-        maxlength="${this.maxlength || nothing}"
+        minlength="${this.minlength ?? nothing}"
+        maxlength="${this.maxlength ?? nothing}"
         autocomplete="${this.autocomplete}"
         aria-label="${this.label}"
         aria-invalid="${this.error}"
@@ -566,21 +568,21 @@ export class Input extends LitElement {
    * 入力フィールドにフォーカスを当てる
    */
   override focus(options?: FocusOptions): void {
-    this._input?.focus(options);
+    this._input.focus(options);
   }
 
   /**
    * 入力フィールドからフォーカスを外す
    */
   override blur(): void {
-    this._input?.blur();
+    this._input.blur();
   }
 
   /**
    * 入力フィールドを選択状態にする
    */
   select(): void {
-    this._input?.select();
+    this._input.select();
   }
 
   /**
@@ -607,7 +609,6 @@ export class Input extends LitElement {
    * 内部inputのネイティブバリデーション状態をElementInternalsに同期
    */
   private _syncNativeValidation(): void {
-    if (!this._input) return;
 
     // カスタムエラー（error属性）が設定されている場合はそちらを優先
     if (this.error && this.errorMessage) {

@@ -222,7 +222,7 @@ export const Default: Story = {
 
     // テスト: デフォルトのtype属性が設定されていること
     if (inputElement.getAttribute('type') !== 'email') {
-      throw new Error(`Expected type to be 'email', got '${inputElement.getAttribute('type')}'`);
+      throw new Error(`Expected type to be 'email', got '${inputElement.getAttribute('type') ?? 'null'}'`);
     }
 
     // テスト: aria-label が設定されていること
@@ -514,22 +514,23 @@ export const Required: Story = {
         id="required-form"
         novalidate
         @submit="${(e: Event) => {
-          e.preventDefault();
-          const form = e.target as HTMLFormElement;
-          const input = form.querySelector('ui-input') as Input;
-          
-          // ブラウザのバリデーションチェック
-          if (!input.checkValidity()) {
-            // バリデーションエラー: ui-inputのerror状態を設定
-            input.error = true;
-            input.errorMessage = 'この項目は必須です';
-          } else {
-            // バリデーション成功: エラー状態をクリア
-            input.error = false;
-            input.errorMessage = '';
-            alert('フォームが送信されました！');
-          }
-        }}"
+      e.preventDefault();
+      const form = e.target as HTMLFormElement;
+      const input = form.querySelector('ui-input');
+      if (!input) return;
+
+      // ブラウザのバリデーションチェック
+      if (!input.checkValidity()) {
+        // バリデーションエラー: ui-inputのerror状態を設定
+        input.error = true;
+        input.errorMessage = 'この項目は必須です';
+      } else {
+        // バリデーション成功: エラー状態をクリア
+        input.error = false;
+        input.errorMessage = '';
+        alert('フォームが送信されました！');
+      }
+    }}"
       >
         <ui-input
           id="required-input"
@@ -539,13 +540,13 @@ export const Required: Story = {
           ?required="${args.required}"
           help-text="${args.helpText}"
           @input="${(e: Event) => {
-            // 入力時にエラー状態をクリア
-            const input = e.target as Input;
-            if (input.error) {
-              input.error = false;
-              input.errorMessage = '';
-            }
-          }}"
+      // 入力時にエラー状態をクリア
+      const input = e.target as Input;
+      if (input.error) {
+        input.error = false;
+        input.errorMessage = '';
+      }
+    }}"
         ></ui-input>
         
         <ui-button type="submit" variant="primary" style="margin-top: 1rem;">
@@ -555,9 +556,9 @@ export const Required: Story = {
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const input = canvasElement.querySelector('#required-input') as Input;
-    const form = canvasElement.querySelector('#required-form') as HTMLFormElement;
-    
+    const input = canvasElement.querySelector<Input>('#required-input');
+    const form = canvasElement.querySelector<HTMLFormElement>('#required-form');
+
     if (!input || !form) {
       throw new Error('Input or form not found');
     }
@@ -578,7 +579,7 @@ export const Required: Story = {
     // テスト: 値を入力するとcheckValidity()がtrueを返すこと
     input.value = 'テスト';
     await input.updateComplete;
-    
+
     if (!input.checkValidity()) {
       throw new Error('Required input with value should be valid');
     }
@@ -658,7 +659,7 @@ export const FocusState: Story = {
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const input = canvasElement.querySelector('#focus-input') as Input;
+    const input = canvasElement.querySelector<Input>('#focus-input');
     if (!input) {
       throw new Error('Input component not found');
     }
@@ -719,9 +720,9 @@ export const FormIntegration: Story = {
     <form
       class="form-demo"
       @submit="${(e: Event) => {
-        e.preventDefault();
-        alert('フォームが送信されました！');
-      }}"
+      e.preventDefault();
+      alert('フォームが送信されました！');
+    }}"
     >
       <h3>ユーザー登録</h3>
 
@@ -885,7 +886,7 @@ export const UnsupportedType: Story = {
 
     // テスト: type が text にフォールバックされていること
     if (inputElement.getAttribute('type') !== 'text') {
-      throw new Error(`Expected type to be 'text' (fallback), got '${inputElement.getAttribute('type')}'`);
+      throw new Error(`Expected type to be 'text' (fallback), got '${inputElement.getAttribute('type') ?? 'null'}'`);
     }
 
     console.log('✅ All tests passed for UnsupportedType story');
@@ -1066,12 +1067,12 @@ export const ErrorStateTransition: Story = {
         <ui-button
           variant="danger"
           @click="${() => {
-            const input = document.getElementById('transition-input') as Input;
-            if (input) {
-              input.error = true;
-              input.errorMessage = 'ユーザー名は3文字以上で入力してください';
-            }
-          }}"
+      const input = document.getElementById('transition-input') as Input | null;
+      if (input) {
+        input.error = true;
+        input.errorMessage = 'ユーザー名は3文字以上で入力してください';
+      }
+    }}"
         >
           エラーを表示
         </ui-button>
@@ -1079,12 +1080,12 @@ export const ErrorStateTransition: Story = {
         <ui-button
           variant="secondary"
           @click="${() => {
-            const input = document.getElementById('transition-input') as Input;
-            if (input) {
-              input.error = false;
-              input.errorMessage = '';
-            }
-          }}"
+      const input = document.getElementById('transition-input') as Input | null;
+      if (input) {
+        input.error = false;
+        input.errorMessage = '';
+      }
+    }}"
         >
           エラーを解消
         </ui-button>
@@ -1092,11 +1093,10 @@ export const ErrorStateTransition: Story = {
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const input = canvasElement.querySelector('#transition-input') as Input;
+    const input = canvasElement.querySelector<Input>('#transition-input');
     if (!input) {
       throw new Error('Input component not found');
     }
-
     await input.updateComplete;
 
     // 初期状態: Help Text が表示されていること
