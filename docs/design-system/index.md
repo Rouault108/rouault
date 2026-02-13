@@ -3,9 +3,8 @@
 ## 目次
 
 1. [概要](#概要)
-2. [デザイン原則](#デザイン原則)
-3. [インタラクションとナビゲーション](#インタラクションとナビゲーション)
-4. [基盤 (Foundations)](#基盤-foundations)
+2. [インタラクションとナビゲーション](#インタラクションとナビゲーション)
+3. [基盤 (Foundations)](#基盤-foundations)
    - [トークン命名規則](#トークン命名規則)
    - [カラーシステム (OKLCH)](#カラーシステム-oklch)
      - [コントラスト比保証](#コントラスト比保証)
@@ -20,14 +19,15 @@
      - [スクロールバー](#スクロールバー-scrollbars)
      - [質感・テクスチャ](#質感テクスチャ-surfaces)
    - [モーション (アニメーション)](#モーション-アニメーション)
-5. [アクセシビリティ実装基準](#アクセシビリティ実装基準-accessibility-standards)
-6. [アーキテクチャとスタイリング](#アーキテクチャとスタイリング)
-7. [レイアウトシステム](#レイアウトシステム)
+4. [アクセシビリティ実装基準](#アクセシビリティ実装基準-accessibility-standards)
+5. [アーキテクチャとスタイリング](#アーキテクチャとスタイリング)
+6. [レイアウトシステム](#レイアウトシステム)
+7. [実装パターンと互換戦略](#実装パターンと互換戦略)
 8. [UI状態パターン](#ui状態パターン)
    - [エラーハンドリング](#エラーハンドリング)
    - [ローディング状態](#ローディング状態)
    - [通知システム](#通知システム)
-9. [技術実装ガイドライン](#技術実装ガイドライン)
+9. [開発規約と品質保証](#開発規約と品質保証)
 10. [用語集](#用語集-glossary)
 11. [参照・インスピレーション](#参照インスピレーション)
 
@@ -43,24 +43,36 @@ Web標準とアクセシビリティへの準拠はゴールではなくスタ�
 
 ### ドキュメントの構成
 
-本ドキュメント (`index.md`) は、Rouaultデザインシステムの**基盤（Foundations）**を定義します。
+本ドキュメント (`index.md`) は、Rouaultデザインシステムの**基盤（Foundations）とグローバル運用方針**を定義します。
 
-- **`index.md` (本ドキュメント)**: デザイン原則、カラー、タイポグラフィ、スペーシング、モーション等の基礎トークンとグローバルなスタイリング規則
+- **`index.md` (本ドキュメント)**: デザイン原則、トークン、レイアウト原則、アクセシビリティ基準、実装・テスト方針などの横断ルール
 - **`components.md`**: 個別コンポーネント（ボタン、ダイアログ、入力フォーム等）の詳細仕様
 
 すべてのコンポーネントは本ドキュメントで定義されたトークンを参照し、一貫性を保証します。
+
+### 運用と変更管理
+
+デザインシステムを継続的に運用するため、以下を必須ルールとします。
+
+| 項目 | ルール |
+|------|--------|
+| **オーナー** | `docs/design-system/` の最終責任者はプロジェクトオーナー。デザイン・実装の両観点で整合性をレビューする。 |
+| **バージョニング** | 本仕様は SemVer 準拠（Major/Minor/Patch）で管理し、互換性に影響する変更は Major とする。 |
+| **変更履歴** | 仕様変更時は `CHANGELOG.md`（または同等ファイル）に「理由・影響範囲・移行要否」を記録する。 |
+| **非推奨（Deprecation）** | `Deprecated` 指定は「代替手段」「廃止予定バージョン」「移行手順」を必ず併記する。 |
+| **受け入れ基準** | トークン変更・コンポーネント変更は VRT と a11y チェック（`axe-core`）を通過してから反映する。 |
 
 ### ブラウザサポート境界
 
 Rouaultは、以下のブラウザ環境を想定します：
 
-| ブラウザ | 最低バージョン | 対応機能 |
-|----------|----------------|----------|
-| **Chrome / Edge (Chromium)** | 111+ | OKLCH、Relative Color Syntax、`@layer`、View Transitions API |
-| **Safari** | 16.4+ | OKLCH、Relative Color Syntax (macOS Ventura / iOS 16.4) |
-| **Firefox** | 113+ | OKLCH、Relative Color Syntax |
+| ブラウザ | ベースライン（保証） | 拡張機能（Progressive Enhancement） |
+|----------|---------------------|-----------------------------------|
+| **Chrome / Edge (Chromium)** | 111+（OKLCH、`@layer`） | Relative Color Syntax は 119+、View Transitions API は 111+ |
+| **Safari** | 16.4+（OKLCH、Relative Color Syntax） | View Transitions API は 18+ |
+| **Firefox** | 113+（OKLCH、`@layer`） | Relative Color Syntax は 128+。View Transitions API は非保証（未対応時は即時遷移） |
 
-> **Note:** 個人用アプリケーションであるため、最新のエバーグリーンブラウザを前提とします。OKLCHやRelative Color等の先進的機能が利用できない古いブラウザでは、Fallbackとして無彩色（グレー）が適用される場合がありますが、**コンテンツの閲覧は可能**です。
+> **Note:** 個人用アプリケーションであるため、最新のエバーグリーンブラウザを前提とします。拡張機能が利用できない環境でも、Fallbackにより**コンテンツの閲覧と基本操作は可能**であることを保証します。
 
 ### 国際化・多言語対応方針
 
@@ -1075,13 +1087,13 @@ async function updatePageContent(url: string): Promise<void> {
 
 ## アクセシビリティ実装基準 (Accessibility Standards)
 
-デザイン原列4「普遍的な明瞭さ (Universal Clarity)」に基づき、**WCAG 2.1 Level AAを最低ライン**、**WCAG 2.2の一部基準にも対応**し、すべてのユーザーに対してRouaultの体験を損なうことなく提供するための技術的保証です。
+デザイン原則4「普遍的な明瞭さ (Universal Clarity)」に基づき、**WCAG 2.1 Level AAを最低ライン**、**WCAG 2.2の一部基準にも対応**し、すべてのユーザーに対してRouaultの体験を損なうことなく提供するための技術的保証です。加えて運用上は、主要操作に対して44×44pxターゲット（SC 2.5.5, AAA相当）を推奨採用します。
 
 ### WCAG準拠レベル
 
 | 基準 | レベル | 対応状況 |
 |------|--------|----------|
-| **WCAG 2.1** | AA | 完全準拠（コントラスト昄.5:1、4.2 Resize Text等） |
+| **WCAG 2.1** | AA | 完全準拠（コントラスト4.5:1、SC 1.4.4 Resize Text等） |
 | **WCAG 2.2** | AA (Partial) | 2.5.7 Dragging Movements、2.5.8 Target Size (Minimum) に対応 |
 
 #### 2.5.8 Target Size (Minimum) 対応
@@ -1090,8 +1102,8 @@ WCAG 2.2 の **SC 2.5.8 (Target Size Minimum)** に対応し、タッチター�
 
 | 基準 | 最小サイズ | Rouault実装 |
 |------|------------|----------------|
-| **WCAG 2.1 (2.5.5)** | 44×44px | `--control-min-touch: 44px` で保証 |
-| **WCAG 2.2 (2.5.8)** | 24×24px | 小さなアイコンボタン（例: 閉じるボタン）でも最低24pxを確保 |
+| **運用推奨 (SC 2.5.5, AAA相当)** | 44×44px | `--control-min-touch: 44px` で保証 |
+| **WCAG 2.2 (SC 2.5.8, AA)** | 24×24px | 小さなアイコンボタン（例: 閉じるボタン）でも最低24pxを確保 |
 
 **実装パターン**:
 
@@ -1138,7 +1150,7 @@ p {
 }
 ```
 
-この状態でテキストの切り截めや重なりが発生しないことを確認してください。
+この状態でテキストの切り詰めや重なりが発生しないことを確認してください。
 
 ### 支援技術への配慮 (Assistive Technologies)
 
@@ -1180,7 +1192,7 @@ Rouaultでは、CSS変数による制御だけでなく、あらゆるアニメ�
 ### フォーカス・インジケータ (Focus Strategy)
 
 「静謐さ」を優先するあまり、現在地（Focus）を見失わせてはなりません。
-一方で、連続移動中（talling）の過剰な点滅は「ノイズ」となります。
+一方で、連続移動中（tabbing）の過剰な点滅は「ノイズ」となります。
 
 Rouaultでは、**時間軸を持ったフォーカス表現（Temporal Focus）**を採用し、移動中は控えめに、停止した瞬間に明確化する挙動を定義します。
 
@@ -1410,32 +1422,28 @@ Shadow DOMは`:root`で定義されたCSS Custom Propertiesを継承するため
 **用途**: 親から子へのレイアウト文脈伝達（統合関係の表現）。
 
 **実装**:
-- 親が CSS 変数（例: `--in-code-group: 1` や `--ui-code-block-header-display: none`）を設定
+- 親が CSS 変数（例: `--ui-code-block-radius-top: 0` や `--ui-code-block-header-display: none`）を設定
 - 子はその変数を検出してスタイルを調整
 
 **例**:
 ```css
 /* 親: Code Group */
 ui-code-group {
-  --in-code-group: 1;
   --ui-code-block-header-display: none; /* FOUC防止 */
+  --ui-code-block-radius-top: 0;
+  --ui-code-block-radius-bottom: var(--radius-md);
 }
 
 /* 子: Code Block */
 :host {
-  border-radius: var(--radius-md); /* デフォルト: 全角丸 */
-}
-
-/* 親コンテキストを検出して上部の角丸を削除 */
-:host {
+  /* デフォルト: 全角丸。親が変数を上書きした場合のみ変化 */
+  --ui-code-block-radius-top: var(--radius-md);
+  --ui-code-block-radius-bottom: var(--radius-md);
   border-radius:
-    0 0
-    var(--radius-md)
-    var(--radius-md);
-  border-radius:
-    var(--in-code-group, 1) == 1
-      ? 0 0 var(--radius-md) var(--radius-md)
-      : var(--radius-md);
+    var(--ui-code-block-radius-top)
+    var(--ui-code-block-radius-top)
+    var(--ui-code-block-radius-bottom)
+    var(--ui-code-block-radius-bottom);
 }
 
 /* FOUC防止: JS実行前のヘッダー二重表示を防ぐ */
@@ -1457,7 +1465,7 @@ figcaption {
 - コンポーネントの「性格」を変えるなら **Attributes**
 - 親子関係による「レイアウト調整」なら **CSS Variables**
 
-**注意**: CSS 変数による親子連携は、`::part()` の代替としてカプセル化を維持しつつ統合を実現する正当な手法ですが、**変数名は Semantic かつ用途が明確でなければなりません**（例: `--in-code-group`, `--ui-code-block-padding`）。汎用的な `--style-override` のような変数は禁止します。
+**注意**: CSS 変数による親子連携は、`::part()` の代替としてカプセル化を維持しつつ統合を実現する正当な手法ですが、**変数名は Semantic かつ用途が明確でなければなりません**（例: `--ui-code-block-radius-top`, `--ui-code-block-padding`）。汎用的な `--style-override` のような変数は禁止します。
 
 ---
 
@@ -1812,7 +1820,7 @@ Web標準のセマンティックHTML（`<nav>`, `<main>`, `<aside>`）とも一
 
 ---
 
-## 技術実装ガイドライン
+## 実装パターンと互換戦略
 
 ### ページ遷移 (View Transitions / Zero Latency)
 
@@ -2226,7 +2234,7 @@ input:disabled,
 
 ---
 
-## 技術実装ガイドライン
+## 開発規約と品質保証
 
 ### CSS記述規約
 
