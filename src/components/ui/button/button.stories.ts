@@ -181,7 +181,7 @@ export const Default: Story = {
 
     // テスト: デフォルトのtype属性が"button"であること
     if (buttonElement.getAttribute('type') !== 'button') {
-      throw new Error(`Expected type to be 'button', got '${buttonElement.getAttribute('type')}'`);
+      throw new Error(`Expected type to be 'button', got '${buttonElement.getAttribute('type') ?? 'null'}'`);
     }
 
     // テスト: デフォルトのvariantが"secondary"であること
@@ -550,9 +550,9 @@ export const FormSubmit: Story = {
   render: (args) => html`
     <form
       @submit="${(e: Event) => {
-        e.preventDefault();
-        alert('フォームが送信されました！');
-      }}"
+      e.preventDefault();
+      alert('フォームが送信されました！');
+    }}"
     >
       <ui-button
         variant="${args.variant}"
@@ -578,7 +578,7 @@ export const FormSubmit: Story = {
 
     // テスト: type属性が"submit"であること
     if (buttonElement.getAttribute('type') !== 'submit') {
-      throw new Error(`Expected type to be 'submit', got '${buttonElement.getAttribute('type')}'`);
+      throw new Error(`Expected type to be 'submit', got '${buttonElement.getAttribute('type') ?? 'null'}'`);
     }
 
     console.log('✅ All tests passed for FormSubmit story');
@@ -755,7 +755,7 @@ export const FocusState: Story = {
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const button = canvasElement.querySelector('#focus-button') as Button;
+    const button = canvasElement.querySelector<Button>('#focus-button');
     if (!button) {
       throw new Error('Button component not found');
     }

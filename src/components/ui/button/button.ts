@@ -465,7 +465,7 @@ export class Button extends LitElement {
    * 内部ボタンのクリックハンドラ
    * Shadow DOM 境界を越えてフォーム送信/リセットを行う
    */
-  private _handleClick(e: Event): void {
+  private _handleClick = (e: Event): void => {
     // disabled または loading 状態の場合は何もしない
     if (this.disabled || this.loading) {
       e.preventDefault();
@@ -506,14 +506,14 @@ export class Button extends LitElement {
         </span>
 
         ${this.loading
-          ? html`
+        ? html`
               <span class="spinner" part="spinner">
                 <slot name="spinner">
                   <span class="spinner-default"></span>
                 </slot>
               </span>
             `
-          : ''}
+        : ''}
       </button>
     `;
   }
