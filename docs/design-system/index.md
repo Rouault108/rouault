@@ -372,9 +372,36 @@ Linearのような洗練された質感を維持するため、**Delta（補正�
 | :--- | :--- | :--- | :--- |
 | `--opacity-link-subtle` | `0.4` | Primitive | 既読リンクや非強調要素の不透明度（コントラスト比低） |
 | `--opacity-link` | `0.6` | Primitive | **標準リンク**。3:1コントラスト保証ライン。 |
-| `--opacity-link-touch` | `0.75` | Primitive | タッチ環境用。発見可能性重視。 |
+| `--opacity-link-touch` | `0.75` | Primitive |  **タッチデバイス用の控えめな常時表示**。ホバー操作が不安定なタッチ環境において、アクション要素（コピーボタン等）を視覚的ノイズを抑えつつ常時表示する際の透明度。WCAG 3:1 コントラスト基準を満たす範囲で、デスクトップの `opacity: 1` よりも視覚的重みを軽減。 |
 | `--opacity-scrim` | `0.6` | Primitive | モーダル背景（Backdrop）の遮光度。 |
 | `--opacity-disabled` | `0.5` | Primitive | 非活性状態の要素。コントラスト比低下により「操作不可」を伝達。 |
+
+**使用例**:
+
+```css
+/* Desktop: ホバーで出現 */
+.action-button {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-normal) var(--ease-out);
+}
+
+.container:hover .action-button,
+.container:focus-within .action-button {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Touch: 常時表示だが控えめに */
+@media (hover: none) and (pointer: coarse) {
+  .action-button {
+    opacity: var(--opacity-link-touch);
+    pointer-events: auto;
+  }
+}
+```
+
+> **Rationale**: タッチデバイスでは `:hover` が不安定なため常時表示が必要ですが、`opacity: 1` ではデスクトップの「隠蔽→出現」戦略の視覚的静謐さが失われます。`0.75` は、操作性（見つけやすさ）と静謐さ（S/N比）のバランスポイントです。
 
 **リンク装飾色 (Link Decoration Colors - Semantic Tokens)**
 
@@ -1362,6 +1389,76 @@ Shadow DOMは`:root`で定義されたCSS Custom Propertiesを継承するため
 - Primitiveトークンではなく、必ずSemanticトークンを参照する
 - `::part()`を使った外部からのスタイリングは、デザインシステムの一貫性を損なうため原則禁止
 
+### コンテキスト伝達パターン (Context Communication Patterns)
+
+親コンポーネントから子コンポーネントへのレイアウト・状態情報の伝達において、カプセル化を維持しながら柔軟性を確保するためのパターンを定義します。
+
+#### 1. Host Attributes（属性ベース）
+
+**用途**: コンポーネント自身の内部状態・バリアント制御。
+
+**実装**:
+- 子コンポーネント自身が `headless`, `variant`, `size` 等の属性を持つ
+- `:host([attribute])` セレクタで自己変容する
+
+**例**: `<ui-code-block headless>` → 内部で `:host([headless])` により枠線・ヘッダーを無効化
+
+**責務境界**: コンポーネント自身の「モード」や「見た目のバリエーション」を表現。
+
+#### 2. CSS Custom Properties（変数ベース）
+
+**用途**: 親から子へのレイアウト文脈伝達（統合関係の表現）。
+
+**実装**:
+- 親が CSS 変数（例: `--in-code-group: 1` や `--ui-code-block-header-display: none`）を設定
+- 子はその変数を検出してスタイルを調整
+
+**例**:
+```css
+/* 親: Code Group */
+ui-code-group {
+  --in-code-group: 1;
+  --ui-code-block-header-display: none; /* FOUC防止 */
+}
+
+/* 子: Code Block */
+:host {
+  border-radius: var(--radius-md); /* デフォルト: 全角丸 */
+}
+
+/* 親コンテキストを検出して上部の角丸を削除 */
+:host {
+  border-radius:
+    0 0
+    var(--radius-md)
+    var(--radius-md);
+  border-radius:
+    var(--in-code-group, 1) == 1
+      ? 0 0 var(--radius-md) var(--radius-md)
+      : var(--radius-md);
+}
+
+/* FOUC防止: JS実行前のヘッダー二重表示を防ぐ */
+figcaption {
+  display: var(--ui-code-block-header-display, block);
+}
+```
+
+**責務境界**: 「この子は親の一部として統合されている」という関係性を表現。
+
+**比較表**:
+
+| 手法 | 適用場面 | 例 | Shadow DOM 透過性 |
+|------|---------|-----|-------------------|
+| **Host Attributes** | コンポーネント自身のモード | `<ui-button variant="danger">` | ❌ 親からの直接制御不可（意図的） |
+| **CSS Variables** | 親子間のレイアウト統合 | Code Group 内での角丸調整 | ✅ Shadow DOM を超えて伝達 |
+
+**選択指針**:
+- コンポーネントの「性格」を変えるなら **Attributes**
+- 親子関係による「レイアウト調整」なら **CSS Variables**
+
+**注意**: CSS 変数による親子連携は、`::part()` の代替としてカプセル化を維持しつつ統合を実現する正当な手法ですが、**変数名は Semantic かつ用途が明確でなければなりません**（例: `--in-code-group`, `--ui-code-block-padding`）。汎用的な `--style-override` のような変数は禁止します。
+
 ---
 
 ## レイアウトシステム
@@ -1435,6 +1532,52 @@ CSS変数は`@media`クエリ内で直接使用できないため、実際の値
 1. `:root`でトークン値を更新（例: `--bp-md: 768px` → `800px`）
 2. プロジェクト全体で`/* --bp-md */`コメントを検索
 3. 該当する`@media`クエリの値を一括更新
+
+**4. インタラクション機能検出 (Interaction Media Features)**
+
+デバイスの入力能力に基づいたUI最適化のため、以下のメディアクエリを標準として使用します。
+
+| Feature | 値 | 意味 | 用途 |
+|---------|-----|------|------|
+| `hover: hover` | True | **ホバー可能** | デスクトップ環境。ホバー時の出現・強調UIを有効化。 |
+| `hover: none` | True | **ホバー不可** | タッチデバイス。ホバー前提のUIは常時表示または削除。 |
+| `pointer: fine` | True | **精密ポインタ** (マウス) | 小さなターゲットでも操作可能。 |
+| `pointer: coarse` | True | **粗いポインタ** (指) | タッチターゲットを `44px` 以上に拡大。 |
+
+**実装パターン**:
+
+```css
+/* デスクトップ: ホバーで表示 */
+.action-button {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-normal) var(--ease-out);
+}
+
+.container:hover .action-button,
+.container:focus-within .action-button {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* タッチデバイス: 常時表示（控えめに） */
+@media (hover: none) and (pointer: coarse) {
+  .action-button {
+    opacity: var(--opacity-link-touch); /* 0.75 */
+    pointer-events: auto;
+  }
+}
+```
+
+**組み合わせ戦略**:
+
+| 条件 | 想定デバイス | UI 挙動 |
+|------|-------------|---------|
+| `hover: hover` | デスクトップ | ホバー出現、視覚的ノイズ最小化 |
+| `hover: none` かつ `pointer: coarse` | スマートフォン、タブレット | 常時表示（`opacity: 0.75`）、Hit Area拡大 |
+| `hover: none` かつ `pointer: fine` | 稀なケース（例: Surface Penのみ使用） | Touch優先（常時表示） |
+
+**注意**: `@media (hover: none)` **単独**では不十分です。必ず `pointer: coarse` との組み合わせで使用し、タッチ環境を明確に特定してください。
 
 > **将来的な拡張:** CSS Container Queries (`@container`) が必要になった場合、本セクションを更新します。現時点では、メディアクエリで十分対応可能です。
 
