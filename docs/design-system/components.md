@@ -12,10 +12,10 @@
 
 **2. 実装戦略 (Implementation Strategy)**
 
-- **Selector**: `.prose a[href]:not([class])`
-    - `href` 属性を持ち、クラスを持たない `<a>` タグのみを対象とし、意図しないスタイル汚染を防ぎます。
-    - **Rationale**: `href` のないアンカー（ページ内ジャンプのターゲット等）を除外し、実際のリンクのみにスタイルを適用します。
-- **SPA Routing**: ルーティング実装の詳細は `app-router` 仕様を参照してください。本セクションではスタイリング定義のみを扱います。
+- **Selector**: `.prose a[href]`
+    - `href` 属性を持つ `<a>` タグのみを対象とし、`href` のないアンカー（ページ内ジャンプのターゲット等）を除外します。
+    - **Rationale**: 通常の本文リンクを広くカバーしつつ、リンクでないアンカーへの誤適用を防ぎます。
+- **SPA Routing**: ルーティング実装の詳細は `src/lib/router.ts` を参照してください。本セクションではスタイリング定義のみを扱います。
 
 **3. スタイリングとトークンマッピング (Style & Tokens)**
 
@@ -46,22 +46,27 @@
 
 **ブラウザサポート (Browser Support)**
 
-`oklch(from ...)` 構文（Relative Color Syntax）のブラウザサポート:
+Rouault全体のブラウザサポート境界（`index.md`）に準拠します。
 
-| ブラウザ | 最低バージョン | index.md 基準との差分 |
-|----------|----------------|----------------------|
-| Chrome | 119+ | 基準 (111+) より新しい |
-| Safari | 16.4+ | **基準と一致** |
-| Firefox | 128+ | 基準 (113+) より新しい |
+| ブラウザ | ベースライン（保証） | 拡張機能（Progressive Enhancement） |
+|----------|---------------------|-----------------------------------|
+| Chrome / Edge (Chromium) | 111+ | Relative Color Syntax は 119+ |
+| Safari | 16.4+ | Relative Color Syntax 利用可 |
+| Firefox | 113+ | Relative Color Syntax は 128+ |
 
-非対応ブラウザでは `--primary` への直接フォールバックを実装します：
+Relative Color Syntax 非対応環境では `--primary` へフォールバックします。
 
 ```css
-.prose a {
-  /* Fallback: Relative Color Syntax 非対応ブラウザ用 (Chrome <119, Firefox <128) */
+/* Baseline (Chrome/Edge 111+, Firefox 113+ を含む): 安全なフォールバック */
+.prose a[href] {
   text-decoration-color: var(--primary);
-  /* Modern: Relative Color Syntax 対応ブラウザ用 */
-  text-decoration-color: var(--link-decoration-color);
+}
+
+/* Progressive Enhancement: Relative Color Syntax 対応環境 */
+@supports (color: oklch(from white l c h)) {
+  .prose a[href] {
+    text-decoration-color: var(--link-decoration-color);
+  }
 }
 ```
 
@@ -70,34 +75,13 @@
 タッチデバイスではホバーによる発見可能性が得られないため、デフォルト状態から視覚的ヒントを強化します。
 
 ```css
-@media (hover: none) {
-  .prose a[href]:not([class]) {
+@media (hover: none) and (pointer: coarse) {
+  .prose a[href] {
     color: var(--primary);
     text-decoration-color: var(--link-decoration-color-touch);
   }
 }
 ```
-
-**バリアント (Variants)**
-
-**Subtle** (`.link-subtle`)
-
-メタデータ、日付、補助的なナビゲーション等で使用します。
-
-| State | Text Color | Decoration | Note |
-|-------|------------|------------|------|
-| **Default** | `var(--fg-muted)` | `none` | 下線なし。テキスト色のみで控えめに存在を示唆。 |
-| **Hover** | `var(--fg-default)` | `underline` | ホバー時に下線を表示し、リンクであることを明確化。 |
-| **Focus-Visible** | `var(--fg-muted)` | `underline` | グローバルフォーカスリングを表示。 |
-| **Visited** | `var(--fg-muted)` | `none` | Default状態と統合。 |
-
-**禁止される背景**
-
-| バリアント | 禁止背景 | コントラスト比 | 理由 |
-|-----------|---------|---------------|------|
-| `.link-subtle` | `--bg-fill-muted` | 3.8:1 | WCAG AA (4.5:1) 未達 |
-
-> **使用可能な背景**: Subtleバリアントは `--bg-default` または `--bg-surface-2` 上でのみ使用してください。
 
 **4. アクセシビリティ (Accessibility)**
 
@@ -105,26 +89,14 @@
     - グローバル定義の `:focus-visible` リングおよび **Adaptive Focus** 戦略を使用。
     - `outline: var(--focus-ring-width) solid var(--focus-ring-color)`
     - `outline-offset: var(--focus-ring-offset)`
-    - `border-radius: var(--radius-sm)`
-        - **Rationale**: テキストの `line-height` (1.75rem) に対して過大な角丸は視覚的ノイズとなるため、最小単位である `--radius-sm` (4px) を採用します。`index.md` のグローバル `:focus-visible` 定義では角丸が未指定のため、Prose Link固有の例外として適用します。
-        - **TODO (index.md)**: グローバル `:focus-visible` 定義に `border-radius` の推奨値を追加することを検討してください。現状では各コンポーネントが個別に定義しており、一貫性が損なわれる可能性があります。
+    - `border-radius: var(--focus-ring-radius)` (`index.md` のグローバル定義をそのまま適用)
     - `animation: var(--animation-focus)`
 - **Motion Reduction**:
     - `@media (prefers-reduced-motion: reduce)` 環境下では、`index.md` のグローバル定義により全てのトランジションが自動的に無効化されます（`0.01ms` に短縮）。
     - Adaptive Focusアニメーション（`--animation-focus`）も無効化され、フォーカスリングは即座に `--focus-ring-color` で表示されます。
 - **Forced Colors Mode**:
-    - `forced-colors: active` 環境下では、以下のスタイルを適用してシステム設定に完全に追従させます：
-    ```css
-    @media (forced-colors: active) {
-      .prose a {
-        color: LinkText;
-        text-decoration-color: currentColor;
-      }
-      .prose a:visited {
-        color: VisitedText;
-      }
-    }
-    ```
+    - `forced-colors: active` 環境下では、`index.md` のグローバルトークンマッピング（`:root` のシステムカラー対応）に従います。
+    - 本セクションでは個別の色上書きは行わず、`color` / `text-decoration-color` はトークン経由の一元管理を維持します。
 
 **5. Print Styles**
 
@@ -164,10 +136,14 @@
 **2. 実装戦略 (Implementation Strategy)**
 
 - **Selector**:
-    - **Primary**: `.ui-link` — 明示的にUIリンクとしてマークされた要素
-    - **Contextual**: `.card:not(.prose) a`, `.sidebar:not(.prose) a` — 直接の子孫のみを対象
-    - **Note**: `.prose` クラスを持つ要素の子孫リンクは、このスタイルの対象外とします。
-- **SPA Routing**: Prose Linkと同様、ルーティング実装の詳細は `app-router` 仕様を参照してください。本セクションではスタイリング定義のみを扱います。
+    - **Primary**: `.ui-link[href]` — 明示的にUIリンクとしてマークされた要素
+    - **Contextual**: `.card a[href], .callout a[href], .sidebar a[href]` — コンテナ内の子孫リンクを対象
+    - **Prose Exclusion**: `.card .prose a[href], .callout .prose a[href], .sidebar .prose a[href]` は常に Prose Link 仕様を優先します（本仕様の対象外）。
+- **SPA Routing**: Prose Linkと同様、ルーティング実装の詳細は `src/lib/router.ts` を参照してください。本セクションではスタイリング定義のみを扱います。
+- **Variant API**:
+    - `.ui-link` または `.ui-link.link-nav` を **Nav (Default)** とします。
+    - `.ui-link.link-action` を **Action** とします。
+    - サイドバー項目は `.sidebar .ui-link.link-nav` を使用し、`index.md` の階層方針に従って `--fg-muted` を基準色とします。
 - **Interaction Pattern**:
     - **Neutral (Nav)**: 形（Weight）で機能を示唆し、色（Hover）で応答する。
     - **Action**: 色（Primary）で誘引し、装飾（Underline）で応答する。
@@ -177,7 +153,7 @@
 **Base Style**
 
 - `cursor`: `pointer`
-- `color`: `var(--fg-default)`
+- `color`: `var(--fg-default)` (Sidebar Nav のみ `var(--fg-muted)` を基準色として上書き)
 - `text-decoration`: `none`
 - `text-underline-offset`: `0.15em`
     - **Rationale**: Prose Linkと同じ値を採用し、`Noto Sans JP` のベースラインとディセンダーの間隔を考慮した最適値として設定。UIリンクでも下線が使用される場合（Hover時等）の一貫性を保証します。
@@ -190,9 +166,8 @@
 
 | ID | Variant | Default Color | Hover Color | Hover Decoration Color | Note |
 |----|---------|---------------|-------------|------------------------|------|
-| **Nav** | ナビゲーション | `var(--fg-default)` | `var(--primary)` | `currentColor` | **Default**. サイドバーやカードタイトル。ノイズを抑え、ホバーで色付きます。下線色はテキスト色に追従。 |
+| **Nav** | ナビゲーション | `var(--fg-default)` (`.sidebar` 内は `var(--fg-muted)`) | `var(--primary)` | `currentColor` | **Default**. サイドバーやカードタイトル。ノイズを抑え、ホバーで色付きます。下線色はテキスト色に追従。 |
 | **Action**| アクション | `var(--primary)` | `var(--primary-hover)` | `currentColor` | 「編集」「作成」など、ユーザーに操作を促す強いリンク。下線色はテキスト色に追従。 |
-| **Subtle**| メタデータ | `var(--fg-muted)` | `var(--fg-default)` | 後述 | 日付、タグなど。詳細は「Subtleバリアント詳細」表を参照。 |
 
 **共通状態 (Common States)**
 
@@ -200,44 +175,41 @@
 - **Active**: `transform: scale(var(--scale-pressed))` (0.96 - ボタンと同様のTactile Feedback)
     - **Rationale**: `opacity` による透過度変化ではなく、`transform` によるスケール変化を採用することで、背景色に依存しない明確な物理的フィードバックを提供します。
 - **Focus-Visible**: グローバルフォーカスリング (`Adaptive Focus`) を表示し、移動中のノイズを低減します。
-- **Visited**: `var(--fg-default)` (Default状態と統合)
-    - **No Distraction**: Prose Linkと同様、個人メモの閲覧用途では「既読管理」より「UIの透明化」を優先します。
+- **Current (Nav only)**: `aria-current="page"` または `.is-active` を現在地として扱います。
+    - `color: var(--primary)`
+    - `font-weight: var(--font-medium)`
+    - 左インジケーター（`border-inline-start: var(--border-width-thick) solid var(--primary)`）または等価の物理的強調を併用し、色のみで状態を伝達しません。
+- **Visited**:
+    - **Nav**: 各コンテキストの Default 色を維持（`.sidebar` 内では `--fg-muted`、その他は `--fg-default`）
+    - **Action**: `var(--primary)` を維持
+    - **No Distraction**: 既読管理よりUIの一貫性を優先します。
 
 **Touch (No Hover) 判定**
 
 タッチデバイスではホバーによる発見可能性が得られないため、デフォルト状態から視覚的ヒントを強化します。
 
 ```css
-@media (hover: none) {
-  /* Navバリアント: デフォルトで色付き */
-  .ui-link,
-  .card:not(.prose) a {
+@media (hover: none) and (pointer: coarse) {
+  /* Navバリアント: デフォルトで色付き（Prose除外） */
+  .ui-link:not(.link-action),
+  .card a[href],
+  .callout a[href],
+  .sidebar a[href] {
     color: var(--primary);
   }
-  
-  /* Subtleバリアント: 発見可能性を優先し、通常のfg-defaultに格上げ */
-  .ui-link.link-subtle {
-    color: var(--fg-default);
+  .card .prose a[href],
+  .callout .prose a[href],
+  .sidebar .prose a[href] {
+    color: inherit;
+  }
+
+  /* Hit Area: WCAG 2.2 と運用推奨に合わせて最小サイズを確保 */
+  .ui-link.icon-only {
+    min-inline-size: var(--control-min-touch); /* 44px */
+    min-block-size: var(--control-min-touch);
   }
 }
 ```
-
-**Subtleバリアント詳細**
-
-| State | Text Color | Decoration | Note |
-|-------|------------|------------|------|
-| **Default** | `var(--fg-muted)` | `none` | 下線なし。テキスト色のみで控えめに存在を示唆。 |
-| **Hover** | `var(--fg-default)` | `underline` | ホバー時に下線を表示し、リンクであることを明確化。 |
-| **Focus-Visible** | `var(--fg-muted)` | `underline` | グローバルフォーカスリングを表示。 |
-| **Visited** | `var(--fg-muted)` | `none` | Default状態と統合。 |
-
-**禁止される背景**
-
-| バリアント | 禁止背景 | コントラスト比 | 理由 |
-|-----------|---------|---------------|------|
-| `.link-subtle` | `--bg-fill-muted` | 3.8:1 | WCAG AA (4.5:1) 未達 |
-
-> **使用可能な背景**: Subtleバリアントは `--bg-default` または `--bg-surface-2` 上でのみ使用してください。
 
 **テクニカル (Technical Features)**
 
@@ -258,6 +230,7 @@
     - **Constraints**: 
         - 親コンテナ（`.card` 等）には `position: relative` が必須です。
         - 内部に別のリンクやボタンがある場合、それらに `position: relative` と `z-index: 2` 以上を設定することで、親リンクによる吸い込みを防ぎます。
+        - テキスト選択が必要な領域では Stretched Link を適用しません（選択操作阻害を回避）。
 - **Icon Links**:
     - アイコンのみのリンクの場合も、`color` の振る舞い（Default/Hover/Active）は各Variant定義に完全に準拠します。
     - ストローク幅は `index.md` の定義通り `1.5px` を維持します。
@@ -267,7 +240,6 @@
 
 - **Contrast Guarantee**:
     - 使用する全色は `index.md` のトークン定義により WCAG AA (4.5:1) を満たすよう計算されています。
-    - Subtleバリアント使用時は、上記「禁止される背景」表を遵守してください。
 - **Link Purpose**:
     - 文脈から切り離されても目的が理解できるよう、"Click here" などの曖昧なラベルを禁止します。
     - アイコンのみの場合は `aria-label` を必須とします。
@@ -280,37 +252,17 @@
     - グローバル定義の `:focus-visible` リングおよび **Adaptive Focus** 戦略を使用。
     - `outline: var(--focus-ring-width) solid var(--focus-ring-color)`
     - `outline-offset: var(--focus-ring-offset)`
-    - `border-radius: var(--radius-sm)`
-        - **Rationale**: UIリンクは短いラベルやアイコンで構成されることが多く、最小単位である `--radius-sm` (4px) を採用することで、フォーカスリングの形状を視覚的に整えます。
+    - `border-radius: var(--focus-ring-radius)` (`index.md` のグローバル定義をそのまま適用)
     - `animation: var(--animation-focus)`
     - `.card-link` にフォーカスが当たった場合、親カード (`.card`) に対してフォーカスリングを適用します。
-    - `.card:has(.card-link:focus-visible)` セレクタを使用し、リンク単体ではなくカード全体を強調します。
+    - **Baseline**: `.card:focus-within` を使用（`index.md` のブラウザ保証境界内）。
+    - **Enhancement**: `:has()` 対応環境では `.card:has(.card-link:focus-visible)` で厳密化します。
 - **Motion Reduction**:
     - `@media (prefers-reduced-motion: reduce)` 環境下では、`index.md` のグローバル定義により全てのトランジションが自動的に無効化されます（`0.01ms` に短縮）。
     - Adaptive Focusアニメーション（`--animation-focus`）も無効化され、フォーカスリングは即座に `--focus-ring-color` で表示されます。
 - **Forced Colors Mode**:
-    - `forced-colors: active` 環境下では、以下のスタイルを適用してシステム設定に完全に追従させます：
-    ```css
-    @media (forced-colors: active) {
-      .ui-link,
-      .card:not(.prose) a,
-      .sidebar:not(.prose) a {
-        color: LinkText;
-        text-decoration-color: currentColor;
-      }
-      
-      .ui-link:visited {
-        color: VisitedText;
-      }
-      
-      /* Actionバリアント: ボタンとして扱う */
-      .ui-link.link-action {
-        color: ButtonText;
-        border: var(--border-width) solid ButtonText;
-        padding: var(--space-1) var(--space-2);
-      }
-    }
-    ```
+    - `forced-colors: active` 環境下では、`index.md` のグローバルトークンマッピングに従います。
+    - この仕様ではリンク個別の色上書きを行わず、トークン経由で統一します。
 
 **5. Print Styles**
 
@@ -319,7 +271,7 @@
 ```css
 @media print {
   /* ナビゲーションリンク: 印刷時は非表示（ページ内でのみ意味を持つため） */
-  .sidebar a,
+  .sidebar a[href],
   .ui-link.link-nav {
     display: none;
   }
@@ -333,7 +285,8 @@
   }
   
   /* カード内リンク: 下線を表示し、リンクであることを明示 */
-  .card a {
+  .card a,
+  .callout a {
     text-decoration: underline;
     text-decoration-color: currentColor;
   }
@@ -358,7 +311,7 @@
 | プロパティ | 属性 | 型/値 | デフォルト | 説明 |
 |------------|------|-------|------------|------|
 | `href` | `href` | `string` | `#main-content` | スキップ先のIDセレクタ。 |
-| `label` | `label` | `string` | `"メインコンテンツへスキップ"` | 表示ラベル。**Rouaultは日本語固定のため、ハードコード可**（`index.md` L67-74: 多言語非対応方針）。 |
+| `label` | `label` | `string` | `"メインコンテンツへスキップ"` | 表示ラベル。**Rouaultは日本語固定のため、ハードコード可**（`index.md` L115-123: 多言語非対応方針）。 |
 
 **4. スタイリングとトークンマッピング (Style & Tokens)**
 
@@ -371,30 +324,30 @@
     - `opacity: 0` で視覚的非表示
 - **Note**: `visibility: hidden` や `display: none` は使用しません。これらはA11yツリーから要素を削除するため、スクリーンリーダーがリンクを認識できなくなります。
 
-**Focus (`:focus`) State (表示)**
+**Focus (`:focus-visible`) State (表示)**
 
-- **Position**: `fixed`. **Top Center** (`left: 50%; transform: translateX(-50%)`) に配置し、独立したシステム通知として扱います。
+- **Position**: `fixed`. **Top Center** (`top: var(--space-2); left: 50%; transform: translateX(-50%)`) に配置し、独立したシステム通知として扱います。
 - **Visibility Restoration**:
     - `transform: translateX(-50%)` (中央配置)
     - `clip-path: none` (クリッピング解除)
     - `opacity: 1` (視覚的表示)
-- **Z-Index**: `var(--z-max)` (**1000**). `index.md` の Z-Index Scale 定義 (L1476) に従い、システム最上位レイヤーに配置します。Toast (500), Modal (300) より上位です。
+- **Z-Index**: `var(--z-max)` (**1000**). `index.md` の Z-Index Scale 定義 (L1688-1701) に従い、システム最上位レイヤーに配置します。Toast (500), Modal (300) より上位です。
 - **Focus Ring Override**:
     - `outline: none` (**Design Exception**)
-    - **Rationale**: このコンポーネントは「出現すること自体」が強力なフォーカス状態を表すため、グローバルの `Adaptive Focus` リングと重複してノイズとならないよう無効化します。
-    - **Forced Colors Support**: `forced-colors: active` 環境下では背景色が消失するため、`outline: 3px solid CanvasText` を強制的に適用し、視認性を保証します（`index.md` L1219-1279: 強制カラーモード戦略準拠）。
+    - **Rationale**: このコンポーネントは「出現すること自体」が強力なフォーカス状態を表すため、グローバルの `Adaptive Focus` リングと重複してノイズとならないよう、コンポーネント例外として無効化します（`index.md` L1232-1292 の方針に対する例外）。
+    - **Forced Colors Support**: `forced-colors: active` 環境下では背景色が消失するため、`outline: 3px solid CanvasText` を強制的に適用し、視認性を保証します（`index.md` L1323-1383: 強制カラーモード戦略準拠）。
 - **Appearance**:
     - Background: `var(--fg-default)` (反転色による最大コントラスト)
     - Color: `var(--bg-default)`
     - Font: `var(--font-sans)`, `var(--font-medium)` (500), `var(--text-sm)` (13px)
-        - **Note (12px以下ルール適用外)**: `--text-sm` (13px) は `--text-xs` (12px) より大きいため、`index.md` L468-476 の「12px以下のテキスト補正ルール」は適用されません。
+        - **Note (12px以下ルール適用外)**: `--text-sm` (13px) は `--text-xs` (12px) より大きいため、`index.md` L558-566 の「12px以下のテキスト補正ルール」は適用されません。
     - Border: `var(--border-width) solid var(--border-on-inverted)`
         - **Token Reference**: `index.md` で新規定義された `--border-on-inverted` トークンを使用。反転背景上の境界線として、計算式の直書きを避けます。
     - Padding: `var(--space-2) var(--space-4)` (8px 16px)
     - Radius: `var(--radius-full)` (ピル形状でナビゲーションであることを示唆)
     - Shadow (Light Mode): `var(--shadow-lg)`
     - Shadow (Dark Mode): `none`
-        - **Rationale (Dark Mode Depth Strategy)**: `index.md` L699-717 の「Dark Mode Depth Strategy」に基づき、Darkモード下では「明るい背景色」を持つこのコンポーネントは「闇の中の発光体」として機能します。シャドウを削除することで、Muddy Shadows（泥のような濁った影）を回避し、**背景色自体のコントラスト**で浮遊感を表現します。
+        - **Rationale (Dark Mode Depth Strategy)**: `index.md` L791-802 の「Dark Mode Depth Strategy」に基づき、Darkモード下では「明るい背景色」を持つこのコンポーネントは「闇の中の発光体」として機能します。シャドウを削除することで、Muddy Shadows（泥のような濁った影）を回避し、**背景色自体のコントラスト**で浮遊感を表現します。
 - **Motion**:
     - `transition`: `none`
     - **Instant Presence**: 思考の即応性を最優先するため、余韻（Fade）を排除し、フォーカスと同時に**物理的に即時表示**します（`index.md` 原則3「デジタルの触感」準拠）。
@@ -414,7 +367,7 @@
 
 **Forced Colors Mode**
 
-`index.md` L1219-1279 の戦略に従い、`forced-colors: active` 環境下では以下を適用します：
+`index.md` L1323-1383 の戦略に従い、`forced-colors: active` 環境下では以下を適用します：
 
 ```css
 @media (forced-colors: active) {
@@ -431,7 +384,8 @@
 
 - **First Tab Stop**: ページ読み込み後、最初の `Tab` キー押下で必ずこのリンクにフォーカスが当たる構造を維持します。
 - **Keyboard Navigation**:
-    - `Enter` / `Space`: ターゲット要素（`#main-content`）へジャンプし、フォーカスを移動します。
+    - `Enter`: ターゲット要素（`#main-content`）へジャンプし、フォーカスを移動します（ネイティブリンク挙動）。
+    - `Space`: ネイティブリンクでは保証されません。必要な場合のみ、`keydown` ハンドラで `Enter` と同等処理を実装してください。
     - `Esc`: ブラウザのデフォルト挙動に委ねます（通常は何も起きない、またはフォーカスを外す）。
         - **Rationale**: スキップリンクは「通過点」であり、特別なキャンセル動作は不要です。ユーザーの自然なフロー（順方向への移動）を優先します。
 - **Screen Reader Support**: Default State で `clip-path: inset(50%)` を使用することで、視覚的に非表示でも確実にA11yツリーに残し、スクリーンリーダーが認識可能な状態を保証します。
@@ -450,9 +404,12 @@
 
 **6. 実装上の注意事項 (Implementation Notes)**
 
-- **Target Element Configuration**: ターゲット要素（`<main id="main-content">` などメインコンテンツのラッパー要素）には `tabindex="-1"` を付与し、プログラム的なフォーカス移動を保証します。
-    - **Note**: `tabindex="-1"` は、通常のタブ順序には含まれないが、JavaScriptやリンクからのフォーカス移動を受け入れ可能にする標準的な手法です。
-    - **Critical**: これがないと、一部のブラウザでフォーカス移動が機能しません。
+- **Critical Setup**: ターゲット要素（`<main id="main-content">` など）への `tabindex="-1"` 付与は必須です。これがないと、一部ブラウザでフォーカス移動が成立しません。
+- **First Tab Stop Guarantee**: `<ui-skip-link>` より前にフォーカス可能要素（`<a>`, `<button>`, `<input>` など）を配置しないでください。
+- **Verification Checklist**:
+    - ページ初回 `Tab` でスキップリンクがフォーカスされること
+    - `Enter` で `#main-content` へジャンプし、ターゲットにフォーカスが移ること
+    - `forced-colors: active` でスキップリンクの境界と文字が視認可能であること
 
 #### ボタン (Button) `<ui-button>`
 
@@ -4992,33 +4949,26 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
                 - Code Group は、この変数が定義されている場合にのみ Breakout スタイルを適用します。
             - **Implementation**:
                 ```css
-                /* 親コンテナ（Light DOM） */
-                .prose {
-                  --in-prose-context: 1;
+                /* 親コンテナ（Light DOM）: prose内の Code Group にのみ拡張値を注入 */
+                .prose ui-code-group {
+                  --ui-code-group-width: calc(100% + var(--space-8));
+                  --ui-code-group-margin-inline: calc(-1 * var(--space-4));
                 }
 
                 /* Code Group (Shadow DOM) */
                 :host {
-                  width: var(--in-prose-context, 0) == 1
-                    ? calc(100% + var(--space-8))  /* Mobile Breakout */
-                    : 100%;                         /* Safe Default */
-                  margin-inline: var(--in-prose-context, 0) == 1
-                    ? calc(-1 * var(--space-4))
-                    : 0;
+                  width: var(--ui-code-group-width, 100%); /* Safe Default */
+                  margin-inline: var(--ui-code-group-margin-inline, 0);
                 }
 
                 @media (min-width: 768px) { /* --bp-md */
-                  :host {
-                    width: var(--in-prose-context, 0) == 1
-                      ? calc(100% + var(--space-16))  /* Desktop Breakout */
-                      : 100%;
-                    margin-inline: var(--in-prose-context, 0) == 1
-                      ? calc(-1 * var(--space-8))
-                      : 0;
+                  .prose ui-code-group {
+                    --ui-code-group-width: calc(100% + var(--space-16));
+                    --ui-code-group-margin-inline: calc(-1 * var(--space-8));
                   }
                 }
                 ```
-            - **Note**: Code Block 仕様でも同じ戦略を採用する必要があります（現在の Code Block 仕様にもこの修正が必要です）。
+            - **Note**: Code Block 仕様でも同じ戦略（Light DOMでの変数注入 + Shadow DOMでの参照）を採用してください。
     - **Nested Layout Safety (Double Breakout Prevention)**:
         - `ui-code-group` 内の `ui-code-block`（Breakout属性を持つ可能性がある）に対しては、**CSS Variable** を用いて Breakout を **`0` に強制リセット**し、グループ内コンテナに収まる（Fill Container）挙動とします。
         - **Strategy**: Code Group が提供する **`--ui-code-block-breakout-width: 100%`** および **`--ui-code-block-breakout-margin: 0`** を、配下の Code Block が優先的に参照することで実現します。
