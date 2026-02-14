@@ -6995,6 +6995,8 @@ interface Track {
 
 #### 楽譜 (Score) `<ui-score>`
 
+**Status: Draft**
+
 **1. デザイン哲学と目的 (Design Philosophy)**
 
 - **役割**: 音楽ジャンルにおいて、主題や動機（Motif）を視覚的に提示します。テキストの流れを一時的に断ち切り、視覚的なリズム（Prose Breakout）を形成します。
@@ -7015,12 +7017,14 @@ interface Track {
     - **Smart Overflow**: 画面幅に収まらない場合、縮小して視認性を損なうのではなく、**横スクロール**を提供します。
     - **Lazy Loading**: `IntersectionObserver` を使用し、ビューポートに近づくまでリクエストを遅延させます。
         - **Skeleton**: ロード中は `index.md` で定義された `--bg-fill-neutral` を使用したスケルトンを表示し、`aspect-ratio` プロパティに基づいてCLS (Cumulative Layout Shift) を防止します。
-            - **Shimmer Animation**: 穏やかに光が流れる効果を適用します。
-                - **Duration**: `1.5s` (無限ループ)
+            - **Shimmer Animation**: `index.md` のスケルトンUIで定義されたシマーエフェクトを適用します。
+                - **Background**: `var(--skeleton-bg)` (`--bg-fill-neutral`)
+                - **Duration**: `1.5s` (無限ループ) — `index.md` のスケルトンUI定義に準拠
                 - **Direction**: 左から右へ (`translateX(-100%)` → `translateX(100%)`)
-                - **Gradient**: `linear-gradient(90deg, transparent 0%, oklch(from var(--bg-default) l c h / 0.5) 50%, transparent 100%)`
-                - **Implementation Note**: アニメーション詳細は実装フェーズで調整可能です。上記は推奨値であり、視覚的なQAに基づいて微調整してください。
+                - **Gradient**: `linear-gradient(90deg, transparent, var(--skeleton-shimmer), transparent)` — `index.md` で定義された `--skeleton-shimmer` トークンを使用
+                - **Animation Category**: 本アニメーションはユーザー操作に対するフィードバックではなく、環境的（Ambient）アニメーションです。そのため、`--duration-slower` (300ms) のトランジション上限は適用されません。
             - **Reduced Motion**: `prefers-reduced-motion: reduce` 環境下では、シマー（明滅）アニメーションを無効化します。
+    - **Loading State (ARIA)**: `index.md` のスケルトンUI要件に準拠し、ローディング中は `<figure>` 要素に `aria-busy="true"` を設定します。読み込み完了時（またはエラー時）に `aria-busy="false"` へ更新します。
     - **Error Handling**: 読み込み失敗時は、`aria-live="polite"` でスクリーンリーダーに通知し、ユーザーフレンドリーなエラーメッセージ（例: "楽譜を読み込めませんでした"）を表示します。
         - **Implementation Detail**: エラーメッセージ用の `<div class="error" aria-live="polite">` は初期DOMに**空要素として配置**しておき、エラー発生時にテキストを挿入します。これにより、`aria-live` 領域の動的変化が正しくスクリーンリーダーに通知されます。
 - **Build-time Processing**:
@@ -7045,12 +7049,12 @@ interface Track {
 - **Container Structure**:
     - `<figure>` 要素をラッパーとして使用し、その内部に **Scroll Container (`div`)** を配置します。
     - **Border Strategy**:
-        - **Light Mode**: `1px solid var(--border-muted)`
-        - **Dark Mode**: `1px solid var(--border-default)`
+        - **Light Mode**: `var(--border-width) solid var(--border-muted)`
+        - **Dark Mode**: `var(--border-width) solid var(--border-default)`
         - *Rationale*: アプリ背景が暗いDark Modeにおいて、白背景の楽譜は強烈なコントラストを持ちます。`border-muted` では境界が光に埋もれてしまう恐れがあるため、より不透明度の高い `border-default` を採用し、**ハレーションを防ぎつつ構造的な境界を明確にします**。
         - *Note (Token Consistency)*: `index.md` の `--border-default` は不透明度 `0.12` で定義されています。実装時には、この値で十分なコントラストが得られるかビジュアルで検証してください。将来的に、より強いコントラストが必要な場合は、`index.md` に新たなトークン（例: `--border-strong`）を追加することを検討してください。
     - **Background**:
-        - 原則として **白 (`#FFFFFF`) または極めて明るいグレー** を維持します。`filter: invert()` は五線譜の視認性を損なうため原則禁止します（例外: Forced Colors Mode の Fallback、後述）。
+        - 原則として **`var(--white)`** （Primitiveトークン: `oklch(100% 0 0)`）を維持します。楽譜は「紙の上のインク」というメタファーに基づき、Light/Dark Mode問わず白背景を固定する意図的な例外です。`filter: invert()` は五線譜の視認性を損なうため原則禁止します（例外: Forced Colors Mode の Fallback、後述）。
     - **Radius**: `--radius-md` を Scroll Container に適用し、`overflow: hidden` と組み合わせて角丸を確実にクリップします。
 - **Scroll Container (Scrollable Area)**:
     - **Focus Strategy**: `tabindex="0"` を付与するため、`index.md` のフォーカス戦略に準拠した **Adaptive Focus (`:focus-visible`)** を適用します。
@@ -7068,10 +7072,47 @@ interface Track {
         - **Forced Colors**: `forced-colors: active` 環境下では `mask-image: none` を指定し、システムカラーによる視認性を優先します。
         - *Rationale*: 楽譜のエッジをなめらかに透過させることで、物理的な紙がそこで途切れているのではなく、ウィンドウの奥に続いているような奥行き（Depth）を表現します。
 - **Layout Strategy**:
-    - **Desktop**: `<ui-image>` と同様に、Prose幅よりも広く表示（`width: calc(100% + var(--space-8))`）し、没入感を高めます。
+    - **Desktop**: `<ui-image>` と同様に、Prose幅よりも広く表示し、没入感を高めます。`index.md` のMedia Elements定義に準拠します。
+        - `width: calc(100% + var(--space-16))`
+        - `margin-inline: var(--space-n8)`
     - **Mobile**: 画面端まで拡張（Full Bleed）し、パディング (`--space-4`) を内部に設けます。
+        - `width: calc(100% + var(--space-8))`
+        - `margin-inline: var(--space-n4)`
     - **Print**: 印刷時は横スクロールやマスクを無効化します。楽譜が紙面幅を超える場合は、**複数ページにまたがる表示**を許可します（`break-inside: auto`）。
         - *Rationale*: 音楽コンテンツの特性上、縮小して視認性を損なうよりも、ページまたぎで原寸を維持する方が望ましいです。
+- **Figcaption Typography**:
+    - `<figcaption>` は楽譜の補足説明として機能するため、`index.md` のタイポグラフィ体系に準拠した控えめなスタイルを適用します。
+
+    | プロパティ | 値 | 根拠 |
+    |------------|-----|------|
+    | `font-size` | `var(--text-sm)` (13px) | 補助テキスト・メタ情報用サイズ |
+    | `color` | `var(--fg-muted)` | メタデータ用カラー（WCAG AA準拠） |
+    | `font-weight` | `var(--font-normal)` (400) | 本文標準。楽譜本体に対して視覚的重みを抑える |
+    | `margin-top` | `var(--space-2)` (8px) | 楽譜コンテナとの間隔（グループ間距離） |
+    | `text-align` | `center` | 楽譜の視覚的中心軸に合わせる |
+
+- **Error Message Styling**:
+    - 読み込み失敗時のエラーメッセージは、`index.md` のインラインエラーパターンに準拠します。
+
+    | プロパティ | 値 | 根拠 |
+    |------------|-----|------|
+    | `color` | `var(--fg-danger)` | エラー状態の標準カラー |
+    | `font-size` | `var(--text-sm)` (13px) | `index.md` エラーハンドリング定義に準拠 |
+    | `margin-top` | `var(--space-2)` (8px) | コンテナとの間隔 |
+    | `text-align` | `center` | 楽譜コンテナの中心軸に合わせる |
+
+    - *Note*: エラー表示時にアイコンを併用する場合は、`var(--icon-sm)` (14px) / `var(--fg-danger)` を使用し、メッセージの左側に配置します（オプション）。
+- **State Transition Animation**:
+    - スケルトンからSVG表示への遷移は、`index.md` のモーションシステムに準拠したアニメーションを適用します。
+
+    | 状態遷移 | プロパティ | 値 | 根拠 |
+    |----------|------------|-----|------|
+    | Skeleton → SVG (出現) | `opacity` | `0` → `1` | 視覚的なフラッシュを防ぎ、滑らかに出現 |
+    | | `transition` | `opacity var(--duration-normal) var(--ease-out)` | `index.md` の標準トランジション (150ms) |
+    | Skeleton (退場) | `opacity` | `1` → `0` | SVG表示と同時にフェードアウト |
+    | | `transition` | `opacity var(--duration-fast) var(--ease-in)` | 退場は高速 (70ms) |
+
+    - *Note*: `transition: all` は `index.md` の禁止事項に該当するため、`opacity` のみを明示的に指定します。
 
 **5. アクセシビリティ (A11y)**
 
@@ -7092,35 +7133,38 @@ interface Track {
 **6. 推奨DOM構造 (Suggested DOM Structure)**
 
 ```html
-<figure class="ui-score">
+<!-- aria-busy: ローディング中は "true"、読み込み完了またはエラー時に "false" へ更新 -->
+<figure class="ui-score" aria-busy="true">
   <!-- Scroll Container: キーボード操作と支援技術のターゲット -->
   <!-- aria-describedby で詳細説明（desc）を紐付け -->
   <div class="score-scroll" tabindex="0" role="region" aria-label="楽譜: {label}" aria-describedby="score-desc-{uniqueId}">
     <!-- Lazy Loading前: Skeleton -->
     <div class="skeleton" style="aspect-ratio: {aspect-ratio ?? '3/1'}"></div>
-    
+
     <!-- Load後: Inline SVG -->
     <!-- Content自体は隠蔽し、コンテナのラベルで代替する -->
     <svg aria-hidden="true" focusable="false" ...>
        <!-- path data -->
     </svg>
-    
+
     <!-- 詳細説明: 視覚的には隠すが、DOMに残して参照させる -->
     <!-- SVG内の <desc> を使うよりも、HTML要素の方が参照の信頼性が高い -->
     <p id="score-desc-{uniqueId}" class="sr-only">{description}</p>
   </div>
-  
+
   <!-- Error時: Fallback (Scroll Container の外に配置) -->
   <!-- 理由1: Scroll Container 内部に配置すると、スクロールしないと見えない可能性がある -->
   <!-- 理由2: Scroll Containerが`overflow: hidden`の場合、エラーメッセージが完全に隠蔽される -->
   <!-- 理由3: `aria-live`領域は視覚的に安定した位置にあるべき（スクロールで消えない） -->
   <div class="error" aria-live="polite"></div>
-  
+
   <figcaption>{caption}</figcaption>
 </figure>
 ```
 
 #### 数式 (Math) `<ui-math>`
+
+**Status: Draft** — API・スタイルともに変更の可能性があります。
 
 **1. デザイン哲学と目的 (Design Philosophy)**
 
@@ -7141,7 +7185,7 @@ interface Track {
 - **Output Format**: MathML（アクセシビリティ用）と HTML/CSS（表示用）のハイブリッド出力。
     - **MathML Support Status**: 
         - **Firefox**: ネイティブサポート（優れた読み上げ）
-        - **Chrome/Edge**: Chromium 109以降でサポート
+        - **Chrome/Edge**: Chromium 111以降でサポート（`index.md` ブラウザサポート境界に準拠）
         - **Safari**: ネイティブサポート
     - **Fallback Strategy**: MathML非対応ブラウザ向けに、KaTeXは自動的にHTML/CSSフォールバックを提供します。追加の実装は不要です。
 - **SSR/Hydration Strategy**:
@@ -7174,7 +7218,7 @@ interface Track {
             - **UI要素**: `14px` Noto Sans JP（ボタンラベル、リスト項目等）でも検証を行います。
         - **調整手段（必要な場合のみ）**:
             - `font-size-adjust` プロパティの使用（ブラウザサポート限定的）
-            - または、インライン数式に対して微調整トークン（例: `--math-inline-scale: 0.98`）を定義し、`font-size: calc(1em * var(--math-inline-scale))` で適用します。
+            - または、インライン数式に対して微調整トークン（例: `--text-math-scale: 0.98`）を定義し、`font-size: calc(1em * var(--text-math-scale))` で適用します。トークン名は `index.md` の命名規則 `--[カテゴリ]-[バリアント]` に従い、カテゴリ `text`・バリアント `math-scale` とします。
         - **推奨アプローチ**: まずはデフォルト（調整なし）で実装し、QAフェーズで視覚的に検証してください。不整合が顕著な場合にのみ、上記の調整を適用します。
 - **Display Mode (Block)**:
     - **Container**: `<div class="math-display">` または `<figure>` でラップします。
@@ -7182,32 +7226,58 @@ interface Track {
         - *Rationale*: `index.md` のセマンティック用途「区分: 小さなセクションやコンテキストの切り替わり」に合致します。
     - **Padding**: `var(--space-4) 0` (上下16px)
     - **Text Align**: **`center`** (デフォルト)
-        - **運用ルール (Genre-Aware Alignment)**:
-            - **Default (`center`)**: 全ジャンル共通。特にCS、音楽、美術、文学の混在コンテンツに適用。
-            - **Override (`left` + indent)**: ジャンル「数学理論」が明示されているメモ、または `<ui-math theorem>` 等の属性が付与された場合のみ適用。
-                - *実装例*: `.prose[data-genre="mathematics"] .math-display { text-align: left; padding-left: var(--space-8); }`
-        - *Rationale*: 数学論文スタイルを採用する場合、`text-align: left` + `padding-left: var(--space-8)` でインデントを適用できます。ただし、デフォルトは視覚的な安定性を重視した `center` とし、特定のジャンルでのみ左揃えを使用します。
+        - *Rationale*: デフォルトは視覚的な安定性を重視した `center` とし、CS・音楽・文学など混在コンテンツを含む全ジャンルに適用します。
+        - *Future Extension (未実装)*: 数学理論書スタイルで左揃えにしたい場合のパターンとして、ジャンルシステム（`data-genre` 属性）の導入を検討できます。ただし、`data-genre` の値一覧・設定方法・適用箇所は `index.md` に定義されていないため、**現時点での実装は行いません**。採用する場合は `index.md` への定義追加を先行させてください。
+            ```css
+            /* 将来のジャンルシステム定義後に適用可 */
+            /* .prose[data-genre="mathematics"] .math-display { text-align: left; padding-left: var(--space-8); } */
+            ```
     - **Overflow**: `overflow-x: auto` (横スクロール許可)
         - **Visual Hint (Fade Effect)**: `<ui-score>` と同様に、横スクロール可能な場合は `mask-image` でフェードヒントを適用します。
             - **適用条件**:
                 - スクロール可能な場合（`scrollWidth > clientWidth`）**のみ**フェードを適用する。
                 - JavaScript なしの場合、または判定が困難な場合は、**常にフェードを適用**する（フォールバック）。
                     - *Rationale*: 「続きがない」状態でフェードがあっても情報損失はないが、「続きがある」状態でフェードがないと発見可能性（Discoverability）が損なわれる。
+            > **⚠️ 実装注意**: 両端フェードをCSS単体で常時適用すると、スクロール位置が先頭のとき数式の**冒頭文字が透過して見えなくなります**。フォールバックは右端のみに限定し、JS有効時はスクロール位置に応じて動的制御します。
+
             ```css
+            /* --- JS非対応フォールバック: 右端のみフェード --- */
+            /* 数式の冒頭を隠さないため、左端のフェードは適用しない */
             .math-display {
               --fade-width: var(--space-4);
+              -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--fade-width)), transparent);
+              mask-image: linear-gradient(to right, black calc(100% - var(--fade-width)), transparent);
+            }
+
+            /* --- JS有効時: data-scroll属性でスクロール状態を管理 --- */
+            /* コンポーネント側で scroll イベントを監視し、以下の値を切り替える */
+            /* "none": スクロール不要 / "start": 先頭 / "middle": 中間 / "end": 末尾 */
+            .math-display[data-scroll="none"] {
+              -webkit-mask-image: none;
+              mask-image: none;
+            }
+            .math-display[data-scroll="start"] {
+              -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--fade-width)), transparent);
+              mask-image: linear-gradient(to right, black calc(100% - var(--fade-width)), transparent);
+            }
+            .math-display[data-scroll="middle"] {
               -webkit-mask-image: linear-gradient(to right, transparent, black var(--fade-width), black calc(100% - var(--fade-width)), transparent);
               mask-image: linear-gradient(to right, transparent, black var(--fade-width), black calc(100% - var(--fade-width)), transparent);
             }
-            
+            .math-display[data-scroll="end"] {
+              -webkit-mask-image: linear-gradient(to right, transparent, black var(--fade-width));
+              mask-image: linear-gradient(to right, transparent, black var(--fade-width));
+            }
+
             @media (forced-colors: active) {
-              .math-display {
+              .math-display,
+              .math-display[data-scroll] {
                 -webkit-mask-image: none;
                 mask-image: none;
               }
             }
             ```
-            - **Forced Colors Mode での検証推奨**: ハイコントラストモードでフェード効果が本文の可読性を損なわないか確認してください。マスク自体が動作しても視覚的な問題が発生しない場合、上記の `@media (forced-colors: active)` ブロックは不要かもしれません。実機検証で判断してください。
+            - **`--fade-width` の位置づけ**: ローカルカスタムプロパティとして `.math-display` スコープに定義します。`<ui-score>` も同様のパターンを使用する場合は、将来的に `index.md` でグローバルトークンへの昇格を検討してください。
         - *Rationale*: 長い数式（行列、連立方程式等）が画面幅を超える場合、続きがあることを視覚的に示唆します。
     - **Border**: **なし**（デフォルト）
         - *Rationale*: 数式は本文の一部として扱い、視覚的な分離は余白（Margin）のみで表現します。ボーダーは情報ブロック（引用、コードブロック）との差別化のために省略します。
@@ -7216,6 +7286,17 @@ interface Track {
         - *Rationale*: 本文と同じ背景色を維持し、読書の流れを分断しません。
         - *Alternative*: コードブロックと同様に数式を「技術的な記述」として扱う場合、`background: var(--bg-fill-muted)` + `padding: var(--space-4)` + `border-radius: var(--radius-md)` の適用を検討できます。
     - **Scrollbar**: `index.md` のスクロールバー定義に準拠します。
+    - **Keyboard Interaction (横スクロール対応)**:
+        - スクロール可能な `.math-display` コンテナには `tabindex="0"` を付与し、キーボードフォーカス可能にします。
+        - フォーカス時は `:focus-visible` スタイルを適用します（`index.md` のキーボードナビゲーション戦略に準拠）。
+        - フォーカス取得後、キーボード操作（`←` `→` キー、スペースキー等）でブラウザネイティブのスクロールを機能させます。
+        ```html
+        <!-- スクロール可能な場合のみ tabindex を付与 -->
+        <div class="math-display" tabindex="0" role="region" aria-label="数式（横スクロール可能）">
+          <!-- KaTeX 出力 -->
+        </div>
+        ```
+        - *Note*: スクロール不要（`scrollWidth <= clientWidth`）の場合は `tabindex` を付与しません。不要なフォーカスストップはキーボードユーザーのフロー状態を妨げます（原則2）。
 - **Inline Mode**:
     - **Padding**: **なし**（デフォルト）
         - *Rationale*: KaTeX自体が既に適切な内部余白を持っている可能性があるため、デフォルトではKaTeXの組版ルールを尊重します。追加のパディングは二重パディングのリスクがあります。
@@ -7228,19 +7309,68 @@ interface Track {
 - **Color**: `var(--fg-default)` (本文と統一)
     - *Rationale*: 数式は本文の一部であり、色による強調は行いません。
 - **Print Styles**:
-    - 印刷時は横スクロールやマスクを無効化します。
-    - ページ途中での数式分割を回避します（`page-break-inside: avoid`）。
     - *Rationale*: 印刷時は横スクロールが不可能なため、数式を紙面幅に収めます。ページまたぎによる数式の分断を防ぎ、可読性を維持します。
+    ```css
+    @media print {
+      .math-display {
+        /* スクロール・マスクを無効化し、紙面幅に収める */
+        overflow: visible;
+        max-width: 100%;
+
+        /* フェードマスクを無効化 */
+        -webkit-mask-image: none;
+        mask-image: none;
+
+        /* ページまたぎ禁止 */
+        page-break-inside: avoid;
+        break-inside: avoid;
+
+        /* 余白を印刷向けに縮小 */
+        margin: var(--space-4) 0;
+        padding: 0;
+      }
+    }
+    ```
 
 **5. アクセシビリティ (A11y)**
 
 - **Semantic Structure**:
-    - **Display Mode**: `<div role="math" aria-label="{aria-label}">` でラップします。
-    - **Inline Mode**: `<span role="math" aria-label="{aria-label}">` でラップします。
+    - **Display Mode**: `<div role="math">` でラップします。`aria-label` は指定がある場合のみ付与します（後述）。
+    - **Inline Mode**: `<span role="math">` でラップします。同上。
     - *Rationale*: `role="math"` は数式コンテンツであることを支援技術に明示します。
 - **MathML vs aria-label Priority**:
-    - **Primary**: MathML（KaTeXが自動生成）を優先します。現代のスクリーンリーダー（NVDA, JAWS, VoiceOver）はMathMLを適切に読み上げます。
-        - **Priority**: `aria-label` が指定された場合、MathMLよりも優先されます。MathML要素に `aria-hidden="true"` を付与し、`aria-label` のテキストのみを読み上げさせます。
+    - **`aria-label` 未指定時（デフォルト）**: `role="math"` ラッパーに `aria-label` を付与しません。スクリーンリーダーはラッパーの内部（KaTeXが生成したMathML）を直接読み上げます。`role="math"` は「ここに数式がある」というコンテキストを補足するに留まり、MathMLのセマンティクスを上書きしません。
+    - **`aria-label` 指定時**: `aria-label` がMathMLより優先されます。MathML要素（`<math>`タグ）に `aria-hidden="true"` を付与し、`aria-label` のテキストのみを読み上げさせます。ラッパーの `aria-label` がMathMLの読み上げを完全に置換します。
+    ```html
+    <!-- aria-label 未指定: MathMLをそのまま読み上げ -->
+    <span role="math">
+      <math>...</math>  <!-- スクリーンリーダーが直接解析 -->
+    </span>
+
+    <!-- aria-label 指定: MathMLを隠し、aria-label のみ読み上げ -->
+    <span role="math" aria-label="エックス プラス ワイ イコール ゼット">
+      <math aria-hidden="true">...</math>
+    </span>
+    ```
+    - **Primary**: MathML（KaTeXが自動生成）を優先します。現代のスクリーンリーダー（NVDA, JAWS, VoiceOver）はMathMLを適切に読み上げます。`aria-label` は、MathMLの読み上げが不自然・不正確な場合の手動オーバーライドとしてのみ使用します。
+- **Dark Mode における KaTeX 生成CSS との相互作用**:
+    - **問題**: KaTeXが生成するHTML内のインラインスタイルや特定のCSSクラスには、`color: #000` のようにハードコードされた黒色が含まれる場合があります。ダークモード時に背景が暗くなっても、これらの要素が黒文字のまま残り不可視になるリスクがあります。
+    - **対策**: KaTeX出力コンテナに `color: inherit` を設定し、ラッパーの `var(--fg-default)` を確実に継承させます。
+        ```css
+        /* KaTeX内部の色をデザイントークンに従わせる */
+        .katex {
+          color: inherit;
+        }
+        .katex .mord,
+        .katex .mbin,
+        .katex .mrel,
+        .katex .mopen,
+        .katex .mclose,
+        .katex .mpunct {
+          color: inherit;
+        }
+        ```
+    - **検証**: ダークモード（`prefers-color-scheme: dark`）でインライン数式・ブロック数式の両方をレンダリングし、全ての数式要素が `var(--fg-default)` と同等の色で表示されることを確認してください。
 - **Forced Colors Mode (ハイコントラスト)**:
     - **Strategy**: KaTeXが生成するHTML/CSSは、`currentColor` を使用しているため、システムカラーに自動的に追従します。
     - **Verification**: Windows ハイコントラストモードで、数式の色が背景色と適切なコントラストを持つか確認してください。
@@ -7251,8 +7381,16 @@ interface Track {
     - **LaTeX Syntax Error**: ビルド時またはランタイムでLaTeX構文エラーが発生した場合、エラーUIを表示します。
         - **Style**: Background: `var(--bg-danger-subtle)`, Border: `1px solid var(--border-danger)`, Color: `var(--fg-danger)`
         - **Structure**: エラーアイコン、エラーメッセージ、ソースコード（`<details>` で折りたたみ）を含みます。
-        - **Role**: `role="alert"` を使用し、スクリーンリーダーに即座に通知します。
-    - *Rationale*: エラーを視覚的に明確にし、コンテンツ作成者がデバッグできるようにします。
+        - **Role（ビルド時エラー）**: `role="alert"` は**使用しません**。ページ読み込み時に既に存在する静的コンテンツのため、`role="alert"` を付与するとページロード時に全エラーが一斉読み上げされ、ユーザー体験を破壊します。代わりに通常のマークアップ（セマンティックなエラーブロック）として出力し、スクリーンリーダーはドキュメントの読み進め順で自然に読み上げます。
+        - **Role（ランタイムエラー）**: `role="alert"` を使用します。ユーザー操作（`latex` プロパティへの動的な書き込み等）に起因して**動的に挿入**されるエラーのみに限定し、スクリーンリーダーへの即座の通知を行います。
+        ```html
+        <!-- ビルド時エラー: role="alert" なし（静的コンテンツ） -->
+        <div class="math-error">...</div>
+
+        <!-- ランタイムエラー: role="alert" あり（動的挿入時のみ） -->
+        <div class="math-error" role="alert">...</div>
+        ```
+    - *Rationale*: エラーを視覚的に明確にし、コンテンツ作成者がデバッグできるようにします。ライブリージョン（`role="alert"`）は動的変化への通知手段であり、静的コンテンツへの適用は目的外使用です。
 
 **6. 使用例 (Usage Examples)**
 
@@ -7274,6 +7412,8 @@ interface Track {
 ### フィードバックと通知 (Feedback & Notifications)
 
 #### トースト (Toast) `<ui-toast>`
+
+**ステータス**: `Draft` — API・スタイルが変更される可能性があります。
 
 **1. デザイン哲学と目的 (Design Philosophy)**
 
@@ -7299,13 +7439,16 @@ interface Track {
 
 | プロパティ | 型/値 | 説明 |
 |------------|-------|------|
-| `variant` | `'success' \| 'error' \| 'info'` | 通知タイプ。 |
-| `duration` | `number` | 表示時間（ミリ秒）。デフォルト `5000`。<br>**特殊値**: `0` を指定した場合、自動的に消えません（ユーザーが手動で閉じるまで表示）。この場合、`dismissible` は自動的に `true` として扱われます。<br>**フォーカス管理**: `duration: 0` のトーストは Non-blocking の原則を維持するため、**フォーカスを強制的に奪いません**。キーボードユーザーは、現在の操作を完了した後にタブキーで閉じるボタンにアクセスできます。フォーカストラップは実装しません。 |
+| `variant` | `'success' \| 'warning' \| 'error' \| 'info'` | 通知タイプ。`warning` は警告・注意（重大ではないが確認を促したい場合）に使用します。 |
+| `duration` | `number` | 表示時間（ミリ秒）。デフォルト `4000`（`variant="error"` のみ `6000`）。<br>*Rationale*: `error` はユーザーが内容を読み対処する必要があるため、読む時間を確保します（`index.md` 通知システムより）。<br>**特殊値**: `0` を指定した場合、自動的に消えません（ユーザーが手動で閉じるまで表示）。この場合、`dismissible` は自動的に `true` として扱われます。<br>**フォーカス管理**: `duration: 0` のトーストは Non-blocking の原則を維持するため、**フォーカスを強制的に奪いません**。キーボードユーザーは、現在の操作を完了した後にタブキーで閉じるボタンにアクセスできます。フォーカストラップは実装しません。 |
 | `dismissible`| `boolean` | 手動で閉じることができるか。デフォルト `true`。 |
 
 **4. スタイリングとトークンマッピング (Style & Tokens)**
 
-- **Position**: 画面右下 (`bottom: var(--space-4)`, `right: var(--space-4)`)。
+- **Position**:
+    - **デスクトップ**: 画面右上 (`top: var(--space-4)`, `right: var(--space-4)`)。
+    - **モバイル** (`max-width: 640px`): 画面下部 (`bottom: var(--space-4)`, `left: var(--space-4)`, `right: var(--space-4)`)。`--toast-width` を `100%` として横幅いっぱいに広げ、タッチ操作の邪魔にならない位置に配置します。
+    - *Rationale*: `index.md` 通知システムの配置指針に準拠します。モバイルでは画面上部にコンテンツが集中するため下部への移動が有効です。
 - **Z-Index**: `--z-toast` (500)
 - **Appearance**:
     - **Width**: `--toast-width` (320px)
@@ -7323,23 +7466,33 @@ interface Track {
             }
             ```
         - *Rationale*: ハードコード値を排除し、レスポンシブ対応の余地を残します。
-    - **Background**: `var(--bg-surface-3)`
+    - **Background / Icon Color**: バリアントごとにセマンティックトークンを使用します。
+
+        | `variant` | 背景色トークン | アイコン色トークン |
+        |-----------|--------------|----------------|
+        | `info` | `var(--bg-surface-2)` | `var(--fg-info)` |
+        | `success` | `var(--bg-success-subtle)` | `var(--fg-success)` |
+        | `warning` | `var(--bg-warning-subtle)` | `var(--fg-warning)` |
+        | `error` | `var(--bg-danger-subtle)` | `var(--fg-danger)` |
+
+        - *Rationale*: 一律 `--bg-surface-3` では色による意味の区別ができません。バリアント別 Subtle 背景色とアイコン色の組み合わせにより、色覚に依存せず variant の意味を伝えます（禁止事項「色のみによる情報伝達」回避）。
     - **Border**: `var(--border-width) solid var(--border-default)`
-    - **Shadow**: Lightモードで `var(--shadow-lg)`、Darkモードで `var(--shadow-dark-lg)` を使用します（メディアクエリで切り替え）。
+    - **Shadow**: `var(--elevation-lg)`。Light/Dark の切り替えは Semantic トークンが内部で処理するため、メディアクエリは不要です。
+        - *Rationale*: `index.md` の深度表現規約「コンポーネント実装では Primitive トークン（`--shadow-*`）を直接使用せず、必ず `--elevation-*` を使うこと」に準拠します。
     - **Radius**: `var(--radius-md)`
     - **Padding**: `var(--space-3) var(--space-4)`
     - **Animation**: 
         - **Implementation Guideline**: コンポーネント固有のアニメーション（`@keyframes toast-slide-in` など）は、Shadow DOM 内でローカルに定義します。`index.md` のモーショントークン（`--duration-normal`, `--ease-out` など）を参照します。
-        - **Entry**: 右からスライドイン + フェード。`var(--duration-normal)` と `var(--ease-out)` を使用します。
-        - **Exit**: フェードアウトのみ（スライドアウトは視覚的ノイズとなるため排除）。`var(--duration-fast)` と `var(--ease-in)` を使用します。
-        - **Motion Reduction**: `prefers-reduced-motion` 時はスライドを無効化し、フェードのみにします。
+        - **Entry**: 右からスライドイン (`translateX(100%)` → `translateX(0)`) + フェード (`opacity: 0` → `opacity: 1`)。`var(--duration-slow)` (200ms) と `var(--ease-out)` を使用します。
+        - **Exit**: フェードアウト (`opacity: 1` → `opacity: 0`) + 縮小 (`transform: scale(0.95)`)。スライドアウトは視覚的ノイズとなるため排除します。`var(--duration-normal)` (150ms) と `var(--ease-in)` を使用します。
+        - **Motion Reduction**: `prefers-reduced-motion` 時はスライドと縮小を無効化し、フェードのみにします。トースト通知の出現・消去自体は `prefers-reduced-motion` 下でも機能を維持します（`index.md` Reduced Motion 例外規定に準拠）。
 
 **5. アクセシビリティ (A11y)**
 
-- **Role**: 
-    - `variant="info"` または `variant="success"`: `role="status"` (polite)
+- **Role**:
+    - `variant="info"` または `variant="success"` または `variant="warning"`: `role="status"` (polite)
     - `variant="error"`: `role="alert"` (assertive)
-    - *Rationale*: 情報の重要度に応じてスクリーンリーダーへの伝達方法を変え、ユーザーの集中を適切に制御します。
+    - *Rationale*: `warning` は確認を促す情報であり、読み上げを即時割り込みさせる必要はないため `polite` とします。`error` のみ、即座に伝達が必要な障害情報として `assertive` を使用します（`index.md` `aria-live` 使い分けガイドラインおよびコンポーネント基準表に準拠）。
     - **Container `aria-live` について**: 一般的には、コンテナに `aria-live` を設定せず、個々のトースト要素に `role="status"` / `role="alert"` を設定するアプローチがより明確です。実装時は VoiceOver/NVDA など主要スクリーンリーダーでの実機テストを推奨します。
 - **Dismissible Button (Close)**:
     - **Icon**: `×` (Close icon, `--icon-sm` / 14px)
@@ -7347,8 +7500,8 @@ interface Track {
     - **Label**: `aria-label="通知を閉じる"` を付与します。
 - **Motion**: `prefers-reduced-motion` 時はスライドインを無効化し、フェードのみにします（上記参照）。
 - **Forced Colors Mode**:
-    - **Border**: 背景色が消失するため、`border: var(--border-width) solid ButtonText` を適用し、トースト領域の構造を維持します。
-    - *Rationale*: `index.md` の「強制カラーモード」セクションに準拠し、ボーダーとスペーシングで領域を認識可能にします。
+    - **Border**: 背景色が消失するため、`border: var(--border-width) solid CanvasText` を適用し、トースト領域の構造を維持します。
+    - *Rationale*: `index.md` の強制カラーモードにおけるシステムカラーマッピングでは `--border-default` → `CanvasText` と定義されています。`ButtonText` はボタン要素のテキスト色であり、ここでは不適切です。ボーダーとスペーシングで領域を認識可能にします。
 
 **6. 印刷スタイル (Print Styles)**
 
@@ -7359,8 +7512,9 @@ interface Track {
 ```html
 <!-- ToastManager Container -->
 <!-- aria-live はコンテナには設定せず、個別トーストの role で制御 -->
+<!-- display: flex; flex-direction: column-reverse; により、DOMの追加順序と視覚的な上積み順序を一致させる -->
 <div class="toast-container">
-  <!-- Individual Toast -->
+  <!-- Success Toast (role="status" = polite) -->
   <output class="toast toast--success" role="status">
     <div class="toast-content">
       <span class="toast-icon" aria-hidden="true">✓</span>
@@ -7370,8 +7524,19 @@ interface Track {
       <span aria-hidden="true">×</span>
     </button>
   </output>
-  
-  <!-- Error Toast (role="alert") -->
+
+  <!-- Warning Toast (role="status" = polite) -->
+  <output class="toast toast--warning" role="status">
+    <div class="toast-content">
+      <span class="toast-icon" aria-hidden="true">⚠</span>
+      <span class="toast-message">変更は保存されていません</span>
+    </div>
+    <button class="toast-close" aria-label="通知を閉じる">
+      <span aria-hidden="true">×</span>
+    </button>
+  </output>
+
+  <!-- Error Toast (role="alert" = assertive) -->
   <output class="toast toast--error" role="alert">
     <div class="toast-content">
       <span class="toast-icon" aria-hidden="true">⚠</span>
@@ -7387,10 +7552,29 @@ interface Track {
 **8. 使用例 (Usage Examples)**
 
 ```typescript
+// 成功通知（デフォルト 4000ms）
 ToastManager.show({
   variant: 'success',
   message: '保存が完了しました',
-  duration: 5000
+});
+
+// 警告通知（デフォルト 4000ms）
+ToastManager.show({
+  variant: 'warning',
+  message: '変更は保存されていません',
+});
+
+// エラー通知（デフォルト 6000ms — 読む時間を確保）
+ToastManager.show({
+  variant: 'error',
+  message: '保存に失敗しました。再度お試しください。',
+});
+
+// 手動で閉じるまで表示（duration: 0）
+ToastManager.show({
+  variant: 'info',
+  message: '新しいバージョンが利用可能です',
+  duration: 0,
 });
 ```
 
