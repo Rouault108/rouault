@@ -23,7 +23,8 @@ import type { SkipLink } from './skip-link';
  * ### キーボードナビゲーション
  * 
  * - **Tab**: ページ読み込み後、最初の Tab キー押下でこのリンクにフォーカスが当たります。
- * - **Enter / Space**: ターゲット要素（`#main-content`）へジャンプし、フォーカスを移動します。
+ * - **Enter**: ターゲット要素（`#main-content`）へジャンプし、フォーカスを移動します。
+ * - **Space**: ネイティブリンクでは挙動が保証されません。
  * - **Esc**: ブラウザのデフォルト挙動に委ねます（通常は何も起きない、またはフォーカスを外す）。
  * 
  * ### アクセシビリティ
@@ -49,7 +50,7 @@ const meta: Meta<SkipLink> = {
 <ui-skip-link></ui-skip-link>
 
 <!-- カスタムターゲット -->
-<ui-skip-link target="#content" label="コンテンツへ移動"></ui-skip-link>
+<ui-skip-link href="#content" label="コンテンツへ移動"></ui-skip-link>
 \`\`\`
 
 ## 注意事項
@@ -93,6 +94,12 @@ const meta: Meta<SkipLink> = {
 
 export default meta;
 type Story = StoryObj<SkipLink>;
+
+const focusByKeyboard = (element: HTMLElement): void => {
+  // キーボード操作由来のフォーカスとして扱わせ、:focus-visible の表示を安定させる
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+  element.focus();
+};
 
 /**
  * デフォルトのスキップリンク。
@@ -210,6 +217,47 @@ export const Default: Story = {
     }
 
     console.log('✅ All tests passed for Default story');
+  },
+};
+
+/**
+ * 初期状態（非表示）の検証。
+ *
+ * フォーカス前は視覚的に非表示であり、A11yツリーに残る実装であることを確認します。
+ */
+export const HiddenByDefault: Story = {
+  args: {
+    href: '#main-content',
+    label: 'メインコンテンツへスキップ',
+  },
+  render: (args) => html`
+    <div>
+      <ui-skip-link href="${args.href}" label="${args.label}" id="hidden-skip-link"></ui-skip-link>
+      <main id="main-content" tabindex="-1">
+        <h2>メインコンテンツ</h2>
+      </main>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const skipLink = canvasElement.querySelector<SkipLink>('#hidden-skip-link');
+    if (!skipLink) {
+      throw new Error('Skip link component not found');
+    }
+
+    await skipLink.updateComplete;
+
+    const anchor = skipLink.shadowRoot?.querySelector('a');
+    if (!anchor) {
+      throw new Error('Anchor element not found in shadow root');
+    }
+
+    const computedStyle = window.getComputedStyle(anchor);
+    if (computedStyle.opacity !== '0') {
+      throw new Error(`Default: Expected opacity to be '0', got '${computedStyle.opacity}'`);
+    }
+    if (computedStyle.clipPath === 'none') {
+      throw new Error('Default: Expected clip-path to hide element, got "none"');
+    }
   },
 };
 
@@ -360,8 +408,8 @@ export const Focused: Story = {
       throw new Error('Anchor element not found in shadow root');
     }
 
-    // フォーカスを当てる
-    anchor.focus();
+    // フォーカスを当てる（:focus-visible の検証）
+    focusByKeyboard(anchor);
     // 次のフレームを待つ（スタイル適用のため）
     await new Promise(resolve => setTimeout(resolve, 0));
 
@@ -384,8 +432,11 @@ export const Focused: Story = {
 
     // テスト: フォーカス状態の検証 - transform が中央配置であること
     // Note: transform の値はブラウザによって異なるため、'translateX(-50%)' または 'matrix' を含むことを確認
-    const hasTransform = computedStyle.transform.includes('matrix') || computedStyle.transform === 'translateX(-50%)';
-    if (!hasTransform && computedStyle.transform === 'none') {
+    const hasTransform =
+      computedStyle.transform.includes('matrix') ||
+      computedStyle.transform === 'translateX(-50%)' ||
+      computedStyle.transform === 'translate(-50%, 0px)';
+    if (!hasTransform) {
       throw new Error(`Focus: Expected transform to include translation, got '${computedStyle.transform}'`);
     }
 
@@ -496,7 +547,7 @@ export const SkipNavigationFlow: Story = {
     }
 
     // テスト: スキップリンクにフォーカスを当てる
-    anchor.focus();
+    focusByKeyboard(anchor);
     await new Promise(resolve => setTimeout(resolve, 100));
 
     // テスト: 現在のフォーカスがスキップリンクにあることを確認
@@ -623,8 +674,8 @@ export const DarkMode: Story = {
       throw new Error('Anchor element not found in shadow root');
     }
 
-    // フォーカスを当てる
-    anchor.focus();
+    // フォーカスを当てる（:focus-visible の検証）
+    focusByKeyboard(anchor);
     await new Promise(resolve => setTimeout(resolve, 100));
 
     const computedStyle = window.getComputedStyle(anchor);
@@ -740,8 +791,8 @@ export const ForcedColorsMode: Story = {
       throw new Error('Anchor element not found in shadow root');
     }
 
-    // フォーカスを当てる
-    anchor.focus();
+    // フォーカスを当てる（:focus-visible の検証）
+    focusByKeyboard(anchor);
     await new Promise(resolve => setTimeout(resolve, 100));
 
     // テスト: 基本的なフォーカス状態の確認
@@ -763,6 +814,74 @@ export const ForcedColorsMode: Story = {
     }
 
     console.log('✅ All tests passed for ForcedColorsMode story');
+  },
+};
+
+/**
+ * ラベル文言の境界ケース。
+ *
+ * 極端に短い/長い文言でも表示崩れやテキスト欠落が起きないことを確認します。
+ */
+export const LabelBoundaries: Story = {
+  render: () => html`
+    <style>
+      .demo-container {
+        display: grid;
+        gap: 3rem;
+        min-height: 320px;
+        padding: 1rem;
+      }
+
+      .demo-section {
+        min-height: 120px;
+      }
+    </style>
+
+    <div class="demo-container">
+      <section class="demo-section">
+        <ui-skip-link href="#short-label-content" label="移動" id="short-label-skip-link"></ui-skip-link>
+        <main id="short-label-content" tabindex="-1">
+          <h2>短いラベル</h2>
+        </main>
+      </section>
+
+      <section class="demo-section">
+        <ui-skip-link
+          href="#long-label-content"
+          label="メインコンテンツ（記事本文と補足情報を含む領域）へスキップして、ナビゲーションを省略する"
+          id="long-label-skip-link"
+        ></ui-skip-link>
+        <main id="long-label-content" tabindex="-1">
+          <h2>長いラベル</h2>
+        </main>
+      </section>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const shortSkipLink = canvasElement.querySelector<SkipLink>('#short-label-skip-link');
+    const longSkipLink = canvasElement.querySelector<SkipLink>('#long-label-skip-link');
+
+    if (!shortSkipLink || !longSkipLink) {
+      throw new Error('Boundary stories are not rendered correctly');
+    }
+
+    await Promise.all([shortSkipLink.updateComplete, longSkipLink.updateComplete]);
+
+    const shortAnchor = shortSkipLink.shadowRoot?.querySelector('a');
+    const longAnchor = longSkipLink.shadowRoot?.querySelector('a');
+    if (!shortAnchor || !longAnchor) {
+      throw new Error('Anchor elements not found in shadow root');
+    }
+
+    if (shortAnchor.textContent.trim() !== '移動') {
+      throw new Error('Short label text is not rendered correctly');
+    }
+
+    const expectedLongLabel =
+      'メインコンテンツ（記事本文と補足情報を含む領域）へスキップして、ナビゲーションを省略する';
+    if (longAnchor.textContent.trim() !== expectedLongLabel) {
+      throw new Error('Long label text is not rendered correctly');
+    }
   },
 };
 

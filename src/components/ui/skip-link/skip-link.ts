@@ -36,7 +36,7 @@ import { customElement, property } from 'lit/decorators.js';
  * <ui-skip-link></ui-skip-link>
  * 
  * <!-- カスタムターゲット -->
- * <ui-skip-link target="#content" label="コンテンツへ移動"></ui-skip-link>
+ * <ui-skip-link href="#content" label="コンテンツへ移動"></ui-skip-link>
  * ```
  */
 @customElement('ui-skip-link')
@@ -93,7 +93,7 @@ export class SkipLink extends LitElement {
     }
 
     /* Focus State (表示) */
-    a:focus {
+    a:focus-visible {
       /* Visibility Restoration */
       transform: translateX(-50%);
       clip-path: none;
@@ -105,7 +105,7 @@ export class SkipLink extends LitElement {
 
     /* Forced Colors Mode: アウトラインを強制的に適用 */
     @media (forced-colors: active) {
-      a:focus {
+      a:focus-visible {
         outline: 3px solid CanvasText;
         background: Canvas;
         color: CanvasText;
@@ -151,15 +151,26 @@ export class SkipLink extends LitElement {
   protected override firstUpdated(_changedProperties: PropertyValues): void {
     super.firstUpdated(_changedProperties);
 
-    // 開発者への警告: ターゲット要素が存在しない場合
-    if (this.href.startsWith('#')) {
-      // Shadow DOM 内からドキュメント全体を検索
-      const root = this.getRootNode() as Document | ShadowRoot;
-      const targetElement = root.querySelector(this.href);
-      
-      if (!targetElement) {
-        console.warn(`[ui-skip-link]: Target element with selector '${this.href}' not found in the document.`);
-      }
+    // 開発者向けの設定検証: href は ID 参照（#...）を想定
+    if (!this.href.startsWith('#')) {
+      return;
+    }
+
+    const targetId = this.href.slice(1);
+    if (!targetId) {
+      return;
+    }
+
+    const targetElement = this.ownerDocument.getElementById(targetId);
+    if (!targetElement) {
+      console.warn(`[ui-skip-link]: Target element with selector '${this.href}' not found in the document.`);
+      return;
+    }
+
+    if (targetElement.getAttribute('tabindex') !== '-1') {
+      console.warn(
+        `[ui-skip-link]: Target element '${this.href}' should have tabindex="-1" to guarantee programmatic focus.`,
+      );
     }
   }
 }
