@@ -311,7 +311,7 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
 | プロパティ | 属性 | 型/値 | デフォルト | 説明 |
 |------------|------|-------|------------|------|
 | `href` | `href` | `string` | `#main-content` | スキップ先のIDセレクタ。 |
-| `label` | `label` | `string` | `"メインコンテンツへスキップ"` | 表示ラベル。**Rouaultは日本語固定のため、ハードコード可**（`index.md` L115-123: 多言語非対応方針）。 |
+| `label` | `label` | `string` | `"メインコンテンツへスキップ"` | 表示ラベル。**Rouaultは日本語固定のため、ハードコード可**（`index.md` : 多言語非対応方針）。 |
 
 **4. スタイリングとトークンマッピング (Style & Tokens)**
 
@@ -331,23 +331,23 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
     - `transform: translateX(-50%)` (中央配置)
     - `clip-path: none` (クリッピング解除)
     - `opacity: 1` (視覚的表示)
-- **Z-Index**: `var(--z-max)` (**1000**). `index.md` の Z-Index Scale 定義 (L1688-1701) に従い、システム最上位レイヤーに配置します。Toast (500), Modal (300) より上位です。
+- **Z-Index**: `var(--z-max)` (**1000**). `index.md` の Z-Index Scale 定義に従い、システム最上位レイヤーに配置します。Toast (500), Modal (300) より上位です。
 - **Focus Ring Override**:
     - `outline: none` (**Design Exception**)
-    - **Rationale**: このコンポーネントは「出現すること自体」が強力なフォーカス状態を表すため、グローバルの `Adaptive Focus` リングと重複してノイズとならないよう、コンポーネント例外として無効化します（`index.md` L1232-1292 の方針に対する例外）。
-    - **Forced Colors Support**: `forced-colors: active` 環境下では背景色が消失するため、`outline: 3px solid CanvasText` を強制的に適用し、視認性を保証します（`index.md` L1323-1383: 強制カラーモード戦略準拠）。
+    - **Rationale**: このコンポーネントは「出現すること自体」が強力なフォーカス状態を表すため、グローバルの `Adaptive Focus` リングと重複してノイズとならないよう、コンポーネント例外として無効化します（`index.md` の方針に対する例外）。
+    - **Forced Colors Support**: `forced-colors: active` 環境下では背景色が消失するため、`outline: 3px solid CanvasText` を強制的に適用し、視認性を保証します（`index.md` : 強制カラーモード戦略準拠）。
 - **Appearance**:
     - Background: `var(--fg-default)` (反転色による最大コントラスト)
     - Color: `var(--bg-default)`
     - Font: `var(--font-sans)`, `var(--font-medium)` (500), `var(--text-sm)` (13px)
-        - **Note (12px以下ルール適用外)**: `--text-sm` (13px) は `--text-xs` (12px) より大きいため、`index.md` L558-566 の「12px以下のテキスト補正ルール」は適用されません。
+        - **Note (12px以下ルール適用外)**: `--text-sm` (13px) は `--text-xs` (12px) より大きいため、`index.md` の「12px以下のテキスト補正ルール」は適用されません。
     - Border: `var(--border-width) solid var(--border-on-inverted)`
         - **Token Reference**: `index.md` で新規定義された `--border-on-inverted` トークンを使用。反転背景上の境界線として、計算式の直書きを避けます。
     - Padding: `var(--space-2) var(--space-4)` (8px 16px)
     - Radius: `var(--radius-full)` (ピル形状でナビゲーションであることを示唆)
     - Shadow (Light Mode): `var(--shadow-lg)`
     - Shadow (Dark Mode): `none`
-        - **Rationale (Dark Mode Depth Strategy)**: `index.md` L791-802 の「Dark Mode Depth Strategy」に基づき、Darkモード下では「明るい背景色」を持つこのコンポーネントは「闇の中の発光体」として機能します。シャドウを削除することで、Muddy Shadows（泥のような濁った影）を回避し、**背景色自体のコントラスト**で浮遊感を表現します。
+        - **Rationale (Dark Mode Depth Strategy)**: `index.md` の「Dark Mode Depth Strategy」に基づき、Darkモード下では「明るい背景色」を持つこのコンポーネントは「闇の中の発光体」として機能します。シャドウを削除することで、Muddy Shadows（泥のような濁った影）を回避し、**背景色自体のコントラスト**で浮遊感を表現します。
 - **Motion**:
     - `transition`: `none`
     - **Instant Presence**: 思考の即応性を最優先するため、余韻（Fade）を排除し、フォーカスと同時に**物理的に即時表示**します（`index.md` 原則3「デジタルの触感」準拠）。
@@ -367,7 +367,7 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
 
 **Forced Colors Mode**
 
-`index.md` L1323-1383 の戦略に従い、`forced-colors: active` 環境下では以下を適用します：
+`index.md` の戦略に従い、`forced-colors: active` 環境下では以下を適用します：
 
 ```css
 @media (forced-colors: active) {
@@ -415,7 +415,7 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
 
 **1. デザイン哲学と目的 (Design Philosophy)**
 
-- **役割**: アクションの優先度を視覚的な「重さ（Weight）」で制御します。「静謐さ」を保つため、画面内に **Primary（塗りつぶし）ボタンは原則1つのみ** とし、残りは Secondary または Ghost を使用することで視覚的ノイズを極限まで抑制します。
+- **役割**: アクションの優先度を視覚的な「重さ（Weight）」で制御します。「静謐さ」を保つため、画面内に **Primary（塗りつぶし）ボタンは原則1つのみ** とし、残りは Secondary / Outline / Ghost を文脈に応じて使い分け、視覚的ノイズを極限まで抑制します。
 - **触感 (Tactility)**: システム定義のマイクロインタラクション（`scale(var(--scale-pressed))`）により、入力がシステムに受容されたことをデジタルに伝えます。
 - **最小化設計 (Minimality)**: デザイン原則「Structure for Immersion」に基づき、**UIの透明化**を追求します。ボタンが主役であるコンテンツを圧迫しないよう、思考のノイズとなる過剰な余白とサイズを排除し、黒子として機能させます。
 
@@ -436,7 +436,7 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
 | `loading` | `loading` | `boolean` | 処理中状態。`aria-busy="true"` を付与し操作をブロック。短期記憶（コンテキスト）の維持を優先する。 |
 | `disabled` | `disabled` | `boolean` | 不活性状態。スタイルは薄くなり、ポインターイベントを除去。 |
 | `type` | `type` | `'button' \| 'submit' \| 'reset'` | フォーム内での挙動制御。デフォルトは `button`。<br>**Note**: ネイティブ `<button>` のデフォルトは `submit` ですが、`<ui-button>` はフォーム外での汎用使用を想定し、意図しないフォーム送信を防ぐため `button` をデフォルトとします。<br><br>**⚠️ Migration Note (From Native Button)**:<br>フォーム送信に `<ui-button>` を使用する場合は、**必ず `type="submit"` を明示**してください。ネイティブ `<button>` と異なり、デフォルトは `button` であり、属性なしではフォームを送信しません。<br><br>```html<br><!-- ❌ Wrong: フォーム送信しない --><br><ui-button>保存</ui-button><br><br><!-- ✅ Correct: フォーム送信する --><br><ui-button type="submit">保存</ui-button><br>``` |
-| `form` | `form` | `string` | **フォームオーナーの明示**。ネイティブ `<button>` の `form` 属性と同様に、ボタンが所属するフォームの `id` を指定します。これにより、ボタンがフォーム外に配置されていても、指定されたフォームと関連付けることができます。<br>**Implementation**: `ElementInternals.form` プロパティを通じて、指定されたフォームとの連携を実現します。 |
+| `form` | `form` | `string` | **フォームオーナーの明示**。ネイティブ `<button>` の `form` 属性と同様に、ボタンが所属するフォームの `id` を指定します。これにより、ボタンがフォーム外に配置されていても、指定されたフォームと関連付けることができます。<br>**Implementation**: 関連付け自体は `form` 属性（およびフォーム関連要素の標準アルゴリズム）で行い、`ElementInternals.form` は解決結果の参照に使用します。 |
 
 > **ElementInternals API 使用方針**:
 > - **Form Participation**: `attachInternals()` を通じて取得した `ElementInternals` インスタンスにより、ネイティブフォーム要素と同等のフォーム参加機能を実現します。
@@ -459,7 +459,7 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
 - `font-family`: `--font-sans`
 - `font-weight`: `var(--font-medium)`（500 - アクションとしての視認性確保）
 - `font-feature-settings`: `"palt"` (和文プロポーショナルメトリクスによる密度の最適化)
-    - **Rationale**: `index.md` L445-451 で定義された「見出し・UIラベル」への `"palt"` 適用方針に準拠します。ボタンラベルは短いテキスト（UIラベル）であり、文字詰めを有効にすることで密度を高め、「塊」としての構造美を強調します。
+    - **Rationale**: `index.md` で定義された「見出し・UIラベル」への `"palt"` 適用方針に準拠します。ボタンラベルは短いテキスト（UIラベル）であり、文字詰めを有効にすることで密度を高め、「塊」としての構造美を強調します。
 - `letter-spacing`: `0.02em` (視認性のための微調整)
 - `transition`: 
     ```css
@@ -469,7 +469,7 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
     border-color var(--duration-fast) var(--ease-out),
     transform var(--duration-fast) var(--ease-out)
     ```
-    - **Rationale**: `index.md` L99-112 の禁止事項に従い、`transition: all` を避け、明示的なプロパティリストを使用します。これにより、意図しないプロパティの遷移によるパフォーマンスとアクセシビリティへの悪影響を防ぎます。
+    - **Rationale**: `index.md` の方針に従い、`transition: all` を避け、明示的なプロパティリストを使用します。これにより、意図しないプロパティの遷移によるパフォーマンスとアクセシビリティへの悪影響を防ぎます。
 - `:active`: 
     - `transform: scale(var(--scale-pressed))` — 微細な縮小 (0.96) により「押し込み」のタクタイルシグナルを表現します。
     - `box-shadow: none` — 平面に押し付けられた「沈み込み」を表現するため、浮遊感を示す影を即座に除去します。**Edge Highlight を含むすべての `box-shadow` を除去**し、完全に平面に押し付けられた状態を表現します。
@@ -488,18 +488,23 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
 > **Note**: `lg` サイズは **Deprecated**（非推奨）です。実装としては存在しますが、以下の制約があります：
 > - **コードレベル強制**: TypeScript実装において `@deprecated` JSDocコメントを付与し、IDE上で警告を表示します。
 > - **使用禁止の原則**: デザインレビューなしでの使用を禁止します。
+> - **廃止予定バージョン**: `v2.0.0`（予定）。
 > - **例外的に許可されるコンテキスト**: 以下のセレクタ/コンテキストでのみ、デザインレビュー後に使用を許可します：
 >   - `.hero ui-button[size="lg"]` — ヒーローセクション内の主要CTA
 >   - `.landing-cta ui-button[size="lg"]` — ランディングページの主要アクション
 >   - その他、個別にデザインレビューで承認されたケース
-> - **推奨代替**: 強調が必要な場合は、`md` サイズに `variant="primary"` を組み合わせることを優先してください。`index.md` L585 では「原則として使用しない。特別に強調が必要な場合のみ例外的に許可」と定義されています。
+> - **推奨代替**: 強調が必要な場合は、`md` サイズに `variant="primary"` を組み合わせることを優先してください。`index.md` では「原則として使用しない。特別に強調が必要な場合のみ例外的に許可」と定義されています。
+> - **移行手順**:
+>   1. `size="lg"` を `size="md"` へ置換する。
+>   2. 強調が必要なケースのみ `variant="primary"` を併用する。
+>   3. 主要CTA以外で `lg` が残っていないことを VRT で確認する。
 
 **バリアント定義 (マッピング)**
 
 | Variant | Background | Border | Text Color | Shadow | Hover Action | 使用ガイドライン |
 |---------|------------|--------|------------|--------|--------------|------------------|
-| **Primary** | `--primary` | None | `--on-primary` | `--shadow-md` | `--primary-hover` | **主要アクション**。画面内に1つのみ配置することを原則とします。 |
-| **Secondary** | `--bg-surface-2` | `--border-default` | `--fg-default` | `--shadow-sm` | `--bg-fill-muted` | **標準アクション**。Primaryに次ぐ重要度。背景色と境界線で構造を明示します。 |
+| **Primary** | `--primary` | None | `--on-primary` | `--elevation-md` | `--primary-hover` | **主要アクション**。画面内に1つのみ配置することを原則とします。 |
+| **Secondary** | `--bg-surface-2` | `--border-default` | `--fg-default` | `--elevation-sm` | `--bg-fill-muted` | **標準アクション**。Primaryに次ぐ重要度。背景色と境界線で構造を明示します。 |
 | **Outline** | `transparent` | `--border-default` | `--fg-default` | `none` | `border-color: var(--fg-muted)` | **軽量アクション**。Secondaryより控えめ。背景を持たないため、カード内やモーダル内で使用すると視覚的ノイズを抑制できます。<br>**Note**: Secondaryとの使い分けに迷う場合は、**Secondary を優先**してください。Outlineは特定のデザイン意図がある場合のみ使用します。 |
 | **Ghost** | `transparent` | None | `--fg-muted` | `none` | `background: var(--bg-hover)` | **最小限の主張**。アイコンボタンやツールバーなど、高密度なUIで使用します。 |
 | **Danger** | `--bg-danger-subtle` | `--border-danger` | `--danger` | `none` | `background: var(--danger); color: var(--on-danger)` | **破壊的アクション**（削除、リセット等）。ホバー時に背景が赤く反転し、無意識に警告します。 |
@@ -518,10 +523,12 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
          └─ カード内/モーダル内で視覚的ノイズを抑えたいか？
             ├─ Yes → Outline
             └─ No
-               └─ 高密度UI（ツールバー等）で最小限の主張にしたいか？
-                  ├─ Yes → Ghost
-                  └─ 破壊的アクション（削除、リセット等）か？
-                     └─ Yes → Danger
+               └─ 高密度UI（ツールバー等）で、輪郭のみで十分か？
+                  ├─ Yes → Outline
+                  └─ アイコン中心で主張を最小化したいか？
+                     ├─ Yes → Ghost
+                     └─ 破壊的アクション（削除、リセット等）か？
+                        └─ Yes → Danger
 ```
 
 > **迷った場合の原則**: Secondary と Outline で迷う場合は、**Secondary を優先**してください。Outline は特定のデザイン意図（背景色との調和、ノイズ抑制）がある場合のみ使用します。
@@ -542,16 +549,16 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
 - **Secondary (Dark Mode)**:
     - 暗所における視認性を確保するため、上端に微細なハイライト（Edge Highlight）を追加します。
     - **適用条件**: Dark Mode かつ `variant="secondary"` である場合に**常に適用**されます（背景レイヤーに依存しません）。
-    - `box-shadow: inset 0 1px 0 0 oklch(100% 0 0 / 0.1), var(--shadow-sm)`
-    - **Rationale**: `index.md` L709-718 で定義された Dark Mode Depth Strategy に準拠し、Elevated レイヤー（`surface-2` 以上）と同様の「上部エッジ強調」を適用することで、低コントラスト環境での識別性を保証します。
+    - `box-shadow: var(--elevation-sm)`
+    - **Rationale**: `index.md`の Semantic Elevation を優先し、モード差分は基盤トークン側で吸収します。Dark Mode の上部エッジ強調は、必要時に `index.md` 側でセマンティックトークン化して適用します。
 - **Primary**:
     - プレミアムな質感を表現するため、モードに関わらず極めて微細なインナーハイライトを付与します。
-    - `box-shadow: inset 0 1px 0 0 oklch(100% 0 0 / 0.15), var(--shadow-md)`
+    - `box-shadow: var(--elevation-md)`
 
 **5. アクセシビリティとキーボード操作 (A11y & Interaction)**
 
 - **Target Size (Touch)**:
-    - 視覚的には `32px` ですが、`index.md` L1047-1066 の実装パターンに従い、`::after` 疑似要素で **最低 44×44px のクリック領域** を確保します。
+    - 視覚的には `32px` ですが、`index.md` の実装パターンに従い、`::after` 疑似要素で **最低 44×44px のクリック領域** を確保します。
 - **Element Internals**:
     - `ElementInternals` API を通じて、アクセシビリティツリーへの情報提供とフォーム参加を実現します。
 - **Keyboard Support**:
@@ -562,7 +569,7 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
         - `outline: var(--focus-ring-width) solid var(--focus-ring-color)`
         - `outline-offset: var(--focus-ring-offset)` (分離による視認性確保)。
         - `animation: var(--animation-focus)` (**Adaptive Focus**: 移動中のノイズ低減と停止時の明確化)。
-            - **定義**: `@keyframes adaptive-focus` (`index.md` L1154-1189 参照)
+            - **定義**: `@keyframes adaptive-focus`
             - **挙動**: 最初の 50ms (0%〜25%) は `--focus-ring-color-subtle` で控えめに表示、その後 `--focus-ring-color` へ遷移します。素早い Tab 移動中は Subtle 色のまま終了するため、視覚的ノイズが抑制されます。
 - **Loading State & Flow**:
     - **Context Retention & Layout Freeze**:
@@ -591,7 +598,7 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
                 - 複雑さが増すため、Overlay が不可能な特殊ケースのみに限定します。
     - `aria-busy="true"` を付与し、支援技術に処理中であることを伝えます。処理完了後は `aria-live` 等を用いて結果をフィードバックし、状態変化を認知させます。
 - **Motion Reduction (`prefers-reduced-motion`)**:
-    - `@media (prefers-reduced-motion: reduce)` 環境下では、`index.md` L1099-1128 のグローバル定義により全てのトランジションが自動的に `0.01ms` に短縮されます。
+    - `@media (prefers-reduced-motion: reduce)` 環境下では、`index.md` のグローバル定義により全てのトランジションが自動的に `0.01ms` に短縮されます。
     - `:active` の `transform: scale()` トランジションは視覚的に即座に適用されます（実質的に瞬時）。
     - ローディングスピナーは静的な「処理中」インジケータ（例: 変化しないアイコン、または「処理中...」テキスト）に置き換わります。アニメーションループは停止します。
     - Adaptive Focus アニメーション（`--animation-focus`）も無効化され、フォーカスリングは即座に `--focus-ring-color` で表示されます。
@@ -600,43 +607,21 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
 
 印刷時は、インタラクティブ要素としてのボタンは機能しません。視覚的な装飾を最小化し、インク節約と可読性を両立させます。
 
+`index.md` のグローバル印刷方針に従い、`ui-button` は既定で非表示とします。
+
 ```css
 @media print {
   ui-button {
-    /* Shadow を除去（印刷では不要） */
-    box-shadow: none !important;
-    
-    /* Primary/Danger バリアントは Outline スタイルにフォールバック */
-    &[variant="primary"],
-    &[variant="danger"] {
-      background: transparent !important;
-      border: var(--border-width) solid currentColor !important;
-      color: var(--fg-default) !important;
-    }
-    
-    /* Secondary は境界線のみで視覚的輪郭を維持 */
-    &[variant="secondary"] {
-      background: transparent !important;
-    }
-    
-    /* Ghost は印刷時に非表示（機能的意味を持たないため） */
-    &[variant="ghost"] {
-      display: none;
-    }
-    
-    /* Loading 状態のボタンは非表示 */
-    &[loading] {
-      display: none;
-    }
+    display: none !important;
   }
 }
 ```
 
-> **Note**: フォーム送信ボタン（`type="submit"`）など、印刷物上でも文脈として必要な場合は表示されますが、クリック不可であることを前提とした最小限のスタイルとなります。
+> **Note**: 印刷物にアクション名称を残す必要がある場合は、ボタン自体を表示するのではなく、静的テキストとして別要素に出力してください（インタラクティブ要素との二重管理を避けるため）。
 
 **7. 強制カラーモード対応 (Forced Colors Mode)**
 
-`@media (forced-colors: active)` 環境下では、背景色や `box-shadow` がシステムによって上書きされる可能性があります。以下のフォールバックを適用し、構造と意味を維持します（`index.md` L1220-1280 参照）。
+`@media (forced-colors: active)` 環境下では、背景色や `box-shadow` がシステムによって上書きされる可能性があります。以下のフォールバックを適用し、構造と意味を維持します（`index.md` 参照）。
 
 ```css
 @media (forced-colors: active) {
@@ -648,12 +633,18 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
     box-shadow: none;
   }
   
-  ui-button[variant="primary"],
-  ui-button[variant="danger"] {
-    /* システムのHighlightカラーを使用 */
+  ui-button[variant="primary"] {
+    /* Primary はシステムの Highlight を使用 */
     background: Highlight;
     color: HighlightText;
     border-color: Highlight;
+  }
+
+  ui-button[variant="danger"] {
+    /* Danger は Primary と同色化せず、境界で意味を維持 */
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
   }
   
   ui-button:focus-visible {
@@ -671,7 +662,7 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
 }
 ```
 
-> **Note (Forced Colors Strategy):** 透過やシャドウに依存した視覚表現はこのモードで消失するため、**ボーダーとスペーシング**により構造を明示します。`index.md` L1232-1247 で定義されたシステムカラーマッピングに従い、すべてのトークンがシステムカラーへフォールバックします。
+> **Note (Forced Colors Strategy):** 透過やシャドウに依存した視覚表現はこのモードで消失するため、**ボーダーとスペーシング**により構造を明示します。`index.md` で定義されたシステムカラーマッピングに従い、すべてのトークンがシステムカラーへフォールバックします。
 
 #### コピーボタン (Copy Button) `<ui-copy-button>`
 
@@ -702,7 +693,7 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
         ```
         
     - **Focus Stability**: フォーカス状態は親コンテナであるボタン自体が保持します。内部アイコンの切り替え（DOM操作）が発生しても、フォーカスリングが途切れたり再描画されたりしない構造を維持します。
-    - **Self-Contained Feedback**: 内部に `role="status"` (`aria-live="polite"`) を持つ不可視要素 (`.sr-only`) を配置し、スクリーンリーダーへの通知をコンポーネント内で完結させます。
+    - **Self-Contained Feedback**: 内部に不可視要素 (`.sr-only`) を配置し、成功時は `role="status"` (`aria-live="polite"`)、失敗時は `role="alert"` (`aria-live="assertive"`) として通知をコンポーネント内で完結させます。
 - **Logic**:
     - Clipboard API (`navigator.clipboard.writeText`) を使用。
     - **State Machine**:
@@ -720,6 +711,7 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
 | :--- | :--- | :--- | :--- |
 | `value` | `value` | `string` | クリップボードに書き込むテキスト。 |
 | `label` | `label` | `string` | **必須**。`aria-label` のベースとなるテキスト（例: "コードをコピー"）。 |
+| `size` | `size` | `'sm' \| 'md'` | ボタンサイズ。デフォルトは `sm` (24px)。`md` はツールバー等で視認性を優先したい場合のみ使用。 |
 
 **動的ラベル定義**:
 
@@ -740,9 +732,9 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
         - `--duration-fast` (70ms) / `--ease-out` (Snappy) での**瞬時の切り替え**と、コンポーネントローカル変数 `--_copy-button-scale-pressed` (0.9) による深いスケール変化を組み合わせ、小さなアイコンでも確実な変化（Snappiness）を表現します。
         - Success: `Copy` → `Check`
         - Error: `Copy` → `AlertTriangle`
-            - **Error Icon + Color Rationale**: `AlertTriangle` + `var(--danger)` の組み合わせは、「重大だがユーザーの責任ではない問題」を伝達します。エラーの原因は外部（Clipboard API非対応、ブラウザ権限拒否等）であり、ユーザーの操作ミスではないため、威圧的な `CircleX` ではなく警告的なアイコンを選択しています。`--fg-warning` を使用しない理由は、「操作は失敗した」という結果の厳格さを優先するためです。
+            - **Error Icon + Color Rationale**: `AlertTriangle` + `var(--fg-danger)` の組み合わせは、「重大だがユーザーの責任ではない問題」を伝達します。エラーの原因は外部（Clipboard API非対応、ブラウザ権限拒否等）であり、ユーザーの操作ミスではないため、威圧的な `CircleX` ではなく警告的なアイコンを選択しています。`--fg-warning` を使用しない理由は、「操作は失敗した」という結果の厳格さを優先するためです。
     - **Flash Effect**:
-        - `index.md` L938-939 で定義された `--animation-flash` のタイミング・カーブ（`var(--duration-fast)` / `var(--ease-out)`）を採用し、背景色を一瞬発光させてフェードアウトさせます。
+        - `index.md` で定義された `--animation-flash` のタイミング・カーブ（`var(--duration-fast)` / `var(--ease-out)`）を採用し、背景色を一瞬発光させてフェードアウトさせます。
         - **Implementation Strategy**: 標準の `@keyframes flash` を流用せず、コンポーネント専用のローカル変数とキーフレームを定義します。これにより、`--bg-surface-active` の意味論的役割（リスト行選択状態）を保護し、将来的なメンテナンス時の混乱を回避します。
         - **Keyframes Naming**: `flash-copy-success`, `flash-copy-error` のようにサフィックスで揃え、グローバル定義との混乱を避けます。
         
@@ -778,12 +770,12 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
         - **Dark Mode Viability**: ダークモードでの Flash Effect 色（`--bg-success-subtle`: L 25%, `--bg-danger-subtle`: L 25%）は、`--bg-default` (L 12%) と比較して十分な明度差（ΔL = 13%）があり、視認可能です。
 - **Color State**:
     - **Idle**: `var(--fg-muted)`
-    - **Success**: `var(--success)`
-    - **Error**: `var(--danger)`
+    - **Success**: `var(--fg-success)`
+    - **Error**: `var(--fg-danger)`
         - *Rationale*: アイコン色と背景フラッシュの色相を統一し、美的調和と状態伝達の明瞭さを両立します。
 - **Hit Area Requirement**:
     - 視覚的サイズは `size="sm"` (24px) ですが、`::after` 擬似要素を使用して必ず `--control-min-touch` (44px) 以上の物理ヒットエリアを確保してください。
-    - **Implementation** (`index.md` L1047-1065 参照):
+    - **Implementation** (`index.md` 参照):
         
         ```css
         /* Hit Area Requirement: 視覚サイズ 24px / ヒット領域 44px */
@@ -799,7 +791,6 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
           transform: translate(-50%, -50%);
           width: var(--control-min-touch); /* 44px */
           height: var(--control-min-touch);
-          pointer-events: none;
         }
         ```
 
@@ -807,12 +798,18 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
 
 - **Self-Contained Feedback**:
     - 外部のトースト通知システムには依存しません。
-    - 状態変化時、内部の不可視領域 (`role="status"`) にテキスト（"コピーしました", "コピー失敗"）を注入し、即座に読み上げさせます。これにより、視覚的変化に気付けないユーザーにも結果を保証します。
+    - 状態変化時、内部の不可視領域にテキスト（"コピーしました", "コピー失敗"）を注入し、読み上げさせます。これにより、視覚的変化に気付けないユーザーにも結果を保証します。
+- **Live Region Policy**:
+    - 成功通知: `role="status"` + `aria-live="polite"`。
+    - 失敗通知: `role="alert"` + `aria-live="assertive"`。
+    - *Rationale*: `index.md` の `aria-live` 使い分け基準（通常は `polite`、エラーは `assertive`）に準拠します。
 - **Label Update**: 補助的に、ボタン自体の `aria-label` も動的に更新します（上記の動的ラベル定義を参照）。
+- **`.sr-only` in Shadow DOM**:
+    - `ui-copy-button` は Shadow DOM 内で自己完結するため、グローバルな `.sr-only` には依存しません。コンポーネント内部に同等のユーティリティスタイルを定義してください。
 - **Motion Reduction (`prefers-reduced-motion`)**:
-    - `@media (prefers-reduced-motion: reduce)` 環境では、Icon Swap と Flash Effect のアニメーションは `index.md` L1099-1128 のグローバル定義により自動的に即時完了（`0.01ms`）となります。
+    - `@media (prefers-reduced-motion: reduce)` 環境では、Icon Swap と Flash Effect のアニメーションは `index.md` のグローバル定義により自動的に即時完了（`0.01ms`）となります。
     - 結果として、視覚的変化は瞬時に適用され、ユーザーはアニメーションによる負担を受けません。
-    - ただし、`role="status"` による読み上げは変わらず機能し、操作結果は確実に伝達されます。
+    - ただし、`role="status"` / `role="alert"` による読み上げは変わらず機能し、操作結果は確実に伝達されます。
 - **Forced Colors Mode**:
     - `forced-colors: active` 環境では、Flash Effect の背景色（`--bg-success-subtle`, `--bg-danger-subtle`）は消失する可能性があります。
     - この場合、**アイコンの変化とボーダーの強調**が唯一の視覚的フィードバックとなります。
@@ -820,18 +817,18 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
     
     ```css
     @media (forced-colors: active) {
-      ui-copy-button {
+      :host {
         /* 境界線を強制し、ボタンの輪郭を明確化 */
         border: var(--border-width) solid CanvasText;
       }
-      
-      ui-copy-button[state="success"] .icon {
+
+      :host([state="success"]) {
         /* 成功状態をシステムカラーで表現 */
         color: Highlight;
       }
-      
-      ui-copy-button[state="error"] .icon {
-        /* エラー状態を維持（システムカラーで境界を強調） */
+
+      :host([state="error"]) {
+        /* エラー状態は境界強調を追加して伝達 */
         color: CanvasText;
         outline: 2px solid CanvasText;
         outline-offset: -2px;
@@ -886,6 +883,8 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
 | `name` | `name` | `string` | フォーム送信時のフィールド名。`ElementInternals` によるフォーム参加に必須。 |
 | `placeholder`| `placeholder`| `string` | ヒントテキスト。 |
 | `value` | `value` | `string` | 入力値。 |
+| `required` | `required` | `boolean` | 必須入力フラグ。未入力時は内部バリデーションを失敗させます。 |
+| `pattern` | `pattern` | `string` | 入力値の正規表現パターン。`ValidityState.patternMismatch` を使用。 |
 | `help-text` | `help-text` | `string` | 下部に表示する補助テキスト。 |
 | `error-message` | `error-message` | `string` | エラー時に表示するメッセージ。`error` が `true` のときに `aria-describedby` で紐付けられます。 |
 | `error` | `error` | `boolean` | エラー状態の強制。通常は内部バリデーションで自動制御。 |
@@ -932,18 +931,18 @@ Shadow DOM内ではグローバルな`.sr-only`クラスを参照できないた
 
 | State | Border | Background | Text Color | Note |
 |-------|--------|------------|------------|------|
-| **Default** | `var(--border-width) solid transparent` | `var(--bg-fill-muted)` | `--fg-default` | **Discoverability**: 背景色を採用しつつ、レイアウトシフト防止のため透明なボーダーを確保します。 |
-| **Hover** | `var(--border-width) solid var(--border-default)` | `var(--bg-fill-muted)` | `--fg-default` | **Tactility**: 明確なボーダーによって入力可能領域のエッジをフィードバックします。 |
-| **Focus** | `var(--border-width) solid var(--border-default)` | `var(--bg-default)` | `--fg-default` | **Clear Canvas**: 入力時は「紙」のような白地（デフォルト背景）に戻し、執筆に集中させます。強調表示（Colording）はFocus Ringに一任し、ノイズを減らします。 |
-| **Error** | `var(--border-width) solid var(--danger)` | `var(--bg-danger-subtle)` | `--fg-default` | 背景色も淡く変化させ、色覚多様性に配慮。 |
-| **Disabled**| `var(--border-width) solid var(--border-default)` | `var(--bg-fill-muted)`| `--fg-subtle` | `opacity: var(--opacity-disabled)` を併用し、操作不可を表現。 |
+| **Default** | `var(--border-width) solid transparent` | `var(--bg-fill-muted)` | `var(--fg-default)` | **Discoverability**: 背景色を採用しつつ、レイアウトシフト防止のため透明なボーダーを確保します。 |
+| **Hover** | `var(--border-width) solid var(--border-default)` | `var(--bg-fill-muted)` | `var(--fg-default)` | **Tactility**: 明確なボーダーによって入力可能領域のエッジをフィードバックします。 |
+| **Focus** | `var(--border-width) solid var(--border-default)` | `var(--bg-default)` | `var(--fg-default)` | **Clear Canvas**: 入力時は「紙」のような白地（デフォルト背景）に戻し、執筆に集中させます。強調表示（Colording）はFocus Ringに一任し、ノイズを減らします。 |
+| **Error** | `var(--border-width) solid var(--border-danger)` | `var(--bg-danger-subtle)` | `var(--fg-default)` | 背景色も淡く変化させ、色覚多様性に配慮。 |
+| **Disabled**| `var(--border-width) solid var(--border-default)` | `var(--bg-fill-muted)`| `var(--fg-subtle)` | `opacity: var(--opacity-disabled)` を併用し、操作不可を表現。 |
 
 - **Width**: `100%` (親コンテナの幅に追従)
 - **Height**: `--control-height-md` (32px)
 - **Padding-X**: `--space-2` (8px)
 - **Radius**: `--radius-md` (6px)
 - **Font**: `--text-base` (14px)
-- **Transition**: 状態遷移は以下のプロパティに限定し、`transition: all` の使用を禁止します（`index.md` L883-918 準拠）。
+- **Transition**: 状態遷移は以下のプロパティに限定し、`transition: all` の使用を禁止します（`index.md` 準拠）。
 
 ```css
 input {
@@ -985,44 +984,47 @@ input {
     - **Adaptive Focus**: `index.md` で定義された `animation: var(--animation-focus)` を適用し、移動中はノイズを抑え、停止した瞬間に明確化する挙動を実装します。
 - **Error Messaging**:
     - エラー発生時は `aria-invalid="true"` を設定し、エラーメッセージ要素（`error-message` プロパティから生成）を `aria-describedby` に追加してスクリーンリーダーに通知します。
+    - エラーメッセージ要素には `aria-live="polite"`（必要に応じて `role="status"`）を付与し、入力中の読み上げを不必要に中断せず通知します。
 - **Motion Reduction (`prefers-reduced-motion`)**:
-    - `@media (prefers-reduced-motion: reduce)` 環境下では、`index.md` L1099-1128 のグローバル定義により全てのトランジションが自動的に `0.01ms` に短縮されます。
+    - `@media (prefers-reduced-motion: reduce)` 環境下では、`index.md` のグローバル定義により全てのトランジションが自動的に `0.01ms` に短縮されます。
     - 背景色・ボーダー色の変化は視覚的に即座に適用されます（実質的に瞬時）。
     - Adaptive Focus アニメーション（`--animation-focus`）も無効化され、フォーカスリングは即座に `--focus-ring-color` で表示されます。
 
 **6. 強制カラーモード対応 (Forced Colors Mode)**
 
-`@media (forced-colors: active)` 環境下では、背景色やシャドウがシステムによって上書きされる可能性があります。以下のフォールバックを適用し、構造と意味を維持します（`index.md` L1230-1290 準拠）。
+`@media (forced-colors: active)` 環境下では、背景色やシャドウがシステムによって上書きされる可能性があります。以下のフォールバックを適用し、構造と意味を維持します（`index.md` 準拠）。
 
 ```css
 @media (forced-colors: active) {
-  ui-input {
+  :host input {
     /* 境界線を強制し、入力領域の輪郭を明確化 */
     border: var(--border-width) solid CanvasText !important;
     background: Canvas !important;
+    color: CanvasText !important;
   }
   
-  ui-input[error] {
-    /* エラー状態をボーダーで表現（背景色は消失するため） */
-    border-color: LinkText;
-    border-width: 2px; /* --border-width-thick */
+  :host([error]) input {
+    /* エラー状態を太い境界で表現（背景色は消失するため） */
+    border-width: var(--border-width-thick);
+    border-color: CanvasText !important;
   }
   
-  ui-input:focus-visible {
+  :host input:focus-visible {
     /* box-shadowは消失するため、実線のアウトラインを強制 */
     outline: 3px solid CanvasText;
     box-shadow: none;
   }
   
   /* Disabled状態もボーダーで明示 */
-  ui-input[disabled] {
+  :host([disabled]) input {
     border-color: GrayText;
+    color: GrayText !important;
     opacity: 1; /* システムカラーが適用されるため不透明度は戻す */
   }
 }
 ```
 
-> **Note (Forced Colors Strategy):** 透過やシャドウに依存した視覚表現はこのモードで消失するため、**ボーダーとスペーシング**により構造を明示します。`index.md` L1232-1247 で定義されたシステムカラーマッピングに従い、すべてのトークンがシステムカラーへフォールバックします。
+> **Note (Forced Colors Strategy):** 透過やシャドウに依存した視覚表現はこのモードで消失するため、**ボーダーとスペーシング**により構造を明示します。`index.md` で定義されたシステムカラーマッピングに従い、すべてのトークンがシステムカラーへフォールバックします。
 
 **7. 印刷スタイル (Print Styles)**
 
@@ -1030,7 +1032,7 @@ input {
 
 ```css
 @media print {
-  ui-input {
+  :host input {
     /* 背景を透明化しインク節約 */
     background: transparent !important;
     
@@ -1042,13 +1044,13 @@ input {
   }
   
   /* エラー状態は印刷時に淡色化（インク節約） */
-  ui-input[error] {
-    border-color: var(--fg-muted) !important;
+  :host([error]) input {
+    border-color: var(--border-danger) !important;
   }
   
   /* Disabled/Readonly状態も視覚的に区別を維持 */
-  ui-input[disabled],
-  ui-input[readonly] {
+  :host([disabled]) input,
+  :host([readonly]) input {
     opacity: 0.6;
   }
 }
@@ -1076,7 +1078,7 @@ input {
     - **DOM構造とARIA Reflection**: トリガー（Shadow DOM内）とオーバーレイ（Portal / document.body直下）を分離します。`aria-activedescendant` が Shadow DOM境界を越えてOptionのIDを参照するため、以下の戦略を採用します：
         - **ID生成**: オプションのIDは `<ui-select>` のコンポーネントIDをプレフィックスとして生成（例: `select-123-option-0`）し、グローバルに一意性を保証します。
         - **`aria-activedescendant` 更新**: トリガー内部の `<input>` 要素の `aria-activedescendant` 属性を、キーボード移動に応じて動的に更新します。これにより、フォーカスはトリガーに留まったまま、スクリーンリーダーには現在の選択候補が通知されます。
-        - **Portal Accessibility**: Portal化されたListboxは `aria-labelledby` でトリガーのラベルIDを参照し、スクリーンリーダーに「何のリストか」を明示します。
+        - **Portal Accessibility**: Portal化されたListboxのアクセシブルネームは、`label` プロパティ値を `aria-label` に直接反映して付与します。これにより、ツリー境界を跨ぐID参照に依存せず「何のリストか」を安定して通知できます（同一ツリー内に配置される場合のみ `aria-labelledby` を任意併用）。
 
 **借用するロジック**:
 - `FormControlMixin`: フォーム要素としての基本機能（`name`, `value`, `disabled`等の管理）
@@ -1129,14 +1131,14 @@ input {
 
 | State | Border | Background | Text Color | Note |
 |-------|--------|------------|------------|------|
-| **Default** | `var(--border-width) solid transparent` | `var(--bg-fill-muted)` | `--fg-default` | **Discoverability**: 背景色を採用しつつ、レイアウトシフト防止のため透明なボーダーを確保します。 |
-| **Placeholder** | (同上) | (同上) | `--fg-subtle` | 未選択時のプレースホルダーテキストは控えめな色で表示。 |
-| **Hover** | `var(--border-width) solid var(--border-default)` | `var(--bg-fill-muted)` | `--fg-default` | **Tactility**: 明確なボーダーによって入力可能領域のエッジをフィードバックします。 |
-| **Focus** | `var(--border-width) solid var(--border-default)` | `var(--bg-default)` | `--fg-default` | **Clear Canvas**: 入力時は「紙」のような白地（デフォルト背景）に戻し、執筆に集中させます。強調表示（Colording）はFocus Ringに一任し、ノイズを減らします。 |
-| **Opened** | `var(--border-width) solid var(--border-default)` | `var(--bg-active)` | `--fg-default` | **Visual Connection**: リストボックスとの視覚的な接続を強化。 |
-| **Error** | `var(--border-width) solid var(--danger)` | `var(--bg-danger-subtle)` | `--fg-default` | 背景色も淡く変化させ、色覚多様性に配慮。 |
-| **Disabled**| `var(--border-width) solid var(--border-default)` | `var(--bg-fill-muted)`| `--fg-subtle` | `opacity: var(--opacity-disabled)` を併用し、操作不可を表現。 |
-| **Readonly**| `var(--border-width) solid var(--border-default)` | `var(--bg-fill-muted)`| `--fg-default` | Disabledより高いコントラストを維持し、値の確認は可能であることを示す。 |
+| **Default** | `var(--border-width) solid transparent` | `var(--bg-fill-muted)` | `var(--fg-default)` | **Discoverability**: 背景色を採用しつつ、レイアウトシフト防止のため透明なボーダーを確保します。 |
+| **Placeholder** | (同上) | (同上) | `var(--fg-subtle)` | 未選択時のプレースホルダーテキストは控えめな色で表示。 |
+| **Hover** | `var(--border-width) solid var(--border-default)` | `var(--bg-fill-muted)` | `var(--fg-default)` | **Tactility**: 明確なボーダーによって入力可能領域のエッジをフィードバックします。 |
+| **Focus** | `var(--border-width) solid var(--border-default)` | `var(--bg-default)` | `var(--fg-default)` | **Clear Canvas**: 入力時は「紙」のような白地（デフォルト背景）に戻し、執筆に集中させます。強調表示（Colording）はFocus Ringに一任し、ノイズを減らします。 |
+| **Opened** | `var(--border-width) solid var(--border-default)` | `var(--bg-active)` | `var(--fg-default)` | **Visual Connection**: リストボックスとの視覚的な接続を強化。 |
+| **Error** | `var(--border-width) solid var(--border-danger)` | `var(--bg-danger-subtle)` | `var(--fg-default)` | 背景色も淡く変化させ、色覚多様性に配慮。 |
+| **Disabled**| `var(--border-width) solid var(--border-default)` | `var(--bg-fill-muted)`| `var(--fg-subtle)` | `opacity: var(--opacity-disabled)` を併用し、操作不可を表現。 |
+| **Readonly**| `var(--border-width) solid var(--border-default)` | `var(--bg-fill-muted)`| `var(--fg-default)` | Disabledより高いコントラストを維持し、値の確認は可能であることを示す。 |
 
 **Trigger固有の要素**:
 - **Width**: `100%` (親コンテナの幅に追従)
@@ -1150,15 +1152,15 @@ input {
     - **Size**: `var(--icon-base)` (16px)
     - **Color**: `var(--fg-muted)` (Default) → `var(--fg-default)` (Hover/Focus)
     - **Rotation**: リストボックス展開時（`opened=true`）に `transform: rotate(180deg)` で上向きに変化
-    - **Transition**: `transform var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out)`
-- **Transition**: 状態遷移は以下のプロパティに限定し、`transition: all` の使用を禁止します（`index.md` L883-918 準拠）。
+    - **Transition**: `transform var(--duration-normal) var(--ease-out), color var(--duration-normal) var(--ease-out)`
+- **Transition**: 状態遷移は以下のプロパティに限定し、`transition: all` の使用を禁止します（`index.md` 準拠）。
 
 ```css
 .trigger {
   transition:
-    background-color var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out),
-    outline-color var(--duration-fast) var(--ease-out);
+    background-color var(--duration-normal) var(--ease-out),
+    border-color var(--duration-normal) var(--ease-out),
+    outline-color var(--duration-normal) var(--ease-out);
 }
 ```
 
@@ -1169,23 +1171,23 @@ input {
 | **Z-Index**| `var(--z-popover)` (400) | **Always on Top**: モーダル(`--z-modal`)より上位のレイヤーに配置。 |
 | **Background** | `var(--bg-surface-2)` | Elevationによる浮遊感。 |
 | **Border** | `var(--border-width) solid var(--border-default)` | 境界線を明確化。 |
-| **Shadow** | `var(--elevation-lg)` | **Semantic Token使用**: Light/Dark Mode自動切り替え。`index.md` L773準拠。 |
-| **Highlight (Light Mode)** | `inset 0 1px 0 0 oklch(100% 0 0 / 0.05)` | **Glass Panel準拠**: 上端に微細な光の反射（`index.md` L835）。 |
-| **Highlight (Dark Mode)** | `inset 0 1px 0 0 oklch(100% 0 0 / 0.1)` | **Depth Strategy準拠**: 闇の中での輪郭を立たせるため、Light Modeより強い反射（`index.md` L710-718, L843）。 |
+| **Shadow** | `var(--elevation-lg)` | **Semantic Token使用**: Light/Dark Mode自動切り替え。`index.md`準拠。 |
+| **Highlight (Light Mode)** | `inset 0 1px 0 0 oklch(100% 0 0 / 0.05)` | **Glass Panel準拠**: 上端に微細な光の反射（`index.md`）。 |
+| **Highlight (Dark Mode)** | `inset 0 1px 0 0 oklch(100% 0 0 / 0.1)` | **Depth Strategy準拠**: 闇の中での輪郭を立たせるため、Light Modeより強い反射（`index.md` の Dark Mode Depth Strategy に準拠）。 |
 | **Radius** | `--radius-md` (6px) | トリガーと同じR値。 |
 | **Min Width** | トリガーと同じ幅 | Floating UIの `size` middlewareで自動調整。 |
 | **Max Width** | `320px` | 長いオプション名でもレイアウト破壊を防ぐ。 |
 | **Max Height** | `calc(var(--control-height-md) * 7.5)` (240px) | **Scrolling Affordance**: `overflow-y: auto`。7.5行分を表示し、端数を見せることでスクロール可能であることを直感的に伝える。 |
-| **Padding** | `calc(var(--radius-md) - var(--radius-sm))` (2px) | **Nested Geometry準拠**: `index.md` L672-682の数理に従い、内部Option Itemの角丸が自然に収まるよう計算されたパディング。 |
-| **Scrollbar** | **System Mixin** | **Invisible Hit Area**: `index.md` L775-814 の定義に従い、物理幅 `12px` を確保しつつ、視覚的には `4px` のみが描画されるよう透明ボーダーを活用する。 |
+| **Padding** | `calc(var(--radius-md) - var(--radius-sm))` (2px) | **Nested Geometry準拠**: `index.md`の数理に従い、内部Option Itemの角丸が自然に収まるよう計算されたパディング。 |
+| **Scrollbar** | **System Mixin** | **Invisible Hit Area**: `index.md` の定義に従い、物理幅 `12px` を確保しつつ、視覚的には `4px` のみが描画されるよう透明ボーダーを活用する。 |
 
 **Motion (Animation)**
 
 - **Enter**: `opacity: 0` → `1`, `transform: scale(var(--scale-enter))` → `1` (Duration: `var(--duration-normal)` - 150ms).
-    - **Rationale**: `index.md` L867で「標準トランジション（ホバー色変化、フェードイン、**ドロップダウン展開**）」と明記されているため、`--duration-normal` を採用します。`--duration-fast` (70ms) は「マイクロインタラクション（ボタン押下、トグル、チェックボックス）」用であり、リストボックス展開には短すぎます。
+    - **Rationale**: `index.md`で「標準トランジション（ホバー色変化、フェードイン、**ドロップダウン展開**）」と明記されているため、`--duration-normal` を採用します。`--duration-fast` (70ms) は「マイクロインタラクション（ボタン押下、トグル、チェックボックス）」用であり、リストボックス展開には短すぎます。
 - **Exit**: `opacity: 1` → `0` (Duration: `var(--duration-instant)` - 0ms).
-    - **Rationale**: `index.md` L865で定義されたSemanticトークンを使用。ハードコード値の禁止原則に準拠。即座に消滅し、次の作業を阻害しない。
-- **Motion Reduction**: `@media (prefers-reduced-motion: reduce)` 環境下では、`index.md` L1109-1138 のグローバル定義により全てのトランジションが自動的に `0.01ms` に短縮されます。展開・収縮アニメーションは視覚的に即座に適用されます（実質的に瞬時）。
+    - **Rationale**: `index.md`で定義されたSemanticトークンを使用。ハードコード値の禁止原則に準拠。即座に消滅し、次の作業を阻害しない。
+- **Motion Reduction**: `@media (prefers-reduced-motion: reduce)` 環境下では、`index.md` のグローバル定義により全てのトランジションが自動的に `0.01ms` に短縮されます。展開・収縮アニメーションは視覚的に即座に適用されます（実質的に瞬時）。
 
 **Option Item**
 
@@ -1195,7 +1197,7 @@ input {
 | **Padding-X** | `var(--space-3)` (12px) | 左右の余白。ただし左側はチェックアイコン用に `--space-6` (24px) を確保。 |
 | **Padding-Y** | `0` | 高さは `--control-height-md` で固定されるため、垂直方向のパディングは不要。代わりに `display: flex; align-items: center;` で垂直中央揃え。 |
 | **Font** | `var(--text-base)` (14px) | トリガーと同じフォントサイズ。 |
-| **Radius** | `var(--radius-sm)` (4px) | **Nested Geometry準拠**: Listboxのパディング2px + Option角丸4px = Listbox角丸6px。`index.md` L672-682の公式 `R_inner = R_outer - Padding` に従います。 |
+| **Radius** | `var(--radius-sm)` (4px) | **Nested Geometry準拠**: Listboxのパディング2px + Option角丸4px = Listbox角丸6px。`index.md`の公式 `R_inner = R_outer - Padding` に従います。 |
 | **Cursor** | `pointer` | クリック可能。 |
 
 **Layout**:
@@ -1207,10 +1209,10 @@ input {
 | State | Background | Text Color | Font Weight | Icon | Transition |
 |-------|------------|------------|-------------|------|------------|
 | **Default** | `transparent` | `var(--fg-default)` | `var(--font-normal)` | なし | — |
-| **Hover** | `var(--bg-surface-active)` | `var(--fg-default)` | `var(--font-normal)` | なし | `background-color var(--duration-fast) var(--ease-out)` |
-| **Active** (aria-activedescendant) | `var(--bg-surface-active)` | `var(--fg-default)` | `var(--font-normal)` | なし | `background-color var(--duration-fast) var(--ease-out)` |
-| **Selected** | `transparent` (Hover時は `var(--bg-surface-active)`) | `var(--primary)` | `var(--font-medium)` (500) | `Check` アイコン (`var(--icon-base)`) を左側に表示 | `color var(--duration-fast) var(--ease-out)` |
-| **Selected + Hover** | `var(--bg-surface-active)` | `var(--primary)` | `var(--font-medium)` | `Check` アイコン | `background-color var(--duration-fast) var(--ease-out)` |
+| **Hover** | `var(--bg-surface-active)` | `var(--fg-default)` | `var(--font-normal)` | なし | `background-color var(--duration-normal) var(--ease-out)` |
+| **Active** (aria-activedescendant) | `var(--bg-surface-active)` | `var(--fg-default)` | `var(--font-normal)` | なし | `background-color var(--duration-normal) var(--ease-out)` |
+| **Selected** | `transparent` (Hover時は `var(--bg-surface-active)`) | `var(--primary)` | `var(--font-medium)` (500) | `Check` アイコン (`var(--icon-base)`) を左側に表示 | `color var(--duration-normal) var(--ease-out)` |
+| **Selected + Hover** | `var(--bg-surface-active)` | `var(--primary)` | `var(--font-medium)` | `Check` アイコン | `background-color var(--duration-normal) var(--ease-out)` |
 
 > **Note**: 選択状態（`[selected]`）と現在のキーボードフォーカス（`aria-activedescendant`）は独立して管理されます。選択された項目でも、キーボード移動によって別の項目が `active` になることがあります。
 
@@ -1251,7 +1253,7 @@ input {
         - `aria-describedby="[error-message-id]"` (エラー時にエラーメッセージIDを紐付け)
     - **Listbox**:
         - `role="listbox"`
-        - `aria-labelledby="[label-id]"` (トリガーのラベルIDを参照し、「何のリストか」を明示)
+        - `aria-label="[label]"` (コンポーネントの `label` プロパティ値を反映し、「何のリストか」を明示)
     - **Option**:
         - `role="option"`
         - `aria-selected="true" | "false"` (選択状態)
@@ -1261,7 +1263,7 @@ input {
     - `outline: var(--focus-ring-width) solid var(--focus-ring-color)`
     - `outline-offset: var(--focus-ring-offset)` (ボーダーと重ならないよう配置)
     - `border-radius: var(--radius-md)` (トリガーと同じ角丸)
-    - **Adaptive Focus**: `index.md` L1159-1198 で定義された `animation: var(--animation-focus)` を適用し、移動中はノイズを抑え、停止した瞬間に明確化する挙動を実装します。
+    - **Adaptive Focus**: `index.md` で定義された `animation: var(--animation-focus)` を適用し、移動中はノイズを抑え、停止した瞬間に明確化する挙動を実装します。
         - **挙動**: 最初の 50ms (0%〜25%) は `--focus-ring-color-subtle` で控えめに表示、その後 `--focus-ring-color` へ遷移します。素早い Tab 移動中は Subtle 色のまま終了するため、視覚的ノイズが抑制されます。
 
 - **Keyboard Interaction** (WAI-ARIA Combobox Pattern準拠):
@@ -1275,14 +1277,14 @@ input {
         - リストボックスが開いている場合: 前の項目にフォーカス移動。先頭の場合は末尾に循環。
     - **`Home`**: リストボックス内の最初の項目にフォーカス移動（リストボックスが開いている場合のみ）。
     - **`End`**: リストボックス内の最後の項目にフォーカス移動（リストボックスが開いている場合のみ）。
-    - **`Tab`**: `index.md` L130 の方針に従い、**Focus Trapは行わない**。`Tab` キーによりリストボックスを閉じて次の要素へフォーカス移動します。Flow Stateを維持し、ユーザーを閉じ込めません。
+    - **`Tab`**: `index.md` の方針に従い、**Focus Trapは行わない**。`Tab` キーによりリストボックスを閉じて次の要素へフォーカス移動します。Flow Stateを維持し、ユーザーを閉じ込めません。
     - **Type-ahead (文字入力)**:
         - **有効化**: アルファベットや数字の入力により、該当する項目に即座にジャンプします。
         - **バッファリング**: 1秒以内の連続入力は連結され（例: "ap" → "apple"）、1秒経過後にリセットされます。
         - **Mobile Readonly**: モバイル環境では `readonly` 属性によりソフトウェアキーボードが抑制されるため、Type-aheadは**物理キーボード接続時のみ動作**します。
 
 - **Click Outside / Scroll Close**:
-    - **Click Outside**: リストボックス外（トリガー以外）をクリックした場合、リストボックスを即座に閉じます。`<ui-dropdown>` と同様の挙動（`index.md` L130, L1186）。
+    - **Click Outside**: リストボックス外（トリガー以外）をクリックした場合、リストボックスを即座に閉じます。`<ui-dropdown>` と同様の挙動。
     - **Scroll Close**: 親スクロールコンテナのスクロール検出時にリストボックスを閉じます。これにより、トリガーとリストボックスの位置がズレて混乱を招く状況を防ぎます。
 
 - **Error Messaging**:
@@ -1290,52 +1292,52 @@ input {
     - エラー状態でも操作は可能とし、値の修正を許容します。
 
 - **Motion Reduction (`prefers-reduced-motion`)**:
-    - `@media (prefers-reduced-motion: reduce)` 環境下では、`index.md` L1109-1138 のグローバル定義により全てのトランジションが自動的に `0.01ms` に短縮されます。
+    - `@media (prefers-reduced-motion: reduce)` 環境下では、`index.md` のグローバル定義により全てのトランジションが自動的に `0.01ms` に短縮されます。
     - 背景色・ボーダー色の変化、リストボックスの展開・収縮アニメーションは視覚的に即座に適用されます（実質的に瞬時）。
     - Adaptive Focus アニメーション（`--animation-focus`）も無効化され、フォーカスリングは即座に `--focus-ring-color` で表示されます。
 
 **6. 強制カラーモード対応 (Forced Colors Mode)**
 
-`@media (forced-colors: active)` 環境下では、背景色やシャドウがシステムによって上書きされる可能性があります。以下のフォールバックを適用し、構造と意味を維持します（`index.md` L1230-1290 準拠）。
+`@media (forced-colors: active)` 環境下では、背景色やシャドウがシステムによって上書きされる可能性があります。以下のフォールバックを適用し、構造と意味を維持します（`index.md` 準拠）。
 
 ```css
 @media (forced-colors: active) {
-  /* Trigger */
-  ui-select .trigger {
+  /* Trigger (Shadow DOM内) */
+  :host .trigger {
     /* 境界線を強制し、入力領域の輪郭を明確化 */
     border: var(--border-width) solid CanvasText !important;
     background: Canvas !important;
     color: CanvasText !important;
   }
 
-  ui-select[error] .trigger {
+  :host([error]) .trigger {
     /* エラー状態をボーダーで表現（背景色は消失するため） */
     border-color: LinkText;
-    border-width: 2px; /* --border-width-thick */
+    border-width: var(--border-width-thick);
   }
 
-  ui-select .trigger:focus-visible {
+  :host .trigger:focus-visible {
     /* box-shadowは消失するため、実線のアウトラインを強制 */
     outline: 3px solid CanvasText;
     box-shadow: none;
   }
 
   /* Disabled/Readonly状態もボーダーで明示 */
-  ui-select[disabled] .trigger,
-  ui-select[readonly] .trigger {
+  :host([disabled]) .trigger,
+  :host([readonly]) .trigger {
     border-color: GrayText;
     opacity: 1; /* システムカラーが適用されるため不透明度は戻す */
   }
 
-  /* Listbox */
-  ui-select .listbox {
+  /* Listbox (Portal: document.body 直下) */
+  [data-ui-select-listbox] {
     background: Canvas !important;
     border: var(--border-width) solid CanvasText !important;
     box-shadow: none; /* シャドウは消失 */
   }
 
   /* Option Item - Selected状態をボーダーで表現 */
-  ui-select .option[aria-selected="true"] {
+  [data-ui-select-option][aria-selected="true"] {
     background: Highlight !important;
     color: HighlightText !important;
     outline: 2px solid CanvasText;
@@ -1343,20 +1345,20 @@ input {
   }
 
   /* Option Item - Hover/Active状態 */
-  ui-select .option:hover,
-  ui-select .option[data-active] {
+  [data-ui-select-option]:hover,
+  [data-ui-select-option][data-active] {
     background: Highlight !important;
     color: HighlightText !important;
   }
 
-  /* ChevronDown Icon */
-  ui-select .icon-chevron {
+  /* ChevronDown Icon (Shadow DOM内) */
+  :host .icon-chevron {
     stroke: CanvasText; /* アイコンをシステムカラーに追従 */
   }
 }
 ```
 
-> **Note (Forced Colors Strategy):** 透過やシャドウに依存した視覚表現はこのモードで消失するため、**ボーダーとスペーシング**により構造を明示します。`index.md` L1232-1247 で定義されたシステムカラーマッピングに従い、すべてのトークンがシステムカラーへフォールバックします。選択状態（`[aria-selected="true"]`）は背景色（`Highlight`）とアウトライン（`CanvasText`）の組み合わせにより、色情報が失われても識別可能にします。
+> **Note (Forced Colors Strategy):** 透過やシャドウに依存した視覚表現はこのモードで消失するため、**ボーダーとスペーシング**により構造を明示します。`index.md` で定義されたシステムカラーマッピングに従い、すべてのトークンがシステムカラーへフォールバックします。選択状態（`[aria-selected="true"]`）は背景色（`Highlight`）とアウトライン（`CanvasText`）の組み合わせにより、色情報が失われても識別可能にします。
 
 **7. 印刷スタイル (Print Styles)**
 
@@ -1365,7 +1367,7 @@ input {
 ```css
 @media print {
   /* Trigger - 現在選択されている値のみを表示 */
-  ui-select .trigger {
+  :host .trigger {
     /* 背景を透明化しインク節約 */
     background: transparent !important;
 
@@ -1377,23 +1379,23 @@ input {
   }
 
   /* ChevronDownアイコンは非表示（印刷時は不要） */
-  ui-select .icon-chevron {
+  :host .icon-chevron {
     display: none;
   }
 
-  /* Listboxは常に非表示 */
-  ui-select .listbox {
+  /* Listboxは常に非表示 (Portal: document.body 直下) */
+  [data-ui-select-listbox] {
     display: none !important;
   }
 
   /* エラー状態は印刷時に淡色化（インク節約） */
-  ui-select[error] .trigger {
+  :host([error]) .trigger {
     border-color: var(--fg-muted) !important;
   }
 
   /* Disabled/Readonly状態も視覚的に区別を維持 */
-  ui-select[disabled] .trigger,
-  ui-select[readonly] .trigger {
+  :host([disabled]) .trigger,
+  :host([readonly]) .trigger {
     opacity: 0.6;
   }
 }
@@ -1437,8 +1439,13 @@ input {
 - `@menu-item-select`: メニュー項目が選択された時に発火。`event.detail: { value: string, label: string }`
 
 **Slots**:
-- `trigger` (デフォルトスロット): トリガーボタンの内容。ボタン、アイコンボタン等を配置。
+- `trigger` (名前付きスロット): トリガーボタンの内容。ボタン、アイコンボタン等を配置。
 - `menu`: メニュー項目のリスト。`<ui-menu-item>` 要素を配置。
+
+**実装セレクタ方針**:
+- **Shadow DOM内部要素**: `:host .panel`, `:host .menu-item` のようにコンポーネント内部セレクタで定義。
+- **Slotted Trigger**: `::slotted([slot="trigger"])` で最小限の見た目調整を適用（子孫要素の深い装飾は行わない）。
+- **Portal表示時のOverlay**: `document.body` 直下へ分離する場合は `[data-ui-dropdown-panel]` 等のデータ属性で対象を明示。
 
 **4. スタイリングとトークンマッピング (Style & Tokens)**
 
@@ -1460,18 +1467,18 @@ input {
 
 | Property | Value | Note |
 |----------|-------|------|
-| **Min Width** | `180px` | アクション名の可読性確保 |
-| **Max Width** | `280px` | 長いラベルでもレイアウト破壊を防ぐ |
-| **Padding** | `calc(var(--radius-md) - var(--radius-sm))` (2px) | **Nested Geometry準拠**: `index.md` L672-682の数理に従い、内部Menu Itemの角丸が自然に収まるよう計算されたパディング。これは `index.md` の最小スペーシング(`4px`)の例外です。親子間の $R_{outer} - R_{inner}$ を数理的に一致させ、完璧な同心円を描画することを優先します。 |
+| **Min Width** | `180px` | アクション名の可読性確保。現時点ではトークン未定義のため暫定固定値。トークン追加時は移行する。 |
+| **Max Width** | `280px` | 長いラベルでもレイアウト破壊を防ぐ。現時点ではトークン未定義のため暫定固定値。トークン追加時は移行する。 |
+| **Padding** | `calc(var(--radius-md) - var(--radius-sm))` (2px) | **Nested Geometry準拠**: `index.md`の数理に従い、内部Menu Itemの角丸が自然に収まるよう計算されたパディング。これは `index.md` の最小スペーシング(`4px`)の例外です。親子間の $R_{outer} - R_{inner}$ を数理的に一致させ、完璧な同心円を描画することを優先します。 |
 | **Background** | `var(--bg-surface-2)` | Elevationによる浮遊感 |
 | **Border** | `var(--border-width) solid var(--border-default)` | 境界線を明確化 |
 | **Radius** | `var(--radius-md)` (6px) | 標準の角丸 |
-| **Shadow** | `var(--elevation-lg)` | **Semantic Token使用**: Light/Dark Mode自動切り替え。`index.md` L729-772準拠。 |
-| **Highlight (Light Mode)** | `inset 0 1px 0 0 oklch(100% 0 0 / 0.05)` | **Glass Panel準拠**: 上端に微細な光の反射（`index.md` L835）。 |
-| **Highlight (Dark Mode)** | `inset 0 1px 0 0 oklch(100% 0 0 / 0.1)` | **Depth Strategy準拠**: 闇の中での輪郭を立たせるため、Light Modeより強い反射（`index.md` L710-718, L843）。 |
+| **Shadow** | `var(--elevation-lg)` | **Semantic Token使用**: Light/Dark Mode自動切り替え。`index.md`準拠。 |
+| **Highlight (Light Mode)** | `inset 0 1px 0 0 oklch(100% 0 0 / 0.05)` | **Glass Panel準拠**: 上端に微細な光の反射（`index.md` の質感ガイドライン）。 |
+| **Highlight (Dark Mode)** | `inset 0 1px 0 0 oklch(100% 0 0 / 0.1)` | **Dark Mode Depth Strategy準拠**: 闇の中での輪郭を立たせるため、Light Modeより強い反射。 |
 | **Z-Index** | `var(--z-popover)` (400) | **Always on Top**: モーダル(`--z-modal`)より上位のレイヤーに配置 |
 | **Max Height** | `calc(var(--control-height-md) * 10)` (320px) | **Scrolling Affordance**: `overflow-y: auto`。10行分を表示し、スクロール可能であることを直感的に伝える |
-| **Scrollbar** | **System Mixin** | **Invisible Hit Area**: `index.md` L775-814 の定義に従い、物理幅 `12px` を確保しつつ、視覚的には `4px` のみが描画されるよう `background-clip: content-box` + 透明ボーダーを活用する |
+| **Scrollbar** | **System Mixin** | **Invisible Hit Area**: `index.md` の定義に従い、物理幅 `12px` を確保しつつ、視覚的には `4px` のみが描画されるよう `background-clip: content-box` + 透明ボーダーを活用する |
 
 **Motion (Animation)**
 
@@ -1480,22 +1487,33 @@ input {
     - `transform: scale(var(--scale-enter))` → `1`
     - **Duration**: `var(--duration-normal)` (150ms)
     - **Easing**: `var(--ease-out)`
-    - **Rationale**: `index.md` L867で「標準トランジション（ホバー色変化、フェードイン、**ドロップダウン展開**）」と明記されているため、`--duration-normal` を採用します。
+    - **Rationale**: `index.md`で「標準トランジション（ホバー色変化、フェードイン、**ドロップダウン展開**）」と明記されているため、`--duration-normal` を採用します。
 - **Exit**:
     - `opacity: 1` → `0`
     - **Duration**: `var(--duration-instant)` (0ms)
-    - **Rationale**: `index.md` L865で定義されたSemanticトークンを使用。即座に消滅し、次の作業を阻害しない。
-- **Transition**: 状態遷移は以下のプロパティに限定し、`transition: all` の使用を禁止します（`index.md` L883-918 準拠）。
+    - **Rationale**: `index.md`で定義されたSemanticトークンを使用。即座に消滅し、次の作業を阻害しない。
+- **Transition**: 状態遷移は以下のプロパティに限定し、`transition: all` の使用を禁止します（`index.md` 準拠）。
 
 ```css
-.panel {
+:host .panel {
+  transition-property: opacity, transform;
+  transition-timing-function: var(--ease-out);
+}
+
+/* Enter: 開く時は通常速度 */
+:host([opened]) .panel {
   transition:
     opacity var(--duration-normal) var(--ease-out),
     transform var(--duration-normal) var(--ease-out);
 }
+
+/* Exit: 閉じる時は即時 */
+:host(:not([opened])) .panel {
+  transition-duration: var(--duration-instant);
+}
 ```
 
-- **Motion Reduction**: `@media (prefers-reduced-motion: reduce)` 環境下では、`index.md` L1109-1138 のグローバル定義により全てのトランジションが自動的に `0.01ms` に短縮されます。展開・収縮アニメーションは視覚的に即座に適用されます（実質的に瞬時）。
+- **Motion Reduction**: `@media (prefers-reduced-motion: reduce)` 環境下では、`index.md` のグローバル定義により全てのトランジションが自動的に `0.01ms` に短縮されます。展開・収縮アニメーションは視覚的に即座に適用されます（実質的に瞬時）。
 
 **Menu Item**
 
@@ -1511,7 +1529,7 @@ input {
 | **Font Weight** | `var(--font-normal)` (400) | 標準ウェイト |
 | **Color** | `var(--fg-default)` | 標準テキスト色 |
 | **Icon Size** | `var(--icon-base)` (16px) | 標準アイコンサイズ |
-| **Radius** | `var(--radius-sm)` (4px) | **Nested Geometry準拠**: Panelのパディング2px + Item角丸4px = Panel角丸6px。`index.md` L672-682の公式 `R_inner = R_outer - Padding` に従います |
+| **Radius** | `var(--radius-sm)` (4px) | **Nested Geometry準拠**: Panelのパディング2px + Item角丸4px = Panel角丸6px。`index.md`の公式 `R_inner = R_outer - Padding` に従います |
 | **Cursor** | `pointer` | クリック可能を明示 |
 
 **State**:
@@ -1533,7 +1551,7 @@ input {
 
 **Touch Target**:
 
-`::after` 擬似要素を使用し、**最低 44px の高さを確保 (Invisible Hit Area)** します。`index.md` L1057-1076の実装パターンに従います。
+`::after` 擬似要素を使用し、**最低 44px の高さを確保 (Invisible Hit Area)** します。`index.md`の実装パターンに従います。
 
 ```css
 .menu-item {
@@ -1549,7 +1567,12 @@ input {
   right: 0;
   transform: translateY(-50%);
   min-height: var(--control-min-touch); /* 44px */
-  z-index: -1; /* 隣接アイテムとの重複時、下に配置 */
+  z-index: 0; /* Hit Areaを要素内で保持 */
+}
+
+.menu-item > * {
+  position: relative;
+  z-index: 1; /* ラベルやアイコンを常に前面に維持 */
 }
 ```
 
@@ -1583,14 +1606,14 @@ input {
 
 - **Focus Management**:
     - **Open時**: メニューが開くと、フォーカスを**内部の最初のメニュー項目**へ自動的に移動させます（`role="menu"` パターン）。
-    - **Close時**: メニューが閉じると、フォーカスを**トリガー**へ戻します（`index.md` L131準拠）。
+    - **Close時**: メニューが閉じると、フォーカスを**トリガー**へ戻します（`index.md`準拠）。
     - **Roving Tabindex**: メニュー内の項目は `-1` の `tabindex` を持ち、矢印キーによる移動時にのみフォーカス可能になります。現在フォーカス中の項目のみが `tabindex="0"` となります。
 
 - **Focus Indicator**:
     - メニュー項目の `:focus-visible` 時には、背景色の変化に加え、**グローバルなフォーカスリング（アウトライン）を追加** します。
     - `outline: var(--focus-ring-width) solid var(--focus-ring-color)`
     - `outline-offset: var(--focus-ring-offset)`
-    - **Adaptive Focus**: `index.md` L1159-1198 で定義された `animation: var(--animation-focus)` を適用し、移動中はノイズを抑え、停止した瞬間に明確化する挙動を実装します。
+    - **Adaptive Focus**: `index.md` で定義された `animation: var(--animation-focus)` を適用し、移動中はノイズを抑え、停止した瞬間に明確化する挙動を実装します。
         - **挙動**: 最初の 50ms (0%〜25%) は `--focus-ring-color-subtle` で控えめに表示、その後 `--focus-ring-color` へ遷移します。素早い矢印キー移動中は Subtle 色のまま終了するため、視覚的ノイズが抑制されます。
 
 - **Keyboard Interaction** (WAI-ARIA Menu Pattern準拠):
@@ -1601,7 +1624,7 @@ input {
         - 現在フォーカス中の項目を選択し、メニューを閉じてトリガーへフォーカスを戻す。
         - `@menu-item-select` イベントを発火。
     - **`Escape`**:
-        - メニューを閉じ、トリガーにフォーカスを戻す（`index.md` L131準拠）。
+        - メニューを閉じ、トリガーにフォーカスを戻す（`index.md`準拠）。
         - 選択はキャンセル扱い（項目は選択されない）。
     - **`ArrowDown`**:
         - メニューが閉じている場合（トリガー上）: メニューを開き、最初の項目にフォーカス。
@@ -1614,7 +1637,7 @@ input {
     - **`End`**:
         - メニュー内の最後の項目にフォーカス移動（メニューが開いている場合のみ）。disabled項目もスキップ。
     - **`Tab`**:
-        - `index.md` L130, L1321 の方針に従い、**Focus Trapは行わない**。
+        - `index.md` の「キーボードナビゲーション戦略」に従い、**Focus Trapは行わない**。
         - **Reason**: ドロップダウンはモーダルと異なり、思考の文脈を完全に切り替えるものではありません。ユーザーが「やはり次へ進みたい」と思った瞬間のフローを阻害しないよう、意図的にTrapを解除します。
         - `Tab` キーによりメニューを閉じ、トリガーの次の要素へフォーカス移動します。
         - `Shift + Tab` でメニューを閉じ、トリガーの前の要素へフォーカス移動します。
@@ -1624,108 +1647,119 @@ input {
         - **マッチング**: 項目ラベルの先頭文字（大文字・小文字を区別しない）から検索します。
 
 - **Click Outside / Scroll Close**:
-    - **Click Outside**: メニュー外（トリガー以外）をクリックした場合、メニューを即座に閉じます（`index.md` L130, L1328参照）。
-    - **Scroll Close**: 親スクロールコンテナのスクロール検出時にメニューを閉じます。これにより、トリガーとメニューの位置がズレて混乱を招く状況を防ぎます（`index.md` L1329参照）。
+    - **Click Outside**: メニュー外（トリガー以外）をクリックした場合、メニューを即座に閉じます（`index.md` のフォーカス管理方針に準拠）。
+    - **Scroll Close**: 親スクロールコンテナのスクロール検出時にメニューを閉じます。これにより、トリガーとメニューの位置がズレて混乱を招く状況を防ぎます（`index.md`参照）。
 
 - **Motion Reduction (`prefers-reduced-motion`)**:
-    - `@media (prefers-reduced-motion: reduce)` 環境下では、`index.md` L1109-1138 のグローバル定義により全てのトランジションが自動的に `0.01ms` に短縮されます。
+    - `@media (prefers-reduced-motion: reduce)` 環境下では、`index.md` のグローバル定義により全てのトランジションが自動的に `0.01ms` に短縮されます。
     - 背景色の変化、メニューの展開・収縮アニメーションは視覚的に即座に適用されます（実質的に瞬時）。
     - Adaptive Focus アニメーション（`--animation-focus`）も無効化され、フォーカスリングは即座に `--focus-ring-color` で表示されます。
 
 **6. 強制カラーモード対応 (Forced Colors Mode)**
 
-`@media (forced-colors: active)` 環境下では、背景色やシャドウがシステムによって上書きされる可能性があります。以下のフォールバックを適用し、構造と意味を維持します（`index.md` L1230-1290 準拠）。
+`@media (forced-colors: active)` 環境下では、背景色やシャドウがシステムによって上書きされる可能性があります。以下のフォールバックを適用し、構造と意味を維持します（`index.md` 準拠）。
 
 ```css
 @media (forced-colors: active) {
-  /* Trigger */
-  ui-dropdown [slot="trigger"] button,
-  ui-dropdown [slot="trigger"] {
+  /* Trigger (Slotted) */
+  :host ::slotted([slot="trigger"]) {
     /* システムカラーへのマッピング */
     border-color: ButtonBorder !important;
     background: ButtonFace !important;
     color: ButtonText !important;
   }
 
-  ui-dropdown[disabled] [slot="trigger"] button,
-  ui-dropdown[disabled] [slot="trigger"] {
+  :host([disabled]) ::slotted([slot="trigger"]) {
     /* Disabled状態をシステムカラーで表現 */
     border-color: GrayText !important;
     color: GrayText !important;
     opacity: 1; /* システムカラーが適用されるため不透明度は戻す */
   }
 
-  /* Panel */
-  ui-dropdown .panel {
+  /* Panel (Shadow DOM内) */
+  :host .panel,
+  /* Panel (Portal: document.body直下) */
+  [data-ui-dropdown-panel] {
     background: Canvas !important;
     border: var(--border-width) solid CanvasText !important;
     box-shadow: none; /* シャドウは消失 */
   }
 
   /* Menu Item - Default */
-  ui-dropdown .menu-item {
+  :host .menu-item,
+  [data-ui-dropdown-item] {
     color: CanvasText !important;
   }
 
   /* Menu Item - Hover/Focus状態 */
-  ui-dropdown .menu-item:hover,
-  ui-dropdown .menu-item:focus-visible {
+  :host .menu-item:hover,
+  :host .menu-item:focus-visible,
+  [data-ui-dropdown-item]:hover,
+  [data-ui-dropdown-item]:focus-visible {
     background: Highlight !important;
     color: HighlightText !important;
   }
 
   /* Menu Item - Disabled状態 */
-  ui-dropdown .menu-item[aria-disabled="true"] {
+  :host .menu-item[aria-disabled="true"],
+  [data-ui-dropdown-item][aria-disabled="true"] {
     color: GrayText !important;
     background: transparent !important;
   }
 
   /* Menu Item - Destructive Variant */
-  ui-dropdown .menu-item.variant-danger {
+  :host .menu-item.variant-danger,
+  [data-ui-dropdown-item].variant-danger {
     /* 破壊的アクションはボーダーで区別 */
     color: CanvasText !important;
     outline: 1px solid CanvasText;
     outline-offset: -1px;
   }
 
-  ui-dropdown .menu-item.variant-danger:hover {
+  :host .menu-item.variant-danger:hover,
+  [data-ui-dropdown-item].variant-danger:hover {
     background: Highlight !important;
     color: HighlightText !important;
   }
 
   /* Separator */
-  ui-dropdown .separator {
+  :host .separator,
+  [data-ui-dropdown-separator] {
     background: CanvasText !important;
   }
 
   /* Focus Indicator */
-  ui-dropdown .menu-item:focus-visible {
+  :host .menu-item:focus-visible,
+  [data-ui-dropdown-item]:focus-visible {
     outline: 3px solid CanvasText;
     box-shadow: none;
   }
 }
 ```
 
-> **Note (Forced Colors Strategy):** 透過やシャドウに依存した視覚表現はこのモードで消失するため、**ボーダーとスペーシング**により構造を明示します。`index.md` L1232-1247 で定義されたシステムカラーマッピングに従い、すべてのトークンがシステムカラーへフォールバックします。破壊的アクション（`.variant-danger`）は色情報が失われても、アウトラインにより識別可能にします。
+> **Note (Forced Colors Strategy):** 透過やシャドウに依存した視覚表現はこのモードで消失するため、**ボーダーとスペーシング**により構造を明示します。`index.md` で定義されたシステムカラーマッピングに従い、すべてのトークンがシステムカラーへフォールバックします。破壊的アクション（`.variant-danger`）は色情報が失われても、アウトラインにより識別可能にします。
 
 **7. 印刷スタイル (Print Styles)**
 
 印刷時は、インタラクティブ要素としてのドロップダウンメニューは機能しません。視覚的な装飾を最小化し、インク節約と可読性を両立させます。
 
+> **Scope**: 本セクションは「コンポーネント単体を印刷対象にする場合」の仕様です。アプリ全体の印刷では、`index.md` のグローバル印刷ルール（`.ui-dropdown` 非表示）が優先されます。
+
 ```css
 @media print {
   /* メニュー本体は常に非表示 */
-  ui-dropdown .panel {
+  :host .panel,
+  [data-ui-dropdown-panel] {
     display: none !important;
   }
 
   /* トリガーは表示を維持（操作不可を明示するため淡色化） */
-  ui-dropdown [slot="trigger"] {
+  :host ::slotted([slot="trigger"]) {
     opacity: 0.6;
   }
 
   /* Disabled状態は更に淡色化 */
-  ui-dropdown[disabled] [slot="trigger"] {
+  :host([disabled]) ::slotted([slot="trigger"]) {
     opacity: 0.4;
   }
 }
@@ -1763,14 +1797,18 @@ input {
 |------|-----|----------|------|
 | `role` | `"checkbox"` / `"radio"` | Control要素 | セマンティックロールを明示。 |
 | `aria-checked` | `"true"` / `"false"` / `"mixed"` | Control要素 | 選択状態。Checkboxの`indeterminate`時は`"mixed"`。 |
-| `aria-disabled` | `"true"` | Control要素 | `disabled`プロパティが`true`の場合。 |
+| `aria-disabled` | `"true"` | Control要素 | `disabled` 属性使用時、またはフォーカス保持型の非活性を表現する場合。 |
 | `aria-invalid` | `"true"` | Control要素 | バリデーションエラー時（後述）。 |
 | `aria-describedby` | ID参照 | Control要素 | エラーメッセージまたはヘルプテキストとの紐付け。 |
 
 **フォーム統合 (Form-Associated Custom Element):**
 
 - `ElementInternals` APIを使用し、標準フォーム要素としての振る舞いを実装します。
-- `formdata` イベント時に `name` と `value` をFormDataに自動追加。
+- `setFormValue()` を用いて送信値を制御し、`formdata` イベント時には以下の条件を満たす場合のみ `name` と `value` をFormDataに追加します。
+  - `name` が空でない
+  - `disabled` ではない
+  - `checked === true`（Checkbox / Radio共通）
+- `checked === false` または `disabled === true` の場合、送信値は追加しません。
 - `reportValidity()`, `checkValidity()` によるバリデーション統合。
 
 **4. スタイリングとトークンマッピング (Style & Tokens)**
@@ -1784,11 +1822,11 @@ input {
     - **Reduced Motion**: `@media (prefers-reduced-motion: reduce)` 環境下では、アニメーションを `0.01ms` に短縮し、視覚的変化を瞬時に完了させます（index.md グローバルポリシーに準拠）。
 - **Common State (Unchecked)**:
     - Background: `var(--bg-fill-muted)`
-    - Border: `var(--border-width) solid var(--border-default)`
+    - Border: `var(--border-width) solid var(--border-muted)`
     - **Logic**: 未選択時は「構造」として静かに存在し、選択時のみ「色」を持ちます。
 - **Interactive States (Hover / Active)**:
     - **Hover** (`:hover`):
-        - Border: `var(--border-width) solid var(--border-hover)` (わずかに濃く、操作可能性を示唆)
+        - Border: `var(--border-width) solid var(--border-default)` (わずかに濃く、操作可能性を示唆)
         - Transition: `border-color var(--duration-fast) var(--ease-out)`
     - **Active** (`:active`):
         - `transform: scale(var(--scale-pressed))` (0.96) - 触覚的フィードバック。
@@ -1809,15 +1847,16 @@ input {
         - Background: `var(--bg-default)` (**Hole Creation**: 選択時に背景を「穴」として抜く)
         - **Animation Impact**: `1px` (Unchecked) から `4px` (Checked) へのボーダー幅遷移に加え、背景色が `Muted` から `Default` へ変化することで、円の内側へ色が満ちていくような「ドーナツ型」のアニメーションを数理的に生成します。
         - **Contrast Validation**: 中心に8pxの空間を残し、`--primary` (border) と `--bg-default` (center hole) のコントラスト比を保証します。
-            - **Calculated Ratio**: `--primary` (oklch 55% 0.15 250) vs `--bg-default` (Light: oklch 100% 0 0, Dark: oklch 20% 0.01 250) → 約 **8.2:1** (Light) / **3.5:1** (Dark) で、WCAG 2.1 Non-text Contrast (Level AA: 3:1) を満たします。
+            - **Acceptance Criteria**: `index.md` の最新トークン値を単一の正として、Light / Dark 両テーマで WCAG 2.1 Non-text Contrast (Level AA: 3:1) 以上を満たすこと。トークン更新時は再計算して追記します。
 - **Disabled**:
     - `opacity: var(--opacity-disabled)` (0.5)
     - `cursor: not-allowed`
-    - **Interaction Block**: すべてのマウス・キーボードイベントを無効化し、`aria-disabled="true"` を付与します。
+    - **Native Disabled**: `disabled` 属性を優先し、フォーカス不可・フォーム送信除外とします。
+    - **ARIA Disabled**: `aria-disabled="true"` は「フォーカスを保持したまま非活性を伝える」必要がある場合にのみ使用し、その際はJavaScriptで操作を抑止します。
 - **Validation Error State**:
-    - Border: `var(--border-width) solid var(--danger)` (赤枠で視覚的に警告)
-    - **Error Message**: エラーメッセージを `<span role="alert">` で描画し、`aria-describedby` で紐付けます。
-    - **Focus on Error**: エラー状態でフォーカス時、フォーカスリングも `--danger` 色を使用します。
+    - Border: `var(--border-width) solid var(--border-danger)` (赤枠で視覚的に警告)
+    - **Error Message**: エラーメッセージを `<span aria-live="polite">` で描画し、`aria-describedby` で紐付けます。
+    - **Focus on Error**: エラー状態でフォーカス時、フォーカスリング色は `var(--border-danger)` を使用します。
 
 **5. アクセシビリティとキーボード操作 (A11y & Interaction)**
 
@@ -1843,6 +1882,8 @@ input {
 - **Focus Indicator**:
     - `:focus-visible` 時にグローバルなフォーカスリングを適用します（`outline: var(--focus-ring-width) solid var(--focus-ring-color)`, `outline-offset: var(--focus-ring-offset)`）。
     - **Adaptive Focus**: `animation: var(--animation-focus)` を適用し、リスト内の高速移動時（矢印キー操作）のチラつき（ノイズ）を低減します。
+- **State Reflection**:
+    - スタイルは `:host([checked])`, `:host([disabled])`, `:host([invalid])`, `:host([indeterminate])` を基準に定義し、ロジックと見た目の責務を分離します。
 
 - **Events**:
     - `change`: ユーザー操作によって選択状態が変化した後に発火（ネイティブ `<input>` 互換）。
@@ -1851,10 +1892,10 @@ input {
 - **Forced Colors Mode**:
     - `@media (forced-colors: active)` 環境下では、背景色によるチェック表現が無効化されるため、システムカラーを利用して状態を再定義します。
     - **Checked**:
-        - Background: `CanvasText` (または `Highlight`)
-        - Icon Color: `Canvas` (または `HighlightText`)
+        - Background: `Highlight`
+        - Icon Color: `HighlightText`
         - Border: `2px solid CanvasText` (境界を太くして視認性を担保)。
-    - **Focus**: `outline: 2px solid Highlight` (システムフォーカス色を使用)。
+    - **Focus**: `outline: 3px solid CanvasText`（グローバルForced Colors基準に追従し、`box-shadow` は使用しません）。
 
 #### トグルスイッチ (Toggle Switch) `<ui-switch>`
 
@@ -1893,7 +1934,7 @@ input {
 | トークン | 値 | 算出根拠 |
 |----------|-----|----------|
 | `--switch-thumb-size` | `var(--icon-base)` (16px) | アイコンサイズと統一し、視覚的リズムを保つ |
-| `--switch-track-padding` | `2px` | Thumbとトラック境界の余白 |
+| `--switch-track-padding` | `var(--border-width-thick)` (2px) | Thumbとトラック境界の余白 |
 | `--switch-track-height` | `calc(var(--switch-thumb-size) + var(--switch-track-padding) * 2)` | 20px (16px + 2px × 2) |
 | `--switch-track-width` | `calc(var(--switch-thumb-size) * 2 + var(--switch-track-padding) * 2)` | 36px (16px × 2 + 2px × 2) |
 | `--switch-thumb-pos-off` | `var(--switch-track-padding)` | 2px (左端の余白) |
@@ -1905,7 +1946,7 @@ input {
 
 **Track**:
 - Radius: `var(--radius-full)`
-- **Border**: `2px solid transparent` (High Contrast Mode用のフックとして領域確保)
+- **Border**: `var(--border-width-thick) solid var(--border-transparent)` (High Contrast Mode用のフックとして領域確保)
 - Transition: `background-color var(--duration-fast) var(--ease-out)` (色変化も即座に行う)
 
 **Thumb (Knob)**:
@@ -1927,14 +1968,14 @@ input {
 | **Hover (ON)** | `var(--primary-hover)` | 同上 | カーソル: `pointer` |
 | **Focus** | 継承 | 継承 | `:focus-visible` リング（`var(--focus-ring-color)`, `--focus-ring-width`, `--focus-ring-offset`） |
 | **Active (押下中)** | 継承 | `scale(var(--scale-pressed))` をThumbに追加適用 | 触覚的フィードバック |
-| **Disabled** | `var(--bg-fill-muted)` | `translateX(var(--switch-thumb-pos-off))` | `opacity: var(--opacity-disabled)` (0.5)、`cursor: not-allowed`、`aria-disabled="true"` |
+| **Disabled** | OFF時 `var(--bg-fill-muted)` / ON時 `var(--primary)` を維持 | OFF時 `translateX(var(--switch-thumb-pos-off))` / ON時 `translateX(var(--switch-thumb-pos-on))` を維持 | `opacity: var(--opacity-disabled)` (0.5)、`cursor: not-allowed`、`pointer-events: none` |
 
 **5. アクセシビリティとキーボード操作 (A11y & Interaction)**
 
 **ARIA & Semantics**:
 - **Role**: `role="switch"`。`aria-checked="true/false"` で状態を通知。
 - **Labeling**: `aria-labelledby` で外部ラベル要素と関連付け。ラベルが無い場合は `aria-label` で代替テキストを提供。
-- **Disabled State**: `aria-disabled="true"` を適用（`disabled` 属性ではなくARIA属性を使用し、フォーカスは保持したまま操作を無効化）。
+- **Disabled State**: 内部コントロールには `disabled` 属性を適用してネイティブに操作を無効化します。必要に応じてホスト要素にも `aria-disabled="true"` を反映し、支援技術への状態伝達を冗長化します。
 
 **Focus Indicator**:
 - グローバル定義の `:focus-visible` リングを使用。トラック形状に合わせて `border-radius: var(--radius-full)` を適用。
@@ -1951,35 +1992,36 @@ input {
 
 **モーション軽減 (Reduced Motion)**:
 
-`prefers-reduced-motion: reduce` が設定されている場合、アニメーションを完全に無効化します（index.md L1109-1112の必須要件に準拠）：
+`prefers-reduced-motion: reduce` が設定されている場合は、`index.md` のグローバルルール（`*, *::before, *::after` の `transition-duration` / `animation-duration` を `0.01ms` に短縮）に追従します。`<ui-switch>` 側で個別に `--duration-*` を上書きしません。
 
 ```css
 @media (prefers-reduced-motion: reduce) {
-  ui-switch {
-    --duration-fast: 0ms;
-    --duration-normal: 0ms;
-    --ease-spring: linear; /* イージング関数も無効化 */
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
 ```
 
-または、グローバルトークン `--motion-duration: 0ms` を参照し、すべてのトランジション/アニメーションを統一的に制御します。
+補助的に、共通トークン `--motion-duration` / `--motion-easing` を使った制御を併用しても構いませんが、判定のSingle Source of Truthはグローバルメディアクエリとします。
 
 **Forced Colors Mode**:
 
 `forced-colors: active` 環境下では、背景色によるON/OFF表現が無効化されます。
 
 ```css
+/* ui-switch の Shadow DOM 内スタイル例（外部からの ::part() 上書きは使用しない） */
 @media (forced-colors: active) {
-  ui-switch::part(track) {
-    border: 2px solid CanvasText; /* 境界を強制表示 */
+  :host .track {
+    border: var(--border-width-thick) solid CanvasText; /* 境界を強制表示 */
   }
 
-  ui-switch::part(thumb) {
+  :host .thumb {
     background: CanvasText; /* OFF状態 */
   }
 
-  ui-switch[checked]::part(thumb) {
+  :host([checked]) .thumb {
     background: Highlight; /* ON状態 */
   }
 }
@@ -2000,7 +2042,7 @@ input {
 - **Reference**: `@lion/ui` の `LionInputRange` ロジックをポーティング。
 - **Porting Strategy**:
     - **Logic Only**: Lion UIが生成するDOM構造には依存せず、バリデーションやステップ計算などの**ステート管理ロジックのみ**を借用します。
-- **View Strategy**: **Input-on-Top Overlay パターン**を採用します。ネイティブ `<input type="range">` を透明（`opacity: 0`）にしてコンテナ最前面（`z-index: 2`）に配置し、全てのユーザー操作（クリック・ドラッグ）を直接受け取らせることで「操作の吸われ」や「空振り」を物理的に防ぎます。視覚的なカスタムトラックとThumbは背面に配置（`z-index: 1`, `pointer-events: none`）し、Inputの値と連動して描画します。これにより、ネイティブの堅牢な操作性とカスタムデザインの完全な制御を両立します。
+- **View Strategy**: **Input-on-Top Overlay パターン**を採用します。ネイティブ `<input type="range">` を透明（`opacity: 0`）にしてコンテナ最前面（`z-index: 2`）に配置し、全てのユーザー操作（クリック・ドラッグ）を直接受け取らせることで「操作の吸われ」や「空振り」を物理的に防ぎます。視覚的なカスタムトラックとThumbは背面に配置（`z-index: 1`, `pointer-events: none`）し、Inputの値と連動して描画します。操作判定は最前面InputをSingle Source of Truthとし、タッチターゲット拡張もInput側で行います。
 
 **3. 技術仕様とAPI (Technical Specs)**
 
@@ -2009,7 +2051,7 @@ input {
 | `min` | `min` | `number` | `0` | 最小値。 |
 | `max` | `max` | `number` | `100` | 最大値。 |
 | `step` | `step` | `number` | `1` | 増減の刻み幅。 |
-| `value` | `value` | `number` | `0` | 現在の値。 |
+| `value` | `value` | `number` | `min` | 現在の値。未指定時は正規化後の `min` を採用。 |
 | `label` | `label` | `string` | (なし) | **必須**。スクリーンリーダー用のラベル。 |
 | `disabled` | `disabled` | `boolean` | `false` | 無効状態。`true` の場合、操作不可となりフォーカスも受け付けません。 |
 
@@ -2022,6 +2064,13 @@ input {
 |------------|------|
 | `prefix` | 左端（最小値側）のアイコンやテキスト。常に垂直中央配置。 |
 | `suffix` | 右端（最大値側）のアイコンや現在値表示。常に垂直中央配置。 |
+
+**Value Normalization (Deterministic Rules)**
+
+- `min` / `max`: `min > max` の場合は値を入れ替えて正規化します。
+- `step`: `step <= 0` または非数値は `1` にフォールバックします。
+- `value`: 未指定時は `min`。指定時は `min...max` にクランプした後、`min` 基準で最も近い有効ステップへ丸めます。
+- **Precision**: 小数ステップ（例: `0.1`）での誤差を避けるため、`step` の小数桁精度に合わせて丸めます。
 
 **4. スタイリングとトークンマッピング (Style & Tokens)**
 
@@ -2040,7 +2089,7 @@ input {
 - **Thumb (Knob)**:
     - Visual Size: `var(--icon-base)` × `var(--icon-base)` (16px × 16px)
         > **Rationale (Token Reference):** Thumbサイズは `--icon-base` (16px) と一致させることで、視覚的な一貫性を保証します。アイコンと同じ基準サイズを使用することで、UI全体のグリッド感を維持します。
-    - **Touch Target**: `::after` 等により **`var(--control-min-touch)` (44px) × `var(--control-min-touch)` (44px)** 以上のヒットエリアを確保。WCAG 2.1 SC 2.5.5 (Target Size) に準拠。
+    - **Touch Target**: 判定主体である最前面 `<input type="range">` のヒットエリアを **`var(--control-min-touch)` (44px) × `var(--control-min-touch)` (44px)** 以上に確保します。背面Thumbの疑似要素ではなく、Input側で物理判定を保証します。
     - Background: `var(--white)`
     - Border: `var(--border-width) solid var(--border-default)`
     - Shadow: `var(--elevation-md)`。Light/Dark Mode間で自動的にシャドウスタイルが切り替わり、背景との同化を防いで**Z軸方向の分離**を明確にします。
@@ -2058,20 +2107,21 @@ input {
         - **Animation**: `animation: var(--animation-focus)` (**Adaptive Focus**)。移動中のノイズを抑え、停止した瞬間に明確化します。
     - **Reduced Motion**: `prefers-reduced-motion: reduce` 時は `animation: none` にフォールバックし、即座に最終色（`var(--focus-ring-color)`）を適用します。`index.md` のモーション軽減戦略に準拠。
 - **Dark Mode Considerations**:
-    - **Track Background**: `--border-default` の透過ボーダーはDark Mode背景上でも3:1以上のコントラスト比を保証します（`index.md` のコントラスト比保証表を参照）。
+    - **Track Background**: `--border-default` を使用し、Dark Modeでもトラックの境界が視認できることをVRT/手動検証で保証します（`index.md` のテスト方針に準拠）。
     - **Thumb Shadow**: `--elevation-md` により、Light ModeではShadow、Dark Modeでは強化されたシャドウ（`--shadow-dark-md`）が自動的に適用され、視認性が維持されます。
 
 **5. アクセシビリティ (A11y)**
 
 - **WCAG 2.2 Compliance**:
     - **2.5.7 Dragging Movements (AA)**: ドラッグ操作を必須としません。キーボード操作（矢印キー）により、ドラッグ不要で全ての値調整が可能です。
-    - **2.5.5 Target Size (AA)**: Thumbの物理的なヒットエリアは `var(--control-min-touch)` (44px × 44px) 以上を確保します。
+    - **2.5.8 Target Size (Minimum, AA)**: 最小 24px 要件を満たします。
+    - **運用推奨 (SC 2.5.5, AAA相当)**: Inputの物理ヒットエリアは `var(--control-min-touch)` (44px × 44px) 以上を確保します。
 - **Keyboard**:
     - `Right` / `Up`: 値を `step` の単位で増加。
     - `Left` / `Down`: 値を `step` の単位で減少。
     - `Home`: 最小値 (`min`) へジャンプ。
     - `End`: 最大値 (`max`) へジャンプ。
-    - `Page Up` / `Page Down`: より大きな刻み幅での増減（通常 `step` × 10）。
+    - `Page Up` / `Page Down`: `largeStep = step * 10` を使用して増減（決定的仕様）。
 - **ARIA Attributes**:
     - **`aria-label`**: `label` プロパティの値を内部 `<input>` の `aria-label` に直接反映（Reflect）します。
     - **`aria-valuemin`**: `min` プロパティの値を反映。
@@ -2090,7 +2140,7 @@ input {
 
 **1. デザイン哲学と目的 (Design Philosophy)**
 
-- **役割**: ヘッダー等に配置され、**コマンドパレット (`<ui-command-palette>`) を起動するためだけのボタン**です。
+- **役割**: ヘッダー等に配置され、**検索ダイアログ (`<ui-search-dialog>`) を起動するためだけのボタン**です。
 - **Dummy Input (Mental Model)**: 外見は検索ボックス（Input）そのものですが、実際には文字入力を行わず、**アクティブ化（クリック・Enter）**によって即座にモーダルを展開します。これにより、PCとモバイル、キーボード操作とマウス操作の体験を完全に統一します。
 
 **2. 実装仕様と構造 (Implementation Strategy)**
@@ -2103,7 +2153,7 @@ input {
 
 | State | Border | Background | Cursor | Note |
 |-------|--------|------------|--------|------|
-| **Default** | `var(--border-width) solid transparent` | `var(--bg-fill-muted)` | `default` | **Discoverability**: `<ui-input>` ([L978](components.md#L978)) と同じ背景色を採用し、レイアウトシフト防止のため透明なボーダーを確保します。 |
+| **Default** | `var(--border-width) solid transparent` | `var(--bg-fill-muted)` | `default` | **Discoverability**: `<ui-input>` と同じ背景色を採用し、レイアウトシフト防止のため透明なボーダーを確保します。 |
 | **Hover** | `var(--border-width) solid var(--border-default)` | `var(--bg-fill-muted)` | `default` | **Tactility**: 明確なボーダーによってインタラクティブ要素のエッジをフィードバックします。 |
 | **Focus** | `var(--border-width) solid var(--border-default)` | `var(--bg-default)` | `default` | **Clear Canvas**: 入力準備状態として白地（デフォルト背景）に切り替え、強調表示はFocus Ringに一任します。 |
 | **Active (Pressed)** | `var(--border-width) solid var(--border-default)` | `var(--bg-default)` | `default` | **Tactile Signal**: `transform: scale(var(--scale-pressed))` (0.96) を適用し、押下の瞬間フィードバックを提供（原則3「デジタルの触感」）。 |
@@ -2118,7 +2168,7 @@ input {
 
 **Transition (Explicit Property List)**
 
-`index.md` L883-918 の禁止事項に従い、`transition: all` を使用せず、以下のプロパティのみを遷移対象として明示します：
+`index.md` の禁止事項に従い、`transition: all` を使用せず、以下のプロパティのみを遷移対象として明示します：
 
 ```css
 button {
@@ -2135,67 +2185,66 @@ button {
 - **Desktop (Default)**:
     - **Left**: Search Icon (Size: `--icon-base` (16px), Color: `var(--fg-muted)`)
     - **Fill**: Placeholder Text ("検索...") — Color: `var(--fg-subtle)`, Font: `--text-base` (14px) / `--font-normal` (400), `user-select: none`。アイコンに続けて左揃え。
-    - **Right**: Shortcut Badge (`<ui-kbd>Cmd K</ui-kbd>`)
-- **Mobile (`@media (max-width: 640px)`)** & **Touch Devices (`@media (hover: none)`)**:
+    - **Right**: Shortcut Badge (`<ui-kbd>Ctrl K / Cmd K</ui-kbd>`)
+- **Mobile (`@media (max-width: 640px)`)**:
     - **Icon Only**: プレースホルダーとバッジを `display: none` で隠蔽し、**検索アイコンのみ**を表示します。
     - **Dimension**: 幅を `auto` (正方形) に縮小し、`padding: 0 var(--space-2)` 程度に調整してヘッダー領域を節約します。
-    - **Touch Target**: 視覚的なサイズは `--control-height-md` (32px) ですが、`::after` 擬似要素を用いて **`--control-min-touch` (44px) のヒットエリアを確保** し、操作性を維持します（`index.md` L1047-1076 準拠）。
-    - **Badge Visibility**: キーボードショートカットのバッジは、タッチデバイス (`@media (hover: none)`) ではノイズとなるため非表示にします。
+    - **Touch Target**: 視覚的なサイズは `--control-height-md` (32px) ですが、`::after` 擬似要素を用いて **`--control-min-touch` (44px) のヒットエリアを確保** し、操作性を維持します（`index.md` 準拠）。
 
-> **Note (Responsive Strategy)**: レスポンシブ挙動は **ブレークポイント (`--bp-sm`)** と **入力モダリティ (`hover: none`)** の二重基準で制御されます。アイコンオンリー化はブレークポイント依存、バッジ非表示はモダリティ依存であり、実装時にはタッチ対応の大画面デバイスでも正しく動作することを確認してください。
+> **Note (Responsive Strategy)**: icon-only への切り替えは **ブレークポイント (`--bp-sm` = 640px)** のみで制御します。実装時は `@media (max-width: 640px) { /* --bp-sm */ ... }` の形式でトークン参照コメントを付与し、`index.md` のブレークポイント運用方針に従ってください。
 
 **4. アクセシビリティとインタラクション (A11y & Interaction)**
 
 - **ARIA Attributes**:
-    - `aria-label="検索コマンドパレットを開く"` を付与し、視覚的なプレースホルダーテキストに依存せず機能を説明します。
+    - `aria-label="検索ダイアログを開く"` を付与し、視覚的なプレースホルダーテキストに依存せず機能を説明します。
     - `aria-haspopup="dialog"` を設定し、モーダルが開く挙動を予告します。
-    - `aria-keyshortcuts="Meta+K"` を設定し、支援技術へショートカットキーを通知します。バッジ自体は `aria-hidden="true"` で隠蔽し、読み上げのノイズを防ぎます。
+    - `aria-keyshortcuts="Control+K Meta+K"` を設定し、支援技術へショートカットキーを通知します。バッジ自体は `aria-hidden="true"` で隠蔽し、読み上げのノイズを防ぎます。
 - **Activation Policy (起動方針)**:
-    - **Explicit Activation Only**: フォーカス取得（`:focus`）だけではモーダルを開きません。ユーザーの明示的なアクティベーション（`click`, `Enter`, `Space`）によってのみコマンドパレットを起動します。
-    - **Event Interface**: アクティベーション時に `search-trigger-activate` カスタムイベントを発火します。親コンポーネントまたはアプリケーションレベルでこのイベントをリスンし、`<ui-command-palette>` の表示処理を実装してください。
+    - **Explicit Activation Only**: フォーカス取得（`:focus`）だけではモーダルを開きません。ユーザーの明示的なアクティベーション（`click`, `Enter`, `Space`）によってのみ検索ダイアログを起動します。
+    - **Event Interface**: アクティベーション時に `open-search-dialog` カスタムイベントを発火します。親コンポーネントまたはアプリケーションレベルでこのイベントをリスンし、`<ui-search-dialog>` の表示処理を実装してください。
         ```typescript
         // イベント定義例
-        this.dispatchEvent(new CustomEvent('search-trigger-activate', {
+        this.dispatchEvent(new CustomEvent('open-search-dialog', {
           bubbles: true,
           composed: true,
         }));
         ```
 - **Focus Indicator**:
-    - **Adaptive Focus**: `index.md` L1141-1202 で定義された `animation: var(--animation-focus)` を適用します。フォーカス移動中（短時間）は控えめな `--focus-ring-color-subtle` で表示され、停止した瞬間に `--focus-ring-color` (Primary) へ遷移します。
-    - **Reduced Motion**: `@media (prefers-reduced-motion: reduce)` 環境下では、`index.md` L1099-1138 のグローバル定義により、Adaptive Focus アニメーションは自動的に無効化され、フォーカスリングは即座に `--focus-ring-color` で表示されます。このコンポーネントは**グローバル定義に依存**します。
+    - **Adaptive Focus**: `index.md` で定義された `animation: var(--animation-focus)` を適用します。フォーカス移動中（短時間）は控えめな `--focus-ring-color-subtle` で表示され、停止した瞬間に `--focus-ring-color` (Primary) へ遷移します。
+    - **Reduced Motion**: `@media (prefers-reduced-motion: reduce)` 環境下では、`index.md` のグローバル定義により、Adaptive Focus アニメーションは自動的に無効化され、フォーカスリングは即座に `--focus-ring-color` で表示されます。このコンポーネントは**グローバル定義に依存**します。
 
 **5. 強制カラーモード対応 (Forced Colors Mode)**
 
-`@media (forced-colors: active)` 環境下（Windows ハイコントラストモード等）では、背景色やシャドウがシステムによって上書きされます。以下のフォールバックを適用し、「Dummy Input」という視覚的欺瞞が破綻しないよう、インタラクティブ要素としての構造と意味を明確に維持します（`index.md` L1230-1290 準拠）。
+`@media (forced-colors: active)` 環境下（Windows ハイコントラストモード等）では、背景色やシャドウがシステムによって上書きされます。以下のフォールバックを適用し、「Dummy Input」という視覚的欺瞞が破綻しないよう、インタラクティブ要素としての構造と意味を明確に維持します（`index.md` 準拠）。
 
 ```css
 @media (forced-colors: active) {
-  ui-search-trigger {
+  :host {
     /* 境界線を強制し、ボタン領域の輪郭を明確化 */
     border: var(--border-width) solid CanvasText !important;
     background: Canvas !important;
   }
 
-  ui-search-trigger:hover {
+  :host(:hover) {
     /* ホバー時にもボーダーを維持 */
     border-color: CanvasText;
   }
 
-  ui-search-trigger:focus-visible {
+  :host(:focus-visible) {
     /* box-shadowは消失するため、実線のアウトラインを強制 */
     outline: 3px solid CanvasText;
     box-shadow: none;
   }
 
-  ui-search-trigger:active {
+  :host(:active) {
     /* アクティブ状態もボーダーで明示（scaleは維持） */
     border-color: CanvasText;
     background: ButtonFace;
   }
 
   /* 内部アイコン・テキストの色もシステムカラーに追従 */
-  ui-search-trigger .icon,
-  ui-search-trigger .placeholder {
+  .icon,
+  .placeholder {
     color: CanvasText;
   }
 }
@@ -2213,7 +2262,7 @@ button {
 **2. ロジック参照基盤 (Logic Reference)**
 
 - **Reference**: `@lion/ui` の `LionTextarea`（継承元: `LionField`）
-- **Porting Strategy**: `<ui-input>` ([L897-1101](#L897)) と同じ方針を採用します。
+- **Porting Strategy**: `<ui-input>` と同じ方針を採用します。
     - `LionField` が持つ強力なアクセシビリティ連携のロジックを借用します。
     - **DOM構造の簡素化**: `Shadow DOM` 内で完結した `<textarea>` レンダリングを行い、スタイルカプセル化を徹底します。
 - **Auto Grow Strategy**:
@@ -2232,7 +2281,7 @@ button {
 
 **3. 技術仕様とAPI (Technical Specs)**
 
-> **継承関係**: `<ui-input>` ([L922-937](#L922)) の API を基盤とし、以下に Textarea 固有のプロパティと差分のみを記載します。
+> **継承関係**: `<ui-input>` の API を基盤とし、以下に Textarea 固有のプロパティと差分のみを記載します。
 
 **共通プロパティ（`<ui-input>` から継承）**:
 
@@ -2243,6 +2292,7 @@ button {
 | `name` | `name` | `string` | フォーム送信時のフィールド名。`ElementInternals` によるフォーム参加に必須。 |
 | `placeholder`| `placeholder`| `string` | ヒントテキスト。 |
 | `value` | `value` | `string` | 入力値。 |
+| `required` | `required` | `boolean` | 必須入力フラグ。未入力時は内部バリデーションを失敗させます。 |
 | `help-text` | `help-text` | `string` | 下部に表示する補助テキスト。 |
 | `error-message` | `error-message` | `string` | エラー時に表示するメッセージ。`error` が `true` のときに `aria-describedby` で紐付けられます。 |
 | `error` | `error` | `boolean` | エラー状態の強制。通常は内部バリデーションで自動制御。 |
@@ -2257,13 +2307,13 @@ button {
 | `rows` | `rows` | `number` | 初期表示行数。デフォルト: `3`。 |
 | `max-rows` | `max-rows` | `number` | 自動伸長時の最大行数。これを超えた場合のみ内部スクロールを許可。未指定時は無制限に伸長します。 |
 | `auto-grow` | `auto-grow` | `boolean` | 自動高さ拡張の有効化。デフォルト: `true`。 |
-| `resize` | — | `'none' \| 'vertical'` | CSS `resize` プロパティ。**原則 `none`**。Auto Growが無効、または `max-rows` 到達時のみ `vertical` を許容。 |
+| `resize` | — | `'none' \| 'vertical'` | CSS `resize` プロパティ。デフォルト: `'none'`。`auto-grow="false"` の場合のみ `'vertical'` を許容します。 |
 
 > **Unsupported Properties**: `<ui-input>` の `type` プロパティは Textarea では使用しません。
 
 **4. スタイリングとトークンマッピング (Style & Tokens)**
 
-> **継承関係**: `<ui-input>` ([L940-1014](#L940)) のスタイリング戦略を基盤とし、以下に Textarea 固有の差分のみを記載します。
+> **継承関係**: `<ui-input>` のスタイリング戦略を基盤とし、以下に Textarea 固有の差分のみを記載します。
 
 **:host (Container)**
 
@@ -2275,18 +2325,18 @@ button {
 
 **Label Element**
 
-`<ui-input>` と同じスタイルを適用します（[L949-971](#L949)）。
+`<ui-input>` と同じスタイルを適用します。
 
 **Textarea Element (Control)**
 
-基本的な状態管理は `<ui-input>` ([L974-982](#L974)) と完全に同じです：
+基本的な状態管理は `<ui-input>` と完全に同じです：
 
 | State | Border | Background | Text Color | Note |
 |-------|--------|------------|------------|------|
 | **Default** | `var(--border-width) solid transparent` | `var(--bg-fill-muted)` | `--fg-default` | **Discoverability**: 背景色を採用しつつ、レイアウトシフト防止のため透明なボーダーを確保します。 |
 | **Hover** | `var(--border-width) solid var(--border-default)` | `var(--bg-fill-muted)` | `--fg-default` | **Tactility**: 明確なボーダーによって入力可能領域のエッジをフィードバックします。 |
 | **Focus** | `var(--border-width) solid var(--border-default)` | `var(--bg-default)` | `--fg-default` | **Clear Canvas**: 入力時は「紙」のような白地（デフォルト背景）に戻し、執筆に集中させます。強調表示（Colording）はFocus Ringに一任し、ノイズを減らします。 |
-| **Error** | `var(--border-width) solid var(--danger)` | `var(--bg-danger-subtle)` | `--fg-default` | 背景色も淡く変化させ、色覚多様性に配慮。 |
+| **Error** | `var(--border-width) solid var(--border-danger)` | `var(--bg-danger-subtle)` | `--fg-default` | 背景色も淡く変化させ、色覚多様性に配慮。 |
 | **Disabled**| `var(--border-width) solid var(--border-default)` | `var(--bg-fill-muted)`| `--fg-subtle` | `opacity: var(--opacity-disabled)` (0.5) を併用し、操作不可を表現。 |
 
 **Textarea 固有のレイアウトとタイポグラフィ**:
@@ -2294,14 +2344,21 @@ button {
 - **Width**: `100%` (親コンテナの幅に追従)
 - **Min-Height**: `rows` 属性に基づいて計算（例: `rows=3` → 約 3行分の高さ）
 - **Radius**: `--radius-md` (6px)
-- **Resize**: `none` (Auto Grow 優先のため、手動リサイズを無効化)
+- **Resize**: `auto-grow=true` では `none`。`auto-grow=false` では `vertical` を許容。
+
+**Auto Grow の実装契約 (Implementation Contract)**:
+
+- **高さ計算**: 入力イベントごとに `height: auto` へ一時リセットした後、`scrollHeight` を採用して即時反映します。
+- **最大高さ**: `max-rows` 指定時は `line-height * max-rows + padding + border` を上限とし、それを超えた分のみ内部スクロール (`overflow-y: auto`) を許可します。
+- **初期高さ**: `rows` は最小表示行数として扱い、`rows` 未満には縮めません。
+- **モーション**: ユーザー入力起因の高さ変化は `0ms` 固定。プログラム変更時のみ `--duration-fast` を任意で許容します。
 
 **タイポグラフィのバリアント別設定**:
 
 - **Default (UI)**:
     - **Padding**: `var(--space-2) var(--space-3)` (上下 8px / 左右 12px)。`<ui-input>` との並びにおけるベースラインの整合性を優先します。
     - **Font**: `--text-base` (14px), `line-height: --line-height-normal` (1.5)。
-    - **Typography**: `letter-spacing: 0.02em`。視認性と密度を優先。
+    - **Typography**: `letter-spacing: var(--tracking-normal)` (0em)。入力系コンポーネント間の一貫性を優先します。
     - **Font Feature**: `font-feature-settings: normal`（`"palt"` は**不採用**。ユーザーが入力するテキストに対して字詰めを強制すると、執筆中の表示が意図しない形になるため）。
 - **Prose (Content)**: `variant="prose"` 指定時。
     - **Padding**: `var(--space-3) var(--space-3)` (上下左右 12px)。執筆時の「呼吸空間」を確保するため、意図的に広げます。
@@ -2310,7 +2367,7 @@ button {
 
 **Transition**:
 
-状態遷移は以下のプロパティに限定し、`transition: all` の使用を禁止します（`index.md` L883-918 準拠、`<ui-input>` [L989-997](#L989) と同じ）。**高さ (`height`) は transition 対象外**とし、Auto Grow の即応性（0ms）を維持します。
+状態遷移は以下のプロパティに限定し、`transition: all` の使用を禁止します（`index.md` 準拠、`<ui-input>` と同じ）。**高さ (`height`) は transition 対象外**とし、Auto Grow の即応性（0ms）を維持します。
 
 ```css
 textarea {
@@ -2323,11 +2380,11 @@ textarea {
 
 **Resize Grip**:
 
-非採用とします。ユーザーに「狭くなったから手動で広げる」という作業を強いることは、執筆という思考プロセスを中断させるノイズとなるためです。
+`auto-grow=true` では非採用です。`auto-grow=false` のときのみ `resize: vertical` を許容し、ユーザーの明示的なリサイズ操作を可能にします。
 
 **Scrollbar**:
 
-`max-rows` 超過時は内部スクロールが発生します。`index.md` L775-814 で定義された**スクロールバースタイル**（「見えないヒットエリア」手法）を適用します：
+`max-rows` 超過時は内部スクロールが発生します。`index.md` で定義された**スクロールバースタイル**（「見えないヒットエリア」手法）を適用します：
 
 - **Width**: `var(--scrollbar-width)` (12px) — 物理的なヒットエリア
 - **Thumb**: `var(--scrollbar-thumb)` (`var(--fg-subtle)`)
@@ -2361,11 +2418,11 @@ textarea::-webkit-scrollbar-thumb:hover {
 
 **Help Text / Error Message**
 
-`<ui-input>` ([L1000-1014](#L1000)) と完全に同じスタイルを適用します。
+`<ui-input>` と完全に同じスタイルを適用します。
 
 **5. アクセシビリティとキーボード操作 (A11y & Interaction)**
 
-> **継承関係**: `<ui-input>` ([L1017-1034](#L1017)) のアクセシビリティ戦略を基盤とします。
+> **継承関係**: `<ui-input>` のアクセシビリティ戦略を基盤とします。
 
 - **Label Association & Focus Strategy**:
     - **Interaction**: Shadow DOM の標準オプションである **`delegatesFocus: true`** を有効化します。これにより、カスタム要素自体へのクリックや外部 `<label>` からのフォーカス移動が、自動的かつ即座に内部の `<textarea>` へ転送されます。
@@ -2376,56 +2433,59 @@ textarea::-webkit-scrollbar-thumb:hover {
     - 入力フィールド自体の明示的な変化（背景色の正規化）に加え、**:focus-visible 時にはグローバルなフォーカスリング（アウトライン）を追加** します。
     - `outline: var(--focus-ring-width) solid var(--focus-ring-color)`
     - `outline-offset: var(--focus-ring-offset)` (ボーダーと重ならないよう配置)
-    - **Adaptive Focus**: `index.md` L1159-1187 で定義された `animation: var(--animation-focus)` を適用し、移動中はノイズを抑え、停止した瞬間に明確化する挙動を実装します。
+    - **Adaptive Focus**: `index.md` で定義された `animation: var(--animation-focus)` を適用し、移動中はノイズを抑え、停止した瞬間に明確化する挙動を実装します。
 - **Error Messaging**:
     - エラー発生時は `aria-invalid="true"` を設定し、エラーメッセージ要素（`error-message` プロパティから生成）を `aria-describedby` に追加してスクリーンリーダーに通知します。
+    - エラーメッセージ要素には `aria-live="polite"`（必要に応じて `role="status"`）を付与し、入力中の読み上げを不必要に中断せず通知します。
 - **Motion Reduction (`prefers-reduced-motion`)**:
-    - `@media (prefers-reduced-motion: reduce)` 環境下では、`index.md` L1099-1128 のグローバル定義により全てのトランジションが自動的に `0.01ms` に短縮されます。
+    - `@media (prefers-reduced-motion: reduce)` 環境下では、`index.md` のグローバル定義により全てのトランジションが自動的に `0.01ms` に短縮されます。
     - 背景色・ボーダー色の変化は視覚的に即座に適用されます（実質的に瞬時）。
     - Adaptive Focus アニメーション（`--animation-focus`）も無効化され、フォーカスリングは即座に `--focus-ring-color` で表示されます。
     - **Auto Grow**: 高さ変化は元々 `0ms` (Instant) であり、追加の対応は不要です。プログラムによる変更時の `--duration-fast` (70ms) のみが `0.01ms` に短縮されます。
 
 **6. 強制カラーモード対応 (Forced Colors Mode)**
 
-`@media (forced-colors: active)` 環境下では、背景色やシャドウがシステムによって上書きされる可能性があります。以下のフォールバックを適用し、構造と意味を維持します（`index.md` L1230-1290 準拠、`<ui-input>` [L1036-1068](#L1036) と同じ戦略）。
+`@media (forced-colors: active)` 環境下では、背景色やシャドウがシステムによって上書きされる可能性があります。以下のフォールバックを適用し、構造と意味を維持します（`index.md` 準拠、`<ui-input>` と同じ戦略）。
 
 ```css
 @media (forced-colors: active) {
-  ui-textarea {
+  :host textarea {
     /* 境界線を強制し、入力領域の輪郭を明確化 */
     border: var(--border-width) solid CanvasText !important;
     background: Canvas !important;
+    color: CanvasText !important;
   }
 
-  ui-textarea[error] {
-    /* エラー状態をボーダーで表現（背景色は消失するため） */
-    border-color: LinkText;
-    border-width: 2px; /* --border-width-thick */
+  :host([error]) textarea {
+    /* エラー状態を太い境界で表現（背景色は消失するため） */
+    border-width: var(--border-width-thick);
+    border-color: CanvasText !important;
   }
 
-  ui-textarea:focus-visible {
+  :host textarea:focus-visible {
     /* box-shadowは消失するため、実線のアウトラインを強制 */
     outline: 3px solid CanvasText;
     box-shadow: none;
   }
 
   /* Disabled状態もボーダーで明示 */
-  ui-textarea[disabled] {
+  :host([disabled]) textarea {
     border-color: GrayText;
+    color: GrayText !important;
     opacity: 1; /* システムカラーが適用されるため不透明度は戻す */
   }
 }
 ```
 
-> **Note (Forced Colors Strategy):** 透過やシャドウに依存した視覚表現はこのモードで消失するため、**ボーダーとスペーシング**により構造を明示します。`index.md` L1246-1269 で定義されたシステムカラーマッピングに従い、すべてのトークンがシステムカラーへフォールバックします。
+> **Note (Forced Colors Strategy):** 透過やシャドウに依存した視覚表現はこのモードで消失するため、**ボーダーとスペーシング**により構造を明示します。`index.md` で定義されたシステムカラーマッピングに従い、すべてのトークンがシステムカラーへフォールバックします。
 
 **7. 印刷スタイル (Print Styles)**
 
-印刷時は、インタラクティブ要素としての入力フィールドは機能しません。視覚的な装飾を最小化し、インク節約と可読性を両立させます（`<ui-input>` [L1070-1100](#L1070) と同じ戦略）。
+印刷時は、インタラクティブ要素としての入力フィールドは機能しません。視覚的な装飾を最小化し、インク節約と可読性を両立させます（`<ui-input>` と同じ戦略）。
 
 ```css
 @media print {
-  ui-textarea {
+  :host textarea {
     /* 背景を透明化しインク節約 */
     background: transparent !important;
 
@@ -2437,13 +2497,13 @@ textarea::-webkit-scrollbar-thumb:hover {
   }
 
   /* エラー状態は印刷時に淡色化（インク節約） */
-  ui-textarea[error] {
-    border-color: var(--fg-muted) !important;
+  :host([error]) textarea {
+    border-color: var(--border-danger) !important;
   }
 
   /* Disabled/Readonly状態も視覚的に区別を維持 */
-  ui-textarea[disabled],
-  ui-textarea[readonly] {
+  :host([disabled]) textarea,
+  :host([readonly]) textarea {
     opacity: 0.6;
   }
 }
@@ -2499,7 +2559,7 @@ textarea::-webkit-scrollbar-thumb:hover {
 |------------|------|-------|------------|------|
 | `variant` | `variant` | `'default' \| 'outline' \| 'solid'` | `'default'` | 通常は `default` (Subtle)。`solid` は重要なステータスのみ。 |
 | `size` | `size` | `'xs' \| 'sm'` | `'xs'` | 通常は `xs` (20px - High Density)。強調時のみ `sm` (24px)。 |
-| `color` | `color` | `'neutral' \| 'primary' \| 'blue' \| 'violet' \| 'pink' \| 'gold'` | `'neutral'` | 意味的カラー（例: `gold`=Literature）。トークン名（`--hue-*`）と整合させる。 |
+| `color` | `color` | `'neutral' \| 'primary' \| 'blue' \| 'violet' \| 'pink' \| 'gold'` | `'neutral'` | 意味的カラー（例: `gold`=Literature）。色相はコンポーネント内のHueマッピングで管理する。 |
 | `removable` | `removable` | `boolean` | `false` | 削除用「×」ボタンを表示するか。 |
 | `href` | `href` | `string \| undefined` | `undefined` | リンク先URL。テキスト部分がリンクとなる。 |
 | `disabled` | `disabled` | `boolean` | `false` | 非活性状態。`true` の場合、`opacity: var(--opacity-disabled)` (0.5) が適用され、リンク・削除ボタンは無効化される。 |
@@ -2556,6 +2616,7 @@ textarea::-webkit-scrollbar-thumb:hover {
     - Default: ボーダー色を `var(--border-default)` または同等の色に変更し、背景色は維持する。
 
 - **Color System Strategy**:
+    - **Token Policy**: `index.md` の原則に従い、実装時はSemanticトークンを優先します。ジャンル色相（Blue/Violet/Pink/Gold）は基盤に専用Semanticトークンが未定義のため、`<ui-tag>` 内でローカルHue変数を定義し、必要に応じて上位から上書き可能にします。
     - **Separated Delta Logic**: Gold（黄色系）の視認性問題を解決するため、明度補正値（Delta L）を**背景用**と**文字用**で分離独立させます。
     - **Chroma Dampening**: テキストの彩度は背景よりも敏感にノイズとなるため、`--chroma-ui` を減衰させて使用します。
     - **Note on Delta L Divergence**: index.mdの基盤定義では、Gold色相は「明度を上げる (+5%)」とされていますが、タグコンポーネントのSubtle背景（Light: L96%、高明度域）では、同じ補正を適用すると**白飛び**し、黄色味が消失します。そのため、タグでは**逆方向の補正（背景 -3%、文字 -15%）** を採用し、黄色系特有の「暗く見える」特性を活用して、むしろ「茶色方向へ引く」ことで視認性を確保しています。これはindex.md基盤ルールの例外であり、**高明度背景という文脈固有の補正**として文書化されています。
@@ -2565,6 +2626,10 @@ textarea::-webkit-scrollbar-thumb:hover {
       /* --- Default (Subtle) Configuration --- */
       --bg-l: 96%; /* Light: Muted Base */
       --fg-l: 45%; /* Light: Text */
+      --ui-tag-hue-blue: var(--hue-blue, 230);
+      --ui-tag-hue-violet: var(--hue-violet, 280);
+      --ui-tag-hue-pink: var(--hue-pink, 340);
+      --ui-tag-hue-gold: var(--hue-gold, 85);
       
       --chroma-bg: var(--chroma-subtle);
       --chroma-fg: calc(var(--chroma-ui) * 0.6); /* 文字は彩度を落としてハレーションを防ぐ */
@@ -2582,13 +2647,13 @@ textarea::-webkit-scrollbar-thumb:hover {
       --chroma-fg: var(--chroma-neutral);
     }
     :host([color="primary"])    { --tag-hue: var(--hue-base); }
-    :host([color="blue"])       { --tag-hue: var(--hue-blue); }
-    :host([color="violet"])     { --tag-hue: var(--hue-violet); }
-    :host([color="pink"])       { --tag-hue: var(--hue-pink); }
+    :host([color="blue"])       { --tag-hue: var(--ui-tag-hue-blue); }
+    :host([color="violet"])     { --tag-hue: var(--ui-tag-hue-violet); }
+    :host([color="pink"])       { --tag-hue: var(--ui-tag-hue-pink); }
     
     /* Gold (Literature): Logic Correction */
     :host([color="gold"]) { 
-      --tag-hue: var(--hue-gold);
+      --tag-hue: var(--ui-tag-hue-gold);
       /* 背景: L96では白飛びするため、わずかに暗くして黄色味を出す (-3%) */ 
       --delta-l-bg: -3%; 
       /* 文字: 背景とのコントラストを稼ぐため、茶色方向へ大きく暗くする (-15%) */
@@ -2626,7 +2691,7 @@ textarea::-webkit-scrollbar-thumb:hover {
       --border-color: transparent;
     }
 
-    /* Solid Dark Mode Adjustment: Match system primary token logic (L65%) */
+    /* Solid Dark Mode Adjustment: Lightnessのみ system primary のL65%に揃える */
     @media (prefers-color-scheme: dark) {
       :host([variant="solid"]) {
         --bg-l: 65%;
@@ -2659,14 +2724,14 @@ textarea::-webkit-scrollbar-thumb:hover {
     |------------|-----------|-----------|---------------|---------------|
     | `neutral` | `--hue-base` | - | `Chroma = Neutral` | Meta / ID |
     | `primary` | `--hue-base` | `var(--hue-base)` | `0` | Default |
-    | `blue` | `--hue-blue` | `230` | `0` | Computer Science |
-    | `violet` | `--hue-violet`| `280` | `0` | Music |
-    | `gold` | `--hue-gold` | `85` | **Bg -3% / Fg -15%** | Literature |
-    | `pink` | `--hue-pink` | `340` | `0` | Art |
+    | `blue` | `--ui-tag-hue-blue` | `230` | `0` | Computer Science |
+    | `violet` | `--ui-tag-hue-violet`| `280` | `0` | Music |
+    | `gold` | `--ui-tag-hue-gold` | `85` | **Bg -3% / Fg -15%** | Literature |
+    | `pink` | `--ui-tag-hue-pink` | `340` | `0` | Art |
 
 - **Contrast Ratio Verification (WCAG AA Compliance)**:
 
-    index.mdの禁止事項に基づき、すべてのVariant×Color組み合わせで**最低4.5:1のコントラスト比**を保証します。以下は各組み合わせの実測値です。
+    index.mdの禁止事項に基づき、**`default` と `solid` Variant** で最低4.5:1のコントラスト比を保証します。`outline` は背景依存のため保証対象外です。以下は各組み合わせの実測値です。
 
     **Light Mode:**
 
@@ -2695,7 +2760,7 @@ textarea::-webkit-scrollbar-thumb:hover {
 
     | Variant | Color | Foreground (L/C/H) | Background (L/C/H) | Contrast Ratio | Status |
     |---------|-------|-------------------|-------------------|----------------|--------|
-    | `default` | `neutral` | `90% / 0.01 / 250` | `17% / 0.02 / 250` | 11.8:1 | ✅ Pass |
+    | `default` | `neutral` | `90% / 0.01 / 250` | `17% / 0.01 / 250` | 11.8:1 | ✅ Pass |
     | `default` | `primary` | `90% / 0.072 / 250` | `17% / 0.04 / 250` | 11.8:1 | ✅ Pass |
     | `default` | `blue` | `90% / 0.072 / 230` | `17% / 0.04 / 230` | 11.8:1 | ✅ Pass |
     | `default` | `violet` | `90% / 0.072 / 280` | `17% / 0.04 / 280` | 11.8:1 | ✅ Pass |
@@ -2722,25 +2787,26 @@ textarea::-webkit-scrollbar-thumb:hover {
     - **通常（装飾的）**: `<span>` を使用。ロール不要。
     - **リスト内**: `<li>` 要素として配置し、`role="listitem"` は自動で適用される。
     - **Link Only (`href` のみ)**: ネイティブ `<a>` 要素を使用し、`role="link"` は自動で適用される。追加のARIA不要。
-    - **Removable Only (`removable` のみ)**: `<button>` 要素として実装し、`aria-label="[タグ名]を削除"` を付与。例: `aria-label="JavaScriptを削除"`。
+    - **Removable Only (`removable` のみ)**: ルートは非インタラクティブ要素（`<span>`）を維持し、内部に削除ボタン（`<button aria-label="[タグ名]を削除">`）を配置する。
     - **Link + Removable (`href` + `removable`)**:
         - 構造: `<div role="group" aria-label="[タグ名] タグ"><a>[テキスト]</a><button aria-label="削除"></button></div>`
         - スクリーンリーダーは「[タグ名] タグ グループ、内部: [タグ名] リンク、削除 ボタン」と読み上げる。
         - `role="group"` により、リンクと削除ボタンが論理的に関連していることを伝達する。
+    - **Disabled + Link (`disabled` + `href`)**: `aria-disabled="true"` と `tabindex="-1"` を付与し、クリック時は `preventDefault()` で遷移を抑止する。
 
 - **Contrast Ratio Guarantee (WCAG AA準拠)**:
-    - すべてのVariant×Color組み合わせで**最低4.5:1のコントラスト比**を保証済み（上記「Contrast Ratio Verification」テーブル参照）。
+    - `default` / `solid` Variantで**最低4.5:1のコントラスト比**を保証済み（上記「Contrast Ratio Verification」テーブル参照）。
     - `Separated Delta Logic` と `Chroma Dampening` により、黄色系（Gold）など視認性の難しい色相でも、数学的に一貫したコントラストを維持します。
     - **Exception**: `outline` Variantは背景色が `transparent` のため、親要素の背景色に依存します。実装者は使用時にコントラスト比を個別検証してください。
 
 - **Focus Indicator**:
     - Interactive Variant (`href` または `removable`) の場合は、システム共通の **Adaptive Focus** (`var(--animation-focus)`) を適用し、キーボード操作時のノイズを低減します。
-    - フォーカスリングは `outline: 2px solid var(--focus-ring-color)` + `outline-offset: 2px` で描画され、キーボード操作時のみ表示されます（`:focus-visible` 使用）。
+    - フォーカスリングは `outline: var(--focus-ring-width) solid var(--focus-ring-color)` + `outline-offset: var(--focus-ring-offset)` で描画され、キーボード操作時のみ表示されます（`:focus-visible` 使用）。
 
 - **Keyboard Navigation**:
     - リンク・削除ボタンは `Tab` キーで到達可能。
     - 削除ボタンは `Enter` または `Space` キーで起動。
-    - `disabled` 状態では、`tabindex="-1"` が自動適用され、フォーカス不可となります。
+    - `disabled` 状態では、リンク/削除ボタンともにフォーカス不可（`tabindex="-1"`）かつ操作不可となります。
 
 - **Screen Reader Announcements**:
     - 削除ボタンクリック時、`ui-tag-remove` イベントが発火した後、親コンポーネントは `aria-live="polite"` 領域に「[タグ名]を削除しました」などのメッセージを追加することを推奨します（コンポーネント自体は実装しない）。
@@ -2773,8 +2839,8 @@ textarea::-webkit-scrollbar-thumb:hover {
 | プロパティ | 属性 | 型/値 | デフォルト | 説明 |
 |------------|------|-------|------------|------|
 | `variant` | `variant` | `'solid' \| 'subtle' \| 'dot'` | `'solid'` | 視覚スタイル。 |
-| `count` | `count` | `number \| null` | `null` | 表示する数値。指定された場合、スロット内容よりも優先される。 |
-| `max` | `max` | `number` | `99` | 数値の最大表示リミット（表示は `99+`）。 |
+| `count` | `count` | `number \| null` | `null` | 表示する数値。`null` の場合はスロットを表示。`number` の場合は正規化ルールを適用。 |
+| `max` | `max` | `number` | `99` | 数値の最大表示リミット。表示は `{max}+`。正規化ルールを適用。 |
 | `color` | `color` | `'danger' \| 'primary' \| 'neutral' \| 'success' \| 'warning'` | `'primary'` | 意味的カラー。 |
 
 **スロット:**
@@ -2786,6 +2852,15 @@ textarea::-webkit-scrollbar-thumb:hover {
 **イベント:**
 
 バッジは情報表示専用コンポーネントであり、カスタムイベントは発行しません。
+
+**値の正規化ルール (`count` / `max`):**
+
+- `count === null` または `count === undefined`: 数値表示を行わず、`variant !== "dot"` の場合にスロットを表示。
+- `count` が `number`: `Math.floor(count)` を使用し、負数は `0` として扱う。
+- `count` が `NaN` / `Infinity` / `-Infinity`: 無効値として `0` を使用。
+- `max` は `Math.floor(max)` を使用し、`1` 未満は `1` に補正。
+- 表示値は `count > max ? \`${max}+\` : \`${count}\`` とする。
+- `aria-label` は表示文字列ではなく正規化後の実数値を使って生成する（例: 表示 `99+`、読み上げ `128 件`）。
 
 **4. スタイリングとトークンマッピング (Style & Tokens)**
 
@@ -2805,166 +2880,104 @@ textarea::-webkit-scrollbar-thumb:hover {
     - **Height**: `var(--control-height-2xs)` (16px) (行間 `1rem` に収まる高密度設計)
     - **Shape**: `border-radius: var(--radius-full)` (**全てのバッジは正円または楕円**。Dotも含む)
 - **Logic & Color System**:
-    - **High Contrast Strategy**: 11pxの文字を可読にするため、`Tag` コンポーネントと同様の **Delta L (明度補正)** ロジックを採用しますが、より厳格なコントラスト基準を適用します。
-    - **Subtle** の文字色は、元の色（L=55%付近）をそのまま使うと明るすぎるため、**L=40%程度まで強制的に減光**させます。
-    - **Chroma Strategy (Subtle)**: Tag (`0.6x`) よりも高い `0.8x` の彩度減衰率を採用していますが、これは**Bold Weight (700)** との組み合わせにより、文字のストローク幅が物理的に太いため、彩度ハレーションのリスクが低減されるためです。Tagの Medium Weight (500) では `0.6x` が必要ですが、Badgeでは太字により彩度を維持しても判読性が担保されます。
+    - **Token-Driven Strategy**: `index.md` の原則に従い、色は Semantic Token を唯一の参照元とします。Primitive値（生の `oklch(...)`）はコンポーネント仕様内で直接使用しません。
+    - **Small Text Rule Exception**: `11px` 利用は例外運用とし、`font-weight: 700` + `letter-spacing: --tracking-wider` + `4.5:1以上` を必須条件とします。
+    - **Subtle Variant**: `solid` の Semantic Token を基準に、`oklch(from var(--badge-bg) ...)` で背景・境界・文字を派生させます（`warning` のみ Delta補正あり）。
 
     ```css
     :host {
-      /* Base Logic (Subtle Variant) */
-      --bg-l: 96%;
-      --fg-l: 40%; /* Tag(45%)よりもさらに深くし、細いフォントの視認性を稼ぐ */
+      /* Solidの参照元（Semantic Token） */
+      --badge-bg: var(--primary);
+      --badge-fg: var(--on-primary);
+      /* DotはSolidと同じ色を利用 */
+      --badge-dot: var(--badge-bg);
 
-      --chroma-bg: var(--chroma-subtle);
-      --chroma-fg: calc(var(--chroma-ui) * 0.8); /* Bold Weightのため、Tagより高い彩度を維持可能 */
-
-      --delta-l-bg: 0%;
-      --delta-l-fg: 0%;
+      /* Subtle派生用Delta。warningのみ上書き */
+      --badge-subtle-bg-delta: 41%;
+      --badge-subtle-fg-delta: -15%;
+      --badge-subtle-border-delta: 36%;
     }
 
-    /* Color Mapping */
+    /* Color Mapping (Semantic Token Only) */
     :host([color="neutral"]) {
-      --badge-hue: var(--hue-base);
-      --chroma-bg: var(--chroma-neutral);
-      --chroma-fg: var(--chroma-neutral);
+      --badge-bg: var(--fg-default);
+      --badge-fg: var(--bg-default);
     }
-    :host([color="primary"]) { --badge-hue: var(--hue-primary); }
-    :host([color="success"]) { --badge-hue: 145; } /* Green */
-    :host([color="danger"])  { --badge-hue: 25; }  /* Red */
+    :host([color="primary"]) {
+      --badge-bg: var(--primary);
+      --badge-fg: var(--on-primary);
+    }
+    :host([color="success"]) {
+      --badge-bg: var(--success);
+      --badge-fg: var(--on-success);
+    }
+    :host([color="danger"]) {
+      --badge-bg: var(--danger);
+      --badge-fg: var(--on-danger);
+    }
     :host([color="warning"]) {
-      --badge-hue: 85; /* Amber */
-      /* Subtleバリアント: 黄色は背景・文字ともに視認性が低いため、強く補正 */
-      --delta-l-bg: -5%;
-      --delta-l-fg: -15%;
-    }
-
-    /* Dark Mode Override */
-    @media (prefers-color-scheme: dark) {
-      :host {
-        --bg-l: 15%;
-        --fg-l: 90%;
-      }
-      /* Dark Modeでは黄色の視認性問題が軽減されるため、補正をリセット */
-      :host([color="warning"]) {
-        --delta-l-bg: 0%;
-        --delta-l-fg: 0%;
-      }
+      --badge-bg: var(--warning);
+      --badge-fg: var(--on-warning);
+      --badge-subtle-bg-delta: 16%;
+      --badge-subtle-fg-delta: -35%;
+      --badge-subtle-border-delta: 10%;
     }
     ```
 
     > **Note (Color Restriction):**
     > バッジはユーザーコンテンツではなく「システムの通知（Status）」を表すため、Tagのように拡張可能なジャンル色（Blue, Pink等）は持ちません。
-    > 常に `--hue-primary` や定義済みのセマンティックカラー（`danger`, `success` 等）のみを参照し、色による意味定義を固定します。
+    > 常に `--primary` / `--danger` / `--success` / `--warning` などのSemantic Tokenを参照し、色による意味定義を固定します。
 
 - **Variants**:
     - **Solid**:
         - `min-width: var(--control-height-2xs)` (16px - 正円を保証)
         - `padding: 0 var(--space-1)` (0 4px - テキスト時に左右余白を確保)
         - `max-width: 12ch` (3桁以上の数値や長いテキストの制限。`99+` は約2.5ch)
-        - **Background & Foreground**:
-            - `neutral`: `oklch(55% 0.2 var(--hue-base))` / `white`
-            - `primary`: `oklch(55% 0.2 var(--hue-primary))` / `white`
-            - `success`: `oklch(55% 0.18 145)` / `white`
-            - `danger`: `oklch(55% 0.2 25)` / `white`
-            - `warning`: `oklch(65% 0.16 85)` / `oklch(20% 0.08 85)` **(Special Case)**
-        - **Warning Exception**: 黄色背景 + 白文字の組み合わせはコントラスト比が不足するため、Warningのみ背景を `L=65%` に引き上げ、文字色を `L=20%` の暗色（茶色系）に変更します。
-        - **Dark Mode Adjustment**:
-            ```css
-            @media (prefers-color-scheme: dark) {
-              :host([variant="solid"]) {
-                /* Primary/Danger/Success/Neutral: L=65% に引き上げ（Tag Solidと同様） */
-                --solid-bg-l: 65%;
-              }
-              :host([variant="solid"][color="warning"]) {
-                /* Warning: L=75% + 白文字に変更（Dark Modeでは黄色+白が機能する） */
-                background-color: oklch(75% 0.16 85);
-                color: var(--white);
-              }
-            }
-            ```
+        - `background: var(--badge-bg)`
+        - `color: var(--badge-fg)`
         - **用途**: 未読数 (`count`) や、特に強調すべきステータス。
     - **Subtle**:
         - `padding: 0 var(--space-2)` (0 8px)
-        - `background: oklch(calc(var(--bg-l) + var(--delta-l-bg)) var(--chroma-bg) var(--badge-hue))`
-        - `color: oklch(calc(var(--fg-l) + var(--delta-l-fg)) var(--chroma-fg) var(--badge-hue))`
-        - `border: var(--border-width) solid oklch(calc(var(--bg-l) - 5%) var(--chroma-bg) var(--badge-hue))`
-        - **Note**: ボーダー色は背景よりわずかに暗く設定し (`-5%`)、小サイズでの輪郭認識を補強します。
+        - `background: oklch(from var(--badge-bg) calc(l + var(--badge-subtle-bg-delta)) calc(c * 0.35) h)`
+        - `color: oklch(from var(--badge-bg) calc(l + var(--badge-subtle-fg-delta)) calc(c * 0.85) h)`
+        - `border: var(--border-width) solid oklch(from var(--badge-bg) calc(l + var(--badge-subtle-border-delta)) calc(c * 0.45) h)`
+        - **Note**: SubtleはSolidの意味論を維持したままトーンのみ落とす。`warning` は Deltaを個別補正してAAを維持します。
         - **用途**: `Beta`, `New`, `Draft` などのテキストラベル。
     - **Dot**:
         - `width: var(--space-2)` (8px), `height: var(--space-2)` (8px)
         - `min-width: 8px`, `min-height: 8px` (正円を物理的に強制)
         - `padding: 0` (Dotは内容を持たない)
         - `border-radius: var(--radius-full)` (正円)
-        - **Background**:
-            - `neutral`: `oklch(55% 0.2 var(--hue-base))`
-            - `primary`: `oklch(55% 0.2 var(--hue-primary))`
-            - `success`: `oklch(55% 0.18 145)`
-            - `danger`: `oklch(55% 0.2 25)`
-            - `warning`: `oklch(65% 0.16 85)` (Solid同様にL=65%へ引き上げ)
-        - **Dark Mode Adjustment**: `L=65%` へ引き上げ（Solidと同様）
+        - `background: var(--badge-dot)`
         - **用途**: よくアイコンの右上に赤色で表示されるコンテンツの更新有無のみを伝える最小単位。
 
 - **Contrast Ratio Verification (WCAG AA Compliance)**:
 
-    index.mdの禁止事項に基づき、すべてのVariant×Color組み合わせで**最低4.5:1のコントラスト比**を保証します。以下は各組み合わせの実測値です。
+    index.mdの禁止事項に基づき、**テキストを持つ全組み合わせで最低4.5:1** を保証します。以下はトークン組み合わせごとの保証マトリクスです。
 
-    **Light Mode:**
+    **Token Pair Guarantee (Light / Dark 共通):**
 
-    | Variant | Color | Foreground (L/C/H) | Background (L/C/H) | Contrast Ratio | Status |
-    |---------|-------|-------------------|-------------------|----------------|--------|
-    | `subtle` | `neutral` | `40% / 0.01 / var(--hue-base)` | `96% / 0.01 / var(--hue-base)` | 9.8:1 | ✅ Pass |
-    | `subtle` | `primary` | `40% / 0.096 / var(--hue-primary)` | `96% / 0.04 / var(--hue-primary)` | 9.8:1 | ✅ Pass |
-    | `subtle` | `success` | `40% / 0.096 / 145` | `96% / 0.04 / 145` | 9.8:1 | ✅ Pass |
-    | `subtle` | `danger` | `40% / 0.096 / 25` | `96% / 0.04 / 25` | 9.8:1 | ✅ Pass |
-    | `subtle` | `warning` | `25% / 0.096 / 85` | `91% / 0.04 / 85` | 13.2:1 | ✅ Pass |
-    | `solid` | `neutral` | `100% / 0 / 0` (white) | `55% / 0.2 / var(--hue-base)` | 5.8:1 | ✅ Pass |
-    | `solid` | `primary` | `100% / 0 / 0` (white) | `55% / 0.2 / var(--hue-primary)` | 5.8:1 | ✅ Pass |
-    | `solid` | `success` | `100% / 0 / 0` (white) | `55% / 0.18 / 145` | 5.8:1 | ✅ Pass |
-    | `solid` | `danger` | `100% / 0 / 0` (white) | `55% / 0.2 / 25` | 5.8:1 | ✅ Pass |
-    | `solid` | `warning` | `20% / 0.08 / 85` | `65% / 0.16 / 85` | 6.5:1 | ✅ Pass |
-    | `dot` | `neutral` | N/A (背景色のみ) | `55% / 0.2 / var(--hue-base)` | N/A | ✅ 親要素との比較が必要 |
-    | `dot` | `primary` | N/A (背景色のみ) | `55% / 0.2 / var(--hue-primary)` | N/A | ✅ 親要素との比較が必要 |
-    | `dot` | `success` | N/A (背景色のみ) | `55% / 0.18 / 145` | N/A | ✅ 親要素との比較が必要 |
-    | `dot` | `danger` | N/A (背景色のみ) | `55% / 0.2 / 25` | N/A | ✅ 親要素との比較が必要 |
-    | `dot` | `warning` | N/A (背景色のみ) | `65% / 0.16 / 85` | N/A | ✅ 親要素との比較が必要 |
-
-    **Dark Mode:**
-
-    | Variant | Color | Foreground (L/C/H) | Background (L/C/H) | Contrast Ratio | Status |
-    |---------|-------|-------------------|-------------------|----------------|--------|
-    | `subtle` | `neutral` | `90% / 0.01 / var(--hue-base)` | `15% / 0.02 / var(--hue-base)` | 13.5:1 | ✅ Pass |
-    | `subtle` | `primary` | `90% / 0.096 / var(--hue-primary)` | `15% / 0.04 / var(--hue-primary)` | 13.5:1 | ✅ Pass |
-    | `subtle` | `success` | `90% / 0.096 / 145` | `15% / 0.04 / 145` | 13.5:1 | ✅ Pass |
-    | `subtle` | `danger` | `90% / 0.096 / 25` | `15% / 0.04 / 25` | 13.5:1 | ✅ Pass |
-    | `subtle` | `warning` | `90% / 0.096 / 85` | `15% / 0.04 / 85` | 13.5:1 | ✅ Pass |
-    | `solid` | `neutral` | `100% / 0 / 0` (white) | `65% / 0.2 / var(--hue-base)` | 4.6:1 | ✅ Pass |
-    | `solid` | `primary` | `100% / 0 / 0` (white) | `65% / 0.2 / var(--hue-primary)` | 4.6:1 | ✅ Pass |
-    | `solid` | `success` | `100% / 0 / 0` (white) | `65% / 0.18 / 145` | 4.6:1 | ✅ Pass |
-    | `solid` | `danger` | `100% / 0 / 0` (white) | `65% / 0.2 / 25` | 4.6:1 | ✅ Pass |
-    | `solid` | `warning` | `100% / 0 / 0` (white) | `75% / 0.16 / 85` | 3.2:1 | ⚠️ **Borderline** (Acceptable) |
-    | `dot` | `neutral` | N/A (背景色のみ) | `65% / 0.2 / var(--hue-base)` | N/A | ✅ 親要素との比較が必要 |
-    | `dot` | `primary` | N/A (背景色のみ) | `65% / 0.2 / var(--hue-primary)` | N/A | ✅ 親要素との比較が必要 |
-    | `dot` | `success` | N/A (背景色のみ) | `65% / 0.18 / 145` | N/A | ✅ 親要素との比較が必要 |
-    | `dot` | `danger` | N/A (背景色のみ) | `65% / 0.2 / 25` | N/A | ✅ 親要素との比較が必要 |
-    | `dot` | `warning` | N/A (背景色のみ) | `75% / 0.16 / 85` | N/A | ✅ 親要素との比較が必要 |
+    | Variant | Color | Foreground Token | Background Token | Contrast |
+    |---------|-------|------------------|------------------|----------|
+    | `solid` | `primary` | `--on-primary` | `--primary` | 4.5:1 以上 |
+    | `solid` | `success` | `--on-success` | `--success` | 4.5:1 以上 |
+    | `solid` | `danger` | `--on-danger` | `--danger` | 4.5:1 以上 |
+    | `solid` | `warning` | `--on-warning` | `--warning` | 4.5:1 以上 |
+    | `solid` | `neutral` | `--bg-default` | `--fg-default` | 4.5:1 以上 |
+    | `subtle` | `all` | `oklch(from var(--badge-bg) ...)` | `oklch(from var(--badge-bg) ...)` | 4.5:1 以上（自動テストで検証） |
+    | `dot` | `all` | N/A | `--badge-dot` | 非テキスト 3.0:1 以上 |
 
     > **Note on Warning (Dark Mode Solid):**
-    > Dark ModeでのSolid × Warningの組み合わせは、コントラスト比が 3.2:1 とWCAG AA基準（4.5:1）を若干下回ります。ただし、WCAG 2.1では「**Large Text**」（18pt以上または14pt Bold以上）の場合、**3.0:1**が許容されます。Badgeは `11px Bold (700)` であり、厳密には「Large Text」ではありませんが、以下の理由により実用上許容可能と判断します:
-    > - **Bold Weight (700)**: 通常のテキスト（400-500）より視認性が高い
-    > - **Warning色の意味的特性**: 黄色系は本質的に高明度であり、Dark Mode環境では背景（L=12%）に対して十分に目立つ
-    > - **代替手段**: より厳格なアクセシビリティが必要な場合、`variant="subtle"` を使用することで 13.5:1 のコントラストが保証されます
-    >
-    > この判断は、「Readability First」の原則と現実的な実装の両立を図ったものです。
+    > `solid + warning` は `index.md` の定義済みペア `--warning` / `--on-warning` をそのまま使用し、4.8:1 を確保します。例外扱いはしません。
 
     > **Note on Dot Variant:**
     > Dotは文字を持たないため、親要素の背景色との**非テキストコントラスト比（3.0:1以上）** を満たす必要があります。
-    > - Light Mode: `--bg-default` (L=98%) に対し、Dot背景 (L=55%) は **約8.5:1** で十分に識別可能
-    > - Dark Mode: `--bg-default` (L=12%) に対し、Dot背景 (L=65%) は **約9.2:1** で十分に識別可能
-    > - 実装者は、カスタム背景色（`--bg-surface-2` 等）上にDotを配置する場合、個別にコントラスト比を検証してください。
+    > - `--bg-default` / `--bg-surface-2` 上で3.0:1以上を維持すること。
+    > - 実装者は、カスタム背景色上にDotを配置する場合、個別にコントラスト比を検証してください。
 
 **5. アクセシビリティ (A11y)**
 
-- **Contrast Safety**: 上記「Contrast Ratio Verification」テーブルに示す通り、極小文字（11px）であっても**ほぼ全ての組み合わせで4.5:1以上**のコントラスト比を達成しています。
+- **Contrast Safety**: 上記「Contrast Ratio Verification」テーブルに示す通り、極小文字（11px）であっても**テキストを持つ全組み合わせで4.5:1以上**のコントラスト比を達成しています。
 - **Role**:
     - **Static Label**: `role` なし（`<span>`）。記事のステータス表示など、最初から表示されている場合。
     - **Live Notification**: `role="status"`。未読数カウントなど、動的に更新・出現する場合。
@@ -3071,9 +3084,9 @@ textarea::-webkit-scrollbar-thumb:hover {
 
 | 対象 | Duration | Easing | 根拠 |
 |------|----------|--------|------|
-| Dropdown 展開 | `var(--duration-normal)` (150ms) | `var(--ease-out)` | `index.md` L867「標準トランジション（ドロップダウン展開）」に明記 |
+| Dropdown 展開 | `var(--duration-normal)` (150ms) | `var(--ease-out)` | `index.md`「標準トランジション（ドロップダウン展開）」に明記 |
 | Dropdown 退出 | `var(--duration-instant)` (0ms) | - | 即座に消滅し、次の作業を阻害しない |
-| Motion Reduction | `0.01ms` (実質即時) | - | `@media (prefers-reduced-motion: reduce)` 環境下では `index.md` L1109-1138 のグローバル定義により自動短縮 |
+| Motion Reduction | `0.01ms` (実質即時) | - | `@media (prefers-reduced-motion: reduce)` 環境下では `index.md` のグローバル定義により自動短縮 |
 
 **6. キーボードインタラクション (Keyboard Interaction)**
 
@@ -3153,47 +3166,19 @@ Windows ハイコントラストモード (`forced-colors: active`) への対応
 
 **9. 印刷スタイル (Print Styles)**
 
-印刷時は、インタラクティブ要素（省略ボタン、ホバー効果）を排除し、全パスをテキストとして展開表示します。
+`index.md` のグローバル印刷方針（ナビゲーション要素の非表示）に従い、パンくずリストは印刷時に非表示とします。
 
 ```css
 @media print {
-  /* 省略ボタンを非表示 */
-  ui-breadcrumbs [aria-label="中間ページを表示"] {
+  ui-breadcrumbs {
     display: none !important;
-  }
-
-  /* 全ての項目を表示（Collapsingを解除） */
-  ui-breadcrumbs li {
-    display: inline !important;
-  }
-
-  /* リンク要素の装飾を最小化 */
-  ui-breadcrumbs a {
-    color: inherit !important;
-    text-decoration: underline !important;
-    background: none !important;
-    box-shadow: none !important;
-  }
-
-  /* 現在のページの強調を維持 */
-  ui-breadcrumbs [aria-current="page"] {
-    font-weight: var(--font-bold) !important;
-    color: inherit !important;
-  }
-
-  /* セパレーターは維持（構造の可読性） */
-  ui-breadcrumbs .separator {
-    color: inherit !important;
-    opacity: 0.6;
   }
 }
 ```
 
 **Rationale:**
-- 省略ボタンは紙面上で意味をなさないため完全に非表示とし、全パスを展開表示します。
-- リンクの色・背景は削除し、下線のみでハイパーリンクであることを示します（インク節約）。
-- 現在のページは太字により強調を維持します。
-- セパレーターはパスの区切りを理解するために維持しますが、淡色化してノイズを抑えます。
+- パンくずリストはナビゲーション要素であり、紙面ではインタラクション不可能です。
+- アプリ全体の印刷方針（`header` / `nav` 非表示）と統一し、仕様の衝突を防ぎます。
 
 #### ツリーアイテム (Tree Item) `<ui-tree-item>`
 
@@ -3232,12 +3217,12 @@ Windows ハイコントラストモード (`forced-colors: active`) への対応
     - Full Width Hover: ホバー時の背景色は親コンテナの幅いっぱいに広がります。ネスト構造では各アイテムの `::before` 疑似要素を絶対配置 (`position: absolute; left: 0; right: 0`) で親コンテナの左右端まで拡張し、`z-index: -1` で背面に配置します。
     - Padding Left: `var(--space-4)` (ネスト構造による自然な積み重ね)
     - **Touch Target (Compact密度)**:
-        - 視覚的には24pxですが、タッチデバイスでのアクセシビリティ（WCAG 2.5.8）を保証するため、`::after` 疑似要素で最低 `44px` (`--control-min-touch`) のヒットエリアを確保します。
+        - 視覚サイズは `24px`（WCAG 2.5.8 AA の最小要件）を満たしつつ、運用上は `::after` 疑似要素で `44px`（`--control-min-touch`、SC 2.5.5 推奨）まで拡張します。
         - この拡大されたヒットエリアがラベルテキストやアイコンの操作を阻害しないよう、コンテンツには `position: relative; z-index: 1` を付与して前面に配置します。
 - **State Colors**:
     - Default: `color: var(--fg-muted)`
     - Hover: `background: var(--bg-hover); color: var(--fg-default)`
-    - Selected: `background: var(--bg-active); color: var(--primary); font-weight: var(--font-medium)`
+    - Selected: `background: var(--bg-surface-active); color: var(--primary); font-weight: var(--font-medium)`
     - **Transition**: `background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out)`
 - **Indent Guide (Structure)**:
     - **Implementation**: アイテムごとの計算ではなく、ネストされたグループコンテナ (`role="group"`) の左端にボーダーを描画します。
@@ -3256,19 +3241,14 @@ Windows ハイコントラストモード (`forced-colors: active`) への対応
     - `Enter`: 選択 / アクション実行
     - `Right`: 展開（展開済みの場合は最初の子へ移動）
     - `Left`: 収縮（収縮済みの場合は親へ移動）
-    - `Up` / `Down`: 前後の可視項目へフォーカス移動
-    - `Home` / `End`: 最初/最後の項目へ移動
-    - `Esc`: **ツリー全体からフォーカスを外し**、トリガー元（サイドバーのトグルボタン等）へフォーカスを戻します。ツリーが常時表示の場合、フォーカスを次のランドマーク（メインコンテンツ等）へ移動させます。
+    - `Space`: 選択 / アクション実行（`Enter` と同等）
     - `*` (アスタリスク): **非採用**。WAI-ARIA標準では「同階層の全兄弟ノードを展開」機能が定義されていますが、本アプリは閲覧体験に特化しており、一括操作によるレイアウトの大規模変化は「読むリズム（Flow State）」を分断するため、意図的に除外しています。
-    - **Type-ahead**: 文字入力で該当項目へフォーカスジャンプ。
-        - **Buffer Reset**: 最後の入力から 500ms 経過でバッファをクリア。
-        - **Matching**: 複数文字のプレフィックスマッチング（例: "do" → "documents"）をサポート。大文字/小文字は区別しません。
-        - **Multiple Matches**: 同じプレフィックスを持つ項目が複数ある場合、連続入力で巡回します。
+    - **Delegated to `<ui-file-tree>`**: `Up` / `Down` / `Home` / `End` / `Esc` / Type-ahead はルートコンテナ側の Event Delegation で管理します（責務分離）。
 - **Focus Indicator**:
     - グローバル定義の `:focus-visible` スタイルおよび **Adaptive Focus** 戦略（`var(--animation-focus)`）を使用します。
     - `outline: var(--focus-ring-width) solid var(--focus-ring-color)`
     - `outline-offset: var(--focus-ring-offset)`
-    - `border-radius: var(--radius-sm)`
+    - `border-radius: var(--focus-ring-radius)`
 - **Motion Reduction**:
     - `@media (prefers-reduced-motion: reduce)` 環境下では、`index.md` のグローバル定義により全てのトランジション・アニメーションが自動的に `0.01ms` に短縮されます。
 - **Forced Colors Mode**:
@@ -3286,6 +3266,8 @@ Windows ハイコントラストモード (`forced-colors: active`) への対応
       [role="treeitem"][aria-selected="true"] {
         background-color: Highlight;
         color: HighlightText;
+        outline: var(--border-width-thick) solid CanvasText;
+        outline-offset: -1px;
         forced-color-adjust: none;
       }
     }
@@ -3295,6 +3277,15 @@ Windows ハイコントラストモード (`forced-colors: active`) への対応
 
 - **Initial State**: ページロード時、現在のアクティブな項目までのパスのみを自動展開します。
 - **Auto Scroll**: アクティブな項目が可視領域外にある場合、**`scrollIntoView({ behavior: 'instant', block: 'nearest' })`** で、最小限の視覚移動でフレームインさせます。コンテキスト（親要素）の位置関係を乱す唐突な中央配置（Center）は避けます。
+
+**7. 受け入れ基準 (Acceptance Checks)**
+
+- `Esc` で必ずトリガー元へフォーカスが戻ること（例外動作を作らない）。
+- `Enter` / `Space` で同等の選択動作になること。
+- Type-ahead は 500ms でバッファクリアされ、同一プレフィックス候補を巡回できること。
+- `prefers-reduced-motion: reduce` で展開/収縮・色遷移が `0.01ms` 相当に短縮されること。
+- `forced-colors: active` でインデントガイドと選択状態（背景+アウトライン）が視認できること。
+- Compact 密度で視覚 `24px`、物理ヒットエリア `44px` が確保されること。
 
 #### ファイルツリー (File Tree) `<ui-file-tree>`
 
@@ -3309,11 +3300,11 @@ Windows ハイコントラストモード (`forced-colors: active`) への対応
 - **Reference**: WAI-ARIA Tree View Pattern
 - **Porting Strategy**:
     - `@lion/ui` の `LionTree` コンポーネントが持つ Roving Tabindex 管理ロジックを参照し、`src/lib/ui-core/tree` にポーティングします。
-    - **Focus Management**: コンテナが Tab フォーカスを受け取った際、最初の可視アイテム（または `aria-selected="true"` なアイテム）へ自動移動する Entry Point ロジックを実装します。
+    - **Focus Management**: **Roving Tabindex を単一のフォーカスモデルとして採用**します。可視アイテムのうち 1 つだけを `tabindex="0"`、それ以外を `tabindex="-1"` にし、`Tab` エントリー時は `selected` 項目（なければ最初の可視項目）をエントリーポイントにします。
     - **Keyboard Navigation Delegation**: 矢印キー（`↑` `↓`）による項目間移動、`Home` / `End` による先頭/末尾移動は、コンテナレベルで一括管理（Event Delegation）します。個別のアイテムにリスナーを付与せず、パフォーマンスを最適化します。
 - **Data Flow**:
     - **Input**: `items` プロパティ（`TreeNode[]` 型）を受け取り、再帰的に `<ui-tree-item>` をレンダリングします。
-    - **State Synchronization**: 選択状態（`selected`）および展開状態（`expanded`）は、各 `<ui-tree-item>` が管理しますが、コンテナは `aria-activedescendant` または内部状態として現在のフォーカス位置を追跡します。
+    - **State Synchronization**: 選択状態（`selected`）および展開状態（`expanded`）は各 `<ui-tree-item>` が管理し、コンテナは `active-id` と roving tabindex により現在フォーカス位置を追跡します。
 
 **3. 技術仕様とAPI (Technical Specs)**
 
@@ -3321,7 +3312,7 @@ Windows ハイコントラストモード (`forced-colors: active`) への対応
 |------------|------|-------|------|
 | `items` | - | `TreeNode[]` | ツリー構造を表す再帰的なデータオブジェクト。下記「TreeNode 型定義」を参照。 |
 | `variant` | `variant` | `'default' \| 'card'` | 原則 `default` (背景なし)。`card` は独立したウィジェットとして使う場合のみ。 |
-| `loading` | `loading` | `boolean` | データ取得中の状態フラグ。`index.md` L880 の `--timeout-async-threshold` (500ms) に基づき、500ms未満で完了する場合はスケルトンを表示せず、超過時のみ表示します。 |
+| `loading` | `loading` | `boolean` | データ取得中の状態フラグ。`index.md` の `--timeout-async-threshold` (500ms) に基づき、500ms未満で完了する場合はスケルトンを表示せず、超過時のみ表示します。 |
 | `active-id` | `active-id` | `string` | 現在フォーカスされているアイテムの `id`。初期値は最初の可視アイテムまたは `selected` なアイテムの `id`。 |
 | `density` | `density` | `'normal' \| 'compact'` | 全アイテムの高さ密度。`normal` (32px) または `compact` (24px)。デフォルトは `normal`。 |
 
@@ -3374,7 +3365,7 @@ type TreeNode = {
     background-color var(--duration-fast) var(--ease-out),
     border-color var(--duration-fast) var(--ease-out)
     ```
-    - **Rationale**: `index.md` L894-930 の禁止事項に従い、`transition: all` を避け、明示的なプロパティリストを使用します。Card バリアントへの切り替え時に背景とボーダーがスムーズに遷移します。
+    - **Rationale**: `index.md` の禁止事項に従い、`transition: all` を避け、明示的なプロパティリストを使用します。Card バリアントへの切り替え時に背景とボーダーがスムーズに遷移します。
 
 **Container (Default)**
 
@@ -3385,19 +3376,20 @@ type TreeNode = {
 **Container (Variant: Card)**
 
 - `background`: `var(--bg-surface-2)`
-    - **Rationale**: `index.md` L256-260 の Background トークン定義において、`--bg-surface-2` は「Elevated (Card, Dropdown)」として定義されています。Card として独立配置される場合、Base Layer (`--bg-surface-1`) ではなく Elevated レイヤーを使用することで、視覚的な浮遊感（深度）を表現します。
+    - **Rationale**: `index.md` の Background トークン定義において、`--bg-surface-2` は「Elevated (Card, Dropdown)」として定義されています。Card として独立配置される場合、Base Layer (`--bg-surface-1`) ではなく Elevated レイヤーを使用することで、視覚的な浮遊感（深度）を表現します。
 - `border`: `var(--border-width) solid var(--border-default)`
 - `border-radius`: `var(--radius-md)`
 - `padding`: `var(--space-4)`
 - `box-shadow`: `var(--elevation-md)`
-    - **Rationale**: `index.md` L695-784 の深度表現セクションで定義されたセマンティックトークンを使用します。Card バリアントは Elevated レイヤーに相当するため、`--elevation-md` により Light/Dark Mode 間で自動的にシャドウが切り替わります。
+    - **Rationale**: `index.md` の深度表現セクションで定義されたセマンティックトークンを使用します。Card バリアントは Elevated レイヤーに相当するため、`--elevation-md` により Light/Dark Mode 間で自動的にシャドウが切り替わります。
+- **Dark Mode Edge Highlight (推奨)**: `inset 0 1px 0 0 oklch(100% 0 0 / 0.1)` を併用し、Dark Mode で Elevated Surface のエッジ視認性を確保します（`index.md` の深度戦略準拠）。
 
 **Overflow Strategy**
 
 - **Truncation**: アイテム名が横幅を超える場合、水平スクロールは原則3「Flow State」を分断するため採用しません。`text-overflow: ellipsis` で省略表示します。
 - **Hover Reveal (Tooltip)**:
     - 省略されたアイテムにホバーまたはフォーカスした際、`<ui-tooltip>` を表示して全名称を提示します。
-    - **Timing**: `--duration-instant` (0ms) で即座に表示します。`index.md` L864-880 の「認識できる最速の速度」原則に基づき、ツールチップは思考速度を妨げない即応性を持ちます。
+    - **Timing**: `--duration-instant` (0ms) で即座に表示します。`index.md` の「認識できる最速の速度」原則に基づき、ツールチップは思考速度を妨げない即応性を持ちます。
     - **Detection Logic**: JavaScript により `scrollWidth > clientWidth` を検出した場合のみツールチップを有効化します。省略されていない項目には表示しません。
     - **Note**: ネイティブの `title` 属性は表示遅延（通常 500ms-1000ms）が大きく、原則3「即応性」に反するため、**使用禁止**とします。
 
@@ -3406,18 +3398,17 @@ type TreeNode = {
 **ARIA Role & Attributes**
 
 - **Role**: `role="tree"`
-- **Label**: `aria-label="File tree"` または `aria-labelledby` で適切なラベルを提供します。
+- **Label**: `aria-label="ファイルツリー"` または `aria-labelledby` で適切なラベルを提供します。
 - **Orientation**: `aria-orientation="vertical"` (デフォルト動作を明示)
 
 **Focus Delegation (Entry Point)**
 
 - **Tab Entry**:
-    - ユーザーが `Tab` キーでコンテナにフォーカスした場合、コンテナ自体 (`:host`) は `tabindex="-1"` で直接フォーカスを受けません。
-    - 代わりに、JavaScript により自動的に**最初の可視アイテム**（`items[0]` に対応する `<ui-tree-item>`）、または `aria-selected="true"` なアイテムへフォーカスを移動させます。
+    - ユーザーが `Tab` キーでツリーへ入る際は、roving tabindex で `tabindex="0"` になっている `ui-tree-item` に直接フォーカスします（コンテナ自体をフォーカス対象にしません）。
+    - 初期状態では `selected` 項目（未指定時は最初の可視項目）を `tabindex="0"` とし、他は `tabindex="-1"` とします。
     - **Rationale**: WAI-ARIA Tree View Pattern の標準挙動に準拠し、ユーザーが迷子にならず即座にキーボードナビゲーション（矢印キー操作）を開始できるようにします。
 - **Tab Exit**:
-    - ツリー内の最後のインタラクティブ要素（最後の `<ui-tree-item>`）から `Tab` キーで離脱する際、次のフォーカス可能要素へ移動します。
-    - `Shift + Tab` で逆方向に離脱する場合も同様です。
+    - `Tab` / `Shift + Tab` ではネイティブのタブ順に従ってツリー外へ離脱します。フォーカストラップは実装しません。
 
 **Keyboard Navigation (Container Level)**
 
@@ -3428,16 +3419,18 @@ type TreeNode = {
 | `↑` / `↓` | 前後の可視項目へフォーカス移動 | 収縮されたノードの子要素はスキップします。 |
 | `Home` | 最初の項目へ移動 | — |
 | `End` | 最後の可視項目へ移動 | — |
-| `Esc` | ツリー全体からフォーカスを外す | トリガー元（サイドバーのトグルボタン等）へフォーカスを戻します。ツリーが常時表示の場合、次のランドマーク（`<main>` 等）へ移動させます。 |
+| `Esc` | ツリー全体からフォーカスを外す | トリガー元（サイドバーのトグルボタン等）へフォーカスを戻します。 |
+| `Type-ahead` | 文字入力で該当項目へフォーカス移動 | 500ms無入力でバッファをクリアし、同一プレフィックス候補を巡回します。 |
 
-> **Note**: `→` / `←` / `Enter` / `Space` / Type-ahead 等の操作は、個別の `<ui-tree-item>` が担当します。詳細は Tree Item の仕様を参照してください。
+> **Note**: `→` / `←` / `Enter` / `Space` は個別の `<ui-tree-item>` が担当します。`↑` / `↓` / `Home` / `End` / `Esc` / Type-ahead は `<ui-file-tree>` が担当します。
 
 **State Handling**
 
 - **Loading (Latency Compensation)**:
-    - **Threshold**: `index.md` L880-893 の `--timeout-async-threshold` (500ms) に基づきます。
+    - **Threshold**: `index.md` の `--timeout-async-threshold` (500ms) に基づきます。
     - **500ms未満**: データ取得が500ms未満で完了する場合、スケルトンを表示せず、完了後に即座にツリーをレンダリングします。これにより**視覚的フリッカー（ノイズ）を回避**し、原則2「Flow State」を維持します。
     - **500ms超過**: データ取得が500msを超える場合、スケルトン表示を開始します。この時点で `aria-busy="true"` を付与し、スクリーンリーダーへ通知します。
+    - **完了時**: データ取得完了時に `aria-busy="false"` へ戻し、ルートに `aria-label="読み込み中"`（または `aria-labelledby`）を提供して状態を明示します。
     - **Implementation**:
         ```typescript
         const LOADING_THRESHOLD = 500; // ms
@@ -3453,7 +3446,7 @@ type TreeNode = {
         showSkeleton = false;
         ```
     - **Skeleton Style**:
-        - `index.md` L1980-2030 で定義されたスケルトンUIパターンに準拠します。
+        - `index.md` で定義されたスケルトンUIパターンに準拠します。
         - 背景: `var(--skeleton-bg)` (`--bg-fill-neutral`)
         - シマーエフェクト: `@keyframes shimmer` (`--skeleton-shimmer`)
         - 各項目は `--control-height-md` (32px) の高さを持つプレースホルダーとしてレンダリングします。
@@ -3462,15 +3455,15 @@ type TreeNode = {
 - **Empty (No Items)**:
     - データが存在しない（`items.length === 0`）場合でも、ルートコンテナはレンダリングし続けます（レイアウトシフト防止）。
     - **Empty State Display**:
-        - **Simplified Pattern**: 本コンポーネントの Empty State は、`index.md` L1905-1938 で定義された完全なエンプティステート（アイコン + タイトル + 説明文 + アクション）ではなく、**簡略版**（テキストのみ）を採用します。
+        - **Simplified Pattern**: 本コンポーネントの Empty State は、`index.md` で定義された完全なエンプティステート（アイコン + タイトル + 説明文 + アクション）ではなく、**簡略版**（テキストのみ）を採用します。
         - **Rationale**: ファイルツリーは補助的なナビゲーション要素であり、Empty State 自体が主要なアクション対象ではないためです。完全なエンプティステートは、データが主役となるメインコンテンツ領域（リストビュー、ダッシュボード等）に適用します。
     - **Empty State Styling**:
-        - Text: `"No items"`
+        - Text: `"項目がありません"`
         - Color: `var(--fg-subtle)`
         - Font: `--text-sm` (13px) / `var(--font-normal)` (400)
         - Alignment: `text-align: center`
         - Padding: `var(--space-8) var(--space-4)`
-        - Role: `role="status"` を付与し、スクリーンリーダーへ状態変化を通知します（`index.md` L1218-1239 参照）。
+        - Role: `role="status"` を付与し、スクリーンリーダーへ状態変化を通知します（`index.md` 参照）。
 
 **6. 初期化とスクロール挙動 (Initialization Strategy)**
 
@@ -3487,7 +3480,7 @@ type TreeNode = {
 
 - **Trigger**: 初期化時に `selected: true` なアイテムが可視領域外にある場合、または `active-id` がプログラム的に変更された場合。
 - **Method**: `scrollIntoView({ behavior: 'instant', block: 'nearest' })`
-    - **Rationale**: `index.md` L1610-1632 のスクロール独立性戦略に基づき、最小限の視覚移動でフレームインさせます。
+    - **Rationale**: `index.md` のスクロール独立性戦略に基づき、最小限の視覚移動でフレームインさせます。
     - `block: 'nearest'`: 上端または下端に最も近い位置へ配置します。中央配置（`center`）は唐突で、コンテキスト（親要素）の位置関係を乱すため避けます。
     - `behavior: 'instant'`: 初期化時のスクロールはアニメーションなしで即座に完了します。ページロード後のアニメーションは視覚的ノイズとなるためです。
 
@@ -3495,24 +3488,33 @@ type TreeNode = {
 
 - **User Interaction**: ユーザーが矢印キーや Enter で項目を操作した際、フォーカスが可視領域外に移動する場合、自動的に `scrollIntoView({ behavior: 'smooth', block: 'nearest' })` を実行します。
     - **Difference**: ユーザー操作時は `behavior: 'smooth'` とし、原則3「即応性」に基づく滑らかなフィードバックを提供します。
-    - **Motion Reduction**: `@media (prefers-reduced-motion: reduce)` 環境下では、`behavior: 'instant'` に自動的にフォールバックします（`index.md` L1099-1148 のグローバル定義）。
+    - **Motion Reduction**: `window.matchMedia('(prefers-reduced-motion: reduce)').matches` を評価し、`true` の場合は `behavior: 'instant'` を明示的に指定します。
 
 **7. モーション軽減 (Motion Reduction)**
 
-- **Adaptive Focus**: `index.md` L1152-1213 で定義された Adaptive Focus アニメーション（`--animation-focus`）は、グローバル定義により `@media (prefers-reduced-motion: reduce)` 環境下で自動的に無効化されます。フォーカスリングは即座に `--focus-ring-color` で表示されます。
+- **Adaptive Focus**: `index.md` で定義された Adaptive Focus アニメーション（`--animation-focus`）は、グローバル定義により `@media (prefers-reduced-motion: reduce)` 環境下で自動的に無効化されます。フォーカスリングは即座に `--focus-ring-color` で表示されます。
 - **Skeleton Shimmer**: ローディング時のシマーエフェクトは、`@media (prefers-reduced-motion: reduce)` 環境下で `animation: none` に設定され、静的なプレースホルダーとして表示されます。
-- **Scroll Behavior**: `scrollIntoView` の `behavior` は、`prefers-reduced-motion: reduce` 時に `smooth` → `instant` へ自動的にフォールバックします。
-- **Transition Duration**: すべてのトランジション（背景色、ボーダー色）は、`index.md` L1099-1138 のグローバル定義により `0.01ms` に短縮されます。
+- **Scroll Behavior**: `scrollIntoView` の `behavior` は JS 側で `prefers-reduced-motion` を判定し、`smooth` / `instant` を明示的に切り替えます。
+- **Transition Duration**: すべてのトランジション（背景色、ボーダー色）は、`index.md` のグローバル定義により `0.01ms` に短縮されます。
 
 **8. 印刷スタイル (Print Styles)**
 
-**Card バリアントの印刷最適化**
+**基本方針: ナビゲーション用途は非表示**
 
-Card バリアントとして独立配置される場合、印刷時の挙動を以下のように最適化します。
+`index.md` の印刷方針（ナビゲーションUIの非表示）に従い、通常の `ui-file-tree` は印刷時に非表示とします。  
+ただし、本文中の独立ウィジェットとして使用する `variant="card"` かつ `data-printable="true"` の場合のみ例外的に表示します。
 
 ```css
 @media print {
+  /* デフォルト: ナビゲーションUIとして非表示 */
   ui-file-tree {
+    display: none !important;
+  }
+
+  /* 例外: 本文内の独立ウィジェットとして明示的に許可 */
+  ui-file-tree[variant="card"][data-printable="true"] {
+    display: block !important;
+
     /* Shadow を除去（印刷では不要） */
     box-shadow: none !important;
 
@@ -3523,15 +3525,15 @@ Card バリアントとして独立配置される場合、印刷時の挙動を
     border-color: #000 !important;
   }
 
-  /* 全ての項目を展開表示 */
-  ui-file-tree ui-tree-item {
+  /* 例外表示時のみ全ての項目を展開表示 */
+  ui-file-tree[variant="card"][data-printable="true"] ui-tree-item {
     /* 展開アイコンを非表示 */
     &::before {
       display: none;
     }
   }
 
-  ui-file-tree ui-tree-item[aria-expanded="false"] {
+  ui-file-tree[variant="card"][data-printable="true"] ui-tree-item[aria-expanded="false"] {
     /* 収縮状態でも子要素を表示 */
     > [role="group"] {
       display: block !important;
@@ -3542,13 +3544,13 @@ Card バリアントとして独立配置される場合、印刷時の挙動を
 
 **Rationale:**
 
-- `index.md` L1729-1860 の印刷スタイル基本方針に従い、装飾的な背景色とシャドウを削除します。
-- 全ノードを展開表示することで、紙面上でも完全な階層構造を把握できるようにします。
+- `index.md` の印刷スタイル基本方針（ナビゲーションUIの非表示）と整合させます。
+- 例外的に本文カードとして印刷する場合のみ、背景/シャドウを除去し、階層構造の把握を優先して全展開します。
 - 境界線は黒（`#000`）に統一し、構造の可読性を維持します。
 
 **9. 強制カラーモード対応 (Forced Colors Mode)**
 
-`@media (forced-colors: active)` 環境下では、透過色やシャドウがシステムによって上書きされます。以下のフォールバックを適用し、構造と意味を維持します（`index.md` L1241-1301 参照）。
+`@media (forced-colors: active)` 環境下では、透過色やシャドウがシステムによって上書きされます。以下のフォールバックを適用し、構造と意味を維持します（`index.md` 参照）。
 
 ```css
 @media (forced-colors: active) {
@@ -3573,9 +3575,9 @@ Card バリアントとして独立配置される場合、印刷時の挙動を
 
 **Rationale:**
 
-- `index.md` L1244-1247 で定義されたシステムカラーマッピングに従い、`--border-default` の透過色（`oklch(L C H / 0.12)`）は `CanvasText` へフォールバックします。
+- `index.md` で定義されたシステムカラーマッピングに従い、`--border-default` の透過色（`oklch(L C H / 0.12)`）は `CanvasText` へフォールバックします。
 - ボーダーレスなデザイン（Default バリアント）でも、このモードでは境界線を明確化し、構造を視覚的に伝えます。
-- Tree Item 内部の Indent Guide（`--border-ghost`）の対応は、`<ui-tree-item>` の仕様（L3318-3335）に記載されています。
+- Tree Item 内部の Indent Guide（`--border-ghost`）の対応は、`<ui-tree-item>` の仕様に記載されています。
 
 ### データ表示 (Data Display)
 
@@ -3624,7 +3626,7 @@ Card バリアントとして独立配置される場合、印刷時の挙動を
 interface ColumnDef {
   id: string;                      // 列の一意識別子
   label: string;                   // ヘッダーに表示されるラベル
-  width: string;                   // CSS値 (例: "200px", "1fr", "minmax(120px, 1fr)")
+  width: string;                   // CSS値 (例: "200px", "1fr", "minmax(calc(var(--space-12) + var(--space-20)), 1fr)")
   sortable?: boolean;              // ソート可能か（デフォルト: false）
   hideOnMobile?: boolean;          // モバイル表示時に非表示にするか（デフォルト: false）
   primary?: boolean;               // プライマリ列（メインリンク含む）か（デフォルト: false）
@@ -3635,7 +3637,7 @@ interface ColumnDef {
 
 - **Subgrid対応環境**: 指定したCSS値をそのまま使用（`1fr` 等の相対値も有効）。
 - **Subgrid非対応環境 (Fallback)**: `1fr` 等の相対値は各行で列幅が不揃いになるため、以下のルールで固定値に変換されます：
-  - `1fr` → `minmax(120px, 1fr)` に変換（最小幅を保証）
+  - `1fr` → `minmax(calc(var(--space-12) + var(--space-20)), 1fr)` に変換（最小幅を保証）
   - `px` / `%` / `minmax` 指定はそのまま適用
   - 幅指定のない列は `auto` として扱われ、コンテンツ幅に追従します
 
@@ -3651,8 +3653,10 @@ interface ColumnDef {
 
 | イベント名 | Detail | 説明 | ソート処理のオーナーシップ |
 |------------|--------|------|-------------------------|
-| `ui-sort-change` | `{ key: string, direction: 'asc' \| 'desc' }` | ヘッダー操作によりソート順が変更された時に発火。 | **外部委譲**: `<ui-list>` は内部でソート処理を行いません。親コンポーネント側がこのイベントを購読し、`items` 配列を並び替えた上で再代入する責務を持ちます。これにより、ソートロジックの柔軟性（複雑なソート条件、バックエンド連携等）を担保します。 |
+| `ui-sort-change` | `{ key: string \| null, direction: 'asc' \| 'desc' \| null }` | ヘッダー操作によりソート順が変更された時に発火。`none -> asc -> desc -> none` の順で循環し、未ソート時は `key: null`, `direction: null` を返します。 | **外部委譲**: `<ui-list>` は内部でソート処理を行いません。親コンポーネント側がこのイベントを購読し、`items` 配列を並び替えた上で再代入する責務を持ちます。これにより、ソートロジックの柔軟性（複雑なソート条件、バックエンド連携等）を担保します。 |
 | `ui-active-change` | `{ rowId: string }` | キーボード操作等で行のアクティブ状態（フォーカス）が変更された時に発火。 | — |
+| `ui-preview-request` | `{ rowId: string }` | `Shift + Space` によるQuick Look要求時に発火。親コンポーネントがプレビューダイアログ表示を担当します。 | — |
+| `ui-context-request` | `{ rowId: string, anchor: { x: number, y: number } }` | `Shift + F10` / 右クリックでコンテキストメニュー要求時に発火。 | — |
 
 **Slots:**
 
@@ -3664,14 +3668,14 @@ interface ColumnDef {
 
 - **CSS Grid & Progressive Enhancement**:
     - **Modern (Primary)**: 親コンテナ (`<ui-list>`) で `display: grid`、各行 (`<ui-list-item>`) で `grid-template-columns: subgrid` を採用します。
-    - **A11y Warning (display: contents)**: `display: contents` は一部のブラウザでセマンティクス（`role="row"`）が剥落する不具合があるため、**`subgrid` 対応環境以外では使用しません**。
+    - **A11y Warning (display: contents)**: `display: contents` は一部のブラウザでセマンティクス（`role="row"`）が剥落する不具合があるため、**本コンポーネントでは採用しません**（`subgrid` 対応有無に関わらず不使用）。
     - **Fallback (Robustness)**: `subgrid` 非対応環境では、各行を独立したGridコンテキスト（明示的な `display: grid`）として扱います。この場合、`1fr` 等の相対値を使用すると行ごとのコンテンツ量によって列幅が不揃いになるため、`columns` 定義に基づく**固定値（px / %）または `minmax` による最小幅保証**を強制的に適用します。柔軟性（Flexibility）よりも、グリッドの整列（Alignment）を優先し、普遍的な可読性を維持します。
 - **Header Generation**:
     - `columns` 定義に基づき、自動的に `role="rowgroup" > role="row" > role="columnheader"` を生成します。
     - **Sort State**: ソート可能なヘッダーには **`aria-sort="ascending" | "descending" | "none"`** を付与し、現在の状態をスクリーンリーダーに通知します。
     - **Header Interaction**: ソート可能な列ヘッダーはインタラクティブ（`tabindex="0"` または `<button>` 内包）とし、クリックおよびキーボード操作を受け付けます。
     - **Indicator**: `sort-key` に一致する列には、並べ替えアイコン（`ChevronDown` / `ChevronUp`）をサイズ `--icon-sm` (14px) で表示します。
-    - **Action Column**: 右端のアクション列に対しても、視覚的には空であってもアクセシブルなヘッダーセル（`<div role="columnheader" aria-label="Actions"></div>`）を配置し、グリッドの列構造を維持します。
+    - **Action Column**: 右端のアクション列に対しても、視覚的には空であってもアクセシブルなヘッダーセル（`<div role="columnheader" aria-label="操作"></div>`）を配置し、グリッドの列構造を維持します。
     - **Typography**: ヘッダー行のテキストは `--text-xs` (12px) / `--font-medium` (500) / `--fg-muted` を使用し、データ行（`--text-base` / `--font-normal` / `--fg-default`）との視覚的階層を明確化します。
 - **Responsive**:
     - モバイル (`< md`) 環境では、可読性を維持するため、`columns` 定義内の `hideOnMobile: true` な列を非表示にします。
@@ -3688,10 +3692,9 @@ interface ColumnDef {
         - **Collision Safety**: この拡大された見えないヒットエリア (`::after`, `z-index: 0`) が、行内のリンクやボタンの操作を阻害しないよう、行内コンテンツには **`position: relative; z-index: 1`** を付与し、物理的に前面へ配置することを必須とします。
 - **Padding**: `0 var(--space-4)`
 - **Border**:
-    - **Default (通常モード)**: `border-left: 3px solid transparent` — Forced Colors Mode時のレイアウトシフトを防ぐため、デフォルトで透明な左ボーダーを配置します。
+    - **Default (通常モード)**: `border-left: var(--border-width-thick) solid transparent` — Forced Colors Mode時のレイアウトシフトを防ぐため、デフォルトで透明な左ボーダーを配置します。
     - **Active (通常モード)**: `border-left-color: var(--primary)` — アクティブ（Focus）時のみボーダー色を変更。
     - **Note**: 従来の `box-shadow` によるマーカー表現は、Forced Colors Modeで消失するため採用しません。`border-left` による実装で通常モードとForced Colors Modeの構造的一貫性を保ちます。
-    - **Fallback (display: contents 環境)**: `display: contents` を使用する場合、親要素のボーダーが無効化されるため、最初のセル (`gridcell`) に `box-shadow: inset 3px 0 0 0 transparent` を適用し、同等の視覚表現を維持します。
 
 **タイポグラフィ:**
 
@@ -3722,21 +3725,22 @@ transition:
 
 **Forced Colors Mode:**
 
-- **Layout Safety**: 通常モードで既に `border-left: 3px solid transparent` を設定しているため、Forced Colors Mode時もレイアウトシフト（ガタつき）は発生しません。
+- **Layout Safety**: 通常モードで既に `border-left: var(--border-width-thick) solid transparent` を設定しているため、Forced Colors Mode時もレイアウトシフト（ガタつき）は発生しません。
 - **Active State**: アクティブ（Focus）時は `border-left-color: Highlight`（システムカラー）に変更し、色情報に依存せず確実に選択状態を可視化します。
-- **`display: contents` 環境の補足**: 親要素のボーダーが無効化される場合、最初のセル (`gridcell`) に `box-shadow: inset 3px 0 0 0 Highlight` を適用します。
 
 **空状態 (Empty State):**
 
 `items` が空配列（0件）の場合の表示仕様：
 
-- グリッドコンテナ内に、`role="status"` を持つ空状態メッセージを配置します。
+- `role="grid"` 要素とは**別要素（兄弟ノード）**として、`role="status"` を持つ空状態メッセージを配置します（`grid` 直下に `status` を混在させない）。
 - `aria-live="polite"` を付与し、動的にアイテムが削除されて0件になった場合、スクリーンリーダーに通知します。
 - **実装例**:
   ```html
-  <div role="status" aria-live="polite" class="empty-state">
-    <span class="text-muted">表示するアイテムがありません</span>
-  </div>
+  <section class="list-region" aria-label="ノート一覧">
+    <div role="status" aria-live="polite" class="empty-state">
+      <span class="text-muted">表示するアイテムがありません</span>
+    </div>
+  </section>
   ```
 - **スタイル**: `--text-base` / `--fg-muted` / 中央揃え / 上下パディング `var(--space-12)`
 
@@ -3782,8 +3786,8 @@ transition:
 
 - **Primary Cell Focus**: WAI-ARIA Grid Patternに準拠し、**行内の最初のインタラクティブなセル（通常はタイトル列）にフォーカス** (`tabindex="0"`) を与えます。
     - **Reason**: 行コンテナ (`role="row"`) 自体にフォーカスを当てると、一部のスクリーンリーダーが行内の全テキストを一括で読み上げてしまい、S/N比が悪化するためです。
-    - **Visual Experience**: プログラム的なフォーカスはセルにありますが、**CSS `:focus-within`** を使用してフォーカスリングと背景色を**行全体 (`ui-list-item`) に描画**します。これにより、ユーザーのメンタルモデル（行選択）と実装の堅牢性（セルフォーカス）を乖離させることなく統合します。
-- **Adaptive Focus**: 行全体（`<ui-list-item>`）の `:focus-within` スタイルに対してシステム共通の `var(--animation-focus)` を適用し、時間的な強調表現を行います。セル単体へのフォーカスリングは不可視（または極小）とし、視覚的なノイズを排除します。
+    - **Visual Experience**: プログラム的なフォーカスはセルにあります。セル自体には `:focus-visible` による可視リング（`index.md` のグローバルFocus Strategy）を維持した上で、補助表現として **CSS `:focus-within`** により行全体 (`ui-list-item`) の背景色と左ボーダーを変化させます。
+- **Adaptive Focus**: セル要素の `:focus-visible` にシステム共通の `var(--animation-focus)` を適用します。行全体の `:focus-within` は位置認識の補助として扱い、フォーカス可視性の主担当を置き換えません。
 
 **Keyboard Shortcuts:**
 
@@ -3791,7 +3795,7 @@ transition:
 
 | キー | 動作 |
 |------|------|
-| `Enter` / `Space` | 列のソート順を切り替え（昇順 ⇄ 降順）。 |
+| `Enter` / `Space` | 列のソート順を切り替え（なし → 昇順 → 降順 → なし）。 |
 
 **Row Focus:**
 
@@ -3841,6 +3845,7 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 - **Interaction**:
     - **Smooth Scroll**:
         - 原則として JS制御により、移動距離に応じた適応的アニメーション時間（最大 `--duration-slower` = 300ms）で完了するカスタムスクロールを実装し、即応性を保証します。隣接セクションへの小さな移動では短時間（例: 100ms）、大きな移動でも300msを超えないよう制御します。
+        - **Header Offset Contract**: アンカー移動時に見出しがヘッダーに隠れないよう、アプリケーション全体の `scroll-padding-top`（`--header-height` + 余白）を前提とし、カスタムスクロール実装でも同等のオフセット補正を必須とします。
         - **Reduced Motion**: ユーザー設定 `prefers-reduced-motion: reduce` が有効な場合、アニメーションを完全に無効化し、即座にジャンプします。
     - **Keyboard Navigation**: 標準のTab順序ナビゲーションに従います。Roving Tabindex（矢印キーナビゲーション）は使用しません。
 
@@ -3870,17 +3875,18 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
     - Color (Default): `--fg-muted` (WCAG AA準拠: `--bg-default` に対して 4.8:1)
     - Color (Hover): `--fg-default` (背景色は変更せず、文字色のみで反応を返し、ノイズを抑える)
     - Color (Active): `--primary` (WCAG AA準拠: Light Mode `--bg-default` に対して 7.1:1)
-    - Color (Focus): Adaptive Focus適用。`:focus-visible` 時に `outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: var(--focus-ring-offset);` + `animation: var(--animation-focus);` を使用し、移動中は控えめ、停止時に強調する時間軸フォーカス表現を実現します。
+    - Color (Focus): Adaptive Focus適用。`:focus-visible` 時に `outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: var(--focus-ring-offset); border-radius: var(--focus-ring-radius);` + `animation: var(--animation-focus);` を使用し、移動中は控えめ、停止時に強調する時間軸フォーカス表現を実現します。
     - Padding Left: `calc(var(--level) * var(--space-2) + var(--space-3))`
         - **Note**: `var(--level)` は表示上の相対階層（0 start）として正規化した値を適用します（例: H2=0, H3=1...）。
 
 **5. レスポンシブ戦略 (Responsive Strategy)**
 
-- **Desktop (>= lg)**:
+- **Desktop (`@media (min-width: 1024px)` / `--bp-lg`)**:
     - サイドバーへ追従配置（Sticky）。
-- **Mobile (< lg)**:
+- **Mobile (`@media (max-width: 1023px)` / `< --bp-lg`)**:
     - **Trigger**: スティッキーヘッダーの右端に「目次アイコン (`List`)」を配置します。
         - **Note**: ヘッダーの既存要素（検索トリガー、ユーザーメニュー）との配置関係については、ヘッダーコンポーネント仕様を参照してください。目次アイコンは検索トリガーとユーザーメニューの間に配置し、モバイル画面幅でのレイアウト優先順位はヘッダー仕様に準じます。
+        - **Touch Target**: 視覚サイズとは独立して、トリガーの物理ヒットエリアは `--control-min-touch` (44px) を必須とします（最小でも 24px を下回らない）。
     - **Presentation**: アイコンタップにより、画面下部からスライドインする **Bottom Sheet (Sheet Modal)** として展開します。
         - **Z-index**: オーバーレイは `--z-backdrop` (200)、シート本体は `--z-modal` (300) を使用し、index.md の Z-index体系に準拠します。
         - **Dimming**: 背景（記事本文）を `background-color: oklch(0% 0 0 / var(--opacity-scrim))` で暗くし、フォーカスをシートへ移動させます。
@@ -3895,35 +3901,49 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 - **Structure**: `nav` > `ul` > `li` > `a` (ネイティブリンク)
 - **Label**: `nav` に `aria-label="Table of Contents"` を付与。
 - **Current**: アクティブなリンクに `aria-current="location"` を設定。
+- **Touch Target**: 目次リンクおよびモバイルトリガーは、視覚サイズに関わらず物理ヒットエリアを `--control-min-touch` (44px) 以上に確保します（最低保証は 24px）。
 - **Focus Management**:
     - デスクトップ: 標準のTab順序ナビゲーション。Roving Tabindexは使用しない。
     - モバイル (Bottom Sheet): シート展開時にフォーカスを内部へ移動させ、Focus Trapを適用。`Esc` キーでシートを閉じ、トリガー（目次アイコン）へフォーカスを戻します。
-- **Reduced Motion**: `prefers-reduced-motion: reduce` 時、すべてのアニメーション（Smooth Scroll、Bottom Sheetのスライドイン、インジケーターのフェードイン）を無効化し、即座に状態遷移します。
+- **Reduced Motion**: `prefers-reduced-motion: reduce` 時、すべてのアニメーションは `0.01ms` へ短縮して実質的に瞬時完了とします。フォーカス表示・シート開閉など状態認知に必須な遷移は「瞬時完了」の形で維持します。
 - **Forced Colors Mode**:
     - **Indicator Visibility**: `forced-colors: active` 環境では背景色が消失するため、アクティブなインジケーター (`::before`) には `background-color` ではなく **`border: var(--border-width-thick) solid Highlight`** を適用し、現在地を物理的に可視化します。
     - **Text Color**: index.md のシステムカラーマッピングに従い、`--fg-default` → `CanvasText`、`--fg-muted` → `GrayText`、`--primary` → `Highlight` が自動適用されます。
+
+**7. テスト要件 (Validation Checklist)**
+
+- [ ] Light/Dark 両モードで視認性が維持される
+- [ ] `prefers-reduced-motion: reduce` で遷移が実質瞬時化される
+- [ ] Forced Colors Mode でアクティブ位置が判別できる
+- [ ] キーボードのみでリンク操作・シート開閉・`Esc` 復帰が可能
+- [ ] スクリーンリーダーで `nav` ラベルと `aria-current="location"` が正しく伝達される
+- [ ] `--fg-muted` / `--primary` のコントラスト基準（AA）を満たす
+- [ ] モバイルトリガーとリンクのタッチターゲットが 44px（最低 24px）を満たす
 
 #### テーブル (Table) `<ui-table>`
 
 **1. デザイン哲学と目的 (Design Philosophy)**
 
 - **役割**: 構造化されたデータを比較・閲覧するためのビューです。
+- **Component Contract**: 本仕様は **カスタムエレメント `<ui-table>`** を対象とします。`<ui-table>` は、内部にネイティブ `<table>` を保持し、セマンティクスを壊さずにスクロール制御・密度切替・A11y補助を提供します。
 - **Clarification**: 罫線は「行 (Row)」の区切り（横線）のみとし、縦線は排除して視線の水平移動（Scanning）を助けます。データそのものを主役にし、枠線というノイズを減らします。
 - **No Sticky Headers**: ヘッダーの固定（Sticky）は採用しません。横スクロールコンテナとの技術的競合（消失）や、内部スクロール（二重スクロール）による「読むリズム（Flow State）」の分断を避けるためです。縦に長すぎるテーブルは、UIでの解決ではなくコンテンツの分割を推奨します。
 
 **2. ロジック参照基盤 (Logic Reference)**
 
-- **Reference**: Native `<table>` structure
+- **Reference**: Native `<table>` structure（HTML Table Model）
 - **Semantic Usage**: 本コンポーネントはデータ表示専用です。レイアウト目的（2カラム配置など）での使用は禁止とし、スクリーンリーダーの読み上げ体験（テーブルモード）を保護します。
-- **Wrapper**: 横スクロールが必要な場合のために、ラッパー要素 `<div class="table-container">` で囲みます。これにはキーボード操作でのスクロールを保証するため、適切な属性 (`tabindex="0"`, `role="region"`) が必須です。
+- **Structure**: `<ui-table>` は Shadow DOM 内で `.table-container` を持ち、Light DOM の `<table>`（または `<table>` を生成するテンプレート）を表示します。著者は `th`/`td`/`thead`/`tbody`/`tfoot` をネイティブ要素として記述します。
+- **Wrapper Responsibility**: 横スクロールが必要な場合でも、著者が毎回ラッパーを手書きする必要はありません。`<ui-table>` が内部コンテナに `tabindex="0"` と `role="region"` を適用し、`aria-label` はホスト属性から受け取ります。
 
 **3. 技術仕様とAPI (Technical Specs)**
 
 | プロパティ | 属性 | 型/値 | デフォルト | 説明 |
 |------------|------|-------|-----------|------|
 | `density` | `density` | `'compact' \| 'normal'` | `'normal'` | 行の高さ密度。 |
+| `ariaLabel` | `aria-label` | `string` | `undefined` | スクロール領域のアクセシブルネーム。横スクロールが発生しうるため、用途を示すラベルを推奨。 |
 | `colspan` / `rowspan` | - | - | - | **Support**. <br>**Long Table Strategy**: 行数が多く `rowspan` を使用する場合は、意味のまとまりごとに `<tbody>` 要素を分割することを推奨します。システムは `tbody` 間の境界線を強調 (`border-width-thick`) し、意味的なまとまり（Chunking）を提供します。 |
-| `<tfoot>` | - | - | - | **現時点ではサポート対象外**。集計行・サマリー行が必要な場合は、`<tbody>` 末尾に通常の `<tr>` として配置し、必要に応じて `font-weight: var(--font-medium)` で強調することを推奨します。将来的にサポートを追加する場合は、このセクションを更新します。 |
+| `<tfoot>` | - | - | - | **Support**. サマリー・合計行はネイティブ `tfoot` を使用します。`tbody` 末尾の疑似代替は推奨しません。 |
 
 **4. スタイリングとトークンマッピング (Style & Tokens)**
 
@@ -3949,8 +3969,9 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
         - **Normal**: `var(--space-3) var(--space-4)` (12px 16px)
         - **Compact**: `var(--space-2) var(--space-4)` (8px 16px)
     - **Truncation Strategy**:
-        - **Desktop**: 行の高さ（Rhythm）を一定に保つため、`max-width` を指定の上、`text-overflow: ellipsis` で省略し、`<ui-tooltip>` で補完することを標準とします。
-        - **Mobile / Touch**: ホバー操作ができないため、**省略設定を強制解除（Wrap）**し、全てのテキストを可視化します。リズムより情報へのアクセス性を優先します。
+        - **Default**: 既定は `white-space: normal` の折り返し表示です（Progressive Enhancement優先）。
+        - **Desktop Optional**: 省略を有効化する場合は `max-width` + `text-overflow: ellipsis` を適用し、**必ず** `title` 属性または常設の補足テキストで全文を参照可能にします。`<ui-tooltip>` は補助として扱い、必須依存にしません。
+        - **Mobile / Touch**: `@media (hover: none) and (pointer: coarse)` では省略を強制解除（Wrap）し、全テキストを可視化します。
     - **Alignment Support**: Markdown互換のため、`th`/`td` の `align` 属性（`left`/`center`/`right`）をCSSでサポートします。
         - **Note**: `align` 属性はHTML5で非推奨（deprecated）ですが、Markdown生成コンテンツとの互換性のために例外的にサポートします。新規実装では代わりにCSSクラス（`.text-left`, `.text-center`, `.text-right`）の使用を推奨します。
         - **Automatic Optimization**: `align="right"` が指定されたセルには、数値とみなして自動的に `font-feature-settings: "tnum"` (等幅数値) を適用します。これにより、クラス指定なしで美しい数値リストを実現します。
@@ -3958,11 +3979,9 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
     - Border: `var(--border-width) solid var(--border-default)`
     - Transition: `background-color var(--duration-fast) var(--ease-out)` (スムーズなホバー体験)
     - **Hover (Active Ruler)**: `background-color: var(--bg-table-ruler)` (縦線がないため、現在行を示す動的な定規として機能させます)
-        - **Token Definition**: テーブル専用のActive Rulerトークン `--bg-table-ruler` を以下のように定義します:
-            - **Light Mode**: `oklch(from var(--fg-default) l c h / 0.08)` (標準の `--bg-hover` より強いコントラスト)
-            - **Dark Mode**: `oklch(from var(--fg-default) l c h / 0.08)` (同上)
+        - **Token Source of Truth**: 値定義は `index.md` の `--bg-table-ruler` に一元化します（本セクションで再定義しません）。
         - **Rationale**: 高密度なデータ閲覧において「行」の識別性は重要です。標準の `--bg-hover` (opacity `0.05`) では視覚的な定規として機能しないため、テーブル専用のトークンで例外的に強調します。
-        - **Touch Device Consideration**: タッチデバイスでは `:hover` の挙動が不安定（タップ後に残留）であるため、Active Rulerはマウス環境でのみ有効化します。タッチ環境では `:hover` スタイルを無効化し、代わりにセル間の十分なスペーシングとボーダーによる構造の明確化に依存します。
+        - **Activation Condition**: Active Ruler は `@media (hover: hover) and (pointer: fine)` でのみ有効化します。`@media (hover: none) and (pointer: coarse)` では `:hover` を無効化します。
 - **Caption (`caption`)**:
     - Position: `caption-side: top` (左寄せ配置)
     - Font: `--text-xs`, `color: var(--fg-muted)`
@@ -3981,11 +4000,11 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 
 - **Caption**: `<caption>` 要素でテーブルのタイトルを提供。
 - **Scope**: `th` に `scope="col"` または `scope="row"` を明示。
-- **Scrollable Wrapper**: 横スクロールが発生するコンテナには必ず `tabindex="0"` と `role="region"`、および適切な `aria-label` を付与し、キーボード操作によるスクロールを保証します。
+- **Scrollable Wrapper**: 横スクロールが発生するコンテナには `tabindex="0"` と `role="region"`、および適切な `aria-label` を付与し、キーボード操作によるスクロールを保証します（`<ui-table>` が内部で適用）。
     - フォーカス可能要素として、`:focus-visible` スタイル（アウトライン）の適用が必須です（上記「Scrollable Wrapper」スタイル参照）。
 - **Sorting (Future Extension)**: ソート機能を追加する場合は、`th` に `aria-sort` 属性（`ascending`/`descending`/`none`）を付与し、現在のソート状態を支援技術に伝達してください。
 - **Forced Colors Mode**:
-    - 透過ボーダーが消失するのを防ぐため、`forced-colors: active` 時は `tr` のボーダーを `1px solid ButtonText` (または `CanvasText`) に強制し、構造の可視性を維持します。
+    - 透過ボーダーが消失するのを防ぐため、`forced-colors: active` 時は `tr` のボーダーを `1px solid CanvasText` に強制し、構造の可視性を維持します（`index.md` のシステムカラーマッピング準拠）。
 
 **6. `.prose` コンテキストとの統合**
 
@@ -3997,34 +4016,44 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 
   /* モバイル: コンテナよりやや広く */
   width: calc(100% + var(--space-8)); /* +32px */
-  margin-inline: calc(-1 * var(--space-4)); /* -16px */
+  margin-inline: var(--space-n4); /* -16px */
 
   /* デスクトップ (768px以上): さらに広く強調 */
   @media (min-width: 768px) { /* --bp-md */
     width: calc(100% + var(--space-16)); /* +64px */
-    margin-inline: calc(-1 * var(--space-8)); /* -32px */
+    margin-inline: var(--space-n8); /* -32px */
   }
 }
 ```
 
-- **Rationale**: 本文テキスト（約65文字幅）に対してテーブルを視覚的に拡張し、「データの広がり」を表現します。横スクロールが必要な場合は、`.table-container` ラッパーと組み合わせて使用します。
+- **Rationale**: 本文テキスト（約65文字幅）に対してテーブルを視覚的に拡張し、「データの広がり」を表現します。横スクロール管理は `<ui-table>` 内部の `.table-container` が担います。
 - **Wrapper Integration**: `.prose` 内で横スクロールが必要な場合の統合パターン:
 
 ```html
 <div class="prose">
   <p>本文テキスト...</p>
 
-  <div class="table-container" tabindex="0" role="region" aria-label="データテーブル">
+  <ui-table density="normal" aria-label="データテーブル">
     <table>
       <!-- テーブル内容 -->
     </table>
-  </div>
+  </ui-table>
 
   <p>続きの本文...</p>
 </div>
 ```
 
-この場合、`.table-container` に対してもはみ出しスタイルが適用され、横スクロールとレイアウト拡張が両立します。
+この場合、`<ui-table>` 内部の `.table-container` により横スクロールとフォーカス管理が提供され、`.prose table` のはみ出しスタイルと両立します。
+
+**7. テスト要件 (Validation Checklist)**
+
+- [ ] `<ui-table>` ホストが内部スクロール領域に `tabindex="0"` / `role="region"` / `aria-label` を反映する
+- [ ] `th` の `scope`、`caption`、`thead` / `tbody` / `tfoot` がスクリーンリーダーで正しく解釈される
+- [ ] `@media (hover: hover) and (pointer: fine)` のみ Active Ruler が有効化される
+- [ ] `@media (hover: none) and (pointer: coarse)` で省略解除（Wrap）される
+- [ ] `prefers-reduced-motion: reduce` でフォーカス/遷移が実質瞬時化される
+- [ ] `forced-colors: active` で行境界（`CanvasText`）が視認可能
+- [ ] `.prose` 内で `--space-n4` / `--space-n8` のブレークアウトが適用される
 
 #### カード (Card) `<ui-card>`
 
@@ -4037,11 +4066,12 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 **2. ロジック参照基盤 (Logic Reference)**
 
 - **Structure**: Slotベース (`header`, `default`, `footer`)。
-- **Click Strategy**: `clickable` 属性が有効な場合、ナレッジ管理ツールとしての**テキスト選択性（Selectability）**を維持するため、以下の優先順位を採用します。
-    1.  **Robust Delegation (Primary)**: `<ui-list>` と同様、JSイベント委譲によりカード全体のクリックを主要リンクとして扱います。ただし、以下の条件では**委譲をキャンセル**し、コピー操作等のネイティブ挙動を阻害しません。
+- **Click Strategy**: `clickable` 属性が有効な場合、カードは**主要リンクを1つだけ持つ**前提とし、ナレッジ管理ツールとしての**テキスト選択性（Selectability）**を維持するため、以下の優先順位を採用します。
+    1.  **Robust Delegation (Primary)**: `<ui-list>` と同様、JSイベント委譲によりカード全体のクリックを主要リンクとして扱います。ただし、以下の条件では**委譲をキャンセル**し、コピー操作やブラウザのネイティブ挙動を阻害しません。
         - **Text Selection**: テキスト選択中（`window.getSelection().toString().length > 0`）の場合。
         - **Interactive Elements**: 内部のボタンやリンクがクリックされた場合。
-    2.  **Stretched Link (Secondary)**: 画像のみのカードなど、テキスト選択が不要な特殊なケースに限り、CSS (`::before` 拡張) による実装を許容します。
+        - **Modified / Non-primary Click**: `metaKey` / `ctrlKey` / `shiftKey` / `altKey` が押下されている場合、または主ボタン以外（中クリック・右クリック）の場合。
+    2.  **Stretched Link (Secondary)**: 画像のみのカードなど、テキスト選択が不要な特殊なケースに限り、CSS (`::after` 拡張) による実装を許容します。
 
 **3. 技術仕様とAPI (Technical Specs)**
 
@@ -4100,7 +4130,7 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 
 - **Role**: コンテンツに応じて `article` (独立記事), `section` (節), または `div` (単なるラッパー) を適切に使い分けること。
 - **Focus**:
-    - **Functional Focus**: `clickable` な場合、カード全体ではなく、内部の主要リンクまたはアクションボタンにフォーカスを当てる構造にします（Focusable Container Anti-patternの回避）。
+    - **Functional Focus**: `clickable` な場合、カード全体ではなく、内部の主要リンク（単一）またはアクションボタンにフォーカスを当てる構造にします（Focusable Container Anti-patternの回避）。
     - **Visual Unification**: 上記の通り、CSS `:focus-within` を用いて、視覚的にはカード全体をハイライトすることで、操作性と実装の堅牢性を両立させます。
 - **Forced Colors Mode** (`forced-colors: active`):
     - Windows ハイコントラストモード等、OSレベルで色が強制される環境では、シャドウと背景色が消失します。以下の対応により構造を維持します。
@@ -4113,11 +4143,11 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
         }
         ```
     - **Elevated / Flat variant**: 通常時は `border: none` ですが、このモードでは明示的なボーダーを追加することで、カードの存在を認識可能にします。
-    - **選択状態**: `clickable` かつ選択状態のカードには、アウトラインを追加します。
+    - **操作フィードバック**: `clickable` カードには、`hover` と `focus-within` に対してアウトラインを追加し、背景色が失われる環境でも操作可能領域を明確化します。
         ```css
         @media (forced-colors: active) {
           ui-card[clickable]:hover,
-          ui-card[clickable][aria-selected="true"] {
+          ui-card[clickable]:focus-within {
             outline: 2px solid Highlight;
             outline-offset: -2px;
           }
@@ -4140,6 +4170,12 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
           ui-card[variant="elevated"],
           ui-card[variant="flat"] {
             border: 1px solid #000 !important;
+          }
+
+          /* Outlined/Ghostバリアントは線色のみ黒に統一 */
+          ui-card[variant="outlined"],
+          ui-card[variant="ghost"] {
+            border-color: #000 !important;
           }
         }
         ```
@@ -4175,7 +4211,12 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 | `orientation` | `orientation` | `'horizontal' \| 'vertical'` | タブの配置方向。レイアウトに応じて切り替えます。デフォルトは `horizontal`。 |
 | `automatic-activation` | `automatic-activation` | `boolean` | `true` の場合、矢印キーでの移動時に即座に選択（Activate）します。設定画面など、コンテンツがローカルにあり即応性が求められる場合に使用します。 |
 
-> **Note (Disabled State)**: 個別タブの無効化（`disabled`属性）は、現在のRouaultでは使用想定がないため、意図的に実装対象外としています。将来的に必要になった場合、`--opacity-disabled` (0.5) トークンを適用し、`aria-disabled="true"` および `tabindex="-1"` を付与する戦略を採用します。
+> **Note (Disabled State)**: 個別タブの無効化（`disabled`属性）は、現在のRouaultでは使用想定がないため、意図的に実装対象外としています。将来的に必要になった場合、`index.md` の Disabled State 基準に従い、`disabled`（ネイティブ）または `aria-disabled="true"`（非ネイティブ）を用途に応じて使い分けます。`aria-disabled="true"` を採用する場合は、フォーカス可否を要件に応じて明示的に設計し、`tabindex` を機械的に固定しません。
+
+> **API Resolution Rules**:
+> - `selected-value` と `selected-index` が同時指定された場合、**`selected-value` を優先**します（URL連携時の安定性を優先）。
+> - `selected-value` が一致しない場合のみ `selected-index` を評価します。
+> - 両方が無効な場合は **先頭タブ (`index=0`)** を選択し、コンポーネントは例外を投げずに `console.warn` で開発時通知を行います。
 
 **4. スタイリングとトークンマッピング (Style & Tokens)**
 
@@ -4208,14 +4249,14 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
         - Active/Click: `transform: scale(var(--scale-pressed))` (`0.96`) をラベル要素（アイコン+テキスト）に適用し、入力受領の確かな触感（Tactility）を提供します。
         - **Transition (Active)**: `transform var(--duration-fast) var(--ease-out)`
     - **Touch Target**:
-        - 物理的な高さは32pxですが、`::after` 疑似要素等を用いて垂直方向に **44px以上のヒットエリア** を確保します（WCAG 2.5.5 準拠）。
+        - 物理的な高さは32pxですが、`::after` 疑似要素等を用いて垂直方向に **`var(--control-min-touch)`（44px）以上**のヒットエリアを確保します（WCAG 2.5.5 準拠）。
         - **Collision Avoidance**: 隣接するタブとの誤操作を防ぐため、ヒットエリアの水平方向のマージンや `z-index` 管理に留意してください。
     - **Indicator (Active Line)**:
         - 各タブの `border-bottom` ではなく、親要素内に配置された**独立したスライディング要素（Shared Layout Axis）**として実装します。
         - Color: `var(--primary)`
         - **Geometry Logic**:
-            - **Horizontal**: Height `2px`. Bottom `0`. Widthは**ラベル（テキスト+アイコン）の幅**に一致。Animationは `translateX` & `scaleX`。
-            - **Vertical**: Width `2px`. Right `-1px` (tablistの`border-right`に重ねる)。Heightは**タブ自体の高さ**に一致（またはラベル高さ）。Animationは `translateY`。`z-index: 1`により、ボーダーの上に重なりprimary色が前面に表示されます。
+            - **Horizontal**: Height `var(--border-width-thick)`. Bottom `0`. Widthは**ラベル（テキスト+アイコン）の幅**に一致。Animationは `translateX` & `scaleX`。
+            - **Vertical**: Width `var(--border-width-thick)`. Right `calc(-1 * var(--border-width))` (tablistの`border-right`に重ねる)。Heightは**タブ自体の高さ**に一致（またはラベル高さ）。Animationは `translateY`。`z-index: 1`により、ボーダーの上に重なりprimary色が前面に表示されます。
         - **Animation**:
             - **Method**: FLIPアニメーション（First, Last, Invert, Play）
             - **Easing**: `var(--ease-spring)` — ターゲット位置へ吸い付くような収束感（Overdamped）を表現
@@ -4224,7 +4265,7 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
         - **Layering**: `z-index: 1` を指定し、`tablist` のボーダーと色が混ざらないよう最前面に配置します。
         - **Hydration Strategy (SSG/SSR Safety)**:
             - JSによる位置計算 (`transform`) が完了するまでの間（Hydration前）、インジケータが消失したりアニメーションしたりするノイズを防ぎます。
-            - **Initial State (Fallback & No-JS)**: `[aria-selected="true"]` なタブに対して、CSSで簡易的な `border-bottom: 2px solid var(--primary)` (Vertical時は `border-right: 2px solid var(--primary)`) を描画することを**必須**とします。これにより、JSが無効な環境やロード失敗時でも現在地情報が失われません。
+            - **Initial State (Fallback & No-JS)**: `[aria-selected="true"]` なタブに対して、CSSで簡易的な `border-bottom: var(--border-width-thick) solid var(--primary)` (Vertical時は `border-right: var(--border-width-thick) solid var(--primary)`) を描画することを**必須**とします。これにより、JSが無効な環境やロード失敗時でも現在地情報が失われません。
             - **Hydrated State**: コンポーネントの初期化完了後（属性 `hydrated` 付与後など）、CSSによる下線を非表示にし、JS制御のスライディングインジケータへシームレスに引き継ぎます。
 
 - **Panel (`tabpanel`)**:
@@ -4234,6 +4275,13 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
         - Easing: `var(--ease-out)`
         - **Reduced Motion**: `prefers-reduced-motion: reduce` 時は `0.01ms` に短縮されます（状態変化の認識に必須のため、完全無効化はしません）。
     - **Loading State**: Fetching中の場合、`aria-busy="true"` を付与し、スケルトンを表示します（詳細はセクション1 Latency Handling参照）。
+
+**Async State Machine (Normative)**:
+- **Idle**: 選択済みパネル表示中。`aria-busy="false"`。
+- **Pending (< `--timeout-async-threshold`)**: 既存パネルを維持し、追加ローディングUIは表示しません（ちらつき防止）。
+- **Loading (>= `--timeout-async-threshold`)**: 既存パネルを即時にスケルトンへ置換し、対象 `tabpanel` に `aria-busy="true"` を付与。
+- **Resolved**: データ反映後に `aria-busy="false"` へ戻し、`opacity` トランジションで表示。
+- **Rejected**: エラー表示へ遷移し、`aria-busy="false"` を保証。必要に応じて `role="status"` + `aria-live="polite"` の専用領域で通知。
 
 > **Note (Light/Dark Mode)**: タブコンポーネントのすべてのトークン（`--fg-muted`, `--fg-default`, `--primary`, `--border-default`等）は、`index.md` で定義されたSemanticトークンを使用しているため、Light/Darkモード間で自動的に適切な値に切り替わります。コンポーネント実装側でモード分岐を記述する必要はありません。
 
@@ -4248,7 +4296,7 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
         - `aria-selected="true"` (選択中のタブ) / `"false"` (非選択タブ)
         - `aria-orientation="horizontal"` (デフォルト) / `"vertical"`
         - **Loading State**: パネル内容がFetching中の場合、`tabpanel` に `aria-busy="true"` を付与し、完了後に `"false"` へ変更します。
-        - **Live Region**: パネル切り替え時、動的コンテンツの変更を `aria-live="polite"` で通知します（緊急性が低いため `polite` を採用）。
+        - **Live Region**: `tabpanel` 自体の `aria-live` は **`off`（デフォルト）** とします。読み上げ通知が必要なケース（非同期完了・エラー）のみ、別途 `role="status"` + `aria-live="polite"` の専用領域で通知します。
 
 - **Keyboard Navigation**:
     - **Arrow Keys**: 左右矢印キー（Vertical時は上下）でフォーカス移動。ロービングタブインデックス（Roving Tabindex）パターンを採用し、タブリスト全体で1つのタブのみが `tabindex="0"`、他は `tabindex="-1"` となります。
@@ -4265,21 +4313,37 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
     - **Spacing**: タブ間のパディング（`var(--space-4)`）により十分なクリアランスがあるため、外側リングでも干渉しません。万一重なる場合は `z-index` でフォーカス要素を前面に出します。
 
 - **Forced Colors Mode**:
-    - **Indicator Visibility**: `forced-colors: active` 環境では背景色とシャドウが消失するため、JS制御のインジケータは非表示とし、代わりに**タブ要素 (`tab`) 自体の `border-bottom: 2px solid Highlight` (Vertical時は `border-right: 2px solid Highlight`) で復活させる**「ネイティブ回帰」戦略を採用します。`Highlight` はシステムカラーの選択色であり、`CanvasText` より視覚的に適切です（`index.md` のシステムカラーマッピング表に準拠）。
-    - **Border Fallback**: すべてのタブに `border: 1px solid CanvasText` を適用し、構造を明示します。
+    - **Indicator Visibility**: `forced-colors: active` 環境では背景色とシャドウが消失するため、JS制御のインジケータは非表示とし、代わりに**タブ要素 (`tab`) 自体の `border-bottom: var(--border-width-thick) solid Highlight` (Vertical時は `border-right: var(--border-width-thick) solid Highlight`) で復活させる**「ネイティブ回帰」戦略を採用します。`Highlight` はシステムカラーの選択色であり、`CanvasText` より視覚的に適切です（`index.md` のシステムカラーマッピング表に準拠）。
+    - **Border Fallback**: すべてのタブに `border: var(--border-width) solid CanvasText` を適用し、構造を明示します。
+
+**6. 受け入れ基準 (Acceptance Criteria)**
+
+- **Token Compliance**: 色・サイズ・モーションにハードコード値を使わず、`index.md` 定義トークンを参照していること。
+- **Keyboard**: `Tab` / `Shift+Tab` でウィジェットへ到達可能、矢印キー + `Home` / `End` が仕様通り動作すること。
+- **A11y**: `role` / `aria-controls` / `aria-labelledby` / `aria-selected` / `aria-busy` が状態遷移と一致すること。
+- **Reduced Motion**: `prefers-reduced-motion: reduce` でアニメーションが `0.01ms` 相当に短縮されること。
+- **Forced Colors**: `forced-colors: active` でアクティブ状態が `Highlight` と境界線で識別可能であること。
+- **Loading UX**: `--timeout-async-threshold` 未満ではローディングUIが出ず、超過時のみスケルトンへ遷移すること。
 
 #### ページネーション (Pagination) `<ui-pagination>`
 
 **1. デザイン哲学と目的 (Design Philosophy)**
 
 - **役割**: 大量データを分割表示する際のナビゲーションです。
-- **Range Logic**: `Prev 1 ... 4 5 6 ... 10 Next` のように、現在地周辺と両端を表示し、中間を省略するロジックを持ちます。
-- **Link-based**: アプリケーションの状態遷移ではなく、ドキュメントの「移動」であるため、プログレッシブエンハンスメントを前提としたリンク構造を提供します。
+- **Range Logic**: `Prev 1 ... 4 5 6 ... 10 Next` のように、現在地周辺と両端を表示し、中間を省略します。境界条件を含む決定的なルールを定義し、実装差分を防ぎます。
+- **Link-based + SSR**: アプリケーションの状態遷移ではなく、ドキュメントの「移動」であるため、プログレッシブエンハンスメントを前提としたリンク構造を提供します。**初期描画はSSRで静的な `<a href>` を必ず出力**し、クライアントではルーターが同一リンクを介入（Intercept）します。
 - **Tactility**: ボタンのインタラクション（ホバー、プレス）については `<ui-button>` コンポーネントの仕様に準拠します。押下時の `transform: scale(var(--scale-pressed))` や視覚的フィードバックを継承します。
 
 **2. ロジック参照基盤 (Logic Reference)**
 
 - **Implementation**: `<a>` タグをベースとしたナビゲーションリンクの集合体。クリックイベントはルーターが介入（Intercept）しますが、ネイティブのリンク機能（別タブで開く等）を維持します。
+- **Range Algorithm (Desktop / Default)**:
+    - `total <= 7` の場合は省略せず `1..total` をすべて表示。
+    - `total >= 8` の場合は、`1` と `total` を常時表示し、`current - 1` から `current + 1` を近傍として表示。
+    - 連続して欠落する範囲が2ページ以上ある場合のみ、省略記号 `...` を表示（1ページ欠落は実ページ番号を表示）。
+- **Range Algorithm (Compact)**:
+    - `@media (hover: none) and (pointer: coarse)` では `Prev ... {current} ... Next` を基本形とし、コンパクト表示へ切り替える（`index.md` の入力特性戦略に準拠）。
+    - `current === 1` または `current === total` など省略不要の側では `...` を出さない。
 
 **3. 技術仕様とAPI (Technical Specs)**
 
@@ -4287,7 +4351,11 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 |------------|------|-------|------|
 | `current` | `current` | `number` | 現在のページ（1始まり）。 |
 | `total` | `total` | `number` | 総ページ数。 |
-| `get-href` | - | `(page: number) => string` | ページ番号からURLを生成する関数。 |
+| `getHref` | - | `(page: number) => string` | ページ番号からURLを生成する関数。SSR時に各リンクの静的 `href` を生成するために使用。 |
+
+- **SSR Contract**:
+    - 初期HTMLでは、表示されるすべてのページ番号・`Prev`・`Next` に対して `getHref(page)` から生成した `href` を出力します。
+    - JavaScript無効時でもリンク遷移できることを保証します。
 
 **4. スタイリングとトークンマッピング (Style & Tokens)**
 
@@ -4303,12 +4371,13 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
         ```
         - **Note**: `transition: all` は使用しません。意図しないプロパティの遷移を防ぐため、明示的なプロパティリストを使用します。
     - **Icon**: `ChevronLeft` / `ChevronRight` (Size: `--icon-base` 16px)。テキストラベルは使用しない。
-    - **Disabled State**: 先頭ページ時の `Prev`、最終ページ時の `Next` は非表示にせず、`aria-disabled="true"` を付与し、**`href` 属性を削除（または `<span>` 要素へ置換）** することで、物理的にフォーカス不能かつ遷移不能にします。視覚的には `opacity: var(--opacity-disabled)` を適用します。
+    - **Disabled State**: 先頭ページ時の `Prev`、最終ページ時の `Next` は非表示にせず、**`<span aria-disabled="true">`** として描画します（`href` は持たせない）。視覚的には `opacity: var(--opacity-disabled)` を適用し、Forced Colorsでは `color: GrayText` にフォールバックします。
     - **Typography**: `var(--font-sans)` + `font-variant-numeric: tabular-nums`。
         - **Note**: `font-mono` は使用しません。デザインシステム全体の調和を優先し、OpenType機能を用いて標準フォント内で数字の等幅性を確保します。
     - **Touch Target**:
-        - 物理的な高さは32pxですが、**`::after` 疑似要素を用いて物理的に 44px 以上 (`--control-min-touch`) のヒットエリアを確保**します。これにより、モバイル環境での「即応性（Snappiness）」と操作ミス（Mis-tap）の防止を保証します。
+        - 物理的な高さは32pxを維持しつつ、**`@media (hover: none) and (pointer: coarse)` のときのみ** `::after` 疑似要素で 44px 以上 (`--control-min-touch`) のヒットエリアを確保します。これにより、`index.md` の入力特性戦略とターゲットサイズ基準を両立します。
 - **Active State (Current Page)**: 
+    - **Markup**: **`<a aria-current="page" href="...">`** として描画し、再訪（リロード・新規タブ）可能性を残します。
     - **Background**: `var(--bg-surface-active)` (面による明確な現在地示唆)
     - **Color**: `var(--primary)`
     - **Shape**: `box-shadow: inset 0 calc(var(--border-width-thick) * -1) 0 0 var(--primary)`。
@@ -4319,17 +4388,17 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
         - `text-decoration: underline`: ボタン形状（Box Model）との不整合および、アイコン使用時の見た目の不格好さを避けるため禁止。
         - `variant="outline"`: ボーダーによるレイアウトシフト防止のため禁止。
 - **Gap**: 
-    - **Desktop**: `--space-1` (4px)
-    - **Mobile**: `--space-3` (12px)。
-        - **Hit Area Safety**: 上記「Touch Target」により物理的なヒットエリアの重なりは `z-index` で制御されますが、視覚的にも十分な分離を行うことで、誤操作の不安を物理的・心理的双方から取り除きます。
-        - **Safety Net**: 万一のレイアウト調整で重複が発生する場合に備え、**現在のページ (`current`) の `z-index` を引き上げ**、常に最前面で操作を受け付けるよう制御します。
+    - **Fine Pointer (Desktop)**: `--space-1` (4px)
+    - **Coarse Pointer (Touch)**: `--space-3` (12px)
+        - **Hit Area Safety**: 44pxターゲット拡張は coarse pointer のみで有効化し、desktop側でのヒットエリア重なりを回避します。
 
 **5. レスポンシブ戦略 (Responsive Strategy)**
 
 - **Range Logic**:
     - **Desktop**: `Prev 1 ... 4 5 6 ... 10 Next` (標準的な隣接表示)
     - **Mobile**: `Prev ... 5 ... Next` (省スペース化)
-        - 画面幅が狭い場合、両端（Prev/Next）と現在地（Current）周辺のみを表示し、**1行での表示**を物理的に強制します。折り返し（Wrap）はレイアウトを破壊するため許容しません。
+        - **表示モードは画面幅のみで判定しません**。`@media (hover: none) and (pointer: coarse)` を主判定とし、タッチ環境でのみコンパクト化します。
+        - 両端（Prev/Next）と現在地（Current）周辺のみを表示し、**1行での表示**を物理的に強制します。折り返し（Wrap）はレイアウトを破壊するため許容しません。
         - **Layout Stability**: 先頭ページ（Prevなし）や最終ページ（Nextなし）の場合でも、ボタン領域を確保（Disabled表示）し、ページ遷移によるボタン位置のガタつき（Layout Shift）を防ぎます。
 - **Ellipsis (省略記号 `...`)**:
     - **Markup**: `<span aria-hidden="true">...</span>` として実装します。
@@ -4341,8 +4410,10 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 - **Label**: 各リンクに `aria-label="5ページへ移動"`、前後ナビゲーションには `aria-label="前のページへ移動"` / `aria-label="次のページへ移動"` 等を動的に付与。
     - **Note**: Rouaultは日本語環境に特化したアプリケーションであるため、すべてのUIテキストとラベルは日本語で記述します。
 - **Current Page**:
-    - `aria-current="page"` を付与。
-    - **Interaction**: 再ロードや誤認を防ぐため、**リンク (`<a>`) ではなく `<span>` 要素としてレンダリング**し、物理的にタブ順序から排除する。
+    - 現在ページリンクは **`<a aria-current="page">`** を使用し、`href` を保持します。
+    - **Label**: `aria-label="現在のページ、5ページ"` のように、状態とページ番号を同時に伝えます。
+- **Prev / Next Disabled**:
+    - 非活性時は `<span aria-disabled="true">` を使用し、フォーカス不能かつ遷移不能を物理的に担保します（`<a>` は使用しない）。
 - **Focus Management**:
     - **Timing**: ページ遷移後、View Transitions API（`document.startViewTransition()`）の `.finished` Promise完了後、またはフォールバック時は `fetch` によるDOM更新完了後にフォーカスを移動します。
     - **Target**: フォーカスは自動的に **ページタイトル (`h1[tabindex="-1"]`)** へ移動し、利用者が新しいページの先頭にいることを明確にします。スクリーンリーダーの読み上げコンテキストをリセットするためにも必須です。
@@ -4354,6 +4425,15 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
         - **Current Page**: `outline: 2px solid Highlight; outline-offset: -2px;` を追加し、背景色消失時でもシステムカラーで現在地を明示します。`box-shadow` によるインジケーターはこのモードでは消失します。
         - **Disabled State**: `opacity` が無効化されるため、`color: GrayText` をシステムカラーとして適用し、視覚的に非活性を示します。
         - **Border**: 構造の維持のため、すべてのアイテムに `border: var(--border-width) solid CanvasText` を適用します。
+
+**7. 受け入れ基準 (Acceptance Criteria)**
+
+- **SSR + PE**: 初期HTMLに `href` 付きリンクが出力され、JavaScript無効時でもページ移動できること。
+- **Current Link**: 現在ページが `<a aria-current="page">` で描画され、再訪可能であること。
+- **Range Determinism**: `total <= 7` / `total >= 8` の両方で省略記号の出現条件が仕様通りであること。
+- **Input Feature Strategy**: コンパクト表示と44pxヒットエリア拡張が `@media (hover: none) and (pointer: coarse)` でのみ有効化されること。
+- **Reduced Motion**: `prefers-reduced-motion: reduce` でアニメーションが `0.01ms` 相当に短縮されること。
+- **Forced Colors**: `forced-colors: active` で現在地・非活性・境界が識別可能であること。
 
 ### 記事・コンテンツ要素 (Article Elements)
 
@@ -4391,7 +4471,7 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
         - **Date**: `<time>` タグと `datetime` 属性を必須とします。
     - **Standard Items**: 以下の順序での配置します。
         1.  **Date**: `CalendarDays` icon (Lucide) + **最終更新日** (`YYYY-MM-DD`)。
-            - **Policy**: 常に情報の鮮度（`updated` > `created`）を優先して一つだけ表示します。作成日は視覚的に表示しません。
+            - **Policy**: 常に情報の鮮度（`updated` > `published`）を優先して一つだけ表示します。作成日は視覚的に表示しません。
             - **A11y (Date Context)**:
                 - **Screen Reader**: `<time>` 要素に `aria-label="最終更新日: [Date]、作成日: [CreatedDate]"` を付与することで、視覚的ノイズを排除しつつ完全な文脈を提供します。
                 - **CRITICAL**: `title` 属性によるツールチップは**キーボードユーザーとタッチデバイスユーザーにアクセス不可能**なため、WCAG準拠の手段として採用しません。`aria-label` による情報提供を唯一の実装とします。
@@ -4403,16 +4483,17 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
                     - Light Mode: `--fg-muted` (L45%) → `--fg-default` (L20%) = 明度低下（暗く）
                     - Dark Mode: `--fg-muted` (L65%) → `--fg-default` (L90%) = 明度上昇（明るく）
                     - **Rationale**: 通常のリンクのような色相変化（Hue Shift）ではなく、**明度変化（Lightness Shift）**のみで「押せる」ことを伝えます。これにより、メタデータエリアの静的な美しさを操作中も崩しません。
+                - **Touch (No Hover)**: `@media (hover: none) and (pointer: coarse)` では、発見可能性を担保するため `text-decoration: underline` を有効化し、`text-decoration-color: var(--link-decoration-color-touch)` を適用します。
                 - **Focus (`:focus-visible`)**:
                     - **Outline**: 基盤の Adaptive Focus（`--focus-ring-color-subtle` → `--focus-ring-color`）を適用。
                     - **Text Color**: Hoverと同様に `var(--fg-default)` へ変化。
                     - **Rationale**: Silent Linkの文脈でもフォーカスリングは明確に表示し、キーボードナビゲーションの現在地を保証します。
                 - **Transition**: `color var(--duration-fast) var(--ease-out), outline-color var(--duration-normal) var(--ease-out)`。
             - **Implementation Note**: `text-link` はカスタムコンポーネントではなく、**ネイティブの `<a>` タグ**（クラス `.silent-link` 付与）で実装します。これはテキストの折り返しやベースライン配置などの自然なインライン挙動を維持し、Markdownパーサーとの親和性を保つためです。
-        3.  **Reading Time** (Optional): `Clock` icon + 読了時間目安（"5 min read"）。
-        4.  **Source / License** (Optional): `Link` または `Scale` icon + 出典元への外部リンク（"Original"）やライセンス名。
+        3.  **Reading Time** (Optional): `Clock` icon + 読了時間目安（例: "読了目安 5分"）。
+        4.  **Source / License** (Optional): `Link` または `Scale` icon + 出典元への外部リンク（例: "原文"）やライセンス名。
             - **Note**: 翻訳記事や外部資料の転載の場合、原文への敬意と権利関係の明確化のため、この位置で明示をします。
-        5.  **Status** (Optional): `FileDashed` (Draft) / `Archive` (Archived) icon + ステータス名。
+        5.  **Status** (Optional): `FileDashed`（下書き） / `Archive`（アーカイブ）icon + ステータス名。
             - **Policy**: デフォルト（完成/標準）の場合は非表示とし、注意を要する状態のみを表示します。
             - **Icon Metaphor**: `Pencil` は「編集ボタン」と誤認されるリスクがあるため、状態を表す静的なアイコン（`FileDashed` 等）を採用します。
             - **Style**: **Icon + Colored Text** で表現します。矩形のバッジ (`<ui-badge>`) はメタデータ行の静謐さを損なうため使用しません。
@@ -4420,17 +4501,19 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 
                 | Status | Color Token | Icon | Rationale |
                 |--------|-------------|------|-----------|
-                | **Draft** | `--fg-muted` | `FileDashed` | 静謐さを保ちつつ「未完成」を伝える。注意喚起ではなく状態の提示。 |
-                | **Archived** | `--fg-subtle` | `Archive` | より控えめに。過去のコンテンツであることを主張せず暗示。 |
-                | **Work in Progress** | `--fg-warning` | `Construction` | 注意喚起が必要な場合の例外。内容が不完全・変更中であることを明示。 |
-                | **Deprecated** | `--fg-danger` | `AlertTriangle` | 警告レベル。非推奨コンテンツであることを強調。 |
+                | **下書き** | `--fg-muted` | `FileDashed` | 静謐さを保ちつつ「未完成」を伝える。注意喚起ではなく状態の提示。 |
+                | **アーカイブ** | `--fg-subtle` | `Archive` | より控えめに。過去のコンテンツであることを主張せず暗示。 |
+                | **作業中** | `--fg-warning` | `Construction` | 注意喚起が必要な場合の例外。内容が不完全・変更中であることを明示。 |
+                | **非推奨** | `--fg-danger` | `AlertTriangle` | 警告レベル。非推奨コンテンツであることを強調。 |
 
                 - **Design Rationale**: 基本的には `--fg-muted` / `--fg-subtle` で静謐さを維持し、ユーザーへの注意喚起が明確に必要な場合のみ `--fg-warning` / `--fg-danger` を使用します。
     - **Separator**: アイテム間の区切りには、CSSの **`::before` 擬似要素 (`content: "・"`)** を使用します。
         - **Logic**: **`li + li::before`** セレクタ（隣接兄弟結合子）を使用します。
         - **Wrapping Benefit**: `::after` (行末配置) と異なり、アイテムが折り返された際にセパレーターも一緒に次行の先頭へ移動するため、行末に中黒だけが取り残される現象（dangling dots）を防ぎます。
         - **Subtlety**: **`color: var(--fg-subtle)`** を適用し、情報のノイズ化を防ぎます。
-        - **A11y**: **`content: "・" / "";` (Alt Syntax)** を採用します。これはCSS生成コンテンツに代替テキスト（空文字）を設定できるモダンな手法であり、DOMを汚すことなく視覚と聴覚のS/N比を両立させるための**必須実装**です。
+        - **A11y/PE**:
+            - **Primary**: **`content: "・" / "";` (Alt Syntax)** を採用し、生成コンテンツの代替テキストを空文字に設定します。
+            - **Fallback**: Alt Syntax 非対応環境では `content: "・"` にフォールバックします。意味情報は各要素のラベル（`aria-label` 等）で提供し、セパレーター自体には意味を持たせません。
     - Layout: `display: flex`, `flex-wrap: wrap`, `align-items: center`
     - Placement: タイトル直下
     - Typography:
@@ -4466,14 +4549,14 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 
 | Property | Attribute | Type | Default | Description |
 |----------|-----------|------|---------|-------------|
-| `title` | `title` | `string` | `''` | 記事タイトル（必須）。`<h1>` として表示されます。 |
-| `date` | `date` | `string` | `''` | 最終更新日（ISO 8601形式: `YYYY-MM-DD`）。`updated` が存在する場合はそちらを優先表示。 |
+| `heading` | `heading` | `string` | `''` | 記事タイトル（必須）。`<h1>` として表示されます。`title` グローバル属性との衝突を避けるため、API名は `heading` を使用します。 |
+| `published` | `published` | `string` | `''` | 公開日（ISO 8601形式: `YYYY-MM-DD`）。`updated` が未指定の場合に表示日として使用します。 |
 | `created` | `created` | `string` | `''` | 作成日（ISO 8601形式: `YYYY-MM-DD`）。視覚的には表示せず、`aria-label` で提供。 |
-| `updated` | `updated` | `string` | `''` | 更新日（ISO 8601形式: `YYYY-MM-DD`）。存在する場合、`date` より優先して表示。 |
-| `tags` | `tags` | `string[]` | `[]` | タグ配列（例: `['音楽', 'バッハ']`）。各タグは Silent Link としてレンダリング。 |
-| `readingTime` | `reading-time` | `number` | — | 読了時間（分）。指定された場合のみ表示（例: `5` → "5 min read"）。 |
+| `updated` | `updated` | `string` | `''` | 更新日（ISO 8601形式: `YYYY-MM-DD`）。存在する場合、表示日は `updated` を優先します（`updated` > `published`）。 |
+| `tags` | — (property only) | `string[]` | `[]` | タグ配列（例: `['音楽', 'バッハ']`）。HTML属性ではなく、Litのプロパティバインディング（`.tags=${...}`）で渡します。 |
+| `readingTime` | `reading-time` | `number` | — | 読了時間（分）。指定された場合のみ表示（例: `5` → "読了目安 5分"）。 |
 | `status` | `status` | `'draft' \| 'archived' \| 'wip' \| 'deprecated'` | — | ステータス。指定された場合のみ表示。デフォルト（完成）の場合は省略。 |
-| `source` | `source` | `string` | — | 出典元URL（翻訳記事や転載の場合）。指定された場合のみ "Original" リンクとして表示。 |
+| `source` | `source` | `string` | — | 出典元URL（翻訳記事や転載の場合）。指定された場合のみ「原文」リンクとして表示。 |
 | `license` | `license` | `string` | — | ライセンス名（例: "CC BY 4.0"）。指定された場合のみ表示。 |
 
 **Slots**
@@ -4484,16 +4567,17 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 
 **Events**
 
-| Event Name | Detail Type | Description |
-|------------|-------------|-------------|
-| `tag-click` | `{ tag: string }` | タグリンクがクリックされた際に発火。親コンポーネントがルーティングや検索をハンドリング可能。デフォルトではリンクのネイティブ挙動（`href` による遷移）を維持。 |
+| Event Name | Detail Type | bubbles | composed | cancelable | Description |
+|------------|-------------|---------|----------|------------|-------------|
+| `tag-click` | `{ tag: string; href: string }` | `true` | `true` | `true` | タグリンククリック時に発火。`event.preventDefault()` が呼ばれなかった場合はネイティブ遷移を継続し、呼ばれた場合は親コンポーネント側でルーティングをハンドリングします。 |
 
 **実装例**
 
 ```html
 <ui-article-header
-  title="バッハ《マタイ受難曲》の構造美"
+  heading="バッハ《マタイ受難曲》の構造美"
   updated="2026-02-12"
+  published="2025-12-01"
   created="2025-11-20"
   .tags="${['音楽', 'バッハ', '宗教音楽']}"
   reading-time="8"
@@ -4523,6 +4607,30 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 
 **特記事項**: コンポーネント固有の Dark Mode 調整は現時点で不要です。将来的に視認性の問題が発覚した場合、このセクションに例外的な調整を追記します。
 
+**5. モーション軽減 (Reduced Motion)**
+
+- `prefers-reduced-motion: reduce` では、基盤ルールに従いすべての遷移・アニメーションを `0.01ms` 相当に短縮します。
+- Silent Link の色変化やフォーカスリングのアニメーションも即時完了とし、情報の認知は維持しつつ運動負荷を排除します。
+
+**6. Forced Colors対応 (Forced Colors Mode)**
+
+- `@media (forced-colors: active)` 時は、以下を満たします。
+    - **Title / Metadata**: システムカラー（`CanvasText` / `GrayText`）で可読性を維持。
+    - **Silent Link**: `text-decoration: underline` を強制し、色依存せずリンクであることを伝達。
+    - **Status**: 色だけに依存せず、必ずアイコン + テキストで状態を識別可能にする。
+    - **Focus**: `outline` を維持し、`box-shadow` 依存の表現は使用しない。
+
+**7. 受け入れ基準 (Acceptance Criteria)**
+
+- **Date Priority**: 表示日は `updated` > `published` の優先順位で決定されること。
+- **Date Context A11y**: 作成日が存在する場合、`<time>` の `aria-label` に「最終更新日 + 作成日」の両文脈が含まれること。
+- **Tag API Contract**: `tags` が property only として機能し、`.tags=${string[]}` で正しく描画されること。
+- **Tag Event Contract**: `tag-click` が `bubbles/composed/cancelable = true` で発火し、`preventDefault()` により遷移を抑止できること。
+- **Touch Discoverability**: `@media (hover: none) and (pointer: coarse)` で Silent Link の下線が有効化されること。
+- **Reduced Motion**: `prefers-reduced-motion: reduce` 時に色・フォーカス遷移が即時完了すること。
+- **Forced Colors**: `forced-colors: active` でタイトル・メタデータ・リンク・フォーカスが識別可能であること。
+- **Keyboard/SR**: キーボードのみでタグリンクに到達可能で、スクリーンリーダーで日付文脈が欠落なく伝わること。
+
 #### コールアウト (Callout) `<ui-callout>`
 
 **1. デザイン哲学と目的 (Design Philosophy)**
@@ -4538,7 +4646,7 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 | `variant` | `variant` | `'note' \| 'tip' \| 'success' \| 'warning' \| 'danger'` | 意味的種別。 |
 | `title` | `title` | `string` | （任意）見出しテキスト。 |
 | `icon` | `icon` | `string` | デフォルトアイコンを上書きする場合指定。 |
-| `heading-level` | `heading-level` | `number` | タイトルを表示する場合のARIA見出しレベル（例: `3` -> `h3`）。デフォルトは指定なし（単なるラベル）。**`title` が指定されている場合にのみ有効**です。 |
+| `heading-level` | `heading-level` | `number` | タイトルを表示する場合のARIA見出しレベル（例: `3` -> `aria-level="3"`）。見出しタグ（`h1`-`h6`）は生成せず、`div.title` に `role="heading"` + `aria-level` を適用します。デフォルトは指定なし（単なるラベル）。**`title` が指定されている場合にのみ有効**です。 |
 
 **3. スタイリングとトークンマッピング (Style & Tokens)**
 
@@ -4551,6 +4659,7 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
         - *Requirement*: `index.md` (Colors) に定義された正式なトークンを使用します。コンポーネント内でのオンザフライ計算（`from ...`）は禁止とし、デザインシステムの一貫性を守ります。
     - **Border Strategy** (System Consistency):
         - 引用 (Blockquote) との視覚的な整合性を図るため、物理的なボーダー (`border-inline-start`) を採用します。
+        - **Exception Policy**: `index.md` の「本文コンテンツ内（`.prose`）では境界線を最小化する」原則に対する**明示的な例外**として扱います。コールアウトは文脈外の補足情報を即座に識別させる必要があるため、左ボーダーのみ許可します。
         - **Width**: `var(--border-width-thick)` (`2px`) (Solid)
             - *Rationale*: システムで定義された強調ボーダー (`2px`) を使用し、一貫性を保ちます。色の違い (`[AccentColor]`) によって `Blockquote` との区別は十分になされるため、物理的な太さによる過剰な主張は避け、「静謐さ」を維持します。
         - **Values**:
@@ -4566,10 +4675,10 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
         - *Constraint*: 全周に一貫した角丸を適用し、有機的な「箱」としての形状を維持します。ボーダーが角丸に追従することで、コンテンツへの当たりを柔らかくします。
     - Padding: `--space-4`
     - **Forced Colors**:
-        - `forced-colors: active` では背景色が消えるため、`border: 1px solid CanvasText` (全周) を追加し、矩形領域を可視化します。
+        - `forced-colors: active` では背景色が消えるため、`index.md` のシステムカラーマッピング方針に従い、**トークン参照のまま** `border: var(--border-width) solid var(--border-default)` (全周) を追加して矩形領域を可視化します。
         - **Accent Border**:
-            - **Danger**: `border-inline-start: var(--border-width-thick) solid CanvasText` — `index.md` の `--danger` マッピングとの整合性を保ち、危険の差別化を維持します。
-            - **その他バリアント**: `border-inline-start: var(--border-width-thick) solid Highlight` — システム強調色により、補足情報としての重要性を物理的に伝達します。
+            - **Danger**: `border-inline-start: var(--border-width-thick) solid var(--danger)` — `index.md` の `--danger` マッピングとの整合性を保ち、危険の差別化を維持します。
+            - **その他バリアント**: `border-inline-start: var(--border-width-thick) solid var(--primary)` — システム強調色により、補足情報としての重要性を物理的に伝達します。
 - **Icon**:
     - Size: **`--icon-base` (16px)** — Prose（記事本文）・UI両コンテキストで統一します。
     - *Consistency*: ストローク幅は **`1.5px`** で固定します（`index.md` 準拠）。太いアイコンは警告であってもノイズとなるため禁止します。
@@ -4590,7 +4699,7 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
         - Margin Bottom: `var(--space-2)`
 - **Variants** (Icon: Lucide):
     - *Note*: アイコン色は `[AccentColor]` と同期させます。
-    - **Note** (Gray): `Info` icon (Color: `--fg-muted`)
+    - **Note** (Gray): `Info` icon (Color: `var(--fg-muted)`)
     - **Tip** (Primary/Violet): `Lightbulb` icon (Color: `var(--fg-info)`)
     - **Success** (Green): `CheckCircle` icon (Color: `var(--fg-success)`)
     - **Warning** (Amber): `AlertTriangle` icon (Color: `var(--fg-warning)`)
@@ -4610,6 +4719,7 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 | **Danger** | `--fg-danger` | `--bg-danger-subtle` | 5.8:1 | 5.8:1 | 3:1 ✓ |
 
 > **Note**: テキストコンテンツ（`--fg-default`）は `--bg-[variant]-subtle` 上で常に 4.5:1 以上（通常テキスト AA基準）を満たします。
+> **Source**: 上記比率は `index.md` で定義されたトークン値（OKLCH）を元に算出した値です。トークン値が変更された場合は再計算が必要です。
 
 **4. アクセシビリティ (A11y)**
 
@@ -4624,7 +4734,17 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
             - **Success**: `aria-label="成功"`
             - **Warning**: `aria-label="警告"`
             - **Danger**: `aria-label="注意"`
-        - **Heading Level**: `heading-level` 属性が指定され、かつ `title` が存在する場合、`div.title` に `role="heading"` と `aria-level` を適用し、スクリーンリーダーのナビゲーション対象とします。
+        - **Heading Level**: `heading-level` 属性が指定され、かつ `title` が存在する場合、`div.title` に `role="heading"` と `aria-level` を適用し、スクリーンリーダーのナビゲーション対象とします（許容値: `1-6`）。無効値は属性未指定として扱います。
+
+**5. 受け入れ基準 (Acceptance Criteria)**
+
+- **Variant Mapping**: `variant` ごとに背景・アクセントボーダー・アイコン色が `index.md` で定義されたトークンへ正しくマッピングされること。
+- **Prose Exception**: `.prose` 内で使用する場合でも、コールアウトのみ左ボーダー例外が適用されること。
+- **Heading Semantics**: `title` + `heading-level` 指定時に、`div.title` へ `role="heading"` + 正しい `aria-level` が設定されること（`h1`-`h6` は生成しない）。
+- **Heading Validation**: `heading-level` が `1-6` 以外の場合、`aria-level` を出力しないこと。
+- **Label Fallback**: `title` 未指定時、`variant` ごとの `aria-label` が設定されること。
+- **Forced Colors**: `forced-colors: active` 時、トークン経由で全周ボーダーとアクセントボーダーが可視化され、色のみに依存せず識別可能であること。
+- **Non-text Contrast**: アイコン・左ボーダーが各バリアント背景に対し WCAG 2.1 1.4.11 の 3:1 以上を満たすこと。
 
 #### 詳細折りたたみ (Details) `<ui-details>`
 
@@ -4651,6 +4771,7 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 
 | プロパティ | 属性 | 型/値 | デフォルト | 説明 |
 |------------|------|-------|-----------|------|
+| `ariaLabel` | `aria-label` | `string` | なし（必須） | Triggerボタンのアクセシブルネーム。**必須API**（空文字不可）。 |
 | `summary` | `summary` | `string` | `''` | 見出しテキスト。`summary` スロットが提供された場合は無視されます。 |
 | `open` | `open` | `boolean` | `false` | 開閉状態。`false` で閉じた状態（初期値）。 |
 | `variant` | `variant` | `'default' \| 'bordered'` | `'default'` | 枠線の有無。 |
@@ -4665,7 +4786,7 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
     - **`event.detail`**: `{ open: boolean }` — 変更後の開閉状態を含む
 
 **Fallback Behavior:**
-- `summary` 属性とスロットの両方が未提供の場合、空の見出し（空文字）が表示されます。これはエラーとはせず、意図的に見出しテキストを省略するユースケース（アイコンのみのトリガー等）を許容します。
+- `summary` 属性とスロットの両方が未提供の場合、視覚上は空の見出し（空文字）を許容します。ただしこの場合でも、**`aria-label` の指定は必須**です（アイコンのみトリガーを含む全ケースで必須）。
 
 **4. スタイリングとトークンマッピング (Style & Tokens)**
 
@@ -4707,7 +4828,7 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 **5. アクセシビリティ (A11y)**
 
 - **ARIA**:
-    - **Trigger**: `button` 要素を使用。`aria-expanded` を開閉状態に応じて `true`/`false` に切り替え、`aria-controls` でコンテンツ領域のIDを参照します。
+    - **Trigger**: `button` 要素を使用。`aria-label` を必須で指定し、`aria-expanded` を開閉状態に応じて `true`/`false` に切り替え、`aria-controls` でコンテンツ領域のIDを参照します。
     - **Content Region**:
         - **基準**: コンテンツが独立したセクションとして機能する場合（例: FAQ回答、長大な補足情報）は `role="region"` と `aria-labelledby` を付与し、ランドマークとして認識可能にします。
         - **非適用**: 単なる補足情報やインラインの詳細（数行程度）の場合は、`region` ロールを付与せず、通常のコンテンツとして扱います。
@@ -4719,6 +4840,15 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 - **Keyboard**: `Enter` または `Space` で開閉可能。
     - **Focus Strategy**: Triggerボタンには、`index.md` で定義された **Adaptive Focus** (`var(--animation-focus)`) を適用し、連続移動時のノイズを抑制しつつ、停止時の明確なフォーカス位置を示します。
 - **Forced Colors Mode**: `forced-colors: active` 時、Default Variant（枠なし）では背景色が消失するため、アイコン (`ChevronRight`) の `stroke` が `CanvasText` 等のシステムカラーに追従することを保証し、可視性を維持します。
+
+**6. 受け入れ基準 (Acceptance Criteria)**
+
+- **Accessible Name Required**: `aria-label` が未指定または空文字の場合、仕様違反として扱うこと。
+- **Icon-only Trigger**: `summary` 属性と `summary` スロットが未提供でも、`aria-label` のみでトリガーの意味がスクリーンリーダーに伝達されること。
+- **State Sync**: `open` 状態と `aria-expanded` が常に同期し、`toggle` イベントが状態変化時に1回発火すること。
+- **Closed Isolation**: 閉状態で `inert` が適用され、Tab移動とスクリーンリーダー読み上げの両方が遮断されること。
+- **Reduced Motion**: `prefers-reduced-motion: reduce` 時、開閉アニメーションが `0.01ms` に短縮されること。
+- **Forced Colors**: `forced-colors: active` 時、アイコンがシステムカラーへ追従し視認可能であること。
 
 #### コードブロック (Code Block) `<ui-code-block>`
 
@@ -4732,24 +4862,38 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
         - **Dark Mode** (`--bg-fill-muted`: L 9%): 前景 **L ≥ 55%** で 4.5:1 確保
         - *Rationale*: カラーシステムで定義された背景トークンとの組み合わせにおいて、コントラスト比を保証することでアクセシビリティ基準を満たします。
     - **Forced Colors Resilience**: ハイコントラストモード (`forced-colors: active`) では全ての色が失われるため、コメント部分（`comment`）に **`font-style: italic`** を適用し、斜体による構造的区別を担保します。
+- **Correct/Incorrect Expression**:
+    - **Principle**: 「正しい例 / 誤り例」の意味付けは、コード面そのものではなく**ヘッダー層（文脈層）**で伝達します。これにより、本文エリアの静謐さと高いS/N比を維持します。
+    - **No Color Flood**: 赤/緑の面塗りや強い背景演出は採用せず、必要最小限の状態表示（ラベル、アイコン、細線）に限定します。
+    - **Redundancy**: 色覚多様性とハイコントラスト環境を考慮し、色差だけでなく**文言（「正しい例」「誤り例」）とアイコン**を必須とします。
 
 **2. 実装要件 (Implementation Strategy)**
 
-- **Structure**: `<figure>` (Wrapper) > `<figcaption>` (File Name) + `<pre>` (Shiki Output) + `<button>` (Copy) のセマンティックな構成を採用します。
+- **Structure**: `<figure>` (Wrapper) > `<figcaption>` (File Name) + `<pre>` (Shiki Output) + `<ui-copy-button>` (Copy) のセマンティックな構成を採用します。
 - **Language Label**:
     - **Visual**: 言語名（例えば "TypeScript" バッジ等）は、ファイル名やハイライトから自明であるため、**視覚的には表示しません**（S/N比の維持）。
     - **A11y**: スクリーンリーダー向けには、Shikiが出力する `class` だけでなく、`<pre>` または `<figure>` に以下のARIA属性を付与します。
-        - **`aria-description="[Lang] code"`**: 言語情報を明示的に伝達
+        - **`aria-description="[言語名] のコード"`**: 言語情報を明示的に伝達（日本語固定）
         - **`aria-label`**: スクロール可能な領域（`tabindex="0"` 付与時）には「[filename || lang] コード」のようなアクセシブルネームを必須とします（WCAG SC 4.1.2 準拠）。
+- **Intent Label (Correct/Incorrect)**:
+    - **API**: `intent="neutral|valid|invalid"` をサポートし、既定値は `neutral` とします。
+    - **Visual**: `figcaption` 内に状態ラベル（例: 「正しい例」「誤り例」）とアイコンを表示します。`intent="neutral"` では非表示とします。
+    - **A11y**: `intent` が `valid` / `invalid` の場合、`aria-description` へ状態を含めます（例: 「TypeScript の誤りコード例」）。
+    - **Boundary Rule**: 状態表現はヘッダー内で完結させ、コード本文の背景色は変更しません。必要時のみ、補助的な左側アクセント線（1〜2px）を許容します。
 - **Engine**: プロジェクト規定に基づき **`Shiki`** (Build-time Rendering) を採用します。ランタイムJS（PrismJS等）は排除し、レイアウトシフトのない堅牢な描画とゼロ・ランタイムオーバーヘッドを実現します。
     - **Wrapper Injection (Shadow DOM)**: `<ui-copy-button>` コンポーネントを使用し、コピー機能とフィードバック（Flash/Morphing）を委譲します。
         - **Visibility (Desktop)**: 視覚的ノイズを抑えるためデフォルトでは非表示（`opacity: 0`）としますが、**ホバー (`:hover`)** および **フォーカス (`:focus-within`)** 時に即座に出現（`opacity: 1`）させます。
             - *Note*: キーボードフォーカスを受け付けるため、`display: none` ではなく `opacity` で制御します。
             - **Ghost Interaction Prevention**: `opacity: 0` の状態では **`pointer-events: none`** を適用し、不可視状態での誤クリック（Ghost Click）を物理的に防ぎます。出現時のみ `auto` に戻します。
             - **Snappiness**: `:focus-within` 起因の表示においては、フォーカスリングの視認性を優先するため、**transitionを無効化（または `duration-instant`）** し、即座に状態を可視化します。
-            - **Transition Spec**: 明示的なプロパティリストを使用します。
+            - **Transition Spec**: 明示的なプロパティリストを使用します（`focus-within` 起因時は即時化）。
                 ```css
                 transition: opacity var(--duration-normal) var(--ease-out);
+
+                /* キーボードフォーカス時は即時可視化を優先 */
+                :host(:focus-within) ui-copy-button {
+                  transition-duration: var(--duration-instant);
+                }
                 ```
     - **Visibility (Mobile/Touch)**: タッチ操作でのホバーは不安定であるため、 **`var(--opacity-link-touch)` (0.75)** を適用して常時表示とします。
         - **Detection**: `@media (hover: none) and (pointer: coarse)` によりタッチデバイスを検出します（`index.md` のインタラクション機能検出戦略に準拠）。
@@ -4767,8 +4911,10 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 |------------|------|-------|------|
 | `filename` | `filename` | `string` | ファイル名。指定時はヘッダー（figcaption）に表示。 |
 | `lang` | `lang` | `string` | 言語名（例: `ts`, `css`）。ARIAラベルやハイライトのクラス生成に使用。また、**`data-lang` 属性**としてDOMに出力し、CSS/JSからの参照を可能にします。 |
+| `label` | `label` | `string` | **Code Group連携用の任意属性**。`<ui-code-group>` 配下でタブ名として使用。未指定時は Group 側で `filename` > `lang` > `"コード"` の順にフォールバック。 |
+| `intent` | `intent` | `'neutral' \| 'valid' \| 'invalid'` | コード例の意味状態。`valid` は正しい例、`invalid` は誤り例を表します。表示はヘッダー層で行い、コード本文の背景トーンは維持します。 |
 | `show-line-numbers` | `show-line-numbers` | `boolean` | 行番号を表示するかどうか。デフォルトは `false`。 |
-| `headless` | `headless` | `boolean` | **Headless Mode**。`true` の場合、ファイル名ヘッダー、コピーボタン、外枠（ボーダー・背景・角丸）を全て無効化し、純粋なコードコンテンツのみを表示します。Code Group内での使用を想定。 |
+| `headless` | `headless` | `boolean` | **Headless Mode**。外装（ヘッダー、コピーボタン、外枠）を無効化する**初期モード**。親から `--ui-code-block-header-display` が提供された場合はそちらを優先します。 |
 
 **Public Methods:**
 - **`getCodeContent(): string`**: コピー用に整形された純粋なコードテキストを返します。**`innerText` の単純取得ではなく、ShikiのメタデータやRawソースを使用し、行番号が表示されている場合でもそれらが混入しないことを保証します。**これにより、親コンポーネントはDOM構造を知る必要がなくなります。
@@ -4782,8 +4928,8 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
     - **Line Height**: **`var(--line-height-normal)` (1.5)**。親 (`.prose`) の `relaxed` (1.75) はコードには散漫すぎるため、引き締めて「塊」としての可読性を確保します。
 - **Background**: `var(--bg-fill-muted)`
     - *Rationale*: 入力フォーム等と共通の「Fill」階層を使用し、一貫性を担保します。
-- **Border**: **`var(--border-subtle)`** (`border: var(--border-width) solid var(--border-default)`)
-    - *Rationale*: 独立した情報ブロックとして構造を明示する必要があるため、標準ボーダーを使用します（`index.md` L660-670 ボーダーガイドライン準拠）。
+- **Border**: **`var(--border-style-subtle)`**
+    - *Rationale*: 独立した情報ブロックとして構造を明示する必要があるため、標準ボーダーを使用します（`index.md` ボーダーガイドライン準拠）。
 - **Radius Strategy**:
     - **Standalone**: `var(--radius-md)`
     - **In Group (Bottom)**: `0 0 var(--radius-md) var(--radius-md)`
@@ -4795,6 +4941,9 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
         - **Rationale**: Shadow DOM のカプセル化を維持するため、親（Group）からのスタイル注入ではなく、自身の属性 (`:host([headless])`) による自己変容で統合を実現します。
         - **Context Awareness (No-JS FOUC Prevention)**:
             - **Critical**: JS実行前のヘッダー二重表示（FOUC）を防ぐため、CSS変数 **`--ui-code-block-header-display`** が `none` の場合、`headless` 属性がなくともヘッダーとコピーボタンを非表示にするフォールバックを実装します。
+        - **Control Priority (Formal Spec)**:
+            - 表示制御の優先順位は **親CSS変数 > `headless` 属性 > コンポーネント既定値** とします。
+            - 具体的には、`--ui-code-block-header-display` が定義されている場合、`headless` の有無に関わらずその値（`none` / `block`）を採用します。
 - **Padding**: **`var(--ui-code-block-padding, var(--space-4))`**
     - *Rationale*: 外部コンポーネント（例: `<ui-syntax-card>`）からのレイアウト制御（余白のゼロ化など）を受け入れるため、CSS変数を公開APIとして定義します。
 - **Copy Button (Action)**:
@@ -4811,11 +4960,16 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
         - **Compliance**: `index.md` の "Small Text Rule" に従い、**`font-weight: var(--font-medium)`** と **`letter-spacing: var(--tracking-wide)`** を適用して可読性を担保します。
     - Position: 左上。コピーボタンエリア（右上）との衝突を避ける配置。
     - **Truncation**: 長いファイル名は `text-overflow: ellipsis` 等で省略し、コピーボタンと重ならないよう右側に安全なマージンを確保します。
+- **Intent Indicator (`intent`)**:
+    - **Placement**: `figcaption` 内でファイル名の近傍に配置し、本文に干渉させません。
+    - **Token Strategy**: `intent="valid"` / `intent="invalid"` でも背景の塗り分けは行わず、`color: var(--fg-muted)` を基調にした低彩度表示を維持します。
+    - **Optional Accent Rail**: 判別補助として `border-inline-start: 2px solid` の細線を許容します。色は低彩度トークンに限定し、本文面積への侵食を避けます。
+    - **Forced Colors**: `forced-colors: active` では `currentColor` ベースのアイコンとテキストを保持し、意味が損なわれないことを優先します。
 - **Layout Strategy (Breakout)**:
     - **Concept**: `index.md` の "Media Elements" ルールに従い、本文幅 (`.prose`) よりも広く表示することで、没入感を高めると同時に、横長のコードの視認性を向上させます。
     - **Mobile**: `width: calc(100% + var(--space-8))`, `margin-inline: var(--space-n4)`
     - **Desktop**: `width: calc(100% + var(--space-16))`, `margin-inline: var(--space-n8)`
-    - *Note*: ネガティブスペーシングトークン（`index.md` L619-628）を使用し、計算式の重複を排除します。
+    - *Note*: ネガティブスペーシングトークン（`index.md`）を使用し、計算式の重複を排除します。
 - **Overflow**:
     - `overflow-x: auto`
     - **Scrollbar Clipping Safety**: Standalone モードにおいて、スクロールバーの端がコンテナの角丸 (`radius-md`) によって切り取られる現象（特にWindows環境）を防ぐため、必要に応じて下部に微細なパディングを確保し、物理的な干渉を回避します。
@@ -4828,7 +4982,7 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 
 **5. 印刷対応 (Print Styles)**
 
-`index.md` L1730-1901 "印刷スタイル" に準拠し、紙媒体への出力時に以下の最適化を行います。
+`index.md` "印刷スタイル" に準拠し、紙媒体への出力時に以下の最適化を行います。
 
 - **Copy Button**: `display: none` で非表示
 - **Breakout Layout 解除**:
@@ -4838,11 +4992,11 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 - **Line Wrapping 強制**: `white-space: pre-wrap` および `word-wrap: break-word`
     - *Rationale*: 横スクロールが不可能な印刷メディアでは、長い行を折り返してコンテンツの完全性を確保します。
 - **Background 除去**: `background: transparent !important`
-- **Border モノクロ化**: `border-color: #ccc !important`
+- **Border モノクロ化**: `border-color: #000 !important`
     - *Rationale*: インク節約と視認性のバランス。
 - **Page Break 制御**: `page-break-inside: avoid` および `break-inside: avoid`
     - *Rationale*: コードブロックが途中で分割されないよう、単一ページ内に収める。
-- **Font Size 調整**: `font-size: 9pt`（`index.md` L1849 準拠）
+- **Font Size 調整**: `font-size: 9pt`（`index.md` 準拠）
 
 **実装例**:
 
@@ -4852,7 +5006,7 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
     width: 100% !important;
     margin-inline: 0 !important;
     background: transparent !important;
-    border-color: #ccc !important;
+    border-color: #000 !important;
     page-break-inside: avoid;
     break-inside: avoid;
   }
@@ -4871,12 +5025,21 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 }
 ```
 
+**6. 受け入れ基準 (Acceptance Criteria)**
+
+- **Priority Rule**: `--ui-code-block-header-display` が指定された場合、`headless` 属性より優先してヘッダー/コピーボタンの表示状態が決定されること。
+- **A11y Language**: `aria-description` および `aria-label` が日本語文言（例: 「TypeScript のコード」「index.ts コード」）で提供されること。
+- **Focus Visibility**: `:focus-within` 起因ではコピーボタンが即時（`--duration-instant`）に可視化されること。
+- **Border Token Consistency**: 外枠が `var(--border-style-subtle)` で統一されていること。
+- **Intent Semantics**: `intent="valid"` / `intent="invalid"` 指定時、ヘッダーに文言+アイコンで状態が表示され、`aria-description` にも同義の状態情報（日本語）が含まれること。
+
 #### コードグループ (Code Group) `<ui-code-group>`
 
 **1. デザイン哲学と目的 (Design Philosophy)**
 
 - **役割**: 複数のコードを並列に提示し、**「比較（Comparison）」**や**「凝集（Cohesion）」**を促します。
     - **Use Case**: Good/Badパターンの対比、Before/After（リファクタリング）、言語別（TS/JS）の切り替え。
+    - **Comparison Convention**: 正誤比較では、タブラベルを **`正しい例` / `誤り例`** に統一し、各 `<ui-code-block>` に `intent="valid"` / `intent="invalid"` を対応づけます。
     - **Anti-Pattern**: 単なる環境差分（npm/yarn）の吸収には最適ですが、乱用は避け、本当に比較が必要な場合に限定します。
 - **Physical Connection (Context Fusion)**:
     - タブヘッダーとコードブロック本体を、単なる切り替えスイッチではなく**「一つの実体（Solid Object）」**として統合します。
@@ -4903,11 +5066,13 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
             - 各 `<ui-code-block>` に対して **`slot="panel"`** および **`role="tabpanel"`** を動的に付与し、Shadow DOM 内の適切なスロット領域へ投影（Project）されるよう制御します。
         - これにより、Shadow DOM 側は単に「枠（Slot）」を提供するだけで済み、複雑なDOMラップ操作を回避しつつ、正しい ARIA 構造を実現します。
         - **No-JS Fallback**: JSが無効な環境ではスロット属性が付与されないため、すべてのブロックが通常フロー（スタック）で表示されるという**プログレッシブエンハンスメント**が自然に成立します。
+        - **Baseline Rendering Guarantee**: `data-ready` 付与前は `hidden` を適用せず、default slot 側で全 `<ui-code-block>` が必ず描画される構造を維持します。これにより、JS未実行時でもコンテンツ欠落を防ぎます。
 
 | プロパティ | 属性 | 説明 |
 |------------|------|------|
-| `label` | `label` | (Child Item) タブに表示するラベルテキスト。 **省略時のフォールバック順序: `filename` > `lang` > "コード"**。これにより空のタブが生成されることを防ぎます。`index.md` L72-73 の国際化方針に従い、ジェネリックフォールバックは日本語で固定します。 |
+| `label` | `label` | (Child Item) タブに表示するラベルテキスト。 **省略時のフォールバック順序: `filename` > `lang` > "コード"**。これにより空のタブが生成されることを防ぎます。`index.md` の国際化方針に従い、ジェネリックフォールバックは日本語で固定します。 |
 | - | - | **Metadata Extraction**: Code Group は、アクティブな Code Block が持つ `filename` 属性を読み取り、自身のヘッダー内に表示します。ただし、`label` が未指定（filenameをタブ名に使用）の場合、重複を避けるためメタデータ領域には表示しません。 |
+| - | - | **Comparison Pair Contract**: 正誤比較を行う場合、子要素の `label` は `正しい例` / `誤り例` を明示指定し、対応する `intent` (`valid` / `invalid`) と意味を一致させます。 |
 
 **3. 実装要件 (Implementation Strategy)**
 
@@ -4918,14 +5083,18 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
             - **Target**: `<ui-code-group>` のホスト要素自身。Shadow DOM内の子要素ではありません。
             - **Purpose**: CSS セレクタ `:host([data-ready])` を通じて、ハイドレーション完了後のスタイル（タブUI）を有効化します。
         - この属性が付与されて初めて、タブナビゲーションのスタイルとARIA制御（非アクティブパネルへの `hidden`）を適用し、インタラクティブなタブUIへと変形させます。これにより、レイアウトシフト（CLS）は発生しますが、コンテンツの完全性を保証します。
-        - **Implementation Note**: `data-ready` は Code Group 独自の概念であり、`index.md` L1392-1460 のコンテキスト伝達パターンには該当しません（親子間通信ではなく、コンポーネント自身の内部状態のため）。この属性は、Progressive Enhancement の段階的適用（No-JS → JS-ready）を CSS で制御するためのトリガーとして機能します。
+        - **Implementation Note**: `data-ready` は Code Group 独自の概念であり、`index.md` のコンテキスト伝達パターンには該当しません（親子間通信ではなく、コンポーネント自身の内部状態のため）。この属性は、Progressive Enhancement の段階的適用（No-JS → JS-ready）を CSS で制御するためのトリガーとして機能します。
     - **Headless Switch**:
         - Code Blockのヘッダーは、Stack状態では表示し、タブ化完了後（`data-ready`）に CSS Custom Property（例: `--ui-code-block-header-display: none`）を通じて一括隠蔽します。これにより、タブとブロックヘッダーの情報の重複を解消します。
+        - **Priority Rule (Formal Spec)**: 表示制御の優先順位は **親CSS変数 > `headless` 属性 > コンポーネント既定値** とします。`ui-code-group` は `--ui-code-block-header-display` を通じて子 `ui-code-block` の表示状態を最終決定します。
 - **Logic Porting**:
     - `index.md` の戦略に従い、**`@lion/ui` (LionTabs)** のロジック（Controller/Mixin）をポーティングして使用します。
     - **Keyboard Navigation (Focus Flow)**:
         - **Tabs**: 矢印キー（`←` `→`）によるタブ移動、`Home`/`End` 対応、およびフォーカス時の自動選択（Follow Focus）。
         - **Exit Strategy**: ARIA標準に従い、タブリストからの **`Tab` キー押下**によってグループを脱出し、次のフォーカス可能要素（**Copy Button**）へ移動するフローを保証します。視覚的に隣接していても、矢印キーでボタンへ移動させる非標準な挙動は採用しません。
+    - **Intent Synchronization (Comparison Mode)**:
+        - 正誤比較のタブ構成では、アクティブパネルの `intent` を読み取り、グループヘッダー（メタデータ領域）にも同義の状態文言を反映します。
+        - これにより、モバイルで `figcaption` が折り返し・省略される状況でも、現在の文脈（正しい例/誤り例）を見失わない設計とします。
 - **SSR & Hydration**:
     - サーバーサイド（SSG）では全てのスロットコンテンツを出力します。前述の通りCSSで初期表示を制御し、ハイドレーション後はJSが適切にARIAステートを管理します。
 
@@ -4934,7 +5103,7 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
 - **Container**:
     - Radius: `--radius-md`
     - Overflow: `hidden` (角丸の維持)
-    - Border: `var(--border-subtle)`
+    - Border: `var(--border-style-subtle)`
     - Position: `relative`
     - **Layout Strategy (Context-Dependent Breakout)**:
         - UIコンポーネントとしての安全性（Safe by Default）を優先します。
@@ -4944,9 +5113,9 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
             - **Desktop**: `width: calc(100% + var(--space-16))`, `margin-inline: calc(-1 * var(--space-8))`
         - **Browser Compatibility (Firefox Fallback)**:
             - **Critical**: `:host-context(.prose)` は **Firefox 未サポート**です（2026年2月時点）。
-            - **Strategy**: CSS Variable ベースのコンテキスト検出を採用します。
-                - 親（`.prose`）が **`--in-prose-context: 1`** を設定します。
-                - Code Group は、この変数が定義されている場合にのみ Breakout スタイルを適用します。
+            - **Strategy**: CSS Variable ベースのコンテキスト伝達を採用します。
+                - 親（`.prose`）が `--ui-code-group-width` / `--ui-code-group-margin-inline` を注入します。
+                - Code Group はこれらの変数を参照し、未定義時は `width: 100%`, `margin-inline: 0` の安全な既定値を使用します。
             - **Implementation**:
                 ```css
                 /* 親コンテナ（Light DOM）: prose内の Code Group にのみ拡張値を注入 */
@@ -4988,7 +5157,7 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
               margin-inline: var(--ui-code-block-breakout-margin, calc(-1 * var(--space-4)));
             }
             ```
-        - **Note**: この戦略により、CSS詳細度の問題を回避し、Code Block 側で `!important` を使用する必要もありません。親からの変数提供のみで、子の挙動を制御できます（`index.md` L1408-1460 のコンテキスト伝達パターンに準拠）。
+        - **Note**: この戦略により、CSS詳細度の問題を回避し、Code Block 側で `!important` を使用する必要もありません。親からの変数提供のみで、子の挙動を制御できます（`index.md` のコンテキスト伝達パターンに準拠）。
 - **Header Area Structure (ARIA Compliance)**:
     - **Structural Separation**: `div.code-group-header` (Flex wrapper) 内で「純粋なタブリスト (`div[role="tablist"]`)」と「ヘッダーツール (`div.header-tools`)」を明確に分離します。
     - **Container Stacking**: Wrapperに **`isolation: isolate`** を適用し、ローカルスタッキングコンテキストを生成します。
@@ -4998,10 +5167,10 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
         - *Structure*: Body (`--bg-fill-muted`) に対して一段階「浮き上がった（明るい）」階層とすることで、物理的なフォルダのように振る舞いを表現します。
     - Border Bottom: `var(--border-width) solid var(--border-default)` (未選択部分の境界線として描画)
     - **Scroll Affordance (Shadow Hint)**:
-        - **Mobile Detection**: `@media (hover: none) and (pointer: coarse)` を使用してタッチデバイスを検出します（`index.md` L1536-1580 のインタラクション機能検出戦略に準拠）。
+        - **Mobile Detection**: `@media (hover: none) and (pointer: coarse)` を使用してタッチデバイスを検出します（`index.md` のインタラクション機能検出戦略に準拠）。
         - モバイル環境ではスクロールバーを非表示（`scrollbar-width: none` / `::-webkit-scrollbar { display: none; }`）にし、**CSS Pure Scroll Shadows** を導入します。スクロール可能な方向（隠れている側）にのみ影が出現する視覚的ヒントを提供します。
         - **Right Side Padding (Mask Compensation)**: ヘッダーツール（マスク領域）による文字被りを防ぐため、`tab-list` の末尾（`padding-inline-end`）に **マスク幅と同等以上の余白（約40px）** を確保し、最後のタブが完全に可視領域までスクロールできるようにします。
-    - **Desktop Strategy (A11y)**: マウスやキーボード操作を主とする環境（`@media (hover: hover)`）では、操作手段（ハンドル）の提示が不可欠です。隠蔽は行わず、**`index.md` で定義されたカスタムスクロールバー (`height: 12px` / Track: Transparent / Thumb: `4px` Height)** を適用します。これにより、視覚的ノイズを最小限に抑えつつ、WCAG 2.1 (Pointer Gestures) に準拠します。
+    - **Desktop Strategy (A11y)**: マウスやキーボード操作を主とする環境（`@media (hover: hover)`）では、操作手段（ハンドル）の提示が不可欠です。隠蔽は行わず、**`index.md` で定義されたカスタムスクロールバー (`height: 12px` / Track: Transparent / Thumb: `4px` Height)** を適用します。これにより、視覚的ノイズを最小限に抑えつつ、操作の発見可能性と十分なヒットエリアを維持します。
     - **Tab Item**:
         - **Touch Target & Clipping Prevention**:
             - **Concept**: **`::after` 疑似要素等を用いて垂直方向 44px (`--control-min-touch`) 以上のヒットエリア**を確保します。
@@ -5018,7 +5187,7 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
                 - **Offset Compensation (Mask Safety)**:
                     - `header-tools` の幅は動的に変化する可能性がありますが、実装時は **CSS Variable (`--header-tools-width`)** として公開し、JS側で参照可能にします。
                     - `scrollIntoView()` 実行後、`tab-list` の `scrollLeft` を `header-tools` の幅分だけ補正し、タブが完全に可視領域に収まることを保証します。
-                    - **Formula**: `tabList.scrollLeft -= headerToolsWidth`
+                    - **Formula**: `tabList.scrollLeft += headerToolsWidth`
                 - **Implementation Example**:
                     ```typescript
                     private _scrollTabIntoView(tab: HTMLElement): void {
@@ -5084,11 +5253,11 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
             - **Adaptive Focus**: キーボード操作時は `var(--animation-focus)` を適用。
             - **Feedback**: Code Block同様、アイコンの変化に加え **`var(--animation-flash)`** を使用したフィードバックを実装します。
         - **Animation Tokens (Explicit Reference)**:
-            - **Visibility Transition**: `transition: opacity var(--duration-normal) var(--ease-out)` (`index.md` L906: `--duration-normal` = 150ms)
-            - **Adaptive Focus**: `animation: var(--animation-focus)` (`index.md` L1216: adaptive-focus 200ms)
-            - **Copy Feedback**: `animation: var(--animation-flash)` (`index.md` L987: flash var(--duration-fast) var(--ease-out))
-            - **Hydration Fade-in**: `transition: opacity var(--duration-slow) var(--ease-out)` (`index.md` L907: `--duration-slow` = 200ms)
-            - **Constraint Compliance**: すべてのアニメーションは `index.md` L109 の「300ms超の遷移禁止」制約を遵守しています。最長の `--animation-focus` でも 200ms であり、`--duration-slower` (300ms) を超えません。
+            - **Visibility Transition**: `transition: opacity var(--duration-normal) var(--ease-out)` (`index.md`: `--duration-normal` = 150ms)
+            - **Adaptive Focus**: `animation: var(--animation-focus)` (`index.md`: adaptive-focus 200ms)
+            - **Copy Feedback**: `animation: var(--animation-flash)` (`index.md`: flash var(--duration-fast) var(--ease-out))
+            - **Hydration Fade-in**: `transition: opacity var(--duration-slow) var(--ease-out)` (`index.md`: `--duration-slow` = 200ms)
+            - **Constraint Compliance**: すべてのアニメーションは `index.md` の「300ms超の遷移禁止」制約を遵守しています。最長の `--animation-focus` でも 200ms であり、`--duration-slower` (300ms) を超えません。
 - **Body (Code Block Wrapper)**:
     - Background: `var(--bg-fill-muted)` (Sunken)
     - Border Top: `var(--border-width) solid var(--border-default)`
@@ -5112,16 +5281,15 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
         - Header領域内（右上）に **`<ui-copy-button>`** を配置します。
         - **Logic**: タブ切り替え時に、`<ui-copy-button>` の `value` プロパティをアクティブな Code Block のコンテンツで更新します。
             - **State Reset**: タブ切り替え時は文脈が変わるため、コピーボタンの状態（Success/Error）を即座に **`Idle`** にリセットします。前のタブでの操作結果を引き継ぐことによるユーザーの混乱を防ぎます。
-            - **Async Operation Cancellation (Robustness)**:
-                - コピー操作が `--timeout-async-threshold` (500ms, `index.md` L918) を超えて遅延している間にタブが切り替わった場合、**`AbortController`** を使用して進行中の非同期処理をキャンセルします。
+            - **Async Result Invalidation (Robustness)**:
+                - `navigator.clipboard.writeText()` は `AbortSignal` を受け取らないため、処理自体の中断ではなく、**遅延した結果の無効化**で整合性を担保します。
                 - **Implementation Strategy**:
                     ```typescript
-                    private _currentCopyAbortController?: AbortController;
+                    private _copyRequestId = 0;
 
-                    private async _handleTabChange(newIndex: number): Promise<void> {
-                      // 進行中のコピー操作をキャンセル
-                      this._currentCopyAbortController?.abort();
-                      this._currentCopyAbortController = undefined;
+                    private _handleTabChange(newIndex: number): void {
+                      // タブ切り替えで世代を進め、旧リクエストの結果を無効化
+                      this._copyRequestId += 1;
 
                       // ボタンの状態を Idle にリセット
                       this._copyButton.state = 'idle';
@@ -5129,36 +5297,32 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
                       // 新しいタブのコンテンツで更新
                       const activeBlock = this._codeBlocks[newIndex];
                       this._copyButton.value = activeBlock.getCodeContent();
-                      this._copyButton.label = `Copy ${activeBlock.filename || activeBlock.lang} code`;
+                      this._copyButton.label = `${activeBlock.filename || activeBlock.lang} のコードをコピー`;
                     }
 
                     private async _handleCopy(): Promise<void> {
-                      // 新しい AbortController を作成
-                      this._currentCopyAbortController = new AbortController();
-                      const { signal } = this._currentCopyAbortController;
+                      const requestId = ++this._copyRequestId;
 
                       try {
-                        await navigator.clipboard.writeText(this._copyButton.value, { signal });
-                        if (!signal.aborted) {
+                        await navigator.clipboard.writeText(this._copyButton.value);
+                        if (requestId === this._copyRequestId) {
                           this._copyButton.state = 'success';
                         }
-                      } catch (error) {
-                        if (error.name !== 'AbortError' && !signal.aborted) {
+                      } catch (_error: unknown) {
+                        if (requestId === this._copyRequestId) {
                           this._copyButton.state = 'error';
                         }
-                      } finally {
-                        this._currentCopyAbortController = undefined;
                       }
                     }
                     ```
-                - **Rationale**: タブ切り替え後、旧タブのコピー結果がボタンに反映されることを防ぎ、UIの整合性を保証します。
+                - **Rationale**: タブ切り替え後、旧タブ文脈で完了したコピー結果が現行タブのUI状態を上書きすることを防止します。
             - **Note**: Reactivityのある実装（Lit等）であれば、アクティブインデックスの変更をトリガーに自動的に伝播させます。
     - **Hydration Safety (Zero-Confusion)**:
         - JSが無効な環境（SSR/No-JS）ではクリップボードAPIが動作しないため、コピーボタン自体を **`display: none` または `visibility: hidden`** で隠蔽し、機能しないUIをユーザーに見せない「誠実な設計」を徹底します。
         - JSハイドレーション完了（Controller接続）と共に、フェードイン等で滑らかに出現させます。
     - **Reactive Labeling (A11y)**:
         - `<ui-copy-button>` の `label` プロパティも動的に更新します。
-        - 例: `label="Copy index.ts code"` -> `label="Copy styles.css code"`。
+        - 例: `label="index.ts のコードをコピー"` -> `label="styles.css のコードをコピー"`。
     - **Encapsulation**: DOM構造（`<pre>` や行番号）への直接アクセスは禁止します。Blockからテキストを取得するインターフェース (`getCodeContent()`) を経由して値を渡します。
 - **A11y**:
     - **ARIA Roles**:
@@ -5170,7 +5334,7 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
 
 **6. 印刷対応 (Print Styles)**
 
-`index.md` L1730-1901 "印刷スタイル" に準拠し、紙媒体への出力時に以下の最適化を行います。
+`index.md` "印刷スタイル" に準拠し、紙媒体への出力時に以下の最適化を行います。
 
 - **Tab Navigation 非表示**:
     - `div[role="tablist"]` および `div.header-tools` を `display: none` で隠蔽します。
@@ -5185,7 +5349,7 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
     - *Rationale*: 用紙幅を最大限活用し、ネガティブマージンによる意図しないはみ出しを防ぎます。
 - **Background & Border モノクロ化**:
     - `background: transparent !important`
-    - `border-color: #ccc !important`
+    - `border-color: #000 !important`
     - *Rationale*: インク節約と視認性のバランス。
 - **Page Break 制御**:
     - `:host { page-break-inside: avoid; break-inside: avoid; }`
@@ -5201,7 +5365,7 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
     width: 100% !important;
     margin-inline: 0 !important;
     background: transparent !important;
-    border-color: #ccc !important;
+    border-color: #000 !important;
     page-break-inside: avoid;
     break-inside: avoid;
   }
@@ -5223,6 +5387,15 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
 }
 ```
 
+**7. 受け入れ基準 (Acceptance Criteria)**
+
+- **No-JS Content Integrity**: `data-ready` 未付与時は全 `<ui-code-block>` がスタック表示され、非アクティブ化（`hidden`）が適用されないこと。
+- **Tab Label Contract**: `label` 未指定時に `filename` > `lang` > `"コード"` の順で空タブなしにフォールバックすること。
+- **Scroll Compensation Consistency**: `scrollIntoView()` 後の補正式が **`tabList.scrollLeft += headerToolsWidth`** で仕様文と実装例の双方で一致すること。
+- **Copy State Isolation**: タブ切り替え後、旧タブ由来のコピー結果（Success/Error）が現行タブのボタン状態を上書きしないこと。
+- **Print Token Alignment**: 印刷時ボーダー色が `#000` に統一され、`index.md` の印刷基準と整合していること。
+- **Comparison Pair Consistency**: 正誤比較用途では、タブラベル（`正しい例` / `誤り例`）と子 `ui-code-block` の `intent` (`valid` / `invalid`) が常に一致していること。
+
 #### 構文カード (Syntax Card) `<ui-syntax-card>`
 
 **1. デザイン哲学と目的 (Design Philosophy)**
@@ -5242,12 +5415,17 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
     - 垂直方向のスタックレイアウトを採用し、情報の種別ごとにセクション（スロット）を積み上げます。
     - **Header**: コンテキスト（種類）、名前、**およびコピーボタン（Action）**。
     - **Hero (Signature)**: シンタックスハイライトされたコードブロック。
-    - **Content**: 構成要素のリスト（`<ui-syntax-field>` の集合）。
-    - **Empty State Logic**: `(default)` スロット（Content）が空の場合、**Content Area 全体を非表示**とし、Hero (Signature) の `border-bottom` を削除してデザインを完結させます。
+    - **Content**: 構成要素のリスト（`<ui-syntax-field>` の集合）および `returns` スロットの解説。
+    - **Empty State Logic**: `(default)` と `returns` の**両方が空**の場合に限り、**Content Area 全体を非表示**とし、Hero (Signature) の `border-bottom` を削除してデザインを完結させます。
         - **Radius Logic**: この時、Signature Area がカードの最下部となるため、**`border-radius: 0 0 var(--radius-md) var(--radius-md)`** を適用し、カードの形状を美しく閉じます。
 - **Copy Integration (Delegation)**:
     - **Concept**: Signatureエリア（コードブロック）は `headless` モードで表示されるため、コピー機能をヘッダー右端に**委譲配置**します。
+        - **Headless Priority Note**: 本コンポーネントは `ui-code-group` のような `--ui-code-block-header-display` の親上書きを行わないため、`headless` は実質的に厳格モードとして動作します（`ui-code-block` の優先順位仕様と整合）。
     - **Implementation**: `<ui-copy-button>` をヘッダー内に配置します。クリック時、`signature` スロット内の `<ui-code-block>` インスタンスを特定し、その公開メソッド **`getCodeContent()`** を実行して純粋なコードを取得・コピーします。
+    - **Failure Contract**:
+        - `signature` スロット内の `<ui-code-block>` は**1つのみ**を正式サポート対象とします。
+        - 対象が0件または複数件の場合、コピー機能は無効化（`disabled` + `aria-disabled="true"`）し、誤コピーを防止します。
+        - `getCodeContent()` が空文字または例外を返した場合、成功状態を表示せず、エラー状態のみを表示します（詳細通知は `ui-copy-button` の仕様に委譲）。
 
 **3. 技術仕様とAPI (Technical Specs)**
 
@@ -5255,13 +5433,13 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
 |------------|------|-------|------|
 | `kind` | `kind` | `string` | 要素の種類（例: "Method", "Struct", "Component", "Query"）。ヘッダーのタグとして表示。 |
 | `name` | `name` | `string` | 対象の名前（例: "useEffect", "User", "SELECT"）。 |
-| `lang` | `data-lang` | `string` | 対象言語。シンタックスハイライトおよびARIAラベルに使用。<br>**Note**: `data-lang` 属性として出力する理由は、HTML標準の `lang` 属性（自然言語指定）との衝突を回避し、プログラミング言語のメタデータとして明確に区別するためです。CSS/JSからのセレクタアクセスも容易になります。 |
-| `heading-level` | `heading-level` | `number` | Header内の名前（Name）に適用する見出しレベル（デフォルト: `4`）。ドキュメント構造に応じて適切な階層を指定します。<br>**実装**: Shadow DOM内で動的に `<h2>`～`<h6>` のネイティブ要素を生成します（`role="heading"` + `aria-level` ではなく、セマンティックHTML優先）。 |
+| `lang` | `data-lang` | `string` | 対象言語のメタデータ。ARIAラベル、分析、CSS/JSセレクタに使用。<br>**Highlight SoT**: シンタックスハイライトの実体は `signature` スロット内 `ui-code-block[lang]` をSingle Source of Truthとします。`ui-syntax-card` の `lang` は補助情報であり、子 `ui-code-block` 側が未指定の場合のみ同期（フォールバック）します。<br>**Note**: `data-lang` 属性として出力する理由は、HTML標準の `lang` 属性（自然言語指定）との衝突を回避するためです。 |
+| `heading-level` | `heading-level` | `number` | Header内の名前（Name）に適用する見出しレベル（デフォルト: `4`）。ドキュメント構造に応じて適切な階層を指定します。<br>**Validation**: `2-6` の範囲のみ有効。範囲外・`NaN`・未指定は `4` にフォールバックします。<br>**実装**: Shadow DOM内で動的に `<h2>`～`<h6>` のネイティブ要素を生成します（`role="heading"` + `aria-level` ではなく、セマンティックHTML優先）。 |
 
 **Slots:**
 - **`signature`**: コードブロック `<ui-code-block headless>` を配置。
 - **(default)**: 詳細セクション。主に `<ui-syntax-field>` をリストとして配置。
-- **`returns`**: 戻り値の解説（必要な場合）。
+- **`returns`**: 戻り値の解説（必要な場合）。`(default)` が空で `returns` のみ存在する構成も正式サポートします。
 
 **4. スタイリングとトークンマッピング (Style & Tokens)**
 
@@ -5271,21 +5449,22 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
     - Overflow: `hidden`
     - Margin Block: `var(--space-8)`
     - Box Shadow: `var(--elevation-sm)` — 微細な浮遊感を付与し、`.prose` 内でのカード境界を強調。
-    - **Breakout Strategy**: `.prose` 内部では左右に拡張し、複雑なシグネチャの視認性を確保します（`index.md` L586-590 のメディア要素パターンに準拠）。
+    - **Breakout Strategy**: `.prose` 内部では左右に拡張し、複雑なシグネチャの視認性を確保します（`index.md` のメディア要素パターンに準拠）。
         - **Mobile**: `width: calc(100% + var(--space-8))`, `margin-inline: var(--space-n4)`
         - **Desktop**: `width: calc(100% + var(--space-16))`, `margin-inline: var(--space-n8)`
     - **配置コンテキスト**: 本コンポーネントは `--bg-default` 背景（`.prose` 内）に配置されることを想定しています。`--bg-surface-2` 以上の背景（カードやモーダル内）にネストする場合、ヘッダー背景が親と同化するため、Container に `--bg-surface-1` を明示的に設定する必要があります。
+    - **Prose Border Exception**: `index.md` の「本文はスペーシング優先」原則に対する明示的な例外として、本コンポーネントは独立情報ブロックであるため外周ボーダーとセクション境界を許容します。
 - **Header**:
     - Background: `var(--bg-surface-2)` (Elevated)
     - **Dark Mode Elevation Strategy**:
-        - `index.md` L748-757 の "Depth System" に従い、Dark Mode 時は上端に `1px` のハイライト（`box-shadow: inset 0 1px 0 0 oklch(100% 0 0 / 0.1)`）を付与し、背景色の明度差だけでなく、光源反射による物理的なエッジを表現します。
+        - `index.md` の "Depth System" に従い、Dark Mode 時は上端に `1px` のハイライト（`box-shadow: inset 0 1px 0 0 oklch(100% 0 0 / 0.1)`）を付与し、背景色の明度差だけでなく、光源反射による物理的なエッジを表現します。
     - Border Bottom: `var(--border-width) solid var(--border-default)`
     - Padding: `var(--space-3) var(--space-4)`
     - Display: `flex`, `align-items: center`, `gap: var(--space-3)`
     - **Typography**:
         - **Kind (Tag)**:
             - **Background**: `var(--bg-fill-neutral)`
-                - *Note*: `--bg-fill-neutral` は `index.md` L263 で「構造的背景（プログレスバー、スケルトンなど）」と定義されていますが、テキストバッジ/タグのような **テキスト情報の視覚的グルーピング** にも適用可能です。透過ベースの中立的な背景色として、情報の階層を損なわずにゾーニングを実現します。
+                - *Note*: `--bg-fill-neutral` は `index.md` で「構造的背景（プログレスバー、スケルトンなど）」と定義されていますが、テキストバッジ/タグのような **テキスト情報の視覚的グルーピング** にも適用可能です。透過ベースの中立的な背景色として、情報の階層を損なわずにゾーニングを実現します。
             - **Border**: `none`
             - Color: **`var(--fg-default)`**
             - Font: `var(--text-xs)`, `font-weight: var(--font-bold)`, `text-transform: uppercase`, `letter-spacing: var(--tracking-wider)`
@@ -5312,17 +5491,19 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
     - **Sectioning (Parameters / Returns)**:
         - 異なる属性（引数リスト、戻り値）が同居する場合、視覚的な区切りが必要です。
         - **Strategy**: ブロック間に `var(--space-6)` のマージンを設け、セクションタイトル（例: "Returns"）を `var(--text-xs)` / `font-weight: bold` / `color: var(--fg-muted)` で表示します。
+        - **Title Visibility Rule**: セクションタイトルは対応スロットに実コンテンツが存在する場合のみ表示します。
         - **Note**: `returns` スロットは、このセクションタイトルの直下に配置されます。
     - **Empty State Detection & Management**:
-        - **Detection**: `slotchange` イベントを監視し、`(default)` スロットに割り当てられた要素が存在しない場合、ホスト要素に `data-empty` 属性を付与します。
-        - **CSS Control**: `:host([data-empty]) .content-area { display: none; }` により、Empty時のContent Area非表示とSignature Areaのボーダー/角丸調整を実現します。
+        - **Detection**: `slotchange` イベントを監視し、`(default)` と `returns` の両スロットに割り当てられた要素が存在しない場合、ホスト要素に `data-content-empty` 属性を付与します。
+        - **CSS Control**: `:host([data-content-empty]) .content-area { display: none; }` により、Empty時のContent Area非表示とSignature Areaのボーダー/角丸調整を実現します。
         - **Rationale**: Web ComponentsのスロットにおいてCSS `:empty` は期待通り動作しないため、属性ベースの状態管理を採用します。
 
 **5. アクセシビリティ (A11y)**
 
 - **Heading Structure**:
     - Header内の `Name` は、ドキュメント内での重要なランドマークとなるため、Shadow DOM内で `<h2>`～`<h6>` のネイティブ見出し要素を動的生成します（`heading-level` 属性値に基づく）。
-    - **Rationale**: `index.md` L105 の「非セマンティックなHTML」回避原則に従い、`role="heading"` + `aria-level` ではなく、セマンティックHTMLを優先します。
+    - `heading-level` が不正値の場合は `h4` を使用し、文書アウトラインを破壊しないことを優先します。
+    - **Rationale**: `index.md` の「非セマンティックなHTML」回避原則に従い、`role="heading"` + `aria-level` ではなく、セマンティックHTMLを優先します。
 - **List Semantics**:
     - 複数のフィールドが並ぶ `Content Area` は、視覚的なGridだけでなく意味的なリスト構造を持ちます。
     - **Structure**: 親コンテナを `<dl>` (Description List) とし、各 `<ui-syntax-field>` を `<div>` (Wrapper) > `<dt>` (Name/Type) + `<dd>` (Description) としてレンダリングします。これにより、スクリーンリーダー利用者が用語とその定義の関係を正確に把握できます。
@@ -5336,14 +5517,14 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
 本コンポーネントの視覚的階層（Sunken Method）は、Header/Signature/Contentの三層構造を **背景色の明度差** で表現しています。Windows ハイコントラストモード (`forced-colors: active`) では、これらの背景色が消失するため、以下のフォールバック戦略を実装します。
 
 - **境界線の強制表示**:
-    - `index.md` L1274 の「構造の維持」戦略に従い、Header/Signature/Content間の境界線（`border-bottom`）を保持し、システムカラー（`CanvasText`）で表示します。
+    - `index.md` の「構造の維持」戦略に従い、Header/Signature/Content間の境界線（`border-bottom`）を保持し、システムカラー（`CanvasText`）で表示します。
     - Container外周も `border: var(--border-width) solid CanvasText` を明示的に適用し、カード領域を明確化します。
 
 - **Kind Tag の可視性**:
     - 背景色（`--bg-fill-neutral`）が消失するため、`border: var(--border-width) solid CanvasText` を追加し、タグの輪郭を保証します。
 
 - **Copy Button の境界強調**:
-    - `<ui-copy-button>` 仕様（L864-878）に従い、`border: var(--border-width) solid CanvasText` を適用し、アクション要素を明確化します。
+    - `<ui-copy-button>` 仕様に従い、`border: var(--border-width) solid CanvasText` を適用し、アクション要素を明確化します。
 
 **実装例**:
 
@@ -5372,13 +5553,14 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
 }
 ```
 
-> **Note**: `index.md` L1282-1295 で定義されたシステムカラーマッピングにより、`:root` レベルのトークンが自動的にフォールバックしますが、**構造的な境界線**（この場合、三層のセパレーター）は明示的に `CanvasText` を適用することで可視性を保証します。
+> **Note**: `index.md` で定義されたシステムカラーマッピングにより、`:root` レベルのトークンが自動的にフォールバックしますが、**構造的な境界線**（この場合、三層のセパレーター）は明示的に `CanvasText` を適用することで可視性を保証します。
 
 **7. Print スタイル**
 
 - **Copy Button**: `display: none` — 印刷物には不要なインタラクティブ要素を除外。
 - **Breakout Strategy**: リセット（`width: 100%`, `margin-inline: 0`）— 用紙幅に収まるよう調整。
-- **Background Colors**: 保持 — コードブロックの視認性を維持するため、Signature Area (`--bg-fill-muted`) の背景色は印刷します。
+- **Background Colors**: デフォルトでは除去 — `index.md` の印刷方針（インク節約・可読性）を優先し、背景色とシャドウを削除します。
+- **Opt-in Exception**: コード背景を保持したい場合のみ、`data-print-color="signature"` を明示したときに限り Signature Area の背景印刷を許可します。
 
 **実装例**:
 
@@ -5394,12 +5576,30 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
     display: none;
   }
 
-  /* 背景色は保持（コード視認性優先） */
-  .signature-area {
-    print-color-adjust: exact; /* 背景色の印刷を強制 */
+  ui-syntax-card,
+  ui-syntax-card .header,
+  ui-syntax-card .signature-area,
+  ui-syntax-card .content-area {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  /* 例外: 明示指定時のみコード背景を保持 */
+  ui-syntax-card[data-print-color="signature"] .signature-area {
+    background: var(--bg-fill-muted) !important;
+    print-color-adjust: exact;
   }
 }
 ```
+
+**8. 受け入れ基準 (Acceptance Criteria)**
+
+- **Returns-only Integrity**: `(default)` が空かつ `returns` のみ存在する場合、Content Area が表示されること。
+- **Content Empty Contract**: `(default)` と `returns` の両方が空の場合のみ `data-content-empty` が付与され、Signature Area が下端角丸化されること。
+- **Heading Fallback Safety**: `heading-level` が `2-6` 以外の場合、`h4` にフォールバックされること。
+- **Language SoT Consistency**: ハイライト言語は `ui-code-block[lang]` を優先し、未指定時のみ `ui-syntax-card[lang]` が補完されること。
+- **Copy Failure Isolation**: `signature` 内の `ui-code-block` が0件または複数件のとき、Copy Button は無効化されること。
+- **Print Baseline Alignment**: 印刷時は背景とシャドウが除去され、`data-print-color="signature"` 指定時のみ Signature背景が保持されること。
 
 #### 構文フィールド (Syntax Field) `<ui-syntax-field>`
 
@@ -5421,7 +5621,7 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
           <div class="field-wrapper">
             <dt class="field-term">
               <span class="field-name">props</span>
-              <span class="field-required" aria-label="必須">required</span>
+              <span class="field-required" aria-label="必須">必須</span>
               <span class="field-type">object</span>
               <span class="field-default">default: {}</span>
             </dt>
@@ -5449,7 +5649,7 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
 |------------|------|-------|------------|------|
 | `name` | `name` | `string` | (必須) | フィールド名（例: `props`, `user_id`）。 |
 | `type` | `type` | `string` | `undefined` | 型定義（例: `string`, `Option<T>`, `VARCHAR(255)`）。省略時は非表示。 |
-| `required` | `required` | `boolean` | `false` | 必須項目の場合 `true`。視覚的なバッジと `aria-required` を出力。 |
+| `required` | `required` | `boolean` | `false` | 必須項目の場合 `true`。視覚的なバッジ（文言は「必須」で固定）と `aria-label="必須"` を出力。 |
 | `default` | `default` | `string` | `undefined` | デフォルト値（例: `"anonymous"`, `NULL`）。省略時は非表示。 |
 
 **Slots:**
@@ -5461,7 +5661,7 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
 **4. スタイリングとトークンマッピング (Style & Tokens)**
 
 - **Layout (Grid System)**:
-    - **Desktop (`min-width: 768px`)**: **`[Name + Type + Default] [Description]` の2カラム構成**。
+    - **Tablet 以上 (`min-width: 768px`)**: **`[Name + Type + Default] [Description]` の2カラム構成**（`--bp-md`）。
         - **Grid Properties** (`.field-wrapper` に適用):
             - `display: grid`
             - `grid-template-columns`: **`minmax(min-content, 30%) 1fr`**。左カラム（定義）が必要最小限の幅を確保しつつ、30%を超えて説明文を圧迫しないよう制御します。
@@ -5474,7 +5674,7 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
             - `gap: var(--space-3)` (12px)
             - **Order**: `Name` → `Required Badge` → `Type` → `Default`
             - **Default Value Spacing**: `Type` の後に **`margin-left: var(--space-2)`** (8px) を明示的に適用し、視覚的な分離を保証します。
-    - **Mobile (`max-width: 767px`)**: スタックレイアウト。
+    - **Mobile (`max-width: 767px`)**: スタックレイアウト（`--bp-md` 未満）。
         - **Grid Properties** (`.field-wrapper` に適用):
             - `display: block`
         - **`.field-term`** (Name/Type/Default):
@@ -5491,7 +5691,8 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
         - Color: `var(--fg-default)`
         - *Hierarchy Adjustment*: 親コンテナ（Card Header の `--text-base` / `--font-semibold`）より視覚的に目立たないよう、サイズとウェイトを抑えて階層を整理します。
     - **Required Mark** (`.field-required`):
-        - Font: `var(--font-mono)`, `var(--text-xs)` (12px), `font-weight: var(--font-bold)` (700), `text-transform: uppercase`
+        - Font: `var(--font-mono)`, `var(--text-xs)` (12px), `font-weight: var(--font-bold)` (700), `text-transform: none`
+        - Label Text: **`必須`（日本語固定）**
         - Color: **`var(--fg-warning)`**
         - Background: `oklch(from var(--fg-warning) l c h / 0.1)` — 微細な背景色でバッジとしての視認性を高める
         - Padding: `calc(var(--space-1) * 0.5) var(--space-2)` (2px 8px)
@@ -5501,7 +5702,7 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
     - **Type** (`.field-type`):
         - Font: `var(--font-mono)`, `var(--text-xs)` (12px), `font-weight: var(--font-medium)` (500)
         - Color: **`var(--fg-muted)`**
-        - **12px ルール準拠**: `index.md` L508-516 の「12px以下テキストのWeight Boost」ルールに従い、`--font-medium` (500) を適用して視認性を物理的に担保しています。
+        - **12px ルール準拠**: `index.md` の「12px以下テキストのWeight Boost」ルールに従い、`--font-medium` (500) を適用して視認性を物理的に担保しています。
         - *Visual Distinction*: アクションカラー (`--primary`/`--fg-info`) との混同（リンク誤認）を避けるため、Mutedカラーをベースとします。
         - **Important Types**: 主要な型情報などで強調が必要な場合は、コンポーネント外で型文字列を **`<code>` タグ（`var(--fg-default)`）でラップすること**を推奨ルールとします。
     - **Default** (`.field-default`):
@@ -5519,37 +5720,35 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
             - `background-color: var(--bg-hover)`
             - `cursor: default` (クリック不可であることを明示)
             - `border-radius: var(--radius-md)` (6px)
-            - `padding: var(--space-2) var(--space-3)` (8px 12px)
-            - `margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-3))` — パディング分だけネガティブマージンで相殺し、グリッド配置を崩さない
             - `transition: background-color var(--duration-fast) var(--ease-out)`
         - **Touch Device Safety**: タッチデバイスにおいて、タップ時に背景色がつく挙動は「クリッカブルである」という誤解を招くため、**`@media (hover: hover)`** を使用してマウス操作時のみ適用します。
         - *Rationale*: `--bg-surface-active` (Primaryベース) は選択状態を意味するため、単なる読み取り補助（Reading Ruler）としては `--bg-hover` (Neutral) が適切です。また、`cursor: default` 指定によりリンク誤認を防ぎます。
     - **Nested Radius Exception**:
-        - ホバー背景に `var(--radius-md)` (6px) を適用していますが、親コンテナ（`<ui-syntax-card>` の Content Area）のパディング (`var(--space-4)` = 16px) を考慮すると、`index.md` L711-721 のネスト角丸公式 `R_inner = R_outer - Padding` では負値（6px - 16px = -10px）となり、本来は 0 であるべきです。
+        - ホバー背景に `var(--radius-md)` (6px) を適用していますが、親コンテナ（`<ui-syntax-card>` の Content Area）のパディング (`var(--space-4)` = 16px) を考慮すると、`index.md` のネスト角丸公式 `R_inner = R_outer - Padding` では負値（6px - 16px = -10px）となり、本来は 0 であるべきです。
         - **例外根拠**: ホバー背景はカードの**角（コーナー）とは物理的に接触しない位置**（パディング内側の中央部）に配置されるため、公式の前提条件（親子が同心円状に接触）が成立しません。そのため、視覚的な違和感を生じさせず、Rouaultの形状言語（`--radius-md`）に準拠した角丸を適用することで、一貫性を優先します。
 - **Border**: **なし (`none`)**。
-    - *Rationale*: リストの構造はグリッド配置とスペーシング、そしてインタラクションによって暗示されます。`index.md` L666 の「線が見えなくても構造が伝わる」設計原則に準拠します。
+    - *Rationale*: リストの構造はグリッド配置とスペーシング、そしてインタラクションによって暗示されます。`index.md` の「線が見えなくても構造が伝わる」設計原則に準拠します。
 
 **5. アクセシビリティ (Accessibility)**
 
 - **Semantic HTML (Description List)**:
     - 各フィールドは `<dt>` (用語・定義) と `<dd>` (説明) のペアとして出力され、親コンテナの `<dl>` 構造を構成します。
-    - **Rationale**: `index.md` L105 の「非セマンティックなHTML」回避原則に従い、`<div>` や `role` 属性ではなく、ネイティブHTMLのセマンティクスを最大限活用します。
+    - **Rationale**: `index.md` の「非セマンティックなHTML」回避原則に従い、`<div>` や `role` 属性ではなく、ネイティブHTMLのセマンティクスを最大限活用します。
     - スクリーンリーダーは「リスト、N個の項目」「用語: [Name]、定義: [Description]」として読み上げ、情報の構造を正確に伝達します。
 - **Required Attribute (Non-Visual Communication)**:
     - **Visual**: Amber バッジ (`--fg-warning`) で視覚的に表示。
     - **Non-Visual**: `.field-required` 要素に **`aria-label="必須"`** を付与し、スクリーンリーダーに「必須」情報を明示的に伝達します。
-    - **Rationale**: `index.md` L106 の「色のみによる情報伝達」禁止に準拠。視覚と非視覚の両面で情報を保証します。
+    - **Rationale**: `index.md` の「色のみによる情報伝達」禁止に準拠。視覚と非視覚の両面で情報を保証します。
 - **Display: Contents Avoidance**:
     - Grid レイアウトの実装において、`dt` や `dd` に `display: contents` を適用することで CSS Grid の制約を回避できますが、これは一部のブラウザ・スクリーンリーダーの組み合わせでセマンティックロール（`term`, `definition`）を消失させるリスクがあります。
     - **本仕様では `display: contents` を使用せず**、`dt` 内部に Flexbox を適用することで、セマンティクスを完全に保持します。
 - **Motion Reduction**:
-    - `@media (prefers-reduced-motion: reduce)` 環境下では、`index.md` L103 のグローバル定義により、ホバー時の `background-color` トランジション (`var(--duration-fast)`) が自動的に `0.01ms` に短縮され、即座に変化します。
+    - `@media (prefers-reduced-motion: reduce)` 環境下では、`index.md` のグローバル定義により、ホバー時の `background-color` トランジション (`var(--duration-fast)`) が自動的に `0.01ms` に短縮され、即座に変化します。
     - 前庭障害を持つユーザーに配慮し、動きによる認知負荷を排除します。
 - **Contrast Guarantee**:
-    - すべての文字色は `index.md` のコントラスト比保証表（L294-300）に基づき、WCAG AA (4.5:1) を満たします。
-        - `--fg-default` on `--bg-default`: 10.2:1 (Light) / 9.8:1 (Dark)
-        - `--fg-muted` on `--bg-default`: 4.8:1 (Light) / 4.6:1 (Dark)
+    - すべての文字色は `index.md` のコントラスト比保証表に基づき、WCAG AA (4.5:1) を満たします。
+        - `--fg-default` on `--bg-default`: 14.2:1 (Light) / 12.8:1 (Dark)
+        - `--fg-muted` on `--bg-default`: 4.8:1 (Light) / 5.1:1 (Dark)
 
 **6. 強制カラーモード (Forced Colors Mode)**
 
@@ -5566,7 +5765,7 @@ Windows ハイコントラストモード (`forced-colors: active`) では、背
       }
     }
     ```
-    - **Rationale**: `index.md` L1274 の「構造の維持: ボーダーやスペーシングにより、背景色が無くても領域を認識可能にする」戦略に準拠します。
+    - **Rationale**: `index.md` の「構造の維持: ボーダーやスペーシングにより、背景色が無くても領域を認識可能にする」戦略に準拠します。
 
 - **Required Badge の可視性**:
     - 背景色 (`oklch(from var(--fg-warning) l c h / 0.1)`) が消失するため、境界線を追加します。
@@ -5580,10 +5779,8 @@ Windows ハイコントラストモード (`forced-colors: active`) では、背
     ```
 
 - **Type / Default の色マッピング**:
-    - `--fg-muted` は `index.md` L1294 により `GrayText` にマッピングされます。
-    - **GrayText の注意点**: 一部の Windows ハイコントラストテーマでは、`GrayText` が極端に低コントラスト（例: 中間グレー on 白背景で 2:1 未満）となる場合があります。
-    - **フォールバック戦略**: 重要度の低いメタデータ（Type/Default）であるため、視認性低下を許容します。読み上げ順序（Name → Required → Type → Default → Description）により、スクリーンリーダー利用者は情報を確実に取得できます。
-    - 将来的に視認性問題が報告された場合、`CanvasText` (標準テキスト色) へのオーバーライドを検討します。
+    - `--fg-muted` は `index.md` により `GrayText` にマッピングされます。
+    - **AA維持戦略**: 一部テーマで `GrayText` のコントラストが不足する可能性があるため、`forced-colors: active` では `.field-type` / `.field-default` を `CanvasText` にオーバーライドし、可読性を優先します。
 
 **実装例**:
 
@@ -5599,16 +5796,22 @@ Windows ハイコントラストモード (`forced-colors: active`) では、背
   .field-required {
     border: var(--border-width) solid CanvasText;
   }
+
+  /* Type/Default のコントラストをAA基準へ補正 */
+  .field-type,
+  .field-default {
+    color: CanvasText;
+  }
 }
 ```
 
-> **Note**: `index.md` L1282-1295 で定義されたシステムカラーマッピングにより、`:root` レベルのトークンが自動的にフォールバックしますが、**構造的な境界線**（ホバー時の行識別、バッジの輪郭）は明示的に追加することで可視性を保証します。
+> **Note**: `index.md` で定義されたシステムカラーマッピングにより、`:root` レベルのトークンが自動的にフォールバックしますが、**構造的な境界線**（ホバー時の行識別、バッジの輪郭）は明示的に追加することで可視性を保証します。
 
 **7. Print スタイル**
 
-- **Grid Layout の維持**: Desktop の2カラムレイアウトを維持し、印刷時も情報の対応関係を明確に保ちます。
+- **Grid Layout の維持**: Tablet以上の2カラムレイアウトを維持し、印刷時も情報の対応関係を明確に保ちます。
 - **Hover Effects の除去**: インタラクティブな背景色・境界線は印刷時に不要なノイズとなるため、無効化します。
-- **Color Adjustment**: 背景色を持たないため `.field-wrapper` の `print-color-adjust` 指定は不要です。Required Badge の背景色のみ、情報伝達上重要であるため保持します。
+- **Color Adjustment**: `index.md` の全体方針に合わせ、背景色は保持しません。Required Badge も背景色は印刷しません（文字と境界のみで情報を伝達）。
 
 **実装例**:
 
@@ -5628,11 +5831,17 @@ Windows ハイコントラストモード (`forced-colors: active`) では、背
     margin: 0 !important;
   }
 
-  .field-required {
-    print-color-adjust: exact; /* バッジの背景色の印刷を強制 */
-  }
 }
 ```
+
+**8. 受け入れ基準 (Acceptance Criteria)**
+
+- **Required Label Consistency**: `required` 属性がある場合、視覚ラベルと `aria-label` の両方が `必須` で一致すること。
+- **A11y Contract Clarity**: `required` 表現は `aria-required` ではなく `.field-required` への `aria-label="必須"` で運用されること。
+- **Breakpoint Semantics Alignment**: 2カラム化は `min-width: 768px`（`--bp-md`）で発火し、説明上も「Tablet以上」と一致すること。
+- **Contrast SoT Alignment**: コントラスト比の記載値が `index.md` の保証表と一致していること。
+- **Forced Colors AA Preservation**: `forced-colors: active` で `.field-type` / `.field-default` が `CanvasText` へ補正され、低コントラストを許容しないこと。
+- **Print Baseline Alignment**: 印刷時に背景色を保持しないこと（Required Badge を含む）。
 
 #### インラインコード (Inline Code) `<code>`
 
@@ -5652,18 +5861,17 @@ Windows ハイコントラストモード (`forced-colors: active`) では、背
 
 - **Font**: `var(--font-mono)`
     - **Optical Size & Scale Guard**:
-        - 日本語フォントとの混植時に視覚的に浮く場合、`font-size: 0.875em` での調整を基本とします。
+        - 日本語フォントとの混植時の光学サイズ補正として、縮小係数 `0.875em` を採用します。
+        - **Hard Limit（機械的担保）**: `index.md` の禁止事項「12px未満のテキスト」に合わせ、`font-size` は **`max(var(--text-xs), 0.875em)`** を確定実装とします。
+        - *Rationale*: 仕様に下限値を埋め込むことで、実装者の運用判断（Scale Reset 忘れ）に依存せず、常に12px以上を保証します。
         - *Note (Exception)*: `0.875em` は親フォントサイズへの連動スケーリング係数であるため、`index.md` の禁止事項「ハードコードされた色・サイズ値」の例外として許容します。
-        - **Constraint (Small Text Rule)**: 計算値が `12px` を下回る場合、`index.md` の "Small Text Rule" に従い、以下のいずれかの補正を**必須**とします。
-            1. **Weight Boost**: ウェイトを一段階上げる（`400` → `font-weight: 500`）。
-            2. **Tracking Boost**: 字間を広げる（`letter-spacing: var(--tracking-wide)`）。
-            3. **High Contrast**: 色を `--fg-muted` ではなく `--fg-default` に格上げする（インラインコードはデフォルトで `--fg-default` を使用するため、すでに本補正を満たしている）。
-            4. **Scale Reset** *(インラインコード固有の追加策)*: 縮小を解除し `font-size: 1em`（または `font-size: calc(12 / 16 * 1rem)`）を確保する。
 - **Background**: **`var(--bg-fill-muted)`**
     - *Rationale*: 入力フォームやコードブロックと共通の「Fill」階層を使用し、一貫性を担保します。未定義のトークンは使用しません。
 - **Color**: **`var(--fg-default)`**
     - *Constraint*: アクションカラー (`--primary`) の使用は禁止します（リンクと誤認されるため）。
-    - *Context Awareness*: 親要素がリンク (`<a>`) の場合、色は **`inherit` (または `currentColor`)** となり、アンカースタイルに従います。これにより、インタラクティブなコンテキスト内での違和感を排除します。なおこの場合、親の `transition` がそのまま継承されるため、`<code>` 側で独立したトランジションを定義する必要はありません。
+    - *Context Awareness*: 親要素がリンク (`<a>`) の場合でも、**`<code>` の色は `var(--fg-default)` を維持**します（`a > code { color: var(--fg-default); }`）。
+        - *Rationale*: タッチ環境でリンク色が `--primary` に変化するコンテキストでも、`--bg-fill-muted` 上のコントラスト比（4.5:1以上）を安定して維持するためです。
+        - *Implementation Note*: `transition` は継承プロパティではありません。本仕様では `code` 側で独立したトランジションを定義せず、色固定によって挙動を安定化します。
 - **Padding**: `0.2em 0.4em`
     - *Note (Exception)*: `em` 単位により親フォントサイズに連動するため、`index.md` の禁止事項「ハードコードされた色・サイズ値」の例外として許容します。
 - **Radius**: `--radius-sm` (4px)
@@ -5694,47 +5902,84 @@ Windows ハイコントラストモード (`forced-colors: active`) では、背
 
 | テーマ | Foreground | Background | コントラスト比 | 判定 |
 |--------|------------|------------|----------------|------|
-| **Light** | `--fg-default` `oklch(20% 0.03 250)` | `--bg-fill-muted` `oklch(96% 0.01 250)` | ~13.5:1 | AA ✓ |
-| **Dark** | `--fg-default` `oklch(90% 0.01 250)` | `--bg-fill-muted` `oklch(9% 0.02 250)` | ~13.8:1 | AA ✓ |
+| **Light** | `--fg-default` `oklch(20% 0.03 250)` | `--bg-fill-muted` `oklch(96% 0.01 250)` | ~16.1:1 | AA ✓ |
+| **Dark** | `--fg-default` `oklch(90% 0.01 250)` | `--bg-fill-muted` `oklch(9% 0.02 250)` | ~15.4:1 | AA ✓ |
 
 **5. 翻訳（Translate）**
 
 必要であれば属性に`translate="no"`を使用し、機械翻訳時にインラインコード要素を翻訳対象から外すように指定してください。
+
+**6. 受け入れ基準 (Acceptance Criteria)**
+
+- **Small Text Hard Limit**: `:not(pre) > code` の計算後フォントサイズが、親コンテキストに関わらず 12px 未満にならないこと。
+- **Link Context Color Stability**: `a > code` においても `color: var(--fg-default)` が維持され、リンク色（`--primary`）へ変化しないこと。
+- **Forced Colors Visibility**: `forced-colors: active` で `outline: var(--border-width) solid CanvasText` が適用され、背景色消失時も境界が視認できること。
+- **Translate Contract Clarity**: 固有名詞・識別子など翻訳非推奨のコード片に `translate="no"` を適用する運用規約が明記されていること。
 
 #### キーボード入力 (Keyboard Input) `<ui-kbd>`
 
 **1. デザイン哲学と目的 (Design Philosophy)**
 
 - **役割**: ユーザーに対するキーボードショートカットや入力指示を視覚化します。
-- **Digital Tactility**: キートップの**Tactile Affordance（押せる感）**を視覚化し、コード（`<code>`）とは異なる「操作可能なUI要素」であることを直感的に伝えます。
+- **Digital Tactility**: キートップの**Tactile Affordance（押せる感）**を視覚化し、コード（`<code>`）とは異なる「キー入力を示すUI要素」であることを直感的に伝えます。
     - *Rationale*: 現実の物理法則（慣性）の模倣ではなく、デジタルなインターフェースとしての機能的な厚みを表現します。
 
 **2. 実装基盤 (Reference)**
 
 - **Native**: `<kbd>` タグ。
+- **実DOM要件（必須）**: 「`<ui-kbd>`」は仕様書上のコンポーネント名であり、**最終DOMには必ずネイティブの `<kbd>` を出力**します。`<div role="text">` 等の代替実装は禁止します。
 - **Key Combination Pattern**: 修飾キーを含む組み合わせ（例: `Ctrl + K`）は、外側 `<kbd>` で個々の `<kbd>` を包みます。外側 `<kbd>` にはビジュアルスタイル（`background`、`border`、`box-shadow`）を適用しません。セパレータ（`+`）はテキストノードとして記述します。
     ```html
-    <kbd><kbd>Ctrl</kbd> + <kbd>K</kbd></kbd>
+    <kbd class="kbd-combo"><kbd class="kbd-key">Ctrl</kbd> + <kbd class="kbd-key">K</kbd></kbd>
     ```
     - *Rationale*: 外側 `<kbd>` は「ショートカット全体」を、内側 `<kbd>` は「個々のキー」を意味し、HTMLセマンティクスの入れ子構造を活用します。
+- **単体キーのマークアップ**:
+    ```html
+    <kbd class="kbd-key">Esc</kbd>
+    ```
+- **スタイル適用範囲（必須）**: 視覚スタイル（`background`、`border`、`box-shadow`、`padding`、`radius`）は **`.kbd-key` のみ**に適用します。`.kbd-combo` はレイアウトコンテナとして扱い、無装飾とします。
+- **Layout Contract（折返し・整列の拘束）**:
+    - ショートカットの途中分断（例: `Ctrl +` 改行 `K`）を防ぐため、`.kbd-combo` には **`white-space: nowrap`** を必須適用します。
+    - 複合キー全体の視線リズムを安定化するため、`.kbd-combo` には **`display: inline-flex`**, `align-items: baseline`, `column-gap: var(--space-1)` を適用します。
+    - セパレータは現仕様どおりテキストノード（`+`）で維持し、`+` の前後には半角スペースを必須とします（`Ctrl + K`）。
+- **ショートカット表記規約（表示とARIAの対応）**:
+    - 視覚表記（`<kbd>`）は読みやすさを優先し、`Ctrl + K` / `⌘ + K` のような一般的キーラベルを使用します。
+    - アクション要素の `aria-keyshortcuts` は WAI-ARIA 準拠の正規トークンで記述します（例: `Control+K Meta+K`）。
+    - **対応関係（必須）**: 同一機能について、視覚表記と `aria-keyshortcuts` は必ず同じショートカット集合を表すこと。片方のみ更新する運用は禁止します。
+    - **記述例**:
+      ```html
+      <button aria-keyshortcuts="Control+K Meta+K" aria-label="検索">
+        <kbd class="kbd-combo">
+          <kbd class="kbd-key">Ctrl</kbd> + <kbd class="kbd-key">K</kbd>
+        </kbd>
+        /
+        <kbd class="kbd-combo">
+          <kbd class="kbd-key">⌘</kbd> + <kbd class="kbd-key">K</kbd>
+        </kbd>
+      </button>
+      ```
 
 **3. スタイリングとトークンマッピング (Style & Tokens)**
 
 - **Font**: **`var(--font-sans)`**
     - *Rationale*: 物理キーボードの印字（UI）を模倣し、`var(--font-mono)`（コード）と明確に区別するため。
-    - **Font Size**: `inherit` — 親要素のフォントサイズを継承し、本文（`--text-lg`）・UI（`--text-base`）の両コンテキストに対応します。
+    - **Font Size**: `max(1em, var(--text-xs))` — 親要素のフォントサイズを継承しつつ、**絶対下限を12px（`--text-xs`）に固定**します。本文（`--text-lg`）・UI（`--text-base`）の両コンテキストに対応します。
     - **Scale Guard**: `index.md` の "Small Text Rule" および禁止事項「12px未満のテキスト」に従い、計算値が **`var(--text-xs)` (12px)** を下回ることを禁止します。これが絶対下限値です。
         - **Compliance（Dual Boost）**: `<ui-kbd>` は常時 Small Text Rule の対象として、以下の補正を**両方デフォルト適用**します。単文字キーラベルの文字密度が高く、「いずれかの補正」では不十分なため、Weight と Tracking を組み合わせた Dual Boost 戦略を採用します。
             - **Weight**: **`var(--font-medium)` (500)**
             - **Tracking**: **`var(--tracking-wide)`** (密集の回避)
+    - **テスト要件（必須）**: `font-size: 11px` の親コンテナ配下でも、計算後フォントサイズが12px未満にならないことをVRTまたはユニットテストで検証します。
 - **Background**: `var(--bg-surface-2)` (Elevated Surface)
     - *Intentional Semantic Extension*: `--bg-surface-2` は本来 Card・Dropdown 等のレイヤー高さを表すトークンですが、`<ui-kbd>` では「キーキャップというUI要素としての表面」という意味論で意図的に採用します。`<code>`（`--bg-fill-muted`）との輝度差が「浮き感」の主要素であり、この選択は設計上不可欠です。
     - **Dark Mode における上端ハイライトの非適用**: `index.md` の Dark Mode Depth Strategy が規定する Elevated レイヤーへの `inset 0 1px 0 0 oklch(100% 0 0 / 0.1)` は、Tactile Depth の `box-shadow`（下部の厚み）との `box-shadow` 競合を避けるため適用しません。Dark Mode での識別性は `border`（`--border-default`）が担保します。
 - **Border**: `var(--border-width) solid var(--border-default)`
+    - *Exception (`.prose` Border Rule)*: `index.md` の原則「本文コンテンツ内（`.prose`）には境界線を使用せず、スペーシングのみで構造を表現する」に対する意図的な例外です。`<kbd>` の境界は装飾ではなく「キー入力指示」の識別子であり、`<code>` との差分を保証するために必須です。この例外は `<kbd>` に限定されます。
 - **Tactile Depth (Thickness)**: **`box-shadow: 0 var(--border-width-thick) 0 0 var(--border-default)`**
     - *Rationale*: `border-bottom` によるレイアウト（行間）の拡張を防ぎつつ、下部に厚み（側面）を持たせてUIコンポーネントとしての実在感を表現します。「ぼかし」のないソリッドな影を使用することで、デジタルな硬質感を保ちます。値は `var(--border-width-thick)` (2px) を参照し、ハードコードを回避します。
 - **Radius**: `--radius-sm` (4px)
+    - *Note (Exception)*: 固定値の直接記述ではなくトークン参照であるため、`index.md` の禁止事項「ハードコードされた色・サイズ値」に抵触しません。
 - **Padding**: `0 0.4em`
+    - *Note (Exception)*: `em` は親フォントサイズに連動する相対値であり、`index.md` の禁止事項「ハードコードされた色・サイズ値」の例外として許容します。
 - **Line Height**: **`var(--line-height-none)` (1)**
     - *Layout*: 行間（Vertical Rhythm）の破壊を徹底して防ぐため、高さ計算を最小化します。
 - **Color**: **`var(--fg-default)`**
@@ -5752,11 +5997,69 @@ Windows ハイコントラストモード (`forced-colors: active`) では、背
 **5. アクセシビリティ (A11y)**
 
 - **Semantics**:
-    - アルファベット（例: "K"）の場合はそのまま読み上げさせます。
-    - 記号（例: `⌘`）を使用する場合は、`<span class="sr-only">Command</span><span aria-hidden="true">⌘</span>` のパターンを使用し、正確な読み上げを保証します。安易な `aria-label` よりもDOM構造による解決を優先します。
+    - **言語整合性（必須）**: 読み上げ用テキストは `index.md` の日本語固定方針に従い、日本語をデフォルトとします。視覚ラベルと読み上げを乖離させる場合は、意図的なアクセシビリティ補助として明記してください。
+    - **キー読み上げマッピング（必須）**:
+        - `Ctrl` → 「コントロール」（Windows/Linux 系）
+        - `⌘` / `Cmd` → 「コマンド」（macOS 系。記号単体表示時は補助テキスト必須）
+        - `Esc` → 「エスケープ」
+        - `Shift` → 「シフト」
+        - `Enter` → 「エンター」
+        - `Tab` → 「タブ」
+        - `Space` → 「スペース」
+        - `K` など単独英字 → 英字そのまま（例: 「ケー」相当の自動読み上げを許容）
+    - **記号キーの実装**: 記号（例: `⌘`）を使用する場合は、`<span class="sr-only">コマンド</span><span aria-hidden="true">⌘</span>` のパターンを使用し、読み上げの一貫性を保証します。安易な `aria-label` よりもDOM構造による解決を優先します。
 - **Forced Colors Mode**:
-    - `forced-colors: active` 環境では `background` と `box-shadow` が消失します。`border` は `ButtonBorder` として残存するため最低限の視覚的識別性は維持されます。Tactile Depth（下部の厚み）の消失は許容される劣化として扱います。
-    - `box-shadow` は視覚的装飾のみを担い、情報伝達を担っていません。`<code>` が `border: none` であるため `outline` を必要とするのとは異なり、`<ui-kbd>` は常時 `border` を持つため、追加の `outline` は不要です。
+    - **Token SoT（追従項目）**:
+        - 色・背景・ボーダーは `index.md` の `:root` マッピングに追従するため、`var(--fg-default)` / `var(--bg-surface-2)` / `var(--border-default)` を参照します。
+    - **Explicit Override（明示項目）**:
+        - 強制カラーモードで消失し得る立体表現（`box-shadow`）のみを明示的に無効化します。
+    - `forced-colors: active` 環境では、以下のスタイルを**確定実装**とします。
+      ```css
+      @media (forced-colors: active) {
+        .kbd-key {
+          color: var(--fg-default);
+          background: var(--bg-surface-2);
+          border: var(--border-width) solid var(--border-default);
+          box-shadow: none;
+          forced-color-adjust: auto;
+        }
+      }
+      ```
+    - *Rationale*: `index.md` のシステムカラーマッピング（例: `--fg-default -> CanvasText`, `--bg-surface-2 -> Canvas`, `--border-default -> CanvasText`）を Single Source of Truth として維持します。
+    - `box-shadow` は視覚的装飾のみを担い、情報伝達を担っていません。Tactile Depth（下部の厚み）の消失は許容される劣化として扱います。
+    - `<kbd>` は非インタラクティブ要素のため、追加の `tabindex` やフォーカスリングは不要です。
+
+**6. Print スタイル**
+
+- **Background & Shadow Removal**: `index.md` の印刷方針に従い、キートップ背景と立体影を除去してインク消費を抑制します。
+- **Semantic Preservation**: `<kbd>` の語義（キー入力指示）は保持するため、境界線とテキストは残します。
+- **Shortcut Integrity**: 複合キーは印刷時も分断しないよう、`white-space: nowrap` を維持します。
+
+**実装例**:
+
+```css
+@media print {
+  .kbd-key {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: var(--border-width) solid var(--border-default);
+  }
+
+  .kbd-combo {
+    white-space: nowrap;
+  }
+}
+```
+
+**7. 受け入れ基準 (Acceptance Criteria)**
+
+- **Shortcut Contract Alignment**: 同一操作に対して、視覚表記（`<kbd>`）と `aria-keyshortcuts` が同じキー集合を表していること。
+- **Japanese SR Consistency**: 修飾キー（`Ctrl`, `Cmd`, `Esc`, `Shift`, `Enter`, `Tab`, `Space`）の読み上げが日本語マッピングに一致していること。
+- **`.prose` Border Exception Clarity**: `<kbd>` の境界線が「本文内ボーダー原則」の意図的例外として明記されていること。
+- **Forced Colors SoT Compliance**: `forced-colors: active` で `border` が `var(--border-default)` 参照を維持し、システムカラーマッピング経由で可視化されること。
+- **Small Text Hard Limit**: 親コンテキストが小さくても計算後フォントサイズが 12px 未満にならないこと。
+- **Combo No-Wrap Integrity**: `.kbd-combo` に `white-space: nowrap` が適用され、`Ctrl + K` の途中改行が発生しないこと。
+- **Print Noise Reduction**: 印刷時に `.kbd-key` の背景色と `box-shadow` が除去され、境界線と文字情報のみが残ること。
 
 
 #### 引用 (Blockquote) `<blockquote>`
@@ -5770,6 +6073,10 @@ Windows ハイコントラストモード (`forced-colors: active`) では、背
 
 - **Native**: `blockquote` タグ。出典がある場合は `<figure>` でラップし、 `<figcaption>` 内に `<cite>` を使用します。
 - **Scope**: `.prose` (記事本文) 内部での使用を前提とします。
+- **実DOM要件（必須）**: 仕様上の「引用セクション」は抽象名であり、**最終DOMには必ずネイティブの `<blockquote>` を出力**します。`<div role="blockquote">` 等の代替実装は禁止します。
+- **Source Contract（出典の構造契約）**:
+    - 出典あり: `<figure><blockquote>...</blockquote><figcaption><cite>...</cite></figcaption></figure>` を必須とします。
+    - 出典なし: `<blockquote>` 単体を許容します（`<figure>` の強制ラップは不要）。
 
 **3. スタイリングとトークンマッピング (Style & Tokens)**
 
@@ -5779,6 +6086,10 @@ Windows ハイコントラストモード (`forced-colors: active`) では、背
     - **Margin Inline**: `0`
     - **Padding Inline**: `var(--space-4) 0`
         - *Note*: `padding-inline-start` で構造線との間隔を確保します。`padding-block` は `0` とし、`margin-block` によるリズム制御に委ねます。
+    - **Inner Flow Normalization（必須）**:
+        - `blockquote > :first-child { margin-block-start: 0; }`
+        - `blockquote > :last-child { margin-block-end: 0; }`
+        - *Rationale*: 子要素（`p`, `ul`, `ol`）の既定マージンによる上下の余白暴走を防ぎ、本文リズムを一定に保ちます。
 - **Border Inline Start**: `var(--border-width-thick) solid var(--border-default)`
     - *Exception (`.prose` Border Rule)*: `index.md` の原則「本文コンテンツ内（`.prose`）には境界線を使用せず、スペーシングのみで構造を表現する」に対する意図的な例外です。`blockquote` の左縦線は装飾ではなく「声の変化（Change of Voice）」を伝えるセマンティックなシグナルであり、スペーシングのみでは表現できない情報を持ちます。この例外は `blockquote` に限定されます。
     - *Correction*: `thick`（太い = 強調）のWidthに対して `muted`（控えめ）のColorは意図の矛盾を生じさせます。**構造線としてのWidth（thick）に相応する標準色（`--border-default`）** を採用し、明確な構造線として機能させます。
@@ -5797,9 +6108,22 @@ Windows ハイコントラストモード (`forced-colors: active`) では、背
         - *Rationale*: 出典情報はメタデータであるため、ここで `muted` カラーを使用し、本文との階層差を作ります。`--bg-default` 上でのコントラスト比は 4.8:1（WCAG AA準拠）。ダークモードでも同トークンの Dark Value により同等のコントラストが保証されます。
     - **Margin Block Start**: `var(--space-2)`
 - **ネスト（Nested Blockquote）**:
-    - 2段目以降の `blockquote` には `margin-inline-start: 0` を維持し、`padding-inline-start` を引き継ぎます。ボーダー色は `--border-muted` に一段階下げ、視覚的な深度差を表現します。
+    - 2段目以降の `blockquote` には `margin-inline-start: 0` を維持し、`padding-inline-start` を引き継ぎます。
+    - 2段目以降は `margin-block: var(--space-4)` を適用し、入れ子深度に応じて縦方向の圧縮を行います（`--space-6` の連鎖による過剰な谷を防止）。
+    - ボーダー色は `--border-muted` に一段階下げ、視覚的な深度差を表現します。
 
-**4. アクセシビリティ (A11y)**
+**4. コントラスト比の保証 (Contrast Guarantee)**
+
+`index.md` のWCAG 2.1 Level AA基準（4.5:1以上）に基づき、以下の組み合わせを保証します。
+
+| テキスト種別 | テーマ | Foreground | Background | コントラスト比 | 判定 |
+|------------|--------|------------|------------|----------------|------|
+| 引用本文 | **Light** | `--fg-default` | `--bg-default` | 14.2:1 | AA ✓ |
+| 引用本文 | **Dark** | `--fg-default` | `--bg-default` | 12.8:1 | AA ✓ |
+| 出典キャプション | **Light** | `--fg-muted` | `--bg-default` | 4.8:1 | AA ✓ |
+| 出典キャプション | **Dark** | `--fg-muted` | `--bg-default` | 5.1:1 | AA ✓ |
+
+**5. アクセシビリティ (A11y)**
 
 - **Semantic Grouping**:
     - 出典を伴う場合、`<figure>` 要素を用いて `<blockquote>` (内容) と `<figcaption>` (出典) をグループ化することを必須とします。これにより、支援技術に対して両者の関係性が明確に伝わります。
@@ -5808,8 +6132,63 @@ Windows ハイコントラストモード (`forced-colors: active`) では、背
     - 出典URLが存在する場合、`<blockquote cite="https://...">` 属性を付与します。この属性はブラウザの視覚表示には影響しませんが、支援技術や検索エンジンに対して出典関係を機械可読な形で伝達します。`<figcaption>` 内のテキスト出典と併用することで、視覚・非視覚の両チャネルをカバーします。
 - **Language Switch**:
     - 引用文が本文と異なる言語で記述されている場合、`<blockquote>` に `lang` 属性を明示します（例: `lang="en"`）。これにより、スクリーンリーダーの音声合成エンジンが適切な言語モードに切り替わり、正しい発音で読み上げられます。
+- **Keyboard Contract（非インタラクティブ契約）**:
+    - `blockquote` 自体は非インタラクティブ要素であり、`tabindex` 付与・独自キー操作・`role` の上書きを禁止します。
+    - キーボード到達対象は、`figcaption` 内のリンク等の**実在するインタラクティブ要素のみ**とします。
+    - `figcaption a` のフォーカス表示は、`index.md` の `:focus-visible` 戦略（共通フォーカスリング）に追従します。
 
-**5. HTML構造例 (Reference HTML)**
+**6. Forced Colors Mode**
+
+- **Token SoT（追従項目）**:
+    - 文字色・境界線色は `var(--fg-default)`, `var(--fg-muted)`, `var(--border-default)` を参照し、`index.md` のシステムカラーマッピングに追従します。
+- **Explicit Override（明示項目）**:
+    - 引用の構造線は情報伝達を担うため、`forced-colors: active` では `border-inline-start` の維持を明示します。
+
+```css
+@media (forced-colors: active) {
+  blockquote {
+    color: var(--fg-default);
+    border-inline-start: var(--border-width-thick) solid var(--border-default);
+    forced-color-adjust: auto;
+  }
+
+  figcaption,
+  figcaption cite {
+    color: var(--fg-muted);
+  }
+}
+```
+
+**7. Print スタイル**
+
+- **Baseline Follow**: `index.md` の印刷方針に従い、背景・シャドウは除去し、構造線（`blockquote` のボーダー）は保持します。
+- **Structure Preservation**: 出典付き引用（`figure`）は `break-inside: avoid` を適用し、本文と出典の分断を防止します。
+
+```css
+@media print {
+  blockquote,
+  figure {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  blockquote {
+    border-inline-start-color: #000 !important;
+  }
+}
+```
+
+**8. 受け入れ基準 (Acceptance Criteria)**
+
+- **Native Semantics Integrity**: 最終DOMで引用は `<blockquote>` で出力され、`<div role="blockquote">` 等の代替実装が存在しないこと。
+- **Source Grouping Contract**: 出典あり引用は `figure > blockquote + figcaption > cite` 構造を満たすこと。
+- **`.prose` Border Exception Clarity**: `blockquote` の左構造線が `.prose` ボーダー原則の意図的例外として明記されていること。
+- **Nested Rhythm Stability**: ネストされた `blockquote` に `margin-block: var(--space-4)` が適用され、縦方向の過剰余白が発生しないこと。
+- **Keyboard Non-Interactive Contract**: `blockquote` に `tabindex` が付与されず、キーボードフォーカス対象が出典リンク等に限定されること。
+- **Forced Colors SoT Compliance**: `forced-colors: active` で `blockquote` の構造線が可視であり、色指定がトークン参照を維持すること。
+- **Print Structure Continuity**: 印刷時に `blockquote` と対応する `figcaption` が同一ページ内で保持されること（`break-inside: avoid`）。
+
+**9. HTML構造例 (Reference HTML)**
 
 ```html
 <!-- 出典あり（標準） -->
@@ -5842,7 +6221,7 @@ Windows ハイコントラストモード (`forced-colors: active`) では、背
 - **Peripheral Presence**: 脚注参照 (`[1]`) は本文の一部として存在しますが、注意を引きすぎない**Receded（控えめな）スタイル**を採用します。読書中の周辺視野に留まりつつ、興味があれば即座に内容を確認できる設計です。
 - **Dual Access Strategy (デュアルアクセス戦略)**:
     - **Primary (Popover)**: 通常のクリック/タップで Popover を表示し、視線移動を最小化。素早く内容を確認したいユースケースに最適化。
-    - **Secondary (Jump to Footer)**: 修飾キー（`Cmd`/`Ctrl`）押下時のクリック、または中クリックで、記事末尾の脚注一覧セクションへジャンプ。複数の脚注を一覧で確認したい、長い脚注を読みたい、別タブで開きたい等のユースケースに対応。
+    - **Secondary (Jump to Footer)**: 修飾キー（`Cmd`/`Ctrl`）押下時のクリック、または中クリックでは**リンクのネイティブ挙動を維持**し、記事末尾の脚注一覧セクションへジャンプ（または別タブで開く）します。
     - **Popover内リンク**: Popover 内に「脚注一覧で見る →」リンクを配置し、Popover から末尾セクションへの遷移を可能にします。
 - **Progressive Enhancement**: JavaScript無効環境（SSR/No-JS）でも、記事末尾の脚注セクションへのリンクとして機能する**完全なフォールバック**を提供します。
 
@@ -5857,14 +6236,14 @@ Windows ハイコントラストモード (`forced-colors: active`) では、背
 - **Strategy (Custom Remark Plugin)**:
     - **`remark-footnote`**: カスタム remark プラグインを作成し、上記構文を解析します。
     - **Output (MDAST -> HAST)**: プラグインは以下の構造を生成し、`<ui-footnote>` 要素として直接出力します。
-        - **Inline Reference**: `<ui-footnote ref-id="fn-1" index="1">...</ui-footnote>`
-        - **Footnotes Section**: 記事末尾に `<section class="footnotes">` を配置（No-JS / 印刷用フォールバック）。
+        - **Inline Reference**: `<ui-footnote ref-id="fn-1" index="1" ref-instance="1">...</ui-footnote>`
+        - **Footnotes Section**: 記事末尾に `<section class="footnotes" role="doc-endnotes">` を配置（No-JS / 印刷用フォールバック）。
     - 脚注本文を `data-part` 属性で管理する子要素として埋め込み、ランタイムでの追加フェッチを回避します。
 - **Popover API**:
     - ブラウザネイティブの **Popover API (`popover` 属性)** を活用し、軽量かつアクセシブルな実装を実現します。
     - **Fallback (Popover API 非対応環境)**:
-        - **CSS `:target` Strategy**: Fallback Link（`<a class="footnote-fallback-link">`）の `href` を `#fn-1-popover` に変更し、`:target` 疑似クラスを組み合わせることで、同一ページ内で Popover 相当のコンテンツを表示します。`<button>` には `href` 属性が存在しないため、`:target` フォールバックでは Fallback Link を流用します。ただし、この場合は位置固定（Sticky / Absolute）による簡易的な表示となり、Light Dismiss は JavaScript で補完します。
-        - **JavaScript Polyfill**: Popover API の完全なポリフィル（位置計算、Light Dismiss、フォーカス管理）を提供します。
+        - Baseline は常にアンカーリンク（`href="#fn-1"`）です。Popover が使えない環境では、リンク遷移のみで脚注へ到達可能であることを保証します。
+        - `:target` による疑似Popoverは採用しません。実装分岐を増やさず、可読性と保守性を優先します。
 
 **3. 技術仕様とAPI (Technical Specs)**
 
@@ -5872,35 +6251,32 @@ Windows ハイコントラストモード (`forced-colors: active`) では、背
 |------------|------|-------|------|
 | `ref-id` | `ref-id` | `string` | 脚注のユニークID（例: `fn-1`）。双方向リンクに使用。 |
 | `index` | `index` | `number` | 脚注番号（表示用）。`[1]`, `[2]` のラベル生成に使用。 |
+| `ref-instance` | `ref-instance` | `number` | 同一脚注の参照インスタンス番号。Backref 用トリガーIDの一意化に使用。 |
 
 **Child Elements (Light DOM):**
-- **`[data-part="trigger"]`**: Popover を制御するボタン要素。
+- **`[data-part="trigger"]`**: Popover を制御するアンカー要素（`<a>`）。
 - **`[data-part="content"]`**: Popover コンテンツを含む div 要素。
-- **`.footnote-fallback-link`**: No-JS 環境用のフォールバックリンク。
+- **`.footnote-list-link`**: Popover フッター内の「脚注一覧で見る」リンク。
 
 **DOM 構造設計 (Light DOM Strategy)**
 
 Light DOM を採用する理由:
 - **SSR 親和性**: Eleventy / Velite のビルドパイプラインで生成された HTML を、そのまま初期レンダリングに使用できます。Shadow DOM では SSR 時に内部構造を事前レンダリングできないため、Hydration 前の No-JS 環境でフォールバックが機能しません。
-- **No-JS フォールバック**: `<a href="#fn-1">` によるネイティブなアンカーリンクが、JavaScript 無効時にそのまま機能します。
+- **No-JS フォールバック**: Trigger 自体を `<a href="#fn-1">` とし、JavaScript 無効時にそのまま機能します。
 - **スタイル継承**: 本文コンテキストのタイポグラフィ（`font-family`, `line-height` 等）を自然に継承し、脚注が本文の一部として視覚的に統合されます。
 
 **Internal Structure (Light DOM Managed):**
 ```html
-<ui-footnote ref-id="fn-1" index="1">
-  <!-- Trigger: <button> ベースで Popover を制御 (JS有効時に表示) -->
-  <button
-    type="button"
+<ui-footnote ref-id="fn-1" index="1" ref-instance="1">
+  <!-- Trigger: ネイティブリンクをベースに、通常クリックのみ Popover へ拡張 -->
+  <a
+    id="fnref-1-1"
     data-part="trigger"
-    popovertarget="fn-1-popover"
+    href="#fn-1"
+    role="doc-noteref"
+    aria-controls="fn-1-popover"
     aria-expanded="false"
-    aria-details="fn-1-popover"
-    hidden>
-    <sup>[1]</sup>
-  </button>
-
-  <!-- No-JS Fallback: Fallback Link (JS無効時に表示、JS有効後に hidden 化) -->
-  <a href="#fn-1" class="footnote-fallback-link">
+    aria-details="fn-1-popover">
     <sup>[1]</sup>
   </a>
 
@@ -5930,13 +6306,13 @@ Light DOM を採用する理由:
 
 **4.1 Trigger (Reference Mark)**
 
-- **Element**: `<button type="button">` — Popover 制御専用のボタン。
-    - **`popovertarget` 属性**: Popover API のネイティブ制御を使用。
-    - **No-JS Fallback**: JavaScript 無効時は `<button>` を非表示にし、代わりに `<a href="#fn-1">` を表示します（`hidden` 属性を JS で切り替え）。
-    - **Modifier Key 対応**: `Cmd`/`Ctrl` + クリックや中クリックで「脚注一覧セクションへジャンプ」を実現するため、ボタンのクリックイベントで修飾キーを検出し、該当する場合は `window.location.hash = '#fn-1'` で遷移します。
+- **Element**: `<a href="#fn-1">` — Baseline はネイティブリンク。
+    - **Enhancement**: JavaScript 有効かつ Popover API 対応時のみ、通常クリック（修飾キーなし・主ボタン）を `preventDefault()` して Popover を表示します。
+    - **Modifier Key 対応**: `Cmd`/`Ctrl` + クリック、中クリック、コンテキストメニュー経由の別タブ操作は**ネイティブリンク挙動を阻害しません**。
 - **Typography**:
-    - **Font Size**: `var(--text-xs)` (12px)。ただし `<sup>` 要素のブラウザデフォルト（`font-size: smaller`）が適用されるため、CSS でのリセットは不要。
-    - **上付きスタイル**: `<sup>` 要素のデフォルトスタイル（`vertical-align: super; font-size: smaller`）を利用。`font-variant-position: super` は `<sup>` との二重適用になるため**使用しない**。
+    - **Font Size**: `var(--text-xs)` (12px) を下限として固定。
+    - **Small Text Rule 準拠（必須）**: `font-weight: var(--font-medium)` と `letter-spacing: var(--tracking-wide)` を適用。
+    - **上付きスタイル**: `<sup>` は `font-size: inherit` にリセットし、`vertical-align: super` のみを利用します。`smaller` のままにして 12px 未満へ縮小することを禁止します。
     - **Weight**: `var(--font-medium)` — Small Text Rule 準拠。
 - **Color**:
     - Default: `var(--fg-muted)` — 本文より一段階控えめに。
@@ -5948,13 +6324,13 @@ Light DOM を採用する理由:
     - `margin-inline: 0.1em` — 前後の文字との視覚的な分離。
 - **Focus State**:
     - `outline: var(--focus-ring-width) solid var(--focus-ring-color)`
-    - `outline-offset: 2px`
+    - `outline-offset: var(--focus-ring-offset)`
     - `border-radius: var(--radius-sm)` (リングの形状)
     - **Animation**: `var(--animation-focus)` (Adaptive Focus)
 - **Active State (Popover Open)**:
     - Background: `var(--bg-active)` — Popoverとの視覚的な接続を強化。
     - `border-radius: var(--radius-sm)`
-- **Button Reset**: ボタンのデフォルトスタイル（背景、ボーダー、パディング）をリセットし、テキストライン内に自然に収まるようにします。
+- **Link Reset**: 下線は通常時オフ、Hover/Focus 時のみ表示して本文ノイズを抑制します。
 
 **4.2 Content Popover**
 
@@ -6048,18 +6424,22 @@ ui-footnote {
 
 **5.1 ARIA & Semantics**
 
-- **Trigger (`<button>`)**:
-    - `popovertarget="[popover-id]"` — Popover API のネイティブ制御。
+- **Trigger (`<a role="doc-noteref">`)**:
+    - `href="#fn-1"` — JavaScript 無効時の到達保証。
+    - `aria-controls="[popover-id]"` — ポップオーバー対象の明示（堅牢フォールバック）。
     - `aria-expanded="true|false"` — 開閉状態を通知（Popover API は `aria-expanded` を自動管理しないため、Popover の `toggle` イベントをリスンして JS 側で手動更新する）。
-    - `aria-details="[popover-id]"` — 詳細情報の関連付け（ARIA 1.1）。`aria-describedby` と異なり、スクリーンリーダーがフォーカス時に自動で全文読み上げを行わないため、長い脚注コンテンツに対して適切。ユーザーが詳細情報を参照したいときに操作できる。
+    - `aria-details="[popover-id]"` — 詳細情報の関連付け（サポート非対応環境では `aria-controls` がフォールバック）。
 - **Content Popover**:
     - `role="note"` — 脚注としての意味論的役割を明示。
     - `aria-labelledby="[label-id]"` — Popover 内の見出し（`.sr-only` で視覚的に非表示）を参照し、スクリーンリーダーに「脚注 1」等のコンテキストを提供。
     - **`aria-live` は使用しない**: Popover の出現は `aria-expanded` と `role="note"` で十分に伝達されます。`aria-live` を追加すると、Popover を開くたびに全内容が読み上げられ、ユーザーの操作を妨げる可能性があります。
+- **Endnotes Semantics**:
+    - 末尾セクションは `role="doc-endnotes"`、各項目は `id="fn-1"` を保持します。
+    - Backref は `href="#fnref-1-1"` のように**実在するTrigger ID**を参照し、往復ナビゲーションを保証します。
 
 **5.2 Keyboard Interaction**
 
-- **Open**: `Enter` / `Space` (Trigger フォーカス時)
+- **Open**: `Enter` (Trigger フォーカス時)。`Space` はリンク要素の標準挙動に従います。
 - **Close**:
     - `Escape` キー
     - Popover 外クリック（Light Dismiss）— Popover API のネイティブ機能
@@ -6067,7 +6447,7 @@ ui-footnote {
 - **Focus Management**:
     - **Focus Trap は使用しない**: デザイン原則2「フロー状態の維持」に基づき、Popover にフォーカスを閉じ込めません。Modal (Dialog) とは異なり、Popover はユーザーの読書フローの一部です。
     - **Tab によるナビゲーション**: `Tab` キーで Popover 内のフォーカス可能要素（Footer リンク「脚注一覧で見る」）に移動できます。Footer リンクにフォーカスがある状態でさらに `Tab` を押すと、**Popover が閉じ**、本文の次のフォーカス可能要素へ移動します。
-    - **Return Focus**: `Escape` キーまたは Light Dismiss でクローズした後、フォーカスは元の Trigger (`<button>`) に戻ります。
+    - **Return Focus**: `Escape` キーまたは Light Dismiss でクローズした後、フォーカスは元の Trigger (`<a data-part="trigger">`) に戻ります。
 
 **5.3 Forced Colors Mode**
 
@@ -6079,25 +6459,24 @@ ui-footnote {
 **5.4 Print Styles**
 
 - Popover は印刷不可能なため、脚注番号を**ページ末尾の脚注セクションへのリンク**として機能させます。
-    - 印刷時は Trigger (`<button>`) を非表示にし、代わりに Fallback Link (`<a href="#fn-1">`) を表示します。
-    - Popover (`[popover]`) は `display: none`。
+    - Trigger はリンク要素のため、そのまま印刷対象に含めます。
+    - Popover (`[popover]`) は `display: none` で非表示化します。
     - 脚注セクション（`<section class="footnotes">`）は印刷出力に含めます。
 
 **6. No-JS / SSR フォールバック戦略 (Progressive Enhancement)**
 
 JavaScript が無効、または Hydration 前の状態でも、脚注へのアクセスを完全に保証します。
 
-- **Trigger**: 
-    - `<button>` は `hidden` 属性で非表示（JavaScript で `hidden` を削除）。
-    - 代わりに `<a href="#fn-1" class="footnote-fallback-link">` を表示し、クリックでページ末尾の脚注セクションへジャンプ可能にします。
+- **Trigger**:
+    - Trigger は常に `<a href="#fn-1">` を使用します（切り替え不要）。
+    - JavaScript 有効時のみ通常クリックを Popover 表示に拡張し、リンクの本来機能を保持します。
 - **Footnotes Section**:
     - 記事末尾に `<section class="footnotes" role="doc-endnotes">` を配置。
     - 各脚注に `id="fn-1"` を付与し、アンカーリンクのターゲットとして機能。
-    - Backref (`<a href="#fnref-1">↩</a>`) で本文への戻りを提供。
+    - Backref (`<a href="#fnref-1-1">↩</a>`) で本文への戻りを提供。
 - **Hydration**:
-    - JS ロード後、`<ui-footnote>` コンポーネントが初期化され、Popover 機能が有効化。
-    - `<button>` の `hidden` 属性を削除し、`<a class="footnote-fallback-link">` を非表示化。
-    - 脚注セクションは `display: none`（または `hidden` 属性）で非表示化。ただし、印刷時は復活。
+    - JS ロード後、`<ui-footnote>` コンポーネントが初期化され、Popover 機能が有効化されます。
+    - **脚注セクションは非表示にしません**。Secondary Access（ジャンプ）と印刷互換を維持するため、常時DOM・常時可視を契約とします。
 
 **7. Footnotes Section (Footer) スタイル**
 
@@ -6107,6 +6486,7 @@ No-JS 環境および印刷用に、記事末尾の脚注セクションのス�
     - `margin-block-start: var(--space-16)` — 本文との明確な分離。
     - `padding-block-start: var(--space-8)`
     - `border-block-start: var(--border-width) solid var(--border-default)` — 視覚的な区切り線。
+    - *Exception (`.prose` Border Rule)*: `index.md` の「本文コンテンツ内（`.prose`）はスペーシング中心」原則に対する意図的例外です。脚注セクションは本文中の補助記号ではなく、末尾の独立情報ブロックであり、一覧領域の開始を明確化する構造線を許可します。
 - **Heading (Optional)**:
     - 「脚注」という見出しは冗長なため、原則として表示しません。区切り線で十分です。
     - スクリーンリーダー向けに `.sr-only` で `<h2>脚注</h2>` を配置することを推奨。
@@ -6130,6 +6510,7 @@ No-JS 環境および印刷用に、記事末尾の脚注セクションのス�
     - Pandoc / CommonMark 互換の脚注構文（`[^1]` / `[^1]: ...`）を解析します。
     - MDAST を走査し、脚注参照（`footnoteReference`）と脚注定義（`footnoteDefinition`）を収集。
     - 参照位置に `<ui-footnote>` を、記事末尾に `<section class="footnotes">` を出力。
+    - Trigger ID は `fnref-{index}-{instance}` 形式で一意化し、Backref の `href` と対応させます。
     - Velite の `markdown` 設定に追加: `remarkPlugins: [remarkFootnote, ...]`
 - **SSG Integration**: Velite / Eleventy のビルドパイプラインで事前レンダリングされるため、ランタイムでの Markdown 解析は不要です。
 - **Anchor Positioning**: CSS Anchor Positioning API のサポート状況（Chrome 125+, Safari/Firefox 未対応）を考慮し、Floating UI 等のポリフィルを使用します。
@@ -6139,13 +6520,24 @@ No-JS 環境および印刷用に、記事末尾の脚注セクションのス�
     - **代替戦略 (Static Page Strategy)**: 極端に長い脚注（2000文字以上、または複雑な図表を含む）の場合、Popover 内には要約（最初の200文字程度）のみを表示し、「詳細を読む →」リンクで専用ページ（`/notes/[note-id]/footnotes/[footnote-id]`）へ遷移させることを検討します。
         - この場合、Popover Footer に「詳細ページで読む」リンクを追加します。
 - **Multiple References (同一脚注の複数参照)**:
-    - **DOM 構造**: 同一脚注が複数箇所から参照される場合、**Popover インスタンスは1つのみ生成**し、全ての Trigger が同じ `popovertarget` を参照します。
-        - 例: `<button popovertarget="fn-1-popover">` が複数存在し、全て同じ `<div id="fn-1-popover" popover>` を開きます。
+    - **DOM 構造**: 同一脚注が複数箇所から参照される場合、**Popover インスタンスは1つのみ生成**し、全ての Trigger が同じ Popover 要素（`id="fn-1-popover"`）を共有します。
+        - 例: `<a data-part="trigger" href="#fn-1">` が複数存在し、全て同じ `<div id="fn-1-popover" popover>` を開きます。
     - **ID 重複問題の回避**: Popover 要素（`id="fn-1-popover"`）は**最初の参照位置にのみ配置**し、2番目以降の `<ui-footnote>` 要素には Popover コンテンツを含めません（Trigger のみ）。
         - Remark プラグインは、同一 `ref-id` の2回目以降の出現時に `<ui-footnote ref-id="fn-1" index="1" shared>` のように `shared` 属性を付与し、コンポーネント側で Popover 生成をスキップします。
+    - **Backref 方針**: 複数参照時の末尾脚注には「最初の参照へ戻る」リンクを既定とし、必要に応じて複数Backref（`↩︎1`, `↩︎2`）へ拡張します。
     - **コンテキスト維持**: どの Trigger から開いたかを視覚的に示すため、Popover 表示中は**アクティブな Trigger のみ**に `--bg-active` 背景を適用します（他の Trigger は通常状態）。
         - 実装: 各 Trigger の `click` イベントハンドラでクリックされたトリガーを変数（例: `activeTrigger`）に記録する。Popover の `toggle` イベントで表示/非表示を検知し（`event.target` は Popover 要素自体）、`activeTrigger` に CSS クラスを付与/削除する。
     - **位置再計算 (Multiple References)**: 2番目以降のトリガーから Popover を開く際は、Floating UI の `reference` オプションをアクティブなトリガーに更新するか、Popover 要素を `document.body` 等に移動した上でアクティブトリガーを基点として位置計算を行い、位置がずれないようにします。
+
+**9. 受け入れ基準 (Acceptance Criteria)**
+
+- **Native Link Baseline**: Trigger が常に `<a href="#fn-*">` で出力され、JavaScript 無効でも脚注本文へ到達できること。
+- **Dual Access Integrity**: 通常クリックで Popover、修飾キー付きクリック/中クリックで末尾脚注遷移（または別タブ）が成立すること。
+- **Backref Contract**: Endnotes の Backref が実在する Trigger ID（`fnref-*`）を参照し、本文へ確実に戻れること。
+- **Small Text Hard Limit**: 脚注参照の計算後フォントサイズが 12px 未満にならないこと（`sup` の `smaller` 依存を排除）。
+- **Endnotes Visibility Guarantee**: Hydration 後も `section.footnotes` が `display:none`/`hidden` にならず、アンカー遷移先として機能し続けること。
+- **`.prose` Border Exception Clarity**: 脚注セクション上ボーダーが `.prose` ボーダー原則の意図的例外として明記されていること。
+- **Print Continuity**: 印刷時に Popover が非表示化され、末尾脚注セクションが出力されること。
 
 #### 順序なしリスト (Unordered List) `<ui-ul>`
 
@@ -6166,29 +6558,37 @@ No-JS 環境および印刷用に、記事末尾の脚注セクションのス�
         | Level 1 | `"●"` (U+25CF) | ● | `disc` |
         | Level 2 | `"○"` (U+25CB) | ○ | `circle` |
         | Level 3 | `"■"` (U+25A0) | ■ | `square` |
-    - **Position**: `outside` (テキストの左端を揃え、可読性を維持)
-    - **Forced Colors**: ハイコントラストモードでは `currentColor` (CanvasText) を継承し、視認性を確保します。`--fg-muted` は `forced-colors: active` 時に `GrayText` にマッピングされます。
+    - **Position**: 擬似要素による専用マーカー列（Pseudo Marker Column）を左側に確保し、本文の開始位置を固定します。
+    - **Forced Colors**: `forced-colors: active` 時は `CanvasText` を明示指定し、補助色 (`GrayText`) への自動マッピングによる視認性低下を防ぎます。
 - **Spacing**:
-    - Item Gap: `var(--space-2)` (リスト項目間の適切な呼吸)
+    - **Item Gap**: `var(--space-2)` (`li + li` の `margin-block-start` で項目間の垂直リズムを保証)
     - **Marker Gap**: `var(--space-2)` (`gap` プロパティが担当。マーカーとテキストの間の物理的な余白)
     - **Marker Column Width**: `var(--space-4)` (マーカー文字の居住空間。`gap` とは別概念であり、`●` 等の描画幅に両側余白を加えた最小幅として設定)
     - Indent: `0` (Gridレイアウトにより制御)
+- **Scope Contract**:
+    - 対象は **`.prose ul`** と **`<ui-ul>` 内部のリスト (`ui-ul > ul`)** に限定します。
+    - グローバルな `ul`/`li` への直接適用は**禁止**します（他コンテキストの副作用防止）。
 
 **3. 実装詳細 (Implementation Strategy)**
 
 - **Strict Layout (Grid System)**:
     - ブラウザ標準の `list-style` はマーカー位置の微調整が困難であるため、**`list-style: none`** とし、**CSS Grid** を用いた完全な自前制御を採用します。
     - **Accessibility Restoration (Critical)**:
-        - `list-style: none` の副作用として、Safari (VoiceOver) 等でリストのセマンティクスが消失する問題を防ぐため、HTML生成時に以下の属性を強制的に付与します。
+        - `list-style: none` の副作用として、Safari (VoiceOver) 等でリストのセマンティクスが消失する問題を防ぐため、以下を必須とします。
         - **Parent**: `<ul role="list">`
         - **Child**: `<li role="listitem">`
+        - **責務分担**:
+            - `.prose ul`: Markdown変換パイプライン（remark/rehype後段）で `role` 属性を付与。
+            - `<ui-ul>`: コンポーネントのレンダラーが `role` 属性付きのDOMを出力。
     - **Structure**:
         ```css
-        ul {
+        :where(.prose ul, ui-ul > ul) {
           list-style: none;
           padding: 0;
+          margin: 0;
         }
-        li {
+
+        :where(.prose ul li, ui-ul li) {
           display: grid;
           /*
            * マーカー列幅 (var(--space-4) = 16px):
@@ -6201,27 +6601,37 @@ No-JS 環境および印刷用に、記事末尾の脚注セクションのス�
           align-items: baseline; /* マーカーと本文のベースラインを厳密に同期 */
         }
 
+        /* Item Gap: 項目間の垂直余白を明示 */
+        :where(.prose ul li, ui-ul li) + :where(.prose ul li, ui-ul li) {
+          margin-block-start: var(--space-2);
+        }
+
         /* Level 1: disc (●) */
-        li::before {
+        :where(.prose ul li, ui-ul li)::before {
           content: "●"; /* U+25CF */
           color: var(--fg-muted);
           justify-self: center;
         }
 
         /* Level 2: circle (○) — ネスト深度をセレクタで判定 */
-        li li::before {
+        :where(.prose ul li li, ui-ul li li)::before {
           content: "○"; /* U+25CB */
         }
 
         /* Level 3: square (■) */
-        li li li::before {
+        :where(.prose ul li li li, ui-ul li li li)::before {
           content: "■"; /* U+25A0 */
+        }
+
+        /* ネストリストと親テキストの癒着を防止 */
+        :where(.prose ul li ul, ui-ul li ul) {
+          margin-block-start: var(--space-2);
         }
 
         /* Forced Colors: マーカーをシステム文字色に追従させる */
         @media (forced-colors: active) {
-          li::before {
-            color: currentColor; /* CanvasText を継承 */
+          :where(.prose ul li, ui-ul li)::before {
+            color: CanvasText;
             forced-color-adjust: auto;
           }
         }
@@ -6232,6 +6642,34 @@ No-JS 環境および印刷用に、記事末尾の脚注セクションのス�
         - **マーカー形状の切り替え**: `li li::before` / `li li li::before` のネストセレクタで深度を判定します。4階層以上は Level 3 の `■` を維持します（`li li li li::before` への追加定義は不要）。
 - **インタラクティブ要素を含む場合**:
     - リスト項目内にリンク (`<a>`) やボタン (`<button>`) が含まれる場合、タッチターゲットサイズの最小値 (`--control-min-touch` = 44px) を疑似要素で確保してください。リスト行高さが 44px を下回る場合でも、タップ領域は 44px × 44px を維持します。
+    - **実装パターン**:
+        ```css
+        :where(.prose ul li, ui-ul li) :is(a, button, [role="button"]) {
+          position: relative;
+          min-height: max(var(--control-height-sm), 24px);
+        }
+
+        :where(.prose ul li, ui-ul li) :is(a, button, [role="button"])::after {
+          content: "";
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: var(--control-min-touch);
+          height: var(--control-min-touch);
+          transform: translate(-50%, -50%);
+          pointer-events: none;
+        }
+        ```
+
+**4. 受け入れ基準 (Acceptance Criteria)**
+
+- **Scope Isolation**: スタイルが `.prose ul` と `ui-ul > ul` にのみ適用され、他の `ul` に影響しないこと。
+- **Item Gap Consistency**: リスト項目間に `var(--space-2)` が適用され、仕様と実装が一致していること。
+- **Marker Hierarchy**: Level 1/2/3 が `●`/`○`/`■` で表示され、4階層以上は `■` を維持すること。
+- **A11y Semantics**: `ul` に `role="list"`、`li` に `role="listitem"` が付与されること。
+- **Forced Colors Readability**: `forced-colors: active` でマーカーが `CanvasText` に切り替わり、視認性を維持すること。
+- **Touch Target Guarantee**: リスト内のインタラクティブ要素が最小44pxのタッチターゲットを満たすこと。
+- **Token Compliance**: 色・余白・サイズがトークンで定義され、ハードコード値を持ち込まないこと（Unicode記号定義を除く）。
 
 #### 順序付きリスト (Ordered List) `<ui-ol>`
 
@@ -6257,9 +6695,14 @@ No-JS 環境および印刷用に、記事末尾の脚注セクションのス�
 - **Spacing**:
     - **Item Gap**: `var(--space-2)` (リスト項目間の垂直余白)
     - **Marker Gap**: `var(--space-2)` (`gap` プロパティが担当。マーカーと本文テキストの間の水平余白)
-    - **Marker Column Width**: `3ch` (等幅数字2桁+ピリオド分の固定幅)
+    - **Marker Column Width**: `--ol-marker-column`（デフォルト `3ch`）
+        - **Default**: `3ch`（`1.`〜`99.` を想定）
+        - **Extended**: `4ch`（`100.` 以上、`start`/`reversed`/`li[value]` を使用するケース）
         - **Note (Exception)**: `ch` 単位は `var(--font-mono)` のグリフ幅に依存するフォント相対値です。`index.md` の禁止事項「ハードコードされた色・サイズ値」の例外として許容します。`<ui-ul>` の `var(--space-4)` とは異なり、桁揃えという目的上、スペーシングトークンではなくフォントメトリクスに基づく値が最適です。
     - **Indent**: `0` (Grid レイアウトにより制御)
+- **Scope Contract**:
+    - 対象は **`.prose ol`** と **`<ui-ol>` 内部のリスト (`ui-ol > ol`)** に限定します。
+    - グローバルな `ol`/`li` への直接適用は**禁止**します（他コンテキストの副作用防止）。
 - **背景色の制約**: `--bg-default` または `--bg-surface-2` 上での使用を前提とします。
     | 組み合わせ | Light | Dark | 判定 |
     |-----------|-------|------|------|
@@ -6272,27 +6715,102 @@ No-JS 環境および印刷用に、記事末尾の脚注セクションのス�
 - **Strict Layout (Grid System)**:
     - `<ui-ul>` と同様のGrid戦略を採用しますが、桁数によるレイアウトシフト（Wobble）を排除します。
     - **Accessibility Restoration (Critical)**:
-        - `<ui-ul>` と同様、**Parent: `<ol role="list">`**, **Child: `<li role="listitem">`** を必須とします。
+        - 基本方針は**ネイティブの順序セマンティクス維持**です。`<ol>`/`<li>` を必須とし、順序情報の伝達は常にHTMLに委譲します。
+        - `list-style: none` 適用時に Safari (VoiceOver) などで読み上げ劣化が確認された場合のみ、互換レイヤーとして **Parent: `<ol role="list">`**, **Child: `<li role="listitem">`** を追加します。
+        - **検証要件**: 少なくとも VoiceOver / NVDA で「リスト件数」「項目順序」「現在項目位置」が読み上げられることを確認します。
+        - **責務分担**:
+            - `.prose ol`: Markdown変換パイプライン（remark/rehype後段）で必要に応じて `role` 属性を付与。
+            - `<ui-ol>`: コンポーネントのレンダラーが同等のDOM契約を出力。
+    - **`.prose ol` の自動属性付与 (Build-time Contract)**:
+        - `.prose ol` は Markdown変換パイプライン（rehype後段）で、桁数を判定して `data-marker-digits` を自動付与します。
+        - **付与ルール**:
+            - 最大番号が 3桁以上になる可能性がある `ol` に `data-marker-digits="3"` を付与。
+            - 2桁以下に収まる `ol` には属性を付与しない（`3ch` の既定値を使用）。
+        - **判定対象**:
+            - `ol[start]`
+            - `ol[reversed]`
+            - 各 `li[value]`
+            - 該当 `ol` の直下 `li` 件数（ネスト `ol` は別スコープで独立判定）
+        - **実装例（rehype）**:
+            ```ts
+            type HastElement = {
+              type: "element";
+              tagName: string;
+              properties?: Record<string, unknown>;
+              children?: Array<HastElement | { type: string }>;
+            };
+
+            const toInt = (value: unknown): number | null => {
+              if (typeof value === "number" && Number.isFinite(value)) return Math.trunc(value);
+              if (typeof value === "string" && value.trim() !== "") {
+                const parsed = Number.parseInt(value, 10);
+                return Number.isNaN(parsed) ? null : parsed;
+              }
+              return null;
+            };
+
+            const digits = (value: number): number => Math.abs(value).toString().length;
+
+            const getMarkerDigits = (ol: HastElement): number => {
+              const props = ol.properties ?? {};
+              const start = toInt(props.start) ?? 1;
+              const reversed = props.reversed !== undefined && props.reversed !== false;
+              const liChildren = (ol.children ?? []).filter(
+                (child): child is HastElement => child.type === "element" && child.tagName === "li",
+              );
+
+              const explicitValues = liChildren
+                .map((li) => toInt(li.properties?.value))
+                .filter((v): v is number => v !== null);
+
+              const end = reversed ? start - (liChildren.length - 1) : start + (liChildren.length - 1);
+              const maxDigits = Math.max(
+                digits(start),
+                digits(end),
+                ...explicitValues.map((value) => digits(value)),
+              );
+
+              return maxDigits >= 3 ? 3 : 2;
+            };
+
+            // rehype visitor内
+            if (node.tagName === "ol") {
+              const markerDigits = getMarkerDigits(node);
+              if (markerDigits >= 3) {
+                node.properties = { ...(node.properties ?? {}), "data-marker-digits": "3" };
+              }
+            }
+            ```
     - **Alignment Strategy (Decimal Alignment)**:
-        - 1桁("1.")と2桁("10.")で本文の開始位置がズレることを防ぐため、マーカー領域に **`3ch`** (約3文字分) の固定幅を与え、**右揃え（Right Align）**で配置します。これにより、ドットと本文の垂直ラインを維持し、美しい構造を作ります。
+        - 1桁("1.")と2桁("10.")で本文の開始位置がズレることを防ぐため、マーカー領域に **`--ol-marker-column`** を与え、**右揃え（Right Align）**で配置します。これにより、ドットと本文の垂直ラインを維持し、美しい構造を作ります。
+        - 既定値は `3ch` とし、3桁番号を扱うケースでは `4ch` に切り替えます。
     - **Structure**:
         ```css
-        ol {
+        :where(.prose ol, ui-ol > ol) {
+          --ol-marker-column: 3ch;
           list-style: none;
           counter-reset: list-item;
+          margin: 0;
           padding: 0;
         }
-        li + li {
+
+        /* 3桁番号を扱うケース（100+、start/reversed/value） */
+        :where(.prose ol[data-marker-digits="3"], ui-ol > ol[data-marker-digits="3"]) {
+          --ol-marker-column: 4ch;
+        }
+
+        :where(.prose ol li, ui-ol li) + :where(.prose ol li, ui-ol li) {
           margin-top: var(--space-2); /* Item Gap: リスト項目間の垂直余白 */
         }
-        li {
+
+        :where(.prose ol li, ui-ol li) {
           display: grid;
-          /* 3ch: var(--font-mono) の等幅字幅に基づく桁揃え固定値（2桁まで安全） */
-          grid-template-columns: 3ch 1fr;
+          grid-template-columns: var(--ol-marker-column) 1fr;
           gap: var(--space-2); /* Marker Gap: マーカーと本文テキストの間の水平余白 */
           align-items: baseline;
         }
-        li::before {
+
+        :where(.prose ol li, ui-ol li)::before {
           counter-increment: list-item;
           content: counter(list-item) ".";
           font-family: var(--font-mono);
@@ -6305,7 +6823,7 @@ No-JS 環境および印刷用に、記事末尾の脚注セクションのス�
 
         /* Forced Colors: マーカーをシステム文字色に追従させる */
         @media (forced-colors: active) {
-          li::before {
+          :where(.prose ol li, ui-ol li)::before {
             color: CanvasText;
             forced-color-adjust: auto;
           }
@@ -6328,16 +6846,47 @@ No-JS 環境および印刷用に、記事末尾の脚注セクションのス�
         - **変更箇所**: マーカー色のみ `var(--primary)` に変更します。本文色・背景色・ボーダーは変更しません。
         - **非対象**: 完了済みステップ・アクティブステップの視覚表現は本バリアントの対象外です。必要な場合は別途定義してください。
         ```css
-        [variant="steps"] li::before {
+        :where(.prose ol[variant="steps"] li, ui-ol[variant="steps"] li)::before {
           color: var(--primary);
         }
         ```
 - **インタラクティブ要素を含む場合**:
     - リスト項目内にリンク (`<a>`) やボタン (`<button>`) が含まれる場合、タッチターゲットサイズの最小値 (`--control-min-touch` = 44px) を疑似要素で確保してください。リスト行高さが 44px を下回る場合でも、タップ領域は 44px × 44px を維持します。
+    - **実装パターン**:
+        ```css
+        :where(.prose ol li, ui-ol li) :is(a, button, [role="button"]) {
+          position: relative;
+          min-height: max(var(--control-height-sm), 24px);
+        }
+
+        :where(.prose ol li, ui-ol li) :is(a, button, [role="button"])::after {
+          content: "";
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: var(--control-min-touch);
+          height: var(--control-min-touch);
+          transform: translate(-50%, -50%);
+          pointer-events: none;
+        }
+        ```
 - **Optical Baseline Adjustment (Cross-Font Sync)**:
     - 和文フォント (`var(--font-sans)`) と欧文等幅フォント (`var(--font-mono)`) の混植において、ベースラインが視覚的にずれて見える場合があります。
     - **デフォルト構成** (`Noto Sans JP` + `JetBrains Mono`): `align-items: baseline` による自動調整で補正不要です。フォントを変更した場合のみ以下の検証を行ってください。
     - **補正の適用条件**: ズレが顕著な場合（フォント変更時に目視で確認）に限り、マーカー側に **`transform: translateY(0.05em)`** を適用し、「数字の底」と「和文の底」が一直線に見えるよう補正します。この値はフォントメトリクスに依存するため、フォント変更の都度再検証してください。
+
+**4. 受け入れ基準 (Acceptance Criteria)**
+
+- **Scope Isolation**: スタイルが `.prose ol` と `ui-ol > ol` にのみ適用され、他の `ol` に影響しないこと。
+- **Item Gap Consistency**: リスト項目間に `var(--space-2)` が適用され、仕様と実装が一致していること。
+- **Marker Alignment**: `1.` と `10.` の本文開始位置が一致し、桁揃えが崩れないこと。
+- **Large Number Safety**: 3桁番号が想定される場合、`data-marker-digits="3"` で `--ol-marker-column: 4ch` に切り替わること。
+- **Build-time Auto Annotation**: `.prose ol` 生成時に `start` / `reversed` / `li[value]` / `li` 件数から桁数判定を行い、3桁以上のみ `data-marker-digits="3"` が自動付与されること。
+- **A11y Semantics**: `<ol>/<li>` の順序セマンティクスが維持され、必要環境では `role="list"` / `role="listitem"` の互換レイヤーが適用されること。
+- **SR Reading Validation**: VoiceOver / NVDA で「リスト件数」「項目順序」「現在項目位置」が読み上げられること。
+- **Forced Colors Readability**: `forced-colors: active` でマーカーが `CanvasText` に切り替わり、視認性を維持すること。
+- **Touch Target Guarantee**: リスト内のインタラクティブ要素が最小44pxのタッチターゲットを満たすこと。
+- **Token Compliance**: 色・余白・サイズがトークンで定義され、ハードコード値を持ち込まないこと（`ch` による列幅定義を除く）。
 
 #### 画像 / 図版 (Image) `<ui-image>`
 
@@ -6354,11 +6903,21 @@ No-JS 環境および印刷用に、記事末尾の脚注セクションのス�
 | プロパティ | 属性 | 型/値 | 説明 |
 |------------|------|-------|------|
 | `src` | `src` | `string` | 画像URL。 |
-| `alt` | `alt` | `string` | 代替テキスト（必須）。 |
+| `alt` | `alt` | `string` | 代替テキスト（必須。装飾画像のみ空文字を許可）。 |
 | `caption` | `caption` | `string` | 画像下に表示する説明文。 |
 | `zoomable` | `zoomable` | `boolean` | 拡大表示機能の有無。デフォルトは `true`。 |
 | `width` / `height` | - | `number` | **CLS防止用**。アスペクト比計算に使用。 |
 | `loading` | `loading` | `'lazy' \| 'eager'` | デフォルトは `lazy`。LCP要素のみ `eager` 指定可能。 |
+
+- **Scope Contract**:
+    - 対象は **`.prose img` / `.prose figure` / `<ui-image>` 内部要素** に限定します。
+    - グローバルな `img` / `figure` への直接適用は**禁止**します（他コンテキストの副作用防止）。
+- **Build-time Contract (`.prose` 用)**:
+    - Markdown変換パイプライン（rehype後段）で以下を自動整備します。
+        - `img + em`（直後の説明文）を `<figure><img><figcaption></figcaption></figure>` に正規化。
+        - `figcaption` に一意ID（`image-caption-*`）を付与。
+        - `zoomable` な場合、トリガー `button` に `aria-controls`（dialog ID参照）を付与。
+    - `width` / `height` が欠落している画像は、フロントマターやメタデータから補完を試行し、解決不能時はランタイムでプレースホルダー表示へフォールバックします。
 
 **3. スタイリングとトークンマッピング (Style & Tokens)**
 
@@ -6380,7 +6939,7 @@ No-JS 環境および印刷用に、記事末尾の脚注セクションのス�
         - Active: `transform: scale(var(--scale-pressed))` (押下時の沈み込み)
         - Focus: **Adaptive Focus** (`--animation-focus`) を適用。
         - **Transition**: `transition: all` は禁止。以下のプロパティのみ明示的に指定します。
-            ```
+            ```css
             transition:
               transform var(--duration-fast) var(--ease-out),
               filter var(--duration-normal) var(--ease-out),
@@ -6397,6 +6956,9 @@ No-JS 環境および印刷用に、記事末尾の脚注セクションのス�
     - **Mobile Safety (Full Bleed)**:
         - 画像が画面端まで拡張される（Full Bleed）場合、キャプションには **`padding-inline: var(--space-4)`** を適用し、テキストが画面端に張り付くのを防ぎます。
     - Margin Top: `--space-2`
+- **Token Exception**:
+    - `background-color: oklch(0% 0 0 / var(--opacity-scrim))` は、`index.md` の Primitive (`--opacity-scrim`) と同一色相の透過黒を明示するための例外表記です。
+    - ローディング時の最小高さは **`calc(var(--space-20) * 2)`**（160px相当）を使用し、固定ピクセル値を直接記述しません。
 
 **4. Lightbox体験 (Immersion)**
 
@@ -6409,8 +6971,8 @@ No-JS 環境および印刷用に、記事末尾の脚注セクションのス�
     - `prefers-reduced-motion: reduce` 設定時は、`index.md` のグローバルルールによりアニメーション時間が `0.01ms` に短縮され、Lightboxは**即座に表示/非表示**になります。
     - これにより Shared Element Transition がスキップされますが、Lightboxの機能（表示・非表示・フォーカス管理）は維持されます。コンテキスト喪失を防ぐため、即時表示時でも**バックドロップのスクリムは表示**します。
 - **Backdrop (Context Retention)**:
-    - **Scrim & Blur**: `background-color: oklch(0% 0 0 / var(--opacity-scrim))` (黒の透過 60%) に加え、**`backdrop-filter: blur(var(--blur-md))`** を適用します。
-    - *Rationale*: 背面の記事（コンテキスト）を「気配」として残しつつ、**文字情報の輪郭を微細にボカすことで視覚的干渉（ノイズ）を取り除き**、画像への没入と集中を最大化します。これはカメラの被写界深度（Depth of Field）のメタファーでもあります。
+    - **Scrim & Blur**: `background-color: oklch(0% 0 0 / var(--opacity-scrim))` に加え、**`backdrop-filter: blur(var(--blur-md))`** を適用します。
+    - *Rationale*: 背面の記事（コンテキスト）を「気配」として残しつつ、文字情報の輪郭を微細にボカして視覚的干渉（ノイズ）を抑えます。
     - **Zoomed Image Border**: 拡大時も `1px solid var(--border-ghost)` を維持し、暗い背景上での視認性を保証します。
 
 **5. 拡大時の操作 (Serene Operation)**
@@ -6427,7 +6989,9 @@ No-JS 環境および印刷用に、記事末尾の脚注セクションのス�
 
 **6. アクセシビリティ (A11y)**
 
-- **Structure**: 拡大可能な場合、`<img>` を `<button type="button">` でラップし、キーボードフォーカスを可能にします。
+- **Structure**:
+    - 拡大可能な場合、`<img>` を `<button type="button">` でラップし、キーボードフォーカスを可能にします。
+    - トリガーには `aria-expanded`、`aria-controls`（dialog ID）、`aria-haspopup="dialog"` を付与します。
 - **Button Reset (Implementation Safety)**:
     - ラッパーとしての `<button>` は、意味的な役割のみを果たし、視覚的には「透明」である必要があります。ブラウザ標準スタイル（Border, Padding, Background）を完全にリセットし、**`display: block`** として画像のレイアウトに影響を与えないようにします。
     - **⚠️ `display: contents` の使用禁止**: `display: contents` はブラウザによってアクセシビリティツリーからボタン要素を消去するバグが報告されており、`display: block` を明示的に使用してください。
@@ -6436,15 +7000,15 @@ No-JS 環境および印刷用に、記事末尾の脚注セクションのス�
         - **Strategy**: `forced-colors: active` においてもボタンの `border` を `none` に、`background` を `transparent` に強制します。画像の境界線は `ui-image` 自身が持つボーダー（システムカラーにマッピングされる）によって表現され、二重線やノイズを防ぎます。
 - **State**:
     - `aria-expanded`: `false` (通常時) / `true` (拡大時) を切り替え、展開可能な要素であることを伝えます。
-    - `aria-label`: **`alt` テキストを含む動的な値**を設定します（例: `"${alt}を拡大"`）。これにより、スクリーンリーダーユーザーが「どの画像を拡大するのか」を把握できます。`alt` が空文字（装飾画像）の場合は `aria-label="画像を拡大"` を固定値として使用します。
+    - `aria-label`: **`alt` テキストを含む動的な値**を設定します（例: `"${alt}を拡大"`）。`alt` が空文字（装飾画像）の場合は `aria-label="画像を拡大"` を固定値として使用します。
 - **Lightbox セマンティクス**:
-    - Lightboxは「スクロールロック」「バックドロップ」「Escで閉じる」というモーダルの特性を持つため、拡大コンテナに **`role="dialog"`** と **`aria-modal="true"`** を付与します。
+    - Lightboxはモーダルとして扱い、拡大コンテナに **`role="dialog"`** と **`aria-modal="true"`** を付与します。
     - `aria-label` または `aria-labelledby` で、ダイアログのアクセシブルな名前（例: `alt` テキストと同値）を設定します。
 - **フォーカス管理 (Focus Management)**:
     - `index.md` の「Escキーは閉じる + トリガー元へフォーカスを戻す」原則に従います。
-    - **展開時**: フォーカスを拡大画像コンテナ（`role="dialog"` の要素）に移動します。
+    - **展開時**: フォーカスを拡大画像コンテナ（`role="dialog"` の要素、`tabindex="-1"`）に移動します。
     - **閉じる時**（クリック / バックドロップクリック / `Esc` のいずれの場合も）: フォーカスを元のサムネイルボタンに戻します。
-    - **フォーカストラップ**: Lightboxは「拡大画像クリック」「バックドロップクリック」「Escキー」のみでフォーカス可能なインタラクティブ要素を持たないため、フォーカストラップは**実装しません**（Tabキーで自由に脱出できます）。
+    - **フォーカストラップ**: モーダル契約に従い必須とします。Lightbox内部のフォーカス可能要素がダイアログ自身のみである場合、`Tab` / `Shift+Tab` でダイアログ自身へ循環させます。
 - **Semantic Bonding**:
     - `<figcaption>` に一意のIDを付与し、ボタン（または画像）から `aria-describedby` で参照します。これにより、「画像の名前（`aria-label`）」と「画像の説明（Caption）」が支援技術に対して明確に関連付けられます。
 - **Alt Text**: コンテキストに応じた説明を義務付けます。装飾的な画像の場合は空文字 (`alt=""`) とします。
@@ -6455,7 +7019,7 @@ No-JS 環境および印刷用に、記事末尾の脚注セクションのス�
 - **ローディング状態 (Loading)**:
     - `loading="lazy"` 使用時など、画像の読み込み中はコンテナにプレースホルダーを表示します。
     - **Skeleton**: `background-color: var(--bg-fill-neutral)` の矩形をアスペクト比維持で表示します（`width`/`height` 属性をもとに `aspect-ratio` プロパティを設定）。
-    - `width`/`height` 属性が未指定の場合は、固定の最小高さ（例: `160px`）を仮表示します。
+    - `width`/`height` 属性が未指定の場合は、`min-height: calc(var(--space-20) * 2)` を仮表示します。
     - **アニメーション**: Shimmer Effectは使用しません。`index.md` の「No Decoration（非装飾）」原則に基づき、静止したプレースホルダーのみとします。
     - `aria-busy="true"` をコンポーネントルートに付与し、読み込み中であることを支援技術に伝えます。
 
@@ -6465,241 +7029,202 @@ No-JS 環境および印刷用に、記事末尾の脚注セクションのス�
     - `border-radius: var(--radius-md)` と `1px solid var(--border-ghost)` はエラー時も維持し、レイアウトの安定性（CLS防止）を保ちます。
     - `zoomable` 機能はエラー時には無効化します（`<button>` を非インタラクティブにする）。
 
+**8. 印刷スタイル (Print Styles)**
+
+- **基本方針**: `index.md` の印刷ルールに従い、Lightbox体験は印刷対象外とします。
+- **Print Contract**:
+    - サムネイル画像（`figure > img`）と `figcaption` は印刷対象として保持します。
+    - Lightboxのバックドロップ、拡大コンテナ、スクロールロック用スタイルは `@media print` で非表示/無効化します。
+    - トリガー `button` の視覚リセットは維持しつつ、印刷時は通常フロー要素として扱います（余分な境界線・背景を付与しない）。
+
+**9. 受け入れ基準 (Acceptance Criteria)**
+
+- **Scope Isolation**: スタイル適用範囲が `.prose img` / `.prose figure` / `<ui-image>` 内部に限定され、他の `img` / `figure` に影響しないこと。
+- **Build-time Normalization**: `.prose` 生成時に `figure/figcaption` 正規化、caption ID付与、`aria-controls` 付与が実行されること。
+- **Token Compliance**: 色・余白・サイズがトークンで定義され、固定値の直接記述を持ち込まないこと（透過黒の例外表記を除く）。
+- **Breakout Consistency**: モバイル/デスクトップで `index.md` の Media Elements 拡張値と一致すること。
+- **Motion Compliance**: `transition: all` を使用せず、許可プロパティのみを遷移させること。
+- **Modal Semantics**: 拡大時に `role="dialog"` + `aria-modal="true"` が付与され、トリガーの `aria-expanded` と同期すること。
+- **Focus Trap & Return**: 拡大中はフォーカストラップが有効で、閉じる操作後は必ずトリガーへフォーカスが戻ること。
+- **Reduced Motion Safety**: `prefers-reduced-motion: reduce` で Lightbox遷移が実質即時（0.01ms）になること。
+- **Forced Colors Readability**: `forced-colors: active` でボタンは透明を維持し、画像境界が視認可能であること。
+- **CLS Prevention**: `width`/`height` 指定時はレイアウトシフトが発生せず、未指定時もプレースホルダーで崩れを抑制すること。
+- **Print Behavior**: 印刷時にLightbox関連UIが出力されず、画像とキャプションのみが可読に保持されること。
+
 #### 動画埋め込み (Video) `<ui-video>`
 
 **1. デザイン哲学と目的 (Design Philosophy)**
 
-- **役割**: 静的なテキストでは伝えきれない動的な情報を提供します。
-- **Control**: ユーザーの許可なき「自動再生（Autoplay）」は、集中を乱す最悪のノイズであるため、原則として禁止します。音声もデフォルトはミュートとします。
-- **Immersion**: 文脈（Context）を維持したまま再生するため、全画面遷移を強制せず、記事の一部として自然に振る舞います。
+- **役割**: 静的なテキストでは伝えきれない動的な情報を、読書文脈を壊さずに提供します。
+- **Control**: ユーザーの許可なき自動再生はノイズであるため原則禁止し、`autoplay` 使用時は必ず `muted` を併用します。
+- **Immersion**: 全画面遷移を強制せず、本文の一部として自然に再生できることを優先します。
+- **Scope Boundary**:
+    - **対象**: self-hosted の `<video>` をラップする `<ui-video>`。
+    - **非対象**: YouTube等の外部 `iframe` 埋め込みUI（`index.md` の非対象に準拠）。
 
 **2. 技術仕様とAPI (Technical Specs)**
 
 | プロパティ | 属性 | 型/値 | 説明 |
 |------------|------|-------|------|
-| `src` | `src` | `string` | 動画ファイルのURL。 |
-| `poster` | `poster` | `string` | サムネイル画像URL。 |
-| `autoplay` | `autoplay` | `boolean` | 自動再生（**非推奨**）。使用時は必ず`muted`を併用。 |
-| `loop` | `loop` | `boolean` | ループ再生。短いデモ動画等で使用。 |
-| `muted` | `muted` | `boolean` | 音声ミュート。デフォルト `true` 推奨。 |
-| `playsinline`| `playsinline`| `boolean`| モバイルでのインライン再生強制（必須）。デフォルト `true`。 |
-| `width` / `height` | - | `number` | **CLS防止・アスペクト比計算用**。指定がない場合は `16/9` をデフォルトとします。 |
-| `caption` | `caption` | `string` | 動画の説明（キャプション）。 |
-| `tracks` | - | `Track[]` | 字幕データ配列（または `<track>` 要素をSlotへ）。 |
+| `src` | `src` | `string` | 動画ファイルURL。 |
+| `poster` | `poster` | `string` | ポスター画像URL。 |
+| `autoplay` | `autoplay` | `boolean` | 自動再生（非推奨）。使用時は `muted` 必須。 |
+| `loop` | `loop` | `boolean` | ループ再生。短いデモ動画向け。 |
+| `muted` | `muted` | `boolean` | 音声ミュート。既定値 `true` 推奨。 |
+| `playsinline` | `playsinline` | `boolean` | モバイルでのインライン再生（既定値 `true`）。 |
+| `width` / `height` | - | `number` | CLS防止・アスペクト比計算用。未指定時は `16 / 9`。 |
+| `caption` | `caption` | `string` | 動画の説明文。 |
+| `tracks` | - | `Track[]` | 字幕・キャプション情報。 |
 
 **`Track` 型定義:**
 
 ```typescript
 interface Track {
-  src: string;       // 字幕ファイルURL (.vtt 形式推奨)
-  srclang: string;   // 言語コード (例: 'ja', 'en')
-  label: string;     // UIに表示するラベル (例: '日本語', 'English')
+  src: string;
+  srclang: string;
+  label: string;
   kind: 'subtitles' | 'captions' | 'descriptions' | 'chapters' | 'metadata';
-  default?: boolean; // 省略時 false。true の場合、初期表示で有効化される
+  default?: boolean;
 }
 ```
 
-> **Note**: `<track>` 要素のSlot使用（`<track slot="tracks" ...>`）も等価の代替手段として許可します。ただし、プログラム的な制御が必要な場合は `tracks` プロパティを優先してください。
+> **Note**: `<track slot="tracks" ...>` のSlot利用も許可します。プログラム制御が必要な場合は `tracks` プロパティを優先します。
+
+- **Scope Contract**:
+    - 対象は **`.prose video` / `.prose figure` / `<ui-video>` 内部要素** に限定します。
+    - グローバルな `video` / `figure` への直接適用は禁止します。
+- **Build-time Contract (`.prose` 用)**:
+    - Markdown変換パイプライン（rehype後段）で以下を自動整備します。
+        - `video + em`（直後説明文）を `<figure><video><figcaption></figcaption></figure>` に正規化。
+        - `<figcaption>` に一意ID（`video-caption-*`）を付与。
+        - 動画コンテナへ `aria-describedby` を付与し、caption IDを参照。
+    - `width` / `height` 欠落時はメタデータ補完を試行し、解決不能時は `aspect-ratio: 16 / 9` のプレースホルダーへフォールバックします。
 
 **3. スタイリングとトークンマッピング (Style & Tokens)**
 
+- **Token Compliance**:
+    - コンポーネント実装では `index.md` の方針通り、Primitive直接参照ではなくSemanticトークンを使用します。
+    - 例外値が必要な場合はコンポーネント専用のSemanticエイリアス（例: `--video-overlay-bg`）を定義し、内部でのみ参照します。
 - **Container**:
-    - Aspect Ratio: `16 / 9` (標準)
-    - Radius: `--radius-md`
-    - Overflow: `hidden` (角丸を維持)
-    - Isolation: `isolate` (スタッキングコンテキストの生成)
-    - Background: `var(--black)` (読み込み前のちらつき防止)
+    - Aspect Ratio: `16 / 9`
+    - Radius: `var(--radius-md)`
+    - Overflow: `hidden`
+    - Isolation: `isolate`
+    - Background: `var(--bg-fill-neutral)`
     - Border: `1px solid var(--border-ghost)`
-        - *Rationale*: 白背景の動画（スクリーンキャスト等）がアプリ背景に溶け込むのを防ぎ、境界を明確にします。
 - **Layout Strategy (Prose Breakout)**:
-    - **Context: Prose**: テキストコンテナよりも広く表示し、没入感を高めます。`index.md` の「本文幅」セクション（Media Elementsの拡張ルール）と同一の計算式を適用します。
-        - **Mobile**: `width: calc(100% + var(--space-8))`, `margin-inline: calc(-1 * var(--space-4))`
-        - **Desktop**: `width: calc(100% + var(--space-16))`, `margin-inline: calc(-1 * var(--space-8))`
+    - **Mobile**: `width: calc(100% + var(--space-8))`, `margin-inline: var(--space-n4)`
+    - **Desktop**: `width: calc(100% + var(--space-16))`, `margin-inline: var(--space-n8)`
 - **Local Z-index Scale**:
-    - コンテナ (`isolation: isolate`) 内部での階層構造を厳密に定義し、重なり順序による事故を防ぎます。
-    - **Layer 0**: `<video>` 要素 (Content)
-    - **Layer 1**: Poster Image / Thumbnail (Loading State)
-    - **Layer 2**: Loading Spinner / Buffering Indicator
-    - **Layer 3**: Caption / Subtitles
-    - **Layer 4**: Controls Overlay (Play Button, Seek Bar, Floating Bar)
-- **Visual Comfort (Dark Mode Dimming)**:
-    - **State: Paused**: ポスター画像に対し `filter: brightness(var(--brightness-dimmed))` を適用し、周囲の暗さに馴染ませます。
-    - **State: Hover / Playing**: `filter: brightness(1)` に復帰させ、本来の色を表示します。
+    - Layer 0: `<video>`
+    - Layer 1: Poster / Thumbnail
+    - Layer 2: Loading Spinner / Buffering Indicator
+    - Layer 3: Captions / Subtitles
+    - Layer 4: Controls Overlay
+- **Visual Comfort**:
+    - Paused時は `filter: brightness(var(--brightness-dimmed))` を適用。
+    - Hover / Playing / Focus-visible 時は `filter: brightness(1)` に復帰。
 - **Caption**:
     - Element: `<figcaption>`
-    - Typography: `--text-sm`, `color: var(--fg-muted)`
+    - Typography: `--text-sm`
+    - Color: `var(--fg-muted)`
     - Align: `left`
-    - **Mobile Safety (Full Bleed)**:
-        - 動画が画面端まで拡張される（Full Bleed）場合、キャプションには **`padding-inline: var(--space-4)`** を適用し、テキストが画面端に張り付くのを防ぎます。
-    - Margin Top: `--space-2`
+    - Margin Top: `var(--space-2)`
+    - Full Bleed時は `padding-inline: var(--space-4)` を付与。
 - **Overlay (Play Button & Loading)**:
-    - **Appearance**:
-        - Icon: `--icon-xl` (32px), `color: var(--white)`
-        - **Button Size**: **Min `calc(var(--control-min-touch) + var(--space-1))` (48px)** (Paddingを含む)
-            - *Rationale*: `index.md` の `--control-min-touch` (44px) に安全マージン (`--space-1`) を加算し、容易な操作性を数学的に保証する意図的なオーバーライドです。視覚的に複雑な動画上のオーバーレイにおいて、ラフな操作でも確実にヒットさせるための**心理的な安心感（Psychological Safety）**を担保します。
-        - Background: `glass-panel` (Dark Mode強制) + `oklch(20% 0 0 / 0.6)`
-        - Shape: `circle` (Radius Full)
-    - **Tactility**:
-        - Hover: `transform: scale(var(--scale-hover-lg))` (1.1倍 / 吸い付き)
-        - *Rationale (Deviancy)*: 通常のボタンには `--scale-hover-sm` (1.02) を使用しますが、映像上に浮遊する円形ボタン（Floating Action）においては、より強い物理的なフィードバックが必要なため、例外的にアイコン用のスケール (`lg`) を採用し、操作の確実感（Surety）を高めます。
-        - Active: `transform: scale(var(--scale-pressed))` (沈み込み)
-        - Focus: **Adaptive Focus** (`--animation-focus`) を適用。
-    - **Loading State (Buffering)**:
-        - **Indicator Strategy**:
-            - **Primary (Recommended)**: **Glass Panel Container**. 再生ボタンの背景（すりガラスの円）を維持したまま、アイコンのみを `<ui-spinner>` に置換します。
-                - *Rationale*: Glass Panel が映像とスピナーの間に「中間層（Substrate）」として機能し、雪景色のような高輝度映像においても**数学的にコントラストを保証**します。これにより、視覚的に汚いドロップシャドウを回避し、「美しい待機状態」を実現します。
-            - **Secondary**: スピナー単体で表示する必要がある場合に限り、`filter: drop-shadow(...)` を使用して可視性を担保します。
-        - **Perceived Performance**: 静止画のまま待機させるストレスを軽減し、バックグラウンドで処理が進行中であることを伝えます。
+    - Icon: `var(--icon-xl)`, `color: var(--fg-default)`
+    - Button Min Size: `calc(var(--control-min-touch) + var(--space-1))`
+    - Background: `var(--video-overlay-bg, var(--bg-surface-3))`
+    - Border: `1px solid var(--video-overlay-border, var(--border-default))`
+    - Shadow: `var(--video-overlay-elevation, var(--elevation-md))`
+    - Shape: `var(--radius-full)`
+    - Hover: `transform: scale(var(--scale-hover-lg))`
+    - Active: `transform: scale(var(--scale-pressed))`
+    - Focus: `--animation-focus` を適用
 - **Controls Strategy**:
-    - **Custom Controls (Standard)**:
-        - **Philosophy**: Rouaultの世界観（Glassmorphism, Radius, Icons）に統一されたカスタムコントロールを**標準実装**とします。ブラウザ標準のコントロールはOSやバージョンによって大きく異なり、没入感を損なうノイズとなり得るため、原則として使用しません。
-        - **Implementation**: `<div>` による安易な模倣ではなく、ネイティブ要素（`<button>`, `<input type="range">`）をCSSでスタイリングする手法を採用し、セマンティクスとアクセシビリティを維持します。
-        - **Layout (Floating Bar)**:
-            - **Container**: `position: absolute`, `bottom: var(--space-4)`, `left: var(--space-4)`, `right: var(--space-4)`.
-            - **Appearance**: `glass-panel` + `radius: var(--radius-full)`.
-                - **Variable Override (Dark Mode Force)**:
-                    - コンテナに対して、以下のトークン再定義を適用し、システム設定に関わらず**完全なダークモード**としてレンダリングします。
-                    - *Code Example*:
-                        ```css
-                        .video-container {
-                          /* Background & Foregrounds (Dark Values) */
-                          --bg-default: oklch(12% 0.02 var(--hue-base)); /* Dark Bg */
-                          --fg-default: oklch(90% 0.01 var(--hue-base)); /* Dark Fg */
-                          --fg-muted:   oklch(65% 0.01 var(--hue-base)); /* Dark Muted */
-                          
-                          /* Colors (Dark Values) - 視認性確保のため明るい色を使用 */
-                          --primary:    oklch(65% 0.12 var(--hue-primary)); 
-                          --border-default: oklch(90% 0.01 var(--hue-base) / 0.12);
-                        }
-                        ```
-                    - *Rationale*: 単に背景を黒にするだけでなく、`--primary` や `--fg-muted` もダークモード用の値（より明るい色）に切り替えることで、黒背景上でのコントラスト比（WCAG AA）を数学的に保証します。
-            - **Shadow**: `var(--shadow-dark-md)` (映像からの分離を明確化).
-                - *Rationale (Intentional Deviation)*: このコンテナはDark Mode強制コンテキストであるため、Semanticトークン `--elevation-md` ではなく、明示的にDark Mode用のPrimitiveトークン `var(--shadow-dark-md)` を使用します。これにより、Light Modeでも常に動画映像とバーの間に十分なコントラストを確保し、WCAG基準の視認性を数学的に保証します。
-            - **Padding**: `var(--space-2) var(--space-4)`.
-            - **Content**: `Play/Pause | Volume | Timer | Spacer | Fullscreen`.
-            - **Visibility**: 再生中はマウス静止でフェードアウトし、操作時のみ出現させることで没入感を維持します（Paused時は常時表示）。
-    - **Seek Bar (Slider)**:
-        - `<ui-slider>` (Input-on-Top Overlayパターン) を使用し、ドラッグ可能なつまみ（Thumb）を持つカスタムスライダーを実装します。
-        - **Layering Strategy (Contrast Safety)**:
-            - **Track (Base)**: `height: 4px`, `radius: var(--radius-full)`, `background: oklch(from var(--white) l c h / 0.25)`.
-                - *Rationale*: アプリのLight/Dark設定に関わらず、動画プレイヤーUIは常に**Dark Mode（暗い背景上の白いUI）**として設計します。これにより、夜のシーン（黒）でも明るいシーン（白）でも、Glass Panelの保護と合わせて視認性を数学的に担保します。
-                - *Note (Relative Color Syntax)*: `oklch(from var(--white) l c h / 0.25)` は `oklch(100% 0 0 / 0.25)` と等価ですが、`from` 構文を使用することで**ベースカラーを `--white` トークン経由で管理**し、将来的にベースカラー変更が生じた際にここのみの修正で済む保守性を担保しています（現時点では純白固定）。
-            - **Buffered**: `background: oklch(from var(--white) l c h / 0.5)`. (読み込み済み範囲)
-            - **Progress**: `background: var(--primary)`. (現在位置)
-        - **Thumb**:
-            - Size: `12px` (通常時) -> `16px` (ホバー/ドラッグ時).
-            - Color: `var(--white)`.
-            - Shadow: `0 2px 4px oklch(0% 0 0 / 0.2)`.
-            - **Touch Target (Invisible Hit Area)**: `index.md` の `--control-min-touch` (44px) 基準を満たすため、視覚的なサイズとは独立した **透明なヒットエリア（Padding または 疑似要素）** を確保します。
-                - *Rationale*: フィッツの法則に基づき、見た目の繊細さを保ったまま、モバイル環境での操作ミス（Frustration）を物理的に排除します。
-            - **Interaction**: ホバー時のみ拡大表示し、通常時は目立たないようにします（没入優先）。
-    - **Playback Buttons**:
-        - **Size**: `--control-height-md` (32px).
-        - **Icon Size**: `var(--icon-base)` (16px).
-        - **Icons**:
-            - **Main**: `play` / `pause`.
-            - **Skip**: `rotate-ccw` (10s戻る) / `rotate-cw` (30s進む).
-            - **Volume**:
-                - **Desktop**: `volume-2` / `volume-x` (Mute). ホバーでスライダーを表示。
-                - **Mobile**: スライダー非表示（物理ボタン推奨）。
-            - **Screen**: `maximize` / `minimize`.
-        - **State**: `color: var(--white)`, `hover: bg-white/10` (微細なハイライト).
-    - **Error State**:
-        - ネットワークエラー等で再生不可能な場合、再生ボタンの代わりに「Retry」ボタン（Reload Icon）とエラーメッセージを表示し、決して沈黙しないUIとします。
-        - **カラートークン**:
-            - エラーメッセージテキスト: `color: var(--fg-default)` (Dark Mode強制コンテキスト内のため白相当)
-            - エラーアイコン: `color: var(--fg-default)`
-            - *Rationale*: このエリアは動画プレイヤーのDark Mode強制コンテキスト内であるため、`--fg-danger` ではなく `--fg-default` を使用します。`--fg-danger` は明るい映像背景上でコントラストが確保できない場合があり、Dark Mode強制による `--fg-default` の再定義（白相当値）が最大の視認性を保証します。
-        - **ARIA属性**:
-            - エラーコンテナ: `role="alert"`, `aria-live="assertive"` (エラーは即座に読み上げを必須とする)
-            - エラーメッセージ: 具体的な障害内容を含むテキスト（例: `「動画を読み込めませんでした。ネットワーク接続を確認してください。」`）
-            - Retryボタン: `aria-label="再試行"`, フォーカスを**エラー発生時に自動的にRetryボタンへ移動**させること（`button.focus()`）。これにより、キーボード・スクリーンリーダーユーザーが即座にリカバリ操作を実行できます。
-    - **Subtitle Integration (Layout Safety)**:
-        - **Strategy**: 字幕（Text Track）の表示領域は、フローティングコントロールバーの干渉を避けるため、**常にコントロールバーの高さ＋安全マージン分の余白（Padding）を下部に確保**します。
-        - **Behavior**: コントロールバーの出現（Fade-in）によって字幕の位置を動かすこと（Lift-up）は禁止します。読書中の視線移動（Saccade）を阻害し、没入感を損なうノイズとなるためです。UIは、最初から空けてある「予約された空間」に静かに出現し、コンテンツは不動を貫きます。
-    - **Native Fallback (Emergency Use Only)**:
-        - 開発初期フェーズや、カスタムコントロールが致命的なバグにより機能しない場合に限り、一時的な措置として `<video controls>` (Native) の使用を許可します。その際も **`accent-color: var(--primary)`** を指定し、最小限のブランド統一を図ります。
+    - 標準実装はカスタムコントロール（ネイティブ要素ベース）とし、`<button>` / `<input type="range">` を使用してセマンティクスを維持します。
+    - Floating Bar:
+        - `position: absolute; bottom: var(--space-4); left: var(--space-4); right: var(--space-4);`
+        - `background: var(--video-overlay-bg, var(--bg-surface-3))`
+        - `border-radius: var(--radius-full)`
+        - `padding: var(--space-2) var(--space-4)`
+        - `box-shadow: var(--video-overlay-elevation, var(--elevation-md))`
+        - 再生中はポインタ静止でフェードアウト、操作時に再表示（Paused時は常時表示）。
+    - Seek Bar:
+        - Track: `height: var(--space-1)`, `border-radius: var(--radius-full)`, `background: var(--bg-fill-neutral)`
+        - Buffered: `background: var(--border-muted)`
+        - Progress: `background: var(--primary)`
+        - Thumb: `12px -> 16px`（hover/drag）
+        - `--control-min-touch` 準拠の透明ヒットエリアを確保。
+    - Native Fallback（緊急時のみ）:
+        - `<video controls>` を一時許可。
+        - `accent-color: var(--primary)` を指定。
 
 **4. アクセシビリティ (A11y)**
 
-- **Captions**: 動画には字幕（Track）を提供することを強く推奨します。
-- **Controls (Keyboard & ARIA)**:
-    - **Full Support**: マウス操作と同等の機能をキーボードのみで実現することを**必須**とします。
-    - **Key Bindings**:
-        - `Space` / `Enter`: 再生・一時停止。
-        - `ArrowLeft` / `ArrowRight`: 5秒スキップ（シーク）。
-        - `ArrowUp` / `ArrowDown`: 音量調整。
-        - `M`: ミュート切り替え。
-        - `F`: 全画面切り替え。
-    - **Focus Order**: 論理的な順序（再生ボタン → シークバー → 音量 → 全画面）でフォーカスが移動するように構成します。
-    - **ARIA Attributes**:
-        - Play Button: `aria-label="再生"`, `aria-pressed="false/true"`.
-        - Slider: `role="slider"`, `aria-valuemin="0"`, `aria-valuemax="duration"`, `aria-valuenow="currentTime"`, `aria-valuetext="MM:SS"`.
+- **Captions / Transcripts**:
+    - **音声を含む動画は `track(kind='captions' or 'subtitles')` を必須**とします。
+    - 音声なしの装飾動画のみ、字幕を任意とします（`muted` 必須）。
+- **Keyboard & ARIA**:
+    - `Space` / `Enter`: 再生・一時停止
+    - `ArrowLeft` / `ArrowRight`: 5秒シーク
+    - `ArrowUp` / `ArrowDown`: 音量調整
+    - `M`: ミュート切替
+    - `F`: 全画面切替
+    - フォーカス順序: 再生ボタン -> シークバー -> 音量 -> 全画面
+    - Play Button: `aria-label`, `aria-pressed`
+    - Slider: `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, `aria-valuetext`
 - **Semantic Bonding**:
-    - `<figcaption>` に一意のIDを付与し、動画コンテナから `aria-describedby` で参照します。これにより、キャプションが動画の補足情報であることを支援技術に伝えます。
+    - `<figcaption>` ID と `aria-describedby` を必ず関連付けます。
+- **Error Announce Strategy**:
+    - **既定**: `role="status"` + `aria-live="polite"`（非破壊エラー）
+    - **例外**: 再生不能かつ代替操作不能の致命エラーのみ `role="alert"` + `aria-live="assertive"`
+    - Retryボタンへフォーカス移動を実行し、キーボード復旧経路を保証します。
 
 **5. モーション軽減対応 (Reduced Motion)**
 
-`index.md` のグローバルリセット（`prefers-reduced-motion: reduce` 時に `animation-duration: 0.01ms`）は大半のアニメーションを自動的に無効化しますが、動画プレイヤー固有の挙動について以下の方針を明示します。
+`index.md` のグローバルルール（`prefers-reduced-motion: reduce` で `0.01ms`）に従います。
 
 | アニメーション | `reduce` 時の挙動 | 分類 |
 |---|---|---|
-| Floating Barのフェードイン/アウト | グローバルリセットで実質即時切替 | 装飾 → 自動対応 |
-| Play Buttonの `scale` | グローバルリセットで無効化 | 装飾 → 自動対応 |
-| `filter: brightness()` のトランジション | グローバルリセットで即時切替 | 装飾 → 自動対応 |
-| **Loading Spinner (`<ui-spinner>`)** | 回転アニメーションは停止。ただし**スピナー要素自体は表示を維持**し、バッファリング中であることを静的に伝える | 機能的 → 要素消去禁止 |
-| **コントロールバーの表示/非表示** | 即時切替（`opacity: 1` または `opacity: 0` へ瞬時に遷移）。フェードアウトの遅延は適用しない | 機能的 → 即時完了で維持 |
-| Seek Barのサムネイルサイズ変化 (`12px → 16px`) | グローバルリセットで即時変化 | 機能的 → 自動対応 |
+| Floating Bar フェード | 即時切替 | 機能維持 |
+| Play Button `scale` | 実質無効化 | 装飾 |
+| `filter: brightness()` 遷移 | 即時切替 | 装飾 |
+| Loading Spinner | 回転停止、要素表示は維持 | 機能 |
+| Seek Thumb サイズ変化 | 即時反映 | 機能 |
 
 ```css
-/* Loading Spinnerの静的フォールバック (reduced-motion時) */
 @media (prefers-reduced-motion: reduce) {
   .video-spinner {
-    /* アイコン自体は表示維持。aria-label="読み込み中" で意味を保持 */
     animation: none;
-    /* 静的な視覚的代替: ドットや静止アイコンへの差し替えも可 */
   }
 }
 ```
 
 **6. 強制カラーモード対応 (Forced Colors)**
 
-`index.md` の `forced-colors` 方針に準拠し、動画プレイヤーのカスタムコントロールにおける視認性とセマンティクスを維持します。
+`index.md` のトークンマッピング方針に準拠し、構造情報を維持します。
 
 ```css
 @media (forced-colors: active) {
-  /* Glass Panelの背景が消失するため、明示的なボーダーで構造を維持 */
   .video-floating-bar {
-    background-color: Canvas;
+    background: Canvas;
     border: var(--border-width) solid CanvasText;
-    backdrop-filter: none;
     box-shadow: none;
+    backdrop-filter: none;
   }
 
-  /* Play Buttonのアイコン可視性保証 */
   .video-play-button {
-    background-color: Canvas;
+    background: Canvas;
     border: var(--border-width) solid CanvasText;
     color: CanvasText;
-    forced-color-adjust: auto;
   }
 
-  /* Seek Barのトラック・プログレス・サムネイルをシステムカラーでマッピング */
-  .video-seek-track {
-    background-color: GrayText; /* Track (Base): システムグレー */
-  }
-  .video-seek-buffered {
-    background-color: CanvasText; /* Buffered: 標準テキスト色 */
-  }
-  .video-seek-progress {
-    background-color: Highlight; /* Progress: システムハイライト色 (--primary相当) */
-  }
-  .video-seek-thumb {
-    background-color: CanvasText;
-    forced-color-adjust: none; /* サムネイルは強制上書きを禁止 */
-  }
+  .video-seek-track { background: GrayText; }
+  .video-seek-buffered { background: CanvasText; }
+  .video-seek-progress { background: Highlight; }
+  .video-seek-thumb { background: CanvasText; forced-color-adjust: none; }
 
-  /* フォーカスリングの強制適用 (box-shadowが消失するため) */
   .video-floating-bar :focus-visible {
     outline: 3px solid CanvasText;
     outline-offset: 2px;
@@ -6708,53 +7233,52 @@ interface Track {
 }
 ```
 
-> **Rationale**: `forced-colors` 環境ではGlass Panel（`backdrop-filter` + 半透明背景）が消失し、コントロールが映像に溶け込む危険があります。明示的な `Canvas` / `CanvasText` へのフォールバックにより、映像の輝度に関わらずコントロールの構造と操作可能性を保証します。
-
 **7. 状態遷移 (State Machine)**
 
-`<ui-video>` が取りうる状態と、状態間のトリガーを定義します。実装時はこのState Machineを基準として、各状態に対応するUI・ARIA属性・アニメーションを決定してください。
+`<ui-video>` の状態と遷移を以下に定義します。
 
 ```
-                    ┌─────────────────────────────────────────────────────────┐
-                    │                                                         │
-          src未指定  ▼                                                         │
-         ┌─────────────────┐     src指定          ┌──────────────────┐         │
-         │    EMPTY        │──────────────────────▶│    LOADING       │         │
-         │  (プレースホルダー)│                      │  (メタデータ読込)  │         │
-         └─────────────────┘                      └────────┬─────────┘         │
-                                                           │ loadedmetadata     │
-                                                   error   │                    │
-                                          ┌────────────────┼────────────────┐  │
-                                          ▼                ▼                │  │
-                                 ┌─────────────────┐  ┌─────────────────┐  │  │
-                                 │     ERROR        │  │     PAUSED      │  │  │
-                                 │  (再試行ボタン)   │  │  (再生待機中)   │  │  │
-                                 └────────┬─────────┘  └────────┬────────┘  │  │
-                                          │                      │ play()    │  │
-                                     retry│                      ▼           │  │
-                                          │             ┌─────────────────┐  │  │
-                                          │             │    PLAYING      │  │  │
-                                          │             │  (再生中)        │  │  │
-                                          │             └──┬──────┬───────┘  │  │
-                                          └──────────      │pause │          │  │
-                                                    │      ▼      │buffering │  │
-                                                    │  PAUSED     ▼          │  │
-                                                    │         ┌──────────────┤  │
-                                                    │         │  BUFFERING   │  │
-                                                    │         │ (スピナー表示) │  │
-                                                    │         └──────────────┘  │
-                                                    └──────────────────────────┘
-                                                           ended
+EMPTY -> LOADING -> PAUSED -> PLAYING -> ENDED
+                 \-> ERROR
+
+PLAYING -> BUFFERING -> PLAYING
+PLAYING -> PAUSED
+PAUSED  -> PLAYING
+ERROR   -> LOADING (retry)
+ENDED   -> PAUSED (seek/play)
 ```
 
 | 状態 | 説明 | UIの変化 | ARIA |
 |------|------|----------|------|
-| **EMPTY** | `src` 未指定 | プレースホルダー表示。再生UIは非表示。 | `aria-disabled="true"` |
-| **LOADING** | メタデータ読み込み中 | Posterを表示。Play ButtonにSpinnerを表示。 | `aria-busy="true"` |
-| **PAUSED** | 再生待機中（初期・一時停止） | Poster + Play Icon表示。Floating Bar常時表示。 | `aria-pressed="false"` (Play Button) |
-| **PLAYING** | 再生中 | Poster非表示。Floating Barは静止でフェードアウト。 | `aria-pressed="true"` (Play Button) |
-| **BUFFERING** | 再生中にデータ待ち | Play ButtonアイコンをSpinnerに置換。再生は継続（または一時停止）。 | `aria-busy="true"` |
-| **ERROR** | 読み込み/再生失敗 | Play ButtonをRetryボタンに置換。エラーメッセージ表示。Floating Bar非表示。 | `role="alert"`, `aria-live="assertive"` |
+| **EMPTY** | `src` 未指定 | プレースホルダー表示 | `aria-disabled="true"` |
+| **LOADING** | メタデータ読込中 | Poster + Spinner | `aria-busy="true"` |
+| **PAUSED** | 初期・一時停止 | Play表示、バー常時表示 | `aria-pressed="false"` |
+| **PLAYING** | 再生中 | Poster非表示、バー自動退避 | `aria-pressed="true"` |
+| **BUFFERING** | 再生中の待機 | Spinner置換 | `aria-busy="true"` |
+| **ENDED** | 再生終了 | 終端UI（Replay提示） | `aria-pressed="false"` |
+| **ERROR** | 読込/再生失敗 | Retry + エラーメッセージ | `status` or `alert` |
+
+**8. 印刷スタイル (Print Styles)**
+
+- **基本方針**: `index.md` の印刷ルールに従い、動画本体は印刷対象外とします。
+- **Print Contract**:
+    - `<video>` 要素とコントロールUIは `@media print` で非表示。
+    - `<figure>` の `figcaption` は印刷対象として保持。
+    - ポスター画像を印刷代替として使用する場合は、静的 `img` として出力し `break-inside: avoid` を適用。
+
+**9. 受け入れ基準 (Acceptance Criteria)**
+
+- **Scope Isolation**: `.prose video` / `.prose figure` / `<ui-video>` 内部のみにスタイル適用されること。
+- **Scope Boundary Compliance**: 外部 `iframe` 埋め込みUIを本仕様の対象外として扱うこと。
+- **Build-time Normalization**: `figure/figcaption` 正規化、caption ID付与、`aria-describedby` 連携が実行されること。
+- **Token Compliance**: Primitive直接参照を避け、Semanticトークン（またはコンポーネント専用Semanticエイリアス）で定義されること。
+- **Breakout Consistency**: `index.md` の Media Elements 拡張値（`--space-n4` / `--space-n8`）と一致すること。
+- **Keyboard Completeness**: キーボード操作がマウス同等機能を満たすこと。
+- **Caption Requirement**: 音声付き動画で `track` が欠落した場合、ビルドまたはLintで検知できること。
+- **Reduced Motion Safety**: `prefers-reduced-motion: reduce` で機能を維持したまま即時遷移となること。
+- **Forced Colors Readability**: `forced-colors: active` で構造・操作性・フォーカス可視性が維持されること。
+- **State Completeness**: `ENDED` を含む全状態でUI/ARIAが矛盾しないこと。
+- **Print Behavior**: 印刷時に動画UIは出力されず、説明情報（caption）が可読に保持されること。
 
 #### 区切り線 (Divider) `<ui-divider>` / `<hr>`
 
@@ -6762,21 +7286,69 @@ interface Track {
 
 - **役割**: コンテンツの意味的な区切りを示します。
 - **Subtlety**: 視覚的なノイズにならないよう、極限まで薄く（Low Contrast）、余白を持って配置します。物理的な線というよりも、「沈黙（Whitespace）」の境界として機能させます。
+- **Exception Policy**: `index.md` の原則「本文コンテンツ内はスペーシング主体」を維持しつつ、`<hr>` は **thematic break を明示する例外的要素**として扱います。
 
-**2. 実装基盤 (Reference)**
+**2. 実装基盤とスコープ (Reference & Scope)**
 
 - **Native**: `<hr>` タグ。
 - **Role**: Implicit `separator`.
+- **`<ui-divider>` の位置付け**:
+    - `<hr>` の薄いラッパーとして提供します（最終DOMは `hr` を出力）。
+    - 追加の独自ロールは付与しません（ネイティブセマンティクスを優先）。
+- **Scope Contract**:
+    - 対象は **`.prose hr` / `<ui-divider>` 内部 `hr` / レイアウト境界用 `hr`** に限定します。
+    - `hr` 以外の要素に `role="separator"` を与えて代替する実装は禁止します。
+    - 段落間の軽い区切りには使用せず、セクション境界のみで使用します。
 
 **3. スタイリングとトークンマッピング (Style & Tokens)**
 
 - **Reset**: `border: 0` (ブラウザデフォルトの除去)
 - **Border Top**: `1px solid var(--border-ghost)`
-    - *Correction*: `muted` ではなく `ghost` (`index.md` 定義: "気配としての構造線") を採用し、「沈黙」という哲学を物理的に体現します。
+    - *Rationale*: `muted` ではなく `ghost`（「気配としての構造線」）を採用し、区切りの主張を最小化します。
 - **Margin**: `var(--space-12) 0`
-    - *Rationale*: `<hr>` は HTML における「テーマの区切り（thematic break）」であり、段落間の軽い区切りではなく、**セクションレベルの境界**です。`index.md` のスペーシング意味論に従い、「セクション: 大きなコンテンツ領域の境界」と定義される `--space-12` (48px) を採用します。
-- **Forced Colors**: `index.md` のグローバル戦略に委ねます（コンポーネント個別のハードコード不要）
-    - *Rationale*: `index.md` は Forced Colors Mode への対応を 2 段階で定義しています。第一に、`@media (forced-colors: active)` でのグローバルなトークンリマッピング（`--border-*` → `CanvasText`）。第二に、「線が見えなくても構造が伝わる」ようスペーシング自体がグルーピングを定義する設計の徹底。`<hr>` は `--space-12` の余白によって構造が維持されるため、コンポーネント側で `border-color: CanvasText` を個別指定する必要はなく、グローバル戦略に委ねることで二重管理を排除します。
+    - *Rationale*: `<hr>` は段落境界ではなく「テーマの区切り」であるため、`--space-12`（セクション境界）を採用します。
+- **Width**: `100%`
+- **Opacity**: 指定しない（コントラスト管理は `--border-ghost` 側で一元化）
+- **Token Compliance**:
+    - Primitive値の直接指定は禁止し、Semanticトークンのみを使用します。
+    - コンポーネント固有の見た目差分が必要な場合は `--divider-*` のSemanticエイリアスを追加して吸収します。
+
+**4. アクセシビリティ (A11y)**
+
+- **Semantic Integrity**:
+    - 区切りの意味を持つ箇所ではネイティブ `hr` を使用し、`div` 等で代替しません。
+    - 装飾だけが目的の場合は `hr` を使用せず、余白トークンで表現します。
+- **Readable Structure**:
+    - 線が薄く視認しづらい環境でも、前後の `--space-12` によりセクション境界を認知可能にします。
+
+**5. 強制カラーモード対応 (Forced Colors)**
+
+- **Strategy**: `index.md` のグローバルトークンマッピングに追従します。
+- **Non-goal**: Divider固有で `CanvasText` をハードコードしません（重複管理の回避）。
+- **Fallback Guarantee**:
+    - `--border-ghost` が実質的に消失する環境でも、`--space-12` による境界認知を成立条件とします。
+    - 必要に応じて文脈側（見出し、セクションタイトル）で境界情報を補助します。
+
+**6. モーション軽減対応 (Reduced Motion)**
+
+- 区切り線自体にアニメーションは持たせません。
+- `prefers-reduced-motion: reduce` で追加対応は不要です（グローバルルールに従います）。
+
+**7. 印刷スタイル (Print Styles)**
+
+- **基本方針**: `index.md` の印刷ルールに従い、区切り線は構造情報として保持します。
+- **Print Contract**:
+    - `hr` は非表示にせず表示を維持します。
+    - 印刷時の色強制変換に依存せず、余白（`--space-12` 相当）で段落群を分離します。
+
+**8. 受け入れ基準 (Acceptance Criteria)**
+
+- **Scope Isolation**: スタイル適用対象が `.prose hr` と `<ui-divider>` の内部 `hr` に限定されること。
+- **Semantic Integrity**: 区切り用途で `hr` 以外の疑似セパレーターが混入しないこと。
+- **Token Compliance**: Divider実装でPrimitive直接参照がないこと。
+- **Spacing Contract**: `margin-block` が `--space-12` と一致し、セクション境界として機能すること。
+- **Forced Colors Robustness**: `forced-colors: active` で線の視認性が低下しても、構造認知が維持されること。
+- **Print Behavior**: 印刷時に区切り線または等価な余白境界が保持されること。
 
 #### ハイライト (Highlight) `<mark>`
 
@@ -6785,23 +7357,82 @@ interface Track {
 - **役割**: 検索結果のマッチ部分や、ユーザーが能動的に指定した箇所に対する一時的なフィードバックです。
 - **Constraint (Serenity)**: 著者が予めテキストを強調する目的（静的な装飾）には使用しません。その場合は `<strong>` (太字) を使用してください。ハイライトはあくまで「探すモード」における機能的支援であり、「読むモード」の静謐さを乱してはなりません。
 - **Noticeability**: 「静謐さ」を崩さない範囲で、周囲のテキストから明確に浮き立たせます。蛍光ペンのような過剰な彩度（Noise）は排除します。
+- **Non-color Signal Policy**: `index.md` の原則「色のみによる情報伝達を禁止」に従い、強制カラー/印刷など背景色が失われる文脈でも、非色シグナルで識別可能にします。
 
-**2. 実装基盤 (Reference)**
+**2. 実装基盤とスコープ (Reference & Scope)**
 
 - **Native**: `<mark>` タグ。
+- **Semantic**: インラインテキスト範囲の「関連性」を示すネイティブ要素として使用します。
+- **Scope Contract**:
+    - 対象は **`.prose mark` / `<ui-search-highlight>` が出力する内部 `mark`** に限定します。
+    - 段落全体・見出し全体などの大域的な背景装飾には使用しません。
+    - 著者入力Markdownの静的 `<mark>` は原則禁止とし、検索機能またはユーザー操作由来のハイライトのみ許可します。
 
 **3. スタイリングとトークンマッピング (Style & Tokens)**
 
 - **Background**: `var(--bg-highlight-subtle)`
-    - *Light*: `oklch(96% 0.04 85)` (Pale Yellow)
-    - *Dark*: `oklch(25% 0.05 85)` (Dark Amber)
-    - *Rationale*: 青系（Deep Indigo）を基調とするUIにおける**視覚的な補色**としてAmber色相を採用し、検索結果の発見可能性を高めています。
+    - *Light*: `oklch(96% 0.04 65)` (Pale Yellow-Orange)
+    - *Dark*: `oklch(25% 0.05 65)` (Dark Amber)
+    - *Rationale*: `index.md` の `--bg-highlight-subtle` 定義（Hue 65）に統一し、`--bg-warning-subtle` (Hue 85) との意味衝突を回避します。
 - **Color**: `var(--fg-default)`
-    - *Rationale*: 背景が十分に淡い（Darkでは暗い）ため、標準テキスト色でコントラスト比を確保できます。
+    - *Rationale*: 本文との可読性を維持しつつ、背景トーン差で発見可能性を確保します。
 - **Padding**: `0 0.1em`
     - *Rationale*: 文字の呼吸を確保します。
 - **Border Radius**: `var(--radius-sm)` (4px)
     - *Rationale*: 直角なマーカーは古さを感じさせるため、微細な角丸を与えて「インクが染みたような」自然な質感を演出します。
+- **Text Decoration (Default)**: 付与しない
+    - *Rationale*: 通常の読書モードで装飾ノイズを増やさないため。
+- **Token Compliance**:
+    - Primitive値の直接指定は禁止し、Semanticトークンのみを使用します。
+    - 見た目差分が必要な場合は `--highlight-*` のSemanticエイリアスを追加して吸収します。
+
+**4. アクセシビリティ (A11y)**
+
+- **Semantic Integrity**:
+    - 文字列の関連性を示す場合のみ `mark` を使用し、単なる配色演出には使用しません。
+    - 重要度の強調（意味論的強調）は `strong` を使用し、`mark` と混同しません。
+- **Readable Contrast**:
+    - `var(--fg-default)` と `var(--bg-highlight-subtle)` の組み合わせで、通常テキストの可読性（4.5:1以上）を満たすことを前提に運用します。
+- **Non-color Distinction**:
+    - 背景色が失われる環境でも意味が消失しないよう、フォールバック時は下線などの非色シグナルを必須とします。
+
+**5. 強制カラーモード対応 (Forced Colors)**
+
+- **Strategy**: `index.md` のグローバルトークンマッピングに追従します。
+- **Fallback Guarantee**:
+    - `forced-colors: active` では背景依存を避け、`text-decoration: underline` を付与してハイライト範囲を維持します。
+    - 必要に応じて `text-decoration-thickness: from-font` または `0.08em` を使用し、識別性を確保します。
+- **Non-goal**: Highlight固有で `CanvasText` / `Highlight` のハードコードは行いません。
+
+**6. モーション軽減対応 (Reduced Motion)**
+
+- ハイライト自体にアニメーションは持たせません。
+- `prefers-reduced-motion: reduce` で追加対応は不要です（グローバルルールに従います）。
+
+**7. 印刷スタイル (Print Styles)**
+
+- **基本方針**: `index.md` の印刷ルール（背景除去）に追従しつつ、意味を保持します。
+- **Print Contract**:
+    - `@media print` では `mark` の背景色に依存しません。
+    - 印刷時は `text-decoration: underline`（または `border-bottom: 1px solid currentColor`）でハイライト範囲を識別可能にします。
+    - 本文の可読性を優先し、過剰な太字化・高彩度表現は行いません。
+
+**8. 運用ガードレール (Authoring Guardrails)**
+
+- **Authoring Rule**: 著者コンテンツ中の静的 `<mark>` を禁止し、検索由来/ユーザー操作由来のみ許可します。
+- **Build-time Enforcement**:
+    - Markdown変換時またはLintで静的 `<mark>` を検知し、警告またはエラーにします。
+    - 正当なケース（検索UIが挿入する `mark`）は `data-origin="search"` 等の属性で識別可能にします。
+
+**9. 受け入れ基準 (Acceptance Criteria)**
+
+- **Scope Isolation**: スタイル適用対象が `.prose mark` と検索ハイライトが生成する `mark` に限定されること。
+- **Token Compliance**: Highlight実装でPrimitive直接参照がないこと。
+- **Index Consistency**: `--bg-highlight-subtle` のHueが `index.md` と一致（65）すること。
+- **Contrast Compliance**: `--fg-default` on `--bg-highlight-subtle` が通常テキストの可読基準（4.5:1以上）を満たすこと。
+- **Non-color Signal**: `forced-colors: active` および印刷時に、背景色なしでもハイライト範囲を識別できること。
+- **Serenity Contract**: 通常モードで下線を常時表示せず、読書ノイズを増やさないこと。
+- **Authoring Enforcement**: 静的 `<mark>` の混入がビルドまたはLintで検知できること。
 
 ### 特殊コンテンツ (Specialized Content)
 
@@ -6826,24 +7457,19 @@ interface Track {
             - *Rationale*: "Flow State" を維持するため、行間展開によるレイアウトシフト（読み位置のズレ）を回避します。
             - **Swipe to Close**: 標準的なUXとして、下方向へのスワイプ（閾値: 画面高さの30%または速度判定）による閉じる操作をサポートします。
         - **Interlinear Mode (Option)**: 設定により、全ての翻訳を原文の下に行間展開（アコーディオン）して表示。
-            - **Animation**: `grid-template-rows` (`0fr → 1fr`) と `opacity` を用いたトランジション（`--duration-slow` (200ms), `--ease-in-out`）を適用します。
-                - *Rationale*: `max-height` は `index.md` のトランジション許可リスト外であり、リフロー（再レイアウト）を引き起こすパフォーマンス上の問題があります。CSS Grid の暗黙的サイズ遷移（`grid-template-rows: 0fr → 1fr`）はレイアウトエンジンへの影響を最小化します。`--duration-slow` (200ms) は `index.md` の区分「限定的なレイアウト変化（単一コンポーネント内の状態遷移）」に対応します。
+            - **Animation Policy**: `index.md` の Transition Allowlist に準拠し、**レイアウトプロパティ（`height`/`max-height`/`grid-template-rows` 等）のアニメーションは禁止**します。開閉によるレイアウト変化は即時反映し、補助的に `opacity` のみで視覚変化を伝えます。
+                - *Rationale*: 「Flow State」の維持を最優先しつつ、`transition: all` や未許可プロパティ遷移による挙動不定を排除します。
                 - **CSS**:
                     ```css
-                    .interlinear-content-wrapper {
-                      display: grid;
-                      grid-template-rows: 0fr;
-                      opacity: 0;
-                      transition:
-                        grid-template-rows var(--duration-slow) var(--ease-in-out),
-                        opacity var(--duration-slow) var(--ease-in-out);
+                    .interlinear-content[hidden] {
+                      display: none;
                     }
-                    .interlinear-content-wrapper[aria-hidden="false"] {
-                      grid-template-rows: 1fr;
+                    .interlinear-content[data-open="true"] {
                       opacity: 1;
+                      transition: opacity var(--duration-fast) var(--ease-out);
                     }
-                    .interlinear-content-wrapper > * {
-                      overflow: hidden;
+                    .interlinear-content[data-open="false"] {
+                      opacity: 0;
                     }
                     ```
                 - **Note (prefers-reduced-motion)**: グローバルルール（`index.md` § モーション軽減）により `transition-duration: 0.01ms` が自動適用されます。JS によるスワイプアニメーションについては、`window.matchMedia('(prefers-reduced-motion: reduce)')` を参照し、`reduce` 時はアニメーションをスキップして即座に最終状態へ移行してください。
@@ -6856,8 +7482,8 @@ interface Track {
         - **Implementation Detail**:
             - **Key Naming**: 名前空間付きの `rouault:translation-mode` を使用し、値は `'lookup'` または `'parallel'` とします。
                 - **概念の分離**: localStorage の値はユーザーの**意図モード**（lookup/parallel）を表します。実際の**レンダリングモード**（`render-mode` 属性: `popover`/`drawer`/`interlinear`）は、意図モードとデバイス（desktop/mobile）の組み合わせで自動解決されます。対応表: `lookup + desktop → popover`、`parallel + desktop → drawer`、`lookup + mobile → popover (bottom-sheet)`、`parallel + mobile (Study Mode) → interlinear`。
-            - **SSR Hydration Strategy**: Eleventyビルド時には `localStorage` が参照できないため、初期表示のちらつき（FOUC）を防ぐため、**`<head>` 内のブロッキングスクリプトで属性を付与することを必須とします**。
-                - *Rationale*: コンテンツの表示遅延は原則1（没入のための構造）に反するため、スクリプトによる属性付与でスタイルを初期化し、即時のレンダリングを保証します。
+            - **SSR Hydration Strategy**: Eleventyビルド時には `localStorage` が参照できないため、SSRの初期表示は **Lookup固定**を基準とします。`<head>` での早期属性付与スクリプトはFOUC低減の**推奨最適化**として扱い、必須要件にはしません。
+                - *Rationale*: `index.md` の Progressive Enhancement 方針に従い、JavaScriptが無効でも本文読書とLookup運用が破綻しない状態をベースラインとします。
     - **Toggle Actions**:
         - 以下の操作を行った瞬間、**デフォルトモード設定が反転（Toggle）**し、表示が切り替わります（Lookup ⇔ Parallel）。
         - **Desktop (GUI)**: Popover/Panel 右上のアイコンボタン（`icon: panel-right` ⇔ `icon: message-square`）をクリック。
@@ -6882,8 +7508,15 @@ interface Track {
 >
 > **Structure Example**:
 > ```html
-> <span class="ui-translation-trigger" lang="fr">Je pense, donc je suis.</span>
-> <div class="ui-translation-content" lang="ja">我思う、ゆえに我あり。</div>
+> <button type="button" class="ui-translation-trigger" lang="fr"
+>         aria-haspopup="dialog" aria-expanded="false"
+>         aria-controls="translation-uid-123" aria-details="translation-uid-123">
+>   Je pense, donc je suis.
+> </button>
+> <div id="translation-uid-123" class="ui-translation-content"
+>      role="dialog" aria-modal="false" lang="ja">
+>   我思う、ゆえに我あり。
+> </div>
 > ```
 
 **4. スタイリングとトークンマッピング (Style & Tokens)**
@@ -6939,7 +7572,7 @@ interface Track {
         - **Strategy**:
             - **Overlay (Recommended)**: 画面幅に余裕がある場合、翻訳パネルを本文の右側に **オーバーレイ（Drawer）** として展開します。
             - **TOC Conflict (Mode Switch)**: Parallel Mode展開時は、**右サイドバーの目次（TOC）を一時的に隠蔽（または置換）し**、`--aside-width` 領域を翻訳パネルとして活用します。これにより、3カラム構造の整合性を保ちつつ、新たなレイアウトシフトを回避します。
-                - **Strip Mode Consideration (Position Awareness)**: 画面幅に余裕がある場合（目安: `>= 1400px` ※ `index.md` § TOC「Collapsed State Behavior」で定義された Collision Fallback 閾値 `< 1400px` の正値）、TOCを完全に隠蔽するのではなく、`index.md` で定義されている **「Collapsed State Behavior (Strip Mode)」** を適用し、翻訳パネルの右端に幅 `24px` 程度の極細インジケーターバーとして残すことを必須とします。
+                - **Strip Mode Consideration (Position Awareness)**: `index.md` の TOC ルールに合わせ、**画面幅が `< 1400px` の衝突時のみ** Strip Mode（右端 `24px` 程度）を適用します。`>= 1400px` では TOC 常駐を維持し、翻訳パネルとの情報衝突がないレイアウトを優先します。
                     - *Rationale*: ユーザーが翻訳を参照している間も、ドキュメント全体の中での現在位置（Reading Position）を周辺視野で感じ取れるようにし、「Flow State」を維持します。インジケーターバーを残す理由は翻訳パネル展開中にユーザーがドキュメント全体の中での現在位置（Reading Position）を完全に見失う状態は、デザイン原則「**Structure for Immersion（没入のための構造）**」に反するためです。
                     - *Implementation*: TOCの視覚的幅を縮小し、現在地（Active Indicator）のみを表示します。クリックで完全なTOCへ展開可能とします。
                         - **Animation**: Strip Mode からの展開は `--duration-normal` (150ms) + `--ease-out` で行います。
@@ -6962,15 +7595,16 @@ interface Track {
 
 **6. アクセシビリティ (A11y)**
 
-- **Semantics**: **`<span role="button">`**, **`aria-details`**, および **`aria-controls`** を併用します。
-    - *Rationale*: `aria-details` は意味論的に最適ですが、現状のサポート状況を考慮し、堅牢なフォールバックとして `aria-controls` (開閉対象の明示) を必須とします。将来的に支援技術のサポートが十分に普及した段階で `aria-controls` は削除可能なよう、構成を検討してください。
-    - *Structure*: `<span ... aria-haspopup="dialog" aria-expanded="false" aria-controls="translation-uid-123" aria-details="translation-uid-123">`
-        - *Rationale*: `aria-haspopup="dialog"` により、フォーカス前に「このボタンはポップアップを開く」ことをスクリーンリーダーが事前に通知できます。`aria-expanded` のみでは操作後の状態変化しか通知されません。
-    - **Usage Note**: 段落全体などの長文をボタン化 (`role="button"`) すると、スクリーンリーダーの読み上げやナビゲーション挙動が不安定になるリスクがあります。原則として、翻訳機能は**単語や短いフレーズ単位**（推奨：150文字以内）での適用を推奨します。
+- **Semantics**: トリガーは **ネイティブ `button` 要素**を使用し、`aria-details` と `aria-controls` を併用します。
+    - *Rationale*: `index.md` の「非セマンティックHTML禁止」に準拠し、`role="button"` 依存を排除します。
+    - *Structure*: `<button type="button" ... aria-expanded="false" aria-controls="translation-uid-123" aria-details="translation-uid-123">`
+    - **Popup Semantics**:
+        - **Lookup（Popover / Bottom Sheet）**: 翻訳コンテンツは `role="dialog"` + `aria-modal="false"` を使用し、トリガーに `aria-haspopup="dialog"` を付与します。
+        - **Interlinear**: インライン補足情報として `role="note"` を使用し、`aria-haspopup` は付与しません。
+    - **Usage Note**: 段落全体などの長文をボタン化すると、スクリーンリーダーの読み上げやナビゲーション挙動が不安定になるリスクがあります。原則として、翻訳機能は**単語や短いフレーズ単位**（推奨：150文字以内）での適用を推奨します。
         - **Dev Feedback**: `connectedCallback` 等で文字数をチェックし、150文字を超過している場合は `console.warn` で開発者に警告を出す実装を推奨します。
-- **Content Role**:
-    - 翻訳コンテンツのコンテナには **`role="note"`** を付与します。
-        - *Rationale*: `role="region"` はランドマークとして認識されるため、1ページに大量の翻訳箇所がある文学作品では、スクリーンリーダーのランドマークナビゲーション一覧が汚染されます。`role="note"` は「補足情報」の意味論を持ちつつランドマーク一覧には現れず、`aria-details` による関連付けと組み合わせることで、支援技術に対して適切な文脈を伝達できます。
+- **Touch Target**:
+    - トリガーボタンの物理ヒットエリアは **最低24px（AA）/ 推奨44px** を満たします。インライン表示時は疑似要素や不可視パディングで補います。
 - **Interaction (Keyboard)**:
     - **Focus**: テキスト装飾の変化だけでなく、標準の **Adaptive Focus** (Outline) も適用し、視認性を担保します。
     - **Activation**: `Enter` / `Space` キーで Popover/Bottom Sheet の開閉、または翻訳詳細へのフォーカス移動を行います。
@@ -6979,15 +7613,55 @@ interface Track {
     - **Focus Management**: `index.md` のキーボードナビゲーション戦略（§ Dropdown / Popover）に準拠し、Lookup モードの Bottom Sheet では **Focus Trap は行いません**。`Tab` キーによる脱出（シートを閉じて次のインタラクティブ要素へ移動）を許容し、Flow State を保護します。
     - *Rationale*: Focus Trap はユーザーの操作を独占するモーダルダイアログに適用する手法です。Lookup モードの Bottom Sheet は文脈参照のための一時的な補足情報であり、強制的な閉じ操作（Esc 必須）は「翻訳を見たい→読書に戻りたい」という最頻出フローを阻害します。
 
+**7. 強制カラーモード対応 (Forced Colors)**
+
+- **Strategy**: `index.md` のシステムカラーマッピングに追従し、背景色依存を避けます。
+- **Trigger**:
+    - `background-image` は無効化し、`text-decoration: underline dashed` を強制適用します。
+    - フォーカス時は `outline` を併用し、現在地を非色シグナルで可視化します。
+- **Content**:
+    - Lookupコンテンツ（`role="dialog"`）は `border: var(--border-width) solid CanvasText` を適用し、領域境界を維持します。
+    - 開閉状態は `aria-expanded` と境界線変化を併用し、背景色が失われても識別可能とします。
+
+**8. 印刷スタイル (Print Styles)**
+
+- **基本方針**: 印刷時は翻訳を本文補助として扱い、可読性を優先します。
+- **Print Contract**:
+    - トリガーの点線は `text-decoration: underline` へ単純化します。
+    - Popover / Bottom Sheet は印刷対象から除外し、Interlinear（本文内に実在する翻訳）のみ印刷対象にします。
+    - 翻訳文は `lang` 属性を保持したまま、本文より一段低い情報密度（サイズ/色）で出力します。
+
+**9. 運用ガードレール (Authoring Guardrails)**
+
+- 翻訳トリガーは「語句/短句」単位を原則とし、段落全体への適用を禁止します。
+- `lang` / `target-lang` 未指定時はビルドまたはLintで警告を出し、i18n品質を担保します。
+- Parallel Mode はユーザー起点でのみ切り替え、ページロード時の強制遷移を禁止します。
+
+**10. 受け入れ基準 (Acceptance Criteria)**
+
+- **Index Consistency**: TOCのStrip Mode条件が `index.md` と一致し、`< 1400px` でのみ衝突回避として発動すること。
+- **Transition Compliance**: `transition` が Allowlist内プロパティ（`opacity`, `transform` など）に限定されること。
+- **Semantic Compliance**: トリガーが `button` で実装され、`span role="button"` が混入しないこと。
+- **Popup Role Consistency**: Lookupでは `role="dialog"` + `aria-haspopup="dialog"`、Interlinearでは `role="note"` を使用し、意味論が一致すること。
+- **Progressive Enhancement**: JavaScript無効時でも本文読書とLookupのベース体験が成立すること。
+- **Touch Target Compliance**: トリガーの物理ヒットエリアが最低24px（推奨44px）を満たすこと。
+- **Non-color Signal**: `forced-colors: active` と印刷時に、背景色なしでもトリガーと開閉状態を識別できること。
+
 ```html
 <!-- マークアップ例 -->
-<span class="ui-translation-trigger" role="button" tabindex="0" lang="fr"
+<button type="button" class="ui-translation-trigger" lang="fr"
       aria-haspopup="dialog" aria-expanded="false" aria-controls="translation-uid-123" aria-details="translation-uid-123">
   Je pense, donc je suis.
-</span>
+</button>
 
-<!-- 翻訳コンテンツ（Popover / Bottom Sheet / Interlinear） -->
+<!-- Lookup翻訳コンテンツ（Popover / Bottom Sheet） -->
 <div id="translation-uid-123" class="ui-translation-content" hidden
+     role="dialog" aria-modal="false" lang="ja">
+  <span class="ui-text-sans">我思う、ゆえに我あり。</span>
+</div>
+
+<!-- Interlinear翻訳コンテンツ -->
+<div id="translation-uid-124" class="ui-translation-inline" hidden
      role="note" lang="ja">
   <span class="ui-text-sans">我思う、ゆえに我あり。</span>
 </div>
@@ -7010,6 +7684,12 @@ interface Track {
         - *Rationale*: 初期表示パフォーマンスを最大化し、ランタイムでの `fetch` リクエストを排除します。`loading="lazy"` の場合でも、ビューポート接近時には既にDOMに存在するため、即座に表示可能です。
     - **Secondary (Fallback)**: **クライアントサイド `fetch`**。ビルド時の処理が不可能な場合（動的コンテンツ等）に限り、`IntersectionObserver` トリガー時に `fetch` してインライン化します。
         - *Implementation Note*: `loading="eager"` の場合でも、SSGビルド時にインライン化されていない場合は、コンポーネント初期化時に即座に `fetch` を開始します。
+    - **Execution Matrix (Normative)**:
+        - `build-inline + loading="lazy"`: **Fetchなし**。初期DOMにSVGが存在。初期描画時はスケルトンを表示せず、必要であれば `content-visibility` で描画コストのみ遅延。
+        - `build-inline + loading="eager"`: **Fetchなし**。初期DOMにSVGが存在。即時表示。
+        - `runtime-fetch + loading="lazy"`: `IntersectionObserver` でビューポート接近時に `fetch` を開始。読み込み完了までスケルトン表示。
+        - `runtime-fetch + loading="eager"`: 初期化時に即時 `fetch`。読み込み完了までスケルトン表示。
+        - **Invariant**: `loading` は「ネットワーク開始タイミング」を制御する属性であり、ビルド時インライン化されたコンテンツの表示可否を遅延させる属性ではありません。
 - **Security (Sanitization)**:
     - 外部から取得したSVGには悪意のあるスクリプトが含まれる可能性があるため、**展開前に必ずサニタイズ（`DOMPurify` 等）を実行し、`<script>` タグやイベントハンドラを除去します**。
     - **Build-time Sanitization**: ビルドプロセスで処理する場合、サニタイズもビルド時に実行し、クライアント側のオーバーヘッドを排除します。
@@ -7054,15 +7734,15 @@ interface Track {
         - *Rationale*: アプリ背景が暗いDark Modeにおいて、白背景の楽譜は強烈なコントラストを持ちます。`border-muted` では境界が光に埋もれてしまう恐れがあるため、より不透明度の高い `border-default` を採用し、**ハレーションを防ぎつつ構造的な境界を明確にします**。
         - *Note (Token Consistency)*: `index.md` の `--border-default` は不透明度 `0.12` で定義されています。実装時には、この値で十分なコントラストが得られるかビジュアルで検証してください。将来的に、より強いコントラストが必要な場合は、`index.md` に新たなトークン（例: `--border-strong`）を追加することを検討してください。
     - **Background**:
-        - 原則として **`var(--white)`** （Primitiveトークン: `oklch(100% 0 0)`）を維持します。楽譜は「紙の上のインク」というメタファーに基づき、Light/Dark Mode問わず白背景を固定する意図的な例外です。`filter: invert()` は五線譜の視認性を損なうため原則禁止します（例外: Forced Colors Mode の Fallback、後述）。
+        - 原則として **`var(--bg-score-paper)`** を使用します。これは楽譜専用のSemanticトークンであり、Light/Dark Mode問わず白背景（紙）を維持する意図的な例外です。`filter: invert()` は五線譜の視認性を損なうため原則禁止します（例外: Forced Colors Mode の Fallback、後述）。
     - **Radius**: `--radius-md` を Scroll Container に適用し、`overflow: hidden` と組み合わせて角丸を確実にクリップします。
 - **Scroll Container (Scrollable Area)**:
     - **Focus Strategy**: `tabindex="0"` を付与するため、`index.md` のフォーカス戦略に準拠した **Adaptive Focus (`:focus-visible`)** を適用します。
     - **Overflow**: `overflow-x: auto` を適用し、楽譜の縦横比とサイズを維持したまま閲覧可能にします。
     - **Scrollbar**: `index.md` のスクロールバー定義に準拠しますが、**白背景上での視認性**を考慮した調整を行います。
-        - **Width**: `scrollbar-width: thin`
-        - **Color Override**: `scrollbar-color: var(--fg-muted) transparent`
-            - *Rationale*: グローバルのつまみ色（`--scrollbar-thumb` / `--fg-subtle`）は淡すぎて白背景上で視認できないリスクがあるため、よりコントラストの高い `--fg-muted` を強制し、操作性を担保します。
+        - **Required Baseline**: `index.md` の「見えないヒットエリア」ミックスイン（物理幅 `--scrollbar-width: 12px` + `background-clip: content-box`）を**そのまま適用**します。`scrollbar-width: thin` 単独では不十分です。
+        - **Color Override**: このコンポーネント内に限り `--scrollbar-thumb: var(--fg-muted)` を上書きし、Firefox (`scrollbar-color`) と WebKit (`::-webkit-scrollbar-thumb`) の双方で同じ視認性を確保します。
+            - *Rationale*: グローバルのつまみ色（`--scrollbar-thumb` / `--fg-subtle`）は淡すぎて白背景上で視認できないリスクがあるため、よりコントラストの高い `--fg-muted` を適用し、操作性を担保します。
             - *Note (Token System)*: `--fg-muted` は `index.md` では「メタデータ、アイコン」用と定義されています。このコンポーネント固有のオーバーライドであることを明確にするため、将来的には `index.md` にスクロールバー専用の「コンテキストオーバーライドトークン」（例: `--scrollbar-thumb-on-light`）を追加することを検討してください。<br>**トークン化の判断基準**: `<ui-score>` 実装後、他のコンポーネント（例: `<ui-image>` の白背景バリアント等）でも同様のニーズ（白背景上のスクロールバー）が発生した場合に初めてトークンを `index.md` に追加し、正規化します。現時点では、このコンポーネント固有のオーバーライドとして実装してください。
     - **Visual Hint (Fade Effect)**:
         - スクロール可能な場合、**`mask-image`** を使用して両端をフェードさせ、続きがあることを示唆します。
@@ -7117,7 +7797,8 @@ interface Track {
 **5. アクセシビリティ (A11y)**
 
 - **Structure & Navigation**:
-    - **Scroll Container** (`div`) に `role="region"`、`tabindex="0"`、および `aria-label="楽譜: {label}"` を付与します。これにより、キーボードユーザー（矢印キー）とスクリーンリーダーユーザーが楽譜領域を認識し、スクロール操作を行えるようにします。
+    - **Scroll Container** (`div`) には `tabindex="0"` と `aria-label="楽譜: {label}"` を付与します。`role="region"` はランドマーク過多を避けるため、**本文の主題となる譜例（ページ内で最大3件程度）にのみ**付与し、補助的な譜例では付与しません。
+        - *Rationale*: 連続する譜例が多い記事で `region` を乱用すると、スクリーンリーダーのランドマーク一覧が過密化し、ナビゲーション効率を損ないます。
     - **SVG Semantics**: SVG自体には `aria-hidden="true"` と `focusable="false"` を設定し、**スクリーンリーダーへの情報は親のScroll Containerに集約します**。
         - *Rationale*: SVG内のテキストノードやパスを個別に読み上げさせると情報過多（Verbose）になりやすいため、コンテナレベルで「何の楽譜か」を伝える方がユーザー体験として整理されています。
 - **Forced Colors Mode**:
@@ -7136,8 +7817,8 @@ interface Track {
 <!-- aria-busy: ローディング中は "true"、読み込み完了またはエラー時に "false" へ更新 -->
 <figure class="ui-score" aria-busy="true">
   <!-- Scroll Container: キーボード操作と支援技術のターゲット -->
-  <!-- aria-describedby で詳細説明（desc）を紐付け -->
-  <div class="score-scroll" tabindex="0" role="region" aria-label="楽譜: {label}" aria-describedby="score-desc-{uniqueId}">
+  <!-- role="region" は主要譜例のみ。description がある場合のみ aria-describedby を付与 -->
+  <div class="score-scroll" tabindex="0" role="{isPrimary ? 'region' : undefined}" aria-label="楽譜: {label}" aria-describedby="{description ? `score-desc-${uniqueId}` : undefined}">
     <!-- Lazy Loading前: Skeleton -->
     <div class="skeleton" style="aspect-ratio: {aspect-ratio ?? '3/1'}"></div>
 
@@ -7147,9 +7828,9 @@ interface Track {
        <!-- path data -->
     </svg>
 
-    <!-- 詳細説明: 視覚的には隠すが、DOMに残して参照させる -->
+    <!-- 詳細説明がある場合のみ出力 -->
     <!-- SVG内の <desc> を使うよりも、HTML要素の方が参照の信頼性が高い -->
-    <p id="score-desc-{uniqueId}" class="sr-only">{description}</p>
+    {description ? <p id="score-desc-{uniqueId}" class="sr-only">{description}</p> : null}
   </div>
 
   <!-- Error時: Fallback (Scroll Container の外に配置) -->
@@ -7158,9 +7839,25 @@ interface Track {
   <!-- 理由3: `aria-live`領域は視覚的に安定した位置にあるべき（スクロールで消えない） -->
   <div class="error" aria-live="polite"></div>
 
-  <figcaption>{caption}</figcaption>
+  {caption ? <figcaption>{caption}</figcaption> : null}
 </figure>
 ```
+
+**7. 運用ガードレール (Authoring Guardrails)**
+
+- `label` は必須。ビルドまたはLintで未指定をエラーにします。
+- `description` は任意ですが、指定した場合は `aria-describedby` の参照先を必ず生成します。未指定時は `aria-describedby` を出力しません。
+- `role="region"` は主題譜例のみに限定し、補助譜例への機械的な一律付与を禁止します。
+- `loading="eager"` は「冒頭主題譜例」など明確な理由がある場合のみ許可し、それ以外は `lazy` を既定とします。
+
+**8. 受け入れ基準 (Acceptance Criteria)**
+
+- **Semantic Token Compliance**: 楽譜背景が `--bg-score-paper` で定義され、Primitive直接参照（`--white`）で実装されないこと。
+- **A11y Referential Integrity**: `description` 未指定時に `aria-describedby` が空参照を作らないこと。
+- **Landmark Hygiene**: `role="region"` が過剰付与されず、ページ内ランドマークの可読性を維持すること。
+- **Loading Matrix Compliance**: `build-inline/runtime-fetch` と `lazy/eager` の各組み合わせが仕様どおりに動作すること。
+- **Scrollbar Compliance**: 物理幅12pxを含むグローバルスクロールバー実装を維持しつつ、白背景上でつまみ視認性が確保されること。
+- **Progressive Enhancement**: JavaScript無効時でも、ビルド時インライン化された楽譜とキャプションが読書可能であること。
 
 #### 数式 (Math) `<ui-math>`
 
@@ -7201,6 +7898,7 @@ interface Track {
 | `latex` | - | `string` | TeX形式の数式文字列。**ビルド時レンダリングの場合は不要**（Markdownパイプラインで処理済み）。ランタイムレンダリング時のみ使用。 |
 | `block` | `block` | `boolean` | `true`: 別行立て数式（Display Mode）、`false`: インライン数式。デフォルトは `false`。 |
 | `id` | `id` | `string` | **オプショナル**。Display Mode の数式に対して、引用やアンカーリンクを可能にするためのID。指定された場合、コンテナ要素の `id` 属性として出力されます。<br>**使用例**: `<ui-math id="eq-pythagorean" block>...</ui-math>` → 本文から `#eq-pythagorean` でリンク可能。<br>**ID命名規則**:<br>- **プレフィックス**: `eq-` (equation の略)<br>- **フォーマット**: `eq-{descriptive-name}` (例: `eq-pythagorean`, `eq-fourier-transform`)<br>- **禁止**: 機械的な連番 (`eq-1`, `eq-2`) は、数式の追加・削除時にリンク切れを招くため非推奨。<br>**重複チェック**: ビルド時（Eleventy Transform）に同一ドキュメント内でのID重複を検出した場合、`console.warn` で警告を出力してください。ビルドエラーにはせず、コンテンツ作成者が修正できるようにします。 |
+| `primary` | `primary` | `boolean` | **オプショナル（Display Modeのみ）**。本文の主題となる数式にのみ指定します。`true` の場合に限り、スクロールコンテナへ `role="region"` を付与できます。デフォルトは `false`。 |
 | `aria-label` | `aria-label` | `string` | **オプショナル**。MathMLが自然言語の読み上げを生成できない複雑な数式のケースを想定し、手動で読み上げテキストを指定します。<br>**使用ガイドライン**:<br>- **不要な場合**: 単純な数式（例: `x + y`）。MathMLの自動読み上げで十分。<br>- **必要な場合**: 複雑な構造（多重積分、行列、特殊記号）で、MathMLの読み上げが不自然または不正確な場合。<br>**具体例**:<br>- **複雑な行列**: MathMLは要素を順に読むため「1，2，3，4」となり、行列構造が伝わらない場合 → `aria-label="2行2列の行列、1行目：1，2、2行目：3，4"`<br>- **上付き/下付きの複合**: 「x の 2乗 の 下付きn」のような読み順が不自然になる場合 → `aria-label="エックス n の 2乗"`<br>- **学術慣習との乖離**: 「∇」をMathMLが「ナブラ」と読まず「デル」と読む場合 → `aria-label="ナブラ エフ"`<br>**記述例**: `aria-label="エックス プラス ワイ イコール ゼット"` |
 | `error-message` | - | `string` | **内部プロパティ**。LaTeX構文エラーが発生した場合に設定され、エラーUIに表示されます。<br>**設定タイミング**:<br>- **ビルド時**: Eleventy Transform がエラーを検出した場合、`error-message` 属性を付与。<br>- **ランタイム時**: `<ui-math>` コンポーネント自身が `latex` プロパティをパースし、エラー検出時に設定。<br>通常、コンテンツ作成者が直接指定することはありません。 |
 
@@ -7236,17 +7934,16 @@ interface Track {
         - **Visual Hint (Fade Effect)**: `<ui-score>` と同様に、横スクロール可能な場合は `mask-image` でフェードヒントを適用します。
             - **適用条件**:
                 - スクロール可能な場合（`scrollWidth > clientWidth`）**のみ**フェードを適用する。
-                - JavaScript なしの場合、または判定が困難な場合は、**常にフェードを適用**する（フォールバック）。
-                    - *Rationale*: 「続きがない」状態でフェードがあっても情報損失はないが、「続きがある」状態でフェードがないと発見可能性（Discoverability）が損なわれる。
-            > **⚠️ 実装注意**: 両端フェードをCSS単体で常時適用すると、スクロール位置が先頭のとき数式の**冒頭文字が透過して見えなくなります**。フォールバックは右端のみに限定し、JS有効時はスクロール位置に応じて動的制御します。
+                - JavaScript なしの場合は、**デフォルトでフェードを適用しません**（可読性優先）。
+                    - *Rationale*: 原則4「普遍的な明瞭さ」に基づき、式の冒頭/末尾を常時透過させるリスクを避けます。発見可能性より、まず情報欠損を防ぎます。
+            > **⚠️ 実装注意**: 両端フェードをCSS単体で常時適用すると、スクロール位置が先頭のとき数式の**冒頭文字が透過して見えなくなります**。JS有効時のみ、スクロール位置に応じて動的制御してください。
 
             ```css
-            /* --- JS非対応フォールバック: 右端のみフェード --- */
-            /* 数式の冒頭を隠さないため、左端のフェードは適用しない */
+            /* --- デフォルト（JS無効を含む）: フェードなし --- */
             .math-display {
               --fade-width: var(--space-4);
-              -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--fade-width)), transparent);
-              mask-image: linear-gradient(to right, black calc(100% - var(--fade-width)), transparent);
+              -webkit-mask-image: none;
+              mask-image: none;
             }
 
             /* --- JS有効時: data-scroll属性でスクロール状態を管理 --- */
@@ -7292,8 +7989,11 @@ interface Track {
         - フォーカス取得後、キーボード操作（`←` `→` キー、スペースキー等）でブラウザネイティブのスクロールを機能させます。
         ```html
         <!-- スクロール可能な場合のみ tabindex を付与 -->
-        <div class="math-display" tabindex="0" role="region" aria-label="数式（横スクロール可能）">
-          <!-- KaTeX 出力 -->
+        <!-- role="region" は primary=true の主題数式にのみ付与 -->
+        <div class="math-display" tabindex="0" role="{primary ? 'region' : undefined}" aria-label="{primary ? '数式（横スクロール可能）' : undefined}">
+          <div class="math-content" role="math">
+            <!-- KaTeX 出力 -->
+          </div>
         </div>
         ```
         - *Note*: スクロール不要（`scrollWidth <= clientWidth`）の場合は `tabindex` を付与しません。不要なフォーカスストップはキーボードユーザーのフロー状態を妨げます（原則2）。
@@ -7331,13 +8031,22 @@ interface Track {
       }
     }
     ```
+    - **長大数式の運用**:
+        - 1行で紙幅に収まらない式は、著者側で `aligned` / `split` 等を使って**意味単位で改行**してください。
+        - やむを得ず1行式を維持する場合のみ、印刷専用で `font-size` を段階的に縮小するフォールバックを許可します（可読性を優先し、過度な縮小は禁止）。
 
 **5. アクセシビリティ (A11y)**
 
-- **Semantic Structure**:
-    - **Display Mode**: `<div role="math">` でラップします。`aria-label` は指定がある場合のみ付与します（後述）。
-    - **Inline Mode**: `<span role="math">` でラップします。同上。
-    - *Rationale*: `role="math"` は数式コンテンツであることを支援技術に明示します。
+- **Semantic Structure（責務分離）**:
+    - **Display Mode**: 2層構造を採用します。
+        - 外側 `math-display`: スクロールとキーボード操作の責務。スクロール可能時のみ `tabindex="0"` を付与。
+        - 内側 `math-content`: 数式セマンティクスの責務。`role="math"` を付与。
+    - **Inline Mode**: `role="math"` を持つ単一要素（例: `<span role="math">`）でラップします。
+    - *Rationale*: `region`（ランドマーク）と `math`（意味論）を同一要素に混在させず、支援技術での解釈を明確化します。
+- **Landmark Hygiene**:
+    - `role="region"` は本文の主題となる数式（`primary=true`）にのみ付与し、補助的な数式への一律付与を禁止します。
+    - 1ページあたりの `region` 付与対象は最大3件程度を目安とします。
+    - *Rationale*: ランドマークの過密化を防ぎ、スクリーンリーダーのナビゲーション効率を維持します。
 - **MathML vs aria-label Priority**:
     - **`aria-label` 未指定時（デフォルト）**: `role="math"` ラッパーに `aria-label` を付与しません。スクリーンリーダーはラッパーの内部（KaTeXが生成したMathML）を直接読み上げます。`role="math"` は「ここに数式がある」というコンテキストを補足するに留まり、MathMLのセマンティクスを上書きしません。
     - **`aria-label` 指定時**: `aria-label` がMathMLより優先されます。MathML要素（`<math>`タグ）に `aria-hidden="true"` を付与し、`aria-label` のテキストのみを読み上げさせます。ラッパーの `aria-label` がMathMLの読み上げを完全に置換します。
@@ -7392,7 +8101,44 @@ interface Track {
         ```
     - *Rationale*: エラーを視覚的に明確にし、コンテンツ作成者がデバッグできるようにします。ライブリージョン（`role="alert"`）は動的変化への通知手段であり、静的コンテンツへの適用は目的外使用です。
 
-**6. 使用例 (Usage Examples)**
+**6. 推奨DOM構造 (Suggested DOM Structure)**
+
+```html
+<!-- Display Mode -->
+<div class="math-display" tabindex="{isScrollable ? 0 : undefined}" role="{primary ? 'region' : undefined}" aria-label="{primary ? '数式（横スクロール可能）' : undefined}">
+  <div class="math-content" role="math" aria-label="{ariaLabel || undefined}">
+    <!-- aria-label 未指定時は MathML をそのまま公開 -->
+    <!-- aria-label 指定時は <math aria-hidden='true'> に切り替える -->
+    <math>...</math>
+    <span class="katex-html" aria-hidden="true">...</span>
+  </div>
+</div>
+
+<!-- Inline Mode -->
+<span class="math-inline" role="math" aria-label="{ariaLabel || undefined}">
+  <math>...</math>
+  <span class="katex-html" aria-hidden="true">...</span>
+</span>
+```
+
+**7. 運用ガードレール (Authoring Guardrails)**
+
+- `aria-label` は複雑な式の読み上げ補助が必要な場合のみ指定し、通常はMathMLを優先します。
+- `role="region"` は `primary=true` の主題数式にのみ許可し、補助数式への機械的な一律付与を禁止します。
+- スクロール不要な数式に `tabindex` を付与しません。
+- no-JS環境ではフェードを適用しません。可読性を優先します。
+- 印刷で紙幅を超える長大数式は、著者側で意味単位改行（`aligned` / `split`）を行います。
+
+**8. 受け入れ基準 (Acceptance Criteria)**
+
+- **Semantic Separation**: `math-display`（スクロール責務）と `math-content`（`role="math"`）が分離され、責務衝突がないこと。
+- **Landmark Hygiene**: `role="region"` が主題数式のみに限定され、ページ内ランドマーク過密が発生しないこと。
+- **MathML Priority**: `aria-label` 未指定時にMathMLがそのまま読み上げ対象になること。`aria-label` 指定時のみMathMLを `aria-hidden` にできること。
+- **Scrollable Focus Discipline**: スクロール不要時に `tabindex` が付与されず、不要なフォーカスストップを作らないこと。
+- **Readable Fallback**: JavaScript無効時にフェードが無効化され、数式の先頭/末尾が常時可視であること。
+- **Print Integrity**: 印刷時に横スクロール/マスクが無効化され、数式が紙面で読めること（長大数式は著者改行で対応可能であること）。
+
+**9. 使用例 (Usage Examples)**
 
 - **Markdown (Build-time Rendering)**:
     ```markdown
@@ -9016,7 +9762,7 @@ Backdropの表示・非表示時、`opacity: 0` ↔ `opacity: 1` のフェード
             - `aria-keyshortcuts="Control+K Meta+K"`: ショートカットキーを明示。
             - `aria-label="検索"`: スクリーンリーダー用のラベル。
         - *Style*: デスクトップでは **Dummy Input形式**（アイコン + "検索" + バッジ）で配置し、検索ダイアログへのディスカバリ性を担保します。
-        - *Responsive*: モバイル（`--bp-sm` 以下）やタッチ環境では、バッジとテキストを隠蔽して **アイコンのみ (`icon-only`)** のスタイルへ変形し、スペースを確保します。
+        - *Responsive*: モバイル（`--bp-sm` 以下）では、バッジとテキストを隠蔽して **アイコンのみ (`icon-only`)** のスタイルへ変形し、スペースを確保します。
         
     2. **TOC Trigger** (Mobile Only): 目次展開ボタン。
         - *Element*: `<button>` 要素。
@@ -9040,7 +9786,7 @@ Backdropの表示・非表示時、`opacity: 0` ↔ `opacity: 1` のフェード
 | ゾーン | Mobile (`< md`) | Tablet (`md` - `xl`) | Desktop (`>= xl`) |
 | :--- | :--- | :--- | :--- |
 | **Start** | `Trigger` (Sidebar) | `Trigger` + `Switcher` | `Trigger` + `Switcher` |
-| **Center** | `Title` (Current Page) | `Breadcrumbs` (Full) | `Breadcrumbs` (Smart Omission) |
+| **Center** | `Breadcrumbs` (Collapsed: `ルート / ... / 現在地`) | `Breadcrumbs` (Full) | `Breadcrumbs` (Smart Omission) |
 | **End** | `Search` (Icon) + `TOC` + `Menu` | `Search` (Full) + `Menu` | `Search` (Full) + `Menu` |
 
 **Responsive Logic & Fallbacks**
@@ -9054,9 +9800,9 @@ Backdropの表示・非表示時、`opacity: 0` ↔ `opacity: 1` のフェード
 - **Breadcrumbs**:
     - **Desktop** (`>= xl`): ルート省略（Smart Omission）。ルート直下では非表示。
     - **Tablet** (`md` - `xl`): フルパス表示。
-    - **Mobile** (`< md`): スペース不足のため中間階層は省略（Collapse）され、**現在のページタイトル**のみを優先表示します。
-        - *Tap Behavior*: **シングルタップでページトップへスクロール**します。親階層への遷移が必要な場合は、サイドバー（ドロワー）内のナビゲーションを使用します。
-        - *Rationale*: ヘッダー領域でのコンテキストメニュー展開は、タップ精度の問題やヒットエリアの競合を招くリスクがあるため、シンプルな単一アクションに限定します。
+    - **Mobile** (`<= --bp-sm`): スペース不足のため **「ルート / ... / 現在地」** の最小構成に自動凝縮します（中間階層は省略ボタンに格納）。
+        - *Tap Behavior*: ルート・現在地は通常のパンくずリンク/現在地として機能し、中間階層は省略ボタンから Dropdown で選択します。
+        - *Rationale*: ヘッダー内に文脈を維持しつつ、横幅制約下でもS/N比を保ちます。
     
 - **Search Trigger**:
     - **Desktop/Tablet** (`>= md`): フル表示（アイコン + テキスト + バッジ）。
@@ -9077,10 +9823,10 @@ Backdropの表示・非表示時、`opacity: 0` ↔ `opacity: 1` のフェード
     - *Base*: `.glass-panel` を基盤とし、`index.md` 定義に準拠します。
     - *Enhancement*: ヘッダー直下のコンテンツ色彩によるノイズを防ぐため、`saturate(0.5)` を追加合成し、S/N比を強化します。
         - *Rationale*: 彩度 50% への減衰は、背景画像やカラフルなコンテンツ（コードハイライト等）が透過した際に、視認性を損なわないヒューリスティックな値です。実装時にコンテンツとの組み合わせを目視検証し、必要に応じて `0.4`〜`0.6` の範囲で調整してください。
-    - *Fallback*: `backdrop-filter` 非対応環境では不透明な `--bg-default` に切り替わります。`@supports (backdrop-filter: blur(12px))` によるポジティブ形式の Progressive Enhancement を採用します（`index.md` L1052-1067 参照）。
+    - *Fallback*: `backdrop-filter` 非対応環境では不透明な `--bg-default` に切り替わります。`@supports (backdrop-filter: blur(12px))` によるポジティブ形式の Progressive Enhancement を採用します（`index.md` 参照）。
     
 - **Border Bottom**: `var(--border-width) solid var(--border-default)`。
-    - *Rationale*: `index.md` L880 では `--border-subtle` が推奨されていますが、ヘッダーはアプリケーション構造の最上位に位置し、ユーザーのスクロール操作の視覚的起点（ストッパー）として機能します。この役割を果たすため、他のコンテンツエリアとは一線を画した明確な境界が必要であり、`--border-default` (Opacity `0.12`) を採用します。将来的に `index.md` の推奨と統一する場合は、本仕様を更新してください。
+    - *Rationale*: `index.md` では `--border-subtle` が推奨されていますが、ヘッダーはアプリケーション構造の最上位に位置し、ユーザーのスクロール操作の視覚的起点（ストッパー）として機能します。この役割を果たすため、他のコンテンツエリアとは一線を画した明確な境界が必要であり、`--border-default` (Opacity `0.12`) を採用します。将来的に `index.md` の推奨と統一する場合は、本仕様を更新してください。
 - **Typography**:
     - Font Size: `--text-base` (14px)。
     - Font Weight (Element-specific):
@@ -9088,7 +9834,7 @@ Backdropの表示・非表示時、`opacity: 0` ↔ `opacity: 1` のフェード
         - **Breadcrumbs Items**: `--font-normal` (400)。本文と同じウェイトで視覚的階層を下げる。
         - **Breadcrumbs Current**: `--font-medium` (500)。現在ページのみウェイトで強調。
         - **Search Trigger Text**: `--font-normal` (400)。控えめなプレースホルダー表現。
-    - *Rationale*: 本文見出し (`H1` / `--text-4xl` / 36px) よりも小さいサイズを採用し、視覚的階層を明確化します。ウェイトは各要素の役割に応じて使い分け、「大胆なウェイト差」戦略（`index.md` L252-258）に準拠します。
+    - *Rationale*: 本文見出し (`H1` / `--text-4xl` / 36px) よりも小さいサイズを採用し、視覚的階層を明確化します。ウェイトは各要素の役割に応じて使い分け、「大胆なウェイト差」戦略（`index.md`）に準拠します。
 - **Shadow**: 原則なし（ボーダーとGlass効果で階層を分離）。
 
 **7. アクセシビリティ (A11y)**
@@ -9246,7 +9992,7 @@ Windows ハイコントラストモードなど、OSレベルで色が強制さ�
 
 - `border-right: var(--border-width) solid var(--border-ghost)`
 - *Rationale*: サイドバーは「構造の気配（Ghost）」として機能すべきであり、標準の `--border-default` (Opacity `0.12`) よりもさらに繊細な `--border-ghost` (Opacity `0.04`) を採用して静謐さを保ちます。
-- *Note (index.md との整合性)*: `index.md` L897 では `--border-subtle` が記載されていますが、本仕様では「Silent Existence」の哲学を徹底するため、より繊細な `--border-ghost` を採用しています。将来的に `index.md` 本体を更新する際は、この仕様を基準としてください。
+- *Note (index.md との整合性)*: `index.md` では `--border-subtle` が記載されていますが、本仕様では「Silent Existence」の哲学を徹底するため、より繊細な `--border-ghost` を採用しています。将来的に `index.md` 本体を更新する際は、この仕様を基準としてください。
 - *Collapsed State*: `collapsed` 状態ではサイドバーそのものが隠れるため、ボーダーも消失します。
 
 **6. アクセシビリティ (A11y)**
@@ -9278,7 +10024,7 @@ Windows ハイコントラストモードなど、OSレベルで色が強制さ�
 
 **Focus Strategy**
 
-`ui-header` と同様に、**Adaptive Focus** を適用します。`index.md` L681-723 の仕様に準拠し、移動中は控えめ（`--focus-ring-color-subtle`）、停止時に明確（`--focus-ring-color`）な識別を行います。
+`ui-header` と同様に、**Adaptive Focus** を適用します。`index.md` の仕様に準拠し、移動中は控えめ（`--focus-ring-color-subtle`）、停止時に明確（`--focus-ring-color`）な識別を行います。
 
 **7. アニメーション (Motion)**
 
@@ -9294,7 +10040,7 @@ Windows ハイコントラストモードなど、OSレベルで色が強制さ�
 | 設定 | 値 | 説明 |
 |------|-----|------|
 | **Duration** | `--duration-slower` (300ms) | Scene Change として認知させる十分な時間。 |
-| **Easing** | `--ease-spring` (Overdamped) | バウンスなしの収束。`index.md` L627-631 の「振動禁止」原則に準拠。 |
+| **Easing** | `--ease-spring` (Overdamped) | バウンスなしの収束。`index.md` の「振動禁止」原則に準拠。 |
 
 **Motion Reduction (モーション軽減)**
 
@@ -9327,7 +10073,7 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
 ```
 
 > **Rationale (Forced Colors Strategy):**  
-> `index.md` L729-759 の「構造の維持」「ボーダーやスペーシングにより、背景色が無くても領域を認識可能にする」という原則に準拠します。透過ボーダーが消失する環境でも、`CanvasText` による明確な境界線で構造を維持します。
+> `index.md` の「構造の維持」「ボーダーやスペーシングにより、背景色が無くても領域を認識可能にする」という原則に準拠します。透過ボーダーが消失する環境でも、`CanvasText` による明確な境界線で構造を維持します。
 
 **9. 印刷スタイル (Print Styles)**
 
