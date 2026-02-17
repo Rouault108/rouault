@@ -26,6 +26,7 @@
   ::view-transition-group(*) {
     animation-duration: 0.2s;
     animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    mix-blend-mode: var(--view-transition-fade);
   }
 }
 
@@ -200,6 +201,7 @@ a:focus-visible {
   outline-width: var(--focus-ring-width);
   outline-offset: var(--focus-ring-offset);
   outline-color: var(--focus-ring-color);
+  border-radius: var(--focus-ring-radius);
   animation: var(--animation-focus);
 }
 
@@ -243,7 +245,7 @@ a:focus-visible {
   outline-width: var(--focus-ring-width);
   outline-offset: var(--focus-ring-offset);
   outline-color: var(--focus-ring-color);
-  border-radius: var(--radius-sm); /* line-heightに対して適切な角丸 */
+  border-radius: var(--focus-ring-radius); /* line-heightに対して適切な角丸 */
   animation: var(--animation-focus);
   
   /* テキスト色はデフォルトのまま */
@@ -258,7 +260,7 @@ a:focus-visible {
 }
 
 /* Touch (No Hover) 判定 - タッチデバイスでは発見可能性を優先 */
-@media (hover: none) {
+@media (hover: none) and (pointer: coarse) {
   .prose a[href]:not([class]) {
     color: var(--primary);
     text-decoration-color: var(--link-decoration-color-touch);
@@ -387,14 +389,14 @@ a:focus-visible {
  * タッチデバイスではホバーによる発見可能性が得られないため、
  * デフォルト状態から視覚的ヒントを強化
  * --------------------------------------------------------------------------- */
-@media (hover: none) {
+@media (hover: none) and (pointer: coarse) {
   /* Nav バリアント: デフォルトで色付き */
   .ui-link,
   .card:not(.prose) a,
   .sidebar:not(.prose) a {
     color: var(--primary);
   }
-  
+
   /* Subtle バリアント: 発見可能性を優先し、fg-default に格上げ */
   .ui-link.link-subtle,
   .link-subtle {
@@ -538,6 +540,7 @@ a:focus-visible {
   outline-width: var(--focus-ring-width);
   outline-offset: var(--focus-ring-offset);
   outline-color: var(--focus-ring-color);
+  border-radius: var(--focus-ring-radius);
   animation: var(--animation-focus);
 }
 
@@ -593,8 +596,8 @@ a:focus-visible {
 /* Glass Panel：ヘッダー、フローティングパネル用 */
 .glass-panel {
   /* Baseline: 明確な境界線による構造化 */
-  background: var(--bg-default);
-  border: 1px solid var(--border-default);
+  background: var(--glass-panel);
+  border: var(--border-style-subtle);
 }
 
 @supports (backdrop-filter: blur(12px)) {

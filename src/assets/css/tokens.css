@@ -76,6 +76,7 @@
   --bg-surface-1: var(--bg-default);
   --bg-surface-2: oklch(100% 0 0);
   --bg-surface-3: oklch(100% 0 0);
+  --bg-score-paper: oklch(100% 0 0);
 
   /* =========================================================================
    * Semantic Tokens - Fill (Light Mode)
@@ -97,7 +98,7 @@
   --bg-success-subtle: oklch(96% 0.04 145);
   --bg-tip-subtle: oklch(96% 0.04 var(--hue-primary));
   --bg-note-subtle: oklch(96% 0.01 var(--hue-base));
-  --bg-table-ruler: oklch(from var(--fg-default) l c h / 0.08)
+  --bg-table-ruler: oklch(from var(--fg-default) l c h / 0.08);
     /* =========================================================================
    * Semantic Tokens - Foreground (Light Mode)
    * ========================================================================= */
@@ -127,13 +128,15 @@
   --border-muted: oklch(20% 0.03 var(--hue-base) / 0.06);
   --border-ghost: oklch(20% 0.03 var(--hue-base) / 0.04);
   --border-danger: oklch(72% 0.15 25);
-  --border-on-inverted: oklch(from var(--bg-default) l c h / 0.2);
+  --border-warning: oklch(72% 0.15 85);
+  --border-on-inverted: oklch(from var(--fg-default) l c h / 0.1);
 
   /* =========================================================================
    * Semantic Tokens - Focus Ring
    * ========================================================================= */
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
+  --focus-ring-radius: var(--radius-sm);
   --focus-ring-color: var(--primary);
 
   /* =========================================================================
@@ -264,7 +267,8 @@
   /* =========================================================================
    * Border - Semantic Borders
    * ========================================================================= */
-  --border-subtle: var(--border-width) solid var(--border-default);
+  --border-subtle: var(--border-default);
+  --border-style-subtle: var(--border-width) solid var(--border-subtle);
   --border-style-ghost: var(--border-width) solid var(--border-ghost);
 
   /* =========================================================================
@@ -378,6 +382,15 @@
    * Focus Animation
    * ========================================================================= */
   --animation-focus: adaptive-focus 200ms var(--ease-out) forwards;
+  --animation-flash: flash var(--duration-fast) var(--ease-out);
+
+  /* View Transitions で参照する値 */
+  --view-transition-fade: plus-lighter;
+  --view-transition-slide-to-left: translateX(-20px);
+  --view-transition-slide-to-right: translateX(20px);
+
+  /* ガラス質感パネルの基準背景 */
+  --glass-panel: var(--bg-default);
 }
 
 /* =============================================================================
@@ -410,6 +423,7 @@
     --bg-surface-1: var(--bg-default);
     --bg-surface-2: oklch(17% 0.02 var(--hue-base));
     --bg-surface-3: oklch(22% 0.02 var(--hue-base));
+    --bg-score-paper: oklch(100% 0 0);
 
     /* =========================================================================
      * Semantic Tokens - Fill (Dark Mode)
@@ -433,7 +447,7 @@
     --bg-success-subtle: oklch(25% 0.05 145);
     --bg-tip-subtle: oklch(25% 0.05 var(--hue-primary));
     --bg-note-subtle: oklch(20% 0.02 var(--hue-base));
-    --bg-table-ruler: oklch(from var(--fg-default) l c h / 0.08)
+    --bg-table-ruler: oklch(from var(--fg-default) l c h / 0.08);
       /* =========================================================================
      * Semantic Tokens - Foreground (Dark Mode)
      * ========================================================================= */
@@ -457,6 +471,8 @@
     --border-muted: oklch(90% 0.01 var(--hue-base) / 0.06);
     --border-ghost: oklch(90% 0.01 var(--hue-base) / 0.04);
     --border-danger: oklch(35% 0.1 25);
+    --border-warning: oklch(35% 0.1 85);
+    --border-on-inverted: oklch(from var(--bg-default) l c h / 0.1);
 
     /* =========================================================================
      * Primitive Tokens - Shadows (Dark Mode)
@@ -502,6 +518,7 @@
     --on-danger: Canvas;
     --bg-surface-2: Canvas;
     --bg-surface-active: Highlight;
+    --bg-score-paper: Canvas;
   }
 
   :focus-visible {
