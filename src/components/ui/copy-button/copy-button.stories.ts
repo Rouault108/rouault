@@ -584,7 +584,7 @@ export const WithEventHandlers: Story = {
       <ui-copy-button
         value="${args.value}"
         label="${args.label}"
-        @copy="${(e: CustomEvent) => {
+        @copy="${(e: CustomEvent<{value: string}>) => {
           const log = document.getElementById('event-log');
           if (log) {
             const item = document.createElement('div');
@@ -594,7 +594,7 @@ export const WithEventHandlers: Story = {
             log.scrollTop = log.scrollHeight;
           }
         }}"
-        @copy-error="${(e: CustomEvent) => {
+        @copy-error="${(e: CustomEvent<{error: string}>) => {
           const log = document.getElementById('event-log');
           if (log) {
             const item = document.createElement('div');
@@ -649,7 +649,7 @@ export const TestSuccessState: Story = {
     }
 
     // Clipboard API をモック（成功を保証）
-    const originalWriteText = navigator.clipboard.writeText;
+    const originalWriteText = navigator.clipboard.writeText.bind(navigator.clipboard);
     navigator.clipboard.writeText = async () => {
       return Promise.resolve();
     };

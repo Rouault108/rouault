@@ -173,7 +173,7 @@ export const Default: Story = {
       </main>
     </div>
   `,
-  play: async ({ canvasElement }) => {
+  play: ({ canvasElement }) => {
     // テスト: コンポーネントが正しくレンダリングされていること
     const skipLink = canvasElement.querySelector('ui-skip-link');
     if (!skipLink) {
@@ -187,13 +187,14 @@ export const Default: Story = {
     }
 
     // テスト: 正しいhref属性が設定されていること
-    if (anchor.getAttribute('href') !== '#main-content') {
-      throw new Error(`Expected href to be '#main-content', got '${anchor.getAttribute('href')}'`);
+    const href = anchor.getAttribute('href');
+    if (href !== '#main-content') {
+      throw new Error(`Expected href to be '#main-content', got '${href ?? 'null'}'`);
     }
 
     // テスト: 正しいテキストコンテンツが設定されていること
     // Note: アンカー要素はテキストコンテンツを持つため、aria-labelは冗長であり設定されない
-    const anchorText = anchor.textContent?.trim();
+    const anchorText = anchor.textContent.trim();
     if (anchorText !== 'メインコンテンツへスキップ') {
       throw new Error(`Expected text content to be 'メインコンテンツへスキップ', got '${anchorText}'`);
     }
@@ -203,8 +204,9 @@ export const Default: Story = {
     if (!mainContent) {
       throw new Error('Main content target element not found');
     }
-    if (mainContent.getAttribute('tabindex') !== '-1') {
-      throw new Error(`Expected main content tabindex to be '-1', got '${mainContent.getAttribute('tabindex')}'`);
+    const tabindex = mainContent.getAttribute('tabindex');
+    if (tabindex !== '-1') {
+      throw new Error(`Expected main content tabindex to be '-1', got '${tabindex ?? 'null'}'`);
     }
 
     console.log('✅ All tests passed for Default story');
@@ -262,7 +264,7 @@ export const CustomTarget: Story = {
       </div>
     </div>
   `,
-  play: async ({ canvasElement }) => {
+  play: ({ canvasElement }) => {
     // テスト: カスタムターゲットが正しく設定されていること
     const skipLink = canvasElement.querySelector('ui-skip-link');
     if (!skipLink) {
@@ -275,13 +277,14 @@ export const CustomTarget: Story = {
     }
 
     // テスト: カスタムhref属性が正しく設定されていること
-    if (anchor.getAttribute('href') !== '#custom-content') {
-      throw new Error(`Expected href to be '#custom-content', got '${anchor.getAttribute('href')}'`);
+    const href = anchor.getAttribute('href');
+    if (href !== '#custom-content') {
+      throw new Error(`Expected href to be '#custom-content', got '${href ?? 'null'}'`);
     }
 
     // テスト: カスタムラベルが正しく設定されていること
     // Note: アンカー要素はテキストコンテンツを持つため、aria-labelは冗長であり設定されない
-    const anchorText = anchor.textContent?.trim();
+    const anchorText = anchor.textContent.trim();
     if (anchorText !== 'カスタムコンテンツへスキップ') {
       throw new Error(`Expected text content to be 'カスタムコンテンツへスキップ', got '${anchorText}'`);
     }
@@ -344,7 +347,7 @@ export const Focused: Story = {
   `,
   play: async ({ canvasElement }) => {
     // テスト: コンポーネントのスタイル検証
-    const skipLink = canvasElement.querySelector('#focused-skip-link') as SkipLink;
+    const skipLink = canvasElement.querySelector<SkipLink>('#focused-skip-link');
     if (!skipLink) {
       throw new Error('Focused skip link component not found');
     }
@@ -475,19 +478,19 @@ export const SkipNavigationFlow: Story = {
   `,
   play: async ({ canvasElement }) => {
     // テスト: スキップリンクの存在確認
-    const skipLink = canvasElement.querySelector('#flow-skip-link') as SkipLink;
+    const skipLink = canvasElement.querySelector<SkipLink>('#flow-skip-link');
     if (!skipLink) {
       throw new Error('Skip link component not found');
     }
 
     await skipLink.updateComplete;
 
-    const anchor = skipLink.shadowRoot?.querySelector('a') as HTMLAnchorElement;
+    const anchor = skipLink.shadowRoot?.querySelector<HTMLAnchorElement>('a');
     if (!anchor) {
       throw new Error('Anchor element not found in shadow root');
     }
 
-    const mainContent = canvasElement.querySelector('#main-content') as HTMLElement;
+    const mainContent = canvasElement.querySelector<HTMLElement>('#main-content');
     if (!mainContent) {
       throw new Error('Main content target element not found');
     }
@@ -507,7 +510,7 @@ export const SkipNavigationFlow: Story = {
     // ここでは、ターゲット要素が正しく設定されていることを確認します。
     const targetId = anchor.getAttribute('href');
     if (targetId !== '#main-content') {
-      throw new Error(`Expected href to be '#main-content', got '${targetId}'`);
+      throw new Error(`Expected href to be '#main-content', got '${targetId ?? 'null'}'`);
     }
 
     // テスト: ターゲット要素にtabindex="-1"が設定されていることを確認
@@ -608,7 +611,7 @@ export const DarkMode: Story = {
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const skipLink = canvasElement.querySelector('#dark-mode-skip-link') as SkipLink;
+    const skipLink = canvasElement.querySelector<SkipLink>('#dark-mode-skip-link');
     if (!skipLink) {
       throw new Error('Skip link component not found');
     }
@@ -725,7 +728,7 @@ export const ForcedColorsMode: Story = {
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const skipLink = canvasElement.querySelector('#forced-colors-skip-link') as SkipLink;
+    const skipLink = canvasElement.querySelector<SkipLink>('#forced-colors-skip-link');
     if (!skipLink) {
       throw new Error('Skip link component not found');
     }
@@ -825,7 +828,7 @@ export const MissingTargetWarning: Story = {
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const skipLink = canvasElement.querySelector('#missing-target-skip-link') as SkipLink;
+    const skipLink = canvasElement.querySelector<SkipLink>('#missing-target-skip-link');
     if (!skipLink) {
       throw new Error('Skip link component not found');
     }
@@ -839,8 +842,9 @@ export const MissingTargetWarning: Story = {
     }
 
     // テスト: href属性が正しく設定されていること
-    if (anchor.getAttribute('href') !== '#non-existent-target') {
-      throw new Error(`Expected href to be '#non-existent-target', got '${anchor.getAttribute('href')}'`);
+    const href = anchor.getAttribute('href');
+    if (href !== '#non-existent-target') {
+      throw new Error(`Expected href to be '#non-existent-target', got '${href ?? 'null'}'`);
     }
 
     // テスト: ターゲット要素が存在しないことを確認

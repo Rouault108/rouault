@@ -152,10 +152,10 @@ export class SkipLink extends LitElement {
     super.firstUpdated(_changedProperties);
 
     // 開発者への警告: ターゲット要素が存在しない場合
-    if (this.href && this.href.startsWith('#')) {
+    if (this.href.startsWith('#')) {
       // Shadow DOM 内からドキュメント全体を検索
       const root = this.getRootNode() as Document | ShadowRoot;
-      const targetElement = root.querySelector ? root.querySelector(this.href) : null;
+      const targetElement = root.querySelector(this.href);
       
       if (!targetElement) {
         console.warn(`[ui-skip-link]: Target element with selector '${this.href}' not found in the document.`);
