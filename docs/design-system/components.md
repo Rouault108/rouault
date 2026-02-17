@@ -8621,6 +8621,8 @@ class SaveButton extends LitElement {
 
 #### 空状態 (Empty State) `<ui-empty-state>`
 
+> **ステータス**: `Beta` — API安定。スタイリングの詳細は変更される可能性があります。
+
 **1. デザイン哲学と目的 (Design Philosophy)**
 
 - **役割**: データがないことを伝えるだけでなく、「次の一手（Call to Action）」を提示します。
@@ -8629,42 +8631,57 @@ class SaveButton extends LitElement {
 
 **2. ロジック参照基盤 (Logic Reference)**
 
-- **Native**: 標準的なHTML要素（`<section>`, `<figure>`）の組み合わせで構成します。特別なARIAロールは不要です。
-- **Semantic Structure**: `<figure>` + `<figcaption>` の組み合わせにより、アイコンとテキストの関係性を明確化します。
+- **Native**: 対応する標準HTML要素は存在しません。Shadow DOMを持つカスタム要素として実装します。
+- **Semantic Structure**: ホスト要素（`<ui-empty-state>`）自体が `role="status"` を担います。Shadow DOM内部はフラットな構造とし、スロットでコンシューマーからコンテンツを受け取ります。
+- **Porting Strategy**: 自前実装。状態表示の責務はデータフェッチ層に委ね、このコンポーネントは表示のみを担います。
 
-**3. 技術仕様とAPI (Technical Specs)**
+**3. コンポーネント定義**
 
-| プロパティ/スロット | 型 | 必須 | デフォルト | 説明 |
+- **`<ui-empty-state>`**: コレクションやリストにデータが存在しない場合に表示するプレースホルダーUI。視覚的にコンテキストを伝え、次のアクション（CTA）へユーザーを誘導します。
+
+**4. 技術仕様とAPI (Technical Specs)**
+
+**スロット (Slots)**
+
+| スロット | 必須 | デフォルト | 説明 |
+| :--- | :--- | :--- | :--- |
+| `slot="icon"` | いいえ | `inbox` (Lucide) | 状態を表すアイコン。未指定時はデフォルトの受信トレイアイコンを表示。 |
+| `slot="heading"` | **はい** | - | 状態を説明する見出し。**見出しレベル（`<h2>`, `<h3>` 等）はコンシューマーが文書構造に応じて適切に指定する責任を持ちます。** |
+| `slot="description"` | いいえ | - | 補足説明テキスト。状況の詳細や次のアクションのヒントを提供。 |
+| `slot="action"` | いいえ | - | CTAボタン。複数配置可能（例: 「新規作成」と「インポート」）。 |
+| `slot="illustration"` | いいえ | - | カスタムイラストレーション（オンボーディング等の特例）。指定時は `slot="icon"` を非表示にします。 |
+
+**プロパティ (Properties)**
+
+| プロパティ | 属性 | 型/値 | デフォルト | 説明 |
 | :--- | :--- | :--- | :--- | :--- |
-| `slot="icon"` | Slot | いいえ | `inbox` | 状態を表すアイコン。Lucideアイコンを推奨。指定がない場合はデフォルトの受信トレイアイコンを表示。 |
-| `slot="heading"` | Slot | はい | - | 状態を説明する見出し。簡潔で明確な表現を使用。**見出しレベル（`<h2>`, `<h3>` など）はコンシューマーが文書構造に応じて適切に指定する責任を持ちます。** |
-| `slot="description"` | Slot | いいえ | - | 補足説明テキスト。状況の詳細や次のアクションのヒントを提供。 |
-| `slot="action"` | Slot | いいえ | - | CTAボタン。複数配置可能（例: 「新規作成」と「インポート」）。 |
-| `variant` | `'default' \| 'search' \| 'error'` | いいえ | `'default'` | 空状態の種類。`search`: 検索結果なし、`error`: エラー状態。 |
+| `variant` | `variant` | `'default' \| 'search' \| 'error'` | `'default'` | 空状態の種類。`search`: 検索結果なし、`error`: エラー状態。 |
 
-**4. スタイリングとトークンマッピング (Style & Tokens)**
+**5. スタイリングとトークンマッピング (Style & Tokens)**
 
 **レイアウト (Layout)**
 
 ```css
-.empty-state {
+:host {
   /* コンテナ全体を中央配置 */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  
+
   /* 内部パディング: 周囲との適切な余白を確保 */
   padding: var(--space-12); /* 48px */
-  
-  /* 最小高さ: 小さなコンテナでも視覚的バランスを維持 */
+
+  /* 最小高さ: 小さなコンテナでも視覚的バランスを維持
+     スペーシングトークンは余白・間隔用であり、コンポーネントの
+     レイアウト保証目的の最小高さは直接指定する */
   min-height: 320px;
 }
 
-/* モバイル時のパディング調整 */
+/* --bp-md: 768px。CSS カスタムプロパティはメディアクエリ内で使用不可のため直接指定 */
 @media (max-width: 768px) {
-  .empty-state {
+  :host {
     padding: var(--space-8); /* 32px */
     min-height: 240px;
   }
@@ -8678,17 +8695,17 @@ class SaveButton extends LitElement {
 **アイコン (Icon)**
 
 ```css
-.empty-state__icon {
+.icon {
   /* サイズ: 大きく目立つが威圧的ではない */
   width: var(--icon-xl); /* 32px */
   height: var(--icon-xl);
-  
+
   /* 色: 控えめに背景に溶け込む */
   color: var(--fg-muted);
-  
+
   /* ストローク幅: Lucide標準（Lucide側で管理される値のため、トークン化せず直接指定） */
   stroke-width: 1.5px;
-  
+
   /* 下部要素との間隔 */
   margin-bottom: var(--space-4); /* 16px */
 }
@@ -8705,33 +8722,33 @@ class SaveButton extends LitElement {
 | **Description** | `--text-sm` (13px) | `--font-normal` (400) | `--fg-muted` | `--line-height-normal` (1.5) | 補足情報 |
 
 ```css
-.empty-state__heading {
+.heading {
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
   color: var(--fg-default);
   line-height: var(--line-height-tight);
-  
+
   /* アイコンとの間隔 */
   margin-top: 0;
   margin-bottom: var(--space-2); /* 8px */
 }
 
-.empty-state__description {
+.description {
   font-size: var(--text-sm);
   font-weight: var(--font-normal);
   color: var(--fg-muted);
   line-height: var(--line-height-normal);
-  
+
   /* 最大幅: 可読性を確保 */
   max-width: 40ch;
-  
+
   /* 見出しとの間隔 */
   margin-top: 0;
   margin-bottom: var(--space-6); /* 24px */
 }
 
-/* Description が存在しない場合の調整 */
-.empty-state__heading:last-of-type {
+/* description スロットが空の場合、heading 直下に action が来るための調整 */
+.heading:last-of-type {
   margin-bottom: var(--space-6);
 }
 ```
@@ -8739,13 +8756,10 @@ class SaveButton extends LitElement {
 > **Rationale (Description Max-Width):**
 > 空状態の説明文は短文（1-2文）であり、中央揃えで表示されます。`--width-reading` (65ch) は左揃えの長文用であり、中央揃えでは視線移動が大きくなりすぎます。`40ch` に制限することで、中央揃えでも快適に読める行長を維持します。
 
-```css
-```
-
 **アクション (Action)**
 
 ```css
-.empty-state__actions {
+.actions {
   /* 複数ボタンの配置 */
   display: flex;
   gap: var(--space-3); /* 12px */
@@ -8753,8 +8767,8 @@ class SaveButton extends LitElement {
   justify-content: center;
 }
 
-/* アクションが存在しない場合は非表示 */
-.empty-state__actions:empty {
+/* action スロットが空の場合は非表示 */
+.actions:empty {
   display: none;
 }
 ```
@@ -8762,40 +8776,43 @@ class SaveButton extends LitElement {
 **バリアント (Variants)**
 
 ```css
-/* Search: 検索結果なし */
-.empty-state--search .empty-state__icon {
-  color: var(--fg-subtle); /* さらに控えめに */
+/* Search: 検索結果なし。アイコンをさらに控えめに表示 */
+/* Note: --fg-subtle は 3.2:1（WCAG SC 1.4.11 非テキストコントラスト最低 3:1 を満たす）。
+   ただし .icon は aria-hidden="true" の装飾要素のため、非テキストコントラスト基準の適用外。
+   将来的なラベル付きアイコンへの変更時は --fg-muted (4.8:1) への切り替えを要検討。 */
+:host([variant="search"]) .icon {
+  color: var(--fg-subtle);
 }
 
-/* Error: エラー状態 */
-.empty-state--error .empty-state__icon {
+/* Error: エラー状態。アイコンと見出しを danger 色で表示 */
+:host([variant="error"]) .icon {
   color: var(--fg-danger);
 }
 
-.empty-state--error .empty-state__heading {
+:host([variant="error"]) .heading {
   color: var(--fg-danger);
 }
 ```
 
-**5. アクセシビリティ (A11y)**
+**6. アクセシビリティ (A11y)**
 
 **セマンティクス (Semantics)**
 
-- **Role**: `role="status"` を付与し、空状態が「現在の状態の通知」であることを示します。
-  - *Rationale*: `role="alert"` は緊急性が高い場合のみ使用します。空状態は通常、静的な情報提示であるため `status` が適切です。
-- **Atomic**: `aria-atomic="true"` を明示的に設定し、動的に空状態が表示された際にスクリーンリーダーが領域全体を読み上げるようにします。
-  - *Note*: `role="status"` はデフォルトで `aria-atomic="true"` が暗黙的に適用されますが、実装者の意図を明確にするため明示します。
-- **Labeling**: `aria-labelledby` で見出しを参照し、スクリーンリーダーに文脈を提供します。
+- **Role**: ホスト要素に `role="status"` を付与します。
+  - *Rationale*: `role="alert"` は緊急性が高い場合のみ使用します。空状態は通常、情報提示であるため `status` が適切です。
+  - *Scope*: `role="status"` は暗黙的な `aria-live="polite"` を持つため、空状態が**動的に表示される場合**（例: 検索後に結果が0件）にスクリーンリーダーへの通知が発火します。**初期レンダリング時に存在する場合**（例: 初回訪問でデータが0件）はライブリージョンの通知は発火しませんが、スクリーンリーダーはDOM順にコンテンツを読み上げるため問題はありません。
+- **Atomic**: `aria-atomic="true"` を明示的に設定し、動的表示時にスクリーンリーダーが領域全体を読み上げるようにします。`role="status"` の暗黙適用に加え、実装者の意図を明確化するために明示します。
+- **Labeling (`aria-label` 動的設定)**: `slot="heading"` に渡された要素はLight DOMに存在するため、コンポーネントは `slotchange` イベントを監視し、`heading` スロットのテキストコンテンツをホスト要素の `aria-label` に動的に設定します。これにより、コンシューマーがIDを管理する必要がなくなります。
 
-```html
-<section class="empty-state" role="status" aria-atomic="true" aria-labelledby="empty-state-heading">
-  <lucide-icon slot="icon" name="inbox"></lucide-icon>
-  <h2 id="empty-state-heading" class="empty-state__heading">まだメモがありません</h2>
-  <p class="empty-state__description">新しいメモを作成して、アイデアを書き留めましょう。</p>
-  <div class="empty-state__actions">
-    <ui-button variant="primary">新規作成</ui-button>
-  </div>
-</section>
+```typescript
+// コンポーネント内部の実装例
+private _onHeadingSlotChange() {
+  const slot = this.shadowRoot!.querySelector<HTMLSlotElement>('slot[name="heading"]');
+  const heading = slot?.assignedElements()[0];
+  if (heading?.textContent) {
+    this.setAttribute('aria-label', heading.textContent.trim());
+  }
+}
 ```
 
 **見出しレベルの制御 (Heading Level Control)**
@@ -8803,60 +8820,54 @@ class SaveButton extends LitElement {
 - **方針**: 空状態コンポーネントは見出しレベルを強制せず、**コンシューマー（使用側）が文書構造に応じて適切なレベルを指定する責任を持ちます**。
 - **実装ガイダンス**: ページのメイン見出しが `<h1>` の場合、空状態の見出しは `<h2>` を使用します。セクション内に配置される場合は、親セクションの見出しレベルに応じて `<h3>` 以下を使用してください。
 
-```html
-<!-- 例: ページ全体の空状態（メイン見出しの次） -->
-<ui-empty-state>
-  <h2 slot="heading">まだメモがありません</h2>
-  ...
-</ui-empty-state>
-
-<!-- 例: セクション内の空状態 -->
-<section>
-  <h2>最近のメモ</h2>
-  <ui-empty-state>
-    <h3 slot="heading">最近のメモはありません</h3>
-    ...
-  </ui-empty-state>
-</section>
-```
-
 **フォーカス管理 (Focus Management)**
 
 - **原則**: 空状態表示時、CTAボタンへの自動フォーカスは**行いません**。
-  - *Rationale*: 原則2「フロー状態の維持」に基づき、ユーザーの意図しない操作（誤クリック）を防ぎます。ページ遷移後のフォーカスは、ブラウザのデフォルト挙動（`<body>` または最初のインタラクティブ要素）に委ねます。
+  - *Rationale*: 原則2「フロー状態の維持」に基づき、ユーザーの意図しない操作（誤クリック）を防ぎます。
+  - **SPA遷移後**: View Transitions API によるページ遷移で空状態が表示された場合も、フォーカスをCTAへ自動移動させません。ページ見出しへのフォーカス管理はルーターの責務とします。
 - **タブ順序**: CTAボタンは自然なタブ順序で到達可能とし、キーボード操作を妨げません。
 
 **Forced Colors Mode (強制カラーモード)**
 
 ```css
 @media (forced-colors: active) {
-  .empty-state__icon {
-    /* システムカラーに追従 */
+  .icon {
+    /* システムカラーに追従。GrayText は補助的要素に適合 */
     color: GrayText;
-    /* または CanvasText（より強いコントラスト） */
   }
-  
-  /* エラーバリアントは強調を維持 */
-  .empty-state--error .empty-state__icon,
-  .empty-state--error .empty-state__heading {
-    color: LinkText; /* システムの強調色 */
+
+  /* エラーバリアント: Highlight でシステムの強調色を使用
+     Note: LinkText（リンク用システムカラー）はリンクとの誤認リスクがあるため使用しない。
+     Highlight（選択背景色）は環境によっては視認性が低い場合があるため、
+     実装時にスクリーンリーダー読み上げとの組み合わせで検証すること。 */
+  :host([variant="error"]) .icon,
+  :host([variant="error"]) .heading {
+    color: Highlight;
   }
 }
 ```
 
-> **Rationale (Forced Colors Strategy):**
-> `GrayText` は補助的な情報に使用されるシステムカラーで、空状態のアイコンの役割（装飾的・補助的）に適合します。エラー状態では `LinkText`（通常は青または赤）を使用し、重要性を視覚的に伝えます。
->
-> **Note (LinkText Usage):**
-> `LinkText` は通常リンクに使用されるシステムカラーですが、Forced Colors Mode では選択肢が限られるため、「重要性の強調」として使用します。実装時には、スクリーンリーダーでの読み上げと併せて、ユーザーが「クリック可能なリンク」と誤認しないか検証してください。
+**7. 印刷スタイル (Print Styles)**
 
-**6. 印刷スタイル (Print Styles)**
+空状態は画面上の一時的な状態表示であり、印刷時には意味を持ちません。ただし、完全に非表示にするとページが空白になるため、テキストのみを残します。
 
-空状態は画面上の一時的な状態表示であり、印刷時には意味を持ちません。ただし、完全に非表示にするとページが空白になるため、簡潔なテキストのみを残します。
+```css
+@media print {
+  :host {
+    /* 最小高さを解除し、パディングを最小化 */
+    min-height: unset;
+    padding: var(--space-4);
+  }
 
-印刷時はアイコンとボタンを非表示にし、テキストのみを表示します。パディングを削減し、`min-height` を解除します。
+  /* アイコンとボタンは印刷不要 */
+  .icon,
+  .actions {
+    display: none !important;
+  }
+}
+```
 
-**7. UXライティングガイダンス (UX Writing Guidelines)**
+**8. UXライティングガイダンス (UX Writing Guidelines)**
 
 **トーン (Tone)**
 
@@ -8884,7 +8895,7 @@ class SaveButton extends LitElement {
 
 - **原則**: シンプルなアイコンで十分です。複雑なイラストレーションは原則として使用しません。
   - *Rationale*: 原則1「没入のための構造」に基づき、装飾的な要素は最小限に抑え、情報のS/N比を維持します。
-- **例外**: ブランド表現上、特別に必要な場合（例: オンボーディング画面）は `slot="illustration"` として定義可能とします。この場合、アイコンは非表示となります。
+- **例外**: ブランド表現上、特別に必要な場合（例: オンボーディング画面）は `slot="illustration"` を使用します。指定時は `slot="icon"` が非表示になります。コンポーネント側で `illustration` スロットの有無を検出し、`icon` スロットを包む要素に `display: none` を設定します。
 
 **バリアントの拡張性 (Variant Extensibility)**
 
@@ -8897,20 +8908,111 @@ class SaveButton extends LitElement {
 
 **追加が想定されるバリアント例**:
 - `filtered`: フィルタ適用後に結果が0件になった場合（`search` との違いは、フィルタ解除のCTAを提供する点）
-- `tutorial`: 初回訪問時のオンボーディング（イラストレーションの使用を許可）
+- `tutorial`: 初回訪問時のオンボーディング（`slot="illustration"` の使用を許可）
 
-**8. アニメーション (Motion)**
+**9. アニメーション (Motion)**
 
 **出現アニメーション (Entrance)**
 
-空状態の出現時、控えめなフェードインを適用します。`var(--duration-normal)` と `var(--ease-out)` を使用し、`translateY(8px)` の微細な上昇効果を含みます。
+空状態の出現時、控えめなフェードインを適用します。`var(--duration-normal)` と `var(--ease-out)` を使用し、`var(--space-2)`（8px）の微細な上昇効果を含みます。
 
-`prefers-reduced-motion: reduce` 時はアニメーションを無効化します。
+```css
+@keyframes empty-state-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-2)); /* 8px */
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+:host {
+  animation: empty-state-enter var(--duration-normal) var(--ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host {
+    animation: none;
+  }
+}
+```
 
 > **Rationale (Subtle Animation):**
-> 8pxの微細な移動は、コンテンツが「現れた」という認知を与えつつ、原則3「デジタルの触感」に基づき、過度な物理シミュレーション（バウンス等）を排除します。
+> `var(--space-2)`（8px）の微細な移動は、コンテンツが「現れた」という認知を与えつつ、原則3「デジタルの触感」に基づき、過度な物理シミュレーション（バウンス等）を排除します。`translateY` の値にスペーシングトークンを使用することで、スペーシングスケール変更時の一貫性を保ちます。
+
+**10. DOM構造例 (Suggested DOM Structure)**
+
+> **Note**: `aria-label` はコンポーネントが `heading` スロットから自動的に取得します。使用側での明示は不要です。
+
+```html
+<!-- デフォルト（メモなし）: slot="heading" は必須 -->
+<ui-empty-state>
+  <iconify-icon slot="icon" icon="lucide:inbox" aria-hidden="true"></iconify-icon>
+  <h2 slot="heading">まだメモがありません</h2>
+  <p slot="description">新しいメモを作成して、アイデアを書き留めましょう。</p>
+  <ui-button slot="action" variant="primary">新規作成</ui-button>
+</ui-empty-state>
+
+<!-- Search バリアント: CTAなし -->
+<ui-empty-state variant="search">
+  <iconify-icon slot="icon" icon="lucide:search-x" aria-hidden="true"></iconify-icon>
+  <h2 slot="heading">「キーワード」に一致する結果が見つかりませんでした</h2>
+  <p slot="description">別のキーワードで検索するか、フィルタを調整してください。</p>
+</ui-empty-state>
+
+<!-- Error バリアント -->
+<ui-empty-state variant="error">
+  <iconify-icon slot="icon" icon="lucide:triangle-alert" aria-hidden="true"></iconify-icon>
+  <h2 slot="heading">データを読み込めませんでした</h2>
+  <p slot="description">しばらく経ってから再度お試しください。</p>
+  <ui-button slot="action" variant="ghost">再試行</ui-button>
+</ui-empty-state>
+
+<!-- セクション内の空状態: 見出しレベルはコンシューマーが調整 -->
+<section>
+  <h2>最近のメモ</h2>
+  <ui-empty-state>
+    <iconify-icon slot="icon" icon="lucide:clock" aria-hidden="true"></iconify-icon>
+    <h3 slot="heading">最近のメモはありません</h3>
+    <p slot="description">過去7日間に編集されたメモが表示されます。</p>
+  </ui-empty-state>
+</section>
+
+<!-- 複数アクション -->
+<ui-empty-state>
+  <iconify-icon slot="icon" icon="lucide:folder-open" aria-hidden="true"></iconify-icon>
+  <h2 slot="heading">タグを作成しましょう</h2>
+  <p slot="description">タグを使ってメモを整理できます。</p>
+  <ui-button slot="action" variant="primary">タグを追加</ui-button>
+  <ui-button slot="action" variant="ghost">インポート</ui-button>
+</ui-empty-state>
+
+<!-- Shadow DOM 内部の実装詳細:
+     host: role="status" aria-atomic="true" aria-label="（heading スロットから自動取得）"
+     .icon: aria-hidden="true" スロットラッパー
+     .heading: slot="heading" のラッパー
+     .description: slot="description" のラッパー
+     .actions: slot="action" のラッパー -->
+```
+
+**11. 受け入れ基準 (Acceptance Criteria)**
+
+- **Role Placement**: `role="status"` がホスト要素（`<ui-empty-state>`）にのみ存在し、外側のコンテナで重複しないこと。
+- **aria-label 自動同期**: `slot="heading"` のテキストが変更された際、ホスト要素の `aria-label` が `slotchange` イベント経由で正しく更新されること。
+- **Variant Styling**: `variant="error"` 時に `.icon` と `.heading` が `--fg-danger` で描画され、`variant="search"` 時に `.icon` が `--fg-subtle` で描画されること。
+- **Heading Level Freedom**: `slot="heading"` に `<h2>`, `<h3>`, `<h4>` のいずれを渡しても、レイアウトが崩れないこと。
+- **slot="heading" Required**: `slot="heading"` が未指定の場合、コンソールに警告を出力すること（`aria-label` が空になるため）。
+- **slot="illustration" 優先**: `slot="illustration"` が指定された場合、`slot="icon"` ラッパーが非表示になること。
+- **Reduced Motion**: `prefers-reduced-motion: reduce` で出現アニメーションが無効化されること。
+- **Forced Colors**: `variant="error"` 時に `.icon` と `.heading` が `Highlight` システムカラーで強調表示されること。デフォルト・search バリアントでは `.icon` が `GrayText` に追従すること。
+- **Print**: 印刷時に `.icon` と `.actions` が非表示になり、テキストのみが残ること。`min-height` が解除されること。
+- **Animation Token**: 出現アニメーションの移動量に `var(--space-2)` が使用され、ハードコードの `8px` が存在しないこと。
 
 #### バナー (Banner) `<ui-banner>`
+
+> **ステータス**: `Beta` — API安定。スタイリングの詳細は変更される可能性があります。
 
 **1. デザイン哲学と目的 (Design Philosophy)**
 
@@ -8920,152 +9022,231 @@ class SaveButton extends LitElement {
 
 **2. ロジック参照基盤 (Logic Reference)**
 
-- **Structure**: ヘッダー直下、またはコンテンツ最上部に配置されるブロック要素。
-- **A11y**: 重要な情報は `role="alert"`、それ以外は `role="status"`。
+- **Native**: 対応する標準HTML要素は存在しません。Shadow DOMを持つカスタム要素として実装します。
+- **Semantic Structure**: ホスト要素（`<ui-banner>`）自体が `role="alert"` または `role="status"` を担います。Shadow DOM内部はフラットな構造とし、スロットでコンシューマーからコンテンツを受け取ります。
 - **Positioning**: `position: static`（通常フロー）。複数のバナーが存在する場合は垂直にスタックします。
+- **Porting Strategy**: 自前実装。状態表示の責務はアプリケーション層に委ね、このコンポーネントは表示のみを担います。
 
-**3. 技術仕様とAPI (Technical Specs)**
+**3. コンポーネント定義**
+
+- **`<ui-banner>`**: アプリケーション全体に関わる持続的な状態通知を表示するブロック要素。ヘッダー直下に配置し、ページ幅全体を占有します。
+
+**4. 技術仕様とAPI (Technical Specs)**
+
+**スロット (Slots)**
+
+| スロット | 必須 | デフォルト | 説明 |
+| :--- | :--- | :--- | :--- |
+| (default) | **はい** | - | メッセージ本文。`<span>` または `<p>` を推奨。スクリーンリーダーはこのコンテンツをホスト要素の `role` に従って読み上げます。 |
+| `slot="icon"` | いいえ | variant毎に自動 | 状態を表すアイコン。未指定時は `variant` に対応するデフォルトアイコン（`info: lucide:info`, `warning: lucide:triangle-alert`, `error: lucide:circle-x`, `success: lucide:circle-check`）を表示。 |
+| `slot="action"` | いいえ | - | バナー内のCTAリンクやボタン（例:「詳細を見る」「再試行」）。メッセージの右側に配置。 |
+
+**プロパティ (Properties)**
 
 | プロパティ | 属性 | 型/値 | デフォルト | 説明 |
-|------------|------|-------|-----------|------|
+| :--- | :--- | :--- | :--- | :--- |
 | `variant` | `variant` | `'info' \| 'warning' \| 'error' \| 'success'` | `'info'` | メッセージの重要度。 |
-| `dismissible`| `dismissible`| `boolean` | `false` | 閉じるボタンを表示するか。 |
-| `role` | `role` | `'alert' \| 'status'` | Auto | ARIA Role。未指定時は `variant` に基づき自動設定（`error` → `alert`、それ以外 → `status`）。 |
+| `dismissible` | `dismissible` | `boolean` | `false` | 閉じるボタンを表示するか。 |
 
-**Variant と Role のマッピング戦略**
+**ARIA Role 自動マッピング**
+
+`role` はネイティブHTML属性として直接ホスト要素に設定されます。コンポーネントは `variant` の変更を監視し、`role` 属性が明示的に指定されていない場合のみ自動マッピングを行います。
 
 | Variant | デフォルト Role | 理由 |
-|---------|----------------|------|
+| :--- | :--- | :--- |
 | `info` | `status` | 情報提供。緊急性は低い。 |
 | `success` | `status` | 成功通知。緊急性は低い。 |
 | `warning` | `status` | 注意喚起。ユーザーの操作を強制しない。 |
 | `error` | `alert` | エラー状態。即座の認識が必要。 |
 
 > **Note (Role Override):**
-> 実装者は `role` プロパティを明示的に指定することで、デフォルトのマッピングを上書きできます。例えば、`variant="warning"` でも緊急性が高い場合は `role="alert"` を指定します。
+> コンシューマーは `<ui-banner role="alert">` のようにネイティブ `role` 属性を直接指定することで、デフォルトのマッピングを上書きできます。例えば、`variant="warning"` でも緊急性が高い場合は `role="alert"` を指定します。
 
-**4. スタイリングとトークンマッピング (Style & Tokens)**
+```typescript
+// コンポーネント内部の実装例: role の自動マッピング
+private _roleExplicitlySet = false;
+
+override updated(changedProperties: PropertyValues) {
+  // role 属性が明示的に指定されていない場合のみ自動設定
+  if (changedProperties.has('variant') && !this._roleExplicitlySet) {
+    this.setAttribute('role', this.variant === 'error' ? 'alert' : 'status');
+  }
+}
+
+// コンシューマーによる明示的 role 指定を検出
+override attributeChangedCallback(name: string, old: string | null, value: string | null) {
+  super.attributeChangedCallback(name, old, value);
+  if (name === 'role' && value !== null) {
+    this._roleExplicitlySet = true;
+  }
+}
+```
+
+**5. スタイリングとトークンマッピング (Style & Tokens)**
 
 **コンテナ (Container)**
 
-| プロパティ | 値 | 説明 |
-|-----------|-----|------|
-| `width` | `100%` | ページ全体の幅を占有。 |
-| `padding` | `var(--space-3) var(--space-4)` | 上下: 12px、左右: 16px。 |
-| `display` | `flex` | アイコン、メッセージ、閉じるボタンを横並びに配置。 |
-| `align-items` | `center` | 垂直方向の中央揃え。 |
-| `gap` | `var(--space-3)` | 要素間の間隔: 12px。 |
-| `min-height` | `var(--control-height-md)` | 最小高さ: 32px（タッチターゲット確保）。 |
+```css
+:host {
+  /* レイアウト: アイコン・メッセージ・アクション・閉じるボタンを横並びに */
+  display: flex;
+  align-items: center;
+  gap: var(--space-3); /* 12px */
+
+  /* 幅: ページ全体を占有 */
+  width: 100%;
+
+  /* 余白 */
+  padding: var(--space-3) var(--space-4); /* 上下: 12px、左右: 16px */
+
+  /* 最小高さ: タッチターゲット最小サイズに合わせ、バナー全体のタッチ操作を保証 */
+  min-height: var(--control-min-touch); /* 44px */
+
+  /* 下部強調ボーダー: バリアント毎に色が異なるため、デフォルトは透明 */
+  border-bottom: 2px solid transparent;
+}
+```
+
+> **Rationale (min-height):**
+> `--control-height-md` (32px) はフォームコントロール用のトークンであり、バナーに適用するのは意味論的に不適切です。バナーの最小高さはタッチターゲット保証を目的とするため、`--control-min-touch` (44px) を直接参照します。ただし CSS カスタムプロパティはそのまま `min-height` に指定可能なため、`min-height: var(--control-min-touch)` と記述します。
+
+> **Rationale (Border 2px):**
+> 通常のボーダー（`1px`）ではなく `2px` を使用することで、バナーの「重要性」を視覚的に強調します。これは原則1「没入のための構造」に基づき、ユーザーの注意を適切に引きつけるための意図的な設計です。
 
 **バリアント別スタイル (Variant Styles)**
 
-| Variant | Background (Light) | Background (Dark) | Text Color | Icon Color | Border Color |
-|---------|-------------------|-------------------|------------|------------|--------------|
-| **Info** | `var(--bg-tip-subtle)` | `var(--bg-tip-subtle)` | `var(--fg-info)` | `var(--fg-info)` | `var(--primary)` |
-| **Success** | `var(--bg-success-subtle)` | `var(--bg-success-subtle)` | `var(--fg-success)` | `var(--fg-success)` | `var(--success)` |
-| **Warning** | `var(--bg-warning-subtle)` | `var(--bg-warning-subtle)` | `var(--fg-warning)` | `var(--fg-warning)` | `oklch(75% 0.16 85)` (Light) / `oklch(85% 0.16 85)` (Dark) |
-| **Error** | `var(--bg-danger-subtle)` | `var(--bg-danger-subtle)` | `var(--fg-danger)` | `var(--fg-danger)` | `var(--border-danger)` |
+| Variant | 背景色 | テキスト色 | アイコン色 | ボーダー色 |
+| :--- | :--- | :--- | :--- | :--- |
+| **Info** | `var(--bg-tip-subtle)` | `var(--fg-info)` | `var(--fg-info)` | `var(--primary)` |
+| **Success** | `var(--bg-success-subtle)` | `var(--fg-success)` | `var(--fg-success)` | `var(--success)` |
+| **Warning** | `var(--bg-warning-subtle)` | `var(--fg-warning)` | `var(--fg-warning)` | `var(--border-warning)` |
+| **Error** | `var(--bg-danger-subtle)` | `var(--fg-danger)` | `var(--fg-danger)` | `var(--border-danger)` |
 
-> **Rationale (Warning Border Color):**
-> `--warning` トークンは Fill 背景用に設計されており、Dark Mode では `L 25%` という低明度値を持ちます。一方、バナーの Subtle 背景 (`--bg-warning-subtle`) 上でのボーダーとしては視認性が不足するため、`--on-warning` と同じ明度（Light: `L 75%` / Dark: `L 85%`）を使用します。これにより、Subtle 背景上でも WCAG AA 基準のコントラストを確保します。
+> **Note (`--bg-tip-subtle` 命名):**
+> Info バリアントの背景トークン名が `--bg-tip-subtle`（variant 名 `info` ではなく `tip`）なのは、このトークンが `index.md` で「Tip (Primary) 背景」として定義されており、Primary カラー系の Subtle 背景として汎用的に使用されるためです。命名の乖離は認識していますが、既存トークン定義との整合性を優先し、バナー仕様ではこのトークンをそのまま参照します。
 
-- **Border**: 下部に `2px solid` の強調線を追加します（色はバリアント毎）。
-    - *Rationale*: 通常のボーダー（`1px`）ではなく `2px` を使用することで、バナーの「重要性」を視覚的に強調します。これは原則1「没入のための構造」に基づき、ユーザーの注意を適切に引きつけるための意図的な設計です。
+> **Note (`--border-warning`):**
+> `--warning` トークン（Fill 背景用）は Dark Mode で `L 25%` という低明度値のため Subtle 背景上でのボーダーに不適です。`index.md` に `--border-warning` トークン（Light: `oklch(72% 0.15 85)` / Dark: `oklch(35% 0.1 85)`）を追加し、`--border-danger` と同パターンで定義しています。
+
+```css
+:host([variant="info"]) {
+  background: var(--bg-tip-subtle);
+  border-bottom-color: var(--primary);
+  color: var(--fg-info);
+}
+
+:host([variant="success"]) {
+  background: var(--bg-success-subtle);
+  border-bottom-color: var(--success);
+  color: var(--fg-success);
+}
+
+:host([variant="warning"]) {
+  background: var(--bg-warning-subtle);
+  border-bottom-color: var(--border-warning);
+  color: var(--fg-warning);
+}
+
+:host([variant="error"]) {
+  background: var(--bg-danger-subtle);
+  border-bottom-color: var(--border-danger);
+  color: var(--fg-danger);
+}
+```
 
 **タイポグラフィ (Typography)**
 
 | 要素 | サイズ | ウェイト | 色 | 行間 |
-|------|--------|---------|-----|------|
-| **Message** | `--text-sm` (13px) | `--font-medium` (500) | Variant毎 | `--line-height-normal` (1.5) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Message** | `--text-sm` (13px) | `--font-medium` (500) | variant毎 | `--line-height-normal` (1.5) |
 
 ```css
-.banner__message {
+.message {
   flex: 1; /* 残りの幅を占有 */
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   line-height: var(--line-height-normal);
+  /* color は :host の color を継承 */
 }
 ```
 
 **アイコン (Icon)**
 
 ```css
-.banner__icon {
+.icon {
   flex-shrink: 0;
   width: var(--icon-base); /* 16px */
   height: var(--icon-base);
-  color: inherit; /* バリアントの色を継承 */
+  /* color は :host の color を継承 */
   /* Lucide の標準 stroke-width: 1.5 を使用 */
 }
+```
 
 > **Note (Icon Stroke Width):**
-> すべてのバリアントで Lucide の標準 `stroke-width: 1.5` を使用します。Subtle 背景上では細い線幅でも十分に視認性を確保できます。
-```
+> すべてのバリアントで Lucide の標準 `stroke-width: 1.5` を使用します。Subtle 背景上では細い線幅でも十分な視認性を確保できます。
 
 **閉じるボタン (Dismiss Button)**
 
 ```css
-.banner__dismiss {
+.dismiss {
   flex-shrink: 0;
   width: var(--control-height-sm); /* 24px */
   height: var(--control-height-sm);
   padding: 0;
-  
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  border-radius: var(--radius-sm);
+
   /* タッチターゲット拡張 */
   position: relative;
 }
 
-.banner__dismiss::before {
+/* ::after で拡張することで ::before を他用途に開放 */
+.dismiss::after {
   content: '';
   position: absolute;
   inset: calc((var(--control-min-touch) - var(--control-height-sm)) / -2);
-  /* 44px - 24px = 20px → -10px の拡張 */
+  /* (44px - 24px) / 2 = 10px → -10px の拡張 */
 }
 
-.banner__dismiss:hover {
+.dismiss:hover {
   background: var(--bg-hover);
-  border-radius: var(--radius-sm);
 }
 ```
 
 > **Rationale (Touch Target):**
-> 閉じるボタンの視覚サイズは `24px` ですが、疑似要素 `::before` により物理的なタッチターゲットを `44px` に拡張し、WCAG 2.5.5 (Target Size) に準拠します。
+> 閉じるボタンの視覚サイズは `24px` ですが、疑似要素 `::after` により物理的なタッチターゲットを `44px` に拡張し、WCAG 2.5.5 (Target Size) に準拠します。`::after` を使用するのは `index.md` の実装パターンとの一貫性のためです。
 
-**5. アクセシビリティ (A11y)**
+**6. アクセシビリティ (A11y)**
 
 **セマンティクス (Semantics)**
 
-- **Role**: `role="alert"` または `role="status"`。
+- **Role**: セクション4「ARIA Role 自動マッピング」に定義された通り、`variant` に基づきホスト要素に自動設定されます。
   - `role="alert"`: `aria-live="assertive"` が暗黙的に適用され、スクリーンリーダーが即座に読み上げます。
   - `role="status"`: `aria-live="polite"` が暗黙的に適用され、現在の読み上げが終了してから通知します。
-- **Atomic**: `aria-atomic="true"` を明示的に設定し、バナー全体を一つの単位として読み上げます。
+- **Atomic**: `aria-atomic="true"` をコンポーネント内部で明示的に設定し、バナー全体を一つの単位として読み上げます。
 
 > **Note (`aria-atomic` Usage):**
 > `aria-atomic="true"` はバナー全体を「ひとつの通知単位」として読み上げるために設定しています。もしバナー内のメッセージが頻繁に更新される場合（例: 残り時間カウントダウン）、`aria-atomic="false"` を明示的に指定し、変更箇所のみをアナウンスさせることを検討してください。
 >
 > **動的更新時の推奨設定:**
 > | シナリオ | `aria-atomic` | 理由 |
-> |----------|---------------|------|
+> | :--- | :--- | :--- |
 > | **静的メッセージ** | `true` (デフォルト) | バナー全体を一度だけ読み上げる |
 > | **カウントダウン等の高頻度更新** | `false` | 変更箇所のみをアナウンスし、冗長な読み上げを回避 |
 > | **メッセージ内容の全面更新** | `true` | 新しいメッセージ全体を読み上げる |
 
-```html
-<div class="banner banner--warning" role="status" aria-atomic="true">
-  <lucide-icon class="banner__icon" name="alert-triangle"></lucide-icon>
-  <span class="banner__message">メンテナンスのため、2月15日 深夜0時から2時間程度サービスを停止します。</span>
-</div>
-```
-
 **閉じるボタンのアクセシビリティ (Dismiss Button A11y)**
 
 ```html
-<button 
-  class="banner__dismiss" 
+<button
+  class="dismiss"
   aria-label="通知を閉じる"
   type="button"
 >
-  <lucide-icon name="x" aria-hidden="true"></lucide-icon>
+  <iconify-icon icon="lucide:x" aria-hidden="true"></iconify-icon>
 </button>
 ```
 
@@ -9074,16 +9255,58 @@ class SaveButton extends LitElement {
 
 **フォーカス管理 (Focus Management)**
 
-- **閉じた後のフォーカス**: バナーにはトリガー要素が存在しないため、閉じた後のフォーカスは**次のインタラクティブ要素**（通常はヘッダーの検索ボタン等）へ移動します。
-  - *Implementation*: ネイティブにフォーカス可能な要素（`<a>`, `<button>` など）を含む堅牢なセレクタを使用します。
+- **閉じた後のフォーカス**: バナーにはトリガー要素が存在しないため、閉じた後のフォーカスは DOM 上で次に来るフォーカス可能な要素へ移動します。
+
+```typescript
+// 閉じる処理の実装例
+private _dismiss() {
+  // 閉じる前に次のフォーカス対象を特定
+  const focusable = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  const next = this.nextElementSibling?.querySelector<HTMLElement>(focusable)
+    ?? document.querySelector<HTMLElement>(`main ${focusable}`);
+
+  // アニメーション終了後にフォーカス移動・削除
+  this.addEventListener('animationend', () => {
+    this.remove();
+    next?.focus();
+  }, { once: true });
+
+  this.setAttribute('data-dismissing', '');
+}
+```
 
 **Forced Colors Mode (強制カラーモード)**
 
-- Subtle背景色はForced Colors Modeで消失するため、`CanvasText` のボーダーで構造を維持します。
-- Error バリアントは `LinkText` を使用し、重要性を視覚的に伝えます。
-- 閉じるボタンは `border: 1px solid ButtonText` で構造を明示します。
+```css
+@media (forced-colors: active) {
+  :host {
+    /* Subtle 背景色はシステムにより Canvas に置換されるため、
+       ボーダーで構造を維持する */
+    border: 1px solid CanvasText;
+    border-bottom-width: 2px;
+  }
 
-**6. レイアウトと配置 (Layout & Placement)**
+  .icon {
+    /* システムカラーに追従。GrayText は補助的要素に適合 */
+    color: GrayText;
+  }
+
+  /* エラーバリアント: Highlight でシステムの強調色を使用
+     Note: LinkText（リンク用システムカラー）はリンクとの誤認リスクがあるため使用しない。
+     空状態コンポーネントの設計判断（Highlight 使用）と統一。 */
+  :host([variant="error"]) .icon,
+  :host([variant="error"]) .message {
+    color: Highlight;
+  }
+
+  /* 閉じるボタン: 構造を明示 */
+  .dismiss {
+    border: 1px solid ButtonText;
+  }
+}
+```
+
+**7. レイアウトと配置 (Layout & Placement)**
 
 **配置戦略 (Placement Strategy)**
 
@@ -9093,7 +9316,9 @@ class SaveButton extends LitElement {
 
 ```html
 <ui-header></ui-header>
-<ui-banner variant="warning">...</ui-banner>
+<ui-banner variant="warning">
+  メンテナンスのため、2月15日 深夜0時から2時間程度サービスを停止します。
+</ui-banner>
 <main>
   <!-- メインコンテンツ -->
 </main>
@@ -9101,44 +9326,225 @@ class SaveButton extends LitElement {
 
 **複数バナー時のスタック (Multiple Banners Stacking)**
 
-- バナーコンテナで `flex-direction: column` を使用します。
-- 最後以外のバナーは `border-bottom: none` で重複を回避します。
-- Forced Colors Mode では `border-bottom: 1px solid CanvasText` でセパレータとして境界を維持します。
+複数のバナーを表示する場合、専用のコンテナ要素（例: `<div class="banner-stack">`）で囲み、縦方向に積み重ねます。
 
-**7. アニメーション (Motion)**
+```css
+.banner-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 隣接するバナー間のボーダー重複を防ぐ */
+.banner-stack > ui-banner:not(:last-child) {
+  border-bottom: none;
+}
+
+/* Forced Colors Mode: セパレータとして境界を維持 */
+@media (forced-colors: active) {
+  .banner-stack > ui-banner:not(:last-child) {
+    border-bottom: 1px solid CanvasText;
+  }
+}
+```
+
+**8. アニメーション (Motion)**
 
 **出現アニメーション (Entrance)**
 
-バナーが動的に追加される場合、控えめなスライドインを適用します。`translateY(-100%)` から `translateY(0)` へ、`var(--duration-normal)` と `var(--ease-out)` を使用します。
+バナーが動的に追加される場合、控えめなスライドインを適用します。
 
-`prefers-reduced-motion: reduce` 時はアニメーションを無効化します。
+```css
+@keyframes banner-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+:host {
+  animation: banner-enter var(--duration-normal) var(--ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host {
+    animation: none;
+  }
+}
+```
 
 **消失アニメーション (Exit)**
 
-閉じるボタンをクリックした際のフェードアウト。`max-height` と `padding` を同時にアニメーションさせ、`var(--duration-fast)` と `var(--ease-in)` を使用します。
+閉じるボタンをクリックした際のスライドアウト。`max-height` と `padding` を同時にアニメーションさせ、下のコンテンツがスムーズに上昇します。
 
-`prefers-reduced-motion: reduce` 時は `display: none` で即座に非表示にします。
+```css
+@keyframes banner-exit {
+  from {
+    opacity: 1;
+    max-height: 100px;
+    padding-top: var(--space-3);
+    padding-bottom: var(--space-3);
+  }
+  to {
+    opacity: 0;
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
+:host([data-dismissing]) {
+  animation: banner-exit var(--duration-fast) var(--ease-in) both;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host([data-dismissing]) {
+    animation: none;
+    display: none;
+  }
+}
+```
 
 > **Rationale (Height Collapse):**
-> `max-height` と `padding` を同時にアニメーションさせることで、バナーが消失する際に下のコンテンツがスムーズに上昇します。これにより、レイアウトシフトによる認知負荷を軽減します。
+> `max-height` と `padding` を同時にアニメーションさせることで、バナーが消失する際に下のコンテンツがスムーズに上昇します。これにより、レイアウトシフトによる認知負荷を軽減します。`max-height: 100px` は単一行バナー（`min-height: 44px`）に十分な余裕を持たせた値です。複数行のバナーを許容する場合は、`animationstart` イベント直前に `scrollHeight` を取得して動的に設定することを推奨します。
 
-> **Rationale (`max-height` Value):**
-> `100px` は単一行バナー（`min-height: 32px`）に十分な余裕を持たせた値です。複数行のバナーを許容する場合は、動的に `scrollHeight` を取得して `max-height` を設定することを推奨します。
+**9. 印刷スタイル (Print Styles)**
 
-**8. 印刷スタイル (Print Styles)**
+バナーは画面上の一時的な状態通知であり、印刷時には意味を持ちません。ただし、Error バリアントは重要な情報（障害内容など）を含む可能性があるため、テキストのみ残します。
 
-バナーは画面上の一時的な状態通知であり、印刷時には意味を持ちません。ただし、Error バリアントは重要な情報を含む可能性があるため、テキストのみ表示します。
+```css
+@media print {
+  /* Info, Success, Warning は完全非表示 */
+  :host([variant="info"]),
+  :host([variant="success"]),
+  :host([variant="warning"]) {
+    display: none !important;
+  }
 
-- Info, Success, Warning は非表示。
-- Error のみテキスト表示（アイコンと閉じるボタンは非表示）。
+  /* Error のみテキストを残す */
+  :host([variant="error"]) {
+    background: none;
+    border: none;
+    padding: var(--space-2) 0;
+    min-height: unset;
+    animation: none;
+  }
 
-**9. ダークモード考慮 (Dark Mode)**
+  /* アイコンと閉じるボタンは印刷不要 */
+  :host([variant="error"]) .icon,
+  :host([variant="error"]) .dismiss {
+    display: none !important;
+  }
+}
+```
 
-バリアント別の背景色とテキスト色は、`index.md` で定義された Light/Dark トークンを使用するため、自動的にダークモードに対応します。
+**10. UXライティングガイダンス (UX Writing Guidelines)**
 
-ダークモードではボーダーの視認性を高めるため、`border-bottom-width: 2px` を維持します。Warning のボーダー色は `oklch(85% 0.16 85)` に調整します。
+**トーン (Tone)**
+
+- **明確 (Clear)**: 状況を端的に伝えます。技術用語を避け、ユーザーが次に何をすべきかを明示します。
+- **簡潔 (Concise)**: 1〜2文以内に収めます。詳細はリンク先のページで提供します。
+- **中立 (Neutral)**: バナーは持続的に表示されるため、不安を煽る表現を避けます。
+
+**推奨例 (Good Examples)**
+
+| Variant | メッセージ | CTA |
+| :--- | :--- | :--- |
+| Info | メンテナンスのため、2月15日 深夜0時から2時間程度サービスを停止します。 | 詳細を見る |
+| Warning | お使いのセッションは30分後に期限切れになります。 | セッションを延長 |
+| Error | サービスへの接続に問題が発生しています。 | 再試行 |
+| Success | データのバックアップが完了しました。 | - |
+
+**非推奨例 (Bad Examples)**
+
+| 問題のある表現 | 理由 |
+| :--- | :--- |
+| 「エラー 503: Service Unavailable」 | 技術的すぎる。ユーザーに行動指針を与えない。 |
+| 「重大な障害が発生しました！！！」 | 過度に不安を煽る。感嘆符の多用は避ける。 |
+| 「システムメンテナンスのため一部機能が制限される場合があります。ご不便をおかけして申し訳ありません。ご理解とご協力のほどよろしくお願いいたします。」 | 冗長。バナーの限られた空間に収まらず、読み切れない。 |
+
+**11. DOM構造例 (Suggested DOM Structure)**
+
+> **Note**: `role` と `aria-atomic="true"` はコンポーネントが内部で自動的に設定します。使用側での明示は不要です（Role Override の場合を除く）。
+
+```html
+<!-- Info バリアント（デフォルト）: メッセージのみ -->
+<ui-banner variant="info">
+  メンテナンスのため、2月15日 深夜0時から2時間程度サービスを停止します。
+</ui-banner>
+
+<!-- Info + カスタムアイコン + アクション -->
+<ui-banner variant="info">
+  <iconify-icon slot="icon" icon="lucide:calendar-clock" aria-hidden="true"></iconify-icon>
+  メンテナンスのため、2月15日 深夜0時から2時間程度サービスを停止します。
+  <a slot="action" href="/maintenance">詳細を見る</a>
+</ui-banner>
+
+<!-- Warning バリアント: セッション期限切れ警告 -->
+<ui-banner variant="warning">
+  お使いのセッションは30分後に期限切れになります。
+  <ui-button slot="action" variant="ghost" size="sm">セッションを延長</ui-button>
+</ui-banner>
+
+<!-- Error バリアント: 接続エラー（role="alert" が自動設定される）+ dismissible -->
+<ui-banner variant="error" dismissible>
+  サービスへの接続に問題が発生しています。
+  <ui-button slot="action" variant="ghost" size="sm">再試行</ui-button>
+</ui-banner>
+
+<!-- Warning を alert として扱う: 明示的 role override -->
+<ui-banner variant="warning" role="alert">
+  セキュリティ上の問題が検出されました。直ちに対応してください。
+  <a slot="action" href="/security">対応方法を確認</a>
+</ui-banner>
+
+<!-- Success バリアント: dismissible -->
+<ui-banner variant="success" dismissible>
+  データのバックアップが完了しました。
+</ui-banner>
+
+<!-- 複数バナーのスタック -->
+<div class="banner-stack">
+  <ui-banner variant="error">
+    サービスへの接続に問題が発生しています。
+  </ui-banner>
+  <ui-banner variant="info" dismissible>
+    新機能「タグ機能」が追加されました。
+    <a slot="action" href="/changelog">変更履歴を見る</a>
+  </ui-banner>
+</div>
+
+<!-- Shadow DOM 内部の実装詳細:
+     host: role="status"|"alert" (自動) aria-atomic="true"
+     .icon: slot="icon" のラッパー（デフォルトアイコンを内包）
+     .message: default slot のラッパー
+     .actions: slot="action" のラッパー
+     .dismiss: dismissible 時のみ表示される閉じるボタン -->
+```
+
+**12. 受け入れ基準 (Acceptance Criteria)**
+
+- **Role 自動マッピング**: `variant="error"` 時に `role="alert"` が自動設定され、他のバリアント（`info`, `success`, `warning`）では `role="status"` が設定されること。
+- **Role Override**: `role` 属性を明示的に指定した場合、自動マッピングが上書きされること。その後 `variant` を変更しても明示値が保持されること。
+- **Variant Styling**: 各バリアントで背景色・テキスト色・ボーダー色が正しいトークンで描画されること。`variant="warning"` のボーダーに `var(--border-warning)` が使用され、ハードコードのOKLCH値が存在しないこと。
+- **Default Slot**: default slot にテキストコンテンツを渡せること。
+- **slot="icon" 自動フォールバック**: `slot="icon"` 未指定時にvariantに対応するデフォルトアイコンが表示されること。指定時はカスタムアイコンのみが表示されること。
+- **slot="action"**: アクションが未指定の場合は非表示になること。複数指定時も横並びに正しく表示されること。
+- **Dismissible**: `dismissible` 属性がある場合のみ閉じるボタンが表示されること。属性がない場合は DOM から除外されること。
+- **Focus Management**: 閉じるボタンクリック後、バナーが DOM から削除され、次のフォーカス可能な要素にフォーカスが移動すること。
+- **Touch Target**: 閉じるボタンのタッチターゲットが `::after` 疑似要素で `44px × 44px` に拡張されること。
+- **Reduced Motion**: `prefers-reduced-motion: reduce` で出現・消失アニメーションが無効化されること。消失時は `display: none` で即座に非表示になること。
+- **Forced Colors**: すべてのバリアントで `border: 2px solid CanvasText` が適用され構造が維持されること。`variant="error"` でアイコンとメッセージが `Highlight` で描画されること。`LinkText` システムカラーが使用されていないこと。
+- **Print**: `variant="info"`, `"success"`, `"warning"` が印刷時に `display: none` になること。`variant="error"` はテキストのみ残り、`.icon` と `.dismiss` が非表示になること。
+- **Animation Tokens**: 出現アニメーションに `var(--duration-normal)` と `var(--ease-out)` が使用されること。消失アニメーションに `var(--duration-fast)` と `var(--ease-in)` が使用されること。ハードコードのタイミング値が存在しないこと。
 
 #### プログレス (Progress) `<ui-progress>`
+
+> **ステータス**: `Beta` — API安定。スタイリングの詳細は変更される可能性があります。
 
 **1. デザイン哲学と目的 (Design Philosophy)**
 
@@ -9151,28 +9557,54 @@ class SaveButton extends LitElement {
 - **Reference**: Native `<progress>` or `role="progressbar"`.
 - **Porting Strategy**: Shadow DOM 内で `role="progressbar"` を実装し、ARIA 属性による完全なアクセシビリティを保証します。
 
-**3. 技術仕様とAPI (Technical Specs)**
+**3. コンポーネント定義**
+
+- **`<ui-progress>`**: 完了までの進捗をインラインの水平バーで可視化するブロック要素。値の変化はCSSトランジションで補間されます。スロットは持たず、Shadow DOM内部のみで完結します。
+
+**4. 技術仕様とAPI (Technical Specs)**
+
+**プロパティ (Properties)**
 
 | プロパティ | 属性 | 型/値 | デフォルト | 説明 |
 |------------|------|-------|-----------|------|
 | `value` | `value` | `number` | `0` | 現在の進捗値（`0` 〜 `max`）。 |
 | `max` | `max` | `number` | `100` | 最大値。 |
 | `label` | `label` | `string` | `undefined` | プログレスバーの目的を示すラベル（例: "ファイルアップロード中"）。 |
-| `valueText` | `value-text` | `string` | `undefined` | カスタム読み上げテキスト（例: "3件中1件完了"）。未指定時は `"{value}%"` が自動生成されます。 |
+| `valueText` | `value-text` | `string` | `undefined` | カスタム読み上げテキスト（例: "3件中1件完了"）。未指定時は `"{percentage}%"` が自動生成されます。 |
 
 **バリデーションとクランプ (Validation \u0026 Clamping)**
 
 - `value < 0` の場合、`0` にクランプされます。
 - `value > max` の場合、`max` にクランプされます。
-- `max <= 0` の場合、エラーをコンソールに出力し、`max` を `100` にフォールバックします。
+- `max <= 0` の場合、開発環境でコンソールにエラーを出力し、`max` を `100` にフォールバックします。
 
-**4. スタイリングとトークンマッピング (Style \u0026 Tokens)**
+**5. スタイリングとトークンマッピング (Style \u0026 Tokens)**
+
+**コンポーネントパブリックトークン (Component Public Tokens)**
+
+`:host` 上で定義し、外部から CSS カスタムプロパティで上書き可能な公開 API です。
+
+```css
+:host {
+  display: block;
+
+  /* 外部からオーバーライド可能なパブリックトークン */
+  --ui-progress-track-height: 4px;
+  --ui-progress-bar-background: var(--primary);
+}
+```
+
+> **Rationale (CSS Custom Properties as Public API):**
+> `::part()` による外部スタイリングは `index.md` の禁止事項（コンポーネントのカプセル化を破壊）に該当するため使用しません。代わりに CSS カスタムプロパティを `:host` 上で公開することで、`index.md` の「コンテキスト伝達パターン」に従い、カプセル化を維持しながら外部からの調整を可能にします。変数名は `--ui-[コンポーネント名]-[プロパティ]` の命名規則に従います。
+
+> **Rationale (Track Height):**
+> `4px` は `index.md` の標準スペーシングトークンには存在しませんが、プログレスバーの視認性と「静謐さ」のバランスを取るための最適値として、コンポーネントパブリックトークンとして定義します。
 
 **Track (トラック)**
 
 | プロパティ | 値 | 説明 |
 |------------|-----|------|
-| `height` | `var(--progress-track-height)` | トラックの高さ。 |
+| `height` | `var(--ui-progress-track-height)` | トラックの高さ。 |
 | `background` | `var(--bg-fill-neutral)` | トラックの背景色。 |
 | `border-radius` | `var(--radius-full)` | 角丸（ピル型）。 |
 | `overflow` | `hidden` | バーの角丸を維持するため。 |
@@ -9181,26 +9613,15 @@ class SaveButton extends LitElement {
 
 | プロパティ | 値 | 説明 |
 |------------|-----|------|
-| `background` | `var(--primary)` | バーの背景色。 |
+| `background` | `var(--ui-progress-bar-background)` | バーの背景色。デフォルトは `var(--primary)`。 |
 | `border-radius` | `var(--radius-full)` | 角丸（ピル型）。 |
 | `transition` | `width var(--duration-normal) var(--ease-out)` | スムーズな幅変化。 |
 | `height` | `100%` | トラックの高さに追従。 |
 
-**コンポーネントローカルトークン (Component-Local Tokens)**
-
-```css
-:host {
-  --progress-track-height: 4px;
-}
-```
-
-> **Rationale (Track Height):**
-> `4px` は `index.md` の標準スペーシングトークンには存在しませんが、プログレスバーの視認性と「静謐さ」のバランスを取るための最適値として、コンポーネントローカルトークンとして定義します。
-
 > **Rationale (Easing Function):**
 > `--ease-out` を採用する理由は、プログレスバーの「増加」が視覚的な「出現」に近いためです。`linear` では機械的な印象を与え、ユーザーの認知と乖離する可能性があります。`ease-out` により、バーが目的地に「吸い付く」ような自然な収束感を提供し、デザイン原則3「デジタルの触感 (Digital Tactility)」に準拠します。
 
-**5. アクセシビリティ (A11y)**
+**6. アクセシビリティ (A11y)**
 
 **ARIA 属性 (ARIA Attributes)**
 
@@ -9210,24 +9631,32 @@ class SaveButton extends LitElement {
 | `aria-valuenow` | `{clampedValue}` | ✅ | 現在の値。 |
 | `aria-valuemin` | `0` | ✅ | 最小値（常に `0`）。 |
 | `aria-valuemax` | `{max}` | ✅ | 最大値。 |
-| `aria-valuetext` | `{valueText}` または `"{percentage}%"` | 推奨 | 読み上げ用テキスト。 |
-| `aria-label` | `{label}` | 推奨 | プログレスバーの目的。 |
+| `aria-valuetext` | `{valueText}` または `"{percentage}%"` | 推奨 | 読み上げ用テキスト。未指定時は割合（例: `"50%"`）が自動生成されます。 |
+| `aria-label` | `{label}` | 推奨 | プログレスバーの目的。`label` プロパティ未指定時は属性ごと省略されます。 |
 
 **実装例 (Implementation Example)**
 
-```html
-<div
-  part="track"
-  role="progressbar"
-  aria-valuenow="${this.clampedValue}"
-  aria-valuemin="0"
-  aria-valuemax="${this.max}"
-  aria-valuetext="${this.valueText || `${this.percentage}%`}"
-  aria-label="${this.label || undefined}"
->
-  <div part="bar" style="width: ${this.percentage}%"></div>
-</div>
+```typescript
+import { ifDefined } from 'lit/directives/if-defined.js';
+
+// render() 内のテンプレート
+html`
+  <div
+    class="track"
+    role="progressbar"
+    aria-valuenow="${this.clampedValue}"
+    aria-valuemin="0"
+    aria-valuemax="${this.max}"
+    aria-valuetext="${this.valueText ?? `${this.percentage}%`}"
+    aria-label="${ifDefined(this.label)}"
+  >
+    <div class="bar" style="width: ${this.percentage}%"></div>
+  </div>
+`
 ```
+
+> **Note (`ifDefined` の使用):**
+> `aria-label="${this.label || undefined}"` と記述すると、Lit テンプレートでは `undefined` が文字列 `"undefined"` としてレンダリングされ、`aria-label="undefined"` という不正な属性が付与されます。`ifDefined` ディレクティブを使用することで、`label` が `undefined` または `null` の場合に属性自体を DOM から除去します。
 
 **ラベルとの関連付け (Label Association)**
 
@@ -9249,51 +9678,110 @@ class SaveButton extends LitElement {
 <ui-progress aria-labelledby="upload-label" value="50"></ui-progress>
 ```
 
-**6. DOM構造とパーツ (DOM Structure \u0026 Parts)**
+**スクリーンリーダーへの通知方針 (Screen Reader Notification)**
 
-**Shadow DOM 構造**
+`role="progressbar"` は暗黙の `aria-live` 値を持ちません。スクリーンリーダーは、ユーザーがフォーカスしたタイミングで `aria-valuenow` と `aria-valuetext` の現在値を読み上げます。自動更新（ファイルアップロード等）の進捗をスクリーンリーダーに随時通知する必要がある場合は、`role="progressbar"` の周辺に `aria-live="polite"` を持つ独立した状態読み上げ領域（ビジュアルリージョン）を設けることを検討してください。
+
+> **Note (`aria-live` を progressbar 自体に設定しない理由):**
+> `aria-live="polite"` を `role="progressbar"` に直接付与すると、頻繁な値の変化（例: 1%刻みの更新）のたびにスクリーンリーダーが割り込み、読み上げが過剰になります。`index.md` の `aria-live` ガイドラインで「進捗率変化は頻繁なため `polite`」と定義されているのは、**別途設けた通知領域**に適用することを意図しています。プログレスバー要素自体には `aria-live` を設定しません。
+
+**7. DOM構造 (DOM Structure)**
+
+スロット: なし。すべての内部要素は Shadow DOM で完結します。
 
 ```html
-<div part="track" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" aria-valuetext="50%">
-  <div part="bar" style="width: 50%"></div>
+<!-- Shadow DOM 内部 -->
+<div
+  class="track"
+  role="progressbar"
+  aria-valuenow="50"
+  aria-valuemin="0"
+  aria-valuemax="100"
+  aria-valuetext="50%"
+>
+  <div class="bar" style="width: 50%"></div>
 </div>
 ```
 
-**外部スタイリングフック (External Styling Hooks)**
+> **Note (内部クラス名について):**
+> 内部要素には `part` 属性を付与しません。`::part()` による外部スタイリングは `index.md` の禁止事項（コンポーネントのカプセル化を破壊）に該当するためです。外部からのカスタマイズが必要な場合は、`:host` 上で公開されている CSS カスタムプロパティ（`--ui-progress-track-height`, `--ui-progress-bar-background`）を使用してください。
 
-`part` 属性により、外部から特定の要素をスタイリング可能です。
-
-- `ui-progress::part(track)` でトラックの高さをカスタマイズできます。
-- `ui-progress::part(bar)` でバーのスタイル（グラデーション等）をカスタマイズできます。
-
-**7. Forced Colors Mode (強制カラーモード)**
+**8. Forced Colors Mode (強制カラーモード)**
 
 Windows ハイコントラストモードなど、OS レベルで色が強制される環境への対応です。
 
-- トラック: `border: 1px solid CanvasText` で構造を維持、`background: Canvas` を使用。
-- バー: `background: Highlight` でシステムの強調色を使用、`border: 1px solid Highlight` で視認性を担保。
+```css
+@media (forced-colors: active) {
+  .track {
+    /* background-color が Canvas に置換されるため、ボーダーで構造を維持 */
+    border: 1px solid CanvasText;
+    background: Canvas;
+  }
+
+  .bar {
+    /* システムの強調色でバーを描画 */
+    background: Highlight;
+    /* ボーダーにより最小幅でも視認性を担保 */
+    border: 1px solid Highlight;
+  }
+}
+```
 
 > **Rationale (Forced Colors Strategy):**
-> プログレスバーは `background-color` で表現されるため、Forced Colors Mode では消失するリスクがあります。`CanvasText` のボーダーで構造を維持し、`Highlight` でアクセント表現を行うことで、視認性を担保します。
+> プログレスバーはトラック・バーともに `background-color` で表現されるため、Forced Colors Mode では消失するリスクがあります。`CanvasText` のボーダーでトラックの構造を維持し、`Highlight` でバーのアクセント表現を行うことで、進捗の視認性を担保します。
 
-**8. モーション軽減 (Reduced Motion)**
+**9. アニメーション (Motion)**
 
-`prefers-reduced-motion` 設定を尊重し、アニメーションを無効化します。`transition-duration: 0.01ms !important` で即座に値を反映します。
+バーの幅変化はCSSトランジションで実装します。バナーのような出現・消失アニメーションはなく、値の変化を滑らかに補間することのみが目的です。
 
-> **Rationale (Motion Reduction):**
-> `index.md` では、モーション軽減は **必須要件** とされています。トランジションが `width` にかかっているため、`prefers-reduced-motion: reduce` 時には即座に値を反映し、ユーザーの不快感や健康被害を防ぎます。
+```css
+.bar {
+  transition: width var(--duration-normal) var(--ease-out);
+}
+```
 
-**9. 印刷スタイル (Print Styles)**
+| トークン | 値 | 理由 |
+|:---|:---|:---|
+| `--duration-normal` | 150ms | ステップ間の補間として自然な速度。300msを超えると「遅い」印象を与え、フロー状態を分断する。 |
+| `--ease-out` | `cubic-bezier(0.33, 1, 0.68, 1)` | バーの増加が「出現」に近いため採用。収束する「吸い付き感」がデザイン原則3「デジタルの触感」に準拠する。 |
 
-印刷時は、プログレスバーを静的な状態で表示します。
+**10. モーション軽減 (Reduced Motion)**
 
-- トラック: `border: 1px solid black`, `background: white` で構造を明示。
-- バー: `background: black` で現在の進捗を表示、`transition: none` でアニメーションを無効化。
+`prefers-reduced-motion: reduce` 時、`index.md` のグローバルルール（`transition-duration: 0.01ms !important`）により、コンポーネントのトランジションは自動的に無効化されます。コンポーネント側でも明示的に `transition: none` を宣言し、意図を明確にします。
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    transition: none;
+  }
+}
+```
+
+> **Note (グローバルルールとの関係):**
+> `index.md` では `*, *::before, *::after { transition-duration: 0.01ms !important; }` をグローバルに適用するため、コンポーネント個別の宣言がなくてもトランジションは事実上無効になります。コンポーネント側での `transition: none` は、Shadow DOM のカプセル化境界における安全策と、仕様としての意図の明示を兼ねています。
+
+**11. 印刷スタイル (Print Styles)**
+
+`index.md` のグローバル印刷スタイルは `* { background: transparent !important; }` を適用するため、トラック・バーの背景色が消失します。プログレスバーは進捗状況という有意義な情報を持つため、`!important` で上書きし、現在の進捗を静的な黒バーとして保持します。
+
+```css
+@media print {
+  .track {
+    border: 1px solid black;
+    background: white !important;
+  }
+
+  .bar {
+    background: black !important;
+    transition: none;
+  }
+}
+```
 
 > **Rationale (Print Strategy):**
-> 動的な状態を静的に表現するため、現在の進捗値を黒のバーとして印刷します。これにより、印刷物でも進捗状況が一目で分かります。
+> プログレスバーは「現在の進捗値」という静的な情報として印刷物でも有意義です。グローバルな `background: transparent !important` に対し、`!important` で上書きすることで、トラックの白背景とバーの黒塗りを確実に印刷します。
 
-**10. 使用例 (Usage Examples)**
+**12. 使用例 (Usage Examples)**
 
 **基本的な使用 (Basic Usage)**
 
@@ -9304,10 +9792,10 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
 **カスタム読み上げテキスト (Custom Value Text)**
 
 ```html
-<ui-progress 
-  value="1" 
-  max="3" 
-  label="処理中" 
+<ui-progress
+  value="1"
+  max="3"
+  label="処理中"
   value-text="3件中1件完了"
 ></ui-progress>
 ```
@@ -9315,7 +9803,7 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
 **動的な更新 (Dynamic Update)**
 
 ```typescript
-const progress = document.querySelector('ui-progress');
+const progress = document.querySelector<HTMLElement & { value: number }>('ui-progress');
 
 // 進捗を更新
 progress.value = 75;
@@ -9328,12 +9816,44 @@ progress.value = 100;
 
 ```html
 <label id="download-label">ダウンロード中</label>
-<ui-progress 
-  aria-labelledby="download-label" 
-  value="30" 
+<ui-progress
+  aria-labelledby="download-label"
+  value="30"
   max="100"
 ></ui-progress>
 ```
+
+**パブリックトークンによるカスタマイズ (Custom Track & Bar)**
+
+```html
+<!-- スタイル側 -->
+<style>
+  .upload-progress {
+    --ui-progress-track-height: 8px;
+    --ui-progress-bar-background: var(--success);
+  }
+</style>
+
+<ui-progress class="upload-progress" value="80" label="アップロード完了間近"></ui-progress>
+```
+
+**13. 受け入れ基準 (Acceptance Criteria)**
+
+- **クランプ動作**: `value < 0` が `0` に、`value > max` が `max` にクランプされること。
+- **max バリデーション**: `max <= 0` の場合、コンソールにエラーが出力され、`max` が `100` にフォールバックされること。
+- **ARIA 必須属性**: `aria-valuenow`, `aria-valuemin`, `aria-valuemax` が正しい値で設定されること。
+- **aria-valuetext 自動生成**: `valueText` 未指定時に `"{percentage}%"` が自動生成されること（例: `value=1, max=3` → `"33%"`）。
+- **aria-valuetext カスタム**: `valueText` 指定時にその値が `aria-valuetext` に設定されること。
+- **aria-label 設定**: `label` プロパティ指定時に `aria-label` が設定されること。未指定時に `aria-label` 属性が DOM から除去されること（`aria-label="undefined"` が付与されないこと）。
+- **aria-labelledby 優先**: `aria-labelledby` と `label` の両方が指定された場合、`aria-labelledby` が優先されること。
+- **パーセンテージ計算**: `(clampedValue / max) * 100` でバー幅が正しく計算されること。
+- **トランジション**: バー幅の変化に `var(--duration-normal)` と `var(--ease-out)` が適用されること。ハードコードのタイミング値が存在しないこと。
+- **パブリックトークン**: `--ui-progress-track-height` と `--ui-progress-bar-background` を上書きするとスタイルが正しく変化すること。
+- **`::part()` 不使用**: DOM に `part` 属性が存在しないこと。
+- **スロットなし**: Shadow DOM 内部にスロットが存在しないこと。
+- **Reduced Motion**: `prefers-reduced-motion: reduce` 時にバー幅の変化が即座（トランジションなし）に反映されること。
+- **Forced Colors**: Forced Colors Mode でトラックに `CanvasText` のボーダーが適用されること。バーに `Highlight` が適用されること。
+- **印刷**: 印刷時にトラックが白背景・黒ボーダーで表示され、バーが黒で進捗を示すこと。グローバル印刷スタイルの `background: transparent !important` に対し正しく上書きされること。
 
 ### オーバーレイ (Overlays)
 
