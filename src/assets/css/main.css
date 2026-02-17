@@ -286,9 +286,10 @@ a:focus-visible {
  * - デフォルトは Nav バリアント（ニュートラル）
  * - Prose Linkと同じ下線オフセット・太さを共有し一貫性を保証
  */
-.ui-link,
-.card:not(.prose) a,
-.sidebar:not(.prose) a {
+.ui-link[href],
+.card :where(a[href]):not(:where(.prose a[href])),
+.callout :where(a[href]):not(:where(.prose a[href])),
+.sidebar :where(a[href]):not(:where(.prose a[href])) {
   cursor: pointer;
   color: var(--fg-default);
   text-decoration: none;
@@ -301,25 +302,28 @@ a:focus-visible {
 }
 
 /* Hover: 下線追加 + プライマリカラーへ変化 */
-.ui-link:hover,
-.card:not(.prose) a:hover,
-.sidebar:not(.prose) a:hover {
+.ui-link[href]:hover,
+.card :where(a[href]):not(:where(.prose a[href])):hover,
+.callout :where(a[href]):not(:where(.prose a[href])):hover,
+.sidebar :where(a[href]):not(:where(.prose a[href])):hover {
   color: var(--primary);
   text-decoration: underline;
   text-decoration-color: currentColor;
 }
 
 /* Active: Tactile Feedback（ボタンと同様のスケール変化） */
-.ui-link:active,
-.card:not(.prose) a:active,
-.sidebar:not(.prose) a:active {
+.ui-link[href]:active,
+.card :where(a[href]):not(:where(.prose a[href])):active,
+.callout :where(a[href]):not(:where(.prose a[href])):active,
+.sidebar :where(a[href]):not(:where(.prose a[href])):active {
   transform: scale(var(--scale-pressed));
 }
 
 /* Focus-Visible: Adaptive Focusリング */
-.ui-link:focus-visible,
-.card:not(.prose) a:focus-visible,
-.sidebar:not(.prose) a:focus-visible {
+.ui-link[href]:focus-visible,
+.card :where(a[href]):not(:where(.prose a[href])):focus-visible,
+.callout :where(a[href]):not(:where(.prose a[href])):focus-visible,
+.sidebar :where(a[href]):not(:where(.prose a[href])):focus-visible {
   outline-style: solid;
   outline-width: var(--focus-ring-width);
   outline-offset: var(--focus-ring-offset);
@@ -329,10 +333,22 @@ a:focus-visible {
 }
 
 /* Visited: UIの透明化を優先、Default状態と統合 */
-.ui-link:visited,
-.card:not(.prose) a:visited,
-.sidebar:not(.prose) a:visited {
+.ui-link[href]:visited,
+.card :where(a[href]):not(:where(.prose a[href])):visited,
+.callout :where(a[href]):not(:where(.prose a[href])):visited,
+.sidebar :where(a[href]):not(:where(.prose a[href])):visited {
   color: var(--fg-default);
+}
+
+/* Sidebar Nav: 階層構造を示すため muted を基準色とする */
+.sidebar .ui-link[href],
+.sidebar :where(a[href]):not(:where(.prose a[href])) {
+  color: var(--fg-muted);
+}
+
+.sidebar .ui-link[href]:visited,
+.sidebar :where(a[href]):not(:where(.prose a[href])):visited {
+  color: var(--fg-muted);
 }
 
 /* ---------------------------------------------------------------------------
@@ -344,11 +360,31 @@ a:focus-visible {
   color: var(--primary);
 }
 
+.ui-link.link-action:visited,
+.link-action:visited {
+  color: var(--primary);
+}
+
 .ui-link.link-action:hover,
 .link-action:hover {
   color: var(--primary-hover);
   text-decoration: underline;
   text-decoration-color: currentColor;
+}
+
+/* Current (Nav only): 現在地は色と物理的インジケータで示す */
+.ui-link[href]:not(.link-action)[aria-current='page'],
+.ui-link[href]:not(.link-action).is-active,
+.card :where(a[href]):not(:where(.prose a[href]))[aria-current='page'],
+.card :where(a[href]):not(:where(.prose a[href])).is-active,
+.callout :where(a[href]):not(:where(.prose a[href]))[aria-current='page'],
+.callout :where(a[href]):not(:where(.prose a[href])).is-active,
+.sidebar :where(a[href]):not(:where(.prose a[href]))[aria-current='page'],
+.sidebar :where(a[href]):not(:where(.prose a[href])).is-active {
+  color: var(--primary);
+  font-weight: var(--font-medium);
+  border-inline-start: var(--border-width-thick) solid var(--primary);
+  padding-inline-start: var(--space-2);
 }
 
 /* ---------------------------------------------------------------------------
@@ -396,10 +432,24 @@ a:focus-visible {
  * --------------------------------------------------------------------------- */
 @media (hover: none) and (pointer: coarse) {
   /* Nav バリアント: デフォルトで色付き */
-  .ui-link,
-  .card:not(.prose) a,
-  .sidebar:not(.prose) a {
+  .ui-link[href]:not(.link-action),
+  .card :where(a[href]):not(:where(.prose a[href])),
+  .callout :where(a[href]):not(:where(.prose a[href])),
+  .sidebar :where(a[href]):not(:where(.prose a[href])) {
     color: var(--primary);
+  }
+
+  /* Prose 除外: 本文リンクは本文仕様を維持 */
+  .card .prose a[href],
+  .callout .prose a[href],
+  .sidebar .prose a[href] {
+    color: inherit;
+  }
+
+  /* Icon Only: 最小タップ領域を確保 */
+  .ui-link.icon-only {
+    min-inline-size: var(--control-min-touch);
+    min-block-size: var(--control-min-touch);
   }
 
   /* Subtle バリアント: 発見可能性を優先し、fg-default に格上げ */
@@ -428,6 +478,16 @@ a:focus-visible {
 }
 
 /* Block Link (card-link) にフォーカス時、親カード全体を強調 */
+.card:focus-within {
+  outline-style: solid;
+  outline-width: var(--focus-ring-width);
+  outline-offset: var(--focus-ring-offset);
+  outline-color: var(--focus-ring-color);
+  border-radius: var(--radius-md);
+  animation: var(--animation-focus);
+}
+
+/* Enhancement: :has() 対応環境では card-link のフォーカスに限定 */
 .card:has(.card-link:focus-visible) {
   outline-style: solid;
   outline-width: var(--focus-ring-width);
@@ -443,39 +503,12 @@ a:focus-visible {
 }
 
 /* ===========================================================================
- * Forced Colors Mode - Contextual Links
- * =========================================================================== */
-
-@media (forced-colors: active) {
-  .ui-link,
-  .card:not(.prose) a,
-  .sidebar:not(.prose) a {
-    color: LinkText;
-    text-decoration-color: currentColor;
-  }
-  
-  .ui-link:visited,
-  .card:not(.prose) a:visited,
-  .sidebar:not(.prose) a:visited {
-    color: VisitedText;
-  }
-  
-  /* Action バリアント: ボタンとして扱う */
-  .ui-link.link-action,
-  .link-action {
-    color: ButtonText;
-    border: var(--border-width) solid ButtonText;
-    padding: var(--space-1) var(--space-2);
-  }
-}
-
-/* ===========================================================================
  * Print Styles - Contextual Links
  * =========================================================================== */
 
 @media print {
   /* ナビゲーションリンク: 印刷時は非表示（ページ内でのみ意味を持つため） */
-  .sidebar a,
+  .sidebar a[href],
   .ui-link.link-nav {
     display: none;
   }
@@ -489,7 +522,8 @@ a:focus-visible {
   }
   
   /* カード内リンク: 下線を表示し、リンクであることを明示 */
-  .card a {
+  .card a,
+  .callout a {
     text-decoration: underline;
     text-decoration-color: currentColor;
   }
