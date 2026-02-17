@@ -95,6 +95,15 @@ const meta: Meta<CopyButton> = {
         defaultValue: { summary: '' },
       },
     },
+    size: {
+      control: 'inline-radio',
+      options: ['sm', 'md'],
+      description: 'ボタンサイズ',
+      table: {
+        type: { summary: "'sm' | 'md'" },
+        defaultValue: { summary: 'sm' },
+      },
+    },
   },
 };
 
@@ -110,11 +119,13 @@ export const Default: Story = {
   args: {
     value: 'コピーされるテキスト',
     label: 'コードをコピー',
+    size: 'sm',
   },
   render: (args) => html`
     <ui-copy-button
       value="${args.value}"
       label="${args.label}"
+      size="${args.size}"
     ></ui-copy-button>
   `,
   play: async ({ canvasElement }) => {
@@ -205,6 +216,7 @@ export const URLCopy: Story = {
   args: {
     value: 'https://example.com/article/design-system',
     label: 'URLをコピー',
+    size: 'sm',
   },
   render: (args) => html`
     <style>
@@ -233,6 +245,7 @@ export const URLCopy: Story = {
       <ui-copy-button
         value="${args.value}"
         label="${args.label}"
+        size="${args.size}"
       ></ui-copy-button>
     </div>
   `,
@@ -248,6 +261,7 @@ export const SuccessState: Story = {
   args: {
     value: 'コピー成功のテスト',
     label: 'コピー',
+    size: 'sm',
   },
   render: (args) => html`
     <style>
@@ -281,6 +295,7 @@ export const SuccessState: Story = {
       <ui-copy-button
         value="${args.value}"
         label="${args.label}"
+        size="${args.size}"
       ></ui-copy-button>
     </div>
   `,
@@ -298,6 +313,7 @@ export const ErrorState: Story = {
   args: {
     value: 'エラーテスト',
     label: 'コピー',
+    size: 'sm',
   },
   render: (args) => html`
     <style>
@@ -335,6 +351,7 @@ export const ErrorState: Story = {
       <ui-copy-button
         value="${args.value}"
         label="${args.label}"
+        size="${args.size}"
       ></ui-copy-button>
     </div>
   `,
@@ -407,6 +424,7 @@ export const DarkMode: Story = {
   args: {
     value: 'ダークモードテスト',
     label: 'コピー',
+    size: 'sm',
   },
   render: (args) => html`
     <style>
@@ -430,6 +448,7 @@ export const DarkMode: Story = {
       <ui-copy-button
         value="${args.value}"
         label="${args.label}"
+        size="${args.size}"
       ></ui-copy-button>
     </div>
   `,
@@ -448,6 +467,7 @@ export const ForcedColorsMode: Story = {
   args: {
     value: 'ハイコントラストモードテスト',
     label: 'コピー',
+    size: 'sm',
   },
   render: (args) => html`
     <style>
@@ -480,6 +500,7 @@ export const ForcedColorsMode: Story = {
       <ui-copy-button
         value="${args.value}"
         label="${args.label}"
+        size="${args.size}"
       ></ui-copy-button>
     </div>
   `,
@@ -547,6 +568,7 @@ export const WithEventHandlers: Story = {
   args: {
     value: 'イベントハンドリングテスト',
     label: 'コピー',
+    size: 'sm',
   },
   render: (args) => html`
     <style>
@@ -584,6 +606,7 @@ export const WithEventHandlers: Story = {
       <ui-copy-button
         value="${args.value}"
         label="${args.label}"
+        size="${args.size}"
         @copy="${(e: CustomEvent<{value: string}>) => {
           const log = document.getElementById('event-log');
           if (log) {
@@ -594,12 +617,12 @@ export const WithEventHandlers: Story = {
             log.scrollTop = log.scrollHeight;
           }
         }}"
-        @copy-error="${(e: CustomEvent<{error: string}>) => {
+        @copy-error="${(e: CustomEvent<{error: unknown}>) => {
           const log = document.getElementById('event-log');
           if (log) {
             const item = document.createElement('div');
             item.className = 'event-log-item event-log-error';
-            item.textContent = `[${new Date().toLocaleTimeString()}] ✗ Copy error: ${e.detail.error}`;
+            item.textContent = `[${new Date().toLocaleTimeString()}] ✗ Copy error: ${String(e.detail.error)}`;
             log.appendChild(item);
             log.scrollTop = log.scrollHeight;
           }
@@ -627,12 +650,14 @@ export const TestSuccessState: Story = {
   args: {
     value: 'テスト用テキスト',
     label: 'コピー',
+    size: 'sm',
   },
   tags: ['!autodocs'], // ドキュメントから除外
   render: (args) => html`
     <ui-copy-button
       value="${args.value}"
       label="${args.label}"
+      size="${args.size}"
     ></ui-copy-button>
   `,
   play: async ({ canvasElement }) => {
@@ -677,6 +702,208 @@ export const TestSuccessState: Story = {
       console.log('✅ All tests passed for TestSuccessState story');
     } finally {
       // モックを元に戻す
+      navigator.clipboard.writeText = originalWriteText;
+    }
+  },
+};
+
+/**
+ * サイズバリアントの比較。
+ *
+ * sm / md の使い分けとヒットエリアの一貫性を確認できます。
+ */
+export const SizeVariants: Story = {
+  render: () => html`
+    <style>
+      .size-variants-demo {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: var(--bg-surface-2, #f5f5f5);
+        border-radius: var(--radius-md, 6px);
+      }
+    </style>
+    <div class="size-variants-demo">
+      <ui-copy-button value="small" label="smサイズをコピー" size="sm"></ui-copy-button>
+      <ui-copy-button value="medium" label="mdサイズをコピー" size="md"></ui-copy-button>
+    </div>
+  `,
+};
+
+/**
+ * 🧪 自動テスト用ストーリー（エラー状態）
+ *
+ * Clipboard API 失敗時の state / icon / live region 切り替えを検証します。
+ */
+export const TestErrorState: Story = {
+  args: {
+    value: 'テスト用テキスト',
+    label: 'コピー',
+    size: 'sm',
+  },
+  tags: ['!autodocs'],
+  render: (args) => html`
+    <ui-copy-button
+      value="${args.value}"
+      label="${args.label}"
+      size="${args.size}"
+    ></ui-copy-button>
+  `,
+  play: async ({ canvasElement }) => {
+    const button = canvasElement.querySelector('ui-copy-button');
+    if (!button) {
+      throw new Error('Copy button component not found');
+    }
+
+    await button.updateComplete;
+
+    const uiButton = button.shadowRoot?.querySelector('ui-button');
+    if (!uiButton) {
+      throw new Error('UI button not found in shadow root');
+    }
+
+    // Clipboard API をモック（失敗を保証）
+    const originalWriteText = navigator.clipboard.writeText.bind(navigator.clipboard);
+    navigator.clipboard.writeText = () => Promise.reject(new Error('Clipboard write failed'));
+
+    try {
+      await userEvent.click(uiButton);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      if (button.getAttribute('state') !== 'error') {
+        throw new Error('Expected state to be "error"');
+      }
+
+      const icon = button.shadowRoot?.querySelector('iconify-icon');
+      if (!icon) {
+        throw new Error('Icon not found');
+      }
+
+      if (icon.getAttribute('icon') !== 'lucide:alert-triangle') {
+        throw new Error('Expected icon to be "lucide:alert-triangle"');
+      }
+
+      const liveRegion = button.shadowRoot?.querySelector('.sr-only');
+      if (!liveRegion) {
+        throw new Error('Live region not found');
+      }
+
+      if (liveRegion.getAttribute('role') !== 'alert') {
+        throw new Error('Expected live region role to be "alert"');
+      }
+
+      if (liveRegion.getAttribute('aria-live') !== 'assertive') {
+        throw new Error('Expected live region aria-live to be "assertive"');
+      }
+    } finally {
+      navigator.clipboard.writeText = originalWriteText;
+    }
+  },
+};
+
+/**
+ * 🧪 自動テスト用ストーリー（タイマー復帰）
+ *
+ * Success 2000ms / Error 3000ms 後に Idle へ復帰する境界条件を検証します。
+ */
+export const TestStateTimerReset: Story = {
+  tags: ['!autodocs'],
+  render: () => html`
+    <div style="display: flex; gap: 1rem;">
+      <ui-copy-button id="success-btn" value="success" label="成功テスト" size="sm"></ui-copy-button>
+      <ui-copy-button id="error-btn" value="error" label="失敗テスト" size="sm"></ui-copy-button>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const successButton = canvasElement.querySelector<CopyButton>('#success-btn');
+    const errorButton = canvasElement.querySelector<CopyButton>('#error-btn');
+    if (!successButton || !errorButton) {
+      throw new Error('Copy button components not found');
+    }
+
+    const successUiButton = successButton.shadowRoot?.querySelector('ui-button');
+    const errorUiButton = errorButton.shadowRoot?.querySelector('ui-button');
+    if (!successUiButton || !errorUiButton) {
+      throw new Error('UI button not found in shadow root');
+    }
+
+    const originalWriteText = navigator.clipboard.writeText.bind(navigator.clipboard);
+    navigator.clipboard.writeText = async (value: string) => {
+      if (value === 'error') {
+        throw new Error('forced error');
+      }
+      return Promise.resolve();
+    };
+
+    try {
+      await userEvent.click(successUiButton);
+      await new Promise((resolve) => setTimeout(resolve, 2100));
+      if (successButton.getAttribute('state') !== 'idle') {
+        throw new Error('Expected success state to reset to idle after 2000ms');
+      }
+
+      await userEvent.click(errorUiButton);
+      await new Promise((resolve) => setTimeout(resolve, 3100));
+      if (errorButton.getAttribute('state') !== 'idle') {
+        throw new Error('Expected error state to reset to idle after 3000ms');
+      }
+    } finally {
+      navigator.clipboard.writeText = originalWriteText;
+    }
+  },
+};
+
+/**
+ * 🧪 自動テスト用ストーリー（連打時の再通知）
+ *
+ * 同一状態への連続遷移でも aria-label と state が更新されることを確認します。
+ */
+export const TestRapidClicksReplay: Story = {
+  tags: ['!autodocs'],
+  args: {
+    value: '連打テスト',
+    label: 'コピー',
+    size: 'sm',
+  },
+  render: (args) => html`
+    <ui-copy-button
+      value="${args.value}"
+      label="${args.label}"
+      size="${args.size}"
+    ></ui-copy-button>
+  `,
+  play: async ({ canvasElement }) => {
+    const button = canvasElement.querySelector('ui-copy-button');
+    if (!button) {
+      throw new Error('Copy button component not found');
+    }
+
+    const uiButton = button.shadowRoot?.querySelector('ui-button');
+    if (!uiButton) {
+      throw new Error('UI button not found in shadow root');
+    }
+
+    const originalWriteText = navigator.clipboard.writeText.bind(navigator.clipboard);
+    navigator.clipboard.writeText = async () => Promise.resolve();
+
+    try {
+      await userEvent.click(uiButton);
+      await new Promise((resolve) => setTimeout(resolve, 80));
+      const firstLabel = uiButton.getAttribute('aria-label');
+
+      await userEvent.click(uiButton);
+      await new Promise((resolve) => setTimeout(resolve, 80));
+      const secondLabel = uiButton.getAttribute('aria-label');
+
+      if (button.getAttribute('state') !== 'success') {
+        throw new Error('Expected state to remain success after rapid clicks');
+      }
+
+      if (!firstLabel?.includes('コピーしました') || !secondLabel?.includes('コピーしました')) {
+        throw new Error('Expected aria-label to be updated to success label for repeated clicks');
+      }
+    } finally {
       navigator.clipboard.writeText = originalWriteText;
     }
   },
