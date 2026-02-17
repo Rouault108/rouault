@@ -210,17 +210,15 @@ a:focus-visible {
  * @see docs/design-system/components.md - Prose Link仕様
  * =========================================================================== */
 
-/* Base Style - href属性を持ち、クラスを持たないリンクのみ対象 */
-.prose a[href]:not([class]) {
+/* Base Style - href属性を持つリンクのみ対象 */
+.prose a[href] {
   cursor: pointer;
   color: var(--fg-default); /* 本文色を維持し、読むリズムを優先 */
   text-decoration: underline;
   text-underline-offset: 0.15em; /* Noto Sans JPのベースラインに最適化 */
   
-  /* Fallback: Relative Color Syntax 非対応ブラウザ用 (Chrome <119, Firefox <128) */
+  /* Baseline: Relative Color Syntax 非対応ブラウザ向けの安全なフォールバック */
   text-decoration-color: var(--primary);
-  /* Modern: Relative Color Syntax 対応ブラウザ用 */
-  text-decoration-color: var(--link-decoration-color);
   
   text-decoration-thickness: var(--border-width); /* UI全体の線幅との一貫性 */
   
@@ -233,14 +231,21 @@ a:focus-visible {
   -webkit-box-decoration-break: clone;
 }
 
+/* Progressive Enhancement: Relative Color Syntax 対応環境 */
+@supports (color: oklch(from white l c h)) {
+  .prose a[href] {
+    text-decoration-color: var(--link-decoration-color);
+  }
+}
+
 /* Hover状態 - テキストと下線の両方を色付け */
-.prose a[href]:not([class]):hover {
+.prose a[href]:hover {
   color: var(--primary-hover);
   text-decoration-color: var(--primary-hover);
 }
 
 /* Focus-Visible状態 - テキスト色は変更せず、フォーカスリングのみで状態を示す */
-.prose a[href]:not([class]):focus-visible {
+.prose a[href]:focus-visible {
   outline-style: solid;
   outline-width: var(--focus-ring-width);
   outline-offset: var(--focus-ring-offset);
@@ -254,14 +259,14 @@ a:focus-visible {
 }
 
 /* Visited状態 - 個人メモでは既読管理より読むリズムを優先 */
-.prose a[href]:not([class]):visited {
+.prose a[href]:visited {
   color: var(--fg-default);
   text-decoration-color: var(--link-decoration-color);
 }
 
 /* Touch (No Hover) 判定 - タッチデバイスでは発見可能性を優先 */
 @media (hover: none) and (pointer: coarse) {
-  .prose a[href]:not([class]) {
+  .prose a[href] {
     color: var(--primary);
     text-decoration-color: var(--link-decoration-color-touch);
   }
@@ -491,21 +496,6 @@ a:focus-visible {
 }
 
 /* ===========================================================================
- * Forced Colors Mode - Prose Links
- * =========================================================================== */
-
-@media (forced-colors: active) {
-  .prose a[href]:not([class]) {
-    color: LinkText;
-    text-decoration-color: currentColor;
-  }
-  
-  .prose a[href]:not([class]):visited {
-    color: VisitedText;
-  }
-}
-
-/* ===========================================================================
  * Print Styles - Prose Links
  * =========================================================================== */
 
@@ -525,7 +515,7 @@ a:focus-visible {
   }
   
   /* 下線は常に表示し、リンクであることを明示 */
-  .prose a[href]:not([class]) {
+  .prose a {
     text-decoration: underline;
     text-decoration-color: currentColor;
   }
