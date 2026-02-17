@@ -310,6 +310,7 @@ Rouaultは、色空間として **OKLCH** を採用します。これは、従�
 | `--border-muted` | Semantic | `oklch(20% 0.03 var(--hue-base) / 0.06)` | `oklch(90% 0.01 var(--hue-base) / 0.06)` | Mutedボーダー |
 | `--border-ghost` | Semantic | `oklch(20% 0.03 var(--hue-base) / 0.04)` | `oklch(90% 0.01 var(--hue-base) / 0.04)` | **Ghostボーダー**。「気配」として機能する構造線。 |
 | `--border-danger` | Semantic | `oklch(72% 0.15 25)` | `oklch(35% 0.1 25)` | エラーボーダー |
+| `--border-warning` | Semantic | `oklch(72% 0.15 85)` | `oklch(35% 0.1 85)` | 警告ボーダー。`--warning` (Fill) はDark Modeで `L 25%` と低明度のため Subtle 背景上での境界として不適。`--border-danger` のパターン（L/C同値、Hue差分のみ）で定義。 |
 | `--border-on-inverted` | Semantic | `oklch(from var(--fg-default) l c h / 0.1)` | `oklch(from var(--bg-default) l c h / 0.1)` | **反転背景上のボーダー**。スキップリンク等、`--fg-default` を背景色として使用する要素の境界線。 |
 
 #### コントラスト比保証
