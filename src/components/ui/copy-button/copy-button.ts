@@ -284,7 +284,7 @@ export class CopyButton extends LitElement {
    * コピーボタンクリック時の処理
    * @private
    */
-  private async _handleCopy(): Promise<void> {
+  private _handleCopy = async (): Promise<void> => {
     // 既存のタイマーをクリア
     this._clearStateTimer();
 
@@ -328,7 +328,7 @@ export class CopyButton extends LitElement {
         this.requestUpdate();
       }, 3000);
     }
-  }
+  };
 
   override render() {
     return html`
