@@ -8176,42 +8176,54 @@ ENDED   -> PAUSED (seek/play)
     - **Max Stack Count**: 同時に表示できるトーストの最大数は **3件** とします。
         - *Rationale*: 画面を埋め尽くす状況を避け、原則2「フロー状態の維持」を守ります。
     - **Stacking Order**: 新しいトーストは **上に積む** (最新が最上部)。
-        - *Layout*: `display: flex; flex-direction: column-reverse;` を使用し、DOMの追加順序と視覚的な順序を一致させます。
+        - *Layout*: `display: flex; flex-direction: column;` を使用し、`ToastManager` は新規要素をコンテナ先頭へ `prepend()` します。これにより、**DOM順・視覚順・Tab順**を一致させます。
     - **Overflow Behavior**: 4件目が発生した場合、**最も古いトースト（最下部）を即座に削除**します。
-    - **Duplicate Handling**: 同一メッセージが連続発生した場合、**新規トーストを追加せず、既存トーストの `duration` をリセット**します。
-        - *Implementation Note*: メッセージ内容（`textContent`）のハッシュ値で重複を判定します。
+    - **Duplicate Handling**: 同一内容の通知が連続発生した場合、**新規トーストを追加せず、既存トーストの `duration` をリセット**します。
+        - *Implementation Note*: 重複キーは `variant + normalizedMessage` を使用します。`textContent` 単体での判定は禁止します。
+    - **Auto-dismiss Timer Policy**:
+        - `duration > 0` のトーストは、`pointerenter` または `focusin` でタイマーを一時停止し、`pointerleave` または `focusout` で再開します。
+        - `document.visibilityState === 'hidden'` の間はタイマーを進めません。
+        - *Rationale*: 読み上げ中・操作中に消える事故を防ぎ、Non-blocking と可読性を両立します。
 
 **3. 技術仕様とAPI (Technical Specs)**
 
 | プロパティ | 型/値 | 説明 |
 |------------|-------|------|
-| `variant` | `'success' \| 'warning' \| 'error' \| 'info'` | 通知タイプ。`warning` は警告・注意（重大ではないが確認を促したい場合）に使用します。 |
-| `duration` | `number` | 表示時間（ミリ秒）。デフォルト `4000`（`variant="error"` のみ `6000`）。<br>*Rationale*: `error` はユーザーが内容を読み対処する必要があるため、読む時間を確保します（`index.md` 通知システムより）。<br>**特殊値**: `0` を指定した場合、自動的に消えません（ユーザーが手動で閉じるまで表示）。この場合、`dismissible` は自動的に `true` として扱われます。<br>**フォーカス管理**: `duration: 0` のトーストは Non-blocking の原則を維持するため、**フォーカスを強制的に奪いません**。キーボードユーザーは、現在の操作を完了した後にタブキーで閉じるボタンにアクセスできます。フォーカストラップは実装しません。 |
+| `variant` | `'success' \| 'warning' \| 'danger' \| 'info'` | 通知タイプ。`index.md` の通知システムと命名を統一します。<br>**後方互換**: 既存実装の `error` は `danger` へ内部マッピングし、将来的に削除予定（Draft期間のみ許容）。 |
+| `duration` | `number` | 表示時間（ミリ秒）。デフォルト `4000`（`variant="danger"` のみ `6000`）。<br>*Rationale*: `danger` はユーザーが内容を読み対処する必要があるため、読む時間を確保します（`index.md` 通知システムより）。<br>**特殊値**: `0` を指定した場合、自動的に消えません（ユーザーが手動で閉じるまで表示）。この場合、`dismissible` は自動的に `true` として扱われます。<br>**フォーカス管理**: `duration: 0` のトーストは Non-blocking の原則を維持するため、**フォーカスを強制的に奪いません**。キーボードユーザーは、現在の操作を完了した後にタブキーで閉じるボタンにアクセスできます。フォーカストラップは実装しません。 |
 | `dismissible`| `boolean` | 手動で閉じることができるか。デフォルト `true`。 |
 
 **4. スタイリングとトークンマッピング (Style & Tokens)**
 
 - **Position**:
     - **デスクトップ**: 画面右上 (`top: var(--space-4)`, `right: var(--space-4)`)。
-    - **モバイル** (`max-width: 640px`): 画面下部 (`bottom: var(--space-4)`, `left: var(--space-4)`, `right: var(--space-4)`)。`--toast-width` を `100%` として横幅いっぱいに広げ、タッチ操作の邪魔にならない位置に配置します。
+    - **モバイル** (`max-width: 640px`): 画面下部 (`bottom: var(--space-4)`, `left: var(--space-4)`, `right: var(--space-4)`)。モバイルではコンテナを `inline-size: auto` とし、内側のトーストを `width: 100%` で展開します。
     - *Rationale*: `index.md` 通知システムの配置指針に準拠します。モバイルでは画面上部にコンテンツが集中するため下部への移動が有効です。
 - **Z-Index**: `--z-toast` (500)
 - **Appearance**:
-    - **Width**: `--toast-width` (320px)
+    - **Width**: `--toast-max-width` (320px)
         - *Token Strategy*: トーストコンポーネント専用のトークンであるため、**コンポーネントローカル**（`:host` レベル）で定義します。他のフローティング要素（ツールチップなど）と幅を統一する必要が生じた場合は、`index.md` の Layout Dimensions セクションへの移行を検討してください。
         - *Implementation*:
             ```css
             :host {
-              --toast-width: 320px;
+              --toast-max-width: 320px;
             }
-            
+
+            .toast-container {
+              inline-size: min(var(--toast-max-width), calc(100vw - var(--space-8)));
+            }
+
             @media (max-width: 640px) {
-              :host {
-                --toast-width: calc(100vw - var(--space-8)); /* モバイル時は左右16pxの余白を確保 */
+              .toast-container {
+                inline-size: auto;
+              }
+
+              .toast {
+                inline-size: 100%;
               }
             }
             ```
-        - *Rationale*: ハードコード値を排除し、レスポンシブ対応の余地を残します。
+        - *Rationale*: `left/right` と固定幅の過拘束を避け、viewport依存の崩れを防ぎます。
     - **Background / Icon Color**: バリアントごとにセマンティックトークンを使用します。
 
         | `variant` | 背景色トークン | アイコン色トークン |
@@ -8219,7 +8231,7 @@ ENDED   -> PAUSED (seek/play)
         | `info` | `var(--bg-surface-2)` | `var(--fg-info)` |
         | `success` | `var(--bg-success-subtle)` | `var(--fg-success)` |
         | `warning` | `var(--bg-warning-subtle)` | `var(--fg-warning)` |
-        | `error` | `var(--bg-danger-subtle)` | `var(--fg-danger)` |
+        | `danger` | `var(--bg-danger-subtle)` | `var(--fg-danger)` |
 
         - *Rationale*: 一律 `--bg-surface-3` では色による意味の区別ができません。バリアント別 Subtle 背景色とアイコン色の組み合わせにより、色覚に依存せず variant の意味を伝えます（禁止事項「色のみによる情報伝達」回避）。
     - **Border**: `var(--border-width) solid var(--border-default)`
@@ -8236,9 +8248,9 @@ ENDED   -> PAUSED (seek/play)
 **5. アクセシビリティ (A11y)**
 
 - **Role**:
-    - `variant="info"` または `variant="success"` または `variant="warning"`: `role="status"` (polite)
-    - `variant="error"`: `role="alert"` (assertive)
-    - *Rationale*: `warning` は確認を促す情報であり、読み上げを即時割り込みさせる必要はないため `polite` とします。`error` のみ、即座に伝達が必要な障害情報として `assertive` を使用します（`index.md` `aria-live` 使い分けガイドラインおよびコンポーネント基準表に準拠）。
+    - `variant="info"` または `variant="success"`: `role="status"` (polite)
+    - `variant="warning"` または `variant="danger"`: `role="alert"` (assertive)
+    - *Rationale*: `index.md` の `aria-live` 使い分けガイドラインに合わせ、Warning/Danger は即時伝達を優先します。`assertive` の乱用を避けるため、運用上は「要対処」の通知に限定します。
     - **Container `aria-live` について**: 一般的には、コンテナに `aria-live` を設定せず、個々のトースト要素に `role="status"` / `role="alert"` を設定するアプローチがより明確です。実装時は VoiceOver/NVDA など主要スクリーンリーダーでの実機テストを推奨します。
 - **Dismissible Button (Close)**:
     - **Icon**: `×` (Close icon, `--icon-sm` / 14px)
@@ -8258,7 +8270,7 @@ ENDED   -> PAUSED (seek/play)
 ```html
 <!-- ToastManager Container -->
 <!-- aria-live はコンテナには設定せず、個別トーストの role で制御 -->
-<!-- display: flex; flex-direction: column-reverse; により、DOMの追加順序と視覚的な上積み順序を一致させる -->
+<!-- display: flex; flex-direction: column; + prepend() で最新を先頭に配置 -->
 <div class="toast-container">
   <!-- Success Toast (role="status" = polite) -->
   <output class="toast toast--success" role="status">
@@ -8271,8 +8283,8 @@ ENDED   -> PAUSED (seek/play)
     </button>
   </output>
 
-  <!-- Warning Toast (role="status" = polite) -->
-  <output class="toast toast--warning" role="status">
+  <!-- Warning Toast (role="alert" = assertive) -->
+  <output class="toast toast--warning" role="alert">
     <div class="toast-content">
       <span class="toast-icon" aria-hidden="true">⚠</span>
       <span class="toast-message">変更は保存されていません</span>
@@ -8282,8 +8294,8 @@ ENDED   -> PAUSED (seek/play)
     </button>
   </output>
 
-  <!-- Error Toast (role="alert" = assertive) -->
-  <output class="toast toast--error" role="alert">
+  <!-- Danger Toast (role="alert" = assertive) -->
+  <output class="toast toast--danger" role="alert">
     <div class="toast-content">
       <span class="toast-icon" aria-hidden="true">⚠</span>
       <span class="toast-message">エラーが発生しました</span>
@@ -8310,9 +8322,9 @@ ToastManager.show({
   message: '変更は保存されていません',
 });
 
-// エラー通知（デフォルト 6000ms — 読む時間を確保）
+// 危険通知（デフォルト 6000ms — 読む時間を確保）
 ToastManager.show({
-  variant: 'error',
+  variant: 'danger',
   message: '保存に失敗しました。再度お試しください。',
 });
 
@@ -8323,6 +8335,23 @@ ToastManager.show({
   duration: 0,
 });
 ```
+
+**9. 運用ガードレール (Authoring Guardrails)**
+
+- `warning` / `danger` は `role="alert"` となるため、文言は「要対処」に限定します。進捗や参考情報は `info` / `success` を使います。
+- 重複判定は `variant + normalizedMessage` を必須とし、文言のみで統合しません。
+- `duration > 0` のトーストは hover/focus 中に自動消滅させません。
+- `duration: 0` は必ず閉じるボタン付き（`dismissible=true`）で運用します。
+- コンテナへの `aria-live` 付与は行わず、個々のトースト要素の `role` で通知します。
+
+**10. 受け入れ基準 (Acceptance Criteria)**
+
+- **Live Region Consistency**: `info/success` は `status`、`warning/danger` は `alert` で実装され、`index.md` と矛盾しないこと。
+- **Order Integrity**: 新規トーストが視覚上最上部かつDOM先頭に入り、Tab順序と視覚順序が一致すること。
+- **Duplicate Safety**: `variant + normalizedMessage` で重複統合され、別variant通知の誤統合が起きないこと。
+- **Mobile Layout Robustness**: モバイルで `left/right` 指定と幅指定の競合がなく、横スクロールが発生しないこと。
+- **Timer Usability**: hover/focus中・タブ非表示中は自動消滅タイマーが停止し、読み上げ中の消失が起きないこと。
+- **Print Exclusion**: 印刷時にトーストが表示されないこと（`display: none !important`）。
 
 #### ローディング / スケルトン (Loading State)
 
@@ -8342,6 +8371,10 @@ ToastManager.show({
 - **Reference**: ネイティブには対応するHTML要素なし。
 - **Porting Strategy**: 自前実装。状態管理は各コンテキストのロジック（データフェッチ、画像読み込み等）に委ねます。
 - **CLS Prevention**: スケルトンは読み込み後のコンテンツと同じ寸法（`width`, `height`, `aspect-ratio`）を事前に確保し、レイアウトシフトを防止します。
+- **Loading State Matrix**: `index.md` の `--timeout-async-threshold` (500ms) を厳守し、以下の状態遷移を実装します。
+    - **Pending (< 500ms)**: ローディングUIを表示しません（フリッカー防止）。
+    - **Loading (>= 500ms)**: スケルトン/スピナーを表示し、コンテンツコンテナへ `aria-busy="true"` を付与します。
+    - **Resolved / Rejected**: ローディングUIを解除し、`aria-busy="false"` へ更新します。
 
 **3. コンポーネント定義**
 
@@ -8355,9 +8388,9 @@ ToastManager.show({
 | プロパティ | 属性 | 型/値 | 説明 |
 |------------|------|-------|------|
 | `variant` | `variant` | `'text' \| 'circular' \| 'rectangular'` | 形状タイプ。デフォルト `'rectangular'`（最も汎用的な形状であり、画像・カード・テキストブロックなど多様なコンテンツに適用可能なため）。 |
-| `width` | `width` | `string` | 幅（CSS単位）。例: `'100%'`, `'200px'`。 |
-| `height` | `height` | `string` | 高さ（CSS単位）。 |
-| `animated` | `animated` | `boolean` | Shimmerアニメーション有無。デフォルト `false`（静謐優先）。長時間のローディングが予想される場合のみ `true` を指定します。 |
+| `width` | `width` | `string` | 幅（CSS単位）。例: `'100%'`, `'200px'`。`rectangular` では `height` または `aspect-ratio` と組み合わせて使用します。 |
+| `height` | `height` | `string` | 高さ（CSS単位）。`text` は未指定時 `1em` を適用。`rectangular` で `aspect-ratio` 未指定の場合は必須です。 |
+| `animated` | `animated` | `boolean` | Shimmerアニメーション有無。デフォルト `false`（静謐優先）。**有効化条件**: 想定待機時間の p75 が 3000ms 以上、かつ主要注視領域で停滞誤認リスクがある場合。 |
 
 **`<ui-spinner>`**
 
@@ -8373,7 +8406,7 @@ ToastManager.show({
 
 **コンポーネントローカルトークン (Component-Local Tokens)**
 
-アニメーション速度とShimmerの色は `index.md` の標準トークンでは表現できないため、コンポーネントレベルで定義します。
+アニメーション速度はコンポーネントローカルで定義し、Shimmer色は `index.md` の `--skeleton-shimmer` を優先して参照します（Single Source of Truth）。
 
 > **Design Decision (Animation Independence):**
 > Shimmer/Spinner のアニメーション速度は、UIトランジション用の `--duration-*` トークンとは意図的に独立しています。
@@ -8385,10 +8418,8 @@ ToastManager.show({
   /* Shimmer: ユーザーがローディングを意識しすぎない「穏やかさ」を演出するための速度 */
   --shimmer-duration: 1.5s;
   
-  /* Shimmer Highlight: --bg-fill-neutral から明度を5%上げたハイライト色。
-     index.md の --skeleton-shimmer トークン定義と同一の計算式に準拠。
-     不透明度ではなく明度で制御することで、OKLCH の知覚均一性を維持する。 */
-  --shimmer-highlight: oklch(from var(--bg-fill-neutral) calc(l + 5%) c h);
+  /* Shimmer Highlight: グローバルトークンを既定値として使用 */
+  --shimmer-highlight: var(--skeleton-shimmer);
 
   /* Spinner Rotation: 1サイクルで完全な1回転を行う時間 */
   --spinner-rotation-duration: 2s;
@@ -8400,14 +8431,6 @@ ToastManager.show({
   --spinner-stroke-width: 10%;
 }
 
-/* ダークモード: ダーク背景（--bg-fill-neutral が低輝度）では+5%では変化量が
-   視覚的に不十分なため+10%に調整。不透明度による制御は行わず、
-   明度のみで表現することで OKLCH 計算の一貫性を保つ。 */
-@media (prefers-color-scheme: dark) {
-  :host {
-    --shimmer-highlight: oklch(from var(--bg-fill-neutral) calc(l + 10%) c h);
-  }
-}
 ```
 
 > **SVG Geometry Rationale:**
@@ -8452,8 +8475,10 @@ ToastManager.show({
 - **Role**: 視覚的プレースホルダのみであり、支援技術への通知は不要です。
 - **ARIA Attributes**: `aria-hidden="true"` をコンポーネント内部で付与し、スクリーンリーダーから隠蔽します。
     - *Rationale*: スケルトンは「まだ何もない」状態を視覚的に示すものであり、読み上げる意味のある情報を持ちません。
-- **`aria-busy`（コンテナへの付与）**: `<ui-skeleton>` 個々に `aria-hidden="true"` を付与する一方、それらを包むコンテナには `aria-busy="true"` を設定します。読み込み完了時に `aria-busy="false"` へ更新することで、スクリーンリーダーがコンテンツ領域の状態変化を把握できます。
-    - *Rationale*: `aria-hidden` でスケルトン要素自体を隠しても、コンテナレベルで「現在読み込み中」という情報を伝えなければ、スクリーンリーダーユーザーは状態を把握できません。`index.md` のローディング状態アクセシビリティ指針と整合します。
+- **`aria-busy`（コンテナへの付与）**: `<ui-skeleton>` 個々には付与せず、包むコンテンツコンテナへ `aria-busy="true"` を設定します。読み込み完了時に `aria-busy="false"` へ更新します。
+    - *Rationale*: スケルトン自体は意味情報を持たないため、状態通知はコンテナ責務とします。
+- **読み上げラベル（コンテナ）**: `aria-busy="true"` のコンテナには、`aria-live="polite"` と `aria-label="読み込み中"`、または `.sr-only` テキストで同等の文言を提供します。
+    - *Rationale*: 支援技術には「領域が読み込み中」である事実のみを一度明確に伝え、プレースホルダー列挙を避けます。
 - **Forced Colors Mode**:
     - グラデーションとアニメーションは消失しますが、`background-color` は `Canvas` にマッピングされ構造を維持します。
     - `border: var(--border-width) solid CanvasText` で領域を明示します。
@@ -8461,11 +8486,11 @@ ToastManager.show({
 
 **スピナー (Spinner)**
 
-- **Role**: `role="status"` を付与し、非同期処理の進行中であることを伝えます。
+- **Role**: `<ui-spinner>` の**ホスト要素**に `role="status"` を付与し、内部SVGは `aria-hidden="true"` とします。
 - **ARIA Attributes**:
     - `aria-label="読み込み中"` (デフォルト) または文脈に応じたラベル（例: `"保存中"`）を付与します。
     - `aria-live="polite"` は `role="status"` に暗黙的に含まれます。
-- **`role="status"` の重複回避**: `<ui-spinner>` はコンポーネント内部に `role="status"` を持ちます。外側のコンテナに別途 `role="status"` を付与すると、スクリーンリーダーがライブリージョンを二重に認識する場合があります。
+- **`role="status"` の重複回避**: 外側のコンテナに別途 `role="status"` を付与すると、スクリーンリーダーがライブリージョンを二重に認識する場合があります。
     - **`<ui-spinner>` 単体で通知が完結する場合**（ボタン内など）: コンテナに `role="status"` を付与しない。
     - **オーバーレイなど外側のコンテナが状態を一元管理する場合**: コンテナに `role="status"` を付与せず、`<ui-spinner>` の `aria-label` に文脈に応じたラベルを設定して `<ui-spinner>` に委ねる。セクション8のDOM構造例を参照してください。
 - **Forced Colors Mode**:
@@ -8500,8 +8525,8 @@ ToastManager.show({
 <ui-skeleton variant="rectangular" width="100%" animated style="aspect-ratio: 16 / 9;"></ui-skeleton>
 
 <!-- Card (複数要素の組み合わせ) -->
-<!-- コンテナに aria-busy="true" を付与し、読み込み完了時に aria-busy="false" へ更新する -->
-<div aria-busy="true">
+<!-- コンテナに aria-busy と読み上げ文言を付与し、完了時に解除する -->
+<div aria-busy="true" aria-live="polite" aria-label="読み込み中">
   <ui-skeleton variant="rectangular" width="100%" style="aspect-ratio: 16 / 9;"></ui-skeleton>
   <ui-skeleton variant="text" width="90%" style="margin-top: var(--space-2);"></ui-skeleton>
   <ui-skeleton variant="text" width="70%" style="margin-top: var(--space-1);"></ui-skeleton>
@@ -8523,21 +8548,20 @@ ToastManager.show({
   <ui-spinner size="lg" aria-label="ページを読み込み中"></ui-spinner>
 </div>
 
-<!-- SVG Structure (Shadow DOM 内部の実装詳細) -->
-<svg viewBox="0 0 50 50" role="status" aria-label="読み込み中">
-  <circle cx="25" cy="25" r="20"></circle>
-</svg>
+<!-- Shadow DOM 内部の実装詳細:
+     host: role="status" aria-label="読み込み中"
+     svg: aria-hidden="true" -->
 ```
 
 **Shimmer の使用基準と実装詳細**
 
 **使用基準 (When to Use Shimmer)**
 
-Shimmerアニメーションは、以下の条件を**すべて満たす**場合にのみ使用を検討してください：
+Shimmerアニメーションは、以下の条件を**すべて満たす**場合にのみ使用します：
 
-1. **長時間のローディング**: 3秒以上かかることが予想される処理（大量データのフェッチ、複雑な計算など）。Nielsen Norman Groupが定義する「ユーザーが思考の流れを保てる限界」(10秒) に対し、Rouaultの「静謐優先」原則に基づき、より保守的な3秒を閾値とします。なお `index.md` の `--timeout-async-threshold` (500ms) はOptimistic UI表示判断の閾値であり、Shimmer使用判断とは独立しています。
-2. **ユーザーの注視点**: ローディング領域がユーザーの主要な注視点である（周辺視野ではない）
-3. **停滞感の懸念**: 完全静止では「フリーズした」と誤解される可能性がある
+1. **計測条件**: 該当処理の待機時間が p75 >= 3000ms（RUMまたは開発環境の継続計測で確認）。
+2. **表示条件**: `--timeout-async-threshold` (500ms) を超えてローディングUIが表示される文脈である。
+3. **認知条件**: 主要注視領域で停滞誤認リスクがある。
 
 上記を満たさない場合は、デフォルトの静止スケルトンを使用してください。
 
@@ -8559,6 +8583,15 @@ Shimmerアニメーションは、以下の条件を**すべて満たす**場合
 - **Rationale**: 統一感があり、システム全体が一つの処理として動作していることを示します。個別にずらす（Stagger）アプローチは、実装の複雑さに対して得られる視覚的効果が小さいため採用しません。
 - **Implementation**: デフォルトでは `animation-delay` を設定せず、すべてのスケルトンが同時にアニメーションを開始します。
 - **Dynamic Addition**: 動的にDOMに追加されたスケルトン（例：無限スクロールで追加される新しいカード）は、既存のスケルトンと位相がずれることを許容します。視覚的な違和感は軽微であり、JavaScriptによる位相同期の実装コストに見合う効果は得られません。
+
+**9. 受け入れ基準 (Acceptance Criteria)**
+
+- **State Timing**: Pending (<500ms) でローディングUIが表示されず、500ms経過後のみ表示されること。
+- **A11y Consistency**: スケルトンは `aria-hidden="true"`、コンテナは `aria-busy` の真偽を正しく遷移し、読み上げ文言を提供すること。
+- **Live Region Hygiene**: `role="status"` が `<ui-spinner>` ホストにのみ存在し、外側で重複しないこと。
+- **CLS Guard**: `rectangular` は `height` または `aspect-ratio` 指定なしで本番利用されないこと。
+- **Reduced Motion**: `prefers-reduced-motion: reduce` でShimmer/Spinnerの連続アニメーションが停止すること。
+- **Forced Colors**: スケルトン領域がボーダーで識別可能で、スピナーが `currentColor` 追従を維持すること。
 
 **使用例 (Usage Examples)**
 
