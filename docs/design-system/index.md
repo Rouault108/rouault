@@ -2208,9 +2208,10 @@ input:disabled,
 
 **アクセシビリティ:**
 
-- スケルトン要素に `aria-busy="true"` を設定
-- 読み込み完了時に `aria-busy="false"` に更新
-- スクリーンリーダー用に `aria-label="読み込み中"` を提供
+- スケルトン要素自体は `aria-hidden="true"` とし、読み上げ対象にしない
+- スケルトンを包むコンテナに `aria-busy="true"` を設定
+- 読み込み完了時にコンテナの `aria-busy="false"` へ更新
+- コンテナに `aria-live="polite"` と `aria-label="読み込み中"`（または同等の `.sr-only` テキスト）を提供
 
 #### スピナー
 
