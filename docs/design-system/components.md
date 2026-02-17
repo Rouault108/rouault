@@ -7580,6 +7580,8 @@ ToastManager.show({
 
 #### ローディング / スケルトン (Loading State)
 
+> **ステータス**: `Beta` — API安定。破壊的変更の可能性は低いが、Shimmerアニメーションの実装詳細は変更される可能性があります。
+
 **1. デザイン哲学と目的 (Design Philosophy)**
 
 - **Perceived Performance**: 待ち時間を短く感じさせるための演出です（実際に速くするわけではありません）。
@@ -7637,8 +7639,10 @@ ToastManager.show({
   /* Shimmer: ユーザーがローディングを意識しすぎない「穏やかさ」を演出するための速度 */
   --shimmer-duration: 1.5s;
   
-  /* Shimmer Highlight: グラデーションのハイライト色（モード別に調整可能） */
-  --shimmer-highlight: oklch(from var(--bg-default) l c h / 0.5);
+  /* Shimmer Highlight: --bg-fill-neutral から明度を5%上げたハイライト色。
+     index.md の --skeleton-shimmer トークン定義と同一の計算式に準拠。
+     不透明度ではなく明度で制御することで、OKLCH の知覚均一性を維持する。 */
+  --shimmer-highlight: oklch(from var(--bg-fill-neutral) calc(l + 5%) c h);
 
   /* Spinner Rotation: 1サイクルで完全な1回転を行う時間 */
   --spinner-rotation-duration: 2s;
@@ -7650,10 +7654,12 @@ ToastManager.show({
   --spinner-stroke-width: 10%;
 }
 
-/* ダークモードでは発光感を調整 */
+/* ダークモード: ダーク背景（--bg-fill-neutral が低輝度）では+5%では変化量が
+   視覚的に不十分なため+10%に調整。不透明度による制御は行わず、
+   明度のみで表現することで OKLCH 計算の一貫性を保つ。 */
 @media (prefers-color-scheme: dark) {
   :host {
-    --shimmer-highlight: oklch(from var(--bg-default) calc(l + 10%) c h / 0.4);
+    --shimmer-highlight: oklch(from var(--bg-fill-neutral) calc(l + 10%) c h);
   }
 }
 ```
@@ -7668,13 +7674,21 @@ ToastManager.show({
 **スケルトン (Skeleton)**
 
 - **デフォルト**: 完全静止（静謐優先）。`background-color: var(--bg-fill-neutral)`, `border-radius: var(--radius-sm)` を使用します。
-- **Shimmer Animation**: `animated` 属性でオプトイン。グラデーション（`90deg`, `transparent → var(--shimmer-highlight) → transparent`）による光の表現。`animation: shimmer var(--shimmer-duration) infinite linear` を使用します。
-    - **Direction**: RTL環境でも物理方向（左→右）を維持するため、論理プロパティではなく物理値（`background-position`）を使用します。
+- **Shimmer Animation**: `animated` 属性でオプトイン。`::after` 疑似要素をホスト要素全体に重ね、`translateX(-100%)` → `translateX(100%)` の水平移動でグラデーション（`90deg`, `transparent → var(--shimmer-highlight) → transparent`）による光を走らせます。`animation: shimmer var(--shimmer-duration) infinite linear` を使用します。これは `index.md` の `@keyframes shimmer` 定義と同一の実装です。
+    - **Direction**: 左→右の物理的水平方向。日本語横書きの読書方向（`index.md` 国際化方針: 日本語環境特化）に合致し、「進行」の暗喩として機能します。
 - **Variants**:
     - **Text**: `height: 1em`, `border-radius: var(--radius-sm)`
     - **Circular**: `border-radius: var(--radius-full)`
     - **Rectangular**: デフォルト形状
 - **Motion Reduction**: `prefers-reduced-motion: reduce` 時はアニメーションを無効化し、背景色のみで表示します。
+
+**スケルトン消去トランジション (Dismiss Transition)**
+
+スケルトンがコンテンツに切り替わる瞬間は、ローディング中の唯一の「一回性フィードバック」です。`index.md` のUIトランジショントークンを使用します。
+
+- **スケルトンのフェードアウト**: `opacity: 1` → `opacity: 0`、`var(--duration-normal)` (150ms)、`var(--ease-out)`。
+- **コンテンツのフェードイン**: `opacity: 0` → `opacity: 1`、`var(--duration-slow)` (200ms)、`var(--ease-out)`。スケルトン消去完了後にシーケンシャルに開始します。
+- **Motion Reduction**: `prefers-reduced-motion: reduce` 時は即時置換（トランジションなし）。
 
 **スピナー (Spinner)**
 
@@ -7690,8 +7704,10 @@ ToastManager.show({
 **スケルトン (Skeleton)**
 
 - **Role**: 視覚的プレースホルダのみであり、支援技術への通知は不要です。
-- **ARIA Attributes**: `aria-hidden="true"` を付与し、スクリーンリーダーから隠蔽します。
+- **ARIA Attributes**: `aria-hidden="true"` をコンポーネント内部で付与し、スクリーンリーダーから隠蔽します。
     - *Rationale*: スケルトンは「まだ何もない」状態を視覚的に示すものであり、読み上げる意味のある情報を持ちません。
+- **`aria-busy`（コンテナへの付与）**: `<ui-skeleton>` 個々に `aria-hidden="true"` を付与する一方、それらを包むコンテナには `aria-busy="true"` を設定します。読み込み完了時に `aria-busy="false"` へ更新することで、スクリーンリーダーがコンテンツ領域の状態変化を把握できます。
+    - *Rationale*: `aria-hidden` でスケルトン要素自体を隠しても、コンテナレベルで「現在読み込み中」という情報を伝えなければ、スクリーンリーダーユーザーは状態を把握できません。`index.md` のローディング状態アクセシビリティ指針と整合します。
 - **Forced Colors Mode**:
     - グラデーションとアニメーションは消失しますが、`background-color` は `Canvas` にマッピングされ構造を維持します。
     - `border: var(--border-width) solid CanvasText` で領域を明示します。
@@ -7703,6 +7719,9 @@ ToastManager.show({
 - **ARIA Attributes**:
     - `aria-label="読み込み中"` (デフォルト) または文脈に応じたラベル（例: `"保存中"`）を付与します。
     - `aria-live="polite"` は `role="status"` に暗黙的に含まれます。
+- **`role="status"` の重複回避**: `<ui-spinner>` はコンポーネント内部に `role="status"` を持ちます。外側のコンテナに別途 `role="status"` を付与すると、スクリーンリーダーがライブリージョンを二重に認識する場合があります。
+    - **`<ui-spinner>` 単体で通知が完結する場合**（ボタン内など）: コンテナに `role="status"` を付与しない。
+    - **オーバーレイなど外側のコンテナが状態を一元管理する場合**: コンテナに `role="status"` を付与せず、`<ui-spinner>` の `aria-label` に文脈に応じたラベルを設定して `<ui-spinner>` に委ねる。セクション8のDOM構造例を参照してください。
 - **Forced Colors Mode**:
     - `currentColor` を使用しているため、システムカラー `CanvasText` に自動的に追従します。
 
@@ -7718,45 +7737,48 @@ ToastManager.show({
 
 **スケルトン (Skeleton)**
 
+> **Note**: `aria-hidden="true"` はコンポーネント内部で自動付与されます。使用側での明示は不要です。
+
 ```html
 <!-- Text Line (1行のテキスト) - デフォルト: 静止 -->
-<div class="skeleton skeleton--text" aria-hidden="true" style="width: 80%;"></div>
+<ui-skeleton variant="text" width="80%"></ui-skeleton>
 
 <!-- Avatar (円形) - デフォルト: 静止 -->
-<div class="skeleton skeleton--circular" aria-hidden="true" style="width: 40px; height: 40px;"></div>
+<ui-skeleton variant="circular" width="40px" height="40px"></ui-skeleton>
 
-<!-- Image (矩形、アスペクト比固定でCLS防止) - デフォルト: 静止 -->
-<div class="skeleton skeleton--rectangular" aria-hidden="true" style="aspect-ratio: 16 / 9; width: 100%;"></div>
+<!-- Image (矩形、アスペクト比固定でCLS防止) -->
+<!-- CLS防止のため aspect-ratio はホスト要素に style で直接指定 -->
+<ui-skeleton variant="rectangular" width="100%" style="aspect-ratio: 16 / 9;"></ui-skeleton>
 
-<!-- Animated Skeleton (長時間のローディングが予想される場合) -->
-<div class="skeleton skeleton--rectangular skeleton--animated" aria-hidden="true" style="aspect-ratio: 16 / 9; width: 100%;"></div>
+<!-- Animated Skeleton (長時間のローディングが予想される場合のみ) -->
+<ui-skeleton variant="rectangular" width="100%" animated style="aspect-ratio: 16 / 9;"></ui-skeleton>
 
-<!-- Card (複数要素の組み合わせ) - デフォルト: 静止 -->
-<div class="card-skeleton" aria-hidden="true">
-  <div class="skeleton skeleton--rectangular" style="aspect-ratio: 16 / 9; width: 100%;"></div>
-  <div class="skeleton skeleton--text" style="width: 90%; margin-top: var(--space-2);"></div>
-  <div class="skeleton skeleton--text" style="width: 70%; margin-top: var(--space-1);"></div>
+<!-- Card (複数要素の組み合わせ) -->
+<!-- コンテナに aria-busy="true" を付与し、読み込み完了時に aria-busy="false" へ更新する -->
+<div aria-busy="true">
+  <ui-skeleton variant="rectangular" width="100%" style="aspect-ratio: 16 / 9;"></ui-skeleton>
+  <ui-skeleton variant="text" width="90%" style="margin-top: var(--space-2);"></ui-skeleton>
+  <ui-skeleton variant="text" width="70%" style="margin-top: var(--space-1);"></ui-skeleton>
 </div>
 ```
 
 **スピナー (Spinner)**
 
 ```html
-<!-- Inline (Button) -->
+<!-- Inline (Button): <ui-spinner> が role="status" を担う -->
 <button disabled>
   <ui-spinner size="default" aria-label="保存中"></ui-spinner>
   保存中...
 </button>
 
-<!-- Fullscreen Overlay -->
-<!-- role="status" は暗黙的に aria-live="polite" を含むため、
-     aria-live の明示は冗長だが、ブラウザ互換性のためDefensive Codingとして残す -->
-<div class="loading-overlay" role="status" aria-live="polite">
+<!-- Fullscreen Overlay: コンテナには role="status" を付与しない。
+     <ui-spinner> が role="status" + aria-label で通知を一元管理する。 -->
+<div class="loading-overlay">
   <ui-spinner size="lg" aria-label="ページを読み込み中"></ui-spinner>
 </div>
 
-<!-- SVG Structure (Implementation Detail) -->
-<svg class="spinner" viewBox="0 0 50 50" role="status" aria-label="読み込み中">
+<!-- SVG Structure (Shadow DOM 内部の実装詳細) -->
+<svg viewBox="0 0 50 50" role="status" aria-label="読み込み中">
   <circle cx="25" cy="25" r="20"></circle>
 </svg>
 ```
@@ -7767,7 +7789,7 @@ ToastManager.show({
 
 Shimmerアニメーションは、以下の条件を**すべて満たす**場合にのみ使用を検討してください：
 
-1. **長時間のローディング**: 3秒以上かかることが予想される処理（大量データのフェッチ、複雑な計算など）
+1. **長時間のローディング**: 3秒以上かかることが予想される処理（大量データのフェッチ、複雑な計算など）。Nielsen Norman Groupが定義する「ユーザーが思考の流れを保てる限界」(10秒) に対し、Rouaultの「静謐優先」原則に基づき、より保守的な3秒を閾値とします。なお `index.md` の `--timeout-async-threshold` (500ms) はOptimistic UI表示判断の閾値であり、Shimmer使用判断とは独立しています。
 2. **ユーザーの注視点**: ローディング領域がユーザーの主要な注視点である（周辺視野ではない）
 3. **停滞感の懸念**: 完全静止では「フリーズした」と誤解される可能性がある
 
@@ -7781,9 +7803,7 @@ Shimmerアニメーションは、以下の条件を**すべて満たす**場合
 
 **方向と速度の根拠**
 
-- **方向 (`90deg`)**: 左→右の水平方向。西洋言語の読書方向に合致し、「進行」の暗喩として機能します。
-    - *Note*: 日本語の縦書きコンテンツでは検証が必要ですが、現在のRouaultは横書きを前提とするため `90deg` を採用します。
-    - *RTL Support*: 将来的に `direction: rtl` を含む環境をサポートする場合、Shimmerの方向は**物理方向（常に左→右）を維持**します。これは「進行」の暗喩が視覚的な慣習（プログレスバーなど）に基づくためです。論理プロパティへの変更は不要です。
+- **方向 (`90deg`)**: 左→右の物理的水平方向。日本語横書きの読書方向（`index.md` 国際化方針: 日本語環境特化）に合致し、「進行」の暗喩として機能します。
 - **速度 (`1.5s`)**: 人間の視覚が「変化」として認識しつつ、「焦り」を感じない閾値。2Hz以下（0.5秒以上の周期）の変化は視覚的ストレスを与えないという認知科学的知見に基づきます。
 
 **複数スケルトンの連続配置時のアニメーション同期**
