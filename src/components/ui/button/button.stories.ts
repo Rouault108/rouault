@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './button';
-import type { Button } from './button';
+import { defineButtonA11yContract, type Button } from './button';
 
 /**
  * ## ボタン (Button)
@@ -138,6 +138,20 @@ const meta: Meta<Button> = {
       table: {
         type: { summary: 'string' },
         defaultValue: { summary: 'button' },
+      },
+    },
+    form: {
+      control: 'text',
+      description: 'フォームオーナーの明示（form の id を指定）',
+      table: {
+        type: { summary: 'string' },
+      },
+    },
+    ariaLabel: {
+      control: 'text',
+      description: 'アクセシブル名（icon-only の場合必須）',
+      table: {
+        type: { summary: 'string' },
       },
     },
   },
@@ -495,22 +509,26 @@ export const IconOnly: Story = {
     variant: 'ghost',
     size: 'md',
     iconOnly: true,
+    ariaLabel: '設定を開く',
   },
   render: (args) => html`
-    <style>
-      iconify-icon {
-        font-size: var(--icon-base, 16px);
-      }
-    </style>
+    ${(() => {
+      const a11yContract = defineButtonA11yContract({
+        iconOnly: true,
+        ariaLabel: args.ariaLabel ?? '設定を開く',
+      });
 
-    <ui-button
-      variant="${args.variant}"
-      size="${args.size}"
-      ?icon-only="${args.iconOnly}"
-      aria-label="設定を開く"
-    >
-      <iconify-icon icon="lucide:settings"></iconify-icon>
-    </ui-button>
+      return html`
+        <ui-button
+          variant="${args.variant}"
+          size="${args.size}"
+          ?icon-only="${a11yContract.iconOnly}"
+          aria-label="${a11yContract.ariaLabel}"
+        >
+          <iconify-icon icon="lucide:settings"></iconify-icon>
+        </ui-button>
+      `;
+    })()}
   `,
   play: async ({ canvasElement }) => {
     const button = canvasElement.querySelector('ui-button');
@@ -549,12 +567,15 @@ export const FormSubmit: Story = {
   },
   render: (args) => html`
     <form
+      id="submit-form"
       @submit="${(e: Event) => {
-      e.preventDefault();
-      alert('フォームが送信されました！');
-    }}"
+        e.preventDefault();
+        const form = e.currentTarget as HTMLFormElement;
+        form.dataset['submitCount'] = String(Number(form.dataset['submitCount'] ?? '0') + 1);
+      }}"
     >
       <ui-button
+        id="submit-button"
         variant="${args.variant}"
         size="${args.size}"
         type="${args.type}"
@@ -581,7 +602,119 @@ export const FormSubmit: Story = {
       throw new Error(`Expected type to be 'submit', got '${buttonElement.getAttribute('type') ?? 'null'}'`);
     }
 
+    const form = canvasElement.querySelector<HTMLFormElement>('#submit-form');
+    if (!form) {
+      throw new Error('Submit form not found');
+    }
+
+    buttonElement.click();
+    await button.updateComplete;
+
+    if (form.dataset['submitCount'] !== '1') {
+      throw new Error(`Expected submit count to be 1, got '${form.dataset['submitCount'] ?? 'undefined'}'`);
+    }
+
     console.log('✅ All tests passed for FormSubmit story');
+  },
+};
+
+/**
+ * フォームリセットボタン。
+ *
+ * type="reset" を明示することで、フォーム入力値を初期値へ戻します。
+ */
+export const FormReset: Story = {
+  args: {
+    variant: 'secondary',
+    size: 'md',
+    type: 'reset',
+  },
+  render: (args) => html`
+    <form id="reset-form">
+      <input id="reset-target" type="text" value="初期値" style="margin-right: 0.75rem;" />
+      <ui-button
+        id="reset-button"
+        variant="${args.variant}"
+        size="${args.size}"
+        type="${args.type}"
+      >
+        リセット
+      </ui-button>
+    </form>
+  `,
+  play: async ({ canvasElement }) => {
+    const form = canvasElement.querySelector<HTMLFormElement>('#reset-form');
+    const input = canvasElement.querySelector<HTMLInputElement>('#reset-target');
+    const button = canvasElement.querySelector<HTMLElement>('#reset-button');
+
+    if (!form || !input || !button) {
+      throw new Error('Form reset story elements not found');
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    input.value = '変更後';
+    button.click();
+
+    if (input.value !== '初期値') {
+      throw new Error(`Expected reset value to be '初期値', got '${input.value}'`);
+    }
+
+    console.log('✅ All tests passed for FormReset story');
+  },
+};
+
+/**
+ * フォーム外配置 + form 属性の使用例。
+ *
+ * ボタンがフォーム外でも form 属性でフォームオーナーを指定できます。
+ */
+export const ExternalFormOwnerSubmit: Story = {
+  args: {
+    variant: 'primary',
+    size: 'md',
+    type: 'submit',
+    form: 'external-owner-form',
+  },
+  render: (args) => html`
+    <form
+      id="external-owner-form"
+      @submit="${(e: Event) => {
+        e.preventDefault();
+        const form = e.currentTarget as HTMLFormElement;
+        form.dataset['submitCount'] = String(Number(form.dataset['submitCount'] ?? '0') + 1);
+      }}"
+    >
+      <input type="text" value="dummy" />
+    </form>
+
+    <div style="margin-top: 0.75rem;">
+      <ui-button
+        id="external-owner-submit-button"
+        variant="${args.variant}"
+        size="${args.size}"
+        type="${args.type}"
+        form="${args.form}"
+      >
+        フォーム外から送信
+      </ui-button>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const form = canvasElement.querySelector<HTMLFormElement>('#external-owner-form');
+    const button = canvasElement.querySelector<HTMLElement>('#external-owner-submit-button');
+    if (!form || !button) {
+      throw new Error('External form owner story elements not found');
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 0));
+    button.click();
+
+    if (form.dataset['submitCount'] !== '1') {
+      throw new Error(`Expected submit count to be 1, got '${form.dataset['submitCount'] ?? 'undefined'}'`);
+    }
+
+    console.log('✅ All tests passed for ExternalFormOwnerSubmit story');
   },
 };
 
@@ -755,24 +888,25 @@ export const FocusState: Story = {
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const button = canvasElement.querySelector<Button>('#focus-button');
-    if (!button) {
+    const button = canvasElement.querySelector('#focus-button');
+    if (!(button instanceof HTMLElement)) {
       throw new Error('Button component not found');
     }
 
-    await button.updateComplete;
+    const uiButton = button as Button;
+    await uiButton.updateComplete;
 
     // フォーカスを当てる
-    button.focus();
+    uiButton.focus();
     await new Promise(resolve => setTimeout(resolve, 100));
 
-    const buttonElement = button.shadowRoot?.querySelector('button');
+    const buttonElement = uiButton.shadowRoot?.querySelector('button');
     if (!buttonElement) {
       throw new Error('Button element not found in shadow root');
     }
 
     // テスト: フォーカスが当たっていること
-    if (button.shadowRoot?.activeElement !== buttonElement) {
+    if (uiButton.shadowRoot?.activeElement !== buttonElement) {
       throw new Error('Button should be focused');
     }
 
@@ -1051,7 +1185,7 @@ export const ReducedMotion: Story = {
  * 印刷スタイルの確認。
  * 
  * @media print 時のスタイルを確認します。
- * Shadow を除去し、Primary/Danger は Outline スタイルにフォールバックします。
+ * 仕様に従い、ui-button は非表示になります。
  */
 export const PrintStyles: Story = {
   render: () => html`
@@ -1088,11 +1222,8 @@ export const PrintStyles: Story = {
       <strong>確認方法</strong>: 
       ブラウザの印刷プレビュー（Ctrl+P / Cmd+P）を開いて、以下の挙動を確認してください：
       <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
-        <li>Shadow が除去される</li>
-        <li>Primary/Danger が Outline スタイルにフォールバック</li>
-        <li>Secondary は境界線のみで表示</li>
-        <li>Ghost は非表示</li>
-        <li>Loading 状態のボタンは非表示</li>
+        <li>すべての ui-button が非表示になる</li>
+        <li>アクション名が必要な場合は静的テキストを別要素で用意する</li>
       </ul>
     </div>
 
@@ -1131,7 +1262,7 @@ export const PrintStyles: Story = {
   parameters: {
     docs: {
       description: {
-        story: '印刷時のスタイルを確認します。インク節約と可読性を両立させるため、装飾を最小化します。',
+        story: '印刷時の仕様確認です。ui-button はインタラクティブ要素のため印刷時に非表示となります。',
       },
     },
   },

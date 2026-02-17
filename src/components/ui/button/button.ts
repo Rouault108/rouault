@@ -1,6 +1,28 @@
-import { css, html, LitElement } from 'lit';
+import { css, html, LitElement, type PropertyValues } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
+
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+type ButtonSize = 'sm' | 'md' | 'lg';
+type ButtonType = 'button' | 'submit' | 'reset';
+
+/** @deprecated size="lg" は非推奨です。デザインレビュー承認済みケースでのみ使用してください。 */
+export const BUTTON_SIZE_LG_DEPRECATED = 'lg' as const;
+
+interface IconOnlyA11yRequired {
+  iconOnly: true;
+  ariaLabel: string;
+}
+
+interface IconOnlyA11yOptional {
+  iconOnly?: false;
+  ariaLabel?: string | null;
+}
+
+export type ButtonA11yContract = IconOnlyA11yRequired | IconOnlyA11yOptional;
+
+export const defineButtonA11yContract = <T extends ButtonA11yContract>(contract: T): T => contract;
 
 /**
  * ボタン (Button) コンポーネント
@@ -35,8 +57,8 @@ import { classMap } from 'lit/directives/class-map.js';
  * @cssprop --fg-muted - 控えめなテキスト色
  * @cssprop --danger - Dangerカラー
  * @cssprop --on-danger - Dangerカラー上のテキスト色
- * @cssprop --shadow-sm - 小さめのシャドウ
- * @cssprop --shadow-md - 中程度のシャドウ
+ * @cssprop --elevation-sm - 小さめのセマンティックシャドウ
+ * @cssprop --elevation-md - 中程度のセマンティックシャドウ
  * @cssprop --radius-md - 中程度の角丸
  * @cssprop --font-sans - サンセリフフォントファミリー
  * @cssprop --font-medium - 中程度のフォントウェイト
@@ -145,6 +167,7 @@ export class Button extends LitElement {
 
     /* Small */
     .size-sm {
+      --button-icon-size: var(--icon-sm, 14px);
       height: var(--control-height-sm, 28px);
       padding: 0 var(--space-2, 8px);
       font-size: var(--text-sm, 13px);
@@ -158,6 +181,7 @@ export class Button extends LitElement {
 
     /* Medium (Default) */
     .size-md {
+      --button-icon-size: var(--icon-base, 16px);
       height: var(--control-height-md, 32px);
       padding: 0 var(--space-3, 12px);
       font-size: var(--text-base, 14px);
@@ -171,6 +195,7 @@ export class Button extends LitElement {
 
     /* Large (Deprecated) */
     .size-lg {
+      --button-icon-size: var(--icon-md, 20px);
       height: var(--control-height-lg, 40px);
       padding: 0 var(--space-4, 16px);
       font-size: var(--text-base, 14px);
@@ -190,7 +215,7 @@ export class Button extends LitElement {
       color: var(--on-primary, oklch(100% 0 0));
       box-shadow:
         inset 0 1px 0 0 oklch(100% 0 0 / 0.15),
-        var(--shadow-md, 0 2px 8px oklch(0% 0 0 / 0.12));
+        var(--elevation-md, 0 2px 8px oklch(0% 0 0 / 0.12));
     }
 
     .variant-primary:hover:not(:disabled) {
@@ -202,7 +227,7 @@ export class Button extends LitElement {
       background: var(--bg-surface-2, oklch(97% 0 0));
       color: var(--fg-default, oklch(20% 0.01 250));
       border: var(--border-width, 1px) solid var(--border-default, oklch(90% 0.01 250 / 0.12));
-      box-shadow: var(--shadow-sm, 0 1px 2px oklch(0% 0 0 / 0.05));
+      box-shadow: var(--elevation-sm, 0 1px 2px oklch(0% 0 0 / 0.05));
     }
 
     .variant-secondary:hover:not(:disabled) {
@@ -214,7 +239,7 @@ export class Button extends LitElement {
       .variant-secondary {
         box-shadow:
           inset 0 1px 0 0 oklch(100% 0 0 / 0.1),
-          var(--shadow-sm, 0 1px 2px oklch(0% 0 0 / 0.05));
+          var(--elevation-sm, 0 1px 2px oklch(0% 0 0 / 0.05));
       }
     }
 
@@ -259,6 +284,14 @@ export class Button extends LitElement {
       display: inline-flex;
       align-items: center;
       gap: inherit;
+    }
+
+    .content-slot::slotted(iconify-icon),
+    .content-slot::slotted(svg) {
+      inline-size: var(--button-icon-size);
+      block-size: var(--button-icon-size);
+      font-size: var(--button-icon-size);
+      flex-shrink: 0;
     }
 
     button[aria-busy='true'] .label {
@@ -307,29 +340,9 @@ export class Button extends LitElement {
     }
 
     /* --- Print Styles --- */
-
     @media print {
-      button {
-        box-shadow: none !important;
-      }
-
-      .variant-primary,
-      .variant-danger {
-        background: transparent !important;
-        border: var(--border-width, 1px) solid currentColor !important;
-        color: var(--fg-default, oklch(20% 0.01 250)) !important;
-      }
-
-      .variant-secondary {
-        background: transparent !important;
-      }
-
-      .variant-ghost {
-        display: none;
-      }
-
-      button[aria-busy='true'] {
-        display: none;
+      :host {
+        display: none !important;
       }
     }
 
@@ -341,11 +354,16 @@ export class Button extends LitElement {
         box-shadow: none;
       }
 
-      .variant-primary,
-      .variant-danger {
+      .variant-primary {
         background: Highlight;
         color: HighlightText;
         border-color: Highlight;
+      }
+
+      .variant-danger {
+        background: Canvas;
+        color: CanvasText;
+        border-color: CanvasText;
       }
 
       button:focus-visible {
@@ -371,6 +389,7 @@ export class Button extends LitElement {
       transform: translate(-50%, -50%);
       min-width: 44px;
       min-height: 44px;
+      pointer-events: none;
     }
   `;
 
@@ -383,7 +402,7 @@ export class Button extends LitElement {
    * @default 'secondary'
    */
   @property({ type: String, reflect: true })
-  variant: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' = 'secondary';
+  variant: ButtonVariant = 'secondary';
 
   /**
    * ボタンのサイズ
@@ -391,7 +410,7 @@ export class Button extends LitElement {
    * @default 'md'
    */
   @property({ type: String, reflect: true })
-  size: 'sm' | 'md' | 'lg' = 'md';
+  size: ButtonSize = 'md';
 
   /**
    * アイコンのみのボタン（正方形を強制）
@@ -401,6 +420,13 @@ export class Button extends LitElement {
    */
   @property({ type: Boolean, attribute: 'icon-only', reflect: true })
   iconOnly = false;
+
+  /**
+   * アイコンのみボタンの代替テキスト
+   * @type {string | undefined}
+   */
+  @property({ type: String, attribute: 'aria-label', reflect: true })
+  override ariaLabel: string | null = null;
 
   /**
    * 処理中状態
@@ -425,7 +451,7 @@ export class Button extends LitElement {
    * フォーム送信に使用する場合は type="submit" を明示してください。
    */
   @property({ type: String, reflect: true })
-  type: 'button' | 'submit' | 'reset' = 'button';
+  type: ButtonType = 'button';
 
   /**
    * フォームオーナーの明示
@@ -435,29 +461,26 @@ export class Button extends LitElement {
   form?: string;
 
   private _internals: ElementInternals;
+  private readonly _isDevelopment: boolean;
 
   constructor() {
     super();
     this._internals = this.attachInternals();
+    this._isDevelopment = (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV ?? true;
   }
 
   override connectedCallback(): void {
     super.connectedCallback();
+    this._validateAccessibilityContract();
+    this._warnDeprecatedSizeUsage();
+  }
 
-    // icon-only 時に aria-label がない場合の警告（開発モード）
-    if (this.iconOnly && !this.getAttribute('aria-label')) {
-      console.error(
-        '[ui-button]: icon-only="true" の場合、aria-label は必須です。アクセシビリティのために代替テキストを提供してください。',
-        this,
-      );
+  override willUpdate(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has('iconOnly') || changedProperties.has('ariaLabel')) {
+      this._validateAccessibilityContract();
     }
-
-    // lg サイズの使用警告（Deprecated）
-    if (this.size === 'lg') {
-      console.warn(
-        '[ui-button]: size="lg" は非推奨です。デザインレビューなしでの使用を禁止します。md サイズに variant="primary" を組み合わせることを検討してください。',
-        this,
-      );
+    if (changedProperties.has('size')) {
+      this._warnDeprecatedSizeUsage();
     }
   }
 
@@ -485,6 +508,38 @@ export class Button extends LitElement {
     }
   }
 
+  /**
+   * icon-only と aria-label の契約を開発時に検証
+   */
+  private _validateAccessibilityContract(): void {
+    if (!this._isDevelopment) {
+      return;
+    }
+
+    if (this.iconOnly && !this.ariaLabel) {
+      console.error(
+        '[ui-button]: icon-only="true" の場合、aria-label は必須です。アクセシビリティのために代替テキストを提供してください。',
+        this,
+      );
+    }
+  }
+
+  /**
+   * 非推奨サイズの使用を開発時に警告
+   */
+  private _warnDeprecatedSizeUsage(): void {
+    if (!this._isDevelopment) {
+      return;
+    }
+
+    if (this.size === 'lg') {
+      console.warn(
+        '[ui-button]: size="lg" は非推奨です。デザインレビューなしでの使用を禁止します。md サイズに variant="primary" を組み合わせることを検討してください。',
+        this,
+      );
+    }
+  }
+
   override render() {
     const classes = {
       [`variant-${this.variant}`]: true,
@@ -496,13 +551,15 @@ export class Button extends LitElement {
       <button
         part="button"
         type="${this.type}"
+        form="${ifDefined(this.form)}"
         ?disabled="${this.disabled || this.loading}"
-        aria-busy="${this.loading}"
+        aria-busy="${ifDefined(this.loading ? 'true' : undefined)}"
+        aria-label="${ifDefined(this.ariaLabel ?? undefined)}"
         class="${classMap(classes)}"
         @click="${this._handleClick}"
       >
         <span class="label" part="label">
-          <slot></slot>
+          <slot class="content-slot"></slot>
         </span>
 
         ${this.loading
