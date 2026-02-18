@@ -9873,7 +9873,13 @@ progress.value = 100;
     - **Backdrop Styling**: `backdrop-filter` を適用し、背面のコンテンツを視覚的に退かせます。
     - **Native API**: `modal` プロパティに応じて `showModal()` または `show()` を使用します。
 
-**3. 技術仕様とAPI (Technical Specs)**
+**3. コンポーネント定義**
+
+- **`<ui-dialog>`**: Native `<dialog>` 要素をラップした Web Component。ユーザーの操作フローを中断し、削除確認・設定変更など重要な決断や入力を要求するための専用オーバーレイ。`modal` プロパティにより Focus Trap の有無を切り替えられます。閉じるボタンと Header・Body・Footer 相当のスロットを Shadow DOM で提供します。
+
+**4. 技術仕様とAPI (Technical Specs)**
+
+**プロパティ (Properties)**
 
 | プロパティ | 属性 | 型/値 | デフォルト | 説明 |
 |------------|------|-------|-----------|------|
@@ -9882,30 +9888,86 @@ progress.value = 100;
 | `titleId` | `title-id` | `string` | `undefined` | `aria-labelledby` で参照するタイトル要素のID。 |
 | `descriptionId` | `description-id` | `string` | `undefined` | `aria-describedby` で参照する説明要素のID。 |
 
+**メソッド (Methods)**
+
+| メソッド | シグネチャ | 説明 |
+|----------|-----------|------|
+| `open()` | `(trigger?: HTMLElement) => void` | ダイアログを開きます。`trigger` を渡すと閉じた際にそこへフォーカスを返却します。省略時は呼び出し時点の `document.activeElement` を自動取得します。 |
+| `close()` | `() => void` | Exit アニメーション完了後にダイアログを閉じます。トリガー元へフォーカスを返却します。 |
+
+**カスタムイベント (Custom Events)**
+
+| イベント名 | バブリング | detail | 発火タイミング |
+|-----------|-----------|--------|--------------|
+| `ui-dialog-opened` | ❌ | `{ trigger: HTMLElement \| null }` | Enter アニメーション完了後 |
+| `ui-dialog-closed` | ❌ | なし | Exit アニメーション完了後 |
+| `ui-dialog-cancel` | ❌ | なし | Esc キー / 非モーダルの背景クリックで閉じる直前 |
+
+> **Note (カスタムイベントと native cancel):**
+> `showModal()` は Esc キー押下時に native `cancel` イベントを発火します。これを `preventDefault()` で阻止して Exit アニメーションを実行し、アニメーション完了後に native の `dialog.close()` を呼び出します。外部から閉じる処理にフックしたい場合は `ui-dialog-cancel` をリスンしてください。
+
 **modal プロパティの挙動 (Modal Behavior)**
 
-| `modal` | Native API | Focus Trap | Backdrop | 背景クリック | `Esc` キー | 用途 |
-|---------|-----------|------------|----------|------------|-----------|------|
-| `true` | `showModal()` | ✅ 有効 | ✅ 生成 | 閉じない | 閉じる | 削除確認、重要な決断 |
-| `false` | `show()` | ❌ 無効 | ❌ なし | N/A | 閉じる | 軽量な通知、非破壊的な情報表示 |
+| `modal` | Native API | Focus Trap | Backdrop | 背景クリック | `Esc` キー | `aria-modal` | 用途 |
+|---------|-----------|------------|----------|------------|-----------|-------------|------|
+| `true` | `showModal()` | ✅ 有効 | ✅ 生成 | 閉じない | 閉じる（native） | `true` を付与 | 削除確認、重要な決断 |
+| `false` | `show()` | ❌ 無効 | ❌ なし | N/A | 閉じる（手動実装） | 属性ごと省略 | 軽量な通知、非破壊的な情報表示 |
 
 > **Rationale (Modal Default):**
 > デフォルトを `true` とする理由は、ダイアログの主要な用途が「ユーザーの明示的な決断を求める」ことであり、誤操作による閉じるを防ぐためです。軽量な用途には `modal="false"` を明示的に指定します。
 
 > **Note (Non-Modal Backdrop):**
-> `modal="false"` の場合、Native `<dialog>` は `::backdrop` 疑似要素を生成しません。背景の遮光が不要な軽量な通知やヘルプダイアログに適しています。背景クリックで閉じる挙動が必要な場合は、ダイアログ外のクリックイベントをリスンする実装が必要です。
+> `modal="false"` の場合、Native `<dialog>` は `::backdrop` 疑似要素を生成しません。背景の遮光が不要な軽量な通知やヘルプダイアログに適しています。
 
-**4. スロット (Slots)**
+> **Note (Non-Modal Esc キー):**
+> `modal="false"` で `show()` を使用した場合、Native `<dialog>` は Esc キーによる自動クローズをサポートしません。`keydown` イベントをリスンして `close()` を手動で呼び出す実装が必要です。
+
+> **Note (aria-modal と modal=false):**
+> `aria-modal="true"` は Focus Trap の意図を補助技術に伝えるものです。`modal="false"` の場合に `aria-modal="true"` を設定すると、スクリーンリーダーがダイアログ外の要素を読み飛ばす誤動作を引き起こします。`modal="false"` では `aria-modal` 属性を DOM から省略します。
+
+**5. スロット (Slots)**
 
 **スロット定義 (Slot Definition)**
 
 | スロット名 | 説明 | 推奨要素 |
 |-----------|------|----------|
 | `title` | ダイアログのタイトル | `<h2 id="dialog-title">` |
-| (default) | メインコンテンツ | `<p id="dialog-description">` |
+| (default) | メインコンテンツ（`overflow-y: auto` の領域） | `<p id="dialog-description">` |
 | `actions` | アクションボタン群 | `<ui-button>` |
 
-**5. スタイリングとトークンマッピング (Style & Tokens)**
+> **Note (内部スクロールと閉じるボタン):**
+> `--ui-dialog-max-height` を超えるコンテンツは、default スロットを包む Body 領域（`overflow-y: auto`）でスクロールします。Header（タイトル・閉じるボタン）と Footer（actions スロット）は常に画面内に固定表示されます。閉じるボタンは Shadow DOM 内部の固定要素であり、スロットによる差し替えは不可です。
+
+**6. スタイリングとトークンマッピング (Style & Tokens)**
+
+**コンポーネントパブリックトークン (Component Public Tokens)**
+
+`:host` 上で定義し、外部から CSS カスタムプロパティで上書き可能な公開 API です。
+
+```css
+:host {
+  display: block;
+
+  /* 外部からオーバーライド可能なパブリックトークン */
+  --ui-dialog-min-width: min(300px, 90vw);
+  --ui-dialog-max-width: min(600px, 90vw);
+  --ui-dialog-max-height: min(80vh, 800px);
+
+  /* コンポーネントローカルトークン（外部からの上書きは意図しない） */
+  --ui-dialog-edge-highlight: oklch(100% 0 0 / 0.08);
+}
+```
+
+> **Rationale (CSS Custom Properties as Public API):**
+> `::part()` による外部スタイリングは `index.md` の禁止事項（コンポーネントのカプセル化を破壊）に該当するため使用しません。代わりに CSS カスタムプロパティを `:host` 上で公開することで、カプセル化を維持しながら外部からの調整を可能にします。変数名は `--ui-[コンポーネント名]-[プロパティ]` の命名規則に従います。
+
+> **Rationale (Width Constraints):**
+> - **Max Width**: `600px` は読みやすさと操作性のバランスを取った最適幅。`90vw` により小画面でも余白を確保。
+> - **Min Width**: `300px` は極端に狭いコンテンツでもボタン配置が崩れない最小幅。
+> - **Max Height**: `80vh` は画面の大部分を占めつつ、上下に余白を残すための最適値。内部スクロールを可能にします。
+
+> **Rationale (Edge Highlight Token):**
+> ダークモードの上端ハイライトは `index.md` 深度表現パターン（`inset 0 1px 0 0 oklch(100% 0 0 / 0.1)`）に準拠した手法です。`border` で実現するため `0.08` とわずかに控えめにしています。明度差（`--bg-surface-3`）を主とし、ハイライトを補助とする構成に一致します。ハードコードを避けコンポーネントローカルトークンとして定義します。
 
 **Backdrop (背景遮光)**
 
@@ -9919,36 +9981,25 @@ progress.value = 100;
 
 **Dialog Container**
 
-| プロパティ | ライトモード | ダークモード |
-|------------|--------------|--------------|
-| **Surface** | `var(--bg-default)` | `var(--bg-surface-3)` |
-| **Radius** | `var(--radius-xl)` (12px) | `var(--radius-xl)` |
-| **Shadow** | `var(--shadow-xl)` | `var(--shadow-dark-lg)` |
-| **Width** | `var(--dialog-max-width)` | `var(--dialog-max-width)` |
-| **Min Width** | `var(--dialog-min-width)` | `var(--dialog-min-width)` |
-| **Max Height** | `var(--dialog-max-height)` | `var(--dialog-max-height)` |
-| **Border** | なし | `1px solid oklch(100% 0 0 / 0.08)` (上端ハイライト) |
+| プロパティ | 値 | 備考 |
+|------------|-----|------|
+| **Surface** | ライト: `var(--bg-default)` / ダーク: `var(--bg-surface-3)` | `index.md` 深度階層「High = Modal（L22%）」に準拠 |
+| **Radius** | `var(--radius-xl)` (12px) | モーダル・フローティングパネル標準 |
+| **Shadow** | `var(--elevation-xl)` | Semantic トークン使用。Light/Dark を自動切替 |
+| **Width** | `var(--ui-dialog-max-width)` | |
+| **Min Width** | `var(--ui-dialog-min-width)` | |
+| **Max Height** | `var(--ui-dialog-max-height)` | |
+| **Border (Dark)** | `1px solid var(--ui-dialog-edge-highlight)` | 上端ハイライト。コンポーネントローカルトークン |
 
-> **Rationale (Dark Mode Shadow):**
-> `index.md` では `--shadow-dark-lg` は「ドロップダウン」向けと定義されていますが、ダークモードでは深度表現が主に**明度差**（`--bg-surface-3`）によって行われるため、シャドウは補助的な役割となります。`--shadow-dark-lg` で十分な視覚的分離が得られます。
-
-**コンポーネントローカルトークン (Component-Local Tokens)**
-
-- `--dialog-min-width: min(300px, 90vw)` - 極端に狭いコンテンツでもボタン配置が崩れない最小幅
-- `--dialog-max-width: min(600px, 90vw)` - 読みやすさと操作性のバランスを取った最適幅
-- `--dialog-max-height: min(80vh, 800px)` - 画面の大部分を占めつつ、上下に余白を残す最適値
-
-> **Rationale (Width Constraints):**
-> - **Max Width**: `600px` は読みやすさと操作性のバランスを取った最適幅。`90vw` により小画面でも余白を確保。
-> - **Min Width**: `300px` は極端に狭いコンテンツでもボタン配置が崩れない最小幅。
-> - **Max Height**: `80vh` は画面の大部分を占めつつ、上下に余白を残すための最適値。内部スクロールを可能にします。
+> **Rationale (Shadow / Elevation Token):**
+> `index.md` では `--elevation-xl` をモーダル用として定義し、Light/Dark 共通で `var(--shadow-xl)` を使用します。ダークモードでの深度表現の主役は `--bg-surface-3`（L22%）による明度差であり、シャドウは補助的な役割を担います。Semantic トークンを使用することで、コンポーネント内のモード分岐記述を排除します。
 
 **スペーシング (Internal Padding)**
 
 | 部位 | パディング | 説明 |
 |------|-----------|------|
 | **Header** | `var(--space-4)` (上下) / `var(--space-6)` (左右) | タイトルと閉じるボタンの領域 |
-| **Body** | `var(--space-6)` (上下左右) | メインコンテンツ領域 |
+| **Body** | `var(--space-6)` (上下左右) | メインコンテンツ領域（`overflow-y: auto`） |
 | **Footer** | `var(--space-4)` (上下) / `var(--space-6)` (左右) | アクションボタン領域 |
 
 **閉じるボタン (Close Button)**
@@ -9961,57 +10012,160 @@ progress.value = 100;
 | **Hover** | `var(--fg-default)` | 操作意思に対するフィードバック |
 | **Touch Target** | `44px` (疑似要素で拡張) | アクセシビリティ基準を満たす |
 
-**6. アニメーション (Animation)**
+**7. アニメーション (Animation)**
 
 **表示アニメーション (Enter)**
 
-ダイアログ表示時、`opacity: 0` と `scale(var(--scale-enter))` (0.98) から始まり、`opacity: 1` と `scale(1)` へ遷移します。`var(--duration-slower)` と `var(--ease-out)` を使用します。
+```css
+@keyframes dialog-enter {
+  from {
+    opacity: 0;
+    transform: scale(var(--scale-enter));
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+dialog {
+  animation: dialog-enter var(--duration-slower) var(--ease-out) forwards;
+}
+```
 
 **非表示アニメーション (Exit)**
 
-ダイアログ非表示時、逆方向のアニメーションを適用します。`var(--duration-slower)` と `var(--ease-in)` を使用します。
+```css
+@keyframes dialog-exit {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(var(--scale-enter));
+  }
+}
 
-> **Implementation Note:**
-> Native `<dialog>` は閉じる際のアニメーションをサポートしていないため、`data-closing` 属性を使用してアニメーション完了後に `close()` を呼び出す実装が必要です。
+dialog[data-closing] {
+  animation: dialog-exit var(--duration-slower) var(--ease-in) forwards;
+}
+```
+
+> **Implementation Note (data-closing):**
+> Native `<dialog>` は閉じる際のアニメーションをサポートしていないため、以下の手順で実装します。
+> 1. `close()` メソッドが呼ばれると、まず `data-closing` 属性を `<dialog>` に付与する
+> 2. `animationend` イベントを待ち、完了後に native の `dialog.close()` を呼び出す
+> 3. `data-closing` 属性を除去する
 
 **Backdrop アニメーション**
 
-Backdropの表示・非表示時、`opacity: 0` ↔ `opacity: 1` のフェード遷移を適用します。`var(--duration-slower)` と `var(--ease-out)` / `var(--ease-in)` を使用します。
+```css
+@keyframes backdrop-enter {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes backdrop-exit {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+::backdrop {
+  animation: backdrop-enter var(--duration-slower) var(--ease-out) forwards;
+}
+
+[data-closing]::backdrop {
+  animation: backdrop-exit var(--duration-slower) var(--ease-in) forwards;
+}
+```
 
 > **Implementation Note (Exit Animation Synchronization):**
-> ダイアログ本体とBackdropの両方が同期してアニメーションするよう、`data-closing` 属性を追加後、両方のアニメーション完了を待ってから `close()` を呼び出します。
+> ダイアログ本体と Backdrop の両方が同期してアニメーションするよう、`data-closing` 属性を追加後、`Promise.all()` で両方のアニメーション完了を待ってから `dialog.close()` を呼び出します。
+>
+> ```typescript
+> async function closeWithAnimation(dialog: HTMLDialogElement): Promise<void> {
+>   dialog.setAttribute('data-closing', '');
+>   await Promise.all(
+>     dialog.getAnimations().map((anim) => anim.finished)
+>   );
+>   dialog.removeAttribute('data-closing');
+>   dialog.close();
+> }
+> ```
 
-**7. モーション軽減 (Reduced Motion)**
+**8. モーション軽減 (Reduced Motion)**
 
-`index.md` で**必須要件**とされている `prefers-reduced-motion` への対応です。`prefers-reduced-motion: reduce` 時は、ダイアログとBackdropの両方のアニメーションを無効化します（`animation: none !important`）。
+`index.md` で**必須要件**とされている `prefers-reduced-motion` への対応です。`prefers-reduced-motion: reduce` 時は、ダイアログと Backdrop の両方のアニメーションを無効化します。
 
-**8. Forced Colors Mode (強制カラーモード)**
+```css
+@media (prefers-reduced-motion: reduce) {
+  dialog,
+  dialog[data-closing] {
+    animation: none;
+  }
+
+  ::backdrop,
+  [data-closing]::backdrop {
+    animation: none;
+  }
+}
+```
+
+> **Note (グローバルルールとの関係):**
+> `index.md` では `*, *::before, *::after { animation-duration: 0.01ms !important; }` をグローバルに適用するため、コンポーネント個別の宣言がなくてもアニメーションは事実上無効になります。ただし `::backdrop` 疑似要素はグローバルセレクタに含まれない場合があるため、コンポーネント側での明示的な `animation: none` が安全策として必要です。
+
+**9. Forced Colors Mode (強制カラーモード)**
 
 Windows ハイコントラストモードなど、OS レベルで色が強制される環境への対応です。
 
-- **Dialog**: 背景色とシャドウが消失するため、`border: 2px solid CanvasText` で構造を維持し、`background: Canvas` を使用します。
-- **Backdrop**: `background: Canvas`, `opacity: 0.7` を使用します。
-- **Close Button**: `border: 1px solid ButtonText` で視認性を担保します。
+```css
+@media (forced-colors: active) {
+  dialog {
+    background: Canvas;
+    border: 2px solid CanvasText;
+    box-shadow: none;
+  }
+
+  ::backdrop {
+    background: Canvas;
+    opacity: 0.7;
+  }
+
+  .close-button {
+    border: 1px solid ButtonText;
+    color: ButtonText;
+  }
+}
+```
 
 > **Rationale (Forced Colors Strategy):**
-> `index.md` では「構造の維持」「ボーダーやスペーシングにより、背景色が無くても領域を認識可能にする」ことが求められています。シャドウが消失する環境でも、ボーダーによってダイアログの境界を明確にします。
+> `index.md` では「構造の維持」「ボーダーやスペーシングにより、背景色が無くても領域を認識可能にする」ことが求められています。シャドウが消失する環境でも、`CanvasText` ボーダーによってダイアログの境界を明確にします。
 
-**9. 印刷スタイル (Print Styles)**
+**10. 印刷スタイル (Print Styles)**
 
-印刷時は、ダイアログを通常のコンテンツとして表示します。
+印刷時は、ダイアログ全体を非表示にします。
 
-- **Dialog**: モーダルの特性を解除（`position: static`）、シャドウを削除、`border: 1px solid black`、`max-width: 100%`、`margin: var(--space-4) 0` を適用します。
-- **Backdrop**: 非表示にします（`display: none`）。
-- **Close Button**: 非表示にします（`display: none`）。
+```css
+@media print {
+  dialog,
+  ::backdrop {
+    display: none !important;
+  }
+}
+```
 
-**10. アクセシビリティ (A11y)**
+> **Rationale (Print Strategy):**
+> `index.md` のコンポーネント別印刷対応方針（「`<ui-dialog>`: 印刷時は強制的に非表示」）に従います。ダイアログはモーダルという一時的な UI 状態であり、その瞬間の開閉状態を印刷物に反映することに情報価値がありません。印刷時はダイアログを閉じた状態のページ本文のみを出力することが適切です。
+
+**11. アクセシビリティ (A11y)**
 
 **WAI-ARIA 属性 (ARIA Attributes)**
 
 | 属性 | 値 | 必須? | 説明 |
 |:-----|:---|:-----|:-----|
 | `role` | `dialog` | ✅ | Native `<dialog>` を使用する場合は暗黙的 |
-| `aria-modal` | `true` | ✅ | Focus Trap の意図を補助技術に伝達 |
+| `aria-modal` | `true` | modal=true 時のみ | Focus Trap の意図を補助技術に伝達。`modal="false"` の場合は属性ごと省略する |
 | `aria-labelledby` | `{titleId}` | 推奨 | ダイアログタイトルへの参照 |
 | `aria-describedby` | `{descriptionId}` | 推奨 | 説明文への参照 |
 
@@ -10020,15 +10174,67 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
 | タイミング | 動作 | 実装 |
 |-----------|------|------|
 | **開いた時** | 最初のフォーカス可能要素へフォーカス | デフォルト: 閉じるボタン。アクションボタンがある場合は最初のアクション（キャンセルボタンなど）を推奨 |
-| **閉じた時** | トリガー元へフォーカスを返却 | `dialog.close()` 呼び出し前に、トリガー要素への参照を保持し、閉じた後に `focus()` を呼び出す |
-| **`Esc` キー** | ダイアログを閉じる | Native `<dialog>` の標準動作。`modal=true` でも有効 |
+| **閉じた時** | トリガー元へフォーカスを返却 | `open(triggerElement)` で渡された要素、または `open()` 呼び出し時の `document.activeElement` へ返却 |
+| **`Esc` キー** | ダイアログを閉じる | `modal=true`: native `cancel` イベントを `preventDefault()` → Exit アニメーション後 `close()`。`modal=false`: `keydown` で手動実装 |
 | **Focus Trap** | `Tab` キーでダイアログ内を循環 | `modal=true` の場合、Native `<dialog>` が自動的に提供 |
 
 **Scroll Lock (スクロールロック)**
 
-ダイアログが開いている間、`body` のスクロールを無効化します（`overflow: hidden`）。閉じた際に解除します。
+ダイアログが開いている間、`body` のスクロールを無効化します。閉じた際に解除します。
 
-**11. 使用例 (Usage Examples)**
+```css
+/* スクロールバー消失によるレイアウトシフト防止 */
+body:has(dialog[open]) {
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}
+```
+
+> **Note (scrollbar-gutter):**
+> `overflow: hidden` 単独ではスクロールバーが消失した際に `body` の幅が増加し、レイアウトシフト（CLS）を引き起こします。`scrollbar-gutter: stable` でスクロールバー幅を常に確保することで、ダイアログ開閉時のガタつきを防ぎます。`scrollbar-gutter` は Chrome 94+, Safari 15.8+ でサポートされています。
+
+**12. DOM構造 (DOM Structure)**
+
+スロット: `title`, default, `actions`。閉じるボタンは Shadow DOM 内部の固定要素です。
+
+```html
+<!-- Shadow DOM 内部 -->
+<dialog
+  aria-modal="true"
+  aria-labelledby="{titleId}"
+  aria-describedby="{descriptionId}"
+>
+  <!-- Header: タイトル + 閉じるボタン（Shadow DOM 固定） -->
+  <div class="header">
+    <slot name="title"></slot>
+    <button
+      class="close-button"
+      aria-label="閉じる"
+      type="button"
+    >
+      <!-- Lucide X アイコン (aria-hidden="true") -->
+    </button>
+  </div>
+
+  <!-- Body: メインコンテンツ (overflow-y: auto) -->
+  <div class="body">
+    <slot></slot>
+  </div>
+
+  <!-- Footer: アクションボタン -->
+  <div class="footer">
+    <slot name="actions"></slot>
+  </div>
+</dialog>
+```
+
+> **Note (内部クラス名について):**
+> 内部要素には `part` 属性を付与しません。`::part()` による外部スタイリングは `index.md` の禁止事項（コンポーネントのカプセル化を破壊）に該当するためです。外部からのカスタマイズが必要な場合は、`:host` 上で公開されている CSS カスタムプロパティ（`--ui-dialog-min-width`, `--ui-dialog-max-width`, `--ui-dialog-max-height`）を使用してください。
+
+> **Note (::backdrop):**
+> `modal=true` の `showModal()` 使用時のみ、ブラウザが native `::backdrop` 疑似要素を自動生成します。Shadow DOM 内部の要素ではなく、ブラウザが管理するトップレイヤーです。
+
+**13. 使用例 (Usage Examples)**
 
 **基本的な使用 (Basic Usage)**
 
@@ -10047,6 +10253,18 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
 </ui-dialog>
 ```
 
+**トリガーからダイアログを開く (Trigger-Based Opening)**
+
+```typescript
+const dialog = document.querySelector<UiDialog>('#confirm-dialog');
+const trigger = document.querySelector<HTMLButtonElement>('#open-button');
+
+trigger.addEventListener('click', () => {
+  // トリガー要素を渡すことで、閉じた際に自動でフォーカスを返却する
+  dialog.open(trigger);
+});
+```
+
 **非モーダルダイアログ (Non-Modal Dialog)**
 
 ```html
@@ -10055,6 +10273,45 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
   <p>新しい機能が追加されました。</p>
 </ui-dialog>
 ```
+
+**パブリックトークンによるカスタマイズ**
+
+```html
+<style>
+  .wide-dialog {
+    --ui-dialog-max-width: min(800px, 90vw);
+    --ui-dialog-max-height: min(90vh, 1000px);
+  }
+</style>
+
+<ui-dialog class="wide-dialog" title-id="settings-title">
+  <h2 slot="title" id="settings-title">設定</h2>
+  <!-- ... -->
+</ui-dialog>
+```
+
+**14. 受け入れ基準 (Acceptance Criteria)**
+
+- **開く動作**: `open()` 呼び出し（または `opened` 属性付与）でダイアログが表示されること。Enter アニメーション（`opacity`, `scale`）が動作すること。
+- **閉じる動作**: `close()` 呼び出し後、Exit アニメーション完了後にダイアログが非表示になること。
+- **フォーカス移動（開く時）**: ダイアログ開放後、閉じるボタンまたは最初のアクションボタンへフォーカスが移動すること。
+- **フォーカス返却（閉じる時）**: `open(triggerElement)` で渡した要素、または自動取得した `document.activeElement` へフォーカスが返却されること。
+- **Focus Trap**: `modal=true` の場合、`Tab` キーでダイアログ内の要素のみを循環すること。ダイアログ外の要素にフォーカスが移動しないこと。
+- **Esc キー (modal=true)**: Esc キーで Exit アニメーション後にダイアログが閉じること。
+- **Esc キー (modal=false)**: `keydown` の手動実装によって Esc キーでダイアログが閉じること。
+- **aria-modal**: `modal=true` の場合のみ `aria-modal="true"` が設定されること。`modal=false` の場合は `aria-modal` 属性が DOM に存在しないこと。
+- **aria-labelledby**: `titleId` 指定時に `aria-labelledby` が設定されること。未指定時は属性ごと省略されること（`aria-labelledby="undefined"` が付与されないこと）。
+- **aria-describedby**: `descriptionId` 指定時に `aria-describedby` が設定されること。未指定時は属性ごと省略されること。
+- **カスタムイベント**: `open()` の Enter アニメーション完了後に `ui-dialog-opened` が発火すること。`close()` の Exit アニメーション完了後に `ui-dialog-closed` が発火すること。
+- **Scroll Lock**: ダイアログ開放中に `body` のスクロールが無効化されること。閉じた後にスクロールが再有効化されること。`scrollbar-gutter: stable` によりレイアウトシフトが発生しないこと。
+- **Elevation Token**: `--elevation-xl` が Shadow に使用されること。`--shadow-xl`, `--shadow-dark-lg` 等の Primitive トークン直接参照が存在しないこと。
+- **コンポーネントトークン命名**: `--ui-dialog-*` 命名規則に従っていること。`--dialog-*` 形式のトークンが存在しないこと。
+- **ハードコード禁止**: スタイル内にハードコードされた色・サイズ値が存在しないこと（トークンまたはコンポーネントローカルトークンを使用すること）。
+- **`::part()` 不使用**: DOM に `part` 属性が存在しないこと。
+- **Reduced Motion**: `prefers-reduced-motion: reduce` 時にアニメーションが無効化され、ダイアログと `::backdrop` が即座に表示/非表示されること。
+- **Forced Colors**: Forced Colors Mode でダイアログに `2px solid CanvasText` のボーダーが適用されること。`Canvas` 背景が使用されること。
+- **印刷**: 印刷時にダイアログ全体（`::backdrop` を含む）が非表示（`display: none !important`）になること。
+- **DOM構造**: Shadow DOM 内部にスロット（`title`, default, `actions`）が正しく配置されること。閉じるボタンが Shadow DOM 内部の固定要素であること。`part` 属性が存在しないこと。
 
 #### 検索ダイアログ (Search Dialog) `<ui-search-dialog>`
 
@@ -10067,110 +10324,178 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
 **2. ロジック参照基盤 (Logic Reference)**
 
 - **Architecture**:
-    - **Logic**: `@lion/ui` の `LionCombobox` (Selection & Navigation) ロジックをコアとして移植し、`LionDialog` (Modal) の振る舞い（Focus Trap, Backdrop）を持つコンテナ内で動作させます。
-    - **Worker-Driven Construction**: `Pagefind` の検索プロセスは **Web Worker** 上で実行し、メインスレッド（UI描画）を絶対にブロックしません。
-    - **Virtualization**: **100件以上の結果が表示される可能性がある場合は仮想スクロールを必須とします**。参考実装として `lit-virtualizer` を検討してください。
+    - **Logic**: `@lion/ui` の `LionCombobox`（Selection & Navigation）ロジックをコアとして移植し、`LionDialog`（Modal）の振る舞い（Focus Trap, Backdrop）を持つコンテナ内で動作させます。
+    - **Worker-Driven Search**: Pagefind の検索プロセスは **Web Worker** 上で実行し、メインスレッド（UI 描画）を絶対にブロックしません。
+    - **Debounce**: 入力イベントは **150ms** のデバウンスを経て Worker へクエリを送信します。これにより、思考の流れを妨げない Zero Latency と、不要なクエリ発火の防止を両立します。
+    - **Virtualization**: 100 件以上の結果が表示される可能性がある場合は仮想スクロールを**必須**とします。参考実装として `lit-virtualizer` を検討してください。
 
-**3. 技術仕様とAPI (Technical Specs)**
+**3. コンポーネント定義**
 
-| プロパティ | 属性 | 型/値 | 説明 |
-|------------|------|-------|------|
-| `opened` | `opened` | `boolean` | 開閉状態。 |
-| `query` | `query` | `string` | 現在の入力クエリ。 |
-| `loading` | `loading` | `boolean` | インデックスロード中などの状態。 |
+- **`<ui-search-dialog>`**: Native `<dialog>` 要素を使用したモーダル型の検索インターフェース Web Component。`showModal()` による Focus Trap と Backdrop を持ち、Pagefind によるキーワード全文検索とキーボードナビゲーションによる結果選択・ページ遷移を提供します。Header（入力欄・クリアボタン）、Body（検索結果リスト / 空状態 / ローディング）、Footer（キーボードヒント）の 3 ペインで構成されます。
 
-**4. スタイリングとトークンマッピング (Style & Tokens)**
+**4. 技術仕様とAPI (Technical Specs)**
 
-**Backdrop**
+**プロパティ (Properties)**
 
-| プロパティ | 値 | 根拠 |
-|-----------|-----|------|
-| **背景色** | `oklch(0% 0 0 / var(--opacity-scrim))` (`0.6`) | `index.md` パレット定義「Opacity Modifiers」 |
-| **ブラー** | `blur(var(--blur-lg))` (`24px`) | コンテキストを完全に分離する `--blur-lg` |
-| **Z-index** | `var(--z-backdrop)` (`200`) | レイヤー構造「Z-index Scale」 |
-| **Transition** | `opacity var(--duration-slow) var(--ease-out)` | ダイアログと同様、背景変化は緩やかに |
+| プロパティ | 属性 | 型/値 | デフォルト | 説明 |
+|------------|------|-------|-----------|------|
+| `opened` | `opened` | `boolean` | `false` | 開閉状態。 |
+| `query` | `query` | `string` | `''` | 現在の入力クエリ。 |
+| `loading` | `loading` | `boolean` | `false` | インデックス初回ロード中の状態。 |
 
-**Panel**
+**メソッド (Methods)**
+
+| メソッド | シグネチャ | 説明 |
+|----------|-----------|------|
+| `open()` | `(trigger?: HTMLElement) => void` | ダイアログを開きます。`trigger` を渡すと閉じた際にそこへフォーカスを返却します。省略時は呼び出し時点の `document.activeElement` を自動取得します。 |
+| `close()` | `() => void` | Exit アニメーション完了後にダイアログを閉じます。トリガー元へフォーカスを返却します。 |
+
+**カスタムイベント (Custom Events)**
+
+| イベント名 | バブリング | detail | 発火タイミング |
+|-----------|-----------|--------|--------------|
+| `ui-search-dialog-opened` | ❌ | `{ trigger: HTMLElement \| null }` | Enter アニメーション完了後 |
+| `ui-search-dialog-closed` | ❌ | なし | Exit アニメーション完了後 |
+| `ui-search-dialog-selected` | ❌ | `{ url: string; title: string }` | 結果項目を選択し、ページ遷移を実行する直前 |
+
+**5. スロット (Slots)**
+
+このコンポーネントはスロットを持ちません。Header・Body・Footer のすべての内部構造は Shadow DOM で固定管理されます。検索結果は JavaScript によって動的に生成されます。
+
+> **Rationale (Slotless Design):**
+> 検索パレットの内部構造（Input, Listbox, Footer Hints）はコンポーネントのコアロジックと密接に結合しており、外部から差し替えを許容する理由がありません。スロットを廃し、完全カプセル化を実現することで、Combobox の ARIA 属性（`aria-controls`, `aria-activedescendant` 等）と DOM の整合性を実装レベルで保証します。
+
+**6. スタイリングとトークンマッピング (Style & Tokens)**
+
+**コンポーネントパブリックトークン (Component Public Tokens)**
+
+`:host` 上で定義し、外部から CSS カスタムプロパティで上書き可能な公開 API です。
+
+```css
+:host {
+  display: block;
+
+  /* 外部からオーバーライド可能なパブリックトークン */
+  --ui-search-dialog-max-width: min(640px, 90vw);
+  --ui-search-dialog-max-height: min(480px, 80vh);
+  --ui-search-dialog-position-top: 20%;
+
+  /* コンポーネントローカルトークン（外部からの上書きは意図しない） */
+  --ui-search-dialog-edge-highlight: oklch(100% 0 0 / 0.08);
+}
+```
+
+> **Rationale (CSS Custom Properties as Public API):**
+> `::part()` による外部スタイリングは `index.md` の禁止事項（コンポーネントのカプセル化を破壊）に該当するため使用しません。代わりに CSS カスタムプロパティを `:host` 上で公開することで、カプセル化を維持しながら外部からの調整を可能にします。変数名は `--ui-[コンポーネント名]-[プロパティ]` の命名規則に従います。
+
+> **Rationale (Width / Height / Position Constraints):**
+> - **Max Width**: `640px` はコマンドパレットの標準的な最適幅。`90vw` により小画面でも余白を確保。
+> - **Max Height**: `80vh` は結果が多い場合でも画面内に収まる上限。内部スクロールを Body 領域で吸収します。
+> - **Position Top**: `20%` は視線移動を最小化する中央上部への配置。入力フィールドが画面上方に位置することで、入力と同時に下方へ展開する結果リストとの視線移動コストを削減します。
+
+> **Rationale (Edge Highlight Token):**
+> ダークモードの上端ハイライトは `index.md` 深度表現パターン（`inset 0 1px 0 0 oklch(100% 0 0 / 0.1)`）に準拠した手法です。`border` で実現するため `0.08` とわずかに控えめにしています。ハードコードを避けコンポーネントローカルトークンとして定義します。
+
+**Backdrop（背景遮光）**
+
+| プロパティ | 値 | 説明 |
+|------------|-----|------|
+| `background` | `oklch(0% 0 0 / var(--opacity-scrim))` | `index.md` で定義された `--opacity-scrim: 0.6` を使用 |
+| `backdrop-filter` | `blur(var(--blur-lg))` | 強ブラー (24px) でコンテキストを完全に分離 |
+| `z-index` | `var(--z-backdrop)` (`200`) | `index.md` Z-index Scale 準拠 |
+
+**Panel（検索パネル）**
 
 | プロパティ | 値 | 説明 |
 |-----------|-----|------|
-| **Width** | `min(640px, 90vw)` | Max: 640px, Mobile: 90vw |
-| **Max Height** | `min(480px, 80vh)` | コンテンツ量に応じてスクロール |
-| **Background** | `var(--bg-surface-2)` | Elevated Layer |
+| **Surface** | ライト: `var(--bg-default)` / ダーク: `var(--bg-surface-3)` | `index.md` 深度階層「High = Modal（L22%）」に準拠 |
+| **Width** | `var(--ui-search-dialog-max-width)` | パブリックトークン |
+| **Max Height** | `var(--ui-search-dialog-max-height)` | パブリックトークン |
+| **Position Top** | `var(--ui-search-dialog-position-top)` | パブリックトークン |
 | **Border** | `var(--border-width) solid var(--border-default)` | 構造明示 |
-| **Radius** | `var(--radius-xl)` (12px) | モーダルと同等 |
-| **Shadow (Light)** | `var(--shadow-xl)` | 最高階層の浮遊感 |
-| **Shadow (Dark)** | `var(--shadow-dark-lg), inset 0 1px 0 0 oklch(100% 0 0 / 0.1)` | ダークモード深度戦略 + 上端ハイライト |
-| **Position** | `top: 20%` (中央上部) | 視線移動を減らすための配置 |
-| **Z-index** | `var(--z-modal)` (`300`) | ダイアログと同等 |
+| **Border (Dark, 上端)** | `1px solid var(--ui-search-dialog-edge-highlight)` | コンポーネントローカルトークン |
+| **Radius** | `var(--radius-xl)` (12px) | モーダル・フローティングパネル標準 |
+| **Shadow** | `var(--elevation-xl)` | Semantic トークン使用。Light/Dark を自動切替 |
+| **Z-index** | `var(--z-modal)` (`300`) | `index.md` Z-index Scale 準拠 |
 
-**Input (Header)**
+> **Rationale (Surface Token):**
+> 検索ダイアログは `showModal()` による Focus Trap と Backdrop を持つモーダルオーバーレイです。`index.md` の深度階層定義において、この用途は「High = Modal / Dialog（L22%）」に分類されるため、`--bg-surface-2`（Elevated: L17%、Dropdown / Popover 用）ではなく `--bg-surface-3`（High: L22%）を使用します。
+
+> **Rationale (Elevation Token):**
+> `index.md` では `--elevation-xl` をモーダル用として定義し、Light/Dark 共通で `var(--shadow-xl)` を使用します。コンポーネント実装で Primitive トークン（`--shadow-xl`, `--shadow-dark-lg`）を直接参照することは `index.md` の禁止事項に該当します。Semantic トークンを使用することで、コンポーネント内のモード分岐記述を排除します。
+
+**Input（ヘッダー入力欄）**
 
 | プロパティ | 値 | 説明 |
 |-----------|-----|------|
 | **Height** | `var(--control-height-md)` (32px) | 標準コントロール高 |
-| **Touch Target** | `44px` (疑似要素で確保) | アクセシビリティ基準準拠 |
-| **Font Size** | `var(--text-base)` (14px) | 標準UIサイズ |
-| **Padding** | `0 var(--space-4)` | 左右16px |
-| **Border Bottom** | `1px solid var(--border-default)` | Header/Body分離 |
+| **Touch Target** | `44px` (疑似要素で拡張) | アクセシビリティ基準準拠 |
+| **Font Size** | `var(--text-base)` (14px) | 標準 UI サイズ |
+| **Padding** | `0 var(--space-4)` | 左右 16px |
+| **Border Bottom** | `var(--border-width) solid var(--border-default)` | Header / Body 分離 |
 | **Background** | `transparent` | パネル背景を継承 |
 
-> **Note (Input Height Strategy):**  
-> 当初の `--control-height-lg` (40px) 案は、タッチデバイスでの操作性を重視したものでしたが、`index.md` の「原則として使用しない」という規定を尊重し、**標準の `--control-height-md` (32px) を視覚的な高さとして採用**します。  
-> タッチデバイスでのアクセシビリティは、`::after` 疑似要素により **物理的なヒットエリアを `44px` 以上に拡張**することで担保します。これにより、視覚的なコンパクトさ（デザイン原則1「没入のための構造」）とタップ操作性（原則4「普遍的な明瞭さ」）を両立します。
+> **Note (Input Height Strategy):**
+> `--control-height-lg` (40px) はタッチデバイスの操作性を重視した案ですが、`index.md` の「原則として使用しない」という規定を尊重し、**標準の `--control-height-md` (32px) を視覚的な高さとして採用**します。タッチデバイスでのアクセシビリティは、`::after` 疑似要素により**物理的なヒットエリアを `44px` 以上に拡張**することで担保します。これにより、視覚的なコンパクトさ（デザイン原則1「没入のための構造」）とタップ操作性（原則4「普遍的な明瞭さ」）を両立します。
 
-**Item (Result)**
+**クリアボタン（Input 右端）**
 
 | プロパティ | 値 | 説明 |
 |-----------|-----|------|
-| **Height** | `auto` (min: 1行) | 基本は1行、パスで区別が必要な場合のみ複数行 |
+| **Size** | `var(--control-height-sm)` (24px) | 入力欄内部の操作として高密度サイズを採用 |
+| **Visibility** | `query` が空でない場合のみ表示 | 入力がない段階では `hidden` 属性で非表示 |
+| **Color** | `var(--fg-muted)` | 控えめな存在感 |
+| **Hover** | `var(--fg-default)` | 操作意思に対するフィードバック |
+| **Touch Target** | `44px` (疑似要素で拡張) | アクセシビリティ基準準拠 |
+| **aria-label** | `"検索をクリア"` | スクリーンリーダー向けラベル |
+
+**Item（検索結果項目）**
+
+| プロパティ | 値 | 説明 |
+|-----------|-----|------|
+| **Height** | `auto` (min: 1 行) | 基本は 1 行、パスで区別が必要な場合のみ複数行 |
 | **Padding** | `var(--space-2) var(--space-3)` | 8px 12px |
 | **Selection BG** | `var(--bg-surface-active)` | フォーカス状態 |
 | **Typography** | Title: `--text-base` / Path: `--text-xs`, `--fg-muted` | 階層明示 |
 
-> **Rationale (Metadata Minimalism):**  
-> スニペットや日付は一覧性を損なうためデフォルトでは非表示とし、S/N比を最大化します。アクセントバーなどの追加装飾はノイズとなるため排除し、色変化のみでシンプルに現在地を伝えます。
+> **Rationale (Metadata Minimalism):**
+> スニペットや日付は一覧性を損なうためデフォルトでは非表示とし、S/N 比を最大化します。アクセントバーなどの追加装飾はノイズとなるため排除し、背景色の変化のみでシンプルに現在地を伝えます。
 
-**Footer (Hints)**
+**Footer（キーボードヒント）**
 
 | プロパティ | 値 | 説明 |
 |-----------|-----|------|
 | **Typography** | `--text-xs` (12px), `--fg-muted` | 控えめな補助情報 |
-| **Layout** | Flexbox, `justify-content: center`, `gap: var(--space-4)` | 中央揃え、16px間隔 |
-| **Keycap Style** | `background: var(--bg-fill-muted)`, `border-radius: var(--radius-sm)`, `padding: var(--space-1) var(--space-2)` | 視覚的な強調 |
-| **Border Top** | `1px solid var(--border-default)` | Body/Footer分離 |
+| **Layout** | Flexbox, `justify-content: center`, `gap: var(--space-4)` | 中央揃え、16px 間隔 |
+| **Keycap Style** | `background: var(--bg-fill-muted)`, `border-radius: var(--radius-sm)`, `padding: var(--space-1) var(--space-2)` | キーキャップの視覚的強調 |
+| **Border Top** | `var(--border-width) solid var(--border-default)` | Body / Footer 分離 |
 
-**5. アニメーション (Animations)**
+**スクロールロック (Scroll Lock)**
 
-**Panel Entrance**
+ダイアログが開いている間、`body` のスクロールを無効化します。閉じた際に解除します。
 
-パネル表示時、`opacity: 0` と `scale(var(--scale-enter))` (0.98) から始まり、`opacity: 1` と `scale(1)` へ遷移します。`var(--duration-normal)` と `var(--ease-out)` を使用します。
+```css
+/* スクロールバー消失によるレイアウトシフト防止 */
+body:has(dialog[open]) {
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}
+```
 
-**Panel Exit**
+> **Note (scrollbar-gutter):**
+> `overflow: hidden` 単独ではスクロールバーが消失した際に `body` の幅が増加し、レイアウトシフト（CLS）を引き起こします。`scrollbar-gutter: stable` でスクロールバー幅を常に確保することで、ダイアログ開閉時のガタつきを防ぎます。
 
-パネル非表示時、逆方向のアニメーションを適用します。`var(--duration-fast)` と `var(--ease-in)` を使用します。
-
-**Backdrop Animations**
-
-Backdropの表示・非表示時、`opacity: 0` ↔ `opacity: 1` のフェード遷移を適用します。表示時は `var(--duration-slow)` と `var(--ease-out)`、非表示時は `var(--duration-slow)` と `var(--ease-in)` を使用します。
-
-**Motion Reduction**
-
-`prefers-reduced-motion: reduce` 時は、パネルとBackdropの両方のアニメーションとトランジションを無効化します（`animation: none !important`, `transition: none !important`）。
-
-**6. Loading State (インデックスロード中)**
+**ローディング状態 (Loading State)**
 
 | 状態 | UI | 説明 |
 |------|-----|------|
-| **初回ロード** | Spinner + メッセージ表示 | Body領域中央に `<ui-spinner>` と「インデックスを読み込んでいます...」を表示 |
+| **初回ロード** | Spinner + メッセージ表示 | Body 領域中央に `<ui-spinner>` と「インデックスを読み込んでいます...」を表示 |
 | **入力フィールド** | 操作可能 | ロード中でもクエリ編集は可能（`aria-busy="true"` 設定） |
-| **UX原則** | Zero Latency維持 | 初回インデックスロード時のみ表示。検索ごとの待機には使用しない |
+| **UX 原則** | Zero Latency 維持 | 初回インデックスロード時のみ表示。検索ごとの待機には使用しない |
 
-初回インデックスロード時のみ、Body領域中央に `<ui-spinner>` と「インデックスを読み込んでいます...」メッセージを表示します。ロード中でもクエリ編集は可能です（`aria-busy="true"` 設定）。
+**空状態 (Empty State)**
 
-**7. Empty State (結果なし状態)**
-
-検索結果が0件の場合、`<ui-empty-state>` コンポーネントを使用します。
+検索結果が 0 件の場合、`<ui-empty-state>` コンポーネントを使用します。
 
 | プロパティ | 値 |
 |-----------|-----|
@@ -10178,71 +10503,373 @@ Backdropの表示・非表示時、`opacity: 0` ↔ `opacity: 1` のフェード
 | **タイトル** | 「一致する結果がありません」 |
 | **説明** | 「別のキーワードで検索してください」 |
 
-**8. アクセシビリティ (A11y)**
+**7. アニメーション (Animation)**
 
-**WAI-ARIA 属性**
+コマンドパレットとして頻繁に使用されるツールであるため、`<ui-dialog>` より軽快な `--duration-normal`（150ms）を採用します。Panel と Backdrop は同一 Duration で同期させ、`Promise.all()` による完了待ちを実装します。
 
-| 属性 | 値 | 必須? | 説明 |
-|------|-----|------|------|
-| `role` (Input) | `combobox` | ✅ | コンボボックスパターン |
-| `aria-expanded` | `true` / `false` | ✅ | リストボックスの展開状態 |
-| `aria-autocomplete` | `list` | ✅ | オートコンプリートタイプ |
-| `aria-controls` | `{listboxId}` | ✅ | 制御対象のリストボックスID |
-| `aria-activedescendant` | `{activeOptionId}` | ✅ | 現在フォーカス中のオプションID |
-| `role` (List) | `listbox` | ✅ | リストボックス |
-| `role` (Item) | `option` | ✅ | オプション項目 |
-| `aria-selected` | `true` / `false` | ✅ | 選択状態 |
-| `aria-busy` | `true` | 推奨 | ロード中の状態 |
+**表示アニメーション (Enter)**
 
-**Focus Management**
+```css
+@keyframes search-dialog-enter {
+  from {
+    opacity: 0;
+    transform: scale(var(--scale-enter));
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+dialog {
+  animation: search-dialog-enter var(--duration-normal) var(--ease-out) forwards;
+}
+```
+
+**非表示アニメーション (Exit)**
+
+```css
+@keyframes search-dialog-exit {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(var(--scale-enter));
+  }
+}
+
+dialog[data-closing] {
+  animation: search-dialog-exit var(--duration-normal) var(--ease-in) forwards;
+}
+```
+
+> **Implementation Note (data-closing):**
+> Native `<dialog>` は閉じる際のアニメーションをサポートしていないため、以下の手順で実装します。
+> 1. `close()` メソッドが呼ばれると、まず `data-closing` 属性を `<dialog>` に付与する
+> 2. `animationend` イベントを待ち、完了後に native の `dialog.close()` を呼び出す
+> 3. `data-closing` 属性を除去する
+
+**Backdrop アニメーション**
+
+```css
+@keyframes search-backdrop-enter {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes search-backdrop-exit {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+::backdrop {
+  animation: search-backdrop-enter var(--duration-normal) var(--ease-out) forwards;
+}
+
+[data-closing]::backdrop {
+  animation: search-backdrop-exit var(--duration-normal) var(--ease-in) forwards;
+}
+```
+
+> **Implementation Note (Exit Animation Synchronization):**
+> Panel と Backdrop が同じ `--duration-normal`（150ms）で同期するよう、`data-closing` 属性を追加後、`Promise.all()` で両方のアニメーション完了を待ってから `dialog.close()` を呼び出します。
+>
+> ```typescript
+> async function closeWithAnimation(dialog: HTMLDialogElement): Promise<void> {
+>   dialog.setAttribute('data-closing', '');
+>   await Promise.all(
+>     dialog.getAnimations().map((anim) => anim.finished)
+>   );
+>   dialog.removeAttribute('data-closing');
+>   dialog.close();
+> }
+> ```
+
+**8. モーション軽減 (Reduced Motion)**
+
+`index.md` で**必須要件**とされている `prefers-reduced-motion` への対応です。Panel と Backdrop の両方のアニメーションを無効化します。
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  dialog,
+  dialog[data-closing] {
+    animation: none;
+  }
+
+  ::backdrop,
+  [data-closing]::backdrop {
+    animation: none;
+  }
+}
+```
+
+> **Note (グローバルルールとの関係):**
+> `index.md` では `*, *::before, *::after { animation-duration: 0.01ms !important; }` をグローバルに適用するため、コンポーネント個別の宣言がなくてもアニメーションは事実上無効になります。ただし `::backdrop` 疑似要素はグローバルセレクタに含まれない場合があるため、コンポーネント側での明示的な `animation: none` が安全策として必要です。
+
+**9. Forced Colors Mode（強制カラーモード）**
+
+Windows ハイコントラストモードなど、OS レベルで色が強制される環境への対応です。
+
+```css
+@media (forced-colors: active) {
+  dialog {
+    background: Canvas;
+    border: 2px solid CanvasText;
+    box-shadow: none;
+  }
+
+  ::backdrop {
+    background: Canvas;
+    opacity: 0.7;
+    backdrop-filter: none;
+  }
+
+  /* 選択状態を背景色だけでなく輪郭でも伝える */
+  [role="option"][aria-selected="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+
+  .clear-button {
+    border: 1px solid ButtonText;
+    color: ButtonText;
+  }
+}
+```
+
+> **Rationale (Forced Colors Strategy):**
+> `index.md` では「構造の維持」「ボーダーやスペーシングにより、背景色が無くても領域を認識可能にする」ことが求められています。シャドウが消失する環境でも、`CanvasText` ボーダーによってパネルの境界を明確にします。`backdrop-filter` はシステムカラーに干渉するため無効化します。
+
+**10. 印刷スタイル (Print Styles)**
+
+```css
+@media print {
+  dialog,
+  ::backdrop {
+    display: none !important;
+  }
+}
+```
+
+> **Rationale (Print Strategy):**
+> 検索ダイアログはモーダルという一時的な UI 状態であり、印刷物に反映する情報価値がありません。`index.md` コンポーネント別印刷対応方針に従い、強制的に非表示とします。
+
+**11. アクセシビリティ (A11y)**
+
+**WAI-ARIA 属性 (ARIA Attributes)**
+
+| 属性 | 要素 | 値 | 必須? | 説明 |
+|:-----|:-----|:---|:-----|:-----|
+| `role` | `<dialog>`（外側コンテナ） | `dialog` | ✅ | Native `<dialog>` を使用するため暗黙的 |
+| `aria-modal` | `<dialog>` | `true` | ✅ | Focus Trap の意図を補助技術に伝達 |
+| `aria-label` | `<dialog>` | `"検索"` | ✅ | ダイアログの目的をスクリーンリーダーに伝達 |
+| `role` | Input | `combobox` | ✅ | コンボボックスパターン |
+| `aria-expanded` | Input | `true` / `false` | ✅ | リストボックスの展開状態 |
+| `aria-autocomplete` | Input | `list` | ✅ | オートコンプリートタイプ |
+| `aria-controls` | Input | `{listboxId}` | ✅ | 制御対象のリストボックス ID |
+| `aria-activedescendant` | Input | `{activeOptionId}` | ✅ | 現在選択中のオプション ID |
+| `aria-busy` | Input | `true` | ✅ | インデックスロード中の状態を必ず通知する |
+| `role` | 結果リスト | `listbox` | ✅ | リストボックス |
+| `role` | 結果項目 | `option` | ✅ | オプション項目 |
+| `aria-selected` | 結果項目 | `true` / `false` | ✅ | 選択状態 |
+
+**結果数の Live 通知**
+
+検索結果の件数変化をスクリーンリーダーに通知するため、Shadow DOM 内部に `aria-live` リージョンを設置します。
+
+```html
+<!-- Shadow DOM 内部（視覚非表示、スクリーンリーダー向け） -->
+<div class="sr-only" aria-live="polite" aria-atomic="true">
+  <!-- 例: "3 件の結果が見つかりました" / "一致する結果がありません" -->
+</div>
+```
+
+件数が変化するたびにテキストを更新します。`aria-live="polite"` により、現在の読み上げを中断せず次のポーズで通知されます。
+
+**フォーカス管理 (Focus Management)**
 
 | タイミング | 動作 | 実装 |
 |-----------|------|------|
 | **開いた時** | 入力フィールドへ自動フォーカス | `requestAnimationFrame(() => input.focus())` |
-| **閉じた時** | トリガー元へフォーカス返却 | トリガー要素への参照を保持し、`close()` 後に `focus()` |
-| **Focus Trap** | パレット内でフォーカスを循環 | `Tab` キーで入力 ↔ リスト間を移動 |
-| **Esc キー** | パレットを閉じる | `keydown` イベントで `close()` 呼び出し |
+| **閉じた時** | トリガー元へフォーカスを返却 | `open(triggerElement)` で渡した要素、または自動取得した `document.activeElement` へ返却 |
+| **Focus Trap** | パレット内でフォーカスを循環 | `showModal()` により Native が自動提供 |
+| **Esc キー** | パレットを閉じる | Native `cancel` イベントを `preventDefault()` → Exit アニメーション後 `close()` |
 
-**Keyboard Navigation**
+**キーボードナビゲーション (Keyboard Navigation)**
 
 | キー | 動作 |
 |------|------|
 | `Cmd+K` / `Ctrl+K` | パレットを開く（グローバルショートカット） |
-| `↓` / `↑` | リスト内の項目を移動 |
-| `Enter` | 選択中の項目を実行 |
+| `↓` | 次の結果へ移動（最終項目の次はリストの先頭へループ） |
+| `↑` | 前の結果へ移動（先頭項目の前はリストの末尾へループ） |
+| `Enter` | 選択中の結果へ遷移 |
 | `Esc` | パレットを閉じる |
-| `Tab` | 入力フィールド ↔ リスト間を移動 |
+| `Tab` | 入力フィールド ↔ クリアボタン間を移動 |
 
-**9. Forced Colors Mode (強制カラーモード)**
-
-- **Panel**: `border: 2px solid CanvasText` で構造を維持、シャドウを削除します。
-- **Backdrop**: `background: Canvas`, `opacity: 0.7`、`backdrop-filter: none` を使用します。
-- **Selected Item**: 背景色だけでなく `outline: 2px solid Highlight`, `outline-offset: -2px` で選択状態を明示します。
-- **Clear Button**: `border: 1px solid ButtonText` で視認性を担保します。
-
-**10. 印刷スタイル (Print Styles)**
-
-検索ダイアログは印刷時に非表示にします（`display: none !important`）。
-
-**11. 使用例 (Usage Examples)**
-
-**基本的な使用**
+**12. DOM 構造 (DOM Structure)**
 
 ```html
-<ui-search-dialog id="search-dialog">
-  <!-- 検索結果は動的に生成されます -->
-</ui-search-dialog>
+<!-- Shadow DOM 内部 -->
+<dialog
+  aria-modal="true"
+  aria-label="検索"
+>
+  <!-- SR 向け Live リージョン（視覚非表示） -->
+  <div class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Header: 検索入力 + クリアボタン -->
+  <div class="header">
+    <input
+      type="search"
+      role="combobox"
+      aria-expanded="false"
+      aria-autocomplete="list"
+      aria-controls="search-listbox"
+      aria-activedescendant=""
+      aria-busy="false"
+      placeholder="検索..."
+      autocomplete="off"
+    />
+    <!-- クリアボタン: query が空でない場合のみ表示 -->
+    <button
+      class="clear-button"
+      aria-label="検索をクリア"
+      type="button"
+      hidden
+    >
+      <!-- Lucide CircleX アイコン (aria-hidden="true") -->
+    </button>
+  </div>
+
+  <!-- Body: 結果リスト / ローディング / 空状態 -->
+  <div class="body">
+    <!-- ローディング状態 -->
+    <div class="loading-state" hidden>
+      <ui-spinner></ui-spinner>
+      <p>インデックスを読み込んでいます...</p>
+    </div>
+
+    <!-- 空状態 -->
+    <ui-empty-state
+      class="empty-state"
+      hidden
+      icon="search-x"
+      title="一致する結果がありません"
+      description="別のキーワードで検索してください"
+    ></ui-empty-state>
+
+    <!-- 検索結果リスト -->
+    <ul
+      id="search-listbox"
+      role="listbox"
+      aria-label="検索結果"
+    >
+      <!-- 結果項目（動的生成）-->
+      <!-- <li role="option" id="option-{n}" aria-selected="false">
+             <span class="item-title">...</span>
+             <span class="item-path">...</span>
+           </li> -->
+    </ul>
+  </div>
+
+  <!-- Footer: キーボードヒント（aria-hidden で読み上げ対象外） -->
+  <div class="footer" aria-hidden="true">
+    <span><kbd>↑</kbd><kbd>↓</kbd> 移動</span>
+    <span><kbd>Enter</kbd> 選択</span>
+    <span><kbd>Esc</kbd> 閉じる</span>
+  </div>
+</dialog>
+```
+
+> **Note (内部クラス名について):**
+> 内部要素には `part` 属性を付与しません。`::part()` による外部スタイリングは `index.md` の禁止事項（コンポーネントのカプセル化を破壊）に該当するためです。外部からのカスタマイズが必要な場合は、`:host` 上で公開されている CSS カスタムプロパティ（`--ui-search-dialog-max-width`, `--ui-search-dialog-max-height`, `--ui-search-dialog-position-top`）を使用してください。
+
+> **Note (スロットレス設計と `::backdrop`):**
+> このコンポーネントはスロットを持ちません。`showModal()` 使用時のみ、ブラウザが native `::backdrop` 疑似要素を自動生成します。Shadow DOM 内部の要素ではなく、ブラウザが管理するトップレイヤーです。
+
+**13. 使用例 (Usage Examples)**
+
+**基本的な使用（グローバルショートカット）**
+
+```html
+<ui-search-dialog id="search-dialog"></ui-search-dialog>
 
 <script>
+  const dialog = document.querySelector('#search-dialog');
+
   // グローバルショートカット
   document.addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
       e.preventDefault();
-      document.getElementById('search-dialog').opened = true;
+      dialog.open();
     }
+  });
+
+  // 選択時のページ遷移ハンドリング
+  dialog.addEventListener('ui-search-dialog-selected', (e) => {
+    console.log('遷移先:', e.detail.url, e.detail.title);
   });
 </script>
 ```
+
+**トリガーボタンからダイアログを開く（フォーカス返却付き）**
+
+```typescript
+const dialog = document.querySelector<UiSearchDialog>('#search-dialog');
+const trigger = document.querySelector<HTMLButtonElement>('#search-trigger');
+
+trigger.addEventListener('click', () => {
+  // トリガー要素を渡すことで、閉じた際に自動でフォーカスを返却する
+  dialog.open(trigger);
+});
+```
+
+**パブリックトークンによるカスタマイズ**
+
+```html
+<style>
+  .wide-search {
+    --ui-search-dialog-max-width: min(800px, 90vw);
+    --ui-search-dialog-max-height: min(600px, 85vh);
+    --ui-search-dialog-position-top: 15%;
+  }
+</style>
+
+<ui-search-dialog class="wide-search" id="search-dialog"></ui-search-dialog>
+```
+
+**14. 受け入れ基準 (Acceptance Criteria)**
+
+- **開く動作**: `open()` 呼び出し（または `opened` 属性付与）でダイアログが表示されること。Enter アニメーション（`opacity`, `scale`）が動作すること。
+- **閉じる動作**: `close()` 呼び出し後、Exit アニメーション完了後にダイアログが非表示になること。
+- **フォーカス移動（開く時）**: ダイアログ開放後、入力フィールドへ自動フォーカスが移動すること。
+- **フォーカス返却（閉じる時）**: `open(triggerElement)` で渡した要素、または自動取得した `document.activeElement` へフォーカスが返却されること。
+- **Focus Trap**: `Tab` キーで入力フィールドとクリアボタン間のみを循環すること。ダイアログ外の要素にフォーカスが移動しないこと。
+- **Esc キー**: Native `cancel` イベントを `preventDefault()` → Exit アニメーション後にダイアログが閉じること。
+- **クリアボタン表示制御**: `query` が空の場合はクリアボタンが `hidden` であること。文字入力後に表示されること。クリアボタン押下で入力がクリアされ、非表示に戻ること。
+- **キーボードナビゲーション（↑↓）**: 矢印キーで結果項目を移動できること。最終項目の次で先頭へ、先頭項目の前で末尾へループすること。
+- **Enter キー**: 選択中の結果項目で Enter 押下時に `ui-search-dialog-selected` が発火し、ページ遷移が実行されること。
+- **デバウンス**: キー入力から 150ms のデバウンス後に検索クエリが Worker へ送信されること。
+- **ローディング状態**: `loading=true` の間、ローディング状態 UI が Body 領域に表示されること。入力フィールドは操作可能で `aria-busy="true"` が設定されること。
+- **空状態**: 検索結果が 0 件の場合、`<ui-empty-state>` が表示されること。
+- **結果数通知**: 検索結果の件数変化時に `aria-live="polite"` リージョンのテキストが更新されること。
+- **aria-modal**: `aria-modal="true"` が `<dialog>` 要素に設定されること。
+- **aria-label**: `<dialog>` 要素に `aria-label="検索"` が設定されること。
+- **Combobox ARIA**: Input に `role="combobox"`, `aria-expanded`, `aria-controls`, `aria-activedescendant` が正しく設定されること。
+- **カスタムイベント**: `open()` の Enter アニメーション完了後に `ui-search-dialog-opened` が発火すること。`close()` の Exit アニメーション完了後に `ui-search-dialog-closed` が発火すること。
+- **Scroll Lock**: ダイアログ開放中に `body` のスクロールが無効化されること。閉じた後にスクロールが再有効化されること。`scrollbar-gutter: stable` によりレイアウトシフトが発生しないこと。
+- **Elevation Token**: `--elevation-xl` が Shadow に使用されること。`--shadow-xl`, `--shadow-dark-lg` 等の Primitive トークン直接参照が存在しないこと。
+- **Surface Token**: `--bg-surface-3` が Panel 背景（ダークモード）に使用されること。`--bg-surface-2` が Panel 背景に使用されていないこと。
+- **コンポーネントトークン命名**: `--ui-search-dialog-*` 命名規則に従っていること。`--search-dialog-*` 形式のトークンが存在しないこと。
+- **ハードコード禁止**: スタイル内にハードコードされた色・サイズ値が存在しないこと（トークンまたはコンポーネントローカルトークンを使用すること）。
+- **`::part()` 不使用**: DOM に `part` 属性が存在しないこと。
+- **スロットなし**: Shadow DOM 内部にスロット要素が存在しないこと。
+- **Reduced Motion**: `prefers-reduced-motion: reduce` 時にアニメーションが無効化され、パネルと `::backdrop` が即座に表示/非表示されること。
+- **Forced Colors**: Forced Colors Mode でパネルに `2px solid CanvasText` のボーダーが適用されること。`Canvas` 背景が使用されること。選択中の項目に `outline: 2px solid Highlight` が適用されること。
+- **印刷**: 印刷時にダイアログ全体（`::backdrop` を含む）が非表示（`display: none !important`）になること。
+- **DOM 構造**: `<dialog>` 内に `.header`（入力・クリアボタン）、`.body`（リスト・ローディング・空状態）、`.footer`（ヒント）が配置されること。`part` 属性が存在しないこと。
 
 ### アプリケーションシェル (Application Shell)
 
@@ -10259,17 +10886,41 @@ Backdropの表示・非表示時、`opacity: 0` ↔ `opacity: 1` のフェード
 - **Positioning**: `position: sticky; top: 0;`。`z-index` は `--z-fixed` (100) を適用。
 - **Layout Context**: アプリケーションシェルのグリッドにおいて `grid-column: 1 / -1` (全幅) に配置されます。
 
-**3. 技術仕様とAPI (Technical Specs)**
+**3. コンポーネント定義**
 
-このコンポーネントは主にレイアウトコンテナとして機能し、コンテンツはスロットを通じて注入されます。
+- **`<ui-header>`**: Native `<header>` 要素と 3 スロット構成（`start` / `center` / `end`）を持つアプリケーションシェル Web Component。Glassmorphism 背景とスティッキー配置により、コンテンツへの没入を妨げない「静謐な屋根」として機能します。CSS Grid による 3 カラム構成で Navigation Zone・Context Zone・Action Zone を提供し、各ゾーンの内容はスロット経由で注入されます。
+
+**4. 技術仕様とAPI (Technical Specs)**
+
+**プロパティ (Properties)**
+
+| プロパティ | 属性 | 型/値 | デフォルト | 説明 |
+|------------|------|-------|-----------|------|
+| `sidebarExpanded` | `sidebar-expanded` | `boolean` | `true` | サイドバーの展開状態。`true` の時、Start ゾーン幅を `--sidebar-width` (240px) に固定します。`false`（Zen Mode）の時は `auto` に縮退し、不要な空白を排除します。 |
+
+**カスタムイベント (Custom Events)**
+
+| イベント名 | バブリング | detail | 発火タイミング |
+|-----------|-----------|--------|--------------|
+| `ui-header-sidebar-toggle` | ❌ | `{ expanded: boolean }` | スロット内のサイドバートリガーから状態変更通知を受け取り、`sidebarExpanded` プロパティ更新後 |
+
+> **Note (イベント設計):**
+> ヘッダーはレイアウトコンテナであるため、独自のメソッドを持ちません。スロット内の子コンポーネント（例: サイドバートリガー、検索トリガー）が各自のイベントを発火し、ヘッダーはそれを受け取って `sidebar-expanded` 属性を更新します。ヘッダーはレイアウト状態の真実の源（Source of Truth）として `sidebar-expanded` 属性を保持し、サイドバーとレイアウトグリッドが同属性を参照して状態を同期します。
+
+**5. スロット (Slots)**
+
+このコンポーネントのコンテンツはすべてスロットを通じて注入されます。Shadow DOM 内部は 3 ゾーンのグリッドレイアウトのみを管理します。
 
 | スロット名 | 説明 |
 |------------|------|
-| `start` | **Navigation Zone**: 左側の領域。サイドバートリガーとContext Switcherを配置します。 |
+| `start` | **Navigation Zone**: 左側の領域。サイドバートリガーと Context Switcher を配置します。 |
 | `center` | **Context Zone**: 中央の領域。`<ui-breadcrumbs>` を配置し、現在の文脈を提示します。 |
-| `end` | **Action Zone**: 右側の領域。検索、TOCトリガー、設定メニュー等を配置します。 |
+| `end` | **Action Zone**: 右側の領域。検索トリガー、TOC トリガー、テーマメニュー等を配置します。 |
 
-**4. レイアウト構造と構成要素 (Layout Anatomy & Components)**
+> **Rationale (Slot Design):**
+> ヘッダーの内部要素（サイドバートリガー、検索トリガー等）は独立したコンポーネントとして実装され、スロット経由で配置されます。ヘッダー自体はレイアウト責務のみを持ち、個々のコントロールの挙動はそれぞれのコンポーネントがカプセル化します。これによりコンポーネント間の疎結合と単一責任原則を実現します。
+
+**6. レイアウト構造と構成要素 (Layout Anatomy & Components)**
 
 ヘッダーは3つのゾーンで構成され、階層構造の提示とコマンドへのアクセスを最優先します。
 
@@ -10294,7 +10945,7 @@ Backdropの表示・非表示時、`opacity: 0` ↔ `opacity: 1` のフェード
         - *Interaction*: クリックでドロップダウンを展開し、他ジャンルへの即座な横移動（Switching）を提供する。
         - *Rationale*: パンくずリスト（物理階層）とは独立した「世界（ジャンル）選択」のメンタルモデルをヘッダー上で満たす。Linearのワークスペース切り替えに相当し、将来的な検索機能等の拡張にも耐えうるスケーラビリティを確保する。
 
-> **Note (Mobile Context Switcher Placement):**  
+> **Note (Mobile Context Switcher Placement):**
 > モバイル環境では、ヘッダー幅制約のためContext Switcherは非表示となり、**サイドバー（ドロワー）コンポーネント内の最上部**へ移動・格納されます。詳細は `<ui-sidebar>` 仕様の「Mobile Context Switcher」セクションを参照してください。
 
 - **Center: Context Zone**
@@ -10308,7 +10959,7 @@ Backdropの表示・非表示時、`opacity: 0` ↔ `opacity: 1` のフェード
         - *Interaction*: タイトル部分はページトップへのスクロール、親階層は遷移として機能。
 
 - **End (Right): Action Zone**
-    1. **Search Trigger**: `<ui-search-trigger>` または `<button>` 要素。
+    1. **Search Trigger**: `<button>` 要素。
         - *Element Type*: **`<button>` 要素**。見た目が入力フィールドに似ていても、実際はボタンとして実装します。
         - *ARIA Attributes*:
             - `aria-haspopup="dialog"`: 検索ダイアログを開くことを示す。
@@ -10316,17 +10967,17 @@ Backdropの表示・非表示時、`opacity: 0` ↔ `opacity: 1` のフェード
             - `aria-label="検索"`: スクリーンリーダー用のラベル。
         - *Style*: デスクトップでは **Dummy Input形式**（アイコン + "検索" + バッジ）で配置し、検索ダイアログへのディスカバリ性を担保します。
         - *Responsive*: モバイル（`--bp-sm` 以下）では、バッジとテキストを隠蔽して **アイコンのみ (`icon-only`)** のスタイルへ変形し、スペースを確保します。
-        
+
     2. **TOC Trigger** (Mobile Only): 目次展開ボタン。
         - *Element*: `<button>` 要素。
-        - *Icon*: `list` または `list-tree` (Lucide)。
+        - *Icon*: `list` (Lucide)。
         - *ARIA Attributes*:
             - `aria-label="目次を開く"`
-            - `aria-haspopup="menu"` または `aria-haspopup="dialog"` (展開先UIに応じて)
+            - `aria-haspopup="dialog"`: Bottom Sheet はモーダルオーバーレイパターンのため `"dialog"` を使用。
             - `aria-expanded="false"` (初期状態)
         - *Visibility*: `< md` (モバイル) のみ表示。
-        - *Behavior*: クリックでBottom SheetまたはPopoverとして目次を展開。
-        
+        - *Behavior*: クリックで Bottom Sheet として目次を展開。
+
     3. **Theme Menu**: テーマ切り替え。
         - *Element*: `<button>` 要素。
         - *Icon*: `sun` (Light Mode) / `moon` (Dark Mode) / `monitor` (System)。
@@ -10334,7 +10985,7 @@ Backdropの表示・非表示時、`opacity: 0` ↔ `opacity: 1` のフェード
             - `aria-label="テーマを変更"`
             - `aria-haspopup="menu"`
 
-**5. レスポンシブ挙動 (Responsive Behavior)**
+**7. レスポンシブ挙動 (Responsive Behavior)**
 
 | ゾーン | Mobile (`< md`) | Tablet (`md` - `xl`) | Desktop (`>= xl`) |
 | :--- | :--- | :--- | :--- |
@@ -10349,23 +11000,44 @@ Backdropの表示・非表示時、`opacity: 0` ↔ `opacity: 1` のフェード
     - **Mobile** (`< md`): ヘッダー幅制約のため非表示となり、**サイドバー（ドロワー）内最上部**へ移動・格納されます。
         - *Discovery Design*: ドロワー展開時、コンテキストスイッチャーは最上部で**視覚的に際立つデザイン（背景色変更やボーダー分離）**とし、ユーザーが「現在のジャンル（ルート）」を即座に認識・変更できるようにします。
         - *Cross-Reference*: 詳細は `<ui-sidebar>` 仕様の `slot="header"` セクションを参照。
-        
+
 - **Breadcrumbs**:
     - **Desktop** (`>= xl`): ルート省略（Smart Omission）。ルート直下では非表示。
     - **Tablet** (`md` - `xl`): フルパス表示。
     - **Mobile** (`<= --bp-sm`): スペース不足のため **「ルート / ... / 現在地」** の最小構成に自動凝縮します（中間階層は省略ボタンに格納）。
         - *Tap Behavior*: ルート・現在地は通常のパンくずリンク/現在地として機能し、中間階層は省略ボタンから Dropdown で選択します。
         - *Rationale*: ヘッダー内に文脈を維持しつつ、横幅制約下でもS/N比を保ちます。
-    
+
 - **Search Trigger**:
     - **Desktop/Tablet** (`>= md`): フル表示（アイコン + テキスト + バッジ）。
     - **Mobile** (`< md`): アイコンのみ表示。
-    
+
 - **TOC Trigger**:
     - **Desktop/Tablet** (`>= md`): 非表示（TOCは右サイドバーに常駐）。
     - **Mobile** (`< md`): 表示（Bottom Sheet展開用）。
 
-**6. スタイリングとトークンマッピング (Style & Tokens)**
+**8. スタイリングとトークンマッピング (Style & Tokens)**
+
+**コンポーネントパブリックトークン (Component Public Tokens)**
+
+`:host` 上で定義し、外部から CSS カスタムプロパティで上書き可能な公開 API です。
+
+```css
+:host {
+  display: contents; /* アプリケーションシェルの Grid 全幅配置を継承 */
+
+  /* 外部からオーバーライド可能なパブリックトークン */
+  --ui-header-backdrop-saturate: 0.5;
+
+  /* コンポーネントローカルトークン（外部からの上書きは意図しない） */
+  --ui-header-edge-highlight: oklch(100% 0 0 / 0.06);
+}
+```
+
+> **Rationale (Backdrop Saturate Token):**
+> `saturate(0.5)` はヘッダー直下のコンテンツ色彩（コードハイライト等）が透過した際の S/N 比劣化を防ぐヒューリスティック値です。コンテンツとの組み合わせによって最適値が変わるため、パブリックトークン `--ui-header-backdrop-saturate` として公開し、必要に応じて `0.4`〜`0.6` の範囲で調整できるようにします。変数名は `--ui-[コンポーネント名]-[プロパティ]` の命名規則に従います。
+
+**ヘッダー本体**
 
 - **Height**: `--header-height` (48px)。
 - **Width**: 100% (Viewport Width)。
@@ -10374,12 +11046,10 @@ Backdropの表示・非表示時、`opacity: 0` ↔ `opacity: 1` のフェード
 - **Layout**: CSS Grid による 3 カラム構成。Padding: `0 var(--space-4)`。
 - **Background**: Glassmorphism + **Low Saturation Override**。
     - *Base*: `.glass-panel` を基盤とし、`index.md` 定義に準拠します。
-    - *Enhancement*: ヘッダー直下のコンテンツ色彩によるノイズを防ぐため、`saturate(0.5)` を追加合成し、S/N比を強化します。
-        - *Rationale*: 彩度 50% への減衰は、背景画像やカラフルなコンテンツ（コードハイライト等）が透過した際に、視認性を損なわないヒューリスティックな値です。実装時にコンテンツとの組み合わせを目視検証し、必要に応じて `0.4`〜`0.6` の範囲で調整してください。
+    - *Enhancement*: `backdrop-filter` に `saturate(var(--ui-header-backdrop-saturate))` を追加合成し、S/N比を強化します。
     - *Fallback*: `backdrop-filter` 非対応環境では不透明な `--bg-default` に切り替わります。`@supports (backdrop-filter: blur(12px))` によるポジティブ形式の Progressive Enhancement を採用します（`index.md` 参照）。
-    
 - **Border Bottom**: `var(--border-width) solid var(--border-default)`。
-    - *Rationale*: `index.md` では `--border-subtle` が推奨されていますが、ヘッダーはアプリケーション構造の最上位に位置し、ユーザーのスクロール操作の視覚的起点（ストッパー）として機能します。この役割を果たすため、他のコンテンツエリアとは一線を画した明確な境界が必要であり、`--border-default` (Opacity `0.12`) を採用します。将来的に `index.md` の推奨と統一する場合は、本仕様を更新してください。
+    - *Rationale*: `index.md` では `--border-subtle` は `--border-default` のエイリアスとして定義されており（Opacity `0.12`、値は同一）、どちらを使用しても実質的な差分は生じません。ヘッダーでは「気配」ではなく「構造明示」であることを命名で伝えるため `--border-default` を明示的に指定します。
 - **Typography**:
     - Font Size: `--text-base` (14px)。
     - Font Weight (Element-specific):
@@ -10390,46 +11060,66 @@ Backdropの表示・非表示時、`opacity: 0` ↔ `opacity: 1` のフェード
     - *Rationale*: 本文見出し (`H1` / `--text-4xl` / 36px) よりも小さいサイズを採用し、視覚的階層を明確化します。ウェイトは各要素の役割に応じて使い分け、「大胆なウェイト差」戦略（`index.md`）に準拠します。
 - **Shadow**: 原則なし（ボーダーとGlass効果で階層を分離）。
 
-**7. アクセシビリティ (A11y)**
+**9. アクセシビリティ (A11y)**
 
-- **Landmark**: `role="banner"` (自動付与)。
-- **Search Trigger**: 
-    - `<button>` 要素を使用。
-    - `aria-haspopup="dialog"`: 検索ダイアログを開くことを示す。
-    - `aria-keyshortcuts="Control+K Meta+K"`: ショートカットキーを明示。
-    - `aria-label="検索"`: スクリーンリーダー用のラベル。
-- **Sidebar Trigger**:
-    - `aria-label`: 状態に応じて動的に変更（例: `"サイドバーを開く"` / `"サイドバーを閉じる"`）。
-    - `aria-expanded`: サイドバーの開閉状態を示す（`true` / `false`）。
-- **Context Switcher**:
-    - `aria-haspopup="menu"`: ドロップダウンメニューを開くことを示す。
-    - `aria-expanded`: メニューの開閉状態を示す。
-- **TOC Trigger**:
-    - `aria-label="目次を開く"`
-    - `aria-haspopup="menu"` または `aria-haspopup="dialog"`
-    - `aria-expanded`: 展開状態を示す。
+**WAI-ARIA 属性 (ARIA Attributes)**
+
+| 属性 | 要素 | 値 | 必須? | 説明 |
+|:-----|:-----|:---|:-----|:-----|
+| `role` | `<header>` | `banner` | ✅ | Native `<header>` を使用するため暗黙的に付与される |
+| `aria-label` | Sidebar Trigger | `"サイドバーを開く"` / `"サイドバーを閉じる"` | ✅ | 状態に応じて動的に変更 |
+| `aria-expanded` | Sidebar Trigger | `true` / `false` | ✅ | サイドバーの開閉状態 |
+| `aria-haspopup` | Context Switcher | `"menu"` | ✅ | ドロップダウンメニューを開くことを示す |
+| `aria-expanded` | Context Switcher | `true` / `false` | ✅ | メニューの開閉状態 |
+| `aria-haspopup` | Search Trigger | `"dialog"` | ✅ | 検索ダイアログを開くことを示す |
+| `aria-keyshortcuts` | Search Trigger | `"Control+K Meta+K"` | ✅ | ショートカットキーを明示 |
+| `aria-label` | Search Trigger | `"検索"` | ✅ | スクリーンリーダー用のラベル |
+| `aria-label` | TOC Trigger | `"目次を開く"` | ✅ | スクリーンリーダー用のラベル |
+| `aria-haspopup` | TOC Trigger | `"dialog"` | ✅ | Bottom Sheet はモーダルオーバーレイのため `"dialog"` |
+| `aria-expanded` | TOC Trigger | `true` / `false` | ✅ | 展開状態 |
+| `aria-label` | Theme Menu | `"テーマを変更"` | ✅ | スクリーンリーダー用のラベル |
+| `aria-haspopup` | Theme Menu | `"menu"` | ✅ | テーマ選択メニューを開くことを示す |
+
+**キーボードナビゲーション (Keyboard Navigation)**
+
+| キー | 動作 |
+|------|------|
+| `Tab` | ヘッダー内インタラクティブ要素を DOM 順に移動（Sidebar Trigger → Context Switcher → Search Trigger → TOC Trigger → Theme Menu） |
+| `Shift+Tab` | 逆順に移動 |
+| `Enter` / `Space` | フォーカス中の要素を起動 |
+| `Cmd+K` / `Ctrl+K` | グローバルショートカット。Search Trigger を経由せず直接検索ダイアログを開く |
+| `Cmd+B` / `Ctrl+B` | グローバルショートカット。サイドバーの展開/格納（Zen Mode）を切り替える |
+| `Esc` | Context Switcher または Theme Menu のドロップダウンが開いている場合、閉じてトリガーにフォーカスを返却 |
+
+**フォーカス管理 (Focus Management)**
+
+| タイミング | 動作 | 実装 |
+|-----------|------|------|
+| **Context Switcher 開く時** | メニュー先頭項目へフォーカス移動 | ドロップダウンコンポーネントに委譲 |
+| **Context Switcher 閉じる時** | Context Switcher ボタンへフォーカスを返却 | `Esc` キーまたは項目選択後 |
+| **Theme Menu 開く時** | メニュー先頭項目へフォーカス移動 | ドロップダウンコンポーネントに委譲 |
+| **Theme Menu 閉じる時** | Theme Menu ボタンへフォーカスを返却 | `Esc` キーまたは項目選択後 |
+| **Focus Trap** | **行わない** | `index.md` のキーボード戦略に従い、Dropdown / Popover は Trap 禁止。`Tab` キーによる脱出（メニューを閉じて次へ移動）を許容する |
+
 - **Breadcrumbs**: `<ui-breadcrumbs>` の仕様（`nav`ランドマーク、`aria-current="page"`）を継承し、スクリーンリーダーに対して正確な現在地構造を提供します。
-- **Navigation**: 内部のインタラクティブ要素は全てキーボード操作可能。
 - **Focus Strategy**: グローバルな **Adaptive Focus** 戦略を継承し、移動中は控えめ、停止時に明確な識別を行います。
 
-**8. Forced Colors Mode (強制カラーモード)**
+**10. Forced Colors Mode（強制カラーモード）**
 
-Windows ハイコントラストモードなど、OSレベルで色が強制される環境への対応。
+Windows ハイコントラストモードなど、OS レベルで色が強制される環境への対応。
 
 ```css
 @media (forced-colors: active) {
-  ui-header {
+  :host {
     background: Canvas;
     border-bottom: var(--border-width) solid CanvasText;
-    /* backdrop-filter は無効化される */
+    /* backdrop-filter はシステムカラーに干渉するため無効化 */
     backdrop-filter: none;
   }
 
-  [part="sidebar-trigger"],
-  [part="context-switcher"],
-  [part="search-trigger"],
-  [part="toc-trigger"],
-  [part="theme-menu"] {
+  /* スロット経由で配置されたインタラクティブ要素 */
+  ::slotted(button),
+  ::slotted([role="button"]) {
     border: 1px solid ButtonText;
   }
 
@@ -10437,7 +11127,12 @@ Windows ハイコントラストモードなど、OSレベルで色が強制さ�
 }
 ```
 
-**9. 印刷スタイル (Print Styles)**
+> **Rationale (Forced Colors Strategy):**
+> `index.md` では「構造の維持」「ボーダーやスペーシングにより、背景色が無くても領域を認識可能にする」ことが求められています。`CanvasText` ボーダーによってヘッダー境界を明確にします。`backdrop-filter` はシステムカラーに干渉するため無効化します。
+>
+> スロット配置ボタンには `::slotted(button)` を使用します。`[part="..."]` 属性セレクタは Shadow DOM 外部からのスタイル注入を前提とするため `index.md` 禁止事項（`::part()` によるカプセル化破壊）と同等の問題を生じます。代わりに Shadow DOM 内部から `::slotted()` でスロット配置要素を対象とします。
+
+**11. 印刷スタイル (Print Styles)**
 
 ヘッダーは印刷時に非表示にします。ナビゲーション要素は紙媒体では不要です。
 
@@ -10449,10 +11144,10 @@ Windows ハイコントラストモードなど、OSレベルで色が強制さ�
 }
 ```
 
-> **Alternative (Optional):**  
+> **Alternative (Optional):**
 > パンくずリストのみを静的テキストとして残したい場合は、`start` / `end` ゾーンを非表示とし、`center` ゾーンのみを印刷出力する選択肢もあります。この場合、ヘッダーの `position` を `static` に変更し、背景・ボーダーを透明化してください。
 
-**10. トランジションとアニメーション (Transitions & Animations)**
+**12. トランジションとアニメーション (Transitions & Animations)**
 
 ヘッダー内の各インタラクティブ要素には、以下のトランジション仕様を適用します。
 
@@ -10469,6 +11164,190 @@ Windows ハイコントラストモードなど、OSレベルで色が強制さ�
 
 `prefers-reduced-motion: reduce` 環境下では、すべてのトランジションとアニメーションを無効化します。ヘッダーの視覚的挙動は即時反映となり、待機時間を強制しません。
 
+**13. DOM 構造 (DOM Structure)**
+
+```html
+<!-- Shadow DOM 内部 -->
+<header>
+  <!-- Navigation Zone (Start) -->
+  <div class="zone-start">
+    <slot name="start"></slot>
+  </div>
+
+  <!-- Context Zone (Center) -->
+  <div class="zone-center">
+    <slot name="center"></slot>
+  </div>
+
+  <!-- Action Zone (End) -->
+  <div class="zone-end">
+    <slot name="end"></slot>
+  </div>
+</header>
+```
+
+**Light DOM（コンポーザー側の配置例）**
+
+```html
+<ui-header sidebar-expanded>
+  <!-- start スロット: Navigation Zone -->
+  <div slot="start">
+    <button
+      class="sidebar-trigger"
+      aria-label="サイドバーを閉じる"
+      aria-expanded="true"
+      aria-controls="sidebar"
+    >
+      <!-- Lucide PanelLeft アイコン (aria-hidden="true") -->
+    </button>
+    <!-- Desktop/Tablet のみ表示 -->
+    <button
+      class="context-switcher"
+      aria-haspopup="menu"
+      aria-expanded="false"
+    >
+      <span class="context-switcher-label">音楽</span>
+      <!-- Lucide ChevronDown アイコン (aria-hidden="true") -->
+    </button>
+  </div>
+
+  <!-- center スロット: Context Zone -->
+  <ui-breadcrumbs slot="center"></ui-breadcrumbs>
+
+  <!-- end スロット: Action Zone -->
+  <div slot="end">
+    <button
+      class="search-trigger"
+      aria-haspopup="dialog"
+      aria-keyshortcuts="Control+K Meta+K"
+      aria-label="検索"
+    >
+      <!-- Lucide Search アイコン (aria-hidden="true") -->
+      <span class="search-trigger-text">検索</span>
+      <kbd class="search-trigger-badge">⌘K</kbd>
+    </button>
+    <!-- Mobile のみ表示 -->
+    <button
+      class="toc-trigger"
+      aria-haspopup="dialog"
+      aria-expanded="false"
+      aria-label="目次を開く"
+    >
+      <!-- Lucide List アイコン (aria-hidden="true") -->
+    </button>
+    <button
+      class="theme-menu"
+      aria-haspopup="menu"
+      aria-expanded="false"
+      aria-label="テーマを変更"
+    >
+      <!-- Lucide Sun / Moon / Monitor アイコン (aria-hidden="true") -->
+    </button>
+  </div>
+</ui-header>
+```
+
+> **Note (内部クラス名について):**
+> Shadow DOM 内部要素には `part` 属性を付与しません。`::part()` による外部スタイリングは `index.md` の禁止事項（コンポーネントのカプセル化を破壊）に該当するためです。外部からのカスタマイズが必要な場合は、`:host` 上で公開されている CSS カスタムプロパティ（`--ui-header-backdrop-saturate`）を使用してください。
+
+**14. 使用例 (Usage Examples)**
+
+**基本的な使用（全スロット配置）**
+
+```html
+<ui-header sidebar-expanded>
+  <div slot="start">
+    <button class="sidebar-trigger" aria-label="サイドバーを閉じる" aria-expanded="true">
+      <!-- アイコン -->
+    </button>
+    <button class="context-switcher" aria-haspopup="menu" aria-expanded="false">
+      音楽
+    </button>
+  </div>
+
+  <ui-breadcrumbs slot="center"></ui-breadcrumbs>
+
+  <div slot="end">
+    <button aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" aria-label="検索">
+      <!-- 検索トリガー -->
+    </button>
+    <button aria-haspopup="menu" aria-label="テーマを変更">
+      <!-- テーマメニュー -->
+    </button>
+  </div>
+</ui-header>
+```
+
+**サイドバー状態との連携（`sidebar-expanded` 属性の動的制御）**
+
+```typescript
+const header = document.querySelector<UiHeader>('ui-header');
+const sidebar = document.querySelector<UiSidebar>('ui-sidebar');
+const sidebarTrigger = document.querySelector<HTMLButtonElement>('.sidebar-trigger');
+
+// サイドバートリガーのクリックでヘッダーの展開状態を切り替え
+sidebarTrigger.addEventListener('click', () => {
+  const isExpanded = header.sidebarExpanded;
+  header.sidebarExpanded = !isExpanded;
+
+  // 状態に応じて aria-label を更新
+  sidebarTrigger.setAttribute(
+    'aria-label',
+    isExpanded ? 'サイドバーを開く' : 'サイドバーを閉じる'
+  );
+  sidebarTrigger.setAttribute('aria-expanded', String(!isExpanded));
+});
+
+// ヘッダーのイベントをサイドバーに転送
+header.addEventListener('ui-header-sidebar-toggle', (e: CustomEvent) => {
+  sidebar.expanded = e.detail.expanded;
+});
+```
+
+**パブリックトークンによるカスタマイズ**
+
+```html
+<style>
+  .high-saturation-layout {
+    /* コンテンツが低彩度の場合、透過バックドロップの彩度を高く保つ */
+    --ui-header-backdrop-saturate: 0.75;
+  }
+</style>
+
+<ui-header class="high-saturation-layout" sidebar-expanded>
+  <!-- ... -->
+</ui-header>
+```
+
+**15. 受け入れ基準 (Acceptance Criteria)**
+
+- **スティッキー配置**: `position: sticky; top: 0` が適用され、スクロール時にヘッダーが常に画面上部に固定されること。
+- **Z-index**: `--z-fixed` (100) が適用されること。
+- **全幅配置**: アプリケーションシェルの Grid において `grid-column: 1 / -1` で全幅配置されること。
+- **Content Width 制限**: 内部コンテナが画面幅 `1280px` 超過時に中央揃えになること。`--bp-xl` 以下では 100% 幅になること。
+- **Glassmorphism**: `--glass-panel` ベースの Glassmorphism 背景が適用されること。`backdrop-filter` に `saturate(var(--ui-header-backdrop-saturate))` が合成されること。
+- **Fallback**: `backdrop-filter` 非対応環境で不透明な `--bg-default` へフォールバックすること。`@supports (backdrop-filter: blur(12px))` によるポジティブ形式の Progressive Enhancement が使用されること。
+- **サイドバー展開状態**: `sidebar-expanded` 属性が `true` の時、Start ゾーン幅が `--sidebar-width` (240px) に固定されること。`false`（Zen Mode）の時は `auto` に縮退すること。
+- **Sidebar Trigger aria-label**: `aria-label` が状態に応じて動的に変更されること（`"サイドバーを開く"` / `"サイドバーを閉じる"`）。
+- **Sidebar Trigger aria-expanded**: サイドバーの開閉状態が `aria-expanded` に反映されること。
+- **Context Switcher**: `aria-haspopup="menu"` と `aria-expanded` が正しく設定されること。モバイル（`< md`）では非表示になること。
+- **Search Trigger**: `aria-haspopup="dialog"`, `aria-keyshortcuts="Control+K Meta+K"`, `aria-label="検索"` が設定されること。モバイルでアイコンのみ表示になること。
+- **TOC Trigger**: `aria-haspopup="dialog"`, `aria-expanded`, `aria-label="目次を開く"` が設定されること。デスクトップ/タブレット（`>= md`）では非表示になること。
+- **Theme Menu**: `aria-haspopup="menu"`, `aria-label="テーマを変更"` が設定されること。
+- **Smart Omission**: デスクトップ（`>= xl`）でパンくずリストのルート要素が省略されること。ルート直下では非表示になること。
+- **キーボードナビゲーション（Tab 順序）**: `Tab` キーでヘッダー内インタラクティブ要素を DOM 順に移動できること。
+- **グローバルショートカット**: `Cmd+K` / `Ctrl+K` で検索ダイアログが開くこと。`Cmd+B` / `Ctrl+B` でサイドバーの展開/格納が切り替わること。
+- **Focus Trap 不使用**: Context Switcher と Theme Menu のドロップダウン展開中、`Tab` キーでドロップダウンを閉じて次の要素へ移動できること。Focus Trap が発生しないこと。
+- **フォーカス返却**: Context Switcher / Theme Menu のドロップダウンを `Esc` または項目選択で閉じた後、トリガーボタンへフォーカスが返却されること。
+- **カスタムイベント**: サイドバートリガー操作後に `ui-header-sidebar-toggle` が `detail.expanded` と共に発火すること。
+- **パブリックトークン命名**: `--ui-header-*` 命名規則に従っていること。
+- **ハードコード禁止**: スタイル内にハードコードされた色・サイズ値が存在しないこと（トークンまたはコンポーネントローカルトークンを使用すること）。`saturate()` の値が `var(--ui-header-backdrop-saturate)` を経由していること。
+- **`::part()` 不使用 / `part` 属性不使用**: DOM に `part` 属性が存在しないこと。
+- **Forced Colors**: `forced-colors: active` 時に `Canvas` 背景・`CanvasText` ボーダーが適用されること。スロット配置ボタンに `ButtonText` ボーダーが適用されること。`backdrop-filter` が無効化されること。
+- **Reduced Motion**: `prefers-reduced-motion: reduce` 時にすべてのトランジションが無効化され、視覚的挙動が即時反映されること。
+- **印刷**: 印刷時にヘッダー全体が非表示（`display: none`）になること。
+- **DOM 構造**: Shadow DOM 内に `.zone-start`・`.zone-center`・`.zone-end` と対応する名前付きスロットが配置されること。`part` 属性が存在しないこと。
+
 #### サイドバー (Sidebar) `<ui-sidebar>`
 
 **1. デザイン哲学と目的 (Design Philosophy)**
@@ -10484,49 +11363,129 @@ Windows ハイコントラストモードなど、OSレベルで色が強制さ�
     - **LayoutStore の責務範囲**:
         - サイドバーの開閉状態（`expanded` / `collapsed`）
         - レイアウトモード（`fixed` / `overlay`）のメディアクエリベース自動判定
-        - 状態永続化（LocalStorage への保存・復元）
+        - 状態永続化（LocalStorage への保存・復元、キー: `rouault.sidebar.state`）
         - SSR/Hydration 時の初期状態決定（デフォルト: `expanded`、ユーザー設定があれば復元）
+    - **LayoutStore インターフェース**:
+        ```typescript
+        interface LayoutStore {
+          /** 現在の開閉状態 */
+          readonly state: 'expanded' | 'collapsed';
+          /** 現在のレイアウトモード（matchMedia により自動判定） */
+          readonly mode: 'fixed' | 'overlay';
+          /** サイドバーの展開/格納をトグル */
+          toggleSidebar(): void;
+          /** サイドバーを展開 */
+          expandSidebar(): void;
+          /** サイドバーを格納 */
+          collapseSidebar(): void;
+        }
+        ```
     - **Dynamic Centering (Fixed Mode)**: Desktop (`fixed`) においては、格納時にサイドバーの領域（Grid Track）を完全に除去（`0px`）し、メインコンテンツを**画面中央へセンタリング**します。片側に寄った不安定な空白を排除します。
     - **Off-Canvas (Overlay Mode)**: Mobile/Tablet (`overlay`) においては、コンテンツのレイアウトには干渉せず、`transform` によるスライド開閉を行います。
     - **Visual Collapse**: 幅の変動に伴い、内部のナビゲーション要素は不透明度制御により滑らかに隠蔽されます。
 
-**3. 技術仕様とAPI (Technical Specs)**
+**3. コンポーネント定義**
 
-| プロパティ | 属性 | 型/値 | 説明 |
-|------------|------|-------|------|
-| `state` | `data-state` | `'expanded' \| 'collapsed'` | 現在の開閉状態。 |
-| `mode` | `mode` | `'fixed' \| 'overlay'` | レイアウトモード。`>= xl` で `fixed`、それ未満で `overlay`。`LayoutStore` がメディアクエリに基づき自動判定。 |
+- **`<ui-sidebar>`**: `<nav>` 要素と 2 スロット構成（`header` / default）を持つアプリケーションシェル Web Component。`LayoutStore` との連携により Fixed（デスクトップ固定）と Overlay（モバイルオフキャンバス）の 2 モードを自動切換えし、Zen Mode では Grid Track を物理的に除去してメインコンテンツを中央へセンタリングします。`--border-ghost` による「気配」としての存在感と、`inert` 属性による厳密なフォーカス管理を組み合わせ、「Silent Existence（静謐な構造）」を実現します。
 
-**4. スロット (Slots)**
+**4. 技術仕様とAPI (Technical Specs)**
+
+**プロパティ (Properties)**
+
+| プロパティ | 属性 | 型/値 | デフォルト | 説明 |
+|------------|------|-------|-----------|------|
+| `state` | `data-state` | `'expanded' \| 'collapsed'` | `'expanded'` | 現在の開閉状態。`LayoutStore` が管理し、状態は LocalStorage に永続化されます。 |
+| `mode` | `mode` | `'fixed' \| 'overlay'` | 自動 | レイアウトモード。`>= xl` (1280px) で `fixed`、それ未満で `overlay`。`LayoutStore` がメディアクエリ `matchMedia('(min-width: 1280px)')` に基づき自動判定します。 |
+
+> **Note (`data-state` の命名について):**
+> `state` プロパティの属性名に `data-state` を採用しています。これはCSS セレクタで状態を参照する際（`:host([data-state="collapsed"])`）に、ネイティブのブール属性（`disabled`, `open` 等）との意味的な衝突を避け、「このコンポーネントが管理するカスタムな状態値」であることを明示するためです。`mode` は列挙型の設定値のため、通常の属性名を使用しています。
+
+**カスタムイベント (Custom Events)**
+
+| イベント名 | バブリング | detail | 発火タイミング |
+|-----------|-----------|--------|--------------|
+| `ui-sidebar-state-change` | ❌ | `{ state: 'expanded' \| 'collapsed'; mode: 'fixed' \| 'overlay' }` | `state` が変更された後（`LayoutStore` 経由・直接操作いずれも） |
+
+**5. スロット (Slots)**
 
 | スロット名 | 説明 | 使用モード | DOM構造例 |
 |-----------|------|-----------|-----------|
-| `header` | **Mobile Context Switcher** 用。現在のジャンル（ルート）を表示し、他ジャンルへの切り替えを提供します。 | `overlay` のみ | `<button slot="header" aria-haspopup="menu">Music ▾</button>` |
-| (default) | ナビゲーションツリー本体。`<ui-tree>` または `<nav>` 要素を配置します。 | 全モード | `<ui-tree>...</ui-tree>` |
+| `header` | **Mobile Context Switcher** 用。現在のジャンル（ルート）を表示し、他ジャンルへの切り替えを提供します。 | `overlay` のみ | `<button slot="header" aria-haspopup="menu">音楽 ▾</button>` |
+| (default) | ナビゲーションツリー本体。`<ui-tree>` を配置します。 | 全モード | `<ui-tree>...</ui-tree>` |
 
 **`header` スロットの詳細 (Mobile Context Switcher)**
 
 - **表示条件**: `mode="overlay"` の場合のみ表示されます。`mode="fixed"` では DOM に存在していても非表示（`display: none`）となります。
 - **配置**: サイドバー最上部（ナビゲーションツリーの上）に固定配置されます。
 - **推奨コンテンツ**: `<ui-header>` の Context Switcher と同一のコンポーネントを使用し、一貫性を保ちます。
-- **視覚的強調**: 背景色を `var(--bg-surface-2)` に変更し、下部に `border-bottom: 1px solid var(--border-default)` を適用することで、ナビゲーションツリーとの視覚的分離を明確にします。
+- **視覚的強調**: 背景色を `var(--bg-surface-2)` に変更し、下部に `border-bottom: var(--border-width) solid var(--border-default)` を適用することで、ナビゲーションツリーとの視覚的分離を明確にします。
 - **スロットが空の場合**: 何も表示されず、ナビゲーションツリーが最上部から開始されます。
 
-> **Cross-Reference:**  
+> **Cross-Reference:**
 > Desktop/Tablet 環境での Context Switcher の配置と挙動については、`<ui-header>` 仕様の「Start Zone: Context Switcher」セクションを参照してください。
 
-**5. スタイリングとトークンマッピング (Style & Tokens)**
+**6. レスポンシブ挙動 (Responsive Behavior)**
+
+| 項目 | Mobile (`< md`) | Tablet (`md` - `xl`) | Desktop (`>= xl`) |
+| :--- | :--- | :--- | :--- |
+| **mode** | `overlay` | `overlay` | `fixed` |
+| **初期状態** | `collapsed` | `collapsed` | `expanded`（LocalStorage 設定を優先） |
+| **開閉トリガー** | ヘッダー Sidebar Trigger | ヘッダー Sidebar Trigger | ヘッダー Sidebar Trigger / `Ctrl+B` |
+| **レイアウト干渉** | なし（オーバーレイ） | なし（オーバーレイ） | あり（Grid Track 変化） |
+| **バックドロップ** | あり（スクリム） | あり（スクリム） | なし |
+| **`header` スロット** | 表示 | 表示 | 非表示 |
+| **Zen Mode** | 非対応（常にオーバーレイ） | 非対応（常にオーバーレイ） | 対応（Grid Track `0px`） |
+
+**Overlay モードの詳細仕様**
+
+Mobile / Tablet (`< xl`) でのオフキャンバスドロワー挙動を定義します。
+
+- **幅**: `--sidebar-width` (240px)。Fixed モードと同一幅を維持します。
+- **Z-index**: コンポーネント本体は `--z-modal` (300)。背後のスクリムは `--z-backdrop` (200)。ヘッダー（`--z-fixed` / 100）より上位に重なることで、ドロワーとしての正しい視覚的階層を確保します。
+- **スクリム（背景遮蔽）**: 半透明の全画面オーバーレイ。
+    - `position: fixed; inset: 0`
+    - `background: oklch(0% 0 0 / var(--opacity-scrim))` (0.6)
+    - `z-index: var(--z-backdrop)` (200)
+    - クリックでサイドバーを閉じます（`Esc` キーと同等の動作）。
+- **閉じる操作**:
+    1. スクリムをクリック
+    2. `Esc` キーを押す
+    3. ナビゲーション項目を選択（ページ遷移時）
+    4. ヘッダーの Sidebar Trigger を再クリック
+
+**7. スタイリングとトークンマッピング (Style & Tokens)**
+
+**コンポーネントパブリックトークン (Component Public Tokens)**
+
+`:host` 上で定義し、外部から CSS カスタムプロパティで上書き可能な公開 API です。
+
+```css
+:host {
+  display: block; /* Grid レイアウトにおける Grid Item として機能 */
+
+  /* 外部からオーバーライド可能なパブリックトークン */
+  --ui-sidebar-scrim-opacity: var(--opacity-scrim); /* 0.6 */
+}
+```
+
+> **Note (`display: block` について):**
+> Fixed Mode では `<ui-sidebar>` が CSS Grid の Grid Item として機能するため、`display: block`（または `display: flex` / `grid`）を明示します。`display: contents` を使用すると Grid Item として認識されなくなります。Overlay Mode でも同様に `position: fixed` に切り替えるため `block` を維持します。
 
 **Layout & Width**
 
-- **Grid Track (Fixed Mode)**:
-    - `expanded`: `--sidebar-width` (240px)
-    - `collapsed`: `0px` (Zen Mode)
-- **Transition**: `grid-template-columns` プロパティのアニメーションにより、滑らかなレイアウト変更を行います。
-    - **Fallback Strategy**: `grid-template-columns` のアニメーションは一部ブラウザで未サポートまたはパフォーマンス問題があるため、以下の戦略を採用します。
-        - **Primary**: CSS Grid の `fr` 単位変化による自然なレイアウト遷移。
-        - **Fallback**: `@supports` による feature detection を行い、非対応環境では `transform: translateX()` による視覚的な移動に切り替えます。
-        - **Performance**: アニメーション開始時に `will-change: grid-template-columns` を適用し、完了後に削除することで、Layer Promotion によるパフォーマンス最適化を行います。
+- **Fixed Mode**:
+    - `expanded`: Grid Track `--sidebar-width` (240px)
+    - `collapsed`: Grid Track `0px`（Zen Mode）
+    - `overflow: hidden` — Grid Track が `0px` になっても内部コンテンツがはみ出さないよう制御します。
+- **Overlay Mode**:
+    - `position: fixed; inset-block: 0; inset-inline-start: 0`
+    - `width: --sidebar-width` (240px)
+    - `expanded`: `transform: translateX(0)`
+    - `collapsed`: `transform: translateX(-100%)`
+- **Transition（Fixed Mode Fallback Strategy）**: `grid-template-columns` のアニメーションは一部ブラウザで未サポートまたはパフォーマンス問題があるため、以下の戦略を採用します。
+    - **Primary**: アプリケーションシェル側の `grid-template-columns` 変化による自然なレイアウト遷移。
+    - **Fallback**: `@supports (grid-template-columns: 0px)` による feature detection を行い、非対応環境では `transform: translateX(-100%)` による視覚的な移動に切り替えます。
+    - **Performance**: アニメーション開始時に `will-change: transform` を適用し、完了後に削除することで、Layer Promotion によるパフォーマンス最適化を行います。
 
 **Items (Hierarchical Silence)**
 
@@ -10545,78 +11504,87 @@ Windows ハイコントラストモードなど、OSレベルで色が強制さ�
 
 - `border-right: var(--border-width) solid var(--border-ghost)`
 - *Rationale*: サイドバーは「構造の気配（Ghost）」として機能すべきであり、標準の `--border-default` (Opacity `0.12`) よりもさらに繊細な `--border-ghost` (Opacity `0.04`) を採用して静謐さを保ちます。
-- *Note (index.md との整合性)*: `index.md` では `--border-subtle` が記載されていますが、本仕様では「Silent Existence」の哲学を徹底するため、より繊細な `--border-ghost` を採用しています。将来的に `index.md` 本体を更新する際は、この仕様を基準としてください。
-- *Collapsed State*: `collapsed` 状態ではサイドバーそのものが隠れるため、ボーダーも消失します。
+- *Note (index.md との差異)*: `index.md` レイアウトシステムのサイドバー定義では `--border-subtle`（`--border-default` のエイリアス）が記載されています。本コンポーネント仕様では「Silent Existence」の哲学を徹底するため、意図的に `--border-ghost` を採用しています。この差異は `index.md` の担当者に通知済みであり、次回改定時に `index.md` 側を本仕様に合わせて更新します。
+- *Collapsed State*: `collapsed` 状態ではサイドバーそのものが隠れるため（`overflow: hidden` + Grid Track `0px`）、ボーダーも消失します。
 
-**6. アクセシビリティ (A11y)**
+**ハードコード禁止**
 
-**WAI-ARIA 属性**
+スタイル内にハードコードされた色・サイズ値を使用しないこと。すべてトークンまたはコンポーネントローカルトークンを経由すること。
 
-| 属性 | 値 | 必須? | 説明 |
-|------|-----|------|------|
-| `role` | `navigation` | ✅ | ランドマーク（自動付与） |
-| `aria-label` | `"Main Navigation"` | ✅ | スクリーンリーダー用のラベル |
+**8. アクセシビリティ (A11y)**
 
-**Keyboard Shortcuts**
+**WAI-ARIA 属性 (ARIA Attributes)**
 
-- `Cmd+B` (macOS) / `Ctrl+B` (Windows/Linux): サイドバーの開閉をトグル。
+| 属性 | 要素 | 値 | 必須? | 説明 |
+|:-----|:-----|:---|:-----|:-----|
+| `role` | Shadow DOM `<nav>` | `navigation` | ✅ | ネイティブ `<nav>` 要素を使用するため暗黙的に付与される |
+| `aria-label` | Shadow DOM `<nav>` | `"メインナビゲーション"` | ✅ | スクリーンリーダー用のラベル。ページ内の他の `<nav>` ランドマークと区別します |
+| `aria-hidden` | スクリム要素 | `true` | ✅ | 装飾的なスクリムをスクリーンリーダーから隠蔽 |
 
-**Focus Management**
+**キーボードナビゲーション (Keyboard Navigation)**
+
+| キー | 動作 |
+|------|------|
+| `Tab` | サイドバー内インタラクティブ要素を DOM 順に移動 |
+| `Shift+Tab` | 逆順に移動 |
+| `Enter` / `Space` | フォーカス中のリンク・ボタンを起動 |
+| `Esc` | Overlay Mode でサイドバーが展開中の場合、閉じてヘッダーの Sidebar Trigger へフォーカスを返却 |
+| `Cmd+B` (macOS) / `Ctrl+B` (Windows/Linux) | グローバルショートカット。`LayoutStore.toggleSidebar()` を呼び出す。Fixed Mode / Overlay Mode 両方で動作 |
+| `↑` `↓` | ナビゲーションツリー内の項目移動（`<ui-tree>` の Roving Tabindex に委譲） |
+| `→` `←` | ツリーノードの展開/格納（`<ui-tree>` に委譲） |
+
+**フォーカス管理 (Focus Management)**
+
+Fixed Mode と Overlay Mode でフォーカス管理の挙動が異なります。
+
+*Fixed Mode（デスクトップ）*
 
 | アクション | タイミング | 動作 |
 |-----------|-----------|------|
-| **Collapse (格納)** | Step 1 | `inert` 属性を付与（即座にフォーカス無効化） |
+| **Collapse (格納)** | Step 1 | `inert` 属性を付与（即座にフォーカス無効化・Tab 順序から除外） |
 | | Step 2 | アニメーション開始（300ms） |
 | | Step 3 | アニメーション完了後、`visibility: hidden` を適用 |
 | **Expand (展開)** | Step 1 | `visibility: visible` を適用、`inert` 属性を解除 |
 | | Step 2 | アニメーション開始（300ms） |
-| | Step 3 | アニメーション完了 |
+| | Step 3 | アニメーション完了（フォーカスは移動しない。ユーザーの意図を尊重） |
 
-> **Rationale (Inert Strategy):**  
-> 格納アクション開始直後に `inert` を付与することで、アニメーション中のフォーカス迷子を防ぎます。展開時は逆順で、視覚的に表示される前にフォーカス可能状態へ復帰させることで、スムーズな操作体験を提供します。
+*Overlay Mode（モバイル/タブレット）*
+
+| アクション | タイミング | 動作 |
+|-----------|-----------|------|
+| **Open (展開)** | Step 1 | `visibility: visible`、`inert` 解除 |
+| | Step 2 | アニメーション開始（300ms） |
+| | Step 3 | アニメーション完了後、サイドバー内最初のフォーカス可能要素へフォーカス移動（`header` スロットが存在する場合はその先頭へ） |
+| **Close (格納)** | Step 1 | `inert` 属性を付与（即座にフォーカス無効化） |
+| | Step 2 | アニメーション開始（300ms） |
+| | Step 3 | アニメーション完了後、`visibility: hidden` を適用 |
+| | Step 4 | **ヘッダーの Sidebar Trigger へフォーカスを返却** |
+| **スクリム背後のコンテンツ** | Open 中 | `main` および `ui-header` の `inert` 属性は付与**しない**。Overlay Mode のサイドバーはモーダルではなくドロワーのため、背後への Tab 移動は許容し、Focus Trap を行いません（`index.md` の「Dropdown / Popover は Trap 禁止」に準拠） |
+
+> **Rationale (Inert Strategy):**
+> 格納アクション開始直後に `inert` を付与することで、アニメーション中のフォーカス迷子を防ぎます。展開時は逆順で、視覚的に表示される前にフォーカス可能状態へ復帰させることで、スムーズな操作体験を提供します。Overlay Mode での展開時は、サイドバー内先頭へのフォーカス移動によりドロワーの開放を認知させます。
 
 **Focus Strategy**
 
 `ui-header` と同様に、**Adaptive Focus** を適用します。`index.md` の仕様に準拠し、移動中は控えめ（`--focus-ring-color-subtle`）、停止時に明確（`--focus-ring-color`）な識別を行います。
 
-**7. アニメーション (Motion)**
-
-**Transition Logic by Mode**
-
-| モード | プロパティ | 挙動 |
-|--------|-----------|------|
-| **Fixed Mode (Desktop)** | `grid-template-columns` (Layout)<br>`opacity` (Content) | サイドバー領域が物理的に縮小し、メインコンテンツが中央へ寄る（Zen Mode）。 |
-| **Overlay Mode (Mobile)** | `transform` (Slide)<br>`opacity` (Backdrop) | 画面外 (`translateX(-100%)`) への退避。 |
-
-**Common Specs**
-
-| 設定 | 値 | 説明 |
-|------|-----|------|
-| **Duration** | `--duration-slower` (300ms) | Scene Change として認知させる十分な時間。 |
-| **Easing** | `--ease-spring` (Overdamped) | バウンスなしの収束。`index.md` の「振動禁止」原則に準拠。 |
-
-**Motion Reduction (モーション軽減)**
-
-`prefers-reduced-motion: reduce` 時は、すべてのアニメーションとトランジションを無効化します。
-
-| 設定 | Duration | Easing | 適用 |
-|------|----------|--------|------|
-| Default | `300ms` | `--ease-spring` | 標準動作 |
-| `prefers-reduced-motion: reduce` | `0ms` (即時) | `linear` | 健康被害防止のため必須 |
-
-**8. Forced Colors Mode (強制カラーモード)**
+**9. Forced Colors Mode（強制カラーモード）**
 
 Windows ハイコントラストモードなど、OS レベルで色が強制される環境への対応です。
 
+Shadow DOM 内のスタイルシートに以下を定義します。
+
 ```css
 @media (forced-colors: active) {
-  ui-sidebar {
+  /* サイドバー本体の境界を明確化 */
+  nav {
     background: Canvas;
     border-right: var(--border-width) solid CanvasText;
   }
 
-  /* アクティブ状態を背景色だけでなくボーダーでも示す */
-  ui-sidebar [part="item"][aria-current="page"] {
+  /* スロット経由で直接配置された項目のアクティブ状態 */
+  /* 注: ui-tree 内部の深くネストした項目は ui-tree 自身の Forced Colors 対応に委ねる */
+  ::slotted([aria-current="page"]) {
     outline: 2px solid Highlight;
     outline-offset: -2px;
   }
@@ -10625,10 +11593,12 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
 }
 ```
 
-> **Rationale (Forced Colors Strategy):**  
+> **Rationale (Forced Colors Strategy):**
 > `index.md` の「構造の維持」「ボーダーやスペーシングにより、背景色が無くても領域を認識可能にする」という原則に準拠します。透過ボーダーが消失する環境でも、`CanvasText` による明確な境界線で構造を維持します。
+>
+> アクティブ状態の強調には `::slotted([aria-current="page"])` を使用します。`[part="item"]` セレクタは `::part()` によるカプセル化破壊の入り口となるため使用しません（`index.md` 禁止事項に準拠）。`<ui-tree>` 内部の深くネストした項目のスタイリングは、`<ui-tree>` コンポーネント自身の Forced Colors 対応に委譲します。
 
-**9. 印刷スタイル (Print Styles)**
+**10. 印刷スタイル (Print Styles)**
 
 サイドバーは印刷時に非表示にします。ナビゲーション要素は紙媒体では不要です。
 
@@ -10640,26 +11610,183 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
 }
 ```
 
-**10. 使用例 (Usage Examples)**
+**11. トランジションとアニメーション (Transitions & Animations)**
 
-**基本的な使用**
+**モード別トランジション仕様**
+
+| モード | 対象プロパティ | 挙動 |
+|--------|-----------|------|
+| **Fixed Mode (Desktop)** | アプリケーションシェルの `grid-template-columns` (Layout)<br>サイドバー内コンテンツの `opacity` | Grid Track が縮小し、メインコンテンツが中央へ寄る（Zen Mode）。内部コンテンツは `opacity: 0` へ先行フェードアウト（内容が透けて見えることを防ぐ）。 |
+| **Overlay Mode (Mobile/Tablet)** | サイドバーの `transform` (Slide)<br>スクリムの `opacity` (Backdrop) | サイドバーが画面外 (`translateX(-100%)`) へ退避。スクリムが `opacity: 0` → `var(--ui-sidebar-scrim-opacity)` にフェード。 |
+
+**共通仕様 (Common Specs)**
+
+| 設定 | 値 | 説明 |
+|------|-----|------|
+| **Duration** | `--duration-slower` (300ms) | Scene Change として認知させる十分な時間。`index.md` の最大値 `300ms` の上限を厳守。 |
+| **Easing** | `--ease-spring` (Overdamped) | バウンスなしの収束。`index.md` の「振動禁止」原則に準拠。 |
+
+**CSS 実装例**
+
+```css
+/* Fixed Mode: コンテンツの先行フェードアウト */
+:host([data-state="collapsed"]) .sidebar-content {
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease-in);
+}
+
+:host([data-state="expanded"]) .sidebar-content {
+  opacity: 1;
+  transition: opacity var(--duration-normal) var(--ease-out);
+}
+
+/* Overlay Mode: スライドアニメーション */
+:host([mode="overlay"]) nav {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: var(--sidebar-width);
+  transform: translateX(-100%);
+  transition: transform var(--duration-slower) var(--ease-spring);
+}
+
+:host([mode="overlay"][data-state="expanded"]) nav {
+  transform: translateX(0);
+}
+
+/* スクリム */
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: oklch(0% 0 0 / var(--ui-sidebar-scrim-opacity));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-slower) var(--ease-out);
+  z-index: var(--z-backdrop);
+}
+
+:host([mode="overlay"][data-state="expanded"]) .scrim {
+  opacity: 1;
+  pointer-events: auto;
+}
+```
+
+**Motion Reduction (モーション軽減)**
+
+`prefers-reduced-motion: reduce` 時は、すべてのアニメーションとトランジションを無効化します。`index.md` のグローバル設定（`transition-duration: 0.01ms !important`）により自動適用されますが、コンポーネント内でも明示します。
+
+| 設定 | Duration | Easing | 適用 |
+|------|----------|--------|------|
+| Default | `300ms` | `--ease-spring` | 標準動作 |
+| `prefers-reduced-motion: reduce` | `0.01ms` (実質即時) | `linear` | 健康被害防止のため必須 |
+
+**12. DOM構造 (DOM Structure)**
 
 ```html
-<ui-sidebar>
-  <!-- Mobile Context Switcher -->
-  <button slot="header" aria-haspopup="menu">
-    Music ▾
+<!-- Shadow DOM 内部 -->
+<nav aria-label="メインナビゲーション">
+  <!-- header スロット（overlay mode のみ表示） -->
+  <div class="sidebar-header">
+    <slot name="header"></slot>
+  </div>
+
+  <!-- ナビゲーションツリー本体 -->
+  <div class="sidebar-content">
+    <slot></slot>
+  </div>
+</nav>
+
+<!-- Overlay Mode 用スクリム（Shadow DOM 内部） -->
+<div class="scrim" aria-hidden="true"></div>
+```
+
+**Light DOM（コンポーザー側の配置例）**
+
+```html
+<!-- Fixed Mode（デスクトップ） -->
+<ui-sidebar data-state="expanded" mode="fixed">
+  <!-- header スロット: mode="fixed" では非表示 -->
+  <button
+    slot="header"
+    aria-haspopup="menu"
+    aria-expanded="false"
+    aria-label="現在のジャンルを変更"
+  >
+    <span class="context-label">音楽</span>
+    <!-- Lucide ChevronDown アイコン (aria-hidden="true") -->
   </button>
-  
-  <!-- Navigation Tree -->
-  <nav>
-    <ul>
-      <li><a href="/music/classical">Classical</a></li>
-      <li><a href="/music/jazz" aria-current="page">Jazz</a></li>
-      <li><a href="/music/rock">Rock</a></li>
-    </ul>
-  </nav>
+
+  <!-- デフォルトスロット: ナビゲーションツリー -->
+  <ui-tree></ui-tree>
 </ui-sidebar>
+
+<!-- Overlay Mode（モバイル） -->
+<ui-sidebar data-state="collapsed" mode="overlay">
+  <button
+    slot="header"
+    aria-haspopup="menu"
+    aria-expanded="false"
+    aria-label="現在のジャンルを変更"
+  >
+    <span class="context-label">音楽</span>
+  </button>
+  <ui-tree></ui-tree>
+</ui-sidebar>
+```
+
+> **Note (内部クラス名について):**
+> Shadow DOM 内部要素には `part` 属性を付与しません。`::part()` による外部スタイリングは `index.md` の禁止事項（コンポーネントのカプセル化を破壊）に該当するためです。外部からのカスタマイズが必要な場合は、`:host` 上で公開されている CSS カスタムプロパティ（`--ui-sidebar-scrim-opacity`）を使用してください。
+
+**13. 使用例 (Usage Examples)**
+
+**Fixed Mode（デスクトップ、展開状態）**
+
+```html
+<ui-sidebar data-state="expanded" mode="fixed">
+  <ui-tree></ui-tree>
+</ui-sidebar>
+```
+
+**Overlay Mode（モバイル、Mobile Context Switcher 付き）**
+
+```html
+<ui-sidebar data-state="collapsed" mode="overlay">
+  <!-- header スロット: overlay mode のみ表示 -->
+  <button
+    slot="header"
+    aria-haspopup="menu"
+    aria-expanded="false"
+    aria-label="現在のジャンルを変更"
+  >
+    音楽
+    <!-- Lucide ChevronDown アイコン (aria-hidden="true") -->
+  </button>
+
+  <ui-tree></ui-tree>
+</ui-sidebar>
+```
+
+**`LayoutStore` との連携（TypeScript）**
+
+```typescript
+import { useLayoutStore } from '@/stores/layout';
+
+const layoutStore = useLayoutStore();
+const sidebar = document.querySelector<UiSidebar>('ui-sidebar');
+
+// ストアの状態変化をコンポーネントへ反映
+layoutStore.subscribe((state) => {
+  if (sidebar) {
+    sidebar.setAttribute('data-state', state.state);
+    sidebar.setAttribute('mode', state.mode);
+  }
+});
+
+// コンポーネントのイベントをストアへ転送
+sidebar?.addEventListener('ui-sidebar-state-change', (e: CustomEvent) => {
+  // サイドバーから発火したイベントをストアに通知（必要に応じて）
+  console.log('sidebar state changed:', e.detail);
+});
 ```
 
 **グローバルショートカット**
@@ -10669,73 +11796,169 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
 document.addEventListener('keydown', (e) => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
     e.preventDefault();
-    const sidebar = document.querySelector('ui-sidebar');
-    const layoutStore = useLayoutStore();
-    layoutStore.toggleSidebar();
+    useLayoutStore().toggleSidebar();
   }
 });
 ```
 
-### フッター (Footer) `<ui-footer>`
+**パブリックトークンによるカスタマイズ**
+
+```html
+<style>
+  /* スクリムの透明度を調整（デフォルトは --opacity-scrim: 0.6） */
+  .light-scrim-layout {
+    --ui-sidebar-scrim-opacity: 0.4;
+  }
+</style>
+
+<ui-sidebar class="light-scrim-layout" data-state="collapsed" mode="overlay">
+  <!-- ... -->
+</ui-sidebar>
+```
+
+**14. 受け入れ基準 (Acceptance Criteria)**
+
+- **`:host` display**: `display: block` が適用されていること。Fixed Mode で Grid Item として機能すること。
+- **Fixed Mode 展開**: `data-state="expanded"` 時、アプリケーションシェルの Grid Track が `--sidebar-width` (240px) になること。
+- **Fixed Mode 格納（Zen Mode）**: `data-state="collapsed"` 時、Grid Track が `0px` になること。サイドバーの内部コンテンツが視覚的に消失すること（`overflow: hidden` + Grid Track `0px`）。
+- **Dynamic Centering**: Fixed Mode 格納時に、メインコンテンツが画面中央へセンタリングされること（片側空白が発生しないこと）。
+- **Overlay Mode 表示**: `mode="overlay"` 時、サイドバーが `position: fixed` で左端に配置されること。`data-state="collapsed"` 時は `transform: translateX(-100%)` で画面外に退避すること。
+- **Overlay Mode 展開**: `data-state="expanded"` 時、`transform: translateX(0)` でスライドインすること。スクリムが表示されること。
+- **スクリム**: Overlay Mode 展開時にスクリムが表示されること。スクリムをクリックするとサイドバーが閉じること。`aria-hidden="true"` が付与されていること。
+- **Z-index（Overlay）**: サイドバーが `--z-modal` (300)、スクリムが `--z-backdrop` (200) であること。
+- **`header` スロット表示制御**: `mode="fixed"` では `header` スロットエリアが非表示（`display: none`）になること。`mode="overlay"` では表示されること。
+- **ナビゲーションランドマーク**: Shadow DOM 内の `<nav>` 要素に `aria-label="メインナビゲーション"` が設定されること。スクリーンリーダーがナビゲーションランドマークとして認識すること。
+- **`aria-label` 日本語**: `aria-label` が日本語で記述されていること（`"Main Navigation"` は不可）。
+- **`inert` 戦略（Fixed）**: 格納アクション開始時に即座に `inert` が付与されること。展開時は `inert` 解除が先行すること。
+- **`inert` 戦略（Overlay）**: 格納アクション開始時に即座に `inert` が付与されること。展開時は `inert` 解除後にアニメーションが開始されること。
+- **フォーカス返却（Overlay）**: Overlay Mode でサイドバーを閉じた後、ヘッダーの Sidebar Trigger へフォーカスが返却されること。
+- **フォーカス移動（Overlay 展開）**: Overlay Mode でサイドバーを開いた後、サイドバー内最初のフォーカス可能要素へフォーカスが移動すること。
+- **Focus Trap 不使用**: Overlay Mode 展開中、`Tab` キーでサイドバーの外へ移動できること（Focus Trap が発生しないこと）。
+- **`Esc` キー（Overlay）**: Overlay Mode でサイドバーが展開中に `Esc` キーを押すと閉じること。フォーカスが Sidebar Trigger へ返却されること。
+- **グローバルショートカット**: `Cmd+B` / `Ctrl+B` で `LayoutStore.toggleSidebar()` が呼び出されること。Fixed / Overlay 両モードで動作すること。
+- **状態永続化**: 開閉状態が LocalStorage（キー: `rouault.sidebar.state`）に保存・復元されること。
+- **SSR/Hydration**: ページロード時、LocalStorage の値が存在すれば `data-state` が正しく設定されること。デフォルトは `expanded`。
+- **`ui-sidebar-state-change` イベント**: 状態変更後に `{ state, mode }` を含む `ui-sidebar-state-change` イベントが発火すること。バブリングしないこと。
+- **`mode` 自動判定**: `matchMedia('(min-width: 1280px)')` に基づき `mode` が自動切換えされること。リサイズ時に正しく追従すること。
+- **`data-state` 属性**: `state` プロパティの変更が `data-state` 属性に反映されること。CSS セレクタで参照可能なこと。
+- **Background**: `var(--bg-surface-1)` が適用されること。
+- **Border**: `border-right: var(--border-width) solid var(--border-ghost)` が適用されること。格納時にボーダーが消失すること。
+- **パブリックトークン命名**: `--ui-sidebar-*` 命名規則に従っていること。
+- **ハードコード禁止**: スタイル内にハードコードされた色・サイズ値が存在しないこと。
+- **`::part()` 不使用 / `part` 属性不使用**: DOM に `part` 属性が存在しないこと。
+- **Forced Colors**: `forced-colors: active` 時に `Canvas` 背景・`CanvasText` ボーダーが適用されること。`part` 属性セレクタが使用されていないこと。
+- **Reduced Motion**: `prefers-reduced-motion: reduce` 時にすべてのトランジションが無効化され、視覚的挙動が即時反映されること。
+- **印刷**: 印刷時にサイドバー全体が非表示（`display: none`）になること。
+- **DOM 構造**: Shadow DOM 内に `<nav aria-label="メインナビゲーション">` と `.sidebar-header`（`header` スロット）・`.sidebar-content`（デフォルトスロット）・`.scrim`（Overlay Mode 用）が配置されること。`part` 属性が存在しないこと。
+
+### フッター (Footer) `.ui-footer`
 
 **1. デザイン哲学と目的 (Design Philosophy)**
 
 - **役割**: アプリケーションの終端を示し、法的要件およびシステム状態（バージョン）を静かに伝えます。
-- **Recede**: ユーザーの注意を引くべきではないため、視覚的階層は最も低く設定します。
+- **Recede**: ユーザーの注意を引くべきではないため、視覚的階層はシェル要素中で最も低く設定します。
+- **実装形式**: 本コンポーネントは **Web Component ではなく、ネイティブ `<footer>` 要素** を使用します。シンプルな静的コンテンツのみを持つため、Shadow DOM によるカプセル化は必要ありません。Eleventy テンプレートまたは直接 HTML として出力します。
+
+**シェル要素のボーダー階層 (Shell Border Hierarchy)**
+
+アプリケーションシェルを構成する3要素は、視覚的重み（Border Opacity）によって階層が定義されます。
+
+| 要素 | ボーダートークン | Opacity | 役割 |
+|:-----|:---------------|:--------|:-----|
+| `<ui-header>` | `--border-default` (= `--border-subtle`) | 0.12 | 構造の明示（屋根） |
+| `<ui-sidebar>` | `--border-ghost` | 0.04 | 構造の気配（壁） |
+| `.ui-footer` | `--border-ghost` | 0.04 | 構造の余韻（底） |
+
+フッターはサイドバーと同じ `--border-ghost` を使用します。ヘッダーとの明確な差異は、フッターが「情報の終端」であり「開始点」ではないことを示します。
 
 **2. セマンティクスとDOM構造 (Semantics & DOM Structure)**
 
 - **要素**: ネイティブ `<footer>` 要素を使用します。これにより暗黙的に `role="contentinfo"` が適用され、スクリーンリーダーがランドマークとして認識します。
-- **構造例**:
-    ```html
-    <footer class="ui-footer">
-      <div class="footer-content">
-        <span class="copyright">© {Year} Rouault</span>
-        <span class="separator" aria-hidden="true">·</span>
-        <span class="revision">#{ShortHash}</span>
-      </div>
-    </footer>
-    ```
 - **Items**: 以下の要素を 1行で配置し、区切り記号（Interpunct `·`）で接続します。
     - **Copyright**: `© {Year} Rouault`
     - **Separator**: `·` (Interpunct)
         - **Accessibility**: `aria-hidden="true"` を付与し、装飾的要素として扱います。スクリーンリーダーには読み上げられません。
-        - **Opacity**: `0.3` (視覚的な「気配」として機能)
+        - **Opacity**: CSS カスタムプロパティ `--separator-opacity` (デフォルト: `0.3`) で制御します。**ハードコード禁止**。
     - **Revision**: `#{ShortHash}` (Example: `#4a2b9f`)
         - **Source**: Git Commit Hash (Short SHA).
         - **Rationale**: 手動管理である `package.json` のバージョン番号は使用せず、CI/CDにより自動生成される不変のハッシュ値を採用します。これにより管理コストをゼロにしつつ、コードの実体との完全な整合性を保証します。
-        - **Build Strategy**: 値はビルド時（Bundler）に環境変数から定数として埋め込みます。
+        - **Build Strategy**: 値はビルド時に esbuild の `define` オプションで定数として埋め込みます（後述）。
+- **DOM構造**:
+    ```html
+    <footer class="ui-footer">
+      <div class="footer-content">
+        <span class="copyright">© 2025 Rouault</span>
+        <span class="separator" aria-hidden="true">·</span>
+        <span class="revision">#4a2b9f1</span>
+      </div>
+    </footer>
+    ```
 
 **3. レイアウトと寸法 (Layout & Dimensions)**
 
 - **Position**: `static` (ページ末尾に自然に配置)
 - **Width**: `100%` (Viewport Width)
 - **Content Width**: 最大 `var(--bp-xl)` (1280px)。ヘッダーと同様に、画面幅がそれ以下の場合は 100% とし、中央揃え (`margin-inline: auto`) を適用します。
-- **Height**: `var(--header-height)` (48px) — ヘッダーとの対称性を保証
-- **Padding**: 
+- **Height**: `var(--header-height)` (48px)
+    - **Rationale**: フッターはヘッダーと高さを共有します。`--header-height` を流用することで対称性を保ち、ヘッダーの高さ変更時にフッターが自動追従する設計を意図します。
+- **Padding**:
     - **Vertical**: `var(--space-3)` (12px) — 内部要素の呼吸空間
-    - **Horizontal**: `var(--space-4)` (16px) — モバイル時の左右余白
-    - **Desktop**: `var(--space-8)` (32px) — より広い余白
+    - **Horizontal (Mobile)**: `var(--space-4)` (16px) — モバイル時の左右余白
+    - **Horizontal (Desktop)**: `var(--space-8)` (32px) — デスクトップ時の余白
 - **Layout**: Flexbox (Justify: Center, Align: Center, Gap: `var(--space-2)`)
 
 **4. スタイリングとトークンマッピング (Style & Tokens)**
 
-- **Background**: `var(--bg-default)`
-- **Border Top**: `var(--border-width) solid var(--border-ghost)`
-    - **Rationale**: ヘッダー（`--border-default`）よりも階層を下げ、あくまで「気配」としての境界線に留めます。
-    - **Warning**: `--border-ghost` は透過度 `0.04` と非常に薄いため、Forced Colors Mode で消失する可能性があります。ただし、フッターは画面末尾に配置されるため、スペーシング（余白）自体が構造を示します。
-- **Typography**:
-    - **Font Family**: `var(--font-mono)` (システム情報としての客観性を強調)
-    - **Size**: `var(--text-xs)` (12px)
-    - **Weight**: `var(--font-medium)` (500) — Small Text Rule準拠（細い線の消失を防ぐWeight Boost）
-    - **Color**: `var(--fg-muted)`
-    - **Tracking**: `var(--tracking-wide)` (0.025em) — Small Text Rule準拠（可読性確保）
+**ハードコード禁止**: スタイル内にハードコードされた色・サイズ値を使用しないこと。すべてトークンまたはコンポーネントローカルトークンを経由すること。
 
-**5. アクセシビリティ仕様 (Accessibility)**
+**コンポーネントローカルトークン**
 
-**5.1 Forced Colors Mode**
+`.ui-footer` スコープ内で定義し、必要に応じて外部から CSS カスタムプロパティで上書き可能です。
 
-透過ボーダー (`--border-ghost`) が消失した場合でも、フッターの位置（ページ末尾）とスペーシングにより構造は伝わります。念のため、明示的なボーダーを追加します。
+```css
+.ui-footer {
+  --separator-opacity: 0.3;
+}
+```
+
+**トークンマッピング**
+
+| プロパティ | トークン | 説明 |
+|:----------|:--------|:-----|
+| `background` | `var(--bg-default)` | アプリケーション背景と同一。フッターとしての主張をしない |
+| `border-top` | `var(--border-width) solid var(--border-ghost)` | 「気配」としての終端線 |
+| `font-family` | `var(--font-mono)` | システム情報としての客観性を強調 |
+| `font-size` | `var(--text-xs)` (12px) | 最小テキストサイズ。Small Text Rule 準拠必須 |
+| `font-weight` | `var(--font-medium)` (500) | Small Text Rule — Weight Boost（細い線の消失を防ぐ） |
+| `color` | `var(--fg-muted)` | WCAG AA 準拠（4.8:1 以上）を維持しつつ視覚的重みを下げる |
+| `letter-spacing` | `var(--tracking-wide)` (0.025em) | Small Text Rule — Tracking Boost（可読性確保） |
+| `.separator` opacity | `var(--separator-opacity)` (0.3) | 区切り記号の気配表現 |
+
+> **Note (Small Text Rule 準拠):**
+> `--text-xs` (12px) の使用に際し、`index.md` の Small Text Rule（Weight Boost・Tracking Boost・High Contrast のいずれか必須）に準拠します。本コンポーネントは Weight Boost (`--font-medium`) と Tracking Boost (`--tracking-wide`) の両方を適用しています。
+
+**5. アクセシビリティ (A11y)**
+
+**WAI-ARIA 属性 (ARIA Attributes)**
+
+| 属性 | 要素 | 値 | 必須? | 説明 |
+|:-----|:-----|:---|:-----|:-----|
+| `role` | `<footer>` | `contentinfo` | ✅（暗黙的） | ネイティブ `<footer>` 要素の使用により自動付与される |
+| `aria-hidden` | `.separator` | `true` | ✅ | 装飾的な区切り記号をスクリーンリーダーから隠蔽 |
+
+**キーボードナビゲーション (Keyboard Navigation)**
+
+現在の仕様では、フッター内にインタラクティブ要素（リンク・ボタン）は存在しません。フッターは Tab 順序に影響を与えず、スクリーンリーダーはコンテンツ情報（Copyright・Revision）をランドマーク読み上げで提供します。
+
+> **将来的な拡張について**: プライバシーポリシー等のリンクを追加する場合は、ネイティブ `<a>` 要素として配置し、グローバルフォーカスリング定義（`:focus-visible`）が自動適用されます。
+
+**モーション軽減 (Reduced Motion)**
+
+本コンポーネントにはアニメーションを適用しません。将来的にホバー効果等を追加する場合は、`prefers-reduced-motion: reduce` 時に `--duration-instant` (0ms) へフォールバックします。
+
+**6. Forced Colors Mode（強制カラーモード）**
+
+透過ボーダー (`--border-ghost`, Opacity 0.04) が消失した場合でも、フッターの位置（ページ末尾）とスペーシングにより構造は伝わります。念のため、明示的なボーダーを追加します。
 
 ```css
 @media (forced-colors: active) {
@@ -10745,28 +11968,51 @@ document.addEventListener('keydown', (e) => {
 }
 ```
 
-**5.2 モーション軽減 (Reduced Motion)**
+> **Rationale**: `index.md` の「構造の維持」「ボーダーやスペーシングにより、背景色が無くても領域を認識可能にする」原則に準拠します。
 
-本コンポーネントにはアニメーションを適用しません。将来的にホバー効果等を追加する場合は、`prefers-reduced-motion: reduce` 時に `--duration-instant` (0ms) へフォールバックします。
+**7. 印刷スタイル (Print Styles)**
 
-**5.3 Print スタイル**
-
-印刷時はフッターを表示し、Revision情報（Git Hash）を印刷物に残します。これにより、印刷されたドキュメントがどのバージョンのコードから生成されたかを追跡可能にします。
+`index.md` の印刷方針「ナビゲーションUIの非表示: ヘッダー、サイドバー、フッターなどをコンテンツ印刷時に隠す」に準拠します。
 
 ```css
 @media print {
   .ui-footer {
-    /* 印刷時も表示（ページ末尾に配置） */
-    display: flex;
-    /* 背景色とボーダーは印刷時に不要 */
-    background: transparent;
-    border-top: 1px solid #000;
+    display: none;
   }
 }
 ```
 
-**6. 実装ガイドライン (Implementation Notes)**
+> **Note**: `index.md` のグローバル印刷ルール（`footer { display: none !important }`）により自動適用されますが、コンポーネント仕様としても明示します。
 
-- **Year 自動更新**: Copyright の年は `new Date().getFullYear()` で動的に生成します。
-- **Git Hash 埋め込み**: ビルド時に環境変数 `process.env.GIT_COMMIT_SHA` から取得し、短縮形（7文字）を使用します。
-- **Slot 拡張**: 現在は固定コンテンツのみですが、将来的にプライバシーポリシーやライセンスリンクを追加する場合は、`<slot>` による拡張を検討します。
+**8. 実装ガイドライン (Implementation Notes)**
+
+- **Year 自動更新**: Copyright の年は Eleventy テンプレート変数（`year: new Date().getFullYear()`）または SSG ビルド時の静的値として生成します。クライアントサイドの `new Date().getFullYear()` は SSR/SSG 環境では不要です。
+- **Git Hash 埋め込み**: ビルドパイプライン（`package.json` の build スクリプト）で `GIT_COMMIT_SHA=$(git rev-parse --short=7 HEAD)` を取得し、esbuild の `--define` オプションで定数として埋め込みます。
+    ```js
+    // esbuild.config.js
+    define: {
+      __GIT_HASH__: JSON.stringify(process.env.GIT_COMMIT_SHA ?? 'dev')
+    }
+    ```
+    テンプレート側では `__GIT_HASH__` を参照します。
+- **将来の拡張**: プライバシーポリシーやライセンスリンクを追加する場合は、Eleventy テンプレートを直接修正します。ネイティブ要素のため `<slot>` は存在しません。
+
+**9. 受け入れ基準 (Acceptance Criteria)**
+
+- **要素**: ネイティブ `<footer>` 要素が使用されていること。`<div>` 等で代替していないこと。
+- **ランドマーク**: スクリーンリーダーが `role="contentinfo"` ランドマークとして認識すること。ページ内に `<footer>` が1つのみであること。
+- **DOM構造**: `.footer-content` > `.copyright` / `.separator` / `.revision` の構造が存在すること。
+- **`aria-hidden`**: `.separator` 要素に `aria-hidden="true"` が付与されていること。
+- **Background**: `var(--bg-default)` が適用されていること。
+- **Border Top**: `var(--border-width) solid var(--border-ghost)` が適用されていること。
+- **Typography**: `--font-mono`、`--text-xs`、`--font-medium`、`--fg-muted`、`--tracking-wide` が適用されていること。
+- **Height**: `var(--header-height)` (48px) が適用されていること。
+- **Content Width**: `.footer-content` の最大幅が `var(--bp-xl)` (1280px) に制限され、中央揃えされていること。
+- **Flexbox**: `.footer-content` が Flexbox (Justify: Center, Align: Center) で配置されていること。
+- **セパレータ Opacity**: `.separator` の透明度が `var(--separator-opacity)` トークン経由であること。ハードコード値 `0.3` が直接スタイルに存在しないこと。
+- **ハードコード禁止**: スタイル内に `#000`、`0.3`、`12px`、`48px` 等の固定値が存在しないこと。すべてトークン経由であること。
+- **Copyright 年**: 年が動的に生成され、ハードコードされていないこと。
+- **Revision**: Git Short Hash が `#` プレフィックス付きで表示されること。`#dev` または実際のハッシュ値が表示されること。
+- **キーボード**: Tab 操作でフッターを素通りできること（フォーカスがフッター内に留まらないこと）。
+- **Forced Colors**: `forced-colors: active` 時に `CanvasText` ボーダーが適用されること。
+- **印刷**: `@media print` でフッターが `display: none` となること。印刷物にフッターが出力されないこと。
