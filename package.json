@@ -28,6 +28,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.6.2",
   "dependencies": {
+    "@floating-ui/dom": "1.7.5",
     "@fontsource-variable/noto-sans-jp": "5.2.10",
     "@fontsource/jetbrains-mono": "5.2.8",
     "@lion/ui": "~0.15.3",
