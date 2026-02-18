@@ -176,6 +176,36 @@ const meta: Meta<Input> = {
         defaultValue: { summary: 'false' },
       },
     },
+    pattern: {
+      control: 'text',
+      description: 'バリデーションパターン（正規表現）',
+      table: {
+        type: { summary: 'string' },
+        defaultValue: { summary: '' },
+      },
+    },
+    minlength: {
+      control: 'number',
+      description: '最小文字数',
+      table: {
+        type: { summary: 'number' },
+      },
+    },
+    maxlength: {
+      control: 'number',
+      description: '最大文字数',
+      table: {
+        type: { summary: 'number' },
+      },
+    },
+    autocomplete: {
+      control: 'text',
+      description: 'オートコンプリート設定',
+      table: {
+        type: { summary: 'string' },
+        defaultValue: { summary: '' },
+      },
+    },
   },
 };
 
@@ -1066,8 +1096,10 @@ export const ErrorStateTransition: Story = {
       <div class="controls">
         <ui-button
           variant="danger"
-          @click="${() => {
-      const input = document.getElementById('transition-input') as Input | null;
+          @click="${(e: Event) => {
+      const trigger = e.currentTarget as HTMLElement | null;
+      const container = trigger?.closest('.transition-demo');
+      const input = container?.querySelector<Input>('#transition-input') ?? null;
       if (input) {
         input.error = true;
         input.errorMessage = 'ユーザー名は3文字以上で入力してください';
@@ -1079,8 +1111,10 @@ export const ErrorStateTransition: Story = {
 
         <ui-button
           variant="secondary"
-          @click="${() => {
-      const input = document.getElementById('transition-input') as Input | null;
+          @click="${(e: Event) => {
+      const trigger = e.currentTarget as HTMLElement | null;
+      const container = trigger?.closest('.transition-demo');
+      const input = container?.querySelector<Input>('#transition-input') ?? null;
       if (input) {
         input.error = false;
         input.errorMessage = '';
@@ -1133,5 +1167,197 @@ export const ErrorStateTransition: Story = {
     }
 
     console.log('✅ All tests passed for ErrorStateTransition story');
+  },
+};
+
+/**
+ * イベント重複発火の境界条件テスト。
+ *
+ * `input` と `change` が二重発火しないことを確認します。
+ */
+export const EventDispatchSingle: Story = {
+  render: () => html`
+    <ui-input
+      id="event-single-input"
+      label="イベント検証"
+      name="eventCheck"
+      placeholder="入力してください"
+    ></ui-input>
+  `,
+  play: async ({ canvasElement }) => {
+    const input = canvasElement.querySelector<Input>('#event-single-input');
+    if (!input) {
+      throw new Error('Input component not found');
+    }
+    await input.updateComplete;
+
+    const inputElement = input.shadowRoot?.querySelector('input');
+    if (!inputElement) {
+      throw new Error('Input element not found in shadow root');
+    }
+
+    let inputCount = 0;
+    let changeCount = 0;
+    input.addEventListener('input', () => {
+      inputCount += 1;
+    });
+    input.addEventListener('change', () => {
+      changeCount += 1;
+    });
+
+    inputElement.value = 'abc';
+    inputElement.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+    inputElement.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+    await input.updateComplete;
+
+    if (inputCount !== 1) {
+      throw new Error(`Expected input event to fire once, got ${inputCount.toString()}`);
+    }
+    if (changeCount !== 1) {
+      throw new Error(`Expected change event to fire once, got ${changeCount.toString()}`);
+    }
+  },
+};
+
+/**
+ * FormData 参加の境界条件テスト。
+ *
+ * ElementInternals によりフォーム送信データへ値が反映されることを確認します。
+ */
+export const FormDataParticipation: Story = {
+  render: () => html`
+    <form id="formdata-participation">
+      <ui-input
+        id="formdata-input"
+        label="メールアドレス"
+        type="email"
+        name="email"
+        value="user@example.com"
+      ></ui-input>
+    </form>
+  `,
+  play: async ({ canvasElement }) => {
+    const form = canvasElement.querySelector<HTMLFormElement>('#formdata-participation');
+    const input = canvasElement.querySelector<Input>('#formdata-input');
+    if (!form || !input) {
+      throw new Error('Form or input not found');
+    }
+    await input.updateComplete;
+
+    const formData = new FormData(form);
+    const email = formData.get('email');
+    if (email !== 'user@example.com') {
+      throw new Error('Expected FormData email to be "user@example.com"');
+    }
+  },
+};
+
+/**
+ * type の動的変更時フォールバック検証。
+ *
+ * 接続後にサポート外 type を指定しても `text` へフォールバックすることを確認します。
+ */
+export const DynamicTypeFallback: Story = {
+  render: () => html`
+    <ui-input id="dynamic-type-input" label="動的type" type="text" name="dynamicType"></ui-input>
+  `,
+  play: async ({ canvasElement }) => {
+    const input = canvasElement.querySelector<Input>('#dynamic-type-input');
+    if (!input) {
+      throw new Error('Input component not found');
+    }
+    await input.updateComplete;
+
+    input.type = 'date';
+    await input.updateComplete;
+
+    const inputElement = input.shadowRoot?.querySelector('input');
+    if (!inputElement) {
+      throw new Error('Input element not found in shadow root');
+    }
+
+    if (inputElement.type !== 'text') {
+      throw new Error(`Expected fallback type to be "text", got "${inputElement.type}"`);
+    }
+  },
+};
+
+/**
+ * 強制エラー（メッセージなし）の境界条件。
+ *
+ * `aria-invalid` は true になり、`aria-describedby` は空のままになることを確認します。
+ */
+export const ErrorWithoutMessage: Story = {
+  render: () => html`
+    <ui-input
+      id="error-no-message-input"
+      label="エラーテスト"
+      name="errorNoMessage"
+      error
+      help-text="通常時のヘルプテキスト"
+    ></ui-input>
+  `,
+  play: async ({ canvasElement }) => {
+    const input = canvasElement.querySelector<Input>('#error-no-message-input');
+    if (!input) {
+      throw new Error('Input component not found');
+    }
+    await input.updateComplete;
+
+    const inputElement = input.shadowRoot?.querySelector('input');
+    if (!inputElement) {
+      throw new Error('Input element not found in shadow root');
+    }
+
+    if (inputElement.getAttribute('aria-invalid') !== 'true') {
+      throw new Error('aria-invalid should be true when error is forced');
+    }
+
+    if (inputElement.getAttribute('aria-describedby') !== '') {
+      throw new Error('aria-describedby should be empty when no error message is provided');
+    }
+  },
+};
+
+/**
+ * 文字数バリデーション境界条件テスト。
+ *
+ * minlength / maxlength の下限・上限で妥当性が切り替わることを確認します。
+ */
+export const MinMaxLengthBoundary: Story = {
+  render: () => html`
+    <ui-input
+      id="minmax-boundary-input"
+      label="ユーザー名"
+      name="username"
+      minlength="3"
+      maxlength="5"
+      required
+    ></ui-input>
+  `,
+  play: async ({ canvasElement }) => {
+    const input = canvasElement.querySelector<Input>('#minmax-boundary-input');
+    if (!input) {
+      throw new Error('Input component not found');
+    }
+    await input.updateComplete;
+
+    input.value = 'ab';
+    await input.updateComplete;
+    if (input.checkValidity()) {
+      throw new Error('Value with 2 characters should be invalid (too short)');
+    }
+
+    input.value = 'abc';
+    await input.updateComplete;
+    if (!input.checkValidity()) {
+      throw new Error('Value with 3 characters should be valid');
+    }
+
+    input.value = 'abcdef';
+    await input.updateComplete;
+    if (input.checkValidity()) {
+      throw new Error('Value with 6 characters should be invalid (too long)');
+    }
   },
 };

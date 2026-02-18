@@ -41,8 +41,9 @@ import { live } from 'lit/directives/live.js';
  * @cssprop --fg-muted - Help Textのテキスト色
  * @cssprop --fg-danger - エラーメッセージのテキスト色
  * @cssprop --border-default - デフォルトボーダー色
+ * @cssprop --border-danger - エラーボーダー色
+ * @cssprop --border-width-thick - 太いボーダー幅
  * @cssprop --border-width - ボーダー幅
- * @cssprop --danger - エラー色
  * @cssprop --radius-md - 角丸
  * @cssprop --control-height-md - 入力フィールドの高さ
  * @cssprop --space-1 - 小スペーシング (4px)
@@ -166,8 +167,8 @@ export class Input extends LitElement {
 
     /* Error State */
     input.error {
-      border-color: var(--danger, oklch(55% 0.2 28));
-      background: var(--bg-danger-subtle, oklch(from var(--danger, oklch(55% 0.2 28)) l c h / 0.1));
+      border-color: var(--border-danger, oklch(55% 0.2 28));
+      background: var(--bg-danger-subtle, oklch(95% 0.02 28));
     }
 
     /* Disabled State */
@@ -205,11 +206,6 @@ export class Input extends LitElement {
       display: block;
     }
 
-    /* Help Text は Error 時に非表示 */
-    :host([error]) .help-text {
-      display: none;
-    }
-
     /* Motion Reduction */
     @media (prefers-reduced-motion: reduce) {
       input {
@@ -225,8 +221,8 @@ export class Input extends LitElement {
       }
       
       input.error {
-        border-color: LinkText;
-        border-width: 2px;
+        border-width: var(--border-width-thick, 2px);
+        border-color: CanvasText !important;
       }
       
       input:focus-visible {
@@ -249,7 +245,7 @@ export class Input extends LitElement {
       }
       
       input.error {
-        border-color: var(--fg-muted, oklch(48% 0.01 250)) !important;
+        border-color: var(--border-danger, oklch(55% 0.2 28)) !important;
       }
       
       input:disabled,
@@ -281,7 +277,7 @@ export class Input extends LitElement {
    * @default 'text'
    */
   @property({ type: String, reflect: true })
-  type: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'search' = 'text';
+  type = 'text';
 
   /**
    * フォーム送信時のフィールド名
@@ -371,9 +367,19 @@ export class Input extends LitElement {
   private _input!: HTMLInputElement;
 
   private _internals: ElementInternals;
+  private _nativeErrorMessage = '';
+  private _hasNativeError = false;
 
   // サポートされている type のリスト
-  private readonly _supportedTypes = ['text', 'email', 'password', 'number', 'tel', 'url', 'search'];
+  private readonly _supportedTypes: readonly string[] = [
+    'text',
+    'email',
+    'password',
+    'number',
+    'tel',
+    'url',
+    'search',
+  ];
 
   // 一意なIDを生成（レンダリング毎の再生成を防止）
   private readonly _inputId = `input-${Math.random().toString(36).substring(2, 11)}`;
@@ -393,22 +399,25 @@ export class Input extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
 
-    // 未サポートのtypeが指定された場合の警告
-    if (!this._supportedTypes.includes(this.type)) {
-      console.warn(
-        `[ui-input]: type="${this.type}" はサポートされていません。text にフォールバックします。`,
-        `サポートされているtype: ${this._supportedTypes.join(', ')}`,
-        this
-      );
-      this.type = 'text';
-    }
-
     // labelが空の場合の警告
     if (!this.label) {
       console.error(
         '[ui-input]: label は必須です。アクセシビリティのためにラベルを提供してください。',
         this
       );
+    }
+  }
+
+  override firstUpdated(): void {
+    this._internals.setFormValue(this.value);
+    this._syncValidity();
+  }
+
+  override willUpdate(changedProperties: Map<string, unknown>): void {
+    super.willUpdate(changedProperties);
+
+    if (changedProperties.has('type')) {
+      this._normalizeType();
     }
   }
 
@@ -420,56 +429,37 @@ export class Input extends LitElement {
       this._internals.setFormValue(this.value);
     }
 
-    // バリデーション関連のプロパティが変更された場合、バリデーション状態を同期
-    const validationProps = ['value', 'required', 'pattern', 'minlength', 'maxlength', 'type'];
-    if (validationProps.some(prop => changedProperties.has(prop))) {
-      void this.updateComplete.then(() => {
-        this._syncNativeValidation();
-      });
-    }
-
-    // エラー表示状態の更新
-    if (changedProperties.has('error') || changedProperties.has('errorMessage')) {
-      this._updateValidity();
-    }
-  }
-
-  private _updateValidity(): void {
-    if (this.error && this.errorMessage) {
-      this._internals.setValidity(
-        { customError: true },
-        this.errorMessage,
-        this._input
+    if (changedProperties.has('label') && !this.label) {
+      console.error(
+        '[ui-input]: label は必須です。アクセシビリティのためにラベルを提供してください。',
+        this
       );
-    } else {
-      this._internals.setValidity({});
+    }
+
+    // バリデーション関連のプロパティが変更された場合、バリデーション状態を同期
+    const validationProps = [
+      'value',
+      'required',
+      'pattern',
+      'minlength',
+      'maxlength',
+      'type',
+      'error',
+      'errorMessage',
+    ];
+    if (validationProps.some(prop => changedProperties.has(prop))) {
+      this._syncValidity();
     }
   }
 
   private _handleInput = (e: Event): void => {
     const input = e.target as HTMLInputElement;
     this.value = input.value;
-
-    // カスタムイベントを発火
-    this.dispatchEvent(
-      new Event('input', {
-        bubbles: true,
-        composed: true,
-      })
-    );
   }
 
   private _handleChange = (e: Event): void => {
     const input = e.target as HTMLInputElement;
     this.value = input.value;
-
-    // カスタムイベントを発火
-    this.dispatchEvent(
-      new Event('change', {
-        bubbles: true,
-        composed: true,
-      })
-    );
   }
 
   private _handleKeyDown = (e: KeyboardEvent): void => {
@@ -502,22 +492,25 @@ export class Input extends LitElement {
   }
 
   override render() {
+    const currentErrorMessage = this._currentErrorMessage;
+    const hasError = this._hasError;
+
     const labelClasses = {
       label: true,
       'label--hidden': this.hideLabel,
     };
 
     const inputClasses = {
-      error: this.error,
+      error: hasError,
     };
 
     const errorMessageClasses = {
       'error-message': true,
-      'error-message--visible': this.error && this.errorMessage,
+      'error-message--visible': hasError && !!currentErrorMessage,
     };
 
     // aria-describedby の値を決定
-    const describedBy = this.error && this.errorMessage
+    const describedBy = hasError && currentErrorMessage
       ? this._errorId
       : this.helpText
         ? this._helpId
@@ -542,7 +535,7 @@ export class Input extends LitElement {
         maxlength="${this.maxlength ?? nothing}"
         autocomplete="${this.autocomplete}"
         aria-label="${this.label}"
-        aria-invalid="${this.error}"
+        aria-invalid="${hasError}"
         aria-describedby="${describedBy ?? ''}"
         class="${classMap(inputClasses)}"
         @input="${this._handleInput}"
@@ -552,13 +545,18 @@ export class Input extends LitElement {
         @blur="${this._handleBlur}"
       />
 
-      ${this.helpText
+      ${this.helpText && !hasError
         ? html`<div class="help-text" id="${this._helpId}">${this.helpText}</div>`
         : ''}
 
-      ${this.errorMessage
-        ? html`<div class="${classMap(errorMessageClasses)}" id="${this._errorId}" role="alert">
-            ${this.errorMessage}
+      ${currentErrorMessage
+        ? html`<div
+            class="${classMap(errorMessageClasses)}"
+            id="${this._errorId}"
+            role="status"
+            aria-live="polite"
+          >
+            ${currentErrorMessage}
           </div>`
         : ''}
     `;
@@ -591,7 +589,7 @@ export class Input extends LitElement {
    */
   checkValidity(): boolean {
     // 内部inputのバリデーション状態をElementInternalsに同期
-    this._syncNativeValidation();
+    this._syncValidity();
     return this._internals.checkValidity();
   }
 
@@ -601,24 +599,28 @@ export class Input extends LitElement {
    */
   reportValidity(): boolean {
     // 内部inputのバリデーション状態をElementInternalsに同期
-    this._syncNativeValidation();
+    this._syncValidity();
     return this._internals.reportValidity();
   }
 
   /**
-   * 内部inputのネイティブバリデーション状態をElementInternalsに同期
+   * 強制エラーとネイティブバリデーションを統合して同期
    */
-  private _syncNativeValidation(): void {
-
-    // カスタムエラー（error属性）が設定されている場合はそちらを優先
+  private _syncValidity(): void {
+    // 強制エラー（customError）を優先
     if (this.error && this.errorMessage) {
+      this._hasNativeError = false;
+      this._nativeErrorMessage = '';
+      this._internals.setValidity({ customError: true }, this.errorMessage, this._input);
       return;
     }
 
-    // 内部inputのバリデーション状態を取得
+    // 内部inputのネイティブバリデーション状態を同期
     const validity = this._input.validity;
 
     if (!validity.valid) {
+      this._hasNativeError = true;
+      this._nativeErrorMessage = this._input.validationMessage || 'Invalid input';
       // バリデーションエラーがある場合、ElementInternalsに反映
       this._internals.setValidity(
         {
@@ -632,13 +634,48 @@ export class Input extends LitElement {
           stepMismatch: validity.stepMismatch,
           badInput: validity.badInput,
         },
-        this._input.validationMessage || 'Invalid input',
+        this._nativeErrorMessage,
         this._input
       );
     } else {
       // バリデーション成功
+      this._hasNativeError = false;
+      this._nativeErrorMessage = '';
       this._internals.setValidity({});
     }
+  }
+
+  private _normalizeType(): void {
+    if (this._isSupportedType(this.type)) {
+      return;
+    }
+
+    console.warn(
+      `[ui-input]: type="${this.type}" はサポートされていません。text にフォールバックします。`,
+      `サポートされているtype: ${this._supportedTypes.join(', ')}`,
+      this
+    );
+    this.type = 'text';
+  }
+
+  private _isSupportedType(type: string): boolean {
+    return this._supportedTypes.includes(type);
+  }
+
+  private get _hasError(): boolean {
+    return this.error || this._hasNativeError;
+  }
+
+  private get _currentErrorMessage(): string {
+    if (this.error && this.errorMessage) {
+      return this.errorMessage;
+    }
+
+    if (this._hasNativeError) {
+      return this._nativeErrorMessage;
+    }
+
+    return '';
   }
 }
 
