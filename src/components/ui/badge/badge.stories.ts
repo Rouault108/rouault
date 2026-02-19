@@ -266,22 +266,22 @@ export const CountBadge: Story = {
         // テスト: count=1 → 表示 "1"
         const status1 = badge1.shadowRoot?.querySelector('[role="status"]');
         if (!status1) throw new Error('role="status" not found for count=1');
-        if (status1.textContent?.trim() !== '1') {
-            throw new Error(`Expected "1", got "${status1.textContent?.trim() ?? 'null'}"`);
+        if (status1.textContent.trim() !== '1') {
+            throw new Error(`Expected "1", got "${status1.textContent.trim()}"`);
         }
 
         // テスト: count=99 → 表示 "99"（max=99 と等しいため "+" なし）
         const status99 = badge99.shadowRoot?.querySelector('[role="status"]');
         if (!status99) throw new Error('role="status" not found for count=99');
-        if (status99.textContent?.trim() !== '99') {
-            throw new Error(`Expected "99", got "${status99.textContent?.trim() ?? 'null'}"`);
+        if (status99.textContent.trim() !== '99') {
+            throw new Error(`Expected "99", got "${status99.textContent.trim()}"`);
         }
 
         // テスト: count=100 → 表示 "99+"（max=99 を超過）
         const status100 = badge100.shadowRoot?.querySelector('[role="status"]');
         if (!status100) throw new Error('role="status" not found for count=100');
-        if (status100.textContent?.trim() !== '99+') {
-            throw new Error(`Expected "99+", got "${status100.textContent?.trim() ?? 'null'}"`);
+        if (status100.textContent.trim() !== '99+') {
+            throw new Error(`Expected "99+", got "${status100.textContent.trim()}"`);
         }
 
         // テスト: count=128 → aria-label は "128 件"（実数値）
@@ -465,28 +465,28 @@ export const CountMaxCombinations: Story = {
         if (!b0) throw new Error('#cm-0 not found');
         const s0 = b0.shadowRoot?.querySelector('[role="status"]');
         if (!s0) throw new Error('role="status" not found for count=0');
-        if (s0.textContent?.trim() !== '0') throw new Error(`Expected "0", got "${s0.textContent?.trim() ?? 'null'}"`);
+        if (s0.textContent.trim() !== '0') throw new Error(`Expected "0", got "${s0.textContent.trim()}"`);
 
         // テスト: count=99, max=99 → 表示 "99"（等しいため "+" なし）
         const b99 = canvasElement.querySelector<Badge>('#cm-99');
         if (!b99) throw new Error('#cm-99 not found');
         const s99 = b99.shadowRoot?.querySelector('[role="status"]');
         if (!s99) throw new Error('role="status" not found for count=99');
-        if (s99.textContent?.trim() !== '99') throw new Error(`Expected "99", got "${s99.textContent?.trim() ?? 'null'}"`);
+        if (s99.textContent.trim() !== '99') throw new Error(`Expected "99", got "${s99.textContent.trim()}"`);
 
         // テスト: count=100, max=99 → 表示 "99+"
         const b100 = canvasElement.querySelector<Badge>('#cm-100');
         if (!b100) throw new Error('#cm-100 not found');
         const s100 = b100.shadowRoot?.querySelector('[role="status"]');
         if (!s100) throw new Error('role="status" not found for count=100');
-        if (s100.textContent?.trim() !== '99+') throw new Error(`Expected "99+", got "${s100.textContent?.trim() ?? 'null'}"`);
+        if (s100.textContent.trim() !== '99+') throw new Error(`Expected "99+", got "${s100.textContent.trim()}"`);
 
         // テスト: count=10, max=9 → 表示 "9+"
         const bCustom9 = canvasElement.querySelector<Badge>('#cm-custom-9');
         if (!bCustom9) throw new Error('#cm-custom-9 not found');
         const sCustom9 = bCustom9.shadowRoot?.querySelector('[role="status"]');
         if (!sCustom9) throw new Error('role="status" not found for custom max=9');
-        if (sCustom9.textContent?.trim() !== '9+') throw new Error(`Expected "9+", got "${sCustom9.textContent?.trim() ?? 'null'}"`);
+        if (sCustom9.textContent.trim() !== '9+') throw new Error(`Expected "9+", got "${sCustom9.textContent.trim()}"`);
 
         console.log('✅ All tests passed for CountMaxCombinations story');
     },
@@ -532,8 +532,8 @@ export const ContentPriorityLogic: Story = {
         // テスト: count=5 → role="status" で "5" が表示される
         const statusSpan = withCount.shadowRoot?.querySelector('[role="status"]');
         if (!statusSpan) throw new Error('role="status" not found when count is set');
-        if (statusSpan.textContent?.trim() !== '5') {
-            throw new Error(`Expected "5", got "${statusSpan.textContent?.trim() ?? 'null'}"`);
+        if (statusSpan.textContent.trim() !== '5') {
+            throw new Error(`Expected "5", got "${statusSpan.textContent.trim()}"`);
         }
 
         // テスト: count=5 → slot は存在しない
@@ -598,7 +598,7 @@ export const CountNormalization: Story = {
             if (!badge) throw new Error(`${id} not found`);
             const status = badge.shadowRoot?.querySelector('[role="status"]');
             if (!status) throw new Error(`role="status" not found for ${id}`);
-            const actual = status.textContent?.trim() ?? 'null';
+            const actual = status.textContent.trim() || 'null';
             if (actual !== expected) {
                 throw new Error(`${id}: Expected "${expected}", got "${actual}"`);
             }
@@ -665,7 +665,7 @@ export const MaxNormalization: Story = {
             if (!badge) throw new Error(`${id} not found`);
             const status = badge.shadowRoot?.querySelector('[role="status"]');
             if (!status) throw new Error(`role="status" not found for ${id}`);
-            const actual = status.textContent?.trim() ?? 'null';
+            const actual = status.textContent.trim();
             if (actual !== expected) {
                 throw new Error(`${id}: Expected "${expected}", got "${actual}"`);
             }
@@ -720,8 +720,8 @@ export const CountZero: Story = {
         // テスト: count=0 → "0" が表示される（スロットは無視）
         const statusZero = zeroCount.shadowRoot?.querySelector('[role="status"]');
         if (!statusZero) throw new Error('role="status" not found for count=0');
-        if (statusZero.textContent?.trim() !== '0') {
-            throw new Error(`Expected "0", got "${statusZero.textContent?.trim() ?? 'null'}"`);
+        if (statusZero.textContent.trim() !== '0') {
+            throw new Error(`Expected "0", got "${statusZero.textContent.trim()}"`);
         }
         const slotZero = zeroCount.shadowRoot?.querySelector('slot');
         if (slotZero) throw new Error('slot should not exist when count=0');
@@ -775,8 +775,8 @@ export const AriaLabelAccuracy: Story = {
         if (!b128) throw new Error('#aria-128 not found');
         const s128 = b128.shadowRoot?.querySelector('[role="status"]');
         if (!s128) throw new Error('role="status" not found for count=128');
-        if (s128.textContent?.trim() !== '99+') {
-            throw new Error(`Expected display "99+", got "${s128.textContent?.trim() ?? 'null'}"`);
+        if (s128.textContent.trim() !== '99+') {
+            throw new Error(`Expected display "99+", got "${s128.textContent.trim()}"`);
         }
         if (s128.getAttribute('aria-label') !== '128 件') {
             throw new Error(`Expected aria-label="128 件", got "${s128.getAttribute('aria-label') ?? 'null'}"`);
@@ -796,8 +796,8 @@ export const AriaLabelAccuracy: Story = {
         if (!b50) throw new Error('#aria-50 not found');
         const s50 = b50.shadowRoot?.querySelector('[role="status"]');
         if (!s50) throw new Error('role="status" not found for count=50');
-        if (s50.textContent?.trim() !== '50') {
-            throw new Error(`Expected display "50", got "${s50.textContent?.trim() ?? 'null'}"`);
+        if (s50.textContent.trim() !== '50') {
+            throw new Error(`Expected display "50", got "${s50.textContent.trim()}"`);
         }
         if (s50.getAttribute('aria-label') !== '50 件') {
             throw new Error(`Expected aria-label="50 件", got "${s50.getAttribute('aria-label') ?? 'null'}"`);
@@ -996,8 +996,8 @@ export const AllStates: Story = {
         if (!solidWarning) throw new Error('#all-solid-warning not found');
         const statusWarning = solidWarning.shadowRoot?.querySelector('[role="status"]');
         if (!statusWarning) throw new Error('role="status" not found for solid-warning');
-        if (statusWarning.textContent?.trim() !== '99') {
-            throw new Error(`Expected "99", got "${statusWarning.textContent?.trim() ?? 'null'}"`);
+        if (statusWarning.textContent.trim() !== '99') {
+            throw new Error(`Expected "99", got "${statusWarning.textContent.trim()}"`);
         }
 
         console.log('✅ All tests passed for AllStates story');
