@@ -1,0 +1,521 @@
+import { css, html, LitElement, type TemplateResult } from 'lit';
+import { customElement, property, state } from 'lit/decorators.js';
+import 'iconify-icon';
+
+/** ページ範囲アイテムの型 */
+export type RangeItem = number | 'ellipsis';
+
+/**
+ * デスクトップ用のページ範囲を計算します。
+ *
+ * - total <= 7: 全ページを返す
+ * - total >= 8: 1 と total を常時表示し、current±1 を近傍として表示。
+ *              欠落が 2 ページ以上の場合は 'ellipsis'、1 ページのみの場合は実ページ番号を挿入。
+ *
+ * @param current - 現在のページ (1始まり)
+ * @param total   - 総ページ数
+ */
+export function computeRange(current: number, total: number): RangeItem[] {
+  if (total <= 0) return [];
+  if (total === 1) return [1];
+
+  // total <= 7: 全ページ表示（省略なし）
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  // total >= 8: 境界 (1, total) + 近傍 (current-1, current, current+1) を収集
+  const visible = new Set<number>();
+  visible.add(1);
+  visible.add(total);
+  for (let p = Math.max(1, current - 1); p <= Math.min(total, current + 1); p++) {
+    visible.add(p);
+  }
+
+  // ページ番号を昇順に並べ、ギャップを分析して省略記号を挿入
+  const sorted = Array.from(visible).sort((a, b) => a - b);
+  const result: RangeItem[] = [];
+
+  // for...of で反復し、インデックスアクセス（undefined の可能性）を回避
+  let prev: number | undefined;
+  for (const curr of sorted) {
+    if (prev !== undefined) {
+      const gap = curr - prev;
+
+      if (gap === 2) {
+        // 欠落 1 ページ → 実ページ番号を表示（省略なし）
+        result.push(prev + 1);
+      } else if (gap > 2) {
+        // 欠落 2 ページ以上 → 省略記号
+        result.push('ellipsis');
+      }
+      // gap === 1: 連続 → 何も挿入しない
+    }
+    result.push(curr);
+    prev = curr;
+  }
+
+  return result;
+}
+
+/**
+ * コンパクト用のページ範囲を計算します。
+ *
+ * `@media (hover: none) and (pointer: coarse)` 環境向け。
+ * 現在ページのみを表示し、省略不要な側（先頭・末尾）では省略記号を出しません。
+ *
+ * @param current - 現在のページ (1始まり)
+ * @param total   - 総ページ数
+ */
+export function computeCompactRange(current: number, total: number): RangeItem[] {
+  const result: RangeItem[] = [];
+  if (current > 1) result.push('ellipsis');
+  result.push(current);
+  if (current < total) result.push('ellipsis');
+  return result;
+}
+
+/**
+ * ページネーション (Pagination) コンポーネント `<ui-pagination>`
+ *
+ * 大量データを分割表示する際のナビゲーション。
+ * プログレッシブエンハンスメントを前提とし、SSR で静的な `<a href>` を出力します。
+ * クライアントではルーターがリンクをインターセプトします。
+ *
+ * ## 使用方法
+ *
+ * ```html
+ * <ui-pagination
+ *   current="5"
+ *   total="10"
+ *   .getHref="${(p) => `/notes?page=${p}`}"
+ * ></ui-pagination>
+ * ```
+ *
+ * @property {number} current - 現在のページ（1始まり）
+ * @property {number} total   - 総ページ数
+ * @property {(page: number) => string} getHref - ページ番号から URL を生成する関数
+ *
+ * @cssprop --bg-surface-active   - 現在ページの背景色
+ * @cssprop --bg-hover            - ホバー時の背景色
+ * @cssprop --primary             - 現在ページのテキスト色・インジケーター色
+ * @cssprop --fg-muted            - 非アクティブなページのテキスト色
+ * @cssprop --fg-subtle           - 省略記号の色
+ * @cssprop --border-width-thick  - アクティブインジケーターの幅
+ * @cssprop --opacity-disabled    - 無効状態の不透明度
+ * @cssprop --control-height-md   - アイテムの高さ (32px)
+ * @cssprop --control-min-touch   - タッチターゲットの最小サイズ (44px)
+ * @cssprop --font-sans           - フォントファミリー
+ * @cssprop --text-base           - フォントサイズ (14px)
+ * @cssprop --space-1             - デスクトップ時のギャップ (4px)
+ * @cssprop --space-3             - タッチ時のギャップ (12px)
+ * @cssprop --radius-md           - ボーダー半径 (6px)
+ * @cssprop --duration-fast       - トランジション時間 (70ms)
+ * @cssprop --ease-out            - イージング関数
+ * @cssprop --scale-pressed       - 押下時のスケール (0.96)
+ * @cssprop --focus-ring-width    - フォーカスリング幅
+ * @cssprop --focus-ring-color    - フォーカスリング色
+ * @cssprop --focus-ring-offset   - フォーカスリングオフセット
+ * @cssprop --animation-focus     - Adaptive Focus アニメーション
+ * @cssprop --icon-base           - アイコンサイズ (16px)
+ *
+ * @csspart nav   - nav 要素
+ * @csspart list  - ul 要素
+ */
+@customElement('ui-pagination')
+export class Pagination extends LitElement {
+  static override styles = css`
+    :host {
+      display: inline-block;
+    }
+
+    /* ====== リストコンテナ ====== */
+
+    .list {
+      display: flex;
+      align-items: center;
+      flex-wrap: nowrap; /* 折り返し禁止: 仕様の Layout Stability 要件 */
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      gap: var(--space-1, 0.25rem); /* 4px */
+    }
+
+    /* タッチデバイス: ギャップを広げてヒットエリア重複を回避 */
+    @media (hover: none) and (pointer: coarse) {
+      .list {
+        gap: var(--space-3, 0.75rem); /* 12px */
+      }
+    }
+
+    /* ====== アイテム ====== */
+
+    .item {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ====== ページボタン・ナビゲーションボタン共通 ====== */
+
+    .page-btn,
+    .nav-btn {
+      /* ゴーストボタン (ui-button variant="ghost" size="md") をベースに実装 */
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+
+      height: var(--control-height-md, 32px);
+      min-width: var(--control-height-md, 32px);
+      padding: 0;
+
+      /* Typography */
+      font-family: var(--font-sans);
+      font-size: var(--text-base, 0.875rem);
+      font-variant-numeric: tabular-nums; /* 等幅数字: 仕様の注記に従い font-mono は不使用 */
+      line-height: 1;
+      text-decoration: none;
+
+      /* Shape */
+      border-radius: var(--radius-md, 0.375rem);
+
+      /* Colors */
+      background: transparent;
+      color: var(--fg-muted, oklch(45% 0.02 250));
+
+      /* Interaction */
+      cursor: pointer;
+      user-select: none;
+
+      /* Transition: 明示的なプロパティリスト (transition: all は使用しない) */
+      transition:
+        background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        box-shadow var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+    }
+
+    /* ホバー */
+    .page-btn:hover,
+    .nav-btn:not([aria-disabled='true']):hover {
+      background: var(--bg-hover, oklch(0% 0 0 / 0.05));
+    }
+
+    /* 押下 */
+    .page-btn:active,
+    .nav-btn:not([aria-disabled='true']):active {
+      transform: scale(var(--scale-pressed, 0.96));
+    }
+
+    /* フォーカス */
+    .page-btn:focus-visible,
+    .nav-btn:not([aria-disabled='true']):focus-visible {
+      outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(55% 0.2 250));
+      outline-offset: var(--focus-ring-offset, 2px);
+      animation: var(--animation-focus);
+    }
+
+    /* ====== 現在ページ ====== */
+
+    /* Markup: <a aria-current="page"> を使用し、再訪（リロード・新規タブ）を可能に */
+    .page-btn[aria-current='page'] {
+      background: var(--bg-surface-active, oklch(55% 0.2 250 / 0.08));
+      color: var(--primary, oklch(55% 0.2 250));
+
+      /*
+       * Visual Rhyme: <ui-tabs> のインジケーターと視覚的整合性を持たせる。
+       * font-weight: bold は禁止 (tabular-nums でもウェイト間の幅は保証されないため)。
+       * text-decoration: underline は禁止 (ボタン形状との不整合)。
+       * variant="outline" は禁止 (ボーダーによるレイアウトシフト防止)。
+       */
+      box-shadow: inset 0 calc(var(--border-width-thick, 2px) * -1) 0 0 var(--primary, oklch(55% 0.2 250));
+    }
+
+    /* 現在ページのホバー: 背景色を維持（変化させない） */
+    .page-btn[aria-current='page']:hover {
+      background: var(--bg-surface-active, oklch(55% 0.2 250 / 0.08));
+    }
+
+    /* 現在ページの押下: タクタイルフィードバック不要（既に「ここにいる」ため） */
+    .page-btn[aria-current='page']:active {
+      transform: none;
+    }
+
+    /* ====== 無効状態 (Prev/Next の先頭・末尾) ====== */
+
+    /*
+     * Disabled: <a> ではなく <span aria-disabled="true"> として描画。
+     * フォーカス不能・遷移不能を物理的に担保。
+     * href を持たないため、誤クリックでもナビゲーションが発生しない。
+     */
+    .nav-btn[aria-disabled='true'] {
+      opacity: var(--opacity-disabled, 0.5);
+      cursor: default;
+      pointer-events: none;
+    }
+
+    /* ====== 省略記号 ====== */
+
+    /*
+     * Markup: <span aria-hidden="true"> として実装。
+     * スクリーンリーダーには省略の存在を伝えず、各ページリンクの aria-label で文脈を提供。
+     */
+    .ellipsis {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: var(--control-height-md, 32px);
+      min-width: var(--control-height-md, 32px);
+      color: var(--fg-subtle, oklch(60% 0.01 250));
+      font-size: var(--text-base, 0.875rem);
+      user-select: none;
+    }
+
+    /* ====== アイコン ====== */
+
+    iconify-icon {
+      font-size: var(--icon-base, 16px);
+      width: var(--icon-base, 16px);
+      height: var(--icon-base, 16px);
+      flex-shrink: 0;
+    }
+
+    /* ====== タッチターゲット拡張 ====== */
+
+    /*
+     * coarse pointer のみ有効化。
+     * デスクトップ (fine pointer) でヒットエリアが重複するのを防ぐため、
+     * @media (hover: none) and (pointer: coarse) でのみ適用。
+     */
+    @media (hover: none) and (pointer: coarse) {
+      .page-btn::after,
+      .nav-btn::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        min-width: var(--control-min-touch, 44px);
+        min-height: var(--control-min-touch, 44px);
+        pointer-events: none;
+      }
+    }
+
+    /* ====== Motion Reduction ====== */
+
+    /*
+     * prefers-reduced-motion: reduce の場合、トランジションを即座に完了。
+     * 0.01ms への短縮はグローバルルールに準拠。
+     */
+    @media (prefers-reduced-motion: reduce) {
+      .page-btn,
+      .nav-btn {
+        transition-duration: 0.01ms;
+      }
+    }
+
+    /* ====== Forced Colors Mode ====== */
+
+    /*
+     * Windows 高コントラストモード等での対応。
+     * box-shadow によるインジケーターは消失するため、outline でフォールバック。
+     */
+    @media (forced-colors: active) {
+      /* 全アイテムに境界線を追加して構造を維持 */
+      .page-btn,
+      .nav-btn:not([aria-disabled='true']) {
+        border: var(--border-width, 1px) solid CanvasText;
+      }
+
+      /* 現在ページ: outline で現在地を明示 */
+      .page-btn[aria-current='page'] {
+        outline: 2px solid Highlight;
+        outline-offset: -2px;
+        background: Highlight;
+        color: HighlightText;
+        box-shadow: none; /* システムカラー環境では box-shadow が消失するためリセット */
+      }
+
+      /* 無効状態: color: GrayText でシステムカラーによるフォールバック */
+      .nav-btn[aria-disabled='true'] {
+        color: GrayText;
+        border: var(--border-width, 1px) solid GrayText;
+        opacity: 1; /* forced-colors では opacity が無効化される場合があるため */
+      }
+    }
+  `;
+
+  /**
+   * 現在のページ（1始まり）
+   * @default 1
+   */
+  @property({ type: Number, reflect: true })
+  current = 1;
+
+  /**
+   * 総ページ数
+   * @default 1
+   */
+  @property({ type: Number, reflect: true })
+  total = 1;
+
+  /**
+   * ページ番号から URL を生成する関数。
+   * SSR 時に各リンクの静的 href を生成するために使用。
+   * JavaScript 無効時でもリンク遷移が機能することを保証。
+   *
+   * @example
+   * ```js
+   * // Eleventy テンプレートの例
+   * pagination.getHref = (page) => `/notes/page/${page}/`;
+   * ```
+   * @default (p) => `?page=${p}`
+   */
+  @property({ attribute: false })
+  getHref: (page: number) => string = (p) => `?page=${String(p)}`;
+
+  /**
+   * コンパクト表示モード。
+   * `@media (hover: none) and (pointer: coarse)` で自動的に切り替わる。
+   */
+  @state()
+  private _isCompact = false;
+
+  private _mql: MediaQueryList | null = null;
+
+  private readonly _onMediaChange = (e: MediaQueryListEvent): void => {
+    this._isCompact = e.matches;
+  };
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    if (typeof window !== 'undefined') {
+      this._mql = window.matchMedia('(hover: none) and (pointer: coarse)');
+      this._isCompact = this._mql.matches;
+      this._mql.addEventListener('change', this._onMediaChange);
+    }
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this._mql?.removeEventListener('change', this._onMediaChange);
+  }
+
+  override render(): TemplateResult {
+    const { current, total, getHref } = this;
+    const isFirst = current <= 1;
+    const isLast = current >= total;
+
+    const range = this._isCompact
+      ? computeCompactRange(current, total)
+      : computeRange(current, total);
+
+    return html`
+      <nav aria-label="ページナビゲーション" part="nav">
+        <ul class="list" part="list">
+          ${this._renderPrevItem(isFirst, current, getHref)}
+          ${range.map((item, i) => this._renderRangeItem(item, i, current, getHref))}
+          ${this._renderNextItem(isLast, current, getHref)}
+        </ul>
+      </nav>
+    `;
+  }
+
+  /** 「前のページへ」ナビゲーションアイテムを描画 */
+  private _renderPrevItem(
+    isFirst: boolean,
+    current: number,
+    getHref: (p: number) => string,
+  ): TemplateResult {
+    if (isFirst) {
+      // 先頭ページ: <span aria-disabled="true"> で描画（フォーカス不能・遷移不能）
+      return html`
+        <li class="item">
+          <span class="nav-btn" aria-disabled="true" aria-label="前のページへ移動">
+            <iconify-icon icon="lucide:chevron-left" aria-hidden="true"></iconify-icon>
+          </span>
+        </li>
+      `;
+    }
+    return html`
+      <li class="item">
+        <a class="nav-btn" href="${getHref(current - 1)}" aria-label="前のページへ移動">
+          <iconify-icon icon="lucide:chevron-left" aria-hidden="true"></iconify-icon>
+        </a>
+      </li>
+    `;
+  }
+
+  /** 「次のページへ」ナビゲーションアイテムを描画 */
+  private _renderNextItem(
+    isLast: boolean,
+    current: number,
+    getHref: (p: number) => string,
+  ): TemplateResult {
+    if (isLast) {
+      // 末尾ページ: <span aria-disabled="true"> で描画（フォーカス不能・遷移不能）
+      return html`
+        <li class="item">
+          <span class="nav-btn" aria-disabled="true" aria-label="次のページへ移動">
+            <iconify-icon icon="lucide:chevron-right" aria-hidden="true"></iconify-icon>
+          </span>
+        </li>
+      `;
+    }
+    return html`
+      <li class="item">
+        <a class="nav-btn" href="${getHref(current + 1)}" aria-label="次のページへ移動">
+          <iconify-icon icon="lucide:chevron-right" aria-hidden="true"></iconify-icon>
+        </a>
+      </li>
+    `;
+  }
+
+  /** 範囲アイテム（ページ番号 or 省略記号）を描画 */
+  private _renderRangeItem(
+    item: RangeItem,
+    index: number,
+    current: number,
+    getHref: (p: number) => string,
+  ): TemplateResult {
+    if (item === 'ellipsis') {
+      return html`
+        <li class="item">
+          <span class="ellipsis" aria-hidden="true" data-index="${index}">…</span>
+        </li>
+      `;
+    }
+
+    if (item === current) {
+      // 現在ページ: <a aria-current="page" href="..."> を使用し再訪可能に
+      return html`
+        <li class="item">
+          <a
+            class="page-btn"
+            href="${getHref(item)}"
+            aria-current="page"
+            aria-label="現在のページ、${item}ページ"
+          >
+            ${item}
+          </a>
+        </li>
+      `;
+    }
+
+    return html`
+      <li class="item">
+        <a class="page-btn" href="${getHref(item)}" aria-label="${item}ページへ移動">
+          ${item}
+        </a>
+      </li>
+    `;
+  }
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'ui-pagination': Pagination;
+  }
+}
