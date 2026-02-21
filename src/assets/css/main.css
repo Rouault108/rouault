@@ -137,6 +137,32 @@ p {
   margin: 0;
 }
 
+/* ===========================================================================
+ * Inline Code
+ * @see docs/design-system/components.md - インラインコード
+ * =========================================================================== */
+
+:not(pre) > code {
+  font-family: var(--font-mono);
+  /* 12px未満を防ぎつつ本文サイズに追従 */
+  font-size: max(var(--text-xs), 0.875em);
+  line-height: inherit;
+  vertical-align: baseline;
+  color: var(--fg-default);
+  background: var(--bg-fill-muted);
+  padding: 0.2em 0.4em;
+  border: none;
+  border-radius: var(--radius-sm);
+  overflow-wrap: break-word;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* リンク文脈でもインラインコードの可読性を維持 */
+a > code {
+  color: var(--fg-default);
+}
+
 /* Prose（記事本文）コンテナ */
 .prose {
   font-size: var(--text-lg);
@@ -771,6 +797,10 @@ input:disabled,
 
 /* Forced Colors Modeでの対応 */
 @media (forced-colors: active) {
+  :not(pre) > code {
+    outline: var(--border-width) solid CanvasText;
+  }
+
   button:disabled,
   [aria-disabled='true'] {
     opacity: 1;
