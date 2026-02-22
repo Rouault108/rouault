@@ -119,12 +119,12 @@ export class Button extends LitElement {
       position: relative;
 
       /* Border & Radius */
-      border-radius: var(--radius-md, 6px);
+      border-radius: var(--radius-md);
       border: none;
 
       /* Typography */
       font-family: var(--font-sans);
-      font-weight: var(--font-medium, 500);
+      font-weight: var(--font-medium);
       font-size: inherit;
       font-feature-settings: 'palt';
       letter-spacing: 0.02em;
@@ -136,29 +136,29 @@ export class Button extends LitElement {
 
       /* Transition: 明示的なプロパティリストを使用 */
       transition:
-        background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        box-shadow var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+        background-color var(--duration-fast) var(--ease-out),
+        color var(--duration-fast) var(--ease-out),
+        box-shadow var(--duration-fast) var(--ease-out),
+        border-color var(--duration-fast) var(--ease-out),
+        transform var(--duration-fast) var(--ease-out);
     }
 
     /* Active State: 押し込みのタクタイルシグナル */
     button:active:not(:disabled) {
-      transform: scale(var(--scale-pressed, 0.96));
+      transform: scale(var(--scale-pressed));
       box-shadow: none;
     }
 
     /* Focus Indicator: Adaptive Focus */
     button:focus-visible {
-      outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
-      outline-offset: var(--focus-ring-offset, 2px);
+      outline: var(--focus-ring-width) solid var(--focus-ring-color);
+      outline-offset: var(--focus-ring-offset);
       animation: var(--animation-focus);
     }
 
     /* Disabled State */
     button:disabled {
-      opacity: var(--opacity-disabled, 0.5);
+      opacity: var(--opacity-disabled);
       cursor: not-allowed;
       pointer-events: none;
     }
@@ -167,43 +167,43 @@ export class Button extends LitElement {
 
     /* Small */
     .size-sm {
-      --button-icon-size: var(--icon-sm, 14px);
-      height: var(--control-height-sm, 28px);
-      padding: 0 var(--space-2, 8px);
-      font-size: var(--text-sm, 13px);
-      gap: var(--space-1, 4px);
+      --button-icon-size: var(--icon-sm);
+      height: var(--control-height-sm);
+      padding: 0 var(--space-2);
+      font-size: var(--text-sm);
+      gap: var(--space-1);
     }
 
     .size-sm.icon-only {
-      width: var(--control-height-sm, 28px);
+      width: var(--control-height-sm);
       padding: 0;
     }
 
     /* Medium (Default) */
     .size-md {
-      --button-icon-size: var(--icon-base, 16px);
-      height: var(--control-height-md, 32px);
-      padding: 0 var(--space-3, 12px);
-      font-size: var(--text-base, 14px);
-      gap: var(--space-2, 8px);
+      --button-icon-size: var(--icon-base);
+      height: var(--control-height-md);
+      padding: 0 var(--space-3);
+      font-size: var(--text-base);
+      gap: var(--space-2);
     }
 
     .size-md.icon-only {
-      width: var(--control-height-md, 32px);
+      width: var(--control-height-md);
       padding: 0;
     }
 
     /* Large (Deprecated) */
     .size-lg {
-      --button-icon-size: var(--icon-md, 20px);
-      height: var(--control-height-lg, 40px);
-      padding: 0 var(--space-4, 16px);
-      font-size: var(--text-base, 14px);
-      gap: var(--space-2, 8px);
+      --button-icon-size: var(--icon-md);
+      height: var(--control-height-lg);
+      padding: 0 var(--space-4);
+      font-size: var(--text-base);
+      gap: var(--space-2);
     }
 
     .size-lg.icon-only {
-      width: var(--control-height-lg, 40px);
+      width: var(--control-height-lg);
       padding: 0;
     }
 
@@ -211,27 +211,27 @@ export class Button extends LitElement {
 
     /* Primary */
     .variant-primary {
-      background: var(--primary, oklch(60% 0.15 250));
-      color: var(--on-primary, oklch(100% 0 0));
+      background: var(--primary);
+      color: var(--on-primary);
       box-shadow:
         inset 0 1px 0 0 oklch(100% 0 0 / 0.15),
-        var(--elevation-md, 0 2px 8px oklch(0% 0 0 / 0.12));
+        var(--elevation-md);
     }
 
     .variant-primary:hover:not(:disabled) {
-      background: var(--primary-hover, oklch(55% 0.15 250));
+      background: var(--primary-hover);
     }
 
     /* Secondary */
     .variant-secondary {
-      background: var(--bg-surface-2, oklch(97% 0 0));
-      color: var(--fg-default, oklch(20% 0.01 250));
-      border: var(--border-width, 1px) solid var(--border-default, oklch(90% 0.01 250 / 0.12));
-      box-shadow: var(--elevation-sm, 0 1px 2px oklch(0% 0 0 / 0.05));
+      background: var(--bg-surface-2);
+      color: var(--fg-default);
+      border: var(--border-width) solid var(--border-default);
+      box-shadow: var(--elevation-sm);
     }
 
     .variant-secondary:hover:not(:disabled) {
-      background: var(--bg-fill-muted, oklch(95% 0 0));
+      background: var(--bg-fill-muted);
     }
 
     /* Dark Mode: Edge Highlight for Secondary */
@@ -239,42 +239,41 @@ export class Button extends LitElement {
       .variant-secondary {
         box-shadow:
           inset 0 1px 0 0 oklch(100% 0 0 / 0.1),
-          var(--elevation-sm, 0 1px 2px oklch(0% 0 0 / 0.05));
+          var(--elevation-sm);
       }
     }
 
     /* Outline */
     .variant-outline {
       background: transparent;
-      color: var(--fg-default, oklch(20% 0.01 250));
-      border: var(--border-width, 1px) solid var(--border-default, oklch(90% 0.01 250 / 0.12));
+      color: var(--fg-default);
+      border: var(--border-width) solid var(--border-default);
     }
 
     .variant-outline:hover:not(:disabled) {
-      border-color: var(--fg-muted, oklch(48% 0.01 250));
+      border-color: var(--fg-muted);
     }
 
     /* Ghost */
     .variant-ghost {
       background: transparent;
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted);
     }
 
     .variant-ghost:hover:not(:disabled) {
-      background: var(--bg-hover, oklch(0% 0 0 / 0.05));
+      background: var(--bg-hover);
     }
 
     /* Danger */
     .variant-danger {
-      background: var(--bg-danger-subtle, oklch(from var(--danger, oklch(55% 0.2 28)) l c h / 0.1));
-      color: var(--danger, oklch(55% 0.2 28));
-      border: var(--border-width, 1px) solid
-        var(--border-danger, oklch(from var(--danger, oklch(55% 0.2 28)) l c h / 0.3));
+      background: var(--bg-danger-subtle);
+      color: var(--danger);
+      border: var(--border-width) solid var(--border-danger);
     }
 
     .variant-danger:hover:not(:disabled) {
-      background: var(--danger, oklch(55% 0.2 28));
-      color: var(--on-danger, oklch(100% 0 0));
+      background: var(--danger);
+      color: var(--on-danger);
     }
 
     /* --- Loading State --- */
@@ -337,6 +336,11 @@ export class Button extends LitElement {
       button {
         transition-duration: 0.01ms;
       }
+
+      button:focus-visible {
+        animation: none;
+        outline-color: var(--focus-ring-color);
+      }
     }
 
     /* --- Print Styles --- */
@@ -350,7 +354,7 @@ export class Button extends LitElement {
 
     @media (forced-colors: active) {
       button {
-        border: var(--border-width, 1px) solid CanvasText;
+        border: var(--border-width) solid CanvasText;
         box-shadow: none;
       }
 
@@ -387,9 +391,11 @@ export class Button extends LitElement {
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      min-width: 44px;
-      min-height: 44px;
-      pointer-events: none;
+      inline-size: max(100%, 44px);
+      block-size: max(100%, 44px);
+      border-radius: inherit;
+      pointer-events: auto;
+      background: transparent;
     }
   `;
 
@@ -462,6 +468,7 @@ export class Button extends LitElement {
 
   private _internals: ElementInternals;
   private readonly _isDevelopment: boolean;
+  private _spaceKeyPressed = false;
 
   constructor() {
     super();
@@ -507,6 +514,40 @@ export class Button extends LitElement {
       this._internals.form.reset();
     }
   }
+
+  /**
+   * Enter / Space のキーボード操作を click に正規化
+   */
+  private _handleKeyDown = (e: KeyboardEvent): void => {
+    if (this.disabled || this.loading) {
+      return;
+    }
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      (e.currentTarget as HTMLButtonElement).click();
+    }
+
+    if (e.key === ' ') {
+      e.preventDefault();
+      this._spaceKeyPressed = true;
+    }
+  };
+
+  /**
+   * Space は keyup でアクション発火（ネイティブ button と同等）
+   */
+  private _handleKeyUp = (e: KeyboardEvent): void => {
+    if (this.disabled || this.loading) {
+      return;
+    }
+
+    if (e.key === ' ' && this._spaceKeyPressed) {
+      e.preventDefault();
+      this._spaceKeyPressed = false;
+      (e.currentTarget as HTMLButtonElement).click();
+    }
+  };
 
   /**
    * icon-only と aria-label の契約を開発時に検証
@@ -557,6 +598,8 @@ export class Button extends LitElement {
         aria-label="${ifDefined(this.ariaLabel ?? undefined)}"
         class="${classMap(classes)}"
         @click="${this._handleClick}"
+        @keydown="${this._handleKeyDown}"
+        @keyup="${this._handleKeyUp}"
       >
         <span class="label" part="label">
           <slot class="content-slot"></slot>
@@ -595,6 +638,7 @@ export class Button extends LitElement {
    * ボタンからフォーカスを外す
    */
   override blur() {
+    this._spaceKeyPressed = false;
     const button = this.shadowRoot?.querySelector('button');
     button?.blur();
   }

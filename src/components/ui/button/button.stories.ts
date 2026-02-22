@@ -607,11 +607,27 @@ export const FormSubmit: Story = {
       throw new Error('Submit form not found');
     }
 
-    buttonElement.click();
-    await button.updateComplete;
+    const submitCountBeforeEnter = Number(form.dataset['submitCount'] ?? '0');
+    buttonElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true }));
+    await new Promise(resolve => setTimeout(resolve, 0));
 
-    if (form.dataset['submitCount'] !== '1') {
-      throw new Error(`Expected submit count to be 1, got '${form.dataset['submitCount'] ?? 'undefined'}'`);
+    const submitCountAfterEnter = Number(form.dataset['submitCount'] ?? '0');
+    if (submitCountAfterEnter <= submitCountBeforeEnter) {
+      throw new Error('Expected Enter key to trigger submit');
+    }
+
+    const submitCountBeforeSpace = submitCountAfterEnter;
+    buttonElement.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, composed: true }));
+    buttonElement.dispatchEvent(new KeyboardEvent('keyup', { key: ' ', bubbles: true, composed: true }));
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    const submitCountAfterSpace = Number(form.dataset['submitCount'] ?? '0');
+    if (submitCountAfterSpace <= submitCountBeforeSpace) {
+      throw new Error('Expected Space key to trigger submit');
+    }
+
+    if (!Number.isFinite(submitCountAfterSpace) || submitCountAfterSpace <= 0) {
+      throw new Error(`Expected submit count to be positive, got '${form.dataset['submitCount'] ?? 'undefined'}'`);
     }
 
     console.log('✅ All tests passed for FormSubmit story');
@@ -965,12 +981,11 @@ export const IconOnlyWithoutAriaLabel: Story = {
         story: '⚠️ **意図的なエラーケース**: aria-label がないため、コンソールにエラーが出力されます。アクセシビリティのため、icon-only 使用時は必ず aria-label を設定してください。',
       },
     },
-    // a11y アドオンのテストで警告が出ることを期待
+    // 意図的な違反ケースのため、自動a11yチェック対象からは除外
     a11y: {
-      config: {
-        rules: [{ id: 'button-name', enabled: true }],
-      },
+      disable: true,
     },
+    chromatic: { disableSnapshot: true },
   },
   play: async ({ canvasElement }) => {
     const button = canvasElement.querySelector('ui-button');
@@ -1123,6 +1138,125 @@ export const ForcedColorsMode: Story = {
 };
 
 /**
+ * ダークモードでの表示確認。
+ *
+ * ダークトークン環境での各バリアント表示と、Secondary の Edge Highlight を確認します。
+ */
+export const DarkMode: Story = {
+  parameters: {
+    backgrounds: {
+      default: 'dark',
+    },
+    docs: {
+      description: {
+        story:
+          'ダークモード表示の確認用ストーリーです。Secondary の Edge Highlight は `prefers-color-scheme: dark` が有効な場合に適用されます。',
+      },
+    },
+  },
+  render: () => html`
+    <style>
+      .dark-mode-demo {
+        --primary: oklch(65% 0.12 250);
+        --primary-hover: oklch(70% 0.18 250);
+        --on-primary: oklch(100% 0 0);
+        --danger: oklch(55% 0.2 25);
+        --on-danger: oklch(100% 0 0);
+        --bg-default: oklch(12% 0.02 250);
+        --bg-surface-2: oklch(17% 0.02 250);
+        --bg-fill-muted: oklch(9% 0.02 250);
+        --bg-hover: oklch(90% 0.01 250 / 0.05);
+        --bg-danger-subtle: oklch(25% 0.05 25);
+        --fg-default: oklch(90% 0.01 250);
+        --fg-muted: oklch(65% 0.01 250);
+        --border-default: oklch(90% 0.01 250 / 0.12);
+        --border-danger: oklch(35% 0.1 25);
+        --elevation-sm: 0 1px 2px oklch(0% 0 0 / 0.3);
+        --elevation-md: 0 4px 8px oklch(0% 0 0 / 0.4);
+
+        padding: 1.5rem;
+        border-radius: var(--radius-md, 6px);
+        background: var(--bg-default);
+        color: var(--fg-default);
+      }
+
+      .dark-mode-info {
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-md, 6px);
+        background: var(--bg-surface-2);
+        font-size: var(--text-sm, 13px);
+        color: var(--fg-muted);
+      }
+
+      .dark-mode-groups {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .dark-mode-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+    </style>
+
+    <div class="dark-mode-demo">
+      <div class="dark-mode-info">
+        DevTools の Rendering で <code>prefers-color-scheme: dark</code> を有効化すると、
+        Secondary の Edge Highlight（上端の inset shadow）まで確認できます。
+      </div>
+
+      <div class="dark-mode-groups">
+        <div class="dark-mode-row">
+          <ui-button variant="primary">Primary</ui-button>
+          <ui-button id="dark-secondary" variant="secondary">Secondary</ui-button>
+          <ui-button variant="outline">Outline</ui-button>
+          <ui-button variant="ghost">Ghost</ui-button>
+          <ui-button variant="danger">Danger</ui-button>
+        </div>
+        <div class="dark-mode-row">
+          <ui-button variant="primary" loading>Loading</ui-button>
+          <ui-button variant="secondary" disabled>Disabled</ui-button>
+          <ui-button variant="ghost" icon-only aria-label="設定">
+            <iconify-icon icon="lucide:settings"></iconify-icon>
+          </ui-button>
+        </div>
+      </div>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const secondary = canvasElement.querySelector<Button>('#dark-secondary');
+    if (!secondary) {
+      throw new Error('Dark mode secondary button not found');
+    }
+
+    await secondary.updateComplete;
+
+    const internalButton = secondary.shadowRoot?.querySelector('button');
+    if (!internalButton) {
+      throw new Error('Secondary internal button not found');
+    }
+
+    const computedStyle = getComputedStyle(internalButton);
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    if (prefersDark && !computedStyle.boxShadow.includes('inset')) {
+      throw new Error('Expected secondary edge highlight (inset shadow) in dark mode');
+    }
+
+    if (!prefersDark) {
+      console.warn('DarkMode story: prefers-color-scheme: dark を有効化して Edge Highlight を確認してください');
+    }
+
+    console.log('✅ All tests passed for DarkMode story');
+  },
+};
+
+/**
  * Reduced Motion での表示確認。
  * 
  * prefers-reduced-motion 環境下でのアニメーション抑制を確認します。
@@ -1145,13 +1279,6 @@ export const ReducedMotion: Story = {
         flex-wrap: wrap;
       }
 
-      /* このストーリー内で reduced-motion を強制 */
-      @media (prefers-reduced-motion: no-preference) {
-        .reduced-motion-showcase ui-button {
-          /* グローバルトークンの上書きをシミュレート */
-          --duration-fast: 0.01ms;
-        }
-      }
     </style>
     
     <div class="reduced-motion-info">
@@ -1159,7 +1286,7 @@ export const ReducedMotion: Story = {
       <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
         <li><strong>Windows</strong>: 設定 > アクセシビリティ > 視覚効果 > アニメーション効果をオフ</li>
         <li><strong>macOS</strong>: システム設定 > アクセシビリティ > ディスプレイ > 視差効果を減らす</li>
-        <li><strong>このストーリー</strong>: reduced-motion を強制的にシミュレートしています</li>
+        <li><strong>開発者ツール</strong>: Chrome DevTools > Rendering > Emulate CSS media feature prefers-reduced-motion: reduce</li>
       </ul>
       <p style="margin: 0.5rem 0 0 0;">
         ローディングスピナーのアニメーションが停止し、トランジションが即座に適用されることを確認してください。
@@ -1178,6 +1305,40 @@ export const ReducedMotion: Story = {
         story: 'prefers-reduced-motion 環境下でのアニメーション抑制を確認します。スピナーは静的になり、トランジションは即座に適用されます。',
       },
     },
+  },
+  play: async ({ canvasElement }) => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!prefersReducedMotion) {
+      console.warn('ReducedMotion story: prefers-reduced-motion: reduce を有効化して確認してください');
+      return;
+    }
+
+    const loadingButton = canvasElement.querySelector<Button>('ui-button[loading]');
+    if (!loadingButton) {
+      throw new Error('Loading button not found');
+    }
+
+    await loadingButton.updateComplete;
+
+    const internalButton = loadingButton.shadowRoot?.querySelector('button');
+    const spinner = loadingButton.shadowRoot?.querySelector('.spinner-default');
+    if (!internalButton || !spinner) {
+      throw new Error('Reduced motion verification targets not found');
+    }
+
+    internalButton.focus();
+    const spinnerStyle = getComputedStyle(spinner);
+    const focusStyle = getComputedStyle(internalButton);
+
+    if (spinnerStyle.animationName !== 'none') {
+      throw new Error(`Expected spinner animation to be disabled, got '${spinnerStyle.animationName}'`);
+    }
+
+    if (focusStyle.animationName !== 'none') {
+      throw new Error(`Expected focus animation to be disabled, got '${focusStyle.animationName}'`);
+    }
+
+    console.log('✅ All tests passed for ReducedMotion story');
   },
 };
 
