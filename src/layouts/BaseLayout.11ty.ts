@@ -33,9 +33,11 @@ export class BaseLayout {
       </nav>
     </header>
 
-    <main id="main-content">
-      ${data.content}
-    </main>
+    <app-router>
+      <main id="main-content">
+        ${data.content}
+      </main>
+    </app-router>
 
     <footer>
       <p>&copy; 2026 Rouault</p>

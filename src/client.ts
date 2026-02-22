@@ -1,14 +1,10 @@
-import { Router } from './lib/router.js';
-import './components/sample/hello-world.js';
-
-/*
- * アプリケーションのクライアントサイドエントリーポイント（ルーターの初期化）
+/**
+ * アプリケーションのクライアントサイドエントリーポイント
+ *
+ * <app-router> が connectedCallback() で自己初期化するため、
+ * コンポーネントのインポートのみ必要。
  */
-const mainContent = document.getElementById('main-content');
-if (mainContent) {
-  new Router(mainContent);
-} else {
-  console.error('Main content area not found');
-}
+
+import './components/app/app-router.js';
 
 console.log('Rouault Client Initialized');

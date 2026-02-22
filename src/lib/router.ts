@@ -12,6 +12,15 @@ interface RouteDefinition {
   handler: RouteHandler;
 }
 
+export interface RouterOptions {
+  /** コンテンツ更新コールバック（設定時は outlet.innerHTML を直接変更しない） */
+  onContentUpdate?: (html: string) => void;
+  /** 初期ナビゲーションをスキップする（AppRouter が SSG コンテンツを保持するため） */
+  skipInitialNavigation?: boolean;
+  /** 外部で aria-live リージョンを管理する場合は true にする */
+  skipAriaLiveRegion?: boolean;
+}
+
 export class Router {
   private clickHandler: (e: MouseEvent) => void;
   private popstateHandler: () => void;
@@ -24,7 +33,10 @@ export class Router {
   private ariaLiveRegion: HTMLDivElement | null = null;
   private isInitialLoad = true;
 
-  constructor(private outlet: HTMLElement) {
+  constructor(
+    private outlet: HTMLElement,
+    private options: RouterOptions = {},
+  ) {
     // イベントハンドラをバインド（destroy時に解除するため参照を保持）
     this.clickHandler = (e: MouseEvent) => this.handleAnchorClick(e);
     this.popstateHandler = () => {
@@ -52,14 +64,23 @@ export class Router {
     // aria-live リージョンの作成（アクセシビリティ）
     this.createAriaLiveRegion();
 
-    // 初期ロード
-    void this.handleNavigation(window.location.pathname);
+    if (this.options.skipInitialNavigation) {
+      // SSG コンテンツを既に保持しているため初期ナビゲーションをスキップ
+      this.navigationHistory.push(window.location.pathname);
+      this.isInitialLoad = false;
+    } else {
+      // 初期ロード
+      void this.handleNavigation(window.location.pathname);
+    }
   }
 
   /**
    * aria-live リージョンを作成
    */
   private createAriaLiveRegion() {
+    // 外部（AppRouter）で管理する場合はスキップ
+    if (this.options.skipAriaLiveRegion) return;
+
     this.ariaLiveRegion = document.createElement('div');
     this.ariaLiveRegion.setAttribute('aria-live', 'polite');
     this.ariaLiveRegion.setAttribute('aria-atomic', 'true');
@@ -162,6 +183,20 @@ export class Router {
   }
 
   /**
+   * カスタム再初期化フックを実行する
+   * AppRouter の updated() ライフサイクルから呼ばれる
+   */
+  runReinitializeHooks(): void {
+    this.reinitializeHooks.forEach((hook) => {
+      try {
+        hook();
+      } catch (e) {
+        console.error('Error in reinitialize hook:', e);
+      }
+    });
+  }
+
+  /**
    * ルート定義を追加
    * @param pattern パスパターン（文字列または正規表現）
    * @param handler ハンドラ関数
@@ -180,7 +215,7 @@ export class Router {
 
     // 動的パラメータの抽出 (/posts/:id など)
     const segments = path.split('/').filter(Boolean);
-    
+
     // 簡易的な実装：/posts/:id, /posts/:category/:id のようなパターンを想定
     if (segments.length >= 2 && segments[0] === 'posts') {
       if (segments.length === 2 && segments[1]) {
@@ -201,7 +236,7 @@ export class Router {
   getQuery(): Record<string, string> {
     const params: Record<string, string> = {};
     const searchParams = new URLSearchParams(window.location.search);
-    
+
     searchParams.forEach((value, key) => {
       // テストランナーの内部パラメータを除外
       if (key !== 'wtr-session-id') {
@@ -325,7 +360,25 @@ export class Router {
       }
 
       // ルートハンドラの実行
-      await this.executeRouteHandler(url);
+      // ハンドラが HTML 文字列を返した場合は fetch をスキップ
+      const handlerResult = await this.executeRouteHandler(url);
+      if (handlerResult !== null) {
+        this.setContent(handlerResult);
+        this.navigationHistory.push(url);
+        if (!this.isInitialLoad) {
+          this.emit('route:change', url);
+        }
+        this.isInitialLoad = false;
+        this.emit('content:load', url);
+        // onContentUpdate 未設定時のみ reinitializeScripts を実行
+        // （AppRouter 統合時は updated() ライフサイクルで処理するため）
+        if (!this.options.onContentUpdate) {
+          this.reinitializeScripts();
+        }
+        this.announcePageChange(document.title);
+        this.manageFocus();
+        return;
+      }
 
       const response = await fetch(url, { signal });
 
@@ -352,11 +405,11 @@ export class Router {
       this.updateMetaDescription(doc);
 
       // メインコンテンツを更新先のコンテンツに変更
-      this.outlet.innerHTML = newContent;
+      this.setContent(newContent);
 
       // 履歴に追加（初期ロードでも追加）
       this.navigationHistory.push(url);
-      
+
       // イベント発火（初期ロード以外）
       if (!this.isInitialLoad) {
         this.emit('route:change', url);
@@ -366,8 +419,11 @@ export class Router {
       // コンテンツロードイベント
       this.emit('content:load', url);
 
-      // コンテンツ差し替え後の再初期化処理
-      this.reinitializeScripts();
+      // onContentUpdate 未設定時のみ reinitializeScripts を実行
+      // （AppRouter 統合時は updated() ライフサイクルで処理するため）
+      if (!this.options.onContentUpdate) {
+        this.reinitializeScripts();
+      }
 
       // アクセシビリティ: aria-live通知
       this.announcePageChange(newTitle);
@@ -385,7 +441,7 @@ export class Router {
       }
 
       this.emit('error', err instanceof Error ? err : new Error(String(err)));
-      
+
       if (err instanceof TypeError && String(err.message).includes('fetch')) {
         this.showError('ネットワークエラー', 'ネットワーク接続を確認してください。');
       } else {
@@ -400,10 +456,24 @@ export class Router {
   }
 
   /**
+   * コンテンツを設定する
+   * onContentUpdate コールバックが設定されている場合はそちらを呼び出し、
+   * そうでなければ outlet.innerHTML を直接変更する（後方互換）
+   */
+  private setContent(html: string) {
+    if (this.options.onContentUpdate) {
+      this.options.onContentUpdate(html);
+    } else {
+      this.outlet.innerHTML = html;
+    }
+  }
+
+  /**
    * ルートハンドラを実行
    * @param url URL
+   * @returns ハンドラが返した HTML 文字列、またはマッチなし・void 返却時は null
    */
-  private async executeRouteHandler(url: string) {
+  private async executeRouteHandler(url: string): Promise<string | null> {
     for (const route of this.routes) {
       let matched = false;
 
@@ -420,23 +490,25 @@ export class Router {
       }
 
       if (matched) {
-        await route.handler();
-        break;
+        const result: unknown = await route.handler();
+        // ハンドラが HTML 文字列を返した場合のみ使用する
+        return typeof result === 'string' ? result : null;
       }
     }
+    return null;
   }
 
   /**
    * ページ変更をスクリーンリーダーに通知
-   * @param title ページタイトル
+   * @param _title ページタイトル（将来の拡張のため引数は保持）
    */
-  private announcePageChange(title: string) {
+  private announcePageChange(_title: string) {
     if (this.ariaLiveRegion) {
       // 少し遅延させてDOMの更新が完了してから通知
       setTimeout(() => {
         if (this.ariaLiveRegion) {
-          this.ariaLiveRegion.textContent = `ページが変更されました: ${title}`;
-          
+          this.ariaLiveRegion.textContent = 'ページが読み込まれました';
+
           // 通知後、少し待ってからクリア
           setTimeout(() => {
             if (this.ariaLiveRegion) {
@@ -455,7 +527,7 @@ export class Router {
   private manageFocus() {
     // メインコンテンツの最初の見出しまたはフォーカス可能な要素を探す
     const mainHeading = this.outlet.querySelector('h1, h2');
-    
+
     if (mainHeading instanceof HTMLElement) {
       // 見出しにtabindex="-1"を付けてフォーカス可能にする
       if (!mainHeading.hasAttribute('tabindex')) {
@@ -503,12 +575,13 @@ export class Router {
    * @param message エラーメッセージ
    */
   private showError(title: string, message: string) {
-    this.outlet.innerHTML = `
+    const errorHTML = `
       <div class="error-page">
         <h1>${title}</h1>
         <p>${message}</p>
       </div>
     `;
+    this.setContent(errorHTML);
   }
 
   /**
@@ -530,11 +603,8 @@ export class Router {
 
   /**
    * SPA遷移後の再初期化処理
-   * コンテンツを差し替えた後、以下の処理を行う：
-   * - PrismJS のシンタックスハイライト
-   * - Pagefind の検索 UI 初期化
-   * - スクロール位置のリセット
-   * - カスタムフック実行
+   * onContentUpdate 未設定時（スタンドアロン使用）にのみ呼ばれる。
+   * AppRouter 統合時は AppRouter.updated() ライフサイクルで処理する。
    */
   private reinitializeScripts() {
     // シンタックスハイライトの再適用
@@ -549,13 +619,7 @@ export class Router {
     }
 
     // カスタム再初期化フックの実行
-    this.reinitializeHooks.forEach((hook) => {
-      try {
-        hook();
-      } catch (e) {
-        console.error('Error in reinitialize hook:', e);
-      }
-    });
+    this.runReinitializeHooks();
 
     // スクロール位置をトップにリセット
     window.scrollTo(0, 0);

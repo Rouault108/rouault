@@ -1,0 +1,121 @@
+/**
+ * AppRouter - SPA ルーターの Lit ラッパーコンポーネント
+ *
+ * 責務:
+ * - SSG の初期コンテンツを保持してルーターに渡す（フラッシュなし）
+ * - RouterController を通じてページコンテンツをリアクティブに表示する
+ * - aria-live リージョンを宣言的に管理する（Router.createAriaLiveRegion() を置き換え）
+ * - ナビゲーション中の aria-busy 状態を宣言的に管理する
+ * - コンテンツ更新後の再初期化を updated() ライフサイクルで実行する
+ *   （Router.reinitializeScripts() の Lit 統合版）
+ *
+ * ライトDOM（createRenderRoot() { return this; }）を使用する理由:
+ * - グローバル CSS が main 要素に適用される必要があるため
+ * - SSG 生成コンテンツとのスタイル互換性を維持するため
+ */
+
+import { html, LitElement, nothing, type PropertyValues } from 'lit';
+import { customElement, state } from 'lit/decorators.js';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+import { RouterController } from '../../lib/controllers/router-controller.js';
+
+@customElement('app-router')
+export class AppRouter extends LitElement {
+  /** シャドウDOMを無効化してライトDOMを使用する */
+  override createRenderRoot(): this {
+    return this;
+  }
+
+  private _routerController = new RouterController(this);
+
+  /** fetch されたページの HTML コンテンツ */
+  @state() private _pageContent = '';
+
+  /** スクリーンリーダーへの通知テキスト */
+  @state() private _ariaAnnouncement = '';
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+
+    // Lit の初回レンダリング前に SSG コンテンツを取得して保持する
+    // これにより、JS ロード後のコンテンツ消失（フラッシュ）を防ぐ
+    const existingMain = this.querySelector('main');
+    this._pageContent = existingMain?.innerHTML ?? '';
+
+    // Router を SSG コンテンツを上書きしないように初期化する
+    const router = this._routerController.initRouter(
+      this,
+      (newContent) => {
+        this._pageContent = newContent;
+      },
+      {
+        skipInitialNavigation: true, // SSG コンテンツを既に保持しているため
+        skipAriaLiveRegion: true, // AppRouter が宣言的に管理するため
+      },
+    );
+
+    // aria-live 通知を Router の content:load イベントに接続する
+    router.on('content:load', () => {
+      this._ariaAnnouncement = 'ページが読み込まれました';
+      // スクリーンリーダーが次回の通知を検知できるよう、1 秒後にクリアする
+      setTimeout(() => {
+        this._ariaAnnouncement = '';
+      }, 1000);
+    });
+  }
+
+  protected override updated(changedProperties: PropertyValues): void {
+    super.updated(changedProperties);
+
+    // _pageContent が変更された場合のみ再初期化処理を実行する
+    // これが reinitializeScripts() の Lit ライフサイクル版であり、
+    // Lit が DOM を確実に更新した後に実行されることが保証される
+    if (changedProperties.has('_pageContent')) {
+      this._runPostRenderHooks();
+    }
+  }
+
+  /**
+   * コンテンツ差し替え後の再初期化処理
+   * Lit の updated() から呼ばれるため、DOM 更新後に確実に実行される
+   */
+  private _runPostRenderHooks(): void {
+    // Prism JS のシンタックスハイライト再適用
+    if (typeof window.Prism !== 'undefined') {
+      window.Prism.highlightAll();
+    }
+
+    // Pagefind 検索 UI の初期化（検索ページの場合）
+    const searchContainer = this.querySelector('#search');
+    if (searchContainer && typeof window.PagefindUI !== 'undefined') {
+      new window.PagefindUI({ element: searchContainer });
+    }
+
+    // addReinitializeHook() で登録されたカスタムフックを実行する
+    this._routerController.router?.runReinitializeHooks();
+
+    // スクロール位置をトップにリセット
+    window.scrollTo(0, 0);
+  }
+
+  override render() {
+    return html`
+      <!-- スクリーンリーダーへのページ変更通知（宣言的管理） -->
+      <div aria-live="polite" aria-atomic="true" class="sr-only">${this._ariaAnnouncement}</div>
+
+      <!-- メインコンテンツ領域 -->
+      <main
+        id="main-content"
+        aria-busy=${this._routerController.isNavigating ? 'true' : nothing}
+      >
+        ${unsafeHTML(this._pageContent)}
+      </main>
+    `;
+  }
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'app-router': AppRouter;
+  }
+}
