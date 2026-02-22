@@ -4746,6 +4746,177 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 - **Forced Colors**: `forced-colors: active` 時、トークン経由で全周ボーダーとアクセントボーダーが可視化され、色のみに依存せず識別可能であること。
 - **Non-text Contrast**: アイコン・左ボーダーが各バリアント背景に対し WCAG 2.1 1.4.11 の 3:1 以上を満たすこと。
 
+#### インフォボックス (Info Box) `<ui-info-box>`
+
+**1. デザイン哲学と目的 (Design Philosophy)**
+
+- **役割**: 記事本文内で、特定のトピックに関する構造化された補足情報を独立したパネルとして提示します。
+- **Semantic Distinction (コールアウトとの差異)**:
+    - **コールアウト** (`<ui-callout>`): 「緊急度を持つ注意喚起」。意味論的な色（note/tip/warning/danger）が主語となり、ユーザーへ行動や判断を促します。
+    - **インフォボックス** (`<ui-info-box>`): 「価値中立な参照情報の構造化提示」。意味論的な色づけを持たず、**コンテンツの構造**そのものが目的です。緊急度を示さず、事実や参照情報を静かに整理します。
+- **選択ガイド (Callout/Info Box Decision)**:
+    - **Calloutを使う条件**: 注意喚起・推奨・禁止・危険など、読者の判断や行動を変える意図がある。
+    - **Info Boxを使う条件**: メタデータ、定義、補足一覧など、価値中立な参照情報を整理したい。
+    - **境界ケース**: 「要点まとめ」であっても、警告や推奨のニュアンスを含む場合は `<ui-callout>` を優先する。
+- **Use Cases (想定用途)**:
+    - 書籍・楽曲・作品のメタデータ参照カード（題名、作曲者、初演年 等）
+    - 人物・概念プロフィール（生年、主要業績、専門分野 等）
+    - 用語定義（本文の流れから独立した詳細な解説）
+    - 記事内に埋め込む「要点まとめ」パネル
+- **Serenity**: 本文の読書リズムを分断しないよう、装飾を排した静謐なコンテナとして機能します。コールアウトとは異なり、「存在を主張しない」ことでコンテンツの発見可能性を高めます。コンテンツの「外枠」として読者の視線を受け止めるだけです。
+
+**2. ロジック参照基盤 (Logic Reference)**
+
+- **Native Base**: 対応する標準HTML要素はありません。Lit Web Componentとして実装します。
+- **Semantic Strategy**:
+    - `heading` が指定され、かつ `landmark` が `true` の場合: ホスト要素に `role="region"` + `aria-labelledby` を付与し、スクリーンリーダーのランドマークナビゲーション対象とします。
+    - それ以外の場合: `role="note"` にフォールバックします。本文と関連する補足であることを示しつつ、ランドマークとしては公開されません（多用によるランドマーク汚染を防ぐため）。
+- **Porting Strategy**: 自前実装。Lit ReactiveElement として状態管理を行います。
+
+**3. 技術仕様とAPI (Technical Specs)**
+
+**プロパティ (Properties)**
+
+| プロパティ | 属性 | 型/値 | デフォルト | 説明 |
+|------------|------|-------|-----------|------|
+| `heading` | `heading` | `string` | `''` | ヘッダーラベルテキスト。空文字の場合はヘッダー領域（境界線含む）を非表示にします。HTMLグローバル属性 `title` との衝突を避けるため、属性名は `heading` を採用します。 |
+| `icon` | `icon` | `string` | `''` | ヘッダー左側のアイコン名（Lucide）。`heading` が空の場合は無視されます。 |
+| `headingLevel` | `heading-level` | `number` | なし | ヘッダーの `aria-level`。指定時は `div.heading` に `role="heading"` + `aria-level` を付与します。許容値: `1`–`6`。 |
+| `landmark` | `landmark` | `boolean` | `false` | `true` かつ `heading` が存在する場合のみ、ホスト要素を `role="region"` として公開します。ランドマーク過密を防ぐため、デフォルトは無効です。 |
+| `variant` | `variant` | `'default' \| 'filled'` | `'default'` | スタイルバリアント。`default` は透明背景+ボーダー、`filled` は塗り背景+ボーダー。 |
+
+**スロット (Slots)**
+
+| スロット | 必須 | 説明 |
+|---------|------|------|
+| (default) | **はい** | 本体コンテンツ。`<dl>/<dt>/<dd>` による構造化データ、Proseテキスト、任意のHTML。 |
+
+**4. スタイリングとトークンマッピング (Style & Tokens)**
+
+**コンテナ (Container)**
+
+- **Display**: `grid`（ヘッダーとボディを縦に積み上げる）
+- **Border**: `var(--border-style-subtle)` (`1px solid var(--border-default)`)
+    - **Calloutとの差異**: コールアウトが左辺のみにアクセントボーダーを置き「強調」を示すのに対し、インフォボックスは**全周均等なボーダー**とし「中立な囲み」を示します。緊急度の概念がないため、特定の辺を強調しません。
+    - **Exception Note**: `index.md` の「本文コンテンツ内（`.prose`）では境界線を最小化する」原則に対し、コールアウトと同様の**明示的な例外**として扱います。インフォボックスは文脈から独立した情報の塊を示すため、全周ボーダーによる矩形の囲みが構造的に必要です。
+- **Radius**: `var(--radius-md)`
+- **Overflow**: `hidden`（ヘッダー境界線を角丸内に収めるため）
+
+| プロパティ | `default` | `filled` |
+|------------|-----------|----------|
+| **Background** | `transparent` | `var(--bg-fill-muted)` |
+
+> **Rationale (`filled` バリアントのトークン選択):** `--bg-fill-muted` はコードブロックと同じトークンを意図的に採用します。「コード以外の構造化コンテンツ」に対して同一の「入れ物としての素地」を与えることで、記事全体の背景テクスチャに一貫性が生まれます。`--bg-surface-2`（Card/Dropdown用）はエレベーション（浮き）を示唆するため、ページフローに埋め込むインフォボックスには意味論的に不適です。
+
+**ヘッダー (Header)**
+
+`heading` が指定された場合にのみ表示されます。
+
+- **Layout**: `display: flex`, `align-items: center`, `gap: var(--space-2)`
+- **Padding**: `var(--space-3) var(--space-4)` (上下12px、左右16px)
+- **Border Bottom**: `var(--border-style-subtle)` (ヘッダーとボディの境界)
+- **Typography**:
+    - Font Size: `var(--text-xs)` (12px)
+    - Weight: `var(--font-semibold)` (600) — **Small Text Rule 適用: Weight Boost**
+    - Letter Spacing: `var(--tracking-wide)` (0.025em) — **Small Text Rule 適用: Tracking Boost**
+    - Color:
+        - `variant="default"`: `var(--fg-muted)`
+        - `variant="filled"`: `var(--fg-default)` (`--fg-muted` on `--bg-fill-muted` は `index.md` の非推奨組み合わせ 3.8:1 のため)
+    - `font-feature-settings: "palt"` (日本語ラベルのプロポーショナルメトリクス)
+
+> **Rationale (12px ヘッダー):** ヘッダーは「ラベル」として機能し、本文コンテンツより前に出るべきではありません。`default` では `--fg-muted` を用いて静かな視認性を維持し、`filled` では AA コントラスト確保のため `--fg-default` に格上げします。`index.md` の Small Text Rule に従い、Weight Boost（`600`）と Tracking Boost（`--tracking-wide`）を両方適用し、この小さなサイズでの可読性を物理的に担保します。
+
+**アイコン (Icon)**
+
+- **Size**: `var(--icon-xs)` (12px) — ヘッダーテキスト（12px）と同サイズで統一し、高さのばらつきを防ぎます。
+- **Color**: ヘッダーテキスト色と同一（`default`: `--fg-muted` / `filled`: `--fg-default`）
+- **Stroke**: `1.5px`
+- **`aria-hidden`**: `true` (装飾的なため)
+
+> **Note (Icon Size 選択の根拠):** `--icon-sm` (14px) はインライン使用の基準サイズですが、12pxのヘッダーテキストと組み合わせる場合、14pxのアイコンは視覚的に重すぎます。`--icon-xs` (12px) を選択することで、アイコンとテキストの視覚的重みを揃え、「ラベルとしての整合性」を保ちます。
+
+**ボディ (Body)**
+
+- **Padding**: `var(--space-4)` (16px)
+
+> **Note (`<dl>` スタイリング):** スロットコンテンツに `<dl>/<dt>/<dd>` を使用する場合、`.prose` 内に配置される場合はProseのデフォルト `<dl>` スタイルが継承されます。非Prose環境では以下を**最小ベースライン**とし、必要に応じて拡張します。
+> - `dl`: `display: grid; gap: var(--space-2); margin: 0;`
+> - `dt`: `font-weight: var(--font-medium); color: var(--fg-muted);`
+> - `dd`: `margin: 0; color: var(--fg-default);`
+
+**コントラスト比保証 (Contrast Ratios)**
+
+| 要素 | トークン組み合わせ | コントラスト比 | 基準 |
+|------|------------------|----------------|------|
+| **ヘッダーテキスト (`default`)** | `--fg-muted` on `--bg-default` | 4.8:1 (Light) / 5.1:1 (Dark) | 4.5:1 以上（テキスト AA） |
+| **ヘッダーテキスト (`filled`)** | `--fg-default` on `--bg-fill-muted` | ~16.1:1 (Light) / ~15.4:1 (Dark) | 4.5:1 以上（テキスト AA） |
+| **ヘッダーアイコン (`default`)** | `--fg-muted` on `--bg-default` | 4.8:1 (Light) / 5.1:1 (Dark) | 3:1 以上（非テキスト 1.4.11） |
+| **ヘッダーアイコン (`filled`)** | `--fg-default` on `--bg-fill-muted` | ~16.1:1 (Light) / ~15.4:1 (Dark) | 3:1 以上（非テキスト 1.4.11） |
+
+> **Note:** `--fg-muted` on `--bg-fill-muted` は `index.md` で 3.8:1（非推奨）と定義されているため、`filled` ヘッダーは `--fg-default` を使用します。`--fg-default` on `--bg-fill-muted` の値（~16.1:1 / ~15.4:1）は本ドキュメントの算出値（コードセクション）と同一です。
+
+**Forced Colors**
+
+`forced-colors: active` 時は背景色が消失しますが、ボーダーは `CanvasText`（`index.md` のシステムカラーマッピング）にマッピングされるため、コンテナとヘッダーの輪郭は維持されます。色のみに依存せず、ボーダーの矩形によって情報の「囲み」が識別可能です。
+
+**5. アクセシビリティ (A11y)**
+
+**ARIA・セマンティクス**
+
+| 条件 | ホスト要素の属性 | 理由 |
+|------|-----------------|------|
+| `landmark=true` かつ `heading` あり | `role="region"` + `aria-labelledby="[heading-id]"` | 必要な場合のみランドマーク公開し、スクリーンリーダーで「[heading] リージョン」としてジャンプ可能にする |
+| それ以外 | `role="note"` | 補足情報であることを示す。ランドマークとしては公開せず、多用によるランドマーク汚染を防ぐ |
+
+- **見出しレベル**:
+    - `heading-level` 属性が指定され、かつ `heading` が存在する場合、`div.heading` に `role="heading"` と `aria-level` を付与します。
+    - 許容値: `1`–`6`。無効値は属性未指定として扱い、`aria-level` を出力しません（コールアウトと同一の方針）。
+- **アイコン**: 装飾的なため `aria-hidden="true"` を適用します。ヘッダーテキストが情報を伝えるため、アイコンへの代替テキストは不要です。
+
+**キーボード操作**
+
+インフォボックス自体はインタラクティブ要素ではなく、フォーカス対象外です。スロットコンテンツにリンクや入力要素が含まれる場合は、通常のドキュメントのタブ順序に従います。
+
+**6. 使用例 (Usage Examples)**
+
+```html
+<!-- 構造化メタデータ (作品情報カード) -->
+<ui-info-box heading="作品情報" icon="music" heading-level="3" landmark>
+  <dl>
+    <dt>作曲</dt><dd>クロード・ドビュッシー</dd>
+    <dt>作品番号</dt><dd>L. 75</dd>
+    <dt>ジャンル</dt><dd>印象主義音楽</dd>
+    <dt>初演</dt><dd>1905年 — ポルトガル、リスボン</dd>
+  </dl>
+</ui-info-box>
+
+<!-- 要点まとめ (filledバリアント) -->
+<ui-info-box heading="この章のポイント" icon="clipboard-list" variant="filled" heading-level="3">
+  <ul>
+    <li>OKLCHは知覚的均一性を持つカラーモデルであり、WCAG準拠が容易になる</li>
+    <li>Semanticトークンを経由することで、Light/Darkテーマの一元管理が実現する</li>
+  </ul>
+</ui-info-box>
+
+<!-- タイトルなし (インライン補足) -->
+<ui-info-box>
+  <p>この実装は Chrome 111+ と Safari 16.4+ を対象としています。</p>
+</ui-info-box>
+```
+
+**7. 受け入れ基準 (Acceptance Criteria)**
+
+- **Header Visibility**: `heading` が空の場合、ヘッダー領域（境界線含む）が非表示であること。
+- **Role Mapping**: `landmark=true` かつ `heading` あり → `role="region"` + `aria-labelledby` が設定されること。それ以外 → `role="note"` が設定されること。
+- **Heading Semantics**: `heading` + `heading-level` 指定時に、`div.heading` へ `role="heading"` + 正しい `aria-level` が設定されること（`h1`–`h6` タグは生成しない）。
+- **Heading Validation**: `heading-level` が `1`–`6` 以外の場合、`aria-level` を出力しないこと。
+- **Icon Hidden**: ヘッダーアイコンに `aria-hidden="true"` が付与されていること。
+- **Variant Styles**: `variant="filled"` 時に背景色が `var(--bg-fill-muted)` になること。`variant="default"` 時は背景が透明であること。
+- **Header Color Mapping**: ヘッダー前景色が `default` で `--fg-muted`、`filled` で `--fg-default` に切り替わること。
+- **Forced Colors**: `forced-colors: active` 時、コンテナとヘッダー境界のボーダーが可視化され、色のみに依存せず領域が識別可能であること。
+- **Non-text Contrast**: ヘッダーアイコン（12px）が背景に対し WCAG 2.1 1.4.11 の 3:1 以上を満たすこと。
+- **Small Text Rule**: ヘッダーテキスト（12px）に Weight Boost（`--font-semibold`）と Tracking Boost（`--tracking-wide`）が適用されていること。
+
 #### 詳細折りたたみ (Details) `<ui-details>`
 
 **1. デザイン哲学と目的 (Design Philosophy)**
