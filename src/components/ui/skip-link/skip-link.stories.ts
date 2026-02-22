@@ -64,9 +64,9 @@ const meta: Meta<SkipLink> = {
       config: {
         rules: [
           {
-            // スキップリンクは視覚的に非表示のため、color-contrast ルールを無効化
+            // color-contrast は原則有効。HiddenByDefault ストーリーのみ個別に無効化する。
             id: 'color-contrast',
-            enabled: false,
+            enabled: true,
           },
         ],
       },
@@ -97,8 +97,15 @@ type Story = StoryObj<SkipLink>;
 
 const focusByKeyboard = (element: HTMLElement): void => {
   // キーボード操作由来のフォーカスとして扱わせ、:focus-visible の表示を安定させる
-  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+  const doc = element.ownerDocument;
+  doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
   element.focus();
+};
+
+const activateLinkByEnter = (element: HTMLAnchorElement): void => {
+  element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+  element.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', bubbles: true, cancelable: true }));
+  element.click();
 };
 
 /**
@@ -226,6 +233,18 @@ export const Default: Story = {
  * フォーカス前は視覚的に非表示であり、A11yツリーに残る実装であることを確認します。
  */
 export const HiddenByDefault: Story = {
+  parameters: {
+    a11y: {
+      config: {
+        rules: [
+          {
+            id: 'color-contrast',
+            enabled: false,
+          },
+        ],
+      },
+    },
+  },
   args: {
     href: '#main-content',
     label: 'メインコンテンツへスキップ',
@@ -569,8 +588,20 @@ export const SkipNavigationFlow: Story = {
       throw new Error('Target element must have tabindex="-1" for programmatic focus');
     }
 
+    activateLinkByEnter(anchor);
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const locationHash = mainContent.ownerDocument.defaultView?.location.hash;
+    if (locationHash !== '#main-content') {
+      throw new Error(`Expected hash to be '#main-content', got '${locationHash ?? 'null'}'`);
+    }
+
+    const activeElement = mainContent.ownerDocument.activeElement;
+    if (activeElement !== mainContent) {
+      throw new Error('Expected focus to move to #main-content after Enter activation');
+    }
+
     console.log('✅ All tests passed for SkipNavigationFlow story');
-    console.log('ℹ️ Manual test: Press Enter on the skip link to verify focus moves to main content');
   },
 };
 
@@ -624,6 +655,10 @@ export const DarkMode: Story = {
         background: oklch(17% 0.02 250); /* --bg-surface-2 in dark mode */
         border-radius: var(--radius-md, 6px);
         border: 1px solid oklch(90% 0.01 250 / 0.12); /* --border-default in dark mode */
+      }
+      
+      .demo-info code {
+        background: oklch(22% 0.02 250);
       }
 
       .demo-note {
@@ -881,6 +916,25 @@ export const LabelBoundaries: Story = {
       'メインコンテンツ（記事本文と補足情報を含む領域）へスキップして、ナビゲーションを省略する';
     if (longAnchor.textContent.trim() !== expectedLongLabel) {
       throw new Error('Long label text is not rendered correctly');
+    }
+
+    focusByKeyboard(longAnchor);
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    const shortStyle = window.getComputedStyle(shortAnchor);
+    if (shortStyle.whiteSpace !== 'nowrap') {
+      throw new Error(`Expected short label white-space to be 'nowrap', got '${shortStyle.whiteSpace}'`);
+    }
+
+    const longStyle = window.getComputedStyle(longAnchor);
+    if (longStyle.textOverflow !== 'ellipsis') {
+      throw new Error(`Expected long label text-overflow to be 'ellipsis', got '${longStyle.textOverflow}'`);
+    }
+    if (longStyle.overflow !== 'hidden' && longStyle.overflowX !== 'hidden') {
+      throw new Error('Expected long label overflow to be hidden');
+    }
+    if (longAnchor.scrollWidth <= longAnchor.clientWidth) {
+      throw new Error('Expected long label to require truncation in the current viewport');
     }
   },
 };
