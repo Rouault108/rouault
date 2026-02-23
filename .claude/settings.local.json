@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(xargs ls:*)"
+      "Bash(xargs ls:*)",
+      "Bash(npx eslint:*)",
+      "Bash(/c/Users/ruosc/AppData/Local/Programs/Python/Python310/python:*)"
     ]
   }
 }
