@@ -2,14 +2,26 @@
  * View Transition API を利用した SPA ルーター
  */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type EventCallback = (...args: any[]) => void;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type RouteHandler = () => any;
+type EventCallback = (...args: unknown[]) => unknown;
+type RouteHandler = () => unknown;
+
+type HistoryMode = 'none' | 'push' | 'replace';
+
+interface NavigationRequest {
+  url: string;
+  historyMode: HistoryMode;
+  state?: Record<string, unknown>;
+}
 
 interface RouteDefinition {
   pattern: string | RegExp;
   handler: RouteHandler;
+}
+
+interface PendingNavigation {
+  request: NavigationRequest;
+  resolve: () => void;
+  reject: (reason?: unknown) => void;
 }
 
 export interface RouterOptions {
@@ -24,23 +36,31 @@ export interface RouterOptions {
 export class Router {
   private clickHandler: (e: MouseEvent) => void;
   private popstateHandler: () => void;
-  private eventListeners: Map<string, Set<EventCallback>> = new Map();
-  private reinitializeHooks: Set<() => void> = new Set();
+  private eventListeners = new Map<string, Set<EventCallback>>();
+  private reinitializeHooks = new Set<() => void>();
   private routes: RouteDefinition[] = [];
   private navigating = false;
   private timeoutDuration = 0;
   private navigationHistory: string[] = [];
   private ariaLiveRegion: HTMLDivElement | null = null;
   private isInitialLoad = true;
+  private navigationInProgress = false;
+  private pendingNavigation: PendingNavigation | null = null;
+  private isDestroyed = false;
 
   constructor(
     private outlet: HTMLElement,
     private options: RouterOptions = {},
   ) {
     // イベントハンドラをバインド（destroy時に解除するため参照を保持）
-    this.clickHandler = (e: MouseEvent) => this.handleAnchorClick(e);
+    this.clickHandler = (e: MouseEvent) => {
+      this.handleAnchorClick(e);
+    };
     this.popstateHandler = () => {
-      void this.handleNavigation(window.location.pathname);
+      void this.requestNavigation({
+        url: this.getCurrentUrl(),
+        historyMode: 'none',
+      });
     };
 
     this.init();
@@ -66,11 +86,14 @@ export class Router {
 
     if (this.options.skipInitialNavigation) {
       // SSG コンテンツを既に保持しているため初期ナビゲーションをスキップ
-      this.navigationHistory.push(window.location.pathname);
+      this.navigationHistory.push(this.getCurrentUrl());
       this.isInitialLoad = false;
     } else {
       // 初期ロード
-      void this.handleNavigation(window.location.pathname);
+      void this.requestNavigation({
+        url: this.getCurrentUrl(),
+        historyMode: 'none',
+      });
     }
   }
 
@@ -95,10 +118,15 @@ export class Router {
    * イベントリスナーを解除してクリーンアップする
    */
   destroy() {
+    this.isDestroyed = true;
     window.removeEventListener('popstate', this.popstateHandler);
     document.removeEventListener('click', this.clickHandler);
     this.eventListeners.clear();
     this.reinitializeHooks.clear();
+    if (this.pendingNavigation) {
+      this.pendingNavigation.resolve();
+      this.pendingNavigation = null;
+    }
 
     // aria-live リージョンの削除
     if (this.ariaLiveRegion) {
@@ -116,7 +144,7 @@ export class Router {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, new Set());
     }
-    this.eventListeners.get(event)!.add(callback);
+    this.eventListeners.get(event)?.add(callback);
   }
 
   /**
@@ -150,6 +178,34 @@ export class Router {
   }
 
   /**
+   * キャンセル可能なイベントを発火
+   * いずれかのリスナーが false を返した場合は処理を中断する
+   */
+  private emitCancelable(event: string, ...args: unknown[]): boolean {
+    const listeners = this.eventListeners.get(event);
+    if (!listeners) {
+      return true;
+    }
+
+    for (const callback of listeners) {
+      try {
+        const result = callback(...args);
+        if (result === false) {
+          return false;
+        }
+      } catch (e) {
+        console.error(`Error in ${event} event handler:`, e);
+        if (event !== 'error') {
+          this.emit('error', e instanceof Error ? e : new Error(String(e)));
+        }
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
    * ナビゲーション中かどうかを返す
    */
   isNavigating(): boolean {
@@ -162,8 +218,11 @@ export class Router {
    * @param state 履歴に保存する状態データ（オプション）
    */
   async navigate(path: string, state: Record<string, unknown> = {}) {
-    window.history.pushState(state, '', path);
-    await this.handleNavigation(path);
+    await this.requestNavigation({
+      url: path,
+      historyMode: 'push',
+      state,
+    });
   }
 
   /**
@@ -277,6 +336,8 @@ export class Router {
    * @param e マウスイベント
    */
   private handleAnchorClick(e: MouseEvent) {
+    if (e.defaultPrevented) return;
+
     // 左クリック以外は無視（button: 0 が左クリック）
     if (e.button !== 0) return;
 
@@ -286,53 +347,90 @@ export class Router {
     const anchor = (e.target as HTMLElement).closest('a');
     if (!anchor) return;
 
+    const relValue = anchor.getAttribute('rel');
+    const isExternalRel =
+      anchor.relList.contains('external') ||
+      (typeof relValue === 'string' && relValue.split(/\s+/).includes('external'));
+
     // 特定の属性がある場合は無視
     if (
       anchor.target ||
       anchor.hasAttribute('download') ||
-      anchor.getAttribute('rel') === 'external' ||
+      isExternalRel ||
       anchor.hasAttribute('data-no-router')
     ) {
       return;
     }
 
     const href = anchor.getAttribute('href');
-    if (!href || href.startsWith('http') || href.startsWith('#')) return;
+    if (!href) return;
+
+    let targetUrl: URL;
+    try {
+      targetUrl = new URL(href, window.location.href);
+    } catch {
+      return;
+    }
+
+    // http/https 以外のスキームはブラウザ標準の遷移を優先
+    if (targetUrl.protocol !== 'http:' && targetUrl.protocol !== 'https:') {
+      return;
+    }
+
+    // クロスオリジンは通常リンクとして処理
+    if (targetUrl.origin !== window.location.origin) {
+      return;
+    }
+
+    // ハッシュのみの移動（同一ページ内リンク）は通常動作を優先
+    if (
+      targetUrl.pathname === window.location.pathname &&
+      targetUrl.search === window.location.search &&
+      targetUrl.hash
+    ) {
+      return;
+    }
 
     e.preventDefault();
-    window.history.pushState({}, '', href);
-    void this.handleNavigation(href);
+    void this.requestNavigation({
+      url: `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`,
+      historyMode: 'push',
+    });
   }
 
   /**
    * View Transitions APIを利用したページ遷移を行う非同期関数
    * @param url 遷移先のURL
    */
-  private async handleNavigation(url: string) {
-    // 二重ロード防止
-    if (this.navigating) {
-      console.warn('Navigation already in progress');
+  private async handleNavigation(request: NavigationRequest) {
+    const normalizedUrl = this.normalizeUrl(request.url);
+
+    // before:navigate のいずれかのリスナーが false を返した場合は中断
+    if (!this.emitCancelable('before:navigate', normalizedUrl)) {
       return;
     }
 
     this.navigating = true;
     this.emit('loading:start');
-    this.emit('before:navigate', url);
-
-    // View Transition APIをサポートしていないブラウザはフォールバック
-    if (!document.startViewTransition) {
-      await this.updateContent(url);
-      this.navigating = false;
-      this.emit('loading:end');
-      this.emit('after:navigate', url);
-      return;
-    }
-
-    const transition = document.startViewTransition(async () => {
-      await this.updateContent(url);
-    });
 
     try {
+      if (request.historyMode === 'push') {
+        window.history.pushState(request.state ?? {}, '', normalizedUrl);
+      } else if (request.historyMode === 'replace') {
+        window.history.replaceState(request.state ?? {}, '', normalizedUrl);
+      }
+
+      // View Transition APIをサポートしていないブラウザはフォールバック
+      const startViewTransition = (document.startViewTransition as typeof document.startViewTransition | undefined)?.bind(document);
+      if (!startViewTransition) {
+        await this.updateContent(normalizedUrl);
+        return;
+      }
+
+      const transition = startViewTransition(async () => {
+        await this.updateContent(normalizedUrl);
+      });
+
       await transition.finished;
     } catch (e) {
       console.error('Transition failed', e);
@@ -340,7 +438,7 @@ export class Router {
     } finally {
       this.navigating = false;
       this.emit('loading:end');
-      this.emit('after:navigate', url);
+      this.emit('after:navigate', normalizedUrl);
     }
   }
 
@@ -356,7 +454,9 @@ export class Router {
     try {
       // タイムアウトが設定されている場合、タイマーを開始
       if (this.timeoutDuration > 0) {
-        timeoutId = window.setTimeout(() => controller.abort(), this.timeoutDuration);
+        timeoutId = window.setTimeout(() => {
+          controller.abort();
+        }, this.timeoutDuration);
       }
 
       // ルートハンドラの実行
@@ -374,9 +474,9 @@ export class Router {
         // （AppRouter 統合時は updated() ライフサイクルで処理するため）
         if (!this.options.onContentUpdate) {
           this.reinitializeScripts();
+          this.manageFocus();
         }
         this.announcePageChange(document.title);
-        this.manageFocus();
         return;
       }
 
@@ -423,13 +523,11 @@ export class Router {
       // （AppRouter 統合時は updated() ライフサイクルで処理するため）
       if (!this.options.onContentUpdate) {
         this.reinitializeScripts();
+        this.manageFocus();
       }
 
       // アクセシビリティ: aria-live通知
       this.announcePageChange(newTitle);
-
-      // アクセシビリティ: フォーカス管理
-      this.manageFocus();
     } catch (err) {
       console.error('Navigation failed:', err);
 
@@ -442,7 +540,7 @@ export class Router {
 
       this.emit('error', err instanceof Error ? err : new Error(String(err)));
 
-      if (err instanceof TypeError && String(err.message).includes('fetch')) {
+      if (err instanceof TypeError && err.message.includes('fetch')) {
         this.showError('ネットワークエラー', 'ネットワーク接続を確認してください。');
       } else {
         this.showError('エラー', 'ページの読み込みに失敗しました。');
@@ -590,14 +688,22 @@ export class Router {
    */
   private updateMetaDescription(doc: Document) {
     const newDescription = doc.querySelector('meta[name="description"]')?.getAttribute('content');
-    if (newDescription) {
-      let metaTag = document.querySelector('meta[name="description"]');
+    const currentMetaTag = document.querySelector('meta[name="description"]');
+
+    if (newDescription !== null && newDescription !== undefined) {
+      let metaTag = currentMetaTag;
       if (!metaTag) {
         metaTag = document.createElement('meta');
         metaTag.setAttribute('name', 'description');
         document.head.appendChild(metaTag);
       }
       metaTag.setAttribute('content', newDescription);
+      return;
+    }
+
+    // 遷移先に description が存在しない場合は古い値を残さない
+    if (currentMetaTag) {
+      currentMetaTag.remove();
     }
   }
 
@@ -623,5 +729,91 @@ export class Router {
 
     // スクロール位置をトップにリセット
     window.scrollTo(0, 0);
+  }
+
+  /**
+   * 現在URLを取得（pathname + search + hash）
+   */
+  private getCurrentUrl(): string {
+    return `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  }
+
+  /**
+   * URL文字列を正規化する
+   * @param url 相対URLまたは絶対URL
+   */
+  private normalizeUrl(url: string): string {
+    const normalized = new URL(url, window.location.href);
+    return `${normalized.pathname}${normalized.search}${normalized.hash}`;
+  }
+
+  /**
+   * ナビゲーション要求を処理する
+   * 処理中に新しい要求が来た場合は、最後の要求のみを保持する（後勝ち）。
+   * @param request ナビゲーション要求
+   */
+  private requestNavigation(request: NavigationRequest): Promise<void> {
+    const normalizedRequest: NavigationRequest = {
+      ...request,
+      url: this.normalizeUrl(request.url),
+    };
+
+    return new Promise<void>((resolve, reject) => {
+      if (this.isDestroyed) {
+        resolve();
+        return;
+      }
+
+      if (this.navigationInProgress) {
+        // ローディング中は最後に要求された遷移のみ保持する（後勝ち）
+        if (this.pendingNavigation) {
+          this.pendingNavigation.resolve();
+        }
+        this.pendingNavigation = {
+          request: normalizedRequest,
+          resolve,
+          reject,
+        };
+        return;
+      }
+
+      this.navigationInProgress = true;
+      void this.processNavigationLoop(normalizedRequest, resolve, reject);
+    });
+  }
+
+  /**
+   * ナビゲーション要求を順次処理する
+   * 処理中に新しい要求が来た場合は pendingNavigation に保持され、現在の処理後に実行される。
+   */
+  private async processNavigationLoop(
+    initialRequest: NavigationRequest,
+    initialResolve: () => void,
+    initialReject: (reason?: unknown) => void,
+  ) {
+    let currentRequest: NavigationRequest = initialRequest;
+    let currentResolve = initialResolve;
+    let currentReject = initialReject;
+
+    for (;;) {
+      try {
+        await this.handleNavigation(currentRequest);
+        currentResolve();
+      } catch (error) {
+        currentReject(error);
+      }
+
+      if (!this.pendingNavigation) {
+        break;
+      }
+
+      const next = this.pendingNavigation;
+      this.pendingNavigation = null;
+      currentRequest = next.request;
+      currentResolve = next.resolve;
+      currentReject = next.reject;
+    }
+
+    this.navigationInProgress = false;
   }
 }

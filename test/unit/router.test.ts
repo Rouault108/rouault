@@ -26,33 +26,37 @@ describe('Router', () => {
 		originalFetch = globalThis.fetch;
 
 		// history API のオリジナルを保存
-		originalPushState = history.pushState;
-		originalReplaceState = history.replaceState;
+		originalPushState = (data: unknown, unused: string, url?: string | URL | null) => {
+			history.pushState(data, unused, url);
+		};
+		originalReplaceState = (data: unknown, unused: string, url?: string | URL | null) => {
+			history.replaceState(data, unused, url);
+		};
 
-		// history API のモック（SecurityErrorを防ぐため）
-		history.pushState = (_data: unknown, _unused: string, _url?: string | URL | null) => {
-			// mock: 何もしない（SecurityErrorを防ぐだけ）
-		};
-		history.replaceState = (_data: unknown, _unused: string, _url?: string | URL | null) => {
-			// mock: 何もしない（SecurityErrorを防ぐだけ）
-		};
+		// 各テスト開始時のURLを統一
+		try {
+			originalReplaceState.call(history, {}, '', '/');
+		} catch {
+			// 一部実行環境では初期URL変更が制限されるため無視
+		}
 
 		// View Transition API のモック
 		// exactOptionalPropertyTypesに対応するため、型アサーションを使用
-		originalStartViewTransition = document.startViewTransition;
+		originalStartViewTransition = (callback?: ViewTransitionUpdateCallback | StartViewTransitionOptions) =>
+			document.startViewTransition(callback);
 		const mockTransition: Document['startViewTransition'] = (
 			callback?: ViewTransitionUpdateCallback | StartViewTransitionOptions,
 		) => {
 			// コールバックを非同期実行し、完了を追跡
 			const updateCallback =
 				typeof callback === 'function' ? callback : callback?.update;
-			
-			const callbackPromise = updateCallback 
-				? Promise.resolve(updateCallback())
+
+			const callbackPromise: Promise<void> = updateCallback
+				? Promise.resolve(updateCallback()).then(() => undefined)
 				: Promise.resolve();
 
 			// typesのモックオブジェクトを作成
-			const typesArray = typeof callback === 'object' && callback?.types ? callback.types : [];
+			const typesArray = typeof callback === 'object' ? callback.types ?? [] : [];
 			const backingSet = new Set(typesArray);
 
 			const mockTypes = {
@@ -61,7 +65,7 @@ describe('Router', () => {
 					backingSet.add(value);
 					return mockTypes;
 				},
-				clear: () => backingSet.clear(),
+				clear: () => { backingSet.clear(); },
 				delete: (value: string) => backingSet.delete(value),
 				has: (value: string) => backingSet.has(value),
 				entries: () => backingSet.entries(),
@@ -77,7 +81,7 @@ describe('Router', () => {
 					callbackfn: (value: string, key: string, parent: ViewTransitionTypeSet) => void,
 				) {
 					backingSet.forEach((value, key) =>
-						callbackfn(value, key, mockTypes as ViewTransitionTypeSet),
+						{ callbackfn(value, key, mockTypes); },
 					);
 				},
 			} as ViewTransitionTypeSet;
@@ -88,7 +92,7 @@ describe('Router', () => {
 				ready: callbackPromise,
 				updateCallbackDone: callbackPromise,
 				skipTransition: () => {
-					// mock
+					/* モック */
 				},
 				types: mockTypes,
 			};
@@ -104,9 +108,7 @@ describe('Router', () => {
 		history.replaceState = originalReplaceState;
 
 		// ルーターのクリーンアップ
-		if (router) {
-			router.destroy();
-		}
+		router.destroy();
 	});
 
 	// ========================================
@@ -120,11 +122,11 @@ describe('Router', () => {
 
 		it('1.2 初期化時に現在のパスでナビゲーションが実行されること', async () => {
 			let fetchCalled = false;
-			globalThis.fetch = async () => {
+			globalThis.fetch = () => {
 				fetchCalled = true;
-				return new Response('<html><body><main>Initial</main></body></html>', {
+				return Promise.resolve(new Response('<html><body><main>Initial</main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 
 			router = new Router(outlet);
@@ -162,10 +164,10 @@ describe('Router', () => {
 	describe('2. リンクインターセプト', () => {
 		beforeEach(() => {
 			// ナビゲーションをモック（実際のfetchを防ぐ）
-			globalThis.fetch = async () => {
-				return new Response('<html><body><main>Mocked</main></body></html>', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('<html><body><main>Mocked</main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 		});
 
@@ -420,6 +422,26 @@ describe('Router', () => {
 
 			expect(defaultPrevented).to.be.false;
 		});
+
+		it('2.14 rel に external を含む複合トークンはインターセプトしないこと', async () => {
+			router = new Router(outlet);
+			const link = await fixture<HTMLAnchorElement>(
+				html` <a href="/test" rel="noopener external">External Rel Link</a> `,
+			);
+
+			let defaultPrevented = false;
+			const handler = (e: Event) => {
+				defaultPrevented = e.defaultPrevented;
+				e.preventDefault();
+			};
+			document.addEventListener('click', handler);
+
+			link.click();
+
+			document.removeEventListener('click', handler);
+
+			expect(defaultPrevented).to.be.false;
+		});
 	});
 
 	// ========================================
@@ -437,11 +459,11 @@ describe('Router', () => {
                 </html>
             `;
 
-			globalThis.fetch = async () => {
-				return new Response(mockHTML, {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response(mockHTML, {
 					status: 200,
 					headers: { 'Content-Type': 'text/html' },
-				});
+				}));
 			};
 
 			router = new Router(outlet);
@@ -466,16 +488,16 @@ describe('Router', () => {
                 </html>
             `;
 
-			globalThis.fetch = async () => {
-				return new Response(mockHTML, {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response(mockHTML, {
 					status: 200,
-				});
+				}));
 			};
 
 			router = new Router(outlet);
 
 			// プログラマティックにナビゲーション
-			await router.navigate?.('/programmatic');
+			await router.navigate('/programmatic');
 
 			expect(outlet.innerHTML).to.include('Programmatic Content');
 			expect(document.title).to.equal('Programmatic Page');
@@ -487,10 +509,10 @@ describe('Router', () => {
 				if (url) pushedPath = url.toString();
 			}) as typeof history.pushState;
 
-			globalThis.fetch = async () => {
-				return new Response('<html><body><main>Content</main></body></html>', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('<html><body><main>Content</main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 
 			router = new Router(outlet);
@@ -505,11 +527,11 @@ describe('Router', () => {
 
 		it('3.4 popstate イベントで戻る/進むボタンに対応すること', async () => {
 			let lastFetchedPath = '';
-			globalThis.fetch = async (input: RequestInfo | URL) => {
-				lastFetchedPath = input.toString();
-				return new Response('<html><body><main>Back Content</main></body></html>', {
+			globalThis.fetch = (input: RequestInfo | URL) => {
+				lastFetchedPath = input instanceof Request ? input.url : String(input);
+				return Promise.resolve(new Response('<html><body><main>Back Content</main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 
 			router = new Router(outlet);
@@ -540,8 +562,8 @@ describe('Router', () => {
                 </html>
             `;
 
-			globalThis.fetch = async () => {
-				return new Response(mockHTML, { status: 200 });
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response(mockHTML, { status: 200 }));
 			};
 
 			router = new Router(outlet);
@@ -565,8 +587,8 @@ describe('Router', () => {
                 </html>
             `;
 
-			globalThis.fetch = async () => {
-				return new Response(mockHTML, { status: 200 });
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response(mockHTML, { status: 200 }));
 			};
 
 			router = new Router(outlet);
@@ -594,8 +616,8 @@ describe('Router', () => {
                 </html>
             `;
 
-			globalThis.fetch = async () => {
-				return new Response(mockHTML, { status: 200 });
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response(mockHTML, { status: 200 }));
 			};
 
 			router = new Router(outlet);
@@ -613,8 +635,8 @@ describe('Router', () => {
 		});
 
 		it('4.4 空のレスポンスを適切に処理すること', async () => {
-			globalThis.fetch = async () => {
-				return new Response('', { status: 200 });
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('', { status: 200 }));
 			};
 
 			router = new Router(outlet);
@@ -623,7 +645,7 @@ describe('Router', () => {
 			link.click();
 
 			await waitUntil(
-				() => outlet.textContent?.includes('Not Found') || outlet.textContent?.includes('エラー'),
+				() => outlet.textContent.includes('Not Found') || outlet.textContent.includes('エラー'),
 				'エラー表示',
 			);
 
@@ -641,8 +663,8 @@ describe('Router', () => {
                 </html>
             `;
 
-			globalThis.fetch = async () => {
-				return new Response(mockHTML, { status: 200 });
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response(mockHTML, { status: 200 }));
 			};
 
 			router = new Router(outlet);
@@ -651,13 +673,44 @@ describe('Router', () => {
 			link.click();
 
 			await waitUntil(
-				() => outlet.textContent?.includes('Not Found') || outlet.textContent?.includes('エラー'),
+				() => outlet.textContent.includes('Not Found') || outlet.textContent.includes('エラー'),
 				'エラー表示',
 			);
 
 			expect(outlet.textContent).to.satisfy((text: string) =>
 				text.includes('Not Found') || text.includes('エラー')
 			);
+		});
+
+		it('4.6 遷移先にmeta descriptionがない場合は既存タグを削除すること', async () => {
+			const staleMeta = document.createElement('meta');
+			staleMeta.setAttribute('name', 'description');
+			staleMeta.setAttribute('content', 'Stale Description');
+			document.head.appendChild(staleMeta);
+
+			const mockHTML = `
+                <!DOCTYPE html>
+                <html>
+                    <head><title>No Description</title></head>
+                    <body><main>Content</main></body>
+                </html>
+            `;
+
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response(mockHTML, { status: 200 }));
+			};
+
+			router = new Router(outlet);
+
+			const link = await fixture<HTMLAnchorElement>(html` <a href="/meta-clear">Link</a> `);
+			link.click();
+
+			await waitUntil(
+				() => document.querySelector('meta[name="description"]') === null,
+				'meta descriptionが削除される',
+			);
+
+			expect(document.querySelector('meta[name="description"]')).to.equal(null);
 		});
 	});
 
@@ -674,14 +727,14 @@ describe('Router', () => {
 					finished: Promise.resolve(),
 					ready: Promise.resolve(),
 					updateCallbackDone: Promise.resolve(),
-					skipTransition: () => {},
+					skipTransition: () => { /* モック */ },
 				};
 			}) as Document['startViewTransition'];
 
-			globalThis.fetch = async () => {
-				return new Response('<html><body><main>Content</main></body></html>', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('<html><body><main>Content</main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 
 			router = new Router(outlet);
@@ -699,10 +752,10 @@ describe('Router', () => {
 			// @ts-expect-error - テストのために意図的に削除
 			document.startViewTransition = undefined;
 
-			globalThis.fetch = async () => {
-				return new Response('<html><body><main><p>Fallback Content</p></main></body></html>', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('<html><body><main><p>Fallback Content</p></main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 
 			router = new Router(outlet);
@@ -721,14 +774,14 @@ describe('Router', () => {
 					finished: Promise.reject(new Error('Transition failed')),
 					ready: Promise.resolve(),
 					updateCallbackDone: Promise.resolve(),
-					skipTransition: () => {},
+					skipTransition: () => { /* モック */ },
 				};
 			}) as Document['startViewTransition'];
 
-			globalThis.fetch = async () => {
-				return new Response('<html><body><main><p>Content Despite Error</p></main></body></html>', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('<html><body><main><p>Content Despite Error</p></main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 
 			router = new Router(outlet);
@@ -747,11 +800,11 @@ describe('Router', () => {
 	// ========================================
 	describe('6. エラーハンドリング', () => {
 		it('6.1 404エラー時に適切なエラーメッセージを表示すること', async () => {
-			globalThis.fetch = async () => {
-				return new Response('Not Found', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('Not Found', {
 					status: 404,
 					statusText: 'Not Found',
-				});
+				}));
 			};
 
 			router = new Router(outlet);
@@ -759,17 +812,17 @@ describe('Router', () => {
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/404">Link</a> `);
 			link.click();
 
-			await waitUntil(() => outlet.textContent?.includes('404'), '404エラー表示');
+			await waitUntil(() => outlet.textContent.includes('404'), '404エラー表示');
 
 			expect(outlet.textContent).to.include('404');
 		});
 
 		it('6.2 500エラー時に適切なエラーメッセージを表示すること', async () => {
-			globalThis.fetch = async () => {
-				return new Response('Internal Server Error', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('Internal Server Error', {
 					status: 500,
 					statusText: 'Internal Server Error',
-				});
+				}));
 			};
 
 			router = new Router(outlet);
@@ -777,7 +830,7 @@ describe('Router', () => {
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/500">Link</a> `);
 			link.click();
 
-			await waitUntil(() => outlet.textContent?.includes('500') || outlet.textContent?.includes('エラー'), '500エラー表示');
+			await waitUntil(() => outlet.textContent.includes('500') || outlet.textContent.includes('エラー'), '500エラー表示');
 
 			expect(outlet.textContent).to.satisfy((text: string) =>
 				text.includes('500') || text.includes('エラー')
@@ -785,7 +838,7 @@ describe('Router', () => {
 		});
 
 		it('6.3 ネットワークエラー時に適切なメッセージを表示すること', async () => {
-			globalThis.fetch = async () => {
+			globalThis.fetch = () => {
 				throw new TypeError('Failed to fetch');
 			};
 
@@ -795,7 +848,7 @@ describe('Router', () => {
 			link.click();
 
 			await waitUntil(
-				() => outlet.textContent?.includes('ネットワーク') || outlet.textContent?.includes('エラー'),
+				() => outlet.textContent.includes('ネットワーク') || outlet.textContent.includes('エラー'),
 				'ネットワークエラー表示',
 			);
 
@@ -805,11 +858,11 @@ describe('Router', () => {
 		});
 
 		it('6.4 401エラー時に認証エラーメッセージを表示すること', async () => {
-			globalThis.fetch = async () => {
-				return new Response('Unauthorized', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('Unauthorized', {
 					status: 401,
 					statusText: 'Unauthorized',
-				});
+				}));
 			};
 
 			router = new Router(outlet);
@@ -817,7 +870,7 @@ describe('Router', () => {
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/401">Link</a> `);
 			link.click();
 
-			await waitUntil(() => outlet.textContent?.includes('401') || outlet.textContent?.includes('認証'), '401エラー表示');
+			await waitUntil(() => outlet.textContent.includes('401') || outlet.textContent.includes('認証'), '401エラー表示');
 
 			expect(outlet.textContent).to.satisfy((text: string) =>
 				text.includes('401') || text.includes('認証')
@@ -825,11 +878,11 @@ describe('Router', () => {
 		});
 
 		it('6.5 403エラー時に権限エラーメッセージを表示すること', async () => {
-			globalThis.fetch = async () => {
-				return new Response('Forbidden', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('Forbidden', {
 					status: 403,
 					statusText: 'Forbidden',
-				});
+				}));
 			};
 
 			router = new Router(outlet);
@@ -837,7 +890,7 @@ describe('Router', () => {
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/403">Link</a> `);
 			link.click();
 
-			await waitUntil(() => outlet.textContent?.includes('403') || outlet.textContent?.includes('権限'), '403エラー表示');
+			await waitUntil(() => outlet.textContent.includes('403') || outlet.textContent.includes('権限'), '403エラー表示');
 
 			expect(outlet.textContent).to.satisfy((text: string) =>
 				text.includes('403') || text.includes('権限')
@@ -845,11 +898,11 @@ describe('Router', () => {
 		});
 
 		it('6.6 503エラー時にサービス利用不可メッセージを表示すること', async () => {
-			globalThis.fetch = async () => {
-				return new Response('Service Unavailable', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('Service Unavailable', {
 					status: 503,
 					statusText: 'Service Unavailable',
-				});
+				}));
 			};
 
 			router = new Router(outlet);
@@ -857,7 +910,7 @@ describe('Router', () => {
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/503">Link</a> `);
 			link.click();
 
-			await waitUntil(() => outlet.textContent?.includes('503') || outlet.textContent?.includes('利用'), '503エラー表示');
+			await waitUntil(() => outlet.textContent.includes('503') || outlet.textContent.includes('利用'), '503エラー表示');
 
 			expect(outlet.textContent).to.satisfy((text: string) =>
 				text.includes('503') || text.includes('利用')
@@ -883,13 +936,13 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			// タイムアウトを5秒に設定
-			router.setTimeout?.(5000);
+			router.setTimeout(5000);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/timeout">Link</a> `);
 			link.click();
 
 			await waitUntil(
-				() => outlet.textContent?.includes('タイムアウト') || outlet.textContent?.includes('Timeout'),
+				() => outlet.textContent.includes('タイムアウト') || outlet.textContent.includes('Timeout'),
 				'タイムアウトエラー表示',
 				{ timeout: 10000 },
 			);
@@ -900,7 +953,7 @@ describe('Router', () => {
 		});
 
 		it('6.8 CORSエラー時に適切なメッセージを表示すること', async () => {
-			globalThis.fetch = async () => {
+			globalThis.fetch = () => {
 				throw new TypeError('CORS policy blocked');
 			};
 
@@ -910,7 +963,7 @@ describe('Router', () => {
 			link.click();
 
 			await waitUntil(
-				() => outlet.textContent?.includes('CORS') || outlet.textContent?.includes('エラー'),
+				() => outlet.textContent.includes('CORS') || outlet.textContent.includes('エラー'),
 				'CORSエラー表示',
 			);
 
@@ -925,7 +978,7 @@ describe('Router', () => {
 	// ========================================
 	describe('7. ローディング状態管理', () => {
 		it('7.1 ナビゲーション中に isNavigating が true になること', async () => {
-			let resolvePromise: () => void;
+			let resolvePromise: (() => void) | undefined;
 			const promise = new Promise<void>((resolve) => {
 				resolvePromise = resolve;
 			});
@@ -943,25 +996,26 @@ describe('Router', () => {
 			link.click();
 
 			// ナビゲーション中
-			expect(router.isNavigating?.()).to.be.true;
+			expect(router.isNavigating()).to.be.true;
 
 			// ナビゲーション完了
-			resolvePromise!();
-			await waitUntil(() => !router.isNavigating?.(), 'ナビゲーション完了');
+			resolvePromise?.();
+			await waitUntil(() => !router.isNavigating(), 'ナビゲーション完了');
 
-			expect(router.isNavigating?.()).to.be.false;
+			expect(router.isNavigating()).to.be.false;
 		});
 
-		it('7.2 二重ロード防止: ローディング中は新しいナビゲーションをブロックすること', async () => {
-			let fetchCount = 0;
-			let resolveFirstFetch: () => void;
+		it('7.2 競合時は最後のナビゲーション要求のみ実行されること（後勝ち）', async () => {
+			let resolveFirstFetch: (() => void) | undefined;
 			const firstFetchPromise = new Promise<void>((resolve) => {
 				resolveFirstFetch = resolve;
 			});
+			const fetchedPaths: string[] = [];
 
-			globalThis.fetch = async () => {
-				fetchCount++;
-				if (fetchCount === 1) {
+			globalThis.fetch = async (input: RequestInfo | URL) => {
+				const path = new URL(input instanceof Request ? input.url : String(input), window.location.href).pathname;
+				fetchedPaths.push(path);
+				if (path === '/first') {
 					await firstFetchPromise;
 				}
 				return new Response('<html><body><main>Content</main></body></html>', {
@@ -969,42 +1023,36 @@ describe('Router', () => {
 				});
 			};
 
-			router = new Router(outlet);
+			router = new Router(outlet, { skipInitialNavigation: true });
 
-			const link = await fixture<HTMLAnchorElement>(html` <a href="/test">Link</a> `);
-			
-			// 1回目のクリック
-			link.click();
-			
-			// 即座に2回目のクリック（ブロックされるべき）
-			link.click();
+			const firstNavigation = router.navigate('/first');
+			const droppedNavigation = router.navigate('/drop-me');
+			const latestNavigation = router.navigate('/latest');
 
-			// 1回目を完了させる
-			resolveFirstFetch!();
+			// 先行リクエスト完了後に pending の最新のみが実行される
+			resolveFirstFetch?.();
+			await Promise.all([firstNavigation, droppedNavigation, latestNavigation]);
 
-			await waitUntil(() => fetchCount === 1, 'fetchが1回だけ');
-
-			// 2回目はブロックされているのでfetchは1回だけ
-			expect(fetchCount).to.equal(1);
+			expect(fetchedPaths).to.deep.equal(['/first', '/latest']);
 		});
 
 		it('7.3 ローディングイベントが発火すること', async () => {
 			let loadingStarted = false;
 			let loadingEnded = false;
 
-			globalThis.fetch = async () => {
-				return new Response('<html><body><main>Content</main></body></html>', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('<html><body><main>Content</main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 
 			router = new Router(outlet);
 
-			router.on?.('loading:start', () => {
+			router.on('loading:start', () => {
 				loadingStarted = true;
 			});
 
-			router.on?.('loading:end', () => {
+			router.on('loading:end', () => {
 				loadingEnded = true;
 			});
 
@@ -1028,14 +1076,14 @@ describe('Router', () => {
 				highlightAll: () => {
 					highlightAllCalled = true;
 				},
-				highlightElement: () => {},
+				highlightElement: () => { /* モック */ },
 			} as NonNullable<typeof window.Prism>;
 
-			globalThis.fetch = async () => {
-				return new Response(
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response(
 					'<html><body><main><pre><code>test</code></pre></main></body></html>',
 					{ status: 200 },
-				);
+				));
 			};
 
 			router = new Router(outlet);
@@ -1053,10 +1101,10 @@ describe('Router', () => {
 		it('8.2 スクロール位置がトップにリセットされること', async () => {
 			window.scrollTo(0, 500);
 
-			globalThis.fetch = async () => {
-				return new Response('<html><body><main>Content</main></body></html>', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('<html><body><main>Content</main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 
 			router = new Router(outlet);
@@ -1072,20 +1120,18 @@ describe('Router', () => {
 		it('8.3 PagefindUI が再初期化されること', async () => {
 			let pagefindInitialized = false;
 
-			class MockPagefindUI {
-				constructor(_options: { element: Element | null }) {
-					pagefindInitialized = true;
-				}
-			}
+			const createMockPagefindUI = (_options: { element: Element | null }) => {
+				pagefindInitialized = true;
+			};
 
 			const originalPagefindUI = window.PagefindUI;
-			window.PagefindUI = MockPagefindUI as unknown as NonNullable<typeof window.PagefindUI>;
+			window.PagefindUI = createMockPagefindUI as unknown as NonNullable<typeof window.PagefindUI>;
 
-			globalThis.fetch = async () => {
-				return new Response(
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response(
 					'<html><body><main><div id="search"></div></main></body></html>',
 					{ status: 200 },
-				);
+				));
 			};
 
 			router = new Router(outlet);
@@ -1097,21 +1143,25 @@ describe('Router', () => {
 
 			expect(pagefindInitialized).to.be.true;
 
-			window.PagefindUI = originalPagefindUI;
+			if (originalPagefindUI) {
+				window.PagefindUI = originalPagefindUI;
+			} else {
+				delete window.PagefindUI;
+			}
 		});
 
 		it('8.4 カスタム再初期化フックが実行されること', async () => {
 			let customHookCalled = false;
 
-			globalThis.fetch = async () => {
-				return new Response('<html><body><main>Content</main></body></html>', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('<html><body><main>Content</main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 
 			router = new Router(outlet);
 
-			router.addReinitializeHook?.(() => {
+			router.addReinitializeHook(() => {
 				customHookCalled = true;
 			});
 
@@ -1132,17 +1182,17 @@ describe('Router', () => {
 			let beforeNavigateCalled = false;
 			let beforeNavigatePath = '';
 
-			globalThis.fetch = async () => {
-				return new Response('<html><body><main>Content</main></body></html>', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('<html><body><main>Content</main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 
 			router = new Router(outlet);
 
-			router.on?.('before:navigate', (path: string) => {
+			router.on('before:navigate', (path) => {
 				beforeNavigateCalled = true;
-				beforeNavigatePath = path;
+				beforeNavigatePath = String(path);
 			});
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/test">Link</a> `);
@@ -1156,41 +1206,44 @@ describe('Router', () => {
 
 		it('9.2 beforeNavigate でナビゲーションをキャンセルできること', async () => {
 			let fetchCalled = false;
+			let pushStateCalled = false;
+			history.pushState = ((data: unknown, unused: string, url?: string | URL | null) => {
+				pushStateCalled = true;
+				originalPushState.call(history, data, unused, url);
+			}) as typeof history.pushState;
 
-			globalThis.fetch = async () => {
+			globalThis.fetch = () => {
 				fetchCalled = true;
-				return new Response('<html><body><main>Content</main></body></html>', {
+				return Promise.resolve(new Response('<html><body><main>Content</main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 
-			router = new Router(outlet);
+			router = new Router(outlet, { skipInitialNavigation: true });
 
-			router.on?.('before:navigate', () => {
+			router.on('before:navigate', () => {
 				return false; // キャンセル
 			});
 
-			const link = await fixture<HTMLAnchorElement>(html` <a href="/test">Link</a> `);
-			link.click();
+			await router.navigate('/test');
 
 			// キャンセルされているのでfetchは呼ばれない
-			await new Promise((resolve) => setTimeout(resolve, 100));
-
 			expect(fetchCalled).to.be.false;
+			expect(pushStateCalled).to.be.false;
 		});
 
 		it('9.3 afterNavigate フックが実行されること', async () => {
 			let afterNavigateCalled = false;
 
-			globalThis.fetch = async () => {
-				return new Response('<html><body><main>Content</main></body></html>', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('<html><body><main>Content</main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 
 			router = new Router(outlet);
 
-			router.on?.('after:navigate', () => {
+			router.on('after:navigate', () => {
 				afterNavigateCalled = true;
 			});
 
@@ -1206,15 +1259,15 @@ describe('Router', () => {
 			let errorCaught = false;
 			let errorMessage = '';
 
-			globalThis.fetch = async () => {
+			globalThis.fetch = () => {
 				throw new Error('Test Error');
 			};
 
 			router = new Router(outlet);
 
-			router.on?.('error', (error: Error) => {
+			router.on('error', (error) => {
 				errorCaught = true;
-				errorMessage = error.message;
+				errorMessage = error instanceof Error ? error.message : String(error);
 			});
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/error">Link</a> `);
@@ -1229,15 +1282,15 @@ describe('Router', () => {
 		it('9.5 onContentLoad フックが実行されること', async () => {
 			let contentLoadCalled = false;
 
-			globalThis.fetch = async () => {
-				return new Response('<html><body><main>Content</main></body></html>', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('<html><body><main>Content</main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 
 			router = new Router(outlet);
 
-			router.on?.('content:load', () => {
+			router.on('content:load', () => {
 				contentLoadCalled = true;
 			});
 
@@ -1257,19 +1310,19 @@ describe('Router', () => {
 		it('10.1 動的ルートパラメータ（/posts/:id）が取得できること', async () => {
 			let capturedParams: Record<string, string> = {};
 
-			globalThis.fetch = async () => {
-				return new Response('<html><body><main>Post Content</main></body></html>', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('<html><body><main>Post Content</main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 
 			router = new Router(outlet);
 
-			router.on?.('after:navigate', () => {
-				capturedParams = router.getParams?.() ?? {};
+			router.on('after:navigate', () => {
+				capturedParams = router.getParams();
 			});
 
-			await router.navigate?.('/posts/123');
+			await router.navigate('/posts/123');
 
 			await waitUntil(() => Object.keys(capturedParams).length > 0, 'パラメータ取得');
 
@@ -1279,19 +1332,19 @@ describe('Router', () => {
 		it('10.2 複数の動的パラメータ（/posts/:category/:id）が取得できること', async () => {
 			let capturedParams: Record<string, string> = {};
 
-			globalThis.fetch = async () => {
-				return new Response('<html><body><main>Content</main></body></html>', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('<html><body><main>Content</main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 
 			router = new Router(outlet);
 
-			router.on?.('after:navigate', () => {
-				capturedParams = router.getParams?.() ?? {};
+			router.on('after:navigate', () => {
+				capturedParams = router.getParams();
 			});
 
-			await router.navigate?.('/posts/tech/456');
+			await router.navigate('/posts/tech/456');
 
 			await waitUntil(() => Object.keys(capturedParams).length > 0, 'パラメータ取得');
 
@@ -1301,19 +1354,19 @@ describe('Router', () => {
 		it('10.3 クエリパラメータが取得できること', async () => {
 			let capturedQuery: Record<string, string> = {};
 
-			globalThis.fetch = async () => {
-				return new Response('<html><body><main>Content</main></body></html>', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('<html><body><main>Content</main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 
 			router = new Router(outlet);
 
-			router.on?.('after:navigate', () => {
-				capturedQuery = router.getQuery?.() ?? {};
+			router.on('after:navigate', () => {
+				capturedQuery = router.getQuery();
 			});
 
-			await router.navigate?.('/search?q=test&page=2');
+			await router.navigate('/search?q=test&page=2');
 
 			await waitUntil(() => Object.keys(capturedQuery).length > 0, 'クエリ取得');
 
@@ -1325,18 +1378,18 @@ describe('Router', () => {
 
 			router = new Router(outlet);
 
-			router.addRoute?.('/custom-route', async () => {
+			router.addRoute('/custom-route', () => {
 				handlerCalled = true;
-				return '<p>Custom Handler</p>';
+				return Promise.resolve('<p>Custom Handler</p>');
 			});
 
-			globalThis.fetch = async () => {
-				return new Response('<html><body><main>Should not be used</main></body></html>', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('<html><body><main>Should not be used</main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 
-			await router.navigate?.('/custom-route');
+			await router.navigate('/custom-route');
 
 			await waitUntil(() => handlerCalled, 'カスタムハンドラ実行');
 
@@ -1349,12 +1402,12 @@ describe('Router', () => {
 
 			router = new Router(outlet);
 
-			router.addRoute?.('/posts/*', async () => {
+			router.addRoute('/posts/*', () => {
 				wildcardMatched = true;
-				return '<p>Wildcard Match</p>';
+				return Promise.resolve('<p>Wildcard Match</p>');
 			});
 
-			await router.navigate?.('/posts/anything/here');
+			await router.navigate('/posts/anything/here');
 
 			await waitUntil(() => wildcardMatched, 'ワイルドカードマッチ');
 
@@ -1367,12 +1420,12 @@ describe('Router', () => {
 
 			router = new Router(outlet);
 
-			router.addRoute?.(/^\/posts\/(\d+)$/, async () => {
+			router.addRoute(/^\/posts\/(\d+)$/, () => {
 				regexMatched = true;
-				return '<p>Regex Match</p>';
+				return Promise.resolve('<p>Regex Match</p>');
 			});
 
-			await router.navigate?.('/posts/789');
+			await router.navigate('/posts/789');
 
 			await waitUntil(() => regexMatched, '正規表現マッチ');
 
@@ -1386,49 +1439,49 @@ describe('Router', () => {
 	// ========================================
 	describe('11. 状態とデータ管理', () => {
 		it('11.1 現在のパスを取得できること', async () => {
-			globalThis.fetch = async () => {
-				return new Response('<html><body><main>Content</main></body></html>', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('<html><body><main>Content</main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 
 			router = new Router(outlet);
 
-			await router.navigate?.('/current-path');
+			await router.navigate('/current-path');
 
-			await waitUntil(() => router.getCurrentPath?.() === '/current-path', 'パス取得');
+			await waitUntil(() => router.getCurrentPath() === '/current-path', 'パス取得');
 
-			expect(router.getCurrentPath?.()).to.equal('/current-path');
+			expect(router.getCurrentPath()).to.equal('/current-path');
 		});
 
 		it('11.2 history.state を使ってルート固有のデータを保存できること', async () => {
-			globalThis.fetch = async () => {
-				return new Response('<html><body><main>Content</main></body></html>', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('<html><body><main>Content</main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 
 			router = new Router(outlet);
 
-			await router.navigate?.('/test', { customData: 'value' });
+			await router.navigate('/test', { customData: 'value' });
 
 			expect(history.state).to.include({ customData: 'value' });
 		});
 
 		it('11.3 ナビゲーション履歴を取得できること', async () => {
-			globalThis.fetch = async () => {
-				return new Response('<html><body><main>Content</main></body></html>', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('<html><body><main>Content</main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 
 			router = new Router(outlet);
 
-			await router.navigate?.('/page1');
-			await router.navigate?.('/page2');
-			await router.navigate?.('/page3');
+			await router.navigate('/page1');
+			await router.navigate('/page2');
+			await router.navigate('/page3');
 
-			const history = router.getHistory?.();
+			const history = router.getHistory();
 
 			expect(history).to.include.members(['/page1', '/page2', '/page3']);
 		});
@@ -1436,20 +1489,20 @@ describe('Router', () => {
 		it('11.4 ルート変更を監視できること', async () => {
 			let routeChangeCount = 0;
 
-			globalThis.fetch = async () => {
-				return new Response('<html><body><main>Content</main></body></html>', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('<html><body><main>Content</main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 
 			router = new Router(outlet);
 
-			router.on?.('route:change', () => {
+			router.on('route:change', () => {
 				routeChangeCount++;
 			});
 
-			await router.navigate?.('/test1');
-			await router.navigate?.('/test2');
+			await router.navigate('/test1');
+			await router.navigate('/test2');
 
 			expect(routeChangeCount).to.equal(2);
 		});
@@ -1460,11 +1513,11 @@ describe('Router', () => {
 	// ========================================
 	describe('12. アクセシビリティ（WCAG AA準拠）', () => {
 		it('12.1 ナビゲーション後にフォーカスが適切に移動すること', async () => {
-			globalThis.fetch = async () => {
-				return new Response(
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response(
 					'<html><body><main><h1 tabindex="-1">New Page</h1></main></body></html>',
 					{ status: 200 },
-				);
+				));
 			};
 
 			router = new Router(outlet);
@@ -1482,10 +1535,10 @@ describe('Router', () => {
 		});
 
 		it('12.2 aria-live でスクリーンリーダーに通知されること', async () => {
-			globalThis.fetch = async () => {
-				return new Response('<html><body><main>New Content</main></body></html>', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('<html><body><main>New Content</main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 
 			router = new Router(outlet);
@@ -1495,7 +1548,7 @@ describe('Router', () => {
 
 			await waitUntil(() => {
 				const liveRegion = document.querySelector('[aria-live]');
-				return liveRegion?.textContent?.includes('ページが読み込まれました');
+				return (liveRegion?.textContent ?? '').includes('ページが読み込まれました');
 			}, 'aria-live通知');
 
 			const liveRegion = document.querySelector('[aria-live]');
@@ -1503,11 +1556,11 @@ describe('Router', () => {
 		});
 
 		it('12.3 ナビゲーション後にドキュメントタイトルが適切に更新されること', async () => {
-			globalThis.fetch = async () => {
-				return new Response(
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response(
 					'<html><head><title>Accessible Page Title</title></head><body><main>Content</main></body></html>',
 					{ status: 200 },
-				);
+				));
 			};
 
 			router = new Router(outlet);
@@ -1521,10 +1574,10 @@ describe('Router', () => {
 		});
 
 		it('12.4 キーボードナビゲーションが機能すること', async () => {
-			globalThis.fetch = async () => {
-				return new Response('<html><body><main>Content</main></body></html>', {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('<html><body><main>Content</main></body></html>', {
 					status: 200,
-				});
+				}));
 			};
 
 			router = new Router(outlet);

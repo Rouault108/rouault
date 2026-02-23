@@ -25,6 +25,7 @@ export class RouterController implements ReactiveController {
    * initRouter() は AppRouter.connectedCallback() から呼ぶため、
    * hostConnected() での初期化は行わない
    */
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   hostConnected(): void {}
 
   /**

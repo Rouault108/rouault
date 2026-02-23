@@ -96,6 +96,34 @@ export class AppRouter extends LitElement {
 
     // スクロール位置をトップにリセット
     window.scrollTo(0, 0);
+
+    // DOM更新完了後にフォーカスをメインコンテンツへ移動
+    this._manageFocusAfterNavigation();
+  }
+
+  /**
+   * ナビゲーション後のフォーカス管理
+   * Lit の描画完了後に実行することで、更新済みDOMに確実にフォーカスを当てる
+   */
+  private _manageFocusAfterNavigation(): void {
+    const main = this.querySelector('#main-content');
+    if (!(main instanceof HTMLElement)) {
+      return;
+    }
+
+    const mainHeading = main.querySelector('h1, h2');
+    if (mainHeading instanceof HTMLElement) {
+      if (!mainHeading.hasAttribute('tabindex')) {
+        mainHeading.setAttribute('tabindex', '-1');
+      }
+      mainHeading.focus();
+      return;
+    }
+
+    if (!main.hasAttribute('tabindex')) {
+      main.setAttribute('tabindex', '-1');
+    }
+    main.focus();
   }
 
   override render() {
