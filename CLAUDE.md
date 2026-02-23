@@ -52,7 +52,8 @@ Web標準とアクセシビリティへの準拠はゴールではなくスタ�
 
 ### テスト
 
-- **ユニット/統合テスト**: Vitest (`vitest`) - _TDD用、高速実行_
+- **ユニットテスト**: Web Test Runner（`pnpm test:unit`）
+- **UIテスト**: Storybook、Vitest（`pnpm test:storybook`）
 - **E2Eテスト**: Playwright (`@playwright/test`)
 
 ## 開発ガイドライン
