@@ -1612,7 +1612,7 @@ input {
 - **Focus Indicator**:
     - メニュー項目の `:focus-visible` 時には、背景色の変化に加え、**グローバルなフォーカスリング（アウトライン）を追加** します。
     - `outline: var(--focus-ring-width) solid var(--focus-ring-color)`
-    - `outline-offset: var(--focus-ring-offset)`
+    - `outline-offset: -2px`
     - **Adaptive Focus**: `index.md` で定義された `animation: var(--animation-focus)` を適用し、移動中はノイズを抑え、停止した瞬間に明確化する挙動を実装します。
         - **挙動**: 最初の 50ms (0%〜25%) は `--focus-ring-color-subtle` で控えめに表示、その後 `--focus-ring-color` へ遷移します。素早い矢印キー移動中は Subtle 色のまま終了するため、視覚的ノイズが抑制されます。
 
@@ -3596,6 +3596,7 @@ type TreeNode = {
 - **Implementation**:
     - 複数列（タイトル、日付、タグなど）や、行内のインタラクティブ要素（リンク、ボタン）に対応するため、単純な `listbox` ではなく **`role="grid"`** を採用します。
     - **Row Focus Model**: ユーザー体験としては「行単位のブラウジング」を提供しますが、WAI-ARIAの仕様上、フォーカスは技術的に「行内の最初のセル (`role="gridcell"`)」または行全体をラップする要素で管理し、スクリーンリーダーへの読み上げを最適化します。
+    - **Rendering Model (Declarative Slots)**: 行のDOMはEleventyテンプレート等の外部が `<ui-list-item>` として宣言的に生成します。`<ui-list>` はDOM内部生成を行いません。これにより、SSG（Eleventy）との親和性・`Ctrl+F` 検索性・`content-visibility: auto` の効果（DOMが最初から存在することを前提とする）を最大化します。`items` プロパティはソート・フィルタの論理レイヤー専用のメタデータ参照として機能し、DOM生成の責務を持ちません。
     - **Scalability & Performance Strategy**:
         - **No Virtualization (Searchability First)**: ブラウザネイティブの検索機能 (`Ctrl+F`) を阻害しないため、仮想スクロールは採用しません。
         - **DOM Optimization**: これを実現するため、各行（`<ui-list-item>`）は極限まで軽量なDOM構造を保ちます。イベントリスナーは親要素 (`<ui-list>`) での一括管理（**Event Delegation**）を徹底し、個別のリスナー付与によるメモリオーバーヘッドと初期化コストを回避します。
@@ -3614,9 +3615,10 @@ type TreeNode = {
 
 | プロパティ | 属性 | 型/値 | 説明 |
 |------------|------|-------|------|
-| `items` | - | `Array<ListItem>` | データ配列。`ListItem` は `{ id: string; [key: string]: unknown }` の形式。各アイテムは一意の `id` を持つ必要があります。 |
-| `columns` | - | `ColumnDef[]` | 列定義。詳細は下記参照。 |
+| `items` | - | `Array<ListItem>` | ソート・フィルタ用のメタデータ参照配列。**DOMの生成には使用しない**（行のDOMはEleventyテンプレート等の外部が `<ui-list-item>` として宣言的に生成する）。`ListItem` は `{ id: string; [key: string]: unknown }` の形式。各アイテムは一意の `id` を持つ必要があります。 |
+| `columns` | - | `ColumnDef[]` | 列定義。詳細は下記参照。Lit Context を通じて全 `<ui-list-item>` へ自動伝搬されます。 |
 | `active-row` | `active-row` | `string \| null` | 現在フォーカスされている行のID。未選択時は `null`。 |
+| `active-cell-index` | `active-cell-index` | `number` | 現在アクティブな行内でフォーカスされているセルのインデックス（0始まり）。デフォルトは `0`（プライマリ列）。 |
 | `sort-key` | `sort-key` | `string \| null` | 現在ソート基準となっている列ID。未ソート時は `null`。 |
 | `sort-direction` | `sort-direction` | `'asc' \| 'desc' \| null` | ソート順序。未ソート時は `null`。 |
 
@@ -3645,16 +3647,17 @@ interface ColumnDef {
 
 | プロパティ | 属性 | 型/値 | 説明 |
 |------------|------|-------|------|
-| `item-id` | `item-id` | `string` | この行のID（`items` 配列内の `id` に対応）。 |
+| `item-id` | `item-id` | `string` | この行のID。`items` メタデータ配列内の `id` に対応し、ソート・フィルタの基準として使用されます。 |
 | `href` | `href` | `string \| null` | 行のメインコンテンツへの遷移先（Detail View）。指定されていない場合は `null`。 |
 | `active` | `active` | `boolean` | この行がアクティブ（フォーカス）かどうか。 |
+| `active-cell-index` | `active-cell-index` | `number` | アクティブ時にフォーカスすべきセルのインデックス（0始まり）。`active` が `true` になった際、`updated()` ライフサイクル内でこのインデックスのセルに `focus()` が呼ばれます。デフォルトは `0`。 |
 
 **Events:**
 
 | イベント名 | Detail | 説明 | ソート処理のオーナーシップ |
 |------------|--------|------|-------------------------|
-| `ui-sort-change` | `{ key: string \| null, direction: 'asc' \| 'desc' \| null }` | ヘッダー操作によりソート順が変更された時に発火。`none -> asc -> desc -> none` の順で循環し、未ソート時は `key: null`, `direction: null` を返します。 | **外部委譲**: `<ui-list>` は内部でソート処理を行いません。親コンポーネント側がこのイベントを購読し、`items` 配列を並び替えた上で再代入する責務を持ちます。これにより、ソートロジックの柔軟性（複雑なソート条件、バックエンド連携等）を担保します。 |
-| `ui-active-change` | `{ rowId: string }` | キーボード操作等で行のアクティブ状態（フォーカス）が変更された時に発火。 | — |
+| `ui-sort-change` | `{ key: string \| null, direction: 'asc' \| 'desc' \| null }` | ヘッダー操作によりソート順が変更された時に発火。`none -> asc -> desc -> none` の順で循環し、未ソート時は `key: null`, `direction: null` を返します。 | **外部委譲**: `<ui-list>` は内部でソート処理を行いません。親コンポーネント（またはEleventyテンプレートのコントローラ）がこのイベントを購読し、`<ui-list-item>` のDOM順序を並び替えて再挿入すると同時に、`items` メタデータ配列も同期する責務を持ちます。これにより、ソートロジックの柔軟性（複雑なソート条件、バックエンド連携等）を担保します。 |
+| `ui-active-change` | `{ rowId: string, colIndex: number }` | キーボード操作等で行またはセルのアクティブ状態（フォーカス）が変更された時に発火。`colIndex` は行内のフォーカスセルインデックス（0始まり）。 | — |
 | `ui-preview-request` | `{ rowId: string }` | `Shift + Space` によるQuick Look要求時に発火。親コンポーネントがプレビューダイアログ表示を担当します。 | — |
 | `ui-context-request` | `{ rowId: string, anchor: { x: number, y: number } }` | `Shift + F10` / 右クリックでコンテキストメニュー要求時に発火。 | — |
 
@@ -3662,7 +3665,25 @@ interface ColumnDef {
 
 | スロット名 | 所属コンポーネント | 説明 | 使用例 |
 |------------|-------------------|------|--------|
-| `mobile-supplement` | `<ui-list-item>` | モバイル表示 (`hideOnMobile`) で列が隠された際、重要な情報をプライマリ列内に統合表示するための領域。 | `<ui-list-item><span slot="mobile-supplement">・ 2024-01-01</span></ui-list-item>` |
+| `{columns.id}` | `<ui-list-item>` | 列IDに対応するデータセルの内容。`<ui-list>` に渡された `columns` 配列の各 `id` をスロット名として使用します。`<ui-list-item>` は Lit Context から受け取った列定義に基づき、各スロット名に対応する `role="gridcell"` ラッパーを内部でレンダリングします。スロット名と `columns[].id` が一致しない場合、その列は空セルとして描画されます。 | `<a slot="title" href="/note/1">ノートタイトル</a>` |
+| `mobile-supplement` | `<ui-list-item>` | モバイル表示 (`hideOnMobile`) で列が隠された際、重要な情報をプライマリ列（`primary: true`）内に統合表示するための領域。 | `<span slot="mobile-supplement">・ 2024-01-01</span>` |
+
+**使用例 (Eleventy テンプレート):**
+
+```html
+<ui-list-item item-id="{{ item.id }}" href="{{ item.url }}">
+  <a slot="title" href="{{ item.url }}">{{ item.title }}</a>
+  <time slot="date" datetime="{{ item.date }}">{{ item.date }}</time>
+  <span slot="tags">{{ item.tags | join(", ") }}</span>
+  <span slot="mobile-supplement">・ {{ item.date }}</span>
+</ui-list-item>
+```
+
+**スロット名の契約:**
+
+- スロット名は `columns[].id` と**完全一致**させる必要があります。
+- `primary: true` な列のスロット内にプライマリリンク (`<a>`) を配置することを規約とします。
+- `hideOnMobile: true` な列のスロットは、モバイル時に `<ui-list-item>` がgridcellラッパーごとDOM出力を抑制します（Lit Contextから受け取った列定義に基づく）。
 
 **4. レイアウトとレンダリング戦略 (Layout Strategy)**
 
@@ -3682,6 +3703,18 @@ interface ColumnDef {
     - **A11y & Performance**: CSSによる非表示（`display: none`）ではなく、**DOM出力自体を抑制**します。これにより、レンダリングコストを削減し、同時にスクリーンリーダーの `aria-colindex` 計算の整合性を完全に保証します（JSによる `window.matchMedia` 等を用いたリアクティブな描画制御）。
     - **Constraint**: タイトルやメインリンクを含む**プライマリ列は `hideOnMobile` を禁止**し、どのような環境でもコンテンツへのアクセスを保証します。
     - **Data Preservation Strategy**: モバイル・タブレット等の狭小画面で列を非表示にする際、日付やステータスなどの重要情報が欠落するのを防ぐため、**明示的なスロット `<slot name="mobile-supplement">`** を用いてプライマリ列（タイトル）内に情報を統合表示します。これにより、構造的かつセマンティックなレスポンシブ対応を標準化します。
+- **Column Info Propagation (列情報伝搬)**:
+    - **構造情報 → Lit Context**: 列定義（`id`、`hideOnMobile`、`primary`、列総数）は **Lit Context** を通じて `<ui-list>` から全 `<ui-list-item>` へ伝搬します。全行が同一の値を参照するため、プロパティのバケツリレー（親 → 子への `columns` プロパティ直接渡し）は行いません。`<ui-list-item>` はContextから受け取った列定義に基づき、各スロットに対応する `role="gridcell"` ラッパーの生成と `hideOnMobile` 列のDOM抑制を行います。
+    - **視覚情報 → CSSカスタムプロパティ**: 列幅 (`width`) は **CSSカスタムプロパティ** として親要素に注入し、CSS自体が解決します。`<ui-list>` は `columns` 定義から動的にCSS変数を生成します。
+        ```css
+        /* <ui-list> が columns 定義から動的生成するCSS変数 */
+        :host {
+          --col-1-width: 1fr;
+          --col-2-width: 120px;
+          --col-3-width: minmax(80px, 200px);
+        }
+        ```
+        Subgrid環境では `grid-template-columns` に直接使用し、Fallback環境では各 `<ui-list-item>` が同じ変数群を参照して独立したGridコンテキストを構築します。
 
 **5. スタイリングとトークンマッピング (Style & Tokens)**
 
@@ -3730,7 +3763,7 @@ transition:
 
 **空状態 (Empty State):**
 
-`items` が空配列（0件）の場合の表示仕様：
+スロット内の `<ui-list-item>` が0件の場合（または `items` メタデータ配列が空配列の場合）の表示仕様：
 
 - `role="grid"` 要素とは**別要素（兄弟ノード）**として、`role="status"` を持つ空状態メッセージを配置します（`grid` 直下に `status` を混在させない）。
 - `aria-live="polite"` を付与し、動的にアイテムが削除されて0件になった場合、スクリーンリーダーに通知します。
@@ -3788,6 +3821,11 @@ transition:
     - **Reason**: 行コンテナ (`role="row"`) 自体にフォーカスを当てると、一部のスクリーンリーダーが行内の全テキストを一括で読み上げてしまい、S/N比が悪化するためです。
     - **Visual Experience**: プログラム的なフォーカスはセルにあります。セル自体には `:focus-visible` による可視リング（`index.md` のグローバルFocus Strategy）を維持した上で、補助表現として **CSS `:focus-within`** により行全体 (`ui-list-item`) の背景色と左ボーダーを変化させます。
 - **Adaptive Focus**: セル要素の `:focus-visible` にシステム共通の `var(--animation-focus)` を適用します。行全体の `:focus-within` は位置認識の補助として扱い、フォーカス可視性の主担当を置き換えません。
+- **2D Focus State**: フォーカス状態は `{ rowId: string, colIndex: number }` の2次元モデルで管理します。`<ui-list>` は `active-row`（アクティブな行ID）と `active-cell-index`（行内のフォーカスセルインデックス）の両方を保持し、これらを対象の `<ui-list-item>` にプロパティとして渡します。
+- **責務の分割 (Focus Ownership)**:
+    - **`<ui-list>` (親)**: `ArrowUp/Down`、`Home`、`End` による行間移動を管理します。移動後に `active-row` と `active-cell-index` を更新し、新しいアクティブ行の `<ui-list-item>` へプロパティとして伝達します。`<ui-list-item>` からの `ui-active-change` イベントを購読し、子側で変化したフォーカス状態を自身の状態へ同期します。
+    - **`<ui-list-item>` (子)**: `ArrowLeft/Right` による行内セル間移動を管理します。`active-cell-index` が変化した際は `ui-active-change` イベント（`{ rowId, colIndex }`）で親へ通知します。行境界をまたぐセル移動（最右セルで `ArrowRight` 等）は行わず、端で停止します。
+- **Property-Driven Focus API**: フォーカス移動はプロパティの変更によって駆動します。`<ui-list-item>` は `active` または `active-cell-index` プロパティが変化した際、`updated()` ライフサイクル内でShadow DOM内の対象セルに `focus({ preventScroll: true })` を呼び出します。スクロール制御は `PageUp/PageDown` ハンドラ側で分離して管理します。親側は `await this.updateComplete` でレンダリング完了を待ってからフォーカス操作を行い、Shadow DOMの更新タイミング問題を回避します。
 
 **Keyboard Shortcuts:**
 
@@ -3805,7 +3843,7 @@ transition:
 | `Space` | **Scroll (Browsing Optimization)** | WAI-ARIAの標準（選択）とは異なる動作。`aria-keyshortcuts="Space"` または `aria-description` で「Spaceキーでスクロール」を通知することを**必須**とします。 |
 | `Shift + Space` | **Quick Look (Preview)** | `preventDefault()` でスクロールを阻止。`aria-keyshortcuts="Shift+Space"` で通知を推奨。 |
 | `ArrowUp` / `ArrowDown` | 前後の行へ移動 | — |
-| `ArrowLeft` / `ArrowRight` | **セル移動 (Cell Navigation)** | 全てのセル間を移動可能（コピー可能性の保証）。 |
+| `ArrowLeft` / `ArrowRight` | **セル移動 (Cell Navigation)** | 全てのセル間を移動可能（コピー可能性の保証）。処理は `<ui-list-item>` (子) が担当。行境界での停止あり（行またぎ移動なし）。 |
 | `Home` / `End` | 最初 / 最後の項目へ移動 | — |
 | `PageUp` / `PageDown` | 表示領域単位でスクロール移動 | — |
 | `Shift + F10` / 右クリック | コンテキストメニューを表示 | — |
