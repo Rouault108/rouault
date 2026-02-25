@@ -4809,6 +4809,11 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 - **Semantic Strategy**:
     - `heading` が指定され、かつ `landmark` が `true` の場合: ホスト要素に `role="region"` + `aria-labelledby` を付与し、スクリーンリーダーのランドマークナビゲーション対象とします。
     - それ以外の場合: `role="note"` にフォールバックします。本文と関連する補足であることを示しつつ、ランドマークとしては公開されません（多用によるランドマーク汚染を防ぐため）。
+- **Heading ID Strategy (`aria-labelledby`)**:
+    - 見出し要素には `id="info-box-heading-[uid]"` を付与します（`uid` はコンポーネント単位で一意）。
+    - `landmark=true` 時、ホスト要素の `aria-labelledby` はこの見出しIDを参照します。
+    - SSRで見出しIDが既に出力されている場合、クライアント側は既存IDを再利用し再生成しません（SSR/CSRでIDを一致させるため）。
+    - 万一ドキュメント内で同一IDが衝突する場合は、末尾に `-n` を付与して解決します。
 - **Porting Strategy**: 自前実装。Lit ReactiveElement として状態管理を行います。
 
 **3. 技術仕様とAPI (Technical Specs)**
@@ -4828,6 +4833,8 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 | スロット | 必須 | 説明 |
 |---------|------|------|
 | (default) | **はい** | 本体コンテンツ。`<dl>/<dt>/<dd>` による構造化データ、Proseテキスト、任意のHTML。 |
+
+- **空スロット時の挙動**: デフォルトスロットに有効な要素/テキストノードが1つもない場合、`<ui-info-box>` は描画しません（空コンテナを出力しない）。
 
 **4. スタイリングとトークンマッピング (Style & Tokens)**
 
@@ -4881,17 +4888,19 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 > - `dl`: `display: grid; gap: var(--space-2); margin: 0;`
 > - `dt`: `font-weight: var(--font-medium); color: var(--fg-muted);`
 > - `dd`: `margin: 0; color: var(--fg-default);`
+>
+> **Responsibility Split:** コンポーネント実装側の責務は「コンテナ構造（余白・境界・ヘッダー）」までとし、スロット内部の文書タイポグラフィはコンテンツ層（`.prose` または利用側スタイル）の責務とします。
 
 **コントラスト比保証 (Contrast Ratios)**
 
 | 要素 | トークン組み合わせ | コントラスト比 | 基準 |
 |------|------------------|----------------|------|
-| **ヘッダーテキスト (`default`)** | `--fg-muted` on `--bg-default` | 4.8:1 (Light) / 5.1:1 (Dark) | 4.5:1 以上（テキスト AA） |
+| **ヘッダーテキスト (`default`)** | `--fg-muted` on `--bg-default` / `--bg-surface-2` | 4.8:1 / 5.1:1 (`--bg-default`), 5.2:1 / 4.6:1 (`--bg-surface-2`) | 4.5:1 以上（テキスト AA） |
 | **ヘッダーテキスト (`filled`)** | `--fg-default` on `--bg-fill-muted` | ~16.1:1 (Light) / ~15.4:1 (Dark) | 4.5:1 以上（テキスト AA） |
-| **ヘッダーアイコン (`default`)** | `--fg-muted` on `--bg-default` | 4.8:1 (Light) / 5.1:1 (Dark) | 3:1 以上（非テキスト 1.4.11） |
+| **ヘッダーアイコン (`default`)** | `--fg-muted` on `--bg-default` / `--bg-surface-2` | 4.8:1 / 5.1:1 (`--bg-default`), 5.2:1 / 4.6:1 (`--bg-surface-2`) | 3:1 以上（非テキスト 1.4.11） |
 | **ヘッダーアイコン (`filled`)** | `--fg-default` on `--bg-fill-muted` | ~16.1:1 (Light) / ~15.4:1 (Dark) | 3:1 以上（非テキスト 1.4.11） |
 
-> **Note:** `--fg-muted` on `--bg-fill-muted` は `index.md` で 3.8:1（非推奨）と定義されているため、`filled` ヘッダーは `--fg-default` を使用します。`--fg-default` on `--bg-fill-muted` の値（~16.1:1 / ~15.4:1）は本ドキュメントの算出値（コードセクション）と同一です。
+> **Note:** `--fg-muted` on `--bg-fill-muted` は `index.md` で 3.8:1（非推奨）と定義されているため、`filled` ヘッダーは `--fg-default` を使用します。`default` バリアント（背景透明）は、親背景が `--bg-default` または `--bg-surface-2` の場合に本表の保証値を適用できます。これ以外の背景トークン上で使う場合は、コンポーネント利用側で再検証します。
 
 **Forced Colors**
 
@@ -4903,12 +4912,13 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 
 | 条件 | ホスト要素の属性 | 理由 |
 |------|-----------------|------|
-| `landmark=true` かつ `heading` あり | `role="region"` + `aria-labelledby="[heading-id]"` | 必要な場合のみランドマーク公開し、スクリーンリーダーで「[heading] リージョン」としてジャンプ可能にする |
+| `landmark=true` かつ `heading` あり | `role="region"` + `aria-labelledby="info-box-heading-[uid]"` | 必要な場合のみランドマーク公開し、スクリーンリーダーで「[heading] リージョン」としてジャンプ可能にする |
 | それ以外 | `role="note"` | 補足情報であることを示す。ランドマークとしては公開せず、多用によるランドマーク汚染を防ぐ |
 
 - **見出しレベル**:
     - `heading-level` 属性が指定され、かつ `heading` が存在する場合、`div.heading` に `role="heading"` と `aria-level` を付与します。
     - 許容値: `1`–`6`。無効値は属性未指定として扱い、`aria-level` を出力しません（コールアウトと同一の方針）。
+    - **セマンティック例外の理由**: `h1`–`h6` を直接生成すると、本文アウトラインに補助情報パネルの見出しが混入し、文書構造が過剰に汚染されます。インフォボックスは本文の章立てではなく参照ブロックの見出しであるため、`role="heading"` + `aria-level` を採用します。
 - **アイコン**: 装飾的なため `aria-hidden="true"` を適用します。ヘッダーテキストが情報を伝えるため、アイコンへの代替テキストは不要です。
 
 **キーボード操作**
@@ -4946,9 +4956,11 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 
 - **Header Visibility**: `heading` が空の場合、ヘッダー領域（境界線含む）が非表示であること。
 - **Role Mapping**: `landmark=true` かつ `heading` あり → `role="region"` + `aria-labelledby` が設定されること。それ以外 → `role="note"` が設定されること。
+- **Heading ID Mapping**: 見出し要素に `id="info-box-heading-[uid]"` が設定され、`aria-labelledby` が同じIDを参照すること。SSR出力時はクライアントでID再生成を行わず一致すること。
 - **Heading Semantics**: `heading` + `heading-level` 指定時に、`div.heading` へ `role="heading"` + 正しい `aria-level` が設定されること（`h1`–`h6` タグは生成しない）。
 - **Heading Validation**: `heading-level` が `1`–`6` 以外の場合、`aria-level` を出力しないこと。
 - **Icon Hidden**: ヘッダーアイコンに `aria-hidden="true"` が付与されていること。
+- **Empty Slot Behavior**: デフォルトスロットが空の場合、空のボーダーボックスを描画しないこと。
 - **Variant Styles**: `variant="filled"` 時に背景色が `var(--bg-fill-muted)` になること。`variant="default"` 時は背景が透明であること。
 - **Header Color Mapping**: ヘッダー前景色が `default` で `--fg-muted`、`filled` で `--fg-default` に切り替わること。
 - **Forced Colors**: `forced-colors: active` 時、コンテナとヘッダー境界のボーダーが可視化され、色のみに依存せず領域が識別可能であること。
