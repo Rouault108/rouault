@@ -5617,6 +5617,295 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
 - **Print Token Alignment**: 印刷時ボーダー色が `#000` に統一され、`index.md` の印刷基準と整合していること。
 - **Comparison Pair Consistency**: 正誤比較用途では、タブラベル（`正しい例` / `誤り例`）と子 `ui-code-block` の `intent` (`valid` / `invalid`) が常に一致していること。
 
+#### コードプレビュー (Code Preview) `<ui-code-preview>`
+
+**1. デザイン哲学と目的 (Design Philosophy)**
+
+- **役割**: UIのレンダリング結果（プレビュー）とそのソースコードを**一体化**して提示する複合ドキュメントコンポーネントです。「結果を見せ、次にコードで理解させる」**"See it, then understand it"** の読み順を実現します。
+    - **Positioning**: 既存コンポーネント群との関係は以下の通りです。
+        - `ui-code-block`: コードを表示する（**"What"**）
+        - `ui-code-group`: 複数コードをタブで比較する（**"What, compared"**）
+        - `ui-syntax-card`: APIシグネチャ＋構造化ドキュメント（**"Reference"**）
+        - **`ui-code-preview`**: レンダリング結果＋ソースコード（**"Proof"**）
+    - **Use Case**: UIコンポーネントの使用例提示、CSSレイアウトの視覚的解説、HTML構造とその描画結果の対比。
+    - **Anti-Pattern**: API仕様のドキュメント化には `ui-syntax-card` を使用してください。本コンポーネントは「視覚的な結果を持つコード」に限定します。
+- **Visual Hierarchy (Sunken Method)**:
+    - `ui-syntax-card` と同一のSunken Methodを採用しますが、階層の**主従が逆転**します。
+    - **Preview Area**（Surface: `--bg-surface-2`）が「舞台」であり視覚的な主役です。ユーザーの視線はまずここに誘導されます。
+    - **Code Area**（Valley: `--bg-fill-muted`）が「舞台裏」であり、プレビューの実装根拠を提供する従属的な層です。
+    - *Rationale*: `ui-syntax-card` ではコード（Signature）が窪みの主役でしたが、Code Preview ではレンダリング結果こそが主役であり、コードは「それがどう作られているか」を補足する裏側（Backstage）です。
+- **Style Inheritance (No Isolation)**:
+    - プレビュー領域はページのデザイントークン（色、フォント、スペーシング等）を**自然に継承**します。`<iframe>` や追加の Shadow DOM 境界による分離は行いません。
+    - *Rationale*: Rouaultは個人ノート用途であり、プレビュー内容は常に著者が管理します。既存の `ui-*` コンポーネントをそのままプレビュー内に配置できることが最大の利点であり、スタイル継承はそのための前提条件です。高さ同期やスタイル注入等の複雑性を排除し、コンポーネントの堅牢性を維持します。
+    - **Future Extension Point**: 万一、完全分離が必要になった場合は、`isolated` boolean属性を追加し、`<iframe srcdoc>` ベースの描画に切り替える拡張を許容します。ただし、これは現行スコープ外です。
+
+**2. 実装要件 (Implementation Strategy)**
+
+- **Structure**: Shadow DOM内に以下の3領域を垂直スタックで配置します。
+    - **Header**（任意）: `label` が非空、または `toolbar` スロットに有効ノードが存在する場合に描画します（両方空の場合は非描画）。
+    - **Preview Area**: `slot[name="preview"]` を含むフレックスコンテナ。
+    - **Code Area**: デフォルトスロットを含み、`<ui-code-block>` または `<ui-code-group>` を受け入れます。
+- **Child Component Integration (CSS Variable Context Transmission)**:
+    - `ui-code-group` が `ui-code-block` を制御するのと同一のパターンで、CSS Custom Property を通じて子コンポーネントのレイアウトを制御します。**JSによる命令的なDOM操作は不要**です。
+    - **Code Block Neutralization**:
+        ```css
+        :host {
+          /* 子Code Blockのbreakoutを無効化（親が担当するため） */
+          --ui-code-block-breakout-width: 100%;
+          --ui-code-block-breakout-margin: 0;
+          /* 上部角丸を除去してプレビューと接続 */
+          --ui-code-block-radius-top: 0;
+        }
+        ```
+    - **Code Group Neutralization**:
+        ```css
+        :host {
+          /* 子Code Groupのbreakoutを無効化 */
+          --ui-code-group-width: 100%;
+          --ui-code-group-margin-inline: 0;
+        }
+        ```
+    - **Border/Radius Integration**:
+        - スロットされた `<ui-code-block>` の外枠ボーダーは `::slotted()` を通じて除去し、親（Code Preview）の外枠に統合します。
+        - `<ui-code-group>` がスロットされた場合も同様に外枠を除去します。
+        - Code Area 内の子コンポーネントの下部角丸は、親の `--radius-md` を継承させ、外枠との視覚的一体性を確保します。
+- **Progressive Enhancement (No-JS Stability)**:
+    - **No-JS Fallback**: JavaScript未実行時、`preview` slotとdefaultスロットが通常のドキュメントフロー（縦積み）で表示されます。コンテンツの欠落は発生しません。
+    - **JS Enhancement**: JavaScript実行後、構造化されたコンテナ（ボーダー、角丸、背景色）が適用されます。
+    - **Simplicity**: `ui-code-group` のような `data-ready` ベースのハイドレーションは不要です。本コンポーネントはインタラクティブな状態変化（タブ切り替え等）を持たず、純粋にレイアウトを提供するため、CSS自体が十分なフォールバックを担います。
+- **Slot Change Tracking**:
+    - `toolbar` スロットの `slotchange` を監視し、ツールバーコンテンツの有無を `@state()` で管理します。ヘッダー描画条件は `hasLabel || hasToolbarContent` とし、実装と受け入れ基準で同一条件を使用します。
+
+**3. 技術仕様とAPI (Technical Specs)**
+
+| プロパティ | 属性 | 型/値 | 説明 |
+|------------|------|-------|------|
+| `label` | `label` | `string` | オプションのヘッダーラベル。非空の場合、`toolbar` が空でもヘッダー領域を表示します。 |
+| `previewPadding` | `preview-padding` | `'normal' \| 'none' \| 'compact'` | プレビュー領域の内部余白を制御します。`normal`: `--space-6`（既定値）。`compact`: `--space-3`。`none`: 余白なし（エッジツーエッジのレイアウト表示等）。 |
+| `previewAlign` | `preview-align` | `'center' \| 'start' \| 'stretch'` | プレビュー領域内のコンテンツ配置を制御します。`center`: 中央揃え（既定値、最も一般的な使用例）。`start`: 左上揃え。`stretch`: 親幅いっぱいに引き伸ばし。 |
+
+**Slots:**
+- **`preview`**: レンダリング結果を含む任意のHTML。`ui-*` コンポーネントやプレーンHTML要素を自由に配置可能です。
+- **(default)**: `<ui-code-block>` または `<ui-code-group>` を配置するコードエリア。
+- **`toolbar`**: ヘッダー右側に配置するオプションのアクション領域。将来的な背景色トグルやテーマ切り替え等の拡張点として機能します。
+  - **操作要素サイズ要件**: `toolbar` 内のインタラクティブ要素は、最小 `24x24px` を確保します。タッチ前提の操作は `var(--control-min-touch, 44px)` 以上を必須とします。
+
+**CSS Custom Properties (Context API):**
+
+| 変数 | 既定値 | 説明 |
+|------|--------|------|
+| `--ui-code-preview-breakout-width` | breakoutパターン（後述） | 親からの幅オーバーライド |
+| `--ui-code-preview-breakout-margin` | breakoutパターン（後述） | 親からのマージンオーバーライド |
+| `--ui-code-preview-preview-bg` | `var(--bg-surface-2)` | プレビュー背景色。ダーク背景上でのUI表示等に使用。 |
+| `--ui-code-preview-preview-min-height` | `120px` | プレビュー領域の最小高さ。 |
+| `--ui-code-preview-radius` | `var(--radius-md)` | 外枠の角丸。 |
+
+**Public Methods:**
+- なし。本コンポーネントは純粋にプレゼンテーショナル（表示専用）であり、外部から呼び出すメソッドを持ちません。
+
+**Events:**
+- なし。
+
+**4. スタイリングとトークンマッピング (Style & Tokens)**
+
+- **Breakout Pattern (Media Element)**:
+    - `index.md` の "Media Elements" ルールに従い、`ui-syntax-card` / `ui-code-block` と同一の2段階breakoutパターンを採用します。
+    - **Mobile**: `width: calc(100% + var(--space-8))`, `margin-inline: var(--space-n4)`
+    - **Desktop** (`min-width: 768px`): `width: calc(100% + var(--space-16))`, `margin-inline: var(--space-n8)`
+    - **Override Pattern**: 親コンテナから `--ui-code-preview-breakout-width` / `--ui-code-preview-breakout-margin` を注入することで、breakoutを無効化または調整可能とします。
+    - **Implementation**:
+        ```css
+        :host {
+          --_ui-code-preview-breakout-width-default: calc(100% + var(--space-8, 2rem));
+          --_ui-code-preview-breakout-margin-default: var(--space-n4, -1rem);
+
+          display: block;
+          width: var(
+            --ui-code-preview-breakout-width,
+            var(--_ui-code-preview-breakout-width-default)
+          );
+          margin-inline: var(
+            --ui-code-preview-breakout-margin,
+            var(--_ui-code-preview-breakout-margin-default)
+          );
+          margin-block: var(--space-8, 2rem);
+        }
+
+        @media (min-width: 768px) {
+          :host {
+            --_ui-code-preview-breakout-width-default: calc(100% + var(--space-16, 4rem));
+            --_ui-code-preview-breakout-margin-default: var(--space-n8, -2rem);
+          }
+        }
+        ```
+    - **Nested Layout Safety (Double Breakout Prevention)**:
+        - 内部の `ui-code-block` / `ui-code-group` に対して、CSS変数を通じてbreakoutを **`100%` / `0` に強制リセット**します（`ui-code-group` が配下の `ui-code-block` に対して行う処理と同一パターン）。
+- **Container (`.root`)**:
+    - Border: `var(--border-style-subtle)`
+    - Radius: `var(--ui-code-preview-radius, var(--radius-md, 6px))`
+    - Overflow: `hidden`（角丸の維持）
+    - Background: `var(--bg-fill-muted)`（Code Area のフォールバック背景。実際にはほとんど子コンポーネントの背景に覆われます）
+- **Header（任意）**:
+    - Background: `var(--ui-code-preview-preview-bg, var(--bg-surface-2))`
+    - Border Bottom: `var(--border-width) solid var(--border-default)`
+    - Min Height: `var(--control-min-touch, 44px)`（タッチターゲット確保）
+    - **Label**: `color: var(--fg-muted)`, `font-size: var(--text-xs)`, `font-weight: var(--font-medium)`, `letter-spacing: var(--tracking-wide)`（`index.md` "Small Text Rule" 準拠）
+    - **Toolbar**: `display: inline-flex`, `align-items: center`, `gap: var(--space-2)`, `flex-shrink: 0`
+    - **Toolbar Action Target**: `toolbar` 内の `button`, `[role="button"]`, `a` には `min-inline-size` / `min-block-size` を適用し、最低ヒット領域を担保します（`24px`、タッチ操作は `44px`）。
+    - Layout: `display: flex`, `align-items: center`, `justify-content: space-between`
+    - Padding: `var(--space-2) var(--space-4)`
+- **Preview Area**:
+    - Background: `var(--ui-code-preview-preview-bg, var(--bg-surface-2))`
+    - Min Height: `var(--ui-code-preview-preview-min-height, 120px)`
+    - Display: `flex`
+    - Border Bottom: `var(--border-width) solid var(--border-default)`
+    - **Padding Variants**:
+        - `normal`: `var(--space-6)` — 十分な余白で要素を囲む（既定値）
+        - `compact`: `var(--space-3)` — コンパクトな余白
+        - `none`: `0` — エッジツーエッジのレイアウト（全幅コンテンツ表示用）
+    - **Alignment Variants**:
+        - `center`: `align-items: center; justify-content: center` — 中央揃え（既定値）
+        - `start`: `align-items: flex-start; justify-content: flex-start` — 左上揃え
+        - `stretch`: `align-items: stretch` — 親幅いっぱい
+- **Code Area**:
+    - 追加の背景色やパディングは不要です。子コンポーネント（`ui-code-block` / `ui-code-group`）の `--bg-fill-muted` 背景がそのまま適用されます。
+    - **Slotted Child Integration**:
+        ```css
+        ::slotted(ui-code-block) {
+          width: 100% !important;
+          margin-inline: 0 !important;
+        }
+
+        ::slotted(ui-code-group) {
+          border: none !important;
+          border-radius: 0 !important;
+        }
+        ```
+- **Layout Strategy (Vertical Only)**:
+    - 常に縦積み（プレビュー上、コード下）を採用し、ビューポート幅に関わらず変更しません。
+    - *Rationale*: コードブロックは水平方向のスペースを最大限必要とし、横並びレイアウトでは可読性が著しく低下します。また、「結果を見てからコードを読む」という垂直方向の読み順は、あらゆる画面サイズにおいて適切なメンタルモデルです。
+- **Forced Colors Mode**:
+    ```css
+    @media (forced-colors: active) {
+      .root {
+        border-color: CanvasText;
+      }
+
+      .header,
+      .preview-area {
+        background: Canvas;
+        border-bottom-color: CanvasText;
+      }
+
+      .preview-area {
+        /* プレビューとコードの区別のため太い境界線を使用 */
+        border-bottom-width: var(--border-width-thick, 2px);
+      }
+    }
+    ```
+    - *Rationale*: 背景色が透明化される環境では、プレビュー領域とコード領域の視覚的分離が失われます。`2px` の太い境界線で構造を明示し、コンテンツの意味的区別を保証します。
+- **Reduced Motion**:
+    - 本コンポーネントはアニメーションを持たないため、`prefers-reduced-motion` への特別な対応は不要です。ツールバースロット内のボタン等のモーション制御は、各コンポーネント自身のReducedMotion対応に委譲します。
+
+**Token Usage Summary:**
+
+| CSS Property | Token | Fallback |
+|-------------|-------|----------|
+| 外枠ボーダー | `--border-style-subtle` | `1px solid oklch(20% 0.03 250 / 0.12)` |
+| 外枠角丸 | `--radius-md` | `6px` |
+| プレビュー背景 | `--bg-surface-2` | `oklch(100% 0 0)` |
+| コード背景 | （子コンポーネント `--bg-fill-muted`） | `oklch(96% 0.01 250)` |
+| ヘッダーテキスト色 | `--fg-muted` | `oklch(45% 0.02 250)` |
+| ヘッダーフォントサイズ | `--text-xs` | `12px` |
+| 区切りボーダー | `--border-default` | `oklch(20% 0.03 250 / 0.12)` |
+| ブロック間余白 | `--space-8` | `2rem` |
+| プレビュー余白（normal） | `--space-6` | `1.5rem` |
+
+**Fallback値の運用ルール:**
+
+- Fallbackは「トークン未定義時の破綻回避」に限定します。
+- コンポーネント本体の宣言は、常にSemantic Tokenを第一参照にします。
+- Fallbackの生値は `index.md` の既定値と一致する値のみ許可します。
+- 新しい生値が必要な場合は、先に `index.md` 側へトークン定義を追加してから参照します。
+
+**5. 印刷対応 (Print Styles)**
+
+`index.md` "印刷スタイル" に準拠し、紙媒体への出力時に以下の最適化を行います。
+
+- **Breakout Layout 解除**:
+    - `width: 100% !important`
+    - `margin-inline: 0 !important`
+    - *Rationale*: 用紙幅を最大限活用し、ネガティブマージンによる意図しないはみ出しを防ぎます。
+- **Background 除去**:
+    - `.root`, `.header`, `.preview-area`: `background: transparent !important`
+    - *Rationale*: インク節約。
+- **Border モノクロ化**:
+    - `.root`: `border-color: #000 !important`
+    - `.header`, `.preview-area` の `border-bottom-color`: `#000 !important`
+    - *Rationale*: `index.md` の印刷基準と整合。
+- **Toolbar 非表示**:
+    - `.header-toolbar`: `display: none !important`
+    - *Rationale*: インタラクティブな要素は印刷メディアでは無意味です。
+- **Page Break 制御**:
+    - `:host`: `page-break-inside: avoid; break-inside: avoid`
+    - *Rationale*: プレビューとコードが分割されると文脈が失われるため、単一ページ内に収めます。
+- **Code Area への委譲**:
+    - 各 Code Block / Code Group の印刷スタイル（折り返し強制、フォントサイズ調整等）は、それぞれの仕様に従って各コンポーネント側で制御されます。
+
+**実装例**:
+
+```css
+@media print {
+  :host {
+    width: 100% !important;
+    margin-inline: 0 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .root {
+    background: transparent !important;
+    border-color: #000 !important;
+  }
+
+  .header {
+    background: transparent !important;
+    border-bottom-color: #000 !important;
+  }
+
+  .header-toolbar {
+    display: none !important;
+  }
+
+  .preview-area {
+    background: transparent !important;
+    border-bottom-color: #000 !important;
+    min-height: auto !important;
+  }
+}
+```
+
+**6. 受け入れ基準 (Acceptance Criteria)**
+
+**コンポーネント単体基準:**
+
+- **Visual Hierarchy**: プレビュー領域が `--bg-surface-2`、コード領域が `--bg-fill-muted`（子コンポーネント由来）で描画され、`--border-default` による単一の区切り線で分離されていること。
+- **Breakout Consistency**: breakoutパターンが `ui-syntax-card` / `ui-code-block` と同一（Mobile: `+space-8`, Desktop: `+space-16`）であること。
+- **Child Breakout Neutralization**: スロットされた `ui-code-block` / `ui-code-group` のbreakout幅が `100%`、マージンが `0` に強制リセットされていること。
+- **Border Token Consistency**: 外枠が `var(--border-style-subtle)` で統一されていること。
+- **Padding Variants**: `preview-padding` 属性の3値（`normal`, `compact`, `none`）が正しい余白を適用すること。
+- **Alignment Variants**: `preview-align` 属性の3値（`center`, `start`, `stretch`）が正しい配置を適用すること。
+- **Header Visibility**: `label` が空かつ `toolbar` スロットが空の場合、ヘッダー領域が描画されないこと。
+- **A11y Group**: ルートコンテナに `role="group"` と日本語の `aria-label`（`label` プロパティまたは `"コード プレビュー"` のフォールバック）が設定されていること。
+- **Toolbar Target Size**: `toolbar` 内の操作要素が最小 `24x24px`、タッチ前提操作で `44x44px` を満たすこと。
+- **Forced Colors**: `forced-colors: active` 時にボーダーが `CanvasText` で可視化され、プレビュー/コード間の境界線が `2px` に強化されていること。
+- **Print Compliance**: 印刷時に背景透明化、ボーダー `#000` 統一、ツールバー非表示、breakoutリセットが適用されていること。
+- **No-JS Integrity**: JavaScript未実行時に、プレビューとコードが通常のドキュメントフロー（縦積み）で完全に表示され、コンテンツ欠落がないこと。
+
+**構成統合基準（スロット子を含む）:**
+
+- **Copy Functionality Preservation**: スロットされた `ui-code-block` / `ui-code-group` 内のコピーボタンとコピー機能（`getCodeContent()`）が正常に動作すること。
+
 #### 構文カード (Syntax Card) `<ui-syntax-card>`
 
 **1. デザイン哲学と目的 (Design Philosophy)**
