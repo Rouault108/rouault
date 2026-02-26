@@ -5292,7 +5292,7 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
 | プロパティ | 属性 | 説明 |
 |------------|------|------|
 | `label` | `label` | (Child Item) タブに表示するラベルテキスト。 **省略時のフォールバック順序: `filename` > `lang` > "コード"**。これにより空のタブが生成されることを防ぎます。`index.md` の国際化方針に従い、ジェネリックフォールバックは日本語で固定します。 |
-| - | - | **Metadata Extraction**: Code Group は、アクティブな Code Block が持つ `filename` 属性を読み取り、自身のヘッダー内に表示します。ただし、`label` が未指定（filenameをタブ名に使用）の場合、重複を避けるためメタデータ領域には表示しません。 |
+| - | - | **Metadata Policy**: Code Group は `filename` / `intent` をヘッダーに表示しません。情報重複を避け、状態表現はタブ選択に集約します。`filename` はコピー操作の文脈ラベルにのみ利用します。 |
 | - | - | **Comparison Pair Contract**: 正誤比較を行う場合、子要素の `label` は `正しい例` / `誤り例` を明示指定し、対応する `intent` (`valid` / `invalid`) と意味を一致させます。 |
 
 **3. 実装要件 (Implementation Strategy)**
@@ -5458,15 +5458,9 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
         - **Affordance**: 左側へのグラデーションは、スクロールバーが消失するモバイル環境において、**「右側にまだコンテンツ（タブ）が続いている」ことを示唆する視覚的なヒント（Scroll Hint）**としても機能します。
         - **Visual Conflict Resolution**: Right Scroll Shadow（Scroll Hint）とMask（Fade-out）は役割が重複しますが、Mask側の「常時潜り込み表現」を優先します。前述の通り `tab-list` 側に十分な `padding-right` を確保することで、スクロール完了時に情報が隠される問題（Conflict）を物理的に解決します。
         - **Click Safety**: このマスク要素には必ず **`pointer-events: none`** を指定します。
-    - **Header Metadata (Filename Display)**:
-        - **Role**: タブ名（例: "Good"）とは別に、具体的なファイル名（例: "example.ts"）をユーザーに伝えるための領域。
-        - **Placement**: `header-tools` コンテナ内、コピーボタンの左側に配置。
-        - **Source**: アクティブな `<ui-code-block>` の `filename` 属性から抽出。
-        - **Style**: `color: var(--fg-muted)`, `font-size: var(--text-xs)`.
-        - **Compliance**: `index.md` の "Small Text Rule" に従い、**`font-weight: var(--font-medium)`** と **`letter-spacing: var(--tracking-wide)`**、および `font-family: var(--font-mono)` を適用して可読性を担保します。
-        - **Responsive Strategy (Context Relocation)**:
-            - モバイル（`--bp-sm` 未満）ではヘッダー内のスペースが不足するため、メタデータを非表示にします。
-            - **Compensation (CSS Variable Control)**: 代わりに、内部の `<ui-code-block>` のヘッダー（`figcaption`）を**強制的に復帰（`display: block`）**させます。これはルート（Group）で定義するCSS変数 `--ui-code-block-header-display` をメディアクエリで切り替えることで、JS計算なしに実現します。これにより、Groupヘッダーからは情報が消えますが、コンテンツエリア直上にファイル名が表示され、コンテキスト（今どのファイルを見ているか）を維持します。
+    - **Header Metadata (Visibility Policy)**:
+        - filename / intent は視覚的には表示せず、ヘッダーは操作要素（Copy Button）に限定します。
+        - 情報重複を避け、状態表現はタブ選択に集約します。
     - **Copy Button Integration**:
         - **Interaction**: `<ui-code-block>` の "Copy Feature" 仕様を継承します。
             - Default: `opacity: 0`, `pointer-events: none` (Ghost Click防止).
