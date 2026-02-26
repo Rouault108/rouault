@@ -15,5 +15,11 @@
     },
     "resolveJsonModule": true,
   },
-  "include": ["src/**/*", "eleventy.config.ts", "types/**/*", "test/**/*"]
+  "include": [
+    "src/**/*",
+    ".storybook/**/*.ts",
+    "eleventy.config.ts",
+    "types/**/*",
+    "test/**/*"
+  ]
 }
