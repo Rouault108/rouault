@@ -925,10 +925,10 @@ input:disabled,
     word-wrap: break-word;
   }
 
-  code {
+  :not(pre) > code {
     background: #f5f5f5 !important;
     padding: 2pt 4pt;
-    border: 1px solid #ddd;
+    border: none;
     font-size: 10pt;
   }
 
