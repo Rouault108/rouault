@@ -954,6 +954,207 @@ input:disabled,
 }
 
 /* ===========================================================================
+ * Footnote (No-JS / SSR Fallback)
+ * =========================================================================== */
+
+ui-footnote {
+  --footnote-popover-max-width: 400px;
+  display: inline;
+  font-family: inherit;
+  line-height: inherit;
+}
+
+ui-footnote [data-part='trigger'] {
+  display: inline-flex;
+  align-items: baseline;
+  margin-inline: 0.1em;
+  color: var(--fg-muted, oklch(48% 0.01 250));
+  font-size: max(var(--text-xs, 12px), 12px);
+  font-weight: var(--font-medium, 500);
+  letter-spacing: var(--tracking-wide, 0.02em);
+  line-height: var(--line-height-none, 1);
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: var(--radius-sm, 4px);
+  transition:
+    color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+    background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+}
+
+ui-footnote [data-part='trigger'] > sup {
+  font-size: inherit;
+  line-height: 1;
+  vertical-align: super;
+}
+
+ui-footnote [data-part='trigger']:hover,
+ui-footnote [data-part='trigger']:focus-visible {
+  color: var(--primary, oklch(56% 0.16 252));
+  text-decoration: underline;
+}
+
+ui-footnote [data-part='trigger']:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 252));
+  outline-offset: var(--focus-ring-offset, 2px);
+  animation: var(--animation-focus);
+}
+
+ui-footnote [data-part='trigger'].is-active-trigger {
+  background: var(--bg-active, oklch(95% 0.01 250));
+}
+
+ui-footnote [data-part='content'] {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: var(--z-popover, 400);
+  box-sizing: border-box;
+  display: none;
+  max-width: min(90vw, var(--footnote-popover-max-width));
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+  background: var(--bg-surface-2, oklch(100% 0 0));
+  border: var(--border-width, 1px) solid var(--border-default, oklch(86% 0.01 250));
+  border-radius: var(--radius-md, 6px);
+  box-shadow: var(--elevation-lg, 0 8px 24px oklch(0% 0 0 / 0.12));
+  color: var(--fg-default, oklch(20% 0.01 250));
+  font-family: var(--font-sans, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif);
+  font-size: var(--text-sm, 13px);
+  line-height: var(--line-height-relaxed, 1.75);
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+    transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+    display var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9))
+      allow-discrete;
+}
+
+ui-footnote [data-part='content'][popover]:popover-open {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@starting-style {
+  ui-footnote [data-part='content'][popover]:popover-open {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+ui-footnote [data-part='content'][popover]:not(:popover-open) {
+  opacity: 0;
+  transition:
+    opacity var(--duration-fast, 70ms) var(--ease-in, cubic-bezier(0.55, 0, 1, 0.45)),
+    display var(--duration-fast, 70ms) var(--ease-in, cubic-bezier(0.55, 0, 1, 0.45))
+      allow-discrete;
+}
+
+ui-footnote .footnote-body > :first-child {
+  margin-block-start: 0;
+}
+
+ui-footnote .footnote-body > :last-child {
+  margin-block-end: 0;
+}
+
+ui-footnote .footnote-popover-footer {
+  margin-block-start: var(--space-3, 12px);
+  padding-block-start: var(--space-2, 8px);
+  border-top: 1px solid var(--border-ghost, oklch(88% 0.01 250 / 0.5));
+}
+
+ui-footnote .footnote-list-link {
+  color: var(--fg-muted, oklch(48% 0.01 250));
+  font-size: var(--text-xs, 12px);
+  font-weight: var(--font-medium, 500);
+  letter-spacing: var(--tracking-wide, 0.02em);
+  text-decoration: none;
+}
+
+ui-footnote .footnote-list-link:hover,
+ui-footnote .footnote-list-link:focus-visible {
+  color: var(--primary, oklch(56% 0.16 252));
+  text-decoration: underline;
+}
+
+ui-footnote .sr-only,
+section.footnotes .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+section.footnotes {
+  margin-block-start: var(--space-16, 64px);
+  padding-block-start: var(--space-8, 32px);
+  border-block-start: var(--border-width, 1px) solid var(--border-default, oklch(86% 0.01 250));
+}
+
+section.footnotes ol {
+  list-style-position: inside;
+  padding-inline-start: 0;
+}
+
+section.footnotes li {
+  margin-block-end: var(--space-3, 12px);
+  color: var(--fg-default, oklch(20% 0.01 250));
+  font-size: var(--text-sm, 13px);
+}
+
+section.footnotes li:target {
+  background: var(--bg-active, oklch(95% 0.01 250));
+  border-radius: var(--radius-sm, 4px);
+}
+
+section.footnotes a[href^='#fnref-'] {
+  color: var(--fg-muted, oklch(48% 0.01 250));
+  text-decoration: none;
+}
+
+section.footnotes a[href^='#fnref-']:hover,
+section.footnotes a[href^='#fnref-']:focus-visible {
+  color: var(--primary, oklch(56% 0.16 252));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ui-footnote [data-part='content'] {
+    transform: none;
+    transition-duration: var(--duration-instant, 0ms);
+  }
+}
+
+@media (forced-colors: active) {
+  ui-footnote [data-part='trigger'] {
+    color: LinkText;
+  }
+
+  ui-footnote [data-part='content'] {
+    border: 2px solid CanvasText;
+    box-shadow: none;
+  }
+
+  section.footnotes {
+    border-block-start: 1px solid CanvasText;
+  }
+}
+
+@media print {
+  ui-footnote [data-part='content'] {
+    display: none !important;
+  }
+}
+
+/* ===========================================================================
  * Dark Mode - Media Brightness Adjustment
  * =========================================================================== */
 
