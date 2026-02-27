@@ -5929,7 +5929,7 @@ SSG (Eleventy) および Shiki のビルドプロセスとの親和性を高め�
     - **Failure Contract**:
         - `signature` スロット内の `<ui-code-block>` は**1つのみ**を正式サポート対象とします。
         - 対象が0件または複数件の場合、コピー機能は無効化（`disabled` + `aria-disabled="true"`）し、誤コピーを防止します。
-        - `getCodeContent()` が空文字または例外を返した場合、成功状態を表示せず、エラー状態のみを表示します（詳細通知は `ui-copy-button` の仕様に委譲）。
+        - `getCodeContent()` が空文字または例外を返した場合、コピー機能は無効化（`disabled` + `aria-disabled="true"`）します。誤コピーや誤成功表示を防ぎ、詳細なエラー通知は `ui-copy-button` の仕様に委譲します。
 
 **3. 技術仕様とAPI (Technical Specs)**
 
