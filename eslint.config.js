@@ -89,7 +89,18 @@ export default defineConfig(
     },
   },
 
-  // 5. テスト専用設定
+  // 5. Eleventy データファイル（JS）: TypeScript型チェックを無効化
+  {
+    files: ['src/data/**/*.js'],
+    extends: [tseslint.configs.disableTypeChecked],
+    languageOptions: {
+      parserOptions: {
+        project: false,
+      },
+    },
+  },
+
+  // 6. テスト専用設定
   {
     files: ['test/**/*.ts'],
     rules: {
@@ -101,6 +112,6 @@ export default defineConfig(
     },
   },
 
-  // 5. 整形
+  // 7. 整形
   prettier,
 );
