@@ -1,8 +1,5 @@
 import rehypeKatex from 'rehype-katex';
-import remarkEmoji from 'remark-emoji';
-import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
-import remarkSupersub from 'remark-supersub';
 import { defineCollection, defineConfig, s } from 'velite';
 
 import { rehypeDisallowStaticMark } from './lib/rehype/disallow-static-mark.js';
@@ -37,10 +34,7 @@ export default defineConfig({
   collections: { notes },
   markdown: {
     remarkPlugins: [
-      [remarkGfm, { singleTilde: false }],
       remarkMath,
-      remarkEmoji as any,
-      remarkSupersub,
     ],
     rehypePlugins: [
       rehypeKatex,
