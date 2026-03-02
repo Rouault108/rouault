@@ -5,47 +5,9 @@ import remarkMath from 'remark-math';
 import remarkSupersub from 'remark-supersub';
 import { defineCollection, defineConfig, s } from 'velite';
 
-type HastProperties = Record<string, unknown>;
-
-type HastNode = {
-  type?: string;
-  tagName?: string;
-  properties?: HastProperties;
-  children?: HastNode[];
-};
-
-/**
- * インラインコードに translate="no" を付与する。
- * pre > code（コードブロック）は対象外。
- */
-function rehypeInlineCodeTranslateNo() {
-  return (tree: unknown) => {
-    const visit = (node: unknown, parentTagName?: string): void => {
-      if (!node || typeof node !== 'object') {
-        return;
-      }
-
-      const current = node as HastNode;
-
-      if (current.type === 'element' && current.tagName === 'code' && parentTagName !== 'pre') {
-        current.properties ??= {};
-        if (current.properties.translate !== 'no') {
-          current.properties.translate = 'no';
-        }
-      }
-
-      if (!Array.isArray(current.children)) {
-        return;
-      }
-
-      for (const child of current.children) {
-        visit(child, current.tagName);
-      }
-    };
-
-    visit(tree);
-  };
-}
+import { rehypeDisallowStaticMark } from './lib/rehype/disallow-static-mark.js';
+import { rehypeInlineCodeTranslateNo } from './lib/rehype/inline-code-translate-no.js';
+import { rehypeOrderedListContracts } from './lib/rehype/ordered-list-contracts.js';
 
 const notes = defineCollection({
   name: 'Note',
@@ -80,6 +42,11 @@ export default defineConfig({
       remarkEmoji as any,
       remarkSupersub,
     ],
-    rehypePlugins: [rehypeKatex, rehypeInlineCodeTranslateNo],
+    rehypePlugins: [
+      rehypeKatex,
+      rehypeInlineCodeTranslateNo,
+      rehypeOrderedListContracts,
+      rehypeDisallowStaticMark,
+    ],
   },
 });
