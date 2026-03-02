@@ -95,6 +95,9 @@ export default defineConfig(
     rules: {
       // ChaiのAssertionスタイル（expect(x).to.be.true）を許可
       '@typescript-eslint/no-unused-expressions': 'off',
+      // Chai の Assertion 型は chai-as-promised の型合成により thenable に見えるが
+      // 実際には同期アサーションであるため無効化する
+      '@typescript-eslint/no-floating-promises': 'off',
     },
   },
 
