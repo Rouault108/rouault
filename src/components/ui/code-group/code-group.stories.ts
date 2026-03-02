@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
+import { userEvent } from 'storybook/test';
 import './code-group';
-import type { CodeGroup } from './code-group';
+import { CodeGroup } from './code-group';
 import '../codeblock/codeblock';
 import type { CopyButton } from '../copy-button/copy-button';
 
@@ -42,14 +43,49 @@ const getCopyButton = (group: CodeGroup): CopyButton => {
   return copyButton;
 };
 
-const getHeaderIntentText = (group: CodeGroup): string => {
-  const intent = group.shadowRoot?.querySelector<HTMLElement>('.header-intent');
-  return intent ? intent.textContent.trim() : '';
+const getBody = (group: CodeGroup): HTMLElement => {
+  const body = group.shadowRoot?.querySelector<HTMLElement>('.body');
+  if (!body) throw new Error('body が見つかりません');
+  return body;
 };
 
-const getHeaderFilename = (group: CodeGroup): string => {
-  const filename = group.shadowRoot?.querySelector<HTMLElement>('.header-filename');
-  return filename ? filename.textContent.trim() : '';
+const getCopyFocusable = (group: CodeGroup): HTMLElement => {
+  const copyButton = getCopyButton(group);
+  const uiButton = copyButton.shadowRoot?.querySelector<HTMLElement>('ui-button');
+  if (!uiButton) throw new Error('ui-copy-button 内の ui-button が見つかりません');
+
+  const innerNativeButton = uiButton.shadowRoot?.querySelector<HTMLButtonElement>('button');
+  return innerNativeButton ?? uiButton;
+};
+
+const dispatchTabKey = (target: HTMLElement, key: string): KeyboardEvent => {
+  const event = new KeyboardEvent('keydown', {
+    key,
+    bubbles: true,
+    composed: true,
+    cancelable: true,
+  });
+  target.dispatchEvent(event);
+  return event;
+};
+
+const readCssText = (styles: unknown): string => {
+  if (Array.isArray(styles)) {
+    return styles.map((style) => readCssText(style)).join('\n');
+  }
+  if (styles && typeof styles === 'object' && 'cssText' in styles) {
+    const cssText = styles.cssText;
+    if (typeof cssText === 'string') return cssText;
+  }
+  return '';
+};
+
+const getDeepActiveElement = (root: Document | ShadowRoot): Element | null => {
+  let current: Element | null = root.activeElement;
+  while (current instanceof HTMLElement && current.shadowRoot?.activeElement) {
+    current = current.shadowRoot.activeElement;
+  }
+  return current;
 };
 
 const meta: Meta<CodeGroup> = {
@@ -67,6 +103,8 @@ const meta: Meta<CodeGroup> = {
 - \`label\` 未指定時のフォールバック契約（\`filename\` > \`lang\` > \`"コード"\`）
 - 横スクロール時の \`scrollIntoView + header-tools 幅補正\`
 - コピー操作の文脈分離（タブ切り替え後に旧結果を持ち越さない）
+- テーマトークン追従（Dark想定）と \`forced-colors\` フォールバック定義
+- モバイルでのメタデータ移送（groupヘッダー非表示 + blockヘッダー復帰）
 - 子要素ゼロ時の安全な退行（\`data-ready\` を付与しない）
         `,
       },
@@ -131,12 +169,22 @@ export const ComparisonPair: Story = {
     if (firstPanel.getAttribute('role') !== 'tabpanel') {
       throw new Error('パネルに role="tabpanel" が付与されていません');
     }
+    if (firstPanel.hasAttribute('aria-roledescription')) {
+      throw new Error('aria-roledescription は通常時に付与しない想定です');
+    }
     if (!firstPanel.hasAttribute('headless')) {
       throw new Error('配下の ui-code-block に headless が付与されていません');
     }
 
-    if (getHeaderIntentText(group) !== '正しい例') {
-      throw new Error('アクティブ intent 表示が「正しい例」と一致しません');
+    const headerMetaBefore = group.shadowRoot?.querySelector<HTMLElement>('.header-meta');
+    if (headerMetaBefore) {
+      throw new Error('header-meta should not be rendered');
+    }
+
+    const firstPre = firstPanel.querySelector('pre');
+    if (!firstPre) throw new Error('first panel pre is missing');
+    if (getComputedStyle(firstPre).backgroundColor !== 'rgba(0, 0, 0, 0)') {
+      throw new Error('slotted pre background must stay transparent in code-group body');
     }
 
     const copyButtonBefore = getCopyButton(group);
@@ -154,8 +202,9 @@ export const ComparisonPair: Story = {
     if (!firstPanel.hasAttribute('hidden') || secondPanel.hasAttribute('hidden')) {
       throw new Error('タブ切り替え後の hidden 制御が不正です');
     }
-    if (getHeaderIntentText(group) !== '誤り例') {
-      throw new Error('タブ切り替え後の intent 表示が「誤り例」と一致しません');
+    const headerMetaAfter = group.shadowRoot?.querySelector<HTMLElement>('.header-meta');
+    if (headerMetaAfter) {
+      throw new Error('header-meta should stay hidden after tab switch');
     }
 
     const copyButtonAfter = getCopyButton(group);
@@ -203,10 +252,6 @@ export const LabelFallbackContract: Story = {
         throw new Error(`フォールバック順序が不正です。index=${String(index)} expected="${label}" actual="${actual}"`);
       }
     });
-
-    if (getHeaderFilename(group) !== '') {
-      throw new Error('filename フォールバック時はヘッダーメタデータを重複表示しない想定です');
-    }
 
     const secondTab = tabs[1];
     const thirdTab = tabs[2];
@@ -322,9 +367,11 @@ export const CopyStateIsolation: Story = {
     if (!secondTab) throw new Error('2つ目のタブが見つかりません');
 
     const originalClipboard = navigator.clipboard;
+    let copyCallCount = 0;
     const fakeClipboard = {
       writeText: (_value: string): Promise<void> =>
         new Promise((resolve) => {
+          copyCallCount += 1;
           setTimeout(() => {
             resolve();
           }, 120);
@@ -337,8 +384,8 @@ export const CopyStateIsolation: Story = {
         value: fakeClipboard,
       });
 
-      const copyBeforeSwitch = getCopyButton(group);
-      copyBeforeSwitch.click();
+      const copyFocusableBeforeSwitch = getCopyFocusable(group);
+      await userEvent.click(copyFocusableBeforeSwitch);
 
       secondTab.click();
       await group.updateComplete;
@@ -354,6 +401,9 @@ export const CopyStateIsolation: Story = {
       if (copyAfterSwitch.getAttribute('state') !== 'idle') {
         throw new Error('タブ切り替え後のコピーボタン状態が idle に維持されていません');
       }
+      if (copyCallCount !== 1) {
+        throw new Error(`コピー処理の呼び出し回数が不正です: ${String(copyCallCount)}`);
+      }
 
       if (copyAfterSwitch.label !== 'second.ts のコードをコピー') {
         throw new Error(`タブ切り替え後のコピーボタンラベルが不正です: "${copyAfterSwitch.label}"`);
@@ -363,6 +413,229 @@ export const CopyStateIsolation: Story = {
         configurable: true,
         value: originalClipboard,
       });
+    }
+  },
+};
+
+/**
+ * 子要素追加/削除の同期。
+ * childList 変化時にタブ構成と data-ready が破綻しないことを検証します。
+ */
+export const ChildListMutationSync: Story = {
+  render: () => html`
+    <ui-code-group id="child-list-mutation-group">
+      <ui-code-block label="One" filename="one.ts">
+        <pre><code>const one = 1;</code></pre>
+      </ui-code-block>
+      <ui-code-block label="Two" filename="two.ts">
+        <pre><code>const two = 2;</code></pre>
+      </ui-code-block>
+    </ui-code-group>
+  `,
+  play: async ({ canvasElement }) => {
+    const group = getGroup(canvasElement, 'child-list-mutation-group');
+    await group.updateComplete;
+    await waitFrame();
+
+    if (getTabs(group).length !== 2) {
+      throw new Error('初期タブ数が不正です');
+    }
+
+    const appended = document.createElement('ui-code-block');
+    appended.setAttribute('label', 'Three');
+    appended.setAttribute('filename', 'three.ts');
+    appended.innerHTML = '<pre><code>const three = 3;</code></pre>';
+    group.append(appended);
+    await group.updateComplete;
+    await waitFrame();
+
+    const tabsAfterAppend = getTabs(group);
+    if (tabsAfterAppend.length !== 3) {
+      throw new Error(`子要素追加後のタブ数が不正です: ${String(tabsAfterAppend.length)}`);
+    }
+    const thirdTab = tabsAfterAppend[2];
+    if (thirdTab?.textContent.trim() !== 'Three') {
+      throw new Error('追加した子要素のタブが正しく生成されていません');
+    }
+
+    const firstPanel = getPanels(group)[0];
+    if (!firstPanel) throw new Error('削除対象の先頭パネルが見つかりません');
+    firstPanel.remove();
+    await group.updateComplete;
+    await waitFrame();
+
+    const tabsAfterRemove = getTabs(group);
+    if (tabsAfterRemove.length !== 2) {
+      throw new Error(`子要素削除後のタブ数が不正です: ${String(tabsAfterRemove.length)}`);
+    }
+    const firstTabAfterRemove = tabsAfterRemove[0];
+    if (firstTabAfterRemove?.textContent.trim() !== 'Two') {
+      throw new Error('子要素削除後のタブ再構成が不正です');
+    }
+
+    const remainingPanels = getPanels(group);
+    remainingPanels.forEach((panel) => {
+      panel.remove();
+    });
+    await group.updateComplete;
+    await waitFrame();
+
+    if (group.hasAttribute('data-ready')) {
+      throw new Error('子要素全削除後に data-ready が残存しています');
+    }
+    if (getTabs(group).length !== 0) {
+      throw new Error('子要素全削除後にタブが残存しています');
+    }
+  },
+};
+
+/**
+ * 子要素属性変更の同期。
+ * label / intent 更新後にタブ表示とヘッダー情報が追従することを検証します。
+ */
+export const ChildAttributeMutationSync: Story = {
+  render: () => html`
+    <ui-code-group id="mutation-group">
+      <ui-code-block label="初期ラベル" filename="alpha.ts" intent="neutral">
+        <pre><code>const alpha = 1;</code></pre>
+      </ui-code-block>
+      <ui-code-block filename="beta.ts" intent="invalid">
+        <pre><code>const beta = 2;</code></pre>
+      </ui-code-block>
+    </ui-code-group>
+  `,
+  play: async ({ canvasElement }) => {
+    const group = getGroup(canvasElement, 'mutation-group');
+    await group.updateComplete;
+    await waitFrame();
+
+    const panels = getPanels(group);
+    const secondPanel = panels[1];
+    if (!secondPanel) throw new Error('更新対象の2つ目パネルが見つかりません');
+
+    secondPanel.setAttribute('label', '更新後ラベル');
+    secondPanel.setAttribute('intent', 'valid');
+    await group.updateComplete;
+    await waitFrame();
+
+    const tabs = getTabs(group);
+    const secondTab = tabs[1];
+    if (!secondTab) throw new Error('更新後の2つ目タブが見つかりません');
+    if (secondTab.textContent.trim() !== '更新後ラベル') {
+      throw new Error('子属性変更後にタブラベルが更新されていません');
+    }
+
+    secondTab.click();
+    await group.updateComplete;
+    await waitFrame();
+
+  },
+};
+
+/**
+ * キーボード操作契約。
+ * Arrow/Home/End の Follow Focus と Tab キー非抑止を検証します。
+ */
+export const KeyboardNavigationContract: Story = {
+  render: () => html`
+    <ui-code-group id="keyboard-group" aria-label="キーボード検証">
+      <ui-code-block label="One" filename="one.ts">
+        <pre><code>const one = 1;</code></pre>
+      </ui-code-block>
+      <ui-code-block label="Two" filename="two.ts">
+        <pre><code>const two = 2;</code></pre>
+      </ui-code-block>
+      <ui-code-block label="Three" filename="three.ts">
+        <pre><code>const three = 3;</code></pre>
+      </ui-code-block>
+    </ui-code-group>
+  `,
+  play: async ({ canvasElement }) => {
+    const group = getGroup(canvasElement, 'keyboard-group');
+    await group.updateComplete;
+    await waitFrame();
+
+    const tabs = getTabs(group);
+    const firstTab = tabs[0];
+    const secondTab = tabs[1];
+    const thirdTab = tabs[2];
+    if (!firstTab || !secondTab || !thirdTab) {
+      throw new Error('キーボード検証に必要なタブが不足しています');
+    }
+
+    firstTab.focus();
+    dispatchTabKey(firstTab, 'ArrowRight');
+    await group.updateComplete;
+    await waitFrame();
+    if (secondTab.getAttribute('aria-selected') !== 'true') {
+      throw new Error('ArrowRight で次タブへ Follow Focus しません');
+    }
+
+    dispatchTabKey(secondTab, 'End');
+    await group.updateComplete;
+    await waitFrame();
+    if (thirdTab.getAttribute('aria-selected') !== 'true') {
+      throw new Error('End で最終タブへ移動しません');
+    }
+
+    dispatchTabKey(thirdTab, 'Home');
+    await group.updateComplete;
+    await waitFrame();
+    if (firstTab.getAttribute('aria-selected') !== 'true') {
+      throw new Error('Home で先頭タブへ移動しません');
+    }
+
+    firstTab.focus();
+    await waitFrame();
+    await userEvent.tab();
+    await waitFrame();
+
+    const activeElement = getDeepActiveElement(document);
+    const copyFocusable = getCopyFocusable(group);
+    if (activeElement !== copyFocusable) {
+      throw new Error('Tab で次フォーカス要素（Copy Button）へ移動できていません');
+    }
+  },
+};
+
+/**
+ * 印刷スタイル契約。
+ * @media print での基本ルールが定義されていることを検証します。
+ */
+export const PrintStyleContract: Story = {
+  render: () => html`
+    <ui-code-group id="print-group">
+      <ui-code-block label="A" filename="a.ts">
+        <pre><code>const a = 1;</code></pre>
+      </ui-code-block>
+      <ui-code-block label="B" filename="b.ts">
+        <pre><code>const b = 2;</code></pre>
+      </ui-code-block>
+    </ui-code-group>
+  `,
+  play: async ({ canvasElement }) => {
+    const group = getGroup(canvasElement, 'print-group');
+    await group.updateComplete;
+    await waitFrame();
+
+    const cssText = readCssText(CodeGroup.styles);
+    const requiredTokens = [
+      '@media print',
+      'border-color: #000 !important',
+      'page-break-inside: avoid',
+      'break-inside: avoid',
+      '.code-group-header',
+      '.header-tools',
+      'display: none !important',
+      "[slot='panel'][hidden]",
+      'display: block !important',
+      'margin-block-start: var(--space-4, 1rem)',
+    ];
+
+    for (const token of requiredTokens) {
+      if (!cssText.includes(token)) {
+        throw new Error(`印刷スタイル契約の定義が不足しています: ${token}`);
+      }
     }
   },
 };
@@ -394,6 +667,169 @@ export const EmptyGroupBoundary: Story = {
     const fallbackContent = group.querySelector('#empty-content');
     if (!fallbackContent) {
       throw new Error('フォールバックコンテンツが消失しています');
+    }
+  },
+};
+
+/**
+ * テーマトークン追従（Dark想定）の境界。
+ * タブ背景が透過で、下線のみが強調されることを検証します。
+ */
+export const ThemeTokenAdaptation: Story = {
+  render: () => html`
+    <div
+      style="
+        color-scheme: dark;
+        background: rgb(2 6 23);
+        padding: 12px;
+        --bg-surface-2: rgb(15 23 42);
+        --bg-fill-muted: rgb(10 14 28);
+        --fg-default: rgb(226 232 240);
+        --fg-muted: rgb(148 163 184);
+        --border-default: rgb(71 85 105);
+      "
+    >
+      <ui-code-group id="theme-group">
+        <ui-code-block label="One" filename="one.ts">
+          <pre><code>const one = 1;</code></pre>
+        </ui-code-block>
+        <ui-code-block label="Two" filename="two.ts">
+          <pre><code>const two = 2;</code></pre>
+        </ui-code-block>
+      </ui-code-group>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const group = getGroup(canvasElement, 'theme-group');
+    await group.updateComplete;
+    await waitFrame();
+
+    const tabs = getTabs(group);
+    const firstTab = tabs[0];
+    if (!firstTab) throw new Error('1つ目のタブが見つかりません');
+
+    const body = getBody(group);
+    const tabStyle = getComputedStyle(firstTab);
+    const bodyStyle = getComputedStyle(body);
+    if (bodyStyle.backgroundColor !== 'rgb(10, 14, 28)') {
+      throw new Error('body 背景色が theme token と一致しません');
+    }
+    if (tabStyle.backgroundColor !== 'rgba(0, 0, 0, 0)') {
+      throw new Error('アクティブタブ背景が透過になっていません');
+    }
+    if (tabStyle.borderBottomColor === 'rgba(0, 0, 0, 0)') {
+      throw new Error('アクティブタブ下線が表示されていません');
+    }
+  },
+};
+
+/**
+ * 強制カラーモード契約。
+ * フォールバック定義が style に存在することを検証します。
+ */
+export const ForcedColorsContract: Story = {
+  render: () => html`
+    <ui-code-group id="forced-colors-group">
+      <ui-code-block label="One" filename="one.ts">
+        <pre><code>const one = 1;</code></pre>
+      </ui-code-block>
+      <ui-code-block label="Two" filename="two.ts">
+        <pre><code>const two = 2;</code></pre>
+      </ui-code-block>
+    </ui-code-group>
+  `,
+  play: async ({ canvasElement }) => {
+    const group = getGroup(canvasElement, 'forced-colors-group');
+    await group.updateComplete;
+    await waitFrame();
+
+    const cssText = readCssText(CodeGroup.styles);
+    const requiredTokens = [
+      '@media (forced-colors: active)',
+      'border-color: CanvasText',
+      'CanvasText',
+      'background: Canvas',
+      'border-bottom-color: CanvasText !important',
+    ];
+
+    for (const token of requiredTokens) {
+      if (!cssText.includes(token)) {
+        throw new Error(`forced-colors 契約の定義が不足しています: ${token}`);
+      }
+    }
+  },
+};
+
+/**
+ * モバイル文脈移送契約。
+ * 小画面時に group ヘッダーメタデータを隠し、block ヘッダー表示変数を復帰する定義を検証します。
+ */
+export const MobileMetadataRelocationContract: Story = {
+  render: () => html`
+    <ui-code-group id="mobile-relocation-group">
+      <ui-code-block label="One" filename="one.ts">
+        <pre><code>const one = 1;</code></pre>
+      </ui-code-block>
+      <ui-code-block label="Two" filename="two.ts">
+        <pre><code>const two = 2;</code></pre>
+      </ui-code-block>
+    </ui-code-group>
+  `,
+  play: async ({ canvasElement }) => {
+    const group = getGroup(canvasElement, 'mobile-relocation-group');
+    await group.updateComplete;
+    await waitFrame();
+
+    const cssText = readCssText(CodeGroup.styles);
+    const requiredTokens = [
+      '@media (max-width: 639.98px)',
+      ':host([data-ready])',
+      '--ui-code-block-header-display: block',
+    ];
+
+    for (const token of requiredTokens) {
+      if (!cssText.includes(token)) {
+        throw new Error(`モバイル文脈移送契約の定義が不足しています: ${token}`);
+      }
+    }
+  },
+};
+
+/**
+ * 比較ペア不一致の事故境界。
+ * intent と label が不一致な場合に警告が出ることを検証します。
+ */
+export const ComparisonPairMismatchWarning: Story = {
+  render: () => html`
+    <ui-code-group id="mismatch-group">
+      <ui-code-block intent="valid" filename="good.ts">
+        <pre><code>export const ok = true;</code></pre>
+      </ui-code-block>
+      <ui-code-block label="誤り例" intent="invalid" filename="bad.ts">
+        <pre><code>export const ok = ;</code></pre>
+      </ui-code-block>
+    </ui-code-group>
+  `,
+  play: async ({ canvasElement }) => {
+    const warnMessages: string[] = [];
+    const originalWarn = console.warn;
+    console.warn = (...args: unknown[]): void => {
+      warnMessages.push(args.map((value) => String(value)).join(' '));
+    };
+
+    try {
+      const group = getGroup(canvasElement, 'mismatch-group');
+      await group.updateComplete;
+      await waitFrame();
+
+      const hasContractWarning = warnMessages.some((message) =>
+        message.includes('[ui-code-group] Comparison Pair Contract mismatch'),
+      );
+      if (!hasContractWarning) {
+        throw new Error('比較ペア不一致時の警告が出力されていません');
+      }
+    } finally {
+      console.warn = originalWarn;
     }
   },
 };

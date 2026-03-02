@@ -50,6 +50,14 @@ const getDescription = (field: SyntaxField): HTMLElement => {
   return description;
 };
 
+const getDocumentStyleText = (): string => {
+  const style = document.querySelector<HTMLStyleElement>('#ui-syntax-field-document-styles');
+  if (!style) {
+    throw new Error('#ui-syntax-field-document-styles が見つかりません');
+  }
+  return style.textContent;
+};
+
 const assertNoAriaRequired = (field: SyntaxField): void => {
   if (field.hasAttribute('aria-required')) {
     throw new Error('required 表現は aria-required ではなく .field-required[aria-label="必須"] を使用する必要があります');
@@ -70,6 +78,8 @@ const meta: Meta<SyntaxField> = {
 - バリアント × 状態の意味のある組み合わせ（必須 + 型 + 既定値 / 任意 / 混在）
 - 事故が多い境界条件（空白属性値、aria-required 誤用、スタイル重複注入）
 - Light DOM 契約（shadowRoot なし、<dt>/<dd> ペア構造）
+- レスポンシブ・媒体契約（768px境界、forced-colors/print/reduced-motion）
+- ダークモード契約（セマンティックトークン参照）
         `,
       },
     },
@@ -331,13 +341,13 @@ export const LightDomAndStyleInjectionContract: Story = {
       throw new Error(`ドキュメントスタイルは重複注入不可です。actual=${String(styleTags.length)}`);
     }
 
-    const styleText = styleTags[0]?.textContent ?? '';
+    const styleText = getDocumentStyleText();
     const requiredSnippets = [
       '@media (forced-colors: active)',
       '@media print',
       'ui-syntax-field .field-wrapper:hover',
-      'ui-syntax-field .field-type',
-      'ui-syntax-field .field-default',
+      'color: CanvasText;',
+      'background-color: transparent !important;',
     ];
 
     requiredSnippets.forEach((snippet) => {
@@ -348,6 +358,117 @@ export const LightDomAndStyleInjectionContract: Story = {
 
     if (!fieldA.querySelector('.field-wrapper') || !fieldB.querySelector('.field-wrapper')) {
       throw new Error('Light DOM 上に .field-wrapper が描画されていません');
+    }
+  },
+};
+
+/**
+ * 媒体・レスポンシブ契約:
+ * 768px境界、forced-colors、print、reduced-motion の必須ルールを保持していること。
+ */
+export const ResponsiveAndMediaContracts: Story = {
+  render: () => html`
+    <dl class="syntax-fields">
+      <ui-syntax-field id="media-contract" name="age" type="number" default="0">
+        年齢を表す数値。
+      </ui-syntax-field>
+    </dl>
+  `,
+  play: async ({ canvasElement }) => {
+    const field = getField(canvasElement, 'media-contract');
+    await field.updateComplete;
+    await waitFrame();
+
+    const styleText = getDocumentStyleText();
+    const requiredSnippets = [
+      'ui-syntax-field {',
+      'display: contents;',
+      '@media (min-width: 768px)',
+      'grid-template-columns: minmax(min-content, 30%) 1fr;',
+      '@media (hover: hover)',
+      '@media (prefers-reduced-motion: reduce)',
+      'ui-syntax-field .field-wrapper:hover {',
+      'transition-duration: 0.01ms;',
+      '@media (forced-colors: active)',
+      'outline: var(--border-width, 1px) solid CanvasText;',
+      '.field-type,',
+      '.field-default {',
+      'color: CanvasText;',
+      '@media print',
+      'background-color: transparent !important;',
+      'page-break-inside: avoid;',
+    ];
+
+    requiredSnippets.forEach((snippet) => {
+      if (!styleText.includes(snippet)) {
+        throw new Error(`媒体/レスポンシブ契約の定義が不足しています: ${snippet}`);
+      }
+    });
+  },
+};
+
+/**
+ * ダークモード契約:
+ * 色指定がセマンティックトークン参照で定義され、モード分岐を局所実装しないこと。
+ */
+export const DarkModeTokenContract: Story = {
+  render: () => html`
+    <dl class="syntax-fields">
+      <ui-syntax-field id="dark-contract" name="theme" type="string" default="system">
+        テーマ設定。
+      </ui-syntax-field>
+    </dl>
+  `,
+  play: async ({ canvasElement }) => {
+    const field = getField(canvasElement, 'dark-contract');
+    await field.updateComplete;
+    await waitFrame();
+
+    const styleText = getDocumentStyleText();
+    const requiredTokenRefs = [
+      'var(--fg-default',
+      'var(--fg-muted',
+      'var(--fg-warning',
+      'var(--bg-hover',
+      'var(--radius-md',
+    ];
+
+    requiredTokenRefs.forEach((tokenRef) => {
+      if (!styleText.includes(tokenRef)) {
+        throw new Error(`ダークモード契約のトークン参照が不足しています: ${tokenRef}`);
+      }
+    });
+  },
+};
+
+/**
+ * 境界条件:
+ * 初回レンダリング後に説明文ノードが追加されても dd に追従表示されること。
+ */
+export const DynamicDescriptionUpdate: Story = {
+  render: () => html`
+    <dl class="syntax-fields">
+      <ui-syntax-field id="dynamic-description" name="profile">
+        初期説明文。
+      </ui-syntax-field>
+    </dl>
+  `,
+  play: async ({ canvasElement }) => {
+    const field = getField(canvasElement, 'dynamic-description');
+    await field.updateComplete;
+    await waitFrame();
+
+    const additional = document.createElement('span');
+    additional.textContent = ' 追加説明。';
+    field.append(additional);
+
+    await field.updateComplete;
+    await waitFrame();
+
+    const description = getDescription(field);
+    const text = normalizeText(description.textContent);
+    if (!text.includes('初期説明文。') || !text.includes('追加説明。')) {
+      throw new Error('初回描画後に追加された説明文ノードが dd に反映されていません');
     }
   },
 };

@@ -1,5 +1,6 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import '../kbd/kbd';
 
 /**
  * 検索トリガー (Search Trigger) コンポーネント
@@ -95,6 +96,7 @@ export class SearchTrigger extends LitElement {
       align-items: center;
       gap: var(--space-2, 8px);
       position: relative;
+      box-sizing: border-box;
 
       /* Size */
       height: var(--control-height-md, 32px);
@@ -171,7 +173,8 @@ export class SearchTrigger extends LitElement {
       color: var(--fg-muted, oklch(48% 0.01 250));
     }
 
-    .icon svg {
+    .icon iconify-icon {
+      display: block;
       width: 100%;
       height: 100%;
     }
@@ -237,12 +240,6 @@ export class SearchTrigger extends LitElement {
      * 境界線強制は必須実装です。
      */
     @media (forced-colors: active) {
-      :host {
-        /* 境界線を強制し、ボタン領域の輪郭を明確化 */
-        border: var(--border-width, 1px) solid CanvasText !important;
-        background: Canvas !important;
-      }
-
       button {
         border: var(--border-width, 1px) solid CanvasText;
         background: Canvas;
@@ -345,23 +342,11 @@ export class SearchTrigger extends LitElement {
         aria-label="検索ダイアログを開く"
         aria-haspopup="dialog"
         aria-keyshortcuts="Control+K Meta+K"
-        aria-disabled="${this.disabled ? 'true' : 'false'}"
         @click="${this._handleActivate}"
       >
         <!-- 検索アイコン -->
         <span class="icon" part="icon" aria-hidden="true">
-          <svg
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <circle cx="6.5" cy="6.5" r="4" />
-            <line x1="10" y1="10" x2="14" y2="14" />
-          </svg>
+          <iconify-icon icon="lucide:search" aria-hidden="true"></iconify-icon>
         </span>
 
         <!-- プレースホルダーテキスト（デスクトップのみ表示） -->
@@ -372,22 +357,7 @@ export class SearchTrigger extends LitElement {
         <!-- ショートカットバッジ（デスクトップのみ表示） -->
         <span class="badge" part="badge" aria-hidden="true">
           <slot name="badge">
-            <kbd
-              style="
-                display: inline-flex;
-                align-items: center;
-                gap: 2px;
-                padding: 2px 5px;
-                font-size: 11px;
-                font-family: inherit;
-                line-height: 1.4;
-                color: var(--fg-subtle, oklch(65% 0.01 250));
-                background: var(--bg-fill-muted, oklch(95% 0 0));
-                border: var(--border-width, 1px) solid var(--border-default, oklch(85% 0.01 250));
-                border-radius: 4px;
-                white-space: nowrap;
-              "
-            >⌘K</kbd>
+            <ui-kbd>Ctrl K / Cmd K</ui-kbd>
           </slot>
         </span>
       </button>

@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { html } from 'lit';
-import './input';
-import type { Input } from './input';
+import { html, nothing } from 'lit';
+import { Input } from './input';
 import '../button/button';
 
 /**
@@ -227,14 +226,21 @@ export const Default: Story = {
   render: (args) => html`
     <ui-input
       label="${args.label}"
+      ?hide-label="${args.hideLabel}"
       type="${args.type}"
       name="${args.name}"
       placeholder="${args.placeholder}"
-      value="${args.value || ''}"
+      value="${args.value}"
+      help-text="${args.helpText}"
+      error-message="${args.errorMessage}"
       ?disabled="${args.disabled}"
       ?readonly="${args.readonly}"
       ?required="${args.required}"
       ?error="${args.error}"
+      pattern="${args.pattern}"
+      minlength="${args.minlength ?? nothing}"
+      maxlength="${args.maxlength ?? nothing}"
+      autocomplete="${args.autocomplete}"
     ></ui-input>
   `,
   play: async ({ canvasElement }) => {
@@ -298,6 +304,15 @@ export const WithHelpText: Story = {
       throw new Error('Help text should be visible');
     }
 
+    const inputElement = input.shadowRoot?.querySelector('input');
+    if (!inputElement) {
+      throw new Error('Input element not found in shadow root');
+    }
+
+    if (!inputElement.getAttribute('aria-describedby')) {
+      throw new Error('aria-describedby should reference help text when help-text exists');
+    }
+
     console.log('✅ All tests passed for WithHelpText story');
   },
 };
@@ -351,6 +366,11 @@ export const ErrorState: Story = {
     const errorMessage = input.shadowRoot?.querySelector('.error-message--visible');
     if (!errorMessage) {
       throw new Error('Error message should be visible');
+    }
+
+    const describedBy = inputElement.getAttribute('aria-describedby');
+    if (!describedBy) {
+      throw new Error('aria-describedby should reference error message in error state');
     }
 
     // テスト: ヘルプテキストが非表示であること
@@ -644,6 +664,20 @@ export const AllTypes: Story = {
       <ui-input label="検索" type="search" placeholder="検索..."></ui-input>
     </div>
   `,
+  play: ({ canvasElement }) => {
+    const inputs = Array.from(canvasElement.querySelectorAll<Input>('ui-input'));
+    if (inputs.length !== 7) {
+      throw new Error(`Expected 7 input variants, got ${inputs.length.toString()}`);
+    }
+
+    const actualTypes = inputs
+      .map(input => input.shadowRoot?.querySelector('input')?.type ?? '')
+      .join(',');
+    const expectedTypes = 'text,email,password,number,tel,url,search';
+    if (actualTypes !== expectedTypes) {
+      throw new Error(`Type order mismatch. expected="${expectedTypes}" actual="${actualTypes}"`);
+    }
+  },
 };
 
 /**
@@ -794,6 +828,25 @@ export const FormIntegration: Story = {
       </div>
     </form>
   `,
+  play: ({ canvasElement }) => {
+    const form = canvasElement.querySelector<HTMLFormElement>('form');
+    if (!form) {
+      throw new Error('Form not found');
+    }
+
+    const fields = Array.from(form.querySelectorAll<Input>('ui-input'));
+    if (fields.length !== 4) {
+      throw new Error(`Expected 4 fields in form, got ${fields.length.toString()}`);
+    }
+
+    const formData = new FormData(form);
+    const names = ['name', 'email', 'password', 'phone'];
+    for (const name of names) {
+      if (!formData.has(name)) {
+        throw new Error(`FormData should include "${name}"`);
+      }
+    }
+  },
 };
 
 /**
@@ -833,6 +886,44 @@ export const WithValidation: Story = {
       ></ui-input>
     </div>
   `,
+  play: async ({ canvasElement }) => {
+    const inputs = Array.from(canvasElement.querySelectorAll<Input>('ui-input'));
+    if (inputs.length !== 2) {
+      throw new Error(`Expected 2 validation inputs, got ${inputs.length.toString()}`);
+    }
+
+    const zipcode = inputs[0];
+    const username = inputs[1];
+    if (!zipcode || !username) {
+      throw new Error('Validation inputs are missing');
+    }
+    await zipcode.updateComplete;
+    await username.updateComplete;
+
+    zipcode.value = '1234';
+    await zipcode.updateComplete;
+    if (zipcode.checkValidity()) {
+      throw new Error('Zipcode "1234" should be invalid');
+    }
+
+    zipcode.value = '123-4567';
+    await zipcode.updateComplete;
+    if (!zipcode.checkValidity()) {
+      throw new Error('Zipcode "123-4567" should be valid');
+    }
+
+    username.value = 'ab';
+    await username.updateComplete;
+    if (username.checkValidity()) {
+      throw new Error('Username with 2 chars should be invalid');
+    }
+
+    username.value = 'user_01';
+    await username.updateComplete;
+    if (!username.checkValidity()) {
+      throw new Error('Username "user_01" should be valid');
+    }
+  },
 };
 
 /**
@@ -867,6 +958,22 @@ export const WithoutLabel: Story = {
       <ui-input type="text" placeholder="ラベルがありません"></ui-input>
     </div>
   `,
+  play: async ({ canvasElement }) => {
+    const input = canvasElement.querySelector<Input>('ui-input');
+    if (!input) {
+      throw new Error('Input component not found');
+    }
+    await input.updateComplete;
+
+    const inputElement = input.shadowRoot?.querySelector('input');
+    if (!inputElement) {
+      throw new Error('Input element not found in shadow root');
+    }
+
+    if (inputElement.getAttribute('aria-label') !== '') {
+      throw new Error('aria-label should be empty when label is not provided');
+    }
+  },
 };
 
 /**
@@ -1000,6 +1107,28 @@ export const ForcedColorsMode: Story = {
       </div>
     </div>
   `,
+  play: async ({ canvasElement }) => {
+    const inputs = Array.from(canvasElement.querySelectorAll<Input>('ui-input'));
+    if (inputs.length !== 3) {
+      throw new Error(`Expected 3 inputs in forced-colors demo, got ${inputs.length.toString()}`);
+    }
+
+    await Promise.all(inputs.map(input => input.updateComplete));
+
+    const errorInput = inputs[1];
+    const disabledInput = inputs[2];
+    if (!errorInput || !disabledInput) {
+      throw new Error('Expected error/disabled inputs are missing');
+    }
+    if (!errorInput.hasAttribute('error')) {
+      throw new Error('Second input should be in error state');
+    }
+
+    const disabledNative = disabledInput.shadowRoot?.querySelector('input');
+    if (!disabledNative?.disabled) {
+      throw new Error('Third input should be disabled');
+    }
+  },
 };
 
 /**
@@ -1054,6 +1183,20 @@ export const MotionReduction: Story = {
       ></ui-input>
     </div>
   `,
+  play: async ({ canvasElement }) => {
+    const input = canvasElement.querySelector<Input>('ui-input');
+    if (!input) {
+      throw new Error('Input component not found');
+    }
+    await input.updateComplete;
+
+    const hasReduceRule = Input.styles
+      .toString()
+      .includes('@media (prefers-reduced-motion: reduce)');
+    if (!hasReduceRule) {
+      throw new Error('Input styles should include reduced-motion media query');
+    }
+  },
 };
 
 /**
@@ -1313,8 +1456,8 @@ export const ErrorWithoutMessage: Story = {
       throw new Error('aria-invalid should be true when error is forced');
     }
 
-    if (inputElement.getAttribute('aria-describedby') !== '') {
-      throw new Error('aria-describedby should be empty when no error message is provided');
+    if (inputElement.hasAttribute('aria-describedby')) {
+      throw new Error('aria-describedby should be omitted when no error message is provided');
     }
   },
 };
@@ -1358,6 +1501,244 @@ export const MinMaxLengthBoundary: Story = {
     await input.updateComplete;
     if (input.checkValidity()) {
       throw new Error('Value with 6 characters should be invalid (too long)');
+    }
+  },
+};
+
+/**
+ * 状態組み合わせマトリクス。
+ *
+ * 実運用で衝突しやすい状態の組み合わせを一覧で確認します。
+ */
+export const VariantStateMatrix: Story = {
+  render: () => html`
+    <style>
+      .state-matrix {
+        display: grid;
+        gap: 1rem;
+        max-width: 480px;
+      }
+    </style>
+    <div class="state-matrix">
+      <ui-input id="matrix-default" label="Default" name="default"></ui-input>
+      <ui-input id="matrix-required" label="Required" name="required" required help-text="Required field"></ui-input>
+      <ui-input id="matrix-error" label="Error" name="error" error error-message="Invalid value"></ui-input>
+      <ui-input id="matrix-readonly" label="Readonly" name="readonly" value="Fixed value" readonly></ui-input>
+      <ui-input id="matrix-disabled" label="Disabled" name="disabled" value="Disabled value" disabled></ui-input>
+      <ui-input id="matrix-hidden-label" label="Search" name="search" type="search" hide-label placeholder="Search..."></ui-input>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const ids = [
+      '#matrix-default',
+      '#matrix-required',
+      '#matrix-error',
+      '#matrix-readonly',
+      '#matrix-disabled',
+      '#matrix-hidden-label',
+    ] as const;
+    const components = ids
+      .map(id => canvasElement.querySelector<Input>(id))
+      .filter((item): item is Input => item !== null);
+    if (components.length !== ids.length) {
+      throw new Error('State matrix should render all variant/state combinations');
+    }
+
+    await Promise.all(components.map(component => component.updateComplete));
+
+    const errorInput = canvasElement.querySelector<Input>('#matrix-error');
+    const errorNative = errorInput?.shadowRoot?.querySelector('input');
+    if (errorNative?.getAttribute('aria-invalid') !== 'true') {
+      throw new Error('Error variant should set aria-invalid="true"');
+    }
+
+    const disabledInput = canvasElement.querySelector<Input>('#matrix-disabled');
+    const disabledNative = disabledInput?.shadowRoot?.querySelector('input');
+    if (!disabledNative?.disabled) {
+      throw new Error('Disabled variant should disable native input');
+    }
+  },
+};
+
+/**
+ * ダークモード確認。
+ *
+ * ダーク背景上で入力欄の視認性が維持されることを確認します。
+ */
+export const DarkMode: Story = {
+  render: () => html`
+    <style>
+      .dark-surface {
+        max-width: 480px;
+        display: grid;
+        gap: 1rem;
+        padding: 1rem;
+        border-radius: 10px;
+        background: #111827;
+        color: #f3f4f6;
+        --bg-fill-muted: #1f2937;
+        --bg-default: #111827;
+        --fg-default: #f3f4f6;
+        --fg-muted: #9ca3af;
+        --fg-subtle: #9ca3af;
+        --border-default: #374151;
+        --bg-danger-subtle: #3f1d1d;
+        --border-danger: #f87171;
+        --fg-danger: #f87171;
+      }
+    </style>
+    <div class="dark-surface">
+      <ui-input id="dark-default" label="Email" type="email" placeholder="dark@example.com"></ui-input>
+      <ui-input id="dark-error" label="Username" error error-message="Invalid username"></ui-input>
+      <ui-input id="dark-disabled" label="Disabled" value="disabled@example.com" disabled></ui-input>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const defaults = canvasElement.querySelector<Input>('#dark-default');
+    const error = canvasElement.querySelector<Input>('#dark-error');
+    const disabled = canvasElement.querySelector<Input>('#dark-disabled');
+    if (!defaults || !error || !disabled) {
+      throw new Error('Dark mode story inputs are missing');
+    }
+
+    await Promise.all([defaults.updateComplete, error.updateComplete, disabled.updateComplete]);
+
+    const defaultNative = defaults.shadowRoot?.querySelector('input');
+    const errorNative = error.shadowRoot?.querySelector('input');
+    const disabledNative = disabled.shadowRoot?.querySelector('input');
+    if (!defaultNative || !errorNative || !disabledNative) {
+      throw new Error('Native input element not found');
+    }
+
+    if (getComputedStyle(defaultNative).backgroundColor === 'rgba(0, 0, 0, 0)') {
+      throw new Error('Default input should have visible background in dark mode');
+    }
+    if (errorNative.getAttribute('aria-invalid') !== 'true') {
+      throw new Error('Error input should keep aria-invalid in dark mode');
+    }
+    if (!disabledNative.disabled) {
+      throw new Error('Disabled input should remain disabled in dark mode');
+    }
+  },
+};
+
+/**
+ * ラベルクリック時のフォーカス移譲。
+ */
+export const LabelClickFocusTransfer: Story = {
+  render: () => html`
+    <ui-input
+      id="label-focus-transfer-input"
+      label="Display Name"
+      name="displayName"
+      placeholder="Click label to focus"
+    ></ui-input>
+  `,
+  play: async ({ canvasElement }) => {
+    const input = canvasElement.querySelector<Input>('#label-focus-transfer-input');
+    if (!input) {
+      throw new Error('Input component not found');
+    }
+    await input.updateComplete;
+
+    const label = input.shadowRoot?.querySelector('label');
+    const inputElement = input.shadowRoot?.querySelector('input');
+    if (!label || !inputElement) {
+      throw new Error('Label or input is missing in shadow root');
+    }
+
+    (label).click();
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    if (input.shadowRoot?.activeElement !== inputElement) {
+      throw new Error('Clicking label should move focus to native input');
+    }
+  },
+};
+
+/**
+ * Enterキーのフォーム送信連携。
+ */
+export const EnterSubmitFromInput: Story = {
+  render: () => html`
+    <form
+      id="enter-submit-form"
+      data-submit-count="0"
+      @submit="${(e: Event) => {
+        e.preventDefault();
+        const form = e.currentTarget as HTMLFormElement;
+        const current = Number(form.dataset['submitCount'] ?? '0');
+        form.dataset['submitCount'] = (current + 1).toString();
+      }}"
+    >
+      <ui-input
+        id="enter-submit-input"
+        label="Keyword"
+        name="keyword"
+        value="Rouault"
+      ></ui-input>
+      <button type="submit">Submit</button>
+    </form>
+  `,
+  play: async ({ canvasElement }) => {
+    const form = canvasElement.querySelector<HTMLFormElement>('#enter-submit-form');
+    const input = canvasElement.querySelector<Input>('#enter-submit-input');
+    if (!form || !input) {
+      throw new Error('Form or input not found');
+    }
+    await input.updateComplete;
+
+    const inputElement = input.shadowRoot?.querySelector('input');
+    if (!inputElement) {
+      throw new Error('Input element not found in shadow root');
+    }
+
+    inputElement.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'Enter',
+        bubbles: true,
+        composed: true,
+      }),
+    );
+    await input.updateComplete;
+
+    if (form.dataset['submitCount'] !== '1') {
+      throw new Error(`Enter should trigger form submit once, got ${form.dataset['submitCount'] ?? '0'}`);
+    }
+  },
+};
+
+/**
+ * FormData参加の境界条件（disabled/readonly）。
+ */
+export const FormDataDisabledReadonlyBoundary: Story = {
+  render: () => html`
+    <form id="formdata-boundary-form">
+      <ui-input id="fd-enabled" label="Enabled" name="enabled" value="enabled-value"></ui-input>
+      <ui-input id="fd-disabled" label="Disabled" name="disabled" value="disabled-value" disabled></ui-input>
+      <ui-input id="fd-readonly" label="Readonly" name="readonly" value="readonly-value" readonly></ui-input>
+    </form>
+  `,
+  play: async ({ canvasElement }) => {
+    const form = canvasElement.querySelector<HTMLFormElement>('#formdata-boundary-form');
+    const enabled = canvasElement.querySelector<Input>('#fd-enabled');
+    const disabled = canvasElement.querySelector<Input>('#fd-disabled');
+    const readonly = canvasElement.querySelector<Input>('#fd-readonly');
+    if (!form || !enabled || !disabled || !readonly) {
+      throw new Error('Boundary story elements are missing');
+    }
+
+    await Promise.all([enabled.updateComplete, disabled.updateComplete, readonly.updateComplete]);
+
+    const formData = new FormData(form);
+    if (formData.get('enabled') !== 'enabled-value') {
+      throw new Error('Enabled field should be included in FormData');
+    }
+    if (formData.has('disabled')) {
+      throw new Error('Disabled field should not be included in FormData');
+    }
+    if (formData.get('readonly') !== 'readonly-value') {
+      throw new Error('Readonly field should be included in FormData');
     }
   },
 };

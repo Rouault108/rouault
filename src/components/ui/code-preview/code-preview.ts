@@ -69,10 +69,9 @@ export class CodePreview extends LitElement {
       align-items: center;
       justify-content: space-between;
       gap: var(--space-2, 0.5rem);
-      padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+      padding: var(--space-4, 1rem) var(--space-4, 1rem);
       background: var(--ui-code-preview-preview-bg, var(--bg-surface-2, oklch(100% 0 0)));
       border-bottom: none;
-      min-height: var(--control-min-touch, 44px);
     }
 
     :host([data-show-header]) .header {
@@ -144,6 +143,15 @@ export class CodePreview extends LitElement {
 
     :host([preview-padding='none']) .preview-area {
       padding: 0;
+    }
+
+    :host([data-show-header]) .header {
+      padding-bottom: 0;
+    }
+
+    /* ヘッダー表示時はヘッダーの下パディングと重複するため除去 */
+    :host([data-show-header]) .preview-area {
+      padding-top: 0;
     }
 
     /* Align variants */
@@ -245,7 +253,7 @@ export class CodePreview extends LitElement {
    * `center`: 中央揃え（既定値）、`start`: 左上揃え、`stretch`: 親幅いっぱい
    */
   @property({ type: String, attribute: 'preview-align', reflect: true })
-  previewAlign: PreviewAlign = 'start';
+  previewAlign: PreviewAlign = 'center';
 
   @state()
   private _hasToolbarContent = false;
@@ -264,7 +272,7 @@ export class CodePreview extends LitElement {
     }
 
     if (changedProperties.has('previewAlign') && !VALID_ALIGN.has(this.previewAlign)) {
-      this.previewAlign = 'start';
+      this.previewAlign = 'center';
     }
     this._syncHostAttributes();
   }

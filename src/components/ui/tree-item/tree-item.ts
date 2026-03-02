@@ -1,4 +1,4 @@
-import { css, html, LitElement } from 'lit';
+import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 
@@ -108,11 +108,11 @@ export class TreeItem extends LitElement {
     }
 
     /* Hover */
-    :host(:hover) .item::before {
+    .item:hover::before {
       background: var(--bg-hover, oklch(0% 0 0 / 0.05));
     }
 
-    :host(:hover) .item {
+    .item:hover {
       color: var(--fg-default, oklch(20% 0.01 250));
     }
 
@@ -187,6 +187,43 @@ export class TreeItem extends LitElement {
       text-overflow: ellipsis;
     }
 
+    .label-link {
+      color: inherit;
+      text-decoration: none;
+      display: inline-block;
+      width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .overflow-tooltip {
+      position: absolute;
+      left: 0;
+      top: calc(100% + 4px);
+      max-width: min(420px, 90vw);
+      padding: 6px 8px;
+      border: var(--border-width, 1px) solid var(--border-default, oklch(0% 0 0 / 0.12));
+      border-radius: var(--radius-sm, 4px);
+      background: var(--bg-surface-2, oklch(98% 0 0));
+      color: var(--fg-default, oklch(20% 0.01 250));
+      font-size: var(--text-sm, 13px);
+      line-height: 1.4;
+      z-index: 3;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(2px);
+      transition:
+        opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+    }
+
+    .item:hover .overflow-tooltip,
+    .item:focus-visible .overflow-tooltip {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
     /* ── 子要素コンテナ (role="group") ── */
     .children {
       position: relative;
@@ -226,7 +263,7 @@ export class TreeItem extends LitElement {
       right: 0;
       transform: translateY(-50%);
       min-height: var(--control-min-touch, 44px);
-      pointer-events: none;
+      pointer-events: auto;
     }
 
     /* コンテンツを前面に配置（タッチターゲット拡張がテキストを覆わないように） */
@@ -264,6 +301,24 @@ export class TreeItem extends LitElement {
       :host([selected]) .item::before {
         background: Highlight;
       }
+
+      .overflow-tooltip {
+        background: Canvas;
+        color: CanvasText;
+        border-color: CanvasText;
+      }
+    }
+
+    @media print {
+      :host([print-mode]) .expand-icon {
+        display: none;
+      }
+
+      :host([print-mode]) .children {
+        max-height: none !important;
+        opacity: 1 !important;
+        overflow: visible !important;
+      }
     }
   `;
 
@@ -295,6 +350,12 @@ export class TreeItem extends LitElement {
   icon?: string;
 
   /**
+   * リンク先URL
+   */
+  @property({ type: String, reflect: true })
+  href?: string;
+
+  /**
    * 行の高さ密度
    * - normal: 32px (--control-height-md)
    * - compact: 24px (--control-height-sm)
@@ -304,21 +365,74 @@ export class TreeItem extends LitElement {
   density: TreeItemDensity = 'normal';
 
   /**
+   * 印刷時の全展開モード
+   * @internal
+   */
+  @property({ type: Boolean, reflect: true, attribute: 'print-mode' })
+  printMode = false;
+
+  /**
    * 子要素が存在するか（内部状態）
    * @internal
    */
   @state()
   private hasChildren = false;
 
+  /**
+   * ラベルが省略表示されているか
+   * @internal
+   */
+  @state()
+  private isLabelTruncated = false;
+
   private readonly _slotChangeHandler = () => {
     const slot = this.shadowRoot?.querySelector('slot[name="children"]') as HTMLSlotElement | null;
     this.hasChildren = (slot?.assignedElements().length ?? 0) > 0;
   };
 
+  private readonly _hostFocusHandler = (e: FocusEvent) => {
+    if (e.target === this) {
+      this.focus();
+    }
+  };
+
+  private readonly _windowResizeHandler = () => {
+    this._syncLabelTruncation();
+  };
+
+  private _computeAriaLevel(): number {
+    let level = 1;
+    let parent = this.parentElement;
+
+    while (parent) {
+      if (parent.tagName.toLowerCase() === 'ui-tree-item') {
+        level += 1;
+      }
+      parent = parent.parentElement;
+    }
+
+    return level;
+  }
+
+  override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
+    super.attributeChangedCallback(name, oldValue, newValue);
+    if (name === 'tabindex' && oldValue !== newValue) {
+      this.requestUpdate();
+    }
+  }
+
   override connectedCallback(): void {
     super.connectedCallback();
     // role="treeitem" を設定
     this.setAttribute('role', 'treeitem');
+    this.addEventListener('focus', this._hostFocusHandler);
+    window.addEventListener('resize', this._windowResizeHandler);
+  }
+
+  override disconnectedCallback(): void {
+    this.removeEventListener('focus', this._hostFocusHandler);
+    window.removeEventListener('resize', this._windowResizeHandler);
+    super.disconnectedCallback();
   }
 
   override updated(): void {
@@ -331,6 +445,8 @@ export class TreeItem extends LitElement {
 
     // aria-selected: 選択状態と同期
     this.setAttribute('aria-selected', String(this.selected));
+    this.setAttribute('aria-level', String(this._computeAriaLevel()));
+    this._syncLabelTruncation();
   }
 
   /**
@@ -339,10 +455,14 @@ export class TreeItem extends LitElement {
   private _handleKeyDown = (e: KeyboardEvent): void => {
     switch (e.key) {
       case 'Enter':
+        e.preventDefault();
+        this._handleSelect(true);
+        break;
+
       case ' ':
         // 選択/アクション実行
         e.preventDefault();
-        this._handleSelect();
+        this._handleSelect(false);
         break;
 
       case 'ArrowRight':
@@ -386,7 +506,7 @@ export class TreeItem extends LitElement {
    * クリックハンドラ
    */
   private _handleClick = (): void => {
-    this._handleSelect();
+    this._handleSelect(true);
   };
 
   /**
@@ -400,7 +520,7 @@ export class TreeItem extends LitElement {
   /**
    * 選択処理
    */
-  private _handleSelect(): void {
+  private _handleSelect(allowNavigate = false): void {
     this.selected = true;
     this.dispatchEvent(
       new CustomEvent('selected-change', {
@@ -409,6 +529,10 @@ export class TreeItem extends LitElement {
         composed: true,
       }),
     );
+
+    if (allowNavigate && this.href) {
+      window.location.assign(this.href);
+    }
   }
 
   /**
@@ -444,7 +568,7 @@ export class TreeItem extends LitElement {
         <!-- アイテム行 -->
         <div
           class="item"
-          tabindex="${this.selected ? '0' : '-1'}"
+          tabindex="${this.getAttribute('tabindex') ?? '0'}"
           @click="${this._handleClick}"
           @keydown="${this._handleKeyDown}"
         >
@@ -467,19 +591,30 @@ export class TreeItem extends LitElement {
             : html`<slot name="icon" class="content-icon"></slot>`}
 
           <!-- ラベル -->
-          <span class="label">${this.label}</span>
+          <span class="label">
+            ${this.href
+              ? html`<a class="label-link" href="${this.href}" @click="${(e: MouseEvent) => { e.stopPropagation(); }}">${this.label}</a>`
+              : this.label}
+          </span>
+          ${this.isLabelTruncated ? html`<span class="overflow-tooltip" role="tooltip">${this.label}</span>` : nothing}
         </div>
 
         <!-- 子要素 (role="group") -->
         ${this.hasChildren
           ? html`
-              <div class="children" role="group">
+              <div class="children" role="group" aria-hidden="${String(!this.expanded)}" ?inert="${!this.expanded}">
                 <slot name="children" @slotchange="${this._slotChangeHandler}"></slot>
               </div>
             `
           : html`<slot name="children" @slotchange="${this._slotChangeHandler}" style="display: none;"></slot>`}
       </div>
     `;
+  }
+
+  private _syncLabelTruncation(): void {
+    const label = this.shadowRoot?.querySelector<HTMLElement>('.label');
+    if (!label) return;
+    this.isLabelTruncated = label.scrollWidth > label.clientWidth;
   }
 }
 

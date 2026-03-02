@@ -29,6 +29,21 @@ const getCopyButton = (block: CodeBlock): CopyButtonElement => {
   return copyButton;
 };
 
+const nextFrame = async (): Promise<void> =>
+  new Promise<void>((resolve) => {
+    requestAnimationFrame(() => { resolve(); });
+  });
+
+const isRendered = (element: Element): boolean => element.getClientRects().length > 0;
+
+const getDocumentCodeBlockStyle = (): HTMLStyleElement => {
+  const style = document.getElementById('ui-code-block-document-styles');
+  if (!(style instanceof HTMLStyleElement)) {
+    throw new Error('ui-code-block-document-styles が見つかりません');
+  }
+  return style;
+};
+
 const meta: Meta<CodeBlock> = {
   title: 'Components/Code Block',
   component: 'ui-code-block',
@@ -45,6 +60,8 @@ const meta: Meta<CodeBlock> = {
 - \`show-line-numbers\` の挙動とコピー内容の純度
 - 長行オーバーフロー時の \`tabindex="0"\` + \`aria-label\`
 - 境界条件（不正intent・メタデータ欠落）
+- 例外折り返し（\`data-wrap="true"\`）の適用
+- ダークトークン適応とメディア系CSS契約（forced-colors / print）
         `,
       },
     },
@@ -117,6 +134,10 @@ console.log(greeting);</code></pre>
     const root = getRootFigure(block);
     if (root.getAttribute('aria-description') !== 'TypeScript のコード') {
       throw new Error('aria-description が期待値（TypeScript のコード）と一致しません');
+    }
+    const rootStyle = getComputedStyle(root);
+    if (rootStyle.borderTopStyle === 'none' || rootStyle.borderTopWidth === '0px') {
+      throw new Error('コードブロック外枠が非表示です（border token の適用が必要）');
     }
 
     const filename = block.shadowRoot?.querySelector<HTMLElement>('.filename');
@@ -268,8 +289,13 @@ export const HeaderDisplayPriority: Story = {
 
     const showCaption = showBlock.shadowRoot?.querySelector<HTMLElement>('.caption');
     const hideCaption = hideBlock.shadowRoot?.querySelector<HTMLElement>('.caption');
+    const showCopy = showBlock.shadowRoot?.querySelector<HTMLElement>('.copy-button-shell ui-copy-button');
+    const hideCopy = hideBlock.shadowRoot?.querySelector<HTMLElement>('.copy-button-shell ui-copy-button');
     if (!showCaption || !hideCaption) {
       throw new Error('caption が見つかりません');
+    }
+    if (!showCopy || !hideCopy) {
+      throw new Error('ui-copy-button が見つかりません');
     }
 
     if (getComputedStyle(showCaption).display === 'none') {
@@ -278,6 +304,55 @@ export const HeaderDisplayPriority: Story = {
 
     if (getComputedStyle(hideCaption).display !== 'none') {
       throw new Error('親CSS変数 none 指定時は caption が非表示になるべきです');
+    }
+    if (!isRendered(showCopy)) {
+      throw new Error('親CSS変数 block 指定時は copy-button がレイアウト上で可視状態であるべきです');
+    }
+    if (isRendered(hideCopy)) {
+      throw new Error('親CSS変数 none 指定時は copy-button がレイアウト上で非表示であるべきです');
+    }
+  },
+};
+
+/**
+ * フォーカス時の可視化優先。
+ * :focus-within 起因で copy-button が即時可視化（duration-instant）されることを確認します。
+ */
+export const FocusWithinInstantVisibility: Story = {
+  render: () => html`
+    <div style="width: 280px;">
+      <ui-code-block
+        id="focus-instant-block"
+        filename="focus-instant.ts"
+        lang="ts"
+        style="--ui-code-block-breakout-width: 100%; --ui-code-block-breakout-margin: 0;"
+      >
+        <pre><code>const longLine = '0123456789'.repeat(40) + '_force_overflow';</code></pre>
+      </ui-code-block>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const block = getCodeBlock(canvasElement, 'focus-instant-block');
+    await block.updateComplete;
+
+    await nextFrame();
+
+    const pre = getPre(block);
+    if (pre.getAttribute('tabindex') !== '0') {
+      throw new Error('オーバーフロー時は pre がフォーカス可能である必要があります');
+    }
+
+    const copyButton = getCopyButton(block);
+    pre.focus();
+
+    await nextFrame();
+
+    const copyStyle = getComputedStyle(copyButton);
+    if (copyStyle.opacity !== '1') {
+      throw new Error('focus-within 時に copy-button が可視化されていません');
+    }
+    if (!copyStyle.transitionDuration.includes('0s')) {
+      throw new Error('focus-within 時の copy-button transition は即時化されるべきです');
     }
   },
 };
@@ -348,16 +423,183 @@ export const OverflowScrollableArea: Story = {
     const block = getCodeBlock(canvasElement, 'overflow-block');
     await block.updateComplete;
 
-    await new Promise<void>((resolve) => {
-      requestAnimationFrame(() => { resolve(); });
-    });
+    await nextFrame();
 
     const pre = getPre(block);
     if (pre.getAttribute('tabindex') !== '0') {
       throw new Error('オーバーフロー時は pre に tabindex="0" が必要です');
     }
+    if (pre.getAttribute('role') !== 'region') {
+      throw new Error('オーバーフロー時は pre に role="region" が必要です');
+    }
     if (pre.getAttribute('aria-label') !== 'overflow.ts コード') {
       throw new Error(`aria-label が不正です: "${pre.getAttribute('aria-label') ?? 'null'}"`);
+    }
+  },
+};
+
+/**
+ * 折り返し例外。
+ * data-wrap="true" で pre-wrap が適用されることを確認します。
+ */
+export const WrappedContentException: Story = {
+  render: () => html`
+    <div style="width: 320px;">
+      <ui-code-block
+        id="wrapped-block"
+        filename="wrapped.log"
+        lang="text"
+        data-wrap="true"
+        style="--ui-code-block-breakout-width: 100%; --ui-code-block-breakout-margin: 0;"
+      >
+        <pre><code>error: this is a very long log line that should wrap when wrap mode is enabled to avoid horizontal scrolling in prose contexts.</code></pre>
+      </ui-code-block>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const block = getCodeBlock(canvasElement, 'wrapped-block');
+    await block.updateComplete;
+    await nextFrame();
+
+    const pre = getPre(block);
+    if (getComputedStyle(pre).whiteSpace !== 'pre-wrap') {
+      throw new Error('data-wrap="true" では pre-wrap が適用されるべきです');
+    }
+
+    const content = block.getCodeContent();
+    if (!content.startsWith('error: this is a very long log line')) {
+      throw new Error('wrap モードでも getCodeContent() は生コードを保持する必要があります');
+    }
+  },
+};
+
+/**
+ * ダークテーマ適応。
+ * セマンティックトークン上書き時に背景/境界/前景が追従することを確認します。
+ */
+export const DarkTokenAdaptation: Story = {
+  render: () => html`
+    <div
+      style="
+        width: 460px;
+        color-scheme: dark;
+        --bg-fill-muted: rgb(18, 22, 28);
+        --border-style-subtle: 1px solid rgb(73, 82, 96);
+        --fg-default: rgb(231, 236, 244);
+        --ui-code-block-breakout-width: 100%;
+        --ui-code-block-breakout-margin: 0;
+      "
+    >
+      <ui-code-block id="dark-token-block" filename="theme.ts" lang="ts">
+        <pre><code>export const THEME = 'dark';</code></pre>
+      </ui-code-block>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const block = getCodeBlock(canvasElement, 'dark-token-block');
+    await block.updateComplete;
+
+    const root = getRootFigure(block);
+    const pre = getPre(block);
+    const rootStyle = getComputedStyle(root);
+    const preStyle = getComputedStyle(pre);
+
+    if (rootStyle.backgroundColor !== 'rgb(18, 22, 28)') {
+      throw new Error(`ダーク背景トークンが反映されていません: ${rootStyle.backgroundColor}`);
+    }
+    if (rootStyle.borderTopColor !== 'rgb(73, 82, 96)') {
+      throw new Error(`境界トークンが反映されていません: ${rootStyle.borderTopColor}`);
+    }
+    if (preStyle.color !== 'rgb(231, 236, 244)') {
+      throw new Error(`前景トークンが反映されていません: ${preStyle.color}`);
+    }
+  },
+};
+
+/**
+ * メディア関連スタイル契約。
+ * forced-colors / print の必須ルールを定義していることを確認します。
+ */
+export const MediaStyleContracts: Story = {
+  render: () => html`
+    <ui-code-block
+      id="media-contract-block"
+      filename="contract.ts"
+      lang="ts"
+      style="--ui-code-block-breakout-width: 100%; --ui-code-block-breakout-margin: 0;"
+    >
+      <pre><code>const contract = true;</code></pre>
+    </ui-code-block>
+  `,
+  play: async ({ canvasElement }) => {
+    const block = getCodeBlock(canvasElement, 'media-contract-block');
+    await block.updateComplete;
+
+    const shadowStyle = block.shadowRoot?.querySelector('style')?.textContent ?? '';
+    if (!shadowStyle.includes('@media print')) {
+      throw new Error('Shadow CSS に print スタイルが定義されていません');
+    }
+    if (!shadowStyle.includes('.copy-button-shell') || !shadowStyle.includes('display: none !important')) {
+      throw new Error('print 時の copy-button 非表示ルールが不足しています');
+    }
+
+    const documentStyle = getDocumentCodeBlockStyle().textContent;
+    if (!documentStyle.includes('@media (forced-colors: active)')) {
+      throw new Error('document CSS に forced-colors ルールが定義されていません');
+    }
+    if (!documentStyle.includes('ui-code-block pre .comment') || !documentStyle.includes('font-style: italic')) {
+      throw new Error('forced-colors 時のコメント可視化（italic）ルールが不足しています');
+    }
+    if (!documentStyle.includes('ui-code-block pre') || !documentStyle.includes('font-size: 9pt !important')) {
+      throw new Error('document CSS の print フォント調整ルールが不足しています');
+    }
+
+    if (window.matchMedia('(forced-colors: active)').matches) {
+      const shell = block.shadowRoot?.querySelector<HTMLElement>('.copy-button-shell');
+      if (!shell) {
+        throw new Error('copy-button-shell が見つかりません');
+      }
+      const shellStyle = getComputedStyle(shell);
+      if (shellStyle.borderTopStyle === 'none' || shellStyle.borderTopWidth === '0px') {
+        throw new Error('forced-colors 環境では copy-button-shell に境界線が必要です');
+      }
+    }
+  },
+};
+
+/**
+ * タッチ環境の可視化方針。
+ * coarse pointer 環境では copy-button が --opacity-link-touch で常時表示されることを確認します。
+ */
+export const TouchCoarsePointerVisibility: Story = {
+  render: () => html`
+    <ui-code-block
+      id="touch-visibility-block"
+      filename="touch.ts"
+      lang="ts"
+      style="
+        --ui-code-block-breakout-width: 100%;
+        --ui-code-block-breakout-margin: 0;
+        --opacity-link-touch: 0.65;
+      "
+    >
+      <pre><code>const touchVisible = true;</code></pre>
+    </ui-code-block>
+  `,
+  play: async ({ canvasElement }) => {
+    const block = getCodeBlock(canvasElement, 'touch-visibility-block');
+    await block.updateComplete;
+    await nextFrame();
+
+    const isCoarsePointer = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    if (!isCoarsePointer) {
+      return;
+    }
+
+    const copyButton = getCopyButton(block);
+    const copyStyle = getComputedStyle(copyButton);
+    if (copyStyle.opacity !== '0.65') {
+      throw new Error(`coarse pointer 環境では opacity=0.65 の想定です: ${copyStyle.opacity}`);
     }
   },
 };
@@ -404,6 +646,13 @@ export const BoundaryFallbacksAndCopyExtraction: Story = {
         `メタデータ欠落時の aria-description は "コード" の想定です。現在: "${fallbackRoot.getAttribute('aria-description') ?? 'null'}"`,
       );
     }
+    const fallbackFilename = fallback.shadowRoot?.querySelector<HTMLElement>('.filename');
+    if (!fallbackFilename) {
+      throw new Error('filename 表示が見つかりません');
+    }
+    if (fallbackFilename.textContent.trim() !== '') {
+      throw new Error('filename 未指定時は表示しない想定です');
+    }
 
     const extracted = copyBoundary.getCodeContent();
     if (extracted.includes('1const') || extracted.includes('2console')) {
@@ -416,6 +665,52 @@ export const BoundaryFallbacksAndCopyExtraction: Story = {
     const copyButton = getCopyButton(copyBoundary);
     if (copyButton.value !== extracted) {
       throw new Error('copy-button の value が抽出コードと一致しません');
+    }
+  },
+};
+
+/**
+ * メタデータのないコードブロック。
+ * filename/intent が空の場合、キャプションがオーバーレイ化されコピーボタンのみ表示されることを確認します。
+ */
+export const NoMetadataOverlay: Story = {
+  render: () => html`
+    <ui-code-block
+      id="overlay-block"
+      lang="ts"
+      style="--ui-code-block-breakout-width: 100%; --ui-code-block-breakout-margin: 0;"
+    >
+      <pre><code>const minimal = 'no filename, no intent';</code></pre>
+    </ui-code-block>
+  `,
+  play: async ({ canvasElement }) => {
+    const block = getCodeBlock(canvasElement, 'overlay-block');
+    await block.updateComplete;
+
+    const root = getRootFigure(block);
+    if (!root.classList.contains('caption-overlay')) {
+      throw new Error('メタデータのないブロックは caption-overlay クラスを持つべきです');
+    }
+
+    const captionMain = block.shadowRoot?.querySelector<HTMLElement>('.caption-main');
+    if (!captionMain) {
+      throw new Error('caption-main が見つかりません');
+    }
+    if (getComputedStyle(captionMain).display !== 'none') {
+      throw new Error('overlay モードでは caption-main は非表示であるべきです');
+    }
+
+    const caption = block.shadowRoot?.querySelector<HTMLElement>('.caption');
+    if (!caption) {
+      throw new Error('caption が見つかりません');
+    }
+    if (getComputedStyle(caption).position !== 'absolute') {
+      throw new Error('overlay モードでは caption は absolute 配置であるべきです');
+    }
+
+    const copyButton = getCopyButton(block);
+    if (copyButton.label !== 'TypeScript のコードをコピー') {
+      throw new Error(`overlay モードの copy-button label が不正です: "${copyButton.label}"`);
     }
   },
 };

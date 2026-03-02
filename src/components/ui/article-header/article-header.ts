@@ -1,5 +1,6 @@
 import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
+import '../tag/tag';
 
 export type ArticleStatus = 'draft' | 'archived' | 'wip' | 'deprecated';
 
@@ -38,7 +39,8 @@ export class ArticleHeader extends LitElement {
       max-width: var(--width-reading, 72ch);
       font-size: clamp(var(--text-2xl, 24px), 4vw + 1rem, var(--text-4xl, 36px));
       font-weight: 700;
-      line-height: clamp(2rem, 5vw, 2.5rem);
+      /* clamp + media query の不連続を解消。フォントサイズに追従する相対値で統一。 */
+      line-height: var(--line-height-tight, 1.25);
       letter-spacing: var(--tracking-tight, -0.01em);
       color: var(--fg-default, oklch(20% 0.01 250));
       font-feature-settings: 'palt';
@@ -46,18 +48,13 @@ export class ArticleHeader extends LitElement {
       overflow-wrap: break-word;
     }
 
-    @media (min-width: 900px) {
-      .heading {
-        line-height: var(--line-height-tight, 1.25);
-      }
-    }
-
     .metadata-list {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       list-style: none;
-      margin: var(--space-4, 16px) 0 0;
+      /* heading 直下（status-badge なし）の場合の余白 */
+      margin: var(--space-3, 12px) 0 0;
       padding: 0;
       gap: 0;
       font-size: var(--text-sm, 13px);
@@ -65,8 +62,16 @@ export class ArticleHeader extends LitElement {
       color: var(--fg-muted, oklch(48% 0.01 250));
     }
 
-    .no-lead .metadata-list {
-      margin-bottom: var(--space-12, 48px);
+    /* status-badge 直後は詰める（badge が既に heading との距離を稼いでいるため） */
+    .status-badge + .metadata-list {
+      margin-top: var(--space-2, 8px);
+    }
+
+    /* セカンダリメタデータ（出典・ライセンス）: 補助情報として控えめに */
+    .metadata-list--secondary {
+      margin-top: var(--space-2, 8px);
+      font-size: var(--text-xs, 12px);
+      color: var(--fg-subtle, oklch(60% 0.01 250));
     }
 
     .metadata-item {
@@ -79,7 +84,8 @@ export class ArticleHeader extends LitElement {
     .metadata-item + .metadata-item::before {
       content: '・';
       content: '・' / '';
-      margin-inline: var(--space-3, 12px);
+      /* セパレータ間隔（16px）をタグ内ギャップ（8px）の2倍に設定し、「区切り」と「群れ」のリズムを明示 */
+      margin-inline: var(--space-4, 16px);
       color: var(--fg-subtle, oklch(60% 0.01 250));
       flex-shrink: 0;
     }
@@ -91,6 +97,13 @@ export class ArticleHeader extends LitElement {
       color: currentColor;
       flex-shrink: 0;
       transform: translateY(1px);
+    }
+
+    /* セカンダリリスト内のアイコンはフォントサイズに合わせて縮小 */
+    .metadata-list--secondary .meta-icon {
+      width: var(--icon-xs, 12px);
+      height: var(--icon-xs, 12px);
+      font-size: var(--icon-xs, 12px);
     }
 
     .silent-link {
@@ -114,6 +127,17 @@ export class ArticleHeader extends LitElement {
       animation: var(--animation-focus, none);
     }
 
+    .tags-row {
+      /* metadata-list または status-badge の後に続く場合の余白 */
+      margin-top: var(--space-2, 8px);
+    }
+
+    /* heading または status-badge の直後（primary metadata なし）は余白を増やす */
+    .heading + .tags-row,
+    .status-badge + .tags-row {
+      margin-top: var(--space-3, 12px);
+    }
+
     .tag-links {
       display: inline-flex;
       flex-wrap: wrap;
@@ -122,50 +146,20 @@ export class ArticleHeader extends LitElement {
       min-width: 0;
     }
 
-    .tag-link {
-      white-space: nowrap;
-    }
-
-    .status {
+    /* ステータスバッジ: 見出し直下の信頼性シグナル。メタデータリストとは独立して配置。 */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1, 4px);
+      margin-top: var(--space-3, 12px);
+      font-size: var(--text-xs, 12px);
       font-weight: 500;
     }
 
-    .status-draft {
-      color: var(--fg-muted, oklch(48% 0.01 250));
-    }
-
-    .status-archived {
-      color: var(--fg-subtle, oklch(60% 0.01 250));
-    }
-
-    .status-wip {
-      color: var(--fg-warning, oklch(72% 0.13 85));
-    }
-
-    .status-deprecated {
-      color: var(--fg-danger, oklch(60% 0.22 25));
-    }
-
-    .lead {
-      margin-top: var(--space-6, 24px);
-      margin-bottom: var(--space-12, 48px);
-      max-width: var(--width-reading, 72ch);
-      color: var(--fg-default, oklch(20% 0.01 250));
-      font-size: var(--text-xl, 18px);
-      line-height: var(--line-height-relaxed, 1.75);
-    }
-
-    .lead[hidden] {
-      display: none;
-    }
-
-    .lead ::slotted(*) {
-      margin: 0;
-    }
-
-    .lead ::slotted(* + *) {
-      margin-top: var(--space-4, 16px);
-    }
+    .status-draft     { color: var(--fg-muted, oklch(48% 0.01 250)); }
+    .status-archived  { color: var(--fg-subtle, oklch(60% 0.01 250)); }
+    .status-wip       { color: var(--fg-warning, oklch(72% 0.13 85)); }
+    .status-deprecated { color: var(--fg-danger, oklch(60% 0.22 25)); }
 
     @media (hover: none) and (pointer: coarse) {
       .silent-link {
@@ -199,7 +193,7 @@ export class ArticleHeader extends LitElement {
         outline-color: Highlight;
       }
 
-      .status {
+      .status-badge {
         color: CanvasText;
       }
     }
@@ -233,16 +227,6 @@ export class ArticleHeader extends LitElement {
   @property({ type: String })
   license = '';
 
-  @state()
-  private _hasLead = false;
-
-  override firstUpdated(): void {
-    const slot = this.shadowRoot?.querySelector<HTMLSlotElement>('#lead-slot');
-    if (slot) {
-      this._syncLeadState(slot);
-    }
-  }
-
   private get _displayDate(): string {
     return this.updatedDate || this.published;
   }
@@ -269,7 +253,7 @@ export class ArticleHeader extends LitElement {
   private get _statusPresentation(): StatusPresentation | null {
     switch (this.status) {
       case 'draft':
-        return { label: '下書き', icon: 'lucide:file-dashed', toneClass: 'status-draft' };
+        return { label: '下書き', icon: 'lucide:file-pen', toneClass: 'status-draft' };
       case 'archived':
         return { label: 'アーカイブ', icon: 'lucide:archive', toneClass: 'status-archived' };
       case 'wip':
@@ -281,38 +265,37 @@ export class ArticleHeader extends LitElement {
     }
   }
 
-  private get _hasMetadata(): boolean {
-    return (
-      this._displayDate.length > 0 ||
-      this._normalizedTags.length > 0 ||
-      this._displayReadingTime !== null ||
-      this.source.length > 0 ||
-      this.license.length > 0 ||
-      this._statusPresentation !== null
-    );
+  // 主要メタデータ（日付・読了時間）: 時間的コンテキスト。タグとは独立して管理。
+  private get _hasPrimaryMetadata(): boolean {
+    return this._displayDate.length > 0 || this._displayReadingTime !== null;
+  }
+
+  // 補助メタデータ（出典・ライセンス）: 帰属情報。主要メタデータとは優先度が異なる。
+  private get _hasSecondaryMetadata(): boolean {
+    return this._safeSourceHref !== null || this.license.length > 0;
+  }
+
+  private get _safeSourceHref(): string | null {
+    const rawSource = this.source.trim();
+    if (rawSource.length === 0) return null;
+
+    try {
+      const parsed = new URL(rawSource);
+      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+        return parsed.toString();
+      }
+      return null;
+    } catch {
+      return null;
+    }
   }
 
   private _buildTagHref(tag: string): string {
     return `/tags/${encodeURIComponent(tag)}`;
   }
 
-  private _syncLeadState(slot: HTMLSlotElement): void {
-    this._hasLead = slot
-      .assignedNodes({ flatten: true })
-      .some((node) => node.nodeType !== Node.TEXT_NODE || (node.textContent?.trim().length ?? 0) > 0);
-  }
-
-  private _handleLeadSlotChange = (event: Event): void => {
-    const slot = event.currentTarget;
-    if (!(slot instanceof HTMLSlotElement)) return;
-    this._syncLeadState(slot);
-  };
-
   private _handleTagClick = (event: MouseEvent, tag: string): void => {
-    const target = event.currentTarget;
-    if (!(target instanceof HTMLAnchorElement)) return;
-
-    const href = target.getAttribute('href') ?? this._buildTagHref(tag);
+    const href = this._buildTagHref(tag);
     const tagClickEvent = new CustomEvent<TagClickDetail>('tag-click', {
       detail: { tag, href },
       bubbles: true,
@@ -335,35 +318,33 @@ export class ArticleHeader extends LitElement {
 
     return html`
       <li class="metadata-item metadata-date">
-        <iconify-icon class="meta-icon" icon="lucide:calendar-days" aria-hidden="true"></iconify-icon>
+        <iconify-icon class="meta-icon" icon="lucide:history" aria-hidden="true"></iconify-icon>
         <time datetime="${displayDate}" aria-label="${ariaLabel}">${displayDate}</time>
       </li>
     `;
   }
 
-  private _renderTagsItem(): TemplateResult | typeof nothing {
+  // タグは分類・ナビゲーション情報。日付・読了時間とは性質が異なるため独立行で表示。
+  private _renderTagsRow(): TemplateResult | typeof nothing {
     const tags = this._normalizedTags;
     if (tags.length === 0) return nothing;
 
     return html`
-      <li class="metadata-item metadata-tags" aria-label="タグ">
-        <iconify-icon class="meta-icon" icon="lucide:hash" aria-hidden="true"></iconify-icon>
+      <div class="tags-row" aria-label="タグ">
         <span class="tag-links">
           ${tags.map((tag) => {
             const href = this._buildTagHref(tag);
             return html`
-              <a
-                class="silent-link tag-link"
+              <ui-tag
+                class="tag-link"
                 href="${href}"
                 aria-label="タグ: ${tag}"
                 @click="${(event: MouseEvent) => { this._handleTagClick(event, tag); }}"
-              >
-                #${tag}
-              </a>
+              >${tag}</ui-tag>
             `;
           })}
         </span>
-      </li>
+      </div>
     `;
   }
 
@@ -380,12 +361,21 @@ export class ArticleHeader extends LitElement {
   }
 
   private _renderSourceItem(): TemplateResult | typeof nothing {
-    if (!this.source) return nothing;
+    const sourceHref = this._safeSourceHref;
+    if (!sourceHref) return nothing;
 
     return html`
       <li class="metadata-item metadata-source">
         <iconify-icon class="meta-icon" icon="lucide:link" aria-hidden="true"></iconify-icon>
-        <a class="silent-link source-link" href="${this.source}" rel="noopener noreferrer">原文</a>
+        <a
+          class="silent-link source-link"
+          href="${sourceHref}"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="原文（外部リンク）"
+        >
+          原文
+        </a>
       </li>
     `;
   }
@@ -401,42 +391,46 @@ export class ArticleHeader extends LitElement {
     `;
   }
 
-  private _renderStatusItem(): TemplateResult | typeof nothing {
+  private _renderStatusBadge(): TemplateResult | typeof nothing {
     const status = this._statusPresentation;
     if (!status) return nothing;
 
+    // メタデータリストとは独立した信頼性シグナル。
+    // `.status` クラスは既存の play() テストとの互換性のため保持。
     return html`
-      <li class="metadata-item status ${status.toneClass}" aria-label="ステータス: ${status.label}">
+      <div class="status status-badge ${status.toneClass}" aria-label="ステータス: ${status.label}">
         <iconify-icon class="meta-icon" icon="${status.icon}" aria-hidden="true"></iconify-icon>
         <span>${status.label}</span>
-      </li>
+      </div>
     `;
   }
 
   override render() {
-    const hasMetadata = this._hasMetadata;
-    const rootClass = this._hasLead ? 'article-header has-lead' : 'article-header no-lead';
-
     return html`
-      <header class="${rootClass}">
+      <header class="article-header">
         <h1 class="heading">${this.heading}</h1>
 
-        ${hasMetadata
+        ${this._renderStatusBadge()}
+
+        ${this._hasPrimaryMetadata
           ? html`
-              <ul class="metadata-list" aria-label="記事メタデータ">
+              <ul class="metadata-list metadata-list--primary" aria-label="記事メタデータ">
                 ${this._renderDateItem()}
-                ${this._renderTagsItem()}
                 ${this._renderReadingTimeItem()}
-                ${this._renderSourceItem()}
-                ${this._renderLicenseItem()}
-                ${this._renderStatusItem()}
               </ul>
             `
           : nothing}
 
-        <div class="lead" ?hidden="${!this._hasLead}">
-          <slot id="lead-slot" @slotchange="${this._handleLeadSlotChange}"></slot>
-        </div>
+        ${this._renderTagsRow()}
+
+        ${this._hasSecondaryMetadata
+          ? html`
+              <ul class="metadata-list metadata-list--secondary" aria-label="出典・ライセンス情報">
+                ${this._renderSourceItem()}
+                ${this._renderLicenseItem()}
+              </ul>
+            `
+          : nothing}
       </header>
     `;
   }

@@ -19,6 +19,20 @@ const attachLinkSpy = (card: Card): (() => number) => {
   return () => count;
 };
 
+/** 指定セレクタのリンクにクリックスパイを設定し、クリック数カウンタを返す */
+const attachNamedLinkSpy = (
+  card: Card,
+  selector: string,
+): (() => number) => {
+  const link = card.querySelector<HTMLAnchorElement>(selector);
+  let count = 0;
+  link?.addEventListener('click', (e) => {
+    e.preventDefault();
+    count++;
+  });
+  return () => count;
+};
+
 /**
  * ## カード (Card)
  *
@@ -709,7 +723,129 @@ export const ClickableNoLink: Story = {
 };
 
 // ────────────────────────────────────────────
-// 11. FocusWithin: キーボードフォーカスのアクセシビリティ
+// 11. MultipleLinksPrimaryFirst: 複数リンク時の主要リンク委譲（境界条件）
+// ────────────────────────────────────────────
+
+/**
+ * **境界条件**: `clickable` カード内に複数リンクがある場合、
+ * カード背景クリックは最初の `<a href>`（主要リンク）へ委譲されることを確認します。
+ */
+export const MultipleLinksPrimaryFirst: Story = {
+  render: () => html`
+    <ui-card id="multiple-links-card" clickable style="max-width: 400px;">
+      <h3 style="margin: 0 0 0.5rem; font-size: var(--text-base);">
+        <a href="/notes/primary" id="primary-link" style="color: inherit; text-decoration: none;">
+          主要リンク（先頭）
+        </a>
+      </h3>
+      <p style="margin: 0 0 0.75rem; font-size: var(--text-sm); color: var(--fg-muted);">
+        背景クリックは主要リンクへ。副リンクの直接クリックは副リンク自身で処理されます。
+      </p>
+      <a href="/notes/secondary" id="secondary-link">副リンク</a>
+    </ui-card>
+  `,
+  play: async ({ canvasElement }) => {
+    const card = canvasElement.querySelector<Card>('#multiple-links-card');
+    if (!card) throw new Error('ui-card が見つかりません');
+
+    await card.updateComplete;
+
+    const getPrimaryCount = attachNamedLinkSpy(card, '#primary-link');
+    const getSecondaryCount = attachNamedLinkSpy(card, '#secondary-link');
+
+    // 背景クリック時は先頭リンクへ委譲されること
+    card.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+    await card.updateComplete;
+
+    if (getPrimaryCount() !== 1) {
+      throw new Error(`主要リンクのクリック数が 1 であるべきですが ${String(getPrimaryCount())} です`);
+    }
+    if (getSecondaryCount() !== 0) {
+      throw new Error(`副リンクのクリック数は 0 であるべきですが ${String(getSecondaryCount())} です`);
+    }
+
+    // 副リンク直接クリック時は委譲せず副リンク自身で処理されること
+    const secondaryLink = card.querySelector<HTMLAnchorElement>('#secondary-link');
+    if (!secondaryLink) throw new Error('副リンクが見つかりません');
+    secondaryLink.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+    await card.updateComplete;
+
+    if (getSecondaryCount() !== 1) {
+      throw new Error(`副リンクのクリック数が 1 であるべきですが ${String(getSecondaryCount())} です`);
+    }
+    if (getPrimaryCount() !== 1) {
+      throw new Error('副リンク直接クリックで主要リンクが増加しています（誤委譲の可能性）');
+    }
+  },
+};
+
+// ────────────────────────────────────────────
+// 12. InteractiveElementsGuard: フォーム系要素の委譲抑止（境界条件）
+// ────────────────────────────────────────────
+
+/**
+ * **境界条件**: 入力系・編集系要素への直接クリックでは委譲されないことを確認します。
+ * `input` / `select` / `textarea` / `[contenteditable="true"]` / `[role="button"]`
+ */
+export const InteractiveElementsGuard: Story = {
+  render: () => html`
+    <ui-card id="interactive-guard-card" clickable style="max-width: 440px;">
+      <h3 style="margin: 0 0 0.5rem; font-size: var(--text-base);">
+        <a href="/notes/interactive" id="interactive-primary" style="color: inherit; text-decoration: none;">
+          主要リンク
+        </a>
+      </h3>
+
+      <div style="display: grid; gap: 0.5rem;">
+        <input id="guard-input" value="input" />
+        <select id="guard-select">
+          <option>select</option>
+        </select>
+        <textarea id="guard-textarea">textarea</textarea>
+        <div id="guard-editable" contenteditable="true">contenteditable</div>
+        <div id="guard-role-button" role="button" tabindex="0">role=button</div>
+      </div>
+    </ui-card>
+  `,
+  play: async ({ canvasElement }) => {
+    const card = canvasElement.querySelector<Card>('#interactive-guard-card');
+    if (!card) throw new Error('ui-card が見つかりません');
+
+    await card.updateComplete;
+
+    const getPrimaryCount = attachNamedLinkSpy(card, '#interactive-primary');
+    const interactiveSelectors = [
+      '#guard-input',
+      '#guard-select',
+      '#guard-textarea',
+      '#guard-editable',
+      '#guard-role-button',
+    ] as const;
+
+    for (const selector of interactiveSelectors) {
+      const el = card.querySelector<HTMLElement>(selector);
+      if (!el) throw new Error(`${selector} が見つかりません`);
+
+      el.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+      await card.updateComplete;
+
+      if (getPrimaryCount() !== 0) {
+        throw new Error(`${selector} 直接クリックで委譲が発生しています`);
+      }
+    }
+
+    // 背景クリック時のみ委譲されること
+    card.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+    await card.updateComplete;
+
+    if (getPrimaryCount() !== 1) {
+      throw new Error('背景クリックで主要リンク委譲が発生していません');
+    }
+  },
+};
+
+// ────────────────────────────────────────────
+// 13. FocusWithin: キーボードフォーカスのアクセシビリティ
 // ────────────────────────────────────────────
 
 /**
@@ -774,7 +910,7 @@ export const FocusWithin: Story = {
 };
 
 // ────────────────────────────────────────────
-// 12. DefaultRoleAutoSet: role="article" の自動設定
+// 14. DefaultRoleAutoSet: role="article" の自動設定
 // ────────────────────────────────────────────
 
 /**
@@ -809,7 +945,7 @@ export const DefaultRoleAutoSet: Story = {
 };
 
 // ────────────────────────────────────────────
-// 13. ExplicitRoleOverride: 明示的な role 指定（境界条件）
+// 15. ExplicitRoleOverride: 明示的な role 指定（境界条件）
 // ────────────────────────────────────────────
 
 /**
@@ -878,7 +1014,7 @@ export const ExplicitRoleOverride: Story = {
 };
 
 // ────────────────────────────────────────────
-// 14. ClickableVariants: 全バリアント × Clickable（視覚確認）
+// 16. ClickableVariants: 全バリアント × Clickable（視覚確認）
 // ────────────────────────────────────────────
 
 /**
@@ -957,7 +1093,63 @@ export const ClickableVariants: Story = {
 };
 
 // ────────────────────────────────────────────
-// 15. ForcedColorsMode: 高コントラストモード（視覚確認）
+// 17. DarkMode: ダークモードでの視覚確認
+// ────────────────────────────────────────────
+
+/**
+ * ダーク背景におけるカードの視認性確認ストーリーです。
+ * Elevated の Edge Highlight を含む、暗色環境での階層表現を確認できます。
+ */
+export const DarkMode: Story = {
+  render: () => html`
+    <div
+      style="
+        background: oklch(20% 0.01 250);
+        color: oklch(95% 0.01 250);
+        padding: 1.5rem;
+        border-radius: var(--radius-lg);
+      "
+    >
+      <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 420px;">
+        <ui-card variant="outlined" clickable>
+          <h3 style="margin: 0 0 0.4rem; font-size: var(--text-base);">
+            <a href="/notes/dark-outlined" style="color: inherit; text-decoration: none;">
+              Outlined / Dark
+            </a>
+          </h3>
+          <p style="margin: 0; color: var(--fg-muted); font-size: var(--text-sm);">
+            枠線と hover 浮上の視認性を確認します。
+          </p>
+        </ui-card>
+
+        <ui-card id="dark-elevated" variant="elevated">
+          <h3 style="margin: 0 0 0.4rem; font-size: var(--text-base);">Elevated / Dark</h3>
+          <p style="margin: 0; color: var(--fg-muted); font-size: var(--text-sm);">
+            Edge Highlight（inset shadow）を確認します。
+          </p>
+        </ui-card>
+      </div>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const elevated = canvasElement.querySelector<Card>('#dark-elevated');
+    if (!elevated) throw new Error('#dark-elevated が見つかりません');
+
+    await elevated.updateComplete;
+
+    if (elevated.getAttribute('variant') !== 'elevated') {
+      throw new Error('DarkMode: elevated カードの variant が不正です');
+    }
+
+    const style = getComputedStyle(elevated);
+    if (!style.boxShadow || style.boxShadow === 'none') {
+      throw new Error('DarkMode: elevated カードにシャドウが適用されていません');
+    }
+  },
+};
+
+// ────────────────────────────────────────────
+// 18. ForcedColorsMode: 高コントラストモード（視覚確認）
 // ────────────────────────────────────────────
 
 /**
@@ -1005,10 +1197,26 @@ export const ForcedColorsMode: Story = {
       </ui-card>
     </div>
   `,
+  play: async ({ canvasElement }) => {
+    const cards = canvasElement.querySelectorAll<Card>('ui-card');
+    if (cards.length !== 4) {
+      throw new Error(`ForcedColorsMode: カードが 4 つ存在すべきですが ${String(cards.length)} つです`);
+    }
+
+    for (const card of cards) {
+      await card.updateComplete;
+      if (!card.hasAttribute('variant')) {
+        throw new Error('ForcedColorsMode: variant 属性未設定のカードがあります');
+      }
+    }
+
+    const clickable = canvasElement.querySelector<Card>('ui-card[clickable]');
+    if (!clickable) throw new Error('ForcedColorsMode: clickable カードが見つかりません');
+  },
 };
 
 // ────────────────────────────────────────────
-// 16. ReducedMotion: モーション軽減（視覚確認）
+// 19. ReducedMotion: モーション軽減（視覚確認）
 // ────────────────────────────────────────────
 
 /**
@@ -1038,7 +1246,7 @@ export const ReducedMotion: Story = {
       スケール変化が無効化されていることを確認できます。
     </div>
 
-    <ui-card clickable style="max-width: 360px;">
+    <ui-card id="reduced-motion-card" clickable style="max-width: 360px;">
       <h3 style="margin: 0 0 0.5rem; font-size: var(--text-base);">
         <a href="/notes/motion" style="color: inherit; text-decoration: none;">
           Reduced Motion テスト
@@ -1049,4 +1257,17 @@ export const ReducedMotion: Story = {
       </p>
     </ui-card>
   `,
+  play: async ({ canvasElement }) => {
+    const card = canvasElement.querySelector<Card>('#reduced-motion-card');
+    if (!card) throw new Error('ReducedMotion: ui-card が見つかりません');
+
+    await card.updateComplete;
+
+    if (!card.hasAttribute('clickable')) {
+      throw new Error('ReducedMotion: clickable 属性が設定されていません');
+    }
+
+    const link = card.querySelector<HTMLAnchorElement>('a[href]');
+    if (!link) throw new Error('ReducedMotion: 内部リンクが見つかりません');
+  },
 };

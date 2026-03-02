@@ -18,7 +18,7 @@ import type { Badge } from './badge';
  * ### コンテンツ優先ロジック
  *
  * - `count` が `number` の場合: スロット内容は無視され、数値のみが表示されます。
- * - `count` が `null` かつ `variant !== "dot"`: スロット内容が表示されます。
+ * - `count` が `null` / `undefined` かつ `variant !== "dot"`: スロット内容が表示されます。
  * - `variant === "dot"`: `count` およびスロット内容は物理的にレンダリングされません。
  *
  * ### 非インタラクティブ設計
@@ -94,6 +94,49 @@ const meta: Meta<Badge> = {
 
 export default meta;
 type Story = StoryObj<Badge>;
+
+const parseRgb = (value: string): [number, number, number] => {
+    const normalized = value.trim();
+    const match = /^rgba?\((.*)\)$/.exec(normalized);
+    if (!match) throw new Error(`Unsupported color format: "${value}"`);
+
+    const rawBody = match[1] ?? '';
+    const body = rawBody.split('/')[0]?.trim() ?? '';
+    const channels = body.includes(',') ? body.split(',') : body.split(/\s+/);
+    if (channels.length < 3) throw new Error(`Invalid rgb channels: "${value}"`);
+
+    const rgb = channels.slice(0, 3).map((ch) => Number.parseFloat(ch.trim()));
+    if (rgb.some((n) => Number.isNaN(n))) throw new Error(`Invalid rgb value: "${value}"`);
+    return [rgb[0] ?? 0, rgb[1] ?? 0, rgb[2] ?? 0];
+};
+
+const relativeLuminance = ([r, g, b]: [number, number, number]): number => {
+    const linearize = (channel: number): number => {
+        const sRgb = channel / 255;
+        return sRgb <= 0.03928 ? sRgb / 12.92 : ((sRgb + 0.055) / 1.055) ** 2.4;
+    };
+    const lr = linearize(r);
+    const lg = linearize(g);
+    const lb = linearize(b);
+    return (0.2126 * lr) + (0.7152 * lg) + (0.0722 * lb);
+};
+
+const contrastRatio = (fg: string, bg: string): number => {
+    const l1 = relativeLuminance(parseRgb(fg));
+    const l2 = relativeLuminance(parseRgb(bg));
+    const lighter = Math.max(l1, l2);
+    const darker = Math.min(l1, l2);
+    return (lighter + 0.05) / (darker + 0.05);
+};
+
+const collectCssText = (styles: unknown): string => {
+    if (Array.isArray(styles)) return styles.map((item) => collectCssText(item)).join('\n');
+    if (typeof styles === 'object' && styles !== null && 'cssText' in styles) {
+        const cssText = (styles as { cssText: unknown }).cssText;
+        return typeof cssText === 'string' ? cssText : '';
+    }
+    return '';
+};
 
 // ──────────────────────────────────────────────
 // デフォルト
@@ -395,6 +438,9 @@ export const DotVariant: Story = {
         // テスト: role="img" が付与されている
         const imgSpan = dotDanger.shadowRoot?.querySelector('[role="img"]');
         if (!imgSpan) throw new Error('role="img" not found for dot variant');
+        if (imgSpan.getAttribute('aria-label') !== '未読の通知があります') {
+            throw new Error('dot variant aria-label is not applied');
+        }
 
         // テスト: slot は存在しない（Dot は内容を持たない）
         const slot = dotDanger.shadowRoot?.querySelector('slot');
@@ -411,6 +457,15 @@ export const DotVariant: Story = {
         if (!imgSpanAfterCount) throw new Error('role="img" should still exist after setting count on dot variant');
         const statusAfterCount = dotDanger.shadowRoot?.querySelector('[role="status"]');
         if (statusAfterCount) throw new Error('role="status" should not appear even when count is set on dot variant');
+
+        // テスト: aria-label 属性の変更が再レンダリングに追従する
+        dotDanger.setAttribute('aria-label', '新しい未読があります');
+        await dotDanger.updateComplete;
+        const imgSpanAfterLabelUpdate = dotDanger.shadowRoot?.querySelector('[role="img"]');
+        if (!imgSpanAfterLabelUpdate) throw new Error('role="img" not found after aria-label update');
+        if (imgSpanAfterLabelUpdate.getAttribute('aria-label') !== '新しい未読があります') {
+            throw new Error('dot variant aria-label update is not reflected');
+        }
 
         console.log('✅ All tests passed for DotVariant story');
     },
@@ -648,6 +703,10 @@ export const MaxNormalization: Story = {
         <ui-badge id="max-negative" color="warning" count="5"  .max="${-1}"></ui-badge>
         <!-- max=0.9 → floor=0 → 1 に補正 → "1+" -->
         <ui-badge id="max-float"    color="warning" count="5"  .max="${0.9}"></ui-badge>
+        <!-- max=NaN → 1 に補正 → "1+" -->
+        <ui-badge id="max-nan"      color="warning" count="5"  .max="${NaN}"></ui-badge>
+        <!-- max=Infinity → 1 に補正 → "1+" -->
+        <ui-badge id="max-inf"      color="warning" count="5"  .max="${Infinity}"></ui-badge>
         <!-- max=1 → count=1 ≤ 1 → "1" -->
         <ui-badge id="max-one"      color="primary" count="1"  max="1"></ui-badge>
         <!-- max=1 → count=2 > 1 → "1+" -->
@@ -677,6 +736,10 @@ export const MaxNormalization: Story = {
         check('#max-negative', '1+');
         // テスト: max=0.9 → floor=0 → 1 に補正 → "1+"
         check('#max-float', '1+');
+        // テスト: max=NaN → 1 に補正 → "1+"
+        check('#max-nan', '1+');
+        // テスト: max=Infinity → 1 に補正 → "1+"
+        check('#max-inf', '1+');
         // テスト: max=1, count=1 → "1"（等しいため "+" なし）
         check('#max-one', '1');
         // テスト: max=1, count=2 → "1+"
@@ -733,6 +796,48 @@ export const CountZero: Story = {
         if (statusNull) throw new Error('role="status" should not exist when count is null');
 
         console.log('✅ All tests passed for CountZero story');
+    },
+};
+
+/**
+ * ⚠️ 境界条件: `count=undefined` は `null` 同様にスロット表示。
+ *
+ * 仕様上、`count` が `null` または `undefined` の場合は数値表示せず、
+ * `variant !== "dot"` でスロットを表示します。
+ */
+export const CountUndefined: Story = {
+    parameters: {
+        docs: {
+            description: {
+                story: '⚠️ **境界条件**: `count=undefined` は `null` と同様にスロット表示されます。',
+            },
+        },
+    },
+    render: () => html`
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
+        <strong>⚠️ 境界条件</strong>: <code>count=undefined</code> はスロット表示になります。
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
+        <ui-badge id="undefined-count" color="primary">New</ui-badge>
+      </div>
+    </div>
+  `,
+    play: async ({ canvasElement }) => {
+        const badge = canvasElement.querySelector<Badge>('#undefined-count');
+        if (!badge) throw new Error('#undefined-count not found');
+        await badge.updateComplete;
+
+        // テスト: count を undefined にしても数値表示されず、スロット表示になる
+        badge.count = undefined as unknown as number | null;
+        await badge.updateComplete;
+
+        const slot = badge.shadowRoot?.querySelector('slot');
+        if (!slot) throw new Error('slot should exist when count is undefined');
+        const status = badge.shadowRoot?.querySelector('[role="status"]');
+        if (status) throw new Error('role="status" should not exist when count is undefined');
+
+        console.log('✅ All tests passed for CountUndefined story');
     },
 };
 
@@ -894,18 +999,205 @@ export const NonInteractive: Story = {
                 throw new Error(`Expected no tabindex, got "${tabindex}" on ${badge.id}`);
             }
 
-            // テスト: クリックイベントを発行してもカスタムイベントは発火しない
-            let customEventFired = false;
-            badge.addEventListener('ui-badge-click', () => { customEventFired = true; });
-            badge.click();
-            await new Promise((resolve) => setTimeout(resolve, 50));
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-            if (customEventFired) {
-                throw new Error(`Custom event should not fire on badge ${badge.id}`);
+            // テスト: 非対話属性を持たない
+            if (badge.hasAttribute('disabled')) throw new Error(`disabled should not exist on ${badge.id}`);
+            if (badge.hasAttribute('error')) throw new Error(`error should not exist on ${badge.id}`);
+            if (badge.hasAttribute('aria-disabled')) throw new Error(`aria-disabled should not exist on ${badge.id}`);
+            if (badge.hasAttribute('role')) throw new Error(`host role should not be set on ${badge.id}`);
+
+            // テスト: focus() を呼んでもフォーカス対象にならない
+            badge.focus();
+            if (badge === badge.ownerDocument.activeElement) {
+                throw new Error(`badge should not become activeElement: ${badge.id}`);
             }
         }
 
         console.log('✅ All tests passed for NonInteractive story');
+    },
+};
+
+/**
+ * A11y: テキストコントラストとDot非テキストコントラストの検証。
+ *
+ * Light/Dark 相当のトークンセットで、以下を満たすことを確認します。
+ * - solid/subtle: 4.5:1 以上
+ * - dot: 3.0:1 以上
+ */
+export const ThemeContrastAudit: Story = {
+    render: () => {
+        const colors = ['primary', 'danger', 'success', 'warning', 'neutral'] as const;
+        return html`
+      <style>
+        .theme-grid { display: grid; grid-template-columns: 1fr; gap: 1.25rem; }
+        .theme-block { padding: 1rem; border-radius: 10px; border: 1px solid oklch(76% 0.02 250 / 0.4); }
+        .theme-title {
+          margin-bottom: 0.75rem;
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: oklch(48% 0.01 250);
+        }
+        .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 0.75rem; }
+        .surface {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          align-items: center;
+          padding: 0.5rem;
+          border-radius: 8px;
+        }
+      </style>
+
+      <div class="theme-grid">
+        <section
+          id="contrast-light"
+          class="theme-block"
+          style="
+            --primary: #1f5eff;
+            --on-primary: #ffffff;
+            --success: #007a4d;
+            --on-success: #ffffff;
+            --danger: #b42318;
+            --on-danger: #ffffff;
+            --warning: #9a4a00;
+            --on-warning: #ffffff;
+            --fg-default: #111827;
+            --bg-default: #ffffff;
+            --bg-surface-2: #f3f4f6;
+            background: var(--bg-default);
+            color: var(--fg-default);
+          "
+        >
+          <div class="theme-title">Light Token Set</div>
+          <div class="row">
+            ${colors.map((color) => html`<ui-badge id="contrast-light-solid-${color}" color="${color}">text</ui-badge>`)}
+          </div>
+          <div class="row">
+            ${colors.map((color) => html`<ui-badge id="contrast-light-subtle-${color}" variant="subtle" color="${color}">text</ui-badge>`)}
+          </div>
+          <div id="contrast-light-dot-default-surface" class="surface" style="background: var(--bg-default);">
+            ${colors.map((color) => html`<ui-badge id="contrast-light-dot-${color}-default" variant="dot" color="${color}" aria-label="${color}"></ui-badge>`)}
+          </div>
+          <div id="contrast-light-dot-surface2-surface" class="surface" style="background: var(--bg-surface-2); margin-top: 0.5rem;">
+            ${colors.map((color) => html`<ui-badge id="contrast-light-dot-${color}-surface2" variant="dot" color="${color}" aria-label="${color}"></ui-badge>`)}
+          </div>
+        </section>
+
+        <section
+          id="contrast-dark"
+          class="theme-block"
+          style="
+            --primary: #8ab4ff;
+            --on-primary: #06132d;
+            --success: #5fd0a5;
+            --on-success: #042417;
+            --danger: #ff9f9f;
+            --on-danger: #2a0d0d;
+            --warning: #ffd08a;
+            --on-warning: #2e1b00;
+            --fg-default: #f3f4f6;
+            --bg-default: #101317;
+            --bg-surface-2: #1b222c;
+            background: var(--bg-default);
+            color: var(--fg-default);
+          "
+        >
+          <div class="theme-title">Dark Token Set</div>
+          <div class="row">
+            ${colors.map((color) => html`<ui-badge id="contrast-dark-solid-${color}" color="${color}">text</ui-badge>`)}
+          </div>
+          <div class="row">
+            ${colors.map((color) => html`<ui-badge id="contrast-dark-subtle-${color}" variant="subtle" color="${color}">text</ui-badge>`)}
+          </div>
+          <div id="contrast-dark-dot-default-surface" class="surface" style="background: var(--bg-default);">
+            ${colors.map((color) => html`<ui-badge id="contrast-dark-dot-${color}-default" variant="dot" color="${color}" aria-label="${color}"></ui-badge>`)}
+          </div>
+          <div id="contrast-dark-dot-surface2-surface" class="surface" style="background: var(--bg-surface-2); margin-top: 0.5rem;">
+            ${colors.map((color) => html`<ui-badge id="contrast-dark-dot-${color}-surface2" variant="dot" color="${color}" aria-label="${color}"></ui-badge>`)}
+          </div>
+        </section>
+      </div>
+    `;
+    },
+    play: async ({ canvasElement }) => {
+        const colors = ['primary', 'danger', 'success', 'warning', 'neutral'] as const;
+        const themes = ['light', 'dark'] as const;
+
+        const assertTextContrast = (id: string, min: number) => {
+            const badge = canvasElement.querySelector<Badge>(id);
+            if (!badge) throw new Error(`${id} not found`);
+            const style = getComputedStyle(badge);
+            const ratio = contrastRatio(style.color, style.backgroundColor);
+            if (ratio < min) throw new Error(`${id}: contrast ${ratio.toFixed(2)} < ${String(min)}`);
+        };
+
+        const assertDotContrast = (badgeId: string, surfaceId: string, min: number) => {
+            const badge = canvasElement.querySelector<Badge>(badgeId);
+            const surface = canvasElement.querySelector<HTMLElement>(surfaceId);
+            if (!badge || !surface) throw new Error(`dot contrast target not found: ${badgeId} / ${surfaceId}`);
+            const dotStyle = getComputedStyle(badge);
+            const surfaceStyle = getComputedStyle(surface);
+            const ratio = contrastRatio(dotStyle.backgroundColor, surfaceStyle.backgroundColor);
+            if (ratio < min) throw new Error(`${badgeId}: non-text contrast ${ratio.toFixed(2)} < ${String(min)}`);
+        };
+
+        await Promise.all(
+            [...canvasElement.querySelectorAll<Badge>('ui-badge')].map((badge) => badge.updateComplete),
+        );
+
+        for (const theme of themes) {
+            for (const color of colors) {
+                assertTextContrast(`#contrast-${theme}-solid-${color}`, 4.5);
+                assertTextContrast(`#contrast-${theme}-subtle-${color}`, 4.5);
+                assertDotContrast(
+                    `#contrast-${theme}-dot-${color}-default`,
+                    `#contrast-${theme}-dot-default-surface`,
+                    3,
+                );
+                assertDotContrast(
+                    `#contrast-${theme}-dot-${color}-surface2`,
+                    `#contrast-${theme}-dot-surface2-surface`,
+                    3,
+                );
+            }
+        }
+        console.log('✅ All tests passed for ThemeContrastAudit story');
+    },
+};
+
+/**
+ * A11y: forced-colors 対応ルールの退行検知。
+ *
+ * 実UAのforced-colors切替ではなく、スタイル定義に必要ルールがあることを検証します。
+ */
+export const ForcedColorsContract: Story = {
+    render: () => html`
+    <div style="display: flex; gap: 0.75rem; align-items: center;">
+      <ui-badge id="forced-solid" color="primary">New</ui-badge>
+      <ui-badge id="forced-subtle" variant="subtle" color="warning">Draft</ui-badge>
+      <ui-badge id="forced-dot" variant="dot" color="danger" aria-label="更新があります"></ui-badge>
+    </div>
+  `,
+    play: async ({ canvasElement }) => {
+        const badge = canvasElement.querySelector<Badge>('#forced-solid');
+        if (!badge) throw new Error('#forced-solid not found');
+        await badge.updateComplete;
+
+        const cssText = collectCssText((badge.constructor as typeof Badge).styles);
+        if (!cssText.includes('@media (forced-colors: active)')) {
+            throw new Error('forced-colors media query is missing');
+        }
+        if (!cssText.includes('ButtonText')) {
+            throw new Error('ButtonText token is missing in forced-colors rules');
+        }
+        if (!cssText.includes('ButtonFace')) {
+            throw new Error('ButtonFace token is missing in forced-colors rules');
+        }
+        if (!cssText.includes("width: 10px")) {
+            throw new Error('Dot forced-colors size expansion (10px) is missing');
+        }
+
+        console.log('✅ All tests passed for ForcedColorsContract story');
     },
 };
 

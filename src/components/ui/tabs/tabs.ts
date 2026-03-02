@@ -3,6 +3,7 @@ import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 
 type TabsOrientation = 'horizontal' | 'vertical';
+type DevImportMeta = ImportMeta & { env?: { DEV?: boolean } };
 
 /** ユニークIDカウンター（同一ページ内で複数の ui-tabs が共存できるよう） */
 let _uidCounter = 0;
@@ -60,6 +61,7 @@ let _uidCounter = 0;
  * @cssprop --space-1 - スペーシング（4px）
  * @cssprop --space-3 - スペーシング（12px）
  * @cssprop --space-4 - スペーシング（16px）
+ * @cssprop --control-min-touch - 最小タッチターゲット（44px）
  * @cssprop --duration-fast - タブカラートランジション（70ms）
  * @cssprop --duration-normal - パネルフェードトランジション（150ms）
  * @cssprop --duration-slow - インジケータートランジション（200ms）
@@ -107,11 +109,16 @@ export class Tabs extends LitElement {
         var(--border-default, oklch(90% 0.01 250 / 0.12));
       /* 幅超過時は横スクロール許容 */
       overflow-x: auto;
-      overflow-y: visible;
+      /* CSS仕様上 overflow-x が auto/scroll のとき overflow-y: visible は
+         auto に強制変換されフォーカスリングがクリップされる。
+         padding + 負の margin でリング分のスペースを確保しつつレイアウトを相殺する */
+      padding-top: calc(var(--focus-ring-width, 2px) + var(--focus-ring-offset, 2px));
+      margin-top: calc(-1 * (var(--focus-ring-width, 2px) + var(--focus-ring-offset, 2px)));
+      padding-left: calc(var(--focus-ring-width, 2px) + var(--focus-ring-offset, 2px));
       /* フォーカスリングがコンテナ端で隠れないよう余白 */
       scroll-padding-inline: var(--space-4, 16px);
       /* カスタムスクロールバー: 視覚的ノイズを最小化 */
-      scrollbar-width: thin;
+      scrollbar-width: var(--scrollbar-width, thin);
       scrollbar-color: var(--scrollbar-thumb, oklch(70% 0 0 / 0.3)) transparent;
       /* インジケーター + スクロールバーのクリアランス */
       padding-bottom: calc(var(--border-width-thick, 2px) + var(--space-1, 4px));
@@ -125,7 +132,7 @@ export class Tabs extends LitElement {
         var(--border-default, oklch(90% 0.01 250 / 0.12));
       overflow-x: visible;
       overflow-y: auto;
-      padding-bottom: 0;
+      padding-bottom: calc(var(--focus-ring-width, 2px) + var(--focus-ring-offset, 2px));
       /* Vertical時の右クリアランス（インジケーターが右ボーダーに重なる分） */
       padding-right: calc(var(--border-width-thick, 2px) + var(--space-1, 4px));
     }
@@ -139,9 +146,14 @@ export class Tabs extends LitElement {
       justify-content: center;
       gap: var(--space-1, 4px);
 
-      /* Size: High Density 準拠（32px） */
+      /* Size: High Density 準拠（見た目 32px + ヒットエリア 44px） */
       height: var(--control-height-md, 32px);
-      padding: 0 var(--space-3, 12px);
+      box-sizing: content-box;
+      padding-block: max(
+        0px,
+        calc((var(--control-min-touch, 44px) - var(--control-height-md, 32px)) / 2)
+      );
+      padding-inline: var(--space-3, 12px);
       flex-shrink: 0;
       white-space: nowrap;
 
@@ -165,8 +177,15 @@ export class Tabs extends LitElement {
       position: relative;
 
       /* Transition: color のみを明示指定（transition: all を回避） */
-      transition: color var(--duration-fast, 70ms)
-        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      transition:
+        color var(--duration-fast, 70ms)
+          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        transform var(--duration-fast, 70ms)
+          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+    }
+
+    ::slotted([slot='tab']:active) {
+      transform: scale(var(--scale-pressed, 0.96));
     }
 
     ::slotted([slot='tab']:hover) {
@@ -253,11 +272,15 @@ export class Tabs extends LitElement {
     /* ====== パネル ====== */
 
     .panels {
+      display: grid;
       flex: 1;
       min-width: 0;
     }
 
+    /* クロスフェード中に複数パネルが同時に display: block になっても
+       レイアウトがずれないよう、全パネルを同じグリッドセルに重ねる */
     ::slotted([slot='panel']) {
+      grid-area: 1 / 1;
       display: block;
       opacity: 0;
       transition: opacity var(--duration-normal, 150ms)
@@ -368,17 +391,29 @@ export class Tabs extends LitElement {
   /** スロットに割り当てられたパネル要素のリスト */
   @state() private _panelEls: Element[] = [];
 
+  @query('.tablist-container') private _tablistContainerEl!: HTMLElement;
   @query('[role="tablist"]') private _tablistEl!: HTMLElement;
   @query('.indicator') private _indicatorEl!: HTMLElement;
 
   /** タブ要素ごとのクリックハンドラ（disconnectedCallback でクリーンアップ用） */
   private readonly _tabClickHandlers = new Map<Element, EventListener>();
+  /** 旧パネルの hidden フォールバックタイマー管理 */
+  private readonly _panelHideFallbackTimers = new WeakMap<HTMLElement, number>();
 
   /** タブリストサイズ変化時にインジケーターを再計算するための ResizeObserver */
   private _resizeObserver?: ResizeObserver;
 
   /** 初期化済みフラグ（初回 _resolveAndApply は必ず適用するため） */
   private _initialized = false;
+  /** tablist scroll 追従用ハンドラ */
+  private readonly _onTablistScroll = (): void => {
+    this._positionIndicator();
+  };
+
+  /** 現在有効なタブ/パネルの数（1:1 対応の最小数） */
+  private get _interactiveCount(): number {
+    return Math.min(this._tabEls.length, this._panelEls.length);
+  }
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -389,6 +424,7 @@ export class Tabs extends LitElement {
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
+    this._tablistEl.removeEventListener('scroll', this._onTablistScroll);
     this._resizeObserver?.disconnect();
     this._cleanupTabListeners();
   }
@@ -405,10 +441,12 @@ export class Tabs extends LitElement {
     if (panelSlot) this._panelEls = panelSlot.assignedElements();
 
     if (this._tabEls.length > 0) {
+      this._validateSlotPairing();
       this._resolveAndApply();
     }
 
     this._resizeObserver?.observe(this._tablistEl);
+    this._tablistEl.addEventListener('scroll', this._onTablistScroll, { passive: true });
 
     // Hydration完了を示すマーカー属性を付与。
     // これにより CSS がフォールバック下線からスライディングインジケーターへ切り替わる。
@@ -453,6 +491,7 @@ export class Tabs extends LitElement {
   /** スロット変更後の共通処理 */
   private _onSlotChange(): void {
     this._initialized = false; // スロット内容が変わったため再初期化
+    this._validateSlotPairing();
     this._resolveAndApply();
     void this.updateComplete.then(() => {
       this._positionIndicator();
@@ -474,27 +513,28 @@ export class Tabs extends LitElement {
    * 3. 両方が無効なら先頭タブ (index=0) を選択し、開発時に console.warn
    */
   private _resolveAndApply(): void {
-    if (this._tabEls.length === 0) return;
+    const count = this._interactiveCount;
+    if (count === 0) return;
 
     let resolved = -1;
 
     // selected-value 優先（URL連携時の安定性）
     if (this.selectedValue !== null) {
-      resolved = this._tabEls.findIndex(
+      resolved = this._tabEls.slice(0, count).findIndex(
         (tab) => tab.getAttribute('value') === this.selectedValue,
       );
     }
 
     // selected-value が一致しない場合は selected-index を評価
     if (resolved === -1) {
-      if (this.selectedIndex >= 0 && this.selectedIndex < this._tabEls.length) {
+      if (this.selectedIndex >= 0 && this.selectedIndex < count) {
         resolved = this.selectedIndex;
       }
     }
 
     // 両方が無効 → 先頭タブを選択し、開発時に警告
     if (resolved === -1) {
-      const isDev = (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV ?? true;
+      const isDev = (import.meta as DevImportMeta).env?.DEV === true;
       if (isDev) {
         console.warn(
           `[ui-tabs]: selected-value="${String(this.selectedValue)}" および selected-index="${String(this.selectedIndex)}" が有効なタブに一致しません。先頭タブ (index=0) を選択します。`,
@@ -562,7 +602,7 @@ export class Tabs extends LitElement {
    * 公開メソッドとしても使用可能。
    */
   private _selectTab(index: number): void {
-    if (index < 0 || index >= this._tabEls.length) return;
+    if (index < 0 || index >= this._interactiveCount) return;
     this._setActive(index, true);
   }
 
@@ -571,7 +611,7 @@ export class Tabs extends LitElement {
    * Manual Activation モードでは選択は変更しない。
    */
   private _focusTab(index: number): void {
-    if (index < 0 || index >= this._tabEls.length) return;
+    if (index < 0 || index >= this._interactiveCount) return;
 
     this._focusedIndex = index;
 
@@ -600,6 +640,7 @@ export class Tabs extends LitElement {
    */
   private _applyAriaAndListeners(): void {
     const { _tabEls, _panelEls, _uid, _activeIndex, _focusedIndex } = this;
+    const count = this._interactiveCount;
 
     // 既存クリックリスナーをクリーンアップしてから再設定
     this._cleanupTabListeners();
@@ -608,17 +649,23 @@ export class Tabs extends LitElement {
       // セマンティクス
       tab.setAttribute('role', 'tab');
       tab.setAttribute('id', `ui-tabs-${String(_uid)}-tab-${String(i)}`);
-      tab.setAttribute('aria-controls', `ui-tabs-${String(_uid)}-panel-${String(i)}`);
+      if (i < count) {
+        tab.setAttribute('aria-controls', `ui-tabs-${String(_uid)}-panel-${String(i)}`);
+      } else {
+        tab.removeAttribute('aria-controls');
+      }
 
       // 状態
-      tab.setAttribute('aria-selected', i === _activeIndex ? 'true' : 'false');
+      tab.setAttribute('aria-selected', i === _activeIndex && i < count ? 'true' : 'false');
 
       // Roving Tabindex: フォーカス位置の tab のみ tabindex="0"
-      tab.setAttribute('tabindex', i === _focusedIndex ? '0' : '-1');
+      tab.setAttribute('tabindex', i === _focusedIndex && i < count ? '0' : '-1');
 
       // クリックリスナー（イベント委譲の代わりに各タブへ直接設定）
       const handler: EventListener = () => {
-        this._selectTab(i);
+        if (i < count) {
+          this._selectTab(i);
+        }
       };
       this._tabClickHandlers.set(tab, handler);
       tab.addEventListener('click', handler);
@@ -627,10 +674,17 @@ export class Tabs extends LitElement {
     _panelEls.forEach((panel, i) => {
       panel.setAttribute('role', 'tabpanel');
       panel.setAttribute('id', `ui-tabs-${String(_uid)}-panel-${String(i)}`);
-      panel.setAttribute('aria-labelledby', `ui-tabs-${String(_uid)}-tab-${String(i)}`);
+      if (i < count) {
+        panel.setAttribute('aria-labelledby', `ui-tabs-${String(_uid)}-tab-${String(i)}`);
+      } else {
+        panel.removeAttribute('aria-labelledby');
+      }
       // aria-busy のデフォルト値（非同期コンテンツ時は利用側が設定）
       if (!panel.hasAttribute('aria-busy')) {
         panel.setAttribute('aria-busy', 'false');
+      }
+      if (!panel.hasAttribute('aria-live')) {
+        panel.setAttribute('aria-live', 'off');
       }
     });
   }
@@ -660,9 +714,9 @@ export class Tabs extends LitElement {
     const newPanel = this._panelEls[newIndex] as HTMLElement | undefined;
     const oldPanel = this._panelEls[oldIndex] as HTMLElement | undefined;
 
-    // 非アクティブパネルを全て隠す（初期化時のクリーンアップ）
+    // 新旧以外の非アクティブパネルは即時に非表示
     this._panelEls.forEach((panel, i) => {
-      if (i !== newIndex) {
+      if (i !== newIndex && i !== oldIndex) {
         (panel as HTMLElement).removeAttribute('data-panel-active');
         (panel as HTMLElement).setAttribute('aria-hidden', 'true');
         (panel as HTMLElement).setAttribute('hidden', '');
@@ -681,21 +735,35 @@ export class Tabs extends LitElement {
 
     // 旧パネルをフェードアウト後に非表示（新パネルと異なる場合のみ）
     if (oldPanel && oldPanel !== newPanel) {
+      oldPanel.removeAttribute('hidden');
       oldPanel.removeAttribute('data-panel-active');
       oldPanel.setAttribute('aria-hidden', 'true');
 
+      const fallbackTimer = this._panelHideFallbackTimers.get(oldPanel);
+      if (fallbackTimer !== undefined) {
+        clearTimeout(fallbackTimer);
+      }
       const onTransitionEnd = () => {
         oldPanel.setAttribute('hidden', '');
-        oldPanel.removeEventListener('transitionend', onTransitionEnd);
+        const timer = this._panelHideFallbackTimers.get(oldPanel);
+        if (timer !== undefined) {
+          clearTimeout(timer);
+          this._panelHideFallbackTimers.delete(oldPanel);
+        }
       };
-      oldPanel.addEventListener('transitionend', onTransitionEnd);
+      oldPanel.addEventListener('transitionend', onTransitionEnd, { once: true });
 
       // フォールバック: トランジションが発火しない環境（prefers-reduced-motion: reduce 等）
-      setTimeout(() => {
+      const timer = window.setTimeout(() => {
         if (!oldPanel.hasAttribute('hidden')) {
           oldPanel.setAttribute('hidden', '');
         }
       }, 250);
+      this._panelHideFallbackTimers.set(oldPanel, timer);
+    } else if (oldPanel && oldPanel === newPanel) {
+      oldPanel.removeAttribute('hidden');
+      oldPanel.removeAttribute('aria-hidden');
+      oldPanel.setAttribute('data-panel-active', '');
     }
   }
 
@@ -710,22 +778,28 @@ export class Tabs extends LitElement {
    */
   private _positionIndicator(): void {
     const indicator = this._indicatorEl;
-    const tablist = this._tablistEl;
+    const container = this._tablistContainerEl;
     const activeTab = this._tabEls[this._activeIndex] as HTMLElement | undefined;
 
     if (!activeTab) return;
 
-    const tablistRect = tablist.getBoundingClientRect();
+    // インジケーターは .tablist-container 内で position: absolute のため、
+    // 基準は .tablist-container の矩形とする
+    const containerRect = container.getBoundingClientRect();
     const tabRect = activeTab.getBoundingClientRect();
+    const tabStyle = window.getComputedStyle(activeTab);
+    const paddingInlineStart = Number.parseFloat(tabStyle.paddingInlineStart) || 0;
+    const paddingInlineEnd = Number.parseFloat(tabStyle.paddingInlineEnd) || 0;
 
     if (this.orientation === 'horizontal') {
-      const left = tabRect.left - tablistRect.left + tablist.scrollLeft;
+      const left = tabRect.left - containerRect.left + paddingInlineStart;
+      const labelWidth = Math.max(0, tabRect.width - paddingInlineStart - paddingInlineEnd);
       indicator.style.left = `${String(left)}px`;
-      indicator.style.width = `${String(tabRect.width)}px`;
+      indicator.style.width = `${String(labelWidth)}px`;
       indicator.style.removeProperty('top');
       indicator.style.removeProperty('height');
     } else {
-      const top = tabRect.top - tablistRect.top + tablist.scrollTop;
+      const top = tabRect.top - containerRect.top;
       indicator.style.top = `${String(top)}px`;
       indicator.style.height = `${String(tabRect.height)}px`;
       indicator.style.removeProperty('left');
@@ -761,7 +835,9 @@ export class Tabs extends LitElement {
     // タブ要素からのイベントでなければ無視
     if (tabIndex === -1) return;
 
-    const tabCount = this._tabEls.length;
+    const tabCount = this._interactiveCount;
+    if (tabCount === 0) return;
+    if (tabIndex >= tabCount) return;
     const isHorizontal = this.orientation === 'horizontal';
     const prevKey = isHorizontal ? 'ArrowLeft' : 'ArrowUp';
     const nextKey = isHorizontal ? 'ArrowRight' : 'ArrowDown';
@@ -800,6 +876,20 @@ export class Tabs extends LitElement {
         break;
     }
   };
+
+  /**
+   * タブ数とパネル数の 1:1 対応を検証する。
+   * 不一致時は有効件数（min）で動作し、開発時に警告する。
+   */
+  private _validateSlotPairing(): void {
+    if (this._tabEls.length === this._panelEls.length) return;
+    const isDev = (import.meta as DevImportMeta).env?.DEV === true;
+    if (!isDev) return;
+    console.warn(
+      `[ui-tabs]: slot="tab" (${String(this._tabEls.length)}) と slot="panel" (${String(this._panelEls.length)}) の数が一致しません。先頭から ${String(this._interactiveCount)} 件のみ有効化します。`,
+      this,
+    );
+  }
 
   // ─────────────────────────────────────────────────
   // Public API

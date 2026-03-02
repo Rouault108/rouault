@@ -8,7 +8,7 @@ interface MatrixCase {
   variant: DetailsVariant;
   open: boolean;
   summary: string;
-};
+}
 
 const MATRIX_CASES: readonly MatrixCase[] = [
   { id: 'matrix-default-closed', variant: 'default', open: false, summary: 'Default / Closed' },
@@ -82,6 +82,14 @@ Native <details> ではなく、\`button + grid-template-rows + opacity + inert\
       table: {
         type: { summary: "'default' | 'bordered'" },
         defaultValue: { summary: "'default'" },
+      },
+    },
+    region: {
+      control: 'boolean',
+      description: 'コンテンツをランドマーク領域（role="region"）として扱う',
+      table: {
+        type: { summary: 'boolean' },
+        defaultValue: { summary: 'false' },
       },
     },
   },
@@ -286,6 +294,51 @@ export const ToggleEventAndStateSync: Story = {
     if (!controlsId || controlsId !== content.id) {
       throw new Error('aria-controls が content id を参照していません');
     }
+
+    const innerAction = details.querySelector<HTMLButtonElement>('#inner-action');
+    if (!innerAction) throw new Error('#inner-action が見つかりません');
+    innerAction.focus();
+    if (document.activeElement === innerAction) {
+      throw new Error('閉状態で inert が有効なら内部要素へフォーカス移動できない必要があります');
+    }
+  },
+};
+
+/**
+ * 境界条件: キーボード契約。
+ * トリガーが native button であり、ブラウザ標準の Enter/Space 操作を利用できることを担保します。
+ */
+export const KeyboardInteraction: Story = {
+  render: () => html`
+    <ui-details id="keyboard-toggle" aria-label="キーボード開閉" summary="Keyboard Interaction">
+      <p style="margin: 0;">Enter と Space で開閉できることを検証します。</p>
+    </ui-details>
+  `,
+  play: async ({ canvasElement }) => {
+    const details = canvasElement.querySelector<Details>('#keyboard-toggle');
+    if (!details) throw new Error('#keyboard-toggle が見つかりません');
+    await details.updateComplete;
+
+    const trigger = getTrigger(details);
+    if (trigger.tagName !== 'BUTTON') {
+      throw new Error('キーボード契約のため trigger は button 要素である必要があります');
+    }
+    if (trigger.getAttribute('type') !== 'button') {
+      throw new Error('trigger の type は button である必要があります');
+    }
+
+    trigger.focus();
+    if (document.activeElement !== trigger) {
+      throw new Error('trigger がフォーカス可能である必要があります');
+    }
+
+    trigger.click();
+    await details.updateComplete;
+    if (!details.open) throw new Error('button 操作で open=true である必要があります');
+
+    trigger.click();
+    await details.updateComplete;
+    if (details.open as boolean) throw new Error('button 再操作で open=false である必要があります');
   },
 };
 
@@ -389,31 +442,141 @@ export const AccessibleNameRequiredBoundary: Story = {
     if (!details) throw new Error('#a11y-boundary が見つかりません');
     await details.updateComplete;
 
-    const originalError = console.error;
-    const capturedMessages: string[] = [];
-
-    console.error = (...args: unknown[]) => {
-      const message = args.map((arg) => (typeof arg === 'string' ? arg : String(arg))).join(' ');
-      capturedMessages.push(message);
-    };
-
+    let threw = false;
     try {
-      details.ariaLabel = '';
+      details.ariaLabel = ' ';
       await details.updateComplete;
-    } finally {
-      console.error = originalError;
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes('[ui-details]')) {
+        throw new Error('ui-details 由来のエラーメッセージが検出できませんでした');
+      }
+      threw = true;
     }
 
-    if (capturedMessages.length === 0) {
-      throw new Error('aria-label 空文字時のエラーログが検出できませんでした');
+    if (!threw) {
+      throw new Error('aria-label 空文字時は例外を送出する必要があります');
     }
-    if (!capturedMessages.some((message) => message.includes('[ui-details]'))) {
-      throw new Error('ui-details 由来のエラーログが検出できませんでした');
-    }
+  },
+};
+
+/**
+ * A11y: region モードで role と aria-labelledby が正しく付与されること。
+ */
+export const RegionLandmark: Story = {
+  render: () => html`
+    <ui-details id="region-case" aria-label="FAQ の回答を開閉" summary="よくある質問" region>
+      <p style="margin: 0;">独立したセクションとして扱う内容です。</p>
+    </ui-details>
+  `,
+  play: async ({ canvasElement }) => {
+    const details = canvasElement.querySelector<Details>('#region-case');
+    if (!details) throw new Error('#region-case が見つかりません');
+    await details.updateComplete;
 
     const trigger = getTrigger(details);
-    if (trigger.hasAttribute('aria-label')) {
-      throw new Error('aria-label 空文字時は aria-label 属性が出力されない想定です');
+    const content = getContentWrapper(details);
+    if (content.getAttribute('role') !== 'region') {
+      throw new Error('region=true のとき content に role="region" が必要です');
+    }
+    if (content.getAttribute('aria-labelledby') !== trigger.id) {
+      throw new Error('region=true のとき aria-labelledby は trigger id を参照する必要があります');
+    }
+  },
+};
+
+/**
+ * Reduced Motion 契約: 0.01ms 短縮と遅延除去を維持すること。
+ */
+export const ReducedMotionContract: Story = {
+  render: () => html`
+    <ui-details id="reduced-motion-contract" aria-label="Reduced Motion 契約" summary="Reduced Motion">
+      <p style="margin: 0;">モーション抑制契約の退行検知用ストーリーです。</p>
+    </ui-details>
+  `,
+  play: async ({ canvasElement }) => {
+    const details = canvasElement.querySelector<Details>('#reduced-motion-contract');
+    if (!details) throw new Error('#reduced-motion-contract が見つかりません');
+    await details.updateComplete;
+
+    const styles = details.shadowRoot?.querySelectorAll('style');
+    if (!styles || styles.length === 0) throw new Error('style タグが見つかりません');
+
+    const cssText = Array.from(styles)
+      .map((style) => style.textContent)
+      .join('\n');
+
+    if (!cssText.includes('@media (prefers-reduced-motion: reduce)')) {
+      throw new Error('prefers-reduced-motion 契約が定義されていません');
+    }
+    if (!cssText.includes('transition-duration: 0.01ms !important;')) {
+      throw new Error('reduced-motion 時の 0.01ms 短縮が不足しています');
+    }
+    if (!cssText.includes('transition-delay: 0ms !important;')) {
+      throw new Error('reduced-motion 時の delay 除去が不足しています');
+    }
+  },
+};
+
+/**
+ * Forced Colors 契約: システムカラー追従の退行検知。
+ */
+export const ForcedColorsContract: Story = {
+  render: () => html`
+    <ui-details id="forced-colors-contract" aria-label="Forced Colors 契約" summary="Forced Colors">
+      <p style="margin: 0;">forced-colors 契約の退行検知用ストーリーです。</p>
+    </ui-details>
+  `,
+  play: async ({ canvasElement }) => {
+    const details = canvasElement.querySelector<Details>('#forced-colors-contract');
+    if (!details) throw new Error('#forced-colors-contract が見つかりません');
+    await details.updateComplete;
+
+    const styles = details.shadowRoot?.querySelectorAll('style');
+    if (!styles || styles.length === 0) throw new Error('style タグが見つかりません');
+    const cssText = Array.from(styles)
+      .map((style) => style.textContent)
+      .join('\n');
+
+    if (!cssText.includes('@media (forced-colors: active)')) {
+      throw new Error('forced-colors 契約が定義されていません');
+    }
+    if (!cssText.includes('CanvasText')) {
+      throw new Error('forced-colors 時のシステムカラー追従が不足しています');
+    }
+  },
+};
+
+/**
+ * Dark Mode 契約: セマンティックトークン参照を維持すること。
+ */
+export const DarkModeTokenContract: Story = {
+  parameters: {
+    backgrounds: { default: 'dark' },
+  },
+  render: () => html`
+    <div style="padding: 1rem; background: #11151b; border-radius: 8px;">
+      <ui-details id="dark-mode-contract" aria-label="Dark Mode 契約" summary="Dark Surface Contract" open>
+        <p style="margin: 0;">暗色面でもセマンティックトークン参照が崩れないことを確認します。</p>
+      </ui-details>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const details = canvasElement.querySelector<Details>('#dark-mode-contract');
+    if (!details) throw new Error('#dark-mode-contract が見つかりません');
+    await details.updateComplete;
+
+    const styles = details.shadowRoot?.querySelectorAll('style');
+    if (!styles || styles.length === 0) throw new Error('style タグが見つかりません');
+    const cssText = Array.from(styles)
+      .map((style) => style.textContent)
+      .join('\n');
+
+    if (!cssText.includes('var(--fg-default')) {
+      throw new Error('fg-default のセマンティックトークン参照が不足しています');
+    }
+    if (!cssText.includes('var(--fg-muted')) {
+      throw new Error('fg-muted のセマンティックトークン参照が不足しています');
     }
   },
 };

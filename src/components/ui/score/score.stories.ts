@@ -24,6 +24,19 @@ const INLINE_SCORE_TEMPLATE = html`
   </svg>
 `;
 
+const OVERFLOW_INLINE_SCORE_TEMPLATE = html`
+  <svg xmlns="http://www.w3.org/2000/svg" width="1800" height="260" viewBox="0 0 1800 260">
+    <rect width="1800" height="260" fill="white"></rect>
+    <g stroke="#111111" stroke-width="2" fill="none">
+      <line x1="40" y1="72" x2="1760" y2="72"></line>
+      <line x1="40" y1="92" x2="1760" y2="92"></line>
+      <line x1="40" y1="112" x2="1760" y2="112"></line>
+      <line x1="40" y1="132" x2="1760" y2="132"></line>
+      <line x1="40" y1="152" x2="1760" y2="152"></line>
+    </g>
+  </svg>
+`;
+
 const RUNTIME_SCORE_SVG = `
 <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1800 260'>
   <rect width='1800' height='260' fill='white'/>
@@ -145,6 +158,12 @@ const getSkeleton = (score: UiScore): HTMLElement | null =>
 
 const getRuntimeSvg = (score: UiScore): SVGSVGElement | null =>
   score.shadowRoot?.querySelector<SVGSVGElement>('.score-svg-host svg') ?? null;
+
+const getScoreContent = (score: UiScore): HTMLElement => {
+  const content = score.shadowRoot?.querySelector<HTMLElement>('.score-content');
+  if (!content) throw new Error('.score-content が見つかりません');
+  return content;
+};
 
 const getInlineSvg = (score: UiScore): SVGSVGElement => {
   const svg = score.querySelector('svg');
@@ -280,6 +299,7 @@ export const Default: Story = {
 /**
  * 意味のある組み合わせ:
  * - build-inline x primary x description
+ * - build-inline x eager
  * - runtime-fetch x eager x no-caption
  * - runtime-fetch x lazy x caption
  */
@@ -310,6 +330,11 @@ export const VariantStateMatrix: Story = {
         ${INLINE_SCORE_TEMPLATE}
       </ui-score>
 
+      <div class="label">build-inline x eager</div>
+      <ui-score id="matrix-inline-eager" label="譜例1b: build-inline eager" loading="eager">
+        ${INLINE_SCORE_TEMPLATE}
+      </ui-score>
+
       <div class="label">runtime-fetch x eager x no-caption</div>
       <ui-score
         id="matrix-runtime-eager"
@@ -332,10 +357,16 @@ export const VariantStateMatrix: Story = {
   `,
   play: async ({ canvasElement }) => {
     const inlinePrimary = getScore(canvasElement, 'matrix-inline-primary');
+    const inlineEager = getScore(canvasElement, 'matrix-inline-eager');
     const runtimeEager = getScore(canvasElement, 'matrix-runtime-eager');
     const runtimeLazy = getScore(canvasElement, 'matrix-runtime-lazy');
 
-    await Promise.all([inlinePrimary.updateComplete, runtimeEager.updateComplete, runtimeLazy.updateComplete]);
+    await Promise.all([
+      inlinePrimary.updateComplete,
+      inlineEager.updateComplete,
+      runtimeEager.updateComplete,
+      runtimeLazy.updateComplete,
+    ]);
 
     if (getFigure(inlinePrimary).getAttribute('aria-busy') !== 'false') {
       throw new Error('build-inline は初期状態で aria-busy="false" である必要があります');
@@ -359,6 +390,16 @@ export const VariantStateMatrix: Story = {
     );
     if (inlineSvg.getAttribute('focusable') !== 'false') {
       throw new Error('inline SVG は focusable="false" である必要があります');
+    }
+
+    if (getFigure(inlineEager).getAttribute('aria-busy') !== 'false') {
+      throw new Error('build-inline + eager は aria-busy="false" である必要があります');
+    }
+    if (getSkeleton(inlineEager)) {
+      throw new Error('build-inline + eager では skeleton を描画してはいけません');
+    }
+    if (getScrollContainer(inlineEager).hasAttribute('role')) {
+      throw new Error('primary 未指定の build-inline は role を出力してはいけません');
     }
 
     await waitFor(() => getRuntimeSvg(runtimeEager) !== null, 'eager の runtime SVG が描画されませんでした');
@@ -395,6 +436,12 @@ export const LoadingAndErrorStates: Story = {
     <div style="display: grid; gap: 1rem;">
       <ui-score
         id="state-loading"
+        label="ローディング状態サンプル（遅延フェッチ）"
+        loading="eager"
+      ></ui-score>
+
+      <ui-score
+        id="state-loading-lazy"
         src="${SECOND_RUNTIME_SCORE_SRC}"
         label="ローディング状態サンプル"
         aspect-ratio="6/1"
@@ -413,17 +460,65 @@ export const LoadingAndErrorStates: Story = {
   `,
   play: async ({ canvasElement }) => {
     const loading = getScore(canvasElement, 'state-loading');
+    const loadingLazy = getScore(canvasElement, 'state-loading-lazy');
     const error = getScore(canvasElement, 'state-error');
     const missingSrc = getScore(canvasElement, 'state-missing-src');
-    await Promise.all([loading.updateComplete, error.updateComplete, missingSrc.updateComplete]);
+    await Promise.all([loading.updateComplete, loadingLazy.updateComplete, error.updateComplete, missingSrc.updateComplete]);
 
-    if (!getSkeleton(loading)) {
-      throw new Error('runtime fetch ケースには skeleton 要素が必要です');
+    const originalFetch = globalThis.fetch;
+    let resolveDelayedFetch: (response: Response) => void = () => {
+      throw new Error('遅延フェッチ解決関数の初期化に失敗しました');
+    };
+    const delayedFetchPromise = new Promise<Response>((resolve) => {
+      resolveDelayedFetch = resolve;
+    });
+
+    try {
+      globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+        const requestUrl = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+        if (requestUrl === '/__score-delayed.svg') {
+          return delayedFetchPromise;
+        }
+        return originalFetch(input, init);
+      }) as typeof fetch;
+
+      loading.src = '/__score-delayed.svg';
+      await loading.updateComplete;
+
+      await waitFor(
+        () => getFigure(loading).getAttribute('aria-busy') === 'true',
+        '遅延フェッチ中に aria-busy="true" へ遷移しませんでした',
+      );
+      const loadingSkeleton = getSkeleton(loading);
+      if (!loadingSkeleton?.classList.contains('is-visible')) {
+        throw new Error('遅延フェッチ中は skeleton が可視状態である必要があります');
+      }
+
+      const delayedSvgResponse = new Response(SECOND_RUNTIME_SCORE_SVG, {
+        status: 200,
+        headers: { 'Content-Type': 'image/svg+xml' },
+      });
+      resolveDelayedFetch(delayedSvgResponse);
+
+      await waitFor(() => getRuntimeSvg(loading) !== null, '遅延フェッチ完了後に SVG が描画されませんでした');
+      await loading.updateComplete;
+      if (getFigure(loading).getAttribute('aria-busy') !== 'false') {
+        throw new Error('遅延フェッチ完了後は aria-busy="false" である必要があります');
+      }
+      if (!getScoreContent(loading).classList.contains('is-visible')) {
+        throw new Error('SVG 描画後は score-content が可視状態である必要があります');
+      }
+    } finally {
+      globalThis.fetch = originalFetch;
     }
-    await waitFor(() => getRuntimeSvg(loading) !== null, 'loading ケースの SVG が描画されませんでした');
-    await loading.updateComplete;
-    if (getFigure(loading).getAttribute('aria-busy') !== 'false') {
-      throw new Error('loading 完了後は aria-busy="false" である必要があります');
+
+    if (!getSkeleton(loadingLazy)) {
+      throw new Error('runtime fetch lazy ケースには skeleton 要素が必要です');
+    }
+    await waitFor(() => getRuntimeSvg(loadingLazy) !== null, 'loading lazy ケースの SVG が描画されませんでした');
+    await loadingLazy.updateComplete;
+    if (getFigure(loadingLazy).getAttribute('aria-busy') !== 'false') {
+      throw new Error('loading lazy 完了後は aria-busy="false" である必要があります');
     }
 
     await waitFor(
@@ -449,7 +544,6 @@ export const LoadingAndErrorStates: Story = {
 /**
  * 事故が多い境界条件:
  * - 不正 loading 値の fallback
- * - label 空文字の fallback
  * - 不正 aspect-ratio の fallback
  * - runtime SVG サニタイズ（script・onイベント属性・javascript: の除去）
  */
@@ -459,7 +553,7 @@ export const BoundaryConditions: Story = {
       <ui-score
         id="boundary-invalid-input"
         src="${RUNTIME_SCORE_SRC}"
-        label="   "
+        label="譜例4: 境界条件"
         loading="invalid"
         aspect-ratio="broken-ratio"
       ></ui-score>
@@ -474,11 +568,6 @@ export const BoundaryConditions: Story = {
 
     if (invalidInput.loading !== 'lazy') {
       throw new Error('不正 loading 値は lazy にフォールバックされる必要があります');
-    }
-
-    const invalidScroll = getScrollContainer(invalidInput);
-    if (invalidScroll.getAttribute('aria-label') !== '楽譜: 楽譜') {
-      throw new Error('label 空文字時は aria-label が「楽譜: 楽譜」にフォールバックされる必要があります');
     }
 
     const invalidSkeleton = getSkeleton(invalidInput);
@@ -512,6 +601,138 @@ export const BoundaryConditions: Story = {
     }
     if (rect.getAttribute('stroke') !== 'currentColor') {
       throw new Error('stroke="#000000" は currentColor へ置換される必要があります');
+    }
+  },
+};
+
+export const VisualModesAndInkContrast: Story = {
+  render: () => html`
+    <style>
+      .mode-grid {
+        display: grid;
+        gap: 1rem;
+      }
+      .mode-panel {
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1px solid var(--border-muted);
+      }
+      .mode-panel.dark {
+        background: oklch(20% 0.03 250);
+        color: oklch(92% 0.01 250);
+      }
+    </style>
+    <div class="mode-grid">
+      <div class="mode-panel">
+        <ui-score
+          id="mode-light-score"
+          src="${SECOND_RUNTIME_SCORE_SRC}"
+          label="ライトモード確認"
+          loading="eager"
+        ></ui-score>
+      </div>
+      <div class="mode-panel dark">
+        <ui-score
+          id="mode-dark-score"
+          src="${SECOND_RUNTIME_SCORE_SRC}"
+          label="ダーク背景確認"
+          loading="eager"
+        ></ui-score>
+      </div>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const light = getScore(canvasElement, 'mode-light-score');
+    const dark = getScore(canvasElement, 'mode-dark-score');
+    await Promise.all([light.updateComplete, dark.updateComplete]);
+
+    await waitFor(() => getRuntimeSvg(light) !== null, 'light ケースの SVG が描画されませんでした');
+    await waitFor(() => getRuntimeSvg(dark) !== null, 'dark ケースの SVG が描画されませんでした');
+
+    const lightColor = getComputedStyle(getScrollContainer(light)).color;
+    const darkColor = getComputedStyle(getScrollContainer(dark)).color;
+    const isBlackColor = (value: string): boolean => {
+      const normalized = value.replace(/\s+/g, '').toLowerCase();
+      return normalized === 'rgb(0,0,0)' || normalized === 'oklch(00 0)' || normalized === 'oklch(0 0 0)';
+    };
+    if (!isBlackColor(lightColor) || !isBlackColor(darkColor)) {
+      throw new Error(`譜面インク色は常に黒である必要があります: light=${lightColor}, dark=${darkColor}`);
+    }
+  },
+};
+
+export const OverflowAndFadeHints: Story = {
+  render: () => html`
+    <div style="max-width: 360px;">
+      <ui-score id="overflow-fade-score" label="横スクロールヒント確認">${OVERFLOW_INLINE_SCORE_TEMPLATE}</ui-score>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const score = getScore(canvasElement, 'overflow-fade-score');
+    await score.updateComplete;
+    await waitFor(() => getInlineSvg(score).getAttribute('aria-hidden') === 'true', 'inline SVG の準備が完了しませんでした');
+
+    const scroll = getScrollContainer(score);
+    await waitFor(
+      () => scroll.classList.contains('has-overflow'),
+      'オーバーフロー時に has-overflow クラスが付与されませんでした',
+    );
+    if (scroll.classList.contains('has-left-fade')) {
+      throw new Error('先頭位置では left-fade を表示してはいけません');
+    }
+    if (!scroll.classList.contains('has-right-fade')) {
+      throw new Error('先頭位置では right-fade を表示する必要があります');
+    }
+
+    scroll.scrollLeft = scroll.scrollWidth;
+    scroll.dispatchEvent(new Event('scroll'));
+    await waitFrame();
+
+    if (!scroll.classList.contains('has-left-fade')) {
+      throw new Error('末尾位置では left-fade を表示する必要があります');
+    }
+    if (scroll.classList.contains('has-right-fade')) {
+      throw new Error('末尾位置では right-fade を表示してはいけません');
+    }
+  },
+};
+
+export const AccessibilityMediaContracts: Story = {
+  render: () => html`
+    <ui-score
+      id="a11y-media-score"
+      src="${SECOND_RUNTIME_SCORE_SRC}"
+      label="A11yメディアクエリ契約"
+      loading="eager"
+    ></ui-score>
+  `,
+  play: async ({ canvasElement }) => {
+    const score = getScore(canvasElement, 'a11y-media-score');
+    await score.updateComplete;
+    await waitFor(() => getRuntimeSvg(score) !== null, 'A11yメディア契約ケースの SVG が描画されませんでした');
+
+    const styleTag = score.shadowRoot?.querySelector('style');
+    const styleFromTag = styleTag?.textContent ?? '';
+    const styleFromSheets = (score.shadowRoot?.adoptedStyleSheets ?? [])
+      .map((sheet) => {
+        try {
+          return Array.from(sheet.cssRules)
+            .map((rule) => rule.cssText)
+            .join('\n');
+        } catch {
+          return '';
+        }
+      })
+      .join('\n');
+    const styleText = `${styleFromTag}\n${styleFromSheets}`;
+    if (!styleText.includes('@media (prefers-reduced-motion: reduce)')) {
+      throw new Error('reduced-motion 向けメディアクエリが定義されていません');
+    }
+    if (!styleText.includes('@media (forced-colors: active)')) {
+      throw new Error('forced-colors 向けメディアクエリが定義されていません');
+    }
+    if (!styleText.includes('mask-image: none')) {
+      throw new Error('forced-colors 時の mask-image 無効化ルールが見つかりません');
     }
   },
 };

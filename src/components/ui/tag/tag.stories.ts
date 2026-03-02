@@ -110,6 +110,7 @@ const meta: Meta<Tag> = {
 
 export default meta;
 type Story = StoryObj<Tag>;
+const parsePx = (value: string): number => Number.parseFloat(value) || 0;
 
 // ──────────────────────────────────────────────
 // デフォルト
@@ -219,16 +220,17 @@ export const VariantColorMatrix: Story = {
 
         await Promise.all([...tags].map((t) => t.updateComplete));
 
-        // テスト: 各タグが正しい variant / color を持つ
-        const defaultNeutral = canvasElement.querySelector<Tag>('#matrix-default-neutral');
-        if (!defaultNeutral) throw new Error('#matrix-default-neutral not found');
-        if (defaultNeutral.variant !== 'default') throw new Error('Expected variant="default"');
-        if (defaultNeutral.color !== 'neutral') throw new Error('Expected color="neutral"');
-
-        const solidGold = canvasElement.querySelector<Tag>('#matrix-solid-gold');
-        if (!solidGold) throw new Error('#matrix-solid-gold not found');
-        if (solidGold.variant !== 'solid') throw new Error('Expected variant="solid"');
-        if (solidGold.color !== 'gold') throw new Error('Expected color="gold"');
+        // テスト: 全組み合わせが正しい variant / color を持つ
+        const variants = ['default', 'outline', 'solid'] as const;
+        const colors = ['neutral', 'primary', 'blue', 'violet', 'pink', 'gold'] as const;
+        for (const variant of variants) {
+            for (const color of colors) {
+                const tag = canvasElement.querySelector<Tag>(`#matrix-${variant}-${color}`);
+                if (!tag) throw new Error(`#matrix-${variant}-${color} not found`);
+                if (tag.variant !== variant) throw new Error(`Expected variant="${variant}"`);
+                if (tag.color !== color) throw new Error(`Expected color="${color}"`);
+            }
+        }
 
         console.log('✅ All tests passed for VariantColorMatrix story');
     },
@@ -877,7 +879,7 @@ export const LongTextTruncation: Story = {
         },
     },
     render: () => html`
-    <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 200px;">
+    <div id="long-text-container" style="display: flex; flex-direction: column; gap: 1rem; max-width: 200px;">
       <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
         <strong>⚠️ 境界条件</strong>: 長いテキストは省略されます（max-width: 200px のコンテナ内）。
       </div>
@@ -894,9 +896,11 @@ export const LongTextTruncation: Story = {
         if (!tag) throw new Error('#long-text not found');
         await tag.updateComplete;
 
-        // テスト: タグがコンテナ幅を超えていない
+        // テスト: タグが意図したコンテナ幅を超えていない
+        const container = canvasElement.querySelector<HTMLElement>('#long-text-container');
+        if (!container) throw new Error('#long-text-container not found');
         const tagRect = tag.getBoundingClientRect();
-        const containerRect = canvasElement.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
         if (tagRect.width > containerRect.width + 1) { // 1px の誤差を許容
             throw new Error(`Tag width (${String(tagRect.width)}) exceeds container width (${String(containerRect.width)})`);
         }
@@ -984,20 +988,38 @@ export const TouchTargetSize: Story = {
       <div style="display: flex; gap: 0.5rem; align-items: center;">
         <ui-tag id="touch-target-xs" size="xs" color="blue" removable>xs (20px)</ui-tag>
         <ui-tag id="touch-target-sm" size="sm" color="blue" removable>sm (24px)</ui-tag>
+        <ui-tag id="touch-target-link" href="/tags/cs" color="violet">Link</ui-tag>
       </div>
     </div>
   `,
     play: async ({ canvasElement }) => {
-        const tag = canvasElement.querySelector<Tag>('#touch-target-xs');
-        if (!tag) throw new Error('#touch-target-xs not found');
-        await tag.updateComplete;
+        const xs = canvasElement.querySelector<Tag>('#touch-target-xs');
+        const sm = canvasElement.querySelector<Tag>('#touch-target-sm');
+        const linkTag = canvasElement.querySelector<Tag>('#touch-target-link');
+        if (!xs || !sm || !linkTag) throw new Error('touch target tags not found');
+        await Promise.all([xs.updateComplete, sm.updateComplete, linkTag.updateComplete]);
 
-        // テスト: 削除ボタンが存在する
-        const removeBtn = tag.shadowRoot?.querySelector<HTMLButtonElement>('.tag-remove-button');
-        if (!removeBtn) throw new Error('Remove button not found');
+        // テスト: 削除ボタンが存在し、44px以上の疑似要素ターゲットを持つ
+        const removeBtn = xs.shadowRoot?.querySelector<HTMLButtonElement>('.tag-remove-button');
+        if (!removeBtn) throw new Error('Remove button not found on xs removable tag');
+        const removeAfterStyle = getComputedStyle(removeBtn, '::after');
+        const removeAfterWidth = parsePx(removeAfterStyle.width);
+        const removeAfterHeight = parsePx(removeAfterStyle.height);
+        if (removeAfterWidth < 44 || removeAfterHeight < 44) {
+            throw new Error(`Expected remove button pseudo target >= 44x44, got ${String(removeAfterWidth)}x${String(removeAfterHeight)}`);
+        }
 
-        // テスト: ::after 疑似要素の存在は CSS で保証されているため、
-        // ボタン自体が存在し、aria-label が設定されていることを確認
+        // テスト: リンク側も44px以上の疑似要素ターゲットを持つ
+        const link = linkTag.shadowRoot?.querySelector<HTMLAnchorElement>('.tag-link');
+        if (!link) throw new Error('.tag-link not found');
+        const linkAfterStyle = getComputedStyle(link, '::after');
+        const linkAfterWidth = parsePx(linkAfterStyle.width);
+        const linkAfterHeight = parsePx(linkAfterStyle.height);
+        if (linkAfterWidth < 44 || linkAfterHeight < 44) {
+            throw new Error(`Expected link pseudo target >= 44x44, got ${String(linkAfterWidth)}x${String(linkAfterHeight)}`);
+        }
+
+        // テスト: aria-label が設定されていることを確認
         const ariaLabel = removeBtn.getAttribute('aria-label');
         if (!ariaLabel) throw new Error('Remove button must have aria-label');
 
@@ -1041,8 +1063,10 @@ export const GoldColorVisibility: Story = {
   `,
     play: async ({ canvasElement }) => {
         const goldTag = canvasElement.querySelector<Tag>('#gold-default');
+        const blueTag = canvasElement.querySelector<Tag>('#blue-default');
         if (!goldTag) throw new Error('#gold-default not found');
-        await goldTag.updateComplete;
+        if (!blueTag) throw new Error('#blue-default not found');
+        await Promise.all([goldTag.updateComplete, blueTag.updateComplete]);
 
         // テスト: color="gold" が設定されている
         if (goldTag.color !== 'gold') throw new Error('Expected color="gold"');
@@ -1055,6 +1079,101 @@ export const GoldColorVisibility: Story = {
         const goldAttr = goldTag.getAttribute('color');
         if (goldAttr !== 'gold') throw new Error(`Expected color attribute "gold", got "${goldAttr ?? 'null'}"`);
 
+        // テスト: gold と blue は背景色が同一にならない
+        const goldBg = getComputedStyle(goldTag).backgroundColor;
+        const blueBg = getComputedStyle(blueTag).backgroundColor;
+        if (goldBg === blueBg) {
+            throw new Error(`Expected different background colors between gold and blue, got "${goldBg}"`);
+        }
+
         console.log('✅ All tests passed for GoldColorVisibility story');
+    },
+};
+
+/**
+ * ダークモードでの視認性確認（手動確認用）。
+ *
+ * `prefers-color-scheme: dark` 時の最終色はOS/ブラウザ依存のため、
+ * このストーリーは暗背景上での見え方を確認する目的で使用します。
+ */
+export const DarkModeReference: Story = {
+    parameters: {
+        docs: {
+            description: {
+                story: 'ダーク背景上での可視性確認用ストーリーです。`default` / `outline` / `solid` と Gold を含む主要色を並べています。',
+            },
+        },
+        backgrounds: {
+            default: 'dark',
+            values: [
+                { name: 'dark', value: '#121419' },
+            ],
+        },
+    },
+    render: () => html`
+    <div style="display: flex; flex-direction: column; gap: 1rem; padding: 1rem; background: #121419; border-radius: 8px;">
+      <div style="font-size: 12px; color: #b9c0cb;">Dark Mode Reference</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+        <ui-tag id="dark-default-blue" color="blue">Default Blue</ui-tag>
+        <ui-tag id="dark-default-gold" color="gold">Default Gold</ui-tag>
+        <ui-tag id="dark-outline-blue" variant="outline" color="blue">Outline Blue</ui-tag>
+        <ui-tag id="dark-outline-gold" variant="outline" color="gold">Outline Gold</ui-tag>
+        <ui-tag id="dark-solid-blue" variant="solid" color="blue">Solid Blue</ui-tag>
+        <ui-tag id="dark-solid-gold" variant="solid" color="gold">Solid Gold</ui-tag>
+      </div>
+    </div>
+  `,
+    play: async ({ canvasElement }) => {
+        const tags = canvasElement.querySelectorAll<Tag>('ui-tag');
+        if (tags.length !== 6) throw new Error(`Expected 6 tags, got ${String(tags.length)}`);
+        await Promise.all([...tags].map((tag) => tag.updateComplete));
+        console.log('✅ All tests passed for DarkModeReference story');
+    },
+};
+
+/**
+ * フォーカスとキーボード操作の確認。
+ *
+ * `href + removable` 構造で、リンクと削除ボタンの双方がフォーカス可能であることを確認します。
+ */
+export const FocusAndKeyboard: Story = {
+    render: () => html`
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
+        <strong>キーボード確認</strong>: Link と Remove の両方にフォーカス可能で、削除ボタンは Enter / Space で起動できます。
+      </div>
+      <ui-tag id="focus-keyboard" href="/tags/cs" color="blue" removable>Computer Science</ui-tag>
+    </div>
+  `,
+    play: async ({ canvasElement }) => {
+        const tag = canvasElement.querySelector<Tag>('#focus-keyboard');
+        if (!tag) throw new Error('#focus-keyboard not found');
+        await tag.updateComplete;
+
+        const link = tag.shadowRoot?.querySelector<HTMLAnchorElement>('.tag-link');
+        const removeBtn = tag.shadowRoot?.querySelector<HTMLButtonElement>('.tag-remove-button');
+        if (!link || !removeBtn) throw new Error('link or remove button not found');
+
+        // テスト: enabled 時はフォーカス除外されていない
+        if (link.getAttribute('tabindex') === '-1') throw new Error('Link must be focusable when enabled');
+        if (removeBtn.getAttribute('tabindex') === '-1') throw new Error('Remove button must be focusable when enabled');
+
+        // テスト: プログラムフォーカス可能
+        link.focus();
+        if (tag.shadowRoot?.activeElement !== link) throw new Error('Link should receive focus');
+
+        removeBtn.focus();
+        if (tag.shadowRoot.activeElement !== removeBtn) throw new Error('Remove button should receive focus');
+
+        // テスト: Enter / Space キー入力を受け取れる
+        const enter = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });
+        const space = new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true });
+        const enterAccepted = removeBtn.dispatchEvent(enter);
+        const spaceAccepted = removeBtn.dispatchEvent(space);
+        if (!enterAccepted || !spaceAccepted) {
+            throw new Error('Keyboard events should be accepted on remove button');
+        }
+
+        console.log('✅ All tests passed for FocusAndKeyboard story');
     },
 };

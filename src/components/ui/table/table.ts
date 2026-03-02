@@ -209,6 +209,8 @@ ui-table td[align="right"] {
  */
 @customElement('ui-table')
 export class Table extends LitElement {
+	private static readonly FALLBACK_ARIA_LABEL = 'Data table';
+
 	static override styles = css`
 		/* ──────────────────────────────────────────────
 		   レイアウト & ベーススタイル
@@ -265,6 +267,8 @@ export class Table extends LitElement {
 	@property({ type: String, attribute: 'aria-label' })
 	override ariaLabel: string | null = null;
 
+	private _hasWarnedMissingAriaLabel = false;
+
 	override connectedCallback(): void {
 		super.connectedCallback();
 		/*
@@ -272,6 +276,24 @@ export class Table extends LitElement {
 		 * th / td 等の内部要素スタイルをドキュメントに注入する。
 		 */
 		this._injectDocumentStyles();
+	}
+
+	override updated(): void {
+		// スクロールコンテナの region にはアクセシブルネームが必要なため、
+		// 未指定時はフォールバックを適用しつつ開発時に警告する。
+		if (this.ariaLabel && this.ariaLabel.trim().length > 0) return;
+		if (this._hasWarnedMissingAriaLabel) return;
+		this._hasWarnedMissingAriaLabel = true;
+		console.warn(
+			'[ui-table] `aria-label` is required for scrollable region accessibility. Fallback label is applied.',
+		);
+	}
+
+	private _getResolvedAriaLabel(): string {
+		if (this.ariaLabel && this.ariaLabel.trim().length > 0) {
+			return this.ariaLabel;
+		}
+		return Table.FALLBACK_ARIA_LABEL;
 	}
 
 	/**
@@ -290,12 +312,12 @@ export class Table extends LitElement {
 
 	override render() {
 		return html`
-			<div
-				class="table-container"
-				role="region"
-				tabindex="0"
-				aria-label="${this.ariaLabel}"
-			>
+				<div
+					class="table-container"
+					role="region"
+					tabindex="0"
+					aria-label="${this._getResolvedAriaLabel()}"
+				>
 				<slot></slot>
 			</div>
 		`;

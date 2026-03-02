@@ -1,4 +1,4 @@
-import { autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
+import { autoUpdate } from '@floating-ui/dom';
 import { html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 
@@ -55,6 +55,10 @@ ui-footnote [data-part='content'] {
   position: fixed;
   left: 0;
   top: 0;
+  /* Popover の UA 既定中央寄せ (inset + margin:auto) を無効化する */
+  right: auto;
+  bottom: auto;
+  margin: 0;
   z-index: var(--z-popover, 400);
   box-sizing: border-box;
   display: none;
@@ -299,9 +303,16 @@ export class Footnote extends LitElement {
     const existingContent = this.querySelector<HTMLElement>('[data-part="content"]');
     const sourceNodes = existingContent ? Array.from(existingContent.childNodes) : Array.from(this.childNodes);
 
-    this._contentNodes = sourceNodes
-      .filter((node) => this._isRenderableContentNode(node))
-      .map((node) => node.cloneNode(true));
+    const renderableNodes = sourceNodes.filter((node) => this._isRenderableContentNode(node));
+    this._contentNodes = renderableNodes.map((node) => node.cloneNode(true));
+
+    // CSR: キャプチャ済みの元ノードを除去し、Lit の Light DOM 描画との重複を防ぐ。
+    // SSR の場合は existingContent（[data-part="content"]）が存在するため除去しない。
+    if (!existingContent) {
+      for (const node of renderableNodes) {
+        node.remove();
+      }
+    }
 
     this._didCaptureContent = true;
   }
@@ -453,15 +464,32 @@ export class Footnote extends LitElement {
   private _startFloating(trigger: HTMLElement, popover: PopoverElement): void {
     this._teardownFloating();
 
+    const GAP = 8;
+
+    // Popover API の top layer 上では position: fixed の座標系とビューポートが一致するため、
+    // getBoundingClientRect() の値をそのまま left / top に使用できる。
+    // floating-ui の computePosition は含有ブロック補正を行うが、top layer ではその補正が
+    // 不要なため、環境によっては位置がずれる。直接計算で回避する。
     const updatePosition = (): void => {
-      void computePosition(trigger, popover, {
-        strategy: 'fixed',
-        placement: 'bottom',
-        middleware: [offset(8), flip({ padding: 8 }), shift({ padding: 8 })],
-      }).then(({ x, y }) => {
-        popover.style.left = `${String(Math.round(x))}px`;
-        popover.style.top = `${String(Math.round(y))}px`;
-      });
+      const ref = trigger.getBoundingClientRect();
+      const fw = popover.offsetWidth;
+      const fh = popover.offsetHeight;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      // 配置: bottom（トリガー下端 + GAP）、上に反転判定
+      let top = ref.bottom + GAP;
+      if (top + fh > vh - GAP && ref.top - fh - GAP > GAP) {
+        top = ref.top - fh - GAP;
+      }
+
+      // 水平: トリガー左端揃え → 画面内にクランプ
+      let left = ref.left;
+      if (left + fw > vw - GAP) left = vw - fw - GAP;
+      if (left < GAP) left = GAP;
+
+      popover.style.left = `${String(Math.round(left))}px`;
+      popover.style.top = `${String(Math.round(top))}px`;
     };
 
     updatePosition();
@@ -496,7 +524,6 @@ export class Footnote extends LitElement {
     event.preventDefault();
 
     this._registerActiveTrigger(popover.id, trigger);
-    this._startFloating(trigger, popover);
 
     if (this._isPopoverOpen(popover)) {
       this._setFocusReturn(popover, true);
@@ -506,6 +533,7 @@ export class Footnote extends LitElement {
 
     this._setFocusReturn(popover, true);
     this._showPopover(popover);
+    this._startFloating(trigger, popover);
   };
 
   private _onFooterLinkClick = (): void => {
@@ -517,13 +545,22 @@ export class Footnote extends LitElement {
   };
 
   private _onPopoverKeyDown = (event: KeyboardEvent): void => {
-    if (event.key !== 'Tab' || event.shiftKey) return;
-    if (!(event.target instanceof Element)) return;
-    if (!event.target.classList.contains('footnote-list-link')) return;
-
     const popover = event.currentTarget;
     if (!(popover instanceof HTMLElement)) return;
     if (!this._isPopoverOpen(popover)) return;
+
+    if (event.key === 'Escape') {
+      this._setFocusReturn(popover, true);
+      if (this._hidePopover(popover as PopoverElement)) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      return;
+    }
+
+    if (event.key !== 'Tab' || event.shiftKey) return;
+    if (!(event.target instanceof Element)) return;
+    if (!event.target.classList.contains('footnote-list-link')) return;
 
     this._setFocusReturn(popover, false);
     this._hidePopover(popover as PopoverElement);

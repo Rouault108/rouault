@@ -1,13 +1,12 @@
 import { html, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { ifDefined } from 'lit/directives/if-defined.js';
 
 export type DividerVariant = 'section' | 'layout';
 
 const VALID_VARIANTS = new Set<DividerVariant>(['section', 'layout']);
 
 /** ドキュメントに注入するスタイルタグのID（重複注入防止） */
-const DOCUMENT_STYLE_ID = 'ui-divider-document-styles';
+export const DOCUMENT_STYLE_ID = 'ui-divider-document-styles';
 
 /**
  * 区切り線スタイルの適用スコープ。
@@ -16,12 +15,12 @@ const DOCUMENT_STYLE_ID = 'ui-divider-document-styles';
  * - `<ui-divider>` 内部の `hr`
  * - レイアウト境界用 `hr[data-divider-variant="layout"]`
  */
-const DIVIDER_SCOPE_SELECTOR = ':where(.prose hr, ui-divider > hr, hr[data-divider-variant="layout"])';
+export const DIVIDER_SCOPE_SELECTOR = ':where(.prose hr, ui-divider > hr, hr[data-divider-variant="layout"])';
 
 const DOCUMENT_CSS = `
 ${DIVIDER_SCOPE_SELECTOR} {
   border: 0;
-  border-top: var(--border-width) solid var(--border-ghost);
+  border-top: var(--border-style-subtle, 1px solid var(--border-default, oklch(20% 0.03 250 / 0.12)));
   margin: var(--space-12) 0;
   width: 100%;
 }
@@ -43,6 +42,20 @@ ${DIVIDER_SCOPE_SELECTOR} {
 `;
 
 /**
+ * Divider スタイルをドキュメントへ注入する。
+ * `.prose hr` 契約を満たすため、コンポーネント実体の有無に依存させない。
+ */
+export const ensureDividerDocumentStyles = (): void => {
+  if (typeof document === 'undefined') return;
+  if (document.getElementById(DOCUMENT_STYLE_ID)) return;
+
+  const style = document.createElement('style');
+  style.id = DOCUMENT_STYLE_ID;
+  style.textContent = DOCUMENT_CSS;
+  document.head.appendChild(style);
+};
+
+/**
  * 区切り線コンポーネント。
  *
  * ネイティブ `hr` を最終DOMとして出力し、意味論を維持する。
@@ -58,37 +71,21 @@ export class Divider extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this._injectDocumentStyles();
-  }
-
-  private _injectDocumentStyles(): void {
-    if (typeof document === 'undefined') return;
-    if (document.getElementById(DOCUMENT_STYLE_ID)) return;
-
-    const style = document.createElement('style');
-    style.id = DOCUMENT_STYLE_ID;
-    style.textContent = DOCUMENT_CSS;
-    document.head.appendChild(style);
+    ensureDividerDocumentStyles();
   }
 
   private get _resolvedVariant(): DividerVariant {
     return VALID_VARIANTS.has(this.variant) ? this.variant : 'section';
   }
 
-  private get _resolvedAriaLabel(): string | undefined {
-    const label = this.getAttribute('aria-label')?.trim() ?? '';
-    return label === '' ? undefined : label;
-  }
-
   override render() {
     return html`
-      <hr
-        data-divider-variant="${this._resolvedVariant}"
-        aria-label="${ifDefined(this._resolvedAriaLabel)}"
-      />
+      <hr data-divider-variant="${this._resolvedVariant}" />
     `;
   }
 }
+
+ensureDividerDocumentStyles();
 
 declare global {
   interface HTMLElementTagNameMap {

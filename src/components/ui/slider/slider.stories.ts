@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './slider';
-import type { Slider } from './slider';
+import { Slider } from './slider';
+import '../../../lib/icons';
 
 /**
  * ## スライダー (Slider) `<ui-slider>`
@@ -53,8 +54,8 @@ Input-on-Top Overlay パターンにより、操作の「空振り」を物理�
 
 <!-- prefix/suffix スロット -->
 <ui-slider label="明るさ" min="0" max="100" value="70">
-  <span slot="prefix">🌑</span>
-  <span slot="suffix">🌕</span>
+  <iconify-icon slot="prefix" icon="lucide:moon" aria-hidden="true"></iconify-icon>
+  <iconify-icon slot="suffix" icon="lucide:sun" aria-hidden="true"></iconify-icon>
 </ui-slider>
 
 <!-- 小数ステップ -->
@@ -365,12 +366,12 @@ export const WithSlots: Story = {
       value="60"
       @input="${(e: Event) => {
             const slider = e.target as Slider;
-            const suffix = document.getElementById('volume-value');
+            const suffix = slider.querySelector<HTMLElement>('[slot="suffix"][data-role="value"]');
             if (suffix) suffix.textContent = String(slider.value);
         }}"
     >
-      <span slot="prefix" style="font-size: 1.2em;">🔇</span>
-      <span id="volume-value" slot="suffix" style="font-size: 14px; min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums;">60</span>
+      <iconify-icon slot="prefix" icon="lucide:volume-x" aria-hidden="true" style="font-size: 1.2em;"></iconify-icon>
+      <span data-role="value" slot="suffix" style="font-size: 14px; min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums;">60</span>
     </ui-slider>
   `,
     play: async ({ canvasElement }) => {
@@ -406,8 +407,8 @@ export const BrightnessControl: Story = {
         max="100"
         value="70"
       >
-        <span slot="prefix" style="font-size: 1.1em; opacity: 0.5;">☀️</span>
-        <span slot="suffix" style="font-size: 1.1em;">☀️</span>
+        <iconify-icon slot="prefix" icon="lucide:moon-star" aria-hidden="true" style="font-size: 1.1em; opacity: 0.7;"></iconify-icon>
+        <iconify-icon slot="suffix" icon="lucide:sun" aria-hidden="true" style="font-size: 1.1em;"></iconify-icon>
       </ui-slider>
     </div>
   `,
@@ -489,8 +490,8 @@ export const AllStates: Story = {
       <div class="state-group">
         <div class="state-label">With Slots</div>
         <ui-slider id="all-slots" label="スロット付き" value="65">
-          <span slot="prefix">🔇</span>
-          <span slot="suffix">🔊</span>
+          <iconify-icon slot="prefix" icon="lucide:volume-x" aria-hidden="true"></iconify-icon>
+          <iconify-icon slot="suffix" icon="lucide:volume-2" aria-hidden="true"></iconify-icon>
         </ui-slider>
       </div>
     </div>
@@ -535,7 +536,7 @@ export const AllStates: Story = {
  */
 export const EventFiring: Story = {
     render: () => html`
-    <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
+    <div data-story-root="event-firing" style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
       <ui-slider
         id="event-slider"
         label="イベントテスト"
@@ -544,18 +545,18 @@ export const EventFiring: Story = {
         value="50"
         @input="${(e: Event) => {
             const slider = e.target as Slider;
-            const log = document.getElementById('event-log');
+            const log = slider.parentElement?.querySelector<HTMLElement>('[data-role="event-log"]');
             if (log) log.textContent = `input: value=${String(slider.value)}`;
         }}"
         @change="${(e: Event) => {
             const slider = e.target as Slider;
-            const log = document.getElementById('event-log');
+            const log = slider.parentElement?.querySelector<HTMLElement>('[data-role="event-log"]');
             if (log) log.textContent = `change: value=${String(slider.value)}（確定）`;
         }}"
       ></ui-slider>
 
       <div
-        id="event-log"
+        data-role="event-log"
         style="
           padding: 0.75rem 1rem;
           background: oklch(97% 0 0);
@@ -603,25 +604,26 @@ export const EventFiring: Story = {
 };
 
 /**
- * キーボード操作（矢印キー）。
+ * キーボード操作（矢印キー + Home/End + PageUp/PageDown）。
  *
  * - **Right / Up**: 値を `step` の単位で増加
  * - **Left / Down**: 値を `step` の単位で減少
  * - **Home**: 最小値へジャンプ
  * - **End**: 最大値へジャンプ
+ * - **Page Up / Page Down**: `step * 10` で増減
  */
 export const KeyboardNavigation: Story = {
     render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
       <div style="padding: 0.75rem 1rem; background: oklch(97% 0 0); border: 1px solid oklch(90% 0.01 250 / 0.2); border-radius: 6px; font-size: 13px;">
-        <strong>操作方法</strong>: Tab でフォーカスを当て、矢印キー / Home / End で操作してください。
+        <strong>操作方法</strong>: Tab でフォーカスを当て、矢印キー / Home / End / PageUp / PageDown で操作してください。
       </div>
       <ui-slider
         id="keyboard-slider"
         label="キーボード操作"
         min="0"
         max="100"
-        step="10"
+        step="5"
         value="50"
       ></ui-slider>
     </div>
@@ -637,18 +639,14 @@ export const KeyboardNavigation: Story = {
         // フォーカスを当てる
         input.focus();
 
-        // テスト: ArrowRight で値が増加する（ネイティブ input の動作を確認）
-        // ネイティブ input はキーボードイベントを自身で処理するため、
-        // プログラム的に値を変更して input イベントを発火させてテスト
+        // テスト: ArrowRight 相当で値が step 単位増加
         const initialValue = slider.value ?? 50;
-
-        // 値を直接変更して input イベントを発火（ネイティブキーボード動作のシミュレーション）
-        input.value = String(initialValue + 10);
+        input.value = String(initialValue + 5);
         input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
         await slider.updateComplete;
 
-        if (slider.value !== 60) {
-            throw new Error(`Expected value=60 after ArrowRight simulation, got ${String(slider.value)}`);
+        if (slider.value !== 55) {
+            throw new Error(`Expected value=55 after ArrowRight simulation, got ${String(slider.value)}`);
         }
 
         // テスト: Home キー相当（min へ）
@@ -667,6 +665,26 @@ export const KeyboardNavigation: Story = {
 
         if ((slider.value as number) !== 100) {
             throw new Error(`Expected value=100 after End simulation, got ${String(slider.value)}`);
+        }
+
+        // テスト: PageDown で step * 10（=50）減少
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'PageDown', bubbles: true }));
+        await slider.updateComplete;
+        if ((slider.value as number) !== 50) {
+            throw new Error(`Expected value=50 after PageDown, got ${String(slider.value)}`);
+        }
+
+        // テスト: PageUp で step * 10（=50）増加して max へクランプ
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'PageUp', bubbles: true }));
+        await slider.updateComplete;
+        if ((slider.value as number) !== 100) {
+            throw new Error(`Expected value=100 after PageUp, got ${String(slider.value)}`);
+        }
+
+        // テスト: Focus Proxy のセレクタ戦略（input:focus-visible ~ .track .thumb）を維持
+        const cssText = (Slider as unknown as { styles?: { cssText?: string } }).styles?.cssText ?? '';
+        if (!cssText.includes('input:focus-visible ~ .track .thumb')) {
+            throw new Error('Expected focus proxy selector "input:focus-visible ~ .track .thumb"');
         }
 
         console.log('✅ All tests passed for KeyboardNavigation story');
@@ -1059,10 +1077,9 @@ export const DisabledClickBlocked: Story = {
         const input = slider.shadowRoot?.querySelector<HTMLInputElement>('input[type="range"]');
         if (!input) throw new Error('input not found');
 
-        // disabled 時は input 要素自体が disabled なのでイベントは発火しない
-        // プログラム的にイベントを発火してもコンポーネントが disabled チェックで弾くことを確認
-        input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-        input.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+        // disabled input の実操作相当: click / keydown を行っても値やイベントは変化しない
+        input.click();
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
 
         await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -1175,5 +1192,143 @@ export const NegativeRange: Story = {
         }
 
         console.log('✅ All tests passed for NegativeRange story');
+    },
+};
+
+/**
+ * テーマ確認: ダークトークン環境での視認性確認。
+ *
+ * Track / Thumb / Fill のコントラストが維持されることを確認します。
+ */
+export const DarkMode: Story = {
+    parameters: {
+        backgrounds: { default: 'dark' },
+        docs: {
+            description: {
+                story: 'Dark Mode のトークンを与えた状態でトラック境界と Thumb の分離が保たれるかを確認します。',
+            },
+        },
+    },
+    render: () => html`
+    <div
+      style="
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        max-width: 480px;
+        padding: 16px;
+        background: oklch(24% 0.01 250);
+        color: oklch(95% 0.01 250);
+        border-radius: 8px;
+      "
+    >
+      <div style="font-size: 13px;">Dark Mode 表示確認</div>
+      <ui-slider
+        id="dark-mode-slider"
+        label="ダークモード確認"
+        value="45"
+        style="
+          --border-default: oklch(45% 0.02 250);
+          --white: oklch(16% 0.01 250);
+          --primary: oklch(75% 0.12 250);
+          --elevation-md: 0 0 0 1px oklch(82% 0.03 250 / 0.35), 0 6px 20px oklch(0% 0 0 / 0.45);
+        "
+      >
+        <iconify-icon slot="prefix" icon="lucide:moon-star" aria-hidden="true"></iconify-icon>
+        <iconify-icon slot="suffix" icon="lucide:sun" aria-hidden="true"></iconify-icon>
+      </ui-slider>
+    </div>
+  `,
+    play: async ({ canvasElement }) => {
+        const slider = canvasElement.querySelector<Slider>('#dark-mode-slider');
+        if (!slider) throw new Error('ui-slider not found');
+        await slider.updateComplete;
+
+        const input = slider.shadowRoot?.querySelector<HTMLInputElement>('input[type="range"]');
+        const thumb = slider.shadowRoot?.querySelector<HTMLElement>('.thumb');
+        const track = slider.shadowRoot?.querySelector<HTMLElement>('.track');
+        if (!input || !thumb || !track) throw new Error('required shadow elements not found');
+
+        if (input.getAttribute('aria-label') !== 'ダークモード確認') {
+            throw new Error('aria-label should be preserved in dark mode');
+        }
+
+        if (track.style.background.includes('transparent')) {
+            throw new Error('track background should not be transparent in dark mode');
+        }
+
+        console.log('✅ All tests passed for DarkMode story');
+    },
+};
+
+/**
+ * 高コントラスト確認: forced-colors フォールバック定義の存在確認。
+ */
+export const HighContrastFallback: Story = {
+    parameters: {
+        docs: {
+            description: {
+                story: 'Forced Colors 向けの Thumb 境界線フォールバック（CanvasText）と太線トークンの定義を確認します。',
+            },
+        },
+    },
+    render: () => html`
+    <ui-slider
+      id="high-contrast-slider"
+      label="高コントラスト確認"
+      value="60"
+    ></ui-slider>
+  `,
+    play: async ({ canvasElement }) => {
+        const slider = canvasElement.querySelector<Slider>('#high-contrast-slider');
+        if (!slider) throw new Error('ui-slider not found');
+        await slider.updateComplete;
+
+        const cssText = (Slider as unknown as { styles?: { cssText?: string } }).styles?.cssText ?? '';
+        if (!cssText.includes('@media (forced-colors: active)')) {
+            throw new Error('Expected forced-colors media query');
+        }
+        if (!cssText.includes('CanvasText')) {
+            throw new Error('Expected CanvasText fallback in forced-colors mode');
+        }
+        if (!cssText.includes('--border-width-thick')) {
+            throw new Error('Expected --border-width-thick token usage for forced-colors');
+        }
+
+        console.log('✅ All tests passed for HighContrastFallback story');
+    },
+};
+
+/**
+ * アクセシビリティ境界: label 未指定時のフォールバック確認。
+ */
+export const MissingLabelFallback: Story = {
+    parameters: {
+        docs: {
+            description: {
+                story: '`label` 未指定時に内部 input のアクセシブル名が空にならないことを確認します。',
+            },
+        },
+    },
+    render: () => html`
+    <ui-slider
+      id="missing-label-slider"
+      min="0"
+      max="100"
+      value="20"
+    ></ui-slider>
+  `,
+    play: async ({ canvasElement }) => {
+        const slider = canvasElement.querySelector<Slider>('#missing-label-slider');
+        if (!slider) throw new Error('ui-slider not found');
+        await slider.updateComplete;
+
+        const input = slider.shadowRoot?.querySelector<HTMLInputElement>('input[type="range"]');
+        if (!input) throw new Error('input not found');
+        if (input.getAttribute('aria-label') !== 'Slider') {
+            throw new Error(`Expected fallback aria-label="Slider", got "${input.getAttribute('aria-label') ?? 'null'}"`);
+        }
+
+        console.log('✅ All tests passed for MissingLabelFallback story');
     },
 };

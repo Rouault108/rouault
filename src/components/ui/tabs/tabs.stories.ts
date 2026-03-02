@@ -109,6 +109,17 @@ const meta: Meta<Tabs> = {
 export default meta;
 type Story = StoryObj<Tabs>;
 
+const dispatchTabKey = (tab: HTMLElement, key: string): void => {
+  tab.dispatchEvent(
+    new KeyboardEvent('keydown', {
+      key,
+      bubbles: true,
+      composed: true,
+      cancelable: true,
+    }),
+  );
+};
+
 // ─────────────────────────────────────────────────
 // 基本ストーリー
 // ─────────────────────────────────────────────────
@@ -127,9 +138,10 @@ export const Default: Story = {
   },
   render: (args) => html`
     <ui-tabs
-      selected-index="${args.selectedIndex}"
-      orientation="${args.orientation}"
-      ?automatic-activation="${args.automaticActivation}"
+      .selectedIndex=${args.selectedIndex}
+      .selectedValue=${args.selectedValue ?? null}
+      .orientation=${args.orientation}
+      ?automatic-activation=${args.automaticActivation}
     >
       <button slot="tab">概要</button>
       <div slot="panel" style="padding: 1rem;">
@@ -368,14 +380,25 @@ export const AutomaticActivation: Story = {
     </ui-tabs>
   `,
   play: async ({ canvasElement }) => {
-    const tabs = canvasElement.querySelector('ui-tabs');
+    const tabs = canvasElement.querySelector<Tabs>('ui-tabs');
     if (!tabs) throw new Error('[AutomaticActivation] ui-tabs が見つかりません');
 
     await tabs.updateComplete;
+    const tabEls = Array.from(canvasElement.querySelectorAll<HTMLElement>('[slot="tab"]'));
 
     // テスト: automatic-activation 属性が反映されている
     if (!tabs.automaticActivation) {
       throw new Error('[AutomaticActivation] automaticActivation が true ではありません');
+    }
+
+    // テスト: ArrowRight でフォーカス移動と同時に選択される
+    const firstTab = tabEls[0];
+    if (!firstTab) throw new Error('[AutomaticActivation] tab[0] が見つかりません');
+    firstTab.focus();
+    dispatchTabKey(firstTab, 'ArrowRight');
+    await tabs.updateComplete;
+    if (tabEls[1]?.getAttribute('aria-selected') !== 'true') {
+      throw new Error('[AutomaticActivation] ArrowRight 後に tab[1] が選択されていません');
     }
 
     console.log('✅ [AutomaticActivation] 全テスト通過');
@@ -455,7 +478,7 @@ export const ManyTabs: Story = {
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const tabs = canvasElement.querySelector('ui-tabs');
+    const tabs = canvasElement.querySelector<Tabs>('ui-tabs');
     if (!tabs) throw new Error('[ManyTabs] ui-tabs が見つかりません');
 
     await tabs.updateComplete;
@@ -473,6 +496,15 @@ export const ManyTabs: Story = {
         throw new Error(`[ManyTabs] tab[${String(i)}] の role が "tab" ではありません`);
       }
     });
+
+    // テスト: 末尾タブ選択時に自動スクロールで可視領域に入る
+    tabs.select(9);
+    await tabs.updateComplete;
+    const tablist = tabs.shadowRoot?.querySelector<HTMLElement>('[role="tablist"]');
+    if (!tablist) throw new Error('[ManyTabs] tablist が見つかりません');
+    if (tablist.scrollLeft <= 0) {
+      throw new Error('[ManyTabs] 末尾タブ選択時に横スクロールしていません');
+    }
 
     console.log('✅ [ManyTabs] 全テスト通過');
   },
@@ -584,12 +616,11 @@ export const KeyboardNavigation: Story = {
     await tabs.updateComplete;
 
     const tabEls = Array.from(canvasElement.querySelectorAll<HTMLElement>('[slot="tab"]'));
-    const tablist = tabs.shadowRoot?.querySelector<HTMLElement>('[role="tablist"]');
-    if (!tablist) throw new Error('[KeyboardNavigation] tablist が見つかりません');
-
     // ─── テスト: ArrowRight でフォーカス移動（Manual: 選択は変わらない） ───
-    tabEls[0]?.focus();
-    tablist.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, composed: true }));
+    const firstTab = tabEls[0];
+    if (!firstTab) throw new Error('[KeyboardNavigation] tab[0] が見つかりません');
+    firstTab.focus();
+    dispatchTabKey(firstTab, 'ArrowRight');
     await tabs.updateComplete;
 
     // フォーカスが tab[1] に移動している
@@ -602,7 +633,7 @@ export const KeyboardNavigation: Story = {
     }
 
     // ─── テスト: Enter で選択 ───
-    tablist.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true }));
+    dispatchTabKey(tabEls[1], 'Enter');
     await tabs.updateComplete;
 
     if (tabEls[1].getAttribute('aria-selected') !== 'true') {
@@ -610,7 +641,7 @@ export const KeyboardNavigation: Story = {
     }
 
     // ─── テスト: End で末尾へ ───
-    tablist.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true, composed: true }));
+    dispatchTabKey(tabEls[1], 'End');
     await tabs.updateComplete;
 
     if (tabEls[2]?.getAttribute('tabindex') !== '0') {
@@ -618,7 +649,7 @@ export const KeyboardNavigation: Story = {
     }
 
     // ─── テスト: Home で先頭へ ───
-    tablist.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true, composed: true }));
+    dispatchTabKey(tabEls[2], 'Home');
     await tabs.updateComplete;
 
     if (tabEls[0].getAttribute('tabindex') !== '0') {
@@ -627,7 +658,7 @@ export const KeyboardNavigation: Story = {
 
     // ─── テスト: ArrowLeft での循環（先頭 → 末尾） ───
     // tab[0] にいる状態から ArrowLeft
-    tablist.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, composed: true }));
+    dispatchTabKey(tabEls[0], 'ArrowLeft');
     await tabs.updateComplete;
 
     if (tabEls[2].getAttribute('tabindex') !== '0') {
@@ -636,7 +667,7 @@ export const KeyboardNavigation: Story = {
 
     // ─── テスト: ArrowRight での循環（末尾 → 先頭） ───
     // tab[2] にいる状態から ArrowRight
-    tablist.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, composed: true }));
+    dispatchTabKey(tabEls[2], 'ArrowRight');
     await tabs.updateComplete;
 
     if (tabEls[0].getAttribute('tabindex') !== '0') {
@@ -673,12 +704,11 @@ export const KeyboardNavigationVertical: Story = {
     await tabs.updateComplete;
 
     const tabEls = Array.from(canvasElement.querySelectorAll<HTMLElement>('[slot="tab"]'));
-    const tablist = tabs.shadowRoot?.querySelector<HTMLElement>('[role="tablist"]');
-    if (!tablist) throw new Error('[KeyboardNavigationVertical] tablist が見つかりません');
-
     // テスト: ArrowDown でフォーカス移動
-    tabEls[0]?.focus();
-    tablist.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }));
+    const firstTab = tabEls[0];
+    if (!firstTab) throw new Error('[KeyboardNavigationVertical] tab[0] が見つかりません');
+    firstTab.focus();
+    dispatchTabKey(firstTab, 'ArrowDown');
     await tabs.updateComplete;
 
     if (tabEls[1]?.getAttribute('tabindex') !== '0') {
@@ -686,7 +716,7 @@ export const KeyboardNavigationVertical: Story = {
     }
 
     // テスト: ArrowLeft は無視される（垂直時）
-    tablist.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, composed: true }));
+    dispatchTabKey(tabEls[1], 'ArrowLeft');
     await tabs.updateComplete;
 
     // フォーカスは tab[1] のまま
@@ -695,7 +725,7 @@ export const KeyboardNavigationVertical: Story = {
     }
 
     // テスト: ArrowUp でフォーカスを戻す
-    tablist.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, composed: true }));
+    dispatchTabKey(tabEls[1], 'ArrowUp');
     await tabs.updateComplete;
 
     if (tabEls[0]?.getAttribute('tabindex') !== '0') {
@@ -734,7 +764,7 @@ export const TabChangeEvent: Story = {
       id="event-tabs"
       selected-index="0"
       @ui-tab-change="${(e: CustomEvent<{ index: number; value: string | null; prevIndex: number }>) => {
-        const log = document.querySelector('#event-log');
+        const log = (e.currentTarget as HTMLElement | null)?.parentElement?.querySelector<HTMLElement>('#event-log');
         if (log) {
           log.textContent = `ui-tab-change: index=${String(e.detail.index)}, value=${e.detail.value ?? 'null'}, prevIndex=${String(e.detail.prevIndex)}`;
         }
@@ -968,8 +998,6 @@ export const EdgeCase_SingleTab: Story = {
     await tabs.updateComplete;
 
     const tabEls = canvasElement.querySelectorAll('[slot="tab"]');
-    const tablist = tabs.shadowRoot?.querySelector<HTMLElement>('[role="tablist"]');
-    if (!tablist) throw new Error('[EdgeCase_SingleTab] tablist が見つかりません');
 
     // テスト: 1タブのみ存在
     if (tabEls.length !== 1) {
@@ -983,7 +1011,7 @@ export const EdgeCase_SingleTab: Story = {
 
     // テスト: Arrow キーを押してもエラーにならない（循環して自身に戻る）
     (tabEls[0] as HTMLElement).focus();
-    tablist.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, composed: true }));
+    dispatchTabKey(tabEls[0] as HTMLElement, 'ArrowRight');
     await tabs.updateComplete;
 
     // 自身に戻っているため tabindex="0" は変わらない
@@ -1047,6 +1075,44 @@ export const EdgeCase_UnmatchedValue: Story = {
   },
 };
 
+/**
+ * ⚠️ タブ数とパネル数の不一致（境界条件）。
+ *
+ * 1:1 対応が崩れた場合、先頭から最小件数のみを有効化します。
+ * 余剰パネルは非表示、余剰タブは選択不可です。
+ */
+export const EdgeCase_MismatchedSlots: Story = {
+  render: () => html`
+    <ui-tabs id="mismatched-tabs" selected-index="0">
+      <button slot="tab">A</button>
+      <div slot="panel" style="padding: 1rem;">A パネル</div>
+
+      <button slot="tab">B</button>
+      <div slot="panel" style="padding: 1rem;">B パネル</div>
+
+      <button slot="tab">C (余剰)</button>
+    </ui-tabs>
+  `,
+  play: async ({ canvasElement }) => {
+    const tabs = canvasElement.querySelector<Tabs>('#mismatched-tabs');
+    if (!tabs) throw new Error('[EdgeCase_MismatchedSlots] ui-tabs が見つかりません');
+
+    await tabs.updateComplete;
+    const tabEls = canvasElement.querySelectorAll<HTMLElement>('[slot="tab"]');
+    const panelEls = canvasElement.querySelectorAll<HTMLElement>('[slot="panel"]');
+
+    if (tabEls.length !== 3 || panelEls.length !== 2) {
+      throw new Error('[EdgeCase_MismatchedSlots] 事前条件が崩れています');
+    }
+
+    tabEls[2]?.click();
+    await tabs.updateComplete;
+    if (tabEls[2]?.getAttribute('aria-selected') === 'true') {
+      throw new Error('[EdgeCase_MismatchedSlots] 余剰タブが選択されてはいけません');
+    }
+  },
+};
+
 // ─────────────────────────────────────────────────
 // アクセシビリティ
 // ─────────────────────────────────────────────────
@@ -1104,6 +1170,25 @@ export const ReducedMotion: Story = {
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    const tabs = canvasElement.querySelector<Tabs>('ui-tabs');
+    if (!tabs) throw new Error('[ReducedMotion] ui-tabs が見つかりません');
+
+    await tabs.updateComplete;
+
+    const tab = canvasElement.querySelector<HTMLElement>('[slot="tab"]');
+    const panel = canvasElement.querySelector<HTMLElement>('[slot="panel"]');
+    if (!tab || !panel) throw new Error('[ReducedMotion] tab/panel が見つかりません');
+
+    const tabStyle = getComputedStyle(tab);
+    const panelStyle = getComputedStyle(panel);
+    if (!tabStyle.transitionDuration.includes('0.01ms')) {
+      throw new Error('[ReducedMotion] タブの transition-duration が 0.01ms 相当ではありません');
+    }
+    if (!panelStyle.transitionDuration.includes('0.01ms')) {
+      throw new Error('[ReducedMotion] パネルの transition-duration が 0.01ms 相当ではありません');
+    }
+  },
 };
 
 /**
@@ -1157,6 +1242,71 @@ export const ForcedColorsMode: Story = {
       },
     },
   },
+  play: ({ canvasElement }) => {
+    const tabs = canvasElement.querySelectorAll<Tabs>('ui-tabs');
+    if (tabs.length !== 2) {
+      throw new Error('[ForcedColorsMode] 水平/垂直の2インスタンスが必要です');
+    }
+
+    const isForcedColors = window.matchMedia('(forced-colors: active)').matches;
+    if (!isForcedColors) return;
+
+    const firstTab = canvasElement.querySelector<HTMLElement>('[slot="tab"]');
+    if (!firstTab) throw new Error('[ForcedColorsMode] タブが見つかりません');
+    const borderBottomColor = getComputedStyle(firstTab).borderBottomColor;
+    if (!borderBottomColor || borderBottomColor === 'rgba(0, 0, 0, 0)') {
+      throw new Error('[ForcedColorsMode] forced-colors 有効時にアクティブ境界が視認できません');
+    }
+  },
+};
+
+/**
+ * Dark Mode（暗色面）でのコントラスト確認。
+ *
+ * Semantic token による色管理で、ダークサーフェス上でも
+ * タブの可読性とアクティブ状態の識別性が維持されることを確認します。
+ */
+export const DarkMode: Story = {
+  render: () => html`
+    <style>
+      .dark-surface {
+        background: #111827;
+        color: #f9fafb;
+        padding: 1rem;
+        border-radius: 10px;
+      }
+      .dark-surface ui-tabs {
+        --fg-muted: #9ca3af;
+        --fg-default: #f3f4f6;
+        --primary: #93c5fd;
+        --border-default: rgb(255 255 255 / 0.2);
+      }
+    </style>
+
+    <div class="dark-surface">
+      <ui-tabs id="dark-tabs" selected-index="0">
+        <button slot="tab">概要</button>
+        <div slot="panel" style="padding: 1rem;">暗色面の概要パネル</div>
+
+        <button slot="tab">詳細</button>
+        <div slot="panel" style="padding: 1rem;">暗色面の詳細パネル</div>
+      </ui-tabs>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const tabs = canvasElement.querySelector<Tabs>('#dark-tabs');
+    if (!tabs) throw new Error('[DarkMode] ui-tabs が見つかりません');
+
+    await tabs.updateComplete;
+
+    const activeTab = canvasElement.querySelector<HTMLElement>('[slot="tab"][aria-selected="true"]');
+    if (!activeTab) throw new Error('[DarkMode] アクティブタブが見つかりません');
+
+    const color = getComputedStyle(activeTab).color;
+    if (!color || color === 'rgba(0, 0, 0, 0)') {
+      throw new Error('[DarkMode] 暗色面でタブ文字色が不正です');
+    }
+  },
 };
 
 // ─────────────────────────────────────────────────
@@ -1201,17 +1351,19 @@ export const AsyncPanel: Story = {
     </style>
 
     <ui-tabs id="async-tabs" selected-index="0">
-      <button slot="tab">既存コンテンツ</button>
-      <div slot="panel" style="padding: 1rem;">
-        即座に表示されるコンテンツ
+      <button slot="tab">Pending (&lt;500ms)</button>
+      <div slot="panel" id="pending-panel" style="padding: 1rem;" aria-busy="false">
+        <p id="pending-content">既存コンテンツを維持（ローディングUIなし）</p>
       </div>
 
-      <button slot="tab">非同期コンテンツ</button>
-      <div slot="panel" id="async-panel" style="padding: 1rem;" aria-busy="true">
-        <div class="skeleton" style="width: 80%;"></div>
-        <div class="skeleton" style="width: 60%;"></div>
-        <div class="skeleton" style="width: 70%;"></div>
-        <p style="display: none;" id="async-content">読み込み完了後のコンテンツ</p>
+      <button slot="tab">Loading (&gt;=500ms)</button>
+      <div slot="panel" id="loading-panel" style="padding: 1rem;" aria-busy="false">
+        <div id="loading-skeleton" hidden>
+          <div class="skeleton" style="width: 80%;"></div>
+          <div class="skeleton" style="width: 60%;"></div>
+          <div class="skeleton" style="width: 70%;"></div>
+        </div>
+        <p id="loading-content">読み込み完了後のコンテンツ</p>
       </div>
     </ui-tabs>
   `,
@@ -1221,29 +1373,57 @@ export const AsyncPanel: Story = {
 
     await tabs.updateComplete;
 
-    const asyncPanel = canvasElement.querySelector<HTMLElement>('#async-panel');
-    if (!asyncPanel) throw new Error('[AsyncPanel] async-panel が見つかりません');
-
-    // テスト: aria-busy="true" が付与されている
-    if (asyncPanel.getAttribute('aria-busy') !== 'true') {
-      throw new Error('[AsyncPanel] aria-busy="true" が設定されていません');
+    const tabEls = canvasElement.querySelectorAll<HTMLElement>('[slot="tab"]');
+    const pendingPanel = canvasElement.querySelector<HTMLElement>('#pending-panel');
+    const loadingPanel = canvasElement.querySelector<HTMLElement>('#loading-panel');
+    const loadingSkeleton = canvasElement.querySelector<HTMLElement>('#loading-skeleton');
+    const loadingContent = canvasElement.querySelector<HTMLElement>('#loading-content');
+    if (!pendingPanel || !loadingPanel || !loadingSkeleton || !loadingContent) {
+      throw new Error('[AsyncPanel] 必要要素が見つかりません');
     }
 
-    // 非同期完了をシミュレート（500ms 閾値内）
+    // 1) Pending (<500ms): aria-busy は false のまま、ローディングUIなし
+    tabEls[0]?.click();
+    await tabs.updateComplete;
+    if (pendingPanel.getAttribute('aria-busy') !== 'false') {
+      throw new Error('[AsyncPanel] Pending では aria-busy="false" を維持してください');
+    }
+    if (!loadingSkeleton.hasAttribute('hidden')) {
+      throw new Error('[AsyncPanel] Pending ではローディングUIを表示してはいけません');
+    }
+
+    // 2) Loading (>=500ms): threshold 超過時に aria-busy=true + skeleton 表示
+    tabEls[1]?.click();
+    await tabs.updateComplete;
+    loadingPanel.setAttribute('aria-busy', 'true');
+    loadingSkeleton.removeAttribute('hidden');
+    loadingContent.setAttribute('hidden', '');
+
+    if (loadingPanel.getAttribute('aria-busy') !== 'true') {
+      throw new Error('[AsyncPanel] Loading 開始時に aria-busy="true" が必要です');
+    }
+    if (loadingSkeleton.hasAttribute('hidden')) {
+      throw new Error('[AsyncPanel] threshold 超過時に skeleton を表示してください');
+    }
+
+    // 3) 解決後: aria-busy=false + skeleton 非表示 + コンテンツ表示
     await new Promise<void>((resolve) => {
       setTimeout(() => {
-        asyncPanel.setAttribute('aria-busy', 'false');
-        const skeletons = asyncPanel.querySelectorAll<HTMLElement>('.skeleton');
-        skeletons.forEach((s) => { s.remove(); });
-        const content = asyncPanel.querySelector<HTMLElement>('#async-content');
-        if (content) content.style.display = '';
+        loadingPanel.setAttribute('aria-busy', 'false');
+        loadingSkeleton.setAttribute('hidden', '');
+        loadingContent.removeAttribute('hidden');
         resolve();
-      }, 300);
+      }, 700);
     });
 
-    // テスト: aria-busy が false に戻っている
-    if (asyncPanel.getAttribute('aria-busy') !== 'false') {
+    if (loadingPanel.getAttribute('aria-busy') !== 'false') {
       throw new Error('[AsyncPanel] 完了後に aria-busy="false" になっていません');
+    }
+    if (!loadingSkeleton.hasAttribute('hidden')) {
+      throw new Error('[AsyncPanel] 完了後に skeleton が非表示になっていません');
+    }
+    if (loadingContent.hasAttribute('hidden')) {
+      throw new Error('[AsyncPanel] 完了後にコンテンツが表示されていません');
     }
 
     console.log('✅ [AsyncPanel] 全テスト通過');

@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
+import { userEvent } from 'storybook/test';
 import './search-trigger';
 import type { SearchTrigger } from './search-trigger';
 
@@ -158,6 +159,11 @@ export const Default: Story = {
         // テスト: 検索アイコンが存在する
         const icon = trigger.shadowRoot?.querySelector('.icon');
         if (!icon) throw new Error('Icon element not found');
+        const iconGlyph = icon.querySelector('iconify-icon');
+        if (!iconGlyph) throw new Error('iconify-icon not found');
+        if (iconGlyph.getAttribute('icon') !== 'lucide:search') {
+            throw new Error(`Expected icon="lucide:search", got "${iconGlyph.getAttribute('icon') ?? 'null'}"`);
+        }
 
         // テスト: プレースホルダーが存在する
         const placeholder = trigger.shadowRoot?.querySelector('.placeholder');
@@ -166,6 +172,8 @@ export const Default: Story = {
         // テスト: バッジが存在する
         const badge = trigger.shadowRoot?.querySelector('.badge');
         if (!badge) throw new Error('Badge element not found');
+        const kbd = badge.querySelector('ui-kbd');
+        if (!kbd) throw new Error('Default badge should render <ui-kbd>');
 
         // テスト: disabled でない
         if (trigger.disabled) throw new Error('Expected disabled to be false');
@@ -205,13 +213,6 @@ export const StateDefault: Story = {
         // テスト: disabled でない
         if (button.disabled) throw new Error('Expected button to not be disabled');
 
-        // テスト: aria-disabled="false"
-        if (button.getAttribute('aria-disabled') !== 'false') {
-            throw new Error(
-                `Expected aria-disabled="false", got "${button.getAttribute('aria-disabled') ?? 'null'}"`,
-            );
-        }
-
         console.log('✅ All tests passed for StateDefault story');
     },
 };
@@ -244,13 +245,6 @@ export const StateDisabled: Story = {
 
         // テスト: button に disabled 属性が付与されている
         if (!button.disabled) throw new Error('Expected button to be disabled');
-
-        // テスト: aria-disabled="true"
-        if (button.getAttribute('aria-disabled') !== 'true') {
-            throw new Error(
-                `Expected aria-disabled="true", got "${button.getAttribute('aria-disabled') ?? 'null'}"`,
-            );
-        }
 
         console.log('✅ All tests passed for StateDisabled story');
     },
@@ -392,7 +386,8 @@ export const EventFiring: Story = {
       <ui-search-trigger
         id="event-trigger"
         @open-search-dialog="${(e: Event) => {
-            const log = document.getElementById('event-log');
+            const root = (e.currentTarget as HTMLElement).parentElement;
+            const log = root?.querySelector<HTMLElement>('#event-log');
             if (log) log.textContent = `open-search-dialog イベントが発火しました（target: ${(e.target as Element).tagName.toLowerCase()}）`;
         }}"
       ></ui-search-trigger>
@@ -464,8 +459,9 @@ export const DisabledNoEvent: Story = {
       <ui-search-trigger
         id="disabled-no-event"
         disabled
-        @open-search-dialog="${() => {
-            const log = document.getElementById('disabled-event-log');
+        @open-search-dialog="${(e: Event) => {
+            const root = (e.currentTarget as HTMLElement).parentElement;
+            const log = root?.querySelector<HTMLElement>('#disabled-event-log');
             if (log) log.textContent = '❌ イベントが発火してしまいました（バグ）';
         }}"
       ></ui-search-trigger>
@@ -528,8 +524,9 @@ export const KeyboardActivation: Story = {
       </div>
       <ui-search-trigger
         id="keyboard-trigger"
-        @open-search-dialog="${() => {
-            const log = document.getElementById('keyboard-log');
+        @open-search-dialog="${(e: Event) => {
+            const root = (e.currentTarget as HTMLElement).parentElement;
+            const log = root?.querySelector<HTMLElement>('#keyboard-log');
             if (log) log.textContent = '✅ open-search-dialog イベントが発火しました';
         }}"
       ></ui-search-trigger>
@@ -570,23 +567,16 @@ export const KeyboardActivation: Story = {
             }
         }
 
-        // テスト: Enter キーで open-search-dialog イベントが発火する
-        // ネイティブ button は Enter キーでクリックイベントを発火するため、
-        // click イベントをシミュレートしてテスト
-        const eventPromise = new Promise<CustomEvent>((resolve) => {
-            trigger.addEventListener('open-search-dialog', (e) => { resolve(e as CustomEvent); }, { once: true });
-        });
+        // テスト: Enter と Space キーで open-search-dialog イベントが発火する
+        let eventCount = 0;
+        trigger.addEventListener('open-search-dialog', () => { eventCount++; });
 
-        // Enter キー相当: ネイティブ button の Enter キー動作をシミュレート
-        button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true }));
-        button.click(); // Enter は click を発火させる
+        await userEvent.keyboard('{Enter}');
+        await userEvent.keyboard(' ');
 
-        const event = await Promise.race([
-            eventPromise,
-            new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
-        ]);
-
-        if (!event) throw new Error('open-search-dialog event was not fired on keyboard activation');
+        if (eventCount < 2) {
+            throw new Error(`Expected keyboard activation to fire at least 2 events, got ${String(eventCount)}`);
+        }
 
         console.log('✅ All tests passed for KeyboardActivation story');
     },
@@ -711,8 +701,9 @@ export const FocusOnlyNoEvent: Story = {
       </div>
       <ui-search-trigger
         id="focus-only-trigger"
-        @open-search-dialog="${() => {
-            const log = document.getElementById('focus-only-log');
+        @open-search-dialog="${(e: Event) => {
+            const root = (e.currentTarget as HTMLElement).parentElement;
+            const log = root?.querySelector<HTMLElement>('#focus-only-log');
             if (log) log.textContent = '❌ フォーカスでイベントが発火してしまいました（バグ）';
         }}"
       ></ui-search-trigger>
@@ -763,7 +754,7 @@ export const FocusOnlyNoEvent: Story = {
  * ⚠️ 境界条件: カスタムバッジスロット。
  *
  * `badge` スロットにカスタムコンテンツを提供することで、
- * デフォルトの `⌘K` バッジを置き換えられます。
+ * デフォルトのショートカットバッジを置き換えられます。
  * プラットフォームに応じた表示（Ctrl K / Cmd K）に対応できます。
  */
 export const CustomBadgeSlot: Story = {
@@ -900,8 +891,9 @@ export const RapidClickMultipleEvents: Story = {
       </div>
       <ui-search-trigger
         id="rapid-click-trigger"
-        @open-search-dialog="${() => {
-            const log = document.getElementById('rapid-click-log');
+        @open-search-dialog="${(e: Event) => {
+            const root = (e.currentTarget as HTMLElement).parentElement;
+            const log = root?.querySelector<HTMLElement>('#rapid-click-log');
             const count = parseInt(log?.dataset['count'] ?? '0', 10) + 1;
             if (log) {
                 log.dataset['count'] = String(count);
@@ -981,8 +973,9 @@ export const ProgrammaticActivation: Story = {
       </div>
       <ui-search-trigger
         id="programmatic-trigger"
-        @open-search-dialog="${() => {
-            const log = document.getElementById('programmatic-log');
+        @open-search-dialog="${(e: Event) => {
+            const root = (e.currentTarget as HTMLElement).parentElement;
+            const log = root?.querySelector<HTMLElement>('#programmatic-log');
             if (log) log.textContent = '✅ プログラム的アクティベーション成功';
         }}"
       ></ui-search-trigger>
@@ -1077,38 +1070,41 @@ export const InHeader: Story = {
       }
     </style>
 
-    <header class="demo-header">
-      <div class="demo-logo">Rouault DS</div>
+    <div class="header-story-root">
+      <header class="demo-header">
+        <div class="demo-logo">Rouault DS</div>
 
-      <nav class="demo-nav">
-        <div class="demo-nav-item">コンポーネント</div>
-        <div class="demo-nav-item">ガイドライン</div>
-        <div class="demo-nav-item">リソース</div>
-      </nav>
+        <nav class="demo-nav">
+          <div class="demo-nav-item">コンポーネント</div>
+          <div class="demo-nav-item">ガイドライン</div>
+          <div class="demo-nav-item">リソース</div>
+        </nav>
 
-      <ui-search-trigger
-        id="header-trigger"
-        @open-search-dialog="${() => {
-            const log = document.getElementById('header-log');
-            if (log) log.textContent = '検索ダイアログが開きます...';
-        }}"
-      ></ui-search-trigger>
-    </header>
+        <ui-search-trigger
+          id="header-trigger"
+          @open-search-dialog="${(e: Event) => {
+              const root = (e.currentTarget as HTMLElement).closest('.header-story-root');
+              const log = root?.querySelector<HTMLElement>('#header-log');
+              if (log) log.textContent = '検索ダイアログが開きます...';
+          }}"
+        ></ui-search-trigger>
+      </header>
 
-    <div
-      id="header-log"
-      style="
-        margin-top: 1rem;
-        padding: 0.75rem 1rem;
-        background: oklch(97% 0 0);
-        border: 1px solid oklch(90% 0.01 250 / 0.2);
-        border-radius: 6px;
-        font-size: 13px;
-        color: oklch(48% 0.01 250);
-        min-height: 2.5rem;
-      "
-    >
-      検索トリガーをクリックするとここに表示されます
+      <div
+        id="header-log"
+        style="
+          margin-top: 1rem;
+          padding: 0.75rem 1rem;
+          background: oklch(97% 0 0);
+          border: 1px solid oklch(90% 0.01 250 / 0.2);
+          border-radius: 6px;
+          font-size: 13px;
+          color: oklch(48% 0.01 250);
+          min-height: 2.5rem;
+        "
+      >
+        検索トリガーをクリックするとここに表示されます
+      </div>
     </div>
   `,
     play: async ({ canvasElement }) => {
@@ -1134,5 +1130,155 @@ export const InHeader: Story = {
         });
 
         console.log('✅ All tests passed for InHeader story');
+    },
+};
+
+/**
+ * ダークモードでの可読性確認。
+ *
+ * トークンを暗色テーマ相当に上書きし、視覚的コントラストが維持されることを確認します。
+ */
+export const DarkMode: Story = {
+    parameters: {
+        backgrounds: { default: 'dark' },
+    },
+    render: () => html`
+    <div
+      style="
+        padding: 1.25rem;
+        background: oklch(14% 0.01 250);
+        --bg-fill-muted: oklch(22% 0.01 250);
+        --bg-default: oklch(26% 0.01 250);
+        --border-default: oklch(42% 0.02 250);
+        --fg-muted: oklch(78% 0.01 250);
+        --fg-subtle: oklch(86% 0.01 250);
+      "
+    >
+      <ui-search-trigger id="dark-mode-trigger"></ui-search-trigger>
+    </div>
+  `,
+    play: async ({ canvasElement }) => {
+        const trigger = canvasElement.querySelector<SearchTrigger>('#dark-mode-trigger');
+        if (!trigger) throw new Error('ui-search-trigger not found');
+        await trigger.updateComplete;
+
+        const button = trigger.shadowRoot?.querySelector<HTMLButtonElement>('button');
+        const placeholder = trigger.shadowRoot?.querySelector<HTMLElement>('.placeholder');
+        if (!button || !placeholder) throw new Error('dark mode elements not found');
+
+        const buttonStyle = getComputedStyle(button);
+        const placeholderStyle = getComputedStyle(placeholder);
+
+        if (buttonStyle.backgroundColor === 'rgba(0, 0, 0, 0)') {
+            throw new Error('Dark mode background should not be transparent');
+        }
+        if (placeholderStyle.color === 'rgba(0, 0, 0, 0)') {
+            throw new Error('Placeholder color should be visible in dark mode');
+        }
+    },
+};
+
+/**
+ * モバイル icon-only 挙動と 44px ヒットエリアの確認。
+ */
+export const MobileIconOnly: Story = {
+    parameters: {
+        viewport: { defaultViewport: 'mobile1' },
+    },
+    render: () => html`
+    <div style="padding: 1rem;">
+      <ui-search-trigger id="mobile-trigger"></ui-search-trigger>
+    </div>
+  `,
+    play: async ({ canvasElement }) => {
+        const trigger = canvasElement.querySelector<SearchTrigger>('#mobile-trigger');
+        if (!trigger) throw new Error('ui-search-trigger not found');
+        await trigger.updateComplete;
+
+        const isMobileViewport = window.matchMedia('(max-width: 640px)').matches;
+        if (!isMobileViewport) {
+            console.warn('Mobile viewport is not active; MobileIconOnly assertions were skipped');
+            return;
+        }
+
+        const button = trigger.shadowRoot?.querySelector<HTMLButtonElement>('button');
+        const placeholder = trigger.shadowRoot?.querySelector<HTMLElement>('.placeholder');
+        const badge = trigger.shadowRoot?.querySelector<HTMLElement>('.badge');
+        if (!button || !placeholder || !badge) throw new Error('mobile elements not found');
+
+        if (getComputedStyle(placeholder).display !== 'none') {
+            throw new Error('Placeholder should be hidden on mobile');
+        }
+        if (getComputedStyle(badge).display !== 'none') {
+            throw new Error('Badge should be hidden on mobile');
+        }
+
+        const pseudo = getComputedStyle(button, '::after');
+        if (pseudo.minWidth !== '44px' || pseudo.minHeight !== '44px') {
+            throw new Error(`Expected touch target 44px, got ${pseudo.minWidth} x ${pseudo.minHeight}`);
+        }
+    },
+};
+
+/**
+ * 強制カラーモード対応の確認。
+ */
+export const ForcedColors: Story = {
+    render: () => html`
+    <div style="padding: 1rem;">
+      <ui-search-trigger id="forced-colors-trigger"></ui-search-trigger>
+    </div>
+  `,
+    play: async ({ canvasElement }) => {
+        const trigger = canvasElement.querySelector<SearchTrigger>('#forced-colors-trigger');
+        if (!trigger) throw new Error('ui-search-trigger not found');
+        await trigger.updateComplete;
+
+        const isForcedColors = window.matchMedia('(forced-colors: active)').matches;
+        if (!isForcedColors) {
+            console.warn('forced-colors is not active; ForcedColors assertions were skipped');
+            return;
+        }
+
+        const button = trigger.shadowRoot?.querySelector<HTMLButtonElement>('button');
+        if (!button) throw new Error('button not found');
+
+        const style = getComputedStyle(button);
+        if (style.borderStyle === 'none') {
+            throw new Error('Border should be visible in forced-colors mode');
+        }
+        if (style.backgroundColor === 'rgba(0, 0, 0, 0)') {
+            throw new Error('Background should not be transparent in forced-colors mode');
+        }
+    },
+};
+
+/**
+ * 長いプレースホルダー文の省略表示確認。
+ */
+export const LongPlaceholderEllipsis: Story = {
+    render: () => html`
+    <div style="max-width: 420px;">
+      <ui-search-trigger
+        id="long-placeholder-trigger"
+        placeholder="これは非常に長いプレースホルダーテキストで、表示幅を超えた場合に省略記号で切り詰められるべきです"
+      ></ui-search-trigger>
+    </div>
+  `,
+    play: async ({ canvasElement }) => {
+        const trigger = canvasElement.querySelector<SearchTrigger>('#long-placeholder-trigger');
+        if (!trigger) throw new Error('ui-search-trigger not found');
+        await trigger.updateComplete;
+
+        const placeholder = trigger.shadowRoot?.querySelector<HTMLElement>('.placeholder');
+        if (!placeholder) throw new Error('placeholder not found');
+
+        const style = getComputedStyle(placeholder);
+        if (style.textOverflow !== 'ellipsis') {
+            throw new Error(`Expected text-overflow: ellipsis, got "${style.textOverflow}"`);
+        }
+        if (style.whiteSpace !== 'nowrap') {
+            throw new Error(`Expected white-space: nowrap, got "${style.whiteSpace}"`);
+        }
     },
 };

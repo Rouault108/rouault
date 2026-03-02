@@ -1,5 +1,5 @@
-import { css, html, LitElement, nothing } from 'lit';
-import { customElement, query, state } from 'lit/decorators.js';
+import { css, html, LitElement, type PropertyValues } from 'lit';
+import { customElement, property, query, state } from 'lit/decorators.js';
 import { keyed } from 'lit/directives/keyed.js';
 import '../../../lib/icons';
 import '../codeblock/codeblock';
@@ -18,23 +18,22 @@ interface CodeBlockHost extends HTMLElement {
 }
 
 const DEFAULT_TAB_LABEL = 'コード';
-const INTENT_META_LABEL: Record<Exclude<CodeBlockIntent, 'neutral'>, string> = {
+const COMPARISON_LABEL_BY_INTENT: Record<Exclude<CodeBlockIntent, 'neutral'>, string> = {
   valid: '正しい例',
   invalid: '誤り例',
 };
-
 let codeGroupId = 0;
 
 @customElement('ui-code-group')
 export class CodeGroup extends LitElement {
   static override styles = css`
     :host {
-      --header-tools-width: 88px;
-      --_code-group-mask-width: 36px;
+      --header-tools-width: 48px;
 
       /* グループ内の Code Block は常に親コンテナ幅に収める */
       --ui-code-block-breakout-width: 100%;
       --ui-code-block-breakout-margin: 0;
+      --ui-code-block-padding: var(--space-3, 12px);
       --ui-code-block-header-display: block;
 
       display: block;
@@ -44,13 +43,18 @@ export class CodeGroup extends LitElement {
       border: var(--border-style-subtle, 1px solid oklch(20% 0.03 250 / 0.12));
       border-radius: var(--radius-md, 6px);
       overflow: hidden;
-      background: var(--bg-fill-muted, oklch(96% 0.01 250));
+      background: var(--bg-fill-muted, oklch(96% 0 0));
       page-break-inside: avoid;
       break-inside: avoid;
     }
 
     :host([data-ready]) {
       --ui-code-block-header-display: none;
+    }
+
+    :host([embedded]) {
+      border: none;
+      border-radius: 0;
     }
 
     .root {
@@ -62,9 +66,7 @@ export class CodeGroup extends LitElement {
       position: relative;
       align-items: stretch;
       isolation: isolate;
-      background: var(--bg-surface-2, oklch(100% 0 0));
-      border-bottom: var(--border-width, 1px) solid
-        var(--border-default, oklch(20% 0.03 250 / 0.16));
+      background: var(--bg-fill-muted, oklch(96% 0 0));
     }
 
     :host([data-ready]) .code-group-header {
@@ -76,38 +78,31 @@ export class CodeGroup extends LitElement {
       min-width: 0;
       display: flex;
       align-items: stretch;
+      background: var(--bg-fill-muted, oklch(96% 0 0));
       overflow-x: auto;
-      overflow-y: visible;
-      min-height: var(--control-min-touch, 44px);
-      padding-inline-end: calc(var(--header-tools-width, 88px) + var(--space-2, 8px));
-      scroll-padding-inline-end: calc(var(--header-tools-width, 88px) + var(--space-2, 8px));
+      /* visible は overflow-x: auto によって auto に強制計算されるため clip に変更。
+         clip はスクロールコンテナを生成しないため縦スクロールバーが出ない */
+      overflow-y: clip;
+      /* 選択タブの margin-bottom: -1px によるオーバーフロー（1px）と
+         フォーカスリング（outline-offset + outline-width = デフォルト 4px）を
+         クリップ境界外にレンダリングできるよう余白を確保する */
+      overflow-clip-margin: calc(var(--focus-ring-offset, 2px) + var(--focus-ring-width, 2px) + 2px);
+      min-height: 36px;
+      /* フォーカスリングがスクロールコンテナ内部に収まるよう余白を確保。
+         padding によってリングが .tab-list の padding-box 内に描画されるため、
+         祖先の overflow: hidden によるクリップを回避できる */
+      padding-block: 2px;
+      padding-inline-start: calc(var(--focus-ring-offset, 2px) + var(--focus-ring-width, 2px));
+      padding-inline-end: calc(var(--header-tools-width, 48px) + var(--space-1, 4px));
+      /* フォーカス時のスクロール位置にフォーカスリング分の余白を確保 */
+      scroll-padding-inline-start: calc(var(--focus-ring-offset, 2px) + var(--focus-ring-width, 2px));
+      scroll-padding-inline-end: calc(var(--header-tools-width, 48px) + var(--space-1, 4px));
       scrollbar-width: none;
       -ms-overflow-style: none;
     }
 
     .tab-list::-webkit-scrollbar {
       display: none;
-    }
-
-    @media (hover: hover) {
-      .tab-list {
-        scrollbar-width: thin;
-        scrollbar-color: var(--scrollbar-thumb, oklch(70% 0 0 / 0.3)) transparent;
-      }
-
-      .tab-list::-webkit-scrollbar {
-        display: block;
-        height: 12px;
-      }
-
-      .tab-list::-webkit-scrollbar-track {
-        background: transparent;
-      }
-
-      .tab-list::-webkit-scrollbar-thumb {
-        background: var(--scrollbar-thumb, oklch(70% 0 0 / 0.3));
-        border-radius: 9999px;
-      }
     }
 
     ::slotted([slot='tab']) {
@@ -122,7 +117,7 @@ export class CodeGroup extends LitElement {
       font-family: var(--font-sans);
       line-height: 1.3;
       padding-inline: var(--space-3, 12px);
-      min-height: var(--control-min-touch, 44px);
+      min-height: 36px;
       white-space: nowrap;
       display: inline-flex;
       align-items: center;
@@ -130,9 +125,12 @@ export class CodeGroup extends LitElement {
       cursor: pointer;
       flex-shrink: 0;
       position: relative;
-      border-bottom: var(--border-width, 1px) solid transparent;
-      transition: color var(--duration-fast, 70ms)
-        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      border-bottom: 2px solid transparent;
+      transition:
+        color var(--duration-fast, 70ms)
+          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        border-color var(--duration-fast, 70ms)
+          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     ::slotted([slot='tab']:hover) {
@@ -150,11 +148,8 @@ export class CodeGroup extends LitElement {
 
     ::slotted([slot='tab'][aria-selected='true']) {
       color: var(--fg-default, oklch(20% 0.03 250));
-      background: var(--bg-fill-muted, oklch(96% 0.01 250));
-      margin-bottom: -1px;
-      border-bottom-color: var(--bg-fill-muted, oklch(96% 0.01 250));
-      border-radius: var(--radius-md, 6px) var(--radius-md, 6px) 0 0;
-      z-index: 2;
+      border-bottom-width: 1px;
+      border-bottom-color: currentColor;
     }
 
     .header-tools {
@@ -163,66 +158,15 @@ export class CodeGroup extends LitElement {
       flex-shrink: 0;
       display: inline-flex;
       align-items: center;
-      gap: var(--space-2, 8px);
-      padding-inline-end: var(--space-2, 8px);
-      background: var(--bg-surface-2, oklch(100% 0 0));
-    }
-
-    .header-tools::before {
-      content: '';
-      position: absolute;
-      inset-inline-start: calc(-1 * var(--_code-group-mask-width, 36px));
-      inset-block: 0;
-      width: var(--_code-group-mask-width, 36px);
-      background: linear-gradient(
-        to right,
-        transparent 0%,
-        var(--bg-surface-2, oklch(100% 0 0)) 100%
-      );
-      pointer-events: none;
-    }
-
-    .header-meta {
-      min-width: 0;
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-2, 8px);
-      color: var(--fg-muted, oklch(48% 0.01 250));
-      font-size: var(--text-xs, 12px);
-      font-family: var(--font-mono, ui-monospace, monospace);
-      font-weight: var(--font-medium, 500);
-      letter-spacing: var(--tracking-wide, 0.025em);
-      white-space: nowrap;
-    }
-
-    .header-filename {
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .header-intent {
+      gap: 0;
       padding-inline: var(--space-1, 4px);
-      border-radius: 9999px;
-      border: 1px solid transparent;
-    }
-
-    .header-intent[data-intent='valid'] {
-      color: var(--fg-success, oklch(60% 0.15 160));
-      border-color: oklch(from var(--fg-success, oklch(60% 0.15 160)) l c h / 0.35);
-      background: oklch(from var(--fg-success, oklch(60% 0.15 160)) l c h / 0.09);
-    }
-
-    .header-intent[data-intent='invalid'] {
-      color: var(--fg-danger, oklch(55% 0.2 28));
-      border-color: oklch(from var(--fg-danger, oklch(55% 0.2 28)) l c h / 0.35);
-      background: oklch(from var(--fg-danger, oklch(55% 0.2 28)) l c h / 0.08);
+      background: var(--bg-fill-muted, oklch(96% 0.01 250));
     }
 
     .header-tools ui-copy-button {
       --_copy-button-icon-size: var(--icon-sm, 14px);
-      opacity: 0;
-      pointer-events: none;
+      opacity: 0.56;
+      pointer-events: auto;
       transition: opacity var(--duration-normal, 150ms)
         var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
     }
@@ -238,6 +182,40 @@ export class CodeGroup extends LitElement {
     }
 
     @media (hover: none) and (pointer: coarse) {
+      .tab-list {
+        padding-block: calc(var(--focus-ring-offset, 2px) + var(--focus-ring-width, 2px));
+        /* モバイルではスクロールバーの代わりに純CSSのシャドウでスクロール可能性を示す */
+        background:
+          linear-gradient(
+              to right,
+              var(--bg-fill-muted, oklch(96% 0 0)) 30%,
+              transparent 100%
+            )
+            0 0 / 24px 100% no-repeat local,
+          linear-gradient(
+              to left,
+              var(--bg-fill-muted, oklch(96% 0 0)) 30%,
+              transparent 100%
+            )
+            100% 0 / 24px 100% no-repeat local,
+          radial-gradient(
+              farthest-side at 0 50%,
+              oklch(32% 0.03 250 / 0.2),
+              transparent
+            )
+            0 0 / 12px 100% no-repeat scroll,
+          radial-gradient(
+              farthest-side at 100% 50%,
+              oklch(32% 0.03 250 / 0.2),
+              transparent
+            )
+            100% 0 / 12px 100% no-repeat scroll;
+      }
+
+      // ::slotted([slot='tab']) {
+      //   min-height: var(--control-min-touch, 44px);
+      // }
+
       .header-tools ui-copy-button {
         opacity: var(--opacity-link-touch, 0.75);
         pointer-events: auto;
@@ -247,9 +225,8 @@ export class CodeGroup extends LitElement {
     .body {
       display: none;
       background: var(--bg-fill-muted, oklch(96% 0.01 250));
-      border-top: var(--border-width, 1px) solid
-        var(--border-default, oklch(20% 0.03 250 / 0.16));
-      padding: 1px 1px var(--space-1, 4px);
+      padding-block: var(--ui-code-group-body-padding-block, 0);
+      padding-inline: var(--ui-code-group-body-padding-inline, 0);
     }
 
     :host([data-ready]) .body {
@@ -277,10 +254,6 @@ export class CodeGroup extends LitElement {
       :host([data-ready]) {
         --ui-code-block-header-display: block;
       }
-
-      .header-filename {
-        display: none;
-      }
     }
 
     @media (forced-colors: active) {
@@ -307,15 +280,7 @@ export class CodeGroup extends LitElement {
       }
 
       ::slotted([slot='tab'][aria-selected='true']) {
-        border-bottom: 3px solid Canvas !important;
-        outline: 2px solid CanvasText;
-        outline-offset: -2px;
-      }
-
-      .header-intent {
-        color: CanvasText !important;
-        border-color: CanvasText !important;
-        background: transparent !important;
+        border-bottom-color: CanvasText !important;
       }
     }
 
@@ -355,6 +320,9 @@ export class CodeGroup extends LitElement {
   @query('.header-tools')
   private _headerToolsEl?: HTMLElement;
 
+  @property({ type: Boolean, reflect: true })
+  embedded = false;
+
   @state()
   private _blocks: CodeBlockHost[] = [];
 
@@ -366,18 +334,6 @@ export class CodeGroup extends LitElement {
 
   @state()
   private _copyLabel = 'コードをコピー';
-
-  @state()
-  private _showFilenameMeta = false;
-
-  @state()
-  private _metaFilename = '';
-
-  @state()
-  private _metaIntent = '';
-
-  @state()
-  private _metaIntentKind: CodeBlockIntent = 'neutral';
 
   @state()
   private _copyRenderKey = 0;
@@ -394,17 +350,20 @@ export class CodeGroup extends LitElement {
 
   private _isComposing = false;
 
+  private _composeScheduled = false;
+
   override connectedCallback(): void {
     super.connectedCallback();
 
-    this._mutationObserver = new MutationObserver(() => {
+    this._mutationObserver = new MutationObserver((records) => {
       if (this._isComposing) return;
-      this._composeFromLightDom();
+      if (!this._shouldRecompose(records)) return;
+      this._scheduleComposeFromLightDom();
     });
 
     this._mutationObserver.observe(this, {
       childList: true,
-      subtree: false,
+      subtree: true,
       attributes: true,
       attributeFilter: ['label', 'filename', 'lang', 'intent'],
     });
@@ -425,10 +384,16 @@ export class CodeGroup extends LitElement {
     this._composeFromLightDom();
   }
 
-  override updated(): void {
+  override updated(changedProperties: PropertyValues<this>): void {
+    super.updated(changedProperties);
+
     if (this._headerToolsEl) {
       this._headerToolsResizeObserver?.observe(this._headerToolsEl);
       this._syncHeaderToolsWidth();
+    }
+
+    if (changedProperties.has('embedded')) {
+      this._applyEmbeddedMode();
     }
   }
 
@@ -446,15 +411,12 @@ export class CodeGroup extends LitElement {
         this._activeIndex = 0;
         this._copyValue = '';
         this._copyLabel = 'コードをコピー';
-        this._showFilenameMeta = false;
-        this._metaFilename = '';
-        this._metaIntent = '';
-        this._metaIntentKind = 'neutral';
         return;
       }
 
       this._createTabButtons(blocks);
       this._configurePanels(blocks);
+      this._warnComparisonPairContract(blocks);
 
       const safeIndex = this._clampIndex(this._activeIndex, blocks.length);
       this._activeIndex = safeIndex;
@@ -465,6 +427,45 @@ export class CodeGroup extends LitElement {
     } finally {
       this._isComposing = false;
     }
+  }
+
+  private _scheduleComposeFromLightDom(): void {
+    if (this._composeScheduled) return;
+    this._composeScheduled = true;
+
+    queueMicrotask(() => {
+      this._composeScheduled = false;
+      if (!this.isConnected) return;
+      if (this._isComposing) return;
+      this._composeFromLightDom();
+    });
+  }
+
+  private _shouldRecompose(records: readonly MutationRecord[]): boolean {
+    for (const record of records) {
+      if (record.type === 'attributes') {
+        if (this._isDirectCodeBlock(record.target)) {
+          return true;
+        }
+        continue;
+      }
+
+      if (record.type === 'childList') {
+        const changedNodes = [...Array.from(record.addedNodes), ...Array.from(record.removedNodes)];
+        if (record.target === this && changedNodes.some((node) => this._isCodeBlockElement(node))) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private _isCodeBlockElement(node: Node): node is HTMLElement {
+    return node instanceof HTMLElement && node.tagName.toLowerCase() === 'ui-code-block';
+  }
+
+  private _isDirectCodeBlock(node: Node): node is HTMLElement {
+    return this._isCodeBlockElement(node) && node.parentElement === this;
   }
 
   private _collectCodeBlocks(): CodeBlockHost[] {
@@ -524,8 +525,9 @@ export class CodeGroup extends LitElement {
       block.setAttribute('slot', 'panel');
       block.setAttribute('role', 'tabpanel');
       block.setAttribute('aria-labelledby', this._tabId(index));
-      block.setAttribute('aria-roledescription', 'コードパネル');
+      block.removeAttribute('aria-roledescription');
       block.setAttribute('headless', '');
+      this._syncPanelEmbedded(block);
 
       if (index === 0) {
         block.removeAttribute('data-panel-after-first');
@@ -533,6 +535,20 @@ export class CodeGroup extends LitElement {
         block.setAttribute('data-panel-after-first', '');
       }
     });
+  }
+
+  private _applyEmbeddedMode(): void {
+    for (const block of this._blocks) {
+      this._syncPanelEmbedded(block);
+    }
+  }
+
+  private _syncPanelEmbedded(block: CodeBlockHost): void {
+    if (this.embedded) {
+      block.setAttribute('embedded', '');
+      return;
+    }
+    block.removeAttribute('embedded');
   }
 
   private _selectTab(index: number, emitEvent: boolean): void {
@@ -583,19 +599,7 @@ export class CodeGroup extends LitElement {
       }
     });
 
-    this._syncHeaderMeta(activeBlock);
     this._syncCopyPayload(activeBlock);
-  }
-
-  private _syncHeaderMeta(activeBlock: CodeBlockHost): void {
-    const descriptor = this._resolveTabDescriptor(activeBlock);
-    const filename = this._readFilename(activeBlock);
-    const intent = this._normalizeIntent(this._readIntent(activeBlock));
-
-    this._showFilenameMeta = filename !== '' && descriptor.source !== 'filename';
-    this._metaFilename = filename;
-    this._metaIntentKind = intent;
-    this._metaIntent = intent === 'neutral' ? '' : INTENT_META_LABEL[intent];
   }
 
   private _syncCopyPayload(activeBlock: CodeBlockHost): void {
@@ -607,7 +611,7 @@ export class CodeGroup extends LitElement {
       return;
     }
 
-    this._copyValue = this._extractFallbackCode(activeBlock);
+    this._copyValue = '';
   }
 
   private _resolveCopyContextName(block: CodeBlockHost): string {
@@ -618,14 +622,6 @@ export class CodeGroup extends LitElement {
     if (lang !== '') return lang;
 
     return DEFAULT_TAB_LABEL;
-  }
-
-  private _extractFallbackCode(block: CodeBlockHost): string {
-    const pre = block.querySelector('pre');
-    if (!pre) return '';
-
-    const code = pre.querySelector('code') ?? pre;
-    return code.textContent.replace(/\r\n?/g, '\n');
   }
 
   private _scrollTabIntoView(tab: HTMLElement): void {
@@ -757,25 +753,25 @@ export class CodeGroup extends LitElement {
     this._selectTab(index, true);
   }
 
+  private _warnComparisonPairContract(blocks: readonly CodeBlockHost[]): void {
+    for (const block of blocks) {
+      const intent = this._normalizeIntent(this._readIntent(block));
+      if (intent === 'neutral') continue;
+
+      const label = this._readLabel(block);
+      const expected = COMPARISON_LABEL_BY_INTENT[intent];
+      if (label === expected) continue;
+
+      console.warn(
+        `[ui-code-group] Comparison Pair Contract mismatch: intent="${intent}" expects label="${expected}", actual="${label}".`,
+      );
+    }
+  }
+
   private get _tabListAriaLabel(): string {
     const explicit = this.getAttribute('aria-label')?.trim();
     if (explicit && explicit !== '') return explicit;
     return 'コードグループ';
-  }
-
-  private _renderHeaderMeta() {
-    if (!this._showFilenameMeta && this._metaIntent === '') return nothing;
-
-    return html`
-      <span class="header-meta">
-        ${this._showFilenameMeta
-          ? html`<span class="header-filename" title="${this._metaFilename}">${this._metaFilename}</span>`
-          : nothing}
-        ${this._metaIntent !== ''
-          ? html`<span class="header-intent" data-intent="${this._metaIntentKind}">${this._metaIntent}</span>`
-          : nothing}
-      </span>
-    `;
   }
 
   override render() {
@@ -793,7 +789,6 @@ export class CodeGroup extends LitElement {
           </div>
 
           <div class="header-tools">
-            ${this._renderHeaderMeta()}
             ${keyed(
               this._copyRenderKey,
               html`

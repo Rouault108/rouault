@@ -1,7 +1,9 @@
-import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
+import { css, html, LitElement, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import {
+    autoUpdate,
     computePosition,
     flip,
     offset,
@@ -376,7 +378,7 @@ export class Select extends LitElement {
     private _activeIndex = -1;
 
     @query('.trigger')
-    private _trigger!: HTMLElement;
+    private _trigger!: HTMLInputElement;
 
     private _internals: ElementInternals;
 
@@ -395,6 +397,12 @@ export class Select extends LitElement {
     /** Type-ahead タイマーID */
     private _typeaheadTimer: ReturnType<typeof setTimeout> | null = null;
 
+    /** autoUpdate のクリーンアップ関数 */
+    private _cleanupAutoUpdate: (() => void) | null = null;
+
+    /** Portal 用のグローバルスタイルを一度だけ注入 */
+    private static _portalStylesInjected = false;
+
     // ============================================================
     // 一意なID生成（レンダリング毎の再生成を防止）
     // ============================================================
@@ -402,6 +410,8 @@ export class Select extends LitElement {
     private readonly _listboxId = `listbox-${Math.random().toString(36).substring(2, 11)}`;
     private readonly _errorId = `error-${Math.random().toString(36).substring(2, 11)}`;
     private readonly _helpId = `help-${Math.random().toString(36).substring(2, 11)}`;
+    private readonly _labelId = `label-${Math.random().toString(36).substring(2, 11)}`;
+    private readonly _triggerId = `trigger-${Math.random().toString(36).substring(2, 11)}`;
 
     constructor() {
         super();
@@ -415,6 +425,7 @@ export class Select extends LitElement {
 
     override connectedCallback(): void {
         super.connectedCallback();
+        this._ensurePortalStyles();
 
         if (!this.label) {
             console.error(
@@ -433,6 +444,7 @@ export class Select extends LitElement {
 
     override firstUpdated(): void {
         this._internals.setFormValue(String(this.modelValue));
+        this._ensurePortalStyles();
     }
 
     override updated(changedProperties: PropertyValues): void {
@@ -509,31 +521,36 @@ export class Select extends LitElement {
             : undefined;
 
         return html`
-      <label class="${classMap(labelClasses)}">
+      <label class="${classMap(labelClasses)}" id="${this._labelId}" for="${this._triggerId}">
         ${this.label}
       </label>
 
       <div class="trigger-wrapper">
-        <div
+        <input
+          id="${this._triggerId}"
+          type="text"
+          readonly
           class="${classMap(triggerClasses)}"
           role="combobox"
           aria-haspopup="listbox"
           aria-expanded="${this.opened}"
           aria-controls="${this._listboxId}"
           aria-label="${this.label}"
+          aria-labelledby="${this._labelId}"
           aria-invalid="${hasError}"
-          aria-describedby="${describedBy ?? ''}"
-          aria-activedescendant="${activeDescendant ?? ''}"
+          aria-describedby="${ifDefined(describedBy)}"
+          aria-activedescendant="${ifDefined(activeDescendant)}"
+          aria-disabled="${this.disabled ? 'true' : 'false'}"
+          aria-readonly="${this.readonly ? 'true' : 'false'}"
+          ?disabled="${this.disabled}"
           tabindex="${this.disabled ? '-1' : '0'}"
+          .value="${isPlaceholder ? '' : displayText}"
+          placeholder="${isPlaceholder ? this.placeholder : ''}"
           @click="${this._handleTriggerClick}"
           @keydown="${this._handleKeyDown}"
           @focus="${this._handleFocus}"
           @blur="${this._handleBlur}"
-        >
-          ${isPlaceholder
-                ? (this.placeholder ? this.placeholder : nothing)
-                : displayText}
-        </div>
+        />
 
         <!-- ChevronDown アイコン（SVG インライン） -->
         <svg
@@ -593,6 +610,7 @@ export class Select extends LitElement {
         switch (e.key) {
             case 'Enter':
             case ' ':
+            case 'Spacebar':
                 e.preventDefault();
                 if (!this.opened) {
                     this._openListboxAndFocusFirst();
@@ -691,10 +709,12 @@ export class Select extends LitElement {
     private _openListbox(): void {
         this._createListbox();
         void this._positionListbox();
+        this._setupAutoUpdate();
         this._attachOutsideListeners();
     }
 
     private _closeListbox(): void {
+        this._cleanupAutoUpdatePositioning();
         this._detachOutsideListeners();
         this._destroyListbox();
         this._activeIndex = -1;
@@ -717,10 +737,7 @@ export class Select extends LitElement {
             background: 'var(--bg-surface-2, oklch(97% 0 0))',
             border: 'var(--border-width, 1px) solid var(--border-default, oklch(90% 0.01 250 / 0.12))',
             borderRadius: 'var(--radius-md, 6px)',
-            boxShadow: [
-                'var(--elevation-lg, 0 8px 24px oklch(0% 0 0 / 0.12))',
-                'inset 0 1px 0 0 oklch(100% 0 0 / 0.05)',
-            ].join(', '),
+            boxShadow: this._getListboxShadow(),
             maxWidth: '320px',
             maxHeight: 'calc(var(--control-height-md, 32px) * 7.5)',
             overflowY: 'auto',
@@ -1098,6 +1115,67 @@ export class Select extends LitElement {
 
     private _getOptionId(index: number): string {
         return `${this._selectId}-option-${index.toString()}`;
+    }
+
+    private _setupAutoUpdate(): void {
+        const trigger = this.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
+        const listbox = this._listboxEl;
+        if (!trigger || !listbox) return;
+        this._cleanupAutoUpdatePositioning();
+        this._cleanupAutoUpdate = autoUpdate(trigger, listbox, () => {
+            void this._positionListbox();
+        });
+    }
+
+    private _cleanupAutoUpdatePositioning(): void {
+        if (this._cleanupAutoUpdate) {
+            this._cleanupAutoUpdate();
+            this._cleanupAutoUpdate = null;
+        }
+    }
+
+    private _getListboxShadow(): string {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const highlight = isDark
+            ? 'inset 0 1px 0 0 oklch(100% 0 0 / 0.1)'
+            : 'inset 0 1px 0 0 oklch(100% 0 0 / 0.05)';
+        return ['var(--elevation-lg, 0 8px 24px oklch(0% 0 0 / 0.12))', highlight].join(', ');
+    }
+
+    private _ensurePortalStyles(): void {
+        if (Select._portalStylesInjected) return;
+        const style = document.createElement('style');
+        style.setAttribute('data-ui-select-portal-style', '');
+        style.textContent = `
+      @media (forced-colors: active) {
+        [data-ui-select-listbox] {
+          background: Canvas !important;
+          border: var(--border-width, 1px) solid CanvasText !important;
+          box-shadow: none !important;
+        }
+
+        [data-ui-select-option][aria-selected="true"] {
+          background: Highlight !important;
+          color: HighlightText !important;
+          outline: 2px solid CanvasText;
+          outline-offset: -2px;
+        }
+
+        [data-ui-select-option]:hover,
+        [data-ui-select-option][data-active="true"] {
+          background: Highlight !important;
+          color: HighlightText !important;
+        }
+      }
+
+      @media print {
+        [data-ui-select-listbox] {
+          display: none !important;
+        }
+      }
+    `;
+        document.head.appendChild(style);
+        Select._portalStylesInjected = true;
     }
 
     private _findOption(value: string | number): SelectOption | undefined {

@@ -199,6 +199,13 @@ export const Default: Story = {
             throw new Error('aria-label should match label property');
         }
 
+        // テスト: label と trigger が関連付けられていること
+        const labelEl = select.shadowRoot?.querySelector<HTMLLabelElement>('label');
+        const triggerId = trigger.getAttribute('id');
+        if (!labelEl || !triggerId || labelEl.getAttribute('for') !== triggerId) {
+            throw new Error('Label should be associated with trigger input');
+        }
+
         console.log('✅ All tests passed for Default story');
     },
 };
@@ -486,9 +493,29 @@ export const WithDisabledOptions: Story = {
         if (!select) throw new Error('Select component not found');
         await select.updateComplete;
 
-        // テスト: options が正しく設定されていること
-        if (select.options.length !== OPTIONS_WITH_DISABLED.length) {
-            throw new Error(`Expected ${OPTIONS_WITH_DISABLED.length.toString()} options`);
+        const trigger = select.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
+        if (!trigger) throw new Error('Trigger not found');
+
+        // ArrowDown: open + index 0（active1）
+        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+        await select.updateComplete;
+
+        // ArrowDown: disabled1 をスキップして index 2（active2）へ
+        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+        await select.updateComplete;
+
+        const activeId = trigger.getAttribute('aria-activedescendant');
+        if (!activeId) throw new Error('aria-activedescendant should be set');
+
+        const activeEl = document.getElementById(activeId);
+        if (!activeEl) throw new Error('Active option element not found');
+
+        if (activeEl.getAttribute('data-index') !== '2') {
+            throw new Error(`Expected active index "2", got "${activeEl.getAttribute('data-index') ?? ''}"`);
+        }
+
+        if (activeEl.getAttribute('aria-disabled') === 'true') {
+            throw new Error('Active option should not be disabled');
         }
 
         console.log('✅ All tests passed for WithDisabledOptions story');
@@ -722,30 +749,73 @@ export const KeyboardNavigation: Story = {
         const trigger = select.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
         if (!trigger) throw new Error('Trigger not found');
 
-        // テスト: ArrowDown でリストボックスが開くこと
+        // ArrowDown: リストボックスを開く
         trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
         await select.updateComplete;
         if (!select.opened) {
             throw new Error('Listbox should open on ArrowDown');
         }
-
-        // テスト: Escape でリストボックスが閉じること
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-        await select.updateComplete;
-        // opened は false になっているはず
-        const afterEscape = select.opened;
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (afterEscape) {
-            throw new Error('Listbox should close on Escape');
+        if (!trigger.getAttribute('aria-activedescendant')) {
+            throw new Error('aria-activedescendant should be set after opening');
         }
 
-        // テスト: Enter でリストボックスが開くこと
+        // End: 末尾へ移動
+        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+        await select.updateComplete;
+        const endId = trigger.getAttribute('aria-activedescendant');
+        if (!endId) throw new Error('aria-activedescendant should be set on End');
+        const endEl = document.getElementById(endId);
+        if (endEl?.getAttribute('data-index') !== '4') {
+            throw new Error('End should move focus to last option');
+        }
+
+        // Home: 先頭へ移動
+        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+        await select.updateComplete;
+        const homeId = trigger.getAttribute('aria-activedescendant');
+        if (!homeId) throw new Error('aria-activedescendant should be set on Home');
+        const homeEl = document.getElementById(homeId);
+        if (homeEl?.getAttribute('data-index') !== '0') {
+            throw new Error('Home should move focus to first option');
+        }
+
+        // Space: 現在アクティブ項目を選択して閉じる
+        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+        await select.updateComplete;
+        if (select.modelValue !== 'apple') {
+            throw new Error(`Expected selected value "apple", got "${String(select.modelValue)}"`);
+        }
+
+        // 制御フロー解析のリセット: modelValue チェック後に opened を別変数で評価
+        const afterSpace = canvasElement.querySelector<Select>('#keyboard-select');
+        if (afterSpace?.opened) {
+            throw new Error('Listbox should close after selecting with Space');
+        }
+
+        // Enter: 再オープン
         trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
         await select.updateComplete;
-        const afterEnter = select.opened;
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (!afterEnter) {
+        const afterEnter = canvasElement.querySelector<Select>('#keyboard-select');
+        if (!afterEnter?.opened) {
             throw new Error('Listbox should open on Enter');
+        }
+
+        // Tab: Focus trap せず閉じる
+        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+        await select.updateComplete;
+        const afterTab = canvasElement.querySelector<Select>('#keyboard-select');
+        if (afterTab?.opened) {
+            throw new Error('Listbox should close on Tab');
+        }
+
+        // Escape: close
+        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        await select.updateComplete;
+        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        await select.updateComplete;
+        const afterEscape = canvasElement.querySelector<Select>('#keyboard-select');
+        if (afterEscape?.opened) {
+            throw new Error('Listbox should close on Escape');
         }
 
         console.log('✅ All tests passed for KeyboardNavigation story');
@@ -791,26 +861,26 @@ export const ChangeEvent: Story = {
             log.textContent = `変更ログ: ${changeCount.toString()} 回 / 最後の値: ${String(lastValue)}`;
         });
 
-        // テスト: 値を変更すると change イベントが発火すること
-        select.modelValue = 'apple';
-        // プログラム的な変更は change イベントを発火しない（UI操作のみ）
-        // ここでは内部の _selectOption を模倣するため opened を経由
-        select.opened = true;
+        const trigger = select.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
+        if (!trigger) throw new Error('Trigger not found');
+
+        // UI操作: ArrowDown -> Enter で apple を選択
+        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+        await select.updateComplete;
+        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
         await select.updateComplete;
 
-        // 直接 modelValue を変更してイベントを手動発火（ストーリーテスト用）
-        select.dispatchEvent(new CustomEvent('change', {
-            detail: { value: 'banana' },
-            bubbles: true,
-            composed: true,
-        }));
+        // 同値再選択: イベント増加しないこと
+        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        await select.updateComplete;
+        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
         await select.updateComplete;
 
         if (changeCount !== 1) {
             throw new Error(`Expected 1 change event, got ${changeCount.toString()}`);
         }
-        if (lastValue !== 'banana') {
-            throw new Error(`Expected last value "banana", got "${String(lastValue)}"`);
+        if (lastValue !== 'apple') {
+            throw new Error(`Expected last value "apple", got "${String(lastValue)}"`);
         }
 
         console.log('✅ All tests passed for ChangeEvent story');
@@ -1112,16 +1182,22 @@ export const SameValueReselect: Story = {
             log.textContent = `change イベント発火回数: ${changeCount.toString()}`;
         });
 
-        // 同じ値（apple）を再度設定してイベントを手動発火しないことを確認
-        // 内部ロジック: prevValue === opt.value の場合は発火しない
-        const prevValue = select.modelValue;
-        // 同じ値の場合はイベントが発火しないことをシミュレート
-        if (prevValue === 'apple') {
-            // change イベントを発火しない（正しい動作）
-        }
+        const trigger = select.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
+        if (!trigger) throw new Error('Trigger not found');
+
+        // Enter: open（selected=apple に active）
+        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        await select.updateComplete;
+
+        // Enter: same value を再選択
+        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        await select.updateComplete;
 
         if (changeCount !== 0) {
             throw new Error(`change event should not fire when selecting same value, got ${changeCount.toString()}`);
+        }
+        if (select.modelValue !== 'apple') {
+            throw new Error(`modelValue should remain "apple", got "${String(select.modelValue)}"`);
         }
 
         console.log('✅ All tests passed for SameValueReselect story');
@@ -1160,17 +1236,105 @@ export const TypeaheadSearch: Story = {
         const trigger = select.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
         if (!trigger) throw new Error('Trigger not found');
 
-        // テスト: 文字入力でリストボックスが開くこと
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', bubbles: true }));
+        // "c" -> "h" の連続入力で Cherry に移動
+        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true }));
+        await select.updateComplete;
+        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'h', bubbles: true }));
         await select.updateComplete;
         if (!select.opened) {
             throw new Error('Listbox should open on typeahead input');
         }
 
+        const chActiveId = trigger.getAttribute('aria-activedescendant');
+        if (!chActiveId) throw new Error('aria-activedescendant should be set after typeahead');
+        const chActiveEl = document.getElementById(chActiveId);
+        if (!chActiveEl?.textContent.includes('Cherry')) {
+            throw new Error('Expected active option to be Cherry after typing "ch"');
+        }
+
+        // 1秒後にバッファリセットされることを検証
+        await new Promise((resolve) => {
+            setTimeout(resolve, 1100);
+        });
+        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', bubbles: true }));
+        await select.updateComplete;
+        const bActiveId = trigger.getAttribute('aria-activedescendant');
+        if (!bActiveId) throw new Error('aria-activedescendant should be set after typing "b"');
+        const bActiveEl = document.getElementById(bActiveId);
+        if (!bActiveEl?.textContent.includes('Banana')) {
+            throw new Error('Expected active option to be Banana after buffer reset');
+        }
+
         // テスト: Escape で閉じること
         trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
         await select.updateComplete;
+        const afterTypeaheadEscape = canvasElement.querySelector<Select>('#typeahead-select');
+        if (afterTypeaheadEscape?.opened) {
+            throw new Error('Listbox should close on Escape');
+        }
 
         console.log('✅ All tests passed for TypeaheadSearch story');
     },
+};
+
+// ============================================================
+// 21. DarkMode（ダークモード）
+// ============================================================
+
+/**
+ * ダークモードでの見た目確認。
+ * Overlay のハイライトとトリガー状態を確認します。
+ */
+export const DarkMode: Story = {
+    render: () => html`
+    <div style="padding: 16px; background: oklch(18% 0.01 250); color: oklch(96% 0.01 250);">
+      <ui-select
+        id="dark-mode-select"
+        label="都道府県"
+        name="dark-prefecture"
+        placeholder="選択してください"
+        .options="${PREFECTURE_OPTIONS}"
+      ></ui-select>
+    </div>
+  `,
+};
+
+// ============================================================
+// 22. ForcedColorsReference（強制カラー）
+// ============================================================
+
+/**
+ * 強制カラーモード時の確認用ストーリー。
+ * 実際の検証はブラウザ/OS の forced-colors を有効化して実施します。
+ */
+export const ForcedColorsReference: Story = {
+    render: () => html`
+    <ui-select
+      id="forced-colors-select"
+      label="都道府県"
+      name="forced-colors-prefecture"
+      placeholder="選択してください"
+      .options="${PREFECTURE_OPTIONS}"
+    ></ui-select>
+  `,
+};
+
+// ============================================================
+// 23. ReducedMotionReference（低減モーション）
+// ============================================================
+
+/**
+ * prefers-reduced-motion 確認用ストーリー。
+ * 実際の検証はブラウザ/OS の reduced-motion を有効化して実施します。
+ */
+export const ReducedMotionReference: Story = {
+    render: () => html`
+    <ui-select
+      id="reduced-motion-select"
+      label="都道府県"
+      name="reduced-motion-prefecture"
+      placeholder="選択してください"
+      .options="${PREFECTURE_OPTIONS}"
+    ></ui-select>
+  `,
 };

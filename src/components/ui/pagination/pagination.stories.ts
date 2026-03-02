@@ -47,6 +47,13 @@ function getNext(sh: ShadowRoot, storyName: string): Element {
   return el;
 }
 
+/** shadow style のテキストを取得 */
+function getStyleText(sh: ShadowRoot, storyName: string): string {
+  const styleEl = sh.querySelector('style');
+  if (!styleEl) throw new Error(`[${storyName}] shadow style が見つかりません`);
+  return styleEl.textContent;
+}
+
 // =====================================================
 // Meta
 // =====================================================
@@ -1345,10 +1352,7 @@ export const Accessibility: Story = {
     });
 
     // テスト: disabled な Prev/Next は <span>（tabindex なし = フォーカス不能）
-    // FirstPage の disabled 確認
-    const elFirst = document.createElement('div');
-    elFirst.innerHTML = '';
-    // → 別コンポーネントで検証済みのため、ここでは Span であることの構造的担保を確認
+    // → FirstPage / LastPage で別途検証済み。ここでは currentLink の構造を確認。
     // currentLink は <a> であること（href あり → 再訪可能）
     if (currentLink.tagName !== 'A') {
       throw new Error(`[${S}] 現在ページは <a> であるべきですが <${currentLink.tagName}> です`);
@@ -1455,6 +1459,106 @@ export const GetHref: Story = {
   },
 };
 
+/**
+ * 不正入力の正規化（防御的実装）の確認。
+ *
+ * `current` / `total` が不正値でも、内部で安全な整数へ正規化され
+ * ページネーション契約（`aria-current` と有効な href）を維持することを確認します。
+ */
+export const InvalidInputNormalization: Story = {
+  render: () => html`
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+      <div>
+        <div style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem;">
+          current=0, total=10 → current=1 に正規化
+        </div>
+        <ui-pagination id="invalid-current-low" current="0" total="10" .getHref="${defaultHref}">
+        </ui-pagination>
+      </div>
+      <div>
+        <div style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem;">
+          current=999, total=10 → current=10 に正規化
+        </div>
+        <ui-pagination id="invalid-current-high" current="999" total="10" .getHref="${defaultHref}">
+        </ui-pagination>
+      </div>
+      <div>
+        <div style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem;">
+          current=5, total=0 → total=1 に正規化
+        </div>
+        <ui-pagination id="invalid-total-zero" current="5" total="0" .getHref="${defaultHref}">
+        </ui-pagination>
+      </div>
+      <div>
+        <div style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem;">
+          API 関数: computeRange / computeCompactRange も不正値で安定動作
+        </div>
+      </div>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const S = 'InvalidInputNormalization';
+    const low = canvasElement.querySelector<Pagination>('#invalid-current-low');
+    const high = canvasElement.querySelector<Pagination>('#invalid-current-high');
+    const zero = canvasElement.querySelector<Pagination>('#invalid-total-zero');
+    if (!low || !high || !zero) throw new Error(`[${S}] ui-pagination が見つかりません`);
+    await Promise.all([low.updateComplete, high.updateComplete, zero.updateComplete]);
+
+    // current=0 -> 1
+    const shLow = getShadow(low, S);
+    const currentLow = shLow.querySelector('[aria-current="page"]');
+    if (currentLow?.textContent.trim() !== '1') {
+      throw new Error(`[${S}] current=0 が 1 に正規化されていません`);
+    }
+    const prevLow = getPrev(shLow, S);
+    if (prevLow.tagName !== 'SPAN' || prevLow.getAttribute('aria-disabled') !== 'true') {
+      throw new Error(`[${S}] current=0 正規化時、Prev は disabled であるべきです`);
+    }
+
+    // current=999 -> total(=10)
+    const shHigh = getShadow(high, S);
+    const currentHigh = shHigh.querySelector('[aria-current="page"]');
+    if (currentHigh?.textContent.trim() !== '10') {
+      throw new Error(`[${S}] current=999 が 10 に正規化されていません`);
+    }
+    const nextHigh = getNext(shHigh, S);
+    if (nextHigh.tagName !== 'SPAN' || nextHigh.getAttribute('aria-disabled') !== 'true') {
+      throw new Error(`[${S}] current=999 正規化時、Next は disabled であるべきです`);
+    }
+
+    // total=0 -> 1
+    const shZero = getShadow(zero, S);
+    const currentZero = shZero.querySelector('[aria-current="page"]');
+    if (currentZero?.textContent.trim() !== '1') {
+      throw new Error(`[${S}] total=0 が total=1/current=1 に正規化されていません`);
+    }
+    const pageBtnsZero = shZero.querySelectorAll('.page-btn');
+    if (pageBtnsZero.length !== 1) {
+      throw new Error(`[${S}] total=0 正規化時、ページリンクは 1 つであるべきです`);
+    }
+
+    // 関数 API の安定性
+    const r1 = computeRange(3, 0);
+    if (r1.length !== 0) {
+      throw new Error(`[${S}] computeRange(3, 0) は [] であるべきです: ${JSON.stringify(r1)}`);
+    }
+    const r2 = computeCompactRange(3, 0);
+    if (r2.length !== 0) {
+      throw new Error(
+        `[${S}] computeCompactRange(3, 0) は [] であるべきです: ${JSON.stringify(r2)}`,
+      );
+    }
+    const r3 = computeCompactRange(999, 10);
+    if (r3.length !== 2 || r3[0] !== 'ellipsis' || r3[1] !== 10) {
+      throw new Error(
+        `[${S}] computeCompactRange(999, 10) が ['ellipsis', 10] ではありません: ${JSON.stringify(r3)}`,
+      );
+    }
+
+    console.log('✅ [InvalidInputNormalization] 全テスト通過');
+  },
+};
+
 // ─────────────────────────────────────────────────
 // 視覚確認（環境依存）
 // ─────────────────────────────────────────────────
@@ -1502,6 +1606,21 @@ export const ReducedMotion: Story = {
           '`prefers-reduced-motion: reduce` が有効な環境では、`transition-duration` が `0.01ms` に短縮されます。ホバーやプレスのアニメーションが即座に完了します。',
       },
     },
+  },
+  play: async ({ canvasElement }) => {
+    const S = 'ReducedMotion';
+    const el = canvasElement.querySelector<Pagination>('ui-pagination');
+    if (!el) throw new Error(`[${S}] ui-pagination が見つかりません`);
+    await el.updateComplete;
+    const sh = getShadow(el, S);
+    const styleText = getStyleText(sh, S);
+    if (!styleText.includes('@media (prefers-reduced-motion: reduce)')) {
+      throw new Error(`[${S}] prefers-reduced-motion のメディアクエリが存在しません`);
+    }
+    if (!styleText.includes('transition-duration: 0.01ms')) {
+      throw new Error(`[${S}] Reduced Motion 用の transition-duration: 0.01ms が存在しません`);
+    }
+    console.log('✅ [ReducedMotion] 全テスト通過');
   },
 };
 
@@ -1565,6 +1684,71 @@ export const ForcedColorsMode: Story = {
           'Forced Colors Mode では `box-shadow` インジケーターが消失するため、`outline: 2px solid Highlight` で現在地を明示します。Disabled 状態は `color: GrayText` でシステムカラーフォールバックします。',
       },
     },
+  },
+  play: async ({ canvasElement }) => {
+    const S = 'ForcedColorsMode';
+    const mid = canvasElement.querySelector<Pagination>('ui-pagination[current="5"]');
+    if (!mid) throw new Error(`[${S}] 中間ページの ui-pagination が見つかりません`);
+    await mid.updateComplete;
+    const sh = getShadow(mid, S);
+    const styleText = getStyleText(sh, S);
+    if (!styleText.includes('@media (forced-colors: active)')) {
+      throw new Error(`[${S}] forced-colors のメディアクエリが存在しません`);
+    }
+    if (!styleText.includes('outline: 2px solid Highlight')) {
+      throw new Error(`[${S}] Forced Colors の current page outline が存在しません`);
+    }
+    if (!styleText.includes('color: GrayText')) {
+      throw new Error(`[${S}] Forced Colors の disabled GrayText が存在しません`);
+    }
+    console.log('✅ [ForcedColorsMode] 全テスト通過');
+  },
+};
+
+/**
+ * ダークモード想定のトークン適用確認。
+ *
+ * 色トークンを暗色系へ上書きした状態で、現在ページ・通常ページ・disabled が
+ * 視覚的に分離されることを確認します。
+ */
+export const DarkMode: Story = {
+  render: () => html`
+    <div
+      style="
+        padding: 1rem;
+        border-radius: 10px;
+        background: #0f1217;
+        color: #e6edf3;
+        --bg-surface-active: color-mix(in oklab, #7ab8ff 18%, transparent);
+        --bg-hover: color-mix(in oklab, #ffffff 10%, transparent);
+        --primary: #7ab8ff;
+        --fg-muted: #c7d1dc;
+        --fg-subtle: #8b99aa;
+        --focus-ring-color: #8fc2ff;
+      "
+    >
+      <div style="font-size: 11px; margin-bottom: 0.5rem;">ダークトークン適用例 — current=5, total=10</div>
+      <ui-pagination id="dark-pagination" current="5" total="10" .getHref="${defaultHref}"></ui-pagination>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const S = 'DarkMode';
+    const el = canvasElement.querySelector<Pagination>('#dark-pagination');
+    if (!el) throw new Error(`[${S}] ui-pagination が見つかりません`);
+    await el.updateComplete;
+    const sh = getShadow(el, S);
+    const currentLink = sh.querySelector('[aria-current="page"]');
+    if (!currentLink) throw new Error(`[${S}] aria-current="page" が見つかりません`);
+    const prev = getPrev(sh, S);
+    const next = getNext(sh, S);
+    if (prev.tagName !== 'A' || next.tagName !== 'A') {
+      throw new Error(`[${S}] 中間ページの Prev/Next は <a> であるべきです`);
+    }
+    const ellipses = sh.querySelectorAll('.ellipsis');
+    if (ellipses.length !== 2) {
+      throw new Error(`[${S}] 中間ページの省略記号数が 2 ではありません`);
+    }
+    console.log('✅ [DarkMode] 全テスト通過');
   },
 };
 

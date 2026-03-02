@@ -106,6 +106,7 @@ export const Default: Story = {
   args: {
     opened: false,
     placement: 'bottom-start',
+    align: 'start',
     disabled: false,
   },
   render: (args) => html`
@@ -114,6 +115,7 @@ export const Default: Story = {
         id="default-dropdown"
         ?opened="${args.opened}"
         placement="${args.placement}"
+        align="${args.align}"
         ?disabled="${args.disabled}"
         @menu-item-select="${(e: CustomEvent<{ value: string; label: string }>) => {
       console.log('menu-item-select:', e.detail);
@@ -615,6 +617,53 @@ export const KeyboardNavigation: Story = {
     await dropdown.updateComplete;
     await new Promise(resolve => setTimeout(resolve, 50));
     if (dropdown.hasAttribute("opened")) throw new Error('Expected dropdown to close on Escape');
+
+    const trigger = canvasElement.querySelector<HTMLElement>('#keyboard-trigger');
+    if (!trigger) throw new Error('Trigger not found');
+    const getFocusedValue = (): string | null => {
+      const items = canvasElement.querySelectorAll<HTMLElement>('ui-menu-item');
+      for (const item of items) {
+        const active = item.shadowRoot?.activeElement;
+        if (active instanceof HTMLButtonElement) {
+          return item.getAttribute('value');
+        }
+      }
+      return null;
+    };
+
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    await dropdown.updateComplete;
+    await new Promise(resolve => setTimeout(resolve, 50));
+    if (!dropdown.hasAttribute('opened')) throw new Error('Expected ArrowDown to open dropdown');
+    if (getFocusedValue() !== 'new') throw new Error('Expected first enabled item focus on open');
+
+    panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }));
+    await new Promise(resolve => setTimeout(resolve, 0));
+    if (getFocusedValue() !== 'paste') throw new Error('Expected ArrowDown to skip disabled item');
+
+    panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true, composed: true }));
+    await new Promise(resolve => setTimeout(resolve, 0));
+    if (getFocusedValue() !== 'new') throw new Error('Expected Home to move focus to first item');
+
+    panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true, composed: true }));
+    await new Promise(resolve => setTimeout(resolve, 0));
+    if (getFocusedValue() !== 'delete') throw new Error('Expected End to move focus to last item');
+
+    panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, composed: true }));
+    await dropdown.updateComplete;
+    if (dropdown.hasAttribute('opened')) throw new Error('Expected Tab to close dropdown');
+
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    await dropdown.updateComplete;
+    panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, composed: true }));
+    await dropdown.updateComplete;
+    if (dropdown.hasAttribute('opened')) throw new Error('Expected Shift+Tab to close dropdown');
+
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    await dropdown.updateComplete;
+    await new Promise(resolve => setTimeout(resolve, 50));
+    if (!dropdown.hasAttribute('opened')) throw new Error('Expected ArrowUp to open dropdown');
+    if (getFocusedValue() !== 'delete') throw new Error('Expected ArrowUp opening to focus last enabled item');
 
     console.log('✅ All tests passed for KeyboardNavigation story');
   },
@@ -1150,6 +1199,12 @@ export const ForcedColorsMode: Story = {
       </ui-dropdown>
     </div>
   `,
+  play: async ({ canvasElement }) => {
+    const dropdown = canvasElement.querySelector<Dropdown>('#forced-colors-dropdown');
+    if (!dropdown) throw new Error('ui-dropdown not found');
+    await dropdown.updateComplete;
+    if (!dropdown.hasAttribute('opened')) throw new Error('Expected forced-colors dropdown to be opened');
+  },
   parameters: {
     docs: {
       description: {
@@ -1180,11 +1235,162 @@ export const ReducedMotion: Story = {
       </ui-dropdown>
     </div>
   `,
+  play: async ({ canvasElement }) => {
+    const dropdown = canvasElement.querySelector<Dropdown>('#reduced-motion-dropdown');
+    if (!dropdown) throw new Error('ui-dropdown not found');
+    await dropdown.updateComplete;
+
+    dropdown.open();
+    await dropdown.updateComplete;
+    if (!dropdown.hasAttribute('opened')) throw new Error('Expected dropdown to open');
+
+    dropdown.close();
+    await dropdown.updateComplete;
+    if (dropdown.hasAttribute('opened')) throw new Error('Expected dropdown to close');
+  },
   parameters: {
     docs: {
       description: {
         story: 'prefers-reduced-motion 環境下では、開閉アニメーションが即座に適用されます（実質的に瞬時）。',
       },
     },
+  },
+};
+
+export const ClickOutsideClose: Story = {
+  render: () => html`
+    <div style="padding: 2rem; display: flex; gap: 1rem;">
+      <ui-dropdown id="outside-close-dropdown" opened>
+        <button slot="trigger" style="padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
+          メニュー
+        </button>
+        <ui-menu-item value="edit">編集</ui-menu-item>
+        <ui-menu-item value="delete" variant="danger">削除</ui-menu-item>
+      </ui-dropdown>
+      <button id="outside-target" style="height: 32px;">外側</button>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const dropdown = canvasElement.querySelector<Dropdown>('#outside-close-dropdown');
+    const outside = canvasElement.querySelector<HTMLElement>('#outside-target');
+    if (!dropdown || !outside) throw new Error('required elements not found');
+    await dropdown.updateComplete;
+
+    outside.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, composed: true }));
+    await dropdown.updateComplete;
+    if (dropdown.hasAttribute('opened')) throw new Error('Expected click outside to close dropdown');
+  },
+};
+
+export const ScrollClose: Story = {
+  render: () => html`
+    <div style="padding: 2rem;">
+      <ui-dropdown id="scroll-close-dropdown" opened>
+        <button slot="trigger" style="padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
+          メニュー
+        </button>
+        <ui-menu-item value="edit">編集</ui-menu-item>
+      </ui-dropdown>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const dropdown = canvasElement.querySelector<Dropdown>('#scroll-close-dropdown');
+    if (!dropdown) throw new Error('ui-dropdown not found');
+    await dropdown.updateComplete;
+
+    window.dispatchEvent(new Event('scroll'));
+    await dropdown.updateComplete;
+    if (dropdown.hasAttribute('opened')) throw new Error('Expected scroll to close dropdown');
+  },
+};
+
+export const TypeaheadNavigation: Story = {
+  render: () => html`
+    <div style="padding: 2rem;">
+      <ui-dropdown id="typeahead-dropdown" opened>
+        <button slot="trigger" style="padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
+          メニュー
+        </button>
+        <ui-menu-item value="copy">Copy</ui-menu-item>
+        <ui-menu-item value="commit">Commit</ui-menu-item>
+        <ui-menu-item value="delete" variant="danger">Delete</ui-menu-item>
+      </ui-dropdown>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const dropdown = canvasElement.querySelector<Dropdown>('#typeahead-dropdown');
+    if (!dropdown) throw new Error('ui-dropdown not found');
+    await dropdown.updateComplete;
+
+    const panel = dropdown.shadowRoot?.querySelector<HTMLElement>('.panel');
+    if (!panel) throw new Error('panel not found');
+
+    panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true, composed: true }));
+    panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'o', bubbles: true, composed: true }));
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    const items = canvasElement.querySelectorAll<HTMLElement>('ui-menu-item');
+    const focused = Array.from(items).find(item => item.shadowRoot?.activeElement instanceof HTMLButtonElement);
+    if (focused?.getAttribute('value') !== 'copy') {
+      throw new Error('Expected typeahead "co" to focus copy');
+    }
+  },
+};
+
+export const NonButtonTriggerAria: Story = {
+  render: () => html`
+    <div style="padding: 2rem;">
+      <ui-dropdown id="non-button-trigger-dropdown" disabled>
+        <span slot="trigger" id="non-button-trigger" style="display: inline-flex; align-items: center; padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px;">
+          トリガー
+        </span>
+        <ui-menu-item value="edit">編集</ui-menu-item>
+      </ui-dropdown>
+    </div>
+  `,
+  play: ({ canvasElement }) => {
+    const trigger = canvasElement.querySelector<HTMLElement>('#non-button-trigger');
+    if (!trigger) throw new Error('trigger not found');
+    if (trigger.getAttribute('role') !== 'button') throw new Error('Expected role="button" on non-button trigger');
+    if (trigger.getAttribute('aria-disabled') !== 'true') throw new Error('Expected aria-disabled="true"');
+  },
+};
+
+export const DarkModeSurface: Story = {
+  render: () => html`
+    <div style="padding: 2rem; background: oklch(20% 0.01 250); border-radius: 8px;">
+      <ui-dropdown id="dark-mode-dropdown" opened>
+        <button slot="trigger" style="padding: 0 12px; height: 32px; border: 1px solid oklch(100% 0 0 / 0.2); border-radius: 6px; background: oklch(30% 0.01 250); color: oklch(95% 0 0); cursor: pointer;">
+          メニュー
+        </button>
+        <ui-menu-item value="edit">編集</ui-menu-item>
+        <ui-menu-item value="delete" variant="danger">削除</ui-menu-item>
+      </ui-dropdown>
+    </div>
+  `,
+  parameters: {
+    docs: {
+      description: {
+        story: 'ダーク背景上でのパネル可読性とコントラスト確認用ストーリーです。',
+      },
+    },
+  },
+};
+
+export const EmptyMenu: Story = {
+  render: () => html`
+    <div style="padding: 2rem;">
+      <ui-dropdown id="empty-menu-dropdown" opened>
+        <button slot="trigger" style="padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
+          空メニュー
+        </button>
+      </ui-dropdown>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const dropdown = canvasElement.querySelector<Dropdown>('#empty-menu-dropdown');
+    if (!dropdown) throw new Error('ui-dropdown not found');
+    await dropdown.updateComplete;
+    if (!dropdown.hasAttribute('opened')) throw new Error('Expected opened=true');
   },
 };

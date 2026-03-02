@@ -1,4 +1,4 @@
-import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
+import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 
 /**
@@ -142,7 +142,7 @@ export class Switch extends LitElement {
       transform: translate(-50%, -50%);
       min-width: var(--control-min-touch, 44px);
       min-height: var(--control-min-touch, 44px);
-      pointer-events: none;
+      pointer-events: auto;
     }
 
     /* ON 状態: トラック色を primary に */
@@ -253,28 +253,6 @@ export class Switch extends LitElement {
     // 一意な ID（レンダリング毎の再生成を防止）
     private readonly _labelId = `switch-label-${Math.random().toString(36).substring(2, 11)}`;
 
-    override updated(changedProperties: PropertyValues<this>): void {
-        super.updated(changedProperties);
-
-        // ARIA 属性を Track 要素に反映
-        const track = this.shadowRoot?.querySelector<HTMLElement>('.track');
-        if (track) {
-            track.setAttribute('aria-checked', String(this.checked));
-            if (this.disabled) {
-                track.setAttribute('aria-disabled', 'true');
-                track.setAttribute('tabindex', '-1');
-            } else {
-                track.removeAttribute('aria-disabled');
-                track.setAttribute('tabindex', '0');
-            }
-            if (this.label) {
-                track.setAttribute('aria-labelledby', this._labelId);
-            } else {
-                track.removeAttribute('aria-labelledby');
-            }
-        }
-    }
-
     /**
      * トグル操作。`change` / `input` イベントを発火します。
      */
@@ -318,6 +296,8 @@ export class Switch extends LitElement {
     }
 
     override render() {
+        const hostAriaLabel = this.getAttribute('aria-label');
+        const ariaLabel = this.label ? nothing : (hostAriaLabel ?? nothing);
         return html`
       <div class="wrapper">
         <!--
@@ -331,6 +311,7 @@ export class Switch extends LitElement {
           aria-checked="${String(this.checked)}"
           aria-disabled="${this.disabled ? 'true' : nothing}"
           aria-labelledby="${this.label ? this._labelId : nothing}"
+          aria-label="${ariaLabel}"
           tabindex="${this.disabled ? '-1' : '0'}"
           @click="${this._handleClick}"
           @keydown="${this._handleKeyDown}"

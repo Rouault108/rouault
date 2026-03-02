@@ -20,6 +20,10 @@ export class Blockquote extends LitElement {
       color: var(--fg-default, oklch(20% 0.01 250));
     }
 
+    figure {
+      margin: 0;
+    }
+
     .quote {
       margin-block: var(--space-6, 24px);
       margin-inline: 0;
@@ -119,7 +123,11 @@ export class Blockquote extends LitElement {
   }
 
   private get _hasSourceSlot(): boolean {
-    return [...this.querySelectorAll('[slot="source"]')].some((element) => element.textContent.trim().length > 0);
+    return [...this.children].some((element) => {
+      if (!(element instanceof HTMLElement)) return false;
+      if (element.getAttribute('slot') !== 'source') return false;
+      return (element.textContent).trim().length > 0;
+    });
   }
 
   private get _hasSource(): boolean {

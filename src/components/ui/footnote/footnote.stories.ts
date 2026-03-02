@@ -103,6 +103,13 @@ const nextFrame = async (): Promise<void> =>
     });
   });
 
+const hidePopoverProgrammatically = (popover: HTMLElement): boolean => {
+  const maybePopover = popover as HTMLElement & { hidePopover?: () => void };
+  if (typeof maybePopover.hidePopover !== 'function') return false;
+  maybePopover.hidePopover();
+  return true;
+};
+
 /**
  * 基本構造:
  * - Trigger / Popover / Footer Link の契約
@@ -114,7 +121,7 @@ export const Default: Story = {
       <p>
         読書体験は本文の信号比で決まる
         <ui-footnote id="default-footnote" ref-id="fn-1" index="1" ref-instance="1">
-          <p>補足: 本文に集中できる設計は、補助情報へのアクセス経路を明確に定義する。</p>
+          <span>補足: 本文に集中できる設計は、補助情報へのアクセス経路を明確に定義する。</span>
         </ui-footnote>
       </p>
 
@@ -205,7 +212,7 @@ export const VariantStateMatrix: Story = {
       <p>
         単独参照
         <ui-footnote id="matrix-single" ref-id="fn-10" index="10" ref-instance="1">
-          <p>単独参照の脚注本文。</p>
+          <span>単独参照の脚注本文。</span>
         </ui-footnote>
       </p>
 
@@ -213,7 +220,7 @@ export const VariantStateMatrix: Story = {
       <p>
         最初の参照
         <ui-footnote id="matrix-shared-owner" ref-id="fn-11" index="11" ref-instance="1">
-          <p>同一脚注を複数箇所から参照する場合の共有本文。</p>
+          <span>同一脚注を複数箇所から参照する場合の共有本文。</span>
         </ui-footnote>
         と再参照
         <ui-footnote
@@ -229,7 +236,7 @@ export const VariantStateMatrix: Story = {
       <p>
         別番号
         <ui-footnote id="matrix-another" ref-id="fn-12" index="12" ref-instance="1">
-          <p>別番号の脚注本文。</p>
+          <span>別番号の脚注本文。</span>
         </ui-footnote>
       </p>
     </div>
@@ -294,7 +301,7 @@ export const DualAccessContract: Story = {
       <p>
         参照
         <ui-footnote id="access-footnote" ref-id="fn-20" index="20" ref-instance="1">
-          <p>デュアルアクセス契約の検証用本文。</p>
+          <span>デュアルアクセス契約の検証用本文。</span>
         </ui-footnote>
       </p>
       <section class="footnotes" role="doc-endnotes">
@@ -327,6 +334,27 @@ export const DualAccessContract: Story = {
     }
     if (trigger.getAttribute('aria-expanded') !== 'false') {
       throw new Error('修飾キー付きクリック後に aria-expanded が変化してはいけません');
+    }
+
+    const metaClick = new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+      button: 0,
+      metaKey: true,
+    });
+    trigger.dispatchEvent(metaClick);
+    if (metaClick.defaultPrevented) {
+      throw new Error('Cmd/Meta クリックは preventDefault してはいけません');
+    }
+
+    const middleClick = new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+      button: 1,
+    });
+    trigger.dispatchEvent(middleClick);
+    if (middleClick.defaultPrevented) {
+      throw new Error('中クリックは preventDefault してはいけません');
     }
 
     if (supportsPopoverApi()) {
@@ -377,6 +405,93 @@ export const DualAccessContract: Story = {
 };
 
 /**
+ * キーボード/フォーカス契約:
+ * - Escape で閉じる
+ * - Footer Link 上の Tab で閉じる
+ * - 閉じ方に応じてフォーカス復帰契約を満たす
+ */
+export const KeyboardAndFocusContract: Story = {
+  render: () => html`
+    <article>
+      <p>
+        キーボード検証
+        <ui-footnote id="keyboard-footnote" ref-id="fn-40" index="40" ref-instance="1">
+          <span>キーボード契約を検証する脚注本文。</span>
+        </ui-footnote>
+        <a href="#after-footnote" id="after-footnote">次のリンク</a>
+      </p>
+      <section class="footnotes" role="doc-endnotes">
+        <h2 class="sr-only">脚注</h2>
+        <ol>
+          <li id="fn-40">キーボード契約を検証する脚注本文。 <a href="#fnref-40-1">↩︎</a></li>
+        </ol>
+      </section>
+    </article>
+  `,
+  play: async ({ canvasElement }) => {
+    if (!supportsPopoverApi()) return;
+
+    const host = getFootnote(canvasElement, 'keyboard-footnote');
+    await host.updateComplete;
+
+    const trigger = getTrigger(host);
+    const popover = getPopover(host);
+
+    trigger.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+    await nextFrame();
+    if (!isPopoverOpen(popover)) {
+      throw new Error('キーボード検証前提: Popover が開いていません');
+    }
+
+    popover.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    await nextFrame();
+    if (isPopoverOpen(popover)) {
+      throw new Error('Escape で Popover が閉じる必要があります');
+    }
+    if (document.activeElement !== trigger) {
+      throw new Error('Escape クローズ後は trigger にフォーカス復帰する必要があります');
+    }
+
+    trigger.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+    await nextFrame();
+    if (!isPopoverOpen(popover)) {
+      throw new Error('Tab 契約検証前提: Popover が開いていません');
+    }
+
+    const footerLink = popover.querySelector<HTMLAnchorElement>('.footnote-list-link');
+    if (!footerLink) throw new Error('footer link が見つかりません');
+    footerLink.focus();
+    footerLink.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+    await nextFrame();
+
+    if (isPopoverOpen(popover)) {
+      throw new Error('Footer Link 上の Tab で Popover が閉じる必要があります');
+    }
+    if (document.activeElement === trigger) {
+      throw new Error('Footer Link 経由クローズ後は trigger へ復帰しない契約です');
+    }
+
+    trigger.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+    await nextFrame();
+    if (!isPopoverOpen(popover)) {
+      throw new Error('Dismiss 契約検証前提: Popover が開いていません');
+    }
+
+    if (!hidePopoverProgrammatically(popover)) {
+      throw new Error('Popover API の hidePopover が利用できません');
+    }
+    await nextFrame();
+
+    if (isPopoverOpen(popover)) {
+      throw new Error('Dismiss 後に Popover が閉じる必要があります');
+    }
+    if (document.activeElement !== trigger) {
+      throw new Error('Dismiss クローズ後は trigger にフォーカス復帰する必要があります');
+    }
+  },
+};
+
+/**
  * 事故が多い境界条件:
  * - 不正番号のフォールバック
  * - 小さい親フォント下での 12px 下限
@@ -389,25 +504,25 @@ export const BoundaryConditions: Story = {
       <p>
         不正値フォールバック
         <ui-footnote id="boundary-fallback" index="0" ref-instance="0">
-          <p>fallback 本文。</p>
+          <span>fallback 本文。</span>
         </ui-footnote>
       </p>
 
       <p style="font-size: 11px;">
         親 11px
         <ui-footnote id="boundary-small" ref-id="fn-31" index="31" ref-instance="1">
-          <p>small text 本文。</p>
+          <span>small text 本文。</span>
         </ui-footnote>
       </p>
 
       <p>
         長文
         <ui-footnote id="boundary-long" ref-id="fn-32" index="32" ref-instance="1">
-          <p>
+          <span>
             長文脚注: 表示領域の上限を超えると内部スクロールで読む。長文脚注: 表示領域の上限を超えると内部スクロールで読む。
             長文脚注: 表示領域の上限を超えると内部スクロールで読む。長文脚注: 表示領域の上限を超えると内部スクロールで読む。
             長文脚注: 表示領域の上限を超えると内部スクロールで読む。長文脚注: 表示領域の上限を超えると内部スクロールで読む。
-          </p>
+          </span>
         </ui-footnote>
       </p>
     </div>
@@ -453,6 +568,20 @@ export const BoundaryConditions: Story = {
       throw new Error('長文脚注の max-height が無制限になっています');
     }
 
+    if (supportsPopoverApi()) {
+      const longTrigger = getTrigger(long);
+      longTrigger.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+      await nextFrame();
+
+      if (!isPopoverOpen(longPopover)) {
+        throw new Error('長文脚注の Popover が開いていません');
+      }
+
+      if (longPopover.scrollHeight <= longPopover.clientHeight) {
+        throw new Error('長文脚注で実スクロール可能領域が発生していません');
+      }
+    }
+
     const styleElement = document.getElementById('ui-footnote-document-styles');
     if (!(styleElement instanceof HTMLStyleElement)) {
       throw new Error('ui-footnote の document style が注入されていません');
@@ -469,6 +598,70 @@ export const BoundaryConditions: Story = {
     }
     if (/section\.footnotes\s*\{[^}]*display\s*:\s*none/i.test(styleText)) {
       throw new Error('section.footnotes を非表示にする契約違反があります');
+    }
+  },
+};
+
+/**
+ * 視覚モード契約:
+ * - Forced Colors / Reduced Motion / Print の定義が存在
+ * - Dark/Light 双方でトークン参照を維持
+ */
+export const VisualModeContracts: Story = {
+  render: () => html`
+    <article>
+      <p>
+        表示モード検証
+        <ui-footnote id="visual-footnote" ref-id="fn-50" index="50" ref-instance="1">
+          <span>表示モード契約の検証用本文。</span>
+        </ui-footnote>
+      </p>
+      <section class="footnotes" role="doc-endnotes">
+        <h2 class="sr-only">脚注</h2>
+        <ol>
+          <li id="fn-50">表示モード契約の検証用本文。 <a href="#fnref-50-1">↩︎</a></li>
+        </ol>
+      </section>
+    </article>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getFootnote(canvasElement, 'visual-footnote');
+    await host.updateComplete;
+
+    const styleElement = document.getElementById('ui-footnote-document-styles');
+    if (!(styleElement instanceof HTMLStyleElement)) {
+      throw new Error('ui-footnote の document style が注入されていません');
+    }
+    const styleText = styleElement.textContent;
+
+    const requiredSnippets = [
+      '@media (prefers-reduced-motion: reduce)',
+      '@media (forced-colors: active)',
+      '@media print',
+      'var(--bg-surface-2',
+      'var(--fg-default',
+      'var(--border-default',
+      'var(--primary',
+    ];
+
+    for (const snippet of requiredSnippets) {
+      if (!styleText.includes(snippet)) {
+        throw new Error(`表示モード契約に必要なスタイル定義が不足しています: ${snippet}`);
+      }
+    }
+
+    const trigger = getTrigger(host);
+    const popover = getPopover(host);
+    const triggerStyle = getComputedStyle(trigger);
+    const popoverStyle = getComputedStyle(popover);
+    if (popoverStyle.marginTop !== '0px' || popoverStyle.marginLeft !== '0px') {
+      throw new Error(
+        `popover margin must be 0px: top=${popoverStyle.marginTop}, left=${popoverStyle.marginLeft}`,
+      );
+    }
+
+    if (triggerStyle.fontSize === '' || popoverStyle.fontSize === '') {
+      throw new Error('表示モード検証: 計算済みスタイル取得に失敗しました');
     }
   },
 };

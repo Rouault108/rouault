@@ -816,6 +816,19 @@ export const HorizontalScroll: Story = {
 			throw new Error('Scrollable container should have aria-label');
 		}
 
+		// テーブルが実際に横スクロール対象であること
+		if (container.scrollWidth <= container.clientWidth) {
+			throw new Error(
+				`Expected horizontal overflow, got scrollWidth=${String(container.scrollWidth)} clientWidth=${String(container.clientWidth)}`,
+			);
+		}
+
+		// キーボードフォーカス可能であること
+		(container as HTMLElement).focus();
+		if (document.activeElement !== container) {
+			throw new Error('Scrollable container should receive keyboard focus');
+		}
+
 		console.log('✅ All tests passed for HorizontalScroll story');
 	},
 };
@@ -862,22 +875,27 @@ export const BoundaryNoAriaLabel: Story = {
 		if (!table) throw new Error('ui-table not found');
 		await table.updateComplete;
 
-		// テスト: ariaLabel プロパティが null
+		// テスト: ariaLabel プロパティは未指定のまま
 		if (table.ariaLabel !== null) {
 			throw new Error(`Expected ariaLabel to be null, got "${table.ariaLabel}"`);
 		}
 
-		// テスト: .table-container に aria-label 属性が存在しない
+		// テスト: フォールバックラベルが適用される
 		const container = table.shadowRoot?.querySelector('.table-container');
 		if (!container) throw new Error('.table-container not found');
 
-		if (container.hasAttribute('aria-label')) {
+		if (!container.hasAttribute('aria-label')) {
 			throw new Error(
-				`Container should NOT have aria-label when not provided, got "${container.getAttribute('aria-label') ?? ''}"`,
+				'Container should have aria-label even when not provided by user',
 			);
 		}
 
-		// テスト: role="region" と tabindex="0" は aria-label なしでも設定される
+		const resolvedLabel = container.getAttribute('aria-label');
+		if (resolvedLabel !== 'Data table') {
+			throw new Error(`Expected fallback aria-label="Data table", got "${resolvedLabel ?? 'null'}"`);
+		}
+
+		// テスト: role="region" と tabindex="0" は維持される
 		if (container.getAttribute('role') !== 'region') {
 			throw new Error('role="region" should still be set even without aria-label');
 		}
@@ -1235,7 +1253,7 @@ export const AllStates: Story = {
 			.state-label {
 				font-size: 11px;
 				font-weight: 500;
-				color: oklch(48% 0.01 250);
+				color: var(--fg-muted, oklch(48% 0.01 250));
 				text-transform: uppercase;
 				letter-spacing: 0.05em;
 			}
@@ -1370,6 +1388,115 @@ export const AllStates: Story = {
 	},
 };
 
+/**
+ * `.prose` 統合時のブレークアウト確認ストーリー
+ */
+export const ProseIntegration: Story = {
+	render: () => html`
+		<style>
+			.prose {
+				max-width: 720px;
+				margin: 0 auto;
+			}
+
+			.prose table {
+				max-width: none;
+				width: calc(100% + var(--space-8, 2rem));
+				margin-inline: var(--space-n4, -1rem);
+			}
+
+			@media (min-width: 768px) {
+				.prose table {
+					width: calc(100% + var(--space-16, 4rem));
+					margin-inline: var(--space-n8, -2rem);
+				}
+			}
+		</style>
+
+		<div class="prose" id="prose-wrapper">
+			<p>本文テキストの前段です。</p>
+			<ui-table id="prose-table" aria-label="本文内テーブル">
+				<table>
+					<thead>
+						<tr>
+							<th scope="col">列</th>
+							<th scope="col" align="right">値</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr><td>A</td><td align="right">100</td></tr>
+						<tr><td>B</td><td align="right">200</td></tr>
+					</tbody>
+				</table>
+			</ui-table>
+			<p>本文テキストの後段です。</p>
+		</div>
+	`,
+	play: async ({ canvasElement }) => {
+		const wrapper = canvasElement.querySelector<HTMLElement>('#prose-wrapper');
+		const table = canvasElement.querySelector<Table>('#prose-table');
+		if (!wrapper) throw new Error('prose wrapper not found');
+		if (!table) throw new Error('ui-table not found');
+		await table.updateComplete;
+
+		const lightDomTable = table.querySelector('table');
+		if (!lightDomTable) throw new Error('slotted table not found');
+
+		// ブレークアウト指定が効く前提のスタイルが適用されていること
+		const widthValue = getComputedStyle(lightDomTable).width;
+		if (!widthValue) {
+			throw new Error('Expected prose table width style to be resolved');
+		}
+
+		const container = table.shadowRoot?.querySelector('.table-container');
+		if (!container) throw new Error('.table-container not found');
+	},
+};
+
+/**
+ * ダーク背景での可読性確認ストーリー
+ */
+export const DarkMode: Story = {
+	parameters: {
+		backgrounds: { default: 'dark' },
+	},
+	render: () => html`
+		<ui-table id="dark-table" aria-label="Dark mode table">
+			<table>
+				<caption>Dark Surface</caption>
+				<thead>
+					<tr>
+						<th scope="col">Name</th>
+						<th scope="col" align="right">Value</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr><td>Primary</td><td align="right">120</td></tr>
+					<tr><td>Secondary</td><td align="right">80</td></tr>
+				</tbody>
+				<tfoot>
+					<tr><td>Total</td><td align="right">200</td></tr>
+				</tfoot>
+			</table>
+		</ui-table>
+	`,
+	play: async ({ canvasElement }) => {
+		const table = canvasElement.querySelector<Table>('#dark-table');
+		if (!table) throw new Error('ui-table not found');
+		await table.updateComplete;
+
+		const header = table.querySelector('th');
+		const cell = table.querySelector('td');
+		if (!header || !cell) throw new Error('table cells not found');
+
+		const headerColor = getComputedStyle(header).color;
+		const cellColor = getComputedStyle(cell).color;
+		if (!headerColor || !cellColor) {
+			throw new Error('Expected text colors to be resolved in dark mode');
+		}
+	},
+};
+
 // ──────────────────────────────────────────────
 // Reduced Motion / Forced Colors（手動確認）
 // ──────────────────────────────────────────────
@@ -1456,6 +1583,28 @@ export const VisualAccessibility: Story = {
 					</table>
 				</ui-table>
 			</div>
-		</div>
-	`,
+			</div>
+		`,
+	play: async ({ canvasElement }) => {
+		const table = canvasElement.querySelector<Table>('ui-table');
+		if (!table) throw new Error('ui-table not found');
+		await table.updateComplete;
+
+		const injectedStyle = document.getElementById('ui-table-document-styles');
+		if (!injectedStyle?.textContent) {
+			throw new Error('Expected global style injection for visual accessibility rules');
+		}
+
+		if (!injectedStyle.textContent.includes('@media (prefers-reduced-motion: reduce)')) {
+			throw new Error('Missing reduced motion media query in injected styles');
+		}
+
+		if (!injectedStyle.textContent.includes('@media (forced-colors: active)')) {
+			throw new Error('Missing forced-colors media query in injected styles');
+		}
+
+		if (!injectedStyle.textContent.includes('@media (hover: hover) and (pointer: fine)')) {
+			throw new Error('Missing active ruler hover media query in injected styles');
+		}
+	},
 };

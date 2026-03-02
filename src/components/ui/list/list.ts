@@ -1,13 +1,14 @@
-import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
+import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
-import { map } from 'lit/directives/map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
+import { map } from 'lit/directives/map.js';
+import '../list-item/list-item';
+import '../pagination/pagination';
 
 /**
- * リストアイテムのデータ型。
- * `id` は必須で一意でなければなりません。
- * `href` が存在する場合、プライマリ列がリンクとして描画されます。
+ * リストアイテムのメタデータ型。
+ * `id` は一意である必要があります。
  */
 export interface ListItemData {
   id: string;
@@ -16,79 +17,47 @@ export interface ListItemData {
 }
 
 /**
- * 列定義型。
- * `width` は CSS 値で指定します。
+ * 列定義。
  */
 export interface ColumnDef {
-  /** 列の一意識別子（ListItemData のキーに対応） */
   id: string;
-  /** ヘッダーに表示されるラベル */
   label: string;
-  /**
-   * CSS 値 (例: "200px", "1fr", "minmax(...)").
-   * Subgrid 非対応環境では `1fr` が minmax に変換されます。
-   */
   width: string;
-  /** ソート可能か（デフォルト: false） */
   sortable?: boolean;
-  /** モバイル表示時に非表示にするか（デフォルト: false） */
   hideOnMobile?: boolean;
-  /**
-   * プライマリ列（メインリンク含む）か（デフォルト: false）。
-   * プライマリ列は hideOnMobile 禁止・Roving Tabindex の起点となります。
-   */
   primary?: boolean;
 }
 
-/** ソート方向型 */
 type SortDirection = 'asc' | 'desc' | null;
 
+interface UiActiveChangeDetail {
+  rowId: string;
+  colIndex: number;
+}
+
+interface ListContextPayload {
+  columns: ColumnDef[];
+  isMobile: boolean;
+}
+
+interface ListContextRequestDetail {
+  callback: (payload: ListContextPayload) => void;
+}
+
+interface UiListItemLike extends HTMLElement {
+  itemId?: string;
+  managed?: boolean;
+  active?: boolean;
+  activeCellIndex?: number;
+  rowIndex?: number | null;
+  requestListContext?: () => void;
+}
+
 /**
- * リストビュー (List View) コンポーネント `<ui-list>`
+ * リストビューコンポーネント `<ui-list>`。
  *
- * ユーザーがアイテムを探索・操作するための主要インターフェースです。
- * WAI-ARIA Grid Pattern (Roving Tabindex) に準拠し、高密度かつアクセシブルな
- * 一覧表示を実現します。
- *
- * ## 設計原則
- *
- * - **High Density**: Linear Style の情報密度を目指し、最小限の行高さに凝縮
- * - **Browsing First**: 閲覧を最優先とし、複雑な操作を排除
- * - **Event Delegation**: 親要素でのイベント一括管理によりメモリ効率を最適化
- * - **No Virtualization**: ブラウザ検索 (`Ctrl+F`) を阻害しないため仮想スクロール不採用
- *
- * ## レイアウト戦略
- *
- * - **Modern (Subgrid)**: 全行が親グリッドのトラックを継承し完全な列揃えを実現
- * - **Fallback**: Subgrid 非対応環境では各行が同一の明示的列幅を保持
- * - **display: contents 不使用**: role="row" のセマンティクス剥落バグを回避
- *
- * ## ソート処理
- *
- * ソートは外部委譲です。`ui-sort-change` イベントを購読し、
- * 親コンポーネントが `items` を並び替えて再代入する責務を持ちます。
- *
- * @property {ListItemData[]} items - データ配列
- * @property {ColumnDef[]} columns - 列定義
- * @property {string | null} activeRow - 現在アクティブな行の ID
- * @property {string | null} sortKey - ソート基準列 ID
- * @property {SortDirection} sortDirection - ソート方向
- *
- * @fires ui-sort-change - ソート変更 detail: { key: string | null, direction: SortDirection }
- * @fires ui-active-change - アクティブ行変更 detail: { rowId: string }
- * @fires ui-preview-request - Quick Look 要求 (Shift+Space) detail: { rowId: string }
- * @fires ui-context-request - コンテキストメニュー要求 detail: { rowId: string, anchor: { x: number, y: number } }
- *
- * @example
- * ```html
- * <ui-list
- *   .columns="${columns}"
- *   .items="${items}"
- *   sort-key="date"
- *   sort-direction="desc"
- *   @ui-sort-change="${handleSort}"
- * ></ui-list>
- * ```
+ * 行DOMは外部で宣言された `<ui-list-item>` を slot で受け取り、
+ * `<ui-list>` はヘッダー生成とイベント委譲・フォーカス管理のみを担当します。
  */
 @customElement('ui-list')
 export class List extends LitElement {
@@ -97,10 +66,6 @@ export class List extends LitElement {
       display: block;
     }
 
-    /* ────────────────────────────────────────────
-       グリッドコンテナ
-       grid-template-columns は style 属性で動的設定
-    ──────────────────────────────────────────── */
     .grid {
       display: grid;
       border: 1px solid var(--border-default, oklch(90% 0.01 250));
@@ -108,11 +73,6 @@ export class List extends LitElement {
       overflow: hidden;
     }
 
-    /* ────────────────────────────────────────────
-       Rowgroup（ヘッダー・ボディ共通）
-       Subgrid 対応時: subgrid で親トラックを継承
-       Subgrid 非対応時: --_gtc カスタムプロパティで同一列幅を明示
-    ──────────────────────────────────────────── */
     .header-rowgroup,
     .body-rowgroup {
       display: grid;
@@ -133,47 +93,34 @@ export class List extends LitElement {
       }
     }
 
-    /* ────────────────────────────────────────────
-       ヘッダー区切り線
-    ──────────────────────────────────────────── */
     .header-rowgroup {
       border-bottom: 1px solid var(--border-default, oklch(90% 0.01 250));
     }
 
-    /* ────────────────────────────────────────────
-       Row（ヘッダー・データ共通）
-       grid-column: 1 / -1 で Rowgroup の全列をスパン
-    ──────────────────────────────────────────── */
-    .header-row,
-    .data-row {
+    .header-row {
       display: grid;
       grid-column: 1 / -1;
       align-items: center;
     }
 
     @supports (grid-template-columns: subgrid) {
-      .header-row,
-      .data-row {
+      .header-row {
         grid-template-columns: subgrid;
       }
     }
 
     @supports not (grid-template-columns: subgrid) {
-      .header-row,
-      .data-row {
+      .header-row {
         grid-template-columns: var(--_gtc);
       }
     }
 
-    /* ────────────────────────────────────────────
-       ヘッダーセル
-    ──────────────────────────────────────────── */
     .header-cell {
       display: flex;
       align-items: center;
       gap: var(--space-1, 4px);
       min-height: var(--control-height-md, 32px);
-      padding: 0 var(--space-2, 8px);
+      padding: 0 var(--space-4, 16px);
       font-size: var(--text-xs, 12px);
       font-weight: var(--font-medium, 500);
       color: var(--fg-muted, oklch(48% 0.01 250));
@@ -198,128 +145,15 @@ export class List extends LitElement {
       border-radius: var(--radius-sm, 4px);
     }
 
-    /* ────────────────────────────────────────────
-       データ行
-    ──────────────────────────────────────────── */
-    .data-row {
-      position: relative;
-      min-height: var(--control-height-md, 32px);
-      cursor: pointer;
-
-      /* Forced Colors Mode でのレイアウトシフト防止のため透明ボーダーを常に配置 */
-      border-left: var(--border-width-thick, 2px) solid transparent;
-
-      background-color: transparent;
-      transition:
-        background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
-
-      /* content-visibility: auto でオフスクリーンのレンダリングを最適化 */
-      content-visibility: auto;
-      contain-intrinsic-height: var(--control-height-md, 32px);
+    .body-rowgroup > slot {
+      display: contents;
+      grid-column: 1 / -1;
     }
 
-    .data-row:hover,
-    .data-row:focus-within {
-      background-color: var(--bg-hover, oklch(0% 0 0 / 0.05));
+    .body-rowgroup > slot::slotted(ui-list-item) {
+      box-shadow: inset 0 1px 0 0 var(--border-default, oklch(90% 0.01 250));
     }
 
-    .data-row--active {
-      background-color: var(--bg-surface-active, oklch(0% 0 0 / 0.08));
-      border-left-color: var(--primary, oklch(60% 0.15 250));
-    }
-
-    /* タッチターゲット（物理32px → ヒットエリア44px） */
-    .data-row::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 0;
-      right: 0;
-      transform: translateY(-50%);
-      min-height: var(--control-min-touch, 44px);
-      pointer-events: auto;
-      z-index: 0;
-    }
-
-    /* ────────────────────────────────────────────
-       セル（共通）
-    ──────────────────────────────────────────── */
-    .cell {
-      display: flex;
-      align-items: center;
-      padding: 0 var(--space-2, 8px);
-      overflow: hidden;
-      /* タッチターゲット拡大 ::after より前面に配置 */
-      position: relative;
-      z-index: 1;
-    }
-
-    .cell--primary {
-      font-size: var(--text-base, 14px);
-      font-weight: var(--font-normal, 400);
-      color: var(--fg-default, oklch(20% 0.01 250));
-    }
-
-    /* プライマリセルにシステム共通のフォーカスリング */
-    .cell--primary:focus-visible {
-      outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
-      outline-offset: var(--focus-ring-offset, 2px);
-      border-radius: var(--focus-ring-radius, 2px);
-    }
-
-    .cell--meta {
-      font-size: var(--text-sm, 13px);
-      font-weight: var(--font-normal, 400);
-      color: var(--fg-muted, oklch(48% 0.01 250));
-      white-space: nowrap;
-      text-overflow: ellipsis;
-    }
-
-    .cell--action {
-      justify-content: flex-end;
-    }
-
-    /* ────────────────────────────────────────────
-       プライマリリンク
-    ──────────────────────────────────────────── */
-    .primary-link {
-      color: inherit;
-      text-decoration: none;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      /* ブロック表示で幅いっぱいに広げ、クリック領域を最大化 */
-      display: block;
-      width: 100%;
-    }
-
-    .primary-link:hover {
-      text-decoration: underline;
-    }
-
-    /* ────────────────────────────────────────────
-       アクションボタンコンテナ
-       デフォルト非表示 → Hover/Focus-within/Active 時に表示
-    ──────────────────────────────────────────── */
-    .actions {
-      display: flex;
-      align-items: center;
-      gap: var(--space-1, 4px);
-      opacity: 0;
-      transition: opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
-    }
-
-    .data-row:hover .actions,
-    .data-row:focus-within .actions,
-    .data-row--active .actions {
-      opacity: 1;
-    }
-
-    /* ────────────────────────────────────────────
-       空状態
-       grid の外に兄弟要素として配置し role="status" を設定
-    ──────────────────────────────────────────── */
     .empty-state {
       display: flex;
       align-items: center;
@@ -328,85 +162,55 @@ export class List extends LitElement {
       font-size: var(--text-base, 14px);
       color: var(--fg-muted, oklch(48% 0.01 250));
     }
-
-    /* ────────────────────────────────────────────
-       Reduced Motion
-    ──────────────────────────────────────────── */
-    @media (prefers-reduced-motion: reduce) {
-      .data-row,
-      .actions {
-        transition-duration: 0.01ms;
-      }
-    }
-
-    /* ────────────────────────────────────────────
-       Forced Colors Mode
-    ──────────────────────────────────────────── */
-    @media (forced-colors: active) {
-      /* Active: システムカラー Highlight でボーダーを可視化 */
-      .data-row--active {
-        border-left-color: Highlight;
-      }
-
-      /* Focus-within: アウトラインで行全体の位置を補助表示 */
-      .data-row:focus-within {
-        outline: 2px solid CanvasText;
-        outline-offset: -2px;
-      }
-    }
-
-    /* ────────────────────────────────────────────
-       Print
-    ──────────────────────────────────────────── */
-    @media print {
-      .actions {
-        display: none !important;
-      }
-
-      .data-row {
-        border-left: none !important;
-        background: transparent !important;
-      }
-    }
   `;
 
-  /** データ配列。各アイテムは一意の `id` を持つ必要があります。 */
+  /** ソート・フィルタ用メタデータ */
   @property({ type: Array })
   items: ListItemData[] = [];
 
-  /** 列定義。順序がそのまま表示列順になります。 */
+  /** 列定義 */
   @property({ type: Array })
   columns: ColumnDef[] = [];
 
-  /**
-   * 現在フォーカスされている行の ID。
-   * 未選択時は `null`。
-   */
+  /** 現在アクティブな行ID */
   @property({ type: String, attribute: 'active-row', reflect: true })
   activeRow: string | null = null;
 
-  /**
-   * 現在ソート基準となっている列 ID。
-   * 未ソート時は `null`。
-   */
+  /** 現在アクティブなセルのインデックス（0始まり） */
+  @property({ type: Number, attribute: 'active-cell-index', reflect: true })
+  activeCellIndex = 0;
+
+  /** 現在のソートキー */
   @property({ type: String, attribute: 'sort-key', reflect: true })
   sortKey: string | null = null;
 
-  /**
-   * ソート方向。
-   * 未ソート時は `null`。
-   */
+  /** 現在のソート方向 */
   @property({ type: String, attribute: 'sort-direction', reflect: true })
   sortDirection: SortDirection = null;
 
-  /** モバイル判定状態 */
+  /** ページネーション時の総行数 */
+  @property({ type: Number, attribute: 'total-row-count' })
+  totalRowCount: number | null = null;
+
+  /** 行インデックス開始オフセット（0始まり） */
+  @property({ type: Number, attribute: 'row-index-offset' })
+  rowIndexOffset = 0;
+
+  /** ページ番号からURLを生成する関数 */
+  @property({ attribute: false })
+  getPageHref: ((page: number) => string) | null = null;
+
   @state()
   private _isMobile = false;
 
-  private _mql: MediaQueryList | null = null;
+  @state()
+  private _rowElements: UiListItemLike[] = [];
 
-  private readonly _mqlHandler = (e: MediaQueryListEvent): void => {
-    this._isMobile = e.matches;
+  private _mql: MediaQueryList | null = null;
+  private _warnedPrimaryMobile = false;
+
+  private readonly _mqlHandler = (event: MediaQueryListEvent): void => {
+    this._isMobile = event.matches;
   };
 
   override connectedCallback(): void {
@@ -414,274 +218,432 @@ export class List extends LitElement {
     this._mql = window.matchMedia('(max-width: 768px)');
     this._isMobile = this._mql.matches;
     this._mql.addEventListener('change', this._mqlHandler);
+    this.addEventListener('ui-list-context-request', this._handleListContextRequest as EventListener);
   }
 
   override disconnectedCallback(): void {
-    super.disconnectedCallback();
     this._mql?.removeEventListener('change', this._mqlHandler);
     this._mql = null;
+    this.removeEventListener('ui-list-context-request', this._handleListContextRequest as EventListener);
+    super.disconnectedCallback();
   }
 
-  /**
-   * モバイル時は hideOnMobile 列を除外。
-   * ただし primary 列は常に表示（hideOnMobile 禁止）。
-   */
-  private get _visibleColumns(): ColumnDef[] {
-    if (this._isMobile) {
-      return this.columns.filter(col => col.primary === true || col.hideOnMobile !== true);
+  override firstUpdated(): void {
+    this._collectRowElements();
+    this.style.setProperty('--_gtc', this._gridTemplateColumns);
+  }
+
+  override updated(changed: PropertyValues<this>): void {
+    const changedKeys = changed as Map<PropertyKey, unknown>;
+
+    if (changed.has('columns')) {
+      this._validateColumns();
     }
-    return this.columns;
+
+    if (changed.has('columns') || changedKeys.has('_isMobile')) {
+      this.style.setProperty('--_gtc', this._gridTemplateColumns);
+    }
+
+    if (
+      changedKeys.has('_rowElements') ||
+      changed.has('activeRow') ||
+      changed.has('activeCellIndex') ||
+      changed.has('rowIndexOffset') ||
+      changed.has('columns') ||
+      changedKeys.has('_isMobile')
+    ) {
+      this._syncRowsFromState();
+    }
   }
 
-  /**
-   * CSS grid-template-columns 文字列を計算。
-   * Subgrid 非対応環境では `1fr` を minmax に変換して列揃えを保証します。
-   * 末尾にアクション列（40px）を追加します。
-   */
+  private _validateColumns(): void {
+    const ids = new Set<string>();
+    for (const column of this.columns) {
+      if (ids.has(column.id)) {
+        console.warn(`[ui-list] columns.id が重複しています: ${column.id}`);
+      }
+      ids.add(column.id);
+
+      if (column.primary === true && column.hideOnMobile === true && !this._warnedPrimaryMobile) {
+        this._warnedPrimaryMobile = true;
+        console.warn('[ui-list] primary 列に hideOnMobile=true は指定できません。primary を優先します。');
+      }
+    }
+  }
+
+  private get _visibleColumns(): ColumnDef[] {
+    if (!this._isMobile) return this.columns;
+    return this.columns.filter(column => {
+      if (column.primary === true) return true;
+      return column.hideOnMobile !== true;
+    });
+  }
+
   private get _gridTemplateColumns(): string {
     const supportsSubgrid = CSS.supports('grid-template-columns', 'subgrid');
-    const cols = this._visibleColumns;
-
-    const widths = cols.map(col => {
-      // Subgrid 非対応時: 相対値は各行でコンテンツ量により不揃いになるため変換
-      if (!supportsSubgrid && col.width === '1fr') {
+    const widths = this._visibleColumns.map(column => {
+      if (!supportsSubgrid && column.width === '1fr') {
         return 'minmax(calc(var(--space-12, 48px) + var(--space-20, 80px)), 1fr)';
       }
-      return col.width;
+      return column.width;
     });
-
-    // アクション列（固定幅 40px）
     return [...widths, '40px'].join(' ');
   }
 
-  /**
-   * ソートサイクル: なし → asc → desc → なし
-   * ソート処理は外部委譲のため、イベントのみ発火します。
-   */
+  private _getLogicalColIndex(visibleIndex: number): number {
+    if (!this._isMobile) return visibleIndex + 1;
+
+    const visible = this._visibleColumns;
+    const target = visible[visibleIndex];
+    if (!target) return visibleIndex + 1;
+    return this.columns.findIndex(column => column.id === target.id) + 1;
+  }
+
+  private _normalizeCellIndex(index: number): number {
+    const max = Math.max(0, this.columns.length);
+    return Math.max(0, Math.min(index, max));
+  }
+
+  private _collectRowElements(): void {
+    const slot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot[data-list-rows]');
+    if (!slot) return;
+
+    const assigned = slot.assignedElements({ flatten: true });
+    const rows = assigned.filter((element): element is UiListItemLike => {
+      return element instanceof HTMLElement && element.tagName.toLowerCase() === 'ui-list-item';
+    });
+    this._rowElements = rows;
+  }
+
+  private _getRowId(row: UiListItemLike, index: number): string | null {
+    const attrId = row.getAttribute('item-id');
+    if (attrId && attrId.length > 0) return attrId;
+
+    if (typeof row.itemId === 'string' && row.itemId.length > 0) {
+      row.setAttribute('item-id', row.itemId);
+      return row.itemId;
+    }
+
+    const fallback = this.items[index]?.id;
+    if (typeof fallback === 'string' && fallback.length > 0) {
+      row.setAttribute('item-id', fallback);
+      return fallback;
+    }
+
+    return null;
+  }
+
+  private _syncRowsFromState(): void {
+    const normalizedCellIndex = this._normalizeCellIndex(this.activeCellIndex);
+
+    this._rowElements.forEach((row, index) => {
+      const rowId = this._getRowId(row, index);
+      const isActive = rowId !== null && rowId === this.activeRow;
+
+      row.managed = true;
+      row.active = isActive;
+      row.activeCellIndex = normalizedCellIndex;
+      row.rowIndex = this.rowIndexOffset + index + 2;
+      row.requestListContext?.();
+
+      if (rowId) {
+        row.setAttribute('data-item-id', rowId);
+      } else {
+        row.removeAttribute('data-item-id');
+      }
+    });
+  }
+
+  private _getRowFromEvent(event: Event): UiListItemLike | null {
+    const path = event.composedPath();
+    for (const node of path) {
+      if (node instanceof HTMLElement && node.tagName.toLowerCase() === 'ui-list-item') {
+        return node as UiListItemLike;
+      }
+    }
+    return null;
+  }
+
+  private _getColIndexFromEvent(event: Event): number {
+    const path = event.composedPath();
+    for (const node of path) {
+      if (node instanceof HTMLElement) {
+        const value = node.dataset['colIndex'];
+        if (!value) continue;
+
+        const parsed = Number.parseInt(value, 10);
+        if (!Number.isNaN(parsed)) {
+          return this._normalizeCellIndex(parsed);
+        }
+      }
+    }
+    return this._normalizeCellIndex(this.activeCellIndex);
+  }
+
+  private _isInteractiveTarget(event: Event): boolean {
+    const path = event.composedPath();
+    for (const node of path) {
+      if (!(node instanceof HTMLElement)) continue;
+      if (
+        node.matches('a, button, input, textarea, select, [role="button"], [contenteditable="true"]')
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private _getPrimaryLink(row: UiListItemLike): HTMLAnchorElement | null {
+    const primaryColumn = this.columns.find(column => column.primary === true) ?? this.columns[0];
+    if (!primaryColumn) return null;
+
+    const selector = `[slot="${CSS.escape(primaryColumn.id)}"]`;
+    const primaryNode = row.querySelector(selector);
+    if (primaryNode instanceof HTMLAnchorElement && primaryNode.hasAttribute('href')) return primaryNode;
+
+    const nested = primaryNode?.querySelector<HTMLAnchorElement>('a[href]');
+    if (nested) return nested;
+
+    const fallback = row.querySelector<HTMLAnchorElement>('a[href]:not([slot="actions"])');
+    return fallback;
+  }
+
+  private _dispatchActiveChange(rowId: string, colIndex: number): void {
+    this.dispatchEvent(
+      new CustomEvent<UiActiveChangeDetail>('ui-active-change', {
+        detail: { rowId, colIndex },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  private async _activateRow(rowId: string, colIndex: number, focusCell: boolean): Promise<void> {
+    const normalizedColIndex = this._normalizeCellIndex(colIndex);
+    if (rowId === this.activeRow && normalizedColIndex === this.activeCellIndex) return;
+
+    this.activeRow = rowId;
+    this.activeCellIndex = normalizedColIndex;
+    this._dispatchActiveChange(rowId, normalizedColIndex);
+
+    if (!focusCell) return;
+
+    await this.updateComplete;
+    const row = this._rowElements.find((candidate, index) => this._getRowId(candidate, index) === rowId);
+    if (!row) return;
+
+    const target = row.shadowRoot?.querySelector<HTMLElement>(
+      `.cell[data-col-index="${String(normalizedColIndex)}"]`,
+    );
+    target?.focus({ preventScroll: true });
+  }
+
+  private async _activateRowByIndex(index: number, colIndex: number): Promise<void> {
+    const row = this._rowElements[index];
+    if (!row) return;
+    const rowId = this._getRowId(row, index);
+    if (!rowId) return;
+    await this._activateRow(rowId, colIndex, true);
+  }
+
   private _handleSortClick(columnId: string): void {
-    let newKey: string | null = columnId;
-    let newDirection: SortDirection;
+    let nextKey: string | null = columnId;
+    let nextDirection: SortDirection;
 
     if (this.sortKey !== columnId) {
-      // 別の列をクリック: 昇順から開始
-      newDirection = 'asc';
+      nextDirection = 'asc';
     } else if (this.sortDirection === 'asc') {
-      newDirection = 'desc';
+      nextDirection = 'desc';
     } else if (this.sortDirection === 'desc') {
-      // 降順 → リセット
-      newKey = null;
-      newDirection = null;
+      nextKey = null;
+      nextDirection = null;
     } else {
-      newDirection = 'asc';
+      nextDirection = 'asc';
     }
 
     this.dispatchEvent(
       new CustomEvent('ui-sort-change', {
-        detail: { key: newKey, direction: newDirection },
+        detail: { key: nextKey, direction: nextDirection },
         bubbles: true,
         composed: true,
       }),
     );
   }
 
-  /** ヘッダーセルのキーボード操作（Enter/Space でソート切り替え） */
-  private _handleHeaderKeyDown(e: KeyboardEvent, columnId: string): void {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
+  private _handleHeaderKeyDown(event: KeyboardEvent, columnId: string): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
       this._handleSortClick(columnId);
     }
   }
 
-  /**
-   * グリッド全体のキーボードイベント委譲。
-   * WAI-ARIA Grid Pattern のキーボード操作を実装します。
-   */
-  private readonly _handleGridKeyDown = (e: KeyboardEvent): void => {
-    const target = e.target as HTMLElement;
-    // データ行を特定
-    const dataRow = target.closest<HTMLElement>('[data-item-id]');
-    if (!dataRow) return;
+  private readonly _handleGridKeyDown = (event: KeyboardEvent): void => {
+    const row = this._getRowFromEvent(event);
+    if (!row) return;
 
-    const currentId = dataRow.dataset['itemId'] ?? '';
-    const currentIndex = this.items.findIndex(item => item.id === currentId);
+    const currentIndex = this._rowElements.indexOf(row);
     if (currentIndex === -1) return;
 
-    switch (e.key) {
+    const currentColIndex = this._getColIndexFromEvent(event);
+    const rowId = this._getRowId(row, currentIndex);
+    if (!rowId) return;
+
+    switch (event.key) {
       case 'ArrowDown': {
-        e.preventDefault();
-        const nextIndex = Math.min(currentIndex + 1, this.items.length - 1);
-        this._activateRow(this.items[nextIndex]?.id ?? null);
+        event.preventDefault();
+        const nextIndex = Math.min(currentIndex + 1, this._rowElements.length - 1);
+        void this._activateRowByIndex(nextIndex, currentColIndex);
         break;
       }
       case 'ArrowUp': {
-        e.preventDefault();
+        event.preventDefault();
         const prevIndex = Math.max(currentIndex - 1, 0);
-        this._activateRow(this.items[prevIndex]?.id ?? null);
+        void this._activateRowByIndex(prevIndex, currentColIndex);
         break;
       }
       case 'Home': {
-        e.preventDefault();
-        this._activateRow(this.items[0]?.id ?? null);
+        event.preventDefault();
+        void this._activateRowByIndex(0, currentColIndex);
         break;
       }
       case 'End': {
-        e.preventDefault();
-        const lastIndex = this.items.length - 1;
-        this._activateRow(this.items[lastIndex]?.id ?? null);
+        event.preventDefault();
+        void this._activateRowByIndex(this._rowElements.length - 1, currentColIndex);
         break;
       }
       case 'PageDown': {
-        e.preventDefault();
-        // 表示領域単位（概算10件）でスクロール移動
-        const pdIndex = Math.min(currentIndex + 10, this.items.length - 1);
-        this._activateRow(this.items[pdIndex]?.id ?? null);
+        event.preventDefault();
+        const nextIndex = Math.min(currentIndex + 10, this._rowElements.length - 1);
+        void this._activateRowByIndex(nextIndex, currentColIndex);
         break;
       }
       case 'PageUp': {
-        e.preventDefault();
-        const puIndex = Math.max(currentIndex - 10, 0);
-        this._activateRow(this.items[puIndex]?.id ?? null);
+        event.preventDefault();
+        const prevIndex = Math.max(currentIndex - 10, 0);
+        void this._activateRowByIndex(prevIndex, currentColIndex);
         break;
       }
       case 'Enter': {
-        // プライマリリンクへ遷移
-        e.preventDefault();
-        const primaryLink = dataRow.querySelector<HTMLAnchorElement>('.primary-link[href]');
+        if (this._isInteractiveTarget(event)) return;
+        event.preventDefault();
+        const primaryLink = this._getPrimaryLink(row);
         primaryLink?.click();
         break;
       }
       case ' ': {
-        if (e.shiftKey) {
-          // Shift + Space = Quick Look
-          e.preventDefault();
-          this.dispatchEvent(
-            new CustomEvent('ui-preview-request', {
-              detail: { rowId: currentId },
-              bubbles: true,
-              composed: true,
-            }),
-          );
+        if (!event.shiftKey) {
+          // Space 単体はスクロール用途のためブラウザ既定動作を維持
+          return;
         }
-        // Space 単体 = ブラウザのスクロール（preventDefault しない）
+        event.preventDefault();
+        this.dispatchEvent(
+          new CustomEvent('ui-preview-request', {
+            detail: { rowId },
+            bubbles: true,
+            composed: true,
+          }),
+        );
         break;
       }
       case 'F10': {
-        if (e.shiftKey) {
-          // Shift + F10 = コンテキストメニュー
-          e.preventDefault();
-          const rect = dataRow.getBoundingClientRect();
-          this.dispatchEvent(
-            new CustomEvent('ui-context-request', {
-              detail: { rowId: currentId, anchor: { x: rect.left, y: rect.bottom } },
-              bubbles: true,
-              composed: true,
-            }),
-          );
-        }
+        if (!event.shiftKey) return;
+        event.preventDefault();
+        const rect = row.getBoundingClientRect();
+        this.dispatchEvent(
+          new CustomEvent('ui-context-request', {
+            detail: { rowId, anchor: { x: rect.left, y: rect.bottom } },
+            bubbles: true,
+            composed: true,
+          }),
+        );
         break;
       }
+      default:
+        break;
     }
-  }
+  };
 
-  /**
-   * グリッドのクリックイベント委譲。
-   * 行の余白クリックをプライマリリンクへ委譲します。
-   *
-   * 以下のケースでは委譲をキャンセルします:
-   * - テキスト選択中
-   * - 修飾キー押下時（別タブで開く等のネイティブ操作を優先）
-   * - a / button / [role="button"] への直接クリック
-   */
-  private readonly _handleGridClick = (e: MouseEvent): void => {
-    // 左クリックのみ（中クリック等は除外）
-    if (e.button !== 0) return;
+  private readonly _handleGridClick = (event: MouseEvent): void => {
+    if (event.button !== 0) return;
 
-    const target = e.target as HTMLElement;
-    const dataRow = target.closest<HTMLElement>('[data-item-id]');
-    if (!dataRow) return;
+    const row = this._getRowFromEvent(event);
+    if (!row) return;
 
-    const itemId = dataRow.dataset['itemId'] ?? '';
+    const rowIndex = this._rowElements.indexOf(row);
+    if (rowIndex === -1) return;
 
-    // テキスト選択中は委譲しない
+    const rowId = this._getRowId(row, rowIndex);
+    if (!rowId) return;
+
     if ((window.getSelection()?.toString().length ?? 0) > 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (this._isInteractiveTarget(event)) return;
 
-    // 修飾キー押下時は委譲しない（ブラウザのネイティブ操作を優先）
-    if (e.metaKey || e.ctrlKey || e.altKey) return;
-
-    // a / button / [role="button"] への直接クリックは委譲しない
-    if (target.closest('a, button, [role="button"]')) return;
-
-    // プライマリリンクへ委譲
-    const primaryLink = dataRow.querySelector<HTMLAnchorElement>('.primary-link[href]');
+    const colIndex = this._getColIndexFromEvent(event);
+    const primaryLink = this._getPrimaryLink(row);
     if (primaryLink) {
-      e.preventDefault();
+      event.preventDefault();
       primaryLink.click();
     }
 
-    // アクティブ行を更新
-    if (itemId !== this.activeRow) {
-      this._activateRow(itemId);
-    }
-  }
+    void this._activateRow(rowId, colIndex, true);
+  };
 
-  /** コンテキストメニュー委譲 */
-  private readonly _handleGridContextMenu = (e: MouseEvent): void => {
-    const target = e.target as HTMLElement;
-    const dataRow = target.closest<HTMLElement>('[data-item-id]');
-    if (!dataRow) return;
+  private readonly _handleGridContextMenu = (event: MouseEvent): void => {
+    const row = this._getRowFromEvent(event);
+    if (!row) return;
 
-    e.preventDefault();
-    const itemId = dataRow.dataset['itemId'] ?? '';
+    const rowIndex = this._rowElements.indexOf(row);
+    if (rowIndex === -1) return;
+
+    const rowId = this._getRowId(row, rowIndex);
+    if (!rowId) return;
+
+    event.preventDefault();
+    void this._activateRow(rowId, this._getColIndexFromEvent(event), true);
+
     this.dispatchEvent(
       new CustomEvent('ui-context-request', {
-        detail: { rowId: itemId, anchor: { x: e.clientX, y: e.clientY } },
+        detail: { rowId, anchor: { x: event.clientX, y: event.clientY } },
         bubbles: true,
         composed: true,
       }),
     );
-  }
+  };
 
-  /**
-   * 行をアクティブ化し、プライマリセルへ Roving Tabindex でフォーカスを移動します。
-   */
-  private _activateRow(id: string | null): void {
-    if (!id || id === this.activeRow) return;
+  private readonly _handleRowsSlotChange = (): void => {
+    this._collectRowElements();
+  };
 
-    this.activeRow = id;
-    this.dispatchEvent(
-      new CustomEvent('ui-active-change', {
-        detail: { rowId: id },
-        bubbles: true,
-        composed: true,
-      }),
-    );
+  private readonly _handleItemActiveChange = (event: Event): void => {
+    const source = event.target;
+    if (!(source instanceof HTMLElement) || source.tagName.toLowerCase() !== 'ui-list-item') return;
 
-    // Roving Tabindex: 更新完了後にプライマリセルへフォーカス移動
-    void this.updateComplete.then(() => {
-      const primaryCell = this.shadowRoot?.querySelector<HTMLElement>(
-        `[data-item-id="${CSS.escape(id)}"] .cell--primary`,
-      );
-      primaryCell?.focus();
+    const detail = (event as CustomEvent<UiActiveChangeDetail>).detail;
+    if (typeof detail.rowId !== 'string' || typeof detail.colIndex !== 'number') return;
+
+    event.stopPropagation();
+    void this._activateRow(detail.rowId, detail.colIndex, true);
+  };
+
+  private readonly _handleListContextRequest = (event: Event): void => {
+    const source = event.target;
+    if (!(source instanceof HTMLElement) || source.tagName.toLowerCase() !== 'ui-list-item') return;
+
+    const customEvent = event as CustomEvent<ListContextRequestDetail>;
+    customEvent.detail.callback({
+      columns: this.columns,
+      isMobile: this._isMobile,
     });
+    event.stopPropagation();
+  };
+
+  private _getAriaSort(column: ColumnDef): string | typeof nothing {
+    if (!column.sortable) return nothing;
+    if (this.sortKey !== column.id) return 'none';
+    return this.sortDirection === 'asc' ? 'ascending' : 'descending';
   }
 
-  /**
-   * 論理列インデックスを返します。
-   * モバイルで列が非表示になっていても、スクリーンリーダーの
-   * aria-colindex 計算は全列数を基準とします。
-   */
-  private _getLogicalColIndex(visibleIndex: number): number {
-    if (!this._isMobile) return visibleIndex + 1;
-
-    // モバイル時: 非表示列を考慮した論理インデックスを計算
-    const visibleCols = this._visibleColumns;
-    const targetCol = visibleCols[visibleIndex];
-    if (!targetCol) return visibleIndex + 1;
-
-    return this.columns.findIndex(col => col.id === targetCol.id) + 1;
-  }
-
-  /** ソートアイコンのレンダリング */
   private _renderSortIcon(column: ColumnDef): TemplateResult | typeof nothing {
     if (!column.sortable) return nothing;
 
@@ -694,7 +656,6 @@ export class List extends LitElement {
       ></iconify-icon>`;
     }
 
-    // 未ソート時: 中立アイコン（薄く表示）
     return html`<iconify-icon
       icon="lucide:chevrons-up-down"
       style="font-size: var(--icon-sm, 14px); opacity: 0.4;"
@@ -702,150 +663,94 @@ export class List extends LitElement {
     ></iconify-icon>`;
   }
 
-  /** aria-sort 属性値を返します（非ソータブル列は nothing） */
-  private _getAriaSort(column: ColumnDef): string | typeof nothing {
-    if (!column.sortable) return nothing;
-    if (this.sortKey !== column.id) return 'none';
-    return this.sortDirection === 'asc' ? 'ascending' : 'descending';
-  }
-
-  /** データ行のレンダリング */
-  private _renderDataRow(item: ListItemData, index: number): TemplateResult {
-    const isActive = item.id === this.activeRow;
-    const visibleCols = this._visibleColumns;
-
-    const rowClasses = {
-      'data-row': true,
-      'data-row--active': isActive,
-    };
-
-    return html`
-      <div
-        role="row"
-        class="${classMap(rowClasses)}"
-        data-item-id="${item.id}"
-        aria-rowindex="${index + 2}"
-        aria-selected="${isActive}"
-        aria-haspopup="dialog"
-        aria-keyshortcuts="Shift+Space"
-      >
-        ${map(visibleCols, (col, colIndex) => {
-          const value = item[col.id];
-          // unknown 型の安全な文字列変換（Object 等はスキップ）
-          const cellText =
-            value !== undefined && value !== null
-              ? typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'
-                ? String(value)
-                : ''
-              : '';
-          const logicalColIndex = this._getLogicalColIndex(colIndex);
-
-          if (col.primary) {
-            return html`
-              <div
-                role="gridcell"
-                class="cell cell--primary"
-                aria-colindex="${logicalColIndex}"
-                tabindex="${isActive ? '0' : '-1'}"
-              >
-                ${item.href
-                  ? html`<a href="${item.href}" class="primary-link">${cellText}</a>`
-                  : html`<span class="primary-link">${cellText}</span>`}
-              </div>
-            `;
-          }
-
-          return html`
-            <div
-              role="gridcell"
-              class="cell cell--meta"
-              aria-colindex="${logicalColIndex}"
-            >
-              ${cellText}
-            </div>
-          `;
-        })}
-
-        <!-- アクション列（各行のアクションボタンを受け取る） -->
-        <div
-          role="gridcell"
-          class="cell cell--action"
-          aria-colindex="${visibleCols.length + 1}"
-        >
-          <div class="actions">
-            <slot name="actions-${item.id}"></slot>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
   override render(): TemplateResult {
-    const visibleCols = this._visibleColumns;
-    const hasItems = this.items.length > 0;
-    const gtc = this._gridTemplateColumns;
-
-    // 論理列数: 全列 + アクション列
+    const visibleColumns = this._visibleColumns;
+    const renderedRowCount = this._rowElements.length;
+    const effectiveRowCount = this.totalRowCount ?? renderedRowCount;
+    const hasRows = renderedRowCount > 0;
     const logicalColCount = this.columns.length + 1;
+
+    const pageSize = Math.max(1, renderedRowCount);
+    const currentPage = Math.floor(this.rowIndexOffset / pageSize) + 1;
+    const totalPages = Math.max(1, Math.ceil(effectiveRowCount / pageSize));
+    const shouldShowPagination =
+      this.totalRowCount !== null && hasRows && effectiveRowCount > renderedRowCount;
 
     return html`
       <section aria-label="リスト">
         <div
           role="grid"
           class="grid"
-          style="grid-template-columns: ${gtc}; --_gtc: ${gtc};"
-          aria-colcount="${logicalColCount}"
-          aria-rowcount="${ifDefined(hasItems ? this.items.length : undefined)}"
+          style="grid-template-columns: ${this._gridTemplateColumns}; --_gtc: ${this._gridTemplateColumns};"
+          aria-colcount="${String(logicalColCount)}"
+          aria-rowcount="${ifDefined(effectiveRowCount > 0 ? String(effectiveRowCount) : undefined)}"
           @keydown="${this._handleGridKeyDown}"
           @click="${this._handleGridClick}"
           @contextmenu="${this._handleGridContextMenu}"
+          @ui-active-change="${this._handleItemActiveChange}"
         >
-          <!-- ヘッダー rowgroup -->
           <div role="rowgroup" class="header-rowgroup">
             <div role="row" class="header-row">
-              ${map(visibleCols, (col, i) => {
-                const ariaSort = this._getAriaSort(col);
+              ${map(visibleColumns, (column, visibleIndex) => {
+                const ariaSort = this._getAriaSort(column);
                 return html`
                   <div
                     role="columnheader"
                     class="${classMap({
                       'header-cell': true,
-                      'header-cell--sortable': !!col.sortable,
-                      'header-cell--sorted': !!col.sortable && this.sortKey === col.id,
+                      'header-cell--sortable': Boolean(column.sortable),
+                      'header-cell--sorted': Boolean(column.sortable) && this.sortKey === column.id,
                     })}"
-                    aria-colindex="${this._getLogicalColIndex(i)}"
+                    aria-colindex="${String(this._getLogicalColIndex(visibleIndex))}"
                     aria-sort="${ifDefined(typeof ariaSort === 'string' ? ariaSort : undefined)}"
-                    tabindex="${col.sortable ? '0' : nothing}"
-                    @click="${col.sortable ? () => { this._handleSortClick(col.id); } : nothing}"
-                    @keydown="${col.sortable ? (e: KeyboardEvent) => { this._handleHeaderKeyDown(e, col.id); } : nothing}"
+                    tabindex="${column.sortable ? '0' : nothing}"
+                    @click="${column.sortable
+                      ? () => {
+                          this._handleSortClick(column.id);
+                        }
+                      : nothing}"
+                    @keydown="${column.sortable
+                      ? (event: KeyboardEvent) => {
+                          this._handleHeaderKeyDown(event, column.id);
+                        }
+                      : nothing}"
                   >
-                    <span class="header-label">${col.label}</span>
-                    ${this._renderSortIcon(col)}
+                    <span>${column.label}</span>
+                    ${this._renderSortIcon(column)}
                   </div>
                 `;
               })}
 
-              <!-- アクション列ヘッダー（視覚的に空だがグリッド構造を維持） -->
               <div
                 role="columnheader"
-                class="header-cell header-cell--action"
+                class="header-cell"
                 aria-label="操作"
-                aria-colindex="${visibleCols.length + 1}"
+                aria-colindex="${String(this.columns.length + 1)}"
               ></div>
             </div>
           </div>
 
-          <!-- ボディ rowgroup -->
           <div role="rowgroup" class="body-rowgroup">
-            ${hasItems ? map(this.items, (item, index) => this._renderDataRow(item, index)) : nothing}
+            <slot data-list-rows @slotchange="${this._handleRowsSlotChange}"></slot>
           </div>
         </div>
 
-        <!-- 空状態: grid の外に兄弟要素として配置し混在を防ぐ -->
-        ${!hasItems
+        ${!hasRows
           ? html`
               <div role="status" aria-live="polite" class="empty-state">
                 <span>表示するアイテムがありません</span>
+              </div>
+            `
+          : nothing}
+
+        ${shouldShowPagination
+          ? html`
+              <div style="margin-top: var(--space-3, 12px); display: flex; justify-content: center;">
+                <ui-pagination
+                  .current="${currentPage}"
+                  .total="${totalPages}"
+                  .getHref="${this.getPageHref ?? ((page: number): string => `?page=${String(page)}`)}"
+                ></ui-pagination>
               </div>
             `
           : nothing}

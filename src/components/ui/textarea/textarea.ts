@@ -101,6 +101,7 @@ export class Textarea extends LitElement {
       display: flex;
       flex-direction: column;
       gap: var(--space-2, 8px);
+      min-width: 0; /* コンテナ内での縮みを許容 */
     }
 
     /* ── Label ── */
@@ -161,11 +162,6 @@ export class Textarea extends LitElement {
         outline-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
-    /* Remove default outline */
-    textarea:focus {
-      outline: none;
-    }
-
     /* Hover State: Tactility */
     textarea:hover:not(:disabled):not(:read-only):not(:focus) {
       border-color: var(--border-default, oklch(85% 0.01 250));
@@ -173,15 +169,23 @@ export class Textarea extends LitElement {
 
     /* Focus State: Clear Canvas */
     textarea:focus {
-      background: var(--bg-default, oklch(100% 0 0));
-      border-color: var(--border-default, oklch(85% 0.01 250));
-    }
-
-    /* Focus Indicator: Adaptive Focus */
-    textarea:focus-visible {
+      background-color: var(--bg-default, oklch(100% 0 0));
       outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
       outline-offset: var(--focus-ring-offset, 2px);
-      animation: var(--animation-focus);
+    }
+
+    @supports selector(:focus-visible) {
+      textarea:focus {
+        outline: none;
+      }
+      textarea:focus-visible {
+        outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
+        outline-offset: var(--focus-ring-offset, 2px);
+        animation: var(--animation-focus);
+      }
+      textarea:focus:not(:focus-visible) {
+        outline: none;
+      }
     }
 
     /* Error State */
@@ -190,10 +194,13 @@ export class Textarea extends LitElement {
       background: var(--bg-danger-subtle, oklch(95% 0.02 28));
     }
 
+    textarea.error:focus-visible {
+      outline-color: var(--border-danger, oklch(55% 0.2 28));
+    }
+
     /* Disabled State */
     textarea:disabled {
       border-color: var(--border-default, oklch(85% 0.01 250));
-      opacity: var(--opacity-disabled, 0.5);
       cursor: not-allowed;
       color: var(--fg-subtle, oklch(48% 0.01 250));
       resize: none;
@@ -276,6 +283,7 @@ export class Textarea extends LitElement {
     @media (prefers-reduced-motion: reduce) {
       textarea {
         transition-duration: 0.01ms;
+        animation: none !important;
       }
     }
 
@@ -449,6 +457,7 @@ export class Textarea extends LitElement {
     private _internals: ElementInternals;
     private _nativeErrorMessage = '';
     private _hasNativeError = false;
+    private _defaultValue = '';
 
     // 一意な ID を生成（レンダリング毎の再生成を防止）
     private readonly _textareaId = `textarea-${Math.random().toString(36).substring(2, 11)}`;
@@ -471,6 +480,7 @@ export class Textarea extends LitElement {
 
     override connectedCallback(): void {
         super.connectedCallback();
+        this._defaultValue = this.value;
 
         if (!this.label) {
             console.error(
@@ -541,9 +551,13 @@ export class Textarea extends LitElement {
             ta.style.minHeight = `${minH.toString()}px`;
             ta.style.height = '';
             ta.style.maxHeight = '';
+            ta.style.overflowY = 'auto';
             ta.classList.remove('overflow-scroll');
             return;
         }
+
+        ta.style.minHeight = '';
+        ta.style.overflowY = '';
 
         // 1. height を auto にリセットして scrollHeight を正確に取得
         ta.style.height = 'auto';
@@ -651,12 +665,32 @@ export class Textarea extends LitElement {
         return this._internals.reportValidity();
     }
 
+    formResetCallback(): void {
+        this.value = this._defaultValue;
+        this._internals.setFormValue(this.value);
+        this._syncValidity();
+        this._updateHeight();
+    }
+
+    formDisabledCallback(disabled: boolean): void {
+        this.disabled = disabled;
+    }
+
+    formStateRestoreCallback(state: string | File | FormData | null): void {
+        if (typeof state !== 'string') return;
+        this.value = state;
+        this._internals.setFormValue(this.value);
+        this._syncValidity();
+        this._updateHeight();
+    }
+
     private _syncValidity(): void {
         // 強制エラー（customError）を優先
-        if (this.error && this.errorMessage) {
+        if (this.error) {
             this._hasNativeError = false;
             this._nativeErrorMessage = '';
-            this._internals.setValidity({ customError: true }, this.errorMessage, this._textarea);
+            const forcedMessage = this.errorMessage || '入力にエラーがあります。';
+            this._internals.setValidity({ customError: true }, forcedMessage, this._textarea);
             return;
         }
 

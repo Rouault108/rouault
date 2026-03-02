@@ -1,84 +1,26 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { map } from 'lit/directives/map.js';
+import '../button/button';
+import '../dropdown/dropdown';
 
-/**
- * パンくずリストアイテムの型定義
- */
 export interface BreadcrumbItem {
-	/** 表示ラベル */
 	label: string;
-	/** リンク先URL（省略時は非リンク） */
 	href?: string;
 }
 
-/**
- * パンくずリスト (Breadcrumbs) コンポーネント `<ui-breadcrumbs>`
- *
- * ユーザーが現在のページに至るまでのナビゲーション階層を視覚化し、
- * 上位階層へのナビゲーションを提供します。
- *
- * ## 設計思想
- *
- * - **階層の可視化**: 現在位置をコンテキスト内で明確化し、迷子を防止します。
- * - **静謐な存在**: コンテンツの主役を圧迫しない、控えめな UI として機能します。
- * - **省略戦略**: 深い階層では中間要素を省略し、最小限の情報で全体像を伝えます。
- *
- * ## アクセシビリティ
- *
- * - `<nav>` 要素に `aria-label="breadcrumb"` を付与します。
- * - 最後のアイテム（現在ページ）には `aria-current="page"` を付与します。
- * - セパレーターは装飾的なので `aria-hidden="true"` を付与します。
- * - スクリーンリーダーによる読み上げ順序を考慮しています。
- *
- * ## 省略ロジック
- *
- * `maxItems` が設定され、アイテム数がそれを超える場合：
- * - 最初のアイテム（ルート）と最後のアイテム（現在ページ）を常に表示します。
- * - 中間アイテムを省略記号（...）で置き換えます。
- * - 例: `Home / Projects / ... / Settings / General` (maxItems=4 の場合)
- *
- * ## 長いラベルの扱い
- *
- * - 各アイテムは `max-width` でトランケートされ、`text-overflow: ellipsis` で省略されます。
- * - ホバー時に `title` 属性で全文を表示します（実装者が `title` を設定する責任があります）。
- *
- * @property {BreadcrumbItem[]} items - パンくずアイテムの配列
- * @property {string} separator - セパレーター文字（デフォルト: `/`）
- * @property {number | null} maxItems - 最大表示アイテム数（null = 無制限）
- * @property {string} ariaLabel - nav 要素の aria-label（デフォルト: "パンくずリスト"）
- *
- * @cssprop --fg-muted           - テキスト色（控えめ）
- * @cssprop --fg-default         - リンクのホバー色
- * @cssprop --text-sm            - フォントサイズ (13px)
- * @cssprop --font-medium        - フォントウェイト (500)
- * @cssprop --space-1            - セパレーター間隔 (4px)
- * @cssprop --space-2            - 垂直パディング (8px)
- * @cssprop --duration-fast      - トランジション時間 (70ms)
- * @cssprop --ease-out           - イージング関数
- *
- * @example
- * ```html
- * <!-- 基本的な使用 -->
- * <ui-breadcrumbs .items="${[
- *   { label: 'ホーム', href: '/' },
- *   { label: 'プロジェクト', href: '/projects' },
- *   { label: '設定' }
- * ]}"></ui-breadcrumbs>
- *
- * <!-- カスタムセパレーター -->
- * <ui-breadcrumbs separator=">" .items="${items}"></ui-breadcrumbs>
- *
- * <!-- 省略機能（最大4アイテム） -->
- * <ui-breadcrumbs max-items="4" .items="${manyItems}"></ui-breadcrumbs>
- * ```
- */
+interface EllipsisItem {
+	isEllipsis: true;
+	hiddenItems: BreadcrumbItem[];
+}
+
+type DisplayItem = BreadcrumbItem | EllipsisItem;
+
+const MOBILE_BREAKPOINT_QUERY = '(max-width: 640px)';
+
 @customElement('ui-breadcrumbs')
 export class Breadcrumbs extends LitElement {
 	static override styles = css`
-		/* ──────────────────────────────────────────────
-		   レイアウト & ベーススタイル
-		────────────────────────────────────────────── */
 		:host {
 			display: block;
 		}
@@ -93,7 +35,6 @@ export class Breadcrumbs extends LitElement {
 			color: var(--fg-muted, oklch(48% 0.01 250));
 		}
 
-		/* ── アイテムリスト ── */
 		.breadcrumb-list {
 			display: flex;
 			align-items: center;
@@ -110,10 +51,13 @@ export class Breadcrumbs extends LitElement {
 			gap: var(--space-1, 4px);
 		}
 
-		/* ── リンクスタイル ── */
 		.breadcrumb-link {
+			display: inline-flex;
+			align-items: center;
+			position: relative;
 			color: inherit;
 			text-decoration: none;
+			border-radius: var(--radius-sm, 4px);
 			max-width: 20ch;
 			white-space: nowrap;
 			overflow: hidden;
@@ -121,18 +65,30 @@ export class Breadcrumbs extends LitElement {
 			transition: color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
 		}
 
+		/* タッチ環境でもリンク操作しやすいように判定領域を拡張 */
+		.breadcrumb-link::after {
+			content: '';
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			inline-size: max(100%, var(--control-min-touch, 44px));
+			block-size: max(100%, var(--control-min-touch, 44px));
+			border-radius: inherit;
+			pointer-events: auto;
+			background: transparent;
+		}
+
 		.breadcrumb-link:hover {
 			color: var(--fg-default, oklch(20% 0.01 250));
-			text-decoration: underline;
 		}
 
 		.breadcrumb-link:focus-visible {
 			outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
 			outline-offset: var(--focus-ring-offset, 2px);
-			border-radius: 2px;
+			animation: var(--animation-focus);
 		}
 
-		/* ── 現在ページ（非リンク） ── */
 		.breadcrumb-current {
 			color: var(--fg-default, oklch(20% 0.01 250));
 			font-weight: var(--font-medium, 500);
@@ -142,119 +98,186 @@ export class Breadcrumbs extends LitElement {
 			text-overflow: ellipsis;
 		}
 
-		/* ── セパレーター ── */
 		.breadcrumb-separator {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
 			color: var(--fg-muted, oklch(48% 0.01 250));
-			user-select: none;
 			flex-shrink: 0;
 		}
 
-		/* ── 省略記号 ── */
-		.breadcrumb-ellipsis {
-			color: var(--fg-muted, oklch(48% 0.01 250));
-			cursor: default;
-			user-select: none;
+		.breadcrumb-separator iconify-icon {
+			width: 14px;
+			height: 14px;
 		}
 
-		/* ── Forced Colors Mode ── */
+		.breadcrumb-ellipsis-button {
+			color: var(--fg-muted, oklch(48% 0.01 250));
+		}
+
+		.breadcrumb-ellipsis-button iconify-icon {
+			width: var(--icon-base, 16px);
+			height: var(--icon-base, 16px);
+		}
+
 		@media (forced-colors: active) {
 			.breadcrumb-link {
-				border-bottom: 1px solid LinkText;
+				color: LinkText !important;
 			}
 
-			.breadcrumb-link:hover {
-				border-bottom-width: 2px;
+			.breadcrumb-link:focus-visible {
+				outline: var(--focus-ring-width, 2px) solid LinkText !important;
 			}
 
 			.breadcrumb-current {
-				border-bottom: 2px solid CanvasText;
+				color: CanvasText !important;
+				font-weight: var(--font-bold, 700);
+			}
+
+			.breadcrumb-separator {
+				color: CanvasText !important;
+			}
+
+			.breadcrumb-ellipsis-button::part(button) {
+				border: 1px solid ButtonBorder !important;
+				background: ButtonFace !important;
+				color: ButtonText !important;
 			}
 		}
 
-		/* ── Motion Reduction ── */
 		@media (prefers-reduced-motion: reduce) {
 			.breadcrumb-link {
 				transition-duration: 0.01ms;
 			}
 		}
+
+		@media print {
+			:host {
+				display: none !important;
+			}
+		}
 	`;
 
-	/**
-	 * パンくずアイテムの配列
-	 * @default []
-	 */
 	@property({ type: Array })
 	items: BreadcrumbItem[] = [];
 
-	/**
-	 * セパレーター文字
-	 * @default '/'
-	 */
-	@property({ type: String })
-	separator = '/';
-
-	/**
-	 * 最大表示アイテム数（null = 無制限）
-	 * 超過した場合、中間アイテムを省略記号（...）で置き換えます。
-	 * @default null
-	 */
 	@property({ type: Number, attribute: 'max-items' })
-	maxItems: number | null = null;
+	maxItems = 5;
 
-	/**
-	 * nav 要素の aria-label
-	 * @default 'パンくずリスト'
-	 */
+	@property({ type: Boolean, attribute: 'omit-root' })
+	omitRoot = false;
+
 	@property({ type: String, attribute: 'aria-label' })
 	override ariaLabel = 'パンくずリスト';
 
-	/**
-	 * アイテムを省略するかどうかを判定
-	 */
-	private get _shouldCollapse(): boolean {
-		return this.maxItems !== null && this.items.length > this.maxItems;
+	private _mobileMediaQuery: MediaQueryList | null = null;
+
+	override connectedCallback(): void {
+		super.connectedCallback();
+		const mediaQuery = this._getMobileMediaQuery();
+		if (!mediaQuery) return;
+		mediaQuery.addEventListener('change', this._handleMobileQueryChange);
 	}
 
-	/**
-	 * 省略後のアイテム配列を返す
-	 * - 最初と最後を保持
-	 * - 中間を省略記号で置き換え
-	 */
-	private get _displayItems(): (BreadcrumbItem | { isEllipsis: true })[] {
-		if (!this._shouldCollapse || this.maxItems === null || this.items.length === 0) {
+	override disconnectedCallback(): void {
+		super.disconnectedCallback();
+		const mediaQuery = this._getMobileMediaQuery();
+		if (!mediaQuery) return;
+		mediaQuery.removeEventListener('change', this._handleMobileQueryChange);
+	}
+
+	private readonly _handleMobileQueryChange = (): void => {
+		this.requestUpdate();
+	};
+
+	private _getMobileMediaQuery(): MediaQueryList | null {
+		if (this._mobileMediaQuery) return this._mobileMediaQuery;
+		if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+			return null;
+		}
+		this._mobileMediaQuery = window.matchMedia(MOBILE_BREAKPOINT_QUERY);
+		return this._mobileMediaQuery;
+	}
+
+	private get _isMobileViewport(): boolean {
+		return this._getMobileMediaQuery()?.matches ?? false;
+	}
+
+	private get _normalizedMaxItems(): number {
+		const safeValue = Number.isFinite(this.maxItems) ? Math.trunc(this.maxItems) : 5;
+		const normalized = Math.max(1, safeValue);
+		if (this._isMobileViewport) {
+			return 3;
+		}
+		return normalized;
+	}
+
+	private get _sourceItemsForDesktop(): BreadcrumbItem[] {
+		if (!this.omitRoot || this.items.length <= 1) {
 			return this.items;
 		}
+		return this.items.slice(1);
+	}
 
-		const max = this.maxItems;
-		const items = this.items;
+	private _createDesktopDisplayItems(): DisplayItem[] {
+		const sourceItems = this._sourceItemsForDesktop;
+		if (sourceItems.length === 0) return [];
 
-		// maxItems が 1 の場合: 最後のアイテムのみ表示
+		const max = this._normalizedMaxItems;
+		if (sourceItems.length <= max) {
+			return sourceItems;
+		}
+
 		if (max === 1) {
-			const lastItem = items[items.length - 1];
+			const lastItem = sourceItems[sourceItems.length - 1];
 			return lastItem ? [lastItem] : [];
 		}
 
-		// maxItems が 2 の場合: 最初と最後を表示
 		if (max === 2) {
-			const firstItem = items[0];
-			const lastItem = items[items.length - 1];
-			return firstItem && lastItem ? [firstItem, lastItem] : items;
+			const firstItem = sourceItems[0];
+			const lastItem = sourceItems[sourceItems.length - 1];
+			return firstItem && lastItem ? [firstItem, lastItem] : sourceItems;
 		}
 
-		// maxItems が 3 以上: 最初、省略記号、最後の (max - 2) 個
-		const firstItems = items.slice(0, 1);
-		const lastItems = items.slice(-(max - 2));
+		const firstItem = sourceItems[0];
+		const trailingItems = sourceItems.slice(-(max - 2));
+		const hiddenItems = sourceItems.slice(1, -(max - 2));
 
-		return [...firstItems, { isEllipsis: true }, ...lastItems];
+		if (!firstItem) return sourceItems;
+		if (hiddenItems.length === 0) return sourceItems;
+
+		return [firstItem, { isEllipsis: true, hiddenItems }, ...trailingItems];
+	}
+
+	private _createMobileDisplayItems(): DisplayItem[] {
+		if (this.items.length <= 2) {
+			return this.items;
+		}
+
+		const rootItem = this.items[0];
+		const currentItem = this.items[this.items.length - 1];
+		const hiddenItems = this.items.slice(1, -1);
+
+		if (!rootItem || !currentItem || hiddenItems.length === 0) {
+			return this.items;
+		}
+
+		return [rootItem, { isEllipsis: true, hiddenItems }, currentItem];
+	}
+
+	private get _displayItems(): DisplayItem[] {
+		if (this._isMobileViewport) {
+			return this._createMobileDisplayItems();
+		}
+		return this._createDesktopDisplayItems();
 	}
 
 	override render() {
-		// 空の場合は何も表示しない
-		if (this.items.length === 0) {
+		const displayItems = this._displayItems;
+		if (displayItems.length === 0) {
 			return html``;
 		}
 
-		const displayItems = this._displayItems;
 		const lastIndex = displayItems.length - 1;
 
 		return html`
@@ -265,9 +288,7 @@ export class Breadcrumbs extends LitElement {
 						(item, index) => html`
 							<li class="breadcrumb-item">
 								${this._renderItem(item, index === lastIndex)}
-								${index < lastIndex
-									? html`<span class="breadcrumb-separator" aria-hidden="true">${this.separator}</span>`
-									: ''}
+								${index < lastIndex ? this._renderSeparator() : ''}
 							</li>
 						`,
 					)}
@@ -276,28 +297,69 @@ export class Breadcrumbs extends LitElement {
 		`;
 	}
 
-	/**
-	 * 個別アイテムをレンダリング
-	 */
-	private _renderItem(item: BreadcrumbItem | { isEllipsis: true }, isLast: boolean) {
-		// 省略記号の場合
+	private _renderSeparator() {
+		return html`
+			<span class="breadcrumb-separator" aria-hidden="true">
+				<iconify-icon icon="lucide:chevron-right"></iconify-icon>
+			</span>
+		`;
+	}
+
+	private _renderItem(item: DisplayItem, isLast: boolean) {
 		if ('isEllipsis' in item) {
-			return html`<span class="breadcrumb-ellipsis" aria-hidden="true">…</span>`;
+			return this._renderEllipsisDropdown(item.hiddenItems);
 		}
 
-		// 最後のアイテム（現在ページ）
 		if (isLast) {
 			return html`<span class="breadcrumb-current" aria-current="page">${item.label}</span>`;
 		}
 
-		// リンクありの場合
 		if (item.href) {
 			return html`<a class="breadcrumb-link" href="${item.href}">${item.label}</a>`;
 		}
 
-		// リンクなし（通常のテキスト）
 		return html`<span class="breadcrumb-link">${item.label}</span>`;
 	}
+
+	private _renderEllipsisDropdown(hiddenItems: BreadcrumbItem[]) {
+		return html`
+			<ui-dropdown @menu-item-select="${this._handleEllipsisSelect}">
+				<ui-button
+					slot="trigger"
+					variant="ghost"
+					icon-only
+					class="breadcrumb-ellipsis-button"
+					aria-label="中間ページを表示"
+				>
+					<iconify-icon icon="lucide:more-horizontal" aria-hidden="true"></iconify-icon>
+				</ui-button>
+				${map(
+					hiddenItems,
+					(item) => html`
+						<ui-menu-item .value=${item.href ?? ''} ?disabled=${!item.href}>
+							${item.label}
+						</ui-menu-item>
+					`,
+				)}
+			</ui-dropdown>
+		`;
+	}
+
+	private readonly _handleEllipsisSelect = (event: CustomEvent<{ value: string; label: string }>): void => {
+		const href = event.detail.value;
+		if (!href) return;
+
+		const navigateEvent = new CustomEvent<{ href: string }>('breadcrumb-navigate', {
+			bubbles: true,
+			composed: true,
+			cancelable: true,
+			detail: { href },
+		});
+
+		if (!this.dispatchEvent(navigateEvent)) return;
+		if (typeof window === 'undefined') return;
+		window.location.assign(href);
+	};
 }
 
 declare global {

@@ -21,6 +21,7 @@ let detailsUidCounter = 0;
  * @property {string} summary - 見出しテキスト（summary slot 未指定時のフォールバック）
  * @property {boolean} open - 開閉状態
  * @property {'default' | 'bordered'} variant - 外枠バリアント
+ * @property {boolean} region - コンテンツをランドマーク領域として扱うか
  *
  * @fires toggle - 開閉状態が変化した時（detail: { open: boolean }）
  */
@@ -45,7 +46,7 @@ export class Details extends LitElement {
       position: relative;
       width: 100%;
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       gap: var(--space-2, 8px);
       padding: var(--space-2, 8px) 0;
       border: none;
@@ -106,6 +107,8 @@ export class Details extends LitElement {
     .icon iconify-icon {
       display: block;
       font-size: var(--icon-base, 16px);
+      stroke-width: 1.5;
+      --svg-stroke-width: 1.5;
     }
 
     .summary {
@@ -155,6 +158,7 @@ export class Details extends LitElement {
       .icon,
       .content-wrapper {
         transition-duration: 0.01ms !important;
+        transition-delay: 0ms !important;
       }
     }
 
@@ -203,6 +207,12 @@ export class Details extends LitElement {
   @property({ type: String, reflect: true })
   variant: DetailsVariant = 'default';
 
+  /**
+   * コンテンツを独立したセクションとして扱う時に有効化
+   */
+  @property({ type: Boolean, reflect: true })
+  region = false;
+
   override connectedCallback(): void {
     super.connectedCallback();
     this._validateAccessibleName();
@@ -226,13 +236,7 @@ export class Details extends LitElement {
 
   private _validateAccessibleName(): void {
     if (this.ariaLabel.trim().length > 0) return;
-    const isDev = (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV ?? true;
-    if (!isDev) return;
-
-    console.error(
-      '[ui-details] `aria-label` は必須です。空文字または未指定はアクセシビリティ要件違反です。',
-      this,
-    );
+    throw new Error('[ui-details] `aria-label` は必須です。空文字または未指定は許可されません。');
   }
 
   private _dispatchToggleEvent(): void {
@@ -277,6 +281,8 @@ export class Details extends LitElement {
           id="${this._contentId}"
           class="content-wrapper"
           part="content-wrapper"
+          role="${ifDefined(this.region ? 'region' : undefined)}"
+          aria-labelledby="${ifDefined(this.region ? this._summaryId : undefined)}"
           aria-hidden="${String(!this.open)}"
           ?inert="${!this.open}"
         >

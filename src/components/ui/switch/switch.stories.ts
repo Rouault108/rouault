@@ -793,6 +793,9 @@ export const NoLabel: Story = {
         // テスト: トラックは存在する
         const track = sw.shadowRoot?.querySelector('.track');
         if (!track) throw new Error('Track should exist even without label');
+        if (!track.getAttribute('aria-label')) {
+            throw new Error('Expected aria-label to be forwarded to internal switch element');
+        }
 
         // テスト: aria-labelledby は設定されない（label がないため）
         if (track.getAttribute('aria-labelledby')) {
@@ -957,6 +960,9 @@ export const AriaLabelledBy: Story = {
         if (!unlabeledTrack) throw new Error('Unlabeled track not found');
         if (unlabeledTrack.getAttribute('aria-labelledby')) {
             throw new Error('Expected aria-labelledby to NOT be set when label is empty');
+        }
+        if (!unlabeledTrack.getAttribute('aria-label')) {
+            throw new Error('Expected aria-label to be forwarded when label is empty');
         }
 
         console.log('✅ All tests passed for AriaLabelledBy story');
@@ -1134,5 +1140,116 @@ export const SettingsPanel: Story = {
         if (changeEventFired) throw new Error('Disabled autosave switch should not fire change event');
 
         console.log('✅ All tests passed for SettingsPanel story');
+    },
+};
+
+/**
+ * ダークトークン環境での表示確認。
+ */
+export const DarkTokens: Story = {
+    render: () => html`
+    <style>
+      .dark-surface {
+        --bg-fill-muted: oklch(28% 0.01 250);
+        --primary: oklch(68% 0.15 255);
+        --primary-hover: oklch(74% 0.13 255);
+        --fg-default: oklch(92% 0.01 250);
+        --white: oklch(98% 0 0);
+        max-width: 420px;
+        padding: 1rem;
+        border-radius: 10px;
+        background: oklch(18% 0.01 250);
+        border: 1px solid oklch(34% 0.01 250);
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+    </style>
+    <div class="dark-surface">
+      <ui-switch id="dark-off" label="Dark OFF"></ui-switch>
+      <ui-switch id="dark-on" label="Dark ON" checked></ui-switch>
+    </div>
+  `,
+    play: async ({ canvasElement }) => {
+        const off = canvasElement.querySelector<Switch>('#dark-off');
+        const on = canvasElement.querySelector<Switch>('#dark-on');
+        if (!off || !on) throw new Error('Switches not found');
+
+        await Promise.all([off.updateComplete, on.updateComplete]);
+
+        const offTrack = off.shadowRoot?.querySelector<HTMLElement>('.track');
+        const onTrack = on.shadowRoot?.querySelector<HTMLElement>('.track');
+        if (!offTrack || !onTrack) throw new Error('Track not found');
+
+        const offBg = getComputedStyle(offTrack).backgroundColor;
+        const onBg = getComputedStyle(onTrack).backgroundColor;
+        if (offBg === onBg) {
+            throw new Error('OFF and ON track colors should differ in dark tokens');
+        }
+    },
+};
+
+/**
+ * Reduced Motion 環境の検証。
+ */
+export const ReducedMotion: Story = {
+    parameters: {
+        docs: {
+            description: {
+                story: 'OSでreduceが有効な場合のみ、transition時間が最小化されることを検証します。',
+            },
+        },
+    },
+    render: () => html`
+    <ui-switch id="reduced-motion-switch" label="Reduced Motion"></ui-switch>
+  `,
+    play: async ({ canvasElement }) => {
+        const sw = canvasElement.querySelector<Switch>('#reduced-motion-switch');
+        if (!sw) throw new Error('ui-switch not found');
+        await sw.updateComplete;
+
+        const thumb = sw.shadowRoot?.querySelector<HTMLElement>('.thumb');
+        if (!thumb) throw new Error('Thumb not found');
+
+        const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+        if (!media.matches) return;
+
+        const duration = getComputedStyle(thumb).transitionDuration;
+        const isReduced = duration.includes('0s') || duration.includes('0.00001s') || duration.includes('0.01ms');
+        if (!isReduced) {
+            throw new Error(`Expected reduced motion duration, got "${duration}"`);
+        }
+    },
+};
+
+/**
+ * Forced Colors 環境の検証。
+ */
+export const ForcedColors: Story = {
+    parameters: {
+        docs: {
+            description: {
+                story: 'OSでforced-colorsが有効な場合のみ、境界線が視認できることを検証します。',
+            },
+        },
+    },
+    render: () => html`
+    <ui-switch id="forced-colors-switch" label="Forced Colors" checked></ui-switch>
+  `,
+    play: async ({ canvasElement }) => {
+        const sw = canvasElement.querySelector<Switch>('#forced-colors-switch');
+        if (!sw) throw new Error('ui-switch not found');
+        await sw.updateComplete;
+
+        const track = sw.shadowRoot?.querySelector<HTMLElement>('.track');
+        if (!track) throw new Error('Track not found');
+
+        const media = window.matchMedia('(forced-colors: active)');
+        if (!media.matches) return;
+
+        const borderStyle = getComputedStyle(track).borderStyle;
+        if (borderStyle === 'none') {
+            throw new Error('Expected visible border in forced-colors mode');
+        }
     },
 };

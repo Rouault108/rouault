@@ -140,11 +140,6 @@ export class Checkbox extends LitElement {
       border-color: var(--border-danger, oklch(55% 0.2 28));
     }
 
-    :host([invalid][checked]) .control,
-    :host([invalid][indeterminate]) .control {
-      border-color: var(--primary, oklch(60% 0.15 250));
-    }
-
     /* ── SVG アイコン ── */
     .icon {
       display: none;
@@ -235,7 +230,7 @@ export class Checkbox extends LitElement {
    * ユーザー操作（Space キー）による遷移先は checked: false です。
    * @default false
    */
-  @property({ type: Boolean, reflect: true })
+  @property({ type: Boolean, attribute: false })
   indeterminate = false;
 
   /**
@@ -288,6 +283,7 @@ export class Checkbox extends LitElement {
 
   // 一意な ID（レンダリング毎の再生成を防止）
   private readonly _controlId = `checkbox-${Math.random().toString(36).substring(2, 11)}`;
+  private readonly _labelId = `checkbox-label-${Math.random().toString(36).substring(2, 11)}`;
   private readonly _errorId = `checkbox-error-${Math.random().toString(36).substring(2, 11)}`;
 
   constructor() {
@@ -297,6 +293,9 @@ export class Checkbox extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    // indeterminate は属性から受け付けないため、初期化時に外部属性を除去
+    this.removeAttribute('indeterminate');
+    this._syncIndeterminateAttribute();
     this._syncFormValue();
     this._syncValidity();
   }
@@ -317,11 +316,13 @@ export class Checkbox extends LitElement {
     super.updated(changedProperties);
 
     if (
+      changedProperties.has('indeterminate') ||
       changedProperties.has('checked') ||
       changedProperties.has('disabled') ||
       changedProperties.has('name') ||
       changedProperties.has('value')
     ) {
+      this._syncIndeterminateAttribute();
       this._syncFormValue();
     }
 
@@ -346,14 +347,49 @@ export class Checkbox extends LitElement {
       } else {
         control.removeAttribute('aria-disabled');
       }
+      const externalLabel = this.getAttribute('aria-label');
+      const externalLabelledBy = this.getAttribute('aria-labelledby');
+      const externalDescribedBy = this.getAttribute('aria-describedby');
+      const describedByIds: string[] = [];
+      if (externalDescribedBy) describedByIds.push(externalDescribedBy);
+      if (this.invalid && this.errorMessage) describedByIds.push(this._errorId);
+      const describedBy = describedByIds.join(' ');
+
+      if (this.label) {
+        control.setAttribute('aria-labelledby', this._labelId);
+      } else if (externalLabelledBy) {
+        control.setAttribute('aria-labelledby', externalLabelledBy);
+      } else {
+        control.removeAttribute('aria-labelledby');
+      }
+
+      if (externalLabel) {
+        control.setAttribute('aria-label', externalLabel);
+      } else {
+        control.removeAttribute('aria-label');
+      }
+
       if (this.invalid && this.errorMessage) {
         control.setAttribute('aria-invalid', 'true');
-        control.setAttribute('aria-describedby', this._errorId);
       } else {
         control.removeAttribute('aria-invalid');
+      }
+
+      if (describedBy.length > 0) {
+        control.setAttribute('aria-describedby', describedBy);
+      } else {
         control.removeAttribute('aria-describedby');
       }
     }
+  }
+
+  /** indeterminate 状態をスタイル用に属性へ反映 */
+  private _syncIndeterminateAttribute(): void {
+    if (this.indeterminate) {
+      this.setAttribute('indeterminate', '');
+      return;
+    }
+    this.removeAttribute('indeterminate');
   }
 
   /** フォーム値を ElementInternals に同期 */
@@ -410,6 +446,21 @@ export class Checkbox extends LitElement {
     }
   };
 
+  /** ラベルクリックでトグル（span は labelable ではないため手動連携） */
+  private _handleLabelClick = (e: MouseEvent): void => {
+    e.preventDefault();
+    this.focus();
+    this._handleToggle();
+  };
+
+  /** ラベルのキーボード操作: Enter でトグル（ESLint: click-events-have-key-events 対応） */
+  private _handleLabelKeyDown = (e: KeyboardEvent): void => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      this._handleToggle();
+    }
+  };
+
   /**
    * バリデーション状態をチェック
    */
@@ -441,6 +492,14 @@ export class Checkbox extends LitElement {
   override render() {
     const ariaChecked = this.indeterminate ? 'mixed' : String(this.checked);
     const showError = this.invalid && !!this.errorMessage;
+    const externalLabel = this.getAttribute('aria-label');
+    const externalLabelledBy = this.getAttribute('aria-labelledby');
+    const externalDescribedBy = this.getAttribute('aria-describedby');
+    const ariaDescribedByIds: string[] = [];
+    if (externalDescribedBy) ariaDescribedByIds.push(externalDescribedBy);
+    if (showError) ariaDescribedByIds.push(this._errorId);
+    const ariaDescribedBy = ariaDescribedByIds.join(' ');
+    const ariaLabelledBy = this.label ? this._labelId : externalLabelledBy;
 
     return html`
       <div
@@ -457,7 +516,9 @@ export class Checkbox extends LitElement {
           aria-disabled="${this.disabled ? 'true' : nothing}"
           aria-required="${this.required ? 'true' : nothing}"
           aria-invalid="${showError ? 'true' : nothing}"
-          aria-describedby="${showError ? this._errorId : nothing}"
+          aria-describedby="${ariaDescribedBy || nothing}"
+          aria-label="${externalLabel ?? nothing}"
+          aria-labelledby="${ariaLabelledBy ?? nothing}"
           tabindex="${this.disabled ? '-1' : '0'}"
           @click="${this._handleToggle}"
           @keydown="${this._handleKeyDown}"
@@ -493,9 +554,11 @@ export class Checkbox extends LitElement {
         <!-- ラベル: クリックでコントロールにフォーカスを移してトグル -->
         ${this.label
         ? html`<label
+                    id="${this._labelId}"
                     class="label"
                     part="label"
-                    for="${this._controlId}"
+                    @click="${this._handleLabelClick}"
+                  @keydown="${this._handleLabelKeyDown}"
                   >${this.label}</label>`
         : nothing}
       </div>

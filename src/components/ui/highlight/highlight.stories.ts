@@ -47,6 +47,46 @@ const toPx = (value: string): number => {
 const isNearlyEqual = (actual: number, expected: number, tolerance = 0.75): boolean =>
   Math.abs(actual - expected) <= tolerance;
 
+const parseRgbChannels = (value: string): [number, number, number] => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  const context = canvas.getContext('2d');
+  if (!context) {
+    throw new Error('Canvas 2D コンテキストを取得できません');
+  }
+
+  context.clearRect(0, 0, 1, 1);
+  context.fillStyle = value;
+  context.fillRect(0, 0, 1, 1);
+  const pixel = context.getImageData(0, 0, 1, 1).data;
+  return [pixel[0] ?? 0, pixel[1] ?? 0, pixel[2] ?? 0];
+};
+
+const srgbToLinear = (channel: number): number => {
+  const normalized = channel / 255;
+  if (normalized <= 0.04045) {
+    return normalized / 12.92;
+  }
+  return ((normalized + 0.055) / 1.055) ** 2.4;
+};
+
+const relativeLuminance = (color: string): number => {
+  const [r, g, b] = parseRgbChannels(color);
+  const lr = srgbToLinear(r);
+  const lg = srgbToLinear(g);
+  const lb = srgbToLinear(b);
+  return 0.2126 * lr + 0.7152 * lg + 0.0722 * lb;
+};
+
+const getContrastRatio = (foreground: string, background: string): number => {
+  const fg = relativeLuminance(foreground);
+  const bg = relativeLuminance(background);
+  const lighter = Math.max(fg, bg);
+  const darker = Math.min(fg, bg);
+  return (lighter + 0.05) / (darker + 0.05);
+};
+
 const getInjectedStyleTag = (): HTMLStyleElement => {
   const styleTag = document.getElementById(DOCUMENT_STYLE_ID);
   if (!(styleTag instanceof HTMLStyleElement)) {
@@ -256,7 +296,7 @@ export const VariantStateMatrix: Story = {
 /**
  * 事故が多い境界条件:
  * - 不正 origin のフォールバック
- * - スロット優先のテキスト描画
+ * - text 未指定時の空文字安全性
  * - スコープ外 mark へのスタイル漏れ防止
  */
 export const BoundaryConditions: Story = {
@@ -270,9 +310,7 @@ export const BoundaryConditions: Story = {
     <div id="boundary-scope">
       <ui-search-highlight id="boundary-invalid-origin" origin="invalid" text="不正origin"></ui-search-highlight>
 
-      <ui-search-highlight id="boundary-slot-content">
-        <strong data-testid="slot-strong">slot優先テキスト</strong>
-      </ui-search-highlight>
+      <ui-search-highlight id="boundary-empty-text"></ui-search-highlight>
 
       <div class="prose">
         <p>prose scope: <mark id="boundary-prose-mark">本文ハイライト</mark></p>
@@ -283,18 +321,17 @@ export const BoundaryConditions: Story = {
   `,
   play: async ({ canvasElement }) => {
     const invalidOrigin = getHost(canvasElement, 'boundary-invalid-origin');
-    const slotContent = getHost(canvasElement, 'boundary-slot-content');
-    await Promise.all([invalidOrigin.updateComplete, slotContent.updateComplete]);
+    const emptyText = getHost(canvasElement, 'boundary-empty-text');
+    await Promise.all([invalidOrigin.updateComplete, emptyText.updateComplete]);
 
     const invalidMark = getInnerMark(invalidOrigin);
     if (invalidMark.getAttribute('data-origin') !== 'search') {
       throw new Error('不正 origin は "search" へフォールバックする必要があります');
     }
 
-    const slotMark = getInnerMark(slotContent);
-    const slotStrong = slotMark.querySelector<HTMLElement>('[data-testid="slot-strong"]');
-    if (!slotStrong || normalizeText(slotStrong.textContent) !== 'slot優先テキスト') {
-      throw new Error('スロットコンテンツが mark 内で保持されていません');
+    const emptyMark = getInnerMark(emptyText);
+    if (normalizeText(emptyMark.textContent) !== '') {
+      throw new Error('text 未指定時は空文字である必要があります');
     }
 
     const scopeRoot = canvasElement.querySelector<HTMLElement>('#boundary-scope');
@@ -308,14 +345,14 @@ export const BoundaryConditions: Story = {
     const plainMark = getMarkById(canvasElement, 'boundary-plain-mark');
 
     const proseStyle = getComputedStyle(proseMark);
-    const slotStyle = getComputedStyle(slotMark);
+    const emptyStyle = getComputedStyle(emptyMark);
     const plainStyle = getComputedStyle(plainMark);
 
     if (!isNearlyEqual(toPx(proseStyle.borderRadius), expectedRadius)) {
       throw new Error('.prose mark にトークン由来の border-radius が適用されていません');
     }
 
-    if (!isNearlyEqual(toPx(slotStyle.borderRadius), expectedRadius)) {
+    if (!isNearlyEqual(toPx(emptyStyle.borderRadius), expectedRadius)) {
       throw new Error('ui-search-highlight 内 mark にトークン由来の border-radius が適用されていません');
     }
 
@@ -376,6 +413,9 @@ export const MediaAndTokenContracts: Story = {
     if (!cssText.includes('text-decoration-line: underline')) {
       throw new Error('forced-colors/print 向けの非色シグナル契約が不足しています');
     }
+    if (!cssText.includes('color: currentColor')) {
+      throw new Error('print 時に currentColor を使う可読性契約が不足しています');
+    }
     if (cssText.includes('CanvasText') || cssText.includes('Highlight')) {
       throw new Error('Highlight 固有の強制カラーハードコードは禁止です');
     }
@@ -386,6 +426,127 @@ export const MediaAndTokenContracts: Story = {
     const styleB = getComputedStyle(markB);
     if (styleA.backgroundColor !== styleB.backgroundColor) {
       throw new Error('origin/state の違いで背景色が変化してはいけません');
+    }
+  },
+};
+
+/**
+ * Dark Mode + Contrast 契約:
+ * - セマンティックトークン参照で Light/Dark 両方に追従する
+ * - `--fg-default` on `--bg-highlight-subtle` が 4.5:1 以上
+ */
+export const DarkModeTokenAndContrastContract: Story = {
+  render: () => html`
+    <style>
+      .theme {
+        display: grid;
+        gap: 0.5rem;
+        padding: 0.75rem;
+        border-radius: var(--radius-sm, 4px);
+      }
+
+      .theme + .theme {
+        margin-top: 0.75rem;
+      }
+
+      .theme-title {
+        font-size: 12px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--fg-muted, #666);
+      }
+
+      #highlight-theme-light {
+        --bg-highlight-subtle: oklch(96% 0.04 65);
+        --fg-default: oklch(20% 0.03 250);
+        background: oklch(98% 0.01 250);
+        color: var(--fg-default);
+      }
+
+      #highlight-theme-dark {
+        --bg-highlight-subtle: oklch(25% 0.05 65);
+        --fg-default: oklch(90% 0.01 250);
+        background: oklch(12% 0.02 250);
+        color: var(--fg-default);
+      }
+
+      .probe {
+        display: none;
+      }
+    </style>
+
+    <div id="highlight-theme-light" class="theme">
+      <div class="theme-title">Light Token Set</div>
+      <div id="probe-light-fg" class="probe" style="color: var(--fg-default);"></div>
+      <div id="probe-light-bg" class="probe" style="background: var(--bg-highlight-subtle);"></div>
+      <div class="prose">
+        <p><mark id="dark-contract-light-prose">Light prose mark</mark></p>
+      </div>
+      <ui-search-highlight id="dark-contract-light-component" origin="search" text="Light component mark"></ui-search-highlight>
+    </div>
+
+    <div id="highlight-theme-dark" class="theme">
+      <div class="theme-title">Dark Token Set</div>
+      <div id="probe-dark-fg" class="probe" style="color: var(--fg-default);"></div>
+      <div id="probe-dark-bg" class="probe" style="background: var(--bg-highlight-subtle);"></div>
+      <div class="prose">
+        <p><mark id="dark-contract-dark-prose">Dark prose mark</mark></p>
+      </div>
+      <ui-search-highlight id="dark-contract-dark-component" origin="user" current text="Dark component mark"></ui-search-highlight>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const lightComponent = getHost(canvasElement, 'dark-contract-light-component');
+    const darkComponent = getHost(canvasElement, 'dark-contract-dark-component');
+    await Promise.all([lightComponent.updateComplete, darkComponent.updateComplete]);
+
+    const scenarios = [
+      {
+        proseMarkId: 'dark-contract-light-prose',
+        component: lightComponent,
+        fgProbeId: 'probe-light-fg',
+        bgProbeId: 'probe-light-bg',
+        label: 'light',
+      },
+      {
+        proseMarkId: 'dark-contract-dark-prose',
+        component: darkComponent,
+        fgProbeId: 'probe-dark-fg',
+        bgProbeId: 'probe-dark-bg',
+        label: 'dark',
+      },
+    ] as const;
+
+    for (const scenario of scenarios) {
+      const proseMark = getMarkById(canvasElement, scenario.proseMarkId);
+      const componentMark = getInnerMark(scenario.component);
+      const fgProbe = getMarkById(canvasElement, scenario.fgProbeId);
+      const bgProbe = getMarkById(canvasElement, scenario.bgProbeId);
+
+      const proseStyle = getComputedStyle(proseMark);
+      const componentStyle = getComputedStyle(componentMark);
+      const fgProbeColor = getComputedStyle(fgProbe).color;
+      const bgProbeColor = getComputedStyle(bgProbe).backgroundColor;
+
+      if (proseStyle.color !== fgProbeColor || componentStyle.color !== fgProbeColor) {
+        throw new Error(`${scenario.label}: mark の文字色が --fg-default を追従していません`);
+      }
+
+      if (
+        proseStyle.backgroundColor !== bgProbeColor ||
+        componentStyle.backgroundColor !== bgProbeColor
+      ) {
+        throw new Error(
+          `${scenario.label}: mark の背景色が --bg-highlight-subtle を追従していません`,
+        );
+      }
+
+      const contrast = getContrastRatio(fgProbeColor, bgProbeColor);
+      if (contrast < 4.5) {
+        throw new Error(
+          `${scenario.label}: --fg-default と --bg-highlight-subtle のコントラスト比が不足しています (${contrast.toFixed(2)}:1, fg=${fgProbeColor}, bg=${bgProbeColor})`,
+        );
+      }
     }
   },
 };

@@ -40,7 +40,7 @@ ${HIGHLIGHT_SCOPE_SELECTOR} {
 @media print {
   ${HIGHLIGHT_SCOPE_SELECTOR} {
     background: transparent !important;
-    color: var(--fg-default);
+    color: currentColor;
     text-decoration-line: underline;
     text-decoration-style: solid;
     text-decoration-thickness: from-font;

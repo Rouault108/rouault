@@ -87,6 +87,20 @@ export class Kbd extends LitElement {
       border: 0;
     }
 
+    /* スロット経由で渡された読み上げ補助要素にも同じ不可視化ルールを適用する */
+    ::slotted(.sr-only) {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+    }
+
     @media (forced-colors: active) {
       .kbd-key {
         color: var(--fg-default);
@@ -176,10 +190,15 @@ export class Kbd extends LitElement {
     `;
   }
 
-  override render(): TemplateResult {
+  override render(): TemplateResult | typeof nothing {
     const source = this._getSourceText();
     const tokens = source === '' ? [] : this._tokenizeKeys(source);
     const mode = this._resolveVariant(tokens.length);
+
+    // 空入力時は空のキートップを描画せず、出力を省略する。
+    if (source === '' && this.childElementCount === 0) {
+      return nothing;
+    }
 
     if (source === '' && this.childElementCount > 0) {
       if (mode === 'combo') {
@@ -189,11 +208,9 @@ export class Kbd extends LitElement {
     }
 
     if (mode === 'combo') {
-      const normalizedTokens = tokens.length > 0 ? tokens : [''];
-
       return html`
         <kbd class="kbd-combo" part="combo">
-          ${normalizedTokens.map((token, index) => html`
+          ${tokens.map((token, index) => html`
             ${index > 0 ? ' + ' : nothing}${this._renderKeyToken(token)}
           `)}
         </kbd>

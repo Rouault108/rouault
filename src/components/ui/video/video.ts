@@ -2,6 +2,7 @@ import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import '../../../lib/icons';
+import '../button/button';
 
 export type VideoState = 'EMPTY' | 'LOADING' | 'PAUSED' | 'PLAYING' | 'BUFFERING' | 'ENDED' | 'ERROR';
 export type TrackKind = 'subtitles' | 'captions' | 'descriptions' | 'chapters' | 'metadata';
@@ -21,6 +22,24 @@ const VALID_TRACK_KINDS = new Set<TrackKind>([
   'chapters',
   'metadata',
 ]);
+
+/** 長押し判定の閾値（ミリ秒） */
+const LONG_PRESS_THRESHOLD = 500;
+
+/** オーバーレイ自動非表示の遅延（ミリ秒） */
+const OVERLAY_HIDE_DELAY = 1000;
+
+/** スキップインジケータ表示時間（ミリ秒） */
+const SKIP_INDICATOR_DURATION = 600;
+
+/** フローチングバー自動非表示の遅延（ミリ秒） */
+const FLOATING_BAR_HIDE_DELAY = 3000;
+
+/** ダブルタッチ判定の閾値（ミリ秒） */
+const DOUBLE_TAP_THRESHOLD = 300;
+
+/** スキップ秒数 */
+const SKIP_SECONDS = 10;
 
 let videoUid = 0;
 
@@ -84,6 +103,12 @@ export class UiVideo extends LitElement {
       pointer-events: none;
     }
 
+    .skip-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4, 16px);
+    }
+
     .play-button {
       pointer-events: auto;
       display: inline-flex;
@@ -98,12 +123,19 @@ export class UiVideo extends LitElement {
       box-shadow: var(--video-overlay-elevation, var(--elevation-md, 0 4px 12px oklch(0% 0 0 / 0.16)));
       color: var(--fg-default, oklch(20% 0.01 250));
       cursor: pointer;
-      transition: transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      transition:
+        transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     .play-button iconify-icon {
       font-size: var(--icon-xl, 32px);
       line-height: 1;
+    }
+
+    .play-button.is-hidden {
+      opacity: 0;
+      pointer-events: none;
     }
 
     .play-button:hover:not(:disabled) {
@@ -124,6 +156,106 @@ export class UiVideo extends LitElement {
       opacity: 0.6;
       cursor: not-allowed;
       transform: none;
+    }
+
+    /* スキップボタン（10秒戻る/進む） */
+    .skip-button {
+      pointer-events: auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: var(--control-min-touch, 44px);
+      height: var(--control-min-touch, 44px);
+      padding: 0;
+      border: var(--border-width, 1px) solid var(--video-overlay-border, var(--border-default, oklch(86% 0.01 250)));
+      border-radius: var(--radius-full, 999px);
+      background: var(--video-overlay-bg, var(--bg-surface-3, oklch(100% 0 0 / 0.88)));
+      box-shadow: var(--video-overlay-elevation, var(--elevation-md, 0 4px 12px oklch(0% 0 0 / 0.16)));
+      color: var(--fg-default, oklch(20% 0.01 250));
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      transition:
+        opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+    }
+
+    .skip-button iconify-icon {
+      font-size: var(--icon-md, 20px);
+      line-height: 1;
+    }
+
+    .skip-button:hover:not(:disabled) {
+      transform: scale(var(--scale-hover-lg, 1.04));
+    }
+
+    .skip-button:active:not(:disabled) {
+      transform: scale(var(--scale-pressed, 0.96));
+    }
+
+    .skip-button:focus-visible {
+      outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
+      outline-offset: var(--focus-ring-offset, 2px);
+      animation: var(--animation-focus);
+    }
+
+    /* 全画面 + モバイル (< 768px) でのみスキップボタンを表示 */
+    .player-shell.is-fullscreen .skip-button.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    @media (min-width: 768px) {
+      .player-shell.is-fullscreen .skip-button.is-visible {
+        opacity: 0;
+        pointer-events: none;
+      }
+    }
+
+    /* 2倍速バッジ */
+    .speed-badge {
+      position: absolute;
+      top: var(--space-3, 12px);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      padding: var(--space-1, 4px) var(--space-2, 8px);
+      border-radius: var(--radius-full, 999px);
+      background: oklch(0% 0 0 / 0.65);
+      color: var(--fg-on-primary, var(--on-primary, oklch(100% 0 0)));
+      font-family: var(--font-sans, 'Noto Sans JP Variable', sans-serif);
+      font-weight: var(--font-semibold, 600);
+      font-size: var(--text-xs, 12px);
+      line-height: 1;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+    }
+
+    .speed-badge.is-active {
+      opacity: 1;
+    }
+
+    /* 全画面キャプションタイトル */
+    .fullscreen-caption {
+      position: absolute;
+      top: var(--space-4, 16px);
+      left: var(--space-4, 16px);
+      z-index: 5;
+      max-width: 60%;
+      font-family: var(--font-sans, 'Noto Sans JP Variable', sans-serif);
+      font-weight: var(--font-semibold, 600);
+      font-size: var(--text-lg, 16px);
+      color: var(--fg-on-primary, var(--on-primary, oklch(100% 0 0)));
+      line-height: var(--line-height-normal, 1.5);
+      pointer-events: none;
+      text-shadow: 0 1px 3px oklch(0% 0 0 / 0.5);
+      opacity: 0;
+      transition: opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+    }
+
+    .player-shell.is-fullscreen .fullscreen-caption.has-content {
+      opacity: 1;
     }
 
     .state-layer {
@@ -200,64 +332,53 @@ export class UiVideo extends LitElement {
       right: var(--space-4, 16px);
       bottom: var(--space-4, 16px);
       z-index: 4;
-      display: grid;
-      grid-template-columns: auto minmax(120px, 1fr) auto auto auto;
-      align-items: center;
-      gap: var(--space-2, 8px);
-      padding: var(--space-2, 8px) var(--space-4, 16px);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-1, 4px);
+      padding: var(--space-3, 12px) var(--space-4, 16px);
       border: var(--border-width, 1px) solid var(--video-overlay-border, var(--border-default, oklch(86% 0.01 250)));
-      border-radius: var(--radius-full, 999px);
+      border-radius: var(--radius-lg, 10px);
       background: var(--video-overlay-bg, var(--bg-surface-3, oklch(100% 0 0 / 0.88)));
       box-shadow: var(--video-overlay-elevation, var(--elevation-md, 0 4px 12px oklch(0% 0 0 / 0.16)));
       opacity: 1;
       transition: opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
-    .player-shell[data-state='playing'] .floating-bar {
+    /* 初回再生前は非表示 */
+    .floating-bar.is-pre-play {
       opacity: 0;
       pointer-events: none;
     }
 
-    .player-shell[data-state='playing']:hover .floating-bar,
-    .player-shell[data-state='playing']:focus-within .floating-bar,
-    .player-shell[data-state='buffering'] .floating-bar,
-    .player-shell[data-state='paused'] .floating-bar,
-    .player-shell[data-state='ended'] .floating-bar,
-    .player-shell[data-state='error'] .floating-bar,
-    .player-shell[data-state='empty'] .floating-bar {
-      opacity: 1;
-      pointer-events: auto;
+    /* JS制御による非表示 */
+    .floating-bar.is-bar-hidden {
+      opacity: 0;
+      pointer-events: none;
     }
 
-    .control-button {
-      min-width: var(--control-min-touch, 44px);
-      min-height: var(--control-min-touch, 44px);
-      padding: 0;
-      border: none;
-      border-radius: var(--radius-full, 999px);
-      background: transparent;
-      color: var(--fg-default, oklch(20% 0.01 250));
-      display: inline-flex;
+    .bar-row {
+      display: flex;
       align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font: inherit;
+      gap: var(--space-2, 8px);
     }
 
-    .control-button iconify-icon {
-      font-size: var(--icon-base, 18px);
-      line-height: 1;
+    .bar-row-top {
+      gap: var(--space-3, 12px);
     }
 
-    .control-button:focus-visible {
-      outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
-      outline-offset: var(--focus-ring-offset, 2px);
-      animation: var(--animation-focus);
+    .bar-row-bottom {
+      justify-content: space-between;
     }
 
-    .control-button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
+    .bar-group-left,
+    .bar-group-right {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1, 4px);
+    }
+
+    .floating-bar ui-button {
+      --fg-muted: var(--fg-default, oklch(20% 0.01 250));
     }
 
     .seek-input,
@@ -272,7 +393,8 @@ export class UiVideo extends LitElement {
     }
 
     .seek-input {
-      width: 100%;
+      flex: 1;
+      min-width: 0;
       background: linear-gradient(
         to right,
         var(--primary, oklch(56% 0.16 252)) 0%,
@@ -358,10 +480,8 @@ export class UiVideo extends LitElement {
       text-align: left;
     }
 
-    @media (max-width: 767px) {
-      :host-context(.prose) .caption {
-        padding-inline: var(--space-4, 1rem);
-      }
+    :host-context(.prose) .caption {
+      padding-inline: var(--space-4, 1rem);
     }
 
     .sr-only {
@@ -377,10 +497,45 @@ export class UiVideo extends LitElement {
       white-space: nowrap;
     }
 
+    /* スキップインジケータ */
+    .skip-indicator {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 5;
+      padding: var(--space-2, 8px) var(--space-3, 12px);
+      border-radius: var(--radius-full, 999px);
+      background: oklch(0% 0 0 / 0.55);
+      color: var(--fg-on-primary, var(--on-primary, oklch(100% 0 0)));
+      font-family: var(--font-sans, 'Noto Sans JP Variable', sans-serif);
+      font-weight: var(--font-semibold, 600);
+      font-size: var(--text-sm, 13px);
+      line-height: 1;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+    }
+
+    .skip-indicator-left {
+      left: var(--space-8, 32px);
+    }
+
+    .skip-indicator-right {
+      right: var(--space-8, 32px);
+    }
+
+    .skip-indicator.is-active {
+      opacity: 1;
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .video-element,
       .floating-bar,
       .play-button,
+      .skip-button,
+      .speed-badge,
+      .fullscreen-caption,
+      .skip-indicator,
       .seek-input::-webkit-slider-thumb,
       .volume-input::-webkit-slider-thumb,
       .seek-input::-moz-range-thumb,
@@ -396,11 +551,24 @@ export class UiVideo extends LitElement {
     @media (forced-colors: active) {
       .floating-bar,
       .play-button,
+      .skip-button,
       .retry-button {
         background: Canvas;
         border: var(--border-width, 1px) solid CanvasText;
         color: CanvasText;
         box-shadow: none;
+      }
+
+      .speed-badge,
+      .skip-indicator {
+        background: Canvas;
+        color: CanvasText;
+        border: var(--border-width, 1px) solid CanvasText;
+      }
+
+      .fullscreen-caption {
+        color: CanvasText;
+        text-shadow: none;
       }
 
       .seek-input {
@@ -433,9 +601,11 @@ export class UiVideo extends LitElement {
         forced-color-adjust: none;
       }
 
-      .floating-bar :focus-visible,
       .play-button:focus-visible,
-      .retry-button:focus-visible {
+      .skip-button:focus-visible,
+      .retry-button:focus-visible,
+      .seek-input:focus-visible,
+      .volume-input:focus-visible {
         outline: 3px solid CanvasText;
         outline-offset: 2px;
         box-shadow: none;
@@ -504,7 +674,31 @@ export class UiVideo extends LitElement {
   private _isFullscreen = false;
 
   @state()
+  private _captionsActive = false;
+
+  @state()
   private _errorMessage = '';
+
+  @state()
+  private _overlayCenterVisible = true;
+
+  @state()
+  private _skipButtonsVisible = false;
+
+  @state()
+  private _isLongPress = false;
+
+  /** 初回再生が開始されたかどうか */
+  @state()
+  private _hasStartedPlayback = false;
+
+  /** フローティングバーの表示状態（JS制御） */
+  @state()
+  private _floatingBarVisible = false;
+
+  /** スキップインジケータ: 'none' | 'forward' | 'back' */
+  @state()
+  private _skipIndicator: 'none' | 'forward' | 'back' = 'none';
 
   @query('video.video-element')
   private _videoElement?: HTMLVideoElement;
@@ -518,10 +712,49 @@ export class UiVideo extends LitElement {
 
   private _previousStatus: VideoState = 'EMPTY';
 
+  /** ミュート前の音量を保存 */
+  private _volumeBeforeMute = 1;
+
+  /** オーバーレイ自動非表示タイマー */
+  private _hideOverlayTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** スキップボタン自動非表示タイマー */
+  private _hideSkipTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** 長押し判定タイマー */
+  private _longPressTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** フローティングバー自動非表示タイマー */
+  private _floatingBarTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** スキップインジケータ非表示タイマー */
+  private _skipIndicatorTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** ダブルタップ検出用: 直前タッチ時刻 */
+  private _lastTapTime = 0;
+
+  /** シングルタップ実行タイマー */
+  private _singleTapTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** デスクトップ判定用MediaQuery */
+  private _desktopMQ: MediaQueryList | null = null;
+
+  /** 初回再生時にミュートを強制するためのフラグ */
+  private _didApplyInitialPlaybackMute = false;
+
+  private _suppressOverlayOnNextPause = false;
+
+  /** 長押し終了直後のクリックを無視するためのフラグ */
+  private _wasLongPress = false;
+
   override connectedCallback(): void {
     super.connectedCallback();
     if (typeof document !== 'undefined') {
       document.addEventListener('fullscreenchange', this._onFullscreenChange);
+      document.addEventListener('click', this._onDocumentClick);
+    }
+    if (typeof window !== 'undefined') {
+      this._desktopMQ = window.matchMedia('(min-width: 768px)');
     }
   }
 
@@ -529,6 +762,17 @@ export class UiVideo extends LitElement {
     super.disconnectedCallback();
     if (typeof document !== 'undefined') {
       document.removeEventListener('fullscreenchange', this._onFullscreenChange);
+      document.removeEventListener('click', this._onDocumentClick);
+    }
+    // タイマーをすべてクリア
+    this._cancelOverlayHide();
+    this._cancelSkipHide();
+    this._cancelLongPress();
+    this._cancelFloatingBarHide();
+    this._cancelSkipIndicator();
+    if (this._singleTapTimer !== null) {
+      clearTimeout(this._singleTapTimer);
+      this._singleTapTimer = null;
     }
   }
 
@@ -540,6 +784,10 @@ export class UiVideo extends LitElement {
       this._duration = 0;
       this._bufferedEnd = 0;
       this._errorMessage = '';
+      this._hasStartedPlayback = false;
+      this._floatingBarVisible = false;
+      this._skipIndicator = 'none';
+      this._didApplyInitialPlaybackMute = false;
       this._status = this._hasMediaSource ? 'LOADING' : 'EMPTY';
     }
 
@@ -570,6 +818,16 @@ export class UiVideo extends LitElement {
 
     const video = this._videoElement;
     if (!video) return;
+
+    if (!this._didApplyInitialPlaybackMute) {
+      this._didApplyInitialPlaybackMute = true;
+      if (!video.muted && video.volume > 0) {
+        this._volumeBeforeMute = video.volume;
+      }
+      video.muted = true;
+      this.muted = true;
+      this._volume = 0;
+    }
 
     if (this._status === 'ENDED') {
       video.currentTime = 0;
@@ -603,6 +861,8 @@ export class UiVideo extends LitElement {
   private _onRetryClick = (): void => {
     this.retry();
   };
+
+  // ─── 算出プロパティ ───
 
   private get _resolvedSrc(): string {
     return this.src.trim();
@@ -735,6 +995,30 @@ export class UiVideo extends LitElement {
     return this._isFullscreen ? 'lucide:minimize' : 'lucide:maximize';
   }
 
+  private get _hasTracks(): boolean {
+    // 字幕・キャプション種別のトラックのみを対象とする
+    const hasResolvedCaptionTracks = this._resolvedTracks.some(
+      (t) => t.kind === 'captions' || t.kind === 'subtitles',
+    );
+    if (hasResolvedCaptionTracks) return true;
+
+    // slot 経由で追加されたネイティブトラックも確認
+    const video = this._videoElement;
+    if (!video) return false;
+    for (const track of Array.from(video.textTracks)) {
+      if (track.kind === 'captions' || track.kind === 'subtitles') return true;
+    }
+    return false;
+  }
+
+  private get _captionToggleLabel(): string {
+    return this._captionsActive ? '字幕をオフ' : '字幕をオン';
+  }
+
+  private get _captionToggleIcon(): string {
+    return this._captionsActive ? 'lucide:captions' : 'lucide:captions-off';
+  }
+
   private get _controlDisabled(): boolean {
     return this._isDisabled || this._status === 'ERROR';
   }
@@ -749,6 +1033,13 @@ export class UiVideo extends LitElement {
 
     return normalizedTracks;
   }
+
+  /** 全画面時に表示するキャプションタイトル */
+  private get _fullscreenTitle(): string {
+    return this._isFullscreen && this._resolvedCaption !== '' ? this._resolvedCaption : '';
+  }
+
+  // ─── ユーティリティ ───
 
   private _normalizeTrack(track: Track): Track | null {
     const src = track.src.trim();
@@ -804,7 +1095,7 @@ export class UiVideo extends LitElement {
     if (error.code === MediaError.MEDIA_ERR_NETWORK) return 'ネットワークの問題で動画を読み込めませんでした。';
     if (error.code === MediaError.MEDIA_ERR_DECODE) return '動画をデコードできませんでした。';
     if (error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
-      return 'この動画形式はサポートされていません。';
+      return 'サポートされていない動画形式です。';
     }
 
     return '動画の再生に失敗しました。';
@@ -818,12 +1109,262 @@ export class UiVideo extends LitElement {
     return '再生を開始できませんでした。';
   }
 
-  private _togglePlayback = (): void => {
+  // ─── オーバーレイ表示/非表示制御 ───
+
+  private _scheduleOverlayHide(): void {
+    this._cancelOverlayHide();
+    this._hideOverlayTimer = setTimeout(() => {
+      this._overlayCenterVisible = false;
+      this._skipButtonsVisible = false;
+      this._hideOverlayTimer = null;
+    }, OVERLAY_HIDE_DELAY);
+  }
+
+  private _cancelOverlayHide(): void {
+    if (this._hideOverlayTimer !== null) {
+      clearTimeout(this._hideOverlayTimer);
+      this._hideOverlayTimer = null;
+    }
+  }
+
+  private _showOverlayControls(): void {
+    this._overlayCenterVisible = true;
+    this._skipButtonsVisible = true;
+  }
+
+  private _cancelSkipHide(): void {
+    if (this._hideSkipTimer !== null) {
+      clearTimeout(this._hideSkipTimer);
+      this._hideSkipTimer = null;
+    }
+  }
+
+  // ─── フローティングバー表示/非表示制御 ───
+
+  private get _isDesktop(): boolean {
+    return this._desktopMQ?.matches ?? true;
+  }
+
+  private _showFloatingBar(): void {
+    this._floatingBarVisible = true;
+    this._cancelFloatingBarHide();
+  }
+
+  private _hideFloatingBar(): void {
+    this._floatingBarVisible = false;
+    this._cancelFloatingBarHide();
+  }
+
+  private _scheduleFloatingBarHide(): void {
+    this._cancelFloatingBarHide();
+    this._floatingBarTimer = setTimeout(() => {
+      this._floatingBarVisible = false;
+      // モバイルでは再生中にセンターボタンも隠す
+      if (!this._isDesktop && this._isPlayingLike) {
+        this._overlayCenterVisible = false;
+      }
+      this._floatingBarTimer = null;
+    }, FLOATING_BAR_HIDE_DELAY);
+  }
+
+  private _cancelFloatingBarHide(): void {
+    if (this._floatingBarTimer !== null) {
+      clearTimeout(this._floatingBarTimer);
+      this._floatingBarTimer = null;
+    }
+  }
+
+  private get _floatingBarClasses(): string {
+    // エラー時はフローティングバーを非表示
+    if (this._status === 'ERROR') return 'floating-bar is-bar-hidden';
+
+    const isPrePlayBeforeFirstStart =
+      !this.autoplay &&
+      !this._didApplyInitialPlaybackMute &&
+      !this._isPlayingLike &&
+      this._currentTime === 0;
+    if (isPrePlayBeforeFirstStart || (this._status === 'PAUSED' && this._currentTime === 0)) {
+      return 'floating-bar is-pre-play';
+    }
+    if (!this._floatingBarVisible && this._isPlayingLike) return 'floating-bar is-bar-hidden';
+    return 'floating-bar';
+  }
+
+  // ─── スキップインジケータ制御 ───
+
+  private _showSkipIndicator(direction: 'forward' | 'back'): void {
+    this._skipIndicator = direction;
+    this._cancelSkipIndicator();
+    this._skipIndicatorTimer = setTimeout(() => {
+      this._skipIndicator = 'none';
+      this._skipIndicatorTimer = null;
+    }, SKIP_INDICATOR_DURATION);
+  }
+
+  private _cancelSkipIndicator(): void {
+    if (this._skipIndicatorTimer !== null) {
+      clearTimeout(this._skipIndicatorTimer);
+      this._skipIndicatorTimer = null;
+    }
+  }
+
+  // ─── ドキュメントクリック（外部クリック検出） ───
+
+  private _onDocumentClick = (event: MouseEvent): void => {
+    const shell = this.shadowRoot?.querySelector('.player-shell');
+    if (!shell) return;
+    if (!this._hasStartedPlayback) return;
+    if (event.composedPath().includes(shell)) return;
+    this._hideFloatingBar();
+    if (!this._isDesktop && this._isPlayingLike) {
+      this._overlayCenterVisible = false;
+    }
+  };
+
+  // ─── シェルイベントハンドラ（フローティングバー連動） ───
+
+  private _onShellMouseMove = (): void => {
+    if (!this._hasStartedPlayback) return;
+    if (!this._isDesktop) return;
+    this._showFloatingBar();
     if (this._isPlayingLike) {
-      this.pauseVideo();
+      this._scheduleFloatingBarHide();
+    }
+  };
+
+  private _onShellPointerEnter = (): void => {
+    if (!this._hasStartedPlayback) return;
+    if (!this._isDesktop) return;
+    this._showFloatingBar();
+    if (this._isPlayingLike) {
+      this._scheduleFloatingBarHide();
+    }
+  };
+
+  private _onShellPointerLeave = (): void => {
+    if (!this._hasStartedPlayback) return;
+    this._hideFloatingBar();
+    if (!this._isDesktop && this._isPlayingLike) {
+      this._overlayCenterVisible = false;
+    }
+  };
+
+  // ─── ダブルタッチ / シングルタッチ検出 ───
+
+  private _onShellClick = (event: MouseEvent): void => {
+    const path = event.composedPath();
+    const video = this._videoElement;
+    if (!video) return;
+
+    // 動画面へのクリックのみを再生/一時停止トグル対象にする
+    if (!path.includes(video)) return;
+
+    const isFloatingBarTarget = path.some(
+      (el) => el instanceof HTMLElement && el.classList.contains('floating-bar'),
+    );
+    if (isFloatingBarTarget) return;
+
+    const hasInteractive = path.some(
+      (el) =>
+        el instanceof HTMLButtonElement ||
+        el instanceof HTMLInputElement ||
+        (el instanceof HTMLElement && el.localName === 'ui-button'),
+    );
+    if (hasInteractive) return;
+    if (!this._hasStartedPlayback) return;
+
+    // 長押し直後のクリックは再生トグルをスキップ
+    if (this._wasLongPress) {
+      this._wasLongPress = false;
       return;
     }
 
+    const now = Date.now();
+    const timeDelta = now - this._lastTapTime;
+
+    if (timeDelta < DOUBLE_TAP_THRESHOLD && timeDelta > 0) {
+      if (this._singleTapTimer !== null) {
+        clearTimeout(this._singleTapTimer);
+        this._singleTapTimer = null;
+      }
+      this._handleDoubleTap(event);
+      this._lastTapTime = 0;
+      return;
+    }
+
+    this._lastTapTime = now;
+    this._singleTapTimer = setTimeout(() => {
+      this._togglePlayback();
+      this._singleTapTimer = null;
+    }, DOUBLE_TAP_THRESHOLD);
+  };
+
+  private _onShellKeyDown = (event: KeyboardEvent): void => {
+    if (event.defaultPrevented) return;
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    if (event.key !== ' ' && event.key !== 'Enter') return;
+
+    const target = event.target;
+    if (
+      target instanceof HTMLButtonElement ||
+      target instanceof HTMLInputElement ||
+      (target instanceof HTMLElement && target.localName === 'ui-button')
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    this._togglePlayback();
+  };
+  private _handleDoubleTap(event: MouseEvent): void {
+    const shell = this.shadowRoot?.querySelector<HTMLElement>('.player-shell');
+    if (!shell) return;
+
+    // 長押し判定をキャンセル
+    this._cancelLongPress();
+
+    if (this._isDesktop) {
+      // デスクトップ: ダブルクリックで全画面トグル
+      void this._toggleFullscreen();
+    } else {
+      // モバイル: ダブルタップでスキップ
+      const rect = shell.getBoundingClientRect();
+      const midX = rect.left + rect.width / 2;
+      if (event.clientX >= midX) {
+        this._seekBy(SKIP_SECONDS);
+        this._showSkipIndicator('forward');
+      } else {
+        this._seekBy(-SKIP_SECONDS);
+        this._showSkipIndicator('back');
+      }
+    }
+  }
+
+  // ─── 再生操作 ───
+
+  private _togglePlayback = (): void => {
+    // オーバーレイを一時的に表示
+    this._showOverlayControls();
+
+    if (this._isPlayingLike) {
+      this.pauseVideo();
+      // 一時停止時はボタンを表示したまま
+      this._cancelOverlayHide();
+      return;
+    }
+
+    void this.playVideo();
+    // 再生開始後、1秒でボタンを自動非表示
+    this._scheduleOverlayHide();
+  };
+
+  /** フローティングバーからの再生操作（センターオーバーレイを表示しない）*/
+  private _onFloatingBarPlay = (): void => {
+    if (this._isPlayingLike) {
+      this._suppressOverlayOnNextPause = true;
+      this.pauseVideo();
+      return;
+    }
     void this.playVideo();
   };
 
@@ -841,47 +1382,95 @@ export class UiVideo extends LitElement {
     }
   }
 
-  private _adjustVolume(step: number): void {
-    const video = this._videoElement;
-    if (!video) return;
+  private _onSkipBack = (): void => {
+    this._seekBy(-10);
+    this._showOverlayControls();
+    this._scheduleOverlayHide();
+  };
 
-    const next = this._clamp(video.volume + step, 0, 1);
-    video.volume = next;
+  private _onSkipForward = (): void => {
+    this._seekBy(10);
+    this._showOverlayControls();
+    this._scheduleOverlayHide();
+  };
 
-    if (next > 0 && video.muted) video.muted = false;
-    if (next === 0) video.muted = true;
+  private _onFloatingBarSkipBack = (): void => {
+    this._seekBy(-10);
+    this._showFloatingBar();
+    if (this._isPlayingLike) {
+      this._scheduleFloatingBarHide();
+    }
+  };
 
-    this._volume = next;
-    this.muted = video.muted;
-  }
+  private _onFloatingBarSkipForward = (): void => {
+    this._seekBy(10);
+    this._showFloatingBar();
+    if (this._isPlayingLike) {
+      this._scheduleFloatingBarHide();
+    }
+  };
 
   private _toggleMuted = (): void => {
     const video = this._videoElement;
     if (!video) return;
 
-    video.muted = !video.muted;
-    this.muted = video.muted;
-
-    if (!video.muted && video.volume === 0) {
-      video.volume = 0.5;
-      this._volume = 0.5;
+    if (!video.muted) {
+      // ミュートに入る直前のボリュームを保存
+      this._volumeBeforeMute = video.volume > 0 ? video.volume : this._volumeBeforeMute;
+      video.muted = true;
+      this.muted = true;
+      // スライダーを視覚的に 0 へ
+      this._volume = 0;
+    } else {
+      // ミュート解除: 保存してボリュームを復元
+      const restore = this._volumeBeforeMute > 0 ? this._volumeBeforeMute : 0.5;
+      video.muted = false;
+      video.volume = restore;
+      this.muted = false;
+      this._volume = restore;
     }
   };
 
+  /** テキストトラックのモードを _captionsActive に同期する */
+  private _syncTextTrackModes(video: HTMLVideoElement): void {
+    for (const track of Array.from(video.textTracks)) {
+      if (track.kind === 'captions' || track.kind === 'subtitles') {
+        track.mode = this._captionsActive ? 'showing' : 'hidden';
+      }
+    }
+  }
+
+  private _toggleCaptions = (): void => {
+    const video = this._videoElement;
+    if (!video) return;
+
+    const nextActive = !this._captionsActive;
+    this._captionsActive = nextActive;
+
+    // TextTrackList の全トラックに対してモードを切り替え
+    for (const track of Array.from(video.textTracks)) {
+      if (track.kind === 'captions' || track.kind === 'subtitles') {
+        track.mode = nextActive ? 'showing' : 'hidden';
+      }
+    }
+  };
+
+  // ─── 全画面制御 ───
+  // Shadow DOM 内の要素が requestFullscreen() すると、
+  // document.fullscreenElement はシャドウホスト（this）を返す。
   private _toggleFullscreen = async (): Promise<void> => {
     if (typeof document === 'undefined') return;
     const shell = this.shadowRoot?.querySelector<HTMLElement>('.player-shell');
     if (!shell) return;
 
     try {
-      if (document.fullscreenElement === shell) {
+      if (this._isFullscreen) {
+        // 全画面状態の時: 終了する
         await document.exitFullscreen();
         return;
       }
-
-      if (document.fullscreenElement === null) {
-        await shell.requestFullscreen();
-      }
+      // 非全画面状態のとき: 開始する      
+      await shell.requestFullscreen();
     } catch {
       // 操作環境により全画面APIが拒否されるため握りつぶす。
     }
@@ -889,63 +1478,65 @@ export class UiVideo extends LitElement {
 
   private _onFullscreenChange = (): void => {
     if (typeof document === 'undefined') return;
-    const shell = this.shadowRoot?.querySelector<HTMLElement>('.player-shell');
-    this._isFullscreen = shell !== undefined && document.fullscreenElement === shell;
+    // document.fullscreenElement は Shadow DOM 境界を越えないため、
+    // ホスト要素 (this) を確認する。
+    this._isFullscreen =
+      document.fullscreenElement === this ||
+      (this.shadowRoot !== null && this.shadowRoot.fullscreenElement !== null);
   };
 
-  private _onContainerKeyDown = (event: KeyboardEvent): void => {
-    if (event.defaultPrevented) return;
-    if (event.metaKey || event.ctrlKey || event.altKey) return;
+  // ─── 長押し2倍速───
 
-    const target = event.target;
-    if (target instanceof HTMLInputElement && target.type === 'range') {
-      if (event.key === 'm' || event.key === 'M') {
-        event.preventDefault();
-        this._toggleMuted();
-      }
-      if (event.key === 'f' || event.key === 'F') {
-        event.preventDefault();
-        void this._toggleFullscreen();
-      }
-      return;
-    }
+  private _onPointerDown = (event: PointerEvent): void => {
+    // コンポーザードパスにボタンやスライダーが含まれる場合はスキップ
+    const path = event.composedPath();
+    const hasInteractiveTarget = path.some(
+      (el) =>
+        el instanceof HTMLButtonElement ||
+        el instanceof HTMLInputElement ||
+        (el instanceof HTMLElement && el.localName === 'ui-button'),
+    );
+    if (hasInteractiveTarget) return;
 
-    switch (event.key) {
-      case ' ':
-      case 'Enter':
-        event.preventDefault();
-        this._togglePlayback();
-        break;
-      case 'ArrowRight':
-        event.preventDefault();
-        this._seekBy(5);
-        break;
-      case 'ArrowLeft':
-        event.preventDefault();
-        this._seekBy(-5);
-        break;
-      case 'ArrowUp':
-        event.preventDefault();
-        this._adjustVolume(0.1);
-        break;
-      case 'ArrowDown':
-        event.preventDefault();
-        this._adjustVolume(-0.1);
-        break;
-      case 'm':
-      case 'M':
-        event.preventDefault();
-        this._toggleMuted();
-        break;
-      case 'f':
-      case 'F':
-        event.preventDefault();
-        void this._toggleFullscreen();
-        break;
-      default:
-        break;
-    }
+    if (this._longPressTimer !== null) clearTimeout(this._longPressTimer);
+    this._longPressTimer = setTimeout(() => {
+      this._activateLongPress();
+      this._longPressTimer = null;
+    }, LONG_PRESS_THRESHOLD);
   };
+
+  private _onPointerUp = (): void => {
+    this._cancelLongPress();
+  };
+
+  private _onPointerLeave = (): void => {
+    this._cancelLongPress();
+    this._onShellPointerLeave();
+  };
+
+  private _activateLongPress(): void {
+    const video = this._videoElement;
+    if (!video) return;
+    // 再生中のみ 2x を有効にする
+    if (!this._isPlayingLike) return;
+    this._isLongPress = true;
+    video.playbackRate = 2;
+  }
+
+  private _cancelLongPress(): void {
+    if (this._longPressTimer !== null) {
+      clearTimeout(this._longPressTimer);
+      this._longPressTimer = null;
+    }
+    if (this._isLongPress) {
+      this._isLongPress = false;
+      this._wasLongPress = true;
+      const video = this._videoElement;
+      if (video) video.playbackRate = 1;
+    }
+  }
+
+  // ─── メディアイベントハンドラ ───
 
   private _onSeekInput = (event: Event): void => {
     const input = event.currentTarget;
@@ -989,10 +1580,14 @@ export class UiVideo extends LitElement {
     this._duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 0;
     this._currentTime = this._clamp(video.currentTime, 0, this._duration > 0 ? this._duration : Infinity);
     this._bufferedEnd = this._duration > 0 ? this._getBufferedEnd(video) : 0;
-    this._volume = this._clamp(video.volume, 0, 1);
+    this._volume = video.muted ? 0 : this._clamp(video.volume, 0, 1);
     this.muted = video.muted;
 
     this._status = video.autoplay && !video.paused ? 'PLAYING' : 'PAUSED';
+
+    // default 属性付きトラックをブラウザが自動表示するため、
+    // _captionsActive の初期状態に合わせてモードを強制設定する
+    this._syncTextTrackModes(video);
   };
 
   private _onCanPlay = (event: Event): void => {
@@ -1016,6 +1611,12 @@ export class UiVideo extends LitElement {
   private _onPlaying = (): void => {
     if (this._status === 'ERROR' || this._status === 'EMPTY') return;
     this._status = 'PLAYING';
+    this._hasStartedPlayback = true;
+    // 再生開始時にオーバーレイを自動非表示スケジュール
+    this._scheduleOverlayHide();
+    // フローティングバーを表示後、自動非表示をスケジュール
+    this._showFloatingBar();
+    this._scheduleFloatingBarHide();
   };
 
   private _onWaiting = (): void => {
@@ -1030,6 +1631,16 @@ export class UiVideo extends LitElement {
     if (this._status === 'ERROR' || this._status === 'EMPTY') return;
 
     this._status = 'PAUSED';
+    const suppressOverlay = this._suppressOverlayOnNextPause;
+    this._suppressOverlayOnNextPause = false;
+    // 一時停止時にオーバーレイを表示する
+    this._cancelOverlayHide();
+    if (!suppressOverlay) {
+      this._showOverlayControls();
+    }
+    // フローティングバーを表示し、非表示タイマーをキャンセル
+    this._showFloatingBar();
+    this._cancelFloatingBarHide();
   };
 
   private _onTimeUpdate = (event: Event): void => {
@@ -1060,7 +1671,12 @@ export class UiVideo extends LitElement {
   private _onVolumeChange = (event: Event): void => {
     const video = event.currentTarget;
     if (!(video instanceof HTMLVideoElement)) return;
-    this._volume = this._clamp(video.volume, 0, 1);
+    // ミュート中はスライダーを 0 に固定し、実際の volume 値は反映しない
+    if (video.muted) {
+      this._volume = 0;
+    } else {
+      this._volume = this._clamp(video.volume, 0, 1);
+    }
     this.muted = video.muted;
   };
 
@@ -1070,6 +1686,11 @@ export class UiVideo extends LitElement {
 
     this._currentTime = this._seekMax > 0 ? this._seekMax : video.currentTime;
     this._status = 'ENDED';
+    // 終了時はオーバーレイを表示
+    this._cancelOverlayHide();
+    this._showOverlayControls();
+    this._showFloatingBar();
+    this._cancelFloatingBarHide();
   };
 
   private _onVideoError = (event: Event): void => {
@@ -1079,6 +1700,8 @@ export class UiVideo extends LitElement {
     this._errorMessage = this._resolveMediaErrorMessage(video.error);
     this._status = 'ERROR';
   };
+
+  // ─── レンダリング ───
 
   private _renderTrackElements(): TemplateResult | typeof nothing {
     const tracks = this._resolvedTracks;
@@ -1096,6 +1719,52 @@ export class UiVideo extends LitElement {
           />
         `,
       )}
+    `;
+  }
+
+  private _renderOverlayCenter(): TemplateResult | typeof nothing {
+    // エラー時はオーバーレイを完全にDOMから除去する
+    if (this._status === 'ERROR') return nothing;
+
+    const isPressed = this._isPlayingLike;
+    return html`
+      <div class="overlay-center">
+        <div class="skip-row">
+          <button
+            type="button"
+            class="skip-button ${this._skipButtonsVisible ? 'is-visible' : ''}"
+            tabindex="-1"
+            aria-label="10秒戻る"
+            ?disabled="${this._controlDisabled}"
+            @click="${this._onSkipBack}"
+          >
+            <iconify-icon icon="lucide:rotate-ccw" aria-hidden="true"></iconify-icon>
+          </button>
+
+          <button
+            type="button"
+            class="play-button ${this._overlayCenterVisible ? '' : 'is-hidden'}"
+            tabindex="-1"
+            aria-label="${this._playButtonLabel}"
+            aria-pressed="${String(isPressed)}"
+            ?disabled="${this._controlDisabled}"
+            @click="${this._togglePlayback}"
+          >
+            <iconify-icon icon="${this._playButtonIcon}" aria-hidden="true"></iconify-icon>
+          </button>
+
+          <button
+            type="button"
+            class="skip-button ${this._skipButtonsVisible ? 'is-visible' : ''}"
+            tabindex="-1"
+            aria-label="10秒進む"
+            ?disabled="${this._controlDisabled}"
+            @click="${this._onSkipForward}"
+          >
+            <iconify-icon icon="lucide:rotate-cw" aria-hidden="true"></iconify-icon>
+          </button>
+        </div>
+      </div>
     `;
   }
 
@@ -1138,7 +1807,13 @@ export class UiVideo extends LitElement {
 
   override render(): TemplateResult {
     const caption = this._resolvedCaption;
-    const isPressed = this._isPlayingLike;
+    const shellClasses = [
+      'player-shell',
+      this._isPlayingLike ? 'is-playing' : 'is-paused',
+      this._isFullscreen ? 'is-fullscreen' : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
 
     return html`
       <figure
@@ -1148,17 +1823,23 @@ export class UiVideo extends LitElement {
         aria-disabled="${String(this._isDisabled)}"
       >
         <div
-          class="player-shell ${this._isPlayingLike ? 'is-playing' : 'is-paused'}"
+          class="${shellClasses}"
           data-state="${this._status.toLowerCase()}"
           style="${this._aspectRatioStyle}"
           aria-describedby="${ifDefined(this._captionRef)}"
-          @keydown="${this._onContainerKeyDown}"
+          @pointerdown="${this._onPointerDown}"
+          @pointerup="${this._onPointerUp}"
+          @pointerleave="${this._onPointerLeave}"
+          @mousemove="${this._onShellMouseMove}"
+          @pointerenter="${this._onShellPointerEnter}"
+          @click="${this._onShellClick}"
+          @keydown="${this._onShellKeyDown}"
         >
           <video
             class="video-element"
             src="${ifDefined(this._hasMediaSource ? this._resolvedSrc : undefined)}"
             poster="${ifDefined(this._resolvedPoster === '' ? undefined : this._resolvedPoster)}"
-            preload="none"
+            preload="metadata"
             ?autoplay="${this.autoplay}"
             ?loop="${this.loop}"
             ?muted="${this.muted}"
@@ -1182,86 +1863,144 @@ export class UiVideo extends LitElement {
 
           ${this._renderStateLayer()}
 
-          <div class="overlay-center">
-            <button
-              type="button"
-              class="play-button"
-              aria-label="${this._playButtonLabel}"
-              aria-pressed="${String(isPressed)}"
-              ?disabled="${this._controlDisabled}"
-              @click="${this._togglePlayback}"
-            >
-              <iconify-icon icon="${this._playButtonIcon}" aria-hidden="true"></iconify-icon>
-            </button>
+          <!-- 2倍速バッジ -->
+          <div class="speed-badge ${this._isLongPress ? 'is-active' : ''}" aria-hidden="true">2x</div>
+
+          <!-- スキップインジケータ -->
+          <div class="skip-indicator skip-indicator-left ${this._skipIndicator === 'back' ? 'is-active' : ''}" aria-hidden="true">
+            -${String(SKIP_SECONDS)}
+          </div>
+          <div class="skip-indicator skip-indicator-right ${this._skipIndicator === 'forward' ? 'is-active' : ''}" aria-hidden="true">
+            +${String(SKIP_SECONDS)}
           </div>
 
-          <div class="floating-bar">
-            <button
-              type="button"
-              class="control-button"
-              aria-label="${this._playButtonLabel}"
-              aria-pressed="${String(isPressed)}"
-              ?disabled="${this._controlDisabled}"
-              @click="${this._togglePlayback}"
-            >
-              <iconify-icon icon="${this._playButtonIcon}" aria-hidden="true"></iconify-icon>
-            </button>
+          <!-- 全画面キャプションタイトル -->
+          <div
+            class="fullscreen-caption ${this._fullscreenTitle !== '' ? 'has-content' : ''}"
+            aria-hidden="true"
+          >
+            ${this._fullscreenTitle}
+          </div>
 
-            <input
-              class="seek-input"
-              type="range"
-              min="0"
-              max="${String(this._seekMax)}"
-              step="0.1"
-              .value="${String(this._seekNow)}"
-              style="--seek-progress: ${String(this._seekProgress)}%; --seek-buffered: ${String(this._seekBufferedProgress)}%;"
-              aria-label="再生位置"
-              aria-valuemin="0"
-              aria-valuemax="${String(this._seekMax)}"
-              aria-valuenow="${String(this._seekNow)}"
-              aria-valuetext="${this._seekValueText}"
-              ?disabled="${this._controlDisabled || this._seekMax <= 0}"
-              @input="${this._onSeekInput}"
-            />
+          ${this._renderOverlayCenter()}
 
-            <span class="time-label">${this._seekValueText}</span>
+          <div class="${this._floatingBarClasses}">
+            <div class="bar-row bar-row-top">
+              <input
+                class="seek-input"
+                type="range"
+                min="0"
+                max="${String(this._seekMax)}"
+                step="0.1"
+                .value="${String(this._seekNow)}"
+                style="--seek-progress: ${String(this._seekProgress)}%; --seek-buffered: ${String(this._seekBufferedProgress)}%;"
+                aria-label="再生位置"
+                aria-valuemin="0"
+                aria-valuemax="${String(this._seekMax)}"
+                aria-valuenow="${String(this._seekNow)}"
+                aria-valuetext="${this._seekValueText}"
+                ?disabled="${this._controlDisabled || this._seekMax <= 0}"
+                @input="${this._onSeekInput}"
+              />
+              <span class="time-label">${this._seekValueText}</span>
+            </div>
 
-            <button
-              type="button"
-              class="control-button"
-              aria-label="${this._muteButtonLabel}"
-              ?disabled="${this._controlDisabled}"
-              @click="${this._toggleMuted}"
-            >
-              <iconify-icon icon="${this._muteButtonIcon}" aria-hidden="true"></iconify-icon>
-            </button>
+            <div class="bar-row bar-row-bottom">
+              <div class="bar-group-left">
+                <ui-button
+                  variant="ghost"
+                  size="sm"
+                  icon-only
+                  aria-label="${this._playButtonLabel}"
+                  ?pressed="${this._isPlayingLike}"
+                  ?disabled="${this._controlDisabled}"
+                  @click="${this._onFloatingBarPlay}"
+                >
+                  <iconify-icon icon="${this._playButtonIcon}" aria-hidden="true"></iconify-icon>
+                </ui-button>
 
-            <input
-              class="volume-input"
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
-              .value="${String(this._volume)}"
-              style="--volume-progress: ${String(this._volumeProgress)}%;"
-              aria-label="音量"
-              aria-valuemin="0"
-              aria-valuemax="1"
-              aria-valuenow="${String(this._volume)}"
-              aria-valuetext="${`${String(Math.round(this._volume * 100))}%`}"
-              ?disabled="${this._controlDisabled}"
-              @input="${this._onVolumeInput}"
-            />
+                <ui-button
+                  variant="ghost"
+                  size="sm"
+                  icon-only
+                  aria-label="10秒戻る"
+                  ?disabled="${this._controlDisabled}"
+                  @click="${this._onFloatingBarSkipBack}"
+                >
+                  <iconify-icon icon="lucide:rewind" aria-hidden="true"></iconify-icon>
+                </ui-button>
 
-            <button
-              type="button"
-              class="control-button fullscreen-button"
-              aria-label="${this._fullscreenButtonLabel}"
-              ?disabled="${this._controlDisabled}"
-              @click="${this._toggleFullscreen}"
-            >
-              <iconify-icon icon="${this._fullscreenButtonIcon}" aria-hidden="true"></iconify-icon>
-            </button>
+                <ui-button
+                  variant="ghost"
+                  size="sm"
+                  icon-only
+                  aria-label="10秒進む"
+                  ?disabled="${this._controlDisabled}"
+                  @click="${this._onFloatingBarSkipForward}"
+                >
+                  <iconify-icon icon="lucide:fast-forward" aria-hidden="true"></iconify-icon>
+                </ui-button>
+
+                <ui-button
+                  variant="ghost"
+                  size="sm"
+                  icon-only
+                  aria-label="${this._muteButtonLabel}"
+                  ?disabled="${this._controlDisabled}"
+                  @click="${this._toggleMuted}"
+                >
+                  <iconify-icon icon="${this._muteButtonIcon}" aria-hidden="true"></iconify-icon>
+                </ui-button>
+
+                <input
+                  class="volume-input"
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  .value="${String(this._volume)}"
+                  style="--volume-progress: ${String(this._volumeProgress)}%;"
+                  aria-label="音量"
+                  aria-valuemin="0"
+                  aria-valuemax="1"
+                  aria-valuenow="${String(this._volume)}"
+                  aria-valuetext="${`${String(Math.round(this._volume * 100))}%`}"
+                  ?disabled="${this._controlDisabled}"
+                  @input="${this._onVolumeInput}"
+                />
+              </div>
+
+              <div class="bar-group-right">
+                ${this._hasTracks
+                  ? html`
+                      <ui-button
+                        variant="ghost"
+                        size="sm"
+                        icon-only
+                        aria-label="${this._captionToggleLabel}"
+                        aria-pressed="${String(this._captionsActive)}"
+                        .pressed="${this._captionsActive}"
+                        ?disabled="${this._controlDisabled}"
+                        @click="${this._toggleCaptions}"
+                      >
+                        <iconify-icon icon="${this._captionToggleIcon}" aria-hidden="true"></iconify-icon>
+                      </ui-button>
+                    `
+                  : nothing}
+
+                <ui-button
+                  variant="ghost"
+                  size="sm"
+                  icon-only
+                  class="fullscreen-button"
+                  aria-label="${this._fullscreenButtonLabel}"
+                  ?disabled="${this._controlDisabled}"
+                  @click="${this._toggleFullscreen}"
+                >
+                  <iconify-icon icon="${this._fullscreenButtonIcon}" aria-hidden="true"></iconify-icon>
+                </ui-button>
+              </div>
+            </div>
           </div>
         </div>
 

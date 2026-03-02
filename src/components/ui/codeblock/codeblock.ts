@@ -1,6 +1,5 @@
 import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
-import { ifDefined } from 'lit/directives/if-defined.js';
 import '../../../lib/icons';
 import '../copy-button/copy-button';
 
@@ -56,7 +55,7 @@ ui-code-block pre {
   color: var(--fg-default, oklch(20% 0.03 250));
   font-family: var(--font-mono, monospace);
   font-size: var(--text-sm, 0.8125rem);
-  line-height: var(--line-height-normal, 1.5);
+  line-height: var(--line-height-relaxed, 1.75);
   padding: var(--ui-code-block-padding, var(--space-4, 1rem));
   overflow-x: auto;
   overflow-y: hidden;
@@ -67,6 +66,7 @@ ui-code-block pre {
 ui-code-block pre code {
   display: block;
   min-width: max-content;
+  background: transparent !important;
 }
 
 ui-code-block pre:focus-visible {
@@ -121,8 +121,6 @@ ui-code-block[data-wrap='true'] pre {
   }
 }`;
 
-let codeBlockId = 0;
-
 @customElement('ui-code-block')
 export class CodeBlock extends LitElement {
   static override styles = css`
@@ -156,7 +154,15 @@ export class CodeBlock extends LitElement {
       --_ui-code-block-header-display: none;
     }
 
+    :host([embedded]) {
+      --ui-code-block-breakout-width: 100%;
+      --ui-code-block-breakout-margin: 0;
+    }
+
     .root {
+      margin: 0;
+      position: relative;
+      overflow: hidden;
       border: var(--border-style-subtle, 1px solid oklch(20% 0.03 250 / 0.12));
       background: var(--bg-fill-muted, oklch(96% 0.01 250));
       border-radius:
@@ -164,14 +170,18 @@ export class CodeBlock extends LitElement {
         var(--ui-code-block-radius-top, var(--radius-md, 6px))
         var(--ui-code-block-radius-bottom, var(--radius-md, 6px))
         var(--ui-code-block-radius-bottom, var(--radius-md, 6px));
-      padding-block-end: 1px;
     }
 
     :host([headless]) .root {
       border: none;
       background: transparent;
       border-radius: 0;
-      padding-block-end: 0;
+      overflow: visible;
+    }
+
+    :host([embedded]):not([headless]) .root {
+      border: none;
+      border-radius: 0;
     }
 
     .caption {
@@ -208,8 +218,23 @@ export class CodeBlock extends LitElement {
       white-space: nowrap;
     }
 
-    .filename.filename-empty {
-      color: var(--fg-subtle, oklch(60% 0.01 250));
+    /* メタデータのないキャプションをオーバーレイ化し、コピーボタンのみ表示 */
+    .caption-overlay > .caption {
+      position: absolute;
+      top: 0;
+      inset-inline-end: 0;
+      z-index: 1;
+      padding: var(--space-1, 4px) var(--space-2, 8px);
+      background: none;
+    }
+
+    .caption-overlay > .caption .caption-main {
+      display: none;
+    }
+
+    .caption-overlay > .caption .caption-layout {
+      justify-content: flex-end;
+      min-height: 0;
     }
 
     .intent {
@@ -235,8 +260,8 @@ export class CodeBlock extends LitElement {
     .copy-button-shell ui-copy-button {
       --_copy-button-icon-size: var(--icon-sm, 14px);
 
-      opacity: 0;
-      pointer-events: none;
+      opacity: 0.56;
+      pointer-events: auto;
       transition: opacity var(--duration-normal, 150ms)
         var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
     }
@@ -277,7 +302,7 @@ export class CodeBlock extends LitElement {
         break-inside: avoid;
       }
 
-      .caption {
+      .copy-button-shell {
         display: none !important;
       }
     }
@@ -301,6 +326,9 @@ export class CodeBlock extends LitElement {
   @property({ type: Boolean, reflect: true })
   headless = false;
 
+  @property({ type: Boolean, reflect: true })
+  embedded = false;
+
   @state()
   private _copyValue = '';
 
@@ -308,8 +336,6 @@ export class CodeBlock extends LitElement {
   private _defaultSlot?: HTMLSlotElement;
 
   private _resizeObserver?: ResizeObserver;
-
-  private readonly _captionId = `ui-code-block-caption-${String(++codeBlockId)}`;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -436,6 +462,11 @@ export class CodeBlock extends LitElement {
     return `${this._contextName} のコードをコピー`;
   }
 
+  /** キャプションに表示すべきメタデータ（ファイル名またはintent）が存在するか */
+  private get _hasCaptionContent(): boolean {
+    return this._resolvedFilename !== '' || this._resolvedIntent !== 'neutral';
+  }
+
   private get _intentMeta(): IntentMeta | null {
     if (this._resolvedIntent === 'neutral') return null;
     return INTENT_META[this._resolvedIntent];
@@ -450,6 +481,16 @@ export class CodeBlock extends LitElement {
     style.textContent = DOCUMENT_CSS;
     document.head.append(style);
   }
+
+  /** テキスト省略時のみtitle属性を付与し、冗長なツールチップを回避 */
+  private _onFilenameMouseEnter = (e: MouseEvent): void => {
+    const el = e.currentTarget as HTMLElement;
+    if (el.scrollWidth > el.clientWidth) {
+      el.title = this._resolvedFilename;
+    } else {
+      el.removeAttribute('title');
+    }
+  };
 
   private _onSlotChange = (): void => {
     this._syncSlottedPre();
@@ -505,7 +546,14 @@ export class CodeBlock extends LitElement {
     const container = code ?? pre;
     if (container.querySelector('.line')) return;
 
-    const sourceText = (container.textContent).replace(/\r\n?/g, '\n');
+    // Shikiトークンを保持するため、要素ノードを含む場合は破壊的な再構築を避ける。
+    // 行ラッパー未付与のプレーンテキスト入力のみを正規化対象にする。
+    if (container.childElementCount > 0) {
+      return;
+    }
+
+    // 行番号の適用を優先し、.line が無い場合はプレーン行ラッパーへ正規化する
+    const sourceText = (pre.getAttribute('data-raw') ?? container.textContent).replace(/\r\n?/g, '\n');
     const lines = sourceText.split('\n');
 
     container.textContent = '';
@@ -540,11 +588,13 @@ export class CodeBlock extends LitElement {
     const isOverflowing = pre.scrollWidth > pre.clientWidth + 1;
     if (isOverflowing) {
       pre.setAttribute('tabindex', '0');
+      pre.setAttribute('role', 'region');
       pre.setAttribute('aria-label', this._scrollAriaLabel);
       return;
     }
 
     pre.removeAttribute('tabindex');
+    pre.removeAttribute('role');
     pre.removeAttribute('aria-label');
   }
 
@@ -556,15 +606,18 @@ export class CodeBlock extends LitElement {
     const intentMeta = this._intentMeta;
 
     return html`
-      <figure class="root" aria-labelledby="${ifDefined(this._captionId)}" aria-description="${this._ariaDescription}">
-        <figcaption id="${this._captionId}" class="caption">
+      <figure
+        class="root ${this._hasCaptionContent ? '' : 'caption-overlay'}"
+        aria-description="${this._ariaDescription}"
+      >
+        <figcaption class="caption">
           <div class="caption-layout">
             <span class="caption-main">
               <span
-                class="filename ${this._resolvedFilename === '' ? 'filename-empty' : ''}"
-                title="${this._resolvedFilename}"
+                class="filename"
+                @mouseenter="${this._onFilenameMouseEnter}"
               >
-                ${this._resolvedFilename || this._languageLabel || 'コード'}
+                ${this._resolvedFilename}
               </span>
               ${intentMeta
                 ? html`

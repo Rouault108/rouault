@@ -421,6 +421,14 @@ export const BoundaryCases: Story = {
     if (assignedElements.length !== 2) {
       throw new Error(`Expected 2 slotted elements for symbol key, got ${String(assignedElements.length)}`);
     }
+    const srOnlyText = assignedElements.at(0) as HTMLElement | undefined;
+    if (!srOnlyText) {
+      throw new Error('First slotted SR-only element not found');
+    }
+    const srOnlyStyle = getComputedStyle(srOnlyText);
+    if (srOnlyStyle.position !== 'absolute') {
+      throw new Error(`Expected slotted SR-only to be hidden, got position="${srOnlyStyle.position}"`);
+    }
     const hiddenSymbol = assignedElements.at(1);
     if (!hiddenSymbol) {
       throw new Error('Second slotted symbol element not found');
@@ -446,6 +454,185 @@ const toCssText = (style: unknown): string => {
   return String(style);
 };
 
+const parseRgb = (value: string): [number, number, number] | null => {
+  const match = /rgba?\((\d+),\s*(\d+),\s*(\d+)/i.exec(value);
+  if (!match) return null;
+
+  const redText = match[1];
+  const greenText = match[2];
+  const blueText = match[3];
+  if (!redText || !greenText || !blueText) return null;
+
+  const r = Number.parseInt(redText, 10);
+  const g = Number.parseInt(greenText, 10);
+  const b = Number.parseInt(blueText, 10);
+  if ([r, g, b].some((item) => Number.isNaN(item))) return null;
+
+  return [r, g, b];
+};
+
+const toLuminance = ([r, g, b]: [number, number, number]): number => {
+  const normalize = (channel: number): number => {
+    const value = channel / 255;
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  };
+  const rs = normalize(r);
+  const gs = normalize(g);
+  const bs = normalize(b);
+  return (0.2126 * rs) + (0.7152 * gs) + (0.0722 * bs);
+};
+
+const contrastRatio = (foreground: [number, number, number], background: [number, number, number]): number => {
+  const fgLum = toLuminance(foreground);
+  const bgLum = toLuminance(background);
+  const lighter = Math.max(fgLum, bgLum);
+  const darker = Math.min(fgLum, bgLum);
+  return (lighter + 0.05) / (darker + 0.05);
+};
+
+// ──────────────────────────────────────────────
+// 受け入れ基準: 日本語読み上げ整合
+// ──────────────────────────────────────────────
+
+/**
+ * 必須マッピング（Ctrl/Cmd/Esc/Shift/Enter/Tab/Space）の日本語読み上げ整合を検証します。
+ */
+export const JapaneseSRConsistency: Story = {
+  render: () => html`
+    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+      <ui-kbd id="sr-ctrl" keys="Ctrl"></ui-kbd>
+      <ui-kbd id="sr-cmd" keys="⌘"></ui-kbd>
+      <ui-kbd id="sr-esc" keys="Esc"></ui-kbd>
+      <ui-kbd id="sr-shift" keys="Shift"></ui-kbd>
+      <ui-kbd id="sr-enter" keys="Enter"></ui-kbd>
+      <ui-kbd id="sr-tab" keys="Tab"></ui-kbd>
+      <ui-kbd id="sr-space" keys="Space"></ui-kbd>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const expected: readonly { id: string; label: string; useSrOnly?: boolean }[] = [
+      { id: '#sr-ctrl', label: 'コントロール' },
+      { id: '#sr-cmd', label: 'コマンド', useSrOnly: true },
+      { id: '#sr-esc', label: 'エスケープ' },
+      { id: '#sr-shift', label: 'シフト' },
+      { id: '#sr-enter', label: 'エンター' },
+      { id: '#sr-tab', label: 'タブ' },
+      { id: '#sr-space', label: 'スペース' },
+    ];
+
+    const hosts = expected.map(({ id }) => {
+      const host = canvasElement.querySelector<Kbd>(id);
+      if (!host) throw new Error(`${id} not found`);
+      return host;
+    });
+    await Promise.all(hosts.map((host) => host.updateComplete));
+
+    for (const item of expected) {
+      const host = canvasElement.querySelector<Kbd>(item.id);
+      if (!host) throw new Error(`${item.id} not found`);
+      const key = requireShadowElement(host, 'kbd.kbd-key') as HTMLElement;
+
+      if (item.useSrOnly) {
+        const srOnly = key.querySelector('.sr-only');
+        if (!srOnly || normalizeText(srOnly.textContent) !== item.label) {
+          throw new Error(`Expected SR-only label "${item.label}" for ${item.id}`);
+        }
+        continue;
+      }
+
+      if (key.getAttribute('aria-label') !== item.label) {
+        throw new Error(`Expected aria-label="${item.label}" for ${item.id}`);
+      }
+    }
+  },
+};
+
+// ──────────────────────────────────────────────
+// 受け入れ基準: ダークモード契約
+// ──────────────────────────────────────────────
+
+/**
+ * ダークトークンセットでもトークン追従と AA コントラストを維持することを検証します。
+ */
+export const DarkModeTokenContract: Story = {
+  render: () => html`
+    <div
+      id="dark-mode-surface"
+      style="
+        color-scheme: dark;
+        --fg-default: rgb(230, 232, 236);
+        --bg-surface-2: rgb(43, 48, 59);
+        --border-default: rgb(94, 103, 121);
+        --border-width: 1px;
+        --border-width-thick: 2px;
+        background: rgb(24, 28, 35);
+        color: rgb(230, 232, 236);
+        padding: 1rem;
+        border-radius: 8px;
+      "
+    >
+      <ui-kbd id="dark-mode-kbd" keys="Esc"></ui-kbd>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = canvasElement.querySelector<Kbd>('#dark-mode-kbd');
+    if (!host) throw new Error('#dark-mode-kbd not found');
+    await host.updateComplete;
+
+    const key = requireShadowElement(host, 'kbd.kbd-key') as HTMLElement;
+    const style = getComputedStyle(key);
+
+    if (style.color !== 'rgb(230, 232, 236)') {
+      throw new Error(`Expected dark token foreground, got "${style.color}"`);
+    }
+    if (style.backgroundColor !== 'rgb(43, 48, 59)') {
+      throw new Error(`Expected dark token background, got "${style.backgroundColor}"`);
+    }
+    if (style.borderTopColor !== 'rgb(94, 103, 121)') {
+      throw new Error(`Expected dark token border, got "${style.borderTopColor}"`);
+    }
+
+    const fg = parseRgb(style.color);
+    const bg = parseRgb(style.backgroundColor);
+    if (!fg || !bg) {
+      throw new Error('Failed to parse colors for contrast computation');
+    }
+
+    const ratio = contrastRatio(fg, bg);
+    if (ratio < 4.5) {
+      throw new Error(`Expected dark contrast ratio >= 4.5, got ${ratio.toFixed(2)}`);
+    }
+  },
+};
+
+// ──────────────────────────────────────────────
+// 境界条件: 空入力
+// ──────────────────────────────────────────────
+
+/**
+ * 空入力時に空のキートップを出力しないことを確認します。
+ */
+export const EmptyInputNoRenderBoundary: Story = {
+  render: () => html`
+    <div style="display: flex; gap: 0.75rem;">
+      <ui-kbd id="empty-auto"></ui-kbd>
+      <ui-kbd id="empty-combo" variant="combo"></ui-kbd>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const auto = canvasElement.querySelector<Kbd>('#empty-auto');
+    const combo = canvasElement.querySelector<Kbd>('#empty-combo');
+    if (!auto || !combo) throw new Error('Empty input hosts not found');
+    await Promise.all([auto.updateComplete, combo.updateComplete]);
+
+    const emptyAutoRendered = auto.shadowRoot?.querySelector('kbd');
+    const emptyComboRendered = combo.shadowRoot?.querySelector('kbd');
+    if (emptyAutoRendered || emptyComboRendered) {
+      throw new Error('Expected empty input to render no <kbd> nodes');
+    }
+  },
+};
+
 /**
  * `forced-colors` / `print` 契約がスタイル定義に含まれていることを確認します。
  */
@@ -465,6 +652,9 @@ export const MediaModeContracts: Story = {
     if (!styleText.includes('forced-color-adjust: auto')) {
       throw new Error('Expected forced-color-adjust: auto in forced-colors styles');
     }
+    if (!styleText.includes('border: var(--border-width, 1px) solid var(--border-default)')) {
+      throw new Error('Expected forced-colors border to keep var(--border-default) reference');
+    }
     if (!styleText.includes('@media print')) {
       throw new Error('Expected print media query in styles');
     }
@@ -473,6 +663,11 @@ export const MediaModeContracts: Story = {
     }
     if (!styleText.includes('box-shadow: none !important')) {
       throw new Error('Expected print rule to remove key box-shadow');
+    }
+    if (
+      !styleText.includes('border: var(--border-width, 1px) solid var(--border-default, oklch(85% 0.01 250))')
+    ) {
+      throw new Error('Expected print border to preserve border token reference');
     }
   },
 };

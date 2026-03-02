@@ -706,9 +706,14 @@ export const ClickToggle: Story = {
     // テスト: 初期状態は未選択
     if (checkbox.checked) throw new Error('Expected initial state to be unchecked');
 
-    // change イベントを Promise で受け取る
+    // change/input イベントを Promise で受け取る
     const changePromise = new Promise<boolean>(resolve => {
       checkbox.addEventListener('change', (e) => {
+        resolve((e.target as Checkbox).checked);
+      }, { once: true });
+    });
+    const inputPromise = new Promise<boolean>(resolve => {
+      checkbox.addEventListener('input', (e) => {
         resolve((e.target as Checkbox).checked);
       }, { once: true });
     });
@@ -725,6 +730,12 @@ export const ClickToggle: Story = {
 
     if (newChecked === null) throw new Error('change event was not fired');
     if (!newChecked) throw new Error('Expected checked to be true after click');
+    const inputChecked = await Promise.race([
+      inputPromise,
+      new Promise<null>(resolve => setTimeout(() => { resolve(null); }, 500)),
+    ]);
+    if (inputChecked === null) throw new Error('input event was not fired');
+    if (!inputChecked) throw new Error('Expected input checked=true after click');
 
     // テスト: 2回目のクリックで未選択に戻る
     const changePromise2 = new Promise<boolean>(resolve => {
@@ -743,6 +754,36 @@ export const ClickToggle: Story = {
     if (newChecked2) throw new Error('Expected checked to be false after second click');
 
     console.log('✅ All tests passed for ClickToggle story');
+  },
+};
+
+/**
+ * ラベルクリックによるトグル。
+ *
+ * ラベル領域のクリックでも状態が切り替わることを確認します。
+ */
+export const LabelClickToggle: Story = {
+  render: () => html`
+    <ui-checkbox
+      id="label-click-checkbox"
+      label="ラベルクリックでトグル"
+      name="label-click"
+    ></ui-checkbox>
+  `,
+  play: async ({ canvasElement }) => {
+    const checkbox = canvasElement.querySelector<Checkbox>('#label-click-checkbox');
+    if (!checkbox) throw new Error('ui-checkbox not found');
+    await checkbox.updateComplete;
+
+    const label = checkbox.shadowRoot?.querySelector<HTMLElement>('.label');
+    if (!label) throw new Error('Label not found');
+
+    label.click();
+    await checkbox.updateComplete;
+
+    if (!checkbox.checked) throw new Error('Expected checked=true after label click');
+
+    console.log('✅ All tests passed for LabelClickToggle story');
   },
 };
 
@@ -1018,8 +1059,88 @@ export const NoLabel: Story = {
     // テスト: コントロールは存在する
     const control = checkbox.shadowRoot?.querySelector('.control');
     if (!control) throw new Error('Control should exist even without label');
+    if (control.getAttribute('aria-label') !== 'ラベルなしチェックボックス') {
+      throw new Error('Expected aria-label to be forwarded to control');
+    }
 
     console.log('✅ All tests passed for NoLabel story');
+  },
+};
+
+/**
+ * ダークテーマでの表示確認。
+ *
+ * トークンを切り替えた高コントラスト背景で、状態が視認できることを確認します。
+ */
+export const DarkThemeStates: Story = {
+  render: () => html`
+    <div
+      style="
+        padding: 1rem;
+        background: oklch(20% 0.01 250);
+        color: oklch(96% 0 0);
+        border-radius: 8px;
+        --bg-fill-muted: oklch(30% 0.01 250);
+        --bg-default: oklch(18% 0.01 250);
+        --fg-default: oklch(96% 0 0);
+        --border-muted: oklch(62% 0.01 250 / 0.7);
+      "
+    >
+      <div style="display:flex; flex-direction:column; gap:0.5rem;">
+        <ui-checkbox id="dark-unchecked" label="未選択" name="dark-1"></ui-checkbox>
+        <ui-checkbox id="dark-checked" label="選択済み" name="dark-2" checked></ui-checkbox>
+      </div>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const unchecked = canvasElement.querySelector<Checkbox>('#dark-unchecked');
+    const checked = canvasElement.querySelector<Checkbox>('#dark-checked');
+    if (!unchecked || !checked) throw new Error('Dark theme checkboxes not found');
+    await Promise.all([unchecked.updateComplete, checked.updateComplete]);
+
+    const checkedControl = checked.shadowRoot?.querySelector('.control');
+    if (!checkedControl) throw new Error('Checked control not found');
+    if (checkedControl.getAttribute('aria-checked') !== 'true') {
+      throw new Error('Expected checked control to expose aria-checked="true"');
+    }
+
+    console.log('✅ All tests passed for DarkThemeStates story');
+  },
+};
+
+/**
+ * Forced Colors想定スタイルの確認。
+ *
+ * 実ブラウザのforced-colorsとは別に、システムカラー値で見た目崩れがないことを確認します。
+ */
+export const ForcedColorsSimulation: Story = {
+  render: () => html`
+    <div
+      style="
+        padding: 1rem;
+        border: 1px solid CanvasText;
+        color: CanvasText;
+        background: Canvas;
+        --primary: Highlight;
+        --on-primary: HighlightText;
+        --focus-ring-color: CanvasText;
+      "
+    >
+      <ui-checkbox id="forced-colors-checked" label="強制カラー想定" name="fc-1" checked></ui-checkbox>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const checkbox = canvasElement.querySelector<Checkbox>('#forced-colors-checked');
+    if (!checkbox) throw new Error('Forced colors checkbox not found');
+    await checkbox.updateComplete;
+
+    const control = checkbox.shadowRoot?.querySelector('.control');
+    if (!control) throw new Error('Control not found');
+    if (control.getAttribute('aria-checked') !== 'true') {
+      throw new Error('Expected checked state in forced-colors simulation');
+    }
+
+    console.log('✅ All tests passed for ForcedColorsSimulation story');
   },
 };
 
@@ -1283,7 +1404,9 @@ export const SelectAllPattern: Story = {
         name="select-all"
         @change="${(e: Event) => {
       const parent = e.target as Checkbox;
-      const children = document.querySelectorAll<Checkbox>('.child-checkbox');
+      const root = parent.closest('.select-all-demo');
+      if (!root) return;
+      const children = root.querySelectorAll<Checkbox>('.child-checkbox');
       children.forEach(child => {
         child.checked = parent.checked;
       });
@@ -1317,9 +1440,12 @@ export const SelectAllPattern: Story = {
 };
 
 // ── ヘルパー関数（Select All パターン用） ──
-function updateParent(): void {
-  const parent = document.querySelector<Checkbox>('#select-all');
-  const children = document.querySelectorAll<Checkbox>('.child-checkbox');
+function updateParent(e: Event): void {
+  const target = e.currentTarget as Checkbox | null;
+  const root = target?.closest('.select-all-demo');
+  if (!root) return;
+  const parent = root.querySelector<Checkbox>('#select-all');
+  const children = root.querySelectorAll<Checkbox>('.child-checkbox');
   if (!parent) return;
 
   const checkedCount = [...children].filter(c => c.checked).length;

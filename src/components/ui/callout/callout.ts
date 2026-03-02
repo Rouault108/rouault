@@ -87,9 +87,12 @@ export class Callout extends LitElement {
 
     .icon {
       flex-shrink: 0;
+      display: flex;
+      align-items: center;
       width: var(--icon-base, 16px);
-      height: var(--icon-base, 16px);
-      margin-top: calc((1em * var(--line-height-relaxed, 1.75) - var(--icon-base, 16px)) / 2);
+      /* テキスト1行分の行高さに合わせることでアイコンを1行目に垂直中央配置する */
+      height: calc(1em * var(--line-height-relaxed, 1.75));
+      stroke-width: 1.5;
       color: var(--ui-callout-accent-color, var(--fg-muted));
     }
 
@@ -151,11 +154,11 @@ export class Callout extends LitElement {
   private get _resolvedHeadingLevel(): number | null {
     if (this._resolvedTitle.length === 0) return null;
     if (typeof this.headingLevel !== 'number' || !Number.isFinite(this.headingLevel)) return null;
+    if (!Number.isInteger(this.headingLevel)) return null;
 
-    const normalized = Math.trunc(this.headingLevel);
-    if (normalized < 1 || normalized > 6) return null;
+    if (this.headingLevel < 1 || this.headingLevel > 6) return null;
 
-    return normalized;
+    return this.headingLevel;
   }
 
   private get _resolvedIcon(): string {
@@ -170,15 +173,15 @@ export class Callout extends LitElement {
     const hasTitle = title.length > 0;
     const headingLevel = this._resolvedHeadingLevel;
     const explicitLabel = this.getAttribute('aria-label')?.trim();
+    const labelFallback =
+      explicitLabel && explicitLabel.length > 0 ? explicitLabel : VARIANT_CONFIG[this._resolvedVariant].fallbackLabel;
 
     return html`
       <aside
         class="callout"
         data-variant="${this._resolvedVariant}"
         aria-labelledby="${ifDefined(hasTitle ? this._titleId : undefined)}"
-        aria-label="${ifDefined(
-          hasTitle ? undefined : (explicitLabel ?? VARIANT_CONFIG[this._resolvedVariant].fallbackLabel),
-        )}"
+        aria-label="${ifDefined(hasTitle ? undefined : labelFallback)}"
       >
         <iconify-icon class="icon" icon="${this._resolvedIcon}" aria-hidden="true"></iconify-icon>
 

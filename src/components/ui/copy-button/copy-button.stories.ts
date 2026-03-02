@@ -110,6 +110,40 @@ const meta: Meta<CopyButton> = {
 export default meta;
 type Story = StoryObj<CopyButton>;
 
+const sleep = async (ms: number): Promise<void> =>
+  new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+
+const getCopyButton = (canvasElement: Element, selector = 'ui-copy-button'): CopyButton => {
+  const button = canvasElement.querySelector<CopyButton>(selector);
+  if (!button) {
+    throw new Error('Copy button component not found');
+  }
+  return button;
+};
+
+const getInnerUiButton = (copyButton: CopyButton): HTMLElement => {
+  const uiButton = copyButton.shadowRoot?.querySelector<HTMLElement>('ui-button');
+  if (!uiButton) {
+    throw new Error('UI button not found in shadow root');
+  }
+  return uiButton;
+};
+
+const withMockedClipboardWrite = async (
+  mock: (value: string) => Promise<void>,
+  callback: () => Promise<void>,
+): Promise<void> => {
+  const originalWriteText = navigator.clipboard.writeText.bind(navigator.clipboard);
+  navigator.clipboard.writeText = mock;
+  try {
+    await callback();
+  } finally {
+    navigator.clipboard.writeText = originalWriteText;
+  }
+};
+
 /**
  * デフォルトのコピーボタン。
  * 
@@ -422,8 +456,8 @@ export const MultipleButtons: Story = {
  */
 export const DarkMode: Story = {
   args: {
-    value: 'ダークモードテスト',
-    label: 'コピー',
+    value: 'dark-success',
+    label: 'ダークモードコピー',
     size: 'sm',
   },
   render: (args) => html`
@@ -432,6 +466,9 @@ export const DarkMode: Story = {
         background: oklch(12% 0.01 250);
         padding: 2rem;
         border-radius: var(--radius-md, 6px);
+        display: flex;
+        gap: 1rem;
+        align-items: center;
       }
 
       .dark-demo ui-copy-button {
@@ -446,12 +483,40 @@ export const DarkMode: Story = {
 
     <div class="dark-demo">
       <ui-copy-button
+        id="dark-success"
         value="${args.value}"
         label="${args.label}"
         size="${args.size}"
       ></ui-copy-button>
+      <ui-copy-button
+        id="dark-error"
+        value="dark-error"
+        label="ダークモードエラー"
+        size="${args.size}"
+      ></ui-copy-button>
     </div>
   `,
+  play: async ({ canvasElement }) => {
+    const successButton = getCopyButton(canvasElement, '#dark-success');
+    const errorButton = getCopyButton(canvasElement, '#dark-error');
+    await withMockedClipboardWrite(async (value: string) => {
+      if (value === 'dark-error') {
+        throw new Error('forced dark mode error');
+      }
+      return Promise.resolve();
+    }, async () => {
+      await userEvent.click(getInnerUiButton(successButton));
+      await userEvent.click(getInnerUiButton(errorButton));
+      await sleep(100);
+    });
+
+    if (successButton.getAttribute('state') !== 'success') {
+      throw new Error('Expected dark mode success button to be success state');
+    }
+    if (errorButton.getAttribute('state') !== 'error') {
+      throw new Error('Expected dark mode error button to be error state');
+    }
+  },
   parameters: {
     backgrounds: { disable: true },
   },
@@ -465,8 +530,8 @@ export const DarkMode: Story = {
  */
 export const ForcedColorsMode: Story = {
   args: {
-    value: 'ハイコントラストモードテスト',
-    label: 'コピー',
+    value: 'forced-success',
+    label: 'ハイコントラストコピー',
     size: 'sm',
   },
   render: (args) => html`
@@ -475,6 +540,11 @@ export const ForcedColorsMode: Story = {
         padding: 1rem;
         background: Canvas;
         color: CanvasText;
+      }
+
+      .forced-colors-actions {
+        display: flex;
+        gap: 0.75rem;
       }
 
       .forced-colors-demo ui-copy-button {
@@ -497,13 +567,43 @@ export const ForcedColorsMode: Story = {
         Windows のハイコントラストモードで実際の動作を確認できます。
       </div>
 
-      <ui-copy-button
-        value="${args.value}"
-        label="${args.label}"
-        size="${args.size}"
-      ></ui-copy-button>
+      <div class="forced-colors-actions">
+        <ui-copy-button
+          id="forced-success"
+          value="${args.value}"
+          label="${args.label}"
+          size="${args.size}"
+        ></ui-copy-button>
+        <ui-copy-button
+          id="forced-error"
+          value="forced-error"
+          label="ハイコントラストエラー"
+          size="${args.size}"
+        ></ui-copy-button>
+      </div>
     </div>
   `,
+  play: async ({ canvasElement }) => {
+    const successButton = getCopyButton(canvasElement, '#forced-success');
+    const errorButton = getCopyButton(canvasElement, '#forced-error');
+    await withMockedClipboardWrite(async (value: string) => {
+      if (value === 'forced-error') {
+        throw new Error('forced high contrast error');
+      }
+      return Promise.resolve();
+    }, async () => {
+      await userEvent.click(getInnerUiButton(successButton));
+      await userEvent.click(getInnerUiButton(errorButton));
+      await sleep(100);
+    });
+
+    if (successButton.getAttribute('state') !== 'success') {
+      throw new Error('Expected forced-colors success button to be success state');
+    }
+    if (errorButton.getAttribute('state') !== 'error') {
+      throw new Error('Expected forced-colors error button to be error state');
+    }
+  },
   parameters: {
     backgrounds: { disable: true },
   },
@@ -516,6 +616,7 @@ export const ForcedColorsMode: Story = {
  * このストーリーは意図的にアクセシビリティ違反を示すためのものです。
  */
 export const MissingLabel: Story = {
+  tags: ['!autodocs'],
   render: () => html`
     <style>
       .missing-label-demo {
@@ -543,16 +644,18 @@ export const MissingLabel: Story = {
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const button = canvasElement.querySelector('ui-copy-button');
-    if (!button) {
-      throw new Error('Copy button component not found');
-    }
-
+    const button = getCopyButton(canvasElement);
     await button.updateComplete;
 
     // テスト: label がないことを確認（これは意図的なエラー例）
     if (button.label) {
       console.warn('This story is designed to show the missing label error');
+    }
+
+    // テスト: 本番アクセシビリティ崩壊を防ぐため、aria-label は安全な既定値へフォールバック
+    const uiButton = getInnerUiButton(button);
+    if (uiButton.getAttribute('aria-label') !== 'コピー') {
+      throw new Error('Expected fallback aria-label to be "コピー"');
     }
 
     console.log('⚠️ This story demonstrates a missing label error');
@@ -661,49 +764,58 @@ export const TestSuccessState: Story = {
     ></ui-copy-button>
   `,
   play: async ({ canvasElement }) => {
-    const button = canvasElement.querySelector('ui-copy-button');
-    if (!button) {
-      throw new Error('Copy button component not found');
-    }
-
+    const button = getCopyButton(canvasElement);
     await button.updateComplete;
+    const uiButton = getInnerUiButton(button);
 
-    const uiButton = button.shadowRoot?.querySelector('ui-button');
-    if (!uiButton) {
-      throw new Error('UI button not found in shadow root');
-    }
+    let copyEventCount = 0;
+    let copiedValue = '';
+    button.addEventListener('copy', (event: Event) => {
+      const customEvent = event as CustomEvent<{ value: string }>;
+      copyEventCount += 1;
+      copiedValue = customEvent.detail.value;
+    });
 
-    // Clipboard API をモック（成功を保証）
-    const originalWriteText = navigator.clipboard.writeText.bind(navigator.clipboard);
-    navigator.clipboard.writeText = async () => {
-      return Promise.resolve();
-    };
-
-    try {
-      // ボタンをクリック
+    await withMockedClipboardWrite(async () => Promise.resolve(), async () => {
       await userEvent.click(uiButton);
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await sleep(100);
+    });
 
-      // テスト: 成功状態になっていること
-      if (button.getAttribute('state') !== 'success') {
-        throw new Error('Expected state to be "success"');
-      }
-
-      // テスト: アイコンが Check に変わっていること
-      const icon = button.shadowRoot?.querySelector('iconify-icon');
-      if (!icon) {
-        throw new Error('Icon not found');
-      }
-
-      if (icon.getAttribute('icon') !== 'lucide:check') {
-        throw new Error('Expected icon to be "lucide:check"');
-      }
-
-      console.log('✅ All tests passed for TestSuccessState story');
-    } finally {
-      // モックを元に戻す
-      navigator.clipboard.writeText = originalWriteText;
+    if (button.getAttribute('state') !== 'success') {
+      throw new Error('Expected state to be "success"');
     }
+
+    const icon = button.shadowRoot?.querySelector('iconify-icon');
+    if (!icon) {
+      throw new Error('Icon not found');
+    }
+    if (icon.getAttribute('icon') !== 'lucide:check') {
+      throw new Error('Expected icon to be "lucide:check"');
+    }
+
+    if (!uiButton.getAttribute('aria-label')?.includes('コピーしました')) {
+      throw new Error('Expected aria-label to include success message');
+    }
+
+    const liveRegion = button.shadowRoot?.querySelector('.sr-only');
+    if (!liveRegion) {
+      throw new Error('Live region not found');
+    }
+    if (liveRegion.getAttribute('role') !== 'status') {
+      throw new Error('Expected live region role to be "status"');
+    }
+    if (liveRegion.getAttribute('aria-live') !== 'polite') {
+      throw new Error('Expected live region aria-live to be "polite"');
+    }
+    if (!liveRegion.textContent.includes('コピーしました')) {
+      throw new Error('Expected live region text to announce success');
+    }
+
+    if (copyEventCount !== 1 || copiedValue !== button.value) {
+      throw new Error('Expected one copy event with copied value');
+    }
+
+    console.log('✅ All tests passed for TestSuccessState story');
   },
 };
 
@@ -732,6 +844,81 @@ export const SizeVariants: Story = {
 };
 
 /**
+ * サイズ × 状態の組み合わせ。
+ *
+ * sm / md の両サイズで Success / Error の状態遷移を同時に確認します。
+ */
+export const SizeStateMatrix: Story = {
+  render: () => html`
+    <style>
+      .size-state-matrix {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(180px, 1fr));
+        gap: 1rem;
+        padding: 1rem;
+        background: var(--bg-surface-2, #f5f5f5);
+        border-radius: var(--radius-md, 6px);
+      }
+
+      .size-state-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem;
+        background: var(--bg-default, #fff);
+        border: 1px solid var(--border-default, #e0e0e0);
+        border-radius: var(--radius-sm, 4px);
+        font-size: 12px;
+      }
+    </style>
+    <div class="size-state-matrix">
+      <div class="size-state-item">
+        <span>sm / success</span>
+        <ui-copy-button id="matrix-sm-success" value="sm-success" label="sm成功" size="sm"></ui-copy-button>
+      </div>
+      <div class="size-state-item">
+        <span>sm / error</span>
+        <ui-copy-button id="matrix-sm-error" value="sm-error" label="sm失敗" size="sm"></ui-copy-button>
+      </div>
+      <div class="size-state-item">
+        <span>md / success</span>
+        <ui-copy-button id="matrix-md-success" value="md-success" label="md成功" size="md"></ui-copy-button>
+      </div>
+      <div class="size-state-item">
+        <span>md / error</span>
+        <ui-copy-button id="matrix-md-error" value="md-error" label="md失敗" size="md"></ui-copy-button>
+      </div>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const smSuccess = getCopyButton(canvasElement, '#matrix-sm-success');
+    const smError = getCopyButton(canvasElement, '#matrix-sm-error');
+    const mdSuccess = getCopyButton(canvasElement, '#matrix-md-success');
+    const mdError = getCopyButton(canvasElement, '#matrix-md-error');
+
+    await withMockedClipboardWrite(async (value: string) => {
+      if (value.includes('error')) {
+        throw new Error('forced error');
+      }
+      return Promise.resolve();
+    }, async () => {
+      await userEvent.click(getInnerUiButton(smSuccess));
+      await userEvent.click(getInnerUiButton(smError));
+      await userEvent.click(getInnerUiButton(mdSuccess));
+      await userEvent.click(getInnerUiButton(mdError));
+      await sleep(100);
+    });
+
+    if (smSuccess.getAttribute('state') !== 'success' || mdSuccess.getAttribute('state') !== 'success') {
+      throw new Error('Expected success buttons in matrix to become success state');
+    }
+    if (smError.getAttribute('state') !== 'error' || mdError.getAttribute('state') !== 'error') {
+      throw new Error('Expected error buttons in matrix to become error state');
+    }
+  },
+};
+
+/**
  * 🧪 自動テスト用ストーリー（エラー状態）
  *
  * Clipboard API 失敗時の state / icon / live region 切り替えを検証します。
@@ -751,53 +938,59 @@ export const TestErrorState: Story = {
     ></ui-copy-button>
   `,
   play: async ({ canvasElement }) => {
-    const button = canvasElement.querySelector('ui-copy-button');
-    if (!button) {
-      throw new Error('Copy button component not found');
-    }
-
+    const button = getCopyButton(canvasElement);
     await button.updateComplete;
+    const uiButton = getInnerUiButton(button);
 
-    const uiButton = button.shadowRoot?.querySelector('ui-button');
-    if (!uiButton) {
-      throw new Error('UI button not found in shadow root');
+    let copyErrorEventCount = 0;
+    let failedValue = '';
+    button.addEventListener('copy-error', (event: Event) => {
+      const customEvent = event as CustomEvent<{ error: unknown; value: string }>;
+      copyErrorEventCount += 1;
+      failedValue = customEvent.detail.value;
+    });
+
+    await withMockedClipboardWrite(async () => Promise.reject(new Error('Clipboard write failed')), async () => {
+      await userEvent.click(uiButton);
+      await sleep(100);
+    });
+
+    if (button.getAttribute('state') !== 'error') {
+      throw new Error('Expected state to be "error"');
     }
 
-    // Clipboard API をモック（失敗を保証）
-    const originalWriteText = navigator.clipboard.writeText.bind(navigator.clipboard);
-    navigator.clipboard.writeText = () => Promise.reject(new Error('Clipboard write failed'));
+    const icon = button.shadowRoot?.querySelector('iconify-icon');
+    if (!icon) {
+      throw new Error('Icon not found');
+    }
 
-    try {
-      await userEvent.click(uiButton);
-      await new Promise((resolve) => setTimeout(resolve, 100));
+    if (icon.getAttribute('icon') !== 'lucide:alert-triangle') {
+      throw new Error('Expected icon to be "lucide:alert-triangle"');
+    }
 
-      if (button.getAttribute('state') !== 'error') {
-        throw new Error('Expected state to be "error"');
-      }
+    if (!uiButton.getAttribute('aria-label')?.includes('コピー失敗')) {
+      throw new Error('Expected aria-label to include error message');
+    }
 
-      const icon = button.shadowRoot?.querySelector('iconify-icon');
-      if (!icon) {
-        throw new Error('Icon not found');
-      }
+    const liveRegion = button.shadowRoot?.querySelector('.sr-only');
+    if (!liveRegion) {
+      throw new Error('Live region not found');
+    }
 
-      if (icon.getAttribute('icon') !== 'lucide:alert-triangle') {
-        throw new Error('Expected icon to be "lucide:alert-triangle"');
-      }
+    if (liveRegion.getAttribute('role') !== 'alert') {
+      throw new Error('Expected live region role to be "alert"');
+    }
 
-      const liveRegion = button.shadowRoot?.querySelector('.sr-only');
-      if (!liveRegion) {
-        throw new Error('Live region not found');
-      }
+    if (liveRegion.getAttribute('aria-live') !== 'assertive') {
+      throw new Error('Expected live region aria-live to be "assertive"');
+    }
 
-      if (liveRegion.getAttribute('role') !== 'alert') {
-        throw new Error('Expected live region role to be "alert"');
-      }
+    if (!liveRegion.textContent.includes('コピー失敗')) {
+      throw new Error('Expected live region text to announce error');
+    }
 
-      if (liveRegion.getAttribute('aria-live') !== 'assertive') {
-        throw new Error('Expected live region aria-live to be "assertive"');
-      }
-    } finally {
-      navigator.clipboard.writeText = originalWriteText;
+    if (copyErrorEventCount !== 1 || failedValue !== button.value) {
+      throw new Error('Expected one copy-error event with failed value');
     }
   },
 };
@@ -822,35 +1015,33 @@ export const TestStateTimerReset: Story = {
       throw new Error('Copy button components not found');
     }
 
-    const successUiButton = successButton.shadowRoot?.querySelector('ui-button');
-    const errorUiButton = errorButton.shadowRoot?.querySelector('ui-button');
-    if (!successUiButton || !errorUiButton) {
-      throw new Error('UI button not found in shadow root');
-    }
+    const successUiButton = getInnerUiButton(successButton);
+    const errorUiButton = getInnerUiButton(errorButton);
 
-    const originalWriteText = navigator.clipboard.writeText.bind(navigator.clipboard);
-    navigator.clipboard.writeText = async (value: string) => {
+    await withMockedClipboardWrite(async (value: string) => {
       if (value === 'error') {
         throw new Error('forced error');
       }
       return Promise.resolve();
-    };
-
-    try {
+    }, async () => {
       await userEvent.click(successUiButton);
-      await new Promise((resolve) => setTimeout(resolve, 2100));
+      await sleep(2100);
       if (successButton.getAttribute('state') !== 'idle') {
         throw new Error('Expected success state to reset to idle after 2000ms');
       }
+      if (successUiButton.getAttribute('aria-label') !== '成功テスト') {
+        throw new Error('Expected success button aria-label to reset to base label');
+      }
 
       await userEvent.click(errorUiButton);
-      await new Promise((resolve) => setTimeout(resolve, 3100));
+      await sleep(3100);
       if (errorButton.getAttribute('state') !== 'idle') {
         throw new Error('Expected error state to reset to idle after 3000ms');
       }
-    } finally {
-      navigator.clipboard.writeText = originalWriteText;
-    }
+      if (errorUiButton.getAttribute('aria-label') !== '失敗テスト') {
+        throw new Error('Expected error button aria-label to reset to base label');
+      }
+    });
   },
 };
 
@@ -874,26 +1065,20 @@ export const TestRapidClicksReplay: Story = {
     ></ui-copy-button>
   `,
   play: async ({ canvasElement }) => {
-    const button = canvasElement.querySelector('ui-copy-button');
-    if (!button) {
-      throw new Error('Copy button component not found');
-    }
+    const button = getCopyButton(canvasElement);
+    const uiButton = getInnerUiButton(button);
+    let copyEventCount = 0;
+    button.addEventListener('copy', () => {
+      copyEventCount += 1;
+    });
 
-    const uiButton = button.shadowRoot?.querySelector('ui-button');
-    if (!uiButton) {
-      throw new Error('UI button not found in shadow root');
-    }
-
-    const originalWriteText = navigator.clipboard.writeText.bind(navigator.clipboard);
-    navigator.clipboard.writeText = async () => Promise.resolve();
-
-    try {
+    await withMockedClipboardWrite(async () => Promise.resolve(), async () => {
       await userEvent.click(uiButton);
-      await new Promise((resolve) => setTimeout(resolve, 80));
+      await sleep(80);
       const firstLabel = uiButton.getAttribute('aria-label');
 
       await userEvent.click(uiButton);
-      await new Promise((resolve) => setTimeout(resolve, 80));
+      await sleep(80);
       const secondLabel = uiButton.getAttribute('aria-label');
 
       if (button.getAttribute('state') !== 'success') {
@@ -903,8 +1088,59 @@ export const TestRapidClicksReplay: Story = {
       if (!firstLabel?.includes('コピーしました') || !secondLabel?.includes('コピーしました')) {
         throw new Error('Expected aria-label to be updated to success label for repeated clicks');
       }
-    } finally {
-      navigator.clipboard.writeText = originalWriteText;
+
+      if (copyEventCount !== 2) {
+        throw new Error('Expected two copy events after rapid double click');
+      }
+    });
+  },
+};
+
+/**
+ * 自動テスト用ストーリー（遅延時ローディング表示）
+ *
+ * 非同期処理が --timeout-async-threshold を超えた場合のみ「コピー中」を表示する仕様を検証します。
+ */
+export const TestLoadingIndicatorThreshold: Story = {
+  tags: ['!autodocs'],
+  args: {
+    value: 'loading-threshold',
+    label: 'コピー',
+    size: 'sm',
+  },
+  render: (args) => html`
+    <ui-copy-button
+      value="${args.value}"
+      label="${args.label}"
+      size="${args.size}"
+      style="--timeout-async-threshold: 10;"
+    ></ui-copy-button>
+  `,
+  play: async ({ canvasElement }) => {
+    const button = getCopyButton(canvasElement);
+    const uiButton = getInnerUiButton(button);
+
+    await withMockedClipboardWrite(async () => {
+      await sleep(80);
+      return Promise.resolve();
+    }, async () => {
+      await userEvent.click(uiButton);
+      await sleep(25);
+
+      const loadingIcon = button.shadowRoot?.querySelector('iconify-icon');
+      if (loadingIcon?.getAttribute('icon') !== 'lucide:loader-circle') {
+        throw new Error('Expected loading icon to be visible during delayed copy');
+      }
+
+      if (!uiButton.getAttribute('aria-label')?.includes('コピー中')) {
+        throw new Error('Expected aria-label to include loading message');
+      }
+
+      await sleep(100);
+    });
+
+    if (button.getAttribute('state') !== 'success') {
+      throw new Error('Expected delayed copy to end in success state');
     }
   },
 };

@@ -2,6 +2,13 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './translation';
 import { DOCUMENT_STYLE_ID, MAX_TRIGGER_TEXT_LENGTH, type TranslationRenderMode } from './translation';
+import {
+  DEFAULT_TRANSLATION_MOBILE_BREAKPOINT,
+  TRANSLATION_MODE_STORAGE_KEY,
+  TranslationOrchestrator,
+  resolveTranslationRenderMode,
+  type TranslationIntentMode,
+} from './translation-orchestrator';
 import type { UiTranslation } from './translation';
 
 interface MatrixCase {
@@ -45,6 +52,35 @@ const getContent = (host: UiTranslation): HTMLElement => {
 };
 
 const normalize = (value: string | null | undefined): string => (value ?? '').replace(/\s+/g, ' ').trim();
+
+const createMemoryStorage = (
+  initialEntries: Record<string, string> = {},
+): Pick<Storage, 'getItem' | 'setItem'> => {
+  const store = new Map<string, string>(Object.entries(initialEntries));
+  return {
+    getItem: (key: string): string | null => store.get(key) ?? null,
+    setItem: (key: string, value: string): void => {
+      store.set(key, value);
+    },
+  };
+};
+
+// MediaQueryList モックのスタブ用 noop（イベントリスナーは不要なため空実装）
+const noop = (): void => {
+  /* 意図的な空実装 */
+};
+
+const createMediaQueryListMock = (query: string, matches: boolean): MediaQueryList =>
+  ({
+    media: query,
+    matches,
+    onchange: null,
+    addListener: noop,
+    removeListener: noop,
+    addEventListener: noop,
+    removeEventListener: noop,
+    dispatchEvent: (): boolean => true,
+  }) as unknown as MediaQueryList;
 
 const meta: Meta<UiTranslation> = {
   title: 'Components/Translation',
@@ -427,6 +463,374 @@ export const BoundaryConditions: Story = {
     }
     if (!styleText.includes('box-decoration-break')) {
       throw new Error('multiline underline 契約（box-decoration-break）が含まれていません');
+    }
+  },
+};
+
+/**
+ * 上位オーケストレータ契約:
+ * - intent-mode (lookup/parallel) の localStorage 永続化
+ * - デバイス条件（desktop/mobile + study mode）で render-mode 自動解決
+ * - キーボードショートカット配布（Ctrl/Cmd+Shift+L, P）
+ */
+export const OrchestratorContract: Story = {
+  render: () => html`
+    <div id="translation-orchestrator-root" style="display: grid; gap: 0.75rem;">
+      <ui-translation
+        id="orchestrator-item-1"
+        original="Je pense."
+        translated="私は考える。"
+        lang="fr"
+        target-lang="ja"
+      ></ui-translation>
+      <ui-translation
+        id="orchestrator-item-2"
+        original="Et donc."
+        translated="そして、ゆえに。"
+        lang="fr"
+        target-lang="ja"
+      ></ui-translation>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const storage = createMemoryStorage({
+      [TRANSLATION_MODE_STORAGE_KEY]: 'parallel',
+    });
+    const modeChanges: { intentMode: TranslationIntentMode; renderMode: TranslationRenderMode }[] = [];
+
+    const orchestrator = new TranslationOrchestrator({
+      root: canvasElement,
+      keyTarget: document,
+      storage,
+      studyMode: false,
+      isMobileViewport: () => false,
+      mobileBreakpoint: DEFAULT_TRANSLATION_MOBILE_BREAKPOINT,
+    });
+
+    const onModeChange = (event: Event): void => {
+      const customEvent = event as CustomEvent<{
+        intentMode: TranslationIntentMode;
+        renderMode: TranslationRenderMode;
+      }>;
+      modeChanges.push(customEvent.detail);
+    };
+
+    canvasElement.addEventListener('translation-mode-change', onModeChange as EventListener);
+    orchestrator.start();
+
+    try {
+      const host1 = getHost(canvasElement, 'orchestrator-item-1');
+      const host2 = getHost(canvasElement, 'orchestrator-item-2');
+      await Promise.all([host1.updateComplete, host2.updateComplete]);
+
+      if (host1.renderMode !== 'drawer' || host2.renderMode !== 'drawer') {
+        throw new Error('localStorage=parallel の初期値で drawer が配布されていません');
+      }
+
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'L',
+          ctrlKey: true,
+          shiftKey: true,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      await Promise.all([host1.updateComplete, host2.updateComplete]);
+
+      const lookupHost1 = getHost(canvasElement, 'orchestrator-item-1');
+      const lookupHost2 = getHost(canvasElement, 'orchestrator-item-2');
+      await Promise.all([lookupHost1.updateComplete, lookupHost2.updateComplete]);
+
+      if (lookupHost1.renderMode !== 'popover' || lookupHost2.renderMode !== 'popover') {
+        throw new Error('Ctrl+Shift+L で lookup(popover) へ戻る必要があります');
+      }
+      if (storage.getItem(TRANSLATION_MODE_STORAGE_KEY) !== 'lookup') {
+        throw new Error('intent-mode の永続化キーが lookup に更新されていません');
+      }
+
+      const trigger = getTrigger(lookupHost1);
+      trigger.click();
+      await lookupHost1.updateComplete;
+      if (!lookupHost1.open) {
+        throw new Error('P ショートカット検証前に trigger クリックで open=true になる必要があります');
+      }
+
+      trigger.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'p',
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      await Promise.all([lookupHost1.updateComplete, lookupHost2.updateComplete]);
+
+      const parallelHost1 = getHost(canvasElement, 'orchestrator-item-1');
+      const parallelHost2 = getHost(canvasElement, 'orchestrator-item-2');
+      await Promise.all([parallelHost1.updateComplete, parallelHost2.updateComplete]);
+
+      if (parallelHost1.renderMode !== 'drawer' || parallelHost2.renderMode !== 'drawer') {
+        throw new Error('P ショートカットで parallel(drawer) に切り替わる必要があります');
+      }
+      if (storage.getItem(TRANSLATION_MODE_STORAGE_KEY) !== 'parallel') {
+        throw new Error('P ショートカット時に localStorage が parallel へ更新されていません');
+      }
+
+      const mappingChecks: {
+        intentMode: TranslationIntentMode;
+        isMobile: boolean;
+        studyMode: boolean;
+        expected: TranslationRenderMode;
+      }[] = [
+        { intentMode: 'lookup', isMobile: false, studyMode: false, expected: 'popover' },
+        { intentMode: 'parallel', isMobile: false, studyMode: false, expected: 'drawer' },
+        { intentMode: 'lookup', isMobile: true, studyMode: false, expected: 'popover' },
+        { intentMode: 'parallel', isMobile: true, studyMode: false, expected: 'popover' },
+        { intentMode: 'parallel', isMobile: true, studyMode: true, expected: 'interlinear' },
+      ];
+
+      for (const check of mappingChecks) {
+        const actual = resolveTranslationRenderMode({
+          intentMode: check.intentMode,
+          isMobile: check.isMobile,
+          studyMode: check.studyMode,
+        });
+        if (actual !== check.expected) {
+          throw new Error(
+            `render-mode 解決が不正です: mode=${check.intentMode}, mobile=${String(check.isMobile)}, study=${String(check.studyMode)}`,
+          );
+        }
+      }
+
+      if (modeChanges.length < 2) {
+        throw new Error('translation-mode-change イベントが期待回数発火していません');
+      }
+    } finally {
+      orchestrator.destroy();
+      canvasElement.removeEventListener('translation-mode-change', onModeChange as EventListener);
+    }
+  },
+};
+
+/**
+ * Dark Mode契約:
+ * - prefers-color-scheme 分岐をコンポーネント内に直接書かない
+ * - Elevated Content に上端ハイライトを含む
+ */
+export const DarkModeContract: Story = {
+  render: () => html`
+    <ui-translation
+      id="translation-dark-contract"
+      original="Je lis."
+      translated="私は読む。"
+      lang="fr"
+      target-lang="ja"
+      render-mode="popover"
+      open
+    ></ui-translation>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'translation-dark-contract');
+    await host.updateComplete;
+
+    const content = getContent(host);
+    const styleTag = document.querySelector<HTMLStyleElement>(`#${DOCUMENT_STYLE_ID}`);
+    if (!styleTag?.textContent) {
+      throw new Error('translation の style が見つかりません');
+    }
+
+    const cssText = styleTag.textContent;
+    if (cssText.includes('prefers-color-scheme')) {
+      throw new Error('translation は prefers-color-scheme 直接分岐ではなくトークン参照でモード追従する必要があります');
+    }
+    if (!cssText.includes('inset 0 1px 0 0')) {
+      throw new Error('Popover/Drawer の上端ハイライト契約が不足しています');
+    }
+
+    const shadow = getComputedStyle(content).boxShadow;
+    if (!shadow.includes('inset')) {
+      throw new Error('content の box-shadow に inset highlight が反映されていません');
+    }
+  },
+};
+
+/**
+ * Mobile Lookup契約:
+ * - popover は Bottom Sheet 表示
+ * - Scrim タップで閉じる
+ * - 下方向スワイプで閉じる
+ */
+export const MobileLookupBottomSheet: Story = {
+  render: () => html`
+    <ui-translation
+      id="translation-mobile-lookup"
+      original="Je touche."
+      translated="私はタップする。"
+      lang="fr"
+      target-lang="ja"
+      render-mode="popover"
+    ></ui-translation>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'translation-mobile-lookup');
+    await host.updateComplete;
+
+    const originalMatchMedia = window.matchMedia.bind(window);
+    window.matchMedia = ((query: string): MediaQueryList => {
+      if (query.includes(`max-width: ${String(DEFAULT_TRANSLATION_MOBILE_BREAKPOINT - 1)}px`)) {
+        return createMediaQueryListMock(query, true);
+      }
+      return originalMatchMedia(query);
+    }) as typeof window.matchMedia;
+
+    try {
+      const trigger = getTrigger(host);
+      trigger.click();
+      await host.updateComplete;
+
+      const openedHost = getHost(canvasElement, 'translation-mobile-lookup');
+      const content = getContent(openedHost);
+      const scrim = openedHost.querySelector<HTMLElement>('[data-part="scrim"]');
+      if (!scrim) {
+        throw new Error('mobile lookup では scrim が必要です');
+      }
+
+      if (getComputedStyle(content).position !== 'fixed') {
+        throw new Error('mobile lookup content は fixed の bottom-sheet として描画される必要があります');
+      }
+
+      content.dispatchEvent(
+        new PointerEvent('pointerdown', {
+          pointerId: 1,
+          pointerType: 'touch',
+          clientY: 100,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      content.dispatchEvent(
+        new PointerEvent('pointermove', {
+          pointerId: 1,
+          pointerType: 'touch',
+          clientY: 420,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      content.dispatchEvent(
+        new PointerEvent('pointerup', {
+          pointerId: 1,
+          pointerType: 'touch',
+          clientY: 420,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      await openedHost.updateComplete;
+
+      if (openedHost.open) {
+        throw new Error('Bottom Sheet は下方向スワイプで閉じる必要があります');
+      }
+
+      trigger.click();
+      await openedHost.updateComplete;
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      if (!openedHost.open) {
+        throw new Error('再オープンに失敗しました');
+      }
+
+      const openedScrim = openedHost.querySelector<HTMLElement>('[data-part="scrim"]');
+      if (!openedScrim) {
+        throw new Error('再オープン時に scrim がありません');
+      }
+      openedScrim.click();
+      await openedHost.updateComplete;
+
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      if (openedHost.open) {
+        throw new Error('scrim タップで閉じる必要があります');
+      }
+    } finally {
+      window.matchMedia = originalMatchMedia;
+    }
+  },
+};
+
+/**
+ * Forced Colors / Print 契約:
+ * - forced-colors で非色シグナル（underline/border）を持つ
+ * - print で popover/drawer 非表示 + interlinear 表示契約を持つ
+ */
+export const ForcedColorsAndPrintContract: Story = {
+  render: () => html`
+    <div style="display: grid; gap: 0.75rem;">
+      <ui-translation
+        id="translation-forced-popover"
+        original="Je force."
+        translated="私は強制色。"
+        lang="fr"
+        target-lang="ja"
+        render-mode="popover"
+        open
+      ></ui-translation>
+      <ui-translation
+        id="translation-print-interlinear"
+        original="Je imprime."
+        translated="私は印刷する。"
+        lang="fr"
+        target-lang="ja"
+        render-mode="interlinear"
+        open
+      ></ui-translation>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const popoverHost = getHost(canvasElement, 'translation-forced-popover');
+    const interlinearHost = getHost(canvasElement, 'translation-print-interlinear');
+    await Promise.all([popoverHost.updateComplete, interlinearHost.updateComplete]);
+
+    const popoverTrigger = getTrigger(popoverHost);
+    popoverTrigger.click();
+    await popoverHost.updateComplete;
+    if (popoverTrigger.getAttribute('aria-expanded') !== 'false') {
+      throw new Error('非色シグナルとして aria-expanded が閉状態を示す必要があります');
+    }
+    popoverTrigger.click();
+    await popoverHost.updateComplete;
+    if (popoverTrigger.getAttribute('aria-expanded') !== 'true') {
+      throw new Error('非色シグナルとして aria-expanded が開状態を示す必要があります');
+    }
+
+    const styleTag = document.querySelector<HTMLStyleElement>(`#${DOCUMENT_STYLE_ID}`);
+    const cssText = styleTag?.textContent ?? '';
+    const requiredTokens = [
+      '@media (forced-colors: active)',
+      'text-decoration-style: dashed',
+      'border: var(--border-width, 1px) solid CanvasText',
+      '@media print',
+      "[data-render-mode='popover']",
+      "[data-render-mode='drawer']",
+      "[data-render-mode='interlinear']",
+      'display: none !important',
+      'display: block !important',
+    ];
+    for (const token of requiredTokens) {
+      if (!cssText.includes(token)) {
+        throw new Error(`forced-colors/print 契約が不足しています: ${token}`);
+      }
+    }
+
+    if (window.matchMedia('(forced-colors: active)').matches) {
+      const forcedTriggerStyle = getComputedStyle(popoverTrigger);
+      const popoverContent = getContent(popoverHost);
+      const forcedContentStyle = getComputedStyle(popoverContent);
+
+      if (!forcedTriggerStyle.textDecorationLine.includes('underline')) {
+        throw new Error('forced-colors では trigger の underline が必要です');
+      }
+      if (forcedContentStyle.borderStyle === 'none') {
+        throw new Error('forced-colors では content 境界線が必要です');
+      }
     }
   },
 };

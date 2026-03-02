@@ -7,7 +7,7 @@ export type InfoBoxVariant = 'default' | 'filled';
 
 const VALID_VARIANTS = new Set<InfoBoxVariant>(['default', 'filled']);
 
-let infoBoxHeadingId = 0;
+let infoBoxHeadingUid = 0;
 
 /**
  * インフォボックス (Info Box) コンポーネント。
@@ -55,9 +55,11 @@ export class InfoBox extends LitElement {
     }
 
     .icon {
+      display: flex;
+      align-items: end;
       flex-shrink: 0;
       width: var(--icon-xs, 12px);
-      height: var(--icon-xs, 12px);
+      height: calc(1em * var(--line-height-tight, 1.4));
       color: currentColor;
       stroke-width: 1.5;
     }
@@ -70,8 +72,6 @@ export class InfoBox extends LitElement {
     .body {
       padding: var(--space-4, 16px);
       min-width: 0;
-      color: var(--fg-default, oklch(20% 0.01 250));
-      line-height: var(--line-height-relaxed, 1.75);
     }
 
     @media (forced-colors: active) {
@@ -120,11 +120,20 @@ export class InfoBox extends LitElement {
   @property({ type: String, reflect: true })
   variant: InfoBoxVariant = 'default';
 
-  private readonly _headingId = `ui-info-box-heading-${String(++infoBoxHeadingId)}`;
+  private _headingId: string | null = null;
+  private _contentObserver: MutationObserver | null = null;
 
   override connectedCallback(): void {
     super.connectedCallback();
+    this._adoptExistingHeadingId();
+    this._observeLightDomContent();
     this._syncHostSemantics();
+  }
+
+  override disconnectedCallback(): void {
+    this._contentObserver?.disconnect();
+    this._contentObserver = null;
+    super.disconnectedCallback();
   }
 
   protected override updated(changedProperties: PropertyValues<this>): void {
@@ -151,11 +160,9 @@ export class InfoBox extends LitElement {
   private get _resolvedHeadingLevel(): number | null {
     if (!this._hasHeading) return null;
     if (typeof this.headingLevel !== 'number' || !Number.isFinite(this.headingLevel)) return null;
-
-    const normalized = Math.trunc(this.headingLevel);
-    if (normalized < 1 || normalized > 6) return null;
-
-    return normalized;
+    if (!Number.isInteger(this.headingLevel)) return null;
+    if (this.headingLevel < 1 || this.headingLevel > 6) return null;
+    return this.headingLevel;
   }
 
   private get _resolvedIcon(): string {
@@ -163,13 +170,68 @@ export class InfoBox extends LitElement {
     return this.icon.trim();
   }
 
+  private _adoptExistingHeadingId(): void {
+    if (this._headingId) return;
+
+    const fromAriaLabelledby = this.getAttribute('aria-labelledby')?.trim();
+    if (fromAriaLabelledby) {
+      this._headingId = fromAriaLabelledby;
+      return;
+    }
+
+    const existingHeading = this.shadowRoot?.querySelector<HTMLElement>('.heading[id]');
+    const fromRenderedHeading = existingHeading?.id.trim();
+    if (fromRenderedHeading) {
+      this._headingId = fromRenderedHeading;
+    }
+  }
+
+  private _observeLightDomContent(): void {
+    if (this._contentObserver) return;
+
+    this._contentObserver = new MutationObserver(() => {
+      this.requestUpdate();
+    });
+    this._contentObserver.observe(this, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+  }
+
+  private _ensureHeadingId(): string {
+    if (this._headingId) return this._headingId;
+
+    const uid = ++infoBoxHeadingUid;
+    const baseId = `info-box-heading-${String(uid)}`;
+
+    let resolvedId = baseId;
+    let suffix = 1;
+    while (this.ownerDocument.querySelector(`#${resolvedId}`)) {
+      resolvedId = `${baseId}-${String(suffix)}`;
+      suffix += 1;
+    }
+
+    this._headingId = resolvedId;
+    return resolvedId;
+  }
+
+  private _hasMeaningfulSlotContent(): boolean {
+    return Array.from(this.childNodes).some((node) => {
+      if (node.nodeType === Node.ELEMENT_NODE) return true;
+      if (node.nodeType !== Node.TEXT_NODE) return false;
+      return (node.textContent ?? '').trim().length > 0;
+    });
+  }
+
   /**
    * ホスト要素のセマンティクスを受け入れ基準に沿って同期します。
    */
   private _syncHostSemantics(): void {
     if (this.landmark && this._hasHeading) {
+      const headingId = this._ensureHeadingId();
       this.setAttribute('role', 'region');
-      this.setAttribute('aria-labelledby', this._headingId);
+      this.setAttribute('aria-labelledby', headingId);
       return;
     }
 
@@ -178,10 +240,13 @@ export class InfoBox extends LitElement {
   }
 
   override render() {
+    if (!this._hasMeaningfulSlotContent()) return nothing;
+
     const heading = this._resolvedHeading;
     const hasHeading = heading.length > 0;
     const headingLevel = this._resolvedHeadingLevel;
     const icon = this._resolvedIcon;
+    const headingId = hasHeading ? this._ensureHeadingId() : '';
 
     return html`
       <section class="info-box" data-variant="${this._resolvedVariant}">
@@ -192,7 +257,7 @@ export class InfoBox extends LitElement {
                   ? html`<iconify-icon class="icon" icon="lucide:${icon}" aria-hidden="true"></iconify-icon>`
                   : nothing}
                 <div
-                  id="${this._headingId}"
+                  id="${headingId}"
                   class="heading"
                   role="${headingLevel !== null ? 'heading' : nothing}"
                   aria-level="${ifDefined(headingLevel !== null ? String(headingLevel) : undefined)}"

@@ -5,6 +5,22 @@ import 'iconify-icon';
 /** ページ範囲アイテムの型 */
 export type RangeItem = number | 'ellipsis';
 
+/** 数値を有限な整数へ正規化します。 */
+function toFiniteInt(value: number, fallback: number): number {
+  if (!Number.isFinite(value)) return fallback;
+  return Math.trunc(value);
+}
+
+/** ページネーション入力を安全な表示値へ正規化します。 */
+function normalizePagination(current: number, total: number): { current: number; total: number } {
+  const normalizedTotal = Math.max(1, toFiniteInt(total, 1));
+  const normalizedCurrent = Math.min(
+    normalizedTotal,
+    Math.max(1, toFiniteInt(current, 1)),
+  );
+  return { current: normalizedCurrent, total: normalizedTotal };
+}
+
 /**
  * デスクトップ用のページ範囲を計算します。
  *
@@ -16,19 +32,21 @@ export type RangeItem = number | 'ellipsis';
  * @param total   - 総ページ数
  */
 export function computeRange(current: number, total: number): RangeItem[] {
-  if (total <= 0) return [];
-  if (total === 1) return [1];
+  const safeTotal = Math.max(0, toFiniteInt(total, 0));
+  if (safeTotal <= 0) return [];
+  if (safeTotal === 1) return [1];
+  const safeCurrent = Math.min(safeTotal, Math.max(1, toFiniteInt(current, 1)));
 
   // total <= 7: 全ページ表示（省略なし）
-  if (total <= 7) {
-    return Array.from({ length: total }, (_, i) => i + 1);
+  if (safeTotal <= 7) {
+    return Array.from({ length: safeTotal }, (_, i) => i + 1);
   }
 
   // total >= 8: 境界 (1, total) + 近傍 (current-1, current, current+1) を収集
   const visible = new Set<number>();
   visible.add(1);
-  visible.add(total);
-  for (let p = Math.max(1, current - 1); p <= Math.min(total, current + 1); p++) {
+  visible.add(safeTotal);
+  for (let p = Math.max(1, safeCurrent - 1); p <= Math.min(safeTotal, safeCurrent + 1); p++) {
     visible.add(p);
   }
 
@@ -68,10 +86,14 @@ export function computeRange(current: number, total: number): RangeItem[] {
  * @param total   - 総ページ数
  */
 export function computeCompactRange(current: number, total: number): RangeItem[] {
+  const safeTotal = Math.max(0, toFiniteInt(total, 0));
+  if (safeTotal <= 0) return [];
+  const safeCurrent = Math.min(safeTotal, Math.max(1, toFiniteInt(current, 1)));
+
   const result: RangeItem[] = [];
-  if (current > 1) result.push('ellipsis');
-  result.push(current);
-  if (current < total) result.push('ellipsis');
+  if (safeCurrent > 1) result.push('ellipsis');
+  result.push(safeCurrent);
+  if (safeCurrent < safeTotal) result.push('ellipsis');
   return result;
 }
 
@@ -404,7 +426,8 @@ export class Pagination extends LitElement {
   }
 
   override render(): TemplateResult {
-    const { current, total, getHref } = this;
+    const { getHref } = this;
+    const { current, total } = normalizePagination(this.current, this.total);
     const isFirst = current <= 1;
     const isLast = current >= total;
 

@@ -17,7 +17,7 @@ import type { Heading, Toc } from './toc';
  *
  * ### アクセシビリティ
  *
- * - `<nav aria-label="目次">` で意味論的なナビゲーションを提供します。
+ * - `<nav aria-label="Table of Contents">` で意味論的なナビゲーションを提供します。
  * - アクティブなリンクに `aria-current="location"` を設定します。
  * - キーボードの Tab キーによる標準的なナビゲーションをサポートします。
  * - タッチターゲット: モバイルは 44px、デスクトップは最低 24px を保証します。
@@ -143,10 +143,10 @@ export const Default: Story = {
 		const nav = toc.shadowRoot?.querySelector('nav');
 		if (!nav) throw new Error('nav element not found');
 
-		// テスト: aria-label が「目次」に設定されている
-		if (nav.getAttribute('aria-label') !== '目次') {
+		// テスト: aria-label が仕様どおりに設定されている
+		if (nav.getAttribute('aria-label') !== 'Table of Contents') {
 			throw new Error(
-				`Expected aria-label="目次", got "${nav.getAttribute('aria-label') ?? 'null'}"`,
+				`Expected aria-label="Table of Contents", got "${nav.getAttribute('aria-label') ?? 'null'}"`,
 			);
 		}
 
@@ -851,18 +851,36 @@ export const LongText: Story = {
  */
 export const ClickToActivate: Story = {
 	render: () => html`
-		<div style="width: 200px;">
-			<ui-toc
-				id="click-toc"
-				.headers="${flatH2Headers}"
-				active-id="intro"
-			></ui-toc>
+		<div style="display: grid; grid-template-columns: 220px minmax(280px, 1fr); gap: 1.5rem;">
+			<div style="width: 200px;">
+				<ui-toc
+					id="click-toc"
+					.headers="${flatH2Headers}"
+					active-id="intro"
+				></ui-toc>
+			</div>
+			<article style="max-width: 600px;">
+				<h2 id="intro">はじめに</h2>
+				<div style="height: 180px;"></div>
+				<h2 id="background">背景と目的</h2>
+				<div style="height: 180px;"></div>
+				<h2 id="implementation">実装方法</h2>
+				<div style="height: 180px;"></div>
+				<h2 id="results">結果と考察</h2>
+				<div style="height: 180px;"></div>
+				<h2 id="conclusion">まとめ</h2>
+				<div style="height: 180px;"></div>
+			</article>
 		</div>
 	`,
 	play: async ({ canvasElement }) => {
 		const toc = canvasElement.querySelector<Toc>('#click-toc');
 		if (!toc) throw new Error('ui-toc not found');
 		await toc.updateComplete;
+
+		// テスト: ターゲット見出しが存在し、スクロール経路が有効である
+		const targetHeading = document.getElementById('implementation');
+		if (!targetHeading) throw new Error('Expected #implementation heading in document');
 
 		// 初期状態の確認: intro がアクティブ
 		let activeLink = toc.shadowRoot?.querySelector('[aria-current="location"]');
@@ -1006,7 +1024,7 @@ export const ActiveIdNotFound: Story = {
  * アクセシビリティ: ARIA 構造の確認。
  *
  * スクリーンリーダーが正しく解釈できる構造を検証します:
- * - `<nav aria-label="目次">`: ランドマークナビゲーション
+ * - `<nav aria-label="Table of Contents">`: ランドマークナビゲーション
  * - `<ul>` > `<li>` > `<a>`: ネイティブリンクのリスト
  * - `aria-current="location"`: アクティブ位置の通知
  * - `href="#id"`: アンカーリンク（標準的なナビゲーション）
@@ -1054,9 +1072,9 @@ export const AccessibilityStructure: Story = {
 		});
 
 		// テスト: nav の aria-label が正しい
-		if (nav.getAttribute('aria-label') !== '目次') {
+		if (nav.getAttribute('aria-label') !== 'Table of Contents') {
 			throw new Error(
-				`Expected aria-label="目次", got "${nav.getAttribute('aria-label') ?? 'null'}"`,
+				`Expected aria-label="Table of Contents", got "${nav.getAttribute('aria-label') ?? 'null'}"`,
 			);
 		}
 
@@ -1092,6 +1110,96 @@ export const AccessibilityStructure: Story = {
 		});
 
 		console.log('✅ All tests passed for AccessibilityStructure story');
+	},
+};
+
+// ──────────────────────────────────────────────
+// アクセシビリティ: キーボード / タッチターゲット
+// ──────────────────────────────────────────────
+
+/**
+ * キーボードナビゲーションとタッチターゲット寸法の確認。
+ *
+ * - Roving Tabindex を使用しない（`tabindex` を各リンクに付与しない）
+ * - リンクの最小高さが 24px 以上
+ * - モバイル幅では 44px 以上
+ */
+export const KeyboardAndTouchTarget: Story = {
+	render: () => html`
+		<div style="width: 220px;">
+			<ui-toc id="kbd-touch-toc" .headers="${nestedHeaders}" active-id="implementation"></ui-toc>
+		</div>
+	`,
+	play: async ({ canvasElement }) => {
+		const toc = canvasElement.querySelector<Toc>('#kbd-touch-toc');
+		if (!toc) throw new Error('ui-toc not found');
+		await toc.updateComplete;
+
+		const links = toc.shadowRoot?.querySelectorAll<HTMLAnchorElement>('a.toc-link');
+		if (!links || links.length === 0) throw new Error('No toc links found');
+
+		// テスト: Roving Tabindex を使用しない（属性なし）
+		links.forEach((link, idx) => {
+			if (link.hasAttribute('tabindex')) {
+				throw new Error(`Link[${String(idx)}] should not have tabindex`);
+			}
+		});
+
+		// テスト: 最小タッチターゲット寸法
+		const firstLink = links[0];
+		if (!firstLink) throw new Error('first link not found');
+		const minHeight = Number.parseFloat(getComputedStyle(firstLink).minHeight);
+		if (!Number.isFinite(minHeight) || minHeight < 24) {
+			throw new Error(`Expected min-height >= 24px, got ${String(minHeight)}`);
+		}
+
+		// モバイル幅での要件（環境依存のため条件付き）
+		if (window.matchMedia('(max-width: 1023px)').matches && minHeight < 44) {
+			throw new Error(`Expected mobile min-height >= 44px, got ${String(minHeight)}`);
+		}
+	},
+};
+
+// ──────────────────────────────────────────────
+// ダークモード
+// ──────────────────────────────────────────────
+
+/**
+ * ダークモードでの視認性確認。
+ *
+ * `prefers-color-scheme: dark` が有効なとき、
+ * 非アクティブとアクティブの色差が維持されることを確認します。
+ */
+export const DarkMode: Story = {
+	render: () => html`
+		<div style="width: 220px;">
+			<ui-toc id="dark-toc" .headers="${flatH2Headers}" active-id="implementation"></ui-toc>
+		</div>
+	`,
+	play: async ({ canvasElement }) => {
+		const toc = canvasElement.querySelector<Toc>('#dark-toc');
+		if (!toc) throw new Error('ui-toc not found');
+		await toc.updateComplete;
+
+		const activeLink = toc.shadowRoot?.querySelector<HTMLAnchorElement>('a.toc-link.is-active');
+		const inactiveLink = toc.shadowRoot?.querySelector<HTMLAnchorElement>(
+			'a.toc-link:not(.is-active)',
+		);
+		if (!activeLink || !inactiveLink) {
+			throw new Error('Expected active and inactive links');
+		}
+
+		const activeColor = getComputedStyle(activeLink).color;
+		const inactiveColor = getComputedStyle(inactiveLink).color;
+		if (activeColor === inactiveColor) {
+			throw new Error('Active and inactive text colors should differ');
+		}
+
+		if (!window.matchMedia('(prefers-color-scheme: dark)').matches) {
+			console.warn(
+				'DarkMode story: prefers-color-scheme: dark を有効化して暗色環境の最終色を確認してください',
+			);
+		}
 	},
 };
 
@@ -1242,9 +1350,9 @@ export const AllStates: Story = {
 // ──────────────────────────────────────────────
 
 /**
- * Reduced Motion および Forced Colors Mode の手動確認。
+ * Reduced Motion および Forced Colors Mode の確認。
  *
- * 自動化できない視覚的テストのための参照ストーリーです。
+ * 視覚確認を主目的としつつ、条件付きで最低限の自動検証も行います。
  *
  * **確認方法**:
  * - **Reduced Motion**: OS 設定でアニメーション削減を有効化し、クリック時にフェードインなしで
@@ -1281,6 +1389,7 @@ export const VisualAccessibility: Story = {
 				</div>
 				<div style="width: 200px;">
 					<ui-toc
+						id="visual-a11y-toc"
 						.headers="${nestedHeaders}"
 						active-id="implementation"
 					></ui-toc>
@@ -1288,4 +1397,38 @@ export const VisualAccessibility: Story = {
 			</div>
 		</div>
 	`,
+	play: async ({ canvasElement }) => {
+		const toc = canvasElement.querySelector<Toc>('#visual-a11y-toc');
+		if (!toc) throw new Error('ui-toc not found');
+		await toc.updateComplete;
+
+		// click起因にして ::before の計算スタイルを評価
+		const targetLink = toc.shadowRoot?.querySelector<HTMLAnchorElement>('a[href="#setup"]');
+		if (!targetLink) throw new Error('target link not found');
+		targetLink.click();
+		await toc.updateComplete;
+
+		const activeAfterClick = toc.shadowRoot?.querySelector<HTMLAnchorElement>(
+			'a.toc-link.is-active.is-click',
+		);
+		if (!activeAfterClick) throw new Error('clicked active link not found');
+
+		const beforeStyle = getComputedStyle(activeAfterClick, '::before');
+		const animationDuration = beforeStyle.animationDuration;
+
+		// Reduced Motion 時: click起因アニメーションが実質瞬時化される
+		if (
+			window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+			animationDuration !== '0.01ms'
+		) {
+			throw new Error(`Expected animation-duration 0.01ms in reduce mode, got "${animationDuration}"`);
+		}
+
+		// Forced Colors 時: インジケーターが border ベースで可視化される
+		if (window.matchMedia('(forced-colors: active)').matches) {
+			if (beforeStyle.borderStyle === 'none') {
+				throw new Error('Expected active indicator border in forced-colors mode');
+			}
+		}
+	},
 };

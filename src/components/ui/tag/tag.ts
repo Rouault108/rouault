@@ -128,8 +128,7 @@ export class Tag extends LitElement {
       font-size: var(--text-xs, 12px);
       font-weight: var(--font-medium, 500);
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      overflow: visible;
 
       /* Shape */
       padding: 0 var(--space-2, 8px);
@@ -237,9 +236,8 @@ export class Tag extends LitElement {
     }
 
     /* ── Hover (Default / Outline のみ) ── */
-    :host(:not([disabled])) .tag-link:hover,
-    :host(:not([disabled])) .tag-root-interactive:hover {
-      border-color: var(--border-default, oklch(70% 0.01 250 / 0.6));
+    :host(:not([disabled]):not([variant='solid'])):hover {
+      --border-color: var(--border-default, oklch(70% 0.01 250 / 0.6));
     }
 
     /* ── Disabled ── */
@@ -268,11 +266,24 @@ export class Tag extends LitElement {
       align-items: center;
       gap: var(--space-1, 4px);
       width: 100%;
+      min-width: 0;
       overflow: hidden;
       color: inherit;
       text-decoration: none;
       border-radius: inherit;
+      position: relative;
       /* ボーダーはホスト側で管理するため、リンク自体は transparent */
+    }
+
+    /* リンク側のタッチターゲット: 最低 44×44px を ::after で確保 (WCAG 2.5.5) */
+    .tag-link::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: max(100%, var(--control-min-touch, 44px));
+      height: max(100%, var(--control-min-touch, 44px));
     }
 
     /* Link + Removable のグループコンテナ */
@@ -282,12 +293,22 @@ export class Tag extends LitElement {
       gap: 0;
       width: 100%;
       overflow: hidden;
+      position: relative;
+      padding-right: calc(var(--control-min-touch, 44px) - var(--icon-xs, 12px));
     }
 
     .tag-group .tag-link {
       flex: 1;
-      min-width: 0;
+      min-width: var(--control-min-touch, 44px);
       overflow: hidden;
+      padding-right: var(--space-1, 4px);
+    }
+
+    /* Link + Removable ではリンク領域と削除領域を重ねない */
+    .tag-group .tag-link::after {
+      left: 0;
+      transform: translateY(-50%);
+      width: 100%;
     }
 
     /* ── アイコンスロット ── */
@@ -366,6 +387,28 @@ export class Tag extends LitElement {
       transform: translate(-50%, -50%);
       width: max(100%, var(--control-min-touch, 44px));
       height: max(100%, var(--control-min-touch, 44px));
+    }
+
+    /* Link + Removable: 右側に削除ターゲットを固定して誤タップを防ぐ */
+    .tag-group .tag-remove-button {
+      position: absolute;
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      width: var(--control-min-touch, 44px);
+      height: max(100%, var(--control-min-touch, 44px));
+      justify-content: flex-end;
+      padding-right: calc((var(--control-min-touch, 44px) - var(--icon-xs, 12px)) / 2);
+      border-radius: var(--radius-sm, 4px);
+    }
+
+    .tag-group .tag-remove-button::after {
+      top: 50%;
+      right: 0;
+      left: auto;
+      transform: translateY(-50%);
+      width: 100%;
+      height: 100%;
     }
 
     /* ── リンクのフォーカスリング ── */
@@ -507,6 +550,8 @@ export class Tag extends LitElement {
 
     /** アイコンスロットのレンダリング */
     private _renderIcon() {
+        if (!this.querySelector('[slot="icon"]')) return nothing;
+
         return html`
       <span class="icon-slot" aria-hidden="true">
         <slot name="icon"></slot>

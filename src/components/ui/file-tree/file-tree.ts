@@ -176,6 +176,9 @@ export class FileTree extends LitElement {
 
       :host([variant='card'][data-printable='true']) {
         display: block !important;
+      }
+
+      :host([variant='card'][data-printable='true']) .container {
         box-shadow: none !important;
         background: transparent !important;
         border-color: #000 !important;
@@ -242,11 +245,55 @@ export class FileTree extends LitElement {
   private typeAheadTimer: ReturnType<typeof setTimeout> | undefined = undefined;
 
   /**
+   * 初回の選択項目スクロールを実施済みか
+   * @internal
+   */
+  private didInitialSelectedScroll = false;
+
+  /**
+   * Tree外部から流入した直前フォーカス要素
+   * @internal
+   */
+  private lastExternalFocusTarget: HTMLElement | null = null;
+
+  /**
+   * 印刷時に復元する expanded 状態スナップショット
+   * @internal
+   */
+  private printExpandedSnapshot: Map<string, boolean | undefined> | null = null;
+
+  /**
    * フラット化された可視ノードリスト
    * @internal
    */
   @state()
   private flattenedNodes: { node: TreeNode; depth: number }[] = [];
+
+  private readonly _focusInHandler = (e: FocusEvent): void => {
+    const related = e.relatedTarget;
+    if (related instanceof HTMLElement && !this.contains(related)) {
+      this.lastExternalFocusTarget = related;
+    }
+  };
+
+  private readonly _beforePrintHandler = (): void => {
+    if (!this._isPrintableCard()) return;
+
+    this.printExpandedSnapshot = new Map<string, boolean | undefined>();
+    this._snapshotExpandedState(this.items, this.printExpandedSnapshot);
+    this._setAllExpanded(this.items, true);
+    this.flattenedNodes = this._flattenNodes(this.items);
+    this.requestUpdate();
+  };
+
+  private readonly _afterPrintHandler = (): void => {
+    if (!this.printExpandedSnapshot) return;
+
+    this._restoreExpandedState(this.items, this.printExpandedSnapshot);
+    this.flattenedNodes = this._flattenNodes(this.items);
+    this.printExpandedSnapshot = null;
+    this.requestUpdate();
+  };
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -258,20 +305,27 @@ export class FileTree extends LitElement {
     }
     // aria-orientation を設定
     this.setAttribute('aria-orientation', 'vertical');
+    this.addEventListener('focusin', this._focusInHandler);
+    window.addEventListener('beforeprint', this._beforePrintHandler);
+    window.addEventListener('afterprint', this._afterPrintHandler);
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this._clearLoadingTimer();
     this._clearTypeAheadTimer();
+    this.removeEventListener('focusin', this._focusInHandler);
+    window.removeEventListener('beforeprint', this._beforePrintHandler);
+    window.removeEventListener('afterprint', this._afterPrintHandler);
   }
 
   override willUpdate(changedProperties: Map<string, unknown>): void {
     // items が変更されたら、フラット化リストを再計算
     if (changedProperties.has('items')) {
-      this.flattenedNodes = this._flattenNodes(this.items);
       // 初期化: selected 項目までのパスを自動展開
       this._autoExpandSelectedPath();
+      this.flattenedNodes = this._flattenNodes(this.items);
+      this.didInitialSelectedScroll = false;
       // activeId が未設定の場合、初期フォーカス位置を設定
       if (!this.activeId && this.flattenedNodes.length > 0) {
         const selectedNode = this.flattenedNodes.find((item) => item.node.selected);
@@ -286,17 +340,20 @@ export class FileTree extends LitElement {
     }
   }
 
-  override updated(): void {
-    // loading 完了時に aria-busy を更新
-    if (this.loading) {
-      this.setAttribute('aria-busy', 'true');
-    } else {
-      this.setAttribute('aria-busy', 'false');
+  override updated(changedProperties: Map<string, unknown>): void {
+    const busy = this.loading && this.showSkeleton;
+    this.setAttribute('aria-busy', String(busy));
+
+    if (this.loading) return;
+
+    if (!this.didInitialSelectedScroll && this.items.length > 0 && changedProperties.has('items')) {
+      this._scrollSelectedIntoView();
+      this.didInitialSelectedScroll = true;
+      return;
     }
 
-    // selected 項目への自動スクロール（初回のみ）
-    if (this.items.length > 0 && !this.loading) {
-      this._scrollSelectedIntoView();
+    if (changedProperties.has('activeId') && this.activeId) {
+      this._focusItem(this.activeId);
     }
   }
 
@@ -417,11 +474,8 @@ export class FileTree extends LitElement {
     );
 
     if (treeItem instanceof HTMLElement) {
-      // prefers-reduced-motion を判定
-      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
       treeItem.scrollIntoView({
-        behavior: prefersReducedMotion ? 'instant' : 'instant', // 初期化時は instant
+        behavior: 'instant',
         block: 'nearest',
       });
     }
@@ -457,8 +511,7 @@ export class FileTree extends LitElement {
 
       case 'Escape':
         e.preventDefault();
-        // ツリー全体からフォーカスを外す（トリガー元へ戻すロジックは呼び出し側で実装）
-        (this.shadowRoot?.activeElement as HTMLElement).blur();
+        this._restoreExternalFocus();
         break;
 
       default:
@@ -683,8 +736,10 @@ export class FileTree extends LitElement {
           data-id="${node.id}"
           label="${node.label}"
           icon="${node.icon ?? ''}"
+          href="${node.href ?? ''}"
           ?expanded="${node.expanded ?? false}"
           ?selected="${node.selected ?? false}"
+          ?print-mode="${this._isPrintableCard()}"
           tabindex="${tabindex}"
           density="${this.density}"
           @selected-change="${(e: CustomEvent) => {
@@ -738,6 +793,60 @@ export class FileTree extends LitElement {
             : this._renderTreeItems(this.items)}
       </div>
     `;
+  }
+
+  private _restoreExternalFocus(): void {
+    if (this.lastExternalFocusTarget?.isConnected) {
+      this.lastExternalFocusTarget.focus();
+      return;
+    }
+
+    const active = this.shadowRoot?.activeElement;
+    if (active instanceof HTMLElement) {
+      active.blur();
+    }
+  }
+
+  private _isPrintableCard(): boolean {
+    return this.variant === 'card' && this.hasAttribute('data-printable');
+  }
+
+  private _snapshotExpandedState(
+    nodes: TreeNode[],
+    snapshot: Map<string, boolean | undefined>,
+  ): void {
+    for (const node of nodes) {
+      snapshot.set(node.id, node.expanded);
+      if (node.children) {
+        this._snapshotExpandedState(node.children, snapshot);
+      }
+    }
+  }
+
+  private _restoreExpandedState(
+    nodes: TreeNode[],
+    snapshot: Map<string, boolean | undefined>,
+  ): void {
+    for (const node of nodes) {
+      const expanded = snapshot.get(node.id);
+      if (expanded === undefined) {
+        delete node.expanded;
+      } else {
+        node.expanded = expanded;
+      }
+      if (node.children) {
+        this._restoreExpandedState(node.children, snapshot);
+      }
+    }
+  }
+
+  private _setAllExpanded(nodes: TreeNode[], expanded: boolean): void {
+    for (const node of nodes) {
+      if (node.children && node.children.length > 0) {
+        node.expanded = expanded;
+        this._setAllExpanded(node.children, expanded);
+      }
+    }
   }
 }
 

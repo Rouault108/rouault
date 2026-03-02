@@ -69,6 +69,7 @@ export type CardVariant = 'outlined' | 'elevated' | 'flat' | 'ghost';
  * @cssprop --focus-ring-width - フォーカスリングの太さ
  * @cssprop --focus-ring-color - フォーカスリングの色
  * @cssprop --focus-ring-offset - フォーカスリングのオフセット
+ * @cssprop --animation-focus - フォーカスリングのアニメーション
  */
 @customElement('ui-card')
 export class Card extends LitElement {
@@ -149,6 +150,7 @@ export class Card extends LitElement {
     :host([clickable]:focus-within) {
       outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color);
       outline-offset: var(--focus-ring-offset, 2px);
+      animation: var(--animation-focus);
     }
 
     /* ────────────────────────────────────────────
@@ -247,6 +249,25 @@ export class Card extends LitElement {
   clickable = false;
 
   /**
+   * クリックイベントの経路上にインタラクティブ要素が含まれるか判定。
+   * Shadow DOM 内要素も `composedPath()` で判定する。
+   */
+  private _isInteractiveTarget(event: Event): boolean {
+    const path = event.composedPath();
+    for (const node of path) {
+      if (!(node instanceof HTMLElement)) continue;
+      if (
+        node.matches(
+          'a, button, input, textarea, select, [role="button"], [contenteditable="true"]',
+        )
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * クリックイベントの委譲ハンドラ。
    * カード全体のクリックを内部の最初の `<a href>` へ委譲します。
    * 以下の条件では委譲をキャンセルします:
@@ -267,10 +288,8 @@ export class Card extends LitElement {
     // テキスト選択中は委譲しない（コピー操作を阻害しない）
     if ((window.getSelection()?.toString().length ?? 0) > 0) return;
 
-    const target = e.target as HTMLElement;
-
     // インタラクティブ要素への直接クリックは委譲しない
-    if (target.closest('a, button, [role="button"]')) return;
+    if (this._isInteractiveTarget(e)) return;
 
     // ライト DOM から主要リンクを検索して委譲
     const primaryLink = this.querySelector<HTMLAnchorElement>('a[href]');

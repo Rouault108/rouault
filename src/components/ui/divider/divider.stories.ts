@@ -1,10 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './divider';
-import type { Divider, DividerVariant } from './divider';
+import {
+  DIVIDER_SCOPE_SELECTOR,
+  DOCUMENT_STYLE_ID,
+  ensureDividerDocumentStyles,
+  type Divider,
+  type DividerVariant,
+} from './divider';
 
-const DOCUMENT_STYLE_ID = 'ui-divider-document-styles';
-const DIVIDER_SCOPE_SELECTOR = ':where(.prose hr, ui-divider > hr, hr[data-divider-variant="layout"])';
 const VARIANTS = ['section', 'layout'] as const satisfies DividerVariant[];
 
 const getHost = (canvasElement: Element, id: string): Divider => {
@@ -60,7 +64,7 @@ const meta: Meta<Divider> = {
 - ネイティブ \`hr\` を最終DOMとして出力
 - 追加ロールを付与せず、ネイティブセマンティクスを維持
 - 適用スコープは \`.prose hr\` / \`ui-divider > hr\` / \`hr[data-divider-variant="layout"]\` に限定
-- トークン: \`--border-ghost\` / \`--space-12\` / \`--border-width\`
+- トークン: \`--border-ghost\` / \`--space-12\`
         `,
       },
     },
@@ -112,7 +116,7 @@ export const Default: Story = {
 /**
  * バリアント × 状態:
  * - variant: section / layout
- * - state: aria-label あり / なし
+ * - state: host に aria-label あり / なし（内側 hr へは転送しない）
  */
 export const VariantStateMatrix: Story = {
   render: () => html`
@@ -140,7 +144,7 @@ export const VariantStateMatrix: Story = {
       </div>
 
       <div class="cell">
-        <div class="label">section x labeled</div>
+        <div class="label">section x host-labeled</div>
         <ui-divider id="matrix-section-labeled" variant="section" aria-label="章区切り"></ui-divider>
       </div>
 
@@ -150,17 +154,17 @@ export const VariantStateMatrix: Story = {
       </div>
 
       <div class="cell">
-        <div class="label">layout x labeled</div>
+        <div class="label">layout x host-labeled</div>
         <ui-divider id="matrix-layout-labeled" variant="layout" aria-label="レイアウト境界"></ui-divider>
       </div>
     </div>
   `,
   play: async ({ canvasElement }) => {
     const matrix = [
-      { id: 'matrix-section-unlabeled', variant: 'section', label: undefined },
-      { id: 'matrix-section-labeled', variant: 'section', label: '章区切り' },
-      { id: 'matrix-layout-unlabeled', variant: 'layout', label: undefined },
-      { id: 'matrix-layout-labeled', variant: 'layout', label: 'レイアウト境界' },
+      { id: 'matrix-section-unlabeled', variant: 'section', hostLabel: undefined },
+      { id: 'matrix-section-labeled', variant: 'section', hostLabel: '章区切り' },
+      { id: 'matrix-layout-unlabeled', variant: 'layout', hostLabel: undefined },
+      { id: 'matrix-layout-labeled', variant: 'layout', hostLabel: 'レイアウト境界' },
     ] as const;
 
     const hosts = matrix.map(({ id }) => getHost(canvasElement, id));
@@ -174,9 +178,13 @@ export const VariantStateMatrix: Story = {
         throw new Error(`${item.id} の data-divider-variant が不正です`);
       }
 
-      const actualLabel = hr.getAttribute('aria-label') ?? undefined;
-      if (actualLabel !== item.label) {
-        throw new Error(`${item.id} の aria-label 反映が不正です`);
+      if (hr.hasAttribute('aria-label')) {
+        throw new Error(`${item.id} の hr に aria-label を転送してはいけません`);
+      }
+
+      const actualHostLabel = host.getAttribute('aria-label') ?? undefined;
+      if (actualHostLabel !== item.hostLabel) {
+        throw new Error(`${item.id} の host aria-label が不正です`);
       }
 
       if (hr.hasAttribute('role')) {
@@ -189,7 +197,7 @@ export const VariantStateMatrix: Story = {
 /**
  * 事故が多い境界条件:
  * - 不正 variant のフォールバック
- * - 空白 aria-label の無効化
+ * - host aria-label 非転送
  * - スタイルスコープ漏れ防止
  */
 export const BoundaryConditions: Story = {
@@ -197,12 +205,11 @@ export const BoundaryConditions: Story = {
     <style>
       #boundary-scope {
         --space-12: 64px;
-        --border-width: 3px;
       }
     </style>
     <div id="boundary-scope">
       <ui-divider id="boundary-invalid-variant" variant="unknown"></ui-divider>
-      <ui-divider id="boundary-empty-label" aria-label="   "></ui-divider>
+      <ui-divider id="boundary-host-label" aria-label="章区切り"></ui-divider>
       <ui-divider id="boundary-host-role" role="separator"></ui-divider>
 
       <div class="prose">
@@ -214,18 +221,18 @@ export const BoundaryConditions: Story = {
   `,
   play: async ({ canvasElement }) => {
     const invalidVariant = getHost(canvasElement, 'boundary-invalid-variant');
-    const emptyLabel = getHost(canvasElement, 'boundary-empty-label');
+    const hostLabel = getHost(canvasElement, 'boundary-host-label');
     const hostRole = getHost(canvasElement, 'boundary-host-role');
-    await Promise.all([invalidVariant.updateComplete, emptyLabel.updateComplete, hostRole.updateComplete]);
+    await Promise.all([invalidVariant.updateComplete, hostLabel.updateComplete, hostRole.updateComplete]);
 
     const invalidHr = getInnerHr(invalidVariant);
     if (invalidHr.getAttribute('data-divider-variant') !== 'section') {
       throw new Error('不正 variant は "section" にフォールバックする必要があります');
     }
 
-    const emptyLabelHr = getInnerHr(emptyLabel);
-    if (emptyLabelHr.hasAttribute('aria-label')) {
-      throw new Error('空白 aria-label は内側 hr に反映してはいけません');
+    const hostLabelHr = getInnerHr(hostLabel);
+    if (hostLabelHr.hasAttribute('aria-label')) {
+      throw new Error('host aria-label を内側 hr に反映してはいけません');
     }
 
     const hostRoleHr = getInnerHr(hostRole);
@@ -239,7 +246,7 @@ export const BoundaryConditions: Story = {
     }
 
     const expectedMargin = toPx(getComputedStyle(scopeRoot).getPropertyValue('--space-12'));
-    const expectedBorderWidth = toPx(getComputedStyle(scopeRoot).getPropertyValue('--border-width'));
+    const expectedBorderWidth = 1;
 
     const proseHr = getHrById(canvasElement, 'boundary-prose-hr');
     const layoutHr = getHrById(canvasElement, 'boundary-layout-hr');
@@ -256,16 +263,75 @@ export const BoundaryConditions: Story = {
       throw new Error('layout 用 hr に期待する margin が適用されていません');
     }
     if (!isNearlyEqual(toPx(proseStyle.borderTopWidth), expectedBorderWidth)) {
-      throw new Error('.prose hr に期待する border-width が適用されていません');
+      throw new Error('.prose hr に期待する 1px border-top が適用されていません');
     }
     if (!isNearlyEqual(toPx(layoutStyle.borderTopWidth), expectedBorderWidth)) {
-      throw new Error('layout 用 hr に期待する border-width が適用されていません');
+      throw new Error('layout 用 hr に期待する 1px border-top が適用されていません');
     }
 
     const plainMatchesScopedMargin = isNearlyEqual(toPx(plainStyle.marginTop), expectedMargin);
     const plainMatchesScopedBorder = isNearlyEqual(toPx(plainStyle.borderTopWidth), expectedBorderWidth);
     if (plainMatchesScopedMargin && plainMatchesScopedBorder) {
       throw new Error('スコープ外の通常 hr に divider スタイルが漏れています');
+    }
+  },
+};
+
+/**
+ * インスタンス非依存契約:
+ * - `<ui-divider>` が存在しなくても `.prose hr` / `hr[data-divider-variant="layout"]` にスタイルが適用される
+ */
+export const ScopeWithoutComponentInstance: Story = {
+  render: () => html`
+    <style>
+      #scope-only-contract {
+        --space-12: 52px;
+      }
+    </style>
+    <div id="scope-only-contract">
+      <div class="prose">
+        <hr id="scope-only-prose-hr" />
+      </div>
+      <hr id="scope-only-layout-hr" data-divider-variant="layout" />
+      <hr id="scope-only-plain-hr" />
+    </div>
+  `,
+  play: ({ canvasElement }) => {
+    document.querySelectorAll(`#${DOCUMENT_STYLE_ID}`).forEach(node => { node.remove(); });
+    ensureDividerDocumentStyles();
+
+    const styleTags = document.querySelectorAll<HTMLStyleElement>(`#${DOCUMENT_STYLE_ID}`);
+    if (styleTags.length !== 1) {
+      throw new Error(`スタイル注入は1回であるべきですが ${String(styleTags.length)} 回です`);
+    }
+
+    const scopeRoot = canvasElement.querySelector<HTMLElement>('#scope-only-contract');
+    if (!scopeRoot) {
+      throw new Error('#scope-only-contract が見つかりません');
+    }
+
+    const expectedMargin = toPx(getComputedStyle(scopeRoot).getPropertyValue('--space-12'));
+    const proseHr = getHrById(canvasElement, 'scope-only-prose-hr');
+    const layoutHr = getHrById(canvasElement, 'scope-only-layout-hr');
+    const plainHr = getHrById(canvasElement, 'scope-only-plain-hr');
+
+    const proseStyle = getComputedStyle(proseHr);
+    const layoutStyle = getComputedStyle(layoutHr);
+    const plainStyle = getComputedStyle(plainHr);
+
+    if (!isNearlyEqual(toPx(proseStyle.marginTop), expectedMargin)) {
+      throw new Error('インスタンスなしでも .prose hr に margin 契約が必要です');
+    }
+    if (!isNearlyEqual(toPx(layoutStyle.marginTop), expectedMargin)) {
+      throw new Error('インスタンスなしでも layout hr に margin 契約が必要です');
+    }
+    if (!isNearlyEqual(toPx(proseStyle.borderTopWidth), 1) || !isNearlyEqual(toPx(layoutStyle.borderTopWidth), 1)) {
+      throw new Error('インスタンスなしでも 1px border-top 契約が必要です');
+    }
+
+    const plainMatchesScopedMargin = isNearlyEqual(toPx(plainStyle.marginTop), expectedMargin);
+    if (plainMatchesScopedMargin) {
+      throw new Error('スコープ外の通常 hr に divider の margin が漏れています');
     }
   },
 };
@@ -310,11 +376,50 @@ export const MediaAndTokenContracts: Story = {
     if (!cssText.includes('var(--space-12)')) {
       throw new Error('space トークン参照が不足しています');
     }
-    if (!cssText.includes('var(--border-width)')) {
-      throw new Error('border-width トークン参照が不足しています');
-    }
     if (cssText.includes('CanvasText')) {
       throw new Error('Divider 固有の CanvasText ハードコードは許可されません');
+    }
+  },
+};
+
+/**
+ * Dark Mode 契約:
+ * - prefers-color-scheme 分岐を書かず、セマンティックトークン参照でモード追従する
+ */
+export const DarkModeTokenContract: Story = {
+  render: () => html`
+    <div style="display: grid; gap: 0.75rem;">
+      <div id="dark-contract-light" style="padding: 0.75rem; background: var(--bg-default); color: var(--fg-default);">
+        <ui-divider id="dark-contract-divider-light"></ui-divider>
+      </div>
+      <div
+        id="dark-contract-dark"
+        style="padding: 0.75rem; color-scheme: dark; background: oklch(18% 0.01 250); color: oklch(95% 0.01 250);"
+      >
+        <ui-divider id="dark-contract-divider-dark"></ui-divider>
+      </div>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const light = getHost(canvasElement, 'dark-contract-divider-light');
+    const dark = getHost(canvasElement, 'dark-contract-divider-dark');
+    await Promise.all([light.updateComplete, dark.updateComplete]);
+
+    const lightHr = getInnerHr(light);
+    const darkHr = getInnerHr(dark);
+    const lightStyle = getComputedStyle(lightHr);
+    const darkStyle = getComputedStyle(darkHr);
+
+    if (lightStyle.borderTopStyle !== 'solid' || darkStyle.borderTopStyle !== 'solid') {
+      throw new Error('Dark/Light どちらでも border-top は solid である必要があります');
+    }
+
+    const cssText = getInjectedStyleTag().textContent;
+    if (!cssText.includes('var(--border-ghost)')) {
+      throw new Error('Dark Mode 追従に必要な border-ghost トークン参照が不足しています');
+    }
+    if (cssText.includes('prefers-color-scheme')) {
+      throw new Error('Divider は prefers-color-scheme 分岐ではなくトークンでモード追従する必要があります');
     }
   },
 };

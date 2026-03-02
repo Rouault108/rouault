@@ -1,105 +1,73 @@
-import { css, html, LitElement } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
-import { classMap } from 'lit/directives/class-map.js';
-import { ifDefined } from 'lit/directives/if-defined.js';
+import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
+import { customElement, property, state } from 'lit/decorators.js';
+
+interface ListColumnContext {
+  id: string;
+  label: string;
+  width: string;
+  sortable?: boolean;
+  hideOnMobile?: boolean;
+  primary?: boolean;
+}
+
+interface ListContextPayload {
+  columns: ListColumnContext[];
+  isMobile: boolean;
+}
+
+interface ListContextRequestDetail {
+  callback: (payload: ListContextPayload) => void;
+}
+
+interface UiActiveChangeDetail {
+  rowId: string;
+  colIndex: number;
+}
 
 /**
- * ??????? (List Item) ???????
+ * リストアイテム行コンポーネント。
  *
- * ?????? (`<ui-list>`) ??????????????????
- * WAI-ARIA Grid Pattern ????????????????????????????
- *
- * ## ??????
- *
- * - **High Density**: ????????????????????????????????
- * - **Browsing First**: ?????????????????????????????
- * - **Web Standard**: WAI-ARIA Grid Pattern (Roving Tabindex) ??????
- *
- * ## ????
- *
- * - **Row Focus Model**: ??????????????????? (`role="gridcell"`)????
- * - **Primary Action**: ?????? `<a>` ???????????????????????????
- * - **Touch Target**: ???????32px?????????????44px??????????
- *
- * @slot - ???????? `role="gridcell"` ??????
- * @slot mobile-supplement - ??????????????????????????
- *
- * @property {string} itemId - ????ID?`items` ???? `id` ????
- * @property {string | null} href - ????????????????Detail View?
- * @property {boolean} active - ????????????????????
- * @property {number | null} rowIndex - ??????????????????
- *
- * @fires ui-item-click - ???????????detail: { itemId: string, event: MouseEvent }
- * @fires ui-item-preview - Quick Look????Shift + Space??detail: { itemId: string }
- * @fires ui-item-context - ??????????????detail: { itemId: string, anchor: { x: number, y: number } }
- *
- * @cssprop --control-height-md - ???? (32px)
- * @cssprop --control-min-touch - ?????????? (44px)
- * @cssprop --space-4 - ??????? (16px)
- * @cssprop --border-width-thick - ?????????? (2px)
- * @cssprop --primary - ??????????
- * @cssprop --bg-hover - ??????
- * @cssprop --bg-surface-active - ????????
- * @cssprop --duration-fast - ???? (70ms)
- * @cssprop --ease-out - ???????
- *
- * @example
- * ```html
- * <ui-list-item item-id="1" href="/notes/1" active>
- *   <div role="gridcell">???????</div>
- *   <div role="gridcell">2024-01-01</div>
- * </ui-list-item>
- * ```
+ * `<ui-list>` から列定義コンテキストを受け取り、
+ * `columns[].id` に対応する named slot を `role="gridcell"` でラップして描画します。
  */
 @customElement('ui-list-item')
 export class ListItem extends LitElement {
   static override styles = css`
     :host {
-      display: block;
-      position: relative;
-    }
-
-    /* ?? Row Container ?? */
-    .row {
       display: grid;
-      grid-template-columns: subgrid;
       grid-column: 1 / -1;
       align-items: center;
       min-height: var(--control-height-md, 32px);
-      padding: 0 var(--space-4, 16px);
+      cursor: pointer;
+      position: relative;
 
-      /* Border: Forced Colors Mode????????????????????????????????? */
       border-left: var(--border-width-thick, 2px) solid transparent;
-
-      /* Background & Border Transition */
       background-color: transparent;
       transition:
         background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+        border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
 
-      /* Cursor */
-      cursor: pointer;
+      content-visibility: auto;
+      contain-intrinsic-height: var(--control-height-md, 32px);
+      user-select: text;
     }
 
-    /* ?? Hover / Focus Within State ?? */
-    .row:hover,
-    .row:focus-within {
+    :host {
+      /* スロット越しにsubgridチェーンが解決できないため、親の --_gtc を継承して使用する */
+      grid-template-columns: var(--_gtc, 1fr);
+    }
+
+    :host(:hover),
+    :host(:focus-within) {
       background-color: var(--bg-hover, oklch(0% 0 0 / 0.05));
     }
 
-    /* ?? Active (Focus) State ?? */
-    .row.active {
+    :host([active]) {
       background-color: var(--bg-surface-active, oklch(0% 0 0 / 0.08));
       border-left-color: var(--primary, oklch(60% 0.15 250));
     }
 
-    /* ?? Touch Target (??44�44px) ?? */
-    /**
-     * ???????32px????????????????????????44px????
-     * ??????????????????????z-index????????
-     */
-    .row::after {
+    :host::after {
       content: '';
       position: absolute;
       top: 50%;
@@ -111,202 +79,451 @@ export class ListItem extends LitElement {
       z-index: 0;
     }
 
-    /* ????????????? */
-    .row > ::slotted(*) {
+    .cell {
+      display: flex;
+      align-items: center;
+      min-height: var(--control-height-md, 32px);
+      padding: 0 var(--space-4, 16px);
+      overflow: hidden;
       position: relative;
       z-index: 1;
+      outline: none;
     }
 
-    /* ?? Action Button Container ?? */
-    /**
-     * ??????????????????????
-     * ???????????????????????????????
-     */
+    .cell:focus-visible {
+      outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
+      outline-offset: -2px; // var(--focus-ring-offset, 2px) だとフォーカスリングがはみ出るので、はみ出さないようにする
+      border-radius: var(--focus-ring-radius, 2px);
+    }
+
+    .cell-content {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .cell--primary {
+      font-size: var(--text-base, 14px);
+      font-weight: var(--font-normal, 400);
+      color: var(--fg-default, oklch(20% 0.01 250));
+    }
+
+    .cell--primary ::slotted(a.primary-link) {
+      color: inherit;
+      text-decoration: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+      width: 100%;
+    }
+
+    .cell--primary ::slotted(a.primary-link:hover) {
+      text-decoration: underline;
+    }
+
+    .cell--meta {
+      font-size: var(--text-sm, 13px);
+      font-weight: var(--font-normal, 400);
+      color: var(--fg-muted, oklch(48% 0.01 250));
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .mobile-supplement {
+      display: none;
+      margin-left: var(--space-2, 8px);
+      font-size: var(--text-sm, 13px);
+      color: var(--fg-muted, oklch(48% 0.01 250));
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .cell--action {
+      justify-content: flex-end;
+    }
+
     .actions {
       display: flex;
       align-items: center;
       gap: var(--space-1, 4px);
       opacity: 0;
       transition: opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
-      position: relative;
-      z-index: 1;
     }
 
-    .row:hover .actions,
-    .row:focus-within .actions,
-    .row.active .actions {
+    :host(:hover) .actions,
+    :host(:focus-within) .actions,
+    :host([active]) .actions {
       opacity: 1;
-    }
-
-    /* ?? Motion Reduction ?? */
-    @media (prefers-reduced-motion: reduce) {
-      .row,
-      .actions {
-        transition-duration: 0.01ms;
-      }
-    }
-
-    /* ?? Forced Colors Mode ?? */
-    @media (forced-colors: active) {
-      /* Active State: ??????? Highlight???????????? */
-      .row.active {
-        border-left-color: Highlight;
-      }
-
-      .row:focus-within {
-        outline: 2px solid CanvasText;
-        outline-offset: -2px;
-      }
-    }
-
-    /* ?? Print Styles ?? */
-    @media print {
-      .actions {
-        display: none !important;
-      }
-
-      .row {
-        border-left: none !important;
-        background: transparent !important;
-      }
-    }
-
-    /* ?? Mobile Supplement ?? */
-    .mobile-supplement {
-      display: none;
     }
 
     @media (max-width: 768px) {
       .mobile-supplement {
         display: inline;
-        color: var(--fg-muted, oklch(48% 0.01 250));
-        font-size: var(--text-sm, 13px);
-        margin-left: var(--space-2, 8px);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      :host,
+      .actions {
+        transition-duration: 0.01ms;
+      }
+    }
+
+    @media (forced-colors: active) {
+      :host([active]) {
+        border-left-color: Highlight;
+      }
+
+      :host(:focus-within) {
+        outline: 2px solid CanvasText;
+        outline-offset: -2px;
+      }
+    }
+
+    @media print {
+      :host {
+        border-left: none !important;
+        background: transparent !important;
+      }
+
+      .actions {
+        display: none !important;
       }
     }
   `;
 
-  /**
-   * ????ID?`items` ???? `id` ????
-   */
+  /** この行のID */
   @property({ type: String, attribute: 'item-id', reflect: true })
   itemId = '';
 
-  /**
-   * ????????????????Detail View?
-   * ??????????? `null`
-   */
+  /** 行のメイン遷移先 */
   @property({ type: String, reflect: true })
   href: string | null = null;
 
-  /**
-   * ????????????????????
-   * @default false
-   */
+  /** この行がアクティブ状態か */
   @property({ type: Boolean, reflect: true })
   active = false;
 
-  /**
-   * ??????????????????
-   * @default null
-   */
+  /** 行内フォーカスセル（0始まり） */
+  @property({ type: Number, attribute: 'active-cell-index', reflect: true })
+  activeCellIndex = 0;
+
+  /** 全体の中での行番号（ヘッダー込み論理位置） */
   @property({ type: Number, attribute: 'row-index', reflect: true })
   rowIndex: number | null = null;
 
+  /** 親 `<ui-list>` 管理下か */
+  @property({ type: Boolean, reflect: true })
+  managed = false;
+
+  @state()
+  private _columns: ListColumnContext[] = [];
+
+  @state()
+  private _isMobile = false;
+
+  private _warnedPrimaryMobile = false;
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.requestListContext();
+    this.addEventListener('keydown', this._handleHostKeyDown);
+    this.addEventListener('click', this._handleHostClick);
+    this.addEventListener('focusin', this._handleHostFocusIn);
+  }
+
+  override disconnectedCallback(): void {
+    this.removeEventListener('keydown', this._handleHostKeyDown);
+    this.removeEventListener('click', this._handleHostClick);
+    this.removeEventListener('focusin', this._handleHostFocusIn);
+    super.disconnectedCallback();
+  }
+
+  override updated(changed: PropertyValues<this>): void {
+    const changedKeys = changed as Map<PropertyKey, unknown>;
+    this._syncHostA11y();
+
+    if (changedKeys.has('_columns') || changedKeys.has('_isMobile')) {
+      this._syncPrimaryLinkClasses();
+    }
+
+    if (
+      changed.has('active') ||
+      changed.has('activeCellIndex') ||
+      changedKeys.has('_columns') ||
+      changedKeys.has('_isMobile')
+    ) {
+      this._focusActiveCell();
+    }
+  }
+
   /**
-   * ??????????
-   * Primary Action??????? <a> ?????????????
-   *
-   * ## ?????????:
-   * - ??????? (`window.getSelection().toString()`)
-   * - ??????? (Command, Ctrl, Shift, Alt) - ????????????????
-   * - ????? (Mouse Button 1)
+   * 親 `<ui-list>` へ列定義コンテキストを要求します。
+   * Lit Context 相当のイベントベース供給を利用します。
    */
-  private _handleClick = (e: MouseEvent): void => {
-    this._handleActivationEvent(e);
-  }
-
-  private _handleKeyDown = (e: KeyboardEvent): void => {
-    if (e.key !== 'Enter' && e.key !== ' ') {
-      return;
-    }
-    this._handleActivationEvent(e);
-  }
-
-  private _handleActivationEvent = (e: MouseEvent | KeyboardEvent): void => {
-    const hasTextSelection = (window.getSelection()?.toString().length ?? 0) > 0;
-    const hasModifierKey = e.metaKey || e.ctrlKey || e.shiftKey || e.altKey;
-    const isMiddleClick = e instanceof MouseEvent && e.button === 1;
-
-    if (hasTextSelection || hasModifierKey || isMiddleClick) {
-      return;
-    }
-
-    const target = e.target;
-    if (target instanceof HTMLElement && target.closest('a, button, [role="button"]')) {
-      return;
-    }
-
-    const primaryLink = this.shadowRoot?.querySelector('slot')?.assignedElements().find(
-      el => {
-        const gridcell = el.querySelector('[role="gridcell"]');
-        return gridcell?.querySelector('a');
-      }
-    )?.querySelector('[role="gridcell"] a') as HTMLAnchorElement | undefined;
-
-    if (primaryLink && this.href) {
-      e.preventDefault();
-      primaryLink.click();
-    }
-
-    this.dispatchEvent(new CustomEvent('ui-item-click', {
-      detail: { itemId: this.itemId, event: e },
-      bubbles: true,
-      composed: true,
-    }));
-  }
-  private _handleContextMenu = (e: MouseEvent): void => {
-    e.preventDefault();
-    this.dispatchEvent(new CustomEvent('ui-item-context', {
+  requestListContext(): void {
+    const event = new CustomEvent<ListContextRequestDetail>('ui-list-context-request', {
       detail: {
-        itemId: this.itemId,
-        anchor: { x: e.clientX, y: e.clientY },
+        callback: payload => {
+          this._columns = payload.columns;
+          this._isMobile = payload.isMobile;
+        },
       },
       bubbles: true,
       composed: true,
-    }));
+    });
+    this.dispatchEvent(event);
   }
 
-  override render() {
-    const classes = {
-      row: true,
-      active: this.active,
-    };
+  private get _primaryColumnId(): string | null {
+    const primary = this._columns.find(col => col.primary === true);
+    if (primary) return primary.id;
+    return this._columns[0]?.id ?? null;
+  }
+
+  private get _effectiveVisibleColumns(): ListColumnContext[] {
+    if (this._columns.length === 0) {
+      return [
+        {
+          id: '__default__',
+          label: '',
+          width: '1fr',
+          primary: true,
+        },
+      ];
+    }
+
+    return this._columns.filter(col => {
+      if (col.primary === true && col.hideOnMobile === true && !this._warnedPrimaryMobile) {
+        this._warnedPrimaryMobile = true;
+        // 仕様違反の列定義は警告しつつ常時表示にフォールバックする
+        console.warn('[ui-list-item] primary 列に hideOnMobile=true は指定できません。常時表示します。');
+      }
+
+      if (col.primary === true) return true;
+      if (!this._isMobile) return true;
+      return col.hideOnMobile !== true;
+    });
+  }
+
+  private _getLogicalColIndex(visibleIndex: number): number {
+    if (this._columns.length === 0) return 1;
+
+    const visible = this._effectiveVisibleColumns;
+    const target = visible[visibleIndex];
+    if (!target) return visibleIndex + 1;
+
+    return this._columns.findIndex(col => col.id === target.id) + 1;
+  }
+
+  private _normalizeCellIndex(index: number): number {
+    const maxIndex = this._effectiveVisibleColumns.length;
+    return Math.max(0, Math.min(index, maxIndex));
+  }
+
+  private _syncHostA11y(): void {
+    this.setAttribute('role', 'row');
+    this.setAttribute('aria-selected', String(this.active));
+    this.setAttribute('aria-haspopup', 'dialog');
+    this.setAttribute('aria-keyshortcuts', 'Space Shift+Space');
+    this.setAttribute('aria-description', 'Spaceキーでスクロール');
+
+    if (this.rowIndex !== null) {
+      this.setAttribute('aria-rowindex', String(this.rowIndex));
+    } else {
+      this.removeAttribute('aria-rowindex');
+    }
+  }
+
+  private _syncPrimaryLinkClasses(): void {
+    const primaryId = this._primaryColumnId;
+    if (!primaryId) return;
+
+    const primarySlot = this.shadowRoot?.querySelector<HTMLSlotElement>(
+      `slot[name="${CSS.escape(primaryId)}"]`,
+    );
+    if (!primarySlot) return;
+
+    const assigned = primarySlot.assignedElements({ flatten: true });
+    for (const node of assigned) {
+      if (node instanceof HTMLAnchorElement) {
+        node.classList.add('primary-link');
+        node.tabIndex = -1;
+        continue;
+      }
+
+      const anchors = node.querySelectorAll<HTMLAnchorElement>('a[href]');
+      anchors.forEach(anchor => {
+        anchor.classList.add('primary-link');
+        anchor.tabIndex = -1;
+      });
+    }
+  }
+
+  private _focusActiveCell(): void {
+    if (!this.active) return;
+
+    const targetIndex = this._normalizeCellIndex(this.activeCellIndex);
+    const cells = this.shadowRoot?.querySelectorAll<HTMLElement>('.cell[role="gridcell"]');
+    if (!cells || cells.length === 0) return;
+
+    const target = cells[targetIndex];
+    if (!target) return;
+    target.focus({ preventScroll: true });
+  }
+
+  private _getCellFromEvent(event: Event): HTMLElement | null {
+    const path = event.composedPath();
+    for (const node of path) {
+      if (node instanceof HTMLElement && node.classList.contains('cell')) {
+        return node;
+      }
+    }
+    return null;
+  }
+
+  private _getCellIndex(cell: HTMLElement | null): number {
+    if (!cell) return this._normalizeCellIndex(this.activeCellIndex);
+
+    const value = cell.dataset['colIndex'];
+    if (!value) return this._normalizeCellIndex(this.activeCellIndex);
+
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isNaN(parsed)) return this._normalizeCellIndex(this.activeCellIndex);
+    return this._normalizeCellIndex(parsed);
+  }
+
+  private _dispatchActiveChange(colIndex: number): void {
+    const rowId = this.itemId;
+    if (rowId.length === 0) return;
+
+    this.dispatchEvent(
+      new CustomEvent<UiActiveChangeDetail>('ui-active-change', {
+        detail: { rowId, colIndex },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  private readonly _handleHostClick = (event: Event): void => {
+    const cell = this._getCellFromEvent(event);
+    const colIndex = this._getCellIndex(cell);
+    this._dispatchActiveChange(colIndex);
+  };
+
+  private readonly _handleHostFocusIn = (event: FocusEvent): void => {
+    if (!this.active) return;
+
+    const cell = this._getCellFromEvent(event);
+    const colIndex = this._getCellIndex(cell);
+    if (colIndex === this._normalizeCellIndex(this.activeCellIndex)) return;
+    this._dispatchActiveChange(colIndex);
+  };
+
+  private readonly _handleHostKeyDown = (event: KeyboardEvent): void => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+
+    const currentCell = this._getCellFromEvent(event);
+    const currentIndex = this._getCellIndex(currentCell);
+    const maxIndex = this._effectiveVisibleColumns.length;
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      const nextIndex = Math.max(currentIndex - 1, 0);
+      if (nextIndex === currentIndex) return;
+      this._dispatchActiveChange(nextIndex);
+      return;
+    }
+
+    event.preventDefault();
+    const nextIndex = Math.min(currentIndex + 1, maxIndex);
+    if (nextIndex === currentIndex) return;
+    this._dispatchActiveChange(nextIndex);
+  };
+
+  private _renderFallbackCells(): TemplateResult {
+    const normalized = this._normalizeCellIndex(this.activeCellIndex);
+    const mainTabIndex = this.active ? (normalized === 0 ? '0' : '-1') : '-1';
+    const actionTabIndex = this.active ? (normalized === 1 ? '0' : '-1') : '-1';
 
     return html`
-      <div
-        class="${classMap(classes)}"
-        role="row"
-        aria-rowindex="${ifDefined(this.rowIndex ?? undefined)}"
-        aria-selected="${this.active}"
-        aria-haspopup="dialog"
-        tabindex="-1"
-        @click="${this._handleClick}"
-        @keydown="${this._handleKeyDown}"
-        @contextmenu="${this._handleContextMenu}"
-      >
-        <slot></slot>
+      <div role="gridcell" class="cell cell--primary" aria-colindex="1" data-col-index="0" tabindex="${mainTabIndex}">
+        <div class="cell-content">
+          <slot></slot>
+        </div>
+      </div>
 
-        <!-- Mobile Supplement Slot -->
-        <span class="mobile-supplement">
-          <slot name="mobile-supplement"></slot>
-        </span>
-
-        <!-- Action Buttons Container -->
+      <div role="gridcell" class="cell cell--action" aria-colindex="2" data-col-index="1" tabindex="${actionTabIndex}">
         <div class="actions">
           <slot name="actions"></slot>
         </div>
       </div>
+    `;
+  }
+
+  override render(): TemplateResult {
+    const visibleColumns = this._effectiveVisibleColumns;
+    const hasContextColumns = this._columns.length > 0;
+
+    if (!hasContextColumns) {
+      return this._renderFallbackCells();
+    }
+
+    const normalized = this._normalizeCellIndex(this.activeCellIndex);
+    const primaryId = this._primaryColumnId;
+
+    return html`
+      ${visibleColumns.map((column, visibleIndex) => {
+        const isPrimary = column.primary === true || column.id === primaryId;
+        const logicalColIndex = this._getLogicalColIndex(visibleIndex);
+        const colIndex = logicalColIndex - 1;
+        const tabIndex = this.active && normalized === colIndex ? '0' : '-1';
+
+        return html`
+          <div
+            role="gridcell"
+            class="cell ${isPrimary ? 'cell--primary' : 'cell--meta'}"
+            aria-colindex="${logicalColIndex}"
+            data-col-index="${String(colIndex)}"
+            tabindex="${tabIndex}"
+          >
+            <div class="cell-content">
+              <slot name="${column.id}"></slot>
+              ${isPrimary && this._isMobile
+                ? html`
+                    <span class="mobile-supplement">
+                      <slot name="mobile-supplement"></slot>
+                    </span>
+                  `
+                : nothing}
+            </div>
+          </div>
+        `;
+      })}
+
+      ${(() => {
+        const actionIndex = this._columns.length;
+        const actionTabIndex = this.active && normalized === actionIndex ? '0' : '-1';
+
+        return html`
+          <div
+            role="gridcell"
+            class="cell cell--action"
+            aria-colindex="${String(this._columns.length + 1)}"
+            data-col-index="${String(actionIndex)}"
+            tabindex="${actionTabIndex}"
+          >
+            <div class="actions">
+              <slot name="actions"></slot>
+            </div>
+          </div>
+        `;
+      })()}
     `;
   }
 }

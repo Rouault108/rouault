@@ -1,5 +1,6 @@
-import { css, html, LitElement, nothing } from 'lit';
+import { css, html, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 
 /**
  * バッジ (Badge) コンポーネント `<ui-badge>`
@@ -31,6 +32,7 @@ import { customElement, property } from 'lit/decorators.js';
  * @property {number | null} count - 表示する数値。`null` の場合はスロットを表示
  * @property {number} max - 数値の最大表示リミット（デフォルト: 99）
  * @property {'danger' | 'primary' | 'neutral' | 'success' | 'warning'} color - 意味的カラー
+ * @property {string | null} ariaLabelText - Dotバリアント用ラベル（`aria-label`属性）
  *
  * @slot - バッジのテキスト内容（`count` が `null` かつ `variant !== "dot"` の場合に表示）
  *
@@ -167,6 +169,11 @@ export class Badge extends LitElement {
       background: var(--badge-dot);
     }
 
+    /* フォントメトリクスによる視覚的下寄りを補正 */
+    span {
+      transform: translateY(-0.05em);
+    }
+
     /* ── Forced Colors Mode ── */
     @media (forced-colors: active) {
       :host {
@@ -220,6 +227,14 @@ export class Badge extends LitElement {
     color: 'danger' | 'primary' | 'neutral' | 'success' | 'warning' = 'primary';
 
     /**
+     * Dotバリアント用の代替テキスト。
+     * Dotはテキストを持たないため、`aria-label` の付与が必須。
+     * @default null
+     */
+    @property({ attribute: 'aria-label', type: String })
+    ariaLabelText: string | null = null;
+
+    /**
      * `count` の正規化処理。
      * - `NaN` / `Infinity` / `-Infinity` → `0`
      * - 負数 → `0`
@@ -267,7 +282,7 @@ export class Badge extends LitElement {
     override render() {
         // Dot バリアント: コンテンツを物理的にレンダリングしない
         if (this.variant === 'dot') {
-            return html`<span role="img" aria-label="${this.getAttribute('aria-label') ?? '更新があります'}"></span>`;
+            return html`<span role="img" aria-label=${ifDefined(this.ariaLabelText ?? undefined)}></span>`;
         }
 
         const displayText = this._displayText;
@@ -278,7 +293,7 @@ export class Badge extends LitElement {
         }
 
         // count が null の場合: スロットをレンダリング（Static Label）
-        return html`<span>${nothing}<slot></slot></span>`;
+        return html`<span><slot></slot></span>`;
     }
 }
 

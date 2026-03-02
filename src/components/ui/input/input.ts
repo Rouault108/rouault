@@ -1,7 +1,10 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import { live } from 'lit/directives/live.js';
+
+let inputInstanceCounter = 0;
 
 /**
  * 入力フィールド (Input) コンポーネント
@@ -90,6 +93,11 @@ import { live } from 'lit/directives/live.js';
  */
 @customElement('ui-input')
 export class Input extends LitElement {
+  static override shadowRootOptions = {
+    ...LitElement.shadowRootOptions,
+    delegatesFocus: true,
+  };
+
   static override styles = css`
     :host {
       display: flex;
@@ -120,8 +128,10 @@ export class Input extends LitElement {
     /* Input Element */
     input {
       width: 100%;
+      max-width: 100%;
       height: var(--control-height-md, 32px);
       padding: 0 var(--space-2, 8px);
+      box-sizing: border-box;
       
       /* Border & Radius */
       border-radius: var(--radius-md, 6px);
@@ -218,6 +228,7 @@ export class Input extends LitElement {
       input {
         border: var(--border-width, 1px) solid CanvasText !important;
         background: Canvas !important;
+        color: CanvasText !important;
       }
       
       input.error {
@@ -232,6 +243,7 @@ export class Input extends LitElement {
       
       input:disabled {
         border-color: GrayText;
+        color: GrayText !important;
         opacity: 1;
       }
     }
@@ -369,6 +381,7 @@ export class Input extends LitElement {
   private _internals: ElementInternals;
   private _nativeErrorMessage = '';
   private _hasNativeError = false;
+  private _formDisabled = false;
 
   // サポートされている type のリスト
   private readonly _supportedTypes: readonly string[] = [
@@ -382,18 +395,16 @@ export class Input extends LitElement {
   ];
 
   // 一意なIDを生成（レンダリング毎の再生成を防止）
-  private readonly _inputId = `input-${Math.random().toString(36).substring(2, 11)}`;
-  private readonly _errorId = `error-${Math.random().toString(36).substring(2, 11)}`;
-  private readonly _helpId = `help-${Math.random().toString(36).substring(2, 11)}`;
+  private readonly _instanceId = `ui-input-${(++inputInstanceCounter).toString()}`;
+  private readonly _inputId = `${this._instanceId}-input`;
+  private readonly _errorId = `${this._instanceId}-error`;
+  private readonly _helpId = `${this._instanceId}-help`;
 
   constructor() {
     super();
     this._internals = this.attachInternals();
 
     // delegatesFocus を有効化（外部からのフォーカスを内部inputに転送）
-    if (!this.shadowRoot) {
-      this.attachShadow({ mode: 'open', delegatesFocus: true });
-    }
   }
 
   override connectedCallback(): void {
@@ -409,7 +420,7 @@ export class Input extends LitElement {
   }
 
   override firstUpdated(): void {
-    this._internals.setFormValue(this.value);
+    this._syncFormValue();
     this._syncValidity();
   }
 
@@ -425,8 +436,8 @@ export class Input extends LitElement {
     super.updated(changedProperties);
 
     // ElementInternals を使ってフォーム値を設定
-    if (changedProperties.has('value')) {
-      this._internals.setFormValue(this.value);
+    if (changedProperties.has('value') || changedProperties.has('disabled')) {
+      this._syncFormValue();
     }
 
     if (changedProperties.has('label') && !this.label) {
@@ -446,6 +457,7 @@ export class Input extends LitElement {
       'type',
       'error',
       'errorMessage',
+      'disabled',
     ];
     if (validationProps.some(prop => changedProperties.has(prop))) {
       this._syncValidity();
@@ -474,21 +486,11 @@ export class Input extends LitElement {
   }
 
   private _handleFocus = (): void => {
-    this.dispatchEvent(
-      new FocusEvent('focus', {
-        bubbles: true,
-        composed: true,
-      })
-    );
+    this.dispatchEvent(new FocusEvent('focus'));
   }
 
   private _handleBlur = (): void => {
-    this.dispatchEvent(
-      new FocusEvent('blur', {
-        bubbles: true,
-        composed: true,
-      })
-    );
+    this.dispatchEvent(new FocusEvent('blur'));
   }
 
   override render() {
@@ -527,7 +529,7 @@ export class Input extends LitElement {
         name="${this.name}"
         .value="${live(this.value)}"
         placeholder="${this.placeholder}"
-        ?disabled="${this.disabled}"
+        ?disabled="${this._isDisabled}"
         ?readonly="${this.readonly}"
         ?required="${this.required}"
         pattern="${this.pattern || nothing}"
@@ -536,7 +538,7 @@ export class Input extends LitElement {
         autocomplete="${this.autocomplete}"
         aria-label="${this.label}"
         aria-invalid="${hasError}"
-        aria-describedby="${describedBy ?? ''}"
+        aria-describedby="${ifDefined(describedBy)}"
         class="${classMap(inputClasses)}"
         @input="${this._handleInput}"
         @change="${this._handleChange}"
@@ -604,9 +606,46 @@ export class Input extends LitElement {
   }
 
   /**
+   * フォームリセット時に初期値へ戻します。
+   */
+  formResetCallback(): void {
+    this.value = this.getAttribute('value') ?? '';
+    this.error = false;
+    this.errorMessage = '';
+    this._syncFormValue();
+    this._syncValidity();
+  }
+
+  /**
+   * fieldset由来のdisabled状態を反映します。
+   */
+  formDisabledCallback(disabled: boolean): void {
+    this._formDisabled = disabled;
+    this._syncFormValue();
+    this._syncValidity();
+    this.requestUpdate();
+  }
+
+  /**
+   * ブラウザ復元時の値を取り込みます。
+   */
+  formStateRestoreCallback(state: File | FormData | string | null): void {
+    if (typeof state === 'string') {
+      this.value = state;
+    }
+  }
+
+  /**
    * 強制エラーとネイティブバリデーションを統合して同期
    */
   private _syncValidity(): void {
+    if (this._isDisabled) {
+      this._hasNativeError = false;
+      this._nativeErrorMessage = '';
+      this._internals.setValidity({});
+      return;
+    }
+
     // 強制エラー（customError）を優先
     if (this.error && this.errorMessage) {
       this._hasNativeError = false;
@@ -645,6 +684,10 @@ export class Input extends LitElement {
     }
   }
 
+  private _syncFormValue(): void {
+    this._internals.setFormValue(this._isDisabled ? null : this.value);
+  }
+
   private _normalizeType(): void {
     if (this._isSupportedType(this.type)) {
       return;
@@ -660,6 +703,10 @@ export class Input extends LitElement {
 
   private _isSupportedType(type: string): boolean {
     return this._supportedTypes.includes(type);
+  }
+
+  private get _isDisabled(): boolean {
+    return this.disabled || this._formDisabled;
   }
 
   private get _hasError(): boolean {

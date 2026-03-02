@@ -1034,6 +1034,9 @@ export const BoundaryEmptyLabel: Story = {
         if (!el) throw new Error('ui-textarea not found');
 
         // コンソールエラーが出力されることを確認（テスト環境では警告のみ）
+        el.label = '一時ラベル';
+        await el.updateComplete;
+
         const originalError = console.error;
         let errorCalled = false;
         console.error = (...args: unknown[]) => {
@@ -1043,9 +1046,12 @@ export const BoundaryEmptyLabel: Story = {
             originalError(...args);
         };
 
-        await el.updateComplete;
-
-        console.error = originalError;
+        try {
+            el.label = '';
+            await el.updateComplete;
+        } finally {
+            console.error = originalError;
+        }
 
         // テスト: コンソールエラーが呼ばれたことを確認する
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -1061,13 +1067,13 @@ export const BoundaryEmptyLabel: Story = {
  * ⚠️ 境界条件: error=true だが error-message が空。
  *
  * `error=true` でも `error-message` が空の場合、エラーメッセージは表示されません。
- * ただし `aria-invalid="true"` は設定され、スタイルはエラー状態になります。
+ * ただし `aria-invalid="true"` が設定され、`checkValidity()` は `false` を返します。
  */
 export const BoundaryErrorWithoutMessage: Story = {
     parameters: {
         docs: {
             description: {
-                story: '⚠️ **境界条件**: `error=true` でも `error-message` が空の場合、エラーメッセージは表示されませんが、`aria-invalid="true"` とエラースタイルは適用されます。',
+                story: '⚠️ **境界条件**: `error=true` でも `error-message` が空の場合、エラーメッセージは表示されませんが、`aria-invalid="true"` が適用され、`checkValidity()` は `false` になります。',
             },
         },
     },
@@ -1108,6 +1114,11 @@ export const BoundaryErrorWithoutMessage: Story = {
         const errMsgVisible = el.shadowRoot?.querySelector('.error-message--visible');
         if (errMsgVisible) {
             throw new Error('Error message should not be visible when error-message is empty');
+        }
+
+        // テスト: Validity は必ず invalid
+        if (el.checkValidity()) {
+            throw new Error('checkValidity() should be false when error=true');
         }
 
         console.log('✅ All tests passed for BoundaryErrorWithoutMessage story');
@@ -1284,5 +1295,223 @@ export const BoundaryProgrammaticValue: Story = {
         }
 
         console.log('✅ All tests passed for BoundaryProgrammaticValue story');
+    },
+};
+
+/**
+ * ⚠️ 境界条件: rows と max-rows の逆転指定。
+ *
+ * 利用側責務として値はそのまま受け取り、コンポーネントは clamp しません。
+ */
+export const BoundaryRowsMaxRowsInversion: Story = {
+    parameters: {
+        docs: {
+            description: {
+                story: '⚠️ **境界条件**: `rows=6` と `max-rows=3` のような逆転指定も利用側責務として受け入れ、コンポーネント側で clamp しません。',
+            },
+        },
+    },
+    render: () => html`
+    <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
+      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
+        <strong>⚠️ 境界条件</strong>: <code>rows=6</code> + <code>max-rows=3</code>（逆転指定）
+      </div>
+      <ui-textarea
+        id="boundary-rows-maxrows-inversion"
+        label="逆転指定テスト"
+        rows="6"
+        max-rows="3"
+        auto-grow
+      ></ui-textarea>
+    </div>
+  `,
+    play: async ({ canvasElement }) => {
+        const el = canvasElement.querySelector<Textarea>('#boundary-rows-maxrows-inversion');
+        if (!el) throw new Error('ui-textarea not found');
+        await el.updateComplete;
+
+        if (el.rows !== 6) throw new Error(`Expected rows=6, got ${String(el.rows)}`);
+        if (el.maxRows !== 3) throw new Error(`Expected maxRows=3, got ${String(el.maxRows)}`);
+
+        console.log('✅ All tests passed for BoundaryRowsMaxRowsInversion story');
+    },
+};
+
+/**
+ * ダークモード相当トークンでの表示確認。
+ */
+export const DarkModePreview: Story = {
+    parameters: {
+        docs: {
+            description: {
+                story: 'ダークモード相当のトークン上書き環境で表示崩れがないことを確認します。',
+            },
+        },
+    },
+    render: () => html`
+    <div
+      style="
+        --bg-fill-muted: oklch(25% 0.01 250);
+        --bg-default: oklch(20% 0.01 250);
+        --fg-default: oklch(92% 0.01 250);
+        --fg-muted: oklch(75% 0.01 250);
+        --border-default: oklch(45% 0.01 250);
+        --focus-ring-color: oklch(75% 0.12 250);
+        background: oklch(17% 0.01 250);
+        padding: 1rem;
+        border-radius: 8px;
+      "
+    >
+      <ui-textarea
+        id="dark-mode-preview"
+        label="ダークモード確認"
+        help-text="ダークトークン上書き環境"
+        rows="3"
+        value="Dark mode preview"
+      ></ui-textarea>
+    </div>
+  `,
+    play: async ({ canvasElement }) => {
+        const el = canvasElement.querySelector<Textarea>('#dark-mode-preview');
+        if (!el) throw new Error('ui-textarea not found');
+        await el.updateComplete;
+
+        const ta = el.shadowRoot?.querySelector<HTMLTextAreaElement>('textarea');
+        if (!ta) throw new Error('textarea not found');
+        if (ta.getAttribute('aria-label') !== 'ダークモード確認') {
+            throw new Error('aria-label should be set in dark mode preview');
+        }
+
+        console.log('✅ All tests passed for DarkModePreview story');
+    },
+};
+
+/**
+ * Forced Colors でのフォールバック確認。
+ */
+export const ForcedColorsPreview: Story = {
+    parameters: {
+        docs: {
+            description: {
+                story: '`@media (forced-colors: active)` のフォールバック定義を前提に、エラー・無効状態の構造が維持されることを確認します。',
+            },
+        },
+    },
+    render: () => html`
+    <div style="display: grid; gap: 1rem; max-width: 480px;">
+      <ui-textarea
+        id="forced-colors-error"
+        label="強制カラー確認（エラー）"
+        error
+        error-message="エラー表示"
+        rows="3"
+      ></ui-textarea>
+      <ui-textarea
+        id="forced-colors-disabled"
+        label="強制カラー確認（無効）"
+        disabled
+        value="Disabled"
+        rows="3"
+      ></ui-textarea>
+    </div>
+  `,
+    play: async ({ canvasElement }) => {
+        const errorEl = canvasElement.querySelector<Textarea>('#forced-colors-error');
+        const disabledEl = canvasElement.querySelector<Textarea>('#forced-colors-disabled');
+        if (!errorEl || !disabledEl) throw new Error('ui-textarea not found');
+        await Promise.all([errorEl.updateComplete, disabledEl.updateComplete]);
+
+        const errorTa = errorEl.shadowRoot?.querySelector<HTMLTextAreaElement>('textarea');
+        const disabledTa = disabledEl.shadowRoot?.querySelector<HTMLTextAreaElement>('textarea');
+        if (!errorTa || !disabledTa) throw new Error('textarea not found');
+
+        if (errorTa.getAttribute('aria-invalid') !== 'true') throw new Error('Error textarea should be invalid');
+        if (!disabledTa.disabled) throw new Error('Disabled textarea should remain disabled');
+
+        console.log('✅ All tests passed for ForcedColorsPreview story');
+    },
+};
+
+/**
+ * Reduced Motion での遷移短縮確認。
+ */
+export const ReducedMotionPreview: Story = {
+    parameters: {
+        docs: {
+            description: {
+                story: 'reduced motion 相当として `--duration-fast: 0.01ms` と `--animation-focus: none` を適用した表示を確認します。',
+            },
+        },
+    },
+    render: () => html`
+    <div style="--duration-fast: 0.01ms; --animation-focus: none; max-width: 480px;">
+      <ui-textarea
+        id="reduced-motion-preview"
+        label="Reduced Motion 確認"
+        rows="3"
+        value="Motion reduced"
+      ></ui-textarea>
+    </div>
+  `,
+    play: async ({ canvasElement }) => {
+        const el = canvasElement.querySelector<Textarea>('#reduced-motion-preview');
+        if (!el) throw new Error('ui-textarea not found');
+        await el.updateComplete;
+
+        const ta = el.shadowRoot?.querySelector<HTMLTextAreaElement>('textarea');
+        if (!ta) throw new Error('textarea not found');
+
+        const style = getComputedStyle(ta);
+        if (!style.transitionDuration.includes('0.01ms')) {
+            throw new Error(`Expected reduced transition duration, got "${style.transitionDuration}"`);
+        }
+
+        console.log('✅ All tests passed for ReducedMotionPreview story');
+    },
+};
+
+/**
+ * 印刷時スタイルの確認用ストーリー。
+ */
+export const PrintPreview: Story = {
+    parameters: {
+        docs: {
+            description: {
+                story: '印刷プレビュー時の可読性確認用。背景除去・ボーダー維持・値の可読性を確認します。',
+            },
+        },
+    },
+    render: () => html`
+    <div style="display: grid; gap: 1rem; max-width: 480px;">
+      <ui-textarea
+        id="print-preview-default"
+        label="印刷確認"
+        value="印刷時も読みやすい本文"
+        rows="3"
+      ></ui-textarea>
+      <ui-textarea
+        id="print-preview-error"
+        label="印刷確認（エラー）"
+        error
+        error-message="エラー表示"
+        value="エラー状態の本文"
+        rows="3"
+      ></ui-textarea>
+    </div>
+  `,
+    play: async ({ canvasElement }) => {
+        const defaultEl = canvasElement.querySelector<Textarea>('#print-preview-default');
+        const errorEl = canvasElement.querySelector<Textarea>('#print-preview-error');
+        if (!defaultEl || !errorEl) throw new Error('ui-textarea not found');
+        await Promise.all([defaultEl.updateComplete, errorEl.updateComplete]);
+
+        const defaultTa = defaultEl.shadowRoot?.querySelector<HTMLTextAreaElement>('textarea');
+        const errorTa = errorEl.shadowRoot?.querySelector<HTMLTextAreaElement>('textarea');
+        if (!defaultTa || !errorTa) throw new Error('textarea not found');
+
+        if (defaultTa.value !== '印刷時も読みやすい本文') throw new Error('Default print value mismatch');
+        if (errorTa.getAttribute('aria-invalid') !== 'true') throw new Error('Error print textarea should be invalid');
+
+        console.log('✅ All tests passed for PrintPreview story');
     },
 };

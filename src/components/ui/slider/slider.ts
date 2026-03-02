@@ -61,8 +61,8 @@ import { customElement, property, state } from 'lit/decorators.js';
  *
  * <!-- prefix/suffix スロット -->
  * <ui-slider label="明るさ" min="0" max="100" value="70">
- *   <span slot="prefix">🌑</span>
- *   <span slot="suffix">🌕</span>
+ *   <iconify-icon slot="prefix" icon="lucide:moon" aria-hidden="true"></iconify-icon>
+ *   <iconify-icon slot="suffix" icon="lucide:sun" aria-hidden="true"></iconify-icon>
  * </ui-slider>
  *
  * <!-- 無効 -->
@@ -146,13 +146,13 @@ export class Slider extends LitElement {
       transition: transform 70ms var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
-    /* Thumb: Hover 時にスケールアップ */
-    .slider-container:hover .thumb {
+    /* Thumb: Hover 時にスケールアップ（disabled では無効） */
+    :host(:not([disabled])) .slider-container:hover .thumb {
       transform: translateX(-50%) translateY(-50%) scale(var(--scale-hover-lg, 1.2));
     }
 
-    /* Thumb: ドラッグ中（Active）にスケール変化 */
-    .slider-container:has(input:active) .thumb {
+    /* Thumb: ドラッグ中（Active）にスケール変化（disabled では無効） */
+    :host(:not([disabled])) input:active ~ .track .thumb {
       transform: translateX(-50%) translateY(-50%) scale(var(--scale-dragging, 0.9));
     }
 
@@ -160,9 +160,8 @@ export class Slider extends LitElement {
     /*
      * DOM 順序: <input> → <div class="track"> の順に配置。
      * 兄弟セレクタで input のフォーカス状態を Thumb に移譲（Proxy）。
-     * NOTE: :has() を使用して input のフォーカス状態を検出します。
      */
-    .slider-container:has(input:focus-visible) .thumb {
+    input:focus-visible ~ .track .thumb {
       outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
       outline-offset: var(--focus-ring-offset, 2px);
       border-radius: var(--radius-full, 9999px);
@@ -171,7 +170,7 @@ export class Slider extends LitElement {
 
     /* Reduced Motion: フォーカスアニメーションを無効化 */
     @media (prefers-reduced-motion: reduce) {
-      .slider-container:has(input:focus-visible) .thumb {
+      input:focus-visible ~ .track .thumb {
         animation: none;
       }
     }
@@ -303,6 +302,9 @@ export class Slider extends LitElement {
     @state()
     private _normalizedStep = 1;
 
+    /** label 必須要件の警告を重複表示しないためのフラグ */
+    private _hasWarnedMissingLabel = false;
+
     // ──────────────────────────────────────────────
     // Value Normalization
     // ──────────────────────────────────────────────
@@ -365,6 +367,11 @@ export class Slider extends LitElement {
         this._normalizedMax = normalizedMax;
         this._normalizedStep = normalizedStep;
         this._normalizedValue = normalizedValue;
+
+        // 公開 value と内部正規化値を常に同期する（仕様: 未指定時は min を採用）
+        if (this.value !== normalizedValue) {
+            this.value = normalizedValue;
+        }
     }
 
     /**
@@ -393,6 +400,14 @@ export class Slider extends LitElement {
         }
     }
 
+    override updated(changedProperties: PropertyValues<this>): void {
+        super.updated(changedProperties);
+
+        if (changedProperties.has('label') && this.label.trim().length > 0) {
+            this._hasWarnedMissingLabel = false;
+        }
+    }
+
     // ──────────────────────────────────────────────
     // Event Handlers
     // ──────────────────────────────────────────────
@@ -403,8 +418,15 @@ export class Slider extends LitElement {
 
         const input = e.target as HTMLInputElement;
         const rawValue = parseFloat(input.value);
+        const safeRawValue = Number.isFinite(rawValue) ? rawValue : this._normalizedMin;
+        const clamped = Math.min(Math.max(safeRawValue, this._normalizedMin), this._normalizedMax);
+        const stepsFromMin = Math.round((clamped - this._normalizedMin) / this._normalizedStep);
+        const snapped = this._normalizedMin + stepsFromMin * this._normalizedStep;
         const precision = this._getStepPrecision(this._normalizedStep);
-        this._normalizedValue = this._roundToPrecision(rawValue, precision);
+        this._normalizedValue = this._roundToPrecision(
+            Math.min(Math.max(snapped, this._normalizedMin), this._normalizedMax),
+            precision,
+        );
         this.value = this._normalizedValue;
 
         this.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
@@ -415,6 +437,55 @@ export class Slider extends LitElement {
         if (this.disabled) return;
         this.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
     };
+
+    /** キーボードの決定的挙動（特に PageUp/PageDown）を保証します。 */
+    private _handleKeyDown = (e: KeyboardEvent): void => {
+        if (this.disabled) return;
+
+        const input = e.target as HTMLInputElement;
+        const largeStep = this._normalizedStep * 10;
+        let nextValue: number | null = null;
+
+        switch (e.key) {
+            case 'PageUp':
+                nextValue = this._normalizedValue + largeStep;
+                break;
+            case 'PageDown':
+                nextValue = this._normalizedValue - largeStep;
+                break;
+            default:
+                return;
+        }
+
+        e.preventDefault();
+
+        const clamped = Math.min(Math.max(nextValue, this._normalizedMin), this._normalizedMax);
+        const stepsFromMin = Math.round((clamped - this._normalizedMin) / this._normalizedStep);
+        const snapped = this._normalizedMin + stepsFromMin * this._normalizedStep;
+        const precision = this._getStepPrecision(this._normalizedStep);
+        const normalized = this._roundToPrecision(
+            Math.min(Math.max(snapped, this._normalizedMin), this._normalizedMax),
+            precision,
+        );
+
+        this._normalizedValue = normalized;
+        this.value = normalized;
+        input.value = String(normalized);
+        this.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+        this.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+    };
+
+    /** label 必須仕様を補助し、未指定時でも最低限のアクセシブル名を保証します。 */
+    private _getAriaLabel(): string {
+        const trimmed = this.label.trim();
+        if (trimmed.length > 0) return trimmed;
+
+        if (!this._hasWarnedMissingLabel) {
+            this._hasWarnedMissingLabel = true;
+            console.warn('[ui-slider] `label` は必須です。空の場合は "Slider" をフォールバック使用します。');
+        }
+        return 'Slider';
+    }
 
     // ──────────────────────────────────────────────
     // Public API
@@ -454,7 +525,7 @@ export class Slider extends LitElement {
         <!--
           ネイティブ input: 透明・最前面（z-index: 2）
           全てのユーザー操作（クリック・ドラッグ・キーボード）を直接受け取る。
-          DOM 順序: input → .track の順（:has() セレクタのため）
+           DOM 順序: input → .track の順（兄弟セレクタのため）
         -->
         <input
           type="range"
@@ -463,13 +534,14 @@ export class Slider extends LitElement {
           max="${this._normalizedMax}"
           step="${this._normalizedStep}"
           ?disabled="${this.disabled}"
-          aria-label="${this.label || nothing}"
+          aria-label="${this._getAriaLabel()}"
           aria-valuemin="${this._normalizedMin}"
           aria-valuemax="${this._normalizedMax}"
           aria-valuenow="${this._normalizedValue}"
           aria-disabled="${this.disabled ? 'true' : nothing}"
           @input="${this._handleInput}"
           @change="${this._handleChange}"
+          @keydown="${this._handleKeyDown}"
         />
 
         <!-- カスタムトラック: 背面（z-index: 1, pointer-events: none） -->

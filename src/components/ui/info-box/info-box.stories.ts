@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import './info-box';
 import { InfoBox, type InfoBoxVariant } from './info-box';
 
@@ -39,6 +40,15 @@ const VARIANT_MATRIX_CASES: readonly VariantMatrixCase[] = [
     icon: 'clipboard-list',
     landmark: false,
     expectedRole: 'note',
+    expectsHeader: true,
+  },
+  {
+    id: 'matrix-filled-region',
+    variant: 'filled',
+    heading: 'filled region',
+    icon: 'shield',
+    landmark: true,
+    expectedRole: 'region',
     expectsHeader: true,
   },
   {
@@ -159,13 +169,15 @@ export const Default: Story = {
       id="info-box-default"
       heading="${args.heading}"
       icon="${args.icon}"
-      heading-level="${String(args.headingLevel)}"
+      heading-level="${ifDefined(args.headingLevel !== undefined ? String(args.headingLevel) : undefined)}"
       ?landmark="${args.landmark}"
       variant="${args.variant}"
     >
       <dl style="display: grid; gap: 0.5rem; margin: 0;">
-        <div><dt>作曲</dt><dd style="margin: 0;">クロード・ドビュッシー</dd></div>
-        <div><dt>作品番号</dt><dd style="margin: 0;">L. 75</dd></div>
+        <dt>作曲</dt>
+        <dd style="margin: 0;">クロード・ドビュッシー</dd>
+        <dt>作品番号</dt>
+        <dd style="margin: 0;">L. 75</dd>
       </dl>
     </ui-info-box>
   `,
@@ -269,8 +281,12 @@ export const VariantStateMatrix: Story = {
       if (testCase.expectsHeader) {
         if (!header) throw new Error(`${testCase.id}: header が必要です`);
         const heading = getHeading(infoBox);
-        if (infoBox.getAttribute('aria-labelledby') !== heading.id) {
-          throw new Error(`${testCase.id}: aria-labelledby が heading id と一致しません`);
+        if (testCase.expectedRole === 'region') {
+          if (infoBox.getAttribute('aria-labelledby') !== heading.id) {
+            throw new Error(`${testCase.id}: region の aria-labelledby が heading id と一致しません`);
+          }
+        } else if (infoBox.hasAttribute('aria-labelledby')) {
+          throw new Error(`${testCase.id}: note では aria-labelledby を出力しません`);
         }
 
         const expectedHeaderColor = testCase.variant === 'filled' ? 'rgb(20, 21, 22)' : 'rgb(70, 71, 72)';
@@ -307,6 +323,7 @@ export const HeadingLevelBoundaries: Story = {
       <ui-info-box id="heading-valid" heading="有効レベル" heading-level="1">heading-level=1</ui-info-box>
       <ui-info-box id="heading-zero" heading="無効レベル0" heading-level="0">heading-level=0</ui-info-box>
       <ui-info-box id="heading-seven" heading="無効レベル7" heading-level="7">heading-level=7</ui-info-box>
+      <ui-info-box id="heading-decimal" heading="無効レベル2.5" heading-level="2.5">heading-level=2.5</ui-info-box>
       <ui-info-box id="heading-no-title" heading-level="4">heading なし + heading-level=4</ui-info-box>
     </div>
   `,
@@ -314,8 +331,9 @@ export const HeadingLevelBoundaries: Story = {
     const valid = getHost(canvasElement, 'heading-valid');
     const zero = getHost(canvasElement, 'heading-zero');
     const seven = getHost(canvasElement, 'heading-seven');
+    const decimal = getHost(canvasElement, 'heading-decimal');
     const noTitle = getHost(canvasElement, 'heading-no-title');
-    await Promise.all([valid.updateComplete, zero.updateComplete, seven.updateComplete, noTitle.updateComplete]);
+    await Promise.all([valid.updateComplete, zero.updateComplete, seven.updateComplete, decimal.updateComplete, noTitle.updateComplete]);
 
     const validHeading = getHeading(valid);
     if (validHeading.getAttribute('role') !== 'heading' || validHeading.getAttribute('aria-level') !== '1') {
@@ -330,6 +348,11 @@ export const HeadingLevelBoundaries: Story = {
     const sevenHeading = getHeading(seven);
     if (sevenHeading.hasAttribute('role') || sevenHeading.hasAttribute('aria-level')) {
       throw new Error('heading-level=7 は無効値として role/aria-level を出力しません');
+    }
+
+    const decimalHeading = getHeading(decimal);
+    if (decimalHeading.hasAttribute('role') || decimalHeading.hasAttribute('aria-level')) {
+      throw new Error('heading-level=2.5 は無効値として role/aria-level を出力しません');
     }
 
     if (getHeader(noTitle)) {
@@ -420,6 +443,31 @@ export const InvalidVariantFallback: Story = {
 };
 
 /**
+ * 境界条件:
+ * 有効な要素/テキストノードがない場合は描画しない。
+ */
+export const EmptySlotDoesNotRender: Story = {
+  render: () => html`
+    <div style="display: grid; gap: 0.75rem;">
+      <ui-info-box id="empty-slot"></ui-info-box>
+      <ui-info-box id="whitespace-only">   </ui-info-box>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const empty = getHost(canvasElement, 'empty-slot');
+    const whitespaceOnly = getHost(canvasElement, 'whitespace-only');
+    await Promise.all([empty.updateComplete, whitespaceOnly.updateComplete]);
+
+    if (empty.shadowRoot?.querySelector('.info-box')) {
+      throw new Error('空スロットでは .info-box を描画してはいけません');
+    }
+    if (whitespaceOnly.shadowRoot?.querySelector('.info-box')) {
+      throw new Error('空白のみのスロットでは .info-box を描画してはいけません');
+    }
+  },
+};
+
+/**
  * スタイル契約:
  * 受け入れ基準にあるトークンと forced-colors ブロックを保持していることを検証。
  */
@@ -452,6 +500,33 @@ export const StyleContracts: Story = {
     }
     if (!styles.includes('var(--border-style-subtle')) {
       throw new Error('境界線トークン --border-style-subtle が使用されていません');
+    }
+  },
+};
+
+/**
+ * Dark Mode 契約:
+ * prefers-color-scheme 分岐を持たず、セマンティックトークンで Light/Dark を追従する。
+ */
+export const DarkModeTokenContract: Story = {
+  render: () => html`
+    <ui-info-box id="dark-mode-contract" heading="Dark Mode Contract" variant="filled" icon="moon" heading-level="2" landmark>
+      semantic token contract checks
+    </ui-info-box>
+  `,
+  play: async ({ canvasElement }) => {
+    const infoBox = getHost(canvasElement, 'dark-mode-contract');
+    await infoBox.updateComplete;
+
+    const styles = String(InfoBox.styles);
+    if (styles.includes('prefers-color-scheme')) {
+      throw new Error('info-box は prefers-color-scheme 分岐を持たずトークンでモード追従する必要があります');
+    }
+    if (!styles.includes('var(--bg-fill-muted)')) {
+      throw new Error('--bg-fill-muted の参照が不足しています');
+    }
+    if (!styles.includes('var(--fg-muted)') || !styles.includes('var(--fg-default)')) {
+      throw new Error('ヘッダー配色のトークン参照が不足しています');
     }
   },
 };

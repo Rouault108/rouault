@@ -105,6 +105,8 @@ export const defineButtonA11yContract = <T extends ButtonA11yContract>(contract:
  */
 @customElement('ui-button')
 export class Button extends LitElement {
+  static override shadowRootOptions = { ...LitElement.shadowRootOptions, delegatesFocus: true };
+
   static override styles = css`
     :host {
       display: inline-flex;
@@ -435,6 +437,14 @@ export class Button extends LitElement {
   override ariaLabel: string | null = null;
 
   /**
+   * トグルボタンの押下状態
+   * @type {boolean | undefined}
+   * @default undefined
+   */
+  @property({ type: Boolean, reflect: true })
+  pressed?: boolean;
+
+  /**
    * 処理中状態
    * @default false
    */
@@ -595,6 +605,7 @@ export class Button extends LitElement {
         form="${ifDefined(this.form)}"
         ?disabled="${this.disabled || this.loading}"
         aria-busy="${ifDefined(this.loading ? 'true' : undefined)}"
+        aria-pressed="${ifDefined(this.pressed !== undefined ? String(this.pressed) : undefined)}"
         aria-label="${ifDefined(this.ariaLabel ?? undefined)}"
         class="${classMap(classes)}"
         @click="${this._handleClick}"

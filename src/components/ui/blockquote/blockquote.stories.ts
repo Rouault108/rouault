@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './blockquote';
-import type { Blockquote, BlockquoteVariant } from './blockquote';
+import { Blockquote } from './blockquote';
+import type { BlockquoteVariant } from './blockquote';
 
 const VARIANTS = ['default', 'nested'] as const satisfies BlockquoteVariant[];
 
@@ -16,6 +17,14 @@ const getQuoteRoot = (block: Blockquote): HTMLElement => {
   if (!quote) throw new Error('blockquote.quote が見つかりません');
   return quote;
 };
+
+const getSourceCaption = (block: Blockquote): HTMLElement => {
+  const caption = block.shadowRoot?.querySelector<HTMLElement>('figcaption.source');
+  if (!caption) throw new Error('figcaption.source が見つかりません');
+  return caption;
+};
+
+const readCssText = (styles: unknown): string => String(styles);
 
 const meta: Meta<Blockquote> = {
   title: 'Components/Blockquote',
@@ -237,6 +246,36 @@ export const SourceContract: Story = {
 };
 
 /**
+ * フォーカス契約:
+ * - blockquote は非インタラクティブ
+ * - 出典リンクのみがフォーカス対象になる
+ */
+export const FocusContract: Story = {
+  render: () => html`
+    <ui-blockquote id="focus-contract">
+      <p>本文はフォーカス対象ではなく、出典リンクのみを到達可能とする。</p>
+      <span slot="source">出典: <a id="focus-contract-link" href="https://example.com/source">設計資料</a></span>
+    </ui-blockquote>
+  `,
+  play: async ({ canvasElement }) => {
+    const block = getBlockquote(canvasElement, 'focus-contract');
+    await block.updateComplete;
+
+    const quote = getQuoteRoot(block);
+    if (quote.hasAttribute('tabindex') || quote.hasAttribute('role')) {
+      throw new Error('blockquote にインタラクション属性を付与してはいけません');
+    }
+
+    const link = block.querySelector<HTMLAnchorElement>('#focus-contract-link');
+    if (!link) throw new Error('#focus-contract-link が見つかりません');
+    link.focus();
+    if (document.activeElement !== link) {
+      throw new Error('出典リンクがキーボードフォーカス対象になっていません');
+    }
+  },
+};
+
+/**
  * 事故が多い境界条件:
  * - 不正 variant のフォールバック
  * - 空白 source / 空白 source slot の抑止
@@ -287,6 +326,118 @@ export const BoundaryConditions: Story = {
 
     if (emptySourceSlot.shadowRoot?.querySelector('figure')) {
       throw new Error('空白のみの source slot は figcaption 描画条件に含めてはいけません');
+    }
+  },
+};
+
+/**
+ * Dark Mode契約:
+ * - セマンティックトークン参照で Light/Dark を横断する
+ * - prefers-color-scheme の直接分岐を持たない
+ */
+export const DarkModeTokenContract: Story = {
+  render: () => html`
+    <div style="display: grid; gap: 1rem;">
+      <div style="padding: 1rem; background: var(--bg-default); color: var(--fg-default);">
+        <ui-blockquote id="dark-token-light" source="Source: Light Token">
+          <p>Light surface on semantic tokens.</p>
+        </ui-blockquote>
+      </div>
+      <div style="padding: 1rem; color-scheme: dark; background: oklch(18% 0.01 250); color: oklch(95% 0.01 250);">
+        <ui-blockquote id="dark-token-dark" source="Source: Dark Token">
+          <p>Dark surface on semantic tokens.</p>
+        </ui-blockquote>
+      </div>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const light = getBlockquote(canvasElement, 'dark-token-light');
+    const dark = getBlockquote(canvasElement, 'dark-token-dark');
+    await Promise.all([light.updateComplete, dark.updateComplete]);
+
+    const cssText = readCssText(Blockquote.styles);
+    const requiredTokens = [
+      'var(--fg-default',
+      'var(--fg-muted',
+      'var(--border-default',
+      'var(--border-muted',
+    ];
+
+    for (const token of requiredTokens) {
+      if (!cssText.includes(token)) {
+        throw new Error(`Dark/Light 共通トークン参照が不足しています: ${token}`);
+      }
+    }
+
+    if (cssText.includes('prefers-color-scheme')) {
+      throw new Error('blockquote は prefers-color-scheme 分岐ではなくトークンでモード追従する必要があります');
+    }
+  },
+};
+
+/**
+ * Forced Colors契約:
+ * - 強制カラーモードで構造線を維持する
+ * - 色指定がトークン参照を維持する
+ */
+export const ForcedColorsContract: Story = {
+  render: () => html`
+    <ui-blockquote id="forced-colors-contract" source="出典: トークン契約">
+      <p>forced-colors でも左構造線が失われないこと。</p>
+    </ui-blockquote>
+  `,
+  play: async ({ canvasElement }) => {
+    const block = getBlockquote(canvasElement, 'forced-colors-contract');
+    await block.updateComplete;
+
+    const cssText = readCssText(Blockquote.styles);
+    const requiredTokens = [
+      '@media (forced-colors: active)',
+      'border-inline-start: var(--border-width-thick',
+      'var(--border-default',
+      'forced-color-adjust: auto',
+      '.source cite',
+      'var(--fg-muted',
+    ];
+
+    for (const token of requiredTokens) {
+      if (!cssText.includes(token)) {
+        throw new Error(`forced-colors 契約の定義が不足しています: ${token}`);
+      }
+    }
+  },
+};
+
+/**
+ * Print契約:
+ * - blockquote / figure の分断抑止が定義されている
+ * - 構造線の印刷色固定が定義されている
+ */
+export const PrintStyleContract: Story = {
+  render: () => html`
+    <ui-blockquote id="print-contract" source="出典: 印刷設計">
+      <p>print 時の構造保持を確認する。</p>
+    </ui-blockquote>
+  `,
+  play: async ({ canvasElement }) => {
+    const block = getBlockquote(canvasElement, 'print-contract');
+    await block.updateComplete;
+    getSourceCaption(block);
+
+    const cssText = readCssText(Blockquote.styles);
+    const requiredTokens = [
+      '@media print',
+      'break-inside: avoid',
+      'page-break-inside: avoid',
+      'border-inline-start-color: #000 !important',
+      'figure',
+      '.quote',
+    ];
+
+    for (const token of requiredTokens) {
+      if (!cssText.includes(token)) {
+        throw new Error(`印刷スタイル契約の定義が不足しています: ${token}`);
+      }
     }
   },
 };

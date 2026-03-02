@@ -148,10 +148,6 @@ export class Radio extends LitElement {
       border-color: var(--border-danger, oklch(55% 0.2 28));
     }
 
-    :host([invalid][checked]) .control {
-      border-color: var(--primary, oklch(60% 0.15 250));
-    }
-
     /* ── フォーカスリング ── */
     .control:focus-visible {
       outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
@@ -256,6 +252,7 @@ export class Radio extends LitElement {
 
     // 一意な ID（レンダリング毎の再生成を防止）
     private readonly _controlId = `radio-${Math.random().toString(36).substring(2, 11)}`;
+    private readonly _labelId = `radio-label-${Math.random().toString(36).substring(2, 11)}`;
     private readonly _errorId = `radio-error-${Math.random().toString(36).substring(2, 11)}`;
 
     constructor() {
@@ -273,6 +270,7 @@ export class Radio extends LitElement {
 
     override disconnectedCallback(): void {
         super.disconnectedCallback();
+        this._notifyGroupTabindexUpdate();
     }
 
     override updated(changedProperties: PropertyValues<this>): void {
@@ -296,8 +294,13 @@ export class Radio extends LitElement {
         }
 
         // Roving Tabindex の更新
-        if (changedProperties.has('checked') || changedProperties.has('disabled')) {
+        if (
+            changedProperties.has('checked') ||
+            changedProperties.has('disabled') ||
+            changedProperties.has('name')
+        ) {
             this._updateTabindex();
+            this._notifyGroupTabindexUpdate();
         }
 
         // ARIA 属性を Control 要素に反映
@@ -310,11 +313,37 @@ export class Radio extends LitElement {
                 control.removeAttribute('aria-disabled');
             }
             const showError = this.invalid && !!this.errorMessage;
+            const externalLabel = this.getAttribute('aria-label');
+            const externalLabelledBy = this.getAttribute('aria-labelledby');
+            const externalDescribedBy = this.getAttribute('aria-describedby');
+            const describedByIds: string[] = [];
+            if (externalDescribedBy) describedByIds.push(externalDescribedBy);
+            if (showError) describedByIds.push(this._errorId);
+            const describedBy = describedByIds.join(' ');
+
+            if (this.label) {
+                control.setAttribute('aria-labelledby', this._labelId);
+            } else if (externalLabelledBy) {
+                control.setAttribute('aria-labelledby', externalLabelledBy);
+            } else {
+                control.removeAttribute('aria-labelledby');
+            }
+
+            if (externalLabel) {
+                control.setAttribute('aria-label', externalLabel);
+            } else {
+                control.removeAttribute('aria-label');
+            }
+
             if (showError) {
                 control.setAttribute('aria-invalid', 'true');
-                control.setAttribute('aria-describedby', this._errorId);
             } else {
                 control.removeAttribute('aria-invalid');
+            }
+
+            if (describedBy.length > 0) {
+                control.setAttribute('aria-describedby', describedBy);
+            } else {
                 control.removeAttribute('aria-describedby');
             }
         }
@@ -368,6 +397,14 @@ export class Radio extends LitElement {
         }
     }
 
+    /** 同一グループの roving tabindex を再同期 */
+    private _notifyGroupTabindexUpdate(): void {
+        const group = this._getGroupMembers();
+        group.forEach((radio) => {
+            radio._updateTabindex();
+        });
+    }
+
     /**
      * 同一 `name` を持つグループメンバーを取得（DOM順）
      */
@@ -407,6 +444,21 @@ export class Radio extends LitElement {
     /** クリックによる選択 */
     private _handleClick = (): void => {
         this._select();
+    };
+
+    /** ラベルクリックで選択（span は labelable ではないため手動連携） */
+    private _handleLabelClick = (e: MouseEvent): void => {
+        e.preventDefault();
+        this.focus();
+        this._select();
+    };
+
+    /** ラベルのキーボード操作: Enter で選択（ESLint: click-events-have-key-events 対応） */
+    private _handleLabelKeyDown = (e: KeyboardEvent): void => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            this._select();
+        }
     };
 
     /**
@@ -483,6 +535,14 @@ export class Radio extends LitElement {
 
     override render() {
         const showError = this.invalid && !!this.errorMessage;
+        const externalLabel = this.getAttribute('aria-label');
+        const externalLabelledBy = this.getAttribute('aria-labelledby');
+        const externalDescribedBy = this.getAttribute('aria-describedby');
+        const ariaDescribedByIds: string[] = [];
+        if (externalDescribedBy) ariaDescribedByIds.push(externalDescribedBy);
+        if (showError) ariaDescribedByIds.push(this._errorId);
+        const ariaDescribedBy = ariaDescribedByIds.join(' ');
+        const ariaLabelledBy = this.label ? this._labelId : externalLabelledBy;
 
         // Roving Tabindex: checked なら 0、そうでなければ -1（_updateTabindex で上書きされる）
         // 初期レンダリング時のデフォルト値として設定
@@ -502,7 +562,9 @@ export class Radio extends LitElement {
           aria-checked="${String(this.checked)}"
           aria-disabled="${this.disabled ? 'true' : nothing}"
           aria-invalid="${showError ? 'true' : nothing}"
-          aria-describedby="${showError ? this._errorId : nothing}"
+          aria-describedby="${ariaDescribedBy || nothing}"
+          aria-label="${externalLabel ?? nothing}"
+          aria-labelledby="${ariaLabelledBy ?? nothing}"
           tabindex="${tabindex}"
           @click="${this._handleClick}"
           @keydown="${this._handleKeyDown}"
@@ -512,9 +574,11 @@ export class Radio extends LitElement {
         <!-- ラベル: クリックでコントロールにフォーカスを移して選択 -->
         ${this.label
                 ? html`<label
+                    id="${this._labelId}"
                     class="label"
                     part="label"
-                    for="${this._controlId}"
+                    @click="${this._handleLabelClick}"
+                    @keydown="${this._handleLabelKeyDown}"
                   >${this.label}</label>`
                 : nothing}
       </div>

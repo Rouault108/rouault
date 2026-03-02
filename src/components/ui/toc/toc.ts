@@ -66,6 +66,7 @@ export interface Heading {
  * @cssprop --focus-ring-color    - フォーカスリング色
  * @cssprop --focus-ring-offset   - フォーカスリングオフセット
  * @cssprop --focus-ring-radius   - フォーカスリング角丸
+ * @cssprop --animation-focus     - Adaptive Focusアニメーション
  * @cssprop --header-height       - ヘッダー高さ（スクロールオフセット補正に使用）
  * @cssprop --control-min-touch   - 最小タッチターゲットサイズ (44px)
  *
@@ -154,6 +155,7 @@ export class Toc extends LitElement {
 			outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
 			outline-offset: var(--focus-ring-offset, 2px);
 			border-radius: var(--focus-ring-radius, 4px);
+			animation: var(--animation-focus, none);
 		}
 
 		/* ── アクティブ状態: テキスト色を --primary に変更 ── */
@@ -433,18 +435,19 @@ export class Toc extends LitElement {
 
 		// スクロール完了まで Observer を停止（Flickering 防止）
 		this._observerPaused = true;
+		try {
+			// activeId をクリック起因として即座に更新
+			this._setActiveId(headingId, 'click');
 
-		// activeId をクリック起因として即座に更新
-		this._setActiveId(headingId, 'click');
-
-		// ターゲット要素へスムーズスクロール
-		const target = document.getElementById(headingId);
-		if (target) {
-			await this._smoothScrollTo(target);
+			// ターゲット要素へスムーズスクロール
+			const target = document.getElementById(headingId);
+			if (target) {
+				await this._smoothScrollTo(target);
+			}
+		} finally {
+			// スクロール処理中に例外が起きても Observer を再開する
+			this._observerPaused = false;
 		}
-
-		// スクロール完了後に Observer を再開
-		this._observerPaused = false;
 	}
 
 	/**
@@ -457,13 +460,6 @@ export class Toc extends LitElement {
 	 */
 	private _smoothScrollTo(target: HTMLElement): Promise<void> {
 		return new Promise<void>((resolve) => {
-			// Reduced Motion: アニメーション無効化・即座にジャンプ
-			if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-				target.scrollIntoView();
-				resolve();
-				return;
-			}
-
 			// ヘッダー高さの取得（CSS カスタムプロパティから）
 			const headerHeightRaw = getComputedStyle(document.documentElement)
 				.getPropertyValue('--header-height')
@@ -474,6 +470,13 @@ export class Toc extends LitElement {
 
 			const targetTop = target.getBoundingClientRect().top + window.scrollY;
 			const targetY = Math.max(0, targetTop - headerHeight - EXTRA_PADDING);
+
+			// Reduced Motion: アニメーション無効化・即座にジャンプ
+			if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+				window.scrollTo(0, targetY);
+				resolve();
+				return;
+			}
 			const startY = window.scrollY;
 			const distance = Math.abs(targetY - startY);
 
@@ -515,7 +518,7 @@ export class Toc extends LitElement {
 		}
 
 		return html`
-			<nav aria-label="目次">
+			<nav aria-label="Table of Contents">
 				<ul>
 					${map(this.headers, (heading) => {
 						const isActive = heading.id === this.activeId;

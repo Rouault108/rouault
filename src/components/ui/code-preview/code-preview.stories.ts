@@ -257,7 +257,9 @@ export const HeaderWithToolbarOnly: Story = {
         id="toolbar-only-preview"
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
-        <button slot="toolbar" style="padding: 4px 8px; font-size: 12px;">テーマ切替</button>
+        <ui-button slot="toolbar" variant="ghost" size="sm" icon-only aria-label="テーマ切替">
+          <iconify-icon icon="lucide:sun-moon"></iconify-icon>
+        </ui-button>
         <div slot="preview">
           <ui-button>クリック</ui-button>
         </div>
@@ -333,7 +335,9 @@ export const HeaderWithLabelAndToolbar: Story = {
         label="インタラクティブな例"
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
-        <button slot="toolbar" style="padding: 4px 8px; font-size: 12px;">ダーク</button>
+        <ui-button slot="toolbar" variant="ghost" size="sm" icon-only aria-label="ダークモード切替">
+          <iconify-icon icon="lucide:sun-moon"></iconify-icon>
+        </ui-button>
         <div slot="preview">
           <ui-button>クリック</ui-button>
         </div>
@@ -601,7 +605,9 @@ export const ToolbarTargetSizeContract: Story = {
         label="Toolbar Target Size 検証"
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
-        <button slot="toolbar">T</button>
+        <ui-button slot="toolbar" variant="ghost" size="sm" icon-only aria-label="テーマ切替">
+          <iconify-icon icon="lucide:sun-moon"></iconify-icon>
+        </ui-button>
         <div slot="preview"><ui-button>ボタン</ui-button></div>
         <ui-code-block lang="ts">
           <pre><code>const a = 1;</code></pre>

@@ -5,13 +5,13 @@ const DOCUMENT_STYLE_ID = 'ui-syntax-field-document-styles';
 
 const DOCUMENT_CSS = `
 ui-syntax-field {
-  display: block;
+  display: contents;
 }
 
 ui-syntax-field .field-wrapper {
   display: block;
   margin: 0;
-  padding: 0;
+  padding: var(--space-2, 0.5rem) 0;
   border: none;
 }
 
@@ -35,7 +35,8 @@ ui-syntax-field .field-name {
   font-weight: var(--font-semibold, 600);
   color: var(--fg-default, oklch(20% 0.03 250));
   line-height: var(--line-height-normal, 1.5);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 ui-syntax-field .field-required {
@@ -44,10 +45,11 @@ ui-syntax-field .field-required {
   justify-content: center;
   font-family: var(--font-mono, monospace);
   font-size: var(--text-xs, 0.75rem);
-  font-weight: var(--font-bold, 700);
+  font-weight: var(--font-semibold, 600);
   text-transform: none;
-  color: var(--fg-warning, oklch(72% 0.16 80));
-  background-color: oklch(from var(--fg-warning, oklch(72% 0.16 80)) l c h / 0.1);
+  color: var(--fg-muted, oklch(48% 0.01 250));
+  background-color: transparent;
+  border: var(--border-width, 1px) solid var(--border-default, oklch(0% 0 0 / 0.12));
   padding: calc(var(--space-1, 0.25rem) * 0.5) var(--space-2, 0.5rem);
   border-radius: var(--radius-sm, 4px);
   line-height: 1.2;
@@ -60,7 +62,8 @@ ui-syntax-field .field-default {
   font-weight: var(--font-medium, 500);
   color: var(--fg-muted, oklch(48% 0.01 250));
   line-height: 1.4;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 ui-syntax-field .field-default-with-type {
@@ -116,7 +119,7 @@ ui-syntax-field .field-description {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  ui-syntax-field .field-wrapper {
+  ui-syntax-field .field-wrapper:hover {
     transition-duration: 0.01ms;
   }
 }
@@ -158,11 +161,19 @@ export class SyntaxField extends LitElement {
   private _descriptionNodes: Node[] = [];
 
   private _didCaptureDescription = false;
+  private _descriptionObserver: MutationObserver | null = null;
 
   override connectedCallback(): void {
     this._captureInitialDescriptionNodes();
     super.connectedCallback();
     this._injectDocumentStyles();
+    this._observeDescriptionChanges();
+  }
+
+  override disconnectedCallback(): void {
+    this._descriptionObserver?.disconnect();
+    this._descriptionObserver = null;
+    super.disconnectedCallback();
   }
 
   protected override createRenderRoot(): HTMLElement {
@@ -185,8 +196,37 @@ export class SyntaxField extends LitElement {
     if (this._didCaptureDescription) return;
 
     // Light DOM レンダリング時に説明文ノードを失わないよう初期子ノードを保持する
-    this._descriptionNodes = Array.from(this.childNodes);
+    this._descriptionNodes = Array.from(this.childNodes).filter(
+      (node) => !(node instanceof HTMLElement && node.classList.contains('field-wrapper')),
+    );
     this._didCaptureDescription = true;
+  }
+
+  private _observeDescriptionChanges(): void {
+    if (typeof MutationObserver === 'undefined' || this._descriptionObserver) return;
+
+    this._descriptionObserver = new MutationObserver((records) => {
+      const wrapper = this.querySelector('.field-wrapper');
+      const addedDescriptionNodes: Node[] = [];
+
+      for (const record of records) {
+        if (record.type !== 'childList') continue;
+
+        for (const node of Array.from(record.addedNodes)) {
+          if (wrapper && node === wrapper) continue;
+          if (this._descriptionNodes.includes(node) || addedDescriptionNodes.includes(node)) continue;
+          addedDescriptionNodes.push(node);
+        }
+      }
+
+      if (addedDescriptionNodes.length === 0) return;
+
+      // 外部から追加された説明文ノードを追従して dd へ再配置する
+      this._descriptionNodes = [...this._descriptionNodes, ...addedDescriptionNodes];
+      this.requestUpdate();
+    });
+
+    this._descriptionObserver.observe(this, { childList: true });
   }
 
   private _injectDocumentStyles(): void {

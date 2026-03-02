@@ -22,7 +22,8 @@ const meta: Meta<ArticleHeader> = {
     },
     updatedDate: {
       control: 'text',
-      description: '更新日 (`YYYY-MM-DD`)。表示日は `updated > published`',
+      description:
+        '更新日 (`YYYY-MM-DD`)。HTML属性は `updated`。LitElementの `updated()` との衝突回避のためプロパティ名は `updatedDate`',
     },
     tags: {
       control: 'object',
@@ -52,7 +53,7 @@ export default meta;
 type Story = StoryObj<ArticleHeader>;
 
 /**
- * フル状態（更新日優先 + タグ + 読了時間 + 出典/ライセンス + ステータス + Lead）
+ * フル状態（更新日優先 + タグ + 読了時間 + 出典/ライセンス + ステータス）
  */
 export const CompleteState: Story = {
   args: {
@@ -83,9 +84,7 @@ export const CompleteState: Story = {
         license="${args.license}"
         .tags="${tags}"
         .readingTime="${readingTime}"
-      >
-        <p>本稿では、対称構造と神学的意図の関係を分析します。</p>
-      </ui-article-header>
+      ></ui-article-header>
     `;
   },
   play: async ({ canvasElement }) => {
@@ -114,7 +113,7 @@ export const CompleteState: Story = {
       throw new Error(`Expected aria-label to include created context, got "${dateAria}"`);
     }
 
-    const tagLinks = header.shadowRoot?.querySelectorAll<HTMLAnchorElement>('.tag-link');
+    const tagLinks = header.shadowRoot?.querySelectorAll<HTMLElement>('.tag-link');
     const tagLinkCount = tagLinks?.length ?? 0;
     if (tagLinkCount !== 3) {
       throw new Error(`Expected 3 tag links, got ${String(tagLinkCount)}`);
@@ -135,19 +134,20 @@ export const CompleteState: Story = {
     if (sourceLink.getAttribute('href') !== 'https://example.com/original') {
       throw new Error(`Expected source href to be "https://example.com/original", got "${sourceLink.getAttribute('href') ?? 'null'}"`);
     }
-
-    const lead = header.shadowRoot?.querySelector('.lead');
-    if (!lead) throw new Error('.lead not found');
-    if (lead.hasAttribute('hidden')) {
-      throw new Error('Expected lead to be visible');
+    if (sourceLink.getAttribute('target') !== '_blank') {
+      throw new Error('Expected source link to open in a new tab');
     }
+    if (sourceLink.getAttribute('rel') !== 'noopener noreferrer') {
+      throw new Error('Expected source link rel to be "noopener noreferrer"');
+    }
+
   },
 };
 
 /**
- * 更新日なし（公開日フォールバック）+ Leadなし
+ * 更新日なし（公開日フォールバック）
  */
-export const PublishedFallbackWithoutLead: Story = {
+export const PublishedFallback: Story = {
   args: {
     heading: '公開日のみで表示するケース',
     published: '2026-01-10',
@@ -198,17 +198,6 @@ export const PublishedFallbackWithoutLead: Story = {
       throw new Error(`Expected aria-label to include created context, got "${dateAria}"`);
     }
 
-    const root = header.shadowRoot?.querySelector('.article-header');
-    if (!root) throw new Error('.article-header not found');
-    if (!root.classList.contains('no-lead')) {
-      throw new Error('Expected root class to include "no-lead"');
-    }
-
-    const lead = header.shadowRoot?.querySelector('.lead');
-    if (!lead) throw new Error('.lead not found');
-    if (!lead.hasAttribute('hidden')) {
-      throw new Error('Expected lead to be hidden');
-    }
   },
 };
 
@@ -288,7 +277,7 @@ export const TagEventContract: Story = {
       throw new Error('tags should be property only and must not exist as an attribute');
     }
 
-    const tagLink = header.shadowRoot?.querySelector<HTMLAnchorElement>('.tag-link');
+    const tagLink = header.shadowRoot?.querySelector<HTMLElement>('.tag-link');
     if (!tagLink) throw new Error('.tag-link not found');
 
     const eventPromise = new Promise<CustomEvent<TagClickDetail>>((resolve) => {
@@ -364,10 +353,143 @@ export const HeadingOnlyBoundary: Story = {
       throw new Error('metadata-list should not render when all metadata inputs are empty');
     }
 
-    const lead = header.shadowRoot?.querySelector('.lead');
-    if (!lead) throw new Error('.lead not found');
-    if (!lead.hasAttribute('hidden')) {
-      throw new Error('Expected lead to be hidden in heading-only boundary');
+  },
+};
+
+/**
+ * 事故が多い境界条件: 値の正規化（tags/readTime/source）
+ */
+export const NormalizationBoundary: Story = {
+  render: () => html`
+    <ui-article-header
+      id="normalization-boundary"
+      heading="正規化境界ケース"
+      updated="2026-02-01"
+      created="2026-01-15"
+      source="javascript:alert(1)"
+      .tags="${['  設計  ', ' ', '', '実装']}"
+      .readingTime="${1.6}"
+    ></ui-article-header>
+  `,
+  play: async ({ canvasElement }) => {
+    const header = canvasElement.querySelector<ArticleHeader>('#normalization-boundary');
+    if (!header) throw new Error('#normalization-boundary not found');
+    await header.updateComplete;
+
+    const tagLinks = header.shadowRoot?.querySelectorAll<HTMLElement>('.tag-link');
+    const tagTexts = Array.from(tagLinks ?? []).map((link) => link.textContent.trim());
+    if (tagTexts.length !== 2) {
+      throw new Error(`Expected 2 normalized tags, got ${String(tagTexts.length)}`);
+    }
+    if (!tagTexts.includes('#設計') || !tagTexts.includes('#実装')) {
+      throw new Error(`Expected normalized tags to include #設計 and #実装, got "${tagTexts.join(', ')}"`);
+    }
+
+    const reading = header.shadowRoot?.querySelector('.metadata-reading-time span');
+    if (!reading) throw new Error('Expected reading time to render');
+    const readingText = reading.textContent.trim();
+    if (readingText !== '読了目安 2分') {
+      throw new Error(`Expected rounded reading time to be "読了目安 2分", got "${readingText}"`);
+    }
+
+    const source = header.shadowRoot?.querySelector('.source-link');
+    if (source) {
+      throw new Error('Unsafe source URL must not render source link');
+    }
+  },
+};
+
+/**
+ * 境界条件: unsafe source のみ指定時はメタデータ行ごと非表示
+ */
+export const UnsafeSourceOnlyBoundary: Story = {
+  render: () => html`
+    <ui-article-header
+      id="unsafe-source-only"
+      heading="unsafe source 単独境界"
+      source="javascript:alert(1)"
+    ></ui-article-header>
+  `,
+  play: async ({ canvasElement }) => {
+    const header = canvasElement.querySelector<ArticleHeader>('#unsafe-source-only');
+    if (!header) throw new Error('#unsafe-source-only not found');
+    await header.updateComplete;
+
+    const metadata = header.shadowRoot?.querySelector('.metadata-list');
+    if (metadata) {
+      throw new Error('metadata-list should not render when only unsafe source is provided');
+    }
+  },
+};
+
+/**
+ * 受け入れ基準: touch/reduced-motion/forced-colors の契約定義が存在すること
+ */
+export const AccessibilityMediaContracts: Story = {
+  render: () => html`
+    <ui-article-header
+      id="a11y-media-contracts"
+      heading="A11yメディア契約確認"
+      published="2026-02-21"
+      .tags="${['検証']}"
+    ></ui-article-header>
+  `,
+  play: async ({ canvasElement }) => {
+    const header = canvasElement.querySelector<ArticleHeader>('#a11y-media-contracts');
+    if (!header) throw new Error('#a11y-media-contracts not found');
+    await header.updateComplete;
+
+    const stylesText = header.shadowRoot?.querySelector('style')?.textContent ?? '';
+    if (!stylesText.includes('@media (hover: none) and (pointer: coarse)')) {
+      throw new Error('Expected touch discoverability media query');
+    }
+    if (!stylesText.includes('text-decoration: underline')) {
+      throw new Error('Expected underline discoverability contract for silent-link');
+    }
+    if (!stylesText.includes('@media (prefers-reduced-motion: reduce)')) {
+      throw new Error('Expected reduced motion media query');
+    }
+    if (!stylesText.includes('transition-duration: 0.01ms')) {
+      throw new Error('Expected reduced motion transition shortening');
+    }
+    if (!stylesText.includes('@media (forced-colors: active)')) {
+      throw new Error('Expected forced-colors media query');
+    }
+    if (!stylesText.includes('CanvasText') || !stylesText.includes('GrayText') || !stylesText.includes('LinkText')) {
+      throw new Error('Expected forced-colors system color fallbacks');
+    }
+  },
+};
+
+/**
+ * Dark Mode契約: コンポーネント側はセマンティックトークン参照でモード分岐不要
+ */
+export const DarkModeTokenContract: Story = {
+  render: () => html`
+    <ui-article-header
+      id="dark-mode-token-contract"
+      heading="ダークモードトークン契約"
+      published="2026-02-22"
+      .tags="${['theme']}"
+    ></ui-article-header>
+  `,
+  play: async ({ canvasElement }) => {
+    const header = canvasElement.querySelector<ArticleHeader>('#dark-mode-token-contract');
+    if (!header) throw new Error('#dark-mode-token-contract not found');
+    await header.updateComplete;
+
+    const stylesText = header.shadowRoot?.querySelector('style')?.textContent ?? '';
+    if (!stylesText.includes('var(--fg-default')) {
+      throw new Error('Expected --fg-default token usage');
+    }
+    if (!stylesText.includes('var(--fg-muted')) {
+      throw new Error('Expected --fg-muted token usage');
+    }
+    if (!stylesText.includes('var(--fg-subtle')) {
+      throw new Error('Expected --fg-subtle token usage');
+    }
+    if (!stylesText.includes('var(--focus-ring-color')) {
+      throw new Error('Expected --focus-ring-color token usage');
     }
   },
 };

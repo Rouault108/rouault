@@ -68,8 +68,8 @@ const DOCUMENT_CSS = `
   position: absolute;
   top: 50%;
   left: 50%;
-  width: var(--control-min-touch);
-  height: var(--control-min-touch);
+  width: var(--control-min-touch, 44px);
+  height: var(--control-min-touch, 44px);
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
@@ -145,11 +145,6 @@ export class Ol extends LitElement {
    * 直下 `li` のみが存在する場合は `ol` を自動補完する。
    */
   private _ensureRootList(): void {
-    const directLists = [...this.children].filter(
-      (child): child is HTMLOListElement => child instanceof HTMLOListElement,
-    );
-    if (directLists.length > 0) return;
-
     const directItems = [...this.children].filter(
       (child): child is HTMLLIElement => child instanceof HTMLLIElement,
     );

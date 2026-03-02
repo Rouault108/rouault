@@ -20,31 +20,33 @@ const DOCUMENT_CSS = `
 
 :where(.prose ul li, ui-ul li) {
   display: grid;
-  grid-template-columns: var(--space-4) 1fr;
-  gap: var(--space-2);
-  align-items: baseline;
+  grid-template-columns: var(--space-4, 1rem) 1fr;
+  gap: var(--space-2, 0.5rem);
+  align-items: center;
 }
 
 :where(.prose ul li, ui-ul li) + :where(.prose ul li, ui-ul li) {
-  margin-block-start: var(--space-2);
+  margin-block-start: var(--space-2, 0.5rem);
 }
 
 :where(.prose ul li, ui-ul li)::before {
-  content: "●";
+  content: "•";
   color: var(--fg-muted);
   justify-self: center;
+  line-height: 0;
 }
 
 :where(.prose ul li li, ui-ul li li)::before {
-  content: "○";
+  content: "◦";
 }
 
 :where(.prose ul li li li, ui-ul li li li)::before {
-  content: "■";
+  content: "▪";
 }
 
 :where(.prose ul li ul, ui-ul li ul) {
-  margin-block-start: var(--space-2);
+  grid-column: 2;
+  margin-block-start: var(--space-2, 0.5rem);
 }
 
 :where(.prose ul li, ui-ul li) :is(a, button, [role="button"]) {
@@ -57,8 +59,8 @@ const DOCUMENT_CSS = `
   position: absolute;
   top: 50%;
   left: 50%;
-  width: var(--control-min-touch);
-  height: var(--control-min-touch);
+  width: var(--control-min-touch, 44px);
+  height: var(--control-min-touch, 44px);
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
@@ -122,11 +124,6 @@ export class Ul extends LitElement {
    * 直下 `li` のみが存在する場合は `ul` を自動補完する。
    */
   private _ensureRootList(): void {
-    const directLists = [...this.children].filter(
-      (child): child is HTMLUListElement => child instanceof HTMLUListElement,
-    );
-    if (directLists.length > 0) return;
-
     const directItems = [...this.children].filter(
       (child): child is HTMLLIElement => child instanceof HTMLLIElement,
     );

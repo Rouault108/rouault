@@ -53,7 +53,7 @@ const meta: Meta<Ul> = {
 順序なしリストのためのコンポーネントです。
 
 - 適用スコープは \`.prose ul\` と \`ui-ul > ul\` のみに限定
-- マーカー階層は Level1/2/3 = \`●/○/■\`
+- マーカー階層は Level1/2/3 = \`•/◦/▪\`
 - \`list-style: none\` の副作用を避けるため \`role="list"\` / \`role="listitem"\` を補強
 - リスト内リンク/ボタンのタッチターゲット最小 44px を保証
         `,
@@ -68,11 +68,11 @@ type Story = StoryObj<Ul>;
 /**
  * 基本契約:
  * - `role="list"` / `role="listitem"` が付与される
- * - Level 1 マーカーが `●`
+ * - Level 1 マーカーが `•`
  */
 export const Default: Story = {
   render: () => html`
-    <ui-ul id="default-ul">
+    <ui-ul id="default-ul" style="--space-2: 8px; --space-4: 16px;">
       <ul>
         <li data-testid="item-1">本文の読書リズムを壊さない。</li>
         <li data-testid="item-2">マーカーは主張しすぎない。</li>
@@ -101,8 +101,23 @@ export const Default: Story = {
     }
 
     const firstItem = getItem(list, '[data-testid="item-1"]');
-    if (getMarker(firstItem) !== '●') {
-      throw new Error('Level 1 マーカーが "●" ではありません');
+    const secondItem = getItem(list, '[data-testid="item-2"]');
+    if (getMarker(firstItem) !== '•') {
+      throw new Error('Level 1 マーカーが "•" ではありません');
+    }
+
+    const secondMarginBlockStart = getComputedStyle(secondItem).marginBlockStart;
+    if (secondMarginBlockStart !== '8px') {
+      throw new Error(
+        `Item Gap が var(--space-2) と一致しません: margin-block-start=${secondMarginBlockStart}`,
+      );
+    }
+
+    const firstItemGridColumns = getComputedStyle(firstItem).gridTemplateColumns;
+    if (!firstItemGridColumns.startsWith('16px')) {
+      throw new Error(
+        `Marker Column Width が var(--space-4) と一致しません: grid-template-columns=${firstItemGridColumns}`,
+      );
     }
   },
 };
@@ -202,17 +217,17 @@ export const VariantStateMatrix: Story = {
     const level3 = getItem(nestedRoot, '[data-testid="nested-l3"]');
     const level4 = getItem(nestedRoot, '[data-testid="nested-l4"]');
 
-    if (getMarker(level1) !== '●') {
-      throw new Error('Level 1 マーカーが "●" ではありません');
+    if (getMarker(level1) !== '•') {
+      throw new Error('Level 1 マーカーが "•" ではありません');
     }
-    if (getMarker(level2) !== '○') {
-      throw new Error('Level 2 マーカーが "○" ではありません');
+    if (getMarker(level2) !== '◦') {
+      throw new Error('Level 2 マーカーが "◦" ではありません');
     }
-    if (getMarker(level3) !== '■') {
-      throw new Error('Level 3 マーカーが "■" ではありません');
+    if (getMarker(level3) !== '▪') {
+      throw new Error('Level 3 マーカーが "▪" ではありません');
     }
-    if (getMarker(level4) !== '■') {
-      throw new Error('Level 4 で "■" 維持の契約を満たしていません');
+    if (getMarker(level4) !== '▪') {
+      throw new Error('Level 4 で "▪" 維持の契約を満たしていません');
     }
 
     const interactiveHost = getHost(canvasElement, 'matrix-interactive');
@@ -257,6 +272,14 @@ export const BoundaryConditions: Story = {
           <li data-testid="dynamic-root">初期項目</li>
         </ul>
       </ui-ul>
+
+      <ui-ul id="boundary-mixed">
+        <ul>
+          <li data-testid="mixed-root">既存リスト項目</li>
+        </ul>
+        <li data-testid="mixed-stray-1">直下 stray 1</li>
+        <li data-testid="mixed-stray-2">直下 stray 2</li>
+      </ui-ul>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -295,6 +318,33 @@ export const BoundaryConditions: Story = {
     }
     if (nestedItem.getAttribute('role') !== 'listitem') {
       throw new Error('後追加したネスト li に role="listitem" が補強されていません');
+    }
+
+    const mixedHost = getHost(canvasElement, 'boundary-mixed');
+    await mixedHost.updateComplete;
+
+    const mixedLists = [...mixedHost.children].filter(
+      (child): child is HTMLUListElement => child instanceof HTMLUListElement,
+    );
+    if (mixedLists.length < 2) {
+      throw new Error('ul と直下 li の混在ケースで救済用 <ul> が生成されていません');
+    }
+
+    const rescuedList = mixedLists.find((list) =>
+      list.querySelector('[data-testid="mixed-stray-1"], [data-testid="mixed-stray-2"]'),
+    );
+    if (!rescuedList) {
+      throw new Error('直下 stray li が救済用 <ul> に移動していません');
+    }
+
+    const rescuedItems = rescuedList.querySelectorAll<HTMLLIElement>('li');
+    if (rescuedItems.length !== 2) {
+      throw new Error(`救済用 <ul> の li 件数が不正です: ${String(rescuedItems.length)}`);
+    }
+    for (const item of rescuedItems) {
+      if (item.getAttribute('role') !== 'listitem') {
+        throw new Error('救済された li に role="listitem" が補強されていません');
+      }
     }
   },
 };
@@ -384,11 +434,15 @@ export const MediaAndTokenContracts: Story = {
     await host.updateComplete;
 
     const styleTag = document.getElementById('ui-ul-document-styles');
-    if (!styleTag) {
+    if (!(styleTag instanceof HTMLStyleElement)) {
       throw new Error('ui-ul のドキュメントスタイルが注入されていません');
     }
 
     const cssText = styleTag.textContent;
+    if (typeof cssText !== 'string') {
+      throw new Error('style text の取得に失敗しました');
+    }
+
     if (!cssText.includes(':where(.prose ul, ui-ul > ul)')) {
       throw new Error('Scope Contract のセレクタが欠落しています');
     }
@@ -403,6 +457,57 @@ export const MediaAndTokenContracts: Story = {
     }
     if (!cssText.includes('var(--space-2)')) {
       throw new Error('スペーシングのトークン参照がありません');
+    }
+    if (!cssText.includes('var(--space-4)')) {
+      throw new Error('マーカー列幅のトークン参照がありません');
+    }
+    if (!cssText.includes('var(--control-min-touch')) {
+      throw new Error('タッチターゲットのトークン参照がありません');
+    }
+  },
+};
+
+/**
+ * Dark Mode契約:
+ * - セマンティックトークン参照でモード分岐不要
+ * - マーカー色は `--fg-muted` を追従する
+ */
+export const DarkModeTokenContract: Story = {
+  render: () => html`
+    <style>
+      .dark-surface {
+        padding: 1rem;
+        background: oklch(18% 0.02 250);
+        color: oklch(92% 0.01 250);
+        border-radius: var(--radius-md, 8px);
+        --fg-default: oklch(92% 0.01 250);
+        --fg-muted: oklch(74% 0.01 250);
+      }
+    </style>
+
+    <div class="dark-surface">
+      <div id="dark-muted-probe" style="color: var(--fg-muted); display: none;"></div>
+      <ui-ul id="dark-contract">
+        <ul>
+          <li data-testid="dark-item">暗色面でも本文とマーカーの階層差を維持する</li>
+        </ul>
+      </ui-ul>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'dark-contract');
+    await host.updateComplete;
+
+    const item = getItem(getDirectList(host), '[data-testid="dark-item"]');
+    const probe = canvasElement.querySelector<HTMLElement>('#dark-muted-probe');
+    if (!probe) {
+      throw new Error('Dark Mode 色検証用プローブが見つかりません');
+    }
+
+    const markerColor = getComputedStyle(item, '::before').color;
+    const expectedMuted = getComputedStyle(probe).color;
+    if (markerColor !== expectedMuted) {
+      throw new Error(`Dark Mode でマーカー色が --fg-muted を追従していません: ${markerColor}`);
     }
   },
 };

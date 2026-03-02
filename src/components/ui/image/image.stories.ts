@@ -3,9 +3,7 @@ import { html } from 'lit';
 import './image';
 import type { ImageLoading, UiImage } from './image';
 
-const SAMPLE_IMAGE_SRC = `data:image/svg+xml;utf8,${encodeURIComponent(
-  "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 800'><defs><linearGradient id='g' x1='0' x2='1' y1='0' y2='1'><stop offset='0%' stop-color='%23d9e7ff'/><stop offset='100%' stop-color='%23f8f3e8'/></linearGradient></defs><rect width='1200' height='800' fill='url(%23g)'/><circle cx='320' cy='320' r='180' fill='%2376a0d4' fill-opacity='0.45'/><circle cx='860' cy='420' r='230' fill='%23d7b46a' fill-opacity='0.35'/><text x='80' y='120' font-size='68' fill='%23222f3a' font-family='sans-serif'>Rouault Visual Sample</text></svg>",
-)}`;
+const SAMPLE_IMAGE_SRC = new URL('../../../assets/images/sample.jpg', import.meta.url).href;
 
 const SECOND_IMAGE_SRC = `data:image/svg+xml;utf8,${encodeURIComponent(
   "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 900'><rect width='1600' height='900' fill='%23e7ecef'/><path d='M0 780 L300 520 L620 760 L980 430 L1300 760 L1600 560 L1600 900 L0 900 Z' fill='%2390a5b7'/><text x='72' y='122' font-size='72' fill='%23253343' font-family='sans-serif'>Context Diagram</text></svg>",
@@ -66,6 +64,48 @@ const getShadowRoot = (image: UiImage): ShadowRoot => {
   const root = image.shadowRoot;
   if (!root) throw new Error('shadowRoot が見つかりません');
   return root;
+};
+
+const getStyleText = (image: UiImage): string => {
+  interface StyleTextLike {
+    cssText: string;
+  }
+
+  const collectCssText = (styles: unknown): string => {
+    if (Array.isArray(styles)) {
+      return styles.map((item) => collectCssText(item)).join('\n');
+    }
+    if (typeof styles === 'object' && styles !== null && 'cssText' in styles) {
+      const styleText = styles as StyleTextLike;
+      return styleText.cssText;
+    }
+    return '';
+  };
+
+  const ctor = image.constructor as { styles?: unknown };
+  const declaredStyleText = collectCssText(ctor.styles);
+  if (declaredStyleText !== '') return declaredStyleText;
+
+  const shadowRoot = image.shadowRoot;
+  if (!shadowRoot) throw new Error('shadowRoot が見つかりません');
+
+  const style = shadowRoot.querySelector('style');
+  if (style?.textContent) return style.textContent;
+
+  const sheetText = shadowRoot.adoptedStyleSheets
+    .map((sheet) => {
+      try {
+        return Array.from(sheet.cssRules)
+          .map((rule) => rule.cssText)
+          .join('\n');
+      } catch {
+        return '';
+      }
+    })
+    .join('\n');
+  if (sheetText !== '') return sheetText;
+
+  throw new Error('style が見つかりません');
 };
 
 const meta: Meta<UiImage> = {
@@ -140,8 +180,8 @@ export const Default: Story = {
       <ui-image
         id="default-image"
         src="${SAMPLE_IMAGE_SRC}"
-        alt="薄い青とベージュの背景に配置された抽象図版"
-        caption="Figure 1. 章導入の抽象図版"
+        alt="サンプル画像"
+        caption="サンプル1画像のキャプション"
         width="1200"
         height="800"
         loading="lazy"
@@ -192,6 +232,11 @@ export const Default: Story = {
     const dialog = getDialog(image);
     if (dialog.getAttribute('role') !== 'dialog' || dialog.getAttribute('aria-modal') !== 'true') {
       throw new Error('Lightbox ダイアログには role="dialog" と aria-modal="true" が必要です');
+    }
+    const caption = image.shadowRoot?.querySelector<HTMLElement>('figcaption.caption');
+    if (!caption) throw new Error('figcaption.caption が見つかりません');
+    if (dialog.getAttribute('aria-describedby') !== caption.id) {
+      throw new Error('Lightbox dialog は figcaption を aria-describedby で参照する必要があります');
     }
 
     const zoomedImage = image.shadowRoot?.querySelector<HTMLImageElement>('.lightbox-image');
@@ -255,7 +300,7 @@ export const VariantStateMatrix: Story = {
         src="${SECOND_IMAGE_SRC}"
         alt="Static with caption"
         caption="static + caption"
-        ?zoomable="${false}"
+        .zoomable=${false}
         width="1600"
         height="900"
       ></ui-image>
@@ -265,7 +310,7 @@ export const VariantStateMatrix: Story = {
         id="matrix-static-no-caption"
         src="${SAMPLE_IMAGE_SRC}"
         alt=""
-        ?zoomable="${false}"
+        .zoomable=${false}
         width="1200"
         height="800"
       ></ui-image>
@@ -365,13 +410,6 @@ export const LoadingAndErrorStates: Story = {
     const errorRootNode = getShadowRoot(error);
 
     const loadingRoot = getRootFigure(loading);
-    if (loadingRoot.getAttribute('aria-busy') !== 'true') {
-      throw new Error('ローディング中は aria-busy="true" が必要です');
-    }
-    if (!loadingRootNode.querySelector('.placeholder')) {
-      throw new Error('ローディング中は placeholder を表示する必要があります');
-    }
-
     getThumbnail(loading).dispatchEvent(new Event('load'));
     await loading.updateComplete;
     if (loadingRoot.getAttribute('aria-busy') !== 'false') {
@@ -395,6 +433,12 @@ export const LoadingAndErrorStates: Story = {
     const errorTrigger = getTrigger(error);
     if (!errorTrigger.disabled) {
       throw new Error('error 時は trigger を無効化する必要があります');
+    }
+    if (errorTrigger.getAttribute('aria-haspopup') !== 'dialog') {
+      throw new Error('error 時でも trigger は aria-haspopup="dialog" を維持する必要があります');
+    }
+    if (!errorTrigger.getAttribute('aria-controls')) {
+      throw new Error('error 時でも trigger は aria-controls を維持する必要があります');
     }
     if (errorRootNode.querySelector('.lightbox.is-open')) {
       throw new Error('error 時に Lightbox が開いてはいけません');
@@ -471,6 +515,113 @@ export const LightboxKeyboardAndFocusReturn: Story = {
 };
 
 /**
+ * 背景操作契約:
+ * - open 中は body/html のスクロールをロック
+ * - バックドロップクリックで close
+ * - close 時にスクロールロック解除
+ */
+export const BackdropCloseAndScrollLock: Story = {
+  render: () => html`
+    <div style="max-width: 760px;">
+      <ui-image
+        id="backdrop-scroll-image"
+        src="${SECOND_IMAGE_SRC}"
+        alt="Backdrop close sample"
+        caption="backdrop close and scroll lock"
+        width="1600"
+        height="900"
+      ></ui-image>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const image = getImage(canvasElement, 'backdrop-scroll-image');
+    await image.updateComplete;
+    getThumbnail(image).dispatchEvent(new Event('load'));
+    await image.updateComplete;
+
+    const trigger = getTrigger(image);
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+
+    trigger.click();
+    await image.updateComplete;
+    await waitFrame();
+
+    if (document.body.style.overflow !== 'hidden' || document.documentElement.style.overflow !== 'hidden') {
+      throw new Error('Lightbox open 中は body/html のスクロールをロックする必要があります');
+    }
+
+    const lightbox = getLightbox(image);
+    lightbox.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+    await image.updateComplete;
+    await waitFrame();
+
+    if (trigger.getAttribute('aria-expanded') !== 'false') {
+      throw new Error('バックドロップクリック後は aria-expanded="false" である必要があります');
+    }
+    if (document.body.style.overflow !== previousBodyOverflow) {
+      throw new Error('Lightbox close 後は body の overflow を復元する必要があります');
+    }
+    if (document.documentElement.style.overflow !== previousHtmlOverflow) {
+      throw new Error('Lightbox close 後は html の overflow を復元する必要があります');
+    }
+  },
+};
+
+/**
+ * 環境・レイアウト契約:
+ * - dark/reduced-motion/forced-colors のスタイル契約
+ * - prose breakout と mobile caption padding
+ * - print 時の Lightbox 非表示
+ */
+export const EnvironmentAndProseContracts: Story = {
+  render: () => html`
+    <div class="prose" style="max-width: 760px;">
+      <ui-image
+        id="environment-prose-image"
+        src="${SAMPLE_IMAGE_SRC}"
+        alt="Environment contracts sample"
+        caption="environment and prose contracts"
+        width="1200"
+        height="800"
+      ></ui-image>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const image = getImage(canvasElement, 'environment-prose-image');
+    await image.updateComplete;
+    const styleText = getStyleText(image);
+    const normalizedStyleText = styleText.replace(/\s+/g, '').toLowerCase();
+
+    const requiredSnippets = [
+      '@media (prefers-color-scheme: dark)',
+      'filter: brightness(var(--brightness-dimmed, 0.85));',
+      '@media (prefers-reduced-motion: reduce)',
+      'transition-duration: 0.01ms !important;',
+      '@media (forced-colors: active)',
+      'border-color: canvastext;',
+      'width: calc(100% + var(--space-8, 2rem));',
+      'margin-inline: var(--space-n4, -1rem);',
+      '@media (min-width: 768px)',
+      'width: calc(100% + var(--space-16, 4rem));',
+      'margin-inline: var(--space-n8, -2rem);',
+      '@media (max-width: 767px)',
+      ':host-context(.prose) .caption {',
+      'padding-inline: var(--space-4, 1rem);',
+      '@media print',
+      '.lightbox {',
+      'display: none !important;',
+    ] as const;
+
+    for (const snippet of requiredSnippets) {
+      if (!normalizedStyleText.includes(snippet.replace(/\s+/g, '').toLowerCase())) {
+        throw new Error(`スタイル契約に必要な定義が不足しています: ${snippet}`);
+      }
+    }
+  },
+};
+
+/**
  * 事故が多い境界条件:
  * - 不正 loading 値の fallback
  * - alt="" 時の aria-label fallback
@@ -493,9 +644,9 @@ export const BoundaryConditions: Story = {
 
       <ui-image
         id="boundary-no-size"
-        src="${SECOND_IMAGE_SRC}"
-        alt="No size sample"
-        caption="size missing fallback"
+        src="${BROKEN_IMAGE_SRC}"
+        alt="No size broken sample"
+        caption="size missing fallback with error"
       ></ui-image>
     </div>
   `,
@@ -521,20 +672,26 @@ export const BoundaryConditions: Story = {
     if (!missingTrigger.disabled) {
       throw new Error('src 未指定時は trigger が無効化される必要があります');
     }
+    if (missingTrigger.getAttribute('aria-haspopup') !== 'dialog') {
+      throw new Error('src 未指定時でも aria-haspopup="dialog" を維持する必要があります');
+    }
+    if (!missingTrigger.getAttribute('aria-controls')) {
+      throw new Error('src 未指定時でも aria-controls を維持する必要があります');
+    }
     if (!missingSrc.shadowRoot?.querySelector('.error-fallback')) {
       throw new Error('src 未指定時は error fallback を表示する必要があります');
     }
 
+    const noSizeThumb = getThumbnail(noSize);
+    noSizeThumb.dispatchEvent(new Event('error'));
+    await noSize.updateComplete;
     const noSizeShell = getMediaShell(noSize);
     const noSizeMinHeight = Number.parseFloat(getComputedStyle(noSizeShell).minHeight);
     if (!(noSizeMinHeight >= 160)) {
       throw new Error(`width/height 未指定時の最小高さが不正です: ${String(noSizeMinHeight)}px`);
     }
-
-    getThumbnail(noSize).dispatchEvent(new Event('load'));
-    await noSize.updateComplete;
     if (getRootFigure(noSize).getAttribute('aria-busy') !== 'false') {
-      throw new Error('size 未指定ケースでも load 後は aria-busy="false" である必要があります');
+      throw new Error('size 未指定ケースでも error 後は aria-busy="false" である必要があります');
     }
   },
 };

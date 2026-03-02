@@ -1,9 +1,9 @@
-﻿import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './syntax-card';
-import type { SyntaxCard } from './syntax-card';
-import '../codeblock/codeblock';
-import type { CodeBlock } from '../codeblock/codeblock';
+import { SyntaxCard } from './syntax-card';
+import { SyntaxSection } from './syntax-section';
+import '../syntax-field/syntax-field';
 import type { CopyButton } from '../copy-button/copy-button';
 
 const waitFrame = async (): Promise<void> =>
@@ -45,10 +45,10 @@ const getContentArea = (card: SyntaxCard): HTMLElement => {
   return element as HTMLElement;
 };
 
-const getSignatureCodeBlock = (card: SyntaxCard): CodeBlock => {
-  const block = card.querySelector<CodeBlock>('ui-code-block[slot="signature"]');
-  if (!block) throw new Error('signature スロットの ui-code-block が見つかりません');
-  return block;
+const getSignaturePre = (card: SyntaxCard): HTMLPreElement => {
+  const pre = card.querySelector<HTMLPreElement>('pre[slot="signature"]');
+  if (!pre) throw new Error('signature スロットの pre が見つかりません');
+  return pre;
 };
 
 const assertCopyDisabled = (card: SyntaxCard, reason: string): void => {
@@ -64,6 +64,23 @@ const assertCopyDisabled = (card: SyntaxCard, reason: string): void => {
   }
 };
 
+const getStylesText = (styles: typeof SyntaxCard.styles): string => {
+  if (Array.isArray(styles)) {
+    return styles
+      .map((style) => {
+        const s = style as { cssText?: string };
+        return s.cssText ?? '';
+      })
+      .join('\n');
+  }
+
+  return 'cssText' in styles ? styles.cssText : '';
+};
+
+const getSyntaxCardStylesText = (): string => getStylesText(SyntaxCard.styles);
+
+const getSyntaxSectionStylesText = (): string => getStylesText(SyntaxSection.styles);
+
 const meta: Meta<SyntaxCard> = {
   title: 'Components/Syntax Card',
   component: 'ui-syntax-card',
@@ -74,11 +91,12 @@ const meta: Meta<SyntaxCard> = {
         component: `
 構文カードコンポーネントです。Signature（コード）と Members（解説）を分離し、APIドキュメントのような読書体験を提供します。
 
+signature スロットには素の \`<pre><code>\` を直接配置します。
+
 ## このストーリーで検証する観点
 - 種別（kind）× コンテンツ状態（通常 / returns-only / empty）の整合
 - heading-level の有効値（2-6）とフォールバック（h4）
-- Language SoT（signature の ui-code-block[lang] 優先）
-- copy 失敗隔離（signature 内 code-block 0件 / 複数件 / 空コード）
+- copy 失敗隔離（signature 内 pre 0件 / 複数件 / 空コード）
         `,
       },
     },
@@ -97,7 +115,7 @@ const meta: Meta<SyntaxCard> = {
     lang: {
       control: 'text',
       table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
-      description: 'data-lang 属性。子 ui-code-block が lang 未指定のときのみ補完',
+      description: 'data-lang 属性。表示言語の識別子',
     },
     headingLevel: {
       control: 'number',
@@ -116,25 +134,27 @@ type Story = StoryObj<SyntaxCard>;
  */
 export const MethodWithMembersAndReturns: Story = {
   render: () => html`
-    <ui-syntax-card id="method-card" kind="Method" name="useEffect" data-lang="ts" heading-level="3">
-      <ui-code-block slot="signature">
-        <pre><code>useEffect(() => {
-  document.title = title;
-}, [title]);</code></pre>
-      </ui-code-block>
+    <ui-syntax-card id="method-card" kind="フック" name="useEffect" data-lang="ts" heading-level="3"
+      style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+      <pre slot="signature"><code>function useEffect(
+  effect: () =&gt; void | (() =&gt; void),
+  deps?: readonly unknown[]
+): void</code></pre>
 
-      <dl>
-        <div>
-          <dt>effect: () => void | (() => void)</dt>
-          <dd>副作用の実行関数。必要ならクリーンアップ関数を返します。</dd>
-        </div>
-        <div>
-          <dt>deps?: readonly unknown[]</dt>
-          <dd>依存配列。変更時のみ effect を再実行します。</dd>
-        </div>
-      </dl>
+      <ui-syntax-section label="パラメータ">
+        <dl>
+          <ui-syntax-field name="effect" type="() =&gt; void | (() =&gt; void)" required>
+            副作用を実行する関数。クリーンアップが必要な場合は関数を返します。
+          </ui-syntax-field>
+          <ui-syntax-field name="deps" type="readonly unknown[]">
+            依存配列。変更時のみ effect を再実行します。省略時は毎レンダーで実行されます。
+          </ui-syntax-field>
+        </dl>
+      </ui-syntax-section>
 
-      <p slot="returns">戻り値はありません（cleanup 関数を返すパターンを除く）。</p>
+      <ui-syntax-section label="戻り値">
+        <p>void。effect が返したクリーンアップ関数は、再実行前およびアンマウント時に呼び出されます。</p>
+      </ui-syntax-section>
     </ui-syntax-card>
   `,
   play: async ({ canvasElement }) => {
@@ -143,12 +163,17 @@ export const MethodWithMembersAndReturns: Story = {
     await waitFrame();
 
     if (card.hasAttribute('data-content-empty')) {
-      throw new Error('members + returns が存在するため data-content-empty は付与されない想定です');
+      throw new Error('sections が存在するため data-content-empty は付与されない想定です');
     }
 
     const kindTag = getShadowElement(card, '.kind-tag', 'kind タグ') as HTMLElement;
-    if (kindTag.textContent.trim() !== 'Method') {
-      throw new Error('kind タグが "Method" ではありません');
+    if (kindTag.textContent.trim() !== 'フック') {
+      throw new Error('kind タグが "フック" ではありません');
+    }
+
+    const syntaxFields = card.querySelectorAll('ui-syntax-field');
+    if (syntaxFields.length !== 2) {
+      throw new Error(`members は ui-syntax-field を2件使用する必要があります。actual=${String(syntaxFields.length)}`);
     }
 
     const heading = getHeading(card);
@@ -164,22 +189,22 @@ export const MethodWithMembersAndReturns: Story = {
       throw new Error('有効な signature を持つため copy は有効状態である必要があります');
     }
 
-    const signatureBlock = getSignatureCodeBlock(card);
-    if (!signatureBlock.hasAttribute('headless')) {
-      throw new Error('signature 内の ui-code-block に headless が付与されていません');
-    }
-    if (signatureBlock.getAttribute('lang') !== 'ts') {
-      throw new Error('card[data-lang] のフォールバックで ui-code-block[lang="ts"] が補完される必要があります');
+    const signaturePre = getSignaturePre(card);
+    if (!signaturePre.querySelector('code')) {
+      throw new Error('signature の pre 内に code 要素が必要です');
     }
 
-    const returnsSection = getShadowElement(card, '.returns-slot', 'returns セクション') as HTMLElement;
-    if (returnsSection.hasAttribute('hidden')) {
-      throw new Error('returns コンテンツがあるため returns セクションは表示される必要があります');
+    const sections = card.querySelectorAll<SyntaxSection>('ui-syntax-section');
+    if (sections.length !== 2) {
+      throw new Error(`ui-syntax-section は2件必要です。actual=${String(sections.length)}`);
     }
 
-    const returnsTitle = getShadowElement(card, '.returns-slot .section-title', 'returns タイトル') as HTMLElement;
-    if (returnsTitle.textContent.trim() !== 'Returns') {
-      throw new Error('returns セクションタイトルは "Returns" である必要があります');
+    if (sections[0]?.label !== 'パラメータ') {
+      throw new Error('最初のセクションラベルは "パラメータ" である必要があります');
+    }
+
+    if (sections[1]?.label !== '戻り値') {
+      throw new Error('2番目のセクションラベルは "戻り値" である必要があります');
     }
   },
 };
@@ -188,25 +213,26 @@ export const MethodWithMembersAndReturns: Story = {
  * 境界: default なし + returns のみ。
  * Returns-only Integrity を検証します。
  */
-export const ReturnsOnlyQuery: Story = {
+export const SingleSectionOnly: Story = {
   render: () => html`
-    <ui-syntax-card id="returns-only-card" kind="Query" name="SELECT" data-lang="sql">
-      <ui-code-block slot="signature">
-        <pre><code>SELECT id, name
+    <ui-syntax-card id="single-section-card" kind="Query" name="SELECT" data-lang="sql"
+      style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+      <pre slot="signature"><code>SELECT id, name
 FROM users
 WHERE deleted_at IS NULL;</code></pre>
-      </ui-code-block>
 
-      <p slot="returns">一致する行のレコードセットを返します。</p>
+      <ui-syntax-section label="戻り値">
+        <p>一致する行のレコードセットを返します。</p>
+      </ui-syntax-section>
     </ui-syntax-card>
   `,
   play: async ({ canvasElement }) => {
-    const card = getCard(canvasElement, 'returns-only-card');
+    const card = getCard(canvasElement, 'single-section-card');
     await card.updateComplete;
     await waitFrame();
 
     if (card.hasAttribute('data-content-empty')) {
-      throw new Error('returns-only は正式サポートのため data-content-empty は付与されない想定です');
+      throw new Error('セクションが1件存在するため data-content-empty は付与されない想定です');
     }
 
     const heading = getHeading(card);
@@ -214,19 +240,14 @@ WHERE deleted_at IS NULL;</code></pre>
       throw new Error(`heading-level 未指定時は h4 が必要です。actual=${heading.tagName}`);
     }
 
-    const defaultSection = getShadowElement(card, '.default-slot', 'default セクション') as HTMLElement;
-    if (!defaultSection.hasAttribute('hidden')) {
-      throw new Error('default slot が空のため default セクションは hidden である必要があります');
-    }
-
-    const returnsSection = getShadowElement(card, '.returns-slot', 'returns セクション') as HTMLElement;
-    if (returnsSection.hasAttribute('hidden')) {
-      throw new Error('returns slot が存在するため returns セクションは表示される必要があります');
+    const sections = card.querySelectorAll('ui-syntax-section');
+    if (sections.length !== 1) {
+      throw new Error(`ui-syntax-section は1件必要です。actual=${String(sections.length)}`);
     }
 
     const contentArea = getContentArea(card);
     if (getComputedStyle(contentArea).display === 'none') {
-      throw new Error('returns-only 構成では Content Area は表示される必要があります');
+      throw new Error('セクションが存在するため Content Area は表示される必要があります');
     }
   },
 };
@@ -237,13 +258,12 @@ WHERE deleted_at IS NULL;</code></pre>
  */
 export const EmptyContentContract: Story = {
   render: () => html`
-    <ui-syntax-card id="empty-content-card" kind="Struct" name="User" data-lang="ts">
-      <ui-code-block slot="signature">
-        <pre><code>type User = {
+    <ui-syntax-card id="empty-content-card" kind="Struct" name="User" data-lang="ts"
+      style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+      <pre slot="signature"><code>type User = {
   id: string;
   name: string;
 };</code></pre>
-      </ui-code-block>
     </ui-syntax-card>
   `,
   play: async ({ canvasElement }) => {
@@ -252,7 +272,7 @@ export const EmptyContentContract: Story = {
     await waitFrame();
 
     if (!card.hasAttribute('data-content-empty')) {
-      throw new Error('default / returns が空のため data-content-empty が付与される必要があります');
+      throw new Error('セクションが空のため data-content-empty が付与される必要があります');
     }
 
     const contentArea = getContentArea(card);
@@ -268,13 +288,9 @@ export const EmptyContentContract: Story = {
       throw new Error('data-content-empty 時は Signature Area の border-bottom が除去される必要があります');
     }
 
-    if (signatureStyle.borderBottomLeftRadius === '0px') {
-      throw new Error('data-content-empty 時は Signature Area の下端角丸が必要です');
-    }
-
     const copyButton = getCopyButton(card);
     if (copyButton.getAttribute('aria-disabled') !== 'false') {
-      throw new Error('signature に有効な code-block が1件あるため copy は有効状態である必要があります');
+      throw new Error('signature に有効な pre が1件あるため copy は有効状態である必要があります');
     }
   },
 };
@@ -286,16 +302,14 @@ export const EmptyContentContract: Story = {
 export const HeadingLevelFallback: Story = {
   render: () => html`
     <div style="display: grid; gap: 1rem;">
-      <ui-syntax-card id="heading-valid-card" kind="Component" name="SyntaxCard" heading-level="2">
-        <ui-code-block slot="signature">
-          <pre><code>&lt;ui-syntax-card kind="Method" name="fetch"&gt;&lt;/ui-syntax-card&gt;</code></pre>
-        </ui-code-block>
+      <ui-syntax-card id="heading-valid-card" kind="Component" name="SyntaxCard" heading-level="2"
+        style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+        <pre slot="signature"><code>&lt;ui-syntax-card kind="Method" name="fetch"&gt;&lt;/ui-syntax-card&gt;</code></pre>
       </ui-syntax-card>
 
-      <ui-syntax-card id="heading-invalid-card" kind="Component" name="BrokenHeading" heading-level="9">
-        <ui-code-block slot="signature">
-          <pre><code>&lt;ui-syntax-card heading-level="9"&gt;&lt;/ui-syntax-card&gt;</code></pre>
-        </ui-code-block>
+      <ui-syntax-card id="heading-invalid-card" kind="Component" name="BrokenHeading" heading-level="9"
+        style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+        <pre slot="signature"><code>&lt;ui-syntax-card heading-level="9"&gt;&lt;/ui-syntax-card&gt;</code></pre>
       </ui-syntax-card>
     </div>
   `,
@@ -318,95 +332,232 @@ export const HeadingLevelFallback: Story = {
 };
 
 /**
- * 境界: Language SoT。
- * 子 ui-code-block の lang 優先と補完条件を検証します。
+ * 境界: data-lang 属性の伝播。
+ * カードレベルの lang 管理を検証します。
  */
-export const LanguageSourceOfTruth: Story = {
+export const LangAttribute: Story = {
   render: () => html`
     <div style="display: grid; gap: 1rem;">
-      <ui-syntax-card id="lang-fallback-card" kind="Query" name="FindUsers" data-lang="sql">
-        <ui-code-block slot="signature">
-          <pre><code>SELECT * FROM users;</code></pre>
-        </ui-code-block>
+      <ui-syntax-card id="lang-ts-card" kind="Method" name="parse" data-lang="ts"
+        style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+        <pre slot="signature"><code>function parse(input: string): Ast</code></pre>
       </ui-syntax-card>
 
-      <ui-syntax-card id="lang-source-card" kind="Method" name="parse" data-lang="ts">
-        <ui-code-block slot="signature" lang="rust">
-          <pre><code>fn parse(input: &str) -&gt; Result&lt;Ast, Error&gt; { ... }</code></pre>
-        </ui-code-block>
+      <ui-syntax-card id="lang-sql-card" kind="Query" name="FindUsers" data-lang="sql"
+        style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+        <pre slot="signature"><code>SELECT * FROM users;</code></pre>
       </ui-syntax-card>
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const fallbackCard = getCard(canvasElement, 'lang-fallback-card');
-    const sourceCard = getCard(canvasElement, 'lang-source-card');
-    await Promise.all([fallbackCard.updateComplete, sourceCard.updateComplete]);
+    const tsCard = getCard(canvasElement, 'lang-ts-card');
+    const sqlCard = getCard(canvasElement, 'lang-sql-card');
+    await Promise.all([tsCard.updateComplete, sqlCard.updateComplete]);
     await waitFrame();
 
-    const fallbackBlock = getSignatureCodeBlock(fallbackCard);
-    if (fallbackBlock.getAttribute('lang') !== 'sql') {
-      throw new Error('子 ui-code-block の lang 未指定時は card[data-lang] が補完される必要があります');
+    if (tsCard.getAttribute('data-lang') !== 'ts') {
+      throw new Error('data-lang="ts" がホスト属性に反映される必要があります');
     }
 
-    const sourceBlock = getSignatureCodeBlock(sourceCard);
-    if (sourceBlock.getAttribute('lang') !== 'rust') {
-      throw new Error('子 ui-code-block の lang 指定時は card[data-lang] より子を優先する必要があります');
+    if (sqlCard.getAttribute('data-lang') !== 'sql') {
+      throw new Error('data-lang="sql" がホスト属性に反映される必要があります');
     }
 
-    sourceCard.lang = 'go';
-    await sourceCard.updateComplete;
+    // lang プロパティ更新の反映
+    tsCard.lang = 'rust';
+    await tsCard.updateComplete;
     await waitFrame();
 
-    if (sourceCard.getAttribute('data-lang') !== 'go') {
-      throw new Error('card[data-lang] の更新がホスト属性へ反映されていません');
-    }
-    if (sourceBlock.getAttribute('lang') !== 'rust') {
-      throw new Error('子 ui-code-block の lang は card 側更新で上書きしてはいけません');
+    if (tsCard.getAttribute('data-lang') !== 'rust') {
+      throw new Error('lang プロパティ更新が data-lang 属性へ反映される必要があります');
     }
   },
 };
 
 /**
  * 事故が多い境界: copy 失敗隔離。
- * signature 内 code-block が 0件 / 複数件 / 空文字のケースを検証します。
+ * signature 内 pre が 0件 / 複数件 / 空文字のケースを検証します。
  */
 export const CopyFailureIsolation: Story = {
   render: () => html`
     <div style="display: grid; gap: 1rem;">
-      <ui-syntax-card id="no-code-card" kind="Method" name="fetchData">
-        <p slot="signature">コードブロック未配置</p>
+      <ui-syntax-card id="no-pre-card" kind="Method" name="fetchData"
+        style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+        <p slot="signature">pre なし</p>
       </ui-syntax-card>
 
-      <ui-syntax-card id="multi-code-card" kind="Method" name="duplicate">
-        <ui-code-block slot="signature">
-          <pre><code>const a = 1;</code></pre>
-        </ui-code-block>
-        <ui-code-block slot="signature">
-          <pre><code>const b = 2;</code></pre>
-        </ui-code-block>
+      <ui-syntax-card id="multi-pre-card" kind="Method" name="duplicate"
+        style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+        <pre slot="signature"><code>const a = 1;</code></pre>
+        <pre slot="signature"><code>const b = 2;</code></pre>
       </ui-syntax-card>
 
-      <ui-syntax-card id="empty-code-card" kind="Method" name="blank">
-        <ui-code-block slot="signature">
-          <pre><code>   </code></pre>
-        </ui-code-block>
+      <ui-syntax-card id="empty-pre-card" kind="Method" name="blank"
+        style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+        <pre slot="signature"><code>   </code></pre>
       </ui-syntax-card>
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const noCodeCard = getCard(canvasElement, 'no-code-card');
-    const multiCodeCard = getCard(canvasElement, 'multi-code-card');
-    const emptyCodeCard = getCard(canvasElement, 'empty-code-card');
+    const noPreCard = getCard(canvasElement, 'no-pre-card');
+    const multiPreCard = getCard(canvasElement, 'multi-pre-card');
+    const emptyPreCard = getCard(canvasElement, 'empty-pre-card');
 
-    await Promise.all([noCodeCard.updateComplete, multiCodeCard.updateComplete, emptyCodeCard.updateComplete]);
+    await Promise.all([noPreCard.updateComplete, multiPreCard.updateComplete, emptyPreCard.updateComplete]);
     await waitFrame();
 
-    if (multiCodeCard.querySelectorAll('ui-code-block[slot="signature"]').length !== 2) {
-      throw new Error('multi-code-card は 2つの ui-code-block を持つ必要があります');
+    if (multiPreCard.querySelectorAll('pre[slot="signature"]').length !== 2) {
+      throw new Error('multi-pre-card は 2つの pre を持つ必要があります');
     }
 
-    assertCopyDisabled(noCodeCard, 'code-block 0件');
-    assertCopyDisabled(multiCodeCard, 'code-block 複数件');
-    assertCopyDisabled(emptyCodeCard, 'code 文字列が空');
+    assertCopyDisabled(noPreCard, 'pre 0件');
+    assertCopyDisabled(multiPreCard, 'pre 複数件');
+    assertCopyDisabled(emptyPreCard, 'code 文字列が空');
+  },
+};
+
+/**
+ * 境界: default slot のみ（returns なし）。
+ * Parameters-only 構成での表示整合を検証します。
+ */
+export const DefaultOnlyMembers: Story = {
+  render: () => html`
+    <ui-syntax-card id="default-only-card" kind="Struct" name="Article" data-lang="ts"
+      style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+      <pre slot="signature"><code>type Article = {
+  id: string;
+  title: string;
+};</code></pre>
+
+      <ui-syntax-section label="プロパティ">
+        <dl>
+          <ui-syntax-field name="id" type="string" required>
+            記事の識別子です。
+          </ui-syntax-field>
+        </dl>
+      </ui-syntax-section>
+    </ui-syntax-card>
+  `,
+  play: async ({ canvasElement }) => {
+    const card = getCard(canvasElement, 'default-only-card');
+    await card.updateComplete;
+    await waitFrame();
+
+    if (card.hasAttribute('data-content-empty')) {
+      throw new Error('セクションが存在するため data-content-empty は付与されません');
+    }
+
+    const sections = card.querySelectorAll<SyntaxSection>('ui-syntax-section');
+    if (sections.length !== 1) {
+      throw new Error(`ui-syntax-section は1件必要です。actual=${String(sections.length)}`);
+    }
+
+    if (sections[0]?.label !== 'プロパティ') {
+      throw new Error('セクションラベルは "プロパティ" である必要があります');
+    }
+
+    const syntaxFields = card.querySelectorAll('ui-syntax-field');
+    if (syntaxFields.length !== 1) {
+      throw new Error(`ui-syntax-field は1件必要です。actual=${String(syntaxFields.length)}`);
+    }
+  },
+};
+
+/**
+ * 契約: forced-colors の境界フォールバックが定義されていること。
+ */
+export const ForcedColorsContract: Story = {
+  render: () => html`
+    <ui-syntax-card id="forced-colors-contract" kind="Method" name="hydrate" data-lang="ts"
+      style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+      <pre slot="signature"><code>hydrate(root, app);</code></pre>
+    </ui-syntax-card>
+  `,
+  play: () => {
+    const cardStyles = getSyntaxCardStylesText();
+    const cardSnippets = [
+      '@media (forced-colors: active)',
+      'border-color: CanvasText;',
+      '.signature-area',
+      '.kind-tag',
+      '.copy-action',
+    ];
+
+    cardSnippets.forEach((snippet) => {
+      if (!cardStyles.includes(snippet)) {
+        throw new Error(`forced-colors 契約の定義が不足しています (syntax-card): ${snippet}`);
+      }
+    });
+
+    const sectionStyles = getSyntaxSectionStylesText();
+    const sectionSnippets = ['@media (forced-colors: active)', '.section-title'];
+
+    sectionSnippets.forEach((snippet) => {
+      if (!sectionStyles.includes(snippet)) {
+        throw new Error(`forced-colors 契約の定義が不足しています (syntax-section): ${snippet}`);
+      }
+    });
+  },
+};
+
+/**
+ * 契約: print 時の baseline ルールが定義されていること。
+ */
+export const PrintContract: Story = {
+  render: () => html`
+    <ui-syntax-card id="print-contract" kind="Query" name="FindAll" data-lang="sql"
+      style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+      <pre slot="signature"><code>SELECT * FROM posts;</code></pre>
+    </ui-syntax-card>
+  `,
+  play: () => {
+    const styles = getSyntaxCardStylesText();
+    const requiredSnippets = [
+      '@media print',
+      '.copy-action',
+      'display: none;',
+      'background: transparent !important;',
+    ];
+
+    requiredSnippets.forEach((snippet) => {
+      if (!styles.includes(snippet)) {
+        throw new Error(`print 契約の定義が不足しています: ${snippet}`);
+      }
+    });
+  },
+};
+
+/**
+ * 境界: copy 無効時に実操作できないこと。
+ */
+export const CopyDisabledInteractionContract: Story = {
+  render: () => html`
+    <ui-syntax-card id="copy-disabled-interaction" kind="Method" name="noop"
+      style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+      <p slot="signature">pre なし</p>
+    </ui-syntax-card>
+  `,
+  play: async ({ canvasElement }) => {
+    const card = getCard(canvasElement, 'copy-disabled-interaction');
+    await card.updateComplete;
+    await waitFrame();
+
+    const copyButton = getCopyButton(card);
+    if (!copyButton.hasAttribute('disabled')) {
+      throw new Error('copy 無効ケースでは ui-copy-button に disabled が必要です');
+    }
+
+    const innerButton = copyButton.shadowRoot?.querySelector('ui-button');
+    if (!innerButton) {
+      throw new Error('ui-copy-button 内の ui-button が見つかりません');
+    }
+
+    if (!innerButton.hasAttribute('disabled')) {
+      throw new Error('copy 無効ケースでは内部 ui-button へ disabled を伝播する必要があります');
+    }
+
+    if (copyButton.getAttribute('tabindex') !== '-1') {
+      throw new Error('copy 無効ケースでは tabindex=-1 である必要があります');
+    }
   },
 };

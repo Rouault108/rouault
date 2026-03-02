@@ -43,8 +43,9 @@ export class UiScore extends LitElement {
       border: var(--border-width, 1px) solid var(--border-muted, oklch(20% 0.03 250 / 0.06));
       border-radius: var(--radius-md, 6px);
       background: var(--bg-score-paper, oklch(100% 0 0));
+      color: var(--score-ink, oklch(0% 0 0));
       padding: var(--space-4, 16px);
-      scrollbar-width: thin;
+      scrollbar-width: auto;
       scrollbar-color: var(--fg-muted, oklch(45% 0.02 250)) transparent;
       scrollbar-gutter: stable both-edges;
     }
@@ -248,6 +249,10 @@ export class UiScore extends LitElement {
     }
 
     @media print {
+      .root {
+        break-inside: auto;
+      }
+
       :host-context(.prose) .root {
         width: 100% !important;
         margin-inline: 0 !important;
@@ -418,7 +423,6 @@ export class UiScore extends LitElement {
 
   private get _effectiveErrorMessage(): string {
     if (this._errorMessage !== '') return this._errorMessage;
-    if (this._isRuntimeMode && this._resolvedSrc === '') return MISSING_SRC_ERROR_MESSAGE;
     return '';
   }
 

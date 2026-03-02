@@ -1,5 +1,5 @@
 import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
-import { customElement, property, queryAssignedElements } from 'lit/decorators.js';
+import { customElement, property, queryAssignedElements, state } from 'lit/decorators.js';
 import {
     autoUpdate,
     computePosition,
@@ -151,6 +151,12 @@ export class Dropdown extends LitElement {
 
     /* Forced Colors Mode */
     @media (forced-colors: active) {
+      :host ::slotted([slot='trigger']) {
+        border-color: ButtonBorder !important;
+        background: ButtonFace !important;
+        color: ButtonText !important;
+      }
+
       .panel {
         background: Canvas !important;
         border: var(--border-width, 1px) solid CanvasText !important;
@@ -223,10 +229,13 @@ export class Dropdown extends LitElement {
     // Type-ahead バッファ
     private _typeaheadBuffer = '';
     private _typeaheadTimer: ReturnType<typeof setTimeout> | null = null;
+    private _openFocusTarget: 'first' | 'last' = 'first';
+    private _restoreFocusOnClose = true;
 
     // 一意なIDを生成
     private readonly _menuId = `dropdown-menu-${Math.random().toString(36).substring(2, 11)}`;
     private readonly _triggerId = `dropdown-trigger-${Math.random().toString(36).substring(2, 11)}`;
+    private _resolvedTriggerId = this._triggerId;
 
     override connectedCallback(): void {
         super.connectedCallback();
@@ -254,6 +263,14 @@ export class Dropdown extends LitElement {
                 this._onClose();
             }
         }
+        if (changedProperties.has('placement') || changedProperties.has('align')) {
+            if (this.opened) {
+                this._setupFloating();
+            }
+        }
+        if (changedProperties.has('disabled')) {
+            this._updateTriggerAria(this.opened);
+        }
     }
 
     // ──────────────────────────────────────────────
@@ -269,8 +286,11 @@ export class Dropdown extends LitElement {
         // フォーカスを最初の有効なメニュー項目へ
         requestAnimationFrame(() => {
             const items = this._getMenuItems();
-            const first = items.find(item => !item.disabled);
-            first?.focus();
+            const target = this._openFocusTarget === 'last'
+                ? [...items].reverse().find(item => !item.disabled)
+                : items.find(item => !item.disabled);
+            this._focusItem(target ?? null);
+            this._openFocusTarget = 'first';
         });
     }
 
@@ -279,6 +299,10 @@ export class Dropdown extends LitElement {
         this._cleanupClickOutside();
         this._cleanupScrollClose();
         this._updateTriggerAria(false);
+        if (this._restoreFocusOnClose) {
+            this._getTriggerElement()?.focus();
+        }
+        this._restoreFocusOnClose = true;
     }
 
     /**
@@ -293,8 +317,9 @@ export class Dropdown extends LitElement {
     /**
      * メニューを閉じる
      */
-    close(): void {
+    close(restoreFocus = true): void {
         if (!this.opened) return;
+        this._restoreFocusOnClose = restoreFocus;
         this.opened = false;
         this.dispatchEvent(new CustomEvent('close', { bubbles: true, composed: true }));
     }
@@ -318,10 +343,11 @@ export class Dropdown extends LitElement {
         const trigger = this._getTriggerElement();
         const panel = this.shadowRoot?.querySelector<HTMLElement>('.panel');
         if (!trigger || !panel) return;
+        this._cleanupFloating();
 
         const update = (): void => {
             void computePosition(trigger, panel, {
-                placement: this.placement,
+                placement: this._resolvePlacement(),
                 middleware: [offset(4), flip(), shift({ padding: 8 })],
             }).then(({ x, y }) => {
                 Object.assign(panel.style, {
@@ -347,7 +373,7 @@ export class Dropdown extends LitElement {
         const handler = (e: MouseEvent) => {
             const path = e.composedPath();
             if (!path.includes(this)) {
-                this.close();
+                this.close(false);
             }
         };
         document.addEventListener('mousedown', handler, { capture: true });
@@ -363,7 +389,7 @@ export class Dropdown extends LitElement {
 
     private _setupScrollClose(): void {
         const handler = () => {
-            if (this.opened) this.close();
+            if (this.opened) this.close(false);
         };
         window.addEventListener('scroll', handler, { capture: true, passive: true });
         this._scrollCloseCleanup = () => {
@@ -386,9 +412,23 @@ export class Dropdown extends LitElement {
         trigger.setAttribute('aria-expanded', String(expanded));
         trigger.setAttribute('aria-haspopup', 'menu');
         trigger.setAttribute('aria-controls', this._menuId);
+        if (this.disabled) {
+            trigger.setAttribute('aria-disabled', 'true');
+        } else {
+            trigger.removeAttribute('aria-disabled');
+        }
+        if (!this._isNativeButtonLikeTrigger(trigger)) {
+            trigger.setAttribute('role', 'button');
+            if (this.disabled) {
+                trigger.setAttribute('tabindex', '-1');
+            } else if (!trigger.hasAttribute('tabindex')) {
+                trigger.setAttribute('tabindex', '0');
+            }
+        }
         if (!trigger.id) {
             trigger.id = this._triggerId;
         }
+        this._resolvedTriggerId = trigger.id;
     }
 
     // ──────────────────────────────────────────────
@@ -405,6 +445,47 @@ export class Dropdown extends LitElement {
 
     private _getTriggerElement(): HTMLElement | null {
         return this._triggerElements[0] ?? null;
+    }
+
+    private _isNativeButtonLikeTrigger(trigger: HTMLElement): boolean {
+        const tag = trigger.tagName.toLowerCase();
+        if (tag === 'button' || (tag === 'a' && trigger.hasAttribute('href'))) {
+            return true;
+        }
+        // Shadow DOM 内にフォーカス可能な要素を持つカスタム要素（ui-button 等）
+        if (trigger.shadowRoot?.querySelector('button, input, select, textarea, a[href]')) {
+            return true;
+        }
+        return false;
+    }
+
+    private _resolvePlacement(): Placement {
+        const side = this.placement.split('-')[0] as 'top' | 'right' | 'bottom' | 'left';
+        if (this.align === 'center') {
+            return side;
+        }
+        return `${side}-${this.align}` as Placement;
+    }
+
+    private _focusItem(item: MenuItem | null): void {
+        this._syncRovingTabindex(item);
+        item?.focus();
+    }
+
+    private _syncRovingTabindex(activeItem: MenuItem | null): void {
+        const items = this._getMenuItems();
+        for (const item of items) {
+            item.setRovingTabIndex(item === activeItem ? 0 : -1);
+        }
+    }
+
+    private _getFocusedItem(items: MenuItem[]): MenuItem | null {
+        for (const item of items) {
+            if (item.shadowRoot?.activeElement instanceof HTMLElement) {
+                return item;
+            }
+        }
+        return null;
     }
 
     // ──────────────────────────────────────────────
@@ -426,6 +507,7 @@ export class Dropdown extends LitElement {
             case 'ArrowDown':
                 e.preventDefault();
                 if (!this.opened) {
+                    this._openFocusTarget = 'first';
                     this.open();
                     // フォーカスは _onOpen で処理される
                 }
@@ -433,12 +515,8 @@ export class Dropdown extends LitElement {
             case 'ArrowUp':
                 e.preventDefault();
                 if (!this.opened) {
+                    this._openFocusTarget = 'last';
                     this.open();
-                    requestAnimationFrame(() => {
-                        const items = this._getMenuItems();
-                        const last = [...items].reverse().find(item => !item.disabled);
-                        last?.focus();
-                    });
                 }
                 break;
         }
@@ -446,50 +524,48 @@ export class Dropdown extends LitElement {
 
     private _handleMenuKeyDown = (e: KeyboardEvent): void => {
         const items = this._getMenuItems();
-        const activeEl = this.shadowRoot?.activeElement ?? document.activeElement;
         // MenuItem の Shadow DOM 内の button がフォーカスを持つため、
         // host 要素（MenuItem）を特定する
-        const currentItem = items.find(item => item === activeEl || item.shadowRoot?.activeElement !== null && item.contains(activeEl as Node));
+        const currentItem = this._getFocusedItem(items);
         const currentIndex = currentItem ? items.indexOf(currentItem) : -1;
 
         switch (e.key) {
             case 'Escape':
                 e.preventDefault();
-                this.close();
-                this._getTriggerElement()?.focus();
+                this.close(true);
                 break;
 
             case 'ArrowDown': {
                 e.preventDefault();
                 const next = this._findNextEnabled(items, currentIndex, 1);
-                next?.focus();
+                this._focusItem(next);
                 break;
             }
 
             case 'ArrowUp': {
                 e.preventDefault();
                 const prev = this._findNextEnabled(items, currentIndex, -1);
-                prev?.focus();
+                this._focusItem(prev);
                 break;
             }
 
             case 'Home': {
                 e.preventDefault();
                 const first = items.find(item => !item.disabled);
-                first?.focus();
+                this._focusItem(first ?? null);
                 break;
             }
 
             case 'End': {
                 e.preventDefault();
                 const last = [...items].reverse().find(item => !item.disabled);
-                last?.focus();
+                this._focusItem(last ?? null);
                 break;
             }
 
             case 'Tab':
                 // Focus Trap なし: Tab でメニューを閉じ、次の要素へ
-                this.close();
+                this.close(false);
                 break;
 
             case 'Enter':
@@ -543,7 +619,7 @@ export class Dropdown extends LitElement {
             const label = item.textContent.trim().toLowerCase();
             return label.startsWith(buffer);
         });
-        match?.focus();
+        this._focusItem(match ?? null);
     }
 
     private _selectItem(item: MenuItem): void {
@@ -556,8 +632,7 @@ export class Dropdown extends LitElement {
                 detail: { value, label },
             }),
         );
-        this.close();
-        this._getTriggerElement()?.focus();
+        this.close(true);
     }
 
     // MenuItem の click イベントを受け取り、menu-item-select として再発火
@@ -571,8 +646,7 @@ export class Dropdown extends LitElement {
                 detail: { value, label },
             }),
         );
-        this.close();
-        this._getTriggerElement()?.focus();
+        this.close(true);
     };
 
     // ──────────────────────────────────────────────
@@ -592,7 +666,9 @@ export class Dropdown extends LitElement {
         class="panel"
         role="menu"
         id="${this._menuId}"
-        aria-labelledby="${this._triggerId}"
+        aria-labelledby="${this._resolvedTriggerId}"
+        aria-hidden="${this.opened ? 'false' : 'true'}"
+        ?inert="${!this.opened}"
         @keydown="${this._handleMenuKeyDown}"
       >
         <slot class="menu-slot"></slot>
@@ -611,12 +687,7 @@ export class Dropdown extends LitElement {
     private _onTriggerSlotChange = (): void => {
         const trigger = this._getTriggerElement();
         if (!trigger) return;
-        trigger.setAttribute('aria-haspopup', 'menu');
-        trigger.setAttribute('aria-expanded', String(this.opened));
-        trigger.setAttribute('aria-controls', this._menuId);
-        if (!trigger.id) {
-            trigger.id = this._triggerId;
-        }
+        this._updateTriggerAria(this.opened);
     };
 }
 
@@ -723,7 +794,7 @@ export class MenuItem extends LitElement {
     /* Focus Indicator: Adaptive Focus */
     button:focus-visible {
       outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
-      outline-offset: var(--focus-ring-offset, 2px);
+      outline-offset: -2px; /* フォーカスリングがvar(--focus-ring-offset, 2px)の場合メニューからはみ出すため、要素の間隔を調整 */
       animation: var(--animation-focus);
     }
 
@@ -799,12 +870,14 @@ export class MenuItem extends LitElement {
      */
     @property({ type: Boolean, reflect: true })
     disabled = false;
+    @state()
+    private _tabIndex = -1;
 
     override render() {
         return html`
       <button
         role="menuitem"
-        tabindex="-1"
+        tabindex="${String(this._tabIndex)}"
         ?disabled="${this.disabled}"
         aria-disabled="${this.disabled ? 'true' : nothing}"
         @click="${this._handleClick}"
@@ -835,8 +908,13 @@ export class MenuItem extends LitElement {
      * メニュー項目にフォーカスを当てる（Roving Tabindex 管理用）
      */
     override focus(options?: FocusOptions): void {
+        this._tabIndex = 0;
         const button = this.shadowRoot?.querySelector('button');
         button?.focus(options);
+    }
+
+    setRovingTabIndex(tabIndex: number): void {
+        this._tabIndex = tabIndex;
     }
 }
 

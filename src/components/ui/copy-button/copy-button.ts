@@ -1,4 +1,4 @@
-import { css, html, LitElement } from 'lit';
+import { css, html, LitElement, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import '../button/button';
 
@@ -74,20 +74,8 @@ export class CopyButton extends LitElement {
 
     ui-button {
       position: relative;
-      z-index: 2;
-    }
-
-    /* Hit Area Extension: 視覚サイズより大きなタッチ領域を確保 */
-    :host::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: var(--control-min-touch, 44px);
-      height: var(--control-min-touch, 44px);
-      z-index: 1;
-      pointer-events: auto;
+      /* ui-button 側の 44px ヒットエリア実装へトークンを受け渡す */
+      --control-min-touch: var(--control-min-touch, 44px);
     }
 
     /* Layout Stability: アイコン切り替え時のガタつき防止 */
@@ -233,6 +221,9 @@ export class CopyButton extends LitElement {
   @property({ type: String, reflect: true })
   size: CopyButtonSize = 'sm';
 
+  @property({ type: Boolean, reflect: true })
+  disabled = false;
+
   /**
    * 内部状態
    * @type {'idle' | 'success' | 'error'}
@@ -276,17 +267,16 @@ export class CopyButton extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this.addEventListener('click', this._handleHostClick);
 
     // 初期状態を設定（CSS セレクタで使用するため）
     this.setAttribute('state', 'idle');
 
-    // label が必須であることを警告
-    if (this._isDevelopment && !this.label) {
-      console.error(
-        '[ui-copy-button]: label 属性は必須です。アクセシビリティのために代替テキストを提供してください。',
-        this,
-      );
+    this._warnMissingLabel();
+  }
+
+  override willUpdate(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has('label')) {
+      this._warnMissingLabel();
     }
   }
 
@@ -294,7 +284,29 @@ export class CopyButton extends LitElement {
     super.disconnectedCallback();
     this._clearStateTimer();
     this._clearLoadingTimer();
-    this.removeEventListener('click', this._handleHostClick);
+  }
+
+  /**
+   * label 必須契約の検証（開発時）
+   */
+  private _warnMissingLabel(): void {
+    if (!this._isDevelopment) {
+      return;
+    }
+
+    if (!this.label.trim()) {
+      console.error(
+        '[ui-copy-button]: label 属性は必須です。アクセシビリティのために代替テキストを提供してください。',
+        this,
+      );
+    }
+  }
+
+  /**
+   * aria-label のベースラベル（欠落時は安全な既定値へフォールバック）
+   */
+  private get _baseLabel(): string {
+    return this.label.trim() || 'コピー';
   }
 
   /**
@@ -347,16 +359,16 @@ export class CopyButton extends LitElement {
    */
   private get _ariaLabel(): string {
     if (this._isCopyingVisible) {
-      return `${this.label} - コピー中`;
+      return `${this._baseLabel} - コピー中`;
     }
 
     switch (this._internalState) {
       case 'success':
-        return `${this.label} - コピーしました`;
+        return `${this._baseLabel} - コピーしました`;
       case 'error':
-        return `${this.label} - コピー失敗`;
+        return `${this._baseLabel} - コピー失敗`;
       default:
-        return this.label;
+        return this._baseLabel;
     }
   }
 
@@ -410,6 +422,10 @@ export class CopyButton extends LitElement {
    * コピーボタンクリック時の処理
    */
   private _handleCopy = async (): Promise<void> => {
+    if (this.disabled) {
+      return;
+    }
+
     // 既存タイマーをクリア
     this._clearStateTimer();
     this._clearLoadingTimer();
@@ -478,34 +494,18 @@ export class CopyButton extends LitElement {
     }
   };
 
-  /**
-   * 擬似要素ヒットエリアからのクリックを内部ボタンへ委譲
-   */
-  private _handleHostClick = (event: MouseEvent): void => {
-    if (event.target !== this) {
-      return;
-    }
-
-    const button = this.shadowRoot?.querySelector('ui-button');
-    if (!button) {
-      return;
-    }
-
-    event.preventDefault();
-    button.click();
-  };
-
   override render() {
     return html`
       <ui-button
         variant="ghost"
         size="${this.size}"
         icon-only
+        ?disabled="${this.disabled}"
         aria-label="${this._ariaLabel}"
         @click="${this._handleCopy}"
       >
         <span class="copy-button-icon-container">
-          <iconify-icon icon="${this._icon}"></iconify-icon>
+          <iconify-icon icon="${this._icon}" aria-hidden="true"></iconify-icon>
         </span>
       </ui-button>
 

@@ -82,7 +82,7 @@ type Story = StoryObj<Ol>;
  */
 export const Default: Story = {
   render: () => html`
-    <ui-ol id="default-ol">
+    <ui-ol id="default-ol" style="--space-2: 8px;">
       <ol>
         <li data-testid="item-1">順序を明確に伝える。</li>
         <li data-testid="item-2">本文の視線誘導を壊さない。</li>
@@ -114,13 +114,69 @@ export const Default: Story = {
     }
 
     const firstItem = getItem(list, '[data-testid="item-1"]');
+    const secondItem = getItem(list, '[data-testid="item-2"]');
     if (getMarkerText(firstItem) !== '1.') {
       throw new Error(`先頭マーカーが "1." ではありません: ${getMarkerText(firstItem)}`);
+    }
+
+    const secondMarginBlockStart = getComputedStyle(secondItem).marginBlockStart;
+    if (secondMarginBlockStart !== '8px') {
+      throw new Error(
+        `Item Gap が var(--space-2) と一致しません: margin-block-start=${secondMarginBlockStart}`,
+      );
     }
 
     const markerColumn = getComputedStyle(list).getPropertyValue('--ol-marker-column').trim();
     if (markerColumn !== '3ch') {
       throw new Error(`既定のマーカー列幅が 3ch ではありません: ${markerColumn}`);
+    }
+  },
+};
+
+/**
+ * Marker Alignment + Item Gap:
+ * - 1桁と2桁（9. / 10.）で本文開始位置が一致
+ * - `var(--space-2)` が項目間余白へ正しく反映
+ */
+export const MarkerAlignmentAndSpacing: Story = {
+  render: () => html`
+    <ui-ol id="alignment-ol" style="--space-2: 8px;">
+      <ol start="9">
+        <li data-testid="align-9"><span class="content-anchor">9番の本文</span></li>
+        <li data-testid="align-10"><span class="content-anchor">10番の本文</span></li>
+      </ol>
+    </ui-ol>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'alignment-ol');
+    await host.updateComplete;
+
+    const list = getDirectList(host);
+    const item9 = getItem(list, '[data-testid="align-9"]');
+    const item10 = getItem(list, '[data-testid="align-10"]');
+    const anchor9 = item9.querySelector<HTMLElement>('.content-anchor');
+    const anchor10 = item10.querySelector<HTMLElement>('.content-anchor');
+    if (!anchor9 || !anchor10) {
+      throw new Error('本文開始位置の検証用要素が見つかりません');
+    }
+
+    const marker9 = getMarkerNumber(item9);
+    const marker10 = getMarkerNumber(item10);
+    if (marker9 !== 9 || marker10 !== 10) {
+      throw new Error(`start=9 のマーカー生成が不正です: ${String(marker9)}, ${String(marker10)}`);
+    }
+
+    const left9 = anchor9.getBoundingClientRect().left;
+    const left10 = anchor10.getBoundingClientRect().left;
+    if (Math.abs(left9 - left10) > 1) {
+      throw new Error(`1桁/2桁で本文開始位置がずれています: ${String(left9)} vs ${String(left10)}`);
+    }
+
+    const item10MarginBlockStart = getComputedStyle(item10).marginBlockStart;
+    if (item10MarginBlockStart !== '8px') {
+      throw new Error(
+        `Item Gap が var(--space-2) と一致しません: margin-block-start=${item10MarginBlockStart}`,
+      );
     }
   },
 };
@@ -252,6 +308,7 @@ export const VariantStateMatrix: Story = {
  * - 3桁判定（`data-marker-digits="3"`）
  * - `start` / `reversed` / `li[value]` のマーカー追従
  * - `<ui-ol><li>...</li></ui-ol>` の自動補完
+ * - `<ol>` と直下 `li` の混在入力救済
  * - 後追加ノードの role 補強
  */
 export const BoundaryConditions: Story = {
@@ -282,6 +339,14 @@ export const BoundaryConditions: Story = {
           <li data-testid="dynamic-root">初期項目</li>
         </ol>
       </ui-ol>
+
+      <ui-ol id="boundary-mixed">
+        <ol>
+          <li data-testid="mixed-root">既存リスト項目</li>
+        </ol>
+        <li data-testid="mixed-stray-1">直下 stray 1</li>
+        <li data-testid="mixed-stray-2">直下 stray 2</li>
+      </ui-ol>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -289,11 +354,13 @@ export const BoundaryConditions: Story = {
     const reversedHost = getHost(canvasElement, 'boundary-reversed-value');
     const autoHost = getHost(canvasElement, 'boundary-autowrap');
     const dynamicHost = getHost(canvasElement, 'boundary-dynamic');
+    const mixedHost = getHost(canvasElement, 'boundary-mixed');
     await Promise.all([
       largeHost.updateComplete,
       reversedHost.updateComplete,
       autoHost.updateComplete,
       dynamicHost.updateComplete,
+      mixedHost.updateComplete,
     ]);
 
     const largeList = getDirectList(largeHost);
@@ -356,6 +423,30 @@ export const BoundaryConditions: Story = {
     }
     if (nestedItem.getAttribute('role') !== 'listitem') {
       throw new Error('後追加したネスト li に role="listitem" が補強されていません');
+    }
+
+    const mixedLists = [...mixedHost.children].filter(
+      (child): child is HTMLOListElement => child instanceof HTMLOListElement,
+    );
+    if (mixedLists.length < 2) {
+      throw new Error('ol と直下 li の混在ケースで救済用 <ol> が生成されていません');
+    }
+
+    const rescuedList = mixedLists.find((listCandidate) =>
+      listCandidate.querySelector('[data-testid="mixed-stray-1"], [data-testid="mixed-stray-2"]'),
+    );
+    if (!rescuedList) {
+      throw new Error('直下 stray li が救済用 <ol> に移動していません');
+    }
+
+    const rescuedItems = rescuedList.querySelectorAll<HTMLLIElement>('li');
+    if (rescuedItems.length !== 2) {
+      throw new Error(`救済用 <ol> の li 件数が不正です: ${String(rescuedItems.length)}`);
+    }
+    for (const item of rescuedItems) {
+      if (item.getAttribute('role') !== 'listitem') {
+        throw new Error('救済された li に role="listitem" が補強されていません');
+      }
     }
   },
 };
@@ -493,6 +584,68 @@ export const MediaAndTokenContracts: Story = {
     }
     if (!cssText.includes('color: CanvasText')) {
       throw new Error('forced-colors 時の CanvasText 指定がありません');
+    }
+  },
+};
+
+/**
+ * Dark Mode契約:
+ * - セマンティックトークン参照でモード分岐不要
+ * - Defaultマーカーは `--fg-muted`、Stepsマーカーは `--primary` を追従
+ */
+export const DarkModeTokenContract: Story = {
+  render: () => html`
+    <style>
+      .dark-surface {
+        padding: 1rem;
+        background: oklch(18% 0.02 250);
+        color: oklch(92% 0.01 250);
+        border-radius: var(--radius-md, 8px);
+        --fg-default: oklch(92% 0.01 250);
+        --fg-muted: oklch(74% 0.01 250);
+        --primary: oklch(72% 0.17 256);
+      }
+    </style>
+
+    <div class="dark-surface">
+      <div id="dark-muted-probe" style="color: var(--fg-muted); display: none;"></div>
+      <div id="dark-primary-probe" style="color: var(--primary); display: none;"></div>
+
+      <ui-ol id="dark-default">
+        <ol>
+          <li data-testid="dark-default-item">暗色面でも静かな主従を維持する</li>
+        </ol>
+      </ui-ol>
+
+      <ui-ol id="dark-steps" variant="steps">
+        <ol>
+          <li data-testid="dark-steps-item">手順強調時のみプライマリに切り替える</li>
+        </ol>
+      </ui-ol>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const defaultHost = getHost(canvasElement, 'dark-default');
+    const stepsHost = getHost(canvasElement, 'dark-steps');
+    await Promise.all([defaultHost.updateComplete, stepsHost.updateComplete]);
+
+    const defaultItem = getItem(getDirectList(defaultHost), '[data-testid="dark-default-item"]');
+    const stepsItem = getItem(getDirectList(stepsHost), '[data-testid="dark-steps-item"]');
+    const mutedProbe = canvasElement.querySelector<HTMLElement>('#dark-muted-probe');
+    const primaryProbe = canvasElement.querySelector<HTMLElement>('#dark-primary-probe');
+    if (!mutedProbe || !primaryProbe) {
+      throw new Error('Dark Mode 色検証用プローブが見つかりません');
+    }
+
+    const defaultMarkerColor = getComputedStyle(defaultItem, '::before').color;
+    const stepsMarkerColor = getComputedStyle(stepsItem, '::before').color;
+    const expectedMuted = getComputedStyle(mutedProbe).color;
+    const expectedPrimary = getComputedStyle(primaryProbe).color;
+    if (defaultMarkerColor !== expectedMuted) {
+      throw new Error(`Dark Mode で default マーカー色が --fg-muted を追従していません: ${defaultMarkerColor}`);
+    }
+    if (stepsMarkerColor !== expectedPrimary) {
+      throw new Error(`Dark Mode で steps マーカー色が --primary を追従していません: ${stepsMarkerColor}`);
     }
   },
 };

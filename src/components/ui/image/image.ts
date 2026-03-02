@@ -83,25 +83,10 @@ export class UiImage extends LitElement {
       height: auto;
       max-width: 100%;
       opacity: 0;
-      transition:
-        transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        filter var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        box-shadow var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
-      transform-origin: center;
     }
 
     .thumbnail-image.is-loaded {
       opacity: 1;
-    }
-
-    .trigger:hover:not(:disabled) .thumbnail-image,
-    .trigger:focus-visible .thumbnail-image {
-      transform: scale(var(--scale-hover-sm, 1.02));
-    }
-
-    .trigger:active:not(:disabled) .thumbnail-image {
-      transform: scale(var(--scale-pressed, 0.96));
     }
 
     .static-frame .thumbnail-image {
@@ -189,7 +174,7 @@ export class UiImage extends LitElement {
 
     .lightbox-image {
       display: block;
-      max-width: 100%;
+      max-width: calc(100vw - var(--space-8, 2rem));
       max-height: calc(100vh - var(--space-8, 2rem));
       width: auto;
       height: auto;
@@ -603,8 +588,8 @@ export class UiImage extends LitElement {
                 class="trigger"
                 aria-label="${this._triggerLabel}"
                 aria-expanded="${String(this._expanded && this._canOpenLightbox)}"
-                aria-haspopup="${ifDefined(this._canOpenLightbox ? 'dialog' : undefined)}"
-                aria-controls="${ifDefined(this._canOpenLightbox ? this._dialogId : undefined)}"
+                aria-haspopup="dialog"
+                aria-controls="${this._dialogId}"
                 aria-describedby="${ifDefined(this._captionRef)}"
                 ?disabled="${!this._canOpenLightbox}"
                 @click="${this._onTriggerClick}"
