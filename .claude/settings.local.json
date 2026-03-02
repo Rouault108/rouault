@@ -3,7 +3,8 @@
     "allow": [
       "Bash(xargs ls:*)",
       "Bash(npx eslint:*)",
-      "Bash(/c/Users/ruosc/AppData/Local/Programs/Python/Python310/python:*)"
+      "Bash(/c/Users/ruosc/AppData/Local/Programs/Python/Python310/python:*)",
+      "Bash(npx tsc --noEmit --project tsconfig.json)"
     ]
   }
 }
