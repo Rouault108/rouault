@@ -9161,12 +9161,23 @@ class SaveButton extends LitElement {
 | :--- | :--- | :--- | :--- | :--- |
 | `variant` | `variant` | `'default' \| 'search' \| 'error'` | `'default'` | 空状態の種類。`search`: 検索結果なし、`error`: エラー状態。 |
 
+> **Variant Boundary**:
+> `variant="error"` は「当該コンテンツ領域内で解決可能なエラー（再試行・フィルタ調整等）」に限定します。アプリ全体に関わる警告・障害は `index.md` の方針通り `<ui-banner>` を使用してください。
+
 **5. スタイリングとトークンマッピング (Style & Tokens)**
 
 **レイアウト (Layout)**
 
 ```css
 :host {
+  /* コンポーネント専用のセマンティック変数（グローバルトークンから導出） */
+  --empty-state-padding: clamp(var(--space-8), 6vw, var(--space-12));
+  --empty-state-min-height: clamp(
+    calc(var(--space-12) * 5),
+    50vh,
+    calc(var(--space-16) * 5)
+  );
+
   /* コンテナ全体を中央配置 */
   display: flex;
   flex-direction: column;
@@ -9175,26 +9186,16 @@ class SaveButton extends LitElement {
   text-align: center;
 
   /* 内部パディング: 周囲との適切な余白を確保 */
-  padding: var(--space-12); /* 48px */
+  padding: var(--empty-state-padding);
 
-  /* 最小高さ: 小さなコンテナでも視覚的バランスを維持
-     スペーシングトークンは余白・間隔用であり、コンポーネントの
-     レイアウト保証目的の最小高さは直接指定する */
-  min-height: 320px;
-}
-
-/* --bp-md: 768px。CSS カスタムプロパティはメディアクエリ内で使用不可のため直接指定 */
-@media (max-width: 768px) {
-  :host {
-    padding: var(--space-8); /* 32px */
-    min-height: 240px;
-  }
+  /* 最小高さ: 余白トークンを基準にした可変値でレイアウトバランスを維持 */
+  min-height: var(--empty-state-min-height);
 }
 ```
 
 > **Rationale (Minimum Height):**
-> - **Desktop (`320px`)**: アイコン (32px) + マージン (16px) + 見出し (約20px) + マージン (8px) + 説明文 (約40px) + マージン (24px) + ボタン (32px) + 上下パディング (48px × 2) = 約268px。余裕を持たせて `320px` とし、4px基準 (80 × 4px) に合致させています。
-> - **Mobile (`240px`)**: パディングを削減 (32px × 2) し、説明文が短縮される想定で `240px` (60 × 4px) としています。
+> - **Token First**: `--space-*` から導出した `--empty-state-min-height` を使用し、コンポーネント単体でもハードコードを回避します。
+> - **Responsive Without Breakpoint Hardcode**: `clamp()` により画面幅に応じて自然に圧縮し、明示的な `768px` 分岐なしで密度を維持します。
 
 **アイコン (Icon)**
 
@@ -9207,16 +9208,18 @@ class SaveButton extends LitElement {
   /* 色: 控えめに背景に溶け込む */
   color: var(--fg-muted);
 
-  /* ストローク幅: Lucide標準（Lucide側で管理される値のため、トークン化せず直接指定） */
-  stroke-width: 1.5px;
-
   /* 下部要素との間隔 */
   margin-bottom: var(--space-4); /* 16px */
+}
+
+/* illustration がある場合、標準アイコンは非表示 */
+:host([has-illustration]) .icon {
+  display: none;
 }
 ```
 
 > **Note (Stroke Width):**
-> `stroke-width: 1.5px` はLucideアイコンセットの標準仕様であり、アイコンライブラリ側で管理される値です。Rouault側でトークン化すると、Lucideの更新時に不整合が生じる可能性があるため、コンポーネント仕様では直接指定します。
+> ストローク幅はLucide標準値を採用し、コンポーネント側で明示上書きしません。
 
 **タイポグラフィ (Typography)**
 
@@ -9252,7 +9255,7 @@ class SaveButton extends LitElement {
 }
 
 /* description スロットが空の場合、heading 直下に action が来るための調整 */
-.heading:last-of-type {
+:host(:not([has-description])) .heading {
   margin-bottom: var(--space-6);
 }
 ```
@@ -9271,8 +9274,8 @@ class SaveButton extends LitElement {
   justify-content: center;
 }
 
-/* action スロットが空の場合は非表示 */
-.actions:empty {
+/* action スロットが空の場合は非表示（slotchange で has-action 属性を同期） */
+:host(:not([has-action])) .actions {
   display: none;
 }
 ```
@@ -9306,16 +9309,21 @@ class SaveButton extends LitElement {
   - *Rationale*: `role="alert"` は緊急性が高い場合のみ使用します。空状態は通常、情報提示であるため `status` が適切です。
   - *Scope*: `role="status"` は暗黙的な `aria-live="polite"` を持つため、空状態が**動的に表示される場合**（例: 検索後に結果が0件）にスクリーンリーダーへの通知が発火します。**初期レンダリング時に存在する場合**（例: 初回訪問でデータが0件）はライブリージョンの通知は発火しませんが、スクリーンリーダーはDOM順にコンテンツを読み上げるため問題はありません。
 - **Atomic**: `aria-atomic="true"` を明示的に設定し、動的表示時にスクリーンリーダーが領域全体を読み上げるようにします。`role="status"` の暗黙適用に加え、実装者の意図を明確化するために明示します。
-- **Labeling (`aria-label` 動的設定)**: `slot="heading"` に渡された要素はLight DOMに存在するため、コンポーネントは `slotchange` イベントを監視し、`heading` スロットのテキストコンテンツをホスト要素の `aria-label` に動的に設定します。これにより、コンシューマーがIDを管理する必要がなくなります。
+- **Labeling**: 本コンポーネントは `aria-label` を自動生成しません。`heading` と `description` の実テキストをそのまま読み上げ対象とし、視覚テキストと支援技術の情報を一致させます。
+- **Slot State Sync**: `slotchange` で `has-description` / `has-action` / `has-illustration` をホスト属性へ同期し、見た目の分岐を属性ベースで制御します。
 
 ```typescript
 // コンポーネント内部の実装例
-private _onHeadingSlotChange() {
-  const slot = this.shadowRoot!.querySelector<HTMLSlotElement>('slot[name="heading"]');
-  const heading = slot?.assignedElements()[0];
-  if (heading?.textContent) {
-    this.setAttribute('aria-label', heading.textContent.trim());
-  }
+private _syncSlotState() {
+  const getCount = (name: string): number =>
+    this.shadowRoot
+      ?.querySelector<HTMLSlotElement>(`slot[name="${name}"]`)
+      ?.assignedElements()
+      .length ?? 0;
+
+  this.toggleAttribute('has-description', getCount('description') > 0);
+  this.toggleAttribute('has-action', getCount('action') > 0);
+  this.toggleAttribute('has-illustration', getCount('illustration') > 0);
 }
 ```
 
@@ -9340,13 +9348,10 @@ private _onHeadingSlotChange() {
     color: GrayText;
   }
 
-  /* エラーバリアント: Highlight でシステムの強調色を使用
-     Note: LinkText（リンク用システムカラー）はリンクとの誤認リスクがあるため使用しない。
-     Highlight（選択背景色）は環境によっては視認性が低い場合があるため、
-     実装時にスクリーンリーダー読み上げとの組み合わせで検証すること。 */
+  /* エラーバリアント: 通常テキスト色で明確に表示（Primary/選択色との意味衝突を回避） */
   :host([variant="error"]) .icon,
   :host([variant="error"]) .heading {
-    color: Highlight;
+    color: CanvasText;
   }
 }
 ```
@@ -9438,7 +9443,8 @@ private _onHeadingSlotChange() {
 
 @media (prefers-reduced-motion: reduce) {
   :host {
-    animation: none;
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
   }
 }
 ```
@@ -9448,7 +9454,7 @@ private _onHeadingSlotChange() {
 
 **10. DOM構造例 (Suggested DOM Structure)**
 
-> **Note**: `aria-label` はコンポーネントが `heading` スロットから自動的に取得します。使用側での明示は不要です。
+> **Note**: コンポーネントは `aria-label` を自動生成しません。`heading` と `description` の内容が読み上げ対象になります。
 
 ```html
 <!-- デフォルト（メモなし）: slot="heading" は必須 -->
@@ -9494,7 +9500,7 @@ private _onHeadingSlotChange() {
 </ui-empty-state>
 
 <!-- Shadow DOM 内部の実装詳細:
-     host: role="status" aria-atomic="true" aria-label="（heading スロットから自動取得）"
+     host: role="status" aria-atomic="true" has-description? has-action? has-illustration?
      .icon: aria-hidden="true" スロットラッパー
      .heading: slot="heading" のラッパー
      .description: slot="description" のラッパー
@@ -9503,16 +9509,21 @@ private _onHeadingSlotChange() {
 
 **11. 受け入れ基準 (Acceptance Criteria)**
 
-- **Role Placement**: `role="status"` がホスト要素（`<ui-empty-state>`）にのみ存在し、外側のコンテナで重複しないこと。
-- **aria-label 自動同期**: `slot="heading"` のテキストが変更された際、ホスト要素の `aria-label` が `slotchange` イベント経由で正しく更新されること。
+- **Role Placement**: `role="status"` がホスト要素（`<ui-empty-state>`）に存在し、内部の子要素に重複定義されないこと。
+- **No Auto `aria-label`**: コンポーネントが `aria-label` を自動付与せず、`heading` / `description` 実テキストが読み上げ対象になること。
+- **Slot State Sync**: `slotchange` に応じて `has-description` / `has-action` / `has-illustration` 属性が正しく付与・削除されること。
 - **Variant Styling**: `variant="error"` 時に `.icon` と `.heading` が `--fg-danger` で描画され、`variant="search"` 時に `.icon` が `--fg-subtle` で描画されること。
 - **Heading Level Freedom**: `slot="heading"` に `<h2>`, `<h3>`, `<h4>` のいずれを渡しても、レイアウトが崩れないこと。
-- **slot="heading" Required**: `slot="heading"` が未指定の場合、コンソールに警告を出力すること（`aria-label` が空になるため）。
+- **slot="heading" Required**: `slot="heading"` が未指定の場合、コンソールに警告を出力すること（必須情報欠落のため）。
 - **slot="illustration" 優先**: `slot="illustration"` が指定された場合、`slot="icon"` ラッパーが非表示になること。
-- **Reduced Motion**: `prefers-reduced-motion: reduce` で出現アニメーションが無効化されること。
-- **Forced Colors**: `variant="error"` 時に `.icon` と `.heading` が `Highlight` システムカラーで強調表示されること。デフォルト・search バリアントでは `.icon` が `GrayText` に追従すること。
+- **Reduced Motion**: `prefers-reduced-motion: reduce` 時にアニメーションが `0.01ms` 相当に短縮され、実質即時で完了すること。
+- **Forced Colors**: `variant="error"` 時に `.icon` と `.heading` が `CanvasText` に追従すること。デフォルト・search バリアントでは `.icon` が `GrayText` に追従すること。
 - **Print**: 印刷時に `.icon` と `.actions` が非表示になり、テキストのみが残ること。`min-height` が解除されること。
-- **Animation Token**: 出現アニメーションの移動量に `var(--space-2)` が使用され、ハードコードの `8px` が存在しないこと。
+- **Animation Token**: 出現アニメーションの移動量に `var(--space-2)` が使用されること。
+- **Light/Dark**: Light/Dark 両モードで情報の階層（Heading/Description/Action）が崩れないこと。
+- **Contrast**: `heading` と `description` が WCAG AA コントラスト比基準を満たすこと。
+- **Keyboard**: CTA がキーボードのみで到達・操作可能であること。
+- **Screen Reader**: NVDA/VoiceOver で `heading` と `description` が意味として読み上げられること。
 
 #### バナー (Banner) `<ui-banner>`
 
@@ -9560,11 +9571,11 @@ private _onHeadingSlotChange() {
 | :--- | :--- | :--- |
 | `info` | `status` | 情報提供。緊急性は低い。 |
 | `success` | `status` | 成功通知。緊急性は低い。 |
-| `warning` | `status` | 注意喚起。ユーザーの操作を強制しない。 |
+| `warning` | `alert` | システムレベルの警告。即座の認識が必要。 |
 | `error` | `alert` | エラー状態。即座の認識が必要。 |
 
 > **Note (Role Override):**
-> コンシューマーは `<ui-banner role="alert">` のようにネイティブ `role` 属性を直接指定することで、デフォルトのマッピングを上書きできます。例えば、`variant="warning"` でも緊急性が高い場合は `role="alert"` を指定します。
+> コンシューマーは `<ui-banner role="alert">` のようにネイティブ `role` 属性を直接指定することで、デフォルトのマッピングを上書きできます。例えば、通常は `status` となる `variant="info"` を緊急通知として扱いたい場合に `role="alert"` を指定します。
 
 ```typescript
 // コンポーネント内部の実装例: role の自動マッピング
@@ -9573,7 +9584,8 @@ private _roleExplicitlySet = false;
 override updated(changedProperties: PropertyValues) {
   // role 属性が明示的に指定されていない場合のみ自動設定
   if (changedProperties.has('variant') && !this._roleExplicitlySet) {
-    this.setAttribute('role', this.variant === 'error' ? 'alert' : 'status');
+    const isUrgent = this.variant === 'warning' || this.variant === 'error';
+    this.setAttribute('role', isUrgent ? 'alert' : 'status');
   }
 }
 
@@ -9607,7 +9619,7 @@ override attributeChangedCallback(name: string, old: string | null, value: strin
   min-height: var(--control-min-touch); /* 44px */
 
   /* 下部強調ボーダー: バリアント毎に色が異なるため、デフォルトは透明 */
-  border-bottom: 2px solid transparent;
+  border-bottom: var(--border-width-thick) solid transparent;
 }
 ```
 
@@ -9615,7 +9627,7 @@ override attributeChangedCallback(name: string, old: string | null, value: strin
 > `--control-height-md` (32px) はフォームコントロール用のトークンであり、バナーに適用するのは意味論的に不適切です。バナーの最小高さはタッチターゲット保証を目的とするため、`--control-min-touch` (44px) を直接参照します。ただし CSS カスタムプロパティはそのまま `min-height` に指定可能なため、`min-height: var(--control-min-touch)` と記述します。
 
 > **Rationale (Border 2px):**
-> 通常のボーダー（`1px`）ではなく `2px` を使用することで、バナーの「重要性」を視覚的に強調します。これは原則1「没入のための構造」に基づき、ユーザーの注意を適切に引きつけるための意図的な設計です。
+> 通常のボーダー（`--border-width` = 1px）ではなく `--border-width-thick` (2px) を使用することで、バナーの「重要性」を視覚的に強調します。これは原則1「没入のための構造」に基づき、ユーザーの注意を適切に引きつけるための意図的な設計です。
 
 **バリアント別スタイル (Variant Styles)**
 
@@ -9769,6 +9781,17 @@ private _dismiss() {
   const next = this.nextElementSibling?.querySelector<HTMLElement>(focusable)
     ?? document.querySelector<HTMLElement>(`main ${focusable}`);
 
+  // Reduced Motion 環境では即時に削除・フォーカス移動
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (prefersReducedMotion) {
+    this.remove();
+    next?.focus();
+    return;
+  }
+
+  // 現在の実高さを CSS 変数へ渡し、固定値なしで高さアニメーションを行う
+  this.style.setProperty('--ui-banner-exit-height', `${this.scrollHeight}px`);
+
   // アニメーション終了後にフォーカス移動・削除
   this.addEventListener('animationend', () => {
     this.remove();
@@ -9786,8 +9809,8 @@ private _dismiss() {
   :host {
     /* Subtle 背景色はシステムにより Canvas に置換されるため、
        ボーダーで構造を維持する */
-    border: 1px solid CanvasText;
-    border-bottom-width: 2px;
+    border: var(--border-width) solid CanvasText;
+    border-bottom-width: var(--border-width-thick);
   }
 
   .icon {
@@ -9882,13 +9905,13 @@ private _dismiss() {
 
 **消失アニメーション (Exit)**
 
-閉じるボタンをクリックした際のスライドアウト。`max-height` と `padding` を同時にアニメーションさせ、下のコンテンツがスムーズに上昇します。
+閉じるボタンをクリックした際のスライドアウト。`max-height` と `padding` を同時にアニメーションさせ、下のコンテンツがスムーズに上昇します。`max-height` は固定値を使わず、実行時に `scrollHeight` から算出した値を `--ui-banner-exit-height` として注入します。
 
 ```css
 @keyframes banner-exit {
   from {
     opacity: 1;
-    max-height: 100px;
+    max-height: var(--ui-banner-exit-height);
     padding-top: var(--space-3);
     padding-bottom: var(--space-3);
   }
@@ -9908,39 +9931,33 @@ private _dismiss() {
 @media (prefers-reduced-motion: reduce) {
   :host([data-dismissing]) {
     animation: none;
-    display: none;
   }
 }
 ```
 
 > **Rationale (Height Collapse):**
-> `max-height` と `padding` を同時にアニメーションさせることで、バナーが消失する際に下のコンテンツがスムーズに上昇します。これにより、レイアウトシフトによる認知負荷を軽減します。`max-height: 100px` は単一行バナー（`min-height: 44px`）に十分な余裕を持たせた値です。複数行のバナーを許容する場合は、`animationstart` イベント直前に `scrollHeight` を取得して動的に設定することを推奨します。
+> `max-height` と `padding` を同時にアニメーションさせることで、バナーが消失する際に下のコンテンツがスムーズに上昇します。これにより、レイアウトシフトによる認知負荷を軽減します。高さは `scrollHeight` から動的に算出するため、固定のサイズ値に依存しません。
 
 **9. 印刷スタイル (Print Styles)**
 
-バナーは画面上の一時的な状態通知であり、印刷時には意味を持ちません。ただし、Error バリアントは重要な情報（障害内容など）を含む可能性があるため、テキストのみ残します。
+バナーは印刷時に通常テキストとして残します。背景色は除去し、境界線で構造を維持します。これにより、紙面でもページレベルの通知内容を欠落させません。
 
 ```css
 @media print {
-  /* Info, Success, Warning は完全非表示 */
-  :host([variant="info"]),
-  :host([variant="success"]),
-  :host([variant="warning"]) {
-    display: none !important;
-  }
-
-  /* Error のみテキストを残す */
-  :host([variant="error"]) {
+  :host {
     background: none;
-    border: none;
+    color: var(--fg-default);
+    border: var(--border-width) solid var(--border-default);
+    border-bottom-width: var(--border-width-thick);
     padding: var(--space-2) 0;
     min-height: unset;
     animation: none;
   }
 
-  /* アイコンと閉じるボタンは印刷不要 */
-  :host([variant="error"]) .icon,
-  :host([variant="error"]) .dismiss {
+  /* 装飾・操作要素は印刷不要 */
+  .icon,
+  .actions,
+  .dismiss {
     display: none !important;
   }
 }
@@ -10000,10 +10017,10 @@ private _dismiss() {
   <ui-button slot="action" variant="ghost" size="sm">再試行</ui-button>
 </ui-banner>
 
-<!-- Warning を alert として扱う: 明示的 role override -->
-<ui-banner variant="warning" role="alert">
-  セキュリティ上の問題が検出されました。直ちに対応してください。
-  <a slot="action" href="/security">対応方法を確認</a>
+<!-- Info を alert として扱う: 明示的 role override -->
+<ui-banner variant="info" role="alert">
+  緊急メンテナンスを開始します。作業内容を確認してください。
+  <a slot="action" href="/maintenance">対応状況を確認</a>
 </ui-banner>
 
 <!-- Success バリアント: dismissible -->
@@ -10032,7 +10049,7 @@ private _dismiss() {
 
 **12. 受け入れ基準 (Acceptance Criteria)**
 
-- **Role 自動マッピング**: `variant="error"` 時に `role="alert"` が自動設定され、他のバリアント（`info`, `success`, `warning`）では `role="status"` が設定されること。
+- **Role 自動マッピング**: `variant="warning"` と `variant="error"` で `role="alert"` が自動設定され、`variant="info"` と `variant="success"` では `role="status"` が設定されること。
 - **Role Override**: `role` 属性を明示的に指定した場合、自動マッピングが上書きされること。その後 `variant` を変更しても明示値が保持されること。
 - **Variant Styling**: 各バリアントで背景色・テキスト色・ボーダー色が正しいトークンで描画されること。`variant="warning"` のボーダーに `var(--border-warning)` が使用され、ハードコードのOKLCH値が存在しないこと。
 - **Default Slot**: default slot にテキストコンテンツを渡せること。
@@ -10041,9 +10058,9 @@ private _dismiss() {
 - **Dismissible**: `dismissible` 属性がある場合のみ閉じるボタンが表示されること。属性がない場合は DOM から除外されること。
 - **Focus Management**: 閉じるボタンクリック後、バナーが DOM から削除され、次のフォーカス可能な要素にフォーカスが移動すること。
 - **Touch Target**: 閉じるボタンのタッチターゲットが `::after` 疑似要素で `44px × 44px` に拡張されること。
-- **Reduced Motion**: `prefers-reduced-motion: reduce` で出現・消失アニメーションが無効化されること。消失時は `display: none` で即座に非表示になること。
-- **Forced Colors**: すべてのバリアントで `border: 2px solid CanvasText` が適用され構造が維持されること。`variant="error"` でアイコンとメッセージが `Highlight` で描画されること。`LinkText` システムカラーが使用されていないこと。
-- **Print**: `variant="info"`, `"success"`, `"warning"` が印刷時に `display: none` になること。`variant="error"` はテキストのみ残り、`.icon` と `.dismiss` が非表示になること。
+- **Reduced Motion**: `prefers-reduced-motion: reduce` で出現・消失アニメーションが無効化されること。dismiss 時はバナーが即時に DOM から削除され、次のフォーカス可能要素へフォーカス移動すること。
+- **Forced Colors**: すべてのバリアントで `border: 1px solid CanvasText` と `border-bottom-width: var(--border-width-thick)` が適用され構造が維持されること。`variant="error"` でアイコンとメッセージが `Highlight` で描画されること。`LinkText` システムカラーが使用されていないこと。
+- **Print**: すべてのバリアントが印刷時にテキストとして表示されること。背景色は除去され、境界線が維持されること。`.icon` / `.actions` / `.dismiss` が非表示になること。
 - **Animation Tokens**: 出現アニメーションに `var(--duration-normal)` と `var(--ease-out)` が使用されること。消失アニメーションに `var(--duration-fast)` と `var(--ease-in)` が使用されること。ハードコードのタイミング値が存在しないこと。
 
 #### プログレス (Progress) `<ui-progress>`
@@ -10076,13 +10093,22 @@ private _dismiss() {
 | `label` | `label` | `string` | `undefined` | プログレスバーの目的を示すラベル（例: "ファイルアップロード中"）。 |
 | `valueText` | `value-text` | `string` | `undefined` | カスタム読み上げテキスト（例: "3件中1件完了"）。未指定時は `"{percentage}%"` が自動生成されます。 |
 
-**バリデーションとクランプ (Validation \u0026 Clamping)**
+**ホスト属性 (Host Attributes)**
 
+| 属性 | 型/値 | 必須? | 説明 |
+|------|-------|------|------|
+| `aria-labelledby` | `string` (IDREF) | 任意 | 外部ラベル要素を参照するための属性。内部 `role="progressbar"` 要素へ転送されます。 |
+
+**バリデーションとクランプ (Validation & Clamping)**
+
+- `value` と `max` は有限数（`Number.isFinite`）である必要があります。有限数でない場合、`value` は `0`、`max` は `100` にフォールバックします。
 - `value < 0` の場合、`0` にクランプされます。
 - `value > max` の場合、`max` にクランプされます。
 - `max <= 0` の場合、開発環境でコンソールにエラーを出力し、`max` を `100` にフォールバックします。
+- `percentage` は `Math.round((clampedValue / max) * 100)` で算出し、`aria-valuetext` の既定値として使用します（例: `1/3` → `33%`）。
+- バー描画用の比率は `progressRatio = clampedValue / max`（0〜1の浮動小数）を使用し、視覚的な段差を抑えます。
 
-**5. スタイリングとトークンマッピング (Style \u0026 Tokens)**
+**5. スタイリングとトークンマッピング (Style & Tokens)**
 
 **コンポーネントパブリックトークン (Component Public Tokens)**
 
@@ -10119,7 +10145,8 @@ private _dismiss() {
 |------------|-----|------|
 | `background` | `var(--ui-progress-bar-background)` | バーの背景色。デフォルトは `var(--primary)`。 |
 | `border-radius` | `var(--radius-full)` | 角丸（ピル型）。 |
-| `transition` | `width var(--duration-normal) var(--ease-out)` | スムーズな幅変化。 |
+| `transform-origin` | `left center` | 左端を基準にスケールさせ、進捗増加方向を固定。 |
+| `transition` | `transform var(--duration-normal) var(--ease-out)` | スムーズな進捗変化。 |
 | `height` | `100%` | トラックの高さに追従。 |
 
 > **Rationale (Easing Function):**
@@ -10137,6 +10164,7 @@ private _dismiss() {
 | `aria-valuemax` | `{max}` | ✅ | 最大値。 |
 | `aria-valuetext` | `{valueText}` または `"{percentage}%"` | 推奨 | 読み上げ用テキスト。未指定時は割合（例: `"50%"`）が自動生成されます。 |
 | `aria-label` | `{label}` | 推奨 | プログレスバーの目的。`label` プロパティ未指定時は属性ごと省略されます。 |
+| `aria-labelledby` | `{host.getAttribute('aria-labelledby')}` | 推奨 | ホスト属性から転送される外部ラベル参照。 |
 
 **実装例 (Implementation Example)**
 
@@ -10152,9 +10180,10 @@ html`
     aria-valuemin="0"
     aria-valuemax="${this.max}"
     aria-valuetext="${this.valueText ?? `${this.percentage}%`}"
+    aria-labelledby="${ifDefined(this.getAttribute('aria-labelledby'))}"
     aria-label="${ifDefined(this.label)}"
   >
-    <div class="bar" style="width: ${this.percentage}%"></div>
+    <div class="bar" style="transform: scaleX(${this.progressRatio})"></div>
   </div>
 `
 ```
@@ -10177,6 +10206,9 @@ html`
 > **Warning (Label Conflict):**
 > `aria-labelledby` と `label` の両方が指定された場合、**`aria-labelledby` が優先され、`label` プロパティは無視されます**。これはWAI-ARIAの仕様に従った動作です。意図しない動作を避けるため、どちらか一方のみを使用してください。
 
+> **実装要件 (Host Attribute Forwarding):**
+> `aria-labelledby` は `<ui-progress>` のホスト属性として受け取り、Shadow DOM 内の `role="progressbar"` 要素へそのまま転送してください。これにより、外部ラベル参照と内部ロール構造を両立します。
+
 ```html
 <label id="upload-label">ファイルアップロード中</label>
 <ui-progress aria-labelledby="upload-label" value="50"></ui-progress>
@@ -10194,6 +10226,9 @@ html`
 スロット: なし。すべての内部要素は Shadow DOM で完結します。
 
 ```html
+<!-- Light DOM -->
+<ui-progress aria-labelledby="upload-label" value="50" max="100"></ui-progress>
+
 <!-- Shadow DOM 内部 -->
 <div
   class="track"
@@ -10202,8 +10237,9 @@ html`
   aria-valuemin="0"
   aria-valuemax="100"
   aria-valuetext="50%"
+  aria-labelledby="upload-label"
 >
-  <div class="bar" style="width: 50%"></div>
+  <div class="bar" style="transform: scaleX(0.5)"></div>
 </div>
 ```
 
@@ -10236,11 +10272,12 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
 
 **9. アニメーション (Motion)**
 
-バーの幅変化はCSSトランジションで実装します。バナーのような出現・消失アニメーションはなく、値の変化を滑らかに補間することのみが目的です。
+バーの進捗変化はCSSトランジションで実装します。バナーのような出現・消失アニメーションはなく、値の変化を滑らかに補間することのみが目的です。
 
 ```css
 .bar {
-  transition: width var(--duration-normal) var(--ease-out);
+  transform-origin: left center;
+  transition: transform var(--duration-normal) var(--ease-out);
 }
 ```
 
@@ -10266,24 +10303,30 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
 
 **11. 印刷スタイル (Print Styles)**
 
-`index.md` のグローバル印刷スタイルは `* { background: transparent !important; }` を適用するため、トラック・バーの背景色が消失します。プログレスバーは進捗状況という有意義な情報を持つため、`!important` で上書きし、現在の進捗を静的な黒バーとして保持します。
+`index.md` のコンポーネント別印刷対応方針（`<ui-progress>` は進捗パーセンテージをテキスト表示）に合わせ、印刷時はグラフィカルなバーを非表示にし、`aria-valuetext` をテキストとして表示します。
 
 ```css
 @media print {
   .track {
-    border: 1px solid black;
-    background: white !important;
+    border: none;
+    background: transparent !important;
   }
 
   .bar {
-    background: black !important;
-    transition: none;
+    display: none;
+  }
+
+  .track::after {
+    content: "進捗: " attr(aria-valuetext);
+    color: black;
+    font-size: 12pt;
+    font-variant-numeric: tabular-nums;
   }
 }
 ```
 
 > **Rationale (Print Strategy):**
-> プログレスバーは「現在の進捗値」という静的な情報として印刷物でも有意義です。グローバルな `background: transparent !important` に対し、`!important` で上書きすることで、トラックの白背景とバーの黒塗りを確実に印刷します。
+> プログレスバーは印刷物上で「量の視覚比較」よりも「数値情報」の再利用性が高いため、文字情報として固定出力します。これにより白黒印刷や低品質プリンタでも情報欠落を防げます。
 
 **12. 使用例 (Usage Examples)**
 
@@ -10345,19 +10388,21 @@ progress.value = 100;
 
 - **クランプ動作**: `value < 0` が `0` に、`value > max` が `max` にクランプされること。
 - **max バリデーション**: `max <= 0` の場合、コンソールにエラーが出力され、`max` が `100` にフォールバックされること。
+- **非数値フォールバック**: `value` または `max` が有限数でない場合、`value=0` / `max=100` にフォールバックされること。
 - **ARIA 必須属性**: `aria-valuenow`, `aria-valuemin`, `aria-valuemax` が正しい値で設定されること。
 - **aria-valuetext 自動生成**: `valueText` 未指定時に `"{percentage}%"` が自動生成されること（例: `value=1, max=3` → `"33%"`）。
 - **aria-valuetext カスタム**: `valueText` 指定時にその値が `aria-valuetext` に設定されること。
 - **aria-label 設定**: `label` プロパティ指定時に `aria-label` が設定されること。未指定時に `aria-label` 属性が DOM から除去されること（`aria-label="undefined"` が付与されないこと）。
 - **aria-labelledby 優先**: `aria-labelledby` と `label` の両方が指定された場合、`aria-labelledby` が優先されること。
-- **パーセンテージ計算**: `(clampedValue / max) * 100` でバー幅が正しく計算されること。
-- **トランジション**: バー幅の変化に `var(--duration-normal)` と `var(--ease-out)` が適用されること。ハードコードのタイミング値が存在しないこと。
+- **aria-labelledby 転送**: ホスト上の `aria-labelledby` が内部 `role="progressbar"` 要素へ転送されること。
+- **パーセンテージ計算**: `Math.round((clampedValue / max) * 100)` で `aria-valuetext` の既定値が計算されること。
+- **トランジション**: バーの `transform` 変化に `var(--duration-normal)` と `var(--ease-out)` が適用されること。ハードコードのタイミング値が存在しないこと。
 - **パブリックトークン**: `--ui-progress-track-height` と `--ui-progress-bar-background` を上書きするとスタイルが正しく変化すること。
 - **`::part()` 不使用**: DOM に `part` 属性が存在しないこと。
 - **スロットなし**: Shadow DOM 内部にスロットが存在しないこと。
-- **Reduced Motion**: `prefers-reduced-motion: reduce` 時にバー幅の変化が即座（トランジションなし）に反映されること。
+- **Reduced Motion**: `prefers-reduced-motion: reduce` 時に進捗変化が即座（トランジションなし）に反映されること。
 - **Forced Colors**: Forced Colors Mode でトラックに `CanvasText` のボーダーが適用されること。バーに `Highlight` が適用されること。
-- **印刷**: 印刷時にトラックが白背景・黒ボーダーで表示され、バーが黒で進捗を示すこと。グローバル印刷スタイルの `background: transparent !important` に対し正しく上書きされること。
+- **印刷**: 印刷時にバーが非表示となり、`aria-valuetext` を使った進捗テキスト（例: `進捗: 50%`）が表示されること。
 
 ### オーバーレイ (Overlays)
 
@@ -10388,7 +10433,7 @@ progress.value = 100;
 | プロパティ | 属性 | 型/値 | デフォルト | 説明 |
 |------------|------|-------|-----------|------|
 | `opened` | `opened` | `boolean` | `false` | 開閉状態。 |
-| `modal` | `modal` | `boolean` | `true` | `true`: Focus Trap + 背景クリック無効。`false`: Focus Trap なし + 背景クリックで閉じる。 |
+| `modal` | `modal` | `boolean` | `true` | `true`: Focus Trap + 背景クリック無効。`false`: Focus Trap なし（非モーダル、背景クリックによる自動クローズなし）。 |
 | `titleId` | `title-id` | `string` | `undefined` | `aria-labelledby` で参照するタイトル要素のID。 |
 | `descriptionId` | `description-id` | `string` | `undefined` | `aria-describedby` で参照する説明要素のID。 |
 
@@ -10405,7 +10450,7 @@ progress.value = 100;
 |-----------|-----------|--------|--------------|
 | `ui-dialog-opened` | ❌ | `{ trigger: HTMLElement \| null }` | Enter アニメーション完了後 |
 | `ui-dialog-closed` | ❌ | なし | Exit アニメーション完了後 |
-| `ui-dialog-cancel` | ❌ | なし | Esc キー / 非モーダルの背景クリックで閉じる直前 |
+| `ui-dialog-cancel` | ❌ | なし | Esc キーで閉じる直前 |
 
 > **Note (カスタムイベントと native cancel):**
 > `showModal()` は Esc キー押下時に native `cancel` イベントを発火します。これを `preventDefault()` で阻止して Exit アニメーションを実行し、アニメーション完了後に native の `dialog.close()` を呼び出します。外部から閉じる処理にフックしたい場合は `ui-dialog-cancel` をリスンしてください。
@@ -10415,13 +10460,16 @@ progress.value = 100;
 | `modal` | Native API | Focus Trap | Backdrop | 背景クリック | `Esc` キー | `aria-modal` | 用途 |
 |---------|-----------|------------|----------|------------|-----------|-------------|------|
 | `true` | `showModal()` | ✅ 有効 | ✅ 生成 | 閉じない | 閉じる（native） | `true` を付与 | 削除確認、重要な決断 |
-| `false` | `show()` | ❌ 無効 | ❌ なし | N/A | 閉じる（手動実装） | 属性ごと省略 | 軽量な通知、非破壊的な情報表示 |
+| `false` | `show()` | ❌ 無効 | ❌ なし | 自動クローズなし | 閉じる（手動実装） | 属性ごと省略 | 軽量な通知、非破壊的な情報表示 |
 
 > **Rationale (Modal Default):**
 > デフォルトを `true` とする理由は、ダイアログの主要な用途が「ユーザーの明示的な決断を求める」ことであり、誤操作による閉じるを防ぐためです。軽量な用途には `modal="false"` を明示的に指定します。
 
 > **Note (Non-Modal Backdrop):**
 > `modal="false"` の場合、Native `<dialog>` は `::backdrop` 疑似要素を生成しません。背景の遮光が不要な軽量な通知やヘルプダイアログに適しています。
+
+> **Note (Non-Modal Background Click):**
+> `modal="false"` は非モーダルであり、背景クリックで自動的には閉じません。閉じる操作は明示的な閉じるボタンまたは `Esc` キー（手動実装）で行います。
 
 > **Note (Non-Modal Esc キー):**
 > `modal="false"` で `show()` を使用した場合、Native `<dialog>` は Esc キーによる自動クローズをサポートしません。`keydown` イベントをリスンして `close()` を手動で呼び出す実装が必要です。
@@ -10441,6 +10489,9 @@ progress.value = 100;
 
 > **Note (内部スクロールと閉じるボタン):**
 > `--ui-dialog-max-height` を超えるコンテンツは、default スロットを包む Body 領域（`overflow-y: auto`）でスクロールします。Header（タイトル・閉じるボタン）と Footer（actions スロット）は常に画面内に固定表示されます。閉じるボタンは Shadow DOM 内部の固定要素であり、スロットによる差し替えは不可です。
+
+> **A11y Requirement (Accessible Name):**
+> ダイアログにはアクセシブルネームが必須です。原則として `title` スロットの見出し要素を `aria-labelledby` で参照します。`title` スロットを提供しない場合は、`aria-label` を必須とします。
 
 **6. スタイリングとトークンマッピング (Style & Tokens)**
 
@@ -10514,7 +10565,19 @@ progress.value = 100;
 | **Layout** | Header の flex レイアウト内で自然配置 | `justify-content: space-between` により右端に配置 |
 | **Color** | `var(--fg-muted)` | 控えめな存在感 |
 | **Hover** | `var(--fg-default)` | 操作意思に対するフィードバック |
+| **Focus Visible** | `outline: var(--focus-ring-width) solid var(--focus-ring-color)` | `index.md` の Focus Strategy に準拠し、現在地を常に明示 |
 | **Touch Target** | `44px` (疑似要素で拡張) | アクセシビリティ基準を満たす |
+
+```css
+.close-button:focus-visible {
+  outline-style: solid;
+  outline-width: var(--focus-ring-width);
+  outline-offset: var(--focus-ring-offset);
+  outline-color: var(--focus-ring-color);
+  border-radius: var(--focus-ring-radius);
+  animation: var(--animation-focus);
+}
+```
 
 **7. アニメーション (Animation)**
 
@@ -10600,24 +10663,26 @@ dialog[data-closing] {
 
 **8. モーション軽減 (Reduced Motion)**
 
-`index.md` で**必須要件**とされている `prefers-reduced-motion` への対応です。`prefers-reduced-motion: reduce` 時は、ダイアログと Backdrop の両方のアニメーションを無効化します。
+`index.md` で**必須要件**とされている `prefers-reduced-motion` への対応です。`prefers-reduced-motion: reduce` 時は、状態変化の認知を維持しつつ、ダイアログと Backdrop のアニメーションを**瞬時完了（0.01ms）**へ短縮します。
 
 ```css
 @media (prefers-reduced-motion: reduce) {
   dialog,
   dialog[data-closing] {
-    animation: none;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 
-  ::backdrop,
-  [data-closing]::backdrop {
-    animation: none;
+  dialog::backdrop,
+  dialog[data-closing]::backdrop {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
 ```
 
 > **Note (グローバルルールとの関係):**
-> `index.md` では `*, *::before, *::after { animation-duration: 0.01ms !important; }` をグローバルに適用するため、コンポーネント個別の宣言がなくてもアニメーションは事実上無効になります。ただし `::backdrop` 疑似要素はグローバルセレクタに含まれない場合があるため、コンポーネント側での明示的な `animation: none` が安全策として必要です。
+> `index.md` では `*, *::before, *::after { animation-duration: 0.01ms !important; }` をグローバルに適用します。`::backdrop` 疑似要素はグローバルセレクタの影響範囲外となる場合があるため、コンポーネント側でも同等の瞬時化指定を行います。
 
 **9. Forced Colors Mode (強制カラーモード)**
 
@@ -10670,8 +10735,9 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
 |:-----|:---|:-----|:-----|
 | `role` | `dialog` | ✅ | Native `<dialog>` を使用する場合は暗黙的 |
 | `aria-modal` | `true` | modal=true 時のみ | Focus Trap の意図を補助技術に伝達。`modal="false"` の場合は属性ごと省略する |
-| `aria-labelledby` | `{titleId}` | 推奨 | ダイアログタイトルへの参照 |
+| `aria-labelledby` | `{titleId}` | ✅（推奨経路） | ダイアログタイトルへの参照。`title` スロットを提供する場合は必須 |
 | `aria-describedby` | `{descriptionId}` | 推奨 | 説明文への参照 |
+| `aria-label` | 任意の文字列 | `aria-labelledby` 未使用時に必須 | タイトルスロットを持たない場合のアクセシブルネーム |
 
 **フォーカス管理 (Focus Management)**
 
@@ -10688,7 +10754,7 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
 
 ```css
 /* スクロールバー消失によるレイアウトシフト防止 */
-body:has(dialog[open]) {
+body[data-ui-dialog-open] {
   overflow: hidden;
   scrollbar-gutter: stable;
 }
@@ -10697,6 +10763,9 @@ body:has(dialog[open]) {
 > **Note (scrollbar-gutter):**
 > `overflow: hidden` 単独ではスクロールバーが消失した際に `body` の幅が増加し、レイアウトシフト（CLS）を引き起こします。`scrollbar-gutter: stable` でスクロールバー幅を常に確保することで、ダイアログ開閉時のガタつきを防ぎます。`scrollbar-gutter` は Chrome 94+, Safari 15.8+ でサポートされています。
 
+> **Implementation Note (Shadow DOM + Browser Support):**
+> `<dialog>` は Shadow DOM 内部に存在するため、`body:has(dialog[open])` は採用しません。`open()` 時に `body` へ `data-ui-dialog-open` を付与し、最終ダイアログが閉じた時点で削除します。複数ダイアログ対応のため、開いている件数を参照カウントで管理してください。
+
 **12. DOM構造 (DOM Structure)**
 
 スロット: `title`, default, `actions`。閉じるボタンは Shadow DOM 内部の固定要素です。
@@ -10704,9 +10773,10 @@ body:has(dialog[open]) {
 ```html
 <!-- Shadow DOM 内部 -->
 <dialog
-  aria-modal="true"
-  aria-labelledby="{titleId}"
-  aria-describedby="{descriptionId}"
+  aria-modal="{modal ? 'true' : undefined}"
+  aria-labelledby="{titleId ?? undefined}"
+  aria-describedby="{descriptionId ?? undefined}"
+  aria-label="{titleId ? undefined : ariaLabel}"
 >
   <!-- Header: タイトル + 閉じるボタン（Shadow DOM 固定） -->
   <div class="header">
@@ -10804,15 +10874,17 @@ trigger.addEventListener('click', () => {
 - **Esc キー (modal=true)**: Esc キーで Exit アニメーション後にダイアログが閉じること。
 - **Esc キー (modal=false)**: `keydown` の手動実装によって Esc キーでダイアログが閉じること。
 - **aria-modal**: `modal=true` の場合のみ `aria-modal="true"` が設定されること。`modal=false` の場合は `aria-modal` 属性が DOM に存在しないこと。
-- **aria-labelledby**: `titleId` 指定時に `aria-labelledby` が設定されること。未指定時は属性ごと省略されること（`aria-labelledby="undefined"` が付与されないこと）。
+- **アクセシブルネーム必須**: `aria-labelledby` または `aria-label` のどちらか一方が必ず設定されること。
+- **aria-labelledby**: `titleId` 指定時に `aria-labelledby` が設定されること。未指定時は `aria-label` が必須であること。
 - **aria-describedby**: `descriptionId` 指定時に `aria-describedby` が設定されること。未指定時は属性ごと省略されること。
 - **カスタムイベント**: `open()` の Enter アニメーション完了後に `ui-dialog-opened` が発火すること。`close()` の Exit アニメーション完了後に `ui-dialog-closed` が発火すること。
-- **Scroll Lock**: ダイアログ開放中に `body` のスクロールが無効化されること。閉じた後にスクロールが再有効化されること。`scrollbar-gutter: stable` によりレイアウトシフトが発生しないこと。
+- **Scroll Lock**: ダイアログ開放中に `body[data-ui-dialog-open]` が付与され、スクロールが無効化されること。閉じた後に属性が解除されること。`scrollbar-gutter: stable` によりレイアウトシフトが発生しないこと。
 - **Elevation Token**: `--elevation-xl` が Shadow に使用されること。`--shadow-xl`, `--shadow-dark-lg` 等の Primitive トークン直接参照が存在しないこと。
 - **コンポーネントトークン命名**: `--ui-dialog-*` 命名規則に従っていること。`--dialog-*` 形式のトークンが存在しないこと。
 - **ハードコード禁止**: スタイル内にハードコードされた色・サイズ値が存在しないこと（トークンまたはコンポーネントローカルトークンを使用すること）。
 - **`::part()` 不使用**: DOM に `part` 属性が存在しないこと。
-- **Reduced Motion**: `prefers-reduced-motion: reduce` 時にアニメーションが無効化され、ダイアログと `::backdrop` が即座に表示/非表示されること。
+- **Close Button Focus**: `.close-button:focus-visible` でフォーカスリングが明示されること（`--focus-ring-*` と `--animation-focus` を参照）。
+- **Reduced Motion**: `prefers-reduced-motion: reduce` 時にダイアログと `::backdrop` のアニメーションが 0.01ms へ短縮され、状態変化が実質的に即時反映されること。
 - **Forced Colors**: Forced Colors Mode でダイアログに `2px solid CanvasText` のボーダーが適用されること。`Canvas` 背景が使用されること。
 - **印刷**: 印刷時にダイアログ全体（`::backdrop` を含む）が非表示（`display: none !important`）になること。
 - **DOM構造**: Shadow DOM 内部にスロット（`title`, default, `actions`）が正しく配置されること。閉じるボタンが Shadow DOM 内部の固定要素であること。`part` 属性が存在しないこと。
@@ -10885,7 +10957,8 @@ trigger.addEventListener('click', () => {
   --ui-search-dialog-position-top: 20%;
 
   /* コンポーネントローカルトークン（外部からの上書きは意図しない） */
-  --ui-search-dialog-edge-highlight: oklch(100% 0 0 / 0.08);
+  --ui-search-dialog-backdrop: oklch(from var(--black) l c h / var(--opacity-scrim));
+  --ui-search-dialog-edge-highlight: color-mix(in oklch, var(--white) 8%, transparent);
 }
 ```
 
@@ -10904,7 +10977,7 @@ trigger.addEventListener('click', () => {
 
 | プロパティ | 値 | 説明 |
 |------------|-----|------|
-| `background` | `oklch(0% 0 0 / var(--opacity-scrim))` | `index.md` で定義された `--opacity-scrim: 0.6` を使用 |
+| `background` | `var(--ui-search-dialog-backdrop)` | `--black` と `--opacity-scrim` を参照するコンポーネントローカルトークン |
 | `backdrop-filter` | `blur(var(--blur-lg))` | 強ブラー (24px) でコンテキストを完全に分離 |
 | `z-index` | `var(--z-backdrop)` (`200`) | `index.md` Z-index Scale 準拠 |
 
@@ -10912,12 +10985,12 @@ trigger.addEventListener('click', () => {
 
 | プロパティ | 値 | 説明 |
 |-----------|-----|------|
-| **Surface** | ライト: `var(--bg-default)` / ダーク: `var(--bg-surface-3)` | `index.md` 深度階層「High = Modal（L22%）」に準拠 |
+| **Surface** | `var(--bg-surface-3)` | Light/Dark 共通で Modal の Highest Surface を使用 |
 | **Width** | `var(--ui-search-dialog-max-width)` | パブリックトークン |
 | **Max Height** | `var(--ui-search-dialog-max-height)` | パブリックトークン |
 | **Position Top** | `var(--ui-search-dialog-position-top)` | パブリックトークン |
 | **Border** | `var(--border-width) solid var(--border-default)` | 構造明示 |
-| **Border (Dark, 上端)** | `1px solid var(--ui-search-dialog-edge-highlight)` | コンポーネントローカルトークン |
+| **Border (Dark, 上端)** | `var(--border-width) solid var(--ui-search-dialog-edge-highlight)` | コンポーネントローカルトークン |
 | **Radius** | `var(--radius-xl)` (12px) | モーダル・フローティングパネル標準 |
 | **Shadow** | `var(--elevation-xl)` | Semantic トークン使用。Light/Dark を自動切替 |
 | **Z-index** | `var(--z-modal)` (`300`) | `index.md` Z-index Scale 準拠 |
@@ -10933,14 +11006,14 @@ trigger.addEventListener('click', () => {
 | プロパティ | 値 | 説明 |
 |-----------|-----|------|
 | **Height** | `var(--control-height-md)` (32px) | 標準コントロール高 |
-| **Touch Target** | `44px` (疑似要素で拡張) | アクセシビリティ基準準拠 |
+| **Touch Target** | `var(--control-min-touch)` (疑似要素で拡張) | アクセシビリティ基準準拠 |
 | **Font Size** | `var(--text-base)` (14px) | 標準 UI サイズ |
 | **Padding** | `0 var(--space-4)` | 左右 16px |
 | **Border Bottom** | `var(--border-width) solid var(--border-default)` | Header / Body 分離 |
 | **Background** | `transparent` | パネル背景を継承 |
 
 > **Note (Input Height Strategy):**
-> `--control-height-lg` (40px) はタッチデバイスの操作性を重視した案ですが、`index.md` の「原則として使用しない」という規定を尊重し、**標準の `--control-height-md` (32px) を視覚的な高さとして採用**します。タッチデバイスでのアクセシビリティは、`::after` 疑似要素により**物理的なヒットエリアを `44px` 以上に拡張**することで担保します。これにより、視覚的なコンパクトさ（デザイン原則1「没入のための構造」）とタップ操作性（原則4「普遍的な明瞭さ」）を両立します。
+> `--control-height-lg` (40px) はタッチデバイスの操作性を重視した案ですが、`index.md` の「原則として使用しない」という規定を尊重し、**標準の `--control-height-md` (32px) を視覚的な高さとして採用**します。タッチデバイスでのアクセシビリティは、`::after` 疑似要素により**物理的なヒットエリアを `var(--control-min-touch)` 以上へ拡張**することで担保します。これにより、視覚的なコンパクトさ（デザイン原則1「没入のための構造」）とタップ操作性（原則4「普遍的な明瞭さ」）を両立します。
 
 **クリアボタン（Input 右端）**
 
@@ -10950,7 +11023,7 @@ trigger.addEventListener('click', () => {
 | **Visibility** | `query` が空でない場合のみ表示 | 入力がない段階では `hidden` 属性で非表示 |
 | **Color** | `var(--fg-muted)` | 控えめな存在感 |
 | **Hover** | `var(--fg-default)` | 操作意思に対するフィードバック |
-| **Touch Target** | `44px` (疑似要素で拡張) | アクセシビリティ基準準拠 |
+| **Touch Target** | `var(--control-min-touch)` (疑似要素で拡張) | アクセシビリティ基準準拠 |
 | **aria-label** | `"検索をクリア"` | スクリーンリーダー向けラベル |
 
 **Item（検索結果項目）**
@@ -10980,14 +11053,14 @@ trigger.addEventListener('click', () => {
 
 ```css
 /* スクロールバー消失によるレイアウトシフト防止 */
-body:has(dialog[open]) {
+body[data-ui-search-dialog-open] {
   overflow: hidden;
   scrollbar-gutter: stable;
 }
 ```
 
 > **Note (scrollbar-gutter):**
-> `overflow: hidden` 単独ではスクロールバーが消失した際に `body` の幅が増加し、レイアウトシフト（CLS）を引き起こします。`scrollbar-gutter: stable` でスクロールバー幅を常に確保することで、ダイアログ開閉時のガタつきを防ぎます。
+> `overflow: hidden` 単独ではスクロールバーが消失した際に `body` の幅が増加し、レイアウトシフト（CLS）を引き起こします。`scrollbar-gutter: stable` でスクロールバー幅を常に確保することで、ダイアログ開閉時のガタつきを防ぎます。`open()` 時に `body[data-ui-search-dialog-open]` を付与し、`close()` 完了時に解除してください。
 
 **ローディング状態 (Loading State)**
 
@@ -11052,8 +11125,10 @@ dialog[data-closing] {
 > **Implementation Note (data-closing):**
 > Native `<dialog>` は閉じる際のアニメーションをサポートしていないため、以下の手順で実装します。
 > 1. `close()` メソッドが呼ばれると、まず `data-closing` 属性を `<dialog>` に付与する
-> 2. `animationend` イベントを待ち、完了後に native の `dialog.close()` を呼び出す
-> 3. `data-closing` 属性を除去する
+> 2. `dialog.getAnimations().map(anim => anim.finished)` を `Promise.all()` で待機する
+> 3. `data-closing` 属性を除去し、最後に native の `dialog.close()` を呼び出す
+>
+> `getAnimations()` が 0 件（Reduced Motion など）でも `Promise.all([])` は即時解決されるため、`animationend` 依存より堅牢に動作します。
 
 **Backdrop アニメーション**
 
@@ -11093,24 +11168,26 @@ dialog[data-closing] {
 
 **8. モーション軽減 (Reduced Motion)**
 
-`index.md` で**必須要件**とされている `prefers-reduced-motion` への対応です。Panel と Backdrop の両方のアニメーションを無効化します。
+`index.md` で**必須要件**とされている `prefers-reduced-motion` への対応です。Panel と Backdrop の両方のアニメーションを 0.01ms へ短縮し、実質的に無効化します。
 
 ```css
 @media (prefers-reduced-motion: reduce) {
   dialog,
   dialog[data-closing] {
-    animation: none;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1;
   }
 
   ::backdrop,
   [data-closing]::backdrop {
-    animation: none;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1;
   }
 }
 ```
 
 > **Note (グローバルルールとの関係):**
-> `index.md` では `*, *::before, *::after { animation-duration: 0.01ms !important; }` をグローバルに適用するため、コンポーネント個別の宣言がなくてもアニメーションは事実上無効になります。ただし `::backdrop` 疑似要素はグローバルセレクタに含まれない場合があるため、コンポーネント側での明示的な `animation: none` が安全策として必要です。
+> `index.md` では `*, *::before, *::after { animation-duration: 0.01ms !important; }` をグローバルに適用するため、コンポーネント個別の宣言がなくてもアニメーションは事実上無効になります。ただし `::backdrop` 疑似要素はグローバルセレクタに含まれない場合があるため、コンポーネント側でも 0.01ms の短縮指定を明示します。
 
 **9. Forced Colors Mode（強制カラーモード）**
 
@@ -11120,7 +11197,7 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
 @media (forced-colors: active) {
   dialog {
     background: Canvas;
-    border: 2px solid CanvasText;
+    border: var(--border-width-thick) solid CanvasText;
     box-shadow: none;
   }
 
@@ -11132,12 +11209,12 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
 
   /* 選択状態を背景色だけでなく輪郭でも伝える */
   [role="option"][aria-selected="true"] {
-    outline: 2px solid Highlight;
-    outline-offset: -2px;
+    outline: var(--border-width-thick) solid Highlight;
+    outline-offset: calc(-1 * var(--border-width-thick));
   }
 
   .clear-button {
-    border: 1px solid ButtonText;
+    border: var(--border-width) solid ButtonText;
     color: ButtonText;
   }
 }
@@ -11174,7 +11251,7 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
 | `aria-autocomplete` | Input | `list` | ✅ | オートコンプリートタイプ |
 | `aria-controls` | Input | `{listboxId}` | ✅ | 制御対象のリストボックス ID |
 | `aria-activedescendant` | Input | `{activeOptionId}` | ✅ | 現在選択中のオプション ID |
-| `aria-busy` | Input | `true` | ✅ | インデックスロード中の状態を必ず通知する |
+| `aria-busy` | Input | `true` / `false` | ✅ | インデックスロード中のみ `true`、完了後は `false` |
 | `role` | 結果リスト | `listbox` | ✅ | リストボックス |
 | `role` | 結果項目 | `option` | ✅ | オプション項目 |
 | `aria-selected` | 結果項目 | `true` / `false` | ✅ | 選択状態 |
@@ -11362,18 +11439,21 @@ trigger.addEventListener('click', () => {
 - **aria-modal**: `aria-modal="true"` が `<dialog>` 要素に設定されること。
 - **aria-label**: `<dialog>` 要素に `aria-label="検索"` が設定されること。
 - **Combobox ARIA**: Input に `role="combobox"`, `aria-expanded`, `aria-controls`, `aria-activedescendant` が正しく設定されること。
+- **aria-busy 切替**: 初回インデックスロード中は `aria-busy="true"`、ロード完了後は `aria-busy="false"` へ戻ること。
 - **カスタムイベント**: `open()` の Enter アニメーション完了後に `ui-search-dialog-opened` が発火すること。`close()` の Exit アニメーション完了後に `ui-search-dialog-closed` が発火すること。
-- **Scroll Lock**: ダイアログ開放中に `body` のスクロールが無効化されること。閉じた後にスクロールが再有効化されること。`scrollbar-gutter: stable` によりレイアウトシフトが発生しないこと。
+- **Scroll Lock**: ダイアログ開放中に `body[data-ui-search-dialog-open]` が付与され、スクロールが無効化されること。閉じた後に属性が解除されること。`scrollbar-gutter: stable` によりレイアウトシフトが発生しないこと。
 - **Elevation Token**: `--elevation-xl` が Shadow に使用されること。`--shadow-xl`, `--shadow-dark-lg` 等の Primitive トークン直接参照が存在しないこと。
-- **Surface Token**: `--bg-surface-3` が Panel 背景（ダークモード）に使用されること。`--bg-surface-2` が Panel 背景に使用されていないこと。
+- **Surface Token**: Light/Dark の両モードで `--bg-surface-3` が Panel 背景に使用されること。`--bg-surface-2` が Panel 背景に使用されていないこと。
 - **コンポーネントトークン命名**: `--ui-search-dialog-*` 命名規則に従っていること。`--search-dialog-*` 形式のトークンが存在しないこと。
 - **ハードコード禁止**: スタイル内にハードコードされた色・サイズ値が存在しないこと（トークンまたはコンポーネントローカルトークンを使用すること）。
 - **`::part()` 不使用**: DOM に `part` 属性が存在しないこと。
 - **スロットなし**: Shadow DOM 内部にスロット要素が存在しないこと。
 - **Reduced Motion**: `prefers-reduced-motion: reduce` 時にアニメーションが無効化され、パネルと `::backdrop` が即座に表示/非表示されること。
-- **Forced Colors**: Forced Colors Mode でパネルに `2px solid CanvasText` のボーダーが適用されること。`Canvas` 背景が使用されること。選択中の項目に `outline: 2px solid Highlight` が適用されること。
+- **Forced Colors**: Forced Colors Mode でパネルに `var(--border-width-thick) solid CanvasText` のボーダーが適用されること。`Canvas` 背景が使用されること。選択中の項目に `outline: var(--border-width-thick) solid Highlight` が適用されること。
 - **印刷**: 印刷時にダイアログ全体（`::backdrop` を含む）が非表示（`display: none !important`）になること。
 - **DOM 構造**: `<dialog>` 内に `.header`（入力・クリアボタン）、`.body`（リスト・ローディング・空状態）、`.footer`（ヒント）が配置されること。`part` 属性が存在しないこと。
+- **Progressive Enhancement**: JavaScript 無効時、検索機能が使えない旨の `noscript` 通知（`index.md` の方針に準拠）が表示されること。
+- **Performance SLO**: 検索ダイアログの主要操作（開閉、入力、結果選択）において INP p75 が `200ms` 未満であること。開閉時の CLS が `0.1` 未満であること。
 
 ### アプリケーションシェル (Application Shell)
 

@@ -1288,7 +1288,7 @@ Rouaultでは、**時間軸を持ったフォーカス表現（Temporal Focus）
 | **トースト (Error/Warning)** | `assertive` | `alert` | エラーは即座に伝える |
 | **バナー (Info)** | `polite` | `status` | ページロード時の情報表示 |
 | **バナー (Warning/Error)** | `assertive` | `alert` | システムレベルの警告 |
-| **プログレスバー** | `polite` | `progressbar` | 進捗率変化は頻繁なためpolite |
+| **プログレスバー** | `polite`（専用通知領域） | `progressbar` | `progressbar` 本体には `aria-live` を付与せず、必要時のみ周辺の専用ライブリージョンで進捗通知 |
 | **ローディングスピナー** | `polite` | `status` | 単純なローディング通知 |
 
 > **注意**: `assertive` の乱用はユーザー体験を毀損します。疑わしい場合は `polite` を使用してください。
