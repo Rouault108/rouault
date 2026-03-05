@@ -17,6 +17,7 @@
   },
   "include": [
     "src/**/*",
+    "lib/**/*",
     ".storybook/**/*.ts",
     "eleventy.config.ts",
     "types/**/*",
