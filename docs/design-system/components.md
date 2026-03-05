@@ -10460,7 +10460,7 @@ progress.value = 100;
 | `modal` | Native API | Focus Trap | Backdrop | 背景クリック | `Esc` キー | `aria-modal` | 用途 |
 |---------|-----------|------------|----------|------------|-----------|-------------|------|
 | `true` | `showModal()` | ✅ 有効 | ✅ 生成 | 閉じない | 閉じる（native） | `true` を付与 | 削除確認、重要な決断 |
-| `false` | `show()` | ❌ 無効 | ❌ なし | 自動クローズなし | 閉じる（手動実装） | 属性ごと省略 | 軽量な通知、非破壊的な情報表示 |
+| `false` | `show()` | ❌ 無効 | ❌ なし | 閉じない（明示操作のみ） | 閉じる（手動実装） | 属性ごと省略 | 軽量な通知、非破壊的な情報表示 |
 
 > **Rationale (Modal Default):**
 > デフォルトを `true` とする理由は、ダイアログの主要な用途が「ユーザーの明示的な決断を求める」ことであり、誤操作による閉じるを防ぐためです。軽量な用途には `modal="false"` を明示的に指定します。
@@ -10470,6 +10470,9 @@ progress.value = 100;
 
 > **Note (Non-Modal Background Click):**
 > `modal="false"` は非モーダルであり、背景クリックで自動的には閉じません。閉じる操作は明示的な閉じるボタンまたは `Esc` キー（手動実装）で行います。
+
+> **Policy (Backdrop Dismiss):**
+> 誤操作による意図しない離脱を防ぐため、`modal` の `true` / `false` に関わらず、背景クリックによる自動クローズはサポートしません。ダイアログを閉じる操作は、明示的なクローズ操作（閉じるボタン・キャンセルボタン・Esc キー）に限定します。
 
 > **Note (Non-Modal Esc キー):**
 > `modal="false"` で `show()` を使用した場合、Native `<dialog>` は Esc キーによる自動クローズをサポートしません。`keydown` イベントをリスンして `close()` を手動で呼び出す実装が必要です。
@@ -10873,6 +10876,7 @@ trigger.addEventListener('click', () => {
 - **Focus Trap**: `modal=true` の場合、`Tab` キーでダイアログ内の要素のみを循環すること。ダイアログ外の要素にフォーカスが移動しないこと。
 - **Esc キー (modal=true)**: Esc キーで Exit アニメーション後にダイアログが閉じること。
 - **Esc キー (modal=false)**: `keydown` の手動実装によって Esc キーでダイアログが閉じること。
+- **背景クリック**: `modal=true` / `modal=false` のいずれでも背景クリックによる自動クローズが発生しないこと。
 - **aria-modal**: `modal=true` の場合のみ `aria-modal="true"` が設定されること。`modal=false` の場合は `aria-modal` 属性が DOM に存在しないこと。
 - **アクセシブルネーム必須**: `aria-labelledby` または `aria-label` のどちらか一方が必ず設定されること。
 - **aria-labelledby**: `titleId` 指定時に `aria-labelledby` が設定されること。未指定時は `aria-label` が必須であること。
