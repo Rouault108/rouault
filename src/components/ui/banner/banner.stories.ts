@@ -76,12 +76,6 @@ const getActionLink = (host: Banner): HTMLAnchorElement => {
   return actionLink;
 };
 
-const getDismissButton = (host: Banner): HTMLButtonElement => {
-  const dismiss = host.shadowRoot?.querySelector<HTMLButtonElement>('button.dismiss');
-  if (!dismiss) throw new Error('button.dismiss が見つかりません');
-  return dismiss;
-};
-
 const getIconSlot = (host: Banner): HTMLSlotElement => {
   const slot = host.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="icon"]');
   if (!slot) throw new Error('slot[name="icon"] が見つかりません');
@@ -92,6 +86,15 @@ const getFallbackIcon = (host: Banner): HTMLElement => {
   const fallback = host.shadowRoot?.querySelector<HTMLElement>('iconify-icon.fallback-icon');
   if (!fallback) throw new Error('iconify-icon.fallback-icon が見つかりません');
   return fallback;
+};
+
+const queryDismissButton = (host: Banner): HTMLElement | null =>
+  host.shadowRoot?.querySelector<HTMLElement>('ui-button[aria-label="通知を閉じる"]') ?? null;
+
+const getDismissButton = (host: Banner): HTMLElement => {
+  const dismissButton = queryDismissButton(host);
+  if (!dismissButton) throw new Error('閉じる ui-button が見つかりません');
+  return dismissButton;
 };
 
 const assertRole = (host: Banner, expected: 'status' | 'alert'): void => {
@@ -181,8 +184,8 @@ export const Default: Story = {
       throw new Error('action 指定時は .actions が表示される必要があります');
     }
 
-    if (banner.shadowRoot?.querySelector('button.dismiss')) {
-      throw new Error('dismissible=false のとき button.dismiss は非表示である必要があります');
+    if (queryDismissButton(banner)) {
+      throw new Error('dismissible=false のとき閉じる ui-button は非表示である必要があります');
     }
   },
 };
@@ -277,11 +280,12 @@ export const VariantStateCombinations: Story = {
 
     getDismissButton(error);
     getDismissButton(success);
-    if (info.shadowRoot?.querySelector('button.dismiss')) {
-      throw new Error('info は dismissible ではないため button.dismiss を持つべきではありません');
+
+    if (queryDismissButton(info)) {
+      throw new Error('info は dismissible ではないため閉じる ui-button を持つべきではありません');
     }
-    if (warning.shadowRoot?.querySelector('button.dismiss')) {
-      throw new Error('warning は dismissible ではないため button.dismiss を持つべきではありません');
+    if (queryDismissButton(warning)) {
+      throw new Error('warning は dismissible ではないため閉じる ui-button を持つべきではありません');
     }
 
     const infoActionStyle = getComputedStyle(getActionLink(info));
@@ -417,9 +421,9 @@ export const DismissFocusManagement: Story = {
 
     const nextFocus = canvasElement.querySelector<HTMLButtonElement>('#dismiss-next-focus');
     if (!nextFocus) throw new Error('#dismiss-next-focus が見つかりません');
+    const dismissButton = getDismissButton(banner);
 
-    const dismiss = getDismissButton(banner);
-    dismiss.click();
+    dismissButton.click();
     await banner.updateComplete;
 
     if (!banner.hasAttribute('data-dismissing')) {
@@ -553,8 +557,10 @@ export const ReducedMotionDismissImmediate: Story = {
 
         const nextFocus = canvasElement.querySelector<HTMLButtonElement>('#dismiss-reduced-next');
         if (!nextFocus) throw new Error('#dismiss-reduced-next が見つかりません');
+        const dismissButton = getDismissButton(banner);
 
-        getDismissButton(banner).click();
+        dismissButton.click();
+
         await waitFrame();
 
         if (canvasElement.contains(banner)) {

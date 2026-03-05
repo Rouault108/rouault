@@ -48,6 +48,7 @@ export class Banner extends LitElement {
 
   static override styles = css`
     :host {
+      --ui-banner-fg-color: var(--fg-info);
       display: flex;
       align-items: center;
       gap: var(--space-3);
@@ -58,32 +59,36 @@ export class Banner extends LitElement {
       border-bottom: var(--border-width-thick) solid transparent;
       background: var(--bg-tip-subtle);
       border-bottom-color: var(--primary);
-      color: var(--fg-info);
+      color: var(--ui-banner-fg-color);
       animation: banner-enter var(--duration-normal) var(--ease-out) both;
     }
 
     :host([data-resolved-variant='info']) {
+      --ui-banner-fg-color: var(--fg-info);
       background: var(--bg-tip-subtle);
       border-bottom-color: var(--primary);
-      color: var(--fg-info);
+      color: var(--ui-banner-fg-color);
     }
 
     :host([data-resolved-variant='success']) {
+      --ui-banner-fg-color: var(--fg-success);
       background: var(--bg-success-subtle);
       border-bottom-color: var(--success);
-      color: var(--fg-success);
+      color: var(--ui-banner-fg-color);
     }
 
     :host([data-resolved-variant='warning']) {
+      --ui-banner-fg-color: var(--fg-warning);
       background: var(--bg-warning-subtle);
       border-bottom-color: var(--border-warning);
-      color: var(--fg-warning);
+      color: var(--ui-banner-fg-color);
     }
 
     :host([data-resolved-variant='error']) {
+      --ui-banner-fg-color: var(--fg-danger);
       background: var(--bg-danger-subtle);
       border-bottom-color: var(--border-danger);
-      color: var(--fg-danger);
+      color: var(--ui-banner-fg-color);
     }
 
     .icon {
@@ -139,10 +144,10 @@ export class Banner extends LitElement {
      * slot="action" に渡された素の <a> でも、常時下線でリンク判別性を担保する。
      */
     .actions slot::slotted(a[slot='action'][href]) {
-      color: inherit;
+      color: var(--ui-banner-fg-color);
       font-weight: var(--font-medium);
       text-decoration: underline;
-      text-decoration-color: currentColor;
+      text-decoration-color: var(--ui-banner-fg-color);
       text-decoration-thickness: var(--border-width);
       text-underline-offset: 0.15em;
       border-radius: var(--focus-ring-radius);
@@ -289,7 +294,7 @@ export class Banner extends LitElement {
 
   override attributeChangedCallback(name: string, old: string | null, value: string | null): void {
     super.attributeChangedCallback(name, old, value);
-    if (name !== 'role' || old === value || this._isApplyingRoleAttribute) return;
+    if (name !== 'role' || this._isApplyingRoleAttribute) return;
 
     if (value === null) {
       this._roleExplicitlySet = false;
