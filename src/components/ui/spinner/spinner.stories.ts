@@ -1,4 +1,4 @@
-﻿import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './spinner';
 import type { SpinnerSize, UiSpinner } from './spinner';
@@ -250,5 +250,50 @@ export const BoundaryConditions: Story = {
     if (svg.hasAttribute('role')) {
       throw new Error('内部 SVG に role を付与してはいけません');
     }
+  },
+};
+
+export const RuntimeA11yGuard: Story = {
+  render: () => html`<ui-spinner id="runtime-guard" aria-label="同期中"></ui-spinner>`,
+  play: async ({ canvasElement }) => {
+    const spinner = getSpinner(canvasElement, 'runtime-guard');
+    await spinner.updateComplete;
+    assertStatusA11y(spinner, '同期中');
+
+    spinner.setAttribute('role', 'progressbar');
+    spinner.setAttribute('aria-label', '   ');
+    await spinner.updateComplete;
+
+    assertStatusA11y(spinner, '読み込み中');
+  },
+};
+
+export const DarkMode: Story = {
+  parameters: {
+    backgrounds: { default: 'dark' },
+  },
+  render: () => html`
+    <div
+      style="
+        --icon-xl: 36px;
+        background: oklch(20% 0.02 250);
+        color: oklch(95% 0.01 250);
+        padding: 1rem;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+      "
+    >
+      <ui-spinner id="dark-default" size="default" aria-label="読み込み中"></ui-spinner>
+      <ui-spinner id="dark-lg" size="lg" aria-label="ページを読み込み中"></ui-spinner>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const defaultSpinner = getSpinner(canvasElement, 'dark-default');
+    const lgSpinner = getSpinner(canvasElement, 'dark-lg');
+    await Promise.all([defaultSpinner.updateComplete, lgSpinner.updateComplete]);
+    assertStatusA11y(defaultSpinner, '読み込み中');
+    assertStatusA11y(lgSpinner, 'ページを読み込み中');
   },
 };

@@ -11,6 +11,7 @@ export const TOAST_VARIANTS = ['success', 'warning', 'danger', 'info'] as const 
 export const MAX_TOAST_STACK = 3;
 export const DEFAULT_TOAST_DURATION_MS = 4000;
 export const DANGER_TOAST_DURATION_MS = 6000;
+export const TOAST_EXIT_DURATION_MS = 150;
 
 const TOAST_CLOSE_LABEL = '通知を閉じる';
 const TOAST_ID_PREFIX = 'ui-toast';
@@ -49,6 +50,7 @@ export interface ToastItem {
   duration: number;
   dismissible: boolean;
   duplicateKey: string;
+  isExiting: boolean;
 }
 
 interface ToastTimerState {
@@ -74,6 +76,7 @@ const snapshotItems = (items: readonly ToastItem[]): ToastItem[] => items.map((i
 class ToastStore {
   private readonly _subscribers = new Set<ToastSubscriber>();
   private readonly _timers = new Map<string, ToastTimerState>();
+  private readonly _exitTimers = new Map<string, number>();
   private _toasts: ToastItem[] = [];
   private _sequence = 0;
   private _didWarnLegacyError = false;
@@ -105,6 +108,8 @@ class ToastStore {
       existing.message = normalizedMessage;
       existing.duration = duration;
       existing.dismissible = dismissible;
+      existing.isExiting = false;
+      this._clearExitTimer(existing.id);
       this._resetTimer(existing.id, duration);
       this._emit();
       return existing.id;
@@ -117,6 +122,7 @@ class ToastStore {
       duration,
       dismissible,
       duplicateKey,
+      isExiting: false,
     };
 
     this._toasts.unshift(nextItem);
@@ -132,10 +138,22 @@ class ToastStore {
   }
 
   dismiss(id: string): boolean {
-    const index = this._toasts.findIndex((item) => item.id === id);
-    if (index === -1) return false;
+    const target = this._toasts.find((item) => item.id === id);
+    if (!target) return false;
+    if (target.isExiting) return true;
 
-    this._removeAtIndex(index, true);
+    target.isExiting = true;
+    this._clearTimer(target.id);
+    this._clearExitTimer(target.id);
+
+    const timeoutId = window.setTimeout(() => {
+      this._exitTimers.delete(target.id);
+      const index = this._toasts.findIndex((item) => item.id === target.id);
+      if (index === -1) return;
+      this._removeAtIndex(index, true);
+    }, TOAST_EXIT_DURATION_MS);
+    this._exitTimers.set(target.id, timeoutId);
+    this._emit();
     return true;
   }
 
@@ -147,8 +165,12 @@ class ToastStore {
         window.clearTimeout(timer.timeoutId);
       }
     }
+    for (const timeoutId of this._exitTimers.values()) {
+      window.clearTimeout(timeoutId);
+    }
 
     this._timers.clear();
+    this._exitTimers.clear();
     this._toasts = [];
     this._emit();
   }
@@ -212,6 +234,7 @@ class ToastStore {
     if (!target) return;
 
     this._clearTimer(target.id);
+    this._clearExitTimer(target.id);
     this._toasts.splice(index, 1);
 
     if (notify) {
@@ -228,6 +251,13 @@ class ToastStore {
     }
 
     this._timers.delete(id);
+  }
+
+  private _clearExitTimer(id: string): void {
+    const timeoutId = this._exitTimers.get(id);
+    if (typeof timeoutId !== 'number') return;
+    window.clearTimeout(timeoutId);
+    this._exitTimers.delete(id);
   }
 
   private _resetTimer(id: string, duration: number): void {
@@ -346,6 +376,12 @@ export class UiToast extends LitElement {
       animation: toast-slide-in var(--duration-slow, 200ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
     }
 
+    .toast[data-exiting='true'] {
+      animation: toast-fade-out var(--duration-normal, 150ms) var(--ease-in, cubic-bezier(0.32, 0, 0.67, 0.24));
+      animation-fill-mode: both;
+      pointer-events: none;
+    }
+
     .toast[data-variant='info'] {
       background: var(--bg-surface-2, oklch(100% 0 0));
       --_toast-icon-color: var(--fg-info, var(--primary, oklch(55% 0.2 250)));
@@ -445,6 +481,38 @@ export class UiToast extends LitElement {
       }
     }
 
+    @keyframes toast-fade-out {
+      from {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      to {
+        transform: scale(0.95);
+        opacity: 0;
+      }
+    }
+
+    @keyframes toast-fade-only {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes toast-fade-only-out {
+      from {
+        opacity: 1;
+      }
+
+      to {
+        opacity: 0;
+      }
+    }
+
     @media (max-width: 640px) {
       :host {
         inset-block-start: auto;
@@ -464,11 +532,13 @@ export class UiToast extends LitElement {
 
     @media (prefers-reduced-motion: reduce) {
       .toast {
-        animation-duration: 0.01ms;
+        animation-name: toast-fade-only;
+        animation-duration: var(--duration-slow, 200ms);
       }
 
-      .toast-close {
-        transition-duration: 0.01ms;
+      .toast[data-exiting='true'] {
+        animation-name: toast-fade-only-out;
+        animation-duration: var(--duration-normal, 150ms);
       }
     }
 
@@ -622,6 +692,7 @@ export class UiToast extends LitElement {
               role="${TOAST_ROLE_BY_VARIANT[toast.variant]}"
               data-variant="${toast.variant}"
               data-toast-id="${toast.id}"
+              data-exiting="${String(toast.isExiting)}"
               @pointerenter="${this._onToastPointerEnter}"
               @pointerleave="${this._onToastPointerLeave}"
               @focusin="${this._onToastFocusIn}"

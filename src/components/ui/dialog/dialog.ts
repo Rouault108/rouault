@@ -3,6 +3,9 @@ import { customElement, property, query } from 'lit/decorators.js';
 import '../../../lib/icons';
 
 const CLOSE_BUTTON_LABEL = '閉じる';
+const BODY_DIALOG_OPEN_ATTRIBUTE = 'data-ui-dialog-open';
+const ACCESSIBLE_NAME_REQUIRED_MESSAGE =
+  '[ui-dialog] aria-labelledby (title-id) または aria-label のいずれかを設定してください。';
 const FOCUSABLE_SELECTOR =
   'button:not([disabled]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
@@ -25,8 +28,8 @@ export class UiDialog extends LitElement {
       box-sizing: border-box;
       margin: auto;
       padding: 0;
-      border: var(--border-width, 1px) solid transparent;
-      border-radius: var(--radius-xl, 12px);
+      border: var(--border-width) solid transparent;
+      border-radius: var(--radius-xl);
       inline-size: var(--ui-dialog-max-width);
       min-inline-size: var(--ui-dialog-min-width);
       max-inline-size: var(--ui-dialog-max-width);
@@ -34,40 +37,40 @@ export class UiDialog extends LitElement {
       overflow: hidden;
       display: grid;
       grid-template-rows: auto minmax(0, 1fr) auto;
-      background: var(--bg-default, oklch(100% 0 0));
-      color: var(--fg-default, oklch(20% 0.03 250));
-      box-shadow: var(--elevation-xl, 0 16px 40px oklch(0% 0 0 / 0.32));
-      animation: dialog-enter var(--duration-slower, 250ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)) forwards;
+      background: var(--bg-default);
+      color: var(--fg-default);
+      box-shadow: var(--elevation-xl);
+      animation: dialog-enter var(--duration-slower) var(--ease-out) forwards;
     }
 
     @media (prefers-color-scheme: dark) {
       dialog {
-        background: var(--bg-surface-3, oklch(22% 0.02 250));
+        background: var(--bg-surface-3);
         border-color: var(--ui-dialog-edge-highlight);
       }
     }
 
     dialog::backdrop {
-      background: oklch(0% 0 0 / var(--opacity-scrim, 0.6));
-      backdrop-filter: blur(var(--blur-lg, 24px));
-      animation: backdrop-enter var(--duration-slower, 250ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)) forwards;
+      background: oklch(0% 0 0 / var(--opacity-scrim));
+      backdrop-filter: blur(var(--blur-lg));
+      animation: backdrop-enter var(--duration-slower) var(--ease-out) forwards;
     }
 
     dialog[data-closing] {
-      animation: dialog-exit var(--duration-slower, 250ms) var(--ease-in, cubic-bezier(0.55, 0, 1, 0.45)) forwards;
+      animation: dialog-exit var(--duration-slower) var(--ease-in) forwards;
     }
 
     dialog[data-closing]::backdrop {
-      animation: backdrop-exit var(--duration-slower, 250ms) var(--ease-in, cubic-bezier(0.55, 0, 1, 0.45)) forwards;
+      animation: backdrop-exit var(--duration-slower) var(--ease-in) forwards;
     }
 
     .header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: var(--space-3, 12px);
-      padding: var(--space-4, 16px) var(--space-6, 24px);
-      border-bottom: var(--border-width, 1px) solid var(--border-muted, oklch(90% 0.01 250 / 0.15));
+      gap: var(--space-3);
+      padding: var(--space-4) var(--space-6);
+      border-bottom: var(--border-width) solid var(--border-muted);
     }
 
     .header slot[name='title']::slotted(*) {
@@ -75,12 +78,12 @@ export class UiDialog extends LitElement {
     }
 
     .close-button {
-      inline-size: var(--control-height-sm, 24px);
-      block-size: var(--control-height-sm, 24px);
+      inline-size: var(--control-height-sm);
+      block-size: var(--control-height-sm);
       border: none;
-      border-radius: var(--radius-sm, 4px);
+      border-radius: var(--radius-sm);
       background: transparent;
-      color: var(--fg-muted, oklch(48% 0.02 250));
+      color: var(--fg-muted);
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -89,44 +92,45 @@ export class UiDialog extends LitElement {
       flex-shrink: 0;
       position: relative;
       transition:
-        background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)),
-        color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
+        background-color var(--duration-fast) var(--ease-out),
+        color var(--duration-fast) var(--ease-out);
     }
 
     .close-button::after {
       content: '';
       position: absolute;
-      inline-size: var(--control-min-touch, 44px);
-      block-size: var(--control-min-touch, 44px);
+      inline-size: var(--control-min-touch);
+      block-size: var(--control-min-touch);
       inset: 50% auto auto 50%;
       transform: translate(-50%, -50%);
     }
 
     .close-button:hover {
-      background: var(--bg-hover, oklch(from var(--fg-default, oklch(20% 0.03 250)) l c h / 0.06));
-      color: var(--fg-default, oklch(20% 0.03 250));
+      background: var(--bg-hover);
+      color: var(--fg-default);
     }
 
     .close-button:focus-visible {
-      outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(55% 0.2 250));
-      outline-offset: var(--focus-ring-offset, 2px);
-      animation: var(--animation-focus, none);
+      outline: var(--focus-ring-width) solid var(--focus-ring-color);
+      outline-offset: var(--focus-ring-offset);
+      border-radius: var(--focus-ring-radius);
+      animation: var(--animation-focus);
     }
 
     .close-button iconify-icon {
-      inline-size: var(--icon-sm, 14px);
-      block-size: var(--icon-sm, 14px);
-      font-size: var(--icon-sm, 14px);
+      inline-size: var(--icon-sm);
+      block-size: var(--icon-sm);
+      font-size: var(--icon-sm);
     }
 
     .body {
       overflow-y: auto;
       min-block-size: 0;
-      padding: var(--space-6, 24px);
+      padding: var(--space-6);
     }
 
     .body slot::slotted(*) {
-      margin-block: 0 var(--space-4, 16px);
+      margin-block: 0 var(--space-4);
     }
 
     .body slot::slotted(*:last-child) {
@@ -137,9 +141,9 @@ export class UiDialog extends LitElement {
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      gap: var(--space-2, 8px);
-      padding: var(--space-4, 16px) var(--space-6, 24px);
-      border-top: var(--border-width, 1px) solid var(--border-muted, oklch(90% 0.01 250 / 0.15));
+      gap: var(--space-2);
+      padding: var(--space-4) var(--space-6);
+      border-top: var(--border-width) solid var(--border-muted);
     }
 
     .footer slot[name='actions']::slotted(*) {
@@ -149,7 +153,7 @@ export class UiDialog extends LitElement {
     @keyframes dialog-enter {
       from {
         opacity: 0;
-        transform: scale(var(--scale-enter, 0.97));
+        transform: scale(var(--scale-enter));
       }
 
       to {
@@ -166,7 +170,7 @@ export class UiDialog extends LitElement {
 
       to {
         opacity: 0;
-        transform: scale(var(--scale-enter, 0.97));
+        transform: scale(var(--scale-enter));
       }
     }
 
@@ -192,10 +196,15 @@ export class UiDialog extends LitElement {
 
     @media (prefers-reduced-motion: reduce) {
       dialog,
-      dialog[data-closing],
+      dialog[data-closing] {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+
       dialog::backdrop,
       dialog[data-closing]::backdrop {
-        animation: none !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
       }
     }
 
@@ -237,6 +246,9 @@ export class UiDialog extends LitElement {
   @property({ attribute: 'description-id', reflect: true })
   descriptionId: string | undefined = undefined;
 
+  @property({ attribute: 'aria-label', reflect: true })
+  ariaLabelText: string | undefined = undefined;
+
   @query('dialog')
   private _dialogElement?: HTMLDialogElement;
 
@@ -248,8 +260,6 @@ export class UiDialog extends LitElement {
   private _operation: Promise<void> = Promise.resolve();
 
   private static _scrollLockCount = 0;
-  private static _savedOverflow = '';
-  private static _savedScrollbarGutter = '';
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
@@ -298,6 +308,12 @@ export class UiDialog extends LitElement {
 
     if (!this._triggerElement) {
       this._captureTrigger();
+    }
+
+    if (!this._hasAccessibleName()) {
+      console.error(ACCESSIBLE_NAME_REQUIRED_MESSAGE);
+      this.opened = false;
+      return;
     }
 
     try {
@@ -418,14 +434,6 @@ export class UiDialog extends LitElement {
     this.close();
   };
 
-  private _onNonModalBackgroundClick = (event: MouseEvent): void => {
-    if (this.modal) return;
-    const dialog = this._dialogElement;
-    if (!dialog || event.target !== dialog) return;
-    this._emitCancelEvent();
-    this.close();
-  };
-
   private _onNativeClose = (): void => {
     if (this._isClosing) return;
     this.opened = false;
@@ -435,9 +443,24 @@ export class UiDialog extends LitElement {
   };
 
   private _resolveIdAttribute(value: string | undefined): string | typeof nothing {
-    if (typeof value !== 'string') return nothing;
+    const normalized = this._normalizeString(value);
+    return normalized ?? nothing;
+  }
+
+  private _resolveAriaLabelAttribute(labelledBy: string | typeof nothing): string | typeof nothing {
+    if (labelledBy !== nothing) return nothing;
+    const normalized = this._normalizeString(this.ariaLabelText);
+    return normalized ?? nothing;
+  }
+
+  private _hasAccessibleName(): boolean {
+    return this._normalizeString(this.titleId) !== undefined || this._normalizeString(this.ariaLabelText) !== undefined;
+  }
+
+  private _normalizeString(value: string | undefined): string | undefined {
+    if (typeof value !== 'string') return undefined;
     const normalized = value.trim();
-    return normalized === '' ? nothing : normalized;
+    return normalized === '' ? undefined : normalized;
   }
 
   private static _lockBodyScroll(): void {
@@ -445,10 +468,7 @@ export class UiDialog extends LitElement {
     const body = document.body;
 
     if (UiDialog._scrollLockCount === 0) {
-      UiDialog._savedOverflow = body.style.overflow;
-      UiDialog._savedScrollbarGutter = body.style.scrollbarGutter;
-      body.style.overflow = 'hidden';
-      body.style.scrollbarGutter = 'stable';
+      body.setAttribute(BODY_DIALOG_OPEN_ATTRIBUTE, '');
     }
 
     UiDialog._scrollLockCount += 1;
@@ -462,22 +482,22 @@ export class UiDialog extends LitElement {
     if (UiDialog._scrollLockCount > 0) return;
 
     const body = document.body;
-    body.style.overflow = UiDialog._savedOverflow;
-    body.style.scrollbarGutter = UiDialog._savedScrollbarGutter;
+    body.removeAttribute(BODY_DIALOG_OPEN_ATTRIBUTE);
   }
 
   override render() {
     const labelledBy = this._resolveIdAttribute(this.titleId);
     const describedBy = this._resolveIdAttribute(this.descriptionId);
+    const ariaLabel = this._resolveAriaLabelAttribute(labelledBy);
 
     return html`
       <dialog
         aria-modal=${this.modal ? 'true' : nothing}
         aria-labelledby=${labelledBy}
         aria-describedby=${describedBy}
+        aria-label=${ariaLabel}
         @cancel=${this._onNativeCancel}
         @keydown=${this._onNonModalKeydown}
-        @click=${this._onNonModalBackgroundClick}
         @close=${this._onNativeClose}
       >
         <div class="header">

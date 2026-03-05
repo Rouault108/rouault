@@ -1,4 +1,4 @@
-﻿import { css, html, LitElement, type PropertyValues, type TemplateResult } from 'lit';
+import { css, html, LitElement, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 
 export type SkeletonVariant = 'text' | 'circular' | 'rectangular';
@@ -7,6 +7,10 @@ const VALID_VARIANTS = new Set<SkeletonVariant>(['text', 'circular', 'rectangula
 
 @customElement('ui-skeleton')
 export class UiSkeleton extends LitElement {
+  static override get observedAttributes(): string[] {
+    return [...super.observedAttributes, 'aria-hidden'];
+  }
+
   static override styles = css`
     :host {
       --shimmer-duration: 1.5s;
@@ -17,7 +21,6 @@ export class UiSkeleton extends LitElement {
       overflow: hidden;
       inline-size: var(--ui-skeleton-inline-size, auto);
       block-size: var(--ui-skeleton-block-size, auto);
-      min-block-size: var(--ui-skeleton-min-block-size, 0);
       border-radius: var(--radius-sm, 4px);
       background-color: var(--bg-fill-neutral, oklch(95% 0.01 250));
     }
@@ -85,10 +88,21 @@ export class UiSkeleton extends LitElement {
   @property({ type: Boolean, reflect: true })
   animated = false;
 
+  private _isSyncingA11y = false;
+  private _hasWarnedMissingRectangularSize = false;
+
   override connectedCallback(): void {
     super.connectedCallback();
     this._syncHostA11y();
     this._syncDimensionStyles();
+  }
+
+  override attributeChangedCallback(name: string, old: string | null, value: string | null): void {
+    super.attributeChangedCallback(name, old, value);
+
+    if (name === 'aria-hidden' && !this._isSyncingA11y) {
+      this._syncHostA11y();
+    }
   }
 
   override willUpdate(changedProperties: PropertyValues<this>): void {
@@ -129,8 +143,8 @@ export class UiSkeleton extends LitElement {
     }
   }
 
-  private _normalizeDimension(value: string): string {
-    return value.trim();
+  private _normalizeDimension(value: unknown): string {
+    return typeof value === 'string' ? value.trim() : '';
   }
 
   private get _resolvedInlineSize(): string | undefined {
@@ -143,6 +157,10 @@ export class UiSkeleton extends LitElement {
 
     if (this.variant === 'circular' && resolvedHeight !== '') {
       return resolvedHeight;
+    }
+
+    if (this.variant === 'circular') {
+      return '1em';
     }
 
     return undefined;
@@ -183,16 +201,38 @@ export class UiSkeleton extends LitElement {
   private _syncDimensionStyles(): void {
     const inlineSize = this._resolvedInlineSize;
     const blockSize = this._resolvedBlockSize;
-    const needsRectangularFallback = this.variant === 'rectangular' && blockSize === undefined;
 
     this._setHostStyleVar('--ui-skeleton-inline-size', inlineSize);
     this._setHostStyleVar('--ui-skeleton-block-size', blockSize);
-    this._setHostStyleVar('--ui-skeleton-min-block-size', needsRectangularFallback ? '1rem' : undefined);
+
+    const computedAspectRatio = this.isConnected ? getComputedStyle(this).aspectRatio : '';
+    const hasAspectRatio = this.style.aspectRatio !== '' || computedAspectRatio !== 'auto';
+    const needsRectangularGuard = this.variant === 'rectangular' && blockSize === undefined && !hasAspectRatio;
+
+    if (needsRectangularGuard && !this._hasWarnedMissingRectangularSize) {
+      this._hasWarnedMissingRectangularSize = true;
+      console.warn(
+        '[ui-skeleton] rectangular は height または aspect-ratio を指定してください（CLS防止）。',
+      );
+    }
+
+    if (!needsRectangularGuard) {
+      this._hasWarnedMissingRectangularSize = false;
+    }
   }
 
   private _syncHostA11y(): void {
-    if (this.getAttribute('aria-hidden') !== 'true') {
-      this.setAttribute('aria-hidden', 'true');
+    if (this._isSyncingA11y) {
+      return;
+    }
+
+    this._isSyncingA11y = true;
+    try {
+      if (this.getAttribute('aria-hidden') !== 'true') {
+        this.setAttribute('aria-hidden', 'true');
+      }
+    } finally {
+      this._isSyncingA11y = false;
     }
   }
 

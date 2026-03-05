@@ -1,4 +1,4 @@
-﻿import { css, html, LitElement, type PropertyValues, type TemplateResult } from 'lit';
+import { css, html, LitElement, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 
 export type SpinnerSize = 'default' | 'lg';
@@ -8,6 +8,10 @@ const DEFAULT_LABEL = '読み込み中';
 
 @customElement('ui-spinner')
 export class UiSpinner extends LitElement {
+  static override get observedAttributes(): string[] {
+    return [...super.observedAttributes, 'role'];
+  }
+
   static override styles = css`
     :host {
       --spinner-size: 1em;
@@ -99,9 +103,19 @@ export class UiSpinner extends LitElement {
   @property({ type: String, attribute: 'aria-label' })
   label = DEFAULT_LABEL;
 
+  private _isSyncingA11y = false;
+
   override connectedCallback(): void {
     super.connectedCallback();
     this._syncHostA11y();
+  }
+
+  override attributeChangedCallback(name: string, old: string | null, value: string | null): void {
+    super.attributeChangedCallback(name, old, value);
+
+    if ((name === 'role' || name === 'aria-label') && !this._isSyncingA11y) {
+      this._syncHostA11y();
+    }
   }
 
   override willUpdate(changedProperties: PropertyValues<this>): void {
@@ -121,18 +135,28 @@ export class UiSpinner extends LitElement {
   }
 
   private get _resolvedLabel(): string {
-    const trimmedLabel = this.label.trim();
+    const rawLabel = typeof this.label === 'string' ? this.label : '';
+    const trimmedLabel = rawLabel.trim();
     return trimmedLabel === '' ? DEFAULT_LABEL : trimmedLabel;
   }
 
   private _syncHostA11y(): void {
-    if (this.getAttribute('role') !== 'status') {
-      this.setAttribute('role', 'status');
+    if (this._isSyncingA11y) {
+      return;
     }
 
-    const resolvedLabel = this._resolvedLabel;
-    if (this.getAttribute('aria-label') !== resolvedLabel) {
-      this.setAttribute('aria-label', resolvedLabel);
+    this._isSyncingA11y = true;
+    try {
+      if (this.getAttribute('role') !== 'status') {
+        this.setAttribute('role', 'status');
+      }
+
+      const resolvedLabel = this._resolvedLabel;
+      if (this.getAttribute('aria-label') !== resolvedLabel) {
+        this.setAttribute('aria-label', resolvedLabel);
+      }
+    } finally {
+      this._isSyncingA11y = false;
     }
   }
 

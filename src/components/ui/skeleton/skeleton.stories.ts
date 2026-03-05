@@ -1,4 +1,4 @@
-﻿import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './skeleton';
 import type { SkeletonVariant, UiSkeleton } from './skeleton';
@@ -39,6 +39,13 @@ const assertAnimatedState = (skeleton: UiSkeleton, shouldAnimate: boolean): void
     throw new Error(`ui-skeleton#${skeleton.id} は animation=none である必要があります`);
   }
 };
+
+const nextFrame = async (): Promise<void> =>
+  new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      resolve();
+    });
+  });
 
 const meta: Meta<UiSkeleton> = {
   title: 'Components/Skeleton',
@@ -244,7 +251,7 @@ export const BoundaryConditions: Story = {
 
       <ui-skeleton id="boundary-circular-width-only" variant="circular" width="48px"></ui-skeleton>
 
-      <ui-skeleton id="boundary-rect-no-dimension" variant="rectangular"></ui-skeleton>
+      <ui-skeleton id="boundary-rect-no-dimension" variant="rectangular" width="100%"></ui-skeleton>
 
       <ui-skeleton
         id="boundary-trimmed-dimension"
@@ -287,9 +294,11 @@ export const BoundaryConditions: Story = {
       );
     }
 
-    const rectHeight = toPx(getComputedStyle(rectNoDimension).height);
-    if (rectHeight <= 0) {
-      throw new Error('rectangular の高さ未指定時は最小高さフォールバックが必要です');
+    const rectStyle = getComputedStyle(rectNoDimension);
+    const rectHeight = toPx(rectStyle.height);
+    const rectMinHeight = toPx(rectStyle.minHeight);
+    if (!isNearlyEqual(rectHeight, 0) || !isNearlyEqual(rectMinHeight, 0)) {
+      throw new Error('rectangular の高さ未指定時に暗黙フォールバックを持たせてはいけません');
     }
 
     if (trimmedDimension.width !== '60%') {
@@ -308,3 +317,62 @@ export const BoundaryConditions: Story = {
   },
 };
 
+export const BusyStateTransitions: Story = {
+  render: () => html`
+    <div id="loading-region" aria-busy="true" aria-live="polite" aria-label="読み込み中">
+      <ui-skeleton id="transition-skeleton" variant="text" width="80%"></ui-skeleton>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const region = canvasElement.querySelector<HTMLElement>('#loading-region');
+    const skeleton = getSkeleton(canvasElement, 'transition-skeleton');
+    if (!(region instanceof HTMLElement)) {
+      throw new Error('#loading-region が見つかりません');
+    }
+
+    await skeleton.updateComplete;
+    assertAriaHidden(skeleton);
+
+    if (region.getAttribute('aria-busy') !== 'true') {
+      throw new Error('読み込み開始時は aria-busy="true" が必要です');
+    }
+
+    region.setAttribute('aria-busy', 'false');
+    await nextFrame();
+
+    if (region.getAttribute('aria-busy') !== 'false') {
+      throw new Error('読み込み完了時は aria-busy="false" へ遷移する必要があります');
+    }
+  },
+};
+
+export const DarkMode: Story = {
+  parameters: {
+    backgrounds: { default: 'dark' },
+  },
+  render: () => html`
+    <div
+      style="
+        --bg-fill-neutral: oklch(28% 0.02 250);
+        --skeleton-shimmer: oklch(42% 0.02 250 / 0.55);
+        background: oklch(20% 0.02 250);
+        color: oklch(95% 0.01 250);
+        padding: 1rem;
+        border-radius: 10px;
+        display: grid;
+        gap: 0.625rem;
+      "
+    >
+      <ui-skeleton id="dark-rect" variant="rectangular" width="100%" animated style="aspect-ratio: 16 / 9;"></ui-skeleton>
+      <ui-skeleton id="dark-text" variant="text" width="74%"></ui-skeleton>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const rect = getSkeleton(canvasElement, 'dark-rect');
+    const text = getSkeleton(canvasElement, 'dark-text');
+    await Promise.all([rect.updateComplete, text.updateComplete]);
+    assertAriaHidden(rect);
+    assertAriaHidden(text);
+    assertAnimatedState(rect, true);
+  },
+};

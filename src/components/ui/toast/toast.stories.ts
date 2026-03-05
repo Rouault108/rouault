@@ -4,6 +4,7 @@ import './toast';
 import {
   DANGER_TOAST_DURATION_MS,
   MAX_TOAST_STACK,
+  TOAST_EXIT_DURATION_MS,
   ToastManager,
   type ToastItem,
   type ToastVariant,
@@ -74,6 +75,15 @@ const assertVariant = (toast: HTMLOutputElement, expected: ToastVariant): void =
 
 const getSnapshotByMessage = (message: string): ToastItem | undefined =>
   ToastManager.getSnapshot().find((item) => item.message === message);
+
+const waitForSnapshotCount = async (expected: number, timeoutMs = 1200): Promise<void> => {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt <= timeoutMs) {
+    if (ToastManager.getSnapshot().length === expected) return;
+    await wait(16);
+  }
+  throw new Error(`Expected snapshot count=${String(expected)}, got ${String(ToastManager.getSnapshot().length)}`);
+};
 
 const meta: Meta<UiToast> = {
   title: 'Components/Toast',
@@ -291,7 +301,7 @@ export const DuplicateMergeAndDurationReset: Story = {
       throw new Error('duration リセット後の保持に失敗しました');
     }
 
-    await wait(180);
+    await wait(180 + TOAST_EXIT_DURATION_MS + 30);
     await flush(host);
     if (ToastManager.getSnapshot().length !== 0) {
       throw new Error('duration 経過後にトーストが消えていません');
@@ -333,10 +343,171 @@ export const HoverPauseAndResumeTimer: Story = {
 
     toast.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }));
     await wait(300);
+    await waitForSnapshotCount(0);
     await flush(host);
 
     if (ToastManager.getSnapshot().length !== 0) {
       throw new Error('hover 解除後にトーストが消えていません（タイマー再開失敗）');
+    }
+
+    ToastManager.clear();
+  },
+};
+
+/**
+ * 境界条件:
+ * - focusin 中は auto-dismiss タイマーを停止
+ * - focusout でタイマー再開
+ */
+export const FocusPauseAndResumeTimer: Story = {
+  render: () => html`<ui-toast id="toast-focus-pause"></ui-toast>`,
+  play: async ({ canvasElement }) => {
+    ToastManager.clear();
+    const host = getHost(canvasElement, 'toast-focus-pause');
+    await flush(host);
+
+    ToastManager.show({
+      variant: 'warning',
+      message: 'フォーカステスト',
+      duration: 320,
+    });
+    await flush(host);
+
+    const toast = findToastByMessage(host, 'フォーカステスト');
+    const closeButton = getCloseButton(toast);
+
+    await wait(110);
+    closeButton.focus();
+    await wait(360);
+    await flush(host);
+
+    if (ToastManager.getSnapshot().length !== 1) {
+      throw new Error('focusin 中にトーストが消えました（タイマー停止失敗）');
+    }
+
+    closeButton.blur();
+    await waitForSnapshotCount(0);
+    await flush(host);
+
+    if (ToastManager.getSnapshot().length !== 0) {
+      throw new Error('focusout 後にトーストが消えていません（タイマー再開失敗）');
+    }
+
+    ToastManager.clear();
+  },
+};
+
+/**
+ * 境界条件:
+ * - visibility hidden 中は auto-dismiss タイマーを停止
+ * - visible 復帰後にタイマー再開
+ */
+export const VisibilityPauseAndResumeTimer: Story = {
+  render: () => html`<ui-toast id="toast-visibility-pause"></ui-toast>`,
+  play: async ({ canvasElement }) => {
+    ToastManager.clear();
+    ToastManager.setVisibilityPaused(false);
+    const host = getHost(canvasElement, 'toast-visibility-pause');
+    await flush(host);
+
+    ToastManager.show({
+      variant: 'info',
+      message: 'visibility テスト',
+      duration: 280,
+    });
+    await flush(host);
+
+    await wait(100);
+    ToastManager.setVisibilityPaused(true);
+    await wait(360);
+    await flush(host);
+
+    if (ToastManager.getSnapshot().length !== 1) {
+      throw new Error('visibility hidden 中にトーストが消えました');
+    }
+
+    ToastManager.setVisibilityPaused(false);
+    await waitForSnapshotCount(0);
+    await flush(host);
+
+    if (ToastManager.getSnapshot().length !== 0) {
+      throw new Error('visibility visible 復帰後にトーストが消えていません');
+    }
+
+    ToastManager.setVisibilityPaused(false);
+    ToastManager.clear();
+  },
+};
+
+/**
+ * 境界条件:
+ * - 重複判定キーは variant + normalizedMessage
+ * - 同一 message でも variant が違えば統合しない
+ */
+export const DuplicateKeyRespectsVariant: Story = {
+  render: () => html`<ui-toast id="toast-variant-duplicate"></ui-toast>`,
+  play: async ({ canvasElement }) => {
+    ToastManager.clear();
+    const host = getHost(canvasElement, 'toast-variant-duplicate');
+    await flush(host);
+
+    ToastManager.show({ variant: 'info', message: '同一文言', duration: 0 });
+    ToastManager.show({ variant: 'danger', message: '同一文言', duration: 0 });
+    await flush(host);
+
+    const outputs = getOutputs(host);
+    if (outputs.length !== 2) {
+      throw new Error(`variant が異なる同一文言は統合してはいけません: actual=${String(outputs.length)}`);
+    }
+
+    const variants = outputs.map((toast) => toast.getAttribute('data-variant')).sort().join('|');
+    if (variants !== 'danger|info') {
+      throw new Error(`variant の保持に失敗しました: ${variants}`);
+    }
+
+    ToastManager.clear();
+  },
+};
+
+/**
+ * ダークモード契約:
+ * - バリアント背景が透明にならない
+ * - forced-colors / reduced-motion / print の契約定義が存在する
+ */
+export const DarkModeAndStyleContracts: Story = {
+  parameters: {
+    backgrounds: { default: 'dark' },
+  },
+  render: () => html`
+    <div style="color-scheme: dark; background: oklch(16% 0.02 250); min-height: 220px; padding: 1rem;">
+      <ui-toast id="toast-dark-contract"></ui-toast>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    ToastManager.clear();
+    const host = getHost(canvasElement, 'toast-dark-contract');
+    await flush(host);
+
+    ToastManager.show({
+      variant: 'danger',
+      message: 'ダークモード確認',
+      duration: 0,
+    });
+    await flush(host);
+
+    const toast = findToastByMessage(host, 'ダークモード確認');
+    const style = getComputedStyle(toast);
+    if (style.backgroundColor === 'rgba(0, 0, 0, 0)' || style.backgroundColor === 'transparent') {
+      throw new Error('ダークモードで背景が透明です');
+    }
+
+    const styleElement = host.shadowRoot?.querySelector('style');
+    const cssText = styleElement?.textContent ?? '';
+    const requiredContracts = ['@media (forced-colors: active)', '@media (prefers-reduced-motion: reduce)', '@media print'];
+    for (const contract of requiredContracts) {
+      if (!cssText.includes(contract)) {
+        throw new Error(`スタイル契約が不足しています: ${contract}`);
+      }
     }
 
     ToastManager.clear();

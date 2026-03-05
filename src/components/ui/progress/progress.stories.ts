@@ -126,7 +126,9 @@ const assertProgressbarCoreA11y = (progress: UiProgress, expectedValueText?: str
   }
 
   if (track.hasAttribute('aria-live')) {
-    throw new Error(`ui-progress#${progress.id} の progressbar に aria-live を直接付与してはいけません`);
+    throw new Error(
+      `ui-progress#${progress.id} の progressbar に aria-live を直接付与してはいけません`,
+    );
   }
 };
 
@@ -145,17 +147,31 @@ const assertNoPartAndNoSlot = (progress: UiProgress): void => {
   }
 };
 
-const assertBarWidthPercent = (progress: UiProgress, expectedPercent: number): void => {
+const assertBarTransformRatio = (progress: UiProgress, expectedPercent: number): void => {
   const bar = getBar(progress);
-  const widthDeclaration = bar.style.width.trim();
-  const actualPercent = Number.parseFloat(widthDeclaration.replace('%', ''));
-  if (!Number.isFinite(actualPercent)) {
-    throw new Error(`ui-progress#${progress.id} のバー幅指定が不正です: ${widthDeclaration}`);
+  const transformDeclaration = bar.style.transform.trim();
+  const ratioMatch = transformDeclaration.match(/scaleX\(([^)]+)\)/);
+  if (!ratioMatch) {
+    throw new Error(
+      `ui-progress#${progress.id} の transform 指定が不正です: ${transformDeclaration}`,
+    );
+  }
+  const ratioText = ratioMatch[1];
+  if (!ratioText) {
+    throw new Error(
+      `ui-progress#${progress.id} の scaleX 値が抽出できません: ${transformDeclaration}`,
+    );
   }
 
-  if (!isNearlyEqual(actualPercent, expectedPercent, 0.05)) {
+  const actualRatio = Number.parseFloat(ratioText);
+  if (!Number.isFinite(actualRatio)) {
+    throw new Error(`ui-progress#${progress.id} の scaleX 値が不正です: ${transformDeclaration}`);
+  }
+
+  const expectedRatio = expectedPercent / 100;
+  if (!isNearlyEqual(actualRatio, expectedRatio, 0.005)) {
     throw new Error(
-      `ui-progress#${progress.id} のバー幅が不正です: expected=${String(expectedPercent)}%, actual=${String(actualPercent)}%`,
+      `ui-progress#${progress.id} の進捗率が不正です: expected=${String(expectedRatio)}, actual=${String(actualRatio)}`,
     );
   }
 };
@@ -215,7 +231,12 @@ type Story = StoryObj<UiProgress>;
 export const Default: Story = {
   render: () => html`
     <div style="width: min(420px, 100%);">
-      <ui-progress id="progress-default" value="50" max="100" label="ファイルアップロード中"></ui-progress>
+      <ui-progress
+        id="progress-default"
+        value="50"
+        max="100"
+        label="ファイルアップロード中"
+      ></ui-progress>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -236,7 +257,7 @@ export const Default: Story = {
       throw new Error('label 指定時は aria-label が設定される必要があります');
     }
 
-    assertBarWidthPercent(progress, 50);
+    assertBarTransformRatio(progress, 50);
     assertNoPartAndNoSlot(progress);
   },
 };
@@ -328,10 +349,10 @@ export const VariantStateMatrix: Story = {
     ]);
 
     assertProgressbarCoreA11y(defaultUpload);
-    assertBarWidthPercent(defaultUpload, 24);
+    assertBarTransformRatio(defaultUpload, 24);
 
     assertProgressbarCoreA11y(tokenSuccess);
-    assertBarWidthPercent(tokenSuccess, 92);
+    assertBarTransformRatio(tokenSuccess, 92);
 
     const tokenTrack = getTrack(tokenSuccess);
     const tokenBar = getBar(tokenSuccess);
@@ -353,22 +374,44 @@ export const VariantStateMatrix: Story = {
     }
 
     assertProgressbarCoreA11y(customValueText, '3件中1件完了');
-    assertBarWidthPercent(customValueText, (1 / 3) * 100);
+    assertBarTransformRatio(customValueText, (1 / 3) * 100);
   },
 };
 
 export const BoundaryConditions: Story = {
   render: () => html`
     <div style="display: grid; gap: 0.75rem; width: min(420px, 100%);">
-      <ui-progress id="boundary-negative-value" value="-10" max="100" label="負値クランプ"></ui-progress>
+      <ui-progress
+        id="boundary-negative-value"
+        value="-10"
+        max="100"
+        label="負値クランプ"
+      ></ui-progress>
 
-      <ui-progress id="boundary-overflow-value" value="130" max="100" label="超過クランプ"></ui-progress>
+      <ui-progress
+        id="boundary-overflow-value"
+        value="130"
+        max="100"
+        label="超過クランプ"
+      ></ui-progress>
 
       <ui-progress id="boundary-invalid-max" value="24" max="0" label="max不正値"></ui-progress>
 
-      <ui-progress id="boundary-auto-valuetext" value="1" max="3" label="割合読み上げ"></ui-progress>
+      <ui-progress
+        id="boundary-auto-valuetext"
+        value="1"
+        max="3"
+        label="割合読み上げ"
+      ></ui-progress>
 
       <ui-progress id="boundary-no-label" value="40" max="100"></ui-progress>
+
+      <ui-progress
+        id="boundary-non-finite"
+        value="10"
+        max="20"
+        label="非数値フォールバック"
+      ></ui-progress>
 
       <label id="boundary-priority-label">外部ラベル優先</label>
       <ui-progress
@@ -386,6 +429,7 @@ export const BoundaryConditions: Story = {
     const invalidMax = getProgress(canvasElement, 'boundary-invalid-max');
     const autoValueText = getProgress(canvasElement, 'boundary-auto-valuetext');
     const noLabel = getProgress(canvasElement, 'boundary-no-label');
+    const nonFinite = getProgress(canvasElement, 'boundary-non-finite');
     const labelPriority = getProgress(canvasElement, 'boundary-label-priority');
 
     await Promise.all([
@@ -394,26 +438,31 @@ export const BoundaryConditions: Story = {
       invalidMax.updateComplete,
       autoValueText.updateComplete,
       noLabel.updateComplete,
+      nonFinite.updateComplete,
       labelPriority.updateComplete,
     ]);
 
     if (negativeValue.value !== 0) {
-      throw new Error(`value < 0 は 0 にクランプされる必要があります: ${String(negativeValue.value)}`);
+      throw new Error(
+        `value < 0 は 0 にクランプされる必要があります: ${String(negativeValue.value)}`,
+      );
     }
     if (negativeValue.getAttribute('value') !== '0') {
       throw new Error('クランプ後の value 属性が 0 に正規化されていません');
     }
     assertProgressbarCoreA11y(negativeValue);
-    assertBarWidthPercent(negativeValue, 0);
+    assertBarTransformRatio(negativeValue, 0);
 
     if (overflowValue.value !== 100) {
-      throw new Error(`value > max は max にクランプされる必要があります: ${String(overflowValue.value)}`);
+      throw new Error(
+        `value > max は max にクランプされる必要があります: ${String(overflowValue.value)}`,
+      );
     }
     if (overflowValue.getAttribute('value') !== '100') {
       throw new Error('超過 value の属性が max に正規化されていません');
     }
     assertProgressbarCoreA11y(overflowValue);
-    assertBarWidthPercent(overflowValue, 100);
+    assertBarTransformRatio(overflowValue, 100);
 
     const originalError = console.error;
     const capturedErrors: string[] = [];
@@ -430,7 +479,9 @@ export const BoundaryConditions: Story = {
     }
 
     if (invalidMax.max !== 100) {
-      throw new Error(`max <= 0 は 100 にフォールバックされる必要があります: ${String(invalidMax.max)}`);
+      throw new Error(
+        `max <= 0 は 100 にフォールバックされる必要があります: ${String(invalidMax.max)}`,
+      );
     }
     if (!capturedErrors.some((message) => message.includes('[ui-progress]'))) {
       throw new Error('max 不正値時に [ui-progress] のエラーログが必要です');
@@ -438,7 +489,23 @@ export const BoundaryConditions: Story = {
     assertProgressbarCoreA11y(invalidMax);
 
     assertProgressbarCoreA11y(autoValueText, '33%');
-    assertBarWidthPercent(autoValueText, (1 / 3) * 100);
+    assertBarTransformRatio(autoValueText, (1 / 3) * 100);
+
+    nonFinite.max = Number.NaN;
+    nonFinite.value = Number.POSITIVE_INFINITY;
+    await nonFinite.updateComplete;
+    if (nonFinite.max !== 100) {
+      throw new Error(
+        `非数値 max は 100 にフォールバックされる必要があります: ${String(nonFinite.max)}`,
+      );
+    }
+    if (nonFinite.value !== 0) {
+      throw new Error(
+        `非数値 value は 0 にフォールバックされる必要があります: ${String(nonFinite.value)}`,
+      );
+    }
+    assertProgressbarCoreA11y(nonFinite, '0%');
+    assertBarTransformRatio(nonFinite, 0);
 
     const noLabelTrack = getTrack(noLabel);
     if (noLabelTrack.hasAttribute('aria-label')) {
@@ -456,16 +523,31 @@ export const BoundaryConditions: Story = {
       throw new Error('aria-labelledby と label 併用時は aria-label を出力してはいけません');
     }
 
-    for (const progress of [negativeValue, overflowValue, invalidMax, autoValueText, noLabel, labelPriority]) {
+    for (const progress of [
+      negativeValue,
+      overflowValue,
+      invalidMax,
+      autoValueText,
+      noLabel,
+      nonFinite,
+      labelPriority,
+    ]) {
       assertNoPartAndNoSlot(progress);
     }
 
     const styles = String(UiProgress.styles);
+    const normalizedStyles = styles.replace(/\s+/g, '').toLowerCase();
     if (!styles.includes('var(--duration-normal')) {
       throw new Error('トランジション duration token の利用が必須です');
     }
     if (!styles.includes('var(--ease-out')) {
       throw new Error('トランジション easing token の利用が必須です');
+    }
+    if (!normalizedStyles.includes('transition:transformvar(--duration-normal')) {
+      throw new Error('トランジションは transform プロパティで定義する必要があります');
+    }
+    if (!normalizedStyles.includes('transform-origin:leftcenter')) {
+      throw new Error('transform-origin:left center の定義が必要です');
     }
     if (!styles.includes('--ui-progress-track-height')) {
       throw new Error('公開トークン --ui-progress-track-height が必要です');
@@ -479,8 +561,74 @@ export const BoundaryConditions: Story = {
     if (!styles.includes('@media (forced-colors: active)')) {
       throw new Error('Forced Colors 対応が必要です');
     }
+    if (!normalizedStyles.includes('border:1pxsolidcanvastext')) {
+      throw new Error('Forced Colors では track に CanvasText ボーダーが必要です');
+    }
+    if (!normalizedStyles.includes('background:highlight')) {
+      throw new Error('Forced Colors では bar に Highlight 背景が必要です');
+    }
     if (!styles.includes('@media print')) {
       throw new Error('印刷スタイルが必要です');
+    }
+    if (!normalizedStyles.includes('.bar{display:none;')) {
+      throw new Error('印刷時は bar を非表示にする必要があります');
+    }
+    if (!normalizedStyles.includes('attr(aria-valuetext)')) {
+      throw new Error('印刷時は aria-valuetext をテキスト表示する必要があります');
+    }
+    if (!normalizedStyles.includes('font-variant-numeric:tabular-nums')) {
+      throw new Error('印刷時テキストには tabular-nums を適用する必要があります');
+    }
+  },
+};
+
+export const DarkMode: Story = {
+  parameters: {
+    backgrounds: { default: 'dark' },
+  },
+  render: () => html`
+    <div
+      style="
+        background: oklch(18% 0.01 250);
+        color: oklch(95% 0.01 250);
+        padding: 1rem;
+        border-radius: 10px;
+        display: grid;
+        gap: 0.75rem;
+        width: min(420px, 100%);
+      "
+    >
+      <ui-progress id="dark-default" value="44" max="100" label="ダークモード進捗"></ui-progress>
+      <ui-progress
+        id="dark-custom-token"
+        style="--ui-progress-track-height: 6px; --ui-progress-bar-background: rgb(18, 148, 74);"
+        value="68"
+        max="100"
+        label="ダークモード成功"
+      ></ui-progress>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const darkDefault = getProgress(canvasElement, 'dark-default');
+    const darkCustom = getProgress(canvasElement, 'dark-custom-token');
+    await Promise.all([darkDefault.updateComplete, darkCustom.updateComplete]);
+
+    assertProgressbarCoreA11y(darkDefault);
+    assertProgressbarCoreA11y(darkCustom);
+    assertBarTransformRatio(darkDefault, 44);
+    assertBarTransformRatio(darkCustom, 68);
+
+    const customTrack = getTrack(darkCustom);
+    const customBar = getBar(darkCustom);
+    const customTrackHeight = toPx(getComputedStyle(customTrack).height);
+    if (!isNearlyEqual(customTrackHeight, 6)) {
+      throw new Error(
+        `ダークモード時の track 高さトークン反映が不正です: ${String(customTrackHeight)}px`,
+      );
+    }
+    const barBg = getComputedStyle(customBar).backgroundColor;
+    if (barBg !== 'rgb(18, 148, 74)') {
+      throw new Error(`ダークモード時の bar 背景色反映が不正です: ${barBg}`);
     }
   },
 };

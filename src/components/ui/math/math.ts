@@ -1,14 +1,15 @@
 import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+import { ParseError, renderToString } from 'katex';
 import '../../../lib/icons';
 
 type MathScrollState = 'none' | 'start' | 'middle' | 'end';
 
 const PRIMARY_REGION_LABEL = '数式（横スクロール可能）';
-const LATEX_BRACE_ERROR_MESSAGE = 'LaTeX構文エラー: 波括弧の対応が取れていません。';
-const LATEX_ENV_ERROR_MESSAGE = 'LaTeX構文エラー: \\begin と \\end の対応が取れていません。';
 const LATEX_DELIMITER_ERROR_MESSAGE = 'LaTeX構文エラー: latex プロパティに $$ は含めないでください。';
+const LATEX_PARSE_ERROR_PREFIX = 'LaTeX構文エラー: ';
 const ERROR_DETAILS_SUMMARY = '数式ソースを表示';
 
 @customElement('ui-math')
@@ -133,10 +134,6 @@ export class UiMath extends LitElement {
       color: inherit;
     }
 
-    .runtime-mathml {
-      color: inherit;
-    }
-
     .katex-html {
       color: inherit;
     }
@@ -245,6 +242,9 @@ export class UiMath extends LitElement {
   private _runtimeLatex = '';
 
   @state()
+  private _runtimeRenderedHtml = '';
+
+  @state()
   private _runtimeErrorMessage = '';
 
   @state()
@@ -264,7 +264,6 @@ export class UiMath extends LitElement {
 
   private _resizeObserver: ResizeObserver | null = null;
   private _measurementQueued = false;
-  private readonly _managedMathMlElements = new WeakSet<Element>();
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
@@ -277,7 +276,7 @@ export class UiMath extends LitElement {
     this._syncRuntimeState();
     this._syncResizeObserver();
     this._queueOverflowMeasurement();
-    this._syncSlottedMathMlVisibility();
+    this._syncRuntimeMathMlVisibility();
   }
 
   override updated(changedProperties: PropertyValues<this>): void {
@@ -287,6 +286,7 @@ export class UiMath extends LitElement {
     if (
       changedProperties.has('latex') ||
       changedProperties.has('errorMessage') ||
+      changedProperties.has('block') ||
       internalChanges.has('_hasSlottedContent')
     ) {
       this._syncRuntimeState();
@@ -304,10 +304,9 @@ export class UiMath extends LitElement {
 
     if (
       changedProperties.has('accessibleLabel') ||
-      internalChanges.has('_hasSlottedContent') ||
-      internalChanges.has('_runtimeLatex')
+      internalChanges.has('_runtimeRenderedHtml')
     ) {
-      this._syncSlottedMathMlVisibility();
+      this._syncRuntimeMathMlVisibility();
     }
   }
 
@@ -342,7 +341,7 @@ export class UiMath extends LitElement {
     this._syncSlottedContent();
     this._syncRuntimeState();
     this._queueOverflowMeasurement();
-    this._syncSlottedMathMlVisibility();
+    this._syncRuntimeMathMlVisibility();
   };
 
   private _onScroll = (): void => {
@@ -368,33 +367,56 @@ export class UiMath extends LitElement {
 
   private _syncRuntimeState(): void {
     if (this._hasSlottedContent) {
-      this._setRuntimeState('', '', false);
+      this._setRuntimeState('', '', '', false);
       return;
     }
 
     if (this.errorMessage.trim() !== '') {
-      this._setRuntimeState('', '', false);
+      this._setRuntimeState('', '', '', false);
       return;
     }
 
     const latex = this._resolvedLatex;
     if (latex === '') {
-      this._setRuntimeState('', '', false);
+      this._setRuntimeState('', '', '', false);
       return;
     }
 
-    const validationError = this._validateLatex(latex);
-    if (validationError !== null) {
-      this._setRuntimeState('', validationError, true);
+    if (this._containsUnescapedDoubleDollar(latex)) {
+      this._setRuntimeState('', '', LATEX_DELIMITER_ERROR_MESSAGE, true);
       return;
     }
 
-    this._setRuntimeState(latex, '', false);
+    try {
+      const renderedHtml = renderToString(latex, {
+        displayMode: this.block,
+        output: 'htmlAndMathml',
+        throwOnError: true,
+        strict: 'warn',
+      });
+      this._setRuntimeState(latex, renderedHtml, '', false);
+    } catch (error: unknown) {
+      if (error instanceof ParseError) {
+        this._setRuntimeState('', '', `${LATEX_PARSE_ERROR_PREFIX}${error.message}`, true);
+        return;
+      }
+
+      const message = error instanceof Error ? error.message : '数式をレンダリングできませんでした。';
+      this._setRuntimeState('', '', `${LATEX_PARSE_ERROR_PREFIX}${message}`, true);
+    }
   }
 
-  private _setRuntimeState(runtimeLatex: string, runtimeErrorMessage: string, runtimeErrorIsDynamic: boolean): void {
+  private _setRuntimeState(
+    runtimeLatex: string,
+    runtimeRenderedHtml: string,
+    runtimeErrorMessage: string,
+    runtimeErrorIsDynamic: boolean,
+  ): void {
     if (this._runtimeLatex !== runtimeLatex) {
       this._runtimeLatex = runtimeLatex;
+    }
+    if (this._runtimeRenderedHtml !== runtimeRenderedHtml) {
+      this._runtimeRenderedHtml = runtimeRenderedHtml;
     }
     if (this._runtimeErrorMessage !== runtimeErrorMessage) {
       this._runtimeErrorMessage = runtimeErrorMessage;
@@ -404,72 +426,8 @@ export class UiMath extends LitElement {
     }
   }
 
-  // ランタイム入力の最小検証で事故頻度の高い構文崩れを早期に検出する。
-  private _validateLatex(latex: string): string | null {
-    if (this._containsUnescapedDoubleDollar(latex)) {
-      return LATEX_DELIMITER_ERROR_MESSAGE;
-    }
-
-    if (!this._hasBalancedBraces(latex)) {
-      return LATEX_BRACE_ERROR_MESSAGE;
-    }
-
-    if (!this._hasBalancedEnvironments(latex)) {
-      return LATEX_ENV_ERROR_MESSAGE;
-    }
-
-    return null;
-  }
-
   private _containsUnescapedDoubleDollar(latex: string): boolean {
     return /(^|[^\\])\$\$/.test(latex);
-  }
-
-  private _hasBalancedBraces(latex: string): boolean {
-    let depth = 0;
-
-    for (let index = 0; index < latex.length; index += 1) {
-      const current = latex[index];
-      if (current === '\\') {
-        index += 1;
-        continue;
-      }
-
-      if (current === '{') {
-        depth += 1;
-        continue;
-      }
-
-      if (current === '}') {
-        depth -= 1;
-        if (depth < 0) return false;
-      }
-    }
-
-    return depth === 0;
-  }
-
-  private _hasBalancedEnvironments(latex: string): boolean {
-    const pattern = /\\(begin|end)\{([a-zA-Z*]+)\}/g;
-    const stack: string[] = [];
-
-    let matched: RegExpExecArray | null = pattern.exec(latex);
-    while (matched !== null) {
-      const action = matched[1] ?? '';
-      const environmentName = matched[2] ?? '';
-      if (environmentName === '') return false;
-
-      if (action === 'begin') {
-        stack.push(environmentName);
-      } else {
-        const latestEnvironment = stack.pop();
-        if (latestEnvironment !== environmentName) return false;
-      }
-
-      matched = pattern.exec(latex);
-    }
-
-    return stack.length === 0;
   }
 
   private _syncResizeObserver(): void {
@@ -545,33 +503,14 @@ export class UiMath extends LitElement {
     }
   }
 
-  private _syncSlottedMathMlVisibility(): void {
-    const slot = this._defaultSlot;
-    if (!slot) return;
-
-    const assignedElements = slot.assignedElements({ flatten: true });
-    const mathElements: Element[] = [];
-
-    for (const element of assignedElements) {
-      if (element.localName === 'math') {
-        mathElements.push(element);
-      }
-
-      const nestedMathElements = element.querySelectorAll('math');
-      mathElements.push(...nestedMathElements);
-    }
-
+  // ランタイム描画時のみ MathML の公開状態を切り替える。
+  private _syncRuntimeMathMlVisibility(): void {
+    const runtimeMathElements = this.renderRoot.querySelectorAll('.runtime-katex math');
     const shouldHideMathMl = this._hasAccessibleLabel;
-    for (const mathElement of mathElements) {
+    for (const mathElement of runtimeMathElements) {
       if (shouldHideMathMl) {
-        if (!mathElement.hasAttribute('aria-hidden')) {
-          mathElement.setAttribute('aria-hidden', 'true');
-          this._managedMathMlElements.add(mathElement);
-        }
-        continue;
-      }
-
-      if (this._managedMathMlElements.has(mathElement)) {
+        mathElement.setAttribute('aria-hidden', 'true');
+      } else {
         mathElement.removeAttribute('aria-hidden');
       }
     }
@@ -579,14 +518,9 @@ export class UiMath extends LitElement {
 
   private _renderRuntimeMath(): TemplateResult {
     return html`
-      <math
-        class="runtime-mathml"
-        xmlns="http://www.w3.org/1998/Math/MathML"
-        aria-hidden="${ifDefined(this._hasAccessibleLabel ? 'true' : undefined)}"
-      >
-        <mtext>${this._runtimeLatex}</mtext>
-      </math>
-      <span class="katex-html" aria-hidden="true">${this._runtimeLatex}</span>
+      <span class="runtime-katex">
+        ${unsafeHTML(this._runtimeRenderedHtml)}
+      </span>
     `;
   }
 
@@ -620,7 +554,7 @@ export class UiMath extends LitElement {
     if (!this.block) return errorBody;
 
     return html`
-      <div class="math-display" data-scroll="none">
+      <div class="math-display" id="${ifDefined(this.id !== '' ? this.id : undefined)}" data-scroll="none">
         ${errorBody}
       </div>
     `;
@@ -638,6 +572,7 @@ export class UiMath extends LitElement {
     return html`
       <div
         class="math-display"
+        id="${ifDefined(this.id !== '' ? this.id : undefined)}"
         data-scroll="${this._scrollState}"
         tabindex="${ifDefined(this._isScrollable ? '0' : undefined)}"
         role="${ifDefined(this.primary ? 'region' : undefined)}"

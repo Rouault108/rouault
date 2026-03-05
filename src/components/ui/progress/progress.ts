@@ -14,7 +14,8 @@ const IS_DEVELOPMENT = (import.meta as ImportMeta & { env?: ImportMetaEnvLike })
 const normalizeNumber = (value: number, fallback: number): number =>
   Number.isFinite(value) ? value : fallback;
 
-const clamp = (value: number, min: number, max: number): number => Math.min(Math.max(value, min), max);
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(Math.max(value, min), max);
 
 @customElement('ui-progress')
 export class UiProgress extends LitElement {
@@ -35,10 +36,13 @@ export class UiProgress extends LitElement {
 
     .bar {
       block-size: 100%;
-      inline-size: 0%;
+      inline-size: 100%;
       border-radius: var(--radius-full, 9999px);
       background: var(--ui-progress-bar-background);
-      transition: width var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
+      transform: scaleX(0);
+      transform-origin: left center;
+      transition: transform var(--duration-normal, 150ms)
+        var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -61,13 +65,19 @@ export class UiProgress extends LitElement {
 
     @media print {
       .track {
-        border: 1px solid black;
-        background: white !important;
+        border: none;
+        background: transparent !important;
       }
 
       .bar {
-        background: black !important;
-        transition: none;
+        display: none;
+      }
+
+      .track::after {
+        content: '進捗: ' attr(aria-valuetext);
+        color: black;
+        font-size: 12pt;
+        font-variant-numeric: tabular-nums;
       }
     }
   `;
@@ -161,8 +171,9 @@ export class UiProgress extends LitElement {
     return normalized;
   }
 
-  private get _barWidth(): string {
-    return `${String(this._rawPercentage)}%`;
+  private get _progressRatio(): number {
+    if (this.max <= 0) return 0;
+    return this._clampedValue / this.max;
   }
 
   override render(): TemplateResult {
@@ -177,7 +188,7 @@ export class UiProgress extends LitElement {
         aria-label="${ifDefined(this._resolvedAriaLabel)}"
         aria-labelledby="${ifDefined(this._resolvedAriaLabelledBy)}"
       >
-        <div class="bar" style="width: ${this._barWidth};"></div>
+        <div class="bar" style="transform: scaleX(${String(this._progressRatio)});"></div>
       </div>
     `;
   }

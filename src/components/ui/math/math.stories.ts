@@ -50,7 +50,10 @@ const getMathContent = (host: UiMath): HTMLDivElement => {
 };
 
 const getRuntimeMathMl = (host: UiMath): Element | null =>
-  host.shadowRoot?.querySelector('math.runtime-mathml') ?? null;
+  host.shadowRoot?.querySelector('.runtime-katex math') ?? null;
+
+const getRuntimeKatex = (host: UiMath): HTMLElement | null =>
+  host.shadowRoot?.querySelector<HTMLElement>('.runtime-katex .katex') ?? null;
 
 const getSlottedMathMl = (host: UiMath): Element | null => host.querySelector('math');
 
@@ -225,7 +228,7 @@ export const VariantStateMatrix: Story = {
       <div class="cell">
         <div class="label">inline / aria-label override</div>
         <ui-math id="matrix-inline-labeled" aria-label="エックス プラス ワイ">
-          <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <math xmlns="http://www.w3.org/1998/Math/MathML" aria-hidden="true">
             <mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow>
           </math>
           <span class="katex-html" aria-hidden="true">x + y</span>
@@ -278,7 +281,9 @@ export const VariantStateMatrix: Story = {
     if (inlineLabeledContainer.getAttribute('aria-label') !== 'エックス プラス ワイ') {
       throw new Error('inline + aria-label ケースで aria-label が反映されていません');
     }
-    await waitFor(() => (getSlottedMathMl(inlineLabeled)?.getAttribute('aria-hidden') ?? '') === 'true', 'aria-label 指定時に slotted MathML が aria-hidden へ切り替わりません');
+    if (getSlottedMathMl(inlineLabeled)?.getAttribute('aria-hidden') !== 'true') {
+      throw new Error('aria-label 指定時の slotted MathML は SSR 側で aria-hidden="true" である必要があります');
+    }
 
     const secondaryDisplay = getDisplayContainer(blockSecondary);
     const secondaryContent = getMathContent(blockSecondary);
@@ -366,7 +371,7 @@ export const ErrorStates: Story = {
     if (runtimeError.getAttribute('role') !== 'alert') {
       throw new Error('動的エラーでは role="alert" を付与する必要があります');
     }
-    if (!runtimeError.textContent.includes('波括弧')) {
+    if (!runtimeError.textContent.includes('LaTeX構文エラー')) {
       throw new Error('runtime エラーメッセージが想定の構文エラーを示していません');
     }
 
@@ -473,6 +478,129 @@ export const BoundaryConditions: Story = {
     }
     if (inlinePrimary.shadowRoot?.querySelector('[role="region"]')) {
       throw new Error('inline で role="region" を付与してはいけません');
+    }
+  },
+};
+
+/**
+ * キーボード操作契約:
+ * - スクロール可能な display はフォーカス可能
+ * - フォーカス後にスクロール状態が遷移できる
+ */
+export const KeyboardInteraction: Story = {
+  render: () => html`
+    <div style="max-width: 300px;">
+      <ui-math id="keyboard-scrollable" block primary>
+        <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+          <mrow><mi>x</mi><mo>+</mo><mi>y</mi><mo>=</mo><mi>z</mi></mrow>
+        </math>
+        <span class="katex-html" aria-hidden="true" style="display: inline-block; min-width: 1500px;">
+          ${LONG_MATH_TEXT}
+        </span>
+      </ui-math>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getMathHost(canvasElement, 'keyboard-scrollable');
+    await host.updateComplete;
+    await waitFrame();
+
+    const display = getDisplayContainer(host);
+    await waitFor(() => display.getAttribute('tabindex') === '0', 'キーボード操作用 tabindex が付与されません');
+
+    display.focus();
+    await waitFrame();
+    if (host.shadowRoot?.activeElement !== display) {
+      throw new Error('スクロールコンテナにフォーカスできません');
+    }
+
+    display.scrollLeft = display.scrollWidth;
+    display.dispatchEvent(new Event('scroll'));
+    await waitFor(
+      () => display.getAttribute('data-scroll') === 'end',
+      'フォーカス後のスクロール状態が end へ遷移しません',
+    );
+  },
+};
+
+/**
+ * id 契約:
+ * - block 時に host id をスクロールコンテナへミラーする
+ */
+export const IdAnchorContract: Story = {
+  render: () => html`
+    <ui-math id="eq-pythagorean" block .latex=${String.raw`a^2 + b^2 = c^2`}></ui-math>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getMathHost(canvasElement, 'eq-pythagorean');
+    await host.updateComplete;
+    await waitFrame();
+
+    const display = getDisplayContainer(host);
+    if (display.id !== 'eq-pythagorean') {
+      throw new Error('block コンテナへ id がミラーされていません');
+    }
+  },
+};
+
+/**
+ * Dark Mode 契約:
+ * - KaTeX 出力が color: inherit で暗色トークンに追従する
+ */
+export const DarkModeTokenContract: Story = {
+  parameters: {
+    backgrounds: { default: 'dark' },
+  },
+  render: () => html`
+    <div style="color-scheme: dark; background: oklch(16% 0.02 250); color: oklch(92% 0.01 250); padding: 1rem;">
+      <ui-math id="dark-runtime" block .latex=${String.raw`\sum_{i=1}^{n} a_i`}></ui-math>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getMathHost(canvasElement, 'dark-runtime');
+    await host.updateComplete;
+    await waitFrame();
+
+    const content = getMathContent(host);
+    const katex = getRuntimeKatex(host);
+    if (!katex) throw new Error('runtime KaTeX が描画されていません');
+
+    const contentColor = getComputedStyle(content).color;
+    const katexColor = getComputedStyle(katex).color;
+    if (contentColor !== katexColor) {
+      throw new Error(`KaTeX 色が継承されていません: content=${contentColor}, katex=${katexColor}`);
+    }
+  },
+};
+
+/**
+ * Forced Colors 契約:
+ * - 強制色メディアクエリでマスク無効化とシステムカラー追従を維持する
+ */
+export const ForcedColorsContract: Story = {
+  render: () => html`<ui-math id="forced-colors-contract" .latex=${String.raw`x + y = z`}></ui-math>`,
+  play: async ({ canvasElement }) => {
+    const host = getMathHost(canvasElement, 'forced-colors-contract');
+    await host.updateComplete;
+
+    const sheets = host.shadowRoot?.adoptedStyleSheets ?? [];
+    const cssText = sheets.map((sheet) => Array.from(sheet.cssRules).map((rule) => rule.cssText).join('\n')).join('\n');
+    const requiredPatterns: { label: string; pattern: RegExp }[] = [
+      { label: 'forced-colors media query', pattern: /@media\s*\(forced-colors:\s*active\)/i },
+      { label: 'mask-image none', pattern: /mask-image:\s*none/i },
+      { label: 'border-color CanvasText', pattern: /border-color:\s*canvastext/i },
+    ];
+
+    for (const { label, pattern } of requiredPatterns) {
+      if (!pattern.test(cssText)) {
+        throw new Error(`forced-colors 契約の定義が不足しています: ${label}`);
+      }
+    }
+
+    const hasScrollbarRule = /scrollbar-color:\s*canvastext\s+transparent/i.test(cssText);
+    const hasForcedColorsBlock = /@media\s*\(forced-colors:\s*active\)[\s\S]*\.math-display/.test(cssText);
+    if (!hasScrollbarRule && !hasForcedColorsBlock) {
+      throw new Error('forced-colors 時のスクロール領域フォールバック定義が不足しています');
     }
   },
 };

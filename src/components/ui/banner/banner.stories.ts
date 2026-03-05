@@ -7,7 +7,7 @@ const VARIANTS = ['info', 'warning', 'error', 'success'] as const satisfies Bann
 
 const ROLE_BY_VARIANT: Record<BannerVariant, 'status' | 'alert'> = {
   info: 'status',
-  warning: 'status',
+  warning: 'alert',
   error: 'alert',
   success: 'status',
 };
@@ -25,6 +25,32 @@ const waitFrame = async (): Promise<void> =>
       resolve();
     });
   });
+
+const withMockedMatchMedia = async (
+  matcher: (query: string) => boolean,
+  callback: () => Promise<void>,
+): Promise<void> => {
+  const original = window.matchMedia;
+  window.matchMedia = ((query: string): MediaQueryList => {
+    const matches = matcher(query);
+    return {
+      matches,
+      media: query,
+      onchange: null,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      dispatchEvent: () => false,
+    } as MediaQueryList;
+  }) as typeof window.matchMedia;
+
+  try {
+    await callback();
+  } finally {
+    window.matchMedia = original;
+  }
+};
 
 const flush = async (banner: Banner): Promise<void> => {
   await banner.updateComplete;
@@ -86,7 +112,7 @@ const meta: Meta<Banner> = {
         component: `
 アプリ全体に関わる持続的な状態通知バナーです。
 
-- \`variant\` に応じた \`role\` 自動マッピング（error は alert）
+- \`variant\` に応じた \`role\` 自動マッピング（warning / error は alert）
 - \`role\` 明示指定時は自動マッピングを上書き
 - \`slot="icon"\` のデフォルトフォールバック
 - \`dismissible\` 時のみ閉じるボタンを表示し、dismiss 後に次要素へフォーカス移動
@@ -138,7 +164,7 @@ export const Default: Story = {
     await flush(banner);
 
     assertResolvedVariant(banner, 'warning');
-    assertRole(banner, 'status');
+    assertRole(banner, 'alert');
 
     if (banner.getAttribute('aria-atomic') !== 'true') {
       throw new Error('aria-atomic="true" が設定されていません');
@@ -428,6 +454,12 @@ export const InvalidVariantFallbackAndStyleContracts: Story = {
     if (!styles.includes('@media print')) {
       throw new Error('Print の契約が不足しています');
     }
+    if (!styles.includes('max-height: var(--ui-banner-exit-height);')) {
+      throw new Error('dismiss 時の高さ契約（--ui-banner-exit-height）が不足しています');
+    }
+    if (styles.includes('max-height: 100px;')) {
+      throw new Error('dismiss アニメーションに固定 max-height が残っています');
+    }
     if (!styles.includes('var(--duration-normal')) {
       throw new Error('出現アニメーションの duration token が不足しています');
     }
@@ -442,6 +474,120 @@ export const InvalidVariantFallbackAndStyleContracts: Story = {
     }
     if (!styles.includes('var(--control-min-touch')) {
       throw new Error('Touch Target token の参照が不足しています');
+    }
+    if (!styles.includes('border-bottom-width: var(--border-width-thick);')) {
+      throw new Error('forced-colors/print のボーダー強調トークンが不足しています');
+    }
+    if (!styles.includes('.actions,')) {
+      throw new Error('print 時の action 非表示契約が不足しています');
+    }
+    if (styles.includes(":host([data-resolved-variant='info']),")) {
+      throw new Error('print で info/success/warning を非表示にする旧仕様が残っています');
+    }
+  },
+};
+
+/**
+ * 境界条件:
+ * aria-atomic 明示指定(false)が保持されること。
+ */
+export const AtomicOverridePersistence: Story = {
+  render: () => html`
+    <ui-banner id="atomic-override" variant="info" aria-atomic="false">
+      残り時間 29:59
+    </ui-banner>
+  `,
+  play: async ({ canvasElement }) => {
+    const banner = getHost(canvasElement, 'atomic-override');
+    await flush(banner);
+
+    if (banner.getAttribute('aria-atomic') !== 'false') {
+      throw new Error('aria-atomic の明示指定が保持されていません');
+    }
+
+    banner.variant = 'error';
+    await flush(banner);
+
+    assertRole(banner, 'alert');
+    if (banner.getAttribute('aria-atomic') !== 'false') {
+      throw new Error('variant 更新後も aria-atomic="false" を保持する必要があります');
+    }
+  },
+};
+
+/**
+ * 境界条件:
+ * prefers-reduced-motion では dismiss が即時完了すること。
+ */
+export const ReducedMotionDismissImmediate: Story = {
+  render: () => html`
+    <div style="display: grid; gap: 0.75rem;">
+      <ui-banner id="dismiss-reduced" variant="warning" dismissible>
+        セッション期限が近づいています。
+      </ui-banner>
+      <button id="dismiss-reduced-next" type="button">次へ進む</button>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    await withMockedMatchMedia(
+      (query) => query === '(prefers-reduced-motion: reduce)',
+      async () => {
+        const banner = getHost(canvasElement, 'dismiss-reduced');
+        await flush(banner);
+
+        const nextFocus = canvasElement.querySelector<HTMLButtonElement>('#dismiss-reduced-next');
+        if (!nextFocus) throw new Error('#dismiss-reduced-next が見つかりません');
+
+        getDismissButton(banner).click();
+        await waitFrame();
+
+        if (canvasElement.contains(banner)) {
+          throw new Error('reduced-motion では dismiss 後に即時で DOM から削除される必要があります');
+        }
+        if (document.activeElement !== nextFocus) {
+          throw new Error('reduced-motion dismiss 後のフォーカス移動先が不正です');
+        }
+      },
+    );
+  },
+};
+
+/**
+ * ダークモード:
+ * token 追従で表示崩れしないことを確認。
+ */
+export const DarkModeTokenContract: Story = {
+  parameters: {
+    backgrounds: { default: 'dark' },
+  },
+  render: () => html`
+    <div
+      style="color-scheme: dark; background: oklch(14% 0.01 250); color: oklch(92% 0.01 250); padding: 1rem; border-radius: 10px;"
+    >
+      <ui-banner id="dark-mode-warning" variant="warning" dismissible>
+        お使いのセッションは30分後に期限切れになります。
+        <button slot="action" type="button">延長する</button>
+      </ui-banner>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const banner = getHost(canvasElement, 'dark-mode-warning');
+    await flush(banner);
+
+    assertResolvedVariant(banner, 'warning');
+    assertRole(banner, 'alert');
+    getDismissButton(banner);
+
+    const message = banner.shadowRoot?.querySelector<HTMLElement>('.message');
+    if (!message) throw new Error('.message が見つかりません');
+    const style = getComputedStyle(message);
+    if (style.color === '' || style.color === 'transparent') {
+      throw new Error('dark mode でもメッセージ色が解決される必要があります');
+    }
+
+    const cssText = String(Banner.styles);
+    if (cssText.includes('prefers-color-scheme')) {
+      throw new Error('banner は prefers-color-scheme 分岐ではなくトークン参照でモード追従する必要があります');
     }
   },
 };

@@ -23,7 +23,7 @@ const VARIANT_CONFIG: Record<BannerVariant, BannerVariantConfig> = {
   },
   warning: {
     icon: 'lucide:triangle-alert',
-    role: 'status',
+    role: 'alert',
   },
   error: {
     icon: 'lucide:circle-x',
@@ -49,40 +49,40 @@ export class Banner extends LitElement {
     :host {
       display: flex;
       align-items: center;
-      gap: var(--space-3, 12px);
+      gap: var(--space-3);
       width: 100%;
       box-sizing: border-box;
-      padding: var(--space-3, 12px) var(--space-4, 16px);
-      min-height: var(--control-min-touch, 44px);
-      border-bottom: 2px solid transparent;
-      background: var(--bg-tip-subtle, oklch(96% 0.04 250));
-      border-bottom-color: var(--primary, oklch(55% 0.2 250));
-      color: var(--fg-info, var(--primary, oklch(55% 0.2 250)));
-      animation: banner-enter var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)) both;
+      padding: var(--space-3) var(--space-4);
+      min-height: var(--control-min-touch);
+      border-bottom: var(--border-width-thick) solid transparent;
+      background: var(--bg-tip-subtle);
+      border-bottom-color: var(--primary);
+      color: var(--fg-info);
+      animation: banner-enter var(--duration-normal) var(--ease-out) both;
     }
 
     :host([data-resolved-variant='info']) {
-      background: var(--bg-tip-subtle, oklch(96% 0.04 250));
-      border-bottom-color: var(--primary, oklch(55% 0.2 250));
-      color: var(--fg-info, var(--primary, oklch(55% 0.2 250)));
+      background: var(--bg-tip-subtle);
+      border-bottom-color: var(--primary);
+      color: var(--fg-info);
     }
 
     :host([data-resolved-variant='success']) {
-      background: var(--bg-success-subtle, oklch(96% 0.04 145));
-      border-bottom-color: var(--success, oklch(55% 0.18 145));
-      color: var(--fg-success, oklch(55% 0.18 145));
+      background: var(--bg-success-subtle);
+      border-bottom-color: var(--success);
+      color: var(--fg-success);
     }
 
     :host([data-resolved-variant='warning']) {
-      background: var(--bg-warning-subtle, oklch(96% 0.04 85));
-      border-bottom-color: var(--border-warning, oklch(72% 0.15 85));
-      color: var(--fg-warning, oklch(55% 0.16 85));
+      background: var(--bg-warning-subtle);
+      border-bottom-color: var(--border-warning);
+      color: var(--fg-warning);
     }
 
     :host([data-resolved-variant='error']) {
-      background: var(--bg-danger-subtle, oklch(96% 0.03 25));
-      border-bottom-color: var(--border-danger, oklch(62% 0.2 25));
-      color: var(--fg-danger, oklch(55% 0.2 25));
+      background: var(--bg-danger-subtle);
+      border-bottom-color: var(--border-danger);
+      color: var(--fg-danger);
     }
 
     .icon {
@@ -90,21 +90,21 @@ export class Banner extends LitElement {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: var(--icon-base, 16px);
-      height: var(--icon-base, 16px);
+      width: var(--icon-base);
+      height: var(--icon-base);
       color: inherit;
     }
 
     .fallback-icon {
-      width: var(--icon-base, 16px);
-      height: var(--icon-base, 16px);
+      width: var(--icon-base);
+      height: var(--icon-base);
       color: currentColor;
       stroke-width: 1.5;
     }
 
     .icon slot::slotted([slot='icon']) {
-      width: var(--icon-base, 16px);
-      height: var(--icon-base, 16px);
+      width: var(--icon-base);
+      height: var(--icon-base);
       color: currentColor;
       stroke-width: 1.5;
     }
@@ -112,9 +112,9 @@ export class Banner extends LitElement {
     .message {
       flex: 1;
       min-width: 0;
-      font-size: var(--text-sm, 13px);
-      font-weight: var(--font-medium, 500);
-      line-height: var(--line-height-normal, 1.5);
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      line-height: var(--line-height-normal);
       color: inherit;
     }
 
@@ -126,7 +126,7 @@ export class Banner extends LitElement {
       flex-shrink: 0;
       display: flex;
       align-items: center;
-      gap: var(--space-2, 8px);
+      gap: var(--space-2);
     }
 
     .actions slot::slotted([slot='action']) {
@@ -139,11 +139,11 @@ export class Banner extends LitElement {
 
     .dismiss {
       flex-shrink: 0;
-      width: var(--control-height-sm, 24px);
-      height: var(--control-height-sm, 24px);
+      width: var(--control-height-sm);
+      height: var(--control-height-sm);
       padding: 0;
       border: none;
-      border-radius: var(--radius-sm, 4px);
+      border-radius: var(--radius-sm);
       background: transparent;
       color: inherit;
       cursor: pointer;
@@ -151,27 +151,27 @@ export class Banner extends LitElement {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      transition: background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
+      transition: background-color var(--duration-fast) var(--ease-out);
     }
 
     .dismiss::after {
       content: '';
       position: absolute;
-      inset: calc((var(--control-min-touch, 44px) - var(--control-height-sm, 24px)) / -2);
+      inset: calc((var(--control-min-touch) - var(--control-height-sm)) / -2);
     }
 
     .dismiss:hover {
-      background: var(--bg-hover, oklch(from var(--fg-default, oklch(20% 0.03 250)) l c h / 0.06));
+      background: var(--bg-hover);
     }
 
     .dismiss:focus-visible {
-      outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, var(--primary, oklch(55% 0.2 250)));
-      outline-offset: var(--focus-ring-offset, 2px);
+      outline: var(--focus-ring-width) solid var(--focus-ring-color, var(--primary));
+      outline-offset: var(--focus-ring-offset);
     }
 
     .dismiss-icon {
-      width: var(--icon-sm, 14px);
-      height: var(--icon-sm, 14px);
+      width: var(--icon-sm);
+      height: var(--icon-sm);
       color: currentColor;
       stroke-width: 1.5;
     }
@@ -191,9 +191,9 @@ export class Banner extends LitElement {
     @keyframes banner-exit {
       from {
         opacity: 1;
-        max-height: 100px;
-        padding-top: var(--space-3, 12px);
-        padding-bottom: var(--space-3, 12px);
+        max-height: var(--ui-banner-exit-height);
+        padding-top: var(--space-3);
+        padding-bottom: var(--space-3);
       }
 
       to {
@@ -205,7 +205,7 @@ export class Banner extends LitElement {
     }
 
     :host([data-dismissing]) {
-      animation: banner-exit var(--duration-fast, 70ms) var(--ease-in, cubic-bezier(0.32, 0, 0.67, 1)) both;
+      animation: banner-exit var(--duration-fast) var(--ease-in) both;
       overflow: hidden;
     }
 
@@ -216,14 +216,13 @@ export class Banner extends LitElement {
 
       :host([data-dismissing]) {
         animation: none;
-        display: none;
       }
     }
 
     @media (forced-colors: active) {
       :host {
         border: 1px solid CanvasText;
-        border-bottom-width: 2px;
+        border-bottom-width: var(--border-width-thick);
       }
 
       .icon {
@@ -241,22 +240,19 @@ export class Banner extends LitElement {
     }
 
     @media print {
-      :host([data-resolved-variant='info']),
-      :host([data-resolved-variant='success']),
-      :host([data-resolved-variant='warning']) {
-        display: none !important;
-      }
-
-      :host([data-resolved-variant='error']) {
+      :host {
         background: none;
-        border: none;
-        padding: var(--space-2, 8px) 0;
+        color: var(--fg-default);
+        border: var(--border-width) solid var(--border-default);
+        border-bottom-width: var(--border-width-thick);
+        padding: var(--space-2) 0;
         min-height: unset;
         animation: none;
       }
 
-      :host([data-resolved-variant='error']) .icon,
-      :host([data-resolved-variant='error']) .dismiss {
+      .icon,
+      .actions,
+      .dismiss {
         display: none !important;
       }
     }
@@ -329,7 +325,7 @@ export class Banner extends LitElement {
   }
 
   private _ensureAtomic(): void {
-    if (this.getAttribute('aria-atomic') === 'true') return;
+    if (this.getAttribute('aria-atomic') !== null) return;
     this.setAttribute('aria-atomic', 'true');
   }
 
@@ -421,11 +417,24 @@ export class Banner extends LitElement {
       return;
     }
 
+    this.style.setProperty('--ui-banner-exit-height', `${String(this.scrollHeight)}px`);
     this.addEventListener('animationend', this._onDismissAnimationEnd, { once: true });
     this.setAttribute('data-dismissing', '');
+
+    const durationText = getComputedStyle(this).animationDuration;
+    const durationMs = durationText
+      .split(',')
+      .map((value) => value.trim())
+      .map((value) => {
+        if (value.endsWith('ms')) return Number.parseFloat(value);
+        if (value.endsWith('s')) return Number.parseFloat(value) * 1000;
+        return 0;
+      })
+      .reduce((max, value) => Math.max(max, Number.isFinite(value) ? value : 0), 0);
+
     this._dismissFallbackTimer = window.setTimeout(() => {
       this._finalizeDismiss();
-    }, 220);
+    }, Math.max(durationMs + 50, 100));
   };
 
   override render() {

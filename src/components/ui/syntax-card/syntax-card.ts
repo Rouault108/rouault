@@ -174,9 +174,6 @@ export class SyntaxCard extends LitElement {
   private _contentSlot?: HTMLSlotElement;
 
   @state()
-  private _hasSectionContent = false;
-
-  @state()
   private _copyValue = '';
 
   @state()
@@ -237,7 +234,6 @@ export class SyntaxCard extends LitElement {
   private _syncContentState(): void {
     const slot = this._contentSlot;
     if (!slot) {
-      this._hasSectionContent = false;
       this.toggleAttribute('data-content-empty', true);
       return;
     }
@@ -246,7 +242,6 @@ export class SyntaxCard extends LitElement {
       .assignedElements({ flatten: true })
       .some((el) => el.matches('ui-syntax-section'));
 
-    this._hasSectionContent = hasSections;
     this.toggleAttribute('data-content-empty', !hasSections);
   }
 

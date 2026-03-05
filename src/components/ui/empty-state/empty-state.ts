@@ -1,5 +1,5 @@
 import { css, html, LitElement } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import '../../../lib/icons';
 
 export type EmptyStateVariant = 'default' | 'search' | 'error';
@@ -13,13 +13,20 @@ const normalizeText = (value: string): string => value.replace(/\s+/g, ' ').trim
 export class EmptyState extends LitElement {
   static override styles = css`
     :host {
+      --empty-state-padding: clamp(var(--space-8, 32px), 6vw, var(--space-12, 48px));
+      --empty-state-min-height: clamp(
+        calc(var(--space-12, 48px) * 5),
+        50vh,
+        calc(var(--space-16, 64px) * 5)
+      );
+
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: var(--space-12, 48px);
-      min-height: 320px;
+      padding: var(--empty-state-padding);
+      min-height: var(--empty-state-min-height);
       animation: empty-state-enter var(--duration-normal, 200ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1))
         both;
     }
@@ -37,8 +44,12 @@ export class EmptyState extends LitElement {
     }
 
     .illustration {
-      display: block;
+      display: none;
       margin-block-end: var(--space-4, 16px);
+    }
+
+    :host([has-illustration]) .illustration {
+      display: block;
     }
 
     .illustration::slotted(*) {
@@ -60,14 +71,16 @@ export class EmptyState extends LitElement {
       inline-size: var(--icon-xl, 32px);
       block-size: var(--icon-xl, 32px);
       color: currentColor;
-      stroke-width: 1.5px;
     }
 
     .icon::slotted([slot='icon']) {
       inline-size: var(--icon-xl, 32px);
       block-size: var(--icon-xl, 32px);
       color: currentColor;
-      stroke-width: 1.5px;
+    }
+
+    :host([has-illustration]) .icon {
+      display: none;
     }
 
     .heading {
@@ -76,10 +89,6 @@ export class EmptyState extends LitElement {
       font-size: var(--text-lg, 16px);
       font-weight: var(--font-semibold, 600);
       line-height: var(--line-height-tight, 1.25);
-    }
-
-    .heading--standalone {
-      margin-block-end: var(--space-6, 24px);
     }
 
     .heading::slotted([slot='heading']) {
@@ -107,6 +116,14 @@ export class EmptyState extends LitElement {
       line-height: inherit;
     }
 
+    :host(:not([has-description])) .heading {
+      margin-block-end: var(--space-6, 24px);
+    }
+
+    :host(:not([has-description])) .description {
+      display: none;
+    }
+
     .actions {
       display: flex;
       flex-wrap: wrap;
@@ -117,6 +134,10 @@ export class EmptyState extends LitElement {
 
     .actions::slotted([slot='action']) {
       margin: 0;
+    }
+
+    :host(:not([has-action])) .actions {
+      display: none;
     }
 
     .container[data-variant='search'] .icon {
@@ -143,16 +164,10 @@ export class EmptyState extends LitElement {
       }
     }
 
-    @media (max-width: 768px) {
-      :host {
-        padding: var(--space-8, 32px);
-        min-height: 240px;
-      }
-    }
-
     @media (prefers-reduced-motion: reduce) {
       :host {
-        animation: none;
+        animation-duration: 0.01ms;
+        animation-iteration-count: 1;
       }
     }
 
@@ -163,7 +178,7 @@ export class EmptyState extends LitElement {
 
       .container[data-variant='error'] .icon,
       .container[data-variant='error'] .heading {
-        color: Highlight;
+        color: CanvasText;
       }
     }
 
@@ -182,15 +197,6 @@ export class EmptyState extends LitElement {
 
   @property({ type: String, reflect: true })
   variant: EmptyStateVariant = 'default';
-
-  @state()
-  private _hasDescription = false;
-
-  @state()
-  private _hasActions = false;
-
-  @state()
-  private _hasIllustration = false;
 
   private _didWarnMissingHeading = false;
 
@@ -253,12 +259,9 @@ export class EmptyState extends LitElement {
     const headingText = this._readAssignedText(slot);
 
     if (headingText !== '') {
-      this.setAttribute('aria-label', headingText);
       this._didWarnMissingHeading = false;
       return;
     }
-
-    this.removeAttribute('aria-label');
 
     if (!this._didWarnMissingHeading) {
       this._didWarnMissingHeading = true;
@@ -267,17 +270,17 @@ export class EmptyState extends LitElement {
   }
 
   private _syncDescriptionSlot(slot: HTMLSlotElement): void {
-    this._hasDescription = this._readAssignedText(slot) !== '';
+    this.toggleAttribute('has-description', this._readAssignedText(slot) !== '');
   }
 
   private _syncActionSlot(slot: HTMLSlotElement): void {
     const hasElements = this._hasAssignedElements(slot);
     const hasText = this._readAssignedText(slot) !== '';
-    this._hasActions = hasElements || hasText;
+    this.toggleAttribute('has-action', hasElements || hasText);
   }
 
   private _syncIllustrationSlot(slot: HTMLSlotElement): void {
-    this._hasIllustration = this._hasAssignedElements(slot);
+    this.toggleAttribute('has-illustration', this._hasAssignedElements(slot));
   }
 
   private _onHeadingSlotChange = (event: Event): void => {
@@ -307,28 +310,25 @@ export class EmptyState extends LitElement {
   override render() {
     return html`
       <section class="container" data-variant="${this._resolvedVariant}">
-        <slot
-          name="illustration"
-          class="illustration"
-          ?hidden="${!this._hasIllustration}"
-          @slotchange="${this._onIllustrationSlotChange}"
-        ></slot>
+        <div class="illustration">
+          <slot name="illustration" @slotchange="${this._onIllustrationSlotChange}"></slot>
+        </div>
 
-        <div class="icon" aria-hidden="true" ?hidden="${this._hasIllustration}">
+        <div class="icon" aria-hidden="true">
           <slot name="icon">
             <iconify-icon class="fallback-icon" icon="${FALLBACK_ICON}"></iconify-icon>
           </slot>
         </div>
 
-        <div class="heading ${this._hasDescription ? '' : 'heading--standalone'}">
+        <div class="heading">
           <slot name="heading" @slotchange="${this._onHeadingSlotChange}"></slot>
         </div>
 
-        <div class="description" ?hidden="${!this._hasDescription}">
+        <div class="description">
           <slot name="description" @slotchange="${this._onDescriptionSlotChange}"></slot>
         </div>
 
-        <div class="actions" ?hidden="${!this._hasActions}">
+        <div class="actions">
           <slot name="action" @slotchange="${this._onActionSlotChange}"></slot>
         </div>
       </section>
