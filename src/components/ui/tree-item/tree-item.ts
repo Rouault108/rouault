@@ -1,7 +1,7 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
-import '../tooltip/ui-tooltip';
+import '../tooltip/tooltip';
 
 type TreeItemDensity = 'normal' | 'compact';
 
