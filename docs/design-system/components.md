@@ -130,27 +130,29 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
 **1. デザイン哲学と目的 (Design Philosophy)**
 
 - **Role**: カード、コールアウト、サイドバーなどの **UIコンポーネント内** に配置される、ナビゲーションやアクションを目的としたリンク。
-- **Scope**: `.card`, `.callout`, `.sidebar` 等のコンテナ内部、あるいは `.ui-link` クラスを持つ要素。読み物としての本文（Prose）内リンクとは明確に区別されます。
+- **Scope**: UI内のナビゲーション/アクション用リンク。読み物としての本文（Prose）内リンクとは明確に区別します。
 - **Structure**: 「読む」ためのProse Linkとは異なり、UIの一部として機能します。「静謐さ」を維持するため、ナビゲーション目的のリンクは**デフォルトで無彩色（ニュートラル）**とし、重要なアクションのみをプライマリカラーとします。
 
 **2. 実装戦略 (Implementation Strategy)**
 
-- **Selector**:
-    - **Primary**: `.ui-link[href]` — 明示的にUIリンクとしてマークされた要素
-    - **Contextual**: `.card a[href], .callout a[href], .sidebar a[href]` — コンテナ内の子孫リンクを対象
-    - **Prose Exclusion**: `.card .prose a[href], .callout .prose a[href], .sidebar .prose a[href]` は常に Prose Link 仕様を優先します（本仕様の対象外）。
+- **Link Classification API**:
+    - **Text Link**: `.link-text[href]`（常時下線）
+    - **Control Link**: `.link-control[href]`（下線なし許可）
+    - **Legacy互換**: `.ui-link` / `.link-nav` / `.link-action` / `.link-subtle` は継続利用可。運用上は `link-control` 系として扱います。
+- **Default Safety Net**:
+    - `a[href]` は未分類でも「リンクらしさ」を失わないよう、`main.css` 側で常時下線を持つフェイルセーフを適用します。
+    - UI用途で下線を外す場合は、必ず `link-control`（または `ui-link`）を明示します。
+- **Deprecation方針**:
+    - `.card/.callout/.sidebar` のコンテナ依存セレクタは移行レイヤとして段階的に縮小します。
+    - 新規実装では暗黙セレクタへの依存を禁止し、`link-text` / `link-control` の明示付与を必須とします。
 - **SPA Routing**: Prose Linkと同様、ルーティング実装の詳細は `src/lib/router.ts` を参照してください。本セクションではスタイリング定義のみを扱います。
-- **Variant API**:
-    - `.ui-link` または `.ui-link.link-nav` を **Nav (Default)** とします。
-    - `.ui-link.link-action` を **Action** とします。
-    - サイドバー項目は `.sidebar .ui-link.link-nav` を使用し、`index.md` の階層方針に従って `--fg-muted` を基準色とします。
 - **Interaction Pattern**:
     - **Neutral (Nav)**: 形（Weight）で機能を示唆し、色（Hover）で応答する。
     - **Action**: 色（Primary）で誘引し、装飾（Underline）で応答する。
 
 **3. スタイリングとトークンマッピング (Style & Tokens)**
 
-**Base Style**
+**Base Style（Control Link）**
 
 - `cursor`: `pointer`
 - `color`: `var(--fg-default)` (Sidebar Nav のみ `var(--fg-muted)` を基準色として上書き)
@@ -162,11 +164,11 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
 - `font-weight`: `var(--font-medium)` (500 - 周辺テキストより一段階強くし、構造的な差異を作る)
 - `transition`: `color var(--duration-fast) var(--ease-out), text-decoration-color var(--duration-fast) var(--ease-out)`
 
-**バリアントと状態 (Variants & States)**
+**Variants & States（Control Link）**
 
 | ID | Variant | Default Color | Hover Color | Hover Decoration Color | Note |
 |----|---------|---------------|-------------|------------------------|------|
-| **Nav** | ナビゲーション | `var(--fg-default)` (`.sidebar` 内は `var(--fg-muted)`) | `var(--primary)` | `currentColor` | **Default**. サイドバーやカードタイトル。ノイズを抑え、ホバーで色付きます。下線色はテキスト色に追従。 |
+| **Nav** | ナビゲーション | `var(--fg-default)` (`.sidebar` 内は `var(--fg-muted)`) | `var(--primary)` | `currentColor` | **Default**. サイドバーやカードタイトル。ノイズを抑え、ホバーで色付きます。 |
 | **Action**| アクション | `var(--primary)` | `var(--primary-hover)` | `currentColor` | 「編集」「作成」など、ユーザーに操作を促す強いリンク。下線色はテキスト色に追従。 |
 
 **共通状態 (Common States)**
@@ -184,7 +186,7 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
     - **Action**: `var(--primary)` を維持
     - **No Distraction**: 既読管理よりUIの一貫性を優先します。
 
-**Touch (No Hover) 判定**
+**Touch (No Hover) 判定（Control Link）**
 
 タッチデバイスではホバーによる発見可能性が得られないため、デフォルト状態から視覚的ヒントを強化します。
 
@@ -192,15 +194,8 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
 @media (hover: none) and (pointer: coarse) {
   /* Navバリアント: デフォルトで色付き（Prose除外） */
   .ui-link:not(.link-action),
-  .card a[href],
-  .callout a[href],
-  .sidebar a[href] {
+  .link-control:not(.link-action) {
     color: var(--primary);
-  }
-  .card .prose a[href],
-  .callout .prose a[href],
-  .sidebar .prose a[href] {
-    color: inherit;
   }
 
   /* Hit Area: WCAG 2.2 と運用推奨に合わせて最小サイズを確保 */
@@ -240,6 +235,13 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
 
 - **Contrast Guarantee**:
     - 使用する全色は `index.md` のトークン定義により WCAG AA (4.5:1) を満たすよう計算されています。
+- **WCAG Criteria**:
+    - **SC 1.4.1 Use of Color**: `Text Link` は常時下線で非色シグナルを保持します。
+    - **SC 1.4.3 Contrast (Minimum)**: テキストと背景のコントラスト 4.5:1 を維持します。
+    - **SC 2.4.7 Focus Visible**: `Text Link` / `Control Link` ともに `:focus-visible` の視覚表示を必須にします。
+- **Exception Policy（構造型リンク）**:
+    - `Control Link` は下線なしを許可します。
+    - ただし、色だけに依存しないよう、**形状・境界・インジケータ・配置**のいずれか + `focus-visible` を必須とします。
 - **Link Purpose**:
     - 文脈から切り離されても目的が理解できるよう、"Click here" などの曖昧なラベルを禁止します。
     - アイコンのみの場合は `aria-label` を必須とします。
@@ -263,6 +265,9 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
 - **Forced Colors Mode**:
     - `forced-colors: active` 環境下では、`index.md` のグローバルトークンマッピングに従います。
     - この仕様ではリンク個別の色上書きを行わず、トークン経由で統一します。
+- **静的監査**:
+    - `pnpm audit:links` で `<a href>` を `Text / Control / 未分類` に分類して継続監査します。
+    - 詳細は `docs/accessibility/link-audit.md` を参照してください。
 
 **5. Print Styles**
 
@@ -2524,7 +2529,7 @@ textarea::-webkit-scrollbar-thumb:hover {
 - **Use `<ui-tag>` when**:
     - **Interaction**: 検索フィルターの削除ボタン付きチップや、一覧画面でのクリック可能なボタンとして機能させたい場合。
     - **Object**: カード内など、UIパーツの一部として矩形の視覚的ウェイトが必要な場合。
-- **Use `text-link` (#Tag) when**:
+- **Use `link-text` (#Tag) when**:
     - **Immersion**: **記事ヘッダー**や本文中など、テキストの「読むリズム（Line Height）」を崩さず、文脈の一部として自然に提示したい場合。コンポーネントの矩形感はノイズとなるため避ける。
 
 **2. ロジック参照基盤 (Logic Reference)**
@@ -4514,20 +4519,16 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
                 - **Screen Reader**: `<time>` 要素に `aria-label="最終更新日: [Date]、作成日: [CreatedDate]"` を付与することで、視覚的ノイズを排除しつつ完全な文脈を提供します。
                 - **CRITICAL**: `title` 属性によるツールチップは**キーボードユーザーとタッチデバイスユーザーにアクセス不可能**なため、WCAG準拠の手段として採用しません。`aria-label` による情報提供を唯一の実装とします。
         2.  **Category/Tags**: `Hash` icon + **Text Link**。
-            - **Visual Weight**: メタデータ行の静謐さを保つため、背景色を持つ `<ui-tag>` (Chip) は避け、**`text-link` (#Tag)** を使用します。コンポーネントとしての矩形感を排除し、純粋なテキストリンクとして扱うことで、よりコンテンツに近い透明性を実現します。
-            - **Style Strategy (Silent Link)**:
-                - **Default**: `color: inherit` (`--fg-muted`)。`text-decoration: none`（下線なし）。
-                - **Hover**: `color: var(--fg-default)`。
-                    - Light Mode: `--fg-muted` (L45%) → `--fg-default` (L20%) = 明度低下（暗く）
-                    - Dark Mode: `--fg-muted` (L65%) → `--fg-default` (L90%) = 明度上昇（明るく）
-                    - **Rationale**: 通常のリンクのような色相変化（Hue Shift）ではなく、**明度変化（Lightness Shift）**のみで「押せる」ことを伝えます。これにより、メタデータエリアの静的な美しさを操作中も崩しません。
-                - **Touch (No Hover)**: `@media (hover: none) and (pointer: coarse)` では、発見可能性を担保するため `text-decoration: underline` を有効化し、`text-decoration-color: var(--link-decoration-color-touch)` を適用します。
+            - **Visual Weight**: メタデータ行の静謐さを保つため、背景色を持つ `<ui-tag>` (Chip) は避け、**`link-text` (#Tag)** を使用します。コンポーネントとしての矩形感を排除し、純粋なテキストリンクとして扱うことで、よりコンテンツに近い透明性を実現します。
+            - **Style Strategy (`link-text`)**:
+                - **Default**: `color: inherit`（メタデータ色に追従）+ `text-decoration: underline`（常時表示）。
+                - **Hover**: `color: var(--fg-default)`。下線は維持し、色に依存しない判別性を保持します。
                 - **Focus (`:focus-visible`)**:
                     - **Outline**: 基盤の Adaptive Focus（`--focus-ring-color-subtle` → `--focus-ring-color`）を適用。
                     - **Text Color**: Hoverと同様に `var(--fg-default)` へ変化。
-                    - **Rationale**: Silent Linkの文脈でもフォーカスリングは明確に表示し、キーボードナビゲーションの現在地を保証します。
+                    - **Rationale**: メタデータ文脈でもキーボード操作時の現在地を明確に保証します。
                 - **Transition**: `color var(--duration-fast) var(--ease-out), outline-color var(--duration-normal) var(--ease-out)`。
-            - **Implementation Note**: `text-link` はカスタムコンポーネントではなく、**ネイティブの `<a>` タグ**（クラス `.silent-link` 付与）で実装します。これはテキストの折り返しやベースライン配置などの自然なインライン挙動を維持し、Markdownパーサーとの親和性を保つためです。
+            - **Implementation Note**: `link-text` はカスタムコンポーネントではなく、**ネイティブの `<a>` タグ**（クラス `.link-text` 付与）で実装します。これはテキストの折り返しやベースライン配置などの自然なインライン挙動を維持し、Markdownパーサーとの親和性を保つためです。
         3.  **Reading Time** (Optional): `Clock` icon + 読了時間目安（例: "読了目安 5分"）。
         4.  **Source / License** (Optional): `Link` または `Scale` icon + 出典元への外部リンク（例: "原文"）やライセンス名。
             - **Note**: 翻訳記事や外部資料の転載の場合、原文への敬意と権利関係の明確化のため、この位置で明示をします。
@@ -9701,6 +9702,21 @@ override attributeChangedCallback(name: string, old: string | null, value: strin
 > **Note (Icon Stroke Width):**
 > すべてのバリアントで Lucide の標準 `stroke-width: 1.5` を使用します。Subtle 背景上では細い線幅でも十分な視認性を確保できます。
 
+**アクションリンク (slot="action" の `<a>`)**
+
+```css
+.actions slot::slotted(a[slot='action'][href]) {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+  text-decoration-thickness: var(--border-width);
+  text-underline-offset: 0.15em;
+}
+```
+
+- `slot="action"` に渡された素の `<a>` でも、クラス付与なしで常時下線を適用します。
+- この要件は **WCAG 2.1 SC 1.4.1 (Use of Color)** 対応のため必須です。
+
 **閉じるボタン (Dismiss Button)**
 
 ```css
@@ -9743,6 +9759,10 @@ override attributeChangedCallback(name: string, old: string | null, value: strin
   - `role="alert"`: `aria-live="assertive"` が暗黙的に適用され、スクリーンリーダーが即座に読み上げます。
   - `role="status"`: `aria-live="polite"` が暗黙的に適用され、現在の読み上げが終了してから通知します。
 - **Atomic**: `aria-atomic="true"` をコンポーネント内部で明示的に設定し、バナー全体を一つの単位として読み上げます。
+- **WCAG Criteria**:
+  - **SC 1.4.1 Use of Color**: actionリンクはデフォルト状態で下線を持ち、色だけで識別させません。
+  - **SC 1.4.3 Contrast (Minimum)**: メッセージ本文とactionリンクの文字コントラスト 4.5:1 以上を維持します。
+  - **SC 2.4.7 Focus Visible**: actionリンクと閉じるボタンの `:focus-visible` 表示を必須とします。
 
 > **Note (`aria-atomic` Usage):**
 > `aria-atomic="true"` はバナー全体を「ひとつの通知単位」として読み上げるために設定しています。もしバナー内のメッセージが頻繁に更新される場合（例: 残り時間カウントダウン）、`aria-atomic="false"` を明示的に指定し、変更箇所のみをアナウンスさせることを検討してください。
@@ -10054,7 +10074,7 @@ private _dismiss() {
 - **Variant Styling**: 各バリアントで背景色・テキスト色・ボーダー色が正しいトークンで描画されること。`variant="warning"` のボーダーに `var(--border-warning)` が使用され、ハードコードのOKLCH値が存在しないこと。
 - **Default Slot**: default slot にテキストコンテンツを渡せること。
 - **slot="icon" 自動フォールバック**: `slot="icon"` 未指定時にvariantに対応するデフォルトアイコンが表示されること。指定時はカスタムアイコンのみが表示されること。
-- **slot="action"**: アクションが未指定の場合は非表示になること。複数指定時も横並びに正しく表示されること。
+- **slot="action"**: アクションが未指定の場合は非表示になること。複数指定時も横並びに正しく表示されること。`<a>` 指定時はクラス未付与でも `text-decoration-line: underline` が適用されること。
 - **Dismissible**: `dismissible` 属性がある場合のみ閉じるボタンが表示されること。属性がない場合は DOM から除外されること。
 - **Focus Management**: 閉じるボタンクリック後、バナーが DOM から削除され、次のフォーカス可能な要素にフォーカスが移動すること。
 - **Touch Target**: 閉じるボタンのタッチターゲットが `::after` 疑似要素で `44px × 44px` に拡張されること。
