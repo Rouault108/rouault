@@ -8,7 +8,7 @@ const config: StorybookConfig = {
   addons: [
     // '@storybook/addon-essentials',   // すべての基本アドオン (v10では個別導入推奨のため削除)
     '@storybook/addon-a11y',         // アクセシビリティ検証
-    '@storybook/addon-themes',       // テーマ切り替え（Lion UIのダークモード対応等に便利）
+    '@storybook/addon-themes',       // テーマ切り替え
     '@storybook/addon-vitest',       // Vitest統合
   ],
 
