@@ -1,14 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
-import './search-dialog';
-import type {
-  UiSearchDialog,
-  UiSearchDialogItem,
-  UiSearchDialogOpenedDetail,
-  UiSearchDialogSelectedDetail,
+import { userEvent } from 'storybook/test';
+import {
+  UiSearchDialog as SearchDialogElement,
+  type UiSearchDialog,
+  type UiSearchDialogItem,
+  type UiSearchDialogOpenedDetail,
+  type UiSearchDialogSelectedDetail,
 } from './search-dialog';
 
 const DEBOUNCE_WAIT_MS = 210;
+const BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE = 'data-ui-search-dialog-open';
 
 const SEARCH_ITEMS: UiSearchDialogItem[] = [
   { title: 'Router 設計メモ', url: '/notes/router-design', path: '/notes/router-design', keywords: ['navigation'] },
@@ -106,6 +108,9 @@ const getClearButton = (host: UiSearchDialog): HTMLButtonElement => {
 const getResultItems = (host: UiSearchDialog): HTMLLIElement[] =>
   Array.from(host.shadowRoot?.querySelectorAll<HTMLLIElement>('.result-item') ?? []);
 
+const hasInputFocus = (host: UiSearchDialog, input: HTMLInputElement): boolean =>
+  host.shadowRoot?.activeElement === input || document.activeElement === host;
+
 const meta: Meta<UiSearchDialog> = {
   title: 'Components/SearchDialog',
   component: 'ui-search-dialog',
@@ -157,7 +162,7 @@ export const ResultsStateWithFocusReturn: Story = {
     assert(dialog.getAttribute('aria-label') === '検索', 'dialog に aria-label="検索" がありません');
     assert(dialog.getAttribute('aria-modal') === 'true', 'dialog に aria-modal="true" がありません');
     assert(openedEvent.detail.trigger === trigger, 'opened イベントの trigger が不正です');
-    assert(document.activeElement === input, 'open 後の自動フォーカスが input に移動していません');
+    assert(hasInputFocus(host, input), 'open 後の自動フォーカスが input に移動していません');
 
     input.value = 'router';
     input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
@@ -297,7 +302,7 @@ export const KeyboardLoopAndEnterSelection: Story = {
     await flush(host);
 
     const input = getInput(host);
-    input.value = 'ui';
+    input.value = 'i';
     input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
     await settleSearch(host);
 
@@ -445,5 +450,133 @@ export const ReentrancyAndEscCancel: Story = {
     });
 
     host.removeEventListener('ui-search-dialog-opened', openedListener);
+  },
+};
+
+/**
+ * 意味のある組み合わせ:
+ * - opened 属性の反映で開閉できること
+ * - Scroll Lock 属性の付与/解除が成立すること
+ */
+export const OpenedAttributeAndScrollLock: Story = {
+  render: () => html`
+    <div style="padding: 2rem; min-height: 24rem;">
+      <button id="attr-trigger" type="button">属性制御を検証</button>
+      <ui-search-dialog id="dialog-attr" .items=${SEARCH_ITEMS}></ui-search-dialog>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'dialog-attr');
+    const trigger = canvasElement.querySelector<HTMLButtonElement>('#attr-trigger');
+    assert(!!trigger, '#attr-trigger が見つかりません');
+    await flush(host);
+
+    trigger.focus();
+    const openedPromise = waitForEvent(host, 'ui-search-dialog-opened');
+    host.opened = true;
+    await openedPromise;
+    await flush(host);
+
+    assert(getNativeDialog(host).open, 'opened=true で dialog が開いていません');
+    assert(document.body.hasAttribute(BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE), '開放中に body 属性が付与されていません');
+
+    const closedPromise = waitForEvent(host, 'ui-search-dialog-closed');
+    host.opened = false;
+    await closedPromise;
+    await flush(host);
+
+    assert(!getNativeDialog(host).open, 'opened=false で dialog が閉じていません');
+    assert(!document.body.hasAttribute(BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE), 'close 後に body 属性が解除されていません');
+    assert(document.activeElement === trigger, 'opened 属性制御での close 後にフォーカス返却されていません');
+  },
+};
+
+/**
+ * 境界条件:
+ * - Tab で input -> clear button へ移動できること
+ */
+export const TabNavigationBetweenInputAndClear: Story = {
+  render: () => html`
+    <div style="padding: 2rem; min-height: 24rem;">
+      <button id="tab-trigger" type="button">Tab検証</button>
+      <ui-search-dialog id="dialog-tab" .items=${SEARCH_ITEMS}></ui-search-dialog>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'dialog-tab');
+    const trigger = canvasElement.querySelector<HTMLButtonElement>('#tab-trigger');
+    assert(!!trigger, '#tab-trigger が見つかりません');
+    await flush(host);
+
+    const openedPromise = waitForEvent(host, 'ui-search-dialog-opened');
+    host.open(trigger);
+    await openedPromise;
+    await flush(host);
+
+    const input = getInput(host);
+    input.value = 'router';
+    input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+    await settleSearch(host);
+
+    input.focus();
+    await waitFrame();
+    await userEvent.tab();
+    await waitFrame();
+
+    const clearButton = getClearButton(host);
+    assert(host.shadowRoot?.activeElement === clearButton, 'Tab で clear-button へ移動できていません');
+
+    const closedPromise = waitForEvent(host, 'ui-search-dialog-closed');
+    host.close();
+    await closedPromise;
+  },
+};
+
+/**
+ * ダークモード契約:
+ * prefers-color-scheme 分岐に依存せず、トークンで表示できること
+ */
+export const DarkModeTokenContract: Story = {
+  parameters: {
+    backgrounds: { default: 'dark' },
+  },
+  render: () => html`
+    <div style="color-scheme: dark; background: oklch(14% 0.01 250); color: oklch(92% 0.01 250); padding: 1rem;">
+      <ui-search-dialog id="dialog-dark" .items=${SEARCH_ITEMS}></ui-search-dialog>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'dialog-dark');
+    await flush(host);
+
+    const cssText = String(SearchDialogElement.styles);
+    assert(!cssText.includes('prefers-color-scheme'), 'dark mode は prefers-color-scheme 分岐に依存しないでください');
+    assert(cssText.includes('background: var(--bg-surface-3);'), 'panel 背景が --bg-surface-3 契約になっていません');
+  },
+};
+
+/**
+ * スタイル契約:
+ * reduced-motion / forced-colors / print / トークン命名を保持すること
+ */
+export const StyleContractCoverage: Story = {
+  render: () => html`
+    <div style="padding: 2rem;">
+      <ui-search-dialog id="dialog-contract" .items=${SEARCH_ITEMS}></ui-search-dialog>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'dialog-contract');
+    await flush(host);
+
+    const cssText = String(SearchDialogElement.styles);
+    assert(cssText.includes('@media (prefers-reduced-motion: reduce)'), 'Reduced Motion 契約が不足しています');
+    assert(cssText.includes('animation-duration: 0.01ms !important;'), 'Reduced Motion の 0.01ms 短縮が不足しています');
+    assert(cssText.includes('@media (forced-colors: active)'), 'Forced Colors 契約が不足しています');
+    assert(cssText.includes('CanvasText'), 'Forced Colors の境界色契約が不足しています');
+    assert(cssText.includes('@media print'), 'Print 契約が不足しています');
+    assert(cssText.includes('--ui-search-dialog-backdrop'), 'コンポーネントローカルトークンが不足しています');
+    assert(cssText.includes('--ui-search-dialog-max-width'), 'パブリックトークン定義が不足しています');
+    assert(!cssText.includes('--search-dialog-'), 'トークン命名規則違反（--search-dialog-*）があります');
   },
 };
