@@ -89,6 +89,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+body[data-ui-dialog-open] {
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}
+
 /* ===========================================================================
  * Typography - Headings
  * =========================================================================== */
