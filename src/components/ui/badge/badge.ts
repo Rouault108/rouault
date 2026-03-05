@@ -29,12 +29,12 @@ import { ifDefined } from 'lit/directives/if-defined.js';
  * カスタムイベントも発行しません。フォーカス不可（`tabindex` なし）。
  *
  * @property {'solid' | 'subtle' | 'dot'} variant - 視覚スタイル
- * @property {number | null} count - 表示する数値。`null` の場合はスロットを表示
+ * @property {number | null | undefined} count - 表示する数値。`null` / `undefined` の場合はスロットを表示
  * @property {number} max - 数値の最大表示リミット（デフォルト: 99）
  * @property {'danger' | 'primary' | 'neutral' | 'success' | 'warning'} color - 意味的カラー
  * @property {string | null} ariaLabelText - Dotバリアント用ラベル（`aria-label`属性）
  *
- * @slot - バッジのテキスト内容（`count` が `null` かつ `variant !== "dot"` の場合に表示）
+ * @slot - バッジのテキスト内容（`count` が `null` / `undefined` かつ `variant !== "dot"` の場合に表示）
  *
  * @cssprop --primary         - Primary 背景色（Semantic Token）
  * @cssprop --on-primary      - Primary 文字色（Semantic Token）
@@ -88,7 +88,7 @@ export class Badge extends LitElement {
 
       /* Subtle 派生用 Delta。warning のみ上書き */
       --badge-subtle-bg-delta: 41%;
-      --badge-subtle-fg-delta: -15%;
+      --badge-subtle-fg-delta: -45%;
       --badge-subtle-border-delta: 36%;
 
       /* Layout */
@@ -137,7 +137,7 @@ export class Badge extends LitElement {
       --badge-bg: var(--warning);
       --badge-fg: var(--on-warning);
       --badge-subtle-bg-delta: 16%;
-      --badge-subtle-fg-delta: -35%;
+      --badge-subtle-fg-delta: -45%;
       --badge-subtle-border-delta: 10%;
     }
 
@@ -154,9 +154,9 @@ export class Badge extends LitElement {
     /* ── Variant: Subtle ── */
     :host([variant='subtle']) {
       padding: 0 var(--space-2, 8px);
-      background: oklch(from var(--badge-bg) calc(l + var(--badge-subtle-bg-delta)) calc(c * 0.35) h);
-      color: oklch(from var(--badge-bg) calc(l + var(--badge-subtle-fg-delta)) calc(c * 0.85) h);
-      border: var(--border-width, 1px) solid oklch(from var(--badge-bg) calc(l + var(--badge-subtle-border-delta)) calc(c * 0.45) h);
+      background: var(--bg-surface-2, var(--bg-default));
+      color: var(--badge-bg);
+      border: var(--border-width, 1px) solid var(--badge-bg);
     }
 
     /* ── Variant: Dot ── */
@@ -204,12 +204,12 @@ export class Badge extends LitElement {
     variant: 'solid' | 'subtle' | 'dot' = 'solid';
 
     /**
-     * 表示する数値。`null` の場合はスロットを表示。
+     * 表示する数値。`null` / `undefined` の場合はスロットを表示。
      * `number` の場合は正規化ルールを適用。
      * @default null
      */
     @property({ type: Number, reflect: true })
-    count: number | null = null;
+    count: number | null | undefined = null;
 
     /**
      * 数値の最大表示リミット。表示は `{max}+`。
@@ -236,12 +236,13 @@ export class Badge extends LitElement {
 
     /**
      * `count` の正規化処理。
+     * - `null` / `undefined` → `null`（スロット表示）
      * - `NaN` / `Infinity` / `-Infinity` → `0`
      * - 負数 → `0`
      * - `Math.floor()` で整数化
      */
     private get _normalizedCount(): number | null {
-        if (this.count === null) return null;
+        if (this.count === null || this.count === undefined) return null;
         const n = this.count;
         if (!isFinite(n) || isNaN(n)) return 0;
         return Math.max(0, Math.floor(n));
@@ -292,7 +293,7 @@ export class Badge extends LitElement {
             return html`<span role="status" aria-label="${this._ariaLabel ?? ''}">${displayText}</span>`;
         }
 
-        // count が null の場合: スロットをレンダリング（Static Label）
+        // count が null / undefined の場合: スロットをレンダリング（Static Label）
         return html`<span><slot></slot></span>`;
     }
 }

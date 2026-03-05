@@ -829,13 +829,13 @@ export const CountUndefined: Story = {
         await badge.updateComplete;
 
         // テスト: count を undefined にしても数値表示されず、スロット表示になる
-        badge.count = undefined as unknown as number | null;
+        badge.count = undefined;
         await badge.updateComplete;
 
         const slot = badge.shadowRoot?.querySelector('slot');
-        if (!slot) throw new Error('slot should exist when count is undefined');
+        if (!slot) throw new Error('countがundefinedのときslotが存在すべき');
         const status = badge.shadowRoot?.querySelector('[role="status"]');
-        if (status) throw new Error('role="status" should not exist when count is undefined');
+        if (status) throw new Error('countがundefinedのときrole="status"が存在すべきではない');
 
         console.log('✅ All tests passed for CountUndefined story');
     },
