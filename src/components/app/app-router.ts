@@ -134,6 +134,7 @@ export class AppRouter extends LitElement {
       <!-- メインコンテンツ領域 -->
       <main
         id="main-content"
+        tabindex="-1"
         aria-busy=${this._routerController.isNavigating ? 'true' : nothing}
       >
         ${unsafeHTML(this._pageContent)}
