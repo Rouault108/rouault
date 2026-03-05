@@ -52,6 +52,28 @@ const meta: Meta<ArticleHeader> = {
 export default meta;
 type Story = StoryObj<ArticleHeader>;
 
+function getShadowStylesText(shadowRoot: ShadowRoot | null): string {
+  if (!shadowRoot) return '';
+
+  const inlineStyles = Array.from(shadowRoot.querySelectorAll('style'))
+    .map((style) => style.textContent ?? '')
+    .join('\n');
+
+  const adoptedStyles = shadowRoot.adoptedStyleSheets
+    .map((sheet) => {
+      try {
+        return Array.from(sheet.cssRules)
+          .map((rule) => rule.cssText)
+          .join('\n');
+      } catch {
+        return '';
+      }
+    })
+    .join('\n');
+
+  return `${inlineStyles}\n${adoptedStyles}`;
+}
+
 /**
  * フル状態（更新日優先 + タグ + 読了時間 + 出典/ライセンス + ステータス）
  */
@@ -139,6 +161,11 @@ export const CompleteState: Story = {
     }
     if (sourceLink.getAttribute('rel') !== 'noopener noreferrer') {
       throw new Error('Expected source link rel to be "noopener noreferrer"');
+    }
+
+    const sourceStyle = getComputedStyle(sourceLink);
+    if (sourceStyle.textDecorationLine !== 'underline') {
+      throw new Error('source-link はデフォルト状態で下線契約を満たす必要があります');
     }
 
   },
@@ -439,12 +466,12 @@ export const AccessibilityMediaContracts: Story = {
     if (!header) throw new Error('#a11y-media-contracts not found');
     await header.updateComplete;
 
-    const stylesText = header.shadowRoot?.querySelector('style')?.textContent ?? '';
+    const stylesText = getShadowStylesText(header.shadowRoot ?? null);
     if (!stylesText.includes('@media (hover: none) and (pointer: coarse)')) {
       throw new Error('Expected touch discoverability media query');
     }
     if (!stylesText.includes('text-decoration: underline')) {
-      throw new Error('Expected underline discoverability contract for silent-link');
+      throw new Error('Expected underline discoverability contract for link-text');
     }
     if (!stylesText.includes('@media (prefers-reduced-motion: reduce)')) {
       throw new Error('Expected reduced motion media query');
@@ -455,7 +482,12 @@ export const AccessibilityMediaContracts: Story = {
     if (!stylesText.includes('@media (forced-colors: active)')) {
       throw new Error('Expected forced-colors media query');
     }
-    if (!stylesText.includes('CanvasText') || !stylesText.includes('GrayText') || !stylesText.includes('LinkText')) {
+    const lowerStylesText = stylesText.toLowerCase();
+    if (
+      !lowerStylesText.includes('canvastext') ||
+      !lowerStylesText.includes('graytext') ||
+      !lowerStylesText.includes('linktext')
+    ) {
       throw new Error('Expected forced-colors system color fallbacks');
     }
   },
@@ -478,7 +510,7 @@ export const DarkModeTokenContract: Story = {
     if (!header) throw new Error('#dark-mode-token-contract not found');
     await header.updateComplete;
 
-    const stylesText = header.shadowRoot?.querySelector('style')?.textContent ?? '';
+    const stylesText = getShadowStylesText(header.shadowRoot ?? null);
     if (!stylesText.includes('var(--fg-default')) {
       throw new Error('Expected --fg-default token usage');
     }
