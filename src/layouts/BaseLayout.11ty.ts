@@ -25,23 +25,15 @@ export class BaseLayout {
   <script type="module" src="/src/client.ts"></script>
 </head>
 <body>
-  <div id="app">
-    <header>
-      <nav>
-        <a href="/">Home</a>
-        <a href="/notes">Notes</a>
-      </nav>
-    </header>
-
+  <ui-skip-link href="#main-content" label="メインコンテンツへ移動"></ui-skip-link>
+  <div id="app" class="app-root">
+    <layout-header></layout-header>
     <app-router>
-      <main id="main-content">
+      <main id="main-content" tabindex="-1">
         ${data.content}
       </main>
     </app-router>
-
-    <footer>
-      <p>&copy; 2026 Rouault</p>
-    </footer>
+    <layout-footer></layout-footer>
   </div>
 </body>
 </html>
