@@ -17,6 +17,7 @@ export default function (eleventyConfig) {
 
   // Layout Aliases
   eleventyConfig.addLayoutAlias('base', 'BaseLayout.11ty.ts');
+  eleventyConfig.addLayoutAlias('note', 'NoteLayout.11ty.ts');
 
   // Veliteリソース管理
   eleventyConfig.on('eleventy.before', async () => {
