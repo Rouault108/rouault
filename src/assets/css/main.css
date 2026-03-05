@@ -229,6 +229,19 @@ a {
     color var(--duration-fast) var(--ease-out);
 }
 
+a[href] {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  text-decoration-thickness: var(--border-width);
+  text-decoration-color: var(--primary);
+}
+
+@supports (color: oklch(from white l c h)) {
+  a[href] {
+    text-decoration-color: var(--link-decoration-color);
+  }
+}
+
 a:focus-visible {
   outline-style: solid;
   outline-width: var(--focus-ring-width);
@@ -239,26 +252,31 @@ a:focus-visible {
 }
 
 /* ===========================================================================
- * Prose Links（記事本文内のリンク）
+ * Text Links（テキストリンク）
  * @see docs/design-system/components.md - Prose Link仕様
  * =========================================================================== */
 
-/* Base Style - href属性を持つリンクのみ対象 */
+/*
+ * テキストリンク契約:
+ * - 色以外のシグナル（常時下線）を必須にする
+ * - link-text は Shadow DOM/Light DOM 共通の明示クラス
+ */
+.link-text[href],
 .prose a[href] {
   cursor: pointer;
   color: var(--fg-default); /* 本文色を維持し、読むリズムを優先 */
   text-decoration: underline;
   text-underline-offset: 0.15em; /* Noto Sans JPのベースラインに最適化 */
-  
+
   /* Baseline: Relative Color Syntax 非対応ブラウザ向けの安全なフォールバック */
   text-decoration-color: var(--primary);
-  
+
   text-decoration-thickness: var(--border-width); /* UI全体の線幅との一貫性 */
-  
+
   transition:
     text-decoration-color var(--duration-fast) var(--ease-out),
     color var(--duration-fast) var(--ease-out);
-  
+
   /* 改行時もスタイルを行ごとに適用（Firefox未サポート、Progressive Enhancement） */
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
@@ -266,18 +284,21 @@ a:focus-visible {
 
 /* Progressive Enhancement: Relative Color Syntax 対応環境 */
 @supports (color: oklch(from white l c h)) {
+  .link-text[href],
   .prose a[href] {
     text-decoration-color: var(--link-decoration-color);
   }
 }
 
 /* Hover状態 - テキストと下線の両方を色付け */
+.link-text[href]:hover,
 .prose a[href]:hover {
   color: var(--primary-hover);
   text-decoration-color: var(--primary-hover);
 }
 
 /* Focus-Visible状態 - テキスト色は変更せず、フォーカスリングのみで状態を示す */
+.link-text[href]:focus-visible,
 .prose a[href]:focus-visible {
   outline-style: solid;
   outline-width: var(--focus-ring-width);
@@ -292,6 +313,7 @@ a:focus-visible {
 }
 
 /* Visited状態 - 個人メモでは既読管理より読むリズムを優先 */
+.link-text[href]:visited,
 .prose a[href]:visited {
   color: var(--fg-default);
   text-decoration-color: var(--primary);
@@ -299,6 +321,7 @@ a:focus-visible {
 
 /* Progressive Enhancement: Relative Color Syntax 対応環境 */
 @supports (color: oklch(from white l c h)) {
+  .link-text[href]:visited,
   .prose a[href]:visited {
     text-decoration-color: var(--link-decoration-color);
   }
@@ -306,6 +329,7 @@ a:focus-visible {
 
 /* Touch (No Hover) 判定 - タッチデバイスでは発見可能性を優先 */
 @media (hover: none) and (pointer: coarse) {
+  .link-text[href],
   .prose a[href] {
     color: var(--primary);
     text-decoration-color: var(--link-decoration-color-touch);
@@ -313,9 +337,9 @@ a:focus-visible {
 }
 
 /* ===========================================================================
- * Contextual Links（UIリンク）
+ * Control Links（構造型リンク / UIリンク）
  * @see docs/design-system/components.md - Contextual Link仕様
- * 
+ *
  * カード、サイドバー等のUIコンポーネント内に配置される
  * ナビゲーションやアクションを目的としたリンク。
  * Prose Link（読み物内）とは明確に区別される。
@@ -327,9 +351,7 @@ a:focus-visible {
  * - Prose Linkと同じ下線オフセット・太さを共有し一貫性を保証
  */
 .ui-link[href],
-.card :where(a[href]):not(:where(.prose a[href])),
-.callout :where(a[href]):not(:where(.prose a[href])),
-.sidebar :where(a[href]):not(:where(.prose a[href])) {
+.link-control[href] {
   cursor: pointer;
   color: var(--fg-default);
   text-decoration: none;
@@ -343,9 +365,7 @@ a:focus-visible {
 
 /* Hover: 下線追加 + プライマリカラーへ変化 */
 .ui-link[href]:hover,
-.card :where(a[href]):not(:where(.prose a[href])):hover,
-.callout :where(a[href]):not(:where(.prose a[href])):hover,
-.sidebar :where(a[href]):not(:where(.prose a[href])):hover {
+.link-control[href]:hover {
   color: var(--primary);
   text-decoration: underline;
   text-decoration-color: currentColor;
@@ -353,17 +373,13 @@ a:focus-visible {
 
 /* Active: Tactile Feedback（ボタンと同様のスケール変化） */
 .ui-link[href]:active,
-.card :where(a[href]):not(:where(.prose a[href])):active,
-.callout :where(a[href]):not(:where(.prose a[href])):active,
-.sidebar :where(a[href]):not(:where(.prose a[href])):active {
+.link-control[href]:active {
   transform: scale(var(--scale-pressed));
 }
 
 /* Focus-Visible: Adaptive Focusリング */
 .ui-link[href]:focus-visible,
-.card :where(a[href]):not(:where(.prose a[href])):focus-visible,
-.callout :where(a[href]):not(:where(.prose a[href])):focus-visible,
-.sidebar :where(a[href]):not(:where(.prose a[href])):focus-visible {
+.link-control[href]:focus-visible {
   outline-style: solid;
   outline-width: var(--focus-ring-width);
   outline-offset: var(--focus-ring-offset);
@@ -374,20 +390,18 @@ a:focus-visible {
 
 /* Visited: UIの透明化を優先、Default状態と統合 */
 .ui-link[href]:visited,
-.card :where(a[href]):not(:where(.prose a[href])):visited,
-.callout :where(a[href]):not(:where(.prose a[href])):visited,
-.sidebar :where(a[href]):not(:where(.prose a[href])):visited {
+.link-control[href]:visited {
   color: var(--fg-default);
 }
 
 /* Sidebar Nav: 階層構造を示すため muted を基準色とする */
 .sidebar .ui-link[href]:not(.link-action),
-.sidebar :where(a[href]):not(:where(.prose a[href])):not(.link-action) {
+.sidebar .link-control[href]:not(.link-action) {
   color: var(--fg-muted);
 }
 
 .sidebar .ui-link[href]:not(.link-action):visited,
-.sidebar :where(a[href]):not(:where(.prose a[href])):not(.link-action):visited {
+.sidebar .link-control[href]:not(.link-action):visited {
   color: var(--fg-muted);
 }
 
@@ -415,12 +429,8 @@ a:focus-visible {
 /* Current (Nav only): 現在地は色と物理的インジケータで示す */
 .ui-link[href]:not(.link-action)[aria-current='page'],
 .ui-link[href]:not(.link-action).is-active,
-.card :where(a[href]):not(:where(.prose a[href]))[aria-current='page'],
-.card :where(a[href]):not(:where(.prose a[href])).is-active,
-.callout :where(a[href]):not(:where(.prose a[href]))[aria-current='page'],
-.callout :where(a[href]):not(:where(.prose a[href])).is-active,
-.sidebar :where(a[href]):not(:where(.prose a[href]))[aria-current='page'],
-.sidebar :where(a[href]):not(:where(.prose a[href])).is-active {
+.link-control[href]:not(.link-action)[aria-current='page'],
+.link-control[href]:not(.link-action).is-active {
   color: var(--primary);
   font-weight: var(--font-medium);
   border-inline-start: var(--border-width-thick) solid var(--primary);
@@ -473,17 +483,8 @@ a:focus-visible {
 @media (hover: none) and (pointer: coarse) {
   /* Nav バリアント: デフォルトで色付き */
   .ui-link[href]:not(.link-action),
-  .card :where(a[href]):not(:where(.prose a[href])),
-  .callout :where(a[href]):not(:where(.prose a[href])),
-  .sidebar :where(a[href]):not(:where(.prose a[href])) {
+  .link-control[href]:not(.link-action) {
     color: var(--primary);
-  }
-
-  /* Prose 除外: 本文リンクは本文仕様を維持 */
-  .card .prose a[href],
-  .callout .prose a[href],
-  .sidebar .prose a[href] {
-    color: inherit;
   }
 
   /* Icon Only: 最小タップ領域を確保 */
@@ -497,6 +498,22 @@ a:focus-visible {
   .link-subtle {
     color: var(--fg-default);
   }
+}
+
+/* ---------------------------------------------------------------------------
+ * Legacy Compatibility（移行レイヤ）
+ *
+ * card / callout / sidebar 内の未分類リンクを段階的に削減するための暫定措置。
+ * 新規実装では .link-text または .link-control を必ず付与すること。
+ * --------------------------------------------------------------------------- */
+.card :where(a[href]):not(:where(.prose a[href])):not(.link-text):not(.link-control):not(.ui-link),
+.callout :where(a[href]):not(:where(.prose a[href])):not(.link-text):not(.link-control):not(.ui-link),
+.sidebar :where(a[href]):not(:where(.prose a[href])):not(.link-text):not(.link-control):not(.ui-link) {
+  color: var(--fg-default);
+}
+
+.sidebar :where(a[href]):not(:where(.prose a[href])):not(.link-text):not(.link-control):not(.ui-link) {
+  color: var(--fg-muted);
 }
 
 /* ---------------------------------------------------------------------------
@@ -757,44 +774,75 @@ a:focus-visible {
  * Application Shell
  * =========================================================================== */
 
-.app-shell {
+.app-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+app-router {
+  flex: 1 1 auto;
+  display: block;
+}
+
+.note-shell {
+  --note-sidebar-track: var(--sidebar-width);
+  --note-toc-track: var(--aside-width);
   display: grid;
   grid-template-columns:
-    var(--sidebar-width)
+    var(--note-sidebar-track)
     minmax(0, 1fr)
-    var(--aside-width);
-  grid-template-rows: var(--header-height) 1fr;
-  min-height: 100vh;
-}
-
-/* Mobile/Tablet: シングルカラム */
-@media (max-width: 1279px) {
-  /* --bp-xl */
-  .app-shell {
-    grid-template-columns: 100%;
-  }
-
-  .aside-toc {
-    display: none;
-  }
-}
-
-/* Sidebar & TOC: Sticky配置と内部スクロール */
-.sidebar-nav,
-.aside-toc {
-  position: sticky;
-  top: var(--header-height);
-  max-height: calc(100vh - var(--header-height));
-  overflow-y: auto;
-  /* 親へのスクロール連鎖防止 */
-  overscroll-behavior: contain;
-}
-
-/* Main Content: 読むための物理的制約 */
-.main-content {
-  width: 100%;
-  max-width: var(--width-reading);
+    var(--note-toc-track);
+  align-items: start;
+  min-height: calc(100vh - var(--header-height));
+  max-width: var(--bp-xl);
   margin-inline: auto;
+  width: 100%;
+}
+
+.layout-sidebar-col,
+.layout-main-col,
+.layout-toc-col {
+  min-inline-size: 0;
+}
+
+.layout-sidebar-col {
+  border-right: var(--border-width) solid var(--border-ghost);
+  overflow: visible;
+}
+
+.layout-main-col {
+  padding-block: var(--space-8);
+}
+
+.layout-toc-col {
+  border-left: var(--border-width) solid var(--border-ghost);
+  padding-block: var(--space-6);
+}
+
+/* Tablet: 2カラム（本文 + TOC） */
+@media (max-width: 767px) {
+  .note-shell {
+    --note-sidebar-track: 0px;
+    --note-toc-track: minmax(200px, 34vw);
+  }
+
+  .layout-sidebar-col {
+    border-right: none;
+  }
+}
+
+/* Mobile: 1カラム（本文のみ） */
+@media (max-width: 639px) {
+  .note-shell {
+    --note-sidebar-track: 0px;
+    --note-toc-track: 0px;
+  }
+
+  .layout-toc-col {
+    border-left: none;
+    padding: 0;
+  }
 }
 
 /* ===========================================================================
