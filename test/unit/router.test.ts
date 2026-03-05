@@ -25,25 +25,39 @@ describe('Router', () => {
 		// fetch のオリジナルを保存
 		originalFetch = globalThis.fetch;
 
-		// history API のオリジナルを保存
-		originalPushState = (data: unknown, unused: string, url?: string | URL | null) => {
-			history.pushState(data, unused, url);
-		};
-		originalReplaceState = (data: unknown, unused: string, url?: string | URL | null) => {
-			history.replaceState(data, unused, url);
-		};
+		// history API のオリジナルを保存（ネイティブメソッドへの参照を直接保持）
+		originalPushState = history.pushState.bind(history);
+		originalReplaceState = history.replaceState.bind(history);
+
+		// Playwrightのナビゲーション検出（CDP framenavigated）を防ぐため、
+		// history APIをwtr-session-idを保持するラッパーで包む
+		const wtrSessionId = new URLSearchParams(window.location.search).get('wtr-session-id');
+		if (wtrSessionId) {
+			history.pushState = ((data: unknown, unused: string, url?: string | URL | null) => {
+				if (url != null) {
+					const target = new URL(url.toString(), window.location.href);
+					target.searchParams.set('wtr-session-id', wtrSessionId);
+					originalPushState(data, unused, `${target.pathname}${target.search}${target.hash}`);
+				}
+			}) as typeof history.pushState;
+			history.replaceState = ((data: unknown, unused: string, url?: string | URL | null) => {
+				if (url != null) {
+					const target = new URL(url.toString(), window.location.href);
+					target.searchParams.set('wtr-session-id', wtrSessionId);
+					originalReplaceState(data, unused, `${target.pathname}${target.search}${target.hash}`);
+				}
+			}) as typeof history.replaceState;
+		}
 
 		// 各テスト開始時のURLを統一
 		try {
-			originalReplaceState.call(history, {}, '', '/');
+			history.replaceState({}, '', '/');
 		} catch {
 			// 一部実行環境では初期URL変更が制限されるため無視
 		}
 
-		// View Transition API のモック
-		// exactOptionalPropertyTypesに対応するため、型アサーションを使用
-		originalStartViewTransition = (callback?: ViewTransitionUpdateCallback | StartViewTransitionOptions) =>
-			document.startViewTransition(callback);
+		// View Transition API のモック（ネイティブメソッドへの参照を直接保持）
+		originalStartViewTransition = document.startViewTransition.bind(document);
 		const mockTransition: Document['startViewTransition'] = (
 			callback?: ViewTransitionUpdateCallback | StartViewTransitionOptions,
 		) => {
@@ -473,7 +487,8 @@ describe('Router', () => {
 
 			await waitUntil(() => outlet.innerHTML.includes('Test Content'), 'コンテンツが更新されること');
 
-			expect(outlet.innerHTML).to.include('<h1>Test Content</h1>');
+			// manageFocus()がtabindex="-1"を付与するため、テキスト内容で検証
+			expect(outlet.querySelector('h1')?.textContent?.trim()).to.equal('Test Content');
 			expect(document.title).to.equal('Test Page');
 		});
 
@@ -645,13 +660,14 @@ describe('Router', () => {
 			link.click();
 
 			await waitUntil(
-				() => outlet.textContent.includes('Not Found') || outlet.textContent.includes('エラー'),
+				// ルーターは「404 - ページが見つかりません」を表示するため'404'でも確認
+				() => outlet.textContent.includes('Not Found') || outlet.textContent.includes('エラー') || outlet.textContent.includes('404'),
 				'エラー表示',
 			);
 
 			// 空のレスポンスはエラーとして扱われるべき
 			expect(outlet.textContent).to.satisfy((text: string) =>
-				text.includes('Not Found') || text.includes('エラー')
+				text.includes('Not Found') || text.includes('エラー') || text.includes('404')
 			);
 		});
 
@@ -673,12 +689,13 @@ describe('Router', () => {
 			link.click();
 
 			await waitUntil(
-				() => outlet.textContent.includes('Not Found') || outlet.textContent.includes('エラー'),
+				// ルーターは「404 - ページが見つかりません」を表示するため'404'でも確認
+				() => outlet.textContent.includes('Not Found') || outlet.textContent.includes('エラー') || outlet.textContent.includes('404'),
 				'エラー表示',
 			);
 
 			expect(outlet.textContent).to.satisfy((text: string) =>
-				text.includes('Not Found') || text.includes('エラー')
+				text.includes('Not Found') || text.includes('エラー') || text.includes('404')
 			);
 		});
 
@@ -769,7 +786,9 @@ describe('Router', () => {
 		});
 
 		it('5.3 トランジション失敗時にもコンテンツが更新されること', async () => {
-			document.startViewTransition = ((_callback: () => Promise<void>) => {
+			document.startViewTransition = ((callback: () => Promise<void>) => {
+				// コールバックを実行してコンテンツを更新した後、トランジション自体は失敗させる
+				void callback();
 				return {
 					finished: Promise.reject(new Error('Transition failed')),
 					ready: Promise.resolve(),
@@ -933,10 +952,10 @@ describe('Router', () => {
 				});
 			};
 
-			router = new Router(outlet);
-
-			// タイムアウトを5秒に設定
-			router.setTimeout(5000);
+			// skipInitialNavigation: trueで初期ナビゲーションをスキップ（初期fetchが無限ハングするため）
+			// タイムアウトを100msに設定（Mochaのデフォルト2000ms以内に収めるため）
+			router = new Router(outlet, { skipInitialNavigation: true });
+			router.setTimeout(100);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/timeout">Link</a> `);
 			link.click();
@@ -1120,9 +1139,10 @@ describe('Router', () => {
 		it('8.3 PagefindUI が再初期化されること', async () => {
 			let pagefindInitialized = false;
 
-			const createMockPagefindUI = (_options: { element: Element | null }) => {
+			// アロー関数はnewできないため通常のコンストラクタ関数を使用
+			function createMockPagefindUI(_options: { element: Element | null }) {
 				pagefindInitialized = true;
-			};
+			}
 
 			const originalPagefindUI = window.PagefindUI;
 			window.PagefindUI = createMockPagefindUI as unknown as NonNullable<typeof window.PagefindUI>;

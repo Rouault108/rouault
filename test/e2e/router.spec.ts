@@ -55,8 +55,8 @@ test.describe('Router - Basic Functionality', () => {
 		});
 
 		// クエリパラメータが正しく取得できることを確認
-		expect(query.q).toBe('test');
-		expect(query.page).toBe('2');
+			expect(query['q']).toBe('test');
+			expect(query['page']).toBe('2');
 	});
 
 	test('should navigate programmatically', async ({ page }) => {
