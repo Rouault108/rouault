@@ -17,9 +17,6 @@ importers:
       '@fontsource/jetbrains-mono':
         specifier: 5.2.8
         version: 5.2.8
-      '@lion/ui':
-        specifier: ~0.15.3
-        version: 0.15.3
       '@lit-labs/ssr':
         specifier: ~4.0.0
         version: 4.0.0(@types/node@24.10.9)
@@ -210,9 +207,6 @@ packages:
   '@babel/runtime@7.28.6':
     resolution: {integrity: sha512-05WQkdpL9COIMz4LjTxGpPNCdlpyimKppYNoJ5Di5EUObifl8t4tuLuUBBZEpoLYOmfvIWrsp9fCl0HoPRVTdA==}
     engines: {node: '>=6.9.0'}
-
-  '@bundled-es-modules/message-format@6.2.4':
-    resolution: {integrity: sha512-NBaIEUCzSjLZjrsmSOh8PJLqQjSpXVuekIOuUT8tt4N/FdtAavWsC1YinIqIrbRnkBqV90OxgKzsxhFCzETQBw==}
 
   '@custom-elements-manifest/analyzer@0.11.0':
     resolution: {integrity: sha512-F2jQFk6igV5vrTZYDBLVr0GDQF3cTJ2VwwzPdsmkzUE+SHiYAQNKYebIq8qphZdJeTcZtVhvw336FQVZsMqh4A==}
@@ -782,9 +776,6 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@lion/ui@0.15.3':
-    resolution: {integrity: sha512-4Qp2TZbxvbK1dp9r14Ni2v4kgFqYhjWob2O413XQTUN/dp3WcnWLjr1tnRnLcMbVp5lYijoTTkgP+cNszmxu/g==}
-
   '@lit-labs/ssr-client@1.1.8':
     resolution: {integrity: sha512-PjGh81oKsoI64m3IDjTqqjhC7dr2uC/o0jrllUb5gRAyp/RlAHxapgJrjq9kWz97faCHLQ8jUlTi6tGm+8fgyA==}
 
@@ -979,9 +970,6 @@ packages:
 
   '@polka/url@1.0.0-next.29':
     resolution: {integrity: sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww==}
-
-  '@popperjs/core@2.11.8':
-    resolution: {integrity: sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==}
 
   '@puppeteer/browsers@2.11.1':
     resolution: {integrity: sha512-YmhAxs7XPuxN0j7LJloHpfD1ylhDuFmmwMvfy/+6nBSrETT2ycL53LrhgPtR+f+GcPSybQVuQ5inWWu5MrWCpA==}
@@ -1775,13 +1763,6 @@ packages:
 
   async@3.2.6:
     resolution: {integrity: sha512-htCUDlxyyCLMgaM3xXg0C0LW2xqfuQ6p05pCEIsXuyQ+a1koYKTuBMzRNwmybfLgvJDMd0r1LTn4+E0Ti6C2AA==}
-
-  autosize@6.0.1:
-    resolution: {integrity: sha512-f86EjiUKE6Xvczc4ioP1JBlWG7FKrE13qe/DxBCpe8GCipCq2nFw73aO8QEBKHfSbYGDN5eB9jXWKen7tspDqQ==}
-
-  awesome-phonenumber@6.12.0:
-    resolution: {integrity: sha512-17Ts/ceWeWXzWZqTIRKA48y3+OyxYsAXYzuxYCn4n0+By+W0dcHk3fHszW6lLxAlCZt3VmVKY6n9AxOCU84qNw==}
-    engines: {node: '>=18'}
 
   axe-core@4.11.1:
     resolution: {integrity: sha512-BASOg+YwO2C+346x3LZOeoovTIoTrRqEsqMa6fmfAV0P+U9mFr9NsyOEpiYvFjbc64NMrSswhV50WdXzdb/Z5A==}
@@ -2677,9 +2658,6 @@ packages:
   human-signals@2.1.0:
     resolution: {integrity: sha512-B4FFZ6q/T2jhhksgkbEW3HBvWIfDW85snkQgawt07S7J5QXTk6BkNV+0yAeZrM5QpMAdYlocGoljn0sJ/WQkFw==}
     engines: {node: '>=10.17.0'}
-
-  ibantools@4.5.1:
-    resolution: {integrity: sha512-DfKQpLlFq9yEUIEnFuCJzss3XavD7iHZTU5PyqXiAJ+rmaMp+NFP3hboumHKuK8nZjuOJg93WemTzcQ5b9jOZA==}
 
   iconify-icon@3.0.2:
     resolution: {integrity: sha512-DYPAumiUeUeT/GHT8x2wrAVKn1FqZJqFH0Y5pBefapWRreV1BBvqBVMb0020YQ2njmbR59r/IathL2d2OrDrxA==}
@@ -3703,9 +3681,6 @@ packages:
   signal-exit@3.0.7:
     resolution: {integrity: sha512-wnD2ZE+l+SPC/uoS0vXeE9L1+0wuaMqKlfz9AMUo38JsyLSBWSFcHR1Rri62LZc12vLr1gb3jl7iwQhgwpAbGQ==}
 
-  singleton-manager@1.8.0:
-    resolution: {integrity: sha512-1M3qImeT5j74a/GtRwM8Q+JOMwhiNRE/uJtIu+U6LBgbRvl9reoeFbQ+ZALR0CwCqg2hhwmLAGZ9KuxefuIWlA==}
-
   sirv@3.0.2:
     resolution: {integrity: sha512-2wcC/oGxHis/BoHkkPwldgiPSYcpZK3JU28WoMVv55yHJgcZ8rlXvuG9iZggz+sU1d4bRgIGASwyWqjxu3FM0g==}
     engines: {node: '>=18'}
@@ -4345,8 +4320,6 @@ snapshots:
 
   '@babel/runtime@7.28.6': {}
 
-  '@bundled-es-modules/message-format@6.2.4': {}
-
   '@custom-elements-manifest/analyzer@0.11.0':
     dependencies:
       '@custom-elements-manifest/find-dependencies': 0.0.7
@@ -4743,18 +4716,6 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@lion/ui@0.15.3':
-    dependencies:
-      '@bundled-es-modules/message-format': 6.2.4
-      '@open-wc/dedupe-mixin': 2.0.1
-      '@open-wc/scoped-elements': 3.0.6
-      '@popperjs/core': 2.11.8
-      autosize: 6.0.1
-      awesome-phonenumber: 6.12.0
-      ibantools: 4.5.1
-      lit: 3.3.2
-      singleton-manager: 1.8.0
-
   '@lit-labs/ssr-client@1.1.8':
     dependencies:
       '@lit/reactive-element': 2.1.2
@@ -4957,8 +4918,6 @@ snapshots:
       playwright: 1.57.0
 
   '@polka/url@1.0.0-next.29': {}
-
-  '@popperjs/core@2.11.8': {}
 
   '@puppeteer/browsers@2.11.1':
     dependencies:
@@ -5911,10 +5870,6 @@ snapshots:
   astring@1.9.0: {}
 
   async@3.2.6: {}
-
-  autosize@6.0.1: {}
-
-  awesome-phonenumber@6.12.0: {}
 
   axe-core@4.11.1: {}
 
@@ -6960,8 +6915,6 @@ snapshots:
       - supports-color
 
   human-signals@2.1.0: {}
-
-  ibantools@4.5.1: {}
 
   iconify-icon@3.0.2:
     dependencies:
@@ -8317,8 +8270,6 @@ snapshots:
   siginfo@2.0.0: {}
 
   signal-exit@3.0.7: {}
-
-  singleton-manager@1.8.0: {}
 
   sirv@3.0.2:
     dependencies:
