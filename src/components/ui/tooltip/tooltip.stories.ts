@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
-import './ui-tooltip';
-import { UiTooltip } from './ui-tooltip';
+import './tooltip';
+import { UiTooltip } from './tooltip';
 import '../tree-item/tree-item';
 import type { TreeItem } from '../tree-item/tree-item';
 
