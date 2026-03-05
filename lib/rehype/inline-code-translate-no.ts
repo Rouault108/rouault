@@ -15,8 +15,8 @@ export function rehypeInlineCodeTranslateNo() {
 
       if (current.type === 'element' && current.tagName === 'code' && parentTagName !== 'pre') {
         current.properties ??= {};
-        if (current.properties.translate !== 'no') {
-          current.properties.translate = 'no';
+        if (current.properties['translate'] !== 'no') {
+          current.properties['translate'] = 'no';
         }
       }
 

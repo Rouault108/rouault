@@ -28,15 +28,17 @@ export function rehypeOrderedListContracts() {
         const itemCount = liChildren.length;
 
         const hasReversed =
-          props.reversed !== undefined && props.reversed !== false && props.reversed !== 'false';
-        const explicitStart = toInteger(props.start);
+          props['reversed'] !== undefined &&
+          props['reversed'] !== false &&
+          props['reversed'] !== 'false';
+        const explicitStart = toInteger(props['start']);
         const start = explicitStart ?? (hasReversed ? itemCount : 1);
         const step = hasReversed ? -1 : 1;
         const end = itemCount > 0 ? start + step * (itemCount - 1) : start;
         const baseCounterValue = start - step;
 
         const explicitValues = liChildren
-          .map((item) => toInteger(getOrCreateProperties(item).value))
+          .map((item) => toInteger(getOrCreateProperties(item)['value']))
           .filter((value): value is number => value !== null);
 
         const maxDigits = Math.max(
@@ -51,19 +53,19 @@ export function rehypeOrderedListContracts() {
           delete props['data-marker-digits'];
         }
 
-        if (props.role === undefined) {
-          props.role = 'list';
+        if (props['role'] === undefined) {
+          props['role'] = 'list';
         }
         setStyleCustomProperty(props, '--ui-ol-counter-reset', String(baseCounterValue));
         setStyleCustomProperty(props, '--ui-ol-counter-step', String(step));
 
         for (const item of liChildren) {
           const itemProps = getOrCreateProperties(item);
-          if (itemProps.role === undefined) {
-            itemProps.role = 'listitem';
+          if (itemProps['role'] === undefined) {
+            itemProps['role'] = 'listitem';
           }
 
-          const explicitValue = toInteger(itemProps.value);
+          const explicitValue = toInteger(itemProps['value']);
           if (explicitValue === null) {
             delete itemProps['data-ol-has-value'];
             continue;
