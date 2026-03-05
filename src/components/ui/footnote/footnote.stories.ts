@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './footnote';
 import type { Footnote } from './footnote';
+import { DOCUMENT_STYLE_ID as POPOVER_STYLE_ID } from '../popover/popover';
 
 const meta: Meta<Footnote> = {
   title: 'Components/Footnote',
@@ -83,6 +84,12 @@ const getPopover = (host: Footnote): HTMLElement => {
   return popover;
 };
 
+const getPopoverHost = (host: Footnote): HTMLElement => {
+  const popoverHost = host.querySelector<HTMLElement>('ui-popover[data-part="popover-host"]');
+  if (!popoverHost) throw new Error('ui-popover[data-part="popover-host"] が見つかりません');
+  return popoverHost;
+};
+
 const supportsPopoverApi = (): boolean =>
   typeof HTMLElement !== 'undefined' &&
   'showPopover' in HTMLElement.prototype &&
@@ -139,6 +146,7 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const host = getFootnote(canvasElement, 'default-footnote');
     await host.updateComplete;
+    const popoverHost = getPopoverHost(host);
 
     const trigger = getTrigger(host);
     if (trigger.getAttribute('href') !== '#fn-1') {
@@ -158,6 +166,9 @@ export const Default: Story = {
     }
 
     const popover = getPopover(host);
+    if (popoverHost.id !== 'fn-1-popover-host') {
+      throw new Error(`ui-popover host id は fn-1-popover-host を想定しています: ${popoverHost.id}`);
+    }
     if (popover.id !== 'fn-1-popover') {
       throw new Error('popover id が fn-1-popover ではありません');
     }
@@ -257,6 +268,7 @@ export const VariantStateMatrix: Story = {
 
     const sharedOwner = getFootnote(canvasElement, 'matrix-shared-owner');
     const sharedFollower = getFootnote(canvasElement, 'matrix-shared-follower');
+    const sharedOwnerPopoverHost = getPopoverHost(sharedOwner);
 
     const ownerTrigger = getTrigger(sharedOwner);
     const followerTrigger = getTrigger(sharedFollower);
@@ -273,6 +285,11 @@ export const VariantStateMatrix: Story = {
 
     const ownerPopover = sharedOwner.querySelector('[data-part="content"]');
     if (!ownerPopover) throw new Error('shared owner は popover を持つ必要があります');
+    if (sharedOwnerPopoverHost.id !== 'fn-11-popover-host') {
+      throw new Error('shared owner の ui-popover host id が不正です');
+    }
+    const followerPopoverHost = sharedFollower.querySelector('ui-popover[data-part="popover-host"]');
+    if (followerPopoverHost) throw new Error('shared follower は ui-popover host を描画してはいけません');
     const followerPopover = sharedFollower.querySelector('[data-part="content"]');
     if (followerPopover) throw new Error('shared follower は popover 本体を描画してはいけません');
 
@@ -599,6 +616,15 @@ export const BoundaryConditions: Story = {
     if (/section\.footnotes\s*\{[^}]*display\s*:\s*none/i.test(styleText)) {
       throw new Error('section.footnotes を非表示にする契約違反があります');
     }
+
+    const popoverStyleElement = document.getElementById(POPOVER_STYLE_ID);
+    if (!(popoverStyleElement instanceof HTMLStyleElement)) {
+      throw new Error('ui-popover の document style が注入されていません');
+    }
+    const popoverStyleText = popoverStyleElement.textContent;
+    if (!popoverStyleText.includes('@media print')) {
+      throw new Error('ui-popover 側の print スタイルが定義されていません');
+    }
   },
 };
 
@@ -628,25 +654,42 @@ export const VisualModeContracts: Story = {
     const host = getFootnote(canvasElement, 'visual-footnote');
     await host.updateComplete;
 
-    const styleElement = document.getElementById('ui-footnote-document-styles');
-    if (!(styleElement instanceof HTMLStyleElement)) {
+    const footnoteStyleElement = document.getElementById('ui-footnote-document-styles');
+    if (!(footnoteStyleElement instanceof HTMLStyleElement)) {
       throw new Error('ui-footnote の document style が注入されていません');
     }
-    const styleText = styleElement.textContent;
+    const popoverStyleElement = document.getElementById(POPOVER_STYLE_ID);
+    if (!(popoverStyleElement instanceof HTMLStyleElement)) {
+      throw new Error('ui-popover の document style が注入されていません');
+    }
 
-    const requiredSnippets = [
+    const footnoteStyleText = footnoteStyleElement.textContent;
+    const popoverStyleText = popoverStyleElement.textContent;
+
+    const requiredFootnoteSnippets = [
       '@media (prefers-reduced-motion: reduce)',
       '@media (forced-colors: active)',
       '@media print',
-      'var(--bg-surface-2',
-      'var(--fg-default',
-      'var(--border-default',
+      'section.footnotes',
       'var(--primary',
     ];
 
-    for (const snippet of requiredSnippets) {
-      if (!styleText.includes(snippet)) {
-        throw new Error(`表示モード契約に必要なスタイル定義が不足しています: ${snippet}`);
+    const requiredPopoverSnippets = [
+      'var(--bg-surface-2',
+      'var(--fg-default',
+      'var(--border-default',
+      'var(--z-popover',
+    ];
+
+    for (const snippet of requiredFootnoteSnippets) {
+      if (!footnoteStyleText.includes(snippet)) {
+        throw new Error(`footnote 表示モード契約に必要な定義が不足しています: ${snippet}`);
+      }
+    }
+
+    for (const snippet of requiredPopoverSnippets) {
+      if (!popoverStyleText.includes(snippet)) {
+        throw new Error(`popover 表示モード契約に必要な定義が不足しています: ${snippet}`);
       }
     }
 

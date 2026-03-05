@@ -1,6 +1,7 @@
-import { autoUpdate } from '@floating-ui/dom';
-import { html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
+import { html, LitElement, nothing, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import type { UiPopover } from '../popover/popover';
+import '../popover/popover';
 
 const DOCUMENT_STYLE_ID = 'ui-footnote-document-styles';
 
@@ -47,61 +48,16 @@ ui-footnote [data-part='trigger']:focus-visible {
   animation: var(--animation-focus);
 }
 
-ui-footnote [data-part='trigger'].is-active-trigger {
-  background: var(--bg-active, oklch(95% 0.01 250));
+ui-footnote ui-popover[data-part='popover-host'] {
+  --ui-popover-max-width: min(90vw, var(--footnote-popover-max-width));
+  --ui-popover-max-height: 60vh;
 }
 
 ui-footnote [data-part='content'] {
-  position: fixed;
-  left: 0;
-  top: 0;
-  /* Popover の UA 既定中央寄せ (inset + margin:auto) を無効化する */
-  right: auto;
-  bottom: auto;
-  margin: 0;
-  z-index: var(--z-popover, 400);
-  box-sizing: border-box;
-  display: none;
-  max-width: min(90vw, var(--footnote-popover-max-width));
-  max-height: 60vh;
   overflow-y: auto;
-  padding: var(--space-3, 12px) var(--space-4, 16px);
-  background: var(--bg-surface-2, oklch(100% 0 0));
-  border: var(--border-width, 1px) solid var(--border-default, oklch(86% 0.01 250));
-  border-radius: var(--radius-md, 6px);
-  box-shadow: var(--elevation-lg, 0 8px 24px oklch(0% 0 0 / 0.12));
-  color: var(--fg-default, oklch(20% 0.01 250));
   font-family: var(--font-sans, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif);
   font-size: var(--text-sm, 13px);
   line-height: var(--line-height-relaxed, 1.75);
-  opacity: 0;
-  transform: translateY(4px);
-  transition:
-    opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-    transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-    display var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9))
-      allow-discrete;
-}
-
-ui-footnote [data-part='content'][popover]:popover-open {
-  display: block;
-  opacity: 1;
-  transform: translateY(0);
-}
-
-@starting-style {
-  ui-footnote [data-part='content'][popover]:popover-open {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-}
-
-ui-footnote [data-part='content'][popover]:not(:popover-open) {
-  opacity: 0;
-  transition:
-    opacity var(--duration-fast, 70ms) var(--ease-in, cubic-bezier(0.55, 0, 1, 0.45)),
-    display var(--duration-fast, 70ms) var(--ease-in, cubic-bezier(0.55, 0, 1, 0.45))
-      allow-discrete;
 }
 
 ui-footnote .footnote-body > :first-child {
@@ -179,8 +135,7 @@ section.footnotes a[href^='#fnref-']:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  ui-footnote [data-part='content'] {
-    transform: none;
+  ui-footnote [data-part='trigger'] {
     transition-duration: var(--duration-instant, 0ms);
   }
 }
@@ -190,29 +145,18 @@ section.footnotes a[href^='#fnref-']:focus-visible {
     color: LinkText;
   }
 
-  ui-footnote [data-part='content'] {
-    border: 2px solid CanvasText;
-    box-shadow: none;
-  }
-
   section.footnotes {
     border-block-start: 1px solid CanvasText;
   }
 }
 
 @media print {
-  ui-footnote [data-part='content'] {
-    display: none !important;
+  ui-footnote [data-part='trigger'] {
+    color: currentColor;
+    text-decoration: underline;
   }
 }
 `;
-
-type PopoverToggleState = 'open' | 'closed';
-type PopoverToggleEvent = Event & { newState?: PopoverToggleState };
-type PopoverElement = HTMLElement & {
-  hidePopover?: () => void;
-  showPopover?: () => void;
-};
 
 @customElement('ui-footnote')
 export class Footnote extends LitElement {
@@ -228,12 +172,8 @@ export class Footnote extends LitElement {
   @property({ type: Boolean, reflect: true })
   shared = false;
 
-  private static readonly _activeTriggerByPopoverId = new Map<string, HTMLAnchorElement>();
-
   private _contentNodes: Node[] = [];
   private _didCaptureContent = false;
-  private _floatingCleanup: (() => void) | null = null;
-  private _observedPopover: PopoverElement | null = null;
 
   override connectedCallback(): void {
     this._captureInitialContentNodes();
@@ -241,26 +181,8 @@ export class Footnote extends LitElement {
     this._injectDocumentStyles();
   }
 
-  override disconnectedCallback(): void {
-    super.disconnectedCallback();
-    this._detachPopoverListeners();
-    this._teardownFloating();
-    this._unregisterActiveTrigger();
-    this._setTriggerState(this._getTriggerElement(), false, false);
-  }
-
   protected override createRenderRoot(): HTMLElement {
     return this;
-  }
-
-  override updated(changedProperties: PropertyValues<this>): void {
-    super.updated(changedProperties);
-
-    if (changedProperties.has('refId') || changedProperties.has('index') || changedProperties.has('shared')) {
-      this._detachPopoverListeners();
-    }
-
-    this._attachPopoverListeners();
   }
 
   private get _resolvedIndex(): number {
@@ -285,6 +207,10 @@ export class Footnote extends LitElement {
 
   private get _resolvedPopoverId(): string {
     return `${this._resolvedRefId}-popover`;
+  }
+
+  private get _resolvedPopoverHostId(): string {
+    return `${this._resolvedRefId}-popover-host`;
   }
 
   private get _resolvedLabelId(): string {
@@ -325,7 +251,7 @@ export class Footnote extends LitElement {
     if (!(node instanceof HTMLElement)) return true;
 
     const part = node.getAttribute('data-part');
-    if (part === 'trigger' || part === 'content') return false;
+    if (part === 'trigger' || part === 'content' || part === 'popover-host') return false;
 
     if (node.classList.contains('footnote-popover-footer')) return false;
     if (node.classList.contains('footnote-list-link')) return false;
@@ -344,24 +270,25 @@ export class Footnote extends LitElement {
     document.head.append(style);
   }
 
-  private _getTriggerElement(): HTMLAnchorElement | null {
-    return this.querySelector<HTMLAnchorElement>('[data-part="trigger"]');
+  private _getSharedPopoverHost(): UiPopover | null {
+    const host = document.getElementById(this._resolvedPopoverHostId);
+    if (!(host instanceof HTMLElement)) return null;
+    if (host.tagName.toLowerCase() !== 'ui-popover') return null;
+    return host as UiPopover;
   }
 
-  private _getOwnPopoverElement(): PopoverElement | null {
-    const popover = this.querySelector<HTMLElement>('[data-part="content"]');
-    if (!popover) return null;
-    if (popover.id !== this._resolvedPopoverId) return null;
-    return popover as PopoverElement;
+  private _getOwnPopoverHost(): UiPopover | null {
+    const host = this.querySelector<HTMLElement>('[data-part="popover-host"]');
+    if (!(host instanceof HTMLElement)) return null;
+    if (host.tagName.toLowerCase() !== 'ui-popover') return null;
+    return host as UiPopover;
   }
 
-  private _getPopoverElement(): PopoverElement | null {
+  private _resolvePopoverHost(): UiPopover | null {
     if (this.shared) {
-      const popover = document.getElementById(this._resolvedPopoverId);
-      return popover instanceof HTMLElement ? (popover as PopoverElement) : null;
+      return this._getSharedPopoverHost();
     }
-
-    return this._getOwnPopoverElement();
+    return this._getOwnPopoverHost();
   }
 
   private _isPrimaryTriggerClick(event: MouseEvent): boolean {
@@ -375,228 +302,31 @@ export class Footnote extends LitElement {
     );
   }
 
-  private _isPopoverOpen(popover: Element): boolean {
-    try {
-      return popover.matches(':popover-open');
-    } catch {
-      return false;
-    }
-  }
-
-  private _showPopover(popover: PopoverElement): boolean {
-    if (typeof popover.showPopover !== 'function') return false;
-
-    try {
-      popover.showPopover();
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  private _hidePopover(popover: PopoverElement): boolean {
-    if (typeof popover.hidePopover !== 'function') return false;
-
-    try {
-      popover.hidePopover();
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  private _setTriggerState(trigger: HTMLAnchorElement | null, expanded: boolean, isActive: boolean): void {
-    if (!trigger) return;
-    trigger.setAttribute('aria-expanded', String(expanded));
-    trigger.classList.toggle('is-active-trigger', isActive);
-  }
-
-  private _setFocusReturn(popover: HTMLElement, value: boolean): void {
-    popover.dataset['returnFocus'] = value ? 'true' : 'false';
-  }
-
-  private _shouldReturnFocus(popover: HTMLElement): boolean {
-    return popover.dataset['returnFocus'] !== 'false';
-  }
-
-  private _attachPopoverListeners(): void {
-    const popover = this._getPopoverElement();
-    if (!popover) return;
-    this._attachPopoverListenersTo(popover);
-  }
-
-  private _attachPopoverListenersTo(popover: PopoverElement): void {
-    if (this._observedPopover === popover) return;
-
-    this._detachPopoverListeners();
-    popover.addEventListener('toggle', this._onPopoverToggle as EventListener);
-    popover.addEventListener('keydown', this._onPopoverKeyDown);
-    this._observedPopover = popover;
-  }
-
-  private _detachPopoverListeners(): void {
-    if (!this._observedPopover) return;
-
-    this._observedPopover.removeEventListener('toggle', this._onPopoverToggle as EventListener);
-    this._observedPopover.removeEventListener('keydown', this._onPopoverKeyDown);
-    this._observedPopover = null;
-  }
-
-  private _registerActiveTrigger(popoverId: string, trigger: HTMLAnchorElement): void {
-    const previous = Footnote._activeTriggerByPopoverId.get(popoverId);
-    if (previous && previous !== trigger) {
-      this._setTriggerState(previous, false, false);
-    }
-    Footnote._activeTriggerByPopoverId.set(popoverId, trigger);
-  }
-
-  private _unregisterActiveTrigger(): void {
-    const trigger = this._getTriggerElement();
-    if (!trigger) return;
-
-    for (const [popoverId, activeTrigger] of Footnote._activeTriggerByPopoverId.entries()) {
-      if (activeTrigger === trigger) {
-        Footnote._activeTriggerByPopoverId.delete(popoverId);
-      }
-    }
-  }
-
-  private _startFloating(trigger: HTMLElement, popover: PopoverElement): void {
-    this._teardownFloating();
-
-    const GAP = 8;
-
-    // Popover API の top layer 上では position: fixed の座標系とビューポートが一致するため、
-    // getBoundingClientRect() の値をそのまま left / top に使用できる。
-    // floating-ui の computePosition は含有ブロック補正を行うが、top layer ではその補正が
-    // 不要なため、環境によっては位置がずれる。直接計算で回避する。
-    const updatePosition = (): void => {
-      const ref = trigger.getBoundingClientRect();
-      const fw = popover.offsetWidth;
-      const fh = popover.offsetHeight;
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-
-      // 配置: bottom（トリガー下端 + GAP）、上に反転判定
-      let top = ref.bottom + GAP;
-      if (top + fh > vh - GAP && ref.top - fh - GAP > GAP) {
-        top = ref.top - fh - GAP;
-      }
-
-      // 水平: トリガー左端揃え → 画面内にクランプ
-      let left = ref.left;
-      if (left + fw > vw - GAP) left = vw - fw - GAP;
-      if (left < GAP) left = GAP;
-
-      popover.style.left = `${String(Math.round(left))}px`;
-      popover.style.top = `${String(Math.round(top))}px`;
-    };
-
-    updatePosition();
-    this._floatingCleanup = autoUpdate(trigger, popover, updatePosition);
-  }
-
-  private _teardownFloating(): void {
-    if (!this._floatingCleanup) return;
-    this._floatingCleanup();
-    this._floatingCleanup = null;
-  }
-
-  private _resolveToggleState(event: Event, popover: Element): PopoverToggleState {
-    const toggleEvent = event as PopoverToggleEvent;
-    if (toggleEvent.newState === 'open' || toggleEvent.newState === 'closed') {
-      return toggleEvent.newState;
-    }
-    return this._isPopoverOpen(popover) ? 'open' : 'closed';
-  }
-
-  private _onTriggerClick = (event: MouseEvent): void => {
+  private _onSharedTriggerClick = (event: MouseEvent): void => {
     if (!this._isPrimaryTriggerClick(event)) return;
     if (!this._supportsPopoverApi) return;
 
     const trigger = event.currentTarget;
-    if (!(trigger instanceof HTMLAnchorElement)) return;
+    if (!(trigger instanceof HTMLElement)) return;
 
-    const popover = this._getPopoverElement();
-    if (!popover) return;
+    const popoverHost = this._getSharedPopoverHost();
+    if (!popoverHost) return;
 
-    this._attachPopoverListenersTo(popover);
     event.preventDefault();
-
-    this._registerActiveTrigger(popover.id, trigger);
-
-    if (this._isPopoverOpen(popover)) {
-      this._setFocusReturn(popover, true);
-      this._hidePopover(popover);
-      return;
-    }
-
-    this._setFocusReturn(popover, true);
-    this._showPopover(popover);
-    this._startFloating(trigger, popover);
+    popoverHost.openForTrigger(trigger, { returnFocus: true });
   };
 
   private _onFooterLinkClick = (): void => {
-    const popover = this._getPopoverElement();
-    if (!popover) return;
-
-    this._setFocusReturn(popover, false);
-    this._hidePopover(popover);
+    const popoverHost = this._resolvePopoverHost();
+    if (!popoverHost) return;
+    popoverHost.close({ returnFocus: false });
   };
 
-  private _onPopoverKeyDown = (event: KeyboardEvent): void => {
-    const popover = event.currentTarget;
-    if (!(popover instanceof HTMLElement)) return;
-    if (!this._isPopoverOpen(popover)) return;
-
-    if (event.key === 'Escape') {
-      this._setFocusReturn(popover, true);
-      if (this._hidePopover(popover as PopoverElement)) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-      return;
-    }
-
+  private _onFooterLinkKeyDown = (event: KeyboardEvent): void => {
     if (event.key !== 'Tab' || event.shiftKey) return;
-    if (!(event.target instanceof Element)) return;
-    if (!event.target.classList.contains('footnote-list-link')) return;
-
-    this._setFocusReturn(popover, false);
-    this._hidePopover(popover as PopoverElement);
-  };
-
-  private _onPopoverToggle = (event: Event): void => {
-    const popover = event.currentTarget;
-    if (!(popover instanceof HTMLElement)) return;
-
-    const state = this._resolveToggleState(event, popover);
-    const isOpen = state === 'open';
-    const trigger = this._getTriggerElement();
-    const activeTrigger = Footnote._activeTriggerByPopoverId.get(popover.id);
-    const activeTriggerElement = trigger !== null && activeTrigger === trigger ? trigger : null;
-
-    this._setTriggerState(
-      trigger,
-      isOpen && activeTriggerElement !== null,
-      isOpen && activeTriggerElement !== null,
-    );
-
-    if (isOpen) {
-      if (activeTriggerElement) {
-        this._startFloating(activeTriggerElement, popover as PopoverElement);
-      }
-      return;
-    }
-
-    if (activeTriggerElement) {
-      Footnote._activeTriggerByPopoverId.delete(popover.id);
-      if (this._shouldReturnFocus(popover)) {
-        activeTriggerElement.focus();
-      }
-    }
-
-    this._teardownFloating();
+    const popoverHost = this._resolvePopoverHost();
+    if (!popoverHost) return;
+    popoverHost.close({ returnFocus: false });
   };
 
   private _renderBodyContent(): TemplateResult | typeof nothing {
@@ -604,46 +334,85 @@ export class Footnote extends LitElement {
     return html`${this._contentNodes}`;
   }
 
-  override render(): TemplateResult {
+  private _renderTriggerTemplate(sharedTrigger: boolean): TemplateResult {
     const refId = this._resolvedRefId;
     const index = this._resolvedIndex;
     const triggerId = this._resolvedTriggerId;
     const popoverId = this._resolvedPopoverId;
-    const labelId = this._resolvedLabelId;
+
+    if (sharedTrigger) {
+      return html`
+        <a
+          id="${triggerId}"
+          data-part="trigger"
+          href="#${refId}"
+          role="doc-noteref"
+          aria-controls="${popoverId}"
+          aria-expanded="false"
+          aria-details="${popoverId}"
+          @click="${this._onSharedTriggerClick}"
+        >
+          <sup>[${String(index)}]</sup>
+        </a>
+      `;
+    }
 
     return html`
       <a
         id="${triggerId}"
         data-part="trigger"
+        slot="trigger"
         href="#${refId}"
         role="doc-noteref"
         aria-controls="${popoverId}"
         aria-expanded="false"
         aria-details="${popoverId}"
-        @click="${this._onTriggerClick}"
       >
         <sup>[${String(index)}]</sup>
       </a>
-      ${this.shared
-        ? nothing
-        : html`
-            <div
-              id="${popoverId}"
-              data-part="content"
-              popover="auto"
-              role="note"
-              aria-labelledby="${labelId}"
-              data-return-focus="true"
+    `;
+  }
+
+  override render(): TemplateResult {
+    const refId = this._resolvedRefId;
+    const index = this._resolvedIndex;
+    const popoverId = this._resolvedPopoverId;
+    const labelId = this._resolvedLabelId;
+
+    if (this.shared) {
+      return this._renderTriggerTemplate(true);
+    }
+
+    return html`
+      <ui-popover
+        id="${this._resolvedPopoverHostId}"
+        data-part="popover-host"
+        placement="bottom-start"
+        .offset=${8}
+        keep-link-fallback
+      >
+        ${this._renderTriggerTemplate(false)}
+        <div
+          id="${popoverId}"
+          data-part="content"
+          slot="content"
+          role="note"
+          aria-labelledby="${labelId}"
+        >
+          <span id="${labelId}" class="sr-only">脚注 ${String(index)}</span>
+          <div class="footnote-body">${this._renderBodyContent()}</div>
+          <footer class="footnote-popover-footer">
+            <a
+              href="#${refId}"
+              class="footnote-list-link"
+              @click="${this._onFooterLinkClick}"
+              @keydown="${this._onFooterLinkKeyDown}"
             >
-              <span id="${labelId}" class="sr-only">脚注 ${String(index)}</span>
-              <div class="footnote-body">${this._renderBodyContent()}</div>
-              <footer class="footnote-popover-footer">
-                <a href="#${refId}" class="footnote-list-link" @click="${this._onFooterLinkClick}">
-                  脚注一覧で見る <span aria-hidden="true">→</span>
-                </a>
-              </footer>
-            </div>
-          `}
+              脚注一覧で見る <span aria-hidden="true">→</span>
+            </a>
+          </footer>
+        </div>
+      </ui-popover>
     `;
   }
 }
