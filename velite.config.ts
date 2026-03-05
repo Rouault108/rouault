@@ -2,19 +2,29 @@ import rehypeKatex from 'rehype-katex';
 import remarkMath from 'remark-math';
 import { defineCollection, defineConfig, s } from 'velite';
 
+import { rehypeDisallowDangerousProps } from './lib/rehype/disallow-dangerous-props.js';
 import { rehypeDisallowStaticMark } from './lib/rehype/disallow-static-mark.js';
 import { rehypeInlineCodeTranslateNo } from './lib/rehype/inline-code-translate-no.js';
 import { rehypeOrderedListContracts } from './lib/rehype/ordered-list-contracts.js';
+import { rehypeRouaultComponents } from './lib/rehype/rouault-components.js';
+import { remarkDisallowRawHtml } from './lib/remark/disallow-raw-html.js';
+import { remarkRouaultDirectives } from './lib/remark/rouault-directives.js';
 
 const notes = defineCollection({
   name: 'Note',
-  pattern: 'notes/**/*.md',
+  pattern: '**/*.md',
   schema: s
     .object({
       title: s.string().optional(),
+      description: s.string().optional(),
       slug: s.path(),
       date: s.isodate().optional(),
       updated: s.isodate().optional(),
+      genre: s.array(s.string()).optional(),
+      cover: s.string().optional(),
+      license: s.string().optional(),
+      licenseNote: s.string().optional(),
+      draft: s.boolean().default(false),
       content: s.markdown(),
       excerpt: s.excerpt().optional(),
       toc: s.toc().optional(),
@@ -35,11 +45,15 @@ export default defineConfig({
   markdown: {
     remarkPlugins: [
       remarkMath,
+      remarkDisallowRawHtml,
+      remarkRouaultDirectives,
     ],
     rehypePlugins: [
       rehypeKatex,
+      rehypeRouaultComponents,
       rehypeInlineCodeTranslateNo,
       rehypeOrderedListContracts,
+      rehypeDisallowDangerousProps,
       rehypeDisallowStaticMark,
     ],
   },
