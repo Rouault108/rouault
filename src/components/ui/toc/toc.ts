@@ -16,6 +16,13 @@ export interface Heading {
 	level: number;
 }
 
+export interface UiTocActiveChangeDetail {
+	id: string;
+	source: 'scroll' | 'click';
+	index: number;
+	total: number;
+}
+
 /**
  * 目次 (Table of Contents) コンポーネント `<ui-toc>`
  *
@@ -136,9 +143,10 @@ export class Toc extends LitElement {
 			overflow: hidden;
 			text-overflow: ellipsis;
 			white-space: nowrap;
-			color: var(--fg-muted, oklch(48% 0.01 250));
-			text-decoration: none;
-			border-radius: var(--radius-sm, 4px);
+				color: var(--fg-muted, oklch(48% 0.01 250));
+				/* 例外許可: TOCは構造型リンク。現在地インジケータとフォーカスリングで非色シグナルを担保する。 */
+				text-decoration: none;
+				border-radius: var(--radius-sm, 4px);
 			/*
 			 * ホバー時は文字色のみ変化させる（背景色変更は視覚ノイズになるため禁止）
 			 */
@@ -329,9 +337,12 @@ export class Toc extends LitElement {
 			this._setupObserver();
 		}
 
-		if (changedProperties.has('activeId') && !this._internalUpdate) {
-			// 外部からの activeId 変更: クリック相当として扱い、フェードイン適用
-			this._activeIdSource = 'click';
+		if (changedProperties.has('activeId')) {
+			if (!this._internalUpdate) {
+				// 外部からの activeId 変更: クリック相当として扱い、フェードイン適用
+				this._activeIdSource = 'click';
+			}
+			this._emitActiveChange();
 		}
 
 		// 内部更新フラグをリセット
@@ -421,6 +432,23 @@ export class Toc extends LitElement {
 		this._internalUpdate = true;
 		this.activeId = id;
 		this._activeIdSource = source;
+	}
+
+	/** 現在のアクティブ見出し情報を外部へ通知する */
+	private _emitActiveChange(): void {
+		const index = this.headers.findIndex((heading) => heading.id === this.activeId);
+		this.dispatchEvent(
+			new CustomEvent<UiTocActiveChangeDetail>('ui-toc-active-change', {
+				bubbles: true,
+				composed: true,
+				detail: {
+					id: this.activeId,
+					source: this._activeIdSource,
+					index,
+					total: this.headers.length,
+				},
+			}),
+		);
 	}
 
 	/**

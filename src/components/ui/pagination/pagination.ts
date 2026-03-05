@@ -194,11 +194,12 @@ export class Pagination extends LitElement {
       padding: 0;
 
       /* Typography */
-      font-family: var(--font-sans);
-      font-size: var(--text-base, 0.875rem);
-      font-variant-numeric: tabular-nums; /* 等幅数字: 仕様の注記に従い font-mono は不使用 */
-      line-height: 1;
-      text-decoration: none;
+	      font-family: var(--font-sans);
+	      font-size: var(--text-base, 0.875rem);
+	      font-variant-numeric: tabular-nums; /* 等幅数字: 仕様の注記に従い font-mono は不使用 */
+	      line-height: 1;
+	      /* 例外許可: Paginationはボタン型リンク。輪郭・背景・現在地インジケータで非色シグナルを示す。 */
+	      text-decoration: none;
 
       /* Shape */
       border-radius: var(--radius-md, 0.375rem);

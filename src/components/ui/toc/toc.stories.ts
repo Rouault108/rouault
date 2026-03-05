@@ -80,6 +80,26 @@ const meta: Meta<Toc> = {
 export default meta;
 type Story = StoryObj<Toc>;
 
+function getShadowStylesText(shadowRoot: ShadowRoot): string {
+	const inlineStyles = Array.from(shadowRoot.querySelectorAll('style'))
+		.map((style) => style.textContent ?? '')
+		.join('\n');
+
+	const adoptedStyles = shadowRoot.adoptedStyleSheets
+		.map((sheet) => {
+			try {
+				return Array.from(sheet.cssRules)
+					.map((rule) => rule.cssText)
+					.join('\n');
+			} catch {
+				return '';
+			}
+		})
+		.join('\n');
+
+	return `${inlineStyles}\n${adoptedStyles}`;
+}
+
 // ──────────────────────────────────────────────
 // サンプルデータ
 // ──────────────────────────────────────────────
@@ -1101,17 +1121,38 @@ export const AccessibilityStructure: Story = {
 			);
 		}
 
-		// テスト: 全リンクの href が # で始まる
-		allLinks.forEach((link, idx) => {
-			const href = link.getAttribute('href');
-			if (!href?.startsWith('#')) {
-				throw new Error(`Link[${String(idx)}] href should start with "#", got "${href ?? 'null'}"`);
-			}
-		});
+			// テスト: 全リンクの href が # で始まる
+			allLinks.forEach((link, idx) => {
+				const href = link.getAttribute('href');
+				if (!href?.startsWith('#')) {
+					throw new Error(`Link[${String(idx)}] href should start with "#", got "${href ?? 'null'}"`);
+				}
+			});
 
-		console.log('✅ All tests passed for AccessibilityStructure story');
-	},
-};
+			// 構造型リンク契約: デフォルトは下線なし
+			const firstLink = allLinks[0];
+			if (!firstLink) throw new Error('first toc-link not found');
+			if (getComputedStyle(firstLink).textDecorationLine !== 'none') {
+				throw new Error('toc-link は構造型リンクとしてデフォルト下線なしである必要があります');
+			}
+
+			// 構造型リンク契約: 現在地はインジケータ定義と active class の組み合わせで識別できる
+			if (!activeLink.classList.contains('is-active')) {
+				throw new Error('active toc-link に is-active クラスが必要です');
+			}
+
+			// 構造型リンク契約: focus-visible のルールが定義されている
+			const styleText = getShadowStylesText(shadow);
+			if (!styleText.includes('.toc-link:focus-visible')) {
+				throw new Error('toc-link の focus-visible 契約が不足しています');
+			}
+			if (!styleText.includes('.toc-link.is-active.is-scroll::before')) {
+				throw new Error('toc-link の現在地インジケータ契約が不足しています');
+			}
+
+			console.log('✅ All tests passed for AccessibilityStructure story');
+		},
+	};
 
 // ──────────────────────────────────────────────
 // アクセシビリティ: キーボード / タッチターゲット

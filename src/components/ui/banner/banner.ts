@@ -134,6 +134,30 @@ export class Banner extends LitElement {
       margin: 0;
     }
 
+    /*
+     * actionリンク契約:
+     * slot="action" に渡された素の <a> でも、常時下線でリンク判別性を担保する。
+     */
+    .actions slot::slotted(a[slot='action'][href]) {
+      color: inherit;
+      font-weight: var(--font-medium);
+      text-decoration: underline;
+      text-decoration-color: currentColor;
+      text-decoration-thickness: var(--border-width);
+      text-underline-offset: 0.15em;
+      border-radius: var(--focus-ring-radius);
+    }
+
+    .actions slot::slotted(a[slot='action'][href]:hover) {
+      text-decoration-thickness: var(--border-width-thick);
+    }
+
+    .actions slot::slotted(a[slot='action'][href]:focus-visible) {
+      outline: var(--focus-ring-width) solid var(--focus-ring-color);
+      outline-offset: var(--focus-ring-offset);
+      animation: var(--animation-focus);
+    }
+
     .actions[hidden] {
       display: none !important;
     }
@@ -198,6 +222,10 @@ export class Banner extends LitElement {
 
       .dismiss {
         border: 1px solid ButtonText;
+      }
+
+      .actions slot::slotted(a[slot='action'][href]) {
+        color: LinkText;
       }
     }
 

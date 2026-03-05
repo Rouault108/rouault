@@ -261,17 +261,18 @@ export class Tag extends LitElement {
     }
 
     /* リンク要素 */
-    .tag-link {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-1, 4px);
+	    .tag-link {
+	      display: inline-flex;
+	      align-items: center;
+	      gap: var(--space-1, 4px);
       width: 100%;
       min-width: 0;
-      overflow: hidden;
-      color: inherit;
-      text-decoration: none;
-      border-radius: inherit;
-      position: relative;
+	      overflow: hidden;
+	      color: inherit;
+	      /* 例外許可: Tagはチップ型リンク。枠線・形状・フォーカスリングで識別する。 */
+	      text-decoration: none;
+	      border-radius: inherit;
+	      position: relative;
       /* ボーダーはホスト側で管理するため、リンク自体は transparent */
     }
 

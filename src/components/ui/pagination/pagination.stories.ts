@@ -49,9 +49,25 @@ function getNext(sh: ShadowRoot, storyName: string): Element {
 
 /** shadow style のテキストを取得 */
 function getStyleText(sh: ShadowRoot, storyName: string): string {
-  const styleEl = sh.querySelector('style');
-  if (!styleEl) throw new Error(`[${storyName}] shadow style が見つかりません`);
-  return styleEl.textContent;
+  const inlineStyles = Array.from(sh.querySelectorAll('style'))
+    .map((style) => style.textContent ?? '')
+    .join('\n');
+
+  const adoptedStyles = sh.adoptedStyleSheets
+    .map((sheet) => {
+      try {
+        return Array.from(sheet.cssRules)
+          .map((rule) => rule.cssText)
+          .join('\n');
+      } catch {
+        return '';
+      }
+    })
+    .join('\n');
+
+  const merged = `${inlineStyles}\n${adoptedStyles}`.trim();
+  if (!merged) throw new Error(`[${storyName}] shadow style が見つかりません`);
+  return merged;
 }
 
 // =====================================================
@@ -1702,6 +1718,50 @@ export const ForcedColorsMode: Story = {
       throw new Error(`[${S}] Forced Colors の disabled GrayText が存在しません`);
     }
     console.log('✅ [ForcedColorsMode] 全テスト通過');
+  },
+};
+
+/**
+ * 構造型リンク契約:
+ * - デフォルトは下線なし
+ * - 現在地は物理インジケータ（inset shadow）で識別
+ * - focus-visible の明示ルールを保持
+ */
+export const StructuralLinkContract: Story = {
+  render: () => html`
+    <ui-pagination
+      id="structural-link-contract"
+      current="5"
+      total="10"
+      .getHref="${defaultHref}"
+    ></ui-pagination>
+  `,
+  play: async ({ canvasElement }) => {
+    const S = 'StructuralLinkContract';
+    const el = canvasElement.querySelector<Pagination>('#structural-link-contract');
+    if (!el) throw new Error(`[${S}] ui-pagination が見つかりません`);
+    await el.updateComplete;
+
+    const sh = getShadow(el, S);
+    const styleText = getStyleText(sh, S);
+    if (!styleText.includes('.page-btn:focus-visible')) {
+      throw new Error(`[${S}] page-btn の focus-visible 契約が不足しています`);
+    }
+    if (!styleText.includes("box-shadow: inset")) {
+      throw new Error(`[${S}] 現在地インジケータ（inset shadow）契約が不足しています`);
+    }
+
+    const current = sh.querySelector<HTMLAnchorElement>('.page-btn[aria-current="page"]');
+    if (!current) throw new Error(`[${S}] 現在ページリンクが見つかりません`);
+    if (getComputedStyle(current).textDecorationLine !== 'none') {
+      throw new Error(`[${S}] page-btn は構造型リンクとして下線なしを維持する必要があります`);
+    }
+
+    const nonCurrent = sh.querySelector<HTMLAnchorElement>('.page-btn:not([aria-current="page"])');
+    if (!nonCurrent) throw new Error(`[${S}] 非アクティブページリンクが見つかりません`);
+    if (getComputedStyle(nonCurrent).textDecorationLine !== 'none') {
+      throw new Error(`[${S}] 非アクティブ page-btn は下線なしである必要があります`);
+    }
   },
 };
 

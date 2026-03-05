@@ -197,6 +197,7 @@ export class TreeItem extends LitElement {
 
     .label-link {
       color: inherit;
+      /* 例外許可: Tree Itemは構造型リンク。行背景/選択状態/フォーカスリングで識別する。 */
       text-decoration: none;
       display: inline-block;
       width: 100%;

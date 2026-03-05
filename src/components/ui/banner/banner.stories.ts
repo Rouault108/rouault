@@ -70,6 +70,12 @@ const getActions = (host: Banner): HTMLElement => {
   return actions;
 };
 
+const getActionLink = (host: Banner): HTMLAnchorElement => {
+  const actionLink = host.querySelector<HTMLAnchorElement>('a[slot="action"][href]');
+  if (!actionLink) throw new Error('slot="action" のリンクが見つかりません');
+  return actionLink;
+};
+
 const getDismissButton = (host: Banner): HTMLButtonElement => {
   const dismiss = host.shadowRoot?.querySelector<HTMLButtonElement>('button.dismiss');
   if (!dismiss) throw new Error('button.dismiss が見つかりません');
@@ -277,6 +283,11 @@ export const VariantStateCombinations: Story = {
     if (warning.shadowRoot?.querySelector('button.dismiss')) {
       throw new Error('warning は dismissible ではないため button.dismiss を持つべきではありません');
     }
+
+    const infoActionStyle = getComputedStyle(getActionLink(info));
+    if (infoActionStyle.textDecorationLine !== 'underline') {
+      throw new Error('banner action link は常時下線である必要があります');
+    }
   },
 };
 
@@ -376,6 +387,11 @@ export const SlotBoundaryConditions: Story = {
     }
     if (getActions(multiAction).hidden) {
       throw new Error('複数 action 指定時は .actions 表示が必要です');
+    }
+
+    const linkStyle = getComputedStyle(getActionLink(multiAction));
+    if (linkStyle.textDecorationLine !== 'underline') {
+      throw new Error('slot action のアンカーはクラスなしでも下線契約を満たす必要があります');
     }
   },
 };
