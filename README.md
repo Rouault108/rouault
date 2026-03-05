@@ -705,7 +705,6 @@ pnpm lint:fix
 | 履歴管理 (History API) | ルーター | |
 | サイドバー ↔ メイン連携 | サイドバー, ルーター | |
 | 階層選択の状態保持 (localStorage) | サイドバー | |
-| パンくずリスト (`ui-breadcrumb`) | ルーター | |
 
 ---
 
