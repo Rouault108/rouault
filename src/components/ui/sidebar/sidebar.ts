@@ -120,6 +120,9 @@ export class UiSidebar extends LitElement {
   @property({ type: String })
   heading = 'ナビゲーション';
 
+  @property({ type: Number, reflect: true, attribute: 'fixed-breakpoint' })
+  fixedBreakpoint = 1280;
+
   @query('ui-sidebar-shell')
   private _shellElement!: UiSidebarShell | null;
 
@@ -142,7 +145,11 @@ export class UiSidebar extends LitElement {
       return;
     }
 
-    if (changedProperties.has('state') || changedProperties.has('mode')) {
+    if (
+      changedProperties.has('state')
+      || changedProperties.has('mode')
+      || changedProperties.has('fixedBreakpoint')
+    ) {
       this._syncStateToShell();
     }
   }
@@ -172,7 +179,7 @@ export class UiSidebar extends LitElement {
 
     this._shellObserver.observe(this._shellElement, {
       attributes: true,
-      attributeFilter: ['mode', 'data-state'],
+      attributeFilter: ['mode', 'data-state', 'fixed-breakpoint'],
     });
   }
 
@@ -193,6 +200,10 @@ export class UiSidebar extends LitElement {
     if (this._shellElement.mode !== this.mode) {
       this._shellElement.mode = this.mode;
     }
+
+    if (this._shellElement.fixedBreakpoint !== this.fixedBreakpoint) {
+      this._shellElement.fixedBreakpoint = this.fixedBreakpoint;
+    }
   }
 
   private _syncStateFromShell(): void {
@@ -202,14 +213,20 @@ export class UiSidebar extends LitElement {
 
     const nextState = this._shellElement.state;
     const nextMode = this._shellElement.mode;
+    const nextFixedBreakpoint = this._shellElement.fixedBreakpoint;
 
-    if (nextState === this.state && nextMode === this.mode) {
+    if (
+      nextState === this.state
+      && nextMode === this.mode
+      && nextFixedBreakpoint === this.fixedBreakpoint
+    ) {
       return;
     }
 
     this._syncFromShellInProgress = true;
     this.state = nextState;
     this.mode = nextMode;
+    this.fixedBreakpoint = nextFixedBreakpoint;
     this._syncFromShellInProgress = false;
   }
 
@@ -268,11 +285,12 @@ export class UiSidebar extends LitElement {
 
   override render() {
     return html`
-      <ui-sidebar-shell
-        data-state=${this.state}
-        mode=${this.mode}
-        @ui-sidebar-state-change=${this._onShellStateChange}
-      >
+        <ui-sidebar-shell
+          data-state=${this.state}
+          mode=${this.mode}
+          .fixedBreakpoint=${this.fixedBreakpoint}
+          @ui-sidebar-state-change=${this._onShellStateChange}
+        >
         <div class="sidebar-head" slot="header">
           <h2 class="heading">${this.heading}</h2>
           <slot name="header-actions"></slot>
