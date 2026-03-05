@@ -8,8 +8,8 @@ const NAV_LABEL = 'メインナビゲーション';
 const FOCUSABLE_SELECTOR =
   'button:not([disabled]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-/** モード判定用メディアクエリ（xl ブレークポイント） */
-const XL_BREAKPOINT = '(min-width: 1280px)';
+/** Fixed/Overlay切替の最小許容値 */
+const MIN_BREAKPOINT = 320;
 
 /** LocalStorage 永続化キー */
 const STORAGE_KEY = 'rouault.sidebar.state';
@@ -174,6 +174,9 @@ export class UiSidebarShell extends LitElement {
   @property({ reflect: true })
   mode: SidebarMode = 'fixed';
 
+  @property({ type: Number, reflect: true, attribute: 'fixed-breakpoint' })
+  fixedBreakpoint = 1280;
+
   @query('nav')
   private _navElement!: HTMLElement;
 
@@ -206,6 +209,10 @@ export class UiSidebarShell extends LitElement {
       /* 初期状態に合わせて inert/visibility を同期 */
       this._syncInitialVisibility();
       return;
+    }
+
+    if (changedProperties.has('fixedBreakpoint')) {
+      this._initMediaQuery();
     }
 
     if (changedProperties.has('state')) {
@@ -279,8 +286,10 @@ export class UiSidebarShell extends LitElement {
   /** matchMedia を初期化しモードを自動判定する */
   private _initMediaQuery(): void {
     if (typeof window === 'undefined') return;
-    this._mediaQuery = window.matchMedia(XL_BREAKPOINT);
-    this.mode = this._mediaQuery.matches ? 'fixed' : 'overlay';
+    this._destroyMediaQuery();
+
+    this._mediaQuery = window.matchMedia(this._buildMediaQuery());
+    this._applyModeFromMediaQuery(this._mediaQuery.matches);
     this._mediaQuery.addEventListener('change', this._onMediaQueryChange);
   }
 
@@ -288,6 +297,26 @@ export class UiSidebarShell extends LitElement {
   private _destroyMediaQuery(): void {
     this._mediaQuery?.removeEventListener('change', this._onMediaQueryChange);
     this._mediaQuery = null;
+  }
+
+  /** 現在の固定ブレークポイントから media query 文字列を組み立てる */
+  private _buildMediaQuery(): string {
+    const resolved = this._resolveFixedBreakpoint(this.fixedBreakpoint);
+    return `(min-width: ${String(resolved)}px)`;
+  }
+
+  /** 不正値を保護した固定ブレークポイントを返す */
+  private _resolveFixedBreakpoint(value: number): number {
+    if (!Number.isFinite(value)) {
+      return 1280;
+    }
+    const normalized = Math.trunc(value);
+    return normalized >= MIN_BREAKPOINT ? normalized : MIN_BREAKPOINT;
+  }
+
+  /** matchMedia の評価結果を mode に反映する */
+  private _applyModeFromMediaQuery(isFixed: boolean): void {
+    this.mode = isFixed ? 'fixed' : 'overlay';
   }
 
   /** 初回レンダリング時に collapsed なら即座に inert/visibility を同期 */
@@ -446,7 +475,7 @@ export class UiSidebarShell extends LitElement {
 
   /** メディアクエリ変更ハンドラ */
   private _onMediaQueryChange = (event: MediaQueryListEvent): void => {
-    this.mode = event.matches ? 'fixed' : 'overlay';
+    this._applyModeFromMediaQuery(event.matches);
   };
 
   /** スクリムクリックハンドラ */
