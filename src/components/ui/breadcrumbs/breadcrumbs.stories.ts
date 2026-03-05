@@ -98,7 +98,7 @@ export const CollapsedWithDropdown: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const host = canvasElement.querySelector<Breadcrumbs>('#collapsed-dropdown');
-		if (!host) throw new Error('ui-breadcrumbs not found');
+		if (!host) throw new Error('ui-breadcrumbsが見つかりません');
 		await host.updateComplete;
 
 		const items = host.shadowRoot?.querySelectorAll('.breadcrumb-item');
@@ -126,8 +126,8 @@ export const CollapsedWithDropdown: Story = {
 		}
 
 		const hiddenMenuItems = dropdown.querySelectorAll('ui-menu-item');
-		if (hiddenMenuItems.length !== 3) {
-			throw new Error(`Expected 3 hidden menu items, got ${String(hiddenMenuItems.length)}`);
+		if (hiddenMenuItems.length !== 4) {
+			throw new Error(`4つの hidden menu itemsを期待しましたが、 ${String(hiddenMenuItems.length)}となりました`);
 		}
 	},
 };
