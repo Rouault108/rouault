@@ -1,15 +1,16 @@
 export type HastProperties = Record<string, unknown>;
 
-export type HastNode = {
+export interface HastNode {
   type?: string;
   tagName?: string;
+  value?: string;
   properties?: HastProperties;
   children?: HastNode[];
-};
+}
 
-export type VFileLike = {
+export interface VFileLike {
   path?: string;
-};
+}
 
 export const toInteger = (value: unknown): number | null => {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -25,9 +26,7 @@ export const toInteger = (value: unknown): number | null => {
 export const getDigits = (value: number): number => Math.abs(value).toString().length;
 
 export const getOrCreateProperties = (node: HastNode): HastProperties => {
-  if (!node.properties) {
-    node.properties = {};
-  }
+  node.properties ??= {};
   return node.properties;
 };
 
@@ -37,7 +36,7 @@ export const setStyleCustomProperty = (
   value: string,
 ): void => {
   const styleMap = new Map<string, string>();
-  const rawStyle = properties.style;
+  const rawStyle = properties['style'];
 
   if (typeof rawStyle === 'string') {
     const declarations = rawStyle.split(';');
@@ -51,5 +50,7 @@ export const setStyleCustomProperty = (
   }
 
   styleMap.set(name, value);
-  properties.style = [...styleMap.entries()].map(([key, itemValue]) => `${key}: ${itemValue}`).join('; ');
+  properties['style'] = [...styleMap.entries()]
+    .map(([key, itemValue]) => `${key}: ${itemValue}`)
+    .join('; ');
 };
