@@ -160,7 +160,9 @@ export const Default: Story = {
     }
 
     if (treeItem.getAttribute('aria-level') !== '1') {
-      throw new Error(`Expected aria-level to be "1", got "${String(treeItem.getAttribute('aria-level'))}"`);
+      throw new Error(
+        `Expected aria-level to be "1", got "${String(treeItem.getAttribute('aria-level'))}"`,
+      );
     }
 
     const itemElement = treeItem.shadowRoot?.querySelector<HTMLElement>('.item');
@@ -169,7 +171,9 @@ export const Default: Story = {
     }
 
     if (itemElement.getAttribute('tabindex') !== '0') {
-      throw new Error(`Expected internal item tabindex to be "0", got "${String(itemElement.getAttribute('tabindex'))}"`);
+      throw new Error(
+        `Expected internal item tabindex to be "0", got "${String(itemElement.getAttribute('tabindex'))}"`,
+      );
     }
 
     console.log('✅ All tests passed for Default story');
@@ -245,7 +249,9 @@ export const AllDensities: Story = {
       throw new Error(`Expected normal density height around 32px, got ${String(normalHeight)}px`);
     }
     if (compactHeight < 22 || compactHeight > 26) {
-      throw new Error(`Expected compact density height around 24px, got ${String(compactHeight)}px`);
+      throw new Error(
+        `Expected compact density height around 24px, got ${String(compactHeight)}px`,
+      );
     }
   },
 };
@@ -367,7 +373,9 @@ export const DeepNesting: Story = {
       throw new Error(`Expected root aria-level="1", got "${String(rootLevel)}"`);
     }
 
-    const thirdLevelNode = canvasElement.querySelector<TreeItem>('ui-tree-item[label="components"]');
+    const thirdLevelNode = canvasElement.querySelector<TreeItem>(
+      'ui-tree-item[label="components"]',
+    );
     if (!thirdLevelNode) {
       throw new Error('Third level tree item not found');
     }
@@ -473,8 +481,18 @@ export const SelectedAndExpanded: Story = {
 export const CompactSelectedExpanded: Story = {
   render: () => html`
     <ui-tree-item label="components" icon="lucide:folder" density="compact" selected expanded>
-      <ui-tree-item slot="children" label="button.ts" icon="lucide:file-code" density="compact"></ui-tree-item>
-      <ui-tree-item slot="children" label="input.ts" icon="lucide:file-code" density="compact"></ui-tree-item>
+      <ui-tree-item
+        slot="children"
+        label="button.ts"
+        icon="lucide:file-code"
+        density="compact"
+      ></ui-tree-item>
+      <ui-tree-item
+        slot="children"
+        label="input.ts"
+        icon="lucide:file-code"
+        density="compact"
+      ></ui-tree-item>
     </ui-tree-item>
   `,
   play: async ({ canvasElement }) => {
@@ -529,6 +547,8 @@ export const LongLabel: Story = {
     }
 
     await treeItem.updateComplete;
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
 
     const labelElement = treeItem.shadowRoot?.querySelector('.label');
     if (!labelElement) {
@@ -539,6 +559,42 @@ export const LongLabel: Story = {
     const computedStyle = window.getComputedStyle(labelElement);
     if (computedStyle.textOverflow !== 'ellipsis') {
       throw new Error('Expected text-overflow to be "ellipsis"');
+    }
+
+    const tooltipHost = treeItem.shadowRoot?.querySelector<HTMLElement & { disabled?: boolean }>(
+      'ui-tooltip.item-tooltip',
+    );
+    if (!tooltipHost) {
+      throw new Error('ui-tooltip.item-tooltip が見つかりません');
+    }
+    if (tooltipHost.disabled === true) {
+      throw new Error('長いラベルでは tooltip が無効化されてはいけません');
+    }
+
+    const trigger = treeItem.shadowRoot?.querySelector<HTMLElement>('.item');
+    if (!trigger) {
+      throw new Error('.item trigger が見つかりません');
+    }
+
+    const panel = tooltipHost.shadowRoot?.querySelector<HTMLElement>('.tooltip');
+    if (!panel) {
+      throw new Error('tooltip panel が見つかりません');
+    }
+
+    trigger.dispatchEvent(new MouseEvent('mouseenter'));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+
+    if (panel.getAttribute('aria-hidden') !== 'false') {
+      throw new Error('hover 時に tooltip が表示される必要があります');
+    }
+
+    trigger.dispatchEvent(new MouseEvent('mouseleave'));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+
+    if (panel.getAttribute('aria-hidden') !== 'true') {
+      throw new Error('leave 後に tooltip が閉じる必要があります');
     }
 
     console.log('✅ All tests passed for LongLabel story');
@@ -552,9 +608,7 @@ export const LongLabel: Story = {
  * スロットにも何も提供しない場合、アイコン領域は空になります。
  */
 export const NoIcon: Story = {
-  render: () => html`
-    <ui-tree-item label="テキストのみのアイテム"></ui-tree-item>
-  `,
+  render: () => html` <ui-tree-item label="テキストのみのアイテム"></ui-tree-item> `,
 };
 
 /**
@@ -576,9 +630,7 @@ export const CustomIconSlot: Story = {
  * 子要素がない場合、展開アイコンは非表示になります（スペースは維持）。
  */
 export const LeafNode: Story = {
-  render: () => html`
-    <ui-tree-item label="index.ts" icon="lucide:file-code"></ui-tree-item>
-  `,
+  render: () => html` <ui-tree-item label="index.ts" icon="lucide:file-code"></ui-tree-item> `,
   play: async ({ canvasElement }) => {
     const treeItem = canvasElement.querySelector('ui-tree-item');
     if (!treeItem) {
@@ -709,7 +761,9 @@ export const KeyboardInteraction: Story = {
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!arrowRightDelegated) {
-      throw new Error('Expected tree-item-arrow-right event on ArrowRight key when already expanded');
+      throw new Error(
+        'Expected tree-item-arrow-right event on ArrowRight key when already expanded',
+      );
     }
 
     // テスト: ArrowLeft キーで収縮すること
@@ -856,11 +910,16 @@ export const FocusState: Story = {
 
     <div class="focus-demo">
       <div class="focus-info">
-        <strong>操作方法</strong>: アイテムをクリックしてフォーカスを当ててください。
-        Adaptive Focus により、フォーカスリングが適切に表示されます。
+        <strong>操作方法</strong>: アイテムをクリックしてフォーカスを当ててください。 Adaptive Focus
+        により、フォーカスリングが適切に表示されます。
       </div>
 
-      <ui-tree-item id="focus-test-item" label="README.md" icon="lucide:file-text" selected></ui-tree-item>
+      <ui-tree-item
+        id="focus-test-item"
+        label="README.md"
+        icon="lucide:file-text"
+        selected
+      ></ui-tree-item>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -920,7 +979,8 @@ export const CompactDensityTouchTarget: Story = {
         <li>物理タッチターゲット: 44px（WCAG 2.5.5 推奨、::after疑似要素で拡張）</li>
       </ul>
       <p style="margin: 0.5rem 0 0 0;">
-        開発者ツールで ::after 疑似要素を検証して、44px の高さが確保されていることを確認してください。
+        開発者ツールで ::after 疑似要素を検証して、44px
+        の高さが確保されていることを確認してください。
       </p>
     </div>
 
@@ -983,14 +1043,18 @@ export const ForcedColorsMode: Story = {
     <div class="forced-colors-info">
       <strong>確認方法</strong>:
       <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
-        <li><strong>Windows</strong>: 設定 > アクセシビリティ > コントラストテーマ で高コントラストモードを有効化</li>
         <li>
-          <strong>開発者ツール</strong>: Chrome DevTools > Rendering > Emulate CSS media feature forced-colors:
-          active
+          <strong>Windows</strong>: 設定 > アクセシビリティ > コントラストテーマ
+          で高コントラストモードを有効化
+        </li>
+        <li>
+          <strong>開発者ツール</strong>: Chrome DevTools > Rendering > Emulate CSS media feature
+          forced-colors: active
         </li>
       </ul>
       <p style="margin: 0.5rem 0 0 0;">
-        インデントガイドが CanvasText で表示され、選択状態が Highlight/HighlightText で明確化されることを確認してください。
+        インデントガイドが CanvasText で表示され、選択状態が Highlight/HighlightText
+        で明確化されることを確認してください。
       </p>
     </div>
 
@@ -1063,8 +1127,12 @@ export const ReducedMotion: Story = {
     <div class="reduced-motion-info">
       <strong>確認方法</strong>:
       <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
-        <li><strong>Windows</strong>: 設定 > アクセシビリティ > 視覚効果 > アニメーション効果をオフ</li>
-        <li><strong>macOS</strong>: システム設定 > アクセシビリティ > ディスプレイ > 視差効果を減らす</li>
+        <li>
+          <strong>Windows</strong>: 設定 > アクセシビリティ > 視覚効果 > アニメーション効果をオフ
+        </li>
+        <li>
+          <strong>macOS</strong>: システム設定 > アクセシビリティ > ディスプレイ > 視差効果を減らす
+        </li>
         <li><strong>このストーリー</strong>: reduced-motion を強制的にシミュレートしています</li>
       </ul>
       <p style="margin: 0.5rem 0 0 0;">
@@ -1133,7 +1201,12 @@ export const DarkSurfaceContrast: Story = {
     </style>
     <div class="dark-surface">
       <ui-tree-item label="src" icon="lucide:folder" expanded>
-        <ui-tree-item slot="children" label="components" icon="lucide:folder" selected></ui-tree-item>
+        <ui-tree-item
+          slot="children"
+          label="components"
+          icon="lucide:folder"
+          selected
+        ></ui-tree-item>
         <ui-tree-item slot="children" label="README.md" icon="lucide:file-text"></ui-tree-item>
       </ui-tree-item>
     </div>
@@ -1174,14 +1247,27 @@ export const RealWorldFileTree: Story = {
         <ui-tree-item slot="children" label="src" icon="lucide:folder" expanded>
           <ui-tree-item slot="children" label="components" icon="lucide:folder" expanded>
             <ui-tree-item slot="children" label="ui" icon="lucide:folder">
-              <ui-tree-item slot="children" label="button.ts" icon="lucide:file-code"></ui-tree-item>
+              <ui-tree-item
+                slot="children"
+                label="button.ts"
+                icon="lucide:file-code"
+              ></ui-tree-item>
               <ui-tree-item slot="children" label="input.ts" icon="lucide:file-code"></ui-tree-item>
-              <ui-tree-item slot="children" label="tree-item.ts" icon="lucide:file-code" selected></ui-tree-item>
+              <ui-tree-item
+                slot="children"
+                label="tree-item.ts"
+                icon="lucide:file-code"
+                selected
+              ></ui-tree-item>
             </ui-tree-item>
           </ui-tree-item>
           <ui-tree-item slot="children" label="utils" icon="lucide:folder">
             <ui-tree-item slot="children" label="helpers.ts" icon="lucide:file-code"></ui-tree-item>
-            <ui-tree-item slot="children" label="validators.ts" icon="lucide:file-code"></ui-tree-item>
+            <ui-tree-item
+              slot="children"
+              label="validators.ts"
+              icon="lucide:file-code"
+            ></ui-tree-item>
           </ui-tree-item>
           <ui-tree-item slot="children" label="index.ts" icon="lucide:file-code"></ui-tree-item>
         </ui-tree-item>

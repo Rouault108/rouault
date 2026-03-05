@@ -1,6 +1,7 @@
-import { css, html, LitElement, nothing } from 'lit';
+import { css, html, LitElement } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
+import '../tooltip/ui-tooltip';
 
 type TreeItemDensity = 'normal' | 'compact';
 
@@ -65,6 +66,7 @@ export class TreeItem extends LitElement {
     :host {
       display: block;
       position: relative;
+      min-inline-size: 0;
     }
 
     /* ── アイテム行 ── */
@@ -73,6 +75,7 @@ export class TreeItem extends LitElement {
       display: flex;
       align-items: center;
       gap: var(--space-2, 8px);
+      min-inline-size: 0;
       padding-left: var(--space-4, 16px);
       padding-right: var(--space-4, 16px);
       cursor: pointer;
@@ -80,8 +83,7 @@ export class TreeItem extends LitElement {
       color: var(--fg-muted, oklch(48% 0.01 250));
 
       /* Transition: 色のみ高速遷移 */
-      transition:
-        color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      transition: color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     /* Full Width Hover: 背景を親コンテナ幅いっぱいに */
@@ -94,7 +96,8 @@ export class TreeItem extends LitElement {
       bottom: 0;
       background: transparent;
       z-index: -1;
-      transition: background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      transition: background-color var(--duration-fast, 70ms)
+        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     /* Normal Density */
@@ -118,7 +121,10 @@ export class TreeItem extends LitElement {
 
     /* Selected */
     :host([selected]) .item::before {
-      background: var(--bg-surface-active, oklch(from var(--primary, oklch(60% 0.15 250)) l c h / 0.1));
+      background: var(
+        --bg-surface-active,
+        oklch(from var(--primary, oklch(60% 0.15 250)) l c h / 0.1)
+      );
     }
 
     :host([selected]) .item {
@@ -143,7 +149,8 @@ export class TreeItem extends LitElement {
       align-items: center;
       justify-content: center;
       transform: rotate(0deg);
-      transition: transform var(--duration-slow, 200ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      transition: transform var(--duration-slow, 200ms)
+        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     /* 展開時: 90度回転 */
@@ -180,6 +187,7 @@ export class TreeItem extends LitElement {
     /* ── ラベル ── */
     .label {
       flex: 1;
+      min-inline-size: 0;
       font-size: var(--text-base, 14px);
       line-height: 1.5;
       white-space: nowrap;
@@ -197,31 +205,10 @@ export class TreeItem extends LitElement {
       text-overflow: ellipsis;
     }
 
-    .overflow-tooltip {
-      position: absolute;
-      left: 0;
-      top: calc(100% + 4px);
-      max-width: min(420px, 90vw);
-      padding: 6px 8px;
-      border: var(--border-width, 1px) solid var(--border-default, oklch(0% 0 0 / 0.12));
-      border-radius: var(--radius-sm, 4px);
-      background: var(--bg-surface-2, oklch(98% 0 0));
-      color: var(--fg-default, oklch(20% 0.01 250));
-      font-size: var(--text-sm, 13px);
-      line-height: 1.4;
-      z-index: 3;
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(2px);
-      transition:
-        opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
-    }
-
-    .item:hover .overflow-tooltip,
-    .item:focus-visible .overflow-tooltip {
-      opacity: 1;
-      transform: translateY(0);
+    .item-tooltip {
+      display: block;
+      inline-size: 100%;
+      min-inline-size: 0;
     }
 
     /* ── 子要素コンテナ (role="group") ── */
@@ -230,7 +217,8 @@ export class TreeItem extends LitElement {
       /* インデントガイド: 左端にボーダー */
       border-left: var(--border-width, 1px) solid var(--border-ghost, oklch(0% 0 0 / 0.04));
       margin-left: var(--space-4, 16px);
-      transition: border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      transition: border-color var(--duration-fast, 70ms)
+        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
 
       /* 展開アニメーション */
       overflow: hidden;
@@ -300,12 +288,6 @@ export class TreeItem extends LitElement {
 
       :host([selected]) .item::before {
         background: Highlight;
-      }
-
-      .overflow-tooltip {
-        background: Canvas;
-        color: CanvasText;
-        border-color: CanvasText;
       }
     }
 
@@ -396,9 +378,13 @@ export class TreeItem extends LitElement {
     }
   };
 
-  private readonly _windowResizeHandler = () => {
-    this._syncLabelTruncation();
-  };
+  /**
+   * ラベル要素のサイズ変化を監視し、省略表示を検出する。
+   * スロット解決後の初回レイアウト確定時にも発火するため、
+   * updated()だけでは検出できないタイミング問題を解決する。
+   * @internal
+   */
+  private _labelResizeObserver?: ResizeObserver;
 
   private _computeAriaLevel(): number {
     let level = 1;
@@ -414,7 +400,11 @@ export class TreeItem extends LitElement {
     return level;
   }
 
-  override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
+  override attributeChangedCallback(
+    name: string,
+    oldValue: string | null,
+    newValue: string | null,
+  ): void {
     super.attributeChangedCallback(name, oldValue, newValue);
     if (name === 'tabindex' && oldValue !== newValue) {
       this.requestUpdate();
@@ -426,12 +416,23 @@ export class TreeItem extends LitElement {
     // role="treeitem" を設定
     this.setAttribute('role', 'treeitem');
     this.addEventListener('focus', this._hostFocusHandler);
-    window.addEventListener('resize', this._windowResizeHandler);
+  }
+
+  override firstUpdated(): void {
+    // ui-tooltipのスロット解決後に.labelが初めてレイアウトを持つため、
+    // ResizeObserverで初回レイアウト確定時の省略判定を確実に行う
+    const label = this.shadowRoot?.querySelector<HTMLElement>('.label');
+    if (label) {
+      this._labelResizeObserver = new ResizeObserver(() => {
+        this._syncLabelTruncation();
+      });
+      this._labelResizeObserver.observe(label);
+    }
   }
 
   override disconnectedCallback(): void {
     this.removeEventListener('focus', this._hostFocusHandler);
-    window.removeEventListener('resize', this._windowResizeHandler);
+    this._labelResizeObserver?.disconnect();
     super.disconnectedCallback();
   }
 
@@ -446,7 +447,11 @@ export class TreeItem extends LitElement {
     // aria-selected: 選択状態と同期
     this.setAttribute('aria-selected', String(this.selected));
     this.setAttribute('aria-level', String(this._computeAriaLevel()));
-    this._syncLabelTruncation();
+    // rAFで遅延: 初回レンダリング時、ui-tooltipのスロット解決前に
+    // .labelのscrollWidth/clientWidthが共に0になるタイミング問題を回避する
+    requestAnimationFrame(() => {
+      this._syncLabelTruncation();
+    });
   }
 
   /**
@@ -565,48 +570,71 @@ export class TreeItem extends LitElement {
 
     return html`
       <div class="${classMap(classes)}">
-        <!-- アイテム行 -->
-        <div
-          class="item"
-          tabindex="${this.getAttribute('tabindex') ?? '0'}"
-          @click="${this._handleClick}"
-          @keydown="${this._handleKeyDown}"
+        <ui-tooltip
+          class="item-tooltip"
+          text="${this.label}"
+          variant="subtle"
+          placement="bottom-start"
+          ?disabled="${!this.isLabelTruncated}"
         >
-          <!-- 展開アイコン（左端配置） -->
-          <span
-            class="expand-icon ${this.hasChildren ? '' : 'hidden'}"
-            @click="${this._handleExpandIconClick}"
-            aria-hidden="true"
+          <!-- アイテム行 -->
+          <div
+            class="item"
+            tabindex="${this.getAttribute('tabindex') ?? '0'}"
+            @click="${this._handleClick}"
+            @keydown="${this._handleKeyDown}"
           >
-            <iconify-icon icon="lucide:chevron-right"></iconify-icon>
-          </span>
+            <!-- 展開アイコン（左端配置） -->
+            <span
+              class="expand-icon ${this.hasChildren ? '' : 'hidden'}"
+              @click="${this._handleExpandIconClick}"
+              aria-hidden="true"
+            >
+              <iconify-icon icon="lucide:chevron-right"></iconify-icon>
+            </span>
 
-          <!-- コンテンツアイコン -->
-          ${this.icon
-            ? html`
-                <span class="content-icon" aria-hidden="true">
-                  <iconify-icon icon="${this.icon}"></iconify-icon>
-                </span>
-              `
-            : html`<slot name="icon" class="content-icon"></slot>`}
+            <!-- コンテンツアイコン -->
+            ${this.icon
+              ? html`
+                  <span class="content-icon" aria-hidden="true">
+                    <iconify-icon icon="${this.icon}"></iconify-icon>
+                  </span>
+                `
+              : html`<slot name="icon" class="content-icon"></slot>`}
 
-          <!-- ラベル -->
-          <span class="label">
-            ${this.href
-              ? html`<a class="label-link" href="${this.href}" @click="${(e: MouseEvent) => { e.stopPropagation(); }}">${this.label}</a>`
-              : this.label}
-          </span>
-          ${this.isLabelTruncated ? html`<span class="overflow-tooltip" role="tooltip">${this.label}</span>` : nothing}
-        </div>
+            <!-- ラベル -->
+            <span class="label">
+              ${this.href
+                ? html`<a
+                    class="label-link"
+                    href="${this.href}"
+                    @click="${(e: MouseEvent) => {
+                      e.stopPropagation();
+                    }}"
+                    >${this.label}</a
+                  >`
+                : this.label}
+            </span>
+          </div>
+        </ui-tooltip>
 
         <!-- 子要素 (role="group") -->
         ${this.hasChildren
           ? html`
-              <div class="children" role="group" aria-hidden="${String(!this.expanded)}" ?inert="${!this.expanded}">
+              <div
+                class="children"
+                role="group"
+                aria-hidden="${String(!this.expanded)}"
+                ?inert="${!this.expanded}"
+              >
                 <slot name="children" @slotchange="${this._slotChangeHandler}"></slot>
               </div>
             `
-          : html`<slot name="children" @slotchange="${this._slotChangeHandler}" style="display: none;"></slot>`}
+          : html`<slot
+              name="children"
+              @slotchange="${this._slotChangeHandler}"
+              style="display: none;"
+            ></slot>`}
       </div>
     `;
   }
