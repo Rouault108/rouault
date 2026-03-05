@@ -8,6 +8,7 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { extractTocFromHtml } from '../../lib/content/extract-toc-from-html.js';
 
 /**
  * _config.json を読み込む。存在しなければ undefined を返す。
@@ -72,7 +73,10 @@ export default function () {
   const contentRoot = join(process.cwd(), 'content');
 
   // 並び順メタデータを付与
-  const enriched = enrichWithSortIndex(notes, contentRoot);
+  const enriched = enrichWithSortIndex(notes, contentRoot).map((note) => ({
+    ...note,
+    tocHeadings: extractTocFromHtml(note.content ?? ''),
+  }));
 
   // sortIndex でソート
   enriched.sort((a, b) => a.sortIndex - b.sortIndex);
