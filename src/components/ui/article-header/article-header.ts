@@ -1,6 +1,7 @@
 import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import '../tag/tag';
+import { linkTextStyles } from '../link/link-styles';
 
 export type ArticleStatus = 'draft' | 'archived' | 'wip' | 'deprecated';
 
@@ -24,7 +25,9 @@ interface StatusPresentation {
  */
 @customElement('ui-article-header')
 export class ArticleHeader extends LitElement {
-  static override styles = css`
+  static override styles = [
+    linkTextStyles,
+    css`
     :host {
       display: block;
       max-width: var(--width-reading, 72ch);
@@ -106,9 +109,8 @@ export class ArticleHeader extends LitElement {
       font-size: var(--icon-xs, 12px);
     }
 
-    .silent-link {
+    .link-text.source-link {
       color: inherit;
-      text-decoration: none;
       border-radius: 2px;
       outline: var(--focus-ring-width, 2px) solid transparent;
       outline-offset: var(--focus-ring-offset, 2px);
@@ -117,11 +119,11 @@ export class ArticleHeader extends LitElement {
         outline-color var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
-    .silent-link:hover {
+    .link-text.source-link:hover {
       color: var(--fg-default, oklch(20% 0.01 250));
     }
 
-    .silent-link:focus-visible {
+    .link-text.source-link:focus-visible {
       color: var(--fg-default, oklch(20% 0.01 250));
       outline-color: var(--focus-ring-color, oklch(60% 0.15 250));
       animation: var(--animation-focus, none);
@@ -161,16 +163,8 @@ export class ArticleHeader extends LitElement {
     .status-wip       { color: var(--fg-warning, oklch(72% 0.13 85)); }
     .status-deprecated { color: var(--fg-danger, oklch(60% 0.22 25)); }
 
-    @media (hover: none) and (pointer: coarse) {
-      .silent-link {
-        text-decoration: underline;
-        text-decoration-color: var(--link-decoration-color-touch, currentColor);
-        text-underline-offset: 0.15em;
-      }
-    }
-
     @media (prefers-reduced-motion: reduce) {
-      .silent-link {
+      .link-text.source-link {
         transition-duration: 0.01ms;
       }
     }
@@ -184,12 +178,12 @@ export class ArticleHeader extends LitElement {
         color: GrayText;
       }
 
-      .silent-link {
+      .link-text.source-link {
         color: LinkText;
         text-decoration: underline;
       }
 
-      .silent-link:focus-visible {
+      .link-text.source-link:focus-visible {
         outline-color: Highlight;
       }
 
@@ -197,7 +191,8 @@ export class ArticleHeader extends LitElement {
         color: CanvasText;
       }
     }
-  `;
+    `,
+  ];
 
   @property({ type: String })
   heading = '';
@@ -253,7 +248,7 @@ export class ArticleHeader extends LitElement {
   private get _statusPresentation(): StatusPresentation | null {
     switch (this.status) {
       case 'draft':
-        return { label: '下書き', icon: 'lucide:file-pen', toneClass: 'status-draft' };
+        return { label: '下書き', icon: 'lucide:file-dashed', toneClass: 'status-draft' };
       case 'archived':
         return { label: 'アーカイブ', icon: 'lucide:archive', toneClass: 'status-archived' };
       case 'wip':
@@ -340,7 +335,7 @@ export class ArticleHeader extends LitElement {
                 href="${href}"
                 aria-label="タグ: ${tag}"
                 @click="${(event: MouseEvent) => { this._handleTagClick(event, tag); }}"
-              >${tag}</ui-tag>
+              >#${tag}</ui-tag>
             `;
           })}
         </span>
@@ -368,7 +363,7 @@ export class ArticleHeader extends LitElement {
       <li class="metadata-item metadata-source">
         <iconify-icon class="meta-icon" icon="lucide:link" aria-hidden="true"></iconify-icon>
         <a
-          class="silent-link source-link"
+          class="link-text source-link"
           href="${sourceHref}"
           target="_blank"
           rel="noopener noreferrer"
