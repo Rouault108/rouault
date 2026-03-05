@@ -1,6 +1,7 @@
 import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import '../../../lib/icons';
+import '../button/button';
 
 export type BannerVariant = 'info' | 'warning' | 'error' | 'success';
 type BannerRole = 'status' | 'alert';
@@ -135,45 +136,6 @@ export class Banner extends LitElement {
 
     .actions[hidden] {
       display: none !important;
-    }
-
-    .dismiss {
-      flex-shrink: 0;
-      width: var(--control-height-sm);
-      height: var(--control-height-sm);
-      padding: 0;
-      border: none;
-      border-radius: var(--radius-sm);
-      background: transparent;
-      color: inherit;
-      cursor: pointer;
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      transition: background-color var(--duration-fast) var(--ease-out);
-    }
-
-    .dismiss::after {
-      content: '';
-      position: absolute;
-      inset: calc((var(--control-min-touch) - var(--control-height-sm)) / -2);
-    }
-
-    .dismiss:hover {
-      background: var(--bg-hover);
-    }
-
-    .dismiss:focus-visible {
-      outline: var(--focus-ring-width) solid var(--focus-ring-color, var(--primary));
-      outline-offset: var(--focus-ring-offset);
-    }
-
-    .dismiss-icon {
-      width: var(--icon-sm);
-      height: var(--icon-sm);
-      color: currentColor;
-      stroke-width: 1.5;
     }
 
     @keyframes banner-enter {
@@ -457,9 +419,16 @@ export class Banner extends LitElement {
 
       ${this.dismissible
         ? html`
-            <button class="dismiss" type="button" aria-label="${DISMISS_LABEL}" @click="${this._onDismissClick}">
+            <ui-button
+              type="button"
+              variant="ghost"
+              size="sm"
+              icon-only
+              aria-label="${DISMISS_LABEL}"
+              @click="${this._onDismissClick}"
+            >
               <iconify-icon class="dismiss-icon" icon="lucide:x" aria-hidden="true"></iconify-icon>
-            </button>
+            </ui-button>
           `
         : nothing}
     `;
