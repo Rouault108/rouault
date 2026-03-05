@@ -238,7 +238,15 @@ export const SourceContract: Story = {
     if (slotQuote.getAttribute('cite') !== 'https://example.com/interview') {
       throw new Error('source slot ケースでも cite 属性を保持する必要があります');
     }
-    const slotSourceEm = sourceSlot.shadowRoot?.querySelector('figcaption.source cite em');
+    const sourceSlotElement = sourceSlot.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="source"]');
+    if (!sourceSlotElement) {
+      throw new Error('source slot 要素が見つかりません');
+    }
+    const assignedSource = sourceSlotElement.assignedElements({ flatten: true }).at(0);
+    if (!assignedSource) {
+      throw new Error('source slot に要素が割り当てられていません');
+    }
+    const slotSourceEm = assignedSource.querySelector('em');
     if (slotSourceEm?.textContent.trim() !== 'Interview') {
       throw new Error('source slot のリッチテキストが cite 内に保持されていません');
     }
