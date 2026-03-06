@@ -98,15 +98,15 @@ type Story = StoryObj<Badge>;
 const parseRgb = (value: string): [number, number, number] => {
     const normalized = value.trim();
     const match = /^rgba?\((.*)\)$/.exec(normalized);
-    if (!match) throw new Error(`Unsupported color format: "${value}"`);
+    if (!match) throw new Error(`サポートされていないカラー形式です: "${value}"`);
 
     const rawBody = match[1] ?? '';
     const body = rawBody.split('/')[0]?.trim() ?? '';
     const channels = body.includes(',') ? body.split(',') : body.split(/\s+/);
-    if (channels.length < 3) throw new Error(`Invalid rgb channels: "${value}"`);
+    if (channels.length < 3) throw new Error(`無効な RGB チャンネルです: "${value}"`);
 
     const rgb = channels.slice(0, 3).map((ch) => Number.parseFloat(ch.trim()));
-    if (rgb.some((n) => Number.isNaN(n))) throw new Error(`Invalid rgb value: "${value}"`);
+    if (rgb.some((n) => Number.isNaN(n))) throw new Error(`無効な RGB 値です: "${value}"`);
     return [rgb[0] ?? 0, rgb[1] ?? 0, rgb[2] ?? 0];
 };
 
@@ -164,22 +164,22 @@ export const Default: Story = {
   `,
     play: async ({ canvasElement }) => {
         const badge = canvasElement.querySelector<Badge>('#default-badge');
-        if (!badge) throw new Error('ui-badge not found');
+        if (!badge) throw new Error('ui-badge が見つかりません');
         await badge.updateComplete;
 
         // テスト: デフォルトプロパティ
-        if (badge.variant !== 'solid') throw new Error(`Expected variant="solid", got "${badge.variant}"`);
-        if (badge.color !== 'primary') throw new Error(`Expected color="primary", got "${badge.color}"`);
-        if (badge.count !== null) throw new Error(`Expected count=null, got ${String(badge.count)}`);
-        if (badge.max !== 99) throw new Error(`Expected max=99, got ${String(badge.max)}`);
+        if (badge.variant !== 'solid') throw new Error(`variant="solid" を期待していましたが、実際には "${badge.variant}" でした`);
+        if (badge.color !== 'primary') throw new Error(`color="primary" を期待していましたが、実際には "${badge.color}" でした`);
+        if (badge.count !== null) throw new Error(`count=null を期待していましたが、実際には ${String(badge.count)} でした`);
+        if (badge.max !== 99) throw new Error(`max=99 を期待していましたが、実際には ${String(badge.max)} でした`);
 
         // テスト: count が null のためスロットがレンダリングされる
         const slot = badge.shadowRoot?.querySelector('slot');
-        if (!slot) throw new Error('slot not found (expected when count is null)');
+        if (!slot) throw new Error('slot が見つかりません（count が null の場合は存在する必要があります）');
 
         // テスト: role="status" は存在しない（スロット表示時は静的ラベル）
         const statusSpan = badge.shadowRoot?.querySelector('[role="status"]');
-        if (statusSpan) throw new Error('role="status" should not exist when count is null');
+        if (statusSpan) throw new Error('count が null のとき、role="status" は存在してはいけません');
 
         console.log('✅ All tests passed for Default story');
     },
@@ -247,32 +247,32 @@ export const VariantColorMatrix: Story = {
         const badges = canvasElement.querySelectorAll<Badge>('ui-badge');
         // 3 variants × 5 colors = 15
         if (badges.length !== 15) {
-            throw new Error(`Expected 15 badges (3 variants × 5 colors), got ${String(badges.length)}`);
+            throw new Error(`15個のバッジ（3バリアント × 5カラー）を期待していましたが、実際には ${String(badges.length)}個でした`);
         }
 
         await Promise.all([...badges].map((b) => b.updateComplete));
 
         // テスト: 各バッジが正しい variant / color を持つ
         const solidPrimary = canvasElement.querySelector<Badge>('#matrix-solid-primary');
-        if (!solidPrimary) throw new Error('#matrix-solid-primary not found');
-        if (solidPrimary.variant !== 'solid') throw new Error('Expected variant="solid"');
-        if (solidPrimary.color !== 'primary') throw new Error('Expected color="primary"');
+        if (!solidPrimary) throw new Error('#matrix-solid-primary が見つかりません');
+        if (solidPrimary.variant !== 'solid') throw new Error('variant="solid" を期待していました');
+        if (solidPrimary.color !== 'primary') throw new Error('color="primary" を期待していました');
 
         const subtleWarning = canvasElement.querySelector<Badge>('#matrix-subtle-warning');
-        if (!subtleWarning) throw new Error('#matrix-subtle-warning not found');
-        if (subtleWarning.variant !== 'subtle') throw new Error('Expected variant="subtle"');
-        if (subtleWarning.color !== 'warning') throw new Error('Expected color="warning"');
+        if (!subtleWarning) throw new Error('#matrix-subtle-warning が見つかりません');
+        if (subtleWarning.variant !== 'subtle') throw new Error('variant="subtle" を期待していました');
+        if (subtleWarning.color !== 'warning') throw new Error('color="warning" を期待していました');
 
         const dotDanger = canvasElement.querySelector<Badge>('#matrix-dot-danger');
-        if (!dotDanger) throw new Error('#matrix-dot-danger not found');
-        if (dotDanger.variant !== 'dot') throw new Error('Expected variant="dot"');
+        if (!dotDanger) throw new Error('#matrix-dot-danger が見つかりません');
+        if (dotDanger.variant !== 'dot') throw new Error('variant="dot" を期待していました');
         if (dotDanger.color !== 'danger') throw new Error('Expected color="danger"');
 
         // テスト: Dot バリアントはコンテンツをレンダリングしない
         const dotSlot = dotDanger.shadowRoot?.querySelector('slot');
-        if (dotSlot) throw new Error('dot variant should not render slot');
+        if (dotSlot) throw new Error('dot バリアントは slot をレンダリングしてはいけません');
         const dotStatus = dotDanger.shadowRoot?.querySelector('[role="status"]');
-        if (dotStatus) throw new Error('dot variant should not render role="status"');
+        if (dotStatus) throw new Error('dot バリアントは role="status" をレンダリングしてはいけません');
 
         console.log('✅ All tests passed for VariantColorMatrix story');
     },
@@ -303,41 +303,41 @@ export const CountBadge: Story = {
         const badge99 = canvasElement.querySelector<Badge>('#count-99');
         const badge100 = canvasElement.querySelector<Badge>('#count-100');
         const badge128 = canvasElement.querySelector<Badge>('#count-128');
-        if (!badge1 || !badge99 || !badge100 || !badge128) throw new Error('Badges not found');
+        if (!badge1 || !badge99 || !badge100 || !badge128) throw new Error('バッジが見つかりません');
         await Promise.all([badge1.updateComplete, badge99.updateComplete, badge100.updateComplete, badge128.updateComplete]);
 
         // テスト: count=1 → 表示 "1"
         const status1 = badge1.shadowRoot?.querySelector('[role="status"]');
-        if (!status1) throw new Error('role="status" not found for count=1');
+        if (!status1) throw new Error('count=1 の role="status" が見つかりません');
         if (status1.textContent.trim() !== '1') {
-            throw new Error(`Expected "1", got "${status1.textContent.trim()}"`);
+            throw new Error(`"1" を期待していましたが、実際には "${status1.textContent.trim()}" でした`);
         }
 
         // テスト: count=99 → 表示 "99"（max=99 と等しいため "+" なし）
         const status99 = badge99.shadowRoot?.querySelector('[role="status"]');
-        if (!status99) throw new Error('role="status" not found for count=99');
+        if (!status99) throw new Error('count=99 の role="status" が見つかりません');
         if (status99.textContent.trim() !== '99') {
-            throw new Error(`Expected "99", got "${status99.textContent.trim()}"`);
+            throw new Error(`"99" を期待していましたが、実際には "${status99.textContent.trim()}" でした`);
         }
 
         // テスト: count=100 → 表示 "99+"（max=99 を超過）
         const status100 = badge100.shadowRoot?.querySelector('[role="status"]');
-        if (!status100) throw new Error('role="status" not found for count=100');
+        if (!status100) throw new Error('count=100 の role="status" が見つかりません');
         if (status100.textContent.trim() !== '99+') {
-            throw new Error(`Expected "99+", got "${status100.textContent.trim()}"`);
+            throw new Error(`"99+" を期待していましたが、実際には "${status100.textContent.trim()}" でした`);
         }
 
         // テスト: count=128 → aria-label は "128 件"（実数値）
         const status128 = badge128.shadowRoot?.querySelector('[role="status"]');
-        if (!status128) throw new Error('role="status" not found for count=128');
+        if (!status128) throw new Error('count=128 の role="status" が見つかりません');
         const ariaLabel128 = status128.getAttribute('aria-label');
         if (ariaLabel128 !== '128 件') {
-            throw new Error(`Expected aria-label="128 件", got "${ariaLabel128 ?? 'null'}"`);
+            throw new Error(`aria-label="128 件" を期待していましたが、実際には "${ariaLabel128 ?? 'null'}" でした`);
         }
 
         // テスト: count が number の場合、slot は存在しない
         const slot1 = badge1.shadowRoot?.querySelector('slot');
-        if (slot1) throw new Error('slot should not exist when count is a number');
+        if (slot1) throw new Error('count が数値のとき、slot は存在してはいけません');
 
         console.log('✅ All tests passed for CountBadge story');
     },
@@ -379,23 +379,23 @@ export const TextBadge: Story = {
   `,
     play: async ({ canvasElement }) => {
         const subtlePrimary = canvasElement.querySelector<Badge>('#text-subtle-primary');
-        if (!subtlePrimary) throw new Error('#text-subtle-primary not found');
+        if (!subtlePrimary) throw new Error('#text-subtle-primary が見つかりません');
         await subtlePrimary.updateComplete;
 
         // テスト: count が null のためスロットがレンダリングされる
         const slot = subtlePrimary.shadowRoot?.querySelector('slot');
-        if (!slot) throw new Error('slot not found (expected when count is null)');
+        if (!slot) throw new Error('slot が見つかりません（count が null の場合は存在する必要があります）');
 
         // テスト: role="status" は存在しない（静的ラベル）
         const statusSpan = subtlePrimary.shadowRoot?.querySelector('[role="status"]');
-        if (statusSpan) throw new Error('role="status" should not exist for text badge');
+        if (statusSpan) throw new Error('テキストバッジに role="status" は存在してはいけません');
 
         // テスト: solid バリアントでも同様にスロットが使われる
         const solidPrimary = canvasElement.querySelector<Badge>('#text-solid-primary');
-        if (!solidPrimary) throw new Error('#text-solid-primary not found');
+        if (!solidPrimary) throw new Error('#text-solid-primary が見つかりません');
         await solidPrimary.updateComplete;
         const solidSlot = solidPrimary.shadowRoot?.querySelector('slot');
-        if (!solidSlot) throw new Error('slot not found for solid text badge');
+        if (!solidSlot) throw new Error('solid テキストバッジの slot が見つかりません');
 
         console.log('✅ All tests passed for TextBadge story');
     },
@@ -432,39 +432,39 @@ export const DotVariant: Story = {
   `,
     play: async ({ canvasElement }) => {
         const dotDanger = canvasElement.querySelector<Badge>('#dot-danger');
-        if (!dotDanger) throw new Error('#dot-danger not found');
+        if (!dotDanger) throw new Error('#dot-danger が見つかりません');
         await dotDanger.updateComplete;
 
         // テスト: role="img" が付与されている
         const imgSpan = dotDanger.shadowRoot?.querySelector('[role="img"]');
-        if (!imgSpan) throw new Error('role="img" not found for dot variant');
+        if (!imgSpan) throw new Error('dot バリアントの role="img" が見つかりません');
         if (imgSpan.getAttribute('aria-label') !== '未読の通知があります') {
-            throw new Error('dot variant aria-label is not applied');
+            throw new Error('dot バリアントの aria-label が適用されていません');
         }
 
         // テスト: slot は存在しない（Dot は内容を持たない）
         const slot = dotDanger.shadowRoot?.querySelector('slot');
-        if (slot) throw new Error('slot should not exist for dot variant');
+        if (slot) throw new Error('dot バリアントに slot は存在してはいけません');
 
         // テスト: role="status" は存在しない
         const statusSpan = dotDanger.shadowRoot?.querySelector('[role="status"]');
-        if (statusSpan) throw new Error('role="status" should not exist for dot variant');
+        if (statusSpan) throw new Error('dot バリアントに role="status" は存在してはいけません');
 
         // テスト: count を設定してもコンテンツがレンダリングされない
         dotDanger.count = 5;
         await dotDanger.updateComplete;
         const imgSpanAfterCount = dotDanger.shadowRoot?.querySelector('[role="img"]');
-        if (!imgSpanAfterCount) throw new Error('role="img" should still exist after setting count on dot variant');
+        if (!imgSpanAfterCount) throw new Error('dot バリアントに count を設定した後も role="img" は存在する必要があります');
         const statusAfterCount = dotDanger.shadowRoot?.querySelector('[role="status"]');
-        if (statusAfterCount) throw new Error('role="status" should not appear even when count is set on dot variant');
+        if (statusAfterCount) throw new Error('dot バリアントに count を設定しても role="status" は表示されてはいけません');
 
         // テスト: aria-label 属性の変更が再レンダリングに追従する
         dotDanger.setAttribute('aria-label', '新しい未読があります');
         await dotDanger.updateComplete;
         const imgSpanAfterLabelUpdate = dotDanger.shadowRoot?.querySelector('[role="img"]');
-        if (!imgSpanAfterLabelUpdate) throw new Error('role="img" not found after aria-label update');
+        if (!imgSpanAfterLabelUpdate) throw new Error('aria-label 更新後に role="img" が見つかりません');
         if (imgSpanAfterLabelUpdate.getAttribute('aria-label') !== '新しい未読があります') {
-            throw new Error('dot variant aria-label update is not reflected');
+            throw new Error('dot バリアントの aria-label 更新が反映されていません');
         }
 
         console.log('✅ All tests passed for DotVariant story');
@@ -517,31 +517,31 @@ export const CountMaxCombinations: Story = {
 
         // テスト: count=0 → 表示 "0"
         const b0 = canvasElement.querySelector<Badge>('#cm-0');
-        if (!b0) throw new Error('#cm-0 not found');
+        if (!b0) throw new Error('#cm-0 が見つかりません');
         const s0 = b0.shadowRoot?.querySelector('[role="status"]');
-        if (!s0) throw new Error('role="status" not found for count=0');
-        if (s0.textContent.trim() !== '0') throw new Error(`Expected "0", got "${s0.textContent.trim()}"`);
+        if (!s0) throw new Error('count=0 の role="status" が見つかりません');
+        if (s0.textContent.trim() !== '0') throw new Error(`"0" を期待していましたが、実際には "${s0.textContent.trim()}" でした`);
 
         // テスト: count=99, max=99 → 表示 "99"（等しいため "+" なし）
         const b99 = canvasElement.querySelector<Badge>('#cm-99');
-        if (!b99) throw new Error('#cm-99 not found');
+        if (!b99) throw new Error('#cm-99 が見つかりません');
         const s99 = b99.shadowRoot?.querySelector('[role="status"]');
-        if (!s99) throw new Error('role="status" not found for count=99');
-        if (s99.textContent.trim() !== '99') throw new Error(`Expected "99", got "${s99.textContent.trim()}"`);
+        if (!s99) throw new Error('count=99 の role="status" が見つかりません');
+        if (s99.textContent.trim() !== '99') throw new Error(`"99" を期待していましたが、実際には "${s99.textContent.trim()}" でした`);
 
         // テスト: count=100, max=99 → 表示 "99+"
         const b100 = canvasElement.querySelector<Badge>('#cm-100');
-        if (!b100) throw new Error('#cm-100 not found');
+        if (!b100) throw new Error('#cm-100 が見つかりません');
         const s100 = b100.shadowRoot?.querySelector('[role="status"]');
-        if (!s100) throw new Error('role="status" not found for count=100');
-        if (s100.textContent.trim() !== '99+') throw new Error(`Expected "99+", got "${s100.textContent.trim()}"`);
+        if (!s100) throw new Error('count=100 の role="status" が見つかりません');
+        if (s100.textContent.trim() !== '99+') throw new Error(`"99+" を期待していましたが、実際には "${s100.textContent.trim()}" でした`);
 
         // テスト: count=10, max=9 → 表示 "9+"
         const bCustom9 = canvasElement.querySelector<Badge>('#cm-custom-9');
-        if (!bCustom9) throw new Error('#cm-custom-9 not found');
+        if (!bCustom9) throw new Error('#cm-custom-9 が見つかりません');
         const sCustom9 = bCustom9.shadowRoot?.querySelector('[role="status"]');
-        if (!sCustom9) throw new Error('role="status" not found for custom max=9');
-        if (sCustom9.textContent.trim() !== '9+') throw new Error(`Expected "9+", got "${sCustom9.textContent.trim()}"`);
+        if (!sCustom9) throw new Error('カスタム max=9 の role="status" が見つかりません');
+        if (sCustom9.textContent.trim() !== '9+') throw new Error(`"9+" を期待していましたが、実際には "${sCustom9.textContent.trim()}" でした`);
 
         console.log('✅ All tests passed for CountMaxCombinations story');
     },
@@ -581,27 +581,27 @@ export const ContentPriorityLogic: Story = {
     play: async ({ canvasElement }) => {
         const withCount = canvasElement.querySelector<Badge>('#priority-count');
         const withSlot = canvasElement.querySelector<Badge>('#priority-slot');
-        if (!withCount || !withSlot) throw new Error('Badges not found');
+        if (!withCount || !withSlot) throw new Error('バッジが見つかりません');
         await Promise.all([withCount.updateComplete, withSlot.updateComplete]);
 
         // テスト: count=5 → role="status" で "5" が表示される
         const statusSpan = withCount.shadowRoot?.querySelector('[role="status"]');
-        if (!statusSpan) throw new Error('role="status" not found when count is set');
+        if (!statusSpan) throw new Error('count 設定時に role="status" が見つかりません');
         if (statusSpan.textContent.trim() !== '5') {
-            throw new Error(`Expected "5", got "${statusSpan.textContent.trim()}"`);
+            throw new Error(`"5" を期待していましたが、実際には "${statusSpan.textContent.trim()}" でした`);
         }
 
         // テスト: count=5 → slot は存在しない
         const slotWithCount = withCount.shadowRoot?.querySelector('slot');
-        if (slotWithCount) throw new Error('slot should not exist when count is a number');
+        if (slotWithCount) throw new Error('count が数値のとき、slot は存在してはいけません');
 
         // テスト: count=null → slot が存在する
         const slotWithoutCount = withSlot.shadowRoot?.querySelector('slot');
-        if (!slotWithoutCount) throw new Error('slot should exist when count is null');
+        if (!slotWithoutCount) throw new Error('count が null のとき、slot は存在する必要があります');
 
         // テスト: count=null → role="status" は存在しない
         const statusWithoutCount = withSlot.shadowRoot?.querySelector('[role="status"]');
-        if (statusWithoutCount) throw new Error('role="status" should not exist when count is null');
+        if (statusWithoutCount) throw new Error('count が null のとき、role="status" は存在してはいけません');
 
         console.log('✅ All tests passed for ContentPriorityLogic story');
     },
@@ -650,12 +650,12 @@ export const CountNormalization: Story = {
 
         const check = (id: string, expected: string) => {
             const badge = canvasElement.querySelector<Badge>(id);
-            if (!badge) throw new Error(`${id} not found`);
+            if (!badge) throw new Error(`${id} が見つかりません`);
             const status = badge.shadowRoot?.querySelector('[role="status"]');
-            if (!status) throw new Error(`role="status" not found for ${id}`);
+            if (!status) throw new Error(`${id} の role="status" が見つかりません`);
             const actual = status.textContent.trim() || 'null';
             if (actual !== expected) {
-                throw new Error(`${id}: Expected "${expected}", got "${actual}"`);
+                throw new Error(`${id}: "${expected}" を期待していましたが、実際には "${actual}" でした`);
             }
         };
 
@@ -721,12 +721,12 @@ export const MaxNormalization: Story = {
 
         const check = (id: string, expected: string) => {
             const badge = canvasElement.querySelector<Badge>(id);
-            if (!badge) throw new Error(`${id} not found`);
+            if (!badge) throw new Error(`${id} が見つかりません`);
             const status = badge.shadowRoot?.querySelector('[role="status"]');
-            if (!status) throw new Error(`role="status" not found for ${id}`);
+            if (!status) throw new Error(`${id} の role="status" が見つかりません`);
             const actual = status.textContent.trim();
             if (actual !== expected) {
-                throw new Error(`${id}: Expected "${expected}", got "${actual}"`);
+                throw new Error(`${id}: "${expected}" を期待していましたが、実際には "${actual}" でした`);
             }
         };
 
@@ -777,23 +777,23 @@ export const CountZero: Story = {
     play: async ({ canvasElement }) => {
         const zeroCount = canvasElement.querySelector<Badge>('#zero-count');
         const nullCount = canvasElement.querySelector<Badge>('#null-count');
-        if (!zeroCount || !nullCount) throw new Error('Badges not found');
+        if (!zeroCount || !nullCount) throw new Error('バッジが見つかりません');
         await Promise.all([zeroCount.updateComplete, nullCount.updateComplete]);
 
         // テスト: count=0 → "0" が表示される（スロットは無視）
         const statusZero = zeroCount.shadowRoot?.querySelector('[role="status"]');
-        if (!statusZero) throw new Error('role="status" not found for count=0');
+        if (!statusZero) throw new Error('count=0 の role="status" が見つかりません');
         if (statusZero.textContent.trim() !== '0') {
-            throw new Error(`Expected "0", got "${statusZero.textContent.trim()}"`);
+            throw new Error(`"0" を期待していましたが、実際には "${statusZero.textContent.trim()}" でした`);
         }
         const slotZero = zeroCount.shadowRoot?.querySelector('slot');
-        if (slotZero) throw new Error('slot should not exist when count=0');
+        if (slotZero) throw new Error('count=0 のとき、slot は存在してはいけません');
 
         // テスト: count=null → スロットが表示される
         const slotNull = nullCount.shadowRoot?.querySelector('slot');
-        if (!slotNull) throw new Error('slot should exist when count is null');
+        if (!slotNull) throw new Error('count が null のとき、slot は存在する必要があります');
         const statusNull = nullCount.shadowRoot?.querySelector('[role="status"]');
-        if (statusNull) throw new Error('role="status" should not exist when count is null');
+        if (statusNull) throw new Error('count が null のとき、role="status" は存在してはいけません');
 
         console.log('✅ All tests passed for CountZero story');
     },
@@ -825,7 +825,7 @@ export const CountUndefined: Story = {
   `,
     play: async ({ canvasElement }) => {
         const badge = canvasElement.querySelector<Badge>('#undefined-count');
-        if (!badge) throw new Error('#undefined-count not found');
+        if (!badge) throw new Error('#undefined-count が見つかりません');
         await badge.updateComplete;
 
         // テスト: count を undefined にしても数値表示されず、スロット表示になる
@@ -833,9 +833,9 @@ export const CountUndefined: Story = {
         await badge.updateComplete;
 
         const slot = badge.shadowRoot?.querySelector('slot');
-        if (!slot) throw new Error('countがundefinedのときslotが存在すべき');
+        if (!slot) throw new Error('count が undefined のとき、slot は存在する必要があります');
         const status = badge.shadowRoot?.querySelector('[role="status"]');
-        if (status) throw new Error('countがundefinedのときrole="status"が存在すべきではない');
+        if (status) throw new Error('count が undefined のとき、role="status" は存在してはいけません');
 
         console.log('✅ All tests passed for CountUndefined story');
     },
@@ -877,35 +877,35 @@ export const AriaLabelAccuracy: Story = {
 
         // テスト: count=128, max=99 → 表示 "99+", aria-label "128 件"
         const b128 = canvasElement.querySelector<Badge>('#aria-128');
-        if (!b128) throw new Error('#aria-128 not found');
+        if (!b128) throw new Error('#aria-128 が見つかりません');
         const s128 = b128.shadowRoot?.querySelector('[role="status"]');
-        if (!s128) throw new Error('role="status" not found for count=128');
+        if (!s128) throw new Error('count=128 の role="status" が見つかりません');
         if (s128.textContent.trim() !== '99+') {
-            throw new Error(`Expected display "99+", got "${s128.textContent.trim()}"`);
+            throw new Error(`表示が "99+" であることを期待していましたが、実際には "${s128.textContent.trim()}" でした`);
         }
         if (s128.getAttribute('aria-label') !== '128 件') {
-            throw new Error(`Expected aria-label="128 件", got "${s128.getAttribute('aria-label') ?? 'null'}"`);
+            throw new Error(`aria-label="128 件" を期待していましたが、実際には "${s128.getAttribute('aria-label') ?? 'null'}" でした`);
         }
 
         // テスト: count=9999, max=99 → 表示 "99+", aria-label "9999 件"
         const b9999 = canvasElement.querySelector<Badge>('#aria-9999');
-        if (!b9999) throw new Error('#aria-9999 not found');
+        if (!b9999) throw new Error('#aria-9999 が見つかりません');
         const s9999 = b9999.shadowRoot?.querySelector('[role="status"]');
-        if (!s9999) throw new Error('role="status" not found for count=9999');
+        if (!s9999) throw new Error('count=9999 の role="status" が見つかりません');
         if (s9999.getAttribute('aria-label') !== '9999 件') {
-            throw new Error(`Expected aria-label="9999 件", got "${s9999.getAttribute('aria-label') ?? 'null'}"`);
+            throw new Error(`aria-label="9999 件" を期待していましたが、実際には "${s9999.getAttribute('aria-label') ?? 'null'}" でした`);
         }
 
         // テスト: count=50, max=99 → 表示 "50", aria-label "50 件"
         const b50 = canvasElement.querySelector<Badge>('#aria-50');
-        if (!b50) throw new Error('#aria-50 not found');
+        if (!b50) throw new Error('#aria-50 が見つかりません');
         const s50 = b50.shadowRoot?.querySelector('[role="status"]');
-        if (!s50) throw new Error('role="status" not found for count=50');
+        if (!s50) throw new Error('count=50 の role="status" が見つかりません');
         if (s50.textContent.trim() !== '50') {
-            throw new Error(`Expected display "50", got "${s50.textContent.trim()}"`);
+            throw new Error(`表示が "50" であることを期待していましたが、実際には "${s50.textContent.trim()}" でした`);
         }
         if (s50.getAttribute('aria-label') !== '50 件') {
-            throw new Error(`Expected aria-label="50 件", got "${s50.getAttribute('aria-label') ?? 'null'}"`);
+            throw new Error(`aria-label="50 件" を期待していましたが、実際には "${s50.getAttribute('aria-label') ?? 'null'}" でした`);
         }
 
         console.log('✅ All tests passed for AriaLabelAccuracy story');
@@ -942,20 +942,20 @@ export const DotIgnoresCount: Story = {
     play: async ({ canvasElement }) => {
         const dotWithCount = canvasElement.querySelector<Badge>('#dot-with-count');
         const dotWithSlot = canvasElement.querySelector<Badge>('#dot-with-slot');
-        if (!dotWithCount || !dotWithSlot) throw new Error('Badges not found');
+        if (!dotWithCount || !dotWithSlot) throw new Error('バッジが見つかりません');
         await Promise.all([dotWithCount.updateComplete, dotWithSlot.updateComplete]);
 
         // テスト: dot + count → role="img" のみ（role="status" なし）
         const imgWithCount = dotWithCount.shadowRoot?.querySelector('[role="img"]');
-        if (!imgWithCount) throw new Error('role="img" not found for dot with count');
+        if (!imgWithCount) throw new Error('数値を持つ dot バリアントの role="img" が見つかりません');
         const statusWithCount = dotWithCount.shadowRoot?.querySelector('[role="status"]');
-        if (statusWithCount) throw new Error('role="status" should not exist for dot variant even with count');
+        if (statusWithCount) throw new Error('dot バリアントに count を設定しても role="status" は存在してはいけません');
 
         // テスト: dot + slot → role="img" のみ（slot なし）
         const imgWithSlot = dotWithSlot.shadowRoot?.querySelector('[role="img"]');
-        if (!imgWithSlot) throw new Error('role="img" not found for dot with slot');
+        if (!imgWithSlot) throw new Error('slot を持つ dot バリアントの role="img" が見つかりません');
         const slotWithDot = dotWithSlot.shadowRoot?.querySelector('slot');
-        if (slotWithDot) throw new Error('slot should not exist for dot variant');
+        if (slotWithDot) throw new Error('dot バリアントに slot は存在してはいけません');
 
         console.log('✅ All tests passed for DotIgnoresCount story');
     },
@@ -996,19 +996,19 @@ export const NonInteractive: Story = {
             // テスト: tabindex が設定されていない（フォーカス不可）
             const tabindex = badge.getAttribute('tabindex');
             if (tabindex !== null) {
-                throw new Error(`Expected no tabindex, got "${tabindex}" on ${badge.id}`);
+                throw new Error(`tabindex が設定されていないことを期待していましたが、${badge.id} には "${tabindex}" が設定されていました`);
             }
 
             // テスト: 非対話属性を持たない
-            if (badge.hasAttribute('disabled')) throw new Error(`disabled should not exist on ${badge.id}`);
-            if (badge.hasAttribute('error')) throw new Error(`error should not exist on ${badge.id}`);
-            if (badge.hasAttribute('aria-disabled')) throw new Error(`aria-disabled should not exist on ${badge.id}`);
-            if (badge.hasAttribute('role')) throw new Error(`host role should not be set on ${badge.id}`);
+            if (badge.hasAttribute('disabled')) throw new Error(`${badge.id} に disabled が存在してはいけません`);
+            if (badge.hasAttribute('error')) throw new Error(`${badge.id} に error が存在してはいけません`);
+            if (badge.hasAttribute('aria-disabled')) throw new Error(`${badge.id} に aria-disabled が存在してはいけません`);
+            if (badge.hasAttribute('role')) throw new Error(`${badge.id} にホスト role が設定されてはいけません`);
 
             // テスト: focus() を呼んでもフォーカス対象にならない
             badge.focus();
             if (badge === badge.ownerDocument.activeElement) {
-                throw new Error(`badge should not become activeElement: ${badge.id}`);
+                throw new Error(`バッジが activeElement になってはいけません: ${badge.id}`);
             }
         }
 
@@ -1125,20 +1125,20 @@ export const ThemeContrastAudit: Story = {
 
         const assertTextContrast = (id: string, min: number) => {
             const badge = canvasElement.querySelector<Badge>(id);
-            if (!badge) throw new Error(`${id} not found`);
+            if (!badge) throw new Error(`${id} が見つかりません`);
             const style = getComputedStyle(badge);
             const ratio = contrastRatio(style.color, style.backgroundColor);
-            if (ratio < min) throw new Error(`${id}: contrast ${ratio.toFixed(2)} < ${String(min)}`);
+            if (ratio < min) throw new Error(`${id}: コントラスト比 ${ratio.toFixed(2)} が最小値 ${String(min)} を下回っています`);
         };
 
         const assertDotContrast = (badgeId: string, surfaceId: string, min: number) => {
             const badge = canvasElement.querySelector<Badge>(badgeId);
             const surface = canvasElement.querySelector<HTMLElement>(surfaceId);
-            if (!badge || !surface) throw new Error(`dot contrast target not found: ${badgeId} / ${surfaceId}`);
+            if (!badge || !surface) throw new Error(`dot コントラスト比の検証ターゲットが見つかりません: ${badgeId} / ${surfaceId}`);
             const dotStyle = getComputedStyle(badge);
             const surfaceStyle = getComputedStyle(surface);
             const ratio = contrastRatio(dotStyle.backgroundColor, surfaceStyle.backgroundColor);
-            if (ratio < min) throw new Error(`${badgeId}: non-text contrast ${ratio.toFixed(2)} < ${String(min)}`);
+            if (ratio < min) throw new Error(`${badgeId}: 非テキストのコントラスト比 ${ratio.toFixed(2)} が最小値 ${String(min)} を下回っています`);
         };
 
         await Promise.all(
@@ -1180,21 +1180,21 @@ export const ForcedColorsContract: Story = {
   `,
     play: async ({ canvasElement }) => {
         const badge = canvasElement.querySelector<Badge>('#forced-solid');
-        if (!badge) throw new Error('#forced-solid not found');
+        if (!badge) throw new Error('#forced-solid が見つかりません');
         await badge.updateComplete;
 
         const cssText = collectCssText((badge.constructor as typeof Badge).styles);
         if (!cssText.includes('@media (forced-colors: active)')) {
-            throw new Error('forced-colors media query is missing');
+            throw new Error('forced-colors メディアクエリが見つかりません');
         }
         if (!cssText.includes('ButtonText')) {
-            throw new Error('ButtonText token is missing in forced-colors rules');
+            throw new Error('forced-colors ルールに ButtonText トークンが見つかりません');
         }
         if (!cssText.includes('ButtonFace')) {
-            throw new Error('ButtonFace token is missing in forced-colors rules');
+            throw new Error('forced-colors ルールに ButtonFace トークンが見つかりません');
         }
         if (!cssText.includes("width: 10px")) {
-            throw new Error('Dot forced-colors size expansion (10px) is missing');
+            throw new Error('Dot の forced-colors 時のサイズ拡張 (10px) が見つかりません');
         }
 
         console.log('✅ All tests passed for ForcedColorsContract story');
@@ -1280,16 +1280,16 @@ export const AllStates: Story = {
 
         // テスト: solid-primary の count が正しい
         const solidPrimary = canvasElement.querySelector<Badge>('#all-solid-primary');
-        if (!solidPrimary) throw new Error('#all-solid-primary not found');
-        if (solidPrimary.count !== 5) throw new Error(`Expected count=5, got ${String(solidPrimary.count)}`);
+        if (!solidPrimary) throw new Error('#all-solid-primary が見つかりません');
+        if (solidPrimary.count !== 5) throw new Error(`count=5 を期待していましたが、実際には ${String(solidPrimary.count)} でした`);
 
         // テスト: solid-warning の count=99 → 表示 "99"（max=99 と等しいため "+" なし）
         const solidWarning = canvasElement.querySelector<Badge>('#all-solid-warning');
-        if (!solidWarning) throw new Error('#all-solid-warning not found');
+        if (!solidWarning) throw new Error('#all-solid-warning が見つかりません');
         const statusWarning = solidWarning.shadowRoot?.querySelector('[role="status"]');
-        if (!statusWarning) throw new Error('role="status" not found for solid-warning');
+        if (!statusWarning) throw new Error('solid-warning の role="status" が見つかりません');
         if (statusWarning.textContent.trim() !== '99') {
-            throw new Error(`Expected "99", got "${statusWarning.textContent.trim()}"`);
+            throw new Error(`"99" を期待していましたが、実際には "${statusWarning.textContent.trim()}" でした`);
         }
 
         console.log('✅ All tests passed for AllStates story');

@@ -111,61 +111,61 @@ export const CompleteState: Story = {
   },
   play: async ({ canvasElement }) => {
     const header = canvasElement.querySelector<ArticleHeader>('#complete-state');
-    if (!header) throw new Error('#complete-state not found');
+    if (!header) throw new Error('#complete-state が見つかりません');
     await header.updateComplete;
 
     const title = header.shadowRoot?.querySelector('.heading');
-    if (!title) throw new Error('.heading not found');
+    if (!title) throw new Error('.heading が見つかりません');
     const titleText = title.textContent.trim();
     if (titleText !== 'バッハ《マタイ受難曲》の構造美') {
-      throw new Error(`Expected heading text to be "バッハ《マタイ受難曲》の構造美", got "${titleText}"`);
+      throw new Error(`タイトルに "バッハ《マタイ受難曲》の構造美" を期待していましたが、実際には "${titleText}" でした`);
     }
 
     const time = header.shadowRoot?.querySelector('time');
-    if (!time) throw new Error('time element not found');
+    if (!time) throw new Error('time 要素が見つかりません');
     if (time.getAttribute('datetime') !== '2026-02-12') {
-      throw new Error(`Expected datetime to be "2026-02-12", got "${time.getAttribute('datetime') ?? 'null'}"`);
+      throw new Error(`datetime 属性に "2026-02-12" を期待していましたが、実際には "${time.getAttribute('datetime') ?? 'null'}" でした`);
     }
 
     const dateAria = time.getAttribute('aria-label') ?? '';
     if (!dateAria.includes('最終更新日: 2026-02-12')) {
-      throw new Error(`Expected aria-label to include updated context, got "${dateAria}"`);
+      throw new Error(`aria-label に最終更新日の文脈が含まれていることを期待していましたが、実際には "${dateAria}" でした`);
     }
     if (!dateAria.includes('作成日: 2025-11-20')) {
-      throw new Error(`Expected aria-label to include created context, got "${dateAria}"`);
+      throw new Error(`aria-label に作成日の文脈が含まれていることを期待していましたが、実際には "${dateAria}" でした`);
     }
 
     const tagLinks = header.shadowRoot?.querySelectorAll<HTMLElement>('.tag-link');
     const tagLinkCount = tagLinks?.length ?? 0;
     if (tagLinkCount !== 3) {
-      throw new Error(`Expected 3 tag links, got ${String(tagLinkCount)}`);
+      throw new Error(`3つのタグリンクを期待していましたが、実際には ${String(tagLinkCount)}つ見つかりました`);
     }
 
     const status = header.shadowRoot?.querySelector('.status');
-    if (!status) throw new Error('.status not found');
+    if (!status) throw new Error('.status が見つかりません');
     if (!status.classList.contains('status-draft')) {
-      throw new Error('Expected status tone class "status-draft"');
+      throw new Error('status のトーンクラスに "status-draft" が含まれていることを期待していました');
     }
     const statusText = status.textContent.trim();
     if (!statusText.includes('下書き')) {
-      throw new Error(`Expected status text to include "下書き", got "${statusText}"`);
+      throw new Error(`status テキストに "下書き" が含まれていることを期待していましたが、実際には "${statusText}" でした`);
     }
 
     const sourceLink = header.shadowRoot?.querySelector<HTMLAnchorElement>('.source-link');
-    if (!sourceLink) throw new Error('.source-link not found');
+    if (!sourceLink) throw new Error('.source-link が見つかりません');
     if (sourceLink.getAttribute('href') !== 'https://example.com/original') {
-      throw new Error(`Expected source href to be "https://example.com/original", got "${sourceLink.getAttribute('href') ?? 'null'}"`);
+      throw new Error(`出典 URL に "https://example.com/original" を期待していましたが、実際には "${sourceLink.getAttribute('href') ?? 'null'}" でした`);
     }
     if (sourceLink.getAttribute('target') !== '_blank') {
-      throw new Error('Expected source link to open in a new tab');
+      throw new Error('出典リンクが新しいタブで開く設定（target="_blank"）になっていることを期待していました');
     }
     if (sourceLink.getAttribute('rel') !== 'noopener noreferrer') {
-      throw new Error('Expected source link rel to be "noopener noreferrer"');
+      throw new Error('出典リンクの rel 属性に "noopener noreferrer" を期待していました');
     }
 
     const sourceStyle = getComputedStyle(sourceLink);
     if (sourceStyle.textDecorationLine !== 'underline') {
-      throw new Error('source-link はデフォルト状態で下線契約を満たす必要があります');
+      throw new Error('source-link はデフォルト状態で下線が表示される必要があります');
     }
 
   },
@@ -208,21 +208,21 @@ export const PublishedFallback: Story = {
   },
   play: async ({ canvasElement }) => {
     const header = canvasElement.querySelector<ArticleHeader>('#published-fallback');
-    if (!header) throw new Error('#published-fallback not found');
+    if (!header) throw new Error('#published-fallback が見つかりません');
     await header.updateComplete;
 
     const time = header.shadowRoot?.querySelector('time');
-    if (!time) throw new Error('time element not found');
+    if (!time) throw new Error('time 要素が見つかりません');
     if (time.getAttribute('datetime') !== '2026-01-10') {
-      throw new Error(`Expected datetime to be "2026-01-10", got "${time.getAttribute('datetime') ?? 'null'}"`);
+      throw new Error(`datetime 属性に "2026-01-10" を期待していましたが、実際には "${time.getAttribute('datetime') ?? 'null'}" でした`);
     }
 
     const dateAria = time.getAttribute('aria-label') ?? '';
     if (!dateAria.includes('公開日: 2026-01-10')) {
-      throw new Error(`Expected aria-label to include published context, got "${dateAria}"`);
+      throw new Error(`aria-label に公開日の文脈が含まれていることを期待していましたが、実際には "${dateAria}" でした`);
     }
     if (!dateAria.includes('作成日: 2026-01-02')) {
-      throw new Error(`Expected aria-label to include created context, got "${dateAria}"`);
+      throw new Error(`aria-label に作成日の文脈が含まれていることを期待していましたが、実際には "${dateAria}" でした`);
     }
 
   },
@@ -261,23 +261,23 @@ export const StatusStateMatrix: Story = {
 
     for (const check of checks) {
       const header = canvasElement.querySelector<ArticleHeader>(check.id);
-      if (!header) throw new Error(`${check.id} not found`);
+      if (!header) throw new Error(`${check.id} が見つかりません`);
       await header.updateComplete;
 
       const status = header.shadowRoot?.querySelector('.status');
-      if (!status) throw new Error(`status element not found for ${check.id}`);
+      if (!status) throw new Error(`${check.id} の status 要素が見つかりません`);
       if (!status.classList.contains(check.toneClass)) {
-        throw new Error(`Expected ${check.id} to include class "${check.toneClass}"`);
+        throw new Error(`${check.id} に "${check.toneClass}" クラスが含まれていることを期待していました`);
       }
       const statusText = status.textContent.trim();
       if (!statusText.includes(check.label)) {
-        throw new Error(`Expected ${check.id} text to include "${check.label}", got "${statusText}"`);
+        throw new Error(`${check.id} のテキストに "${check.label}" が含まれていることを期待していましたが、実際には "${statusText}" でした`);
       }
 
       const icon = status.querySelector('iconify-icon');
-      if (!icon) throw new Error(`iconify-icon not found for ${check.id}`);
+      if (!icon) throw new Error(`${check.id} の iconify-icon が見つかりません`);
       if (icon.getAttribute('icon') !== check.icon) {
-        throw new Error(`Expected ${check.id} icon="${check.icon}", got "${icon.getAttribute('icon') ?? 'null'}"`);
+        throw new Error(`${check.id} の icon 属性に "${check.icon}" を期待していましたが、実際には "${icon.getAttribute('icon') ?? 'null'}" でした`);
       }
     }
   },
@@ -297,15 +297,15 @@ export const TagEventContract: Story = {
   `,
   play: async ({ canvasElement }) => {
     const header = canvasElement.querySelector<ArticleHeader>('#tag-contract');
-    if (!header) throw new Error('#tag-contract not found');
+    if (!header) throw new Error('#tag-contract が見つかりません');
     await header.updateComplete;
 
     if (header.hasAttribute('tags')) {
-      throw new Error('tags should be property only and must not exist as an attribute');
+      throw new Error('tags は property-only である必要があり、属性として存在してはいけません');
     }
 
     const tagLink = header.shadowRoot?.querySelector<HTMLElement>('.tag-link');
-    if (!tagLink) throw new Error('.tag-link not found');
+    if (!tagLink) throw new Error('.tag-link が見つかりません');
 
     const eventPromise = new Promise<CustomEvent<TagClickDetail>>((resolve) => {
       header.addEventListener(
@@ -336,22 +336,22 @@ export const TagEventContract: Story = {
       }),
     ]);
 
-    if (!event) throw new Error('tag-click event did not fire');
-    if (!event.bubbles) throw new Error('Expected tag-click to bubble');
-    if (!event.composed) throw new Error('Expected tag-click to be composed');
-    if (!event.cancelable) throw new Error('Expected tag-click to be cancelable');
+    if (!event) throw new Error('tag-click イベントが発生しませんでした');
+    if (!event.bubbles) throw new Error('tag-click がバブリングすることを期待していました');
+    if (!event.composed) throw new Error('tag-click が composed であることを期待していました');
+    if (!event.cancelable) throw new Error('tag-click がキャンセル可能であることを期待していました');
 
     const expectedTag = '設計と実装';
     const expectedHref = `/tags/${encodeURIComponent(expectedTag)}`;
     if (event.detail.tag !== expectedTag) {
-      throw new Error(`Expected detail.tag="${expectedTag}", got "${event.detail.tag}"`);
+      throw new Error(`detail.tag に "${expectedTag}" を期待していましたが、実際には "${event.detail.tag}" でした`);
     }
     if (event.detail.href !== expectedHref) {
-      throw new Error(`Expected detail.href="${expectedHref}", got "${event.detail.href}"`);
+      throw new Error(`detail.href に "${expectedHref}" を期待していましたが、実際には "${event.detail.href}" でした`);
     }
 
     if (!clickCanceled) {
-      throw new Error('Expected native click navigation to be canceled when tag-click is prevented');
+      throw new Error('tag-click が preventDefault されたとき、ネイティブのクリックナビゲーションがキャンセルされることを期待していました');
     }
   },
 };
@@ -365,19 +365,19 @@ export const HeadingOnlyBoundary: Story = {
   `,
   play: async ({ canvasElement }) => {
     const header = canvasElement.querySelector<ArticleHeader>('#heading-only');
-    if (!header) throw new Error('#heading-only not found');
+    if (!header) throw new Error('#heading-only が見つかりません');
     await header.updateComplete;
 
     const title = header.shadowRoot?.querySelector('.heading');
-    if (!title) throw new Error('.heading not found');
+    if (!title) throw new Error('.heading が見つかりません');
     const titleText = title.textContent.trim();
     if (titleText !== '見出しのみの最小構成') {
-      throw new Error(`Expected heading text to be "見出しのみの最小構成", got "${titleText}"`);
+      throw new Error(`タイトルに "見出しのみの最小構成" を期待していましたが、実際には "${titleText}" でした`);
     }
 
     const metadata = header.shadowRoot?.querySelector('.metadata-list');
     if (metadata) {
-      throw new Error('metadata-list should not render when all metadata inputs are empty');
+      throw new Error('すべてのメタデータ入力が空のとき、metadata-list は存在してはいけません');
     }
 
   },
@@ -400,28 +400,27 @@ export const NormalizationBoundary: Story = {
   `,
   play: async ({ canvasElement }) => {
     const header = canvasElement.querySelector<ArticleHeader>('#normalization-boundary');
-    if (!header) throw new Error('#normalization-boundary not found');
+    if (!header) throw new Error('#normalization-boundary が見つかりません');
     await header.updateComplete;
 
     const tagLinks = header.shadowRoot?.querySelectorAll<HTMLElement>('.tag-link');
     const tagTexts = Array.from(tagLinks ?? []).map((link) => link.textContent.trim());
     if (tagTexts.length !== 2) {
-      throw new Error(`Expected 2 normalized tags, got ${String(tagTexts.length)}`);
+      throw new Error(`正規化されたタグを2つ期待していましたが、実際には ${String(tagTexts.length)}つでした`);
     }
     if (!tagTexts.includes('#設計') || !tagTexts.includes('#実装')) {
-      throw new Error(`Expected normalized tags to include #設計 and #実装, got "${tagTexts.join(', ')}"`);
+      throw new Error(`正規化されたタグに #設計 と #実装 が含まれていることを期待していました。実際: "${tagTexts.join(', ')}"`);
     }
 
-    const reading = header.shadowRoot?.querySelector('.metadata-reading-time span');
-    if (!reading) throw new Error('Expected reading time to render');
+    if (!reading) throw new Error('読了時間がレンダリングされていることを期待していました');
     const readingText = reading.textContent.trim();
     if (readingText !== '読了目安 2分') {
-      throw new Error(`Expected rounded reading time to be "読了目安 2分", got "${readingText}"`);
+      throw new Error(`読了時間の丸め結果に "読了目安 2分" を期待していましたが、実際には "${readingText}" でした`);
     }
 
     const source = header.shadowRoot?.querySelector('.source-link');
     if (source) {
-      throw new Error('Unsafe source URL must not render source link');
+      throw new Error('安全でない出典 URL は存在してはいけません');
     }
   },
 };
@@ -439,12 +438,12 @@ export const UnsafeSourceOnlyBoundary: Story = {
   `,
   play: async ({ canvasElement }) => {
     const header = canvasElement.querySelector<ArticleHeader>('#unsafe-source-only');
-    if (!header) throw new Error('#unsafe-source-only not found');
+    if (!header) throw new Error('#unsafe-source-only が見つかりません');
     await header.updateComplete;
 
     const metadata = header.shadowRoot?.querySelector('.metadata-list');
     if (metadata) {
-      throw new Error('metadata-list should not render when only unsafe source is provided');
+      throw new Error('安全でない出典のみが指定されたとき、metadata-list は存在してはいけません');
     }
   },
 };
@@ -463,24 +462,24 @@ export const AccessibilityMediaContracts: Story = {
   `,
   play: async ({ canvasElement }) => {
     const header = canvasElement.querySelector<ArticleHeader>('#a11y-media-contracts');
-    if (!header) throw new Error('#a11y-media-contracts not found');
+    if (!header) throw new Error('#a11y-media-contracts が見つかりません');
     await header.updateComplete;
 
     const stylesText = getShadowStylesText(header.shadowRoot ?? null);
     if (!stylesText.includes('@media (hover: none) and (pointer: coarse)')) {
-      throw new Error('Expected touch discoverability media query');
+      throw new Error('タッチデバイス向けの discoverability メディアクエリを期待していました');
     }
     if (!stylesText.includes('text-decoration: underline')) {
-      throw new Error('Expected underline discoverability contract for link-text');
+      throw new Error('リンクテキストの下線 discoverability 契約を期待していました');
     }
     if (!stylesText.includes('@media (prefers-reduced-motion: reduce)')) {
-      throw new Error('Expected reduced motion media query');
+      throw new Error('reduced-motion メディアクエリを期待していました');
     }
     if (!stylesText.includes('transition-duration: 0.01ms')) {
-      throw new Error('Expected reduced motion transition shortening');
+      throw new Error('reduced-motion 時のトランジション短縮を期待していました');
     }
     if (!stylesText.includes('@media (forced-colors: active)')) {
-      throw new Error('Expected forced-colors media query');
+      throw new Error('forced-colors メディアクエリを期待していました');
     }
     const lowerStylesText = stylesText.toLowerCase();
     if (
@@ -488,7 +487,7 @@ export const AccessibilityMediaContracts: Story = {
       !lowerStylesText.includes('graytext') ||
       !lowerStylesText.includes('linktext')
     ) {
-      throw new Error('Expected forced-colors system color fallbacks');
+      throw new Error('forced-colors システムカラーのフォールバックを期待していました');
     }
   },
 };
@@ -507,21 +506,21 @@ export const DarkModeTokenContract: Story = {
   `,
   play: async ({ canvasElement }) => {
     const header = canvasElement.querySelector<ArticleHeader>('#dark-mode-token-contract');
-    if (!header) throw new Error('#dark-mode-token-contract not found');
+    if (!header) throw new Error('#dark-mode-token-contract が見つかりません');
     await header.updateComplete;
 
     const stylesText = getShadowStylesText(header.shadowRoot ?? null);
     if (!stylesText.includes('var(--fg-default')) {
-      throw new Error('Expected --fg-default token usage');
+      throw new Error('--fg-default トークンの使用を期待していました');
     }
     if (!stylesText.includes('var(--fg-muted')) {
-      throw new Error('Expected --fg-muted token usage');
+      throw new Error('--fg-muted トークンの使用を期待していました');
     }
     if (!stylesText.includes('var(--fg-subtle')) {
-      throw new Error('Expected --fg-subtle token usage');
+      throw new Error('--fg-subtle トークンの使用を期待していました');
     }
     if (!stylesText.includes('var(--focus-ring-color')) {
-      throw new Error('Expected --focus-ring-color token usage');
+      throw new Error('--focus-ring-color トークンの使用を期待していました');
     }
   },
 };
