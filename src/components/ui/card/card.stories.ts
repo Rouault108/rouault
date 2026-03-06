@@ -351,7 +351,7 @@ export const AllVariants: Story = {
 export const WithAllSlots: Story = {
   render: () => html`
     <ui-card style="max-width: 360px;">
-      <div slot="header" style="border-bottom: 1px solid var(--border-default); padding-bottom: var(--space-3); margin-bottom: var(--space-3);">
+      <div slot="header" style="padding-bottom: var(--space-3); margin-bottom: var(--space-3);">
         <h3 style="margin: 0; font-size: var(--text-base); font-weight: var(--font-medium);">
           ノートタイトル
         </h3>
@@ -371,7 +371,6 @@ export const WithAllSlots: Story = {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          border-top: 1px solid var(--border-default);
           padding-top: var(--space-3);
           margin-top: var(--space-3);
           font-size: var(--text-xs);
