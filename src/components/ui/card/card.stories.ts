@@ -33,6 +33,21 @@ const attachNamedLinkSpy = (
   return () => count;
 };
 
+/** ブラウザテストで既定挙動を制御できるクリックイベントを発火する */
+const dispatchTestClick = (
+  element: Element,
+  init: MouseEventInit = {},
+): boolean =>
+  element.dispatchEvent(
+    new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      button: 0,
+      ...init,
+    }),
+  );
+
 /**
  * ## カード (Card)
  *
@@ -59,7 +74,7 @@ const attachNamedLinkSpy = (
 const meta: Meta<Card> = {
   title: 'Components/Card',
   component: 'ui-card',
-  tags: ['autodocs'],
+  // tags: ['autodocs'],
   parameters: {
     docs: {
       description: {
@@ -459,7 +474,7 @@ export const Clickable: Story = {
     const getCount = attachLinkSpy(card);
 
     // カード要素自体へのクリックを模擬（パディング領域のクリック）
-    card.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+    dispatchTestClick(card);
     await card.updateComplete;
 
     if (getCount() !== 1) {
@@ -522,35 +537,35 @@ export const ClickDelegationGuards: Story = {
     const getCount = attachLinkSpy(card);
 
     // ── Guard 1: 中クリック（button: 1）は委譲しない ──
-    card.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 1 }));
+    dispatchTestClick(card, { button: 1 });
     await card.updateComplete;
     if (getCount() !== 0) {
       throw new Error('Guard 1 失敗: 中クリックで委譲が発生してはいけません');
     }
 
     // ── Guard 2: ctrlKey は委譲しない ──
-    card.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, ctrlKey: true }));
+    dispatchTestClick(card, { ctrlKey: true });
     await card.updateComplete;
     if (getCount() !== 0) {
       throw new Error('Guard 2 失敗: ctrlKey 押下で委譲が発生してはいけません');
     }
 
     // ── Guard 3: metaKey は委譲しない ──
-    card.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, metaKey: true }));
+    dispatchTestClick(card, { metaKey: true });
     await card.updateComplete;
     if (getCount() !== 0) {
       throw new Error('Guard 3 失敗: metaKey 押下で委譲が発生してはいけません');
     }
 
     // ── Guard 4: shiftKey は委譲しない ──
-    card.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, shiftKey: true }));
+    dispatchTestClick(card, { shiftKey: true });
     await card.updateComplete;
     if (getCount() !== 0) {
       throw new Error('Guard 4 失敗: shiftKey 押下で委譲が発生してはいけません');
     }
 
     // ── Guard 5: altKey は委譲しない ──
-    card.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, altKey: true }));
+    dispatchTestClick(card, { altKey: true });
     await card.updateComplete;
     if (getCount() !== 0) {
       throw new Error('Guard 5 失敗: altKey 押下で委譲が発生してはいけません');
@@ -559,7 +574,7 @@ export const ClickDelegationGuards: Story = {
     // ── Guard 6: <button> への直接クリックは委譲しない ──
     const button = card.querySelector<HTMLButtonElement>('#action-button');
     if (!button) throw new Error('テスト用ボタンが見つかりません');
-    button.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+    dispatchTestClick(button);
     await card.updateComplete;
     if (getCount() !== 0) {
       throw new Error('Guard 6 失敗: <button> への直接クリックで委譲が発生してはいけません');
@@ -576,7 +591,7 @@ export const ClickDelegationGuards: Story = {
     // リンク自体をクリックしても「委譲による二重発火」はないことを確認
     // （リンクの click は 1 回だが、それは委譲ではなくリンク自身のクリック）
     const countBeforeLinkClick = getCount();
-    link.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+    dispatchTestClick(link);
     await card.updateComplete;
     // count は 1 増えるが、それは委譲ではなくリンク自身のリスナーによるもの
     if (getCount() !== countBeforeLinkClick + 1) {
@@ -592,8 +607,6 @@ export const ClickDelegationGuards: Story = {
         `Guard 7 後の累計が 1 であるべきですが ${String(getCount())} です（委譲による余分な発火がある可能性）`,
       );
     }
-
-    console.log('✅ ClickDelegationGuards: すべてのガードが正常に機能しています');
   },
 };
 
@@ -640,7 +653,7 @@ export const TextSelectionGuard: Story = {
     }
 
     // テキスト選択中にカードクリック
-    card.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+    dispatchTestClick(card);
     await card.updateComplete;
 
     // 選択を解除
@@ -651,7 +664,7 @@ export const TextSelectionGuard: Story = {
     }
 
     // 選択解除後は委譲されること（正常動作の確認）
-    card.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+    dispatchTestClick(card);
     await card.updateComplete;
 
     if (getCount() !== 1) {
@@ -692,7 +705,7 @@ export const ClickableNoLink: Story = {
     // テスト: クリックしてもエラーが発生しないこと
     let errorOccurred = false;
     try {
-      card.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+      dispatchTestClick(card);
       await card.updateComplete;
     } catch {
       errorOccurred = true;
@@ -736,7 +749,7 @@ export const MultipleLinksPrimaryFirst: Story = {
     const getSecondaryCount = attachNamedLinkSpy(card, '#secondary-link');
 
     // 背景クリック時は先頭リンクへ委譲されること
-    card.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+    dispatchTestClick(card);
     await card.updateComplete;
 
     if (getPrimaryCount() !== 1) {
@@ -749,7 +762,7 @@ export const MultipleLinksPrimaryFirst: Story = {
     // 副リンク直接クリック時は委譲せず副リンク自身で処理されること
     const secondaryLink = card.querySelector<HTMLAnchorElement>('#secondary-link');
     if (!secondaryLink) throw new Error('副リンクが見つかりません');
-    secondaryLink.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+    dispatchTestClick(secondaryLink);
     await card.updateComplete;
 
     if (getSecondaryCount() !== 1) {
@@ -808,7 +821,7 @@ export const InteractiveElementsGuard: Story = {
       const el = card.querySelector<HTMLElement>(selector);
       if (!el) throw new Error(`${selector} が見つかりません`);
 
-      el.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+      dispatchTestClick(el);
       await card.updateComplete;
 
       if (getPrimaryCount() !== 0) {
@@ -817,7 +830,7 @@ export const InteractiveElementsGuard: Story = {
     }
 
     // 背景クリック時のみ委譲されること
-    card.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+    dispatchTestClick(card);
     await card.updateComplete;
 
     if (getPrimaryCount() !== 1) {
@@ -1054,7 +1067,7 @@ export const ClickableVariants: Story = {
 
       // テスト: 全カードにカード背景クリックで委譲が機能すること
       const getCount = attachLinkSpy(card);
-      card.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+      dispatchTestClick(card);
       await card.updateComplete;
 
       if (getCount() !== 1) {
