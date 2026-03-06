@@ -62,7 +62,7 @@ export type CardVariant = 'outlined' | 'elevated' | 'flat' | 'ghost';
  * @cssprop --bg-surface-2 - elevated バリアントの背景色
  * @cssprop --bg-fill-muted - flat バリアントの背景色
  * @cssprop --elevation-md - elevated バリアントのシャドウ
- * @cssprop --elevation-lg - hover 時の浮上シャドウ
+ * @cssprop --elevation-sm - hover 時の浮上シャドウ
  * @cssprop --scale-hover-sm - hover 時のスケール（デフォルト: 1.02）
  * @cssprop --duration-normal - トランジション時間
  * @cssprop --ease-out - イージング関数
@@ -139,12 +139,6 @@ export class Card extends LitElement {
       cursor: pointer;
     }
 
-    /* Hover & :focus-within 共通: Scale（Tactility） */
-    :host([clickable]:hover),
-    :host([clickable]:focus-within) {
-      transform: scale(var(--scale-hover-sm, 1.02));
-    }
-
     /* フォーカスリング: 内部要素にフォーカスがある時、カード全体に描画する。
        これにより「クリック可能な領域＝フォーカス領域」のメンタルモデルが一致する。 */
     :host([clickable]:focus-within) {
@@ -159,8 +153,7 @@ export class Card extends LitElement {
     ──────────────────────────────────────────── */
     :host([clickable][variant='outlined']:hover),
     :host([clickable][variant='outlined']:focus-within) {
-      background: var(--bg-surface-1);
-      box-shadow: var(--elevation-lg);
+      box-shadow: var(--elevation-md);
       border-color: var(--border-muted);
     }
 
