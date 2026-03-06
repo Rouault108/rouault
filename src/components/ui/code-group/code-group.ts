@@ -105,6 +105,12 @@ export class CodeGroup extends LitElement {
       display: none;
     }
 
+    .tab-list-spacer {
+      flex: 0 0 calc(var(--header-tools-width, 48px) + var(--space-1, 4px));
+      align-self: stretch;
+      pointer-events: none;
+    }
+
     ::slotted([slot='tab']) {
       appearance: none;
       border: none;
@@ -635,8 +641,19 @@ export class CodeGroup extends LitElement {
     });
 
     const headerToolsWidth = this._readHeaderToolsWidth();
-    if (headerToolsWidth > 0) {
-      tabList.scrollLeft += headerToolsWidth;
+    if (headerToolsWidth <= 0) return;
+
+    const tabListRect = tabList.getBoundingClientRect();
+    const tabRect = tab.getBoundingClientRect();
+    const visibleInlineStart = tabListRect.left;
+    const visibleInlineEnd = tabListRect.right - headerToolsWidth;
+
+    if (tabRect.right > visibleInlineEnd) {
+      tabList.scrollLeft += Math.ceil(tabRect.right - visibleInlineEnd);
+    }
+
+    if (tabRect.left < visibleInlineStart) {
+      tabList.scrollLeft -= Math.ceil(visibleInlineStart - tabRect.left);
     }
   }
 
@@ -786,6 +803,7 @@ export class CodeGroup extends LitElement {
             @keydown="${this._onTabListKeyDown}"
           >
             <slot name="tab"></slot>
+            <span class="tab-list-spacer" aria-hidden="true"></span>
           </div>
 
           <div class="header-tools">

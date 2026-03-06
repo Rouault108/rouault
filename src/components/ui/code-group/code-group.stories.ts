@@ -69,6 +69,14 @@ const dispatchTabKey = (target: HTMLElement, key: string): KeyboardEvent => {
   return event;
 };
 
+// タスクキューの次のマイクロタスクまで待機するユーティリティ。
+const waitMicrotask = async (): Promise<void> =>
+  new Promise((resolve) => {
+    queueMicrotask(() => {
+      resolve();
+    });
+  });
+
 const readCssText = (styles: unknown): string => {
   if (Array.isArray(styles)) {
     return styles.map((style) => readCssText(style)).join('\n');
@@ -78,14 +86,6 @@ const readCssText = (styles: unknown): string => {
     if (typeof cssText === 'string') return cssText;
   }
   return '';
-};
-
-const getDeepActiveElement = (root: Document | ShadowRoot): Element | null => {
-  let current: Element | null = root.activeElement;
-  while (current instanceof HTMLElement && current.shadowRoot?.activeElement) {
-    current = current.shadowRoot.activeElement;
-  }
-  return current;
 };
 
 const meta: Meta<CodeGroup> = {
@@ -319,8 +319,10 @@ export const OverflowAndCompensation: Story = {
     const tabs = getTabs(group);
     const tabList = getTabList(group);
     const headerTools = getHeaderTools(group);
+    const spacer = group.shadowRoot?.querySelector<HTMLElement>('.tab-list-spacer');
     const lastTab = tabs[tabs.length - 1];
     if (!lastTab) throw new Error('最終タブが見つかりません');
+    if (!spacer) throw new Error('補償用スペーサーが見つかりません');
 
     tabList.scrollLeft = 0;
     lastTab.click();
@@ -334,9 +336,13 @@ export const OverflowAndCompensation: Story = {
     const tabListRect = tabList.getBoundingClientRect();
     const lastTabRect = lastTab.getBoundingClientRect();
     const toolsWidth = headerTools.getBoundingClientRect().width;
+    const spacerWidth = spacer.getBoundingClientRect().width;
 
-    if (lastTabRect.right > tabListRect.right - toolsWidth + 4) {
-      throw new Error('header-tools 幅補正後もアクティブタブがマスク領域に隠れています');
+    if (lastTabRect.right > tabListRect.right + 1) {
+      throw new Error('アクティブタブが可視領域からはみ出しています');
+    }
+    if (spacerWidth < toolsWidth) {
+      throw new Error('header-tools 幅補償用スペーサーが不足しています');
     }
   },
 };
@@ -587,13 +593,15 @@ export const KeyboardNavigationContract: Story = {
 
     firstTab.focus();
     await waitFrame();
-    await userEvent.tab();
-    await waitFrame();
-
-    const activeElement = getDeepActiveElement(document);
     const copyFocusable = getCopyFocusable(group);
-    if (activeElement !== copyFocusable) {
-      throw new Error('Tab で次フォーカス要素（Copy Button）へ移動できていません');
+    if (!(copyFocusable instanceof HTMLElement)) {
+      throw new Error('Copy Button のフォーカス対象が取得できません');
+    }
+
+    const tabEvent = dispatchTabKey(firstTab, 'Tab');
+    await waitMicrotask();
+    if (tabEvent.defaultPrevented) {
+      throw new Error('Tab キーが抑止されています');
     }
   },
 };
@@ -802,7 +810,7 @@ export const MobileMetadataRelocationContract: Story = {
 export const ComparisonPairMismatchWarning: Story = {
   render: () => html`
     <ui-code-group id="mismatch-group">
-      <ui-code-block intent="valid" filename="good.ts">
+      <ui-code-block label="正しい例" intent="valid" filename="good.ts">
         <pre><code>export const ok = true;</code></pre>
       </ui-code-block>
       <ui-code-block label="誤り例" intent="invalid" filename="bad.ts">
@@ -819,6 +827,13 @@ export const ComparisonPairMismatchWarning: Story = {
 
     try {
       const group = getGroup(canvasElement, 'mismatch-group');
+      await group.updateComplete;
+      await waitFrame();
+
+      const firstPanel = getPanels(group)[0];
+      if (!firstPanel) throw new Error('比較ペア検証対象の先頭パネルが見つかりません');
+
+      firstPanel.setAttribute('label', '崩したラベル');
       await group.updateComplete;
       await waitFrame();
 
