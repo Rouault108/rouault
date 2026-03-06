@@ -168,8 +168,6 @@ export const Default: Story = {
     dropdown.close();
     await dropdown.updateComplete;
     if (dropdown.hasAttribute("opened")) throw new Error('close() 実行後にドロップダウンが閉じていることを期待していましたが、開いていました');
-
-    console.log('✅ All tests passed for Default story');
   },
 };
 
@@ -217,8 +215,6 @@ export const DefaultVariantNormal: Story = {
     if (items.length !== 3) {
       throw new Error(`メニュー項目が 3 つあることを期待していましたが、実際には ${String(items.length)} つでした`);
     }
-
-    console.log('✅ All tests passed for DefaultVariantNormal story');
   },
 };
 
@@ -254,8 +250,6 @@ export const DangerVariantNormal: Story = {
         throw new Error('variant="danger" を期待していましたが、異なりました');
       }
     });
-
-    console.log('✅ All tests passed for DangerVariantNormal story');
   },
 };
 
@@ -297,8 +291,6 @@ export const DefaultVariantDisabledItem: Story = {
     if (button.getAttribute('aria-disabled') !== 'true') {
       throw new Error(`aria-disabled="true" を期待していましたが、実際には "${button.getAttribute('aria-disabled') ?? 'null'}" でした`);
     }
-
-    console.log('✅ All tests passed for DefaultVariantDisabledItem story');
   },
 };
 
@@ -333,8 +325,6 @@ export const DangerVariantDisabledItem: Story = {
     if (dangerDisabledItem.getAttribute('variant') !== 'danger') {
       throw new Error('variant="danger" を期待していましたが、異なりました');
     }
-
-    console.log('✅ All tests passed for DangerVariantDisabledItem story');
   },
 };
 
@@ -373,8 +363,6 @@ export const DropdownDisabled: Story = {
     dropdown.open();
     await dropdown.updateComplete;
     if (dropdown.hasAttribute("opened")) throw new Error('無効状態のドロップダウンは開かないはずですが、開いてしまいました');
-
-    console.log('✅ All tests passed for DropdownDisabled story');
   },
 };
 
@@ -460,8 +448,6 @@ export const WithSeparators: Story = {
         throw new Error(`role="separator" を期待していましたが、実際には "${div.getAttribute('role') ?? 'null'}" でした`);
       }
     }
-
-    console.log('✅ All tests passed for WithSeparators story');
   },
 };
 
@@ -551,8 +537,6 @@ export const EventHandling: Story = {
 
     // テスト: 選択後にメニューが閉じる
     if (dropdown.hasAttribute("opened")) throw new Error('項目選択後にドロップダウンが閉じることを期待していましたが、開いたままでした');
-
-    console.log('✅ All tests passed for EventHandling story');
   },
 };
 
@@ -664,8 +648,6 @@ export const KeyboardNavigation: Story = {
     await new Promise(resolve => setTimeout(resolve, 50));
     if (!dropdown.hasAttribute('opened')) throw new Error('ArrowUp キー押下後にドロップダウンが開くことを期待していましたが、閉じたままでした');
     if (getFocusedValue() !== 'delete') throw new Error('ArrowUp キーでの展開時に有効な最後の項目にフォーカスが当たることを期待していましたが、当たりませんでした');
-
-    console.log('✅ All tests passed for KeyboardNavigation story');
   },
 };
 
@@ -711,8 +693,6 @@ export const AllItemsDisabled: Story = {
         throw new Error(`項目 "${item.getAttribute('value') ?? ''}" が無効であることを期待していましたが、有効でした`);
       }
     });
-
-    console.log('✅ All tests passed for AllItemsDisabled story');
   },
 };
 
@@ -744,8 +724,6 @@ export const SingleItem: Story = {
     if (items.length !== 1) {
       throw new Error(`項目が1つあることを期待していましたが、実際には ${String(items.length)} つでした`);
     }
-
-    console.log('✅ All tests passed for SingleItem story');
   },
 };
 
@@ -792,8 +770,6 @@ export const ManyItems: Story = {
     if (style.overflowY !== 'auto') {
       throw new Error(`overflow-y: auto を期待していましたが、実際には "${style.overflowY}" でした`);
     }
-
-    console.log('✅ All tests passed for ManyItems story');
   },
 };
 
@@ -911,8 +887,6 @@ export const ProgrammaticControl: Story = {
     dropdown.close(); // 2回目は無視
     await dropdown.updateComplete;
     if (dropdown.hasAttribute("opened")) throw new Error('opened=false であることを期待していましたが、true でした');
-
-    console.log('✅ All tests passed for ProgrammaticControl story');
   },
 };
 
@@ -996,8 +970,6 @@ export const AriaAttributes: Story = {
         throw new Error(`tabindex="-1" を期待していましたが、実際には "${btn.getAttribute('tabindex') ?? 'null'}" でした`);
       }
     }
-
-    console.log('✅ All tests passed for AriaAttributes story');
   },
 };
 
@@ -1033,8 +1005,6 @@ export const PlacementTop: Story = {
     if (dropdown.placement !== 'top-start') {
       throw new Error(`placement="top-start" を期待していましたが、実際には "${dropdown.placement}" でした`);
     }
-
-    console.log('✅ All tests passed for PlacementTop story');
   },
 };
 

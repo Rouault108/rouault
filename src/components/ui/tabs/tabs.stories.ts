@@ -222,8 +222,6 @@ export const Default: Story = {
     if (firstPanel.hasAttribute('hidden')) {
       throw new Error('[Default] 先頭パネルが hidden になっています');
     }
-
-    console.log('✅ [Default] 全テスト通過');
   },
 };
 
@@ -278,8 +276,6 @@ export const InitialIndex: Story = {
     if (tabEls[1].getAttribute('tabindex') !== '0') {
       throw new Error('[InitialIndex] 選択タブの tabindex が "0" ではありません');
     }
-
-    console.log('✅ [InitialIndex] 全テスト通過');
   },
 };
 
@@ -331,8 +327,6 @@ export const Vertical: Story = {
     if (tabs.getAttribute('orientation') !== 'vertical') {
       throw new Error('[Vertical] orientation 属性が反映されていません');
     }
-
-    console.log('✅ [Vertical] 全テスト通過');
   },
 };
 
@@ -400,8 +394,6 @@ export const AutomaticActivation: Story = {
     if (tabEls[1]?.getAttribute('aria-selected') !== 'true') {
       throw new Error('[AutomaticActivation] ArrowRight 後に tab[1] が選択されていません');
     }
-
-    console.log('✅ [AutomaticActivation] 全テスト通過');
   },
 };
 
@@ -505,8 +497,6 @@ export const ManyTabs: Story = {
     if (tablist.scrollLeft <= 0) {
       throw new Error('[ManyTabs] 末尾タブ選択時に横スクロールしていません');
     }
-
-    console.log('✅ [ManyTabs] 全テスト通過');
   },
 };
 
@@ -557,8 +547,6 @@ export const SelectedByValue: Story = {
     if (thirdPanel.hasAttribute('hidden')) {
       throw new Error('[SelectedByValue] selected-value に対応するパネルが hidden になっています');
     }
-
-    console.log('✅ [SelectedByValue] 全テスト通過');
   },
 };
 
@@ -673,8 +661,6 @@ export const KeyboardNavigation: Story = {
     if (tabEls[0].getAttribute('tabindex') !== '0') {
       throw new Error('[KeyboardNavigation] 末尾からの ArrowRight で先頭へ循環しませんでした');
     }
-
-    console.log('✅ [KeyboardNavigation] 全テスト通過');
   },
 };
 
@@ -731,8 +717,6 @@ export const KeyboardNavigationVertical: Story = {
     if (tabEls[0]?.getAttribute('tabindex') !== '0') {
       throw new Error('[KeyboardNavigationVertical] ArrowUp 後に tab[0] の tabindex が "0" ではありません');
     }
-
-    console.log('✅ [KeyboardNavigationVertical] 全テスト通過');
   },
 };
 
@@ -825,8 +809,6 @@ export const TabChangeEvent: Story = {
     if (events.length !== eventCountBeforeReclick) {
       throw new Error('[TabChangeEvent] 同じタブの再選択でイベントが発火してしまいました');
     }
-
-    console.log('✅ [TabChangeEvent] 全テスト通過');
   },
 };
 
@@ -887,9 +869,6 @@ export const EdgeCase_InvalidIndex: Story = {
     if (firstPanel.hasAttribute('hidden')) {
       throw new Error('[EdgeCase_InvalidIndex] フォールバックで先頭パネルが表示されていません');
     }
-
-    console.log('✅ [EdgeCase_InvalidIndex] 全テスト通過');
-    console.log('📝 コンソールの警告メッセージを確認してください');
   },
   parameters: {
     docs: {
@@ -952,8 +931,6 @@ export const EdgeCase_ValueOverridesIndex: Story = {
     if (tabEls[0]?.getAttribute('aria-selected') !== 'false') {
       throw new Error('[EdgeCase_ValueOverridesIndex] index=0 のタブが誤って選択されています');
     }
-
-    console.log('✅ [EdgeCase_ValueOverridesIndex] 全テスト通過');
   },
   parameters: {
     docs: {
@@ -1018,8 +995,6 @@ export const EdgeCase_SingleTab: Story = {
     if (tabEls[0].getAttribute('tabindex') !== '0') {
       throw new Error('[EdgeCase_SingleTab] Arrow キー後に tabindex="0" が失われました');
     }
-
-    console.log('✅ [EdgeCase_SingleTab] 全テスト通過');
   },
 };
 
@@ -1070,8 +1045,6 @@ export const EdgeCase_UnmatchedValue: Story = {
     if (tabEls[1]?.getAttribute('aria-selected') !== 'true') {
       throw new Error('[EdgeCase_UnmatchedValue] selected-index=1 へのフォールバックが機能していません');
     }
-
-    console.log('✅ [EdgeCase_UnmatchedValue] 全テスト通過');
   },
 };
 
@@ -1425,8 +1398,6 @@ export const AsyncPanel: Story = {
     if (loadingContent.hasAttribute('hidden')) {
       throw new Error('[AsyncPanel] 完了後にコンテンツが表示されていません');
     }
-
-    console.log('✅ [AsyncPanel] 全テスト通過');
   },
 };
 

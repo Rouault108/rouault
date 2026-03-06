@@ -179,8 +179,6 @@ export const Default: Story = {
     if (!button.value) {
       throw new Error('value 属性が設定されている必要があります');
     }
-
-    console.log('✅ All tests passed for Default story');
   },
 };
 
@@ -657,8 +655,6 @@ export const MissingLabel: Story = {
     if (uiButton.getAttribute('aria-label') !== 'コピー') {
       throw new Error(`フォールバックの aria-label が "コピー" であることを期待していましたが、実際には "${uiButton.getAttribute('aria-label') ?? 'null'}" でした`);
     }
-
-    console.log('⚠️ This story demonstrates a missing label error');
   },
 };
 
@@ -814,8 +810,6 @@ export const TestSuccessState: Story = {
     if (copyEventCount !== 1 || copiedValue !== button.value) {
       throw new Error(`コピーイベントが1回発行され、正しい値がコピーされることを期待していましたが、実際には count: ${String(copyEventCount)}, value: "${copiedValue}" でした`);
     }
-
-    console.log('✅ All tests passed for TestSuccessState story');
   },
 };
 

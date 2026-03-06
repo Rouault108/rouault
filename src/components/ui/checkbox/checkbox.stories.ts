@@ -202,8 +202,6 @@ export const Default: Story = {
     if (control.getAttribute('tabindex') !== '0') {
       throw new Error(`tabindex="0" を期待していましたが、実際には "${control.getAttribute('tabindex') ?? 'null'}" でした`);
     }
-
-    console.log('✅ All tests passed for Default story');
   },
 };
 
@@ -236,8 +234,6 @@ export const UncheckedNormal: Story = {
     if (control.getAttribute('aria-checked') !== 'false') {
       throw new Error(`aria-checked="false" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`);
     }
-
-    console.log('✅ All tests passed for UncheckedNormal story');
   },
 };
 
@@ -282,8 +278,6 @@ export const CheckedNormal: Story = {
     if (!minusIcon) throw new Error('マイナスアイコンが見つかりません');
     const minusStyle = getComputedStyle(minusIcon);
     if (minusStyle.display !== 'none') throw new Error('選択時はマイナスアイコンが非表示である必要があります');
-
-    console.log('✅ All tests passed for CheckedNormal story');
   },
 };
 
@@ -336,8 +330,6 @@ export const IndeterminateNormal: Story = {
     if (!checkIcon) throw new Error('チェックアイコンが見つかりません');
     const checkStyle = getComputedStyle(checkIcon);
     if (checkStyle.display !== 'none') throw new Error('中間状態のときはチェックアイコンが非表示である必要があります');
-
-    console.log('✅ All tests passed for IndeterminateNormal story');
   },
 };
 
@@ -376,8 +368,6 @@ export const UncheckedDisabled: Story = {
     if (control.getAttribute('tabindex') !== '-1') {
       throw new Error(`tabindex="-1" を期待していましたが、実際には "${control.getAttribute('tabindex') ?? 'null'}" でした`);
     }
-
-    console.log('✅ All tests passed for UncheckedDisabled story');
   },
 };
 
@@ -416,8 +406,6 @@ export const CheckedDisabled: Story = {
     if (control.getAttribute('aria-disabled') !== 'true') {
       throw new Error(`aria-disabled="true" を期待していましたが、実際には "${control.getAttribute('aria-disabled') ?? 'null'}" でした`);
     }
-
-    console.log('✅ All tests passed for CheckedDisabled story');
   },
 };
 
@@ -453,8 +441,6 @@ export const IndeterminateDisabled: Story = {
     if (control.getAttribute('aria-disabled') !== 'true') {
       throw new Error(`aria-disabled="true" を期待していましたが、実際には "${control.getAttribute('aria-disabled') ?? 'null'}" でした`);
     }
-
-    console.log('✅ All tests passed for IndeterminateDisabled story');
   },
 };
 
@@ -500,8 +486,6 @@ export const UncheckedInvalid: Story = {
     if (!control.getAttribute('aria-describedby')) {
       throw new Error('invalid 時は aria-describedby が設定されている必要があります');
     }
-
-    console.log('✅ All tests passed for UncheckedInvalid story');
   },
 };
 
@@ -542,8 +526,6 @@ export const CheckedInvalid: Story = {
     if (control.getAttribute('aria-invalid') !== 'true') {
       throw new Error(`aria-invalid="true" を期待していましたが、実際には "${control.getAttribute('aria-invalid') ?? 'null'}" でした`);
     }
-
-    console.log('✅ All tests passed for CheckedInvalid story');
   },
 };
 
@@ -652,8 +634,6 @@ export const AllStates: Story = {
     if (checkboxes.length !== 9) {
       throw new Error(`9個のチェックボックスを期待していましたが、実際には ${String(checkboxes.length)}個でした`);
     }
-
-    console.log('✅ All tests passed for AllStates story');
   },
 };
 
@@ -752,8 +732,6 @@ export const ClickToggle: Story = {
 
     if (newChecked2 === null) throw new Error('2回目の change イベントが発火しませんでした');
     if (newChecked2) throw new Error('2回目のクリック後に checked が false になることを期待していましたが true でした');
-
-    console.log('✅ All tests passed for ClickToggle story');
   },
 };
 
@@ -782,8 +760,6 @@ export const LabelClickToggle: Story = {
     await checkbox.updateComplete;
 
     if (!checkbox.checked) throw new Error('ラベルクリック後に checked が true になることを期待していましたが false でした');
-
-    console.log('✅ All tests passed for LabelClickToggle story');
   },
 };
 
@@ -833,8 +809,6 @@ export const KeyboardToggle: Story = {
 
     if (newChecked === null) throw new Error('Space キー操作で change イベントが発火しませんでした');
     if (!newChecked) throw new Error('Space キー操作後に checked が true になることを期待していましたが false でした');
-
-    console.log('✅ All tests passed for KeyboardToggle story');
   },
 };
 
@@ -908,8 +882,6 @@ export const IndeterminateToUnchecked: Story = {
     if (control.getAttribute('aria-checked') !== 'false') {
       throw new Error(`遷移後に aria-checked="false" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`);
     }
-
-    console.log('✅ All tests passed for IndeterminateToUnchecked story');
   },
 };
 
@@ -968,8 +940,6 @@ export const CheckedClearsIndeterminate: Story = {
     if (control.getAttribute('aria-checked') !== 'true') {
       throw new Error(`aria-checked="true" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`);
     }
-
-    console.log('✅ All tests passed for CheckedClearsIndeterminate story');
   },
 };
 
@@ -1022,8 +992,6 @@ export const DisabledClickBlocked: Story = {
     // テスト: change イベントが発火していない
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (changeEventFired) throw new Error('無効状態のチェックボックスは change イベントを発火してはいけません');
-
-    console.log('✅ All tests passed for DisabledClickBlocked story');
   },
 };
 
@@ -1062,8 +1030,6 @@ export const NoLabel: Story = {
     if (control.getAttribute('aria-label') !== 'ラベルなしチェックボックス') {
       throw new Error('aria-label がコントロールに転送されることを期待していましたが false でした');
     }
-
-    console.log('✅ All tests passed for NoLabel story');
   },
 };
 
@@ -1103,8 +1069,6 @@ export const DarkThemeStates: Story = {
     if (checkedControl.getAttribute('aria-checked') !== 'true') {
       throw new Error('選択済みのコントロールが aria-checked="true" であることを期待していましたが false でした');
     }
-
-    console.log('✅ All tests passed for DarkThemeStates story');
   },
 };
 
@@ -1139,8 +1103,6 @@ export const ForcedColorsSimulation: Story = {
     if (control.getAttribute('aria-checked') !== 'true') {
       throw new Error('強制カラーのシミュレーションにおいて選択状態であることを期待していましたが未選択状態でした');
     }
-
-    console.log('✅ All tests passed for ForcedColorsSimulation story');
   },
 };
 
@@ -1263,8 +1225,6 @@ export const FormIntegration: Story = {
 
     // disabled は checked でも送信されない
     if (data.has('locked')) throw new Error('無効状態のチェックボックスは FormData に含まれてはいけません');
-
-    console.log('✅ All tests passed for FormIntegration story');
   },
 };
 
@@ -1362,8 +1322,6 @@ export const RequiredValidation: Story = {
     // 元に戻す
     checkbox.checked = false;
     await checkbox.updateComplete;
-
-    console.log('✅ All tests passed for RequiredValidation story');
   },
 };
 
@@ -1434,8 +1392,6 @@ export const SelectAllPattern: Story = {
     children.forEach(child => {
       if (child.checked) throw new Error('初期状態で子項目は未選択である必要があります');
     });
-
-    console.log('✅ All tests passed for SelectAllPattern story');
   },
 };
 

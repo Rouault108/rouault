@@ -180,8 +180,6 @@ export const Default: Story = {
     // テスト: role="status" は存在しない（スロット表示時は静的ラベル）
     const statusSpan = badge.shadowRoot?.querySelector('[role="status"]');
     if (statusSpan) throw new Error('count が null のとき、role="status" は存在してはいけません');
-
-    console.log('✅ All tests passed for Default story');
   },
 };
 
@@ -273,8 +271,6 @@ export const VariantColorMatrix: Story = {
     if (dotSlot) throw new Error('dot バリアントは slot をレンダリングしてはいけません');
     const dotStatus = dotDanger.shadowRoot?.querySelector('[role="status"]');
     if (dotStatus) throw new Error('dot バリアントは role="status" をレンダリングしてはいけません');
-
-    console.log('✅ All tests passed for VariantColorMatrix story');
   },
 };
 
@@ -338,8 +334,6 @@ export const CountBadge: Story = {
     // テスト: count が number の場合、slot は存在しない
     const slot1 = badge1.shadowRoot?.querySelector('slot');
     if (slot1) throw new Error('count が数値のとき、slot は存在してはいけません');
-
-    console.log('✅ All tests passed for CountBadge story');
   },
 };
 
@@ -396,8 +390,6 @@ export const TextBadge: Story = {
     await solidPrimary.updateComplete;
     const solidSlot = solidPrimary.shadowRoot?.querySelector('slot');
     if (!solidSlot) throw new Error('solid テキストバッジの slot が見つかりません');
-
-    console.log('✅ All tests passed for TextBadge story');
   },
 };
 
@@ -466,8 +458,6 @@ export const DotVariant: Story = {
     if (imgSpanAfterLabelUpdate.getAttribute('aria-label') !== '新しい未読があります') {
       throw new Error('dot バリアントの aria-label 更新が反映されていません');
     }
-
-    console.log('✅ All tests passed for DotVariant story');
   },
 };
 
@@ -542,8 +532,6 @@ export const CountMaxCombinations: Story = {
     const sCustom9 = bCustom9.shadowRoot?.querySelector('[role="status"]');
     if (!sCustom9) throw new Error('カスタム max=9 の role="status" が見つかりません');
     if (sCustom9.textContent.trim() !== '9+') throw new Error(`"9+" を期待していましたが、実際には "${sCustom9.textContent.trim()}" でした`);
-
-    console.log('✅ All tests passed for CountMaxCombinations story');
   },
 };
 
@@ -602,8 +590,6 @@ export const ContentPriorityLogic: Story = {
     // テスト: count=null → role="status" は存在しない
     const statusWithoutCount = withSlot.shadowRoot?.querySelector('[role="status"]');
     if (statusWithoutCount) throw new Error('count が null のとき、role="status" は存在してはいけません');
-
-    console.log('✅ All tests passed for ContentPriorityLogic story');
   },
 };
 
@@ -671,8 +657,6 @@ export const CountNormalization: Story = {
     check('#norm-float', '3');
     // テスト: 0 → "0"
     check('#norm-zero', '0');
-
-    console.log('✅ All tests passed for CountNormalization story');
   },
 };
 
@@ -744,8 +728,6 @@ export const MaxNormalization: Story = {
     check('#max-one', '1');
     // テスト: max=1, count=2 → "1+"
     check('#max-one-over', '1+');
-
-    console.log('✅ All tests passed for MaxNormalization story');
   },
 };
 
@@ -794,8 +776,6 @@ export const CountZero: Story = {
     if (!slotNull) throw new Error('count が null のとき、slot は存在する必要があります');
     const statusNull = nullCount.shadowRoot?.querySelector('[role="status"]');
     if (statusNull) throw new Error('count が null のとき、role="status" は存在してはいけません');
-
-    console.log('✅ All tests passed for CountZero story');
   },
 };
 
@@ -836,8 +816,6 @@ export const CountUndefined: Story = {
     if (!slot) throw new Error('count が undefined のとき、slot は存在する必要があります');
     const status = badge.shadowRoot?.querySelector('[role="status"]');
     if (status) throw new Error('count が undefined のとき、role="status" は存在してはいけません');
-
-    console.log('✅ All tests passed for CountUndefined story');
   },
 };
 
@@ -907,8 +885,6 @@ export const AriaLabelAccuracy: Story = {
     if (s50.getAttribute('aria-label') !== '50 件') {
       throw new Error(`aria-label="50 件" を期待していましたが、実際には "${s50.getAttribute('aria-label') ?? 'null'}" でした`);
     }
-
-    console.log('✅ All tests passed for AriaLabelAccuracy story');
   },
 };
 
@@ -956,8 +932,6 @@ export const DotIgnoresCount: Story = {
     if (!imgWithSlot) throw new Error('slot を持つ dot バリアントの role="img" が見つかりません');
     const slotWithDot = dotWithSlot.shadowRoot?.querySelector('slot');
     if (slotWithDot) throw new Error('dot バリアントに slot は存在してはいけません');
-
-    console.log('✅ All tests passed for DotIgnoresCount story');
   },
 };
 
@@ -1011,8 +985,6 @@ export const NonInteractive: Story = {
         throw new Error(`バッジが activeElement になってはいけません: ${badge.id}`);
       }
     }
-
-    console.log('✅ All tests passed for NonInteractive story');
   },
 };
 
@@ -1161,7 +1133,6 @@ export const ThemeContrastAudit: Story = {
         );
       }
     }
-    console.log('✅ All tests passed for ThemeContrastAudit story');
   },
 };
 
@@ -1196,8 +1167,6 @@ export const ForcedColorsContract: Story = {
     if (!cssText.includes("width: 10px")) {
       throw new Error('Dot の forced-colors 時のサイズ拡張 (10px) が見つかりません');
     }
-
-    console.log('✅ All tests passed for ForcedColorsContract story');
   },
 };
 
@@ -1291,7 +1260,5 @@ export const AllStates: Story = {
     if (statusWarning.textContent.trim() !== '99') {
       throw new Error(`"99" を期待していましたが、実際には "${statusWarning.textContent.trim()}" でした`);
     }
-
-    console.log('✅ All tests passed for AllStates story');
   },
 };

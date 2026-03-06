@@ -254,8 +254,6 @@ export const DefaultExpanded: Story = {
 		// 内部コンテナの存在検証
 		const inner = host.shadowRoot?.querySelector('.inner');
 		assert(!!inner, '.inner コンテナが見つかりません');
-
-		console.log('✅ DefaultExpanded: すべてのテストを通過しました');
 	},
 };
 
@@ -305,8 +303,6 @@ export const ZenModeCollapsed: Story = {
 			collapsedWidth !== expandedWidth,
 			'Zen Mode と Expanded で .zone-start の幅が変化していません',
 		);
-
-		console.log('✅ ZenModeCollapsed: すべてのテストを通過しました');
 	},
 };
 
@@ -360,8 +356,6 @@ export const SidebarToggleEvent: Story = {
 			expandEvent.detail.expanded,
 			'expand イベントの detail.expanded が true ではありません',
 		);
-
-		console.log('✅ SidebarToggleEvent: すべてのテストを通過しました');
 	},
 };
 
@@ -500,8 +494,6 @@ export const EmptySlots: Story = {
 			centerAssigned.length === 0,
 			'center スロットに要素が配置されています（空であるべき）',
 		);
-
-		console.log('✅ EmptySlots: すべてのテストを通過しました');
 	},
 };
 
@@ -564,8 +556,6 @@ export const AttributeDrivenToggle: Story = {
 			host.hasAttribute('sidebar-expanded'),
 			'プロパティ設定後に属性が反映されていません',
 		);
-
-		console.log('✅ AttributeDrivenToggle: すべてのテストを通過しました');
 	},
 };
 
@@ -616,8 +606,6 @@ export const RapidToggleReentrancy: Story = {
 		);
 
 		host.removeEventListener('ui-header-sidebar-toggle', listener);
-
-		console.log('✅ RapidToggleReentrancy: すべてのテストを通過しました');
 	},
 };
 
@@ -672,8 +660,6 @@ export const DynamicSlotContent: Story = {
 			assigned[0]?.textContent === '差し替え後コンテンツ',
 			'差し替え後のコンテンツが正しくありません',
 		);
-
-		console.log('✅ DynamicSlotContent: すべてのテストを通過しました');
 	},
 };
 
@@ -725,8 +711,6 @@ export const ForcedColorsMode: Story = {
 			headerStyles.borderBottomStyle === 'solid',
 			'header に border-bottom: solid が適用されていません',
 		);
-
-		console.log('✅ ForcedColorsMode: すべてのテストを通過しました');
 	},
 };
 
@@ -771,8 +755,6 @@ export const ReducedMotion: Story = {
 		// ヘッダーがレンダリングされていること
 		const header = host.shadowRoot?.querySelector('header');
 		assert(!!header, 'header 要素が存在しません');
-
-		console.log('✅ ReducedMotion: すべてのテストを通過しました');
 	},
 };
 
@@ -813,8 +795,6 @@ export const PrintStyles: Story = {
 			headerStyles.display !== 'none',
 			'通常表示で header が非表示になっています',
 		);
-
-		console.log('✅ PrintStyles: すべてのテストを通過しました');
 	},
 };
 
@@ -863,10 +843,6 @@ export const DarkModeGlassmorphism: Story = {
 
 		const header = host.shadowRoot?.querySelector('header');
 		assert(!!header, 'dark mode ストーリーで header が存在しません');
-
-		console.log(
-			'✅ DarkModeGlassmorphism: すべてのテストを通過しました',
-		);
 	},
 };
 
@@ -981,10 +957,6 @@ export const CustomBackdropSaturate: Story = {
 		assert(
 			lowValue === '0.25',
 			`低彩度の --ui-header-backdrop-saturate が ${lowValue} です（期待: 0.25）`,
-		);
-
-		console.log(
-			'✅ CustomBackdropSaturate: すべてのテストを通過しました',
 		);
 	},
 };

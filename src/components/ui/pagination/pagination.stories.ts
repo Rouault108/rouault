@@ -258,8 +258,6 @@ export const Default: Story = {
         `[${S}] computeRange(5, 10) の省略記号数が 2 ではありません: ${JSON.stringify(expected)}`,
       );
     }
-
-    console.log('✅ [Default] 全テスト通過');
   },
 };
 
@@ -323,8 +321,6 @@ export const FirstPage: Story = {
     if ((currentLink.textContent).trim() !== '1') {
       throw new Error(`[${S}] 現在ページのテキストが "1" ではありません`);
     }
-
-    console.log('✅ [FirstPage] 全テスト通過');
   },
 };
 
@@ -388,8 +384,6 @@ export const LastPage: Story = {
     if ((currentLink.textContent).trim() !== '10') {
       throw new Error(`[${S}] 現在ページのテキストが "10" ではありません`);
     }
-
-    console.log('✅ [LastPage] 全テスト通過');
   },
 };
 
@@ -447,8 +441,6 @@ export const SinglePage: Story = {
     if (range.length !== 1 || range[0] !== 1) {
       throw new Error(`[${S}] computeRange(1, 1) が [1] ではありません: ${JSON.stringify(range)}`);
     }
-
-    console.log('✅ [SinglePage] 全テスト通過');
   },
 };
 
@@ -561,8 +553,6 @@ export const SmallTotal: Story = {
     if (ellipses2.length > 0) {
       throw new Error(`[${S}] total=2 の場合、省略記号は存在すべきではありません`);
     }
-
-    console.log('✅ [SmallTotal] 全テスト通過');
   },
 };
 
@@ -677,8 +667,6 @@ export const EdgeCase_Total7vs8: Story = {
         `[${S}] computeRange(1, 8) の省略記号数が 1 ではありません: ${JSON.stringify(range8first)}`,
       );
     }
-
-    console.log('✅ [EdgeCase_Total7vs8] 全テスト通過');
   },
 };
 
@@ -821,8 +809,6 @@ export const EdgeCase_OnePageGap: Story = {
         `[${S}] current=7 の場合、省略記号は 1 つのみであるべきですが ${String(ellipsesRight.length)} 個です`,
       );
     }
-
-    console.log('✅ [EdgeCase_OnePageGap] 全テスト通過');
   },
 };
 
@@ -936,8 +922,6 @@ export const EdgeCase_NearStart: Story = {
         `[${S}] current=3 の省略記号数が 1 ではありません: ${String(ellipses3.length)} 個`,
       );
     }
-
-    console.log('✅ [EdgeCase_NearStart] 全テスト通過');
   },
 };
 
@@ -1050,8 +1034,6 @@ export const EdgeCase_NearEnd: Story = {
         `[${S}] current=9 の省略記号数が 1 ではありません: ${String(ellipses9.length)} 個`,
       );
     }
-
-    console.log('✅ [EdgeCase_NearEnd] 全テスト通過');
   },
 };
 
@@ -1143,8 +1125,6 @@ export const Compact_Middle: Story = {
     if (next.tagName !== 'A') {
       throw new Error(`[${S}] コンパクト中間で Next が <a> ではありません`);
     }
-
-    console.log('✅ [Compact_Middle] 全テスト通過');
   },
 };
 
@@ -1262,8 +1242,6 @@ export const Compact_FirstPage: Story = {
         `[${S}] computeCompactRange(1, 1) が [1] ではありません: ${JSON.stringify(rangeSingle)}`,
       );
     }
-
-    console.log('✅ [Compact_FirstPage] 全テスト通過');
   },
 };
 
@@ -1376,8 +1354,6 @@ export const Accessibility: Story = {
     if (!currentLink.getAttribute('href')) {
       throw new Error(`[${S}] 現在ページの href が存在しません（再訪可能性の保証が失われています）`);
     }
-
-    console.log('✅ [Accessibility] 全テスト通過');
   },
 };
 
@@ -1470,8 +1446,6 @@ export const GetHref: Story = {
         `[${S}] パス形式の現在ページ href が "/notes/page/5/" ではありません: "${currentPath.getAttribute('href') ?? '(null)'}"`,
       );
     }
-
-    console.log('✅ [GetHref] 全テスト通過');
   },
 };
 
@@ -1570,8 +1544,6 @@ export const InvalidInputNormalization: Story = {
         `[${S}] computeCompactRange(999, 10) が ['ellipsis', 10] ではありません: ${JSON.stringify(r3)}`,
       );
     }
-
-    console.log('✅ [InvalidInputNormalization] 全テスト通過');
   },
 };
 
@@ -1636,7 +1608,6 @@ export const ReducedMotion: Story = {
     if (!styleText.includes('transition-duration: 0.01ms')) {
       throw new Error(`[${S}] Reduced Motion 用の transition-duration: 0.01ms が存在しません`);
     }
-    console.log('✅ [ReducedMotion] 全テスト通過');
   },
 };
 
@@ -1717,7 +1688,6 @@ export const ForcedColorsMode: Story = {
     if (!styleText.includes('color: GrayText')) {
       throw new Error(`[${S}] Forced Colors の disabled GrayText が存在しません`);
     }
-    console.log('✅ [ForcedColorsMode] 全テスト通過');
   },
 };
 
@@ -1808,7 +1778,6 @@ export const DarkMode: Story = {
     if (ellipses.length !== 2) {
       throw new Error(`[${S}] 中間ページの省略記号数が 2 ではありません`);
     }
-    console.log('✅ [DarkMode] 全テスト通過');
   },
 };
 
@@ -1962,7 +1931,5 @@ export const AllStates: Story = {
         );
       }
     }
-
-    console.log('✅ [AllStates] 全テスト通過');
   },
 };

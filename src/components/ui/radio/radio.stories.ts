@@ -279,8 +279,6 @@ export const CheckedDisabled: Story = {
     if (control.getAttribute('aria-disabled') !== 'true') {
       throw new Error('aria-disabled="true" であることを期待していました');
     }
-
-    console.log('✅ All tests passed for CheckedDisabled story');
   },
 };
 

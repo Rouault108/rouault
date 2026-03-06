@@ -202,8 +202,6 @@ export const Default: Story = {
     if (button.variant !== 'secondary') {
       throw new Error(`variant="secondary" を期待していましたが、実際には "${button.variant}" でした`);
     }
-
-    console.log('✅ All tests passed for Default story');
   },
 };
 
@@ -371,8 +369,6 @@ export const Danger: Story = {
     if (button.variant !== 'danger') {
       throw new Error(`variant="danger" を期待していましたが、実際には "${button.variant}" でした`);
     }
-
-    console.log('✅ All tests passed for Danger story');
   },
 };
 
@@ -426,8 +422,6 @@ export const Loading: Story = {
     if (!spinner) {
       throw new Error('ローディング中はスピナーが表示されている必要があります');
     }
-
-    console.log('✅ All tests passed for Loading story');
   },
 };
 
@@ -469,8 +463,6 @@ export const Disabled: Story = {
     if (!buttonElement.disabled) {
       throw new Error('ボタンは disabled 状態である必要があります');
     }
-
-    console.log('✅ All tests passed for Disabled story');
   },
 };
 
@@ -547,8 +539,6 @@ export const IconOnly: Story = {
     if (!button.iconOnly) {
       throw new Error('iconOnly プロパティが true であることを期待していましたが、実際には false でした');
     }
-
-    console.log('✅ All tests passed for IconOnly story');
   },
 };
 
@@ -629,8 +619,6 @@ export const FormSubmit: Story = {
     if (!Number.isFinite(submitCountAfterSpace) || submitCountAfterSpace <= 0) {
       throw new Error(`送信回数が正の数になることを期待していましたが、実際には "${form.dataset['submitCount'] ?? 'undefined'}" でした`);
     }
-
-    console.log('✅ All tests passed for FormSubmit story');
   },
 };
 
@@ -675,8 +663,6 @@ export const FormReset: Story = {
     if (input.value !== '初期値') {
       throw new Error(`リセット後の値が '初期値' になることを期待していましたが、実際には '${input.value}' でした`);
     }
-
-    console.log('✅ All tests passed for FormReset story');
   },
 };
 
@@ -729,8 +715,6 @@ export const ExternalFormOwnerSubmit: Story = {
     if (form.dataset['submitCount'] !== '1') {
       throw new Error(`送信回数が 1 になることを期待していましたが、実際には '${form.dataset['submitCount'] ?? 'undefined'}' でした`);
     }
-
-    console.log('✅ All tests passed for ExternalFormOwnerSubmit story');
   },
 };
 
@@ -925,8 +909,6 @@ export const FocusState: Story = {
     if (uiButton.shadowRoot?.activeElement !== buttonElement) {
       throw new Error('ボタンにフォーカスが当たっていません');
     }
-
-    console.log('✅ All tests passed for FocusState story');
   },
 };
 
@@ -1004,12 +986,6 @@ export const IconOnlyWithoutAriaLabel: Story = {
     if (!button.iconOnly) {
       throw new Error('iconOnly プロパティが true であることを期待していましたが、違います');
     }
-
-    // Note: console.error のモック検証は Storybook の制約上困難なため、
-    // 実際のコンソール出力を手動で確認することを推奨
-
-    console.log('✅ All tests passed for IconOnlyWithoutAriaLabel story');
-    console.log('📝 開発者ツールのコンソールでエラーメッセージを確認してください');
   },
 };
 
@@ -1067,9 +1043,6 @@ export const DeprecatedLargeSize: Story = {
     if (button.size !== 'lg') {
       throw new Error(`size="lg" を期待していましたが、実際には "${button.size}" でした`);
     }
-
-    console.log('✅ All tests passed for DeprecatedLargeSize story');
-    console.log('📝 開発者ツールのコンソールで警告メッセージを確認してください');
   },
 };
 
@@ -1251,8 +1224,6 @@ export const DarkMode: Story = {
     if (!prefersDark) {
       console.warn('DarkMode story: prefers-color-scheme: dark を有効化して Edge Highlight を確認してください');
     }
-
-    console.log('✅ All tests passed for DarkMode story');
   },
 };
 
@@ -1337,8 +1308,6 @@ export const ReducedMotion: Story = {
     if (focusStyle.animationName !== 'none') {
       throw new Error(`フォーカス時のアニメーションが無効化されることを期待していましたが、実際には '${focusStyle.animationName}' でした`);
     }
-
-    console.log('✅ All tests passed for ReducedMotion story');
   },
 };
 

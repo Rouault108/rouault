@@ -707,12 +707,6 @@ export const DarkMode: Story = {
 
     const computedStyle = window.getComputedStyle(anchor);
 
-    // テスト: ダークモードでbox-shadowがnoneであることを確認
-    // Note: prefers-color-scheme: dark の検出は環境依存のため、
-    // ここでは視覚的な確認を推奨するメッセージを出力します。
-    console.log('ℹ️ Dark Mode Test: Verify that box-shadow is "none" when prefers-color-scheme: dark is active');
-    console.log(`Current box-shadow value: ${computedStyle.boxShadow}`);
-
     // テスト: フォーカス状態の基本検証
     if (computedStyle.opacity !== '1') {
       throw new Error(`フォーカス状態: opacity が "1" であることを期待していましたが、実際には "${computedStyle.opacity}" でした`);
@@ -830,12 +824,8 @@ export const ForcedColorsMode: Story = {
     // Note: forced-colors: active の検出は matchMedia で可能
     const isForcedColors = window.matchMedia('(forced-colors: active)').matches;
 
-    console.log(`ℹ️ Forced Colors Mode: ${isForcedColors ? 'ACTIVE' : 'INACTIVE'}`);
-
-    if (isForcedColors) {
-      console.log('✅ 強制カラーモードがアクティブです。アウトラインとシステムカラーが適用されていることを確認してください。');
-    } else {
-      console.log('ℹ️ 強制カラーモードはアクティブではありません。Windowsのハイコントラスト設定を有効にするか、ブラウザのエミュレーションでテストしてください。');
+    if (!isForcedColors) {
+      throw new Error('強制カラーモードはアクティブではありません。Windowsのハイコントラスト設定を有効にするか、ブラウザのエミュレーションでテストしてください。');
     }
   },
 };
