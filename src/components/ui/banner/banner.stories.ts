@@ -100,14 +100,14 @@ const getDismissButton = (host: Banner): HTMLElement => {
 const assertRole = (host: Banner, expected: 'status' | 'alert'): void => {
   const actual = host.getAttribute('role');
   if (actual !== expected) {
-    throw new Error(`Expected role="${expected}", got "${actual ?? 'null'}"`);
+    throw new Error(`role="${expected}" を期待していましたが、実際には "${actual ?? 'null'}" でした`);
   }
 };
 
 const assertResolvedVariant = (host: Banner, expected: BannerVariant): void => {
   const actual = host.getAttribute('data-resolved-variant');
   if (actual !== expected) {
-    throw new Error(`Expected data-resolved-variant="${expected}", got "${actual ?? 'null'}"`);
+    throw new Error(`data-resolved-variant="${expected}" を期待していましたが、実際には "${actual ?? 'null'}" でした`);
   }
 };
 
@@ -176,12 +176,12 @@ export const Default: Story = {
     assertRole(banner, 'alert');
 
     if (banner.getAttribute('aria-atomic') !== 'true') {
-      throw new Error('aria-atomic="true" が設定されていません');
+      throw new Error(`aria-atomic="true" を期待していましたが、実際には "${banner.getAttribute('aria-atomic') ?? 'null'}" でした`);
     }
 
     const actions = getActions(banner);
     if (actions.hidden) {
-      throw new Error('action 指定時は .actions が表示される必要があります');
+      throw new Error('アクション指定時は .actions が表示される必要があります');
     }
 
     if (queryDismissButton(banner)) {
@@ -269,14 +269,14 @@ export const VariantStateCombinations: Story = {
       assertRole(item.host, ROLE_BY_VARIANT[item.variant]);
       const fallback = getFallbackIcon(item.host);
       if (fallback.getAttribute('icon') !== ICON_BY_VARIANT[item.variant]) {
-        throw new Error(`${item.variant} のデフォルトアイコンが不正です`);
+        throw new Error(`${item.variant} のアイコンとして "${ICON_BY_VARIANT[item.variant]}" を期待していましたが、実際には "${fallback.getAttribute('icon') ?? 'null'}" でした`);
       }
     }
 
-    if (getActions(info).hidden) throw new Error('info + action は .actions 表示が必要です');
-    if (getActions(warning).hidden) throw new Error('warning + action は .actions 表示が必要です');
-    if (getActions(error).hidden) throw new Error('error + action は .actions 表示が必要です');
-    if (!getActions(success).hidden) throw new Error('success（action なし）は .actions 非表示が必要です');
+    if (getActions(info).hidden) throw new Error('info + アクションの組み合わせでは .actions の表示が必要です');
+    if (getActions(warning).hidden) throw new Error('warning + アクションの組み合わせでは .actions の表示が必要です');
+    if (getActions(error).hidden) throw new Error('error + アクションの組み合わせでは .actions の表示が必要です');
+    if (!getActions(success).hidden) throw new Error('success（アクションなし）では .actions の非表示が必要です');
 
     getDismissButton(error);
     getDismissButton(success);
@@ -290,7 +290,7 @@ export const VariantStateCombinations: Story = {
 
     const infoActionStyle = getComputedStyle(getActionLink(info));
     if (infoActionStyle.textDecorationLine !== 'underline') {
-      throw new Error('banner action link は常時下線である必要があります');
+      throw new Error('バナーのアクションリンクは常時下線である必要があります');
     }
   },
 };
@@ -363,19 +363,19 @@ export const SlotBoundaryConditions: Story = {
     const customSlot = getIconSlot(customIcon);
     const customAssigned = customSlot.assignedElements({ flatten: true });
     if (customAssigned.length !== 1) {
-      throw new Error('custom icon は1要素のみ割り当てられる必要があります');
+      throw new Error('カスタムアイコンは1要素のみ割り当てられる必要があります');
     }
 
     const customIconElement = customAssigned[0];
     if (!(customIconElement instanceof HTMLElement)) {
-      throw new Error('custom icon が HTMLElement ではありません');
+      throw new Error('カスタムアイコンが HTMLElement ではありません');
     }
     if (customIconElement.getAttribute('icon') !== 'lucide:calendar-clock') {
-      throw new Error('custom icon の icon 属性が不正です');
+      throw new Error('カスタムアイコンの icon 属性が不正です');
     }
 
     if (!getActions(noAction).hidden) {
-      throw new Error('action 未指定時は .actions が hidden である必要があります');
+      throw new Error('アクション未指定時は .actions が非表示である必要があります');
     }
 
     const noActionFallback = getFallbackIcon(noAction);
@@ -387,15 +387,15 @@ export const SlotBoundaryConditions: Story = {
     if (!multiActionSlot) throw new Error('slot[name="action"] が見つかりません');
     const actionElements = multiActionSlot.assignedElements({ flatten: true });
     if (actionElements.length !== 2) {
-      throw new Error(`複数 action は2要素を想定: actual=${String(actionElements.length)}`);
+      throw new Error(`複数アクションは2要素を期待していましたが、実際には ${String(actionElements.length)}個でした`);
     }
     if (getActions(multiAction).hidden) {
-      throw new Error('複数 action 指定時は .actions 表示が必要です');
+      throw new Error('複数アクション指定時は .actions の表示が必要です');
     }
 
     const linkStyle = getComputedStyle(getActionLink(multiAction));
     if (linkStyle.textDecorationLine !== 'underline') {
-      throw new Error('slot action のアンカーはクラスなしでも下線契約を満たす必要があります');
+      throw new Error('アクションスロット内のアンカーは、クラスなしでも下線契約を満たす必要があります');
     }
   },
 };
@@ -461,7 +461,7 @@ export const InvalidVariantFallbackAndStyleContracts: Story = {
     assertRole(banner, 'status');
     const fallback = getFallbackIcon(banner);
     if (fallback.getAttribute('icon') !== ICON_BY_VARIANT.info) {
-      throw new Error('不正 variant 時のフォールバックアイコンが不正です');
+      throw new Error('不正なバリアント指定時のフォールバックアイコンが不正です');
     }
 
     const styles = String(Banner.styles);
@@ -499,7 +499,7 @@ export const InvalidVariantFallbackAndStyleContracts: Story = {
       throw new Error('forced-colors/print のボーダー強調トークンが不足しています');
     }
     if (!styles.includes('.actions,')) {
-      throw new Error('print 時の action 非表示契約が不足しています');
+      throw new Error('print 時のアクション非表示契約が不足しています');
     }
     if (styles.includes(":host([data-resolved-variant='info']),")) {
       throw new Error('print で info/success/warning を非表示にする旧仕様が残っています');
@@ -530,7 +530,7 @@ export const AtomicOverridePersistence: Story = {
 
     assertRole(banner, 'alert');
     if (banner.getAttribute('aria-atomic') !== 'false') {
-      throw new Error('variant 更新後も aria-atomic="false" を保持する必要があります');
+      throw new Error('バリアント更新後も aria-atomic="false" を保持する必要があります');
     }
   },
 };

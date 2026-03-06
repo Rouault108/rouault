@@ -82,7 +82,7 @@ type Story = StoryObj<Toc>;
 
 function getShadowStylesText(shadowRoot: ShadowRoot): string {
 	const inlineStyles = Array.from(shadowRoot.querySelectorAll('style'))
-		.map((style) => style.textContent ?? '')
+		.map((style) => style.textContent)
 		.join('\n');
 
 	const adoptedStyles = shadowRoot.adoptedStyleSheets
@@ -156,53 +156,51 @@ export const Default: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const toc = canvasElement.querySelector<Toc>('#default-toc');
-		if (!toc) throw new Error('ui-toc not found');
+		if (!toc) throw new Error('ui-toc が見つかりません');
 		await toc.updateComplete;
 
 		// テスト: nav 要素が存在する
 		const nav = toc.shadowRoot?.querySelector('nav');
-		if (!nav) throw new Error('nav element not found');
+		if (!nav) throw new Error('nav 要素が見つかりません');
 
 		// テスト: aria-label が仕様どおりに設定されている
 		if (nav.getAttribute('aria-label') !== 'Table of Contents') {
 			throw new Error(
-				`Expected aria-label="Table of Contents", got "${nav.getAttribute('aria-label') ?? 'null'}"`,
+				`aria-label="Table of Contents" を期待していましたが、実際には "${nav.getAttribute('aria-label') ?? 'null'}" でした`,
 			);
 		}
 
 		// テスト: ul > li > a の構造になっている
 		const ul = toc.shadowRoot?.querySelector('ul');
-		if (!ul) throw new Error('ul element not found');
+		if (!ul) throw new Error('ul 要素が見つかりません');
 
 		// テスト: 5つのリンクが存在する
 		const links = toc.shadowRoot?.querySelectorAll('a.toc-link');
 		if (links?.length !== 5) {
-			throw new Error(`Expected 5 links, got ${String(links?.length ?? 0)}`);
+			throw new Error(`5つのリンクを期待していましたが、実際には ${String(links?.length ?? 0)}個でした`);
 		}
 
 		// テスト: アクティブリンクが存在しない
 		const activeLinks = toc.shadowRoot?.querySelectorAll('[aria-current="location"]');
 		if (activeLinks && activeLinks.length > 0) {
-			throw new Error(`Expected 0 active links, got ${String(activeLinks.length)}`);
+			throw new Error(`アクティブリンクが0件であることを期待していましたが、実際には ${String(activeLinks.length)}件でした`);
 		}
 
 		// テスト: 各リンクの href が正しいフォーマット
 		const firstLink = links[0];
 		if (!firstLink?.getAttribute('href')?.startsWith('#')) {
-			throw new Error('Link href should start with "#"');
+			throw new Error('リンクの href は "#" で始まるべきです');
 		}
 		if (firstLink.getAttribute('href') !== '#intro') {
-			throw new Error(`Expected href="#intro", got "${firstLink.getAttribute('href') ?? 'null'}"`);
+			throw new Error(`href="#intro" を期待していましたが、実際には "${firstLink.getAttribute('href') ?? 'null'}" でした`);
 		}
 
 		// テスト: テキスト内容が正しい
 		if (firstLink.textContent.trim() !== 'はじめに') {
 			throw new Error(
-				`Expected text "はじめに", got "${firstLink.textContent.trim()}"`,
+				`テキスト "はじめに" を期待していましたが、実際には "${firstLink.textContent.trim()}" でした`,
 			);
 		}
-
-		console.log('✅ All tests passed for Default story');
 	},
 };
 
@@ -229,45 +227,43 @@ export const WithActiveItem: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const toc = canvasElement.querySelector<Toc>('#active-toc');
-		if (!toc) throw new Error('ui-toc not found');
+		if (!toc) throw new Error('ui-toc が見つかりません');
 		await toc.updateComplete;
 
 		// テスト: activeId が設定されている
 		if (toc.activeId !== 'implementation') {
 			throw new Error(
-				`Expected activeId="implementation", got "${toc.activeId}"`,
+				`activeId="implementation" を期待していましたが、実際には "${toc.activeId}" ででした`,
 			);
 		}
 
 		// テスト: 該当リンクに aria-current="location" がある
 		const activeLink = toc.shadowRoot?.querySelector('[aria-current="location"]');
-		if (!activeLink) throw new Error('aria-current="location" not found');
+		if (!activeLink) throw new Error('aria-current="location" を持つリンクが見つかりません');
 		if (activeLink.getAttribute('href') !== '#implementation') {
 			throw new Error(
-				`Expected active link href="#implementation", got "${activeLink.getAttribute('href') ?? 'null'}"`,
+				`アクティブリンクの href="#implementation" を期待していましたが、実際には "${activeLink.getAttribute('href') ?? 'null'}" でした`,
 			);
 		}
 
 		// テスト: アクティブリンクが 1 つのみ
 		const allActiveLinks = toc.shadowRoot?.querySelectorAll('[aria-current="location"]');
 		if (allActiveLinks?.length !== 1) {
-			throw new Error(`Expected 1 active link, got ${String(allActiveLinks?.length ?? 0)}`);
+			throw new Error(`1つのアクティブリンクを期待していましたが、実際には ${String(allActiveLinks?.length ?? 0)}個でした`);
 		}
 
 		// テスト: アクティブリンクに is-active クラスがある
 		if (!activeLink.classList.contains('is-active')) {
-			throw new Error('Active link should have is-active class');
+			throw new Error('アクティブリンクは is-active クラスを持つべきです');
 		}
 
 		// テスト: 非アクティブリンクに aria-current がない
 		const links = toc.shadowRoot?.querySelectorAll('a.toc-link');
 		links?.forEach((link) => {
 			if (link !== activeLink && link.hasAttribute('aria-current')) {
-				throw new Error('Non-active links should not have aria-current');
+				throw new Error('非アクティブリンクは aria-current を持つべきではありません');
 			}
 		});
-
-		console.log('✅ All tests passed for WithActiveItem story');
 	},
 };
 
@@ -295,16 +291,16 @@ export const Nested: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const toc = canvasElement.querySelector<Toc>('#nested-toc');
-		if (!toc) throw new Error('ui-toc not found');
+		if (!toc) throw new Error('ui-toc が見つかりません');
 		await toc.updateComplete;
 
 		const listItems = toc.shadowRoot?.querySelectorAll('li');
-		if (!listItems) throw new Error('No list items found');
+		if (!listItems) throw new Error('リストアイテムが見つかりません');
 
 		// テスト: 8つのアイテムが存在する（nestedHeaders の件数に一致）
 		if (listItems.length !== nestedHeaders.length) {
 			throw new Error(
-				`Expected ${String(nestedHeaders.length)} items, got ${String(listItems.length)}`,
+				`アイテム数が ${String(nestedHeaders.length)} であることを期待していましたが、実際には ${String(listItems.length)} でした`,
 			);
 		}
 
@@ -314,7 +310,7 @@ export const Nested: Story = {
 			const li = listItems[idx];
 			const level = li?.style.getPropertyValue('--level').trim();
 			if (level !== '0') {
-				throw new Error(`H2 item at index ${String(idx)} should have --level: 0, got "${level ?? 'undefined'}"`);
+				throw new Error(`インデックス ${String(idx)} の H2 アイテムは --level: 0 を持つべきですが、実際には "${level ?? 'undefined'}" でした`);
 			}
 		}
 
@@ -324,20 +320,18 @@ export const Nested: Story = {
 			const li = listItems[idx];
 			const level = li?.style.getPropertyValue('--level').trim();
 			if (level !== '1') {
-				throw new Error(`H3 item at index ${String(idx)} should have --level: 1, got "${level ?? 'undefined'}"`);
+				throw new Error(`インデックス ${String(idx)} の H3 アイテムは --level: 1 を持つべきですが、実際には "${level ?? 'undefined'}" でした`);
 			}
 		}
 
 		// テスト: アクティブな H3 アイテムに aria-current="location" がある
 		const activeLink = toc.shadowRoot?.querySelector('[aria-current="location"]');
-		if (!activeLink) throw new Error('Active link not found');
+		if (!activeLink) throw new Error('アクティブリンクが見つかりません');
 		if (activeLink.getAttribute('href') !== '#setup') {
 			throw new Error(
-				`Expected active href="#setup", got "${activeLink.getAttribute('href') ?? 'null'}"`,
+				`アクティブな href="#setup" を期待していましたが、実際には "${activeLink.getAttribute('href') ?? 'null'}" でした`,
 			);
 		}
-
-		console.log('✅ All tests passed for Nested story');
 	},
 };
 
@@ -365,15 +359,15 @@ export const DeepNesting: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const toc = canvasElement.querySelector<Toc>('#deep-toc');
-		if (!toc) throw new Error('ui-toc not found');
+		if (!toc) throw new Error('ui-toc が見つかりません');
 		await toc.updateComplete;
 
 		const listItems = toc.shadowRoot?.querySelectorAll('li');
-		if (!listItems) throw new Error('No list items found');
+		if (!listItems) throw new Error('リストアイテムが見つかりません');
 
 		if (listItems.length !== deepNestedHeaders.length) {
 			throw new Error(
-				`Expected ${String(deepNestedHeaders.length)} items, got ${String(listItems.length)}`,
+				`アイテム数が ${String(deepNestedHeaders.length)} であることを期待していましたが、実際には ${String(listItems.length)} でした`,
 			);
 		}
 
@@ -383,7 +377,7 @@ export const DeepNesting: Story = {
 			const li = listItems[idx];
 			const level = li?.style.getPropertyValue('--level').trim();
 			if (level !== '0') {
-				throw new Error(`H2 item at index ${String(idx)} should have --level: 0, got "${level ?? 'undefined'}"`);
+				throw new Error(`インデックス ${String(idx)} の H2 アイテムは --level: 0 を持つべきですが、実際には "${level ?? 'undefined'}" でした`);
 			}
 		}
 
@@ -393,7 +387,7 @@ export const DeepNesting: Story = {
 			const li = listItems[idx];
 			const level = li?.style.getPropertyValue('--level').trim();
 			if (level !== '1') {
-				throw new Error(`H3 item at index ${String(idx)} should have --level: 1, got "${level ?? 'undefined'}"`);
+				throw new Error(`インデックス ${String(idx)} の H3 アイテムは --level: 1 を持つべきですが、実際には "${level ?? 'undefined'}" でした`);
 			}
 		}
 
@@ -403,20 +397,18 @@ export const DeepNesting: Story = {
 			const li = listItems[idx];
 			const level = li?.style.getPropertyValue('--level').trim();
 			if (level !== '2') {
-				throw new Error(`H4 item at index ${String(idx)} should have --level: 2, got "${level ?? 'undefined'}"`);
+				throw new Error(`インデックス ${String(idx)} の H4 アイテムは --level: 2 を持つべきですが、実際には "${level ?? 'undefined'}" でした`);
 			}
 		}
 
 		// テスト: H4 アクティブアイテムのインジケーターが表示されている
 		const activeLink = toc.shadowRoot?.querySelector('[aria-current="location"]');
-		if (!activeLink) throw new Error('Active link not found');
+		if (!activeLink) throw new Error('アクティブリンクが見つかりません');
 		if (activeLink.getAttribute('href') !== '#frontend') {
 			throw new Error(
-				`Expected active href="#frontend", got "${activeLink.getAttribute('href') ?? 'null'}"`,
+				`アクティブな href="#frontend" を期待していましたが、実際には "${activeLink.getAttribute('href') ?? 'null'}" でした`,
 			);
 		}
-
-		console.log('✅ All tests passed for DeepNesting story');
 	},
 };
 
@@ -445,31 +437,29 @@ export const ActiveFirst: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const toc = canvasElement.querySelector<Toc>('#first-toc');
-		if (!toc) throw new Error('ui-toc not found');
+		if (!toc) throw new Error('ui-toc が見つかりません');
 		await toc.updateComplete;
 
 		// テスト: 最初のリンクがアクティブ
 		const links = toc.shadowRoot?.querySelectorAll('a.toc-link');
-		if (!links || links.length === 0) throw new Error('No links found');
+		if (!links || links.length === 0) throw new Error('リンクが見つかりません');
 
 		const firstLink = links[0];
-		if (!firstLink) throw new Error('First link not found');
+		if (!firstLink) throw new Error('最初のリンクが見つかりません');
 
 		if (firstLink.getAttribute('aria-current') !== 'location') {
-			throw new Error('First link should have aria-current="location"');
+			throw new Error('最初のリンクは aria-current="location" を持つべきです');
 		}
 		if (!firstLink.classList.contains('is-active')) {
-			throw new Error('First link should have is-active class');
+			throw new Error('最初のリンクは is-active クラスを持つべきです');
 		}
 
 		// テスト: 他のリンクはアクティブでない
 		for (let i = 1; i < links.length; i++) {
 			if (links[i]?.hasAttribute('aria-current')) {
-				throw new Error(`Link at index ${String(i)} should not have aria-current`);
+				throw new Error(`インデックス ${String(i)} のリンクは aria-current を持つべきではありません`);
 			}
 		}
-
-		console.log('✅ All tests passed for ActiveFirst story');
 	},
 };
 
@@ -498,31 +488,27 @@ export const ActiveLast: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const toc = canvasElement.querySelector<Toc>('#last-toc');
-		if (!toc) throw new Error('ui-toc not found');
+		if (!toc) throw new Error('ui-toc が見つかりません');
 		await toc.updateComplete;
 
 		const links = toc.shadowRoot?.querySelectorAll('a.toc-link');
-		if (!links || links.length === 0) throw new Error('No links found');
+		if (!links || links.length === 0) throw new Error('リンクが見つかりません');
 
 		const lastLink = links[links.length - 1];
-		if (!lastLink) throw new Error('Last link not found');
+		if (!lastLink) throw new Error('最後のリンクが見つかりません');
 
 		// テスト: 最後のリンクがアクティブ
 		if (lastLink.getAttribute('aria-current') !== 'location') {
 			throw new Error('Last link should have aria-current="location"');
 		}
 		if (!lastLink.classList.contains('is-active')) {
-			throw new Error('Last link should have is-active class');
+			throw new Error('最後のリンクは is-active クラスを持つべきです');
 		}
 
 		// テスト: 最後のリンクの href が正しい
 		if (lastLink.getAttribute('href') !== '#conclusion') {
-			throw new Error(
-				`Expected last link href="#conclusion", got "${lastLink.getAttribute('href') ?? 'null'}"`,
-			);
+			throw new Error(`最後のリンクの href が "#conclusion" であることを期待していましたが、実際には "${lastLink.getAttribute('href') ?? 'null'}" でした`);
 		}
-
-		console.log('✅ All tests passed for ActiveLast story');
 	},
 };
 
@@ -555,34 +541,32 @@ export const SingleItem: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const toc = canvasElement.querySelector<Toc>('#single-toc');
-		if (!toc) throw new Error('ui-toc not found');
+		if (!toc) throw new Error('ui-toc が見つかりません');
 		await toc.updateComplete;
 
 		// テスト: nav が存在する
 		const nav = toc.shadowRoot?.querySelector('nav');
-		if (!nav) throw new Error('nav element not found');
+		if (!nav) throw new Error('nav 要素が見つかりません');
 
 		// テスト: リンクが 1 件
 		const links = toc.shadowRoot?.querySelectorAll('a.toc-link');
 		if (links?.length !== 1) {
-			throw new Error(`Expected 1 link, got ${String(links?.length ?? 0)}`);
+			throw new Error(`1つのリンクを期待していましたが、実際には ${String(links?.length ?? 0)}個でした`);
 		}
 
 		// テスト: アイテムの --level が 0（単一レベルの正規化）
 		const li = toc.shadowRoot?.querySelector('li');
 		const level = li?.style.getPropertyValue('--level').trim();
 		if (level !== '0') {
-			throw new Error(`Expected --level: 0 for single H2, got "${level ?? 'undefined'}"`);
+			throw new Error(`アイテムの --level が 0 であることを期待していましたが、実際には "${level ?? 'undefined'}" でした`);
 		}
 
 		// テスト: アクティブ状態
 		const activeLink = links[0];
-		if (!activeLink) throw new Error('Link not found');
+		if (!activeLink) throw new Error('リンクが見つかりません');
 		if (activeLink.getAttribute('aria-current') !== 'location') {
-			throw new Error('Single link should have aria-current="location"');
+			throw new Error('アクティブリンクは aria-current="location" を持つべきです');
 		}
-
-		console.log('✅ All tests passed for SingleItem story');
 	},
 };
 
@@ -618,20 +602,18 @@ export const EmptyHeaders: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const toc = canvasElement.querySelector<Toc>('#empty-toc');
-		if (!toc) throw new Error('ui-toc not found');
+		if (!toc) throw new Error('ui-toc が見つかりません');
 		await toc.updateComplete;
 
 		// テスト: nav 要素が存在しない（nothing を返す）
 		const nav = toc.shadowRoot?.querySelector('nav');
-		if (nav) throw new Error('nav element should not exist for empty headers');
+		if (nav) throw new Error('見出しが空の時は nav 要素が存在すべきではありません');
 
 		// テスト: リンクが存在しない
 		const links = toc.shadowRoot?.querySelectorAll('a');
 		if (links && links.length > 0) {
-			throw new Error(`Expected 0 links, got ${String(links.length)}`);
+			throw new Error(`リンクが0件であることを期待していましたが、実際には ${String(links.length)}個でした`);
 		}
-
-		console.log('✅ All tests passed for EmptyHeaders story');
 	},
 };
 
@@ -658,23 +640,23 @@ export const OnlySubheadings: Story = {
 			<ui-toc
 				id="h3only-toc"
 				.headers="${[
-					{ id: 'setup', text: '環境構築', level: 3 },
-					{ id: 'config', text: '設定', level: 3 },
-					{ id: 'deploy', text: 'デプロイ', level: 3 },
-				]}"
+			{ id: 'setup', text: '環境構築', level: 3 },
+			{ id: 'config', text: '設定', level: 3 },
+			{ id: 'deploy', text: 'デプロイ', level: 3 },
+		]}"
 				active-id="config"
 			></ui-toc>
 		</div>
 	`,
 	play: async ({ canvasElement }) => {
 		const toc = canvasElement.querySelector<Toc>('#h3only-toc');
-		if (!toc) throw new Error('ui-toc not found');
+		if (!toc) throw new Error('ui-toc が見つかりません');
 		await toc.updateComplete;
 
 		// テスト: 3件のリンクが存在する
 		const links = toc.shadowRoot?.querySelectorAll('a.toc-link');
 		if (links?.length !== 3) {
-			throw new Error(`Expected 3 links, got ${String(links?.length ?? 0)}`);
+			throw new Error(`3つのリンクを期待していましたが、実際には ${String(links?.length ?? 0)}個でした`);
 		}
 
 		// テスト: 全ての <li> の --level が 0（H3 を基準に正規化）
@@ -683,21 +665,17 @@ export const OnlySubheadings: Story = {
 			const level = li.style.getPropertyValue('--level').trim();
 			if (level !== '0') {
 				throw new Error(
-					`H3 item at index ${String(idx)} should normalize to --level: 0, got "${level}"`,
+					`インデックス ${String(idx)} のH3アイテムは --level: 0 に正規化されるべきですが、実際には "${level}" でした`,
 				);
 			}
 		});
 
 		// テスト: アクティブアイテムが正しい
 		const activeLink = toc.shadowRoot?.querySelector('[aria-current="location"]');
-		if (!activeLink) throw new Error('Active link not found');
+		if (!activeLink) throw new Error('アクティブリンクが見つかりません');
 		if (activeLink.getAttribute('href') !== '#config') {
-			throw new Error(
-				`Expected active href="#config", got "${activeLink.getAttribute('href') ?? 'null'}"`,
-			);
+			throw new Error(`アクティブリンクの href が "#config" であることを期待していましたが、実際には "${activeLink.getAttribute('href') ?? 'null'}" でした`);
 		}
-
-		console.log('✅ All tests passed for OnlySubheadings story');
 	},
 };
 
@@ -728,43 +706,41 @@ export const SparseLevels: Story = {
 			<ui-toc
 				id="sparse-toc"
 				.headers="${[
-					{ id: 'top', text: 'トップレベル見出し', level: 1 },
-					{ id: 'sub', text: '第三レベル見出し', level: 3 },
-					{ id: 'deep', text: '第五レベル見出し', level: 5 },
-				]}"
+			{ id: 'top', text: 'トップレベル見出し', level: 1 },
+			{ id: 'sub', text: '第三レベル見出し', level: 3 },
+			{ id: 'deep', text: '第五レベル見出し', level: 5 },
+		]}"
 				active-id="sub"
 			></ui-toc>
 		</div>
 	`,
 	play: async ({ canvasElement }) => {
 		const toc = canvasElement.querySelector<Toc>('#sparse-toc');
-		if (!toc) throw new Error('ui-toc not found');
+		if (!toc) throw new Error('ui-toc が見つかりません');
 		await toc.updateComplete;
 
 		const listItems = toc.shadowRoot?.querySelectorAll('li');
 		if (listItems?.length !== 3) {
-			throw new Error(`Expected 3 items, got ${String(listItems?.length ?? 0)}`);
+			throw new Error(`3つのアイテムを期待していましたが、実際には ${String(listItems?.length ?? 0)}個でした`);
 		}
 
 		// テスト: H1 → --level: 0
 		const h1Level = listItems[0]?.style.getPropertyValue('--level').trim();
 		if (h1Level !== '0') {
-			throw new Error(`H1 should have --level: 0, got "${h1Level ?? 'undefined'}"`);
+			throw new Error(`H1の --level が 0 であることを期待していましたが、実際には "${h1Level ?? 'undefined'}" でした`);
 		}
 
 		// テスト: H3 → --level: 2 (3 - 1 = 2)
 		const h3Level = listItems[1]?.style.getPropertyValue('--level').trim();
 		if (h3Level !== '2') {
-			throw new Error(`H3 should have --level: 2, got "${h3Level ?? 'undefined'}"`);
+			throw new Error(`H3の --level が 2 であることを期待していましたが、実際には "${h3Level ?? 'undefined'}" でした`);
 		}
 
 		// テスト: H5 → --level: 4 (5 - 1 = 4)
 		const h5Level = listItems[2]?.style.getPropertyValue('--level').trim();
 		if (h5Level !== '4') {
-			throw new Error(`H5 should have --level: 4, got "${h5Level ?? 'undefined'}"`);
+			throw new Error(`H5の --level が 4 であることを期待していましたが、実際には "${h5Level ?? 'undefined'}" でした`);
 		}
-
-		console.log('✅ All tests passed for SparseLevels story');
 	},
 };
 
@@ -792,67 +768,65 @@ export const LongText: Story = {
 			<ui-toc
 				id="longtext-toc"
 				.headers="${[
-					{
-						id: 'long1',
-						text: 'とても長い見出しテキストがここに入ります：これはオーバーフローテストです',
-						level: 2,
-					},
-					{
-						id: 'long2',
-						text: '通常の長さ',
-						level: 2,
-					},
-					{
-						id: 'long3',
-						text: 'Another extremely long heading text that should be truncated with ellipsis in the TOC sidebar',
-						level: 3,
-					},
-				]}"
+			{
+				id: 'long1',
+				text: 'とても長い見出しテキストがここに入ります：これはオーバーフローテストです',
+				level: 2,
+			},
+			{
+				id: 'long2',
+				text: '通常の長さ',
+				level: 2,
+			},
+			{
+				id: 'long3',
+				text: 'Another extremely long heading text that should be truncated with ellipsis in the TOC sidebar',
+				level: 3,
+			},
+		]}"
 				active-id="long1"
 			></ui-toc>
 		</div>
 	`,
 	play: async ({ canvasElement }) => {
 		const toc = canvasElement.querySelector<Toc>('#longtext-toc');
-		if (!toc) throw new Error('ui-toc not found');
+		if (!toc) throw new Error('ui-toc が見つかりません');
 		await toc.updateComplete;
 
 		// テスト: 3件のリンクが存在する
 		const links = toc.shadowRoot?.querySelectorAll('a.toc-link');
 		if (links?.length !== 3) {
-			throw new Error(`Expected 3 links, got ${String(links?.length ?? 0)}`);
+			throw new Error(`3つのリンクを期待していましたが、実際には ${String(links?.length ?? 0)}個でした`);
 		}
 
 		// テスト: コンポーネントが存在し、コンテナ幅を超えていない
 		const hostRect = toc.getBoundingClientRect();
 		if (hostRect.width > 220) {
 			// 200px コンテナ + 余裕
-			throw new Error(`TOC width (${String(Math.round(hostRect.width))}px) exceeds container`);
+			throw new Error(`TOC の幅 (${String(Math.round(hostRect.width))}px) がコンテナを超えています`);
 		}
 
 		// テスト: long1 がアクティブ
 		const activeLink = toc.shadowRoot?.querySelector('[aria-current="location"]');
-		if (!activeLink) throw new Error('Active link not found');
+		if (!activeLink) throw new Error('アクティブリンクが見つかりません');
 		if (activeLink.getAttribute('href') !== '#long1') {
 			throw new Error(
-				`Expected active href="#long1", got "${activeLink.getAttribute('href') ?? 'null'}"`,
+				`アクティブな href="#long1" を期待していましたが、実際には "${activeLink.getAttribute('href') ?? 'null'}" でした`,
 			);
 		}
 
 		// テスト: 長いテキストリンクに text-overflow スタイルが適用されている
 		const firstLink = links[0];
-		if (!firstLink) throw new Error('First link not found');
+		if (!firstLink) throw new Error('最初のリンクが見つかりません');
 		const computedStyle = window.getComputedStyle(firstLink);
 		if (computedStyle.overflow !== 'hidden') {
-			throw new Error(`Expected overflow: hidden, got "${computedStyle.overflow}"`);
+			throw new Error(`overflow: hidden を期待していましたが、実際には "${computedStyle.overflow}" でした`);
 		}
 		if (computedStyle.textOverflow !== 'ellipsis') {
 			throw new Error(
-				`Expected text-overflow: ellipsis, got "${computedStyle.textOverflow}"`,
+				`text-overflow: ellipsis を期待していましたが、実際には "${computedStyle.textOverflow}" でした`,
 			);
 		}
-
-		console.log('✅ All tests passed for LongText story');
 	},
 };
 
@@ -895,19 +869,19 @@ export const ClickToActivate: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const toc = canvasElement.querySelector<Toc>('#click-toc');
-		if (!toc) throw new Error('ui-toc not found');
+		if (!toc) throw new Error('ui-toc が見つかりません');
 		await toc.updateComplete;
 
 		// テスト: ターゲット見出しが存在し、スクロール経路が有効である
 		const targetHeading = document.getElementById('implementation');
-		if (!targetHeading) throw new Error('Expected #implementation heading in document');
+		if (!targetHeading) throw new Error('ドキュメント内に #implementation 見出しが見つかりませんでした');
 
 		// 初期状態の確認: intro がアクティブ
 		let activeLink = toc.shadowRoot?.querySelector('[aria-current="location"]');
-		if (!activeLink) throw new Error('Initial active link not found');
+		if (!activeLink) throw new Error('初期のアクティブリンクが見つかりません');
 		if (activeLink.getAttribute('href') !== '#intro') {
 			throw new Error(
-				`Expected initial active href="#intro", got "${activeLink.getAttribute('href') ?? 'null'}"`,
+				`初期アクティブリンクの href="#intro" を期待していましたが、実際には "${activeLink.getAttribute('href') ?? 'null'}" でした`,
 			);
 		}
 
@@ -915,49 +889,49 @@ export const ClickToActivate: Story = {
 		const implementationLink = toc.shadowRoot?.querySelector<HTMLAnchorElement>(
 			'a[href="#implementation"]',
 		);
-		if (!implementationLink) throw new Error('Implementation link not found');
+		if (!implementationLink) throw new Error('「実装方法」リンクが見つかりません');
 		implementationLink.click();
 		await toc.updateComplete;
 
 		// テスト: activeId が更新されている
 		if (toc.activeId !== 'implementation') {
 			throw new Error(
-				`Expected activeId="implementation" after click, got "${toc.activeId}"`,
+				`クリック後の activeId="implementation" を期待していましたが、実際には "${toc.activeId}" でした`,
 			);
 		}
 
 		// テスト: 新しいアクティブリンクに aria-current="location" がある
 		activeLink = toc.shadowRoot?.querySelector('[aria-current="location"]');
-		if (!activeLink) throw new Error('Active link not found after click');
+		if (!activeLink) throw new Error('クリック後にアクティブリンクが見つかりません');
 		if (activeLink.getAttribute('href') !== '#implementation') {
 			throw new Error(
-				`Expected active href="#implementation" after click, got "${activeLink.getAttribute('href') ?? 'null'}"`,
+				`クリック後のアクティブな href="#implementation" を期待していましたが、実際には "${activeLink.getAttribute('href') ?? 'null'}" でした`,
 			);
 		}
 
 		// テスト: クリック起因のクラスが付与されている
 		if (!activeLink.classList.contains('is-click')) {
-			throw new Error('Clicked link should have is-click class');
+			throw new Error('クリックされたリンクは is-click クラスを持つべきです');
 		}
 		if (!activeLink.classList.contains('is-active')) {
-			throw new Error('Clicked link should have is-active class');
+			throw new Error('クリックされたリンクは is-active クラスを持つべきです');
 		}
 
 		// テスト: 旧アクティブリンクがアクティブでなくなっている
 		const oldLink = toc.shadowRoot?.querySelector<HTMLAnchorElement>('a[href="#intro"]');
-		if (!oldLink) throw new Error('Old link not found');
+		if (!oldLink) throw new Error('古いリンクが見つかりません');
 		if (oldLink.hasAttribute('aria-current')) {
-			throw new Error('Old active link should no longer have aria-current');
+			throw new Error('以前のアクティブリンクは aria-current を持たないべきです');
 		}
 		if (oldLink.classList.contains('is-active')) {
-			throw new Error('Old active link should not have is-active class');
+			throw new Error('以前のアクティブリンクは is-active クラスを持たないべきです');
 		}
 
 		// 「まとめ」リンクをクリック（連続クリックのテスト）
 		const conclusionLink = toc.shadowRoot?.querySelector<HTMLAnchorElement>(
 			'a[href="#conclusion"]',
 		);
-		if (!conclusionLink) throw new Error('Conclusion link not found');
+		if (!conclusionLink) throw new Error('「まとめ」リンクが見つかりません');
 		conclusionLink.click();
 		await toc.updateComplete;
 
@@ -965,16 +939,14 @@ export const ClickToActivate: Story = {
 		const activeIdAfterSecond = toc.activeId as string;
 		if (activeIdAfterSecond !== 'conclusion') {
 			throw new Error(
-				`Expected activeId="conclusion" after second click, got "${activeIdAfterSecond}"`,
+				`2回目のクリック後の activeId="conclusion" を期待していましたが、実際には "${activeIdAfterSecond}" でした`,
 			);
 		}
 
 		const finalActive = toc.shadowRoot?.querySelector('[aria-current="location"]');
 		if (finalActive?.getAttribute('href') !== '#conclusion') {
-			throw new Error('Final active link should be "#conclusion"');
+			throw new Error('最後のアクティブリンクは"#conclusion"であるべきです');
 		}
-
-		console.log('✅ All tests passed for ClickToActivate story');
 	},
 };
 
@@ -1007,32 +979,30 @@ export const ActiveIdNotFound: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const toc = canvasElement.querySelector<Toc>('#notfound-toc');
-		if (!toc) throw new Error('ui-toc not found');
+		if (!toc) throw new Error('ui-toc が見つかりません');
 		await toc.updateComplete;
 
 		// テスト: nav が存在する（壊れていない）
 		const nav = toc.shadowRoot?.querySelector('nav');
-		if (!nav) throw new Error('nav element not found');
+		if (!nav) throw new Error('nav 要素が見つかりません');
 
 		// テスト: 5件のリンクが正常に表示されている
 		const links = toc.shadowRoot?.querySelectorAll('a.toc-link');
 		if (links?.length !== 5) {
-			throw new Error(`Expected 5 links, got ${String(links?.length ?? 0)}`);
+			throw new Error(`5つのリンクを期待していましたが、実際には ${String(links?.length ?? 0)}個でした`);
 		}
 
 		// テスト: どのリンクも aria-current を持たない
 		const activeLinks = toc.shadowRoot?.querySelectorAll('[aria-current]');
 		if (activeLinks && activeLinks.length > 0) {
-			throw new Error(`Expected 0 active links when ID not found, got ${String(activeLinks.length)}`);
+			throw new Error(`ID が見つからない時はアクティブリンクが 0 件であることを期待していましたが、実際には ${String(activeLinks.length)}件でした`);
 		}
 
 		// テスト: どのリンクも is-active クラスを持たない
 		const activeClassLinks = toc.shadowRoot?.querySelectorAll('.is-active');
 		if (activeClassLinks && activeClassLinks.length > 0) {
-			throw new Error(`Expected 0 is-active links, got ${String(activeClassLinks.length)}`);
+			throw new Error(`is-active クラスを持つリンクが 0 件であることを期待していましたが、実際には ${String(activeClassLinks.length)}件でした`);
 		}
-
-		console.log('✅ All tests passed for ActiveIdNotFound story');
 	},
 };
 
@@ -1061,23 +1031,23 @@ export const AccessibilityStructure: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const toc = canvasElement.querySelector<Toc>('#a11y-toc');
-		if (!toc) throw new Error('ui-toc not found');
+		if (!toc) throw new Error('ui-toc が見つかりません');
 		await toc.updateComplete;
 
 		const shadow = toc.shadowRoot;
-		if (!shadow) throw new Error('shadowRoot not found');
+		if (!shadow) throw new Error('shadowRoot が見つかりません');
 
 		// テスト: nav > ul > li > a の正しい構造
 		const nav = shadow.querySelector('nav');
-		if (!nav) throw new Error('nav not found');
+		if (!nav) throw new Error('nav が見つかりません');
 
 		const ul = nav.querySelector('ul');
-		if (!ul) throw new Error('ul not found inside nav');
+		if (!ul) throw new Error('nav 内に ul が見つかりません');
 
 		const listItems = ul.querySelectorAll(':scope > li');
 		if (listItems.length !== nestedHeaders.length) {
 			throw new Error(
-				`Expected ${String(nestedHeaders.length)} li elements, got ${String(listItems.length)}`,
+				`${String(nestedHeaders.length)}個の li 要素を期待していましたが、実際には ${String(listItems.length)}個でした`,
 			);
 		}
 
@@ -1086,7 +1056,7 @@ export const AccessibilityStructure: Story = {
 			const anchors = li.querySelectorAll('a');
 			if (anchors.length !== 1) {
 				throw new Error(
-					`Expected 1 anchor in li[${String(idx)}], got ${String(anchors.length)}`,
+					`${String(idx)}番目の li 内に1つの a 要素を期待していましたが、実際には ${String(anchors.length)}個でした`,
 				);
 			}
 		});
@@ -1094,16 +1064,16 @@ export const AccessibilityStructure: Story = {
 		// テスト: nav の aria-label が正しい
 		if (nav.getAttribute('aria-label') !== 'Table of Contents') {
 			throw new Error(
-				`Expected aria-label="Table of Contents", got "${nav.getAttribute('aria-label') ?? 'null'}"`,
+				`aria-label="Table of Contents" を期待していましたが、実際には "${nav.getAttribute('aria-label') ?? 'null'}" でした`,
 			);
 		}
 
 		// テスト: アクティブリンクの aria-current="location"（"page" ではなく "location"）
 		const activeLink = shadow.querySelector('[aria-current]');
-		if (!activeLink) throw new Error('No element with aria-current found');
+		if (!activeLink) throw new Error('aria-current を持つ要素が見つかりませんでした');
 		if (activeLink.getAttribute('aria-current') !== 'location') {
 			throw new Error(
-				`Expected aria-current="location", got "${activeLink.getAttribute('aria-current') ?? 'null'}"`,
+				`aria-current="location" を期待していましたが、実際には "${activeLink.getAttribute('aria-current') ?? 'null'}" でした`,
 			);
 		}
 
@@ -1117,42 +1087,40 @@ export const AccessibilityStructure: Story = {
 		});
 		if (ariaCurrentCount !== 1) {
 			throw new Error(
-				`Expected exactly 1 link with aria-current, got ${String(ariaCurrentCount)}`,
+				`aria-current を持つリンクがちょうど1つであることを期待していましたが、実際には ${String(ariaCurrentCount)}個でした`,
 			);
 		}
 
-			// テスト: 全リンクの href が # で始まる
-			allLinks.forEach((link, idx) => {
-				const href = link.getAttribute('href');
-				if (!href?.startsWith('#')) {
-					throw new Error(`Link[${String(idx)}] href should start with "#", got "${href ?? 'null'}"`);
-				}
-			});
-
-			// 構造型リンク契約: デフォルトは下線なし
-			const firstLink = allLinks[0];
-			if (!firstLink) throw new Error('first toc-link not found');
-			if (getComputedStyle(firstLink).textDecorationLine !== 'none') {
-				throw new Error('toc-link は構造型リンクとしてデフォルト下線なしである必要があります');
+		// テスト: 全リンクの href が # で始まる
+		allLinks.forEach((link, idx) => {
+			const href = link.getAttribute('href');
+			if (!href?.startsWith('#')) {
+				throw new Error(`${String(idx)}番目のリンクの href は "#" で始まるべきですが、実際には "${href ?? 'null'}" でした`);
 			}
+		});
 
-			// 構造型リンク契約: 現在地はインジケータ定義と active class の組み合わせで識別できる
-			if (!activeLink.classList.contains('is-active')) {
-				throw new Error('active toc-link に is-active クラスが必要です');
-			}
+		// 構造型リンク契約: デフォルトは下線なし
+		const firstLink = allLinks[0];
+		if (!firstLink) throw new Error('最初の toc-link が見つかりません');
+		if (getComputedStyle(firstLink).textDecorationLine !== 'none') {
+			throw new Error('toc-link は構造型リンクとしてデフォルト下線なしである必要があります');
+		}
 
-			// 構造型リンク契約: focus-visible のルールが定義されている
-			const styleText = getShadowStylesText(shadow);
-			if (!styleText.includes('.toc-link:focus-visible')) {
-				throw new Error('toc-link の focus-visible 契約が不足しています');
-			}
-			if (!styleText.includes('.toc-link.is-active.is-scroll::before')) {
-				throw new Error('toc-link の現在地インジケータ契約が不足しています');
-			}
+		// 構造型リンク契約: 現在地はインジケータ定義と active class の組み合わせで識別できる
+		if (!activeLink.classList.contains('is-active')) {
+			throw new Error('active toc-link に is-active クラスが必要です');
+		}
 
-			console.log('✅ All tests passed for AccessibilityStructure story');
-		},
-	};
+		// 構造型リンク契約: focus-visible のルールが定義されている
+		const styleText = getShadowStylesText(shadow);
+		if (!styleText.includes('.toc-link:focus-visible')) {
+			throw new Error('toc-link の focus-visible 契約が不足しています');
+		}
+		if (!styleText.includes('.toc-link.is-active.is-scroll::before')) {
+			throw new Error('toc-link の現在地インジケータ契約が不足しています');
+		}
+	},
+};
 
 // ──────────────────────────────────────────────
 // アクセシビリティ: キーボード / タッチターゲット
@@ -1173,30 +1141,30 @@ export const KeyboardAndTouchTarget: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const toc = canvasElement.querySelector<Toc>('#kbd-touch-toc');
-		if (!toc) throw new Error('ui-toc not found');
+		if (!toc) throw new Error('ui-toc が見つかりません');
 		await toc.updateComplete;
 
 		const links = toc.shadowRoot?.querySelectorAll<HTMLAnchorElement>('a.toc-link');
-		if (!links || links.length === 0) throw new Error('No toc links found');
+		if (!links || links.length === 0) throw new Error('toc リンクが見つかりません');
 
 		// テスト: Roving Tabindex を使用しない（属性なし）
 		links.forEach((link, idx) => {
 			if (link.hasAttribute('tabindex')) {
-				throw new Error(`Link[${String(idx)}] should not have tabindex`);
+				throw new Error(`${String(idx)}番目のリンクは tabindex を持つべきではありません`);
 			}
 		});
 
 		// テスト: 最小タッチターゲット寸法
 		const firstLink = links[0];
-		if (!firstLink) throw new Error('first link not found');
+		if (!firstLink) throw new Error('最初のリンクが見つかりません');
 		const minHeight = Number.parseFloat(getComputedStyle(firstLink).minHeight);
 		if (!Number.isFinite(minHeight) || minHeight < 24) {
-			throw new Error(`Expected min-height >= 24px, got ${String(minHeight)}`);
+			throw new Error(`min-height >= 24px を期待していましたが、実際には ${String(minHeight)}px でした`);
 		}
 
 		// モバイル幅での要件（環境依存のため条件付き）
 		if (window.matchMedia('(max-width: 1023px)').matches && minHeight < 44) {
-			throw new Error(`Expected mobile min-height >= 44px, got ${String(minHeight)}`);
+			throw new Error(`モバイル時の min-height >= 44px を期待していましたが、実際には ${String(minHeight)}px でした`);
 		}
 	},
 };
@@ -1219,7 +1187,7 @@ export const DarkMode: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const toc = canvasElement.querySelector<Toc>('#dark-toc');
-		if (!toc) throw new Error('ui-toc not found');
+		if (!toc) throw new Error('ui-toc が見つかりません');
 		await toc.updateComplete;
 
 		const activeLink = toc.shadowRoot?.querySelector<HTMLAnchorElement>('a.toc-link.is-active');
@@ -1227,13 +1195,13 @@ export const DarkMode: Story = {
 			'a.toc-link:not(.is-active)',
 		);
 		if (!activeLink || !inactiveLink) {
-			throw new Error('Expected active and inactive links');
+			throw new Error('アクティブリンクと非アクティブリンクの両方が存在することを期待していました');
 		}
 
 		const activeColor = getComputedStyle(activeLink).color;
 		const inactiveColor = getComputedStyle(inactiveLink).color;
 		if (activeColor === inactiveColor) {
-			throw new Error('Active and inactive text colors should differ');
+			throw new Error('アクティブと非アクティブでテキストの色が異なるべきです');
 		}
 
 		if (!window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -1343,10 +1311,10 @@ export const AllStates: Story = {
 				<div class="toc-wrapper">
 					<ui-toc
 						.headers="${[
-							{ id: 'a', text: '環境構築', level: 3 },
-							{ id: 'b', text: '設定', level: 3 },
-							{ id: 'c', text: 'デプロイ', level: 3 },
-						]}"
+			{ id: 'a', text: '環境構築', level: 3 },
+			{ id: 'b', text: '設定', level: 3 },
+			{ id: 'c', text: 'デプロイ', level: 3 },
+		]}"
 						active-id="b"
 					></ui-toc>
 				</div>
@@ -1359,30 +1327,28 @@ export const AllStates: Story = {
 
 		// テスト: 8つのコンポーネントが存在する
 		if (allTocs.length !== 8) {
-			throw new Error(`Expected 8 toc components, got ${String(allTocs.length)}`);
+			throw new Error(`8つの目次コンポーネントを期待していましたが、実際には ${String(allTocs.length)}個でした`);
 		}
 
 		// テスト: アクティブなしのコンポーネント（1番目）にアクティブリンクがない
 		const firstToc = allTocs[0];
-		if (!firstToc) throw new Error('First toc not found');
+		if (!firstToc) throw new Error('最初の目次が見つかりません');
 		const firstActiveLinks = firstToc.shadowRoot?.querySelectorAll('[aria-current="location"]');
 		if (firstActiveLinks && firstActiveLinks.length > 0) {
-			throw new Error('First TOC (no active-id) should have no active links');
+			throw new Error('最初の目次（active-id なし）はアクティブリンクを持つべきではありません');
 		}
 
 		// テスト: アクティブありのコンポーネント（2番目）にアクティブリンクが1つある
 		const secondToc = allTocs[1];
-		if (!secondToc) throw new Error('Second toc not found');
+		if (!secondToc) throw new Error('2番目の目次が見つかりません');
 		const secondActiveLinks = secondToc.shadowRoot?.querySelectorAll(
 			'[aria-current="location"]',
 		);
 		if (secondActiveLinks?.length !== 1) {
 			throw new Error(
-				`Second TOC should have 1 active link, got ${String(secondActiveLinks?.length ?? 0)}`,
+				`2番目の目次は1つのアクティブリンクを持つべきですが、実際には ${String(secondActiveLinks?.length ?? 0)}個でした`,
 			);
 		}
-
-		console.log('✅ All tests passed for AllStates story');
 	},
 };
 
@@ -1440,19 +1406,19 @@ export const VisualAccessibility: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const toc = canvasElement.querySelector<Toc>('#visual-a11y-toc');
-		if (!toc) throw new Error('ui-toc not found');
+		if (!toc) throw new Error('ui-toc が見つかりません');
 		await toc.updateComplete;
 
 		// click起因にして ::before の計算スタイルを評価
 		const targetLink = toc.shadowRoot?.querySelector<HTMLAnchorElement>('a[href="#setup"]');
-		if (!targetLink) throw new Error('target link not found');
+		if (!targetLink) throw new Error('ターゲットリンクが見つかりません');
 		targetLink.click();
 		await toc.updateComplete;
 
 		const activeAfterClick = toc.shadowRoot?.querySelector<HTMLAnchorElement>(
 			'a.toc-link.is-active.is-click',
 		);
-		if (!activeAfterClick) throw new Error('clicked active link not found');
+		if (!activeAfterClick) throw new Error('クリック後にアクティブリンクが見つかりません');
 
 		const beforeStyle = getComputedStyle(activeAfterClick, '::before');
 		const animationDuration = beforeStyle.animationDuration;
@@ -1462,13 +1428,13 @@ export const VisualAccessibility: Story = {
 			window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
 			animationDuration !== '0.01ms'
 		) {
-			throw new Error(`Expected animation-duration 0.01ms in reduce mode, got "${animationDuration}"`);
+			throw new Error(`アニメーション軽減モードでは duration 0.01ms を期待していましたが、実際には "${animationDuration}" でした`);
 		}
 
 		// Forced Colors 時: インジケーターが border ベースで可視化される
 		if (window.matchMedia('(forced-colors: active)').matches) {
 			if (beforeStyle.borderStyle === 'none') {
-				throw new Error('Expected active indicator border in forced-colors mode');
+				throw new Error('ハイコントラストモードではアクティブインジケーターに枠線（border）が表示されるべきです');
 			}
 		}
 	},

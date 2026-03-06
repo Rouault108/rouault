@@ -134,60 +134,58 @@ export const Default: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const table = canvasElement.querySelector<Table>('#default-table');
-		if (!table) throw new Error('ui-table not found');
+		if (!table) throw new Error('ui-table が見つかりません');
 		await table.updateComplete;
 
 		// テスト: .table-container が存在する
 		const container = table.shadowRoot?.querySelector('.table-container');
-		if (!container) throw new Error('.table-container not found in shadow root');
+		if (!container) throw new Error('Shadow Root 内に .table-container が見つかりません');
 
 		// テスト: role="region" が設定されている
 		if (container.getAttribute('role') !== 'region') {
 			throw new Error(
-				`Expected role="region", got "${container.getAttribute('role') ?? 'null'}"`,
+				`role="region" を期待していましたが、実際には "${container.getAttribute('role') ?? 'null'}" でした`,
 			);
 		}
 
 		// テスト: tabindex="0" が設定されている
 		if (container.getAttribute('tabindex') !== '0') {
 			throw new Error(
-				`Expected tabindex="0", got "${container.getAttribute('tabindex') ?? 'null'}"`,
+				`tabindex="0" を期待していましたが、実際には "${container.getAttribute('tabindex') ?? 'null'}" でした`,
 			);
 		}
 
 		// テスト: aria-label がコンテナに反映されている
 		if (container.getAttribute('aria-label') !== 'メンバー一覧') {
 			throw new Error(
-				`Expected aria-label="メンバー一覧", got "${container.getAttribute('aria-label') ?? 'null'}"`,
+				`aria-label="メンバー一覧" を期待していましたが、実際には "${container.getAttribute('aria-label') ?? 'null'}" でした`,
 			);
 		}
 
 		// テスト: デフォルト density が 'normal'
 		if (table.density !== 'normal') {
-			throw new Error(`Expected density="normal", got "${table.density}"`);
+			throw new Error(`density="normal" を期待していましたが、実際には "${table.density}" でした`);
 		}
 
 		// テスト: ドキュメントにグローバルスタイルが注入されている
 		const injectedStyle = document.getElementById('ui-table-document-styles');
-		if (!injectedStyle) throw new Error('Global styles not injected into document');
+		if (!injectedStyle) throw new Error('グローバルスタイルがドキュメントに注入されていません');
 
 		// テスト: slotted な <table> が存在する
 		const slottedTable = table.querySelector('table');
-		if (!slottedTable) throw new Error('Slotted <table> not found');
+		if (!slottedTable) throw new Error('スロットされた <table> が見つかりません');
 
 		// テスト: thead > tr > th が 3 つある
 		const headers = table.querySelectorAll('thead th');
 		if (headers.length !== 3) {
-			throw new Error(`Expected 3 th elements, got ${String(headers.length)}`);
+			throw new Error(`3つの th 要素を期待していましたが、実際には ${String(headers.length)}個でした`);
 		}
 
 		// テスト: tbody > tr が 3 行ある
 		const rows = table.querySelectorAll('tbody tr');
 		if (rows.length !== 3) {
-			throw new Error(`Expected 3 data rows, got ${String(rows.length)}`);
+			throw new Error(`3つのデータ行を期待していましたが、実際には ${String(rows.length)}行でした`);
 		}
-
-		console.log('✅ All tests passed for Default story');
 	},
 };
 
@@ -234,34 +232,32 @@ export const Compact: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const table = canvasElement.querySelector<Table>('#compact-table');
-		if (!table) throw new Error('ui-table not found');
+		if (!table) throw new Error('ui-table が見つかりません');
 		await table.updateComplete;
 
 		// テスト: density プロパティが 'compact'
 		if (table.density !== 'compact') {
-			throw new Error(`Expected density="compact", got "${table.density}"`);
+			throw new Error(`density="compact" を期待していましたが、実際には "${table.density}" でした`);
 		}
 
 		// テスト: density 属性がホスト要素に反映されている（CSS セレクター動作の前提）
 		if (table.getAttribute('density') !== 'compact') {
 			throw new Error(
-				`Expected attribute density="compact", got "${table.getAttribute('density') ?? 'null'}"`,
+				`density="compact" 属性を期待していましたが、実際には "${table.getAttribute('density') ?? 'null'}" でした`,
 			);
 		}
 
 		// テスト: .table-container が正しく設定されている
 		const container = table.shadowRoot?.querySelector('.table-container');
-		if (!container) throw new Error('.table-container not found');
+		if (!container) throw new Error('.table-container が見つかりません');
 
 		if (container.getAttribute('role') !== 'region') {
-			throw new Error('Expected role="region"');
+			throw new Error('role="region" を期待していましたが、実際には異なっていました');
 		}
 
 		if (container.getAttribute('tabindex') !== '0') {
-			throw new Error('Expected tabindex="0"');
+			throw new Error('tabindex="0" を期待していましたが、実際には異なっていました');
 		}
-
-		console.log('✅ All tests passed for Compact story');
 	},
 };
 
@@ -315,32 +311,30 @@ export const WithCaption: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const table = canvasElement.querySelector<Table>('#caption-table');
-		if (!table) throw new Error('ui-table not found');
+		if (!table) throw new Error('ui-table が見つかりません');
 		await table.updateComplete;
 
 		// テスト: <caption> 要素が存在する
 		const caption = table.querySelector('caption');
-		if (!caption) throw new Error('<caption> element not found');
+		if (!caption) throw new Error('<caption> 要素が見つかりません');
 
 		// テスト: caption のテキストが正しい
 		const captionText = caption.textContent;
 		if (!captionText.includes('2024年')) {
-			throw new Error(`Caption should contain '2024年', got "${captionText}"`);
+			throw new Error(`キャプションに "2024年" が含まれることを期待していましたが、実際には "${captionText}" でした`);
 		}
 
 		// テスト: 4 行のデータがある
 		const rows = table.querySelectorAll('tbody tr');
 		if (rows.length !== 4) {
-			throw new Error(`Expected 4 data rows, got ${String(rows.length)}`);
+			throw new Error(`4つのデータ行を期待していましたが、実際には ${String(rows.length)}行でした`);
 		}
 
 		// テスト: align="right" の td が存在する
 		const rightAlignedCells = table.querySelectorAll('td[align="right"]');
 		if (rightAlignedCells.length === 0) {
-			throw new Error('No right-aligned cells found');
+			throw new Error('右揃えのセルが見つかりません');
 		}
-
-		console.log('✅ All tests passed for WithCaption story');
 	},
 };
 
@@ -395,32 +389,30 @@ export const WithTfoot: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const table = canvasElement.querySelector<Table>('#tfoot-table');
-		if (!table) throw new Error('ui-table not found');
+		if (!table) throw new Error('ui-table が見つかりません');
 		await table.updateComplete;
 
 		// テスト: <tfoot> 要素が存在する
 		const tfoot = table.querySelector('tfoot');
-		if (!tfoot) throw new Error('<tfoot> element not found');
+		if (!tfoot) throw new Error('<tfoot> 要素が見つかりません');
 
 		// テスト: tfoot に行が 1 つある
 		const tfootRows = tfoot.querySelectorAll('tr');
 		if (tfootRows.length !== 1) {
-			throw new Error(`Expected 1 tfoot row, got ${String(tfootRows.length)}`);
+			throw new Error(`1つの tfoot 行を期待していましたが、実際には ${String(tfootRows.length)}行でした`);
 		}
 
 		// テスト: tfoot の合計セルが正しいテキストを持つ
 		const totalCell = tfoot.querySelector('td');
 		if (!totalCell?.textContent.includes('合計')) {
-			throw new Error(`Expected tfoot to contain '合計', got "${totalCell?.textContent ?? ''}"`);
+			throw new Error(`tfoot に "合計" が含まれることを期待していましたが、実際には "${totalCell?.textContent ?? ''}" でした`);
 		}
 
 		// テスト: tbody に 3 行ある
 		const tbodyRows = table.querySelectorAll('tbody tr');
 		if (tbodyRows.length !== 3) {
-			throw new Error(`Expected 3 tbody rows, got ${String(tbodyRows.length)}`);
+			throw new Error(`3つの tbody 行を期待していましたが、実際には ${String(tbodyRows.length)}行でした`);
 		}
-
-		console.log('✅ All tests passed for WithTfoot story');
 	},
 };
 
@@ -487,13 +479,13 @@ export const MultipleTbody: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const table = canvasElement.querySelector<Table>('#multi-tbody-table');
-		if (!table) throw new Error('ui-table not found');
+		if (!table) throw new Error('ui-table が見つかりません');
 		await table.updateComplete;
 
 		// テスト: tbody が 3 つある
 		const tbodies = table.querySelectorAll('tbody');
 		if (tbodies.length !== 3) {
-			throw new Error(`Expected 3 tbody elements, got ${String(tbodies.length)}`);
+			throw new Error(`3つの tbody 要素を期待していましたが、実際には ${String(tbodies.length)}個でした`);
 		}
 
 		// テスト: 各 tbody に 2 行ずつある
@@ -501,7 +493,7 @@ export const MultipleTbody: Story = {
 			const rows = tbody.querySelectorAll('tr');
 			if (rows.length !== 2) {
 				throw new Error(
-					`Expected 2 rows in tbody[${String(idx)}], got ${String(rows.length)}`,
+					`tbody[${String(idx)}] 内に 2つの行を期待していましたが、実際には ${String(rows.length)}行でした`,
 				);
 			}
 		});
@@ -509,10 +501,8 @@ export const MultipleTbody: Story = {
 		// テスト: 全行合計で 6 行
 		const allRows = table.querySelectorAll('tbody tr');
 		if (allRows.length !== 6) {
-			throw new Error(`Expected 6 total data rows, got ${String(allRows.length)}`);
+			throw new Error(`合計 6つのデータ行を期待していましたが、実際には ${String(allRows.length)}行でした`);
 		}
-
-		console.log('✅ All tests passed for MultipleTbody story');
 	},
 };
 
@@ -563,36 +553,34 @@ export const ColspanRowspan: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const table = canvasElement.querySelector<Table>('#colspan-table');
-		if (!table) throw new Error('ui-table not found');
+		if (!table) throw new Error('ui-table が見つかりません');
 		await table.updateComplete;
 
 		// テスト: colspan="2" のセルが存在する
 		const colspanCell = table.querySelector('td[colspan="2"]');
-		if (!colspanCell) throw new Error('td[colspan="2"] not found');
+		if (!colspanCell) throw new Error('td[colspan="2"] が見つかりません');
 
 		if (!colspanCell.textContent.includes('全社朝礼')) {
 			throw new Error(
-				`Expected colspan cell to contain '全社朝礼', got "${colspanCell.textContent}"`,
+				`colspan セルに "全社朝礼" が含まれることを期待していましたが、実際には "${colspanCell.textContent}" でした`,
 			);
 		}
 
 		// テスト: rowspan="2" のセルが存在する
 		const rowspanCell = table.querySelector('td[rowspan="2"]');
-		if (!rowspanCell) throw new Error('td[rowspan="2"] not found');
+		if (!rowspanCell) throw new Error('td[rowspan="2"] が見つかりません');
 
 		if (!rowspanCell.textContent.includes('設計レビュー')) {
 			throw new Error(
-				`Expected rowspan cell to contain '設計レビュー', got "${rowspanCell.textContent}"`,
+				`rowspan セルに "設計レビュー" が含まれることを期待していましたが、実際には "${rowspanCell.textContent}" でした`,
 			);
 		}
 
 		// テスト: scope="row" の th が存在する
 		const rowHeaders = table.querySelectorAll('th[scope="row"]');
 		if (rowHeaders.length !== 3) {
-			throw new Error(`Expected 3 row header (scope="row"), got ${String(rowHeaders.length)}`);
+			throw new Error(`3つの行ヘッダー (scope="row") を期待していましたが、実際には ${String(rowHeaders.length)}個でした`);
 		}
-
-		console.log('✅ All tests passed for ColspanRowspan story');
 	},
 };
 
@@ -643,27 +631,25 @@ export const NumericData: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const table = canvasElement.querySelector<Table>('#numeric-table');
-		if (!table) throw new Error('ui-table not found');
+		if (!table) throw new Error('ui-table が見つかりません');
 		await table.updateComplete;
 
 		// テスト: align="right" の td が存在する
 		const rightCells = table.querySelectorAll('td[align="right"]');
 		if (rightCells.length === 0) {
-			throw new Error('No td[align="right"] found');
+			throw new Error('td[align="right"] が見つかりません');
 		}
 
 		// テスト: 数値データが含まれている
 		const firstNumericCell = rightCells[0];
 		if (!firstNumericCell?.textContent.includes('¥')) {
-			throw new Error('Numeric cells should contain ¥ symbol');
+			throw new Error('数値セルに "¥" 記号が含まれることを期待していましたが、実際には含まれていませんでした');
 		}
 
 		// テスト: 9 つの数値セルがある（3行 × 3列）
 		if (rightCells.length !== 9) {
-			throw new Error(`Expected 9 right-aligned cells, got ${String(rightCells.length)}`);
+			throw new Error(`9つの右揃えセルを期待していましたが、実際には ${String(rightCells.length)}個でした`);
 		}
-
-		console.log('✅ All tests passed for NumericData story');
 	},
 };
 
@@ -707,22 +693,20 @@ export const AlignmentSupport: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const table = canvasElement.querySelector<Table>('#alignment-table');
-		if (!table) throw new Error('ui-table not found');
+		if (!table) throw new Error('ui-table が見つかりません');
 		await table.updateComplete;
 
 		// テスト: align="left" セルが存在する
 		const leftCells = table.querySelectorAll('[align="left"]');
-		if (leftCells.length === 0) throw new Error('No align="left" cells found');
+		if (leftCells.length === 0) throw new Error('align="left" のセルが見つかりません');
 
 		// テスト: align="center" セルが存在する
 		const centerCells = table.querySelectorAll('[align="center"]');
-		if (centerCells.length === 0) throw new Error('No align="center" cells found');
+		if (centerCells.length === 0) throw new Error('align="center" のセルが見つかりません');
 
 		// テスト: align="right" セルが存在する
 		const rightCells = table.querySelectorAll('[align="right"]');
-		if (rightCells.length === 0) throw new Error('No align="right" cells found');
-
-		console.log('✅ All tests passed for AlignmentSupport story');
+		if (rightCells.length === 0) throw new Error('align="right" のセルが見つかりません');
 	},
 };
 
@@ -792,44 +776,42 @@ export const HorizontalScroll: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const table = canvasElement.querySelector<Table>('#scroll-table');
-		if (!table) throw new Error('ui-table not found');
+		if (!table) throw new Error('ui-table が見つかりません');
 		await table.updateComplete;
 
 		// テスト: .table-container が存在する
 		const container = table.shadowRoot?.querySelector('.table-container');
-		if (!container) throw new Error('.table-container not found');
+		if (!container) throw new Error('.table-container が見つかりません');
 
 		// テスト: tabindex="0" によりキーボードフォーカス可能
 		if (container.getAttribute('tabindex') !== '0') {
-			throw new Error('Container should be keyboard-focusable with tabindex="0"');
+			throw new Error('コンテナはtabindex="0"でなければなりません');
 		}
 
 		// テスト: 8 列のヘッダーがある
 		const headers = table.querySelectorAll('thead th');
 		if (headers.length !== 9) {
 			// 指標列 + 8ヶ月列
-			throw new Error(`Expected 9 header cells, got ${String(headers.length)}`);
+			throw new Error(`期待されるヘッダー数は9ですが、実際には ${String(headers.length)}個でした`);
 		}
 
 		// テスト: aria-label がコンテナに設定されている（スクロール可能リージョンのラベル）
 		if (!container.getAttribute('aria-label')) {
-			throw new Error('Scrollable container should have aria-label');
+			throw new Error('コンテナにはaria-labelが設定されていません');
 		}
 
 		// テーブルが実際に横スクロール対象であること
 		if (container.scrollWidth <= container.clientWidth) {
 			throw new Error(
-				`Expected horizontal overflow, got scrollWidth=${String(container.scrollWidth)} clientWidth=${String(container.clientWidth)}`,
+				`期待される横スクロール対象ですが、実際には scrollWidth=${String(container.scrollWidth)} clientWidth=${String(container.clientWidth)}でした`,
 			);
 		}
 
 		// キーボードフォーカス可能であること
 		(container as HTMLElement).focus();
 		if (document.activeElement !== container) {
-			throw new Error('Scrollable container should receive keyboard focus');
+			throw new Error('コンテナはキーボードフォーカスを受ける必要があります');
 		}
-
-		console.log('✅ All tests passed for HorizontalScroll story');
 	},
 };
 
@@ -872,39 +854,35 @@ export const BoundaryNoAriaLabel: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const table = canvasElement.querySelector<Table>('#no-label-table');
-		if (!table) throw new Error('ui-table not found');
+		if (!table) throw new Error('ui-tableが見つかりません');
 		await table.updateComplete;
 
 		// テスト: ariaLabel プロパティは未指定のまま
 		if (table.ariaLabel !== null) {
-			throw new Error(`Expected ariaLabel to be null, got "${table.ariaLabel}"`);
+			throw new Error(`ariaLabelがnullでなければなりませんが、実際には "${table.ariaLabel}"でした`);
 		}
 
 		// テスト: フォールバックラベルが適用される
 		const container = table.shadowRoot?.querySelector('.table-container');
-		if (!container) throw new Error('.table-container not found');
+		if (!container) throw new Error('.table-containerが見つかりません');
 
 		if (!container.hasAttribute('aria-label')) {
-			throw new Error(
-				'Container should have aria-label even when not provided by user',
-			);
+			throw new Error('コンテナにはaria-labelが設定されていません');
 		}
 
 		const resolvedLabel = container.getAttribute('aria-label');
 		if (resolvedLabel !== 'Data table') {
-			throw new Error(`Expected fallback aria-label="Data table", got "${resolvedLabel ?? 'null'}"`);
+			throw new Error(`aria-label="Data table"を期待していましたが、実際には "${resolvedLabel ?? 'null'}"でした`);
 		}
 
 		// テスト: role="region" と tabindex="0" は維持される
 		if (container.getAttribute('role') !== 'region') {
-			throw new Error('role="region" should still be set even without aria-label');
+			throw new Error('role="region"が維持されるべきです');
 		}
 
 		if (container.getAttribute('tabindex') !== '0') {
-			throw new Error('tabindex="0" should still be set even without aria-label');
+			throw new Error('aria-labelが設定されていないにもかかわらず、tabindex="0"が維持されるべきです');
 		}
-
-		console.log('✅ All tests passed for BoundaryNoAriaLabel story');
 	},
 };
 
@@ -946,26 +924,24 @@ export const BoundarySingleRow: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const table = canvasElement.querySelector<Table>('#single-row-table');
-		if (!table) throw new Error('ui-table not found');
+		if (!table) throw new Error('ui-tableが見つかりません');
 		await table.updateComplete;
 
 		// テスト: tbody に 1 行のみある
 		const rows = table.querySelectorAll('tbody tr');
 		if (rows.length !== 1) {
-			throw new Error(`Expected 1 data row, got ${String(rows.length)}`);
+			throw new Error(`1つのデータ行を期待していましたが、実際には ${String(rows.length)}個でした`);
 		}
 
 		// テスト: 2 つのセルがある
 		const cells = table.querySelectorAll('tbody td');
 		if (cells.length !== 2) {
-			throw new Error(`Expected 2 cells, got ${String(cells.length)}`);
+			throw new Error(`2つのセルを期待していましたが、実際には ${String(cells.length)}個でした`);
 		}
 
 		// テスト: コンポーネントが正常にレンダリングされている
 		const container = table.shadowRoot?.querySelector('.table-container');
-		if (!container) throw new Error('.table-container not found');
-
-		console.log('✅ All tests passed for BoundarySingleRow story');
+		if (!container) throw new Error('.table-containerが見つかりません');
 	},
 };
 
@@ -1005,33 +981,31 @@ export const BoundaryHeaderOnly: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const table = canvasElement.querySelector<Table>('#header-only-table');
-		if (!table) throw new Error('ui-table not found');
+		if (!table) throw new Error('ui-tableが見つかりません');
 		await table.updateComplete;
 
 		// テスト: thead が存在する
 		const thead = table.querySelector('thead');
-		if (!thead) throw new Error('<thead> not found');
+		if (!thead) throw new Error('theadが見つかりません');
 
 		// テスト: tbody が存在するが行が 0 件
 		const tbody = table.querySelector('tbody');
-		if (!tbody) throw new Error('<tbody> not found');
+		if (!tbody) throw new Error('tbodyが見つかりません');
 
 		const rows = tbody.querySelectorAll('tr');
 		if (rows.length !== 0) {
-			throw new Error(`Expected 0 data rows, got ${String(rows.length)}`);
+			throw new Error(`データ行が0件であることを期待していましたが、実際には ${String(rows.length)}件でした`);
 		}
 
 		// テスト: ヘッダーセルが 3 つある（構造は正常）
 		const headers = table.querySelectorAll('thead th');
 		if (headers.length !== 3) {
-			throw new Error(`Expected 3 header cells, got ${String(headers.length)}`);
+			throw new Error(`3つのヘッダーセルを期待していましたが、実際には ${String(headers.length)}個でした`);
 		}
 
 		// テスト: コンテナは正常に存在する
 		const container = table.shadowRoot?.querySelector('.table-container');
-		if (!container) throw new Error('.table-container not found');
-
-		console.log('✅ All tests passed for BoundaryHeaderOnly story');
+		if (!container) throw new Error('.table-containerが見つかりません');
 	},
 };
 
@@ -1087,12 +1061,12 @@ export const DensityToggle: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const table = canvasElement.querySelector<Table>('#density-toggle-table');
-		if (!table) throw new Error('ui-table not found');
+		if (!table) throw new Error('ui-tableが見つかりません');
 		await table.updateComplete;
 
 		// テスト: 初期状態（density="normal"）
 		if (table.density !== 'normal') {
-			throw new Error(`Expected initial density="normal", got "${table.density}"`);
+			throw new Error(`初期状態は density="normal" でなければなりませんが、実際には "${table.density}" でした`);
 		}
 
 		// テスト: density を compact に変更
@@ -1102,13 +1076,13 @@ export const DensityToggle: Story = {
 
 		const densityAfter = table.getAttribute('density');
 		if (densityBefore === densityAfter) {
-			throw new Error(`Expected density to change, but it remained "${densityAfter ?? 'null'}"`);
+			throw new Error(`密度が変更されなければなりませんが、実際には "${densityAfter ?? 'null'}" でした`);
 		}
 
 		// テスト: HTML 属性が更新されている（CSS セレクター動作の確認）
 		if (densityAfter !== 'compact') {
 			throw new Error(
-				`Expected attribute density="compact", got "${densityAfter ?? 'null'}"`,
+				`密度が compact になるはずですが、実際には "${densityAfter ?? 'null'}" でした`,
 			);
 		}
 
@@ -1117,10 +1091,8 @@ export const DensityToggle: Story = {
 		await table.updateComplete;
 
 		if (table.getAttribute('density') !== 'normal') {
-			throw new Error('density attribute should update back to "normal"');
+			throw new Error('密度が normal に戻るべきです');
 		}
-
-		console.log('✅ All tests passed for DensityToggle story');
 	},
 };
 
@@ -1174,34 +1146,34 @@ export const AccessibilityStructure: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const table = canvasElement.querySelector<Table>('#a11y-table');
-		if (!table) throw new Error('ui-table not found');
+		if (!table) throw new Error('ui-tableが見つかりません');
 		await table.updateComplete;
 
 		const shadow = table.shadowRoot;
-		if (!shadow) throw new Error('shadowRoot not found');
+		if (!shadow) throw new Error('shadowRootが見つかりません');
 
 		const container = shadow.querySelector('.table-container');
-		if (!container) throw new Error('.table-container not found');
+		if (!container) throw new Error('.table-containerが見つかりません');
 
 		// テスト: role="region"
 		if (container.getAttribute('role') !== 'region') {
-			throw new Error(`Expected role="region", got "${container.getAttribute('role') ?? 'null'}"`);
+			throw new Error(`role="region"を期待していましたが、実際には "${container.getAttribute('role') ?? 'null'}" でした`);
 		}
 
 		// テスト: tabindex="0"
 		if (container.getAttribute('tabindex') !== '0') {
-			throw new Error(`Expected tabindex="0", got "${container.getAttribute('tabindex') ?? 'null'}"`);
+			throw new Error(`tabindex="0"を期待していましたが、実際には "${container.getAttribute('tabindex') ?? 'null'}" でした`);
 		}
 
 		// テスト: aria-label がコンテナに正しく反映されている
 		const ariaLabel = container.getAttribute('aria-label');
 		if (ariaLabel !== 'アクセシビリティ検証テーブル') {
-			throw new Error(`Expected aria-label="アクセシビリティ検証テーブル", got "${ariaLabel ?? 'null'}"`);
+			throw new Error(`aria-label="アクセシビリティ検証テーブル"を期待していましたが、実際には "${ariaLabel ?? 'null'}" でした`);
 		}
 
 		// テスト: <caption> が存在する
 		const caption = table.querySelector('caption');
-		if (!caption) throw new Error('<caption> not found');
+		if (!caption) throw new Error('captionが見つかりません');
 
 		// テスト: scope="col" の th が 3 つある
 		const colHeaders = table.querySelectorAll('th[scope="col"]');
@@ -1212,15 +1184,13 @@ export const AccessibilityStructure: Story = {
 		// テスト: scope="row" の th が 2 つある
 		const rowHeaders = table.querySelectorAll('th[scope="row"]');
 		if (rowHeaders.length !== 2) {
-			throw new Error(`Expected 2 scope="row" headers, got ${String(rowHeaders.length)}`);
+			throw new Error(`scope="row" のヘッダーが2つあることを期待していましたが、${String(rowHeaders.length)}個でした`);
 		}
 
 		// テスト: <thead> / <tbody> / <tfoot> が存在する
-		if (!table.querySelector('thead')) throw new Error('<thead> not found');
-		if (!table.querySelector('tbody')) throw new Error('<tbody> not found');
-		if (!table.querySelector('tfoot')) throw new Error('<tfoot> not found');
-
-		console.log('✅ All tests passed for AccessibilityStructure story');
+		if (!table.querySelector('thead')) throw new Error('theadが見つかりません');
+		if (!table.querySelector('tbody')) throw new Error('tbodyが見つかりません');
+		if (!table.querySelector('tfoot')) throw new Error('tfootが見つかりません');
 	},
 };
 
@@ -1349,42 +1319,40 @@ export const AllStates: Story = {
 
 		// テスト: 4 つのテーブルが存在する
 		if (tables.length !== 4) {
-			throw new Error(`Expected 4 ui-table components, got ${String(tables.length)}`);
+			throw new Error(`4つの ui-table コンポーネントを期待していましたが、実際には ${String(tables.length)}個でした`);
 		}
 
 		// テスト: 1 番目（Normal）の density が 'normal'
 		const normalTable = tables[0];
-		if (!normalTable) throw new Error('First table not found');
+		if (!normalTable) throw new Error('1番目のテーブルが見つかりません');
 		if (normalTable.density !== 'normal') {
 			throw new Error(`First table should have density="normal", got "${normalTable.density}"`);
 		}
 
 		// テスト: 2 番目（Compact）の density が 'compact'
 		const compactTable = tables[1];
-		if (!compactTable) throw new Error('Second table not found');
+		if (!compactTable) throw new Error('2番目のテーブルが見つかりません');
 		if (compactTable.density !== 'compact') {
-			throw new Error(`Second table should have density="compact", got "${compactTable.density}"`);
+			throw new Error(`2番目のテーブルは density="compact" でなければなりませんが、実際には "${compactTable.density}" でした`);
 		}
 
 		// テスト: 3 番目（Caption + tfoot）が caption と tfoot を持つ
 		const captionTable = tables[2];
-		if (!captionTable) throw new Error('Third table not found');
+		if (!captionTable) throw new Error('3番目のテーブルが見つかりません');
 		if (!captionTable.querySelector('caption')) {
-			throw new Error('Third table should have a <caption>');
+			throw new Error('3番目のテーブルには caption が含まれている必要があります');
 		}
 		if (!captionTable.querySelector('tfoot')) {
-			throw new Error('Third table should have a <tfoot>');
+			throw new Error('3番目のテーブルには tfoot が含まれている必要があります');
 		}
 
 		// テスト: 4 番目（Multiple tbody）が 2 つの tbody を持つ
 		const multiTable = tables[3];
-		if (!multiTable) throw new Error('Fourth table not found');
+		if (!multiTable) throw new Error('4番目のテーブルが見つかりません');
 		const tbodies = multiTable.querySelectorAll('tbody');
 		if (tbodies.length !== 2) {
-			throw new Error(`Expected 2 tbody in fourth table, got ${String(tbodies.length)}`);
+			throw new Error(`4番目のテーブルには2つの tbody を持つ必要がありますが、実際には ${String(tbodies.length)}個でした`);
 		}
-
-		console.log('✅ All tests passed for AllStates story');
 	},
 };
 
@@ -1435,21 +1403,21 @@ export const ProseIntegration: Story = {
 	play: async ({ canvasElement }) => {
 		const wrapper = canvasElement.querySelector<HTMLElement>('#prose-wrapper');
 		const table = canvasElement.querySelector<Table>('#prose-table');
-		if (!wrapper) throw new Error('prose wrapper not found');
-		if (!table) throw new Error('ui-table not found');
+		if (!wrapper) throw new Error('prose-wrapperが見つかりません');
+		if (!table) throw new Error('ui-tableが見つかりません');
 		await table.updateComplete;
 
 		const lightDomTable = table.querySelector('table');
-		if (!lightDomTable) throw new Error('slotted table not found');
+		if (!lightDomTable) throw new Error('slotted tableが見つかりません');
 
 		// ブレークアウト指定が効く前提のスタイルが適用されていること
 		const widthValue = getComputedStyle(lightDomTable).width;
 		if (!widthValue) {
-			throw new Error('Expected prose table width style to be resolved');
+			throw new Error('prose tableの幅のスタイルが解決されませんでした');
 		}
 
 		const container = table.shadowRoot?.querySelector('.table-container');
-		if (!container) throw new Error('.table-container not found');
+		if (!container) throw new Error('.table-containerが見つかりません');
 	},
 };
 
@@ -1482,17 +1450,17 @@ export const DarkMode: Story = {
 	`,
 	play: async ({ canvasElement }) => {
 		const table = canvasElement.querySelector<Table>('#dark-table');
-		if (!table) throw new Error('ui-table not found');
+		if (!table) throw new Error('ui-tableが見つかりません');
 		await table.updateComplete;
 
 		const header = table.querySelector('th');
 		const cell = table.querySelector('td');
-		if (!header || !cell) throw new Error('table cells not found');
+		if (!header || !cell) throw new Error('tableのセルが見つかりません');
 
 		const headerColor = getComputedStyle(header).color;
 		const cellColor = getComputedStyle(cell).color;
 		if (!headerColor || !cellColor) {
-			throw new Error('Expected text colors to be resolved in dark mode');
+			throw new Error('ダークモードでテキストカラーが解決されませんでした');
 		}
 	},
 };
@@ -1587,24 +1555,24 @@ export const VisualAccessibility: Story = {
 		`,
 	play: async ({ canvasElement }) => {
 		const table = canvasElement.querySelector<Table>('ui-table');
-		if (!table) throw new Error('ui-table not found');
+		if (!table) throw new Error('ui-tableが見つかりません');
 		await table.updateComplete;
 
 		const injectedStyle = document.getElementById('ui-table-document-styles');
 		if (!injectedStyle?.textContent) {
-			throw new Error('Expected global style injection for visual accessibility rules');
+			throw new Error('視覚アクセシビリティルールのグローバルスタイル注入が行われていません');
 		}
 
 		if (!injectedStyle.textContent.includes('@media (prefers-reduced-motion: reduce)')) {
-			throw new Error('Missing reduced motion media query in injected styles');
+			throw new Error('注入されたスタイルに prefers-reduced-motion メディアクエリが含まれていません');
 		}
 
 		if (!injectedStyle.textContent.includes('@media (forced-colors: active)')) {
-			throw new Error('Missing forced-colors media query in injected styles');
+			throw new Error('注入されたスタイルに forced-colors メディアクエリが含まれていません');
 		}
 
 		if (!injectedStyle.textContent.includes('@media (hover: hover) and (pointer: fine)')) {
-			throw new Error('Missing active ruler hover media query in injected styles');
+			throw new Error('注入されたスタイルにホバー用のメディアクエリが含まれていません');
 		}
 	},
 };

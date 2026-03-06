@@ -178,13 +178,13 @@ export const ComparisonPair: Story = {
 
     const headerMetaBefore = group.shadowRoot?.querySelector<HTMLElement>('.header-meta');
     if (headerMetaBefore) {
-      throw new Error('header-meta should not be rendered');
+      throw new Error('header-meta はレンダリングしてはいけません');
     }
 
     const firstPre = firstPanel.querySelector('pre');
-    if (!firstPre) throw new Error('first panel pre is missing');
+    if (!firstPre) throw new Error('1つ目のパネルの pre が見つかりません');
     if (getComputedStyle(firstPre).backgroundColor !== 'rgba(0, 0, 0, 0)') {
-      throw new Error('slotted pre background must stay transparent in code-group body');
+      throw new Error('code-group の body 内では、スロットされた pre の背景は透明（transparent）でなければなりません');
     }
 
     const copyButtonBefore = getCopyButton(group);
@@ -204,7 +204,7 @@ export const ComparisonPair: Story = {
     }
     const headerMetaAfter = group.shadowRoot?.querySelector<HTMLElement>('.header-meta');
     if (headerMetaAfter) {
-      throw new Error('header-meta should stay hidden after tab switch');
+      throw new Error('タブ切り替え後も header-meta は非表示のままでなければなりません');
     }
 
     const copyButtonAfter = getCopyButton(group);

@@ -255,24 +255,24 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const fileTree = canvasElement.querySelector('ui-file-tree');
     if (!fileTree) {
-      throw new Error('FileTree component not found');
+      throw new Error('FileTree コンポーネントが見つかりません');
     }
 
     await fileTree.updateComplete;
 
     // テスト: role="tree" が設定されていること
     if (fileTree.getAttribute('role') !== 'tree') {
-      throw new Error('Expected role to be "tree"');
+      throw new Error(`role="tree" を期待していましたが、実際には "${fileTree.getAttribute('role') ?? 'null'}" でした`);
     }
 
     // テスト: aria-orientation="vertical" が設定されていること
     if (fileTree.getAttribute('aria-orientation') !== 'vertical') {
-      throw new Error('Expected aria-orientation to be "vertical"');
+      throw new Error(`aria-orientation="vertical" を期待していましたが、実際には "${fileTree.getAttribute('aria-orientation') ?? 'null'}" でした`);
     }
 
     // テスト: デフォルトのバリアントが "default" であること
     if (fileTree.variant !== 'default') {
-      throw new Error(`Expected variant to be 'default', got '${fileTree.variant}'`);
+      throw new Error(`variant="default" を期待していましたが、実際には "${fileTree.variant}" でした`);
     }
 
   },
@@ -300,19 +300,19 @@ export const CardVariant: Story = {
   play: async ({ canvasElement }) => {
     const fileTree = canvasElement.querySelector('ui-file-tree');
     if (!fileTree) {
-      throw new Error('FileTree component not found');
+      throw new Error('FileTree コンポーネントが見つかりません');
     }
 
     await fileTree.updateComplete;
 
     // テスト: variant が "card" であること
     if (fileTree.variant !== 'card') {
-      throw new Error(`Expected variant to be 'card', got '${fileTree.variant}'`);
+      throw new Error(`variant="card" を期待していましたが、実際には "${fileTree.variant}" でした`);
     }
 
     // テスト: variant 属性が反映されていること
     if (fileTree.getAttribute('variant') !== 'card') {
-      throw new Error('Expected variant attribute to be "card"');
+      throw new Error(`variant 属性が "card" であることを期待していましたが、実際には "${fileTree.getAttribute('variant') ?? 'null'}" でした`);
     }
 
   },
@@ -340,14 +340,14 @@ export const CompactDensity: Story = {
   play: async ({ canvasElement }) => {
     const fileTree = canvasElement.querySelector('ui-file-tree');
     if (!fileTree) {
-      throw new Error('FileTree component not found');
+      throw new Error('FileTree コンポーネントが見つかりません');
     }
 
     await fileTree.updateComplete;
 
     // テスト: density が "compact" であること
     if (fileTree.density !== 'compact') {
-      throw new Error(`Expected density to be 'compact', got '${fileTree.density}'`);
+      throw new Error(`density="compact" を期待していましたが、実際には "${fileTree.density}" でした`);
     }
 
   },
@@ -375,25 +375,25 @@ export const EmptyState: Story = {
   play: async ({ canvasElement }) => {
     const fileTree = canvasElement.querySelector('ui-file-tree');
     if (!fileTree) {
-      throw new Error('FileTree component not found');
+      throw new Error('FileTree コンポーネントが見つかりません');
     }
 
     await fileTree.updateComplete;
 
     // テスト: items が空であること
     if (fileTree.items.length !== 0) {
-      throw new Error(`Expected items to be empty, got length ${String(fileTree.items.length)}`);
+      throw new Error(`items が空であることを期待していましたが、実際には長さ ${String(fileTree.items.length)} でした`);
     }
 
     // テスト: Empty State が表示されていること
     const emptyState = fileTree.shadowRoot?.querySelector('.empty-state');
     if (!emptyState) {
-      throw new Error('Expected empty state to be rendered');
+      throw new Error('エンプティステートがレンダリングされている必要があります');
     }
 
     // テスト: role="status" が設定されていること
     if (emptyState.getAttribute('role') !== 'status') {
-      throw new Error('Expected empty state to have role="status"');
+      throw new Error(`エンプティステートに role="status" が設定されていることを期待していましたが、実際には "${emptyState.getAttribute('role') ?? 'null'}" でした`);
     }
 
   },
@@ -422,22 +422,22 @@ export const LoadingState: Story = {
   play: async ({ canvasElement }) => {
     const fileTree = canvasElement.querySelector('ui-file-tree');
     if (!fileTree) {
-      throw new Error('FileTree component not found');
+      throw new Error('FileTree コンポーネントが見つかりません');
     }
 
     await fileTree.updateComplete;
 
     // テスト: loading が true であること
     if (!fileTree.loading) {
-      throw new Error('Expected loading to be true');
+      throw new Error('loading が true である必要があります');
     }
 
     // テスト: 500ms未満では aria-busy / skeleton を表示しないこと
     if (fileTree.getAttribute('aria-busy') !== 'false') {
-      throw new Error('Expected aria-busy to stay "false" before threshold');
+      throw new Error('しきい値を超える前は aria-busy="false" である必要があります');
     }
     if (fileTree.shadowRoot?.querySelector('.skeleton')) {
-      throw new Error('Skeleton must not render before threshold');
+      throw new Error('しきい値を超える前はスケルトンを表示してはいけません');
     }
 
     // 500ms 待機してスケルトンが表示されることを確認
@@ -445,12 +445,12 @@ export const LoadingState: Story = {
     await fileTree.updateComplete;
 
     if (fileTree.getAttribute('aria-busy') !== 'true') {
-      throw new Error('Expected aria-busy to be "true" after threshold');
+      throw new Error('しきい値を超えた後は aria-busy="true" である必要があります');
     }
 
     const skeleton = fileTree.shadowRoot?.querySelector('.skeleton');
     if (!skeleton) {
-      throw new Error('Expected skeleton to be rendered after 500ms');
+      throw new Error('500ms 経過後はスケルトンが表示されている必要があります');
     }
 
   },
@@ -474,7 +474,7 @@ export const LoadingCompletedQuickly: Story = {
   play: async ({ canvasElement }) => {
     const fileTree = canvasElement.querySelector<FileTree>('#quick-load-tree');
     if (!fileTree) {
-      throw new Error('FileTree component not found');
+      throw new Error('FileTree コンポーネントが見つかりません');
     }
 
     await fileTree.updateComplete;
@@ -485,7 +485,7 @@ export const LoadingCompletedQuickly: Story = {
 
     const skeleton = fileTree.shadowRoot?.querySelector('.skeleton');
     if (skeleton) {
-      throw new Error('Skeleton should not be rendered when loading finishes within 500ms');
+      throw new Error('500ms 以内にローディングが終了した場合、スケルトンは表示されない必要があります');
     }
   },
 };
@@ -514,7 +514,7 @@ export const DeepNested: Story = {
   play: async ({ canvasElement }) => {
     const fileTree = canvasElement.querySelector('ui-file-tree');
     if (!fileTree) {
-      throw new Error('FileTree component not found');
+      throw new Error('FileTree コンポーネントが見つかりません');
     }
 
     await fileTree.updateComplete;
@@ -522,19 +522,19 @@ export const DeepNested: Story = {
     // テスト: selected 項目が存在すること
     const selectedItem = fileTree.shadowRoot?.querySelector('ui-tree-item[selected]');
     if (!selectedItem) {
-      throw new Error('Expected selected item to exist');
+      throw new Error('選択された項目が存在する必要があります');
     }
 
     const inputStoriesItem = fileTree.shadowRoot?.querySelector<HTMLElement>('ui-tree-item[data-id="input-stories"]');
     if (!inputStoriesItem) {
-      throw new Error('Expected input-stories item to exist');
+      throw new Error('input-stories 項目が存在する必要があります');
     }
 
     const parentIds = ['root', 'src', 'components', 'ui', 'input'];
     for (const id of parentIds) {
       const node = fileTree.shadowRoot?.querySelector<HTMLElement>(`ui-tree-item[data-id="${id}"]`);
       if (node?.getAttribute('expanded') === null) {
-        throw new Error(`Expected parent node "${id}" to be expanded`);
+        throw new Error(`親ノード "${id}" が展開されている必要があります`);
       }
     }
   },

@@ -118,7 +118,7 @@ const sleep = async (ms: number): Promise<void> =>
 const getCopyButton = (canvasElement: Element, selector = 'ui-copy-button'): CopyButton => {
   const button = canvasElement.querySelector<CopyButton>(selector);
   if (!button) {
-    throw new Error('Copy button component not found');
+    throw new Error('ui-copy-button が見つかりません');
   }
   return button;
 };
@@ -126,7 +126,7 @@ const getCopyButton = (canvasElement: Element, selector = 'ui-copy-button'): Cop
 const getInnerUiButton = (copyButton: CopyButton): HTMLElement => {
   const uiButton = copyButton.shadowRoot?.querySelector<HTMLElement>('ui-button');
   if (!uiButton) {
-    throw new Error('UI button not found in shadow root');
+    throw new Error('Shadow Root 内に ui-button が見つかりません');
   }
   return uiButton;
 };
@@ -165,19 +165,19 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const button = canvasElement.querySelector('ui-copy-button');
     if (!button) {
-      throw new Error('Copy button component not found');
+      throw new Error('ui-copy-button が見つかりません');
     }
 
     await button.updateComplete;
 
     // テスト: label 属性が設定されていること
     if (!button.label) {
-      throw new Error('label attribute is required');
+      throw new Error('label 属性が設定されている必要があります');
     }
 
     // テスト: value 属性が設定されていること
     if (!button.value) {
-      throw new Error('value attribute is required');
+      throw new Error('value 属性が設定されている必要があります');
     }
 
     console.log('✅ All tests passed for Default story');
@@ -511,10 +511,10 @@ export const DarkMode: Story = {
     });
 
     if (successButton.getAttribute('state') !== 'success') {
-      throw new Error('Expected dark mode success button to be success state');
+      throw new Error(`ダークモードの成功ボタンが success 状態であることを期待していましたが、実際には "${successButton.getAttribute('state') ?? 'null'}" でした`);
     }
     if (errorButton.getAttribute('state') !== 'error') {
-      throw new Error('Expected dark mode error button to be error state');
+      throw new Error(`ダークモードのエラーボタンが error 状態であることを期待していましたが、実際には "${errorButton.getAttribute('state') ?? 'null'}" でした`);
     }
   },
   parameters: {
@@ -598,10 +598,10 @@ export const ForcedColorsMode: Story = {
     });
 
     if (successButton.getAttribute('state') !== 'success') {
-      throw new Error('Expected forced-colors success button to be success state');
+      throw new Error(`ハイコントラストモードの成功ボタンが success 状態であることを期待していましたが、実際には "${successButton.getAttribute('state') ?? 'null'}" でした`);
     }
     if (errorButton.getAttribute('state') !== 'error') {
-      throw new Error('Expected forced-colors error button to be error state');
+      throw new Error(`ハイコントラストモードのエラーボタンが error 状態であることを期待していましたが、実際には "${errorButton.getAttribute('state') ?? 'null'}" でした`);
     }
   },
   parameters: {
@@ -655,7 +655,7 @@ export const MissingLabel: Story = {
     // テスト: 本番アクセシビリティ崩壊を防ぐため、aria-label は安全な既定値へフォールバック
     const uiButton = getInnerUiButton(button);
     if (uiButton.getAttribute('aria-label') !== 'コピー') {
-      throw new Error('Expected fallback aria-label to be "コピー"');
+      throw new Error(`フォールバックの aria-label が "コピー" であることを期待していましたが、実際には "${uiButton.getAttribute('aria-label') ?? 'null'}" でした`);
     }
 
     console.log('⚠️ This story demonstrates a missing label error');
@@ -710,26 +710,26 @@ export const WithEventHandlers: Story = {
         value="${args.value}"
         label="${args.label}"
         size="${args.size}"
-        @copy="${(e: CustomEvent<{value: string}>) => {
-          const log = document.getElementById('event-log');
-          if (log) {
-            const item = document.createElement('div');
-            item.className = 'event-log-item event-log-success';
-            item.textContent = `[${new Date().toLocaleTimeString()}] ✓ Copy success: ${e.detail.value}`;
-            log.appendChild(item);
-            log.scrollTop = log.scrollHeight;
-          }
-        }}"
-        @copy-error="${(e: CustomEvent<{error: unknown}>) => {
-          const log = document.getElementById('event-log');
-          if (log) {
-            const item = document.createElement('div');
-            item.className = 'event-log-item event-log-error';
-            item.textContent = `[${new Date().toLocaleTimeString()}] ✗ Copy error: ${String(e.detail.error)}`;
-            log.appendChild(item);
-            log.scrollTop = log.scrollHeight;
-          }
-        }}"
+        @copy="${(e: CustomEvent<{ value: string }>) => {
+      const log = document.getElementById('event-log');
+      if (log) {
+        const item = document.createElement('div');
+        item.className = 'event-log-item event-log-success';
+        item.textContent = `[${new Date().toLocaleTimeString()}] ✓ Copy success: ${e.detail.value}`;
+        log.appendChild(item);
+        log.scrollTop = log.scrollHeight;
+      }
+    }}"
+        @copy-error="${(e: CustomEvent<{ error: unknown }>) => {
+      const log = document.getElementById('event-log');
+      if (log) {
+        const item = document.createElement('div');
+        item.className = 'event-log-item event-log-error';
+        item.textContent = `[${new Date().toLocaleTimeString()}] ✗ Copy error: ${String(e.detail.error)}`;
+        log.appendChild(item);
+        log.scrollTop = log.scrollHeight;
+      }
+    }}"
       ></ui-copy-button>
 
       <div id="event-log" class="event-log">
@@ -782,37 +782,37 @@ export const TestSuccessState: Story = {
     });
 
     if (button.getAttribute('state') !== 'success') {
-      throw new Error('Expected state to be "success"');
+      throw new Error(`state="success" を期待していましたが、実際には "${button.getAttribute('state') ?? 'null'}" でした`);
     }
 
     const icon = button.shadowRoot?.querySelector('iconify-icon');
     if (!icon) {
-      throw new Error('Icon not found');
+      throw new Error('アイコンが見つかりません');
     }
     if (icon.getAttribute('icon') !== 'lucide:check') {
-      throw new Error('Expected icon to be "lucide:check"');
+      throw new Error(`アイコンが "lucide:check" であることを期待していましたが、実際には "${icon.getAttribute('icon') ?? 'null'}" でした`);
     }
 
     if (!uiButton.getAttribute('aria-label')?.includes('コピーしました')) {
-      throw new Error('Expected aria-label to include success message');
+      throw new Error(`aria-label に成功メッセージが含まれていることを期待していましたが、実際には "${uiButton.getAttribute('aria-label') ?? 'null'}" でした`);
     }
 
     const liveRegion = button.shadowRoot?.querySelector('.sr-only');
     if (!liveRegion) {
-      throw new Error('Live region not found');
+      throw new Error('ライブリージョンが見つかりません');
     }
     if (liveRegion.getAttribute('role') !== 'status') {
-      throw new Error('Expected live region role to be "status"');
+      throw new Error(`ライブリージョンの role が "status" であることを期待していましたが、実際には "${liveRegion.getAttribute('role') ?? 'null'}" でした`);
     }
     if (liveRegion.getAttribute('aria-live') !== 'polite') {
-      throw new Error('Expected live region aria-live to be "polite"');
+      throw new Error(`ライブリージョンの aria-live が "polite" であることを期待していましたが、実際には "${liveRegion.getAttribute('aria-live') ?? 'null'}" でした`);
     }
     if (!liveRegion.textContent.includes('コピーしました')) {
-      throw new Error('Expected live region text to announce success');
+      throw new Error(`ライブリージョンのテキストに成功メッセージが含まれていることを期待していましたが、実際には "${liveRegion.textContent}" でした`);
     }
 
     if (copyEventCount !== 1 || copiedValue !== button.value) {
-      throw new Error('Expected one copy event with copied value');
+      throw new Error(`コピーイベントが1回発行され、正しい値がコピーされることを期待していましたが、実際には count: ${String(copyEventCount)}, value: "${copiedValue}" でした`);
     }
 
     console.log('✅ All tests passed for TestSuccessState story');
@@ -910,10 +910,10 @@ export const SizeStateMatrix: Story = {
     });
 
     if (smSuccess.getAttribute('state') !== 'success' || mdSuccess.getAttribute('state') !== 'success') {
-      throw new Error('Expected success buttons in matrix to become success state');
+      throw new Error(`マトリックス内の成功ボタンが success 状態になることを期待していましたが、実際には sm: "${smSuccess.getAttribute('state') ?? 'null'}", md: "${mdSuccess.getAttribute('state') ?? 'null'}" でした`);
     }
     if (smError.getAttribute('state') !== 'error' || mdError.getAttribute('state') !== 'error') {
-      throw new Error('Expected error buttons in matrix to become error state');
+      throw new Error(`マトリックス内のエラーボタンが error 状態になることを期待していましたが、実際には sm: "${smError.getAttribute('state') ?? 'null'}", md: "${mdError.getAttribute('state') ?? 'null'}" でした`);
     }
   },
 };
@@ -956,41 +956,41 @@ export const TestErrorState: Story = {
     });
 
     if (button.getAttribute('state') !== 'error') {
-      throw new Error('Expected state to be "error"');
+      throw new Error(`state="error" を期待していましたが、実際には "${button.getAttribute('state') ?? 'null'}" でした`);
     }
 
     const icon = button.shadowRoot?.querySelector('iconify-icon');
     if (!icon) {
-      throw new Error('Icon not found');
+      throw new Error('アイコンが見つかりません');
     }
 
     if (icon.getAttribute('icon') !== 'lucide:alert-triangle') {
-      throw new Error('Expected icon to be "lucide:alert-triangle"');
+      throw new Error(`アイコンが "lucide:alert-triangle" であることを期待していましたが、実際には "${icon.getAttribute('icon') ?? 'null'}" でした`);
     }
 
     if (!uiButton.getAttribute('aria-label')?.includes('コピー失敗')) {
-      throw new Error('Expected aria-label to include error message');
+      throw new Error(`aria-label にエラーメッセージが含まれていることを期待していましたが、実際には "${uiButton.getAttribute('aria-label') ?? 'null'}" でした`);
     }
 
     const liveRegion = button.shadowRoot?.querySelector('.sr-only');
     if (!liveRegion) {
-      throw new Error('Live region not found');
+      throw new Error('ライブリージョンが見つかりません');
     }
 
     if (liveRegion.getAttribute('role') !== 'alert') {
-      throw new Error('Expected live region role to be "alert"');
+      throw new Error(`ライブリージョンの role が "alert" であることを期待していましたが、実際には "${liveRegion.getAttribute('role') ?? 'null'}" でした`);
     }
 
     if (liveRegion.getAttribute('aria-live') !== 'assertive') {
-      throw new Error('Expected live region aria-live to be "assertive"');
+      throw new Error(`ライブリージョンの aria-live が "assertive" であることを期待していましたが、実際には "${liveRegion.getAttribute('aria-live') ?? 'null'}" でした`);
     }
 
     if (!liveRegion.textContent.includes('コピー失敗')) {
-      throw new Error('Expected live region text to announce error');
+      throw new Error(`ライブリージョンのテキストにエラーメッセージが含まれていることを期待していましたが、実際には "${liveRegion.textContent}" でした`);
     }
 
     if (copyErrorEventCount !== 1 || failedValue !== button.value) {
-      throw new Error('Expected one copy-error event with failed value');
+      throw new Error(`コピーエラーイベントが1回発行され、正しい値が設定されることを期待していましたが、実際には count: ${String(copyErrorEventCount)}, value: "${failedValue}" でした`);
     }
   },
 };
@@ -1012,7 +1012,7 @@ export const TestStateTimerReset: Story = {
     const successButton = canvasElement.querySelector<CopyButton>('#success-btn');
     const errorButton = canvasElement.querySelector<CopyButton>('#error-btn');
     if (!successButton || !errorButton) {
-      throw new Error('Copy button components not found');
+      throw new Error('ui-copy-button が見つかりません');
     }
 
     const successUiButton = getInnerUiButton(successButton);
@@ -1027,19 +1027,19 @@ export const TestStateTimerReset: Story = {
       await userEvent.click(successUiButton);
       await sleep(2100);
       if (successButton.getAttribute('state') !== 'idle') {
-        throw new Error('Expected success state to reset to idle after 2000ms');
+        throw new Error(`2000ms後に成功状態が idle にリセットされることを期待していましたが、実際には "${successButton.getAttribute('state') ?? 'null'}" でした`);
       }
       if (successUiButton.getAttribute('aria-label') !== '成功テスト') {
-        throw new Error('Expected success button aria-label to reset to base label');
+        throw new Error(`成功ボタンの aria-label が基本ラベルにリセットされることを期待していましたが、実際には "${successUiButton.getAttribute('aria-label') ?? 'null'}" でした`);
       }
 
       await userEvent.click(errorUiButton);
       await sleep(3100);
       if (errorButton.getAttribute('state') !== 'idle') {
-        throw new Error('Expected error state to reset to idle after 3000ms');
+        throw new Error(`3000ms後にエラー状態が idle にリセットされることを期待していましたが、実際には "${errorButton.getAttribute('state') ?? 'null'}" でした`);
       }
       if (errorUiButton.getAttribute('aria-label') !== '失敗テスト') {
-        throw new Error('Expected error button aria-label to reset to base label');
+        throw new Error(`エラーボタンの aria-label が基本ラベルにリセットされることを期待していましたが、実際には "${errorUiButton.getAttribute('aria-label') ?? 'null'}" でした`);
       }
     });
   },
@@ -1082,15 +1082,15 @@ export const TestRapidClicksReplay: Story = {
       const secondLabel = uiButton.getAttribute('aria-label');
 
       if (button.getAttribute('state') !== 'success') {
-        throw new Error('Expected state to remain success after rapid clicks');
+        throw new Error(`連打後も success 状態が維持されることを期待していましたが、実際には "${button.getAttribute('state') ?? 'null'}" でした`);
       }
 
       if (!firstLabel?.includes('コピーしました') || !secondLabel?.includes('コピーしました')) {
-        throw new Error('Expected aria-label to be updated to success label for repeated clicks');
+        throw new Error(`連打時も aria-label が成功メッセージに更新されることを期待していましたが、実際には first: "${firstLabel ?? 'null'}", second: "${secondLabel ?? 'null'}" でした`);
       }
 
       if (copyEventCount !== 2) {
-        throw new Error('Expected two copy events after rapid double click');
+        throw new Error(`2連打後にコピーイベントが2回発行されることを期待していましたが、実際には ${String(copyEventCount)}回でした`);
       }
     });
   },
@@ -1129,18 +1129,18 @@ export const TestLoadingIndicatorThreshold: Story = {
 
       const loadingIcon = button.shadowRoot?.querySelector('iconify-icon');
       if (loadingIcon?.getAttribute('icon') !== 'lucide:loader-circle') {
-        throw new Error('Expected loading icon to be visible during delayed copy');
+        throw new Error(`遅延コピー中にローディングアイコンが表示されることを期待していましたが、実際には "${loadingIcon?.getAttribute('icon') ?? 'null'}" でした`);
       }
 
       if (!uiButton.getAttribute('aria-label')?.includes('コピー中')) {
-        throw new Error('Expected aria-label to include loading message');
+        throw new Error(`aria-label にローディングメッセージが含まれていることを期待していましたが、実際には "${uiButton.getAttribute('aria-label') ?? 'null'}" でした`);
       }
 
       await sleep(100);
     });
 
     if (button.getAttribute('state') !== 'success') {
-      throw new Error('Expected delayed copy to end in success state');
+      throw new Error(`遅延コピー終了後に success 状態になることを期待していましたが、実際には "${button.getAttribute('state') ?? 'null'}" でした`);
     }
   },
 };

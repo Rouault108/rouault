@@ -135,13 +135,13 @@ export const Default: Story = {
     // テスト: role="article" が自動設定されること
     const role = card.getAttribute('role');
     if (role !== 'article') {
-      throw new Error(`role が "article" であるべきですが "${role ?? 'null'}" です`);
+      throw new Error(`role="article" を期待していましたが、実際には "${role ?? 'null'}" でした`);
     }
 
     // テスト: variant="outlined" が reflect されること
     const variant = card.getAttribute('variant');
     if (variant !== 'outlined') {
-      throw new Error(`variant が "outlined" であるべきですが "${variant ?? 'null'}" です`);
+      throw new Error(`variant="outlined" を期待していましたが、実際には "${variant ?? 'null'}" でした`);
     }
 
     // テスト: clickable 属性が存在しないこと
@@ -152,7 +152,7 @@ export const Default: Story = {
     // テスト: Shadow DOM に 3 つのスロットが存在すること
     const slots = card.shadowRoot?.querySelectorAll('slot');
     if (!slots || slots.length < 3) {
-      throw new Error(`スロットが 3 つ存在すべきですが ${String(slots?.length)} つです`);
+      throw new Error(`3つのスロットを期待していましたが、実際には ${String(slots?.length ?? 0)}個でした`);
     }
 
     const headerSlot = card.shadowRoot?.querySelector('slot[name="header"]');
@@ -162,8 +162,6 @@ export const Default: Story = {
     if (!headerSlot) throw new Error('header スロットが見つかりません');
     if (!defaultSlot) throw new Error('デフォルトスロットが見つかりません');
     if (!footerSlot) throw new Error('footer スロットが見つかりません');
-
-    console.log('✅ Default: すべてのテストを通過しました');
   },
 };
 
@@ -203,15 +201,13 @@ export const ElevatedVariant: Story = {
 
     // テスト: variant="elevated" が設定されること
     if (card.getAttribute('variant') !== 'elevated') {
-      throw new Error('variant が "elevated" ではありません');
+      throw new Error(`variant="elevated" を期待していましたが、実際には "${card.getAttribute('variant') ?? 'null'}" でした`);
     }
 
     // テスト: JS プロパティが正しく設定されること
     if (card.variant !== 'elevated') {
-      throw new Error('card.variant プロパティが "elevated" ではありません');
+      throw new Error(`card.variant="elevated" を期待していましたが、実際には "${card.variant}" でした`);
     }
-
-    console.log('✅ ElevatedVariant: すべてのテストを通過しました');
   },
 };
 
@@ -247,10 +243,8 @@ export const FlatVariant: Story = {
     await card.updateComplete;
 
     if (card.getAttribute('variant') !== 'flat') {
-      throw new Error('variant が "flat" ではありません');
+      throw new Error(`variant="flat" を期待していましたが、実際には "${card.getAttribute('variant') ?? 'null'}" でした`);
     }
-
-    console.log('✅ FlatVariant: すべてのテストを通過しました');
   },
 };
 
@@ -283,10 +277,8 @@ export const GhostVariant: Story = {
     await card.updateComplete;
 
     if (card.getAttribute('variant') !== 'ghost') {
-      throw new Error('variant が "ghost" ではありません');
+      throw new Error(`variant="ghost" を期待していましたが、実際には "${card.getAttribute('variant') ?? 'null'}" でした`);
     }
-
-    console.log('✅ GhostVariant: すべてのテストを通過しました');
   },
 };
 
@@ -302,7 +294,7 @@ export const AllVariants: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 480px;">
       ${(['outlined', 'elevated', 'flat', 'ghost'] as const).map(
-        (variant) => html`
+    (variant) => html`
           <div>
             <div
               style="
@@ -325,7 +317,7 @@ export const AllVariants: Story = {
             </ui-card>
           </div>
         `,
-      )}
+  )}
     </div>
   `,
 };
@@ -396,8 +388,6 @@ export const WithAllSlots: Story = {
       (child) => !child.hasAttribute('slot'),
     );
     if (!defaultContent) throw new Error('デフォルトスロットにコンテンツが割り当てられていません');
-
-    console.log('✅ WithAllSlots: すべてのテストを通過しました');
   },
 };
 
@@ -439,10 +429,10 @@ export const Clickable: Story = {
           id="primary-link"
           style="color: inherit; text-decoration: none;"
           @click="${(e: MouseEvent) => {
-            e.preventDefault();
-            const log = document.getElementById('click-log');
-            if (log) log.textContent = '✅ クリック委譲が機能しました → /notes/1 へ遷移';
-          }}"
+      e.preventDefault();
+      const log = document.getElementById('click-log');
+      if (log) log.textContent = '✅ クリック委譲が機能しました → /notes/1 へ遷移';
+    }}"
         >クリック可能なノートカード</a>
       </h3>
       <p style="margin: 0; color: var(--fg-muted); font-size: var(--text-sm);">
@@ -462,7 +452,7 @@ export const Clickable: Story = {
     }
 
     if (!card.clickable) {
-      throw new Error('card.clickable プロパティが true ではありません');
+      throw new Error('card.clickable プロパティが true であることを期待していましたが、実際には false でした');
     }
 
     // テスト: カード背景クリックでリンクが発火すること
@@ -473,12 +463,8 @@ export const Clickable: Story = {
     await card.updateComplete;
 
     if (getCount() !== 1) {
-      throw new Error(
-        `カード背景クリックでリンクが 1 回発火すべきですが ${String(getCount())} 回です`,
-      );
+      throw new Error(`カード背景クリックで主要リンクへの委譲（発火回数: 1）を期待していましたが、実際には ${String(getCount())}回でした`);
     }
-
-    console.log('✅ Clickable: すべてのテストを通過しました');
   },
 };
 
@@ -671,8 +657,6 @@ export const TextSelectionGuard: Story = {
     if (getCount() !== 1) {
       throw new Error('テキスト選択解除後はクリックで委譲が発生するはずです');
     }
-
-    console.log('✅ TextSelectionGuard: すべてのテストを通過しました');
   },
 };
 
@@ -717,8 +701,6 @@ export const ClickableNoLink: Story = {
     if (errorOccurred) {
       throw new Error('リンクなし clickable カードのクリックでエラーが発生しました');
     }
-
-    console.log('✅ ClickableNoLink: すべてのテストを通過しました');
   },
 };
 
@@ -888,7 +870,7 @@ export const FocusWithin: Story = {
     if (card.hasAttribute('tabindex')) {
       throw new Error(
         'Focusable Container Anti-pattern: カード自体に tabindex が設定されています。' +
-          '内部リンクにフォーカスを委ねてください。',
+        '内部リンクにフォーカスを委ねてください。',
       );
     }
 
@@ -904,8 +886,6 @@ export const FocusWithin: Story = {
 
     // フォーカス解除
     link.blur();
-
-    console.log('✅ FocusWithin: すべてのテストを通過しました（フォーカスリングは視覚確認が必要）');
   },
 };
 
@@ -939,8 +919,6 @@ export const DefaultRoleAutoSet: Story = {
     if (role !== 'article') {
       throw new Error(`role が "article" であるべきですが "${role ?? 'null'}" です`);
     }
-
-    console.log('✅ DefaultRoleAutoSet: すべてのテストを通過しました');
   },
 };
 
@@ -1008,8 +986,6 @@ export const ExplicitRoleOverride: Story = {
         `none-card の role が "none" であるべきですが "${noneRole ?? 'null'}" です（"article" に上書きされました）`,
       );
     }
-
-    console.log('✅ ExplicitRoleOverride: すべてのテストを通過しました');
   },
 };
 
@@ -1029,7 +1005,7 @@ export const ClickableVariants: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 480px;">
       ${(['outlined', 'elevated', 'flat', 'ghost'] as const).map(
-        (variant) => html`
+    (variant) => html`
           <div>
             <div
               style="
@@ -1054,7 +1030,7 @@ export const ClickableVariants: Story = {
             </ui-card>
           </div>
         `,
-      )}
+  )}
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -1087,8 +1063,6 @@ export const ClickableVariants: Story = {
         );
       }
     }
-
-    console.log('✅ ClickableVariants: すべてのテストを通過しました');
   },
 };
 

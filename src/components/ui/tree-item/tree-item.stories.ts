@@ -139,44 +139,42 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const treeItem = canvasElement.querySelector('ui-tree-item');
     if (!treeItem) {
-      throw new Error('TreeItem component not found');
+      throw new Error('TreeItem コンポーネントが見つかりません');
     }
 
     await treeItem.updateComplete;
 
     // テスト: デフォルトのdensityが"normal"であること
     if (treeItem.density !== 'normal') {
-      throw new Error(`Expected density to be 'normal', got '${treeItem.density}'`);
+      throw new Error(`density="normal" を期待していましたが、実際には "${treeItem.density}" でした`);
     }
 
     // テスト: role="treeitem"が設定されていること
     if (treeItem.getAttribute('role') !== 'treeitem') {
-      throw new Error('TreeItem must have role="treeitem"');
+      throw new Error('TreeItem は role="treeitem" を持つ必要があります');
     }
 
     // テスト: aria-selectedが設定されていること
     if (treeItem.getAttribute('aria-selected') !== 'false') {
-      throw new Error('Expected aria-selected to be "false"');
+      throw new Error('aria-selected="false" を期待していましたが、実際には違います');
     }
 
     if (treeItem.getAttribute('aria-level') !== '1') {
       throw new Error(
-        `Expected aria-level to be "1", got "${String(treeItem.getAttribute('aria-level'))}"`,
+        `aria-level="1" を期待していましたが、実際には "${String(treeItem.getAttribute('aria-level'))}" でした`,
       );
     }
 
     const itemElement = treeItem.shadowRoot?.querySelector<HTMLElement>('.item');
     if (!itemElement) {
-      throw new Error('Item element not found');
+      throw new Error('アイテム要素が見つかりませんでした');
     }
 
     if (itemElement.getAttribute('tabindex') !== '0') {
       throw new Error(
-        `Expected internal item tabindex to be "0", got "${String(itemElement.getAttribute('tabindex'))}"`,
+        `アイテムの tabindex="0" を期待していましたが、実際には "${String(itemElement.getAttribute('tabindex'))}" でした`,
       );
     }
-
-    console.log('✅ All tests passed for Default story');
   },
 };
 
@@ -224,13 +222,13 @@ export const AllDensities: Story = {
   play: async ({ canvasElement }) => {
     const treeItems = canvasElement.querySelectorAll<TreeItem>('ui-tree-item');
     if (treeItems.length !== 2) {
-      throw new Error(`Expected 2 tree items, got ${String(treeItems.length)}`);
+      throw new Error(`2つのツリーアイテムを期待していましたが、実際には ${String(treeItems.length)}個でした`);
     }
 
     const normal = treeItems[0];
     const compact = treeItems[1];
     if (!normal || !compact) {
-      throw new Error('Tree items not found');
+      throw new Error('ツリーアイテムが見つかりませんでした');
     }
 
     await normal.updateComplete;
@@ -239,18 +237,18 @@ export const AllDensities: Story = {
     const normalRow = normal.shadowRoot?.querySelector<HTMLElement>('.item');
     const compactRow = compact.shadowRoot?.querySelector<HTMLElement>('.item');
     if (!normalRow || !compactRow) {
-      throw new Error('Item rows not found');
+      throw new Error('アイテムの行（row）が見つかりませんでした');
     }
 
     const normalHeight = Math.round(normalRow.getBoundingClientRect().height);
     const compactHeight = Math.round(compactRow.getBoundingClientRect().height);
 
     if (normalHeight < 30 || normalHeight > 34) {
-      throw new Error(`Expected normal density height around 32px, got ${String(normalHeight)}px`);
+      throw new Error(`Normal 密度の高さは約 32px であるべきですが、実際には ${String(normalHeight)}px でした`);
     }
     if (compactHeight < 22 || compactHeight > 26) {
       throw new Error(
-        `Expected compact density height around 24px, got ${String(compactHeight)}px`,
+        `Compact 密度の高さは約 24px であるべきですが、実際には ${String(compactHeight)}px でした`,
       );
     }
   },
@@ -277,22 +275,20 @@ export const Selected: Story = {
   play: async ({ canvasElement }) => {
     const treeItem = canvasElement.querySelector('ui-tree-item');
     if (!treeItem) {
-      throw new Error('TreeItem component not found');
+      throw new Error('TreeItem コンポーネントが見つかりません');
     }
 
     await treeItem.updateComplete;
 
     // テスト: aria-selected="true"が設定されていること
     if (treeItem.getAttribute('aria-selected') !== 'true') {
-      throw new Error('Expected aria-selected to be "true"');
+      throw new Error('aria-selected="true" を期待していましたが、実際には違います');
     }
 
     // テスト: selected属性が設定されていること
     if (!treeItem.selected) {
-      throw new Error('Expected selected to be true');
+      throw new Error('selected プロパティが true であるべきです');
     }
-
-    console.log('✅ All tests passed for Selected story');
   },
 };
 
@@ -313,7 +309,7 @@ export const WithChildren: Story = {
   play: async ({ canvasElement }) => {
     const treeItem = canvasElement.querySelector('ui-tree-item');
     if (!treeItem) {
-      throw new Error('TreeItem component not found');
+      throw new Error('TreeItem コンポーネントが見つかりません');
     }
 
     await treeItem.updateComplete;
@@ -321,16 +317,14 @@ export const WithChildren: Story = {
     // テスト: aria-expandedが設定されていること（子要素がある場合）
     const ariaExpanded = treeItem.getAttribute('aria-expanded');
     if (ariaExpanded !== 'true') {
-      throw new Error(`Expected aria-expanded to be "true", got "${String(ariaExpanded)}"`);
+      throw new Error(`aria-expanded="true" を期待していましたが、実際には "${String(ariaExpanded)}" でした`);
     }
 
     // テスト: 子要素が存在すること
     const children = treeItem.querySelectorAll('ui-tree-item[slot="children"]');
     if (children.length !== 3) {
-      throw new Error(`Expected 3 children, got ${String(children.length)}`);
+      throw new Error(`3つの子要素を期待していましたが、実際には ${String(children.length)}個でした`);
     }
-
-    console.log('✅ All tests passed for WithChildren story');
   },
 };
 
@@ -358,32 +352,32 @@ export const DeepNesting: Story = {
   play: async ({ canvasElement }) => {
     const root = canvasElement.querySelector('ui-tree-item');
     if (!root) {
-      throw new Error('Root tree item not found');
+      throw new Error('ルートツリーアイテムが見つかりませんでした');
     }
 
     await root.updateComplete;
 
     const nestedItems = canvasElement.querySelectorAll<TreeItem>('ui-tree-item');
     if (nestedItems.length < 5) {
-      throw new Error(`Expected deep nesting items, got ${String(nestedItems.length)}`);
+      throw new Error(`深いネスト構造のアイテムを期待していましたが、実際には ${String(nestedItems.length)}個でした`);
     }
 
     const rootLevel = root.getAttribute('aria-level');
     if (rootLevel !== '1') {
-      throw new Error(`Expected root aria-level="1", got "${String(rootLevel)}"`);
+      throw new Error(`ルートの aria-level="1" を期待していましたが、実際には "${String(rootLevel)}" でした`);
     }
 
     const thirdLevelNode = canvasElement.querySelector<TreeItem>(
       'ui-tree-item[label="components"]',
     );
     if (!thirdLevelNode) {
-      throw new Error('Third level tree item not found');
+      throw new Error('3階層目のツリーアイテムが見つかりませんでした');
     }
     await thirdLevelNode.updateComplete;
 
     const thirdLevel = thirdLevelNode.getAttribute('aria-level');
     if (thirdLevel !== '3') {
-      throw new Error(`Expected third level aria-level="3", got "${String(thirdLevel)}"`);
+      throw new Error(`3階層目の aria-level="3" を期待していましたが、実際には "${String(thirdLevel)}" でした`);
     }
   },
 };
@@ -404,31 +398,29 @@ export const Collapsed: Story = {
   play: async ({ canvasElement }) => {
     const treeItem = canvasElement.querySelector('ui-tree-item');
     if (!treeItem) {
-      throw new Error('TreeItem component not found');
+      throw new Error('TreeItem コンポーネントが見つかりません');
     }
 
     await treeItem.updateComplete;
 
     // テスト: aria-expanded="false"が設定されていること
     if (treeItem.getAttribute('aria-expanded') !== 'false') {
-      throw new Error('Expected aria-expanded to be "false"');
+      throw new Error('aria-expanded="false" を期待していましたが、実際には違います');
     }
 
     // テスト: expanded属性がfalseであること
     if (treeItem.expanded) {
-      throw new Error('Expected expanded to be false');
+      throw new Error('expanded プロパティが false であるべきです');
     }
 
     const childrenContainer = treeItem.shadowRoot?.querySelector<HTMLElement>('.children');
     if (!childrenContainer) {
-      throw new Error('Children container not found');
+      throw new Error('子要素コンテナが見つかりませんでした');
     }
 
     if (childrenContainer.getAttribute('aria-hidden') !== 'true') {
-      throw new Error('Expected collapsed children aria-hidden="true"');
+      throw new Error('収縮状態の子要素は aria-hidden="true" を持つべきです');
     }
-
-    console.log('✅ All tests passed for Collapsed story');
   },
 };
 
@@ -449,28 +441,26 @@ export const SelectedAndExpanded: Story = {
   play: async ({ canvasElement }) => {
     const treeItem = canvasElement.querySelector('ui-tree-item');
     if (!treeItem) {
-      throw new Error('TreeItem component not found');
+      throw new Error('TreeItem コンポーネントが見つかりません');
     }
 
     await treeItem.updateComplete;
 
     // テスト: 両方の状態が設定されていること
     if (!treeItem.selected) {
-      throw new Error('Expected selected to be true');
+      throw new Error('selected プロパティが true であるべきです');
     }
     if (!treeItem.expanded) {
-      throw new Error('Expected expanded to be true');
+      throw new Error('expanded プロパティが true であるべきです');
     }
 
     // テスト: aria属性が正しく設定されていること
     if (treeItem.getAttribute('aria-selected') !== 'true') {
-      throw new Error('Expected aria-selected to be "true"');
+      throw new Error('aria-selected="true" ではなく false でした');
     }
     if (treeItem.getAttribute('aria-expanded') !== 'true') {
-      throw new Error('Expected aria-expanded to be "true"');
+      throw new Error('aria-expanded="true" ではなく false でした');
     }
-
-    console.log('✅ All tests passed for SelectedAndExpanded story');
   },
 };
 
@@ -498,21 +488,21 @@ export const CompactSelectedExpanded: Story = {
   play: async ({ canvasElement }) => {
     const treeItem = canvasElement.querySelector<TreeItem>('ui-tree-item');
     if (!treeItem) {
-      throw new Error('TreeItem component not found');
+      throw new Error('TreeItem コンポーネントが見つかりません');
     }
 
     await treeItem.updateComplete;
 
     if (treeItem.density !== 'compact') {
-      throw new Error(`Expected density to be compact, got "${treeItem.density}"`);
+      throw new Error(`density="compact" を期待していましたが、実際には "${treeItem.density}" でした`);
     }
 
     if (treeItem.getAttribute('aria-selected') !== 'true') {
-      throw new Error('Expected aria-selected="true"');
+      throw new Error('aria-selected="true" を期待していました');
     }
 
     if (treeItem.getAttribute('aria-expanded') !== 'true') {
-      throw new Error('Expected aria-expanded="true"');
+      throw new Error('aria-expanded="true" を期待していました');
     }
   },
 };
@@ -543,7 +533,7 @@ export const LongLabel: Story = {
   play: async ({ canvasElement }) => {
     const treeItem = canvasElement.querySelector('ui-tree-item');
     if (!treeItem) {
-      throw new Error('TreeItem component not found');
+      throw new Error('TreeItem コンポーネントが見つかりません');
     }
 
     await treeItem.updateComplete;
@@ -552,13 +542,13 @@ export const LongLabel: Story = {
 
     const labelElement = treeItem.shadowRoot?.querySelector('.label');
     if (!labelElement) {
-      throw new Error('Label element not found');
+      throw new Error('ラベル要素が見つかりませんでした');
     }
 
     // テスト: text-overflow: ellipsis が適用されていること
     const computedStyle = window.getComputedStyle(labelElement);
     if (computedStyle.textOverflow !== 'ellipsis') {
-      throw new Error('Expected text-overflow to be "ellipsis"');
+      throw new Error('text-overflow="ellipsis" を期待していましたが違います');
     }
 
     const tooltipHost = treeItem.shadowRoot?.querySelector<HTMLElement & { disabled?: boolean }>(
@@ -596,8 +586,6 @@ export const LongLabel: Story = {
     if (panel.getAttribute('aria-hidden') !== 'true') {
       throw new Error('leave 後に tooltip が閉じる必要があります');
     }
-
-    console.log('✅ All tests passed for LongLabel story');
   },
 };
 
@@ -634,7 +622,7 @@ export const LeafNode: Story = {
   play: async ({ canvasElement }) => {
     const treeItem = canvasElement.querySelector('ui-tree-item');
     if (!treeItem) {
-      throw new Error('TreeItem component not found');
+      throw new Error('TreeItem コンポーネントが見つかりません');
     }
 
     await treeItem.updateComplete;
@@ -642,16 +630,14 @@ export const LeafNode: Story = {
     // テスト: aria-expandedが設定されていないこと（子要素なし）
     const ariaExpanded = treeItem.getAttribute('aria-expanded');
     if (ariaExpanded !== null) {
-      throw new Error(`Expected aria-expanded to be null, got "${ariaExpanded}"`);
+      throw new Error(`aria-expanded が null であることを期待していましたが、実際には "${ariaExpanded}" でした`);
     }
 
     // テスト: 展開アイコンがhiddenクラスを持つこと
     const expandIcon = treeItem.shadowRoot?.querySelector('.expand-icon');
     if (!expandIcon?.classList.contains('hidden')) {
-      throw new Error('Expand icon should have "hidden" class for leaf nodes');
+      throw new Error('リーフノードでは展開アイコンが "hidden" クラスを持つべきです');
     }
-
-    console.log('✅ All tests passed for LeafNode story');
   },
 };
 
@@ -692,14 +678,14 @@ export const KeyboardInteraction: Story = {
   play: async ({ canvasElement }) => {
     const treeItem = canvasElement.querySelector<TreeItem>('#keyboard-test-item');
     if (!treeItem) {
-      throw new Error('TreeItem component not found');
+      throw new Error('TreeItem コンポーネントが見つかりません');
     }
 
     await treeItem.updateComplete;
 
     const itemElement = treeItem.shadowRoot?.querySelector<HTMLElement>('.item');
     if (!itemElement) {
-      throw new Error('Item element not found');
+      throw new Error('アイテム要素が見つかりませんでした');
     }
 
     // テスト: Enter キーで選択状態になること
@@ -713,11 +699,11 @@ export const KeyboardInteraction: Story = {
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!selectedEventFired) {
-      throw new Error('Expected selected-change event to fire on Enter key');
+      throw new Error('Enter キーの押下時に selected-change イベントが発火することを期待していましたが、発火しませんでした');
     }
 
     if (!treeItem.selected) {
-      throw new Error('Expected selected to be true after Enter key');
+      throw new Error('Enter キーの押下後に selected=true になりませんでした');
     }
 
     // テスト: Space キーでも選択イベントが発火すること
@@ -730,7 +716,7 @@ export const KeyboardInteraction: Story = {
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!selectedEventFired) {
-      throw new Error('Expected selected-change event to fire on Space key');
+      throw new Error('Space キーの押下時に selected-change イベントが発火することを期待していましたが、発火しませんでした');
     }
 
     // テスト: ArrowRight キーで展開すること
@@ -744,11 +730,11 @@ export const KeyboardInteraction: Story = {
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!expandedEventFired) {
-      throw new Error('Expected expanded-change event to fire on ArrowRight key');
+      throw new Error('ArrowRight キーの押下時に expanded-change イベントが発火することを期待していましたが、発火しませんでした');
     }
 
     if (!treeItem.expanded) {
-      throw new Error('Expected expanded to be true after ArrowRight key');
+      throw new Error('ArrowRight キーの押下後に expanded=true になることを期待していました');
     }
 
     // テスト: ArrowRight キー（展開済み）で委譲イベントが発火すること
@@ -762,7 +748,7 @@ export const KeyboardInteraction: Story = {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!arrowRightDelegated) {
       throw new Error(
-        'Expected tree-item-arrow-right event on ArrowRight key when already expanded',
+        '展開済みの状態で ArrowRight キーが押された際に tree-item-arrow-right イベントが発火することを期待していましたが、発火しませんでした',
       );
     }
 
@@ -773,11 +759,11 @@ export const KeyboardInteraction: Story = {
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!expandedEventFired) {
-      throw new Error('Expected expanded-change event to fire on ArrowLeft key');
+      throw new Error('ArrowLeft キーの押下時に expanded-change イベントが発火することを期待していましたが、発火しませんでした');
     }
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (treeItem.expanded) {
-      throw new Error('Expected expanded to be false after ArrowLeft key');
+      throw new Error('ArrowLeft キーの押下後に expanded=false になりませんでした');
     }
 
     // テスト: ArrowLeft キー（収縮済み）で委譲イベントが発火すること
@@ -790,10 +776,8 @@ export const KeyboardInteraction: Story = {
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!arrowLeftDelegated) {
-      throw new Error('Expected tree-item-arrow-left event on ArrowLeft key when collapsed');
+      throw new Error('収縮済みの状態で ArrowLeft キーが押された際に tree-item-arrow-left イベントが発火することを期待していましたが、発火しませんでした');
     }
-
-    console.log('✅ All tests passed for KeyboardInteraction story');
   },
 };
 
@@ -829,7 +813,7 @@ export const ClickInteraction: Story = {
   play: async ({ canvasElement }) => {
     const treeItem = canvasElement.querySelector<TreeItem>('#click-test-item');
     if (!treeItem) {
-      throw new Error('TreeItem component not found');
+      throw new Error('TreeItem コンポーネントが見つかりません');
     }
 
     await treeItem.updateComplete;
@@ -838,7 +822,7 @@ export const ClickInteraction: Story = {
     const expandIcon = treeItem.shadowRoot?.querySelector<HTMLElement>('.expand-icon');
 
     if (!itemElement || !expandIcon) {
-      throw new Error('Required elements not found');
+      throw new Error('必要な要素が見つかりませんでした');
     }
 
     // テスト: 展開アイコンクリックで展開すること（選択はされない）
@@ -852,15 +836,15 @@ export const ClickInteraction: Story = {
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!expandedEventFired) {
-      throw new Error('Expected expanded-change event to fire on expand icon click');
+      throw new Error('展開アイコンのクリック時に expanded-change イベントが発火することを期待していましたが、発火しませんでした');
     }
 
     if (!treeItem.expanded) {
-      throw new Error('Expected expanded to be true after expand icon click');
+      throw new Error('展開アイコンのクリック後に expanded=true になりませんでした');
     }
 
     if (treeItem.selected) {
-      throw new Error('Expected selected to remain false after expand icon click');
+      throw new Error('展開アイコンのクリック後も selected=false を維持することを期待していましたが、維持されませんでした');
     }
 
     // テスト: アイテムクリックで選択されること
@@ -874,15 +858,13 @@ export const ClickInteraction: Story = {
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!selectedEventFired) {
-      throw new Error('Expected selected-change event to fire on item click');
+      throw new Error('アイテムのクリック時に selected-change イベントが発火することを期待していましたが、発火しませんでした');
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!treeItem.selected) {
-      throw new Error('Expected selected to be true after item click');
+      throw new Error('アイテムのクリック後に selected=true になりませんでした');
     }
-
-    console.log('✅ All tests passed for ClickInteraction story');
   },
 };
 
@@ -925,7 +907,7 @@ export const FocusState: Story = {
   play: async ({ canvasElement }) => {
     const treeItem = canvasElement.querySelector<TreeItem>('#focus-test-item');
     if (!treeItem) {
-      throw new Error('TreeItem component not found');
+      throw new Error('TreeItem コンポーネントが見つかりません');
     }
 
     await treeItem.updateComplete;
@@ -936,15 +918,13 @@ export const FocusState: Story = {
 
     const itemElement = treeItem.shadowRoot?.querySelector<HTMLElement>('.item');
     if (!itemElement) {
-      throw new Error('Item element not found');
+      throw new Error('アイテム要素が見つかりませんでした');
     }
 
     // テスト: フォーカスが当たっていること
     if (treeItem.shadowRoot?.activeElement !== itemElement) {
-      throw new Error('Item should be focused');
+      throw new Error('アイテムがフォーカスされている必要があります');
     }
-
-    console.log('✅ All tests passed for FocusState story');
   },
 };
 
@@ -993,32 +973,29 @@ export const CompactDensityTouchTarget: Story = {
   play: async ({ canvasElement }) => {
     const treeItems = canvasElement.querySelectorAll<TreeItem>('ui-tree-item');
     if (treeItems.length !== 3) {
-      throw new Error(`Expected 3 tree items, got ${String(treeItems.length)}`);
+      throw new Error(`3つのツリーアイテムを期待していましたが、実際には ${String(treeItems.length)}個でした`);
     }
 
     const firstItem = treeItems[0];
     if (!firstItem) {
-      throw new Error('First tree item not found');
+      throw new Error('最初のツリーアイテムが見つかりませんでした');
     }
     await firstItem.updateComplete;
 
     if (!firstItem.shadowRoot) {
-      throw new Error('Shadow root not found');
+      throw new Error('Shadow root が見つかりませんでした');
     }
 
     const itemElement = firstItem.shadowRoot.querySelector<HTMLElement>('.item');
     if (!itemElement) {
-      throw new Error('Item element not found');
+      throw new Error('アイテム要素が見つかりませんでした');
     }
 
     // テスト: Compact密度のアイテムの高さが24px前後であること
     const height = itemElement.getBoundingClientRect().height;
     if (height < 20 || height > 28) {
-      throw new Error(`Expected item height to be around 24px, got ${String(height)}px`);
+      throw new Error(`アイテムの高さが 24px 前後であることを期待していましたが、実際には ${String(height)}px でした`);
     }
-
-    console.log('✅ All tests passed for CompactDensityTouchTarget story');
-    console.log('📝 開発者ツールで ::after 疑似要素のタッチターゲット（44px）を確認してください');
   },
 };
 
@@ -1070,22 +1047,22 @@ export const ForcedColorsMode: Story = {
   play: async ({ canvasElement }) => {
     const selectedItem = canvasElement.querySelector<TreeItem>('ui-tree-item[label="components"]');
     if (!selectedItem) {
-      throw new Error('Selected item not found');
+      throw new Error('選択されたアイテムが見つかりませんでした');
     }
 
     await selectedItem.updateComplete;
 
     if (selectedItem.getAttribute('aria-selected') !== 'true') {
-      throw new Error('Expected selected item aria-selected="true"');
+      throw new Error('選択されたアイテムが aria-selected="true" を持っていません');
     }
 
     const childrenContainer = selectedItem.shadowRoot?.querySelector<HTMLElement>('.children');
     if (!childrenContainer) {
-      throw new Error('Children container not found');
+      throw new Error('子要素コンテナが見つかりませんでした');
     }
 
     if (childrenContainer.getAttribute('role') !== 'group') {
-      throw new Error('Children container must have role="group"');
+      throw new Error('子要素コンテナは role="group" を持つ必要があります');
     }
   },
   parameters: {
@@ -1150,19 +1127,19 @@ export const ReducedMotion: Story = {
   play: async ({ canvasElement }) => {
     const treeItem = canvasElement.querySelector<TreeItem>('ui-tree-item');
     if (!treeItem) {
-      throw new Error('TreeItem component not found');
+      throw new Error('TreeItem コンポーネントが見つかりません');
     }
 
     await treeItem.updateComplete;
 
     const children = treeItem.shadowRoot?.querySelector<HTMLElement>('.children');
     if (!children) {
-      throw new Error('Children container not found');
+      throw new Error('子要素コンテナが見つかりませんでした');
     }
 
     const durations = window.getComputedStyle(children).transitionDuration;
     if (!durations.includes('0.01ms') && !durations.includes('0s')) {
-      throw new Error(`Expected reduced motion like transition duration, got "${durations}"`);
+      throw new Error(`reduced-motion 時のような transition-duration を期待していましたが、実際には "${durations}" でした`);
     }
   },
   parameters: {
@@ -1214,13 +1191,13 @@ export const DarkSurfaceContrast: Story = {
   play: async ({ canvasElement }) => {
     const selectedItem = canvasElement.querySelector<TreeItem>('ui-tree-item[label="components"]');
     if (!selectedItem) {
-      throw new Error('Selected child item not found');
+      throw new Error('選択された子アイテムが見つかりませんでした');
     }
 
     await selectedItem.updateComplete;
 
     if (selectedItem.getAttribute('aria-selected') !== 'true') {
-      throw new Error('Expected selected item aria-selected="true"');
+      throw new Error('選択されたアイテムが aria-selected="true" を持っていません');
     }
   },
 };

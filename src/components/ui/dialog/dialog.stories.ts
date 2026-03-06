@@ -28,7 +28,7 @@ function assert(condition: unknown, message: string): asserts condition {
 const waitForEvent = <T extends Event>(target: EventTarget, eventName: string, timeoutMs = 3000): Promise<T> =>
   new Promise((resolve, reject) => {
     const timer = window.setTimeout(() => {
-      reject(new Error(`${eventName} の待機がタイムアウトしました`));
+      reject(new Error(`${eventName} イベントの待機がタイムアウトしました`));
     }, timeoutMs);
 
     const listener: EventListener = (event) => {
@@ -49,7 +49,7 @@ const ensureNoEvent = async (
   const eventPromise = new Promise<never>((_, reject) => {
     listener = () => {
       target.removeEventListener(eventName, listener);
-      reject(new Error(`${eventName} が発火しました`));
+      reject(new Error(`${eventName} イベントが発火しました`));
     };
     target.addEventListener(eventName, listener);
   });
@@ -163,25 +163,37 @@ export const ModalCriticalDecision: Story = {
     await flush(host);
 
     const dialog = getNativeDialog(host);
-    assert(host.opened, 'opened=true になっていません');
-    assert(dialog.open, 'native dialog が開いていません');
-    assert(dialog.getAttribute('aria-modal') === 'true', 'modal=true なのに aria-modal が設定されていません');
-    assert(dialog.getAttribute('aria-labelledby') === 'modal-title', 'aria-labelledby が不正です');
-    assert(dialog.getAttribute('aria-describedby') === 'modal-description', 'aria-describedby が不正です');
-    assert(dialog.getAttribute('aria-label') === null, 'aria-labelledby 指定時は aria-label を省略してください');
-    assert(openedEvent.detail.trigger === trigger, 'opened event の trigger が不正です');
+    assert(host.opened, 'opened="true" であることを期待していましたが、実際には false でした');
+    assert(dialog.open, 'ネイティブの dialog 要素が開いていません');
+    assert(dialog.getAttribute('aria-modal') === 'true', 'modal="true" の場合、aria-modal="true" が設定されている必要があります');
+    assert(
+      dialog.getAttribute('aria-labelledby') === 'modal-title',
+      `aria-labelledby="modal-title" を期待していましたが、実際には "${dialog.getAttribute('aria-labelledby') ?? 'null'}" でした`,
+    );
+    assert(
+      dialog.getAttribute('aria-describedby') === 'modal-description',
+      `aria-describedby="modal-description" を期待していましたが、実際には "${dialog.getAttribute('aria-describedby') ?? 'null'}" でした`,
+    );
+    assert(dialog.getAttribute('aria-label') === null, 'aria-labelledby 指定時は aria-label を省略する必要があります');
+    assert(openedEvent.detail.trigger === trigger, 'opened イベントのトリガーが不正です');
     assert(document.activeElement === cancelButton, '初期フォーカスが最初の actions 要素に移動していません');
-    assert(document.body.hasAttribute('data-ui-dialog-open'), 'ダイアログ表示中に body[data-ui-dialog-open] が付与されていません');
+    assert(
+      document.body.hasAttribute('data-ui-dialog-open'),
+      'ダイアログ表示中に body 要素に data-ui-dialog-open 属性が付与されていません',
+    );
 
     const closedPromise = waitForEvent(host, 'ui-dialog-closed');
     host.close();
     await closedPromise;
     await flush(host);
 
-    assert(!host.opened, 'close() 後に opened=false になっていません');
-    assert(!dialog.open, 'close() 後に native dialog が閉じていません');
-    assert(document.activeElement === trigger, 'close() 後にトリガーへフォーカス返却されていません');
-    assert(!document.body.hasAttribute('data-ui-dialog-open'), 'close() 後に body[data-ui-dialog-open] が解除されていません');
+    assert(!host.opened, 'close() 呼び出し後に opened="false" であることを期待していましたが、実際には true でした');
+    assert(!dialog.open, 'close() 呼び出し後にネイティブの dialog 要素が閉じていません');
+    assert(document.activeElement === trigger, 'close() 後にトリガーへフォーカスが返却されていません');
+    assert(
+      !document.body.hasAttribute('data-ui-dialog-open'),
+      'close() 後に body 要素の data-ui-dialog-open 属性が解除されていません',
+    );
   },
 };
 
@@ -233,7 +245,7 @@ export const ModalEscCancelSequence: Story = {
     await flush(host);
 
     assert(eventOrder.join('>') === 'cancel>closed', 'Esc 経路のイベント順序が不正です');
-    assert(!dialog.open, 'Esc 後にダイアログが閉じていません');
+    assert(!dialog.open, 'Esc キー押下後にダイアログが閉じていません');
   },
 };
 
@@ -270,13 +282,13 @@ export const NonModalLightweightInfo: Story = {
     await flush(host);
 
     const dialog = getNativeDialog(host);
-    assert(dialog.open, '非モーダルが開いていません');
-    assert(dialog.getAttribute('aria-modal') === null, 'modal=false なのに aria-modal が存在します');
+    assert(dialog.open, '非モーダルダイアログが開いていません');
+    assert(dialog.getAttribute('aria-modal') === null, 'modal=false の場合、aria-modal 属性は設定しない必要があります');
 
     await ensureNoEvents(host, ['ui-dialog-cancel', 'ui-dialog-closed'], () => {
       dialog.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
     });
-    assert(dialog.open, '背景クリックで閉じてはいけません');
+    assert(dialog.open, '背景クリックでダイアログが閉じてはいけません');
 
     const cancelByEscPromise = waitForEvent(host, 'ui-dialog-cancel');
     const closedByEscPromise = waitForEvent(host, 'ui-dialog-closed');
@@ -285,8 +297,8 @@ export const NonModalLightweightInfo: Story = {
     await closedByEscPromise;
     await flush(host);
 
-    assert(!dialog.open, 'Esc 後にダイアログが閉じていません');
-    assert(document.activeElement === trigger, 'Esc クローズ後にトリガーへフォーカス返却されていません');
+    assert(!dialog.open, 'Esc キー押下後にダイアログが閉じていません');
+    assert(document.activeElement === trigger, 'Esc によるクローズ後にトリガーへフォーカスが返却されていません');
   },
 };
 
@@ -317,7 +329,7 @@ export const NoActionsInitialFocusFallback: Story = {
     await flush(host);
 
     const closeButton = getCloseButton(host);
-    assert(document.activeElement === closeButton, 'actions 未提供時に close ボタンへ初期フォーカスされていません');
+    assert(document.activeElement === closeButton, 'actions 未提供時に close ボタンへ初期フォーカスが移動していません');
 
     const closedPromise = waitForEvent(host, 'ui-dialog-closed');
     host.close();
@@ -372,8 +384,11 @@ export const TriggerFallbackAndReentrancySafety: Story = {
     await flush(host);
 
     const dialog = getNativeDialog(host);
-    assert(dialog.open, 'open() で開いていません');
-    assert(openedCount === 1, 'open イベント回数が不正です');
+    assert(dialog.open, 'open() 呼び出し後にダイアログが開いていません');
+    assert(
+      openedCount === 1,
+      `opened イベントが 1 回のみ発火することを期待していましたが、実際には ${String(openedCount)} 回でした`,
+    );
 
     await ensureNoEvent(host, 'ui-dialog-opened', () => {
       host.open();
@@ -384,8 +399,11 @@ export const TriggerFallbackAndReentrancySafety: Story = {
     host.close();
     await closedPromise;
     await flush(host);
-    assert(closedCount === 1, 'close イベント回数が不正です');
-    assert(document.activeElement === trigger, 'trigger 省略時のフォーカス返却先が activeElement になっていません');
+    assert(
+      closedCount === 1,
+      `ui-dialog-closed イベントが 1 回のみ発火することを期待していましたが、実際には ${String(closedCount)} 回でした`,
+    );
+    assert(document.activeElement === trigger, 'トリガー省略時のフォーカス返却先が activeElement になっていません');
 
     await ensureNoEvent(host, 'ui-dialog-closed', () => {
       host.close();
@@ -427,8 +445,8 @@ export const AriaLabelFallback: Story = {
     await flush(host);
 
     const dialog = getNativeDialog(host);
-    assert(dialog.getAttribute('aria-labelledby') === null, 'aria-label 経路では aria-labelledby を省略してください');
-    assert(dialog.getAttribute('aria-label') === '通知ダイアログ', 'aria-label が反映されていません');
+    assert(dialog.getAttribute('aria-labelledby') === null, 'aria-label 経路では aria-labelledby を省略する必要があります');
+    assert(dialog.getAttribute('aria-label') === '通知ダイアログ', 'aria-label が正しく反映されていません');
 
     const closedPromise = waitForEvent(host, 'ui-dialog-closed');
     host.close();
@@ -472,25 +490,25 @@ export const MultiDialogScrollLockReferenceCount: Story = {
     hostA.open(triggerA);
     await openAPromise;
     await flush(hostA);
-    assert(document.body.hasAttribute('data-ui-dialog-open'), '1件目 open 後に body ロック属性がありません');
+    assert(document.body.hasAttribute('data-ui-dialog-open'), '1件目のダイアログオープン後に body 要素にロック属性が付与されていません');
 
     const openBPromise = waitForEvent(hostB, 'ui-dialog-opened');
     hostB.open(triggerB);
     await openBPromise;
     await flush(hostB);
-    assert(document.body.hasAttribute('data-ui-dialog-open'), '2件目 open 後に body ロック属性が失われています');
+    assert(document.body.hasAttribute('data-ui-dialog-open'), '2件目のダイアログオープン後に body 要素のロック属性が失われています');
 
     const closeAPromise = waitForEvent(hostA, 'ui-dialog-closed');
     hostA.close();
     await closeAPromise;
     await flush(hostA);
-    assert(document.body.hasAttribute('data-ui-dialog-open'), '1件だけ close した段階で body ロック属性を解除してはいけません');
+    assert(document.body.hasAttribute('data-ui-dialog-open'), '1件だけクローズした段階で body 要素のロック属性を解除してはいけません');
 
     const closeBPromise = waitForEvent(hostB, 'ui-dialog-closed');
     hostB.close();
     await closeBPromise;
     await flush(hostB);
-    assert(!document.body.hasAttribute('data-ui-dialog-open'), '最終 close 後に body ロック属性が解除されていません');
+    assert(!document.body.hasAttribute('data-ui-dialog-open'), '最終的なクローズ後に body 要素のロック属性が解除されていません');
   },
 };
 
@@ -522,16 +540,16 @@ export const AttributeDrivenOpenState: Story = {
     await flush(host);
 
     const dialog = getNativeDialog(host);
-    assert(host.opened, 'opened=true で開いていません');
-    assert(dialog.open, 'opened=true で native dialog が開いていません');
+    assert(host.opened, 'opened="true" 設定後にダイアログが開いていません');
+    assert(dialog.open, 'opened="true" 設定後にネイティブの dialog 要素が開いていません');
 
     const closePromise = waitForEvent(host, 'ui-dialog-closed');
     host.opened = false;
     await closePromise;
     await flush(host);
 
-    assert(!host.opened, 'opened=false で閉じていません');
-    assert(!dialog.open, 'opened=false で native dialog が閉じていません');
+    assert(!host.opened, 'opened="false" 設定後にダイアログが閉じていません');
+    assert(!dialog.open, 'opened="false" 設定後にネイティブの dialog 要素が閉じていません');
   },
 };
 

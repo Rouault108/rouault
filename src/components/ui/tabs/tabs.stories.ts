@@ -469,11 +469,11 @@ export const ManyTabs: Story = {
       </p>
       <ui-tabs selected-index="0">
         ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(
-          (n) => html`
+    (n) => html`
             <button slot="tab">タブ ${String(n)}</button>
             <div slot="panel" style="padding: 1rem;">パネル ${String(n)} のコンテンツ</div>
           `,
-        )}
+  )}
       </ui-tabs>
     </div>
   `,
@@ -764,11 +764,11 @@ export const TabChangeEvent: Story = {
       id="event-tabs"
       selected-index="0"
       @ui-tab-change="${(e: CustomEvent<{ index: number; value: string | null; prevIndex: number }>) => {
-        const log = (e.currentTarget as HTMLElement | null)?.parentElement?.querySelector<HTMLElement>('#event-log');
-        if (log) {
-          log.textContent = `ui-tab-change: index=${String(e.detail.index)}, value=${e.detail.value ?? 'null'}, prevIndex=${String(e.detail.prevIndex)}`;
-        }
-      }}"
+      const log = (e.currentTarget as HTMLElement | null)?.parentElement?.querySelector<HTMLElement>('#event-log');
+      if (log) {
+        log.textContent = `ui-tab-change: index=${String(e.detail.index)}, value=${e.detail.value ?? 'null'}, prevIndex=${String(e.detail.prevIndex)}`;
+      }
+    }}"
     >
       <button slot="tab" value="overview">概要</button>
       <div slot="panel" style="padding: 1rem;">概要パネル</div>

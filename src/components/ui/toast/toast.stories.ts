@@ -62,14 +62,14 @@ const findToastByMessage = (host: UiToast, message: string): HTMLOutputElement =
 const assertRole = (toast: HTMLOutputElement, expected: 'status' | 'alert'): void => {
   const actual = toast.getAttribute('role');
   if (actual !== expected) {
-    throw new Error(`Expected role="${expected}", got "${actual ?? 'null'}"`);
+    throw new Error(`role="${expected}" を期待していましたが、実際には "${actual ?? 'null'}" でした`);
   }
 };
 
 const assertVariant = (toast: HTMLOutputElement, expected: ToastVariant): void => {
   const actual = toast.getAttribute('data-variant');
   if (actual !== expected) {
-    throw new Error(`Expected data-variant="${expected}", got "${actual ?? 'null'}"`);
+    throw new Error(`data-variant="${expected}" を期待していましたが、実際には "${actual ?? 'null'}" でした`);
   }
 };
 
@@ -82,7 +82,7 @@ const waitForSnapshotCount = async (expected: number, timeoutMs = 1200): Promise
     if (ToastManager.getSnapshot().length === expected) return;
     await wait(16);
   }
-  throw new Error(`Expected snapshot count=${String(expected)}, got ${String(ToastManager.getSnapshot().length)}`);
+  throw new Error(`スナップショットの件数が ${String(expected)} であることを期待していましたが、実際には ${String(ToastManager.getSnapshot().length)} でした`);
 };
 
 const meta: Meta<UiToast> = {
@@ -131,7 +131,7 @@ export const Default: Story = {
 
     const toasts = getOutputs(host);
     if (toasts.length !== 1) {
-      throw new Error(`Expected 1 toast, got ${String(toasts.length)}`);
+      throw new Error(`1つのトーストを期待していましたが、実際には ${String(toasts.length)}個でした`);
     }
 
     const toast = toasts[0];
@@ -242,13 +242,13 @@ export const OverflowAndOrderIntegrity: Story = {
 
     const toasts = getOutputs(host);
     if (toasts.length !== MAX_TOAST_STACK) {
-      throw new Error(`Expected ${String(MAX_TOAST_STACK)} toasts, got ${String(toasts.length)}`);
+      throw new Error(`${String(MAX_TOAST_STACK)}個のトーストを期待していましたが、実際には ${String(toasts.length)}個でした`);
     }
 
     const messages = toasts.map((toast) => getMessage(toast));
     const expectedOrder = ['D', 'C', 'B'];
     if (messages.join('|') !== expectedOrder.join('|')) {
-      throw new Error(`順序不整合: expected=${expectedOrder.join(' > ')}, actual=${messages.join(' > ')}`);
+      throw new Error(`順序不整合: 期待値=${expectedOrder.join(' > ')}, 実際値=${messages.join(' > ')}`);
     }
 
     const ids = toasts.map((toast) => toast.dataset['toastId'] ?? '');
@@ -457,7 +457,7 @@ export const DuplicateKeyRespectsVariant: Story = {
 
     const outputs = getOutputs(host);
     if (outputs.length !== 2) {
-      throw new Error(`variant が異なる同一文言は統合してはいけません: actual=${String(outputs.length)}`);
+      throw new Error(`variant が異なる同一文言は統合してはいけません: 実際値=${String(outputs.length)}`);
     }
 
     const variants = outputs.map((toast) => toast.getAttribute('data-variant')).sort().join('|');

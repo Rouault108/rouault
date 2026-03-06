@@ -150,7 +150,7 @@ const assertNoPartAndNoSlot = (progress: UiProgress): void => {
 const assertBarTransformRatio = (progress: UiProgress, expectedPercent: number): void => {
   const bar = getBar(progress);
   const transformDeclaration = bar.style.transform.trim();
-  const ratioMatch = transformDeclaration.match(/scaleX\(([^)]+)\)/);
+  const ratioMatch = (/scaleX\(([^)]+)\)/).exec(transformDeclaration);
   if (!ratioMatch) {
     throw new Error(
       `ui-progress#${progress.id} の transform 指定が不正です: ${transformDeclaration}`,

@@ -26,13 +26,13 @@ import type { Switch } from './switch';
  * - **ラベルなし使用時**: `aria-label` を外部から付与してアクセシビリティを確保してください
  */
 const meta: Meta<Switch> = {
-    title: 'Components/Switch',
-    component: 'ui-switch',
-    tags: ['autodocs'],
-    parameters: {
-        docs: {
-            description: {
-                component: `
+  title: 'Components/Switch',
+  component: 'ui-switch',
+  tags: ['autodocs'],
+  parameters: {
+    docs: {
+      description: {
+        component: `
 トグルスイッチコンポーネントは、設定の「即時反映（Instant Reflection）」を司るメタファーです。
 保存操作を待たず、システムの状態をダイレクトに変更します。
 
@@ -55,26 +55,26 @@ const meta: Meta<Switch> = {
 - **ラベルなし使用時**: \`aria-label\` を外部から付与してアクセシビリティを確保してください。
 - **Enter キー**: トグル操作のみ実行し、フォーム送信は行いません（\`event.preventDefault()\` でブロック）。
         `,
-            },
-        },
+      },
     },
-    argTypes: {
-        checked: {
-            control: 'boolean',
-            description: 'ON/OFF 状態',
-            table: { type: { summary: 'boolean' }, defaultValue: { summary: 'false' } },
-        },
-        label: {
-            control: 'text',
-            description: 'スイッチのラベル（aria-labelledby で関連付け）',
-            table: { type: { summary: 'string' }, defaultValue: { summary: '' } },
-        },
-        disabled: {
-            control: 'boolean',
-            description: '操作無効化',
-            table: { type: { summary: 'boolean' }, defaultValue: { summary: 'false' } },
-        },
+  },
+  argTypes: {
+    checked: {
+      control: 'boolean',
+      description: 'ON/OFF 状態',
+      table: { type: { summary: 'boolean' }, defaultValue: { summary: 'false' } },
     },
+    label: {
+      control: 'text',
+      description: 'スイッチのラベル（aria-labelledby で関連付け）',
+      table: { type: { summary: 'string' }, defaultValue: { summary: '' } },
+    },
+    disabled: {
+      control: 'boolean',
+      description: '操作無効化',
+      table: { type: { summary: 'boolean' }, defaultValue: { summary: 'false' } },
+    },
+  },
 };
 
 export default meta;
@@ -91,10 +91,10 @@ type Story = StoryObj<Switch>;
  * Thumb は左端 (`--switch-thumb-pos-off`: 2px) に位置します。
  */
 export const Default: Story = {
-    args: {
-        label: 'ダークモード',
-    },
-    render: (args) => html`
+  args: {
+    label: 'ダークモード',
+  },
+  render: (args) => html`
     <ui-switch
       id="default-switch"
       label="${args.label}"
@@ -102,33 +102,31 @@ export const Default: Story = {
       ?disabled="${args.disabled}"
     ></ui-switch>
   `,
-    play: async ({ canvasElement }) => {
-        const sw = canvasElement.querySelector<Switch>('#default-switch');
-        if (!sw) throw new Error('ui-switch not found');
-        await sw.updateComplete;
+  play: async ({ canvasElement }) => {
+    const sw = canvasElement.querySelector<Switch>('#default-switch');
+    if (!sw) throw new Error('ui-switch が見つかりません');
+    await sw.updateComplete;
 
-        // テスト: デフォルトは OFF
-        if (sw.checked) throw new Error('Expected checked to be false by default');
+    // テスト: デフォルトは OFF
+    if (sw.checked) throw new Error('デフォルトで checked が false であることを期待していましたが、実際には true でした');
 
-        // テスト: role="switch" が設定されている
-        const track = sw.shadowRoot?.querySelector('.track');
-        if (!track) throw new Error('Track element not found in shadow root');
-        if (track.getAttribute('role') !== 'switch') {
-            throw new Error(`Expected role="switch", got "${track.getAttribute('role') ?? 'null'}"`);
-        }
+    // テスト: role="switch" が設定されている
+    const track = sw.shadowRoot?.querySelector('.track');
+    if (!track) throw new Error('Shadow Root 内に track 要素が見つかりません');
+    if (track.getAttribute('role') !== 'switch') {
+      throw new Error(`role="switch" を期待していましたが、実際には "${track.getAttribute('role') ?? 'null'}" でした`);
+    }
 
-        // テスト: aria-checked="false" が設定されている
-        if (track.getAttribute('aria-checked') !== 'false') {
-            throw new Error(`Expected aria-checked="false", got "${track.getAttribute('aria-checked') ?? 'null'}"`);
-        }
+    // テスト: aria-checked="false" が設定されている
+    if (track.getAttribute('aria-checked') !== 'false') {
+      throw new Error(`aria-checked="false" を期待していましたが、実際には "${track.getAttribute('aria-checked') ?? 'null'}" でした`);
+    }
 
-        // テスト: tabindex="0"（フォーカス可能）
-        if (track.getAttribute('tabindex') !== '0') {
-            throw new Error(`Expected tabindex="0", got "${track.getAttribute('tabindex') ?? 'null'}"`);
-        }
-
-        console.log('✅ All tests passed for Default story');
-    },
+    // テスト: tabindex="0"（フォーカス可能）
+    if (track.getAttribute('tabindex') !== '0') {
+      throw new Error(`tabindex="0" を期待していましたが、実際には "${track.getAttribute('tabindex') ?? 'null'}" でした`);
+    }
+  },
 };
 
 // ──────────────────────────────────────────────
@@ -142,27 +140,25 @@ export const Default: Story = {
  * Thumb は左端に位置し、`aria-checked="false"` が設定されます。
  */
 export const OffNormal: Story = {
-    render: () => html`
+  render: () => html`
     <ui-switch
       id="off-normal"
       label="OFF（通常）"
     ></ui-switch>
   `,
-    play: async ({ canvasElement }) => {
-        const sw = canvasElement.querySelector<Switch>('#off-normal');
-        if (!sw) throw new Error('ui-switch not found');
-        await sw.updateComplete;
+  play: async ({ canvasElement }) => {
+    const sw = canvasElement.querySelector<Switch>('#off-normal');
+    if (!sw) throw new Error('ui-switch が見つかりません');
+    await sw.updateComplete;
 
-        const track = sw.shadowRoot?.querySelector('.track');
-        if (!track) throw new Error('Track not found');
+    const track = sw.shadowRoot?.querySelector('.track');
+    if (!track) throw new Error('track 要素が見つかりません');
 
-        if (sw.checked) throw new Error('Expected checked to be false');
-        if (track.getAttribute('aria-checked') !== 'false') {
-            throw new Error('Expected aria-checked="false"');
-        }
-
-        console.log('✅ All tests passed for OffNormal story');
-    },
+    if (sw.checked) throw new Error('checked が false であることを期待していましたが true でした');
+    if (track.getAttribute('aria-checked') !== 'false') {
+      throw new Error('aria-checked="false" を期待していましたが true でした');
+    }
+  },
 };
 
 /**
@@ -172,28 +168,26 @@ export const OffNormal: Story = {
  * `aria-checked="true"` が設定されます。
  */
 export const OnNormal: Story = {
-    render: () => html`
+  render: () => html`
     <ui-switch
       id="on-normal"
       label="ON（通常）"
       checked
     ></ui-switch>
   `,
-    play: async ({ canvasElement }) => {
-        const sw = canvasElement.querySelector<Switch>('#on-normal');
-        if (!sw) throw new Error('ui-switch not found');
-        await sw.updateComplete;
+  play: async ({ canvasElement }) => {
+    const sw = canvasElement.querySelector<Switch>('#on-normal');
+    if (!sw) throw new Error('ui-switch が見つかりません');
+    await sw.updateComplete;
 
-        const track = sw.shadowRoot?.querySelector('.track');
-        if (!track) throw new Error('Track not found');
+    const track = sw.shadowRoot?.querySelector('.track');
+    if (!track) throw new Error('Track 要素が見つかりません');
 
-        if (!sw.checked) throw new Error('Expected checked to be true');
-        if (track.getAttribute('aria-checked') !== 'true') {
-            throw new Error(`Expected aria-checked="true", got "${track.getAttribute('aria-checked') ?? 'null'}"`);
-        }
-
-        console.log('✅ All tests passed for OnNormal story');
-    },
+    if (!sw.checked) throw new Error('checked が true であることを期待していましたが false でした');
+    if (track.getAttribute('aria-checked') !== 'true') {
+      throw new Error(`aria-checked="true" を期待していましたが、実際には "${track.getAttribute('aria-checked') ?? 'null'}" でした`);
+    }
+  },
 };
 
 /**
@@ -203,33 +197,31 @@ export const OnNormal: Story = {
  * `pointer-events: none` により操作不可。`aria-disabled="true"` が設定されます。
  */
 export const OffDisabled: Story = {
-    render: () => html`
+  render: () => html`
     <ui-switch
       id="off-disabled"
       label="OFF（無効）"
       disabled
     ></ui-switch>
   `,
-    play: async ({ canvasElement }) => {
-        const sw = canvasElement.querySelector<Switch>('#off-disabled');
-        if (!sw) throw new Error('ui-switch not found');
-        await sw.updateComplete;
+  play: async ({ canvasElement }) => {
+    const sw = canvasElement.querySelector<Switch>('#off-disabled');
+    if (!sw) throw new Error('ui-switch が見つかりません');
+    await sw.updateComplete;
 
-        const track = sw.shadowRoot?.querySelector('.track');
-        if (!track) throw new Error('Track not found');
+    const track = sw.shadowRoot?.querySelector('.track');
+    if (!track) throw new Error('Track 要素が見つかりません');
 
-        if (!sw.disabled) throw new Error('Expected disabled to be true');
-        if (sw.checked) throw new Error('Expected checked to be false');
-        if (track.getAttribute('aria-disabled') !== 'true') {
-            throw new Error(`Expected aria-disabled="true", got "${track.getAttribute('aria-disabled') ?? 'null'}"`);
-        }
-        // tabindex="-1": フォーカス不可
-        if (track.getAttribute('tabindex') !== '-1') {
-            throw new Error(`Expected tabindex="-1", got "${track.getAttribute('tabindex') ?? 'null'}"`);
-        }
-
-        console.log('✅ All tests passed for OffDisabled story');
-    },
+    if (!sw.disabled) throw new Error('disabled が true であることを期待していましたが false でした');
+    if (sw.checked) throw new Error('checked が false であることを期待していましたが true でした');
+    if (track.getAttribute('aria-disabled') !== 'true') {
+      throw new Error(`aria-disabled="true" を期待していましたが "${track.getAttribute('aria-disabled') ?? 'null'}" でした`);
+    }
+    // tabindex="-1": フォーカス不可
+    if (track.getAttribute('tabindex') !== '-1') {
+      throw new Error(`tabindex="-1" を期待していましたが、実際には "${track.getAttribute('tabindex') ?? 'null'}" でした`);
+    }
+  },
 };
 
 /**
@@ -239,7 +231,7 @@ export const OffDisabled: Story = {
  * Thumb は右端位置を維持します。
  */
 export const OnDisabled: Story = {
-    render: () => html`
+  render: () => html`
     <ui-switch
       id="on-disabled"
       label="ON（無効）"
@@ -247,25 +239,23 @@ export const OnDisabled: Story = {
       disabled
     ></ui-switch>
   `,
-    play: async ({ canvasElement }) => {
-        const sw = canvasElement.querySelector<Switch>('#on-disabled');
-        if (!sw) throw new Error('ui-switch not found');
-        await sw.updateComplete;
+  play: async ({ canvasElement }) => {
+    const sw = canvasElement.querySelector<Switch>('#on-disabled');
+    if (!sw) throw new Error('ui-switch が見つかりません');
+    await sw.updateComplete;
 
-        const track = sw.shadowRoot?.querySelector('.track');
-        if (!track) throw new Error('Track not found');
+    const track = sw.shadowRoot?.querySelector('.track');
+    if (!track) throw new Error('.track が見つかりません');
 
-        if (!sw.checked) throw new Error('Expected checked to be true');
-        if (!sw.disabled) throw new Error('Expected disabled to be true');
-        if (track.getAttribute('aria-checked') !== 'true') {
-            throw new Error('Expected aria-checked="true"');
-        }
-        if (track.getAttribute('aria-disabled') !== 'true') {
-            throw new Error('Expected aria-disabled="true"');
-        }
-
-        console.log('✅ All tests passed for OnDisabled story');
-    },
+    if (!sw.checked) throw new Error('checked が true であることを期待していましたが false でした');
+    if (!sw.disabled) throw new Error('disabled が true であることを期待していましたが false でした');
+    if (track.getAttribute('aria-checked') !== 'true') {
+      throw new Error('aria-checked="true" を期待していましたが false でした');
+    }
+    if (track.getAttribute('aria-disabled') !== 'true') {
+      throw new Error('aria-disabled="true" を期待していましたが false でした');
+    }
+  },
 };
 
 // ──────────────────────────────────────────────
@@ -279,7 +269,7 @@ export const OnDisabled: Story = {
  * デザインレビューやビジュアルリグレッションテストに使用します。
  */
 export const AllStates: Story = {
-    render: () => html`
+  render: () => html`
     <style>
       .states-grid {
         display: grid;
@@ -336,32 +326,30 @@ export const AllStates: Story = {
       </div>
     </div>
   `,
-    play: async ({ canvasElement }) => {
-        const switches = canvasElement.querySelectorAll('ui-switch');
-        if (switches.length !== 6) {
-            throw new Error(`Expected 6 switches, got ${String(switches.length)}`);
-        }
+  play: async ({ canvasElement }) => {
+    const switches = canvasElement.querySelectorAll('ui-switch');
+    if (switches.length !== 6) {
+      throw new Error(`6つのスイッチを期待していましたが、実際には ${String(switches.length)}個でした`);
+    }
 
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-        await Promise.all([...switches].map((s) => (s as Switch).updateComplete));
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+    await Promise.all([...switches].map((s) => (s as Switch).updateComplete));
 
-        // テスト: ラベルなしのコントロールは存在する
-        const noLabel = canvasElement.querySelector<Switch>('#all-no-label');
-        if (!noLabel) throw new Error('No-label switch not found');
-        const labelEl = noLabel.shadowRoot?.querySelector('.label');
-        if (labelEl) throw new Error('Label element should not exist when label prop is empty');
+    // テスト: ラベルなしのコントロールは存在する
+    const noLabel = canvasElement.querySelector<Switch>('#all-no-label');
+    if (!noLabel) throw new Error('ラベルなしのスイッチが見つかりません');
+    const labelEl = noLabel.shadowRoot?.querySelector('.label');
+    if (labelEl) throw new Error('label プロパティが空の場合、ラベル要素は存在しないはずです');
 
-        // テスト: ON スイッチは aria-checked="true"
-        const onSwitch = canvasElement.querySelector<Switch>('#all-on');
-        if (!onSwitch) throw new Error('ON switch not found');
-        await onSwitch.updateComplete;
-        const onTrack = onSwitch.shadowRoot?.querySelector('.track');
-        if (onTrack?.getAttribute('aria-checked') !== 'true') {
-            throw new Error('Expected ON switch to have aria-checked="true"');
-        }
-
-        console.log('✅ All tests passed for AllStates story');
-    },
+    // テスト: ON スイッチは aria-checked="true"
+    const onSwitch = canvasElement.querySelector<Switch>('#all-on');
+    if (!onSwitch) throw new Error('ON 状態のスイッチが見つかりません');
+    await onSwitch.updateComplete;
+    const onTrack = onSwitch.shadowRoot?.querySelector('.track');
+    if (onTrack?.getAttribute('aria-checked') !== 'true') {
+      throw new Error('ON 状態のスイッチの aria-checked が "true" であることを期待していましたが false でした');
+    }
+  },
 };
 
 // ──────────────────────────────────────────────
@@ -375,16 +363,16 @@ export const AllStates: Story = {
  * ラベルをクリックしてもトグルします。
  */
 export const ClickToggle: Story = {
-    render: () => html`
+  render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <ui-switch
         id="toggle-switch"
         label="クリックでトグル"
         @change="${(e: Event) => {
-            const sw = e.target as Switch;
-            const log = document.getElementById('toggle-log');
-            if (log) log.textContent = `change イベント: checked=${String(sw.checked)}`;
-        }}"
+      const sw = e.target as Switch;
+      const log = document.getElementById('toggle-log');
+      if (log) log.textContent = `change イベント: checked=${String(sw.checked)}`;
+    }}"
       ></ui-switch>
 
       <div
@@ -403,52 +391,50 @@ export const ClickToggle: Story = {
       </div>
     </div>
   `,
-    play: async ({ canvasElement }) => {
-        const sw = canvasElement.querySelector<Switch>('#toggle-switch');
-        if (!sw) throw new Error('ui-switch not found');
-        await sw.updateComplete;
+  play: async ({ canvasElement }) => {
+    const sw = canvasElement.querySelector<Switch>('#toggle-switch');
+    if (!sw) throw new Error('ui-switch が見つかりません');
+    await sw.updateComplete;
 
-        // テスト: 初期状態は OFF
-        if (sw.checked) throw new Error('Expected initial state to be OFF');
+    // テスト: 初期状態は OFF
+    if (sw.checked) throw new Error('初期状態が OFF であることを期待していましたが ON でした');
 
-        // change イベントを Promise で受け取る
-        const changePromise = new Promise<boolean>((resolve) => {
-            sw.addEventListener('change', (e) => {
-                resolve((e.target as Switch).checked);
-            }, { once: true });
-        });
+    // change イベントを Promise で受け取る
+    const changePromise = new Promise<boolean>((resolve) => {
+      sw.addEventListener('change', (e) => {
+        resolve((e.target as Switch).checked);
+      }, { once: true });
+    });
 
-        // トラックをクリック
-        const track = sw.shadowRoot?.querySelector<HTMLElement>('.track');
-        if (!track) throw new Error('Track not found');
-        track.click();
+    // トラックをクリック
+    const track = sw.shadowRoot?.querySelector<HTMLElement>('.track');
+    if (!track) throw new Error('Track not found');
+    track.click();
 
-        const newChecked = await Promise.race([
-            changePromise,
-            new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
-        ]);
+    const newChecked = await Promise.race([
+      changePromise,
+      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+    ]);
 
-        if (newChecked === null) throw new Error('change event was not fired');
-        if (!newChecked) throw new Error('Expected checked to be true after click');
+    if (newChecked === null) throw new Error('change イベントが発火しませんでした');
+    if (!newChecked) throw new Error('クリック後に checked が true になることを期待していましたが false のままでした');
 
-        // テスト: 2回目のクリックで OFF に戻る
-        const changePromise2 = new Promise<boolean>((resolve) => {
-            sw.addEventListener('change', (e) => {
-                resolve((e.target as Switch).checked);
-            }, { once: true });
-        });
+    // テスト: 2回目のクリックで OFF に戻る
+    const changePromise2 = new Promise<boolean>((resolve) => {
+      sw.addEventListener('change', (e) => {
+        resolve((e.target as Switch).checked);
+      }, { once: true });
+    });
 
-        track.click();
-        const newChecked2 = await Promise.race([
-            changePromise2,
-            new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
-        ]);
+    track.click();
+    const newChecked2 = await Promise.race([
+      changePromise2,
+      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+    ]);
 
-        if (newChecked2 === null) throw new Error('Second change event was not fired');
-        if (newChecked2) throw new Error('Expected checked to be false after second click');
-
-        console.log('✅ All tests passed for ClickToggle story');
-    },
+    if (newChecked2 === null) throw new Error('2回目の change イベントが発火しませんでした');
+    if (newChecked2) throw new Error('2回目のクリック後に checked が false になることを期待していましたが true のままでした');
+  },
 };
 
 /**
@@ -458,41 +444,39 @@ export const ClickToggle: Story = {
  * WCAG 2.5.5 のタッチターゲット要件を満たすため、ラベル全体がクリック可能領域です。
  */
 export const LabelClickToggle: Story = {
-    render: () => html`
+  render: () => html`
     <ui-switch
       id="label-click-switch"
       label="ラベルをクリックしてもトグルします"
     ></ui-switch>
   `,
-    play: async ({ canvasElement }) => {
-        const sw = canvasElement.querySelector<Switch>('#label-click-switch');
-        if (!sw) throw new Error('ui-switch not found');
-        await sw.updateComplete;
+  play: async ({ canvasElement }) => {
+    const sw = canvasElement.querySelector<Switch>('#label-click-switch');
+    if (!sw) throw new Error('ui-switch が見つかりません');
+    await sw.updateComplete;
 
-        if (sw.checked) throw new Error('Expected initial state to be OFF');
+    if (sw.checked) throw new Error('Expected initial state to be OFF');
 
-        // ラベル要素をクリック
-        const label = sw.shadowRoot?.querySelector<HTMLElement>('.label');
-        if (!label) throw new Error('Label element not found');
+    // ラベル要素をクリック
+    const label = sw.shadowRoot?.querySelector<HTMLElement>('.label');
+    if (!label) throw new Error('ラベル要素が見つかりません');
 
-        const changePromise = new Promise<boolean>((resolve) => {
-            sw.addEventListener('change', (e) => {
-                resolve((e.target as Switch).checked);
-            }, { once: true });
-        });
+    const changePromise = new Promise<boolean>((resolve) => {
+      sw.addEventListener('change', (e) => {
+        resolve((e.target as Switch).checked);
+      }, { once: true });
+    });
 
-        label.click();
+    label.click();
 
-        const newChecked = await Promise.race([
-            changePromise,
-            new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
-        ]);
+    const newChecked = await Promise.race([
+      changePromise,
+      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+    ]);
 
-        if (newChecked === null) throw new Error('Label click did not fire change event');
-        if (!newChecked) throw new Error('Expected checked to be true after label click');
-
-        console.log('✅ All tests passed for LabelClickToggle story');
-    },
+    if (newChecked === null) throw new Error('ラベルのクリックで change イベントが発火しませんでした');
+    if (!newChecked) throw new Error('ラベルクリック後に checked が true になることを期待していましたが false のままでした');
+  },
 };
 
 /**
@@ -502,7 +486,7 @@ export const LabelClickToggle: Story = {
  * `Tab` でフォーカスを当て、`Space` で操作できます。
  */
 export const KeyboardSpaceToggle: Story = {
-    render: () => html`
+  render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <div style="padding: 0.75rem 1rem; background: oklch(97% 0 0); border: 1px solid oklch(90% 0.01 250 / 0.2); border-radius: 6px; font-size: 13px;">
         <strong>操作方法</strong>: Tab キーでフォーカスを当て、Space キーでトグルしてください。
@@ -513,36 +497,34 @@ export const KeyboardSpaceToggle: Story = {
       ></ui-switch>
     </div>
   `,
-    play: async ({ canvasElement }) => {
-        const sw = canvasElement.querySelector<Switch>('#space-switch');
-        if (!sw) throw new Error('ui-switch not found');
-        await sw.updateComplete;
+  play: async ({ canvasElement }) => {
+    const sw = canvasElement.querySelector<Switch>('#space-switch');
+    if (!sw) throw new Error('ui-switch が見つかりません');
+    await sw.updateComplete;
 
-        const track = sw.shadowRoot?.querySelector<HTMLElement>('.track');
-        if (!track) throw new Error('Track not found');
+    const track = sw.shadowRoot?.querySelector<HTMLElement>('.track');
+    if (!track) throw new Error('.track が見つかりません');
 
-        // フォーカスを当てる
-        track.focus();
+    // フォーカスを当てる
+    track.focus();
 
-        // Space キーイベントを発火
-        const changePromise = new Promise<boolean>((resolve) => {
-            sw.addEventListener('change', (e) => {
-                resolve((e.target as Switch).checked);
-            }, { once: true });
-        });
+    // Space キーイベントを発火
+    const changePromise = new Promise<boolean>((resolve) => {
+      sw.addEventListener('change', (e) => {
+        resolve((e.target as Switch).checked);
+      }, { once: true });
+    });
 
-        track.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, composed: true }));
+    track.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, composed: true }));
 
-        const newChecked = await Promise.race([
-            changePromise,
-            new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
-        ]);
+    const newChecked = await Promise.race([
+      changePromise,
+      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+    ]);
 
-        if (newChecked === null) throw new Error('Space key did not fire change event');
-        if (!newChecked) throw new Error('Expected checked to be true after Space key');
-
-        console.log('✅ All tests passed for KeyboardSpaceToggle story');
-    },
+    if (newChecked === null) throw new Error('Space キー押下で change イベントが発火しませんでした');
+    if (!newChecked) throw new Error('Space キー押下後に checked が true になることを期待していましたが false のままでした');
+  },
 };
 
 /**
@@ -552,14 +534,14 @@ export const KeyboardSpaceToggle: Story = {
  * `event.preventDefault()` でデフォルト動作をブロックします。
  */
 export const KeyboardEnterToggle: Story = {
-    parameters: {
-        docs: {
-            description: {
-                story: '**Enter キー**: トグル操作のみ実行し、フォーム送信は行いません。`event.preventDefault()` でブロックします。',
-            },
-        },
+  parameters: {
+    docs: {
+      description: {
+        story: '**Enter キー**: トグル操作のみ実行し、フォーム送信は行いません。`event.preventDefault()` でブロックします。',
+      },
     },
-    render: () => html`
+  },
+  render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <div style="padding: 0.75rem 1rem; background: oklch(97% 0 0); border: 1px solid oklch(90% 0.01 250 / 0.2); border-radius: 6px; font-size: 13px;">
         <strong>操作方法</strong>: Tab キーでフォーカスを当て、Enter キーでトグルしてください（フォーム送信はブロックされます）。
@@ -587,50 +569,48 @@ export const KeyboardEnterToggle: Story = {
       </div>
     </div>
   `,
-    play: async ({ canvasElement }) => {
-        const sw = canvasElement.querySelector<Switch>('#enter-switch');
-        if (!sw) throw new Error('ui-switch not found');
-        await sw.updateComplete;
+  play: async ({ canvasElement }) => {
+    const sw = canvasElement.querySelector<Switch>('#enter-switch');
+    if (!sw) throw new Error('ui-switch が見つかりません');
+    await sw.updateComplete;
 
-        const track = sw.shadowRoot?.querySelector<HTMLElement>('.track');
-        if (!track) throw new Error('Track not found');
+    const track = sw.shadowRoot?.querySelector<HTMLElement>('.track');
+    if (!track) throw new Error('.track が見つかりません');
 
-        track.focus();
+    track.focus();
 
-        // フォーム送信が発生しないことを確認
-        let formSubmitted = false;
-        const form = canvasElement.querySelector<HTMLFormElement>('#enter-form');
-        if (form) {
-            form.addEventListener('submit', () => { formSubmitted = true; });
-        }
+    // フォーム送信が発生しないことを確認
+    let formSubmitted = false;
+    const form = canvasElement.querySelector<HTMLFormElement>('#enter-form');
+    if (form) {
+      form.addEventListener('submit', () => { formSubmitted = true; });
+    }
 
-        // change イベントを Promise で受け取る
-        const changePromise = new Promise<boolean>((resolve) => {
-            sw.addEventListener('change', (e) => {
-                resolve((e.target as Switch).checked);
-            }, { once: true });
-        });
+    // change イベントを Promise で受け取る
+    const changePromise = new Promise<boolean>((resolve) => {
+      sw.addEventListener('change', (e) => {
+        resolve((e.target as Switch).checked);
+      }, { once: true });
+    });
 
-        track.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true }));
+    track.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true }));
 
-        const newChecked = await Promise.race([
-            changePromise,
-            new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
-        ]);
+    const newChecked = await Promise.race([
+      changePromise,
+      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+    ]);
 
-        if (newChecked === null) throw new Error('Enter key did not fire change event');
-        if (!newChecked) throw new Error('Expected checked to be true after Enter key');
+    if (newChecked === null) throw new Error('Enter キーで change イベントが発生しませんでした');
+    if (!newChecked) throw new Error('Enter キーで checked が true になるはずです');
 
-        // テスト: フォーム送信は発生していない
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (formSubmitted) throw new Error('Form should not be submitted when Enter is pressed on switch');
+    // テスト: フォーム送信は発生していない
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (formSubmitted) throw new Error('スイッチ上で Enter キーが押された場合、フォームは送信されないはずです');
 
-        const log = canvasElement.querySelector('#enter-log');
-        if (log) log.textContent = `Enter キー: checked=${String(sw.checked)}（フォーム送信なし）`;
-
-        console.log('✅ All tests passed for KeyboardEnterToggle story');
-    },
+    const log = canvasElement.querySelector('#enter-log');
+    if (log) log.textContent = `Enter キー: checked=${String(sw.checked)}（フォーム送信なし）`;
+  },
 };
 
 // ──────────────────────────────────────────────
@@ -645,14 +625,14 @@ export const KeyboardEnterToggle: Story = {
  * `pointer-events: none` により物理的に操作をブロックします。
  */
 export const DisabledClickBlocked: Story = {
-    parameters: {
-        docs: {
-            description: {
-                story: '⚠️ **境界条件**: `disabled` 状態ではクリックしても状態が変化せず、イベントも発火しません。',
-            },
-        },
+  parameters: {
+    docs: {
+      description: {
+        story: '⚠️ **境界条件**: `disabled` 状態ではクリックしても状態が変化せず、イベントも発火しません。',
+      },
     },
-    render: () => html`
+  },
+  render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <div
         style="
@@ -672,30 +652,28 @@ export const DisabledClickBlocked: Story = {
       ></ui-switch>
     </div>
   `,
-    play: async ({ canvasElement }) => {
-        const sw = canvasElement.querySelector<Switch>('#disabled-blocked');
-        if (!sw) throw new Error('ui-switch not found');
-        await sw.updateComplete;
+  play: async ({ canvasElement }) => {
+    const sw = canvasElement.querySelector<Switch>('#disabled-blocked');
+    if (!sw) throw new Error('ui-switch が見つかりません');
+    await sw.updateComplete;
 
-        let changeEventFired = false;
-        sw.addEventListener('change', () => { changeEventFired = true; });
+    let changeEventFired = false;
+    sw.addEventListener('change', () => { changeEventFired = true; });
 
-        // pointer-events: none のため直接クリックは届かないが、
-        // プログラム的に _toggle を呼ぼうとしても disabled チェックで弾かれることを確認
-        // Shadow DOM 内の track に直接クリックイベントを送る
-        const track = sw.shadowRoot?.querySelector<HTMLElement>('.track');
-        if (!track) throw new Error('Track not found');
+    // pointer-events: none のため直接クリックは届かないが、
+    // プログラム的に _toggle を呼ぼうとしても disabled チェックで弾かれることを確認
+    // Shadow DOM 内の track に直接クリックイベントを送る
+    const track = sw.shadowRoot?.querySelector<HTMLElement>('.track');
+    if (!track) throw new Error('Track not found');
 
-        // disabled 時は pointer-events: none なので、dispatchEvent で強制的にテスト
-        track.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-        await new Promise((resolve) => setTimeout(resolve, 100));
+    // disabled 時は pointer-events: none なので、dispatchEvent で強制的にテスト
+    track.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
-        if (sw.checked) throw new Error('Disabled switch should not change state on click');
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (changeEventFired) throw new Error('Disabled switch should not fire change event');
-
-        console.log('✅ All tests passed for DisabledClickBlocked story');
-    },
+    if (sw.checked) throw new Error('無効状態のスイッチはクリックしても状態が変化しないはずです');
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (changeEventFired) throw new Error('無効状態のスイッチは change イベントを発火しないはずです');
+  },
 };
 
 /**
@@ -705,14 +683,14 @@ export const DisabledClickBlocked: Story = {
  * Thumb は右端位置を維持します。操作はブロックされます。
  */
 export const OnDisabledClickBlocked: Story = {
-    parameters: {
-        docs: {
-            description: {
-                story: '⚠️ **境界条件**: ON + disabled 状態では、見た目は ON を維持しつつ操作をブロックします。',
-            },
-        },
+  parameters: {
+    docs: {
+      description: {
+        story: '⚠️ **境界条件**: ON + disabled 状態では、見た目は ON を維持しつつ操作をブロックします。',
+      },
     },
-    render: () => html`
+  },
+  render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <div
         style="
@@ -733,32 +711,30 @@ export const OnDisabledClickBlocked: Story = {
       ></ui-switch>
     </div>
   `,
-    play: async ({ canvasElement }) => {
-        const sw = canvasElement.querySelector<Switch>('#on-disabled-blocked');
-        if (!sw) throw new Error('ui-switch not found');
-        await sw.updateComplete;
+  play: async ({ canvasElement }) => {
+    const sw = canvasElement.querySelector<Switch>('#on-disabled-blocked');
+    if (!sw) throw new Error('ui-switch が見つかりません');
+    await sw.updateComplete;
 
-        // 初期状態: ON かつ disabled
-        if (!sw.checked) throw new Error('Expected checked to be true initially');
-        if (!sw.disabled) throw new Error('Expected disabled to be true');
+    // 初期状態: ON かつ disabled
+    if (!sw.checked) throw new Error('初期状態で checked が true であることを期待していましたが false でした');
+    if (!sw.disabled) throw new Error('disabled が true であることを期待していましたが false でした');
 
-        let changeEventFired = false;
-        sw.addEventListener('change', () => { changeEventFired = true; });
+    let changeEventFired = false;
+    sw.addEventListener('change', () => { changeEventFired = true; });
 
-        const track = sw.shadowRoot?.querySelector<HTMLElement>('.track');
-        if (!track) throw new Error('Track not found');
+    const track = sw.shadowRoot?.querySelector<HTMLElement>('.track');
+    if (!track) throw new Error('Track not found');
 
-        track.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-        await new Promise((resolve) => setTimeout(resolve, 100));
+    track.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
-        // ON 状態が維持されている
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (!sw.checked) throw new Error('ON+disabled switch should remain checked after click');
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (changeEventFired) throw new Error('ON+disabled switch should not fire change event');
-
-        console.log('✅ All tests passed for OnDisabledClickBlocked story');
-    },
+    // ON 状態が維持されている
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (!sw.checked) throw new Error('ONかつ無効状態のスイッチは、クリック後も checked 状態を維持するはずです');
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (changeEventFired) throw new Error('ONかつ無効状態のスイッチは change イベントを発火しないはずです');
+  },
 };
 
 /**
@@ -768,42 +744,40 @@ export const OnDisabledClickBlocked: Story = {
  * この場合、外部から `aria-label` を提供してアクセシビリティを確保してください。
  */
 export const NoLabel: Story = {
-    parameters: {
-        docs: {
-            description: {
-                story: '⚠️ **境界条件**: `label` 属性が未設定の場合。コントロールのみが表示されます。外部から `aria-label` を提供してください。',
-            },
-        },
+  parameters: {
+    docs: {
+      description: {
+        story: '⚠️ **境界条件**: `label` 属性が未設定の場合。コントロールのみが表示されます。外部から `aria-label` を提供してください。',
+      },
     },
-    render: () => html`
+  },
+  render: () => html`
     <div style="display: flex; align-items: center; gap: 0.5rem;">
       <ui-switch id="no-label-switch" aria-label="ラベルなしスイッチ"></ui-switch>
       <span style="font-size: 14px; color: oklch(20% 0.01 250);">外部ラベル（aria-label で紐付け）</span>
     </div>
   `,
-    play: async ({ canvasElement }) => {
-        const sw = canvasElement.querySelector<Switch>('#no-label-switch');
-        if (!sw) throw new Error('ui-switch not found');
-        await sw.updateComplete;
+  play: async ({ canvasElement }) => {
+    const sw = canvasElement.querySelector<Switch>('#no-label-switch');
+    if (!sw) throw new Error('ui-switch が見つかりません');
+    await sw.updateComplete;
 
-        // テスト: ラベル要素が存在しない
-        const label = sw.shadowRoot?.querySelector('.label');
-        if (label) throw new Error('Label element should not exist when label prop is empty');
+    // テスト: ラベル要素が存在しない
+    const label = sw.shadowRoot?.querySelector('.label');
+    if (label) throw new Error('label プロパティが空の場合、ラベル要素は存在しないはずです');
 
-        // テスト: トラックは存在する
-        const track = sw.shadowRoot?.querySelector('.track');
-        if (!track) throw new Error('Track should exist even without label');
-        if (!track.getAttribute('aria-label')) {
-            throw new Error('Expected aria-label to be forwarded to internal switch element');
-        }
+    // テスト: トラックは存在する
+    const track = sw.shadowRoot?.querySelector('.track');
+    if (!track) throw new Error('ラベルがなくても track 要素は存在するはずです');
+    if (!track.getAttribute('aria-label')) {
+      throw new Error('aria-label が内部のスイッチ要素に転送されることを期待していましたがされていませんでした');
+    }
 
-        // テスト: aria-labelledby は設定されない（label がないため）
-        if (track.getAttribute('aria-labelledby')) {
-            throw new Error('aria-labelledby should not be set when label is empty');
-        }
-
-        console.log('✅ All tests passed for NoLabel story');
-    },
+    // テスト: aria-labelledby は設定されない（label がないため）
+    if (track.getAttribute('aria-labelledby')) {
+      throw new Error('ラベルが空の時はaria-labelledby を設定すべきではありません');
+    }
+  },
 };
 
 /**
@@ -814,14 +788,14 @@ export const NoLabel: Story = {
  * これは「即時実行」コンポーネントの重要な仕様です。
  */
 export const EnterKeyInFormNoSubmit: Story = {
-    parameters: {
-        docs: {
-            description: {
-                story: '⚠️ **境界条件**: フォーム内で Enter キーを押してもフォームが送信されません。`event.preventDefault()` でブロックします。',
-            },
-        },
+  parameters: {
+    docs: {
+      description: {
+        story: '⚠️ **境界条件**: フォーム内で Enter キーを押してもフォームが送信されません。`event.preventDefault()` でブロックします。',
+      },
     },
-    render: () => html`
+  },
+  render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <div
         style="
@@ -838,10 +812,10 @@ export const EnterKeyInFormNoSubmit: Story = {
         id="boundary-form"
         style="display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; border: 1px solid oklch(90% 0.01 250 / 0.2); border-radius: 6px;"
         @submit="${(e: Event) => {
-            e.preventDefault();
-            const log = document.getElementById('boundary-log');
-            if (log) log.textContent = '⚠️ フォームが送信されました（これは発生してはいけません）';
-        }}"
+      e.preventDefault();
+      const log = document.getElementById('boundary-log');
+      if (log) log.textContent = '⚠️ フォームが送信されました（これは発生してはいけません）';
+    }}"
       >
         <ui-switch
           id="boundary-switch"
@@ -880,45 +854,44 @@ export const EnterKeyInFormNoSubmit: Story = {
       </div>
     </div>
   `,
-    play: async ({ canvasElement }) => {
-        const sw = canvasElement.querySelector<Switch>('#boundary-switch');
-        if (!sw) throw new Error('ui-switch not found');
-        await sw.updateComplete;
+  play: async ({ canvasElement }) => {
+    const sw = canvasElement.querySelector<Switch>('#boundary-switch');
+    if (!sw) throw new Error('ui-switch が見つかりません');
+    await sw.updateComplete;
 
-        const track = sw.shadowRoot?.querySelector<HTMLElement>('.track');
-        if (!track) throw new Error('Track not found');
+    const track = sw.shadowRoot?.querySelector<HTMLElement>('.track');
+    if (!track) throw new Error('.track が見つかりません');
 
-        let formSubmitted = false;
-        const form = canvasElement.querySelector<HTMLFormElement>('#boundary-form');
-        if (form) {
-            form.addEventListener('submit', () => { formSubmitted = true; });
-        }
+    let formSubmitted = false;
+    const form = canvasElement.querySelector<HTMLFormElement>('#boundary-form');
+    if (form) {
+      form.addEventListener('submit', () => { formSubmitted = true; });
+    }
 
-        track.focus();
+    track.focus();
 
-        const changePromise = new Promise<boolean>((resolve) => {
-            sw.addEventListener('change', (e) => {
-                resolve((e.target as Switch).checked);
-            }, { once: true });
-        });
+    const changePromise = new Promise<boolean>((resolve) => {
+      sw.addEventListener('change', (e) => {
+        resolve((e.target as Switch).checked);
+      }, { once: true });
+    });
 
-        // Enter キーを発火
-        track.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true }));
+    // Enter キーを発火
+    track.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true }));
 
-        const newChecked = await Promise.race([
-            changePromise,
-            new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
-        ]);
+    const newChecked = await Promise.race([
+      changePromise,
+      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+    ]);
 
-        if (newChecked === null) throw new Error('Enter key did not fire change event');
-        if (!newChecked) throw new Error('Expected checked to be true after Enter key');
+    if (newChecked === null) throw new Error('Enter キーで change イベントが発火しませんでした');
+    if (!newChecked) throw new Error('Enter キー押下後に checked が true になることを期待していましたが false のままでした');
 
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (formSubmitted) throw new Error('Form should NOT be submitted when Enter is pressed on switch');
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (formSubmitted) throw new Error('Enter キーでフォームが送信されてしまいました');
 
-        console.log('✅ All tests passed for EnterKeyInFormNoSubmit story');
-    },
+  },
 };
 
 /**
@@ -928,45 +901,43 @@ export const EnterKeyInFormNoSubmit: Story = {
  * `label` が空の場合は `aria-labelledby` は設定されません。
  */
 export const AriaLabelledBy: Story = {
-    parameters: {
-        docs: {
-            description: {
-                story: '⚠️ **境界条件**: `label` 属性が設定されている場合のみ `aria-labelledby` が設定されます。',
-            },
-        },
+  parameters: {
+    docs: {
+      description: {
+        story: '⚠️ **境界条件**: `label` 属性が設定されている場合のみ `aria-labelledby` が設定されます。',
+      },
     },
-    render: () => html`
+  },
+  render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <ui-switch id="labeled-switch" label="aria-labelledby テスト"></ui-switch>
       <ui-switch id="unlabeled-switch" aria-label="ラベルなし（aria-label で代替）"></ui-switch>
     </div>
   `,
-    play: async ({ canvasElement }) => {
-        const labeled = canvasElement.querySelector<Switch>('#labeled-switch');
-        const unlabeled = canvasElement.querySelector<Switch>('#unlabeled-switch');
-        if (!labeled || !unlabeled) throw new Error('Switches not found');
+  play: async ({ canvasElement }) => {
+    const labeled = canvasElement.querySelector<Switch>('#labeled-switch');
+    const unlabeled = canvasElement.querySelector<Switch>('#unlabeled-switch');
+    if (!labeled || !unlabeled) throw new Error('ui-switchが見つかりません');
 
-        await Promise.all([labeled.updateComplete, unlabeled.updateComplete]);
+    await Promise.all([labeled.updateComplete, unlabeled.updateComplete]);
 
-        // テスト: label あり → aria-labelledby が設定される
-        const labeledTrack = labeled.shadowRoot?.querySelector('.track');
-        if (!labeledTrack) throw new Error('Labeled track not found');
-        if (!labeledTrack.getAttribute('aria-labelledby')) {
-            throw new Error('Expected aria-labelledby to be set when label is provided');
-        }
+    // テスト: label あり → aria-labelledby が設定される
+    const labeledTrack = labeled.shadowRoot?.querySelector('.track');
+    if (!labeledTrack) throw new Error('.track が見つかりません');
+    if (!labeledTrack.getAttribute('aria-labelledby')) {
+      throw new Error('label がある場合は aria-labelledby を設定すべきです');
+    }
 
-        // テスト: label なし → aria-labelledby は設定されない
-        const unlabeledTrack = unlabeled.shadowRoot?.querySelector('.track');
-        if (!unlabeledTrack) throw new Error('Unlabeled track not found');
-        if (unlabeledTrack.getAttribute('aria-labelledby')) {
-            throw new Error('Expected aria-labelledby to NOT be set when label is empty');
-        }
-        if (!unlabeledTrack.getAttribute('aria-label')) {
-            throw new Error('Expected aria-label to be forwarded when label is empty');
-        }
-
-        console.log('✅ All tests passed for AriaLabelledBy story');
-    },
+    // テスト: label なし → aria-labelledby は設定されない
+    const unlabeledTrack = unlabeled.shadowRoot?.querySelector('.track');
+    if (!unlabeledTrack) throw new Error('.track が見つかりません');
+    if (unlabeledTrack.getAttribute('aria-labelledby')) {
+      throw new Error('ラベルがない場合は aria-labelledby を設定すべきではありません');
+    }
+    if (!unlabeledTrack.getAttribute('aria-label')) {
+      throw new Error('ラベルがない場合は aria-label を設定すべきです');
+    }
+  },
 };
 
 /**
@@ -976,14 +947,14 @@ export const AriaLabelledBy: Story = {
  * リアルタイム監視（即時反映）のユースケースに対応します。
  */
 export const InputEventFired: Story = {
-    parameters: {
-        docs: {
-            description: {
-                story: '⚠️ **境界条件**: `change` と同タイミングで `input` イベントも発火します。',
-            },
-        },
+  parameters: {
+    docs: {
+      description: {
+        story: '⚠️ **境界条件**: `change` と同タイミングで `input` イベントも発火します。',
+      },
     },
-    render: () => html`
+  },
+  render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <div
         style="
@@ -1002,28 +973,26 @@ export const InputEventFired: Story = {
       ></ui-switch>
     </div>
   `,
-    play: async ({ canvasElement }) => {
-        const sw = canvasElement.querySelector<Switch>('#input-event-switch');
-        if (!sw) throw new Error('ui-switch not found');
-        await sw.updateComplete;
+  play: async ({ canvasElement }) => {
+    const sw = canvasElement.querySelector<Switch>('#input-event-switch');
+    if (!sw) throw new Error('ui-switchが見つかりません');
+    await sw.updateComplete;
 
-        let changeCount = 0;
-        let inputCount = 0;
+    let changeCount = 0;
+    let inputCount = 0;
 
-        sw.addEventListener('change', () => { changeCount++; });
-        sw.addEventListener('input', () => { inputCount++; });
+    sw.addEventListener('change', () => { changeCount++; });
+    sw.addEventListener('input', () => { inputCount++; });
 
-        const track = sw.shadowRoot?.querySelector<HTMLElement>('.track');
-        if (!track) throw new Error('Track not found');
+    const track = sw.shadowRoot?.querySelector<HTMLElement>('.track');
+    if (!track) throw new Error('.track が見つかりません');
 
-        track.click();
-        await new Promise((resolve) => setTimeout(resolve, 100));
+    track.click();
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
-        if (changeCount !== 1) throw new Error(`Expected 1 change event, got ${String(changeCount)}`);
-        if (inputCount !== 1) throw new Error(`Expected 1 input event, got ${String(inputCount)}`);
-
-        console.log('✅ All tests passed for InputEventFired story');
-    },
+    if (changeCount !== 1) throw new Error(`change イベントは1回発火するはずでしたが、実際は ${String(changeCount)} 回でした`);
+    if (inputCount !== 1) throw new Error(`input イベントは1回発火するはずでしたが、実際は ${String(inputCount)} 回でした`);
+  },
 };
 
 // ──────────────────────────────────────────────
@@ -1037,7 +1006,7 @@ export const InputEventFired: Story = {
  * 各スイッチは独立して即時反映されます。
  */
 export const SettingsPanel: Story = {
-    render: () => html`
+  render: () => html`
     <style>
       .settings-panel {
         max-width: 400px;
@@ -1101,53 +1070,51 @@ export const SettingsPanel: Story = {
       </div>
     </div>
   `,
-    play: async ({ canvasElement }) => {
-        const darkSwitch = canvasElement.querySelector<Switch>('#setting-dark');
-        const notifySwitch = canvasElement.querySelector<Switch>('#setting-notify');
-        const autosaveSwitch = canvasElement.querySelector<Switch>('#setting-autosave');
+  play: async ({ canvasElement }) => {
+    const darkSwitch = canvasElement.querySelector<Switch>('#setting-dark');
+    const notifySwitch = canvasElement.querySelector<Switch>('#setting-notify');
+    const autosaveSwitch = canvasElement.querySelector<Switch>('#setting-autosave');
 
-        if (!darkSwitch || !notifySwitch || !autosaveSwitch) {
-            throw new Error('Switches not found');
-        }
+    if (!darkSwitch || !notifySwitch || !autosaveSwitch) {
+      throw new Error('ui-switchが見つかりません');
+    }
 
-        await Promise.all([
-            darkSwitch.updateComplete,
-            notifySwitch.updateComplete,
-            autosaveSwitch.updateComplete,
-        ]);
+    await Promise.all([
+      darkSwitch.updateComplete,
+      notifySwitch.updateComplete,
+      autosaveSwitch.updateComplete,
+    ]);
 
-        // テスト: ダークモードは ON
-        if (!darkSwitch.checked) throw new Error('Dark mode switch should be ON');
+    // テスト: ダークモードは ON
+    if (!darkSwitch.checked) throw new Error('ダークモードスイッチはONであるべきです');
 
-        // テスト: 通知は OFF
-        if (notifySwitch.checked) throw new Error('Notify switch should be OFF');
+    // テスト: 通知は OFF
+    if (notifySwitch.checked) throw new Error('通知スイッチはOFFであるべきです');
 
-        // テスト: 自動保存は ON + disabled
-        if (!autosaveSwitch.checked) throw new Error('Autosave switch should be ON');
-        if (!autosaveSwitch.disabled) throw new Error('Autosave switch should be disabled');
+    // テスト: 自動保存は ON + disabled
+    if (!autosaveSwitch.checked) throw new Error('自動保存スイッチはONであるべきです');
+    if (!autosaveSwitch.disabled) throw new Error('自動保存スイッチはdisabledであるべきです');
 
-        // テスト: disabled スイッチはクリックしても変化しない
-        let changeEventFired = false;
-        autosaveSwitch.addEventListener('change', () => { changeEventFired = true; });
-        const autosaveTrack = autosaveSwitch.shadowRoot?.querySelector<HTMLElement>('.track');
-        if (autosaveTrack) {
-            autosaveTrack.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-        }
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (!autosaveSwitch.checked) throw new Error('Disabled autosave switch should remain ON');
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (changeEventFired) throw new Error('Disabled autosave switch should not fire change event');
-
-        console.log('✅ All tests passed for SettingsPanel story');
-    },
+    // テスト: disabled スイッチはクリックしても変化しない
+    let changeEventFired = false;
+    autosaveSwitch.addEventListener('change', () => { changeEventFired = true; });
+    const autosaveTrack = autosaveSwitch.shadowRoot?.querySelector<HTMLElement>('.track');
+    if (autosaveTrack) {
+      autosaveTrack.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (!autosaveSwitch.checked) throw new Error('disabledな自動保存スイッチはONのままあるべきです');
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (changeEventFired) throw new Error('disabledな自動保存スイッチはchangeイベントを発火させるべきではありません');
+  },
 };
 
 /**
  * ダークトークン環境での表示確認。
  */
 export const DarkTokens: Story = {
-    render: () => html`
+  render: () => html`
     <style>
       .dark-surface {
         --bg-fill-muted: oklch(28% 0.01 250);
@@ -1170,86 +1137,86 @@ export const DarkTokens: Story = {
       <ui-switch id="dark-on" label="Dark ON" checked></ui-switch>
     </div>
   `,
-    play: async ({ canvasElement }) => {
-        const off = canvasElement.querySelector<Switch>('#dark-off');
-        const on = canvasElement.querySelector<Switch>('#dark-on');
-        if (!off || !on) throw new Error('Switches not found');
+  play: async ({ canvasElement }) => {
+    const off = canvasElement.querySelector<Switch>('#dark-off');
+    const on = canvasElement.querySelector<Switch>('#dark-on');
+    if (!off || !on) throw new Error('ui-switchが見つかりません');
 
-        await Promise.all([off.updateComplete, on.updateComplete]);
+    await Promise.all([off.updateComplete, on.updateComplete]);
 
-        const offTrack = off.shadowRoot?.querySelector<HTMLElement>('.track');
-        const onTrack = on.shadowRoot?.querySelector<HTMLElement>('.track');
-        if (!offTrack || !onTrack) throw new Error('Track not found');
+    const offTrack = off.shadowRoot?.querySelector<HTMLElement>('.track');
+    const onTrack = on.shadowRoot?.querySelector<HTMLElement>('.track');
+    if (!offTrack || !onTrack) throw new Error('.track が見つかりません');
 
-        const offBg = getComputedStyle(offTrack).backgroundColor;
-        const onBg = getComputedStyle(onTrack).backgroundColor;
-        if (offBg === onBg) {
-            throw new Error('OFF and ON track colors should differ in dark tokens');
-        }
-    },
+    const offBg = getComputedStyle(offTrack).backgroundColor;
+    const onBg = getComputedStyle(onTrack).backgroundColor;
+    if (offBg === onBg) {
+      throw new Error('OFFとONのトラックカラーがダークトークン環境で異なるべき');
+    }
+  },
 };
 
 /**
  * Reduced Motion 環境の検証。
  */
 export const ReducedMotion: Story = {
-    parameters: {
-        docs: {
-            description: {
-                story: 'OSでreduceが有効な場合のみ、transition時間が最小化されることを検証します。',
-            },
-        },
+  parameters: {
+    docs: {
+      description: {
+        story: 'OSでreduceが有効な場合のみ、transition時間が最小化されることを検証します。',
+      },
     },
-    render: () => html`
+  },
+  render: () => html`
     <ui-switch id="reduced-motion-switch" label="Reduced Motion"></ui-switch>
   `,
-    play: async ({ canvasElement }) => {
-        const sw = canvasElement.querySelector<Switch>('#reduced-motion-switch');
-        if (!sw) throw new Error('ui-switch not found');
-        await sw.updateComplete;
+  play: async ({ canvasElement }) => {
+    const sw = canvasElement.querySelector<Switch>('#reduced-motion-switch');
+    if (!sw) throw new Error('ui-switchが見つかりません');
+    await sw.updateComplete;
 
-        const thumb = sw.shadowRoot?.querySelector<HTMLElement>('.thumb');
-        if (!thumb) throw new Error('Thumb not found');
+    const thumb = sw.shadowRoot?.querySelector<HTMLElement>('.thumb');
+    if (!thumb) throw new Error('.thumb が見つかりません');
 
-        const media = window.matchMedia('(prefers-reduced-motion: reduce)');
-        if (!media.matches) return;
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (!media.matches) return;
 
-        const duration = getComputedStyle(thumb).transitionDuration;
-        const isReduced = duration.includes('0s') || duration.includes('0.00001s') || duration.includes('0.01ms');
-        if (!isReduced) {
-            throw new Error(`Expected reduced motion duration, got "${duration}"`);
-        }
-    },
+    const duration = getComputedStyle(thumb).transitionDuration;
+    const isReduced = duration.includes('0s') || duration.includes('0.00001s') || duration.includes('0.01ms');
+    if (!isReduced) {
+      throw new Error(`reduced motion durationが期待値と異なります。実際は "${duration}" です`);
+    }
+  },
 };
 
 /**
  * Forced Colors 環境の検証。
  */
 export const ForcedColors: Story = {
-    parameters: {
-        docs: {
-            description: {
-                story: 'OSでforced-colorsが有効な場合のみ、境界線が視認できることを検証します。',
-            },
-        },
+  parameters: {
+    docs: {
+      description: {
+        story: 'OSでforced-colorsが有効な場合のみ、境界線が視認できることを検証します。',
+      },
     },
-    render: () => html`
+  },
+  render: () => html`
     <ui-switch id="forced-colors-switch" label="Forced Colors" checked></ui-switch>
   `,
-    play: async ({ canvasElement }) => {
-        const sw = canvasElement.querySelector<Switch>('#forced-colors-switch');
-        if (!sw) throw new Error('ui-switch not found');
-        await sw.updateComplete;
+  play: async ({ canvasElement }) => {
+    const sw = canvasElement.querySelector<Switch>('#forced-colors-switch');
+    if (!sw) throw new Error('ui-switchが見つかりません');
+    await sw.updateComplete;
 
-        const track = sw.shadowRoot?.querySelector<HTMLElement>('.track');
-        if (!track) throw new Error('Track not found');
+    const track = sw.shadowRoot?.querySelector<HTMLElement>('.track');
+    if (!track) throw new Error('.track が見つかりません');
 
-        const media = window.matchMedia('(forced-colors: active)');
-        if (!media.matches) return;
+    const media = window.matchMedia('(forced-colors: active)');
+    if (!media.matches) return;
 
-        const borderStyle = getComputedStyle(track).borderStyle;
-        if (borderStyle === 'none') {
-            throw new Error('Expected visible border in forced-colors mode');
-        }
-    },
+    const borderStyle = getComputedStyle(track).borderStyle;
+    if (borderStyle === 'none') {
+      throw new Error('forced-colorsモードでは境界線が視認できるはずです');
+    }
+  },
 };

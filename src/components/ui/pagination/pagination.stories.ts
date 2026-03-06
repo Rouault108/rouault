@@ -50,7 +50,7 @@ function getNext(sh: ShadowRoot, storyName: string): Element {
 /** shadow style のテキストを取得 */
 function getStyleText(sh: ShadowRoot, storyName: string): string {
   const inlineStyles = Array.from(sh.querySelectorAll('style'))
-    .map((style) => style.textContent ?? '')
+    .map((style) => style.textContent)
     .join('\n');
 
   const adoptedStyles = sh.adoptedStyleSheets

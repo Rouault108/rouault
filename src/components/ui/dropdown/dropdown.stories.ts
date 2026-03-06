@@ -145,29 +145,29 @@ export const Default: Story = {
   `,
   play: async ({ canvasElement }) => {
     const dropdown = canvasElement.querySelector<Dropdown>('#default-dropdown');
-    if (!dropdown) throw new Error('ui-dropdown not found');
+    if (!dropdown) throw new Error('ui-dropdown が見つかりません');
     await dropdown.updateComplete;
 
     // テスト: 初期状態は閉じている
-    if (dropdown.hasAttribute("opened")) throw new Error('Expected dropdown to be closed initially');
+    if (dropdown.hasAttribute("opened")) throw new Error('初期状態でドロップダウンが閉じていることを期待していましたが、開いていました');
 
     // テスト: disabled でないこと
-    if (dropdown.disabled) throw new Error('Expected dropdown to not be disabled');
+    if (dropdown.disabled) throw new Error('ドロップダウンが無効状態でないことを期待していましたが、無効でした');
 
     // テスト: placement のデフォルト値
     if (dropdown.placement !== 'bottom-start') {
-      throw new Error(`Expected placement to be 'bottom-start', got '${dropdown.placement}'`);
+      throw new Error(`placement="bottom-start" を期待していましたが、実際には "${dropdown.placement}" でした`);
     }
 
     // テスト: プログラム的に開く
     dropdown.open();
     await dropdown.updateComplete;
-    if (!dropdown.hasAttribute("opened")) throw new Error('Expected dropdown to be opened after open()');
+    if (!dropdown.hasAttribute("opened")) throw new Error('open() 実行後にドロップダウンが開いていることを期待していましたが、閉じていました');
 
     // テスト: プログラム的に閉じる
     dropdown.close();
     await dropdown.updateComplete;
-    if (dropdown.hasAttribute("opened")) throw new Error('Expected dropdown to be closed after close()');
+    if (dropdown.hasAttribute("opened")) throw new Error('close() 実行後にドロップダウンが閉じていることを期待していましたが、開いていました');
 
     console.log('✅ All tests passed for Default story');
   },
@@ -197,25 +197,25 @@ export const DefaultVariantNormal: Story = {
   `,
   play: async ({ canvasElement }) => {
     const dropdown = canvasElement.querySelector<Dropdown>('#variant-normal-dropdown');
-    if (!dropdown) throw new Error('ui-dropdown not found');
+    if (!dropdown) throw new Error('ui-dropdown が見つかりません');
     await dropdown.updateComplete;
 
     // テスト: 開いている
-    if (!dropdown.hasAttribute("opened")) throw new Error('Expected dropdown to be opened');
+    if (!dropdown.hasAttribute("opened")) throw new Error('ドロップダウンが開いていることを期待していましたが、閉じていました');
 
     // テスト: パネルが存在する
     const panel = dropdown.shadowRoot?.querySelector('.panel');
-    if (!panel) throw new Error('Panel not found in shadow root');
+    if (!panel) throw new Error('Shadow Root 内にパネル要素が見つかりませんでした');
 
     // テスト: role="menu" が設定されている
     if (panel.getAttribute('role') !== 'menu') {
-      throw new Error(`Expected role="menu", got "${panel.getAttribute('role') ?? 'null'}"`);
+      throw new Error(`role="menu" を期待していましたが、実際には "${panel.getAttribute('role') ?? 'null'}" でした`);
     }
 
     // テスト: メニュー項目が3つある
     const items = canvasElement.querySelectorAll('ui-menu-item');
     if (items.length !== 3) {
-      throw new Error(`Expected 3 menu items, got ${String(items.length)}`);
+      throw new Error(`メニュー項目が 3 つあることを期待していましたが、実際には ${String(items.length)} つでした`);
     }
 
     console.log('✅ All tests passed for DefaultVariantNormal story');
@@ -245,13 +245,13 @@ export const DangerVariantNormal: Story = {
   play: ({ canvasElement }) => {
     const dangerItems = canvasElement.querySelectorAll('ui-menu-item[variant="danger"]');
     if (dangerItems.length !== 2) {
-      throw new Error(`Expected 2 danger items, got ${String(dangerItems.length)}`);
+      throw new Error(`danger バリアントの項目が 2 つあることを期待していましたが、実際には ${String(dangerItems.length)} つでした`);
     }
 
     // テスト: danger バリアントの variant 属性
     dangerItems.forEach(item => {
       if (item.getAttribute('variant') !== 'danger') {
-        throw new Error('Expected variant="danger"');
+        throw new Error('variant="danger" を期待していましたが、異なりました');
       }
     });
 
@@ -280,22 +280,22 @@ export const DefaultVariantDisabledItem: Story = {
   `,
   play: async ({ canvasElement }) => {
     const disabledItem = canvasElement.querySelector<HTMLElement>('ui-menu-item[disabled]');
-    if (!disabledItem) throw new Error('Disabled menu item not found');
+    if (!disabledItem) throw new Error('無効化されたメニュー項目が見つかりませんでした');
 
     // テスト: disabled 属性が設定されている
     if (!disabledItem.hasAttribute('disabled')) {
-      throw new Error('Expected disabled attribute on menu item');
+      throw new Error('メニュー項目に disabled 属性があることを期待していましたが、ありませんでした');
     }
 
     // テスト: 内部ボタンが disabled
     await new Promise(resolve => setTimeout(resolve, 0));
     const button = disabledItem.shadowRoot?.querySelector('button');
-    if (!button) throw new Error('Button not found in disabled menu item shadow root');
-    if (!button.disabled) throw new Error('Expected button to be disabled');
+    if (!button) throw new Error('Shadow Root 内に button 要素が見つかりませんでした');
+    if (!button.disabled) throw new Error('ボタンが無効状態であることを期待していましたが、有効でした');
 
     // テスト: aria-disabled="true" が設定されている
     if (button.getAttribute('aria-disabled') !== 'true') {
-      throw new Error('Expected aria-disabled="true" on disabled button');
+      throw new Error(`aria-disabled="true" を期待していましたが、実際には "${button.getAttribute('aria-disabled') ?? 'null'}" でした`);
     }
 
     console.log('✅ All tests passed for DefaultVariantDisabledItem story');
@@ -322,16 +322,16 @@ export const DangerVariantDisabledItem: Story = {
   `,
   play: async ({ canvasElement }) => {
     const dangerDisabledItem = canvasElement.querySelector<HTMLElement>('ui-menu-item[variant="danger"][disabled]');
-    if (!dangerDisabledItem) throw new Error('Danger disabled menu item not found');
+    if (!dangerDisabledItem) throw new Error('無効化された danger バリアントのメニュー項目が見つかりませんでした');
 
     await new Promise(resolve => setTimeout(resolve, 0));
     const button = dangerDisabledItem.shadowRoot?.querySelector('button');
-    if (!button) throw new Error('Button not found');
+    if (!button) throw new Error('button 要素が見つかりませんでした');
 
     // テスト: disabled かつ danger
-    if (!button.disabled) throw new Error('Expected button to be disabled');
+    if (!button.disabled) throw new Error('ボタンが無効状態であることを期待していましたが、有効でした');
     if (dangerDisabledItem.getAttribute('variant') !== 'danger') {
-      throw new Error('Expected variant="danger"');
+      throw new Error('variant="danger" を期待していましたが、異なりました');
     }
 
     console.log('✅ All tests passed for DangerVariantDisabledItem story');
@@ -363,16 +363,16 @@ export const DropdownDisabled: Story = {
   `,
   play: async ({ canvasElement }) => {
     const dropdown = canvasElement.querySelector<Dropdown>('#dropdown-disabled');
-    if (!dropdown) throw new Error('ui-dropdown not found');
+    if (!dropdown) throw new Error('ui-dropdown が見つかりませんでした');
     await dropdown.updateComplete;
 
     // テスト: disabled 状態
-    if (!dropdown.disabled) throw new Error('Expected dropdown to be disabled');
+    if (!dropdown.disabled) throw new Error('ドロップダウンが無効状態であることを期待していましたが、有効でした');
 
     // テスト: disabled 時は open() を呼んでも開かない
     dropdown.open();
     await dropdown.updateComplete;
-    if (dropdown.hasAttribute("opened")) throw new Error('Disabled dropdown should not open');
+    if (dropdown.hasAttribute("opened")) throw new Error('無効状態のドロップダウンは開かないはずですが、開いてしまいました');
 
     console.log('✅ All tests passed for DropdownDisabled story');
   },
@@ -447,7 +447,7 @@ export const WithSeparators: Story = {
   play: async ({ canvasElement }) => {
     const separators = canvasElement.querySelectorAll('ui-menu-separator');
     if (separators.length !== 2) {
-      throw new Error(`Expected 2 separators, got ${String(separators.length)}`);
+      throw new Error(`セパレータが2つあることを期待していましたが、実際には ${String(separators.length)} つでした`);
     }
 
     await new Promise(resolve => setTimeout(resolve, 0));
@@ -455,9 +455,9 @@ export const WithSeparators: Story = {
     // テスト: セパレータに role="separator" が設定されている
     for (const sep of separators) {
       const div = sep.shadowRoot?.querySelector('.separator');
-      if (!div) throw new Error('Separator div not found');
+      if (!div) throw new Error('セパレータの div 要素が見つかりませんでした');
       if (div.getAttribute('role') !== 'separator') {
-        throw new Error('Expected role="separator" on separator');
+        throw new Error(`role="separator" を期待していましたが、実際には "${div.getAttribute('role') ?? 'null'}" でした`);
       }
     }
 
@@ -513,7 +513,7 @@ export const EventHandling: Story = {
   `,
   play: async ({ canvasElement }) => {
     const dropdown = canvasElement.querySelector<Dropdown>('#event-dropdown');
-    if (!dropdown) throw new Error('ui-dropdown not found');
+    if (!dropdown) throw new Error('ui-dropdown が見つかりません');
     await dropdown.updateComplete;
 
     // プログラム的に開く
@@ -523,10 +523,10 @@ export const EventHandling: Story = {
 
     // 最初の項目を取得してクリック
     const firstItem = canvasElement.querySelector<HTMLElement>('ui-menu-item[value="edit"]');
-    if (!firstItem) throw new Error('First menu item not found');
+    if (!firstItem) throw new Error('最初のメニュー項目が見つかりませんでした');
 
     const button = firstItem.shadowRoot?.querySelector<HTMLButtonElement>('button');
-    if (!button) throw new Error('Button not found in menu item');
+    if (!button) throw new Error('メニュー項目内のボタンが見つかりませんでした');
 
     // イベントを Promise で受け取る（control flow analysis 問題を回避）
     const detailPromise = new Promise<Record<string, string>>(resolve => {
@@ -542,15 +542,15 @@ export const EventHandling: Story = {
     ]);
 
     // テスト: イベントが発火した
-    if (!receivedDetail) throw new Error('menu-item-select event was not fired');
+    if (!receivedDetail) throw new Error('menu-item-select イベントが発火しませんでした');
 
     // テスト: detail.value が正しい
     if (receivedDetail['value'] !== 'edit') {
-      throw new Error(`Expected value="edit", got "${String(receivedDetail['value'])}"`);
+      throw new Error(`value="edit" を期待していましたが、実際には "${String(receivedDetail['value'])}" でした`);
     }
 
     // テスト: 選択後にメニューが閉じる
-    if (dropdown.hasAttribute("opened")) throw new Error('Expected dropdown to close after item selection');
+    if (dropdown.hasAttribute("opened")) throw new Error('項目選択後にドロップダウンが閉じることを期待していましたが、開いたままでした');
 
     console.log('✅ All tests passed for EventHandling story');
   },
@@ -600,26 +600,26 @@ export const KeyboardNavigation: Story = {
   `,
   play: async ({ canvasElement }) => {
     const dropdown = canvasElement.querySelector<Dropdown>('#keyboard-dropdown');
-    if (!dropdown) throw new Error('ui-dropdown not found');
+    if (!dropdown) throw new Error('ui-dropdown が見つかりません');
     await dropdown.updateComplete;
 
     // テスト: プログラム的に開く
     dropdown.open();
     await dropdown.updateComplete;
     await new Promise(resolve => setTimeout(resolve, 50));
-    if (!dropdown.hasAttribute("opened")) throw new Error('Expected dropdown to open');
+    if (!dropdown.hasAttribute("opened")) throw new Error('ドロップダウンが開くことを期待していましたが、閉じたままでした');
 
     // テスト: Escape でメニューを閉じる
     const panel = dropdown.shadowRoot?.querySelector<HTMLElement>('.panel');
-    if (!panel) throw new Error('Panel not found');
+    if (!panel) throw new Error('パネル要素が見つかりませんでした');
 
     panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, composed: true }));
     await dropdown.updateComplete;
     await new Promise(resolve => setTimeout(resolve, 50));
-    if (dropdown.hasAttribute("opened")) throw new Error('Expected dropdown to close on Escape');
+    if (dropdown.hasAttribute("opened")) throw new Error('Escape キー押下後にドロップダウンが閉じることを期待していましたが、開いたままでした');
 
     const trigger = canvasElement.querySelector<HTMLElement>('#keyboard-trigger');
-    if (!trigger) throw new Error('Trigger not found');
+    if (!trigger) throw new Error('トリガー要素が見つかりませんでした');
     const getFocusedValue = (): string | null => {
       const items = canvasElement.querySelectorAll<HTMLElement>('ui-menu-item');
       for (const item of items) {
@@ -634,36 +634,36 @@ export const KeyboardNavigation: Story = {
     trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
     await dropdown.updateComplete;
     await new Promise(resolve => setTimeout(resolve, 50));
-    if (!dropdown.hasAttribute('opened')) throw new Error('Expected ArrowDown to open dropdown');
-    if (getFocusedValue() !== 'new') throw new Error('Expected first enabled item focus on open');
+    if (!dropdown.hasAttribute('opened')) throw new Error('ArrowDown キー押下後にドロップダウンが開くことを期待していましたが、閉じたままでした');
+    if (getFocusedValue() !== 'new') throw new Error('展開時に有効な最初の項目にフォーカスが当たることを期待していましたが、当たりませんでした');
 
     panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }));
     await new Promise(resolve => setTimeout(resolve, 0));
-    if (getFocusedValue() !== 'paste') throw new Error('Expected ArrowDown to skip disabled item');
+    if (getFocusedValue() !== 'paste') throw new Error('ArrowDown キーで無効な項目をスキップすることを期待していましたが、スキップされませんでした');
 
     panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true, composed: true }));
     await new Promise(resolve => setTimeout(resolve, 0));
-    if (getFocusedValue() !== 'new') throw new Error('Expected Home to move focus to first item');
+    if (getFocusedValue() !== 'new') throw new Error('Home キーで最初の項目にフォーカスが移動することを期待していましたが、移動しませんでした');
 
     panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true, composed: true }));
     await new Promise(resolve => setTimeout(resolve, 0));
-    if (getFocusedValue() !== 'delete') throw new Error('Expected End to move focus to last item');
+    if (getFocusedValue() !== 'delete') throw new Error('End キーで最後の項目にフォーカスが移動することを期待していましたが、移動しませんでした');
 
     panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, composed: true }));
     await dropdown.updateComplete;
-    if (dropdown.hasAttribute('opened')) throw new Error('Expected Tab to close dropdown');
+    if (dropdown.hasAttribute('opened')) throw new Error('Tab キーでドロップダウンが閉じることを期待していましたが、開いたままでした');
 
     trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
     await dropdown.updateComplete;
     panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, composed: true }));
     await dropdown.updateComplete;
-    if (dropdown.hasAttribute('opened')) throw new Error('Expected Shift+Tab to close dropdown');
+    if (dropdown.hasAttribute('opened')) throw new Error('Shift+Tab キーでドロップダウンが閉じることを期待していましたが、開いたままでした');
 
     trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
     await dropdown.updateComplete;
     await new Promise(resolve => setTimeout(resolve, 50));
-    if (!dropdown.hasAttribute('opened')) throw new Error('Expected ArrowUp to open dropdown');
-    if (getFocusedValue() !== 'delete') throw new Error('Expected ArrowUp opening to focus last enabled item');
+    if (!dropdown.hasAttribute('opened')) throw new Error('ArrowUp キー押下後にドロップダウンが開くことを期待していましたが、閉じたままでした');
+    if (getFocusedValue() !== 'delete') throw new Error('ArrowUp キーでの展開時に有効な最後の項目にフォーカスが当たることを期待していましたが、当たりませんでした');
 
     console.log('✅ All tests passed for KeyboardNavigation story');
   },
@@ -702,13 +702,13 @@ export const AllItemsDisabled: Story = {
   play: ({ canvasElement }) => {
     const items = canvasElement.querySelectorAll('ui-menu-item');
     if (items.length !== 3) {
-      throw new Error(`Expected 3 items, got ${String(items.length)}`);
+      throw new Error(`項目が3つあることを期待していましたが、実際には ${String(items.length)} つでした`);
     }
 
     // テスト: 全項目が disabled
     items.forEach(item => {
       if (!item.hasAttribute('disabled')) {
-        throw new Error(`Expected item "${item.getAttribute('value') ?? ''}" to be disabled`);
+        throw new Error(`項目 "${item.getAttribute('value') ?? ''}" が無効であることを期待していましたが、有効でした`);
       }
     });
 
@@ -742,7 +742,7 @@ export const SingleItem: Story = {
   play: ({ canvasElement }) => {
     const items = canvasElement.querySelectorAll('ui-menu-item');
     if (items.length !== 1) {
-      throw new Error(`Expected 1 item, got ${String(items.length)}`);
+      throw new Error(`項目が1つあることを期待していましたが、実際には ${String(items.length)} つでした`);
     }
 
     console.log('✅ All tests passed for SingleItem story');
@@ -778,19 +778,19 @@ export const ManyItems: Story = {
   play: async ({ canvasElement }) => {
     const items = canvasElement.querySelectorAll('ui-menu-item');
     if (items.length !== 15) {
-      throw new Error(`Expected 15 items, got ${String(items.length)}`);
+      throw new Error(`項目が15個あることを期待していましたが、実際には ${String(items.length)} 個でした`);
     }
 
     const dropdown = canvasElement.querySelector<Dropdown>('#many-items-dropdown');
-    if (!dropdown) throw new Error('ui-dropdown not found');
+    if (!dropdown) throw new Error('ui-dropdown が見つかりません');
     await dropdown.updateComplete;
 
     // テスト: パネルが overflow-y: auto を持つ（スクロール可能）
     const panel = dropdown.shadowRoot?.querySelector<HTMLElement>('.panel');
-    if (!panel) throw new Error('Panel not found');
+    if (!panel) throw new Error('パネル要素が見つかりませんでした');
     const style = getComputedStyle(panel);
     if (style.overflowY !== 'auto') {
-      throw new Error(`Expected overflow-y: auto, got ${style.overflowY}`);
+      throw new Error(`overflow-y: auto を期待していましたが、実際には "${style.overflowY}" でした`);
     }
 
     console.log('✅ All tests passed for ManyItems story');
@@ -878,39 +878,39 @@ export const ProgrammaticControl: Story = {
   `,
   play: async ({ canvasElement }) => {
     const dropdown = canvasElement.querySelector<Dropdown>('#programmatic-dropdown');
-    if (!dropdown) throw new Error('ui-dropdown not found');
+    if (!dropdown) throw new Error('ui-dropdown が見つかりません');
     await dropdown.updateComplete;
 
     // テスト: open()
     dropdown.open();
     await dropdown.updateComplete;
-    if (!dropdown.hasAttribute("opened")) throw new Error('Expected opened=true after open()');
+    if (!dropdown.hasAttribute("opened")) throw new Error('open() 実行後に opened=true になることを期待していましたが、false でした');
 
     // テスト: close()
     dropdown.close();
     await dropdown.updateComplete;
-    if (dropdown.hasAttribute("opened")) throw new Error('Expected opened=false after close()');
+    if (dropdown.hasAttribute("opened")) throw new Error('close() 実行後に opened=false になることを期待していましたが、true でした');
 
     // テスト: toggle() × 2
     dropdown.toggle();
     await dropdown.updateComplete;
-    if (!dropdown.hasAttribute("opened")) throw new Error('Expected opened=true after toggle()');
+    if (!dropdown.hasAttribute("opened")) throw new Error('toggle() 実行後に opened=true になることを期待していましたが、false でした');
 
     dropdown.toggle();
     await dropdown.updateComplete;
-    if (dropdown.hasAttribute("opened")) throw new Error('Expected opened=false after second toggle()');
+    if (dropdown.hasAttribute("opened")) throw new Error('2 回目の toggle() 実行後に opened=false になることを期待していましたが、true でした');
 
     // テスト: 重複 open() は無視される
     dropdown.open();
     dropdown.open(); // 2回目は無視
     await dropdown.updateComplete;
-    if (!dropdown.hasAttribute("opened")) throw new Error('Expected opened=true');
+    if (!dropdown.hasAttribute("opened")) throw new Error('opened=true であることを期待していましたが、false でした');
 
     // テスト: 重複 close() は無視される
     dropdown.close();
     dropdown.close(); // 2回目は無視
     await dropdown.updateComplete;
-    if (dropdown.hasAttribute("opened")) throw new Error('Expected opened=false');
+    if (dropdown.hasAttribute("opened")) throw new Error('opened=false であることを期待していましたが、true でした');
 
     console.log('✅ All tests passed for ProgrammaticControl story');
   },
@@ -942,36 +942,36 @@ export const AriaAttributes: Story = {
   `,
   play: async ({ canvasElement }) => {
     const dropdown = canvasElement.querySelector<Dropdown>('#aria-dropdown');
-    if (!dropdown) throw new Error('ui-dropdown not found');
+    if (!dropdown) throw new Error('ui-dropdown が見つかりません');
     await dropdown.updateComplete;
 
     const trigger = canvasElement.querySelector<HTMLElement>('#aria-trigger');
-    if (!trigger) throw new Error('Trigger not found');
+    if (!trigger) throw new Error('トリガー要素が見つかりませんでした');
 
     // テスト: トリガーに aria-haspopup="menu" が設定されている
     if (trigger.getAttribute('aria-haspopup') !== 'menu') {
-      throw new Error(`Expected aria-haspopup="menu", got "${trigger.getAttribute('aria-haspopup') ?? 'null'}"`);
+      throw new Error(`aria-haspopup="menu" を期待していましたが、実際には "${trigger.getAttribute('aria-haspopup') ?? 'null'}" でした`);
     }
 
     // テスト: 閉じている時は aria-expanded="false"
     if (trigger.getAttribute('aria-expanded') !== 'false') {
-      throw new Error(`Expected aria-expanded="false", got "${trigger.getAttribute('aria-expanded') ?? 'null'}"`);
+      throw new Error(`aria-expanded="false" を期待していましたが、実際には "${trigger.getAttribute('aria-expanded') ?? 'null'}" でした`);
     }
 
     // テスト: aria-controls が設定されている
     const controls = trigger.getAttribute('aria-controls');
-    if (!controls) throw new Error('Expected aria-controls to be set on trigger');
+    if (!controls) throw new Error('トリガーに aria-controls が設定されていることを期待していましたが、設定されていませんでした');
 
     // テスト: パネルに role="menu" が設定されている
     const panel = dropdown.shadowRoot?.querySelector('.panel');
-    if (!panel) throw new Error('Panel not found');
+    if (!panel) throw new Error('パネル要素が見つかりませんでした');
     if (panel.getAttribute('role') !== 'menu') {
       throw new Error(`Expected role="menu", got "${panel.getAttribute('role') ?? 'null'}"`);
     }
 
     // テスト: パネルの id が aria-controls と一致する
     if (panel.id !== controls) {
-      throw new Error(`Expected panel id="${controls}", got "${panel.id}"`);
+      throw new Error(`パネルの id が "${controls}" であることを期待していましたが、実際には "${panel.id}" でした`);
     }
 
     // テスト: 開いた時は aria-expanded="true"
@@ -979,7 +979,7 @@ export const AriaAttributes: Story = {
     await dropdown.updateComplete;
     await new Promise(resolve => setTimeout(resolve, 50));
     if (trigger.getAttribute('aria-expanded') !== 'true') {
-      throw new Error(`Expected aria-expanded="true" when opened, got "${trigger.getAttribute('aria-expanded') ?? 'null'}"`);
+      throw new Error(`展開時に aria-expanded="true" になることを期待していましたが、実際には "${trigger.getAttribute('aria-expanded') ?? 'null'}" でした`);
     }
 
     // テスト: メニュー項目に role="menuitem" が設定されている
@@ -987,13 +987,13 @@ export const AriaAttributes: Story = {
     await new Promise(resolve => setTimeout(resolve, 0));
     for (const item of items) {
       const btn = item.shadowRoot?.querySelector('button');
-      if (!btn) throw new Error('Button not found in menu item');
+      if (!btn) throw new Error('メニュー項目にボタンが見つかりませんでした');
       if (btn.getAttribute('role') !== 'menuitem') {
-        throw new Error(`Expected role="menuitem", got "${btn.getAttribute('role') ?? 'null'}"`);
+        throw new Error(`role="menuitem" を期待していましたが、実際には "${btn.getAttribute('role') ?? 'null'}" でした`);
       }
       // テスト: tabindex="-1" (Roving Tabindex)
       if (btn.getAttribute('tabindex') !== '-1') {
-        throw new Error(`Expected tabindex="-1", got "${btn.getAttribute('tabindex') ?? 'null'}"`);
+        throw new Error(`tabindex="-1" を期待していましたが、実際には "${btn.getAttribute('tabindex') ?? 'null'}" でした`);
       }
     }
 
@@ -1027,11 +1027,11 @@ export const PlacementTop: Story = {
   `,
   play: async ({ canvasElement }) => {
     const dropdown = canvasElement.querySelector<Dropdown>('#placement-top-dropdown');
-    if (!dropdown) throw new Error('ui-dropdown not found');
+    if (!dropdown) throw new Error('ui-dropdown が見つかりません');
     await dropdown.updateComplete;
 
     if (dropdown.placement !== 'top-start') {
-      throw new Error(`Expected placement="top-start", got "${dropdown.placement}"`);
+      throw new Error(`placement="top-start" を期待していましたが、実際には "${dropdown.placement}" でした`);
     }
 
     console.log('✅ All tests passed for PlacementTop story');
@@ -1201,9 +1201,9 @@ export const ForcedColorsMode: Story = {
   `,
   play: async ({ canvasElement }) => {
     const dropdown = canvasElement.querySelector<Dropdown>('#forced-colors-dropdown');
-    if (!dropdown) throw new Error('ui-dropdown not found');
+    if (!dropdown) throw new Error('ui-dropdown が見つかりません');
     await dropdown.updateComplete;
-    if (!dropdown.hasAttribute('opened')) throw new Error('Expected forced-colors dropdown to be opened');
+    if (!dropdown.hasAttribute('opened')) throw new Error('強制カラーモードのドロップダウンが開いていることを期待していましたが、閉じていました');
   },
   parameters: {
     docs: {
@@ -1237,16 +1237,16 @@ export const ReducedMotion: Story = {
   `,
   play: async ({ canvasElement }) => {
     const dropdown = canvasElement.querySelector<Dropdown>('#reduced-motion-dropdown');
-    if (!dropdown) throw new Error('ui-dropdown not found');
+    if (!dropdown) throw new Error('ui-dropdown が見つかりません');
     await dropdown.updateComplete;
 
     dropdown.open();
     await dropdown.updateComplete;
-    if (!dropdown.hasAttribute('opened')) throw new Error('Expected dropdown to open');
+    if (!dropdown.hasAttribute('opened')) throw new Error('ドロップダウンが開くことを期待していましたが、閉じたままでした');
 
     dropdown.close();
     await dropdown.updateComplete;
-    if (dropdown.hasAttribute('opened')) throw new Error('Expected dropdown to close');
+    if (dropdown.hasAttribute('opened')) throw new Error('ドロップダウンが閉じることを期待していましたが、開いたままでした');
   },
   parameters: {
     docs: {
@@ -1273,12 +1273,12 @@ export const ClickOutsideClose: Story = {
   play: async ({ canvasElement }) => {
     const dropdown = canvasElement.querySelector<Dropdown>('#outside-close-dropdown');
     const outside = canvasElement.querySelector<HTMLElement>('#outside-target');
-    if (!dropdown || !outside) throw new Error('required elements not found');
+    if (!dropdown || !outside) throw new Error('必要な要素が見つかりませんでした');
     await dropdown.updateComplete;
 
     outside.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, composed: true }));
     await dropdown.updateComplete;
-    if (dropdown.hasAttribute('opened')) throw new Error('Expected click outside to close dropdown');
+    if (dropdown.hasAttribute('opened')) throw new Error('外側をクリックした際にドロップダウンが閉じることを期待していましたが、開いたままでした');
   },
 };
 
@@ -1295,12 +1295,12 @@ export const ScrollClose: Story = {
   `,
   play: async ({ canvasElement }) => {
     const dropdown = canvasElement.querySelector<Dropdown>('#scroll-close-dropdown');
-    if (!dropdown) throw new Error('ui-dropdown not found');
+    if (!dropdown) throw new Error('ui-dropdown が見つかりません');
     await dropdown.updateComplete;
 
     window.dispatchEvent(new Event('scroll'));
     await dropdown.updateComplete;
-    if (dropdown.hasAttribute('opened')) throw new Error('Expected scroll to close dropdown');
+    if (dropdown.hasAttribute('opened')) throw new Error('スクロール時にドロップダウンが閉じることを期待していましたが、開いたままでした');
   },
 };
 
@@ -1319,11 +1319,11 @@ export const TypeaheadNavigation: Story = {
   `,
   play: async ({ canvasElement }) => {
     const dropdown = canvasElement.querySelector<Dropdown>('#typeahead-dropdown');
-    if (!dropdown) throw new Error('ui-dropdown not found');
+    if (!dropdown) throw new Error('ui-dropdown が見つかりません');
     await dropdown.updateComplete;
 
     const panel = dropdown.shadowRoot?.querySelector<HTMLElement>('.panel');
-    if (!panel) throw new Error('panel not found');
+    if (!panel) throw new Error('パネル要素が見つかりませんでした');
 
     panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true, composed: true }));
     panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'o', bubbles: true, composed: true }));
@@ -1332,7 +1332,7 @@ export const TypeaheadNavigation: Story = {
     const items = canvasElement.querySelectorAll<HTMLElement>('ui-menu-item');
     const focused = Array.from(items).find(item => item.shadowRoot?.activeElement instanceof HTMLButtonElement);
     if (focused?.getAttribute('value') !== 'copy') {
-      throw new Error('Expected typeahead "co" to focus copy');
+      throw new Error('Type-ahead "co" で copy にフォーカスが当たることを期待していましたが、当たりませんでした');
     }
   },
 };
@@ -1350,9 +1350,9 @@ export const NonButtonTriggerAria: Story = {
   `,
   play: ({ canvasElement }) => {
     const trigger = canvasElement.querySelector<HTMLElement>('#non-button-trigger');
-    if (!trigger) throw new Error('trigger not found');
-    if (trigger.getAttribute('role') !== 'button') throw new Error('Expected role="button" on non-button trigger');
-    if (trigger.getAttribute('aria-disabled') !== 'true') throw new Error('Expected aria-disabled="true"');
+    if (!trigger) throw new Error('トリガー要素が見つかりませんでした');
+    if (trigger.getAttribute('role') !== 'button') throw new Error('ボタン以外のトリガーに role="button" が設定されていることを期待していましたが、設定されていませんでした');
+    if (trigger.getAttribute('aria-disabled') !== 'true') throw new Error('aria-disabled="true" を期待していましたが、設定されていませんでした');
   },
 };
 
@@ -1389,8 +1389,8 @@ export const EmptyMenu: Story = {
   `,
   play: async ({ canvasElement }) => {
     const dropdown = canvasElement.querySelector<Dropdown>('#empty-menu-dropdown');
-    if (!dropdown) throw new Error('ui-dropdown not found');
+    if (!dropdown) throw new Error('ui-dropdown が見つかりません');
     await dropdown.updateComplete;
-    if (!dropdown.hasAttribute('opened')) throw new Error('Expected opened=true');
+    if (!dropdown.hasAttribute('opened')) throw new Error('opened=true であることを期待していましたが、false でした');
   },
 };

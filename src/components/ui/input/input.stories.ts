@@ -246,27 +246,25 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const input = canvasElement.querySelector('ui-input');
     if (!input) {
-      throw new Error('Input component not found');
+      throw new Error('ui-input が見つかりません');
     }
 
     await input.updateComplete;
 
     const inputElement = input.shadowRoot?.querySelector('input');
     if (!inputElement) {
-      throw new Error('Input element not found in shadow root');
+      throw new Error('Shadow Root 内に input 要素が見つかりません');
     }
 
     // テスト: デフォルトのtype属性が設定されていること
     if (inputElement.getAttribute('type') !== 'email') {
-      throw new Error(`Expected type to be 'email', got '${inputElement.getAttribute('type') ?? 'null'}'`);
+      throw new Error(`type="email" を期待していましたが、実際には "${inputElement.getAttribute('type') ?? 'null'}" でした`);
     }
 
     // テスト: aria-label が設定されていること
     if (!inputElement.getAttribute('aria-label')) {
-      throw new Error('aria-label should be set');
+      throw new Error('aria-label が設定されている必要があります');
     }
-
-    console.log('✅ All tests passed for Default story');
   },
 };
 
@@ -293,7 +291,7 @@ export const WithHelpText: Story = {
   play: async ({ canvasElement }) => {
     const input = canvasElement.querySelector('ui-input');
     if (!input) {
-      throw new Error('Input component not found');
+      throw new Error('ui-input が見つかりません');
     }
 
     await input.updateComplete;
@@ -301,19 +299,17 @@ export const WithHelpText: Story = {
     // テスト: ヘルプテキストが表示されていること
     const helpText = input.shadowRoot?.querySelector('.help-text');
     if (!helpText) {
-      throw new Error('Help text should be visible');
+      throw new Error('ヘルプテキストが表示されている必要があります');
     }
 
     const inputElement = input.shadowRoot?.querySelector('input');
     if (!inputElement) {
-      throw new Error('Input element not found in shadow root');
+      throw new Error('Shadow Root 内に input 要素が見つかりません');
     }
 
     if (!inputElement.getAttribute('aria-describedby')) {
-      throw new Error('aria-describedby should reference help text when help-text exists');
+      throw new Error('help-text が存在する場合、aria-describedby はヘルプテキストを参照している必要があります');
     }
-
-    console.log('✅ All tests passed for WithHelpText story');
   },
 };
 
@@ -347,39 +343,37 @@ export const ErrorState: Story = {
   play: async ({ canvasElement }) => {
     const input = canvasElement.querySelector('ui-input');
     if (!input) {
-      throw new Error('Input component not found');
+      throw new Error('ui-input が見つかりません');
     }
 
     await input.updateComplete;
 
     const inputElement = input.shadowRoot?.querySelector('input');
     if (!inputElement) {
-      throw new Error('Input element not found in shadow root');
+      throw new Error('Shadow Root 内に input 要素が見つかりません');
     }
 
     // テスト: aria-invalid="true" が設定されていること
     if (inputElement.getAttribute('aria-invalid') !== 'true') {
-      throw new Error('aria-invalid should be "true"');
+      throw new Error(`aria-invalid="true" を期待していましたが、実際には "${inputElement.getAttribute('aria-invalid') ?? 'null'}" でした`);
     }
 
     // テスト: エラーメッセージが表示されていること
     const errorMessage = input.shadowRoot?.querySelector('.error-message--visible');
     if (!errorMessage) {
-      throw new Error('Error message should be visible');
+      throw new Error('エラーメッセージが表示されている必要があります');
     }
 
     const describedBy = inputElement.getAttribute('aria-describedby');
     if (!describedBy) {
-      throw new Error('aria-describedby should reference error message in error state');
+      throw new Error('エラー状態では aria-describedby がエラーメッセージを参照している必要があります');
     }
 
     // テスト: ヘルプテキストが非表示であること
     const helpText = input.shadowRoot?.querySelector('.help-text');
     if (helpText && getComputedStyle(helpText).display !== 'none') {
-      throw new Error('Help text should be hidden when error is present');
+      throw new Error('エラー発生時はヘルプテキストが非表示である必要があります');
     }
-
-    console.log('✅ All tests passed for ErrorState story');
   },
 };
 
@@ -409,23 +403,21 @@ export const HiddenLabel: Story = {
   play: async ({ canvasElement }) => {
     const input = canvasElement.querySelector('ui-input');
     if (!input) {
-      throw new Error('Input component not found');
+      throw new Error('ui-input が見つかりません');
     }
 
     await input.updateComplete;
 
     const label = input.shadowRoot?.querySelector('.label--hidden');
     if (!label) {
-      throw new Error('Label should have label--hidden class');
+      throw new Error('ラベルに label--hidden クラスが設定されている必要があります');
     }
 
     // テスト: aria-label は設定されていること
     const inputElement = input.shadowRoot?.querySelector('input');
     if (!inputElement?.getAttribute('aria-label')) {
-      throw new Error('aria-label should be set even when label is hidden');
+      throw new Error('ラベルが非表示の場合でも aria-label が設定されている必要があります');
     }
-
-    console.log('✅ All tests passed for HiddenLabel story');
   },
 };
 
@@ -454,22 +446,20 @@ export const Disabled: Story = {
   play: async ({ canvasElement }) => {
     const input = canvasElement.querySelector('ui-input');
     if (!input) {
-      throw new Error('Input component not found');
+      throw new Error('ui-input が見つかりません');
     }
 
     await input.updateComplete;
 
     const inputElement = input.shadowRoot?.querySelector('input');
     if (!inputElement) {
-      throw new Error('Input element not found in shadow root');
+      throw new Error('Shadow Root 内に input 要素が見つかりません');
     }
 
     // テスト: disabled属性が設定されていること
     if (!inputElement.disabled) {
-      throw new Error('Input should be disabled');
+      throw new Error('input は disabled 状態である必要があります');
     }
-
-    console.log('✅ All tests passed for Disabled story');
   },
 };
 
@@ -498,22 +488,20 @@ export const Readonly: Story = {
   play: async ({ canvasElement }) => {
     const input = canvasElement.querySelector('ui-input');
     if (!input) {
-      throw new Error('Input component not found');
+      throw new Error('ui-input が見つかりません');
     }
 
     await input.updateComplete;
 
     const inputElement = input.shadowRoot?.querySelector('input');
     if (!inputElement) {
-      throw new Error('Input element not found in shadow root');
+      throw new Error('Shadow Root 内に input 要素が見つかりません');
     }
 
     // テスト: readonly属性が設定されていること
     if (!inputElement.readOnly) {
-      throw new Error('Input should be readonly');
+      throw new Error('input は readonly 状態である必要があります');
     }
-
-    console.log('✅ All tests passed for Readonly story');
   },
 };
 
@@ -610,7 +598,7 @@ export const Required: Story = {
     const form = canvasElement.querySelector<HTMLFormElement>('#required-form');
 
     if (!input || !form) {
-      throw new Error('Input or form not found');
+      throw new Error('input または form が見つかりません');
     }
 
     await input.updateComplete;
@@ -618,12 +606,12 @@ export const Required: Story = {
     // テスト: required属性が設定されていること
     const inputElement = input.shadowRoot?.querySelector('input');
     if (!inputElement?.required) {
-      throw new Error('Input should have required attribute');
+      throw new Error('input に required 属性が設定されている必要があります');
     }
 
     // テスト: 空欄の状態でcheckValidity()がfalseを返すこと
     if (input.checkValidity()) {
-      throw new Error('Empty required input should be invalid');
+      throw new Error('未入力の必須項目は無効である必要があります');
     }
 
     // テスト: 値を入力するとcheckValidity()がtrueを返すこと
@@ -631,10 +619,8 @@ export const Required: Story = {
     await input.updateComplete;
 
     if (!input.checkValidity()) {
-      throw new Error('Required input with value should be valid');
+      throw new Error('値が入力された必須項目は有効である必要があります');
     }
-
-    console.log('✅ All tests passed for Required story');
   },
 };
 
@@ -667,7 +653,7 @@ export const AllTypes: Story = {
   play: ({ canvasElement }) => {
     const inputs = Array.from(canvasElement.querySelectorAll<Input>('ui-input'));
     if (inputs.length !== 7) {
-      throw new Error(`Expected 7 input variants, got ${inputs.length.toString()}`);
+      throw new Error(`7つの入力バリアントを期待していましたが、実際には ${inputs.length.toString()} つでした`);
     }
 
     const actualTypes = inputs
@@ -675,7 +661,7 @@ export const AllTypes: Story = {
       .join(',');
     const expectedTypes = 'text,email,password,number,tel,url,search';
     if (actualTypes !== expectedTypes) {
-      throw new Error(`Type order mismatch. expected="${expectedTypes}" actual="${actualTypes}"`);
+      throw new Error(`タイプの順序が一致しません。期待値: "${expectedTypes}"、実際の値: "${actualTypes}"`);
     }
   },
 };
@@ -725,7 +711,7 @@ export const FocusState: Story = {
   play: async ({ canvasElement }) => {
     const input = canvasElement.querySelector<Input>('#focus-input');
     if (!input) {
-      throw new Error('Input component not found');
+      throw new Error('ui-input が見つかりません');
     }
 
     await input.updateComplete;
@@ -736,15 +722,13 @@ export const FocusState: Story = {
 
     const inputElement = input.shadowRoot?.querySelector('input');
     if (!inputElement) {
-      throw new Error('Input element not found in shadow root');
+      throw new Error('Shadow Root 内に input 要素が見つかりません');
     }
 
     // テスト: フォーカスが当たっていること
     if (input.shadowRoot?.activeElement !== inputElement) {
-      throw new Error('Input should be focused');
+      throw new Error('input にフォーカスが当たっている必要があります');
     }
-
-    console.log('✅ All tests passed for FocusState story');
   },
 };
 
@@ -831,19 +815,19 @@ export const FormIntegration: Story = {
   play: ({ canvasElement }) => {
     const form = canvasElement.querySelector<HTMLFormElement>('form');
     if (!form) {
-      throw new Error('Form not found');
+      throw new Error('フォーム要素が見つかりません');
     }
 
     const fields = Array.from(form.querySelectorAll<Input>('ui-input'));
     if (fields.length !== 4) {
-      throw new Error(`Expected 4 fields in form, got ${fields.length.toString()}`);
+      throw new Error(`フォームに4つのフィールドがあることを期待していましたが、${fields.length.toString()} 個見つかりました`);
     }
 
     const formData = new FormData(form);
     const names = ['name', 'email', 'password', 'phone'];
     for (const name of names) {
       if (!formData.has(name)) {
-        throw new Error(`FormData should include "${name}"`);
+        throw new Error(`FormData に "${name}" が含まれている必要があります`);
       }
     }
   },
@@ -889,13 +873,13 @@ export const WithValidation: Story = {
   play: async ({ canvasElement }) => {
     const inputs = Array.from(canvasElement.querySelectorAll<Input>('ui-input'));
     if (inputs.length !== 2) {
-      throw new Error(`Expected 2 validation inputs, got ${inputs.length.toString()}`);
+      throw new Error(`バリデーション用の入力フィールドが2つあることを期待していましたが、${inputs.length.toString()} 個見つかりました`);
     }
 
     const zipcode = inputs[0];
     const username = inputs[1];
     if (!zipcode || !username) {
-      throw new Error('Validation inputs are missing');
+      throw new Error('バリデーション用の入力フィールドが見つかりません');
     }
     await zipcode.updateComplete;
     await username.updateComplete;
@@ -903,25 +887,25 @@ export const WithValidation: Story = {
     zipcode.value = '1234';
     await zipcode.updateComplete;
     if (zipcode.checkValidity()) {
-      throw new Error('Zipcode "1234" should be invalid');
+      throw new Error('郵便番号 "1234" は無効である必要があります');
     }
 
     zipcode.value = '123-4567';
     await zipcode.updateComplete;
     if (!zipcode.checkValidity()) {
-      throw new Error('Zipcode "123-4567" should be valid');
+      throw new Error('郵便番号 "123-4567" は有効である必要があります');
     }
 
     username.value = 'ab';
     await username.updateComplete;
     if (username.checkValidity()) {
-      throw new Error('Username with 2 chars should be invalid');
+      throw new Error('ユーザー名 "ab" は無効である必要があります');
     }
 
     username.value = 'user_01';
     await username.updateComplete;
     if (!username.checkValidity()) {
-      throw new Error('Username "user_01" should be valid');
+      throw new Error('ユーザー名 "user_01" は有効である必要があります');
     }
   },
 };
@@ -961,17 +945,17 @@ export const WithoutLabel: Story = {
   play: async ({ canvasElement }) => {
     const input = canvasElement.querySelector<Input>('ui-input');
     if (!input) {
-      throw new Error('Input component not found');
+      throw new Error('ui-input が見つかりません');
     }
     await input.updateComplete;
 
     const inputElement = input.shadowRoot?.querySelector('input');
     if (!inputElement) {
-      throw new Error('Input element not found in shadow root');
+      throw new Error('Shadow Root 内に input 要素が見つかりません');
     }
 
     if (inputElement.getAttribute('aria-label') !== '') {
-      throw new Error('aria-label should be empty when label is not provided');
+      throw new Error('aria-label が空である必要があります');
     }
   },
 };
@@ -1011,22 +995,20 @@ export const UnsupportedType: Story = {
   play: async ({ canvasElement }) => {
     const input = canvasElement.querySelector('ui-input');
     if (!input) {
-      throw new Error('Input component not found');
+      throw new Error('ui-input が見つかりません');
     }
 
     await input.updateComplete;
 
     const inputElement = input.shadowRoot?.querySelector('input');
     if (!inputElement) {
-      throw new Error('Input element not found in shadow root');
+      throw new Error('Shadow Root 内に input 要素が見つかりません');
     }
 
     // テスト: type が text にフォールバックされていること
     if (inputElement.getAttribute('type') !== 'text') {
-      throw new Error(`Expected type to be 'text' (fallback), got '${inputElement.getAttribute('type') ?? 'null'}'`);
+      throw new Error(`text にフォールバックされることを期待していましたが、実際には '${inputElement.getAttribute('type') ?? 'null'}' でした`);
     }
-
-    console.log('✅ All tests passed for UnsupportedType story');
   },
 };
 
@@ -1110,7 +1092,7 @@ export const ForcedColorsMode: Story = {
   play: async ({ canvasElement }) => {
     const inputs = Array.from(canvasElement.querySelectorAll<Input>('ui-input'));
     if (inputs.length !== 3) {
-      throw new Error(`Expected 3 inputs in forced-colors demo, got ${inputs.length.toString()}`);
+      throw new Error(`強制カラーモードのデモに3つの入力フィールドがあることを期待していましたが、${inputs.length.toString()} 個見つかりました`);
     }
 
     await Promise.all(inputs.map(input => input.updateComplete));
@@ -1118,15 +1100,15 @@ export const ForcedColorsMode: Story = {
     const errorInput = inputs[1];
     const disabledInput = inputs[2];
     if (!errorInput || !disabledInput) {
-      throw new Error('Expected error/disabled inputs are missing');
+      throw new Error('エラー状態/無効状態の入力フィールドが見つかりません');
     }
     if (!errorInput.hasAttribute('error')) {
-      throw new Error('Second input should be in error state');
+      throw new Error('2番目の入力フィールドがエラー状態である必要があります');
     }
 
     const disabledNative = disabledInput.shadowRoot?.querySelector('input');
     if (!disabledNative?.disabled) {
-      throw new Error('Third input should be disabled');
+      throw new Error('3番目の入力フィールドが無効である必要があります');
     }
   },
 };
@@ -1186,7 +1168,7 @@ export const MotionReduction: Story = {
   play: async ({ canvasElement }) => {
     const input = canvasElement.querySelector<Input>('ui-input');
     if (!input) {
-      throw new Error('Input component not found');
+      throw new Error('ui-input が見つかりません');
     }
     await input.updateComplete;
 
@@ -1194,7 +1176,7 @@ export const MotionReduction: Story = {
       .toString()
       .includes('@media (prefers-reduced-motion: reduce)');
     if (!hasReduceRule) {
-      throw new Error('Input styles should include reduced-motion media query');
+      throw new Error('Input styles に prefers-reduced-motion メディアクエリが含まれている必要があります');
     }
   },
 };
@@ -1272,14 +1254,14 @@ export const ErrorStateTransition: Story = {
   play: async ({ canvasElement }) => {
     const input = canvasElement.querySelector<Input>('#transition-input');
     if (!input) {
-      throw new Error('Input component not found');
+      throw new Error('ui-input が見つかりません');
     }
     await input.updateComplete;
 
     // 初期状態: Help Text が表示されていること
     let helpText = input.shadowRoot?.querySelector('.help-text');
     if (!helpText || getComputedStyle(helpText).display === 'none') {
-      throw new Error('Help text should be visible initially');
+      throw new Error('Help text が初期状態で表示されている必要があります');
     }
 
     // エラー状態に遷移
@@ -1290,12 +1272,12 @@ export const ErrorStateTransition: Story = {
     // エラー時: Error Message が表示され、Help Text が非表示
     const errorMessage = input.shadowRoot?.querySelector('.error-message--visible');
     if (!errorMessage) {
-      throw new Error('Error message should be visible when error is true');
+      throw new Error('Error message が error=true の時に表示される必要があります');
     }
 
     helpText = input.shadowRoot?.querySelector('.help-text');
     if (helpText && getComputedStyle(helpText).display !== 'none') {
-      throw new Error('Help text should be hidden when error is present');
+      throw new Error('Help text が error=true の時に非表示になる必要があります');
     }
 
     // エラー解消
@@ -1306,10 +1288,8 @@ export const ErrorStateTransition: Story = {
     // エラー解消後: Help Text が再表示されること
     helpText = input.shadowRoot?.querySelector('.help-text');
     if (!helpText || getComputedStyle(helpText).display === 'none') {
-      throw new Error('Help text should be visible again after error is resolved');
+      throw new Error('Help text がエラー解消後に再表示される必要があります');
     }
-
-    console.log('✅ All tests passed for ErrorStateTransition story');
   },
 };
 
@@ -1330,13 +1310,13 @@ export const EventDispatchSingle: Story = {
   play: async ({ canvasElement }) => {
     const input = canvasElement.querySelector<Input>('#event-single-input');
     if (!input) {
-      throw new Error('Input component not found');
+      throw new Error('ui-input が見つかりません');
     }
     await input.updateComplete;
 
     const inputElement = input.shadowRoot?.querySelector('input');
     if (!inputElement) {
-      throw new Error('Input element not found in shadow root');
+      throw new Error('Shadow root 内に input 要素が見つかりません');
     }
 
     let inputCount = 0;
@@ -1354,10 +1334,10 @@ export const EventDispatchSingle: Story = {
     await input.updateComplete;
 
     if (inputCount !== 1) {
-      throw new Error(`Expected input event to fire once, got ${inputCount.toString()}`);
+      throw new Error(`input イベントが1回発火することを期待していましたが、${inputCount.toString()} 回発火しました`);
     }
     if (changeCount !== 1) {
-      throw new Error(`Expected change event to fire once, got ${changeCount.toString()}`);
+      throw new Error(`change イベントが1回発火することを期待していましたが、${changeCount.toString()} 回発火しました`);
     }
   },
 };
@@ -1383,14 +1363,14 @@ export const FormDataParticipation: Story = {
     const form = canvasElement.querySelector<HTMLFormElement>('#formdata-participation');
     const input = canvasElement.querySelector<Input>('#formdata-input');
     if (!form || !input) {
-      throw new Error('Form or input not found');
+      throw new Error('フォームまたは入力フィールドが見つかりません');
     }
     await input.updateComplete;
 
     const formData = new FormData(form);
-    const email = formData.get('email');
+    const email = formData.get('email') as string | null;
     if (email !== 'user@example.com') {
-      throw new Error('Expected FormData email to be "user@example.com"');
+      throw new Error(`FormData の email が "user@example.com" であることを期待していましたが、実際には ${email ?? 'null'} でした`);
     }
   },
 };
@@ -1407,7 +1387,7 @@ export const DynamicTypeFallback: Story = {
   play: async ({ canvasElement }) => {
     const input = canvasElement.querySelector<Input>('#dynamic-type-input');
     if (!input) {
-      throw new Error('Input component not found');
+      throw new Error('ui-input が見つかりません');
     }
     await input.updateComplete;
 
@@ -1416,11 +1396,11 @@ export const DynamicTypeFallback: Story = {
 
     const inputElement = input.shadowRoot?.querySelector('input');
     if (!inputElement) {
-      throw new Error('Input element not found in shadow root');
+      throw new Error('Shadow root 内に input 要素が見つかりません');
     }
 
     if (inputElement.type !== 'text') {
-      throw new Error(`Expected fallback type to be "text", got "${inputElement.type}"`);
+      throw new Error(`text にフォールバックされることを期待していましたが、実際には "${inputElement.type}" でした`);
     }
   },
 };
@@ -1443,21 +1423,21 @@ export const ErrorWithoutMessage: Story = {
   play: async ({ canvasElement }) => {
     const input = canvasElement.querySelector<Input>('#error-no-message-input');
     if (!input) {
-      throw new Error('Input component not found');
+      throw new Error('ui-input が見つかりません');
     }
     await input.updateComplete;
 
     const inputElement = input.shadowRoot?.querySelector('input');
     if (!inputElement) {
-      throw new Error('Input element not found in shadow root');
+      throw new Error('Shadow root 内に input 要素が見つかりません');
     }
 
     if (inputElement.getAttribute('aria-invalid') !== 'true') {
-      throw new Error('aria-invalid should be true when error is forced');
+      throw new Error(`aria-invalid が true であることを期待していましたが、実際には ${String(inputElement.getAttribute('aria-invalid'))} でした`);
     }
 
     if (inputElement.hasAttribute('aria-describedby')) {
-      throw new Error('aria-describedby should be omitted when no error message is provided');
+      throw new Error('aria-describedby が存在することを期待していましたが、実際には存在しませんでした');
     }
   },
 };
@@ -1481,26 +1461,26 @@ export const MinMaxLengthBoundary: Story = {
   play: async ({ canvasElement }) => {
     const input = canvasElement.querySelector<Input>('#minmax-boundary-input');
     if (!input) {
-      throw new Error('Input component not found');
+      throw new Error('ui-input が見つかりません');
     }
     await input.updateComplete;
 
     input.value = 'ab';
     await input.updateComplete;
     if (input.checkValidity()) {
-      throw new Error('Value with 2 characters should be invalid (too short)');
+      throw new Error('2文字の入力は無効である必要があります（短すぎます）');
     }
 
     input.value = 'abc';
     await input.updateComplete;
     if (!input.checkValidity()) {
-      throw new Error('Value with 3 characters should be valid');
+      throw new Error('3文字の入力は有効である必要があります');
     }
 
     input.value = 'abcdef';
     await input.updateComplete;
     if (input.checkValidity()) {
-      throw new Error('Value with 6 characters should be invalid (too long)');
+      throw new Error('6文字の入力は無効である必要があります（長すぎます）');
     }
   },
 };
@@ -1541,7 +1521,7 @@ export const VariantStateMatrix: Story = {
       .map(id => canvasElement.querySelector<Input>(id))
       .filter((item): item is Input => item !== null);
     if (components.length !== ids.length) {
-      throw new Error('State matrix should render all variant/state combinations');
+      throw new Error('状態組み合わせマトリクスで全てのバリアント/状態の組み合わせが描画されていません');
     }
 
     await Promise.all(components.map(component => component.updateComplete));
@@ -1549,13 +1529,13 @@ export const VariantStateMatrix: Story = {
     const errorInput = canvasElement.querySelector<Input>('#matrix-error');
     const errorNative = errorInput?.shadowRoot?.querySelector('input');
     if (errorNative?.getAttribute('aria-invalid') !== 'true') {
-      throw new Error('Error variant should set aria-invalid="true"');
+      throw new Error('エラー状態の aria-invalid が true に設定されていません');
     }
 
     const disabledInput = canvasElement.querySelector<Input>('#matrix-disabled');
     const disabledNative = disabledInput?.shadowRoot?.querySelector('input');
     if (!disabledNative?.disabled) {
-      throw new Error('Disabled variant should disable native input');
+      throw new Error('ネイティブの input 要素が無効状態になっていません');
     }
   },
 };
@@ -1598,7 +1578,7 @@ export const DarkMode: Story = {
     const error = canvasElement.querySelector<Input>('#dark-error');
     const disabled = canvasElement.querySelector<Input>('#dark-disabled');
     if (!defaults || !error || !disabled) {
-      throw new Error('Dark mode story inputs are missing');
+      throw new Error('ダークモードの story に input 要素が見つかりません');
     }
 
     await Promise.all([defaults.updateComplete, error.updateComplete, disabled.updateComplete]);
@@ -1607,14 +1587,14 @@ export const DarkMode: Story = {
     const errorNative = error.shadowRoot?.querySelector('input');
     const disabledNative = disabled.shadowRoot?.querySelector('input');
     if (!defaultNative || !errorNative || !disabledNative) {
-      throw new Error('Native input element not found');
+      throw new Error('ダークモードの story にネイティブの input 要素が見つかりません');
     }
 
     if (getComputedStyle(defaultNative).backgroundColor === 'rgba(0, 0, 0, 0)') {
-      throw new Error('Default input should have visible background in dark mode');
+      throw new Error('デフォルトの input 要素がダークモードで可視な背景を持っていません');
     }
     if (errorNative.getAttribute('aria-invalid') !== 'true') {
-      throw new Error('Error input should keep aria-invalid in dark mode');
+      throw new Error('エラー状態の input 要素が aria-invalid を true に設定していません');
     }
     if (!disabledNative.disabled) {
       throw new Error('Disabled input should remain disabled in dark mode');
@@ -1637,21 +1617,21 @@ export const LabelClickFocusTransfer: Story = {
   play: async ({ canvasElement }) => {
     const input = canvasElement.querySelector<Input>('#label-focus-transfer-input');
     if (!input) {
-      throw new Error('Input component not found');
+      throw new Error('ui-input が見つかりません');
     }
     await input.updateComplete;
 
     const label = input.shadowRoot?.querySelector('label');
     const inputElement = input.shadowRoot?.querySelector('input');
     if (!label || !inputElement) {
-      throw new Error('Label or input is missing in shadow root');
+      throw new Error('ラベルまたは input 要素が shadow root に見つかりません');
     }
 
     (label).click();
     await new Promise(resolve => setTimeout(resolve, 0));
 
     if (input.shadowRoot?.activeElement !== inputElement) {
-      throw new Error('Clicking label should move focus to native input');
+      throw new Error('ラベルをクリックでネイティブの input 要素にフォーカスが移動していません');
     }
   },
 };
@@ -1665,11 +1645,11 @@ export const EnterSubmitFromInput: Story = {
       id="enter-submit-form"
       data-submit-count="0"
       @submit="${(e: Event) => {
-        e.preventDefault();
-        const form = e.currentTarget as HTMLFormElement;
-        const current = Number(form.dataset['submitCount'] ?? '0');
-        form.dataset['submitCount'] = (current + 1).toString();
-      }}"
+      e.preventDefault();
+      const form = e.currentTarget as HTMLFormElement;
+      const current = Number(form.dataset['submitCount'] ?? '0');
+      form.dataset['submitCount'] = (current + 1).toString();
+    }}"
     >
       <ui-input
         id="enter-submit-input"
@@ -1684,13 +1664,13 @@ export const EnterSubmitFromInput: Story = {
     const form = canvasElement.querySelector<HTMLFormElement>('#enter-submit-form');
     const input = canvasElement.querySelector<Input>('#enter-submit-input');
     if (!form || !input) {
-      throw new Error('Form or input not found');
+      throw new Error('フォームまたは input 要素が見つかりません');
     }
     await input.updateComplete;
 
     const inputElement = input.shadowRoot?.querySelector('input');
     if (!inputElement) {
-      throw new Error('Input element not found in shadow root');
+      throw new Error('Shadow Root 内に input 要素が見つかりません');
     }
 
     inputElement.dispatchEvent(
@@ -1703,7 +1683,7 @@ export const EnterSubmitFromInput: Story = {
     await input.updateComplete;
 
     if (form.dataset['submitCount'] !== '1') {
-      throw new Error(`Enter should trigger form submit once, got ${form.dataset['submitCount'] ?? '0'}`);
+      throw new Error(`Enter でフォーム送信が1回発火することを期待していましたが、実際には ${form.dataset['submitCount'] ?? '0'} 回発火しました`);
     }
   },
 };
@@ -1725,20 +1705,23 @@ export const FormDataDisabledReadonlyBoundary: Story = {
     const disabled = canvasElement.querySelector<Input>('#fd-disabled');
     const readonly = canvasElement.querySelector<Input>('#fd-readonly');
     if (!form || !enabled || !disabled || !readonly) {
-      throw new Error('Boundary story elements are missing');
+      throw new Error('境界条件の story 要素が見つかりません');
     }
 
     await Promise.all([enabled.updateComplete, disabled.updateComplete, readonly.updateComplete]);
 
     const formData = new FormData(form);
-    if (formData.get('enabled') !== 'enabled-value') {
-      throw new Error('Enabled field should be included in FormData');
+    const enabledData = formData.get('enabled') as string | null;
+    if (enabledData !== 'enabled-value') {
+      throw new Error(`フォームの enabled が "enabled-value" であることを期待していましたが、実際には ${enabledData ?? 'null'} でした`);
     }
+    const disabledData = formData.get('disabled') as string | null;
     if (formData.has('disabled')) {
-      throw new Error('Disabled field should not be included in FormData');
+      throw new Error(`フォームに disabled が含まれないことを期待していましたが、実際には ${disabledData ?? 'null'} として含まれていました`);
     }
-    if (formData.get('readonly') !== 'readonly-value') {
-      throw new Error('Readonly field should be included in FormData');
+    const readonlyData = formData.get('readonly') as string | null;
+    if (readonlyData !== 'readonly-value') {
+      throw new Error(`フォームの readonly が "readonly-value" であることを期待していましたが、実際には ${readonlyData ?? 'null'} でした`);
     }
   },
 };

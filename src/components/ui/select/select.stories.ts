@@ -8,40 +8,40 @@ import type { Select, SelectOption } from './select';
 // ============================================================
 
 const PREFECTURE_OPTIONS: SelectOption[] = [
-    { value: 'tokyo', label: '東京都' },
-    { value: 'osaka', label: '大阪府' },
-    { value: 'kyoto', label: '京都府' },
-    { value: 'kanagawa', label: '神奈川県' },
-    { value: 'aichi', label: '愛知県' },
-    { value: 'fukuoka', label: '福岡県' },
-    { value: 'hokkaido', label: '北海道' },
-    { value: 'okinawa', label: '沖縄県' },
+  { value: 'tokyo', label: '東京都' },
+  { value: 'osaka', label: '大阪府' },
+  { value: 'kyoto', label: '京都府' },
+  { value: 'kanagawa', label: '神奈川県' },
+  { value: 'aichi', label: '愛知県' },
+  { value: 'fukuoka', label: '福岡県' },
+  { value: 'hokkaido', label: '北海道' },
+  { value: 'okinawa', label: '沖縄県' },
 ];
 
 const FRUIT_OPTIONS: SelectOption[] = [
-    { value: 'apple', label: 'Apple' },
-    { value: 'banana', label: 'Banana' },
-    { value: 'cherry', label: 'Cherry' },
-    { value: 'date', label: 'Date' },
-    { value: 'elderberry', label: 'Elderberry' },
+  { value: 'apple', label: 'Apple' },
+  { value: 'banana', label: 'Banana' },
+  { value: 'cherry', label: 'Cherry' },
+  { value: 'date', label: 'Date' },
+  { value: 'elderberry', label: 'Elderberry' },
 ];
 
 const OPTIONS_WITH_DISABLED: SelectOption[] = [
-    { value: 'active1', label: '有効な選択肢 1' },
-    { value: 'disabled1', label: '無効な選択肢（disabled）', disabled: true },
-    { value: 'active2', label: '有効な選択肢 2' },
-    { value: 'disabled2', label: '無効な選択肢（disabled）', disabled: true },
-    { value: 'active3', label: '有効な選択肢 3' },
+  { value: 'active1', label: '有効な選択肢 1' },
+  { value: 'disabled1', label: '無効な選択肢（disabled）', disabled: true },
+  { value: 'active2', label: '有効な選択肢 2' },
+  { value: 'disabled2', label: '無効な選択肢（disabled）', disabled: true },
+  { value: 'active3', label: '有効な選択肢 3' },
 ];
 
 const LONG_LABEL_OPTIONS: SelectOption[] = [
-    { value: 'short', label: '短い' },
-    { value: 'long', label: 'とても長いラベルのテキストが入る選択肢のサンプルです（レイアウト確認用）' },
-    { value: 'medium', label: '中程度の長さのラベル' },
+  { value: 'short', label: '短い' },
+  { value: 'long', label: 'とても長いラベルのテキストが入る選択肢のサンプルです（レイアウト確認用）' },
+  { value: 'medium', label: '中程度の長さのラベル' },
 ];
 
 const SINGLE_OPTION: SelectOption[] = [
-    { value: 'only', label: '唯一の選択肢' },
+  { value: 'only', label: '唯一の選択肢' },
 ];
 
 // ============================================================
@@ -67,13 +67,13 @@ const SINGLE_OPTION: SelectOption[] = [
  * - 文字入力: Type-ahead（1秒バッファ）
  */
 const meta: Meta<Select> = {
-    title: 'Components/Select',
-    component: 'ui-select',
-    tags: ['autodocs'],
-    parameters: {
-        docs: {
-            description: {
-                component: `
+  title: 'Components/Select',
+  component: 'ui-select',
+  tags: ['autodocs'],
+  parameters: {
+    docs: {
+      description: {
+        component: `
 セレクトボックスコンポーネントは、ユーザーが既定の選択肢から値を選ぶためのコンポーネントです。
 
 ## 使用方法
@@ -92,66 +92,66 @@ const meta: Meta<Select> = {
 - **options プロパティ**: JavaScript でオプション配列を設定してください。
 - **modelValue**: 選択値は \`string | number\` に限定されます。
         `,
-            },
-        },
+      },
     },
-    argTypes: {
-        label: {
-            control: 'text',
-            description: '入力ラベル（必須）',
-            table: { type: { summary: 'string' }, defaultValue: { summary: '' } },
-        },
-        hideLabel: {
-            control: 'boolean',
-            description: 'ラベルを視覚的に非表示',
-            table: { type: { summary: 'boolean' }, defaultValue: { summary: 'false' } },
-        },
-        name: {
-            control: 'text',
-            description: 'フォーム送信時のフィールド名',
-            table: { type: { summary: 'string' }, defaultValue: { summary: '' } },
-        },
-        modelValue: {
-            control: 'text',
-            description: '選択された値',
-            table: { type: { summary: 'string | number' }, defaultValue: { summary: '' } },
-        },
-        placeholder: {
-            control: 'text',
-            description: '未選択時に表示するテキスト',
-            table: { type: { summary: 'string' }, defaultValue: { summary: '' } },
-        },
-        opened: {
-            control: 'boolean',
-            description: 'リストボックスの開閉状態',
-            table: { type: { summary: 'boolean' }, defaultValue: { summary: 'false' } },
-        },
-        helpText: {
-            control: 'text',
-            description: '補助テキスト',
-            table: { type: { summary: 'string' }, defaultValue: { summary: '' } },
-        },
-        errorMessage: {
-            control: 'text',
-            description: 'エラーメッセージ',
-            table: { type: { summary: 'string' }, defaultValue: { summary: '' } },
-        },
-        error: {
-            control: 'boolean',
-            description: 'エラー状態の強制',
-            table: { type: { summary: 'boolean' }, defaultValue: { summary: 'false' } },
-        },
-        disabled: {
-            control: 'boolean',
-            description: '操作無効化',
-            table: { type: { summary: 'boolean' }, defaultValue: { summary: 'false' } },
-        },
-        readonly: {
-            control: 'boolean',
-            description: '読み取り専用モード',
-            table: { type: { summary: 'boolean' }, defaultValue: { summary: 'false' } },
-        },
+  },
+  argTypes: {
+    label: {
+      control: 'text',
+      description: '入力ラベル（必須）',
+      table: { type: { summary: 'string' }, defaultValue: { summary: '' } },
     },
+    hideLabel: {
+      control: 'boolean',
+      description: 'ラベルを視覚的に非表示',
+      table: { type: { summary: 'boolean' }, defaultValue: { summary: 'false' } },
+    },
+    name: {
+      control: 'text',
+      description: 'フォーム送信時のフィールド名',
+      table: { type: { summary: 'string' }, defaultValue: { summary: '' } },
+    },
+    modelValue: {
+      control: 'text',
+      description: '選択された値',
+      table: { type: { summary: 'string | number' }, defaultValue: { summary: '' } },
+    },
+    placeholder: {
+      control: 'text',
+      description: '未選択時に表示するテキスト',
+      table: { type: { summary: 'string' }, defaultValue: { summary: '' } },
+    },
+    opened: {
+      control: 'boolean',
+      description: 'リストボックスの開閉状態',
+      table: { type: { summary: 'boolean' }, defaultValue: { summary: 'false' } },
+    },
+    helpText: {
+      control: 'text',
+      description: '補助テキスト',
+      table: { type: { summary: 'string' }, defaultValue: { summary: '' } },
+    },
+    errorMessage: {
+      control: 'text',
+      description: 'エラーメッセージ',
+      table: { type: { summary: 'string' }, defaultValue: { summary: '' } },
+    },
+    error: {
+      control: 'boolean',
+      description: 'エラー状態の強制',
+      table: { type: { summary: 'boolean' }, defaultValue: { summary: 'false' } },
+    },
+    disabled: {
+      control: 'boolean',
+      description: '操作無効化',
+      table: { type: { summary: 'boolean' }, defaultValue: { summary: 'false' } },
+    },
+    readonly: {
+      control: 'boolean',
+      description: '読み取り専用モード',
+      table: { type: { summary: 'boolean' }, defaultValue: { summary: 'false' } },
+    },
+  },
 };
 
 export default meta;
@@ -166,7 +166,7 @@ type Story = StoryObj<Select>;
  * 未選択状態でプレースホルダーを表示します。
  */
 export const Default: Story = {
-    render: () => html`
+  render: () => html`
     <ui-select
       id="default-select"
       label="都道府県"
@@ -175,39 +175,37 @@ export const Default: Story = {
       .options="${PREFECTURE_OPTIONS}"
     ></ui-select>
   `,
-    play: async ({ canvasElement }) => {
-        const select = canvasElement.querySelector<Select>('#default-select');
-        if (!select) throw new Error('Select component not found');
-        await select.updateComplete;
+  play: async ({ canvasElement }) => {
+    const select = canvasElement.querySelector<Select>('#default-select');
+    if (!select) throw new Error('ui-select が見つかりません');
+    await select.updateComplete;
 
-        // テスト: トリガーに role="combobox" が設定されていること
-        const trigger = select.shadowRoot?.querySelector('[role="combobox"]');
-        if (!trigger) throw new Error('Trigger with role="combobox" not found');
+    // テスト: トリガーに role="combobox" が設定されていること
+    const trigger = select.shadowRoot?.querySelector('[role="combobox"]');
+    if (!trigger) throw new Error('role="combobox" のトリガーが見つかりません');
 
-        // テスト: aria-haspopup="listbox" が設定されていること
-        if (trigger.getAttribute('aria-haspopup') !== 'listbox') {
-            throw new Error('aria-haspopup should be "listbox"');
-        }
+    // テスト: aria-haspopup="listbox" が設定されていること
+    if (trigger.getAttribute('aria-haspopup') !== 'listbox') {
+      throw new Error('aria-haspopup="listbox" が設定されていません');
+    }
 
-        // テスト: aria-expanded="false" が設定されていること（初期状態）
-        if (trigger.getAttribute('aria-expanded') !== 'false') {
-            throw new Error('aria-expanded should be "false" initially');
-        }
+    // テスト: aria-expanded="false" が設定されていること（初期状態）
+    if (trigger.getAttribute('aria-expanded') !== 'false') {
+      throw new Error('aria-expanded="false" が設定されていません');
+    }
 
-        // テスト: aria-label が label プロパティと一致すること
-        if (trigger.getAttribute('aria-label') !== '都道府県') {
-            throw new Error('aria-label should match label property');
-        }
+    // テスト: aria-label が label プロパティと一致すること
+    if (trigger.getAttribute('aria-label') !== '都道府県') {
+      throw new Error('aria-label が label プロパティと一致していません');
+    }
 
-        // テスト: label と trigger が関連付けられていること
-        const labelEl = select.shadowRoot?.querySelector<HTMLLabelElement>('label');
-        const triggerId = trigger.getAttribute('id');
-        if (!labelEl || !triggerId || labelEl.getAttribute('for') !== triggerId) {
-            throw new Error('Label should be associated with trigger input');
-        }
-
-        console.log('✅ All tests passed for Default story');
-    },
+    // テスト: label と trigger が関連付けられていること
+    const labelEl = select.shadowRoot?.querySelector<HTMLLabelElement>('label');
+    const triggerId = trigger.getAttribute('id');
+    if (!labelEl || !triggerId || labelEl.getAttribute('for') !== triggerId) {
+      throw new Error('Label should be associated with trigger input');
+    }
+  },
 };
 
 // ============================================================
@@ -219,7 +217,7 @@ export const Default: Story = {
  * modelValue が設定されている場合、対応するラベルが表示されます。
  */
 export const WithValue: Story = {
-    render: () => html`
+  render: () => html`
     <ui-select
       id="with-value-select"
       label="都道府県"
@@ -229,28 +227,26 @@ export const WithValue: Story = {
       .options="${PREFECTURE_OPTIONS}"
     ></ui-select>
   `,
-    play: async ({ canvasElement }) => {
-        const select = canvasElement.querySelector<Select>('#with-value-select');
-        if (!select) throw new Error('Select component not found');
-        await select.updateComplete;
+  play: async ({ canvasElement }) => {
+    const select = canvasElement.querySelector<Select>('#with-value-select');
+    if (!select) throw new Error('Select component not found');
+    await select.updateComplete;
 
-        // テスト: 選択済みの値が表示されること
-        const trigger = select.shadowRoot?.querySelector('[role="combobox"]');
-        if (!trigger) throw new Error('Trigger not found');
+    // テスト: 選択済みの値が表示されること
+    const trigger = select.shadowRoot?.querySelector('[role="combobox"]');
+    if (!trigger) throw new Error('Trigger not found');
 
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        const displayText = (trigger.textContent ?? '').trim();
-        if (displayText !== '大阪府') {
-            throw new Error(`Expected "大阪府", got "${displayText}"`);
-        }
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    const displayText = (trigger.textContent ?? '').trim();
+    if (displayText !== '大阪府') {
+      throw new Error(`Expected "大阪府", got "${displayText}"`);
+    }
 
-        // テスト: プレースホルダークラスが付いていないこと
-        if (trigger.classList.contains('trigger--placeholder')) {
-            throw new Error('trigger--placeholder class should not be present when value is set');
-        }
-
-        console.log('✅ All tests passed for WithValue story');
-    },
+    // テスト: プレースホルダークラスが付いていないこと
+    if (trigger.classList.contains('trigger--placeholder')) {
+      throw new Error('値が設定されている場合、trigger--placeholder クラスは存在しないべきです');
+    }
+  },
 };
 
 // ============================================================
@@ -262,7 +258,7 @@ export const WithValue: Story = {
  * エラー状態でない場合、ヘルプテキストが表示されます。
  */
 export const WithHelpText: Story = {
-    render: () => html`
+  render: () => html`
     <ui-select
       id="help-text-select"
       label="フルーツ"
@@ -272,21 +268,19 @@ export const WithHelpText: Story = {
       .options="${FRUIT_OPTIONS}"
     ></ui-select>
   `,
-    play: async ({ canvasElement }) => {
-        const select = canvasElement.querySelector<Select>('#help-text-select');
-        if (!select) throw new Error('Select component not found');
-        await select.updateComplete;
+  play: async ({ canvasElement }) => {
+    const select = canvasElement.querySelector<Select>('#help-text-select');
+    if (!select) throw new Error('ui-select コンポーネントが見つかりません');
+    await select.updateComplete;
 
-        // テスト: ヘルプテキストが表示されていること
-        const helpText = select.shadowRoot?.querySelector('.help-text');
-        if (!helpText) throw new Error('Help text should be visible');
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if ((helpText.textContent ?? '') !== 'お好みのフルーツを選んでください') {
-            throw new Error('Help text content mismatch');
-        }
-
-        console.log('✅ All tests passed for WithHelpText story');
-    },
+    // テスト: ヘルプテキストが表示されていること
+    const helpText = select.shadowRoot?.querySelector('.help-text');
+    if (!helpText) throw new Error('ヘルプテキストが表示されているべきです');
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if ((helpText.textContent ?? '') !== 'お好みのフルーツを選んでください') {
+      throw new Error('ヘルプテキストの内容が一致しません');
+    }
+  },
 };
 
 // ============================================================
@@ -298,7 +292,7 @@ export const WithHelpText: Story = {
  * error=true のとき、エラーメッセージが表示され、ヘルプテキストは非表示になります。
  */
 export const ErrorState: Story = {
-    render: () => html`
+  render: () => html`
     <ui-select
       id="error-select"
       label="都道府県"
@@ -310,40 +304,38 @@ export const ErrorState: Story = {
       .options="${PREFECTURE_OPTIONS}"
     ></ui-select>
   `,
-    play: async ({ canvasElement }) => {
-        const select = canvasElement.querySelector<Select>('#error-select');
-        if (!select) throw new Error('Select component not found');
-        await select.updateComplete;
+  play: async ({ canvasElement }) => {
+    const select = canvasElement.querySelector<Select>('#error-select');
+    if (!select) throw new Error('ui-select コンポーネントが見つかりません');
+    await select.updateComplete;
 
-        const trigger = select.shadowRoot?.querySelector('[role="combobox"]');
-        if (!trigger) throw new Error('Trigger not found');
+    const trigger = select.shadowRoot?.querySelector('[role="combobox"]');
+    if (!trigger) throw new Error('トリガーが見つかりません');
 
-        // テスト: aria-invalid="true" が設定されていること
-        if (trigger.getAttribute('aria-invalid') !== 'true') {
-            throw new Error('aria-invalid should be "true" in error state');
-        }
+    // テスト: aria-invalid="true" が設定されていること
+    if (trigger.getAttribute('aria-invalid') !== 'true') {
+      throw new Error('エラー状態では aria-invalid は "true" であるべきです');
+    }
 
-        // テスト: trigger--error クラスが付いていること
-        if (!trigger.classList.contains('trigger--error')) {
-            throw new Error('trigger--error class should be present');
-        }
+    // テスト: trigger--error クラスが付いていること
+    if (!trigger.classList.contains('trigger--error')) {
+      throw new Error('trigger--error クラスが存在するべきです');
+    }
 
-        // テスト: エラーメッセージが表示されていること
-        const errorMsg = select.shadowRoot?.querySelector('.error-message--visible');
-        if (!errorMsg) throw new Error('Error message should be visible');
+    // テスト: エラーメッセージが表示されていること
+    const errorMsg = select.shadowRoot?.querySelector('.error-message--visible');
+    if (!errorMsg) throw new Error('エラーメッセージが表示されているべきです');
 
-        // テスト: ヘルプテキストが非表示であること（DOMに存在しない）
-        const helpText = select.shadowRoot?.querySelector('.help-text');
-        if (helpText) throw new Error('Help text should be hidden when error is present');
+    // テスト: ヘルプテキストが非表示であること（DOMに存在しない）
+    const helpText = select.shadowRoot?.querySelector('.help-text');
+    if (helpText) throw new Error('エラーが存在する場合、ヘルプテキストは非表示であるべきです');
 
-        // テスト: aria-describedby がエラーメッセージIDを指していること
-        const describedBy = trigger.getAttribute('aria-describedby');
-        if (!describedBy || describedBy === '') {
-            throw new Error('aria-describedby should be set to error message id');
-        }
-
-        console.log('✅ All tests passed for ErrorState story');
-    },
+    // テスト: aria-describedby がエラーメッセージIDを指していること
+    const describedBy = trigger.getAttribute('aria-describedby');
+    if (!describedBy || describedBy === '') {
+      throw new Error('aria-describedby はエラーメッセージのIDに設定されているべきです');
+    }
+  },
 };
 
 // ============================================================
@@ -355,7 +347,7 @@ export const ErrorState: Story = {
  * disabled=true のとき、クリックもキーボード操作も受け付けません。
  */
 export const Disabled: Story = {
-    render: () => html`
+  render: () => html`
     <ui-select
       id="disabled-select"
       label="都道府県"
@@ -365,28 +357,26 @@ export const Disabled: Story = {
       .options="${PREFECTURE_OPTIONS}"
     ></ui-select>
   `,
-    play: async ({ canvasElement }) => {
-        const select = canvasElement.querySelector<Select>('#disabled-select');
-        if (!select) throw new Error('Select component not found');
-        await select.updateComplete;
+  play: async ({ canvasElement }) => {
+    const select = canvasElement.querySelector<Select>('#disabled-select');
+    if (!select) throw new Error('ui-select コンポーネントが見つかりません');
+    await select.updateComplete;
 
-        const trigger = select.shadowRoot?.querySelector('[role="combobox"]');
-        if (!trigger) throw new Error('Trigger not found');
+    const trigger = select.shadowRoot?.querySelector('[role="combobox"]');
+    if (!trigger) throw new Error('トリガーが見つかりません');
 
-        // テスト: tabindex="-1" が設定されていること
-        if (trigger.getAttribute('tabindex') !== '-1') {
-            throw new Error('tabindex should be "-1" when disabled');
-        }
+    // テスト: tabindex="-1" が設定されていること
+    if (trigger.getAttribute('tabindex') !== '-1') {
+      throw new Error('無効化されている場合、tabindex は "-1" であるべきです');
+    }
 
-        // テスト: クリックしてもリストボックスが開かないこと
-        (trigger as HTMLElement).click();
-        await select.updateComplete;
-        if (select.opened) {
-            throw new Error('Listbox should not open when disabled');
-        }
-
-        console.log('✅ All tests passed for Disabled story');
-    },
+    // テスト: クリックしてもリストボックスが開かないこと
+    (trigger as HTMLElement).click();
+    await select.updateComplete;
+    if (select.opened) {
+      throw new Error('無効化されている場合、リストボックスは開かないべきです');
+    }
+  },
 };
 
 // ============================================================
@@ -398,7 +388,7 @@ export const Disabled: Story = {
  * readonly=true のとき、フォーカスは可能ですがリストボックスは開きません。
  */
 export const Readonly: Story = {
-    render: () => html`
+  render: () => html`
     <ui-select
       id="readonly-select"
       label="ステータス"
@@ -408,28 +398,26 @@ export const Readonly: Story = {
       .options="${OPTIONS_WITH_DISABLED}"
     ></ui-select>
   `,
-    play: async ({ canvasElement }) => {
-        const select = canvasElement.querySelector<Select>('#readonly-select');
-        if (!select) throw new Error('Select component not found');
-        await select.updateComplete;
+  play: async ({ canvasElement }) => {
+    const select = canvasElement.querySelector<Select>('#readonly-select');
+    if (!select) throw new Error('ui-select コンポーネントが見つかりません');
+    await select.updateComplete;
 
-        const trigger = select.shadowRoot?.querySelector('[role="combobox"]');
-        if (!trigger) throw new Error('Trigger not found');
+    const trigger = select.shadowRoot?.querySelector('[role="combobox"]');
+    if (!trigger) throw new Error('トリガーが見つかりません');
 
-        // テスト: tabindex が "-1" でないこと（フォーカス可能）
-        if (trigger.getAttribute('tabindex') === '-1') {
-            throw new Error('tabindex should not be "-1" when readonly (should be focusable)');
-        }
+    // テスト: tabindex が "-1" でないこと（フォーカス可能）
+    if (trigger.getAttribute('tabindex') === '-1') {
+      throw new Error('読み取り専用の場合、tabindex は "-1" ではないべきです（フォーカス可能であるべき）');
+    }
 
-        // テスト: クリックしてもリストボックスが開かないこと
-        (trigger as HTMLElement).click();
-        await select.updateComplete;
-        if (select.opened) {
-            throw new Error('Listbox should not open when readonly');
-        }
-
-        console.log('✅ All tests passed for Readonly story');
-    },
+    // テスト: クリックしてもリストボックスが開かないこと
+    (trigger as HTMLElement).click();
+    await select.updateComplete;
+    if (select.opened) {
+      throw new Error('読み取り専用の場合、リストボックスは開かないべきです');
+    }
+  },
 };
 
 // ============================================================
@@ -441,7 +429,7 @@ export const Readonly: Story = {
  * スクリーンリーダーには常にラベルが提供されます。
  */
 export const HiddenLabel: Story = {
-    render: () => html`
+  render: () => html`
     <ui-select
       id="hidden-label-select"
       label="フルーツ"
@@ -451,23 +439,21 @@ export const HiddenLabel: Story = {
       .options="${FRUIT_OPTIONS}"
     ></ui-select>
   `,
-    play: async ({ canvasElement }) => {
-        const select = canvasElement.querySelector<Select>('#hidden-label-select');
-        if (!select) throw new Error('Select component not found');
-        await select.updateComplete;
+  play: async ({ canvasElement }) => {
+    const select = canvasElement.querySelector<Select>('#hidden-label-select');
+    if (!select) throw new Error('ui-select コンポーネントが見つかりません');
+    await select.updateComplete;
 
-        // テスト: label--hidden クラスが付いていること
-        const label = select.shadowRoot?.querySelector('.label--hidden');
-        if (!label) throw new Error('Label should have label--hidden class');
+    // テスト: label--hidden クラスが付いていること
+    const label = select.shadowRoot?.querySelector('.label--hidden');
+    if (!label) throw new Error('ラベルに label--hidden クラスが付いているべきです');
 
-        // テスト: aria-label は設定されていること
-        const trigger = select.shadowRoot?.querySelector('[role="combobox"]');
-        if (!trigger?.getAttribute('aria-label')) {
-            throw new Error('aria-label should be set even when label is hidden');
-        }
-
-        console.log('✅ All tests passed for HiddenLabel story');
-    },
+    // テスト: aria-label は設定されていること
+    const trigger = select.shadowRoot?.querySelector('[role="combobox"]');
+    if (!trigger?.getAttribute('aria-label')) {
+      throw new Error('ラベルが非表示の場合でも aria-label は設定されているべきです');
+    }
+  },
 };
 
 // ============================================================
@@ -479,7 +465,7 @@ export const HiddenLabel: Story = {
  * disabled な選択肢はキーボード移動でスキップされます。
  */
 export const WithDisabledOptions: Story = {
-    render: () => html`
+  render: () => html`
     <ui-select
       id="disabled-options-select"
       label="選択肢"
@@ -488,38 +474,36 @@ export const WithDisabledOptions: Story = {
       .options="${OPTIONS_WITH_DISABLED}"
     ></ui-select>
   `,
-    play: async ({ canvasElement }) => {
-        const select = canvasElement.querySelector<Select>('#disabled-options-select');
-        if (!select) throw new Error('Select component not found');
-        await select.updateComplete;
+  play: async ({ canvasElement }) => {
+    const select = canvasElement.querySelector<Select>('#disabled-options-select');
+    if (!select) throw new Error('ui-select コンポーネントが見つかりません');
+    await select.updateComplete;
 
-        const trigger = select.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
-        if (!trigger) throw new Error('Trigger not found');
+    const trigger = select.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
+    if (!trigger) throw new Error('トリガーが見つかりません');
 
-        // ArrowDown: open + index 0（active1）
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
-        await select.updateComplete;
+    // ArrowDown: open + index 0（active1）
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    await select.updateComplete;
 
-        // ArrowDown: disabled1 をスキップして index 2（active2）へ
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
-        await select.updateComplete;
+    // ArrowDown: disabled1 をスキップして index 2（active2）へ
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    await select.updateComplete;
 
-        const activeId = trigger.getAttribute('aria-activedescendant');
-        if (!activeId) throw new Error('aria-activedescendant should be set');
+    const activeId = trigger.getAttribute('aria-activedescendant');
+    if (!activeId) throw new Error('aria-activedescendant が設定されているべきです');
 
-        const activeEl = document.getElementById(activeId);
-        if (!activeEl) throw new Error('Active option element not found');
+    const activeEl = document.getElementById(activeId);
+    if (!activeEl) throw new Error('アクティブなオプション要素が見つかりません');
 
-        if (activeEl.getAttribute('data-index') !== '2') {
-            throw new Error(`Expected active index "2", got "${activeEl.getAttribute('data-index') ?? ''}"`);
-        }
+    if (activeEl.getAttribute('data-index') !== '2') {
+      throw new Error(`アクティブなインデックスは "2" を期待しましたが、実際には "${activeEl.getAttribute('data-index') ?? ''}" でした`);
+    }
 
-        if (activeEl.getAttribute('aria-disabled') === 'true') {
-            throw new Error('Active option should not be disabled');
-        }
-
-        console.log('✅ All tests passed for WithDisabledOptions story');
-    },
+    if (activeEl.getAttribute('aria-disabled') === 'true') {
+      throw new Error('アクティブなオプションは無効化されていないべきです');
+    }
+  },
 };
 
 // ============================================================
@@ -531,7 +515,7 @@ export const WithDisabledOptions: Story = {
  * トリガーはテキストオーバーフローを省略記号で処理します。
  */
 export const LongLabels: Story = {
-    render: () => html`
+  render: () => html`
     <div style="max-width: 200px;">
       <ui-select
         id="long-labels-select"
@@ -542,27 +526,25 @@ export const LongLabels: Story = {
       ></ui-select>
     </div>
   `,
-    play: async ({ canvasElement }) => {
-        const select = canvasElement.querySelector<Select>('#long-labels-select');
-        if (!select) throw new Error('Select component not found');
-        await select.updateComplete;
+  play: async ({ canvasElement }) => {
+    const select = canvasElement.querySelector<Select>('#long-labels-select');
+    if (!select) throw new Error('ui-select コンポーネントが見つかりません');
+    await select.updateComplete;
 
-        // 長いラベルを選択
-        select.modelValue = 'long';
-        await select.updateComplete;
+    // 長いラベルを選択
+    select.modelValue = 'long';
+    await select.updateComplete;
 
-        const trigger = select.shadowRoot?.querySelector('[role="combobox"]');
-        if (!trigger) throw new Error('Trigger not found');
+    const trigger = select.shadowRoot?.querySelector('[role="combobox"]');
+    if (!trigger) throw new Error('トリガーが見つかりません');
 
-        // テスト: テキストが表示されていること（省略されていても）
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        const text = (trigger.textContent ?? '').trim();
-        if (text.length === 0) {
-            throw new Error('Trigger should display selected label text');
-        }
-
-        console.log('✅ All tests passed for LongLabels story');
-    },
+    // テスト: テキストが表示されていること（省略されていても）
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    const text = (trigger.textContent ?? '').trim();
+    if (text.length === 0) {
+      throw new Error('トリガーは選択されたラベルテキストを表示するべきです');
+    }
+  },
 };
 
 // ============================================================
@@ -574,7 +556,7 @@ export const LongLabels: Story = {
  * デフォルト・選択済み・エラー・無効・読み取り専用を並べて比較できます。
  */
 export const AllStatesShowcase: Story = {
-    render: () => html`
+  render: () => html`
     <style>
       .states-grid {
         display: flex;
@@ -637,7 +619,7 @@ export const AllStatesShowcase: Story = {
  * ElementInternals により FormData に値が反映されます。
  */
 export const FormIntegration: Story = {
-    render: () => html`
+  render: () => html`
     <style>
       .form-demo {
         max-width: 400px;
@@ -661,17 +643,17 @@ export const FormIntegration: Story = {
       id="select-form"
       class="form-demo"
       @submit="${(e: Event) => {
-            e.preventDefault();
-            const form = e.target as HTMLFormElement;
-            const data = new FormData(form);
-            const result = document.getElementById('form-result');
-            if (result) {
-                result.style.display = 'block';
-                const rawVal = data.get('prefecture');
-                const prefVal = rawVal instanceof File ? rawVal.name : (rawVal ?? '(未選択)');
-                result.textContent = `送信データ: prefecture=${prefVal}`;
-            }
-        }}"
+      e.preventDefault();
+      const form = e.target as HTMLFormElement;
+      const data = new FormData(form);
+      const result = document.getElementById('form-result');
+      if (result) {
+        result.style.display = 'block';
+        const rawVal = data.get('prefecture');
+        const prefVal = rawVal instanceof File ? rawVal.name : (rawVal ?? '(未選択)');
+        result.textContent = `送信データ: prefecture=${prefVal}`;
+      }
+    }}"
     >
       <h3>フォーム送信テスト</h3>
       <div class="form-fields">
@@ -689,33 +671,31 @@ export const FormIntegration: Story = {
       <div id="form-result"></div>
     </form>
   `,
-    play: async ({ canvasElement }) => {
-        const select = canvasElement.querySelector<Select>('#form-select');
-        const form = canvasElement.querySelector<HTMLFormElement>('#select-form');
-        if (!select || !form) throw new Error('Select or form not found');
-        await select.updateComplete;
+  play: async ({ canvasElement }) => {
+    const select = canvasElement.querySelector<Select>('#form-select');
+    const form = canvasElement.querySelector<HTMLFormElement>('#select-form');
+    if (!select || !form) throw new Error('ui-select またはフォームが見つかりません');
+    await select.updateComplete;
 
-        // テスト: 初期状態では FormData の値が空文字列
-        const emptyData = new FormData(form);
-        const emptyVal = emptyData.get('prefecture');
-        if (emptyVal !== '') {
-            const displayVal = emptyVal instanceof File ? '[File]' : (emptyVal ?? 'null');
-            throw new Error(`Expected empty string initially, got "${displayVal}"`);
-        }
+    // テスト: 初期状態では FormData の値が空文字列
+    const emptyData = new FormData(form);
+    const emptyVal = emptyData.get('prefecture');
+    if (emptyVal !== '') {
+      const displayVal = emptyVal instanceof File ? '[File]' : (emptyVal ?? 'null');
+      throw new Error(`初期値は空文字列を期待しましたが、実際には "${displayVal}" でした`);
+    }
 
-        // テスト: 値を設定すると FormData に反映される
-        select.modelValue = 'fukuoka';
-        await select.updateComplete;
+    // テスト: 値を設定すると FormData に反映される
+    select.modelValue = 'fukuoka';
+    await select.updateComplete;
 
-        const filledData = new FormData(form);
-        const filledVal = filledData.get('prefecture');
-        if (filledVal !== 'fukuoka') {
-            const displayVal = filledVal instanceof File ? '[File]' : (filledVal ?? 'null');
-            throw new Error(`Expected "fukuoka" in FormData, got "${displayVal}"`);
-        }
-
-        console.log('✅ All tests passed for FormIntegration story');
-    },
+    const filledData = new FormData(form);
+    const filledVal = filledData.get('prefecture');
+    if (filledVal !== 'fukuoka') {
+      const displayVal = filledVal instanceof File ? '[File]' : (filledVal ?? 'null');
+      throw new Error(`FormData に "fukuoka" を期待しましたが、実際には "${displayVal}" でした`);
+    }
+  },
 };
 
 // ============================================================
@@ -727,7 +707,7 @@ export const FormIntegration: Story = {
  * ArrowDown/Up で項目移動、Enter で選択、Escape で閉じます。
  */
 export const KeyboardNavigation: Story = {
-    render: () => html`
+  render: () => html`
     <div style="max-width: 400px;">
       <p style="font-size: 13px; color: var(--fg-muted, #888); margin-bottom: 1rem;">
         Tab でフォーカスを当て、↓↑ で移動、Enter で選択、Escape で閉じます。
@@ -741,85 +721,83 @@ export const KeyboardNavigation: Story = {
       ></ui-select>
     </div>
   `,
-    play: async ({ canvasElement }) => {
-        const select = canvasElement.querySelector<Select>('#keyboard-select');
-        if (!select) throw new Error('Select component not found');
-        await select.updateComplete;
+  play: async ({ canvasElement }) => {
+    const select = canvasElement.querySelector<Select>('#keyboard-select');
+    if (!select) throw new Error('ui-select コンポーネントが見つかりません');
+    await select.updateComplete;
 
-        const trigger = select.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
-        if (!trigger) throw new Error('Trigger not found');
+    const trigger = select.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
+    if (!trigger) throw new Error('トリガーが見つかりません');
 
-        // ArrowDown: リストボックスを開く
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
-        await select.updateComplete;
-        if (!select.opened) {
-            throw new Error('Listbox should open on ArrowDown');
-        }
-        if (!trigger.getAttribute('aria-activedescendant')) {
-            throw new Error('aria-activedescendant should be set after opening');
-        }
+    // ArrowDown: リストボックスを開く
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    await select.updateComplete;
+    if (!select.opened) {
+      throw new Error('ArrowDown でリストボックスが開くべきです');
+    }
+    if (!trigger.getAttribute('aria-activedescendant')) {
+      throw new Error('リストボックスが開いた後、aria-activedescendant が設定されているべきです');
+    }
 
-        // End: 末尾へ移動
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
-        await select.updateComplete;
-        const endId = trigger.getAttribute('aria-activedescendant');
-        if (!endId) throw new Error('aria-activedescendant should be set on End');
-        const endEl = document.getElementById(endId);
-        if (endEl?.getAttribute('data-index') !== '4') {
-            throw new Error('End should move focus to last option');
-        }
+    // End: 末尾へ移動
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+    await select.updateComplete;
+    const endId = trigger.getAttribute('aria-activedescendant');
+    if (!endId) throw new Error('End キー押下後、aria-activedescendant が設定されているべきです');
+    const endEl = document.getElementById(endId);
+    if (endEl?.getAttribute('data-index') !== '4') {
+      throw new Error('End キーはフォーカスを最後のオプションに移動するべきです');
+    }
 
-        // Home: 先頭へ移動
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
-        await select.updateComplete;
-        const homeId = trigger.getAttribute('aria-activedescendant');
-        if (!homeId) throw new Error('aria-activedescendant should be set on Home');
-        const homeEl = document.getElementById(homeId);
-        if (homeEl?.getAttribute('data-index') !== '0') {
-            throw new Error('Home should move focus to first option');
-        }
+    // Home: 先頭へ移動
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+    await select.updateComplete;
+    const homeId = trigger.getAttribute('aria-activedescendant');
+    if (!homeId) throw new Error('Home キー押下後、aria-activedescendant が設定されているべきです');
+    const homeEl = document.getElementById(homeId);
+    if (homeEl?.getAttribute('data-index') !== '0') {
+      throw new Error('Home キーはフォーカスを最初のオプションに移動するべきです');
+    }
 
-        // Space: 現在アクティブ項目を選択して閉じる
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
-        await select.updateComplete;
-        if (select.modelValue !== 'apple') {
-            throw new Error(`Expected selected value "apple", got "${String(select.modelValue)}"`);
-        }
+    // Space: 現在アクティブ項目を選択して閉じる
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+    await select.updateComplete;
+    if (select.modelValue !== 'apple') {
+      throw new Error(`選択された値は "apple" を期待しましたが、実際には "${String(select.modelValue)}" でした`);
+    }
 
-        // 制御フロー解析のリセット: modelValue チェック後に opened を別変数で評価
-        const afterSpace = canvasElement.querySelector<Select>('#keyboard-select');
-        if (afterSpace?.opened) {
-            throw new Error('Listbox should close after selecting with Space');
-        }
+    // 制御フロー解析のリセット: modelValue チェック後に opened を別変数で評価
+    const afterSpace = canvasElement.querySelector<Select>('#keyboard-select');
+    if (afterSpace?.opened) {
+      throw new Error('Space キーで選択後、リストボックスは閉じるべきです');
+    }
 
-        // Enter: 再オープン
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-        await select.updateComplete;
-        const afterEnter = canvasElement.querySelector<Select>('#keyboard-select');
-        if (!afterEnter?.opened) {
-            throw new Error('Listbox should open on Enter');
-        }
+    // Enter: 再オープン
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await select.updateComplete;
+    const afterEnter = canvasElement.querySelector<Select>('#keyboard-select');
+    if (!afterEnter?.opened) {
+      throw new Error('Enter キーでリストボックスが開くべきです');
+    }
 
-        // Tab: Focus trap せず閉じる
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
-        await select.updateComplete;
-        const afterTab = canvasElement.querySelector<Select>('#keyboard-select');
-        if (afterTab?.opened) {
-            throw new Error('Listbox should close on Tab');
-        }
+    // Tab: Focus trap せず閉じる
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    await select.updateComplete;
+    const afterTab = canvasElement.querySelector<Select>('#keyboard-select');
+    if (afterTab?.opened) {
+      throw new Error('Tab キーでリストボックスは閉じるべきです');
+    }
 
-        // Escape: close
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-        await select.updateComplete;
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-        await select.updateComplete;
-        const afterEscape = canvasElement.querySelector<Select>('#keyboard-select');
-        if (afterEscape?.opened) {
-            throw new Error('Listbox should close on Escape');
-        }
-
-        console.log('✅ All tests passed for KeyboardNavigation story');
-    },
+    // Escape: close
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await select.updateComplete;
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await select.updateComplete;
+    const afterEscape = canvasElement.querySelector<Select>('#keyboard-select');
+    if (afterEscape?.opened) {
+      throw new Error('Escape キーでリストボックスは閉じるべきです');
+    }
+  },
 };
 
 // ============================================================
@@ -831,7 +809,7 @@ export const KeyboardNavigation: Story = {
  * 選択値が変わったときのみ change イベントが発火します。
  */
 export const ChangeEvent: Story = {
-    render: () => html`
+  render: () => html`
     <div style="max-width: 400px;">
       <ui-select
         id="change-event-select"
@@ -845,46 +823,44 @@ export const ChangeEvent: Story = {
       </div>
     </div>
   `,
-    play: async ({ canvasElement }) => {
-        const select = canvasElement.querySelector<Select>('#change-event-select');
-        const log = canvasElement.querySelector<HTMLElement>('#change-log');
-        if (!select || !log) throw new Error('Select or log not found');
-        await select.updateComplete;
+  play: async ({ canvasElement }) => {
+    const select = canvasElement.querySelector<Select>('#change-event-select');
+    const log = canvasElement.querySelector<HTMLElement>('#change-log');
+    if (!select || !log) throw new Error('ui-select またはログ要素が見つかりません');
+    await select.updateComplete;
 
-        let changeCount = 0;
-        let lastValue: unknown = '';
+    let changeCount = 0;
+    let lastValue: unknown = '';
 
-        select.addEventListener('change', (e: Event) => {
-            const detail = (e as CustomEvent<{ value: string | number }>).detail;
-            changeCount += 1;
-            lastValue = detail.value;
-            log.textContent = `変更ログ: ${changeCount.toString()} 回 / 最後の値: ${String(lastValue)}`;
-        });
+    select.addEventListener('change', (e: Event) => {
+      const detail = (e as CustomEvent<{ value: string | number }>).detail;
+      changeCount += 1;
+      lastValue = detail.value;
+      log.textContent = `変更ログ: ${changeCount.toString()} 回 / 最後の値: ${String(lastValue)}`;
+    });
 
-        const trigger = select.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
-        if (!trigger) throw new Error('Trigger not found');
+    const trigger = select.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
+    if (!trigger) throw new Error('トリガーが見つかりません');
 
-        // UI操作: ArrowDown -> Enter で apple を選択
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
-        await select.updateComplete;
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-        await select.updateComplete;
+    // UI操作: ArrowDown -> Enter で apple を選択
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    await select.updateComplete;
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await select.updateComplete;
 
-        // 同値再選択: イベント増加しないこと
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-        await select.updateComplete;
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-        await select.updateComplete;
+    // 同値再選択: イベント増加しないこと
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await select.updateComplete;
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await select.updateComplete;
 
-        if (changeCount !== 1) {
-            throw new Error(`Expected 1 change event, got ${changeCount.toString()}`);
-        }
-        if (lastValue !== 'apple') {
-            throw new Error(`Expected last value "apple", got "${String(lastValue)}"`);
-        }
-
-        console.log('✅ All tests passed for ChangeEvent story');
-    },
+    if (changeCount !== 1) {
+      throw new Error(`change イベントは1回発火するべきですが、実際には ${changeCount.toString()} 回でした`);
+    }
+    if (lastValue !== 'apple') {
+      throw new Error(`最後の値は "apple" を期待しましたが、実際には "${String(lastValue)}" でした`);
+    }
+  },
 };
 
 // ============================================================
@@ -896,7 +872,7 @@ export const ChangeEvent: Story = {
  * エラー解消時に Help Text が再表示されることを確認します。
  */
 export const ErrorStateTransition: Story = {
-    render: () => html`
+  render: () => html`
     <div style="max-width: 400px;">
       <ui-select
         id="error-transition-select"
@@ -909,61 +885,59 @@ export const ErrorStateTransition: Story = {
       <div style="display: flex; gap: 8px; margin-top: 12px;">
         <button
           @click="${(e: Event) => {
-            const btn = e.currentTarget as HTMLElement;
-            const container = btn.closest('div')?.parentElement;
-            const sel = container?.querySelector<Select>('#error-transition-select');
-            if (sel) {
-                sel.error = true;
-                sel.errorMessage = '都道府県を選択してください';
-            }
-        }}"
+      const btn = e.currentTarget as HTMLElement;
+      const container = btn.closest('div')?.parentElement;
+      const sel = container?.querySelector<Select>('#error-transition-select');
+      if (sel) {
+        sel.error = true;
+        sel.errorMessage = '都道府県を選択してください';
+      }
+    }}"
           style="padding: 0 12px; height: 32px; cursor: pointer;"
         >エラーを表示</button>
         <button
           @click="${(e: Event) => {
-            const btn = e.currentTarget as HTMLElement;
-            const container = btn.closest('div')?.parentElement;
-            const sel = container?.querySelector<Select>('#error-transition-select');
-            if (sel) {
-                sel.error = false;
-                sel.errorMessage = '';
-            }
-        }}"
+      const btn = e.currentTarget as HTMLElement;
+      const container = btn.closest('div')?.parentElement;
+      const sel = container?.querySelector<Select>('#error-transition-select');
+      if (sel) {
+        sel.error = false;
+        sel.errorMessage = '';
+      }
+    }}"
           style="padding: 0 12px; height: 32px; cursor: pointer;"
         >エラーを解消</button>
       </div>
     </div>
   `,
-    play: async ({ canvasElement }) => {
-        const select = canvasElement.querySelector<Select>('#error-transition-select');
-        if (!select) throw new Error('Select component not found');
-        await select.updateComplete;
+  play: async ({ canvasElement }) => {
+    const select = canvasElement.querySelector<Select>('#error-transition-select');
+    if (!select) throw new Error('ui-select コンポーネントが見つかりません');
+    await select.updateComplete;
 
-        // 初期状態: Help Text が表示されていること
-        let helpText = select.shadowRoot?.querySelector('.help-text');
-        if (!helpText) throw new Error('Help text should be visible initially');
+    // 初期状態: Help Text が表示されていること
+    let helpText = select.shadowRoot?.querySelector('.help-text');
+    if (!helpText) throw new Error('初期状態ではヘルプテキストが表示されているべきです');
 
-        // エラー状態に遷移
-        select.error = true;
-        select.errorMessage = 'テストエラー';
-        await select.updateComplete;
+    // エラー状態に遷移
+    select.error = true;
+    select.errorMessage = 'テストエラー';
+    await select.updateComplete;
 
-        const errorMsg = select.shadowRoot?.querySelector('.error-message--visible');
-        if (!errorMsg) throw new Error('Error message should be visible when error=true');
+    const errorMsg = select.shadowRoot?.querySelector('.error-message--visible');
+    if (!errorMsg) throw new Error('error=true の場合、エラーメッセージが表示されているべきです');
 
-        helpText = select.shadowRoot?.querySelector('.help-text');
-        if (helpText) throw new Error('Help text should be hidden when error is present');
+    helpText = select.shadowRoot?.querySelector('.help-text');
+    if (helpText) throw new Error('エラーが存在する場合、ヘルプテキストは非表示であるべきです');
 
-        // エラー解消
-        select.error = false;
-        select.errorMessage = '';
-        await select.updateComplete;
+    // エラー解消
+    select.error = false;
+    select.errorMessage = '';
+    await select.updateComplete;
 
-        helpText = select.shadowRoot?.querySelector('.help-text');
-        if (!helpText) throw new Error('Help text should be visible again after error resolved');
-
-        console.log('✅ All tests passed for ErrorStateTransition story');
-    },
+    helpText = select.shadowRoot?.querySelector('.help-text');
+    if (!helpText) throw new Error('エラー解消後、ヘルプテキストが再び表示されるべきです');
+  },
 };
 
 // ============================================================
@@ -975,7 +949,7 @@ export const ErrorStateTransition: Story = {
  * options=[] のとき、クリックしてもリストボックスが開きますが項目は表示されません。
  */
 export const EmptyOptions: Story = {
-    render: () => html`
+  render: () => html`
     <ui-select
       id="empty-options-select"
       label="選択肢なし"
@@ -984,29 +958,27 @@ export const EmptyOptions: Story = {
       .options="${[]}"
     ></ui-select>
   `,
-    play: async ({ canvasElement }) => {
-        const select = canvasElement.querySelector<Select>('#empty-options-select');
-        if (!select) throw new Error('Select component not found');
-        await select.updateComplete;
+  play: async ({ canvasElement }) => {
+    const select = canvasElement.querySelector<Select>('#empty-options-select');
+    if (!select) throw new Error('ui-select コンポーネントが見つかりません');
+    await select.updateComplete;
 
-        // テスト: options が空配列であること
-        if (select.options.length !== 0) {
-            throw new Error('Options should be empty');
-        }
+    // テスト: options が空配列であること
+    if (select.options.length !== 0) {
+      throw new Error('オプションは空であるべきです');
+    }
 
-        // テスト: キーボード操作でクラッシュしないこと
-        const trigger = select.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
-        if (!trigger) throw new Error('Trigger not found');
+    // テスト: キーボード操作でクラッシュしないこと
+    const trigger = select.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
+    if (!trigger) throw new Error('トリガーが見つかりません');
 
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
-        await select.updateComplete;
-        // エラーが発生しなければOK
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    await select.updateComplete;
+    // エラーが発生しなければOK
 
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-        await select.updateComplete;
-
-        console.log('✅ All tests passed for EmptyOptions story');
-    },
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await select.updateComplete;
+  },
 };
 
 // ============================================================
@@ -1018,7 +990,7 @@ export const EmptyOptions: Story = {
  * ArrowDown/Up の循環移動が正しく動作することを確認します。
  */
 export const SingleOption: Story = {
-    render: () => html`
+  render: () => html`
     <ui-select
       id="single-option-select"
       label="唯一の選択肢"
@@ -1027,36 +999,34 @@ export const SingleOption: Story = {
       .options="${SINGLE_OPTION}"
     ></ui-select>
   `,
-    play: async ({ canvasElement }) => {
-        const select = canvasElement.querySelector<Select>('#single-option-select');
-        if (!select) throw new Error('Select component not found');
-        await select.updateComplete;
+  play: async ({ canvasElement }) => {
+    const select = canvasElement.querySelector<Select>('#single-option-select');
+    if (!select) throw new Error('ui-select コンポーネントが見つかりません');
+    await select.updateComplete;
 
-        const trigger = select.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
-        if (!trigger) throw new Error('Trigger not found');
+    const trigger = select.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
+    if (!trigger) throw new Error('トリガーが見つかりません');
 
-        // テスト: ArrowDown でリストボックスが開くこと
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
-        await select.updateComplete;
-        if (!select.opened) throw new Error('Listbox should open');
+    // テスト: ArrowDown でリストボックスが開くこと
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    await select.updateComplete;
+    if (!select.opened) throw new Error('リストボックスが開くべきです');
 
-        // テスト: さらに ArrowDown を押してもクラッシュしないこと（循環）
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
-        await select.updateComplete;
+    // テスト: さらに ArrowDown を押してもクラッシュしないこと（循環）
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    await select.updateComplete;
 
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
-        await select.updateComplete;
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    await select.updateComplete;
 
-        // テスト: Enter で選択できること
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-        await select.updateComplete;
+    // テスト: Enter で選択できること
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await select.updateComplete;
 
-        if (select.modelValue !== 'only') {
-            throw new Error(`Expected "only" to be selected, got "${String(select.modelValue)}"`);
-        }
-
-        console.log('✅ All tests passed for SingleOption story');
-    },
+    if (select.modelValue !== 'only') {
+      throw new Error(`"only" が選択されることを期待しましたが、実際には "${String(select.modelValue)}" でした`);
+    }
+  },
 };
 
 // ============================================================
@@ -1068,12 +1038,12 @@ export const SingleOption: Story = {
  * キーボード移動でクラッシュしないことを確認します。
  */
 export const AllDisabledOptions: Story = {
-    render: () => {
-        const allDisabled: SelectOption[] = [
-            { value: 'a', label: '選択肢 A', disabled: true },
-            { value: 'b', label: '選択肢 B', disabled: true },
-        ];
-        return html`
+  render: () => {
+    const allDisabled: SelectOption[] = [
+      { value: 'a', label: '選択肢 A', disabled: true },
+      { value: 'b', label: '選択肢 B', disabled: true },
+    ];
+    return html`
       <ui-select
         id="all-disabled-options-select"
         label="全て無効"
@@ -1082,29 +1052,27 @@ export const AllDisabledOptions: Story = {
         .options="${allDisabled}"
       ></ui-select>
     `;
-    },
-    play: async ({ canvasElement }) => {
-        const select = canvasElement.querySelector<Select>('#all-disabled-options-select');
-        if (!select) throw new Error('Select component not found');
-        await select.updateComplete;
+  },
+  play: async ({ canvasElement }) => {
+    const select = canvasElement.querySelector<Select>('#all-disabled-options-select');
+    if (!select) throw new Error('ui-select コンポーネントが見つかりません');
+    await select.updateComplete;
 
-        const trigger = select.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
-        if (!trigger) throw new Error('Trigger not found');
+    const trigger = select.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
+    if (!trigger) throw new Error('トリガーが見つかりません');
 
-        // テスト: ArrowDown でリストボックスが開いてもクラッシュしないこと
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
-        await select.updateComplete;
+    // テスト: ArrowDown でリストボックスが開いてもクラッシュしないこと
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    await select.updateComplete;
 
-        // テスト: Enter を押しても値が変わらないこと
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-        await select.updateComplete;
+    // テスト: Enter を押しても値が変わらないこと
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await select.updateComplete;
 
-        if (select.modelValue !== '') {
-            throw new Error('modelValue should remain empty when all options are disabled');
-        }
-
-        console.log('✅ All tests passed for AllDisabledOptions story');
-    },
+    if (select.modelValue !== '') {
+      throw new Error('全てのオプションが無効な場合、modelValue は空のままであるべきです');
+    }
+  },
 };
 
 // ============================================================
@@ -1116,7 +1084,7 @@ export const AllDisabledOptions: Story = {
  * aria-invalid="true" は設定されるが、aria-describedby は空のままになります。
  */
 export const ErrorWithoutMessage: Story = {
-    render: () => html`
+  render: () => html`
     <ui-select
       id="error-no-msg-select"
       label="都道府県"
@@ -1127,26 +1095,24 @@ export const ErrorWithoutMessage: Story = {
       .options="${PREFECTURE_OPTIONS}"
     ></ui-select>
   `,
-    play: async ({ canvasElement }) => {
-        const select = canvasElement.querySelector<Select>('#error-no-msg-select');
-        if (!select) throw new Error('Select component not found');
-        await select.updateComplete;
+  play: async ({ canvasElement }) => {
+    const select = canvasElement.querySelector<Select>('#error-no-msg-select');
+    if (!select) throw new Error('ui-select コンポーネントが見つかりません');
+    await select.updateComplete;
 
-        const trigger = select.shadowRoot?.querySelector('[role="combobox"]');
-        if (!trigger) throw new Error('Trigger not found');
+    const trigger = select.shadowRoot?.querySelector('[role="combobox"]');
+    if (!trigger) throw new Error('トリガーが見つかりません');
 
-        // テスト: aria-invalid="true" が設定されていること
-        if (trigger.getAttribute('aria-invalid') !== 'true') {
-            throw new Error('aria-invalid should be "true" when error is forced');
-        }
+    // テスト: aria-invalid="true" が設定されていること
+    if (trigger.getAttribute('aria-invalid') !== 'true') {
+      throw new Error('エラーが強制されている場合、aria-invalid は "true" であるべきです');
+    }
 
-        // テスト: aria-describedby が空であること（メッセージなし）
-        if (trigger.getAttribute('aria-describedby') !== '') {
-            throw new Error('aria-describedby should be empty when no error message');
-        }
-
-        console.log('✅ All tests passed for ErrorWithoutMessage story');
-    },
+    // テスト: aria-describedby が空であること（メッセージなし）
+    if (trigger.getAttribute('aria-describedby') !== '') {
+      throw new Error('エラーメッセージがない場合、aria-describedby は空であるべきです');
+    }
+  },
 };
 
 // ============================================================
@@ -1158,7 +1124,7 @@ export const ErrorWithoutMessage: Story = {
  * change イベントは発火しないことを確認します。
  */
 export const SameValueReselect: Story = {
-    render: () => html`
+  render: () => html`
     <ui-select
       id="same-value-select"
       label="フルーツ"
@@ -1170,38 +1136,36 @@ export const SameValueReselect: Story = {
       change イベント発火回数: 0
     </div>
   `,
-    play: async ({ canvasElement }) => {
-        const select = canvasElement.querySelector<Select>('#same-value-select');
-        const log = canvasElement.querySelector<HTMLElement>('#same-value-log');
-        if (!select || !log) throw new Error('Select or log not found');
-        await select.updateComplete;
+  play: async ({ canvasElement }) => {
+    const select = canvasElement.querySelector<Select>('#same-value-select');
+    const log = canvasElement.querySelector<HTMLElement>('#same-value-log');
+    if (!select || !log) throw new Error('ui-select またはログ要素が見つかりません');
+    await select.updateComplete;
 
-        let changeCount = 0;
-        select.addEventListener('change', () => {
-            changeCount += 1;
-            log.textContent = `change イベント発火回数: ${changeCount.toString()}`;
-        });
+    let changeCount = 0;
+    select.addEventListener('change', () => {
+      changeCount += 1;
+      log.textContent = `change イベント発火回数: ${changeCount.toString()}`;
+    });
 
-        const trigger = select.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
-        if (!trigger) throw new Error('Trigger not found');
+    const trigger = select.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
+    if (!trigger) throw new Error('トリガーが見つかりません');
 
-        // Enter: open（selected=apple に active）
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-        await select.updateComplete;
+    // Enter: open（selected=apple に active）
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await select.updateComplete;
 
-        // Enter: same value を再選択
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-        await select.updateComplete;
+    // Enter: same value を再選択
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await select.updateComplete;
 
-        if (changeCount !== 0) {
-            throw new Error(`change event should not fire when selecting same value, got ${changeCount.toString()}`);
-        }
-        if (select.modelValue !== 'apple') {
-            throw new Error(`modelValue should remain "apple", got "${String(select.modelValue)}"`);
-        }
-
-        console.log('✅ All tests passed for SameValueReselect story');
-    },
+    if (changeCount !== 0) {
+      throw new Error(`同じ値を選択した場合、change イベントは発火しないべきですが、${changeCount.toString()} 回発火しました`);
+    }
+    if (select.modelValue !== 'apple') {
+      throw new Error(`modelValue は "apple" のままであるべきですが、実際には "${String(select.modelValue)}" でした`);
+    }
+  },
 };
 
 // ============================================================
@@ -1213,7 +1177,7 @@ export const SameValueReselect: Story = {
  * フォーカス後に文字を入力すると、マッチする項目にジャンプします。
  */
 export const TypeaheadSearch: Story = {
-    render: () => html`
+  render: () => html`
     <div style="max-width: 400px;">
       <p style="font-size: 13px; color: var(--fg-muted, #888); margin-bottom: 1rem;">
         フォーカスを当てて「a」を入力すると "Apple" にジャンプします。
@@ -1228,53 +1192,51 @@ export const TypeaheadSearch: Story = {
       ></ui-select>
     </div>
   `,
-    play: async ({ canvasElement }) => {
-        const select = canvasElement.querySelector<Select>('#typeahead-select');
-        if (!select) throw new Error('Select component not found');
-        await select.updateComplete;
+  play: async ({ canvasElement }) => {
+    const select = canvasElement.querySelector<Select>('#typeahead-select');
+    if (!select) throw new Error('ui-select コンポーネントが見つかりません');
+    await select.updateComplete;
 
-        const trigger = select.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
-        if (!trigger) throw new Error('Trigger not found');
+    const trigger = select.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
+    if (!trigger) throw new Error('トリガーが見つかりません');
 
-        // "c" -> "h" の連続入力で Cherry に移動
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true }));
-        await select.updateComplete;
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'h', bubbles: true }));
-        await select.updateComplete;
-        if (!select.opened) {
-            throw new Error('Listbox should open on typeahead input');
-        }
+    // "c" -> "h" の連続入力で Cherry に移動
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true }));
+    await select.updateComplete;
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'h', bubbles: true }));
+    await select.updateComplete;
+    if (!select.opened) {
+      throw new Error('タイプアヘッド入力でリストボックスが開くべきです');
+    }
 
-        const chActiveId = trigger.getAttribute('aria-activedescendant');
-        if (!chActiveId) throw new Error('aria-activedescendant should be set after typeahead');
-        const chActiveEl = document.getElementById(chActiveId);
-        if (!chActiveEl?.textContent.includes('Cherry')) {
-            throw new Error('Expected active option to be Cherry after typing "ch"');
-        }
+    const chActiveId = trigger.getAttribute('aria-activedescendant');
+    if (!chActiveId) throw new Error('タイプアヘッド後、aria-activedescendant が設定されているべきです');
+    const chActiveEl = document.getElementById(chActiveId);
+    if (!chActiveEl?.textContent.includes('Cherry')) {
+      throw new Error(`"ch" 入力後に Cherry が選択されることを期待しましたが、実際には "${chActiveEl?.textContent ?? 'null'}" でした`);
+    }
 
-        // 1秒後にバッファリセットされることを検証
-        await new Promise((resolve) => {
-            setTimeout(resolve, 1100);
-        });
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', bubbles: true }));
-        await select.updateComplete;
-        const bActiveId = trigger.getAttribute('aria-activedescendant');
-        if (!bActiveId) throw new Error('aria-activedescendant should be set after typing "b"');
-        const bActiveEl = document.getElementById(bActiveId);
-        if (!bActiveEl?.textContent.includes('Banana')) {
-            throw new Error('Expected active option to be Banana after buffer reset');
-        }
+    // 1秒後にバッファリセットされることを検証
+    await new Promise((resolve) => {
+      setTimeout(resolve, 1100);
+    });
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', bubbles: true }));
+    await select.updateComplete;
+    const bActiveId = trigger.getAttribute('aria-activedescendant');
+    if (!bActiveId) throw new Error('タイプアヘッド後、aria-activedescendant が設定されているべきです');
+    const bActiveEl = document.getElementById(bActiveId);
+    if (!bActiveEl?.textContent.includes('Banana')) {
+      throw new Error(`バッファリセット後の "b" 入力により Banana が選択されることを期待しましたが、実際には "${bActiveEl?.textContent ?? 'null'}" でした`);
+    }
 
-        // テスト: Escape で閉じること
-        trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-        await select.updateComplete;
-        const afterTypeaheadEscape = canvasElement.querySelector<Select>('#typeahead-select');
-        if (afterTypeaheadEscape?.opened) {
-            throw new Error('Listbox should close on Escape');
-        }
-
-        console.log('✅ All tests passed for TypeaheadSearch story');
-    },
+    // テスト: Escape で閉じること
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await select.updateComplete;
+    const afterEscape = canvasElement.querySelector<Select>('#typeahead-select');
+    if (afterEscape?.opened) {
+      throw new Error('Escape キーでリストボックスが閉じるべきです');
+    }
+  },
 };
 
 // ============================================================
@@ -1286,7 +1248,7 @@ export const TypeaheadSearch: Story = {
  * Overlay のハイライトとトリガー状態を確認します。
  */
 export const DarkMode: Story = {
-    render: () => html`
+  render: () => html`
     <div style="padding: 16px; background: oklch(18% 0.01 250); color: oklch(96% 0.01 250);">
       <ui-select
         id="dark-mode-select"
@@ -1308,7 +1270,7 @@ export const DarkMode: Story = {
  * 実際の検証はブラウザ/OS の forced-colors を有効化して実施します。
  */
 export const ForcedColorsReference: Story = {
-    render: () => html`
+  render: () => html`
     <ui-select
       id="forced-colors-select"
       label="都道府県"
@@ -1328,7 +1290,7 @@ export const ForcedColorsReference: Story = {
  * 実際の検証はブラウザ/OS の reduced-motion を有効化して実施します。
  */
 export const ReducedMotionReference: Story = {
-    render: () => html`
+  render: () => html`
     <ui-select
       id="reduced-motion-select"
       label="都道府県"

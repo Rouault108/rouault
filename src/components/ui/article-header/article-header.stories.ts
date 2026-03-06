@@ -56,7 +56,7 @@ function getShadowStylesText(shadowRoot: ShadowRoot | null): string {
   if (!shadowRoot) return '';
 
   const inlineStyles = Array.from(shadowRoot.querySelectorAll('style'))
-    .map((style) => style.textContent ?? '')
+    .map((style) => style.textContent)
     .join('\n');
 
   const adoptedStyles = shadowRoot.adoptedStyleSheets
@@ -138,13 +138,13 @@ export const CompleteState: Story = {
     const tagLinks = header.shadowRoot?.querySelectorAll<HTMLElement>('.tag-link');
     const tagLinkCount = tagLinks?.length ?? 0;
     if (tagLinkCount !== 3) {
-      throw new Error(`3つのタグリンクを期待していましたが、実際には ${String(tagLinkCount)}つ見つかりました`);
+      throw new Error(`3つのタグリンクを期待していましたが、実際には ${String(tagLinkCount)}個でした`);
     }
 
     const status = header.shadowRoot?.querySelector('.status');
     if (!status) throw new Error('.status が見つかりません');
     if (!status.classList.contains('status-draft')) {
-      throw new Error('status のトーンクラスに "status-draft" が含まれていることを期待していました');
+      throw new Error(`status のトーンクラスに "status-draft" を期待していましたが、実際には "${status.className}" でした`);
     }
     const statusText = status.textContent.trim();
     if (!statusText.includes('下書き')) {
@@ -157,10 +157,10 @@ export const CompleteState: Story = {
       throw new Error(`出典 URL に "https://example.com/original" を期待していましたが、実際には "${sourceLink.getAttribute('href') ?? 'null'}" でした`);
     }
     if (sourceLink.getAttribute('target') !== '_blank') {
-      throw new Error('出典リンクが新しいタブで開く設定（target="_blank"）になっていることを期待していました');
+      throw new Error(`出典リンクの target="_blank" を期待していましたが、実際には "${sourceLink.getAttribute('target') ?? 'null'}" でした`);
     }
     if (sourceLink.getAttribute('rel') !== 'noopener noreferrer') {
-      throw new Error('出典リンクの rel 属性に "noopener noreferrer" を期待していました');
+      throw new Error(`出典リンクの rel="noopener noreferrer" を期待していましたが、実際には "${sourceLink.getAttribute('rel') ?? 'null'}" でした`);
     }
 
     const sourceStyle = getComputedStyle(sourceLink);
@@ -253,11 +253,11 @@ export const StatusStateMatrix: Story = {
       icon: string;
       label: string;
     }[] = [
-      { id: '#status-draft', toneClass: 'status-draft', icon: 'lucide:file-dashed', label: '下書き' },
-      { id: '#status-archived', toneClass: 'status-archived', icon: 'lucide:archive', label: 'アーカイブ' },
-      { id: '#status-wip', toneClass: 'status-wip', icon: 'lucide:construction', label: '作業中' },
-      { id: '#status-deprecated', toneClass: 'status-deprecated', icon: 'lucide:alert-triangle', label: '非推奨' },
-    ];
+        { id: '#status-draft', toneClass: 'status-draft', icon: 'lucide:file-dashed', label: '下書き' },
+        { id: '#status-archived', toneClass: 'status-archived', icon: 'lucide:archive', label: 'アーカイブ' },
+        { id: '#status-wip', toneClass: 'status-wip', icon: 'lucide:construction', label: '作業中' },
+        { id: '#status-deprecated', toneClass: 'status-deprecated', icon: 'lucide:alert-triangle', label: '非推奨' },
+      ];
 
     for (const check of checks) {
       const header = canvasElement.querySelector<ArticleHeader>(check.id);
@@ -412,7 +412,8 @@ export const NormalizationBoundary: Story = {
       throw new Error(`正規化されたタグに #設計 と #実装 が含まれていることを期待していました。実際: "${tagTexts.join(', ')}"`);
     }
 
-    if (!reading) throw new Error('読了時間がレンダリングされていることを期待していました');
+    const reading = header.shadowRoot?.querySelector('.reading-time');
+    if (!reading) throw new Error('読了時間がレンダリングされていることを期待していましたが、見つかりませんでした');
     const readingText = reading.textContent.trim();
     if (readingText !== '読了目安 2分') {
       throw new Error(`読了時間の丸め結果に "読了目安 2分" を期待していましたが、実際には "${readingText}" でした`);

@@ -183,24 +183,24 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const button = canvasElement.querySelector('ui-button');
     if (!button) {
-      throw new Error('Button component not found');
+      throw new Error('ui-button が見つかりません');
     }
 
     await button.updateComplete;
 
     const buttonElement = button.shadowRoot?.querySelector('button');
     if (!buttonElement) {
-      throw new Error('Button element not found in shadow root');
+      throw new Error('Shadow Root 内に button 要素が見つかりません');
     }
 
     // テスト: デフォルトのtype属性が"button"であること
     if (buttonElement.getAttribute('type') !== 'button') {
-      throw new Error(`Expected type to be 'button', got '${buttonElement.getAttribute('type') ?? 'null'}'`);
+      throw new Error(`type="button" を期待していましたが、実際には "${buttonElement.getAttribute('type') ?? 'null'}" でした`);
     }
 
     // テスト: デフォルトのvariantが"secondary"であること
     if (button.variant !== 'secondary') {
-      throw new Error(`Expected variant to be 'secondary', got '${button.variant}'`);
+      throw new Error(`variant="secondary" を期待していましたが、実際には "${button.variant}" でした`);
     }
 
     console.log('✅ All tests passed for Default story');
@@ -362,14 +362,14 @@ export const Danger: Story = {
   play: async ({ canvasElement }) => {
     const button = canvasElement.querySelector('ui-button');
     if (!button) {
-      throw new Error('Button component not found');
+      throw new Error('ui-button が見つかりません');
     }
 
     await button.updateComplete;
 
     // テスト: variant が danger であること
     if (button.variant !== 'danger') {
-      throw new Error(`Expected variant to be 'danger', got '${button.variant}'`);
+      throw new Error(`variant="danger" を期待していましたが、実際には "${button.variant}" でした`);
     }
 
     console.log('✅ All tests passed for Danger story');
@@ -401,30 +401,30 @@ export const Loading: Story = {
   play: async ({ canvasElement }) => {
     const button = canvasElement.querySelector('ui-button');
     if (!button) {
-      throw new Error('Button component not found');
+      throw new Error('ui-button が見つかりません');
     }
 
     await button.updateComplete;
 
     const buttonElement = button.shadowRoot?.querySelector('button');
     if (!buttonElement) {
-      throw new Error('Button element not found in shadow root');
+      throw new Error('Shadow Root 内に button 要素が見つかりません');
     }
 
     // テスト: aria-busy="true" が設定されていること
     if (buttonElement.getAttribute('aria-busy') !== 'true') {
-      throw new Error('Expected aria-busy to be "true"');
+      throw new Error(`aria-busy="true" を期待していましたが、実際には "${buttonElement.getAttribute('aria-busy') ?? 'null'}" でした`);
     }
 
     // テスト: disabled状態であること
     if (!buttonElement.disabled) {
-      throw new Error('Button should be disabled when loading');
+      throw new Error('ローディング中は disabled 状態である必要があります');
     }
 
     // テスト: スピナーが表示されていること
     const spinner = buttonElement.querySelector('.spinner');
     if (!spinner) {
-      throw new Error('Spinner should be visible when loading');
+      throw new Error('ローディング中はスピナーが表示されている必要があります');
     }
 
     console.log('✅ All tests passed for Loading story');
@@ -455,19 +455,19 @@ export const Disabled: Story = {
   play: async ({ canvasElement }) => {
     const button = canvasElement.querySelector('ui-button');
     if (!button) {
-      throw new Error('Button component not found');
+      throw new Error('ui-button が見つかりません');
     }
 
     await button.updateComplete;
 
     const buttonElement = button.shadowRoot?.querySelector('button');
     if (!buttonElement) {
-      throw new Error('Button element not found in shadow root');
+      throw new Error('Shadow Root 内に button 要素が見つかりません');
     }
 
     // テスト: disabled属性が設定されていること
     if (!buttonElement.disabled) {
-      throw new Error('Button should be disabled');
+      throw new Error('ボタンは disabled 状態である必要があります');
     }
 
     console.log('✅ All tests passed for Disabled story');
@@ -533,19 +533,19 @@ export const IconOnly: Story = {
   play: async ({ canvasElement }) => {
     const button = canvasElement.querySelector('ui-button');
     if (!button) {
-      throw new Error('Button component not found');
+      throw new Error('ui-button が見つかりません');
     }
 
     await button.updateComplete;
 
     // テスト: aria-label が設定されていること
     if (!button.getAttribute('aria-label')) {
-      throw new Error('icon-only button must have aria-label');
+      throw new Error('icon-only ボタンには aria-label が必須です');
     }
 
     // テスト: icon-only 属性が設定されていること
     if (!button.iconOnly) {
-      throw new Error('Expected iconOnly to be true');
+      throw new Error('iconOnly プロパティが true であることを期待していましたが、実際には false でした');
     }
 
     console.log('✅ All tests passed for IconOnly story');
@@ -569,10 +569,10 @@ export const FormSubmit: Story = {
     <form
       id="submit-form"
       @submit="${(e: Event) => {
-        e.preventDefault();
-        const form = e.currentTarget as HTMLFormElement;
-        form.dataset['submitCount'] = String(Number(form.dataset['submitCount'] ?? '0') + 1);
-      }}"
+      e.preventDefault();
+      const form = e.currentTarget as HTMLFormElement;
+      form.dataset['submitCount'] = String(Number(form.dataset['submitCount'] ?? '0') + 1);
+    }}"
     >
       <ui-button
         id="submit-button"
@@ -587,24 +587,24 @@ export const FormSubmit: Story = {
   play: async ({ canvasElement }) => {
     const button = canvasElement.querySelector('ui-button');
     if (!button) {
-      throw new Error('Button component not found');
+      throw new Error('ui-button が見つかりません');
     }
 
     await button.updateComplete;
 
     const buttonElement = button.shadowRoot?.querySelector('button');
     if (!buttonElement) {
-      throw new Error('Button element not found in shadow root');
+      throw new Error('Shadow Root 内に button 要素が見つかりません');
     }
 
     // テスト: type属性が"submit"であること
     if (buttonElement.getAttribute('type') !== 'submit') {
-      throw new Error(`Expected type to be 'submit', got '${buttonElement.getAttribute('type') ?? 'null'}'`);
+      throw new Error(`type="submit" を期待していましたが、実際には "${buttonElement.getAttribute('type') ?? 'null'}" でした`);
     }
 
     const form = canvasElement.querySelector<HTMLFormElement>('#submit-form');
     if (!form) {
-      throw new Error('Submit form not found');
+      throw new Error('送信用のフォームが見つかりません');
     }
 
     const submitCountBeforeEnter = Number(form.dataset['submitCount'] ?? '0');
@@ -613,7 +613,7 @@ export const FormSubmit: Story = {
 
     const submitCountAfterEnter = Number(form.dataset['submitCount'] ?? '0');
     if (submitCountAfterEnter <= submitCountBeforeEnter) {
-      throw new Error('Expected Enter key to trigger submit');
+      throw new Error(`Enter キー押下後に送信回数が増大することを期待していましたが、実際には ${String(submitCountAfterEnter)}回（増加なし）でした`);
     }
 
     const submitCountBeforeSpace = submitCountAfterEnter;
@@ -623,11 +623,11 @@ export const FormSubmit: Story = {
 
     const submitCountAfterSpace = Number(form.dataset['submitCount'] ?? '0');
     if (submitCountAfterSpace <= submitCountBeforeSpace) {
-      throw new Error('Expected Space key to trigger submit');
+      throw new Error(`Space キー押下後に送信回数が増大することを期待していましたが、実際には ${String(submitCountAfterSpace)}回（増加なし）でした`);
     }
 
     if (!Number.isFinite(submitCountAfterSpace) || submitCountAfterSpace <= 0) {
-      throw new Error(`Expected submit count to be positive, got '${form.dataset['submitCount'] ?? 'undefined'}'`);
+      throw new Error(`送信回数が正の数になることを期待していましたが、実際には "${form.dataset['submitCount'] ?? 'undefined'}" でした`);
     }
 
     console.log('✅ All tests passed for FormSubmit story');
@@ -664,7 +664,7 @@ export const FormReset: Story = {
     const button = canvasElement.querySelector<HTMLElement>('#reset-button');
 
     if (!form || !input || !button) {
-      throw new Error('Form reset story elements not found');
+      throw new Error('フォームリセットのテストに必要な要素が見つかりません');
     }
 
     await new Promise(resolve => setTimeout(resolve, 0));
@@ -673,7 +673,7 @@ export const FormReset: Story = {
     button.click();
 
     if (input.value !== '初期値') {
-      throw new Error(`Expected reset value to be '初期値', got '${input.value}'`);
+      throw new Error(`リセット後の値が '初期値' になることを期待していましたが、実際には '${input.value}' でした`);
     }
 
     console.log('✅ All tests passed for FormReset story');
@@ -696,10 +696,10 @@ export const ExternalFormOwnerSubmit: Story = {
     <form
       id="external-owner-form"
       @submit="${(e: Event) => {
-        e.preventDefault();
-        const form = e.currentTarget as HTMLFormElement;
-        form.dataset['submitCount'] = String(Number(form.dataset['submitCount'] ?? '0') + 1);
-      }}"
+      e.preventDefault();
+      const form = e.currentTarget as HTMLFormElement;
+      form.dataset['submitCount'] = String(Number(form.dataset['submitCount'] ?? '0') + 1);
+    }}"
     >
       <input type="text" value="dummy" />
     </form>
@@ -720,14 +720,14 @@ export const ExternalFormOwnerSubmit: Story = {
     const form = canvasElement.querySelector<HTMLFormElement>('#external-owner-form');
     const button = canvasElement.querySelector<HTMLElement>('#external-owner-submit-button');
     if (!form || !button) {
-      throw new Error('External form owner story elements not found');
+      throw new Error('外部フォームオーナーのテストに必要な要素が見つかりません');
     }
 
     await new Promise(resolve => setTimeout(resolve, 0));
     button.click();
 
     if (form.dataset['submitCount'] !== '1') {
-      throw new Error(`Expected submit count to be 1, got '${form.dataset['submitCount'] ?? 'undefined'}'`);
+      throw new Error(`送信回数が 1 になることを期待していましたが、実際には '${form.dataset['submitCount'] ?? 'undefined'}' でした`);
     }
 
     console.log('✅ All tests passed for ExternalFormOwnerSubmit story');
@@ -906,7 +906,7 @@ export const FocusState: Story = {
   play: async ({ canvasElement }) => {
     const button = canvasElement.querySelector('#focus-button');
     if (!(button instanceof HTMLElement)) {
-      throw new Error('Button component not found');
+      throw new Error('HTML 要素としての ui-button が見つかりません');
     }
 
     const uiButton = button as Button;
@@ -918,12 +918,12 @@ export const FocusState: Story = {
 
     const buttonElement = uiButton.shadowRoot?.querySelector('button');
     if (!buttonElement) {
-      throw new Error('Button element not found in shadow root');
+      throw new Error('Shadow Root 内に button 要素が見つかりません');
     }
 
     // テスト: フォーカスが当たっていること
     if (uiButton.shadowRoot?.activeElement !== buttonElement) {
-      throw new Error('Button should be focused');
+      throw new Error('ボタンにフォーカスが当たっていません');
     }
 
     console.log('✅ All tests passed for FocusState story');
@@ -990,19 +990,19 @@ export const IconOnlyWithoutAriaLabel: Story = {
   play: async ({ canvasElement }) => {
     const button = canvasElement.querySelector('ui-button');
     if (!button) {
-      throw new Error('Button component not found');
+      throw new Error('ui-button が見つかりません');
     }
 
     await button.updateComplete;
 
     // テスト: aria-label が設定されていないこと
     if (button.getAttribute('aria-label')) {
-      throw new Error('This test expects aria-label to be missing');
+      throw new Error('このテストでは aria-label が欠損していることを期待しています');
     }
 
     // テスト: icon-only 属性が設定されていること
     if (!button.iconOnly) {
-      throw new Error('Expected iconOnly to be true');
+      throw new Error('iconOnly プロパティが true であることを期待していましたが、違います');
     }
 
     // Note: console.error のモック検証は Storybook の制約上困難なため、
@@ -1058,14 +1058,14 @@ export const DeprecatedLargeSize: Story = {
   play: async ({ canvasElement }) => {
     const button = canvasElement.querySelector('ui-button');
     if (!button) {
-      throw new Error('Button component not found');
+      throw new Error('ui-button が見つかりません');
     }
 
     await button.updateComplete;
 
     // テスト: size が lg であること
     if (button.size !== 'lg') {
-      throw new Error(`Expected size to be 'lg', got '${button.size}'`);
+      throw new Error(`size="lg" を期待していましたが、実際には "${button.size}" でした`);
     }
 
     console.log('✅ All tests passed for DeprecatedLargeSize story');
@@ -1231,21 +1231,21 @@ export const DarkMode: Story = {
   play: async ({ canvasElement }) => {
     const secondary = canvasElement.querySelector<Button>('#dark-secondary');
     if (!secondary) {
-      throw new Error('Dark mode secondary button not found');
+      throw new Error('ダークモード確認用の Secondary ボタンが見つかりません');
     }
 
     await secondary.updateComplete;
 
     const internalButton = secondary.shadowRoot?.querySelector('button');
     if (!internalButton) {
-      throw new Error('Secondary internal button not found');
+      throw new Error('Shadow Root 内に内部ボタン（button）が見つかりません');
     }
 
     const computedStyle = getComputedStyle(internalButton);
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
     if (prefersDark && !computedStyle.boxShadow.includes('inset')) {
-      throw new Error('Expected secondary edge highlight (inset shadow) in dark mode');
+      throw new Error('ダークモードでは Secondary ボタンにエッジハイライト（inset shadow）が必要です');
     }
 
     if (!prefersDark) {
@@ -1315,7 +1315,7 @@ export const ReducedMotion: Story = {
 
     const loadingButton = canvasElement.querySelector<Button>('ui-button[loading]');
     if (!loadingButton) {
-      throw new Error('Loading button not found');
+      throw new Error('ローディング状態のボタンが見つかりません');
     }
 
     await loadingButton.updateComplete;
@@ -1323,7 +1323,7 @@ export const ReducedMotion: Story = {
     const internalButton = loadingButton.shadowRoot?.querySelector('button');
     const spinner = loadingButton.shadowRoot?.querySelector('.spinner-default');
     if (!internalButton || !spinner) {
-      throw new Error('Reduced motion verification targets not found');
+      throw new Error('Reduced Motion の検証対象が見つかりません');
     }
 
     internalButton.focus();
@@ -1331,11 +1331,11 @@ export const ReducedMotion: Story = {
     const focusStyle = getComputedStyle(internalButton);
 
     if (spinnerStyle.animationName !== 'none') {
-      throw new Error(`Expected spinner animation to be disabled, got '${spinnerStyle.animationName}'`);
+      throw new Error(`スピナーのアニメーションが無効化されることを期待していましたが、実際には '${spinnerStyle.animationName}' でした`);
     }
 
     if (focusStyle.animationName !== 'none') {
-      throw new Error(`Expected focus animation to be disabled, got '${focusStyle.animationName}'`);
+      throw new Error(`フォーカス時のアニメーションが無効化されることを期待していましたが、実際には '${focusStyle.animationName}' でした`);
     }
 
     console.log('✅ All tests passed for ReducedMotion story');

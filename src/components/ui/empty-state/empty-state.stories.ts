@@ -14,43 +14,43 @@ const waitFrame = async (): Promise<void> =>
 
 const getHost = (canvasElement: Element, id: string): EmptyState => {
   const host = canvasElement.querySelector<EmptyState>(`#${id}`);
-  if (!host) throw new Error(`#${id} was not found`);
+  if (!host) throw new Error(`#${id} が見つかりません`);
   return host;
 };
 
 const getContainer = (host: EmptyState): HTMLElement => {
   const container = host.shadowRoot?.querySelector<HTMLElement>('.container');
-  if (!container) throw new Error('.container was not found');
+  if (!container) throw new Error('.container が見つかりません');
   return container;
 };
 
 const getActions = (host: EmptyState): HTMLElement => {
   const actions = host.shadowRoot?.querySelector<HTMLElement>('.actions');
-  if (!actions) throw new Error('.actions was not found');
+  if (!actions) throw new Error('.actions が見つかりません');
   return actions;
 };
 
 const getDescription = (host: EmptyState): HTMLElement => {
   const description = host.shadowRoot?.querySelector<HTMLElement>('.description');
-  if (!description) throw new Error('.description was not found');
+  if (!description) throw new Error('.description が見つかりません');
   return description;
 };
 
 const getHeading = (host: EmptyState): HTMLElement => {
   const heading = host.shadowRoot?.querySelector<HTMLElement>('.heading');
-  if (!heading) throw new Error('.heading was not found');
+  if (!heading) throw new Error('.heading が見つかりません');
   return heading;
 };
 
 const getIcon = (host: EmptyState): HTMLElement => {
   const icon = host.shadowRoot?.querySelector<HTMLElement>('.icon');
-  if (!icon) throw new Error('.icon was not found');
+  if (!icon) throw new Error('.icon が見つかりません');
   return icon;
 };
 
 const getIllustration = (host: EmptyState): HTMLElement => {
   const illustration = host.shadowRoot?.querySelector<HTMLElement>('.illustration');
-  if (!illustration) throw new Error('.illustration was not found');
+  if (!illustration) throw new Error('.illustration が見つかりません');
   return illustration;
 };
 
@@ -59,15 +59,15 @@ const isDisplayNone = (element: HTMLElement): boolean => getComputedStyle(elemen
 const parseRgb = (value: string): [number, number, number] => {
   const normalized = value.trim();
   const match = /^rgba?\((.*)\)$/.exec(normalized);
-  if (!match) throw new Error(`Unsupported color format: "${value}"`);
+  if (!match) throw new Error(`サポートされていないカラーフォーマットです: "${value}"`);
 
   const rawBody = match[1] ?? '';
   const body = rawBody.split('/')[0]?.trim() ?? '';
   const channels = body.includes(',') ? body.split(',') : body.split(/\s+/);
-  if (channels.length < 3) throw new Error(`Invalid rgb channels: "${value}"`);
+  if (channels.length < 3) throw new Error(`無効な RGB チャネルです: "${value}"`);
 
   const rgb = channels.slice(0, 3).map((ch) => Number.parseFloat(ch.trim()));
-  if (rgb.some((n) => Number.isNaN(n))) throw new Error(`Invalid rgb value: "${value}"`);
+  if (rgb.some((n) => Number.isNaN(n))) throw new Error(`無効な RGB 値です: "${value}"`);
   return [rgb[0] ?? 0, rgb[1] ?? 0, rgb[2] ?? 0];
 };
 
@@ -139,53 +139,53 @@ export const Default: Story = {
 
     const container = getContainer(host);
     if (container.getAttribute('data-variant') !== 'default') {
-      throw new Error('Expected default data-variant');
+      throw new Error(`data-variant="default" を期待していましたが、実際には "${container.getAttribute('data-variant') ?? 'null'}" でした`);
     }
 
     if (host.getAttribute('role') !== 'status') {
-      throw new Error('Expected role="status" on host');
+      throw new Error(`role="status" を期待していましたが、実際には "${host.getAttribute('role') ?? 'null'}" でした`);
     }
     if (host.getAttribute('aria-atomic') !== 'true') {
-      throw new Error('Expected aria-atomic="true" on host');
+      throw new Error(`aria-atomic="true" を期待していましたが、実際には "${host.getAttribute('aria-atomic') ?? 'null'}" でした`);
     }
     if (host.hasAttribute('aria-label')) {
-      throw new Error('aria-label must not be auto-generated');
+      throw new Error('aria-label は自動生成されてはいけません');
     }
 
     const fallbackIcon = host.shadowRoot?.querySelector<HTMLElement>('iconify-icon.fallback-icon');
-    if (!fallbackIcon) throw new Error('Fallback icon was not rendered');
+    if (!fallbackIcon) throw new Error('フォールバックアイコンがレンダリングされていません');
     if (fallbackIcon.getAttribute('icon') !== 'lucide:inbox') {
-      throw new Error('Fallback icon should be lucide:inbox');
+      throw new Error(`icon="lucide:inbox" を期待していましたが、実際には "${fallbackIcon.getAttribute('icon') ?? 'null'}" でした`);
     }
 
     if (!host.hasAttribute('has-description')) {
-      throw new Error('has-description should exist when description slot is filled');
+      throw new Error('説明スロットが指定されている場合、has-description 属性が必要です');
     }
     if (!host.hasAttribute('has-action')) {
-      throw new Error('has-action should exist when action slot is filled');
+      throw new Error('アクションスロットが指定されている場合、has-action 属性が必要です');
     }
 
     if (isDisplayNone(getDescription(host))) {
-      throw new Error('Description should be visible');
+      throw new Error('説明文が表示されている必要があります');
     }
     if (isDisplayNone(getActions(host))) {
-      throw new Error('Actions should be visible');
+      throw new Error('アクションが表示されている必要があります');
     }
 
     const actionButton = host.querySelector<HTMLButtonElement>('button[slot="action"]');
     if (!(actionButton instanceof HTMLButtonElement)) {
-      throw new Error('Action button was not found');
+      throw new Error('アクションボタンが見つかりません');
     }
     if (actionButton.disabled) {
-      throw new Error('Action button should be enabled');
+      throw new Error('アクションボタンが有効である必要があります');
     }
     if (actionButton.tabIndex !== 0) {
-      throw new Error('Action button must remain keyboard reachable');
+      throw new Error('アクションボタンはキーボードでフォーカス可能である必要があります');
     }
 
     actionButton.focus();
     if (document.activeElement !== actionButton) {
-      throw new Error('Action button should be focusable');
+      throw new Error('アクションボタンがフォーカス可能である必要があります');
     }
   },
 };
@@ -248,27 +248,27 @@ export const VariantStateMatrix: Story = {
     await Promise.all([defaultHost.updateComplete, searchHost.updateComplete, errorHost.updateComplete]);
 
     if (getContainer(defaultHost).getAttribute('data-variant') !== 'default') {
-      throw new Error('matrix-default should resolve to default');
+      throw new Error('matrix-default は "default" である必要があります');
     }
     if (getContainer(searchHost).getAttribute('data-variant') !== 'search') {
-      throw new Error('matrix-search should resolve to search');
+      throw new Error('matrix-search は "search" である必要があります');
     }
     if (getContainer(errorHost).getAttribute('data-variant') !== 'error') {
-      throw new Error('matrix-error should resolve to error');
+      throw new Error('matrix-error は "error" である必要があります');
     }
 
     if (defaultHost.hasAttribute('aria-label') || searchHost.hasAttribute('aria-label') || errorHost.hasAttribute('aria-label')) {
-      throw new Error('aria-label must not be auto-generated in any variant');
+      throw new Error('どのバリアントでも aria-label は自動生成されてはいけません');
     }
 
     if (isDisplayNone(getActions(defaultHost))) {
-      throw new Error('matrix-default should expose action slot');
+      throw new Error('matrix-default はアクションスロットが表示されている必要があります');
     }
     if (!isDisplayNone(getActions(searchHost))) {
-      throw new Error('matrix-search should hide empty action slot');
+      throw new Error('matrix-search は空のアクションスロットを非表示にする必要があります');
     }
     if (isDisplayNone(getActions(errorHost))) {
-      throw new Error('matrix-error should expose retry action');
+      throw new Error('matrix-error はリトライアクションが表示されている必要があります');
     }
   },
 };
@@ -293,21 +293,21 @@ export const IllustrationPriority: Story = {
     await waitFrame();
 
     if (!host.hasAttribute('has-illustration')) {
-      throw new Error('has-illustration should be synced on host');
+      throw new Error('host に has-illustration 属性が設定されている必要があります');
     }
 
     const illustration = getIllustration(host);
     if (isDisplayNone(illustration)) {
-      throw new Error('Illustration wrapper should be visible when assigned');
+      throw new Error('イラストレーションが割り当てられている場合、ラッパーが表示されている必要があります');
     }
 
     const icon = getIcon(host);
     if (!isDisplayNone(icon)) {
-      throw new Error('Icon should be hidden when illustration exists');
+      throw new Error('イラストレーションが存在する場合、アイコンは非表示である必要があります');
     }
 
     if (host.hasAttribute('aria-label')) {
-      throw new Error('aria-label must not be auto-generated');
+      throw new Error('aria-label は自動生成されてはいけません');
     }
   },
 };
@@ -335,22 +335,22 @@ export const HeadingLevelFreedom: Story = {
     const h2 = h2Host.querySelector<HTMLHeadingElement>('h2[slot="heading"]');
     const h3 = h3Host.querySelector<HTMLHeadingElement>('h3[slot="heading"]');
     const h4 = h4Host.querySelector<HTMLHeadingElement>('h4[slot="heading"]');
-    if (!(h2 instanceof HTMLHeadingElement)) throw new Error('h2 heading was not found');
-    if (!(h3 instanceof HTMLHeadingElement)) throw new Error('h3 heading was not found');
-    if (!(h4 instanceof HTMLHeadingElement)) throw new Error('h4 heading was not found');
+    if (!(h2 instanceof HTMLHeadingElement)) throw new Error('h2 見出しが見つかりません');
+    if (!(h3 instanceof HTMLHeadingElement)) throw new Error('h3 見出しが見つかりません');
+    if (!(h4 instanceof HTMLHeadingElement)) throw new Error('h4 見出しが見つかりません');
 
     if (getHeading(h2Host).getBoundingClientRect().height <= 0) {
-      throw new Error('h2 layout should stay stable');
+      throw new Error('h2 のレイアウトが安定している必要があります');
     }
     if (getHeading(h3Host).getBoundingClientRect().height <= 0) {
-      throw new Error('h3 layout should stay stable');
+      throw new Error('h3 のレイアウトが安定している必要があります');
     }
     if (getHeading(h4Host).getBoundingClientRect().height <= 0) {
-      throw new Error('h4 layout should stay stable');
+      throw new Error('h4 のレイアウトが安定している必要があります');
     }
 
     if (h2Host.hasAttribute('aria-label') || h3Host.hasAttribute('aria-label') || h4Host.hasAttribute('aria-label')) {
-      throw new Error('aria-label must not be auto-generated for any heading level');
+      throw new Error('どの見出しレベルでも aria-label は自動生成されてはいけません');
     }
   },
 };
@@ -368,19 +368,19 @@ export const DynamicSlotStateSync: Story = {
     await host.updateComplete;
 
     if (!host.hasAttribute('has-description')) {
-      throw new Error('Initial has-description should be true');
+      throw new Error('初期状態で has-description が設定されている必要があります');
     }
     if (!host.hasAttribute('has-action')) {
-      throw new Error('Initial has-action should be true');
+      throw new Error('初期状態で has-action が設定されている必要があります');
     }
     if (host.hasAttribute('has-illustration')) {
-      throw new Error('Initial has-illustration should be false');
+      throw new Error('初期状態で has-illustration が設定されていない必要があります');
     }
 
     const descriptionNode = host.querySelector<HTMLElement>('[slot="description"]');
     const actionNode = host.querySelector<HTMLElement>('[slot="action"]');
     if (!descriptionNode || !actionNode) {
-      throw new Error('Initial slotted nodes were not found');
+      throw new Error('初期のスロットノードが見つかりません');
     }
 
     descriptionNode.remove();
@@ -389,16 +389,16 @@ export const DynamicSlotStateSync: Story = {
     await waitFrame();
 
     if (host.hasAttribute('has-description')) {
-      throw new Error('has-description should be removed after description deletion');
+      throw new Error('説明文の削除後、has-description 属性が削除されている必要があります');
     }
     if (host.hasAttribute('has-action')) {
-      throw new Error('has-action should be removed after action deletion');
+      throw new Error('アクションの削除後、has-action 属性が削除されている必要があります');
     }
     if (!isDisplayNone(getDescription(host))) {
-      throw new Error('Description wrapper should be hidden without content');
+      throw new Error('コンテンツがない場合、説明文ラッパーは非表示である必要があります');
     }
     if (!isDisplayNone(getActions(host))) {
-      throw new Error('Actions wrapper should be hidden without content');
+      throw new Error('コンテンツがない場合、アクションラッパーは非表示である必要があります');
     }
 
     const illustration = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -417,10 +417,10 @@ export const DynamicSlotStateSync: Story = {
     await waitFrame();
 
     if (!host.hasAttribute('has-illustration')) {
-      throw new Error('has-illustration should be added when illustration exists');
+      throw new Error('イラストレーションが存在する場合、has-illustration 属性が追加されている必要があります');
     }
     if (!isDisplayNone(getIcon(host))) {
-      throw new Error('Icon wrapper should be hidden when illustration exists');
+      throw new Error('イラストレーションが存在する場合、アイコンラッパーは非表示である必要があります');
     }
 
     illustration.remove();
@@ -428,7 +428,7 @@ export const DynamicSlotStateSync: Story = {
     await waitFrame();
 
     if (host.hasAttribute('has-illustration')) {
-      throw new Error('has-illustration should be removed when illustration is gone');
+      throw new Error('イラストレーションが削除された場合、has-illustration 属性も削除されている必要があります');
     }
   },
 };
@@ -465,7 +465,7 @@ export const DarkModeContract: Story = {
 
     const surface = canvasElement.querySelector<HTMLElement>('#dark-surface');
     if (!(surface instanceof HTMLElement)) {
-      throw new Error('Dark surface container was not found');
+      throw new Error('ダークサーフェスコンテナが見つかりません');
     }
 
     const headingColor = getComputedStyle(getHeading(host)).color;
@@ -476,14 +476,14 @@ export const DarkModeContract: Story = {
     const descriptionContrast = contrastRatio(descriptionColor, backgroundColor);
 
     if (headingContrast < 4.5) {
-      throw new Error(`Heading contrast must satisfy WCAG AA: ${String(headingContrast)}`);
+      throw new Error(`見出しのコントラスト比が WCAG AA を満たしていません: ${String(headingContrast)}`);
     }
     if (descriptionContrast < 4.5) {
-      throw new Error(`Description contrast must satisfy WCAG AA: ${String(descriptionContrast)}`);
+      throw new Error(`説明文のコントラスト比が WCAG AA を満たしていません: ${String(descriptionContrast)}`);
     }
 
     if (host.hasAttribute('aria-label')) {
-      throw new Error('aria-label must not be auto-generated in dark mode');
+      throw new Error('ダークモードでも aria-label は自動生成されてはいけません');
     }
   },
 };
@@ -527,19 +527,19 @@ export const BoundaryConditions: Story = {
 
     const invalidContainer = getContainer(invalidVariant);
     if (invalidContainer.getAttribute('data-variant') !== 'default') {
-      throw new Error('Invalid variant should fallback to default');
+      throw new Error('無効なバリアントは default にフォールバックする必要があります');
     }
 
     const description = getDescription(emptyDescription);
     if (!isDisplayNone(description)) {
-      throw new Error('Whitespace-only description should be treated as empty');
+      throw new Error('空白文字のみの説明文は空として扱われる必要があります');
     }
     if (emptyDescription.hasAttribute('has-description')) {
-      throw new Error('has-description should not exist for whitespace-only content');
+      throw new Error('空白文字のみのコンテンツに対して has-description が存在してはいけません');
     }
 
     const removableHeading = headingRemoval.querySelector<HTMLElement>('[slot="heading"]');
-    if (!removableHeading) throw new Error('Removable heading was not found');
+    if (!removableHeading) throw new Error('削除可能な見出しが見つかりません');
 
     const originalWarn = console.warn;
     const warnCalls: unknown[][] = [];
@@ -556,42 +556,42 @@ export const BoundaryConditions: Story = {
     }
 
     if (warnCalls.length === 0) {
-      throw new Error('Missing heading should trigger warning at least once');
+      throw new Error('見出しがない場合、少なくとも一度は警告が発生する必要があります');
     }
 
     const warnedWithHeadingKey = warnCalls.some((args) =>
       args.some((value) => typeof value === 'string' && value.includes('slot="heading"')),
     );
     if (!warnedWithHeadingKey) {
-      throw new Error('Warning message should mention slot="heading"');
+      throw new Error('警告メッセージには slot="heading" が含まれている必要があります');
     }
 
     const actions = getActions(multiAction);
     if (isDisplayNone(actions)) {
-      throw new Error('Actions should stay visible with multiple buttons');
+      throw new Error('複数のボタンがある場合もアクションが表示されている必要があります');
     }
     if (getComputedStyle(actions).flexWrap !== 'wrap') {
-      throw new Error('Actions container should use flex-wrap: wrap');
+      throw new Error('アクションコンテナに flex-wrap: wrap が設定されている必要があります');
     }
 
     const stylesText = String(EmptyState.styles);
     if (!stylesText.includes('@media (prefers-reduced-motion: reduce)')) {
-      throw new Error('Reduced motion contract is missing');
+      throw new Error('Reduced motion の定義が見つかりません');
     }
     if (!stylesText.includes('animation-duration: 0.01ms')) {
-      throw new Error('Reduced motion duration contract is missing');
+      throw new Error('Reduced motion の所要時間定義が見つかりません');
     }
     if (!stylesText.includes('@media (forced-colors: active)')) {
-      throw new Error('Forced colors contract is missing');
+      throw new Error('Forced colors の定義が見つかりません');
     }
     if (!stylesText.includes('CanvasText')) {
-      throw new Error('Forced colors error mapping should use CanvasText');
+      throw new Error('Forced colors のエラーマッピングには CanvasText を使用する必要があります');
     }
     if (!stylesText.includes('@media print')) {
-      throw new Error('Print contract is missing');
+      throw new Error('Print 用の定義が見つかりません');
     }
     if (!stylesText.includes('translateY(var(--space-2, 8px))')) {
-      throw new Error('Entrance animation token contract is missing');
+      throw new Error('登場アニメーションのトークン定義が見つかりません');
     }
   },
 };

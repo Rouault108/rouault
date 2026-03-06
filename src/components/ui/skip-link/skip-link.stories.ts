@@ -191,39 +191,37 @@ export const Default: Story = {
     // テスト: コンポーネントが正しくレンダリングされていること
     const skipLink = canvasElement.querySelector('ui-skip-link');
     if (!skipLink) {
-      throw new Error('Skip link component not found');
+      throw new Error('ui-skip-link が見つかりません');
     }
 
     // テスト: Shadow DOM内のアンカー要素が存在すること
     const anchor = skipLink.shadowRoot?.querySelector('a');
     if (!anchor) {
-      throw new Error('Anchor element not found in shadow root');
+      throw new Error('Shadow Root 内にアンカー要素が見つかりません');
     }
 
     // テスト: 正しいhref属性が設定されていること
     const href = anchor.getAttribute('href');
     if (href !== '#main-content') {
-      throw new Error(`Expected href to be '#main-content', got '${href ?? 'null'}'`);
+      throw new Error(`href が "#main-content" であることを期待していましたが、実際には "${href ?? 'null'}" でした`);
     }
 
     // テスト: 正しいテキストコンテンツが設定されていること
     // Note: アンカー要素はテキストコンテンツを持つため、aria-labelは冗長であり設定されない
-    const anchorText = anchor.textContent.trim();
+    const anchorText = (anchor.textContent).trim();
     if (anchorText !== 'メインコンテンツへスキップ') {
-      throw new Error(`Expected text content to be 'メインコンテンツへスキップ', got '${anchorText}'`);
+      throw new Error(`テキストコンテンツが "メインコンテンツへスキップ" であることを期待していましたが、実際には "${anchorText}" でした`);
     }
 
     // テスト: ターゲット要素が存在し、tabindex="-1"が設定されていること
     const mainContent = canvasElement.querySelector('#main-content');
     if (!mainContent) {
-      throw new Error('Main content target element not found');
+      throw new Error('メインコンテンツのターゲット要素が見つかりません');
     }
     const tabindex = mainContent.getAttribute('tabindex');
     if (tabindex !== '-1') {
-      throw new Error(`Expected main content tabindex to be '-1', got '${tabindex ?? 'null'}'`);
+      throw new Error(`メインコンテンツの tabindex が "-1" であることを期待していましたが、実際には "${tabindex ?? 'null'}" でした`);
     }
-
-    console.log('✅ All tests passed for Default story');
   },
 };
 
@@ -260,22 +258,22 @@ export const HiddenByDefault: Story = {
   play: async ({ canvasElement }) => {
     const skipLink = canvasElement.querySelector<SkipLink>('#hidden-skip-link');
     if (!skipLink) {
-      throw new Error('Skip link component not found');
+      throw new Error('ui-skip-link が見つかりません');
     }
 
     await skipLink.updateComplete;
 
     const anchor = skipLink.shadowRoot?.querySelector('a');
     if (!anchor) {
-      throw new Error('Anchor element not found in shadow root');
+      throw new Error('Shadow Root 内にアンカー要素が見つかりません');
     }
 
     const computedStyle = window.getComputedStyle(anchor);
     if (computedStyle.opacity !== '0') {
-      throw new Error(`Default: Expected opacity to be '0', got '${computedStyle.opacity}'`);
+      throw new Error(`デフォルト状態: opacity が "0" であることを期待していましたが、実際には "${computedStyle.opacity}" でした`);
     }
     if (computedStyle.clipPath === 'none') {
-      throw new Error('Default: Expected clip-path to hide element, got "none"');
+      throw new Error('デフォルト状態: 要素を非表示にするための clip-path を期待していましたが、"none" でした');
     }
   },
 };
@@ -335,34 +333,32 @@ export const CustomTarget: Story = {
     // テスト: カスタムターゲットが正しく設定されていること
     const skipLink = canvasElement.querySelector('ui-skip-link');
     if (!skipLink) {
-      throw new Error('Skip link component not found');
+      throw new Error('ui-skip-link が見つかりません');
     }
 
     const anchor = skipLink.shadowRoot?.querySelector('a');
     if (!anchor) {
-      throw new Error('Anchor element not found in shadow root');
+      throw new Error('Shadow Root 内にアンカー要素が見つかりません');
     }
 
     // テスト: カスタムhref属性が正しく設定されていること
     const href = anchor.getAttribute('href');
     if (href !== '#custom-content') {
-      throw new Error(`Expected href to be '#custom-content', got '${href ?? 'null'}'`);
+      throw new Error(`href が "#custom-content" であることを期待していましたが、実際には "${href ?? 'null'}" でした`);
     }
 
     // テスト: カスタムラベルが正しく設定されていること
     // Note: アンカー要素はテキストコンテンツを持つため、aria-labelは冗長であり設定されない
-    const anchorText = anchor.textContent.trim();
+    const anchorText = (anchor.textContent).trim();
     if (anchorText !== 'カスタムコンテンツへスキップ') {
-      throw new Error(`Expected text content to be 'カスタムコンテンツへスキップ', got '${anchorText}'`);
+      throw new Error(`テキストコンテンツが "カスタムコンテンツへスキップ" であることを期待していましたが、実際には "${anchorText}" でした`);
     }
 
     // テスト: カスタムターゲット要素が存在すること
     const customContent = canvasElement.querySelector('#custom-content');
     if (!customContent) {
-      throw new Error('Custom content target element not found');
+      throw new Error('カスタムコンテンツのターゲット要素が見つかりません');
     }
-
-    console.log('✅ All tests passed for CustomTarget story');
   },
 };
 
@@ -416,7 +412,7 @@ export const Focused: Story = {
     // テスト: コンポーネントのスタイル検証
     const skipLink = canvasElement.querySelector<SkipLink>('#focused-skip-link');
     if (!skipLink) {
-      throw new Error('Focused skip link component not found');
+      throw new Error('フォーカスされた ui-skip-link が見つかりません');
     }
 
     // コンポーネントのupdateCompleteを待つ
@@ -424,7 +420,7 @@ export const Focused: Story = {
 
     const anchor = skipLink.shadowRoot?.querySelector('a');
     if (!anchor) {
-      throw new Error('Anchor element not found in shadow root');
+      throw new Error('Shadow Root 内にアンカー要素が見つかりません');
     }
 
     // フォーカスを当てる（:focus-visible の検証）
@@ -436,17 +432,17 @@ export const Focused: Story = {
 
     // テスト: position が fixed であること
     if (computedStyle.position !== 'fixed') {
-      throw new Error(`Expected position to be 'fixed', got '${computedStyle.position}'`);
+      throw new Error(`position が "fixed" であることを期待していましたが、実際には "${computedStyle.position}" でした`);
     }
 
     // テスト: フォーカス状態の検証 - opacity が 1 であること
     if (computedStyle.opacity !== '1') {
-      throw new Error(`Focus: Expected opacity to be '1', got '${computedStyle.opacity}'`);
+      throw new Error(`フォーカス状態: opacity が "1" であることを期待していましたが、実際には "${computedStyle.opacity}" でした`);
     }
 
     // テスト: フォーカス状態の検証 - clip-path が none であること
     if (computedStyle.clipPath !== 'none') {
-      throw new Error(`Focus: Expected clip-path to be 'none', got '${computedStyle.clipPath}'`);
+      throw new Error(`フォーカス状態: clip-path が "none" であることを期待していましたが、実際には "${computedStyle.clipPath}" でした`);
     }
 
     // テスト: フォーカス状態の検証 - transform が中央配置であること
@@ -456,10 +452,8 @@ export const Focused: Story = {
       computedStyle.transform === 'translateX(-50%)' ||
       computedStyle.transform === 'translate(-50%, 0px)';
     if (!hasTransform) {
-      throw new Error(`Focus: Expected transform to include translation, got '${computedStyle.transform}'`);
+      throw new Error(`フォーカス状態: transform が中央配置の変換を含むことを期待していましたが、実際には "${computedStyle.transform}" でした`);
     }
-
-    console.log('✅ All tests passed for Focused story');
   },
 };
 
@@ -550,19 +544,19 @@ export const SkipNavigationFlow: Story = {
     // テスト: スキップリンクの存在確認
     const skipLink = canvasElement.querySelector<SkipLink>('#flow-skip-link');
     if (!skipLink) {
-      throw new Error('Skip link component not found');
+      throw new Error('ui-skip-link が見つかりません');
     }
 
     await skipLink.updateComplete;
 
     const anchor = skipLink.shadowRoot?.querySelector<HTMLAnchorElement>('a');
     if (!anchor) {
-      throw new Error('Anchor element not found in shadow root');
+      throw new Error('Shadow Root 内にアンカー要素が見つかりません');
     }
 
     const mainContent = canvasElement.querySelector<HTMLElement>('#main-content');
     if (!mainContent) {
-      throw new Error('Main content target element not found');
+      throw new Error('メインコンテンツのターゲット要素が見つかりません');
     }
 
     // テスト: スキップリンクにフォーカスを当てる
@@ -571,7 +565,7 @@ export const SkipNavigationFlow: Story = {
 
     // テスト: 現在のフォーカスがスキップリンクにあることを確認
     if (skipLink.shadowRoot?.activeElement !== anchor) {
-      throw new Error('Skip link should be focused');
+      throw new Error('スキップリンクにフォーカスが当たっているはずです');
     }
 
     // テスト: Enter キーを押してスキップを実行
@@ -580,12 +574,12 @@ export const SkipNavigationFlow: Story = {
     // ここでは、ターゲット要素が正しく設定されていることを確認します。
     const targetId = anchor.getAttribute('href');
     if (targetId !== '#main-content') {
-      throw new Error(`Expected href to be '#main-content', got '${targetId ?? 'null'}'`);
+      throw new Error(`href が "#main-content" であることを期待していましたが、実際には "${targetId ?? 'null'}" でした`);
     }
 
     // テスト: ターゲット要素にtabindex="-1"が設定されていることを確認
     if (mainContent.getAttribute('tabindex') !== '-1') {
-      throw new Error('Target element must have tabindex="-1" for programmatic focus');
+      throw new Error('プログラムによるフォーカスのため、ターゲット要素には tabindex="-1" が必要です');
     }
 
     activateLinkByEnter(anchor);
@@ -593,15 +587,13 @@ export const SkipNavigationFlow: Story = {
 
     const locationHash = mainContent.ownerDocument.defaultView?.location.hash;
     if (locationHash !== '#main-content') {
-      throw new Error(`Expected hash to be '#main-content', got '${locationHash ?? 'null'}'`);
+      throw new Error(`ハッシュが "#main-content" であることを期待していましたが、実際には "${locationHash ?? 'null'}" でした`);
     }
 
     const activeElement = mainContent.ownerDocument.activeElement;
     if (activeElement !== mainContent) {
-      throw new Error('Expected focus to move to #main-content after Enter activation');
+      throw new Error('Enter キー押下後、フォーカスが #main-content に移動することを期待していました');
     }
-
-    console.log('✅ All tests passed for SkipNavigationFlow story');
   },
 };
 
@@ -699,14 +691,14 @@ export const DarkMode: Story = {
   play: async ({ canvasElement }) => {
     const skipLink = canvasElement.querySelector<SkipLink>('#dark-mode-skip-link');
     if (!skipLink) {
-      throw new Error('Skip link component not found');
+      throw new Error('ui-skip-link が見つかりません');
     }
 
     await skipLink.updateComplete;
 
     const anchor = skipLink.shadowRoot?.querySelector('a');
     if (!anchor) {
-      throw new Error('Anchor element not found in shadow root');
+      throw new Error('Shadow Root 内にアンカー要素が見つかりません');
     }
 
     // フォーカスを当てる（:focus-visible の検証）
@@ -723,14 +715,12 @@ export const DarkMode: Story = {
 
     // テスト: フォーカス状態の基本検証
     if (computedStyle.opacity !== '1') {
-      throw new Error(`Focus: Expected opacity to be '1', got '${computedStyle.opacity}'`);
+      throw new Error(`フォーカス状態: opacity が "1" であることを期待していましたが、実際には "${computedStyle.opacity}" でした`);
     }
 
     if (computedStyle.clipPath !== 'none') {
-      throw new Error(`Focus: Expected clip-path to be 'none', got '${computedStyle.clipPath}'`);
+      throw new Error(`フォーカス状態: clip-path が "none" であることを期待していましたが、実際には "${computedStyle.clipPath}" でした`);
     }
-
-    console.log('✅ All tests passed for DarkMode story');
   },
 };
 
@@ -816,14 +806,14 @@ export const ForcedColorsMode: Story = {
   play: async ({ canvasElement }) => {
     const skipLink = canvasElement.querySelector<SkipLink>('#forced-colors-skip-link');
     if (!skipLink) {
-      throw new Error('Skip link component not found');
+      throw new Error('ui-skip-link が見つかりません');
     }
 
     await skipLink.updateComplete;
 
     const anchor = skipLink.shadowRoot?.querySelector('a');
     if (!anchor) {
-      throw new Error('Anchor element not found in shadow root');
+      throw new Error('Shadow Root 内にアンカー要素が見つかりません');
     }
 
     // フォーカスを当てる（:focus-visible の検証）
@@ -834,21 +824,19 @@ export const ForcedColorsMode: Story = {
     const computedStyle = window.getComputedStyle(anchor);
 
     if (computedStyle.opacity !== '1') {
-      throw new Error(`Focus: Expected opacity to be '1', got '${computedStyle.opacity}'`);
+      throw new Error(`フォーカス状態: opacity が "1" であることを期待していましたが、実際には "${computedStyle.opacity}" でした`);
     }
 
     // Note: forced-colors: active の検出は matchMedia で可能
     const isForcedColors = window.matchMedia('(forced-colors: active)').matches;
-    
-    console.log(`ℹ️ Forced Colors Mode: ${isForcedColors ? 'ACTIVE' : 'INACTIVE'}`);
-    
-    if (isForcedColors) {
-      console.log('✅ Forced colors mode is active. Verify outline and system colors are applied.');
-    } else {
-      console.log('ℹ️ Forced colors mode is not active. Enable Windows High Contrast or browser emulation to test.');
-    }
 
-    console.log('✅ All tests passed for ForcedColorsMode story');
+    console.log(`ℹ️ Forced Colors Mode: ${isForcedColors ? 'ACTIVE' : 'INACTIVE'}`);
+
+    if (isForcedColors) {
+      console.log('✅ 強制カラーモードがアクティブです。アウトラインとシステムカラーが適用されていることを確認してください。');
+    } else {
+      console.log('ℹ️ 強制カラーモードはアクティブではありません。Windowsのハイコントラスト設定を有効にするか、ブラウザのエミュレーションでテストしてください。');
+    }
   },
 };
 
@@ -897,7 +885,7 @@ export const LabelBoundaries: Story = {
     const longSkipLink = canvasElement.querySelector<SkipLink>('#long-label-skip-link');
 
     if (!shortSkipLink || !longSkipLink) {
-      throw new Error('Boundary stories are not rendered correctly');
+      throw new Error('境界ケースのストーリーが正しくレンダリングされていません');
     }
 
     await Promise.all([shortSkipLink.updateComplete, longSkipLink.updateComplete]);
@@ -905,17 +893,17 @@ export const LabelBoundaries: Story = {
     const shortAnchor = shortSkipLink.shadowRoot?.querySelector('a');
     const longAnchor = longSkipLink.shadowRoot?.querySelector('a');
     if (!shortAnchor || !longAnchor) {
-      throw new Error('Anchor elements not found in shadow root');
+      throw new Error('Shadow Root 内にアンカー要素が見つかりません');
     }
 
     if (shortAnchor.textContent.trim() !== '移動') {
-      throw new Error('Short label text is not rendered correctly');
+      throw new Error('短いラベルのテキストが正しくレンダリングされていません');
     }
 
     const expectedLongLabel =
       'メインコンテンツ（記事本文と補足情報を含む領域）へスキップして、ナビゲーションを省略する';
     if (longAnchor.textContent.trim() !== expectedLongLabel) {
-      throw new Error('Long label text is not rendered correctly');
+      throw new Error('長いラベルのテキストが正しくレンダリングされていません');
     }
 
     focusByKeyboard(longAnchor);
@@ -923,18 +911,18 @@ export const LabelBoundaries: Story = {
 
     const shortStyle = window.getComputedStyle(shortAnchor);
     if (shortStyle.whiteSpace !== 'nowrap') {
-      throw new Error(`Expected short label white-space to be 'nowrap', got '${shortStyle.whiteSpace}'`);
+      throw new Error(`短いラベルの white-space が 'nowrap' であることを期待していましたが、実際には '${shortStyle.whiteSpace}' でした`);
     }
 
     const longStyle = window.getComputedStyle(longAnchor);
     if (longStyle.textOverflow !== 'ellipsis') {
-      throw new Error(`Expected long label text-overflow to be 'ellipsis', got '${longStyle.textOverflow}'`);
+      throw new Error(`長いラベルの text-overflow が 'ellipsis' であることを期待していましたが、実際には '${longStyle.textOverflow}' でした`);
     }
     if (longStyle.overflow !== 'hidden' && longStyle.overflowX !== 'hidden') {
-      throw new Error('Expected long label overflow to be hidden');
+      throw new Error('長いラベルの overflow が hidden であることを期待していました');
     }
     if (longAnchor.scrollWidth <= longAnchor.clientWidth) {
-      throw new Error('Expected long label to require truncation in the current viewport');
+      throw new Error('現在のビューポートでは長いラベルが切り詰められることを期待していました');
     }
   },
 };
@@ -1003,7 +991,7 @@ export const MissingTargetWarning: Story = {
   play: async ({ canvasElement }) => {
     const skipLink = canvasElement.querySelector<SkipLink>('#missing-target-skip-link');
     if (!skipLink) {
-      throw new Error('Skip link component not found');
+      throw new Error('ui-skip-link が見つかりません');
     }
 
     await skipLink.updateComplete;
@@ -1011,23 +999,19 @@ export const MissingTargetWarning: Story = {
     // テスト: コンポーネントが正しくレンダリングされていること
     const anchor = skipLink.shadowRoot?.querySelector('a');
     if (!anchor) {
-      throw new Error('Anchor element not found in shadow root');
+      throw new Error('Shadow Root 内にアンカー要素が見つかりません');
     }
 
     // テスト: href属性が正しく設定されていること
     const href = anchor.getAttribute('href');
     if (href !== '#non-existent-target') {
-      throw new Error(`Expected href to be '#non-existent-target', got '${href ?? 'null'}'`);
+      throw new Error(`href が "#non-existent-target" であることを期待していましたが、実際には "${href ?? 'null'}" でした`);
     }
 
     // テスト: ターゲット要素が存在しないことを確認
     const target = canvasElement.querySelector('#non-existent-target');
     if (target) {
-      throw new Error('Target element should not exist in this story');
+      throw new Error('このストーリーではターゲット要素が存在してはいけません');
     }
-
-    console.log('✅ All tests passed for MissingTargetWarning story');
-    console.log('ℹ️ Check the browser console for the expected warning message');
-    console.log('ℹ️ Expected: [ui-skip-link]: Target element with selector \'#non-existent-target\' not found in the document.');
   },
 };
