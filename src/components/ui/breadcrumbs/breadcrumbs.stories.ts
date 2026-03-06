@@ -85,6 +85,23 @@ export const Default: Story = {
 			throw new Error(`2つのセパレーター（chevron）を期待していましたが、実際には ${String(separators?.length ?? 0)}個でした`);
 		}
 
+		const firstItem = host.shadowRoot?.querySelector<HTMLElement>('.breadcrumb-item');
+		const firstLabel = firstItem?.querySelector<HTMLElement>('.breadcrumb-link');
+		const firstSeparator = firstItem?.querySelector<HTMLElement>('.breadcrumb-separator iconify-icon');
+		if (!firstLabel || !firstSeparator) {
+			throw new Error('中心線チェックに必要なラベルまたはセパレーターが見つかりません');
+		}
+		const labelRect = firstLabel.getBoundingClientRect();
+		const separatorRect = firstSeparator.getBoundingClientRect();
+		const labelCenterY = labelRect.top + labelRect.height / 2;
+		const separatorCenterY = separatorRect.top + separatorRect.height / 2;
+		const centerDelta = Math.abs(labelCenterY - separatorCenterY);
+		if (centerDelta > 2) {
+			throw new Error(
+				`ラベルとセパレーターの中心線がずれています（差分: ${centerDelta.toFixed(2)}px, 許容値: 2px）`,
+			);
+		}
+
 		const current = host.shadowRoot?.querySelector('[aria-current="page"]');
 		if (current?.textContent.trim() !== '設定') {
 			throw new Error('カレントページは "設定" である必要があります');
@@ -174,7 +191,6 @@ export const MobileAutoCollapse: Story = {
 			if (!dropdown) throw new Error('モバイル表示では省略ドロップダウンが表示される必要があります');
 		} finally {
 			window.matchMedia = originalMatchMedia;
-			mount.replaceChildren();
 		}
 	},
 };

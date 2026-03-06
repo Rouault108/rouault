@@ -51,14 +51,14 @@ export class Breadcrumbs extends LitElement {
 			gap: var(--space-1, 4px);
 		}
 
-			.breadcrumb-link {
-				display: inline-flex;
-				align-items: center;
-				position: relative;
-				color: inherit;
-				/* 例外許可: Breadcrumbは構造型リンク。区切り・現在地・フォーカスリングで識別する。 */
-				text-decoration: none;
-				border-radius: var(--radius-sm, 4px);
+		.breadcrumb-link {
+			display: inline-flex;
+			align-items: center;
+			position: relative;
+			color: inherit;
+			/* 例外許可: Breadcrumbは構造型リンク。区切り・現在地・フォーカスリングで識別する。 */
+			text-decoration: none;
+			border-radius: var(--radius-sm, 4px);
 			max-width: 20ch;
 			white-space: nowrap;
 			overflow: hidden;
@@ -108,12 +108,13 @@ export class Breadcrumbs extends LitElement {
 		}
 
 		.breadcrumb-separator iconify-icon {
-			width: 14px;
-			height: 14px;
+			/* 日本語ラベルの見た目中心に合わせてセパレーターを微調整 */
+			transform: translateY(1px);
 		}
 
 		.breadcrumb-ellipsis-button {
 			color: var(--fg-muted, oklch(48% 0.01 250));
+			transform: translateY(1px);
 		}
 
 		.breadcrumb-ellipsis-button iconify-icon {
