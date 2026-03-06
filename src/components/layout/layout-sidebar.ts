@@ -179,7 +179,7 @@ export class LayoutSidebar extends LitElement {
     }
 
     try {
-      const parsed: unknown = JSON.parse(source.textContent ?? '[]');
+      const parsed: unknown = JSON.parse(source.textContent || '[]');
       if (!Array.isArray(parsed)) {
         this._items = [];
         return;
@@ -201,7 +201,7 @@ export class LayoutSidebar extends LitElement {
     if (!(event instanceof CustomEvent)) {
       return;
     }
-    const detail = event.detail;
+    const detail: unknown = event.detail;
     const trigger =
       isRecord(detail) && detail['trigger'] instanceof HTMLElement
         ? detail['trigger']

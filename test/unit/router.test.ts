@@ -34,14 +34,14 @@ describe('Router', () => {
 		const wtrSessionId = new URLSearchParams(window.location.search).get('wtr-session-id');
 		if (wtrSessionId) {
 			history.pushState = ((data: unknown, unused: string, url?: string | URL | null) => {
-				if (url != null) {
+				if (url !== null && url !== undefined) {
 					const target = new URL(url.toString(), window.location.href);
 					target.searchParams.set('wtr-session-id', wtrSessionId);
 					originalPushState(data, unused, `${target.pathname}${target.search}${target.hash}`);
 				}
 			}) as typeof history.pushState;
 			history.replaceState = ((data: unknown, unused: string, url?: string | URL | null) => {
-				if (url != null) {
+				if (url !== null && url !== undefined) {
 					const target = new URL(url.toString(), window.location.href);
 					target.searchParams.set('wtr-session-id', wtrSessionId);
 					originalReplaceState(data, unused, `${target.pathname}${target.search}${target.hash}`);
@@ -94,8 +94,7 @@ describe('Router', () => {
 				forEach(
 					callbackfn: (value: string, key: string, parent: ViewTransitionTypeSet) => void,
 				) {
-					backingSet.forEach((value, key) =>
-						{ callbackfn(value, key, mockTypes); },
+					backingSet.forEach((value, key) => { callbackfn(value, key, mockTypes); },
 					);
 				},
 			} as ViewTransitionTypeSet;
@@ -488,7 +487,7 @@ describe('Router', () => {
 			await waitUntil(() => outlet.innerHTML.includes('Test Content'), 'コンテンツが更新されること');
 
 			// manageFocus()がtabindex="-1"を付与するため、テキスト内容で検証
-			expect(outlet.querySelector('h1')?.textContent?.trim()).to.equal('Test Content');
+			expect(outlet.querySelector('h1')?.textContent.trim()).to.equal('Test Content');
 			expect(document.title).to.equal('Test Page');
 		});
 

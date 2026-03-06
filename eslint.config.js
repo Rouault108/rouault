@@ -10,7 +10,7 @@ import globals from 'globals';
 export default defineConfig(
   // 1. 無視設定
   {
-    ignores: ['dist/', '.velite/', 'node_modules/', '*.config.js', '*.config.ts', '*.config.mjs'],
+    ignores: ['dist/', '.velite/', 'node_modules/', 'storybook-static/', '*.config.js', '*.config.ts', '*.config.mjs'],
   },
 
   // 2. 基本的な推奨設定
@@ -89,9 +89,9 @@ export default defineConfig(
     },
   },
 
-  // 5. Eleventy データファイル（JS）: TypeScript型チェックを無効化
+  // 5. JavaScript（設定ファイル・ビルド等）: TypeScript型チェックを無効化
   {
-    files: ['src/data/**/*.js'],
+    files: ['**/*.js', '**/*.mjs', '**/*.cjs'],
     extends: [tseslint.configs.disableTypeChecked],
     languageOptions: {
       parserOptions: {

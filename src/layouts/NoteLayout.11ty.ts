@@ -51,7 +51,7 @@ function escapeJsonForScript(value: unknown): string {
     .replace(/&/g, '\\u0026');
 }
 
-function normalizeHeadings(value: TocHeading[] | undefined): Array<{ id: string; text: string; level: number }> {
+function normalizeHeadings(value: TocHeading[] | undefined): { id: string; text: string; level: number }[] {
   if (!Array.isArray(value)) {
     return [];
   }

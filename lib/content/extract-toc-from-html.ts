@@ -29,7 +29,7 @@ const normalizeText = (value: string): string =>
   decodeHtmlEntities(stripTags(value)).replace(WHITESPACE_PATTERN, ' ').trim();
 
 const extractId = (attributes: string): string | null => {
-  const idMatch = attributes.match(/\sid=(?:"([^"]+)"|'([^']+)'|([^\s>]+))/i);
+  const idMatch = /\sid=(?:"([^"]+)"|'([^']+)'|([^\s>]+))/i.exec(attributes);
   if (!idMatch) {
     return null;
   }

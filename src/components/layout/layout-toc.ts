@@ -242,7 +242,7 @@ export class LayoutToc extends LitElement {
     }
 
     try {
-      const parsed: unknown = JSON.parse(source.textContent ?? '[]');
+      const parsed: unknown = JSON.parse(source.textContent || '[]');
       if (!Array.isArray(parsed)) {
         this._headings = [];
         return;
