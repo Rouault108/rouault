@@ -58,7 +58,7 @@ export class CodePreview extends LitElement {
       border: var(--border-style-subtle, 1px solid oklch(20% 0.03 250 / 0.08));
       border-radius: var(--ui-code-preview-radius, var(--radius-md, 6px));
       overflow: hidden;
-      background: var(--bg-surface-1, oklch(100% 0 0));
+      background: var(--bg-fill-muted, oklch(96% 0.01 250));
       page-break-inside: avoid;
       break-inside: avoid;
     }
@@ -67,7 +67,7 @@ export class CodePreview extends LitElement {
     .header {
       display: none;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-start;
       gap: var(--space-2, 0.5rem);
       padding: var(--space-4, 1rem) var(--space-4, 1rem);
       background: var(--ui-code-preview-preview-bg, var(--bg-surface-2, oklch(100% 0 0)));
@@ -243,10 +243,10 @@ export class CodePreview extends LitElement {
 
   /**
    * プレビュー領域の内部余白を制御します。
-   * `normal`: --space-6（既定値）、`compact`: --space-3、`none`: 余白なし
+   * `normal`: --space-4（既定値）、`compact`: --space-3、`none`: 余白なし
    */
   @property({ type: String, attribute: 'preview-padding', reflect: true })
-  previewPadding: PreviewPadding = 'compact';
+  previewPadding: PreviewPadding = 'normal';
 
   /**
    * プレビュー領域内のコンテンツ配置を制御します。
@@ -264,11 +264,16 @@ export class CodePreview extends LitElement {
   @query('slot:not([name])')
   private _codeSlot?: HTMLSlotElement;
 
+  override firstUpdated(): void {
+    this._onToolbarSlotChange();
+    this._onCodeSlotChange();
+  }
+
   override willUpdate(changedProperties: PropertyValues<this>): void {
     super.willUpdate(changedProperties);
 
     if (changedProperties.has('previewPadding') && !VALID_PADDING.has(this.previewPadding)) {
-      this.previewPadding = 'compact';
+      this.previewPadding = 'normal';
     }
 
     if (changedProperties.has('previewAlign') && !VALID_ALIGN.has(this.previewAlign)) {

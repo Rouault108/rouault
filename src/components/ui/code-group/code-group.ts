@@ -37,6 +37,7 @@ export class CodeGroup extends LitElement {
       --ui-code-block-header-display: block;
 
       display: block;
+      container-type: inline-size;
       position: relative;
       width: var(--ui-code-group-width, 100%);
       margin-inline: var(--ui-code-group-margin-inline, 0);
@@ -256,7 +257,7 @@ export class CodeGroup extends LitElement {
       display: none !important;
     }
 
-    @media (max-width: 639.98px) {
+    @container (max-width: 639.98px) {
       :host([data-ready]) {
         --ui-code-block-header-display: block;
       }

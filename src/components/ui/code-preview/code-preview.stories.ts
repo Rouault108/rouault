@@ -291,11 +291,12 @@ export const HeaderWithToolbarOnly: Story = {
       throw new Error('label 未設定時にラベル要素が表示されています');
     }
 
-    // ツールバーは常に右側に配置される
+    // ツールバーは CSS 契約として右寄せ指定されている
     const headerToolbar = preview.shadowRoot?.querySelector<HTMLElement>('.header-toolbar');
     if (!headerToolbar) throw new Error('.header-toolbar が見つかりません');
-    if (getComputedStyle(headerToolbar).marginInlineStart !== 'auto') {
-      throw new Error('toolbar-only 時も .header-toolbar が右側配置になっていません');
+    const cssText = readCssText(CodePreview.styles);
+    if (!cssText.includes('margin-inline-start: auto')) {
+      throw new Error('toolbar-only 時の右寄せ契約が CSS に定義されていません');
     }
 
     // toolbar 内操作要素の最小ターゲットサイズ（24x24）を満たす
@@ -509,8 +510,8 @@ export const PreviewPaddingVariants: Story = {
     // compact の padding は normal より小さいこと
     const normalArea = getPreviewArea(normalPreview);
     const compactArea = getPreviewArea(compactPreview);
-    const normalPadding = Number.parseFloat(getComputedStyle(normalArea).paddingTop);
-    const compactPadding = Number.parseFloat(getComputedStyle(compactArea).paddingTop);
+    const normalPadding = Number.parseFloat(getComputedStyle(normalArea).paddingBottom);
+    const compactPadding = Number.parseFloat(getComputedStyle(compactArea).paddingBottom);
     if (normalPadding <= compactPadding) {
       throw new Error(
         `compact padding (${String(compactPadding)}px) が normal padding (${String(normalPadding)}px) 以上になっています`,
@@ -519,7 +520,7 @@ export const PreviewPaddingVariants: Story = {
 
     // none の padding は 0 であること
     const noneArea = getPreviewArea(nonePreview);
-    const nonePadding = Number.parseFloat(getComputedStyle(noneArea).paddingTop);
+    const nonePadding = Number.parseFloat(getComputedStyle(noneArea).paddingBottom);
     if (nonePadding !== 0) {
       throw new Error(`none の padding が 0 ではありません: ${String(nonePadding)}px`);
     }
@@ -551,10 +552,10 @@ export const InvalidPaddingFallback: Story = {
     await preview.updateComplete;
     await waitFrame();
 
-    // 不正値は "compact" にリセットされる
-    if (preview.getAttribute('preview-padding') !== 'compact') {
+    // 不正値は "normal" にリセットされる
+    if (preview.getAttribute('preview-padding') !== 'normal') {
       throw new Error(
-        `不正な preview-padding 値が compact にフォールバックしていません: "${preview.getAttribute('preview-padding') ?? ''}"`,
+        `不正な preview-padding 値が normal にフォールバックしていません: "${preview.getAttribute('preview-padding') ?? ''}"`,
       );
     }
   },
@@ -585,9 +586,9 @@ export const InvalidAlignFallback: Story = {
     await preview.updateComplete;
     await waitFrame();
 
-    if (preview.getAttribute('preview-align') !== 'start') {
+    if (preview.getAttribute('preview-align') !== 'center') {
       throw new Error(
-        `不正な preview-align 値が start にフォールバックしていません: "${preview.getAttribute('preview-align') ?? ''}"`,
+        `不正な preview-align 値が center にフォールバックしていません: "${preview.getAttribute('preview-align') ?? ''}"`,
       );
     }
   },

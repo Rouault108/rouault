@@ -211,6 +211,14 @@ export const ComparisonPair: Story = {
     if (copyButtonAfter.label !== 'bad.ts のコードをコピー') {
       throw new Error(`切り替え後コピーラベルが不正です: "${copyButtonAfter.label}"`);
     }
+
+    firstTab.click();
+    await group.updateComplete;
+    await waitFrame();
+
+    if (firstTab.getAttribute('aria-selected') !== 'true') {
+      throw new Error('ストーリー終了時に初期タブへ復帰していません');
+    }
   },
 };
 
@@ -790,8 +798,8 @@ export const MobileMetadataRelocationContract: Story = {
 
     const cssText = readCssText(CodeGroup.styles);
     const requiredTokens = [
-      '@media (max-width: 639.98px)',
-      ':host([data-ready])',
+      'container-type: inline-size',
+      '@container (max-width: 639.98px)',
       '--ui-code-block-header-display: block',
     ];
 
