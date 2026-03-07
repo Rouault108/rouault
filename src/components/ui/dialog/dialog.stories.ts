@@ -326,18 +326,27 @@ export const NoActionsInitialFocusFallback: Story = {
     assert(!!trigger, '#no-actions-trigger が見つかりません');
     await flush(host);
 
-    const openedPromise = waitForEvent(host, 'ui-dialog-opened');
-    host.open(trigger);
-    await openedPromise;
-    await flush(host);
-
     const closeButton = getCloseButton(host);
-    assert(isShadowElementFocused(host, closeButton), 'actions 未提供時に close ボタンへ初期フォーカスが移動していません');
 
-    const closedPromise = waitForEvent(host, 'ui-dialog-closed');
-    host.close();
-    await closedPromise;
-    await flush(host);
+    for (let count = 0; count < 2; count += 1) {
+      const openedPromise = waitForEvent(host, 'ui-dialog-opened');
+      host.open(trigger);
+      await openedPromise;
+      await flush(host);
+
+      assert(isShadowElementFocused(host, closeButton), 'actions 未提供時に close ボタンへ初期フォーカスが移動していません');
+      assert(
+        getComputedStyle(closeButton, '::after').pointerEvents === 'none',
+        'close ボタンのヒットエリア疑似要素が pointer-events を奪ってはいけません',
+      );
+
+      const closedPromise = waitForEvent(host, 'ui-dialog-closed');
+      closeButton.click();
+      await closedPromise;
+      await flush(host);
+
+      assert(!host.opened, 'close ボタン押下後に opened="false" である必要があります');
+    }
   },
 };
 
@@ -407,6 +416,38 @@ export const TriggerFallbackAndReentrancySafety: Story = {
       `ui-dialog-closed イベントが 1 回のみ発火することを期待していましたが、実際には ${String(closedCount)} 回でした`,
     );
     assert(document.activeElement === trigger, 'トリガー省略時のフォーカス返却先が activeElement になっていません');
+
+    const reopenedPromise = waitForEvent(host, 'ui-dialog-opened');
+    host.open(trigger);
+    await reopenedPromise;
+    await flush(host);
+    assert(
+      openedCount === 2,
+      `再オープン後の opened イベントが 2 回であることを期待していましたが、実際には ${String(openedCount)} 回でした`,
+    );
+
+    await ensureNoEvents(
+      host,
+      ['ui-dialog-opened', 'ui-dialog-closed'],
+      async () => {
+        host.close();
+        host.open(trigger);
+        await wait(340);
+      },
+      120,
+    );
+    await flush(host);
+    assert(host.opened, 'close 中に再度 open() した場合は開いた状態を維持する必要があります');
+    assert(dialog.open, 'close 中に再度 open() した場合にネイティブの dialog 要素が閉じてはいけません');
+
+    const finalClosedPromise = waitForEvent(host, 'ui-dialog-closed');
+    host.close();
+    await finalClosedPromise;
+    await flush(host);
+    assert(
+      closedCount === 2,
+      `最終クローズ後の ui-dialog-closed イベントが 2 回であることを期待していましたが、実際には ${String(closedCount)} 回でした`,
+    );
 
     await ensureNoEvent(host, 'ui-dialog-closed', () => {
       host.close();

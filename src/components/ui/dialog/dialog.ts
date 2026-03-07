@@ -1,5 +1,7 @@
 import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
+import type { Button } from '../button/button';
+import '../button/button';
 import '../../../lib/icons';
 
 const CLOSE_BUTTON_LABEL = '閉じる';
@@ -70,54 +72,38 @@ export class UiDialog extends LitElement {
       justify-content: space-between;
       gap: var(--space-3);
       padding: var(--space-4) var(--space-6);
-      border-bottom: var(--border-width) solid var(--border-muted);
     }
 
     .header slot[name='title']::slotted(*) {
       margin: 0;
     }
 
-    .close-button {
-      inline-size: var(--control-height-sm);
-      block-size: var(--control-height-sm);
-      border: none;
-      border-radius: var(--radius-sm);
-      background: transparent;
-      color: var(--fg-muted);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      padding: 0;
+    ui-button.close-button {
       flex-shrink: 0;
       position: relative;
-      transition:
-        background-color var(--duration-fast) var(--ease-out),
-        color var(--duration-fast) var(--ease-out);
     }
 
-    .close-button::after {
+    ui-button.close-button::after {
       content: '';
       position: absolute;
       inline-size: var(--control-min-touch);
       block-size: var(--control-min-touch);
       inset: 50% auto auto 50%;
       transform: translate(-50%, -50%);
+      pointer-events: none;
     }
 
-    .close-button:hover {
+    ui-button.close-button::part(button) {
+      border-radius: var(--radius-sm);
+      color: var(--fg-muted);
+    }
+
+    ui-button.close-button::part(button):hover {
       background: var(--bg-hover);
       color: var(--fg-default);
     }
 
-    .close-button:focus-visible {
-      outline: var(--focus-ring-width) solid var(--focus-ring-color);
-      outline-offset: var(--focus-ring-offset);
-      border-radius: var(--focus-ring-radius);
-      animation: var(--animation-focus);
-    }
-
-    .close-button iconify-icon {
+    ui-button.close-button iconify-icon {
       inline-size: var(--icon-sm);
       block-size: var(--icon-sm);
       font-size: var(--icon-sm);
@@ -143,7 +129,6 @@ export class UiDialog extends LitElement {
       justify-content: flex-end;
       gap: var(--space-2);
       padding: var(--space-4) var(--space-6);
-      border-top: var(--border-width) solid var(--border-muted);
     }
 
     .footer slot[name='actions']::slotted(*) {
@@ -220,7 +205,7 @@ export class UiDialog extends LitElement {
         opacity: 0.7;
       }
 
-      .close-button {
+      ui-button.close-button::part(button) {
         border: 1px solid ButtonText;
         color: ButtonText;
       }
@@ -253,7 +238,7 @@ export class UiDialog extends LitElement {
   private _dialogElement?: HTMLDialogElement;
 
   @query('.close-button')
-  private _closeButtonElement?: HTMLButtonElement;
+  private _closeButtonElement?: Button;
 
   private _triggerElement: HTMLElement | null = null;
   private _isClosing = false;
@@ -281,8 +266,8 @@ export class UiDialog extends LitElement {
   }
 
   open(trigger?: HTMLElement): void {
-    this._captureTrigger(trigger);
     if (this.opened) return;
+    this._captureTrigger(trigger);
     this.opened = true;
   }
 
@@ -300,9 +285,9 @@ export class UiDialog extends LitElement {
   private async _openDialog(): Promise<void> {
     const dialog = this._dialogElement;
     if (!dialog) return;
+    if (!this.opened) return;
 
     if (dialog.open) {
-      UiDialog._lockBodyScroll();
       return;
     }
 
@@ -343,6 +328,7 @@ export class UiDialog extends LitElement {
   private async _closeDialog(): Promise<void> {
     const dialog = this._dialogElement;
     if (!dialog) return;
+    if (this.opened) return;
     if (!dialog.open) {
       UiDialog._unlockBodyScroll();
       return;
@@ -353,13 +339,12 @@ export class UiDialog extends LitElement {
     dialog.setAttribute('data-closing', '');
     await this._waitForAnimations(dialog);
     dialog.removeAttribute('data-closing');
+    if (this.opened) {
+      this._isClosing = false;
+      return;
+    }
 
     dialog.close();
-
-    this._isClosing = false;
-    UiDialog._unlockBodyScroll();
-    this._restoreTriggerFocus();
-    this.dispatchEvent(new CustomEvent('ui-dialog-closed'));
   }
 
   private async _waitForAnimations(dialog: HTMLDialogElement): Promise<void> {
@@ -435,7 +420,7 @@ export class UiDialog extends LitElement {
   };
 
   private _onNativeClose = (): void => {
-    if (this._isClosing) return;
+    this._isClosing = false;
     this.opened = false;
     UiDialog._unlockBodyScroll();
     this._restoreTriggerFocus();
@@ -502,9 +487,16 @@ export class UiDialog extends LitElement {
       >
         <div class="header">
           <slot name="title"></slot>
-          <button class="close-button" type="button" aria-label=${CLOSE_BUTTON_LABEL} @click=${this._onCloseButtonClick}>
+          <ui-button
+            class="close-button"
+            variant="ghost"
+            size="sm"
+            icon-only
+            aria-label=${CLOSE_BUTTON_LABEL}
+            @click=${this._onCloseButtonClick}
+          >
             <iconify-icon icon="lucide:x" aria-hidden="true"></iconify-icon>
-          </button>
+          </ui-button>
         </div>
 
         <div class="body">
