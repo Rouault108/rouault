@@ -44,6 +44,28 @@ const getDocumentCodeBlockStyle = (): HTMLStyleElement => {
   return style;
 };
 
+const getShadowStylesText = (shadowRoot: ShadowRoot | null): string => {
+  if (!shadowRoot) return '';
+
+  const inlineStyles = Array.from(shadowRoot.querySelectorAll('style'))
+    .map((style) => style.textContent)
+    .join('\n');
+
+  const adoptedStyles = shadowRoot.adoptedStyleSheets
+    .map((sheet) => {
+      try {
+        return Array.from(sheet.cssRules)
+          .map((rule) => rule.cssText)
+          .join('\n');
+      } catch {
+        return '';
+      }
+    })
+    .join('\n');
+
+  return `${inlineStyles}\n${adoptedStyles}`;
+};
+
 const meta: Meta<CodeBlock> = {
   title: 'Components/Code Block',
   component: 'ui-code-block',
@@ -535,7 +557,7 @@ export const MediaStyleContracts: Story = {
     const block = getCodeBlock(canvasElement, 'media-contract-block');
     await block.updateComplete;
 
-    const shadowStyle = block.shadowRoot?.querySelector('style')?.textContent ?? '';
+    const shadowStyle = getShadowStylesText(block.shadowRoot);
     if (!shadowStyle.includes('@media print')) {
       throw new Error('Shadow CSS に print スタイルが定義されていません');
     }
