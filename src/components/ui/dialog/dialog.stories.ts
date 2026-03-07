@@ -27,7 +27,11 @@ function assert(condition: unknown, message: string): asserts condition {
 
 const hasExpectedCount = (actual: number, expected: number): boolean => actual === expected;
 
-const waitForEvent = <T extends Event>(target: EventTarget, eventName: string, timeoutMs = 3000): Promise<T> =>
+const waitForEvent = <T extends Event>(
+  target: EventTarget,
+  eventName: string,
+  timeoutMs = 3000,
+): Promise<T> =>
   new Promise((resolve, reject) => {
     const timer = window.setTimeout(() => {
       reject(new Error(`${eventName} イベントの待機がタイムアウトしました`));
@@ -181,7 +185,10 @@ export const ModalCriticalDecisionOpenClose: Story = {
     const dialog = getNativeDialog(host);
     assert(host.opened, 'opened="true" であることを期待していましたが、実際には false でした');
     assert(dialog.open, 'ネイティブの dialog 要素が開いていません');
-    assert(dialog.getAttribute('aria-modal') === 'true', 'modal="true" の場合、aria-modal="true" が設定されている必要があります');
+    assert(
+      dialog.getAttribute('aria-modal') === 'true',
+      'modal="true" の場合、aria-modal="true" が設定されている必要があります',
+    );
     assert(
       dialog.getAttribute('aria-labelledby') === 'modal-title',
       `aria-labelledby="modal-title" を期待していましたが、実際には "${dialog.getAttribute('aria-labelledby') ?? 'null'}" でした`,
@@ -190,9 +197,15 @@ export const ModalCriticalDecisionOpenClose: Story = {
       dialog.getAttribute('aria-describedby') === 'modal-description',
       `aria-describedby="modal-description" を期待していましたが、実際には "${dialog.getAttribute('aria-describedby') ?? 'null'}" でした`,
     );
-    assert(dialog.getAttribute('aria-label') === null, 'aria-labelledby 指定時は aria-label を省略する必要があります');
+    assert(
+      dialog.getAttribute('aria-label') === null,
+      'aria-labelledby 指定時は aria-label を省略する必要があります',
+    );
     assert(openedEvent.detail.trigger === trigger, 'opened イベントのトリガーが不正です');
-    assert(document.activeElement === cancelButton, '初期フォーカスが最初の actions 要素に移動していません');
+    assert(
+      document.activeElement === cancelButton,
+      '初期フォーカスが最初の actions 要素に移動していません',
+    );
     assert(
       document.body.hasAttribute('data-ui-dialog-open'),
       'ダイアログ表示中に body 要素に data-ui-dialog-open 属性が付与されていません',
@@ -203,9 +216,15 @@ export const ModalCriticalDecisionOpenClose: Story = {
     await closedPromise;
     await flush(host);
 
-    assert(!host.opened, 'close() 呼び出し後に opened="false" であることを期待していましたが、実際には true でした');
+    assert(
+      !host.opened,
+      'close() 呼び出し後に opened="false" であることを期待していましたが、実際には true でした',
+    );
     assert(!dialog.open, 'close() 呼び出し後にネイティブの dialog 要素が閉じていません');
-    assert(document.activeElement === trigger, 'close() 後にトリガーへフォーカスが返却されていません');
+    assert(
+      document.activeElement === trigger,
+      'close() 後にトリガーへフォーカスが返却されていません',
+    );
     assert(
       !document.body.hasAttribute('data-ui-dialog-open'),
       'close() 後に body 要素の data-ui-dialog-open 属性が解除されていません',
@@ -223,7 +242,11 @@ export const ModalEscCancelSequence: Story = {
     <div style="padding: 2rem; min-height: 18rem;">
       <button id="modal-esc-trigger" type="button">Escテストを開く</button>
 
-      <ui-dialog id="dialog-modal-esc" title-id="modal-esc-title" description-id="modal-esc-description">
+      <ui-dialog
+        id="dialog-modal-esc"
+        title-id="modal-esc-title"
+        description-id="modal-esc-description"
+      >
         <h2 slot="title" id="modal-esc-title">Esc確認</h2>
         <p id="modal-esc-description">Esc でキャンセルイベントが発火して閉じることを確認します。</p>
 
@@ -299,22 +322,36 @@ export const NonModalLightweightInfo: Story = {
 
     const dialog = getNativeDialog(host);
     assert(dialog.open, '非モーダルダイアログが開いていません');
-    assert(dialog.getAttribute('aria-modal') === null, 'modal=false の場合、aria-modal 属性は設定しない必要があります');
+    assert(
+      dialog.getAttribute('aria-modal') === null,
+      'modal=false の場合、aria-modal 属性は設定しない必要があります',
+    );
 
     await ensureNoEvents(host, ['ui-dialog-cancel', 'ui-dialog-closed'], () => {
-      dialog.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+      trigger.click();
     });
     assert(dialog.open, '背景クリックでダイアログが閉じてはいけません');
 
+    trigger.focus();
+    assert(
+      document.activeElement === trigger,
+      '非モーダル検証のため、ダイアログ外へフォーカスを移せていません',
+    );
+
     const cancelByEscPromise = waitForEvent(host, 'ui-dialog-cancel');
     const closedByEscPromise = waitForEvent(host, 'ui-dialog-closed');
-    dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, composed: true }));
+    trigger.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, composed: true }),
+    );
     await cancelByEscPromise;
     await closedByEscPromise;
     await flush(host);
 
     assert(!dialog.open, 'Esc キー押下後にダイアログが閉じていません');
-    assert(document.activeElement === trigger, 'Esc によるクローズ後にトリガーへフォーカスが返却されていません');
+    assert(
+      document.activeElement === trigger,
+      'Esc によるクローズ後にトリガーへフォーカスが返却されていません',
+    );
   },
 };
 
@@ -327,7 +364,11 @@ export const NoActionsInitialFocusFallback: Story = {
     <div style="padding: 2rem; min-height: 18rem;">
       <button id="no-actions-trigger" type="button">actionsなしで開く</button>
 
-      <ui-dialog id="dialog-no-actions" title-id="no-actions-title" description-id="no-actions-description">
+      <ui-dialog
+        id="dialog-no-actions"
+        title-id="no-actions-title"
+        description-id="no-actions-description"
+      >
         <h2 slot="title" id="no-actions-title">初期フォーカス確認</h2>
         <p id="no-actions-description">actions スロット未指定時のフォーカス先を確認します。</p>
       </ui-dialog>
@@ -340,14 +381,16 @@ export const NoActionsInitialFocusFallback: Story = {
     await flush(host);
 
     const closeButton = getCloseButton(host);
-
     for (let count = 0; count < 2; count += 1) {
       const openedPromise = waitForEvent(host, 'ui-dialog-opened');
       host.open(trigger);
       await openedPromise;
       await flush(host);
 
-      assert(isShadowElementFocused(host, closeButton), 'actions 未提供時に close ボタンへ初期フォーカスが移動していません');
+      assert(
+        isShadowElementFocused(host, closeButton),
+        'actions 未提供時に close ボタンへ初期フォーカスが移動していません',
+      );
       assert(
         getComputedStyle(closeButton, '::after').pointerEvents === 'none',
         'close ボタンのヒットエリア疑似要素が pointer-events を奪ってはいけません',
@@ -429,7 +472,10 @@ export const TriggerFallbackAndReentrancySafety: Story = {
       closedCount === 1,
       `ui-dialog-closed イベントが 1 回のみ発火することを期待していましたが、実際には ${String(closedCount)} 回でした`,
     );
-    assert(document.activeElement === trigger, 'トリガー省略時のフォーカス返却先が activeElement になっていません');
+    assert(
+      document.activeElement === trigger,
+      'トリガー省略時のフォーカス返却先が activeElement になっていません',
+    );
 
     const reopenedPromise = waitForEvent(host, 'ui-dialog-opened');
     host.open(trigger);
@@ -446,21 +492,33 @@ export const TriggerFallbackAndReentrancySafety: Story = {
     };
     host.addEventListener('ui-dialog-closed', closedDuringReopenListener);
 
-    const reopenDuringClosePromise = waitForEvent<CustomEvent<UiDialogOpenedDetail>>(host, 'ui-dialog-opened');
+    const reopenDuringClosePromise = waitForEvent<CustomEvent<UiDialogOpenedDetail>>(
+      host,
+      'ui-dialog-opened',
+    );
     host.close();
     host.open(trigger);
     const reopenDuringCloseEvent = await reopenDuringClosePromise;
     await flush(host);
     host.removeEventListener('ui-dialog-closed', closedDuringReopenListener);
 
-    assert(reopenDuringCloseEvent.detail.trigger === trigger, 'close を打ち消した再 open の trigger が不正です');
-    assert(!closedDuringReopen, 'close を open で打ち消した場合に ui-dialog-closed は発火してはいけません');
+    assert(
+      reopenDuringCloseEvent.detail.trigger === trigger,
+      'close を打ち消した再 open の trigger が不正です',
+    );
+    assert(
+      !closedDuringReopen,
+      'close を open で打ち消した場合に ui-dialog-closed は発火してはいけません',
+    );
     assert(
       hasExpectedCount(openedCount, 3),
       `close を打ち消した再 open 後の opened イベントが 3 回であることを期待していましたが、実際には ${String(openedCount)} 回でした`,
     );
     assert(host.opened, 'close 中に再度 open() した場合は開いた状態を維持する必要があります');
-    assert(dialog.open, 'close 中に再度 open() した場合にネイティブの dialog 要素が閉じてはいけません');
+    assert(
+      dialog.open,
+      'close 中に再度 open() した場合にネイティブの dialog 要素が閉じてはいけません',
+    );
 
     const finalClosedPromise = waitForEvent(host, 'ui-dialog-closed');
     host.close();
@@ -511,8 +569,14 @@ export const AriaLabelFallback: Story = {
     await flush(host);
 
     const dialog = getNativeDialog(host);
-    assert(dialog.getAttribute('aria-labelledby') === null, 'aria-label 経路では aria-labelledby を省略する必要があります');
-    assert(dialog.getAttribute('aria-label') === '通知ダイアログ', 'aria-label が正しく反映されていません');
+    assert(
+      dialog.getAttribute('aria-labelledby') === null,
+      'aria-label 経路では aria-labelledby を省略する必要があります',
+    );
+    assert(
+      dialog.getAttribute('aria-label') === '通知ダイアログ',
+      'aria-label が正しく反映されていません',
+    );
 
     const closedPromise = waitForEvent(host, 'ui-dialog-closed');
     host.close();
@@ -556,25 +620,37 @@ export const MultiDialogScrollLockReferenceCount: Story = {
     hostA.open(triggerA);
     await openAPromise;
     await flush(hostA);
-    assert(document.body.hasAttribute('data-ui-dialog-open'), '1件目のダイアログオープン後に body 要素にロック属性が付与されていません');
+    assert(
+      document.body.hasAttribute('data-ui-dialog-open'),
+      '1件目のダイアログオープン後に body 要素にロック属性が付与されていません',
+    );
 
     const openBPromise = waitForEvent(hostB, 'ui-dialog-opened');
     hostB.open(triggerB);
     await openBPromise;
     await flush(hostB);
-    assert(document.body.hasAttribute('data-ui-dialog-open'), '2件目のダイアログオープン後に body 要素のロック属性が失われています');
+    assert(
+      document.body.hasAttribute('data-ui-dialog-open'),
+      '2件目のダイアログオープン後に body 要素のロック属性が失われています',
+    );
 
     const closeAPromise = waitForEvent(hostA, 'ui-dialog-closed');
     hostA.close();
     await closeAPromise;
     await flush(hostA);
-    assert(document.body.hasAttribute('data-ui-dialog-open'), '1件だけクローズした段階で body 要素のロック属性を解除してはいけません');
+    assert(
+      document.body.hasAttribute('data-ui-dialog-open'),
+      '1件だけクローズした段階で body 要素のロック属性を解除してはいけません',
+    );
 
     const closeBPromise = waitForEvent(hostB, 'ui-dialog-closed');
     hostB.close();
     await closeBPromise;
     await flush(hostB);
-    assert(!document.body.hasAttribute('data-ui-dialog-open'), '最終的なクローズ後に body 要素のロック属性が解除されていません');
+    assert(
+      !document.body.hasAttribute('data-ui-dialog-open'),
+      '最終的なクローズ後に body 要素のロック属性が解除されていません',
+    );
   },
 };
 
@@ -586,7 +662,11 @@ export const MultiDialogScrollLockReferenceCount: Story = {
 export const AttributeDrivenOpenState: Story = {
   render: () => html`
     <div style="padding: 2rem; min-height: 18rem;">
-      <ui-dialog id="dialog-attribute-driven" title-id="attribute-title" description-id="attribute-description">
+      <ui-dialog
+        id="dialog-attribute-driven"
+        title-id="attribute-title"
+        description-id="attribute-description"
+      >
         <h2 slot="title" id="attribute-title">属性駆動テスト</h2>
         <p id="attribute-description">opened プロパティを直接変更して開閉します。</p>
 
@@ -616,6 +696,82 @@ export const AttributeDrivenOpenState: Story = {
 
     assert(!host.opened, 'opened="false" 設定後にダイアログが閉じていません');
     assert(!dialog.open, 'opened="false" 設定後にネイティブの dialog 要素が閉じていません');
+  },
+};
+
+/**
+ * 境界条件:
+ * - open 中に modal を切り替えてもネイティブ挙動と aria が同期する
+ * - modal=true -> false 切り替え後はダイアログ外フォーカスから Esc で閉じられる
+ */
+export const LiveModalModeSwitching: Story = {
+  render: () => html`
+    <div style="padding: 2rem; min-height: 18rem;">
+      <button id="modal-switch-trigger" type="button">切り替えトリガー</button>
+
+      <ui-dialog
+        id="dialog-modal-switch"
+        title-id="modal-switch-title"
+        description-id="modal-switch-description"
+      >
+        <h2 slot="title" id="modal-switch-title">モード切り替え確認</h2>
+        <p id="modal-switch-description">
+          open 中の modal 切り替えで挙動が同期することを確認します。
+        </p>
+
+        <div slot="actions" style="display: flex; gap: 8px; justify-content: flex-end;">
+          <button type="button">了解</button>
+        </div>
+      </ui-dialog>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'dialog-modal-switch');
+    const trigger = canvasElement.querySelector<HTMLButtonElement>('#modal-switch-trigger');
+    assert(!!trigger, '#modal-switch-trigger が見つかりません');
+    await flush(host);
+
+    const openedPromise = waitForEvent(host, 'ui-dialog-opened');
+    host.open(trigger);
+    await openedPromise;
+    await flush(host);
+
+    const dialog = getNativeDialog(host);
+    assert(
+      dialog.getAttribute('aria-modal') === 'true',
+      '初期状態では aria-modal="true" である必要があります',
+    );
+
+    host.modal = false;
+    await flush(host);
+    await waitFrame();
+    await flush(host);
+
+    assert(dialog.open, 'modal=false へ切り替え後もダイアログは開いたままである必要があります');
+    assert(
+      dialog.getAttribute('aria-modal') === null,
+      'modal=false へ切り替え後は aria-modal 属性を除去する必要があります',
+    );
+
+    trigger.focus();
+    assert(
+      document.activeElement === trigger,
+      'modal 切り替え検証のため、ダイアログ外へフォーカスを移せていません',
+    );
+
+    const cancelPromise = waitForEvent(host, 'ui-dialog-cancel');
+    const closedPromise = waitForEvent(host, 'ui-dialog-closed');
+    trigger.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, composed: true }),
+    );
+    await cancelPromise;
+    await closedPromise;
+    await flush(host);
+
+    assert(
+      !dialog.open,
+      'modal=false へ切り替え後、外側フォーカスからの Esc で閉じる必要があります',
+    );
   },
 };
 
@@ -693,7 +849,11 @@ export const VisualReducedMotion: Story = {
     <div style="padding: 2rem; --duration-slower: 0.01ms; --duration-fast: 0.01ms;">
       <button id="reduced-motion-trigger" type="button">開く</button>
 
-      <ui-dialog id="dialog-reduced-motion" title-id="reduced-motion-title" description-id="reduced-motion-description">
+      <ui-dialog
+        id="dialog-reduced-motion"
+        title-id="reduced-motion-title"
+        description-id="reduced-motion-description"
+      >
         <h2 slot="title" id="reduced-motion-title">Reduced Motion Visual</h2>
         <p id="reduced-motion-description">アニメーション短縮時の視覚崩れを確認します。</p>
       </ui-dialog>

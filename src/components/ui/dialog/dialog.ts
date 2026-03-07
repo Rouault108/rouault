@@ -242,13 +242,18 @@ export class UiDialog extends LitElement {
 
   private _triggerElement: HTMLElement | null = null;
   private _isClosing = false;
+  private _isSyncingModalMode = false;
+  private _isDocumentKeydownListening = false;
   private _operation: Promise<void> = Promise.resolve();
 
   private static _scrollLockCount = 0;
+  private static _openDialogs: UiDialog[] = [];
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
+    this._detachDocumentKeydownListener();
     if (this._dialogElement?.open) {
+      UiDialog._unregisterOpenDialog(this);
       UiDialog._unlockBodyScroll();
     }
   }
@@ -261,6 +266,12 @@ export class UiDialog extends LitElement {
           return;
         }
         await this._closeDialog();
+      });
+    }
+
+    if (changedProperties.has('modal') && this._dialogElement?.open) {
+      this._enqueue(async () => {
+        await this._syncModalMode();
       });
     }
   }
@@ -288,6 +299,8 @@ export class UiDialog extends LitElement {
     if (!this.opened) return;
 
     if (dialog.open) {
+      UiDialog._registerOpenDialog(this);
+      this._syncDocumentKeydownListener();
       this._focusInitialElement();
       await this._waitForAnimations(dialog);
       if (!this._isCurrentlyOpened()) return;
@@ -316,7 +329,9 @@ export class UiDialog extends LitElement {
       return;
     }
 
+    UiDialog._registerOpenDialog(this);
     UiDialog._lockBodyScroll();
+    this._syncDocumentKeydownListener();
     this._focusInitialElement();
 
     await this._waitForAnimations(dialog);
@@ -330,6 +345,8 @@ export class UiDialog extends LitElement {
     if (!dialog) return;
     if (this.opened) return;
     if (!dialog.open) {
+      UiDialog._unregisterOpenDialog(this);
+      this._syncDocumentKeydownListener();
       UiDialog._unlockBodyScroll();
       return;
     }
@@ -404,6 +421,37 @@ export class UiDialog extends LitElement {
     this.dispatchEvent(new CustomEvent('ui-dialog-cancel'));
   }
 
+  private async _syncModalMode(): Promise<void> {
+    const dialog = this._dialogElement;
+    if (!dialog?.open) return;
+    if (!this.opened) return;
+    if (this._isClosing) return;
+
+    this._isSyncingModalMode = true;
+    dialog.close();
+
+    try {
+      if (this.modal) {
+        dialog.showModal();
+      } else {
+        dialog.show();
+      }
+    } catch {
+      UiDialog._unregisterOpenDialog(this);
+      this._syncDocumentKeydownListener();
+      UiDialog._unlockBodyScroll();
+      this.opened = false;
+      this._restoreTriggerFocus();
+      this.dispatchEvent(new CustomEvent('ui-dialog-closed'));
+      return;
+    }
+
+    UiDialog._registerOpenDialog(this);
+    this._syncDocumentKeydownListener();
+    this._focusInitialElement();
+    await this._waitForAnimations(dialog);
+  }
+
   private _isCurrentlyOpened(): boolean {
     return this.opened;
   }
@@ -431,9 +479,23 @@ export class UiDialog extends LitElement {
     this.close();
   };
 
+  private _onDocumentKeydown = (event: KeyboardEvent): void => {
+    if (this.modal) return;
+    if (!this._dialogElement?.open) return;
+    if (!UiDialog._isTopmostOpenDialog(this)) return;
+    this._onNonModalKeydown(event);
+  };
+
   private _onNativeClose = (): void => {
+    if (this._isSyncingModalMode) {
+      this._isSyncingModalMode = false;
+      return;
+    }
+
     this._isClosing = false;
     this.opened = false;
+    UiDialog._unregisterOpenDialog(this);
+    this._syncDocumentKeydownListener();
     UiDialog._unlockBodyScroll();
     this._restoreTriggerFocus();
     this.dispatchEvent(new CustomEvent('ui-dialog-closed'));
@@ -451,13 +513,38 @@ export class UiDialog extends LitElement {
   }
 
   private _hasAccessibleName(): boolean {
-    return this._normalizeString(this.titleId) !== undefined || this._normalizeString(this.ariaLabelText) !== undefined;
+    return (
+      this._normalizeString(this.titleId) !== undefined ||
+      this._normalizeString(this.ariaLabelText) !== undefined
+    );
   }
 
   private _normalizeString(value: string | undefined): string | undefined {
     if (typeof value !== 'string') return undefined;
     const normalized = value.trim();
     return normalized === '' ? undefined : normalized;
+  }
+
+  private _syncDocumentKeydownListener(): void {
+    const shouldListen = Boolean(this._dialogElement?.open) && !this.modal;
+    if (shouldListen) {
+      this._attachDocumentKeydownListener();
+      return;
+    }
+
+    this._detachDocumentKeydownListener();
+  }
+
+  private _attachDocumentKeydownListener(): void {
+    if (this._isDocumentKeydownListening) return;
+    this.ownerDocument.addEventListener('keydown', this._onDocumentKeydown, true);
+    this._isDocumentKeydownListening = true;
+  }
+
+  private _detachDocumentKeydownListener(): void {
+    if (!this._isDocumentKeydownListening) return;
+    this.ownerDocument.removeEventListener('keydown', this._onDocumentKeydown, true);
+    this._isDocumentKeydownListening = false;
   }
 
   private static _lockBodyScroll(): void {
@@ -482,6 +569,19 @@ export class UiDialog extends LitElement {
     body.removeAttribute(BODY_DIALOG_OPEN_ATTRIBUTE);
   }
 
+  private static _registerOpenDialog(dialog: UiDialog): void {
+    UiDialog._openDialogs = UiDialog._openDialogs.filter((item) => item !== dialog);
+    UiDialog._openDialogs.push(dialog);
+  }
+
+  private static _unregisterOpenDialog(dialog: UiDialog): void {
+    UiDialog._openDialogs = UiDialog._openDialogs.filter((item) => item !== dialog);
+  }
+
+  private static _isTopmostOpenDialog(dialog: UiDialog): boolean {
+    return UiDialog._openDialogs.at(-1) === dialog;
+  }
+
   override render() {
     const labelledBy = this._resolveIdAttribute(this.titleId);
     const describedBy = this._resolveIdAttribute(this.descriptionId);
@@ -494,7 +594,6 @@ export class UiDialog extends LitElement {
         aria-describedby=${describedBy}
         aria-label=${ariaLabel}
         @cancel=${this._onNativeCancel}
-        @keydown=${this._onNonModalKeydown}
         @close=${this._onNativeClose}
       >
         <div class="header">
