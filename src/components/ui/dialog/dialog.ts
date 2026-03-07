@@ -288,6 +288,10 @@ export class UiDialog extends LitElement {
     if (!this.opened) return;
 
     if (dialog.open) {
+      this._focusInitialElement();
+      await this._waitForAnimations(dialog);
+      if (!this._isCurrentlyOpened()) return;
+      this._dispatchOpenedEvent();
       return;
     }
 
@@ -317,12 +321,8 @@ export class UiDialog extends LitElement {
 
     await this._waitForAnimations(dialog);
 
-    if (!this.opened) return;
-    this.dispatchEvent(
-      new CustomEvent<UiDialogOpenedDetail>('ui-dialog-opened', {
-        detail: { trigger: this._triggerElement },
-      }),
-    );
+    if (!this._isCurrentlyOpened()) return;
+    this._dispatchOpenedEvent();
   }
 
   private async _closeDialog(): Promise<void> {
@@ -339,7 +339,7 @@ export class UiDialog extends LitElement {
     dialog.setAttribute('data-closing', '');
     await this._waitForAnimations(dialog);
     dialog.removeAttribute('data-closing');
-    if (this.opened) {
+    if (this._isCurrentlyOpened()) {
       this._isClosing = false;
       return;
     }
@@ -402,6 +402,18 @@ export class UiDialog extends LitElement {
 
   private _emitCancelEvent(): void {
     this.dispatchEvent(new CustomEvent('ui-dialog-cancel'));
+  }
+
+  private _isCurrentlyOpened(): boolean {
+    return this.opened;
+  }
+
+  private _dispatchOpenedEvent(): void {
+    this.dispatchEvent(
+      new CustomEvent<UiDialogOpenedDetail>('ui-dialog-opened', {
+        detail: { trigger: this._triggerElement },
+      }),
+    );
   }
 
   private _onNativeCancel = (event: Event): void => {

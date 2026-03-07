@@ -25,6 +25,8 @@ function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
 
+const hasExpectedCount = (actual: number, expected: number): boolean => actual === expected;
+
 const waitForEvent = <T extends Event>(target: EventTarget, eventName: string, timeoutMs = 3000): Promise<T> =>
   new Promise((resolve, reject) => {
     const timer = window.setTimeout(() => {
@@ -354,6 +356,7 @@ export const NoActionsInitialFocusFallback: Story = {
  * 境界条件:
  * - open() の trigger 省略時に activeElement を自動採用
  * - 多重 open()/close() でイベントが重複しない
+ * - close を open で打ち消した場合は closed を発火せず opened を再通知する
  */
 export const TriggerFallbackAndReentrancySafety: Story = {
   render: () => html`
@@ -422,21 +425,29 @@ export const TriggerFallbackAndReentrancySafety: Story = {
     await reopenedPromise;
     await flush(host);
     assert(
-      openedCount === 2,
+      hasExpectedCount(openedCount, 2),
       `再オープン後の opened イベントが 2 回であることを期待していましたが、実際には ${String(openedCount)} 回でした`,
     );
 
-    await ensureNoEvents(
-      host,
-      ['ui-dialog-opened', 'ui-dialog-closed'],
-      async () => {
-        host.close();
-        host.open(trigger);
-        await wait(340);
-      },
-      120,
-    );
+    let closedDuringReopen = false;
+    const closedDuringReopenListener = (): void => {
+      closedDuringReopen = true;
+    };
+    host.addEventListener('ui-dialog-closed', closedDuringReopenListener);
+
+    const reopenDuringClosePromise = waitForEvent<CustomEvent<UiDialogOpenedDetail>>(host, 'ui-dialog-opened');
+    host.close();
+    host.open(trigger);
+    const reopenDuringCloseEvent = await reopenDuringClosePromise;
     await flush(host);
+    host.removeEventListener('ui-dialog-closed', closedDuringReopenListener);
+
+    assert(reopenDuringCloseEvent.detail.trigger === trigger, 'close を打ち消した再 open の trigger が不正です');
+    assert(!closedDuringReopen, 'close を open で打ち消した場合に ui-dialog-closed は発火してはいけません');
+    assert(
+      hasExpectedCount(openedCount, 3),
+      `close を打ち消した再 open 後の opened イベントが 3 回であることを期待していましたが、実際には ${String(openedCount)} 回でした`,
+    );
     assert(host.opened, 'close 中に再度 open() した場合は開いた状態を維持する必要があります');
     assert(dialog.open, 'close 中に再度 open() した場合にネイティブの dialog 要素が閉じてはいけません');
 
@@ -445,7 +456,7 @@ export const TriggerFallbackAndReentrancySafety: Story = {
     await finalClosedPromise;
     await flush(host);
     assert(
-      closedCount === 2,
+      hasExpectedCount(closedCount, 2),
       `最終クローズ後の ui-dialog-closed イベントが 2 回であることを期待していましたが、実際には ${String(closedCount)} 回でした`,
     );
 
