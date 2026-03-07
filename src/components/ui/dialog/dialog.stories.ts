@@ -136,22 +136,33 @@ type Story = StoryObj<UiDialog>;
  * - modal=true（重要な意思決定）
  * - title/description/actions を揃えた基本構成
  */
+const renderModalCriticalDecision = () => html`
+  <div style="padding: 2rem; min-height: 18rem;">
+    <button id="modal-trigger" type="button">ダイアログを開く</button>
+
+    <ui-dialog id="dialog-modal" title-id="modal-title" description-id="modal-description">
+      <h2 slot="title" id="modal-title">変更を保存しますか？</h2>
+      <p id="modal-description">現在の設定変更を保存して画面を閉じます。</p>
+
+      <div slot="actions" style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button id="modal-cancel" type="button">キャンセル</button>
+        <button id="modal-confirm" type="button">保存して閉じる</button>
+      </div>
+    </ui-dialog>
+  </div>
+`;
+
 export const ModalCriticalDecision: Story = {
-  render: () => html`
-    <div style="padding: 2rem; min-height: 18rem;">
-      <button id="modal-trigger" type="button">ダイアログを開く</button>
+  render: renderModalCriticalDecision,
+};
 
-      <ui-dialog id="dialog-modal" title-id="modal-title" description-id="modal-description">
-        <h2 slot="title" id="modal-title">変更を保存しますか？</h2>
-        <p id="modal-description">現在の設定変更を保存して画面を閉じます。</p>
-
-        <div slot="actions" style="display: flex; gap: 8px; justify-content: flex-end;">
-          <button id="modal-cancel" type="button">キャンセル</button>
-          <button id="modal-confirm" type="button">保存して閉じる</button>
-        </div>
-      </ui-dialog>
-    </div>
-  `,
+/**
+ * 相互作用テスト:
+ * - open()/close() の基本経路
+ * - モーダル時の aria/focus/scroll lock
+ */
+export const ModalCriticalDecisionOpenClose: Story = {
+  render: renderModalCriticalDecision,
   play: async ({ canvasElement }) => {
     const host = getHost(canvasElement, 'dialog-modal');
     const trigger = canvasElement.querySelector<HTMLButtonElement>('#modal-trigger');
