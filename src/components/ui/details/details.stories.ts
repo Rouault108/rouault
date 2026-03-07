@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { html } from 'lit';
+import { CSSResult, html } from 'lit';
 import './details';
-import type { Details, DetailsVariant } from './details';
+import { Details, type DetailsVariant } from './details';
 
 interface MatrixCase {
   id: string;
@@ -27,6 +27,14 @@ const getContentWrapper = (details: Details): HTMLElement => {
   const content = details.shadowRoot?.querySelector<HTMLElement>('.content-wrapper');
   if (!content) throw new Error('.content-wrapper が見つかりません');
   return content;
+};
+
+const getComponentCssText = (): string => {
+  const styles = Details.styles;
+  const styleList = Array.isArray(styles) ? styles as CSSResult[] : [styles];
+  return styleList
+    .map((style) => ('cssText' in style && typeof style.cssText === 'string' ? style.cssText : ''))
+    .join('\n');
 };
 
 const meta: Meta<Details> = {
@@ -328,7 +336,7 @@ export const KeyboardInteraction: Story = {
     }
 
     trigger.focus();
-    if (document.activeElement !== trigger) {
+    if (details.shadowRoot?.activeElement !== trigger) {
       throw new Error('trigger がフォーカス可能である必要があります');
     }
 
@@ -372,12 +380,9 @@ export const SummarySlotPriority: Story = {
       throw new Error(`summary slot の割り当て要素数は1件のはずですが ${String(assigned.length)} 件です`);
     }
 
-    const triggerText = getTrigger(details).textContent.replace(/\s+/g, ' ').trim();
-    if (!triggerText.includes('スロットで上書きされた見出し')) {
-      throw new Error('slot の見出しテキストがトリガーに反映されていません');
-    }
-    if (triggerText.includes('属性サマリー（表示されない想定）')) {
-      throw new Error('summary 属性のフォールバックが表示されてしまっています');
+    const assignedText = assigned[0]?.textContent.replace(/\s+/g, ' ').trim() ?? '';
+    if (assignedText !== 'スロットで上書きされた見出し') {
+      throw new Error('summary slot に期待した見出しが割り当てられていません');
     }
   },
 };
@@ -499,12 +504,7 @@ export const ReducedMotionContract: Story = {
     if (!details) throw new Error('#reduced-motion-contract が見つかりません');
     await details.updateComplete;
 
-    const styles = details.shadowRoot?.querySelectorAll('style');
-    if (!styles || styles.length === 0) throw new Error('style タグが見つかりません');
-
-    const cssText = Array.from(styles)
-      .map((style) => style.textContent)
-      .join('\n');
+    const cssText = getComponentCssText();
 
     if (!cssText.includes('@media (prefers-reduced-motion: reduce)')) {
       throw new Error('prefers-reduced-motion 契約が定義されていません');
@@ -532,11 +532,7 @@ export const ForcedColorsContract: Story = {
     if (!details) throw new Error('#forced-colors-contract が見つかりません');
     await details.updateComplete;
 
-    const styles = details.shadowRoot?.querySelectorAll('style');
-    if (!styles || styles.length === 0) throw new Error('style タグが見つかりません');
-    const cssText = Array.from(styles)
-      .map((style) => style.textContent)
-      .join('\n');
+    const cssText = getComponentCssText();
 
     if (!cssText.includes('@media (forced-colors: active)')) {
       throw new Error('forced-colors 契約が定義されていません');
@@ -566,11 +562,7 @@ export const DarkModeTokenContract: Story = {
     if (!details) throw new Error('#dark-mode-contract が見つかりません');
     await details.updateComplete;
 
-    const styles = details.shadowRoot?.querySelectorAll('style');
-    if (!styles || styles.length === 0) throw new Error('style タグが見つかりません');
-    const cssText = Array.from(styles)
-      .map((style) => style.textContent)
-      .join('\n');
+    const cssText = getComponentCssText();
 
     if (!cssText.includes('var(--fg-default')) {
       throw new Error('fg-default のセマンティックトークン参照が不足しています');

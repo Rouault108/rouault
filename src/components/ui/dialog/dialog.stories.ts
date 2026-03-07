@@ -97,11 +97,14 @@ const getNativeDialog = (host: UiDialog): HTMLDialogElement => {
   return dialog;
 };
 
-const getCloseButton = (host: UiDialog): HTMLButtonElement => {
-  const closeButton = host.shadowRoot?.querySelector<HTMLButtonElement>('.close-button');
+const getCloseButton = (host: UiDialog): HTMLElement => {
+  const closeButton = host.shadowRoot?.querySelector<HTMLElement>('.close-button');
   if (!closeButton) throw new Error('.close-button が見つかりません');
   return closeButton;
 };
+
+const isShadowElementFocused = (host: UiDialog, element: HTMLElement): boolean =>
+  host.shadowRoot?.activeElement === element;
 
 const meta: Meta<UiDialog> = {
   title: 'Components/Dialog',
@@ -329,7 +332,7 @@ export const NoActionsInitialFocusFallback: Story = {
     await flush(host);
 
     const closeButton = getCloseButton(host);
-    assert(document.activeElement === closeButton, 'actions 未提供時に close ボタンへ初期フォーカスが移動していません');
+    assert(isShadowElementFocused(host, closeButton), 'actions 未提供時に close ボタンへ初期フォーカスが移動していません');
 
     const closedPromise = waitForEvent(host, 'ui-dialog-closed');
     host.close();
