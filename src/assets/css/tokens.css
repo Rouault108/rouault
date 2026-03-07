@@ -20,7 +20,7 @@
    * Primitive Tokens - Hue (色相)
    * ========================================================================= */
   --hue-primary: 250;
-  --hue-base: 250;
+  --hue-base: 0;
 
   /* =========================================================================
    * Primitive Tokens - Fixed Colors
@@ -72,7 +72,7 @@
   /* =========================================================================
    * Semantic Tokens - Background (Light Mode)
    * ========================================================================= */
-  --bg-default: oklch(98% 0.01 var(--hue-base));
+  --bg-default: oklch(1 0 var(--hue-base));
   --bg-surface-1: var(--bg-default);
   --bg-surface-2: oklch(100% 0 0);
   --bg-surface-3: oklch(100% 0 0);
