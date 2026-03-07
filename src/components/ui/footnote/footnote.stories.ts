@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
+import { userEvent } from 'storybook/test';
 import './footnote';
 import type { Footnote } from './footnote';
 import { DOCUMENT_STYLE_ID as POPOVER_STYLE_ID } from '../popover/popover';
@@ -116,6 +117,17 @@ const hidePopoverProgrammatically = (popover: HTMLElement): boolean => {
   maybePopover.hidePopover();
   return true;
 };
+
+const waitForEvent = (target: EventTarget, type: string): Promise<Event> =>
+  new Promise((resolve) => {
+    target.addEventListener(
+      type,
+      (event) => {
+        resolve(event);
+      },
+      { once: true },
+    );
+  });
 
 /**
  * 基本構造:
@@ -303,6 +315,55 @@ export const VariantStateMatrix: Story = {
     if (labels.join('|') !== expected.join('|')) {
       throw new Error(`表示ラベルが想定と一致しません: ${labels.join(', ')}`);
     }
+
+    if (supportsPopoverApi()) {
+      const sharedPopover = getPopover(sharedOwner);
+      const openedPromise = waitForEvent(sharedOwnerPopoverHost, 'ui-popover-opened');
+      const followerClick = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
+      followerTrigger.dispatchEvent(followerClick);
+      if (!followerClick.defaultPrevented) {
+        throw new Error('shared follower の通常クリックは preventDefault される必要があります');
+      }
+      await openedPromise;
+      await nextFrame();
+
+      if (!isPopoverOpen(sharedPopover)) {
+        throw new Error('shared follower クリックで owner 側 Popover が開いていません');
+      }
+      if (followerTrigger.getAttribute('aria-expanded') !== 'true') {
+        throw new Error('shared follower が active trigger になっていません');
+      }
+      if (!followerTrigger.classList.contains('is-active-trigger')) {
+        throw new Error('shared follower クリック中は active class が必要です');
+      }
+      if (ownerTrigger.getAttribute('aria-expanded') !== 'false') {
+        throw new Error('shared follower 経由で開いた場合、owner trigger は非展開のままである必要があります');
+      }
+
+      const footerLink = sharedPopover.querySelector<HTMLAnchorElement>('.footnote-list-link');
+      if (!footerLink) throw new Error('shared owner の footer link が見つかりません');
+
+      const closedPromise = waitForEvent(sharedOwnerPopoverHost, 'ui-popover-closed');
+      await userEvent.click(footerLink);
+      await closedPromise;
+      await nextFrame();
+
+      if (isPopoverOpen(sharedPopover)) {
+        throw new Error('shared footer link クリック後に Popover が閉じていません');
+      }
+      if (followerTrigger.getAttribute('aria-expanded') !== 'false') {
+        throw new Error('shared close 後に follower aria-expanded が false へ戻っていません');
+      }
+      if (document.activeElement === followerTrigger) {
+        throw new Error('shared footer close は trigger へフォーカス復帰しない契約です');
+      }
+    } else {
+      const followerClick = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
+      followerTrigger.dispatchEvent(followerClick);
+      if (followerClick.defaultPrevented) {
+        throw new Error('Popover 非対応環境の shared follower はネイティブリンクを維持する必要があります');
+      }
+    }
   },
 };
 
@@ -338,6 +399,7 @@ export const DualAccessContract: Story = {
 
     const trigger = getTrigger(host);
     const popover = getPopover(host);
+    const popoverHost = getPopoverHost(host);
 
     const modifiedClick = new MouseEvent('click', {
       bubbles: true,
@@ -375,12 +437,17 @@ export const DualAccessContract: Story = {
     }
 
     if (supportsPopoverApi()) {
+      const openedPromise = waitForEvent(popoverHost, 'ui-popover-opened');
       const normalClick = new MouseEvent('click', {
         bubbles: true,
         cancelable: true,
         button: 0,
       });
       trigger.dispatchEvent(normalClick);
+      if (!normalClick.defaultPrevented) {
+        throw new Error('Popover 対応環境では通常クリックを preventDefault する必要があります');
+      }
+      await openedPromise;
       await nextFrame();
 
       if (!isPopoverOpen(popover)) {
@@ -395,7 +462,9 @@ export const DualAccessContract: Story = {
 
       const footerLink = popover.querySelector<HTMLAnchorElement>('.footnote-list-link');
       if (!footerLink) throw new Error('footer link が見つかりません');
-      footerLink.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+      const closedPromise = waitForEvent(popoverHost, 'ui-popover-closed');
+      await userEvent.click(footerLink);
+      await closedPromise;
       await nextFrame();
 
       if (isPopoverOpen(popover)) {
@@ -453,14 +522,27 @@ export const KeyboardAndFocusContract: Story = {
 
     const trigger = getTrigger(host);
     const popover = getPopover(host);
+    const popoverHost = getPopoverHost(host);
+    const afterLink = canvasElement.querySelector<HTMLAnchorElement>('#after-footnote');
+    if (!afterLink) throw new Error('#after-footnote が見つかりません');
 
-    trigger.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+    const firstOpenedPromise = waitForEvent(popoverHost, 'ui-popover-opened');
+    await userEvent.click(trigger);
+    await firstOpenedPromise;
     await nextFrame();
     if (!isPopoverOpen(popover)) {
       throw new Error('キーボード検証前提: Popover が開いていません');
     }
 
-    popover.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    const footerLink = popover.querySelector<HTMLAnchorElement>('.footnote-list-link');
+    if (!footerLink) throw new Error('footer link が見つかりません');
+
+    footerLink.focus();
+    await nextFrame();
+
+    const escapeClosedPromise = waitForEvent(popoverHost, 'ui-popover-closed');
+    await userEvent.keyboard('{Escape}');
+    await escapeClosedPromise;
     await nextFrame();
     if (isPopoverOpen(popover)) {
       throw new Error('Escape で Popover が閉じる必要があります');
@@ -469,34 +551,42 @@ export const KeyboardAndFocusContract: Story = {
       throw new Error('Escape クローズ後は trigger にフォーカス復帰する必要があります');
     }
 
-    trigger.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+    const secondOpenedPromise = waitForEvent(popoverHost, 'ui-popover-opened');
+    await userEvent.click(trigger);
+    await secondOpenedPromise;
     await nextFrame();
     if (!isPopoverOpen(popover)) {
       throw new Error('Tab 契約検証前提: Popover が開いていません');
     }
 
-    const footerLink = popover.querySelector<HTMLAnchorElement>('.footnote-list-link');
-    if (!footerLink) throw new Error('footer link が見つかりません');
     footerLink.focus();
-    footerLink.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+    await nextFrame();
+
+    const tabClosedPromise = waitForEvent(popoverHost, 'ui-popover-closed');
+    await userEvent.tab();
+    await tabClosedPromise;
     await nextFrame();
 
     if (isPopoverOpen(popover)) {
       throw new Error('Footer Link 上の Tab で Popover が閉じる必要があります');
     }
-    if (document.activeElement === trigger) {
-      throw new Error('Footer Link 経由クローズ後は trigger へ復帰しない契約です');
+    if (document.activeElement !== afterLink) {
+      throw new Error('Footer Link 経由クローズ後は次のフォーカス可能要素へ進む必要があります');
     }
 
-    trigger.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+    const thirdOpenedPromise = waitForEvent(popoverHost, 'ui-popover-opened');
+    await userEvent.click(trigger);
+    await thirdOpenedPromise;
     await nextFrame();
     if (!isPopoverOpen(popover)) {
       throw new Error('Dismiss 契約検証前提: Popover が開いていません');
     }
 
+    const dismissClosedPromise = waitForEvent(popoverHost, 'ui-popover-closed');
     if (!hidePopoverProgrammatically(popover)) {
       throw new Error('Popover API の hidePopover が利用できません');
     }
+    await dismissClosedPromise;
     await nextFrame();
 
     if (isPopoverOpen(popover)) {
@@ -509,10 +599,95 @@ export const KeyboardAndFocusContract: Story = {
 };
 
 /**
+ * SSR/Hydration 契約:
+ * - SSR 済み [data-part="content"] から本文を再利用する
+ * - 再描画後も本文が失われず、内部要素が本文へ混入しない
+ */
+export const SsrHydrationContract: Story = {
+  render: () => html`
+    <article>
+      <p>
+        SSR hydrate
+        <ui-footnote id="ssr-footnote" ref-id="fn-60" index="60" ref-instance="1">
+          <ui-popover id="fn-60-popover-host" data-part="popover-host" placement="bottom-start" keep-link-fallback>
+            <a
+              id="fnref-60-1"
+              data-part="trigger"
+              slot="trigger"
+              href="#fn-60"
+              role="doc-noteref"
+              aria-controls="fn-60-popover"
+              aria-expanded="false"
+              aria-details="fn-60-popover"
+            >
+              <sup>[60]</sup>
+            </a>
+            <div
+              id="fn-60-popover"
+              data-part="content"
+              slot="content"
+              role="note"
+              aria-labelledby="fn-60-label"
+            >
+              <span id="fn-60-label" class="sr-only">脚注 60</span>
+              <p>SSR で埋め込まれた脚注本文。</p>
+              <footer class="footnote-popover-footer">
+                <a href="#fn-60" class="footnote-list-link">
+                  脚注一覧で見る <span aria-hidden="true">→</span>
+                </a>
+              </footer>
+            </div>
+          </ui-popover>
+        </ui-footnote>
+      </p>
+      <section class="footnotes" role="doc-endnotes">
+        <h2 class="sr-only">脚注</h2>
+        <ol>
+          <li id="fn-60">SSR で埋め込まれた脚注本文。 <a href="#fnref-60-1">↩︎</a></li>
+        </ol>
+      </section>
+    </article>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getFootnote(canvasElement, 'ssr-footnote');
+    await host.updateComplete;
+
+    const popover = getPopover(host);
+    const body = popover.querySelector<HTMLElement>('.footnote-body');
+    if (!body) throw new Error('.footnote-body が見つかりません');
+    if (!normalizeText(body.textContent).includes('SSR で埋め込まれた脚注本文。')) {
+      throw new Error('SSR 由来の本文が footnote-body へ再利用されていません');
+    }
+    if (body.querySelector('[data-part="trigger"], [data-part="content"], [data-part="popover-host"]')) {
+      throw new Error('内部制御要素が footnote-body に混入しています');
+    }
+    if (body.querySelector('.footnote-list-link, .footnote-popover-footer')) {
+      throw new Error('SSR footer 要素が本文へ混入しています');
+    }
+    if (host.querySelectorAll('.footnote-list-link').length !== 1) {
+      throw new Error('footer link が重複描画されています');
+    }
+
+    host.index = 61;
+    await host.updateComplete;
+
+    const trigger = getTrigger(host);
+    const rerenderedBody = getPopover(host).querySelector<HTMLElement>('.footnote-body');
+    if (!rerenderedBody) throw new Error('再描画後の .footnote-body が見つかりません');
+    if (normalizeText(rerenderedBody.textContent).includes('SSR で埋め込まれた脚注本文。') === false) {
+      throw new Error('再描画後に SSR 本文が失われています');
+    }
+    if (normalizeText(trigger.textContent) !== '[61]') {
+      throw new Error('再描画後に trigger 表示が更新されていません');
+    }
+  },
+};
+
+/**
  * 事故が多い境界条件:
  * - 不正番号のフォールバック
  * - 小さい親フォント下での 12px 下限
- * - 長文脚注の内部スクロール契約
+ * - 長文脚注の max-height / overflow 契約
  * - セクション/印刷スタイル契約の埋め込み
  */
 export const BoundaryConditions: Story = {
@@ -577,6 +752,7 @@ export const BoundaryConditions: Story = {
     }
 
     const longPopover = getPopover(long);
+    const longPopoverHost = getPopoverHost(long);
     const longStyle = getComputedStyle(longPopover);
     if (longStyle.overflowY !== 'auto') {
       throw new Error(`長文脚注の overflow-y は auto である必要があります: ${longStyle.overflowY}`);
@@ -584,19 +760,9 @@ export const BoundaryConditions: Story = {
     if (longStyle.maxHeight === 'none') {
       throw new Error('長文脚注の max-height が無制限になっています');
     }
-
-    if (supportsPopoverApi()) {
-      const longTrigger = getTrigger(long);
-      longTrigger.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
-      await nextFrame();
-
-      if (!isPopoverOpen(longPopover)) {
-        throw new Error('長文脚注の Popover が開いていません');
-      }
-
-      if (longPopover.scrollHeight <= longPopover.clientHeight) {
-        throw new Error('長文脚注で実スクロール可能領域が発生していません');
-      }
+    const longMaxHeightToken = getComputedStyle(longPopoverHost).getPropertyValue('--ui-popover-max-height').trim();
+    if (longMaxHeightToken === '') {
+      throw new Error('長文脚注の Popover max-height トークンが設定されていません');
     }
 
     const styleElement = document.getElementById('ui-footnote-document-styles');
