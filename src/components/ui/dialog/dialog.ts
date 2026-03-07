@@ -38,7 +38,7 @@ export class UiDialog extends LitElement {
       max-block-size: var(--ui-dialog-max-height);
       overflow: hidden;
       grid-template-rows: auto minmax(0, 1fr) auto;
-      background: var(--bg-surface-2);
+      background: var(--bg-default);
       color: var(--fg-default);
       box-shadow: var(--elevation-xl);
       animation: dialog-enter var(--duration-slower) var(--ease-out) forwards;

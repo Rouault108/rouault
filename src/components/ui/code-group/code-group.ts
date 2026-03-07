@@ -44,7 +44,7 @@ export class CodeGroup extends LitElement {
       border: var(--border-style-subtle, 1px solid oklch(20% 0.03 250 / 0.12));
       border-radius: var(--radius-md, 6px);
       overflow: hidden;
-      background: var(--bg-fill-muted, oklch(96% 0 0));
+      background: var(--bg-default, oklch(1 0 0));
       page-break-inside: avoid;
       break-inside: avoid;
     }
@@ -67,7 +67,7 @@ export class CodeGroup extends LitElement {
       position: relative;
       align-items: stretch;
       isolation: isolate;
-      background: var(--bg-fill-muted, oklch(96% 0 0));
+      // background: var(--bg-default, oklch(1 0 0));
     }
 
     :host([data-ready]) .code-group-header {
@@ -79,7 +79,7 @@ export class CodeGroup extends LitElement {
       min-width: 0;
       display: flex;
       align-items: stretch;
-      background: var(--bg-fill-muted, oklch(96% 0 0));
+      background: var(--bg-default, oklch(1 0 0));
       overflow-x: auto;
       /* visible は overflow-x: auto によって auto に強制計算されるため clip に変更。
          clip はスクロールコンテナを生成しないため縦スクロールバーが出ない */
@@ -167,7 +167,7 @@ export class CodeGroup extends LitElement {
       align-items: center;
       gap: 0;
       padding-inline: var(--space-1, 4px);
-      background: var(--bg-fill-muted, oklch(96% 0.01 250));
+      background: var(--bg-default, oklch(1 0 0));
     }
 
     .header-tools ui-copy-button {
@@ -231,7 +231,7 @@ export class CodeGroup extends LitElement {
 
     .body {
       display: none;
-      background: var(--bg-fill-muted, oklch(96% 0.01 250));
+      background: var(--bg-default, oklch(1 0 0));
       padding-block: var(--ui-code-group-body-padding-block, 0);
       padding-inline: var(--ui-code-group-body-padding-inline, 0);
     }

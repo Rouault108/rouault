@@ -125,7 +125,7 @@ export class CodePreview extends LitElement {
     /* ─── Preview Area ─── */
     .preview-area {
       display: flex;
-      background: var(--ui-code-preview-preview-bg, var(--bg-surface-2, oklch(100% 0 0)));
+      background: var(--bg-fill-muted, oklch(96% 0.01 250));
       min-height: var(--ui-code-preview-preview-min-height, 72px);
       border-bottom: var(--border-width, 1px) solid
         var(--border-default, oklch(20% 0.03 250 / 0.16));

@@ -164,7 +164,7 @@ export class CodeBlock extends LitElement {
       position: relative;
       overflow: hidden;
       border: var(--border-style-subtle, 1px solid oklch(20% 0.03 250 / 0.12));
-      background: var(--bg-fill-muted, oklch(96% 0.01 250));
+      background: var(--bg-default, oklch(1 0 0));
       border-radius:
         var(--ui-code-block-radius-top, var(--radius-md, 6px))
         var(--ui-code-block-radius-top, var(--radius-md, 6px))
