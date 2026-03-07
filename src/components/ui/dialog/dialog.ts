@@ -37,12 +37,15 @@ export class UiDialog extends LitElement {
       max-inline-size: var(--ui-dialog-max-width);
       max-block-size: var(--ui-dialog-max-height);
       overflow: hidden;
-      display: grid;
       grid-template-rows: auto minmax(0, 1fr) auto;
-      background: var(--bg-default);
+      background: var(--bg-surface-2);
       color: var(--fg-default);
       box-shadow: var(--elevation-xl);
       animation: dialog-enter var(--duration-slower) var(--ease-out) forwards;
+    }
+
+    dialog[open] {
+      display: grid;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -80,14 +83,11 @@ export class UiDialog extends LitElement {
 
     ui-button.close-button {
       flex-shrink: 0;
-      position: relative;
     }
 
     ui-button.close-button::after {
       content: '';
       position: absolute;
-      inline-size: var(--control-min-touch);
-      block-size: var(--control-min-touch);
       inset: 50% auto auto 50%;
       transform: translate(-50%, -50%);
       pointer-events: none;
@@ -95,18 +95,10 @@ export class UiDialog extends LitElement {
 
     ui-button.close-button::part(button) {
       border-radius: var(--radius-sm);
-      color: var(--fg-muted);
     }
 
     ui-button.close-button::part(button):hover {
-      background: var(--bg-hover);
       color: var(--fg-default);
-    }
-
-    ui-button.close-button iconify-icon {
-      inline-size: var(--icon-sm);
-      block-size: var(--icon-sm);
-      font-size: var(--icon-sm);
     }
 
     .body {

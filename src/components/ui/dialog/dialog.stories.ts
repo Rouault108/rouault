@@ -109,6 +109,35 @@ const getCloseButton = (host: UiDialog): HTMLElement => {
   return closeButton;
 };
 
+const getStoryDialogFromSource = (source: EventTarget | null, id: string): UiDialog => {
+  if (!(source instanceof HTMLElement)) {
+    throw new Error('イベントソースが HTML 要素ではありません');
+  }
+
+  const storyRoot = source.closest<HTMLElement>(`[data-dialog-story="${id}"]`);
+  const dialog = storyRoot?.querySelector<UiDialog>(`#${id}`);
+  if (!dialog) {
+    throw new Error(`#${id} が見つかりません`);
+  }
+
+  return dialog;
+};
+
+const openStoryDialog = (event: Event, id: string): void => {
+  const trigger = event.currentTarget;
+  if (!(trigger instanceof HTMLElement)) {
+    throw new Error('ダイアログトリガーが HTML 要素ではありません');
+  }
+
+  const dialog = getStoryDialogFromSource(trigger, id);
+  dialog.open(trigger);
+};
+
+const closeStoryDialog = (event: Event, id: string): void => {
+  const dialog = getStoryDialogFromSource(event.currentTarget, id);
+  dialog.close();
+};
+
 const isShadowElementFocused = (host: UiDialog, element: HTMLElement): boolean =>
   host.shadowRoot?.activeElement === element;
 
@@ -141,16 +170,40 @@ type Story = StoryObj<UiDialog>;
  * - title/description/actions を揃えた基本構成
  */
 const renderModalCriticalDecision = () => html`
-  <div style="padding: 2rem; min-height: 18rem;">
-    <button id="modal-trigger" type="button">ダイアログを開く</button>
+  <div data-dialog-story="dialog-modal" style="padding: 2rem; min-height: 18rem;">
+    <button
+      id="modal-trigger"
+      type="button"
+      @click=${(event: Event) => {
+        openStoryDialog(event, 'dialog-modal');
+      }}
+    >
+      ダイアログを開く
+    </button>
 
     <ui-dialog id="dialog-modal" title-id="modal-title" description-id="modal-description">
       <h2 slot="title" id="modal-title">変更を保存しますか？</h2>
       <p id="modal-description">現在の設定変更を保存して画面を閉じます。</p>
 
       <div slot="actions" style="display: flex; gap: 8px; justify-content: flex-end;">
-        <button id="modal-cancel" type="button">キャンセル</button>
-        <button id="modal-confirm" type="button">保存して閉じる</button>
+        <button
+          id="modal-cancel"
+          type="button"
+          @click=${(event: Event) => {
+            closeStoryDialog(event, 'dialog-modal');
+          }}
+        >
+          キャンセル
+        </button>
+        <button
+          id="modal-confirm"
+          type="button"
+          @click=${(event: Event) => {
+            closeStoryDialog(event, 'dialog-modal');
+          }}
+        >
+          保存して閉じる
+        </button>
       </div>
     </ui-dialog>
   </div>
@@ -228,6 +281,40 @@ export const ModalCriticalDecisionOpenClose: Story = {
     assert(
       !document.body.hasAttribute('data-ui-dialog-open'),
       'close() 後に body 要素の data-ui-dialog-open 属性が解除されていません',
+    );
+  },
+};
+
+/**
+ * 相互作用テスト:
+ * - trigger の実クリックで開ける
+ * - actions ありでも右上の close ボタン実経路で閉じられる
+ */
+export const ModalCriticalDecisionCloseButton: Story = {
+  render: renderModalCriticalDecision,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'dialog-modal');
+    const trigger = canvasElement.querySelector<HTMLButtonElement>('#modal-trigger');
+    assert(!!trigger, '#modal-trigger が見つかりません');
+    await flush(host);
+
+    const openedPromise = waitForEvent<CustomEvent<UiDialogOpenedDetail>>(host, 'ui-dialog-opened');
+    trigger.click();
+    await openedPromise;
+    await flush(host);
+
+    const closeButton = getCloseButton(host);
+    const dialog = getNativeDialog(host);
+    const closedPromise = waitForEvent(host, 'ui-dialog-closed');
+    closeButton.click();
+    await closedPromise;
+    await flush(host);
+
+    assert(!host.opened, 'close ボタン押下後に opened="false" である必要があります');
+    assert(!dialog.open, 'close ボタン押下後にネイティブの dialog 要素が閉じていません');
+    assert(
+      document.activeElement === trigger,
+      'close ボタン押下後にトリガーへフォーカスが返却されていません',
     );
   },
 };
