@@ -1,5 +1,5 @@
 import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
-import { customElement, property, queryAssignedElements, state } from 'lit/decorators.js';
+import { customElement, property, queryAssignedElements } from 'lit/decorators.js';
 import {
     autoUpdate,
     computePosition,
@@ -230,6 +230,7 @@ export class Dropdown extends LitElement {
     private _typeaheadBuffer = '';
     private _typeaheadTimer: ReturnType<typeof setTimeout> | null = null;
     private _openFocusTarget: 'first' | 'last' = 'first';
+    private _openFocusRafId: number | null = null;
     private _restoreFocusOnClose = true;
 
     // 一意なIDを生成
@@ -250,6 +251,9 @@ export class Dropdown extends LitElement {
         this._cleanupScrollClose();
         if (this._typeaheadTimer !== null) {
             clearTimeout(this._typeaheadTimer);
+        }
+        if (this._openFocusRafId !== null) {
+            cancelAnimationFrame(this._openFocusRafId);
         }
     }
 
@@ -283,18 +287,30 @@ export class Dropdown extends LitElement {
         this._setupScrollClose();
         this._updateTriggerAria(true);
 
-        // フォーカスを最初の有効なメニュー項目へ
-        requestAnimationFrame(() => {
+        // 呼び出し時点の値を確定し、即座にリセット（rAF の競合を防ぐ）
+        const focusTarget = this._openFocusTarget;
+        this._openFocusTarget = 'first';
+
+        if (this._openFocusRafId !== null) {
+            cancelAnimationFrame(this._openFocusRafId);
+        }
+
+        // フォーカスを最初／最後の有効なメニュー項目へ
+        this._openFocusRafId = requestAnimationFrame(() => {
+            this._openFocusRafId = null;
             const items = this._getMenuItems();
-            const target = this._openFocusTarget === 'last'
+            const target = focusTarget === 'last'
                 ? [...items].reverse().find(item => !item.disabled)
                 : items.find(item => !item.disabled);
             this._focusItem(target ?? null);
-            this._openFocusTarget = 'first';
         });
     }
 
     private _onClose(): void {
+        if (this._openFocusRafId !== null) {
+            cancelAnimationFrame(this._openFocusRafId);
+            this._openFocusRafId = null;
+        }
         this._cleanupFloating();
         this._cleanupClickOutside();
         this._cleanupScrollClose();
@@ -468,15 +484,7 @@ export class Dropdown extends LitElement {
     }
 
     private _focusItem(item: MenuItem | null): void {
-        this._syncRovingTabindex(item);
         item?.focus();
-    }
-
-    private _syncRovingTabindex(activeItem: MenuItem | null): void {
-        const items = this._getMenuItems();
-        for (const item of items) {
-            item.setRovingTabIndex(item === activeItem ? 0 : -1);
-        }
     }
 
     private _getFocusedItem(items: MenuItem[]): MenuItem | null {
@@ -870,14 +878,12 @@ export class MenuItem extends LitElement {
      */
     @property({ type: Boolean, reflect: true })
     disabled = false;
-    @state()
-    private _tabIndex = -1;
 
     override render() {
         return html`
       <button
         role="menuitem"
-        tabindex="${String(this._tabIndex)}"
+        tabindex="-1"
         ?disabled="${this.disabled}"
         aria-disabled="${this.disabled ? 'true' : nothing}"
         @click="${this._handleClick}"
@@ -908,13 +914,8 @@ export class MenuItem extends LitElement {
      * メニュー項目にフォーカスを当てる（Roving Tabindex 管理用）
      */
     override focus(options?: FocusOptions): void {
-        this._tabIndex = 0;
         const button = this.shadowRoot?.querySelector('button');
         button?.focus(options);
-    }
-
-    setRovingTabIndex(tabIndex: number): void {
-        this._tabIndex = tabIndex;
     }
 }
 

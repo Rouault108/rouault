@@ -366,7 +366,7 @@ export const MediaAndTokenContracts: Story = {
       'var(--space-3)',
       'var(--space-4)',
       'var(--space-8)',
-      'var(--separator-opacity)',
+      '--separator-opacity',
       '@media (forced-colors: active)',
       '@media print',
       'CanvasText',

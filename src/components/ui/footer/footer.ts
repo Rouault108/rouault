@@ -26,7 +26,6 @@ export interface UiFooterData {
 
 export const FOOTER_DOCUMENT_CSS = `
 ${FOOTER_SCOPE_SELECTOR} {
-  --separator-opacity: 0.3;
   position: static;
   inline-size: 100%;
   block-size: var(--header-height);
@@ -54,7 +53,7 @@ ${FOOTER_SCOPE_SELECTOR} .footer-content {
 }
 
 ${FOOTER_SCOPE_SELECTOR} .separator {
-  opacity: var(--separator-opacity);
+  opacity: var(--separator-opacity, 0.3);
 }
 
 @media (forced-colors: active) {
