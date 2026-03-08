@@ -505,7 +505,7 @@ export const DarkTokenAdaptation: Story = {
       style="
         width: 460px;
         color-scheme: dark;
-        --bg-fill-muted: rgb(18, 22, 28);
+        --bg-default: rgb(18, 22, 28);
         --border-style-subtle: 1px solid rgb(73, 82, 96);
         --fg-default: rgb(231, 236, 244);
         --ui-code-block-breakout-width: 100%;
