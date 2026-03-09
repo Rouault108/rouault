@@ -130,7 +130,6 @@ export class Toc extends LitElement {
 			column-gap: var(--_toc-indicator-gap);
 			/*
 			 * 最低保証タッチターゲット 24px
-			 * モバイルでは --control-min-touch (44px) へ拡張（後述のメディアクエリ参照）
 			 */
 			min-height: 24px;
 			padding-block: var(--space-1, 4px);
@@ -264,18 +263,18 @@ export class Toc extends LitElement {
 			}
 		}
 
-		/* ──────────────────────────────────────────────
-		   モバイル: タッチターゲット拡張
-		────────────────────────────────────────────── */
-		@media (max-width: 1023px) {
-			/*
-			 * モバイル (< --bp-lg) では --control-min-touch (44px) を必須とする。
-			 * 視覚サイズとは独立してヒットエリアを確保。
-			 */
-			.toc-link {
-				min-height: var(--control-min-touch, 44px);
+			/* ──────────────────────────────────────────────
+			   タッチ環境: 粗いポインタでの誤タップ耐性
+			────────────────────────────────────────────── */
+			@media (hover: none) and (pointer: coarse) {
+				/*
+				 * viewport 幅ではなく入力方式で判定する。
+				 * 項目間に最小限の余白を追加して隣接ターゲットの干渉を抑える。
+				 */
+				li + li {
+					margin-block-start: 2px;
+				}
 			}
-		}
 
 		/* ──────────────────────────────────────────────
 		   Reduced Motion
