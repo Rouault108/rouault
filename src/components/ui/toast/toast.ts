@@ -367,10 +367,10 @@ export class UiToast extends LitElement {
       gap: var(--space-3, 12px);
       margin: 0;
       padding: var(--space-3, 12px) var(--space-4, 16px);
-      border: var(--border-width, 1px) solid var(--border-default, oklch(20% 0.03 250 / 0.12));
+      border: var(--border-width, 1px) solid var(--border-default, oklch(20% 0 0 / 0.12));
       border-radius: var(--radius-md, 6px);
       box-shadow: var(--elevation-lg, 0 10px 15px -3px oklch(0% 0 0 / 0.1));
-      color: var(--fg-default, oklch(20% 0.03 250));
+      color: var(--fg-default, oklch(20% 0 0));
       pointer-events: auto;
       inline-size: 100%;
       animation: toast-slide-in var(--duration-slow, 200ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
@@ -418,13 +418,13 @@ export class UiToast extends LitElement {
       /* 1行目のテキスト中央に合わせてアイコンの縦位置を安定させる */
       height: calc(1em * var(--line-height-normal, 1.5));
       font-size: var(--icon-base, 16px);
-      color: var(--_toast-icon-color, var(--fg-muted, oklch(45% 0.02 250)));
+      color: var(--_toast-icon-color, var(--fg-muted, oklch(45% 0 0)));
     }
 
     .toast-message {
       font-size: var(--text-sm, 13px);
       line-height: var(--line-height-normal, 1.5);
-      color: var(--fg-default, oklch(20% 0.03 250));
+      color: var(--fg-default, oklch(20% 0 0));
       word-break: break-word;
     }
 
@@ -433,7 +433,7 @@ export class UiToast extends LitElement {
       border: 0;
       border-radius: var(--radius-sm, 4px);
       background: transparent;
-      color: var(--fg-muted, oklch(45% 0.02 250));
+      color: var(--fg-muted, oklch(45% 0 0));
       inline-size: 24px;
       block-size: 24px;
       padding: 0;
@@ -459,8 +459,8 @@ export class UiToast extends LitElement {
     }
 
     .toast-close:hover {
-      background: var(--bg-hover, oklch(from var(--fg-default, oklch(20% 0.03 250)) l c h / 0.05));
-      color: var(--fg-default, oklch(20% 0.03 250));
+      background: var(--bg-hover, oklch(from var(--fg-default, oklch(20% 0 0)) l c h / 0.05));
+      color: var(--fg-default, oklch(20% 0 0));
     }
 
     .toast-close:focus-visible {

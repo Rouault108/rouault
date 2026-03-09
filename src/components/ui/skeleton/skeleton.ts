@@ -22,7 +22,7 @@ export class UiSkeleton extends LitElement {
       inline-size: var(--ui-skeleton-inline-size, auto);
       block-size: var(--ui-skeleton-block-size, auto);
       border-radius: var(--radius-sm, 4px);
-      background-color: var(--bg-fill-neutral, oklch(95% 0.01 250));
+      background-color: var(--bg-fill-neutral, oklch(95% 0 0));
     }
 
     :host([variant='circular']) {

@@ -17,7 +17,7 @@ ui-footnote [data-part='trigger'] {
   display: inline-flex;
   align-items: baseline;
   margin-inline: 0.1em;
-  color: var(--fg-muted, oklch(48% 0.01 250));
+  color: var(--fg-muted, oklch(48% 0 0));
   font-size: max(var(--text-xs, 12px), 12px);
   font-weight: var(--font-medium, 500);
   letter-spacing: var(--tracking-wide, 0.02em);
@@ -71,11 +71,11 @@ ui-footnote .footnote-body > :last-child {
 ui-footnote .footnote-popover-footer {
   margin-block-start: var(--space-3, 12px);
   padding-block-start: var(--space-1, 4px);
-  border-top: 1px solid var(--border-ghost, oklch(88% 0.01 250 / 0.5));
+  border-top: 1px solid var(--border-ghost, oklch(88% 0 0 / 0.5));
 }
 
 ui-footnote .footnote-list-link {
-  color: var(--fg-muted, oklch(48% 0.01 250));
+  color: var(--fg-muted, oklch(48% 0 0));
   font-size: 10px;
   font-weight: var(--font-medium, 500);
   letter-spacing: var(--tracking-wide, 0.02em);
@@ -105,7 +105,7 @@ section.footnotes .sr-only {
 section.footnotes {
   margin-block-start: var(--space-16, 64px);
   padding-block-start: var(--space-8, 32px);
-  border-block-start: var(--border-width, 1px) solid var(--border-default, oklch(86% 0.01 250));
+  border-block-start: var(--border-width, 1px) solid var(--border-default, oklch(86% 0 0));
 }
 
 section.footnotes ol {
@@ -115,17 +115,17 @@ section.footnotes ol {
 
 section.footnotes li {
   margin-block-end: var(--space-3, 12px);
-  color: var(--fg-default, oklch(20% 0.01 250));
+  color: var(--fg-default, oklch(20% 0 0));
   font-size: var(--text-sm, 13px);
 }
 
 section.footnotes li:target {
-  background: var(--bg-active, oklch(95% 0.01 250));
+  background: var(--bg-active, oklch(95% 0 0));
   border-radius: var(--radius-sm, 4px);
 }
 
 section.footnotes a[href^='#fnref-'] {
-  color: var(--fg-muted, oklch(48% 0.01 250));
+  color: var(--fg-muted, oklch(48% 0 0));
   text-decoration: none;
 }
 

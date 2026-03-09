@@ -78,7 +78,7 @@ export class Select extends LitElement {
     .label {
       font-size: var(--text-sm, 13px);
       font-weight: var(--font-medium, 500);
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
     }
 
     /* sr-only 相当の非表示実装 */
@@ -122,7 +122,7 @@ export class Select extends LitElement {
 
       /* デフォルト状態: Discoverability */
       background: var(--bg-fill-muted, oklch(95% 0 0));
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
 
       /* カーソル */
       cursor: pointer;
@@ -146,18 +146,18 @@ export class Select extends LitElement {
 
     /* Placeholder テキスト色 */
     .trigger--placeholder {
-      color: var(--fg-subtle, oklch(48% 0.01 250));
+      color: var(--fg-subtle, oklch(48% 0 0));
     }
 
     /* Hover 状態: Tactility */
     .trigger:hover:not(:disabled):not(:focus) {
-      border-color: var(--border-default, oklch(90% 0.01 250 / 0.12));
+      border-color: var(--border-default, oklch(90% 0 0 / 0.12));
     }
 
     /* Focus 状態: Clear Canvas */
     .trigger:focus {
       background: var(--bg-default, oklch(100% 0 0));
-      border-color: var(--border-default, oklch(90% 0.01 250 / 0.12));
+      border-color: var(--border-default, oklch(90% 0 0 / 0.12));
     }
 
     /* Focus Indicator: Adaptive Focus */
@@ -171,7 +171,7 @@ export class Select extends LitElement {
     /* Opened 状態: Visual Connection */
     .trigger--opened {
       background: var(--bg-active, oklch(93% 0 0));
-      border-color: var(--border-default, oklch(90% 0.01 250 / 0.12));
+      border-color: var(--border-default, oklch(90% 0 0 / 0.12));
     }
 
     /* Error 状態 */
@@ -183,15 +183,15 @@ export class Select extends LitElement {
     /* Disabled 状態 */
     .trigger:disabled,
     :host([disabled]) .trigger {
-      border-color: var(--border-default, oklch(90% 0.01 250 / 0.12));
+      border-color: var(--border-default, oklch(90% 0 0 / 0.12));
       opacity: var(--opacity-disabled, 0.5);
       cursor: not-allowed;
-      color: var(--fg-subtle, oklch(48% 0.01 250));
+      color: var(--fg-subtle, oklch(48% 0 0));
     }
 
     /* Readonly 状態 */
     :host([readonly]) .trigger {
-      border-color: var(--border-default, oklch(90% 0.01 250 / 0.12));
+      border-color: var(--border-default, oklch(90% 0 0 / 0.12));
       background: var(--bg-fill-muted, oklch(95% 0 0));
       cursor: default;
     }
@@ -206,7 +206,7 @@ export class Select extends LitElement {
       transform: translateY(-50%);
       width: var(--icon-base, 16px);
       height: var(--icon-base, 16px);
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
       pointer-events: none;
       flex-shrink: 0;
       transition:
@@ -217,13 +217,13 @@ export class Select extends LitElement {
     /* Hover/Focus 時のアイコン色 */
     .trigger:hover ~ .icon-chevron,
     .trigger:focus ~ .icon-chevron {
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
     }
 
     /* Opened 時のアイコン回転 */
     .icon-chevron--opened {
       transform: translateY(-50%) rotate(180deg);
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
     }
 
     /* ============================================================
@@ -231,7 +231,7 @@ export class Select extends LitElement {
      * ============================================================ */
     .help-text {
       font-size: var(--text-sm, 13px);
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
       margin-top: var(--space-1, 4px);
       line-height: var(--line-height-normal, 1.5);
     }
@@ -296,7 +296,7 @@ export class Select extends LitElement {
       .trigger {
         background: transparent !important;
         border: var(--border-width, 1px) solid currentColor !important;
-        color: var(--fg-default, oklch(20% 0.01 250)) !important;
+        color: var(--fg-default, oklch(20% 0 0)) !important;
       }
 
       .icon-chevron {
@@ -304,7 +304,7 @@ export class Select extends LitElement {
       }
 
       :host([error]) .trigger {
-        border-color: var(--fg-muted, oklch(48% 0.01 250)) !important;
+        border-color: var(--fg-muted, oklch(48% 0 0)) !important;
       }
 
       :host([disabled]) .trigger,
@@ -735,7 +735,7 @@ export class Select extends LitElement {
             position: 'fixed',
             zIndex: 'var(--z-popover, 400)',
             background: 'var(--bg-surface-2, oklch(97% 0 0))',
-            border: 'var(--border-width, 1px) solid var(--border-default, oklch(90% 0.01 250 / 0.12))',
+            border: 'var(--border-width, 1px) solid var(--border-default, oklch(90% 0 0 / 0.12))',
             borderRadius: 'var(--radius-md, 6px)',
             boxShadow: this._getListboxShadow(),
             maxWidth: '320px',
@@ -744,7 +744,7 @@ export class Select extends LitElement {
             padding: 'calc(var(--radius-md, 6px) - var(--radius-sm, 4px))',
             // スクロールバー: 物理幅 12px、視覚的には 4px のみ
             scrollbarWidth: 'thin',
-            scrollbarColor: 'var(--border-default, oklch(90% 0.01 250 / 0.12)) transparent',
+            scrollbarColor: 'var(--border-default, oklch(90% 0 0 / 0.12)) transparent',
             // Enter アニメーション
             opacity: '0',
             transform: 'scale(var(--scale-enter, 0.97))',
@@ -798,7 +798,7 @@ export class Select extends LitElement {
             opacity: opt.disabled === true ? 'var(--opacity-disabled, 0.5)' : '1',
             color: opt.value === this.modelValue
                 ? 'var(--primary, oklch(60% 0.15 250))'
-                : 'var(--fg-default, oklch(20% 0.01 250))',
+                : 'var(--fg-default, oklch(20% 0 0))',
             fontWeight: opt.value === this.modelValue
                 ? 'var(--font-medium, 500)'
                 : 'var(--font-normal, 400)',
@@ -940,7 +940,7 @@ export class Select extends LitElement {
             : 'transparent';
         item.style.color = isSelected
             ? 'var(--primary, oklch(60% 0.15 250))'
-            : 'var(--fg-default, oklch(20% 0.01 250))';
+            : 'var(--fg-default, oklch(20% 0 0))';
     }
 
     private _scrollActiveIntoView(): void {

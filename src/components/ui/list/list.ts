@@ -68,7 +68,7 @@ export class List extends LitElement {
 
     .grid {
       display: grid;
-      border: 1px solid var(--border-default, oklch(90% 0.01 250));
+      border: 1px solid var(--border-default, oklch(90% 0 0));
       border-radius: var(--radius-md, 6px);
       overflow: hidden;
     }
@@ -94,7 +94,7 @@ export class List extends LitElement {
     }
 
     .header-rowgroup {
-      border-bottom: 1px solid var(--border-default, oklch(90% 0.01 250));
+      border-bottom: 1px solid var(--border-default, oklch(90% 0 0));
     }
 
     .header-row {
@@ -123,7 +123,7 @@ export class List extends LitElement {
       padding: 0 var(--space-4, 16px);
       font-size: var(--text-xs, 12px);
       font-weight: var(--font-medium, 500);
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -136,7 +136,7 @@ export class List extends LitElement {
 
     .header-cell--sortable:hover,
     .header-cell--sorted {
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
     }
 
     .header-cell--sortable:focus-visible {
@@ -151,7 +151,7 @@ export class List extends LitElement {
     }
 
     .body-rowgroup > slot::slotted(ui-list-item) {
-      box-shadow: inset 0 1px 0 0 var(--border-default, oklch(90% 0.01 250));
+      box-shadow: inset 0 1px 0 0 var(--border-default, oklch(90% 0 0));
     }
 
     .empty-state {
@@ -160,7 +160,7 @@ export class List extends LitElement {
       justify-content: center;
       padding: var(--space-12, 48px) var(--space-4, 16px);
       font-size: var(--text-base, 14px);
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
     }
   `;
 

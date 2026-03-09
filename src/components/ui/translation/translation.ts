@@ -47,7 +47,7 @@ ui-translation [data-part='trigger'] {
   position: relative;
   background-image: linear-gradient(
     to right,
-    oklch(from var(--fg-default, oklch(20% 0.01 250)) l c h / var(--opacity-link, 0.6)) 50%,
+    oklch(from var(--fg-default, oklch(20% 0 0)) l c h / var(--opacity-link, 0.6)) 50%,
     transparent 50%
   );
   background-size: var(--space-1, 4px) 1px;
@@ -71,10 +71,10 @@ ui-translation [data-part='trigger']::after {
 ui-translation [data-part='trigger']:hover:not(:disabled),
 ui-translation [data-part='trigger']:focus-visible:not(:disabled),
 ui-translation [data-part='trigger'][aria-expanded='true']:not(:disabled) {
-  color: var(--fg-default, oklch(20% 0.01 250));
+  color: var(--fg-default, oklch(20% 0 0));
   background-image: linear-gradient(
     to right,
-    oklch(from var(--fg-default, oklch(20% 0.01 250)) l c h / 1) 50%,
+    oklch(from var(--fg-default, oklch(20% 0 0)) l c h / 1) 50%,
     transparent 50%
   );
 }
@@ -93,7 +93,7 @@ ui-translation [data-part='trigger']:disabled {
 
 ui-translation [data-part='content'] {
   box-sizing: border-box;
-  color: var(--fg-default, oklch(20% 0.01 250));
+  color: var(--fg-default, oklch(20% 0 0));
   font-family: var(--font-sans, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif);
   line-height: var(--line-height-relaxed, 1.75);
 }
@@ -103,7 +103,7 @@ ui-translation [data-part='content'][data-render-mode='drawer'] {
   z-index: var(--z-popover, 400);
   max-width: min(90vw, 40rem);
   padding: var(--space-3, 12px) var(--space-4, 16px);
-  border: var(--border-width, 1px) solid var(--border-default, oklch(86% 0.01 250));
+  border: var(--border-width, 1px) solid var(--border-default, oklch(86% 0 0));
   border-radius: var(--radius-md, 6px);
   background: var(--bg-surface-2, oklch(100% 0 0));
   box-shadow:
@@ -139,7 +139,7 @@ ui-translation [data-part='content'][data-render-mode='drawer'] {
 ui-translation [data-part='content'][data-render-mode='interlinear'] {
   display: block;
   margin-block-start: var(--space-2, 8px);
-  color: var(--fg-default, oklch(20% 0.01 250));
+  color: var(--fg-default, oklch(20% 0 0));
   font-size: var(--text-sm, 13px);
   opacity: 0;
 }
@@ -209,7 +209,7 @@ ui-translation [data-part='content'][hidden] {
     position: fixed;
     inset: 0;
     z-index: calc(var(--z-popover, 400) - 1);
-    background: oklch(from var(--fg-default, oklch(20% 0.01 250)) l c h / 0.24);
+    background: oklch(from var(--fg-default, oklch(20% 0 0)) l c h / 0.24);
     display: block;
     border: 0;
     padding: 0;

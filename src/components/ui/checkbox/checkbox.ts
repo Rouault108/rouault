@@ -95,7 +95,7 @@ export class Checkbox extends LitElement {
       width: 16px;
       height: 16px;
       border-radius: var(--radius-sm, 4px);
-      border: var(--border-width, 1px) solid var(--border-muted, oklch(80% 0.01 250 / 0.4));
+      border: var(--border-width, 1px) solid var(--border-muted, oklch(80% 0 0 / 0.4));
       background: var(--bg-fill-muted, oklch(95% 0 0));
       display: flex;
       align-items: center;
@@ -120,7 +120,7 @@ export class Checkbox extends LitElement {
 
     /* Hover */
     .wrapper:hover:not([aria-disabled='true']) .control {
-      border-color: var(--border-default, oklch(70% 0.01 250 / 0.6));
+      border-color: var(--border-default, oklch(70% 0 0 / 0.6));
     }
 
     /* Active: タクタイルフィードバック */
@@ -172,7 +172,7 @@ export class Checkbox extends LitElement {
     /* ── ラベルテキスト ── */
     .label {
       font-size: var(--text-base, 14px);
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
       line-height: var(--line-height-normal, 1.5);
     }
 

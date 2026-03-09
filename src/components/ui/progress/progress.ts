@@ -31,7 +31,7 @@ export class UiProgress extends LitElement {
       overflow: hidden;
       block-size: var(--ui-progress-track-height);
       border-radius: var(--radius-full, 9999px);
-      background: var(--bg-fill-neutral, oklch(92% 0.01 250));
+      background: var(--bg-fill-neutral, oklch(92% 0 0));
     }
 
     .bar {

@@ -9,8 +9,8 @@ import { customElement, property } from 'lit/decorators.js';
  *
  * ## デザイン哲学
  *
- * - **Digital Tactility**: 0から1へのデジタルな状態遷移を、Springアニメーション
- *   (`--ease-spring`) を用いて「即時かつ滑らか」に表現します。
+ * - **静かな状態遷移**: 状態変化はサム位置と淡いトラック差分で示し、
+ *   読書体験を邪魔しない抑制的なコントラストに保ちます。
  * - **フォーム非依存**: `name` / `required` / `value` は非対応。状態管理は親で行います。
  *
  * ## キーボード操作
@@ -26,18 +26,20 @@ import { customElement, property } from 'lit/decorators.js';
  * @fires input  - change と同タイミングで発火（リアルタイム監視用）
  *
  * @cssprop --switch-thumb-size     - Thumb サイズ (16px)
- * @cssprop --switch-track-padding  - Thumb とトラック境界の余白 (2px)
- * @cssprop --switch-track-height   - トラック高さ (20px)
- * @cssprop --switch-track-width    - トラック幅 (36px)
- * @cssprop --switch-thumb-pos-off  - Thumb OFF 位置 (2px)
- * @cssprop --switch-thumb-pos-on   - Thumb ON 位置 (18px)
- * @cssprop --primary               - ON 時のトラック色
- * @cssprop --primary-hover         - ON + Hover 時のトラック色
+ * @cssprop --switch-track-padding  - Thumb とトラック境界の余白 (4px)
+ * @cssprop --switch-track-height   - トラック高さ (24px)
+ * @cssprop --switch-track-width    - トラック幅 (42px)
+ * @cssprop --switch-thumb-pos-off  - Thumb OFF 位置 (3px)
+ * @cssprop --switch-thumb-pos-on   - Thumb ON 位置 (21px)
+ * @cssprop --primary               - ON 時のアクセント色
+ * @cssprop --primary-hover         - ON + Hover 時のアクセント色
  * @cssprop --bg-fill-muted         - OFF 時のトラック色
- * @cssprop --white                 - Thumb の色
+ * @cssprop --border-muted          - OFF 時のトラック境界色
+ * @cssprop --border-default        - Hover 時のトラック境界色
+ * @cssprop --fg-muted              - 無効時のラベル色
+ * @cssprop --white                 - Thumb の基準色
  * @cssprop --shadow-sm             - Thumb のシャドウ
- * @cssprop --opacity-disabled      - 無効時の不透明度 (0.5)
- * @cssprop --scale-pressed         - 押下時の Thumb スケール (0.96)
+ * @cssprop --scale-pressed         - 押下時の Thumb 縮尺 (0.98)
  * @cssprop --duration-fast         - 色変化アニメーション時間 (70ms)
  * @cssprop --duration-normal       - Thumb 移動アニメーション時間 (150ms)
  * @cssprop --ease-out              - 色変化イージング
@@ -45,11 +47,10 @@ import { customElement, property } from 'lit/decorators.js';
  * @cssprop --focus-ring-width      - フォーカスリング幅
  * @cssprop --focus-ring-color      - フォーカスリング色
  * @cssprop --focus-ring-offset     - フォーカスリングオフセット
- * @cssprop --control-min-touch     - 最低タッチターゲットサイズ (24px)
- * @cssprop --control-height-sm     - バウンディングボックス高さ (24px)
+ * @cssprop --control-min-touch     - 最低タッチターゲットサイズ (32px)
+ * @cssprop --control-height-sm     - バウンディングボックス高さ (32px)
  * @cssprop --radius-full           - 完全な角丸 (9999px)
- * @cssprop --border-width-thick    - 太いボーダー幅 (2px)
- * @cssprop --border-transparent    - 透明ボーダー
+ * @cssprop --border-width          - ボーダー幅 (1px)
  * @cssprop --fg-default            - ラベルテキスト色
  * @cssprop --text-base             - 標準フォントサイズ (14px)
  * @cssprop --space-2               - スペーシング (8px)
@@ -76,25 +77,51 @@ export class Switch extends LitElement {
     static override styles = css`
     /* ── コンポーネントローカルトークン ── */
     :host {
-      /* Thumb サイズ: アイコンサイズ (16px) と統一 */
-      --switch-thumb-size: var(--icon-base, 16px);
-      /* Thumb とトラック境界の余白: 太いボーダー幅 (2px) */
-      --switch-track-padding: var(--border-width-thick, 2px);
-      /* トラック高さ: 16px + 2px × 2 = 20px */
-      --switch-track-height: calc(
-        var(--switch-thumb-size) + var(--switch-track-padding) * 2
-      );
-      /* トラック幅: 16px × 2 + 2px × 2 = 36px */
-      --switch-track-width: calc(
-        var(--switch-thumb-size) * 2 + var(--switch-track-padding) * 2
-      );
-      /* Thumb OFF 位置: 左端の余白 (2px) */
+      --switch-thumb-size: 16px;
+      --switch-track-padding: 4px;
+      --switch-track-height: calc(var(--switch-thumb-size) + var(--switch-track-padding) * 2);
+      --switch-track-width: calc(var(--switch-thumb-size) * 2 + var(--switch-track-padding) * 2);
       --switch-thumb-pos-off: var(--switch-track-padding);
-      /* Thumb ON 位置: 36px - 16px - 2px = 18px */
       --switch-thumb-pos-on: calc(
         var(--switch-track-width) - var(--switch-thumb-size) - var(--switch-track-padding)
       );
-
+      --switch-track-bg-off: color-mix(
+        in oklch,
+        var(--bg-fill-muted, oklch(96% 0 0)) 92%,
+        var(--fg-default, oklch(20% 0 0)) 8%
+      );
+      --switch-track-bg-on: color-mix(
+        in oklch,
+        var(--bg-fill-muted, oklch(96% 0 0)) 62%,
+        var(--fg-default, oklch(20% 0 0)) 38%
+      );
+      --switch-track-border-off: color-mix(
+        in oklch,
+        var(--border-muted, oklch(20% 0 0 / 0.06)) 72%,
+        transparent
+      );
+      --switch-track-border-on: color-mix(
+        in oklch,
+        var(--fg-default, oklch(20% 0 0)) 18%,
+        var(--border-default, oklch(20% 0 0 / 0.12))
+      );
+      --switch-track-border-hover: color-mix(
+        in oklch,
+        var(--border-default, oklch(20% 0 0 / 0.12)) 68%,
+        transparent
+      );
+      --switch-focus-ring-resolved: var(
+        --focus-ring-color,
+        color-mix(in oklch, var(--primary, oklch(55% 0.2 250)) 58%, white)
+      );
+      --switch-thumb-bg-off: var(--white, oklch(100% 0 0));
+      --switch-thumb-bg-on: var(--switch-thumb-bg-off);
+      --switch-thumb-border-off: color-mix(
+        in oklch,
+        var(--border-default, oklch(20% 0 0 / 0.12)) 55%,
+        white
+      );
+      --switch-thumb-border-on: var(--switch-thumb-border-off);
       display: inline-flex;
       flex-direction: column;
       gap: var(--space-1, 4px);
@@ -108,13 +135,11 @@ export class Switch extends LitElement {
       cursor: pointer;
       position: relative;
       user-select: none;
-      /* バウンディングボックス高さ: システムグリッドに準拠 (24px) */
-      min-height: var(--control-height-sm, 24px);
+      min-height: var(--control-height-sm, 32px);
     }
 
     /* Disabled: ラベル行全体を薄く */
     :host([disabled]) .wrapper {
-      opacity: var(--opacity-disabled, 0.5);
       cursor: not-allowed;
       pointer-events: none;
     }
@@ -126,43 +151,55 @@ export class Switch extends LitElement {
       width: var(--switch-track-width);
       height: var(--switch-track-height);
       border-radius: var(--radius-full, 9999px);
-      /* High Contrast Mode 用のフックとして領域確保 */
-      border: var(--border-width-thick, 2px) solid var(--border-transparent, transparent);
-      background-color: var(--bg-fill-muted, oklch(93% 0 0));
-      transition: background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      border: var(--border-width, 1px) solid var(--switch-track-border-off);
+      background-color: var(--switch-track-bg-off);
+      transition:
+        background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        box-shadow var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
       box-sizing: border-box;
+      box-shadow: inset 0 0 0 0.5px color-mix(in oklch, var(--switch-track-border-off) 50%, transparent);
     }
 
-    /* Touch Target: ::after で最低 44×44px を確保（単体使用時） */
     .track::after {
       content: '';
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      min-width: var(--control-min-touch, 24px);
-      min-height: var(--control-min-touch, 24px);
+      min-width: var(--control-min-touch, 32px);
+      min-height: var(--control-min-touch, 32px);
       pointer-events: auto;
     }
 
-    /* ON 状態: トラック色を primary に */
     :host([checked]) .track {
-      background-color: var(--primary, oklch(60% 0.15 250));
+      background-color: var(--switch-track-bg-on);
+      border-color: var(--switch-track-border-on);
+      box-shadow: inset 0 0 0 0.5px color-mix(in oklch, var(--switch-track-border-on) 45%, transparent);
     }
 
-    /* Hover (OFF) */
     .wrapper:hover .track {
-      background-color: oklch(from var(--bg-fill-muted, oklch(93% 0 0)) calc(l - 3%) c h);
+      background-color: color-mix(in oklch, var(--switch-track-bg-off) 96%, var(--fg-default, oklch(20% 0 0)) 4%);
+      border-color: var(--switch-track-border-hover);
+      box-shadow: inset 0 0 0 0.5px
+        color-mix(in oklch, var(--switch-track-border-hover) 55%, transparent);
     }
 
-    /* Hover (ON) */
     :host([checked]) .wrapper:hover .track {
-      background-color: var(--primary-hover, oklch(55% 0.15 250));
+      background-color: color-mix(
+        in oklch,
+        var(--switch-track-bg-on) 92%,
+        var(--fg-default, oklch(20% 0 0)) 8%
+      );
+      border-color: color-mix(
+        in oklch,
+        var(--switch-track-border-on) 88%,
+        var(--fg-default, oklch(20% 0 0)) 12%
+      );
     }
 
-    /* フォーカスリング: トラック形状に合わせて radius-full */
     .track:focus-visible {
-      outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
+      outline: var(--focus-ring-width, 2px) solid var(--switch-focus-ring-resolved);
       outline-offset: var(--focus-ring-offset, 2px);
       border-radius: var(--radius-full, 9999px);
     }
@@ -175,51 +212,94 @@ export class Switch extends LitElement {
       width: var(--switch-thumb-size);
       height: var(--switch-thumb-size);
       border-radius: var(--radius-full, 9999px);
-      /* Dark Mode でも白を維持し、トラック色でコントラストを確保 */
-      background-color: var(--white, #ffffff);
-      box-shadow: var(--shadow-sm, 0 1px 3px oklch(0% 0 0 / 0.15));
-      /* OFF 位置: translateX(2px) + translateY(-50%) で垂直中央 */
+      border: 1px solid var(--switch-thumb-border-off);
+      background-color: var(--switch-thumb-bg-off);
+      box-shadow:
+        0 1px 2px oklch(0% 0 0 / 0.06),
+        0 0 0 0.5px oklch(100% 0 0 / 0.72);
       transform: translateX(var(--switch-thumb-pos-off)) translateY(-50%);
-      /* Springアニメーション: 余韻やバウンスを排除し、指の動きに吸い付く追従性 */
-      transition: transform var(--duration-normal, 150ms) var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+      transition:
+        transform var(--duration-normal, 150ms)
+          var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)),
+        background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        box-shadow var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
-    /* ON 状態: Thumb を右端へ */
     :host([checked]) .thumb {
+      background-color: var(--switch-thumb-bg-on);
+      border-color: var(--switch-thumb-border-on);
       transform: translateX(var(--switch-thumb-pos-on)) translateY(-50%);
     }
 
-    /* Active (押下中): Thumb にスケールを追加 — 触覚的フィードバック */
     .wrapper:active .thumb {
-      transform: translateX(var(--switch-thumb-pos-off)) translateY(-50%) scale(var(--scale-pressed, 0.96));
+      transform: translateX(var(--switch-thumb-pos-off)) translateY(-50%) scaleX(1.03)
+        scaleY(0.99);
     }
 
     :host([checked]) .wrapper:active .thumb {
-      transform: translateX(var(--switch-thumb-pos-on)) translateY(-50%) scale(var(--scale-pressed, 0.96));
+      transform: translateX(var(--switch-thumb-pos-on)) translateY(-50%) scaleX(1.03)
+        scaleY(0.99);
     }
 
-    /* ── ラベルテキスト ── */
+    :host([disabled]) .track {
+      background-color: color-mix(in oklch, var(--switch-track-bg-off) 95%, white);
+      border-color: color-mix(in oklch, var(--switch-track-border-off) 56%, transparent);
+      box-shadow: none;
+    }
+
+    :host([disabled][checked]) .track {
+      background-color: color-mix(in oklch, var(--switch-track-bg-on) 88%, white);
+      border-color: color-mix(in oklch, var(--switch-track-border-on) 72%, transparent);
+    }
+
+    :host([disabled]) .thumb {
+      box-shadow: none;
+      border-color: color-mix(in oklch, var(--switch-thumb-border-off) 70%, transparent);
+    }
+
+    :host([disabled][checked]) .thumb {
+      background-color: color-mix(in oklch, var(--switch-thumb-bg-off) 97%, var(--primary, oklch(55% 0.2 250)) 3%);
+      border-color: color-mix(in oklch, var(--primary, oklch(55% 0.2 250)) 8%, transparent);
+    }
+
     .label {
       font-size: var(--text-base, 14px);
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
       line-height: var(--line-height-normal, 1.5);
     }
 
-    /* ── Forced Colors Mode ── */
+    :host([disabled]) .label {
+      color: var(--fg-muted, oklch(52% 0 0));
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .track,
+      .thumb {
+        transition-duration: 0.01ms;
+      }
+    }
+
     @media (forced-colors: active) {
       .track {
-        /* 境界を強制表示し、スイッチ領域を明確化 */
-        border: var(--border-width-thick, 2px) solid CanvasText;
+        border: 1px solid CanvasText;
+        background: Canvas;
+        box-shadow: none;
       }
 
       .thumb {
-        /* OFF 状態: CanvasText で Thumb を表示 */
         background: CanvasText;
+        border-color: CanvasText;
+      }
+
+      :host([checked]) .track {
+        background: Canvas;
+        border-color: Highlight;
       }
 
       :host([checked]) .thumb {
-        /* ON 状態: Highlight で Thumb を表示（位置変化が主要シグナル） */
         background: Highlight;
+        border-color: Highlight;
       }
 
       .track:focus-visible {
@@ -229,81 +309,78 @@ export class Switch extends LitElement {
     }
   `;
 
-    /**
-     * ON/OFF 状態
-     * @default false
-     */
-    @property({ type: Boolean, reflect: true })
-    checked = false;
 
-    /**
-     * スイッチのラベル。
-     * 内部的に `aria-labelledby` で関連付けられ、ラベル要素全体がクリック可能領域となります。
-     */
-    @property({ type: String, reflect: true })
-    label = '';
+  /**
+   * ON/OFF 状態
+   * @default false
+   */
+  @property({ type: Boolean, reflect: true })
+  checked = false;
 
-    /**
-     * 操作無効化
-     * @default false
-     */
-    @property({ type: Boolean, reflect: true })
-    disabled = false;
+  /**
+   * スイッチのラベル。
+   * 内部的に `aria-labelledby` で関連付けられ、ラベル要素全体がクリック可能領域となります。
+   */
+  @property({ type: String, reflect: true })
+  label = '';
 
-    // 一意な ID（レンダリング毎の再生成を防止）
-    private readonly _labelId = `switch-label-${Math.random().toString(36).substring(2, 11)}`;
+  /**
+   * 操作無効化
+   * @default false
+   */
+  @property({ type: Boolean, reflect: true })
+  disabled = false;
 
-    /**
-     * トグル操作。`change` / `input` イベントを発火します。
-     */
-    private _toggle(): void {
-        if (this.disabled) return;
+  // 一意な ID（レンダリング毎の再生成を防止）
+  private readonly _labelId = `switch-label-${Math.random().toString(36).substring(2, 11)}`;
 
-        this.checked = !this.checked;
-        this.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
-        this.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+  /**
+   * トグル操作。`change` / `input` イベントを発火します。
+   */
+  private _toggle(): void {
+    if (this.disabled) return;
+
+    this.checked = !this.checked;
+    this.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+    this.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+  }
+
+  /** クリックによるトグル */
+  private _handleClick = (): void => {
+    this._toggle();
+  };
+
+  /**
+   * キーボード操作:
+   * - Space: トグル
+   * - Enter: トグル（フォーム送信はブロック）
+   */
+  private _handleKeyDown = (e: KeyboardEvent): void => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault(); // Enter によるフォーム送信をブロック
+      this._toggle();
     }
+  };
 
-    /** クリックによるトグル */
-    private _handleClick = (): void => {
-        this._toggle();
-    };
+  /**
+   * コントロールにフォーカスを当てる
+   */
+  override focus(options?: FocusOptions): void {
+    this.shadowRoot?.querySelector<HTMLElement>('.track')?.focus(options);
+  }
 
-    /**
-     * キーボード操作:
-     * - Space: トグル
-     * - Enter: トグル（フォーム送信はブロック）
-     */
-    private _handleKeyDown = (e: KeyboardEvent): void => {
-        if (e.key === ' ' || e.key === 'Enter') {
-            e.preventDefault(); // Enter によるフォーム送信をブロック
-            this._toggle();
-        }
-    };
+  /**
+   * コントロールからフォーカスを外す
+   */
+  override blur(): void {
+    this.shadowRoot?.querySelector<HTMLElement>('.track')?.blur();
+  }
 
-    /**
-     * コントロールにフォーカスを当てる
-     */
-    override focus(options?: FocusOptions): void {
-        this.shadowRoot?.querySelector<HTMLElement>('.track')?.focus(options);
-    }
-
-    /**
-     * コントロールからフォーカスを外す
-     */
-    override blur(): void {
-        this.shadowRoot?.querySelector<HTMLElement>('.track')?.blur();
-    }
-
-    override render() {
-        const hostAriaLabel = this.getAttribute('aria-label');
-        const ariaLabel = this.label ? nothing : (hostAriaLabel ?? nothing);
-        return html`
+  override render() {
+    const hostAriaLabel = this.getAttribute('aria-label');
+    const ariaLabel = this.label ? nothing : (hostAriaLabel ?? nothing);
+    return html`
       <div class="wrapper">
-        <!--
-          Track: role="switch" でキーボードフォーカスを受け取る。
-          ラベルが存在する場合は aria-labelledby で関連付け。
-        -->
         <span
           class="track"
           part="track"
@@ -319,23 +396,23 @@ export class Switch extends LitElement {
           <span class="thumb" part="thumb"></span>
         </span>
 
-        <!-- ラベル: クリックでトグル -->
         ${this.label
-                ? html`<label
+          ? html`<label
               id="${this._labelId}"
               class="label"
               part="label"
               @click="${this._handleClick}"
               @keydown="${this._handleKeyDown}"
-            >${this.label}</label>`
-                : nothing}
+              >${this.label}</label
+            >`
+          : nothing}
       </div>
     `;
-    }
+  }
 }
 
 declare global {
-    interface HTMLElementTagNameMap {
-        'ui-switch': Switch;
-    }
+  interface HTMLElementTagNameMap {
+    'ui-switch': Switch;
+  }
 }

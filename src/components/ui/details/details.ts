@@ -37,7 +37,7 @@ export class Details extends LitElement {
     }
 
     :host([variant='bordered']) .root {
-      border: var(--border-width, 1px) solid var(--border-default, oklch(90% 0.01 250 / 0.12));
+      border: var(--border-width, 1px) solid var(--border-default, oklch(90% 0 0 / 0.12));
       border-radius: var(--radius-md, 6px);
       overflow: hidden;
     }
@@ -53,7 +53,7 @@ export class Details extends LitElement {
       background: transparent;
       cursor: pointer;
       text-align: left;
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
       font-size: var(--text-base, 14px);
       font-weight: var(--font-medium, 500);
       line-height: var(--line-height-normal, 1.5);
@@ -93,7 +93,7 @@ export class Details extends LitElement {
       justify-content: center;
       align-self: flex-start;
       margin-top: calc((1em * var(--line-height-normal, 1.5) - var(--icon-base, 16px)) / 2);
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
       transform: rotate(0deg);
       transition:
         transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
@@ -113,7 +113,7 @@ export class Details extends LitElement {
 
     .summary {
       min-width: 0;
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
       line-height: var(--line-height-normal, 1.5);
     }
 
@@ -146,7 +146,7 @@ export class Details extends LitElement {
     .content-body {
       margin-left: calc(var(--icon-base, 16px) + var(--space-2, 8px));
       padding: 0 0 var(--space-4, 16px) 0;
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
       line-height: var(--line-height-normal, 1.5);
     }
 

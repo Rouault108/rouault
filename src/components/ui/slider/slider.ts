@@ -111,7 +111,7 @@ export class Slider extends LitElement {
       width: 100%;
       /* Track 高さ: スライダー固有の視覚的バランス（ハードコード例外） */
       height: 4px;
-      background: var(--border-default, oklch(85% 0.01 250));
+      background: var(--border-default, oklch(85% 0 0));
       border-radius: var(--radius-full, 9999px);
       /* z-index: 1 — Input (z-index: 2) の背面 */
       z-index: 1;
@@ -139,7 +139,7 @@ export class Slider extends LitElement {
       height: var(--icon-base, 16px);
       border-radius: var(--radius-full, 9999px);
       background: var(--white, #ffffff);
-      border: var(--border-width, 1px) solid var(--border-default, oklch(85% 0.01 250));
+      border: var(--border-width, 1px) solid var(--border-default, oklch(85% 0 0));
       box-shadow: var(--elevation-md, 0 2px 8px oklch(0% 0 0 / 0.12));
       transform: translateX(-50%) translateY(-50%);
       pointer-events: none;

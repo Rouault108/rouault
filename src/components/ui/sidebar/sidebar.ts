@@ -1,5 +1,6 @@
 import { css, html, LitElement, type PropertyValues } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import '../file-tree/file-tree';
 import type { FileTreeVariant, TreeItemDensity, TreeNode } from '../file-tree/file-tree';
 import '../sidebar-shell/sidebar-shell';
@@ -30,7 +31,7 @@ export class UiSidebar extends LitElement {
     :host {
       display: block;
       min-block-size: 0;
-      color: var(--fg-default, oklch(24% 0.01 250));
+      color: var(--fg-default, oklch(24% 0 0));
     }
 
     .sidebar-head {
@@ -41,7 +42,7 @@ export class UiSidebar extends LitElement {
       min-block-size: var(--control-height-lg, 40px);
       padding: var(--space-2, 8px) var(--space-4, 16px);
       border-bottom: var(--border-width, 1px) solid
-        var(--border-default, oklch(20% 0.03 250 / 0.12));
+        var(--border-default, oklch(20% 0 0 / 0.12));
       background: var(--bg-surface-2, oklch(100% 0 0));
     }
 
@@ -51,7 +52,7 @@ export class UiSidebar extends LitElement {
       font-size: var(--text-sm, 13px);
       font-weight: var(--font-medium, 500);
       letter-spacing: 0.01em;
-      color: var(--fg-muted, oklch(42% 0.01 250));
+      color: var(--fg-muted, oklch(42% 0 0));
     }
 
     .tree-wrap {
@@ -63,16 +64,16 @@ export class UiSidebar extends LitElement {
       display: block;
       padding: var(--space-2, 8px) var(--space-4, 16px);
       border-top: var(--border-width, 1px) solid
-        var(--border-ghost, oklch(20% 0.03 250 / 0.04));
+        var(--border-ghost, oklch(20% 0 0 / 0.04));
     }
 
     @media (prefers-color-scheme: dark) {
       .sidebar-head {
-        border-bottom-color: var(--border-ghost, oklch(90% 0.01 250 / 0.08));
+        border-bottom-color: var(--border-ghost, oklch(90% 0 0 / 0.08));
       }
 
       .footer {
-        border-top-color: var(--border-ghost, oklch(90% 0.01 250 / 0.08));
+        border-top-color: var(--border-ghost, oklch(90% 0 0 / 0.08));
       }
     }
 
@@ -307,7 +308,7 @@ export class UiSidebar extends LitElement {
     return html`
         <ui-sidebar-shell
           data-state=${this.state}
-          mode=${this.mode}
+          mode=${ifDefined(this._modeSetExplicitly ? this.mode : undefined)}
           .fixedBreakpoint=${this.fixedBreakpoint}
           @ui-sidebar-state-change=${this._onShellStateChange}
         >

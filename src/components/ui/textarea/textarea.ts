@@ -108,7 +108,7 @@ export class Textarea extends LitElement {
     .label {
       font-size: var(--text-sm, 13px);
       font-weight: var(--font-medium, 500);
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
     }
 
     /* sr-only 相当: 視覚的に非表示だがスクリーンリーダーには残る */
@@ -137,7 +137,7 @@ export class Textarea extends LitElement {
 
       /* Default State: Universal Clarity */
       background: var(--bg-fill-muted, oklch(95% 0 0));
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
 
       /* Typography (default variant) */
       font-family: inherit;
@@ -164,7 +164,7 @@ export class Textarea extends LitElement {
 
     /* Hover State: Tactility */
     textarea:hover:not(:disabled):not(:read-only):not(:focus) {
-      border-color: var(--border-default, oklch(85% 0.01 250));
+      border-color: var(--border-default, oklch(85% 0 0));
     }
 
     /* Focus State: Clear Canvas */
@@ -200,9 +200,9 @@ export class Textarea extends LitElement {
 
     /* Disabled State */
     textarea:disabled {
-      border-color: var(--border-default, oklch(85% 0.01 250));
+      border-color: var(--border-default, oklch(85% 0 0));
       cursor: not-allowed;
-      color: var(--fg-subtle, oklch(48% 0.01 250));
+      color: var(--fg-subtle, oklch(48% 0 0));
       resize: none;
     }
 
@@ -235,7 +235,7 @@ export class Textarea extends LitElement {
     textarea {
       /* Firefox */
       scrollbar-width: thin;
-      scrollbar-color: var(--scrollbar-thumb, oklch(65% 0.01 250)) transparent;
+      scrollbar-color: var(--scrollbar-thumb, oklch(65% 0 0)) transparent;
     }
 
     textarea::-webkit-scrollbar {
@@ -248,20 +248,20 @@ export class Textarea extends LitElement {
     }
 
     textarea::-webkit-scrollbar-thumb {
-      background-color: var(--scrollbar-thumb, oklch(65% 0.01 250));
+      background-color: var(--scrollbar-thumb, oklch(65% 0 0));
       border: 4px solid transparent;
       background-clip: content-box;
       border-radius: var(--radius-full, 9999px);
     }
 
     textarea::-webkit-scrollbar-thumb:hover {
-      background-color: var(--scrollbar-thumb-hover, oklch(48% 0.01 250));
+      background-color: var(--scrollbar-thumb-hover, oklch(48% 0 0));
     }
 
     /* ── Help Text ── */
     .help-text {
       font-size: var(--text-sm, 13px);
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
       margin-top: var(--space-1, 4px);
       line-height: var(--line-height-normal, 1.5);
     }
@@ -317,7 +317,7 @@ export class Textarea extends LitElement {
       textarea {
         background: transparent !important;
         border: var(--border-width, 1px) solid currentColor !important;
-        color: var(--fg-default, oklch(20% 0.01 250)) !important;
+        color: var(--fg-default, oklch(20% 0 0)) !important;
       }
 
       textarea.error {

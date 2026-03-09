@@ -668,7 +668,7 @@ export const MediaModeContracts: Story = {
       throw new Error('印刷ルールでキーのボックスシャドウが削除されている必要があります');
     }
     if (
-      !styleText.includes('border: var(--border-width, 1px) solid var(--border-default, oklch(85% 0.01 250))')
+      !styleText.includes('border: var(--border-width, 1px) solid var(--border-default, oklch(85% 0 0))')
     ) {
       throw new Error('印刷用のボーダーがボーダートークンの参照を維持している必要があります');
     }

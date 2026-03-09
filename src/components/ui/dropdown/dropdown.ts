@@ -100,7 +100,7 @@ export class Dropdown extends LitElement {
       /* Nested Geometry: R_outer(6px) - R_inner(4px) = 2px */
       padding: calc(var(--radius-md, 6px) - var(--radius-sm, 4px));
       background: var(--bg-surface-2, oklch(97% 0 0));
-      border: var(--border-width, 1px) solid var(--border-default, oklch(90% 0.01 250 / 0.12));
+      border: var(--border-width, 1px) solid var(--border-default, oklch(90% 0 0 / 0.12));
       border-radius: var(--radius-md, 6px);
       box-shadow:
         var(--elevation-lg, 0 8px 24px oklch(0% 0 0 / 0.12)),
@@ -736,7 +736,7 @@ export class MenuItem extends LitElement {
       padding: 0 var(--space-3, 12px);
       font-size: var(--text-base, 14px);
       font-weight: var(--font-normal, 400);
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
       border-radius: var(--radius-sm, 4px);
       cursor: pointer;
       user-select: none;
@@ -784,7 +784,7 @@ export class MenuItem extends LitElement {
 
     /* Disabled */
     button:disabled {
-      color: var(--fg-subtle, oklch(48% 0.01 250));
+      color: var(--fg-subtle, oklch(48% 0 0));
       cursor: default;
       pointer-events: none;
     }
@@ -943,7 +943,7 @@ export class MenuSeparator extends LitElement {
     .separator {
       height: 1px;
       margin: var(--space-1, 4px) 0;
-      background: var(--border-muted, oklch(90% 0.01 250 / 0.08));
+      background: var(--border-muted, oklch(90% 0 0 / 0.08));
     }
 
     @media (forced-colors: active) {

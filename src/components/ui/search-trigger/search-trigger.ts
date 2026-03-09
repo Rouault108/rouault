@@ -136,12 +136,12 @@ export class SearchTrigger extends LitElement {
 
     /* Hover: 明確なボーダーでインタラクティブ要素のエッジをフィードバック */
     button:hover:not(:disabled) {
-      border-color: var(--border-default, oklch(85% 0.01 250));
+      border-color: var(--border-default, oklch(85% 0 0));
     }
 
     /* Focus: 入力準備状態として白地（デフォルト背景）に切り替え */
     button:focus-visible {
-      border-color: var(--border-default, oklch(85% 0.01 250));
+      border-color: var(--border-default, oklch(85% 0 0));
       background: var(--bg-default, oklch(100% 0 0));
       outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
       outline-offset: var(--focus-ring-offset, 2px);
@@ -150,7 +150,7 @@ export class SearchTrigger extends LitElement {
 
     /* Active (Pressed): タクタイルシグナル */
     button:active:not(:disabled) {
-      border-color: var(--border-default, oklch(85% 0.01 250));
+      border-color: var(--border-default, oklch(85% 0 0));
       background: var(--bg-default, oklch(100% 0 0));
       transform: scale(var(--scale-pressed, 0.96));
     }
@@ -170,7 +170,7 @@ export class SearchTrigger extends LitElement {
       flex-shrink: 0;
       width: var(--icon-base, 16px);
       height: var(--icon-base, 16px);
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
     }
 
     .icon iconify-icon {
@@ -183,7 +183,7 @@ export class SearchTrigger extends LitElement {
     .placeholder {
       flex: 1;
       text-align: left;
-      color: var(--fg-subtle, oklch(65% 0.01 250));
+      color: var(--fg-subtle, oklch(65% 0 0));
       font-size: var(--text-base, 14px);
       font-weight: var(--font-normal, 400);
       user-select: none;

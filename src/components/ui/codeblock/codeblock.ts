@@ -52,7 +52,7 @@ ui-code-block pre {
   margin: 0;
   border: none;
   background: transparent !important;
-  color: var(--fg-default, oklch(20% 0.03 250));
+  color: var(--fg-default, oklch(20% 0 0));
   font-family: var(--font-mono, monospace);
   font-size: var(--text-sm, 0.8125rem);
   line-height: var(--line-height-relaxed, 1.75);
@@ -93,7 +93,7 @@ ui-code-block[show-line-numbers] pre .line::before {
   inset-inline-start: 0;
   width: var(--space-8, 2rem);
   text-align: end;
-  color: var(--fg-subtle, oklch(60% 0.01 250));
+  color: var(--fg-subtle, oklch(60% 0 0));
   user-select: none;
   pointer-events: none;
   font-variant-numeric: tabular-nums;
@@ -163,7 +163,7 @@ export class CodeBlock extends LitElement {
       margin: 0;
       position: relative;
       overflow: hidden;
-      border: var(--border-style-subtle, 1px solid oklch(20% 0.03 250 / 0.12));
+      border: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12));
       background: var(--bg-default, oklch(1 0 0));
       border-radius:
         var(--ui-code-block-radius-top, var(--radius-md, 6px))
@@ -190,7 +190,7 @@ export class CodeBlock extends LitElement {
         var(--_ui-code-block-header-display, block)
       );
       padding: var(--space-2, 8px) var(--ui-code-block-padding, var(--space-4, 1rem)) 0;
-      color: var(--fg-muted, oklch(45% 0.02 250));
+      color: var(--fg-muted, oklch(45% 0 0));
       font-size: var(--text-xs, 12px);
       font-weight: var(--font-medium, 500);
       letter-spacing: var(--tracking-wide, 0.025em);
@@ -242,7 +242,7 @@ export class CodeBlock extends LitElement {
       align-items: center;
       gap: var(--space-1, 4px);
       white-space: nowrap;
-      color: var(--fg-muted, oklch(45% 0.02 250));
+      color: var(--fg-muted, oklch(45% 0 0));
     }
 
     .intent iconify-icon {

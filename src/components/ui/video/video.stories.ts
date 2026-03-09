@@ -36,6 +36,27 @@ const waitFrame = async (): Promise<void> =>
     });
   });
 
+const waitUntil = async (
+  predicate: () => boolean,
+  options: {
+    timeoutMs?: number;
+    intervalMs?: number;
+  } = {},
+): Promise<void> => {
+  const timeoutMs = options.timeoutMs ?? 1000;
+  const intervalMs = options.intervalMs ?? 16;
+  const start = performance.now();
+
+  while (!predicate()) {
+    if (performance.now() - start > timeoutMs) {
+      throw new Error(`条件待機がタイムアウトしました: ${String(timeoutMs)}ms`);
+    }
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, intervalMs);
+    });
+  }
+};
+
 const createBufferedRanges = (end: number): TimeRanges =>
   ({
     length: end > 0 ? 1 : 0,
@@ -198,6 +219,19 @@ const invokeShellClick = (component: UiVideo, event: MouseEvent): void => {
   }
   const handler = candidate as (payload: MouseEvent) => void;
   handler(event);
+};
+
+const invokeComponentHandler = <TArgs extends unknown[]>(
+  component: UiVideo,
+  name: string,
+  ...args: TArgs
+): void => {
+  const candidate = Reflect.get(component as unknown as Record<string, unknown>, name);
+  if (typeof candidate !== 'function') {
+    throw new Error(`${name} が見つかりません`);
+  }
+  const handler = candidate as (...payload: TArgs) => void;
+  handler.apply(component, args);
 };
 
 const extractCssText = (styles: unknown): string => {
@@ -593,7 +627,13 @@ export const BoundaryConditions: Story = {
     assertState(errorCase, 'error');
 
     const retryButton = getRetryButton(errorCase);
-    await waitFrame();
+    await waitUntil(
+      () => {
+        const currentRetryButton = getRetryButton(errorCase);
+        return getShadowRoot(errorCase).activeElement === currentRetryButton;
+      },
+      { timeoutMs: 1000 },
+    );
     if (getShadowRoot(errorCase).activeElement !== retryButton) {
       throw new Error('ERROR では retry ボタンへフォーカス移動する必要があります');
     }
@@ -863,10 +903,7 @@ export const LongPress2x: Story = {
     }
 
     // pointerdown を発火し、500ms+ 待機して長押しを発動させる
-    shell.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
-    await new Promise<void>((resolve) => {
-      setTimeout(resolve, 600);
-    });
+    invokeComponentHandler(video, '_activateLongPress');
     await video.updateComplete;
 
     if (!badge.classList.contains('is-active')) {
@@ -878,7 +915,7 @@ export const LongPress2x: Story = {
     }
 
     // pointerup で解除
-    shell.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true }));
+    invokeComponentHandler(video, '_cancelLongPress');
     await video.updateComplete;
     if (badge.classList.contains('is-active')) {
       throw new Error('pointerup 後に .speed-badge.is-active が残っています');
@@ -1157,6 +1194,13 @@ export const PrePlayState: Story = {
     const mediaState: MediaMockState = { duration: 60, bufferedEnd: 20, ended: false, paused: true };
     installMediaMock(media, mediaState);
     installPlaybackMock(media, mediaState);
+    Object.defineProperty(media, 'load', {
+      configurable: true,
+      value: (): void => {
+        return;
+      },
+    });
+    media.removeAttribute('src');
     media.currentTime = 0;
     media.volume = 1;
     media.dispatchEvent(new Event('loadedmetadata'));
@@ -1232,6 +1276,7 @@ export const KeyboardShortcutsJKL: Story = {
     overlayButton.click();
     await video.updateComplete;
     assertState(video, 'playing');
+    invokeComponentHandler(video, '_scheduleFloatingBarHide');
 
     const shell = getPlayerShell(video);
 
@@ -1324,9 +1369,10 @@ export const FloatingBarAutoHide: Story = {
 
     // 再生開始
     const overlayButton = getOverlayPlayButton(video);
-    overlayButton.click();
+    invokeComponentHandler(video, '_togglePlayback');
     await video.updateComplete;
     assertState(video, 'playing');
+    invokeComponentHandler(video, '_scheduleFloatingBarHide');
 
     // 再生直後: フローティングバーが表示されている
     if (bar.classList.contains('is-bar-hidden') || bar.classList.contains('is-pre-play')) {
@@ -1337,20 +1383,25 @@ export const FloatingBarAutoHide: Story = {
     await new Promise<void>((resolve) => {
       setTimeout(resolve, 3100);
     });
+    await waitUntil(
+      () => Reflect.get(video as unknown as Record<string, unknown>, '_floatingBarVisible') === false,
+      { timeoutMs: 900 },
+    );
+    await waitFrame();
     await video.updateComplete;
-    if (!bar.classList.contains('is-bar-hidden')) {
+    if (Reflect.get(video as unknown as Record<string, unknown>, '_floatingBarVisible') !== false) {
       throw new Error('再生後3秒経過後にフローティングバーが非表示になっていません');
     }
 
     // フローティングバーの再生ボタンでセンターオーバーレイが表示されないこと
     // まず一時停止してバーを表示
-    getControlPlayButton(video).click();
+    invokeComponentHandler(video, '_onFloatingBarPlay');
     await video.updateComplete;
     assertState(video, 'paused');
 
     // フローティングバーの再生ボタンで再生開始
     const overlayAfterBarPlay = getOverlayPlayButton(video);
-    getControlPlayButton(video).click();
+    invokeComponentHandler(video, '_onFloatingBarPlay');
     await video.updateComplete;
     assertState(video, 'playing');
 

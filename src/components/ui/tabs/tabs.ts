@@ -106,7 +106,7 @@ export class Tabs extends LitElement {
       position: relative;
       /* Horizontal: 下ボーダー */
       border-bottom: var(--border-width, 1px) solid
-        var(--border-default, oklch(90% 0.01 250 / 0.12));
+        var(--border-default, oklch(90% 0 0 / 0.12));
       /* 幅超過時は横スクロール許容 */
       overflow-x: auto;
       /* CSS仕様上 overflow-x が auto/scroll のとき overflow-y: visible は
@@ -129,7 +129,7 @@ export class Tabs extends LitElement {
       /* Vertical: 右ボーダー */
       border-bottom: none;
       border-right: var(--border-width, 1px) solid
-        var(--border-default, oklch(90% 0.01 250 / 0.12));
+        var(--border-default, oklch(90% 0 0 / 0.12));
       overflow-x: visible;
       overflow-y: auto;
       padding-bottom: calc(var(--focus-ring-width, 2px) + var(--focus-ring-offset, 2px));
@@ -163,7 +163,7 @@ export class Tabs extends LitElement {
       font-family: var(--font-sans);
 
       /* Color: Muted（デフォルト） */
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
 
       /* Reset */
       background: none;
@@ -189,7 +189,7 @@ export class Tabs extends LitElement {
     }
 
     ::slotted([slot='tab']:hover) {
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
     }
 
     ::slotted([slot='tab'][aria-selected='true']) {

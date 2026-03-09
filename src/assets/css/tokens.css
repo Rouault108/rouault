@@ -72,7 +72,7 @@
   /* =========================================================================
    * Semantic Tokens - Background (Light Mode)
    * ========================================================================= */
-  --bg-default: oklch(1 0 var(--hue-base));
+  --bg-default: oklch(1 0 0);
   --bg-surface-1: var(--bg-default);
   --bg-surface-2: oklch(100% 0 0);
   --bg-surface-3: oklch(100% 0 0);
@@ -97,14 +97,14 @@
   --bg-highlight-subtle: oklch(96% 0.04 65);
   --bg-success-subtle: oklch(96% 0.04 145);
   --bg-tip-subtle: oklch(96% 0.04 var(--hue-primary));
-  --bg-note-subtle: oklch(96% 0.01 var(--hue-base));
+  --bg-note-subtle: oklch(96% 0 0);
   --bg-table-ruler: oklch(from var(--fg-default) l c h / 0.08);
-    /* =========================================================================
+  /* =========================================================================
    * Semantic Tokens - Foreground (Light Mode)
    * ========================================================================= */
-    --fg-default: oklch(20% 0.03 var(--hue-base));
-  --fg-muted: oklch(45% 0.02 var(--hue-base));
-  --fg-subtle: oklch(60% 0.01 var(--hue-base));
+  --fg-default: oklch(20% 0 0);
+  --fg-muted: oklch(45% 0 0);
+  --fg-subtle: oklch(60% 0 0);
   --fg-on-primary: var(--on-primary);
 
   /* =========================================================================
@@ -124,9 +124,9 @@
   /* =========================================================================
    * Semantic Tokens - Border (Light Mode)
    * ========================================================================= */
-  --border-default: oklch(20% 0.03 var(--hue-base) / 0.12);
-  --border-muted: oklch(20% 0.03 var(--hue-base) / 0.06);
-  --border-ghost: oklch(20% 0.03 var(--hue-base) / 0.04);
+  --border-default: oklch(20% 0 0 / 0.12);
+  --border-muted: oklch(20% 0 0 / 0.06);
+  --border-ghost: oklch(20% 0 0 / 0.04);
   --border-danger: oklch(72% 0.15 25);
   --border-warning: oklch(72% 0.15 85);
   --border-on-inverted: oklch(from var(--fg-default) l c h / 0.1);
@@ -419,10 +419,10 @@
     /* =========================================================================
      * Semantic Tokens - Background (Dark Mode)
      * ========================================================================= */
-    --bg-default: oklch(12% 0.02 var(--hue-base));
+    --bg-default: oklch(12% 0 0);
     --bg-surface-1: var(--bg-default);
-    --bg-surface-2: oklch(17% 0.02 var(--hue-base));
-    --bg-surface-3: oklch(22% 0.02 var(--hue-base));
+    --bg-surface-2: oklch(17% 0 0);
+    --bg-surface-3: oklch(22% 0 0);
     --bg-score-paper: oklch(100% 0 0);
 
     /* =========================================================================
@@ -446,14 +446,14 @@
     --bg-highlight-subtle: oklch(25% 0.05 65);
     --bg-success-subtle: oklch(25% 0.05 145);
     --bg-tip-subtle: oklch(25% 0.05 var(--hue-primary));
-    --bg-note-subtle: oklch(20% 0.02 var(--hue-base));
+    --bg-note-subtle: oklch(20% 0 0);
     --bg-table-ruler: oklch(from var(--fg-default) l c h / 0.08);
       /* =========================================================================
      * Semantic Tokens - Foreground (Dark Mode)
      * ========================================================================= */
-      --fg-default: oklch(90% 0.01 var(--hue-base));
-    --fg-muted: oklch(65% 0.01 var(--hue-base));
-    --fg-subtle: oklch(50% 0.01 var(--hue-base));
+      --fg-default: oklch(90% 0 0);
+    --fg-muted: oklch(65% 0 0);
+    --fg-subtle: oklch(50% 0 0);
     --fg-on-primary: var(--on-primary);
 
     /* =========================================================================
@@ -467,9 +467,9 @@
     /* =========================================================================
      * Semantic Tokens - Border (Dark Mode)
      * ========================================================================= */
-    --border-default: oklch(90% 0.01 var(--hue-base) / 0.12);
-    --border-muted: oklch(90% 0.01 var(--hue-base) / 0.06);
-    --border-ghost: oklch(90% 0.01 var(--hue-base) / 0.04);
+    --border-default: oklch(90% 0 0 / 0.12);
+    --border-muted: oklch(90% 0 0 / 0.06);
+    --border-ghost: oklch(90% 0 0 / 0.04);
     --border-danger: oklch(35% 0.1 25);
     --border-warning: oklch(35% 0.1 85);
     --border-on-inverted: oklch(from var(--bg-default) l c h / 0.1);

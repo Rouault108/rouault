@@ -255,7 +255,7 @@ export class Tag extends LitElement {
 
     /* ── Hover (Default / Outline のみ) ── */
     :host(:not([disabled]):not([variant='solid'])):hover {
-      --border-color: var(--border-default, oklch(70% 0.01 250 / 0.6));
+      --border-color: var(--border-default, oklch(70% 0 0 / 0.6));
     }
 
     /* ── Disabled ── */

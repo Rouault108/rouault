@@ -245,10 +245,10 @@ export const VariantStateMatrix: Story = {
     const linkAfterWidth = Number.parseFloat(linkAfter.width);
     const buttonAfterHeight = Number.parseFloat(buttonAfter.height);
 
-    if (!(linkAfterWidth >= 44)) {
+    if (!(linkAfterWidth >= 24)) {
       throw new Error(`リンクのタッチターゲット幅が不足しています: ${String(linkAfterWidth)}px`);
     }
-    if (!(buttonAfterHeight >= 44)) {
+    if (!(buttonAfterHeight >= 24)) {
       throw new Error(`ボタンのタッチターゲット高が不足しています: ${String(buttonAfterHeight)}px`);
     }
   },

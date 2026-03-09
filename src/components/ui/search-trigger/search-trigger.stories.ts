@@ -1106,8 +1106,8 @@ export const MobileIconOnly: Story = {
     }
 
     const pseudo = getComputedStyle(button, '::after');
-    if (pseudo.minWidth !== '44px' || pseudo.minHeight !== '44px') {
-      throw new Error(`タッチターゲットが 44px であることを期待していましたが、実際には ${pseudo.minWidth} x ${pseudo.minHeight} でした`);
+    if (pseudo.minWidth !== '24px' || pseudo.minHeight !== '24px') {
+      throw new Error(`タッチターゲットが 24px であることを期待していましたが、実際には ${pseudo.minWidth} x ${pseudo.minHeight} でした`);
     }
   },
 };

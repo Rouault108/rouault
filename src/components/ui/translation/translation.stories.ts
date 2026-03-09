@@ -263,13 +263,13 @@ export const VariantStateMatrix: Story = {
         display: grid;
         gap: 0.25rem;
         padding: 0.75rem;
-        border: 1px dashed var(--border-default, oklch(86% 0.01 250));
+        border: 1px dashed var(--border-default, oklch(86% 0 0));
       }
       .label {
         font-size: 11px;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: var(--fg-muted, oklch(48% 0.01 250));
+        color: var(--fg-muted, oklch(48% 0 0));
       }
     </style>
     <div class="matrix">

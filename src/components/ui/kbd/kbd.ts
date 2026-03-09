@@ -40,7 +40,7 @@ export class Kbd extends LitElement {
       font-weight: var(--font-medium, 500);
       letter-spacing: var(--tracking-wide, 0.02em);
       line-height: var(--line-height-none, 1);
-      color: var(--fg-default, oklch(20% 0.03 250));
+      color: var(--fg-default, oklch(20% 0 0));
     }
 
     .kbd-key {
@@ -51,9 +51,9 @@ export class Kbd extends LitElement {
       font: inherit;
       color: inherit;
       background: var(--bg-surface-2, oklch(100% 0 0));
-      border: var(--border-width, 1px) solid var(--border-default, oklch(85% 0.01 250));
+      border: var(--border-width, 1px) solid var(--border-default, oklch(85% 0 0));
       box-shadow: 0 var(--border-width-thick, 2px) 0 0
-        var(--border-default, oklch(85% 0.01 250));
+        var(--border-default, oklch(85% 0 0));
       border-radius: var(--radius-sm, 4px);
       padding: 0 0.4em;
       line-height: var(--line-height-none, 1);
@@ -115,7 +115,7 @@ export class Kbd extends LitElement {
       .kbd-key {
         background: transparent !important;
         box-shadow: none !important;
-        border: var(--border-width, 1px) solid var(--border-default, oklch(85% 0.01 250));
+        border: var(--border-width, 1px) solid var(--border-default, oklch(85% 0 0));
       }
 
       .kbd-combo {

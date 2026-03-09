@@ -96,7 +96,7 @@ export class CopyButton extends LitElement {
 
     /* Icon Color States */
     :host([state='idle']) iconify-icon {
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
     }
 
     :host([state='success']) iconify-icon {

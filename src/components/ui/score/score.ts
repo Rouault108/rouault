@@ -40,19 +40,19 @@ export class UiScore extends LitElement {
       position: relative;
       overflow-x: auto;
       overflow-y: hidden;
-      border: var(--border-width, 1px) solid var(--border-muted, oklch(20% 0.03 250 / 0.06));
+      border: var(--border-width, 1px) solid var(--border-muted, oklch(20% 0 0 / 0.06));
       border-radius: var(--radius-md, 6px);
       background: var(--bg-score-paper, oklch(100% 0 0));
       color: var(--score-ink, oklch(0% 0 0));
       padding: var(--space-4, 16px);
       scrollbar-width: auto;
-      scrollbar-color: var(--fg-muted, oklch(45% 0.02 250)) transparent;
+      scrollbar-color: var(--fg-muted, oklch(45% 0 0)) transparent;
       scrollbar-gutter: stable both-edges;
     }
 
     @media (prefers-color-scheme: dark) {
       .score-scroll {
-        border-color: var(--border-default, oklch(90% 0.01 250 / 0.12));
+        border-color: var(--border-default, oklch(90% 0 0 / 0.12));
       }
     }
 
@@ -72,14 +72,14 @@ export class UiScore extends LitElement {
     }
 
     .score-scroll::-webkit-scrollbar-thumb {
-      background-color: var(--fg-muted, oklch(45% 0.02 250));
+      background-color: var(--fg-muted, oklch(45% 0 0));
       border: 4px solid transparent;
       background-clip: content-box;
       border-radius: var(--radius-full, 999px);
     }
 
     .score-scroll::-webkit-scrollbar-thumb:hover {
-      background-color: var(--scrollbar-thumb-hover, var(--fg-default, oklch(20% 0.03 250)));
+      background-color: var(--scrollbar-thumb-hover, var(--fg-default, oklch(20% 0 0)));
     }
 
     .score-scroll.has-overflow.has-left-fade.has-right-fade {
@@ -140,7 +140,7 @@ export class UiScore extends LitElement {
     .skeleton {
       width: 100%;
       min-width: max-content;
-      background: var(--skeleton-bg, var(--bg-fill-neutral, oklch(95% 0.01 250)));
+      background: var(--skeleton-bg, var(--bg-fill-neutral, oklch(95% 0 0)));
       border-radius: var(--radius-sm, 4px);
       overflow: hidden;
       opacity: 0;
@@ -199,7 +199,7 @@ export class UiScore extends LitElement {
 
     .caption {
       margin-top: var(--space-2, 8px);
-      color: var(--fg-muted, oklch(45% 0.02 250));
+      color: var(--fg-muted, oklch(45% 0 0));
       font-size: var(--text-sm, 13px);
       font-weight: var(--font-normal, 400);
       line-height: var(--line-height-relaxed, 1.75);

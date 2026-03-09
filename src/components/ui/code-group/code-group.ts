@@ -41,7 +41,7 @@ export class CodeGroup extends LitElement {
       position: relative;
       width: var(--ui-code-group-width, 100%);
       margin-inline: var(--ui-code-group-margin-inline, 0);
-      border: var(--border-style-subtle, 1px solid oklch(20% 0.03 250 / 0.12));
+      border: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12));
       border-radius: var(--radius-md, 6px);
       overflow: hidden;
       background: var(--bg-default, oklch(1 0 0));
@@ -117,7 +117,7 @@ export class CodeGroup extends LitElement {
       border: none;
       margin: 0;
       background: transparent;
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
       font: inherit;
       font-size: var(--text-sm, 13px);
       font-weight: var(--font-medium, 500);
@@ -141,7 +141,7 @@ export class CodeGroup extends LitElement {
     }
 
     ::slotted([slot='tab']:hover) {
-      color: var(--fg-default, oklch(20% 0.03 250));
+      color: var(--fg-default, oklch(20% 0 0));
     }
 
     ::slotted([slot='tab']:focus-visible) {
@@ -154,7 +154,7 @@ export class CodeGroup extends LitElement {
     }
 
     ::slotted([slot='tab'][aria-selected='true']) {
-      color: var(--fg-default, oklch(20% 0.03 250));
+      color: var(--fg-default, oklch(20% 0 0));
       border-bottom-width: 1px;
       border-bottom-color: currentColor;
     }

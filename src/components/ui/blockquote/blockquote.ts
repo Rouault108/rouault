@@ -17,7 +17,7 @@ export class Blockquote extends LitElement {
   static override styles = css`
     :host {
       display: block;
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
     }
 
     figure {
@@ -29,8 +29,8 @@ export class Blockquote extends LitElement {
       margin-inline: 0;
       padding-block: 0;
       padding-inline: var(--space-4, 16px) 0;
-      border-inline-start: var(--border-width-thick, 2px) solid var(--border-default, oklch(70% 0.01 250 / 0.28));
-      color: var(--fg-default, oklch(20% 0.01 250));
+      border-inline-start: var(--border-width-thick, 2px) solid var(--border-default, oklch(70% 0 0 / 0.28));
+      color: var(--fg-default, oklch(20% 0 0));
       font-style: normal;
     }
 
@@ -46,12 +46,12 @@ export class Blockquote extends LitElement {
       margin-block: var(--space-4, 16px);
       margin-inline-start: 0;
       padding-inline-start: var(--space-4, 16px);
-      border-inline-start-color: var(--border-muted, var(--border-default, oklch(70% 0.01 250 / 0.28)));
+      border-inline-start-color: var(--border-muted, var(--border-default, oklch(70% 0 0 / 0.28)));
     }
 
     .source {
       margin-block-start: var(--space-2, 8px);
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
       font-size: var(--text-xs, 12px);
       font-weight: var(--font-medium, 500);
       letter-spacing: var(--tracking-wide, 0.025em);

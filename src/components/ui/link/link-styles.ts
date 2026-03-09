@@ -7,7 +7,7 @@ import { css } from 'lit';
  */
 export const linkTextStyles = css`
   .link-text[href] {
-    color: var(--fg-default, oklch(20% 0.01 250));
+    color: var(--fg-default, oklch(20% 0 0));
     text-decoration: underline;
     text-underline-offset: 0.15em;
     text-decoration-thickness: var(--border-width, 1px);
@@ -36,7 +36,7 @@ export const linkTextStyles = css`
   }
 
   .link-text[href]:visited {
-    color: var(--fg-default, oklch(20% 0.01 250));
+    color: var(--fg-default, oklch(20% 0 0));
   }
 
   @media (hover: none) and (pointer: coarse) {
@@ -49,7 +49,7 @@ export const linkTextStyles = css`
 
 export const linkControlStyles = css`
   .link-control[href] {
-    color: var(--fg-default, oklch(20% 0.01 250));
+    color: var(--fg-default, oklch(20% 0 0));
     text-decoration: none;
   }
 

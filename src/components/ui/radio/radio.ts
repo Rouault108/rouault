@@ -106,7 +106,7 @@ export class Radio extends LitElement {
        * ボーダー幅 1px → 4px の遷移 + 背景色変化で
        * 「内側へ色が満ちていく」ドーナツ型アニメーションを生成。
        */
-      border: var(--border-width, 1px) solid var(--border-muted, oklch(80% 0.01 250 / 0.4));
+      border: var(--border-width, 1px) solid var(--border-muted, oklch(80% 0 0 / 0.4));
       background: var(--bg-fill-muted, oklch(95% 0 0));
       transition:
         border-width var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
@@ -129,7 +129,7 @@ export class Radio extends LitElement {
 
     /* Hover */
     .wrapper:hover:not([aria-disabled='true']) .control {
-      border-color: var(--border-default, oklch(70% 0.01 250 / 0.6));
+      border-color: var(--border-default, oklch(70% 0 0 / 0.6));
     }
 
     /* Active: タクタイルフィードバック */
@@ -162,7 +162,7 @@ export class Radio extends LitElement {
     /* ── ラベルテキスト ── */
     .label {
       font-size: var(--text-base, 14px);
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
       line-height: var(--line-height-normal, 1.5);
     }
 

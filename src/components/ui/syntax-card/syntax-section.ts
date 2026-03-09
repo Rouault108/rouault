@@ -18,7 +18,7 @@ export class SyntaxSection extends LitElement {
       margin: 0 0 var(--space-1, 0.25rem);
       font-size: var(--text-sm, 0.8125rem);
       font-weight: var(--font-bold, 700);
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
     }
 
     ::slotted(p) {

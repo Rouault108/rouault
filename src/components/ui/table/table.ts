@@ -30,7 +30,7 @@ ui-table table {
 ui-table caption {
   caption-side: top;
   font-size: var(--text-xs, 0.75rem);
-  color: var(--fg-muted, oklch(48% 0.01 250));
+  color: var(--fg-muted, oklch(48% 0 0));
   padding: var(--space-2, 0.5rem) 0;
   text-align: left;
 }
@@ -40,7 +40,7 @@ ui-table th {
   font-size: var(--text-xs, 0.75rem);
   font-weight: var(--font-medium, 500);
   letter-spacing: var(--tracking-wide, 0.04em);
-  color: var(--fg-muted, oklch(48% 0.01 250));
+  color: var(--fg-muted, oklch(48% 0 0));
   vertical-align: bottom;
   padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
   border-bottom: var(--border-width-thick, 2px) solid var(--border-default, oklch(0% 0 0 / 0.08));
@@ -50,7 +50,7 @@ ui-table th {
 /* ── データセル ── */
 ui-table td {
   font-size: var(--text-base, 0.875rem);
-  color: var(--fg-default, oklch(20% 0.01 250));
+  color: var(--fg-default, oklch(20% 0 0));
   vertical-align: top;
   padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
   white-space: normal;

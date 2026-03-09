@@ -206,7 +206,7 @@ export class Pagination extends LitElement {
 
       /* Colors */
       background: transparent;
-      color: var(--fg-muted, oklch(45% 0.02 250));
+      color: var(--fg-muted, oklch(45% 0 0));
 
       /* Interaction */
       cursor: pointer;
@@ -291,7 +291,7 @@ export class Pagination extends LitElement {
       justify-content: center;
       height: var(--control-height-md, 32px);
       min-width: var(--control-height-md, 32px);
-      color: var(--fg-subtle, oklch(60% 0.01 250));
+      color: var(--fg-subtle, oklch(60% 0 0));
       font-size: var(--text-base, 0.875rem);
       user-select: none;
     }

@@ -32,7 +32,7 @@ export class Breadcrumbs extends LitElement {
 			padding: var(--space-2, 8px) 0;
 			gap: var(--space-1, 4px);
 			font-size: var(--text-sm, 13px);
-			color: var(--fg-muted, oklch(48% 0.01 250));
+			color: var(--fg-muted, oklch(48% 0 0));
 		}
 
 		.breadcrumb-list {
@@ -81,7 +81,7 @@ export class Breadcrumbs extends LitElement {
 		}
 
 		.breadcrumb-link:hover {
-			color: var(--fg-default, oklch(20% 0.01 250));
+			color: var(--fg-default, oklch(20% 0 0));
 		}
 
 		.breadcrumb-link:focus-visible {
@@ -91,7 +91,7 @@ export class Breadcrumbs extends LitElement {
 		}
 
 		.breadcrumb-current {
-			color: var(--fg-default, oklch(20% 0.01 250));
+			color: var(--fg-default, oklch(20% 0 0));
 			font-weight: var(--font-medium, 500);
 			max-width: 20ch;
 			white-space: nowrap;
@@ -103,7 +103,7 @@ export class Breadcrumbs extends LitElement {
 			display: inline-flex;
 			align-items: center;
 			justify-content: center;
-			color: var(--fg-muted, oklch(48% 0.01 250));
+			color: var(--fg-muted, oklch(48% 0 0));
 			flex-shrink: 0;
 		}
 
@@ -113,7 +113,7 @@ export class Breadcrumbs extends LitElement {
 		}
 
 		.breadcrumb-ellipsis-button {
-			color: var(--fg-muted, oklch(48% 0.01 250));
+			color: var(--fg-muted, oklch(48% 0 0));
 			transform: translateY(1px);
 		}
 

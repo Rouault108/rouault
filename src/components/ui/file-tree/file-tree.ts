@@ -78,7 +78,7 @@ export class FileTree extends LitElement {
       display: block;
       font-family: var(--font-sans);
       font-size: var(--text-sm, 13px);
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
       user-select: none;
       transition:
         background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
@@ -113,7 +113,7 @@ export class FileTree extends LitElement {
     /* ── Empty State ── */
     .empty-state {
       text-align: center;
-      color: var(--fg-subtle, oklch(62% 0.01 250));
+      color: var(--fg-subtle, oklch(62% 0 0));
       font-size: var(--text-sm, 13px);
       font-weight: var(--font-normal, 400);
       padding: var(--space-8, 32px) var(--space-4, 16px);

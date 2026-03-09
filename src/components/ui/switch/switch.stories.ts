@@ -11,9 +11,9 @@ import type { Switch } from './switch';
  *
  * ### デザイン哲学
  *
- * - **Digital Tactility**: 0から1へのデジタルな状態遷移を `--ease-spring` で「即時かつ滑らか」に表現
+ * - **静かな状態表現**: トラックの淡い変化とサム位置の移動で、状態だけを簡潔に示します
  * - **フォーム非依存**: `name` / `required` / `value` は非対応。状態管理は親コンポーネントで行います
- * - **Thumb アニメーション**: `--duration-normal` (150ms) + `--ease-spring` (Overdamped) で追従性を実現
+ * - **静かな選択表現**: ON 時も彩度を抑え、読書の主役を奪わないコントラストに保ちます
  *
  * ### キーボード操作
  *
@@ -87,8 +87,8 @@ type Story = StoryObj<Switch>;
 /**
  * デフォルトのトグルスイッチ（OFF 状態）。
  *
- * OFF 時はトラックが `--bg-fill-muted` で静かに存在します。
- * Thumb は左端 (`--switch-thumb-pos-off`: 2px) に位置します。
+ * OFF 時は淡いトラック境界で静かに存在を示し、
+ * Thumb は左端 (`--switch-thumb-pos-off`: 4px) に位置します。
  */
 export const Default: Story = {
   args: {
@@ -108,23 +108,32 @@ export const Default: Story = {
     await sw.updateComplete;
 
     // テスト: デフォルトは OFF
-    if (sw.checked) throw new Error('デフォルトで checked が false であることを期待していましたが、実際には true でした');
+    if (sw.checked)
+      throw new Error(
+        'デフォルトで checked が false であることを期待していましたが、実際には true でした',
+      );
 
     // テスト: role="switch" が設定されている
     const track = sw.shadowRoot?.querySelector('.track');
     if (!track) throw new Error('Shadow Root 内に track 要素が見つかりません');
     if (track.getAttribute('role') !== 'switch') {
-      throw new Error(`role="switch" を期待していましたが、実際には "${track.getAttribute('role') ?? 'null'}" でした`);
+      throw new Error(
+        `role="switch" を期待していましたが、実際には "${track.getAttribute('role') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: aria-checked="false" が設定されている
     if (track.getAttribute('aria-checked') !== 'false') {
-      throw new Error(`aria-checked="false" を期待していましたが、実際には "${track.getAttribute('aria-checked') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-checked="false" を期待していましたが、実際には "${track.getAttribute('aria-checked') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: tabindex="0"（フォーカス可能）
     if (track.getAttribute('tabindex') !== '0') {
-      throw new Error(`tabindex="0" を期待していましたが、実際には "${track.getAttribute('tabindex') ?? 'null'}" でした`);
+      throw new Error(
+        `tabindex="0" を期待していましたが、実際には "${track.getAttribute('tabindex') ?? 'null'}" でした`,
+      );
     }
   },
 };
@@ -136,16 +145,11 @@ export const Default: Story = {
 /**
  * 通常状態 × OFF。
  *
- * 最も基本的な状態。トラックは `--bg-fill-muted` で静かに存在します。
+ * 最も基本的な状態。トラックは淡い面と細い境界で静かに存在します。
  * Thumb は左端に位置し、`aria-checked="false"` が設定されます。
  */
 export const OffNormal: Story = {
-  render: () => html`
-    <ui-switch
-      id="off-normal"
-      label="OFF（通常）"
-    ></ui-switch>
-  `,
+  render: () => html` <ui-switch id="off-normal" label="OFF（通常）"></ui-switch> `,
   play: async ({ canvasElement }) => {
     const sw = canvasElement.querySelector<Switch>('#off-normal');
     if (!sw) throw new Error('ui-switch が見つかりません');
@@ -164,17 +168,11 @@ export const OffNormal: Story = {
 /**
  * 通常状態 × ON。
  *
- * ON 時はトラックが `--primary` 色になり、Thumb が右端へ移動します。
+ * ON 時はトラックにアクセントが薄く差し、Thumb が右端へ移動します。
  * `aria-checked="true"` が設定されます。
  */
 export const OnNormal: Story = {
-  render: () => html`
-    <ui-switch
-      id="on-normal"
-      label="ON（通常）"
-      checked
-    ></ui-switch>
-  `,
+  render: () => html` <ui-switch id="on-normal" label="ON（通常）" checked></ui-switch> `,
   play: async ({ canvasElement }) => {
     const sw = canvasElement.querySelector<Switch>('#on-normal');
     if (!sw) throw new Error('ui-switch が見つかりません');
@@ -185,7 +183,9 @@ export const OnNormal: Story = {
 
     if (!sw.checked) throw new Error('checked が true であることを期待していましたが false でした');
     if (track.getAttribute('aria-checked') !== 'true') {
-      throw new Error(`aria-checked="true" を期待していましたが、実際には "${track.getAttribute('aria-checked') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-checked="true" を期待していましたが、実際には "${track.getAttribute('aria-checked') ?? 'null'}" でした`,
+      );
     }
   },
 };
@@ -193,17 +193,11 @@ export const OnNormal: Story = {
 /**
  * 通常状態 × OFF + Disabled。
  *
- * 無効状態では `opacity: --opacity-disabled` で薄く表示されます。
+ * 無効状態では全体を半透明にせず、トラックとラベルを個別に減衰させます。
  * `pointer-events: none` により操作不可。`aria-disabled="true"` が設定されます。
  */
 export const OffDisabled: Story = {
-  render: () => html`
-    <ui-switch
-      id="off-disabled"
-      label="OFF（無効）"
-      disabled
-    ></ui-switch>
-  `,
+  render: () => html` <ui-switch id="off-disabled" label="OFF（無効）" disabled></ui-switch> `,
   play: async ({ canvasElement }) => {
     const sw = canvasElement.querySelector<Switch>('#off-disabled');
     if (!sw) throw new Error('ui-switch が見つかりません');
@@ -212,14 +206,35 @@ export const OffDisabled: Story = {
     const track = sw.shadowRoot?.querySelector('.track');
     if (!track) throw new Error('Track 要素が見つかりません');
 
-    if (!sw.disabled) throw new Error('disabled が true であることを期待していましたが false でした');
+    if (!sw.disabled)
+      throw new Error('disabled が true であることを期待していましたが false でした');
     if (sw.checked) throw new Error('checked が false であることを期待していましたが true でした');
     if (track.getAttribute('aria-disabled') !== 'true') {
-      throw new Error(`aria-disabled="true" を期待していましたが "${track.getAttribute('aria-disabled') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-disabled="true" を期待していましたが "${track.getAttribute('aria-disabled') ?? 'null'}" でした`,
+      );
     }
     // tabindex="-1": フォーカス不可
     if (track.getAttribute('tabindex') !== '-1') {
-      throw new Error(`tabindex="-1" を期待していましたが、実際には "${track.getAttribute('tabindex') ?? 'null'}" でした`);
+      throw new Error(
+        `tabindex="-1" を期待していましたが、実際には "${track.getAttribute('tabindex') ?? 'null'}" でした`,
+      );
+    }
+
+    const wrapper = sw.shadowRoot?.querySelector<HTMLElement>('.wrapper');
+    const label = sw.shadowRoot?.querySelector<HTMLElement>('.label');
+    if (!wrapper || !label) throw new Error('disabled 表現の確認に必要な要素が見つかりません');
+
+    const wrapperStyle = getComputedStyle(wrapper);
+    if (wrapperStyle.pointerEvents !== 'none') {
+      throw new Error(
+        `disabled 時の pointer-events は none のはずですが "${wrapperStyle.pointerEvents}" でした`,
+      );
+    }
+    if (wrapperStyle.opacity !== '1') {
+      throw new Error(
+        `disabled 表現は一律 opacity ではなく個別減衰のはずですが "${wrapperStyle.opacity}" でした`,
+      );
     }
   },
 };
@@ -227,17 +242,12 @@ export const OffDisabled: Story = {
 /**
  * 通常状態 × ON + Disabled。
  *
- * ON 状態かつ無効。トラックは `--primary` 色を維持しますが操作不可です。
+ * ON 状態かつ無効。トラックは淡い ON 表現を維持しつつ操作不可です。
  * Thumb は右端位置を維持します。
  */
 export const OnDisabled: Story = {
   render: () => html`
-    <ui-switch
-      id="on-disabled"
-      label="ON（無効）"
-      checked
-      disabled
-    ></ui-switch>
+    <ui-switch id="on-disabled" label="ON（無効）" checked disabled></ui-switch>
   `,
   play: async ({ canvasElement }) => {
     const sw = canvasElement.querySelector<Switch>('#on-disabled');
@@ -248,7 +258,8 @@ export const OnDisabled: Story = {
     if (!track) throw new Error('.track が見つかりません');
 
     if (!sw.checked) throw new Error('checked が true であることを期待していましたが false でした');
-    if (!sw.disabled) throw new Error('disabled が true であることを期待していましたが false でした');
+    if (!sw.disabled)
+      throw new Error('disabled が true であることを期待していましたが false でした');
     if (track.getAttribute('aria-checked') !== 'true') {
       throw new Error('aria-checked="true" を期待していましたが false でした');
     }
@@ -320,16 +331,16 @@ export const AllStates: Story = {
 
       <div class="state-group">
         <div class="state-label">Long Label</div>
-        <ui-switch
-          label="非常に長いラベルテキストのテスト用スイッチ"
-        ></ui-switch>
+        <ui-switch label="非常に長いラベルテキストのテスト用スイッチ"></ui-switch>
       </div>
     </div>
   `,
   play: async ({ canvasElement }) => {
     const switches = canvasElement.querySelectorAll('ui-switch');
     if (switches.length !== 6) {
-      throw new Error(`6つのスイッチを期待していましたが、実際には ${String(switches.length)}個でした`);
+      throw new Error(
+        `6つのスイッチを期待していましたが、実際には ${String(switches.length)}個でした`,
+      );
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
@@ -347,7 +358,9 @@ export const AllStates: Story = {
     await onSwitch.updateComplete;
     const onTrack = onSwitch.shadowRoot?.querySelector('.track');
     if (onTrack?.getAttribute('aria-checked') !== 'true') {
-      throw new Error('ON 状態のスイッチの aria-checked が "true" であることを期待していましたが false でした');
+      throw new Error(
+        'ON 状態のスイッチの aria-checked が "true" であることを期待していましたが false でした',
+      );
     }
   },
 };
@@ -369,10 +382,10 @@ export const ClickToggle: Story = {
         id="toggle-switch"
         label="クリックでトグル"
         @change="${(e: Event) => {
-      const sw = e.target as Switch;
-      const log = document.getElementById('toggle-log');
-      if (log) log.textContent = `change イベント: checked=${String(sw.checked)}`;
-    }}"
+          const sw = e.target as Switch;
+          const log = document.getElementById('toggle-log');
+          if (log) log.textContent = `change イベント: checked=${String(sw.checked)}`;
+        }}"
       ></ui-switch>
 
       <div
@@ -401,9 +414,13 @@ export const ClickToggle: Story = {
 
     // change イベントを Promise で受け取る
     const changePromise = new Promise<boolean>((resolve) => {
-      sw.addEventListener('change', (e) => {
-        resolve((e.target as Switch).checked);
-      }, { once: true });
+      sw.addEventListener(
+        'change',
+        (e) => {
+          resolve((e.target as Switch).checked);
+        },
+        { once: true },
+      );
     });
 
     // トラックをクリック
@@ -413,27 +430,45 @@ export const ClickToggle: Story = {
 
     const newChecked = await Promise.race([
       changePromise,
-      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
 
     if (newChecked === null) throw new Error('change イベントが発火しませんでした');
-    if (!newChecked) throw new Error('クリック後に checked が true になることを期待していましたが false のままでした');
+    if (!newChecked)
+      throw new Error(
+        'クリック後に checked が true になることを期待していましたが false のままでした',
+      );
 
     // テスト: 2回目のクリックで OFF に戻る
     const changePromise2 = new Promise<boolean>((resolve) => {
-      sw.addEventListener('change', (e) => {
-        resolve((e.target as Switch).checked);
-      }, { once: true });
+      sw.addEventListener(
+        'change',
+        (e) => {
+          resolve((e.target as Switch).checked);
+        },
+        { once: true },
+      );
     });
 
     track.click();
     const newChecked2 = await Promise.race([
       changePromise2,
-      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
 
     if (newChecked2 === null) throw new Error('2回目の change イベントが発火しませんでした');
-    if (newChecked2) throw new Error('2回目のクリック後に checked が false になることを期待していましたが true のままでした');
+    if (newChecked2)
+      throw new Error(
+        '2回目のクリック後に checked が false になることを期待していましたが true のままでした',
+      );
   },
 };
 
@@ -445,10 +480,7 @@ export const ClickToggle: Story = {
  */
 export const LabelClickToggle: Story = {
   render: () => html`
-    <ui-switch
-      id="label-click-switch"
-      label="ラベルをクリックしてもトグルします"
-    ></ui-switch>
+    <ui-switch id="label-click-switch" label="ラベルをクリックしてもトグルします"></ui-switch>
   `,
   play: async ({ canvasElement }) => {
     const sw = canvasElement.querySelector<Switch>('#label-click-switch');
@@ -462,20 +494,32 @@ export const LabelClickToggle: Story = {
     if (!label) throw new Error('ラベル要素が見つかりません');
 
     const changePromise = new Promise<boolean>((resolve) => {
-      sw.addEventListener('change', (e) => {
-        resolve((e.target as Switch).checked);
-      }, { once: true });
+      sw.addEventListener(
+        'change',
+        (e) => {
+          resolve((e.target as Switch).checked);
+        },
+        { once: true },
+      );
     });
 
     label.click();
 
     const newChecked = await Promise.race([
       changePromise,
-      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
 
-    if (newChecked === null) throw new Error('ラベルのクリックで change イベントが発火しませんでした');
-    if (!newChecked) throw new Error('ラベルクリック後に checked が true になることを期待していましたが false のままでした');
+    if (newChecked === null)
+      throw new Error('ラベルのクリックで change イベントが発火しませんでした');
+    if (!newChecked)
+      throw new Error(
+        'ラベルクリック後に checked が true になることを期待していましたが false のままでした',
+      );
   },
 };
 
@@ -488,13 +532,12 @@ export const LabelClickToggle: Story = {
 export const KeyboardSpaceToggle: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0 0); border: 1px solid oklch(90% 0.01 250 / 0.2); border-radius: 6px; font-size: 13px;">
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0 0); border: 1px solid oklch(90% 0.01 250 / 0.2); border-radius: 6px; font-size: 13px;"
+      >
         <strong>操作方法</strong>: Tab キーでフォーカスを当て、Space キーでトグルしてください。
       </div>
-      <ui-switch
-        id="space-switch"
-        label="Space キーでトグル"
-      ></ui-switch>
+      <ui-switch id="space-switch" label="Space キーでトグル"></ui-switch>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -510,20 +553,32 @@ export const KeyboardSpaceToggle: Story = {
 
     // Space キーイベントを発火
     const changePromise = new Promise<boolean>((resolve) => {
-      sw.addEventListener('change', (e) => {
-        resolve((e.target as Switch).checked);
-      }, { once: true });
+      sw.addEventListener(
+        'change',
+        (e) => {
+          resolve((e.target as Switch).checked);
+        },
+        { once: true },
+      );
     });
 
     track.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, composed: true }));
 
     const newChecked = await Promise.race([
       changePromise,
-      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
 
-    if (newChecked === null) throw new Error('Space キー押下で change イベントが発火しませんでした');
-    if (!newChecked) throw new Error('Space キー押下後に checked が true になることを期待していましたが false のままでした');
+    if (newChecked === null)
+      throw new Error('Space キー押下で change イベントが発火しませんでした');
+    if (!newChecked)
+      throw new Error(
+        'Space キー押下後に checked が true になることを期待していましたが false のままでした',
+      );
   },
 };
 
@@ -537,20 +592,26 @@ export const KeyboardEnterToggle: Story = {
   parameters: {
     docs: {
       description: {
-        story: '**Enter キー**: トグル操作のみ実行し、フォーム送信は行いません。`event.preventDefault()` でブロックします。',
+        story:
+          '**Enter キー**: トグル操作のみ実行し、フォーム送信は行いません。`event.preventDefault()` でブロックします。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0 0); border: 1px solid oklch(90% 0.01 250 / 0.2); border-radius: 6px; font-size: 13px;">
-        <strong>操作方法</strong>: Tab キーでフォーカスを当て、Enter キーでトグルしてください（フォーム送信はブロックされます）。
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0 0); border: 1px solid oklch(90% 0.01 250 / 0.2); border-radius: 6px; font-size: 13px;"
+      >
+        <strong>操作方法</strong>: Tab キーでフォーカスを当て、Enter
+        キーでトグルしてください（フォーム送信はブロックされます）。
       </div>
-      <form id="enter-form" @submit="${(e: Event) => { e.preventDefault(); }}">
-        <ui-switch
-          id="enter-switch"
-          label="Enter キーでトグル（フォーム送信なし）"
-        ></ui-switch>
+      <form
+        id="enter-form"
+        @submit="${(e: Event) => {
+          e.preventDefault();
+        }}"
+      >
+        <ui-switch id="enter-switch" label="Enter キーでトグル（フォーム送信なし）"></ui-switch>
         <button type="submit" style="display: none;">送信</button>
       </form>
       <div
@@ -583,21 +644,33 @@ export const KeyboardEnterToggle: Story = {
     let formSubmitted = false;
     const form = canvasElement.querySelector<HTMLFormElement>('#enter-form');
     if (form) {
-      form.addEventListener('submit', () => { formSubmitted = true; });
+      form.addEventListener('submit', () => {
+        formSubmitted = true;
+      });
     }
 
     // change イベントを Promise で受け取る
     const changePromise = new Promise<boolean>((resolve) => {
-      sw.addEventListener('change', (e) => {
-        resolve((e.target as Switch).checked);
-      }, { once: true });
+      sw.addEventListener(
+        'change',
+        (e) => {
+          resolve((e.target as Switch).checked);
+        },
+        { once: true },
+      );
     });
 
-    track.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true }));
+    track.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true }),
+    );
 
     const newChecked = await Promise.race([
       changePromise,
-      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
 
     if (newChecked === null) throw new Error('Enter キーで change イベントが発生しませんでした');
@@ -606,7 +679,8 @@ export const KeyboardEnterToggle: Story = {
     // テスト: フォーム送信は発生していない
     await new Promise((resolve) => setTimeout(resolve, 100));
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (formSubmitted) throw new Error('スイッチ上で Enter キーが押された場合、フォームは送信されないはずです');
+    if (formSubmitted)
+      throw new Error('スイッチ上で Enter キーが押された場合、フォームは送信されないはずです');
 
     const log = canvasElement.querySelector('#enter-log');
     if (log) log.textContent = `Enter キー: checked=${String(sw.checked)}（フォーム送信なし）`;
@@ -628,7 +702,8 @@ export const DisabledClickBlocked: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `disabled` 状態ではクリックしても状態が変化せず、イベントも発火しません。',
+        story:
+          '⚠️ **境界条件**: `disabled` 状態ではクリックしても状態が変化せず、イベントも発火しません。',
       },
     },
   },
@@ -658,7 +733,9 @@ export const DisabledClickBlocked: Story = {
     await sw.updateComplete;
 
     let changeEventFired = false;
-    sw.addEventListener('change', () => { changeEventFired = true; });
+    sw.addEventListener('change', () => {
+      changeEventFired = true;
+    });
 
     // pointer-events: none のため直接クリックは届かないが、
     // プログラム的に _toggle を呼ぼうとしても disabled チェックで弾かれることを確認
@@ -672,21 +749,23 @@ export const DisabledClickBlocked: Story = {
 
     if (sw.checked) throw new Error('無効状態のスイッチはクリックしても状態が変化しないはずです');
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (changeEventFired) throw new Error('無効状態のスイッチは change イベントを発火しないはずです');
+    if (changeEventFired)
+      throw new Error('無効状態のスイッチは change イベントを発火しないはずです');
   },
 };
 
 /**
  * ⚠️ 境界条件: ON 状態の Disabled。
  *
- * ON 状態かつ disabled の場合、トラックは `--primary` 色を維持し、
+ * ON 状態かつ disabled の場合、トラックは淡い ON 表現を維持し、
  * Thumb は右端位置を維持します。操作はブロックされます。
  */
 export const OnDisabledClickBlocked: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: ON + disabled 状態では、見た目は ON を維持しつつ操作をブロックします。',
+        story:
+          '⚠️ **境界条件**: ON + disabled 状態では、見た目は ON を維持しつつ操作をブロックします。',
       },
     },
   },
@@ -701,14 +780,10 @@ export const OnDisabledClickBlocked: Story = {
           font-size: 13px;
         "
       >
-        <strong>⚠️ 境界条件</strong>: ON + disabled 状態では ON の見た目を維持しつつ操作をブロックします。
+        <strong>⚠️ 境界条件</strong>: ON + disabled 状態では ON
+        の見た目を維持しつつ操作をブロックします。
       </div>
-      <ui-switch
-        id="on-disabled-blocked"
-        label="ON（無効・変更不可）"
-        checked
-        disabled
-      ></ui-switch>
+      <ui-switch id="on-disabled-blocked" label="ON（無効・変更不可）" checked disabled></ui-switch>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -717,11 +792,15 @@ export const OnDisabledClickBlocked: Story = {
     await sw.updateComplete;
 
     // 初期状態: ON かつ disabled
-    if (!sw.checked) throw new Error('初期状態で checked が true であることを期待していましたが false でした');
-    if (!sw.disabled) throw new Error('disabled が true であることを期待していましたが false でした');
+    if (!sw.checked)
+      throw new Error('初期状態で checked が true であることを期待していましたが false でした');
+    if (!sw.disabled)
+      throw new Error('disabled が true であることを期待していましたが false でした');
 
     let changeEventFired = false;
-    sw.addEventListener('change', () => { changeEventFired = true; });
+    sw.addEventListener('change', () => {
+      changeEventFired = true;
+    });
 
     const track = sw.shadowRoot?.querySelector<HTMLElement>('.track');
     if (!track) throw new Error('Track not found');
@@ -731,9 +810,11 @@ export const OnDisabledClickBlocked: Story = {
 
     // ON 状態が維持されている
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!sw.checked) throw new Error('ONかつ無効状態のスイッチは、クリック後も checked 状態を維持するはずです');
+    if (!sw.checked)
+      throw new Error('ONかつ無効状態のスイッチは、クリック後も checked 状態を維持するはずです');
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (changeEventFired) throw new Error('ONかつ無効状態のスイッチは change イベントを発火しないはずです');
+    if (changeEventFired)
+      throw new Error('ONかつ無効状態のスイッチは change イベントを発火しないはずです');
   },
 };
 
@@ -747,14 +828,17 @@ export const NoLabel: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `label` 属性が未設定の場合。コントロールのみが表示されます。外部から `aria-label` を提供してください。',
+        story:
+          '⚠️ **境界条件**: `label` 属性が未設定の場合。コントロールのみが表示されます。外部から `aria-label` を提供してください。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; align-items: center; gap: 0.5rem;">
       <ui-switch id="no-label-switch" aria-label="ラベルなしスイッチ"></ui-switch>
-      <span style="font-size: 14px; color: oklch(20% 0.01 250);">外部ラベル（aria-label で紐付け）</span>
+      <span style="font-size: 14px; color: oklch(20% 0.01 250);"
+        >外部ラベル（aria-label で紐付け）</span
+      >
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -770,7 +854,9 @@ export const NoLabel: Story = {
     const track = sw.shadowRoot?.querySelector('.track');
     if (!track) throw new Error('ラベルがなくても track 要素は存在するはずです');
     if (!track.getAttribute('aria-label')) {
-      throw new Error('aria-label が内部のスイッチ要素に転送されることを期待していましたがされていませんでした');
+      throw new Error(
+        'aria-label が内部のスイッチ要素に転送されることを期待していましたがされていませんでした',
+      );
     }
 
     // テスト: aria-labelledby は設定されない（label がないため）
@@ -791,7 +877,8 @@ export const EnterKeyInFormNoSubmit: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: フォーム内で Enter キーを押してもフォームが送信されません。`event.preventDefault()` でブロックします。',
+        story:
+          '⚠️ **境界条件**: フォーム内で Enter キーを押してもフォームが送信されません。`event.preventDefault()` でブロックします。',
       },
     },
   },
@@ -812,10 +899,10 @@ export const EnterKeyInFormNoSubmit: Story = {
         id="boundary-form"
         style="display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; border: 1px solid oklch(90% 0.01 250 / 0.2); border-radius: 6px;"
         @submit="${(e: Event) => {
-      e.preventDefault();
-      const log = document.getElementById('boundary-log');
-      if (log) log.textContent = '⚠️ フォームが送信されました（これは発生してはいけません）';
-    }}"
+          e.preventDefault();
+          const log = document.getElementById('boundary-log');
+          if (log) log.textContent = '⚠️ フォームが送信されました（これは発生してはいけません）';
+        }}"
       >
         <ui-switch
           id="boundary-switch"
@@ -865,32 +952,46 @@ export const EnterKeyInFormNoSubmit: Story = {
     let formSubmitted = false;
     const form = canvasElement.querySelector<HTMLFormElement>('#boundary-form');
     if (form) {
-      form.addEventListener('submit', () => { formSubmitted = true; });
+      form.addEventListener('submit', () => {
+        formSubmitted = true;
+      });
     }
 
     track.focus();
 
     const changePromise = new Promise<boolean>((resolve) => {
-      sw.addEventListener('change', (e) => {
-        resolve((e.target as Switch).checked);
-      }, { once: true });
+      sw.addEventListener(
+        'change',
+        (e) => {
+          resolve((e.target as Switch).checked);
+        },
+        { once: true },
+      );
     });
 
     // Enter キーを発火
-    track.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true }));
+    track.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true }),
+    );
 
     const newChecked = await Promise.race([
       changePromise,
-      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
 
     if (newChecked === null) throw new Error('Enter キーで change イベントが発火しませんでした');
-    if (!newChecked) throw new Error('Enter キー押下後に checked が true になることを期待していましたが false のままでした');
+    if (!newChecked)
+      throw new Error(
+        'Enter キー押下後に checked が true になることを期待していましたが false のままでした',
+      );
 
     await new Promise((resolve) => setTimeout(resolve, 100));
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (formSubmitted) throw new Error('Enter キーでフォームが送信されてしまいました');
-
   },
 };
 
@@ -904,7 +1005,8 @@ export const AriaLabelledBy: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `label` 属性が設定されている場合のみ `aria-labelledby` が設定されます。',
+        story:
+          '⚠️ **境界条件**: `label` 属性が設定されている場合のみ `aria-labelledby` が設定されます。',
       },
     },
   },
@@ -967,10 +1069,7 @@ export const InputEventFired: Story = {
       >
         <strong>⚠️ 境界条件</strong>: change と同タイミングで input イベントも発火します。
       </div>
-      <ui-switch
-        id="input-event-switch"
-        label="input イベントテスト"
-      ></ui-switch>
+      <ui-switch id="input-event-switch" label="input イベントテスト"></ui-switch>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -981,8 +1080,12 @@ export const InputEventFired: Story = {
     let changeCount = 0;
     let inputCount = 0;
 
-    sw.addEventListener('change', () => { changeCount++; });
-    sw.addEventListener('input', () => { inputCount++; });
+    sw.addEventListener('change', () => {
+      changeCount++;
+    });
+    sw.addEventListener('input', () => {
+      inputCount++;
+    });
 
     const track = sw.shadowRoot?.querySelector<HTMLElement>('.track');
     if (!track) throw new Error('.track が見つかりません');
@@ -990,8 +1093,14 @@ export const InputEventFired: Story = {
     track.click();
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    if (changeCount !== 1) throw new Error(`change イベントは1回発火するはずでしたが、実際は ${String(changeCount)} 回でした`);
-    if (inputCount !== 1) throw new Error(`input イベントは1回発火するはずでしたが、実際は ${String(inputCount)} 回でした`);
+    if (changeCount !== 1)
+      throw new Error(
+        `change イベントは1回発火するはずでしたが、実際は ${String(changeCount)} 回でした`,
+      );
+    if (inputCount !== 1)
+      throw new Error(
+        `input イベントは1回発火するはずでしたが、実際は ${String(inputCount)} 回でした`,
+      );
   },
 };
 
@@ -1097,16 +1206,20 @@ export const SettingsPanel: Story = {
 
     // テスト: disabled スイッチはクリックしても変化しない
     let changeEventFired = false;
-    autosaveSwitch.addEventListener('change', () => { changeEventFired = true; });
+    autosaveSwitch.addEventListener('change', () => {
+      changeEventFired = true;
+    });
     const autosaveTrack = autosaveSwitch.shadowRoot?.querySelector<HTMLElement>('.track');
     if (autosaveTrack) {
       autosaveTrack.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     }
     await new Promise((resolve) => setTimeout(resolve, 100));
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!autosaveSwitch.checked) throw new Error('disabledな自動保存スイッチはONのままあるべきです');
+    if (!autosaveSwitch.checked)
+      throw new Error('disabledな自動保存スイッチはONのままあるべきです');
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (changeEventFired) throw new Error('disabledな自動保存スイッチはchangeイベントを発火させるべきではありません');
+    if (changeEventFired)
+      throw new Error('disabledな自動保存スイッチはchangeイベントを発火させるべきではありません');
   },
 };
 
@@ -1167,9 +1280,7 @@ export const ReducedMotion: Story = {
       },
     },
   },
-  render: () => html`
-    <ui-switch id="reduced-motion-switch" label="Reduced Motion"></ui-switch>
-  `,
+  render: () => html` <ui-switch id="reduced-motion-switch" label="Reduced Motion"></ui-switch> `,
   play: async ({ canvasElement }) => {
     const sw = canvasElement.querySelector<Switch>('#reduced-motion-switch');
     if (!sw) throw new Error('ui-switchが見つかりません');
@@ -1182,7 +1293,8 @@ export const ReducedMotion: Story = {
     if (!media.matches) return;
 
     const duration = getComputedStyle(thumb).transitionDuration;
-    const isReduced = duration.includes('0s') || duration.includes('0.00001s') || duration.includes('0.01ms');
+    const isReduced =
+      duration.includes('0s') || duration.includes('0.00001s') || duration.includes('0.01ms');
     if (!isReduced) {
       throw new Error(`reduced motion durationが期待値と異なります。実際は "${duration}" です`);
     }

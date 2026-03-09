@@ -55,10 +55,10 @@ export class CodePreview extends LitElement {
 
     /* ─── Root Container ─── */
     .root {
-      border: var(--border-style-subtle, 1px solid oklch(20% 0.03 250 / 0.08));
+      border: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.08));
       border-radius: var(--ui-code-preview-radius, var(--radius-md, 6px));
       overflow: hidden;
-      background: var(--bg-fill-muted, oklch(96% 0.01 250));
+      background: var(--bg-fill-muted, oklch(96% 0 0));
       page-break-inside: avoid;
       break-inside: avoid;
     }
@@ -84,7 +84,7 @@ export class CodePreview extends LitElement {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
       font-size: var(--text-xs, 12px);
       font-weight: var(--font-medium, 500);
       letter-spacing: var(--tracking-wide, 0.025em);
@@ -125,10 +125,10 @@ export class CodePreview extends LitElement {
     /* ─── Preview Area ─── */
     .preview-area {
       display: flex;
-      background: var(--bg-fill-muted, oklch(96% 0.01 250));
+      background: var(--bg-fill-muted, oklch(96% 0 0));
       min-height: var(--ui-code-preview-preview-min-height, 72px);
       border-bottom: var(--border-width, 1px) solid
-        var(--border-default, oklch(20% 0.03 250 / 0.16));
+        var(--border-default, oklch(20% 0 0 / 0.16));
       /* Padding variant: normal（既定値） */
       padding: var(--space-4, 1rem);
       /* Align variant: center（既定値） */

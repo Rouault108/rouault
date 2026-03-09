@@ -107,7 +107,7 @@ export class ListItem extends LitElement {
     .cell--primary {
       font-size: var(--text-base, 14px);
       font-weight: var(--font-normal, 400);
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
     }
 
     .cell--primary ::slotted(a.primary-link) {
@@ -127,7 +127,7 @@ export class ListItem extends LitElement {
     .cell--meta {
       font-size: var(--text-sm, 13px);
       font-weight: var(--font-normal, 400);
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
       white-space: nowrap;
       text-overflow: ellipsis;
     }
@@ -136,7 +136,7 @@ export class ListItem extends LitElement {
       display: none;
       margin-left: var(--space-2, 8px);
       font-size: var(--text-sm, 13px);
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;

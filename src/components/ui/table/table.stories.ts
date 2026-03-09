@@ -1225,7 +1225,7 @@ export const AllStates: Story = {
 			.state-label {
 				font-size: 11px;
 				font-weight: 500;
-				color: var(--fg-muted, oklch(48% 0.01 250));
+				color: var(--fg-muted, oklch(48% 0 0));
 				text-transform: uppercase;
 				letter-spacing: 0.05em;
 			}

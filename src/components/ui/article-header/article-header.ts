@@ -45,7 +45,7 @@ export class ArticleHeader extends LitElement {
       /* clamp + media query の不連続を解消。フォントサイズに追従する相対値で統一。 */
       line-height: var(--line-height-tight, 1.25);
       letter-spacing: var(--tracking-tight, -0.01em);
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
       font-feature-settings: 'palt';
       word-break: auto-phrase;
       overflow-wrap: break-word;
@@ -62,7 +62,7 @@ export class ArticleHeader extends LitElement {
       gap: 0;
       font-size: var(--text-sm, 13px);
       font-weight: 500;
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
     }
 
     /* status-badge 直後は詰める（badge が既に heading との距離を稼いでいるため） */
@@ -74,7 +74,7 @@ export class ArticleHeader extends LitElement {
     .metadata-list--secondary {
       margin-top: var(--space-2, 8px);
       font-size: var(--text-xs, 12px);
-      color: var(--fg-subtle, oklch(60% 0.01 250));
+      color: var(--fg-subtle, oklch(60% 0 0));
     }
 
     .metadata-item {
@@ -89,7 +89,7 @@ export class ArticleHeader extends LitElement {
       content: '・' / '';
       /* セパレータ間隔（16px）をタグ内ギャップ（8px）の2倍に設定し、「区切り」と「群れ」のリズムを明示 */
       margin-inline: var(--space-4, 16px);
-      color: var(--fg-subtle, oklch(60% 0.01 250));
+      color: var(--fg-subtle, oklch(60% 0 0));
       flex-shrink: 0;
     }
 
@@ -120,11 +120,11 @@ export class ArticleHeader extends LitElement {
     }
 
     .link-text.source-link:hover {
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
     }
 
     .link-text.source-link:focus-visible {
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
       outline-color: var(--focus-ring-color, oklch(60% 0.15 250));
       animation: var(--animation-focus, none);
     }
@@ -158,8 +158,8 @@ export class ArticleHeader extends LitElement {
       font-weight: 500;
     }
 
-    .status-draft     { color: var(--fg-muted, oklch(48% 0.01 250)); }
-    .status-archived  { color: var(--fg-subtle, oklch(60% 0.01 250)); }
+    .status-draft     { color: var(--fg-muted, oklch(48% 0 0)); }
+    .status-archived  { color: var(--fg-subtle, oklch(60% 0 0)); }
     .status-wip       { color: var(--fg-warning, oklch(72% 0.13 85)); }
     .status-deprecated { color: var(--fg-danger, oklch(60% 0.22 25)); }
 

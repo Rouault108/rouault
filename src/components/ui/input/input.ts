@@ -109,7 +109,7 @@ export class Input extends LitElement {
     .label {
       font-size: var(--text-sm, 13px);
       font-weight: var(--font-medium, 500);
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
     }
 
     /* Label Hidden Implementation */
@@ -143,7 +143,7 @@ export class Input extends LitElement {
       
       /* Default State: Universal Clarity */
       background: var(--bg-fill-muted, oklch(95% 0 0));
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
       
       /* Transition: 明示的なプロパティリストを使用 */
       transition:
@@ -159,13 +159,13 @@ export class Input extends LitElement {
 
     /* Hover State: Tactility */
     input:hover:not(:disabled):not(:focus) {
-      border-color: var(--border-default, oklch(90% 0.01 250 / 0.12));
+      border-color: var(--border-default, oklch(90% 0 0 / 0.12));
     }
 
     /* Focus State: Clear Canvas */
     input:focus {
       background: var(--bg-default, oklch(100% 0 0));
-      border-color: var(--border-default, oklch(90% 0.01 250 / 0.12));
+      border-color: var(--border-default, oklch(90% 0 0 / 0.12));
     }
 
     /* Focus Indicator: Adaptive Focus */
@@ -183,10 +183,10 @@ export class Input extends LitElement {
 
     /* Disabled State */
     input:disabled {
-      border-color: var(--border-default, oklch(90% 0.01 250 / 0.12));
+      border-color: var(--border-default, oklch(90% 0 0 / 0.12));
       opacity: var(--opacity-disabled, 0.5);
       cursor: not-allowed;
-      color: var(--fg-subtle, oklch(48% 0.01 250));
+      color: var(--fg-subtle, oklch(48% 0 0));
     }
 
     /* Readonly State */
@@ -198,7 +198,7 @@ export class Input extends LitElement {
     /* Help Text */
     .help-text {
       font-size: var(--text-sm, 13px);
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
       margin-top: var(--space-1, 4px);
       line-height: var(--line-height-normal, 1.5);
     }
@@ -253,7 +253,7 @@ export class Input extends LitElement {
       input {
         background: transparent !important;
         border: var(--border-width, 1px) solid currentColor !important;
-        color: var(--fg-default, oklch(20% 0.01 250)) !important;
+        color: var(--fg-default, oklch(20% 0 0)) !important;
       }
       
       input.error {

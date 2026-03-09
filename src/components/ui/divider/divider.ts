@@ -20,7 +20,7 @@ export const DIVIDER_SCOPE_SELECTOR = ':where(.prose hr, ui-divider > hr, hr[dat
 const DOCUMENT_CSS = `
 ${DIVIDER_SCOPE_SELECTOR} {
   border: 0;
-  border-top: var(--border-style-subtle, 1px solid var(--border-default, oklch(20% 0.03 250 / 0.12)));
+  border-top: var(--border-style-subtle, 1px solid var(--border-default, oklch(20% 0 0 / 0.12)));
   margin: var(--space-12) 0;
   width: 100%;
 }

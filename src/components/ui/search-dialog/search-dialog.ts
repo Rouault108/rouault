@@ -16,6 +16,7 @@ const BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE = 'data-ui-search-dialog-open';
 const VIRTUALIZATION_THRESHOLD = 100;
 const VIRTUAL_ROW_HEIGHT_PX = 48;
 const VIRTUAL_OVERSCAN = 6;
+const SEARCH_WORKER_THRESHOLD = VIRTUALIZATION_THRESHOLD;
 
 interface SearchWorkerRequest {
   token: number;
@@ -436,6 +437,7 @@ export class UiSearchDialog extends LitElement {
   private _searchTimerId: number | undefined;
   private _searchToken = 0;
   private _searchWorker: Worker | null = null;
+  private _searchWorkerUrl: string | null = null;
   private _workerUnsupported = false;
   private _virtualScrollTop = 0;
 
@@ -651,7 +653,7 @@ export class UiSearchDialog extends LitElement {
       return searcher(query);
     }
 
-    if (this.items.length > 0) {
+    if (this.items.length > SEARCH_WORKER_THRESHOLD) {
       try {
         const workerResults = await this._runSearchInWorker(query, token);
         if (workerResults !== null) {
@@ -750,11 +752,12 @@ export class UiSearchDialog extends LitElement {
     const url = URL.createObjectURL(blob);
     try {
       this._searchWorker = new Worker(url, { name: 'ui-search-dialog-worker' });
+      this._searchWorkerUrl = url;
     } catch {
+      URL.revokeObjectURL(url);
       this._workerUnsupported = true;
       this._searchWorker = null;
-    } finally {
-      URL.revokeObjectURL(url);
+      this._searchWorkerUrl = null;
     }
 
     return this._searchWorker;
@@ -763,6 +766,10 @@ export class UiSearchDialog extends LitElement {
   private _destroySearchWorker(): void {
     this._searchWorker?.terminate();
     this._searchWorker = null;
+    if (this._searchWorkerUrl) {
+      URL.revokeObjectURL(this._searchWorkerUrl);
+      this._searchWorkerUrl = null;
+    }
   }
 
   private static _asWorkerResponse(payload: unknown): SearchWorkerResponse | null {

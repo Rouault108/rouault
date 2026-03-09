@@ -45,8 +45,8 @@ export class UiTooltip extends LitElement {
       vertical-align: middle;
 
       --_tooltip-bg: var(--bg-surface-2, oklch(100% 0 0));
-      --_tooltip-fg: var(--fg-default, oklch(20% 0.01 250));
-      --_tooltip-border: var(--border-default, oklch(20% 0.03 250 / 0.12));
+      --_tooltip-fg: var(--fg-default, oklch(20% 0 0));
+      --_tooltip-border: var(--border-default, oklch(20% 0 0 / 0.12));
       --_tooltip-shadow: var(--elevation-lg, 0 8px 24px oklch(0% 0 0 / 0.12));
     }
 
@@ -87,15 +87,15 @@ export class UiTooltip extends LitElement {
 
     .tooltip[data-variant='subtle'] {
       --_tooltip-bg: var(--bg-fill-muted, oklch(96% 0 0));
-      --_tooltip-fg: var(--fg-muted, oklch(45% 0.02 250));
-      --_tooltip-border: var(--border-ghost, oklch(20% 0.03 250 / 0.04));
+      --_tooltip-fg: var(--fg-muted, oklch(45% 0 0));
+      --_tooltip-border: var(--border-ghost, oklch(20% 0 0 / 0.04));
       --_tooltip-shadow: var(--elevation-md, 0 4px 8px oklch(0% 0 0 / 0.08));
     }
 
     .tooltip[data-variant='inverse'] {
-      --_tooltip-bg: var(--fg-default, oklch(20% 0.01 250));
+      --_tooltip-bg: var(--fg-default, oklch(20% 0 0));
       --_tooltip-fg: var(--bg-default, oklch(98% 0.01 250));
-      --_tooltip-border: var(--fg-muted, oklch(45% 0.02 250));
+      --_tooltip-border: var(--fg-muted, oklch(45% 0 0));
       --_tooltip-shadow: var(--elevation-lg, 0 8px 24px oklch(0% 0 0 / 0.12));
     }
 

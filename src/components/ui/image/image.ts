@@ -61,9 +61,9 @@ export class UiImage extends LitElement {
       display: grid;
       width: 100%;
       overflow: hidden;
-      border: var(--border-width, 1px) solid var(--border-ghost, oklch(20% 0.03 250 / 0.04));
+      border: var(--border-width, 1px) solid var(--border-ghost, oklch(20% 0 0 / 0.04));
       border-radius: var(--radius-md, 6px);
-      background: var(--bg-fill-neutral, oklch(95% 0.01 250));
+      background: var(--bg-fill-neutral, oklch(95% 0 0));
     }
 
     .media-shell > * {
@@ -74,7 +74,7 @@ export class UiImage extends LitElement {
       width: 100%;
       height: 100%;
       min-height: inherit;
-      background: var(--bg-fill-neutral, oklch(95% 0.01 250));
+      background: var(--bg-fill-neutral, oklch(95% 0 0));
     }
 
     .thumbnail-image {
@@ -102,8 +102,8 @@ export class UiImage extends LitElement {
       min-height: inherit;
       padding: var(--space-4, 16px);
       box-sizing: border-box;
-      color: var(--fg-muted, oklch(48% 0.01 250));
-      background: var(--bg-fill-neutral, oklch(95% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
+      background: var(--bg-fill-neutral, oklch(95% 0 0));
       text-align: center;
     }
 
@@ -119,7 +119,7 @@ export class UiImage extends LitElement {
 
     .caption {
       margin-block-start: var(--space-2, 8px);
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
       font-size: var(--text-sm, 13px);
       line-height: var(--line-height-relaxed, 1.75);
       text-align: left;
@@ -178,7 +178,7 @@ export class UiImage extends LitElement {
       max-height: calc(100vh - var(--space-8, 2rem));
       width: auto;
       height: auto;
-      border: var(--border-width, 1px) solid var(--border-ghost, oklch(20% 0.03 250 / 0.04));
+      border: var(--border-width, 1px) solid var(--border-ghost, oklch(20% 0 0 / 0.04));
       border-radius: var(--radius-md, 6px);
       object-fit: contain;
       cursor: zoom-out;

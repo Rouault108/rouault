@@ -25,15 +25,15 @@ export class InfoBox extends LitElement {
 
     .info-box {
       display: grid;
-      border: var(--border-style-subtle, 1px solid oklch(20% 0.03 250 / 0.12));
+      border: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12));
       border-radius: var(--radius-md, 6px);
       overflow: hidden;
       background: transparent;
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
     }
 
     .info-box[data-variant='filled'] {
-      background: var(--bg-fill-muted, oklch(96% 0.01 250));
+      background: var(--bg-fill-muted, oklch(96% 0 0));
     }
 
     .header {
@@ -41,17 +41,17 @@ export class InfoBox extends LitElement {
       align-items: center;
       gap: var(--space-2, 8px);
       padding: var(--space-3, 12px) var(--space-4, 16px);
-      border-bottom: var(--border-style-subtle, 1px solid oklch(20% 0.03 250 / 0.12));
+      border-bottom: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12));
       font-size: var(--text-xs, 12px);
       font-weight: var(--font-semibold, 600);
       letter-spacing: var(--tracking-wide, 0.025em);
       line-height: var(--line-height-tight, 1.4);
       font-feature-settings: 'palt';
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
     }
 
     .info-box[data-variant='filled'] .header {
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
     }
 
     .icon {

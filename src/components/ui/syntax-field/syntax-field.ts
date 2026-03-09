@@ -33,7 +33,7 @@ ui-syntax-field .field-name {
   font-family: var(--font-mono, monospace);
   font-size: var(--text-sm, 0.8125rem);
   font-weight: var(--font-semibold, 600);
-  color: var(--fg-default, oklch(20% 0.03 250));
+  color: var(--fg-default, oklch(20% 0 0));
   line-height: var(--line-height-normal, 1.5);
   overflow-wrap: break-word;
   word-break: normal;
@@ -60,7 +60,7 @@ ui-syntax-field .field-default {
   font-family: var(--font-mono, monospace);
   font-size: var(--text-xs, 0.75rem);
   font-weight: var(--font-medium, 500);
-  color: var(--fg-muted, oklch(48% 0.01 250));
+  color: var(--fg-muted, oklch(48% 0 0));
   line-height: 1.4;
   overflow-wrap: break-word;
   word-break: normal;
@@ -75,7 +75,7 @@ ui-syntax-field .field-description {
   font-family: var(--font-sans, sans-serif);
   font-size: var(--text-sm, 0.8125rem);
   font-weight: var(--font-normal, 400);
-  color: var(--fg-default, oklch(20% 0.03 250));
+  color: var(--fg-default, oklch(20% 0 0));
   line-height: var(--line-height-normal, 1.5);
 }
 

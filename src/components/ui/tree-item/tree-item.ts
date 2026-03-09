@@ -80,7 +80,7 @@ export class TreeItem extends LitElement {
       padding-right: var(--space-4, 16px);
       cursor: pointer;
       user-select: none;
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
 
       /* Transition: 色のみ高速遷移 */
       transition: color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
@@ -116,7 +116,7 @@ export class TreeItem extends LitElement {
     }
 
     .item:hover {
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
     }
 
     /* Selected */
@@ -239,7 +239,7 @@ export class TreeItem extends LitElement {
     /* Active Context: 選択中のアイテムを含むパス上のボーダーを強化 */
     :host([selected]) .children,
     :host(:has([selected])) > .children {
-      border-left-color: var(--fg-muted, oklch(48% 0.01 250));
+      border-left-color: var(--fg-muted, oklch(48% 0 0));
     }
 
     /* ── Compact密度のタッチターゲット拡張 ── */

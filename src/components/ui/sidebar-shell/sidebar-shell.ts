@@ -39,7 +39,7 @@ export class UiSidebarShell extends LitElement {
       block-size: 100%;
       overflow: hidden;
       background: var(--bg-surface-1, oklch(98% 0.01 250));
-      border-right: var(--border-width, 1px) solid var(--border-ghost, oklch(20% 0.03 250 / 0.04));
+      border-right: var(--border-width, 1px) solid var(--border-ghost, oklch(20% 0 0 / 0.04));
       display: flex;
       flex-direction: column;
     }
@@ -91,7 +91,7 @@ export class UiSidebarShell extends LitElement {
       flex-shrink: 0;
       background: var(--bg-surface-2, oklch(100% 0 0));
       border-bottom: var(--border-width, 1px) solid
-        var(--border-default, oklch(20% 0.03 250 / 0.12));
+        var(--border-default, oklch(20% 0 0 / 0.12));
     }
 
     /* スロットが空の場合はヘッダーエリアを隠す */
@@ -133,7 +133,7 @@ export class UiSidebarShell extends LitElement {
     /* ── Dark Mode ── */
     @media (prefers-color-scheme: dark) {
       nav {
-        border-color: var(--border-ghost, oklch(90% 0.01 250 / 0.04));
+        border-color: var(--border-ghost, oklch(90% 0 0 / 0.04));
       }
     }
 

@@ -207,7 +207,7 @@ export const VariantStateMatrix: Story = {
         font-size: 11px;
         letter-spacing: 0.05em;
         text-transform: uppercase;
-        color: var(--fg-muted, oklch(45% 0.02 250));
+        color: var(--fg-muted, oklch(45% 0 0));
       }
       .cell {
         display: grid;

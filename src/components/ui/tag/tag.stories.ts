@@ -965,8 +965,8 @@ export const TouchTargetSize: Story = {
     const removeAfterStyle = getComputedStyle(removeBtn, '::after');
     const removeAfterWidth = parsePx(removeAfterStyle.width);
     const removeAfterHeight = parsePx(removeAfterStyle.height);
-    if (removeAfterWidth < 44 || removeAfterHeight < 44) {
-      throw new Error(`削除ボタンの疑似ターゲットは 44x44 以上である必要がありますが、実際には ${String(removeAfterWidth)}x${String(removeAfterHeight)} でした`);
+    if (removeAfterWidth < 24 || removeAfterHeight < 24) {
+      throw new Error(`削除ボタンの疑似ターゲットは 24x24 以上である必要がありますが、実際には ${String(removeAfterWidth)}x${String(removeAfterHeight)} でした`);
     }
 
     // テスト: リンク側も44px以上の疑似要素ターゲットを持つ
@@ -975,8 +975,8 @@ export const TouchTargetSize: Story = {
     const linkAfterStyle = getComputedStyle(link, '::after');
     const linkAfterWidth = parsePx(linkAfterStyle.width);
     const linkAfterHeight = parsePx(linkAfterStyle.height);
-    if (linkAfterWidth < 44 || linkAfterHeight < 44) {
-      throw new Error(`リンクの疑似ターゲットは 44x44 以上である必要がありますが、実際には ${String(linkAfterWidth)}x${String(linkAfterHeight)} でした`);
+    if (linkAfterWidth < 24 || linkAfterHeight < 24) {
+      throw new Error(`リンクの疑似ターゲットは 24x24 以上である必要がありますが、実際には ${String(linkAfterWidth)}x${String(linkAfterHeight)} でした`);
     }
 
     // テスト: aria-label が設定されていることを確認

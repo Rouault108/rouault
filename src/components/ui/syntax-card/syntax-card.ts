@@ -24,7 +24,7 @@ export class SyntaxCard extends LitElement {
       border: var(--border-width, 1px) solid var(--border-default, oklch(0% 0 0 / 0.12));
       border-radius: var(--radius-sm, 0.25rem);
       background: var(--bg-default, oklch(100% 0 0));
-      color: var(--fg-default, oklch(20% 0.03 250));
+      color: var(--fg-default, oklch(20% 0 0));
     }
 
     .header {
@@ -45,7 +45,7 @@ export class SyntaxCard extends LitElement {
       border-radius: var(--radius-sm, 4px);
       border: var(--border-width, 1px) solid var(--border-default, oklch(0% 0 0 / 0.12));
       background: transparent;
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
       font-size: var(--text-xs, 0.75rem);
       font-weight: var(--font-semibold, 600);
       letter-spacing: var(--tracking-wider, 0.08em);
@@ -59,7 +59,7 @@ export class SyntaxCard extends LitElement {
       font-size: var(--text-base, 0.875rem);
       font-weight: var(--font-semibold, 600);
       font-family: var(--font-mono, monospace);
-      color: var(--fg-default, oklch(20% 0.03 250));
+      color: var(--fg-default, oklch(20% 0 0));
       overflow-wrap: anywhere;
       line-height: var(--line-height-normal, 1.5);
     }

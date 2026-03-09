@@ -71,9 +71,9 @@ export class UiVideo extends LitElement {
       display: block;
       overflow: hidden;
       isolation: isolate;
-      border: var(--border-width, 1px) solid var(--border-ghost, oklch(20% 0.03 250 / 0.08));
+      border: var(--border-width, 1px) solid var(--border-ghost, oklch(20% 0 0 / 0.08));
       border-radius: var(--radius-md, 6px);
-      background: var(--bg-fill-neutral, oklch(95% 0.01 250));
+      background: var(--bg-fill-neutral, oklch(95% 0 0));
     }
 
     .video-element {
@@ -117,11 +117,11 @@ export class UiVideo extends LitElement {
       width: calc(var(--control-min-touch, 24px) + var(--space-1, 4px));
       height: calc(var(--control-min-touch, 24px) + var(--space-1, 4px));
       padding: 0;
-      border: var(--border-width, 1px) solid var(--video-overlay-border, var(--border-default, oklch(86% 0.01 250)));
+      border: var(--border-width, 1px) solid var(--video-overlay-border, var(--border-default, oklch(86% 0 0)));
       border-radius: var(--radius-full, 999px);
       background: var(--video-overlay-bg, var(--bg-surface-3, oklch(100% 0 0 / 0.88)));
       box-shadow: var(--video-overlay-elevation, var(--elevation-md, 0 4px 12px oklch(0% 0 0 / 0.16)));
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
       cursor: pointer;
       transition:
         transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
@@ -167,11 +167,11 @@ export class UiVideo extends LitElement {
       width: var(--control-min-touch, 24px);
       height: var(--control-min-touch, 24px);
       padding: 0;
-      border: var(--border-width, 1px) solid var(--video-overlay-border, var(--border-default, oklch(86% 0.01 250)));
+      border: var(--border-width, 1px) solid var(--video-overlay-border, var(--border-default, oklch(86% 0 0)));
       border-radius: var(--radius-full, 999px);
       background: var(--video-overlay-bg, var(--bg-surface-3, oklch(100% 0 0 / 0.88)));
       box-shadow: var(--video-overlay-elevation, var(--elevation-md, 0 4px 12px oklch(0% 0 0 / 0.16)));
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
       cursor: pointer;
       opacity: 0;
       pointer-events: none;
@@ -278,8 +278,8 @@ export class UiVideo extends LitElement {
       padding: var(--space-4, 16px);
       box-sizing: border-box;
       text-align: center;
-      color: var(--fg-muted, oklch(48% 0.01 250));
-      background: color-mix(in oklab, var(--bg-fill-neutral, oklch(95% 0.01 250)) 75%, transparent);
+      color: var(--fg-muted, oklch(48% 0 0));
+      background: color-mix(in oklab, var(--bg-fill-neutral, oklch(95% 0 0)) 75%, transparent);
       backdrop-filter: blur(var(--blur-sm, 8px));
       -webkit-backdrop-filter: blur(var(--blur-sm, 8px));
     }
@@ -303,10 +303,10 @@ export class UiVideo extends LitElement {
     .retry-button {
       min-height: var(--control-min-touch, 24px);
       padding: 0 var(--space-4, 16px);
-      border: var(--border-width, 1px) solid var(--border-default, oklch(86% 0.01 250));
+      border: var(--border-width, 1px) solid var(--border-default, oklch(86% 0 0));
       border-radius: var(--radius-full, 999px);
       background: var(--bg-surface-2, oklch(100% 0 0));
-      color: var(--fg-default, oklch(20% 0.01 250));
+      color: var(--fg-default, oklch(20% 0 0));
       font: inherit;
       cursor: pointer;
     }
@@ -320,7 +320,7 @@ export class UiVideo extends LitElement {
     .loading-spinner {
       width: var(--icon-xl, 32px);
       height: var(--icon-xl, 32px);
-      border: 2px solid var(--border-default, oklch(86% 0.01 250));
+      border: 2px solid var(--border-default, oklch(86% 0 0));
       border-top-color: var(--primary, oklch(56% 0.16 252));
       border-radius: var(--radius-full, 999px);
       animation: ui-video-spin 0.9s linear infinite;
@@ -336,7 +336,7 @@ export class UiVideo extends LitElement {
       flex-direction: column;
       gap: var(--space-1, 4px);
       padding: var(--space-3, 12px) var(--space-4, 16px);
-      border: var(--border-width, 1px) solid var(--video-overlay-border, var(--border-default, oklch(86% 0.01 250)));
+      border: var(--border-width, 1px) solid var(--video-overlay-border, var(--border-default, oklch(86% 0 0)));
       border-radius: var(--radius-lg, 10px);
       background: var(--video-overlay-bg, var(--bg-surface-3, oklch(100% 0 0 / 0.88)));
       box-shadow: var(--video-overlay-elevation, var(--elevation-md, 0 4px 12px oklch(0% 0 0 / 0.16)));
@@ -378,7 +378,7 @@ export class UiVideo extends LitElement {
     }
 
     .floating-bar ui-button {
-      --fg-muted: var(--fg-default, oklch(20% 0.01 250));
+      --fg-muted: var(--fg-default, oklch(20% 0 0));
     }
 
     .seek-input,
@@ -388,7 +388,7 @@ export class UiVideo extends LitElement {
       -webkit-appearance: none;
       height: var(--space-1, 4px);
       border-radius: var(--radius-full, 999px);
-      background: var(--bg-fill-neutral, oklch(95% 0.01 250));
+      background: var(--bg-fill-neutral, oklch(95% 0 0));
       cursor: pointer;
     }
 
@@ -399,10 +399,10 @@ export class UiVideo extends LitElement {
         to right,
         var(--primary, oklch(56% 0.16 252)) 0%,
         var(--primary, oklch(56% 0.16 252)) var(--seek-progress, 0%),
-        var(--border-muted, oklch(82% 0.01 250)) var(--seek-progress, 0%),
-        var(--border-muted, oklch(82% 0.01 250)) var(--seek-buffered, 0%),
-        var(--bg-fill-neutral, oklch(95% 0.01 250)) var(--seek-buffered, 0%),
-        var(--bg-fill-neutral, oklch(95% 0.01 250)) 100%
+        var(--border-muted, oklch(82% 0 0)) var(--seek-progress, 0%),
+        var(--border-muted, oklch(82% 0 0)) var(--seek-buffered, 0%),
+        var(--bg-fill-neutral, oklch(95% 0 0)) var(--seek-buffered, 0%),
+        var(--bg-fill-neutral, oklch(95% 0 0)) 100%
       );
     }
 
@@ -412,8 +412,8 @@ export class UiVideo extends LitElement {
         to right,
         var(--primary, oklch(56% 0.16 252)) 0%,
         var(--primary, oklch(56% 0.16 252)) var(--volume-progress, 100%),
-        var(--bg-fill-neutral, oklch(95% 0.01 250)) var(--volume-progress, 100%),
-        var(--bg-fill-neutral, oklch(95% 0.01 250)) 100%
+        var(--bg-fill-neutral, oklch(95% 0 0)) var(--volume-progress, 100%),
+        var(--bg-fill-neutral, oklch(95% 0 0)) 100%
       );
     }
 
@@ -466,7 +466,7 @@ export class UiVideo extends LitElement {
     }
 
     .time-label {
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
       font-size: var(--text-xs, 12px);
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
@@ -474,7 +474,7 @@ export class UiVideo extends LitElement {
 
     .caption {
       margin-block-start: var(--space-2, 8px);
-      color: var(--fg-muted, oklch(48% 0.01 250));
+      color: var(--fg-muted, oklch(48% 0 0));
       font-size: var(--text-sm, 13px);
       line-height: var(--line-height-relaxed, 1.75);
       text-align: left;

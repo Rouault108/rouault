@@ -17,7 +17,7 @@ export class UiMath extends LitElement {
   static override styles = css`
     :host {
       display: inline;
-      color: var(--fg-default, oklch(20% 0.03 250));
+      color: var(--fg-default, oklch(20% 0 0));
     }
 
     :host([block]) {
@@ -43,7 +43,7 @@ export class UiMath extends LitElement {
       color: inherit;
       scrollbar-width: thin;
       scrollbar-gutter: stable both-edges;
-      scrollbar-color: var(--fg-muted, oklch(45% 0.02 250)) transparent;
+      scrollbar-color: var(--fg-muted, oklch(45% 0 0)) transparent;
       -webkit-mask-image: none;
       mask-image: none;
     }
@@ -58,14 +58,14 @@ export class UiMath extends LitElement {
     }
 
     .math-display::-webkit-scrollbar-thumb {
-      background-color: var(--fg-muted, oklch(45% 0.02 250));
+      background-color: var(--fg-muted, oklch(45% 0 0));
       border: 4px solid transparent;
       border-radius: var(--radius-full, 999px);
       background-clip: content-box;
     }
 
     .math-display::-webkit-scrollbar-thumb:hover {
-      background-color: var(--scrollbar-thumb-hover, var(--fg-default, oklch(20% 0.03 250)));
+      background-color: var(--scrollbar-thumb-hover, var(--fg-default, oklch(20% 0 0)));
     }
 
     .math-display:focus-visible {
@@ -180,8 +180,8 @@ export class UiMath extends LitElement {
       margin: var(--space-2, 8px) 0 0;
       padding: var(--space-2, 8px);
       border-radius: var(--radius-sm, 4px);
-      background: var(--bg-fill-muted, oklch(95% 0.01 250));
-      color: var(--fg-default, oklch(20% 0.03 250));
+      background: var(--bg-fill-muted, oklch(95% 0 0));
+      color: var(--fg-default, oklch(20% 0 0));
       overflow-x: auto;
       white-space: pre-wrap;
       word-break: break-word;

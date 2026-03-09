@@ -152,7 +152,7 @@ export class Toc extends LitElement {
 			font-size: var(--text-sm, 13px);
 			font-weight: 400;
 			line-height: 1.5;
-			color: var(--fg-muted, oklch(48% 0.01 250));
+			color: var(--fg-muted, oklch(48% 0 0));
 			/* 例外許可: TOCは構造型リンク。現在地インジケータとフォーカスリングで非色シグナルを担保する。 */
 			text-decoration: none;
 			border-radius: var(--radius-sm, 4px);
@@ -199,7 +199,7 @@ export class Toc extends LitElement {
 
 		/* ── ホバー: 文字色のみ変更 ── */
 		.toc-link:hover {
-			color: var(--fg-default, oklch(20% 0.01 250));
+			color: var(--fg-default, oklch(20% 0 0));
 		}
 
 		/* ── フォーカス: Adaptive Focus ── */
