@@ -77,13 +77,15 @@ export class Switch extends LitElement {
     static override styles = css`
     /* ── コンポーネントローカルトークン ── */
     :host {
-      --switch-thumb-size: 16px;
+      --switch-thumb-size: 18px;
       --switch-track-padding: 4px;
       --switch-track-height: calc(var(--switch-thumb-size) + var(--switch-track-padding) * 2);
       --switch-track-width: calc(var(--switch-thumb-size) * 2 + var(--switch-track-padding) * 2);
-      --switch-thumb-pos-off: var(--switch-track-padding);
+      /* トラックの内側基準で絶対配置されるため、ボーダー幅を差し引いて視覚上の余白を揃える */
+      --switch-thumb-pos-off: calc(var(--switch-track-padding) - var(--border-width, 1px));
       --switch-thumb-pos-on: calc(
-        var(--switch-track-width) - var(--switch-thumb-size) - var(--switch-track-padding)
+        var(--switch-track-width) - var(--switch-thumb-size) - var(--switch-track-padding) -
+          var(--border-width, 1px)
       );
       --switch-track-bg-off: color-mix(
         in oklch,
@@ -209,6 +211,7 @@ export class Switch extends LitElement {
       position: absolute;
       top: 50%;
       left: 0;
+      box-sizing: border-box;
       width: var(--switch-thumb-size);
       height: var(--switch-thumb-size);
       border-radius: var(--radius-full, 9999px);
@@ -251,6 +254,18 @@ export class Switch extends LitElement {
     :host([disabled][checked]) .track {
       background-color: color-mix(in oklch, var(--switch-track-bg-on) 88%, white);
       border-color: color-mix(in oklch, var(--switch-track-border-on) 72%, transparent);
+    }
+
+    :host([disabled]) .wrapper:hover .track {
+      background-color: color-mix(in oklch, var(--switch-track-bg-off) 95%, white);
+      border-color: color-mix(in oklch, var(--switch-track-border-off) 56%, transparent);
+      box-shadow: none;
+    }
+
+    :host([disabled][checked]) .wrapper:hover .track {
+      background-color: color-mix(in oklch, var(--switch-track-bg-on) 88%, white);
+      border-color: color-mix(in oklch, var(--switch-track-border-on) 72%, transparent);
+      box-shadow: none;
     }
 
     :host([disabled]) .thumb {
