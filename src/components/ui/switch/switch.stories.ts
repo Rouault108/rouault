@@ -1302,6 +1302,43 @@ export const ReducedMotion: Story = {
 };
 
 /**
+ * 通常モーションの検証。
+ */
+export const MotionProfile: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: '通常時は thumb が従来よりも長めの duration で、減速しながら停止することを検証します。',
+      },
+    },
+  },
+  render: () => html` <ui-switch id="motion-profile-switch" label="Motion Profile"></ui-switch> `,
+  play: async ({ canvasElement }) => {
+    const sw = canvasElement.querySelector<Switch>('#motion-profile-switch');
+    if (!sw) throw new Error('ui-switchが見つかりません');
+    await sw.updateComplete;
+
+    const thumb = sw.shadowRoot?.querySelector<HTMLElement>('.thumb');
+    if (!thumb) throw new Error('.thumb が見つかりません');
+
+    const styles = getComputedStyle(thumb);
+    const transformDuration = styles.transitionDuration.split(',')[0]?.trim() ?? '';
+    const transitionTimingFunction = styles.transitionTimingFunction;
+    const isExpectedDuration = transformDuration === '220ms' || transformDuration === '0.22s';
+
+    if (!isExpectedDuration) {
+      throw new Error(`thumb の duration は 220ms を期待しましたが、実際は "${transformDuration}" です`);
+    }
+
+    if (!transitionTimingFunction.includes('cubic-bezier(0.22, 1, 0.36, 1)')) {
+      throw new Error(
+        `thumb の easing は "cubic-bezier(0.22, 1, 0.36, 1)" を期待しましたが、実際は "${transitionTimingFunction}" です`,
+      );
+    }
+  },
+};
+
+/**
  * Forced Colors 環境の検証。
  */
 export const ForcedColors: Story = {

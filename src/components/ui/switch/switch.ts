@@ -124,6 +124,9 @@ export class Switch extends LitElement {
         white
       );
       --switch-thumb-border-on: var(--switch-thumb-border-off);
+      --switch-track-motion-duration: 140ms;
+      --switch-thumb-motion-duration: 220ms;
+      --switch-motion-easing: cubic-bezier(0.22, 1, 0.36, 1);
       display: inline-flex;
       flex-direction: column;
       gap: var(--space-1, 4px);
@@ -156,9 +159,9 @@ export class Switch extends LitElement {
       border: var(--border-width, 1px) solid var(--switch-track-border-off);
       background-color: var(--switch-track-bg-off);
       transition:
-        background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        box-shadow var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+        background-color var(--switch-track-motion-duration, 140ms) var(--switch-motion-easing, cubic-bezier(0.22, 1, 0.36, 1)),
+        border-color var(--switch-track-motion-duration, 140ms) var(--switch-motion-easing, cubic-bezier(0.22, 1, 0.36, 1)),
+        box-shadow var(--switch-track-motion-duration, 140ms) var(--switch-motion-easing, cubic-bezier(0.22, 1, 0.36, 1));
       box-sizing: border-box;
       box-shadow: inset 0 0 0 0.5px color-mix(in oklch, var(--switch-track-border-off) 50%, transparent);
     }
@@ -222,8 +225,8 @@ export class Switch extends LitElement {
         0 0 0 0.5px oklch(100% 0 0 / 0.72);
       transform: translateX(var(--switch-thumb-pos-off)) translateY(-50%);
       transition:
-        transform var(--duration-normal, 150ms)
-          var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)),
+        transform var(--switch-thumb-motion-duration, 220ms)
+          var(--switch-motion-easing, cubic-bezier(0.22, 1, 0.36, 1)),
         background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
         border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
         box-shadow var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
