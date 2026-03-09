@@ -67,7 +67,6 @@ const SUPPORTED_DIRECTIVES = new Set<DirectiveName>([
 ]);
 
 const CALLOUT_VARIANTS = new Set(['note', 'tip', 'success', 'warning', 'danger']);
-const CODE_BLOCK_INTENTS = new Set(['neutral', 'valid', 'invalid']);
 const DETAILS_VARIANTS = new Set(['default', 'bordered']);
 const INFO_BOX_VARIANTS = new Set(['default', 'filled']);
 const SCORE_LOADING_MODES = new Set(['lazy', 'eager']);
@@ -306,7 +305,7 @@ const normalizeCodeBlockMeta = (
 
   const attrs = parseCodeMeta(node.meta, node, file);
   const properties: Record<string, unknown> = {};
-  const allowedKeys = new Set(['title', 'filename', 'label', 'intent']);
+  const allowedKeys = new Set(['title', 'filename', 'label']);
   assertAllowedAttributes(attrs, allowedKeys, node, file, 'code-group 内のコードメタ');
 
   const filename = pickOptional(attrs['filename']) ?? pickOptional(attrs['title']);
@@ -317,14 +316,6 @@ const normalizeCodeBlockMeta = (
   const label = pickOptional(attrs['label']);
   if (label) {
     properties['label'] = label;
-  }
-
-  const intent = pickOptional(attrs['intent'])?.toLowerCase();
-  if (intent) {
-    if (!CODE_BLOCK_INTENTS.has(intent)) {
-      throw toError(file, node, 'code-group 内の intent は neutral/valid/invalid のみ指定可能です');
-    }
-    properties['intent'] = intent;
   }
 
   if (Object.keys(properties).length === 0) {

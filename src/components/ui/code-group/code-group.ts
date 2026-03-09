@@ -5,7 +5,6 @@ import '../../../lib/icons';
 import '../codeblock/codeblock';
 import '../copy-button/copy-button';
 
-type CodeBlockIntent = 'neutral' | 'valid' | 'invalid';
 type TabLabelSource = 'label' | 'filename' | 'lang' | 'fallback';
 
 interface TabDescriptor {
@@ -18,10 +17,6 @@ interface CodeBlockHost extends HTMLElement {
 }
 
 const DEFAULT_TAB_LABEL = 'コード';
-const COMPARISON_LABEL_BY_INTENT: Record<Exclude<CodeBlockIntent, 'neutral'>, string> = {
-  valid: '正しい例',
-  invalid: '誤り例',
-};
 let codeGroupId = 0;
 
 @customElement('ui-code-group')
@@ -372,7 +367,7 @@ export class CodeGroup extends LitElement {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['label', 'filename', 'lang', 'intent'],
+      attributeFilter: ['label', 'filename', 'lang'],
     });
 
     this._headerToolsResizeObserver = new ResizeObserver(() => {
@@ -423,7 +418,6 @@ export class CodeGroup extends LitElement {
 
       this._createTabButtons(blocks);
       this._configurePanels(blocks);
-      this._warnComparisonPairContract(blocks);
 
       const safeIndex = this._clampIndex(this._activeIndex, blocks.length);
       this._activeIndex = safeIndex;
@@ -706,11 +700,6 @@ export class CodeGroup extends LitElement {
     return { label: DEFAULT_TAB_LABEL, source: 'fallback' };
   }
 
-  private _normalizeIntent(rawIntent: string): CodeBlockIntent {
-    if (rawIntent === 'valid' || rawIntent === 'invalid') return rawIntent;
-    return 'neutral';
-  }
-
   private _readLabel(block: HTMLElement): string {
     return block.getAttribute('label')?.trim() ?? '';
   }
@@ -721,10 +710,6 @@ export class CodeGroup extends LitElement {
 
   private _readLang(block: HTMLElement): string {
     return block.getAttribute('lang')?.trim() ?? '';
-  }
-
-  private _readIntent(block: HTMLElement): string {
-    return block.getAttribute('intent')?.trim() ?? '';
   }
 
   private _onTabListKeyDown = (event: KeyboardEvent): void => {
@@ -769,21 +754,6 @@ export class CodeGroup extends LitElement {
     if (!tab) return;
     tab.focus();
     this._selectTab(index, true);
-  }
-
-  private _warnComparisonPairContract(blocks: readonly CodeBlockHost[]): void {
-    for (const block of blocks) {
-      const intent = this._normalizeIntent(this._readIntent(block));
-      if (intent === 'neutral') continue;
-
-      const label = this._readLabel(block);
-      const expected = COMPARISON_LABEL_BY_INTENT[intent];
-      if (label === expected) continue;
-
-      console.warn(
-        `[ui-code-group] Comparison Pair Contract mismatch: intent="${intent}" expects label="${expected}", actual="${label}".`,
-      );
-    }
   }
 
   private get _tabListAriaLabel(): string {

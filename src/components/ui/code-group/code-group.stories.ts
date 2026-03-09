@@ -99,7 +99,7 @@ const meta: Meta<CodeGroup> = {
 コードグループコンポーネントです。複数の \`ui-code-block\` を 1 つの比較可能なタブUIとして統合します。
 
 ## このストーリーで検証する観点
-- 正誤比較（\`正しい例\` / \`誤り例\`）と \`intent\` の整合
+- 正誤比較（\`正しい例\` / \`誤り例\`）のタブ切り替え
 - \`label\` 未指定時のフォールバック契約（\`filename\` > \`lang\` > \`"コード"\`）
 - 横スクロール時の \`scrollIntoView + header-tools 幅補正\`
 - コピー操作の文脈分離（タブ切り替え後に旧結果を持ち越さない）
@@ -117,16 +117,16 @@ type Story = StoryObj<CodeGroup>;
 
 /**
  * 正誤比較の代表ケース。
- * ラベル・intent・copy文脈の同期を検証します。
+ * ラベルと copy 文脈の同期を検証します。
  */
 export const ComparisonPair: Story = {
   render: () => html`
     <ui-code-group id="comparison-group" aria-label="コード例の比較">
-      <ui-code-block label="正しい例" intent="valid" filename="good.ts" lang="ts">
+      <ui-code-block label="正しい例" filename="good.ts" lang="ts">
         <pre><code>export const total = (a: number, b: number): number => a + b;</code></pre>
       </ui-code-block>
 
-      <ui-code-block label="誤り例" intent="invalid" filename="bad.ts" lang="ts">
+      <ui-code-block label="誤り例" filename="bad.ts" lang="ts">
         <pre><code>export const total = (a: number, b: number) => a + ;</code></pre>
       </ui-code-block>
     </ui-code-group>
@@ -505,15 +505,15 @@ export const ChildListMutationSync: Story = {
 
 /**
  * 子要素属性変更の同期。
- * label / intent 更新後にタブ表示とヘッダー情報が追従することを検証します。
+ * label / filename 更新後にタブ表示とコピー文脈が追従することを検証します。
  */
 export const ChildAttributeMutationSync: Story = {
   render: () => html`
     <ui-code-group id="mutation-group">
-      <ui-code-block label="初期ラベル" filename="alpha.ts" intent="neutral">
+      <ui-code-block label="初期ラベル" filename="alpha.ts">
         <pre><code>const alpha = 1;</code></pre>
       </ui-code-block>
-      <ui-code-block filename="beta.ts" intent="invalid">
+      <ui-code-block filename="beta.ts">
         <pre><code>const beta = 2;</code></pre>
       </ui-code-block>
     </ui-code-group>
@@ -528,7 +528,7 @@ export const ChildAttributeMutationSync: Story = {
     if (!secondPanel) throw new Error('更新対象の2つ目パネルが見つかりません');
 
     secondPanel.setAttribute('label', '更新後ラベル');
-    secondPanel.setAttribute('intent', 'valid');
+    secondPanel.setAttribute('filename', 'beta-updated.ts');
     await group.updateComplete;
     await waitFrame();
 
@@ -543,6 +543,10 @@ export const ChildAttributeMutationSync: Story = {
     await group.updateComplete;
     await waitFrame();
 
+    const copyButton = getCopyButton(group);
+    if (copyButton.label !== 'beta-updated.ts のコードをコピー') {
+      throw new Error('子属性変更後にコピー文脈が更新されていません');
+    }
   },
 };
 
@@ -808,52 +812,6 @@ export const MobileMetadataRelocationContract: Story = {
       if (!cssText.includes(token)) {
         throw new Error(`モバイル文脈移送契約の定義が不足しています: ${token}`);
       }
-    }
-  },
-};
-
-/**
- * 比較ペア不一致の事故境界。
- * intent と label が不一致な場合に警告が出ることを検証します。
- */
-export const ComparisonPairMismatchWarning: Story = {
-  render: () => html`
-    <ui-code-group id="mismatch-group">
-      <ui-code-block label="正しい例" intent="valid" filename="good.ts">
-        <pre><code>export const ok = true;</code></pre>
-      </ui-code-block>
-      <ui-code-block label="誤り例" intent="invalid" filename="bad.ts">
-        <pre><code>export const ok = ;</code></pre>
-      </ui-code-block>
-    </ui-code-group>
-  `,
-  play: async ({ canvasElement }) => {
-    const warnMessages: string[] = [];
-    const originalWarn = console.warn;
-    console.warn = (...args: unknown[]): void => {
-      warnMessages.push(args.map((value) => String(value)).join(' '));
-    };
-
-    try {
-      const group = getGroup(canvasElement, 'mismatch-group');
-      await group.updateComplete;
-      await waitFrame();
-
-      const firstPanel = getPanels(group)[0];
-      if (!firstPanel) throw new Error('比較ペア検証対象の先頭パネルが見つかりません');
-
-      firstPanel.setAttribute('label', '崩したラベル');
-      await group.updateComplete;
-      await waitFrame();
-
-      const hasContractWarning = warnMessages.some((message) =>
-        message.includes('[ui-code-group] Comparison Pair Contract mismatch'),
-      );
-      if (!hasContractWarning) {
-        throw new Error('比較ペア不一致時の警告が出力されていません');
-      }
-    } finally {
-      console.warn = originalWarn;
     }
   },
 };

@@ -75,13 +75,13 @@ describe('remarkRouaultDirectives', () => {
         {
           type: 'code',
           lang: 'ts',
-          meta: 'title="one.ts" intent="valid"',
+          meta: 'title="one.ts" label="正しい例"',
           value: 'const one = 1;',
         },
         {
           type: 'code',
           lang: 'ts',
-          meta: 'filename="two.ts" label="誤り例" intent="invalid"',
+          meta: 'filename="two.ts" label="誤り例"',
           value: 'const two = 2;',
         },
         {
@@ -102,10 +102,9 @@ describe('remarkRouaultDirectives', () => {
     const firstCode = group?.children?.[0];
     const secondCode = group?.children?.[1];
     expect(firstCode?.data?.hProperties?.['filename']).to.equal('one.ts');
-    expect(firstCode?.data?.hProperties?.['intent']).to.equal('valid');
+    expect(firstCode?.data?.hProperties?.['label']).to.equal('正しい例');
     expect(secondCode?.data?.hProperties?.['filename']).to.equal('two.ts');
     expect(secondCode?.data?.hProperties?.['label']).to.equal('誤り例');
-    expect(secondCode?.data?.hProperties?.['intent']).to.equal('invalid');
   });
 
   it('details ディレクティブを ui-details ノードへ変換すること', () => {
