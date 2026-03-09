@@ -1138,7 +1138,8 @@ export const ReducedMotion: Story = {
     }
 
     const durations = window.getComputedStyle(children).transitionDuration;
-    if (!durations.includes('0.01ms') && !durations.includes('0s')) {
+    // ブラウザは 0.01ms を秒単位 (0.00001s / 1e-05s) に変換して報告する場合がある
+    if (!durations.includes('0.01ms') && !durations.includes('0s') && !durations.includes('1e-05s') && !durations.includes('0.00001s')) {
       throw new Error(`reduced-motion 時のような transition-duration を期待していましたが、実際には "${durations}" でした`);
     }
   },

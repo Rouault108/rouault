@@ -645,12 +645,23 @@ export class Tabs extends LitElement {
     // 既存クリックリスナーをクリーンアップしてから再設定
     this._cleanupTabListeners();
 
+    // aria-controls/aria-labelledby 参照のため、パネルIDを先に確定させる
+    const panelIds = _panelEls.map((panel, i) => {
+      if (!panel.getAttribute('id')) {
+        panel.setAttribute('id', `ui-tabs-${String(_uid)}-panel-${String(i)}`);
+      }
+      return panel.getAttribute('id')!;
+    });
+
     _tabEls.forEach((tab, i) => {
       // セマンティクス
       tab.setAttribute('role', 'tab');
-      tab.setAttribute('id', `ui-tabs-${String(_uid)}-tab-${String(i)}`);
+      // 既存のIDがあれば保持する
+      if (!tab.getAttribute('id')) {
+        tab.setAttribute('id', `ui-tabs-${String(_uid)}-tab-${String(i)}`);
+      }
       if (i < count) {
-        tab.setAttribute('aria-controls', `ui-tabs-${String(_uid)}-panel-${String(i)}`);
+        tab.setAttribute('aria-controls', panelIds[i] ?? `ui-tabs-${String(_uid)}-panel-${String(i)}`);
       } else {
         tab.removeAttribute('aria-controls');
       }
@@ -673,9 +684,10 @@ export class Tabs extends LitElement {
 
     _panelEls.forEach((panel, i) => {
       panel.setAttribute('role', 'tabpanel');
-      panel.setAttribute('id', `ui-tabs-${String(_uid)}-panel-${String(i)}`);
+      // IDは上の map で確定済み（既存IDを保持）
+      const tabId = _tabEls[i]?.getAttribute('id') ?? `ui-tabs-${String(_uid)}-tab-${String(i)}`;
       if (i < count) {
-        panel.setAttribute('aria-labelledby', `ui-tabs-${String(_uid)}-tab-${String(i)}`);
+        panel.setAttribute('aria-labelledby', tabId);
       } else {
         panel.removeAttribute('aria-labelledby');
       }

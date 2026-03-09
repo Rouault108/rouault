@@ -1155,10 +1155,13 @@ export const ReducedMotion: Story = {
 
     const tabStyle = getComputedStyle(tab);
     const panelStyle = getComputedStyle(panel);
-    if (!tabStyle.transitionDuration.includes('0.01ms')) {
+    // 0.01ms はブラウザによって "0.01ms" / "0.00001s" / "1e-05s" と表記が異なる
+    const isReducedDuration = (v: string) =>
+      v.includes('0.01ms') || v.includes('0.00001s') || v.includes('1e-05s');
+    if (!isReducedDuration(tabStyle.transitionDuration)) {
       throw new Error('[ReducedMotion] タブの transition-duration が 0.01ms 相当ではありません');
     }
-    if (!panelStyle.transitionDuration.includes('0.01ms')) {
+    if (!isReducedDuration(panelStyle.transitionDuration)) {
       throw new Error('[ReducedMotion] パネルの transition-duration が 0.01ms 相当ではありません');
     }
   },

@@ -47,7 +47,7 @@ ui-syntax-field .field-required {
   font-size: var(--text-xs, 0.75rem);
   font-weight: var(--font-semibold, 600);
   text-transform: none;
-  color: var(--fg-muted, oklch(48% 0.01 250));
+  color: var(--fg-warning, oklch(55% 0.15 55));
   background-color: transparent;
   border: var(--border-width, 1px) solid var(--border-default, oklch(0% 0 0 / 0.12));
   padding: calc(var(--space-1, 0.25rem) * 0.5) var(--space-2, 0.5rem);

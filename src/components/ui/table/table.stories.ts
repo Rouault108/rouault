@@ -808,8 +808,10 @@ export const HorizontalScroll: Story = {
 		}
 
 		// キーボードフォーカス可能であること
+		// Shadow DOM 内の要素へのフォーカスは document.activeElement ではホスト要素を指すため、
+		// shadowRoot.activeElement でコンテナにフォーカスが当たっていることを確認する
 		(container as HTMLElement).focus();
-		if (document.activeElement !== container) {
+		if (table.shadowRoot?.activeElement !== container) {
 			throw new Error('コンテナはキーボードフォーカスを受ける必要があります');
 		}
 	},

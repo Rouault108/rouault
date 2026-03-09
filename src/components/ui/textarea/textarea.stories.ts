@@ -668,7 +668,7 @@ export const AutoGrowDisabled: Story = {
       <ui-textarea
         id="auto-grow-disabled"
         label="手動リサイズ"
-        ?auto-grow="${false}"
+        .autoGrow="${false}"
         resize="vertical"
         rows="4"
         placeholder="手動でリサイズできます..."
@@ -1414,7 +1414,10 @@ export const ReducedMotionPreview: Story = {
     if (!ta) throw new Error('textarea not found');
 
     const style = getComputedStyle(ta);
-    if (!style.transitionDuration.includes('0.01ms')) {
+    // 0.01ms はブラウザによって "0.01ms" / "0.00001s" / "1e-05s" と表記が異なる
+    const isReducedDuration = (v: string) =>
+      v.includes('0.01ms') || v.includes('0.00001s') || v.includes('1e-05s');
+    if (!isReducedDuration(style.transitionDuration)) {
       throw new Error(`Expected reduced transition duration, got "${style.transitionDuration}"`);
     }
   },

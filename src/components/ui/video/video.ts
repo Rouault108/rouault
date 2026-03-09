@@ -1253,11 +1253,6 @@ export class UiVideo extends LitElement {
 
   private _onShellClick = (event: MouseEvent): void => {
     const path = event.composedPath();
-    const video = this._videoElement;
-    if (!video) return;
-
-    // 動画面へのクリックのみを再生/一時停止トグル対象にする
-    if (!path.includes(video)) return;
 
     const isFloatingBarTarget = path.some(
       (el) => el instanceof HTMLElement && el.classList.contains('floating-bar'),
@@ -1302,7 +1297,6 @@ export class UiVideo extends LitElement {
   private _onShellKeyDown = (event: KeyboardEvent): void => {
     if (event.defaultPrevented) return;
     if (event.metaKey || event.ctrlKey || event.altKey) return;
-    if (event.key !== ' ' && event.key !== 'Enter') return;
 
     const target = event.target;
     if (
@@ -1313,8 +1307,56 @@ export class UiVideo extends LitElement {
       return;
     }
 
-    event.preventDefault();
-    this._togglePlayback();
+    switch (event.key) {
+      case ' ':
+      case 'Enter':
+      case 'k':
+        event.preventDefault();
+        this._togglePlayback();
+        break;
+      case 'j':
+        event.preventDefault();
+        this._seekBy(-SKIP_SECONDS);
+        this._showSkipIndicator('back');
+        break;
+      case 'l':
+        event.preventDefault();
+        this._seekBy(SKIP_SECONDS);
+        this._showSkipIndicator('forward');
+        break;
+      case 'ArrowRight':
+        event.preventDefault();
+        this._seekBy(SKIP_SECONDS / 2);
+        break;
+      case 'ArrowLeft':
+        event.preventDefault();
+        this._seekBy(-SKIP_SECONDS / 2);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this._adjustVolume(0.1);
+        break;
+      case 'ArrowDown':
+        event.preventDefault();
+        this._adjustVolume(-0.1);
+        break;
+      case 'm':
+        event.preventDefault();
+        this._toggleMuted();
+        break;
+      case 'f':
+        event.preventDefault();
+        void this._toggleFullscreen();
+        break;
+      case 'c':
+        if (this._hasTracks) {
+          event.preventDefault();
+          this._toggleCaptions();
+        }
+        break;
+      default:
+        break;
+    }
   };
   private _handleDoubleTap(event: MouseEvent): void {
     const shell = this.shadowRoot?.querySelector<HTMLElement>('.player-shell');
@@ -1358,10 +1400,9 @@ export class UiVideo extends LitElement {
     this._scheduleOverlayHide();
   };
 
-  /** フローティングバーからの再生操作（センターオーバーレイを表示しない）*/
+  /** フローティングバーからの再生操作 */
   private _onFloatingBarPlay = (): void => {
     if (this._isPlayingLike) {
-      this._suppressOverlayOnNextPause = true;
       this.pauseVideo();
       return;
     }
@@ -1409,6 +1450,22 @@ export class UiVideo extends LitElement {
       this._scheduleFloatingBarHide();
     }
   };
+
+  private _adjustVolume(delta: number): void {
+    const video = this._videoElement;
+    if (!video) return;
+
+    const next = this._clamp(video.volume + delta, 0, 1);
+    video.volume = next;
+    this._volume = next;
+    if (next === 0) {
+      video.muted = true;
+      this.muted = true;
+    } else if (video.muted) {
+      video.muted = false;
+      this.muted = false;
+    }
+  }
 
   private _toggleMuted = (): void => {
     const video = this._videoElement;

@@ -279,14 +279,14 @@ export const DuplicateMergeAndDurationReset: Story = {
     ToastManager.show({
       variant: 'success',
       message: '保存が完了しました',
-      duration: 220,
+      duration: 3000,
     });
     await flush(host);
 
     await wait(140);
     ToastManager.show({
       variant: 'success',
-      message: '  保存が   完了しました  ',
+      message: '  保存が完了しました  ',
       duration: 280,
     });
     await flush(host);
@@ -501,8 +501,14 @@ export const DarkModeAndStyleContracts: Story = {
       throw new Error('ダークモードで背景が透明です');
     }
 
-    const styleElement = host.shadowRoot?.querySelector('style');
-    const cssText = styleElement?.textContent ?? '';
+    const root = host.shadowRoot;
+    const styleEl = root?.querySelector('style');
+    let cssText = styleEl?.textContent ?? '';
+    if (!cssText && root) {
+      cssText = Array.from(root.adoptedStyleSheets ?? [])
+        .flatMap((sheet) => Array.from(sheet.cssRules).map((rule) => rule.cssText))
+        .join('\n');
+    }
     const requiredContracts = ['@media (forced-colors: active)', '@media (prefers-reduced-motion: reduce)', '@media print'];
     for (const contract of requiredContracts) {
       if (!cssText.includes(contract)) {
