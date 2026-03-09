@@ -38,6 +38,26 @@ function simulateClick(element: HTMLElement, options: MouseEventInit = {}) {
 	}
 }
 
+/**
+ * 失敗系テストで発生する想定済みの console.error を一時的に吸収する。
+ * WTR の browser logs を抑制しつつ、他テストでは通常のエラーを見逃さないため局所利用に限定する。
+ */
+function stubConsoleError() {
+	const originalConsoleError = console.error;
+	const calls: unknown[][] = [];
+
+	console.error = (...args: unknown[]) => {
+		calls.push(args);
+	};
+
+	return {
+		calls,
+		restore() {
+			console.error = originalConsoleError;
+		},
+	};
+}
+
 describe('Router', () => {
 	let outlet: HTMLElement;
 	let router: Router;
@@ -45,6 +65,8 @@ describe('Router', () => {
 	let originalFetch: typeof globalThis.fetch;
 	let originalPushState: typeof history.pushState;
 	let originalReplaceState: typeof history.replaceState;
+	let originalHistoryStateDescriptor: PropertyDescriptor | undefined;
+	let mockHistoryState: unknown;
 
 	// WTRのセッションURLを保持（テスト終了時に復元するため）
 	const wtrOriginalUrl = window.location.href;
@@ -66,29 +88,28 @@ describe('Router', () => {
 		// history API のオリジナルを保存（ネイティブメソッドへの参照を直接保持）
 		originalPushState = history.pushState.bind(history);
 		originalReplaceState = history.replaceState.bind(history);
+		originalHistoryStateDescriptor = Object.getOwnPropertyDescriptor(history, 'state');
+		mockHistoryState = history.state;
+
+		Object.defineProperty(history, 'state', {
+			configurable: true,
+			get: () => mockHistoryState,
+		});
 
 		// Playwrightのナビゲーション検出を防ぐため、
-		// history APIをラッパーで包み、URLのパス名を変更せず元のクエリパラメータを保持する
-		const wtrUrl = new URL(wtrOriginalUrl);
+		// history APIをラッパーで包み、URLのパス名を変更せず state だけをテスト内で保持する。
 		history.pushState = ((data: unknown, unused: string, url?: string | URL | null) => {
 			if (url !== null && url !== undefined) {
-				// パス名変更を抑制し、WTRのURLパスを維持する
 				const target = new URL(url.toString(), window.location.href);
-				originalPushState(
-					{ ...(data && typeof data === 'object' ? data : {}), __routerPath: target.pathname },
-					unused,
-					`${wtrUrl.pathname}${wtrUrl.search}${wtrUrl.hash}`,
-				);
+				void unused;
+				mockHistoryState = { ...(data && typeof data === 'object' ? data : {}), __routerPath: target.pathname };
 			}
 		}) as typeof history.pushState;
 		history.replaceState = ((data: unknown, unused: string, url?: string | URL | null) => {
 			if (url !== null && url !== undefined) {
 				const target = new URL(url.toString(), window.location.href);
-				originalReplaceState(
-					{ ...(data && typeof data === 'object' ? data : {}), __routerPath: target.pathname },
-					unused,
-					`${wtrUrl.pathname}${wtrUrl.search}${wtrUrl.hash}`,
-				);
+				void unused;
+				mockHistoryState = { ...(data && typeof data === 'object' ? data : {}), __routerPath: target.pathname };
 			}
 		}) as typeof history.replaceState;
 
@@ -155,8 +176,7 @@ describe('Router', () => {
 
 		// URLをWTRのセッションURLに復元（ラッパー解除前に実行）
 		try {
-			const wtrUrl = new URL(wtrOriginalUrl);
-			history.replaceState({}, '', `${wtrUrl.pathname}${wtrUrl.search}${wtrUrl.hash}`);
+			mockHistoryState = undefined;
 		} catch {
 			// 復元失敗は無視
 		}
@@ -166,6 +186,11 @@ describe('Router', () => {
 		globalThis.fetch = originalFetch;
 		history.pushState = originalPushState;
 		history.replaceState = originalReplaceState;
+		if (originalHistoryStateDescriptor) {
+			Object.defineProperty(history, 'state', originalHistoryStateDescriptor);
+		} else {
+			delete (history as History & { state?: unknown }).state;
+		}
 	});
 
 	// ========================================
@@ -375,9 +400,8 @@ describe('Router', () => {
 			};
 			document.addEventListener('click', handler);
 
-			// Ctrl キーを押しながらクリック
-			const event = new MouseEvent('click', { ctrlKey: true, bubbles: true });
-			link.dispatchEvent(event);
+			// 修飾キー付きでも実ブラウザ遷移は起こさず、ルーターの介入有無だけを検証する
+			simulateClick(link, { ctrlKey: true });
 
 			document.removeEventListener('click', handler);
 
@@ -395,8 +419,7 @@ describe('Router', () => {
 			};
 			document.addEventListener('click', handler);
 
-			const event = new MouseEvent('click', { shiftKey: true, bubbles: true });
-			link.dispatchEvent(event);
+			simulateClick(link, { shiftKey: true });
 
 			document.removeEventListener('click', handler);
 
@@ -414,8 +437,7 @@ describe('Router', () => {
 			};
 			document.addEventListener('click', handler);
 
-			const event = new MouseEvent('click', { altKey: true, bubbles: true });
-			link.dispatchEvent(event);
+			simulateClick(link, { altKey: true });
 
 			document.removeEventListener('click', handler);
 
@@ -433,8 +455,7 @@ describe('Router', () => {
 			};
 			document.addEventListener('click', handler);
 
-			const event = new MouseEvent('click', { metaKey: true, bubbles: true });
-			link.dispatchEvent(event);
+			simulateClick(link, { metaKey: true });
 
 			document.removeEventListener('click', handler);
 
@@ -452,8 +473,7 @@ describe('Router', () => {
 			};
 			document.addEventListener('click', handler);
 
-			const event = new MouseEvent('click', { button: 1, bubbles: true });
-			link.dispatchEvent(event);
+			simulateClick(link, { button: 1 });
 
 			document.removeEventListener('click', handler);
 
@@ -829,6 +849,7 @@ describe('Router', () => {
 		});
 
 		it('5.3 トランジション失敗時にもコンテンツが更新されること', async () => {
+			const consoleErrorStub = stubConsoleError();
 			document.startViewTransition = ((callback: () => Promise<void>) => {
 				// コールバックを実行してコンテンツを更新した後、トランジション自体は失敗させる
 				void callback();
@@ -846,14 +867,19 @@ describe('Router', () => {
 				}));
 			};
 
-			router = new Router(outlet);
+			try {
+				router = new Router(outlet, { skipInitialNavigation: true });
 
-			const link = await fixture<HTMLAnchorElement>(html` <a href="/test">Link</a> `);
-			simulateClick(link);
+				const link = await fixture<HTMLAnchorElement>(html` <a href="/test">Link</a> `);
+				simulateClick(link);
 
-			await waitUntil(() => outlet.innerHTML.includes('Content Despite Error'), 'コンテンツ更新');
+				await waitUntil(() => outlet.innerHTML.includes('Content Despite Error'), 'コンテンツ更新');
 
-			expect(outlet.innerHTML).to.include('Content Despite Error');
+				expect(outlet.innerHTML).to.include('Content Despite Error');
+				expect(consoleErrorStub.calls.length).to.equal(1);
+			} finally {
+				consoleErrorStub.restore();
+			}
 		});
 	});
 
@@ -900,23 +926,29 @@ describe('Router', () => {
 		});
 
 		it('6.3 ネットワークエラー時に適切なメッセージを表示すること', async () => {
+			const consoleErrorStub = stubConsoleError();
 			globalThis.fetch = () => {
 				throw new TypeError('Failed to fetch');
 			};
 
-			router = new Router(outlet);
+			try {
+				router = new Router(outlet, { skipInitialNavigation: true });
 
-			const link = await fixture<HTMLAnchorElement>(html` <a href="/network-error">Link</a> `);
-			simulateClick(link);
+				const link = await fixture<HTMLAnchorElement>(html` <a href="/network-error">Link</a> `);
+				simulateClick(link);
 
-			await waitUntil(
-				() => outlet.textContent.includes('ネットワーク') || outlet.textContent.includes('エラー'),
-				'ネットワークエラー表示',
-			);
+				await waitUntil(
+					() => outlet.textContent.includes('ネットワーク') || outlet.textContent.includes('エラー'),
+					'ネットワークエラー表示',
+				);
 
-			expect(outlet.textContent).to.satisfy((text: string) =>
-				text.includes('ネットワーク') || text.includes('エラー')
-			);
+				expect(outlet.textContent).to.satisfy((text: string) =>
+					text.includes('ネットワーク') || text.includes('エラー')
+				);
+				expect(consoleErrorStub.calls.length).to.equal(1);
+			} finally {
+				consoleErrorStub.restore();
+			}
 		});
 
 		it('6.4 401エラー時に認証エラーメッセージを表示すること', async () => {
@@ -980,6 +1012,7 @@ describe('Router', () => {
 		});
 
 		it('6.7 タイムアウト時に適切なメッセージを表示すること', async () => {
+			const consoleErrorStub = stubConsoleError();
 			globalThis.fetch = async (_input: RequestInfo | URL, init?: RequestInit) => {
 				return new Promise((resolve, reject) => {
 					const timeoutId = setTimeout(() => {
@@ -997,41 +1030,52 @@ describe('Router', () => {
 
 			// skipInitialNavigation: trueで初期ナビゲーションをスキップ（初期fetchが無限ハングするため）
 			// タイムアウトを100msに設定（Mochaのデフォルト2000ms以内に収めるため）
-			router = new Router(outlet, { skipInitialNavigation: true });
-			router.setTimeout(100);
+			try {
+				router = new Router(outlet, { skipInitialNavigation: true });
+				router.setTimeout(100);
 
-			const link = await fixture<HTMLAnchorElement>(html` <a href="/timeout">Link</a> `);
-			simulateClick(link);
+				const link = await fixture<HTMLAnchorElement>(html` <a href="/timeout">Link</a> `);
+				simulateClick(link);
 
-			await waitUntil(
-				() => outlet.textContent.includes('タイムアウト') || outlet.textContent.includes('Timeout'),
-				'タイムアウトエラー表示',
-				{ timeout: 10000 },
-			);
+				await waitUntil(
+					() => outlet.textContent.includes('タイムアウト') || outlet.textContent.includes('Timeout'),
+					'タイムアウトエラー表示',
+					{ timeout: 10000 },
+				);
 
-			expect(outlet.textContent).to.satisfy((text: string) =>
-				text.includes('タイムアウト') || text.includes('Timeout')
-			);
+				expect(outlet.textContent).to.satisfy((text: string) =>
+					text.includes('タイムアウト') || text.includes('Timeout')
+				);
+				expect(consoleErrorStub.calls.length).to.equal(1);
+			} finally {
+				consoleErrorStub.restore();
+			}
 		});
 
 		it('6.8 CORSエラー時に適切なメッセージを表示すること', async () => {
+			const consoleErrorStub = stubConsoleError();
 			globalThis.fetch = () => {
 				throw new TypeError('CORS policy blocked');
 			};
 
-			router = new Router(outlet);
+			try {
+				router = new Router(outlet, { skipInitialNavigation: true });
 
-			const link = await fixture<HTMLAnchorElement>(html` <a href="/cors">Link</a> `);
-			simulateClick(link);
+				const link = await fixture<HTMLAnchorElement>(html` <a href="/cors">Link</a> `);
+				simulateClick(link);
 
-			await waitUntil(
-				() => outlet.textContent.includes('CORS') || outlet.textContent.includes('エラー'),
-				'CORSエラー表示',
-			);
+				await waitUntil(
+					() => outlet.textContent.includes('CORS') || outlet.textContent.includes('エラー'),
+					'CORSエラー表示',
+				);
 
-			expect(outlet.textContent).to.satisfy((text: string) =>
-				text.includes('CORS') || text.includes('エラー')
-			);
+				expect(outlet.textContent).to.satisfy((text: string) =>
+					text.includes('CORS') || text.includes('エラー')
+				);
+				expect(consoleErrorStub.calls.length).to.equal(1);
+			} finally {
+				consoleErrorStub.restore();
+			}
 		});
 	});
 
@@ -1319,6 +1363,7 @@ describe('Router', () => {
 		});
 
 		it('9.4 onError フックが実行されること', async () => {
+			const consoleErrorStub = stubConsoleError();
 			let errorCaught = false;
 			let errorMessage = '';
 
@@ -1326,20 +1371,25 @@ describe('Router', () => {
 				throw new Error('Test Error');
 			};
 
-			router = new Router(outlet);
+			try {
+				router = new Router(outlet, { skipInitialNavigation: true });
 
-			router.on('error', (error) => {
-				errorCaught = true;
-				errorMessage = error instanceof Error ? error.message : String(error);
-			});
+				router.on('error', (error) => {
+					errorCaught = true;
+					errorMessage = error instanceof Error ? error.message : String(error);
+				});
 
-			const link = await fixture<HTMLAnchorElement>(html` <a href="/error">Link</a> `);
-			simulateClick(link);
+				const link = await fixture<HTMLAnchorElement>(html` <a href="/error">Link</a> `);
+				simulateClick(link);
 
-			await waitUntil(() => errorCaught, 'errorフック実行');
+				await waitUntil(() => errorCaught, 'errorフック実行');
 
-			expect(errorCaught).to.be.true;
-			expect(errorMessage).to.equal('Test Error');
+				expect(errorCaught).to.be.true;
+				expect(errorMessage).to.equal('Test Error');
+				expect(consoleErrorStub.calls.length).to.equal(1);
+			} finally {
+				consoleErrorStub.restore();
+			}
 		});
 
 		it('9.5 onContentLoad フックが実行されること', async () => {

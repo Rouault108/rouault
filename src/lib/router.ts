@@ -47,18 +47,22 @@ export class Router {
   private navigationInProgress = false;
   private pendingNavigation: PendingNavigation | null = null;
   private isDestroyed = false;
+  private currentUrl: string;
 
   constructor(
     private outlet: HTMLElement,
     private options: RouterOptions = {},
   ) {
+    this.currentUrl = this.readCurrentUrl();
+
     // イベントハンドラをバインド（destroy時に解除するため参照を保持）
     this.clickHandler = (e: MouseEvent) => {
       this.handleAnchorClick(e);
     };
     this.popstateHandler = () => {
+      this.currentUrl = this.readCurrentUrl();
       void this.requestNavigation({
-        url: this.getCurrentUrl(),
+        url: this.currentUrl,
         historyMode: 'none',
       });
     };
@@ -269,7 +273,7 @@ export class Router {
    * @returns パラメータのオブジェクト
    */
   getParams(): Record<string, string> {
-    const path = window.location.pathname;
+    const path = new URL(this.getCurrentUrl(), window.location.origin).pathname;
     const params: Record<string, string> = {};
 
     // 動的パラメータの抽出 (/posts/:id など)
@@ -294,7 +298,7 @@ export class Router {
    */
   getQuery(): Record<string, string> {
     const params: Record<string, string> = {};
-    const searchParams = new URLSearchParams(window.location.search);
+    const searchParams = new URL(this.getCurrentUrl(), window.location.origin).searchParams;
 
     searchParams.forEach((value, key) => {
       // テストランナーの内部パラメータを除外
@@ -311,7 +315,7 @@ export class Router {
    * @returns 現在のパス
    */
   getCurrentPath(): string {
-    return window.location.pathname;
+    return new URL(this.getCurrentUrl(), window.location.origin).pathname;
   }
 
   /**
@@ -415,10 +419,12 @@ export class Router {
 
     try {
       if (request.historyMode === 'push') {
-        window.history.pushState(request.state ?? {}, '', normalizedUrl);
+        window.history.pushState(this.createHistoryState(request.state, normalizedUrl), '', normalizedUrl);
       } else if (request.historyMode === 'replace') {
-        window.history.replaceState(request.state ?? {}, '', normalizedUrl);
+        window.history.replaceState(this.createHistoryState(request.state, normalizedUrl), '', normalizedUrl);
       }
+
+      this.currentUrl = normalizedUrl;
 
       // View Transition APIをサポートしていないブラウザはフォールバック
       const startViewTransition = (document.startViewTransition as typeof document.startViewTransition | undefined)?.bind(document);
@@ -735,7 +741,50 @@ export class Router {
    * 現在URLを取得（pathname + search + hash）
    */
   private getCurrentUrl(): string {
+    return this.currentUrl;
+  }
+
+  /**
+   * history.state を含めて現在URLを解決する
+   */
+  private readCurrentUrl(): string {
+    const currentState = history.state;
+    if (this.isHistoryStateObject(currentState)) {
+      const historyUrl = currentState['__routerUrl'];
+      if (typeof historyUrl === 'string' && historyUrl.length > 0) {
+        return historyUrl;
+      }
+
+      const historyPath = currentState['__routerPath'];
+      if (typeof historyPath === 'string' && historyPath.length > 0) {
+        const resolved = new URL(window.location.href);
+        resolved.pathname = historyPath;
+        return `${resolved.pathname}${resolved.search}${resolved.hash}`;
+      }
+    }
+
     return `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  }
+
+  /**
+   * history.state にルーター用のURL情報を付与する
+   */
+  private createHistoryState(state: Record<string, unknown> | undefined, normalizedUrl: string): Record<string, unknown> {
+    const currentState = this.isHistoryStateObject(state) ? state : {};
+    const parsedUrl = new URL(normalizedUrl, window.location.origin);
+
+    return {
+      ...currentState,
+      __routerUrl: `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`,
+      __routerPath: parsedUrl.pathname,
+    };
+  }
+
+  /**
+   * history.state として扱えるプレーンオブジェクトか判定する
+   */
+  private isHistoryStateObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null;
   }
 
   /**
