@@ -264,6 +264,8 @@ export class UiSidebarShell extends LitElement {
 
   /** LocalStorage から状態を復元する */
   private _restoreState(): void {
+    /* data-state 属性が明示的に指定されている場合は復元しない（親コンポーネントの意図を尊重） */
+    if (this.hasAttribute('data-state')) return;
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored === 'expanded' || stored === 'collapsed') {
@@ -286,6 +288,8 @@ export class UiSidebarShell extends LitElement {
   /** matchMedia を初期化しモードを自動判定する */
   private _initMediaQuery(): void {
     if (typeof window === 'undefined') return;
+    /* mode 属性が明示的に指定されている場合は自動判定しない */
+    if (this.hasAttribute('mode')) return;
     this._destroyMediaQuery();
 
     this._mediaQuery = window.matchMedia(this._buildMediaQuery());

@@ -550,12 +550,8 @@ export class UiSearchDialog extends LitElement {
     dialog.setAttribute('data-closing', '');
     await this._waitForAnimations(dialog);
     dialog.removeAttribute('data-closing');
+    // dialog.close() が native close イベントを発火 → _onNativeClose がクリーンアップとイベント発火を担う
     dialog.close();
-
-    this._isClosing = false;
-    UiSearchDialog._unlockBodyScroll();
-    this._restoreTriggerFocus();
-    this.dispatchEvent(new CustomEvent('ui-search-dialog-closed'));
   }
 
   private async _waitForAnimations(dialog: HTMLDialogElement): Promise<void> {
@@ -656,9 +652,13 @@ export class UiSearchDialog extends LitElement {
     }
 
     if (this.items.length > 0) {
-      const workerResults = await this._runSearchInWorker(query, token);
-      if (workerResults !== null) {
-        return workerResults;
+      try {
+        const workerResults = await this._runSearchInWorker(query, token);
+        if (workerResults !== null) {
+          return workerResults;
+        }
+      } catch {
+        // Workerが失敗した場合は同期フィルタにフォールバック
       }
     }
 
@@ -862,6 +862,17 @@ export class UiSearchDialog extends LitElement {
         this._selectActiveResult();
         break;
 
+      case 'Tab':
+        if (!event.shiftKey) {
+          // Shadow DOM 内の Tab 移動: clear-button が表示中なら手動でフォーカスを移す
+          const clearBtn = this.shadowRoot?.querySelector<HTMLButtonElement>('.clear-button');
+          if (clearBtn && !clearBtn.hidden) {
+            event.preventDefault();
+            clearBtn.focus();
+          }
+        }
+        break;
+
       default:
         break;
     }
@@ -965,8 +976,14 @@ export class UiSearchDialog extends LitElement {
   };
 
   private _onNativeClose = (): void => {
-    if (this._isClosing) return;
-    this.opened = false;
+    const wasClosing = this._isClosing;
+    this._isClosing = false;
+
+    if (!wasClosing) {
+      // ブラウザがネイティブに閉じた場合（_closeDialog 経由でない）
+      this.opened = false;
+    }
+
     UiSearchDialog._unlockBodyScroll();
     this._restoreTriggerFocus();
     this.dispatchEvent(new CustomEvent('ui-search-dialog-closed'));

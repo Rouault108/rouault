@@ -653,7 +653,7 @@ export const VisualModesAndInkContrast: Story = {
     const darkColor = getComputedStyle(getScrollContainer(dark)).color;
     const isBlackColor = (value: string): boolean => {
       const normalized = value.replace(/\s+/g, '').toLowerCase();
-      return normalized === 'rgb(0,0,0)' || normalized === 'oklch(00 0)' || normalized === 'oklch(0 0 0)';
+      return normalized === 'rgb(0,0,0)' || normalized === 'oklch(000)';
     };
     if (!isBlackColor(lightColor) || !isBlackColor(darkColor)) {
       throw new Error(`譜面インク色は常に黒である必要があります: light=${lightColor}, dark=${darkColor}`);

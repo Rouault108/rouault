@@ -512,9 +512,11 @@ export class Input extends LitElement {
     };
 
     // aria-describedby の値を決定
+    // エラー状態時はエラーメッセージがある場合のみ errorId を参照し、
+    // helpText は非エラー時のみ参照（エラー時は help-text が DOM から除去される）
     const describedBy = hasError && currentErrorMessage
       ? this._errorId
-      : this.helpText
+      : !hasError && this.helpText
         ? this._helpId
         : undefined;
 
@@ -657,7 +659,16 @@ export class Input extends LitElement {
     // 内部inputのネイティブバリデーション状態を同期
     const validity = this._input.validity;
 
-    if (!validity.valid) {
+    // ブラウザはプログラム的に設定した値では tooShort/tooLong を検出しない場合があるため手動確認
+    const currentValue = this._input.value;
+    const manualTooShort =
+      this.minlength !== undefined &&
+      currentValue.length > 0 &&
+      currentValue.length < this.minlength;
+    const manualTooLong =
+      this.maxlength !== undefined && currentValue.length > this.maxlength;
+
+    if (!validity.valid || manualTooShort || manualTooLong) {
       this._hasNativeError = true;
       this._nativeErrorMessage = this._input.validationMessage || 'Invalid input';
       // バリデーションエラーがある場合、ElementInternalsに反映
@@ -666,8 +677,8 @@ export class Input extends LitElement {
           valueMissing: validity.valueMissing,
           typeMismatch: validity.typeMismatch,
           patternMismatch: validity.patternMismatch,
-          tooShort: validity.tooShort,
-          tooLong: validity.tooLong,
+          tooShort: validity.tooShort || manualTooShort,
+          tooLong: validity.tooLong || manualTooLong,
           rangeUnderflow: validity.rangeUnderflow,
           rangeOverflow: validity.rangeOverflow,
           stepMismatch: validity.stepMismatch,

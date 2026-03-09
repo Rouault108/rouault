@@ -150,7 +150,7 @@ export const FixedExpanded: Story = {
     <div
       style="display: grid; grid-template-columns: var(--sidebar-width, 240px) 1fr; min-height: 400px;"
     >
-      <ui-sidebar id="sidebar-fixed-expanded" data-state="expanded" mode="fixed">
+      <ui-sidebar-shell id="sidebar-fixed-expanded" data-state="expanded" mode="fixed">
         <button
           slot="header"
           aria-haspopup="menu"
@@ -164,7 +164,7 @@ export const FixedExpanded: Story = {
           <a href="/music" role="treeitem" tabindex="-1" aria-selected="false">音楽</a>
           <a href="/photos" role="treeitem" tabindex="-1" aria-selected="false">写真</a>
         </div>
-      </ui-sidebar>
+      </ui-sidebar-shell>
       <main style="padding: 2rem;">
         <p>メインコンテンツ</p>
       </main>
@@ -226,12 +226,12 @@ export const FixedCollapsedZenMode: Story = {
       id="shell-zen"
       style="display: grid; grid-template-columns: 0px 1fr; min-height: 400px;"
     >
-      <ui-sidebar id="sidebar-fixed-collapsed" data-state="collapsed" mode="fixed">
+      <ui-sidebar-shell id="sidebar-fixed-collapsed" data-state="collapsed" mode="fixed">
         <div role="tree" aria-label="ナビゲーション">
           <a href="/notes" role="treeitem" tabindex="0" aria-selected="true">ノート</a>
           <a href="/music" role="treeitem" tabindex="-1" aria-selected="false">音楽</a>
         </div>
-      </ui-sidebar>
+      </ui-sidebar-shell>
       <main style="padding: 2rem; text-align: center;">
         <p>Zen Mode — メインコンテンツが中央へセンタリング</p>
       </main>
@@ -275,7 +275,7 @@ export const FixedCollapsedZenMode: Story = {
 export const OverlayExpanded: Story = {
   render: () => html`
     <div style="min-height: 400px; position: relative;">
-      <ui-sidebar id="sidebar-overlay-expanded" data-state="expanded" mode="overlay">
+      <ui-sidebar-shell id="sidebar-overlay-expanded" data-state="expanded" mode="overlay">
         <button
           slot="header"
           aria-haspopup="menu"
@@ -288,7 +288,7 @@ export const OverlayExpanded: Story = {
           <a href="/notes" role="treeitem" tabindex="0" aria-selected="true">ノート</a>
           <a href="/music" role="treeitem" tabindex="-1" aria-selected="false">音楽</a>
         </div>
-      </ui-sidebar>
+      </ui-sidebar-shell>
       <main style="padding: 2rem;">
         <p>Overlay モード: スクリムの背後にコンテンツ</p>
       </main>
@@ -351,11 +351,11 @@ export const OverlayExpanded: Story = {
 export const OverlayCollapsed: Story = {
   render: () => html`
     <div style="min-height: 400px; position: relative;">
-      <ui-sidebar id="sidebar-overlay-collapsed" data-state="collapsed" mode="overlay">
+      <ui-sidebar-shell id="sidebar-overlay-collapsed" data-state="collapsed" mode="overlay">
         <div role="tree" aria-label="ナビゲーション">
           <a href="/notes" role="treeitem" tabindex="0" aria-selected="true">ノート</a>
         </div>
-      </ui-sidebar>
+      </ui-sidebar-shell>
       <main style="padding: 2rem;">
         <p>Overlay Collapsed: サイドバーは画面外</p>
       </main>
@@ -415,11 +415,11 @@ export const FixedToggleStateTransition: Story = {
     <div
       style="display: grid; grid-template-columns: var(--sidebar-width, 240px) 1fr; min-height: 400px;"
     >
-      <ui-sidebar id="sidebar-fixed-toggle" data-state="expanded" mode="fixed">
+      <ui-sidebar-shell id="sidebar-fixed-toggle" data-state="expanded" mode="fixed">
         <div role="tree" aria-label="ナビゲーション">
           <a href="/notes" role="treeitem" tabindex="0" aria-selected="true">ノート</a>
         </div>
-      </ui-sidebar>
+      </ui-sidebar-shell>
       <main style="padding: 2rem;">
         <button id="toggle-trigger" type="button">サイドバー切替</button>
       </main>
@@ -501,7 +501,7 @@ export const OverlayOpenCloseFocusManagement: Story = {
     <div style="min-height: 400px; position: relative;">
       <button id="overlay-trigger" type="button">サイドバーを開く</button>
 
-      <ui-sidebar id="sidebar-overlay-focus" data-state="collapsed" mode="overlay">
+      <ui-sidebar-shell id="sidebar-overlay-focus" data-state="collapsed" mode="overlay">
         <button
           slot="header"
           id="header-button"
@@ -515,7 +515,7 @@ export const OverlayOpenCloseFocusManagement: Story = {
           <a href="/notes" role="treeitem" tabindex="0" id="first-link" aria-selected="true">ノート</a>
           <a href="/music" role="treeitem" tabindex="-1" aria-selected="false">音楽</a>
         </div>
-      </ui-sidebar>
+      </ui-sidebar-shell>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -574,11 +574,11 @@ export const OverlayScrimClickClose: Story = {
     <div style="min-height: 400px; position: relative;">
       <button id="scrim-trigger" type="button">サイドバーを開く</button>
 
-      <ui-sidebar id="sidebar-scrim-close" data-state="collapsed" mode="overlay">
+      <ui-sidebar-shell id="sidebar-scrim-close" data-state="collapsed" mode="overlay">
         <div role="tree" aria-label="ナビゲーション">
           <a href="/notes" role="treeitem" tabindex="0" aria-selected="true">ノート</a>
         </div>
-      </ui-sidebar>
+      </ui-sidebar-shell>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -624,17 +624,17 @@ export const OverlayEscapeKeyClose: Story = {
     <div style="min-height: 400px; position: relative;">
       <button id="esc-trigger" type="button">サイドバーを開く</button>
 
-      <ui-sidebar id="sidebar-esc-overlay" data-state="collapsed" mode="overlay">
+      <ui-sidebar-shell id="sidebar-esc-overlay" data-state="collapsed" mode="overlay">
         <div role="tree" aria-label="ナビゲーション">
           <a href="/notes" role="treeitem" tabindex="0" id="esc-first-link" aria-selected="true">ノート</a>
         </div>
-      </ui-sidebar>
+      </ui-sidebar-shell>
 
-      <ui-sidebar id="sidebar-esc-fixed" data-state="expanded" mode="fixed">
+      <ui-sidebar-shell id="sidebar-esc-fixed" data-state="expanded" mode="fixed">
         <div role="tree" aria-label="ナビゲーション">
           <a href="/notes" role="treeitem" tabindex="0" aria-selected="true">ノート</a>
         </div>
-      </ui-sidebar>
+      </ui-sidebar-shell>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -688,11 +688,11 @@ export const OverlayEscapeKeyClose: Story = {
 export const EventDetailAndNoBubbling: Story = {
   render: () => html`
     <div id="event-parent" style="min-height: 200px;">
-      <ui-sidebar id="sidebar-event" data-state="expanded" mode="fixed">
+      <ui-sidebar-shell id="sidebar-event" data-state="expanded" mode="fixed">
         <div role="tree" aria-label="ナビゲーション">
           <a href="/notes" role="treeitem" tabindex="0" aria-selected="true">ノート</a>
         </div>
-      </ui-sidebar>
+      </ui-sidebar-shell>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -739,11 +739,11 @@ export const NoFocusTrapInOverlay: Story = {
       <button id="trap-trigger" type="button">サイドバーを開く</button>
       <button id="outside-button" type="button">サイドバー外のボタン</button>
 
-      <ui-sidebar id="sidebar-no-trap" data-state="collapsed" mode="overlay">
+      <ui-sidebar-shell id="sidebar-no-trap" data-state="collapsed" mode="overlay">
         <div role="tree" aria-label="ナビゲーション">
           <a href="/notes" role="treeitem" tabindex="0" id="trap-link" aria-selected="true">ノート</a>
         </div>
-      </ui-sidebar>
+      </ui-sidebar-shell>
     </div>
   `,
   play: async ({ canvasElement }) => {

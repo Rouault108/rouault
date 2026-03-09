@@ -220,6 +220,10 @@ export class UiPopover extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this._injectDocumentStyles();
+    // 再接続時はスロット要素とリスナーを再同期する（slotchange が発火しないブラウザに対応）
+    void this.updateComplete.then(() => {
+      this._syncElementsFromSlots();
+    });
   }
 
   override disconnectedCallback(): void {
@@ -231,6 +235,20 @@ export class UiPopover extends LitElement {
     this._detachContentListeners(this._contentElement);
     this._setTriggerState(this._activeTrigger, false);
     this._setTriggerState(this._triggerElement, false);
+
+    // 参照をリセット：再接続時に _syncElementsFromSlots が「変化なし」と判断して
+    // リスナー再アタッチをスキップしないようにする
+    this._triggerElement = null;
+    this._contentElement = null;
+    this._activeTrigger = null;
+
+    // DOM から切り離されたタイミングでブラウザがポップオーバーを自動的に閉じるため
+    // 内部状態もリセットして再接続後の不整合を防ぐ
+    this._openState = false;
+    this._ignoreOpenedChange = true;
+    this.opened = false;
+    this._ignoreOpenedChange = false;
+
     super.disconnectedCallback();
   }
 
@@ -301,6 +319,9 @@ export class UiPopover extends LitElement {
       if (typeof content.showPopover === 'function') {
         try {
           content.showPopover();
+          // toggle イベントが非同期の場合に備え、同期的に状態をコミットする
+          this._startFloating();
+          this._commitOpenState(true);
           return;
         } catch {
           return;
@@ -325,6 +346,8 @@ export class UiPopover extends LitElement {
       if (typeof content.hidePopover === 'function') {
         try {
           content.hidePopover();
+          // toggle イベントが非同期の場合に備え、同期的に状態をコミットする
+          this._commitOpenState(false);
           return;
         } catch {
           // hidePopover に失敗した場合はフォールバックで状態を同期する
