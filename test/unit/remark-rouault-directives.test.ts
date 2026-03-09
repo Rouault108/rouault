@@ -75,7 +75,7 @@ describe('remarkRouaultDirectives', () => {
         {
           type: 'code',
           lang: 'ts',
-          meta: 'title="one.ts" label="正しい例"',
+          meta: 'filename="one.ts" label="正しい例"',
           value: 'const one = 1;',
         },
         {

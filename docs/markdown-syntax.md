@@ -124,7 +124,7 @@ $$
 
 ````markdown
 ::code-group{aria-label="実装比較"}
-```ts title="valid.ts" label="正しい例"
+```ts filename="valid.ts" label="正しい例"
 const value = 1;
 ```
 ```ts filename="invalid.ts" label="誤り例"
@@ -139,18 +139,12 @@ const value = "1";
 
 内包するコードブロックのメタ属性:
 
-- `title`
 - `filename`
 - `label`
-
-値の制約:
-
-- `title` は `filename` の別名として扱われる
 
 | 属性 | 役割 | 値 |
 |---|---|---|
 | `aria-label` | code group 全体の説明ラベル | 任意の文字列 |
-| `title` | コードブロック名。最終的には `filename` として扱われる | 任意の文字列 |
 | `filename` | コードブロック名やファイル名表示 | 任意の文字列 |
 | `label` | 各コード例の補助ラベル | 任意の文字列 |
 

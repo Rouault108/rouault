@@ -143,8 +143,7 @@ const moveCodeMetaToHost = (preNode: HastNode, hostProperties: Record<string, un
   }
 
   const codeProperties = codeNode.properties;
-  const filename =
-    pickOptionalString(codeProperties['filename']) ?? pickOptionalString(codeProperties['title']);
+  const filename = pickOptionalString(codeProperties['filename']);
   if (filename) {
     hostProperties['filename'] = filename;
   }
@@ -159,7 +158,6 @@ const moveCodeMetaToHost = (preNode: HastNode, hostProperties: Record<string, un
     hostProperties['intent'] = intent;
   }
 
-  delete codeProperties['title'];
   delete codeProperties['filename'];
   delete codeProperties['label'];
   delete codeProperties['intent'];

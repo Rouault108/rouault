@@ -40,7 +40,7 @@ remark 層では「著者入力の制約付けと独自構文の展開」を行�
 | 入力 | 出力 | 許可属性 / 補足 |
 |---|---|---|
 | `::callout` | `ui-callout` | `kind` / `variant` / `title` / `icon` / `heading-level` / `aria-label` |
-| `::code-group` | `ui-code-group` | `aria-label`。内包 `code` のメタは `title` / `filename` / `label` / `intent` |
+| `::code-group` | `ui-code-group` | `aria-label`。内包 `code` のメタは `filename` / `label` |
 | `::code-preview` | `ui-code-preview` | `label` / `preview-padding` / `preview-align` |
 | `::details` | `ui-details` | `aria-label` 必須。`summary` / `open` / `variant` / `region` |
 | `::info-box` | `ui-info-box` | `heading` / `icon` / `heading-level` / `landmark` / `variant` |
@@ -115,7 +115,7 @@ remark 段階では次を即時エラーにする。
 
 | 入力 HAST | 出力 | 補足 |
 |---|---|---|
-| `pre > code` | `ui-code-block` | `language-*` から `lang` を推論。`title` / `filename` / `label` / `intent` はホスト属性へ昇格 |
+| `pre > code` | `ui-code-block` | `language-*` から `lang` を推論。`filename` / `label` / `intent` はホスト属性へ昇格 |
 | `blockquote` | `ui-blockquote` | 子要素は維持 |
 | `table` | `ui-table > table` | `caption` があればホストに `aria-label` を補完 |
 | `hr` | `ui-divider > hr` | 見た目と意味論を分離 |

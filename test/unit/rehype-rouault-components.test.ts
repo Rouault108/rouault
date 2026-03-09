@@ -77,37 +77,6 @@ describe('rehypeRouaultComponents', () => {
     expect(code?.properties?.['intent']).to.equal(undefined);
   });
 
-  it('code の title は filename としてホストへ昇格すること', () => {
-    const tree: HastNode = {
-      type: 'root',
-      children: [
-        {
-          type: 'element',
-          tagName: 'pre',
-          properties: {},
-          children: [
-            {
-              type: 'element',
-              tagName: 'code',
-              properties: {
-                className: ['language-ts'],
-                title: 'by-title.ts',
-              },
-              children: [{ type: 'text', value: 'const sample = 1;' }],
-            },
-          ],
-        },
-      ],
-    };
-
-    rehypeRouaultComponents()(tree);
-
-    const block = tree.children?.[0];
-    const code = block?.children?.[0]?.children?.[0];
-    expect(block?.properties?.['filename']).to.equal('by-title.ts');
-    expect(code?.properties?.['title']).to.equal(undefined);
-  });
-
   it('table を ui-table にラップし、caption から aria-label を補完すること', () => {
     const tree: HastNode = {
       type: 'root',

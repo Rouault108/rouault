@@ -305,10 +305,10 @@ const normalizeCodeBlockMeta = (
 
   const attrs = parseCodeMeta(node.meta, node, file);
   const properties: Record<string, unknown> = {};
-  const allowedKeys = new Set(['title', 'filename', 'label']);
+  const allowedKeys = new Set(['filename', 'label']);
   assertAllowedAttributes(attrs, allowedKeys, node, file, 'code-group 内のコードメタ');
 
-  const filename = pickOptional(attrs['filename']) ?? pickOptional(attrs['title']);
+  const filename = pickOptional(attrs['filename']);
   if (filename) {
     properties['filename'] = filename;
   }
