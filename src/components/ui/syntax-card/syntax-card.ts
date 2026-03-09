@@ -22,6 +22,7 @@ export class SyntaxCard extends LitElement {
       margin-inline: var(--ui-syntax-card-breakout-margin, 0);
       margin-block: var(--space-8, 2rem);
       border: var(--border-width, 1px) solid var(--border-default, oklch(0% 0 0 / 0.12));
+      border-radius: var(--radius-sm, 0.25rem);
       background: var(--bg-default, oklch(100% 0 0));
       color: var(--fg-default, oklch(20% 0.03 250));
     }
