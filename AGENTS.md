@@ -55,6 +55,10 @@ Web標準とアクセシビリティへの準拠はゴールではなくスタ�
 - **ユニットテスト**: Web Test Runner（`pnpm test:unit`）
 - **UIテスト**: Storybook、Vitest（`pnpm test:storybook`）
 - **E2Eテスト**: Playwright (`@playwright/test`)
+- **テスト戦略**:
+  - `pnpm test:unit` は `router`、`remark/rehype`、controller などのロジック寄りテストに使用します。
+  - Lit の `@property` / `@state` / `@customElement` などのデコレータを使うコンポーネントは、現状の Web Test Runner 経路では安定して扱わない前提です。
+  - Lit コンポーネントの状態・描画・interaction・a11y の検証は `pnpm test:storybook` 側を優先してください。
 
 ## 開発ガイドライン
 

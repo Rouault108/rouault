@@ -374,7 +374,7 @@ permalinks.json をコミット（自動）
 | **ホスティング** | Cloudflare Pages |
 | **アーカイブストレージ** | Cloudflare R2 |
 | **CI/CD** | GitHub Actions |
-| **テスト** | Vitest (Unit), Playwright (E2E), Storybook |
+| **テスト** | Web Test Runner (ロジック単体), Vitest + Storybook (UI), Playwright (E2E) |
 | **リンター** | ESLint + Prettier |
 
 ---
@@ -527,8 +527,10 @@ pnpm dev
 pnpm build
 
 # テスト
-pnpm test          # ユニットテスト
-pnpm test:e2e      # E2Eテスト
+pnpm test             # test:unit + test:storybook
+pnpm test:unit        # ロジック寄りの単体テスト
+pnpm test:storybook   # Lit コンポーネント / UI テスト
+pnpm test:e2e         # E2Eテスト
 
 # Storybook
 pnpm storybook
@@ -537,6 +539,13 @@ pnpm storybook
 pnpm lint
 pnpm lint:fix
 ```
+
+### テスト戦略
+
+- `pnpm test:unit` は Web Test Runner を使い、`router`、`remark/rehype`、controller などのロジック寄りテストを担当します。
+- Lit の `@property` / `@state` / `@customElement` などのデコレータを使うコンポーネントは、現状の Web Test Runner 経路では安定して扱いません。
+- Lit コンポーネントの状態・描画・interaction・a11y は `pnpm test:storybook` 側で検証します。
+- 新しい Lit コンポーネントテストを追加する場合は、まず Storybook/Vitest 側に置くことを原則とします。
 
 ---
 
