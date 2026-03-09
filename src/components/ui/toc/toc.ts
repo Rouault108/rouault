@@ -3,6 +3,7 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { map } from 'lit/directives/map.js';
 import { styleMap } from 'lit/directives/style-map.js';
+import '../tooltip/tooltip';
 
 /**
  * 見出しデータの型定義
@@ -97,6 +98,7 @@ export class Toc extends LitElement {
 		────────────────────────────────────────────── */
 		:host {
 			display: block;
+			min-inline-size: 0;
 		}
 
 		nav {
@@ -109,13 +111,23 @@ export class Toc extends LitElement {
 			padding: 0;
 		}
 
+		.toc-tooltip {
+			display: block;
+			inline-size: 100%;
+			min-inline-size: 0;
+		}
+
 		/* ──────────────────────────────────────────────
 		   目次リンク
 		────────────────────────────────────────────── */
 		.toc-link {
+			--_toc-indicator-width: var(--border-width-thick, 2px);
+			--_toc-indicator-gap: var(--space-2, 8px);
+
 			position: relative;
 			display: flex;
 			align-items: center;
+			column-gap: var(--_toc-indicator-gap);
 			/*
 			 * 最低保証タッチターゲット 24px
 			 * モバイルでは --control-min-touch (44px) へ拡張（後述のメディアクエリ参照）
@@ -125,10 +137,13 @@ export class Toc extends LitElement {
 			/*
 			 * インデント: var(--level) はインラインスタイルで親 <li> に設定される CSS 変数。
 			 * CSS カスタムプロパティの継承により子の <a> へ伝播する。
-			 * Padding Left: calc(var(--level) * var(--space-2) + var(--space-3))
+			 * ラベル開始位置は従来どおり維持しつつ、
+			 * Safari の transform ベース中央揃え差分を避けるため
+			 * インジケーター自体は flex item として通常フローに参加させる。
 			 */
 			padding-inline-start: calc(
-				var(--level, 0) * var(--space-2, 8px) + var(--space-3, 12px)
+				var(--level, 0) * var(--space-2, 8px) + var(--space-3, 12px) -
+					var(--_toc-indicator-width) - var(--_toc-indicator-gap)
 			);
 			padding-inline-end: var(--space-2, 8px);
 			/*
@@ -139,18 +154,49 @@ export class Toc extends LitElement {
 			font-size: var(--text-sm, 13px);
 			font-weight: 400;
 			line-height: 1.5;
-			/* テキストのオーバーフロー処理 */
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-				color: var(--fg-muted, oklch(48% 0.01 250));
-				/* 例外許可: TOCは構造型リンク。現在地インジケータとフォーカスリングで非色シグナルを担保する。 */
-				text-decoration: none;
-				border-radius: var(--radius-sm, 4px);
+			color: var(--fg-muted, oklch(48% 0.01 250));
+			/* 例外許可: TOCは構造型リンク。現在地インジケータとフォーカスリングで非色シグナルを担保する。 */
+			text-decoration: none;
+			border-radius: var(--radius-sm, 4px);
 			/*
 			 * ホバー時は文字色のみ変化させる（背景色変更は視覚ノイズになるため禁止）
 			 */
 			transition: color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+		}
+
+		.toc-link-label {
+			display: block;
+			flex: 1 1 auto;
+			min-inline-size: 0;
+			overflow: hidden;
+			overflow-wrap: anywhere;
+			word-break: break-word;
+		}
+
+		.toc-link:not(.is-active)[data-heading-level='3'] .toc-link-label {
+			display: -webkit-box;
+			-webkit-box-orient: vertical;
+			-webkit-line-clamp: 2;
+			line-clamp: 2;
+		}
+
+		.toc-link:not(.is-active):is(
+				[data-heading-level='4'],
+				[data-heading-level='5'],
+				[data-heading-level='6']
+			)
+			.toc-link-label {
+			white-space: nowrap;
+			text-overflow: ellipsis;
+		}
+
+		.toc-link.is-active .toc-link-label {
+			display: block;
+			overflow: visible;
+			-webkit-line-clamp: unset;
+			line-clamp: unset;
+			white-space: normal;
+			text-overflow: clip;
 		}
 
 		/* ── ホバー: 文字色のみ変更 ── */
@@ -173,18 +219,17 @@ export class Toc extends LitElement {
 
 		/* ──────────────────────────────────────────────
 		   アクティブインジケーター (::before 疑似要素)
-		   - 左端に絶対配置 (2px幅)
+		   - flex item として通常フローに参加しつつ中央揃え
 		   - Shape: border-radius: --radius-full (単なる線ではなくオブジェクトとして扱う)
 		   - 常時表示ではなくアクティブ時のみ出現
 		────────────────────────────────────────────── */
 		.toc-link::before {
 			content: '';
-			position: absolute;
-			inset-inline-start: 0;
-			top: 50%;
-			transform: translateY(-50%);
-			width: var(--border-width-thick, 2px);
-			height: 0.75em;
+			display: block;
+			flex: 0 0 var(--_toc-indicator-width);
+			inline-size: var(--_toc-indicator-width);
+			block-size: 0.75em;
+			align-self: center;
 			border-radius: var(--radius-full, 9999px);
 			background-color: var(--primary, oklch(55% 0.2 250));
 			/* デフォルト: 非表示 */
@@ -301,6 +346,9 @@ export class Toc extends LitElement {
 	/** アクティブID更新の起源（インジケーターのトランジション戦略を決定） */
 	@state() private _activeIdSource: 'scroll' | 'click' = 'scroll';
 
+	/** 省略表示中の見出しIDセット。tooltip の有効化判定に使用する。 */
+	private _truncatedHeadingIds = new Set<string>();
+
 	/** IntersectionObserver インスタンス */
 	private _observer: IntersectionObserver | null = null;
 
@@ -313,6 +361,12 @@ export class Toc extends LitElement {
 	/** ビューポート内に存在する見出しIDのセット */
 	private _visibleIds = new Set<string>();
 
+	/** ラベル計測の同期用 ResizeObserver */
+	private _labelResizeObserver: ResizeObserver | null = null;
+
+	/** 同一フレーム内の重複計測を防ぐ */
+	private _truncationSyncFrame: number | null = null;
+
 	/**
 	 * 内部からの activeId 更新フラグ。
 	 * updated() で外部更新と内部更新を区別するために使用。
@@ -324,7 +378,21 @@ export class Toc extends LitElement {
 		this._setupObserver();
 	}
 
+	override firstUpdated() {
+		this._labelResizeObserver = new ResizeObserver(() => {
+			this._scheduleTruncationSync();
+		});
+		this._observeLabels();
+		this._scheduleTruncationSync();
+	}
+
 	override disconnectedCallback() {
+		if (this._truncationSyncFrame !== null) {
+			cancelAnimationFrame(this._truncationSyncFrame);
+			this._truncationSyncFrame = null;
+		}
+		this._labelResizeObserver?.disconnect();
+		this._labelResizeObserver = null;
 		super.disconnectedCallback();
 		this._teardownObserver();
 	}
@@ -347,6 +415,8 @@ export class Toc extends LitElement {
 
 		// 内部更新フラグをリセット
 		this._internalUpdate = false;
+		this._observeLabels();
+		this._scheduleTruncationSync();
 	}
 
 	/**
@@ -432,6 +502,71 @@ export class Toc extends LitElement {
 		this._internalUpdate = true;
 		this.activeId = id;
 		this._activeIdSource = source;
+	}
+
+	private _observeLabels(): void {
+		const observer = this._labelResizeObserver;
+		if (!observer) return;
+
+		observer.disconnect();
+		const labels = this.renderRoot.querySelectorAll<HTMLElement>('.toc-link-label');
+		for (const label of labels) {
+			observer.observe(label);
+		}
+	}
+
+	private _scheduleTruncationSync(): void {
+		if (this._truncationSyncFrame !== null) return;
+
+		// ui-tooltip 配下の初回レイアウト確定後に計測する
+		this._truncationSyncFrame = requestAnimationFrame(() => {
+			this._truncationSyncFrame = null;
+			this._syncTruncationState();
+		});
+	}
+
+	private _syncTruncationState(): void {
+		const nextTruncatedIds = new Set<string>();
+		const labels = this.renderRoot.querySelectorAll<HTMLElement>('.toc-link-label');
+
+		for (const label of labels) {
+			const headingId = label.dataset["headingId"];
+			if (!headingId || headingId === this.activeId) continue;
+
+			const isTruncated =
+				label.scrollWidth - label.clientWidth > 1 || label.scrollHeight - label.clientHeight > 1;
+
+			if (isTruncated) {
+				nextTruncatedIds.add(headingId);
+			}
+		}
+
+		if (!this._setsEqual(this._truncatedHeadingIds, nextTruncatedIds)) {
+			this._truncatedHeadingIds = nextTruncatedIds;
+		}
+
+		this._syncTooltipDisabledState();
+	}
+
+	private _setsEqual(left: ReadonlySet<string>, right: ReadonlySet<string>): boolean {
+		if (left.size !== right.size) return false;
+		for (const value of left) {
+			if (!right.has(value)) return false;
+		}
+		return true;
+	}
+
+	private _syncTooltipDisabledState(): void {
+		const tooltips = this.renderRoot.querySelectorAll<
+			HTMLElement & { disabled: boolean; dataset: DOMStringMap }
+		>('ui-tooltip.toc-tooltip');
+
+		for (const tooltip of tooltips) {
+			const headingId = tooltip.dataset["headingId"];
+			if (!headingId) continue;
+
+			tooltip.disabled = headingId === this.activeId || !this._truncatedHeadingIds.has(headingId);
+		}
 	}
 
 	/** 現在のアクティブ見出し情報を外部へ通知する */
@@ -554,17 +689,31 @@ export class Toc extends LitElement {
 
 						return html`
 							<li style="${styleMap({ '--level': String(normalizedLevel) })}">
-								<a
-									class="${classMap({
-										'toc-link': true,
-										'is-active': isActive,
-										'is-scroll': isActive && this._activeIdSource === 'scroll',
-										'is-click': isActive && this._activeIdSource === 'click',
-									})}"
-									href="#${heading.id}"
-									aria-current="${isActive ? 'location' : nothing}"
-									@click="${(e: Event) => this._handleLinkClick(e, heading.id)}"
-								>${heading.text}</a>
+								<ui-tooltip
+									class="toc-tooltip"
+									text="${heading.text}"
+									variant="subtle"
+									placement="right-start"
+									data-heading-id="${heading.id}"
+									?disabled="${isActive || !this._truncatedHeadingIds.has(heading.id)}"
+								>
+									<a
+										class="${classMap({
+											'toc-link': true,
+											'is-active': isActive,
+											'is-scroll': isActive && this._activeIdSource === 'scroll',
+											'is-click': isActive && this._activeIdSource === 'click',
+										})}"
+										href="#${heading.id}"
+										data-heading-level="${String(heading.level)}"
+										aria-current="${isActive ? 'location' : nothing}"
+										@click="${(e: Event) => this._handleLinkClick(e, heading.id)}"
+									>
+										<span class="toc-link-label" data-heading-id="${heading.id}">
+											${heading.text}
+										</span>
+									</a>
+								</ui-tooltip>
 							</li>
 						`;
 					})}

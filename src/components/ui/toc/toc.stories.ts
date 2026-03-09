@@ -751,15 +751,15 @@ export const SparseLevels: Story = {
 /**
  * ⚠️ 境界条件: 非常に長い見出しテキスト。
  *
- * `text-overflow: ellipsis` と `white-space: nowrap` により、
- * コンテナ幅を超える長いテキストが省略表示されます。
- * コンポーネントのレイアウトが崩れないことを確認します。
+ * H3 は 2 行まで、H4 以降は 1 行 ellipsis で省略表示されます。
+ * hover 時は tooltip、active 時は clamp を解除して全文表示に切り替わることを確認します。
  */
 export const LongText: Story = {
 	parameters: {
 		docs: {
 			description: {
-				story: '⚠️ **境界条件**: 長い見出しテキスト。`text-overflow: ellipsis` で省略表示されます。',
+				story:
+					'⚠️ **境界条件**: 長い見出しテキスト。`H3=2行 clamp`、`H4+=1行 ellipsis`、`hover=tooltip`、`active=expand` を検証します。',
 			},
 		},
 	},
@@ -769,22 +769,22 @@ export const LongText: Story = {
 				id="longtext-toc"
 				.headers="${[
 			{
-				id: 'long1',
-				text: 'とても長い見出しテキストがここに入ります：これはオーバーフローテストです',
+				id: 'long-h2',
+				text: '通常の長さの H2 見出し',
 				level: 2,
 			},
 			{
-				id: 'long2',
-				text: '通常の長さ',
-				level: 2,
-			},
-			{
-				id: 'long3',
-				text: 'Another extremely long heading text that should be truncated with ellipsis in the TOC sidebar',
+				id: 'long-h3',
+				text: 'これは H3 の非常に長い見出しテキストであり、200px 幅の TOC では 2 行に収めたうえで続きを省略する必要があります',
 				level: 3,
 			},
+			{
+				id: 'long-h4',
+				text: 'これは H4 の非常に長い見出しテキストであり、通常状態では 1 行 ellipsis と tooltip が必要です',
+				level: 4,
+			},
 		]}"
-				active-id="long1"
+				active-id="long-h2"
 			></ui-toc>
 		</div>
 	`,
@@ -792,6 +792,8 @@ export const LongText: Story = {
 		const toc = canvasElement.querySelector<Toc>('#longtext-toc');
 		if (!toc) throw new Error('ui-toc が見つかりません');
 		await toc.updateComplete;
+		await new Promise((resolve) => requestAnimationFrame(resolve));
+		await new Promise((resolve) => requestAnimationFrame(resolve));
 
 		// テスト: 3件のリンクが存在する
 		const links = toc.shadowRoot?.querySelectorAll('a.toc-link');
@@ -806,25 +808,79 @@ export const LongText: Story = {
 			throw new Error(`TOC の幅 (${String(Math.round(hostRect.width))}px) がコンテナを超えています`);
 		}
 
-		// テスト: long1 がアクティブ
+		// テスト: long-h2 がアクティブ
 		const activeLink = toc.shadowRoot?.querySelector('[aria-current="location"]');
 		if (!activeLink) throw new Error('アクティブリンクが見つかりません');
-		if (activeLink.getAttribute('href') !== '#long1') {
+		if (activeLink.getAttribute('href') !== '#long-h2') {
 			throw new Error(
-				`アクティブな href="#long1" を期待していましたが、実際には "${activeLink.getAttribute('href') ?? 'null'}" でした`,
+				`アクティブな href="#long-h2" を期待していましたが、実際には "${activeLink.getAttribute('href') ?? 'null'}" でした`,
 			);
 		}
 
-		// テスト: 長いテキストリンクに text-overflow スタイルが適用されている
-		const firstLink = links[0];
-		if (!firstLink) throw new Error('最初のリンクが見つかりません');
-		const computedStyle = window.getComputedStyle(firstLink);
-		if (computedStyle.overflow !== 'hidden') {
-			throw new Error(`overflow: hidden を期待していましたが、実際には "${computedStyle.overflow}" でした`);
-		}
-		if (computedStyle.textOverflow !== 'ellipsis') {
+		const h3Label = toc.shadowRoot?.querySelector<HTMLElement>('.toc-link-label[data-heading-id="long-h3"]');
+		if (!h3Label) throw new Error('H3 ラベルが見つかりません');
+		const h3Style = window.getComputedStyle(h3Label);
+		if (h3Style.getPropertyValue('-webkit-line-clamp').trim() !== '2') {
 			throw new Error(
-				`text-overflow: ellipsis を期待していましたが、実際には "${computedStyle.textOverflow}" でした`,
+				`H3 の -webkit-line-clamp=2 を期待していましたが、実際には "${h3Style.getPropertyValue('-webkit-line-clamp').trim()}" でした`,
+			);
+		}
+
+		const h4Label = toc.shadowRoot?.querySelector<HTMLElement>('.toc-link-label[data-heading-id="long-h4"]');
+		if (!h4Label) throw new Error('H4 ラベルが見つかりません');
+		const h4Style = window.getComputedStyle(h4Label);
+		if (h4Style.whiteSpace !== 'nowrap') {
+			throw new Error(
+				`H4 の white-space=nowrap を期待していましたが、実際には "${h4Style.whiteSpace}" でした`,
+			);
+		}
+		if (h4Style.textOverflow !== 'ellipsis') {
+			throw new Error(`H4 の text-overflow=ellipsis を期待していましたが、実際には "${h4Style.textOverflow}" でした`);
+		}
+
+		const h4Link = toc.shadowRoot?.querySelector<HTMLAnchorElement>('a[href="#long-h4"]');
+		if (!h4Link) throw new Error('H4 リンクが見つかりません');
+		const h4Tooltip = h4Link.closest<HTMLElement & { disabled?: boolean }>('ui-tooltip.toc-tooltip');
+		if (!h4Tooltip) throw new Error('H4 tooltip が見つかりません');
+		if (h4Tooltip.disabled === true) {
+			throw new Error('省略表示中の H4 では tooltip が有効である必要があります');
+		}
+		const h4Panel = h4Tooltip.shadowRoot?.querySelector<HTMLElement>('.tooltip');
+		if (!h4Panel) throw new Error('H4 tooltip panel が見つかりません');
+
+		h4Link.dispatchEvent(new MouseEvent('mouseenter'));
+		await new Promise((resolve) => requestAnimationFrame(resolve));
+		await new Promise((resolve) => requestAnimationFrame(resolve));
+
+		if (h4Panel.getAttribute('aria-hidden') !== 'false') {
+			throw new Error('H4 hover 時に tooltip が表示される必要があります');
+		}
+
+		h4Link.dispatchEvent(new MouseEvent('mouseleave'));
+		await new Promise((resolve) => requestAnimationFrame(resolve));
+		await new Promise((resolve) => requestAnimationFrame(resolve));
+
+		if (h4Panel.getAttribute('aria-hidden') !== 'true') {
+			throw new Error('H4 leave 後に tooltip が閉じる必要があります');
+		}
+
+		toc.activeId = 'long-h4';
+		await toc.updateComplete;
+		await new Promise((resolve) => requestAnimationFrame(resolve));
+		await new Promise((resolve) => requestAnimationFrame(resolve));
+
+		const activeH4Link = toc.shadowRoot?.querySelector<HTMLAnchorElement>('a[href="#long-h4"]');
+		if (!activeH4Link?.classList.contains('is-active')) {
+			throw new Error('active 切り替え後の H4 に is-active クラスが必要です');
+		}
+		if (h4Tooltip.disabled !== true) {
+			throw new Error('active 状態の H4 では tooltip が無効化される必要があります');
+		}
+
+		const activeH4Style = window.getComputedStyle(h4Label);
+		if (activeH4Style.whiteSpace !== 'normal') {
+			throw new Error(
+				`active H4 の white-space=normal を期待していましたが、実際には "${activeH4Style.whiteSpace}" でした`,
 			);
 		}
 	},
@@ -1102,8 +1158,23 @@ export const AccessibilityStructure: Story = {
 		// 構造型リンク契約: デフォルトは下線なし
 		const firstLink = allLinks[0];
 		if (!firstLink) throw new Error('最初の toc-link が見つかりません');
-		if (getComputedStyle(firstLink).textDecorationLine !== 'none') {
+		const firstLinkStyle = getComputedStyle(firstLink);
+		if (firstLinkStyle.textDecorationLine !== 'none') {
 			throw new Error('toc-link は構造型リンクとしてデフォルト下線なしである必要があります');
+		}
+		if (firstLinkStyle.display !== 'flex') {
+			throw new Error(`toc-link は flex レイアウトである必要がありますが、実際には "${firstLinkStyle.display}" でした`);
+		}
+		if (firstLinkStyle.alignItems !== 'center') {
+			throw new Error(
+				`toc-link は Safari ずれ対策として align-items:center が必要ですが、実際には "${firstLinkStyle.alignItems}" でした`,
+			);
+		}
+		const indicatorStyle = getComputedStyle(firstLink, '::before');
+		if (indicatorStyle.position !== 'static') {
+			throw new Error(
+				`toc-link の現在地インジケータは通常フロー配置である必要がありますが、実際には position="${indicatorStyle.position}" でした`,
+			);
 		}
 
 		// 構造型リンク契約: 現在地はインジケータ定義と active class の組み合わせで識別できる
