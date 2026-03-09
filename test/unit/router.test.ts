@@ -2,13 +2,26 @@
 
 /**
  * Router クラスの包括的な単体テスト
- *
  * View Transitions API を使用したSPAルーターのテスト
- * TDD方式で段階的に機能を実装していく
  */
 
 import { expect, fixture, html, waitUntil } from '@open-wc/testing';
 import { Router } from '../../src/lib/router.js';
+
+/**
+ * Chromium/Webkit では link.click() が isTrusted=true なクリックを生成し、
+ * ドキュメントレベルのバブリングハンドラで e.preventDefault() を呼んでも
+ * 実際のページナビゲーションを防げない場合がある。
+ * dispatchEvent を使うと isTrusted=false になり、ブラウザは実際のナビゲーションを行わない。
+ */
+function simulateClick(element: HTMLElement, options: MouseEventInit = {}) {
+	element.dispatchEvent(new MouseEvent('click', {
+		bubbles: true,
+		cancelable: true,
+		button: 0,
+		...options,
+	}));
+}
 
 describe('Router', () => {
 	let outlet: HTMLElement;
@@ -162,7 +175,7 @@ describe('Router', () => {
 			};
 			document.addEventListener('click', handler);
 
-			link.click();
+			simulateClick(link);
 
 			document.removeEventListener('click', handler);
 
@@ -195,7 +208,7 @@ describe('Router', () => {
 			};
 			document.addEventListener('click', handler);
 
-			link.click();
+			simulateClick(link);
 
 			document.removeEventListener('click', handler);
 
@@ -215,7 +228,7 @@ describe('Router', () => {
 			};
 			document.addEventListener('click', handler);
 
-			link.click();
+			simulateClick(link);
 
 			document.removeEventListener('click', handler);
 
@@ -235,7 +248,7 @@ describe('Router', () => {
 			};
 			document.addEventListener('click', handler);
 
-			link.click();
+			simulateClick(link);
 
 			document.removeEventListener('click', handler);
 
@@ -253,7 +266,7 @@ describe('Router', () => {
 			};
 			document.addEventListener('click', handler);
 
-			link.click();
+			simulateClick(link);
 
 			document.removeEventListener('click', handler);
 
@@ -273,7 +286,7 @@ describe('Router', () => {
 			};
 			document.addEventListener('click', handler);
 
-			link.click();
+			simulateClick(link);
 
 			document.removeEventListener('click', handler);
 
@@ -293,7 +306,7 @@ describe('Router', () => {
 			};
 			document.addEventListener('click', handler);
 
-			link.click();
+			simulateClick(link);
 
 			document.removeEventListener('click', handler);
 
@@ -313,7 +326,7 @@ describe('Router', () => {
 			};
 			document.addEventListener('click', handler);
 
-			link.click();
+			simulateClick(link);
 
 			document.removeEventListener('click', handler);
 
@@ -429,7 +442,7 @@ describe('Router', () => {
 			};
 			document.addEventListener('click', handler);
 
-			link.click();
+			simulateClick(link);
 
 			document.removeEventListener('click', handler);
 
@@ -449,7 +462,7 @@ describe('Router', () => {
 			};
 			document.addEventListener('click', handler);
 
-			link.click();
+			simulateClick(link);
 
 			document.removeEventListener('click', handler);
 
@@ -482,7 +495,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/test-page">Navigate</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => outlet.innerHTML.includes('Test Content'), 'コンテンツが更新されること');
 
@@ -532,7 +545,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/new-page">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => pushedPath === '/new-page', 'pushStateが呼ばれること');
 
@@ -583,7 +596,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/test">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => outlet.innerHTML.includes('Article Content'), 'main要素が抽出');
 
@@ -608,7 +621,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/test">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => document.title === 'Updated Title', 'タイトルが更新');
 
@@ -637,7 +650,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/test">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(
 				() => document.querySelector('meta[name="description"]')?.getAttribute('content') === 'Updated Description',
@@ -656,7 +669,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/empty">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(
 				// ルーターは「404 - ページが見つかりません」を表示するため'404'でも確認
@@ -685,7 +698,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/no-main">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(
 				// ルーターは「404 - ページが見つかりません」を表示するため'404'でも確認
@@ -719,7 +732,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/meta-clear">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(
 				() => document.querySelector('meta[name="description"]') === null,
@@ -756,7 +769,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/test">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => transitionCalled, 'startViewTransitionが呼ばれる');
 
@@ -777,7 +790,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/fallback">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => outlet.innerHTML.includes('Fallback Content'), 'フォールバック動作');
 
@@ -805,7 +818,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/test">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => outlet.innerHTML.includes('Content Despite Error'), 'コンテンツ更新');
 
@@ -828,7 +841,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/404">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => outlet.textContent.includes('404'), '404エラー表示');
 
@@ -846,7 +859,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/500">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => outlet.textContent.includes('500') || outlet.textContent.includes('エラー'), '500エラー表示');
 
@@ -863,7 +876,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/network-error">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(
 				() => outlet.textContent.includes('ネットワーク') || outlet.textContent.includes('エラー'),
@@ -886,7 +899,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/401">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => outlet.textContent.includes('401') || outlet.textContent.includes('認証'), '401エラー表示');
 
@@ -906,7 +919,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/403">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => outlet.textContent.includes('403') || outlet.textContent.includes('権限'), '403エラー表示');
 
@@ -926,7 +939,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/503">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => outlet.textContent.includes('503') || outlet.textContent.includes('利用'), '503エラー表示');
 
@@ -957,7 +970,7 @@ describe('Router', () => {
 			router.setTimeout(100);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/timeout">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(
 				() => outlet.textContent.includes('タイムアウト') || outlet.textContent.includes('Timeout'),
@@ -978,7 +991,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/cors">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(
 				() => outlet.textContent.includes('CORS') || outlet.textContent.includes('エラー'),
@@ -1011,7 +1024,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/test">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			// ナビゲーション中
 			expect(router.isNavigating()).to.be.true;
@@ -1075,7 +1088,7 @@ describe('Router', () => {
 			});
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/test">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => loadingEnded, 'ローディング完了イベント');
 
@@ -1107,7 +1120,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/test">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => highlightAllCalled, 'Prism.highlightAll呼び出し');
 
@@ -1128,7 +1141,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/test">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => window.scrollY === 0, 'スクロールリセット');
 
@@ -1156,7 +1169,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/search">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => pagefindInitialized, 'PagefindUI初期化');
 
@@ -1185,7 +1198,7 @@ describe('Router', () => {
 			});
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/test">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => customHookCalled, 'カスタムフック実行');
 
@@ -1215,7 +1228,7 @@ describe('Router', () => {
 			});
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/test">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => beforeNavigateCalled, 'beforeNavigate実行');
 
@@ -1267,7 +1280,7 @@ describe('Router', () => {
 			});
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/test">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => afterNavigateCalled, 'afterNavigate実行');
 
@@ -1290,7 +1303,7 @@ describe('Router', () => {
 			});
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/error">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => errorCaught, 'errorフック実行');
 
@@ -1314,7 +1327,7 @@ describe('Router', () => {
 			});
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/test">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => contentLoadCalled, 'contentLoadフック実行');
 
@@ -1542,7 +1555,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/test">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => {
 				const h1 = outlet.querySelector('h1');
@@ -1563,7 +1576,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/test">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => {
 				const liveRegion = document.querySelector('[aria-live]');
@@ -1585,7 +1598,7 @@ describe('Router', () => {
 			router = new Router(outlet);
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/test">Link</a> `);
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => document.title === 'Accessible Page Title', 'タイトル更新');
 
@@ -1608,7 +1621,7 @@ describe('Router', () => {
 			link.dispatchEvent(event);
 
 			// リンクのクリックハンドラをトリガー
-			link.click();
+			simulateClick(link);
 
 			await waitUntil(() => outlet.innerHTML.includes('Content'), 'キーボードナビゲーション');
 
