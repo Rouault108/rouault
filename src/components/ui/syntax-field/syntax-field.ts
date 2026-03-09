@@ -10,7 +10,7 @@ ui-syntax-field {
 
 ui-syntax-field .field-wrapper {
   display: block;
-  margin: 0;
+  margin: 2px;
   padding: var(--space-2, 0.5rem) 0;
   border: none;
 }
