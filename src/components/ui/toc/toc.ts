@@ -76,7 +76,6 @@ export interface UiTocActiveChangeDetail {
  * @cssprop --focus-ring-radius   - フォーカスリング角丸
  * @cssprop --animation-focus     - Adaptive Focusアニメーション
  * @cssprop --header-height       - ヘッダー高さ（スクロールオフセット補正に使用）
- * @cssprop --control-min-touch   - 最小タッチターゲットサイズ (44px)
  *
  * @example
  * ```html

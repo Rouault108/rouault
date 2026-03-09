@@ -61,7 +61,7 @@ let _uidCounter = 0;
  * @cssprop --space-1 - スペーシング（4px）
  * @cssprop --space-3 - スペーシング（12px）
  * @cssprop --space-4 - スペーシング（16px）
- * @cssprop --control-min-touch - 最小タッチターゲット（44px）
+ * @cssprop --control-min-touch - 最小タッチターゲット（24px）
  * @cssprop --duration-fast - タブカラートランジション（70ms）
  * @cssprop --duration-normal - パネルフェードトランジション（150ms）
  * @cssprop --duration-slow - インジケータートランジション（200ms）
@@ -151,7 +151,7 @@ export class Tabs extends LitElement {
       box-sizing: content-box;
       padding-block: max(
         0px,
-        calc((var(--control-min-touch, 44px) - var(--control-height-md, 32px)) / 2)
+        calc((var(--control-min-touch, 24px) - var(--control-height-md, 32px)) / 2)
       );
       padding-inline: var(--space-3, 12px);
       flex-shrink: 0;
@@ -650,7 +650,7 @@ export class Tabs extends LitElement {
       if (!panel.getAttribute('id')) {
         panel.setAttribute('id', `ui-tabs-${String(_uid)}-panel-${String(i)}`);
       }
-      return panel.getAttribute('id')!;
+      return panel.getAttribute('id');
     });
 
     _tabEls.forEach((tab, i) => {

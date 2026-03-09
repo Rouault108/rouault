@@ -126,7 +126,7 @@ export function computeCompactRange(current: number, total: number): RangeItem[]
  * @cssprop --border-width-thick  - アクティブインジケーターの幅
  * @cssprop --opacity-disabled    - 無効状態の不透明度
  * @cssprop --control-height-md   - アイテムの高さ (32px)
- * @cssprop --control-min-touch   - タッチターゲットの最小サイズ (44px)
+ * @cssprop --control-min-touch   - タッチターゲットの最小サイズ (24px)
  * @cssprop --font-sans           - フォントファミリー
  * @cssprop --text-base           - フォントサイズ (14px)
  * @cssprop --space-1             - デスクトップ時のギャップ (4px)
@@ -320,8 +320,8 @@ export class Pagination extends LitElement {
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        min-width: var(--control-min-touch, 44px);
-        min-height: var(--control-min-touch, 44px);
+        min-width: var(--control-min-touch, 24px);
+        min-height: var(--control-min-touch, 24px);
         pointer-events: none;
       }
     }

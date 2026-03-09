@@ -629,8 +629,8 @@ export const ToolbarTargetSizeContract: Story = {
       'min-inline-size: 24px',
       'min-block-size: 24px',
       '@media (pointer: coarse)',
-      'min-inline-size: var(--control-min-touch, 44px)',
-      'min-block-size: var(--control-min-touch, 44px)',
+      'min-inline-size: var(--control-min-touch, 24px)',
+      'min-block-size: var(--control-min-touch, 24px)',
     ];
 
     for (const token of requiredTokens) {

@@ -42,7 +42,7 @@ import { customElement, property } from 'lit/decorators.js';
  * @cssprop --focus-ring-color  - フォーカスリング色
  * @cssprop --focus-ring-offset - フォーカスリングオフセット
  * @cssprop --animation-focus   - Adaptive Focus アニメーション
- * @cssprop --control-min-touch - 最低タッチターゲットサイズ (44px)
+ * @cssprop --control-min-touch - 最低タッチターゲットサイズ (24px)
  * @cssprop --text-base         - 標準フォントサイズ (14px)
  * @cssprop --text-sm           - 小フォントサイズ (13px)
  * @cssprop --space-2           - スペーシング (8px)
@@ -122,8 +122,8 @@ export class Radio extends LitElement {
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      min-width: var(--control-min-touch, 44px);
-      min-height: var(--control-min-touch, 44px);
+      min-width: var(--control-min-touch, 24px);
+      min-height: var(--control-min-touch, 24px);
       pointer-events: none;
     }
 

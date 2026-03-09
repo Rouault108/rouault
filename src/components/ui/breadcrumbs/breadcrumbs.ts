@@ -73,8 +73,8 @@ export class Breadcrumbs extends LitElement {
 			top: 50%;
 			left: 50%;
 			transform: translate(-50%, -50%);
-			inline-size: max(100%, var(--control-min-touch, 44px));
-			block-size: max(100%, var(--control-min-touch, 44px));
+			inline-size: max(100%, var(--control-min-touch, 24px));
+			block-size: max(100%, var(--control-min-touch, 24px));
 			border-radius: inherit;
 			pointer-events: auto;
 			background: transparent;

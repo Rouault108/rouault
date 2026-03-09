@@ -54,7 +54,7 @@ import '../kbd/kbd';
  * @cssprop --focus-ring-offset    - フォーカスリングオフセット
  * @cssprop --animation-focus      - Adaptive Focus アニメーション
  * @cssprop --opacity-disabled     - 無効時の不透明度 (0.5)
- * @cssprop --control-min-touch    - 最低タッチターゲットサイズ (44px)
+ * @cssprop --control-min-touch    - 最低タッチターゲットサイズ (24px)
  *
  * @csspart button      - 内部の button 要素
  * @csspart icon        - 検索アイコンのラッパー
@@ -211,7 +211,7 @@ export class SearchTrigger extends LitElement {
 
       /*
        * タッチターゲット: 視覚的サイズは 32px だが、
-       * ::after 擬似要素で --control-min-touch (44px) のヒットエリアを確保
+       * ::after 擬似要素で --control-min-touch (24px) のヒットエリアを確保
        */
       button::after {
         content: '';
@@ -219,8 +219,8 @@ export class SearchTrigger extends LitElement {
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        min-width: var(--control-min-touch, 44px);
-        min-height: var(--control-min-touch, 44px);
+        min-width: var(--control-min-touch, 24px);
+        min-height: var(--control-min-touch, 24px);
         pointer-events: none;
       }
     }

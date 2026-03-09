@@ -71,7 +71,7 @@ export class Details extends LitElement {
       position: absolute;
       inset-inline: 0;
       top: 50%;
-      min-height: var(--control-min-touch, 44px);
+      min-height: var(--control-min-touch, 24px);
       transform: translateY(-50%);
       pointer-events: none;
     }

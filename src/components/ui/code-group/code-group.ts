@@ -219,9 +219,9 @@ export class CodeGroup extends LitElement {
             100% 0 / 12px 100% no-repeat scroll;
       }
 
-      // ::slotted([slot='tab']) {
-      //   min-height: var(--control-min-touch, 44px);
-      // }
+      ::slotted([slot='tab']) {
+        min-height: var(--control-min-touch, 24px);
+      }
 
       .header-tools ui-copy-button {
         opacity: var(--opacity-link-touch, 0.75);

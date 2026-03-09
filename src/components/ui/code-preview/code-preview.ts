@@ -117,8 +117,8 @@ export class CodePreview extends LitElement {
       ::slotted(button[slot='toolbar']),
       ::slotted(a[slot='toolbar']),
       ::slotted([role='button'][slot='toolbar']) {
-        min-inline-size: var(--control-min-touch, 44px);
-        min-block-size: var(--control-min-touch, 44px);
+        min-inline-size: var(--control-min-touch, 24px);
+        min-block-size: var(--control-min-touch, 24px);
       }
     }
 

@@ -33,7 +33,7 @@ type LiveRegionMode = 'idle' | 'success' | 'error';
  * @cssprop --duration-fast - アニメーション速度
  * @cssprop --ease-out - イージング関数
  * @cssprop --timeout-async-threshold - 遅延時にローディング表示へ切り替える閾値（500ms）
- * @cssprop --control-min-touch - 最小タッチターゲットサイズ (44px)
+ * @cssprop --control-min-touch - 最小タッチターゲットサイズ (24px)
  *
  * @example
  * ```html
@@ -74,8 +74,8 @@ export class CopyButton extends LitElement {
 
     ui-button {
       position: relative;
-      /* ui-button 側の 44px ヒットエリア実装へトークンを受け渡す */
-      --control-min-touch: var(--control-min-touch, 44px);
+      /* ui-button 側の 24px ヒットエリア実装へトークンを受け渡す */
+      --control-min-touch: var(--control-min-touch, 24px);
     }
 
     /* Layout Stability: アイコン切り替え時のガタつき防止 */

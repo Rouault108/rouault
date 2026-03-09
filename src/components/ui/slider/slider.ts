@@ -39,7 +39,7 @@ import { customElement, property, state } from 'lit/decorators.js';
  * @cssprop --elevation-md         - Thumb のシャドウ
  * @cssprop --icon-base            - Thumb のサイズ (16px)
  * @cssprop --radius-full          - 完全な角丸 (9999px)
- * @cssprop --control-min-touch    - 最低タッチターゲットサイズ (44px)
+ * @cssprop --control-min-touch    - 最低タッチターゲットサイズ (24px)
  * @cssprop --focus-ring-width     - フォーカスリング幅
  * @cssprop --focus-ring-color     - フォーカスリング色
  * @cssprop --focus-ring-offset    - フォーカスリングオフセット
@@ -100,7 +100,7 @@ export class Slider extends LitElement {
       position: relative;
       flex: 1;
       /* タッチターゲット確保のため最低高さを設定 */
-      height: var(--control-min-touch, 44px);
+      height: var(--control-min-touch, 24px);
       display: flex;
       align-items: center;
     }
@@ -197,13 +197,13 @@ export class Slider extends LitElement {
     /* タッチターゲット: input 自体で 44px × 44px を確保 */
     input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: var(--control-min-touch, 44px);
-      height: var(--control-min-touch, 44px);
+      width: var(--control-min-touch, 24px);
+      height: var(--control-min-touch, 24px);
     }
 
     input[type="range"]::-moz-range-thumb {
-      width: var(--control-min-touch, 44px);
-      height: var(--control-min-touch, 44px);
+      width: var(--control-min-touch, 24px);
+      height: var(--control-min-touch, 24px);
       border: none;
       background: transparent;
     }

@@ -211,8 +211,7 @@ export const VariantStateMatrix: Story = {
         gap: 1rem;
         --fg-muted: rgb(111, 111, 124);
         --primary: rgb(24, 118, 242);
-        --control-min-touch: 44px;
-        --control-height-sm: 24px;
+        --control-min-touch: 24px;
       }
       .cell {
         padding: 0.75rem;

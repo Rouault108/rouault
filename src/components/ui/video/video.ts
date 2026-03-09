@@ -114,8 +114,8 @@ export class UiVideo extends LitElement {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: calc(var(--control-min-touch, 44px) + var(--space-1, 4px));
-      height: calc(var(--control-min-touch, 44px) + var(--space-1, 4px));
+      width: calc(var(--control-min-touch, 24px) + var(--space-1, 4px));
+      height: calc(var(--control-min-touch, 24px) + var(--space-1, 4px));
       padding: 0;
       border: var(--border-width, 1px) solid var(--video-overlay-border, var(--border-default, oklch(86% 0.01 250)));
       border-radius: var(--radius-full, 999px);
@@ -164,8 +164,8 @@ export class UiVideo extends LitElement {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: var(--control-min-touch, 44px);
-      height: var(--control-min-touch, 44px);
+      width: var(--control-min-touch, 24px);
+      height: var(--control-min-touch, 24px);
       padding: 0;
       border: var(--border-width, 1px) solid var(--video-overlay-border, var(--border-default, oklch(86% 0.01 250)));
       border-radius: var(--radius-full, 999px);
@@ -301,7 +301,7 @@ export class UiVideo extends LitElement {
     }
 
     .retry-button {
-      min-height: var(--control-min-touch, 44px);
+      min-height: var(--control-min-touch, 24px);
       padding: 0 var(--space-4, 16px);
       border: var(--border-width, 1px) solid var(--border-default, oklch(86% 0.01 250));
       border-radius: var(--radius-full, 999px);

@@ -74,7 +74,7 @@ export class ListItem extends LitElement {
       left: 0;
       right: 0;
       transform: translateY(-50%);
-      min-height: var(--control-min-touch, 44px);
+      min-height: var(--control-min-touch, 24px);
       pointer-events: auto;
       z-index: 0;
     }

@@ -60,8 +60,8 @@ const DOCUMENT_CSS = `
   position: absolute;
   top: 50%;
   left: 50%;
-  width: var(--control-min-touch, 44px);
-  height: var(--control-min-touch, 44px);
+  width: var(--control-min-touch, 24px);
+  height: var(--control-min-touch, 24px);
   transform: translate(-50%, -50%);
   pointer-events: none;
 }

@@ -185,8 +185,8 @@ ui-translation [data-part='content'][hidden] {
 
 @media (max-width: 1279px) {
   ui-translation [data-part='trigger']::after {
-    inline-size: max(100%, var(--control-min-touch, 44px));
-    block-size: max(100%, var(--control-min-touch, 44px));
+    inline-size: max(100%, var(--control-min-touch, 24px));
+    block-size: max(100%, var(--control-min-touch, 24px));
   }
 
   ui-translation [data-part='content'][data-render-mode='popover'] {

@@ -32,7 +32,7 @@ export class SyntaxCard extends LitElement {
       gap: var(--space-3, 0.75rem);
       padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
       border-bottom: var(--border-width, 1px) solid var(--border-default, oklch(0% 0 0 / 0.12));
-      min-height: var(--control-min-touch, 44px);
+      min-height: var(--control-min-touch, 24px);
     }
 
     .kind-tag {

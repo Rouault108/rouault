@@ -26,7 +26,7 @@ type TreeItemDensity = 'normal' | 'compact';
  *
  * @cssprop --control-height-md - Normal密度の高さ (32px)
  * @cssprop --control-height-sm - Compact密度の高さ (24px)
- * @cssprop --control-min-touch - 最低タッチターゲットサイズ (44px)
+ * @cssprop --control-min-touch - 最低タッチターゲットサイズ (24px)
  * @cssprop --space-4 - パディング (16px)
  * @cssprop --space-2 - 内部スペーシング (8px)
  * @cssprop --bg-hover - ホバー時の背景色
@@ -251,7 +251,7 @@ export class TreeItem extends LitElement {
       left: 0;
       right: 0;
       transform: translateY(-50%);
-      min-height: var(--control-min-touch, 44px);
+      min-height: var(--control-min-touch, 24px);
       pointer-events: auto;
     }
 

@@ -193,7 +193,7 @@ export const VariantStateMatrix: Story = {
         <div class="label">Interactive × Touch Target</div>
         <ui-ul
           id="matrix-interactive"
-          style="--control-min-touch: 44px; --control-height-sm: 24px;"
+          style="--control-min-touch: 24px; --control-height-sm: 24px;"
         >
           <ul>
             <li>

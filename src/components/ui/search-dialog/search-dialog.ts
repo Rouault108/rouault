@@ -133,7 +133,7 @@ export class UiSearchDialog extends LitElement {
       inset: 50% auto auto 50%;
       transform: translate(-50%, -50%);
       inline-size: 100%;
-      block-size: var(--control-min-touch, 44px);
+      block-size: var(--control-min-touch, 24px);
       pointer-events: none;
     }
 
@@ -184,8 +184,8 @@ export class UiSearchDialog extends LitElement {
       position: absolute;
       inset: 50% auto auto 50%;
       transform: translate(-50%, -50%);
-      inline-size: var(--control-min-touch, 44px);
-      block-size: var(--control-min-touch, 44px);
+      inline-size: var(--control-min-touch, 24px);
+      block-size: var(--control-min-touch, 24px);
       pointer-events: none;
     }
 

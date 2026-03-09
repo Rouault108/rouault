@@ -45,7 +45,7 @@ import { customElement, property } from 'lit/decorators.js';
  * @cssprop --focus-ring-width      - フォーカスリング幅
  * @cssprop --focus-ring-color      - フォーカスリング色
  * @cssprop --focus-ring-offset     - フォーカスリングオフセット
- * @cssprop --control-min-touch     - 最低タッチターゲットサイズ (44px)
+ * @cssprop --control-min-touch     - 最低タッチターゲットサイズ (24px)
  * @cssprop --control-height-sm     - バウンディングボックス高さ (24px)
  * @cssprop --radius-full           - 完全な角丸 (9999px)
  * @cssprop --border-width-thick    - 太いボーダー幅 (2px)
@@ -140,8 +140,8 @@ export class Switch extends LitElement {
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      min-width: var(--control-min-touch, 44px);
-      min-height: var(--control-min-touch, 44px);
+      min-width: var(--control-min-touch, 24px);
+      min-height: var(--control-min-touch, 24px);
       pointer-events: auto;
     }
 

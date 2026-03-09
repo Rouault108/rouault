@@ -62,7 +62,7 @@ export type MenuItemVariant = 'default' | 'danger';
  * @cssprop --focus-ring-color - フォーカスリング色
  * @cssprop --focus-ring-offset - フォーカスリングオフセット
  * @cssprop --animation-focus - Adaptive Focusアニメーション
- * @cssprop --control-min-touch - タッチターゲット最小サイズ (44px)
+ * @cssprop --control-min-touch - タッチターゲット最小サイズ (24px)
  * @cssprop --border-muted - セパレータ色
  * @cssprop --icon-base - アイコンサイズ (16px)
  *
@@ -762,7 +762,7 @@ export class MenuItem extends LitElement {
       left: 0;
       right: 0;
       transform: translateY(-50%);
-      min-height: var(--control-min-touch, 44px);
+      min-height: var(--control-min-touch, 24px);
       z-index: 0;
     }
 
