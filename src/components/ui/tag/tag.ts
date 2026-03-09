@@ -169,23 +169,33 @@ export class Tag extends LitElement {
 
     :host([color='primary']) {
       --tag-hue: var(--hue-base, 0);
+      --chroma-bg: var(--chroma-subtle, 0.02);
+      --chroma-fg: var(--chroma-ui, 0.05);
     }
 
     :host([color='blue']) {
       --tag-hue: var(--ui-tag-hue-blue);
+      --chroma-bg: var(--chroma-subtle, 0.02);
+      --chroma-fg: var(--chroma-ui, 0.05);
     }
 
     :host([color='violet']) {
       --tag-hue: var(--ui-tag-hue-violet);
+      --chroma-bg: var(--chroma-subtle, 0.02);
+      --chroma-fg: var(--chroma-ui, 0.05);
     }
 
     :host([color='pink']) {
       --tag-hue: var(--ui-tag-hue-pink);
+      --chroma-bg: var(--chroma-subtle, 0.02);
+      --chroma-fg: var(--chroma-ui, 0.05);
     }
 
     /* Gold (Literature): 高明度背景での白飛び防止 */
     :host([color='gold']) {
       --tag-hue: var(--ui-tag-hue-gold);
+      --chroma-bg: var(--chroma-subtle, 0.02);
+      --chroma-fg: var(--chroma-ui, 0.05);
       /* 背景: L96 では白飛びするため、わずかに暗くして黄色味を出す (-3%) */
       --delta-l-bg: -3%;
       /* 文字: 背景とのコントラストを稼ぐため、茶色方向へ大きく暗くする (-15%) */
@@ -228,9 +238,18 @@ export class Tag extends LitElement {
       color: var(--white, oklch(100% 0 0));
     }
 
+    /* Solid + Neutral: 濃いグレー背景 + 白文字で他の solid カラーと一貫性を保つ */
+    :host([variant='solid'][color='neutral']) {
+      --chroma-bg: 0;
+    }
+
     @media (prefers-color-scheme: dark) {
       :host([variant='solid']) {
         --bg-l: 65%;
+      }
+
+      :host([variant='solid'][color='neutral']) {
+        --bg-l: 45%;
       }
     }
 
