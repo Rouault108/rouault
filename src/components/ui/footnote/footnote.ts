@@ -70,13 +70,13 @@ ui-footnote .footnote-body > :last-child {
 
 ui-footnote .footnote-popover-footer {
   margin-block-start: var(--space-3, 12px);
-  padding-block-start: var(--space-2, 8px);
+  padding-block-start: var(--space-1, 4px);
   border-top: 1px solid var(--border-ghost, oklch(88% 0.01 250 / 0.5));
 }
 
 ui-footnote .footnote-list-link {
   color: var(--fg-muted, oklch(48% 0.01 250));
-  font-size: var(--text-xs, 12px);
+  font-size: 10px;
   font-weight: var(--font-medium, 500);
   letter-spacing: var(--tracking-wide, 0.02em);
   text-decoration: none;

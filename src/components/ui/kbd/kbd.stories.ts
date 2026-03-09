@@ -281,8 +281,11 @@ export const ShortcutContractAlignment: Story = {
     if (normalizeText(winCombo.textContent) !== 'Ctrl + K') {
       throw new Error(`視覚的なショートカット "Ctrl + K" を期待していましたが、実際には "${normalizeText(winCombo.textContent)}" でした`);
     }
-    if (normalizeText(macCombo.textContent) !== '⌘ + K') {
-      throw new Error(`視覚的なショートカット "⌘ + K" を期待していましたが、実際には "${normalizeText(macCombo.textContent)}" でした`);
+    // sr-only 要素（スクリーンリーダー専用テキスト）を除いた視覚テキストで比較する
+    const macComboClone = macCombo.cloneNode(true) as HTMLElement;
+    macComboClone.querySelectorAll('.sr-only').forEach((el) => { el.remove() });
+    if (normalizeText(macComboClone.textContent) !== '⌘ + K') {
+      throw new Error(`視覚的なショートカット "⌘ + K" を期待していましたが、実際には "${normalizeText(macComboClone.textContent)}" でした`);
     }
   },
 };

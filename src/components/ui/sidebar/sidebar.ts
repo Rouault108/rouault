@@ -130,13 +130,33 @@ export class UiSidebar extends LitElement {
 
   private _shellObserver: MutationObserver | null = null;
 
+  /**
+   * HTML パース時に mode 属性が明示的に指定されたか追跡するフラグ。
+   * Lit の reflect による属性設定（接続後・非同期）と区別するため、
+   * isConnected が false の間に attributeChangedCallback が呼ばれた場合のみ true にする。
+   */
+  private _modeSetExplicitly = false;
+
+  override attributeChangedCallback(name: string, old: string | null, value: string | null): void {
+    super.attributeChangedCallback(name, old, value);
+    if (name === 'mode' && !this.isConnected) {
+      this._modeSetExplicitly = true;
+    }
+  }
+
   override disconnectedCallback(): void {
     this._detachShellObserver();
     super.disconnectedCallback();
   }
 
   protected override firstUpdated(): void {
-    this._syncStateFromShell();
+    if (this._modeSetExplicitly) {
+      /* mode が明示的に指定されている場合はシェルへ同期（メディアクエリの自動判定を上書き） */
+      this._syncStateToShell();
+    } else {
+      /* 未指定の場合はシェルの自動判定（メディアクエリ）を取得 */
+      this._syncStateFromShell();
+    }
     this._attachShellObserver();
   }
 

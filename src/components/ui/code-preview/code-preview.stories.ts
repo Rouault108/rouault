@@ -1153,12 +1153,13 @@ export const VisualHierarchyContract: Story = {
 
     const cssText = readCssText(CodePreview.styles);
 
-    // プレビュー領域が --bg-surface-2 を使用
+    // ヘッダー領域が --ui-code-preview-preview-bg / --bg-surface-2 を使用
+    // （ヘッダーが preview-bg トークンの拡張ポイントを担当）
     if (!cssText.includes('var(--ui-code-preview-preview-bg, var(--bg-surface-2')) {
-      throw new Error('preview-area が --bg-surface-2 を参照していません');
+      throw new Error('header が --bg-surface-2 を参照していません');
     }
 
-    // ルートが --bg-fill-muted を使用（コードエリアのフォールバック背景）
+    // ルートおよびプレビュー領域が --bg-fill-muted を使用
     if (!cssText.includes('var(--bg-fill-muted')) {
       throw new Error('.root が --bg-fill-muted を参照していません');
     }
@@ -1168,18 +1169,19 @@ export const VisualHierarchyContract: Story = {
       throw new Error('外枠ボーダーが --border-style-subtle を参照していません');
     }
 
-    // 実際の背景色の違いを検証（トークン未定義時のフォールバック値で比較）
-    const previewArea = getPreviewArea(preview);
+    // ヘッダー（Surface = 白）とルート（Muted = 薄グレー）の階層差を検証
+    // ヘッダーは data-show-header 時のみ表示されるため、label を持つこのストーリーで確認
+    const header = getHeader(preview);
     const root = preview.shadowRoot?.querySelector<HTMLElement>('.root');
     if (!root) throw new Error('.root が見つかりません');
 
-    const previewBg = getComputedStyle(previewArea).backgroundColor;
+    const headerBg = getComputedStyle(header).backgroundColor;
     const rootBg = getComputedStyle(root).backgroundColor;
 
-    // プレビュー背景 ≠ ルート背景（Surface vs Muted の差がある）
-    if (previewBg === rootBg) {
+    // ヘッダー背景 ≠ ルート背景（Surface vs Muted の差がある）
+    if (headerBg === rootBg) {
       throw new Error(
-        `プレビュー背景 (${previewBg}) とルート背景 (${rootBg}) が同一です（階層差が表現されていません）`,
+        `ヘッダー背景 (${headerBg}) とルート背景 (${rootBg}) が同一です（階層差が表現されていません）`,
       );
     }
   },
@@ -1187,7 +1189,8 @@ export const VisualHierarchyContract: Story = {
 
 /**
  * ダーク背景拡張ポイント。
- * `--ui-code-preview-preview-bg` で preview 背景を上書きできることを検証します。
+ * `--ui-code-preview-preview-bg` でヘッダー背景を上書きできることを検証します。
+ * このトークンは `.header` に適用されます。
  */
 export const DarkThemePreviewBackground: Story = {
   render: () => html`
@@ -1214,10 +1217,11 @@ export const DarkThemePreviewBackground: Story = {
     await preview.updateComplete;
     await waitFrame();
 
-    const previewArea = getPreviewArea(preview);
-    const previewBg = getComputedStyle(previewArea).backgroundColor;
-    if (previewBg !== 'rgb(22, 24, 28)') {
-      throw new Error(`preview 背景トークン上書きが反映されていません: "${previewBg}"`);
+    // --ui-code-preview-preview-bg はヘッダー背景に適用される
+    const header = getHeader(preview);
+    const headerBg = getComputedStyle(header).backgroundColor;
+    if (headerBg !== 'rgb(22, 24, 28)') {
+      throw new Error(`ヘッダー背景トークン上書きが反映されていません: "${headerBg}"`);
     }
   },
 };

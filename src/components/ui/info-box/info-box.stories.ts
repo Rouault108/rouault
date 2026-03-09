@@ -522,10 +522,10 @@ export const DarkModeTokenContract: Story = {
     if (styles.includes('prefers-color-scheme')) {
       throw new Error('info-box は prefers-color-scheme 分岐を持たずトークンでモード追従する必要があります');
     }
-    if (!styles.includes('var(--bg-fill-muted)')) {
+    if (!styles.includes('var(--bg-fill-muted, oklch(96% 0.01 250))')) {
       throw new Error('--bg-fill-muted の参照が不足しています');
     }
-    if (!styles.includes('var(--fg-muted)') || !styles.includes('var(--fg-default)')) {
+    if (!styles.includes('var(--fg-muted,') || !styles.includes('var(--fg-default,')) {
       throw new Error('ヘッダー配色のトークン参照が不足しています');
     }
   },

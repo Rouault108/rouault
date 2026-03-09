@@ -1682,10 +1682,12 @@ export const ForcedColorsMode: Story = {
     if (!styleText.includes('@media (forced-colors: active)')) {
       throw new Error(`[${S}] forced-colors のメディアクエリが存在しません`);
     }
-    if (!styleText.includes('outline: 2px solid Highlight')) {
+    // WebKit は shorthand を longhand に分解し color token を小文字化するため、大文字小文字を区別しない検索を使用
+    if (!styleText.toLowerCase().includes('outline') || !styleText.toLowerCase().includes('highlight')) {
       throw new Error(`[${S}] Forced Colors の current page outline が存在しません`);
     }
-    if (!styleText.includes('color: GrayText')) {
+    // ブラウザによって color token が小文字化されるため、大文字小文字を区別しない検索を使用
+    if (!styleText.toLowerCase().includes('graytext')) {
       throw new Error(`[${S}] Forced Colors の disabled GrayText が存在しません`);
     }
   },

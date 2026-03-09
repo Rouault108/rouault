@@ -294,14 +294,27 @@ export const AnchorDualAccessBoundary: Story = {
     await host.updateComplete;
     const trigger = getTrigger(host, '#anchor-trigger');
 
+    // バブルフェーズのリスナーでコンポーネント処理後の状態を記録しつつナビゲーションを防ぐ
+    // （dispatchEvent は同期的のため、コンポーネントの target フェーズ処理後に実行される）
+    const dispatchAndCapture = (event: MouseEvent): boolean => {
+      let preventedByComponent = false;
+      const guard = (e: Event): void => {
+        preventedByComponent = e.defaultPrevented;
+        e.preventDefault(); // 実際のナビゲーションを防止
+      };
+      canvasElement.addEventListener('click', guard);
+      trigger.dispatchEvent(event);
+      canvasElement.removeEventListener('click', guard);
+      return preventedByComponent;
+    };
+
     const modifiedClick = new MouseEvent('click', {
       bubbles: true,
       cancelable: true,
       button: 0,
       ctrlKey: true,
     });
-    trigger.dispatchEvent(modifiedClick);
-    if (modifiedClick.defaultPrevented) {
+    if (dispatchAndCapture(modifiedClick)) {
       throw new Error('修飾キー付きクリックは preventDefault してはいけません');
     }
 
@@ -310,8 +323,7 @@ export const AnchorDualAccessBoundary: Story = {
       cancelable: true,
       button: 1,
     });
-    trigger.dispatchEvent(middleClick);
-    if (middleClick.defaultPrevented) {
+    if (dispatchAndCapture(middleClick)) {
       throw new Error('中クリックは preventDefault してはいけません');
     }
 
@@ -560,7 +572,11 @@ export const VisualModeContracts: Story = {
     }
 
     const content = getContent(host, '#visual-content');
-    if (!content.hidden && !isPopoverOpen(content)) {
+    // Popover API 環境では hidden 属性ではなく UA スタイルで非表示になるため、
+    // popover 属性あり + :popover-open でない場合も「非表示」として扱う
+    const isHiddenByAttribute = content.hidden;
+    const isHiddenByPopoverApi = content.hasAttribute('popover') && !isPopoverOpen(content);
+    if (!isHiddenByAttribute && !isHiddenByPopoverApi) {
       throw new Error('初期状態では content は非表示である必要があります');
     }
   },

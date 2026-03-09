@@ -169,12 +169,6 @@ export const Default: Story = {
     const placeholder = trigger.shadowRoot?.querySelector('.placeholder');
     if (!placeholder) throw new Error('プレースホルダー要素が見つかりません');
 
-    // テスト: バッジが存在する
-    const badge = trigger.shadowRoot?.querySelector('.badge');
-    if (!badge) throw new Error('バッジ要素が見つかりません');
-    const kbd = badge.querySelector('ui-kbd');
-    if (!kbd) throw new Error('デフォルトのバッジは <ui-kbd> をレンダリングする必要があります');
-
     // テスト: disabled でない
     if (trigger.disabled) throw new Error('disabled が false である必要があります');
     if (button.disabled) throw new Error('ボタンが無効化されていない必要があります');
@@ -622,15 +616,6 @@ export const AriaAttributes: Story = {
       throw new Error(`aria-keyshortcuts に "Meta+K" が含まれることを期待していましたが、実際には "${ariaKeyshortcuts}" でした`);
     }
 
-    // テスト: バッジが aria-hidden="true"
-    const badge = trigger.shadowRoot?.querySelector('.badge');
-    if (!badge) throw new Error('バッジ要素が見つかりません');
-    if (badge.getAttribute('aria-hidden') !== 'true') {
-      throw new Error(
-        `バッジの aria-hidden="true" を期待していましたが、実際には "${badge.getAttribute('aria-hidden') ?? 'null'}" でした`,
-      );
-    }
-
     // テスト: アイコンが aria-hidden="true"
     const icon = trigger.shadowRoot?.querySelector('.icon');
     if (!icon) throw new Error('アイコン要素が見つかりません');
@@ -727,65 +712,6 @@ export const FocusOnlyNoEvent: Story = {
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (eventFired) throw new Error('フォーカスのみで open-search-dialog イベントが発火してはいけません');
-  },
-};
-
-/**
- * ⚠️ 境界条件: カスタムバッジスロット。
- *
- * `badge` スロットにカスタムコンテンツを提供することで、
- * デフォルトのショートカットバッジを置き換えられます。
- * プラットフォームに応じた表示（Ctrl K / Cmd K）に対応できます。
- */
-export const CustomBadgeSlot: Story = {
-  parameters: {
-    docs: {
-      description: {
-        story: '⚠️ **境界条件**: `badge` スロットにカスタムコンテンツを提供することで、デフォルトのバッジを置き換えられます。',
-      },
-    },
-  },
-  render: () => html`
-    <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="
-        padding: 0.75rem 1rem;
-        background: oklch(97% 0.01 80 / 0.3);
-        border: 1px solid oklch(80% 0.05 80 / 0.4);
-        border-radius: 6px;
-        font-size: 13px;
-      ">
-        <strong>⚠️ 境界条件</strong>: <code>badge</code> スロットでデフォルトバッジを置き換えます。
-      </div>
-      <ui-search-trigger id="custom-badge-trigger">
-        <span
-          slot="badge"
-          style="
-            display: inline-flex;
-            align-items: center;
-            gap: 2px;
-            padding: 2px 5px;
-            font-size: 11px;
-            color: oklch(65% 0.01 250);
-            background: oklch(95% 0 0);
-            border: 1px solid oklch(85% 0.01 250);
-            border-radius: 4px;
-          "
-        >Ctrl K</span>
-      </ui-search-trigger>
-    </div>
-  `,
-  play: async ({ canvasElement }) => {
-    const trigger = canvasElement.querySelector<SearchTrigger>('#custom-badge-trigger');
-    if (!trigger) throw new Error('ui-search-trigger が見つかりません');
-    await trigger.updateComplete;
-
-    // テスト: カスタムバッジスロットが存在する
-    const slottedBadge = canvasElement.querySelector('[slot="badge"]');
-    if (!slottedBadge) throw new Error('カスタムバッジスロット要素が見つかりません');
-
-    if (!slottedBadge.textContent.includes('Ctrl K')) {
-      throw new Error(`カスタムバッジのテキストに "Ctrl K" が含まれることを期待していましたが、実際には "${slottedBadge.textContent}" でした`);
-    }
   },
 };
 
@@ -1173,14 +1099,10 @@ export const MobileIconOnly: Story = {
 
     const button = trigger.shadowRoot?.querySelector<HTMLButtonElement>('button');
     const placeholder = trigger.shadowRoot?.querySelector<HTMLElement>('.placeholder');
-    const badge = trigger.shadowRoot?.querySelector<HTMLElement>('.badge');
-    if (!button || !placeholder || !badge) throw new Error('モバイル用の要素が見つかりません');
+    if (!button || !placeholder) throw new Error('モバイル用の要素が見つかりません');
 
     if (getComputedStyle(placeholder).display !== 'none') {
       throw new Error('モバイル環境ではプレースホルダーは非表示である必要があります');
-    }
-    if (getComputedStyle(badge).display !== 'none') {
-      throw new Error('モバイル環境ではバッジは非表示である必要があります');
     }
 
     const pseudo = getComputedStyle(button, '::after');

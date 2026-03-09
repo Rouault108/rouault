@@ -5,9 +5,7 @@ import type { ImageLoading, UiImage } from './image';
 
 const SAMPLE_IMAGE_SRC = new URL('../../../assets/images/sample.jpg', import.meta.url).href;
 
-const SECOND_IMAGE_SRC = `data:image/svg+xml;utf8,${encodeURIComponent(
-  "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 900'><rect width='1600' height='900' fill='%23e7ecef'/><path d='M0 780 L300 520 L620 760 L980 430 L1300 760 L1600 560 L1600 900 L0 900 Z' fill='%2390a5b7'/><text x='72' y='122' font-size='72' fill='%23253343' font-family='sans-serif'>Context Diagram</text></svg>",
-)}`;
+const SECOND_IMAGE_SRC = new URL('../../../assets/images/sample-2.jpeg', import.meta.url).href;
 
 const BROKEN_IMAGE_SRC = 'data:image/png;base64,invalid-base64';
 

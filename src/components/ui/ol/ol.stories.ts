@@ -29,19 +29,36 @@ const getItem = (root: ParentNode, selector: string): HTMLLIElement => {
   return item;
 };
 
-const normalizePseudoContent = (value: string): string => value.replace(/^["']|["']$/g, '');
-
-const getMarkerText = (item: HTMLLIElement): string =>
-  normalizePseudoContent(getComputedStyle(item, '::before').content);
-
+/**
+ * CSS counter は getComputedStyle では解決されないため、
+ * コンポーネントが設定する CSS カスタムプロパティから計算する。
+ */
 const getMarkerNumber = (item: HTMLLIElement): number => {
-  const marker = getMarkerText(item).replace(/\.$/, '').trim();
-  const parsed = Number.parseInt(marker, 10);
-  if (Number.isNaN(parsed)) {
-    throw new Error(`マーカー番号を数値として解釈できません: "${marker}"`);
+  const list = item.closest('ol');
+  if (!(list instanceof HTMLOListElement)) {
+    throw new Error('li の親 ol が見つかりません');
   }
-  return parsed;
+  const listStyle = getComputedStyle(list);
+  const resetStr = listStyle.getPropertyValue('--ui-ol-counter-reset').trim();
+  const stepStr = listStyle.getPropertyValue('--ui-ol-counter-step').trim();
+  const reset = resetStr !== '' ? Number(resetStr) : 0;
+  const step = stepStr !== '' ? Number(stepStr) : 1;
+  const directItems = [...list.children].filter(
+    (c): c is HTMLLIElement => c instanceof HTMLLIElement,
+  );
+  let counter = reset;
+  for (const li of directItems) {
+    const setValStr = getComputedStyle(li).getPropertyValue('--ui-ol-counter-set').trim();
+    if (setValStr !== '') {
+      counter = Number(setValStr);
+    }
+    counter += step;
+    if (li === item) return counter;
+  }
+  throw new Error('item が list 内で見つかりません');
 };
+
+const getMarkerText = (item: HTMLLIElement): string => `${getMarkerNumber(item).toString()}.`;
 
 const nextFrame = async (): Promise<void> =>
   new Promise((resolve) => {

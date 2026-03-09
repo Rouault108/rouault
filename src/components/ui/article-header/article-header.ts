@@ -350,7 +350,7 @@ export class ArticleHeader extends LitElement {
     return html`
       <li class="metadata-item metadata-reading-time">
         <iconify-icon class="meta-icon" icon="lucide:clock-3" aria-hidden="true"></iconify-icon>
-        <span aria-label="読了目安 ${readingTime}分">読了目安 ${readingTime}分</span>
+        <span class="reading-time" aria-label="読了目安 ${readingTime}分">読了目安 ${readingTime}分</span>
       </li>
     `;
   }

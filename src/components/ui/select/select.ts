@@ -509,11 +509,11 @@ export class Select extends LitElement {
         };
 
         // aria-describedby の決定
-        const describedBy = hasError && this.errorMessage
-            ? this._errorId
-            : this.helpText
-                ? this._helpId
-                : undefined;
+        // エラー時: エラーメッセージがあれば errorId、なければ空文字列（helpText は非表示）
+        // 通常時: helpText があれば helpId、なければ undefined
+        const describedBy = hasError
+            ? (this.errorMessage ? this._errorId : '')
+            : (this.helpText ? this._helpId : undefined);
 
         // aria-activedescendant の決定
         const activeDescendant = this.opened && this._activeIndex >= 0

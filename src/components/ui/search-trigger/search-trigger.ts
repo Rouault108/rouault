@@ -100,8 +100,8 @@ export class SearchTrigger extends LitElement {
 
       /* Size */
       height: var(--control-height-md, 32px);
-      min-width: 280px;
-      max-width: 400px;
+      min-width: 120px;
+      max-width: 120px;
       padding: 0 var(--space-3, 12px);
 
       /* Border & Radius */
@@ -174,7 +174,7 @@ export class SearchTrigger extends LitElement {
     }
 
     .icon iconify-icon {
-      display: block;
+      display: flex;
       width: 100%;
       height: 100%;
     }
@@ -190,14 +190,6 @@ export class SearchTrigger extends LitElement {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-    }
-
-    /* ── ショートカットバッジ ── */
-    .badge {
-      display: flex;
-      align-items: center;
-      flex-shrink: 0;
-      margin-left: auto;
     }
 
     /* ── モバイル: アイコンのみ表示 (@media --bp-sm = 640px) ── */
@@ -344,21 +336,12 @@ export class SearchTrigger extends LitElement {
         aria-keyshortcuts="Control+K Meta+K"
         @click="${this._handleActivate}"
       >
-        <!-- 検索アイコン -->
         <span class="icon" part="icon" aria-hidden="true">
           <iconify-icon icon="lucide:search" aria-hidden="true"></iconify-icon>
         </span>
 
-        <!-- プレースホルダーテキスト（デスクトップのみ表示） -->
         <span class="placeholder" part="placeholder" aria-hidden="true">
           ${this.placeholder}
-        </span>
-
-        <!-- ショートカットバッジ（デスクトップのみ表示） -->
-        <span class="badge" part="badge" aria-hidden="true">
-          <slot name="badge">
-            <ui-kbd>Ctrl K / Cmd K</ui-kbd>
-          </slot>
         </span>
       </button>
     `;

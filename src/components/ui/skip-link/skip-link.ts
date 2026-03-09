@@ -168,7 +168,7 @@ export class SkipLink extends LitElement {
     const processObject = globalThis as typeof globalThis & {
       process?: { env?: { NODE_ENV?: string } };
     };
-    const nodeEnv = processObject.process.env.NODE_ENV;
+    const nodeEnv = processObject.process?.env?.NODE_ENV;
     if (typeof nodeEnv === 'string') {
       return nodeEnv !== 'production';
     }

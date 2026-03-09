@@ -699,6 +699,7 @@ export const ThemeTokenAdaptation: Story = {
         background: rgb(2 6 23);
         padding: 12px;
         --bg-surface-2: rgb(15 23 42);
+        --bg-default: rgb(15 23 42);
         --bg-fill-muted: rgb(10 14 28);
         --fg-default: rgb(226 232 240);
         --fg-muted: rgb(148 163 184);
@@ -727,7 +728,7 @@ export const ThemeTokenAdaptation: Story = {
     const body = getBody(group);
     const tabStyle = getComputedStyle(firstTab);
     const bodyStyle = getComputedStyle(body);
-    if (bodyStyle.backgroundColor !== 'rgb(10, 14, 28)') {
+    if (bodyStyle.backgroundColor !== 'rgb(15, 23, 42)') {
       throw new Error('body 背景色が theme token と一致しません');
     }
     if (tabStyle.backgroundColor !== 'rgba(0, 0, 0, 0)') {

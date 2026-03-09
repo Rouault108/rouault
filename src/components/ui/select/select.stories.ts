@@ -237,7 +237,7 @@ export const WithValue: Story = {
     if (!trigger) throw new Error('Trigger not found');
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    const displayText = (trigger.textContent ?? '').trim();
+    const displayText = ((trigger as HTMLInputElement).value ?? '').trim();
     if (displayText !== '大阪府') {
       throw new Error(`Expected "大阪府", got "${displayText}"`);
     }
@@ -540,7 +540,7 @@ export const LongLabels: Story = {
 
     // テスト: テキストが表示されていること（省略されていても）
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    const text = (trigger.textContent ?? '').trim();
+    const text = ((trigger as HTMLInputElement).value ?? '').trim();
     if (text.length === 0) {
       throw new Error('トリガーは選択されたラベルテキストを表示するべきです');
     }

@@ -110,7 +110,7 @@ const STORAGE_KEY = 'rouault.sidebar.state';
 
 const meta: Meta<UiSidebarShell> = {
   title: 'Components/Sidebar Shell/Boundary',
-  component: 'ui-sidebar',
+  component: 'ui-sidebar-shell',
   tags: ['autodocs'],
   parameters: {
     docs: {
@@ -136,11 +136,11 @@ type Story = StoryObj<UiSidebarShell>;
 export const RapidToggleReentrancySafety: Story = {
   render: () => html`
     <div style="min-height: 200px;">
-      <ui-sidebar id="sidebar-rapid" data-state="expanded" mode="fixed">
+      <ui-sidebar-shell id="sidebar-rapid" data-state="expanded" mode="fixed">
         <div role="tree" aria-label="ナビゲーション">
           <a href="/notes" role="treeitem" aria-selected="false" tabindex="0">ノート</a>
         </div>
-      </ui-sidebar>
+      </ui-sidebar-shell>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -186,11 +186,11 @@ export const RapidToggleReentrancySafety: Story = {
 export const AttributeDrivenStateChange: Story = {
   render: () => html`
     <div style="min-height: 200px;">
-      <ui-sidebar id="sidebar-attr" data-state="expanded" mode="fixed">
+      <ui-sidebar-shell id="sidebar-attr" data-state="expanded" mode="fixed">
         <div role="tree" aria-label="ナビゲーション">
           <a href="/notes" role="treeitem" aria-selected="false" tabindex="0">ノート</a>
         </div>
-      </ui-sidebar>
+      </ui-sidebar-shell>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -227,11 +227,11 @@ export const AttributeDrivenStateChange: Story = {
 export const LocalStoragePersistence: Story = {
   render: () => html`
     <div style="min-height: 200px;">
-      <ui-sidebar id="sidebar-storage" data-state="expanded" mode="fixed">
+      <ui-sidebar-shell id="sidebar-storage" data-state="expanded" mode="fixed">
         <div role="tree" aria-label="ナビゲーション">
           <a href="/notes" role="treeitem" aria-selected="false" tabindex="0">ノート</a>
         </div>
-      </ui-sidebar>
+      </ui-sidebar-shell>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -278,11 +278,11 @@ export const LocalStoragePersistence: Story = {
 export const ModeAutoDetection: Story = {
   render: () => html`
     <div style="min-height: 200px;">
-      <ui-sidebar id="sidebar-auto-mode">
+      <ui-sidebar-shell id="sidebar-auto-mode">
         <div role="tree" aria-label="ナビゲーション">
           <a href="/notes" role="treeitem" aria-selected="false" tabindex="0">ノート</a>
         </div>
-      </ui-sidebar>
+      </ui-sidebar-shell>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -314,7 +314,7 @@ export const ModeAutoDetection: Story = {
 export const HeaderSlotVisibilityByMode: Story = {
   render: () => html`
     <div style="min-height: 300px;">
-      <ui-sidebar id="sidebar-header-vis" data-state="expanded" mode="fixed">
+      <ui-sidebar-shell id="sidebar-header-vis" data-state="expanded" mode="fixed">
         <button
           slot="header"
           aria-haspopup="menu"
@@ -326,7 +326,7 @@ export const HeaderSlotVisibilityByMode: Story = {
         <div role="tree" aria-label="ナビゲーション">
           <a href="/notes" role="treeitem" aria-selected="false" tabindex="0">ノート</a>
         </div>
-      </ui-sidebar>
+      </ui-sidebar-shell>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -374,11 +374,11 @@ export const InertStrategyTiming: Story = {
     <div
       style="display: grid; grid-template-columns: var(--sidebar-width, 240px) 1fr; min-height: 300px;"
     >
-      <ui-sidebar id="sidebar-inert-timing" data-state="expanded" mode="fixed">
+      <ui-sidebar-shell id="sidebar-inert-timing" data-state="expanded" mode="fixed">
         <div role="tree" aria-label="ナビゲーション">
           <a href="/notes" role="treeitem" aria-selected="false" tabindex="0">ノート</a>
         </div>
-      </ui-sidebar>
+      </ui-sidebar-shell>
       <main style="padding: 2rem;">メイン</main>
     </div>
   `,
@@ -457,7 +457,7 @@ export const DarkModeSurface: Story = {
         style="color-scheme: light; background: oklch(98% 0.01 250); padding: 1rem;"
       >
         <h3 style="margin: 0 0 0.5rem;">Light</h3>
-        <ui-sidebar
+        <ui-sidebar-shell
           id="sidebar-dark-light"
           data-state="expanded"
           mode="fixed"
@@ -467,7 +467,7 @@ export const DarkModeSurface: Story = {
             <a href="/notes" role="treeitem" aria-selected="false" tabindex="0" style="color: var(--fg-muted);">ノート</a>
             <a href="/music" role="treeitem" aria-selected="false" tabindex="-1" style="color: var(--fg-muted);">音楽</a>
           </div>
-        </ui-sidebar>
+        </ui-sidebar-shell>
       </div>
 
       <!-- ダークモード -->
@@ -476,7 +476,7 @@ export const DarkModeSurface: Story = {
         style="color-scheme: dark; background: oklch(12% 0.02 250); color: oklch(90% 0.01 250); padding: 1rem;"
       >
         <h3 style="margin: 0 0 0.5rem;">Dark</h3>
-        <ui-sidebar
+        <ui-sidebar-shell
           id="sidebar-dark-dark"
           data-state="expanded"
           mode="fixed"
@@ -486,7 +486,7 @@ export const DarkModeSurface: Story = {
             <a href="/notes" role="treeitem" aria-selected="false" tabindex="0" style="color: var(--fg-muted);">ノート</a>
             <a href="/music" role="treeitem" aria-selected="false" tabindex="-1" style="color: var(--fg-muted);">音楽</a>
           </div>
-        </ui-sidebar>
+        </ui-sidebar-shell>
       </div>
     </div>
   `,
@@ -530,11 +530,11 @@ export const DarkModeSurface: Story = {
  */
 export const ForcedColorsContract: Story = {
   render: () => html`
-    <ui-sidebar id="sidebar-forced" data-state="expanded" mode="fixed">
+    <ui-sidebar-shell id="sidebar-forced" data-state="expanded" mode="fixed">
       <div role="tree" aria-label="ナビゲーション">
         <a href="/notes" role="treeitem" aria-selected="false" tabindex="0">ノート</a>
       </div>
-    </ui-sidebar>
+    </ui-sidebar-shell>
   `,
   play: async ({ canvasElement }) => {
     const host = getHost(canvasElement, 'sidebar-forced');
@@ -567,11 +567,11 @@ export const ForcedColorsContract: Story = {
  */
 export const ReducedMotionAndPrintContract: Story = {
   render: () => html`
-    <ui-sidebar id="sidebar-motion" data-state="expanded" mode="fixed">
+    <ui-sidebar-shell id="sidebar-motion" data-state="expanded" mode="fixed">
       <div role="tree" aria-label="ナビゲーション">
         <a href="/notes" role="treeitem" aria-selected="false" tabindex="0">ノート</a>
       </div>
-    </ui-sidebar>
+    </ui-sidebar-shell>
   `,
   play: async ({ canvasElement }) => {
     const host = getHost(canvasElement, 'sidebar-motion');
@@ -616,17 +616,17 @@ export const ScrimOpacityPublicToken: Story = {
       <!-- デフォルトスクリム -->
       <div style="flex: 1; position: relative;">
         <h3 style="margin: 0 0 0.5rem;">デフォルト (0.6)</h3>
-        <ui-sidebar id="sidebar-scrim-default" data-state="expanded" mode="overlay">
+        <ui-sidebar-shell id="sidebar-scrim-default" data-state="expanded" mode="overlay">
           <div role="tree" aria-label="ナビゲーション">
             <a href="/notes" role="treeitem" aria-selected="false" tabindex="0">ノート</a>
           </div>
-        </ui-sidebar>
+        </ui-sidebar-shell>
       </div>
 
       <!-- カスタムスクリム -->
       <div style="flex: 1; position: relative;">
         <h3 style="margin: 0 0 0.5rem;">カスタム (0.3)</h3>
-        <ui-sidebar
+        <ui-sidebar-shell
           id="sidebar-scrim-custom"
           class="custom-scrim-sidebar"
           data-state="expanded"
@@ -635,7 +635,7 @@ export const ScrimOpacityPublicToken: Story = {
           <div role="tree" aria-label="ナビゲーション">
             <a href="/notes" role="treeitem" aria-selected="false" tabindex="0">ノート</a>
           </div>
-        </ui-sidebar>
+        </ui-sidebar-shell>
       </div>
     </div>
   `,
