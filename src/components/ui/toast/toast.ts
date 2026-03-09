@@ -411,10 +411,14 @@ export class UiToast extends LitElement {
     }
 
     .toast-icon {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      width: var(--icon-base, 16px);
+      /* 1行目のテキスト中央に合わせてアイコンの縦位置を安定させる */
+      height: calc(1em * var(--line-height-normal, 1.5));
       font-size: var(--icon-base, 16px);
       color: var(--_toast-icon-color, var(--fg-muted, oklch(45% 0.02 250)));
-      flex-shrink: 0;
-      margin-top: 1px;
     }
 
     .toast-message {
