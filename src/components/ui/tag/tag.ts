@@ -39,7 +39,7 @@ import { customElement, property } from 'lit/decorators.js';
  * @cssprop --hue-gold     - Gold 色相 (デフォルト: 85)
  * @cssprop --chroma-subtle  - Subtle 彩度
  * @cssprop --chroma-ui      - UI 彩度
- * @cssprop --chroma-neutral - Neutral 彩度 (ほぼ 0)
+ * @cssprop --chroma-neutral - Neutral 彩度 (0)
  * @cssprop --chroma-high    - High 彩度
  * @cssprop --border-width   - ボーダー幅
  * @cssprop --border-default - ホバー時ボーダー色
@@ -105,9 +105,8 @@ export class Tag extends LitElement {
       --ui-tag-hue-gold:   var(--hue-gold,   85);
 
       /* Chroma */
-      --chroma-bg: var(--chroma-subtle, 0.04);
-      /* 文字は彩度を落としてハレーションを防ぐ */
-      --chroma-fg: calc(var(--chroma-ui, 0.12) * 0.6);
+      --chroma-bg: var(--chroma-neutral, 0);
+      --chroma-fg: var(--chroma-neutral, 0);
 
       /* Delta L: 背景用・文字用を分離独立 */
       --delta-l-bg: 0%;
@@ -138,12 +137,12 @@ export class Tag extends LitElement {
       background-color: oklch(
         calc(var(--bg-l) + var(--delta-l-bg))
         var(--chroma-bg)
-        var(--tag-hue, var(--hue-base, 250))
+        var(--tag-hue, var(--hue-base, 0))
       );
       color: oklch(
         calc(var(--fg-l) + var(--delta-l-fg))
         var(--chroma-fg)
-        var(--tag-hue, var(--hue-base, 250))
+        var(--tag-hue, var(--hue-base, 0))
       );
       border: var(--border-width, 1px) solid var(--border-color);
 
@@ -163,13 +162,13 @@ export class Tag extends LitElement {
 
     /* ── Color Mapping ── */
     :host([color='neutral']) {
-      --tag-hue: var(--hue-base, 250);
-      --chroma-bg: var(--chroma-neutral, 0.01);
-      --chroma-fg: var(--chroma-neutral, 0.01);
+      --tag-hue: var(--hue-base, 0);
+      --chroma-bg: var(--chroma-neutral, 0);
+      --chroma-fg: var(--chroma-neutral, 0);
     }
 
     :host([color='primary']) {
-      --tag-hue: var(--hue-base, 250);
+      --tag-hue: var(--hue-base, 0);
     }
 
     :host([color='blue']) {
@@ -212,7 +211,7 @@ export class Tag extends LitElement {
       --border-color: oklch(
         calc(var(--fg-l) + var(--delta-l-fg))
         var(--chroma-fg)
-        var(--tag-hue, var(--hue-base, 250))
+        var(--tag-hue, var(--hue-base, 0))
       );
     }
 
