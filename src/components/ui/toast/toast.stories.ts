@@ -125,7 +125,7 @@ export const Default: Story = {
     ToastManager.show({
       variant: 'success',
       message: '保存が完了しました',
-      duration: 3000,
+      duration: 0,
     });
     await flush(host);
 
@@ -144,7 +144,6 @@ export const Default: Story = {
       throw new Error('閉じるボタンの aria-label が不正です');
     }
 
-    ToastManager.clear();
   },
 };
 
@@ -184,7 +183,7 @@ export const VariantStateCombinations: Story = {
     ToastManager.show({
       variant: 'warning',
       message: '未保存の変更があります',
-      duration: 2500,
+      duration: 0,
     });
     ToastManager.show({
       variant: 'danger',
@@ -213,8 +212,6 @@ export const VariantStateCombinations: Story = {
         `danger のデフォルト duration が不正です: expected=${String(DANGER_TOAST_DURATION_MS)}, actual=${String(dangerSnapshot.duration)}`,
       );
     }
-
-    ToastManager.clear();
   },
 };
 
