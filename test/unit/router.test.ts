@@ -9,18 +9,33 @@ import { expect, fixture, html, waitUntil } from '@open-wc/testing';
 import { Router } from '../../src/lib/router.js';
 
 /**
- * Chromium/Webkit では link.click() が isTrusted=true なクリックを生成し、
- * ドキュメントレベルのバブリングハンドラで e.preventDefault() を呼んでも
- * 実際のページナビゲーションを防げない場合がある。
- * dispatchEvent を使うと isTrusted=false になり、ブラウザは実際のナビゲーションを行わない。
+ * テスト用クリックシミュレーション。
+ * アンカー要素に直接 dispatchEvent するとChromium/Webkitで
+ * DefaultEventHandler が実行され実際のページナビゲーションが発生する。
+ * 子要素（<span>）にイベントを発行することで、ルーターの closest('a') は
+ * 正しくアンカーを検出するが、ブラウザのナビゲーションは発生しない。
  */
 function simulateClick(element: HTMLElement, options: MouseEventInit = {}) {
-	element.dispatchEvent(new MouseEvent('click', {
+	let target = element;
+	let tempSpan: HTMLSpanElement | null = null;
+
+	// アンカー要素の場合、一時的な子要素を挿入してそこにクリックを発行
+	if (element.tagName === 'A') {
+		tempSpan = document.createElement('span');
+		element.prepend(tempSpan);
+		target = tempSpan;
+	}
+
+	target.dispatchEvent(new MouseEvent('click', {
 		bubbles: true,
 		cancelable: true,
 		button: 0,
 		...options,
 	}));
+
+	if (tempSpan) {
+		tempSpan.remove();
+	}
 }
 
 describe('Router', () => {
@@ -31,43 +46,51 @@ describe('Router', () => {
 	let originalPushState: typeof history.pushState;
 	let originalReplaceState: typeof history.replaceState;
 
+	// WTRのセッションURLを保持（テスト終了時に復元するため）
+	const wtrOriginalUrl = window.location.href;
+
+
 	beforeEach(async () => {
 		// テスト用のアウトレット要素を作成
 		outlet = await fixture<HTMLElement>(html` <main id="test-outlet">Initial Content</main> `);
 
-		// fetch のオリジナルを保存
+		// fetch のオリジナルを保存し、デフォルトモックを設定
+		// （テストで実際のHTTPリクエストが発生するのを防ぐ）
 		originalFetch = globalThis.fetch;
+		globalThis.fetch = () => {
+			return Promise.resolve(new Response('<html><body><main>Default Mock</main></body></html>', {
+				status: 200,
+			}));
+		};
 
 		// history API のオリジナルを保存（ネイティブメソッドへの参照を直接保持）
 		originalPushState = history.pushState.bind(history);
 		originalReplaceState = history.replaceState.bind(history);
 
-		// Playwrightのナビゲーション検出（CDP framenavigated）を防ぐため、
-		// history APIをwtr-session-idを保持するラッパーで包む
-		const wtrSessionId = new URLSearchParams(window.location.search).get('wtr-session-id');
-		if (wtrSessionId) {
-			history.pushState = ((data: unknown, unused: string, url?: string | URL | null) => {
-				if (url !== null && url !== undefined) {
-					const target = new URL(url.toString(), window.location.href);
-					target.searchParams.set('wtr-session-id', wtrSessionId);
-					originalPushState(data, unused, `${target.pathname}${target.search}${target.hash}`);
-				}
-			}) as typeof history.pushState;
-			history.replaceState = ((data: unknown, unused: string, url?: string | URL | null) => {
-				if (url !== null && url !== undefined) {
-					const target = new URL(url.toString(), window.location.href);
-					target.searchParams.set('wtr-session-id', wtrSessionId);
-					originalReplaceState(data, unused, `${target.pathname}${target.search}${target.hash}`);
-				}
-			}) as typeof history.replaceState;
-		}
-
-		// 各テスト開始時のURLを統一
-		try {
-			history.replaceState({}, '', '/');
-		} catch {
-			// 一部実行環境では初期URL変更が制限されるため無視
-		}
+		// Playwrightのナビゲーション検出を防ぐため、
+		// history APIをラッパーで包み、URLのパス名を変更せず元のクエリパラメータを保持する
+		const wtrUrl = new URL(wtrOriginalUrl);
+		history.pushState = ((data: unknown, unused: string, url?: string | URL | null) => {
+			if (url !== null && url !== undefined) {
+				// パス名変更を抑制し、WTRのURLパスを維持する
+				const target = new URL(url.toString(), window.location.href);
+				originalPushState(
+					{ ...(data && typeof data === 'object' ? data : {}), __routerPath: target.pathname },
+					unused,
+					`${wtrUrl.pathname}${wtrUrl.search}${wtrUrl.hash}`,
+				);
+			}
+		}) as typeof history.pushState;
+		history.replaceState = ((data: unknown, unused: string, url?: string | URL | null) => {
+			if (url !== null && url !== undefined) {
+				const target = new URL(url.toString(), window.location.href);
+				originalReplaceState(
+					{ ...(data && typeof data === 'object' ? data : {}), __routerPath: target.pathname },
+					unused,
+					`${wtrUrl.pathname}${wtrUrl.search}${wtrUrl.hash}`,
+				);
+			}
+		}) as typeof history.replaceState;
 
 		// View Transition API のモック（ネイティブメソッドへの参照を直接保持）
 		originalStartViewTransition = document.startViewTransition.bind(document);
@@ -127,14 +150,22 @@ describe('Router', () => {
 	});
 
 	afterEach(() => {
+		// ルーターのクリーンアップ（先に実行して非同期処理を停止）
+		router.destroy();
+
+		// URLをWTRのセッションURLに復元（ラッパー解除前に実行）
+		try {
+			const wtrUrl = new URL(wtrOriginalUrl);
+			history.replaceState({}, '', `${wtrUrl.pathname}${wtrUrl.search}${wtrUrl.hash}`);
+		} catch {
+			// 復元失敗は無視
+		}
+
 		// すべてのモックを解除
 		document.startViewTransition = originalStartViewTransition;
 		globalThis.fetch = originalFetch;
 		history.pushState = originalPushState;
 		history.replaceState = originalReplaceState;
-
-		// ルーターのクリーンアップ
-		router.destroy();
 	});
 
 	// ========================================
