@@ -20,13 +20,13 @@ const DOCUMENT_CSS = `
 
 :where(.prose ul li, ui-ul li) {
   display: grid;
-  grid-template-columns: var(--space-4, 1rem) 1fr;
-  gap: var(--space-2, 0.5rem);
+  grid-template-columns: var(--space-4) 1fr;
+  gap: var(--space-2);
   align-items: center;
 }
 
 :where(.prose ul li, ui-ul li) + :where(.prose ul li, ui-ul li) {
-  margin-block-start: var(--space-2, 0.5rem);
+  margin-block-start: var(--space-2);
 }
 
 :where(.prose ul li, ui-ul li)::before {
@@ -47,7 +47,7 @@ const DOCUMENT_CSS = `
 
 :where(.prose ul li ul, ui-ul li ul) {
   grid-column: 2;
-  margin-block-start: var(--space-2, 0.5rem);
+  margin-block-start: var(--space-2);
 }
 
 :where(.prose ul li, ui-ul li) :is(a, button, [role="button"]) {

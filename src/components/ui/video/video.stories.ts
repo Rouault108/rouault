@@ -50,6 +50,15 @@ const createBufferedRanges = (end: number): TimeRanges =>
   }) as TimeRanges;
 
 const installMediaMock = (videoElement: HTMLVideoElement, state: MediaMockState): void => {
+  // currentTime をバッキングストアで管理し、実際の動画長によるブラウザ側クランプを回避する
+  let _currentTime = videoElement.currentTime;
+  Object.defineProperty(videoElement, 'currentTime', {
+    configurable: true,
+    get: () => _currentTime,
+    set: (value: number) => {
+      _currentTime = value;
+    },
+  });
   Object.defineProperty(videoElement, 'duration', {
     configurable: true,
     get: () => state.duration,

@@ -1316,11 +1316,13 @@ export class UiVideo extends LitElement {
         break;
       case 'j':
         event.preventDefault();
+        if (!this._hasStartedPlayback) break;
         this._seekBy(-SKIP_SECONDS);
         this._showSkipIndicator('back');
         break;
       case 'l':
         event.preventDefault();
+        if (!this._hasStartedPlayback) break;
         this._seekBy(SKIP_SECONDS);
         this._showSkipIndicator('forward');
         break;
