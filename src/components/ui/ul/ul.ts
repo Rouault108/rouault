@@ -34,6 +34,7 @@ const DOCUMENT_CSS = `
   color: var(--fg-muted);
   justify-self: center;
   line-height: 0;
+  transform: translateY(-0.05em);
 }
 
 :where(.prose ul li li, ui-ul li li)::before {
