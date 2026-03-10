@@ -73,7 +73,7 @@ ui-popover [data-ui-popover-content] {
   background: var(--bg-surface-2, oklch(100% 0 0));
   color: var(--fg-default, oklch(20% 0 0));
   box-shadow: var(--elevation-lg, 0 8px 24px oklch(0% 0 0 / 0.12));
-  font-size: var(--text-sm, 13px);
+  font-size: inherit;
   line-height: var(--line-height-relaxed, 1.75);
   opacity: 0;
   transform: translateY(4px);
@@ -346,8 +346,10 @@ export class UiPopover extends LitElement {
       if (typeof content.hidePopover === 'function') {
         try {
           content.hidePopover();
-          // toggle イベントが非同期の場合に備え、同期的に状態をコミットする
-          this._commitOpenState(false);
+          // Popover API では閉状態の反映を toggle に委ねる。
+          // ここで先に data-open='false' を付与すると、top-layer 解除前に
+          // 閉アニメーション用スタイルだけが先行適用され、ちらつきの原因になる。
+          this._teardownFloating();
           return;
         } catch {
           // hidePopover に失敗した場合はフォールバックで状態を同期する
