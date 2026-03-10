@@ -3,6 +3,13 @@ import { customElement, property, query } from 'lit/decorators.js';
 import type { Button } from '../button/button';
 import '../button/button';
 import '../../../lib/icons';
+import {
+  captureTrigger,
+  createBodyScrollLock,
+  restoreTriggerFocus,
+  showNativeDialog,
+  waitForDialogAnimations,
+} from './dialog-helpers';
 
 const CLOSE_BUTTON_LABEL = '閉じる';
 const BODY_DIALOG_OPEN_ATTRIBUTE = 'data-ui-dialog-open';
@@ -10,6 +17,7 @@ const ACCESSIBLE_NAME_REQUIRED_MESSAGE =
   '[ui-dialog] aria-labelledby (title-id) または aria-label のいずれかを設定してください。';
 const FOCUSABLE_SELECTOR =
   'button:not([disabled]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const dialogBodyScrollLock = createBodyScrollLock(BODY_DIALOG_OPEN_ATTRIBUTE);
 
 export interface UiDialogOpenedDetail {
   trigger: HTMLElement | null;
@@ -236,9 +244,9 @@ export class UiDialog extends LitElement {
   private _isClosing = false;
   private _isSyncingModalMode = false;
   private _isDocumentKeydownListening = false;
+  private _hasBodyScrollLock = false;
   private _operation: Promise<void> = Promise.resolve();
 
-  private static _scrollLockCount = 0;
   private static _openDialogs: UiDialog[] = [];
 
   override disconnectedCallback(): void {
@@ -246,7 +254,7 @@ export class UiDialog extends LitElement {
     this._detachDocumentKeydownListener();
     if (this._dialogElement?.open) {
       UiDialog._unregisterOpenDialog(this);
-      UiDialog._unlockBodyScroll();
+      this._unlockBodyScroll();
     }
   }
 
@@ -270,7 +278,7 @@ export class UiDialog extends LitElement {
 
   open(trigger?: HTMLElement): void {
     if (this.opened) return;
-    this._captureTrigger(trigger);
+    this._triggerElement = captureTrigger(this.ownerDocument, trigger);
     this.opened = true;
   }
 
@@ -294,14 +302,14 @@ export class UiDialog extends LitElement {
       UiDialog._registerOpenDialog(this);
       this._syncDocumentKeydownListener();
       this._focusInitialElement();
-      await this._waitForAnimations(dialog);
+      await waitForDialogAnimations(dialog);
       if (!this._isCurrentlyOpened()) return;
       this._dispatchOpenedEvent();
       return;
     }
 
     if (!this._triggerElement) {
-      this._captureTrigger();
+      this._triggerElement = captureTrigger(this.ownerDocument);
     }
 
     if (!this._hasAccessibleName()) {
@@ -310,23 +318,17 @@ export class UiDialog extends LitElement {
       return;
     }
 
-    try {
-      if (this.modal) {
-        dialog.showModal();
-      } else {
-        dialog.show();
-      }
-    } catch {
+    if (!showNativeDialog(dialog, this.modal)) {
       this.opened = false;
       return;
     }
 
     UiDialog._registerOpenDialog(this);
-    UiDialog._lockBodyScroll();
+    this._lockBodyScroll();
     this._syncDocumentKeydownListener();
     this._focusInitialElement();
 
-    await this._waitForAnimations(dialog);
+    await waitForDialogAnimations(dialog);
 
     if (!this._isCurrentlyOpened()) return;
     this._dispatchOpenedEvent();
@@ -339,14 +341,14 @@ export class UiDialog extends LitElement {
     if (!dialog.open) {
       UiDialog._unregisterOpenDialog(this);
       this._syncDocumentKeydownListener();
-      UiDialog._unlockBodyScroll();
+      this._unlockBodyScroll();
       return;
     }
     if (this._isClosing) return;
 
     this._isClosing = true;
     dialog.setAttribute('data-closing', '');
-    await this._waitForAnimations(dialog);
+    await waitForDialogAnimations(dialog);
     dialog.removeAttribute('data-closing');
     if (this._isCurrentlyOpened()) {
       this._isClosing = false;
@@ -354,26 +356,6 @@ export class UiDialog extends LitElement {
     }
 
     dialog.close();
-  }
-
-  private async _waitForAnimations(dialog: HTMLDialogElement): Promise<void> {
-    const animations = dialog.getAnimations();
-    if (animations.length === 0) {
-      await Promise.resolve();
-      return;
-    }
-
-    await Promise.allSettled(animations.map((animation) => animation.finished));
-  }
-
-  private _captureTrigger(trigger?: HTMLElement): void {
-    if (trigger instanceof HTMLElement) {
-      this._triggerElement = trigger;
-      return;
-    }
-
-    const activeElement = this.ownerDocument.activeElement;
-    this._triggerElement = activeElement instanceof HTMLElement ? activeElement : null;
   }
 
   private _focusInitialElement(): void {
@@ -391,9 +373,7 @@ export class UiDialog extends LitElement {
   }
 
   private _restoreTriggerFocus(): void {
-    const target = this._triggerElement;
-    if (!target?.isConnected) return;
-    target.focus({ preventScroll: true });
+    restoreTriggerFocus(this._triggerElement);
   }
 
   private _findFirstFocusable(elements: readonly Element[]): HTMLElement | null {
@@ -413,6 +393,18 @@ export class UiDialog extends LitElement {
     this.dispatchEvent(new CustomEvent('ui-dialog-cancel'));
   }
 
+  private _lockBodyScroll(): void {
+    if (this._hasBodyScrollLock) return;
+    dialogBodyScrollLock.lock();
+    this._hasBodyScrollLock = true;
+  }
+
+  private _unlockBodyScroll(): void {
+    if (!this._hasBodyScrollLock) return;
+    dialogBodyScrollLock.unlock();
+    this._hasBodyScrollLock = false;
+  }
+
   private async _syncModalMode(): Promise<void> {
     const dialog = this._dialogElement;
     if (!dialog?.open) return;
@@ -422,16 +414,10 @@ export class UiDialog extends LitElement {
     this._isSyncingModalMode = true;
     dialog.close();
 
-    try {
-      if (this.modal) {
-        dialog.showModal();
-      } else {
-        dialog.show();
-      }
-    } catch {
+    if (!showNativeDialog(dialog, this.modal)) {
       UiDialog._unregisterOpenDialog(this);
       this._syncDocumentKeydownListener();
-      UiDialog._unlockBodyScroll();
+      this._unlockBodyScroll();
       this.opened = false;
       this._restoreTriggerFocus();
       this.dispatchEvent(new CustomEvent('ui-dialog-closed'));
@@ -441,7 +427,7 @@ export class UiDialog extends LitElement {
     UiDialog._registerOpenDialog(this);
     this._syncDocumentKeydownListener();
     this._focusInitialElement();
-    await this._waitForAnimations(dialog);
+    await waitForDialogAnimations(dialog);
   }
 
   private _isCurrentlyOpened(): boolean {
@@ -488,7 +474,7 @@ export class UiDialog extends LitElement {
     this.opened = false;
     UiDialog._unregisterOpenDialog(this);
     this._syncDocumentKeydownListener();
-    UiDialog._unlockBodyScroll();
+    this._unlockBodyScroll();
     this._restoreTriggerFocus();
     this.dispatchEvent(new CustomEvent('ui-dialog-closed'));
   };
@@ -537,28 +523,6 @@ export class UiDialog extends LitElement {
     if (!this._isDocumentKeydownListening) return;
     this.ownerDocument.removeEventListener('keydown', this._onDocumentKeydown, true);
     this._isDocumentKeydownListening = false;
-  }
-
-  private static _lockBodyScroll(): void {
-    if (typeof document === 'undefined') return;
-    const body = document.body;
-
-    if (UiDialog._scrollLockCount === 0) {
-      body.setAttribute(BODY_DIALOG_OPEN_ATTRIBUTE, '');
-    }
-
-    UiDialog._scrollLockCount += 1;
-  }
-
-  private static _unlockBodyScroll(): void {
-    if (typeof document === 'undefined') return;
-    if (UiDialog._scrollLockCount === 0) return;
-
-    UiDialog._scrollLockCount -= 1;
-    if (UiDialog._scrollLockCount > 0) return;
-
-    const body = document.body;
-    body.removeAttribute(BODY_DIALOG_OPEN_ATTRIBUTE);
   }
 
   private static _registerOpenDialog(dialog: UiDialog): void {
