@@ -66,7 +66,6 @@ let _uidCounter = 0;
  * @cssprop --duration-normal - パネルフェードトランジション（150ms）
  * @cssprop --duration-slow - インジケータートランジション（200ms）
  * @cssprop --ease-out - イージング関数
- * @cssprop --ease-spring - インジケーターのスプリングイージング
  * @cssprop --focus-ring-width - フォーカスリング幅
  * @cssprop --focus-ring-color - フォーカスリング色
  * @cssprop --focus-ring-offset - フォーカスリングオフセット
@@ -120,8 +119,8 @@ export class Tabs extends LitElement {
       /* カスタムスクロールバー: 視覚的ノイズを最小化 */
       scrollbar-width: var(--scrollbar-width, thin);
       scrollbar-color: var(--scrollbar-thumb, oklch(70% 0 0 / 0.3)) transparent;
-      /* インジケーター + スクロールバーのクリアランス */
-      padding-bottom: calc(var(--border-width-thick, 2px) + var(--space-1, 4px));
+      /* インジケーターをセパレーター線に重ねるため、tablist 全体をわずかに下げる */
+      margin-bottom: calc(-0.5 * var(--border-width-thick, 2px));
     }
 
     .orient-vertical [role='tablist'] {
@@ -163,7 +162,7 @@ export class Tabs extends LitElement {
       font-family: var(--font-sans);
 
       /* Color: Muted（デフォルト） */
-      color: var(--fg-muted, oklch(48% 0 0));
+      color: var(--fg-subtle, oklch(48% 0 0));
 
       /* Reset */
       background: none;
@@ -237,8 +236,8 @@ export class Tabs extends LitElement {
 
     .indicator {
       position: absolute;
-      /* Horizontal: 下端（padding-bottomのクリアランスを打ち消す位置） */
-      bottom: calc(var(--border-width-thick, 2px) + var(--space-1, 4px));
+      /* Horizontal: セパレーター線そのものに重ねる */
+      bottom: 0;
       height: var(--border-width-thick, 2px);
       background: var(--primary, oklch(60% 0.15 250));
       pointer-events: none;
@@ -248,9 +247,9 @@ export class Tabs extends LitElement {
       /* CSS Transition */
       transition:
         left var(--duration-slow, 200ms)
-          var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)),
+          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
         width var(--duration-slow, 200ms)
-          var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     /* Vertical: 右端（tablistの border-right に重なる） */
@@ -264,9 +263,9 @@ export class Tabs extends LitElement {
 
       transition:
         top var(--duration-slow, 200ms)
-          var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)),
+          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
         height var(--duration-slow, 200ms)
-          var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     /* ====== パネル ====== */
@@ -804,10 +803,12 @@ export class Tabs extends LitElement {
     const paddingInlineEnd = Number.parseFloat(tabStyle.paddingInlineEnd) || 0;
 
     if (this.orientation === 'horizontal') {
-      const left = tabRect.left - containerRect.left + paddingInlineStart;
+      // 文字幅に対して両端を少しだけ伸ばし、タブ余白の内側に収める。
+      const indicatorBleed = Math.min(4, paddingInlineStart, paddingInlineEnd);
+      const labelLeft = tabRect.left - containerRect.left + paddingInlineStart;
       const labelWidth = Math.max(0, tabRect.width - paddingInlineStart - paddingInlineEnd);
-      indicator.style.left = `${String(left)}px`;
-      indicator.style.width = `${String(labelWidth)}px`;
+      indicator.style.left = `${String(labelLeft - indicatorBleed)}px`;
+      indicator.style.width = `${String(labelWidth + indicatorBleed * 2)}px`;
       indicator.style.removeProperty('top');
       indicator.style.removeProperty('height');
     } else {
