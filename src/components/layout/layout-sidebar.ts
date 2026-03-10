@@ -143,7 +143,7 @@ export class LayoutSidebar extends LitElement {
   private _state: 'expanded' | 'collapsed' = 'collapsed';
 
   @query('ui-sidebar')
-  private _sidebarElement: UiSidebar | null = null;
+  private _sidebarElement!: UiSidebar | null;
 
   override connectedCallback(): void {
     super.connectedCallback();
