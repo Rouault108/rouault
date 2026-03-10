@@ -10931,7 +10931,7 @@ trigger.addEventListener('click', () => {
 
 **3. コンポーネント定義**
 
-- **`<ui-search-dialog>`**: Native `<dialog>` 要素を使用したモーダル型の検索インターフェース Web Component。`showModal()` による Focus Trap と Backdrop を持ち、Pagefind によるキーワード全文検索とキーボードナビゲーションによる結果選択・ページ遷移を提供します。Header（入力欄・クリアボタン）、Body（検索結果リスト / 空状態 / ローディング）、Footer（キーボードヒント）の 3 ペインで構成されます。
+- **`<ui-search-dialog>`**: Native `<dialog>` 要素を使用したモーダル型の検索インターフェース Web Component。`showModal()` による Focus Trap と Backdrop を持ち、Pagefind によるキーワード全文検索とキーボードナビゲーションによる結果選択・ページ遷移を提供します。Header（入力欄・入力内クリア・閉じるボタン）、Body（検索結果リスト / 空状態 / ローディング）、Footer（キーボードヒント）の 3 ペインで構成されます。
 
 **4. 技術仕様とAPI (Technical Specs)**
 
@@ -10976,9 +10976,10 @@ trigger.addEventListener('click', () => {
   display: block;
 
   /* 外部からオーバーライド可能なパブリックトークン */
-  --ui-search-dialog-max-width: min(640px, 90vw);
-  --ui-search-dialog-max-height: min(480px, 80vh);
-  --ui-search-dialog-position-top: 20%;
+  --ui-search-dialog-max-width: min(600px, 92vw);
+  --ui-search-dialog-max-height: min(440px, 76vh);
+  --ui-search-dialog-position-top: 14%;
+  --ui-search-dialog-body-min-height: clamp(220px, 34vh, 300px);
 
   /* コンポーネントローカルトークン（外部からの上書きは意図しない） */
   --ui-search-dialog-backdrop: oklch(from var(--black) l c h / var(--opacity-scrim));
@@ -10990,9 +10991,10 @@ trigger.addEventListener('click', () => {
 > `::part()` による外部スタイリングは `index.md` の禁止事項（コンポーネントのカプセル化を破壊）に該当するため使用しません。代わりに CSS カスタムプロパティを `:host` 上で公開することで、カプセル化を維持しながら外部からの調整を可能にします。変数名は `--ui-[コンポーネント名]-[プロパティ]` の命名規則に従います。
 
 > **Rationale (Width / Height / Position Constraints):**
-> - **Max Width**: `640px` はコマンドパレットの標準的な最適幅。`90vw` により小画面でも余白を確保。
-> - **Max Height**: `80vh` は結果が多い場合でも画面内に収まる上限。内部スクロールを Body 領域で吸収します。
-> - **Position Top**: `20%` は視線移動を最小化する中央上部への配置。入力フィールドが画面上方に位置することで、入力と同時に下方へ展開する結果リストとの視線移動コストを削減します。
+> - **Max Width**: `600px` は検索パレットとして十分な一覧性を確保しつつ、読みのリズムを崩さない上限です。`92vw` により小画面でも余白を維持します。
+> - **Max Height**: `76vh` はトップレイヤーとしての圧迫感を抑えつつ、結果リストのスクロール余地を確保する上限です。
+> - **Position Top**: `14%` は視線の初期着地点をやや上に寄せ、入力欄と結果リストを一続きの視野に収めます。
+> - **Body Min Height**: `--ui-search-dialog-body-min-height` は Body を唯一の高さオーナーに固定し、loading / empty / results の切替でもレイアウトジャンプを防ぎます。
 
 > **Rationale (Edge Highlight Token):**
 > ダークモードの上端ハイライトは `index.md` 深度表現パターン（`inset 0 1px 0 0 oklch(100% 0 0 / 0.1)`）に準拠した手法です。`border` で実現するため `0.08` とわずかに控えめにしています。ハードコードを避けコンポーネントローカルトークンとして定義します。
@@ -11019,6 +11021,20 @@ trigger.addEventListener('click', () => {
 | **Shadow** | `var(--elevation-xl)` | Semantic トークン使用。Light/Dark を自動切替 |
 | **Z-index** | `var(--z-modal)` (`300`) | `index.md` Z-index Scale 準拠 |
 
+> **Implementation Note (Shell Responsibility):**
+> Native `<dialog>` には `.dialog` class を付与し、トップレイヤーのシェル責務だけを持たせます。寸法、位置、サーフェス、アニメーション、`::backdrop` は `.dialog` に集約し、状態別の高さは Body 側で管理します。
+
+**Body（状態コンテナ）**
+
+| プロパティ | 値 | 説明 |
+|-----------|-----|------|
+| **Min Height** | `var(--ui-search-dialog-body-min-height)` | loading / empty / results の共通下限高 |
+| **Layout** | `display: flex; flex-direction: column;` | 可視状態の子を 1 つだけ伸長 |
+| **Overflow** | `hidden` | リストのスクロールを Body 内へ閉じ込める |
+
+> **Rationale (Single Height Owner):**
+> 個々の状態要素に `min-height` を分散させると、状態遷移ごとにレイアウト責務が曖昧になります。`.body` にのみ最低高を持たせ、`loading-state` / `empty-state` / `result-list` はその領域を埋めるだけの構造に固定します。
+
 > **Rationale (Surface Token):**
 > 検索ダイアログは `showModal()` による Focus Trap と Backdrop を持つモーダルオーバーレイです。`index.md` の深度階層定義において、この用途は「High = Modal / Dialog（L22%）」に分類されるため、`--bg-surface-2`（Elevated: L17%、Dropdown / Popover 用）ではなく `--bg-surface-3`（High: L22%）を使用します。
 
@@ -11029,15 +11045,15 @@ trigger.addEventListener('click', () => {
 
 | プロパティ | 値 | 説明 |
 |-----------|-----|------|
-| **Height** | `var(--control-height-md)` (32px) | 標準コントロール高 |
+| **Height** | `44px` | クリアボタンと閉じるボタンを含む検索行の視覚的基準高 |
 | **Touch Target** | `var(--control-min-touch)` (疑似要素で拡張) | アクセシビリティ基準準拠 |
 | **Font Size** | `var(--text-base)` (14px) | 標準 UI サイズ |
-| **Padding** | `0 var(--space-4)` | 左右 16px |
+| **Padding** | `0 calc(28px + var(--space-4)) 0 calc(16px + var(--space-5))` | 左アイコンと右クリアボタンを避ける |
 | **Border Bottom** | `var(--border-width) solid var(--border-default)` | Header / Body 分離 |
-| **Background** | `transparent` | パネル背景を継承 |
+| **Background** | `var(--bg-fill-muted)` | 入力ラッパーの背景でノイズを抑えつつ区切る |
 
 > **Note (Input Height Strategy):**
-> `--control-height-lg` (40px) はタッチデバイスの操作性を重視した案ですが、`index.md` の「原則として使用しない」という規定を尊重し、**標準の `--control-height-md` (32px) を視覚的な高さとして採用**します。タッチデバイスでのアクセシビリティは、`::after` 疑似要素により**物理的なヒットエリアを `var(--control-min-touch)` 以上へ拡張**することで担保します。これにより、視覚的なコンパクトさ（デザイン原則1「没入のための構造」）とタップ操作性（原則4「普遍的な明瞭さ」）を両立します。
+> 入力欄自体は `44px` を採用し、左アイコン・入力本体・入力内クリアボタンを 1 つのストリップとして扱います。視覚的な密度を保ちながら、`::after` 疑似要素でタッチターゲットを補強します。
 
 **クリアボタン（Input 右端）**
 
@@ -11049,6 +11065,15 @@ trigger.addEventListener('click', () => {
 | **Hover** | `var(--fg-default)` | 操作意思に対するフィードバック |
 | **Touch Target** | `var(--control-min-touch)` (疑似要素で拡張) | アクセシビリティ基準準拠 |
 | **aria-label** | `"検索をクリア"` | スクリーンリーダー向けラベル |
+
+**閉じるボタン（Header 右端）**
+
+| プロパティ | 値 | 説明 |
+|-----------|-----|------|
+| **Size** | `44px` | 入力行と同じ高さで並べる |
+| **Color** | `var(--fg-muted)` | 通常時は控えめ |
+| **Hover** | `var(--fg-default)` + `var(--bg-hover)` | 操作意思への即時フィードバック |
+| **aria-label** | `"閉じる"` | スクリーンリーダー向けラベル |
 
 **Item（検索結果項目）**
 
@@ -11067,8 +11092,8 @@ trigger.addEventListener('click', () => {
 | プロパティ | 値 | 説明 |
 |-----------|-----|------|
 | **Typography** | `--text-xs` (12px), `--fg-muted` | 控えめな補助情報 |
-| **Layout** | Flexbox, `justify-content: center`, `gap: var(--space-4)` | 中央揃え、16px 間隔 |
-| **Keycap Style** | `background: var(--bg-fill-muted)`, `border-radius: var(--radius-sm)`, `padding: var(--space-1) var(--space-2)` | キーキャップの視覚的強調 |
+| **Layout** | Flexbox, `justify-content: center`, `gap: var(--space-3)`, `flex-wrap: wrap` | 中央揃え、12px 間隔、狭幅時は折り返し |
+| **Keycap Style** | `background: transparent`, `padding: 0` | 補助情報として軽く見せる |
 | **Border Top** | `var(--border-width) solid var(--border-default)` | Body / Footer 分離 |
 
 **スクロールロック (Scroll Lock)**
@@ -11096,13 +11121,14 @@ body[data-ui-search-dialog-open] {
 
 **空状態 (Empty State)**
 
-検索結果が 0 件の場合、`<ui-empty-state>` コンポーネントを使用します。
+検索結果が 0 件の場合、Body 内に検索専用の空状態マークアップを描画します。`ui-empty-state` へ委譲せず、検索ダイアログ内で視覚密度とキーボード導線を完結させます。
 
 | プロパティ | 値 |
 |-----------|-----|
-| **アイコン** | `search-x` |
-| **タイトル** | 「一致する結果がありません」 |
+| **アイコン** | `search` |
+| **タイトル** | 「結果が見つかりません」 |
 | **説明** | 「別のキーワードで検索してください」 |
+| **上下余白比** | `1 : 0.7` |
 
 **7. アニメーション (Animation)**
 
@@ -11122,7 +11148,7 @@ body[data-ui-search-dialog-open] {
   }
 }
 
-dialog {
+.dialog {
   animation: search-dialog-enter var(--duration-normal) var(--ease-out) forwards;
 }
 ```
@@ -11141,7 +11167,7 @@ dialog {
   }
 }
 
-dialog[data-closing] {
+.dialog[data-closing] {
   animation: search-dialog-exit var(--duration-normal) var(--ease-in) forwards;
 }
 ```
@@ -11167,11 +11193,11 @@ dialog[data-closing] {
   to   { opacity: 0; }
 }
 
-::backdrop {
+.dialog::backdrop {
   animation: search-backdrop-enter var(--duration-normal) var(--ease-out) forwards;
 }
 
-[data-closing]::backdrop {
+.dialog[data-closing]::backdrop {
   animation: search-backdrop-exit var(--duration-normal) var(--ease-in) forwards;
 }
 ```
@@ -11196,14 +11222,14 @@ dialog[data-closing] {
 
 ```css
 @media (prefers-reduced-motion: reduce) {
-  dialog,
-  dialog[data-closing] {
+  .dialog,
+  .dialog[data-closing] {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1;
   }
 
-  ::backdrop,
-  [data-closing]::backdrop {
+  .dialog::backdrop,
+  .dialog[data-closing]::backdrop {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1;
   }
@@ -11219,13 +11245,13 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
 
 ```css
 @media (forced-colors: active) {
-  dialog {
+  .dialog {
     background: Canvas;
     border: var(--border-width-thick) solid CanvasText;
     box-shadow: none;
   }
 
-  ::backdrop {
+  .dialog::backdrop {
     background: Canvas;
     opacity: 0.7;
     backdrop-filter: none;
@@ -11241,6 +11267,11 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
     border: var(--border-width) solid ButtonText;
     color: ButtonText;
   }
+
+  .close-button {
+    border: var(--border-width) solid ButtonText;
+    color: ButtonText;
+  }
 }
 ```
 
@@ -11251,8 +11282,8 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
 
 ```css
 @media print {
-  dialog,
-  ::backdrop {
+  .dialog,
+  .dialog::backdrop {
     display: none !important;
   }
 }
@@ -11287,7 +11318,7 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
 ```html
 <!-- Shadow DOM 内部（視覚非表示、スクリーンリーダー向け） -->
 <div class="sr-only" aria-live="polite" aria-atomic="true">
-  <!-- 例: "3 件の結果が見つかりました" / "一致する結果がありません" -->
+  <!-- 例: "3 件の結果が見つかりました" / "結果が見つかりません" -->
 </div>
 ```
 
@@ -11311,40 +11342,47 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
 | `↑` | 前の結果へ移動（先頭項目の前はリストの末尾へループ） |
 | `Enter` | 選択中の結果へ遷移 |
 | `Esc` | パレットを閉じる |
-| `Tab` | 入力フィールド ↔ クリアボタン間を移動 |
+| `Tab` | 入力フィールド → クリアボタン → 閉じるボタンへ移動 |
 
 **12. DOM 構造 (DOM Structure)**
 
 ```html
 <!-- Shadow DOM 内部 -->
 <dialog
+  class="dialog"
   aria-modal="true"
   aria-label="検索"
 >
   <!-- SR 向け Live リージョン（視覚非表示） -->
   <div class="sr-only" aria-live="polite" aria-atomic="true"></div>
 
-  <!-- Header: 検索入力 + クリアボタン -->
+  <!-- Header: 検索入力 + 入力内クリア + 閉じるボタン -->
   <div class="header">
-    <input
-      type="search"
-      role="combobox"
-      aria-expanded="false"
-      aria-autocomplete="list"
-      aria-controls="search-listbox"
-      aria-activedescendant=""
-      aria-busy="false"
-      placeholder="検索..."
-      autocomplete="off"
-    />
-    <!-- クリアボタン: query が空でない場合のみ表示 -->
-    <button
-      class="clear-button"
-      aria-label="検索をクリア"
-      type="button"
-      hidden
-    >
-      <!-- Lucide CircleX アイコン (aria-hidden="true") -->
+    <div class="input-wrapper">
+      <span class="input-icon" aria-hidden="true"></span>
+      <input
+        class="search-input"
+        type="search"
+        role="combobox"
+        aria-expanded="false"
+        aria-autocomplete="list"
+        aria-controls="search-listbox"
+        aria-activedescendant=""
+        aria-busy="false"
+        placeholder="検索"
+        autocomplete="off"
+      />
+      <button
+        class="clear-button"
+        aria-label="検索をクリア"
+        type="button"
+        hidden
+      >
+        <!-- Lucide CircleX アイコン (aria-hidden="true") -->
+      </button>
+    </div>
+    <button class="close-button" aria-label="閉じる" type="button">
+      <!-- Lucide X アイコン (aria-hidden="true") -->
     </button>
   </div>
 
@@ -11357,13 +11395,13 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
     </div>
 
     <!-- 空状態 -->
-    <ui-empty-state
-      class="empty-state"
-      hidden
-      icon="search-x"
-      title="一致する結果がありません"
-      description="別のキーワードで検索してください"
-    ></ui-empty-state>
+    <section class="empty-state" role="status" aria-atomic="true" hidden>
+      <div class="empty-state-content">
+        <div class="empty-state-icon" aria-hidden="true"></div>
+        <h2 class="empty-state-heading">結果が見つかりません</h2>
+        <p class="empty-state-description">別のキーワードで検索してください</p>
+      </div>
+    </section>
 
     <!-- 検索結果リスト -->
     <ul
@@ -11383,13 +11421,12 @@ Windows ハイコントラストモードなど、OS レベルで色が強制さ
   <div class="footer" aria-hidden="true">
     <span><kbd>↑</kbd><kbd>↓</kbd> 移動</span>
     <span><kbd>Enter</kbd> 選択</span>
-    <span><kbd>Esc</kbd> 閉じる</span>
   </div>
 </dialog>
 ```
 
 > **Note (内部クラス名について):**
-> 内部要素には `part` 属性を付与しません。`::part()` による外部スタイリングは `index.md` の禁止事項（コンポーネントのカプセル化を破壊）に該当するためです。外部からのカスタマイズが必要な場合は、`:host` 上で公開されている CSS カスタムプロパティ（`--ui-search-dialog-max-width`, `--ui-search-dialog-max-height`, `--ui-search-dialog-position-top`）を使用してください。
+> 内部要素には `part` 属性を付与しません。`::part()` による外部スタイリングは `index.md` の禁止事項（コンポーネントのカプセル化を破壊）に該当するためです。外部からのカスタマイズが必要な場合は、`:host` 上で公開されている CSS カスタムプロパティ（`--ui-search-dialog-max-width`, `--ui-search-dialog-max-height`, `--ui-search-dialog-position-top`, `--ui-search-dialog-body-min-height`）を使用してください。
 
 > **Note (スロットレス設計と `::backdrop`):**
 > このコンポーネントはスロットを持ちません。`showModal()` 使用時のみ、ブラウザが native `::backdrop` 疑似要素を自動生成します。Shadow DOM 内部の要素ではなく、ブラウザが管理するトップレイヤーです。
@@ -11439,6 +11476,7 @@ trigger.addEventListener('click', () => {
     --ui-search-dialog-max-width: min(800px, 90vw);
     --ui-search-dialog-max-height: min(600px, 85vh);
     --ui-search-dialog-position-top: 15%;
+    --ui-search-dialog-body-min-height: 20rem;
   }
 </style>
 
@@ -11451,14 +11489,14 @@ trigger.addEventListener('click', () => {
 - **閉じる動作**: `close()` 呼び出し後、Exit アニメーション完了後にダイアログが非表示になること。
 - **フォーカス移動（開く時）**: ダイアログ開放後、入力フィールドへ自動フォーカスが移動すること。
 - **フォーカス返却（閉じる時）**: `open(triggerElement)` で渡した要素、または自動取得した `document.activeElement` へフォーカスが返却されること。
-- **Focus Trap**: `Tab` キーで入力フィールドとクリアボタン間のみを循環すること。ダイアログ外の要素にフォーカスが移動しないこと。
+- **Focus Trap**: `Tab` / `Shift+Tab` で入力フィールド、クリアボタン、閉じるボタン間を循環すること。ダイアログ外の要素にフォーカスが移動しないこと。
 - **Esc キー**: Native `cancel` イベントを `preventDefault()` → Exit アニメーション後にダイアログが閉じること。
 - **クリアボタン表示制御**: `query` が空の場合はクリアボタンが `hidden` であること。文字入力後に表示されること。クリアボタン押下で入力がクリアされ、非表示に戻ること。
 - **キーボードナビゲーション（↑↓）**: 矢印キーで結果項目を移動できること。最終項目の次で先頭へ、先頭項目の前で末尾へループすること。
 - **Enter キー**: 選択中の結果項目で Enter 押下時に `ui-search-dialog-selected` が発火し、ページ遷移が実行されること。
 - **デバウンス**: キー入力から 150ms のデバウンス後に検索クエリが Worker へ送信されること。
 - **ローディング状態**: `loading=true` の間、ローディング状態 UI が Body 領域に表示されること。入力フィールドは操作可能で `aria-busy="true"` が設定されること。
-- **空状態**: 検索結果が 0 件の場合、`<ui-empty-state>` が表示されること。
+- **空状態**: 検索結果が 0 件の場合、検索専用の空状態セクションが表示されること。
 - **結果数通知**: 検索結果の件数変化時に `aria-live="polite"` リージョンのテキストが更新されること。
 - **aria-modal**: `aria-modal="true"` が `<dialog>` 要素に設定されること。
 - **aria-label**: `<dialog>` 要素に `aria-label="検索"` が設定されること。
@@ -11468,14 +11506,16 @@ trigger.addEventListener('click', () => {
 - **Scroll Lock**: ダイアログ開放中に `body[data-ui-search-dialog-open]` が付与され、スクロールが無効化されること。閉じた後に属性が解除されること。`scrollbar-gutter: stable` によりレイアウトシフトが発生しないこと。
 - **Elevation Token**: `--elevation-xl` が Shadow に使用されること。`--shadow-xl`, `--shadow-dark-lg` 等の Primitive トークン直接参照が存在しないこと。
 - **Surface Token**: Light/Dark の両モードで `--bg-surface-3` が Panel 背景に使用されること。`--bg-surface-2` が Panel 背景に使用されていないこと。
+- **Body Height Token**: `--ui-search-dialog-body-min-height` が公開トークンとして存在し、Body の最低高がここで一元管理されること。
 - **コンポーネントトークン命名**: `--ui-search-dialog-*` 命名規則に従っていること。`--search-dialog-*` 形式のトークンが存在しないこと。
+- **Dialog Shell Selector**: Native `<dialog>` のスタイルが `.dialog` class 経由で適用され、`dialog` タグ直指定へ責務が散らばっていないこと。
 - **ハードコード禁止**: スタイル内にハードコードされた色・サイズ値が存在しないこと（トークンまたはコンポーネントローカルトークンを使用すること）。
 - **`::part()` 不使用**: DOM に `part` 属性が存在しないこと。
 - **スロットなし**: Shadow DOM 内部にスロット要素が存在しないこと。
 - **Reduced Motion**: `prefers-reduced-motion: reduce` 時にアニメーションが無効化され、パネルと `::backdrop` が即座に表示/非表示されること。
 - **Forced Colors**: Forced Colors Mode でパネルに `var(--border-width-thick) solid CanvasText` のボーダーが適用されること。`Canvas` 背景が使用されること。選択中の項目に `outline: var(--border-width-thick) solid Highlight` が適用されること。
 - **印刷**: 印刷時にダイアログ全体（`::backdrop` を含む）が非表示（`display: none !important`）になること。
-- **DOM 構造**: `<dialog>` 内に `.header`（入力・クリアボタン）、`.body`（リスト・ローディング・空状態）、`.footer`（ヒント）が配置されること。`part` 属性が存在しないこと。
+- **DOM 構造**: `<dialog class="dialog">` 内に `.header`（入力・クリアボタン・閉じるボタン）、`.body`（リスト・ローディング・空状態）、`.footer`（ヒント）が配置されること。`part` 属性が存在しないこと。
 - **Progressive Enhancement**: JavaScript 無効時、検索機能が使えない旨の `noscript` 通知（`index.md` の方針に準拠）が表示されること。
 - **Performance SLO**: 検索ダイアログの主要操作（開閉、入力、結果選択）において INP p75 が `200ms` 未満であること。開閉時の CLS が `0.1` 未満であること。
 
