@@ -522,6 +522,18 @@ a:focus-visible {
   color: var(--fg-muted);
 }
 
+/* list-item の主リンクは light DOM 側にいるため、グローバル側で下線契約を上書きする */
+ui-list-item a.primary-link[href] {
+  color: inherit;
+  font-weight: inherit;
+  text-decoration: none;
+}
+
+ui-list-item a.primary-link[href]:hover {
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+}
+
 /* ---------------------------------------------------------------------------
  * Block Link (Card Action)
  * カード全体をリンク化する Stretched Link パターン
