@@ -44,6 +44,11 @@ const SINGLE_OPTION: SelectOption[] = [
   { value: 'only', label: '唯一の選択肢' },
 ];
 
+const MANY_OPTIONS: SelectOption[] = Array.from({ length: 20 }, (_, index) => ({
+  value: `item-${(index + 1).toString()}`,
+  label: `選択肢 ${(index + 1).toString()}`,
+}));
+
 // ============================================================
 // Meta
 // ============================================================
@@ -204,6 +209,28 @@ export const Default: Story = {
     const triggerId = trigger.getAttribute('id');
     if (!labelEl || !triggerId || labelEl.getAttribute('for') !== triggerId) {
       throw new Error('Label should be associated with trigger input');
+    }
+
+    const chevronIcon = select.shadowRoot?.querySelector<HTMLElement>('iconify-icon.icon-chevron');
+    if (!chevronIcon) {
+      throw new Error('トリガーのアイコンは iconify-icon で描画されるべきです');
+    }
+    if (chevronIcon.getAttribute('icon') !== 'lucide:chevron-down') {
+      throw new Error(`icon="lucide:chevron-down" を期待しましたが、実際には "${chevronIcon.getAttribute('icon') ?? 'null'}" でした`);
+    }
+
+    const triggerRect = trigger.getBoundingClientRect();
+    const iconRect = chevronIcon.getBoundingClientRect();
+    if (triggerRect.right > window.innerWidth) {
+      throw new Error('トリガーがビューポート右端にはみ出しています');
+    }
+    if (triggerRect.right - iconRect.right > 16) {
+      throw new Error('矢印アイコンがトリガー右端から離れすぎています');
+    }
+    const triggerCenterY = triggerRect.top + triggerRect.height / 2;
+    const iconCenterY = iconRect.top + iconRect.height / 2;
+    if (Math.abs(triggerCenterY - iconCenterY) > 1) {
+      throw new Error('矢印アイコンがトリガーの垂直中央に配置されていません');
     }
   },
 };
@@ -801,7 +828,80 @@ export const KeyboardNavigation: Story = {
 };
 
 // ============================================================
-// 13. ChangeEvent（changeイベント）
+// 13. LongScrollableOptions（長い選択肢リスト）
+// ============================================================
+
+/**
+ * 長い選択肢リストの回帰テスト。
+ * 内部スクロールや Arrow キー移動でポップアップが閉じないことを確認します。
+ */
+export const LongScrollableOptions: Story = {
+  render: () => html`
+    <div style="max-width: 400px;">
+      <ui-select
+        id="long-scrollable-select"
+        label="多数の選択肢"
+        name="many-options"
+        placeholder="選択してください"
+        .options="${MANY_OPTIONS}"
+      ></ui-select>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const select = canvasElement.querySelector<Select>('#long-scrollable-select');
+    if (!select) throw new Error('ui-select コンポーネントが見つかりません');
+    await select.updateComplete;
+
+    const trigger = select.shadowRoot?.querySelector<HTMLElement>('[role="combobox"]');
+    if (!trigger) throw new Error('トリガーが見つかりません');
+
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    await select.updateComplete;
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+
+    for (let i = 0; i < 12; i += 1) {
+      trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      await select.updateComplete;
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
+    }
+
+    if (!select.opened) {
+      throw new Error('長いリストを ArrowDown で移動しても、リストボックスは閉じないべきです');
+    }
+
+    const activeId = trigger.getAttribute('aria-activedescendant');
+    if (!activeId) {
+      throw new Error('長いリストでも aria-activedescendant が維持されるべきです');
+    }
+
+    const activeEl = document.getElementById(activeId);
+    if (!activeEl) {
+      throw new Error('アクティブなオプション要素が見つかりません');
+    }
+
+    if (activeEl.getAttribute('data-index') !== '12') {
+      throw new Error(`13番目の選択肢に到達することを期待しましたが、実際には "${activeEl.getAttribute('data-index') ?? 'null'}" でした`);
+    }
+
+    const listbox = document.querySelector<HTMLElement>('[data-ui-select-listbox]');
+    if (!listbox) {
+      throw new Error('リストボックス要素が見つかりません');
+    }
+
+    listbox.scrollTop = listbox.scrollHeight;
+    listbox.dispatchEvent(new Event('scroll', { bubbles: true }));
+    await select.updateComplete;
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+
+    const afterScroll = canvasElement.querySelector<Select>('#long-scrollable-select');
+    if (!afterScroll?.opened) {
+      throw new Error('リストボックス自身をスクロールしても、ポップアップは閉じないべきです');
+    }
+  },
+};
+
+// ============================================================
+// 14. ChangeEvent（changeイベント）
 // ============================================================
 
 /**
@@ -864,7 +964,7 @@ export const ChangeEvent: Story = {
 };
 
 // ============================================================
-// 14. ErrorStateTransition（エラー状態の遷移）
+// 15. ErrorStateTransition（エラー状態の遷移）
 // ============================================================
 
 /**
@@ -941,7 +1041,7 @@ export const ErrorStateTransition: Story = {
 };
 
 // ============================================================
-// 15. EmptyOptions（選択肢なし）境界条件
+// 16. EmptyOptions（選択肢なし）境界条件
 // ============================================================
 
 /**

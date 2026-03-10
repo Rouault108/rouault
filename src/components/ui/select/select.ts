@@ -11,6 +11,7 @@ import {
     size,
     type ComputePositionReturn,
 } from '@floating-ui/dom';
+import '../../../lib/icons';
 
 // ============================================================
 // 型定義
@@ -100,13 +101,15 @@ export class Select extends LitElement {
     .trigger-wrapper {
       position: relative;
       width: 100%;
+      max-width: 100%;
     }
 
     .trigger {
-      /* レイアウト */
       display: flex;
       align-items: center;
       width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
       height: var(--control-height-md, 32px);
       /* 右側にアイコン領域を確保 */
       padding: 0 calc(var(--space-2, 8px) + var(--icon-base, 16px) + var(--space-2, 8px)) 0 var(--space-2, 8px);
@@ -201,9 +204,12 @@ export class Select extends LitElement {
      * ============================================================ */
     .icon-chevron {
       position: absolute;
-      right: var(--space-2, 8px);
+      display: inline-grid;
+      place-items: center;
+      inset-inline-end: var(--space-2, 8px);
       top: 50%;
       transform: translateY(-50%);
+      line-height: 1;
       width: var(--icon-base, 16px);
       height: var(--icon-base, 16px);
       color: var(--fg-muted, oklch(48% 0 0));
@@ -389,7 +395,7 @@ export class Select extends LitElement {
     private _handleClickOutside: ((e: MouseEvent) => void) | null = null;
 
     /** Scroll Close ハンドラの参照 */
-    private _handleScrollClose: (() => void) | null = null;
+    private _handleScrollClose: ((e: Event) => void) | null = null;
 
     /** Type-ahead バッファ */
     private _typeaheadBuffer = '';
@@ -552,22 +558,11 @@ export class Select extends LitElement {
           @blur="${this._handleBlur}"
         />
 
-        <!-- ChevronDown アイコン（SVG インライン） -->
-        <svg
+        <iconify-icon
           class="${classMap(chevronClasses)}"
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+          icon="lucide:chevron-down"
           aria-hidden="true"
-        >
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
+        ></iconify-icon>
       </div>
 
       ${this.helpText && !hasError
@@ -814,6 +809,9 @@ export class Select extends LitElement {
         // チェックアイコン（選択済み項目）
         if (opt.value === this.modelValue) {
             const checkIcon = document.createElement('span');
+            const checkGlyph = document.createElement('iconify-icon');
+            checkGlyph.setAttribute('icon', 'lucide:check');
+            checkGlyph.setAttribute('aria-hidden', 'true');
             checkIcon.setAttribute('aria-hidden', 'true');
             checkIcon.style.cssText = `
         position: absolute;
@@ -827,13 +825,11 @@ export class Select extends LitElement {
         justify-content: center;
         color: var(--primary, oklch(60% 0.15 250));
       `;
-            checkIcon.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-          fill="none" stroke="currentColor" stroke-width="2.5"
-          stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
-      `;
+            Object.assign(checkGlyph.style, {
+                width: '14px',
+                height: '14px',
+            });
+            checkIcon.appendChild(checkGlyph);
             item.appendChild(checkIcon);
         }
 
@@ -1081,7 +1077,12 @@ export class Select extends LitElement {
             }
         };
 
-        this._handleScrollClose = () => {
+        this._handleScrollClose = (e: Event) => {
+            const target = e.target;
+            if (target instanceof Node) {
+                if (this.contains(target)) return;
+                if (this._listboxEl?.contains(target) ?? false) return;
+            }
             this.opened = false;
         };
 
