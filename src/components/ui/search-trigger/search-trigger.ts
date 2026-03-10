@@ -182,7 +182,7 @@ export class SearchTrigger extends LitElement {
     /* ── プレースホルダーテキスト ── */
     .placeholder {
       flex: 1;
-      text-align: left;
+      text-align: start;
       color: var(--fg-subtle, oklch(65% 0 0));
       font-size: var(--text-base, 14px);
       font-weight: var(--font-normal, 400);
