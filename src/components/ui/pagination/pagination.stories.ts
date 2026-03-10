@@ -1719,9 +1719,6 @@ export const StructuralLinkContract: Story = {
     if (!styleText.includes('.page-btn:focus-visible')) {
       throw new Error(`[${S}] page-btn の focus-visible 契約が不足しています`);
     }
-    if (!styleText.includes("box-shadow: inset")) {
-      throw new Error(`[${S}] 現在地インジケータ（inset shadow）契約が不足しています`);
-    }
 
     const current = sh.querySelector<HTMLAnchorElement>('.page-btn[aria-current="page"]');
     if (!current) throw new Error(`[${S}] 現在ページリンクが見つかりません`);

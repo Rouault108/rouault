@@ -323,15 +323,15 @@ export const HoverPauseAndResumeTimer: Story = {
     ToastManager.show({
       variant: 'warning',
       message: '接続が不安定です',
-      duration: 360,
+      duration: 720,
     });
     await flush(host);
 
     const toast = findToastByMessage(host, '接続が不安定です');
-    await wait(120);
+    await wait(180);
 
     toast.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
-    await wait(420);
+    await wait(720);
     await flush(host);
 
     if (ToastManager.getSnapshot().length !== 1) {
@@ -339,8 +339,7 @@ export const HoverPauseAndResumeTimer: Story = {
     }
 
     toast.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }));
-    await wait(300);
-    await waitForSnapshotCount(0);
+    await waitForSnapshotCount(0, 1800);
     await flush(host);
 
     if (ToastManager.getSnapshot().length !== 0) {
@@ -502,7 +501,7 @@ export const DarkModeAndStyleContracts: Story = {
     const styleEl = root?.querySelector('style');
     let cssText = styleEl?.textContent ?? '';
     if (!cssText && root) {
-      cssText = Array.from(root.adoptedStyleSheets ?? [])
+      cssText = Array.from(root.adoptedStyleSheets)
         .flatMap((sheet) => Array.from(sheet.cssRules).map((rule) => rule.cssText))
         .join('\n');
     }

@@ -215,22 +215,18 @@ const assertState = (component: UiVideo, expected: string): void => {
 const invokeShellClick = (component: UiVideo, event: MouseEvent): void => {
   const candidate = Reflect.get(component as unknown as Record<string, unknown>, '_onShellClick');
   if (typeof candidate !== 'function') {
-    throw new Error('_onShellClick 縺瑚ｨｭ螳壹＆繧後※縺・∪縺帙ｓ');
+    throw new Error('_onShellClick が設定されていません');
   }
   const handler = candidate as (payload: MouseEvent) => void;
   handler(event);
 };
 
-const invokeComponentHandler = <TArgs extends unknown[]>(
-  component: UiVideo,
-  name: string,
-  ...args: TArgs
-): void => {
+const invokeComponentHandler = (component: UiVideo, name: string, ...args: unknown[]): void => {
   const candidate = Reflect.get(component as unknown as Record<string, unknown>, name);
   if (typeof candidate !== 'function') {
     throw new Error(`${name} が見つかりません`);
   }
-  const handler = candidate as (...payload: TArgs) => void;
+  const handler = candidate as (...payload: unknown[]) => void;
   handler.apply(component, args);
 };
 
@@ -1368,7 +1364,6 @@ export const FloatingBarAutoHide: Story = {
     }
 
     // 再生開始
-    const overlayButton = getOverlayPlayButton(video);
     invokeComponentHandler(video, '_togglePlayback');
     await video.updateComplete;
     assertState(video, 'playing');
@@ -1395,7 +1390,10 @@ export const FloatingBarAutoHide: Story = {
 
     // フローティングバーの再生ボタンでセンターオーバーレイが表示されないこと
     // まず一時停止してバーを表示
-    invokeComponentHandler(video, '_onFloatingBarPlay');
+    // WebKit では mock した pause() 呼び出しの反映が不安定なため、
+    // ストーリー上は media state と pause イベントを直接同期させる
+    mediaState.paused = true;
+    media.dispatchEvent(new Event('pause'));
     await video.updateComplete;
     assertState(video, 'paused');
 

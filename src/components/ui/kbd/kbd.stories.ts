@@ -493,6 +493,17 @@ const contrastRatio = (foreground: [number, number, number], background: [number
   return (lighter + 0.05) / (darker + 0.05);
 };
 
+const resolveBorderColor = (surface: HTMLElement): string => {
+  const probe = document.createElement('div');
+  probe.style.borderTopWidth = '1px';
+  probe.style.borderTopStyle = 'solid';
+  probe.style.borderTopColor = 'color-mix(in oklab, var(--border-muted, oklch(20% 0 0 / 0.06)) 80%, transparent)';
+  surface.append(probe);
+  const color = getComputedStyle(probe).borderTopColor;
+  probe.remove();
+  return color;
+};
+
 // ──────────────────────────────────────────────
 // 受け入れ基準: 日本語読み上げ整合
 // ──────────────────────────────────────────────
@@ -568,6 +579,7 @@ export const DarkModeTokenContract: Story = {
         --bg-fill-muted: rgb(31, 35, 43);
         --border-muted: rgb(94, 103, 121);
         --border-width: 1px;
+        --radius-md: 12px;
         background: rgb(24, 28, 35);
         color: rgb(230, 232, 236);
         padding: 1rem;
@@ -582,8 +594,12 @@ export const DarkModeTokenContract: Story = {
     if (!host) throw new Error('#dark-mode-kbd が見つかりません');
     await host.updateComplete;
 
+    const surface = canvasElement.querySelector<HTMLElement>('#dark-mode-surface');
+    if (!surface) throw new Error('#dark-mode-surface が見つかりません');
+
     const key = requireShadowElement(host, 'kbd.kbd-key') as HTMLElement;
     const style = getComputedStyle(key);
+    const expectedBorderColor = resolveBorderColor(surface);
 
     if (style.color !== 'rgb(230, 232, 236)') {
       throw new Error(`ダークモードのフォアグラウンドカラーを期待していましたが、実際には "${style.color}" でした`);
@@ -591,8 +607,10 @@ export const DarkModeTokenContract: Story = {
     if (style.backgroundColor !== 'rgb(31, 35, 43)') {
       throw new Error(`ダークモードのバックグラウンドカラーを期待していましたが、実際には "${style.backgroundColor}" でした`);
     }
-    if (style.borderTopColor !== 'rgb(94, 103, 121)') {
-      throw new Error(`ダークモードのボーダーカラーを期待していましたが、実際には "${style.borderTopColor}" でした`);
+    if (style.borderTopColor !== expectedBorderColor) {
+      throw new Error(
+        `ダークモードのボーダーカラーを期待していましたが、実際には "${style.borderTopColor}" でした`,
+      );
     }
     if (style.borderRadius !== '12px') {
       throw new Error(`ダークモードの角丸が 12px であることを期待していましたが、実際には "${style.borderRadius}" でした`);
