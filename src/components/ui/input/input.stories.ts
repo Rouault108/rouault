@@ -609,6 +609,11 @@ export const Required: Story = {
       throw new Error('input に required 属性が設定されている必要があります');
     }
 
+    const labelElement = input.shadowRoot?.querySelector('label');
+    if (labelElement?.textContent.trim() !== '氏名（必須）') {
+      throw new Error('required の場合、ラベルに「（必須）」が表示される必要があります');
+    }
+
     // テスト: 空欄の状態でcheckValidity()がfalseを返すこと
     if (input.checkValidity()) {
       throw new Error('未入力の必須項目は無効である必要があります');

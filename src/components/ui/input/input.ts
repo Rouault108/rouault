@@ -522,7 +522,7 @@ export class Input extends LitElement {
 
     return html`
       <label for="${this._inputId}" class="${classMap(labelClasses)}">
-        ${this.label}
+        ${this.label}${this.required ? '（必須）' : ''}
       </label>
 
       <input
