@@ -82,7 +82,6 @@ export class Select extends LitElement {
       color: var(--fg-default, oklch(20% 0 0));
     }
 
-    /* sr-only 相当の非表示実装 */
     .label--hidden {
       position: absolute;
       width: 1px;
@@ -111,59 +110,47 @@ export class Select extends LitElement {
       max-width: 100%;
       box-sizing: border-box;
       height: var(--control-height-md, 32px);
-      /* 右側にアイコン領域を確保 */
       padding: 0 calc(var(--space-2, 8px) + var(--icon-base, 16px) + var(--space-2, 8px)) 0 var(--space-2, 8px);
 
-      /* ボーダー・角丸 */
       border-radius: var(--radius-md, 6px);
       border: var(--border-width, 1px) solid transparent;
 
-      /* タイポグラフィ */
       font-family: inherit;
       font-size: var(--text-base, 14px);
       text-align: left;
 
-      /* デフォルト状態: Discoverability */
       background: var(--bg-fill-muted, oklch(95% 0 0));
       color: var(--fg-default, oklch(20% 0 0));
 
-      /* カーソル */
       cursor: pointer;
 
-      /* テキストオーバーフロー */
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
 
-      /* トランジション（明示的なプロパティリスト） */
       transition:
         background-color var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
         border-color var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
         outline-color var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
-    /* フォーカスリングのデフォルトを除去 */
     .trigger:focus {
       outline: none;
     }
 
-    /* Placeholder テキスト色 */
     .trigger--placeholder {
       color: var(--fg-subtle, oklch(48% 0 0));
     }
 
-    /* Hover 状態: Tactility */
     .trigger:hover:not(:disabled):not(:focus) {
       border-color: var(--border-default, oklch(90% 0 0 / 0.12));
     }
 
-    /* Focus 状態: Clear Canvas */
     .trigger:focus {
       background: var(--bg-default, oklch(100% 0 0));
       border-color: var(--border-default, oklch(90% 0 0 / 0.12));
     }
 
-    /* Focus Indicator: Adaptive Focus */
     .trigger:focus-visible {
       outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
       outline-offset: var(--focus-ring-offset, 2px);
@@ -171,19 +158,16 @@ export class Select extends LitElement {
       animation: var(--animation-focus);
     }
 
-    /* Opened 状態: Visual Connection */
     .trigger--opened {
       background: var(--bg-active, oklch(93% 0 0));
       border-color: var(--border-default, oklch(90% 0 0 / 0.12));
     }
 
-    /* Error 状態 */
     .trigger--error {
       border-color: var(--border-danger, oklch(55% 0.2 28));
       background: var(--bg-danger-subtle, oklch(95% 0.02 28));
     }
 
-    /* Disabled 状態 */
     .trigger:disabled,
     :host([disabled]) .trigger {
       border-color: var(--border-default, oklch(90% 0 0 / 0.12));
@@ -192,7 +176,6 @@ export class Select extends LitElement {
       color: var(--fg-subtle, oklch(48% 0 0));
     }
 
-    /* Readonly 状態 */
     :host([readonly]) .trigger {
       border-color: var(--border-default, oklch(90% 0 0 / 0.12));
       background: var(--bg-fill-muted, oklch(95% 0 0));
