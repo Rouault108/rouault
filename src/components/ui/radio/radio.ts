@@ -91,6 +91,7 @@ export class Radio extends LitElement {
     .control {
       position: relative;
       flex-shrink: 0;
+      box-sizing: border-box;
       width: 16px;
       height: 16px;
       border-radius: var(--radius-full, 9999px);
@@ -102,17 +103,9 @@ export class Radio extends LitElement {
        * Unchecked:
        *   border: 1px solid var(--border-muted)
        *   background: var(--bg-fill-muted)
-       *
-       * ボーダー幅 1px → 4px の遷移 + 背景色変化で
-       * 「内側へ色が満ちていく」ドーナツ型アニメーションを生成。
        */
       border: var(--border-width, 1px) solid var(--border-muted, oklch(80% 0 0 / 0.4));
       background: var(--bg-fill-muted, oklch(95% 0 0));
-      transition:
-        border-width var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     /* Touch Target: ::before で最低 44×44px を確保 */
@@ -130,6 +123,11 @@ export class Radio extends LitElement {
     /* Hover */
     .wrapper:hover:not([aria-disabled='true']) .control {
       border-color: var(--border-default, oklch(70% 0 0 / 0.6));
+    }
+
+    :host([checked]) .wrapper:hover .control {
+      border-color: var(--primary, oklch(60% 0.15 250));
+      background: var(--bg-default, oklch(100% 0 0));
     }
 
     /* Active: タクタイルフィードバック */
