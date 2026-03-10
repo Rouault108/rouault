@@ -1,22 +1,30 @@
 import { css, html, LitElement, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import '../../../lib/icons';
-import '../empty-state/empty-state';
 import '../spinner/spinner';
+import {
+  captureTrigger,
+  createBodyScrollLock,
+  restoreTriggerFocus,
+  showNativeDialog,
+  waitForDialogAnimations,
+} from '../dialog/dialog-helpers';
 
 const SEARCH_DEBOUNCE_MS = 150;
 const DIALOG_LABEL = '検索';
-const INPUT_PLACEHOLDER = '検索...';
+const INPUT_PLACEHOLDER = '検索';
 const CLEAR_BUTTON_LABEL = '検索をクリア';
+const CLOSE_BUTTON_LABEL = '閉じる';
 const LISTBOX_ID = 'search-listbox';
 const LOADING_MESSAGE = 'インデックスを読み込んでいます...';
-const EMPTY_HEADING = '一致する結果がありません';
+const EMPTY_HEADING = '結果が見つかりません';
 const EMPTY_DESCRIPTION = '別のキーワードで検索してください';
 const BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE = 'data-ui-search-dialog-open';
 const VIRTUALIZATION_THRESHOLD = 100;
 const VIRTUAL_ROW_HEIGHT_PX = 48;
 const VIRTUAL_OVERSCAN = 6;
 const SEARCH_WORKER_THRESHOLD = VIRTUALIZATION_THRESHOLD;
+const searchDialogBodyScrollLock = createBodyScrollLock(BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE);
 
 interface SearchWorkerRequest {
   token: number;
@@ -54,9 +62,10 @@ export class UiSearchDialog extends LitElement {
   static override styles = css`
     :host {
       display: block;
-      --ui-search-dialog-max-width: min(640px, 90vw);
-      --ui-search-dialog-max-height: min(480px, 80vh);
-      --ui-search-dialog-position-top: 20%;
+      --ui-search-dialog-max-width: min(600px, 92vw);
+      --ui-search-dialog-max-height: min(340px, 60vh);
+      --ui-search-dialog-position-top: 14%;
+      --ui-search-dialog-body-min-height: clamp(170px, 26vh, 230px);
       --ui-search-dialog-backdrop: oklch(from var(--black) l c h / var(--opacity-scrim));
       --ui-search-dialog-edge-highlight: color-mix(in oklch, var(--white) 8%, transparent);
     }
@@ -65,7 +74,7 @@ export class UiSearchDialog extends LitElement {
       display: none !important;
     }
 
-    dialog {
+    .dialog {
       box-sizing: border-box;
       margin: var(--ui-search-dialog-position-top) auto 0;
       padding: 0;
@@ -80,23 +89,26 @@ export class UiSearchDialog extends LitElement {
       color: var(--fg-default);
       box-shadow: var(--elevation-xl);
       animation: search-dialog-enter var(--duration-normal) var(--ease-out) forwards;
-      display: grid;
       grid-template-rows: auto minmax(0, 1fr) auto;
       z-index: var(--z-modal);
     }
 
-    dialog::backdrop {
+    .dialog[open] {
+      display: grid;
+    }
+
+    .dialog::backdrop {
       background: var(--ui-search-dialog-backdrop);
       backdrop-filter: blur(var(--blur-lg));
       animation: search-backdrop-enter var(--duration-normal) var(--ease-out) forwards;
       z-index: var(--z-backdrop);
     }
 
-    dialog[data-closing] {
+    .dialog[data-closing] {
       animation: search-dialog-exit var(--duration-normal) var(--ease-in) forwards;
     }
 
-    dialog[data-closing]::backdrop {
+    .dialog[data-closing]::backdrop {
       animation: search-backdrop-exit var(--duration-normal) var(--ease-in) forwards;
     }
 
@@ -115,7 +127,7 @@ export class UiSearchDialog extends LitElement {
     .header {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
-      align-items: start;
+      align-items: center;
       gap: var(--space-2, 8px);
       border-bottom: var(--border-width) solid var(--border-default);
       padding: var(--space-2, 8px) var(--space-3, 12px);
@@ -123,9 +135,11 @@ export class UiSearchDialog extends LitElement {
 
     .input-wrapper {
       position: relative;
-      min-block-size: var(--control-height-md, 32px);
+      min-block-size: 44px;
       display: flex;
       align-items: center;
+      border-radius: var(--radius-md);
+      background: var(--bg-fill-muted);
     }
 
     .input-wrapper::after {
@@ -138,21 +152,53 @@ export class UiSearchDialog extends LitElement {
       pointer-events: none;
     }
 
+    .input-icon {
+      position: absolute;
+      inset-inline-start: var(--space-3, 12px);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--fg-muted);
+      pointer-events: none;
+    }
+
+    .input-icon iconify-icon {
+      inline-size: var(--icon-base, 16px);
+      block-size: var(--icon-base, 16px);
+      font-size: var(--icon-base, 16px);
+    }
+
     .search-input {
       inline-size: 100%;
-      block-size: var(--control-height-md, 32px);
+      block-size: 44px;
       border: none;
       background: transparent;
       color: var(--fg-default);
       font: inherit;
-      font-size: var(--text-base, 14px);
+      font-size: var(--text-xl, 18px);
       line-height: 1.4;
-      padding: 0 var(--space-1, 4px);
+      padding: 0 calc(28px + var(--space-4, 16px)) 0 calc(16px + var(--space-5, 20px));
       outline: none;
     }
 
     .search-input::placeholder {
       color: var(--fg-subtle);
+    }
+
+    .search-input::-webkit-search-cancel-button,
+    .search-input::-webkit-search-decoration,
+    .search-input::-webkit-search-results-button,
+    .search-input::-webkit-search-results-decoration {
+      -webkit-appearance: none;
+      appearance: none;
+      display: none;
+    }
+
+    .search-input::-ms-clear,
+    .search-input::-ms-reveal {
+      display: none;
+      inline-size: 0;
+      block-size: 0;
     }
 
     .search-input:focus-visible {
@@ -163,9 +209,12 @@ export class UiSearchDialog extends LitElement {
     }
 
     .clear-button {
-      position: relative;
-      inline-size: var(--control-height-sm, 24px);
-      block-size: var(--control-height-sm, 24px);
+      position: absolute;
+      inset-block-start: 50%;
+      inset-inline-end: var(--space-2, 8px);
+      transform: translateY(-50%);
+      inline-size: 28px;
+      block-size: 28px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -207,15 +256,56 @@ export class UiSearchDialog extends LitElement {
       font-size: var(--icon-sm, 14px);
     }
 
+    .close-button {
+      inline-size: 44px;
+      block-size: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      border-radius: var(--radius-md);
+      background: transparent;
+      color: var(--fg-muted);
+      opacity: 0.72;
+      cursor: pointer;
+      padding: 0;
+      transition:
+        opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)),
+        color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)),
+        background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
+    }
+
+    .close-button:hover {
+      opacity: 1;
+      color: var(--fg-default);
+      background: var(--bg-hover);
+    }
+
+    .close-button:focus-visible {
+      opacity: 1;
+      color: var(--fg-default);
+      background: var(--bg-hover);
+      outline: var(--focus-ring-width) solid var(--focus-ring-color);
+      outline-offset: var(--focus-ring-offset);
+      animation: var(--animation-focus, none);
+    }
+
+    .close-button iconify-icon {
+      inline-size: var(--icon-base, 16px);
+      block-size: var(--icon-base, 16px);
+      font-size: var(--icon-base, 16px);
+    }
+
     .body {
-      min-block-size: 0;
+      min-block-size: var(--ui-search-dialog-body-min-height);
       overflow: hidden;
       display: flex;
       flex-direction: column;
     }
 
     .loading-state {
-      min-block-size: 100%;
+      flex: 1 1 auto;
+      min-block-size: 0;
       display: grid;
       place-items: center;
       align-content: center;
@@ -232,13 +322,60 @@ export class UiSearchDialog extends LitElement {
     }
 
     .empty-state {
-      --space-12: var(--space-6, 24px);
-      --space-8: var(--space-4, 16px);
-      min-block-size: 100%;
-      border: none;
+      --ui-search-dialog-empty-state-padding-inline: clamp(var(--space-5, 20px), 4vw, var(--space-7, 28px));
+      --ui-search-dialog-empty-state-padding-block-start: clamp(var(--space-5, 20px), 4vw, var(--space-7, 28px));
+      flex: 1 1 auto;
+      min-block-size: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding-inline: var(--ui-search-dialog-empty-state-padding-inline);
+      padding-block-start: var(--ui-search-dialog-empty-state-padding-block-start);
+      padding-block-end: calc(var(--ui-search-dialog-empty-state-padding-block-start) * 0.7);
+      text-align: center;
+    }
+
+    .empty-state-content {
+      display: grid;
+      justify-items: center;
+      gap: var(--space-3, 12px);
+      inline-size: min(100%, 22rem);
+    }
+
+    .empty-state-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      inline-size: 40px;
+      block-size: 40px;
+      color: var(--fg-subtle);
+    }
+
+    .empty-state-icon iconify-icon {
+      inline-size: 40px;
+      block-size: 40px;
+      font-size: 40px;
+    }
+
+    .empty-state-heading {
+      margin: 0;
+      color: var(--fg-default);
+      font-size: var(--text-lg, 16px);
+      font-weight: var(--font-semibold, 600);
+      line-height: var(--line-height-tight, 1.25);
+      letter-spacing: 0.01em;
+    }
+
+    .empty-state-description {
+      margin: 0;
+      max-inline-size: 34ch;
+      color: var(--fg-muted);
+      font-size: var(--text-sm, 13px);
+      line-height: 1.5;
     }
 
     .result-list {
+      flex: 1 1 auto;
       list-style: none;
       margin: 0;
       padding: var(--space-2, 8px);
@@ -285,7 +422,8 @@ export class UiSearchDialog extends LitElement {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: var(--space-4, 16px);
+      gap: var(--space-3, 12px);
+      flex-wrap: wrap;
       border-top: var(--border-width) solid var(--border-default);
       padding: var(--space-2, 8px) var(--space-3, 12px);
       font-size: var(--text-xs, 12px);
@@ -302,11 +440,11 @@ export class UiSearchDialog extends LitElement {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-inline-size: 1.2em;
-      padding: var(--space-1, 4px) var(--space-2, 8px);
-      border-radius: var(--radius-sm);
-      background: var(--bg-fill-muted);
-      color: var(--fg-default);
+      min-inline-size: 1em;
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+      color: inherit;
       font-size: inherit;
       font-family: inherit;
       line-height: 1;
@@ -357,23 +495,23 @@ export class UiSearchDialog extends LitElement {
     }
 
     @media (prefers-reduced-motion: reduce) {
-      dialog,
-      dialog[data-closing],
-      dialog::backdrop,
-      dialog[data-closing]::backdrop {
+      .dialog,
+      .dialog[data-closing],
+      .dialog::backdrop,
+      .dialog[data-closing]::backdrop {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1;
       }
     }
 
     @media (forced-colors: active) {
-      dialog {
+      .dialog {
         background: Canvas;
         border: var(--border-width-thick) solid CanvasText;
         box-shadow: none;
       }
 
-      dialog::backdrop {
+      .dialog::backdrop {
         background: Canvas;
         opacity: 0.7;
         backdrop-filter: none;
@@ -388,11 +526,16 @@ export class UiSearchDialog extends LitElement {
         border: var(--border-width) solid ButtonText;
         color: ButtonText;
       }
+
+      .close-button {
+        border: var(--border-width) solid ButtonText;
+        color: ButtonText;
+      }
     }
 
     @media print {
-      dialog,
-      dialog::backdrop {
+      .dialog,
+      .dialog::backdrop {
         display: none !important;
       }
     }
@@ -422,6 +565,9 @@ export class UiSearchDialog extends LitElement {
   @state()
   private _liveMessage = '';
 
+  @state()
+  private _hasCompletedSearch = false;
+
   @query('dialog')
   private _dialogElement?: HTMLDialogElement;
 
@@ -440,15 +586,14 @@ export class UiSearchDialog extends LitElement {
   private _searchWorkerUrl: string | null = null;
   private _workerUnsupported = false;
   private _virtualScrollTop = 0;
-
-  private static _scrollLockCount = 0;
+  private _hasBodyScrollLock = false;
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this._clearSearchTimer();
     this._destroySearchWorker();
     if (this._dialogElement?.open) {
-      UiSearchDialog._unlockBodyScroll();
+      this._unlockBodyScroll();
     }
   }
 
@@ -483,7 +628,7 @@ export class UiSearchDialog extends LitElement {
   }
 
   open(trigger?: HTMLElement): void {
-    this._captureTrigger(trigger);
+    this._triggerElement = captureTrigger(this.ownerDocument, trigger);
     if (this.opened) return;
     this.opened = true;
   }
@@ -504,30 +649,26 @@ export class UiSearchDialog extends LitElement {
     if (!dialog) return;
 
     if (dialog.open) {
-      UiSearchDialog._lockBodyScroll();
+      this._lockBodyScroll();
       this._focusInput();
       return;
     }
 
-    if (!this._triggerElement) {
-      this._captureTrigger();
-    }
+    this._triggerElement ??= captureTrigger(this.ownerDocument);
 
-    try {
-      dialog.showModal();
-    } catch {
+    if (!showNativeDialog(dialog, true)) {
       this.opened = false;
       return;
     }
 
-    UiSearchDialog._lockBodyScroll();
+    this._lockBodyScroll();
     this._focusInput();
 
     if (this.query.trim() !== '' && !this.loading) {
       this._scheduleSearch();
     }
 
-    await this._waitForAnimations(dialog);
+    await waitForDialogAnimations(dialog);
     if (!this.opened) return;
 
     this.dispatchEvent(
@@ -541,7 +682,7 @@ export class UiSearchDialog extends LitElement {
     const dialog = this._dialogElement;
     if (!dialog) return;
     if (!dialog.open) {
-      UiSearchDialog._unlockBodyScroll();
+      this._unlockBodyScroll();
       return;
     }
     if (this._isClosing) return;
@@ -550,20 +691,10 @@ export class UiSearchDialog extends LitElement {
     this._isClosing = true;
 
     dialog.setAttribute('data-closing', '');
-    await this._waitForAnimations(dialog);
+    await waitForDialogAnimations(dialog);
     dialog.removeAttribute('data-closing');
     // dialog.close() が native close イベントを発火 → _onNativeClose がクリーンアップとイベント発火を担う
     dialog.close();
-  }
-
-  private async _waitForAnimations(dialog: HTMLDialogElement): Promise<void> {
-    const animations = dialog.getAnimations();
-    if (animations.length === 0) {
-      await Promise.resolve();
-      return;
-    }
-
-    await Promise.allSettled(animations.map((animation) => animation.finished));
   }
 
   private _focusInput(): void {
@@ -573,20 +704,20 @@ export class UiSearchDialog extends LitElement {
     });
   }
 
-  private _captureTrigger(trigger?: HTMLElement): void {
-    if (trigger instanceof HTMLElement) {
-      this._triggerElement = trigger;
-      return;
-    }
-
-    const activeElement = this.ownerDocument.activeElement;
-    this._triggerElement = activeElement instanceof HTMLElement ? activeElement : null;
+  private _restoreTriggerFocus(): void {
+    restoreTriggerFocus(this._triggerElement);
   }
 
-  private _restoreTriggerFocus(): void {
-    const trigger = this._triggerElement;
-    if (!trigger?.isConnected) return;
-    trigger.focus({ preventScroll: true });
+  private _lockBodyScroll(): void {
+    if (this._hasBodyScrollLock) return;
+    searchDialogBodyScrollLock.lock();
+    this._hasBodyScrollLock = true;
+  }
+
+  private _unlockBodyScroll(): void {
+    if (!this._hasBodyScrollLock) return;
+    searchDialogBodyScrollLock.unlock();
+    this._hasBodyScrollLock = false;
   }
 
   private _clearSearchTimer(): void {
@@ -603,15 +734,18 @@ export class UiSearchDialog extends LitElement {
     if (trimmedQuery === '') {
       this._results = [];
       this._activeIndex = -1;
+      this._hasCompletedSearch = false;
       this._setLiveMessage('');
       return;
     }
 
     if (this.loading) {
+      this._hasCompletedSearch = false;
       this._setLiveMessage(LOADING_MESSAGE);
       return;
     }
 
+    this._hasCompletedSearch = false;
     const currentToken = this._searchToken;
     this._searchTimerId = window.setTimeout(() => {
       void this._executeSearch(trimmedQuery, currentToken);
@@ -627,6 +761,7 @@ export class UiSearchDialog extends LitElement {
       if (token !== this._searchToken) return;
       this._results = [];
       this._activeIndex = -1;
+      this._hasCompletedSearch = true;
       this._setLiveMessage(EMPTY_HEADING);
       return;
     }
@@ -637,6 +772,7 @@ export class UiSearchDialog extends LitElement {
     const normalizedResults = this._normalizeResults(rawResults);
     this._results = normalizedResults;
     this._activeIndex = normalizedResults.length > 0 ? 0 : -1;
+    this._hasCompletedSearch = true;
 
     if (normalizedResults.length === 0) {
       this._setLiveMessage(EMPTY_HEADING);
@@ -871,17 +1007,54 @@ export class UiSearchDialog extends LitElement {
 
       case 'Tab':
         if (!event.shiftKey) {
-          // Shadow DOM 内の Tab 移動: clear-button が表示中なら手動でフォーカスを移す
+          // Shadow DOM 内の Tab 移動を明示して、入力クリアと閉じるの役割を分離する
           const clearBtn = this.shadowRoot?.querySelector<HTMLButtonElement>('.clear-button');
+          const closeBtn = this.shadowRoot?.querySelector<HTMLButtonElement>('.close-button');
           if (clearBtn && !clearBtn.hidden) {
             event.preventDefault();
             clearBtn.focus();
+          } else if (closeBtn) {
+            event.preventDefault();
+            closeBtn.focus();
           }
         }
         break;
 
       default:
         break;
+    }
+  };
+
+  private _onAuxiliaryControlKeydown = (event: KeyboardEvent): void => {
+    if (event.key !== 'Tab') return;
+
+    const target = event.currentTarget;
+    if (!(target instanceof HTMLElement)) return;
+
+    const clearButton = this.shadowRoot?.querySelector<HTMLButtonElement>('.clear-button');
+    const closeButton = this.shadowRoot?.querySelector<HTMLButtonElement>('.close-button');
+    const input = this._inputElement;
+    if (!closeButton || !input) return;
+
+    const clearVisible = !!clearButton && !clearButton.hidden;
+    if (event.shiftKey) {
+      if (target === closeButton) {
+        event.preventDefault();
+        if (clearVisible) {
+          clearButton.focus();
+        } else {
+          input.focus();
+        }
+      } else if (target === clearButton) {
+        event.preventDefault();
+        input.focus();
+      }
+      return;
+    }
+
+    if (target === clearButton) {
+      event.preventDefault();
+      closeButton.focus();
     }
   };
 
@@ -977,6 +1150,10 @@ export class UiSearchDialog extends LitElement {
     this._inputElement?.focus({ preventScroll: true });
   };
 
+  private _onCloseClick = (): void => {
+    this.close();
+  };
+
   private _onDialogCancel = (event: Event): void => {
     event.preventDefault();
     this.close();
@@ -991,7 +1168,7 @@ export class UiSearchDialog extends LitElement {
       this.opened = false;
     }
 
-    UiSearchDialog._unlockBodyScroll();
+    this._unlockBodyScroll();
     this._restoreTriggerFocus();
     this.dispatchEvent(new CustomEvent('ui-search-dialog-closed'));
   };
@@ -1011,27 +1188,6 @@ export class UiSearchDialog extends LitElement {
     } catch {
       return item.url;
     }
-  }
-
-  private static _lockBodyScroll(): void {
-    if (typeof document === 'undefined') return;
-
-    const body = document.body;
-    if (UiSearchDialog._scrollLockCount === 0) {
-      body.setAttribute(BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE, '');
-    }
-
-    UiSearchDialog._scrollLockCount += 1;
-  }
-
-  private static _unlockBodyScroll(): void {
-    if (typeof document === 'undefined') return;
-    if (UiSearchDialog._scrollLockCount === 0) return;
-
-    UiSearchDialog._scrollLockCount -= 1;
-    if (UiSearchDialog._scrollLockCount > 0) return;
-
-    document.body.removeAttribute(BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE);
   }
 
   private _onResultListScroll = (event: Event): void => {
@@ -1070,13 +1226,14 @@ export class UiSearchDialog extends LitElement {
     const hasQuery = this.query.trim() !== '';
     const showLoading = this.loading;
     const showResults = !showLoading && this._results.length > 0;
-    const showEmpty = !showLoading && hasQuery && this._results.length === 0;
+    const showEmpty = !showLoading && hasQuery && this._hasCompletedSearch && this._results.length === 0;
     const activeOptionId = this._activeIndex >= 0 ? this._getOptionId(this._activeIndex) : '';
     const visibleRange = this._getVisibleRange();
     const visibleResults = showResults ? this._results.slice(visibleRange.start, visibleRange.end) : [];
 
     return html`
       <dialog
+        class="dialog"
         aria-label=${DIALOG_LABEL}
         aria-modal="true"
         @cancel=${this._onDialogCancel}
@@ -1086,6 +1243,10 @@ export class UiSearchDialog extends LitElement {
 
         <div class="header">
           <div class="input-wrapper">
+            <span class="input-icon" aria-hidden="true">
+              <iconify-icon icon="lucide:search"></iconify-icon>
+            </span>
+
             <input
               class="search-input"
               type="search"
@@ -1101,16 +1262,27 @@ export class UiSearchDialog extends LitElement {
               @input=${this._onInput}
               @keydown=${this._onInputKeydown}
             />
+
+            <button
+              class="clear-button"
+              type="button"
+              aria-label=${CLEAR_BUTTON_LABEL}
+              ?hidden=${!hasQuery}
+              @click=${this._onClear}
+              @keydown=${this._onAuxiliaryControlKeydown}
+            >
+              <iconify-icon icon="lucide:circle-x" aria-hidden="true"></iconify-icon>
+            </button>
           </div>
 
           <button
-            class="clear-button"
+            class="close-button"
             type="button"
-            aria-label=${CLEAR_BUTTON_LABEL}
-            ?hidden=${!hasQuery}
-            @click=${this._onClear}
+            aria-label=${CLOSE_BUTTON_LABEL}
+            @click=${this._onCloseClick}
+            @keydown=${this._onAuxiliaryControlKeydown}
           >
-            <iconify-icon icon="lucide:circle-x" aria-hidden="true"></iconify-icon>
+            <iconify-icon icon="lucide:x" aria-hidden="true"></iconify-icon>
           </button>
         </div>
 
@@ -1120,11 +1292,15 @@ export class UiSearchDialog extends LitElement {
             <p>${LOADING_MESSAGE}</p>
           </div>
 
-          <ui-empty-state class="empty-state" variant="search" ?hidden=${!showEmpty}>
-            <iconify-icon slot="icon" icon="lucide:search-x" aria-hidden="true"></iconify-icon>
-            <span slot="heading">${EMPTY_HEADING}</span>
-            <span slot="description">${EMPTY_DESCRIPTION}</span>
-          </ui-empty-state>
+          <section class="empty-state" role="status" aria-atomic="true" ?hidden=${!showEmpty}>
+            <div class="empty-state-content">
+              <div class="empty-state-icon" aria-hidden="true">
+                <iconify-icon icon="lucide:search"></iconify-icon>
+              </div>
+              <h2 class="empty-state-heading">${EMPTY_HEADING}</h2>
+              <p class="empty-state-description">${EMPTY_DESCRIPTION}</p>
+            </div>
+          </section>
 
           <ul
             id=${LISTBOX_ID}
@@ -1169,9 +1345,8 @@ export class UiSearchDialog extends LitElement {
         </div>
 
         <div class="footer" aria-hidden="true">
-          <span><kbd>↑</kbd><kbd>↓</kbd> 移動</span>
+          <span><kbd>↑</kbd><kbd>↓</kbd>移動</span>
           <span><kbd>Enter</kbd> 選択</span>
-          <span><kbd>Esc</kbd> 閉じる</span>
         </div>
       </dialog>
     `;

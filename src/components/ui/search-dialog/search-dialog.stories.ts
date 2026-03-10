@@ -99,9 +99,21 @@ const getInput = (host: UiSearchDialog): HTMLInputElement => {
   return input;
 };
 
+const getBody = (host: UiSearchDialog): HTMLElement => {
+  const body = host.shadowRoot?.querySelector<HTMLElement>('.body');
+  if (!body) throw new Error('body 要素が見つかりません');
+  return body;
+};
+
 const getClearButton = (host: UiSearchDialog): HTMLButtonElement => {
   const button = host.shadowRoot?.querySelector<HTMLButtonElement>('.clear-button');
   if (!button) throw new Error('クリアボタンが見つかりません');
+  return button;
+};
+
+const getCloseButton = (host: UiSearchDialog): HTMLButtonElement => {
+  const button = host.shadowRoot?.querySelector<HTMLButtonElement>('.close-button');
+  if (!button) throw new Error('閉じるボタンが見つかりません');
   return button;
 };
 
@@ -133,6 +145,41 @@ type Story = StoryObj<UiSearchDialog>;
 
 /**
  * 意味のある組み合わせ:
+ * - 常時オープン + 結果あり
+ * - デザイン確認と手動操作確認のための基準状態
+ */
+export const OpenPreview: Story = {
+  render: () => html`
+    <div style="padding: 2rem; min-height: 24rem;">
+      <ui-search-dialog id="dialog-open-preview" .items=${SEARCH_ITEMS} opened query="router"></ui-search-dialog>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'dialog-open-preview');
+    await flush(host);
+
+    const dialog = getNativeDialog(host);
+    const body = getBody(host);
+    const emptyState = host.shadowRoot?.querySelector<HTMLElement>('.empty-state');
+    const clearButton = getClearButton(host);
+    assert(dialog.open, '初期表示で dialog が開いていません');
+    assert(dialog.classList.contains('dialog'), 'native dialog に .dialog class が付与されていません');
+    assert(!!emptyState, 'empty-state 要素が見つかりません');
+    assert(clearButton.parentElement?.classList.contains('input-wrapper'), 'clear-button が input-wrapper 内に配置されていません');
+    assert(emptyState.hidden, '初回検索完了前に空状態が表示されています');
+    assert(getComputedStyle(body).minBlockSize !== '0px', '.body の min-block-size が確保されていません');
+
+    await settleSearch(host);
+
+    const results = getResultItems(host);
+    assert(results.length > 0, '初期クエリの検索結果が表示されていません');
+    assert(emptyState.hidden, '検索結果表示後も空状態が表示されています');
+    assert(body.getBoundingClientRect().height > 0, '.body の高さが結果表示後に失われています');
+  },
+};
+
+/**
+ * 意味のある組み合わせ:
  * - 通常表示 + 結果あり
  * - 開閉イベント、フォーカス返却、Combobox ARIA の基本成立
  */
@@ -161,6 +208,10 @@ export const ResultsStateWithFocusReturn: Story = {
     assert(host.opened, 'open() 後に opened=true になっていません');
     assert(dialog.getAttribute('aria-label') === '検索', 'dialog に aria-label="検索" がありません');
     assert(dialog.getAttribute('aria-modal') === 'true', 'dialog に aria-modal="true" がありません');
+    assert(
+      input.getAttribute('placeholder') === '検索',
+      '検索プレースホルダーが新しい補助文言になっていません',
+    );
     assert(openedEvent.detail.trigger === trigger, 'opened イベントの trigger が不正です');
     assert(hasInputFocus(host, input), 'open 後の自動フォーカスが input に移動していません');
 
@@ -208,6 +259,7 @@ export const LoadingStateEditableInput: Story = {
     await flush(host);
 
     const input = getInput(host);
+    const body = getBody(host);
     const loadingState = host.shadowRoot?.querySelector<HTMLElement>('.loading-state');
     const listbox = host.shadowRoot?.querySelector<HTMLUListElement>('#search-listbox');
     assert(!!loadingState, 'loading-state 要素が見つかりません');
@@ -216,6 +268,8 @@ export const LoadingStateEditableInput: Story = {
     assert(!loadingState.hidden, 'loading=true なのにローディング表示が出ていません');
     assert(input.getAttribute('aria-busy') === 'true', 'loading=true で aria-busy=true になっていません');
     assert(listbox.hidden, 'loading=true で listbox が非表示になっていません');
+
+    const bodyHeightWhileLoading = body.getBoundingClientRect().height;
 
     input.value = 'router';
     input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
@@ -226,6 +280,8 @@ export const LoadingStateEditableInput: Story = {
     await settleSearch(host);
     assert(input.getAttribute('aria-busy') === 'false', 'loading=false で aria-busy=false に戻っていません');
     assert(getResultItems(host).length > 0, 'loading 解除後に検索結果が表示されていません');
+    const bodyHeightAfterLoading = body.getBoundingClientRect().height;
+    assert(Math.abs(bodyHeightAfterLoading - bodyHeightWhileLoading) <= 1, '.body の高さが loading 解除で変動しています');
 
     const closedPromise = waitForEvent(host, 'ui-search-dialog-closed');
     host.close();
@@ -257,20 +313,30 @@ export const EmptyStateWithLiveRegion: Story = {
     await flush(host);
 
     const input = getInput(host);
+    const body = getBody(host);
+    const bodyHeightBefore = body.getBoundingClientRect().height;
     input.value = 'zzzzzz';
     input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
     await settleSearch(host);
 
-    const emptyState = host.shadowRoot?.querySelector<HTMLElement>('ui-empty-state.empty-state');
+    const emptyState = host.shadowRoot?.querySelector<HTMLElement>('.empty-state');
     const listbox = host.shadowRoot?.querySelector<HTMLUListElement>('#search-listbox');
     const liveRegion = host.shadowRoot?.querySelector<HTMLElement>('.sr-only');
+    const footer = host.shadowRoot?.querySelector<HTMLElement>('.footer');
+    const closeButton = getCloseButton(host);
     assert(!!emptyState, 'empty-state 要素が見つかりません');
     assert(!!listbox, 'listbox 要素が見つかりません');
     assert(!!liveRegion, 'aria-live 領域が見つかりません');
+    assert(!!footer, 'footer 要素が見つかりません');
 
     assert(!emptyState.hidden, '0 件時に empty-state が表示されていません');
     assert(listbox.hidden, '0 件時に listbox が非表示になっていません');
-    assert(liveRegion.textContent.includes('一致する結果がありません'), 'aria-live 通知文言が更新されていません');
+    assert(liveRegion.textContent.includes('結果が見つかりません'), 'aria-live 通知文言が更新されていません');
+    assert(footer.textContent.includes('Enter'), 'footer に Enter 操作が表示されていません');
+    assert(!footer.textContent.includes('Esc'), 'footer に Esc が残っています');
+    assert(closeButton.getAttribute('aria-label') === '閉じる', '閉じるボタンの aria-label が不正です');
+    const bodyHeightAfter = body.getBoundingClientRect().height;
+    assert(Math.abs(bodyHeightAfter - bodyHeightBefore) <= 1, '.body の高さが empty state 表示で変動しています');
 
     const closedPromise = waitForEvent(host, 'ui-search-dialog-closed');
     host.close();
@@ -493,7 +559,7 @@ export const OpenedAttributeAndScrollLock: Story = {
 
 /**
  * 境界条件:
- * - Tab で input -> clear button へ移動できること
+ * - Tab で input -> clear button -> close button へ移動できること
  */
 export const TabNavigationBetweenInputAndClear: Story = {
   render: () => html`
@@ -525,6 +591,20 @@ export const TabNavigationBetweenInputAndClear: Story = {
 
     const clearButton = getClearButton(host);
     assert(host.shadowRoot?.activeElement === clearButton, 'Tab で clear-button へ移動できていません');
+
+    await userEvent.tab();
+    await waitFrame();
+
+    const closeButton = getCloseButton(host);
+    assert(host.shadowRoot.activeElement === closeButton, 'Tab で close-button へ移動できていません');
+
+    await userEvent.tab({ shift: true });
+    await waitFrame();
+    assert(host.shadowRoot.activeElement === clearButton, 'Shift+Tab で clear-button へ戻れません');
+
+    await userEvent.tab({ shift: true });
+    await waitFrame();
+    assert(host.shadowRoot.activeElement === input, 'Shift+Tab で input へ戻れません');
 
     const closedPromise = waitForEvent(host, 'ui-search-dialog-closed');
     host.close();
@@ -575,8 +655,12 @@ export const StyleContractCoverage: Story = {
     assert(cssText.includes('@media (forced-colors: active)'), 'Forced Colors 契約が不足しています');
     assert(cssText.includes('CanvasText'), 'Forced Colors の境界色契約が不足しています');
     assert(cssText.includes('@media print'), 'Print 契約が不足しています');
+    assert(cssText.includes('::-webkit-search-cancel-button'), 'ネイティブ search cancel UI 抑止が不足しています');
+    assert(cssText.includes('.dialog {'), 'native dialog shell class が不足しています');
     assert(cssText.includes('--ui-search-dialog-backdrop'), 'コンポーネントローカルトークンが不足しています');
+    assert(cssText.includes('--ui-search-dialog-body-min-height'), 'body min height 公開トークンが不足しています');
     assert(cssText.includes('--ui-search-dialog-max-width'), 'パブリックトークン定義が不足しています');
+    assert(!/(^|[\s}])dialog(?=(\[|::backdrop|\s*\{))/m.test(cssText), 'native dialog 直指定セレクタは使用しないでください');
     assert(!cssText.includes('--search-dialog-'), 'トークン命名規則違反（--search-dialog-*）があります');
   },
 };
