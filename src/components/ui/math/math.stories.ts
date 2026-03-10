@@ -4,7 +4,7 @@ import './math';
 import type { UiMath } from './math';
 
 const PRIMARY_REGION_LABEL = '数式（横スクロール可能）';
-const LONG_MATH_TEXT = 'x + y + z + w + v + u + t + s + r + q + p + o + n + m + l + k + j + i + h + g';
+const LONG_MATH_LATEX = String.raw`x + y + z + w + v + u + t + s + r + q + p + o + n + m + l + k + j + i + h + g`;
 
 const waitFrame = async (): Promise<void> =>
   new Promise((resolve) => {
@@ -114,26 +114,13 @@ type Story = StoryObj<UiMath>;
 
 /**
  * 基本契約:
- * - block + primary での責務分離
- * - オーバーフロー時の tabindex/data-scroll 制御
+ * - 通常表示時の block + primary の責務分離
+ * - 非オーバーフロー時は余計なスクロール状態を持たない
  */
 export const Default: Story = {
   render: () => html`
     <div style="max-width: 320px;">
-      <ui-math id="default-math" block primary>
-        <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
-          <mrow>
-            <mi>x</mi>
-            <mo>+</mo>
-            <mi>y</mi>
-            <mo>=</mo>
-            <mi>z</mi>
-          </mrow>
-        </math>
-        <span class="katex-html" aria-hidden="true" style="display: inline-block; min-width: 1400px;">
-          ${LONG_MATH_TEXT}
-        </span>
-      </ui-math>
+      <ui-math id="default-math" block primary .latex=${String.raw`x + y = z`}></ui-math>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -143,8 +130,10 @@ export const Default: Story = {
 
     const display = getDisplayContainer(host);
     const content = getMathContent(host);
-    const slottedMath = getSlottedMathMl(host);
-    if (!slottedMath) throw new Error('slotted MathML が見つかりません');
+    const runtimeMathMl = getRuntimeMathMl(host);
+    const runtimeKatex = getRuntimeKatex(host);
+    if (!runtimeMathMl) throw new Error('runtime MathML が見つかりません');
+    if (!runtimeKatex) throw new Error('runtime KaTeX が見つかりません');
 
     if (display.getAttribute('role') !== 'region') {
       throw new Error('primary=true の block では role="region" が必要です');
@@ -158,35 +147,21 @@ export const Default: Story = {
     if (content.hasAttribute('aria-label')) {
       throw new Error('aria-label 未指定時に math-content へ aria-label を出力してはいけません');
     }
-    if (slottedMath.hasAttribute('aria-hidden')) {
+    if (runtimeMathMl.hasAttribute('aria-hidden')) {
       throw new Error('aria-label 未指定時は MathML を aria-hidden にしてはいけません');
     }
-
-    await waitFor(
-      () => display.getAttribute('tabindex') === '0',
-      'オーバーフロー時に tabindex="0" が付与されませんでした',
-    );
-
-    if (display.getAttribute('data-scroll') !== 'start') {
-      throw new Error('初期スクロール状態は data-scroll="start" である必要があります');
+    if (display.hasAttribute('tabindex')) {
+      throw new Error('非オーバーフロー時に tabindex を付与してはいけません');
     }
-    if (display.scrollWidth <= display.clientWidth + 1) {
-      throw new Error('オーバーフロー検証に必要な横幅が不足しています');
+    if (display.getAttribute('data-scroll') !== 'none') {
+      throw new Error('非オーバーフロー時は data-scroll="none" である必要があります');
     }
-
-    display.scrollLeft = Math.max((display.scrollWidth - display.clientWidth) / 2, 1);
-    display.dispatchEvent(new Event('scroll'));
-    await waitFor(
-      () => display.getAttribute('data-scroll') === 'middle',
-      '中央スクロール時に data-scroll="middle" へ遷移しません',
-    );
-
-    display.scrollLeft = display.scrollWidth;
-    display.dispatchEvent(new Event('scroll'));
-    await waitFor(
-      () => display.getAttribute('data-scroll') === 'end',
-      '末尾スクロール時に data-scroll="end" へ遷移しません',
-    );
+    if (display.scrollWidth > display.clientWidth + 1) {
+      throw new Error('Default は横スクロールしない代表例である必要があります');
+    }
+    if (getComputedStyle(runtimeKatex).color !== getComputedStyle(content).color) {
+      throw new Error('runtime KaTeX は math-content の文字色を継承する必要があります');
+    }
   },
 };
 
@@ -490,14 +465,7 @@ export const BoundaryConditions: Story = {
 export const KeyboardInteraction: Story = {
   render: () => html`
     <div style="max-width: 300px;">
-      <ui-math id="keyboard-scrollable" block primary>
-        <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
-          <mrow><mi>x</mi><mo>+</mo><mi>y</mi><mo>=</mo><mi>z</mi></mrow>
-        </math>
-        <span class="katex-html" aria-hidden="true" style="display: inline-block; min-width: 1500px;">
-          ${LONG_MATH_TEXT}
-        </span>
-      </ui-math>
+      <ui-math id="keyboard-scrollable" block primary .latex=${LONG_MATH_LATEX}></ui-math>
     </div>
   `,
   play: async ({ canvasElement }) => {
