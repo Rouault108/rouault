@@ -52,6 +52,9 @@ const getMathContent = (host: UiMath): HTMLDivElement => {
 const getRuntimeMathMl = (host: UiMath): Element | null =>
   host.shadowRoot?.querySelector('.runtime-katex math') ?? null;
 
+const getRuntimeKatexMathMlContainer = (host: UiMath): HTMLElement | null =>
+  host.shadowRoot?.querySelector<HTMLElement>('.runtime-katex .katex-mathml') ?? null;
+
 const getRuntimeKatex = (host: UiMath): HTMLElement | null =>
   host.shadowRoot?.querySelector<HTMLElement>('.runtime-katex .katex') ?? null;
 
@@ -131,8 +134,10 @@ export const Default: Story = {
     const display = getDisplayContainer(host);
     const content = getMathContent(host);
     const runtimeMathMl = getRuntimeMathMl(host);
+    const runtimeMathMlContainer = getRuntimeKatexMathMlContainer(host);
     const runtimeKatex = getRuntimeKatex(host);
     if (!runtimeMathMl) throw new Error('runtime MathML が見つかりません');
+    if (!runtimeMathMlContainer) throw new Error('runtime KaTeX MathML コンテナが見つかりません');
     if (!runtimeKatex) throw new Error('runtime KaTeX が見つかりません');
 
     if (display.getAttribute('role') !== 'region') {
@@ -161,6 +166,17 @@ export const Default: Story = {
     }
     if (getComputedStyle(runtimeKatex).color !== getComputedStyle(content).color) {
       throw new Error('runtime KaTeX は math-content の文字色を継承する必要があります');
+    }
+
+    const runtimeMathMlStyle = getComputedStyle(runtimeMathMlContainer);
+    const runtimeMathMlRect = runtimeMathMlContainer.getBoundingClientRect();
+    if (runtimeMathMlStyle.position !== 'absolute') {
+      throw new Error('runtime KaTeX MathML は通常フローから外して視覚非表示にする必要があります');
+    }
+    if (runtimeMathMlRect.width > 1.5 || runtimeMathMlRect.height > 1.5) {
+      throw new Error(
+        `runtime KaTeX MathML は 1px 退避である必要があります: width=${runtimeMathMlRect.width.toString()}, height=${runtimeMathMlRect.height.toString()}`,
+      );
     }
   },
 };
