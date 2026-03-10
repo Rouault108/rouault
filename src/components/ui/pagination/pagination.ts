@@ -193,18 +193,15 @@ export class Pagination extends LitElement {
       min-width: var(--control-height-md, 32px);
       padding: 0;
 
-      /* Typography */
-	      font-family: var(--font-sans);
-	      font-size: var(--text-base, 0.875rem);
-	      font-variant-numeric: tabular-nums; /* 等幅数字: 仕様の注記に従い font-mono は不使用 */
-	      line-height: 1;
-	      /* 例外許可: Paginationはボタン型リンク。輪郭・背景・現在地インジケータで非色シグナルを示す。 */
-	      text-decoration: none;
+	    font-family: var(--font-sans);
+	    font-size: var(--text-base, 0.875rem);
+	    font-variant-numeric: tabular-nums; /* 等幅数字: 仕様の注記に従い font-mono は不使用 */
+	    line-height: 1;
+	    /* 例外許可: Paginationはボタン型リンク。輪郭・背景・現在地インジケータで非色シグナルを示す。 */
+	    text-decoration: none;
 
-      /* Shape */
       border-radius: var(--radius-md, 0.375rem);
 
-      /* Colors */
       background: transparent;
       color: var(--fg-muted, oklch(45% 0 0));
 
@@ -246,14 +243,7 @@ export class Pagination extends LitElement {
     .page-btn[aria-current='page'] {
       background: var(--bg-surface-active, oklch(55% 0.2 250 / 0.08));
       color: var(--primary, oklch(55% 0.2 250));
-
-      /*
-       * Visual Rhyme: <ui-tabs> のインジケーターと視覚的整合性を持たせる。
-       * font-weight: bold は禁止 (tabular-nums でもウェイト間の幅は保証されないため)。
-       * text-decoration: underline は禁止 (ボタン形状との不整合)。
-       * variant="outline" は禁止 (ボーダーによるレイアウトシフト防止)。
-       */
-      box-shadow: inset 0 calc(var(--border-width-thick, 2px) * -1) 0 0 var(--primary, oklch(55% 0.2 250));
+      font-weight: 700;
     }
 
     /* 現在ページのホバー: 背景色を維持（変化させない） */
