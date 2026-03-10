@@ -78,6 +78,14 @@ export const DefaultInList: Story = {
 
     const cells = row.shadowRoot?.querySelectorAll('[role="gridcell"]');
     if (cells?.length !== 4) throw new Error(`セル数が不正です: ${String(cells?.length)}`);
+
+    const primaryLink = row.querySelector<HTMLAnchorElement>('a[slot="title"]');
+    if (!primaryLink) throw new Error('primary link が見つかりません');
+
+    const primaryLinkStyle = getComputedStyle(primaryLink);
+    if (primaryLinkStyle.textDecorationLine.includes('underline')) {
+      throw new Error('primary link に下線が残っています');
+    }
   },
 };
 
