@@ -181,6 +181,43 @@ export const DefaultContract: Story = {
   },
 };
 
+export const TypographyZoomContract: Story = {
+  render: () => html`
+    <div id="popover-zoom-wrapper" style="padding: 2rem; font-size: 16px;">
+      <ui-popover id="popover-zoom">
+        <button id="popover-zoom-trigger" slot="trigger" type="button">拡大確認</button>
+        <div id="popover-zoom-content" slot="content">Popover 本文も拡大される必要があります。</div>
+      </ui-popover>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const wrapper = canvasElement.querySelector<HTMLElement>('#popover-zoom-wrapper');
+    if (!wrapper) throw new Error('#popover-zoom-wrapper が見つかりません');
+
+    const host = getHost(canvasElement, 'popover-zoom');
+    await host.updateComplete;
+
+    const trigger = getTrigger(host, '#popover-zoom-trigger');
+    const content = getContent(host, '#popover-zoom-content');
+
+    clickPrimary(trigger);
+    await nextFrame();
+
+    const initialFontSize = getComputedStyle(content).fontSize;
+    if (initialFontSize !== '16px') {
+      throw new Error(`初期フォントサイズは親要素を継承する必要があります: ${initialFontSize}`);
+    }
+
+    wrapper.style.fontSize = '24px';
+    await nextFrame();
+
+    const zoomedFontSize = getComputedStyle(content).fontSize;
+    if (zoomedFontSize !== '24px') {
+      throw new Error(`親要素の文字拡大に追従していません: ${zoomedFontSize}`);
+    }
+  },
+};
+
 export const VariantStateMatrix: Story = {
   render: () => html`
     <style>
