@@ -1,7 +1,7 @@
 import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import '../tag/tag';
-import { linkTextStyles } from '../link/link-styles';
+import { linkTextStyles } from '../../../styles/contracts/link-styles';
 
 export type ArticleStatus = 'draft' | 'archived' | 'wip' | 'deprecated';
 
