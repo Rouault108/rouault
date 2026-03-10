@@ -347,8 +347,8 @@ export const ComboNoWrapIntegrity: Story = {
     if (comboStyle.display !== 'inline-flex') {
       throw new Error(`display: inline-flex を期待していましたが、実際には "${comboStyle.display}" でした`);
     }
-    if (comboStyle.alignItems !== 'baseline') {
-      throw new Error(`align-items: baseline を期待していましたが、実際には "${comboStyle.alignItems}" でした`);
+    if (comboStyle.alignItems !== 'center') {
+      throw new Error(`align-items: center を期待していましたが、実際には "${comboStyle.alignItems}" でした`);
     }
 
     const keys = host.shadowRoot?.querySelectorAll('kbd.kbd-key');
@@ -565,9 +565,9 @@ export const DarkModeTokenContract: Story = {
         color-scheme: dark;
         --fg-default: rgb(230, 232, 236);
         --bg-surface-2: rgb(43, 48, 59);
-        --border-default: rgb(94, 103, 121);
+        --bg-fill-muted: rgb(31, 35, 43);
+        --border-muted: rgb(94, 103, 121);
         --border-width: 1px;
-        --border-width-thick: 2px;
         background: rgb(24, 28, 35);
         color: rgb(230, 232, 236);
         padding: 1rem;
@@ -588,11 +588,14 @@ export const DarkModeTokenContract: Story = {
     if (style.color !== 'rgb(230, 232, 236)') {
       throw new Error(`ダークモードのフォアグラウンドカラーを期待していましたが、実際には "${style.color}" でした`);
     }
-    if (style.backgroundColor !== 'rgb(43, 48, 59)') {
+    if (style.backgroundColor !== 'rgb(31, 35, 43)') {
       throw new Error(`ダークモードのバックグラウンドカラーを期待していましたが、実際には "${style.backgroundColor}" でした`);
     }
     if (style.borderTopColor !== 'rgb(94, 103, 121)') {
       throw new Error(`ダークモードのボーダーカラーを期待していましたが、実際には "${style.borderTopColor}" でした`);
+    }
+    if (style.borderRadius !== '12px') {
+      throw new Error(`ダークモードの角丸が 12px であることを期待していましたが、実際には "${style.borderRadius}" でした`);
     }
 
     const fg = parseRgb(style.color);

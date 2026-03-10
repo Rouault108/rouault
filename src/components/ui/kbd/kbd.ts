@@ -36,33 +36,41 @@ export class Kbd extends LitElement {
       vertical-align: baseline;
       font-family:
         var(--font-sans, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif);
-      font-size: max(1em, var(--text-xs, 12px));
+      font-size: max(0.75rem, var(--text-xs, 12px));
       font-weight: var(--font-medium, 500);
-      letter-spacing: var(--tracking-wide, 0.02em);
+      letter-spacing: var(--tracking-normal, 0);
       line-height: var(--line-height-none, 1);
       color: var(--fg-default, oklch(20% 0 0));
     }
 
     .kbd-key {
       display: inline-flex;
-      align-items: baseline;
+      align-items: center;
+      justify-content: center;
       vertical-align: baseline;
       white-space: nowrap;
       font: inherit;
       color: inherit;
-      background: var(--bg-surface-2, oklch(100% 0 0));
-      border: var(--border-width, 1px) solid var(--border-default, oklch(85% 0 0));
-      box-shadow: 0 var(--border-width-thick, 2px) 0 0
-        var(--border-default, oklch(85% 0 0));
-      border-radius: var(--radius-sm, 4px);
-      padding: 0 0.4em;
+      min-inline-size: var(--space-3, 12px);
+      min-block-size: calc(0.75em + var(--space-3, 12px));
+      background: var(--bg-fill-muted, oklch(96% 0 0));
+      border: var(--border-width, 1px) solid color-mix(
+        in oklab,
+        var(--border-muted, oklch(20% 0 0 / 0.06)) 80%,
+        transparent
+      );
+      box-shadow:
+        inset 0 1px 0 oklch(100% 0 0 / 0.7),
+        0 1px 2px oklch(0% 0 0 / 0.04);
+      border-radius: var(--radius-md, 6px);
+      padding: 0 4px;
       line-height: var(--line-height-none, 1);
     }
 
     .kbd-combo {
       display: inline-flex;
-      align-items: baseline;
-      column-gap: var(--space-1, 4px);
+      align-items: center;
+      column-gap: var(--space-2, 8px);
       white-space: nowrap;
       font: inherit;
       color: inherit;
