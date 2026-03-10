@@ -181,7 +181,7 @@ export class UiVideo extends LitElement {
     }
 
     .skip-button iconify-icon {
-      font-size: var(--icon-md, 20px);
+      font-size: var(--icon-md, 18px);
       line-height: 1;
     }
 
