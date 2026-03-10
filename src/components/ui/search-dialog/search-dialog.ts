@@ -1154,6 +1154,23 @@ export class UiSearchDialog extends LitElement {
     this.close();
   };
 
+  private _onDialogPointerDown = (event: MouseEvent): void => {
+    const dialog = this._dialogElement;
+    if (!dialog?.open) return;
+    if (this._isClosing) return;
+    if (event.target !== dialog) return;
+
+    const rect = dialog.getBoundingClientRect();
+    const isInsideDialogBounds =
+      event.clientX >= rect.left &&
+      event.clientX <= rect.right &&
+      event.clientY >= rect.top &&
+      event.clientY <= rect.bottom;
+
+    if (isInsideDialogBounds) return;
+    this.close();
+  };
+
   private _onDialogCancel = (event: Event): void => {
     event.preventDefault();
     this.close();
@@ -1236,6 +1253,7 @@ export class UiSearchDialog extends LitElement {
         class="dialog"
         aria-label=${DIALOG_LABEL}
         aria-modal="true"
+        @mousedown=${this._onDialogPointerDown}
         @cancel=${this._onDialogCancel}
         @close=${this._onNativeClose}
       >

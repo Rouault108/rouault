@@ -520,6 +520,62 @@ export const ReentrancyAndEscCancel: Story = {
 };
 
 /**
+ * 境界条件:
+ * - パネル内クリックでは閉じないこと
+ * - backdrop クリックで閉じること
+ */
+export const BackdropClickClosesDialog: Story = {
+  render: () => html`
+    <div style="padding: 2rem; min-height: 24rem;">
+      <button id="backdrop-trigger" type="button">backdrop検証</button>
+      <ui-search-dialog id="dialog-backdrop" .items=${SEARCH_ITEMS}></ui-search-dialog>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'dialog-backdrop');
+    const trigger = canvasElement.querySelector<HTMLButtonElement>('#backdrop-trigger');
+    assert(!!trigger, '#backdrop-trigger が見つかりません');
+    await flush(host);
+
+    trigger.focus();
+    const openedPromise = waitForEvent(host, 'ui-search-dialog-opened');
+    host.open(trigger);
+    await openedPromise;
+    await flush(host);
+
+    const dialog = getNativeDialog(host);
+    const rect = dialog.getBoundingClientRect();
+
+    await ensureNoEvent(host, 'ui-search-dialog-closed', () => {
+      dialog.dispatchEvent(
+        new MouseEvent('mousedown', {
+          bubbles: true,
+          composed: true,
+          clientX: rect.left + rect.width / 2,
+          clientY: rect.top + rect.height / 2,
+        }),
+      );
+    });
+    assert(dialog.open, 'パネル内クリックで dialog が閉じてはいけません');
+
+    const closedPromise = waitForEvent(host, 'ui-search-dialog-closed');
+    dialog.dispatchEvent(
+      new MouseEvent('mousedown', {
+        bubbles: true,
+        composed: true,
+        clientX: Math.max(0, rect.left - 8),
+        clientY: Math.max(0, rect.top - 8),
+      }),
+    );
+    await closedPromise;
+    await flush(host);
+
+    assert(!dialog.open, 'backdrop クリック後に dialog が閉じていません');
+    assert(document.activeElement === trigger, 'backdrop クリック後に trigger へフォーカス返却されていません');
+  },
+};
+
+/**
  * 意味のある組み合わせ:
  * - opened 属性の反映で開閉できること
  * - Scroll Lock 属性の付与/解除が成立すること
