@@ -16,8 +16,8 @@ const DOCUMENT_STYLE_ID = 'ui-highlight-document-styles';
  */
 const HIGHLIGHT_SCOPE_SELECTOR = ':where(.prose mark, ui-search-highlight > mark)';
 
-const DOCUMENT_CSS = `
-${HIGHLIGHT_SCOPE_SELECTOR} {
+const HIGHLIGHT_RULE_TEMPLATE = (scopeSelector: string): string => `
+${scopeSelector} {
   background: var(--bg-highlight-subtle);
   color: var(--fg-default);
   padding: 0 0.1em;
@@ -26,7 +26,7 @@ ${HIGHLIGHT_SCOPE_SELECTOR} {
 }
 
 @media (forced-colors: active) {
-  ${HIGHLIGHT_SCOPE_SELECTOR} {
+  ${scopeSelector} {
     background: transparent;
     color: var(--fg-default);
     text-decoration-line: underline;
@@ -38,7 +38,7 @@ ${HIGHLIGHT_SCOPE_SELECTOR} {
 }
 
 @media print {
-  ${HIGHLIGHT_SCOPE_SELECTOR} {
+  ${scopeSelector} {
     background: transparent !important;
     color: currentColor;
     text-decoration-line: underline;
@@ -48,6 +48,8 @@ ${HIGHLIGHT_SCOPE_SELECTOR} {
   }
 }
 `;
+
+const DOCUMENT_CSS = HIGHLIGHT_RULE_TEMPLATE(HIGHLIGHT_SCOPE_SELECTOR);
 
 /**
  * 検索由来/ユーザー操作由来のハイライトを表現するコンポーネント。
@@ -110,4 +112,4 @@ declare global {
   }
 }
 
-export { DOCUMENT_STYLE_ID, HIGHLIGHT_SCOPE_SELECTOR };
+export { DOCUMENT_STYLE_ID, HIGHLIGHT_SCOPE_SELECTOR, HIGHLIGHT_RULE_TEMPLATE };
