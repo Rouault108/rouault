@@ -1,4 +1,4 @@
-import { css, html, LitElement, type PropertyValues } from 'lit';
+import { css, html, LitElement, nothing, unsafeCSS, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import '../../../lib/icons';
 import '../spinner/spinner';
@@ -9,6 +9,7 @@ import {
   showNativeDialog,
   waitForDialogAnimations,
 } from '../dialog/dialog-helpers';
+import { HIGHLIGHT_RULE_TEMPLATE } from '../highlight/highlight';
 
 const SEARCH_DEBOUNCE_MS = 150;
 const DIALOG_LABEL = '検索';
@@ -24,6 +25,7 @@ const VIRTUALIZATION_THRESHOLD = 100;
 const VIRTUAL_ROW_HEIGHT_PX = 48;
 const VIRTUAL_OVERSCAN = 6;
 const SEARCH_WORKER_THRESHOLD = VIRTUALIZATION_THRESHOLD;
+const SEARCH_DIALOG_HIGHLIGHT_SELECTOR = ':where(.result-item ui-search-highlight > mark)';
 const searchDialogBodyScrollLock = createBodyScrollLock(BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE);
 
 interface SearchWorkerRequest {
@@ -36,6 +38,13 @@ interface SearchWorkerResponse {
   token: number;
   results: readonly UiSearchDialogItem[];
 }
+
+interface HighlightPart {
+  text: string;
+  matched: boolean;
+}
+
+type HighlightRenderPart = string | typeof nothing | ReturnType<typeof html>;
 
 export interface UiSearchDialogItem {
   title: string;
@@ -413,6 +422,8 @@ export class UiSearchDialog extends LitElement {
       line-height: 1.4;
       word-break: break-all;
     }
+
+    ${unsafeCSS(HIGHLIGHT_RULE_TEMPLATE(SEARCH_DIALOG_HIGHLIGHT_SELECTOR))}
 
     .virtual-spacer {
       block-size: 0;
@@ -1207,6 +1218,52 @@ export class UiSearchDialog extends LitElement {
     }
   }
 
+  private _splitHighlightParts(value: string, query: string): HighlightPart[] {
+    const normalizedQuery = query.trim().toLowerCase();
+    if (normalizedQuery === '') {
+      return [{ text: value, matched: false }];
+    }
+
+    const normalizedValue = value.toLowerCase();
+    const parts: HighlightPart[] = [];
+    let cursor = 0;
+
+    while (cursor < value.length) {
+      const matchIndex = normalizedValue.indexOf(normalizedQuery, cursor);
+      if (matchIndex === -1) {
+        const trailingText = value.slice(cursor);
+        if (trailingText !== '') {
+          parts.push({ text: trailingText, matched: false });
+        }
+        break;
+      }
+
+      if (matchIndex > cursor) {
+        parts.push({ text: value.slice(cursor, matchIndex), matched: false });
+      }
+
+      const matchEnd = matchIndex + normalizedQuery.length;
+      parts.push({ text: value.slice(matchIndex, matchEnd), matched: true });
+      cursor = matchEnd;
+    }
+
+    return parts.length > 0 ? parts : [{ text: value, matched: false }];
+  }
+
+  private _renderHighlightedText(value: string): string | typeof nothing | HighlightRenderPart[] {
+    const parts = this._splitHighlightParts(value, this.query);
+    const hasMatch = parts.some((part) => part.matched);
+    if (!hasMatch) {
+      return value;
+    }
+
+    return parts.map((part) =>
+      part.matched
+        ? html`<ui-search-highlight origin="search">${part.text}</ui-search-highlight>`
+        : part.text || nothing,
+    );
+  }
+
   private _onResultListScroll = (event: Event): void => {
     if (!this._isVirtualized()) return;
     const target = event.currentTarget;
@@ -1348,8 +1405,8 @@ export class UiSearchDialog extends LitElement {
                   @click=${this._onResultClick}
                   @keydown=${this._onResultKeydown}
                 >
-                  <span class="item-title">${item.title}</span>
-                  <span class="item-path">${this._resolvePath(item)}</span>
+                  <span class="item-title">${this._renderHighlightedText(item.title)}</span>
+                  <span class="item-path">${this._renderHighlightedText(this._resolvePath(item))}</span>
                 </li>
               `;
             })}

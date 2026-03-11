@@ -120,6 +120,12 @@ const getCloseButton = (host: UiSearchDialog): HTMLButtonElement => {
 const getResultItems = (host: UiSearchDialog): HTMLLIElement[] =>
   Array.from(host.shadowRoot?.querySelectorAll<HTMLLIElement>('.result-item') ?? []);
 
+const getHighlightedMarks = (host: UiSearchDialog): HTMLElement[] =>
+  Array.from(host.shadowRoot?.querySelectorAll<HTMLElement>('ui-search-highlight > mark') ?? []);
+
+const normalizeText = (value: string | null | undefined): string =>
+  (value ?? '').replace(/\s+/g, ' ').trim();
+
 const hasInputFocus = (host: UiSearchDialog, input: HTMLInputElement): boolean =>
   host.shadowRoot?.activeElement === input || document.activeElement === host;
 
@@ -232,6 +238,74 @@ export const ResultsStateWithFocusReturn: Story = {
 
     assert(!dialog.open, 'close() 後に dialog が閉じていません');
     assert(document.activeElement === trigger, 'close() 後にトリガーへフォーカス返却されていません');
+  },
+};
+
+/**
+ * ハイライト契約:
+ * - 可視文字列上の一致だけを mark で包む
+ * - keywords のみ一致する場合は候補は出すが mark は増えない
+ */
+export const VisibleMatchHighlighting: Story = {
+  render: () => html`
+    <div style="padding: 2rem; min-height: 24rem;">
+      <button id="highlight-trigger" type="button">ハイライト検証</button>
+      <button id="keyword-trigger" type="button">キーワード検証</button>
+      <ui-search-dialog id="dialog-highlight" .items=${SEARCH_ITEMS}></ui-search-dialog>
+      <ui-search-dialog id="dialog-keyword-only" .items=${SEARCH_ITEMS}></ui-search-dialog>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const visibleMatchHost = getHost(canvasElement, 'dialog-highlight');
+    const keywordOnlyHost = getHost(canvasElement, 'dialog-keyword-only');
+    const highlightTrigger = canvasElement.querySelector<HTMLButtonElement>('#highlight-trigger');
+    const keywordTrigger = canvasElement.querySelector<HTMLButtonElement>('#keyword-trigger');
+    assert(!!highlightTrigger, '#highlight-trigger が見つかりません');
+    assert(!!keywordTrigger, '#keyword-trigger が見つかりません');
+    await flush(visibleMatchHost);
+    await flush(keywordOnlyHost);
+
+    const visibleOpenedPromise = waitForEvent(visibleMatchHost, 'ui-search-dialog-opened');
+    visibleMatchHost.open(highlightTrigger);
+    await visibleOpenedPromise;
+    await flush(visibleMatchHost);
+    visibleMatchHost.query = 'RoUtEr';
+    await settleSearch(visibleMatchHost);
+
+    const visibleMarks = getHighlightedMarks(visibleMatchHost);
+    const visibleResults = getResultItems(visibleMatchHost);
+    assert(visibleResults.length > 0, '可視一致の検索結果が表示されていません');
+    assert(visibleMarks.length >= 2, 'title/path の可視一致が mark でハイライトされていません');
+
+    const firstTitle = visibleResults[0]?.querySelector('.item-title');
+    const firstPath = visibleResults[0]?.querySelector('.item-path');
+    const titleText = normalizeText(firstTitle?.textContent);
+    const pathText = normalizeText(firstPath?.textContent);
+    assert(titleText.includes('Router'), 'title の元文字列の大小文字が保持されていません');
+    assert(pathText.includes('/notes/') && pathText.includes('router') && pathText.includes('-design'), 'path の表示文字列が変形しています');
+    assert(!!firstTitle?.querySelector('ui-search-highlight > mark'), 'case-insensitive 一致でも title の一致語が mark 化されていません');
+    assert(!!firstPath?.querySelector('ui-search-highlight > mark'), 'path の一致語が mark 化されていません');
+
+    const visibleClosedPromise = waitForEvent(visibleMatchHost, 'ui-search-dialog-closed');
+    visibleMatchHost.close();
+    await visibleClosedPromise;
+    await flush(visibleMatchHost);
+
+    const keywordOpenedPromise = waitForEvent(keywordOnlyHost, 'ui-search-dialog-opened');
+    keywordOnlyHost.open(keywordTrigger);
+    await keywordOpenedPromise;
+    await flush(keywordOnlyHost);
+    keywordOnlyHost.query = 'navigation';
+    await settleSearch(keywordOnlyHost);
+
+    const keywordOnlyMarks = getHighlightedMarks(keywordOnlyHost);
+    const keywordOnlyResults = getResultItems(keywordOnlyHost);
+    assert(keywordOnlyResults.length > 0, 'keywords のみ一致する結果が表示されていません');
+    assert(keywordOnlyMarks.length === 0, 'keywords のみ一致する結果に可視ハイライトが出ています');
+
+    const keywordClosedPromise = waitForEvent(keywordOnlyHost, 'ui-search-dialog-closed');
+    keywordOnlyHost.close();
+    await keywordClosedPromise;
   },
 };
 
@@ -678,16 +752,20 @@ export const DarkModeTokenContract: Story = {
   },
   render: () => html`
     <div style="color-scheme: dark; background: oklch(14% 0.01 250); color: oklch(92% 0.01 250); padding: 1rem;">
-      <ui-search-dialog id="dialog-dark" .items=${SEARCH_ITEMS}></ui-search-dialog>
+      <ui-search-dialog id="dialog-dark" .items=${SEARCH_ITEMS} opened query="router"></ui-search-dialog>
     </div>
   `,
   play: async ({ canvasElement }) => {
     const host = getHost(canvasElement, 'dialog-dark');
     await flush(host);
+    await settleSearch(host);
 
     const cssText = String(SearchDialogElement.styles);
+    const mark = getHighlightedMarks(host)[0];
     assert(!cssText.includes('prefers-color-scheme'), 'dark mode は prefers-color-scheme 分岐に依存しないでください');
     assert(cssText.includes('background: var(--bg-surface-3);'), 'panel 背景が --bg-surface-3 契約になっていません');
+    assert(!!mark, 'dark mode で検索ハイライトが描画されていません');
+    assert(getComputedStyle(mark).backgroundColor !== 'rgba(0, 0, 0, 0)', 'dark mode で mark 背景が消失しています');
   },
 };
 
