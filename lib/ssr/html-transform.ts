@@ -135,7 +135,7 @@ export const transformHtmlWithLitSsr = async (
     collectDocumentStylesForTags,
   }: TransformHtmlWithLitSsrOptions,
 ): Promise<string> => {
-  const document = parse5.parse(html) as Parse5Document;
+  const document: Parse5Document = parse5.parse(html);
   const targetTagNameSet = new Set(targetTagNames);
   const renderedTagNames = new Set<string>();
 
