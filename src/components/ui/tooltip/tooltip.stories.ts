@@ -25,9 +25,18 @@ const getTrigger = (host: UiTooltip, selector: string): HTMLElement => {
 };
 
 const getPanel = (host: UiTooltip): HTMLElement => {
-  const panel = host.shadowRoot?.querySelector<HTMLElement>('.tooltip');
+  const tooltipId = host.dataset['tooltipId'];
+  if (!tooltipId) throw new Error('tooltip id が見つかりません');
+  const panel = host.ownerDocument.getElementById(tooltipId);
   if (!panel) throw new Error('tooltip panel が見つかりません');
   return panel;
+};
+
+const getPanelSurface = (host: UiTooltip): HTMLElement => {
+  const panel = getPanel(host);
+  const surface = panel.querySelector<HTMLElement>('[data-ui-tooltip-surface]');
+  if (!surface) throw new Error('tooltip surface が見つかりません');
+  return surface;
 };
 
 const openByHover = async (trigger: HTMLElement): Promise<void> => {
@@ -40,6 +49,25 @@ const closeByLeave = async (trigger: HTMLElement): Promise<void> => {
   trigger.dispatchEvent(new MouseEvent('mouseleave'));
   await nextFrame();
   await nextFrame();
+};
+
+const movePointerFromTriggerToPanel = async (trigger: HTMLElement, panel: HTMLElement): Promise<void> => {
+  trigger.dispatchEvent(new MouseEvent('mouseleave', { relatedTarget: panel }));
+  panel.dispatchEvent(new MouseEvent('mouseenter', { relatedTarget: trigger }));
+  await nextFrame();
+  await nextFrame();
+};
+
+const getVerticalGap = (triggerRect: DOMRect, panelRect: DOMRect): number => {
+  if (panelRect.bottom <= triggerRect.top) {
+    return Math.round(triggerRect.top - panelRect.bottom);
+  }
+
+  if (panelRect.top >= triggerRect.bottom) {
+    return Math.round(panelRect.top - triggerRect.bottom);
+  }
+
+  return -Math.round(Math.min(triggerRect.bottom, panelRect.bottom) - Math.max(triggerRect.top, panelRect.top));
 };
 
 const meta: Meta<UiTooltip> = {
@@ -55,7 +83,7 @@ const meta: Meta<UiTooltip> = {
 - hover / focus で表示
 - Escape で閉じる
 - trigger へ aria-describedby を動的付与
-- floating-ui で fixed 配置
+- floating-ui で追従配置
         `,
       },
     },
@@ -136,6 +164,18 @@ export const DefaultInfoIcon: Story = {
     const describedBy = trigger.getAttribute('aria-describedby') ?? '';
     if (!describedBy.split(/\s+/).includes(panel.id)) {
       throw new Error('表示中は trigger に aria-describedby が付与される必要があります');
+    }
+
+    await movePointerFromTriggerToPanel(trigger, panel);
+    if (panel.getAttribute('aria-hidden') !== 'false') {
+      throw new Error('tooltip 上へポインタを移動しても表示を維持する必要があります');
+    }
+
+    panel.dispatchEvent(new MouseEvent('mouseleave'));
+    await nextFrame();
+    await nextFrame();
+    if (panel.getAttribute('aria-hidden') !== 'true') {
+      throw new Error('tooltip から離れたら閉じる必要があります');
     }
 
     await closeByLeave(trigger);
@@ -266,9 +306,9 @@ export const VariantStateMatrix: Story = {
       throw new Error('inverse panel の variant が不正です');
     }
 
-    const defaultBg = getComputedStyle(defaultPanel).backgroundColor;
-    const subtleBg = getComputedStyle(subtlePanel).backgroundColor;
-    const inverseBg = getComputedStyle(inversePanel).backgroundColor;
+    const defaultBg = getComputedStyle(getPanelSurface(defaultHost)).backgroundColor;
+    const subtleBg = getComputedStyle(getPanelSurface(subtleHost)).backgroundColor;
+    const inverseBg = getComputedStyle(getPanelSurface(inverseHost)).backgroundColor;
 
     if (defaultBg === subtleBg) {
       throw new Error('default と subtle の背景色は差分が必要です');
@@ -282,6 +322,58 @@ export const VariantStateMatrix: Story = {
     const disabledPanel = getPanel(disabledHost);
     if (disabledPanel.getAttribute('aria-hidden') !== 'true') {
       throw new Error('disabled の tooltip は表示されてはいけません');
+    }
+  },
+};
+
+export const TransformZoomContract: Story = {
+  render: () => html`
+    <style>
+      #tooltip-zoom-scale {
+        display: inline-block;
+        transform-origin: top left;
+      }
+    </style>
+
+    <div style="padding: 2rem; min-block-size: 18rem; display: flex; align-items: flex-start;">
+      <div id="tooltip-zoom-scale">
+        <ui-tooltip id="tooltip-zoom" text="Zoom しても隙間が崩れない" placement="bottom">
+          <button id="tooltip-zoom-trigger" type="button">拡大確認</button>
+        </ui-tooltip>
+      </div>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const scaleHost = canvasElement.querySelector<HTMLElement>('#tooltip-zoom-scale');
+    if (!scaleHost) throw new Error('#tooltip-zoom-scale が見つかりません');
+
+    const host = getTooltipHost(canvasElement, 'tooltip-zoom');
+    await host.updateComplete;
+
+    const trigger = getTrigger(host, '#tooltip-zoom-trigger');
+    const panel = getPanel(host);
+
+    await openByHover(trigger);
+
+    const initialTriggerRect = trigger.getBoundingClientRect();
+    const initialPanelRect = panel.getBoundingClientRect();
+    const initialGap = getVerticalGap(initialTriggerRect, initialPanelRect);
+    if (Math.abs(initialGap - 8) > 2) {
+      throw new Error(`初期ギャップが offset に近い必要があります: ${String(initialGap)}px`);
+    }
+
+    scaleHost.style.transform = 'scale(1.5)';
+    window.dispatchEvent(new Event('resize'));
+    await nextFrame();
+    await nextFrame();
+
+    const zoomedTriggerRect = trigger.getBoundingClientRect();
+    const zoomedPanelRect = panel.getBoundingClientRect();
+    const zoomedGap = getVerticalGap(zoomedTriggerRect, zoomedPanelRect);
+    if (Math.abs(zoomedGap - initialGap) > 3) {
+      throw new Error(
+        `transform zoom 後も trigger と tooltip の距離は offset を維持する必要があります: ${String(zoomedGap)}px`,
+      );
     }
   },
 };
@@ -431,13 +523,15 @@ export const DarkModeContract: Story = {
     const defaultPanel = getPanel(darkDefault);
     const inversePanel = getPanel(darkInverse);
 
-    const defaultStyle = getComputedStyle(defaultPanel);
-    const inverseStyle = getComputedStyle(inversePanel);
+    const defaultStyle = getComputedStyle(getPanelSurface(darkDefault));
+    const inverseStyle = getComputedStyle(getPanelSurface(darkInverse));
+    const defaultPanelStyle = getComputedStyle(defaultPanel);
+    const inversePanelStyle = getComputedStyle(inversePanel);
 
     if (defaultStyle.backgroundColor === inverseStyle.backgroundColor) {
       throw new Error('dark mode でも default/inverse の背景が区別できる必要があります');
     }
-    if (defaultStyle.zIndex === 'auto' || inverseStyle.zIndex === 'auto') {
+    if (defaultPanelStyle.zIndex === 'auto' || inversePanelStyle.zIndex === 'auto') {
       throw new Error('tooltip は z-popover を使用する必要があります');
     }
     if (defaultStyle.boxShadow === 'none') {
@@ -456,12 +550,17 @@ export const VisualModeContracts: Story = {
     const host = getTooltipHost(canvasElement, 'visual-mode');
     await host.updateComplete;
 
-    const cssText = String(UiTooltip.styles);
+    const styleElement = document.getElementById('ui-tooltip-document-styles');
+    if (!(styleElement instanceof HTMLStyleElement)) {
+      throw new Error('ui-tooltip の document style が注入されていません');
+    }
+
+    const cssText = styleElement.textContent;
     const requiredSnippets = [
       '@media (prefers-reduced-motion: reduce)',
       '@media (forced-colors: active)',
       '@media print',
-      'pointer-events: none',
+      'pointer-events: auto',
       'var(--z-popover',
       'var(--bg-surface-2',
       'var(--fg-default',

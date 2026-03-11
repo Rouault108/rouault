@@ -6,7 +6,7 @@ import {
   shift,
   type Placement,
 } from '@floating-ui/dom';
-import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
+import { css, html, LitElement, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 
 export type UiTooltipVariant = 'default' | 'subtle' | 'inverse';
@@ -29,6 +29,115 @@ const VALID_PLACEMENTS = new Set<UiTooltipPlacement>([
 ]);
 
 const DEFAULT_OFFSET = 8;
+const DOCUMENT_STYLE_ID = 'ui-tooltip-document-styles';
+const HIT_SLOP = 10;
+
+const DOCUMENT_CSS = `
+[data-ui-tooltip-content] {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: auto;
+  bottom: auto;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  max-inline-size: min(42ch, calc(100vw - var(--space-4, 16px)));
+  z-index: var(--z-popover, 400);
+  pointer-events: auto;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(2px);
+  transition:
+    opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+    transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+    visibility var(--duration-fast, 70ms) linear;
+}
+
+[data-ui-tooltip-content][data-open='true'] {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+[data-ui-tooltip-hit-area] {
+  position: absolute;
+  inset: 0;
+}
+
+[data-ui-tooltip-content][data-side='top'] [data-ui-tooltip-hit-area] {
+  bottom: calc(-1 * var(--_tooltip-hit-slop, 10px));
+}
+
+[data-ui-tooltip-content][data-side='right'] [data-ui-tooltip-hit-area] {
+  left: calc(-1 * var(--_tooltip-hit-slop, 10px));
+}
+
+[data-ui-tooltip-content][data-side='bottom'] [data-ui-tooltip-hit-area] {
+  top: calc(-1 * var(--_tooltip-hit-slop, 10px));
+}
+
+[data-ui-tooltip-content][data-side='left'] [data-ui-tooltip-hit-area] {
+  right: calc(-1 * var(--_tooltip-hit-slop, 10px));
+}
+
+[data-ui-tooltip-surface] {
+  position: relative;
+  margin: 0;
+  max-inline-size: min(42ch, calc(100vw - var(--space-4, 16px)));
+  padding: var(--space-1, 4px) var(--space-2, 8px);
+  border: var(--border-width, 1px) solid var(--_tooltip-border, var(--border-default, oklch(20% 0 0 / 0.12)));
+  border-radius: var(--radius-sm, 4px);
+  background: var(--_tooltip-bg, var(--bg-surface-2, oklch(100% 0 0)));
+  color: var(--_tooltip-fg, var(--fg-default, oklch(20% 0 0)));
+  box-shadow: var(--_tooltip-shadow, var(--elevation-lg, 0 8px 24px oklch(0% 0 0 / 0.12)));
+  font-size: var(--text-xs, 12px);
+  font-weight: var(--font-medium, 500);
+  letter-spacing: var(--tracking-wide, 0.025em);
+  line-height: var(--line-height-normal, 1.5);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+[data-ui-tooltip-content][data-variant='subtle'] {
+  --_tooltip-bg: var(--bg-fill-muted, oklch(96% 0 0));
+  --_tooltip-fg: var(--fg-muted, oklch(45% 0 0));
+  --_tooltip-border: var(--border-ghost, oklch(20% 0 0 / 0.04));
+  --_tooltip-shadow: var(--elevation-md, 0 4px 8px oklch(0% 0 0 / 0.08));
+}
+
+[data-ui-tooltip-content][data-variant='inverse'] {
+  --_tooltip-bg: var(--fg-default, oklch(20% 0 0));
+  --_tooltip-fg: var(--bg-default, oklch(98% 0.01 250));
+  --_tooltip-border: var(--fg-muted, oklch(45% 0 0));
+  --_tooltip-shadow: var(--elevation-lg, 0 8px 24px oklch(0% 0 0 / 0.12));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-ui-tooltip-content],
+  [data-ui-tooltip-content][data-open='true'] {
+    transition-duration: var(--duration-instant, 0ms);
+  }
+}
+
+@media (forced-colors: active) {
+  [data-ui-tooltip-content] {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+}
+
+@media print {
+  [data-ui-tooltip-content] {
+    display: none !important;
+  }
+}
+`;
 
 const toNonNegativeFiniteNumber = (value: number, fallback: number): number => {
   if (!Number.isFinite(value)) return fallback;
@@ -36,89 +145,20 @@ const toNonNegativeFiniteNumber = (value: number, fallback: number): number => {
   return value;
 };
 
+const getPlacementSide = (placement: Placement): 'top' | 'right' | 'bottom' | 'left' => {
+  const [side] = placement.split('-');
+  if (side === 'right' || side === 'bottom' || side === 'left') {
+    return side;
+  }
+  return 'top';
+};
+
 @customElement('ui-tooltip')
 export class UiTooltip extends LitElement {
   static override styles = css`
     :host {
       display: inline-flex;
-      position: relative;
       vertical-align: middle;
-
-      --_tooltip-bg: var(--bg-surface-2, oklch(100% 0 0));
-      --_tooltip-fg: var(--fg-default, oklch(20% 0 0));
-      --_tooltip-border: var(--border-default, oklch(20% 0 0 / 0.12));
-      --_tooltip-shadow: var(--elevation-lg, 0 8px 24px oklch(0% 0 0 / 0.12));
-    }
-
-    .tooltip {
-      position: fixed;
-      left: 0;
-      top: 0;
-      margin: 0;
-      max-inline-size: min(42ch, calc(100vw - var(--space-4, 16px)));
-      padding: var(--space-1, 4px) var(--space-2, 8px);
-      border: var(--border-width, 1px) solid var(--_tooltip-border);
-      border-radius: var(--radius-sm, 4px);
-      background: var(--_tooltip-bg);
-      color: var(--_tooltip-fg);
-      box-shadow: var(--_tooltip-shadow);
-      font-size: var(--text-xs, 12px);
-      font-weight: var(--font-medium, 500);
-      letter-spacing: var(--tracking-wide, 0.025em);
-      line-height: var(--line-height-normal, 1.5);
-      white-space: normal;
-      overflow-wrap: anywhere;
-      z-index: var(--z-popover, 400);
-      pointer-events: none;
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(2px);
-      transition:
-        opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        visibility var(--duration-fast, 70ms) linear;
-    }
-
-    .tooltip[data-open='true'] {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
-    }
-
-    .tooltip[data-variant='subtle'] {
-      --_tooltip-bg: var(--bg-fill-muted, oklch(96% 0 0));
-      --_tooltip-fg: var(--fg-muted, oklch(45% 0 0));
-      --_tooltip-border: var(--border-ghost, oklch(20% 0 0 / 0.04));
-      --_tooltip-shadow: var(--elevation-md, 0 4px 8px oklch(0% 0 0 / 0.08));
-    }
-
-    .tooltip[data-variant='inverse'] {
-      --_tooltip-bg: var(--fg-default, oklch(20% 0 0));
-      --_tooltip-fg: var(--bg-default, oklch(98% 0.01 250));
-      --_tooltip-border: var(--fg-muted, oklch(45% 0 0));
-      --_tooltip-shadow: var(--elevation-lg, 0 8px 24px oklch(0% 0 0 / 0.12));
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .tooltip,
-      .tooltip[data-open='true'] {
-        transition-duration: var(--duration-instant, 0ms);
-      }
-    }
-
-    @media (forced-colors: active) {
-      .tooltip {
-        background: Canvas;
-        color: CanvasText;
-        border-color: CanvasText;
-        box-shadow: none;
-      }
-    }
-
-    @media print {
-      .tooltip {
-        display: none !important;
-      }
     }
   `;
 
@@ -149,20 +189,23 @@ export class UiTooltip extends LitElement {
   @query('slot')
   private _slotElement?: HTMLSlotElement;
 
-  @query('.tooltip')
-  private _tooltipElement?: HTMLElement;
-
   private readonly _tooltipId = `ui-tooltip-${Math.random().toString(36).slice(2, 11)}`;
 
   private _triggerElement: HTMLElement | null = null;
+  private _tooltipElement: HTMLElement | null = null;
+  private _tooltipSurfaceElement: HTMLElement | null = null;
   private _cleanupAutoUpdate: (() => void) | null = null;
   private _openTimer: ReturnType<typeof setTimeout> | null = null;
   private _closeTimer: ReturnType<typeof setTimeout> | null = null;
   private _hoveringTrigger = false;
+  private _hoveringTooltip = false;
   private _focusWithinTrigger = false;
 
   override connectedCallback(): void {
     super.connectedCallback();
+    this.dataset['tooltipId'] = this._tooltipId;
+    this._injectDocumentStyles();
+    this._ensureTooltipElement();
     this.addEventListener('keydown', this._onKeyDown as EventListener);
   }
 
@@ -172,6 +215,7 @@ export class UiTooltip extends LitElement {
     this._teardownFloating();
     this._detachTriggerListeners(this._triggerElement);
     this._removeAriaDescribedBy();
+    this._destroyTooltipElement();
     super.disconnectedCallback();
   }
 
@@ -202,9 +246,12 @@ export class UiTooltip extends LitElement {
   }
 
   protected override updated(changedProperties: PropertyValues<this>): void {
+    this._syncTooltipElement();
+
     if (changedProperties.has('disabled') || changedProperties.has('text')) {
       if (this._shouldSuppressTooltip()) {
         this._hoveringTrigger = false;
+        this._hoveringTooltip = false;
         this._focusWithinTrigger = false;
         this._clearTimers();
         void this._closeTooltip();
@@ -226,6 +273,64 @@ export class UiTooltip extends LitElement {
 
   private get _resolvedPlacement(): UiTooltipPlacement {
     return VALID_PLACEMENTS.has(this.placement) ? this.placement : 'top';
+  }
+
+  private _injectDocumentStyles(): void {
+    if (typeof document === 'undefined') return;
+    if (document.getElementById(DOCUMENT_STYLE_ID)) return;
+
+    const style = document.createElement('style');
+    style.id = DOCUMENT_STYLE_ID;
+    style.textContent = DOCUMENT_CSS;
+    document.head.append(style);
+  }
+
+  private _ensureTooltipElement(): void {
+    if (typeof document === 'undefined') return;
+    if (this._tooltipElement) return;
+
+    const tooltip = document.createElement('div');
+    const hitArea = document.createElement('div');
+    const surface = document.createElement('div');
+    tooltip.id = this._tooltipId;
+    tooltip.setAttribute('role', 'tooltip');
+    tooltip.setAttribute('aria-hidden', 'true');
+    tooltip.setAttribute('data-ui-tooltip-content', '');
+    tooltip.dataset['open'] = 'false';
+    tooltip.dataset['side'] = getPlacementSide(this._resolvedPlacement);
+    tooltip.dataset['variant'] = this._resolvedVariant;
+    tooltip.style.setProperty('--_tooltip-hit-slop', `${String(HIT_SLOP)}px`);
+    hitArea.setAttribute('data-ui-tooltip-hit-area', '');
+    hitArea.setAttribute('aria-hidden', 'true');
+    surface.setAttribute('data-ui-tooltip-surface', '');
+    tooltip.append(hitArea, surface);
+    tooltip.addEventListener('mouseenter', this._onTooltipMouseEnter);
+    tooltip.addEventListener('mouseleave', this._onTooltipMouseLeave);
+    document.body.append(tooltip);
+    this._tooltipElement = tooltip;
+    this._tooltipSurfaceElement = surface;
+    this._syncTooltipElement();
+  }
+
+  private _destroyTooltipElement(): void {
+    if (!this._tooltipElement) return;
+    this._tooltipElement.removeEventListener('mouseenter', this._onTooltipMouseEnter);
+    this._tooltipElement.removeEventListener('mouseleave', this._onTooltipMouseLeave);
+    this._tooltipElement.remove();
+    this._tooltipElement = null;
+    this._tooltipSurfaceElement = null;
+  }
+
+  private _syncTooltipElement(): void {
+    const tooltip = this._tooltipElement;
+    const surface = this._tooltipSurfaceElement;
+    if (!tooltip || !surface) return;
+
+    surface.textContent = this._isTextAvailable() ? this.text : '';
+    tooltip.dataset['side'] = getPlacementSide(this._resolvedPlacement);
+    tooltip.dataset['variant'] = this._resolvedVariant;
+    tooltip.dataset['open'] = String(this._open);
+    tooltip.setAttribute('aria-hidden', String(!this._open));
   }
 
   private _isTextAvailable(): boolean {
@@ -251,6 +356,7 @@ export class UiTooltip extends LitElement {
 
     if (this._triggerElement === null) {
       this._hoveringTrigger = false;
+      this._hoveringTooltip = false;
       this._focusWithinTrigger = false;
       void this._closeTooltip();
     }
@@ -281,8 +387,24 @@ export class UiTooltip extends LitElement {
     this._scheduleOpen();
   };
 
-  private _onTriggerMouseLeave = (): void => {
+  private _onTriggerMouseLeave = (event: MouseEvent): void => {
     this._hoveringTrigger = false;
+    if (this._isTooltipTarget(event.relatedTarget)) {
+      this._hoveringTooltip = true;
+    }
+    this._scheduleClose();
+  };
+
+  private _onTooltipMouseEnter = (): void => {
+    this._hoveringTooltip = true;
+    this._scheduleOpen();
+  };
+
+  private _onTooltipMouseLeave = (event: MouseEvent): void => {
+    this._hoveringTooltip = false;
+    if (this._isTriggerTarget(event.relatedTarget)) {
+      this._hoveringTrigger = true;
+    }
     this._scheduleClose();
   };
 
@@ -305,6 +427,7 @@ export class UiTooltip extends LitElement {
     if (event.key !== 'Escape' || !this._open) return;
 
     this._hoveringTrigger = false;
+    this._hoveringTooltip = false;
     this._focusWithinTrigger = false;
     this._clearTimers();
     void this._closeTooltip();
@@ -339,7 +462,7 @@ export class UiTooltip extends LitElement {
   }
 
   private _scheduleClose(): void {
-    if (this._hoveringTrigger || this._focusWithinTrigger) return;
+    if (this._hoveringTrigger || this._hoveringTooltip || this._focusWithinTrigger) return;
 
     if (this._openTimer !== null) {
       clearTimeout(this._openTimer);
@@ -434,7 +557,7 @@ export class UiTooltip extends LitElement {
       strategy: 'fixed',
       middleware: [applyOffset(this._resolvedOffset), flip({ padding: 8 }), shift({ padding: 8 })],
     });
-
+    tooltip.dataset['side'] = getPlacementSide(result.placement);
     tooltip.style.left = `${String(Math.round(result.x))}px`;
     tooltip.style.top = `${String(Math.round(result.y))}px`;
   }
@@ -445,6 +568,7 @@ export class UiTooltip extends LitElement {
     this._open = true;
     await this.updateComplete;
 
+    this._syncTooltipElement();
     this._applyAriaDescribedBy();
     await this._positionTooltip();
     this._setupFloating();
@@ -454,24 +578,24 @@ export class UiTooltip extends LitElement {
     if (!this._open) return;
 
     this._open = false;
+    this._hoveringTooltip = false;
     this._teardownFloating();
     this._removeAriaDescribedBy();
+    this._syncTooltipElement();
     await this.updateComplete;
+  }
+
+  private _isTooltipTarget(target: EventTarget | null): boolean {
+    return target instanceof Node && this._tooltipElement?.contains(target) === true;
+  }
+
+  private _isTriggerTarget(target: EventTarget | null): boolean {
+    return target instanceof Node && this._triggerElement?.contains(target) === true;
   }
 
   override render(): TemplateResult {
     return html`
       <slot @slotchange="${this._onSlotChange}"></slot>
-      <div
-        id="${this._tooltipId}"
-        class="tooltip"
-        role="tooltip"
-        aria-hidden="${String(!this._open)}"
-        data-open="${String(this._open)}"
-        data-variant="${this._resolvedVariant}"
-      >
-        ${this._isTextAvailable() ? this.text : nothing}
-      </div>
     `;
   }
 }
