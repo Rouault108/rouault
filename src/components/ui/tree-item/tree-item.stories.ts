@@ -114,6 +114,25 @@ const meta: Meta<TreeItem> = {
 export default meta;
 type Story = StoryObj<TreeItem>;
 
+const nextFrame = async (): Promise<void> =>
+  new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      resolve();
+    });
+  });
+
+const getTooltipPanel = (host: HTMLElement): HTMLElement => {
+  const tooltipId = host.dataset['tooltipId'];
+  if (!tooltipId) {
+    throw new Error('tooltip id が見つかりません');
+  }
+  const panel = host.ownerDocument.getElementById(tooltipId);
+  if (!panel) {
+    throw new Error('tooltip panel が見つかりません');
+  }
+  return panel;
+};
+
 /**
  * デフォルトのツリーアイテム（Normal密度）。
  *
@@ -537,8 +556,8 @@ export const LongLabel: Story = {
     }
 
     await treeItem.updateComplete;
-    await new Promise((resolve) => requestAnimationFrame(resolve));
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrame();
+    await nextFrame();
 
     const labelElement = treeItem.shadowRoot?.querySelector('.label');
     if (!labelElement) {
@@ -566,22 +585,19 @@ export const LongLabel: Story = {
       throw new Error('.item trigger が見つかりません');
     }
 
-    const panel = tooltipHost.shadowRoot?.querySelector<HTMLElement>('.tooltip');
-    if (!panel) {
-      throw new Error('tooltip panel が見つかりません');
-    }
+    const panel = getTooltipPanel(tooltipHost);
 
     trigger.dispatchEvent(new MouseEvent('mouseenter'));
-    await new Promise((resolve) => requestAnimationFrame(resolve));
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrame();
+    await nextFrame();
 
     if (panel.getAttribute('aria-hidden') !== 'false') {
       throw new Error('hover 時に tooltip が表示される必要があります');
     }
 
     trigger.dispatchEvent(new MouseEvent('mouseleave'));
-    await new Promise((resolve) => requestAnimationFrame(resolve));
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrame();
+    await nextFrame();
 
     if (panel.getAttribute('aria-hidden') !== 'true') {
       throw new Error('leave 後に tooltip が閉じる必要があります');

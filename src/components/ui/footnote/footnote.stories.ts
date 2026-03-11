@@ -401,7 +401,9 @@ export const VariantStateMatrix: Story = {
       const footerLink = sharedPopover.querySelector<HTMLAnchorElement>('.footnote-list-link');
       if (!footerLink) throw new Error('shared owner の footer link が見つかりません');
 
+      const closedPromise = waitForEvent(sharedOwnerPopoverHost, 'ui-popover-closed');
       sharedOwnerPopoverHost.close({ returnFocus: false });
+      await closedPromise;
       await nextFrame();
 
       if (isPopoverOpen(sharedPopover)) {
@@ -509,7 +511,9 @@ export const DualAccessContract: Story = {
 
       const footerLink = popover.querySelector<HTMLAnchorElement>('.footnote-list-link');
       if (!footerLink) throw new Error('footer link が見つかりません');
+      const closedPromise = waitForEvent(popoverHost, 'ui-popover-closed');
       popoverHost.close({ returnFocus: false });
+      await closedPromise;
       await nextFrame();
 
       if (isPopoverOpen(popover)) {

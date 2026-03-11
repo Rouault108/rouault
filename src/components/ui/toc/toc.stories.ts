@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './toc';
 import type { Heading, Toc } from './toc';
+import type { UiTooltip } from '../tooltip/tooltip';
 
 const nextFrame = async (): Promise<void> =>
 	new Promise((resolve) => {
@@ -424,6 +425,20 @@ export const DeepNesting: Story = {
 		if (activeLink.getAttribute('href') !== '#frontend') {
 			throw new Error(
 				`アクティブな href="#frontend" を期待していましたが、実際には "${activeLink.getAttribute('href') ?? 'null'}" でした`,
+			);
+		}
+
+		const h2Link = toc.shadowRoot?.querySelector<HTMLAnchorElement>('a[href="#implementation"]');
+		const activeH4Link = toc.shadowRoot?.querySelector<HTMLAnchorElement>('a[href="#frontend"]');
+		if (!h2Link || !activeH4Link) {
+			throw new Error('位置比較用のリンクが見つかりません');
+		}
+
+		const h2PaddingStart = Number.parseFloat(getComputedStyle(h2Link).paddingInlineStart);
+		const h4PaddingStart = Number.parseFloat(getComputedStyle(activeH4Link).paddingInlineStart);
+		if (Math.abs(h2PaddingStart - h4PaddingStart) > 0.1) {
+			throw new Error(
+				`H4 active の indicator 位置は H2 基準と一致するべきですが、実際には H2=${String(h2PaddingStart)}px, H4=${String(h4PaddingStart)}px でした`,
 			);
 		}
 	},
@@ -857,13 +872,12 @@ export const LongText: Story = {
 
 		const h4Link = toc.shadowRoot?.querySelector<HTMLAnchorElement>('a[href="#long-h4"]');
 		if (!h4Link) throw new Error('H4 リンクが見つかりません');
-		const h4Tooltip = h4Link.closest<HTMLElement & { disabled?: boolean }>('ui-tooltip.toc-tooltip');
+		const h4Tooltip = h4Link.closest<UiTooltip>('ui-tooltip.toc-tooltip');
 		if (!h4Tooltip) throw new Error('H4 tooltip が見つかりません');
-		if (h4Tooltip.disabled === true) {
+		if (h4Tooltip.disabled) {
 			throw new Error('省略表示中の H4 では tooltip が有効である必要があります');
 		}
 		const h4Panel = getTooltipPanel(h4Tooltip);
-		if (!h4Panel) throw new Error('H4 tooltip panel が見つかりません');
 
 		h4Link.dispatchEvent(new MouseEvent('mouseenter'));
 		await nextFrame();
@@ -886,13 +900,15 @@ export const LongText: Story = {
 		await nextFrame();
 		await nextFrame();
 
-		const activeH4Link = toc.shadowRoot?.querySelector<HTMLAnchorElement>('a[href="#long-h4"]');
-		if (!activeH4Link?.classList.contains('is-active')) {
-			throw new Error('active 切り替え後の H4 に is-active クラスが必要です');
-		}
-		if (h4Tooltip.disabled !== true) {
-			throw new Error('active 状態の H4 では tooltip が無効化される必要があります');
-		}
+			const activeH4Link = toc.shadowRoot?.querySelector<HTMLAnchorElement>('a[href="#long-h4"]');
+			if (!activeH4Link?.classList.contains('is-active')) {
+				throw new Error('active 切り替え後の H4 に is-active クラスが必要です');
+			}
+			const activeH4Tooltip = activeH4Link.closest<UiTooltip>('ui-tooltip.toc-tooltip');
+			if (!activeH4Tooltip) throw new Error('active 状態の H4 tooltip が見つかりません');
+			if (!activeH4Tooltip.disabled) {
+				throw new Error('active 状態の H4 では tooltip が無効化される必要があります');
+			}
 
 		const activeH4Style = window.getComputedStyle(h4Label);
 		if (activeH4Style.whiteSpace !== 'normal') {

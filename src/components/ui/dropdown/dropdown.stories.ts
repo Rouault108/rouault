@@ -92,6 +92,35 @@ const meta: Meta<Dropdown> = {
 export default meta;
 type Story = StoryObj<Dropdown>;
 
+const waitUntil = async (
+  predicate: () => boolean,
+  options: {
+    timeoutMs?: number;
+    intervalMs?: number;
+  } = {},
+): Promise<void> => {
+  const timeoutMs = options.timeoutMs ?? 1000;
+  const intervalMs = options.intervalMs ?? 16;
+  const start = performance.now();
+
+  while (!predicate()) {
+    if (performance.now() - start > timeoutMs) {
+      throw new Error(`条件待機がタイムアウトしました: ${String(timeoutMs)}ms`);
+    }
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, intervalMs);
+    });
+  }
+};
+
+const getDeepActiveElement = (root: Document | ShadowRoot): Element | null => {
+  let current: Element | null = root.activeElement;
+  while (current instanceof HTMLElement && current.shadowRoot?.activeElement) {
+    current = current.shadowRoot.activeElement;
+  }
+  return current;
+};
+
 // ──────────────────────────────────────────────
 // 基本
 // ──────────────────────────────────────────────
@@ -619,9 +648,10 @@ export const KeyboardNavigation: Story = {
     if (!trigger) throw new Error('トリガー要素が見つかりませんでした');
     const getFocusedValue = (): string | null => {
       const items = canvasElement.querySelectorAll<HTMLElement>('ui-menu-item');
+      const activeElement = getDeepActiveElement(document);
       for (const item of items) {
         const active = item.shadowRoot?.activeElement;
-        if (active instanceof HTMLButtonElement) {
+        if (active instanceof HTMLButtonElement || activeElement === active) {
           return item.getAttribute('value');
         }
       }
@@ -630,20 +660,21 @@ export const KeyboardNavigation: Story = {
 
     trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
     await dropdown.updateComplete;
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await waitUntil(() => dropdown.hasAttribute('opened'));
     if (!dropdown.hasAttribute('opened')) throw new Error('ArrowDown キー押下後にドロップダウンが開くことを期待していましたが、閉じたままでした');
+    await waitUntil(() => getFocusedValue() === 'new');
     if (getFocusedValue() !== 'new') throw new Error('展開時に有効な最初の項目にフォーカスが当たることを期待していましたが、当たりませんでした');
 
     panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }));
-    await new Promise(resolve => setTimeout(resolve, 0));
+    await waitUntil(() => getFocusedValue() === 'paste');
     if (getFocusedValue() !== 'paste') throw new Error('ArrowDown キーで無効な項目をスキップすることを期待していましたが、スキップされませんでした');
 
     panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true, composed: true }));
-    await new Promise(resolve => setTimeout(resolve, 0));
+    await waitUntil(() => getFocusedValue() === 'new');
     if (getFocusedValue() !== 'new') throw new Error('Home キーで最初の項目にフォーカスが移動することを期待していましたが、移動しませんでした');
 
     panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true, composed: true }));
-    await new Promise(resolve => setTimeout(resolve, 0));
+    await waitUntil(() => getFocusedValue() === 'delete');
     if (getFocusedValue() !== 'delete') throw new Error('End キーで最後の項目にフォーカスが移動することを期待していましたが、移動しませんでした');
 
     panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, composed: true }));
@@ -658,8 +689,9 @@ export const KeyboardNavigation: Story = {
 
     trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
     await dropdown.updateComplete;
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await waitUntil(() => dropdown.hasAttribute('opened'));
     if (!dropdown.hasAttribute('opened')) throw new Error('ArrowUp キー押下後にドロップダウンが開くことを期待していましたが、閉じたままでした');
+    await waitUntil(() => getFocusedValue() === 'delete');
     if (getFocusedValue() !== 'delete') throw new Error('ArrowUp キーでの展開時に有効な最後の項目にフォーカスが当たることを期待していましたが、当たりませんでした');
   },
 };

@@ -193,6 +193,9 @@ const getRetryButton = (component: UiVideo): HTMLButtonElement => {
   return button;
 };
 
+const queryRetryButton = (component: UiVideo): HTMLButtonElement | null =>
+  component.shadowRoot?.querySelector<HTMLButtonElement>('button.retry-button') ?? null;
+
 const getFloatingBar = (component: UiVideo): HTMLElement => {
   const bar = component.shadowRoot?.querySelector<HTMLElement>('.floating-bar');
   if (!bar) throw new Error('.floating-bar が見つかりません');
@@ -622,10 +625,18 @@ export const BoundaryConditions: Story = {
     await errorCase.updateComplete;
     assertState(errorCase, 'error');
 
+    await waitUntil(
+      () => queryRetryButton(errorCase) instanceof HTMLButtonElement,
+      { timeoutMs: 1000 },
+    );
+
     const retryButton = getRetryButton(errorCase);
     await waitUntil(
       () => {
-        const currentRetryButton = getRetryButton(errorCase);
+        const currentRetryButton = queryRetryButton(errorCase);
+        if (!(currentRetryButton instanceof HTMLButtonElement)) {
+          return false;
+        }
         return getShadowRoot(errorCase).activeElement === currentRetryButton;
       },
       { timeoutMs: 1000 },

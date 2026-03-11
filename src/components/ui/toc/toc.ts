@@ -127,21 +127,14 @@ export class Toc extends LitElement {
 			display: flex;
 			align-items: center;
 			column-gap: var(--_toc-indicator-gap);
-			/*
-			 * 最低保証タッチターゲット 24px
-			 */
 			min-height: 24px;
 			padding-block: var(--space-1, 4px);
 			/*
-			 * インデント: var(--level) はインラインスタイルで親 <li> に設定される CSS 変数。
-			 * CSS カスタムプロパティの継承により子の <a> へ伝播する。
-			 * ラベル開始位置は従来どおり維持しつつ、
-			 * Safari の transform ベース中央揃え差分を避けるため
-			 * インジケーター自体は flex item として通常フローに参加させる。
+			 * インジケーター列は常にトップレベル見出しと同じ基準線に固定する。
+			 * 階層によるインデントはラベル側で表現し、active 時も indicator の X 座標を変えない。
 			 */
 			padding-inline-start: calc(
-				var(--level, 0) * var(--space-2, 8px) + var(--space-3, 12px) -
-					var(--_toc-indicator-width) - var(--_toc-indicator-gap)
+				var(--space-3, 12px) - var(--_toc-indicator-width) - var(--_toc-indicator-gap)
 			);
 			padding-inline-end: var(--space-2, 8px);
 			/*
@@ -156,9 +149,6 @@ export class Toc extends LitElement {
 			/* 例外許可: TOCは構造型リンク。現在地インジケータとフォーカスリングで非色シグナルを担保する。 */
 			text-decoration: none;
 			border-radius: var(--radius-sm, 4px);
-			/*
-			 * ホバー時は文字色のみ変化させる（背景色変更は視覚ノイズになるため禁止）
-			 */
 			transition: color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
 		}
 
@@ -166,6 +156,7 @@ export class Toc extends LitElement {
 			display: block;
 			flex: 1 1 auto;
 			min-inline-size: 0;
+			padding-inline-start: calc(var(--level, 0) * var(--space-2, 8px));
 			overflow: hidden;
 			overflow-wrap: anywhere;
 			word-break: break-word;
@@ -226,13 +217,12 @@ export class Toc extends LitElement {
 			display: block;
 			flex: 0 0 var(--_toc-indicator-width);
 			inline-size: var(--_toc-indicator-width);
-			block-size: 0.75em;
+			block-size: 1.25em;
 			align-self: center;
 			border-radius: var(--radius-full, 9999px);
 			background-color: var(--primary, oklch(55% 0.2 250));
-			/* デフォルト: 非表示 */
 			opacity: 0;
-			/* トランジションなし（スクロール起因のデフォルト動作を即座にするため） */
+			transform: translateY(1px);
 		}
 
 		/*
