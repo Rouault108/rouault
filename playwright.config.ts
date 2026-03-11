@@ -26,7 +26,7 @@ export default defineConfig({
 
 	use: {
 		// ベースURL（開発サーバー）
-		baseURL: 'http://localhost:8080',
+		baseURL: 'http://127.0.0.1:8080',
 
 		// スクリーンショット・ビデオ設定
 		trace: 'on-first-retry',
@@ -51,8 +51,8 @@ export default defineConfig({
 
 	// 開発サーバー設定
 	webServer: {
-		command: 'pnpm dev',
-		url: 'http://localhost:8080',
+		command: 'pnpm build && pnpm exec vite preview --host 127.0.0.1 --port 8080 --strictPort',
+		url: 'http://127.0.0.1:8080/search/',
 		reuseExistingServer: !process.env.CI,
 		timeout: 120 * 1000,
 	},
