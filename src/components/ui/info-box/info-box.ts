@@ -62,6 +62,7 @@ export class InfoBox extends LitElement {
       height: calc(1em * var(--line-height-tight, 1.4));
       color: currentColor;
       stroke-width: 1.5;
+      transform: translateY(0.5px);
     }
 
     .heading {
