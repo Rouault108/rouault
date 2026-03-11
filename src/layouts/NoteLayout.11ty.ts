@@ -112,6 +112,8 @@ export class NoteLayout {
     const sidebarSourceId = `sidebar-source-${dataIdBase}`;
     const tocSourceId = `toc-source-${dataIdBase}`;
     const tagsJson = escapeAttr(JSON.stringify(genres));
+    const sidebarItemsJson = escapeAttr(JSON.stringify(sidebarTree));
+    const tocHeadingsJson = escapeAttr(JSON.stringify(headings));
     const pagefindTitle = note?.title ? escapeHtml(note.title) : '';
     const pagefindDescription = note?.description ? escapeHtml(note.description) : '';
     const pagefindDateValue = note?.updated ?? note?.date ?? '';
@@ -126,6 +128,7 @@ export class NoteLayout {
           <layout-sidebar
             source-id="${escapeAttr(sidebarSourceId)}"
             active-id="${escapeAttr(slug)}"
+            items-json="${sidebarItemsJson}"
             heading="ナビゲーション"
             fixed-breakpoint="768"
           ></layout-sidebar>
@@ -150,6 +153,7 @@ export class NoteLayout {
         <aside class="layout-toc-col" aria-label="目次">
           <layout-toc
             source-id="${escapeAttr(tocSourceId)}"
+            headings-json="${tocHeadingsJson}"
             home-href="/"
           ></layout-toc>
         </aside>
