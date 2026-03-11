@@ -3,8 +3,16 @@ import { customElement, property, query, state } from 'lit/decorators.js';
 import '../../lib/icons';
 import '../ui/sidebar/sidebar';
 import type { TreeNode } from '../ui/file-tree/file-tree';
-import type { UiSidebar } from '../ui/sidebar/sidebar';
+import type {
+  UiSidebar,
+  UiSidebarExpandDetail,
+} from '../ui/sidebar/sidebar';
 import type { UiSidebarStateChangeDetail } from '../ui/sidebar-shell/sidebar-shell';
+import {
+  mergeLayoutSidebarTreeState,
+  readLayoutSidebarTreeState,
+  writeLayoutSidebarTreeState,
+} from './layout-sidebar-tree-state.js';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -145,8 +153,13 @@ export class LayoutSidebar extends LitElement {
   @query('ui-sidebar')
   private _sidebarElement!: UiSidebar | null;
 
+  private _storage: Storage | null = null;
+
+  private _persistedExpandedIds = new Set<string>();
+
   override connectedCallback(): void {
     super.connectedCallback();
+    this._storage = this._resolveStorage();
     this._loadItemsFromSource();
     window.addEventListener('layout-sidebar-toggle-request', this._onToggleRequest as EventListener);
   }
@@ -167,6 +180,10 @@ export class LayoutSidebar extends LitElement {
   }
 
   private _loadItemsFromSource(): void {
+    this._persistedExpandedIds = new Set(
+      readLayoutSidebarTreeState(this._storage).expandedIds,
+    );
+
     if (this.sourceId.length === 0) {
       this._items = [];
       return;
@@ -184,11 +201,27 @@ export class LayoutSidebar extends LitElement {
         this._items = [];
         return;
       }
-      this._items = parsed
+      const items = parsed
         .map((item) => toTreeNode(item))
         .filter((item): item is TreeNode => item !== null);
+      this._items = mergeLayoutSidebarTreeState(
+        items,
+        [...this._persistedExpandedIds],
+      );
     } catch {
       this._items = [];
+    }
+  }
+
+  private _resolveStorage(): Storage | null {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    try {
+      return window.localStorage;
+    } catch {
+      return null;
     }
   }
 
@@ -213,6 +246,19 @@ export class LayoutSidebar extends LitElement {
     this._state = event.detail.state;
   };
 
+  private _onSidebarExpand = (event: CustomEvent<UiSidebarExpandDetail>): void => {
+    const { id, expanded } = event.detail;
+    if (expanded) {
+      this._persistedExpandedIds.add(id);
+    } else {
+      this._persistedExpandedIds.delete(id);
+    }
+
+    writeLayoutSidebarTreeState(this._storage, {
+      expandedIds: [...this._persistedExpandedIds],
+    });
+  };
+
   private _onSidebarSelect = (): void => {
     if (this._sidebarElement?.mode === 'overlay') {
       this._sidebarElement.collapse();
@@ -231,6 +277,7 @@ export class LayoutSidebar extends LitElement {
           .heading=${this.heading}
           .fixedBreakpoint=${this.fixedBreakpoint}
           @ui-sidebar-state-change=${this._onSidebarStateChange}
+          @ui-sidebar-expand=${this._onSidebarExpand}
           @ui-sidebar-select=${this._onSidebarSelect}
         ></ui-sidebar>
       </div>
