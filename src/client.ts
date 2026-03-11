@@ -17,6 +17,7 @@ import './components/ui/callout/callout.js';
 import './components/ui/codeblock/codeblock.js';
 import './components/ui/code-group/code-group.js';
 import './components/ui/ol/ol.js';
+import './components/ui/ul/ul.js';
 import './components/ui/divider/divider.js';
 import './components/ui/table/table.js';
 import './components/ui/translation/translation.js';

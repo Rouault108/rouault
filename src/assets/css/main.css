@@ -177,12 +177,49 @@ a > code {
 
 /* Prose（記事本文）コンテナ */
 .prose {
+  --prose-flow-space: var(--space-4);
+  --prose-section-space: var(--space-8);
+  --prose-subsection-space: var(--space-6);
   font-size: var(--text-lg);
   line-height: var(--line-height-relaxed);
   max-width: var(--width-reading);
   margin-inline: auto;
   /* 本文は詰めず、自然な可読性を優先 */
   letter-spacing: 0;
+}
+
+.prose > * + :where(
+    p,
+    ul,
+    ol,
+    dl,
+    pre,
+    table,
+    figure,
+    h4,
+    h5,
+    h6,
+    ui-callout,
+    ui-code-block,
+    ui-code-group,
+    ui-details,
+    ui-info-box,
+    ui-image,
+    ui-video,
+    ui-score,
+    ui-table,
+    ui-tabs,
+    ui-translation
+  ) {
+  margin-block-start: var(--prose-flow-space);
+}
+
+.prose > * + h3 {
+  margin-block-start: var(--prose-subsection-space);
+}
+
+.prose > * + h2 {
+  margin-block-start: var(--prose-section-space);
 }
 
 /* Proseコンテナ内のメディア要素はテキスト幅を超えて拡張 */
