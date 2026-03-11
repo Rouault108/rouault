@@ -348,7 +348,7 @@ export class Router {
     // 修飾キーが押されている場合は無視（新規タブで開くなどのブラウザ標準動作を許可）
     if (e.ctrlKey || e.shiftKey || e.altKey || e.metaKey) return;
 
-    const anchor = (e.target as HTMLElement).closest('a');
+    const anchor = this.resolveAnchorFromClickEvent(e);
     if (!anchor) return;
 
     const relValue = anchor.getAttribute('rel');
@@ -400,6 +400,27 @@ export class Router {
       url: `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`,
       historyMode: 'push',
     });
+  }
+
+  /**
+   * Shadow DOM 越しでもクリック元アンカーを解決する。
+   */
+  private resolveAnchorFromClickEvent(e: MouseEvent): HTMLAnchorElement | null {
+    const target = e.target;
+    if (target instanceof Element) {
+      const closestAnchor = target.closest('a');
+      if (closestAnchor instanceof HTMLAnchorElement) {
+        return closestAnchor;
+      }
+    }
+
+    for (const pathItem of e.composedPath()) {
+      if (pathItem instanceof HTMLAnchorElement) {
+        return pathItem;
+      }
+    }
+
+    return null;
   }
 
   /**
