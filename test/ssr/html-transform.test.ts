@@ -14,11 +14,11 @@ const serializeAttributes = (attributes: readonly TestSsrAttribute[]): string =>
 
 describe('transformHtmlWithLitSsr', () => {
   it('ノート相当のHTMLで対象要素をDSDに置換し、通常HTMLを保持する', async () => {
-    const renderCalls: Array<{
+    const renderCalls: {
       tagName: string;
       attributes: readonly SsrAttribute[];
       innerHtml: string;
-    }> = [];
+    }[] = [];
 
     const html = `<!doctype html>
       <html lang="ja">
@@ -37,13 +37,15 @@ describe('transformHtmlWithLitSsr', () => {
 
     const transformed = await transformHtmlWithLitSsr(html, {
       targetTagNames: ['ui-code-block', 'ui-table'],
-      renderCustomElement: async (
+      renderCustomElement: (
         tagName: string,
         attributes: readonly SsrAttribute[],
         innerHtml: string,
       ) => {
         renderCalls.push({ tagName, attributes, innerHtml });
-        return `<${tagName}${serializeAttributes(attributes)}><template shadowrootmode="open"><section data-ssr="${tagName}">${innerHtml}</section></template></${tagName}>`;
+        return Promise.resolve(
+          `<${tagName}${serializeAttributes(attributes)}><template shadowrootmode="open"><section data-ssr="${tagName}">${innerHtml}</section></template></${tagName}>`,
+        );
       },
       collectDocumentStylesForTags: (tagNames: ReadonlySet<string>) => {
         const renderedTagNames = new Set(tagNames);
@@ -97,8 +99,10 @@ describe('transformHtmlWithLitSsr', () => {
 
     const transformed = await transformHtmlWithLitSsr(html, {
       targetTagNames: ['search-page'],
-      renderCustomElement: async (tagName: string, attributes: readonly SsrAttribute[]) =>
-        `<${tagName}${serializeAttributes(attributes)}><template shadowrootmode="open"><div>SSR Search</div></template></${tagName}>`,
+      renderCustomElement: (tagName: string, attributes: readonly SsrAttribute[]) =>
+        Promise.resolve(
+          `<${tagName}${serializeAttributes(attributes)}><template shadowrootmode="open"><div>SSR Search</div></template></${tagName}>`,
+        ),
       collectDocumentStylesForTags: () => [],
     });
 
@@ -123,12 +127,14 @@ describe('transformHtmlWithLitSsr', () => {
 
     const transformed = await transformHtmlWithLitSsr(html, {
       targetTagNames: ['ui-table'],
-      renderCustomElement: async (
+      renderCustomElement: (
         tagName: string,
         attributes: readonly SsrAttribute[],
         innerHtml: string,
       ) =>
-        `<${tagName}${serializeAttributes(attributes)}><template shadowrootmode="open">${innerHtml}</template></${tagName}>`,
+        Promise.resolve(
+          `<${tagName}${serializeAttributes(attributes)}><template shadowrootmode="open">${innerHtml}</template></${tagName}>`,
+        ),
       collectDocumentStylesForTags: () => [
         {
           id: 'ui-table-document-styles',
