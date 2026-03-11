@@ -1,9 +1,9 @@
+import type { TestRunnerConfig } from '@web/test-runner';
 import { esbuildPlugin } from '@web/dev-server-esbuild';
 import { playwrightLauncher } from '@web/test-runner-playwright';
 
-/** @type {import('@web/test-runner').TestRunnerConfig} */
-export default {
-  files: ['src/**/*.test.ts', 'test/**/*.test.ts'],
+const config: TestRunnerConfig = {
+  files: ['src/**/*.test.ts', 'test/unit/**/*.test.ts'],
   nodeResolve: {
     exportConditions: ['browser', 'development'],
   },
@@ -25,3 +25,5 @@ export default {
     },
   },
 };
+
+export default config;

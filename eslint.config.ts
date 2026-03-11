@@ -6,19 +6,39 @@ import litA11y from 'eslint-plugin-lit-a11y';
 import wc from 'eslint-plugin-wc';
 import prettier from 'eslint-config-prettier';
 import globals from 'globals';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const dirname = path.dirname(fileURLToPath(import.meta.url));
+type FlatConfigItem = Parameters<typeof defineConfig>[number];
+
+const litRecommendedConfig = lit.configs?.['flat/recommended'];
+const wcRecommendedConfig = wc.configs?.['flat/recommended'];
+
+if (!litRecommendedConfig || !wcRecommendedConfig) {
+  throw new Error('ESLint plugin recommended config could not be resolved.');
+}
 
 export default defineConfig(
   // 1. 無視設定
   {
-    ignores: ['dist/', '.velite/', 'node_modules/', 'storybook-static/', '*.config.js', '*.config.ts', '*.config.mjs'],
+    ignores: [
+      'dist/',
+      '.velite/',
+      'node_modules/',
+      'storybook-static/',
+      '*.config.js',
+      '*.config.ts',
+      '*.config.mjs',
+    ],
   },
 
   // 2. 基本的な推奨設定
   eslint.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
-  lit.configs['flat/recommended'],
-  wc.configs['flat/recommended'],
+  litRecommendedConfig as unknown as FlatConfigItem,
+  wcRecommendedConfig as unknown as FlatConfigItem,
 
   // 3. 言語・パーサー設定
   {
@@ -29,8 +49,8 @@ export default defineConfig(
       },
       parserOptions: {
         project: './tsconfig.json',
-        // 【堅牢性向上】実行環境に左右されないパス解決
-        tsconfigRootDir: import.meta.dirname,
+        // 実行環境に左右されないパス解決にする。
+        tsconfigRootDir: dirname,
       },
     },
   },
@@ -40,33 +60,18 @@ export default defineConfig(
     files: ['src/**/*.ts', 'test/**/*.ts'],
     plugins: { 'lit-a11y': litA11y },
     rules: {
-      // 未使用変数の厳格な管理
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-
-      // Lit関連の厳格化
       'lit/no-legacy-template-syntax': 'error',
       'lit/no-value-attribute': 'error',
       'lit/attribute-value-entities': 'error',
       'lit/no-invalid-html': 'error',
-
-      // 堅牢性を高める一般ルール
       eqeqeq: ['error', 'always'],
-
-      // TypeScript 厳格化の念押し
       '@typescript-eslint/no-explicit-any': 'error',
-
-      // 不必要な型キャストを禁止し、型の安全性を高める
       '@typescript-eslint/no-unnecessary-type-assertion': 'error',
-
-      // Litのプロパティ定義での不整合を防ぐ
       'lit/binding-positions': 'error',
-
-      // WC関連の厳格化
       'wc/tag-name-matches-class': 'error',
       'wc/no-constructor-attributes': 'error',
       'wc/no-invalid-element-name': 'error',
-
-      // Lit-a11y
       'lit-a11y/alt-text': 'error',
       'lit-a11y/anchor-is-valid': 'error',
       'lit-a11y/aria-activedescendant-has-tabindex': 'error',
@@ -89,7 +94,7 @@ export default defineConfig(
     },
   },
 
-  // 5. JavaScript（設定ファイル・ビルド等）: TypeScript型チェックを無効化
+  // 5. JavaScript が残っている外部生成物向け設定
   {
     files: ['**/*.js', '**/*.mjs', '**/*.cjs'],
     extends: [tseslint.configs.disableTypeChecked],
@@ -104,10 +109,7 @@ export default defineConfig(
   {
     files: ['test/**/*.ts'],
     rules: {
-      // ChaiのAssertionスタイル（expect(x).to.be.true）を許可
       '@typescript-eslint/no-unused-expressions': 'off',
-      // Chai の Assertion 型は chai-as-promised の型合成により thenable に見えるが
-      // 実際には同期アサーションであるため無効化する
       '@typescript-eslint/no-floating-promises': 'off',
     },
   },

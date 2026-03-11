@@ -1,25 +1,32 @@
 import path from 'node:path';
+import type { UserConfig } from '@11ty/eleventy';
 import EleventyVitePlugin from '@11ty/eleventy-plugin-vite';
 import { build } from 'velite';
 
+import { loadNotesData } from './src/data/notes.js';
+import { loadSearchGenresData } from './src/data/searchGenres.js';
+
 /**
- * VeliteとViteを組み合わせた11tyの設定
- * @param {import('@11ty/eleventy').UserConfig} eleventyConfig 11tyの設定オブジェクト
+ * Velite と Vite を組み合わせた 11ty の設定。
  */
-export default function (eleventyConfig) {
-  // 11ty.ts を 11ty.js エンジンで処理するようにマッピング
+export default function configureEleventy(eleventyConfig: UserConfig) {
+  // 11ty.ts を 11ty.js エンジンで処理するようにマッピングする。
   eleventyConfig.addExtension('11ty.ts', {
     key: '11ty.js',
   });
 
-  // 静的アセットのコピー
+  // TypeScript 化したグローバルデータを明示登録する。
+  eleventyConfig.addGlobalData('notes', () => loadNotesData());
+  eleventyConfig.addGlobalData('searchGenres', () => loadSearchGenresData());
+
+  // 静的アセットをコピーする。
   eleventyConfig.addPassthroughCopy({ 'src/assets': 'assets' });
 
   // Layout Aliases
   eleventyConfig.addLayoutAlias('base', 'BaseLayout.11ty.ts');
   eleventyConfig.addLayoutAlias('note', 'NoteLayout.11ty.ts');
 
-  // Veliteリソース管理
+  // Velite リソース管理。
   eleventyConfig.on('eleventy.before', async () => {
     const isServing = process.argv.includes('--serve');
 
@@ -28,21 +35,21 @@ export default function (eleventyConfig) {
         clean: !isServing,
         watch: isServing,
       });
-    } catch (err) {
-      console.error('❌ Velite build failed:', err);
+    } catch (error: unknown) {
+      console.error('❌ Velite build failed:', error);
 
-      // 本番ビルド時は失敗させる（CI/CDで検知するため）
+      // 本番ビルド時は失敗させる。
       if (!isServing) {
         console.error('Exiting due to build failure in production mode.');
         process.exit(1);
       }
 
-      // 開発時は警告のみで継続（部分的なエラーを許容）
+      // 開発時は警告のみで継続する。
       console.warn('⚠️  Continuing in development mode despite errors.');
     }
   });
 
-  // Viteバンドルと開発サーバーの使用
+  // Vite バンドルと開発サーバーの使用。
   eleventyConfig.addPlugin(EleventyVitePlugin, {
     viteOptions: {
       clearScreen: false,
@@ -56,9 +63,13 @@ export default function (eleventyConfig) {
       },
       resolve: {
         alias: {
-          // "/src" へのアクセスを、実際の src ディレクトリへ転送する
+          // "/src" へのアクセスを、実際の src ディレクトリへ転送する。
           '/src': path.resolve(process.cwd(), 'src'),
           '@': path.resolve(process.cwd(), 'src'),
+          '@lit-labs/ssr-client': path.resolve(
+            process.cwd(),
+            'node_modules/.pnpm/node_modules/@lit-labs/ssr-client',
+          ),
         },
       },
     },
