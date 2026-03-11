@@ -124,6 +124,9 @@ export const Default: Story = {
         <button
           slot="trigger"
           style="
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
             padding: 0 12px;
             height: 32px;
             border: 1px solid oklch(90% 0.01 250 / 0.3);
@@ -133,7 +136,8 @@ export const Default: Story = {
             font-size: 14px;
           "
         >
-          メニューを開く ▾
+          メニューを開く
+          <iconify-icon icon="lucide:chevron-down" aria-hidden="true" style="width: 14px; height: 14px;"></iconify-icon>
         </button>
         <ui-menu-item value="edit">編集</ui-menu-item>
         <ui-menu-item value="copy">コピー</ui-menu-item>
@@ -184,8 +188,9 @@ export const DefaultVariantNormal: Story = {
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown id="variant-normal-dropdown" opened>
-        <button slot="trigger" style="padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
-          メニュー ▾
+        <button slot="trigger" style="display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
+          メニュー
+          <iconify-icon icon="lucide:chevron-down" aria-hidden="true" style="width: 14px; height: 14px;"></iconify-icon>
         </button>
         <ui-menu-item value="new">新規作成</ui-menu-item>
         <ui-menu-item value="open">開く</ui-menu-item>
@@ -228,8 +233,9 @@ export const DangerVariantNormal: Story = {
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown id="danger-variant-dropdown" opened>
-        <button slot="trigger" style="padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
-          操作 ▾
+        <button slot="trigger" style="display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
+          操作
+          <iconify-icon icon="lucide:chevron-down" aria-hidden="true" style="width: 14px; height: 14px;"></iconify-icon>
         </button>
         <ui-menu-item value="archive">アーカイブ</ui-menu-item>
         <ui-menu-separator></ui-menu-separator>
@@ -263,8 +269,9 @@ export const DefaultVariantDisabledItem: Story = {
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown id="disabled-item-dropdown" opened>
-        <button slot="trigger" style="padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
-          操作 ▾
+        <button slot="trigger" style="display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
+          操作
+          <iconify-icon icon="lucide:chevron-down" aria-hidden="true" style="width: 14px; height: 14px;"></iconify-icon>
         </button>
         <ui-menu-item value="edit">編集</ui-menu-item>
         <ui-menu-item value="copy" disabled>コピー（無効）</ui-menu-item>
@@ -303,8 +310,9 @@ export const DangerVariantDisabledItem: Story = {
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown id="danger-disabled-dropdown" opened>
-        <button slot="trigger" style="padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
-          操作 ▾
+        <button slot="trigger" style="display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
+          操作
+          <iconify-icon icon="lucide:chevron-down" aria-hidden="true" style="width: 14px; height: 14px;"></iconify-icon>
         </button>
         <ui-menu-item value="view">詳細を見る</ui-menu-item>
         <ui-menu-separator></ui-menu-separator>
@@ -343,8 +351,9 @@ export const DropdownDisabled: Story = {
   render: (args) => html`
     <div style="padding: 2rem;">
       <ui-dropdown id="dropdown-disabled" ?disabled="${args.disabled}">
-        <button slot="trigger" style="padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
-          メニュー ▾
+        <button slot="trigger" style="display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
+          メニュー
+          <iconify-icon icon="lucide:chevron-down" aria-hidden="true" style="width: 14px; height: 14px;"></iconify-icon>
         </button>
         <ui-menu-item value="edit">編集</ui-menu-item>
         <ui-menu-item value="delete" variant="danger">削除</ui-menu-item>
@@ -380,8 +389,9 @@ export const WithIcons: Story = {
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown id="with-icons-dropdown" opened>
-        <button slot="trigger" style="padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
-          ファイル ▾
+        <button slot="trigger" style="display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
+          ファイル
+          <iconify-icon icon="lucide:chevron-down" aria-hidden="true" style="width: 14px; height: 14px;"></iconify-icon>
         </button>
         <ui-menu-item value="new">
           <iconify-icon icon="lucide:file-plus" style="font-size: 16px;"></iconify-icon>
@@ -419,8 +429,9 @@ export const WithSeparators: Story = {
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown id="with-separators-dropdown" opened>
-        <button slot="trigger" style="padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
-          編集 ▾
+        <button slot="trigger" style="display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
+          編集
+          <iconify-icon icon="lucide:chevron-down" aria-hidden="true" style="width: 14px; height: 14px;"></iconify-icon>
         </button>
         <ui-menu-item value="cut">切り取り</ui-menu-item>
         <ui-menu-item value="copy">コピー</ui-menu-item>
@@ -473,8 +484,9 @@ export const EventHandling: Story = {
       }
     }}"
       >
-        <button slot="trigger" style="padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
-          操作を選択 ▾
+        <button slot="trigger" style="display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
+          操作を選択
+          <iconify-icon icon="lucide:chevron-down" aria-hidden="true" style="width: 14px; height: 14px;"></iconify-icon>
         </button>
         <ui-menu-item value="edit">編集</ui-menu-item>
         <ui-menu-item value="copy">コピー</ui-menu-item>
@@ -570,9 +582,10 @@ export const KeyboardNavigation: Story = {
         <button
           id="keyboard-trigger"
           slot="trigger"
-          style="padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;"
+          style="display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;"
         >
-          キーボード操作 ▾
+          キーボード操作
+          <iconify-icon icon="lucide:chevron-down" aria-hidden="true" style="width: 14px; height: 14px;"></iconify-icon>
         </button>
         <ui-menu-item value="new">新規作成</ui-menu-item>
         <ui-menu-item value="copy" disabled>コピー（無効）</ui-menu-item>
@@ -665,8 +678,9 @@ export const AllItemsDisabled: Story = {
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown id="all-disabled-dropdown" opened>
-        <button slot="trigger" style="padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
-          操作 ▾
+        <button slot="trigger" style="display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
+          操作
+          <iconify-icon icon="lucide:chevron-down" aria-hidden="true" style="width: 14px; height: 14px;"></iconify-icon>
         </button>
         <ui-menu-item value="edit" disabled>編集（無効）</ui-menu-item>
         <ui-menu-item value="copy" disabled>コピー（無効）</ui-menu-item>
@@ -705,8 +719,9 @@ export const SingleItem: Story = {
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown id="single-item-dropdown" opened>
-        <button slot="trigger" style="padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
-          操作 ▾
+        <button slot="trigger" style="display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
+          操作
+          <iconify-icon icon="lucide:chevron-down" aria-hidden="true" style="width: 14px; height: 14px;"></iconify-icon>
         </button>
         <ui-menu-item value="confirm" variant="danger">実行して削除</ui-menu-item>
       </ui-dropdown>
@@ -737,8 +752,9 @@ export const ManyItems: Story = {
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown id="many-items-dropdown" opened>
-        <button slot="trigger" style="padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
-          言語を選択 ▾
+        <button slot="trigger" style="display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
+          言語を選択
+          <iconify-icon icon="lucide:chevron-down" aria-hidden="true" style="width: 14px; height: 14px;"></iconify-icon>
         </button>
         ${Array.from({ length: 15 }, (_, i) => html`
           <ui-menu-item value="lang-${String(i + 1)}">言語 ${String(i + 1)}</ui-menu-item>
@@ -783,8 +799,9 @@ export const LongLabels: Story = {
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown id="long-labels-dropdown" opened>
-        <button slot="trigger" style="padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
-          操作 ▾
+        <button slot="trigger" style="display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
+          操作
+          <iconify-icon icon="lucide:chevron-down" aria-hidden="true" style="width: 14px; height: 14px;"></iconify-icon>
         </button>
         <ui-menu-item value="short">短いラベル</ui-menu-item>
         <ui-menu-item value="long">非常に長いラベルのメニュー項目がここに表示されます（最大280px）</ui-menu-item>
@@ -844,8 +861,9 @@ export const ProgrammaticControl: Story = {
       </div>
 
       <ui-dropdown id="programmatic-dropdown">
-        <button slot="trigger" style="padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
-          メニュー ▾
+        <button slot="trigger" style="display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
+          メニュー
+          <iconify-icon icon="lucide:chevron-down" aria-hidden="true" style="width: 14px; height: 14px;"></iconify-icon>
         </button>
         <ui-menu-item value="edit">編集</ui-menu-item>
         <ui-menu-item value="delete" variant="danger">削除</ui-menu-item>
@@ -906,8 +924,9 @@ export const AriaAttributes: Story = {
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown id="aria-dropdown">
-        <button id="aria-trigger" slot="trigger" style="padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
-          メニュー ▾
+        <button id="aria-trigger" slot="trigger" style="display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
+          メニュー
+          <iconify-icon icon="lucide:chevron-down" aria-hidden="true" style="width: 14px; height: 14px;"></iconify-icon>
         </button>
         <ui-menu-item value="edit">編集</ui-menu-item>
         <ui-menu-item value="delete" variant="danger">削除</ui-menu-item>
@@ -1101,13 +1120,17 @@ export const NavigationExample: Story = {
           <button
             slot="trigger"
             style="
+              display: inline-flex;
+              align-items: center;
+              gap: 4px;
               padding: 0 12px; height: 28px;
               border: none; border-radius: 4px;
               background: transparent; color: oklch(85% 0 0);
               cursor: pointer; font-size: 13px;
             "
           >
-            ファイル ▾
+            ファイル
+            <iconify-icon icon="lucide:chevron-down" aria-hidden="true" style="width: 14px; height: 14px;"></iconify-icon>
           </button>
           <ui-menu-item value="new">新規作成</ui-menu-item>
           <ui-menu-item value="open">開く</ui-menu-item>
@@ -1120,13 +1143,17 @@ export const NavigationExample: Story = {
           <button
             slot="trigger"
             style="
+              display: inline-flex;
+              align-items: center;
+              gap: 4px;
               padding: 0 12px; height: 28px;
               border: none; border-radius: 4px;
               background: transparent; color: oklch(85% 0 0);
               cursor: pointer; font-size: 13px;
             "
           >
-            編集 ▾
+            編集
+            <iconify-icon icon="lucide:chevron-down" aria-hidden="true" style="width: 14px; height: 14px;"></iconify-icon>
           </button>
           <ui-menu-item value="undo">元に戻す</ui-menu-item>
           <ui-menu-item value="redo">やり直す</ui-menu-item>
@@ -1159,8 +1186,9 @@ export const ForcedColorsMode: Story = {
 
     <div style="padding: 2rem;">
       <ui-dropdown id="forced-colors-dropdown" opened>
-        <button slot="trigger" style="padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
-          操作 ▾
+        <button slot="trigger" style="display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
+          操作
+          <iconify-icon icon="lucide:chevron-down" aria-hidden="true" style="width: 14px; height: 14px;"></iconify-icon>
         </button>
         <ui-menu-item value="edit">編集（Default）</ui-menu-item>
         <ui-menu-item value="copy" disabled>コピー（Disabled）</ui-menu-item>
@@ -1197,8 +1225,9 @@ export const ReducedMotion: Story = {
 
     <div style="padding: 2rem;">
       <ui-dropdown id="reduced-motion-dropdown">
-        <button slot="trigger" style="padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
-          メニュー ▾
+        <button slot="trigger" style="display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; height: 32px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer;">
+          メニュー
+          <iconify-icon icon="lucide:chevron-down" aria-hidden="true" style="width: 14px; height: 14px;"></iconify-icon>
         </button>
         <ui-menu-item value="edit">編集</ui-menu-item>
         <ui-menu-item value="delete" variant="danger">削除</ui-menu-item>
