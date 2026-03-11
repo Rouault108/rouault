@@ -405,7 +405,7 @@ export class SearchPage extends LitElement {
     void navigateToUrl(url);
   };
 
-  private _sortedGenreEntries(): Array<[string, number]> {
+  private _sortedGenreEntries(): [string, number][] {
     const map = new Map<string, number>(Object.entries(this._allGenreCounts));
 
     for (const [tag, count] of Object.entries(this._genreCounts)) {
