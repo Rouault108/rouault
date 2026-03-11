@@ -2,6 +2,7 @@ import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import '../tag/tag';
 import { linkTextStyles } from '../../../styles/contracts/link-styles';
+import { formatArticleDate } from './format-article-date.js';
 
 export type ArticleStatus = 'draft' | 'archived' | 'wip' | 'deprecated';
 
@@ -28,169 +29,178 @@ export class ArticleHeader extends LitElement {
   static override styles = [
     linkTextStyles,
     css`
-    :host {
-      display: block;
-      max-width: var(--width-reading, 72ch);
-    }
-
-    .article-header {
-      display: block;
-    }
-
-    .heading {
-      margin: 0;
-      max-width: var(--width-reading, 72ch);
-      font-size: clamp(var(--text-2xl, 24px), 4vw + 1rem, var(--text-4xl, 36px));
-      font-weight: 700;
-      /* clamp + media query の不連続を解消。フォントサイズに追従する相対値で統一。 */
-      line-height: var(--line-height-tight, 1.25);
-      letter-spacing: var(--tracking-tight, -0.01em);
-      color: var(--fg-default, oklch(20% 0 0));
-      font-feature-settings: 'palt';
-      word-break: auto-phrase;
-      overflow-wrap: break-word;
-    }
-
-    .metadata-list {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      list-style: none;
-      /* heading 直下（status-badge なし）の場合の余白 */
-      margin: var(--space-3, 12px) 0 0;
-      padding: 0;
-      gap: 0;
-      font-size: var(--text-sm, 13px);
-      font-weight: 500;
-      color: var(--fg-muted, oklch(48% 0 0));
-    }
-
-    /* status-badge 直後は詰める（badge が既に heading との距離を稼いでいるため） */
-    .status-badge + .metadata-list {
-      margin-top: var(--space-2, 8px);
-    }
-
-    /* セカンダリメタデータ（出典・ライセンス）: 補助情報として控えめに */
-    .metadata-list--secondary {
-      margin-top: var(--space-2, 8px);
-      font-size: var(--text-xs, 12px);
-      color: var(--fg-subtle, oklch(60% 0 0));
-    }
-
-    .metadata-item {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-1, 4px);
-      min-width: 0;
-    }
-
-    .metadata-item + .metadata-item::before {
-      content: '・';
-      content: '・' / '';
-      /* セパレータ間隔（16px）をタグ内ギャップ（8px）の2倍に設定し、「区切り」と「群れ」のリズムを明示 */
-      margin-inline: var(--space-4, 16px);
-      color: var(--fg-subtle, oklch(60% 0 0));
-      flex-shrink: 0;
-    }
-
-    .meta-icon {
-      width: var(--icon-sm, 14px);
-      height: var(--icon-sm, 14px);
-      font-size: var(--icon-sm, 14px);
-      color: currentColor;
-      flex-shrink: 0;
-      transform: translateY(1px);
-    }
-
-    /* セカンダリリスト内のアイコンはフォントサイズに合わせて縮小 */
-    .metadata-list--secondary .meta-icon {
-      width: var(--icon-xs, 12px);
-      height: var(--icon-xs, 12px);
-      font-size: var(--icon-xs, 12px);
-    }
-
-    .link-text.source-link {
-      color: inherit;
-      border-radius: 2px;
-      outline: var(--focus-ring-width, 2px) solid transparent;
-      outline-offset: var(--focus-ring-offset, 2px);
-      transition:
-        color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        outline-color var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
-    }
-
-    .link-text.source-link:hover {
-      color: var(--fg-default, oklch(20% 0 0));
-    }
-
-    .link-text.source-link:focus-visible {
-      color: var(--fg-default, oklch(20% 0 0));
-      outline-color: var(--focus-ring-color, oklch(60% 0.15 250));
-      animation: var(--animation-focus, none);
-    }
-
-    .tags-row {
-      /* metadata-list または status-badge の後に続く場合の余白 */
-      margin-top: var(--space-2, 8px);
-    }
-
-    /* heading または status-badge の直後（primary metadata なし）は余白を増やす */
-    .heading + .tags-row,
-    .status-badge + .tags-row {
-      margin-top: var(--space-3, 12px);
-    }
-
-    .tag-links {
-      display: inline-flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: var(--space-2, 8px);
-      min-width: 0;
-    }
-
-    /* ステータスバッジ: 見出し直下の信頼性シグナル。メタデータリストとは独立して配置。 */
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-1, 4px);
-      margin-top: var(--space-3, 12px);
-      font-size: var(--text-xs, 12px);
-      font-weight: 500;
-    }
-
-    .status-draft     { color: var(--fg-muted, oklch(48% 0 0)); }
-    .status-archived  { color: var(--fg-subtle, oklch(60% 0 0)); }
-    .status-wip       { color: var(--fg-warning, oklch(72% 0.13 85)); }
-    .status-deprecated { color: var(--fg-danger, oklch(60% 0.22 25)); }
-
-    @media (prefers-reduced-motion: reduce) {
-      .link-text.source-link {
-        transition-duration: 0.01ms;
+      :host {
+        display: block;
+        max-width: var(--width-reading, 72ch);
       }
-    }
 
-    @media (forced-colors: active) {
+      .article-header {
+        display: block;
+      }
+
       .heading {
-        color: CanvasText;
+        margin: 0;
+        max-width: var(--width-reading, 72ch);
+        font-size: clamp(var(--text-2xl, 24px), 4vw + 1rem, var(--text-4xl, 36px));
+        font-weight: 700;
+        /* clamp + media query の不連続を解消。フォントサイズに追従する相対値で統一。 */
+        line-height: var(--line-height-tight, 1.25);
+        letter-spacing: var(--tracking-tight, -0.01em);
+        color: var(--fg-default, oklch(20% 0 0));
+        font-feature-settings: 'palt';
+        word-break: auto-phrase;
+        overflow-wrap: break-word;
       }
 
       .metadata-list {
-        color: GrayText;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        list-style: none;
+        /* heading 直下（status-badge なし）の場合の余白 */
+        margin: var(--space-3, 12px) 0 0;
+        padding: 0;
+        gap: 0;
+        font-size: var(--text-sm, 13px);
+        font-weight: 500;
+        color: var(--fg-muted, oklch(48% 0 0));
+      }
+
+      /* status-badge 直後は詰める（badge が既に heading との距離を稼いでいるため） */
+      .status-badge + .metadata-list {
+        margin-top: var(--space-2, 8px);
+      }
+
+      /* セカンダリメタデータ（出典・ライセンス）: 補助情報として控えめに */
+      .metadata-list--secondary {
+        margin-top: var(--space-2, 8px);
+        font-size: var(--text-xs, 12px);
+        color: var(--fg-subtle, oklch(60% 0 0));
+      }
+
+      .metadata-item {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1, 4px);
+        min-width: 0;
+      }
+
+      .metadata-item + .metadata-item::before {
+        content: '・';
+        content: '・' / '';
+        /* セパレータ間隔（16px）をタグ内ギャップ（8px）の2倍に設定し、「区切り」と「群れ」のリズムを明示 */
+        margin-inline: var(--space-4, 16px);
+        color: var(--fg-subtle, oklch(60% 0 0));
+        flex-shrink: 0;
+      }
+
+      .meta-icon {
+        width: var(--icon-sm, 14px);
+        height: var(--icon-sm, 14px);
+        font-size: var(--icon-sm, 14px);
+        color: currentColor;
+        flex-shrink: 0;
+        transform: translateY(1px);
+      }
+
+      /* セカンダリリスト内のアイコンはフォントサイズに合わせて縮小 */
+      .metadata-list--secondary .meta-icon {
+        width: var(--icon-xs, 12px);
+        height: var(--icon-xs, 12px);
+        font-size: var(--icon-xs, 12px);
       }
 
       .link-text.source-link {
-        color: LinkText;
-        text-decoration: underline;
+        color: inherit;
+        border-radius: 2px;
+        outline: var(--focus-ring-width, 2px) solid transparent;
+        outline-offset: var(--focus-ring-offset, 2px);
+        transition:
+          color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+          outline-color var(--duration-normal, 150ms)
+            var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      }
+
+      .link-text.source-link:hover {
+        color: var(--fg-default, oklch(20% 0 0));
       }
 
       .link-text.source-link:focus-visible {
-        outline-color: Highlight;
+        color: var(--fg-default, oklch(20% 0 0));
+        outline-color: var(--focus-ring-color, oklch(60% 0.15 250));
+        animation: var(--animation-focus, none);
       }
 
-      .status-badge {
-        color: CanvasText;
+      .tags-row {
+        /* metadata-list または status-badge の後に続く場合の余白 */
+        margin-top: var(--space-2, 8px);
       }
-    }
+
+      /* heading または status-badge の直後（primary metadata なし）は余白を増やす */
+      .heading + .tags-row,
+      .status-badge + .tags-row {
+        margin-top: var(--space-3, 12px);
+      }
+
+      .tag-links {
+        display: inline-flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-2, 8px);
+        min-width: 0;
+      }
+
+      /* ステータスバッジ: 見出し直下の信頼性シグナル。メタデータリストとは独立して配置。 */
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1, 4px);
+        margin-top: var(--space-3, 12px);
+        font-size: var(--text-xs, 12px);
+        font-weight: 500;
+      }
+
+      .status-draft {
+        color: var(--fg-muted, oklch(48% 0 0));
+      }
+      .status-archived {
+        color: var(--fg-subtle, oklch(60% 0 0));
+      }
+      .status-wip {
+        color: var(--fg-warning, oklch(72% 0.13 85));
+      }
+      .status-deprecated {
+        color: var(--fg-danger, oklch(60% 0.22 25));
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .link-text.source-link {
+          transition-duration: 0.01ms;
+        }
+      }
+
+      @media (forced-colors: active) {
+        .heading {
+          color: CanvasText;
+        }
+
+        .metadata-list {
+          color: GrayText;
+        }
+
+        .link-text.source-link {
+          color: LinkText;
+          text-decoration: underline;
+        }
+
+        .link-text.source-link:focus-visible {
+          outline-color: Highlight;
+        }
+
+        .status-badge {
+          color: CanvasText;
+        }
+      }
     `,
   ];
 
@@ -226,7 +236,11 @@ export class ArticleHeader extends LitElement {
   license = '';
 
   private get _displayDate(): string {
-    return this.updatedDate || this.published;
+    return formatArticleDate(this._displayDateTime);
+  }
+
+  private get _displayDateTime(): string {
+    return (this.updatedDate || this.published).trim();
   }
 
   private get _displayDateLabel(): string {
@@ -236,9 +250,7 @@ export class ArticleHeader extends LitElement {
   private get _normalizedTags(): string[] {
     const source = this.tags.length > 0 ? this.tags : this._tagsFromJson;
 
-    return source
-      .map((tag) => tag.trim())
-      .filter((tag) => tag.length > 0);
+    return source.map((tag) => tag.trim()).filter((tag) => tag.length > 0);
   }
 
   private get _tagsFromJson(): string[] {
@@ -328,15 +340,17 @@ export class ArticleHeader extends LitElement {
 
   private _renderDateItem(): TemplateResult | typeof nothing {
     const displayDate = this._displayDate;
-    if (!displayDate) return nothing;
+    const displayDateTime = this._displayDateTime;
+    if (!displayDate || !displayDateTime) return nothing;
 
-    const createdSuffix = this.created ? `、作成日: ${this.created}` : '';
+    const createdDate = formatArticleDate(this.created);
+    const createdSuffix = createdDate ? `、作成日: ${createdDate}` : '';
     const ariaLabel = `${this._displayDateLabel}: ${displayDate}${createdSuffix}`;
 
     return html`
       <li class="metadata-item metadata-date">
         <iconify-icon class="meta-icon" icon="lucide:history" aria-hidden="true"></iconify-icon>
-        <time datetime="${displayDate}" aria-label="${ariaLabel}">${displayDate}</time>
+        <time datetime="${displayDateTime}" aria-label="${ariaLabel}">${displayDate}</time>
       </li>
     `;
   }
@@ -356,8 +370,11 @@ export class ArticleHeader extends LitElement {
                 class="tag-link"
                 href="${href}"
                 aria-label="タグ: ${tag}"
-                @click="${(event: MouseEvent) => { this._handleTagClick(event, tag); }}"
-              >#${tag}</ui-tag>
+                @click="${(event: MouseEvent) => {
+                  this._handleTagClick(event, tag);
+                }}"
+                >#${tag}</ui-tag
+              >
             `;
           })}
         </span>
@@ -372,7 +389,9 @@ export class ArticleHeader extends LitElement {
     return html`
       <li class="metadata-item metadata-reading-time">
         <iconify-icon class="meta-icon" icon="lucide:clock-3" aria-hidden="true"></iconify-icon>
-        <span class="reading-time" aria-label="読了目安 ${readingTime}分">読了目安 ${readingTime}分</span>
+        <span class="reading-time" aria-label="読了目安 ${readingTime}分"
+          >読了目安 ${readingTime}分</span
+        >
       </li>
     `;
   }
@@ -428,23 +447,18 @@ export class ArticleHeader extends LitElement {
         <h1 class="heading">${this.heading}</h1>
 
         ${this._renderStatusBadge()}
-
         ${this._hasPrimaryMetadata
           ? html`
               <ul class="metadata-list metadata-list--primary" aria-label="記事メタデータ">
-                ${this._renderDateItem()}
-                ${this._renderReadingTimeItem()}
+                ${this._renderDateItem()} ${this._renderReadingTimeItem()}
               </ul>
             `
           : nothing}
-
         ${this._renderTagsRow()}
-
         ${this._hasSecondaryMetadata
           ? html`
               <ul class="metadata-list metadata-list--secondary" aria-label="出典・ライセンス情報">
-                ${this._renderSourceItem()}
-                ${this._renderLicenseItem()}
+                ${this._renderSourceItem()} ${this._renderLicenseItem()}
               </ul>
             `
           : nothing}

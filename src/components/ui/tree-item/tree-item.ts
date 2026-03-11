@@ -220,6 +220,8 @@ export class TreeItem extends LitElement {
       /* インデントガイド: 左端にボーダー */
       border-left: var(--border-width, 1px) solid var(--border-ghost, oklch(0% 0 0 / 0.04));
       margin-left: var(--space-4, 16px);
+      visibility: hidden;
+      pointer-events: none;
       transition: border-color var(--duration-fast, 70ms)
         var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
 
@@ -230,11 +232,19 @@ export class TreeItem extends LitElement {
       transition:
         height var(--duration-slow, 200ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
         opacity var(--duration-slow, 200ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+        border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        visibility 0s linear var(--duration-slow, 200ms);
     }
 
     :host([expanded]) .children {
       opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transition:
+        height var(--duration-slow, 200ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        opacity var(--duration-slow, 200ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        visibility 0s;
     }
 
     /* Active Context: 選択中のアイテムを含むパス上のボーダーを強化 */

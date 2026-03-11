@@ -54,13 +54,15 @@ export class UiSidebarShell extends LitElement {
     :host([mode='fixed'][data-state='collapsed']) .sidebar-content,
     :host([mode='fixed'][data-state='collapsed']) .sidebar-header {
       opacity: 0;
-      transition: opacity var(--duration-normal, 150ms) var(--ease-in, cubic-bezier(0.32, 0, 0.67, 1));
+      transition: opacity var(--duration-normal, 150ms)
+        var(--ease-in, cubic-bezier(0.32, 0, 0.67, 1));
     }
 
     :host([mode='fixed'][data-state='expanded']) .sidebar-content,
     :host([mode='fixed'][data-state='expanded']) .sidebar-header {
       opacity: 1;
-      transition: opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
+      transition: opacity var(--duration-normal, 150ms)
+        var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
     }
 
     /* ── Overlay Mode: オフキャンバスドロワー ── */
@@ -72,10 +74,7 @@ export class UiSidebarShell extends LitElement {
       z-index: var(--z-modal, 300);
       transform: translateX(-100%);
       transition: transform var(--duration-slower, 300ms)
-        var(
-          --ease-spring,
-          cubic-bezier(0.33, 1, 0.68, 1)
-        );
+        var(--ease-spring, cubic-bezier(0.33, 1, 0.68, 1));
     }
 
     :host([mode='overlay'][data-state='expanded']) nav {
@@ -90,8 +89,7 @@ export class UiSidebarShell extends LitElement {
     .sidebar-header {
       flex-shrink: 0;
       background: var(--bg-surface-2, oklch(100% 0 0));
-      border-bottom: var(--border-width, 1px) solid
-        var(--border-default, oklch(20% 0 0 / 0.12));
+      border-bottom: var(--border-width, 1px) solid var(--border-default, oklch(20% 0 0 / 0.12));
     }
 
     /* スロットが空の場合はヘッダーエリアを隠す */
@@ -104,6 +102,7 @@ export class UiSidebarShell extends LitElement {
     .sidebar-content {
       flex: 1 1 auto;
       overflow-y: auto;
+      overflow-x: hidden;
       overscroll-behavior: contain;
       min-block-size: 0;
     }

@@ -123,7 +123,12 @@ export class Blockquote extends LitElement {
   }
 
   private get _hasSourceSlot(): boolean {
-    return [...this.children].some((element) => {
+    const children =
+      typeof (this as { children?: Iterable<Element> }).children === 'object'
+        ? Array.from((this as { children?: Iterable<Element> }).children ?? [])
+        : [];
+
+    return children.some((element) => {
       if (!(element instanceof HTMLElement)) return false;
       if (element.getAttribute('slot') !== 'source') return false;
       return (element.textContent).trim().length > 0;

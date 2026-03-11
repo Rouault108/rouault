@@ -42,8 +42,8 @@ const LANGUAGE_LABEL_MAP: Record<string, string> = {
   yaml: 'YAML',
 };
 
-const DOCUMENT_STYLE_ID = 'ui-code-block-document-styles';
-const DOCUMENT_CSS = `/* ============================================================
+export const DOCUMENT_STYLE_ID = 'ui-code-block-document-styles';
+export const DOCUMENT_CSS = `/* ============================================================
    <ui-code-block> document styles
    Shadow DOM の ::slotted() 制約を回避して pre/code 配下を制御
    ============================================================ */
@@ -329,6 +329,9 @@ export class CodeBlock extends LitElement {
   @property({ type: Boolean, reflect: true })
   embedded = false;
 
+  @property({ type: String, attribute: 'initial-code' })
+  initialCode = '';
+
   @state()
   private _copyValue = '';
 
@@ -369,6 +372,10 @@ export class CodeBlock extends LitElement {
         this.setAttribute('data-lang', normalizedLang);
       }
     }
+
+    if (changedProperties.has('initialCode') && this._copyValue === '') {
+      this._copyValue = this.initialCode.replace(/\r\n?/g, '\n');
+    }
   }
 
   override updated(changedProperties: PropertyValues<this>): void {
@@ -377,7 +384,8 @@ export class CodeBlock extends LitElement {
     if (
       changedProperties.has('filename') ||
       changedProperties.has('lang') ||
-      changedProperties.has('intent')
+      changedProperties.has('intent') ||
+      changedProperties.has('initialCode')
     ) {
       this._updateAccessibleMetadata();
       this._updateCopyButtonValue();
@@ -599,7 +607,8 @@ export class CodeBlock extends LitElement {
   }
 
   private _updateCopyButtonValue(): void {
-    this._copyValue = this.getCodeContent();
+    const normalizedInitialCode = this.initialCode.replace(/\r\n?/g, '\n');
+    this._copyValue = this.getCodeContent() || normalizedInitialCode;
   }
 
   override render() {

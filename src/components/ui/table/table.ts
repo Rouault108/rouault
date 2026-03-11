@@ -7,14 +7,14 @@ import { customElement, property } from 'lit/decorators.js';
 export type TableDensity = 'compact' | 'normal';
 
 /** ドキュメントに注入するスタイルタグのID（重複防止） */
-const DOCUMENT_STYLE_ID = 'ui-table-document-styles';
+export const DOCUMENT_STYLE_ID = 'ui-table-document-styles';
 
 /**
  * Shadow DOM の ::slotted() はスロット直下の要素にしか適用できず、
  * th / td などの孫要素にはスタイルを適用できない。
  * そのため、テーブル内部要素のスタイルはドキュメントに直接注入する。
  */
-const DOCUMENT_CSS = `/* ============================================================
+export const DOCUMENT_CSS = `/* ============================================================
    <ui-table> ドキュメントスタイル
    Shadow DOM の ::slotted() 制限を回避するためドキュメントに注入
    ============================================================ */
@@ -23,7 +23,9 @@ const DOCUMENT_CSS = `/* =======================================================
 ui-table table {
   border-collapse: collapse;
   border-spacing: 0;
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
+  table-layout: auto;
 }
 
 /* ── キャプション ── */
@@ -209,123 +211,134 @@ ui-table td[align="right"] {
  */
 @customElement('ui-table')
 export class Table extends LitElement {
-	private static readonly FALLBACK_ARIA_LABEL = 'Data table';
+  private static readonly FALLBACK_ARIA_LABEL = 'Data table';
 
-	static override styles = css`
-		/* ──────────────────────────────────────────────
+  static override styles = css`
+    /* ──────────────────────────────────────────────
 		   レイアウト & ベーススタイル
 		────────────────────────────────────────────── */
-		:host {
-			display: block;
-		}
+    :host {
+      display: block;
+      --_ui-table-breakout-width-default: calc(100% + var(--space-8, 2rem));
+      --_ui-table-breakout-margin-default: var(--space-n4, -1rem);
+      width: var(--ui-table-breakout-width, var(--_ui-table-breakout-width-default));
+      margin-inline: var(--ui-table-breakout-margin, var(--_ui-table-breakout-margin-default));
+    }
 
-		/* ──────────────────────────────────────────────
+    @media (min-width: 768px) {
+      :host {
+        --_ui-table-breakout-width-default: calc(100% + var(--space-16, 4rem));
+        --_ui-table-breakout-margin-default: var(--space-n8, -2rem);
+      }
+    }
+
+    /* ──────────────────────────────────────────────
 		   スクロールコンテナ
 		────────────────────────────────────────────── */
-		.table-container {
-			overflow-x: auto;
-			overflow-y: visible;
-		}
+    .table-container {
+      overflow-x: auto;
+      overflow-y: visible;
+    }
 
-		/* ── フォーカスリング（Adaptive Focus） ── */
-		.table-container:focus-visible {
-			outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
-			outline-offset: var(--focus-ring-offset, 2px);
-			border-radius: var(--radius-sm, 4px);
-			/*
+    /* ── フォーカスリング（Adaptive Focus） ── */
+    .table-container:focus-visible {
+      outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
+      outline-offset: var(--focus-ring-offset, 2px);
+      border-radius: var(--radius-sm, 4px);
+      /*
 			 * --animation-focus はデザイントークンで定義される Adaptive Focus アニメーション。
 			 * 移動中はサブトルなリング、停止後にプライマリへ強調する。
 			 */
-			animation: var(--animation-focus);
-		}
+      animation: var(--animation-focus);
+    }
 
-		/* ──────────────────────────────────────────────
+    /* ──────────────────────────────────────────────
 		   Reduced Motion
 		────────────────────────────────────────────── */
-		@media (prefers-reduced-motion: reduce) {
-			.table-container:focus-visible {
-				animation: none;
-			}
-		}
-	`;
+    @media (prefers-reduced-motion: reduce) {
+      .table-container:focus-visible {
+        animation: none;
+      }
+    }
+  `;
 
-	/**
-	 * 行の高さ密度。
-	 * `reflect: true` により HTML 属性として反映され、
-	 * ドキュメントに注入された CSS セレクター `ui-table[density="compact"]` が機能する。
-	 * @default 'normal'
-	 */
-	@property({ type: String, reflect: true })
-	density: TableDensity = 'normal';
+  /**
+   * 行の高さ密度。
+   * `reflect: true` により HTML 属性として反映され、
+   * ドキュメントに注入された CSS セレクター `ui-table[density="compact"]` が機能する。
+   * @default 'normal'
+   */
+  @property({ type: String, reflect: true })
+  density: TableDensity = 'normal';
 
-	/**
-	 * スクロール領域のアクセシブルネーム。
-	 * `tabindex="0"` を持つ `role="region"` にはアクセシブルネームが推奨される。
-	 * ホストの `aria-label` 属性から受け取り、内部コンテナに反映する。
-	 * @default null
-	 */
-	@property({ type: String, attribute: 'aria-label' })
-	override ariaLabel: string | null = null;
+  /**
+   * スクロール領域のアクセシブルネーム。
+   * `tabindex="0"` を持つ `role="region"` にはアクセシブルネームが推奨される。
+   * ホストの `aria-label` 属性から受け取り、内部コンテナに反映する。
+   * @default null
+   */
+  @property({ type: String, attribute: 'aria-label' })
+  override ariaLabel: string | null = null;
 
-	private _hasWarnedMissingAriaLabel = false;
+  private _hasWarnedMissingAriaLabel = false;
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		/*
-		 * Shadow DOM の ::slotted() は孫要素にスタイルを適用できないため、
-		 * th / td 等の内部要素スタイルをドキュメントに注入する。
-		 */
-		this._injectDocumentStyles();
-	}
+  override connectedCallback(): void {
+    super.connectedCallback();
+    /*
+     * Shadow DOM の ::slotted() は孫要素にスタイルを適用できないため、
+     * th / td 等の内部要素スタイルをドキュメントに注入する。
+     */
+    this._injectDocumentStyles();
+  }
 
-	override updated(): void {
-		// スクロールコンテナの region にはアクセシブルネームが必要なため、
-		// 未指定時はフォールバックを適用しつつ開発時に警告する。
-		if (this.ariaLabel && this.ariaLabel.trim().length > 0) return;
-		if (this._hasWarnedMissingAriaLabel) return;
-		this._hasWarnedMissingAriaLabel = true;
-		console.warn(
-			'[ui-table] `aria-label` is required for scrollable region accessibility. Fallback label is applied.',
-		);
-	}
+  override updated(): void {
+    // スクロールコンテナの region にはアクセシブルネームが必要なため、
+    // 未指定時はフォールバックを適用しつつ開発時に警告する。
+    if (this.ariaLabel && this.ariaLabel.trim().length > 0) return;
+    if (this._hasWarnedMissingAriaLabel) return;
+    this._hasWarnedMissingAriaLabel = true;
+    console.warn(
+      '[ui-table] `aria-label` is required for scrollable region accessibility. Fallback label is applied.',
+    );
+  }
 
-	private _getResolvedAriaLabel(): string {
-		if (this.ariaLabel && this.ariaLabel.trim().length > 0) {
-			return this.ariaLabel;
-		}
-		return Table.FALLBACK_ARIA_LABEL;
-	}
+  private _getResolvedAriaLabel(): string {
+    if (this.ariaLabel && this.ariaLabel.trim().length > 0) {
+      return this.ariaLabel;
+    }
+    return Table.FALLBACK_ARIA_LABEL;
+  }
 
-	/**
-	 * テーブル内部要素（th / td / tr 等）のスタイルをドキュメントに注入する。
-	 * 同一ドキュメント内で複数の <ui-table> が存在しても重複注入しない。
-	 * SSR 環境（document が未定義）では何もしない。
-	 */
-	private _injectDocumentStyles(): void {
-		if (typeof document === 'undefined') return;
-		if (document.getElementById(DOCUMENT_STYLE_ID)) return;
-		const style = document.createElement('style');
-		style.id = DOCUMENT_STYLE_ID;
-		style.textContent = DOCUMENT_CSS;
-		document.head.appendChild(style);
-	}
+  /**
+   * テーブル内部要素（th / td / tr 等）のスタイルをドキュメントに注入する。
+   * 同一ドキュメント内で複数の <ui-table> が存在しても重複注入しない。
+   * SSR 環境（document が未定義）では何もしない。
+   */
+  private _injectDocumentStyles(): void {
+    if (typeof document === 'undefined') return;
+    if (document.getElementById(DOCUMENT_STYLE_ID)) return;
+    const style = document.createElement('style');
+    style.id = DOCUMENT_STYLE_ID;
+    style.textContent = DOCUMENT_CSS;
+    document.head.appendChild(style);
+  }
 
-	override render() {
-		return html`
-				<div
-					class="table-container"
-					role="region"
-					tabindex="0"
-					aria-label="${this._getResolvedAriaLabel()}"
-				>
-				<slot></slot>
-			</div>
-		`;
-	}
+  override render() {
+    return html`
+      <div
+        class="table-container"
+        role="region"
+        tabindex="0"
+        aria-label="${this._getResolvedAriaLabel()}"
+      >
+        <slot></slot>
+      </div>
+    `;
+  }
 }
 
 declare global {
-	interface HTMLElementTagNameMap {
-		'ui-table': Table;
-	}
+  interface HTMLElementTagNameMap {
+    'ui-table': Table;
+  }
 }
