@@ -49,6 +49,23 @@ export interface SearchAdapter {
 }
 
 type PagefindLoader = () => Promise<PagefindApi>;
+interface PagefindSearchOptions {
+  filters?: Record<string, string[]>;
+}
+
+interface PagefindModule {
+  filters: PagefindApi['filters'];
+  search: PagefindApi['search'];
+}
+
+const isPagefindModule = (value: unknown): value is PagefindModule => {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const candidate = value as Partial<PagefindModule>;
+  return typeof candidate.filters === 'function' && typeof candidate.search === 'function';
+};
 
 const EMPTY_COUNTS: Record<string, number> = {};
 
@@ -79,11 +96,14 @@ function normalizePath(url: string): string {
 
 async function loadDefaultPagefindModule(): Promise<PagefindApi> {
   const modulePath = '/pagefind/pagefind.js';
-  const module = await import(/* @vite-ignore */ modulePath);
+  const importedModule: unknown = await import(/* @vite-ignore */ modulePath);
+  if (!isPagefindModule(importedModule)) {
+    throw new Error('Pagefind module shape is invalid.');
+  }
 
   return {
-    filters: module.filters,
-    search: module.search,
+    filters: importedModule.filters,
+    search: importedModule.search,
   } satisfies PagefindApi;
 }
 
@@ -131,12 +151,14 @@ export function createPagefindSearchAdapter(loadPagefind: PagefindLoader = loadD
               genre: normalizedGenres,
             }
           : undefined;
-      const response = await pagefind.search(term, { filters });
+      const searchOptions: PagefindSearchOptions =
+        filters === undefined ? {} : { filters };
+      const response = await pagefind.search(term, searchOptions);
 
       const items = await Promise.all(
         response.results.map(async (result) => {
           const data = await result.data();
-          const title = data.meta?.['title']?.trim() || normalizePath(data.url);
+          const title = data.meta?.['title']?.trim() ?? normalizePath(data.url);
 
           return {
             title,

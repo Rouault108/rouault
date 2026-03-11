@@ -86,11 +86,12 @@ const buildShadowTemplate = (
   const staticTagName = unsafeStatic(tagName);
   const staticAttributes = unsafeStatic(serializeAttributes(attributes));
 
+  // eslint-disable-next-line lit/binding-positions, lit/no-invalid-html
   return html`<${staticTagName}${staticAttributes}>${unsafeHTML(innerHtml)}</${staticTagName}>`;
 };
 
 const extractMainContent = (innerHtml: string): string => {
-  const matched = innerHtml.match(/<main\b[^>]*>([\s\S]*)<\/main>/i);
+  const matched = /<main\b[^>]*>([\s\S]*)<\/main>/i.exec(innerHtml);
   return matched?.[1] ?? innerHtml;
 };
 

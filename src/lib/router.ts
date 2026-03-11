@@ -386,12 +386,12 @@ export class Router {
       return;
     }
 
+    const normalizedTargetUrl = this.normalizeUrl(targetUrl.toString());
+    const normalizedTargetWithoutHash = this.stripHash(normalizedTargetUrl);
+    const normalizedCurrentWithoutHash = this.stripHash(this.getCurrentUrl());
+
     // ハッシュのみの移動（同一ページ内リンク）は通常動作を優先
-    if (
-      targetUrl.pathname === window.location.pathname &&
-      targetUrl.search === window.location.search &&
-      targetUrl.hash
-    ) {
+    if (normalizedTargetWithoutHash === normalizedCurrentWithoutHash && targetUrl.hash) {
       return;
     }
 
@@ -767,18 +767,18 @@ export class Router {
     if (this.isHistoryStateObject(currentState)) {
       const historyUrl = currentState['__routerUrl'];
       if (typeof historyUrl === 'string' && historyUrl.length > 0) {
-        return historyUrl;
+        return this.normalizeUrl(historyUrl);
       }
 
       const historyPath = currentState['__routerPath'];
       if (typeof historyPath === 'string' && historyPath.length > 0) {
         const resolved = new URL(window.location.href);
         resolved.pathname = historyPath;
-        return `${resolved.pathname}${resolved.search}${resolved.hash}`;
+        return this.normalizeUrl(`${resolved.pathname}${resolved.search}${resolved.hash}`);
       }
     }
 
-    return `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    return this.normalizeUrl(`${window.location.pathname}${window.location.search}${window.location.hash}`);
   }
 
   /**
@@ -808,7 +808,28 @@ export class Router {
    */
   private normalizeUrl(url: string): string {
     const normalized = new URL(url, window.location.href);
+    normalized.pathname = this.normalizePathname(normalized.pathname);
     return `${normalized.pathname}${normalized.search}${normalized.hash}`;
+  }
+
+  /**
+   * 末尾スラッシュの有無を吸収して表示用URLを正規化する。
+   * 静的HTML取得用の trailing slash 補完は resolveContentUrl() 側でのみ行う。
+   */
+  private normalizePathname(pathname: string): string {
+    if (pathname === '/') {
+      return pathname;
+    }
+
+    return pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+  }
+
+  /**
+   * URL文字列から hash を除去する。
+   */
+  private stripHash(url: string): string {
+    const normalized = new URL(url, window.location.origin);
+    return `${normalized.pathname}${normalized.search}`;
   }
 
   /**

@@ -6,6 +6,6 @@ export const formatArticleDate = (value: string): string => {
     return '';
   }
 
-  const matched = normalized.match(ISO_DATE_PREFIX_PATTERN);
+  const matched = ISO_DATE_PREFIX_PATTERN.exec(normalized);
   return matched?.[1] ?? normalized;
 };

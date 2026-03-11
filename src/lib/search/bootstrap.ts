@@ -48,7 +48,7 @@ export function initSearch(): void {
 
   dialog.addEventListener('ui-search-dialog-selected', (event) => {
     const customEvent = event as CustomEvent<{ url?: string }>;
-    const url = customEvent.detail?.url;
+    const url = customEvent.detail.url;
     if (typeof url !== 'string' || url.length === 0) {
       return;
     }
