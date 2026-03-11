@@ -1,4 +1,4 @@
-import { css, html, LitElement, nothing } from 'lit';
+import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import '../../lib/icons.js';
@@ -251,6 +251,23 @@ export class SearchPage extends LitElement {
 
   private _searchTimerId: number | undefined;
   private _requestToken = 0;
+
+  protected override willUpdate(changedProperties: PropertyValues<this>): void {
+    super.willUpdate(changedProperties);
+
+    if (typeof window !== 'undefined') {
+      return;
+    }
+
+    if (
+      changedProperties.has('initialTag') &&
+      this._query.length === 0 &&
+      this._selectedTags.length === 0
+    ) {
+      const initialTag = this.initialTag.trim();
+      this._selectedTags = initialTag.length > 0 ? [initialTag] : [];
+    }
+  }
 
   override connectedCallback(): void {
     super.connectedCallback();
