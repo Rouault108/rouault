@@ -6,11 +6,6 @@ import litA11y from 'eslint-plugin-lit-a11y';
 import wc from 'eslint-plugin-wc';
 import prettier from 'eslint-config-prettier';
 import globals from 'globals';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const dirname = path.dirname(fileURLToPath(import.meta.url));
-type FlatConfigItem = Parameters<typeof defineConfig>[number];
 
 const litRecommendedConfig = lit.configs?.['flat/recommended'];
 const wcRecommendedConfig = wc.configs?.['flat/recommended'];
@@ -20,7 +15,6 @@ if (!litRecommendedConfig || !wcRecommendedConfig) {
 }
 
 export default defineConfig(
-  // 1. 無視設定
   {
     ignores: [
       'dist/',
@@ -33,14 +27,12 @@ export default defineConfig(
     ],
   },
 
-  // 2. 基本的な推奨設定
   eslint.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
-  litRecommendedConfig as unknown as FlatConfigItem,
-  wcRecommendedConfig as unknown as FlatConfigItem,
+  litRecommendedConfig,
+  wcRecommendedConfig,
 
-  // 3. 言語・パーサー設定
   {
     languageOptions: {
       globals: {
@@ -49,13 +41,10 @@ export default defineConfig(
       },
       parserOptions: {
         project: './tsconfig.json',
-        // 実行環境に左右されないパス解決にする。
-        tsconfigRootDir: dirname,
       },
     },
   },
 
-  // 4. カスタムルール
   {
     files: ['src/**/*.ts', 'test/**/*.ts'],
     plugins: { 'lit-a11y': litA11y },
@@ -94,7 +83,6 @@ export default defineConfig(
     },
   },
 
-  // 5. JavaScript が残っている外部生成物向け設定
   {
     files: ['**/*.js', '**/*.mjs', '**/*.cjs'],
     extends: [tseslint.configs.disableTypeChecked],
@@ -105,7 +93,6 @@ export default defineConfig(
     },
   },
 
-  // 6. テスト専用設定
   {
     files: ['test/**/*.ts'],
     rules: {
@@ -114,6 +101,5 @@ export default defineConfig(
     },
   },
 
-  // 7. 整形
   prettier,
 );
