@@ -517,7 +517,7 @@ describe('Router', () => {
 			expect(defaultPrevented).to.be.false;
 		});
 
-		it('2.15 Shadow DOM 内の内部リンクもインターセプトすること', async () => {
+		it('2.15 Shadow DOM 内の内部リンクもインターセプトすること', () => {
 			router = new Router(outlet);
 
 			const host = document.createElement('div');
@@ -628,6 +628,35 @@ describe('Router', () => {
 			await router.navigate('/programmatic');
 
 			expect(pushedPath).to.equal('/programmatic');
+			expect(fetchedUrl).to.include('/programmatic/');
+		});
+
+		it('3.2.2 末尾 slash 付きで navigate しても表示URLと履歴は canonical に揃えること', async () => {
+			let fetchedUrl = '';
+			let pushedPath = '';
+
+			history.pushState = ((data: unknown, _unused: string, url?: string | URL | null) => {
+				if (url) {
+					pushedPath = url.toString();
+					const target = new URL(url.toString(), window.location.href);
+					mockHistoryState = { ...(data && typeof data === 'object' ? data : {}), __routerUrl: `${target.pathname}${target.search}${target.hash}` };
+				}
+			}) as typeof history.pushState;
+
+			globalThis.fetch = (input: RequestInfo | URL) => {
+				fetchedUrl = input instanceof Request ? input.url : String(input);
+				return Promise.resolve(new Response('<html><body><main>Canonical</main></body></html>', {
+					status: 200,
+				}));
+			};
+
+			router = new Router(outlet);
+
+			await router.navigate('/programmatic/');
+
+			expect(pushedPath).to.equal('/programmatic');
+			expect(router.getCurrentPath()).to.equal('/programmatic');
+			expect(router.getHistory()).to.include('/programmatic');
 			expect(fetchedUrl).to.include('/programmatic/');
 		});
 
@@ -1579,6 +1608,19 @@ describe('Router', () => {
 			await router.navigate('/current-path');
 
 			await waitUntil(() => router.getCurrentPath() === '/current-path', 'パス取得');
+
+			expect(router.getCurrentPath()).to.equal('/current-path');
+		});
+
+		it('11.1.2 末尾 slash 付きの現在URLも同じパスとして取得できること', () => {
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('<html><body><main>Content</main></body></html>', {
+					status: 200,
+				}));
+			};
+
+			mockHistoryState = { __routerUrl: '/current-path/' };
+			router = new Router(outlet, { skipInitialNavigation: true });
 
 			expect(router.getCurrentPath()).to.equal('/current-path');
 		});

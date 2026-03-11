@@ -7,29 +7,33 @@ import {
 } from '../../src/lib/search/pagefind-search.js';
 
 describe('pagefind-search', () => {
-  let searchCalls: Array<{ term: string | null; filters?: Record<string, string[]> }>;
+  let searchCalls: { term: string | null; filters?: Record<string, string[]> }[];
   let adapter: SearchAdapter;
 
   beforeEach(() => {
     searchCalls = [];
 
     const api: PagefindApi = {
-      async filters() {
-        return {
+      filters() {
+        return Promise.resolve({
           genre: {
             music: 2,
             jazz: 1,
             classical: 1,
           },
-        };
+        });
       },
-      async search(term, options = {}) {
-        searchCalls.push({ term, filters: options.filters });
-        return {
+      search(term, options = {}) {
+        const searchCall =
+          options.filters === undefined
+            ? { term }
+            : { term, filters: options.filters };
+        searchCalls.push(searchCall);
+        return Promise.resolve({
           results: [
             {
-              async data() {
-                return {
+              data() {
+                return Promise.resolve({
                   url: '/notes/music/jazz/jazz-theory/',
                   excerpt: '<mark>ジャズ</mark>理論の基礎',
                   meta: {
@@ -37,7 +41,7 @@ describe('pagefind-search', () => {
                     description: 'ジャズ音楽の基本理論',
                     date: '2026-02-01',
                   },
-                };
+                });
               },
             },
           ],
@@ -55,11 +59,11 @@ describe('pagefind-search', () => {
               classical: 1,
             },
           },
-        };
+        });
       },
     };
 
-    adapter = createPagefindSearchAdapter(async () => api);
+    adapter = createPagefindSearchAdapter(() => Promise.resolve(api));
   });
 
   it('利用可能なタグ一覧を取得すること', async () => {
