@@ -1,124 +1,84 @@
-import { test, expect } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
-/**
- * Router E2E Tests（簡略版）
- * Routerインスタンスの基本機能のみをテスト
- */
+const beethovenPath = '/notes/music/classical/beethoven/symphony-9';
+const nutcrackerPath = '/notes/music/classical/tchaikovsky/the-nutcracker';
 
-/** window.router の型定義 */
-interface WindowRouter {
-	getCurrentPath(): string;
-	getQuery(): Record<string, string>;
-	getHistory(): string[];
-	navigate(path: string): Promise<void>;
-	on(event: string, callback: () => void): void;
-	isNavigating(): boolean;
-}
+const getTreeItem = (page: Page, label: string): Locator =>
+  page.locator('ui-tree-item').filter({ hasText: label }).first();
 
-type WindowWithRouter = Window & typeof globalThis & { router?: WindowRouter };
+const getTreeItemRow = (page: Page, label: string): Locator =>
+  getTreeItem(page, label).locator('.item').first();
 
-test.describe('Router - Basic Functionality', () => {
-	test.beforeEach(async ({ page }) => {
-		// ルートページに移動
-		await page.goto('/');
+const getExpandIcon = (page: Page, label: string): Locator =>
+  getTreeItem(page, label).locator('.expand-icon').first();
 
-		// Routerが初期化されるまで待機
-		await page.waitForSelector('main');
-	});
+const expectMainHeading = async (page: Page, headingText: string): Promise<void> => {
+  await expect(page.locator('#main-content h1').first()).toHaveText(headingText);
+};
 
-	test('Router instance should be available', async ({ page }) => {
-		//window.routerが存在することを確認
-		const routerExists = await page.evaluate(() => {
-			return typeof (window as WindowWithRouter).router !== 'undefined';
-		});
+test.describe('Router Navigation', () => {
+  test('サイドバー遷移で SPA ナビゲーションが動作すること', async ({ page }) => {
+    await page.goto(beethovenPath);
+    await expectMainHeading(page, '交響曲第9番 ニ短調 作品125');
 
-		expect(routerExists).toBe(true);
-	});
+    await page.evaluate(() => {
+      (window as typeof window & { __spaProbe?: { alive: boolean } }).__spaProbe = {
+        alive: true,
+      };
+    });
 
-	test('should get current path', async ({ page }) => {
-		const currentPath = await page.evaluate(() => {
-			const router = (window as WindowWithRouter).router;
-			return router?.getCurrentPath();
-		});
+    await getExpandIcon(page, 'Tchaikovsky').click();
+    await getTreeItemRow(page, '楽曲分析: くるみ割り人形').click();
 
-		// 現在のパスは '/' であるべき
-		expect(currentPath).toBe('/');
-	});
+    await expect(page).toHaveURL(nutcrackerPath);
+    await expectMainHeading(page, 'くるみ割り人形');
 
-	test('should extract query parameters from URL', async ({ page }) => {
-		// クエリパラメータ付きでアクセス
-		await page.goto('/?q=test&page=2');
+    const probeAlive = await page.evaluate(() => {
+      return (window as typeof window & { __spaProbe?: { alive: boolean } }).__spaProbe?.alive === true;
+    });
+    expect(probeAlive).toBe(true);
+  });
 
-		const query = await page.evaluate(() => {
-			const router = (window as WindowWithRouter).router;
-			return router?.getQuery() ?? {};
-		});
+  test('履歴の戻る / 進むで main content が追従すること', async ({ page }) => {
+    await page.goto(beethovenPath);
+    await expectMainHeading(page, '交響曲第9番 ニ短調 作品125');
 
-		// クエリパラメータが正しく取得できることを確認
-			expect(query['q']).toBe('test');
-			expect(query['page']).toBe('2');
-	});
+    await getExpandIcon(page, 'Tchaikovsky').click();
+    await getTreeItemRow(page, '楽曲分析: くるみ割り人形').click();
 
-	test('should navigate programmatically', async ({ page }) => {
-		// プログラマティックにナビゲーション
-		await page.evaluate(async () => {
-			const router = (window as WindowWithRouter).router;
-			await router?.navigate('/test-route');
-		});
+    await expect(page).toHaveURL(nutcrackerPath);
+    await expectMainHeading(page, 'くるみ割り人形');
 
-		// URLが変更されていることを確認（ページは404かもしれないが、URLは変わる）
-		await expect(page).toHaveURL('/test-route');
-	});
+    await page.goBack();
+    await expect(page).toHaveURL(beethovenPath);
+    await expectMainHeading(page, '交響曲第9番 ニ短調 作品125');
 
-	test('should have navigation history', async ({ page }) => {
-		const history = await page.evaluate(() => {
-			const router = (window as WindowWithRouter).router;
-			return router?.getHistory() ?? [];
-		});
+    await page.goForward();
+    await expect(page).toHaveURL(nutcrackerPath);
+    await expectMainHeading(page, 'くるみ割り人形');
+  });
 
-		// 初期ロード時、少なくとも1エントリ（'/'）が存在するべき
-		expect(history.length).toBeGreaterThanOrEqual(1);
-		expect(history).toContain('/');
-	});
+  test('遷移後に aria-live とフォーカス管理が更新されること', async ({ page }) => {
+    await page.goto(beethovenPath);
+    await expectMainHeading(page, '交響曲第9番 ニ短調 作品125');
 
-	test('should support event listeners', async ({ page }) => {
-		// イベントリスナーをセットアップし、ナビゲーションイベントを確認
-		const eventFired = await page.evaluate(async () => {
-			return new Promise<boolean>((resolve) => {
-				const router = (window as WindowWithRouter).router;
-				let fired = false;
+    await getExpandIcon(page, 'Tchaikovsky').click();
+    await getTreeItemRow(page, '楽曲分析: くるみ割り人形').click();
 
-				router?.on('after:navigate', () => {
-					fired = true;
-				});
+    const ariaLive = page.locator('[aria-live="polite"]').filter({
+      hasText: 'ページが読み込まれました',
+    });
+    await expect(ariaLive.first()).toBeVisible();
 
-				// ナビゲーションを実行
-				void router?.navigate('/test').then(() => {
-					setTimeout(() => { resolve(fired); }, 100);
-				});
-			});
-		});
+    const activeElement = await page.evaluate(() => {
+      const element = document.activeElement;
+      return {
+        tagName: element?.tagName ?? '',
+        text: element?.textContent?.trim() ?? '',
+      };
+    });
 
-		expect(eventFired).toBe(true);
-	});
-
-	test('should check if navigating', async ({ page }) => {
-		const isNavigating = await page.evaluate(() => {
-			const router = (window as WindowWithRouter).router;
-			return router?.isNavigating();
-		});
-
-		// 初期状態ではナビゲーション中ではない
-		expect(isNavigating).toBe(false);
-	});
-});
-
-test.describe('Router - Accessibility', () => {
-	test('should have aria-live region', async ({ page }) => {
-		await page.goto('/');
-
-		// aria-liveリージョンが存在することを確認
-		const ariaLiveExists = await page.locator('[aria-live="polite"]').count();
-		expect(ariaLiveExists).toBeGreaterThan(0);
-	});
+    expect(activeElement.tagName).toBe('H1');
+    expect(activeElement.text).toContain('くるみ割り人形');
+  });
 });

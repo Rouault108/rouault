@@ -29,6 +29,7 @@ function simulateClick(element: HTMLElement, options: MouseEventInit = {}) {
 	target.dispatchEvent(new MouseEvent('click', {
 		bubbles: true,
 		cancelable: true,
+		composed: true,
 		button: 0,
 		...options,
 	}));
@@ -514,6 +515,34 @@ describe('Router', () => {
 			document.removeEventListener('click', handler);
 
 			expect(defaultPrevented).to.be.false;
+		});
+
+		it('2.15 Shadow DOM 内の内部リンクもインターセプトすること', async () => {
+			router = new Router(outlet);
+
+			const host = document.createElement('div');
+			const shadowRoot = host.attachShadow({ mode: 'open' });
+			shadowRoot.innerHTML = '<a href="/shadow-link"><span>Shadow Link</span></a>';
+			document.body.append(host);
+
+			const innerSpan = shadowRoot.querySelector('span');
+			expect(innerSpan).to.not.equal(null);
+
+			let defaultPrevented = false;
+			const handler = (e: Event) => {
+				defaultPrevented = e.defaultPrevented;
+				if (!defaultPrevented) {
+					e.preventDefault();
+				}
+			};
+			document.addEventListener('click', handler);
+
+			simulateClick(innerSpan as HTMLElement);
+
+			document.removeEventListener('click', handler);
+			host.remove();
+
+			expect(defaultPrevented).to.be.true;
 		});
 	});
 
