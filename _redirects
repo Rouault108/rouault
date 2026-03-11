@@ -1,0 +1,3 @@
+/notes/* /notes/:splat/ 200
+/search /search/ 200
+/tags/* /tags/:splat/ 200
