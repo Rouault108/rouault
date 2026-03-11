@@ -1,10 +1,33 @@
 import path from 'node:path';
+import { copyFile } from 'node:fs/promises';
 import type { UserConfig } from '@11ty/eleventy';
 import EleventyVitePlugin from '@11ty/eleventy-plugin-vite';
+import type { Connect, ViteDevServer } from 'vite';
 import { build } from 'velite';
 
 import { loadNotesData } from './src/data/notes.js';
 import { loadSearchGenresData } from './src/data/searchGenres.js';
+import { resolveTrailingSlashRewrite } from './src/lib/trailing-slash-rewrite.js';
+
+const registerTrailingSlashRewrite = (server: ViteDevServer): void => {
+  const middleware: Connect.NextHandleFunction = (req, _res, next) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      next();
+      return;
+    }
+
+    if (typeof req.url === 'string') {
+      const rewrittenUrl = resolveTrailingSlashRewrite(req.url);
+      if (rewrittenUrl !== null) {
+        req.url = rewrittenUrl;
+      }
+    }
+
+    next();
+  };
+
+  server.middlewares.use(middleware);
+};
 
 /**
  * Velite と Vite を組み合わせた 11ty の設定。
@@ -49,10 +72,28 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
     }
   });
 
+  eleventyConfig.on('eleventy.after', async () => {
+    // Cloudflare Pages 用の rewrite ルールを出力ディレクトリへ明示コピーする。
+    await copyFile(path.resolve(process.cwd(), '_redirects'), path.resolve(process.cwd(), 'dist/_redirects'));
+  });
+
   // Vite バンドルと開発サーバーの使用。
   eleventyConfig.addPlugin(EleventyVitePlugin, {
     viteOptions: {
       clearScreen: false,
+      plugins: [
+        {
+          name: 'rouault-trailing-slash-rewrite',
+          configureServer(server: ViteDevServer) {
+            registerTrailingSlashRewrite(server);
+          },
+          configurePreviewServer(server: ViteDevServer) {
+            return () => {
+              registerTrailingSlashRewrite(server);
+            };
+          },
+        },
+      ],
       server: {
         mode: 'development',
         middlewareMode: true,
