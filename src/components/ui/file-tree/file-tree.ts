@@ -80,9 +80,6 @@ export class FileTree extends LitElement {
       font-size: var(--text-sm, 13px);
       color: var(--fg-muted, oklch(48% 0 0));
       user-select: none;
-      transition:
-        background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     /* ── Container (Default) ── */
@@ -90,6 +87,9 @@ export class FileTree extends LitElement {
       background: transparent;
       border: none;
       padding: var(--space-2, 8px) 0;
+      transition:
+        background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     /* ── Container (Variant: Card) ── */
@@ -146,7 +146,7 @@ export class FileTree extends LitElement {
 
     /* ── Motion Reduction ── */
     @media (prefers-reduced-motion: reduce) {
-      :host {
+      .container {
         transition-duration: 0.01ms;
       }
 
