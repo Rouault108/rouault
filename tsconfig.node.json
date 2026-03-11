@@ -1,0 +1,26 @@
+{
+  "extends": "@tsconfig/strictest/tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "noEmit": true,
+    "baseUrl": "."
+  },
+  "include": [
+    "eleventy.config.ts",
+    "eslint.config.ts",
+    "web-test-runner.config.ts",
+    "cem.config.ts",
+    "scripts/**/*.ts",
+    "lib/content/extract-toc-from-html.ts",
+    "lib/ssr/**/*.ts",
+    "src/data/**/*.ts",
+    "types/**/*.d.ts",
+    "test/ssr/**/*.test.ts"
+  ]
+}
