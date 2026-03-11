@@ -1,6 +1,6 @@
 import type { UiSearchDialogItem } from '../../components/ui/search-dialog/search-dialog.js';
-import { pagefindSearchAdapter } from './pagefind-search.js';
 import { navigateToUrl } from './navigation.js';
+import type { SearchAdapter } from './pagefind-search.js';
 
 interface SearchDialogElement extends HTMLElement {
   open(trigger?: HTMLElement): void;
@@ -8,6 +8,15 @@ interface SearchDialogElement extends HTMLElement {
 }
 
 let initialized = false;
+let pagefindAdapterPromise: Promise<SearchAdapter> | null = null;
+
+async function getPagefindSearchAdapter(): Promise<SearchAdapter> {
+  pagefindAdapterPromise ??= import('./pagefind-search.js').then(
+    (module) => module.pagefindSearchAdapter,
+  );
+
+  return pagefindAdapterPromise;
+}
 
 export function initSearch(): void {
   if (initialized || typeof document === 'undefined') {
@@ -22,6 +31,7 @@ export function initSearch(): void {
   }
 
   dialog.searcher = async (query: string): Promise<UiSearchDialogItem[]> => {
+    const pagefindSearchAdapter = await getPagefindSearchAdapter();
     const result = await pagefindSearchAdapter.search(query, []);
 
     return result.items.map((item) => ({
