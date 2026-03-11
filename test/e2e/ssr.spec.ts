@@ -8,6 +8,15 @@ const sortingEntryPath = `${sortingPath}/`;
 test.describe('SSR Rendering', () => {
   test.use({ javaScriptEnabled: false });
 
+  test('末尾 slash なしの直接アクセスでもノートページを初期表示できること', async ({ page }) => {
+    await page.goto(beethovenPath);
+
+    await expect(page.locator('#main-content h1').first()).toHaveText(
+      '交響曲第9番 ニ短調 作品125',
+    );
+    await expect(page).toHaveURL(beethovenPath);
+  });
+
   test('ノートページが Declarative Shadow DOM と本文を初期表示すること', async ({ page }) => {
     await page.goto(beethovenEntryPath);
 

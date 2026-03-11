@@ -79,9 +79,16 @@ test.describe('Router Navigation', () => {
 
     const activeElement = await page.evaluate(() => {
       const element = document.activeElement;
+      if (element === null) {
+        return {
+          tagName: '',
+          text: '',
+        };
+      }
+
       return {
-        tagName: element?.tagName ?? '',
-        text: element?.textContent?.trim() ?? '',
+        tagName: element.tagName,
+        text: element.textContent.trim(),
       };
     });
 
