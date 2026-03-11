@@ -1,6 +1,5 @@
 import { css, html, LitElement, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
-import { keyed } from 'lit/directives/keyed.js';
 import '../../../lib/icons';
 import '../codeblock/codeblock';
 import '../copy-button/copy-button';
@@ -16,6 +15,10 @@ interface CodeBlockHost extends HTMLElement {
   getCodeContent?: () => string;
 }
 
+interface CopyButtonHost extends HTMLElement {
+  resetState?: () => void;
+}
+
 const DEFAULT_TAB_LABEL = 'コード';
 let codeGroupId = 0;
 
@@ -28,7 +31,7 @@ export class CodeGroup extends LitElement {
       /* グループ内の Code Block は常に親コンテナ幅に収める */
       --ui-code-block-breakout-width: 100%;
       --ui-code-block-breakout-margin: 0;
-      --ui-code-block-padding: var(--space-3, 12px);
+      --ui-code-block-padding: var(--space-2, 8px);
       --ui-code-block-header-display: block;
 
       display: block;
@@ -150,7 +153,6 @@ export class CodeGroup extends LitElement {
 
     ::slotted([slot='tab'][aria-selected='true']) {
       color: var(--fg-default, oklch(20% 0 0));
-      border-bottom-width: 1px;
       border-bottom-color: currentColor;
     }
 
@@ -161,7 +163,7 @@ export class CodeGroup extends LitElement {
       display: inline-flex;
       align-items: center;
       gap: 0;
-      padding-inline: var(--space-1, 4px);
+      padding-inline: var(--ui-code-block-padding, var(--space-2, 8px));
       background: var(--bg-default, oklch(1 0 0));
     }
 
@@ -322,6 +324,9 @@ export class CodeGroup extends LitElement {
   @query('.header-tools')
   private _headerToolsEl?: HTMLElement;
 
+  @query('ui-copy-button')
+  private _copyButtonEl?: CopyButtonHost;
+
   @property({ type: Boolean, reflect: true })
   embedded = false;
 
@@ -336,9 +341,6 @@ export class CodeGroup extends LitElement {
 
   @state()
   private _copyLabel = 'コードをコピー';
-
-  @state()
-  private _copyRenderKey = 0;
 
   private readonly _uid = ++codeGroupId;
 
@@ -560,7 +562,7 @@ export class CodeGroup extends LitElement {
     this._applySelection(index, true);
 
     if (previousIndex !== index) {
-      this._copyRenderKey += 1;
+      this._copyButtonEl?.resetState?.();
     }
 
     if (!emitEvent || previousIndex === index) return;
@@ -778,16 +780,11 @@ export class CodeGroup extends LitElement {
           </div>
 
           <div class="header-tools">
-            ${keyed(
-              this._copyRenderKey,
-              html`
-                <ui-copy-button
-                  size="sm"
-                  value="${this._copyValue}"
-                  label="${this._copyLabel}"
-                ></ui-copy-button>
-              `,
-            )}
+            <ui-copy-button
+              size="sm"
+              value="${this._copyValue}"
+              label="${this._copyLabel}"
+            ></ui-copy-button>
           </div>
         </div>
 

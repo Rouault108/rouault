@@ -56,7 +56,7 @@ ui-code-block pre {
   font-family: var(--font-mono, monospace);
   font-size: var(--text-sm, 0.8125rem);
   line-height: var(--line-height-relaxed, 1.75);
-  padding: var(--ui-code-block-padding, var(--space-4, 1rem));
+  padding: var(--space-3, 12px);
   overflow-x: auto;
   overflow-y: hidden;
   white-space: pre;
@@ -189,7 +189,7 @@ export class CodeBlock extends LitElement {
         --ui-code-block-header-display,
         var(--_ui-code-block-header-display, block)
       );
-      padding: var(--space-2, 8px) var(--ui-code-block-padding, var(--space-4, 1rem)) 0;
+      padding: var(--space-2, 8px) var(--ui-code-block-padding, var(--space-2, 8px)) 0 var(--space-3, 12px);
       color: var(--fg-muted, oklch(45% 0 0));
       font-size: var(--text-xs, 12px);
       font-weight: var(--font-medium, 500);

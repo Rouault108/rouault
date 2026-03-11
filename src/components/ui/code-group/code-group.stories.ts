@@ -208,6 +208,9 @@ export const ComparisonPair: Story = {
     }
 
     const copyButtonAfter = getCopyButton(group);
+    if (copyButtonAfter !== copyButtonBefore) {
+      throw new Error('タブ切り替え時に ui-copy-button が再生成されています');
+    }
     if (copyButtonAfter.label !== 'bad.ts のコードをコピー') {
       throw new Error(`切り替え後コピーラベルが不正です: "${copyButtonAfter.label}"`);
     }

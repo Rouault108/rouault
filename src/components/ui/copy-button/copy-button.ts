@@ -245,6 +245,11 @@ export class CopyButton extends LitElement {
   private _loadingTimer: number | null = null;
 
   /**
+   * 進行中コピーの世代。外部 reset で古い非同期完了を無効化する
+   */
+  private _copyRequestVersion = 0;
+
+  /**
    * API応答待ち中であるか
    * @internal
    */
@@ -327,6 +332,19 @@ export class CopyButton extends LitElement {
       window.clearTimeout(this._loadingTimer);
       this._loadingTimer = null;
     }
+  }
+
+  /**
+   * 外部コンテキスト切り替え時に状態表示を初期化
+   */
+  resetState(): void {
+    this._copyRequestVersion += 1;
+    this._clearStateTimer();
+    this._clearLoadingTimer();
+    this._isCopyingVisible = false;
+    this._internalState = 'idle';
+    this._liveRegionMode = 'idle';
+    this.setAttribute('state', 'idle');
   }
 
   /**
@@ -426,6 +444,9 @@ export class CopyButton extends LitElement {
       return;
     }
 
+    const requestVersion = this._copyRequestVersion + 1;
+    this._copyRequestVersion = requestVersion;
+
     // 既存タイマーをクリア
     this._clearStateTimer();
     this._clearLoadingTimer();
@@ -441,13 +462,16 @@ export class CopyButton extends LitElement {
     const thresholdMs = Number.isFinite(thresholdValue) ? thresholdValue : 500;
 
     this._loadingTimer = window.setTimeout(() => {
-      if (!requestSettled) {
+      if (!requestSettled && this._copyRequestVersion === requestVersion) {
         this._isCopyingVisible = true;
       }
     }, thresholdMs);
 
     try {
       await navigator.clipboard.writeText(this.value);
+      if (this._copyRequestVersion !== requestVersion) {
+        return;
+      }
       requestSettled = true;
       this._clearLoadingTimer();
       this._isCopyingVisible = false;
@@ -470,6 +494,9 @@ export class CopyButton extends LitElement {
         this._liveRegionMode = 'idle';
       }, 2000);
     } catch (error: unknown) {
+      if (this._copyRequestVersion !== requestVersion) {
+        return;
+      }
       requestSettled = true;
       this._clearLoadingTimer();
       this._isCopyingVisible = false;
