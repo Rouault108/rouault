@@ -1,4 +1,4 @@
-import { css, html, LitElement, nothing } from 'lit';
+import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { map } from 'lit/directives/map.js';
@@ -395,7 +395,14 @@ export class Toc extends LitElement {
 		this._teardownObserver();
 	}
 
-	override updated(changedProperties: Map<string, unknown>) {
+	protected override willUpdate(changedProperties: PropertyValues<this>) {
+		if (changedProperties.has('activeId') && !this._internalUpdate) {
+			// 外部からの activeId 変更は描画前に click 起因へ寄せる。
+			this._activeIdSource = 'click';
+		}
+	}
+
+	override updated(changedProperties: PropertyValues<this>) {
 		super.updated(changedProperties);
 
 		if (changedProperties.has('headers')) {
@@ -404,10 +411,6 @@ export class Toc extends LitElement {
 		}
 
 		if (changedProperties.has('activeId')) {
-			if (!this._internalUpdate) {
-				// 外部からの activeId 変更: クリック相当として扱い、フェードイン適用
-				this._activeIdSource = 'click';
-			}
 			this._emitActiveChange();
 		}
 

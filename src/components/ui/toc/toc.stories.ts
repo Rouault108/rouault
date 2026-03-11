@@ -3,6 +3,23 @@ import { html } from 'lit';
 import './toc';
 import type { Heading, Toc } from './toc';
 
+const nextFrame = async (): Promise<void> =>
+	new Promise((resolve) => {
+		requestAnimationFrame(() => {
+			resolve();
+		});
+	});
+
+const getTooltipPanel = (host: HTMLElement): HTMLElement => {
+	const tooltipId = host.dataset['tooltipId'];
+	if (!tooltipId) throw new Error('tooltip id が見つかりません');
+
+	const panel = host.ownerDocument.getElementById(tooltipId);
+	if (!panel) throw new Error('tooltip panel が見つかりません');
+
+	return panel;
+};
+
 /**
  * ## 目次 (Table of Contents) `<ui-toc>`
  *
@@ -792,8 +809,8 @@ export const LongText: Story = {
 		const toc = canvasElement.querySelector<Toc>('#longtext-toc');
 		if (!toc) throw new Error('ui-toc が見つかりません');
 		await toc.updateComplete;
-		await new Promise((resolve) => requestAnimationFrame(resolve));
-		await new Promise((resolve) => requestAnimationFrame(resolve));
+		await nextFrame();
+		await nextFrame();
 
 		// テスト: 3件のリンクが存在する
 		const links = toc.shadowRoot?.querySelectorAll('a.toc-link');
@@ -845,20 +862,20 @@ export const LongText: Story = {
 		if (h4Tooltip.disabled === true) {
 			throw new Error('省略表示中の H4 では tooltip が有効である必要があります');
 		}
-		const h4Panel = h4Tooltip.shadowRoot?.querySelector<HTMLElement>('.tooltip');
+		const h4Panel = getTooltipPanel(h4Tooltip);
 		if (!h4Panel) throw new Error('H4 tooltip panel が見つかりません');
 
 		h4Link.dispatchEvent(new MouseEvent('mouseenter'));
-		await new Promise((resolve) => requestAnimationFrame(resolve));
-		await new Promise((resolve) => requestAnimationFrame(resolve));
+		await nextFrame();
+		await nextFrame();
 
 		if (h4Panel.getAttribute('aria-hidden') !== 'false') {
 			throw new Error('H4 hover 時に tooltip が表示される必要があります');
 		}
 
 		h4Link.dispatchEvent(new MouseEvent('mouseleave'));
-		await new Promise((resolve) => requestAnimationFrame(resolve));
-		await new Promise((resolve) => requestAnimationFrame(resolve));
+		await nextFrame();
+		await nextFrame();
 
 		if (h4Panel.getAttribute('aria-hidden') !== 'true') {
 			throw new Error('H4 leave 後に tooltip が閉じる必要があります');
@@ -866,8 +883,8 @@ export const LongText: Story = {
 
 		toc.activeId = 'long-h4';
 		await toc.updateComplete;
-		await new Promise((resolve) => requestAnimationFrame(resolve));
-		await new Promise((resolve) => requestAnimationFrame(resolve));
+		await nextFrame();
+		await nextFrame();
 
 		const activeH4Link = toc.shadowRoot?.querySelector<HTMLAnchorElement>('a[href="#long-h4"]');
 		if (!activeH4Link?.classList.contains('is-active')) {
