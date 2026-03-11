@@ -68,10 +68,6 @@ describe('Router', () => {
 	let originalHistoryStateDescriptor: PropertyDescriptor | undefined;
 	let mockHistoryState: unknown;
 
-	// WTRのセッションURLを保持（テスト終了時に復元するため）
-	const wtrOriginalUrl = window.location.href;
-
-
 	beforeEach(async () => {
 		// テスト用のアウトレット要素を作成
 		outlet = await fixture<HTMLElement>(html` <main id="test-outlet">Initial Content</main> `);

@@ -748,7 +748,7 @@ export class Router {
    * history.state を含めて現在URLを解決する
    */
   private readCurrentUrl(): string {
-    const currentState = history.state;
+    const currentState: unknown = history.state;
     if (this.isHistoryStateObject(currentState)) {
       const historyUrl = currentState['__routerUrl'];
       if (typeof historyUrl === 'string' && historyUrl.length > 0) {

@@ -308,9 +308,7 @@ export class UiDialog extends LitElement {
       return;
     }
 
-    if (!this._triggerElement) {
-      this._triggerElement = captureTrigger(this.ownerDocument);
-    }
+    this._triggerElement ??= captureTrigger(this.ownerDocument);
 
     if (!this._hasAccessibleName()) {
       console.error(ACCESSIBLE_NAME_REQUIRED_MESSAGE);

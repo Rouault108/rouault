@@ -60,7 +60,7 @@ export const Default: Story = {
         )}
       `,
     ),
-  play: async ({ canvasElement }) => {
+  play: ({ canvasElement }) => {
     const root = canvasElement.querySelector<HTMLElement>('#app-shell-root');
     const skipLink = canvasElement.querySelector<HTMLElement>('#app-shell-skip-link');
     const header = canvasElement.querySelector<HTMLElement>('layout-header');

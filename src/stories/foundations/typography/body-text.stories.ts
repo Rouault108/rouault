@@ -119,7 +119,7 @@ export const Default: Story = {
     if (linkStyle.textDecorationLine === 'none') {
       throw new Error('本文リンクは下線を持つ必要があります');
     }
-    if (blockquote.textContent?.includes('内容の読解') !== true) {
+    if (!blockquote.textContent.includes('内容の読解')) {
       throw new Error('blockquote の本文が想定どおりではありません');
     }
   },

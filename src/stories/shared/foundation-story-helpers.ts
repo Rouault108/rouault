@@ -267,7 +267,7 @@ export const renderTokenSampleGrid = (
 `;
 
 export const renderTokenValueList = (
-  rows: Array<{ label: string; token: string }>,
+  rows: { label: string; token: string }[],
 ): TemplateResult => html`
   <div class="foundation-value-list">
     ${rows.map(

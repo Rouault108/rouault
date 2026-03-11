@@ -140,7 +140,11 @@ export const Default: Story = {
       throw new Error('--fg-default が解決できていません');
     }
 
-    const firstSwatchStyle = getComputedStyle(swatches[0] as HTMLElement);
+    const firstSwatch = swatches[0];
+    if (!firstSwatch) {
+      throw new Error('Primary スウォッチが見つかりません');
+    }
+    const firstSwatchStyle = getComputedStyle(firstSwatch);
     if (firstSwatchStyle.backgroundColor === 'rgba(0, 0, 0, 0)') {
       throw new Error('Primary スウォッチの背景色が透明です');
     }
