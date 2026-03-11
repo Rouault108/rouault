@@ -1,8 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
+import '../article-header/article-header';
 import './info-box';
 import { InfoBox, type InfoBoxVariant } from './info-box';
+import {
+  renderFoundationFrame,
+  renderFoundationSection,
+} from '../../../stories/shared/foundation-story-helpers';
 
 interface VariantMatrixCase {
   readonly id: string;
@@ -212,6 +217,308 @@ export const Default: Story = {
     }
     if (icon.getAttribute('aria-hidden') !== 'true') {
       throw new Error('装飾アイコンは aria-hidden="true" である必要があります');
+    }
+  },
+};
+
+/**
+ * 閲覧用:
+ * 「読む前提条件」を info-box で見せるときの文言と配置パターン。
+ */
+export const ReadingPrerequisitePlacements: Story = {
+  parameters: {
+    layout: 'fullscreen',
+    docs: {
+      description: {
+        story:
+          '「読む前提条件」を article header に混ぜず、info-box としてどこに置くかを比較する閲覧用ストーリーです。',
+      },
+    },
+  },
+  render: () =>
+    renderFoundationFrame(
+      {
+        title: 'Reading Prerequisite Placements',
+        description:
+          '前提条件は記事メタデータではなく、読むための補助情報として独立させます。推奨は article header 直下、その次に本文導入内、必要なら特定セクション直前で再提示します。',
+      },
+      html`
+        <style>
+          .reading-patterns {
+            display: grid;
+            gap: var(--space-5, 1.25rem);
+          }
+
+          .reading-patterns-grid {
+            display: grid;
+            gap: var(--space-4, 1rem);
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          }
+
+          .reading-preview {
+            display: grid;
+            gap: var(--space-5, 1.25rem);
+            max-width: min(100%, 76ch);
+            margin: 0 auto;
+          }
+
+          .reading-preview--narrow {
+            max-width: min(100%, 64ch);
+          }
+
+          .reading-prose {
+            display: grid;
+            gap: var(--space-4, 1rem);
+            color: var(--fg-default, oklch(20% 0 0));
+          }
+
+          .reading-prose > * {
+            margin: 0;
+          }
+
+          .reading-prose h2 {
+            font-size: var(--text-xl, 1.25rem);
+            line-height: var(--line-height-tight, 1.25);
+          }
+
+          .reading-prose p,
+          .reading-prose li,
+          .reading-prose dd {
+            font-size: var(--text-sm, 0.875rem);
+            line-height: var(--line-height-relaxed, 1.8);
+          }
+
+          .reading-prose ul,
+          .reading-prose dl {
+            margin: 0;
+          }
+
+          .reading-prose ul {
+            padding-inline-start: 1.25rem;
+          }
+
+          .reading-prose dl {
+            display: grid;
+            gap: var(--space-2, 0.5rem);
+          }
+
+          .reading-prose dt {
+            font-size: var(--text-xs, 0.75rem);
+            font-weight: var(--font-semibold, 600);
+            letter-spacing: var(--tracking-wide, 0.025em);
+            color: var(--fg-muted, oklch(48% 0 0));
+          }
+
+          .reading-prose dd {
+            margin: 0;
+          }
+
+          .pattern-note {
+            margin: 0;
+            font-size: var(--text-xs, 0.75rem);
+            line-height: var(--line-height-relaxed, 1.75);
+            color: var(--fg-muted, oklch(48% 0 0));
+          }
+        </style>
+
+        ${renderFoundationSection(
+          '推奨配置',
+          html`
+            <div class="foundation-stage">
+              <article class="reading-preview" id="placement-recommended">
+                <ui-article-header
+                  heading="設計メモを読むときの前提共有"
+                  published="2026-03-11"
+                  updated="2026-03-11"
+                ></ui-article-header>
+
+                <ui-info-box
+                  id="prerequisite-global"
+                  heading="このサイトを読む前に"
+                  icon="scan-search"
+                  heading-level="2"
+                  landmark
+                  variant="filled"
+                >
+                  <div class="reading-prose">
+                    <p>
+                      このサイトのノートは、入門よりも判断の記録を優先します。
+                      定義や背景を一から説明しない箇所があります。
+                    </p>
+                    <ul>
+                      <li>結論、判断理由、未解決点を先に書きます。</li>
+                      <li>固有名詞や過去の文脈は、関連ノートの存在を前提に省略することがあります。</li>
+                      <li>導入解説や完全な手順が必要な場合は、本文中の出典や関連ノートを併読してください。</li>
+                    </ul>
+                  </div>
+                </ui-info-box>
+
+                <div class="reading-prose">
+                  <p>
+                    本文に入る前に読み方の前提を切り出しておくと、ヘッダーの責務を崩さずに済みます。
+                    読者はタイトルと記事状態を見たあと、どの粒度で読めばよいかを自然に理解できます。
+                  </p>
+                </div>
+              </article>
+            </div>
+          `,
+          'article header の直下に 1 回だけ置くパターンです。記事メタデータと混線せず、本文へ入る前の認知切り替えを作れます。',
+        )}
+
+        ${renderFoundationSection(
+          '代替配置',
+          html`
+            <div class="reading-patterns-grid">
+              <div class="foundation-stage">
+                <article class="reading-preview reading-preview--narrow" id="placement-inline">
+                  <ui-article-header
+                    heading="導入の中で前提を短く差し込む"
+                    published="2026-03-11"
+                  ></ui-article-header>
+
+                  <div class="reading-prose">
+                    <p>
+                      冒頭で背景を一段だけ説明したあと、読む姿勢を短く合わせたいケースです。
+                    </p>
+
+                    <ui-info-box
+                      id="prerequisite-inline"
+                      heading="読み方の目印"
+                      icon="bookmark"
+                      heading-level="2"
+                    >
+                      <dl>
+                        <div>
+                          <dt>想定</dt>
+                          <dd>このノートは結論と判断理由を追える読者を想定します。</dd>
+                        </div>
+                        <div>
+                          <dt>扱わないもの</dt>
+                          <dd>用語の網羅的な定義と、導入からの手順説明は省略します。</dd>
+                        </div>
+                      </dl>
+                    </ui-info-box>
+
+                    <p>
+                      条件が軽い場合は、このくらいの短いボックスで十分です。本文の流れを止めずに、
+                      省略の前提だけ明示できます。
+                    </p>
+                  </div>
+                </article>
+              </div>
+
+              <div class="foundation-stage">
+                <article class="reading-preview reading-preview--narrow" id="placement-section">
+                  <ui-article-header
+                    heading="難所だけ局所前提を再提示する"
+                    published="2026-03-11"
+                  ></ui-article-header>
+
+                  <div class="reading-prose">
+                    <p>
+                      先頭では全体方針だけを出し、特定の章だけ前提が重くなる場合に再提示するパターンです。
+                    </p>
+
+                    <ui-info-box
+                      id="prerequisite-section"
+                      heading="この章の前提"
+                      icon="waypoints"
+                      heading-level="2"
+                      variant="default"
+                    >
+                      <div class="reading-prose">
+                        <p>
+                          ここから先は、過去の実装ログと Storybook のコンポーネント契約を把握している前提で進めます。
+                        </p>
+                      </div>
+                    </ui-info-box>
+
+                    <h2>状態遷移の分解</h2>
+                    <p>
+                      全読者向けではない条件を局所化できるため、ページ冒頭のノイズを増やさずに済みます。
+                    </p>
+                  </div>
+                </article>
+              </div>
+            </div>
+          `,
+          '前提条件の重さに応じて、本文導入内の短い提示か、特定セクション直前の再提示へ縮退させます。',
+        )}
+
+        ${renderFoundationSection(
+          '文言の指針',
+          html`
+            <div class="reading-patterns">
+              <p class="pattern-note">
+                見出しは「このサイトを読む前に」「読み方の目印」「この章の前提」のように、
+                読者が何を調整すべきかを即座に理解できる名詞句にします。
+              </p>
+              <p class="pattern-note">
+                本文は「想定読者」「省略するもの」「併読先」の 3 点に絞ると、
+                ルール説明ではなく読む補助として機能します。
+              </p>
+              <p class="pattern-note">
+                ステータスや更新日と混ぜないことで、article header は記事の現在地、
+                info-box は読むための前提という役割分担を保てます。
+              </p>
+            </div>
+          `,
+        )}
+      `,
+    ),
+  play: async ({ canvasElement }) => {
+    const recommendedBox = getHost(canvasElement, 'prerequisite-global');
+    const inlineBox = getHost(canvasElement, 'prerequisite-inline');
+    const sectionBox = getHost(canvasElement, 'prerequisite-section');
+    await Promise.all([recommendedBox.updateComplete, inlineBox.updateComplete, sectionBox.updateComplete]);
+
+    const recommendedStage = canvasElement.querySelector<HTMLElement>('#placement-recommended');
+    if (!recommendedStage) {
+      throw new Error('推奨配置ステージが見つかりません');
+    }
+
+    const recommendedChildren = Array.from(recommendedStage.children);
+    if (recommendedChildren[0]?.tagName.toLowerCase() !== 'ui-article-header') {
+      throw new Error('推奨配置は article header から始まる必要があります');
+    }
+    if (recommendedChildren[1]?.id !== 'prerequisite-global') {
+      throw new Error('推奨配置では article header 直下に前提 info-box を置く必要があります');
+    }
+    if (recommendedChildren[2]?.className !== 'reading-prose') {
+      throw new Error('推奨配置では前提 info-box の後に本文導入が続く必要があります');
+    }
+
+    if (recommendedBox.getAttribute('role') !== 'region') {
+      throw new Error('全体前提の推奨配置は landmark region として公開する必要があります');
+    }
+
+    const recommendedHeading = getHeading(recommendedBox);
+    if (recommendedHeading.textContent.trim() !== 'このサイトを読む前に') {
+      throw new Error('推奨配置の見出し文言が期待値と一致しません');
+    }
+
+    const inlineProse = canvasElement.querySelector<HTMLElement>('#placement-inline .reading-prose');
+    if (!inlineProse) {
+      throw new Error('導入内配置の本文コンテナが見つかりません');
+    }
+
+    const inlineChildren = Array.from(inlineProse.children);
+    if (inlineChildren[1]?.id !== 'prerequisite-inline') {
+      throw new Error('導入内配置では最初の説明文の直後に前提 info-box を置く必要があります');
+    }
+
+    if (inlineBox.getAttribute('role') !== 'note') {
+      throw new Error('導入内の短い前提は note として扱う必要があります');
+    }
+
+    const sectionProse = canvasElement.querySelector<HTMLElement>('#placement-section .reading-prose');
+    if (!sectionProse) {
+      throw new Error('局所前提配置の本文コンテナが見つかりません');
+    }
+
+    const sectionChildren = Array.from(sectionProse.children);
+    if (sectionChildren[1]?.id !== 'prerequisite-section' || sectionChildren[2]?.tagName.toLowerCase() !== 'h2') {
+      throw new Error('局所前提は対象セクション見出しの直前に配置する必要があります');
     }
   },
 };
