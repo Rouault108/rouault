@@ -436,6 +436,12 @@ export class Select extends LitElement {
         this._ensurePortalStyles();
     }
 
+    override willUpdate(changedProperties: PropertyValues): void {
+        if (changedProperties.has('opened') && !this.opened) {
+            this._activeIndex = -1;
+        }
+    }
+
     override updated(changedProperties: PropertyValues): void {
         super.updated(changedProperties);
 
@@ -695,7 +701,6 @@ export class Select extends LitElement {
         this._cleanupAutoUpdatePositioning();
         this._detachOutsideListeners();
         this._destroyListbox();
-        this._activeIndex = -1;
         this._clearTypeahead();
     }
 

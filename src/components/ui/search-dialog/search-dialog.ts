@@ -608,17 +608,7 @@ export class UiSearchDialog extends LitElement {
     }
   }
 
-  protected override updated(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.has('opened')) {
-      this._enqueue(async () => {
-        if (this.opened) {
-          await this._openDialog();
-          return;
-        }
-        await this._closeDialog();
-      });
-    }
-
+  protected override willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has('query')) {
       this._virtualScrollTop = 0;
       this._scheduleSearch();
@@ -635,6 +625,18 @@ export class UiSearchDialog extends LitElement {
       } else {
         this._setLiveMessage('');
       }
+    }
+  }
+
+  protected override updated(changedProperties: PropertyValues<this>): void {
+    if (changedProperties.has('opened')) {
+      this._enqueue(async () => {
+        if (this.opened) {
+          await this._openDialog();
+          return;
+        }
+        await this._closeDialog();
+      });
     }
   }
 

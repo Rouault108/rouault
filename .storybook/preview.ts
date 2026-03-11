@@ -1,3 +1,10 @@
+const issuedWarnings =
+  (globalThis as typeof globalThis & { litIssuedWarnings?: Set<string> }).litIssuedWarnings ??
+  new Set<string>();
+issuedWarnings.add('dev-mode');
+(globalThis as typeof globalThis & { litIssuedWarnings?: Set<string> }).litIssuedWarnings =
+  issuedWarnings;
+
 import { setCustomElementsManifest } from '@storybook/web-components-vite';
 import customElements from '../custom-elements.json';
 

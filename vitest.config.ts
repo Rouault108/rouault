@@ -48,9 +48,6 @@ export default defineConfig({
 
           // Storybook の設定を Vitest に適用するセットアップファイル
           setupFiles: ['./.storybook/vitest.setup.ts'],
-
-          // stories ファイルをテスト対象に含める
-          include: ['src/**/*.stories.ts'],
         },
       },
     ],
