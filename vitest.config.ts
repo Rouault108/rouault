@@ -20,6 +20,13 @@ export default defineConfig({
     // Vitest 3.2+ では projects を使用
     projects: [
       {
+        test: {
+          name: 'ssr',
+          environment: 'node',
+          include: ['test/ssr/**/*.test.ts'],
+        },
+      },
+      {
         // 既存の設定を継承
         extends: true,
 
