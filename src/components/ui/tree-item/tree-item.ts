@@ -177,6 +177,7 @@ export class TreeItem extends LitElement {
       display: flex;
       align-items: center;
       justify-content: center;
+      transform: translateY(0.5px);
     }
 
     .content-icon iconify-icon,
