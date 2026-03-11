@@ -569,8 +569,10 @@ export class Tag extends LitElement {
 
     /** アイコンスロットのレンダリング */
     private _renderIcon() {
-        if (typeof this.querySelector !== 'function') return nothing;
-        if (!this.querySelector('[slot="icon"]')) return nothing;
+        const hasIcon = Array.from(this.children).some(
+            (child) => child.getAttribute('slot') === 'icon',
+        );
+        if (!hasIcon) return nothing;
 
         return html`
       <span class="icon-slot" aria-hidden="true">
