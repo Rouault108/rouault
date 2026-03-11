@@ -21,12 +21,20 @@ import { RouterController } from '../../lib/controllers/router-controller.js';
 
 @customElement('app-router')
 export class AppRouter extends LitElement {
+  private _didInitializeFromSsr = false;
+
   /** シャドウDOMを無効化してライトDOMを使用する */
   override createRenderRoot(): this {
     return this;
   }
 
   private _routerController = new RouterController(this);
+
+  /**
+   * SSR で注入する初期本文。
+   * クライアントでは connectedCallback() で既存DOMから再取得される。
+   */
+  serverContent = '';
 
   /** fetch されたページの HTML コンテンツ */
   @state() private _pageContent = '';
@@ -35,12 +43,16 @@ export class AppRouter extends LitElement {
   @state() private _ariaAnnouncement = '';
 
   override connectedCallback(): void {
-    super.connectedCallback();
+    if (!this._didInitializeFromSsr) {
+      // 初回接続時のみ SSR されたライトDOMを state に退避し、
+      // Lit の初回描画前に既存ノードを除去して二重描画を防ぐ。
+      const existingMain = this.querySelector('main');
+      this._pageContent = existingMain?.innerHTML ?? '';
+      this.replaceChildren();
+      this._didInitializeFromSsr = true;
+    }
 
-    // Lit の初回レンダリング前に SSG コンテンツを取得して保持する
-    // これにより、JS ロード後のコンテンツ消失（フラッシュ）を防ぐ
-    const existingMain = this.querySelector('main');
-    this._pageContent = existingMain?.innerHTML ?? '';
+    super.connectedCallback();
 
     // Router を SSG コンテンツを上書きしないように初期化する
     const router = this._routerController.initRouter(
@@ -72,6 +84,12 @@ export class AppRouter extends LitElement {
     // Lit が DOM を確実に更新した後に実行されることが保証される
     if (changedProperties.has('_pageContent')) {
       this._runPostRenderHooks();
+      this.dispatchEvent(
+        new CustomEvent('app-router:content-rendered', {
+          bubbles: true,
+          composed: true,
+        }),
+      );
     }
   }
 
@@ -125,6 +143,8 @@ export class AppRouter extends LitElement {
   }
 
   override render() {
+    const pageContent = this._pageContent || this.serverContent;
+
     return html`
       <!-- スクリーンリーダーへのページ変更通知（宣言的管理） -->
       <div aria-live="polite" aria-atomic="true" class="sr-only">${this._ariaAnnouncement}</div>
@@ -135,7 +155,7 @@ export class AppRouter extends LitElement {
         tabindex="-1"
         aria-busy=${this._routerController.isNavigating ? 'true' : nothing}
       >
-        ${unsafeHTML(this._pageContent)}
+        ${unsafeHTML(pageContent)}
       </main>
     `;
   }
