@@ -507,7 +507,7 @@ export class Router {
         return;
       }
 
-      const response = await fetch(url, { signal });
+      const response = await fetch(this.resolveContentUrl(url), { signal });
 
       if (!response.ok) {
         this.handleHttpError(response.status);
@@ -808,6 +808,26 @@ export class Router {
    */
   private normalizeUrl(url: string): string {
     const normalized = new URL(url, window.location.href);
+    return `${normalized.pathname}${normalized.search}${normalized.hash}`;
+  }
+
+  /**
+   * 静的配信の index.html を取得できるよう、拡張子のない内部URLには fetch 時のみ trailing slash を補う。
+   * history 上の URL 表示は呼び出し元の指定を維持する。
+   */
+  private resolveContentUrl(url: string): string {
+    const normalized = new URL(url, window.location.origin);
+    const pathname = normalized.pathname;
+    const lastSegment = pathname.split('/').pop() ?? '';
+
+    if (
+      pathname !== '/' &&
+      !pathname.endsWith('/') &&
+      !lastSegment.includes('.')
+    ) {
+      normalized.pathname = `${pathname}/`;
+    }
+
     return `${normalized.pathname}${normalized.search}${normalized.hash}`;
   }
 
