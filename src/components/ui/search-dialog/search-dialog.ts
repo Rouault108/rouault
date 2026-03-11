@@ -1261,7 +1261,7 @@ export class UiSearchDialog extends LitElement {
 
     return parts.map((part) =>
       part.matched
-        ? html`<ui-search-highlight origin="search">${part.text}</ui-search-highlight>`
+        ? html`<ui-search-highlight origin="search" .text=${part.text}></ui-search-highlight>`
         : part.text || nothing,
     );
   }

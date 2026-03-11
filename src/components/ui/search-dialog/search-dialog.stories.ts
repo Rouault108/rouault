@@ -276,6 +276,14 @@ export const VisibleMatchHighlighting: Story = {
     const visibleResults = getResultItems(visibleMatchHost);
     assert(visibleResults.length > 0, '可視一致の検索結果が表示されていません');
     assert(visibleMarks.length >= 2, 'title/path の可視一致が mark でハイライトされていません');
+    assert(
+      normalizeText(visibleMarks[0]?.textContent) === 'Router',
+      'title のハイライト mark 自体が一致文字列を内包していません',
+    );
+    assert(
+      normalizeText(visibleMarks[1]?.textContent) === 'router',
+      'path のハイライト mark 自体が一致文字列を内包していません',
+    );
 
     const firstTitle = visibleResults[0]?.querySelector('.item-title');
     const firstPath = visibleResults[0]?.querySelector('.item-path');

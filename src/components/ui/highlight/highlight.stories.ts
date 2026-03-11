@@ -199,6 +199,10 @@ export const Default: Story = {
       throw new Error('mark に角丸トークンが適用されていません');
     }
 
+    if (!isNearlyEqual(toPx(markStyle.paddingLeft), 0) || !isNearlyEqual(toPx(markStyle.paddingRight), 0)) {
+      throw new Error('mark に左右 padding を入れてはいけません');
+    }
+
     if (markStyle.backgroundColor === 'rgba(0, 0, 0, 0)') {
       throw new Error('通常モードで背景ハイライトが消失しています');
     }
@@ -550,4 +554,3 @@ export const DarkModeTokenAndContrastContract: Story = {
     }
   },
 };
-

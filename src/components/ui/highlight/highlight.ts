@@ -20,7 +20,7 @@ const HIGHLIGHT_RULE_TEMPLATE = (scopeSelector: string): string => `
 ${scopeSelector} {
   background: var(--bg-highlight-subtle);
   color: var(--fg-default);
-  padding: 0 0.1em;
+  padding: 0;
   border-radius: var(--radius-sm);
   text-decoration: none;
 }
