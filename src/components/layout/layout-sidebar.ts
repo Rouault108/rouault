@@ -138,6 +138,9 @@ export class LayoutSidebar extends LitElement {
   @property({ type: String, attribute: 'active-id' })
   activeId = '';
 
+  @property({ type: String, attribute: 'items-json' })
+  itemsJson = '';
+
   @property({ type: String })
   heading = 'ナビゲーション';
 
@@ -169,8 +172,12 @@ export class LayoutSidebar extends LitElement {
     super.disconnectedCallback();
   }
 
-  protected override updated(changedProperties: Map<string, unknown>): void {
-    if (changedProperties.has('sourceId')) {
+  protected override willUpdate(changedProperties: Map<string, unknown>): void {
+    if (
+      !this.hasUpdated ||
+      changedProperties.has('sourceId') ||
+      changedProperties.has('itemsJson')
+    ) {
       this._loadItemsFromSource();
     }
   }
@@ -183,6 +190,15 @@ export class LayoutSidebar extends LitElement {
     this._persistedExpandedIds = new Set(
       readLayoutSidebarTreeState(this._storage).expandedIds,
     );
+
+    const inlineItems = this._parseItemsJson(this.itemsJson);
+    if (inlineItems !== null) {
+      this._items = mergeLayoutSidebarTreeState(
+        inlineItems,
+        [...this._persistedExpandedIds],
+      );
+      return;
+    }
 
     if (this.sourceId.length === 0) {
       this._items = [];
@@ -210,6 +226,26 @@ export class LayoutSidebar extends LitElement {
       );
     } catch {
       this._items = [];
+    }
+  }
+
+  private _parseItemsJson(value: string): TreeNode[] | null {
+    const normalized = value.trim();
+    if (normalized.length === 0) {
+      return null;
+    }
+
+    try {
+      const parsed: unknown = JSON.parse(normalized);
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+
+      return parsed
+        .map((item) => toTreeNode(item))
+        .filter((item): item is TreeNode => item !== null);
+    } catch {
+      return [];
     }
   }
 

@@ -176,6 +176,9 @@ export class LayoutToc extends LitElement {
   @property({ type: String, attribute: 'home-href' })
   homeHref = '/';
 
+  @property({ type: String, attribute: 'headings-json' })
+  headingsJson = '';
+
   @state()
   private _headings: Heading[] = [];
 
@@ -217,13 +220,26 @@ export class LayoutToc extends LitElement {
     super.disconnectedCallback();
   }
 
-  protected override updated(changedProperties: Map<string, unknown>): void {
-    if (changedProperties.has('sourceId')) {
+  protected override willUpdate(changedProperties: Map<string, unknown>): void {
+    if (
+      !this.hasUpdated ||
+      changedProperties.has('sourceId') ||
+      changedProperties.has('headingsJson')
+    ) {
       this._loadHeadingsFromSource();
     }
   }
 
   private _loadHeadingsFromSource(): void {
+    const inlineHeadings = this._parseHeadingsJson(this.headingsJson);
+    if (inlineHeadings !== null) {
+      this._headings = inlineHeadings;
+      this._activeTotal = inlineHeadings.length;
+      this._activeId = inlineHeadings[0]?.id ?? '';
+      this._activeIndex = inlineHeadings.length > 0 ? 0 : -1;
+      return;
+    }
+
     if (this.sourceId.length === 0) {
       this._headings = [];
       this._activeId = '';
@@ -259,6 +275,26 @@ export class LayoutToc extends LitElement {
       this._activeId = '';
       this._activeIndex = -1;
       this._activeTotal = 0;
+    }
+  }
+
+  private _parseHeadingsJson(value: string): Heading[] | null {
+    const normalized = value.trim();
+    if (normalized.length === 0) {
+      return null;
+    }
+
+    try {
+      const parsed: unknown = JSON.parse(normalized);
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+
+      return parsed
+        .map((item) => toHeading(item))
+        .filter((item): item is Heading => item !== null);
+    } catch {
+      return [];
     }
   }
 
