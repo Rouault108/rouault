@@ -1,16 +1,9 @@
 import { LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import {
-  FOOTER_DEFAULT_APP_NAME,
-  type UiFooterRenderOptions,
-  renderFooter,
-} from '../ui/footer/footer';
+import { type UiFooterRenderOptions, renderFooter } from '../ui/footer/footer';
 
 @customElement('layout-footer')
 export class LayoutFooter extends LitElement {
-  @property({ type: String, attribute: 'app-name' })
-  appName = FOOTER_DEFAULT_APP_NAME;
-
   @property({ type: String })
   revision?: string;
 
@@ -23,7 +16,6 @@ export class LayoutFooter extends LitElement {
 
   override render() {
     const options: UiFooterRenderOptions = {
-      appName: this.appName,
       ...(typeof this.revision === 'string' ? { revision: this.revision } : {}),
       ...(typeof this.year === 'number' ? { year: this.year } : {}),
     };

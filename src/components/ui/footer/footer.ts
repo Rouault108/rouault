@@ -11,7 +11,6 @@ export const FOOTER_DEFAULT_REVISION = 'dev';
 const VALID_REVISION_PATTERN = /^[0-9a-f]{7,40}$/i;
 
 export interface UiFooterRenderOptions {
-  appName?: string;
   id?: string;
   revision?: string;
   year?: number;
@@ -19,7 +18,6 @@ export interface UiFooterRenderOptions {
 
 export interface UiFooterData {
   appName: string;
-  copyright: string;
   revision: string;
   year: number;
 }
@@ -54,6 +52,17 @@ ${FOOTER_SCOPE_SELECTOR} .footer-content {
 
 ${FOOTER_SCOPE_SELECTOR} .separator {
   opacity: var(--separator-opacity, 0.3);
+}
+
+${FOOTER_SCOPE_SELECTOR} .copyright {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+${FOOTER_SCOPE_SELECTOR} .copyright iconify-icon {
+  font-size: 0.75em;
+  flex: none;
 }
 
 @media (forced-colors: active) {
@@ -93,15 +102,6 @@ const resolveBuildRevision = (): string | undefined => {
   return normalized.length > 0 ? normalized : undefined;
 };
 
-const resolveAppName = (appName?: string): string => {
-  if (typeof appName !== 'string') {
-    return FOOTER_DEFAULT_APP_NAME;
-  }
-
-  const normalized = appName.trim();
-  return normalized.length > 0 ? normalized : FOOTER_DEFAULT_APP_NAME;
-};
-
 export const resolveFooterYear = (year?: number): number => {
   if (typeof year === 'number' && Number.isFinite(year) && year >= 1) {
     return Math.trunc(year);
@@ -120,13 +120,11 @@ export const resolveFooterRevision = (revision?: string): string => {
 export const buildFooterData = (
   options: UiFooterRenderOptions = {},
 ): UiFooterData => {
-  const appName = resolveAppName(options.appName);
   const year = resolveFooterYear(options.year);
   const resolvedRevision = resolveFooterRevision(options.revision);
 
   return {
-    appName,
-    copyright: `© ${year.toString()} ${appName}`,
+    appName: FOOTER_DEFAULT_APP_NAME,
     revision: `#${resolvedRevision}`,
     year,
   };
@@ -153,7 +151,10 @@ export const renderFooter = (
   return html`
     <footer id=${ifDefined(footerId)} class="ui-footer">
       <div class="footer-content">
-        <span class="copyright">${data.copyright}</span>
+        <span class="copyright">
+          <iconify-icon icon="lucide:copyright" aria-hidden="true"></iconify-icon>
+          <span>${data.year.toString()} ${data.appName}</span>
+        </span>
         <span class="separator" aria-hidden="true">·</span>
         <span class="revision">${data.revision}</span>
       </div>

@@ -121,7 +121,7 @@ export const Default: Story = {
                     ${JSON.stringify(tocSource)}
                   </script>
                 </main>
-                <layout-footer app-name="Rouault" revision="abcdef1" year="2026"></layout-footer>
+                <layout-footer revision="abcdef1" year="2026"></layout-footer>
               </div>
             </div>
           `,

@@ -12,7 +12,6 @@ import {
 } from './footer';
 
 interface FooterStoryArgs {
-  appName?: string;
   revision?: string;
   year?: number;
 }
@@ -46,6 +45,8 @@ const getFooterParts = (footer: HTMLElement) => {
   const content = footer.querySelector<HTMLElement>(':scope > .footer-content');
   const copyright =
     footer.querySelector<HTMLElement>(':scope > .footer-content > .copyright');
+  const copyrightIcon =
+    footer.querySelector<HTMLElement>(':scope > .footer-content > .copyright > iconify-icon');
   const separator =
     footer.querySelector<HTMLElement>(':scope > .footer-content > .separator');
   const revision =
@@ -53,14 +54,15 @@ const getFooterParts = (footer: HTMLElement) => {
 
   assert(!!content, '.footer-content が見つかりません');
   assert(!!copyright, '.copyright が見つかりません');
+  assert(!!copyrightIcon, '.copyright icon が見つかりません');
   assert(!!separator, '.separator が見つかりません');
   assert(!!revision, '.revision が見つかりません');
 
-  return { content, copyright, separator, revision };
+  return { content, copyright, copyrightIcon, separator, revision };
 };
 
 const parseYear = (copyright: string): number | null => {
-  const matched = /^©\s+(\d{1,4})\s+/u.exec(copyright);
+  const matched = /(\d{1,4})\s+/u.exec(copyright);
   if (!matched?.[1]) return null;
   const parsed = Number.parseInt(matched[1], 10);
   return Number.isNaN(parsed) ? null : parsed;
@@ -73,7 +75,6 @@ const toNumber = (value: string): number => {
 
 const buildRenderOptions = (args: FooterStoryArgs): UiFooterRenderOptions => ({
   id: 'footer-default',
-  ...(typeof args.appName === 'string' ? { appName: args.appName } : {}),
   ...(typeof args.revision === 'string' ? { revision: args.revision } : {}),
   ...(typeof args.year === 'number' ? { year: args.year } : {}),
 });
@@ -98,11 +99,6 @@ const meta: Meta<FooterStoryArgs> = {
     },
   },
   argTypes: {
-    appName: {
-      control: 'text',
-      description: '表示するアプリ名（未指定時は Rouault）',
-      table: { type: { summary: 'string' }, defaultValue: { summary: "'Rouault'" } },
-    },
     revision: {
       control: 'text',
       description: 'Git short hash。無効値は #dev にフォールバック',
@@ -130,12 +126,9 @@ type Story = StoryObj<FooterStoryArgs>;
  * - aria-hidden 付きセパレータ
  */
 export const DefaultContract: Story = {
-  args: {
-    appName: FOOTER_DEFAULT_APP_NAME,
-  },
   play: ({ canvasElement }) => {
     const footer = getFooter(canvasElement, 'footer-default');
-    const { content, copyright, separator, revision } = getFooterParts(footer);
+    const { content, copyright, copyrightIcon, separator, revision } = getFooterParts(footer);
 
     assert(
       canvasElement.querySelectorAll('footer').length === 1,
@@ -157,6 +150,14 @@ export const DefaultContract: Story = {
     assert(
       revision.textContent.startsWith('#'),
       'revision は # プレフィックス付きである必要があります',
+    );
+    assert(
+      copyrightIcon.getAttribute('icon') === 'lucide:copyright',
+      'コピーライト記号は lucide icon を使用する必要があります',
+    );
+    assert(
+      copyrightIcon.getAttribute('aria-hidden') === 'true',
+      'コピーライト icon は aria-hidden="true" である必要があります',
     );
 
     const expectedYear = resolveFooterYear();
@@ -281,7 +282,6 @@ export const BoundaryConditions: Story = {
     <div style="--separator-opacity: 0.62;">
       ${renderFooter({
         id: 'footer-boundary',
-        appName: 'Rouault <script>alert(1)</script>',
         revision: '',
         year: -10,
       })}
@@ -304,10 +304,6 @@ export const BoundaryConditions: Story = {
     assert(
       revision.textContent.trim() === `#${FOOTER_DEFAULT_REVISION}`,
       '無効 revision は #dev へフォールバックする必要があります',
-    );
-    assert(
-      footer.querySelector('script') === null,
-      'アプリ名文字列が HTML として解釈されてはいけません',
     );
 
     const interactive = footer.querySelectorAll(

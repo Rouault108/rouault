@@ -52,7 +52,7 @@ export const Default: Story = {
                     </p>
                   </div>
                 </main>
-                <layout-footer app-name="Rouault" revision="abcdef1" year="2026"></layout-footer>
+                <layout-footer revision="abcdef1" year="2026"></layout-footer>
               </div>
             </div>
           `,
