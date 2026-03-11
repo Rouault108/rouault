@@ -4,6 +4,8 @@ import { type UiFooterRenderOptions, renderFooter } from '../ui/footer/footer';
 
 @customElement('layout-footer')
 export class LayoutFooter extends LitElement {
+  private _didInitializeFromSsr = false;
+
   @property({ type: String })
   revision?: string;
 
@@ -12,6 +14,16 @@ export class LayoutFooter extends LitElement {
 
   override createRenderRoot(): this {
     return this;
+  }
+
+  override connectedCallback(): void {
+    if (!this._didInitializeFromSsr) {
+      // 初回接続時のみ SSR のライトDOMを除去して、Lit の再描画と重複させない。
+      this.replaceChildren();
+      this._didInitializeFromSsr = true;
+    }
+
+    super.connectedCallback();
   }
 
   override render() {
