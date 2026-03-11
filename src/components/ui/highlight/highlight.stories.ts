@@ -173,6 +173,10 @@ export const Default: Story = {
       throw new Error('ui-search-highlight はネイティブ mark を出力する必要があります');
     }
 
+    if (mark.textContent !== '検索キーワード') {
+      throw new Error('mark のテキストに前後の不要な空白を含めてはいけません');
+    }
+
     if (normalizeText(mark.textContent) !== '検索キーワード') {
       throw new Error('mark のテキストが想定どおりではありません');
     }

@@ -94,15 +94,12 @@ export class SearchHighlight extends LitElement {
   }
 
   override render() {
-    return html`
-      <mark
-        data-origin="${this._resolvedOrigin}"
-        data-current="${String(this.current)}"
-        aria-current="${ifDefined(this.current ? 'true' : undefined)}"
-      >
-        <slot>${this._resolvedText}</slot>
-      </mark>
-    `;
+    return html`<mark
+      data-origin="${this._resolvedOrigin}"
+      data-current="${String(this.current)}"
+      aria-current="${ifDefined(this.current ? 'true' : undefined)}"
+      ><slot>${this._resolvedText}</slot></mark
+    >`;
   }
 }
 
