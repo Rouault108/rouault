@@ -392,6 +392,7 @@ export class TreeItem extends LitElement {
   private _labelResizeObserver?: ResizeObserver;
   private _childrenTransitionCleanup: (() => void) | undefined;
   private _childrenAnimationFrame = 0;
+  private _skipSyntheticAnchorClick = false;
 
   private _computeAriaLevel(): number {
     let level = 1;
@@ -476,7 +477,7 @@ export class TreeItem extends LitElement {
     switch (e.key) {
       case 'Enter':
         e.preventDefault();
-        this._handleSelect(true);
+        this._activateItem();
         break;
 
       case ' ':
@@ -525,8 +526,17 @@ export class TreeItem extends LitElement {
   /**
    * クリックハンドラ
    */
-  private _handleClick = (): void => {
-    this._handleSelect(true);
+  private _handleClick = (e: MouseEvent): void => {
+    const clickedAnchor = this._isAnchorEvent(e);
+    if (clickedAnchor && this._skipSyntheticAnchorClick) {
+      return;
+    }
+
+    this._handleSelect(false);
+
+    if (!clickedAnchor) {
+      this._triggerAnchorNavigation();
+    }
   };
 
   /**
@@ -538,9 +548,17 @@ export class TreeItem extends LitElement {
   };
 
   /**
+   * 行の主操作を実行する。
+   */
+  private _activateItem(): void {
+    this._handleSelect(false);
+    this._triggerAnchorNavigation();
+  }
+
+  /**
    * 選択処理
    */
-  private _handleSelect(allowNavigate = false): void {
+  private _handleSelect(_allowNavigate = false): void {
     this.selected = true;
     this.dispatchEvent(
       new CustomEvent('selected-change', {
@@ -549,10 +567,29 @@ export class TreeItem extends LitElement {
         composed: true,
       }),
     );
+  }
 
-    if (allowNavigate && this.href) {
-      window.location.assign(this.href);
+  /**
+   * 外部の Router が拾えるアンカー click を発火する。
+   */
+  private _triggerAnchorNavigation(): void {
+    const anchor = this.shadowRoot?.querySelector<HTMLAnchorElement>('.label-link');
+    if (!anchor || !this.href) {
+      return;
     }
+
+    this._skipSyntheticAnchorClick = true;
+    anchor.click();
+    queueMicrotask(() => {
+      this._skipSyntheticAnchorClick = false;
+    });
+  }
+
+  /**
+   * 現在のイベントがアンカー由来か判定する。
+   */
+  private _isAnchorEvent(event: Event): boolean {
+    return event.composedPath().some((target) => target instanceof HTMLAnchorElement);
   }
 
   /**
@@ -690,9 +727,6 @@ export class TreeItem extends LitElement {
                 ? html`<a
                     class="label-link"
                     href="${this.href}"
-                    @click="${(e: MouseEvent) => {
-                      e.stopPropagation();
-                    }}"
                     >${this.label}</a
                   >`
                 : this.label}

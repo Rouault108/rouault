@@ -1284,3 +1284,60 @@ export const RealWorldFileTree: Story = {
     },
   },
 };
+
+export const NavigableRowActivation: Story = {
+  render: () => html`
+    <ui-tree-item
+      label="ソートアルゴリズム比較"
+      icon="lucide:file-text"
+      href="/notes/computer-science/algorithms/sorting"
+    ></ui-tree-item>
+  `,
+  play: async ({ canvasElement }) => {
+    const treeItem = canvasElement.querySelector<TreeItem>('ui-tree-item');
+    if (!treeItem) {
+      throw new Error('TreeItem コンポーネントが見つかりません');
+    }
+
+    await treeItem.updateComplete;
+
+    let selectedCount = 0;
+    let anchorPathCount = 0;
+
+    treeItem.addEventListener('selected-change', () => {
+      selectedCount += 1;
+    });
+
+    const clickHandler = (event: Event): void => {
+      const hasAnchorInPath = event.composedPath().some(
+        (target) => target instanceof HTMLAnchorElement,
+      );
+      if (hasAnchorInPath) {
+        anchorPathCount += 1;
+      }
+      event.preventDefault();
+    };
+
+    document.addEventListener('click', clickHandler);
+
+    try {
+      const row = treeItem.shadowRoot?.querySelector<HTMLElement>('.item');
+      if (!row) {
+        throw new Error('.item が見つかりませんでした');
+      }
+
+      row.click();
+      await nextFrame();
+
+      if (selectedCount !== 1) {
+        throw new Error(`selected-change は 1 回だけ発火する必要があります: ${String(selectedCount)}`);
+      }
+
+      if (anchorPathCount < 1) {
+        throw new Error('行クリック時に document から辿れるアンカー click が発火していません');
+      }
+    } finally {
+      document.removeEventListener('click', clickHandler);
+    }
+  },
+};
