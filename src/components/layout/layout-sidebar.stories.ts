@@ -109,6 +109,8 @@ const getSidebar = (host: LayoutSidebar): UiSidebar => {
   return sidebar;
 };
 
+const readSidebarState = (sidebar: UiSidebar): UiSidebar['state'] => sidebar.state;
+
 const findNodeById = (nodes: TreeNode[], id: string): TreeNode | null => {
   for (const node of nodes) {
     if (node.id === id) {
@@ -206,7 +208,9 @@ export const OverlaySelectionCollapses: Story = {
     await flush(host);
 
     assert(sidebar.mode === 'overlay', 'fixed-breakpoint により overlay モードになること');
-    assert(sidebar.state === 'expanded', '選択前は expanded であること');
+    if (readSidebarState(sidebar) !== 'expanded') {
+      throw new Error('選択前は expanded であること');
+    }
 
     sidebar.dispatchEvent(
       new CustomEvent<UiSidebarSelectDetail>('ui-sidebar-select', {
@@ -223,6 +227,8 @@ export const OverlaySelectionCollapses: Story = {
     );
     await flush(host);
 
-    assert(sidebar.state === 'collapsed', 'overlay では選択後に閉じること');
+    if (readSidebarState(sidebar) !== 'collapsed') {
+      throw new Error('overlay では選択後に閉じること');
+    }
   },
 };

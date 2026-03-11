@@ -91,10 +91,8 @@ export const mergeLayoutSidebarTreeState = (
   const expandedSet = new Set(expandedIds);
 
   const mergeNode = (node: TreeNode): TreeNode => {
-    const hasChildren = Array.isArray(node.children) && node.children.length > 0;
-    const children = hasChildren
-      ? node.children?.map((child) => mergeNode(child))
-      : undefined;
+    const { children } = node;
+    const hasChildren = Array.isArray(children) && children.length > 0;
 
     if (!hasChildren) {
       return { ...node };
@@ -103,7 +101,7 @@ export const mergeLayoutSidebarTreeState = (
     return {
       ...node,
       expanded: Boolean(node.expanded) || expandedSet.has(node.id),
-      children,
+      children: children.map((child) => mergeNode(child)),
     };
   };
 
