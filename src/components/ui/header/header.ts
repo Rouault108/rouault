@@ -8,7 +8,6 @@ export interface UiHeaderSidebarToggleDetail {
 @customElement('ui-header')
 export class UiHeader extends LitElement {
 	static override styles = css`
-		/* ── ホスト: display: contents でアプリシェルのGrid継承 ── */
 		:host {
 			display: contents;
 
@@ -21,22 +20,16 @@ export class UiHeader extends LitElement {
 
 		/* ── ヘッダー本体 ── */
 		header {
-			/* スティッキー配置 */
 			position: sticky;
 			top: 0;
 			z-index: var(--z-fixed, 100);
-
-			/* 全幅配置（親Gridにおいて全カラムをカバー） */
 			grid-column: 1 / -1;
-
-			/* 高さ */
 			block-size: var(--header-height, 48px);
 
 			/* 背景: Baseline（backdrop-filter非対応環境用フォールバック） */
 			background: var(--glass-panel, var(--bg-default));
 			border-bottom: var(--border-width, 1px) solid var(--border-default);
 
-			/* タイポグラフィ */
 			font-size: var(--text-base, 0.875rem);
 			color: var(--fg-default);
 		}
@@ -74,7 +67,6 @@ export class UiHeader extends LitElement {
 			}
 		}
 
-		/* ── 内部レイアウト: Flex + 絶対配置 Center ── */
 		.inner {
 			/*
 			 * position: relative は .zone-center の絶対配置基点として必須。
@@ -91,12 +83,10 @@ export class UiHeader extends LitElement {
 			padding-inline: var(--space-4, 1rem);
 		}
 
-		/* ── Start Zone幅の切り替え ── */
 		:host([sidebar-expanded]) .zone-start {
 			inline-size: var(--sidebar-width, 240px);
 		}
 
-		/* ── ゾーンコンテナ ── */
 		.zone-start {
 			display: flex;
 			align-items: center;
@@ -106,11 +96,6 @@ export class UiHeader extends LitElement {
 		}
 
 		.zone-center {
-			/*
-			 * 絶対配置でヘッダー全幅をカバーし、content を水平中央に配置。
-			 * pointer-events: none で start/end ゾーンへのクリックをブロックしない。
-			 * slotted コンテンツは ::slotted(*) で pointer-events: auto を付与。
-			 */
 			position: absolute;
 			inset-inline: 0;
 			block-size: 100%;
@@ -168,7 +153,6 @@ export class UiHeader extends LitElement {
 			}
 		}
 
-		/* ── Print ── */
 		@media print {
 			header {
 				display: none !important;
