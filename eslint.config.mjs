@@ -84,6 +84,23 @@ export default defineConfig(
   },
 
   {
+    files: [
+      'eleventy.config.ts',
+      'scripts/**/*.ts',
+      'lib/**/*.ts',
+      'src/data/**/*.ts',
+      'test/ssr/**/*.ts',
+      'web-test-runner.config.ts',
+      'cem.config.ts',
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: './tsconfig.node.json',
+      },
+    },
+  },
+
+  {
     files: ['**/*.js', '**/*.mjs', '**/*.cjs'],
     extends: [tseslint.configs.disableTypeChecked],
     languageOptions: {
