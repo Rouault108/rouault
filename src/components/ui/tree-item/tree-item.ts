@@ -1,4 +1,5 @@
 import { css, html, LitElement } from 'lit';
+import type { PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import '../tooltip/tooltip';
@@ -223,16 +224,15 @@ export class TreeItem extends LitElement {
 
       /* 展開アニメーション */
       overflow: hidden;
-      max-height: 0;
+      height: 0;
       opacity: 0;
       transition:
-        max-height var(--duration-slow, 200ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        height var(--duration-slow, 200ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
         opacity var(--duration-slow, 200ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
         border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     :host([expanded]) .children {
-      max-height: 10000px; /* 実用的に十分な高さ */
       opacity: 1;
     }
 
@@ -298,7 +298,7 @@ export class TreeItem extends LitElement {
       }
 
       :host([print-mode]) .children {
-        max-height: none !important;
+        height: auto !important;
         opacity: 1 !important;
         overflow: visible !important;
       }
@@ -371,6 +371,9 @@ export class TreeItem extends LitElement {
   private readonly _slotChangeHandler = () => {
     const slot = this.shadowRoot?.querySelector('slot[name="children"]') as HTMLSlotElement | null;
     this.hasChildren = (slot?.assignedElements().length ?? 0) > 0;
+    void this.updateComplete.then(() => {
+      this._syncChildrenHeightImmediately();
+    });
   };
 
   private readonly _hostFocusHandler = (e: FocusEvent) => {
@@ -386,6 +389,8 @@ export class TreeItem extends LitElement {
    * @internal
    */
   private _labelResizeObserver?: ResizeObserver;
+  private _childrenTransitionCleanup: (() => void) | undefined;
+  private _childrenAnimationFrame = 0;
 
   private _computeAriaLevel(): number {
     let level = 1;
@@ -429,15 +434,19 @@ export class TreeItem extends LitElement {
       });
       this._labelResizeObserver.observe(label);
     }
+
+    this._syncChildrenHeightImmediately();
   }
 
   override disconnectedCallback(): void {
     this.removeEventListener('focus', this._hostFocusHandler);
     this._labelResizeObserver?.disconnect();
+    this._childrenTransitionCleanup?.();
+    cancelAnimationFrame(this._childrenAnimationFrame);
     super.disconnectedCallback();
   }
 
-  override updated(): void {
+  override updated(changedProperties: PropertyValues<this>): void {
     // aria-expanded: 子要素がある場合のみ付与
     if (this.hasChildren) {
       this.setAttribute('aria-expanded', String(this.expanded));
@@ -453,6 +462,10 @@ export class TreeItem extends LitElement {
     requestAnimationFrame(() => {
       this._syncLabelTruncation();
     });
+
+    if (changedProperties.has('expanded')) {
+      this._syncChildrenHeight();
+    }
   }
 
   /**
@@ -555,6 +568,73 @@ export class TreeItem extends LitElement {
         composed: true,
       }),
     );
+  }
+
+  private _getChildrenContainer(): HTMLElement | null {
+    return this.shadowRoot?.querySelector<HTMLElement>('.children') ?? null;
+  }
+
+  private _syncChildrenHeightImmediately(): void {
+    const container = this._getChildrenContainer();
+    if (!container) return;
+
+    container.style.height = this.expanded ? 'auto' : '0px';
+  }
+
+  private _syncChildrenHeight(): void {
+    const container = this._getChildrenContainer();
+    if (!container) return;
+
+    this._childrenTransitionCleanup?.();
+    cancelAnimationFrame(this._childrenAnimationFrame);
+
+    if (this.printMode || this._prefersReducedMotion()) {
+      container.style.height = this.expanded ? 'auto' : '0px';
+      return;
+    }
+
+    if (this.expanded) {
+      this._animateChildrenExpand(container);
+      return;
+    }
+
+    this._animateChildrenCollapse(container);
+  }
+
+  private _animateChildrenExpand(container: HTMLElement): void {
+    container.style.height = '0px';
+
+    const targetHeight = container.scrollHeight;
+    this._childrenAnimationFrame = requestAnimationFrame(() => {
+      container.style.height = `${targetHeight.toString()}px`;
+    });
+
+    const handleTransitionEnd = (event: TransitionEvent): void => {
+      if (event.target !== container || event.propertyName !== 'height') return;
+      container.style.height = 'auto';
+      container.removeEventListener('transitionend', handleTransitionEnd);
+      this._childrenTransitionCleanup = undefined;
+    };
+
+    container.addEventListener('transitionend', handleTransitionEnd);
+    this._childrenTransitionCleanup = () => {
+      container.removeEventListener('transitionend', handleTransitionEnd);
+      this._childrenTransitionCleanup = undefined;
+    };
+  }
+
+  private _animateChildrenCollapse(container: HTMLElement): void {
+    const currentHeight = container.scrollHeight;
+    container.style.height = `${currentHeight.toString()}px`;
+    void container.offsetHeight;
+
+    this._childrenAnimationFrame = requestAnimationFrame(() => {
+      container.style.height = '0px';
+    });
+  }
+
+  private _prefersReducedMotion(): boolean {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
 
   /**
