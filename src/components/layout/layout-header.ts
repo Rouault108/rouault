@@ -1,6 +1,7 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import '../ui/header/header';
+import '../ui/search-trigger/search-trigger';
 
 @customElement('layout-header')
 export class LayoutHeader extends LitElement {
@@ -71,6 +72,7 @@ export class LayoutHeader extends LitElement {
       <ui-header .sidebarExpanded=${this._sidebarExpanded}>
         <a slot="start" class="brand" href="/">Rouault</a>
         <span slot="center" class="context">Personal Notes</span>
+        <ui-search-trigger slot="end"></ui-search-trigger>
       </ui-header>
     `;
   }

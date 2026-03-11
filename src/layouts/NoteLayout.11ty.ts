@@ -41,6 +41,13 @@ function escapeAttr(value: string): string {
     .replace(/>/g, '&gt;');
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 /**
  * script[type="application/json"] 向けにJSON文字列を安全化する。
  */
@@ -95,12 +102,23 @@ export class NoteLayout {
     const license = note?.license
       ? ` license="${escapeAttr(note.license)}"`
       : '';
+    const genres = Array.isArray(note?.genre)
+      ? note.genre.map((item) => item.trim()).filter((item) => item.length > 0)
+      : [];
     const headings = normalizeHeadings(note?.tocHeadings);
     const sidebarTree = buildSidebarTree(data.notes ?? [], slug);
 
     const dataIdBase = toSafeDataId(slug.length > 0 ? slug : 'note');
     const sidebarSourceId = `sidebar-source-${dataIdBase}`;
     const tocSourceId = `toc-source-${dataIdBase}`;
+    const tagsJson = escapeAttr(JSON.stringify(genres));
+    const pagefindTitle = note?.title ? escapeHtml(note.title) : '';
+    const pagefindDescription = note?.description ? escapeHtml(note.description) : '';
+    const pagefindDateValue = note?.updated ?? note?.date ?? '';
+    const pagefindDate = pagefindDateValue ? escapeHtml(pagefindDateValue) : '';
+    const pagefindGenreFilters = genres
+      .map((genre) => `<span data-pagefind-filter="genre:${escapeAttr(genre)}"></span>`)
+      .join('');
 
     return `
       <section class="note-shell">
@@ -113,9 +131,16 @@ export class NoteLayout {
           ></layout-sidebar>
         </aside>
 
-        <article class="layout-main-col container-reading">
+        <article class="layout-main-col container-reading" data-pagefind-body>
+          <div class="sr-only" aria-hidden="true" data-pagefind-ignore>
+            <span data-pagefind-meta="title">${pagefindTitle}</span>
+            <span data-pagefind-meta="description">${pagefindDescription}</span>
+            <span data-pagefind-meta="date">${pagefindDate}</span>
+            ${pagefindGenreFilters}
+          </div>
           <ui-article-header
             heading="${heading}"${published}${updated}${status}${license}
+            tags-json="${tagsJson}"
           ></ui-article-header>
           <div class="prose">
             ${data.content}

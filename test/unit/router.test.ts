@@ -1248,41 +1248,7 @@ describe('Router', () => {
 			expect(window.scrollY).to.equal(0);
 		});
 
-		it('8.3 PagefindUI が再初期化されること', async () => {
-			let pagefindInitialized = false;
-
-			// アロー関数はnewできないため通常のコンストラクタ関数を使用
-			function createMockPagefindUI(_options: { element: Element | null }) {
-				pagefindInitialized = true;
-			}
-
-			const originalPagefindUI = window.PagefindUI;
-			window.PagefindUI = createMockPagefindUI as unknown as NonNullable<typeof window.PagefindUI>;
-
-			globalThis.fetch = () => {
-				return Promise.resolve(new Response(
-					'<html><body><main><div id="search"></div></main></body></html>',
-					{ status: 200 },
-				));
-			};
-
-			router = new Router(outlet);
-
-			const link = await fixture<HTMLAnchorElement>(html` <a href="/search">Link</a> `);
-			simulateClick(link);
-
-			await waitUntil(() => pagefindInitialized, 'PagefindUI初期化');
-
-			expect(pagefindInitialized).to.be.true;
-
-			if (originalPagefindUI) {
-				window.PagefindUI = originalPagefindUI;
-			} else {
-				delete window.PagefindUI;
-			}
-		});
-
-		it('8.4 カスタム再初期化フックが実行されること', async () => {
+		it('8.3 カスタム再初期化フックが実行されること', async () => {
 			let customHookCalled = false;
 
 			globalThis.fetch = () => {

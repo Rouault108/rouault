@@ -745,12 +745,6 @@ export class Router {
       window.Prism.highlightAll();
     }
 
-    // Pagefind 検索 UI の初期化（検索ページの場合）
-    const searchContainer = this.outlet.querySelector('#search');
-    if (searchContainer && typeof window.PagefindUI !== 'undefined') {
-      new window.PagefindUI({ element: searchContainer });
-    }
-
     // カスタム再初期化フックの実行
     this.runReinitializeHooks();
 

@@ -210,6 +210,9 @@ export class ArticleHeader extends LitElement {
   @property({ attribute: false })
   tags: string[] = [];
 
+  @property({ type: String, attribute: 'tags-json' })
+  tagsJson = '';
+
   @property({ type: Number, attribute: 'reading-time' })
   readingTime: number | null = null;
 
@@ -231,9 +234,28 @@ export class ArticleHeader extends LitElement {
   }
 
   private get _normalizedTags(): string[] {
-    return this.tags
+    const source = this.tags.length > 0 ? this.tags : this._tagsFromJson;
+
+    return source
       .map((tag) => tag.trim())
       .filter((tag) => tag.length > 0);
+  }
+
+  private get _tagsFromJson(): string[] {
+    if (this.tagsJson.trim().length === 0) {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(this.tagsJson) as unknown;
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+
+      return parsed.filter((item): item is string => typeof item === 'string');
+    } catch {
+      return [];
+    }
   }
 
   private get _displayReadingTime(): number | null {

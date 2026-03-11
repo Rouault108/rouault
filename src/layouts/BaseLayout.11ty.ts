@@ -35,6 +35,7 @@ export class BaseLayout {
     </app-router>
     <layout-footer></layout-footer>
   </div>
+  <ui-search-dialog id="global-search-dialog"></ui-search-dialog>
 </body>
 </html>
     `.trim();

@@ -85,12 +85,6 @@ export class AppRouter extends LitElement {
       window.Prism.highlightAll();
     }
 
-    // Pagefind 検索 UI の初期化（検索ページの場合）
-    const searchContainer = this.querySelector('#search');
-    if (searchContainer && typeof window.PagefindUI !== 'undefined') {
-      new window.PagefindUI({ element: searchContainer });
-    }
-
     // addReinitializeHook() で登録されたカスタムフックを実行する
     this._routerController.router?.runReinitializeHooks();
 
@@ -124,6 +118,10 @@ export class AppRouter extends LitElement {
       main.setAttribute('tabindex', '-1');
     }
     main.focus();
+  }
+
+  async navigate(url: string): Promise<void> {
+    await this._routerController.router?.navigate(url);
   }
 
   override render() {
