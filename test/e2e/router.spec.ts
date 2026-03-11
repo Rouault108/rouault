@@ -2,23 +2,30 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 
 const beethovenPath = '/notes/music/classical/beethoven/symphony-9';
 const nutcrackerPath = '/notes/music/classical/tchaikovsky/the-nutcracker';
+const beethovenEntryPath = `${beethovenPath}/`;
 
-const getTreeItem = (page: Page, label: string): Locator =>
-  page.locator('ui-tree-item').filter({ hasText: label }).first();
+const getSidebarTreeItem = (page: Page, label: string): Locator =>
+  page.getByRole('treeitem', { name: label, exact: true }).first();
 
-const getTreeItemRow = (page: Page, label: string): Locator =>
-  getTreeItem(page, label).locator('.item').first();
-
-const getExpandIcon = (page: Page, label: string): Locator =>
-  getTreeItem(page, label).locator('.expand-icon').first();
+const expandSidebarTreeItem = async (page: Page, label: string): Promise<void> => {
+  const item = getSidebarTreeItem(page, label);
+  await expect(item).toHaveAttribute('aria-expanded', 'false');
+  await item.locator('.expand-icon:not(.hidden)').click();
+  await expect(item).toHaveAttribute('aria-expanded', 'true');
+};
 
 const expectMainHeading = async (page: Page, headingText: string): Promise<void> => {
   await expect(page.locator('#main-content h1').first()).toHaveText(headingText);
 };
 
+const activateSidebarTreeItem = async (page: Page, label: string): Promise<void> => {
+  const item = getSidebarTreeItem(page, label);
+  await item.locator('.item').click();
+};
+
 test.describe('Router Navigation', () => {
   test('サイドバー遷移で SPA ナビゲーションが動作すること', async ({ page }) => {
-    await page.goto(beethovenPath);
+    await page.goto(beethovenEntryPath);
     await expectMainHeading(page, '交響曲第9番 ニ短調 作品125');
 
     await page.evaluate(() => {
@@ -27,8 +34,8 @@ test.describe('Router Navigation', () => {
       };
     });
 
-    await getExpandIcon(page, 'Tchaikovsky').click();
-    await getTreeItemRow(page, '楽曲分析: くるみ割り人形').click();
+    await expandSidebarTreeItem(page, 'Tchaikovsky');
+    await activateSidebarTreeItem(page, '楽曲分析: くるみ割り人形');
 
     await expect(page).toHaveURL(nutcrackerPath);
     await expectMainHeading(page, 'くるみ割り人形');
@@ -40,17 +47,17 @@ test.describe('Router Navigation', () => {
   });
 
   test('履歴の戻る / 進むで main content が追従すること', async ({ page }) => {
-    await page.goto(beethovenPath);
+    await page.goto(beethovenEntryPath);
     await expectMainHeading(page, '交響曲第9番 ニ短調 作品125');
 
-    await getExpandIcon(page, 'Tchaikovsky').click();
-    await getTreeItemRow(page, '楽曲分析: くるみ割り人形').click();
+    await expandSidebarTreeItem(page, 'Tchaikovsky');
+    await activateSidebarTreeItem(page, '楽曲分析: くるみ割り人形');
 
     await expect(page).toHaveURL(nutcrackerPath);
     await expectMainHeading(page, 'くるみ割り人形');
 
     await page.goBack();
-    await expect(page).toHaveURL(beethovenPath);
+    await expect(page).toHaveURL(beethovenEntryPath);
     await expectMainHeading(page, '交響曲第9番 ニ短調 作品125');
 
     await page.goForward();
@@ -59,16 +66,16 @@ test.describe('Router Navigation', () => {
   });
 
   test('遷移後に aria-live とフォーカス管理が更新されること', async ({ page }) => {
-    await page.goto(beethovenPath);
+    await page.goto(beethovenEntryPath);
     await expectMainHeading(page, '交響曲第9番 ニ短調 作品125');
 
-    await getExpandIcon(page, 'Tchaikovsky').click();
-    await getTreeItemRow(page, '楽曲分析: くるみ割り人形').click();
+    await expandSidebarTreeItem(page, 'Tchaikovsky');
+    await activateSidebarTreeItem(page, '楽曲分析: くるみ割り人形');
 
     const ariaLive = page.locator('[aria-live="polite"]').filter({
       hasText: 'ページが読み込まれました',
     });
-    await expect(ariaLive.first()).toBeVisible();
+    await expect(ariaLive.first()).toContainText('ページが読み込まれました');
 
     const activeElement = await page.evaluate(() => {
       const element = document.activeElement;

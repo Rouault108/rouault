@@ -606,6 +606,31 @@ describe('Router', () => {
 			expect(document.title).to.equal('Programmatic Page');
 		});
 
+		it('3.2.1 拡張子のない内部URLは fetch 時のみ trailing slash を補うこと', async () => {
+			let fetchedUrl = '';
+			let pushedPath = '';
+
+			history.pushState = ((_data: unknown, _unused: string, url?: string | URL | null) => {
+				if (url) {
+					pushedPath = url.toString();
+				}
+			}) as typeof history.pushState;
+
+			globalThis.fetch = (input: RequestInfo | URL) => {
+				fetchedUrl = input instanceof Request ? input.url : String(input);
+				return Promise.resolve(new Response('<html><body><main>Trailing Slash</main></body></html>', {
+					status: 200,
+				}));
+			};
+
+			router = new Router(outlet);
+
+			await router.navigate('/programmatic');
+
+			expect(pushedPath).to.equal('/programmatic');
+			expect(fetchedUrl).to.include('/programmatic/');
+		});
+
 		it('3.3 history.pushState が呼ばれて履歴に追加されること', async () => {
 			let pushedPath = '';
 			history.pushState = ((_data: unknown, _unused: string, url?: string | URL | null) => {
@@ -1146,7 +1171,7 @@ describe('Router', () => {
 			globalThis.fetch = async (input: RequestInfo | URL) => {
 				const path = new URL(input instanceof Request ? input.url : String(input), window.location.href).pathname;
 				fetchedPaths.push(path);
-				if (path === '/first') {
+				if (path === '/first/') {
 					await firstFetchPromise;
 				}
 				return new Response('<html><body><main>Content</main></body></html>', {
@@ -1164,7 +1189,7 @@ describe('Router', () => {
 			resolveFirstFetch?.();
 			await Promise.all([firstNavigation, droppedNavigation, latestNavigation]);
 
-			expect(fetchedPaths).to.deep.equal(['/first', '/latest']);
+			expect(fetchedPaths).to.deep.equal(['/first/', '/latest/']);
 		});
 
 		it('7.3 ローディングイベントが発火すること', async () => {
