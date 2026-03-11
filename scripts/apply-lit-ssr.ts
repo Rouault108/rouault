@@ -1,4 +1,4 @@
-import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { copyFile, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
@@ -19,6 +19,8 @@ const { build } = require(path.join(process.cwd(), 'node_modules/.pnpm/node_modu
   }) => Promise<void>;
 };
 const DIST_DIR = path.resolve(process.cwd(), 'dist');
+const REDIRECTS_SOURCE = path.resolve(process.cwd(), '_redirects');
+const REDIRECTS_OUTPUT = path.resolve(DIST_DIR, '_redirects');
 
 const listHtmlFiles = async (dirPath: string): Promise<string[]> => {
   const entries = await readdir(dirPath, { withFileTypes: true });
@@ -52,6 +54,19 @@ interface ServerEntryModule {
   }[];
 }
 
+const isServerEntryModule = (value: unknown): value is ServerEntryModule => {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const candidate = value as Partial<ServerEntryModule>;
+  return (
+    Array.isArray(candidate.SSR_TARGET_TAGS) &&
+    typeof candidate.renderCustomElement === 'function' &&
+    typeof candidate.collectDocumentStylesForTags === 'function'
+  );
+};
+
 const buildServerEntry = async (): Promise<{
   module: ServerEntryModule;
   cleanup: () => Promise<void>;
@@ -70,10 +85,13 @@ const buildServerEntry = async (): Promise<{
   });
 
   const moduleUrl = pathToFileURL(outfile).href;
-  const importedModule = await import(moduleUrl);
+  const importedModule: unknown = await import(moduleUrl);
+  if (!isServerEntryModule(importedModule)) {
+    throw new Error('SSR server entry module shape is invalid.');
+  }
 
   return {
-    module: importedModule as ServerEntryModule,
+    module: importedModule,
     cleanup: async () => {
       await rm(tempDir, { recursive: true, force: true });
     },
@@ -100,6 +118,9 @@ const main = async (): Promise<void> => {
         await writeFile(htmlFile, rendered, 'utf8');
       }
     }
+
+    // Cloudflare Pages 用の rewrite 設定を最終成果物へ含める。
+    await copyFile(REDIRECTS_SOURCE, REDIRECTS_OUTPUT);
   } finally {
     await cleanup();
   }
