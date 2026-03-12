@@ -406,9 +406,9 @@ export class ArticleHeader extends LitElement {
           href="${sourceHref}"
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="原文（外部リンク）"
+          aria-label="出典（外部リンク）"
         >
-          原文
+          出典
         </a>
       </li>
     `;
