@@ -10,6 +10,7 @@ import { rehypeOrderedListContracts } from './lib/rehype/ordered-list-contracts.
 import { rehypeRouaultComponents } from './lib/rehype/rouault-components.js';
 import { remarkDisallowRawHtml } from './lib/remark/disallow-raw-html.js';
 import { remarkRouaultDirectives } from './lib/remark/rouault-directives.js';
+import { ARTICLE_STATUSES } from './src/types/article-status.js';
 
 const notes = defineCollection({
   name: 'Note',
@@ -25,12 +26,12 @@ const notes = defineCollection({
       cover: s.string().optional(),
       license: s.string().optional(),
       licenseNote: s.string().optional(),
-      draft: s.boolean().default(false),
+      status: s.enum(ARTICLE_STATUSES).optional(),
       content: s.markdown(),
       excerpt: s.excerpt().optional(),
       toc: s.toc().optional(),
     })
-    .transform((data) => ({ ...data, permalink: `/notes/${data.slug}` })),
+    .transform((data) => ({ ...data, status: data.status ?? '', permalink: `/notes/${data.slug}` })),
 });
 
 export default defineConfig({
