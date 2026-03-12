@@ -85,7 +85,7 @@ export const CompleteState: Story = {
     created: '2025-11-20',
     tags: ['音楽', 'バッハ', '宗教音楽'],
     readingTime: 8,
-    status: 'draft',
+    status: 'wip',
     source: 'https://example.com/original',
     license: 'CC BY 4.0',
   },
@@ -143,8 +143,8 @@ export const CompleteState: Story = {
 
     const status = header.shadowRoot?.querySelector('.status');
     if (!status) throw new Error('.status が見つかりません');
-    if (!status.classList.contains('status-draft')) {
-      throw new Error(`status のトーンクラスに "status-draft" を期待していましたが、実際には "${status.className}" でした`);
+    if (!status.classList.contains('status-wip')) {
+      throw new Error(`status のトーンクラスに "status-wip" を期待していましたが、実際には "${status.className}" でした`);
     }
     const statusText = status.textContent.trim();
     if (!statusText.includes('下書き')) {
