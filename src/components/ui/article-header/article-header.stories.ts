@@ -147,8 +147,8 @@ export const CompleteState: Story = {
       throw new Error(`status のトーンクラスに "status-wip" を期待していましたが、実際には "${status.className}" でした`);
     }
     const statusText = status.textContent.trim();
-    if (!statusText.includes('下書き')) {
-      throw new Error(`status テキストに "下書き" が含まれていることを期待していましたが、実際には "${statusText}" でした`);
+    if (!statusText.includes('作業中')) {
+      throw new Error(`status テキストに "作業中" が含まれていることを期待していましたが、実際には "${statusText}" でした`);
     }
 
     const sourceLink = header.shadowRoot?.querySelector<HTMLAnchorElement>('.source-link');
@@ -408,8 +408,8 @@ export const NormalizationBoundary: Story = {
     if (tagTexts.length !== 2) {
       throw new Error(`正規化されたタグを2つ期待していましたが、実際には ${String(tagTexts.length)}つでした`);
     }
-    if (!tagTexts.includes('#設計') || !tagTexts.includes('#実装')) {
-      throw new Error(`正規化されたタグに #設計 と #実装 が含まれていることを期待していました。実際: "${tagTexts.join(', ')}"`);
+    if (!tagTexts.includes('設計') || !tagTexts.includes('実装')) {
+      throw new Error(`正規化されたタグに 設計 と 実装 が含まれていることを期待していました。実際: "${tagTexts.join(', ')}"`);
     }
 
     const reading = header.shadowRoot?.querySelector('.reading-time');
