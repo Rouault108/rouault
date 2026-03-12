@@ -98,11 +98,6 @@ export class AppRouter extends LitElement {
    * Lit の updated() から呼ばれるため、DOM 更新後に確実に実行される
    */
   private _runPostRenderHooks(): void {
-    // Prism JS のシンタックスハイライト再適用
-    if (typeof window.Prism !== 'undefined') {
-      window.Prism.highlightAll();
-    }
-
     // addReinitializeHook() で登録されたカスタムフックを実行する
     this._routerController.router?.runReinitializeHooks();
 
