@@ -6,7 +6,6 @@ genre:
   - music
   - classical
   - symphony
-draft: false
 ---
 
 ## 交響曲第9番 ニ短調 作品125

@@ -6,7 +6,6 @@ genre:
   - music
   - jazz
   - theory
-draft: false
 ---
 
 # ジャズ理論の基礎

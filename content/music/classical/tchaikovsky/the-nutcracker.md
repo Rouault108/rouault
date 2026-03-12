@@ -6,7 +6,6 @@ genre:
   - music
   - classical
   - ballet
-draft: false
 ---
 
 # くるみ割り人形
