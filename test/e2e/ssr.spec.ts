@@ -71,12 +71,15 @@ test.describe('SSR Rendering', () => {
 
     const header = page.locator('layout-header');
     const sidebar = page.locator('.layout-sidebar-col');
+    const toc = page.locator('.layout-toc-col');
 
     const headerBefore = await header.boundingBox();
     const sidebarBefore = await sidebar.boundingBox();
+    const tocBefore = await toc.boundingBox();
 
     expect(headerBefore).not.toBeNull();
     expect(sidebarBefore).not.toBeNull();
+    expect(tocBefore).not.toBeNull();
 
     await page.evaluate(() => {
       window.scrollTo({ top: 640, behavior: 'instant' });
@@ -84,11 +87,14 @@ test.describe('SSR Rendering', () => {
 
     const headerAfter = await header.boundingBox();
     const sidebarAfter = await sidebar.boundingBox();
+    const tocAfter = await toc.boundingBox();
 
     expect(headerAfter).not.toBeNull();
     expect(sidebarAfter).not.toBeNull();
+    expect(tocAfter).not.toBeNull();
 
     expect(Math.abs((headerAfter?.y ?? 0) - (headerBefore?.y ?? 0))).toBeLessThan(1);
     expect(Math.abs((sidebarAfter?.y ?? 0) - (headerBefore?.height ?? 0))).toBeLessThan(2);
+    expect(Math.abs((tocAfter?.y ?? 0) - (headerBefore?.height ?? 0))).toBeLessThan(2);
   });
 });

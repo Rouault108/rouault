@@ -7,7 +7,11 @@ import {
 } from '../../src/lib/search/pagefind-search.js';
 
 describe('pagefind-search', () => {
-  let searchCalls: { term: string | null; filters?: Record<string, string[]> }[];
+  let searchCalls: {
+    term: string | null;
+    filters?: Record<string, string[]>;
+    sort?: Record<string, 'asc' | 'desc'>;
+  }[];
   let adapter: SearchAdapter;
 
   beforeEach(() => {
@@ -24,10 +28,17 @@ describe('pagefind-search', () => {
         });
       },
       search(term, options = {}) {
-        const searchCall =
-          options.filters === undefined
-            ? { term }
-            : { term, filters: options.filters };
+        const searchCall: {
+          term: string | null;
+          filters?: Record<string, string[]>;
+          sort?: Record<string, 'asc' | 'desc'>;
+        } = { term };
+        if (options.filters !== undefined) {
+          searchCall.filters = options.filters;
+        }
+        if (options.sort !== undefined) {
+          searchCall.sort = options.sort;
+        }
         searchCalls.push(searchCall);
         return Promise.resolve({
           results: [
@@ -75,11 +86,11 @@ describe('pagefind-search', () => {
   });
 
   it('Pagefind 検索結果をアプリ用モデルに正規化すること', async () => {
-    const result = await adapter.search('ジャズ', ['music']);
+    const result = await adapter.search('ジャズ理論', ['music'], 'relevance');
 
     expect(searchCalls).to.deep.equal([
       {
-        term: 'ジャズ',
+        term: 'ジャズ 理論',
         filters: {
           genre: ['music'],
         },
@@ -108,7 +119,7 @@ describe('pagefind-search', () => {
   });
 
   it('クエリもタグもない時は検索を走らせないこと', async () => {
-    const result = await adapter.search('', []);
+    const result = await adapter.search('', [], 'relevance');
 
     expect(searchCalls).to.deep.equal([]);
     expect(result.total).to.equal(0);
@@ -121,7 +132,7 @@ describe('pagefind-search', () => {
   });
 
   it('タグのみ検索では filter-only 検索を使うこと', async () => {
-    await adapter.search('', ['music', 'jazz']);
+    await adapter.search('', ['music', 'jazz'], 'relevance');
 
     expect(searchCalls).to.deep.equal([
       {
@@ -129,6 +140,72 @@ describe('pagefind-search', () => {
         filters: {
           genre: ['music', 'jazz'],
         },
+      },
+    ]);
+  });
+
+  it('新しい順では date sort を Pagefind に渡すこと', async () => {
+    await adapter.search('ジャズ', [], 'date-desc');
+
+    expect(searchCalls).to.deep.equal([
+      {
+        term: 'ジャズ',
+        sort: {
+          date: 'desc',
+        },
+      },
+    ]);
+  });
+
+  it('日付が空でも date sort 検索結果を返すこと', async () => {
+    const api: PagefindApi = {
+      filters() {
+        return Promise.resolve({
+          genre: {
+            music: 1,
+          },
+        });
+      },
+      search() {
+        return Promise.resolve({
+          results: [
+            {
+              data() {
+                return Promise.resolve({
+                  url: '/notes/no-date/',
+                  meta: {
+                    title: '日付なしノート',
+                  },
+                });
+              },
+            },
+          ],
+          unfilteredResultCount: 1,
+          filters: {
+            genre: {
+              music: 1,
+            },
+          },
+          totalFilters: {
+            genre: {
+              music: 1,
+            },
+          },
+        });
+      },
+    };
+    const noDateAdapter = createPagefindSearchAdapter(() => Promise.resolve(api));
+
+    const result = await noDateAdapter.search('ノート', [], 'date-desc');
+
+    expect(result.items).to.deep.equal([
+      {
+        title: '日付なしノート',
+        url: '/notes/no-date/',
+        path: '/notes/no-date/',
+        excerptHtml: '',
+        description: '',
+        date: '',
       },
     ]);
   });
