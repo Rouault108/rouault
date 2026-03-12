@@ -54,6 +54,71 @@ describe('rehypeDisallowDangerousProps', () => {
     expect(run).not.to.throw();
   });
 
+  it('Shiki が生成した style 属性は許可すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'pre',
+          properties: {
+            className: ['shiki', 'shiki-themes', 'github-light', 'github-dark'],
+            style: 'background-color:#fff;color:#111',
+          },
+          children: [
+            {
+              type: 'element',
+              tagName: 'code',
+              properties: {},
+              children: [
+                {
+                  type: 'element',
+                  tagName: 'span',
+                  properties: { style: 'color:#D73A49;--shiki-dark:#F97583' },
+                  children: [],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const run = () => {
+      rehypeDisallowDangerousProps()(tree, { path: 'content/notes/sample.md' });
+    };
+    expect(run).not.to.throw();
+  });
+
+  it('class 属性で表現された Shiki subtree も許可すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'pre',
+          properties: {
+            class: 'shiki shiki-themes github-light github-dark',
+            style: 'background-color:#fff;color:#111',
+          },
+          children: [
+            {
+              type: 'element',
+              tagName: 'code',
+              properties: {},
+              children: [],
+            },
+          ],
+        },
+      ],
+    };
+
+    const run = () => {
+      rehypeDisallowDangerousProps()(tree, { path: 'content/notes/sample.md' });
+    };
+    expect(run).not.to.throw();
+  });
+
   it('on* 属性を禁止すること', () => {
     const tree: HastNode = {
       type: 'root',

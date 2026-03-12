@@ -24,12 +24,26 @@ const getClassList = (value: unknown): string[] => {
   return [];
 };
 
+const getNodeClassList = (node: HastNode): string[] =>
+  getClassList(node.properties?.['className'] ?? node.properties?.['class']);
+
 const isWithinKatex = (node: HastNode, parentWithinKatex: boolean): boolean => {
   if (parentWithinKatex) {
     return true;
   }
-  const classList = getClassList(node.properties?.['className']);
+  const classList = getNodeClassList(node);
   return classList.some((className) => className === 'katex' || className.startsWith('katex-'));
+};
+
+const isWithinShiki = (node: HastNode, parentWithinShiki: boolean): boolean => {
+  if (parentWithinShiki) {
+    return true;
+  }
+  const classList = getNodeClassList(node);
+  return classList.some(
+    (className) =>
+      className === 'shiki' || className === 'shiki-themes' || className.startsWith('shiki-'),
+  );
 };
 
 const removeControlCharacters = (value: string): string => {
@@ -101,13 +115,18 @@ const getStylePropertyNames = (styleValue: string): string[] => {
  */
 export function rehypeDisallowDangerousProps() {
   return (tree: unknown, file?: VFileLike) => {
-    const visit = (node: unknown, parentWithinKatex = false): void => {
+    const visit = (
+      node: unknown,
+      parentWithinKatex = false,
+      parentWithinShiki = false,
+    ): void => {
       if (!node || typeof node !== 'object') {
         return;
       }
 
       const current = node as HastNode;
       const currentWithinKatex = isWithinKatex(current, parentWithinKatex);
+      const currentWithinShiki = isWithinShiki(current, parentWithinShiki);
 
       if (current.type === 'element' && current.properties) {
         for (const [rawName, rawValue] of Object.entries(current.properties)) {
@@ -141,7 +160,7 @@ export function rehypeDisallowDangerousProps() {
             throw toError(file, '空の style 属性は使用できません');
           }
 
-          if (currentWithinKatex) {
+          if (currentWithinKatex || currentWithinShiki) {
             continue;
           }
 
@@ -158,7 +177,7 @@ export function rehypeDisallowDangerousProps() {
       }
 
       for (const child of current.children) {
-        visit(child, currentWithinKatex);
+        visit(child, currentWithinKatex, currentWithinShiki);
       }
     };
 
