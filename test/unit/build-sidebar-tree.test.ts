@@ -70,7 +70,7 @@ describe('buildSidebarTree', () => {
     expect(parentNode?.expanded).to.equal(true);
   });
 
-  it('rootSlug 指定時は起点配下だけを返すこと', () => {
+  it('rootSlug 指定時は起点ディレクトリ自身を含むこと', () => {
     const tree = buildSidebarTree(
       [
         {
@@ -95,6 +95,8 @@ describe('buildSidebarTree', () => {
 
     expect(findNode(tree as SidebarTreeNode[], 'music')).to.equal(null);
     expect(findNode(tree as SidebarTreeNode[], 'music/classical/tchaikovsky')).to.equal(null);
+    expect(tree).to.have.length(1);
+    expect(tree[0]?.id).to.equal('music/classical/beethoven');
     expect(findNode(tree as SidebarTreeNode[], 'music/classical/beethoven/fidelio')).to.not.equal(null);
     expect(findNode(tree as SidebarTreeNode[], 'music/classical/beethoven/symphony-9')).to.not.equal(null);
   });
@@ -119,8 +121,10 @@ describe('buildSidebarTree', () => {
     );
 
     const selectedNode = findNode(tree as SidebarTreeNode[], selectedSlug);
+    const rootNode = findNode(tree as SidebarTreeNode[], 'music/classical/beethoven');
     const parentNode = findNode(tree as SidebarTreeNode[], 'music/classical/beethoven/symphonies');
 
+    expect(rootNode?.expanded).to.equal(true);
     expect(selectedNode?.selected).to.equal(true);
     expect(parentNode?.expanded).to.equal(true);
   });

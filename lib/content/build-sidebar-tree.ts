@@ -152,7 +152,8 @@ export const buildSidebarTree = (
   sortNodes(roots);
 
   if (rootSlug.length > 0) {
-    return findNodeById(roots, rootSlug)?.children ?? [];
+    const rootNode = findNodeById(roots, rootSlug);
+    return rootNode ? [rootNode] : [];
   }
 
   return roots;
