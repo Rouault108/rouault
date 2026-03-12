@@ -76,14 +76,6 @@ export class LayoutSidebar extends LitElement {
       overflow: visible;
     }
 
-    .sidebar-shell {
-      block-size: 100%;
-      min-block-size: 0;
-      position: sticky;
-      top: var(--header-height);
-      max-block-size: calc(100vh - var(--header-height));
-    }
-
     ui-sidebar {
       block-size: 100%;
       min-block-size: 0;
@@ -305,18 +297,16 @@ export class LayoutSidebar extends LitElement {
     const isExpanded = this._state === 'expanded';
 
     return html`
-      <div class="sidebar-shell">
-        <ui-sidebar
-          id="layout-sidebar-panel"
-          .items=${this._items}
-          .activeId=${this.activeId}
-          .heading=${this.heading}
-          .fixedBreakpoint=${this.fixedBreakpoint}
-          @ui-sidebar-state-change=${this._onSidebarStateChange}
-          @ui-sidebar-expand=${this._onSidebarExpand}
-          @ui-sidebar-select=${this._onSidebarSelect}
-        ></ui-sidebar>
-      </div>
+      <ui-sidebar
+        id="layout-sidebar-panel"
+        .items=${this._items}
+        .activeId=${this.activeId}
+        .heading=${this.heading}
+        .fixedBreakpoint=${this.fixedBreakpoint}
+        @ui-sidebar-state-change=${this._onSidebarStateChange}
+        @ui-sidebar-expand=${this._onSidebarExpand}
+        @ui-sidebar-select=${this._onSidebarSelect}
+      ></ui-sidebar>
 
       <button
         class="floating-toggle"

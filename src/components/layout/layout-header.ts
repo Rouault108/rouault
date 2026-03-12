@@ -13,6 +13,9 @@ export class LayoutHeader extends LitElement {
   static override styles = css`
     :host {
       display: block;
+      position: sticky;
+      top: 0;
+      z-index: var(--z-fixed, 100);
     }
 
     .brand {
