@@ -40,7 +40,7 @@ export class ArticleHeader extends LitElement {
       }
 
       .heading {
-        margin: 0;
+        margin: 0 0 var(--space-6, 24px);
         max-width: var(--width-reading, 72ch);
         font-size: clamp(var(--text-2xl, 24px), 4vw + 1rem, var(--text-4xl, 36px));
         font-weight: 700;
@@ -58,7 +58,7 @@ export class ArticleHeader extends LitElement {
         flex-wrap: wrap;
         align-items: center;
         list-style: none;
-        margin: var(--space-3, 12px) 0 0;
+        // margin: var(--space-6, 24px) 0 0;
         padding: 0;
         gap: 0;
         font-size: var(--text-sm, 13px);
@@ -66,14 +66,9 @@ export class ArticleHeader extends LitElement {
         color: var(--fg-muted, oklch(48% 0 0));
       }
 
-      /* status-badge 直後は詰める（badge が heading との距離を先に確保するため） */
-      .status-badge + .heading + .metadata-list {
-        margin-top: var(--space-2, 8px);
-      }
-
       /* セカンダリメタデータ（出典・ライセンス）: 補助情報として控えめに */
       .metadata-list--secondary {
-        margin-top: var(--space-2, 8px);
+        margin-top: var(--space-3, 12px);
         font-size: var(--text-xs, 12px);
         color: var(--fg-subtle, oklch(60% 0 0));
       }
@@ -101,6 +96,10 @@ export class ArticleHeader extends LitElement {
         color: currentColor;
         flex-shrink: 0;
         transform: translateY(1px);
+      }
+
+      .metadata-list--primary .meta-icon {
+        color: var(--fg-sabtle, oklch(60% 0 0))
       }
 
       /* セカンダリリスト内のアイコンはフォントサイズに合わせて縮小 */
@@ -132,8 +131,7 @@ export class ArticleHeader extends LitElement {
       }
 
       .tags-row {
-        /* metadata-list または status-badge の後に続く場合の余白 */
-        margin-top: var(--space-2, 8px);
+        margin-top: var(--space-3, 12px);
       }
 
       /* heading または status-badge の直後（primary metadata なし）は余白を増やす */
