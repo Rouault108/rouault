@@ -158,9 +158,14 @@ const moveCodeMetaToHost = (preNode: HastNode, hostProperties: Record<string, un
     hostProperties['intent'] = intent;
   }
 
+  if (toBooleanAttribute(codeProperties['show-line-numbers'])) {
+    hostProperties['show-line-numbers'] = true;
+  }
+
   delete codeProperties['filename'];
   delete codeProperties['label'];
   delete codeProperties['intent'];
+  delete codeProperties['show-line-numbers'];
 };
 
 const toUiCodeBlock = (node: HastNode): void => {
