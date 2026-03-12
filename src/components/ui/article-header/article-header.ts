@@ -153,7 +153,7 @@ export class ArticleHeader extends LitElement {
         display: inline-flex;
         align-items: center;
         gap: var(--space-1, 4px);
-        margin: 0 0 var(--space-2, 8px) var(--space-1, 4px);
+        margin: 0 0 var(--space-1, 4px) var(--space-1, 4px);
         font-size: var(--text-xs, 12px);
         font-weight: 500;
       }
