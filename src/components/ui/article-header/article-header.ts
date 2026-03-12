@@ -58,7 +58,6 @@ export class ArticleHeader extends LitElement {
         flex-wrap: wrap;
         align-items: center;
         list-style: none;
-        /* heading 直下（status-badge なし）の場合の余白 */
         margin: var(--space-3, 12px) 0 0;
         padding: 0;
         gap: 0;
@@ -67,8 +66,8 @@ export class ArticleHeader extends LitElement {
         color: var(--fg-muted, oklch(48% 0 0));
       }
 
-      /* status-badge 直後は詰める（badge が既に heading との距離を稼いでいるため） */
-      .status-badge + .metadata-list {
+      /* status-badge 直後は詰める（badge が heading との距離を先に確保するため） */
+      .status-badge + .heading + .metadata-list {
         margin-top: var(--space-2, 8px);
       }
 
@@ -139,7 +138,7 @@ export class ArticleHeader extends LitElement {
 
       /* heading または status-badge の直後（primary metadata なし）は余白を増やす */
       .heading + .tags-row,
-      .status-badge + .tags-row {
+      .status-badge + .heading + .tags-row {
         margin-top: var(--space-3, 12px);
       }
 
@@ -151,12 +150,12 @@ export class ArticleHeader extends LitElement {
         min-width: 0;
       }
 
-      /* ステータスバッジ: 見出し直下の信頼性シグナル。メタデータリストとは独立して配置。 */
+      /* ステータスバッジ: 見出し上部の信頼性シグナル。メタデータリストとは独立して配置。 */
       .status-badge {
         display: inline-flex;
         align-items: center;
         gap: var(--space-1, 4px);
-        margin-top: var(--space-3, 12px);
+        margin: 0 0 var(--space-2, 8px) var(--space-1, 4px);
         font-size: var(--text-xs, 12px);
         font-weight: 500;
       }
@@ -445,9 +444,8 @@ export class ArticleHeader extends LitElement {
   override render() {
     return html`
       <header class="article-header">
-        <h1 class="heading">${this.heading}</h1>
-
         ${this._renderStatusBadge()}
+        <h1 class="heading">${this.heading}</h1>
         ${this._hasPrimaryMetadata
           ? html`
               <ul class="metadata-list metadata-list--primary" aria-label="記事メタデータ">
