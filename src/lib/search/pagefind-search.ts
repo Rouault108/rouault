@@ -1,4 +1,9 @@
-import { normalizeSearchQuery, normalizeSearchTags } from './search-url.js';
+import { prepareSearchQuery } from './query-preprocessor.js';
+import {
+  normalizeSearchSort,
+  normalizeSearchTags,
+  type SearchSortMode,
+} from './search-url.js';
 
 export interface PagefindFragmentData {
   url: string;
@@ -23,6 +28,7 @@ export interface PagefindApi {
     term: string | null,
     options?: {
       filters?: Record<string, string[]>;
+      sort?: Record<string, 'asc' | 'desc'>;
     },
   ): Promise<PagefindSearchResponse>;
 }
@@ -44,13 +50,18 @@ export interface SearchResponse {
 }
 
 export interface SearchAdapter {
-  search(query: string, selectedGenres: readonly string[]): Promise<SearchResponse>;
+  search(
+    query: string,
+    selectedGenres: readonly string[],
+    sortMode: SearchSortMode,
+  ): Promise<SearchResponse>;
   getAvailableGenres(): Promise<Record<string, number>>;
 }
 
 type PagefindLoader = () => Promise<PagefindApi>;
 interface PagefindSearchOptions {
   filters?: Record<string, string[]>;
+  sort?: Record<string, 'asc' | 'desc'>;
 }
 
 interface PagefindModule {
@@ -129,12 +140,17 @@ export function createPagefindSearchAdapter(loadPagefind: PagefindLoader = loadD
   return {
     getAvailableGenres,
 
-    async search(query: string, selectedGenres: readonly string[]): Promise<SearchResponse> {
-      const normalizedQuery = normalizeSearchQuery(query);
+    async search(
+      query: string,
+      selectedGenres: readonly string[],
+      sortMode: SearchSortMode,
+    ): Promise<SearchResponse> {
+      const preparedQuery = prepareSearchQuery(query);
       const normalizedGenres = normalizeSearchTags(selectedGenres);
+      const normalizedSortMode = normalizeSearchSort(sortMode);
       const allGenreCounts = await getAvailableGenres();
 
-      if (normalizedQuery.length === 0 && normalizedGenres.length === 0) {
+      if (preparedQuery.rawQuery.length === 0 && normalizedGenres.length === 0) {
         return {
           items: [],
           total: 0,
@@ -144,15 +160,20 @@ export function createPagefindSearchAdapter(loadPagefind: PagefindLoader = loadD
       }
 
       const pagefind = await getPagefind();
-      const term = normalizedQuery.length > 0 ? normalizedQuery : null;
+      const term = preparedQuery.segmentedQuery.length > 0 ? preparedQuery.segmentedQuery : null;
       const filters =
         normalizedGenres.length > 0
           ? {
               genre: normalizedGenres,
             }
           : undefined;
-      const searchOptions: PagefindSearchOptions =
-        filters === undefined ? {} : { filters };
+      const searchOptions: PagefindSearchOptions = {};
+      if (filters !== undefined) {
+        searchOptions.filters = filters;
+      }
+      if (normalizedSortMode === 'date-desc') {
+        searchOptions.sort = { date: 'desc' };
+      }
       const response = await pagefind.search(term, searchOptions);
 
       const items = await Promise.all(

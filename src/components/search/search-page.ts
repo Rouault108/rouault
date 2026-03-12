@@ -7,9 +7,11 @@ import '../../components/ui/spinner/spinner.js';
 import { pagefindSearchAdapter, type SearchResultItem } from '../../lib/search/pagefind-search.js';
 import { navigateToUrl } from '../../lib/search/navigation.js';
 import {
+  DEFAULT_SEARCH_SORT_MODE,
   buildSearchHref,
   normalizeSearchTags,
   parseSearchStateFromUrl,
+  type SearchSortMode,
 } from '../../lib/search/search-url.js';
 
 const SEARCH_DEBOUNCE_MS = 150;
@@ -107,6 +109,41 @@ export class SearchPage extends LitElement {
       align-items: center;
       color: var(--fg-muted);
       font-size: var(--text-sm, 13px);
+    }
+
+    .toolbar-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4, 16px);
+    }
+
+    .sort-field {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2, 8px);
+      color: var(--fg-muted);
+      font-size: var(--text-sm, 13px);
+    }
+
+    .sort-label {
+      color: var(--fg-default);
+    }
+
+    .sort-select {
+      min-height: 2.25rem;
+      border: var(--border-width, 1px) solid var(--border-default);
+      border-radius: var(--radius-md, 8px);
+      background: var(--bg-surface-2);
+      color: var(--fg-default);
+      font: inherit;
+      padding: 0 var(--space-3, 12px);
+    }
+
+    .sort-select:focus-visible {
+      outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color);
+      outline-offset: var(--focus-ring-offset, 2px);
     }
 
     .filters {
@@ -232,6 +269,9 @@ export class SearchPage extends LitElement {
   private _selectedTags: string[] = [];
 
   @state()
+  private _sortMode: SearchSortMode = DEFAULT_SEARCH_SORT_MODE;
+
+  @state()
   private _results: SearchResultItem[] = [];
 
   @state()
@@ -297,6 +337,7 @@ export class SearchPage extends LitElement {
 
     this._query = state.query;
     this._selectedTags = state.tags.length > 0 ? state.tags : initialTag.length > 0 ? [initialTag] : [];
+    this._sortMode = state.sort;
   }
 
   private _scheduleRefresh(): void {
@@ -315,7 +356,11 @@ export class SearchPage extends LitElement {
     this._errorMessage = '';
 
     try {
-      const result = await pagefindSearchAdapter.search(this._query, this._selectedTags);
+      const result = await pagefindSearchAdapter.search(
+        this._query,
+        this._selectedTags,
+        this._sortMode,
+      );
       if (currentToken !== this._requestToken) {
         return;
       }
@@ -344,6 +389,7 @@ export class SearchPage extends LitElement {
     const nextUrl = buildSearchHref({
       query: this._query,
       tags: this._selectedTags,
+      sort: this._sortMode,
     });
 
     if (nextUrl === `${window.location.pathname}${window.location.search}`) {
@@ -357,6 +403,7 @@ export class SearchPage extends LitElement {
     const nextUrl = buildSearchHref({
       query: this._query,
       tags: this._selectedTags,
+      sort: this._sortMode,
     });
 
     if (nextUrl === `${window.location.pathname}${window.location.search}`) {
@@ -388,6 +435,23 @@ export class SearchPage extends LitElement {
     this._pushUrl();
     void this._refreshResults();
   }
+
+  private _onSortChange = (event: Event): void => {
+    const select = event.currentTarget;
+    if (!(select instanceof HTMLSelectElement)) {
+      return;
+    }
+
+    const nextSortMode: SearchSortMode =
+      select.value === 'date-desc' ? 'date-desc' : DEFAULT_SEARCH_SORT_MODE;
+    if (nextSortMode === this._sortMode) {
+      return;
+    }
+
+    this._sortMode = nextSortMode;
+    this._pushUrl();
+    void this._refreshResults();
+  };
 
   private _onResultClick = (event: MouseEvent, url: string): void => {
     if (
@@ -521,11 +585,21 @@ export class SearchPage extends LitElement {
             />
           </label>
 
-          <div class="meta-row">
-            <span>${activeCount.toString()} 件の結果</span>
-            ${this._selectedTags.length > 0
-              ? html`<span>選択中: ${this._selectedTags.join(' / ')}</span>`
-              : nothing}
+          <div class="toolbar-row">
+            <div class="meta-row">
+              <span>${activeCount.toString()} 件の結果</span>
+              ${this._selectedTags.length > 0
+                ? html`<span>選択中: ${this._selectedTags.join(' / ')}</span>`
+                : nothing}
+            </div>
+
+            <label class="sort-field">
+              <span class="sort-label">並び順</span>
+              <select class="sort-select" .value=${this._sortMode} @change=${this._onSortChange}>
+                <option value="relevance">関連度順</option>
+                <option value="date-desc">新しい順</option>
+              </select>
+            </label>
           </div>
 
           ${filters.length > 0

@@ -85,6 +85,11 @@ function toSafeDataId(slug: string): string {
   return slug.replace(/[^a-zA-Z0-9_-]/g, '-');
 }
 
+function normalizePagefindSortDate(value: string | undefined): string {
+  const normalized = typeof value === 'string' ? value.trim() : '';
+  return normalized.length > 0 ? normalized : '0000-00-00';
+}
+
 export class NoteLayout {
   data() {
     return {
@@ -121,6 +126,7 @@ export class NoteLayout {
     const pagefindDescription = note?.description ? escapeHtml(note.description) : '';
     const pagefindDateValue = note?.updated ?? note?.date ?? '';
     const pagefindDate = pagefindDateValue ? escapeHtml(pagefindDateValue) : '';
+    const pagefindSortDate = escapeAttr(normalizePagefindSortDate(note?.updated ?? note?.date));
     const pagefindGenreFilters = genres
       .map((genre) => `<span data-pagefind-filter="genre:${escapeAttr(genre)}"></span>`)
       .join('');
@@ -137,12 +143,20 @@ export class NoteLayout {
           ></layout-sidebar>
         </aside>
 
-        <article class="layout-main-col container-reading" data-pagefind-body>
+        <article
+          class="layout-main-col container-reading"
+          data-pagefind-body
+          data-pagefind-sort="date:${pagefindSortDate}"
+        >
           <div class="sr-only" aria-hidden="true" data-pagefind-ignore>
             <span data-pagefind-meta="title">${pagefindTitle}</span>
             <span data-pagefind-meta="description">${pagefindDescription}</span>
             <span data-pagefind-meta="date">${pagefindDate}</span>
             ${pagefindGenreFilters}
+          </div>
+          <div class="sr-only" aria-hidden="true">
+            ${pagefindTitle.length > 0 ? `<span data-pagefind-weight="10">${pagefindTitle}</span>` : ''}
+            ${pagefindDescription.length > 0 ? `<span data-pagefind-weight="5">${pagefindDescription}</span>` : ''}
           </div>
           <ui-article-header
             heading="${heading}"${published}${updated}${status}${license}

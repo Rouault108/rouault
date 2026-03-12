@@ -1,6 +1,12 @@
 import type { UiSearchDialogItem } from '../../components/ui/search-dialog/search-dialog.js';
 import { navigateToUrl } from './navigation.js';
 import type { SearchAdapter } from './pagefind-search.js';
+import {
+  getSearchCatalog,
+  mergeSearchDialogItems,
+  searchSearchCatalog,
+  type SearchDialogItem,
+} from './search-catalog.js';
 
 interface SearchDialogElement extends HTMLElement {
   open(trigger?: HTMLElement): void;
@@ -31,14 +37,36 @@ export function initSearch(): void {
   }
 
   dialog.searcher = async (query: string): Promise<UiSearchDialogItem[]> => {
-    const pagefindSearchAdapter = await getPagefindSearchAdapter();
-    const result = await pagefindSearchAdapter.search(query, []);
+    const pagefindPromise = getPagefindSearchAdapter().then((pagefindSearchAdapter) =>
+      pagefindSearchAdapter.search(query, [], 'relevance'),
+    );
+    const catalogPromise = getSearchCatalog();
 
-    return result.items.map((item) => ({
-      title: item.title,
-      url: item.url,
-      path: item.path,
-    }));
+    const [pagefindResult, catalogResult] = await Promise.allSettled([
+      pagefindPromise,
+      catalogPromise,
+    ]);
+
+    const pagefindItems: SearchDialogItem[] =
+      pagefindResult.status === 'fulfilled'
+        ? pagefindResult.value.items.map((item) => ({
+            title: item.title,
+            url: item.url,
+            path: item.path,
+            date: item.date,
+            pagefindBacked: true,
+          }))
+        : [];
+    const catalogItems =
+      catalogResult.status === 'fulfilled'
+        ? searchSearchCatalog(catalogResult.value, query)
+        : [];
+
+    if (pagefindResult.status === 'rejected' && catalogItems.length === 0) {
+      throw pagefindResult.reason;
+    }
+
+    return mergeSearchDialogItems(pagefindItems, catalogItems, query);
   };
 
   document.addEventListener('open-search-dialog', (event) => {
