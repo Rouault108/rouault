@@ -8,6 +8,7 @@ import { rehypeHeadingIds } from './lib/rehype/rehype-heading-ids.js';
 import { rehypeInlineCodeTranslateNo } from './lib/rehype/inline-code-translate-no.js';
 import { rehypeOrderedListContracts } from './lib/rehype/ordered-list-contracts.js';
 import { rehypeRouaultComponents } from './lib/rehype/rouault-components.js';
+import { rehypeShikiCodeBlocks } from './lib/rehype/shiki-code-blocks.js';
 import { remarkDisallowRawHtml } from './lib/remark/disallow-raw-html.js';
 import { remarkRouaultDirectives } from './lib/remark/rouault-directives.js';
 import { ARTICLE_STATUSES } from './src/types/article-status.js';
@@ -53,6 +54,7 @@ export default defineConfig({
     rehypePlugins: [
       rehypeKatex,
       rehypeHeadingIds,
+      rehypeShikiCodeBlocks,
       rehypeRouaultComponents,
       rehypeInlineCodeTranslateNo,
       rehypeOrderedListContracts,
