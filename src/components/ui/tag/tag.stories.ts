@@ -14,6 +14,7 @@ import type { Tag } from './tag';
  * - **`default`** (Subtle): 背景色あり・ボーダー透明。最も控えめ。
  * - **`outline`**: 背景透明・ボーダーあり。親要素の背景に依存。
  * - **`solid`**: 高彩度背景・白文字。重要なステータスのみ使用。
+ * - **`plain`**: 背景色・枠線なし。`neutral` と同じ文字色で最小限に表示。
  *
  * ### 構造パターン
  *
@@ -59,7 +60,10 @@ const meta: Meta<Tag> = {
 <ui-tag removable>Python</ui-tag>
 
 <!-- Solid バリアント -->
-<ui-tag variant="solid" color="primary">New</ui-tag>
+<ui-tag variant="solid" color="red">New</ui-tag>
+
+<!-- Plain バリアント -->
+<ui-tag variant="plain" color="blue">Muted</ui-tag>
 \`\`\`
 
 ## 注意事項
@@ -74,9 +78,9 @@ const meta: Meta<Tag> = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['default', 'outline', 'solid'],
+      options: ['default', 'outline', 'solid', 'plain'],
       description: 'スタイルバリアント',
-      table: { type: { summary: "'default' | 'outline' | 'solid'" }, defaultValue: { summary: "'default'" } },
+      table: { type: { summary: "'default' | 'outline' | 'solid' | 'plain'" }, defaultValue: { summary: "'default'" } },
     },
     size: {
       control: 'select',
@@ -86,9 +90,9 @@ const meta: Meta<Tag> = {
     },
     color: {
       control: 'select',
-      options: ['neutral', 'primary', 'blue', 'violet', 'pink', 'gold'],
+      options: ['neutral', 'red', 'blue', 'violet', 'pink', 'gold'],
       description: '意味的カラー',
-      table: { type: { summary: "'neutral' | 'primary' | 'blue' | 'violet' | 'pink' | 'gold'" }, defaultValue: { summary: "'neutral'" } },
+      table: { type: { summary: "'neutral' | 'red' | 'blue' | 'violet' | 'pink' | 'gold'" }, defaultValue: { summary: "'neutral'" } },
     },
     removable: {
       control: 'boolean',
@@ -179,7 +183,7 @@ export const Default: Story = {
 export const VariantColorMatrix: Story = {
   render: () => {
     const variants = ['default', 'outline', 'solid'] as const;
-    const colors = ['neutral', 'primary', 'blue', 'violet', 'pink', 'gold'] as const;
+    const colors = ['neutral', 'red', 'blue', 'violet', 'pink', 'gold'] as const;
 
     return html`
       <style>
@@ -207,20 +211,25 @@ export const VariantColorMatrix: Story = {
             </div>
           </div>
         `)}
+        <div class="matrix-row">
+          <div class="matrix-label">PALIN</div>
+          <div class="matrix-tags">
+            <ui-tag variant="plain">PLAIN</ui-tag>
+          </div>
       </div>
     `;
   },
   play: async ({ canvasElement }) => {
     const tags = canvasElement.querySelectorAll<Tag>('ui-tag');
-    if (tags.length !== 18) {
-      throw new Error(`18個のタグ（3つのバリアント × 6色）を期待していましたが、実際には ${String(tags.length)}個でした`);
+    if (tags.length !== 24) {
+      throw new Error(`24個のタグ（4つのバリアント × 6色）を期待していましたが、実際には ${String(tags.length)}個でした`);
     }
 
     await Promise.all([...tags].map((t) => t.updateComplete));
 
     // テスト: 全組み合わせが正しい variant / color を持つ
-    const variants = ['default', 'outline', 'solid'] as const;
-    const colors = ['neutral', 'primary', 'blue', 'violet', 'pink', 'gold'] as const;
+    const variants = ['default', 'outline', 'solid', 'plain'] as const;
+    const colors = ['neutral', 'red', 'blue', 'violet', 'pink', 'gold'] as const;
     for (const variant of variants) {
       for (const color of colors) {
         const tag = canvasElement.querySelector<Tag>(`#matrix-${variant}-${color}`);
@@ -288,9 +297,9 @@ export const DisabledVariants: Story = {
         Disabled × Variants
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
-        <ui-tag id="disabled-default" variant="default" color="primary" disabled>Default</ui-tag>
-        <ui-tag id="disabled-outline" variant="outline" color="primary" disabled>Outline</ui-tag>
-        <ui-tag id="disabled-solid"   variant="solid"   color="primary" disabled>Solid</ui-tag>
+        <ui-tag id="disabled-default" variant="default" color="red" disabled>Default</ui-tag>
+        <ui-tag id="disabled-outline" variant="outline" color="red" disabled>Outline</ui-tag>
+        <ui-tag id="disabled-solid"   variant="solid"   color="red" disabled>Solid</ui-tag>
       </div>
       <div style="font-size: 11px; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;">
         Disabled × Removable
@@ -350,7 +359,7 @@ export const Removable: Story = {
         <ui-tag id="removable-neutral" color="neutral" removable>Neutral</ui-tag>
         <ui-tag id="removable-blue"    color="blue"    removable>Computer Science</ui-tag>
         <ui-tag id="removable-gold"    color="gold"    removable>Literature</ui-tag>
-        <ui-tag id="removable-solid"   variant="solid" color="primary" removable>Solid</ui-tag>
+        <ui-tag id="removable-solid"   variant="solid" color="red" removable>Solid</ui-tag>
       </div>
       <div
         id="remove-log"
@@ -408,7 +417,7 @@ export const WithLink: Story = {
       <ui-tag id="link-blue"   href="/tags/cs"          color="blue">Computer Science</ui-tag>
       <ui-tag id="link-violet" href="/tags/music"       color="violet">Music</ui-tag>
       <ui-tag id="link-gold"   href="/tags/literature"  color="gold">Literature</ui-tag>
-      <ui-tag id="link-solid"  href="/tags/new" variant="solid" color="primary">New</ui-tag>
+      <ui-tag id="link-solid"  href="/tags/new" variant="solid" color="red">New</ui-tag>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -581,7 +590,7 @@ export const AllStates: Story = {
         <div class="state-label">Default × Colors</div>
         <div class="state-tags">
           <ui-tag id="all-neutral" color="neutral">Neutral</ui-tag>
-          <ui-tag id="all-primary" color="primary">Primary</ui-tag>
+          <ui-tag id="all-red" color="red">Red</ui-tag>
           <ui-tag id="all-blue"    color="blue">Blue</ui-tag>
           <ui-tag id="all-violet"  color="violet">Violet</ui-tag>
           <ui-tag id="all-pink"    color="pink">Pink</ui-tag>
@@ -592,7 +601,7 @@ export const AllStates: Story = {
         <div class="state-label">Outline × Colors</div>
         <div class="state-tags">
           <ui-tag variant="outline" color="neutral">Neutral</ui-tag>
-          <ui-tag variant="outline" color="primary">Primary</ui-tag>
+          <ui-tag variant="outline" color="red">Red</ui-tag>
           <ui-tag variant="outline" color="blue">Blue</ui-tag>
           <ui-tag variant="outline" color="violet">Violet</ui-tag>
           <ui-tag variant="outline" color="pink">Pink</ui-tag>
@@ -603,7 +612,7 @@ export const AllStates: Story = {
         <div class="state-label">Solid × Colors</div>
         <div class="state-tags">
           <ui-tag variant="solid" color="neutral">Neutral</ui-tag>
-          <ui-tag variant="solid" color="primary">Primary</ui-tag>
+          <ui-tag variant="solid" color="red">Red</ui-tag>
           <ui-tag variant="solid" color="blue">Blue</ui-tag>
           <ui-tag variant="solid" color="violet">Violet</ui-tag>
           <ui-tag variant="solid" color="pink">Pink</ui-tag>

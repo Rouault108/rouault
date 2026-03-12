@@ -20,9 +20,9 @@ import { customElement, property } from 'lit/decorators.js';
  * タグ自体のサイズが小さい（xs: 20px / sm: 24px）ため、
  * すべてのインタラクティブ要素に `::after` 疑似要素で最小 44×44px を確保します。
  *
- * @property {'default' | 'outline' | 'solid'} variant - スタイルバリアント
+ * @property {'default' | 'outline' | 'solid' | 'plain'} variant - スタイルバリアント
  * @property {'xs' | 'sm'} size - サイズ
- * @property {'neutral' | 'primary' | 'blue' | 'violet' | 'pink' | 'gold'} color - 意味的カラー
+ * @property {'neutral' | 'red' | 'blue' | 'violet' | 'pink' | 'gold'} color - 意味的カラー
  * @property {boolean} removable - 削除ボタンを表示するか
  * @property {string | undefined} href - リンク先URL
  * @property {boolean} disabled - 非活性状態
@@ -84,7 +84,10 @@ import { customElement, property } from 'lit/decorators.js';
  * </ui-tag>
  *
  * <!-- Solid バリアント -->
- * <ui-tag variant="solid" color="primary">New</ui-tag>
+ * <ui-tag variant="solid" color="red">New</ui-tag>
+ *
+ * <!-- Plain バリアント -->
+ * <ui-tag variant="plain" color="blue">Muted</ui-tag>
  * ```
  */
 @customElement('ui-tag')
@@ -167,7 +170,7 @@ export class Tag extends LitElement {
       --chroma-fg: var(--chroma-neutral, 0);
     }
 
-    :host([color='primary']) {
+    :host([color='red']) {
       --tag-hue: var(--hue-base, 0);
       --chroma-bg: var(--chroma-subtle, 0.02);
       --chroma-fg: var(--chroma-ui, 0.05);
@@ -253,8 +256,19 @@ export class Tag extends LitElement {
       }
     }
 
+    /* ── Variant: Plain ── */
+    :host([variant='plain']) {
+      background-color: transparent;
+      border-color: transparent;
+      --tag-hue: var(--hue-base, 0);
+      --chroma-bg: var(--chroma-neutral, 0);
+      --chroma-fg: var(--chroma-neutral, 0);
+      --delta-l-bg: 0%;
+      --delta-l-fg: 0%;
+    }
+
     /* ── Hover (Default / Outline のみ) ── */
-    :host(:not([disabled]):not([variant='solid'])):hover {
+    :host(:not([disabled]):not([variant='solid']):not([variant='plain'])):hover {
       --border-color: var(--border-default, oklch(70% 0 0 / 0.6));
     }
 
@@ -472,7 +486,7 @@ export class Tag extends LitElement {
      * @default 'default'
      */
     @property({ type: String, reflect: true })
-    variant: 'default' | 'outline' | 'solid' = 'default';
+    variant: 'default' | 'outline' | 'solid' | 'plain' = 'default';
 
     /**
      * サイズ
@@ -486,7 +500,7 @@ export class Tag extends LitElement {
      * @default 'neutral'
      */
     @property({ type: String, reflect: true })
-    color: 'neutral' | 'primary' | 'blue' | 'violet' | 'pink' | 'gold' = 'neutral';
+    color: 'neutral' | 'red' | 'blue' | 'violet' | 'pink' | 'gold' = 'neutral';
 
     /**
      * 削除ボタンを表示するか
