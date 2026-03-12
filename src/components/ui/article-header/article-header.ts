@@ -372,9 +372,9 @@ export class ArticleHeader extends LitElement {
                 aria-label="タグ: ${tag}"
                 @click="${(event: MouseEvent) => {
                   this._handleTagClick(event, tag);
-                }}"
-                >#${tag}</ui-tag
-              >
+                }}">
+                ${tag}
+              </ui-tag>
             `;
           })}
         </span>
