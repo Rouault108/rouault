@@ -42,12 +42,19 @@ export default defineConfig({
         test: {
           // プロジェクト名 (テスト結果で識別用)
           name: 'storybook',
+          // Firefox のセッション接続タイムアウトを避けるため、重い Story を直列寄りに実行する
+          fileParallelism: false,
 
           // ブラウザモードを有効化 (Shadow DOM の完全なサポートのため)
           browser: {
             enabled: true,
+            connectTimeout: 180_000,
             // Playwright を使用
-            provider: playwright({}),
+            provider: playwright({
+              launchOptions: {
+                timeout: 120_000,
+              },
+            }),
             // ヘッドレスでCI/自動テストに最適化
             headless: true,
             instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }]
