@@ -75,6 +75,7 @@ const PREVIEW_PADDING_MODES = new Set(['normal', 'compact', 'none']);
 const PREVIEW_ALIGN_MODES = new Set(['center', 'start', 'stretch']);
 const TRANSLATION_RENDER_MODES = new Set(['popover', 'drawer', 'interlinear']);
 const HIGHLIGHT_ORIGINS = new Set(['search', 'user']);
+const CODE_BLOCK_INTENTS = new Set(['neutral', 'valid', 'invalid']);
 const EMOJI_SHORTCODE_MAP: Record<string, string> = {
   smile: '😄',
   grin: '😁',
@@ -283,16 +284,58 @@ const assertAllowedAttributes = (
   }
 };
 
+interface ParsedCodeMeta {
+  readonly attrs: Record<string, string>;
+  readonly raw: string;
+}
+
 const parseCodeMeta = (
   source: string | undefined,
   node: MdastNode,
   file?: VFileLike,
-): Record<string, string> => {
+): ParsedCodeMeta => {
   if (typeof source !== 'string') {
-    return {};
+    return { attrs: {}, raw: '' };
   }
 
-  return parseAttributes(source, node, file);
+  const attrs: Record<string, string> = {};
+  const raw = source.trim();
+  const attrPattern = /\s*([A-Za-z_][\w-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'}]+))/y;
+  const highlightMetaPattern = /\s*\{[^}\n]+\}/y;
+  let cursor = 0;
+
+  while (cursor < source.length) {
+    while (cursor < source.length && /\s/.test(source[cursor] ?? '')) {
+      cursor += 1;
+    }
+    if (cursor >= source.length) {
+      break;
+    }
+
+    highlightMetaPattern.lastIndex = cursor;
+    const highlightMeta = highlightMetaPattern.exec(source);
+    if (highlightMeta) {
+      cursor = highlightMetaPattern.lastIndex;
+      continue;
+    }
+
+    attrPattern.lastIndex = cursor;
+    const matched = attrPattern.exec(source);
+    if (!matched) {
+      throw toError(file, node, `code meta の構文が不正です "${source}"`);
+    }
+
+    const key = matched[1] ?? '';
+    const value = matched[2] ?? matched[3] ?? matched[4] ?? '';
+    if (attrs[key] !== undefined) {
+      throw toError(file, node, `code meta 属性 "${key}" が重複しています`);
+    }
+
+    attrs[key] = value;
+    cursor = attrPattern.lastIndex;
+  }
+
+  return { attrs, raw };
 };
 
 const normalizeCodeBlockMeta = (
@@ -303,10 +346,10 @@ const normalizeCodeBlockMeta = (
     return;
   }
 
-  const attrs = parseCodeMeta(node.meta, node, file);
+  const { attrs, raw } = parseCodeMeta(node.meta, node, file);
   const properties: Record<string, unknown> = {};
-  const allowedKeys = new Set(['filename', 'label']);
-  assertAllowedAttributes(attrs, allowedKeys, node, file, 'code-group 内のコードメタ');
+  const allowedKeys = new Set(['filename', 'label', 'intent', 'show-line-numbers']);
+  assertAllowedAttributes(attrs, allowedKeys, node, file, 'code meta');
 
   const filename = pickOptional(attrs['filename']);
   if (filename) {
@@ -318,6 +361,29 @@ const normalizeCodeBlockMeta = (
     properties['label'] = label;
   }
 
+  const intent = pickOptional(attrs['intent'])?.toLowerCase();
+  if (intent) {
+    if (!CODE_BLOCK_INTENTS.has(intent)) {
+      throw toError(file, node, 'code meta の intent は neutral/valid/invalid のみ指定可能です');
+    }
+    properties['intent'] = intent;
+  }
+
+  const showLineNumbers = parseBooleanAttribute(
+    attrs['show-line-numbers'],
+    node,
+    file,
+    'code meta',
+    'show-line-numbers',
+  );
+  if (showLineNumbers === true) {
+    properties['show-line-numbers'] = true;
+  }
+
+  if (raw !== '') {
+    properties['data-shiki-meta'] = raw;
+  }
+
   if (Object.keys(properties).length === 0) {
     return;
   }
@@ -326,6 +392,15 @@ const normalizeCodeBlockMeta = (
   const currentProperties = data.hProperties ?? {};
   data.hProperties = { ...currentProperties, ...properties };
   node.data = data;
+};
+
+const normalizeCodeBlockMetaTree = (nodes: MdastNode[], file?: VFileLike): void => {
+  for (const node of nodes) {
+    normalizeCodeBlockMeta(node, file);
+    if (Array.isArray(node.children)) {
+      normalizeCodeBlockMetaTree(node.children, file);
+    }
+  }
 };
 
 const applyCalloutAttributes = (
@@ -1142,5 +1217,6 @@ export function remarkRouaultDirectives() {
     }
 
     root.children = transformChildren(root.children, file);
+    normalizeCodeBlockMetaTree(root.children, file);
   };
 }
