@@ -12,6 +12,7 @@ const createContentRoot = async (): Promise<string> => {
   tempDirs.push(tempDir);
 
   await mkdir(path.join(tempDir, 'music', 'classical'), { recursive: true });
+  await mkdir(path.join(tempDir, 'music', 'jazz'), { recursive: true });
   await writeFile(
     path.join(tempDir, '_config.json'),
     JSON.stringify({ order: ['music'] }),
@@ -63,6 +64,50 @@ describe('buildNotesCollection', () => {
     expect(collection[1]?.tocHeadings).toEqual([
       { id: 'life', text: '生涯', level: 2 },
     ]);
+  });
+
+  it('sidebar.scope を最も近い祖先から解決する', async () => {
+    const contentRoot = await createContentRoot();
+    await mkdir(path.join(contentRoot, 'music', 'classical', 'beethoven'), { recursive: true });
+    await mkdir(path.join(contentRoot, 'music', 'classical', 'chopin'), { recursive: true });
+    await writeFile(
+      path.join(contentRoot, 'music', 'classical', '_config.json'),
+      JSON.stringify({
+        order: ['beethoven', 'chopin', 'mozart.md'],
+        sidebar: { scope: 'self' },
+      }),
+      'utf8',
+    );
+    await writeFile(
+      path.join(contentRoot, 'music', 'classical', 'beethoven', '_config.json'),
+      JSON.stringify({ sidebar: { scope: 'global' } }),
+      'utf8',
+    );
+    await writeFile(
+      path.join(contentRoot, 'music', 'jazz', '_config.json'),
+      JSON.stringify({ sidebar: { scope: 'invalid' } }),
+      'utf8',
+    );
+
+    const notes: SourceNote[] = [
+      { slug: 'music/classical/mozart', content: '' },
+      { slug: 'music/classical/chopin/nocturnes', content: '' },
+      { slug: 'music/classical/beethoven/symphony-9', content: '' },
+      { slug: 'music/jazz/kind-of-blue', content: '' },
+    ];
+
+    const collection = buildNotesCollection(notes, contentRoot);
+
+    expect(collection.find((note) => note.slug === 'music/classical/mozart')?.sidebarRoot).toBe(
+      'music/classical',
+    );
+    expect(
+      collection.find((note) => note.slug === 'music/classical/chopin/nocturnes')?.sidebarRoot,
+    ).toBe('music/classical');
+    expect(
+      collection.find((note) => note.slug === 'music/classical/beethoven/symphony-9')?.sidebarRoot,
+    ).toBeUndefined();
+    expect(collection.find((note) => note.slug === 'music/jazz/kind-of-blue')?.sidebarRoot).toBeUndefined();
   });
 });
 

@@ -69,4 +69,59 @@ describe('buildSidebarTree', () => {
     expect(selectedNode?.selected).to.equal(true);
     expect(parentNode?.expanded).to.equal(true);
   });
+
+  it('rootSlug 指定時は起点配下だけを返すこと', () => {
+    const tree = buildSidebarTree(
+      [
+        {
+          slug: 'music/classical/beethoven/fidelio',
+          title: 'フィデリオ',
+          permalink: '/notes/music/classical/beethoven/fidelio',
+        },
+        {
+          slug: 'music/classical/beethoven/symphony-9',
+          title: '交響曲第9番',
+          permalink: '/notes/music/classical/beethoven/symphony-9',
+        },
+        {
+          slug: 'music/classical/tchaikovsky/the-nutcracker',
+          title: '楽曲分析: くるみ割り人形',
+          permalink: '/notes/music/classical/tchaikovsky/the-nutcracker',
+        },
+      ],
+      '',
+      'music/classical/beethoven',
+    );
+
+    expect(findNode(tree as SidebarTreeNode[], 'music')).to.equal(null);
+    expect(findNode(tree as SidebarTreeNode[], 'music/classical/tchaikovsky')).to.equal(null);
+    expect(findNode(tree as SidebarTreeNode[], 'music/classical/beethoven/fidelio')).to.not.equal(null);
+    expect(findNode(tree as SidebarTreeNode[], 'music/classical/beethoven/symphony-9')).to.not.equal(null);
+  });
+
+  it('rootSlug 指定後も選択中ノートまでの展開状態を維持すること', () => {
+    const selectedSlug = 'music/classical/beethoven/symphonies/symphony-9';
+    const tree = buildSidebarTree(
+      [
+        {
+          slug: selectedSlug,
+          title: '交響曲第9番',
+          permalink: '/notes/music/classical/beethoven/symphonies/symphony-9',
+        },
+        {
+          slug: 'music/classical/beethoven/overtures/egmont',
+          title: 'エグモント序曲',
+          permalink: '/notes/music/classical/beethoven/overtures/egmont',
+        },
+      ],
+      selectedSlug,
+      'music/classical/beethoven',
+    );
+
+    const selectedNode = findNode(tree as SidebarTreeNode[], selectedSlug);
+    const parentNode = findNode(tree as SidebarTreeNode[], 'music/classical/beethoven/symphonies');
+
+    expect(selectedNode?.selected).to.equal(true);
+    expect(parentNode?.expanded).to.equal(true);
+  });
 });
