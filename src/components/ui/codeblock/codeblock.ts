@@ -1,5 +1,5 @@
 import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
-import { customElement, property, query, state } from 'lit/decorators.js';
+import { customElement, property, query } from 'lit/decorators.js';
 import '../../../lib/icons';
 import '../copy-button/copy-button';
 
@@ -67,6 +67,33 @@ ui-code-block pre code {
   display: block;
   min-width: max-content;
   background: transparent !important;
+}
+
+ui-code-block pre.shiki .line {
+  display: block;
+}
+
+ui-code-block pre .line.highlighted {
+  background: color-mix(in oklch, var(--bg-highlight-subtle, oklch(96% 0.04 65)) 78%, transparent);
+}
+
+ui-code-block pre .line.diff.add {
+  background: color-mix(in oklch, var(--success, oklch(60% 0.15 160)) 14%, transparent);
+}
+
+ui-code-block pre .line.diff.remove {
+  background: color-mix(in oklch, var(--danger, oklch(55% 0.2 28)) 12%, transparent);
+}
+
+@media (prefers-color-scheme: dark) {
+  ui-code-block pre.shiki {
+    background-color: var(--shiki-dark-bg, transparent) !important;
+    color: var(--shiki-dark, inherit) !important;
+  }
+
+  ui-code-block pre.shiki span {
+    color: var(--shiki-dark, inherit) !important;
+  }
 }
 
 ui-code-block pre:focus-visible {
@@ -332,11 +359,13 @@ export class CodeBlock extends LitElement {
   @property({ type: String, attribute: 'initial-code' })
   initialCode = '';
 
-  @state()
   private _copyValue = '';
 
   @query('slot:not([name])')
   private _defaultSlot?: HTMLSlotElement;
+
+  @query('ui-copy-button')
+  private _copyButton?: HTMLElement & { value: string };
 
   private _resizeObserver?: ResizeObserver;
 
@@ -351,10 +380,6 @@ export class CodeBlock extends LitElement {
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this._resizeObserver?.disconnect();
-  }
-
-  override firstUpdated(): void {
-    this._syncSlottedPre();
   }
 
   override willUpdate(changedProperties: PropertyValues<this>): void {
@@ -609,6 +634,9 @@ export class CodeBlock extends LitElement {
   private _updateCopyButtonValue(): void {
     const normalizedInitialCode = this.initialCode.replace(/\r\n?/g, '\n');
     this._copyValue = this.getCodeContent() || normalizedInitialCode;
+    if (this._copyButton) {
+      this._copyButton.value = this._copyValue;
+    }
   }
 
   override render() {
@@ -640,7 +668,7 @@ export class CodeBlock extends LitElement {
             <span class="copy-button-shell">
               <ui-copy-button
                 size="sm"
-                value="${this._copyValue}"
+                value="${this._copyValue || this.initialCode.replace(/\r\n?/g, '\n')}"
                 label="${this._copyButtonLabel}"
               ></ui-copy-button>
             </span>

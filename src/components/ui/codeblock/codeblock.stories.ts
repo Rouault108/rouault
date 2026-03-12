@@ -425,6 +425,66 @@ console.log(first + second);</code></pre>
 };
 
 /**
+ * Shiki の行ハイライトと差分行。
+ * `.line.highlighted` / `.line.diff.*` の視覚契約とコピー純度を確認します。
+ */
+export const ShikiHighlightedLines: Story = {
+  render: () => html`
+    <ui-code-block
+      id="shiki-highlighted-block"
+      filename="example.ts"
+      lang="ts"
+      style="--ui-code-block-breakout-width: 100%; --ui-code-block-breakout-margin: 0;"
+    >
+      <pre
+        class="shiki shiki-themes github-light github-dark has-highlighted has-diff"
+        data-raw="const highlighted = 1;\nconst added = 2;"
+      >
+        <code>
+          <span class="line highlighted"><span style="color:#D73A49;--shiki-dark:#F97583">const</span><span style="color:#005CC5;--shiki-dark:#79B8FF"> highlighted = 1;</span></span>
+          <span class="line diff add"><span style="color:#D73A49;--shiki-dark:#F97583">const</span><span style="color:#005CC5;--shiki-dark:#79B8FF"> added = 2;</span></span>
+        </code>
+      </pre>
+    </ui-code-block>
+  `,
+  play: async ({ canvasElement }) => {
+    const block = getCodeBlock(canvasElement, 'shiki-highlighted-block');
+    await block.updateComplete;
+
+    const pre = getPre(block);
+    const lines = Array.from(pre.querySelectorAll<HTMLElement>('code .line'));
+    if (lines.length !== 2) {
+      throw new Error(`Shiki の line 要素が不足しています。actual=${String(lines.length)}`);
+    }
+
+    const highlightedLine = lines[0];
+    const addedLine = lines[1];
+    if (!highlightedLine || !addedLine) {
+      throw new Error('Shiki line 要素の取得に失敗しました');
+    }
+
+    if (getComputedStyle(highlightedLine).display !== 'block') {
+      throw new Error('Shiki の .line は block として描画される必要があります');
+    }
+
+    const highlightedBackground = getComputedStyle(highlightedLine).backgroundColor;
+    if (highlightedBackground === 'rgba(0, 0, 0, 0)') {
+      throw new Error('highlighted line の背景が適用されていません');
+    }
+
+    const addedBackground = getComputedStyle(addedLine).backgroundColor;
+    if (addedBackground === 'rgba(0, 0, 0, 0)') {
+      throw new Error('diff add line の背景が適用されていません');
+    }
+
+    const content = block.getCodeContent();
+    if (content !== 'const highlighted = 1;\nconst added = 2;') {
+      throw new Error(`Shiki data-raw がコピー値に反映されていません: "${content}"`);
+    }
+  },
+};
+
+/**
  * 長行オーバーフロー境界。
  * オーバーフロー時のみ pre に tabindex/aria-label が付与されることを確認します。
  */
