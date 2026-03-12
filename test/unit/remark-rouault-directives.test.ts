@@ -107,6 +107,31 @@ describe('remarkRouaultDirectives', () => {
     expect(secondCode?.data?.hProperties?.['label']).to.equal('誤り例');
   });
 
+  it('standalone fenced code の meta を正規化すること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'code',
+          lang: 'ts',
+          meta: '{1} filename="sample.ts" label="例" intent="invalid" show-line-numbers="true"',
+          value: 'const sample = 1;',
+        },
+      ],
+    };
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    const code = tree.children?.[0];
+    expect(code?.data?.hProperties?.['filename']).to.equal('sample.ts');
+    expect(code?.data?.hProperties?.['label']).to.equal('例');
+    expect(code?.data?.hProperties?.['intent']).to.equal('invalid');
+    expect(code?.data?.hProperties?.['show-line-numbers']).to.equal(true);
+    expect(code?.data?.hProperties?.['data-shiki-meta']).to.equal(
+      '{1} filename="sample.ts" label="例" intent="invalid" show-line-numbers="true"',
+    );
+  });
+
   it('details ディレクティブを ui-details ノードへ変換すること', () => {
     const tree: MdastNode = {
       type: 'root',
