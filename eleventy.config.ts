@@ -8,6 +8,7 @@ import { build } from 'velite';
 import { loadNotesData } from './src/data/notes.js';
 import { loadSearchGenresData } from './src/data/searchGenres.js';
 import { resolveTrailingSlashRewrite } from './src/lib/trailing-slash-rewrite.js';
+import { buildPagefindIndex } from './scripts/build-pagefind.js';
 
 const registerTrailingSlashRewrite = (server: ViteDevServer): void => {
   const middleware: Connect.NextHandleFunction = (req, _res, next) => {
@@ -33,6 +34,8 @@ const registerTrailingSlashRewrite = (server: ViteDevServer): void => {
  * Velite と Vite を組み合わせた 11ty の設定。
  */
 export default function configureEleventy(eleventyConfig: UserConfig) {
+  const isServing = process.argv.includes('--serve');
+
   // 11ty.ts を 11ty.js エンジンで処理するようにマッピングする。
   eleventyConfig.addExtension('11ty.ts', {
     key: '11ty.js',
@@ -51,8 +54,6 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
 
   // Velite リソース管理。
   eleventyConfig.on('eleventy.before', async () => {
-    const isServing = process.argv.includes('--serve');
-
     try {
       await build({
         clean: !isServing,
@@ -75,6 +76,11 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
   eleventyConfig.on('eleventy.after', async () => {
     // Cloudflare Pages 用の rewrite ルールを出力ディレクトリへ明示コピーする。
     await copyFile(path.resolve(process.cwd(), '_redirects'), path.resolve(process.cwd(), 'dist/_redirects'));
+
+    // 開発サーバーでは pagefind を都度再生成して検索候補を維持する。
+    if (isServing) {
+      await buildPagefindIndex();
+    }
   });
 
   // Vite バンドルと開発サーバーの使用。
