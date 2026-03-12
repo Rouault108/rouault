@@ -248,10 +248,16 @@ export class CodeBlock extends LitElement {
     /* メタデータのないキャプションをオーバーレイ化し、コピーボタンのみ表示 */
     .caption-overlay > .caption {
       position: absolute;
-      top: 0;
+      top: calc(
+        var(--space-3, 12px) -
+          (
+            var(--control-height-sm, 24px) -
+              (var(--text-sm, 0.8125rem) * var(--line-height-relaxed, 1.75))
+          ) / 2
+      );
       inset-inline-end: 0;
       z-index: 1;
-      padding: var(--space-1, 4px) var(--space-2, 8px);
+      padding: 0 var(--space-2, 8px);
       background: none;
     }
 

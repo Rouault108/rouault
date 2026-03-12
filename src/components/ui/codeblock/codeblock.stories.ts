@@ -790,9 +790,33 @@ export const NoMetadataOverlay: Story = {
       throw new Error('overlay モードでは caption は absolute 配置であるべきです');
     }
 
+    const pre = block.querySelector('pre');
+    if (!pre) {
+      throw new Error('pre が見つかりません');
+    }
+
+    const copyShell = block.shadowRoot?.querySelector<HTMLElement>('.copy-button-shell');
+    if (!copyShell) {
+      throw new Error('copy-button-shell が見つかりません');
+    }
+
     const copyButton = getCopyButton(block);
     if (copyButton.label !== 'TypeScript のコードをコピー') {
       throw new Error(`overlay モードの copy-button label が不正です: "${copyButton.label}"`);
+    }
+
+    const captionStyle = getComputedStyle(caption);
+    const preStyle = getComputedStyle(pre);
+    const paddingTop = Number.parseFloat(preStyle.paddingTop);
+    const lineHeight = Number.parseFloat(preStyle.lineHeight);
+    const copyHeight = copyShell.getBoundingClientRect().height;
+    const expectedTop = paddingTop - (copyHeight - lineHeight) / 2;
+    const actualTop = Number.parseFloat(captionStyle.top);
+
+    if (Math.abs(actualTop - expectedTop) > 1) {
+      throw new Error(
+        `overlay モードの caption top が不正です: ${actualTop} vs ${expectedTop}`,
+      );
     }
   },
 };
