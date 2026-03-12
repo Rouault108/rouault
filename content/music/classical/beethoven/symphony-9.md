@@ -6,6 +6,7 @@ genre:
   - music
   - classical
   - symphony
+status: wip
 ---
 
 ## 交響曲第9番 ニ短調 作品125
