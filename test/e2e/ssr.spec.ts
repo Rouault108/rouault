@@ -65,4 +65,30 @@ test.describe('SSR Rendering', () => {
     expect(hasCodeBlockShadowRoot).toBe(true);
     expect(hasTableShadowRoot).toBe(true);
   });
+
+  test('ヘッダーとサイドバーがスクロールしても固定されること', async ({ page }) => {
+    await page.goto(beethovenEntryPath);
+
+    const header = page.locator('layout-header');
+    const sidebar = page.locator('.layout-sidebar-col');
+
+    const headerBefore = await header.boundingBox();
+    const sidebarBefore = await sidebar.boundingBox();
+
+    expect(headerBefore).not.toBeNull();
+    expect(sidebarBefore).not.toBeNull();
+
+    await page.evaluate(() => {
+      window.scrollTo({ top: 640, behavior: 'instant' });
+    });
+
+    const headerAfter = await header.boundingBox();
+    const sidebarAfter = await sidebar.boundingBox();
+
+    expect(headerAfter).not.toBeNull();
+    expect(sidebarAfter).not.toBeNull();
+
+    expect(Math.abs((headerAfter?.y ?? 0) - (headerBefore?.y ?? 0))).toBeLessThan(1);
+    expect(Math.abs((sidebarAfter?.y ?? 0) - (headerBefore?.height ?? 0))).toBeLessThan(2);
+  });
 });
