@@ -60,26 +60,14 @@ export class UiSidebar extends LitElement {
       min-block-size: 0;
     }
 
-    .footer {
-      display: block;
-      padding: var(--space-2, 8px) var(--space-4, 16px);
-      border-top: var(--border-width, 1px) solid
-        var(--border-ghost, oklch(20% 0 0 / 0.04));
-    }
-
     @media (prefers-color-scheme: dark) {
       .sidebar-head {
         border-bottom-color: var(--border-ghost, oklch(90% 0 0 / 0.08));
       }
-
-      .footer {
-        border-top-color: var(--border-ghost, oklch(90% 0 0 / 0.08));
-      }
     }
 
     @media (forced-colors: active) {
-      .sidebar-head,
-      .footer {
+      .sidebar-head {
         border-color: CanvasText;
         background: Canvas;
       }
@@ -90,8 +78,7 @@ export class UiSidebar extends LitElement {
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .sidebar-head,
-      .footer {
+      .sidebar-head {
         transition-duration: 0.01ms !important;
       }
     }
@@ -328,10 +315,6 @@ export class UiSidebar extends LitElement {
             @ui-tree-expand=${this._onTreeExpand}
             @ui-tree-focus-change=${this._onTreeFocusChange}
           ></ui-file-tree>
-        </div>
-
-        <div class="footer">
-          <slot name="footer"></slot>
         </div>
       </ui-sidebar-shell>
     `;
