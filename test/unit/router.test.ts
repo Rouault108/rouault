@@ -1255,15 +1255,8 @@ describe('Router', () => {
 	// 8. 再初期化処理
 	// ========================================
 	describe('8. 再初期化処理', () => {
-		it('8.1 Prism.highlightAll() が呼ばれること', async () => {
-			let highlightAllCalled = false;
-			window.Prism = {
-				highlightAll: () => {
-					highlightAllCalled = true;
-				},
-				highlightElement: () => { /* モック */ },
-			} as NonNullable<typeof window.Prism>;
-
+		it('8.1 addReinitializeHook() で登録したフックが呼ばれること', async () => {
+			let hookCalled = false;
 			globalThis.fetch = () => {
 				return Promise.resolve(new Response(
 					'<html><body><main><pre><code>test</code></pre></main></body></html>',
@@ -1272,15 +1265,16 @@ describe('Router', () => {
 			};
 
 			router = new Router(outlet);
+			router.addReinitializeHook(() => {
+				hookCalled = true;
+			});
 
 			const link = await fixture<HTMLAnchorElement>(html` <a href="/test">Link</a> `);
 			simulateClick(link);
 
-			await waitUntil(() => highlightAllCalled, 'Prism.highlightAll呼び出し');
+			await waitUntil(() => hookCalled, '再初期化フック呼び出し');
 
-			expect(highlightAllCalled).to.be.true;
-
-			delete window.Prism;
+			expect(hookCalled).to.be.true;
 		});
 
 		it('8.2 スクロール位置がトップにリセットされること', async () => {
