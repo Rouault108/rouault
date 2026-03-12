@@ -740,11 +740,6 @@ export class Router {
    * AppRouter 統合時は AppRouter.updated() ライフサイクルで処理する。
    */
   private reinitializeScripts() {
-    // シンタックスハイライトの再適用
-    if (typeof window.Prism !== 'undefined') {
-      window.Prism.highlightAll();
-    }
-
     // カスタム再初期化フックの実行
     this.runReinitializeHooks();
 
