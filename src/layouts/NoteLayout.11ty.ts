@@ -6,6 +6,7 @@
  */
 
 import { buildSidebarTree, type SidebarSourceNote } from '../../lib/content/build-sidebar-tree.js';
+import type { NoteStatus } from '../types/article-status.js';
 
 interface TocHeading {
   id?: string;
@@ -20,7 +21,7 @@ interface NoteData extends SidebarSourceNote {
   genre?: string[];
   license?: string;
   licenseNote?: string;
-  draft?: boolean;
+  status?: NoteStatus;
   tocHeadings?: TocHeading[];
 }
 
@@ -98,7 +99,7 @@ export class NoteLayout {
     const updated = note?.updated
       ? ` updated="${escapeAttr(note.updated)}"`
       : '';
-    const status = note?.draft ? ' status="draft"' : '';
+    const status = note?.status ? ` status="${escapeAttr(note.status)}"` : '';
     const license = note?.license
       ? ` license="${escapeAttr(note.license)}"`
       : '';

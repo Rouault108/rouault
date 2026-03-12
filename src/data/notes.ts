@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { extractTocFromHtml, type TocHeading } from '../../lib/content/extract-toc-from-html.js';
+import type { NoteStatus } from '../types/article-status.js';
 
 interface NoteOrderConfig {
   order?: string[];
@@ -10,7 +11,7 @@ interface NoteOrderConfig {
 export interface SourceNote {
   slug?: string;
   content?: string;
-  draft?: boolean;
+  status?: NoteStatus;
   genre?: string[];
   [key: string]: unknown;
 }
@@ -84,6 +85,11 @@ export const buildNotesCollection = (
     .sort((left, right) => left.sortIndex - right.sortIndex);
 };
 
+export const isPublicNote = (note: SourceNote): boolean => note.status !== 'draft';
+
+export const filterPublicNotes = <T extends SourceNote>(notes: readonly T[]): T[] =>
+  notes.filter((note) => isPublicNote(note));
+
 export const loadNotesData = (): NoteCollectionItem[] => {
   const velitePath = join(process.cwd(), '.velite', 'notes.json');
   if (!existsSync(velitePath)) {
@@ -93,7 +99,6 @@ export const loadNotesData = (): NoteCollectionItem[] => {
   const notes = readNotesFile(velitePath);
   const contentRoot = join(process.cwd(), 'content');
   const enriched = buildNotesCollection(notes, contentRoot);
-  const isProduction = process.env['NODE_ENV'] === 'production';
 
-  return isProduction ? enriched.filter((note) => note.draft !== true) : enriched;
+  return filterPublicNotes(enriched);
 };

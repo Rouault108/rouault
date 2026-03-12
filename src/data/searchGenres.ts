@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { SourceNote } from './notes.js';
+import { filterPublicNotes, type SourceNote } from './notes.js';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -13,11 +13,8 @@ const readNotesFile = (filePath: string): SourceNote[] => {
   return Array.isArray(parsed) ? parsed.filter(isSourceNote) : [];
 };
 
-export const buildSearchGenres = (
-  notes: readonly SourceNote[],
-  isProduction: boolean,
-): string[] => {
-  const visibleNotes = isProduction ? notes.filter((note) => note.draft !== true) : notes;
+export const buildSearchGenres = (notes: readonly SourceNote[]): string[] => {
+  const visibleNotes = filterPublicNotes(notes);
   const genres = new Set<string>();
 
   for (const note of visibleNotes) {
@@ -44,5 +41,5 @@ export const loadSearchGenresData = (): string[] => {
   }
 
   const notes = readNotesFile(velitePath);
-  return buildSearchGenres(notes, process.env['NODE_ENV'] === 'production');
+  return buildSearchGenres(notes);
 };
