@@ -168,6 +168,7 @@ export class Tag extends LitElement {
       --tag-hue: var(--hue-base, 0);
       --chroma-bg: var(--chroma-neutral, 0);
       --chroma-fg: var(--chroma-neutral, 0);
+      --delta-l-bg: 2%;
     }
 
     :host([color='red']) {
