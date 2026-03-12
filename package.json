@@ -21,7 +21,7 @@
     "storybook": "NODE_OPTIONS='--import=tsx' pnpm exec cem analyze --config cem.config.ts && NODE_OPTIONS='--import=tsx' pnpm exec storybook dev",
     "storybook:build": "NODE_OPTIONS='--import=tsx' pnpm exec cem analyze --config cem.config.ts && NODE_OPTIONS='--import=tsx' pnpm exec storybook build",
     "dev": "NODE_OPTIONS='--import=tsx' pnpm exec eleventy --config=eleventy.config.ts --serve",
-    "build": "NODE_OPTIONS='--import=tsx' pnpm exec eleventy --config=eleventy.config.ts && NODE_OPTIONS='--import=tsx' node scripts/apply-lit-ssr.ts && pagefind --site dist",
+    "build": "NODE_OPTIONS='--import=tsx' pnpm exec eleventy --config=eleventy.config.ts && NODE_OPTIONS='--import=tsx' node scripts/apply-lit-ssr.ts && NODE_OPTIONS='--import=tsx' node scripts/build-pagefind.ts",
     "start": "NODE_OPTIONS='--import=tsx' pnpm exec eleventy --config=eleventy.config.ts --serve",
     "typecheck:node": "pnpm exec tsc -p tsconfig.node.json --noEmit"
   },
