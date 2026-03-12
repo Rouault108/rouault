@@ -214,7 +214,7 @@ export const VariantColorMatrix: Story = {
         <div class="matrix-row">
           <div class="matrix-label">PALIN</div>
           <div class="matrix-tags">
-            <ui-tag variant="plain">PLAIN</ui-tag>
+            <ui-tag variant="plain">plain</ui-tag>
           </div>
       </div>
     `;
