@@ -1,5 +1,3 @@
-/// <reference types="../../types/global.d.ts" />
-
 /**
  * Router クラスの包括的な単体テスト
  * View Transitions API を使用したSPAルーターのテスト
