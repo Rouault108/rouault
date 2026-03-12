@@ -182,9 +182,9 @@ const highlightCodeBlock = async (node: HastNode): Promise<void> => {
     lang: language,
   };
 
-  node.tagName = highlightedPre.tagName;
+  node.tagName = 'pre';
   node.properties = highlightedPre.properties;
-  node.children = highlightedPre.children;
+  node.children = highlightedPre.children ?? [];
 };
 
 const isCodeBlockPre = (node: HastNode): boolean => {
