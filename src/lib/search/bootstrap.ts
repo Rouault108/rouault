@@ -53,6 +53,7 @@ export function initSearch(): void {
             title: item.title,
             url: item.url,
             path: item.path,
+            description: item.description,
             date: item.date,
             pagefindBacked: true,
           }))

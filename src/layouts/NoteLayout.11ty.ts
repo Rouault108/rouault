@@ -6,6 +6,7 @@
  */
 
 import { buildSidebarTree, type SidebarSourceNote } from '../../lib/content/build-sidebar-tree.js';
+import { tokenizeSearchText } from '../lib/search/query-preprocessor.js';
 import type { NoteStatus } from '../types/article-status.js';
 
 interface TocHeading {
@@ -90,6 +91,20 @@ function normalizePagefindSortDate(value: string | undefined): string {
   return normalized.length > 0 ? normalized : '0000-00-00';
 }
 
+function buildTokenizedPagefindText(value: string | undefined): string {
+  const normalized = typeof value === 'string' ? value.trim() : '';
+  if (normalized.length === 0) {
+    return '';
+  }
+
+  const tokenized = tokenizeSearchText(normalized);
+  if (tokenized.segmentedText.length === 0 || tokenized.segmentedText === tokenized.rawText) {
+    return '';
+  }
+
+  return escapeHtml(tokenized.segmentedText);
+}
+
 export class NoteLayout {
   data() {
     return {
@@ -124,6 +139,8 @@ export class NoteLayout {
     const tocHeadingsJson = escapeAttr(JSON.stringify(headings));
     const pagefindTitle = note?.title ? escapeHtml(note.title) : '';
     const pagefindDescription = note?.description ? escapeHtml(note.description) : '';
+    const pagefindTokenizedTitle = buildTokenizedPagefindText(note?.title);
+    const pagefindTokenizedDescription = buildTokenizedPagefindText(note?.description);
     const pagefindDateValue = note?.updated ?? note?.date ?? '';
     const pagefindDate = pagefindDateValue ? escapeHtml(pagefindDateValue) : '';
     const pagefindSortDate = escapeAttr(normalizePagefindSortDate(note?.updated ?? note?.date));
@@ -156,7 +173,9 @@ export class NoteLayout {
           </div>
           <div class="sr-only" aria-hidden="true">
             ${pagefindTitle.length > 0 ? `<span data-pagefind-weight="10">${pagefindTitle}</span>` : ''}
+            ${pagefindTokenizedTitle.length > 0 ? `<span data-pagefind-weight="8">${pagefindTokenizedTitle}</span>` : ''}
             ${pagefindDescription.length > 0 ? `<span data-pagefind-weight="5">${pagefindDescription}</span>` : ''}
+            ${pagefindTokenizedDescription.length > 0 ? `<span data-pagefind-weight="3">${pagefindTokenizedDescription}</span>` : ''}
           </div>
           <ui-article-header
             heading="${heading}"${published}${updated}${status}${license}

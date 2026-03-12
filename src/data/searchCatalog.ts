@@ -1,4 +1,5 @@
 import { filterPublicNotes, type SourceNote } from './notes.js';
+import { tokenizeSearchText } from '../lib/search/query-preprocessor.js';
 
 export interface SearchCatalogSourceNote extends SourceNote {
   title?: string;
@@ -39,11 +40,12 @@ function dedupeStrings(values: readonly string[]): string[] {
 
   for (const value of values) {
     const normalized = value.trim();
-    if (normalized.length === 0 || seen.has(normalized)) {
+    const normalizedKey = normalized.toLocaleLowerCase('ja');
+    if (normalized.length === 0 || seen.has(normalizedKey)) {
       continue;
     }
 
-    seen.add(normalized);
+    seen.add(normalizedKey);
     result.push(normalized);
   }
 
@@ -63,6 +65,10 @@ function buildSlugKeywords(slug: string): string[] {
   return dedupeStrings([slug, ...slashSegments, ...hyphenSegments]);
 }
 
+function buildTokenKeywords(value: string): string[] {
+  return tokenizeSearchText(value).tokens;
+}
+
 export function buildSearchCatalog(notes: readonly SearchCatalogSourceNote[]): SearchCatalogItem[] {
   return filterPublicNotes(notes).flatMap((note) => {
     const title = normalizeString(note.title);
@@ -73,9 +79,12 @@ export function buildSearchCatalog(notes: readonly SearchCatalogSourceNote[]): S
 
     const slug = normalizeString(note.slug);
     const genres = normalizeStringArray(note.genre);
+    const description = normalizeString(note.description);
     const keywords = dedupeStrings([
       ...buildSlugKeywords(slug),
       ...genres,
+      ...buildTokenKeywords(title),
+      ...buildTokenKeywords(description),
     ]);
 
     return [
@@ -83,7 +92,7 @@ export function buildSearchCatalog(notes: readonly SearchCatalogSourceNote[]): S
         title,
         url: permalink,
         path: permalink,
-        description: normalizeString(note.description),
+        description,
         date: normalizeString(note.updated) || normalizeString(note.date),
         keywords,
         genres,

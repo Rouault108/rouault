@@ -6,6 +6,12 @@ export interface PreparedSearchQuery {
   tokens: string[];
 }
 
+export interface TokenizedSearchText {
+  rawText: string;
+  segmentedText: string;
+  tokens: string[];
+}
+
 interface SegmentLike {
   segment: string;
   isWordLike?: boolean;
@@ -51,33 +57,33 @@ function fallbackTokens(rawQuery: string): string[] {
   return dedupeTokens(rawQuery.split(' '));
 }
 
-export function prepareSearchQuery(
-  query: string,
+export function tokenizeSearchText(
+  value: string,
   createSegmenter: SegmenterFactory = createDefaultSegmenter,
-): PreparedSearchQuery {
-  const rawQuery = normalizeSearchQuery(query);
-  if (rawQuery.length === 0) {
+): TokenizedSearchText {
+  const rawText = normalizeSearchQuery(value);
+  if (rawText.length === 0) {
     return {
-      rawQuery: '',
-      segmentedQuery: '',
+      rawText: '',
+      segmentedText: '',
       tokens: [],
     };
   }
 
   const segmenter = createSegmenter();
   if (!segmenter) {
-    const tokens = fallbackTokens(rawQuery);
+    const tokens = fallbackTokens(rawText);
     return {
-      rawQuery,
-      segmentedQuery: rawQuery,
+      rawText,
+      segmentedText: rawText,
       tokens,
     };
   }
 
   const tokens = dedupeTokens(
-    Array.from(segmenter.segment(rawQuery)).flatMap((segment) => {
-      const value = normalizeSearchQuery(segment.segment);
-      if (value.length === 0) {
+    Array.from(segmenter.segment(rawText)).flatMap((segment) => {
+      const normalized = normalizeSearchQuery(segment.segment);
+      if (normalized.length === 0) {
         return [];
       }
 
@@ -85,22 +91,34 @@ export function prepareSearchQuery(
         return [];
       }
 
-      return [value];
+      return [normalized];
     }),
   );
 
   if (tokens.length === 0) {
-    const fallback = fallbackTokens(rawQuery);
+    const fallback = fallbackTokens(rawText);
     return {
-      rawQuery,
-      segmentedQuery: rawQuery,
+      rawText,
+      segmentedText: rawText,
       tokens: fallback,
     };
   }
 
   return {
-    rawQuery,
-    segmentedQuery: tokens.join(' '),
+    rawText,
+    segmentedText: tokens.join(' '),
     tokens,
+  };
+}
+
+export function prepareSearchQuery(
+  query: string,
+  createSegmenter: SegmenterFactory = createDefaultSegmenter,
+): PreparedSearchQuery {
+  const tokenized = tokenizeSearchText(query, createSegmenter);
+  return {
+    rawQuery: tokenized.rawText,
+    segmentedQuery: tokenized.segmentedText,
+    tokens: tokenized.tokens,
   };
 }

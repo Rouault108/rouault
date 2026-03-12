@@ -1,5 +1,9 @@
 import type { UiSearchDialogItem } from '../../components/ui/search-dialog/search-dialog.js';
-import { prepareSearchQuery, type PreparedSearchQuery } from './query-preprocessor.js';
+import {
+  prepareSearchQuery,
+  tokenizeSearchText,
+  type PreparedSearchQuery,
+} from './query-preprocessor.js';
 
 export interface SearchCatalogItem {
   title: string;
@@ -12,6 +16,7 @@ export interface SearchCatalogItem {
 }
 
 export interface SearchDialogItem extends UiSearchDialogItem {
+  description?: string;
   date?: string;
   pagefindBacked?: boolean;
 }
@@ -110,20 +115,24 @@ function splitPathTerms(path: string): string[] {
   );
 }
 
-function toSearchableContext(item: Pick<SearchCatalogItem, 'title' | 'path' | 'keywords'>): {
+function toSearchableContext(item: Pick<SearchCatalogItem, 'title' | 'path' | 'keywords' | 'description'>): {
   title: string;
+  description: string;
   path: string;
   keywordString: string;
   terms: string[];
 } {
   const keywords = normalizeStringArray(item.keywords);
+  const titleTerms = tokenizeSearchText(item.title).tokens;
+  const descriptionTerms = tokenizeSearchText(normalizeString(item.description)).tokens;
 
   return {
     title: item.title.toLocaleLowerCase('ja'),
+    description: normalizeString(item.description).toLocaleLowerCase('ja'),
     path: item.path.toLocaleLowerCase('ja'),
     keywordString: keywords.map((keyword) => keyword.toLocaleLowerCase('ja')).join(' '),
-    terms: dedupeStrings([...keywords, ...splitPathTerms(item.path)]).map((term) =>
-      term.toLocaleLowerCase('ja'),
+    terms: dedupeStrings([...keywords, ...splitPathTerms(item.path), ...titleTerms, ...descriptionTerms]).map(
+      (term) => term.toLocaleLowerCase('ja'),
     ),
   };
 }
@@ -138,6 +147,7 @@ function matchesPreparedQuery(item: SearchCatalogItem, preparedQuery: PreparedSe
   const matchesSubstring =
     context.title.includes(normalizedQuery) ||
     context.path.includes(normalizedQuery) ||
+    context.description.includes(normalizedQuery) ||
     context.keywordString.includes(normalizedQuery);
   const tokens = preparedQuery.tokens.map((token) => token.toLocaleLowerCase('ja'));
   const matchesAllTokens =
@@ -146,6 +156,7 @@ function matchesPreparedQuery(item: SearchCatalogItem, preparedQuery: PreparedSe
       (token) =>
         context.title.includes(token) ||
         context.path.includes(token) ||
+        context.description.includes(token) ||
         context.keywordString.includes(token),
     );
   const matchesExactToken = tokens.some((token) => context.terms.includes(token));
@@ -158,6 +169,9 @@ function toDialogItem(item: SearchCatalogItem): SearchDialogItem {
     title: item.title,
     url: item.url,
     path: item.path,
+    ...(typeof item.description === 'string' && item.description.length > 0
+      ? { description: item.description }
+      : {}),
     ...(typeof item.date === 'string' && item.date.length > 0 ? { date: item.date } : {}),
     ...(Array.isArray(item.keywords) && item.keywords.length > 0 ? { keywords: item.keywords } : {}),
   };
@@ -171,6 +185,7 @@ function getDialogItemRank(item: SearchDialogItem, preparedQuery: PreparedSearch
   const rawQuery = preparedQuery.rawQuery.toLocaleLowerCase('ja');
   const tokens = preparedQuery.tokens.map((token) => token.toLocaleLowerCase('ja'));
   const title = item.title.toLocaleLowerCase('ja');
+  const description = normalizeString(item.description).toLocaleLowerCase('ja');
   const path = normalizeString(item.path).toLocaleLowerCase('ja');
   const keywordString = normalizeStringArray(item.keywords)
     .map((keyword) => keyword.toLocaleLowerCase('ja'))
@@ -178,6 +193,8 @@ function getDialogItemRank(item: SearchDialogItem, preparedQuery: PreparedSearch
   const exactTerms = dedupeStrings([
     ...normalizeStringArray(item.keywords),
     ...splitPathTerms(path),
+    ...tokenizeSearchText(item.title).tokens,
+    ...tokenizeSearchText(normalizeString(item.description)).tokens,
   ]).map((term) => term.toLocaleLowerCase('ja'));
 
   if (title === rawQuery) {
@@ -196,19 +213,32 @@ function getDialogItemRank(item: SearchDialogItem, preparedQuery: PreparedSearch
     return 3;
   }
 
-  if (item.pagefindBacked) {
+  if (
+    tokens.length > 0 &&
+    tokens.every(
+      (token) =>
+        title.includes(token) ||
+        path.includes(token) ||
+        description.includes(token) ||
+        keywordString.includes(token),
+    )
+  ) {
     return 4;
   }
 
-  if (title.includes(rawQuery) || path.includes(rawQuery)) {
+  if (item.pagefindBacked) {
     return 5;
   }
 
-  if (keywordString.includes(rawQuery)) {
+  if (title.includes(rawQuery) || path.includes(rawQuery)) {
     return 6;
   }
 
-  return 7;
+  if (description.includes(rawQuery) || keywordString.includes(rawQuery)) {
+    return 7;
+  }
+
+  return 8;
 }
 
 function compareDialogItems(left: SearchDialogItem, right: SearchDialogItem, preparedQuery: PreparedSearchQuery): number {
@@ -247,11 +277,15 @@ function normalizeDialogItem(item: SearchDialogItem): SearchDialogItem | null {
     url,
   };
   const path = normalizeString(item.path);
+  const description = normalizeString(item.description);
   const date = normalizeString(item.date);
   const keywords = dedupeStrings(normalizeStringArray(item.keywords));
 
   if (path.length > 0) {
     normalized.path = path;
+  }
+  if (description.length > 0) {
+    normalized.description = description;
   }
   if (date.length > 0) {
     normalized.date = date;
@@ -277,6 +311,10 @@ function mergeDialogItem(existing: SearchDialogItem, incoming: SearchDialogItem)
     normalizeDateForSort(existingDate) >= normalizeDateForSort(incomingDate)
       ? existingDate
       : incomingDate;
+  const existingDescription = normalizeString(existing.description);
+  const incomingDescription = normalizeString(incoming.description);
+  const mergedDescription =
+    existingDescription.length >= incomingDescription.length ? existingDescription : incomingDescription;
 
   return {
     title: existing.title,
@@ -284,6 +322,7 @@ function mergeDialogItem(existing: SearchDialogItem, incoming: SearchDialogItem)
     ...(normalizeString(existing.path).length > 0 || normalizeString(incoming.path).length > 0
       ? { path: normalizeString(existing.path) || normalizeString(incoming.path) }
       : {}),
+    ...(mergedDescription.length > 0 ? { description: mergedDescription } : {}),
     ...(mergedDate.length > 0 ? { date: mergedDate } : {}),
     ...(mergedKeywords.length > 0 ? { keywords: mergedKeywords } : {}),
     ...(existing.pagefindBacked || incoming.pagefindBacked ? { pagefindBacked: true } : {}),

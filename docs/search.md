@@ -45,11 +45,15 @@
 - `data-pagefind-filter="genre:<name>"`: genre フィルター
 - `data-pagefind-sort="date:YYYY-MM-DD"`: 更新日の sort キー
 - `data-pagefind-weight="10"`: タイトル用の索引テキスト
+- `data-pagefind-weight="8"`: タイトル token 用の補助索引テキスト
 - `data-pagefind-weight="5"`: description 用の索引テキスト
+- `data-pagefind-weight="3"`: description token 用の補助索引テキスト
 
 補足:
 
 - `title` / `description` は表示用メタに加えて、`sr-only` の索引用テキストとしても本文内に埋め込みます。
+- `Intl.Segmenter` で token 化した `title` / `description` も別 weight で埋め込み、空白なし日本語クエリの Recall を補強します。
+- token 化結果が raw テキストと同一になる場合は、補助索引テキストを重複出力しません。
 - `data-pagefind-sort` は `updated ?? date ?? '0000-00-00'` を使うため、日付未設定ノートでも sort 時に脱落しません。
 - これにより検索結果ページでは、**キーワード検索 + genre の AND 条件**に加えて**関連度順 / 新しい順**の切り替えができます。
 
@@ -60,6 +64,7 @@
 - 公開ノートのみを対象にする
 - `title`、`url`、`path`、`description`、`date` を持つ
 - `slug` を分解した語や `genre` を `keywords` に含める
+- `title` / `description` を `Intl.Segmenter` で token 化した語も `keywords` に含める
 
 この補助カタログにより、**本文にヒットしなくても URL パスや slug 由来のキーワードでダイアログ検索に引っかかる**ようになっています。
 
@@ -81,7 +86,7 @@
 1. `initSearch()` が `dialog.searcher` を設定する
 2. 検索時に `pagefindSearchAdapter.search(query, [], 'relevance')` と `getSearchCatalog()` を並列実行する
 3. Pagefind の結果は `pagefindBacked` な候補として扱う
-4. 補助カタログは `rawQuery` と `tokens` を使って `title` / `path` / `keywords` を検索する
+4. 補助カタログは `rawQuery` と `tokens` を使って `title` / `description` / `path` / `keywords` を検索する
 5. URL 単位で両者をマージし、再ランキングして一覧表示する
 
 再ランキングの優先順位:
@@ -89,9 +94,11 @@
 - `title exact`
 - `title prefix`
 - `title contains all tokens`
-- `path or keyword exact token`
+- `title/path/description/keyword exact token`
+- `title/path/description/keyword contains all tokens`
 - `pagefind-backed result`
 - `title/path substring`
+- `description/keyword substring`
 
 同点時は `date` の降順、その後に `title/path` の `localeCompare('ja')` で安定化します。
 
