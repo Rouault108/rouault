@@ -4,8 +4,15 @@ import { join } from 'node:path';
 import { extractTocFromHtml, type TocHeading } from '../../lib/content/extract-toc-from-html.js';
 import type { NoteStatus } from '../types/article-status.js';
 
-interface NoteOrderConfig {
+type SidebarScope = 'global' | 'self';
+
+interface NoteSidebarConfig {
+  scope?: SidebarScope;
+}
+
+interface NoteDirectoryConfig {
   order?: string[];
+  sidebar?: NoteSidebarConfig;
 }
 
 export interface SourceNote {
@@ -20,6 +27,7 @@ export interface NoteCollectionItem extends SourceNote {
   slug: string;
   sortIndex: number;
   tocHeadings: TocHeading[];
+  sidebarRoot?: string;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -27,17 +35,54 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const isSourceNote = (value: unknown): value is SourceNote => isRecord(value);
 
+const toOptionalStringArray = (value: unknown): string[] | undefined => {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const normalized = value
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+
+  return normalized;
+};
+
+const toOptionalSidebarScope = (value: unknown): SidebarScope | undefined => {
+  if (value === 'global' || value === 'self') {
+    return value;
+  }
+  return undefined;
+};
+
+const toDirectoryConfig = (value: unknown): NoteDirectoryConfig | undefined => {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const order = toOptionalStringArray(value['order']);
+  const sidebarValue = value['sidebar'];
+  const sidebarScope = isRecord(sidebarValue)
+    ? toOptionalSidebarScope(sidebarValue['scope'])
+    : undefined;
+
+  return {
+    ...(order !== undefined ? { order } : {}),
+    ...(sidebarScope !== undefined ? { sidebar: { scope: sidebarScope } } : {}),
+  };
+};
+
 const readJsonFile = (filePath: string): unknown =>
   JSON.parse(readFileSync(filePath, 'utf-8')) as unknown;
 
-const readConfig = (dirPath: string): NoteOrderConfig | undefined => {
+const readConfig = (dirPath: string): NoteDirectoryConfig | undefined => {
   const configPath = join(dirPath, '_config.json');
   if (!existsSync(configPath)) {
     return undefined;
   }
 
   const config = readJsonFile(configPath);
-  return isRecord(config) ? (config as NoteOrderConfig) : undefined;
+  return toDirectoryConfig(config);
 };
 
 const readNotesFile = (filePath: string): SourceNote[] => {
@@ -65,6 +110,29 @@ const calculateSortIndex = (slug: string, contentRoot: string): number => {
   return sortIndex;
 };
 
+const resolveSidebarRoot = (slug: string, contentRoot: string): string | undefined => {
+  const parts = slug.split('/');
+  const dirParts = parts.slice(0, -1);
+  let sidebarRoot: string | undefined;
+
+  for (let depth = 0; depth <= dirParts.length; depth += 1) {
+    const currentDirParts = dirParts.slice(0, depth);
+    const currentDir = join(contentRoot, ...currentDirParts);
+    const scope = readConfig(currentDir)?.sidebar?.scope;
+
+    if (scope === 'global') {
+      sidebarRoot = undefined;
+      continue;
+    }
+
+    if (scope === 'self') {
+      sidebarRoot = currentDirParts.length > 0 ? currentDirParts.join('/') : undefined;
+    }
+  }
+
+  return sidebarRoot;
+};
+
 export const buildNotesCollection = (
   notes: readonly SourceNote[],
   contentRoot: string,
@@ -75,11 +143,13 @@ export const buildNotesCollection = (
     })
     .map((note) => {
       const slug = note.slug.trim();
+      const sidebarRoot = resolveSidebarRoot(slug, contentRoot);
       return {
         ...note,
         slug,
         sortIndex: calculateSortIndex(slug, contentRoot),
         tocHeadings: extractTocFromHtml(typeof note.content === 'string' ? note.content : ''),
+        ...(sidebarRoot !== undefined ? { sidebarRoot } : {}),
       };
     })
     .sort((left, right) => left.sortIndex - right.sortIndex);

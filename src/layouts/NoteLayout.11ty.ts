@@ -21,6 +21,7 @@ interface NoteData extends SidebarSourceNote {
   genre?: string[];
   license?: string;
   licenseNote?: string;
+  sidebarRoot?: string;
   status?: NoteStatus;
   tocHeadings?: TocHeading[];
 }
@@ -107,7 +108,8 @@ export class NoteLayout {
       ? note.genre.map((item) => item.trim()).filter((item) => item.length > 0)
       : [];
     const headings = normalizeHeadings(note?.tocHeadings);
-    const sidebarTree = buildSidebarTree(data.notes ?? [], slug);
+    const sidebarRoot = typeof note?.sidebarRoot === 'string' ? note.sidebarRoot : '';
+    const sidebarTree = buildSidebarTree(data.notes ?? [], slug, sidebarRoot);
 
     const dataIdBase = toSafeDataId(slug.length > 0 ? slug : 'note');
     const sidebarSourceId = `sidebar-source-${dataIdBase}`;

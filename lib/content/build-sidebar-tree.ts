@@ -50,6 +50,7 @@ const markExpandedPath = (nodes: SidebarMutableNode[], selectedId: string): bool
 export const buildSidebarTree = (
   notes: SidebarSourceNote[],
   selectedSlug = '',
+  rootSlug = '',
 ): TreeNode[] => {
   const roots: SidebarMutableNode[] = [];
 
@@ -149,6 +150,10 @@ export const buildSidebarTree = (
   };
 
   sortNodes(roots);
+
+  if (rootSlug.length > 0) {
+    return findNodeById(roots, rootSlug)?.children ?? [];
+  }
 
   return roots;
 };
