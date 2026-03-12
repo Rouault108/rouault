@@ -558,7 +558,7 @@ export class Tag extends LitElement {
         if (this.disabled) return;
 
         // タグのテキスト内容を取得
-        const textContent = this.textContent.trim();
+        const textContent = this.textContent?.trim() ?? '';
 
         this.dispatchEvent(
             new CustomEvent<{ value: string }>('ui-tag-remove', {
@@ -578,13 +578,14 @@ export class Tag extends LitElement {
 
     /** 削除ボタンのラベル */
     private get _removeLabel(): string {
-        const text = this.textContent.trim();
+        const text = this.textContent?.trim() ?? '';
         return text ? `${text}を削除` : '削除';
     }
 
     /** アイコンスロットのレンダリング */
     private _renderIcon() {
-        const hasIcon = Array.from(this.children).some(
+        const lightDomChildren = this.children ? Array.from(this.children) : [];
+        const hasIcon = lightDomChildren.some(
             (child) => child.getAttribute('slot') === 'icon',
         );
         if (!hasIcon) return nothing;
@@ -641,7 +642,7 @@ export class Tag extends LitElement {
         <div
           class="tag-group"
           role="group"
-          aria-label="${this.textContent.trim()} タグ"
+          aria-label="${this.textContent?.trim() ?? ''} タグ"
         >
           <a
             class="tag-link"
