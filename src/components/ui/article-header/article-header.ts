@@ -2,9 +2,10 @@ import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import '../tag/tag';
 import { linkTextStyles } from '../../../styles/contracts/link-styles';
+import type { ArticleStatus } from '../../../types/article-status.js';
 import { formatArticleDate } from './format-article-date.js';
 
-export type ArticleStatus = 'draft' | 'archived' | 'wip' | 'deprecated';
+export type { ArticleStatus } from '../../../types/article-status.js';
 
 export interface TagClickDetail {
   tag: string;
