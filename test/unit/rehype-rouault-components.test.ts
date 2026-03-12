@@ -56,6 +56,7 @@ describe('rehypeRouaultComponents', () => {
                 filename: 'sample.ts',
                 label: '正解例',
                 intent: 'valid',
+                'show-line-numbers': true,
               },
               children: [{ type: 'text', value: 'const sample = 1;' }],
             },
@@ -72,9 +73,11 @@ describe('rehypeRouaultComponents', () => {
     expect(block?.properties?.['filename']).to.equal('sample.ts');
     expect(block?.properties?.['label']).to.equal('正解例');
     expect(block?.properties?.['intent']).to.equal('valid');
+    expect(block?.properties?.['show-line-numbers']).to.equal(true);
     expect(code?.properties?.['filename']).to.equal(undefined);
     expect(code?.properties?.['label']).to.equal(undefined);
     expect(code?.properties?.['intent']).to.equal(undefined);
+    expect(code?.properties?.['show-line-numbers']).to.equal(undefined);
   });
 
   it('table を ui-table にラップし、caption から aria-label を補完すること', () => {
