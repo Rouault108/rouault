@@ -28,6 +28,9 @@ export class UiSidebarShell extends LitElement {
     /* ── ホスト: Grid Item として機能 ── */
     :host {
       display: block;
+      block-size: 100%;
+      min-block-size: 0;
+      overflow: visible;
 
       /* パブリックトークン（外部からオーバーライド可能） */
       --ui-sidebar-scrim-opacity: var(--opacity-scrim, 0.6);
@@ -46,8 +49,10 @@ export class UiSidebarShell extends LitElement {
 
     /* ── Fixed Mode: 基本レイアウト ── */
     :host([mode='fixed']) nav {
-      position: relative;
+      position: sticky;
+      top: var(--header-height);
       inline-size: 100%;
+      max-block-size: calc(100vh - var(--header-height));
     }
 
     /* ── Fixed Mode: コンテンツ先行フェードアウト ── */
