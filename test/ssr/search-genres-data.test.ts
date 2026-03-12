@@ -10,15 +10,16 @@ describe('buildSearchGenres', () => {
       { genre: ['music', 'classical'] },
     ];
 
-    expect(buildSearchGenres(notes, false)).toEqual(['classical', 'jazz', 'music']);
+    expect(buildSearchGenres(notes)).toEqual(['classical', 'jazz', 'music']);
   });
 
-  it('production では draft を除外する', () => {
+  it('status=draft だけを除外する', () => {
     const notes: SourceNote[] = [
-      { draft: true, genre: ['private'] },
-      { draft: false, genre: ['public'] },
+      { status: 'draft', genre: ['private'] },
+      { status: 'archived', genre: ['archived'] },
+      { status: '', genre: ['public'] },
     ];
 
-    expect(buildSearchGenres(notes, true)).toEqual(['public']);
+    expect(buildSearchGenres(notes)).toEqual(['archived', 'public']);
   });
 });

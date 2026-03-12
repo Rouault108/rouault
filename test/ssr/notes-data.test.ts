@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { buildNotesCollection, type SourceNote } from '../../src/data/notes.js';
+import { buildNotesCollection, filterPublicNotes, type SourceNote } from '../../src/data/notes.js';
 
 const tempDirs: string[] = [];
 
@@ -62,6 +62,23 @@ describe('buildNotesCollection', () => {
     ]);
     expect(collection[1]?.tocHeadings).toEqual([
       { id: 'life', text: '生涯', level: 2 },
+    ]);
+  });
+});
+
+describe('filterPublicNotes', () => {
+  it('status=draft を除外し、それ以外の status は公開対象として返す', () => {
+    const notes: SourceNote[] = [
+      { slug: 'private-note', status: 'draft' },
+      { slug: 'archived-note', status: 'archived' },
+      { slug: 'public-note', status: '' },
+      { slug: 'implicit-public' },
+    ];
+
+    expect(filterPublicNotes(notes).map((note) => note.slug)).toEqual([
+      'archived-note',
+      'public-note',
+      'implicit-public',
     ]);
   });
 });
