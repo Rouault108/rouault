@@ -83,6 +83,10 @@ export const Default: Story = {
     if (!(footer instanceof HTMLElement)) {
       throw new Error('footer.ui-footer が見つかりません');
     }
+    const skipLinkShadowRoot = skipLink.shadowRoot;
+    if (!(skipLinkShadowRoot instanceof ShadowRoot)) {
+      throw new Error('ui-skip-link の shadowRoot が見つかりません');
+    }
 
     if (!root.classList.contains('app-root')) {
       throw new Error('app shell root には .app-root が必要です');
@@ -90,7 +94,7 @@ export const Default: Story = {
     if (main.getAttribute('tabindex') !== '-1') {
       throw new Error('main には tabindex="-1" が必要です');
     }
-    if (!skipLink.shadowRoot?.querySelector('a[href="#app-shell-main"]')) {
+    if (!skipLinkShadowRoot.querySelector('a[href="#app-shell-main"]')) {
       throw new Error('skip link の href が不正です');
     }
 
@@ -98,14 +102,14 @@ export const Default: Story = {
     document.body.focus();
     await userEvent.tab();
 
-    const skipLinkAnchor = skipLink.shadowRoot?.querySelector('a[href="#app-shell-main"]');
+    const skipLinkAnchor = skipLinkShadowRoot.querySelector('a[href="#app-shell-main"]');
     if (!(skipLinkAnchor instanceof HTMLAnchorElement)) {
       throw new Error('skip link のアンカー要素が見つかりません');
     }
     if (document.activeElement !== skipLink) {
       throw new Error('最初の Tab で ui-skip-link がフォーカスされていません');
     }
-    if (skipLink.shadowRoot?.activeElement !== skipLinkAnchor) {
+    if (skipLinkShadowRoot.activeElement !== skipLinkAnchor) {
       throw new Error('最初の Tab で skip link の内部アンカーへフォーカス委譲されていません');
     }
   },

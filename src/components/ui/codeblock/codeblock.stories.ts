@@ -815,7 +815,7 @@ export const NoMetadataOverlay: Story = {
 
     if (Math.abs(actualTop - expectedTop) > 1) {
       throw new Error(
-        `overlay モードの caption top が不正です: ${actualTop} vs ${expectedTop}`,
+        `overlay モードの caption top が不正です: ${String(actualTop)} vs ${String(expectedTop)}`,
       );
     }
   },

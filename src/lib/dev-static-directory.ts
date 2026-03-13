@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import path from 'node:path';
 import type { Connect } from 'vite';
 
@@ -77,7 +78,11 @@ export function createStaticDirectoryMiddleware(
   routePrefix: string,
   rootDirectory: string,
 ): Connect.NextHandleFunction {
-  return async (request, response, next) => {
+  const handleRequest = async (
+    request: IncomingMessage,
+    response: ServerResponse,
+    next: Connect.NextFunction,
+  ): Promise<void> => {
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       next();
       return;
@@ -113,5 +118,9 @@ export function createStaticDirectoryMiddleware(
 
       next(error as Error);
     }
+  };
+
+  return (request, response, next) => {
+    void handleRequest(request, response, next);
   };
 }

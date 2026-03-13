@@ -5,8 +5,9 @@ import './search-page.js';
 import type { SearchField } from '../ui/search-field/search-field.js';
 import type { SearchPage } from './search-page.js';
 
-const ORIGINAL_SEARCH = pagefindSearchAdapter.search;
-const ORIGINAL_GET_AVAILABLE_GENRES = pagefindSearchAdapter.getAvailableGenres;
+const ORIGINAL_SEARCH = pagefindSearchAdapter.search.bind(pagefindSearchAdapter);
+const ORIGINAL_GET_AVAILABLE_GENRES =
+  pagefindSearchAdapter.getAvailableGenres.bind(pagefindSearchAdapter);
 
 const SEARCH_RESPONSE = {
   total: 2,
@@ -89,15 +90,15 @@ type Story = StoryObj<SearchPage>;
 
 export const QueryAndClearFlow: Story = {
   render: () => {
-    pagefindSearchAdapter.search = async (query, selectedGenres, sortMode) => {
+    pagefindSearchAdapter.search = (query, selectedGenres, sortMode) => {
       const normalizedQuery = query.trim().toLowerCase();
       if (normalizedQuery.length === 0 && selectedGenres.length === 0) {
-        return {
+        return Promise.resolve({
           total: 0,
           items: [],
           genreCounts: {},
           allGenreCounts: SEARCH_RESPONSE.allGenreCounts,
-        } satisfies SearchResponse;
+        } satisfies SearchResponse);
       }
 
       const filteredItems = SEARCH_RESPONSE.items.filter((item) => {
@@ -112,15 +113,16 @@ export const QueryAndClearFlow: Story = {
         return matchesQuery && matchesTag;
       });
 
-      return {
+      return Promise.resolve({
         total: filteredItems.length,
         items: sortMode === 'date-desc' ? [...filteredItems].reverse() : filteredItems,
         genreCounts: SEARCH_RESPONSE.genreCounts,
         allGenreCounts: SEARCH_RESPONSE.allGenreCounts,
-      } satisfies SearchResponse;
+      } satisfies SearchResponse);
     };
 
-    pagefindSearchAdapter.getAvailableGenres = async () => SEARCH_RESPONSE.allGenreCounts;
+    pagefindSearchAdapter.getAvailableGenres = () =>
+      Promise.resolve(SEARCH_RESPONSE.allGenreCounts);
 
     return html`<search-page id="search-page-regression"></search-page>`;
   },
