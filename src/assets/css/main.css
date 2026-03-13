@@ -680,19 +680,20 @@ ui-list-item a.primary-link[href]:hover {
  * =========================================================================== */
 
 .tag-page {
-  width: min(100%, 52rem);
+  width: min(100%, 60rem);
   margin: 0 auto;
   padding: clamp(var(--space-6), 4vw, var(--space-10)) var(--space-4) var(--space-12);
 }
 
 .tag-page__hero {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-4);
   padding-bottom: var(--space-6);
   border-bottom: var(--border-width) solid var(--border-default);
 }
 
 .tag-page__eyebrow {
+  margin: 0;
   color: var(--fg-muted);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
@@ -701,8 +702,16 @@ ui-list-item a.primary-link[href]:hover {
 }
 
 .tag-page__title {
-  font-size: clamp(var(--text-3xl), 5vw, var(--text-5xl));
+  margin: 0;
+  font-size: clamp(var(--text-2xl), 4vw, var(--text-4xl));
   line-height: var(--line-height-tight);
+}
+
+.tag-page__description {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: var(--text-base);
+  line-height: var(--line-height-relaxed);
 }
 
 .tag-page__meta {
@@ -715,6 +724,7 @@ ui-list-item a.primary-link[href]:hover {
 }
 
 .tag-page__count {
+  margin: 0;
   color: var(--fg-default);
 }
 
@@ -722,25 +732,49 @@ ui-list-item a.primary-link[href]:hover {
   list-style: none;
   margin: var(--space-8) 0 0;
   padding: 0;
+  display: grid;
+  gap: var(--space-3);
 }
 
-.tag-page__item + .tag-page__item {
-  border-top: var(--border-width) solid var(--border-default);
+.tag-page__item {
+  min-width: 0;
 }
 
 .tag-page__item-card {
+  display: block;
+  --space-4: var(--space-5);
+  --radius-md: var(--radius-lg);
+  --border-default: var(--border-default);
+  --border-muted: var(--border-muted);
+  background: var(--bg-surface-2);
+}
+
+.tag-page__item-link {
   display: grid;
   gap: var(--space-2);
-  padding: var(--space-5) 0;
+  color: inherit;
+  text-decoration: none;
+  min-width: 0;
+}
+
+.tag-page__item-link:focus-visible {
+  outline: none;
 }
 
 .tag-page__item-title {
-  font-size: var(--text-xl);
+  margin: 0;
+  font-size: var(--text-lg);
   line-height: var(--line-height-tight);
 }
 
-.tag-page__item-meta,
+.tag-page__item-meta {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: var(--text-xs);
+}
+
 .tag-page__item-description {
+  margin: 0;
   color: var(--fg-muted);
   font-size: var(--text-sm);
   line-height: var(--line-height-relaxed);
@@ -752,7 +786,7 @@ ui-list-item a.primary-link[href]:hover {
   }
 
   .tag-page__item-title {
-    font-size: var(--text-lg);
+    font-size: var(--text-base);
   }
 }
 

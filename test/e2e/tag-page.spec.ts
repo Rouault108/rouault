@@ -24,4 +24,28 @@ test.describe('Tag Page', () => {
     });
     expect(probeAlive).toBe(true);
   });
+
+  test('タグページのカード内リンクからノートへ遷移できること', async ({ page }) => {
+    await page.goto('/tags/music/');
+
+    await page.evaluate(() => {
+      (window as typeof window & { __tagCardProbe?: { alive: boolean } }).__tagCardProbe = {
+        alive: true,
+      };
+    });
+
+    await page
+      .locator('#main-content .tag-page__item-card a')
+      .filter({ hasText: '交響曲第9番 ニ短調 作品125' })
+      .first()
+      .click();
+
+    await expect(page).toHaveURL(notePath);
+    await expect(page.locator('#main-content h1').first()).toHaveText('交響曲第9番 ニ短調 作品125');
+
+    const probeAlive = await page.evaluate(() => {
+      return (window as typeof window & { __tagCardProbe?: { alive: boolean } }).__tagCardProbe?.alive === true;
+    });
+    expect(probeAlive).toBe(true);
+  });
 });

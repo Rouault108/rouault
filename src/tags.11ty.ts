@@ -2,10 +2,14 @@ import {
   DEFAULT_SEARCH_SORT_MODE,
   buildSearchHref,
 } from './lib/search/search-url.js';
-import type { TagPageEntry, TagPageNoteSummary } from './data/tagPages.js';
+import { loadTagPagesData, type TagPageEntry, type TagPageNoteSummary } from './data/tagPages.js';
 
 interface TagPageTemplateData {
   tagPage?: TagPageEntry;
+}
+
+interface TagPagesPaginationData extends TagPageTemplateData {
+  paginationTagPages?: TagPageEntry[];
 }
 
 function escapeHtml(value: string): string {
@@ -31,13 +35,13 @@ const renderNotes = (notes: readonly TagPageNoteSummary[]): string =>
     .map((note) => {
       return `
         <li class="tag-page__item">
-          <article class="tag-page__item-card">
-            <h2 class="tag-page__item-title">
-              <a class="link-text" href="${escapeHtml(note.permalink)}">${escapeHtml(note.title)}</a>
-            </h2>
-            ${renderDate(note.date)}
-            ${renderDescription(note.description)}
-          </article>
+          <ui-card class="tag-page__item-card" clickable variant="outlined">
+            <a class="tag-page__item-link" href="${escapeHtml(note.permalink)}">
+              <h2 class="tag-page__item-title">${escapeHtml(note.title)}</h2>
+              ${renderDate(note.date)}
+              ${renderDescription(note.description)}
+            </a>
+          </ui-card>
         </li>
       `.trim();
     })
@@ -47,14 +51,15 @@ export class TagPagesTemplate {
   data() {
     return {
       layout: 'base',
+      paginationTagPages: loadTagPagesData(),
       pagination: {
-        data: 'tagPages',
+        data: 'paginationTagPages',
         size: 1,
         alias: 'tagPage',
       },
       eleventyComputed: {
-        title: (data: TagPageTemplateData) => `タグ: ${data.tagPage?.tag ?? ''}`,
-        permalink: (data: TagPageTemplateData) => {
+        title: (data: TagPagesPaginationData) => `タグ: ${data.tagPage?.tag ?? ''}`,
+        permalink: (data: TagPagesPaginationData) => {
           if (typeof data.tagPage?.tag !== 'string' || data.tagPage.tag.length === 0) {
             return false;
           }
@@ -65,7 +70,7 @@ export class TagPagesTemplate {
     };
   }
 
-  render(data: TagPageTemplateData) {
+  render(data: TagPagesPaginationData) {
     const tagPage = data.tagPage;
     if (!tagPage) {
       return '';
@@ -80,8 +85,9 @@ export class TagPagesTemplate {
     return `
       <section class="tag-page" aria-labelledby="tag-page-title">
         <header class="tag-page__hero">
-          <p class="tag-page__eyebrow">Tag Archive</p>
+          <p class="tag-page__eyebrow">Tag / Archive</p>
           <h1 id="tag-page-title" class="tag-page__title">#${escapeHtml(tagPage.tag)}</h1>
+          <p class="tag-page__description">このタグに属する公開ノートを新しい順で一覧します。</p>
           <div class="tag-page__meta">
             <p class="tag-page__count">${escapeHtml(tagPage.noteCount.toString())}件のノート</p>
             <a class="link-control link-subtle" href="${escapeHtml(searchHref)}">このタグで検索へ</a>

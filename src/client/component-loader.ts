@@ -17,6 +17,7 @@ const TAG_MODULE_LOADERS: Record<SsrTargetTag, ComponentModuleLoader> = {
   'app-router': () => import('../components/app/app-router.js'),
   'layout-footer': () => import('../components/layout/layout-footer.js'),
   'ui-search-dialog': () => import('../components/ui/search-dialog/search-dialog.js'),
+  'ui-card': () => import('../components/ui/card/card.js'),
   'search-page': () => import('../components/search/search-page.js'),
   'ui-article-header': () => import('../components/ui/article-header/article-header.js'),
   'layout-sidebar': () => import('../components/layout/layout-sidebar.js'),

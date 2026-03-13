@@ -3,6 +3,7 @@ export const SSR_SHADOW_TARGET_TAGS = [
   'layout-header',
   'ui-search-dialog',
   'search-page',
+  'ui-card',
   'ui-article-header',
   'layout-sidebar',
   'layout-toc',
@@ -44,4 +45,5 @@ export const SSR_ALWAYS_LOAD_TAGS = [
   'app-router',
   'layout-footer',
   'ui-search-dialog',
+  'ui-card',
 ] as const satisfies readonly SsrTargetTag[];
