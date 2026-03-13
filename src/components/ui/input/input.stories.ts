@@ -60,13 +60,12 @@ const meta: Meta<Input> = {
   error-message="このユーザー名は既に使用されています"
 ></ui-input>
 
-<!-- ラベルを視覚的に非表示（検索フィールド等） -->
+<!-- ラベルを視覚的に非表示 -->
 <ui-input 
-  label="検索" 
+  label="ユーザーID" 
   hide-label 
-  variant="outline"
-  type="search" 
-  placeholder="検索..."
+  type="text" 
+  placeholder="ユーザーIDを入力"
 ></ui-input>
 \`\`\`
 
@@ -74,7 +73,7 @@ const meta: Meta<Input> = {
 
 - **ラベルは必須**: アクセシビリティのため、\`label\` 属性は必ず設定してください。視覚的に非表示にする場合は \`hide-label\` を使用します。
 - **Help TextとError Messageは排他的**: エラー状態（\`error=true\`）の場合、Help Textは非表示となり、Error Messageのみが表示されます。
-- **未サポートのtype**: \`date\`, \`time\`, \`file\`, \`checkbox\`, \`radio\` 等は専用コンポーネントで対応します。未定義のtypeが渡された場合は \`text\` にフォールバックし、開発時にコンソール警告を出力します。
+- **未サポートのtype**: \`date\`, \`time\`, \`file\`, \`checkbox\`, \`radio\`, \`search\` 等は専用コンポーネントで対応します。検索用途には \`<ui-search-field>\` を使用してください。未定義のtypeが渡された場合は \`text\` にフォールバックし、開発時にコンソール警告を出力します。
         `,
       },
     },
@@ -98,7 +97,7 @@ const meta: Meta<Input> = {
     },
     type: {
       control: 'select',
-      options: ['text', 'email', 'password', 'number', 'tel', 'url', 'search'],
+      options: ['text', 'email', 'password', 'number', 'tel', 'url'],
       description: '入力フィールドのタイプ',
       table: {
         type: { summary: 'string' },
@@ -391,16 +390,16 @@ export const ErrorState: Story = {
 /**
  * ラベルを視覚的に非表示にした入力フィールド。
  * 
- * 検索フィールド等、文脈からラベルが明らかな場合に使用します。
+ * フィールドの文脈からラベルが明らかな場合に使用します。
  * スクリーンリーダーには常にラベルが提供されます。
  */
 export const HiddenLabel: Story = {
   args: {
-    label: '検索',
+    label: 'ユーザーID',
     hideLabel: true,
-    type: 'search',
-    name: 'search',
-    placeholder: '検索...',
+    type: 'text',
+    name: 'userId',
+    placeholder: 'ユーザーIDを入力',
   },
   render: (args) => html`
     <ui-input
@@ -663,19 +662,18 @@ export const AllTypes: Story = {
       <ui-input label="数値" type="number" placeholder="123"></ui-input>
       <ui-input label="電話番号" type="tel" placeholder="03-1234-5678"></ui-input>
       <ui-input label="URL" type="url" placeholder="https://example.com"></ui-input>
-      <ui-input label="検索" type="search" placeholder="検索..."></ui-input>
     </div>
   `,
   play: ({ canvasElement }) => {
     const inputs = Array.from(canvasElement.querySelectorAll<Input>('ui-input'));
-    if (inputs.length !== 7) {
-      throw new Error(`7つの入力バリアントを期待していましたが、実際には ${inputs.length.toString()} つでした`);
+    if (inputs.length !== 6) {
+      throw new Error(`6つの入力バリアントを期待していましたが、実際には ${inputs.length.toString()} つでした`);
     }
 
     const actualTypes = inputs
-      .map(input => input.shadowRoot?.querySelector('input')?.type ?? '')
+      .map((input) => input.shadowRoot?.querySelector('input')?.type ?? '')
       .join(',');
-    const expectedTypes = 'text,email,password,number,tel,url,search';
+    const expectedTypes = 'text,email,password,number,tel,url';
     if (actualTypes !== expectedTypes) {
       throw new Error(`タイプの順序が一致しません。期待値: "${expectedTypes}"、実際の値: "${actualTypes}"`);
     }
@@ -1521,7 +1519,7 @@ export const VariantStateMatrix: Story = {
       <ui-input id="matrix-error" label="Error" name="error" error error-message="Invalid value"></ui-input>
       <ui-input id="matrix-readonly" label="Readonly" name="readonly" value="Fixed value" readonly></ui-input>
       <ui-input id="matrix-disabled" label="Disabled" name="disabled" value="Disabled value" disabled></ui-input>
-      <ui-input id="matrix-hidden-label" label="Search" name="search" type="search" hide-label placeholder="Search..."></ui-input>
+      <ui-input id="matrix-hidden-label" label="User ID" name="userId" type="text" hide-label placeholder="User ID"></ui-input>
     </div>
   `,
   play: async ({ canvasElement }) => {

@@ -83,12 +83,12 @@ let inputInstanceCounter = 0;
  *   error-message="このユーザー名は既に使用されています"
  * ></ui-input>
  * 
- * <!-- ラベルを視覚的に非表示（検索フィールド等） -->
+ * <!-- ラベルを視覚的に非表示 -->
  * <ui-input 
- *   label="検索" 
+ *   label="ユーザーID" 
  *   hide-label 
- *   type="search" 
- *   placeholder="検索..."
+ *   type="text" 
+ *   placeholder="ユーザーIDを入力"
  * ></ui-input>
  * ```
  */
@@ -306,7 +306,7 @@ export class Input extends LitElement {
 
   /**
    * 入力フィールドのタイプ
-   * @type {'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'search'}
+   * @type {'text' | 'email' | 'password' | 'number' | 'tel' | 'url'}
    * @default 'text'
    */
   @property({ type: String, reflect: true })
@@ -412,7 +412,6 @@ export class Input extends LitElement {
     'number',
     'tel',
     'url',
-    'search',
   ];
 
   // 一意なIDを生成（レンダリング毎の再生成を防止）
