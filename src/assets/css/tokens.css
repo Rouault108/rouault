@@ -168,7 +168,7 @@
    * Typography - Font Family
    * ========================================================================= */
   --font-sans:
-    'Noto Sans JP Variable', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Hiragino Sans',
+    'Rouault Sans', 'Noto Sans JP Variable', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Hiragino Sans',
     'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', 'Segoe UI', 'Meiryo', sans-serif;
   --font-mono:
     'JetBrains Mono', 'Fira Code', 'Consolas', 'Liberation Mono', 'Courier New', monospace;

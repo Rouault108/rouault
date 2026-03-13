@@ -2,11 +2,10 @@
  * フォント読み込み
  * =========================================================================== */
 
-/* Noto Sans JP Variable Font
- * - 可変フォントにより、400-900の全ウェイトを1ファイルで提供
- * - 日本語主体のコンテンツに最適化された設計
- * - 欧文グリフも含むため和欧混植時の統一感が高い */
-@import '@fontsource-variable/noto-sans-jp';
+/* Rouault Sans
+ * - Noto Sans JP Variable をベースにしたプロジェクト用エイリアス
+ * - 和文とアイコンの視覚中心差を吸収するため、font metrics を調整 */
+@import './fonts/rouault-sans.css';
 
 /* Inter Variable Font（欧文用）
  * - 将来的な追加を見越してコメント残し
