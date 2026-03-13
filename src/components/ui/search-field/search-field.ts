@@ -31,8 +31,11 @@ export class SearchField extends LitElement {
       gap: var(--space-2, 8px);
       inline-size: 100%;
       --ui-search-field-height: 44px;
-      --ui-search-field-radius: var(--radius-md, 8px);
+      --ui-search-field-radius: var(--radius-sm, 4px);
       --ui-search-field-bg: var(--bg-fill-muted, oklch(95% 0 0));
+      --ui-search-field-border-width: 0px;
+      --ui-search-field-border-color: transparent;
+      --ui-search-field-shadow: none;
       --ui-search-field-font-size: var(--text-xl, 18px);
       --ui-search-field-icon-color: var(--fg-muted, oklch(48% 0 0));
     }
@@ -60,12 +63,15 @@ export class SearchField extends LitElement {
     }
 
     .field {
+      box-sizing: border-box;
       position: relative;
       display: flex;
       align-items: center;
       min-block-size: var(--ui-search-field-height);
+      border: var(--ui-search-field-border-width) solid var(--ui-search-field-border-color);
       border-radius: var(--ui-search-field-radius);
       background: var(--ui-search-field-bg);
+      box-shadow: var(--ui-search-field-shadow);
     }
 
     .field::after {
@@ -100,10 +106,11 @@ export class SearchField extends LitElement {
       -webkit-appearance: none;
       appearance: none;
       margin: 0;
+      display: block;
 
       inline-size: 100%;
       min-block-size: var(--ui-search-field-height);
-      block-size: auto;
+      block-size: var(--ui-search-field-height);
 
       border: none;
       background: transparent;
@@ -111,10 +118,8 @@ export class SearchField extends LitElement {
       font: inherit;
       font-size: var(--ui-search-field-font-size);
 
-      line-height: 1;
-      padding-block: calc(
-        (var(--ui-search-field-height) - var(--ui-search-field-font-size)) / 2
-      );
+      line-height: var(--ui-search-field-height);
+      padding-block: 0;
 
       padding-inline-start: calc(16px + var(--space-5, 20px));
       padding-inline-end: calc(28px + var(--space-4, 16px));
@@ -218,6 +223,7 @@ export class SearchField extends LitElement {
     @media (forced-colors: active) {
       .field {
         background: Field;
+        border-color: FieldText;
       }
 
       input {

@@ -91,10 +91,16 @@ export const Default: Story = {
     const input = getInput(host);
     const clearButton = getClearButton(host);
     const icon = host.shadowRoot?.querySelector('.icon');
+    const inputStyle = getComputedStyle(input);
     assert(!!icon, '検索アイコンが表示されていません');
     assert(input.type === 'search', '内部 input が type="search" ではありません');
     assert(clearButton.hidden, '初期状態では clear button が非表示である必要があります');
     assert(input.getAttribute('aria-label') === '検索', 'aria-label が設定されていません');
+    assert(inputStyle.paddingTop === '0px', '入力テキストの縦位置合わせのため padding-block-start は 0px である必要があります');
+    assert(inputStyle.paddingBottom === '0px', '入力テキストの縦位置合わせのため padding-block-end は 0px である必要があります');
+    assert(inputStyle.height === '44px', '入力欄の高さはコントロール全体と一致している必要があります');
+    assert(inputStyle.lineHeight === '44px', '入力欄の line-height はコントロール高と一致している必要があります');
+    assert(inputStyle.fontFamily.includes('Rouault Sans'), '入力欄はグローバルなメトリクス補正済みフォントを継承している必要があります');
   },
 };
 
@@ -191,5 +197,38 @@ export const DisabledAndReadonlyBoundary: Story = {
     assert(readonlyClearButton.hidden, 'readonly 状態では clear button を表示してはいけません');
     assert(!disabledHost.clearButtonVisible, 'disabled 状態では clearButtonVisible=false である必要があります');
     assert(disabledClearButton.hidden, 'disabled 状態では clear button を表示してはいけません');
+  },
+};
+
+export const SurfaceBorderCustomization: Story = {
+  render: () => html`
+    <div style="max-width: 32rem;">
+      <ui-search-field
+        id="search-field-border"
+        label="検索"
+        hide-label
+        placeholder="メモを検索"
+        style="
+          --ui-search-field-bg: var(--bg-surface-2);
+          --ui-search-field-border-width: 1px;
+          --ui-search-field-border-color: var(--border-default);
+        "
+      ></ui-search-field>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    await customElements.whenDefined('ui-search-field');
+    const host = getHost(canvasElement, 'search-field-border');
+    await flush(host);
+
+    const field = host.shadowRoot?.querySelector<HTMLDivElement>('.field');
+    if (!field) {
+      throw new Error('.field が見つかりません');
+    }
+
+    const fieldStyle = getComputedStyle(field);
+    assert(fieldStyle.borderTopWidth === '1px', 'カスタム border width が .field に反映されていません');
+    assert(fieldStyle.borderTopStyle === 'solid', 'カスタム border style が .field に反映されていません');
+    assert(fieldStyle.borderTopColor !== 'rgba(0, 0, 0, 0)', 'カスタム border color が .field に反映されていません');
   },
 };
