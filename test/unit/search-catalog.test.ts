@@ -172,7 +172,7 @@ describe('search-catalog', () => {
       },
     );
 
-    const items = await loadSearchCatalog(async () => response);
+    const items = await loadSearchCatalog(() => Promise.resolve(response));
 
     expect(items).to.deep.equal([
       {
