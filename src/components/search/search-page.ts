@@ -81,6 +81,8 @@ export class SearchPage extends LitElement {
       --ui-search-field-height: 3rem;
       --ui-search-field-radius: var(--radius-lg, 12px);
       --ui-search-field-bg: var(--bg-surface-2);
+      --ui-search-field-border-width: var(--border-width, 1px);
+      --ui-search-field-border-color: var(--border-default);
     }
 
     .meta-row {
