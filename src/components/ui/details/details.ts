@@ -92,7 +92,10 @@ export class Details extends LitElement {
       align-items: center;
       justify-content: center;
       align-self: flex-start;
-      margin-top: calc((1em * var(--line-height-normal, 1.5) - var(--icon-base, 16px)) / 2);
+      margin-top: var(
+        --ui-details-icon-offset-block-start,
+        calc((1em * var(--line-height-normal, 1.5) - var(--icon-base, 16px)) / 2)
+      );
       color: var(--fg-muted, oklch(48% 0 0));
       transform: rotate(0deg);
       transition:
