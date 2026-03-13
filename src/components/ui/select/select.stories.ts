@@ -156,6 +156,12 @@ const meta: Meta<Select> = {
       description: '読み取り専用モード',
       table: { type: { summary: 'boolean' }, defaultValue: { summary: 'false' } },
     },
+    variant: {
+      control: 'radio',
+      options: ['filled', 'outline'],
+      description: '外観バリアント',
+      table: { type: { summary: "'filled' | 'outline'" }, defaultValue: { summary: 'filled' } },
+    },
   },
 };
 
@@ -231,6 +237,39 @@ export const Default: Story = {
     const iconCenterY = iconRect.top + iconRect.height / 2;
     if (Math.abs(triggerCenterY - iconCenterY) > 1) {
       throw new Error('矢印アイコンがトリガーの垂直中央に配置されていません');
+    }
+  },
+};
+
+/**
+ * アウトラインバリアント。
+ * 白背景でも境界が消えないことを確認します。
+ */
+export const OutlineVariant: Story = {
+  render: () => html`
+    <ui-select
+      id="outline-select"
+      label="都道府県"
+      name="prefecture"
+      variant="outline"
+      placeholder="選択してください"
+      .options="${PREFECTURE_OPTIONS}"
+    ></ui-select>
+  `,
+  play: async ({ canvasElement }) => {
+    const select = canvasElement.querySelector<Select>('#outline-select');
+    if (!select) throw new Error('ui-select コンポーネントが見つかりません');
+    await select.updateComplete;
+
+    const trigger = select.shadowRoot?.querySelector<HTMLInputElement>('[role="combobox"]');
+    if (!trigger) throw new Error('トリガーが見つかりません');
+
+    const computedStyle = window.getComputedStyle(trigger);
+    if (computedStyle.backgroundColor === 'rgba(0, 0, 0, 0)') {
+      throw new Error('outline バリアントの背景が透明になっています');
+    }
+    if (computedStyle.borderTopColor === 'rgba(0, 0, 0, 0)') {
+      throw new Error('outline バリアントの境界線が透明になっています');
     }
   },
 };

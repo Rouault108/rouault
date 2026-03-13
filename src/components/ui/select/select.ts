@@ -48,6 +48,7 @@ export interface SelectOption {
  * @property {boolean} error - エラー状態の強制
  * @property {boolean} disabled - 操作無効化
  * @property {boolean} readonly - 読み取り専用モード
+ * @property {'filled' | 'outline'} variant - 外観バリアント
  * @property {SelectOption[]} options - 選択肢の配列
  *
  * @fires change - 選択値が変更された時（detail: { value: string | number }）
@@ -76,6 +77,11 @@ export class Select extends LitElement {
       display: flex;
       flex-direction: column;
       gap: var(--space-2, 8px);
+    }
+
+    :host([variant='outline']) .trigger {
+      border-color: var(--border-default, oklch(90% 0 0 / 0.12));
+      background: var(--bg-default, oklch(100% 0 0));
     }
 
     /* ============================================================
@@ -168,6 +174,15 @@ export class Select extends LitElement {
       border-color: var(--border-default, oklch(90% 0 0 / 0.12));
     }
 
+    :host([variant='outline']) .trigger:focus {
+      background: var(--bg-default, oklch(100% 0 0));
+    }
+
+    :host([variant='outline']) .trigger--opened {
+      background: var(--bg-default, oklch(100% 0 0));
+      border-color: var(--border-default, oklch(90% 0 0 / 0.18));
+    }
+
     .trigger--error {
       border-color: var(--border-danger, oklch(55% 0.2 28));
       background: var(--bg-danger-subtle, oklch(95% 0.02 28));
@@ -185,6 +200,10 @@ export class Select extends LitElement {
       border-color: var(--border-default, oklch(90% 0 0 / 0.12));
       background: var(--bg-fill-muted, oklch(95% 0 0));
       cursor: default;
+    }
+
+    :host([variant='outline'][readonly]) .trigger {
+      background: var(--bg-default, oklch(100% 0 0));
     }
 
     /* ============================================================
@@ -358,6 +377,10 @@ export class Select extends LitElement {
     /** 読み取り専用モード */
     @property({ type: Boolean, reflect: true })
     readonly = false;
+
+    /** 外観バリアント */
+    @property({ type: String, reflect: true })
+    variant: 'filled' | 'outline' = 'filled';
 
     /** 選択肢の配列 */
     @property({ type: Array })
