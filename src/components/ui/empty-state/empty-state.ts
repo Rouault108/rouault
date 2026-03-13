@@ -13,20 +13,11 @@ const normalizeText = (value: string): string => value.replace(/\s+/g, ' ').trim
 export class EmptyState extends LitElement {
   static override styles = css`
     :host {
-      --empty-state-padding: clamp(var(--space-8, 32px), 6vw, var(--space-12, 48px));
-      --empty-state-min-height: clamp(
-        calc(var(--space-12, 48px) * 5),
-        50vh,
-        calc(var(--space-16, 64px) * 5)
-      );
-
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: var(--empty-state-padding);
-      min-height: var(--empty-state-min-height);
       animation: empty-state-enter var(--duration-normal, 200ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1))
         both;
     }
@@ -183,11 +174,6 @@ export class EmptyState extends LitElement {
     }
 
     @media print {
-      :host {
-        min-height: unset;
-        padding: var(--space-4, 16px);
-      }
-
       .icon,
       .actions {
         display: none !important;
