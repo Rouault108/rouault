@@ -63,6 +63,11 @@ export interface SelectOption {
  */
 @customElement('ui-select')
 export class Select extends LitElement {
+    static override shadowRootOptions = {
+        ...LitElement.shadowRootOptions,
+        delegatesFocus: true,
+    };
+
     static override styles = css`
     /* ============================================================
      * Host Container
@@ -405,11 +410,6 @@ export class Select extends LitElement {
     constructor() {
         super();
         this._internals = this.attachInternals();
-
-        // delegatesFocus: true により外部フォーカスをトリガーに転送
-        if (!this.shadowRoot) {
-            this.attachShadow({ mode: 'open', delegatesFocus: true });
-        }
     }
 
     override connectedCallback(): void {
