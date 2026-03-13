@@ -66,7 +66,6 @@ export class SearchPage extends LitElement {
 
     .description {
       margin: 0;
-      max-width: 56ch;
       color: var(--fg-muted);
       font-size: var(--text-base, 14px);
       line-height: var(--line-height-relaxed, 1.7);
