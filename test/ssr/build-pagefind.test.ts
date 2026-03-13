@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
   buildPagefindIndex,
@@ -17,9 +17,10 @@ describe('build-pagefind', () => {
 
   it('Node 経由で pagefind CLI を dist に対して実行すること', async () => {
     const commands: PagefindCommand[] = [];
-    const runner: PagefindCommandRunner = vi.fn(async (command) => {
+    const runner: PagefindCommandRunner = (command) => {
       commands.push(command);
-    });
+      return Promise.resolve();
+    };
 
     await buildPagefindIndex({
       projectRoot: '/tmp/rouault',

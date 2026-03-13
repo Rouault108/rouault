@@ -66,6 +66,22 @@ test.describe('SSR Rendering', () => {
     expect(hasTableShadowRoot).toBe(true);
   });
 
+  test('タグページのカードが JavaScript 無効時も初期表示されること', async ({ page }) => {
+    await page.goto('/tags/music/');
+
+    await expect(page.locator('#main-content h1').first()).toHaveText('#music');
+    await expect(page.locator('#main-content')).toContainText(
+      'このタグに属する公開ノートを新しい順で一覧します。',
+    );
+    await expect(page.locator('ui-card').first()).toContainText('交響曲第9番 ニ短調 作品125');
+
+    const hasCardShadowRoot = await page.locator('ui-card').first().evaluate(
+      (element) => element.shadowRoot !== null,
+    );
+
+    expect(hasCardShadowRoot).toBe(true);
+  });
+
   test('ヘッダーとサイドバーがスクロールしても固定されること', async ({ page }) => {
     await page.goto(beethovenEntryPath);
 
