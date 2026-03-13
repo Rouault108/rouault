@@ -1,12 +1,17 @@
 import { css, html, LitElement, nothing, unsafeCSS } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { live } from 'lit/directives/live.js';
+import { repeat } from 'lit/directives/repeat.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import '../../components/ui/button/button.js';
+import '../../lib/icons';
 import '../../components/ui/card/card.js';
+import '../../components/ui/checkbox/checkbox.js';
+import '../../components/ui/details/details.js';
 import '../../components/ui/empty-state/empty-state.js';
 import '../../components/ui/search-field/search-field.js';
 import '../../components/ui/select/select.js';
 import '../../components/ui/spinner/spinner.js';
+import '../../components/ui/tag/tag.js';
 import type { SelectOption } from '../../components/ui/select/select.js';
 import { HIGHLIGHT_RULE_TEMPLATE } from '../ui/highlight/highlight.js';
 import { pagefindSearchAdapter, type SearchResultItem } from '../../lib/search/pagefind-search.js';
@@ -26,6 +31,13 @@ const SEARCH_SORT_OPTIONS: SelectOption[] = [
 ];
 
 type SearchControlTarget = EventTarget & { value: unknown };
+
+interface GenreFilterEntry {
+  tag: string;
+  count: number;
+  selected: boolean;
+  disabled: boolean;
+}
 
 @customElement('search-page')
 export class SearchPage extends LitElement {
@@ -100,6 +112,7 @@ export class SearchPage extends LitElement {
       align-items: center;
       justify-content: space-between;
       gap: var(--space-4, 16px);
+      margin: 0 0 0 var(--space-2, 8px);
     }
 
     .sort-field {
@@ -120,26 +133,179 @@ export class SearchPage extends LitElement {
       --control-height-md: 2.25rem;
     }
 
-    .filters {
+    .filter-details {
+      display: block;
+      --ui-details-icon-align-self: center;
+      --ui-details-icon-offset-block-start: 0px;
+    }
+
+    .filter-details::part(trigger) {
+      padding: var(--space-3, 12px) var(--space-4, 16px);
+    }
+
+    .filter-details::part(summary) {
+      display: block;
+      inline-size: 100%;
+    }
+
+    .filter-details::part(content) {
+      margin-left: 0;
+      padding: 0 var(--space-4, 16px) var(--space-4, 16px);
+    }
+
+    .filter-summary {
+      inline-size: 100%;
+      min-width: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: var(--space-3, 12px);
+    }
+
+    .filter-summary-main {
+      min-width: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2, 8px);
+      font-size: var(--text-base, 14px);
+      color: var(--fg-default);
+    }
+
+    .filter-summary-main iconify-icon {
+      flex-shrink: 0;
+      color: var(--fg-muted);
+      inline-size: var(--icon-base, 16px);
+      block-size: var(--icon-base, 16px);
+      font-size: var(--icon-base, 16px);
+    }
+
+    .filter-summary-meta {
+      min-width: 0;
+      display: grid;
+      justify-items: end;
+      gap: 2px;
+      color: var(--fg-muted);
+      text-align: right;
+    }
+
+    .filter-summary-state {
+      color: var(--fg-default);
+      font-size: var(--text-sm, 13px);
+      line-height: 1.3;
+    }
+
+    .filter-summary-detail {
+      font-size: var(--text-xs, 12px);
+      line-height: 1.3;
+      white-space: normal;
+      max-inline-size: min(24rem, 100%);
+    }
+
+    .filter-panel {
+      display: grid;
+      gap: var(--space-5, 20px);
+      padding-top: var(--space-2, 8px);
+    }
+
+    .filter-section {
+      display: grid;
+      gap: var(--space-3, 12px);
+    }
+
+    .filter-section-header,
+    .filter-list-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2, 8px);
+    }
+
+    .filter-section-title {
+      margin: 0;
+      color: var(--fg-default);
+      font-size: var(--text-sm, 13px);
+      font-weight: var(--font-medium, 500);
+      line-height: 1.4;
+    }
+
+    .filter-section-meta {
+      color: var(--fg-muted);
+      font-size: var(--text-xs, 12px);
+      line-height: 1.4;
+    }
+
+    .selected-tags {
       display: flex;
       flex-wrap: wrap;
       gap: var(--space-2, 8px);
     }
 
-    .filter-chip {
-      --radius-md: 999px;
-      --control-height-sm: 2rem;
-      --space-2: var(--space-3, 12px);
-      --space-1: var(--space-1, 4px);
-      --elevation-sm: none;
+    .selected-tag {
+      --radius-sm: 999px;
     }
 
-    .filter-chip-count {
+    .filter-empty {
+      margin: 0;
       color: var(--fg-muted);
+      font-size: var(--text-sm, 13px);
+      line-height: 1.6;
     }
 
-    .filter-chip[data-selected='true'] .filter-chip-count {
-      color: inherit;
+    .filter-search-field {
+      --ui-search-field-height: 2.5rem;
+      --ui-search-field-radius: var(--radius-md, 8px);
+      --ui-search-field-bg: var(--bg-surface-2);
+      --ui-search-field-border-width: var(--border-width, 1px);
+      --ui-search-field-border-color: var(--border-default);
+      --ui-search-field-font-size: var(--text-base, 14px);
+    }
+
+    .filter-list {
+      display: grid;
+      gap: var(--space-2, 8px);
+      max-block-size: min(22rem, 50vh);
+      padding-right: var(--space-1, 4px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    .filter-option {
+      --search-filter-option-selected-accent: oklch(55% var(--chroma-high, 0.2) var(--hue-blue, 230));
+      /* 無彩色との mix で Hue が赤側へ回り込むのを避けるため、選択色は明示的に青系で固定する */
+      --search-filter-option-selected-border: oklch(84% 0.07 var(--hue-blue, 230));
+      --search-filter-option-selected-bg: oklch(97% 0.018 var(--hue-blue, 230));
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: var(--space-3, 12px);
+      padding: var(--space-3, 12px);
+      border: var(--border-width, 1px) solid var(--border-default);
+      border-radius: var(--radius-md, 8px);
+      background: var(--bg-surface-2);
+      transition:
+        border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+    }
+
+    .filter-option[data-selected='true'] {
+      border-color: var(--search-filter-option-selected-border);
+      background: var(--search-filter-option-selected-bg);
+    }
+
+    .filter-option[data-disabled='true'] {
+      opacity: 0.68;
+    }
+
+    .filter-option-checkbox {
+      inline-size: 100%;
+    }
+
+    .filter-option-count {
+      color: var(--fg-muted);
+      font-size: var(--text-sm, 13px);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
 
     .results-section {
@@ -209,6 +375,33 @@ export class SearchPage extends LitElement {
       .search-page {
         padding-inline: var(--space-3, 12px);
       }
+
+      .toolbar-row {
+        margin-left: 0;
+      }
+
+      .sort-field {
+        width: 100%;
+        grid-template-columns: 1fr;
+      }
+
+      .sort-select {
+        min-inline-size: 0;
+      }
+
+      .filter-summary-meta {
+        max-inline-size: 100%;
+        justify-items: start;
+        text-align: left;
+      }
+
+      .filter-summary {
+        grid-template-columns: 1fr;
+      }
+
+      .filter-list {
+        max-block-size: min(18rem, 45vh);
+      }
     }
   `;
 
@@ -238,6 +431,12 @@ export class SearchPage extends LitElement {
 
   @state()
   private _allGenreCounts: Record<string, number> = {};
+
+  @state()
+  private _filterQuery = '';
+
+  @state()
+  private _filtersOpen = false;
 
   private _searchTimerId: number | undefined;
   private _requestToken = 0;
@@ -373,6 +572,15 @@ export class SearchPage extends LitElement {
     this._scheduleRefresh();
   };
 
+  private _onFilterInput = (event: Event): void => {
+    const nextValue = this._readControlValue(event.currentTarget ?? event.target);
+    if (nextValue === null) {
+      return;
+    }
+
+    this._filterQuery = nextValue;
+  };
+
   private _toggleTag(tag: string): void {
     const normalized = normalizeSearchTags(
       this._selectedTags.includes(tag)
@@ -384,6 +592,15 @@ export class SearchPage extends LitElement {
     this._pushUrl();
     void this._refreshResults();
   }
+
+  private _onSelectedTagRemove = (event: CustomEvent<{ value: string }>): void => {
+    event.stopPropagation();
+    this._toggleTag(event.detail.value);
+  };
+
+  private _onFiltersToggle = (event: CustomEvent<{ open: boolean }>): void => {
+    this._filtersOpen = event.detail.open;
+  };
 
   private _onSortChange = (event: Event): void => {
     const { value } = (event as CustomEvent<{ value: string | number }>).detail;
@@ -415,7 +632,7 @@ export class SearchPage extends LitElement {
     void navigateToUrl(url);
   };
 
-  private _sortedGenreEntries(): [string, number][] {
+  private _buildGenreFilterEntries(): GenreFilterEntry[] {
     const map = new Map<string, number>(Object.entries(this._allGenreCounts));
 
     for (const [tag, count] of Object.entries(this._genreCounts)) {
@@ -428,16 +645,175 @@ export class SearchPage extends LitElement {
       }
     }
 
-    return [...map.entries()].sort((left, right) => {
-      const leftSelected = this._selectedTags.includes(left[0]) ? 1 : 0;
-      const rightSelected = this._selectedTags.includes(right[0]) ? 1 : 0;
+    return [...map.entries()]
+      .map(([tag, count]) => {
+        const selected = this._selectedTags.includes(tag);
+        return {
+          tag,
+          count,
+          selected,
+          disabled: !selected && count === 0,
+        } satisfies GenreFilterEntry;
+      })
+      .sort((left, right) => {
+        const leftSelected = left.selected ? 1 : 0;
+        const rightSelected = right.selected ? 1 : 0;
 
-      if (leftSelected !== rightSelected) {
-        return rightSelected - leftSelected;
-      }
+        if (leftSelected !== rightSelected) {
+          return rightSelected - leftSelected;
+        }
 
-      return left[0].localeCompare(right[0], 'ja');
-    });
+        if (left.count !== right.count) {
+          return right.count - left.count;
+        }
+
+        return left.tag.localeCompare(right.tag, 'ja');
+      });
+  }
+
+  private _normalizedFilterQuery(): string {
+    return this._filterQuery.trim().toLocaleLowerCase('ja');
+  }
+
+  private _visibleGenreFilterEntries(): GenreFilterEntry[] {
+    const normalizedFilterQuery = this._normalizedFilterQuery();
+    const entries = this._buildGenreFilterEntries();
+    if (normalizedFilterQuery.length === 0) {
+      return entries;
+    }
+
+    return entries.filter((entry) =>
+      entry.tag.toLocaleLowerCase('ja').includes(normalizedFilterQuery),
+    );
+  }
+
+  private _filterSummaryState(): string {
+    if (this._selectedTags.length === 0) {
+      return 'すべてのタグ';
+    }
+
+    return `${this._selectedTags.length.toString()}タグ選択中`;
+  }
+
+  private _filterSummaryDetail(): string {
+    if (this._selectedTags.length === 0) {
+      return '必要な時だけ展開して絞り込めます。';
+    }
+
+    const previewTags = this._selectedTags.slice(0, 2);
+    const remainder = this._selectedTags.length - previewTags.length;
+    return remainder > 0
+      ? `${previewTags.join(' / ')} ほか ${remainder.toString()} 件`
+      : previewTags.join(' / ');
+  }
+
+  private _renderSelectedTags(): unknown {
+    if (this._selectedTags.length === 0) {
+      return html`<p class="filter-empty">まだタグは選択されていません。</p>`;
+    }
+
+    return html`
+      <div class="selected-tags">
+        ${this._selectedTags.map((tag) => html`
+          <ui-tag
+            class="selected-tag"
+            variant="outline"
+            color="blue"
+            removable
+            @ui-tag-remove=${this._onSelectedTagRemove}
+          >
+            ${tag}
+          </ui-tag>
+        `)}
+      </div>
+    `;
+  }
+
+  private _renderFilterPanel(): unknown {
+    const entries = this._buildGenreFilterEntries();
+    if (entries.length === 0) {
+      return nothing;
+    }
+
+    const visibleEntries = this._visibleGenreFilterEntries();
+
+    return html`
+      <ui-details
+        class="filter-details"
+        aria-label="タグフィルターを開閉"
+        variant="bordered"
+        region
+        ?open=${this._filtersOpen}
+        @toggle=${this._onFiltersToggle}
+      >
+        <div slot="summary" class="filter-summary">
+          <div class="filter-summary-main">
+            <iconify-icon icon="lucide:tag" aria-hidden="true"></iconify-icon>
+            <span>タグで絞り込む</span>
+          </div>
+
+          <div class="filter-summary-meta">
+            <span class="filter-summary-state">${this._filterSummaryState()}</span>
+            <span class="filter-summary-detail">${this._filterSummaryDetail()}</span>
+          </div>
+        </div>
+
+        <div class="filter-panel" aria-label="タグフィルター">
+          <section class="filter-section" aria-labelledby="selected-tags-heading">
+            <div class="filter-section-header">
+              <h2 id="selected-tags-heading" class="filter-section-title">選択中タグ</h2>
+              <span class="filter-section-meta">${this._selectedTags.length.toString()} 件</span>
+            </div>
+            ${this._renderSelectedTags()}
+          </section>
+
+          <section class="filter-section" aria-labelledby="filter-list-heading">
+            <div class="filter-list-header">
+              <h2 id="filter-list-heading" class="filter-section-title">タグを絞り込む</h2>
+              <span class="filter-section-meta">
+                ${visibleEntries.length.toString()} / ${entries.length.toString()} タグ
+              </span>
+            </div>
+
+            <ui-search-field
+              class="filter-search-field"
+              label="タグを絞り込む"
+              hide-label
+              autocomplete="off"
+              placeholder="タグ名で絞り込む"
+              .value=${this._filterQuery}
+              @input=${this._onFilterInput}
+            ></ui-search-field>
+
+            ${visibleEntries.length > 0
+              ? html`
+                  <div class="filter-list" role="list">
+                    ${repeat(visibleEntries, (entry) => entry.tag, (entry) => html`
+                      <div
+                        class="filter-option"
+                        role="listitem"
+                        data-selected=${entry.selected ? 'true' : 'false'}
+                        data-disabled=${entry.disabled ? 'true' : 'false'}
+                      >
+                        <ui-checkbox
+                          class="filter-option-checkbox"
+                          .checked=${live(entry.selected)}
+                          .disabled=${entry.disabled}
+                          .label=${entry.tag}
+                          @change=${() => {
+                            this._toggleTag(entry.tag);
+                          }}
+                        ></ui-checkbox>
+                        <span class="filter-option-count">${entry.count.toString()}件</span>
+                      </div>
+                    `)}
+                  </div>
+                `
+              : html`<p class="filter-empty">一致するタグはありません。</p>`}
+          </section>
+        </div>
+      </ui-details>
+    `;
   }
 
   private _renderResults(): unknown {
@@ -506,7 +882,6 @@ export class SearchPage extends LitElement {
   }
 
   override render() {
-    const filters = this._sortedGenreEntries();
     const activeCount = this._results.length;
 
     return html`
@@ -533,9 +908,6 @@ export class SearchPage extends LitElement {
           <div class="toolbar-row">
             <div class="meta-row">
               <span>${activeCount.toString()} 件の結果</span>
-              ${this._selectedTags.length > 0
-                ? html`<span>選択中: ${this._selectedTags.join(' / ')}</span>`
-                : nothing}
             </div>
 
             <div class="sort-field">
@@ -552,32 +924,7 @@ export class SearchPage extends LitElement {
             </div>
           </div>
 
-          ${filters.length > 0
-            ? html`
-                <div class="filters" aria-label="タグフィルター">
-                  ${filters.map(([tag, count]) => {
-                    const selected = this._selectedTags.includes(tag);
-                    const disabled = !selected && count === 0;
-
-                    return html`
-                      <ui-button
-                        class="filter-chip"
-                        size="sm"
-                        variant=${selected ? 'secondary' : 'outline'}
-                        type="button"
-                        data-selected=${selected ? 'true' : 'false'}
-                        aria-pressed=${selected ? 'true' : 'false'}
-                        ?disabled=${disabled}
-                        @click=${() => { this._toggleTag(tag); }}
-                      >
-                        <span>#${tag}</span>
-                        <span class="filter-chip-count">${count.toString()}</span>
-                      </ui-button>
-                    `;
-                  })}
-                </div>
-              `
-            : nothing}
+          ${this._renderFilterPanel()}
         </div>
 
         <div class="results-section">
