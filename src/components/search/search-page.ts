@@ -36,6 +36,7 @@ export class SearchPage extends LitElement {
     }
 
     .search-page {
+      box-sizing: border-box;
       width: min(100%, 72rem);
       margin: 0 auto;
       padding: clamp(var(--space-6, 24px), 4vw, var(--space-10, 40px)) var(--space-4, 16px) var(--space-12, 48px);
@@ -545,6 +546,7 @@ export class SearchPage extends LitElement {
             class="search-input-control"
             label="検索"
             hide-label
+            variant="outline"
             type="search"
             autocomplete="off"
             placeholder="メモを検索"
