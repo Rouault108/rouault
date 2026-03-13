@@ -80,7 +80,9 @@ export class SearchField extends LitElement {
 
     .icon {
       position: absolute;
+      inset-block-start: 50%;
       inset-inline-start: var(--space-3, 12px);
+      transform: translateY(-50%);
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -89,22 +91,34 @@ export class SearchField extends LitElement {
     }
 
     .icon iconify-icon {
-      inline-size: var(--icon-base, 16px);
-      block-size: var(--icon-base, 16px);
-      font-size: var(--icon-base, 16px);
+      inline-size: var(--icon-md, 18px);
+      block-size: var(--icon-md, 18px);
+      font-size: var(--icon-md, 18px);
     }
 
     input {
+      -webkit-appearance: none;
+      appearance: none;
+      margin: 0;
+
       inline-size: 100%;
-      block-size: var(--ui-search-field-height);
+      min-block-size: var(--ui-search-field-height);
+      block-size: auto;
+
       border: none;
       background: transparent;
       color: var(--fg-default, oklch(20% 0 0));
       font: inherit;
       font-size: var(--ui-search-field-font-size);
-      line-height: 1.4;
+
+      line-height: 1;
+      padding-block: calc(
+        (var(--ui-search-field-height) - var(--ui-search-field-font-size)) / 2
+      );
+
       padding-inline-start: calc(16px + var(--space-5, 20px));
       padding-inline-end: calc(28px + var(--space-4, 16px));
+
       outline: none;
       box-sizing: border-box;
     }
