@@ -290,15 +290,15 @@ export class SearchField extends LitElement {
   }
 
   override focus(options?: FocusOptions): void {
-    this._input?.focus(options);
+    this._input.focus(options);
   }
 
   override blur(): void {
-    this._input?.blur();
+    this._input.blur();
   }
 
   select(): void {
-    this._input?.select();
+    this._input.select();
   }
 
   setSelectionRange(
@@ -306,16 +306,14 @@ export class SearchField extends LitElement {
     end: number,
     direction?: SelectionDirectionValue,
   ): void {
-    this._input?.setSelectionRange(start, end, direction);
+    this._input.setSelectionRange(start, end, direction);
   }
 
   clear(options?: FocusOptions): void {
     if (this.disabled || this.readonly) return;
 
     this.value = '';
-    if (this._input) {
-      this._input.value = '';
-    }
+    this._input.value = '';
 
     this._dispatchInputEvent();
     this.focus(options);
