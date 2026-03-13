@@ -8,6 +8,7 @@ import '../components/ui/skip-link/skip-link.js';
 import '../components/layout/layout-header.js';
 import { LayoutFooter } from '../components/layout/layout-footer.js';
 import '../components/ui/search-dialog/search-dialog.js';
+import '../components/ui/card/card.js';
 import '../components/search/search-page.js';
 import '../components/ui/article-header/article-header.js';
 import '../components/layout/layout-sidebar.js';
