@@ -59,9 +59,20 @@ export class EmptyState extends LitElement {
     }
 
     .fallback-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       inline-size: var(--icon-xl, 32px);
       block-size: var(--icon-xl, 32px);
       color: currentColor;
+      line-height: 0;
+    }
+
+    .fallback-icon > svg {
+      display: block;
+      inline-size: 100%;
+      block-size: 100%;
+      margin: auto;
     }
 
     .icon::slotted([slot='icon']) {
