@@ -91,7 +91,7 @@ export class Details extends LitElement {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      align-self: flex-start;
+      align-self: var(--ui-details-icon-align-self, flex-start);
       margin-top: var(
         --ui-details-icon-offset-block-start,
         calc((1em * var(--line-height-normal, 1.5) - var(--icon-base, 16px)) / 2)
