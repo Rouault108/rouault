@@ -107,6 +107,7 @@ const meta: Meta<SearchHighlight> = {
 
 - 最終DOMはネイティブ \`mark\`
 - 適用スコープは \`.prose mark\` と \`ui-search-highlight > mark\` のみ
+- 通常モードは塗りつぶしではなく、線状のハイライトを \`box-shadow\` で描画
 - \`origin\` は \`search\` / \`user\` を受け取り、\`data-origin\` へ反映
 - \`forced-colors\` / \`print\` では背景依存を避け、下線で非色シグナルを維持
         `,
@@ -207,8 +208,12 @@ export const Default: Story = {
       throw new Error('mark に左右 padding を入れてはいけません');
     }
 
-    if (markStyle.backgroundColor === 'rgba(0, 0, 0, 0)') {
-      throw new Error('通常モードで背景ハイライトが消失しています');
+    if (markStyle.backgroundColor !== 'rgba(0, 0, 0, 0)') {
+      throw new Error('通常モードで塗りつぶし背景を持ってはいけません');
+    }
+
+    if (markStyle.boxShadow === 'none') {
+      throw new Error('通常モードで線状ハイライトが消失しています');
     }
 
     if (markStyle.textDecorationLine.includes('underline')) {
@@ -365,8 +370,8 @@ export const BoundaryConditions: Story = {
     }
 
     const plainRadiusMatches = isNearlyEqual(toPx(plainStyle.borderRadius), expectedRadius);
-    const plainBackgroundMatches = plainStyle.backgroundColor === proseStyle.backgroundColor;
-    if (plainRadiusMatches && plainBackgroundMatches) {
+    const plainShadowMatches = plainStyle.boxShadow === proseStyle.boxShadow;
+    if (plainRadiusMatches && plainShadowMatches) {
       throw new Error('スコープ外 mark に highlight スタイルが漏れています');
     }
   },
@@ -409,11 +414,11 @@ export const MediaAndTokenContracts: Story = {
     if (!cssText.includes('var(--bg-highlight-subtle)')) {
       throw new Error('背景トークン参照が不足しています');
     }
-    if (!cssText.includes('var(--fg-default)')) {
-      throw new Error('文字色トークン参照が不足しています');
-    }
     if (!cssText.includes('var(--radius-sm)')) {
       throw new Error('角丸トークン参照が不足しています');
+    }
+    if (!cssText.includes('box-shadow: inset 0 -0.5em 0')) {
+      throw new Error('線状ハイライトの box-shadow 契約が不足しています');
     }
     if (!cssText.includes('text-decoration: none')) {
       throw new Error('通常モードで下線を抑制する契約が不足しています');
@@ -432,8 +437,8 @@ export const MediaAndTokenContracts: Story = {
     const markB = getInnerMark(hostB);
     const styleA = getComputedStyle(markA);
     const styleB = getComputedStyle(markB);
-    if (styleA.backgroundColor !== styleB.backgroundColor) {
-      throw new Error('origin/state の違いで背景色が変化してはいけません');
+    if (styleA.boxShadow !== styleB.boxShadow) {
+      throw new Error('origin/state の違いで線状ハイライトの見た目が変化してはいけません');
     }
   },
 };
@@ -525,6 +530,8 @@ export const DarkModeTokenAndContrastContract: Story = {
       },
     ] as const;
 
+    const shadowValues: string[] = [];
+
     for (const scenario of scenarios) {
       const proseMark = getMarkById(canvasElement, scenario.proseMarkId);
       const componentMark = getInnerMark(scenario.component);
@@ -540,14 +547,17 @@ export const DarkModeTokenAndContrastContract: Story = {
         throw new Error(`${scenario.label}: mark の文字色が --fg-default を追従していません`);
       }
 
-      if (
-        proseStyle.backgroundColor !== bgProbeColor ||
-        componentStyle.backgroundColor !== bgProbeColor
-      ) {
+      if (proseStyle.backgroundColor !== 'rgba(0, 0, 0, 0)' || componentStyle.backgroundColor !== 'rgba(0, 0, 0, 0)') {
         throw new Error(
-          `${scenario.label}: mark の背景色が --bg-highlight-subtle を追従していません`,
+          `${scenario.label}: mark は塗りつぶし背景を持たない必要があります`,
         );
       }
+
+      if (proseStyle.boxShadow === 'none' || componentStyle.boxShadow === 'none') {
+        throw new Error(`${scenario.label}: 線状ハイライトが描画されていません`);
+      }
+
+      shadowValues.push(proseStyle.boxShadow, componentStyle.boxShadow);
 
       const contrast = getContrastRatio(fgProbeColor, bgProbeColor);
       if (contrast < 4.5) {
@@ -555,6 +565,10 @@ export const DarkModeTokenAndContrastContract: Story = {
           `${scenario.label}: --fg-default と --bg-highlight-subtle のコントラスト比が不足しています (${contrast.toFixed(2)}:1, fg=${fgProbeColor}, bg=${bgProbeColor})`,
         );
       }
+    }
+
+    if (shadowValues[0] === shadowValues[2] && shadowValues[1] === shadowValues[3]) {
+      throw new Error('Light/Dark で線状ハイライトが同一になっており、テーマトークン差分を反映できていません');
     }
   },
 };

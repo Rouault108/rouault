@@ -18,21 +18,25 @@ const HIGHLIGHT_SCOPE_SELECTOR = ':where(.prose mark, ui-search-highlight > mark
 
 const HIGHLIGHT_RULE_TEMPLATE = (scopeSelector: string): string => `
 ${scopeSelector} {
-  background: var(--bg-highlight-subtle);
-  color: var(--fg-default);
+  background: transparent;
+  color: inherit;
   padding: 0;
   border-radius: var(--radius-sm);
   text-decoration: none;
+  box-shadow: inset 0 -0.5em 0 color-mix(in oklch, var(--bg-highlight-subtle) 88%, transparent);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 @media (forced-colors: active) {
   ${scopeSelector} {
     background: transparent;
-    color: var(--fg-default);
+    color: inherit;
     text-decoration-line: underline;
     text-decoration-style: solid;
     text-decoration-thickness: from-font;
     text-underline-offset: 0.08em;
+    box-shadow: none;
     forced-color-adjust: auto;
   }
 }
@@ -45,6 +49,7 @@ ${scopeSelector} {
     text-decoration-style: solid;
     text-decoration-thickness: from-font;
     text-underline-offset: 0.08em;
+    box-shadow: none;
   }
 }
 `;

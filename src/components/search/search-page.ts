@@ -1,9 +1,10 @@
-import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
+import { css, html, LitElement, nothing, unsafeCSS, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import '../../lib/icons.js';
 import '../../components/ui/empty-state/empty-state.js';
 import '../../components/ui/spinner/spinner.js';
+import { HIGHLIGHT_RULE_TEMPLATE } from '../ui/highlight/highlight.js';
 import { pagefindSearchAdapter, type SearchResultItem } from '../../lib/search/pagefind-search.js';
 import { navigateToUrl } from '../../lib/search/navigation.js';
 import {
@@ -242,11 +243,7 @@ export class SearchPage extends LitElement {
       line-height: var(--line-height-relaxed, 1.7);
     }
 
-    .result-excerpt :where(mark) {
-      background: transparent;
-      color: inherit;
-      box-shadow: inset 0 -0.5em 0 color-mix(in oklch, var(--accent-soft, oklch(92% 0.03 95)) 88%, transparent);
-    }
+    ${unsafeCSS(HIGHLIGHT_RULE_TEMPLATE('.result-excerpt :where(mark)'))}
 
     .empty-hint {
       margin-top: var(--space-8, 32px);

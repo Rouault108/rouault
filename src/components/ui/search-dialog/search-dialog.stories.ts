@@ -775,7 +775,7 @@ export const DarkModeTokenContract: Story = {
     assert(!cssText.includes('prefers-color-scheme'), 'dark mode は prefers-color-scheme 分岐に依存しないでください');
     assert(cssText.includes('background: var(--bg-surface-3);'), 'panel 背景が --bg-surface-3 契約になっていません');
     assert(!!mark, 'dark mode で検索ハイライトが描画されていません');
-    assert(getComputedStyle(mark).backgroundColor !== 'rgba(0, 0, 0, 0)', 'dark mode で mark 背景が消失しています');
+    assert(getComputedStyle(mark).boxShadow !== 'none', 'dark mode で線状ハイライトが消失しています');
   },
 };
 
