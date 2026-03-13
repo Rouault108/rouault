@@ -95,7 +95,6 @@ export class ArticleHeader extends LitElement {
         font-size: var(--icon-sm, 14px);
         color: currentColor;
         flex-shrink: 0;
-        transform: translateY(1px);
       }
 
       .metadata-list--primary .meta-icon {
