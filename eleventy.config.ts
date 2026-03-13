@@ -6,7 +6,7 @@ import type { Connect, ViteDevServer } from 'vite';
 import { build } from 'velite';
 
 import { loadNotesData } from './src/data/notes.js';
-import { loadTagPagesData } from './src/data/tagPages.js';
+import { createStaticDirectoryMiddleware } from './src/lib/dev-static-directory.js';
 import { resolveTrailingSlashRewrite } from './src/lib/trailing-slash-rewrite.js';
 import { buildPagefindIndex } from './scripts/build-pagefind.js';
 
@@ -30,6 +30,13 @@ const registerTrailingSlashRewrite = (server: ViteDevServer): void => {
   server.middlewares.use(middleware);
 };
 
+const registerDevelopmentStaticDirectories = (server: ViteDevServer): void => {
+  // 開発サーバーでは dist/pagefind を明示的に配信しないと dynamic import が 404 になる。
+  server.middlewares.use(
+    createStaticDirectoryMiddleware('/pagefind/', path.resolve(process.cwd(), 'dist', 'pagefind')),
+  );
+};
+
 /**
  * Velite と Vite を組み合わせた 11ty の設定。
  */
@@ -43,7 +50,10 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
 
   // TypeScript 化したグローバルデータを明示登録する。
   eleventyConfig.addGlobalData('notes', () => loadNotesData());
-  eleventyConfig.addGlobalData('tagPages', () => loadTagPagesData());
+  eleventyConfig.addGlobalData('tagPages', async () => {
+    const tagPagesModule = await import('./src/data/tagPages.js');
+    return tagPagesModule.loadTagPagesData();
+  });
 
   // 静的アセットをコピーする。
   eleventyConfig.addPassthroughCopy({ 'src/assets': 'assets' });
@@ -91,10 +101,12 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
         {
           name: 'rouault-trailing-slash-rewrite',
           configureServer(server: ViteDevServer) {
+            registerDevelopmentStaticDirectories(server);
             registerTrailingSlashRewrite(server);
           },
           configurePreviewServer(server: ViteDevServer) {
             return () => {
+              registerDevelopmentStaticDirectories(server);
               registerTrailingSlashRewrite(server);
             };
           },
