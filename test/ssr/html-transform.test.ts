@@ -91,7 +91,7 @@ describe('transformHtmlWithLitSsr', () => {
         </head>
         <body>
           <main id="main-content">
-            <search-page initial-tag="music"></search-page>
+            <search-page></search-page>
             <article data-static="keep">残したい要素</article>
           </main>
         </body>
@@ -108,7 +108,7 @@ describe('transformHtmlWithLitSsr', () => {
 
     expect(transformed).toContain('pagefind:metadata:genre');
     expect(transformed).toContain('<article data-static="keep">残したい要素</article>');
-    expect(transformed).toContain('<search-page initial-tag="music"><template shadowrootmode="open"><div>SSR Search</div></template></search-page>');
+    expect(transformed).toContain('<search-page><template shadowrootmode="open"><div>SSR Search</div></template></search-page>');
   });
 
   it('document style を重複注入しない', async () => {

@@ -1,0 +1,147 @@
+import { describe, expect, it } from 'vitest';
+
+import { buildTagPagesData } from '../../src/data/tagPages.js';
+import type { SourceNote } from '../../src/data/notes.js';
+
+describe('buildTagPagesData', () => {
+  it('公開ノートからタグ一覧と各タグのノート一覧を構築すること', () => {
+    const notes: SourceNote[] = [
+      {
+        title: '後期ロマン派',
+        permalink: '/notes/music/romantic/',
+        slug: 'music/romantic',
+        description: '和声進行の整理',
+        date: '2026-01-01',
+        updated: '2026-03-10',
+        genre: ['music', ' romantic ', 'music'],
+      },
+      {
+        title: 'バロック入門',
+        permalink: '/notes/music/baroque/',
+        slug: 'music/baroque',
+        description: '通奏低音の基礎',
+        date: '2026-02-14',
+        genre: ['music', 'baroque'],
+      },
+      {
+        title: '非公開ノート',
+        permalink: '/notes/private/',
+        slug: 'private',
+        status: 'draft',
+        genre: ['music'],
+      },
+    ];
+
+    expect(buildTagPagesData(notes)).toEqual([
+      {
+        tag: 'baroque',
+        noteCount: 1,
+        notes: [
+          {
+            title: 'バロック入門',
+            permalink: '/notes/music/baroque/',
+            description: '通奏低音の基礎',
+            date: '2026-02-14',
+            slug: 'music/baroque',
+            genres: ['music', 'baroque'],
+          },
+        ],
+      },
+      {
+        tag: 'music',
+        noteCount: 2,
+        notes: [
+          {
+            title: '後期ロマン派',
+            permalink: '/notes/music/romantic/',
+            description: '和声進行の整理',
+            date: '2026-03-10',
+            slug: 'music/romantic',
+            genres: ['music', 'romantic'],
+          },
+          {
+            title: 'バロック入門',
+            permalink: '/notes/music/baroque/',
+            description: '通奏低音の基礎',
+            date: '2026-02-14',
+            slug: 'music/baroque',
+            genres: ['music', 'baroque'],
+          },
+        ],
+      },
+      {
+        tag: 'romantic',
+        noteCount: 1,
+        notes: [
+          {
+            title: '後期ロマン派',
+            permalink: '/notes/music/romantic/',
+            description: '和声進行の整理',
+            date: '2026-03-10',
+            slug: 'music/romantic',
+            genres: ['music', 'romantic'],
+          },
+        ],
+      },
+    ]);
+  });
+
+  it('更新日優先の降順で並べ、同日の場合はタイトル順で安定化すること', () => {
+    const notes: SourceNote[] = [
+      {
+        title: 'Zeta',
+        permalink: '/notes/zeta/',
+        slug: 'zeta',
+        updated: '2026-01-12',
+        genre: ['設計'],
+      },
+      {
+        title: 'Alpha',
+        permalink: '/notes/alpha/',
+        slug: 'alpha',
+        date: '2026-01-12',
+        genre: ['設計'],
+      },
+      {
+        title: 'Beta',
+        permalink: '/notes/beta/',
+        slug: 'beta',
+        updated: '2026-01-20',
+        genre: ['設計'],
+      },
+    ];
+
+    expect(buildTagPagesData(notes)).toEqual([
+      {
+        tag: '設計',
+        noteCount: 3,
+        notes: [
+          {
+            title: 'Beta',
+            permalink: '/notes/beta/',
+            description: '',
+            date: '2026-01-20',
+            slug: 'beta',
+            genres: ['設計'],
+          },
+          {
+            title: 'Alpha',
+            permalink: '/notes/alpha/',
+            description: '',
+            date: '2026-01-12',
+            slug: 'alpha',
+            genres: ['設計'],
+          },
+          {
+            title: 'Zeta',
+            permalink: '/notes/zeta/',
+            description: '',
+            date: '2026-01-12',
+            slug: 'zeta',
+            genres: ['設計'],
+          },
+        ],
+      },
+    ]);
+  });
+});

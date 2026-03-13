@@ -1,5 +1,5 @@
-import { css, html, LitElement, nothing, unsafeCSS, type PropertyValues } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { css, html, LitElement, nothing, unsafeCSS } from 'lit';
+import { customElement, state } from 'lit/decorators.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import '../../components/ui/button/button.js';
 import '../../components/ui/card/card.js';
@@ -210,9 +210,6 @@ export class SearchPage extends LitElement {
     }
   `;
 
-  @property({ type: String, attribute: 'initial-tag' })
-  initialTag = '';
-
   @state()
   private _query = '';
 
@@ -243,23 +240,6 @@ export class SearchPage extends LitElement {
   private _searchTimerId: number | undefined;
   private _requestToken = 0;
 
-  protected override willUpdate(changedProperties: PropertyValues<this>): void {
-    super.willUpdate(changedProperties);
-
-    if (typeof window !== 'undefined') {
-      return;
-    }
-
-    if (
-      changedProperties.has('initialTag') &&
-      this._query.length === 0 &&
-      this._selectedTags.length === 0
-    ) {
-      const initialTag = this.initialTag.trim();
-      this._selectedTags = initialTag.length > 0 ? [initialTag] : [];
-    }
-  }
-
   override connectedCallback(): void {
     super.connectedCallback();
     window.addEventListener('popstate', this._onPopState);
@@ -284,10 +264,9 @@ export class SearchPage extends LitElement {
   private _syncStateFromLocation(): void {
     const url = new URL(window.location.href);
     const state = parseSearchStateFromUrl(url);
-    const initialTag = this.initialTag.trim();
 
     this._query = state.query;
-    this._selectedTags = state.tags.length > 0 ? state.tags : initialTag.length > 0 ? [initialTag] : [];
+    this._selectedTags = state.tags;
     this._sortMode = state.sort;
   }
 

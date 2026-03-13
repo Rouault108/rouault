@@ -6,7 +6,7 @@ import type { Connect, ViteDevServer } from 'vite';
 import { build } from 'velite';
 
 import { loadNotesData } from './src/data/notes.js';
-import { loadSearchGenresData } from './src/data/searchGenres.js';
+import { loadTagPagesData } from './src/data/tagPages.js';
 import { resolveTrailingSlashRewrite } from './src/lib/trailing-slash-rewrite.js';
 import { buildPagefindIndex } from './scripts/build-pagefind.js';
 
@@ -43,7 +43,7 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
 
   // TypeScript 化したグローバルデータを明示登録する。
   eleventyConfig.addGlobalData('notes', () => loadNotesData());
-  eleventyConfig.addGlobalData('searchGenres', () => loadSearchGenresData());
+  eleventyConfig.addGlobalData('tagPages', () => loadTagPagesData());
 
   // 静的アセットをコピーする。
   eleventyConfig.addPassthroughCopy({ 'src/assets': 'assets' });

@@ -676,6 +676,87 @@ ui-list-item a.primary-link[href]:hover {
 }
 
 /* ===========================================================================
+ * Tag Page
+ * =========================================================================== */
+
+.tag-page {
+  width: min(100%, 52rem);
+  margin: 0 auto;
+  padding: clamp(var(--space-6), 4vw, var(--space-10)) var(--space-4) var(--space-12);
+}
+
+.tag-page__hero {
+  display: grid;
+  gap: var(--space-3);
+  padding-bottom: var(--space-6);
+  border-bottom: var(--border-width) solid var(--border-default);
+}
+
+.tag-page__eyebrow {
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+
+.tag-page__title {
+  font-size: clamp(var(--text-3xl), 5vw, var(--text-5xl));
+  line-height: var(--line-height-tight);
+}
+
+.tag-page__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  color: var(--fg-muted);
+  font-size: var(--text-sm);
+}
+
+.tag-page__count {
+  color: var(--fg-default);
+}
+
+.tag-page__list {
+  list-style: none;
+  margin: var(--space-8) 0 0;
+  padding: 0;
+}
+
+.tag-page__item + .tag-page__item {
+  border-top: var(--border-width) solid var(--border-default);
+}
+
+.tag-page__item-card {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-5) 0;
+}
+
+.tag-page__item-title {
+  font-size: var(--text-xl);
+  line-height: var(--line-height-tight);
+}
+
+.tag-page__item-meta,
+.tag-page__item-description {
+  color: var(--fg-muted);
+  font-size: var(--text-sm);
+  line-height: var(--line-height-relaxed);
+}
+
+@media (max-width: 768px) {
+  .tag-page {
+    padding-inline: var(--space-3);
+  }
+
+  .tag-page__item-title {
+    font-size: var(--text-lg);
+  }
+}
+
+/* ===========================================================================
  * Focus Visible (Global)
  * =========================================================================== */
 
