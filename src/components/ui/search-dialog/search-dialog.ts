@@ -1,6 +1,7 @@
 import { css, html, LitElement, nothing, unsafeCSS, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import '../../../lib/icons';
+import '../search-field/search-field';
 import '../spinner/spinner';
 import {
   captureTrigger,
@@ -10,6 +11,7 @@ import {
   waitForDialogAnimations,
 } from '../dialog/dialog-helpers';
 import { HIGHLIGHT_RULE_TEMPLATE } from '../highlight/highlight';
+import type { SearchField } from '../search-field/search-field';
 
 const SEARCH_DEBOUNCE_MS = 150;
 const DIALOG_LABEL = '検索';
@@ -142,127 +144,12 @@ export class UiSearchDialog extends LitElement {
       padding: var(--space-2, 8px) var(--space-3, 12px);
     }
 
-    .input-wrapper {
-      position: relative;
-      min-block-size: 44px;
-      display: flex;
-      align-items: center;
-      border-radius: var(--radius-md);
-      background: var(--bg-fill-muted);
-    }
-
-    .input-wrapper::after {
-      content: '';
-      position: absolute;
-      inset: 50% auto auto 50%;
-      transform: translate(-50%, -50%);
-      inline-size: 100%;
-      block-size: var(--control-min-touch, 24px);
-      pointer-events: none;
-    }
-
-    .input-icon {
-      position: absolute;
-      inset-inline-start: var(--space-3, 12px);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--fg-muted);
-      pointer-events: none;
-    }
-
-    .input-icon iconify-icon {
-      inline-size: var(--icon-base, 16px);
-      block-size: var(--icon-base, 16px);
-      font-size: var(--icon-base, 16px);
-    }
-
-    .search-input {
-      inline-size: 100%;
-      block-size: 44px;
-      border: none;
-      background: transparent;
-      color: var(--fg-default);
-      font: inherit;
-      font-size: var(--text-xl, 18px);
-      line-height: 1.4;
-      padding: 0 calc(28px + var(--space-4, 16px)) 0 calc(16px + var(--space-5, 20px));
-      outline: none;
-    }
-
-    .search-input::placeholder {
-      color: var(--fg-subtle);
-    }
-
-    .search-input::-webkit-search-cancel-button,
-    .search-input::-webkit-search-decoration,
-    .search-input::-webkit-search-results-button,
-    .search-input::-webkit-search-results-decoration {
-      -webkit-appearance: none;
-      appearance: none;
-      display: none;
-    }
-
-    .search-input::-ms-clear,
-    .search-input::-ms-reveal {
-      display: none;
-      inline-size: 0;
-      block-size: 0;
-    }
-
-    .search-input:focus-visible {
-      outline: var(--focus-ring-width) solid var(--focus-ring-color);
-      outline-offset: var(--focus-ring-offset);
-      animation: var(--animation-focus, none);
-      border-radius: var(--radius-sm);
-    }
-
-    .clear-button {
-      position: absolute;
-      inset-block-start: 50%;
-      inset-inline-end: var(--space-2, 8px);
-      transform: translateY(-50%);
-      inline-size: 28px;
-      block-size: 28px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border: none;
-      border-radius: var(--radius-sm);
-      background: transparent;
-      color: var(--fg-muted);
-      cursor: pointer;
-      padding: 0;
-      transition:
-        color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)),
-        background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
-    }
-
-    .clear-button::after {
-      content: '';
-      position: absolute;
-      inset: 50% auto auto 50%;
-      transform: translate(-50%, -50%);
-      inline-size: var(--control-min-touch, 24px);
-      block-size: var(--control-min-touch, 24px);
-      pointer-events: none;
-    }
-
-    .clear-button:hover {
-      color: var(--fg-default);
-      background: var(--bg-hover);
-    }
-
-    .clear-button:focus-visible {
-      outline: var(--focus-ring-width) solid var(--focus-ring-color);
-      outline-offset: var(--focus-ring-offset);
-      animation: var(--animation-focus, none);
-    }
-
-    .clear-button iconify-icon {
-      inline-size: var(--icon-sm, 14px);
-      block-size: var(--icon-sm, 14px);
-      font-size: var(--icon-sm, 14px);
+    .search-field {
+      --ui-search-field-height: 44px;
+      --ui-search-field-radius: var(--radius-md);
+      --ui-search-field-bg: var(--bg-fill-muted);
+      --ui-search-field-font-size: var(--text-xl, 18px);
+      --ui-search-field-icon-color: var(--fg-muted);
     }
 
     .close-button {
@@ -533,11 +420,6 @@ export class UiSearchDialog extends LitElement {
         outline-offset: calc(-1 * var(--border-width-thick));
       }
 
-      .clear-button {
-        border: var(--border-width) solid ButtonText;
-        color: ButtonText;
-      }
-
       .close-button {
         border: var(--border-width) solid ButtonText;
         color: ButtonText;
@@ -582,8 +464,8 @@ export class UiSearchDialog extends LitElement {
   @query('dialog')
   private _dialogElement?: HTMLDialogElement;
 
-  @query('.search-input')
-  private _inputElement?: HTMLInputElement;
+  @query('ui-search-field')
+  private _searchFieldElement?: SearchField;
 
   @query('.result-list')
   private _resultListElement?: HTMLUListElement;
@@ -712,8 +594,8 @@ export class UiSearchDialog extends LitElement {
 
   private _focusInput(): void {
     requestAnimationFrame(() => {
-      this._inputElement?.focus({ preventScroll: true });
-      this._inputElement?.setSelectionRange(this.query.length, this.query.length);
+      this._searchFieldElement?.focus({ preventScroll: true });
+      this._searchFieldElement?.setSelectionRange(this.query.length, this.query.length);
     });
   }
 
@@ -992,8 +874,12 @@ export class UiSearchDialog extends LitElement {
 
   private _onInput = (event: Event): void => {
     const input = event.currentTarget;
-    if (!(input instanceof HTMLInputElement)) return;
-    this.query = input.value;
+    if (!input || typeof input !== 'object' || !('value' in input)) return;
+
+    const { value } = input as EventTarget & { value: unknown };
+    if (typeof value !== 'string') return;
+
+    this.query = value;
   };
 
   private _onInputKeydown = (event: KeyboardEvent): void => {
@@ -1020,13 +906,8 @@ export class UiSearchDialog extends LitElement {
 
       case 'Tab':
         if (!event.shiftKey) {
-          // Shadow DOM 内の Tab 移動を明示して、入力クリアと閉じるの役割を分離する
-          const clearBtn = this.shadowRoot?.querySelector<HTMLButtonElement>('.clear-button');
           const closeBtn = this.shadowRoot?.querySelector<HTMLButtonElement>('.close-button');
-          if (clearBtn && !clearBtn.hidden) {
-            event.preventDefault();
-            clearBtn.focus();
-          } else if (closeBtn) {
+          if (!this._searchFieldElement?.clearButtonVisible && closeBtn) {
             event.preventDefault();
             closeBtn.focus();
           }
@@ -1041,34 +922,52 @@ export class UiSearchDialog extends LitElement {
   private _onAuxiliaryControlKeydown = (event: KeyboardEvent): void => {
     if (event.key !== 'Tab') return;
 
-    const target = event.currentTarget;
-    if (!(target instanceof HTMLElement)) return;
-
-    const clearButton = this.shadowRoot?.querySelector<HTMLButtonElement>('.clear-button');
     const closeButton = this.shadowRoot?.querySelector<HTMLButtonElement>('.close-button');
-    const input = this._inputElement;
-    if (!closeButton || !input) return;
+    const searchField = this._searchFieldElement;
+    const currentTarget = event.currentTarget;
+    const origin = event.composedPath()[0];
+    if (!closeButton || !searchField) return;
 
-    const clearVisible = !!clearButton && !clearButton.hidden;
-    if (event.shiftKey) {
-      if (target === closeButton) {
-        event.preventDefault();
-        if (clearVisible) {
-          clearButton.focus();
-        } else {
-          input.focus();
-        }
-      } else if (target === clearButton) {
-        event.preventDefault();
-        input.focus();
+    if (currentTarget === closeButton && event.shiftKey) {
+      event.preventDefault();
+      if (searchField.clearButtonVisible) {
+        searchField.focusClearButton();
+      } else {
+        searchField.focus({ preventScroll: true });
       }
       return;
     }
 
-    if (target === clearButton) {
+    if (currentTarget !== searchField) return;
+
+    if (origin instanceof HTMLButtonElement) {
       event.preventDefault();
-      closeButton.focus();
+      if (event.shiftKey) {
+        searchField.focus({ preventScroll: true });
+      } else {
+        closeButton.focus();
+      }
+      return;
     }
+
+    if (origin instanceof HTMLInputElement && !event.shiftKey) {
+      event.preventDefault();
+      if (searchField.clearButtonVisible) {
+        searchField.focusClearButton();
+      } else {
+        closeButton.focus();
+      }
+    }
+  };
+
+  private _onSearchFieldKeydown = (event: KeyboardEvent): void => {
+    this._onInputKeydown(event);
+
+    if (event.defaultPrevented && event.key !== 'Tab') {
+      return;
+    }
+
+    this._onAuxiliaryControlKeydown(event);
   };
 
   private _moveActiveIndex(delta: 1 | -1): void {
@@ -1156,11 +1055,6 @@ export class UiSearchDialog extends LitElement {
 
     this._activeIndex = index;
     this._selectActiveResult();
-  };
-
-  private _onClear = (): void => {
-    this.query = '';
-    this._inputElement?.focus({ preventScroll: true });
   };
 
   private _onCloseClick = (): void => {
@@ -1319,38 +1213,23 @@ export class UiSearchDialog extends LitElement {
         <div class="sr-only" aria-live="polite" aria-atomic="true">${this._liveMessage}</div>
 
         <div class="header">
-          <div class="input-wrapper">
-            <span class="input-icon" aria-hidden="true">
-              <iconify-icon icon="lucide:search"></iconify-icon>
-            </span>
-
-            <input
-              class="search-input"
-              type="search"
-              role="combobox"
-              aria-expanded=${showResults ? 'true' : 'false'}
-              aria-autocomplete="list"
-              aria-controls=${LISTBOX_ID}
-              aria-activedescendant=${activeOptionId}
-              aria-busy=${this.loading ? 'true' : 'false'}
-              placeholder=${INPUT_PLACEHOLDER}
-              autocomplete="off"
-              .value=${this.query}
-              @input=${this._onInput}
-              @keydown=${this._onInputKeydown}
-            />
-
-            <button
-              class="clear-button"
-              type="button"
-              aria-label=${CLEAR_BUTTON_LABEL}
-              ?hidden=${!hasQuery}
-              @click=${this._onClear}
-              @keydown=${this._onAuxiliaryControlKeydown}
-            >
-              <iconify-icon icon="lucide:circle-x" aria-hidden="true"></iconify-icon>
-            </button>
-          </div>
+          <ui-search-field
+            class="search-field"
+            label=${DIALOG_LABEL}
+            hide-label
+            clear-button-label=${CLEAR_BUTTON_LABEL}
+            .inputRole=${'combobox'}
+            .inputAriaExpanded=${showResults ? 'true' : 'false'}
+            .inputAriaAutocomplete=${'list'}
+            .inputAriaControls=${LISTBOX_ID}
+            .inputAriaActivedescendant=${activeOptionId}
+            .inputAriaBusy=${this.loading ? 'true' : 'false'}
+            placeholder=${INPUT_PLACEHOLDER}
+            autocomplete="off"
+            .value=${this.query}
+            @input=${this._onInput}
+            @keydown=${this._onSearchFieldKeydown}
+          ></ui-search-field>
 
           <button
             class="close-button"

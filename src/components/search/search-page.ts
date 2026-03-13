@@ -4,7 +4,7 @@ import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import '../../components/ui/button/button.js';
 import '../../components/ui/card/card.js';
 import '../../components/ui/empty-state/empty-state.js';
-import '../../components/ui/input/input.js';
+import '../../components/ui/search-field/search-field.js';
 import '../../components/ui/select/select.js';
 import '../../components/ui/spinner/spinner.js';
 import type { SelectOption } from '../../components/ui/select/select.js';
@@ -78,11 +78,9 @@ export class SearchPage extends LitElement {
     }
 
     .search-input-control {
-      --control-height-md: 3rem;
-      --radius-md: var(--radius-lg, 12px);
-      --space-2: var(--space-4, 16px);
-      --bg-fill-muted: var(--bg-surface-2);
-      --bg-default: var(--bg-surface-2);
+      --ui-search-field-height: 3rem;
+      --ui-search-field-radius: var(--radius-lg, 12px);
+      --ui-search-field-bg: var(--bg-surface-2);
     }
 
     .meta-row {
@@ -541,17 +539,15 @@ export class SearchPage extends LitElement {
         </div>
 
         <div class="search-controls">
-          <ui-input
+          <ui-search-field
             class="search-input-control"
             label="検索"
             hide-label
-            variant="outline"
-            type="search"
             autocomplete="off"
             placeholder="メモを検索"
             .value=${this._query}
             @input=${this._onInput}
-          ></ui-input>
+          ></ui-search-field>
 
           <div class="toolbar-row">
             <div class="meta-row">

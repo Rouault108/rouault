@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
+import { userEvent } from 'storybook/test';
 import '../../../components/layout/layout-header';
 import '../../../components/layout/layout-footer';
 import '../../../components/ui/skip-link/skip-link';
@@ -60,7 +61,7 @@ export const Default: Story = {
         )}
       `,
     ),
-  play: ({ canvasElement }) => {
+  play: async ({ canvasElement }) => {
     const root = canvasElement.querySelector<HTMLElement>('#app-shell-root');
     const skipLink = canvasElement.querySelector<HTMLElement>('#app-shell-skip-link');
     const header = canvasElement.querySelector<HTMLElement>('layout-header');
@@ -91,6 +92,21 @@ export const Default: Story = {
     }
     if (!skipLink.shadowRoot?.querySelector('a[href="#app-shell-main"]')) {
       throw new Error('skip link の href が不正です');
+    }
+
+    // 最初の Tab 停留点が skip link であることを検証する
+    document.body.focus();
+    await userEvent.tab();
+
+    const skipLinkAnchor = skipLink.shadowRoot?.querySelector('a[href="#app-shell-main"]');
+    if (!(skipLinkAnchor instanceof HTMLAnchorElement)) {
+      throw new Error('skip link のアンカー要素が見つかりません');
+    }
+    if (document.activeElement !== skipLink) {
+      throw new Error('最初の Tab で ui-skip-link がフォーカスされていません');
+    }
+    if (skipLink.shadowRoot?.activeElement !== skipLinkAnchor) {
+      throw new Error('最初の Tab で skip link の内部アンカーへフォーカス委譲されていません');
     }
   },
 };

@@ -8,6 +8,7 @@ import {
   type UiSearchDialogOpenedDetail,
   type UiSearchDialogSelectedDetail,
 } from './search-dialog';
+import { SearchField as SearchFieldElement, type SearchField } from '../search-field/search-field';
 
 const DEBOUNCE_WAIT_MS = 210;
 const BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE = 'data-ui-search-dialog-open';
@@ -93,8 +94,14 @@ const getNativeDialog = (host: UiSearchDialog): HTMLDialogElement => {
   return dialog;
 };
 
+const getSearchField = (host: UiSearchDialog): SearchField => {
+  const field = host.shadowRoot?.querySelector<SearchField>('ui-search-field');
+  if (!field) throw new Error('ui-search-field が見つかりません');
+  return field;
+};
+
 const getInput = (host: UiSearchDialog): HTMLInputElement => {
-  const input = host.shadowRoot?.querySelector<HTMLInputElement>('.search-input');
+  const input = getSearchField(host).shadowRoot?.querySelector<HTMLInputElement>('input');
   if (!input) throw new Error('検索 input が見つかりません');
   return input;
 };
@@ -106,7 +113,7 @@ const getBody = (host: UiSearchDialog): HTMLElement => {
 };
 
 const getClearButton = (host: UiSearchDialog): HTMLButtonElement => {
-  const button = host.shadowRoot?.querySelector<HTMLButtonElement>('.clear-button');
+  const button = getSearchField(host).shadowRoot?.querySelector<HTMLButtonElement>('.clear-button');
   if (!button) throw new Error('クリアボタンが見つかりません');
   return button;
 };
@@ -126,8 +133,15 @@ const getHighlightedMarks = (host: UiSearchDialog): HTMLElement[] =>
 const normalizeText = (value: string | null | undefined): string =>
   (value ?? '').replace(/\s+/g, ' ').trim();
 
-const hasInputFocus = (host: UiSearchDialog, input: HTMLInputElement): boolean =>
-  host.shadowRoot?.activeElement === input || document.activeElement === host;
+const hasInputFocus = (host: UiSearchDialog, input: HTMLInputElement): boolean => {
+  const field = getSearchField(host);
+  return host.shadowRoot?.activeElement === field && field.shadowRoot?.activeElement === input;
+};
+
+const hasClearButtonFocus = (host: UiSearchDialog, clearButton: HTMLButtonElement): boolean => {
+  const field = getSearchField(host);
+  return host.shadowRoot?.activeElement === field && field.shadowRoot?.activeElement === clearButton;
+};
 
 const meta: Meta<UiSearchDialog> = {
   title: 'Components/SearchDialog',
@@ -171,7 +185,10 @@ export const OpenPreview: Story = {
     assert(dialog.open, '初期表示で dialog が開いていません');
     assert(dialog.classList.contains('dialog'), 'native dialog に .dialog class が付与されていません');
     assert(!!emptyState, 'empty-state 要素が見つかりません');
-    assert(clearButton.parentElement?.classList.contains('input-wrapper'), 'clear-button が input-wrapper 内に配置されていません');
+    assert(
+      clearButton.parentElement?.classList.contains('field'),
+      'clear-button が ui-search-field の .field 内に配置されていません',
+    );
     assert(emptyState.hidden, '初回検索完了前に空状態が表示されています');
     assert(getComputedStyle(body).minBlockSize !== '0px', '.body の min-block-size が確保されていません');
 
@@ -730,21 +747,21 @@ export const TabNavigationBetweenInputAndClear: Story = {
     await waitFrame();
 
     const clearButton = getClearButton(host);
-    assert(host.shadowRoot?.activeElement === clearButton, 'Tab で clear-button へ移動できていません');
+    assert(hasClearButtonFocus(host, clearButton), 'Tab で clear-button へ移動できていません');
 
     await userEvent.tab();
     await waitFrame();
 
     const closeButton = getCloseButton(host);
-    assert(host.shadowRoot.activeElement === closeButton, 'Tab で close-button へ移動できていません');
+    assert(host.shadowRoot?.activeElement === closeButton, 'Tab で close-button へ移動できていません');
 
     await userEvent.tab({ shift: true });
     await waitFrame();
-    assert(host.shadowRoot.activeElement === clearButton, 'Shift+Tab で clear-button へ戻れません');
+    assert(hasClearButtonFocus(host, clearButton), 'Shift+Tab で clear-button へ戻れません');
 
     await userEvent.tab({ shift: true });
     await waitFrame();
-    assert(host.shadowRoot.activeElement === input, 'Shift+Tab で input へ戻れません');
+    assert(hasInputFocus(host, input), 'Shift+Tab で input へ戻れません');
 
     const closedPromise = waitForEvent(host, 'ui-search-dialog-closed');
     host.close();
@@ -794,12 +811,13 @@ export const StyleContractCoverage: Story = {
     await flush(host);
 
     const cssText = String(SearchDialogElement.styles);
+    const searchFieldCssText = String(SearchFieldElement.styles);
     assert(cssText.includes('@media (prefers-reduced-motion: reduce)'), 'Reduced Motion 契約が不足しています');
     assert(cssText.includes('animation-duration: 0.01ms !important;'), 'Reduced Motion の 0.01ms 短縮が不足しています');
     assert(cssText.includes('@media (forced-colors: active)'), 'Forced Colors 契約が不足しています');
     assert(cssText.includes('CanvasText'), 'Forced Colors の境界色契約が不足しています');
     assert(cssText.includes('@media print'), 'Print 契約が不足しています');
-    assert(cssText.includes('::-webkit-search-cancel-button'), 'ネイティブ search cancel UI 抑止が不足しています');
+    assert(searchFieldCssText.includes('::-webkit-search-cancel-button'), 'ネイティブ search cancel UI 抑止が不足しています');
     assert(cssText.includes('.dialog {'), 'native dialog shell class が不足しています');
     assert(cssText.includes('--ui-search-dialog-backdrop'), 'コンポーネントローカルトークンが不足しています');
     assert(cssText.includes('--ui-search-dialog-body-min-height'), 'body min height 公開トークンが不足しています');

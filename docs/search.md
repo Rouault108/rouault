@@ -16,6 +16,7 @@
 - `layout-header` 内の `<ui-search-trigger>` から起動します。
 - `open-search-dialog` を `initSearch()` が受け取り、`#global-search-dialog` を開きます。
 - `Cmd+K` / `Ctrl+K` でも起動できます。
+- 入力欄には共通コンポーネント `<ui-search-field>` を使います。
 - 結果はタイトルとパス中心の軽量表示です。
 - `Enter`、クリックで選択すると `navigateToUrl()` 経由で遷移します。
 
@@ -23,6 +24,7 @@
 
 - `src/search.11ty.ts` が `/search/index.html` を生成します。
 - 実体は `<search-page>` コンポーネントです。
+- キーワード入力にはダイアログと同じ `<ui-search-field>` を使います。
 - キーワード入力、タグフィルター、並び順切り替えを同じ画面で扱います。
 - 検索結果にはタイトル、パス、更新日、抜粋または description を表示します。
 
@@ -155,6 +157,7 @@
 
 - `src/lib/search/bootstrap.ts`: グローバル検索の初期化
 - `src/components/ui/search-dialog/search-dialog.ts`: ダイアログ UI と操作
+- `src/components/ui/search-field/search-field.ts`: 検索入力 UI の共通コンポーネント
 - `src/components/search/search-page.ts`: 検索結果ページ UI
 - `src/lib/search/query-preprocessor.ts`: 検索前処理
 - `src/lib/search/pagefind-search.ts`: Pagefind アダプタ
