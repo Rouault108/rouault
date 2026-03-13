@@ -9,6 +9,11 @@ import { customElement, property } from 'lit/decorators.js';
  */
 @customElement('ui-skip-link')
 export class SkipLink extends LitElement {
+  static override shadowRootOptions: ShadowRootInit = {
+    ...LitElement.shadowRootOptions,
+    delegatesFocus: true,
+  };
+
   static override styles = css`
     :host {
       display: block;
@@ -49,6 +54,7 @@ export class SkipLink extends LitElement {
       }
     }
 
+    :host(:focus-visible) a,
     a:focus-visible {
       transform: translateX(-50%);
       clip-path: none;
@@ -84,6 +90,13 @@ export class SkipLink extends LitElement {
   @property({ type: String })
   label = 'メインコンテンツへスキップ';
 
+  override connectedCallback(): void {
+    super.connectedCallback();
+    if (!this.hasAttribute('tabindex')) {
+      this.tabIndex = 0;
+    }
+  }
+
   override render() {
     return html`
       <a
@@ -98,10 +111,17 @@ export class SkipLink extends LitElement {
 
   protected override updated(changedProperties: PropertyValues<this>): void {
     super.updated(changedProperties);
+    if (changedProperties.has('label')) {
+      this.setAttribute('aria-label', this.label);
+    }
     if (!changedProperties.has('href')) {
       return;
     }
     this.validateTargetConfiguration();
+  }
+
+  override focus(options?: FocusOptions): void {
+    this.shadowRoot?.querySelector<HTMLAnchorElement>('a')?.focus(options);
   }
 
   private readonly handleLinkClick = (): void => {

@@ -22,6 +22,7 @@ import { RouterController } from '../../lib/controllers/router-controller.js';
 @customElement('app-router')
 export class AppRouter extends LitElement {
   private _didInitializeFromSsr = false;
+  private _shouldRunPostNavigationHooks = false;
 
   /** シャドウDOMを無効化してライトDOMを使用する */
   override createRenderRoot(): this {
@@ -58,6 +59,7 @@ export class AppRouter extends LitElement {
     const router = this._routerController.initRouter(
       this,
       (newContent) => {
+        this._shouldRunPostNavigationHooks = true;
         this._pageContent = newContent;
       },
       {
@@ -83,7 +85,11 @@ export class AppRouter extends LitElement {
     // これが reinitializeScripts() の Lit ライフサイクル版であり、
     // Lit が DOM を確実に更新した後に実行されることが保証される
     if (changedProperties.has('_pageContent')) {
-      this._runPostRenderHooks();
+      // 初回 SSR 描画ではブラウザの自然な初期フォーカスとスクロール位置を尊重する。
+      if (this._shouldRunPostNavigationHooks) {
+        this._runPostRenderHooks();
+        this._shouldRunPostNavigationHooks = false;
+      }
       this.dispatchEvent(
         new CustomEvent('app-router:content-rendered', {
           bubbles: true,
