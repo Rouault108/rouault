@@ -761,7 +761,6 @@ export class MenuItem extends LitElement {
       top: 50%;
       left: 0;
       right: 0;
-      transform: translateY(-50%);
       min-height: var(--control-min-touch, 24px);
       z-index: 0;
     }
