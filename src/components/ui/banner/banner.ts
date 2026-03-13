@@ -102,10 +102,21 @@ export class Banner extends LitElement {
     }
 
     .fallback-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       width: var(--icon-base);
       height: var(--icon-base);
       color: currentColor;
+      line-height: 0;
       stroke-width: 1.5;
+    }
+
+    .fallback-icon > svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      margin: auto;
     }
 
     .icon slot::slotted([slot='icon']) {
