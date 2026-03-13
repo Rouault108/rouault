@@ -202,7 +202,7 @@ export class SearchPage extends LitElement {
     ${unsafeCSS(HIGHLIGHT_RULE_TEMPLATE('.result-excerpt :where(mark)'))}
 
     .empty-hint {
-      margin-top: var(--space-8, 32px);
+      min-height: 25vh
     }
 
     @media (max-width: 768px) {
