@@ -1,9 +1,13 @@
 import { css, html, LitElement, nothing, unsafeCSS, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import '../../lib/icons.js';
+import '../../components/ui/button/button.js';
+import '../../components/ui/card/card.js';
 import '../../components/ui/empty-state/empty-state.js';
+import '../../components/ui/input/input.js';
+import '../../components/ui/select/select.js';
 import '../../components/ui/spinner/spinner.js';
+import type { SelectOption } from '../../components/ui/select/select.js';
 import { HIGHLIGHT_RULE_TEMPLATE } from '../ui/highlight/highlight.js';
 import { pagefindSearchAdapter, type SearchResultItem } from '../../lib/search/pagefind-search.js';
 import { navigateToUrl } from '../../lib/search/navigation.js';
@@ -16,6 +20,12 @@ import {
 } from '../../lib/search/search-url.js';
 
 const SEARCH_DEBOUNCE_MS = 150;
+const SEARCH_SORT_OPTIONS: SelectOption[] = [
+  { value: DEFAULT_SEARCH_SORT_MODE, label: '関連度順' },
+  { value: 'date-desc', label: '新しい順' },
+];
+
+type SearchControlTarget = EventTarget & { value: unknown };
 
 @customElement('search-page')
 export class SearchPage extends LitElement {
@@ -67,40 +77,12 @@ export class SearchPage extends LitElement {
       margin-top: var(--space-6, 24px);
     }
 
-    .search-field {
-      position: relative;
-      display: flex;
-      align-items: center;
-      min-height: 3rem;
-      border: var(--border-width, 1px) solid var(--border-default);
-      border-radius: var(--radius-lg, 12px);
-      background: var(--bg-surface-2);
-      box-shadow: var(--elevation-sm);
-    }
-
-    .search-field:focus-within {
-      border-color: var(--focus-ring-color);
-      box-shadow: 0 0 0 var(--focus-ring-width, 2px) color-mix(in oklch, var(--focus-ring-color) 32%, transparent);
-    }
-
-    .search-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding-inline-start: var(--space-4, 16px);
-      color: var(--fg-muted);
-    }
-
-    .search-input {
-      flex: 1;
-      min-width: 0;
-      border: none;
-      background: transparent;
-      color: var(--fg-default);
-      font: inherit;
-      font-size: var(--text-lg, 16px);
-      padding: var(--space-3, 12px) var(--space-4, 16px);
-      outline: none;
+    .search-input-control {
+      --control-height-md: 3rem;
+      --radius-md: var(--radius-lg, 12px);
+      --space-2: var(--space-4, 16px);
+      --bg-fill-muted: var(--bg-surface-2);
+      --bg-default: var(--bg-surface-2);
     }
 
     .meta-row {
@@ -121,7 +103,8 @@ export class SearchPage extends LitElement {
     }
 
     .sort-field {
-      display: inline-flex;
+      display: grid;
+      grid-template-columns: auto minmax(10rem, auto);
       align-items: center;
       gap: var(--space-2, 8px);
       color: var(--fg-muted);
@@ -133,18 +116,8 @@ export class SearchPage extends LitElement {
     }
 
     .sort-select {
-      min-height: 2.25rem;
-      border: var(--border-width, 1px) solid var(--border-default);
-      border-radius: var(--radius-md, 8px);
-      background: var(--bg-surface-2);
-      color: var(--fg-default);
-      font: inherit;
-      padding: 0 var(--space-3, 12px);
-    }
-
-    .sort-select:focus-visible {
-      outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color);
-      outline-offset: var(--focus-ring-offset, 2px);
+      min-inline-size: 10rem;
+      --control-height-md: 2.25rem;
     }
 
     .filters {
@@ -153,40 +126,20 @@ export class SearchPage extends LitElement {
       gap: var(--space-2, 8px);
     }
 
-    .filter-button {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-1, 4px);
-      min-height: 2rem;
-      border: var(--border-width, 1px) solid var(--border-default);
-      border-radius: 999px;
-      background: var(--bg-default);
-      color: var(--fg-default);
-      font: inherit;
-      font-size: var(--text-sm, 13px);
-      padding: 0 var(--space-3, 12px);
-      cursor: pointer;
-      transition:
-        background-color var(--duration-fast, 70ms) var(--ease-out),
-        border-color var(--duration-fast, 70ms) var(--ease-out),
-        color var(--duration-fast, 70ms) var(--ease-out);
+    .filter-chip {
+      --radius-md: 999px;
+      --control-height-sm: 2rem;
+      --space-2: var(--space-3, 12px);
+      --space-1: var(--space-1, 4px);
+      --elevation-sm: none;
     }
 
-    .filter-button[aria-pressed='true'] {
-      border-color: color-mix(in oklch, var(--fg-default) 28%, var(--border-default));
-      background: var(--bg-surface-3);
-      color: var(--fg-default);
+    .filter-chip-count {
+      color: var(--fg-muted);
     }
 
-    .filter-button:disabled {
-      opacity: 0.48;
-      cursor: not-allowed;
-    }
-
-    .filter-button:focus-visible,
-    .result-link:focus-visible {
-      outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color);
-      outline-offset: var(--focus-ring-offset, 2px);
+    .filter-chip[data-selected='true'] .filter-chip-count {
+      color: inherit;
     }
 
     .results-section {
@@ -209,19 +162,22 @@ export class SearchPage extends LitElement {
       gap: var(--space-3, 12px);
     }
 
-    .result-item {
-      border: var(--border-width, 1px) solid var(--border-default);
-      border-radius: var(--radius-lg, 12px);
+    .result-card {
+      --radius-md: var(--radius-lg, 12px);
+      --space-4: var(--space-5, 20px);
       background: var(--bg-surface-2);
-      overflow: hidden;
     }
 
     .result-link {
       display: grid;
       gap: var(--space-2, 8px);
-      padding: var(--space-5, 20px);
       color: inherit;
       text-decoration: none;
+      min-width: 0;
+    }
+
+    .result-link:focus-visible {
+      outline: none;
     }
 
     .result-title {
@@ -410,13 +366,30 @@ export class SearchPage extends LitElement {
     history.pushState(history.state, '', nextUrl);
   }
 
+  private _readControlValue(target: EventTarget | null): string | null {
+    if (target === null || typeof target !== 'object' || !('value' in target)) {
+      return null;
+    }
+
+    const { value } = target as SearchControlTarget;
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    if (typeof value === 'number') {
+      return String(value);
+    }
+
+    return null;
+  }
+
   private _onInput = (event: Event): void => {
-    const input = event.currentTarget;
-    if (!(input instanceof HTMLInputElement)) {
+    const nextValue = this._readControlValue(event.currentTarget ?? event.target);
+    if (nextValue === null) {
       return;
     }
 
-    this._query = input.value;
+    this._query = nextValue;
     this._replaceUrl();
     this._scheduleRefresh();
   };
@@ -434,13 +407,10 @@ export class SearchPage extends LitElement {
   }
 
   private _onSortChange = (event: Event): void => {
-    const select = event.currentTarget;
-    if (!(select instanceof HTMLSelectElement)) {
-      return;
-    }
-
+    const { value } = (event as CustomEvent<{ value: string | number }>).detail;
+    const selectedValue = typeof value === 'string' ? value : String(value);
     const nextSortMode: SearchSortMode =
-      select.value === 'date-desc' ? 'date-desc' : DEFAULT_SEARCH_SORT_MODE;
+      selectedValue === 'date-desc' ? 'date-desc' : DEFAULT_SEARCH_SORT_MODE;
     if (nextSortMode === this._sortMode) {
       return;
     }
@@ -538,15 +508,17 @@ export class SearchPage extends LitElement {
           const secondaryText = item.excerptHtml.length > 0 ? item.excerptHtml : item.description;
 
           return html`
-            <li class="result-item">
-              <a class="result-link" href=${item.url} @click=${(event: MouseEvent) => { this._onResultClick(event, item.url); }}>
-                <div class="result-path">${item.path}</div>
-                <h2 class="result-title">${item.title}</h2>
-                ${item.date.length > 0 ? html`<div class="result-meta">更新日: ${item.date}</div>` : nothing}
-                ${secondaryText.length > 0
-                  ? html`<p class="result-excerpt">${unsafeHTML(secondaryText)}</p>`
-                  : nothing}
-              </a>
+            <li>
+              <ui-card class="result-card" clickable variant="outlined">
+                <a class="result-link" href=${item.url} @click=${(event: MouseEvent) => { this._onResultClick(event, item.url); }}>
+                  <div class="result-path">${item.path}</div>
+                  <h2 class="result-title">${item.title}</h2>
+                  ${item.date.length > 0 ? html`<div class="result-meta">更新日: ${item.date}</div>` : nothing}
+                  ${secondaryText.length > 0
+                    ? html`<p class="result-excerpt">${unsafeHTML(secondaryText)}</p>`
+                    : nothing}
+                </a>
+              </ui-card>
             </li>
           `;
         })}
@@ -569,18 +541,16 @@ export class SearchPage extends LitElement {
         </div>
 
         <div class="search-controls">
-          <label class="search-field">
-            <span class="search-icon" aria-hidden="true">
-              <iconify-icon icon="lucide:search"></iconify-icon>
-            </span>
-            <input
-              class="search-input"
-              type="search"
-              placeholder="メモを検索"
-              .value=${this._query}
-              @input=${this._onInput}
-            />
-          </label>
+          <ui-input
+            class="search-input-control"
+            label="検索"
+            hide-label
+            type="search"
+            autocomplete="off"
+            placeholder="メモを検索"
+            .value=${this._query}
+            @input=${this._onInput}
+          ></ui-input>
 
           <div class="toolbar-row">
             <div class="meta-row">
@@ -590,13 +560,18 @@ export class SearchPage extends LitElement {
                 : nothing}
             </div>
 
-            <label class="sort-field">
+            <div class="sort-field">
               <span class="sort-label">並び順</span>
-              <select class="sort-select" .value=${this._sortMode} @change=${this._onSortChange}>
-                <option value="relevance">関連度順</option>
-                <option value="date-desc">新しい順</option>
-              </select>
-            </label>
+              <ui-select
+                class="sort-select"
+                label="並び順"
+                hide-label
+                variant="outline"
+                .modelValue=${this._sortMode}
+                .options=${SEARCH_SORT_OPTIONS}
+                @change=${this._onSortChange}
+              ></ui-select>
+            </div>
           </div>
 
           ${filters.length > 0
@@ -607,16 +582,19 @@ export class SearchPage extends LitElement {
                     const disabled = !selected && count === 0;
 
                     return html`
-                      <button
-                        class="filter-button"
+                      <ui-button
+                        class="filter-chip"
+                        size="sm"
+                        variant=${selected ? 'secondary' : 'outline'}
                         type="button"
+                        data-selected=${selected ? 'true' : 'false'}
                         aria-pressed=${selected ? 'true' : 'false'}
                         ?disabled=${disabled}
                         @click=${() => { this._toggleTag(tag); }}
                       >
                         <span>#${tag}</span>
-                        <span>${count.toString()}</span>
-                      </button>
+                        <span class="filter-chip-count">${count.toString()}</span>
+                      </ui-button>
                     `;
                   })}
                 </div>
