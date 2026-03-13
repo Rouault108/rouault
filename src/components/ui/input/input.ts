@@ -16,6 +16,7 @@ let inputInstanceCounter = 0;
  * 
  * @property {string} label - 入力項目のラベル（必須）
  * @property {boolean} hideLabel - ラベルを視覚的に非表示（スクリーンリーダーには残る）
+ * @property {'filled' | 'outline'} variant - 外観バリアント
  * @property {string} type - 入力フィールドのタイプ
  * @property {string} name - フォーム送信時のフィールド名
  * @property {string} placeholder - ヒントテキスト
@@ -105,6 +106,11 @@ export class Input extends LitElement {
       gap: var(--space-2, 8px);
     }
 
+    :host([variant='outline']) input {
+      border-color: var(--border-default, oklch(90% 0 0 / 0.12));
+      background: var(--bg-default, oklch(100% 0 0));
+    }
+
     /* Label Element */
     .label {
       font-size: var(--text-sm, 13px);
@@ -168,6 +174,10 @@ export class Input extends LitElement {
       border-color: var(--border-default, oklch(90% 0 0 / 0.12));
     }
 
+    :host([variant='outline']) input:focus {
+      background: var(--bg-default, oklch(100% 0 0));
+    }
+
     /* Focus Indicator: Adaptive Focus */
     input:focus-visible {
       outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
@@ -193,6 +203,10 @@ export class Input extends LitElement {
     input:read-only {
       background: var(--bg-fill-muted, oklch(95% 0 0));
       cursor: default;
+    }
+
+    :host([variant='outline']) input:read-only {
+      background: var(--bg-default, oklch(100% 0 0));
     }
 
     /* Help Text */
@@ -282,6 +296,13 @@ export class Input extends LitElement {
    */
   @property({ type: Boolean, attribute: 'hide-label', reflect: true })
   hideLabel = false;
+
+  /**
+   * 外観バリアント
+   * @default 'filled'
+   */
+  @property({ type: String, reflect: true })
+  variant: 'filled' | 'outline' = 'filled';
 
   /**
    * 入力フィールドのタイプ

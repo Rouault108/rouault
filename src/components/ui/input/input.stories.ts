@@ -13,6 +13,7 @@ import '../button/button';
  * 
  * - **役割**: 思考を妨げない「透明な」入力インターフェース
  * - **Universal Clarity**: 入力待機時には `--bg-fill-muted` によって領域を静かに明示し、「どこに入力できるか」を迷わせません
+ * - **Variant**: `filled` は面で、`outline` は線で入力領域を明示します
  * - **Contextual Feedback**: バリデーションエラーやヘルプテキストは、視線の移動を最小限に抑えるため、入力フィールドに近接して表示
  * - **Clear Canvas**: フォーカス時は「紙」のような白地に戻し、執筆に集中させます
  * 
@@ -63,6 +64,7 @@ const meta: Meta<Input> = {
 <ui-input 
   label="検索" 
   hide-label 
+  variant="outline"
   type="search" 
   placeholder="検索..."
 ></ui-input>
@@ -101,6 +103,15 @@ const meta: Meta<Input> = {
       table: {
         type: { summary: 'string' },
         defaultValue: { summary: 'text' },
+      },
+    },
+    variant: {
+      control: 'select',
+      options: ['filled', 'outline'],
+      description: '外観バリアント',
+      table: {
+        type: { summary: "'filled' | 'outline'" },
+        defaultValue: { summary: 'filled' },
       },
     },
     name: {
