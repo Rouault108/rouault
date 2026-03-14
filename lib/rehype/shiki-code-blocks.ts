@@ -145,7 +145,7 @@ const toShikiMeta = (codeNode: HastNode): Record<string, unknown> => {
   return meta;
 };
 
-const normalizeLineEndings = (value: string): string => value.replace(/\r\n?/g, '\n');
+const normalizeLineEndings = (value: string): string => value.replace(/\r\n?/g, '\n').replace(/\n$/, '');
 
 const highlightCodeBlock = async (node: HastNode): Promise<void> => {
   const codeNode = findCodeChild(node);
