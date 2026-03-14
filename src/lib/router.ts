@@ -26,7 +26,7 @@ interface PendingNavigation {
 
 export interface RouterOptions {
   /** コンテンツ更新コールバック（設定時は outlet.innerHTML を直接変更しない） */
-  onContentUpdate?: (html: string) => void;
+  onContentUpdate?: (html: string) => void | Promise<void>;
   /** 初期ナビゲーションをスキップする（AppRouter が SSG コンテンツを保持するため） */
   skipInitialNavigation?: boolean;
   /** 外部で aria-live リージョンを管理する場合は true にする */
@@ -490,7 +490,7 @@ export class Router {
       // ハンドラが HTML 文字列を返した場合は fetch をスキップ
       const handlerResult = await this.executeRouteHandler(url);
       if (handlerResult !== null) {
-        this.setContent(handlerResult);
+        await this.setContent(handlerResult);
         this.navigationHistory.push(url);
         if (!this.isInitialLoad) {
           this.emit('route:change', url);
@@ -531,8 +531,11 @@ export class Router {
       // メタディスクリプションを更新
       this.updateMetaDescription(doc);
 
+      // SPA 遷移ではヘッダー自体は残るため、パンくず属性だけ明示的に同期する
+      this.updateLayoutHeader(doc);
+
       // メインコンテンツを更新先のコンテンツに変更
-      this.setContent(newContent);
+      await this.setContent(newContent);
 
       // 履歴に追加（初期ロードでも追加）
       this.navigationHistory.push(url);
@@ -585,12 +588,13 @@ export class Router {
    * onContentUpdate コールバックが設定されている場合はそちらを呼び出し、
    * そうでなければ outlet.innerHTML を直接変更する（後方互換）
    */
-  private setContent(html: string) {
+  private async setContent(html: string): Promise<void> {
     if (this.options.onContentUpdate) {
-      this.options.onContentUpdate(html);
-    } else {
-      this.outlet.innerHTML = html;
+      await this.options.onContentUpdate(html);
+      return;
     }
+
+    this.outlet.innerHTML = html;
   }
 
   /**
@@ -658,13 +662,13 @@ export class Router {
       if (!mainHeading.hasAttribute('tabindex')) {
         mainHeading.setAttribute('tabindex', '-1');
       }
-      mainHeading.focus();
+      mainHeading.focus({ preventScroll: true });
     } else {
       // 見出しがない場合はメインコンテンツ自体にフォーカス
       if (!this.outlet.hasAttribute('tabindex')) {
         this.outlet.setAttribute('tabindex', '-1');
       }
-      this.outlet.focus();
+      this.outlet.focus({ preventScroll: true });
     }
   }
 
@@ -706,7 +710,7 @@ export class Router {
         <p>${message}</p>
       </div>
     `;
-    this.setContent(errorHTML);
+    void this.setContent(errorHTML);
   }
 
   /**
@@ -735,6 +739,19 @@ export class Router {
   }
 
   /**
+   * 遷移先ドキュメントの layout-header が持つパンくず情報を現在のヘッダーへ同期する。
+   */
+  private updateLayoutHeader(doc: Document): void {
+    const currentHeader = document.querySelector('layout-header');
+    if (!(currentHeader instanceof HTMLElement)) {
+      return;
+    }
+
+    const nextBreadcrumbsJson = doc.querySelector('layout-header')?.getAttribute('breadcrumbs-json') ?? '';
+    currentHeader.setAttribute('breadcrumbs-json', nextBreadcrumbsJson);
+  }
+
+  /**
    * SPA遷移後の再初期化処理
    * onContentUpdate 未設定時（スタンドアロン使用）にのみ呼ばれる。
    * AppRouter 統合時は AppRouter.updated() ライフサイクルで処理する。
@@ -744,7 +761,7 @@ export class Router {
     this.runReinitializeHooks();
 
     // スクロール位置をトップにリセット
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
   }
 
   /**

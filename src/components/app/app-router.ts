@@ -58,9 +58,10 @@ export class AppRouter extends LitElement {
     // Router を SSG コンテンツを上書きしないように初期化する
     const router = this._routerController.initRouter(
       this,
-      (newContent) => {
+      async (newContent) => {
         this._shouldRunPostNavigationHooks = true;
         this._pageContent = newContent;
+        await this.updateComplete;
       },
       {
         skipInitialNavigation: true, // SSG コンテンツを既に保持しているため
@@ -108,7 +109,7 @@ export class AppRouter extends LitElement {
     this._routerController.router?.runReinitializeHooks();
 
     // スクロール位置をトップにリセット
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
 
     // DOM更新完了後にフォーカスをメインコンテンツへ移動
     this._manageFocusAfterNavigation();
@@ -129,14 +130,14 @@ export class AppRouter extends LitElement {
       if (!mainHeading.hasAttribute('tabindex')) {
         mainHeading.setAttribute('tabindex', '-1');
       }
-      mainHeading.focus();
+      mainHeading.focus({ preventScroll: true });
       return;
     }
 
     if (!main.hasAttribute('tabindex')) {
       main.setAttribute('tabindex', '-1');
     }
-    main.focus();
+    main.focus({ preventScroll: true });
   }
 
   async navigate(url: string): Promise<void> {

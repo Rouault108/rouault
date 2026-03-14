@@ -95,4 +95,28 @@ test.describe('Router Navigation', () => {
     expect(activeElement.tagName).toBe('H1');
     expect(activeElement.text).toContain('くるみ割り人形');
   });
+
+  test('検索ページ下端から記事へ遷移してもスクロール位置が先頭に戻ること', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 480 });
+    await page.goto('/search/?tag=music');
+
+    const resultLinks = page.locator('.result-link');
+    await expect(resultLinks).toHaveCount(3);
+
+    await page.evaluate(() => {
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
+    });
+
+    const targetLink = resultLinks.last();
+    const targetHref = await targetLink.getAttribute('href');
+    expect(targetHref).not.toBeNull();
+
+    await targetLink.click();
+
+    await expect(page).toHaveURL(targetHref as string);
+    await expect(page.locator('ui-article-header')).toBeVisible();
+
+    const scrollY = await page.evaluate(() => window.scrollY);
+    expect(scrollY).toBe(0);
+  });
 });

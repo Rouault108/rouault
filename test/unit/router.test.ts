@@ -578,6 +578,47 @@ describe('Router', () => {
 			expect(document.title).to.equal('Test Page');
 		});
 
+		it('3.1.1 ナビゲーション後のフォーカス移動で preventScroll を指定すること', async () => {
+			const mockHTML = `
+                <!DOCTYPE html>
+                <html>
+                    <head><title>Focus Page</title></head>
+                    <body>
+                        <main><h1>Focus Target</h1></main>
+                    </body>
+                </html>
+            `;
+
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response(mockHTML, {
+					status: 200,
+					headers: { 'Content-Type': 'text/html' },
+				}));
+			};
+
+			const originalFocus = HTMLElement.prototype.focus;
+			let focusedTagName = '';
+			let focusOptions: FocusOptions | undefined;
+
+			HTMLElement.prototype.focus = function focus(this: HTMLElement, options?: FocusOptions): void {
+				focusedTagName = this.tagName;
+				focusOptions = options;
+			};
+
+			try {
+				router = new Router(outlet, { skipInitialNavigation: true });
+
+				const link = await fixture<HTMLAnchorElement>(html` <a href="/focus-page">Navigate</a> `);
+				simulateClick(link);
+
+				await waitUntil(() => focusedTagName === 'H1', '見出しへフォーカス移動');
+
+				expect(focusOptions).to.deep.equal({ preventScroll: true });
+			} finally {
+				HTMLElement.prototype.focus = originalFocus;
+			}
+		});
+
 		it('3.2 navigate() メソッドでプログラマティックナビゲーションができること', async () => {
 			const mockHTML = `
                 <!DOCTYPE html>
@@ -604,7 +645,49 @@ describe('Router', () => {
 			expect(document.title).to.equal('Programmatic Page');
 		});
 
-		it('3.2.1 拡張子のない内部URLは fetch 時のみ trailing slash を補うこと', async () => {
+		it('3.2.1 onContentUpdate が非同期でも描画完了まで待ってから遷移完了すること', async () => {
+			const lifecycle: string[] = [];
+			let resolveRender!: () => void;
+			const renderCompleted = new Promise<void>((resolve) => {
+				resolveRender = resolve;
+			});
+
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response('<html><body><main><h1>Delayed</h1></main></body></html>', {
+					status: 200,
+				}));
+			};
+
+			router = new Router(outlet, {
+				skipInitialNavigation: true,
+				onContentUpdate: async (html) => {
+					lifecycle.push('content:update:start');
+					outlet.innerHTML = html;
+					await renderCompleted;
+					lifecycle.push('content:update:end');
+				},
+			});
+
+			router.on('after:navigate', () => {
+				lifecycle.push('after:navigate');
+			});
+
+			const navigationPromise = router.navigate('/delayed');
+
+			await waitUntil(() => lifecycle.includes('content:update:start'), '描画開始待ち');
+			expect(lifecycle).to.deep.equal(['content:update:start']);
+
+			resolveRender();
+			await navigationPromise;
+
+			expect(lifecycle).to.deep.equal([
+				'content:update:start',
+				'content:update:end',
+				'after:navigate',
+			]);
+		});
+
+		it('3.2.2 拡張子のない内部URLは fetch 時のみ trailing slash を補うこと', async () => {
 			let fetchedUrl = '';
 			let pushedPath = '';
 
@@ -787,6 +870,72 @@ describe('Router', () => {
 
 			const metaTag = document.querySelector('meta[name="description"]');
 			expect(metaTag?.getAttribute('content')).to.equal('Updated Description');
+		});
+
+		it('4.3.1 layout-header の breadcrumbs-json が遷移先に同期されること', async () => {
+			const header = await fixture<HTMLElement>(
+				html`<layout-header breadcrumbs-json='[{"label":"Old Note","href":"/notes/old-note"}]'></layout-header>`,
+			);
+
+			const mockHTML = `
+                <!DOCTYPE html>
+                <html>
+                    <body>
+                        <layout-header breadcrumbs-json='[{"label":"New Note","href":"/notes/new-note"}]'></layout-header>
+                        <main><h1>New Note</h1></main>
+                    </body>
+                </html>
+            `;
+
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response(mockHTML, { status: 200 }));
+			};
+
+			router = new Router(outlet);
+
+			const link = await fixture<HTMLAnchorElement>(html` <a href="/notes/new-note">Link</a> `);
+			simulateClick(link);
+
+			await waitUntil(
+				() => header.getAttribute('breadcrumbs-json') === '[{"label":"New Note","href":"/notes/new-note"}]',
+				'breadcrumbs-json が更新される',
+			);
+
+			expect(header.getAttribute('breadcrumbs-json')).to.equal(
+				'[{"label":"New Note","href":"/notes/new-note"}]',
+			);
+		});
+
+		it('4.3.2 検索ページ遷移時は layout-header の breadcrumbs-json を空配列へ更新できること', async () => {
+			const header = await fixture<HTMLElement>(
+				html`<layout-header breadcrumbs-json='[{"label":"Current Note","href":"/notes/current-note"}]'></layout-header>`,
+			);
+
+			const mockHTML = `
+                <!DOCTYPE html>
+                <html>
+                    <body>
+                        <layout-header breadcrumbs-json="[]"></layout-header>
+                        <main><search-page></search-page></main>
+                    </body>
+                </html>
+            `;
+
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response(mockHTML, { status: 200 }));
+			};
+
+			router = new Router(outlet);
+
+			const link = await fixture<HTMLAnchorElement>(html` <a href="/search">Search</a> `);
+			simulateClick(link);
+
+			await waitUntil(
+				() => header.getAttribute('breadcrumbs-json') === '[]',
+				'breadcrumbs-json が検索ページ用に更新される',
+			);
+
+			expect(header.getAttribute('breadcrumbs-json')).to.equal('[]');
 		});
 
 		it('4.4 空のレスポンスを適切に処理すること', async () => {

@@ -46,7 +46,7 @@ export class RouterController implements ReactiveController {
    */
   initRouter(
     outlet: HTMLElement,
-    onPageContent: (html: string) => void,
+    onPageContent: (html: string) => void | Promise<void>,
     options: Omit<RouterOptions, 'onContentUpdate'> = {},
   ): Router {
     this._router = new Router(outlet, {
