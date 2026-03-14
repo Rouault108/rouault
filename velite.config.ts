@@ -21,6 +21,7 @@ const notes = defineCollection({
       title: s.string().optional(),
       description: s.string().optional(),
       slug: s.path(),
+      sidebarIcon: s.string().optional(),
       date: s.isodate().optional(),
       updated: s.isodate().optional(),
       genre: s.array(s.string()).optional(),

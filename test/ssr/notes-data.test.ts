@@ -109,6 +109,85 @@ describe('buildNotesCollection', () => {
     ).toBeUndefined();
     expect(collection.find((note) => note.slug === 'music/jazz/kind-of-blue')?.sidebarRoot).toBeUndefined();
   });
+
+  it('sidebarIcon と sidebar.icon を解決してサイドバー用 icon 情報を付与する', async () => {
+    const contentRoot = await createContentRoot();
+    await mkdir(path.join(contentRoot, 'music', 'classical', 'beethoven'), { recursive: true });
+    await writeFile(
+      path.join(contentRoot, '_config.json'),
+      JSON.stringify({
+        order: ['music'],
+        sidebar: { icon: 'lucide:library' },
+      }),
+      'utf8',
+    );
+    await writeFile(
+      path.join(contentRoot, 'music', '_config.json'),
+      JSON.stringify({
+        order: ['classical'],
+        sidebar: { icon: 'folder' },
+      }),
+      'utf8',
+    );
+    await writeFile(
+      path.join(contentRoot, 'music', 'classical', '_config.json'),
+      JSON.stringify({
+        order: ['beethoven', 'mozart.md'],
+        sidebar: { icon: 'lucide:music-2' },
+      }),
+      'utf8',
+    );
+    await writeFile(
+      path.join(contentRoot, 'music', 'classical', 'beethoven', '_config.json'),
+      JSON.stringify({ sidebar: { icon: 'none' } }),
+      'utf8',
+    );
+
+    const notes: SourceNote[] = [
+      {
+        slug: 'music/classical/mozart',
+        content: '',
+        sidebarIcon: 'file',
+      },
+      {
+        slug: 'music/classical/beethoven/symphony-9',
+        content: '',
+      },
+      {
+        slug: 'music/classical/beethoven/fidelio',
+        content: '',
+        sidebarIcon: 'lucide:music-3',
+      },
+      {
+        slug: 'music/jazz/kind-of-blue',
+        content: '',
+        sidebarIcon: 'none',
+      },
+    ];
+
+    const collection = buildNotesCollection(notes, contentRoot);
+    const mozart = collection.find((note) => note.slug === 'music/classical/mozart');
+    const symphony = collection.find((note) => note.slug === 'music/classical/beethoven/symphony-9');
+    const fidelio = collection.find((note) => note.slug === 'music/classical/beethoven/fidelio');
+    const jazz = collection.find((note) => note.slug === 'music/jazz/kind-of-blue');
+
+    expect(mozart?.sidebarResolvedIcon).toBe('lucide:file-text');
+    expect(mozart?.sidebarDirectoryIcons).toEqual({
+      music: 'lucide:folder',
+      'music/classical': 'lucide:music-2',
+    });
+    expect(symphony?.sidebarResolvedIcon).toBeUndefined();
+    expect(symphony?.sidebarDirectoryIcons).toEqual({
+      music: 'lucide:folder',
+      'music/classical': 'lucide:music-2',
+    });
+    expect(fidelio?.sidebarResolvedIcon).toBe('lucide:music-3');
+    expect(jazz?.sidebarResolvedIcon).toBeUndefined();
+    expect(jazz?.sidebarDirectoryIcons).toEqual({
+      music: 'lucide:folder',
+      'music/jazz': 'lucide:folder',
+    });
+  });
 });
 
 describe('filterPublicNotes', () => {

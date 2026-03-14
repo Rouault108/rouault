@@ -4,6 +4,8 @@ export interface SidebarSourceNote {
   slug?: string;
   title?: string;
   permalink?: string;
+  sidebarResolvedIcon?: string;
+  sidebarDirectoryIcons?: Record<string, string>;
 }
 
 interface SidebarMutableNode extends TreeNode {
@@ -88,11 +90,14 @@ export const buildSidebarTree = (
       let node = findNodeById(currentChildren, nodeId);
 
       if (node === null) {
+        const directoryIcon = note.sidebarDirectoryIcons?.[currentPath];
         const createdNode: SidebarMutableNode = isLeaf
           ? {
             id: nodeId,
             label: candidateTitle,
-            icon: 'lucide:file-text',
+            ...(typeof note.sidebarResolvedIcon === 'string'
+              ? { icon: note.sidebarResolvedIcon }
+              : {}),
             href: note.permalink.trim(),
             selected: slug === selectedSlug,
             expanded: false,
@@ -100,7 +105,7 @@ export const buildSidebarTree = (
           : {
             id: nodeId,
             label: normalizeSegmentLabel(segment),
-            icon: 'lucide:folder',
+            ...(typeof directoryIcon === 'string' ? { icon: directoryIcon } : {}),
             selected: false,
             expanded: false,
             children: [],
@@ -111,6 +116,14 @@ export const buildSidebarTree = (
         node.label = candidateTitle;
         node.href = note.permalink.trim();
         node.selected = slug === selectedSlug;
+        if (typeof note.sidebarResolvedIcon === 'string') {
+          node.icon = note.sidebarResolvedIcon;
+        }
+      } else {
+        const directoryIcon = note.sidebarDirectoryIcons?.[currentPath];
+        if (typeof directoryIcon === 'string' && typeof node.icon !== 'string') {
+          node.icon = directoryIcon;
+        }
       }
 
       if (!isLeaf) {

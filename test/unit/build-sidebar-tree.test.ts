@@ -4,6 +4,7 @@ import { buildSidebarTree } from '../../lib/content/build-sidebar-tree.js';
 interface SidebarTreeNode {
   id: string;
   label: string;
+  icon?: string;
   selected?: boolean;
   expanded?: boolean;
   children?: SidebarTreeNode[];
@@ -127,5 +128,44 @@ describe('buildSidebarTree', () => {
     expect(rootNode?.expanded).to.equal(true);
     expect(selectedNode?.selected).to.equal(true);
     expect(parentNode?.expanded).to.equal(true);
+  });
+
+  it('記事 icon は frontmatter > ディレクトリ設定 > none の優先順位で解決すること', () => {
+    const tree = buildSidebarTree([
+      {
+        slug: 'music/classical/mozart',
+        title: 'モーツァルト',
+        permalink: '/notes/music/classical/mozart',
+        sidebarResolvedIcon: 'lucide:music-4',
+        sidebarDirectoryIcons: {
+          music: 'lucide:folder-root',
+          'music/classical': 'lucide:folder-kanban',
+        },
+      },
+      {
+        slug: 'music/classical/beethoven',
+        title: 'ベートーヴェン',
+        permalink: '/notes/music/classical/beethoven',
+        sidebarResolvedIcon: 'lucide:folder-kanban',
+        sidebarDirectoryIcons: {
+          music: 'lucide:folder-root',
+          'music/classical': 'lucide:folder-kanban',
+        },
+      },
+      {
+        slug: 'music/jazz/kind-of-blue',
+        title: 'Kind of Blue',
+        permalink: '/notes/music/jazz/kind-of-blue',
+      },
+    ]);
+
+    expect(findNode(tree as SidebarTreeNode[], 'music')?.icon).to.equal('lucide:folder-root');
+    expect(findNode(tree as SidebarTreeNode[], 'music/classical')?.icon).to.equal('lucide:folder-kanban');
+    expect(findNode(tree as SidebarTreeNode[], 'music/classical/mozart')?.icon).to.equal('lucide:music-4');
+    expect(findNode(tree as SidebarTreeNode[], 'music/classical/beethoven')?.icon).to.equal(
+      'lucide:folder-kanban',
+    );
+    expect(findNode(tree as SidebarTreeNode[], 'music/jazz')?.icon).to.equal(undefined);
+    expect(findNode(tree as SidebarTreeNode[], 'music/jazz/kind-of-blue')?.icon).to.equal(undefined);
   });
 });
