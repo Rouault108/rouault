@@ -374,6 +374,13 @@ export class TreeItem extends LitElement {
   private hasChildren = false;
 
   /**
+   * カスタムアイコンが存在するか
+   * @internal
+   */
+  @state()
+  private hasCustomIcon = false;
+
+  /**
    * ラベルが省略表示されているか
    * @internal
    */
@@ -386,6 +393,11 @@ export class TreeItem extends LitElement {
     void this.updateComplete.then(() => {
       this._syncChildrenHeightImmediately();
     });
+  };
+
+  private readonly _iconSlotChangeHandler = () => {
+    const slot = this.shadowRoot?.querySelector('slot[name="icon"]') as HTMLSlotElement | null;
+    this.hasCustomIcon = (slot?.assignedElements({ flatten: true }).length ?? 0) > 0;
   };
 
   private readonly _hostFocusHandler = (e: FocusEvent) => {
@@ -438,6 +450,8 @@ export class TreeItem extends LitElement {
   }
 
   override firstUpdated(): void {
+    this._iconSlotChangeHandler();
+
     // ui-tooltipのスロット解決後に.labelが初めてレイアウトを持つため、
     // ResizeObserverで初回レイアウト確定時の省略判定を確実に行う
     const label = this.shadowRoot?.querySelector<HTMLElement>('.label');
@@ -730,7 +744,19 @@ export class TreeItem extends LitElement {
                     <iconify-icon icon="${this.icon}"></iconify-icon>
                   </span>
                 `
-              : html`<slot name="icon" class="content-icon"></slot>`}
+              : this.hasCustomIcon
+                ? html`
+                    <span class="content-icon" aria-hidden="true">
+                      <slot name="icon" @slotchange="${this._iconSlotChangeHandler}"></slot>
+                    </span>
+                  `
+                : html`
+                    <slot
+                      name="icon"
+                      @slotchange="${this._iconSlotChangeHandler}"
+                      style="display: none;"
+                    ></slot>
+                  `}
 
             <!-- ラベル -->
             <span class="label">
