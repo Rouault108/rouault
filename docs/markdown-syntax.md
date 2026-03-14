@@ -54,7 +54,7 @@ genre:
 
 | 項目 | 必須 | 内容 |
 |---|---|---|
-| `title` | 任意 | ノートタイトル |
+| `title` | 必須 | ノートタイトル |
 | `description` | 任意 | 一覧、検索、OG などで使う短い説明 |
 | `date` | 任意 | 作成日。`YYYY-MM-DD` の ISO 日付で書く |
 | `updated` | 任意 | 更新日。`YYYY-MM-DD` の ISO 日付で書く |
