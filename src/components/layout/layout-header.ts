@@ -76,6 +76,9 @@ export class LayoutHeader extends LitElement {
   @property({ type: String, attribute: 'breadcrumbs-json' })
   breadcrumbsJson = '';
 
+  @property({ type: Boolean, reflect: true, attribute: 'note-layout' })
+  noteLayout = false;
+
   @state()
   private _sidebarExpanded = true;
 
@@ -163,14 +166,18 @@ export class LayoutHeader extends LitElement {
     return html`
       <ui-header .sidebarExpanded=${this._sidebarExpanded}>
         <div slot="start" class="slot-group">
-          <ui-button
-            variant="ghost"
-            icon-only
-            aria-label="${sidebarToggleLabel}"
-            @click=${this._handleSidebarToggleClick}
-          >
-            <iconify-icon icon="lucide:panel-left" aria-hidden="true"></iconify-icon>
-          </ui-button>
+          ${this.noteLayout
+            ? html`
+                <ui-button
+                  variant="ghost"
+                  icon-only
+                  aria-label="${sidebarToggleLabel}"
+                  @click=${this._handleSidebarToggleClick}
+                >
+                  <iconify-icon icon="lucide:panel-left" aria-hidden="true"></iconify-icon>
+                </ui-button>
+              `
+            : null}
           <ui-dropdown @menu-item-select=${this._handleGenreSelect}>
             <ui-button slot="trigger" variant="ghost">
               ジャンル

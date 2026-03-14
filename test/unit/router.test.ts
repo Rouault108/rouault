@@ -938,6 +938,70 @@ describe('Router', () => {
 			expect(header.getAttribute('breadcrumbs-json')).to.equal('[]');
 		});
 
+		it('4.3.3 ノートページ遷移時は layout-header の note-layout 属性を付与できること', async () => {
+			const header = await fixture<HTMLElement>(
+				html`<layout-header breadcrumbs-json="[]"></layout-header>`,
+			);
+
+			const mockHTML = `
+                <!DOCTYPE html>
+                <html>
+                    <body>
+                        <layout-header note-layout breadcrumbs-json='[{"label":"New Note","href":"/notes/new-note"}]'></layout-header>
+                        <main><h1>New Note</h1></main>
+                    </body>
+                </html>
+            `;
+
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response(mockHTML, { status: 200 }));
+			};
+
+			router = new Router(outlet);
+
+			const link = await fixture<HTMLAnchorElement>(html` <a href="/notes/new-note">Link</a> `);
+			simulateClick(link);
+
+			await waitUntil(
+				() => header.hasAttribute('note-layout'),
+				'note-layout 属性が付与される',
+			);
+
+			expect(header.hasAttribute('note-layout')).to.equal(true);
+		});
+
+		it('4.3.4 検索ページ遷移時は layout-header の note-layout 属性を除去できること', async () => {
+			const header = await fixture<HTMLElement>(
+				html`<layout-header note-layout breadcrumbs-json='[{"label":"Current Note","href":"/notes/current-note"}]'></layout-header>`,
+			);
+
+			const mockHTML = `
+                <!DOCTYPE html>
+                <html>
+                    <body>
+                        <layout-header breadcrumbs-json="[]"></layout-header>
+                        <main><search-page></search-page></main>
+                    </body>
+                </html>
+            `;
+
+			globalThis.fetch = () => {
+				return Promise.resolve(new Response(mockHTML, { status: 200 }));
+			};
+
+			router = new Router(outlet);
+
+			const link = await fixture<HTMLAnchorElement>(html` <a href="/search">Search</a> `);
+			simulateClick(link);
+
+			await waitUntil(
+				() => !header.hasAttribute('note-layout'),
+				'note-layout 属性が除去される',
+			);
+
+			expect(header.hasAttribute('note-layout')).to.equal(false);
+		});
+
 		it('4.4 空のレスポンスを適切に処理すること', async () => {
 			globalThis.fetch = () => {
 				return Promise.resolve(new Response('', { status: 200 }));

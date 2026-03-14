@@ -747,8 +747,10 @@ export class Router {
       return;
     }
 
-    const nextBreadcrumbsJson = doc.querySelector('layout-header')?.getAttribute('breadcrumbs-json') ?? '';
+    const nextHeader = doc.querySelector('layout-header');
+    const nextBreadcrumbsJson = nextHeader?.getAttribute('breadcrumbs-json') ?? '';
     currentHeader.setAttribute('breadcrumbs-json', nextBreadcrumbsJson);
+    currentHeader.toggleAttribute('note-layout', nextHeader?.hasAttribute('note-layout') ?? false);
   }
 
   /**
