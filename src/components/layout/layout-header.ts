@@ -102,6 +102,9 @@ export class LayoutHeader extends LitElement {
     .theme-menu-icon,
     .theme-trigger-icon,
     .theme-chevron {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       width: var(--icon-base, 16px);
       height: var(--icon-base, 16px);
       flex-shrink: 0;
@@ -232,7 +235,7 @@ export class LayoutHeader extends LitElement {
       <ui-header .sidebarExpanded=${this._sidebarExpanded}>
         <div slot="start" class="slot-group">
           ${this.noteLayout
-            ? html`
+        ? html`
                 <ui-button
                   variant="ghost"
                   icon-only
@@ -242,7 +245,7 @@ export class LayoutHeader extends LitElement {
                   <iconify-icon icon="lucide:panel-left" aria-hidden="true"></iconify-icon>
                 </ui-button>
               `
-            : null}
+        : null}
           <ui-dropdown @menu-item-select=${this._handleGenreSelect}>
             <ui-button slot="trigger" variant="ghost">
               ジャンル
@@ -257,7 +260,7 @@ export class LayoutHeader extends LitElement {
           </ui-dropdown>
         </div>
         ${breadcrumbs.length > 0
-          ? html`
+        ? html`
               <ui-breadcrumbs
                 slot="center"
                 class="breadcrumbs"
@@ -265,7 +268,7 @@ export class LayoutHeader extends LitElement {
                 aria-label="現在の階層"
               ></ui-breadcrumbs>
             `
-          : html`<span slot="center" class="context">Personal Notes</span>`}
+        : html`<span slot="center" class="context">Personal Notes</span>`}
         <div slot="end" class="slot-group">
           <ui-search-trigger></ui-search-trigger>
           <ui-dropdown align="end" @menu-item-select=${this._handleThemeSelect}>
@@ -285,12 +288,12 @@ export class LayoutHeader extends LitElement {
               ></iconify-icon>
             </ui-button>
             ${(
-              Object.entries(THEME_OPTIONS) as [
-                ThemePreference,
-                (typeof THEME_OPTIONS)[ThemePreference],
-              ][]
-            ).map(
-              ([value, option]) => html`
+        Object.entries(THEME_OPTIONS) as [
+          ThemePreference,
+          (typeof THEME_OPTIONS)[ThemePreference],
+        ][]
+      ).map(
+        ([value, option]) => html`
                 <ui-menu-item value=${value}>
                   <span class="theme-menu-label">
                     <iconify-icon
@@ -302,7 +305,7 @@ export class LayoutHeader extends LitElement {
                   </span>
                 </ui-menu-item>
               `,
-            )}
+      )}
           </ui-dropdown>
         </div>
       </ui-header>
