@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildSearchCatalog } from '../../src/data/searchCatalog.js';
+import { buildSearchCatalog, serializeSearchCatalog } from '../../src/data/searchCatalog.js';
 
 describe('buildSearchCatalog', () => {
   it('公開ノートから検索ダイアログ用カタログを構築すること', () => {
@@ -79,5 +79,20 @@ describe('buildSearchCatalog', () => {
         genres: [],
       },
     ]);
+  });
+
+  it('検索カタログJSONを安定した形式でシリアライズできること', () => {
+    const json = serializeSearchCatalog([
+      {
+        title: '公開ノート',
+        permalink: '/notes/public/',
+        slug: 'public',
+        description: '説明',
+      },
+    ]);
+
+    expect(json).toBe(
+      '[{"title":"公開ノート","url":"/notes/public/","path":"/notes/public/","description":"説明","date":"","keywords":["public","公開","ノート","説明"],"genres":[]}]',
+    );
   });
 });

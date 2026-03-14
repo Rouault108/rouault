@@ -55,4 +55,67 @@ describe('NoteLayout', () => {
     expect(rendered).not.toContain('<span data-pagefind-weight="8">public</span>');
     expect(rendered).not.toContain('<span data-pagefind-weight="3">memo</span>');
   });
+
+  it('sidebar icon 未指定のノートではサイドバー JSON に icon を出力しないこと', () => {
+    const layout = new NoteLayout();
+    const rendered = layout.render({
+      content: '<p>本文</p>',
+      note: {
+        slug: 'music/jazz/jazz-theory',
+        title: 'ジャズ理論の基礎',
+      },
+      notes: [
+        {
+          slug: 'music/jazz/jazz-theory',
+          title: 'ジャズ理論の基礎',
+          permalink: '/notes/music/jazz/jazz-theory',
+        },
+        {
+          slug: 'music/classical/tchaikovsky/the-nutcracker',
+          title: '楽曲分析: くるみ割り人形',
+          permalink: '/notes/music/classical/tchaikovsky/the-nutcracker',
+        },
+      ],
+    });
+
+    expect(rendered).not.toContain('"icon":');
+  });
+
+  it('sidebar icon 指定時だけ対象ノードへ icon を出力すること', () => {
+    const layout = new NoteLayout();
+    const rendered = layout.render({
+      content: '<p>本文</p>',
+      note: {
+        slug: 'music/classical/mozart',
+        title: 'モーツァルト',
+      },
+      notes: [
+        {
+          slug: 'music/classical/mozart',
+          title: 'モーツァルト',
+          permalink: '/notes/music/classical/mozart',
+          sidebarResolvedIcon: 'lucide:music-4',
+          sidebarDirectoryIcons: {
+            music: 'lucide:library',
+            'music/classical': 'lucide:folder-kanban',
+          },
+        },
+        {
+          slug: 'music/jazz/kind-of-blue',
+          title: 'Kind of Blue',
+          permalink: '/notes/music/jazz/kind-of-blue',
+        },
+      ],
+    });
+
+    expect(rendered).toContain('"id":"music","label":"Music","icon":"lucide:library"');
+    expect(rendered).toContain(
+      '"id":"music/classical","label":"Classical","icon":"lucide:folder-kanban"',
+    );
+    expect(rendered).toContain(
+      '"id":"music/classical/mozart","label":"モーツァルト","icon":"lucide:music-4"',
+    );
+    expect(rendered).not.toContain('"id":"music/jazz","label":"Jazz","icon":');
+    expect(rendered).not.toContain('"id":"music/jazz/kind-of-blue","label":"Kind of Blue","icon":');
+  });
 });

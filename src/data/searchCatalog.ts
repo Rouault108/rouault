@@ -100,3 +100,7 @@ export function buildSearchCatalog(notes: readonly SearchCatalogSourceNote[]): S
     ];
   });
 }
+
+export function serializeSearchCatalog(notes: readonly SearchCatalogSourceNote[]): string {
+  return JSON.stringify(buildSearchCatalog(notes));
+}

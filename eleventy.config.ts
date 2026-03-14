@@ -1,11 +1,12 @@
 import path from 'node:path';
-import { copyFile } from 'node:fs/promises';
+import { copyFile, mkdir, writeFile } from 'node:fs/promises';
 import type { UserConfig } from '@11ty/eleventy';
 import EleventyVitePlugin from '@11ty/eleventy-plugin-vite';
 import type { Connect, ViteDevServer } from 'vite';
 import { build } from 'velite';
 
 import { loadNotesData } from './src/data/notes.js';
+import { serializeSearchCatalog } from './src/data/searchCatalog.js';
 import { createStaticDirectoryMiddleware } from './src/lib/dev-static-directory.js';
 import { resolveTrailingSlashRewrite } from './src/lib/trailing-slash-rewrite.js';
 import { buildPagefindIndex } from './scripts/build-pagefind.js';
@@ -35,6 +36,12 @@ const registerDevelopmentStaticDirectories = (server: ViteDevServer): void => {
   server.middlewares.use(
     createStaticDirectoryMiddleware('/pagefind/', path.resolve(process.cwd(), 'dist', 'pagefind')),
   );
+};
+
+const writeSearchCatalogJson = async (outputDirectory: string): Promise<void> => {
+  const outputPath = path.resolve(outputDirectory, 'search-catalog.json');
+  await mkdir(path.dirname(outputPath), { recursive: true });
+  await writeFile(outputPath, serializeSearchCatalog(loadNotesData()), 'utf8');
 };
 
 /**
@@ -84,6 +91,8 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
   });
 
   eleventyConfig.on('eleventy.after', async () => {
+    await writeSearchCatalogJson(path.resolve(process.cwd(), 'dist'));
+
     // Cloudflare Pages 用の rewrite ルールを出力ディレクトリへ明示コピーする。
     await copyFile(path.resolve(process.cwd(), '_redirects'), path.resolve(process.cwd(), 'dist/_redirects'));
 
