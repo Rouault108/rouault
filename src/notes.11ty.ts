@@ -6,7 +6,7 @@
  */
 
 interface NoteEntry {
-  title?: string;
+  title: string;
   permalink?: string;
   content?: string;
 }

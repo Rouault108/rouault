@@ -18,7 +18,7 @@ const notes = defineCollection({
   pattern: '**/*.md',
   schema: s
     .object({
-      title: s.string().optional(),
+      title: s.string(),
       description: s.string().optional(),
       slug: s.path(),
       sidebarIcon: s.string().optional(),

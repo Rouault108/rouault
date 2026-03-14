@@ -217,9 +217,11 @@ const resolveSidebarIconContext = (
     }
   }
 
+  const noteFallbackIcon = resolveDirectorySidebarIcon(inheritedSetting);
+
   return {
     directoryIcons,
-    noteFallbackIcon: resolveDirectorySidebarIcon(inheritedSetting),
+    ...(noteFallbackIcon !== undefined ? { noteFallbackIcon } : {}),
   };
 };
 
