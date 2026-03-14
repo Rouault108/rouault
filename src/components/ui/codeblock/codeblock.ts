@@ -86,14 +86,23 @@ ui-code-block pre .line.diff.remove {
 }
 
 @media (prefers-color-scheme: dark) {
-  ui-code-block pre.shiki {
+  :root:not([data-theme='light']) ui-code-block pre.shiki {
     background-color: var(--shiki-dark-bg, transparent) !important;
     color: var(--shiki-dark, inherit) !important;
   }
 
-  ui-code-block pre.shiki span {
+  :root:not([data-theme='light']) ui-code-block pre.shiki span {
     color: var(--shiki-dark, inherit) !important;
   }
+}
+
+:root[data-theme='dark'] ui-code-block pre.shiki {
+  background-color: var(--shiki-dark-bg, transparent) !important;
+  color: var(--shiki-dark, inherit) !important;
+}
+
+:root[data-theme='dark'] ui-code-block pre.shiki span {
+  color: var(--shiki-dark, inherit) !important;
 }
 
 ui-code-block pre:focus-visible {
