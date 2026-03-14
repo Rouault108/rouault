@@ -10,6 +10,7 @@ import { LayoutFooter } from '../components/layout/layout-footer.js';
 import '../components/ui/search-dialog/search-dialog.js';
 import '../components/ui/card/card.js';
 import '../components/search/search-page.js';
+import '../components/tag/tag-page.js';
 import '../components/ui/article-header/article-header.js';
 import '../components/layout/layout-sidebar.js';
 import '../components/layout/layout-toc.js';
@@ -24,10 +25,7 @@ import {
 } from '../components/ui/codeblock/codeblock.js';
 import '../components/ui/codeblock/codeblock.js';
 import '../components/ui/blockquote/blockquote.js';
-import {
-  FOOTER_DOCUMENT_CSS,
-  FOOTER_DOCUMENT_STYLE_ID,
-} from '../components/ui/footer/footer.js';
+import { FOOTER_DOCUMENT_CSS, FOOTER_DOCUMENT_STYLE_ID } from '../components/ui/footer/footer.js';
 import {
   SSR_TARGET_TAGS,
   type SsrLightTargetTag,
@@ -47,10 +45,7 @@ export interface SsrDocumentStyleDefinition {
   cssText: string;
 }
 
-const LIGHT_TARGET_TAGS = new Set<SsrLightTargetTag>([
-  'app-router',
-  'layout-footer',
-]);
+const LIGHT_TARGET_TAGS = new Set<SsrLightTargetTag>(['app-router', 'layout-footer']);
 
 const DOCUMENT_STYLE_DEFINITIONS: Partial<Record<SsrTargetTag, SsrDocumentStyleDefinition>> = {
   'layout-footer': {
@@ -68,11 +63,7 @@ const DOCUMENT_STYLE_DEFINITIONS: Partial<Record<SsrTargetTag, SsrDocumentStyleD
 };
 
 const escapeAttributeValue = (value: string): string =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 const serializeAttributes = (attributes: readonly SsrAttribute[]): string =>
   attributes
@@ -137,13 +128,7 @@ export const renderCustomElement = async (
   }
 
   const rendered = await collectResult(
-    renderThunked(
-      buildShadowTemplate(
-        tagName as SsrShadowTargetTag,
-        attributes,
-        innerHtml,
-      ),
-    ),
+    renderThunked(buildShadowTemplate(tagName as SsrShadowTargetTag, attributes, innerHtml)),
   );
   return rendered;
 };

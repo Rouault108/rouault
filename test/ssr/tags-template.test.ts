@@ -38,16 +38,10 @@ describe('TagPagesTemplate', () => {
       },
     });
 
-    expect(rendered).toContain('<section class="tag-page" aria-labelledby="tag-page-title">');
-    expect(rendered).toContain('<p class="tag-page__eyebrow">Tag / Archive</p>');
-    expect(rendered).toContain('<h1 id="tag-page-title" class="tag-page__title">#music</h1>');
-    expect(rendered).toContain(
-      '<p class="tag-page__description">このタグに属する公開ノートを新しい順で一覧します。</p>',
-    );
-    expect(rendered).toContain('2件のノート');
-    expect(rendered).toContain('href="/search?tag=music"');
-    expect(rendered).toContain('<ui-card class="tag-page__item-card" clickable variant="outlined">');
-    expect(rendered).toContain('交響曲メモ');
+    expect(rendered).toContain('<tag-page tag-page-json="');
+    expect(rendered).toContain('&quot;tag&quot;:&quot;music&quot;');
+    expect(rendered).toContain('&quot;noteCount&quot;:2');
+    expect(rendered).toContain('&quot;title&quot;:&quot;交響曲メモ&quot;');
     expect(rendered).not.toContain('<search-page');
   });
 });

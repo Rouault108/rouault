@@ -3,6 +3,7 @@ export const SSR_SHADOW_TARGET_TAGS = [
   'layout-header',
   'ui-search-dialog',
   'search-page',
+  'tag-page',
   'ui-card',
   'ui-article-header',
   'layout-sidebar',
@@ -12,15 +13,9 @@ export const SSR_SHADOW_TARGET_TAGS = [
   'ui-blockquote',
 ] as const;
 
-export const SSR_LIGHT_TARGET_TAGS = [
-  'app-router',
-  'layout-footer',
-] as const;
+export const SSR_LIGHT_TARGET_TAGS = ['app-router', 'layout-footer'] as const;
 
-export const SSR_TARGET_TAGS = [
-  ...SSR_SHADOW_TARGET_TAGS,
-  ...SSR_LIGHT_TARGET_TAGS,
-] as const;
+export const SSR_TARGET_TAGS = [...SSR_SHADOW_TARGET_TAGS, ...SSR_LIGHT_TARGET_TAGS] as const;
 
 export type SsrShadowTargetTag = (typeof SSR_SHADOW_TARGET_TAGS)[number];
 export type SsrLightTargetTag = (typeof SSR_LIGHT_TARGET_TAGS)[number];
@@ -37,6 +32,7 @@ export const SSR_NOTE_TARGET_TAGS = [
 
 export const SSR_SEARCH_TARGET_TAGS = [
   'search-page',
+  'tag-page',
 ] as const satisfies readonly SsrTargetTag[];
 
 export const SSR_ALWAYS_LOAD_TAGS = [

@@ -92,23 +92,29 @@ describe('transformHtmlWithLitSsr', () => {
         <body>
           <main id="main-content">
             <search-page></search-page>
+            <tag-page tag-page-json="{&quot;tag&quot;:&quot;music&quot;}"></tag-page>
             <article data-static="keep">残したい要素</article>
           </main>
         </body>
       </html>`;
 
     const transformed = await transformHtmlWithLitSsr(html, {
-      targetTagNames: ['search-page'],
+      targetTagNames: ['search-page', 'tag-page'],
       renderCustomElement: (tagName: string, attributes: readonly SsrAttribute[]) =>
         Promise.resolve(
-          `<${tagName}${serializeAttributes(attributes)}><template shadowrootmode="open"><div>SSR Search</div></template></${tagName}>`,
+          `<${tagName}${serializeAttributes(attributes)}><template shadowrootmode="open"><div>SSR ${tagName}</div></template></${tagName}>`,
         ),
       collectDocumentStylesForTags: () => [],
     });
 
     expect(transformed).toContain('pagefind:metadata:genre');
     expect(transformed).toContain('<article data-static="keep">残したい要素</article>');
-    expect(transformed).toContain('<search-page><template shadowrootmode="open"><div>SSR Search</div></template></search-page>');
+    expect(transformed).toContain(
+      '<search-page><template shadowrootmode="open"><div>SSR search-page</div></template></search-page>',
+    );
+    expect(transformed).toContain(
+      '<tag-page tag-page-json="{&quot;tag&quot;:&quot;music&quot;}"><template shadowrootmode="open"><div>SSR tag-page</div></template></tag-page>',
+    );
   });
 
   it('document style を重複注入しない', async () => {

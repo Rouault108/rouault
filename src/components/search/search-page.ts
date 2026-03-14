@@ -14,6 +14,7 @@ import '../../components/ui/spinner/spinner.js';
 import '../../components/ui/tag/tag.js';
 import type { SelectOption } from '../../components/ui/select/select.js';
 import { HIGHLIGHT_RULE_TEMPLATE } from '../ui/highlight/highlight.js';
+import { pageShellStyles } from '../page/page-shell-styles.js';
 import { pagefindSearchAdapter, type SearchResultItem } from '../../lib/search/pagefind-search.js';
 import { navigateToUrl } from '../../lib/search/navigation.js';
 import {
@@ -41,361 +42,264 @@ interface GenreFilterEntry {
 
 @customElement('search-page')
 export class SearchPage extends LitElement {
-  static override styles = css`
-    :host {
-      display: block;
-      color: var(--fg-default);
-    }
+  static override styles = [
+    pageShellStyles,
+    css`
+      .search-controls {
+        display: grid;
+        gap: var(--space-4, 16px);
+        margin-top: var(--space-6, 24px);
+      }
 
-    .search-page {
-      box-sizing: border-box;
-      width: min(100%, 72rem);
-      margin: 0 auto;
-      padding: clamp(var(--space-6, 24px), 4vw, var(--space-10, 40px)) var(--space-4, 16px) var(--space-12, 48px);
-    }
-
-    .hero {
-      display: grid;
-      gap: var(--space-4, 16px);
-      padding-bottom: var(--space-6, 24px);
-      border-bottom: var(--border-width, 1px) solid var(--border-default);
-    }
-
-    .eyebrow {
-      margin: 0;
-      color: var(--fg-muted);
-      font-family: var(--font-mono);
-      font-size: var(--text-xs, 12px);
-      letter-spacing: var(--tracking-wide, 0.06em);
-      text-transform: uppercase;
-    }
-
-    .heading {
-      margin: 0;
-      font-size: clamp(var(--text-2xl, 24px), 4vw, var(--text-4xl, 36px));
-      line-height: var(--line-height-tight, 1.2);
-    }
-
-    .description {
-      margin: 0;
-      color: var(--fg-muted);
-      font-size: var(--text-base, 14px);
-      line-height: var(--line-height-relaxed, 1.7);
-    }
-
-    .search-controls {
-      display: grid;
-      gap: var(--space-4, 16px);
-      margin-top: var(--space-6, 24px);
-    }
-
-    .search-input-control {
-      --ui-search-field-height: 3rem;
-      --ui-search-field-radius: var(--radius-lg, 12px);
-      --ui-search-field-bg: var(--bg-surface-2);
-      --ui-search-field-border-width: var(--border-width, 1px);
-      --ui-search-field-border-color: var(--border-default);
-    }
-
-    .meta-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--space-3, 12px);
-      align-items: center;
-      color: var(--fg-muted);
-      font-size: var(--text-sm, 13px);
-    }
-
-    .toolbar-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: var(--space-4, 16px);
-      margin: 0 0 0 var(--space-2, 8px);
-    }
-
-    .sort-field {
-      display: grid;
-      grid-template-columns: auto minmax(10rem, auto);
-      align-items: center;
-      gap: var(--space-2, 8px);
-      color: var(--fg-muted);
-      font-size: var(--text-sm, 13px);
-    }
-
-    .sort-label {
-      color: var(--fg-default);
-    }
-
-    .sort-select {
-      min-inline-size: 10rem;
-      --control-height-md: 2.25rem;
-    }
-
-    .filter-details {
-      display: block;
-      --ui-details-icon-align-self: center;
-      --ui-details-icon-offset-block-start: 0px;
-    }
-
-    .filter-details::part(trigger) {
-      padding: var(--space-3, 12px) var(--space-4, 16px);
-    }
-
-    .filter-details::part(summary) {
-      display: block;
-      inline-size: 100%;
-    }
-
-    .filter-details::part(content) {
-      margin-left: 0;
-      padding: 0 var(--space-4, 16px) var(--space-4, 16px);
-    }
-
-    .filter-summary {
-      inline-size: 100%;
-      min-width: 0;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: center;
-      gap: var(--space-3, 12px);
-    }
-
-    .filter-summary-main {
-      min-width: 0;
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-1, 4px);
-      font-size: var(--text-base, 14px);
-      color: var(--fg-default);
-    }
-
-    .filter-summary-meta {
-      min-width: 0;
-      display: grid;
-      justify-items: end;
-      gap: 2px;
-      color: var(--fg-muted);
-      text-align: right;
-    }
-
-    .filter-summary-state {
-      color: var(--fg-default);
-      font-size: var(--text-sm, 13px);
-      line-height: 1.3;
-    }
-
-    .filter-summary-detail {
-      font-size: var(--text-xs, 12px);
-      line-height: 1.3;
-      white-space: normal;
-      max-inline-size: min(24rem, 100%);
-    }
-
-    .filter-panel {
-      display: grid;
-      gap: var(--space-5, 20px);
-      padding-top: var(--space-2, 8px);
-    }
-
-    .filter-section {
-      display: grid;
-      gap: var(--space-3, 12px);
-    }
-
-    .filter-section-header,
-    .filter-list-header {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: var(--space-2, 8px);
-    }
-
-    .filter-section-title {
-      margin: 0;
-      color: var(--fg-default);
-      font-size: var(--text-sm, 13px);
-      font-weight: var(--font-medium, 500);
-      line-height: 1.4;
-    }
-
-    .filter-section-meta {
-      color: var(--fg-muted);
-      font-size: var(--text-xs, 12px);
-      line-height: 1.4;
-    }
-
-    .selected-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--space-2, 8px);
-    }
-
-    .selected-tag {
-      --radius-sm: 999px;
-    }
-
-    .filter-empty {
-      margin: 0;
-      color: var(--fg-muted);
-      font-size: var(--text-sm, 13px);
-      line-height: 1.6;
-    }
-
-    .filter-search-field {
-      --ui-search-field-height: 2.5rem;
-      --ui-search-field-radius: var(--radius-md, 8px);
-      --ui-search-field-bg: var(--bg-surface-2);
-      --ui-search-field-border-width: var(--border-width, 1px);
-      --ui-search-field-border-color: var(--border-default);
-      --ui-search-field-font-size: var(--text-base, 14px);
-    }
-
-    .filter-list {
-      display: grid;
-      gap: var(--space-2, 8px);
-      max-block-size: min(22rem, 50vh);
-      padding-right: var(--space-1, 4px);
-      overflow-y: auto;
-      overscroll-behavior: contain;
-    }
-
-    .filter-option {
-      --search-filter-option-selected-accent: oklch(55% var(--chroma-high, 0.2) var(--hue-blue, 230));
-      /* 無彩色との mix で Hue が赤側へ回り込むのを避けるため、選択色は明示的に青系で固定する */
-      --search-filter-option-selected-border: oklch(84% 0.07 var(--hue-blue, 230));
-      --search-filter-option-selected-bg: oklch(97% 0.018 var(--hue-blue, 230));
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: center;
-      gap: var(--space-3, 12px);
-      padding: var(--space-3, 12px);
-      border: var(--border-width, 1px) solid var(--border-default);
-      border-radius: var(--radius-md, 8px);
-      background: var(--bg-surface-2);
-      transition:
-        border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
-    }
-
-    .filter-option[data-selected='true'] {
-      border-color: var(--search-filter-option-selected-border);
-      background: var(--search-filter-option-selected-bg);
-    }
-
-    .filter-option[data-disabled='true'] {
-      opacity: 0.68;
-    }
-
-    .filter-option-checkbox {
-      inline-size: 100%;
-    }
-
-    .filter-option-count {
-      color: var(--fg-muted);
-      font-size: var(--text-sm, 13px);
-      font-variant-numeric: tabular-nums;
-      white-space: nowrap;
-    }
-
-    .results-section {
-      margin-top: var(--space-8, 32px);
-    }
-
-    .loading {
-      display: flex;
-      align-items: center;
-      gap: var(--space-3, 12px);
-      color: var(--fg-muted);
-      font-size: var(--text-sm, 13px);
-    }
-
-    .results-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: grid;
-      gap: var(--space-3, 12px);
-    }
-
-    .result-card {
-      --radius-md: var(--radius-lg, 12px);
-      --space-4: var(--space-5, 20px);
-      background: var(--bg-surface-2);
-    }
-
-    .result-link {
-      display: grid;
-      gap: var(--space-2, 8px);
-      color: inherit;
-      text-decoration: none;
-      min-width: 0;
-    }
-
-    .result-link:focus-visible {
-      outline: none;
-    }
-
-    .result-title {
-      margin: 0;
-      font-size: var(--text-lg, 16px);
-      line-height: var(--line-height-tight, 1.3);
-    }
-
-    .result-path,
-    .result-meta {
-      color: var(--fg-muted);
-      font-size: var(--text-xs, 12px);
-    }
-
-    .result-excerpt {
-      margin: 0;
-      color: var(--fg-default);
-      font-size: var(--text-sm, 13px);
-      line-height: var(--line-height-relaxed, 1.7);
-    }
-
-    ${unsafeCSS(HIGHLIGHT_RULE_TEMPLATE('.result-excerpt :where(mark)'))}
-
-    .empty-hint {
-      min-height: 25vh
-    }
-
-    @media (max-width: 768px) {
-      .search-page {
-        padding-inline: var(--space-3, 12px);
+      .search-input-control {
+        --ui-search-field-height: 3rem;
+        --ui-search-field-radius: var(--radius-lg, 12px);
+        --ui-search-field-bg: var(--bg-surface-2);
+        --ui-search-field-border-width: var(--border-width, 1px);
+        --ui-search-field-border-color: var(--border-default);
       }
 
       .toolbar-row {
-        margin-left: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-4, 16px);
+        margin: 0 0 0 var(--space-2, 8px);
       }
 
       .sort-field {
-        width: 100%;
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: auto minmax(10rem, auto);
+        align-items: center;
+        gap: var(--space-2, 8px);
+        color: var(--fg-muted);
+        font-size: var(--text-sm, 13px);
+      }
+
+      .sort-label {
+        color: var(--fg-default);
       }
 
       .sort-select {
-        min-inline-size: 0;
+        min-inline-size: 10rem;
+        --control-height-md: 2.25rem;
       }
 
-      .filter-summary-meta {
-        max-inline-size: 100%;
-        justify-items: start;
-        text-align: left;
+      .filter-details {
+        display: block;
+        --ui-details-icon-align-self: center;
+        --ui-details-icon-offset-block-start: 0px;
+      }
+
+      .filter-details::part(trigger) {
+        padding: var(--space-3, 12px) var(--space-4, 16px);
+      }
+
+      .filter-details::part(summary) {
+        display: block;
+        inline-size: 100%;
+      }
+
+      .filter-details::part(content) {
+        margin-left: 0;
+        padding: 0 var(--space-4, 16px) var(--space-4, 16px);
       }
 
       .filter-summary {
-        grid-template-columns: 1fr;
+        inline-size: 100%;
+        min-width: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: var(--space-3, 12px);
+      }
+
+      .filter-summary-main {
+        min-width: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1, 4px);
+        font-size: var(--text-base, 14px);
+        color: var(--fg-default);
+      }
+
+      .filter-summary-meta {
+        min-width: 0;
+        display: grid;
+        justify-items: end;
+        gap: 2px;
+        color: var(--fg-muted);
+        text-align: right;
+      }
+
+      .filter-summary-state {
+        color: var(--fg-default);
+        font-size: var(--text-sm, 13px);
+        line-height: 1.3;
+      }
+
+      .filter-summary-detail {
+        font-size: var(--text-xs, 12px);
+        line-height: 1.3;
+        white-space: normal;
+        max-inline-size: min(24rem, 100%);
+      }
+
+      .filter-panel {
+        display: grid;
+        gap: var(--space-5, 20px);
+        padding-top: var(--space-2, 8px);
+      }
+
+      .filter-section {
+        display: grid;
+        gap: var(--space-3, 12px);
+      }
+
+      .filter-section-header,
+      .filter-list-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-2, 8px);
+      }
+
+      .filter-section-title {
+        margin: 0;
+        color: var(--fg-default);
+        font-size: var(--text-sm, 13px);
+        font-weight: var(--font-medium, 500);
+        line-height: 1.4;
+      }
+
+      .filter-section-meta {
+        color: var(--fg-muted);
+        font-size: var(--text-xs, 12px);
+        line-height: 1.4;
+      }
+
+      .selected-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2, 8px);
+      }
+
+      .selected-tag {
+        --radius-sm: 999px;
+      }
+
+      .filter-empty {
+        margin: 0;
+        color: var(--fg-muted);
+        font-size: var(--text-sm, 13px);
+        line-height: 1.6;
+      }
+
+      .filter-search-field {
+        --ui-search-field-height: 2.5rem;
+        --ui-search-field-radius: var(--radius-md, 8px);
+        --ui-search-field-bg: var(--bg-surface-2);
+        --ui-search-field-border-width: var(--border-width, 1px);
+        --ui-search-field-border-color: var(--border-default);
+        --ui-search-field-font-size: var(--text-base, 14px);
       }
 
       .filter-list {
-        max-block-size: min(18rem, 45vh);
+        display: grid;
+        gap: var(--space-2, 8px);
+        max-block-size: min(22rem, 50vh);
+        padding-right: var(--space-1, 4px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
       }
-    }
-  `;
+
+      .filter-option {
+        --search-filter-option-selected-accent: oklch(
+          55% var(--chroma-high, 0.2) var(--hue-blue, 230)
+        );
+        /* 無彩色との mix で Hue が赤側へ回り込むのを避けるため、選択色は明示的に青系で固定する */
+        --search-filter-option-selected-border: oklch(84% 0.07 var(--hue-blue, 230));
+        --search-filter-option-selected-bg: oklch(97% 0.018 var(--hue-blue, 230));
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: var(--space-3, 12px);
+        padding: var(--space-3, 12px);
+        border: var(--border-width, 1px) solid var(--border-default);
+        border-radius: var(--radius-md, 8px);
+        background: var(--bg-surface-2);
+        transition:
+          border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+          background-color var(--duration-fast, 70ms)
+            var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      }
+
+      .filter-option[data-selected='true'] {
+        border-color: var(--search-filter-option-selected-border);
+        background: var(--search-filter-option-selected-bg);
+      }
+
+      .filter-option[data-disabled='true'] {
+        opacity: 0.68;
+      }
+
+      .filter-option-checkbox {
+        inline-size: 100%;
+      }
+
+      .filter-option-count {
+        color: var(--fg-muted);
+        font-size: var(--text-sm, 13px);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      .loading {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3, 12px);
+        color: var(--fg-muted);
+        font-size: var(--text-sm, 13px);
+      }
+
+      ${unsafeCSS(HIGHLIGHT_RULE_TEMPLATE('.result-excerpt :where(mark)'))}
+
+      .empty-hint {
+        min-height: 25vh;
+      }
+
+      @media (max-width: 768px) {
+        .toolbar-row {
+          margin-left: 0;
+        }
+
+        .sort-field {
+          width: 100%;
+          grid-template-columns: 1fr;
+        }
+
+        .sort-select {
+          min-inline-size: 0;
+        }
+
+        .filter-summary-meta {
+          max-inline-size: 100%;
+          justify-items: start;
+          text-align: left;
+        }
+
+        .filter-summary {
+          grid-template-columns: 1fr;
+        }
+
+        .filter-list {
+          max-block-size: min(18rem, 45vh);
+        }
+      }
+    `,
+  ];
 
   @state()
   private _query = '';
@@ -499,7 +403,8 @@ export class SearchPage extends LitElement {
 
       this._results = [];
       this._genreCounts = {};
-      this._errorMessage = error instanceof Error ? error.message : '検索の読み込みに失敗しました。';
+      this._errorMessage =
+        error instanceof Error ? error.message : '検索の読み込みに失敗しました。';
       this._loaded = true;
     } finally {
       if (currentToken === this._requestToken) {
@@ -706,17 +611,19 @@ export class SearchPage extends LitElement {
 
     return html`
       <div class="selected-tags">
-        ${this._selectedTags.map((tag) => html`
-          <ui-tag
-            class="selected-tag"
-            variant="outline"
-            color="blue"
-            removable
-            @ui-tag-remove=${this._onSelectedTagRemove}
-          >
-            ${tag}
-          </ui-tag>
-        `)}
+        ${this._selectedTags.map(
+          (tag) => html`
+            <ui-tag
+              class="selected-tag"
+              variant="outline"
+              color="blue"
+              removable
+              @ui-tag-remove=${this._onSelectedTagRemove}
+            >
+              ${tag}
+            </ui-tag>
+          `,
+        )}
       </div>
     `;
   }
@@ -779,25 +686,29 @@ export class SearchPage extends LitElement {
             ${visibleEntries.length > 0
               ? html`
                   <div class="filter-list" role="list">
-                    ${repeat(visibleEntries, (entry) => entry.tag, (entry) => html`
-                      <div
-                        class="filter-option"
-                        role="listitem"
-                        data-selected=${entry.selected ? 'true' : 'false'}
-                        data-disabled=${entry.disabled ? 'true' : 'false'}
-                      >
-                        <ui-checkbox
-                          class="filter-option-checkbox"
-                          .checked=${live(entry.selected)}
-                          .disabled=${entry.disabled}
-                          .label=${entry.tag}
-                          @change=${() => {
-                            this._toggleTag(entry.tag);
-                          }}
-                        ></ui-checkbox>
-                        <span class="filter-option-count">${entry.count.toString()}件</span>
-                      </div>
-                    `)}
+                    ${repeat(
+                      visibleEntries,
+                      (entry) => entry.tag,
+                      (entry) => html`
+                        <div
+                          class="filter-option"
+                          role="listitem"
+                          data-selected=${entry.selected ? 'true' : 'false'}
+                          data-disabled=${entry.disabled ? 'true' : 'false'}
+                        >
+                          <ui-checkbox
+                            class="filter-option-checkbox"
+                            .checked=${live(entry.selected)}
+                            .disabled=${entry.disabled}
+                            .label=${entry.tag}
+                            @change=${() => {
+                              this._toggleTag(entry.tag);
+                            }}
+                          ></ui-checkbox>
+                          <span class="filter-option-count">${entry.count.toString()}件</span>
+                        </div>
+                      `,
+                    )}
                   </div>
                 `
               : html`<p class="filter-empty">一致するタグはありません。</p>`}
@@ -835,7 +746,9 @@ export class SearchPage extends LitElement {
         return html`
           <ui-empty-state class="empty-hint" variant="default">
             <span slot="heading">キーワードまたはタグで絞り込めます</span>
-            <span slot="description">ヘッダーのダイアログは即時検索、ここでは結果を一覧で比較できます。</span>
+            <span slot="description"
+              >ヘッダーのダイアログは即時検索、ここでは結果を一覧で比較できます。</span
+            >
           </ui-empty-state>
         `;
       }
@@ -856,10 +769,18 @@ export class SearchPage extends LitElement {
           return html`
             <li>
               <ui-card class="result-card" clickable variant="outlined">
-                <a class="result-link" href=${item.url} @click=${(event: MouseEvent) => { this._onResultClick(event, item.url); }}>
+                <a
+                  class="result-link"
+                  href=${item.url}
+                  @click=${(event: MouseEvent) => {
+                    this._onResultClick(event, item.url);
+                  }}
+                >
                   <div class="result-path">${item.path}</div>
                   <h2 class="result-title">${item.title}</h2>
-                  ${item.date.length > 0 ? html`<div class="result-meta">更新日: ${item.date}</div>` : nothing}
+                  ${item.date.length > 0
+                    ? html`<div class="result-meta">更新日: ${item.date}</div>`
+                    : nothing}
                   ${secondaryText.length > 0
                     ? html`<p class="result-excerpt">${unsafeHTML(secondaryText)}</p>`
                     : nothing}
@@ -876,7 +797,7 @@ export class SearchPage extends LitElement {
     const activeCount = this._results.length;
 
     return html`
-      <section class="search-page" aria-label="検索結果">
+      <section class="search-page page-shell" aria-label="検索結果">
         <div class="hero">
           <p class="eyebrow">Search / Filter</p>
           <h1 class="heading">検索</h1>
@@ -918,9 +839,7 @@ export class SearchPage extends LitElement {
           ${this._renderFilterPanel()}
         </div>
 
-        <div class="results-section">
-          ${this._renderResults()}
-        </div>
+        <div class="results-section">${this._renderResults()}</div>
       </section>
     `;
   }

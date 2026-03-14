@@ -19,6 +19,7 @@ const TAG_MODULE_LOADERS: Record<SsrTargetTag, ComponentModuleLoader> = {
   'ui-search-dialog': () => import('../components/ui/search-dialog/search-dialog.js'),
   'ui-card': () => import('../components/ui/card/card.js'),
   'search-page': () => import('../components/search/search-page.js'),
+  'tag-page': () => import('../components/tag/tag-page.js'),
   'ui-article-header': () => import('../components/ui/article-header/article-header.js'),
   'layout-sidebar': () => import('../components/layout/layout-sidebar.js'),
   'layout-toc': () => import('../components/layout/layout-toc.js'),
@@ -27,14 +28,10 @@ const TAG_MODULE_LOADERS: Record<SsrTargetTag, ComponentModuleLoader> = {
   'ui-blockquote': () => import('../components/ui/blockquote/blockquote.js'),
 };
 
-const matchesAnyTag = (
-  root: ParentNode,
-  selectors: readonly string[],
-): boolean => selectors.some((selector) => root.querySelector(selector) !== null);
+const matchesAnyTag = (root: ParentNode, selectors: readonly string[]): boolean =>
+  selectors.some((selector) => root.querySelector(selector) !== null);
 
-const loadModulesForTags = async (
-  tagNames: readonly SsrTargetTag[],
-): Promise<void> => {
+const loadModulesForTags = async (tagNames: readonly SsrTargetTag[]): Promise<void> => {
   const uniqueLoaders = new Set<ComponentModuleLoader>();
 
   for (const tagName of tagNames) {
@@ -72,9 +69,7 @@ export const loadSearchModules = async (): Promise<void> => {
   await searchModulesPromise;
 };
 
-export const loadModulesForDocument = async (
-  root: ParentNode = document,
-): Promise<void> => {
+export const loadModulesForDocument = async (root: ParentNode = document): Promise<void> => {
   await loadShellModules();
 
   const pendingLoads: Promise<void>[] = [];
