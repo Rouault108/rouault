@@ -1,0 +1,12 @@
+---
+title: "Sidebar Scroll Item 02"
+description: "サイドバーのスクロール検証用ノート 02"
+date: 2026-03-14
+genre:
+  - testing
+  - e2e
+---
+
+# Sidebar Scroll Item 02
+
+スクロール検証用の補助ノートです。

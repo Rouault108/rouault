@@ -13,17 +13,21 @@ const clampToNonNegative = (value: number): number => {
 };
 
 export const computeStickyMaxBlockSize = ({
-  footerTop,
   stickyTop,
   viewportHeight,
 }: StickyBoundaryMetrics): number => {
-  const viewportAvailable = clampToNonNegative(viewportHeight - stickyTop);
+  return clampToNonNegative(viewportHeight - stickyTop);
+};
+
+export const computeStickyFooterOffset = ({
+  footerTop,
+  viewportHeight,
+}: Pick<StickyBoundaryMetrics, 'footerTop' | 'viewportHeight'>): number => {
   if (footerTop === null) {
-    return viewportAvailable;
+    return 0;
   }
 
-  const footerAvailable = clampToNonNegative(footerTop - stickyTop);
-  return Math.min(viewportAvailable, footerAvailable);
+  return clampToNonNegative(viewportHeight - footerTop);
 };
 
 const resolveFooterHost = (): HTMLElement | null =>
@@ -41,7 +45,6 @@ const readPxCustomProperty = (element: HTMLElement, propertyName: string): numbe
 
 export const attachStickyFooterBoundary = (
   target: HTMLElement,
-  propertyName = '--layout-sticky-max-block-size',
 ): (() => void) => {
   if (typeof window === 'undefined') {
     return () => {};
@@ -63,13 +66,18 @@ export const attachStickyFooterBoundary = (
 
     const stickyTop = readPxCustomProperty(target, '--header-height');
     const footerTop = footerHost?.getBoundingClientRect().top ?? null;
-    const available = computeStickyMaxBlockSize({
+    const maxBlockSize = computeStickyMaxBlockSize({
       footerTop,
       stickyTop,
       viewportHeight: window.innerHeight,
     });
+    const footerOffset = computeStickyFooterOffset({
+      footerTop,
+      viewportHeight: window.innerHeight,
+    });
 
-    target.style.setProperty(propertyName, `${available}px`);
+    target.style.setProperty('--layout-sticky-max-block-size', `${maxBlockSize}px`);
+    target.style.setProperty('--layout-sticky-footer-offset', `${footerOffset}px`);
   };
 
   const scheduleUpdate = (): void => {
@@ -102,6 +110,7 @@ export const attachStickyFooterBoundary = (
       window.cancelAnimationFrame(frameId);
     }
     resizeObserver?.disconnect();
-    target.style.removeProperty(propertyName);
+    target.style.removeProperty('--layout-sticky-max-block-size');
+    target.style.removeProperty('--layout-sticky-footer-offset');
   };
 };

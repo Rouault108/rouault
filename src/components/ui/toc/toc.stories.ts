@@ -11,6 +11,53 @@ const nextFrame = async (): Promise<void> =>
 		});
 	});
 
+interface StoryRectInit {
+	top: number;
+	bottom: number;
+	left?: number;
+	right?: number;
+	width?: number;
+	height?: number;
+}
+
+const createStoryRect = ({
+	top,
+	bottom,
+	left = 0,
+	right = 200,
+	width = 200,
+	height = bottom - top,
+}: StoryRectInit): DOMRect =>
+	({
+		x: left,
+		y: top,
+		top,
+		bottom,
+		left,
+		right,
+		width,
+		height,
+		toJSON: () => '',
+	}) as DOMRect;
+
+const setStoryRect = (element: Element, rect: StoryRectInit): void => {
+	Object.defineProperty(element, 'getBoundingClientRect', {
+		configurable: true,
+		value: () => createStoryRect(rect),
+	});
+};
+
+const setStoryDimension = (
+	element: Element,
+	key: 'clientHeight' | 'scrollHeight',
+	value: number,
+): void => {
+	Object.defineProperty(element, key, {
+		configurable: true,
+		value,
+	});
+};
+
 const getTooltipPanel = (host: HTMLElement): HTMLElement => {
 	const tooltipId = host.dataset['tooltipId'];
 	if (!tooltipId) throw new Error('tooltip id が見つかりません');
@@ -1540,6 +1587,119 @@ export const VisualAccessibility: Story = {
 			if (beforeStyle.borderStyle === 'none') {
 				throw new Error('ハイコントラストモードではアクティブインジケーターに枠線（border）が表示されるべきです');
 			}
+		}
+	},
+};
+
+/**
+ * TOC の自動スクロールが「可視範囲外のときだけ」発火することを確認する。
+ */
+export const AutoScrollOnlyWhenOutOfView: Story = {
+	parameters: {
+		docs: {
+			description: {
+				story:
+					'アクティブ項目が TOC の可視範囲内にある限り、自動スクロールを発火しないことを検証します。',
+			},
+		},
+	},
+	render: () => html`
+		<div id="scroll-host" style="width: 200px; overflow-y: auto;">
+			<ui-toc id="autoscroll-visible-toc" .headers="${flatH2Headers}" active-id="intro"></ui-toc>
+		</div>
+	`,
+	play: async ({ canvasElement }) => {
+		const wrapper = canvasElement.querySelector<HTMLElement>('#scroll-host');
+		const toc = canvasElement.querySelector<Toc>('#autoscroll-visible-toc');
+		if (!wrapper || !toc) throw new Error('TOC スクロールテスト用の要素が見つかりません');
+		await toc.updateComplete;
+
+		const targetLink = toc.shadowRoot?.querySelector<HTMLAnchorElement>('a[href="#implementation"]');
+		if (!targetLink) throw new Error('対象の TOC リンクが見つかりません');
+
+		setStoryDimension(wrapper, 'clientHeight', 120);
+		setStoryDimension(wrapper, 'scrollHeight', 320);
+		setStoryRect(wrapper, { top: 0, bottom: 120 });
+		setStoryRect(targetLink, { top: 40, bottom: 64 });
+
+		let callCount = 0;
+		Object.defineProperty(targetLink, 'scrollIntoView', {
+			configurable: true,
+			value: () => {
+				callCount += 1;
+			},
+		});
+
+		toc.activeId = 'implementation';
+		await toc.updateComplete;
+
+		if (callCount !== 0) {
+			throw new Error(`可視範囲内では自動スクロールしない想定ですが、実際には ${String(callCount)} 回呼ばれました`);
+		}
+	},
+};
+
+/**
+ * TOC の自動スクロールが `nearest` で最小限に寄せることを確認する。
+ */
+export const AutoScrollWithNearest: Story = {
+	parameters: {
+		docs: {
+			description: {
+				story:
+					'アクティブ項目が TOC の可視範囲外に出たときだけ、`scrollIntoView({ behavior: "instant", block: "nearest", inline: "nearest" })` が呼ばれることを検証します。',
+			},
+		},
+	},
+	render: () => html`
+		<div id="scroll-host-nearest" style="width: 200px; overflow-y: auto;">
+			<ui-toc id="autoscroll-nearest-toc" .headers="${flatH2Headers}" active-id="intro"></ui-toc>
+		</div>
+	`,
+	play: async ({ canvasElement }) => {
+		const wrapper = canvasElement.querySelector<HTMLElement>('#scroll-host-nearest');
+		const toc = canvasElement.querySelector<Toc>('#autoscroll-nearest-toc');
+		if (!wrapper || !toc) throw new Error('TOC スクロールテスト用の要素が見つかりません');
+		await toc.updateComplete;
+
+		const targetLink = toc.shadowRoot?.querySelector<HTMLAnchorElement>('a[href="#implementation"]');
+		if (!targetLink) throw new Error('対象の TOC リンクが見つかりません');
+
+		setStoryDimension(wrapper, 'clientHeight', 120);
+		setStoryDimension(wrapper, 'scrollHeight', 320);
+		setStoryRect(wrapper, { top: 0, bottom: 120 });
+		setStoryRect(targetLink, { top: 148, bottom: 172 });
+
+		let callCount = 0;
+		let receivedOptions: ScrollIntoViewOptions | null = null;
+		Object.defineProperty(targetLink, 'scrollIntoView', {
+			configurable: true,
+			value: (options?: ScrollIntoViewOptions) => {
+				callCount += 1;
+				receivedOptions = options ?? null;
+			},
+		});
+
+		toc.activeId = 'implementation';
+		await toc.updateComplete;
+
+		if (callCount !== 1) {
+			throw new Error(`可視範囲外では自動スクロール 1 回を期待していましたが、実際には ${String(callCount)} 回でした`);
+		}
+
+		const expectedOptions: ScrollIntoViewOptions = {
+			behavior: 'instant',
+			block: 'nearest',
+			inline: 'nearest',
+		};
+		if (
+			receivedOptions?.behavior !== expectedOptions.behavior ||
+			receivedOptions?.block !== expectedOptions.block ||
+			receivedOptions?.inline !== expectedOptions.inline
+		) {
+			throw new Error(
+				`scrollIntoView オプションが不正です: ${JSON.stringify(receivedOptions)} を受け取りました`,
+			);
 		}
 	},
 };

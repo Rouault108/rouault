@@ -405,6 +405,10 @@ export class Toc extends LitElement {
 			this._emitActiveChange();
 		}
 
+		if (changedProperties.has('headers') || changedProperties.has('activeId')) {
+			this._syncActiveLinkVisibility();
+		}
+
 		// 内部更新フラグをリセット
 		this._internalUpdate = false;
 		this._observeLabels();
@@ -494,6 +498,76 @@ export class Toc extends LitElement {
 		this._internalUpdate = true;
 		this.activeId = id;
 		this._activeIdSource = source;
+	}
+
+	/**
+	 * アクティブ項目が TOC の可視範囲から外れた場合のみ、
+	 * 最小移動でフレーム内へ戻す。
+	 */
+	private _syncActiveLinkVisibility(): void {
+		const activeLink = this.renderRoot.querySelector<HTMLAnchorElement>('a.toc-link.is-active');
+		if (!activeLink || activeLink.getClientRects().length === 0) {
+			return;
+		}
+
+		const scrollContainer = this._findScrollContainer(activeLink);
+		if (!scrollContainer || scrollContainer.getClientRects().length === 0) {
+			return;
+		}
+
+		if (this._isFullyVisibleInContainer(activeLink, scrollContainer)) {
+			return;
+		}
+
+		activeLink.scrollIntoView({
+			behavior: 'instant',
+			block: 'nearest',
+			inline: 'nearest',
+		});
+	}
+
+	private _findScrollContainer(start: HTMLElement): HTMLElement | null {
+		let current = start;
+
+		for (;;) {
+			const parent = this._getComposedParentElement(current);
+			if (!parent) {
+				return null;
+			}
+
+			const style = getComputedStyle(parent);
+			const overflowY = style.overflowY || style.overflow;
+			const isScrollable = ['auto', 'scroll', 'overlay'].includes(overflowY);
+			if (isScrollable && parent.scrollHeight > parent.clientHeight) {
+				return parent;
+			}
+
+			current = parent;
+		}
+	}
+
+	private _getComposedParentElement(element: HTMLElement): HTMLElement | null {
+		if (element.parentElement instanceof HTMLElement) {
+			return element.parentElement;
+		}
+
+		const root = element.getRootNode();
+		if (root instanceof ShadowRoot && root.host instanceof HTMLElement) {
+			return root.host;
+		}
+
+		return null;
+	}
+
+	private _isFullyVisibleInContainer(element: HTMLElement, container: HTMLElement): boolean {
+		const elementRect = element.getBoundingClientRect();
+		const containerRect = container.getBoundingClientRect();
+		const tolerance = 1;
+
+		return (
+			elementRect.top >= containerRect.top - tolerance &&
+			elementRect.bottom <= containerRect.bottom + tolerance
+		);
 	}
 
 	private _observeLabels(): void {
