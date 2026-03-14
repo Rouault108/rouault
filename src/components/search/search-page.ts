@@ -166,7 +166,7 @@ export class SearchPage extends LitElement {
       min-width: 0;
       display: inline-flex;
       align-items: center;
-      gap: var(--space-2, 8px);
+      gap: var(--space-1, 4px);
       font-size: var(--text-base, 14px);
       color: var(--fg-default);
     }
