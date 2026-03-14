@@ -316,7 +316,7 @@ export class Dropdown extends LitElement {
         this._cleanupScrollClose();
         this._updateTriggerAria(false);
         if (this._restoreFocusOnClose) {
-            this._getTriggerElement()?.focus();
+            this._getTriggerElement()?.focus({ preventScroll: true });
         }
         this._restoreFocusOnClose = true;
     }
@@ -484,7 +484,7 @@ export class Dropdown extends LitElement {
     }
 
     private _focusItem(item: MenuItem | null): void {
-        item?.focus();
+        item?.focus({ preventScroll: true });
     }
 
     private _getFocusedItem(items: MenuItem[]): MenuItem | null {
