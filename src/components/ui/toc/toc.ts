@@ -142,7 +142,7 @@ export class Toc extends LitElement {
 			 * "Small Text Rule" (12px以下補正) を回避するため --text-sm を採用。
 			 * Weight 400 を保ったまま --fg-muted を使用し、視覚的静謐さを維持。
 			 */
-			font-size: var(--text-sm, 13px);
+			font-size: var(--text-base, 14px);
 			font-weight: 400;
 			line-height: 1.5;
 			color: var(--fg-muted, oklch(48% 0 0));
