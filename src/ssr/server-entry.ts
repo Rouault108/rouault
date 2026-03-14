@@ -4,6 +4,7 @@ import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { html, unsafeStatic } from 'lit/static-html.js';
 import type { TemplateResult } from 'lit';
 import { AppRouter } from '../components/app/app-router.js';
+import { AboutPage } from '../components/about/about-page.js';
 import '../components/ui/skip-link/skip-link.js';
 import '../components/layout/layout-header.js';
 import { LayoutFooter } from '../components/layout/layout-footer.js';
@@ -45,7 +46,7 @@ export interface SsrDocumentStyleDefinition {
   cssText: string;
 }
 
-const LIGHT_TARGET_TAGS = new Set<SsrLightTargetTag>(['app-router', 'layout-footer']);
+const LIGHT_TARGET_TAGS = new Set<SsrLightTargetTag>(['app-router', 'about-page', 'layout-footer']);
 
 const DOCUMENT_STYLE_DEFINITIONS: Partial<Record<SsrTargetTag, SsrDocumentStyleDefinition>> = {
   'layout-footer': {
@@ -99,6 +100,12 @@ const renderLightElement = async (
     router.serverContent = extractMainContent(innerHtml);
     const rendered = await collectResult(renderThunked(router.render()));
     return `<app-router${serializedAttributes}>${rendered}</app-router>`;
+  }
+
+  if (tagName === 'about-page') {
+    const aboutPage = new AboutPage();
+    const rendered = await collectResult(renderThunked(aboutPage.render()));
+    return `<about-page${serializedAttributes}>${rendered}</about-page>`;
   }
 
   const footer = new LayoutFooter();

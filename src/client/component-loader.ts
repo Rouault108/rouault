@@ -15,6 +15,7 @@ const TAG_MODULE_LOADERS: Record<SsrTargetTag, ComponentModuleLoader> = {
   'ui-skip-link': () => import('../components/ui/skip-link/skip-link.js'),
   'layout-header': () => import('../components/layout/layout-header.js'),
   'app-router': () => import('../components/app/app-router.js'),
+  'about-page': () => import('../components/about/about-page.js'),
   'layout-footer': () => import('../components/layout/layout-footer.js'),
   'ui-search-dialog': () => import('../components/ui/search-dialog/search-dialog.js'),
   'ui-card': () => import('../components/ui/card/card.js'),

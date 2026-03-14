@@ -83,7 +83,7 @@ describe('transformHtmlWithLitSsr', () => {
     });
   });
 
-  it('タグ・検索相当のHTMLで対象外の構造を壊さずに変換する', async () => {
+  it('タグ・検索・独立ページ相当のHTMLで対象外の構造を壊さずに変換する', async () => {
     const html = `<!doctype html>
       <html lang="ja">
         <head>
@@ -91,6 +91,7 @@ describe('transformHtmlWithLitSsr', () => {
         </head>
         <body>
           <main id="main-content">
+            <about-page></about-page>
             <search-page></search-page>
             <tag-page tag-page-json="{&quot;tag&quot;:&quot;music&quot;}"></tag-page>
             <article data-static="keep">残したい要素</article>
@@ -99,16 +100,19 @@ describe('transformHtmlWithLitSsr', () => {
       </html>`;
 
     const transformed = await transformHtmlWithLitSsr(html, {
-      targetTagNames: ['search-page', 'tag-page'],
+      targetTagNames: ['about-page', 'search-page', 'tag-page'],
       renderCustomElement: (tagName: string, attributes: readonly SsrAttribute[]) =>
         Promise.resolve(
-          `<${tagName}${serializeAttributes(attributes)}><template shadowrootmode="open"><div>SSR ${tagName}</div></template></${tagName}>`,
+          tagName === 'about-page'
+            ? `<${tagName}${serializeAttributes(attributes)}><div>SSR ${tagName}</div></${tagName}>`
+            : `<${tagName}${serializeAttributes(attributes)}><template shadowrootmode="open"><div>SSR ${tagName}</div></template></${tagName}>`,
         ),
       collectDocumentStylesForTags: () => [],
     });
 
     expect(transformed).toContain('pagefind:metadata:genre');
     expect(transformed).toContain('<article data-static="keep">残したい要素</article>');
+    expect(transformed).toContain('<about-page><div>SSR about-page</div></about-page>');
     expect(transformed).toContain(
       '<search-page><template shadowrootmode="open"><div>SSR search-page</div></template></search-page>',
     );
