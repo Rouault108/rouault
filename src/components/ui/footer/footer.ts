@@ -46,7 +46,7 @@ ${FOOTER_SCOPE_SELECTOR} .footer-content {
   block-size: 100%;
   max-inline-size: var(--bp-xl);
   margin-inline: auto;
-  padding-block: var(--space-3);
+  padding-block: var(--space-5);
   padding-inline: max(var(--space-4), min(var(--space-8), 4vi));
 }
 
