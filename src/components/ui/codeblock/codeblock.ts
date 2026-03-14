@@ -55,7 +55,7 @@ ui-code-block pre {
   color: var(--fg-default, oklch(20% 0 0));
   font-family: var(--font-mono, monospace);
   font-size: var(--text-sm, 0.8125rem);
-  line-height: var(--line-height-relaxed, 1.75);
+  line-height: var(--line-height-none, 1);
   padding: var(--space-3, 12px);
   overflow-x: auto;
   overflow-y: hidden;
@@ -261,7 +261,7 @@ export class CodeBlock extends LitElement {
         var(--space-3, 12px) -
           (
             var(--control-height-sm, 24px) -
-              (var(--text-sm, 0.8125rem) * var(--line-height-relaxed, 1.75))
+              (var(--text-sm, 0.8125rem) * var(--line-height-none, 1))
           ) / 2
       );
       inset-inline-end: 0;
@@ -672,13 +672,13 @@ export class CodeBlock extends LitElement {
                 ${this._resolvedFilename}
               </span>
               ${intentMeta
-                ? html`
+        ? html`
                     <span class="intent" data-intent="${this._resolvedIntent}">
                       <iconify-icon icon="${intentMeta.icon}" aria-hidden="true"></iconify-icon>
                       <span>${intentMeta.label}</span>
                     </span>
                   `
-                : nothing}
+        : nothing}
             </span>
             <span class="copy-button-shell">
               <ui-copy-button
