@@ -171,14 +171,6 @@ export class SearchPage extends LitElement {
       color: var(--fg-default);
     }
 
-    .filter-summary-main iconify-icon {
-      flex-shrink: 0;
-      color: var(--fg-muted);
-      inline-size: var(--icon-base, 16px);
-      block-size: var(--icon-base, 16px);
-      font-size: var(--icon-base, 16px);
-    }
-
     .filter-summary-meta {
       min-width: 0;
       display: grid;
@@ -748,7 +740,6 @@ export class SearchPage extends LitElement {
       >
         <div slot="summary" class="filter-summary">
           <div class="filter-summary-main">
-            <iconify-icon icon="lucide:tag" aria-hidden="true"></iconify-icon>
             <span>タグで絞り込む</span>
           </div>
 
