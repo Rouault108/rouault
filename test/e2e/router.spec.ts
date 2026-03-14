@@ -113,7 +113,8 @@ test.describe('Router Navigation', () => {
 
     await targetLink.click();
 
-    await expect(page).toHaveURL(targetHref as string);
+    const hrefUrl = targetHref ?? '';
+    await expect(page).toHaveURL(hrefUrl);
     await expect(page.locator('ui-article-header')).toBeVisible();
 
     const scrollY = await page.evaluate(() => window.scrollY);

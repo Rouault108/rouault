@@ -160,8 +160,8 @@ function createSearchResponse(
   const filteredItems =
     selectedGenres.length > 0
       ? queryMatchedItems.filter((item) =>
-          selectedGenres.some((tag) => item.tags.includes(tag)),
-        )
+        selectedGenres.some((tag) => item.tags.includes(tag)),
+      )
       : queryMatchedItems;
 
   const sortedItems =
@@ -262,7 +262,7 @@ const getFilterOptionStates = (host: SearchPage): FilterOptionState[] => {
     return {
       label: checkbox.label,
       checked: checkbox.checked,
-      selected: option.dataset.selected === 'true',
+      selected: option.dataset['selected'] === 'true',
     } satisfies FilterOptionState;
   });
 };
@@ -477,13 +477,15 @@ export const FilterPanelReorderRegression: Story = {
       await settleSearch(host);
 
       const statesAfterArchitectureRemove = getFilterOptionStates(host);
-      assert(statesAfterArchitectureRemove[0]?.label === 'lit', '先頭タグ解除後に残った選択タグが先頭へ戻っていません');
-      assert(statesAfterArchitectureRemove[0]?.selected === true, '残った選択タグが選択状態ではありません');
-      assert(statesAfterArchitectureRemove[0]?.checked === true, '残った選択タグの checkbox が checked ではありません');
+      const topStateAfterRemove = statesAfterArchitectureRemove[0];
+      assert(topStateAfterRemove !== undefined, '先頭のタグ状態が存在しません');
+      assert(topStateAfterRemove.label === 'lit', '先頭タグ解除後に残った選択タグが先頭へ戻っていません');
+      assert(topStateAfterRemove.selected, '残った選択タグが選択状態ではありません');
+      assert(topStateAfterRemove.checked, '残った選択タグの checkbox が checked ではありません');
 
       const architectureState = statesAfterArchitectureRemove.find((state) => state.label === 'architecture');
-      assert(architectureState?.selected === false, '解除したタグが data-selected=true のままです');
-      assert(architectureState?.checked === false, '解除したタグの checkbox が checked のままです');
+      assert(!architectureState?.selected, '解除したタグが data-selected=true のままです');
+      assert(!architectureState?.checked, '解除したタグの checkbox が checked のままです');
       assertFilterSelectionConsistency(host, 'architecture 解除後');
     } finally {
       history.replaceState(history.state, '', originalUrl);

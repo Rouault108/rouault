@@ -7,6 +7,28 @@ import '../ui/breadcrumbs/breadcrumbs';
 import '../ui/button/button';
 import '../ui/dropdown/dropdown';
 import type { BreadcrumbItem } from '../ui/breadcrumbs/breadcrumbs';
+import {
+  THEME_CHANGE_EVENT,
+  applyThemePreference,
+  readStoredThemePreference,
+  type ThemeChangeDetail,
+  type ThemePreference,
+} from '../../lib/theme/theme-manager.js';
+
+const THEME_OPTIONS = {
+  light: {
+    icon: 'lucide:sun',
+    label: 'ライト',
+  },
+  dark: {
+    icon: 'lucide:moon',
+    label: 'ダーク',
+  },
+  system: {
+    icon: 'lucide:monitor',
+    label: 'OSテーマ',
+  },
+} as const;
 
 @customElement('layout-header')
 export class LayoutHeader extends LitElement {
@@ -65,6 +87,26 @@ export class LayoutHeader extends LitElement {
       --ui-header-center-end-inset: max(200px, 34vw);
     }
 
+    .theme-trigger-label,
+    .theme-menu-label {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2, 8px);
+      min-inline-size: 0;
+    }
+
+    .theme-trigger-label {
+      color: var(--fg-muted);
+    }
+
+    .theme-menu-icon,
+    .theme-trigger-icon,
+    .theme-chevron {
+      width: var(--icon-base, 16px);
+      height: var(--icon-base, 16px);
+      flex-shrink: 0;
+    }
+
     @media (min-width: 768px) {
       :host([note-layout]) ui-header {
         --ui-header-center-start-inset: var(--sidebar-width, 272px);
@@ -82,6 +124,9 @@ export class LayoutHeader extends LitElement {
   @state()
   private _sidebarExpanded = true;
 
+  @state()
+  private _themePreference: ThemePreference = 'system';
+
   private _mediaQuery: MediaQueryList | null = null;
 
   override connectedCallback(): void {
@@ -90,14 +135,19 @@ export class LayoutHeader extends LitElement {
       return;
     }
 
+    this._themePreference = readStoredThemePreference();
     this._mediaQuery = window.matchMedia('(min-width: 768px)');
     this._syncFromMediaQuery();
     this._mediaQuery.addEventListener('change', this._onMediaQueryChange);
+    window.addEventListener(THEME_CHANGE_EVENT, this._handleThemeChange as EventListener);
   }
 
   override disconnectedCallback(): void {
     this._mediaQuery?.removeEventListener('change', this._onMediaQueryChange);
     this._mediaQuery = null;
+    if (typeof window !== 'undefined') {
+      window.removeEventListener(THEME_CHANGE_EVENT, this._handleThemeChange as EventListener);
+    }
     super.disconnectedCallback();
   }
 
@@ -131,6 +181,20 @@ export class LayoutHeader extends LitElement {
     window.location.assign(href);
   };
 
+  private _handleThemeChange = (event: CustomEvent<ThemeChangeDetail>): void => {
+    this._themePreference = event.detail.preference;
+  };
+
+  private _handleThemeSelect = (event: CustomEvent<{ value: string }>): void => {
+    const nextPreference = event.detail.value;
+    if (nextPreference !== 'light' && nextPreference !== 'dark' && nextPreference !== 'system') {
+      return;
+    }
+
+    this._themePreference = nextPreference;
+    applyThemePreference(nextPreference);
+  };
+
   private get _breadcrumbItems(): BreadcrumbItem[] {
     const normalized = this.breadcrumbsJson.trim();
     if (normalized.length === 0) {
@@ -162,6 +226,7 @@ export class LayoutHeader extends LitElement {
   override render() {
     const breadcrumbs = this._breadcrumbItems;
     const sidebarToggleLabel = this._sidebarExpanded ? 'サイドバーを閉じる' : 'サイドバーを開く';
+    const currentThemeOption = THEME_OPTIONS[this._themePreference];
 
     return html`
       <ui-header .sidebarExpanded=${this._sidebarExpanded}>
@@ -203,6 +268,42 @@ export class LayoutHeader extends LitElement {
           : html`<span slot="center" class="context">Personal Notes</span>`}
         <div slot="end" class="slot-group">
           <ui-search-trigger></ui-search-trigger>
+          <ui-dropdown align="end" @menu-item-select=${this._handleThemeSelect}>
+            <ui-button slot="trigger" variant="ghost">
+              <span class="theme-trigger-label">
+                <iconify-icon
+                  class="theme-trigger-icon"
+                  icon=${currentThemeOption.icon}
+                  aria-hidden="true"
+                ></iconify-icon>
+                <span>テーマ</span>
+              </span>
+              <iconify-icon
+                class="theme-chevron"
+                icon="lucide:chevron-down"
+                aria-hidden="true"
+              ></iconify-icon>
+            </ui-button>
+            ${(
+              Object.entries(THEME_OPTIONS) as [
+                ThemePreference,
+                (typeof THEME_OPTIONS)[ThemePreference],
+              ][]
+            ).map(
+              ([value, option]) => html`
+                <ui-menu-item value=${value}>
+                  <span class="theme-menu-label">
+                    <iconify-icon
+                      class="theme-menu-icon"
+                      icon=${option.icon}
+                      aria-hidden="true"
+                    ></iconify-icon>
+                    <span>${option.label}</span>
+                  </span>
+                </ui-menu-item>
+              `,
+            )}
+          </ui-dropdown>
         </div>
       </ui-header>
     `;

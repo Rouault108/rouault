@@ -47,7 +47,8 @@ export const attachStickyFooterBoundary = (
   target: HTMLElement,
 ): (() => void) => {
   if (typeof window === 'undefined') {
-    return () => {};
+    // SSR環境では何もしないクリーンアップ関数を返す
+    return (): void => undefined;
   }
 
   let frameId = 0;
@@ -76,8 +77,8 @@ export const attachStickyFooterBoundary = (
       viewportHeight: window.innerHeight,
     });
 
-    target.style.setProperty('--layout-sticky-max-block-size', `${maxBlockSize}px`);
-    target.style.setProperty('--layout-sticky-footer-offset', `${footerOffset}px`);
+    target.style.setProperty('--layout-sticky-max-block-size', `${String(maxBlockSize)}px`);
+    target.style.setProperty('--layout-sticky-footer-offset', `${String(footerOffset)}px`);
   };
 
   const scheduleUpdate = (): void => {

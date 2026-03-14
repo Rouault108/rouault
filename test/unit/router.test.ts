@@ -596,11 +596,12 @@ describe('Router', () => {
 				}));
 			};
 
+			// eslint-disable-next-line @typescript-eslint/unbound-method -- テスト用にプロトタイプメソッドを差し替えるため意図的
 			const originalFocus = HTMLElement.prototype.focus;
 			let focusedTagName = '';
 			let focusOptions: FocusOptions | undefined;
 
-			HTMLElement.prototype.focus = function focus(this: HTMLElement, options?: FocusOptions): void {
+			HTMLElement.prototype.focus = function (this: HTMLElement, options?: FocusOptions): void {
 				focusedTagName = this.tagName;
 				focusOptions = options;
 			};

@@ -331,12 +331,16 @@ export const BoundaryConditions: Story = {
       '無効 revision は #dev へフォールバックする必要があります',
     );
 
+    const navLink0 = navLinks[0];
+    const navLink1 = navLinks[1];
+    assert(!!navLink0, '1件目の footer-link が見つかりません');
+    assert(!!navLink1, '2件目の footer-link が見つかりません');
     assert(
-      navLinks[0]?.textContent?.includes('このサイトについて') === true,
+      navLink0.textContent.includes('このサイトについて'),
       '1件目の footer-link は「このサイトについて」である必要があります',
     );
     assert(
-      navLinks[1]?.textContent?.includes('お問い合わせ') === true,
+      navLink1.textContent.includes('お問い合わせ'),
       '2件目の footer-link は「お問い合わせ」である必要があります',
     );
   },
