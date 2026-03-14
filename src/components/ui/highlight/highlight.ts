@@ -1,4 +1,4 @@
-﻿import { html, LitElement } from 'lit';
+import { html, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 
@@ -21,7 +21,7 @@ ${scopeSelector} {
   background: transparent;
   color: inherit;
   padding: 0;
-  border-radius: var(--radius-sm);
+  border-radius: 0;
   text-decoration: none;
   box-shadow: inset 0 -0.5em 0 color-mix(in oklch, var(--bg-highlight-subtle) 88%, transparent);
   -webkit-box-decoration-break: clone;
