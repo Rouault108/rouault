@@ -445,7 +445,7 @@
 
     --bg-danger-subtle: oklch(25% 0.05 25);
     --bg-warning-subtle: oklch(25% 0.05 85);
-    --bg-highlight-subtle: oklch(25% 0.05 65);
+    --bg-highlight-subtle: oklch(60% 0.05 65);
     --bg-success-subtle: oklch(25% 0.05 145);
     --bg-tip-subtle: oklch(25% 0.05 var(--hue-primary));
     --bg-note-subtle: oklch(20% 0 0);
@@ -453,7 +453,7 @@
       /* =========================================================================
      * Semantic Tokens - Foreground (Dark Mode)
      * ========================================================================= */
-      --fg-default: oklch(90% 0 0);
+    --fg-default: oklch(90% 0 0);
     --fg-muted: oklch(65% 0 0);
     --fg-subtle: oklch(50% 0 0);
     --fg-on-primary: var(--on-primary);
@@ -576,7 +576,7 @@
   --focus-ring-color-subtle: oklch(53% 0.12 var(--hue-primary));
   --bg-danger-subtle: oklch(25% 0.05 25);
   --bg-warning-subtle: oklch(25% 0.05 85);
-  --bg-highlight-subtle: oklch(25% 0.05 65);
+  --bg-highlight-subtle: oklch(60% 0.05 65);
   --bg-success-subtle: oklch(25% 0.05 145);
   --bg-tip-subtle: oklch(25% 0.05 var(--hue-primary));
   --bg-note-subtle: oklch(20% 0 0);
