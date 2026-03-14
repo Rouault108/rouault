@@ -159,9 +159,10 @@ export class TreeItem extends LitElement {
       transform: rotate(90deg);
     }
 
-    /* 子要素がない場合は展開アイコンを非表示（スペースは維持） */
     .expand-icon.hidden {
       visibility: hidden;
+      width: 0;
+      height: 0;
     }
 
     .expand-icon iconify-icon {
@@ -721,14 +722,12 @@ export class TreeItem extends LitElement {
           placement="bottom-start"
           ?disabled="${!this.isLabelTruncated}"
         >
-          <!-- アイテム行 -->
           <div
             class="item"
             tabindex="${this.getAttribute('tabindex') ?? '0'}"
             @click="${this._handleClick}"
             @keydown="${this._handleKeyDown}"
           >
-            <!-- 展開アイコン（左端配置） -->
             <span
               class="expand-icon ${this.hasChildren ? '' : 'hidden'}"
               @click="${this._handleExpandIconClick}"
@@ -737,7 +736,6 @@ export class TreeItem extends LitElement {
               <iconify-icon icon="lucide:chevron-right"></iconify-icon>
             </span>
 
-            <!-- コンテンツアイコン -->
             ${this.icon
               ? html`
                   <span class="content-icon" aria-hidden="true">
@@ -758,7 +756,6 @@ export class TreeItem extends LitElement {
                     ></slot>
                   `}
 
-            <!-- ラベル -->
             <span class="label">
               ${this.href
                 ? html`<a
@@ -771,7 +768,6 @@ export class TreeItem extends LitElement {
           </div>
         </ui-tooltip>
 
-        <!-- 子要素 (role="group") -->
         ${this.hasChildren
           ? html`
               <div
