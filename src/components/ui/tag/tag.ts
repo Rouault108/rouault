@@ -207,16 +207,66 @@ export class Tag extends LitElement {
     }
 
     /* ── Dark Mode ── */
+    /* OS設定のダークモード */
     @media (prefers-color-scheme: dark) {
       :host {
         --bg-l: 17%;
         --fg-l: 90%;
       }
 
-      :host([color='gold']) {
-        --delta-l-bg: 0%;
+      :host([color='neutral']) {
+        --chroma-bg: 0;
+        --chroma-fg: 0;
+        --delta-l-bg: 5%;
         --delta-l-fg: 0%;
       }
+
+      :host([color='red']),
+      :host([color='blue']),
+      :host([color='violet']),
+      :host([color='pink']) {
+        --chroma-bg: 0.04;
+        --chroma-fg: 0.12;
+        --delta-l-bg: 5%;
+        --delta-l-fg: 0%;
+      }
+
+      :host([color='gold']) {
+        --chroma-bg: 0.04;
+        --chroma-fg: 0.12;
+        --delta-l-bg: 5%;
+        --delta-l-fg: -5%;
+      }
+    }
+
+    /* サイト設定のダークモード */
+    :host-context([data-theme='dark']) {
+      --bg-l: 17%;
+      --fg-l: 90%;
+    }
+
+    :host-context([data-theme='dark'])[color='neutral'] {
+      --chroma-bg: 0;
+      --chroma-fg: 0;
+      --delta-l-bg: 5%;
+      --delta-l-fg: 0%;
+    }
+
+    :host-context([data-theme='dark'])[color='red'],
+    :host-context([data-theme='dark'])[color='blue'],
+    :host-context([data-theme='dark'])[color='violet'],
+    :host-context([data-theme='dark'])[color='pink'] {
+      --chroma-bg: 0.04;
+      --chroma-fg: 0.12;
+      --delta-l-bg: 5%;
+      --delta-l-fg: 0%;
+    }
+
+    :host-context([data-theme='dark'])[color='gold'] {
+      --chroma-bg: 0.04;
+      --chroma-fg: 0.12;
+      --delta-l-bg: 5%;
+      --delta-l-fg: -5%;
     }
 
     /* ── Variant: Outline ── */
@@ -249,12 +299,20 @@ export class Tag extends LitElement {
 
     @media (prefers-color-scheme: dark) {
       :host([variant='solid']) {
-        --bg-l: 65%;
+        --bg-l: 40%;
       }
 
       :host([variant='solid'][color='neutral']) {
-        --bg-l: 45%;
+        --bg-l: 30%;
       }
+    }
+
+    :host-context([data-theme='dark'])[variant='solid'] {
+      --bg-l: 40%;
+    }
+
+    :host-context([data-theme='dark'])[variant='solid'][color='neutral'] {
+      --bg-l: 30%;
     }
 
     /* ── Variant: Plain ── */
