@@ -3,6 +3,7 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { map } from 'lit/directives/map.js';
 import { styleMap } from 'lit/directives/style-map.js';
+import { updateHashInCurrentUrl } from '../../../lib/url-hash.js';
 import '../tooltip/tooltip';
 
 /**
@@ -596,6 +597,7 @@ export class Toc extends LitElement {
 			// ターゲット要素へスムーズスクロール
 			const target = document.getElementById(headingId);
 			if (target) {
+				updateHashInCurrentUrl(headingId, 'push');
 				await this._smoothScrollTo(target);
 			}
 		} finally {

@@ -227,6 +227,10 @@ ui-article-header + .prose {
   margin-block-start: var(--prose-section-space);
 }
 
+.prose :is(h2, h3, h4, h5, h6)[id] {
+  cursor: pointer;
+}
+
 /* Proseコンテナ内のメディア要素はテキスト幅を超えて拡張 */
 .prose > img,
 .prose > pre,
