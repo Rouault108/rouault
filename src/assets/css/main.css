@@ -239,6 +239,27 @@ ui-article-header + .prose {
   max-width: none;
 }
 
+/* 本文内のコードブロック・テーブルは breakout を無効化して読書幅に揃える */
+.prose > ui-code-block {
+  --ui-code-block-breakout-width: 100%;
+  --ui-code-block-breakout-margin: 0;
+}
+
+.prose > ui-table {
+  --ui-table-breakout-width: 100%;
+  --ui-table-breakout-margin: 0;
+}
+
+.prose > ui-score {
+  --ui-table-breakout-width: 100%;
+  --ui-table-breakout-margin: 0;
+}
+
+.prose > ui-math {
+  --ui-table-breakout-width: 100%;
+  --ui-table-breakout-margin: 0;
+}
+
 /* Mobile: コンテナより広く */
 @media (max-width: 767px) {
   /* --bp-md */
