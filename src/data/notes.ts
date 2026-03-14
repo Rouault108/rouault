@@ -195,7 +195,7 @@ const resolveNoteSidebarIcon = (
 const resolveSidebarIconContext = (
   slug: string,
   contentRoot: string,
-): { directoryIcons: Record<string, string>; noteFallbackIcon?: string } => {
+): { directoryIcons: Record<string, string> } => {
   const parts = slug.split('/');
   const dirParts = parts.slice(0, -1);
   const directoryIcons: Record<string, string> = {};
@@ -217,11 +217,8 @@ const resolveSidebarIconContext = (
     }
   }
 
-  const noteFallbackIcon = resolveDirectorySidebarIcon(inheritedSetting);
-
   return {
     directoryIcons,
-    ...(noteFallbackIcon !== undefined ? { noteFallbackIcon } : {}),
   };
 };
 
@@ -238,10 +235,7 @@ export const buildNotesCollection = (
       const sidebarRoot = resolveSidebarRoot(slug, contentRoot);
       const sidebarIconSetting = toOptionalTrimmedString(note.sidebarIcon);
       const sidebarIconContext = resolveSidebarIconContext(slug, contentRoot);
-      const sidebarResolvedIcon = resolveNoteSidebarIcon(
-        sidebarIconSetting,
-        sidebarIconContext.noteFallbackIcon,
-      );
+      const sidebarResolvedIcon = resolveNoteSidebarIcon(sidebarIconSetting, undefined);
       return {
         ...note,
         slug,

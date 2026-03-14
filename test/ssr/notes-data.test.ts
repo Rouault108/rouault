@@ -110,7 +110,7 @@ describe('buildNotesCollection', () => {
     expect(collection.find((note) => note.slug === 'music/jazz/kind-of-blue')?.sidebarRoot).toBeUndefined();
   });
 
-  it('sidebarIcon と sidebar.icon を解決してサイドバー用 icon 情報を付与する', async () => {
+  it('sidebarIcon 未指定時は none を既定値としてサイドバー用 icon 情報を付与する', async () => {
     const contentRoot = await createContentRoot();
     await mkdir(path.join(contentRoot, 'music', 'classical', 'beethoven'), { recursive: true });
     await writeFile(
