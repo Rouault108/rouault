@@ -55,7 +55,7 @@ export class EmptyState extends LitElement {
       inline-size: var(--icon-xl, 32px);
       block-size: var(--icon-xl, 32px);
       margin-block-end: var(--space-4, 16px);
-      color: var(--fg-muted, #6e7781);
+      color: var(--fg-muted, oklch(45% 0 0));
     }
 
     .fallback-icon {
@@ -64,6 +64,7 @@ export class EmptyState extends LitElement {
       justify-content: center;
       inline-size: var(--icon-xl, 32px);
       block-size: var(--icon-xl, 32px);
+      font-size: var(--icon-lg, 24px);
       color: currentColor;
       line-height: 0;
     }
@@ -78,6 +79,8 @@ export class EmptyState extends LitElement {
     .icon::slotted([slot='icon']) {
       inline-size: var(--icon-xl, 32px);
       block-size: var(--icon-xl, 32px);
+      font-size: var(--icon-lg, 24px);
+      line-height: 1;
       color: currentColor;
     }
 
