@@ -28,27 +28,39 @@ export class Breadcrumbs extends LitElement {
 		nav {
 			display: flex;
 			align-items: center;
-			flex-wrap: wrap;
+			justify-content: center;
 			padding: var(--space-2, 8px) 0;
 			gap: var(--space-1, 4px);
 			font-size: var(--text-sm, 13px);
 			color: var(--fg-muted, oklch(48% 0 0));
+			inline-size: 100%;
+			min-inline-size: 0;
+			overflow: hidden;
 		}
 
 		.breadcrumb-list {
 			display: flex;
 			align-items: center;
-			flex-wrap: wrap;
+			flex-wrap: nowrap;
 			gap: var(--space-2, 8px);
 			list-style: none;
 			margin: 0;
 			padding: 0;
+			max-inline-size: 100%;
+			min-inline-size: 0;
+			overflow: hidden;
 		}
 
 		.breadcrumb-item {
 			display: inline-flex;
 			align-items: center;
 			gap: var(--space-2, 8px);
+			min-inline-size: 0;
+			flex: 0 1 auto;
+		}
+
+		.breadcrumb-item:last-child {
+			flex: 1 1 auto;
 		}
 
 		.breadcrumb-link {
@@ -59,7 +71,8 @@ export class Breadcrumbs extends LitElement {
 			/* 例外許可: Breadcrumbは構造型リンク。区切り・現在地・フォーカスリングで識別する。 */
 			text-decoration: none;
 			border-radius: var(--radius-sm, 4px);
-			max-width: 20ch;
+			max-inline-size: min(18ch, 100%);
+			min-inline-size: 0;
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
@@ -91,9 +104,11 @@ export class Breadcrumbs extends LitElement {
 		}
 
 		.breadcrumb-current {
+			display: block;
 			color: var(--fg-default, oklch(20% 0 0));
 			font-weight: var(--font-medium, 500);
-			max-width: 20ch;
+			max-inline-size: 100%;
+			min-inline-size: 0;
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;

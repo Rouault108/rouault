@@ -18,6 +18,7 @@ export class BaseLayout {
 
   render(data: BaseLayoutData) {
     const title = data.title ? `${data.title} - Rouault` : 'Rouault';
+    const noteLayoutAttribute = data.note ? ' note-layout' : '';
     const breadcrumbsJson = JSON.stringify(buildBreadcrumbs(data.note))
       .replace(/&/g, '&amp;')
       .replace(/"/g, '&quot;')
@@ -38,7 +39,7 @@ export class BaseLayout {
 <body>
   <ui-skip-link href="#main-content" label="メインコンテンツへ移動"></ui-skip-link>
   <div id="app" class="app-root">
-    <layout-header breadcrumbs-json="${breadcrumbsJson}"></layout-header>
+    <layout-header${noteLayoutAttribute} breadcrumbs-json="${breadcrumbsJson}"></layout-header>
     <app-router>
       <main id="main-content" tabindex="-1">
         ${data.content}

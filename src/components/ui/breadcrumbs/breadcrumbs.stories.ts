@@ -235,6 +235,42 @@ export const EmptyItems: Story = {
 	},
 };
 
+export const SingleLineEllipsis: Story = {
+	render: () => html`
+		<div style="width: 420px; border: 1px solid var(--border-default); padding-inline: 12px;">
+			<ui-breadcrumbs
+				id="single-line-ellipsis"
+				.items=${[
+					{ label: 'Notes', href: '/' },
+					{ label: 'Music', href: '/music' },
+					{ label: 'Classical', href: '/music/classical' },
+					{ label: 'Tchaikovsky', href: '/music/classical/tchaikovsky' },
+					{ label: '楽曲分析: くるみ割り人形と組曲版の構造比較' },
+				]}
+			></ui-breadcrumbs>
+		</div>
+	`,
+	play: async ({ canvasElement }) => {
+		const host = canvasElement.querySelector<Breadcrumbs>('#single-line-ellipsis');
+		if (!host) throw new Error('ui-breadcrumbs が見つかりません');
+		await host.updateComplete;
+
+		const nav = host.shadowRoot?.querySelector<HTMLElement>('nav');
+		const current = host.shadowRoot?.querySelector<HTMLElement>('.breadcrumb-current');
+		if (!nav || !current) {
+			throw new Error('省略確認に必要な要素が見つかりません');
+		}
+
+		if (nav.scrollHeight > nav.clientHeight + 2) {
+			throw new Error('パンくずリストが複数行に折り返されています');
+		}
+
+		if (current.scrollWidth <= current.clientWidth) {
+			throw new Error('カレント項目が省略されていません');
+		}
+	},
+};
+
 export const SpecialCharacters: Story = {
 	render: () => html`
 		<ui-breadcrumbs

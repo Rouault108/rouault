@@ -44,7 +44,9 @@ export class LayoutHeader extends LitElement {
     }
 
     .breadcrumbs {
-      max-inline-size: min(100%, 56ch);
+      inline-size: 100%;
+      max-inline-size: 100%;
+      min-inline-size: 0;
     }
 
     .slot-group {
@@ -52,6 +54,22 @@ export class LayoutHeader extends LitElement {
       align-items: center;
       gap: var(--space-2, 8px);
       min-inline-size: 0;
+    }
+
+    ui-header {
+      --ui-header-center-start-inset: 0px;
+      --ui-header-center-end-inset: 0px;
+    }
+
+    :host([note-layout]) ui-header {
+      --ui-header-center-end-inset: max(200px, 34vw);
+    }
+
+    @media (min-width: 768px) {
+      :host([note-layout]) ui-header {
+        --ui-header-center-start-inset: var(--sidebar-width, 272px);
+        --ui-header-center-end-inset: var(--aside-width, 240px);
+      }
     }
   `;
 

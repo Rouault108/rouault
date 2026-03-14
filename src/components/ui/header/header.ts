@@ -13,6 +13,8 @@ export class UiHeader extends LitElement {
 
 			/* パブリックトークン（外部からオーバーライド可能） */
 			--ui-header-backdrop-saturate: 0.5;
+			--ui-header-center-start-inset: 0px;
+			--ui-header-center-end-inset: 0px;
 
 			/* コンポーネントローカルトークン */
 			--ui-header-edge-highlight: oklch(100% 0 0 / 0.06);
@@ -97,7 +99,8 @@ export class UiHeader extends LitElement {
 
 		.zone-center {
 			position: absolute;
-			inset-inline: 0;
+			inset-inline-start: var(--ui-header-center-start-inset);
+			inset-inline-end: var(--ui-header-center-end-inset);
 			block-size: 100%;
 			display: flex;
 			align-items: center;
