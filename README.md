@@ -173,6 +173,8 @@ draft: false                    # true でドラフトアイコン表示（デ�
 | **エンジン** | [Pagefind](https://pagefind.app/) |
 | **日本語対応** | `Intl.Segmenter` による分かち書き |
 | **UI** | ヘッダー右側に検索ボックス（モバイルではアイコンのみ） |
+| **URL** | `/search?q=<query>&tag=<genre>` / `/tags/<genre>/` |
+| **タグ連携** | `genre` をタグとして扱い、検索条件と **AND条件** で組み合わせる |
 
 ---
 
@@ -197,7 +199,7 @@ draft: false                    # true でドラフトアイコン表示（デ�
 |------|------|
 | **構造** | 定番のネスト可能なツリー構造。 |
 | **現在地の明示** | 現在閲覧中のメモを自動的に展開し、視覚的にハイライト（Suble Active）する。 |
-| **状態保持** | 展開/収縮の状態は `localStorage` 等で保持せず、アクセス毎に「現在地へのパス」のみを展開する（シンプルさ優先）。 |
+| **状態保持** | 展開/収縮の状態は `localStorage` に保持する。初回表示では「現在地へのパス」を必ず展開し、その上で保存済みの展開状態をマージして復元する。 |
 | **オートスクロール** | ページロード時、現在のアクティブな項目が可視領域に含まれるよう **即座に（アニメーションなしで）** 表示位置を調整する。 |
 | **アニメーション** | 展開/収縮は `duration-fast` (70ms) で即座に完了させる。 |
 
@@ -266,11 +268,11 @@ Je pense, donc je suis.
 
 | 項目 | 仕様 |
 |------|------|
-| **エンジン** | [Shiki](https://shiki.matsu.io/)（パフォーマンス問題時は PrismJS フォールバック） |
+| **エンジン** | [Shiki](https://shiki.matsu.io/)（ビルド時生成のみ） |
 | **実行タイミング** | ビルド時生成 |
-| **テーマ** | Dual theme（`github-light` / `github-dark`）を CSS クラスで切り替え |
+| **テーマ** | Dual theme（`github-light` / `github-dark`）を `prefers-color-scheme` ベースで切り替え |
 | **機能** | シンタックスハイライト、行番号、行ハイライト、コピーボタン |
-| **カスタム言語** | Shiki のカスタム grammar 定義（予定） |
+| **カスタム言語** | Shiki のカスタム grammar 定義（未着手） |
 
 ---
 
@@ -369,7 +371,7 @@ permalinks.json をコミット（自動）
 | **コンテンツ** | [Velite](https://velite.js.org/) (Markdown) |
 | **検索** | [Pagefind](https://pagefind.app/) |
 | **ルーティング** | Custom Router (SPA + View Transitions API) |
-| **コードハイライト** | [Shiki](https://shiki.matsu.io/)（優先）/ PrismJS（フォールバック） |
+| **コードハイライト** | [Shiki](https://shiki.matsu.io/)（ビルド時生成） |
 | **楽譜レンダリング** | [LilyPond](https://lilypond.org/) → SVG |
 | **ホスティング** | Cloudflare Pages |
 | **アーカイブストレージ** | Cloudflare R2 |
@@ -708,12 +710,12 @@ pnpm lint:fix
 
 | タスク | 依存 | 状態 |
 |--------|------|------|
-| カスタムルーター設計 | - | |
-| `fetch` によるコンテンツ取得 | ルーター | |
-| `document.startViewTransition()` 統合 | ルーター | |
-| 履歴管理 (History API) | ルーター | |
-| サイドバー ↔ メイン連携 | サイドバー, ルーター | |
-| 階層選択の状態保持 (localStorage) | サイドバー | |
+| カスタムルーター設計 | - | ✅ |
+| `fetch` によるコンテンツ取得 | ルーター | ✅ |
+| `document.startViewTransition()` 統合 | ルーター | ✅ |
+| 履歴管理 (History API) | ルーター | ✅ |
+| サイドバー ↔ メイン連携 | サイドバー, ルーター | ✅ |
+| 階層選択の状態保持 (localStorage) | サイドバー | ✅ |
 
 ---
 
@@ -723,12 +725,10 @@ pnpm lint:fix
 
 | タスク | 依存 | 状態 |
 |--------|------|------|
-| Pagefind ビルド統合 | フェーズ1 完了 | |
-| 検索 UI (`ui-search`) | `ui-input` | |
-| 検索結果表示 | 検索 UI | |
-| `Intl.Segmenter` による日本語分かち書き | Pagefind | |
-| タグフィルター連携 (AND 条件) | 検索, タグ | |
-| 検索結果ページ (タグ一覧ページ兼用) | 検索結果 | |
+| Pagefind ビルド統合 | | ✅ 実装済み |
+| `Intl.Segmenter` による日本語分かち書き | Pagefind | ✅ 実装済み |
+| タグフィルター連携 (AND 条件) | 検索, タグ | ✅ 実装済み |
+| 検索結果ページ (タグ一覧ページ兼用) | 検索結果 | ✅ 実装済み |
 
 ---
 
@@ -738,11 +738,11 @@ pnpm lint:fix
 
 | タスク | 依存 | 状態 |
 |--------|------|------|
-| `@lit-labs/ssr` セットアップ | - | |
-| Eleventy Transform での Lit レンダリング | SSR | |
-| Declarative Shadow DOM 出力 | SSR | |
-| クライアントハイドレーション検証 | SSR | |
-| ビルドパフォーマンス最適化 | SSR 統合後 | |
+| `@lit-labs/ssr` セットアップ | - | ✅ 実装済み |
+| Eleventy Transform での Lit レンダリング | SSR | ✅ 実装済み |
+| Declarative Shadow DOM 出力 | SSR | ✅ 実装済み |
+| クライアントハイドレーション検証 | SSR | ✅ 実装済み |
+| ビルドパフォーマンス最適化 | SSR 統合後 | ✅ 一部実装済み |
 
 ---
 
@@ -754,12 +754,11 @@ pnpm lint:fix
 
 | タスク | 依存 | 状態 |
 |--------|------|------|
-| Shiki 統合 (ビルド時) | - | |
-| Dual theme (light/dark) CSS 切り替え | Shiki | |
-| 行番号・行ハイライト | Shiki | |
-| コピーボタン (`ui-copy-button`) | - | |
-| PrismJS フォールバック | - | |
-| Twoslashの静的ビルド時生成設定 | - | |
+| Shiki 統合 (ビルド時) | - | ✅ 実装済み |
+| Dual theme (light/dark) CSS 切り替え | Shiki | ✅ 実装済み |
+| 行番号・行ハイライト | Shiki | ✅ 実装済み |
+| PrismJS フォールバック | - | 廃止（Shiki に統一） |
+| Twoslashの静的ビルド時生成設定 | - | 未着手 |
 
 #### 6-B: 楽譜表示 (LilyPond)
 
