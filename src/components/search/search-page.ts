@@ -236,6 +236,24 @@ export class SearchPage extends LitElement {
             var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
       }
 
+      @media (prefers-color-scheme: dark) {
+        .filter-option {
+          --search-filter-option-selected-accent: oklch(
+            65% var(--chroma-high, 0.2) var(--hue-blue, 230)
+          );
+          --search-filter-option-selected-border: oklch(45% 0.07 var(--hue-blue, 230));
+          --search-filter-option-selected-bg: oklch(25% 0.03 var(--hue-blue, 230));
+        }
+      }
+
+      :host-context([data-theme='dark']) .filter-option {
+        --search-filter-option-selected-accent: oklch(
+          65% var(--chroma-high, 0.2) var(--hue-blue, 230)
+        );
+        --search-filter-option-selected-border: oklch(45% 0.07 var(--hue-blue, 230));
+        --search-filter-option-selected-bg: oklch(25% 0.03 var(--hue-blue, 230));
+      }
+
       .filter-option[data-selected='true'] {
         border-color: var(--search-filter-option-selected-border);
         background: var(--search-filter-option-selected-bg);
@@ -612,7 +630,7 @@ export class SearchPage extends LitElement {
     return html`
       <div class="selected-tags">
         ${this._selectedTags.map(
-          (tag) => html`
+      (tag) => html`
             <ui-tag
               class="selected-tag"
               variant="outline"
@@ -623,7 +641,7 @@ export class SearchPage extends LitElement {
               ${tag}
             </ui-tag>
           `,
-        )}
+    )}
       </div>
     `;
   }
@@ -684,12 +702,12 @@ export class SearchPage extends LitElement {
             ></ui-search-field>
 
             ${visibleEntries.length > 0
-              ? html`
+        ? html`
                   <div class="filter-list" role="list">
                     ${repeat(
-                      visibleEntries,
-                      (entry) => entry.tag,
-                      (entry) => html`
+          visibleEntries,
+          (entry) => entry.tag,
+          (entry) => html`
                         <div
                           class="filter-option"
                           role="listitem"
@@ -702,16 +720,16 @@ export class SearchPage extends LitElement {
                             .disabled=${entry.disabled}
                             .label=${entry.tag}
                             @change=${() => {
-                              this._toggleTag(entry.tag);
-                            }}
+              this._toggleTag(entry.tag);
+            }}
                           ></ui-checkbox>
                           <span class="filter-option-count">${entry.count.toString()}件</span>
                         </div>
                       `,
-                    )}
+        )}
                   </div>
                 `
-              : html`<p class="filter-empty">一致するタグはありません。</p>`}
+        : html`<p class="filter-empty">一致するタグはありません。</p>`}
           </section>
         </div>
       </ui-details>
@@ -764,31 +782,31 @@ export class SearchPage extends LitElement {
     return html`
       <ol class="results-list">
         ${this._results.map((item) => {
-          const secondaryText = item.excerptHtml.length > 0 ? item.excerptHtml : item.description;
+      const secondaryText = item.excerptHtml.length > 0 ? item.excerptHtml : item.description;
 
-          return html`
+      return html`
             <li>
               <ui-card class="result-card" clickable variant="outlined">
                 <a
                   class="result-link"
                   href=${item.url}
                   @click=${(event: MouseEvent) => {
-                    this._onResultClick(event, item.url);
-                  }}
+          this._onResultClick(event, item.url);
+        }}
                 >
                   <div class="result-path">${item.path}</div>
                   <h2 class="result-title">${item.title}</h2>
                   ${item.date.length > 0
-                    ? html`<div class="result-meta">更新日: ${item.date}</div>`
-                    : nothing}
+          ? html`<div class="result-meta">更新日: ${item.date}</div>`
+          : nothing}
                   ${secondaryText.length > 0
-                    ? html`<p class="result-excerpt">${unsafeHTML(secondaryText)}</p>`
-                    : nothing}
+          ? html`<p class="result-excerpt">${unsafeHTML(secondaryText)}</p>`
+          : nothing}
                 </a>
               </ui-card>
             </li>
           `;
-        })}
+    })}
       </ol>
     `;
   }
