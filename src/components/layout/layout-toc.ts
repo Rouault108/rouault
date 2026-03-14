@@ -1,5 +1,6 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { attachStickyFooterBoundary } from '../../lib/layout/sticky-footer-boundary.js';
 import { updateHashInCurrentUrl } from '../../lib/url-hash.js';
 import '../../lib/icons';
 import '../ui/toc/toc';
@@ -29,13 +30,13 @@ export class LayoutToc extends LitElement {
   static override styles = css`
     :host {
       display: block;
+      block-size: 100%;
       min-block-size: 0;
     }
 
     .desktop {
-      position: sticky;
-      top: var(--header-height);
-      max-block-size: calc(100vh - var(--header-height));
+      block-size: 100%;
+      min-block-size: 0;
       overflow-y: auto;
       overscroll-behavior: contain;
       padding: var(--space-3, 12px) var(--space-2, 8px);
@@ -200,9 +201,13 @@ export class LayoutToc extends LitElement {
 
   private _mobileMediaQuery: MediaQueryList | null = null;
 
+  private _detachStickyFooterBoundary: (() => void) | null = null;
+
   override connectedCallback(): void {
     super.connectedCallback();
     this._loadHeadingsFromSource();
+    const stickyTarget = this.parentElement instanceof HTMLElement ? this.parentElement : this;
+    this._detachStickyFooterBoundary = attachStickyFooterBoundary(stickyTarget);
 
     if (typeof window === 'undefined') {
       return;
@@ -220,6 +225,8 @@ export class LayoutToc extends LitElement {
     this._mobileMediaQuery = null;
     window.removeEventListener('scroll', this._onWindowScroll);
     document.removeEventListener('click', this._onDocumentClick);
+    this._detachStickyFooterBoundary?.();
+    this._detachStickyFooterBoundary = null;
     super.disconnectedCallback();
   }
 

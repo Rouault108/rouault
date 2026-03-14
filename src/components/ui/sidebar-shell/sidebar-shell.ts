@@ -52,7 +52,7 @@ export class UiSidebarShell extends LitElement {
       position: sticky;
       top: var(--header-height);
       inline-size: 100%;
-      max-block-size: calc(100vh - var(--header-height));
+      max-block-size: var(--layout-sticky-max-block-size, calc(100vh - var(--header-height)));
     }
 
     /* ── Fixed Mode: コンテンツ先行フェードアウト ── */

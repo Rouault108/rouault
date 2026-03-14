@@ -8,6 +8,7 @@ import type {
   UiSidebarExpandDetail,
 } from '../ui/sidebar/sidebar';
 import type { UiSidebarStateChangeDetail } from '../ui/sidebar-shell/sidebar-shell';
+import { attachStickyFooterBoundary } from '../../lib/layout/sticky-footer-boundary.js';
 import {
   mergeLayoutSidebarTreeState,
   readLayoutSidebarTreeState,
@@ -152,15 +153,21 @@ export class LayoutSidebar extends LitElement {
 
   private _persistedExpandedIds = new Set<string>();
 
+  private _detachStickyFooterBoundary: (() => void) | null = null;
+
   override connectedCallback(): void {
     super.connectedCallback();
     this._storage = this._resolveStorage();
     this._loadItemsFromSource();
     window.addEventListener('layout-sidebar-toggle-request', this._onToggleRequest as EventListener);
+    const stickyTarget = this.parentElement instanceof HTMLElement ? this.parentElement : this;
+    this._detachStickyFooterBoundary = attachStickyFooterBoundary(stickyTarget);
   }
 
   override disconnectedCallback(): void {
     window.removeEventListener('layout-sidebar-toggle-request', this._onToggleRequest as EventListener);
+    this._detachStickyFooterBoundary?.();
+    this._detachStickyFooterBoundary = null;
     super.disconnectedCallback();
   }
 

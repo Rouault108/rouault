@@ -885,6 +885,7 @@ app-router {
 .layout-sidebar-col,
 .layout-main-col,
 .layout-toc-col {
+  box-sizing: border-box;
   min-inline-size: 0;
 }
 
@@ -892,7 +893,7 @@ app-router {
   position: sticky;
   top: var(--header-height);
   align-self: start;
-  max-block-size: calc(100vh - var(--header-height));
+  max-block-size: var(--layout-sticky-max-block-size, calc(100vh - var(--header-height)));
   border-right: var(--border-width) solid var(--border-ghost);
   overflow: visible;
 }
@@ -905,8 +906,10 @@ app-router {
   position: sticky;
   top: var(--header-height);
   align-self: start;
-  max-block-size: calc(100vh - var(--header-height));
+  block-size: var(--layout-sticky-max-block-size, calc(100vh - var(--header-height)));
+  max-block-size: var(--layout-sticky-max-block-size, calc(100vh - var(--header-height)));
   border-left: var(--border-width) solid var(--border-ghost);
+  overflow: hidden;
   padding-block: var(--space-6);
 }
 
