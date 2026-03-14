@@ -441,6 +441,17 @@ export class Toc extends LitElement {
 
 		if (this.headers.length === 0) return;
 
+		// ヘッダー高さと padding からスクロール停止位置を計算
+		const headerHeightRaw = getComputedStyle(document.documentElement)
+			.getPropertyValue('--header-height')
+			.trim();
+		const headerHeight = headerHeightRaw ? parseFloat(headerHeightRaw) : 0;
+		const EXTRA_PADDING = 32;
+
+		// スクロール先のオフセットと観測領域の上端を同期する
+		// 要素が確実に IntersectionObserver の観測領域に入るよう、1px 余分にオフセットを調整する
+		const topMargin = headerHeight + EXTRA_PADDING - 1;
+
 		this._observer = new IntersectionObserver(
 			(entries) => {
 				// クリックスクロール中は無視（Flickering 防止）
@@ -462,11 +473,10 @@ export class Toc extends LitElement {
 			},
 			{
 				/*
-				 * rootMargin でビューポート上部20%の帯域を観測領域とする。
-				 * ヘッダー高さ相当の上部マージンと下部70%除外で、
-				 * スクロール中にビューポート最上部近傍の見出しを捕捉する。
+				 * rootMargin: 上部の除外領域をスクロール停止位置 (headerHeight + padding) と同期。
+				 * 下部70%除外で、スクロール中にビューポート最上部近傍の見出しを捕捉する。
 				 */
-				rootMargin: '-20% 0px -70% 0px',
+				rootMargin: `-${String(topMargin)}px 0px -70% 0px`,
 				threshold: 0,
 			},
 		);
