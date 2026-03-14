@@ -70,7 +70,7 @@ export class AboutPage extends LitElement {
   override render() {
     return html`
       <section class="about-shell">
-        <article class="layout-main-col container-reading">
+        <article class="layout-main-col container-reading about-main-col">
           <div class="about-content">
             <header class="about-hero">
               <p class="about-eyebrow">About Rouault</p>
@@ -90,15 +90,11 @@ export class AboutPage extends LitElement {
               </ul>
             </div>
 
-            <div class="prose">
-              ${ABOUT_SECTIONS.map(
-                (section) => html`
-                  <section aria-labelledby=${section.id}>
-                    <h2 id=${section.id}>${section.heading}</h2>
-                    ${section.body.map((paragraph) => html`<p>${paragraph}</p>`)}
-                  </section>
-                `,
-              )}
+            <div class="about-prose">
+              ${ABOUT_SECTIONS.flatMap((section) => [
+                html`<h2 id=${section.id}>${section.heading}</h2>`,
+                ...section.body.map((paragraph) => html`<p>${paragraph}</p>`),
+              ])}
             </div>
           </div>
         </article>

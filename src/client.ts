@@ -8,8 +8,10 @@
 import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
 import { loadModulesForDocument } from './client/component-loader.js';
 import { initSearch } from './lib/search/bootstrap.js';
+import { initTheme } from './lib/theme/theme-manager.js';
 
 const bootstrapClient = async (): Promise<void> => {
+  initTheme();
   await loadModulesForDocument(document);
   initSearch();
 };

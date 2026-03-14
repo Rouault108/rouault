@@ -8,6 +8,8 @@
  * =========================================================================== */
 
 :root {
+  color-scheme: light;
+
   /* =========================================================================
    * Primitive Tokens - Chroma (彩度)
    * ========================================================================= */
@@ -497,6 +499,108 @@
     --bg-default-rgb: 28, 29, 33;
     --bg-surface-2-rgb: 40, 42, 47;
   }
+}
+
+:root[data-theme='system'] {
+  color-scheme: light dark;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --primary: oklch(55% var(--chroma-high) var(--hue-primary));
+  --primary-hover: oklch(50% var(--chroma-high) var(--hue-primary));
+  --on-primary: var(--white);
+  --danger: oklch(55% var(--chroma-high) 25);
+  --on-danger: var(--white);
+  --success: oklch(55% 0.18 145);
+  --on-success: var(--white);
+  --warning: oklch(75% 0.16 85);
+  --on-warning: oklch(20% 0.05 85);
+  --bg-default: oklch(1 0 0);
+  --bg-surface-1: var(--bg-default);
+  --bg-surface-2: oklch(100% 0 0);
+  --bg-surface-3: oklch(100% 0 0);
+  --bg-score-paper: oklch(100% 0 0);
+  --bg-fill-muted: oklch(96% 0 0);
+  --bg-active: oklch(from var(--primary) l c h / 0.08);
+  --bg-surface-active: var(--bg-active);
+  --focus-ring-color-subtle: oklch(65% 0.12 var(--hue-primary));
+  --bg-danger-subtle: oklch(96% 0.03 25);
+  --bg-warning-subtle: oklch(96% 0.04 85);
+  --bg-highlight-subtle: oklch(96% 0.04 65);
+  --bg-success-subtle: oklch(96% 0.04 145);
+  --bg-tip-subtle: oklch(96% 0.04 var(--hue-primary));
+  --bg-note-subtle: oklch(96% 0 0);
+  --bg-table-ruler: oklch(from var(--fg-default) l c h / 0.08);
+  --fg-default: oklch(20% 0 0);
+  --fg-muted: oklch(45% 0 0);
+  --fg-subtle: oklch(60% 0 0);
+  --fg-on-primary: var(--on-primary);
+  --fg-warning: oklch(55% 0.16 85);
+  --fg-success: var(--success);
+  --fg-danger: var(--danger);
+  --fg-info: var(--primary);
+  --border-default: oklch(20% 0 0 / 0.12);
+  --border-muted: oklch(20% 0 0 / 0.06);
+  --border-ghost: oklch(20% 0 0 / 0.04);
+  --border-danger: oklch(72% 0.15 25);
+  --border-warning: oklch(72% 0.15 85);
+  --border-on-inverted: oklch(from var(--fg-default) l c h / 0.1);
+  --elevation-sm: var(--shadow-sm);
+  --elevation-md: var(--shadow-md);
+  --elevation-lg: var(--shadow-lg);
+  --elevation-glow: var(--shadow-glow);
+  --bg-default-rgb: 250, 250, 251;
+  --bg-surface-2-rgb: 255, 255, 255;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --primary: oklch(65% 0.12 var(--hue-primary));
+  --primary-hover: oklch(70% 0.18 var(--hue-primary));
+  --on-primary: var(--white);
+  --danger: oklch(55% 0.2 25);
+  --on-danger: var(--white);
+  --success: oklch(55% 0.18 145);
+  --on-success: var(--white);
+  --warning: oklch(25% 0.16 85);
+  --on-warning: oklch(85% 0.16 85);
+  --bg-default: oklch(12% 0 0);
+  --bg-surface-1: var(--bg-default);
+  --bg-surface-2: oklch(17% 0 0);
+  --bg-surface-3: oklch(22% 0 0);
+  --bg-score-paper: oklch(100% 0 0);
+  --bg-fill-muted: oklch(9% 0 0);
+  --bg-active: oklch(from var(--primary) l c h / 0.15);
+  --bg-surface-active: var(--bg-active);
+  --focus-ring-color-subtle: oklch(53% 0.12 var(--hue-primary));
+  --bg-danger-subtle: oklch(25% 0.05 25);
+  --bg-warning-subtle: oklch(25% 0.05 85);
+  --bg-highlight-subtle: oklch(25% 0.05 65);
+  --bg-success-subtle: oklch(25% 0.05 145);
+  --bg-tip-subtle: oklch(25% 0.05 var(--hue-primary));
+  --bg-note-subtle: oklch(20% 0 0);
+  --bg-table-ruler: oklch(from var(--fg-default) l c h / 0.08);
+  --fg-default: oklch(90% 0 0);
+  --fg-muted: oklch(65% 0 0);
+  --fg-subtle: oklch(50% 0 0);
+  --fg-on-primary: var(--on-primary);
+  --fg-warning: oklch(85% 0.16 85);
+  --fg-success: var(--success);
+  --fg-danger: var(--danger);
+  --fg-info: var(--primary);
+  --border-default: oklch(90% 0 0 / 0.12);
+  --border-muted: oklch(90% 0 0 / 0.06);
+  --border-ghost: oklch(90% 0 0 / 0.04);
+  --border-danger: oklch(35% 0.1 25);
+  --border-warning: oklch(35% 0.1 85);
+  --border-on-inverted: oklch(from var(--bg-default) l c h / 0.1);
+  --elevation-sm: var(--shadow-dark-sm);
+  --elevation-md: var(--shadow-dark-md);
+  --elevation-lg: var(--shadow-dark-lg);
+  --elevation-glow: var(--shadow-dark-glow);
+  --bg-default-rgb: 28, 29, 33;
+  --bg-surface-2-rgb: 40, 42, 47;
 }
 
 /* =============================================================================

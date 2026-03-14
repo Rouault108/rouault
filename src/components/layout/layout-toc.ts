@@ -392,7 +392,9 @@ export class LayoutToc extends LitElement {
       return;
     }
 
-    const heading = target.closest<HTMLElement>('.prose :is(h2, h3, h4, h5, h6)[id]');
+    const heading = target.closest<HTMLElement>(
+      ':is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id]',
+    );
     if (!heading) {
       return;
     }

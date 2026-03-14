@@ -931,6 +931,59 @@ app-router {
   gap: var(--space-8);
 }
 
+.about-main-col {
+  max-width: min(100%, calc(var(--width-reading) + 12rem));
+}
+
+.about-prose {
+  --prose-flow-space: var(--space-4);
+  --prose-section-space: var(--space-8);
+  --prose-subsection-space: var(--space-6);
+  font-size: var(--text-lg);
+  line-height: var(--line-height-relaxed);
+  letter-spacing: 0;
+}
+
+.about-prose
+  > *
+  + :where(
+    p,
+    ul,
+    ol,
+    dl,
+    pre,
+    table,
+    figure,
+    h4,
+    h5,
+    h6,
+    ui-callout,
+    ui-code-block,
+    ui-code-group,
+    ui-details,
+    ui-info-box,
+    ui-image,
+    ui-video,
+    ui-score,
+    ui-table,
+    ui-tabs,
+    ui-translation
+  ) {
+  margin-block-start: var(--prose-flow-space);
+}
+
+.about-prose > * + h3 {
+  margin-block-start: var(--prose-subsection-space);
+}
+
+.about-prose > * + h2 {
+  margin-block-start: var(--prose-section-space);
+}
+
+.about-prose :is(h2, h3, h4, h5, h6)[id] {
+  cursor: pointer;
+}
+
 .about-hero {
   display: grid;
   gap: var(--space-4);

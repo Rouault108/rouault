@@ -2,6 +2,7 @@ import {
   buildBreadcrumbs,
   type BreadcrumbSourceNote,
 } from '../../lib/content/build-breadcrumbs.js';
+import { THEME_ATTRIBUTE, THEME_STORAGE_KEY, RESOLVED_THEME_ATTRIBUTE } from '../lib/theme/theme-manager.js';
 
 export interface BaseLayoutData {
   title?: string;
@@ -24,6 +25,32 @@ export class BaseLayout {
       .replace(/"/g, '&quot;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
+    const themeBootstrapScript = `
+(() => {
+  const root = document.documentElement;
+  const storageKey = ${JSON.stringify(THEME_STORAGE_KEY)};
+  const themeAttribute = ${JSON.stringify(THEME_ATTRIBUTE)};
+  const resolvedThemeAttribute = ${JSON.stringify(RESOLVED_THEME_ATTRIBUTE)};
+  let preference = 'system';
+
+  try {
+    const stored = window.localStorage.getItem(storageKey);
+    if (stored === 'light' || stored === 'dark' || stored === 'system') {
+      preference = stored;
+    }
+  } catch {
+    preference = 'system';
+  }
+
+  const resolvedTheme = preference === 'system'
+    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : preference;
+
+  root.setAttribute(themeAttribute, preference);
+  root.setAttribute(resolvedThemeAttribute, resolvedTheme);
+  root.style.colorScheme = preference === 'system' ? 'light dark' : preference;
+})();
+    `.trim();
 
     return `
 <!DOCTYPE html>
@@ -33,6 +60,7 @@ export class BaseLayout {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
   <meta name="description" content="Personal Note Viewer">
+  <script>${themeBootstrapScript}</script>
   <link rel="stylesheet" href="/assets/css/main.css">
   <script type="module" src="/src/client.ts"></script>
 </head>
