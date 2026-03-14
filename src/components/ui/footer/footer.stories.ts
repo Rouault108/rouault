@@ -43,22 +43,31 @@ const getCssText = (): string => {
 
 const getFooterParts = (footer: HTMLElement) => {
   const content = footer.querySelector<HTMLElement>(':scope > .footer-content');
+  const nav = footer.querySelector<HTMLElement>(':scope > .footer-content > .footer-nav');
+  const navLinks = footer.querySelectorAll<HTMLAnchorElement>(
+    ':scope > .footer-content > .footer-nav > .footer-link',
+  );
+  const meta = footer.querySelector<HTMLElement>(':scope > .footer-content > .footer-meta');
   const copyright =
-    footer.querySelector<HTMLElement>(':scope > .footer-content > .copyright');
+    footer.querySelector<HTMLElement>(':scope > .footer-content > .footer-meta > .copyright');
   const copyrightIcon =
-    footer.querySelector<HTMLElement>(':scope > .footer-content > .copyright > iconify-icon');
-  const separator =
-    footer.querySelector<HTMLElement>(':scope > .footer-content > .separator');
+    footer.querySelector<HTMLElement>(
+      ':scope > .footer-content > .footer-meta > .copyright > iconify-icon',
+    );
+  const separators = footer.querySelectorAll<HTMLElement>(':scope .separator');
   const revision =
-    footer.querySelector<HTMLElement>(':scope > .footer-content > .revision');
+    footer.querySelector<HTMLElement>(':scope > .footer-content > .footer-meta > .revision');
 
   assert(!!content, '.footer-content が見つかりません');
+  assert(!!nav, '.footer-nav が見つかりません');
+  assert(navLinks.length === 2, '.footer-link は 2 件必要です');
+  assert(!!meta, '.footer-meta が見つかりません');
   assert(!!copyright, '.copyright が見つかりません');
   assert(!!copyrightIcon, '.copyright icon が見つかりません');
-  assert(!!separator, '.separator が見つかりません');
+  assert(separators.length === 2, '.separator は 2 件必要です');
   assert(!!revision, '.revision が見つかりません');
 
-  return { content, copyright, copyrightIcon, separator, revision };
+  return { content, nav, navLinks, meta, copyright, copyrightIcon, separators, revision };
 };
 
 const parseYear = (copyright: string): number | null => {
@@ -91,7 +100,9 @@ const meta: Meta<FooterStoryArgs> = {
 フッターは Web Component ではなく、ネイティブ \`<footer>\` を使用します。
 
 - DOM: \`.footer-content > .copyright / .separator / .revision\`
-- Separator: \`aria-hidden="true"\`
+- DOM: \`.footer-content > .footer-nav / .footer-meta\`
+- Navigation: \`/about\` / \`/contact\`
+- Separator: すべて \`aria-hidden="true"\`
 - トークン: \`--bg-default\` / \`--border-ghost\` / \`--font-mono\` / \`--text-xs\`
 - Revision: \`#<short-hash>\`（未定義時は \`#dev\`）
         `,
@@ -128,7 +139,8 @@ type Story = StoryObj<FooterStoryArgs>;
 export const DefaultContract: Story = {
   play: ({ canvasElement }) => {
     const footer = getFooter(canvasElement, 'footer-default');
-    const { content, copyright, copyrightIcon, separator, revision } = getFooterParts(footer);
+    const { content, nav, navLinks, meta, copyright, copyrightIcon, separators, revision } =
+      getFooterParts(footer);
 
     assert(
       canvasElement.querySelectorAll('footer').length === 1,
@@ -140,13 +152,22 @@ export const DefaultContract: Story = {
     );
     assert(footer.classList.contains('ui-footer'), '.ui-footer クラスが必要です');
     assert(
-      separator.getAttribute('aria-hidden') === 'true',
-      'separator には aria-hidden="true" が必要です',
+      nav.getAttribute('aria-label') === 'フッターナビゲーション',
+      'footer-nav には aria-label="フッターナビゲーション" が必要です',
     );
     assert(
-      content.children.length === 3,
-      '.footer-content 直下は copyright / separator / revision の 3 要素である必要があります',
+      content.children.length === 2,
+      '.footer-content 直下は footer-nav / footer-meta の 2 要素である必要があります',
     );
+    assert(meta.children.length === 3, '.footer-meta 直下は 3 要素である必要があります');
+    for (const separator of separators) {
+      assert(
+        separator.getAttribute('aria-hidden') === 'true',
+        'separator には aria-hidden="true" が必要です',
+      );
+    }
+    assert(navLinks[0]?.getAttribute('href') === '/about', '/about リンクが必要です');
+    assert(navLinks[1]?.getAttribute('href') === '/contact', '/contact リンクが必要です');
     assert(
       revision.textContent.startsWith('#'),
       'revision は # プレフィックス付きである必要があります',
@@ -264,7 +285,9 @@ export const RevisionYearStateMatrix: Story = {
         })`,
       );
       assert(
-        parts.separator.getAttribute('aria-hidden') === 'true',
+        Array.from(parts.separators).every(
+          (separator) => separator.getAttribute('aria-hidden') === 'true',
+        ),
         `${testCase.id}: separator の aria-hidden が失われています`,
       );
     }
@@ -275,7 +298,7 @@ export const RevisionYearStateMatrix: Story = {
  * 事故が多い境界条件:
  * - separator opacity の外部上書き
  * - 不正 year/revision のフォールバック
- * - インタラクティブ要素非搭載の維持
+ * - navigation と meta の分離維持
  */
 export const BoundaryConditions: Story = {
   render: () => html`
@@ -289,9 +312,11 @@ export const BoundaryConditions: Story = {
   `,
   play: ({ canvasElement }) => {
     const footer = getFooter(canvasElement, 'footer-boundary');
-    const { copyright, separator, revision } = getFooterParts(footer);
+    const { navLinks, copyright, separators, revision } = getFooterParts(footer);
+    const firstSeparator = separators[0];
+    assert(!!firstSeparator, 'separator が見つかりません');
 
-    const separatorOpacity = toNumber(getComputedStyle(separator).opacity);
+    const separatorOpacity = toNumber(getComputedStyle(firstSeparator).opacity);
     assert(
       Math.abs(separatorOpacity - 0.62) < 0.01,
       `separator opacity のトークン上書きが反映されていません (実際: ${separatorOpacity.toString()})`,
@@ -306,12 +331,13 @@ export const BoundaryConditions: Story = {
       '無効 revision は #dev へフォールバックする必要があります',
     );
 
-    const interactive = footer.querySelectorAll(
-      'a, button, input, select, textarea, [role="button"], [tabindex]',
+    assert(
+      navLinks[0]?.textContent?.includes('このサイトについて') === true,
+      '1件目の footer-link は「このサイトについて」である必要があります',
     );
     assert(
-      interactive.length === 0,
-      'フッターにはインタラクティブ要素を含めない現在仕様を維持する必要があります',
+      navLinks[1]?.textContent?.includes('お問い合わせ') === true,
+      '2件目の footer-link は「お問い合わせ」である必要があります',
     );
   },
 };

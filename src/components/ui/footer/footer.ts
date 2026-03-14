@@ -39,15 +39,26 @@ ${FOOTER_SCOPE_SELECTOR} {
 ${FOOTER_SCOPE_SELECTOR} .footer-content {
   box-sizing: border-box;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2);
+  column-gap: var(--space-12);
+  row-gap: var(--space-2);
   inline-size: 100%;
   block-size: 100%;
   max-inline-size: var(--bp-xl);
   margin-inline: auto;
   padding-block: var(--space-5);
   padding-inline: max(var(--space-4), min(var(--space-8), 4vi));
+}
+
+${FOOTER_SCOPE_SELECTOR} .footer-nav,
+${FOOTER_SCOPE_SELECTOR} .footer-meta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
 }
 
 ${FOOTER_SCOPE_SELECTOR} .separator {
@@ -65,9 +76,28 @@ ${FOOTER_SCOPE_SELECTOR} .copyright iconify-icon {
   flex: none;
 }
 
+${FOOTER_SCOPE_SELECTOR} .footer-link {
+  color: inherit;
+  text-decoration-color: transparent;
+  text-decoration-thickness: from-font;
+  text-underline-offset: 0.2em;
+}
+
+${FOOTER_SCOPE_SELECTOR} .footer-link:hover {
+  text-decoration-color: currentColor;
+}
+
+${FOOTER_SCOPE_SELECTOR} .footer-link:focus-visible {
+  text-decoration-color: currentColor;
+}
+
 @media (forced-colors: active) {
   ${FOOTER_SCOPE_SELECTOR} {
     border-top: var(--border-width) solid CanvasText;
+  }
+
+  ${FOOTER_SCOPE_SELECTOR} .footer-link {
+    text-decoration-color: currentColor;
   }
 }
 
@@ -151,12 +181,19 @@ export const renderFooter = (
   return html`
     <footer id=${ifDefined(footerId)} class="ui-footer">
       <div class="footer-content">
-        <span class="copyright">
-          <iconify-icon icon="lucide:copyright" aria-hidden="true"></iconify-icon>
-          <span>${data.year.toString()} ${data.appName}</span>
-        </span>
-        <span class="separator" aria-hidden="true">·</span>
-        <span class="revision">${data.revision}</span>
+        <div class="footer-meta">
+          <span class="copyright">
+            <iconify-icon icon="lucide:copyright" aria-hidden="true"></iconify-icon>
+            <span>${data.year.toString()} ${data.appName}</span>
+          </span>
+          <span class="separator" aria-hidden="true">·</span>
+          <span class="revision">${data.revision}</span>
+        </div>
+        <nav class="footer-nav" aria-label="フッターナビゲーション">
+          <a class="footer-link" href="/about">このサイトについて</a>
+          <span class="separator" aria-hidden="true">·</span>
+          <a class="footer-link" href="/contact">お問い合わせ</a>
+        </nav>
       </div>
     </footer>
   `;
