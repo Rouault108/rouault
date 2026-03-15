@@ -335,7 +335,13 @@ describe('remarkRouaultDirectives', () => {
       children: [
         {
           type: 'paragraph',
-          children: [{ type: 'text', value: '::code-preview{label="ボタン例" preview-align="stretch"}' }],
+          children: [
+            {
+              type: 'text',
+              value:
+                '::code-preview{label="ボタン例" controls="theme surface viewport" preview-align="stretch" preview-theme="dark" preview-surface="muted" preview-viewport="mobile"}',
+            },
+          ],
         },
         {
           type: 'paragraph',
@@ -378,7 +384,11 @@ describe('remarkRouaultDirectives', () => {
     const preview = tree.children?.[0];
     expect(preview?.data?.hName).to.equal('ui-code-preview');
     expect(preview?.data?.hProperties?.['label']).to.equal('ボタン例');
+    expect(preview?.data?.hProperties?.['controls']).to.equal('theme surface viewport');
     expect(preview?.data?.hProperties?.['preview-align']).to.equal('stretch');
+    expect(preview?.data?.hProperties?.['preview-theme']).to.equal('dark');
+    expect(preview?.data?.hProperties?.['preview-surface']).to.equal('muted');
+    expect(preview?.data?.hProperties?.['preview-viewport']).to.equal('mobile');
     expect(preview?.children?.[0]?.data?.hProperties?.['slot']).to.equal('preview');
     expect(preview?.children?.[1]?.data?.hProperties?.['slot']).to.equal('toolbar');
     expect(preview?.children?.[2]?.type).to.equal('code');
@@ -413,6 +423,114 @@ describe('remarkRouaultDirectives', () => {
     expect(translation?.data?.hProperties?.['target-lang']).to.equal('ja');
     expect(translation?.data?.hProperties?.['render-mode']).to.equal('drawer');
     expect(translation?.data?.hProperties?.['open']).to.equal(true);
+    expect(translation?.data?.hProperties?.['original']).to.equal('Je pense, donc je suis.');
+    expect(translation?.data?.hProperties?.['translated']).to.equal('我思う、ゆえに我あり。');
+  });
+
+  it('空行なしで畳まれた code-preview の slot ディレクティブも変換すること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::code-preview{label="ボタン例"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::preview\nここにプレビュー内容を書く' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'code',
+          lang: 'html',
+          value: '<button>例</button>',
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    expect(tree.children).to.have.length(1);
+    const preview = tree.children?.[0];
+    expect(preview?.data?.hName).to.equal('ui-code-preview');
+    expect(preview?.children).to.have.length(2);
+    expect(preview?.children?.[0]?.data?.hProperties?.['slot']).to.equal('preview');
+    expect(preview?.children?.[0]?.children?.[0]?.children?.[0]?.value).to.equal(
+      'ここにプレビュー内容を書く',
+    );
+    expect(preview?.children?.[1]?.type).to.equal('code');
+  });
+
+  it('空行なしで畳まれた tabs の slot ディレクティブも変換すること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::tabs{selected-index="0"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'text',
+              value:
+                '::tab{value="overview"}\n概要\n::\n::panel\n概要の内容\n::\n::tab{value="details"}\n詳細\n::\n::panel\n詳細の内容\n::',
+            },
+          ],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    expect(tree.children).to.have.length(1);
+    const tabs = tree.children?.[0];
+    expect(tabs?.data?.hName).to.equal('ui-tabs');
+    expect(tabs?.children).to.have.length(4);
+    expect(tabs?.children?.[0]?.data?.hProperties?.['slot']).to.equal('tab');
+    expect(tabs?.children?.[1]?.data?.hProperties?.['slot']).to.equal('panel');
+    expect(tabs?.children?.[2]?.data?.hProperties?.['slot']).to.equal('tab');
+    expect(tabs?.children?.[3]?.data?.hProperties?.['slot']).to.equal('panel');
+  });
+
+  it('空行なしで畳まれた translation ディレクティブも変換すること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'text',
+              value:
+                '::translation{lang="fr" target-lang="ja"}\nJe pense, donc je suis.',
+            },
+          ],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '我思う、ゆえに我あり。\n::' }],
+        },
+      ],
+    };
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    expect(tree.children).to.have.length(1);
+    const translation = tree.children?.[0];
+    expect(translation?.data?.hName).to.equal('ui-translation');
     expect(translation?.data?.hProperties?.['original']).to.equal('Je pense, donc je suis.');
     expect(translation?.data?.hProperties?.['translated']).to.equal('我思う、ゆえに我あり。');
   });
@@ -611,5 +729,141 @@ describe('remarkRouaultDirectives', () => {
     };
 
     expect(run).to.throw('[markdown] image 属性 "caption" は未対応です');
+  });
+
+  it('code-preview の controls に未知の値が来た場合はエラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'text',
+              value: '::code-preview{controls="theme invalid"}',
+            },
+          ],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::preview' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '本文' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'code',
+          lang: 'ts',
+          value: 'const ok = true;',
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw(
+      '[markdown] code-preview の controls は theme/surface/viewport のみ指定可能です',
+    );
+  });
+
+  it('code-preview の controls に重複値が来た場合はエラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'text',
+              value: '::code-preview{controls="theme theme"}',
+            },
+          ],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::preview' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '本文' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'code',
+          lang: 'ts',
+          value: 'const ok = true;',
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw('[markdown] code-preview の controls で "theme" が重複しています');
+  });
+
+  it('code-preview の preview-theme に不正な値が来た場合はエラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'text',
+              value: '::code-preview{preview-theme="sepia"}',
+            },
+          ],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::preview' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '本文' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'code',
+          lang: 'ts',
+          value: 'const ok = true;',
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw(
+      '[markdown] code-preview の preview-theme は page/light/dark のみ指定可能です',
+    );
   });
 });
