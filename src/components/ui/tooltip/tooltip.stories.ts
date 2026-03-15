@@ -32,11 +32,28 @@ const getPanel = (host: UiTooltip): HTMLElement => {
   return panel;
 };
 
+const getPanelIfPresent = (host: UiTooltip): HTMLElement | null => {
+  const tooltipId = host.dataset['tooltipId'];
+  if (!tooltipId) throw new Error('tooltip id が見つかりません');
+  const panel = host.ownerDocument.getElementById(tooltipId);
+  return panel instanceof HTMLElement ? panel : null;
+};
+
 const getPanelSurface = (host: UiTooltip): HTMLElement => {
   const panel = getPanel(host);
   const surface = panel.querySelector<HTMLElement>('[data-ui-tooltip-surface]');
   if (!surface) throw new Error('tooltip surface が見つかりません');
   return surface;
+};
+
+const waitForPanel = async (host: UiTooltip, maxFrames = 8): Promise<HTMLElement> => {
+  for (let index = 0; index < maxFrames; index += 1) {
+    const panel = getPanelIfPresent(host);
+    if (panel) return panel;
+    await nextFrame();
+  }
+
+  throw new Error('tooltip panel が見つかりません');
 };
 
 const openByHover = async (trigger: HTMLElement): Promise<void> => {
@@ -148,16 +165,15 @@ export const DefaultInfoIcon: Story = {
     await host.updateComplete;
 
     const trigger = getTrigger(host, '#tooltip-default-trigger');
-    const panel = getPanel(host);
-
-    if (panel.getAttribute('role') !== 'tooltip') {
-      throw new Error('panel の role は tooltip である必要があります');
-    }
-    if (panel.getAttribute('aria-hidden') !== 'true') {
-      throw new Error('初期状態で tooltip は aria-hidden="true" である必要があります');
+    if (getPanelIfPresent(host) !== null) {
+      throw new Error('初期状態で tooltip panel は生成されてはいけません');
     }
 
     await openByHover(trigger);
+    const panel = await waitForPanel(host);
+    if (panel.getAttribute('role') !== 'tooltip') {
+      throw new Error('panel の role は tooltip である必要があります');
+    }
     if (panel.getAttribute('aria-hidden') !== 'false') {
       throw new Error('hover 時に tooltip が表示されていません');
     }
@@ -174,13 +190,13 @@ export const DefaultInfoIcon: Story = {
     panel.dispatchEvent(new MouseEvent('mouseleave'));
     await nextFrame();
     await nextFrame();
-    if (panel.getAttribute('aria-hidden') !== 'true') {
-      throw new Error('tooltip から離れたら閉じる必要があります');
+    if (getPanelIfPresent(host) !== null) {
+      throw new Error('tooltip から離れたら panel は破棄される必要があります');
     }
 
     await closeByLeave(trigger);
-    if (panel.getAttribute('aria-hidden') !== 'true') {
-      throw new Error('leave 後に tooltip が閉じていません');
+    if (getPanelIfPresent(host) !== null) {
+      throw new Error('leave 後に tooltip panel は破棄される必要があります');
     }
     if ((trigger.getAttribute('aria-describedby') ?? '').split(/\s+/).includes(panel.id)) {
       throw new Error('close 後に aria-describedby から tooltip id が除去されていません');
@@ -188,14 +204,15 @@ export const DefaultInfoIcon: Story = {
 
     trigger.focus();
     await nextFrame();
-    if (panel.getAttribute('aria-hidden') !== 'false') {
+    const focusedPanel = getPanel(host);
+    if (focusedPanel.getAttribute('aria-hidden') !== 'false') {
       throw new Error('focus 時に tooltip が表示されていません');
     }
 
     trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await nextFrame();
-    if (panel.getAttribute('aria-hidden') !== 'true') {
-      throw new Error('Escape で tooltip が閉じる必要があります');
+    if (getPanelIfPresent(host) !== null) {
+      throw new Error('Escape で close 後、tooltip panel は破棄される必要があります');
     }
   },
 };
@@ -292,9 +309,9 @@ export const VariantStateMatrix: Story = {
     await openByHover(subtleTrigger);
     await openByHover(inverseTrigger);
 
-    const defaultPanel = getPanel(defaultHost);
-    const subtlePanel = getPanel(subtleHost);
-    const inversePanel = getPanel(inverseHost);
+    const defaultPanel = await waitForPanel(defaultHost);
+    const subtlePanel = await waitForPanel(subtleHost);
+    const inversePanel = await waitForPanel(inverseHost);
 
     if (defaultPanel.dataset['variant'] !== 'default') {
       throw new Error('default panel の variant が不正です');
@@ -319,9 +336,8 @@ export const VariantStateMatrix: Story = {
 
     disabledTrigger.dispatchEvent(new MouseEvent('mouseenter'));
     await nextFrame();
-    const disabledPanel = getPanel(disabledHost);
-    if (disabledPanel.getAttribute('aria-hidden') !== 'true') {
-      throw new Error('disabled の tooltip は表示されてはいけません');
+    if (getPanelIfPresent(disabledHost) !== null) {
+      throw new Error('disabled の tooltip は panel を生成してはいけません');
     }
   },
 };
@@ -351,9 +367,8 @@ export const TransformZoomContract: Story = {
     await host.updateComplete;
 
     const trigger = getTrigger(host, '#tooltip-zoom-trigger');
-    const panel = getPanel(host);
-
     await openByHover(trigger);
+    const panel = await waitForPanel(host);
 
     const initialTriggerRect = trigger.getBoundingClientRect();
     const initialPanelRect = panel.getBoundingClientRect();
@@ -434,8 +449,8 @@ export const BoundaryConditions: Story = {
     const emptyTrigger = getTrigger(empty, '#boundary-empty-trigger');
     emptyTrigger.dispatchEvent(new MouseEvent('mouseenter'));
     await nextFrame();
-    if (getPanel(empty).getAttribute('aria-hidden') !== 'true') {
-      throw new Error('text が空の場合は tooltip を表示してはいけません');
+    if (getPanelIfPresent(empty) !== null) {
+      throw new Error('text が空の場合は tooltip panel を生成してはいけません');
     }
 
     if (invalid.variant !== 'default') {
@@ -456,7 +471,7 @@ export const BoundaryConditions: Story = {
 
     const invalidTrigger = getTrigger(invalid, '#boundary-invalid-trigger');
     await openByHover(invalidTrigger);
-    if (getPanel(invalid).getAttribute('aria-hidden') !== 'false') {
+    if ((await waitForPanel(invalid)).getAttribute('aria-hidden') !== 'false') {
       throw new Error('正規化後の tooltip は表示できる必要があります');
     }
 
@@ -479,10 +494,10 @@ export const BoundaryConditions: Story = {
     await reconnect.updateComplete;
 
     const reconnectTriggerAfter = getTrigger(reconnect, '#boundary-reconnect-trigger');
-    reconnectTriggerAfter.dispatchEvent(new MouseEvent('mouseenter'));
-    await new Promise((resolve) => setTimeout(resolve, 12));
+    await openByHover(reconnectTriggerAfter);
+    await new Promise((resolve) => setTimeout(resolve, 20));
     await nextFrame();
-    if (getPanel(reconnect).getAttribute('aria-hidden') !== 'false') {
+    if ((await waitForPanel(reconnect)).getAttribute('aria-hidden') !== 'false') {
       throw new Error('reconnect 後も tooltip が開ける必要があります');
     }
   },
@@ -520,8 +535,8 @@ export const DarkModeContract: Story = {
     await openByHover(getTrigger(darkDefault, '#dark-default-trigger'));
     await openByHover(getTrigger(darkInverse, '#dark-inverse-trigger'));
 
-    const defaultPanel = getPanel(darkDefault);
-    const inversePanel = getPanel(darkInverse);
+    const defaultPanel = await waitForPanel(darkDefault);
+    const inversePanel = await waitForPanel(darkInverse);
 
     const defaultStyle = getComputedStyle(getPanelSurface(darkDefault));
     const inverseStyle = getComputedStyle(getPanelSurface(darkInverse));
@@ -574,9 +589,8 @@ export const VisualModeContracts: Story = {
       }
     }
 
-    const panel = getPanel(host);
-    if (panel.getAttribute('aria-hidden') !== 'true') {
-      throw new Error('初期状態では panel は hidden である必要があります');
+    if (getPanelIfPresent(host) !== null) {
+      throw new Error('初期状態では panel は生成されてはいけません');
     }
   },
 };
@@ -640,14 +654,14 @@ export const TreeItemIntegrationContract: Story = {
     if (!longItemTrigger) throw new Error('long item の trigger が見つかりません');
 
     await openByHover(longItemTrigger);
-    const longPanel = getPanel(longTooltip);
+    const longPanel = await waitForPanel(longTooltip);
     if (longPanel.getAttribute('aria-hidden') !== 'false') {
       throw new Error('長いラベルで hover 時に tooltip が開く必要があります');
     }
 
     await closeByLeave(longItemTrigger);
-    if (longPanel.getAttribute('aria-hidden') !== 'true') {
-      throw new Error('leave 後に tooltip が閉じる必要があります');
+    if (getPanelIfPresent(longTooltip) !== null) {
+      throw new Error('leave 後に tooltip panel は破棄される必要があります');
     }
   },
 };

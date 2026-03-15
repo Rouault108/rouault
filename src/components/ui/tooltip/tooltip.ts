@@ -205,7 +205,11 @@ export class UiTooltip extends LitElement {
     super.connectedCallback();
     this.dataset['tooltipId'] = this._tooltipId;
     this._injectDocumentStyles();
-    this._ensureTooltipElement();
+    this._syncTriggerElement();
+    void this.updateComplete.then(() => {
+      if (!this.isConnected) return;
+      this._syncTriggerElement();
+    });
     this.addEventListener('keydown', this._onKeyDown as EventListener);
   }
 
@@ -215,6 +219,11 @@ export class UiTooltip extends LitElement {
     this._teardownFloating();
     this._detachTriggerListeners(this._triggerElement);
     this._removeAriaDescribedBy();
+    this._open = false;
+    this._hoveringTrigger = false;
+    this._hoveringTooltip = false;
+    this._focusWithinTrigger = false;
+    this._triggerElement = null;
     this._destroyTooltipElement();
     super.disconnectedCallback();
   }
@@ -343,9 +352,7 @@ export class UiTooltip extends LitElement {
 
   private _syncTriggerElement(): void {
     const slot = this._slotElement;
-    if (!slot) return;
-
-    const firstElement = slot.assignedElements({ flatten: true })[0];
+    const firstElement = slot?.assignedElements({ flatten: true })[0] ?? this.firstElementChild;
     const nextTrigger = firstElement instanceof HTMLElement ? firstElement : null;
 
     if (nextTrigger === this._triggerElement) return;
@@ -565,6 +572,7 @@ export class UiTooltip extends LitElement {
   private async _openTooltip(): Promise<void> {
     if (this._open || this._shouldSuppressTooltip()) return;
 
+    this._ensureTooltipElement();
     this._open = true;
     await this.updateComplete;
 
@@ -583,6 +591,7 @@ export class UiTooltip extends LitElement {
     this._removeAriaDescribedBy();
     this._syncTooltipElement();
     await this.updateComplete;
+    this._destroyTooltipElement();
   }
 
   private _isTooltipTarget(target: EventTarget | null): boolean {
