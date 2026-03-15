@@ -33,15 +33,8 @@ export class UiImage extends LitElement {
     }
 
     :host-context(.prose) .root {
-      width: calc(100% + var(--space-8, 2rem));
-      margin-inline: var(--space-n4, -1rem);
-    }
-
-    @media (min-width: 768px) {
-      :host-context(.prose) .root {
-        width: calc(100% + var(--space-16, 4rem));
-        margin-inline: var(--space-n8, -2rem);
-      }
+      width: 100%;
+      margin-inline: 0;
     }
 
     .trigger {
