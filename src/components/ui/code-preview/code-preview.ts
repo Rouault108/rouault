@@ -83,9 +83,8 @@ const findOption = <T extends string>(
 export class CodePreview extends LitElement {
   static override styles = css`
     :host {
-      /* ─── Breakout デフォルト値（Mobile） ─── */
-      --_ui-code-preview-breakout-width-default: calc(100% + var(--space-8, 2rem));
-      --_ui-code-preview-breakout-margin-default: var(--space-n4, -1rem);
+      --_ui-code-preview-breakout-width-default: 100%;
+      --_ui-code-preview-breakout-margin-default: 0;
 
       /* ─── 子コンポーネントの breakout を無効化（本コンポーネントが担当） ─── */
       --ui-code-block-breakout-width: 100%;
@@ -158,14 +157,6 @@ export class CodePreview extends LitElement {
       --_ui-preview-context-bg-default: var(--_ui-code-preview-surface-bg);
       --_ui-preview-context-bg-surface-1: var(--_ui-code-preview-surface-bg);
       --_ui-code-preview-frame-width: 100%;
-    }
-
-    @media (min-width: 768px) {
-      :host {
-        /* ─── Breakout デフォルト値（Desktop） ─── */
-        --_ui-code-preview-breakout-width-default: calc(100% + var(--space-16, 4rem));
-        --_ui-code-preview-breakout-margin-default: var(--space-n8, -2rem);
-      }
     }
 
     :host([preview-theme='light']) {
