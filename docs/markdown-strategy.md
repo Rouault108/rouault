@@ -37,20 +37,20 @@ remark 層では「著者入力の制約付けと独自構文の展開」を行�
 
 [`lib/remark/rouault-directives.ts`](/Users/ruo/Desktop/Programing/Rouault/lib/remark/rouault-directives.ts#L1142) は、段落テキストとして書かれた `::directive{...}` 記法を解析し、`data.hName` / `data.hProperties` を持つノードへ変換する。
 
-| 入力 | 出力 | 許可属性 / 補足 |
-|---|---|---|
-| `::callout` | `ui-callout` | `kind` / `variant` / `title` / `icon` / `heading-level` / `aria-label` |
-| `::code-group` | `ui-code-group` | `aria-label`。内包 `code` のメタは `filename` / `label` |
-| `::code-preview` | `ui-code-preview` | `label` / `preview-padding` / `preview-align` |
-| `::details` | `ui-details` | `aria-label` 必須。`summary` / `open` / `variant` / `region` |
-| `::info-box` | `ui-info-box` | `heading` / `icon` / `heading-level` / `landmark` / `variant` |
-| `::score` | `ui-score` | `src` / `caption` / `label` / `description` / `aspect-ratio` / `loading` / `primary` |
-| `::tabs` | `ui-tabs` | `selected-index` / `selected-value` / `orientation` / `automatic-activation` |
-| `::translation` | `ui-translation` | `original` / `translated` / `lang` / `target-lang` / `render-mode` / `open` |
-| `::preview` | `div[slot=preview]` | 属性なし |
-| `::toolbar` | `div[slot=toolbar]` | 属性なし |
-| `::tab` | `div[slot=tab]` | `value` |
-| `::panel` | `div[slot=panel]` | 属性なし |
+| 入力             | 出力                | 許可属性 / 補足                                                                                                       |
+| ---------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `::callout`      | `ui-callout`        | `kind` / `variant` / `title` / `icon` / `heading-level` / `aria-label`                                                |
+| `::code-group`   | `ui-code-group`     | `aria-label`。内包 `code` のメタは `filename` / `label`                                                               |
+| `::code-preview` | `ui-code-preview`   | `label` / `controls` / `preview-padding` / `preview-align` / `preview-theme` / `preview-surface` / `preview-viewport` |
+| `::details`      | `ui-details`        | `aria-label` 必須。`summary` / `open` / `variant` / `region`                                                          |
+| `::info-box`     | `ui-info-box`       | `heading` / `icon` / `heading-level` / `landmark` / `variant`                                                         |
+| `::score`        | `ui-score`          | `src` / `caption` / `label` / `description` / `aspect-ratio` / `loading` / `primary`                                  |
+| `::tabs`         | `ui-tabs`           | `selected-index` / `selected-value` / `orientation` / `automatic-activation`                                          |
+| `::translation`  | `ui-translation`    | `original` / `translated` / `lang` / `target-lang` / `render-mode` / `open`                                           |
+| `::preview`      | `div[slot=preview]` | 属性なし                                                                                                              |
+| `::toolbar`      | `div[slot=toolbar]` | 内部 / 互換用。著者向け公開文法では非推奨                                                                             |
+| `::tab`          | `div[slot=tab]`     | `value`                                                                                                               |
+| `::panel`        | `div[slot=panel]`   | 属性なし                                                                                                              |
 
 補足:
 
@@ -62,6 +62,10 @@ remark 層では「著者入力の制約付けと独自構文の展開」を行�
 - `tabs.orientation` は `horizontal|vertical`
 - `code-preview.preview-padding` は `normal|compact|none`
 - `code-preview.preview-align` は `center|start|stretch`
+- `code-preview.controls` は空白区切りで `theme|surface|viewport`
+- `code-preview.preview-theme` は `page|light|dark`
+- `code-preview.preview-surface` は `surface|canvas|muted`
+- `code-preview.preview-viewport` は `full|tablet|mobile`
 - `translation.render-mode` は `popover|drawer|interlinear`
 
 ### 3. インライン記法を展開する
@@ -115,17 +119,17 @@ remark 段階では次を即時エラーにする。
 
 [`lib/rehype/rouault-components.ts`](/Users/ruo/Desktop/Programing/Rouault/lib/rehype/rouault-components.ts#L699) が担当する。
 
-| 入力 HAST | 出力 | 補足 |
-|---|---|---|
-| `pre > code` | `ui-code-block` | `language-*` から `lang` を推論。`filename` / `label` / `intent` はホスト属性へ昇格 |
-| `blockquote` | `ui-blockquote` | 子要素は維持 |
-| `table` | `ui-table > table` | `caption` があればホストに `aria-label` を補完 |
-| `hr` | `ui-divider > hr` | 見た目と意味論を分離 |
-| `li` + `input[type=checkbox]` | `ui-checkbox` | task list のラベルを抽出し、後続のネストリストは維持 |
-| `mark` | `ui-search-highlight` | `origin` / `data-origin`、`current` / `data-current` / `aria-current` を吸収 |
-| `img` | `ui-image` | `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化 |
-| `figure(img + figcaption)` | `ui-image` | `figcaption` を `caption` に統合 |
-| footnote 参照 / 定義 | `ui-footnote` + `section[role=doc-endnotes]` | 参照回数、backref、`user-content-` 接頭辞を正規化 |
+| 入力 HAST                     | 出力                                         | 補足                                                                                |
+| ----------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `pre > code`                  | `ui-code-block`                              | `language-*` から `lang` を推論。`filename` / `label` / `intent` はホスト属性へ昇格 |
+| `blockquote`                  | `ui-blockquote`                              | 子要素は維持                                                                        |
+| `table`                       | `ui-table > table`                           | `caption` があればホストに `aria-label` を補完                                      |
+| `hr`                          | `ui-divider > hr`                            | 見た目と意味論を分離                                                                |
+| `li` + `input[type=checkbox]` | `ui-checkbox`                                | task list のラベルを抽出し、後続のネストリストは維持                                |
+| `mark`                        | `ui-search-highlight`                        | `origin` / `data-origin`、`current` / `data-current` / `aria-current` を吸収        |
+| `img`                         | `ui-image`                                   | `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化      |
+| `figure(img + figcaption)`    | `ui-image`                                   | `figcaption` を `caption` に統合                                                    |
+| footnote 参照 / 定義          | `ui-footnote` + `section[role=doc-endnotes]` | 参照回数、backref、`user-content-` 接頭辞を正規化                                   |
 
 脚注については、最初の参照だけが本文ノードを内包し、2 回目以降の参照は `shared` と `ref-instance` だけを持つ軽量ノードになる。
 

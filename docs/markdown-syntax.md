@@ -17,8 +17,8 @@
 
 ```markdown
 ---
-title: "メモのタイトル"
-description: "一覧や検索で使う短い説明"
+title: 'メモのタイトル'
+description: '一覧や検索で使う短い説明'
 date: 2026-03-14
 updated: 2026-03-15
 genre:
@@ -41,8 +41,8 @@ frontmatter はファイル先頭の `---` で囲まれた領域に書く。YAML
 
 ```yaml
 ---
-title: "Router 設計メモ"
-description: "ルーティングの責務分割とイベント境界を整理するメモ"
+title: 'Router 設計メモ'
+description: 'ルーティングの責務分割とイベント境界を整理するメモ'
 date: 2026-03-14
 genre:
   - architecture
@@ -52,18 +52,18 @@ genre:
 
 ### 書ける項目
 
-| 項目 | 必須 | 内容 |
-|---|---|---|
-| `title` | 必須 | ノートタイトル |
-| `description` | 任意 | 一覧、検索、OG などで使う短い説明 |
-| `date` | 任意 | 作成日。`YYYY-MM-DD` の ISO 日付で書く |
-| `updated` | 任意 | 更新日。`YYYY-MM-DD` の ISO 日付で書く |
-| `genre` | 任意 | 分類用の文字列配列 |
-| `sidebarIcon` | 任意 | サイドバーで使うアイコン名 |
-| `cover` | 任意 | カバー画像のパスまたは URL |
-| `license` | 任意 | ライセンス名 |
-| `licenseNote` | 任意 | ライセンスに関する補足 |
-| `status` | 任意 | 公開状態 |
+| 項目          | 必須 | 内容                                   |
+| ------------- | ---- | -------------------------------------- |
+| `title`       | 必須 | ノートタイトル                         |
+| `description` | 任意 | 一覧、検索、OG などで使う短い説明      |
+| `date`        | 任意 | 作成日。`YYYY-MM-DD` の ISO 日付で書く |
+| `updated`     | 任意 | 更新日。`YYYY-MM-DD` の ISO 日付で書く |
+| `genre`       | 任意 | 分類用の文字列配列                     |
+| `sidebarIcon` | 任意 | サイドバーで使うアイコン名             |
+| `cover`       | 任意 | カバー画像のパスまたは URL             |
+| `license`     | 任意 | ライセンス名                           |
+| `licenseNote` | 任意 | ライセンスに関する補足                 |
+| `status`      | 任意 | 公開状態                               |
 
 ### 各項目の補足
 
@@ -110,7 +110,9 @@ tags: [router, design]
 
 ```markdown
 # 大見出し
+
 ## 中見出し
+
 ### 小見出し
 ```
 
@@ -118,22 +120,22 @@ tags: [router, design]
 
 ```markdown
 **太字**
-*イタリック*
+_イタリック_
 `inline code`
 [リンク](https://example.com)
-![画像の代替テキスト](/assets/images/example.jpg "キャプション")
+![画像の代替テキスト](/assets/images/example.jpg 'キャプション')
 ```
 
 画像の拡大を無効化したい場合は、画像記法の直後に属性ブロックを書く。
 
 ```markdown
-![画像の代替テキスト](/assets/images/example.jpg "キャプション"){zoomable="false"}
+![画像の代替テキスト](/assets/images/example.jpg 'キャプション'){zoomable="false"}
 ```
 
 他のオプションは以下
 
 ```markdown
-![画像の代替テキスト](/assets/images/example.jpg "キャプション"){loading="eager" width="1200" height="800"}
+![画像の代替テキスト](/assets/images/example.jpg 'キャプション'){loading="eager" width="1200" height="800"}
 ```
 
 補足:
@@ -207,14 +209,14 @@ $$
 ::
 ```
 
-| 属性 | 内容 | 値 |
-|---|---|---|
-| `kind` | 種別 | `note`, `tip`, `success`, `warning`, `danger` |
-| `variant` | `kind` の別名 | `note`, `tip`, `success`, `warning`, `danger` |
-| `title` | 見出し文言 | 任意の文字列 |
-| `icon` | アイコン名 | 任意の文字列 |
-| `heading-level` | 見出しレベル | `1` から `6` |
-| `aria-label` | 補助技術向けラベル | 任意の文字列 |
+| 属性            | 内容               | 値                                            |
+| --------------- | ------------------ | --------------------------------------------- |
+| `kind`          | 種別               | `note`, `tip`, `success`, `warning`, `danger` |
+| `variant`       | `kind` の別名      | `note`, `tip`, `success`, `warning`, `danger` |
+| `title`         | 見出し文言         | 任意の文字列                                  |
+| `icon`          | アイコン名         | 任意の文字列                                  |
+| `heading-level` | 見出しレベル       | `1` から `6`                                  |
+| `aria-label`    | 補助技術向けラベル | 任意の文字列                                  |
 
 補足:
 
@@ -226,49 +228,56 @@ $$
 
 ````markdown
 ::code-group{aria-label="実装比較"}
+
 ```ts filename="valid.ts" label="正しい例"
 const value = 1;
 ```
+
 ```ts filename="invalid.ts" label="誤り例"
-const value = "1";
+const value = '1';
 ```
+
 ::
 ````
 
-| 属性 | 内容 | 値 |
-|---|---|---|
-| `aria-label` | 全体の説明ラベル | 任意の文字列 |
-| `filename` | 各コードブロックのファイル名表示 | 任意の文字列 |
-| `label` | 各コード例の補助ラベル | 任意の文字列 |
+| 属性         | 内容                             | 値           |
+| ------------ | -------------------------------- | ------------ |
+| `aria-label` | 全体の説明ラベル                 | 任意の文字列 |
+| `filename`   | 各コードブロックのファイル名表示 | 任意の文字列 |
+| `label`      | 各コード例の補助ラベル           | 任意の文字列 |
 
 ### Code Preview
 
 プレビュー領域とコードをセットで見せる。
 
 ````markdown
-::code-preview{label="ボタン例" preview-padding="compact" preview-align="center"}
+::code-preview{label="ボタン例" controls="theme surface viewport" preview-theme="light" preview-surface="surface" preview-viewport="tablet" preview-padding="compact" preview-align="center"}
 ::preview
 ここにプレビュー内容を書く
 ::
-::toolbar
-ここに補助 UI を書く
-::
+
 ```html
 <button>例</button>
 ```
+
 ::
 ````
 
-| 属性 | 内容 | 値 |
-|---|---|---|
-| `label` | code preview 全体の名前 | 任意の文字列 |
-| `preview-padding` | プレビュー余白 | `normal`, `compact`, `none` |
-| `preview-align` | プレビュー配置 | `center`, `start`, `stretch` |
+| 属性               | 内容                           | 値                                          |
+| ------------------ | ------------------------------ | ------------------------------------------- |
+| `label`            | code preview 全体の名前        | 任意の文字列                                |
+| `controls`         | built-in showcase controls     | 空白区切りで `theme`, `surface`, `viewport` |
+| `preview-padding`  | プレビュー余白                 | `normal`, `compact`, `none`                 |
+| `preview-align`    | プレビュー配置                 | `center`, `start`, `stretch`                |
+| `preview-theme`    | プレビュー専用テーマ           | `page`, `light`, `dark`                     |
+| `preview-surface`  | プレビュー専用の面コンテキスト | `surface`, `canvas`, `muted`                |
+| `preview-viewport` | プレビュー専用のビューポート幅 | `full`, `tablet`, `mobile`                  |
 
 補足:
 
 - `::preview` は必須
-- `::toolbar` は任意
+- built-in controls は `controls` 指定時のみ表示
+- `preview-theme` / `preview-surface` / `preview-viewport` は controls 未指定でも静的指定として有効
 
 ### Details
 
@@ -280,13 +289,13 @@ const value = "1";
 ::
 ```
 
-| 属性 | 内容 | 値 |
-|---|---|---|
-| `aria-label` | アクセシブル名 | 任意の文字列 |
-| `summary` | トグル見出し | 任意の文字列 |
-| `open` | 初期状態を開く | 真偽値 |
-| `variant` | 外観 | `default`, `bordered` |
-| `region` | landmark として扱う | 真偽値 |
+| 属性         | 内容                | 値                    |
+| ------------ | ------------------- | --------------------- |
+| `aria-label` | アクセシブル名      | 任意の文字列          |
+| `summary`    | トグル見出し        | 任意の文字列          |
+| `open`       | 初期状態を開く      | 真偽値                |
+| `variant`    | 外観                | `default`, `bordered` |
+| `region`     | landmark として扱う | 真偽値                |
 
 補足:
 
@@ -302,13 +311,13 @@ const value = "1";
 ::
 ```
 
-| 属性 | 内容 | 値 |
-|---|---|---|
-| `heading` | 見出し | 任意の文字列 |
-| `icon` | アイコン名 | 任意の文字列 |
-| `heading-level` | 見出しレベル | `1` から `6` |
-| `landmark` | 独立 landmark として扱う | 真偽値 |
-| `variant` | 外観 | `default`, `filled` |
+| 属性            | 内容                     | 値                  |
+| --------------- | ------------------------ | ------------------- |
+| `heading`       | 見出し                   | 任意の文字列        |
+| `icon`          | アイコン名               | 任意の文字列        |
+| `heading-level` | 見出しレベル             | `1` から `6`        |
+| `landmark`      | 独立 landmark として扱う | 真偽値              |
+| `variant`       | 外観                     | `default`, `filled` |
 
 ### Score
 
@@ -319,15 +328,15 @@ const value = "1";
 ::
 ```
 
-| 属性 | 内容 | 値 |
-|---|---|---|
-| `src` | 譜例データ参照先 | パスまたは URL |
-| `caption` | キャプション | 任意の文字列 |
-| `label` | 補助ラベル | 任意の文字列 |
-| `description` | 補助説明 | 任意の文字列 |
-| `aspect-ratio` | アスペクト比ヒント | 任意の文字列 |
-| `loading` | 読み込み方針 | `lazy`, `eager` |
-| `primary` | 主要譜例フラグ | 真偽値 |
+| 属性           | 内容               | 値              |
+| -------------- | ------------------ | --------------- |
+| `src`          | 譜例データ参照先   | パスまたは URL  |
+| `caption`      | キャプション       | 任意の文字列    |
+| `label`        | 補助ラベル         | 任意の文字列    |
+| `description`  | 補助説明           | 任意の文字列    |
+| `aspect-ratio` | アスペクト比ヒント | 任意の文字列    |
+| `loading`      | 読み込み方針       | `lazy`, `eager` |
+| `primary`      | 主要譜例フラグ     | 真偽値          |
 
 ### Tabs
 
@@ -350,13 +359,13 @@ const value = "1";
 ::
 ```
 
-| 属性 | 内容 | 値 |
-|---|---|---|
-| `selected-index` | 初期選択番号 | `0` 以上の整数 |
-| `selected-value` | 初期選択値 | 任意の文字列 |
-| `orientation` | 並び方向 | `horizontal`, `vertical` |
-| `automatic-activation` | フォーカス移動で自動選択 | 真偽値 |
-| `value` | `tab` の識別子 | 任意の文字列 |
+| 属性                   | 内容                     | 値                       |
+| ---------------------- | ------------------------ | ------------------------ |
+| `selected-index`       | 初期選択番号             | `0` 以上の整数           |
+| `selected-value`       | 初期選択値               | 任意の文字列             |
+| `orientation`          | 並び方向                 | `horizontal`, `vertical` |
+| `automatic-activation` | フォーカス移動で自動選択 | 真偽値                   |
+| `value`                | `tab` の識別子           | 任意の文字列             |
 
 補足:
 
@@ -383,14 +392,14 @@ Je pense, donc je suis.
 ::
 ```
 
-| 属性 | 内容 | 値 |
-|---|---|---|
-| `original` | 原文 | 任意の文字列 |
-| `translated` | 訳文 | 任意の文字列 |
-| `lang` | 原文言語コード | 任意の文字列 |
-| `target-lang` | 訳文言語コード | 任意の文字列 |
-| `render-mode` | 表示モード | `popover`, `drawer`, `interlinear` |
-| `open` | 初期表示を開く | 真偽値 |
+| 属性          | 内容           | 値                                 |
+| ------------- | -------------- | ---------------------------------- |
+| `original`    | 原文           | 任意の文字列                       |
+| `translated`  | 訳文           | 任意の文字列                       |
+| `lang`        | 原文言語コード | 任意の文字列                       |
+| `target-lang` | 訳文言語コード | 任意の文字列                       |
+| `render-mode` | 表示モード     | `popover`, `drawer`, `interlinear` |
+| `open`        | 初期表示を開く | 真偽値                             |
 
 補足:
 
@@ -406,14 +415,6 @@ Je pense, donc je suis.
 ```markdown
 ::preview
 プレビュー内容
-::
-```
-
-### Toolbar
-
-```markdown
-::toolbar
-補助操作
 ::
 ```
 
@@ -442,10 +443,10 @@ Je pense, donc je suis.
 :highlight[検索ヒット]{origin="search" current="true"}
 ```
 
-| 属性 | 内容 | 値 |
-|---|---|---|
-| `origin` | ハイライトの由来 | `search`, `user` |
-| `current` | 現在選択中のヒットか | 真偽値 |
+| 属性      | 内容                 | 値               |
+| --------- | -------------------- | ---------------- |
+| `origin`  | ハイライトの由来     | `search`, `user` |
+| `current` | 現在選択中のヒットか | 真偽値           |
 
 補足:
 
@@ -457,10 +458,10 @@ Je pense, donc je suis.
 :emoji[😀]{aria-label="笑顔"}
 ```
 
-| 属性 | 内容 | 値 |
-|---|---|---|
-| `label` | `aria-label` の別名 | 任意の文字列 |
-| `aria-label` | 読み上げラベル | 任意の文字列 |
+| 属性         | 内容                | 値           |
+| ------------ | ------------------- | ------------ |
+| `label`      | `aria-label` の別名 | 任意の文字列 |
+| `aria-label` | 読み上げラベル      | 任意の文字列 |
 
 ### Superscript / Subscript
 
