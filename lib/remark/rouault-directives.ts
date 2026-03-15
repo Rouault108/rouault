@@ -77,6 +77,10 @@ const IMAGE_LOADING_MODES = new Set(['lazy', 'eager']);
 const TABS_ORIENTATIONS = new Set(['horizontal', 'vertical']);
 const PREVIEW_PADDING_MODES = new Set(['normal', 'compact', 'none']);
 const PREVIEW_ALIGN_MODES = new Set(['center', 'start', 'stretch']);
+const PREVIEW_THEMES = new Set(['page', 'light', 'dark']);
+const PREVIEW_SURFACES = new Set(['surface', 'canvas', 'muted']);
+const PREVIEW_VIEWPORTS = new Set(['full', 'tablet', 'mobile']);
+const PREVIEW_CONTROL_VALUES = new Set(['theme', 'surface', 'viewport']);
 const TRANSLATION_RENDER_MODES = new Set(['popover', 'drawer', 'interlinear']);
 const HIGHLIGHT_ORIGINS = new Set(['search', 'user']);
 const CODE_BLOCK_INTENTS = new Set(['neutral', 'valid', 'invalid']);
@@ -146,10 +150,7 @@ const parseStartLine = (
   };
 };
 
-const parseStartMarker = (
-  node: MdastNode,
-  file?: VFileLike,
-): DirectiveMarker | null => {
+const parseStartMarker = (node: MdastNode, file?: VFileLike): DirectiveMarker | null => {
   const markerText = getParagraphSingleText(node);
   if (markerText === null) {
     return null;
@@ -269,7 +270,11 @@ const parseIntegerInRange = (
 
   const parsed = Number.parseInt(normalized, 10);
   if (!Number.isInteger(parsed) || parsed < min || parsed > max) {
-    throw toError(file, node, `${directiveName} の ${key} は ${String(min)} から ${String(max)} の整数で指定してください`);
+    throw toError(
+      file,
+      node,
+      `${directiveName} の ${key} は ${String(min)} から ${String(max)} の整数で指定してください`,
+    );
   }
 
   return parsed;
@@ -290,10 +295,50 @@ const parseIntegerMin = (
 
   const parsed = Number.parseInt(normalized, 10);
   if (!Number.isInteger(parsed) || parsed < min) {
-    throw toError(file, node, `${directiveName} の ${key} は ${String(min)} 以上の整数で指定してください`);
+    throw toError(
+      file,
+      node,
+      `${directiveName} の ${key} は ${String(min)} 以上の整数で指定してください`,
+    );
   }
 
   return parsed;
+};
+
+const parseEnumListAttribute = (
+  value: string | undefined,
+  node: MdastNode,
+  file: VFileLike | undefined,
+  directiveName: string,
+  key: string,
+  allowedValues: ReadonlySet<string>,
+  orderedValues: readonly string[],
+): string | undefined => {
+  const normalized = pickOptional(value)?.toLowerCase();
+  if (!normalized) {
+    return undefined;
+  }
+
+  const tokens = normalized.split(/\s+/);
+  const seen = new Set<string>();
+
+  for (const token of tokens) {
+    if (!allowedValues.has(token)) {
+      throw toError(
+        file,
+        node,
+        `${directiveName} の ${key} は ${orderedValues.join('/')} のみ指定可能です`,
+      );
+    }
+
+    if (seen.has(token)) {
+      throw toError(file, node, `${directiveName} の ${key} で "${token}" が重複しています`);
+    }
+
+    seen.add(token);
+  }
+
+  return orderedValues.filter((item) => seen.has(item)).join(' ');
 };
 
 const assertAllowedAttributes = (
@@ -364,10 +409,7 @@ const parseCodeMeta = (
   return { attrs, raw };
 };
 
-const normalizeCodeBlockMeta = (
-  node: MdastNode,
-  file?: VFileLike,
-): void => {
+const normalizeCodeBlockMeta = (node: MdastNode, file?: VFileLike): void => {
   if (node.type !== 'code') {
     return;
   }
@@ -465,7 +507,15 @@ const applyCalloutAttributes = (
     result['aria-label'] = ariaLabel;
   }
 
-  const headingLevel = parseIntegerInRange(attrs['heading-level'], node, file, 'callout', 'heading-level', 1, 6);
+  const headingLevel = parseIntegerInRange(
+    attrs['heading-level'],
+    node,
+    file,
+    'callout',
+    'heading-level',
+    1,
+    6,
+  );
   if (typeof headingLevel === 'number') {
     result['heading-level'] = String(headingLevel);
   }
@@ -496,7 +546,15 @@ const applyCodePreviewAttributes = (
   file?: VFileLike,
 ): Record<string, unknown> => {
   const result: Record<string, unknown> = {};
-  const allowedKeys = new Set(['label', 'preview-padding', 'preview-align']);
+  const allowedKeys = new Set([
+    'label',
+    'controls',
+    'preview-padding',
+    'preview-align',
+    'preview-theme',
+    'preview-surface',
+    'preview-viewport',
+  ]);
   assertAllowedAttributes(attrs, allowedKeys, node, file, 'code-preview');
 
   const label = pickOptional(attrs['label']);
@@ -504,10 +562,27 @@ const applyCodePreviewAttributes = (
     result['label'] = label;
   }
 
+  const controls = parseEnumListAttribute(
+    attrs['controls'],
+    node,
+    file,
+    'code-preview',
+    'controls',
+    PREVIEW_CONTROL_VALUES,
+    ['theme', 'surface', 'viewport'],
+  );
+  if (controls) {
+    result['controls'] = controls;
+  }
+
   const previewPadding = pickOptional(attrs['preview-padding'])?.toLowerCase();
   if (previewPadding) {
     if (!PREVIEW_PADDING_MODES.has(previewPadding)) {
-      throw toError(file, node, 'code-preview の preview-padding は normal/compact/none のみ指定可能です');
+      throw toError(
+        file,
+        node,
+        'code-preview の preview-padding は normal/compact/none のみ指定可能です',
+      );
     }
     result['preview-padding'] = previewPadding;
   }
@@ -515,9 +590,49 @@ const applyCodePreviewAttributes = (
   const previewAlign = pickOptional(attrs['preview-align'])?.toLowerCase();
   if (previewAlign) {
     if (!PREVIEW_ALIGN_MODES.has(previewAlign)) {
-      throw toError(file, node, 'code-preview の preview-align は center/start/stretch のみ指定可能です');
+      throw toError(
+        file,
+        node,
+        'code-preview の preview-align は center/start/stretch のみ指定可能です',
+      );
     }
     result['preview-align'] = previewAlign;
+  }
+
+  const previewTheme = pickOptional(attrs['preview-theme'])?.toLowerCase();
+  if (previewTheme) {
+    if (!PREVIEW_THEMES.has(previewTheme)) {
+      throw toError(
+        file,
+        node,
+        'code-preview の preview-theme は page/light/dark のみ指定可能です',
+      );
+    }
+    result['preview-theme'] = previewTheme;
+  }
+
+  const previewSurface = pickOptional(attrs['preview-surface'])?.toLowerCase();
+  if (previewSurface) {
+    if (!PREVIEW_SURFACES.has(previewSurface)) {
+      throw toError(
+        file,
+        node,
+        'code-preview の preview-surface は surface/canvas/muted のみ指定可能です',
+      );
+    }
+    result['preview-surface'] = previewSurface;
+  }
+
+  const previewViewport = pickOptional(attrs['preview-viewport'])?.toLowerCase();
+  if (previewViewport) {
+    if (!PREVIEW_VIEWPORTS.has(previewViewport)) {
+      throw toError(
+        file,
+        node,
+        'code-preview の preview-viewport は full/tablet/mobile のみ指定可能です',
+      );
+    }
+    result['preview-viewport'] = previewViewport;
   }
 
   return result;
@@ -583,7 +698,15 @@ const applyInfoBoxAttributes = (
     result['icon'] = icon;
   }
 
-  const headingLevel = parseIntegerInRange(attrs['heading-level'], node, file, 'info-box', 'heading-level', 1, 6);
+  const headingLevel = parseIntegerInRange(
+    attrs['heading-level'],
+    node,
+    file,
+    'info-box',
+    'heading-level',
+    1,
+    6,
+  );
   if (typeof headingLevel === 'number') {
     result['heading-level'] = String(headingLevel);
   }
@@ -610,7 +733,15 @@ const applyScoreAttributes = (
   file?: VFileLike,
 ): Record<string, unknown> => {
   const result: Record<string, unknown> = {};
-  const allowedKeys = new Set(['src', 'caption', 'label', 'description', 'aspect-ratio', 'loading', 'primary']);
+  const allowedKeys = new Set([
+    'src',
+    'caption',
+    'label',
+    'description',
+    'aspect-ratio',
+    'loading',
+    'primary',
+  ]);
   assertAllowedAttributes(attrs, allowedKeys, node, file, 'score');
 
   const src = pickOptional(attrs['src']);
@@ -695,10 +826,22 @@ const applyTabsAttributes = (
   file?: VFileLike,
 ): Record<string, unknown> => {
   const result: Record<string, unknown> = {};
-  const allowedKeys = new Set(['selected-index', 'selected-value', 'orientation', 'automatic-activation']);
+  const allowedKeys = new Set([
+    'selected-index',
+    'selected-value',
+    'orientation',
+    'automatic-activation',
+  ]);
   assertAllowedAttributes(attrs, allowedKeys, node, file, 'tabs');
 
-  const selectedIndex = parseIntegerMin(attrs['selected-index'], node, file, 'tabs', 'selected-index', 0);
+  const selectedIndex = parseIntegerMin(
+    attrs['selected-index'],
+    node,
+    file,
+    'tabs',
+    'selected-index',
+    0,
+  );
   if (typeof selectedIndex === 'number') {
     result['selected-index'] = String(selectedIndex);
   }
@@ -736,7 +879,14 @@ const applyTranslationAttributes = (
   file?: VFileLike,
 ): Record<string, unknown> => {
   const result: Record<string, unknown> = {};
-  const allowedKeys = new Set(['original', 'translated', 'lang', 'target-lang', 'render-mode', 'open']);
+  const allowedKeys = new Set([
+    'original',
+    'translated',
+    'lang',
+    'target-lang',
+    'render-mode',
+    'open',
+  ]);
   assertAllowedAttributes(attrs, allowedKeys, node, file, 'translation');
 
   const original = pickOptional(attrs['original']);
@@ -762,7 +912,11 @@ const applyTranslationAttributes = (
   const renderMode = pickOptional(attrs['render-mode'])?.toLowerCase();
   if (renderMode) {
     if (!TRANSLATION_RENDER_MODES.has(renderMode)) {
-      throw toError(file, node, 'translation の render-mode は popover/drawer/interlinear のみ指定可能です');
+      throw toError(
+        file,
+        node,
+        'translation の render-mode は popover/drawer/interlinear のみ指定可能です',
+      );
     }
     result['render-mode'] = renderMode;
   }
@@ -910,11 +1064,7 @@ const applyHighlightInlineAttributes = (
   return result;
 };
 
-const parseInlineText = (
-  source: string,
-  node: MdastNode,
-  file?: VFileLike,
-): MdastNode[] => {
+const parseInlineText = (source: string, node: MdastNode, file?: VFileLike): MdastNode[] => {
   const result: MdastNode[] = [];
   let cursor = 0;
 
@@ -930,7 +1080,14 @@ const parseInlineText = (
       const attrs = parseAttributes(attrSource, node, file);
 
       if (name === 'emoji') {
-        result.push(createInlineNode('span', text, applyEmojiInlineAttributes(attrs, node, file), 'rouaultInlineEmoji'));
+        result.push(
+          createInlineNode(
+            'span',
+            text,
+            applyEmojiInlineAttributes(attrs, node, file),
+            'rouaultInlineEmoji',
+          ),
+        );
       } else if (name === 'subscript') {
         const allowed = new Set<string>();
         assertAllowedAttributes(attrs, allowed, node, file, 'subscript');
@@ -1024,10 +1181,7 @@ const mergeNodeHProperties = (node: MdastNode, properties: Record<string, unknow
   node.data = nextData;
 };
 
-const normalizeImageAttributeBlocks = (
-  nodes: MdastNode[],
-  file?: VFileLike,
-): MdastNode[] => {
+const normalizeImageAttributeBlocks = (nodes: MdastNode[], file?: VFileLike): MdastNode[] => {
   const result = [...nodes];
 
   for (let index = 0; index < result.length; index += 1) {
@@ -1201,10 +1355,7 @@ const toDirectiveNode = (
   };
 };
 
-const tryParseFoldedDirectiveParagraph = (
-  node: MdastNode,
-  file?: VFileLike,
-): MdastNode | null => {
+const tryParseFoldedDirectiveParagraph = (node: MdastNode, file?: VFileLike): MdastNode | null => {
   const rawText = getParagraphSingleText(node);
   if (!rawText?.includes('\n')) {
     return null;
@@ -1240,15 +1391,87 @@ const tryParseFoldedDirectiveParagraph = (
   return toDirectiveNode(marker, transformChildren(children, file), attrs, file);
 };
 
-const transformChildren = (
-  nodes: MdastNode[],
-  file?: VFileLike,
-): MdastNode[] => {
+const expandDirectiveParagraph = (node: MdastNode, file?: VFileLike): MdastNode[] | null => {
+  const rawText = getParagraphSingleText(node);
+  if (!rawText?.includes('\n')) {
+    return null;
+  }
+
+  const lines = rawText.split(/\r?\n/);
+  const hasDirectiveLine = lines.some((line) => {
+    const trimmed = line.trim();
+    if (trimmed.length === 0) {
+      return false;
+    }
+
+    return parseStartLine(trimmed, node, file) !== null || END_PATTERN.test(trimmed);
+  });
+
+  if (!hasDirectiveLine) {
+    return null;
+  }
+
+  const result: MdastNode[] = [];
+  let paragraphLines: string[] = [];
+
+  const flushParagraph = (): void => {
+    if (paragraphLines.length === 0) {
+      return;
+    }
+
+    result.push({
+      type: 'paragraph',
+      children: [{ type: 'text', value: paragraphLines.join('\n') }],
+    });
+    paragraphLines = [];
+  };
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed.length === 0) {
+      flushParagraph();
+      continue;
+    }
+
+    if (parseStartLine(trimmed, node, file) !== null || END_PATTERN.test(trimmed)) {
+      flushParagraph();
+      result.push({
+        type: 'paragraph',
+        children: [{ type: 'text', value: trimmed }],
+      });
+      continue;
+    }
+
+    paragraphLines.push(line);
+  }
+
+  flushParagraph();
+  return result;
+};
+
+const expandDirectiveParagraphs = (nodes: MdastNode[], file?: VFileLike): MdastNode[] => {
+  const result: MdastNode[] = [];
+
+  for (const node of nodes) {
+    const expanded = expandDirectiveParagraph(node, file);
+    if (expanded) {
+      result.push(...expanded);
+      continue;
+    }
+
+    result.push(node);
+  }
+
+  return result;
+};
+
+const transformChildren = (nodes: MdastNode[], file?: VFileLike): MdastNode[] => {
+  const normalizedNodes = expandDirectiveParagraphs(nodes, file);
   const result: MdastNode[] = [];
   let index = 0;
 
-  while (index < nodes.length) {
-    const current = nodes[index];
+  while (index < normalizedNodes.length) {
+    const current = normalizedNodes[index];
     if (!current) {
       index += 1;
       continue;
@@ -1274,8 +1497,8 @@ const transformChildren = (
 
     let depth = 0;
     let closingIndex = -1;
-    for (let cursor = index + 1; cursor < nodes.length; cursor += 1) {
-      const candidate = nodes[cursor];
+    for (let cursor = index + 1; cursor < normalizedNodes.length; cursor += 1) {
+      const candidate = normalizedNodes[cursor];
       if (!candidate) continue;
 
       const nestedStart = parseStartMarker(candidate, file);
@@ -1297,10 +1520,14 @@ const transformChildren = (
     }
 
     if (closingIndex < 0) {
-      throw toError(file, marker.node, `ディレクティブ "${marker.name}" の終端 "::" が見つかりません`);
+      throw toError(
+        file,
+        marker.node,
+        `ディレクティブ "${marker.name}" の終端 "::" が見つかりません`,
+      );
     }
 
-    const innerNodes = transformChildren(nodes.slice(index + 1, closingIndex), file);
+    const innerNodes = transformChildren(normalizedNodes.slice(index + 1, closingIndex), file);
     const attrs = parseAttributes(marker.attrsSource, marker.node, file);
     result.push(toDirectiveNode(marker, innerNodes, attrs, file));
     index = closingIndex + 1;
