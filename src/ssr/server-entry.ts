@@ -15,6 +15,10 @@ import '../components/tag/tag-page.js';
 import '../components/ui/article-header/article-header.js';
 import '../components/layout/layout-sidebar.js';
 import '../components/layout/layout-toc.js';
+import '../components/ui/callout/callout.js';
+import '../components/ui/checkbox/checkbox.js';
+import '../components/ui/code-group/code-group.js';
+import '../components/ui/code-preview/code-preview.js';
 import {
   DOCUMENT_CSS as TABLE_DOCUMENT_CSS,
   DOCUMENT_STYLE_ID as TABLE_DOCUMENT_STYLE_ID,
@@ -26,6 +30,15 @@ import {
 } from '../components/ui/codeblock/codeblock.js';
 import '../components/ui/codeblock/codeblock.js';
 import '../components/ui/blockquote/blockquote.js';
+import '../components/ui/details/details.js';
+import '../components/ui/divider/divider.js';
+import '../components/ui/footnote/footnote.js';
+import '../components/ui/image/image.js';
+import '../components/ui/info-box/info-box.js';
+import '../components/ui/score/score.js';
+import '../components/ui/highlight/highlight.js';
+import '../components/ui/tabs/tabs.js';
+import '../components/ui/translation/translation.js';
 import { FOOTER_DOCUMENT_CSS, FOOTER_DOCUMENT_STYLE_ID } from '../components/ui/footer/footer.js';
 import {
   SSR_TARGET_TAGS,
