@@ -89,11 +89,11 @@ test.describe('Sidebar Selected Item Scroll', () => {
             : undefined;
 
         recorded.push({
-          dataId: element?.dataset.id ?? null,
+          dataId: element?.dataset['id'] ?? null,
           block: options?.block ?? null,
         });
 
-        original(this, arg);
+        original.call(this, arg);
       };
     });
 

@@ -1692,10 +1692,11 @@ export const AutoScrollWithNearest: Story = {
 			block: 'nearest',
 			inline: 'nearest',
 		};
+		const opts = receivedOptions as ScrollIntoViewOptions | null;
 		if (
-			receivedOptions?.behavior !== expectedOptions.behavior ||
-			receivedOptions?.block !== expectedOptions.block ||
-			receivedOptions?.inline !== expectedOptions.inline
+			opts?.behavior !== expectedOptions.behavior ||
+			opts?.block !== expectedOptions.block ||
+			opts?.inline !== expectedOptions.inline
 		) {
 			throw new Error(
 				`scrollIntoView オプションが不正です: ${JSON.stringify(receivedOptions)} を受け取りました`,

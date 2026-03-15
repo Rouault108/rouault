@@ -26,7 +26,7 @@ describe('url-hash', () => {
     let capturedUrl = '';
     let capturedState: unknown = null;
 
-    history.pushState = ((data: unknown, unused: string, url?: string | URL | null) => {
+    history.pushState = ((data: unknown, _unused: string, url?: string | URL | null) => {
       capturedState = data;
       capturedUrl = typeof url === 'string' ? url : String(url ?? '');
     }) as typeof history.pushState;

@@ -65,7 +65,9 @@ const normalizeControls = (value: string): string => {
 const findOption = <T extends string>(
   options: readonly PreviewControlOption<T>[],
   value: T,
-): PreviewControlOption<T> => options.find((option) => option.value === value) ?? options[0];
+): PreviewControlOption<T> =>
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  options.find((option) => option.value === value) ?? options[0]!;
 
 /**
  * コードプレビューコンポーネント。
