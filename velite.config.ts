@@ -26,6 +26,7 @@ const notes = defineCollection({
       updated: s.isodate().optional(),
       genre: s.array(s.string()).optional(),
       cover: s.string().optional(),
+      source: s.string().optional(),
       license: s.string().optional(),
       licenseNote: s.string().optional(),
       status: s.enum(ARTICLE_STATUSES).optional(),

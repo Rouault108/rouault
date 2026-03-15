@@ -20,6 +20,7 @@ interface NoteData extends SidebarSourceNote {
   date?: string;
   updated?: string;
   genre?: string[];
+  source?: string;
   license?: string;
   licenseNote?: string;
   sidebarRoot?: string;
@@ -121,6 +122,9 @@ export class NoteLayout {
       ? ` updated="${escapeAttr(note.updated)}"`
       : '';
     const status = note?.status ? ` status="${escapeAttr(note.status)}"` : '';
+    const source = note?.source
+      ? ` source="${escapeAttr(note.source)}"`
+      : '';
     const license = note?.license
       ? ` license="${escapeAttr(note.license)}"`
       : '';
@@ -178,7 +182,7 @@ export class NoteLayout {
             ${pagefindTokenizedDescription.length > 0 ? `<span data-pagefind-weight="3">${pagefindTokenizedDescription}</span>` : ''}
           </div>
           <ui-article-header
-            heading="${heading}"${published}${updated}${status}${license}
+            heading="${heading}"${published}${updated}${status}${source}${license}
             tags-json="${tagsJson}"
           ></ui-article-header>
           <div class="prose">
