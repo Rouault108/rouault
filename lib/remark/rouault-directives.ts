@@ -660,13 +660,8 @@ const applyImageAttributes = (
   file?: VFileLike,
 ): Record<string, unknown> => {
   const result: Record<string, unknown> = {};
-  const allowedKeys = new Set(['caption', 'loading', 'width', 'height', 'zoomable']);
+  const allowedKeys = new Set(['loading', 'width', 'height', 'zoomable']);
   assertAllowedAttributes(attrs, allowedKeys, node, file, 'image');
-
-  const caption = pickOptional(attrs['caption']);
-  if (caption) {
-    result['caption'] = caption;
-  }
 
   const loading = pickOptional(attrs['loading'])?.toLowerCase();
   if (loading) {

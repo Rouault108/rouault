@@ -342,8 +342,7 @@ const toUiImage = (node: HastNode): void => {
     hostProperties['alt'] = '';
   }
 
-  const caption =
-    pickOptionalString(originalProperties['caption']) ?? pickOptionalString(originalProperties['title']);
+  const caption = pickOptionalString(originalProperties['title']);
   if (caption) {
     hostProperties['caption'] = caption;
   }

@@ -133,12 +133,12 @@ tags: [router, design]
 他のオプションは以下
 
 ```markdown
-![画像の代替テキスト](/assets/images/example.jpg){caption="別キャプション" loading="eager" width="1200" height="800"}
+![画像の代替テキスト](/assets/images/example.jpg "キャプション"){loading="eager" width="1200" height="800"}
 ```
 
 補足:
 
-- `caption` は Markdown のタイトル文字列より優先される
+- キャプションは標準 Markdown と同じく `()` 内のタイトル文字列に書く
 - `loading` は `lazy` または `eager`
 - `width` / `height` は 1 以上の整数
 - `zoomable` の既定値は `true`

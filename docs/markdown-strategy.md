@@ -79,7 +79,7 @@ remark 層では「著者入力の制約付けと独自構文の展開」を行�
 
 内蔵 shortcodes は `smile`, `grin`, `joy`, `thinking`, `sparkles`, `warning`, `fire`, `heart`, `check`, `x`, `memo`, `book`, `music`, `bulb`。
 
-また、標準画像記法の直後に置かれた属性ブロック `![alt](src){...}` を検出し、対応する `img` の `data.hProperties` に転写する。現在サポートするのは `caption` / `loading` / `width` / `height` / `zoomable` である。
+また、標準画像記法の直後に置かれた属性ブロック `![alt](src "caption"){...}` を検出し、対応する `img` の `data.hProperties` に転写する。現在サポートするのは `loading` / `width` / `height` / `zoomable` であり、キャプションは標準 Markdown の title 文字列を使う。
 
 ### 4. バリデーション方針
 

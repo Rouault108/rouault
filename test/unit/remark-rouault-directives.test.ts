@@ -432,7 +432,7 @@ describe('remarkRouaultDirectives', () => {
             },
             {
               type: 'text',
-              value: '{caption="上書きキャプション" loading="eager" width="1200" height="800" zoomable="false"}',
+              value: '{loading="eager" width="1200" height="800" zoomable="false"}',
             },
           ],
         },
@@ -445,7 +445,6 @@ describe('remarkRouaultDirectives', () => {
     const image = paragraph?.children?.[0];
     expect(paragraph?.children).to.have.length(1);
     expect(image?.type).to.equal('image');
-    expect(image?.data?.hProperties?.['caption']).to.equal('上書きキャプション');
     expect(image?.data?.hProperties?.['loading']).to.equal('eager');
     expect(image?.data?.hProperties?.['width']).to.equal(1200);
     expect(image?.data?.hProperties?.['height']).to.equal(800);
@@ -583,5 +582,34 @@ describe('remarkRouaultDirectives', () => {
     };
 
     expect(run).to.throw('[markdown] image の loading は lazy/eager のみ指定可能です');
+  });
+
+  it('画像属性で caption を指定した場合はエラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'image',
+              url: '/assets/images/sample.jpg',
+              alt: 'sample',
+              title: '標準キャプション',
+            },
+            {
+              type: 'text',
+              value: '{caption="独自キャプション"}',
+            },
+          ],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw('[markdown] image 属性 "caption" は未対応です');
   });
 });
