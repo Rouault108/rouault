@@ -28,6 +28,7 @@ const TAG_MODULE_LOADERS: Record<SsrTargetTag, ComponentModuleLoader> = {
   'ui-checkbox': () => import('../components/ui/checkbox/checkbox.js'),
   'ui-code-group': () => import('../components/ui/code-group/code-group.js'),
   'ui-code-preview': () => import('../components/ui/code-preview/code-preview.js'),
+  'ui-preview-sandbox': () => import('../components/ui/preview-sandbox/preview-sandbox.js'),
   'ui-table': () => import('../components/ui/table/table.js'),
   'ui-code-block': () => import('../components/ui/codeblock/codeblock.js'),
   'ui-blockquote': () => import('../components/ui/blockquote/blockquote.js'),

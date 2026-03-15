@@ -19,11 +19,13 @@ Rouault の Markdown 戦略は、現在次の 4 点を同時に満たすこと�
 4. `remark-rehype`（Velite 内部）
 5. `rehypeKatex`
 6. `rehypeHeadingIds`
-7. `rehypeRouaultComponents`
-8. `rehypeInlineCodeTranslateNo`
-9. `rehypeOrderedListContracts`
-10. `rehypeDisallowDangerousProps`
-11. `rehypeDisallowStaticMark`
+7. `rehypePreviewSandbox`
+8. `rehypeShikiCodeBlocks`
+9. `rehypeRouaultComponents`
+10. `rehypeInlineCodeTranslateNo`
+11. `rehypeOrderedListContracts`
+12. `rehypeDisallowDangerousProps`
+13. `rehypeDisallowStaticMark`
 
 remark 層では「著者入力の制約付けと独自構文の展開」を行い、rehype 層では「出力 DOM の正規化と安全性の最終検査」を行う。
 
@@ -42,6 +44,7 @@ remark 層では「著者入力の制約付けと独自構文の展開」を行�
 | `::callout`      | `ui-callout`        | `kind` / `variant` / `title` / `icon` / `heading-level` / `aria-label`                                                |
 | `::code-group`   | `ui-code-group`     | `aria-label`。内包 `code` のメタは `filename` / `label`                                                               |
 | `::code-preview` | `ui-code-preview`   | `label` / `controls` / `preview-padding` / `preview-align` / `preview-theme` / `preview-surface` / `preview-viewport` |
+| `::preview-sandbox` | `ui-preview-sandbox` | `title` / `allow-js` / `height`。`code-preview` 直下専用、内部は `preview-html/css/js` fenced code のみ |
 | `::details`      | `ui-details`        | `aria-label` 必須。`summary` / `open` / `variant` / `region`                                                          |
 | `::info-box`     | `ui-info-box`       | `heading` / `icon` / `heading-level` / `landmark` / `variant`                                                         |
 | `::score`        | `ui-score`          | `src` / `caption` / `label` / `description` / `aspect-ratio` / `loading` / `primary`                                  |
@@ -66,6 +69,8 @@ remark 層では「著者入力の制約付けと独自構文の展開」を行�
 - `code-preview.preview-theme` は `page|light|dark`
 - `code-preview.preview-surface` は `surface|canvas|muted`
 - `code-preview.preview-viewport` は `full|tablet|mobile`
+- `preview-sandbox.height` は正の整数
+- `preview-sandbox` 内の `code.lang` は `preview-html|preview-css|preview-js`
 - `translation.render-mode` は `popover|drawer|interlinear`
 
 ### 3. インライン記法を展開する
@@ -77,8 +82,8 @@ remark 層では「著者入力の制約付けと独自構文の展開」を行�
 | `:emoji[text]{aria-label="..."}` | `span` | `label` か `aria-label` があれば `role="img"` を付与 |
 | `:subscript[text]` / `~text~` | `sub` | 属性なし |
 | `:superscript[text]` / `^text^` | `sup` | 属性なし |
-| `:highlight[text]{origin="search"}` | `ui-search-highlight` | `origin` は `search|user`、`current` を許可 |
-| `==text==` | `ui-search-highlight` | 常に `origin="user"` |
+| `:highlight[text]{origin="search"}` | `ui-highlight` | `origin` は `search|user`、`current` を許可 |
+| `==text==` | `ui-highlight` | 常に `origin="user"` |
 | `:sparkles:` など | 絵文字文字列 | 内蔵 shortcodes のみ置換 |
 
 内蔵 shortcodes は `smile`, `grin`, `joy`, `thinking`, `sparkles`, `warning`, `fire`, `heart`, `check`, `x`, `memo`, `book`, `music`, `bulb`。
@@ -126,12 +131,21 @@ remark 段階では次を即時エラーにする。
 | `table`                       | `ui-table > table`                           | `caption` があればホストに `aria-label` を補完                                      |
 | `hr`                          | `ui-divider > hr`                            | 見た目と意味論を分離                                                                |
 | `li` + `input[type=checkbox]` | `ui-checkbox`                                | task list のラベルを抽出し、後続のネストリストは維持                                |
-| `mark`                        | `ui-search-highlight`                        | `origin` / `data-origin`、`current` / `data-current` / `aria-current` を吸収        |
+| `mark`                        | `ui-highlight`                               | `origin` / `data-origin`、`current` / `data-current` / `aria-current` を吸収        |
 | `img`                         | `ui-image`                                   | `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化      |
 | `figure(img + figcaption)`    | `ui-image`                                   | `figcaption` を `caption` に統合                                                    |
 | footnote 参照 / 定義          | `ui-footnote` + `section[role=doc-endnotes]` | 参照回数、backref、`user-content-` 接頭辞を正規化                                   |
 
 脚注については、最初の参照だけが本文ノードを内包し、2 回目以降の参照は `shared` と `ref-instance` だけを持つ軽量ノードになる。
+
+### 2.5. preview-sandbox source を inert payload へ展開する
+
+[`lib/rehype/preview-sandbox.ts`](/Users/ruo/Desktop/Programing/Rouault/lib/rehype/preview-sandbox.ts) は `ui-code-preview > ui-preview-sandbox` を検出し、内部の `preview-html` / `preview-css` / `preview-js` fenced code を次へ変換する。
+
+1. `template[data-preview-kind]` の inert payload
+2. 表示用の code area（1件なら単体 code block、複数なら `ui-code-group`）
+
+この変換は `rehypeShikiCodeBlocks` より前に実行し、後続の Shiki と `rehypeRouaultComponents` に通常の code block として流す。
 
 ### 3. インラインコードと順序付きリストの契約を付与する
 
@@ -165,8 +179,9 @@ remark 段階では次を即時エラーにする。
 ## 現在の制約
 
 1. `translation` は block children を保持しない。子要素から拾うのは 1 段落目と 2 段落目のプレーンテキスト相当で、最終的には `original` / `translated` 属性へ昇格したあと `children: []` になる。
-2. `tabs` と `code-preview` は slot 属性を付けるところまでで、`tab/panel` の個数整合や `preview/toolbar` の順序までは検証しない。
-3. ブロックディレクティブは paragraph テキストを自前解析しているため、micromark / `remark-directive` ベースの一般的な directive AST とは互換ではない。開始行と終端行は、独立した paragraph か、単一 text node に畳まれた 1 paragraph 内の独立行として存在する必要がある。
+2. `tabs` は slot 属性を付けるところまでで、`tab/panel` の個数整合までは検証しない。
+3. `code-preview` で `preview-sandbox` を使う場合、手書き `::preview` と手書き code area は禁止し、自動生成に固定する。
+4. ブロックディレクティブは paragraph テキストを自前解析しているため、micromark / `remark-directive` ベースの一般的な directive AST とは互換ではない。開始行と終端行は、独立した paragraph か、単一 text node に畳まれた 1 paragraph 内の独立行として存在する必要がある。
 
 ## テストで固定している範囲
 

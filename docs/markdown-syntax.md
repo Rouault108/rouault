@@ -279,6 +279,33 @@ const value = '1';
 - built-in controls は `controls` 指定時のみ表示
 - `preview-theme` / `preview-surface` / `preview-viewport` は controls 未指定でも静的指定として有効
 
+Sandbox preview を使う場合:
+
+````markdown
+::code-preview{label="ボタン例" controls="viewport"}
+::preview-sandbox{title="ボタンの sandbox" allow-js="true" height="160"}
+```preview-html filename="button.html"
+<button class="demo-button">押す</button>
+```
+```preview-css filename="button.css"
+.demo-button { padding: 0.75rem 1rem; }
+```
+```preview-js filename="button.js"
+document.querySelector('.demo-button')?.addEventListener('click', () => {
+  document.querySelector('.demo-button')?.toggleAttribute('data-active');
+});
+```
+::
+::
+````
+
+- `::preview-sandbox` は `::code-preview` の直下でのみ使用可能
+- `preview-html` は必須かつ 1 個のみ
+- `preview-css` / `preview-js` は任意で、それぞれ 1 個まで
+- `preview-js` を使う場合は `allow-js="true"` が必須
+- `preview-sandbox` 使用時は手書きの `::preview` / code block を併用しない
+- code area は sandbox source から自動生成される
+
 ### Details
 
 開閉可能な補足領域。

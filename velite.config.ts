@@ -7,6 +7,7 @@ import { rehypeDisallowStaticMark } from './lib/rehype/disallow-static-mark.js';
 import { rehypeHeadingIds } from './lib/rehype/rehype-heading-ids.js';
 import { rehypeInlineCodeTranslateNo } from './lib/rehype/inline-code-translate-no.js';
 import { rehypeOrderedListContracts } from './lib/rehype/ordered-list-contracts.js';
+import { rehypePreviewSandbox } from './lib/rehype/preview-sandbox.js';
 import { rehypeRouaultComponents } from './lib/rehype/rouault-components.js';
 import { rehypeShikiCodeBlocks } from './lib/rehype/shiki-code-blocks.js';
 import { remarkDisallowRawHtml } from './lib/remark/disallow-raw-html.js';
@@ -56,6 +57,7 @@ export default defineConfig({
     rehypePlugins: [
       rehypeKatex,
       rehypeHeadingIds,
+      rehypePreviewSandbox,
       rehypeShikiCodeBlocks,
       rehypeRouaultComponents,
       rehypeInlineCodeTranslateNo,

@@ -19,6 +19,7 @@ import '../components/ui/callout/callout.js';
 import '../components/ui/checkbox/checkbox.js';
 import '../components/ui/code-group/code-group.js';
 import '../components/ui/code-preview/code-preview.js';
+import '../components/ui/preview-sandbox/preview-sandbox.js';
 import {
   DOCUMENT_CSS as TABLE_DOCUMENT_CSS,
   DOCUMENT_STYLE_ID as TABLE_DOCUMENT_STYLE_ID,

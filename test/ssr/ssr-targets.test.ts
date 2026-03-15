@@ -7,6 +7,7 @@ const REQUIRED_NOTE_CONTENT_TAGS = [
   'ui-checkbox',
   'ui-code-group',
   'ui-code-preview',
+  'ui-preview-sandbox',
   'ui-table',
   'ui-code-block',
   'ui-blockquote',

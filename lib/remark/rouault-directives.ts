@@ -36,6 +36,7 @@ type DirectiveName =
   | 'callout'
   | 'code-group'
   | 'code-preview'
+  | 'preview-sandbox'
   | 'details'
   | 'info-box'
   | 'score'
@@ -65,6 +66,7 @@ const SUPPORTED_DIRECTIVES = new Set<DirectiveName>([
   'callout',
   'code-group',
   'code-preview',
+  'preview-sandbox',
   'details',
   'info-box',
   'score',
@@ -88,6 +90,7 @@ const PREVIEW_THEMES = new Set(['page', 'light', 'dark']);
 const PREVIEW_SURFACES = new Set(['surface', 'canvas', 'muted']);
 const PREVIEW_VIEWPORTS = new Set(['full', 'tablet', 'mobile']);
 const PREVIEW_CONTROL_VALUES = new Set(['theme', 'surface', 'viewport']);
+const PREVIEW_SANDBOX_LANGUAGES = new Set(['preview-html', 'preview-css', 'preview-js']);
 const TRANSLATION_RENDER_MODES = new Set(['popover', 'drawer', 'interlinear']);
 const HIGHLIGHT_ORIGINS = new Set(['search', 'user']);
 const CODE_BLOCK_INTENTS = new Set(['neutral', 'valid', 'invalid']);
@@ -946,6 +949,43 @@ const applyPreviewSlotAttributes = (
   return { slot: 'preview' };
 };
 
+const applyPreviewSandboxAttributes = (
+  attrs: Record<string, string>,
+  node: MdastNode,
+  file?: VFileLike,
+): Record<string, unknown> => {
+  const result: Record<string, unknown> = { slot: 'preview' };
+  const allowedKeys = new Set(['title', 'allow-js', 'height']);
+  assertAllowedAttributes(attrs, allowedKeys, node, file, 'preview-sandbox');
+
+  const title = pickOptional(attrs['title']);
+  if (title) {
+    result['title'] = title;
+  }
+
+  const allowJs = parseBooleanAttribute(
+    attrs['allow-js'],
+    node,
+    file,
+    'preview-sandbox',
+    'allow-js',
+  );
+  if (allowJs === true) {
+    result['allow-js'] = true;
+  }
+
+  const height = pickOptional(attrs['height']);
+  if (height) {
+    const parsedHeight = Number.parseInt(height, 10);
+    if (!Number.isFinite(parsedHeight) || parsedHeight <= 0) {
+      throw toError(file, node, 'preview-sandbox の height は正の整数のみ指定可能です');
+    }
+    result['height'] = String(parsedHeight);
+  }
+
+  return result;
+};
+
 const applyToolbarSlotAttributes = (
   attrs: Record<string, string>,
   node: MdastNode,
@@ -1296,6 +1336,16 @@ const toDirectiveNode = (
     };
   }
 
+  if (marker.name === 'preview-sandbox') {
+    data.hName = 'ui-preview-sandbox';
+    data.hProperties = applyPreviewSandboxAttributes(attrs, marker.node, file);
+    return {
+      type: 'rouaultDirectivePreviewSandbox',
+      data,
+      children,
+    };
+  }
+
   if (marker.name === 'details') {
     data.hName = 'ui-details';
     data.hProperties = applyDetailsAttributes(attrs, marker.node, file);
@@ -1397,6 +1447,110 @@ const toDirectiveNode = (
     data,
     children,
   };
+};
+
+const validatePreviewSandboxNode = (node: MdastNode, file?: VFileLike): void => {
+  const children = node.children ?? [];
+  let htmlCount = 0;
+  let cssCount = 0;
+  let jsCount = 0;
+
+  for (const child of children) {
+    if (child.type !== 'code') {
+      throw toError(file, child, 'preview-sandbox には fenced code block のみ配置できます');
+    }
+
+    const language = child.lang?.trim().toLowerCase() ?? '';
+    if (!PREVIEW_SANDBOX_LANGUAGES.has(language)) {
+      throw toError(
+        file,
+        child,
+        'preview-sandbox の code lang は preview-html/preview-css/preview-js のみ指定可能です',
+      );
+    }
+
+    if (language === 'preview-html') {
+      htmlCount += 1;
+    } else if (language === 'preview-css') {
+      cssCount += 1;
+    } else if (language === 'preview-js') {
+      jsCount += 1;
+    }
+  }
+
+  if (htmlCount === 0) {
+    throw toError(file, node, 'preview-sandbox には preview-html が必須です');
+  }
+  if (htmlCount > 1) {
+    throw toError(file, node, 'preview-sandbox の preview-html は 1 つだけ指定できます');
+  }
+  if (cssCount > 1) {
+    throw toError(file, node, 'preview-sandbox の preview-css は 1 つだけ指定できます');
+  }
+  if (jsCount > 1) {
+    throw toError(file, node, 'preview-sandbox の preview-js は 1 つだけ指定できます');
+  }
+
+  const allowJs = node.data?.hProperties?.['allow-js'] === true;
+  if (jsCount > 0 && !allowJs) {
+    throw toError(
+      file,
+      node,
+      'preview-js を使う場合、preview-sandbox の allow-js="true" が必要です',
+    );
+  }
+};
+
+const validateDirectiveTree = (
+  nodes: MdastNode[],
+  file?: VFileLike,
+  parentType: string | undefined = undefined,
+): void => {
+  for (const node of nodes) {
+    if (node.type === 'rouaultDirectivePreviewSandbox') {
+      if (parentType !== 'rouaultDirectiveCodePreview') {
+        throw toError(file, node, 'preview-sandbox は code-preview の直下でのみ使用できます');
+      }
+      validatePreviewSandboxNode(node, file);
+    }
+
+    if (node.type === 'rouaultDirectiveCodePreview') {
+      const children = node.children ?? [];
+      const sandboxChildren = children.filter(
+        (child) => child.type === 'rouaultDirectivePreviewSandbox',
+      );
+      const manualPreviewChildren = children.filter((child) => child.type === 'rouaultDirectivePreviewSlot');
+      const hasManualCodeArea = children.some(
+        (child) =>
+          child.type !== 'rouaultDirectivePreviewSandbox' &&
+          child.type !== 'rouaultDirectiveToolbarSlot',
+      );
+
+      if (sandboxChildren.length > 1) {
+        throw toError(file, node, 'code-preview 内の preview-sandbox は 1 つだけ指定できます');
+      }
+
+      if (sandboxChildren.length > 0 && manualPreviewChildren.length > 0) {
+        throw toError(
+          file,
+          node,
+          'preview-sandbox を使う code-preview では手書きの preview スロットを併用できません',
+        );
+      }
+
+      if (sandboxChildren.length > 0 && hasManualCodeArea) {
+        throw toError(
+          file,
+          node,
+          'preview-sandbox を使う code-preview では手書きの code area を併用できません',
+        );
+      }
+    }
+
+    if (Array.isArray(node.children) && node.children.length > 0) {
+      validateDirectiveTree(node.children, file, node.type);
+    }
+  }
 };
 
 const tryParseFoldedDirectiveParagraph = (node: MdastNode, file?: VFileLike): MdastNode | null => {
@@ -1595,6 +1749,7 @@ export function remarkRouaultDirectives() {
     }
 
     root.children = transformChildren(root.children, file);
+    validateDirectiveTree(root.children, file);
     normalizeCodeBlockMetaTree(root.children, file);
   };
 }
