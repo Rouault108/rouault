@@ -195,7 +195,7 @@ describe('rehypeRouaultComponents', () => {
     expect(checkbox?.properties?.['label']).to.equal('タスクA');
   });
 
-  it('mark を ui-search-highlight へ変換すること', () => {
+  it('mark を ui-highlight へ変換すること', () => {
     const tree: HastNode = {
       type: 'root',
       children: [
@@ -211,7 +211,7 @@ describe('rehypeRouaultComponents', () => {
     rehypeRouaultComponents()(tree);
 
     const highlight = tree.children?.[0];
-    expect(highlight?.tagName).to.equal('ui-search-highlight');
+    expect(highlight?.tagName).to.equal('ui-highlight');
     expect(highlight?.properties?.['origin']).to.equal('user');
     expect(highlight?.properties?.['current']).to.equal(true);
     expect(highlight?.children?.[0]?.value).to.equal('hit');

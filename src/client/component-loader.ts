@@ -36,6 +36,7 @@ const TAG_MODULE_LOADERS: Record<SsrTargetTag, ComponentModuleLoader> = {
   'ui-footnote': () => import('../components/ui/footnote/footnote.js'),
   'ui-image': () => import('../components/ui/image/image.js'),
   'ui-info-box': () => import('../components/ui/info-box/info-box.js'),
+  'ui-highlight': () => import('../components/ui/highlight/highlight.js'),
   'ui-score': () => import('../components/ui/score/score.js'),
   'ui-search-highlight': () => import('../components/ui/highlight/highlight.js'),
   'ui-tabs': () => import('../components/ui/tabs/tabs.js'),

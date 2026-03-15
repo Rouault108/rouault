@@ -2,8 +2,8 @@
 import { html } from 'lit';
 import './highlight';
 import type {
+  Highlight,
   HighlightOrigin,
-  SearchHighlight,
 } from './highlight';
 import {
   DOCUMENT_STYLE_ID,
@@ -12,18 +12,18 @@ import {
 
 const ORIGINS = ['search', 'user'] as const satisfies HighlightOrigin[];
 
-const getHost = (canvasElement: Element, id: string): SearchHighlight => {
-  const host = canvasElement.querySelector<SearchHighlight>(`#${id}`);
+const getHost = (canvasElement: Element, id: string): Highlight => {
+  const host = canvasElement.querySelector<Highlight>(`#${id}`);
   if (!host) {
     throw new Error(`#${id} が見つかりません`);
   }
   return host;
 };
 
-const getInnerMark = (host: SearchHighlight): HTMLElement => {
+const getInnerMark = (host: Highlight): HTMLElement => {
   const mark = host.querySelector<HTMLElement>(':scope > mark');
   if (!mark) {
-    throw new Error(`ui-search-highlight#${host.id} 直下の mark が見つかりません`);
+    throw new Error(`ui-highlight#${host.id} 直下の mark が見つかりません`);
   }
   return mark;
 };
@@ -95,9 +95,9 @@ const getInjectedStyleTag = (): HTMLStyleElement => {
   return styleTag;
 };
 
-const meta: Meta<SearchHighlight> = {
+const meta: Meta<Highlight> = {
   title: 'Components/Highlight',
-  component: 'ui-search-highlight',
+  component: 'ui-highlight',
   tags: ['autodocs'],
   parameters: {
     docs: {
@@ -106,7 +106,7 @@ const meta: Meta<SearchHighlight> = {
 ハイライトコンポーネントです。
 
 - 最終DOMはネイティブ \`mark\`
-- 適用スコープは \`.prose mark\` と \`ui-search-highlight > mark\` のみ
+- 適用スコープは \`.prose mark\` と \`ui-highlight > mark\` / \`ui-search-highlight > mark\`
 - 通常モードは塗りつぶしではなく、線状のハイライトを \`box-shadow\` で描画
 - \`origin\` は \`search\` / \`user\` を受け取り、\`data-origin\` へ反映
 - \`forced-colors\` / \`print\` では背景依存を避け、下線で非色シグナルを維持
@@ -144,11 +144,11 @@ const meta: Meta<SearchHighlight> = {
 };
 
 export default meta;
-type Story = StoryObj<SearchHighlight>;
+type Story = StoryObj<Highlight>;
 
 /**
  * 基本契約:
- * - `ui-search-highlight` は `mark` を出力する
+ * - `ui-highlight` は `mark` を出力する
  * - セマンティクスを壊す属性（role/tabindex）を付けない
  */
 export const Default: Story = {
@@ -158,12 +158,12 @@ export const Default: Story = {
     text: '検索キーワード',
   },
   render: (args) => html`
-    <ui-search-highlight
+    <ui-highlight
       id="default-highlight"
       origin="${args.origin}"
       ?current="${args.current}"
       text="${args.text}"
-    ></ui-search-highlight>
+    ></ui-highlight>
   `,
   play: async ({ canvasElement }) => {
     const host = getHost(canvasElement, 'default-highlight');
@@ -171,7 +171,7 @@ export const Default: Story = {
 
     const mark = getInnerMark(host);
     if (mark.tagName !== 'MARK') {
-      throw new Error('ui-search-highlight はネイティブ mark を出力する必要があります');
+      throw new Error('ui-highlight はネイティブ mark を出力する必要があります');
     }
 
     if (mark.textContent !== '検索キーワード') {
@@ -223,6 +223,46 @@ export const Default: Story = {
 };
 
 /**
+ * Markdown 由来の子テキスト:
+ * - `<ui-highlight>text</ui-highlight>` をそのまま描画できる
+ */
+export const SlottedTextFromMarkdown: Story = {
+  render: () => html`
+    <ui-highlight id="markdown-highlight" origin="user"
+      >Markdown ハイライト</ui-highlight
+    >
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'markdown-highlight');
+    await host.updateComplete;
+
+    const mark = getInnerMark(host);
+    const directMarks = host.querySelectorAll(':scope > mark');
+    const directTextNodes = Array.from(host.childNodes).filter((node) => node.nodeType === Node.TEXT_NODE);
+
+    if (directMarks.length !== 1) {
+      throw new Error(`mark は 1 つだけ描画される必要があります: actual=${String(directMarks.length)}`);
+    }
+
+    if (directTextNodes.length !== 0) {
+      throw new Error('初期の生テキストノードがホスト直下に残ってはいけません');
+    }
+
+    if (normalizeText(mark.textContent) !== 'Markdown ハイライト') {
+      throw new Error('Markdown 由来の子テキストを mark へ引き継げていません');
+    }
+
+    if (mark.getAttribute('data-origin') !== 'user') {
+      throw new Error('Markdown 由来の highlight でも origin を保持する必要があります');
+    }
+
+    if (mark.getAttribute('data-current') !== 'false') {
+      throw new Error('current 未指定時の data-current は false である必要があります');
+    }
+  },
+};
+
+/**
  * バリアント × 状態:
  * - origin: search / user
  * - state: current true / false
@@ -253,22 +293,22 @@ export const VariantStateMatrix: Story = {
     <div class="matrix">
       <div class="cell">
         <div class="label">search x passive</div>
-        <ui-search-highlight id="matrix-search-passive" origin="search" text="検索ヒット"></ui-search-highlight>
+        <ui-highlight id="matrix-search-passive" origin="search" text="検索ヒット"></ui-highlight>
       </div>
 
       <div class="cell">
         <div class="label">search x current</div>
-        <ui-search-highlight id="matrix-search-current" origin="search" current text="現在の検索ヒット"></ui-search-highlight>
+        <ui-highlight id="matrix-search-current" origin="search" current text="現在の検索ヒット"></ui-highlight>
       </div>
 
       <div class="cell">
         <div class="label">user x passive</div>
-        <ui-search-highlight id="matrix-user-passive" origin="user" text="手動ハイライト"></ui-search-highlight>
+        <ui-highlight id="matrix-user-passive" origin="user" text="手動ハイライト"></ui-highlight>
       </div>
 
       <div class="cell">
         <div class="label">user x current</div>
-        <ui-search-highlight id="matrix-user-current" origin="user" current text="現在の手動ハイライト"></ui-search-highlight>
+        <ui-highlight id="matrix-user-current" origin="user" current text="現在の手動ハイライト"></ui-highlight>
       </div>
     </div>
   `,
@@ -321,9 +361,9 @@ export const BoundaryConditions: Story = {
     </style>
 
     <div id="boundary-scope">
-      <ui-search-highlight id="boundary-invalid-origin" origin="invalid" text="不正origin"></ui-search-highlight>
+      <ui-highlight id="boundary-invalid-origin" origin="invalid" text="不正origin"></ui-highlight>
 
-      <ui-search-highlight id="boundary-empty-text"></ui-search-highlight>
+      <ui-highlight id="boundary-empty-text"></ui-highlight>
 
       <div class="prose">
         <p>prose scope: <mark id="boundary-prose-mark">本文ハイライト</mark></p>
@@ -366,7 +406,7 @@ export const BoundaryConditions: Story = {
     }
 
     if (!isNearlyEqual(toPx(emptyStyle.borderRadius), expectedRadius)) {
-      throw new Error('ui-search-highlight 内 mark にトークン由来の border-radius が適用されていません');
+      throw new Error('ui-highlight 内 mark にトークン由来の border-radius が適用されていません');
     }
 
     const plainRadiusMatches = isNearlyEqual(toPx(plainStyle.borderRadius), expectedRadius);
@@ -385,8 +425,8 @@ export const BoundaryConditions: Story = {
 export const MediaAndTokenContracts: Story = {
   render: () => html`
     <div style="display: grid; gap: 0.5rem;">
-      <ui-search-highlight id="contract-a" origin="search" text="A"></ui-search-highlight>
-      <ui-search-highlight id="contract-b" origin="user" current text="B"></ui-search-highlight>
+      <ui-highlight id="contract-a" origin="search" text="A"></ui-highlight>
+      <ui-highlight id="contract-b" origin="user" current text="B"></ui-highlight>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -495,7 +535,7 @@ export const DarkModeTokenAndContrastContract: Story = {
       <div class="prose">
         <p><mark id="dark-contract-light-prose">Light prose mark</mark></p>
       </div>
-      <ui-search-highlight id="dark-contract-light-component" origin="search" text="Light component mark"></ui-search-highlight>
+      <ui-highlight id="dark-contract-light-component" origin="search" text="Light component mark"></ui-highlight>
     </div>
 
     <div id="highlight-theme-dark" class="theme">
@@ -505,7 +545,7 @@ export const DarkModeTokenAndContrastContract: Story = {
       <div class="prose">
         <p><mark id="dark-contract-dark-prose">Dark prose mark</mark></p>
       </div>
-      <ui-search-highlight id="dark-contract-dark-component" origin="user" current text="Dark component mark"></ui-search-highlight>
+      <ui-highlight id="dark-contract-dark-component" origin="user" current text="Dark component mark"></ui-highlight>
     </div>
   `,
   play: async ({ canvasElement }) => {

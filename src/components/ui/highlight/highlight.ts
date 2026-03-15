@@ -12,9 +12,10 @@ const DOCUMENT_STYLE_ID = 'ui-highlight-document-styles';
 /**
  * ハイライトスタイルの適用スコープ。
  * - `.prose mark`
+ * - `<ui-highlight>` 内部の `mark`
  * - `<ui-search-highlight>` 内部の `mark`
  */
-const HIGHLIGHT_SCOPE_SELECTOR = ':where(.prose mark, ui-search-highlight > mark)';
+const HIGHLIGHT_SCOPE_SELECTOR = ':where(.prose mark, ui-highlight > mark, ui-search-highlight > mark)';
 
 const HIGHLIGHT_RULE_TEMPLATE = (scopeSelector: string): string => `
 ${scopeSelector} {
@@ -57,11 +58,10 @@ ${scopeSelector} {
 const DOCUMENT_CSS = HIGHLIGHT_RULE_TEMPLATE(HIGHLIGHT_SCOPE_SELECTOR);
 
 /**
- * 検索由来/ユーザー操作由来のハイライトを表現するコンポーネント。
+ * 本文中のハイライトを表現する基底コンポーネント。
  * 最終DOMはネイティブ `<mark>` を使用する。
  */
-@customElement('ui-search-highlight')
-export class SearchHighlight extends LitElement {
+class HighlightBase extends LitElement {
   @property({ type: String, reflect: true })
   origin: HighlightOrigin = 'search';
 
@@ -71,13 +71,51 @@ export class SearchHighlight extends LitElement {
   @property({ type: String })
   text = '';
 
+  private _fallbackText = '';
+  private _didAdoptInitialContent = false;
+
   override createRenderRoot(): this {
     return this;
   }
 
   override connectedCallback(): void {
+    if (!this._didAdoptInitialContent) {
+      if (this.text === '') {
+        // Markdown/SSR 由来の初期子ノードから表示テキストだけを吸収する。
+        this._fallbackText = this._extractInitialText();
+      }
+
+      // Light DOM 既存ノードを残すと、初回 render() 後に重複表示される。
+      this.replaceChildren();
+      this._didAdoptInitialContent = true;
+    }
+
     super.connectedCallback();
     this._injectDocumentStyles();
+  }
+
+  private _extractInitialText(): string {
+    const childNodes = Array.from(this.childNodes);
+
+    const directText = childNodes
+      .filter((node) => node.nodeType === Node.TEXT_NODE)
+      .map((node) => node.textContent ?? '')
+      .join('')
+      .trim();
+    if (directText !== '') {
+      return directText;
+    }
+
+    const directMarkText = childNodes
+      .filter((node): node is HTMLElement => node instanceof HTMLElement && node.tagName === 'MARK')
+      .map((node) => node.textContent)
+      .join('')
+      .trim();
+    if (directMarkText !== '') {
+      return directMarkText;
+    }
+
+    return this.textContent.trim();
   }
 
   private _injectDocumentStyles(): void {
@@ -95,7 +133,8 @@ export class SearchHighlight extends LitElement {
   }
 
   private get _resolvedText(): string | undefined {
-    return this.text === '' ? undefined : this.text;
+    const source = this.text === '' ? this._fallbackText : this.text;
+    return source === '' ? undefined : source;
   }
 
   override render() {
@@ -103,15 +142,22 @@ export class SearchHighlight extends LitElement {
       data-origin="${this._resolvedOrigin}"
       data-current="${String(this.current)}"
       aria-current="${ifDefined(this.current ? 'true' : undefined)}"
-      ><slot>${this._resolvedText}</slot></mark
+      >${this._resolvedText}</mark
     >`;
   }
 }
 
+@customElement('ui-highlight')
+export class Highlight extends HighlightBase {}
+
+@customElement('ui-search-highlight')
+export class SearchHighlight extends HighlightBase {}
+
 declare global {
   interface HTMLElementTagNameMap {
+    'ui-highlight': Highlight;
     'ui-search-highlight': SearchHighlight;
   }
 }
 
-export { DOCUMENT_STYLE_ID, HIGHLIGHT_SCOPE_SELECTOR, HIGHLIGHT_RULE_TEMPLATE };
+export { DOCUMENT_CSS, DOCUMENT_STYLE_ID, HIGHLIGHT_SCOPE_SELECTOR, HIGHLIGHT_RULE_TEMPLATE };

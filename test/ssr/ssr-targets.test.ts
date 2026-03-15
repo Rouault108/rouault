@@ -13,10 +13,10 @@ const REQUIRED_NOTE_CONTENT_TAGS = [
   'ui-details',
   'ui-divider',
   'ui-footnote',
+  'ui-highlight',
   'ui-image',
   'ui-info-box',
   'ui-score',
-  'ui-search-highlight',
   'ui-tabs',
   'ui-translation',
 ] as const;

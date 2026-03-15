@@ -298,7 +298,7 @@ const toUiTaskListItem = (node: HastNode): void => {
   ];
 };
 
-const toUiSearchHighlight = (node: HastNode): void => {
+const toUiHighlight = (node: HastNode): void => {
   if (!isElement(node, 'mark')) {
     return;
   }
@@ -320,7 +320,7 @@ const toUiSearchHighlight = (node: HastNode): void => {
     hostProperties['current'] = true;
   }
 
-  node.tagName = 'ui-search-highlight';
+  node.tagName = 'ui-highlight';
   node.properties = hostProperties;
 };
 
@@ -755,7 +755,7 @@ export function rehypeRouaultComponents() {
       }
 
       if (current.tagName === 'mark') {
-        toUiSearchHighlight(current);
+        toUiHighlight(current);
         return;
       }
 

@@ -36,6 +36,10 @@ import '../components/ui/footnote/footnote.js';
 import '../components/ui/image/image.js';
 import '../components/ui/info-box/info-box.js';
 import '../components/ui/score/score.js';
+import {
+  DOCUMENT_CSS as HIGHLIGHT_DOCUMENT_CSS,
+  DOCUMENT_STYLE_ID as HIGHLIGHT_DOCUMENT_STYLE_ID,
+} from '../components/ui/highlight/highlight.js';
 import '../components/ui/highlight/highlight.js';
 import '../components/ui/tabs/tabs.js';
 import '../components/ui/translation/translation.js';
@@ -73,6 +77,14 @@ const DOCUMENT_STYLE_DEFINITIONS: Partial<Record<SsrTargetTag, SsrDocumentStyleD
   'ui-code-block': {
     id: CODE_BLOCK_DOCUMENT_STYLE_ID,
     cssText: CODE_BLOCK_DOCUMENT_CSS,
+  },
+  'ui-highlight': {
+    id: HIGHLIGHT_DOCUMENT_STYLE_ID,
+    cssText: HIGHLIGHT_DOCUMENT_CSS,
+  },
+  'ui-search-highlight': {
+    id: HIGHLIGHT_DOCUMENT_STYLE_ID,
+    cssText: HIGHLIGHT_DOCUMENT_CSS,
   },
 };
 
