@@ -79,8 +79,6 @@ export class CodeGroup extends LitElement {
       align-items: stretch;
       background: var(--bg-default, oklch(1 0 0));
       overflow-x: auto;
-      /* visible は overflow-x: auto によって auto に強制計算されるため clip に変更。
-         clip はスクロールコンテナを生成しないため縦スクロールバーが出ない */
       overflow-y: clip;
       /* 選択タブの margin-bottom: -1px によるオーバーフロー（1px）と
          フォーカスリング（outline-offset + outline-width = デフォルト 4px）を
@@ -184,37 +182,6 @@ export class CodeGroup extends LitElement {
     :host([data-ready]:focus-within) .header-tools ui-copy-button {
       transition-duration: var(--duration-instant, 0ms);
     }
-
-    @media (hover: none) and (pointer: coarse) {
-      .tab-list {
-        padding-block: calc(var(--focus-ring-offset, 2px) + var(--focus-ring-width, 2px));
-        /* モバイルではスクロールバーの代わりに純CSSのシャドウでスクロール可能性を示す */
-        background:
-          linear-gradient(
-              to right,
-              var(--bg-fill-muted, oklch(96% 0 0)) 30%,
-              transparent 100%
-            )
-            0 0 / 24px 100% no-repeat local,
-          linear-gradient(
-              to left,
-              var(--bg-fill-muted, oklch(96% 0 0)) 30%,
-              transparent 100%
-            )
-            100% 0 / 24px 100% no-repeat local,
-          radial-gradient(
-              farthest-side at 0 50%,
-              oklch(32% 0.03 250 / 0.2),
-              transparent
-            )
-            0 0 / 12px 100% no-repeat scroll,
-          radial-gradient(
-              farthest-side at 100% 50%,
-              oklch(32% 0.03 250 / 0.2),
-              transparent
-            )
-            100% 0 / 12px 100% no-repeat scroll;
-      }
 
       ::slotted([slot='tab']) {
         min-height: var(--control-min-touch, 24px);
