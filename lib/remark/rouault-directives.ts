@@ -8,6 +8,9 @@ interface MdastNode {
   value?: string;
   lang?: string;
   meta?: string;
+  url?: string;
+  title?: string | null;
+  alt?: string | null;
   children?: MdastNode[];
   data?: MdastNodeData;
   position?: {
@@ -193,6 +196,28 @@ const parseAttributes = (
   }
 
   return result;
+};
+
+const extractLeadingAttributeBlock = (
+  source: string,
+  node: MdastNode,
+  file: VFileLike | undefined,
+  contextName: string,
+): { attrsSource: string; rest: string } | null => {
+  const leadingWhitespaceMatched = /^\s*/.exec(source);
+  const offset = leadingWhitespaceMatched?.[0].length ?? 0;
+  if (source[offset] !== '{') {
+    return null;
+  }
+
+  const closingIndex = source.indexOf('}', offset + 1);
+  if (closingIndex < 0) {
+    throw toError(file, node, `${contextName}属性の構文が不正です "${source}"`);
+  }
+
+  const attrsSource = source.slice(offset + 1, closingIndex);
+  const rest = source.slice(closingIndex + 1);
+  return { attrsSource, rest };
 };
 
 const pickOptional = (value: string | undefined): string | undefined => {
@@ -628,6 +653,23 @@ const applyScoreAttributes = (
   return result;
 };
 
+const applyImageAttributes = (
+  attrs: Record<string, string>,
+  node: MdastNode,
+  file?: VFileLike,
+): Record<string, unknown> => {
+  const result: Record<string, unknown> = {};
+  const allowedKeys = new Set(['zoomable']);
+  assertAllowedAttributes(attrs, allowedKeys, node, file, 'image');
+
+  const zoomable = parseBooleanAttribute(attrs['zoomable'], node, file, 'image', 'zoomable');
+  if (typeof zoomable === 'boolean') {
+    result['zoomable'] = zoomable;
+  }
+
+  return result;
+};
+
 const applyTabsAttributes = (
   attrs: Record<string, string>,
   node: MdastNode,
@@ -950,6 +992,51 @@ const transformInlineTextNode = (node: MdastNode, file?: VFileLike): MdastNode[]
   return parseInlineText(node.value, node, file);
 };
 
+const mergeNodeHProperties = (node: MdastNode, properties: Record<string, unknown>): void => {
+  if (Object.keys(properties).length === 0) {
+    return;
+  }
+
+  const nextData: MdastNodeData = { ...(node.data ?? {}) };
+  nextData.hProperties = {
+    ...(nextData.hProperties ?? {}),
+    ...properties,
+  };
+  node.data = nextData;
+};
+
+const normalizeImageAttributeBlocks = (
+  nodes: MdastNode[],
+  file?: VFileLike,
+): MdastNode[] => {
+  const result = [...nodes];
+
+  for (let index = 0; index < result.length; index += 1) {
+    const current = result[index];
+    const next = result[index + 1];
+    if (current?.type !== 'image' || next?.type !== 'text' || typeof next.value !== 'string') {
+      continue;
+    }
+
+    const extracted = extractLeadingAttributeBlock(next.value, next, file, '画像');
+    if (!extracted) {
+      continue;
+    }
+
+    const attrs = parseAttributes(extracted.attrsSource, next, file);
+    mergeNodeHProperties(current, applyImageAttributes(attrs, next, file));
+
+    if (extracted.rest.trim().length === 0) {
+      result.splice(index + 1, 1);
+      continue;
+    }
+
+    next.value = extracted.rest;
+  }
+
+  return result;
+};
+
 const toDirectiveNode = (
   marker: DirectiveMarker,
   children: MdastNode[],
@@ -1159,6 +1246,7 @@ const transformChildren = (
     if (!marker) {
       if (Array.isArray(current.children)) {
         current.children = transformChildren(current.children, file);
+        current.children = normalizeImageAttributeBlocks(current.children, file);
       }
       result.push(...transformInlineTextNode(current, file));
       index += 1;

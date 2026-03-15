@@ -229,6 +229,7 @@ describe('rehypeRouaultComponents', () => {
             alt: 'sample',
             title: 'タイトル',
             loading: 'eager',
+            zoomable: 'false',
             width: '800',
             height: 600,
           },
@@ -260,6 +261,7 @@ describe('rehypeRouaultComponents', () => {
     const second = tree.children?.[1];
     expect(first?.tagName).to.equal('ui-image');
     expect(first?.properties?.['caption']).to.equal('タイトル');
+    expect(first?.properties?.['zoomable']).to.equal(false);
     expect(first?.properties?.['width']).to.equal(800);
     expect(first?.properties?.['height']).to.equal(600);
     expect(second?.tagName).to.equal('ui-image');

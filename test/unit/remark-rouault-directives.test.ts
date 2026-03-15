@@ -6,6 +6,9 @@ interface MdastNode {
   value?: string;
   lang?: string;
   meta?: string;
+  url?: string;
+  title?: string | null;
+  alt?: string | null;
   children?: MdastNode[];
   data?: {
     hName?: string;
@@ -414,6 +417,37 @@ describe('remarkRouaultDirectives', () => {
     expect(translation?.data?.hProperties?.['translated']).to.equal('我思う、ゆえに我あり。');
   });
 
+  it('画像直後の属性ブロックから zoomable を img 属性へ変換すること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'image',
+              url: '/assets/images/sample.jpg',
+              alt: 'sample',
+              title: 'キャプション',
+            },
+            {
+              type: 'text',
+              value: '{zoomable="false"}',
+            },
+          ],
+        },
+      ],
+    };
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    const paragraph = tree.children?.[0];
+    const image = paragraph?.children?.[0];
+    expect(paragraph?.children).to.have.length(1);
+    expect(image?.type).to.equal('image');
+    expect(image?.data?.hProperties?.['zoomable']).to.equal(false);
+  });
+
   it('emoji/subscript/superscript/highlight のインライン記法を変換すること', () => {
     const tree: MdastNode = {
       type: 'root',
@@ -489,5 +523,33 @@ describe('remarkRouaultDirectives', () => {
     };
 
     expect(run).to.throw('[markdown] ディレクティブ "callout" の終端 "::" が見つかりません');
+  });
+
+  it('画像属性の zoomable に不正な値が来た場合はエラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'image',
+              url: '/assets/images/sample.jpg',
+              alt: 'sample',
+            },
+            {
+              type: 'text',
+              value: '{zoomable="maybe"}',
+            },
+          ],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw('[markdown] image の zoomable は true/false で指定してください');
   });
 });

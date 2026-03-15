@@ -298,7 +298,7 @@ export const VariantStateMatrix: Story = {
         src="${SECOND_IMAGE_SRC}"
         alt="Static with caption"
         caption="static + caption"
-        .zoomable=${false}
+        zoomable="false"
         width="1600"
         height="900"
       ></ui-image>

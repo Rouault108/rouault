@@ -6,6 +6,18 @@ import '../../../lib/icons';
 export type ImageLoading = 'lazy' | 'eager';
 
 const VALID_LOADING = new Set<ImageLoading>(['lazy', 'eager']);
+const FALSE_BOOLEAN_ATTRIBUTE_VALUES = new Set(['false', '0', 'off', 'no']);
+
+const zoomableAttributeConverter = {
+  fromAttribute: (value: string | null): boolean => {
+    if (value === null) {
+      return true;
+    }
+
+    return !FALSE_BOOLEAN_ATTRIBUTE_VALUES.has(value.trim().toLowerCase());
+  },
+  toAttribute: (value: boolean): string | null => (value ? '' : 'false'),
+};
 
 let imageUid = 0;
 
@@ -242,7 +254,7 @@ export class UiImage extends LitElement {
   @property({ type: String })
   caption = '';
 
-  @property({ type: Boolean, reflect: true })
+  @property({ reflect: true, converter: zoomableAttributeConverter })
   zoomable = true;
 
   @property({ type: Number })

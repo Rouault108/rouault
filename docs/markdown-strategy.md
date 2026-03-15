@@ -1,4 +1,4 @@
-# Markdown 変換戦略（実装ベース / 2026-03-09）
+# Markdown 変換戦略（実装ベース / 2026-03-15）
 
 ## 目的
 
@@ -79,6 +79,8 @@ remark 層では「著者入力の制約付けと独自構文の展開」を行�
 
 内蔵 shortcodes は `smile`, `grin`, `joy`, `thinking`, `sparkles`, `warning`, `fire`, `heart`, `check`, `x`, `memo`, `book`, `music`, `bulb`。
 
+また、標準画像記法の直後に置かれた属性ブロック `![alt](src){zoomable="false"}` を検出し、対応する `img` の `data.hProperties.zoomable` に転写する。
+
 ### 4. バリデーション方針
 
 remark 段階では次を即時エラーにする。
@@ -121,7 +123,7 @@ remark 段階では次を即時エラーにする。
 | `hr` | `ui-divider > hr` | 見た目と意味論を分離 |
 | `li` + `input[type=checkbox]` | `ui-checkbox` | task list のラベルを抽出し、後続のネストリストは維持 |
 | `mark` | `ui-search-highlight` | `origin` / `data-origin`、`current` / `data-current` / `aria-current` を吸収 |
-| `img` | `ui-image` | `src` / `alt` / `title` / `loading` / `width` / `height` を正規化 |
+| `img` | `ui-image` | `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化 |
 | `figure(img + figcaption)` | `ui-image` | `figcaption` を `caption` に統合 |
 | footnote 参照 / 定義 | `ui-footnote` + `section[role=doc-endnotes]` | 参照回数、backref、`user-content-` 接頭辞を正規化 |
 
