@@ -130,11 +130,19 @@ tags: [router, design]
 ![画像の代替テキスト](/assets/images/example.jpg "キャプション"){zoomable="false"}
 ```
 
+他のオプションは以下
+
+```markdown
+![画像の代替テキスト](/assets/images/example.jpg){caption="別キャプション" loading="eager" width="1200" height="800"}
+```
+
 補足:
 
-- 現在サポートしている画像属性は `zoomable` のみ
-- 既定値は `true`
-- 値は `true` / `false` で書く
+- `caption` は Markdown のタイトル文字列より優先される
+- `loading` は `lazy` または `eager`
+- `width` / `height` は 1 以上の整数
+- `zoomable` の既定値は `true`
+- 真偽値は `true` / `false` で書く
 
 ### リスト
 

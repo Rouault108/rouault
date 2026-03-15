@@ -73,6 +73,7 @@ const CALLOUT_VARIANTS = new Set(['note', 'tip', 'success', 'warning', 'danger']
 const DETAILS_VARIANTS = new Set(['default', 'bordered']);
 const INFO_BOX_VARIANTS = new Set(['default', 'filled']);
 const SCORE_LOADING_MODES = new Set(['lazy', 'eager']);
+const IMAGE_LOADING_MODES = new Set(['lazy', 'eager']);
 const TABS_ORIENTATIONS = new Set(['horizontal', 'vertical']);
 const PREVIEW_PADDING_MODES = new Set(['normal', 'compact', 'none']);
 const PREVIEW_ALIGN_MODES = new Set(['center', 'start', 'stretch']);
@@ -659,8 +660,31 @@ const applyImageAttributes = (
   file?: VFileLike,
 ): Record<string, unknown> => {
   const result: Record<string, unknown> = {};
-  const allowedKeys = new Set(['zoomable']);
+  const allowedKeys = new Set(['caption', 'loading', 'width', 'height', 'zoomable']);
   assertAllowedAttributes(attrs, allowedKeys, node, file, 'image');
+
+  const caption = pickOptional(attrs['caption']);
+  if (caption) {
+    result['caption'] = caption;
+  }
+
+  const loading = pickOptional(attrs['loading'])?.toLowerCase();
+  if (loading) {
+    if (!IMAGE_LOADING_MODES.has(loading)) {
+      throw toError(file, node, 'image の loading は lazy/eager のみ指定可能です');
+    }
+    result['loading'] = loading;
+  }
+
+  const width = parseIntegerMin(attrs['width'], node, file, 'image', 'width', 1);
+  if (typeof width === 'number') {
+    result['width'] = width;
+  }
+
+  const height = parseIntegerMin(attrs['height'], node, file, 'image', 'height', 1);
+  if (typeof height === 'number') {
+    result['height'] = height;
+  }
 
   const zoomable = parseBooleanAttribute(attrs['zoomable'], node, file, 'image', 'zoomable');
   if (typeof zoomable === 'boolean') {

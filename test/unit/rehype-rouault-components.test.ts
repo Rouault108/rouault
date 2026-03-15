@@ -228,6 +228,7 @@ describe('rehypeRouaultComponents', () => {
             src: '/assets/images/sample.jpg',
             alt: 'sample',
             title: 'タイトル',
+            caption: '上書きキャプション',
             loading: 'eager',
             zoomable: 'false',
             width: '800',
@@ -260,7 +261,7 @@ describe('rehypeRouaultComponents', () => {
     const first = tree.children?.[0];
     const second = tree.children?.[1];
     expect(first?.tagName).to.equal('ui-image');
-    expect(first?.properties?.['caption']).to.equal('タイトル');
+    expect(first?.properties?.['caption']).to.equal('上書きキャプション');
     expect(first?.properties?.['zoomable']).to.equal(false);
     expect(first?.properties?.['width']).to.equal(800);
     expect(first?.properties?.['height']).to.equal(600);

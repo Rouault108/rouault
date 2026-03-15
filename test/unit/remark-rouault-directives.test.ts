@@ -417,7 +417,7 @@ describe('remarkRouaultDirectives', () => {
     expect(translation?.data?.hProperties?.['translated']).to.equal('我思う、ゆえに我あり。');
   });
 
-  it('画像直後の属性ブロックから zoomable を img 属性へ変換すること', () => {
+  it('画像直後の属性ブロックから image オプションを img 属性へ変換すること', () => {
     const tree: MdastNode = {
       type: 'root',
       children: [
@@ -432,7 +432,7 @@ describe('remarkRouaultDirectives', () => {
             },
             {
               type: 'text',
-              value: '{zoomable="false"}',
+              value: '{caption="上書きキャプション" loading="eager" width="1200" height="800" zoomable="false"}',
             },
           ],
         },
@@ -445,6 +445,10 @@ describe('remarkRouaultDirectives', () => {
     const image = paragraph?.children?.[0];
     expect(paragraph?.children).to.have.length(1);
     expect(image?.type).to.equal('image');
+    expect(image?.data?.hProperties?.['caption']).to.equal('上書きキャプション');
+    expect(image?.data?.hProperties?.['loading']).to.equal('eager');
+    expect(image?.data?.hProperties?.['width']).to.equal(1200);
+    expect(image?.data?.hProperties?.['height']).to.equal(800);
     expect(image?.data?.hProperties?.['zoomable']).to.equal(false);
   });
 
@@ -551,5 +555,33 @@ describe('remarkRouaultDirectives', () => {
     };
 
     expect(run).to.throw('[markdown] image の zoomable は true/false で指定してください');
+  });
+
+  it('画像属性の loading に不正な値が来た場合はエラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'image',
+              url: '/assets/images/sample.jpg',
+              alt: 'sample',
+            },
+            {
+              type: 'text',
+              value: '{loading="auto"}',
+            },
+          ],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw('[markdown] image の loading は lazy/eager のみ指定可能です');
   });
 });
