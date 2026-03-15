@@ -37,6 +37,12 @@ const getPreviewArea = (preview: CodePreview): HTMLElement => {
   return area;
 };
 
+const getPreviewFrame = (preview: CodePreview): HTMLElement => {
+  const frame = preview.shadowRoot?.querySelector<HTMLElement>('.preview-frame');
+  if (!frame) throw new Error('.preview-frame が見つかりません');
+  return frame;
+};
+
 const getHeaderLabel = (preview: CodePreview): HTMLElement => {
   const label = preview.shadowRoot?.querySelector<HTMLElement>('.header-label');
   if (!label) throw new Error('.header-label が見つかりません');
@@ -47,6 +53,35 @@ const getToolbarSlot = (preview: CodePreview): HTMLSlotElement => {
   const toolbarSlot = preview.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="toolbar"]');
   if (!toolbarSlot) throw new Error('toolbar slot が見つかりません');
   return toolbarSlot;
+};
+
+const getBuiltInDropdown = (
+  preview: CodePreview,
+  control: 'theme' | 'surface' | 'viewport',
+): HTMLElement => {
+  const dropdown = preview.shadowRoot?.querySelector<HTMLElement>(
+    `ui-dropdown[data-control="${control}"]`,
+  );
+  if (!dropdown) throw new Error(`ui-dropdown[data-control="${control}"] が見つかりません`);
+  return dropdown;
+};
+
+const clickDropdownTrigger = async (dropdown: HTMLElement): Promise<void> => {
+  const trigger = dropdown.querySelector<HTMLElement>('ui-button[slot="trigger"]');
+  if (!trigger) throw new Error('dropdown trigger が見つかりません');
+  const button = trigger.shadowRoot?.querySelector<HTMLButtonElement>('button');
+  if (!button) throw new Error('dropdown trigger 内の button が見つかりません');
+  button.click();
+  await waitFrame();
+};
+
+const clickDropdownItem = async (dropdown: HTMLElement, value: string): Promise<void> => {
+  const item = dropdown.querySelector<HTMLElement>(`ui-menu-item[value="${value}"]`);
+  if (!item) throw new Error(`ui-menu-item[value="${value}"] が見つかりません`);
+  const button = item.shadowRoot?.querySelector<HTMLButtonElement>('button');
+  if (!button) throw new Error('ui-menu-item 内の button が見つかりません');
+  button.click();
+  await waitFrame();
 };
 
 const readCssText = (styles: unknown): string => {
@@ -74,7 +109,8 @@ const meta: Meta<CodePreview> = {
 - ビジュアル階層（Sunken Method）：プレビュー領域 Surface vs コード領域 Valley
 - Breakout パターンが \`ui-syntax-card\` / \`ui-code-block\` と同一であること
 - 子コンポーネントの breakout 無効化（CSS 変数伝播）
-- ヘッダー表示条件：\`label\` 非空 OR \`toolbar\` スロットに有効ノードが存在
+- ヘッダー表示条件：\`label\` 非空 OR built-in controls 有効 OR \`toolbar\` スロットに有効ノードが存在
+- built-in showcase controls（theme / surface / viewport）
 - \`preview-padding\` の3値（normal/compact/none）の余白制御
 - \`preview-align\` の3値（center/start/stretch）の配置制御
 - A11y：ルートに \`role="group"\` と日本語 \`aria-label\`（フォールバック含む）
@@ -126,7 +162,9 @@ export const BasicWithCodeBlock: Story = {
       throw new Error('ルートに role="group" が設定されていません');
     }
     if (root.getAttribute('aria-label') !== 'コード プレビュー') {
-      throw new Error(`フォールバック aria-label が不正です: "${root.getAttribute('aria-label') ?? ''}"`);
+      throw new Error(
+        `フォールバック aria-label が不正です: "${root.getAttribute('aria-label') ?? ''}"`,
+      );
     }
 
     // プレビュー領域が存在することをスローで保証（getPreviewArea は見つからなければ throw）
@@ -141,9 +179,7 @@ export const BasicWithCodeBlock: Story = {
     }
 
     // デフォルトスロット（コードエリア）に内容がスロットされている
-    const defaultSlot = preview.shadowRoot?.querySelector<HTMLSlotElement>(
-      'slot:not([name])',
-    );
+    const defaultSlot = preview.shadowRoot?.querySelector<HTMLSlotElement>('slot:not([name])');
     if (!defaultSlot) throw new Error('default slot が見つかりません');
     const defaultSlotted = defaultSlot.assignedElements({ flatten: true });
     if (defaultSlotted.length === 0) {
@@ -241,7 +277,9 @@ export const HeaderWithLabelOnly: Story = {
     // aria-label はラベル値を使用
     const root = getRoot(preview);
     if (root.getAttribute('aria-label') !== 'ボタンの使用例') {
-      throw new Error(`label 設定時の aria-label が不正です: "${root.getAttribute('aria-label') ?? ''}"`);
+      throw new Error(
+        `label 設定時の aria-label が不正です: "${root.getAttribute('aria-label') ?? ''}"`,
+      );
     }
   },
 };
@@ -370,6 +408,213 @@ export const HeaderWithLabelAndToolbar: Story = {
     if (!toolbarSlot) throw new Error('toolbar slot が見つかりません');
     if (toolbarSlot.assignedElements({ flatten: true }).length === 0) {
       throw new Error('toolbar スロットに要素がスロットされていません');
+    }
+  },
+};
+
+/**
+ * built-in controls のみ設定。ラベルなしでもヘッダーが表示されます。
+ * Markdown 公開文法向けの opt-in controls 境界を検証します。
+ */
+export const HeaderWithBuiltInControlsOnly: Story = {
+  render: () => html`
+    <div style="padding: 2rem; max-width: 900px;">
+      <ui-code-preview
+        id="builtins-only-preview"
+        controls="theme surface viewport"
+        style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
+      >
+        <div slot="preview">
+          <ui-button>クリック</ui-button>
+        </div>
+        <ui-code-block filename="button.ts" lang="ts">
+          <pre><code>// &lt;ui-button&gt;クリック&lt;/ui-button&gt;</code></pre>
+        </ui-code-block>
+      </ui-code-preview>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const preview = getPreview(canvasElement, 'builtins-only-preview');
+    await preview.updateComplete;
+    await waitFrame();
+
+    if (!preview.hasAttribute('data-show-header')) {
+      throw new Error('built-in controls 設定時に data-show-header が付与されていません');
+    }
+    if (preview.hasAttribute('data-has-label')) {
+      throw new Error('label 未設定時に data-has-label が付与されています');
+    }
+
+    getBuiltInDropdown(preview, 'theme');
+    getBuiltInDropdown(preview, 'surface');
+    getBuiltInDropdown(preview, 'viewport');
+
+    const root = getRoot(preview);
+    if (root.getAttribute('aria-label') !== 'コード プレビュー') {
+      throw new Error('built-in controls のみの場合の aria-label が不正です');
+    }
+  },
+};
+
+/**
+ * built-in showcase controls の契約。
+ * theme / surface / viewport の切替が preview 側だけに反映されることを検証します。
+ */
+export const BuiltInShowcaseControlsContract: Story = {
+  render: () => html`
+    <div style="padding: 2rem; max-width: 960px;">
+      <ui-code-preview
+        id="showcase-controls-preview"
+        controls="theme surface viewport"
+        preview-theme="page"
+        preview-surface="surface"
+        preview-viewport="full"
+        label="Showcase Controls"
+        style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
+      >
+        <div id="showcase-preview-host" slot="preview" style="padding: 1rem; border-radius: 8px;">
+          <ui-button>Preview Button</ui-button>
+        </div>
+        <ui-code-block id="showcase-code-block" filename="button.ts" lang="ts">
+          <pre><code>// &lt;ui-button&gt;Preview Button&lt;/ui-button&gt;</code></pre>
+        </ui-code-block>
+      </ui-code-preview>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const preview = getPreview(canvasElement, 'showcase-controls-preview');
+    const previewHost = canvasElement.querySelector<HTMLElement>('#showcase-preview-host');
+    const codeBlock = canvasElement.querySelector<HTMLElement>('#showcase-code-block');
+    if (!previewHost || !codeBlock) {
+      throw new Error('showcase controls の検証対象が見つかりません');
+    }
+
+    await preview.updateComplete;
+    await waitFrame();
+
+    const previewArea = getPreviewArea(preview);
+    const previewFrame = getPreviewFrame(preview);
+    const initialPreviewToken = getComputedStyle(previewHost)
+      .getPropertyValue('--bg-default')
+      .trim();
+    const initialCodeToken = getComputedStyle(codeBlock).getPropertyValue('--bg-default').trim();
+    const initialPreviewAreaBg = getComputedStyle(previewArea).backgroundColor;
+    const initialFrameWidth = Number.parseFloat(getComputedStyle(previewFrame).width);
+
+    const themeDropdown = getBuiltInDropdown(preview, 'theme');
+    await clickDropdownTrigger(themeDropdown);
+    await clickDropdownItem(themeDropdown, 'dark');
+    await preview.updateComplete;
+    await waitFrame();
+
+    if (preview.getAttribute('preview-theme') !== 'dark') {
+      throw new Error('theme control の選択が preview-theme 属性へ反映されていません');
+    }
+
+    const darkPreviewToken = getComputedStyle(previewHost).getPropertyValue('--bg-default').trim();
+    const darkCodeToken = getComputedStyle(codeBlock).getPropertyValue('--bg-default').trim();
+    if (darkPreviewToken === initialPreviewToken) {
+      throw new Error('theme control 切替後も preview slot のトークンが変化していません');
+    }
+    if (darkCodeToken !== initialCodeToken) {
+      throw new Error('theme control が code area のトークンまで変更しています');
+    }
+
+    const surfaceDropdown = getBuiltInDropdown(preview, 'surface');
+    await clickDropdownTrigger(surfaceDropdown);
+    await clickDropdownItem(surfaceDropdown, 'muted');
+    await preview.updateComplete;
+    await waitFrame();
+
+    if (preview.getAttribute('preview-surface') !== 'muted') {
+      throw new Error('surface control の選択が preview-surface 属性へ反映されていません');
+    }
+
+    const mutedPreviewAreaBg = getComputedStyle(previewArea).backgroundColor;
+    const mutedPreviewToken = getComputedStyle(previewHost).getPropertyValue('--bg-default').trim();
+    if (mutedPreviewAreaBg === initialPreviewAreaBg) {
+      throw new Error('surface control 切替後も preview-area 背景色が変化していません');
+    }
+    if (mutedPreviewToken === darkPreviewToken) {
+      throw new Error('surface control 切替後も preview slot の背景コンテキストが変化していません');
+    }
+
+    const viewportDropdown = getBuiltInDropdown(preview, 'viewport');
+    await clickDropdownTrigger(viewportDropdown);
+    await clickDropdownItem(viewportDropdown, 'mobile');
+    await preview.updateComplete;
+    await waitFrame();
+
+    if (preview.getAttribute('preview-viewport') !== 'mobile') {
+      throw new Error('viewport control の選択が preview-viewport 属性へ反映されていません');
+    }
+
+    const resolvedFrameWidth = getComputedStyle(preview)
+      .getPropertyValue('--_ui-code-preview-frame-width')
+      .trim();
+    if (resolvedFrameWidth !== '375px') {
+      throw new Error(`mobile viewport の frame 幅変数が不正です: ${resolvedFrameWidth}`);
+    }
+
+    const mobileWidth = Number.parseFloat(getComputedStyle(previewFrame).width);
+    if (mobileWidth >= initialFrameWidth) {
+      throw new Error(
+        `mobile viewport の preview-frame 幅が縮小していません: ${String(mobileWidth)}px`,
+      );
+    }
+  },
+};
+
+/**
+ * built-in controls と internal toolbar slot の共存契約。
+ * built-in controls を先、slot 内容を後に表示できることを検証します。
+ */
+export const BuiltInControlsWithToolbarSlot: Story = {
+  render: () => html`
+    <div style="padding: 2rem; max-width: 900px;">
+      <ui-code-preview
+        id="controls-with-toolbar-preview"
+        controls="theme surface"
+        label="Toolbar Coexist"
+        style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
+      >
+        <ui-button slot="toolbar" variant="ghost" size="sm" icon-only aria-label="外部アクション">
+          <iconify-icon icon="lucide:settings-2"></iconify-icon>
+        </ui-button>
+        <div slot="preview">
+          <ui-button>プレビュー</ui-button>
+        </div>
+        <ui-code-block filename="button.ts" lang="ts">
+          <pre><code>// toolbar coexist</code></pre>
+        </ui-code-block>
+      </ui-code-preview>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const preview = getPreview(canvasElement, 'controls-with-toolbar-preview');
+    await preview.updateComplete;
+    await waitFrame();
+
+    const headerTools = preview.shadowRoot?.querySelector<HTMLElement>('.header-tools');
+    if (!headerTools) throw new Error('.header-tools が見つかりません');
+
+    const themeDropdown = getBuiltInDropdown(preview, 'theme');
+    const surfaceDropdown = getBuiltInDropdown(preview, 'surface');
+    const toolbarSlot = getToolbarSlot(preview);
+    if (toolbarSlot.assignedElements({ flatten: true }).length !== 1) {
+      throw new Error('toolbar slot の要素数が不正です');
+    }
+
+    const controlNodes = Array.from(headerTools.children);
+    if (controlNodes[0] !== themeDropdown || controlNodes[1] !== surfaceDropdown) {
+      throw new Error('built-in controls が toolbar slot より前に配置されていません');
+    }
+
+    const toolbarIndex = controlNodes.findIndex((node) =>
+      node.classList.contains('header-toolbar'),
+    );
+    if (toolbarIndex < 0 || toolbarIndex < 2) {
+      throw new Error('header-toolbar が built-in controls の後ろに配置されていません');
     }
   },
 };
@@ -730,9 +975,7 @@ export const PreviewAlignVariants: Story = {
     const centerArea = getPreviewArea(centerPreview);
     const centerAreaStyle = getComputedStyle(centerArea);
     if (centerAreaStyle.alignItems !== 'center') {
-      throw new Error(
-        `center 時の align-items が不正です: "${centerAreaStyle.alignItems}"`,
-      );
+      throw new Error(`center 時の align-items が不正です: "${centerAreaStyle.alignItems}"`);
     }
     if (centerAreaStyle.justifyContent !== 'center') {
       throw new Error(
@@ -744,23 +987,17 @@ export const PreviewAlignVariants: Story = {
     const startArea = getPreviewArea(startPreview);
     const startAreaStyle = getComputedStyle(startArea);
     if (startAreaStyle.alignItems !== 'flex-start') {
-      throw new Error(
-        `start 時の align-items が不正です: "${startAreaStyle.alignItems}"`,
-      );
+      throw new Error(`start 時の align-items が不正です: "${startAreaStyle.alignItems}"`);
     }
     if (startAreaStyle.justifyContent !== 'flex-start') {
-      throw new Error(
-        `start 時の justify-content が不正です: "${startAreaStyle.justifyContent}"`,
-      );
+      throw new Error(`start 時の justify-content が不正です: "${startAreaStyle.justifyContent}"`);
     }
 
     // stretch の場合: align-items: stretch
     const stretchArea = getPreviewArea(stretchPreview);
     const stretchAreaStyle = getComputedStyle(stretchArea);
     if (stretchAreaStyle.alignItems !== 'stretch') {
-      throw new Error(
-        `stretch 時の align-items が不正です: "${stretchAreaStyle.alignItems}"`,
-      );
+      throw new Error(`stretch 時の align-items が不正です: "${stretchAreaStyle.alignItems}"`);
     }
 
     // stretch 時は preview コンテンツが親幅いっぱいになる
@@ -770,9 +1007,7 @@ export const PreviewAlignVariants: Story = {
       stretchArea.getBoundingClientRect().width - stretchContent.getBoundingClientRect().width,
     );
     if (widthDiff > 1) {
-      throw new Error(
-        `stretch 時に幅いっぱいになっていません: 差分=${String(widthDiff)}px`,
-      );
+      throw new Error(`stretch 時に幅いっぱいになっていません: 差分=${String(widthDiff)}px`);
     }
   },
 };
@@ -806,37 +1041,27 @@ export const ChildBreakoutNeutralization: Story = {
 
     const blockWidth = previewStyle.getPropertyValue('--ui-code-block-breakout-width').trim();
     if (blockWidth !== '100%') {
-      throw new Error(
-        `--ui-code-block-breakout-width が 100% ではありません: "${blockWidth}"`,
-      );
+      throw new Error(`--ui-code-block-breakout-width が 100% ではありません: "${blockWidth}"`);
     }
 
     const blockMargin = previewStyle.getPropertyValue('--ui-code-block-breakout-margin').trim();
     if (blockMargin !== '0') {
-      throw new Error(
-        `--ui-code-block-breakout-margin が 0 ではありません: "${blockMargin}"`,
-      );
+      throw new Error(`--ui-code-block-breakout-margin が 0 ではありません: "${blockMargin}"`);
     }
 
     const blockRadiusTop = previewStyle.getPropertyValue('--ui-code-block-radius-top').trim();
     if (blockRadiusTop !== '0') {
-      throw new Error(
-        `--ui-code-block-radius-top が 0 ではありません: "${blockRadiusTop}"`,
-      );
+      throw new Error(`--ui-code-block-radius-top が 0 ではありません: "${blockRadiusTop}"`);
     }
 
     const groupWidth = previewStyle.getPropertyValue('--ui-code-group-width').trim();
     if (groupWidth !== '100%') {
-      throw new Error(
-        `--ui-code-group-width が 100% ではありません: "${groupWidth}"`,
-      );
+      throw new Error(`--ui-code-group-width が 100% ではありません: "${groupWidth}"`);
     }
 
     const groupMargin = previewStyle.getPropertyValue('--ui-code-group-margin-inline').trim();
     if (groupMargin !== '0') {
-      throw new Error(
-        `--ui-code-group-margin-inline が 0 ではありません: "${groupMargin}"`,
-      );
+      throw new Error(`--ui-code-group-margin-inline が 0 ではありません: "${groupMargin}"`);
     }
 
     // 子 ui-code-block が変数を継承している（CSS継承により）
@@ -1048,6 +1273,7 @@ export const PrintStyleContract: Story = {
       'margin-inline: 0 !important',
       'border-color: #000 !important',
       'background: transparent !important',
+      '.header-tools',
       '.header-toolbar',
       'display: none !important',
       'page-break-inside: avoid',
@@ -1089,10 +1315,7 @@ export const BreakoutPatternContract: Story = {
     const cssText = readCssText(CodePreview.styles);
 
     // mobile breakout（space-8 / space-n4）
-    const mobileTokens = [
-      'calc(100% + var(--space-8, 2rem))',
-      'var(--space-n4, -1rem)',
-    ];
+    const mobileTokens = ['calc(100% + var(--space-8, 2rem))', 'var(--space-n4, -1rem)'];
     for (const token of mobileTokens) {
       if (!cssText.includes(token)) {
         throw new Error(`Mobile breakout 定義が不足しています: ${token}`);
@@ -1153,10 +1376,12 @@ export const VisualHierarchyContract: Story = {
 
     const cssText = readCssText(CodePreview.styles);
 
-    // ヘッダー領域が --ui-code-preview-preview-bg / --bg-surface-2 を使用
-    // （ヘッダーが preview-bg トークンの拡張ポイントを担当）
-    if (!cssText.includes('var(--ui-code-preview-preview-bg, var(--bg-surface-2')) {
-      throw new Error('header が --bg-surface-2 を参照していません');
+    // ヘッダー領域が preview-bg 拡張ポイントを経由して preview surface を参照
+    if (
+      !cssText.includes('--_ui-code-preview-surface-bg') ||
+      !cssText.includes('--ui-code-preview-preview-bg')
+    ) {
+      throw new Error('header が preview surface トークンを参照していません');
     }
 
     // ルートおよびプレビュー領域が --bg-fill-muted を使用
@@ -1344,18 +1569,22 @@ export const CopyFunctionalityPreservation: Story = {
       throw new Error('ui-code-block#getCodeContent が見つかりません');
     }
     const blockExpected = blockHost.getCodeContent();
-    const blockCopy = block.shadowRoot?.querySelector<HTMLElement>('ui-copy-button');
+    const blockCopy = block.shadowRoot?.querySelector<HTMLElement & { value?: string }>(
+      'ui-copy-button',
+    );
     if (!blockCopy) throw new Error('ui-code-block の ui-copy-button が見つかりません');
-    const blockCopyValue = blockCopy.getAttribute('value') ?? '';
+    const blockCopyValue = blockCopy.value ?? blockCopy.getAttribute('value') ?? '';
     if (blockCopyValue !== blockExpected) {
       throw new Error('ui-code-block の copy 値が getCodeContent() と一致しません');
     }
 
     const group = canvasElement.querySelector<HTMLElement>('#copy-preserve-group');
     if (!group) throw new Error('#copy-preserve-group が見つかりません');
-    const groupCopy = group.shadowRoot?.querySelector<HTMLElement>('.header-tools ui-copy-button');
+    const groupCopy = group.shadowRoot?.querySelector<HTMLElement & { value?: string }>(
+      '.header-tools ui-copy-button',
+    );
     if (!groupCopy) throw new Error('ui-code-group の ui-copy-button が見つかりません');
-    const groupCopyValue = groupCopy.getAttribute('value') ?? '';
+    const groupCopyValue = groupCopy.value ?? groupCopy.getAttribute('value') ?? '';
     if (groupCopyValue.trim() === '') {
       throw new Error('ui-code-group の copy 値が空です');
     }
