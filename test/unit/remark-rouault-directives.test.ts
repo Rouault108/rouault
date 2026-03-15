@@ -14,6 +14,18 @@ interface MdastNode {
     hName?: string;
     hProperties?: Record<string, unknown>;
   };
+  position?: {
+    start?: {
+      line?: number;
+      column?: number;
+      offset?: number;
+    };
+    end?: {
+      line?: number;
+      column?: number;
+      offset?: number;
+    };
+  };
 }
 
 describe('remarkRouaultDirectives', () => {
@@ -593,7 +605,7 @@ describe('remarkRouaultDirectives', () => {
     const children = paragraph?.children ?? [];
     const sub = children.find((child) => child.data?.hName === 'sub');
     const sup = children.find((child) => child.data?.hName === 'sup');
-    const highlight = children.find((child) => child.data?.hName === 'ui-search-highlight');
+    const highlight = children.find((child) => child.data?.hName === 'ui-highlight');
     const emoji = children.find((child) => child.type === 'rouaultInlineEmoji');
     const lastText = children[children.length - 1];
 
@@ -604,6 +616,72 @@ describe('remarkRouaultDirectives', () => {
     expect(emoji?.children?.[0]?.value).to.equal('😀');
     expect(emoji?.data?.hProperties?.['aria-label']).to.equal('笑顔');
     expect(lastText?.value).to.contain('✨');
+  });
+
+  it('single tilde の delete ノードは subscript として復元すること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [
+            { type: 'text', value: 'H' },
+            {
+              type: 'delete',
+              children: [{ type: 'text', value: '2' }],
+              position: {
+                start: { offset: 1 },
+                end: { offset: 4 },
+              },
+            },
+            { type: 'text', value: 'O' },
+          ],
+        },
+      ],
+    };
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md', value: 'H~2~O' });
+
+    const paragraph = tree.children?.[0];
+    const children = paragraph?.children ?? [];
+    const sub = children[1];
+
+    expect(sub?.type).to.equal('rouaultInlineSubscript');
+    expect(sub?.data?.hName).to.equal('sub');
+    expect(sub?.children?.[0]?.value).to.equal('2');
+  });
+
+  it('double tilde の delete ノードは strikethrough のまま維持すること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [
+            { type: 'text', value: 'H' },
+            {
+              type: 'delete',
+              children: [{ type: 'text', value: '2' }],
+              position: {
+                start: { offset: 1 },
+                end: { offset: 6 },
+              },
+            },
+            { type: 'text', value: 'O' },
+          ],
+        },
+      ],
+    };
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md', value: 'H~~2~~O' });
+
+    const paragraph = tree.children?.[0];
+    const children = paragraph?.children ?? [];
+    const deleted = children[1];
+
+    expect(deleted?.type).to.equal('delete');
+    expect(deleted?.data?.hName).to.equal(undefined);
+    expect(deleted?.children?.[0]?.value).to.equal('2');
   });
 
   it('未知のディレクティブはエラーにすること', () => {

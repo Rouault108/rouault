@@ -17,12 +17,19 @@ interface MdastNode {
     start?: {
       line?: number;
       column?: number;
+      offset?: number;
+    };
+    end?: {
+      line?: number;
+      column?: number;
+      offset?: number;
     };
   };
 }
 
 interface VFileLike {
   path?: string;
+  value?: unknown;
 }
 
 type DirectiveName =
@@ -1099,7 +1106,7 @@ const parseInlineText = (source: string, node: MdastNode, file?: VFileLike): Mda
       } else {
         result.push(
           createInlineNode(
-            'ui-search-highlight',
+            'ui-highlight',
             text,
             applyHighlightInlineAttributes(attrs, node, file),
             'rouaultInlineHighlight',
@@ -1127,7 +1134,7 @@ const parseInlineText = (source: string, node: MdastNode, file?: VFileLike): Mda
     if (highlightMatch) {
       const text = highlightMatch[1] ?? '';
       result.push(
-        createInlineNode('ui-search-highlight', text, { origin: 'user' }, 'rouaultInlineHighlight'),
+        createInlineNode('ui-highlight', text, { origin: 'user' }, 'rouaultInlineHighlight'),
       );
       cursor += highlightMatch[0].length;
       continue;
@@ -1162,11 +1169,48 @@ const parseInlineText = (source: string, node: MdastNode, file?: VFileLike): Mda
 
 const transformInlineTextNode = (node: MdastNode, file?: VFileLike): MdastNode[] => {
   if (node.type !== 'text' || typeof node.value !== 'string') {
+    if (node.type === 'delete') {
+      const source = extractNodeSource(node, file);
+      if (source && isSingleTildeWrapped(source)) {
+        return [
+          {
+            type: 'rouaultInlineSubscript',
+            data: { hName: 'sub' },
+            children: node.children ?? [],
+          },
+        ];
+      }
+    }
+
     return [node];
   }
 
   return parseInlineText(node.value, node, file);
 };
+
+const extractNodeSource = (node: MdastNode, file?: VFileLike): string | null => {
+  if (typeof file?.value !== 'string') {
+    return null;
+  }
+
+  const startOffset = node.position?.start?.offset;
+  const endOffset = node.position?.end?.offset;
+  if (typeof startOffset !== 'number' || typeof endOffset !== 'number') {
+    return null;
+  }
+
+  if (startOffset < 0 || endOffset < startOffset || endOffset > file.value.length) {
+    return null;
+  }
+
+  return file.value.slice(startOffset, endOffset);
+};
+
+const isSingleTildeWrapped = (source: string): boolean =>
+  source.startsWith('~') &&
+  !source.startsWith('~~') &&
+  source.endsWith('~') &&
+  !source.endsWith('~~');
 
 const mergeNodeHProperties = (node: MdastNode, properties: Record<string, unknown>): void => {
   if (Object.keys(properties).length === 0) {
