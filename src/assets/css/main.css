@@ -1240,6 +1240,32 @@ input:disabled,
 }
 
 /* ===========================================================================
+ * KaTeX（Light DOM）
+ *
+ * rehype-katex が .prose 等の Light DOM へ直接出力する KaTeX HTML に対する
+ * グローバルスタイル。ui-math の Shadow DOM 内では同等ルールをコンポーネント
+ * スタイルで管理するため、ここでは Light DOM のみを対象とする。
+ *
+ * KaTeX は出力に .katex-mathml（MathML / スクリーンリーダー用）と
+ * .katex-html（視覚レンダリング）の両方を含む。
+ * .katex-mathml を視覚的に非表示にしないと両者が重複して表示される。
+ * =========================================================================== */
+
+/* .katex-mathml: スクリーンリーダーのみに公開し、視覚的には非表示 */
+.katex .katex-mathml {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ===========================================================================
  * Footnote (No-JS / SSR Fallback)
  * =========================================================================== */
 
