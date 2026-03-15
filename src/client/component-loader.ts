@@ -24,9 +24,22 @@ const TAG_MODULE_LOADERS: Record<SsrTargetTag, ComponentModuleLoader> = {
   'ui-article-header': () => import('../components/ui/article-header/article-header.js'),
   'layout-sidebar': () => import('../components/layout/layout-sidebar.js'),
   'layout-toc': () => import('../components/layout/layout-toc.js'),
+  'ui-callout': () => import('../components/ui/callout/callout.js'),
+  'ui-checkbox': () => import('../components/ui/checkbox/checkbox.js'),
+  'ui-code-group': () => import('../components/ui/code-group/code-group.js'),
+  'ui-code-preview': () => import('../components/ui/code-preview/code-preview.js'),
   'ui-table': () => import('../components/ui/table/table.js'),
   'ui-code-block': () => import('../components/ui/codeblock/codeblock.js'),
   'ui-blockquote': () => import('../components/ui/blockquote/blockquote.js'),
+  'ui-details': () => import('../components/ui/details/details.js'),
+  'ui-divider': () => import('../components/ui/divider/divider.js'),
+  'ui-footnote': () => import('../components/ui/footnote/footnote.js'),
+  'ui-image': () => import('../components/ui/image/image.js'),
+  'ui-info-box': () => import('../components/ui/info-box/info-box.js'),
+  'ui-score': () => import('../components/ui/score/score.js'),
+  'ui-search-highlight': () => import('../components/ui/highlight/highlight.js'),
+  'ui-tabs': () => import('../components/ui/tabs/tabs.js'),
+  'ui-translation': () => import('../components/ui/translation/translation.js'),
 };
 
 const matchesAnyTag = (root: ParentNode, selectors: readonly string[]): boolean =>
