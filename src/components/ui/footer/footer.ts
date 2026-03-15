@@ -183,8 +183,9 @@ export const renderFooter = (
       <div class="footer-content">
         <div class="footer-meta">
           <span class="copyright">
+            <span><a href="https://example.com">${data.appName}</a></span>
             <iconify-icon icon="lucide:copyright" aria-hidden="true"></iconify-icon>
-            <span>${data.year.toString()} ${data.appName}</span>
+            <span>${data.year.toString()} by Ruo Miyata is licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a><img src="https://mirrors.creativecommons.org/presskit/icons/cc.svg" alt="" style="max-width: 1em;max-height:1em;margin-left: .2em;"><img src="https://mirrors.creativecommons.org/presskit/icons/by.svg" alt="" style="max-width: 1em;max-height:1em;margin-left: .2em;"></span>
           </span>
           <span class="separator" aria-hidden="true">·</span>
           <span class="revision">${data.revision}</span>
