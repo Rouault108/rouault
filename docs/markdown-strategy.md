@@ -16,16 +16,17 @@ Rouault の Markdown 戦略は、現在次の 4 点を同時に満たすこと�
 1. `remarkMath`
 2. `remarkDisallowRawHtml`
 3. `remarkRouaultDirectives`
-4. `remark-rehype`（Velite 内部）
-5. `rehypeKatex`
-6. `rehypeHeadingIds`
-7. `rehypePreviewSandbox`
-8. `rehypeShikiCodeBlocks`
-9. `rehypeRouaultComponents`
-10. `rehypeInlineCodeTranslateNo`
-11. `rehypeOrderedListContracts`
-12. `rehypeDisallowDangerousProps`
-13. `rehypeDisallowStaticMark`
+4. `remarkLinkCards`
+5. `remark-rehype`（Velite 内部）
+6. `rehypeKatex`
+7. `rehypeHeadingIds`
+8. `rehypePreviewSandbox`
+9. `rehypeShikiCodeBlocks`
+10. `rehypeRouaultComponents`
+11. `rehypeInlineCodeTranslateNo`
+12. `rehypeOrderedListContracts`
+13. `rehypeDisallowDangerousProps`
+14. `rehypeDisallowStaticMark`
 
 remark 層では「著者入力の制約付けと独自構文の展開」を行い、rehype 層では「出力 DOM の正規化と安全性の最終検査」を行う。
 
@@ -47,6 +48,7 @@ remark 層では「著者入力の制約付けと独自構文の展開」を行�
 | `::preview-sandbox` | `ui-preview-sandbox` | `title` / `allow-js` / `height`。`code-preview` 直下専用、内部は `preview-html/css/js` fenced code のみ |
 | `::details`      | `ui-details`        | `aria-label` 必須。`summary` / `open` / `variant` / `region`                                                          |
 | `::info-box`     | `ui-info-box`       | `heading` / `icon` / `heading-level` / `landmark` / `variant`                                                         |
+| `::link-card`    | `ui-card`           | leaf directive。`url` 必須、`title` / `description` / `image`。終端 `::` は不要                                      |
 | `::score`        | `ui-score`          | `src` / `caption` / `label` / `description` / `aspect-ratio` / `loading` / `primary`                                  |
 | `::tabs`         | `ui-tabs`           | `selected-index` / `selected-value` / `orientation` / `automatic-activation`                                          |
 | `::translation`  | `ui-translation`    | `original` / `translated` / `lang` / `target-lang` / `render-mode` / `open`                                           |
@@ -72,6 +74,18 @@ remark 層では「著者入力の制約付けと独自構文の展開」を行�
 - `preview-sandbox.height` は正の整数
 - `preview-sandbox` 内の `code.lang` は `preview-html|preview-css|preview-js`
 - `translation.render-mode` は `popover|drawer|interlinear`
+- `link-card.url` は後段で `http/https` 絶対 URL として検証する
+
+### 2.5. リンクカードを build-time で解決する
+
+[`lib/remark/remark-link-cards.ts`](/Users/ruo/Desktop/Programing/Rouault/lib/remark/remark-link-cards.ts) は次を担当する。
+
+1. `::link-card{...}` を最終的な `ui-card[card-kind="link"]` に解決する
+2. 「単独段落の外部リンク 1 件だけ」を自動リンクカード化する
+3. 取得メタデータを `著者指定 > OGP > Twitter Card > oEmbed > URL フォールバック` の順でマージする
+4. 取得失敗時は warning を残しつつ画像なしカードへフォールバックする
+
+最終出力の主要属性は `href` / `card-kind="link"` / `card-title` / `description` / `image-src` / `site-name` である。
 
 ### 3. インライン記法を展開する
 

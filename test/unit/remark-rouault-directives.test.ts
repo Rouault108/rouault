@@ -219,6 +219,39 @@ describe('remarkRouaultDirectives', () => {
     expect(infoBox?.data?.hProperties?.['variant']).to.equal('filled');
   });
 
+  it('link-card ディレクティブを終端なしの ui-card ノードへ変換すること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'text',
+              value:
+                '::link-card{url="https://example.com/post" title="著者指定タイトル" description="補足文" image="https://cdn.example.com/card.png"}',
+            },
+          ],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '後続段落' }],
+        },
+      ],
+    };
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    const card = tree.children?.[0];
+    const paragraph = tree.children?.[1];
+    expect(card?.data?.hName).to.equal('ui-card');
+    expect(card?.data?.hProperties?.['url']).to.equal('https://example.com/post');
+    expect(card?.data?.hProperties?.['title']).to.equal('著者指定タイトル');
+    expect(card?.data?.hProperties?.['description']).to.equal('補足文');
+    expect(card?.data?.hProperties?.['image']).to.equal('https://cdn.example.com/card.png');
+    expect(paragraph?.type).to.equal('paragraph');
+  });
+
   it('score ディレクティブを ui-score ノードへ変換すること', () => {
     const tree: MdastNode = {
       type: 'root',
@@ -811,6 +844,47 @@ describe('remarkRouaultDirectives', () => {
     };
 
     expect(run).to.throw('[markdown] image の zoomable は true/false で指定してください');
+  });
+
+  it('link-card の url が無い場合はエラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::link-card{title="missing"}' }],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw('[markdown] link-card の url は必須です');
+  });
+
+  it('link-card の未対応属性はエラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'text',
+              value: '::link-card{url="https://example.com" caption="unsupported"}',
+            },
+          ],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw('[markdown] link-card 属性 "caption" は未対応です');
   });
 
   it('画像属性の loading に不正な値が来た場合はエラーにすること', () => {

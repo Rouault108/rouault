@@ -11,6 +11,7 @@ import { rehypePreviewSandbox } from './lib/rehype/preview-sandbox.js';
 import { rehypeRouaultComponents } from './lib/rehype/rouault-components.js';
 import { rehypeShikiCodeBlocks } from './lib/rehype/shiki-code-blocks.js';
 import { remarkDisallowRawHtml } from './lib/remark/disallow-raw-html.js';
+import { remarkLinkCards } from './lib/remark/remark-link-cards.js';
 import { remarkRouaultDirectives } from './lib/remark/rouault-directives.js';
 import { ARTICLE_STATUSES } from './src/types/article-status.js';
 
@@ -53,6 +54,7 @@ export default defineConfig({
       remarkMath,
       remarkDisallowRawHtml,
       remarkRouaultDirectives,
+      remarkLinkCards,
     ],
     rehypePlugins: [
       rehypeKatex,

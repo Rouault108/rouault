@@ -39,6 +39,7 @@ type DirectiveName =
   | 'preview-sandbox'
   | 'details'
   | 'info-box'
+  | 'link-card'
   | 'score'
   | 'tabs'
   | 'translation'
@@ -69,6 +70,7 @@ const SUPPORTED_DIRECTIVES = new Set<DirectiveName>([
   'preview-sandbox',
   'details',
   'info-box',
+  'link-card',
   'score',
   'tabs',
   'translation',
@@ -77,6 +79,7 @@ const SUPPORTED_DIRECTIVES = new Set<DirectiveName>([
   'tab',
   'panel',
 ]);
+const LEAF_DIRECTIVES = new Set<DirectiveName>(['link-card']);
 
 const CALLOUT_VARIANTS = new Set(['note', 'tip', 'success', 'warning', 'danger']);
 const DETAILS_VARIANTS = new Set(['default', 'bordered']);
@@ -737,6 +740,39 @@ const applyInfoBoxAttributes = (
   return result;
 };
 
+const applyLinkCardAttributes = (
+  attrs: Record<string, string>,
+  node: MdastNode,
+  file?: VFileLike,
+): Record<string, unknown> => {
+  const result: Record<string, unknown> = {};
+  const allowedKeys = new Set(['url', 'title', 'description', 'image']);
+  assertAllowedAttributes(attrs, allowedKeys, node, file, 'link-card');
+
+  const url = pickOptional(attrs['url']);
+  if (!url) {
+    throw toError(file, node, 'link-card の url は必須です');
+  }
+  result['url'] = url;
+
+  const title = pickOptional(attrs['title']);
+  if (title) {
+    result['title'] = title;
+  }
+
+  const description = pickOptional(attrs['description']);
+  if (description) {
+    result['description'] = description;
+  }
+
+  const image = pickOptional(attrs['image']);
+  if (image) {
+    result['image'] = image;
+  }
+
+  return result;
+};
+
 const applyScoreAttributes = (
   attrs: Record<string, string>,
   node: MdastNode,
@@ -1366,6 +1402,16 @@ const toDirectiveNode = (
     };
   }
 
+  if (marker.name === 'link-card') {
+    data.hName = 'ui-card';
+    data.hProperties = applyLinkCardAttributes(attrs, marker.node, file);
+    return {
+      type: 'rouaultDirectiveLinkCard',
+      data,
+      children: [],
+    };
+  }
+
   if (marker.name === 'score') {
     data.hName = 'ui-score';
     data.hProperties = applyScoreAttributes(attrs, marker.node, file);
@@ -1568,6 +1614,9 @@ const tryParseFoldedDirectiveParagraph = (node: MdastNode, file?: VFileLike): Md
   if (!marker) {
     return null;
   }
+  if (LEAF_DIRECTIVES.has(marker.name)) {
+    return null;
+  }
 
   const lastLine = (lines[lines.length - 1] ?? '').trim();
   if (!END_PATTERN.test(lastLine)) {
@@ -1693,6 +1742,13 @@ const transformChildren = (nodes: MdastNode[], file?: VFileLike): MdastNode[] =>
       continue;
     }
 
+    if (LEAF_DIRECTIVES.has(marker.name)) {
+      const attrs = parseAttributes(marker.attrsSource, marker.node, file);
+      result.push(toDirectiveNode(marker, [], attrs, file));
+      index += 1;
+      continue;
+    }
+
     let depth = 0;
     let closingIndex = -1;
     for (let cursor = index + 1; cursor < normalizedNodes.length; cursor += 1) {
@@ -1700,7 +1756,7 @@ const transformChildren = (nodes: MdastNode[], file?: VFileLike): MdastNode[] =>
       if (!candidate) continue;
 
       const nestedStart = parseStartMarker(candidate, file);
-      if (nestedStart) {
+      if (nestedStart && !LEAF_DIRECTIVES.has(nestedStart.name)) {
         depth += 1;
         continue;
       }

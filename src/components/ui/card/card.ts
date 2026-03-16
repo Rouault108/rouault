@@ -1,8 +1,10 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 
 /** カードの外観スタイルを定義するバリアント型 */
 export type CardVariant = 'outlined' | 'elevated' | 'flat' | 'ghost';
+export type CardKind = 'generic' | 'link';
 
 /**
  * カード (Card) コンポーネント `<ui-card>`
@@ -139,9 +141,14 @@ export class Card extends LitElement {
       cursor: pointer;
     }
 
+    :host([card-kind='link']) {
+      cursor: pointer;
+    }
+
     /* フォーカスリング: 内部要素にフォーカスがある時、カード全体に描画する。
        これにより「クリック可能な領域＝フォーカス領域」のメンタルモデルが一致する。 */
-    :host([clickable]:focus-within) {
+    :host([clickable]:focus-within),
+    :host([card-kind='link']:focus-within) {
       outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color);
       outline-offset: var(--focus-ring-offset, 2px);
       animation: var(--animation-focus);
@@ -152,7 +159,9 @@ export class Card extends LitElement {
        「枠」から「物体（面）」へ。背景不透明化・Shadow 獲得・枠線が光に溶け込む。
     ──────────────────────────────────────────── */
     :host([clickable][variant='outlined']:hover),
-    :host([clickable][variant='outlined']:focus-within) {
+    :host([clickable][variant='outlined']:focus-within),
+    :host([card-kind='link'][variant='outlined']:hover),
+    :host([card-kind='link'][variant='outlined']:focus-within) {
       box-shadow: var(--elevation-md);
       border-color: var(--border-muted);
     }
@@ -162,8 +171,66 @@ export class Card extends LitElement {
        Shadow が elevation-md から elevation-lg へ強化。
     ──────────────────────────────────────────── */
     :host([clickable][variant='elevated']:hover),
-    :host([clickable][variant='elevated']:focus-within) {
+    :host([clickable][variant='elevated']:focus-within),
+    :host([card-kind='link'][variant='elevated']:hover),
+    :host([card-kind='link'][variant='elevated']:focus-within) {
       box-shadow: var(--elevation-lg), inset 0 1px 0 0 oklch(100% 0 0 / 0.1);
+    }
+
+    .link-card {
+      color: inherit;
+      display: grid;
+      gap: var(--space-4, 1rem);
+      grid-template-columns: minmax(0, 1fr) auto;
+      text-decoration: none;
+    }
+
+    /* link mode ではカード全体の focus-within リングを唯一の視覚シグナルにする。
+       内部リンクの既定 outline は抑止し、二重リングを防ぐ。 */
+    .link-card:focus-visible {
+      outline: none;
+    }
+
+    .link-card--no-image {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .link-card__body {
+      display: grid;
+      gap: var(--space-2, 0.5rem);
+      min-width: 0;
+    }
+
+    .link-card__eyebrow {
+      color: var(--fg-muted);
+      font-size: var(--text-xs);
+      letter-spacing: 0.02em;
+      line-height: var(--line-height-snug, 1.35);
+      margin: 0;
+    }
+
+    .link-card__title {
+      font-size: var(--text-base);
+      font-weight: var(--font-semibold, 600);
+      line-height: var(--line-height-tight, 1.3);
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .link-card__description {
+      color: var(--fg-muted);
+      font-size: var(--text-sm);
+      line-height: var(--line-height-relaxed, 1.65);
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .link-card__media {
+      align-self: stretch;
+      block-size: clamp(96px, 16vw, 124px);
+      border-radius: calc(var(--radius-md, 6px) - 2px);
+      inline-size: clamp(96px, 18vw, 156px);
+      object-fit: cover;
     }
 
     /* ────────────────────────────────────────────
@@ -176,7 +243,9 @@ export class Card extends LitElement {
       }
 
       :host([clickable]:hover),
-      :host([clickable]:focus-within) {
+      :host([clickable]:focus-within),
+      :host([card-kind='link']:hover),
+      :host([card-kind='link']:focus-within) {
         transform: none;
       }
     }
@@ -191,7 +260,9 @@ export class Card extends LitElement {
       }
 
       :host([clickable]:hover),
-      :host([clickable]:focus-within) {
+      :host([clickable]:focus-within),
+      :host([card-kind='link']:hover),
+      :host([card-kind='link']:focus-within) {
         outline: 2px solid Highlight;
         outline-offset: -2px;
       }
@@ -241,6 +312,34 @@ export class Card extends LitElement {
   @property({ type: Boolean, reflect: true })
   clickable = false;
 
+  /** カードの描画モード。既定は既存のスロットベースカード。 */
+  @property({ type: String, reflect: true, attribute: 'card-kind' })
+  cardKind: CardKind = 'generic';
+
+  /** リンクカードの遷移先 URL。 */
+  @property({ type: String })
+  href = '';
+
+  /** リンクカードの見出し。 */
+  @property({ type: String, attribute: 'card-title' })
+  cardTitle = '';
+
+  /** リンクカードの補足説明。 */
+  @property({ type: String })
+  description = '';
+
+  /** リンクカードの右側画像 URL。 */
+  @property({ type: String, attribute: 'image-src' })
+  imageSrc = '';
+
+  /** リンクカードの出典サイト名。 */
+  @property({ type: String, attribute: 'site-name' })
+  siteName = '';
+
+  private get _isLinkCard(): boolean {
+    return this.cardKind === 'link' && this.href.trim().length > 0;
+  }
+
   /**
    * クリックイベントの経路上にインタラクティブ要素が含まれるか判定。
    * Shadow DOM 内要素も `composedPath()` で判定する。
@@ -270,7 +369,7 @@ export class Card extends LitElement {
    * - `<a>` / `<button>` / `[role="button"]` への直接クリック
    */
   private readonly _handleClick = (e: MouseEvent): void => {
-    if (!this.clickable) return;
+    if (!this.clickable && !this._isLinkCard) return;
 
     // 主ボタン（左クリック）のみ委譲
     if (e.button !== 0) return;
@@ -284,8 +383,11 @@ export class Card extends LitElement {
     // インタラクティブ要素への直接クリックは委譲しない
     if (this._isInteractiveTarget(e)) return;
 
-    // ライト DOM から主要リンクを検索して委譲
-    const primaryLink = this.querySelector<HTMLAnchorElement>('a[href]');
+    // link mode は Shadow DOM 内の主リンクを優先し、
+    // generic mode は従来どおり Light DOM の最初のリンクへ委譲する。
+    const primaryLink = this._isLinkCard
+      ? this.shadowRoot?.querySelector<HTMLAnchorElement>('a[href]') ?? null
+      : this.querySelector<HTMLAnchorElement>('a[href]');
     if (primaryLink) {
       e.preventDefault();
       primaryLink.click();
@@ -306,7 +408,37 @@ export class Card extends LitElement {
     this.removeEventListener('click', this._handleClick);
   }
 
+  private renderLinkCard() {
+    const siteName = this.siteName.trim();
+    const title = this.cardTitle.trim();
+    const description = this.description.trim();
+    const imageSrc = this.imageSrc.trim();
+    const hasImage = imageSrc.length > 0;
+
+    return html`
+      <a
+        class="link-card ${hasImage ? '' : 'link-card--no-image'}"
+        href=${ifDefined(this.href || undefined)}
+      >
+        <div class="link-card__body">
+          ${siteName.length > 0 ? html`<p class="link-card__eyebrow">${siteName}</p>` : null}
+          <h3 class="link-card__title">${title}</h3>
+          ${description.length > 0
+            ? html`<p class="link-card__description">${description}</p>`
+            : null}
+        </div>
+        ${hasImage
+          ? html`<img class="link-card__media" src=${imageSrc} alt="" loading="lazy" />`
+          : null}
+      </a>
+    `;
+  }
+
   override render() {
+    if (this._isLinkCard) {
+      return this.renderLinkCard();
+    }
+
     return html`
       <slot name="header"></slot>
       <slot></slot>

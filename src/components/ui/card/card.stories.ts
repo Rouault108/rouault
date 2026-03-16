@@ -406,6 +406,101 @@ export const WithAllSlots: Story = {
 };
 
 // ────────────────────────────────────────────
+// LinkCardWithImage: 右側画像付きリンクカード
+// ────────────────────────────────────────────
+
+/**
+ * `card-kind="link"` の属性駆動モードです。
+ * タイトル・説明・サイト名を左、画像を右に配置します。
+ */
+export const LinkCardWithImage: Story = {
+  render: () => html`
+    <ui-card
+      id="link-card-with-image"
+      card-kind="link"
+      href="https://example.com/article"
+      card-title="リンクカードのタイトル"
+      description="OGP や明示指定から解決した説明文を表示します。"
+      image-src="https://images.unsplash.com/photo-1513128034602-7814ccaddd4e"
+      site-name="Example"
+      style="max-width: 520px;"
+    ></ui-card>
+  `,
+  play: async ({ canvasElement }) => {
+    const card = canvasElement.querySelector<Card>('#link-card-with-image');
+    if (!card) throw new Error('ui-card が見つかりません');
+
+    await card.updateComplete;
+
+    const shadowLink = card.shadowRoot?.querySelector<HTMLAnchorElement>('a.link-card');
+    const shadowImage = card.shadowRoot?.querySelector<HTMLImageElement>('img.link-card__media');
+    const title = card.shadowRoot?.querySelector('.link-card__title')?.textContent.trim();
+
+    if (!shadowLink) throw new Error('link mode の主リンクが見つかりません');
+    if (!shadowImage) throw new Error('右側画像が見つかりません');
+    if (title !== 'リンクカードのタイトル') {
+      throw new Error(`タイトルが想定と異なります: ${title ?? 'null'}`);
+    }
+
+    shadowLink.focus();
+    const linkStyle = window.getComputedStyle(shadowLink);
+    if (linkStyle.outlineStyle !== 'none') {
+      throw new Error(`内部リンクの outline は none であるべきですが、実際には "${linkStyle.outlineStyle}" でした`);
+    }
+
+    let count = 0;
+    shadowLink.addEventListener('click', (event) => {
+      event.preventDefault();
+      count += 1;
+    });
+
+    dispatchTestClick(card);
+    await card.updateComplete;
+
+    if (count !== 1) {
+      throw new Error(`背景クリックで link mode の主リンクが 1 回発火する想定でしたが ${String(count)} 回でした`);
+    }
+  },
+};
+
+// ────────────────────────────────────────────
+// LinkCardWithoutImage: 画像なしリンクカード
+// ────────────────────────────────────────────
+
+/**
+ * 画像が無い場合はテキスト領域だけで収まることを確認します。
+ */
+export const LinkCardWithoutImage: Story = {
+  render: () => html`
+    <ui-card
+      id="link-card-without-image"
+      card-kind="link"
+      href="https://example.com/no-image"
+      card-title="画像なしカード"
+      description="メタデータ取得に失敗した場合のフォールバック想定です。"
+      site-name="Fallback Host"
+      style="max-width: 520px;"
+    ></ui-card>
+  `,
+  play: async ({ canvasElement }) => {
+    const card = canvasElement.querySelector<Card>('#link-card-without-image');
+    if (!card) throw new Error('ui-card が見つかりません');
+
+    await card.updateComplete;
+
+    const shadowLink = card.shadowRoot?.querySelector<HTMLAnchorElement>('a.link-card');
+    const shadowImage = card.shadowRoot?.querySelector('img.link-card__media');
+    const description = card.shadowRoot?.querySelector('.link-card__description')?.textContent.trim();
+
+    if (!shadowLink) throw new Error('画像なし link mode の主リンクが見つかりません');
+    if (shadowImage) throw new Error('画像なしカードに img が描画されてはいけません');
+    if (description !== 'メタデータ取得に失敗した場合のフォールバック想定です。') {
+      throw new Error(`説明文が想定と異なります: ${description ?? 'null'}`);
+    }
+  },
+};
+
+// ────────────────────────────────────────────
 // 7. Clickable: クリック委譲の基本動作
 // ────────────────────────────────────────────
 

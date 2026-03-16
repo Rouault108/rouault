@@ -126,6 +126,18 @@ _イタリック_
 ![画像の代替テキスト](/assets/images/example.jpg 'キャプション')
 ```
 
+外部リンクを 1 行だけ書いた段落は、自動でリンクカードになる。
+
+```markdown
+https://example.com/article
+```
+
+タイトル・説明・画像を著者が明示したい場合は `::link-card` を使う。
+
+```markdown
+::link-card{url="https://example.com/article" title="任意タイトル" description="任意説明" image="https://cdn.example.com/card.png"}
+```
+
 画像の拡大を無効化したい場合は、画像記法の直後に属性ブロックを書く。
 
 ```markdown
@@ -145,6 +157,11 @@ _イタリック_
 - `width` / `height` は 1 以上の整数
 - `zoomable` の既定値は `true`
 - 真偽値は `true` / `false` で書く
+- 自動リンクカード化の対象は「単独段落の外部 URL 1 件だけ」
+- 本文中の通常リンクや複数リンク段落はそのまま残る
+- `::link-card` の `url` は必須、`title` / `description` / `image` は任意
+- 解決順序は `著者指定 > OGP > Twitter Card > oEmbed > URL フォールバック`
+- 取得失敗時はビルド継続のまま画像なしカードになる
 
 ### リスト
 
@@ -345,6 +362,21 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 | `heading-level` | 見出しレベル             | `1` から `6`        |
 | `landmark`      | 独立 landmark として扱う | 真偽値              |
 | `variant`       | 外観                     | `default`, `filled` |
+
+### Link Card
+
+リンクカードを明示的に埋め込む。
+
+```markdown
+::link-card{url="https://example.com/article" title="任意タイトル" description="任意説明" image="https://cdn.example.com/card.png"}
+```
+
+| 属性          | 内容     | 値                  |
+| ------------- | -------- | ------------------- |
+| `url`         | 遷移先   | 外部 `http/https` URL |
+| `title`       | 見出し   | 任意の文字列        |
+| `description` | 補足説明 | 任意の文字列        |
+| `image`       | 右側画像 | 任意の URL          |
 
 ### Score
 
