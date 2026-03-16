@@ -11,21 +11,21 @@ const createContentRoot = async (): Promise<string> => {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), 'rouault-notes-data-'));
   tempDirs.push(tempDir);
 
-  await mkdir(path.join(tempDir, 'music', 'classical'), { recursive: true });
-  await mkdir(path.join(tempDir, 'music', 'jazz'), { recursive: true });
+  await mkdir(path.join(tempDir, 'category', 'section-a'), { recursive: true });
+  await mkdir(path.join(tempDir, 'category', 'section-b'), { recursive: true });
   await writeFile(
     path.join(tempDir, '_config.json'),
-    JSON.stringify({ order: ['music'] }),
+    JSON.stringify({ order: ['category'] }),
     'utf8',
   );
   await writeFile(
-    path.join(tempDir, 'music', '_config.json'),
-    JSON.stringify({ order: ['classical'] }),
+    path.join(tempDir, 'category', '_config.json'),
+    JSON.stringify({ order: ['section-a'] }),
     'utf8',
   );
   await writeFile(
-    path.join(tempDir, 'music', 'classical', '_config.json'),
-    JSON.stringify({ order: ['beethoven.md', 'mozart.md'] }),
+    path.join(tempDir, 'category', 'section-a', '_config.json'),
+    JSON.stringify({ order: ['item-alpha.md', 'item-beta.md'] }),
     'utf8',
   );
 
@@ -41,151 +41,151 @@ describe('buildNotesCollection', () => {
     const contentRoot = await createContentRoot();
     const notes: SourceNote[] = [
       {
-        slug: 'music/classical/mozart',
-        title: 'モーツァルト',
-        content: '<h2 id="life">生涯</h2>',
+        slug: 'category/section-a/item-beta',
+        title: '項目ベータ',
+        content: '<h2 id="heading-a">見出しA</h2>',
       },
       {
-        slug: 'music/classical/beethoven',
-        title: 'ベートーヴェン',
-        content: '<h2 id="works">作品</h2>',
+        slug: 'category/section-a/item-alpha',
+        title: '項目アルファ',
+        content: '<h2 id="heading-b">見出しB</h2>',
       },
     ];
 
     const collection = buildNotesCollection(notes, contentRoot);
 
     expect(collection.map((note) => note.slug)).toEqual([
-      'music/classical/beethoven',
-      'music/classical/mozart',
+      'category/section-a/item-alpha',
+      'category/section-a/item-beta',
     ]);
     expect(collection[0]?.tocHeadings).toEqual([
-      { id: 'works', text: '作品', level: 2 },
+      { id: 'heading-b', text: '見出しB', level: 2 },
     ]);
     expect(collection[1]?.tocHeadings).toEqual([
-      { id: 'life', text: '生涯', level: 2 },
+      { id: 'heading-a', text: '見出しA', level: 2 },
     ]);
   });
 
   it('sidebar.scope を最も近い祖先から解決する', async () => {
     const contentRoot = await createContentRoot();
-    await mkdir(path.join(contentRoot, 'music', 'classical', 'beethoven'), { recursive: true });
-    await mkdir(path.join(contentRoot, 'music', 'classical', 'chopin'), { recursive: true });
+    await mkdir(path.join(contentRoot, 'category', 'section-a', 'item-alpha'), { recursive: true });
+    await mkdir(path.join(contentRoot, 'category', 'section-a', 'item-gamma'), { recursive: true });
     await writeFile(
-      path.join(contentRoot, 'music', 'classical', '_config.json'),
+      path.join(contentRoot, 'category', 'section-a', '_config.json'),
       JSON.stringify({
-        order: ['beethoven', 'chopin', 'mozart.md'],
+        order: ['item-alpha', 'item-gamma', 'item-beta.md'],
         sidebar: { scope: 'self' },
       }),
       'utf8',
     );
     await writeFile(
-      path.join(contentRoot, 'music', 'classical', 'beethoven', '_config.json'),
+      path.join(contentRoot, 'category', 'section-a', 'item-alpha', '_config.json'),
       JSON.stringify({ sidebar: { scope: 'global' } }),
       'utf8',
     );
     await writeFile(
-      path.join(contentRoot, 'music', 'jazz', '_config.json'),
+      path.join(contentRoot, 'category', 'section-b', '_config.json'),
       JSON.stringify({ sidebar: { scope: 'invalid' } }),
       'utf8',
     );
 
     const notes: SourceNote[] = [
-      { slug: 'music/classical/mozart', content: '' },
-      { slug: 'music/classical/chopin/nocturnes', content: '' },
-      { slug: 'music/classical/beethoven/symphony-9', content: '' },
-      { slug: 'music/jazz/kind-of-blue', content: '' },
+      { slug: 'category/section-a/item-beta', content: '' },
+      { slug: 'category/section-a/item-gamma/page-one', content: '' },
+      { slug: 'category/section-a/item-alpha/page-two', content: '' },
+      { slug: 'category/section-b/page-three', content: '' },
     ];
 
     const collection = buildNotesCollection(notes, contentRoot);
 
-    expect(collection.find((note) => note.slug === 'music/classical/mozart')?.sidebarRoot).toBe(
-      'music/classical',
+    expect(collection.find((note) => note.slug === 'category/section-a/item-beta')?.sidebarRoot).toBe(
+      'category/section-a',
     );
     expect(
-      collection.find((note) => note.slug === 'music/classical/chopin/nocturnes')?.sidebarRoot,
-    ).toBe('music/classical');
+      collection.find((note) => note.slug === 'category/section-a/item-gamma/page-one')?.sidebarRoot,
+    ).toBe('category/section-a');
     expect(
-      collection.find((note) => note.slug === 'music/classical/beethoven/symphony-9')?.sidebarRoot,
+      collection.find((note) => note.slug === 'category/section-a/item-alpha/page-two')?.sidebarRoot,
     ).toBeUndefined();
-    expect(collection.find((note) => note.slug === 'music/jazz/kind-of-blue')?.sidebarRoot).toBeUndefined();
+    expect(collection.find((note) => note.slug === 'category/section-b/page-three')?.sidebarRoot).toBeUndefined();
   });
 
   it('sidebarIcon 未指定時は none を既定値としてサイドバー用 icon 情報を付与する', async () => {
     const contentRoot = await createContentRoot();
-    await mkdir(path.join(contentRoot, 'music', 'classical', 'beethoven'), { recursive: true });
+    await mkdir(path.join(contentRoot, 'category', 'section-a', 'item-alpha'), { recursive: true });
     await writeFile(
       path.join(contentRoot, '_config.json'),
       JSON.stringify({
-        order: ['music'],
+        order: ['category'],
         sidebar: { icon: 'lucide:library' },
       }),
       'utf8',
     );
     await writeFile(
-      path.join(contentRoot, 'music', '_config.json'),
+      path.join(contentRoot, 'category', '_config.json'),
       JSON.stringify({
-        order: ['classical'],
+        order: ['section-a'],
         sidebar: { icon: 'folder' },
       }),
       'utf8',
     );
     await writeFile(
-      path.join(contentRoot, 'music', 'classical', '_config.json'),
+      path.join(contentRoot, 'category', 'section-a', '_config.json'),
       JSON.stringify({
-        order: ['beethoven', 'mozart.md'],
+        order: ['item-alpha', 'item-beta.md'],
         sidebar: { icon: 'lucide:music-2' },
       }),
       'utf8',
     );
     await writeFile(
-      path.join(contentRoot, 'music', 'classical', 'beethoven', '_config.json'),
+      path.join(contentRoot, 'category', 'section-a', 'item-alpha', '_config.json'),
       JSON.stringify({ sidebar: { icon: 'none' } }),
       'utf8',
     );
 
     const notes: SourceNote[] = [
       {
-        slug: 'music/classical/mozart',
+        slug: 'category/section-a/item-beta',
         content: '',
         sidebarIcon: 'file',
       },
       {
-        slug: 'music/classical/beethoven/symphony-9',
+        slug: 'category/section-a/item-alpha/page-two',
         content: '',
       },
       {
-        slug: 'music/classical/beethoven/fidelio',
+        slug: 'category/section-a/item-alpha/page-three',
         content: '',
         sidebarIcon: 'lucide:music-3',
       },
       {
-        slug: 'music/jazz/kind-of-blue',
+        slug: 'category/section-b/page-four',
         content: '',
         sidebarIcon: 'none',
       },
     ];
 
     const collection = buildNotesCollection(notes, contentRoot);
-    const mozart = collection.find((note) => note.slug === 'music/classical/mozart');
-    const symphony = collection.find((note) => note.slug === 'music/classical/beethoven/symphony-9');
-    const fidelio = collection.find((note) => note.slug === 'music/classical/beethoven/fidelio');
-    const jazz = collection.find((note) => note.slug === 'music/jazz/kind-of-blue');
+    const itemBeta = collection.find((note) => note.slug === 'category/section-a/item-beta');
+    const pageTwo = collection.find((note) => note.slug === 'category/section-a/item-alpha/page-two');
+    const pageThree = collection.find((note) => note.slug === 'category/section-a/item-alpha/page-three');
+    const pageFour = collection.find((note) => note.slug === 'category/section-b/page-four');
 
-    expect(mozart?.sidebarResolvedIcon).toBe('lucide:file-text');
-    expect(mozart?.sidebarDirectoryIcons).toEqual({
-      music: 'lucide:folder',
-      'music/classical': 'lucide:music-2',
+    expect(itemBeta?.sidebarResolvedIcon).toBe('lucide:file-text');
+    expect(itemBeta?.sidebarDirectoryIcons).toEqual({
+      category: 'lucide:folder',
+      'category/section-a': 'lucide:music-2',
     });
-    expect(symphony?.sidebarResolvedIcon).toBeUndefined();
-    expect(symphony?.sidebarDirectoryIcons).toEqual({
-      music: 'lucide:folder',
-      'music/classical': 'lucide:music-2',
+    expect(pageTwo?.sidebarResolvedIcon).toBeUndefined();
+    expect(pageTwo?.sidebarDirectoryIcons).toEqual({
+      category: 'lucide:folder',
+      'category/section-a': 'lucide:music-2',
     });
-    expect(fidelio?.sidebarResolvedIcon).toBe('lucide:music-3');
-    expect(jazz?.sidebarResolvedIcon).toBeUndefined();
-    expect(jazz?.sidebarDirectoryIcons).toEqual({
-      music: 'lucide:folder',
-      'music/jazz': 'lucide:folder',
+    expect(pageThree?.sidebarResolvedIcon).toBe('lucide:music-3');
+    expect(pageFour?.sidebarResolvedIcon).toBeUndefined();
+    expect(pageFour?.sidebarDirectoryIcons).toEqual({
+      category: 'lucide:folder',
+      'category/section-b': 'lucide:folder',
     });
   });
 
@@ -195,20 +195,20 @@ describe('buildNotesCollection', () => {
     const collection = buildNotesCollection(
       [
         {
-          slug: 'testing/index',
+          slug: 'fixture/index',
           title: 'テスト',
-          content: '<h2 id="概要">概要</h2>',
+          content: '<h2 id="summary">概要</h2>',
         },
       ],
       contentRoot,
     );
 
     expect(collection[0]).toMatchObject({
-      rawSlug: 'testing/index',
-      slug: 'testing',
-      permalink: '/notes/testing',
+      rawSlug: 'fixture/index',
+      slug: 'fixture',
+      permalink: '/notes/fixture',
       noteKind: 'directory-index',
-      directoryPath: 'testing',
+      directoryPath: 'fixture',
     });
   });
 
@@ -218,8 +218,8 @@ describe('buildNotesCollection', () => {
     expect(() =>
       buildNotesCollection(
         [
-          { slug: 'testing', title: 'testing.md', content: '' },
-          { slug: 'testing/index', title: 'testing/index.md', content: '' },
+          { slug: 'fixture', title: 'fixture.md', content: '' },
+          { slug: 'fixture/index', title: 'fixture/index.md', content: '' },
         ],
         contentRoot,
       ),
@@ -230,57 +230,57 @@ describe('buildNotesCollection', () => {
 describe('filterPublicNotes', () => {
   it('status=draft を除外し、それ以外の status は公開対象として返す', () => {
     const notes: SourceNote[] = [
-      { slug: 'private-note', status: 'draft' },
-      { slug: 'archived-note', status: 'archived' },
-      { slug: 'public-note', status: '' },
-      { slug: 'implicit-public' },
+      { slug: 'note-draft', status: 'draft' },
+      { slug: 'note-archived', status: 'archived' },
+      { slug: 'note-public', status: '' },
+      { slug: 'note-default' },
     ];
 
     expect(filterPublicNotes(notes).map((note) => note.slug)).toEqual([
-      'archived-note',
-      'public-note',
-      'implicit-public',
+      'note-archived',
+      'note-public',
+      'note-default',
     ]);
   });
 
-  it('Velite が index.md を "testing" として返しても directory-index に復元する', async () => {
+  it('Velite が index.md を "fixture" として返しても directory-index に復元する', async () => {
     const contentRoot = await createContentRoot();
 
-    await mkdir(path.join(contentRoot, 'testing'), { recursive: true });
-    await writeFile(path.join(contentRoot, 'testing', 'index.md'), '# testing', 'utf8');
+    await mkdir(path.join(contentRoot, 'fixture'), { recursive: true });
+    await writeFile(path.join(contentRoot, 'fixture', 'index.md'), '# fixture', 'utf8');
 
     const collection = buildNotesCollection(
       [
         {
-          slug: 'testing',
+          slug: 'fixture',
           title: 'テスト',
-          content: '<h2 id="概要">概要</h2>',
+          content: '<h2 id="summary">概要</h2>',
         },
       ],
       contentRoot,
     );
 
     expect(collection[0]).toMatchObject({
-      rawSlug: 'testing/index',
-      slug: 'testing',
-      permalink: '/notes/testing',
+      rawSlug: 'fixture/index',
+      slug: 'fixture',
+      permalink: '/notes/fixture',
       noteKind: 'directory-index',
-      directoryPath: 'testing',
+      directoryPath: 'fixture',
     });
   });
 
-  it('testing.md と testing/index.md が同居する場合は曖昧としてエラーにする', async () => {
+  it('fixture.md と fixture/index.md が同居する場合は曖昧としてエラーにする', async () => {
     const contentRoot = await createContentRoot();
 
-    await mkdir(path.join(contentRoot, 'testing'), { recursive: true });
-    await writeFile(path.join(contentRoot, 'testing.md'), '# leaf', 'utf8');
-    await writeFile(path.join(contentRoot, 'testing', 'index.md'), '# dir', 'utf8');
+    await mkdir(path.join(contentRoot, 'fixture'), { recursive: true });
+    await writeFile(path.join(contentRoot, 'fixture.md'), '# leaf', 'utf8');
+    await writeFile(path.join(contentRoot, 'fixture', 'index.md'), '# dir', 'utf8');
 
     expect(() =>
       buildNotesCollection(
         [
           {
-            slug: 'testing',
+            slug: 'fixture',
             title: 'テスト',
             content: '',
           },
