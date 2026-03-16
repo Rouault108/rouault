@@ -188,6 +188,43 @@ describe('buildNotesCollection', () => {
       'music/jazz': 'lucide:folder',
     });
   });
+
+  it('index.md を directory-index として正規化する', async () => {
+    const contentRoot = await createContentRoot();
+
+    const collection = buildNotesCollection(
+      [
+        {
+          slug: 'music/index',
+          title: '音楽',
+          content: '<h2 id="overview">概要</h2>',
+        },
+      ],
+      contentRoot,
+    );
+
+    expect(collection[0]).toMatchObject({
+      rawSlug: 'music/index',
+      slug: 'music',
+      permalink: '/notes/music',
+      noteKind: 'directory-index',
+      directoryPath: 'music',
+    });
+  });
+
+  it('leaf と directory-index が同じルートへ解決される場合はエラーにする', async () => {
+    const contentRoot = await createContentRoot();
+
+    expect(() =>
+      buildNotesCollection(
+        [
+          { slug: 'music', title: 'music.md', content: '' },
+          { slug: 'music/index', title: 'music/index.md', content: '' },
+        ],
+        contentRoot,
+      ),
+    ).toThrow(/Route collision detected/);
+  });
 });
 
 describe('filterPublicNotes', () => {

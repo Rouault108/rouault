@@ -4,6 +4,7 @@ import { buildSidebarTree } from '../../lib/content/build-sidebar-tree.js';
 interface SidebarTreeNode {
   id: string;
   label: string;
+  href?: string;
   icon?: string;
   selected?: boolean;
   expanded?: boolean;
@@ -167,5 +168,33 @@ describe('buildSidebarTree', () => {
     );
     expect(findNode(tree as SidebarTreeNode[], 'music/jazz')?.icon).to.equal(undefined);
     expect(findNode(tree as SidebarTreeNode[], 'music/jazz/kind-of-blue')?.icon).to.equal(undefined);
+  });
+
+  it('directory-index はリンク付き親ノードとして扱われること', () => {
+  const tree = buildSidebarTree(
+    [
+      {
+        slug: 'music',
+        title: '音楽',
+        permalink: '/notes/music',
+        noteKind: 'directory-index',
+        directoryPath: 'music',
+      },
+      {
+        slug: 'music/classical/mozart',
+        title: 'モーツァルト',
+        permalink: '/notes/music/classical/mozart',
+      },
+    ],
+    'music',
+  );
+
+  const root = findNode(tree as SidebarTreeNode[], 'music');
+
+  expect(root?.label).to.equal('音楽');
+  expect(root?.href).to.equal('/notes/music');
+  expect(root?.selected).to.equal(true);
+  expect(root?.expanded).to.equal(true);
+  expect(findNode(tree as SidebarTreeNode[], 'music/classical/mozart')).to.not.equal(null);
   });
 });
