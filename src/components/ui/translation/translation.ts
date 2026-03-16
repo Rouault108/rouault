@@ -14,10 +14,13 @@ const VALID_RENDER_MODES = new Set<TranslationRenderMode>(['popover', 'drawer', 
 const DOCUMENT_STYLE_ID = 'ui-translation-document-styles';
 const MAX_TRIGGER_TEXT_LENGTH = 150;
 const MOBILE_VIEWPORT_MAX_WIDTH = 1279;
+const BOTTOM_SHEET_MEDIA_QUERY =
+  `(max-width: ${String(MOBILE_VIEWPORT_MAX_WIDTH)}px) and (hover: none) and (pointer: coarse)`;
 const POPOVER_EDGE_PADDING = 16;
 const POPOVER_TRIGGER_GAP = 8;
 const BOTTOM_SHEET_CLOSE_RATIO = 0.3;
 const BOTTOM_SHEET_CLOSE_VELOCITY = 0.75;
+
 
 const DOCUMENT_CSS = `
 ui-translation {
@@ -183,7 +186,7 @@ ui-translation [data-part='content'][hidden] {
   }
 }
 
-@media (max-width: 1279px) {
+@media ${BOTTOM_SHEET_MEDIA_QUERY} {
   ui-translation [data-part='trigger']::after {
     inline-size: max(100%, var(--control-min-touch, 24px));
     block-size: max(100%, var(--control-min-touch, 24px));
@@ -412,13 +415,13 @@ export class UiTranslation extends LitElement {
     return this._resolvedRenderMode === 'popover';
   }
 
-  private get _isMobileViewport(): boolean {
+  private get _matchesBottomSheetViewport(): boolean {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
-    return window.matchMedia(`(max-width: ${String(MOBILE_VIEWPORT_MAX_WIDTH)}px)`).matches;
+    return window.matchMedia(BOTTOM_SHEET_MEDIA_QUERY).matches;
   }
 
   private get _isBottomSheetMode(): boolean {
-    return this._isPopoverMode && this._isLookupMode && this._isMobileViewport;
+    return this._isPopoverMode && this._isLookupMode && this._matchesBottomSheetViewport;
   }
 
   private _setOpen(nextOpen: boolean): void {
@@ -780,4 +783,4 @@ declare global {
   }
 }
 
-export { DOCUMENT_STYLE_ID, MAX_TRIGGER_TEXT_LENGTH };
+export { DOCUMENT_STYLE_ID, MAX_TRIGGER_TEXT_LENGTH, BOTTOM_SHEET_MEDIA_QUERY };

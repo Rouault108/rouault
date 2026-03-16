@@ -1,7 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './translation';
-import { DOCUMENT_STYLE_ID, MAX_TRIGGER_TEXT_LENGTH, type TranslationRenderMode } from './translation';
+import {
+  DOCUMENT_STYLE_ID,
+  MAX_TRIGGER_TEXT_LENGTH,
+  BOTTOM_SHEET_MEDIA_QUERY,
+  type TranslationRenderMode,
+} from './translation';
 import {
   DEFAULT_TRANSLATION_MOBILE_BREAKPOINT,
   TRANSLATION_MODE_STORAGE_KEY,
@@ -677,7 +682,7 @@ export const MobileLookupBottomSheet: Story = {
 
     const originalMatchMedia = window.matchMedia.bind(window);
     window.matchMedia = ((query: string): MediaQueryList => {
-      if (query.includes(`max-width: ${String(DEFAULT_TRANSLATION_MOBILE_BREAKPOINT - 1)}px`)) {
+      if (query === BOTTOM_SHEET_MEDIA_QUERY) {
         return createMediaQueryListMock(query, true);
       }
       return originalMatchMedia(query);
