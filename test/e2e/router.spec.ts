@@ -3,6 +3,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 const beethovenPath = '/notes/music/classical/beethoven/symphony-9';
 const nutcrackerPath = '/notes/music/classical/tchaikovsky/the-nutcracker';
 const beethovenEntryPath = `${beethovenPath}/`;
+const testNotePath = '/notes/testing/test';
 
 const getSidebarTreeItem = (page: Page, label: string): Locator =>
   page.getByRole('treeitem', { name: label, exact: true }).first();
@@ -119,5 +120,34 @@ test.describe('Router Navigation', () => {
 
     const scrollY = await page.evaluate(() => window.scrollY);
     expect(scrollY).toBe(0);
+  });
+
+  test('hash なしで再読み込みしてもトップ位置のままであること', async ({ page }) => {
+  await page.goto(testNotePath);
+
+  await expect(page.locator('ui-tabs')).toBeVisible();
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => { resolve() });
+        });
+      }),
+  );
+
+  await page.reload();
+
+  await expect(page.locator('ui-tabs')).toBeVisible();
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => { resolve() });
+        });
+      }),
+  );
+
+  const scrollY = await page.evaluate(() => window.scrollY);
+  expect(scrollY).toBeLessThanOrEqual(2);
   });
 });

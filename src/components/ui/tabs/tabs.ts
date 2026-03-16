@@ -605,29 +605,64 @@ export class Tabs extends LitElement {
     this._setActive(index, true);
   }
 
-  /**
-   * Roving Tabindex でフォーカスをタブに移動する。
-   * Manual Activation モードでは選択は変更しない。
-   */
   private _focusTab(index: number): void {
-    if (index < 0 || index >= this._interactiveCount) return;
+  if (index < 0 || index >= this._interactiveCount) return;
 
-    this._focusedIndex = index;
+  this._focusedIndex = index;
 
-    // Roving Tabindex の更新: フォーカスされるタブのみ tabindex="0"
-    this._tabEls.forEach((tab, i) => {
-      tab.setAttribute('tabindex', i === index ? '0' : '-1');
-    });
+  // Roving Tabindex の更新: フォーカスされるタブのみ tabindex="0"
+  this._tabEls.forEach((tab, i) => {
+    tab.setAttribute('tabindex', i === index ? '0' : '-1');
+  });
 
-    const tabEl = this._tabEls[index] as HTMLElement | undefined;
-    tabEl?.focus();
-    tabEl?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-
-    // Automatic Activation: フォーカス移動と同時に選択
-    if (this.automaticActivation) {
-      this._selectTab(index);
-    }
+  const tabEl = this._tabEls[index] as HTMLElement | undefined;
+  if (tabEl) {
+    tabEl.focus({ preventScroll: true });
+    this._scrollTabElementIntoView(tabEl);
   }
+
+  // Automatic Activation: フォーカス移動と同時に選択
+  if (this.automaticActivation) {
+    this._selectTab(index);
+  }
+}
+
+/**
+ * 指定インデックスのタブをタブリスト内で可視領域へ寄せる。
+ */
+private _scrollTabIntoView(index: number): void {
+  const tabEl = this._tabEls[index] as HTMLElement | undefined;
+  if (!tabEl) return;
+
+  this._scrollTabElementIntoView(tabEl);
+}
+
+/**
+ * scrollIntoView() を使わず、tablist コンテナ自身の scroll だけを調整する。
+ * これにより、初期 hydration 時にページ全体が途中まで飛ぶのを防ぐ。
+ */
+private _scrollTabElementIntoView(tabEl: HTMLElement): void {
+  const container = this._tablistEl;
+  if (tabEl.getClientRects().length === 0 || container.getClientRects().length === 0) return;
+
+  const containerRect = container.getBoundingClientRect();
+  const tabRect = tabEl.getBoundingClientRect();
+
+  if (this.orientation === 'vertical') {
+    if (tabRect.top < containerRect.top) {
+      container.scrollTop -= Math.ceil(containerRect.top - tabRect.top);
+    } else if (tabRect.bottom > containerRect.bottom) {
+      container.scrollTop += Math.ceil(tabRect.bottom - containerRect.bottom);
+    }
+    return;
+  }
+
+  if (tabRect.left < containerRect.left) {
+    container.scrollLeft -= Math.ceil(containerRect.left - tabRect.left);
+  } else if (tabRect.right > containerRect.right) {
+    container.scrollLeft += Math.ceil(tabRect.right - containerRect.right);
+  }
+}
 
   // ─────────────────────────────────────────────────
   // Private: ARIA
@@ -818,16 +853,6 @@ export class Tabs extends LitElement {
       indicator.style.removeProperty('left');
       indicator.style.removeProperty('width');
     }
-  }
-
-  /**
-   * 指定インデックスのタブを可視領域にスクロールする。
-   * ページロード時や選択変更時に自動的に呼び出される。
-   */
-  private _scrollTabIntoView(index: number): void {
-    const tabEl = this._tabEls[index] as HTMLElement | undefined;
-    if (!tabEl) return;
-    tabEl.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
 
   // ─────────────────────────────────────────────────
