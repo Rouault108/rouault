@@ -1,10 +1,20 @@
 import { css, html, LitElement } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 
 /** カードの外観スタイルを定義するバリアント型 */
 export type CardVariant = 'outlined' | 'elevated' | 'flat' | 'ghost';
 export type CardKind = 'generic' | 'link';
+
+const truncateDescription = (value: string, maxLength = 140): string => {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, Math.max(0, maxLength - 1)).trimEnd()}…`;
+};
+
+const isDescriptionTextTruncated = (value: string, maxLength = 140): boolean => value.length > maxLength;
 
 /**
  * カード (Card) コンポーネント `<ui-card>`
@@ -210,19 +220,52 @@ export class Card extends LitElement {
     }
 
     .link-card__title {
+      --link-card-title-lines: 2;
+      --link-card-title-line-height: 1.3;
+
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      display: -webkit-box;
       font-size: var(--text-base);
       font-weight: var(--font-semibold, 600);
-      line-height: var(--line-height-tight, 1.3);
+      line-height: var(--line-height-tight, var(--link-card-title-line-height));
       margin: 0;
+      max-block-size: calc(1em * var(--link-card-title-line-height) * var(--link-card-title-lines) + 1px);
+      overflow: hidden;
       overflow-wrap: anywhere;
     }
 
     .link-card__description {
+      --link-card-description-lines: 2;
+      --link-card-description-line-height: 1.65;
+
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      display: -webkit-box;
       color: var(--fg-muted);
-      font-size: var(--text-sm);
-      line-height: var(--line-height-relaxed, 1.65);
+      font-size: var(--text-xs);
+      line-height: var(--line-height-relaxed, var(--link-card-description-line-height));
       margin: 0;
+      max-block-size: calc(
+        1em * var(--link-card-description-line-height) * var(--link-card-description-lines) + 1px
+      );
+      overflow: hidden;
       overflow-wrap: anywhere;
+      position: relative;
+    }
+
+    .link-card__description[data-line-overflowed='true'][data-text-truncated='false']::after {
+      background:
+        linear-gradient(
+          to right,
+          transparent 0%,
+          var(--ui-card-description-fade, var(--bg-surface-2)) 45%
+        );
+      bottom: 0;
+      content: '…';
+      inset-inline-end: 0;
+      padding-inline-start: 0.25em;
+      position: absolute;
     }
 
     .link-card__media {
@@ -336,6 +379,13 @@ export class Card extends LitElement {
   @property({ type: String, attribute: 'site-name' })
   siteName = '';
 
+  @state()
+  private _descriptionLineOverflowed = false;
+
+  private _descriptionObserver: ResizeObserver | null = null;
+  private _observedDescription: HTMLElement | null = null;
+  private _overflowMeasureFrame = 0;
+
   private get _isLinkCard(): boolean {
     return this.cardKind === 'link' && this.href.trim().length > 0;
   }
@@ -403,15 +453,76 @@ export class Card extends LitElement {
     this.addEventListener('click', this._handleClick);
   }
 
+  override firstUpdated(): void {
+    this._descriptionObserver = new ResizeObserver(() => {
+      this._scheduleDescriptionOverflowSync();
+    });
+    this._observeDescription();
+    this._scheduleDescriptionOverflowSync();
+  }
+
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeEventListener('click', this._handleClick);
+    this._descriptionObserver?.disconnect();
+    this._descriptionObserver = null;
+    this._observedDescription = null;
+    if (this._overflowMeasureFrame !== 0) {
+      cancelAnimationFrame(this._overflowMeasureFrame);
+      this._overflowMeasureFrame = 0;
+    }
+  }
+
+  override updated(): void {
+    this._observeDescription();
+    this._scheduleDescriptionOverflowSync();
+  }
+
+  private _observeDescription(): void {
+    const description = this.shadowRoot?.querySelector<HTMLElement>('.link-card__description') ?? null;
+    if (this._observedDescription === description) {
+      return;
+    }
+
+    this._descriptionObserver?.disconnect();
+    this._observedDescription = description;
+    if (description) {
+      this._descriptionObserver?.observe(description);
+    }
+  }
+
+  private _scheduleDescriptionOverflowSync(): void {
+    if (this._overflowMeasureFrame !== 0) {
+      cancelAnimationFrame(this._overflowMeasureFrame);
+    }
+
+    this._overflowMeasureFrame = requestAnimationFrame(() => {
+      this._overflowMeasureFrame = 0;
+      this._syncDescriptionOverflow();
+    });
+  }
+
+  private _syncDescriptionOverflow(): void {
+    const description = this._observedDescription;
+    if (!description) {
+      if (this._descriptionLineOverflowed) {
+        this._descriptionLineOverflowed = false;
+      }
+      return;
+    }
+
+    const nextOverflowed = description.scrollHeight > description.clientHeight + 1;
+    if (this._descriptionLineOverflowed !== nextOverflowed) {
+      this._descriptionLineOverflowed = nextOverflowed;
+    }
   }
 
   private renderLinkCard() {
     const siteName = this.siteName.trim();
     const title = this.cardTitle.trim();
-    const description = this.description.trim();
+    const rawDescription = this.description.trim();
+    const description = truncateDescription(rawDescription);
+    const textTruncated = isDescriptionTextTruncated(rawDescription);
     const imageSrc = this.imageSrc.trim();
     const hasImage = imageSrc.length > 0;
 
@@ -424,7 +535,15 @@ export class Card extends LitElement {
           ${siteName.length > 0 ? html`<p class="link-card__eyebrow">${siteName}</p>` : null}
           <h3 class="link-card__title">${title}</h3>
           ${description.length > 0
-            ? html`<p class="link-card__description">${description}</p>`
+            ? html`
+                <p
+                  class="link-card__description"
+                  data-line-overflowed=${this._descriptionLineOverflowed ? 'true' : 'false'}
+                  data-text-truncated=${textTruncated ? 'true' : 'false'}
+                >
+                  ${description}
+                </p>
+              `
             : null}
         </div>
         ${hasImage

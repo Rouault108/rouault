@@ -444,8 +444,17 @@ export const LinkCardWithImage: Story = {
 
     shadowLink.focus();
     const linkStyle = window.getComputedStyle(shadowLink);
+    const titleStyle = window.getComputedStyle(
+      card.shadowRoot?.querySelector<HTMLElement>('.link-card__title') ?? shadowLink,
+    );
     if (linkStyle.outlineStyle !== 'none') {
       throw new Error(`内部リンクの outline は none であるべきですが、実際には "${linkStyle.outlineStyle}" でした`);
+    }
+    if (titleStyle.getPropertyValue('-webkit-line-clamp').trim() !== '2') {
+      throw new Error('タイトルの line clamp は 2 行である必要があります');
+    }
+    if (titleStyle.maxBlockSize === 'none') {
+      throw new Error('タイトルには見切れ防止の max-block-size が必要です');
     }
 
     let count = 0;
@@ -476,8 +485,8 @@ export const LinkCardWithoutImage: Story = {
       id="link-card-without-image"
       card-kind="link"
       href="https://example.com/no-image"
-      card-title="画像なしカード"
-      description="メタデータ取得に失敗した場合のフォールバック想定です。"
+      card-title="画像なしカードでも本文領域の可読性が崩れないことを確認するために十分な長さを持たせたタイトルです"
+      description="これはメタデータ取得に失敗した場合のフォールバック想定です。説明文は最大 140 文字に切り詰めたうえで、表示上はさらに 2 行までに抑える必要があります。そのため、ここでは意図的に長い日本語の文章を入れて truncate と line clamp の両方を確認します。さらに後続の文を追加して、140 文字を確実に超えた状態でもカードの高さが暴れず、末尾に省略記号が付くことまで検証します。"
       site-name="Fallback Host"
       style="max-width: 520px;"
     ></ui-card>
@@ -490,12 +499,27 @@ export const LinkCardWithoutImage: Story = {
 
     const shadowLink = card.shadowRoot?.querySelector<HTMLAnchorElement>('a.link-card');
     const shadowImage = card.shadowRoot?.querySelector('img.link-card__media');
-    const description = card.shadowRoot?.querySelector('.link-card__description')?.textContent.trim();
+    const title = card.shadowRoot?.querySelector('.link-card__title')?.textContent?.trim();
+    const description = card.shadowRoot?.querySelector('.link-card__description')?.textContent?.trim();
+    const descriptionStyle = window.getComputedStyle(
+      card.shadowRoot?.querySelector<HTMLElement>('.link-card__description')
+        ?? shadowLink
+        ?? document.body,
+    );
 
     if (!shadowLink) throw new Error('画像なし link mode の主リンクが見つかりません');
     if (shadowImage) throw new Error('画像なしカードに img が描画されてはいけません');
-    if (description !== 'メタデータ取得に失敗した場合のフォールバック想定です。') {
-      throw new Error(`説明文が想定と異なります: ${description ?? 'null'}`);
+    if (!title || title.length === 0) {
+      throw new Error('タイトルが描画されていません');
+    }
+    if (!description || description.length > 140 || !description.endsWith('…')) {
+      throw new Error(`説明文の truncate が想定どおりではありません: ${description ?? 'null'}`);
+    }
+    if (descriptionStyle.getPropertyValue('-webkit-line-clamp').trim() !== '2') {
+      throw new Error('説明文の line clamp は 2 行である必要があります');
+    }
+    if (descriptionStyle.maxBlockSize === 'none') {
+      throw new Error('説明文には見切れ防止の max-block-size が必要です');
     }
   },
 };
