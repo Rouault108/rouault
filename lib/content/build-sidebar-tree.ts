@@ -21,6 +21,35 @@ const normalizeSegmentLabel = (segment: string): string =>
     .trim()
     .replace(/\b\p{Letter}/gu, (value) => value.toUpperCase());
 
+const getDirectoryIndexNodeId = (directoryPath: string): string =>
+  `${directoryPath}/__index__`;
+
+const resolveSelectedNodeId = (
+  notes: SidebarSourceNote[],
+  selectedSlug: string,
+): string => {
+  const normalized = selectedSlug.trim();
+  if (normalized.length === 0) {
+    return '';
+  }
+
+  const selectedNote = notes.find(
+    (note) => typeof note.slug === 'string' && note.slug.trim() === normalized,
+  );
+
+  if (selectedNote?.noteKind === 'directory-index') {
+    const directoryPath =
+      typeof selectedNote.directoryPath === 'string' &&
+      selectedNote.directoryPath.trim().length > 0
+        ? selectedNote.directoryPath.trim()
+        : normalized;
+
+    return getDirectoryIndexNodeId(directoryPath);
+  }
+
+  return normalized;
+};
+
 const findNodeById = (nodes: SidebarMutableNode[], id: string): SidebarMutableNode | null => {
   for (const node of nodes) {
     if (node.id === id) {
@@ -60,10 +89,15 @@ const ensureDirectoryNode = (
 ): SidebarMutableNode => {
   const existing = findNodeById(nodes, id);
   if (existing !== null) {
+    existing.label = label;
     if (typeof icon === 'string' && typeof existing.icon !== 'string') {
       existing.icon = icon;
     }
     existing.children = existing.children ?? [];
+
+    delete existing.href;
+    existing.selected = false;
+
     return existing;
   }
 
@@ -85,6 +119,7 @@ export const buildSidebarTree = (
   rootSlug = '',
 ): TreeNode[] => {
   const roots: SidebarMutableNode[] = [];
+  const selectedNodeId = resolveSelectedNodeId(notes, selectedSlug);
 
   for (const note of notes) {
     if (typeof note.slug !== 'string' || note.slug.trim().length === 0) {
@@ -114,8 +149,7 @@ export const buildSidebarTree = (
       let currentChildren = roots;
       let parentPath = '';
 
-      for (let index = 0; index < segments.length; index += 1) {
-        const segment = segments[index];
+      for (const segment of segments) {
         if (!segment) {
           continue;
         }
@@ -129,18 +163,38 @@ export const buildSidebarTree = (
           directoryIcon,
         );
 
-        if (index === segments.length - 1) {
-          node.label = candidateTitle;
-          node.href = note.permalink.trim();
-          node.selected = slug === selectedSlug;
-          if (typeof note.sidebarResolvedIcon === 'string') {
-            node.icon = note.sidebarResolvedIcon;
-          }
-        }
-
         currentChildren = node.children ?? [];
         node.children = currentChildren;
         parentPath = currentPath;
+      }
+
+      const lastSegment = segments[segments.length - 1];
+      if (lastSegment === undefined) {
+        throw new Error('segments must not be empty');
+      }
+
+      const indexNodeId = getDirectoryIndexNodeId(directoryPath);
+
+      let indexNode = findNodeById(currentChildren, indexNodeId);
+      if (indexNode === null) {
+        indexNode = {
+          id: indexNodeId,
+          label: normalizeSegmentLabel(lastSegment),
+          ...(typeof note.sidebarResolvedIcon === 'string'
+            ? { icon: note.sidebarResolvedIcon }
+            : {}),
+          href: note.permalink.trim(),
+          selected: indexNodeId === selectedNodeId,
+          expanded: false,
+        };
+        currentChildren.push(indexNode);
+      } else {
+        indexNode.label = normalizeSegmentLabel(lastSegment);
+        indexNode.href = note.permalink.trim();
+        indexNode.selected = indexNodeId === selectedNodeId;
+        if (typeof note.sidebarResolvedIcon === 'string') {
+          indexNode.icon = note.sidebarResolvedIcon;
+        }
       }
 
       continue;
@@ -186,14 +240,14 @@ export const buildSidebarTree = (
             ? { icon: note.sidebarResolvedIcon }
             : {}),
           href: note.permalink.trim(),
-          selected: slug === selectedSlug,
+          selected: slug === selectedNodeId,
           expanded: false,
         };
         currentChildren.push(node);
       } else {
         node.label = candidateTitle;
         node.href = note.permalink.trim();
-        node.selected = slug === selectedSlug;
+        node.selected = slug === selectedNodeId;
         if (typeof note.sidebarResolvedIcon === 'string') {
           node.icon = note.sidebarResolvedIcon;
         }
@@ -203,27 +257,31 @@ export const buildSidebarTree = (
     }
   }
 
-  if (selectedSlug.length > 0) {
-    const selectedNode = findNodeById(roots, selectedSlug);
+  if (selectedNodeId.length > 0) {
+    const selectedNode = findNodeById(roots, selectedNodeId);
     if (selectedNode) {
       selectedNode.selected = true;
       if (Array.isArray(selectedNode.children) && selectedNode.children.length > 0) {
         selectedNode.expanded = true;
       }
-      markExpandedPath(roots, selectedSlug);
+      markExpandedPath(roots, selectedNodeId);
     }
   }
 
+  const isDirectoryIndexNode = (node: SidebarMutableNode): boolean =>
+    node.id.endsWith('/__index__');
+
   const sortNodes = (nodes: SidebarMutableNode[]): void => {
     nodes.sort((first, second) => {
+      const firstIsIndex = isDirectoryIndexNode(first);
+      const secondIsIndex = isDirectoryIndexNode(second);
+      if (firstIsIndex && !secondIsIndex) return -1;
+      if (!firstIsIndex && secondIsIndex) return 1;
+
       const firstHasChildren = Array.isArray(first.children) && first.children.length > 0;
       const secondHasChildren = Array.isArray(second.children) && second.children.length > 0;
-      if (firstHasChildren && !secondHasChildren) {
-        return -1;
-      }
-      if (!firstHasChildren && secondHasChildren) {
-        return 1;
-      }
+      if (firstHasChildren && !secondHasChildren) return -1;
+      if (!firstHasChildren && secondHasChildren) return 1;
       return 0;
     });
 

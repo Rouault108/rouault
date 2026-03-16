@@ -128,8 +128,11 @@ const readNotesFile = (filePath: string): SourceNote[] => {
   return Array.isArray(parsed) ? parsed.filter(isSourceNote) : [];
 };
 
-const normalizeNotePath = (rawSlug: string): NormalizedNotePath => {
-  const normalized = rawSlug.trim().replace(/^\/+|\/+$/g, '');
+const normalizeNotePath = (
+  inputSlug: string,
+  contentRoot: string,
+): NormalizedNotePath => {
+  const normalized = inputSlug.trim().replace(/^\/+|\/+$/g, '');
 
   if (normalized.length === 0) {
     throw new Error('Empty slug is not allowed.');
@@ -141,19 +144,26 @@ const normalizeNotePath = (rawSlug: string): NormalizedNotePath => {
     );
   }
 
-  if (normalized.endsWith('/index')) {
-    const directoryPath = normalized.slice(0, -'/index'.length);
+  const leafPath = join(contentRoot, `${normalized}.md`);
+  const directoryIndexPath = join(contentRoot, normalized, 'index.md');
 
-    if (directoryPath.length === 0) {
-      throw new Error(`Invalid directory index slug: "${rawSlug}"`);
-    }
+  const hasLeaf = existsSync(leafPath);
+  const hasDirectoryIndex = existsSync(directoryIndexPath);
 
+  if (hasLeaf && hasDirectoryIndex) {
+    throw new Error(
+      `Ambiguous note source for "${normalized}". ` +
+        `Both "${normalized}.md" and "${normalized}/index.md" exist.`,
+    );
+  }
+
+  if (hasDirectoryIndex) {
     return {
-      rawSlug: normalized,
-      slug: directoryPath,
-      permalink: `/notes/${directoryPath}`,
+      rawSlug: `${normalized}/index`,
+      slug: normalized,
+      permalink: `/notes/${normalized}`,
       kind: 'directory-index',
-      directoryPath,
+      directoryPath: normalized,
     };
   }
 
@@ -282,23 +292,25 @@ export const buildNotesCollection = (
       return typeof note.slug === 'string' && note.slug.trim().length > 0;
     })
     .map((note) => {
-      const rawSlug = note.slug.trim();
-      const pathInfo = normalizeNotePath(rawSlug);
-      const sidebarRoot = resolveSidebarRoot(rawSlug, contentRoot);
+      const inputSlug = note.slug.trim();
+      const pathInfo = normalizeNotePath(inputSlug, contentRoot);
+      const sourceSlug = pathInfo.rawSlug;
+
+      const sidebarRoot = resolveSidebarRoot(sourceSlug, contentRoot);
       const sidebarIconSetting = toOptionalTrimmedString(note.sidebarIcon);
-      const sidebarIconContext = resolveSidebarIconContext(rawSlug, contentRoot);
+      const sidebarIconContext = resolveSidebarIconContext(sourceSlug, contentRoot);
       const sidebarResolvedIcon = resolveNoteSidebarIcon(sidebarIconSetting, undefined);
 
       return {
         ...note,
-        rawSlug,
+        rawSlug: sourceSlug,
         slug: pathInfo.slug,
         permalink: pathInfo.permalink,
         noteKind: pathInfo.kind,
         ...(pathInfo.directoryPath !== undefined
           ? { directoryPath: pathInfo.directoryPath }
           : {}),
-        sortIndex: calculateSortIndex(rawSlug, contentRoot),
+        sortIndex: calculateSortIndex(sourceSlug, contentRoot),
         tocHeadings: extractTocFromHtml(typeof note.content === 'string' ? note.content : ''),
         ...(sidebarRoot !== undefined ? { sidebarRoot } : {}),
         ...(sidebarResolvedIcon !== undefined ? { sidebarResolvedIcon } : {}),

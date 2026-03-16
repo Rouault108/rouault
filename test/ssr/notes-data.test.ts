@@ -195,20 +195,20 @@ describe('buildNotesCollection', () => {
     const collection = buildNotesCollection(
       [
         {
-          slug: 'music/index',
-          title: '音楽',
-          content: '<h2 id="overview">概要</h2>',
+          slug: 'testing/index',
+          title: 'テスト',
+          content: '<h2 id="概要">概要</h2>',
         },
       ],
       contentRoot,
     );
 
     expect(collection[0]).toMatchObject({
-      rawSlug: 'music/index',
-      slug: 'music',
-      permalink: '/notes/music',
+      rawSlug: 'testing/index',
+      slug: 'testing',
+      permalink: '/notes/testing',
       noteKind: 'directory-index',
-      directoryPath: 'music',
+      directoryPath: 'testing',
     });
   });
 
@@ -218,8 +218,8 @@ describe('buildNotesCollection', () => {
     expect(() =>
       buildNotesCollection(
         [
-          { slug: 'music', title: 'music.md', content: '' },
-          { slug: 'music/index', title: 'music/index.md', content: '' },
+          { slug: 'testing', title: 'testing.md', content: '' },
+          { slug: 'testing/index', title: 'testing/index.md', content: '' },
         ],
         contentRoot,
       ),
@@ -241,5 +241,52 @@ describe('filterPublicNotes', () => {
       'public-note',
       'implicit-public',
     ]);
+  });
+
+  it('Velite が index.md を "testing" として返しても directory-index に復元する', async () => {
+    const contentRoot = await createContentRoot();
+
+    await mkdir(path.join(contentRoot, 'testing'), { recursive: true });
+    await writeFile(path.join(contentRoot, 'testing', 'index.md'), '# testing', 'utf8');
+
+    const collection = buildNotesCollection(
+      [
+        {
+          slug: 'testing',
+          title: 'テスト',
+          content: '<h2 id="概要">概要</h2>',
+        },
+      ],
+      contentRoot,
+    );
+
+    expect(collection[0]).toMatchObject({
+      rawSlug: 'testing/index',
+      slug: 'testing',
+      permalink: '/notes/testing',
+      noteKind: 'directory-index',
+      directoryPath: 'testing',
+    });
+  });
+
+  it('testing.md と testing/index.md が同居する場合は曖昧としてエラーにする', async () => {
+    const contentRoot = await createContentRoot();
+
+    await mkdir(path.join(contentRoot, 'testing'), { recursive: true });
+    await writeFile(path.join(contentRoot, 'testing.md'), '# leaf', 'utf8');
+    await writeFile(path.join(contentRoot, 'testing', 'index.md'), '# dir', 'utf8');
+
+    expect(() =>
+      buildNotesCollection(
+        [
+          {
+            slug: 'testing',
+            title: 'テスト',
+            content: '',
+          },
+        ],
+        contentRoot,
+      ),
+    ).toThrow(/Ambiguous note source/);
   });
 });

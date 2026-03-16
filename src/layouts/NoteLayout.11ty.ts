@@ -5,7 +5,7 @@
  * サイドバー + 本文 + TOC の3カラム構成を提供する。
  */
 
-import { buildSidebarTree, type SidebarSourceNote } from '../../lib/content/build-sidebar-tree.js';
+import { buildSidebarTree } from '../../lib/content/build-sidebar-tree.js';
 import { tokenizeSearchText } from '../lib/search/query-preprocessor.js';
 import type { NoteStatus } from '../types/article-status.js';
 
@@ -15,7 +15,17 @@ interface TocHeading {
   level?: number;
 }
 
-interface NoteData extends SidebarSourceNote {
+interface SidebarNoteLike {
+  slug?: string;
+  title?: string;
+  permalink?: string;
+  noteKind?: 'leaf' | 'directory-index';
+  directoryPath?: string;
+  sidebarResolvedIcon?: string;
+  sidebarDirectoryIcons?: Record<string, string>;
+};
+
+interface NoteData extends SidebarNoteLike {
   description?: string;
   date?: string;
   updated?: string;
@@ -31,7 +41,7 @@ interface NoteData extends SidebarSourceNote {
 interface NoteLayoutData {
   content: string;
   note?: NoteData;
-  notes?: SidebarSourceNote[];
+  notes?: SidebarNoteLike[];
 }
 
 /**
@@ -106,6 +116,76 @@ function buildTokenizedPagefindText(value: string | undefined): string {
   return escapeHtml(tokenized.segmentedText);
 }
 
+function mergeCurrentNoteIntoSidebarNotes(
+  note: NoteData | undefined,
+  notes: SidebarNoteLike[] | undefined,
+): SidebarNoteLike[] {
+  const base: SidebarNoteLike[] = Array.isArray(notes) ? [...notes] : [];
+
+  if (!note || typeof note.slug !== 'string') {
+    return base;
+  }
+
+  const slug = note.slug.trim();
+  if (slug.length === 0) {
+    return base;
+  }
+
+  const permalink =
+    typeof note.permalink === 'string' && note.permalink.trim().length > 0
+      ? note.permalink.trim()
+      : `/notes/${slug}`;
+
+  const currentNote: SidebarNoteLike = {
+    slug,
+    permalink,
+  };
+
+  if (typeof note.title === 'string' && note.title.trim().length > 0) {
+    currentNote.title = note.title.trim();
+  }
+
+  if (note.noteKind === 'leaf' || note.noteKind === 'directory-index') {
+    currentNote.noteKind = note.noteKind;
+  }
+
+  if (typeof note.sidebarResolvedIcon === 'string' && note.sidebarResolvedIcon.trim().length > 0) {
+    currentNote.sidebarResolvedIcon = note.sidebarResolvedIcon;
+  }
+
+  if (note.sidebarDirectoryIcons && typeof note.sidebarDirectoryIcons === 'object') {
+    currentNote.sidebarDirectoryIcons = note.sidebarDirectoryIcons;
+  }
+
+  if (typeof note.directoryPath === 'string' && note.directoryPath.trim().length > 0) {
+    currentNote.directoryPath = note.directoryPath.trim();
+  } else if (note.noteKind === 'directory-index') {
+    currentNote.directoryPath = slug;
+  }
+
+  const alreadyIncluded = base.some((item: SidebarNoteLike) => {
+    const itemSlug = typeof item.slug === 'string' ? item.slug.trim() : '';
+    const itemDirectoryPath =
+      typeof item.directoryPath === 'string' ? item.directoryPath.trim() : '';
+
+    if (currentNote.noteKind === 'directory-index') {
+      return (
+        item.noteKind === 'directory-index' &&
+        itemSlug === slug &&
+        itemDirectoryPath === (currentNote.directoryPath ?? slug)
+      );
+    }
+
+    return itemSlug === slug && item.noteKind !== 'directory-index';
+  });
+
+  if (!alreadyIncluded) {
+    base.push(currentNote);
+  }
+
+  return base;
+}
+
 export class NoteLayout {
   data() {
     return {
@@ -116,6 +196,10 @@ export class NoteLayout {
   render(data: NoteLayoutData) {
     const note = data.note;
     const slug = typeof note?.slug === 'string' ? note.slug : '';
+    const sidebarActiveId =
+      note?.noteKind === 'directory-index'
+        ? `${slug}/__index__`
+        : slug;
     const heading = escapeAttr(note?.title ?? '');
     const published = note?.date ? ` published="${escapeAttr(note.date)}"` : '';
     const updated = note?.updated
@@ -133,7 +217,8 @@ export class NoteLayout {
       : [];
     const headings = normalizeHeadings(note?.tocHeadings);
     const sidebarRoot = typeof note?.sidebarRoot === 'string' ? note.sidebarRoot : '';
-    const sidebarTree = buildSidebarTree(data.notes ?? [], slug, sidebarRoot);
+    const sidebarNotes = mergeCurrentNoteIntoSidebarNotes(note, data.notes);
+    const sidebarTree = buildSidebarTree(sidebarNotes, slug, sidebarRoot);
 
     const dataIdBase = toSafeDataId(slug.length > 0 ? slug : 'note');
     const sidebarSourceId = `sidebar-source-${dataIdBase}`;
@@ -157,7 +242,7 @@ export class NoteLayout {
         <aside class="layout-sidebar-col" aria-label="ナビゲーション">
           <layout-sidebar
             source-id="${escapeAttr(sidebarSourceId)}"
-            active-id="${escapeAttr(slug)}"
+            active-id="${escapeAttr(sidebarActiveId)}"
             items-json="${sidebarItemsJson}"
             heading="ナビゲーション"
             fixed-breakpoint="768"

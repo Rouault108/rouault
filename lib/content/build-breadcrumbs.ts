@@ -17,6 +17,11 @@ const normalizeSegmentLabel = (segment: string): string =>
     .trim()
     .replace(/\b\p{Letter}/gu, (value) => value.toUpperCase());
 
+const getDirectoryLabel = (directoryPath: string): string => {
+  const segment = directoryPath.split('/').pop() ?? directoryPath;
+  return normalizeSegmentLabel(segment);
+};
+
 export const buildBreadcrumbs = (
   note: BreadcrumbSourceNote | null | undefined,
   notes: readonly BreadcrumbSourceNote[] = [],
@@ -49,19 +54,13 @@ export const buildBreadcrumbs = (
       continue;
     }
 
-    const fallbackSegment = directoryPath.split('/').pop() ?? directoryPath;
-    const label =
-      typeof entry.title === 'string' && entry.title.trim().length > 0
-        ? entry.title.trim()
-        : normalizeSegmentLabel(fallbackSegment);
-
     const href =
       typeof entry.permalink === 'string' && entry.permalink.trim().length > 0
         ? entry.permalink.trim()
         : undefined;
 
     directoryIndexMap.set(directoryPath, {
-      label,
+      label: getDirectoryLabel(directoryPath),
       ...(href !== undefined ? { href } : {}),
     });
   }
@@ -79,9 +78,11 @@ export const buildBreadcrumbs = (
 
     if (isLast) {
       const label =
-        typeof note.title === 'string' && note.title.trim().length > 0
-          ? note.title.trim()
-          : directoryIndexMap.get(currentPath)?.label ?? normalizeSegmentLabel(segment);
+        note.noteKind === 'directory-index'
+          ? getDirectoryLabel(currentPath)
+          : typeof note.title === 'string' && note.title.trim().length > 0
+            ? note.title.trim()
+            : directoryIndexMap.get(currentPath)?.label ?? normalizeSegmentLabel(segment);
 
       breadcrumbs.push({ label });
       continue;
