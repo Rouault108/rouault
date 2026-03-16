@@ -220,6 +220,11 @@ ui-article-header + .prose {
   margin-block-start: var(--prose-flow-space);
 }
 
+.prose > ui-translation,
+.about-prose > ui-translation {
+  display: block;
+}
+
 .prose > * + h3 {
   margin-block-start: var(--prose-subsection-space);
 }
