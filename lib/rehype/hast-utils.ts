@@ -6,6 +6,10 @@ export interface HastNode {
   value?: string;
   properties?: HastProperties;
   children?: HastNode[];
+  content?: {
+    type: 'root';
+    children: HastNode[];
+  };
 }
 
 export interface VFileLike {

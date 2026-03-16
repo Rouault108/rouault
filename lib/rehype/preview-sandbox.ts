@@ -107,7 +107,11 @@ const createTemplateNode = (kind: PreviewKind, source: string): HastNode => ({
   properties: {
     'data-preview-kind': kind,
   },
-  children: [{ type: 'text', value: source }],
+  content: {
+    type: 'root',
+    children: [{ type: 'text', value: source }],
+  },
+  children: [],
 });
 
 const createGeneratedCodeNode = (snippet: PreviewSnippet): HastNode => {
