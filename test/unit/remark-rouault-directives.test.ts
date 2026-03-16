@@ -676,7 +676,7 @@ describe('remarkRouaultDirectives', () => {
     expect(translation?.data?.hProperties?.['translated']).to.equal('我思う、ゆえに我あり。');
   });
 
-  it('画像直後の属性ブロックから image オプションを img 属性へ変換すること', () => {
+  it('画像直後の属性ブロックから image オプションを HTML 属性として保持すること', () => {
     const tree: MdastNode = {
       type: 'root',
       children: [
@@ -702,12 +702,15 @@ describe('remarkRouaultDirectives', () => {
 
     const paragraph = tree.children?.[0];
     const image = paragraph?.children?.[0];
+
     expect(paragraph?.children).to.have.length(1);
     expect(image?.type).to.equal('image');
     expect(image?.data?.hProperties?.['loading']).to.equal('eager');
     expect(image?.data?.hProperties?.['width']).to.equal(1200);
     expect(image?.data?.hProperties?.['height']).to.equal(800);
-    expect(image?.data?.hProperties?.['zoomable']).to.equal(false);
+
+    // boolean false ではなく、後段へ落ちない文字列属性として保持されていることを確認する
+    expect(image?.data?.hProperties?.['zoomable']).to.equal('false');
   });
 
   it('emoji/subscript/superscript/highlight のインライン記法を変換すること', () => {

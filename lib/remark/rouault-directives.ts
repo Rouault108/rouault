@@ -890,7 +890,7 @@ const applyImageAttributes = (
 
   const zoomable = parseBooleanAttribute(attrs['zoomable'], node, file, 'image', 'zoomable');
   if (typeof zoomable === 'boolean') {
-    result['zoomable'] = zoomable;
+    result['zoomable'] = zoomable ? 'true' : 'false';
   }
 
   return result;

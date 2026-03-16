@@ -3,6 +3,7 @@ import { collectResult } from '@lit-labs/ssr/lib/render-result.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { html, unsafeStatic } from 'lit/static-html.js';
 import type { TemplateResult } from 'lit';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import { AppRouter } from '../components/app/app-router.js';
 import { AboutPage } from '../components/about/about-page.js';
 import '../components/ui/skip-link/skip-link.js';
@@ -10,6 +11,7 @@ import '../components/layout/layout-header.js';
 import { LayoutFooter } from '../components/layout/layout-footer.js';
 import '../components/ui/search-dialog/search-dialog.js';
 import '../components/ui/card/card.js';
+import { type ImageLoading } from '../components/ui/image/image.js';
 import '../components/search/search-page.js';
 import '../components/tag/tag-page.js';
 import '../components/ui/article-header/article-header.js';
@@ -89,6 +91,73 @@ const DOCUMENT_STYLE_DEFINITIONS: Partial<Record<SsrTargetTag, SsrDocumentStyleD
   },
 };
 
+const getAttributeValue = (
+  attributes: readonly SsrAttribute[],
+  name: string,
+): string | undefined => attributes.find((attribute) => attribute.name === name)?.value;
+
+const parseBooleanLikeAttribute = (value: string | undefined, defaultValue: boolean): boolean => {
+  if (value === undefined) {
+    return defaultValue;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (normalized === '' || normalized === 'true' || normalized === '1' || normalized === 'on') {
+    return true;
+  }
+  if (
+    normalized === 'false' ||
+    normalized === '0' ||
+    normalized === 'off' ||
+    normalized === 'no'
+  ) {
+    return false;
+  }
+
+  return defaultValue;
+};
+
+const parsePositiveIntegerAttribute = (value: string | undefined): number | undefined => {
+  if (value === undefined || value.trim() === '') {
+    return undefined;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+};
+
+const parseImageLoadingAttribute = (value: string | undefined): ImageLoading =>
+  value === 'eager' ? 'eager' : 'lazy';
+
+const renderImageShadowElement = async (
+  attributes: readonly SsrAttribute[],
+  innerHtml: string,
+): Promise<string> => {
+  const src = getAttributeValue(attributes, 'src') ?? '';
+  const alt = getAttributeValue(attributes, 'alt') ?? '';
+  const caption = getAttributeValue(attributes, 'caption');
+  const loading = parseImageLoadingAttribute(getAttributeValue(attributes, 'loading'));
+  const hasZoomableAttribute = attributes.some((attribute) => attribute.name === 'zoomable');
+  const zoomable = parseBooleanLikeAttribute(getAttributeValue(attributes, 'zoomable'), true);
+  const width = parsePositiveIntegerAttribute(getAttributeValue(attributes, 'width'));
+  const height = parsePositiveIntegerAttribute(getAttributeValue(attributes, 'height'));
+
+  return await collectResult(renderThunked(html`
+    <ui-image
+      src=${src}
+      alt=${alt}
+      caption=${ifDefined(caption)}
+      loading=${loading}
+      zoomable=${ifDefined(hasZoomableAttribute ? String(zoomable) : undefined)}
+      .zoomable=${zoomable}
+      width=${ifDefined(width !== undefined ? String(width) : undefined)}
+      .width=${width}
+      height=${ifDefined(height !== undefined ? String(height) : undefined)}
+      .height=${height}
+    >${unsafeHTML(innerHtml)}</ui-image>
+  `));
+};
+
 const escapeAttributeValue = (value: string): string =>
   value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -158,6 +227,10 @@ export const renderCustomElement = async (
 ): Promise<string> => {
   if (LIGHT_TARGET_TAGS.has(tagName as SsrLightTargetTag)) {
     return renderLightElement(tagName as SsrLightTargetTag, attributes, innerHtml);
+  }
+
+  if (tagName === 'ui-image') {
+    return renderImageShadowElement(attributes, innerHtml);
   }
 
   const rendered = await collectResult(
