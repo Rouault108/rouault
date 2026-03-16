@@ -468,17 +468,13 @@ export class FileTree extends LitElement {
     const selectedNode = this.flattenedNodes.find((item) => item.node.selected);
     if (!selectedNode || !this.shadowRoot) return;
 
-    // tree-item 要素を取得
-    const treeItem = this.shadowRoot.querySelector(
+    const treeItem = this.shadowRoot.querySelector<HTMLElement>(
       `ui-tree-item[data-id="${selectedNode.node.id}"]`,
     );
 
-    if (treeItem instanceof HTMLElement) {
-      treeItem.scrollIntoView({
-        behavior: 'instant',
-        block: 'nearest',
-      });
-    }
+    if (!(treeItem instanceof HTMLElement)) return;
+
+    this._scrollElementWithinContainer(treeItem, 'instant');
   }
 
   /**
@@ -570,18 +566,83 @@ export class FileTree extends LitElement {
   private _scrollItemIntoView(nodeId: string): void {
     if (!this.shadowRoot) return;
 
-    const treeItem = this.shadowRoot.querySelector(
+    const treeItem = this.shadowRoot.querySelector<HTMLElement>(
       `ui-tree-item[data-id="${nodeId}"]`,
     );
 
-    if (treeItem instanceof HTMLElement) {
-      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!(treeItem instanceof HTMLElement)) return;
 
-      treeItem.scrollIntoView({
-        behavior: prefersReducedMotion ? 'instant' : 'smooth',
-        block: 'nearest',
-      });
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    this._scrollElementWithinContainer(
+      treeItem,
+      prefersReducedMotion ? 'instant' : 'smooth',
+    );
+  }
+
+  private _scrollElementWithinContainer(
+    element: HTMLElement,
+    behavior: ScrollBehavior,
+  ): void {
+    const container = this._findScrollContainer(element);
+    if (!container) return;
+
+    if (element.getClientRects().length === 0 || container.getClientRects().length === 0) {
+      return;
     }
+
+    const containerRect = container.getBoundingClientRect();
+    const elementRect = element.getBoundingClientRect();
+
+    let nextScrollTop = container.scrollTop;
+
+    if (elementRect.top < containerRect.top) {
+      nextScrollTop -= Math.ceil(containerRect.top - elementRect.top);
+    } else if (elementRect.bottom > containerRect.bottom) {
+      nextScrollTop += Math.ceil(elementRect.bottom - containerRect.bottom);
+    }
+
+    if (nextScrollTop === container.scrollTop) {
+      return;
+    }
+
+    container.scrollTo({
+      top: nextScrollTop,
+      behavior,
+    });
+  }
+
+  private _findScrollContainer(start: HTMLElement): HTMLElement | null {
+    let current: HTMLElement | null = start;
+
+    for (;;) {
+
+      const parent = this._getComposedParentElement(current);
+      if (!parent) return null;
+
+      const style = getComputedStyle(parent);
+      const overflowY = style.overflowY || style.overflow;
+      const isScrollable = ['auto', 'scroll', 'overlay'].includes(overflowY);
+
+      if (isScrollable && parent.scrollHeight > parent.clientHeight) {
+        return parent;
+      }
+
+      current = parent;
+    }
+  }
+
+  private _getComposedParentElement(element: HTMLElement): HTMLElement | null {
+    if (element.parentElement instanceof HTMLElement) {
+      return element.parentElement;
+    }
+
+    const root = element.getRootNode();
+    if (root instanceof ShadowRoot && root.host instanceof HTMLElement) {
+      return root.host;
+    }
+
+    return null;
   }
 
   /**
