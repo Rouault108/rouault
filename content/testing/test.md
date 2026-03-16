@@ -129,7 +129,7 @@ https://note.com/info/n/nea1b96233fbf
 ::
 ::
 
-::translation{lang="fr" target-lang="ja" render-mode="drawer" original="Je pense, donc je suis." translated="我思う、ゆえに我あり。"}
+::translation{lang="fr" target-lang="ja" render-mode="interlinear" original="Je pense, donc je suis." translated="我思う、ゆえに我あり。"}
 ::
 
 ::translation{lang="fr" target-lang="ja"}
