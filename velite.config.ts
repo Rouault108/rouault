@@ -36,7 +36,7 @@ const notes = defineCollection({
       excerpt: s.excerpt().optional(),
       toc: s.toc().optional(),
     })
-    .transform((data) => ({ ...data, status: data.status ?? '', permalink: `/notes/${data.slug}` })),
+    .transform((data) => ({ ...data, status: data.status ?? '' })),
 });
 
 export default defineConfig({
