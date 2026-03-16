@@ -353,7 +353,9 @@ const toUiImage = (node: HastNode): void => {
   }
 
   if (Object.hasOwn(originalProperties, 'zoomable')) {
-    hostProperties['zoomable'] = toBooleanAttribute(originalProperties['zoomable']);
+    hostProperties['zoomable'] = toBooleanAttribute(originalProperties['zoomable'])
+      ? 'true'
+      : 'false';
   }
 
   const width = toPositiveInteger(originalProperties['width']);
