@@ -128,8 +128,20 @@ const toError = (file: VFileLike | undefined, node: MdastNode, message: string):
   return new Error(`[markdown] ${message}: ${sourcePath}${getNodeLocation(node)}`);
 };
 
-const getParagraphSingleText = (node: MdastNode): string | null => {
-  if (node.type !== 'paragraph' || !Array.isArray(node.children) || node.children.length !== 1) {
+const getDirectiveTextFromNode = (node: MdastNode): string | null => {
+  if (node.type === 'text' && typeof node.value === 'string') {
+    return node.value;
+  }
+
+  if (node.type !== 'link' || typeof node.url !== 'string' || !Array.isArray(node.children)) {
+    return null;
+  }
+
+  if (typeof node.title === 'string' && node.title.trim().length > 0) {
+    return null;
+  }
+
+  if (node.children.length !== 1) {
     return null;
   }
 
@@ -138,7 +150,25 @@ const getParagraphSingleText = (node: MdastNode): string | null => {
     return null;
   }
 
-  return onlyChild.value;
+  const label = onlyChild.value.trim();
+  return label === node.url ? node.url : null;
+};
+
+const getParagraphSingleText = (node: MdastNode): string | null => {
+  if (node.type !== 'paragraph' || !Array.isArray(node.children) || node.children.length === 0) {
+    return null;
+  }
+
+  let result = '';
+  for (const child of node.children) {
+    const segment = getDirectiveTextFromNode(child);
+    if (segment === null) {
+      return null;
+    }
+    result += segment;
+  }
+
+  return result;
 };
 
 const parseStartLine = (

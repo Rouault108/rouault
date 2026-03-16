@@ -252,6 +252,41 @@ describe('remarkRouaultDirectives', () => {
     expect(paragraph?.type).to.equal('paragraph');
   });
 
+  it('自動リンク化された URL を含む link-card ディレクティブも変換すること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [
+            { type: 'text', value: '::link-card{url="' },
+            {
+              type: 'link',
+              url: 'https://example.com/post',
+              children: [{ type: 'text', value: 'https://example.com/post' }],
+            },
+            { type: 'text', value: '" title="著者指定タイトル" description="補足文" image="' },
+            {
+              type: 'link',
+              url: 'https://cdn.example.com/card.png',
+              children: [{ type: 'text', value: 'https://cdn.example.com/card.png' }],
+            },
+            { type: 'text', value: '"}' },
+          ],
+        },
+      ],
+    };
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    const card = tree.children?.[0];
+    expect(card?.data?.hName).to.equal('ui-card');
+    expect(card?.data?.hProperties?.['url']).to.equal('https://example.com/post');
+    expect(card?.data?.hProperties?.['title']).to.equal('著者指定タイトル');
+    expect(card?.data?.hProperties?.['description']).to.equal('補足文');
+    expect(card?.data?.hProperties?.['image']).to.equal('https://cdn.example.com/card.png');
+  });
+
   it('score ディレクティブを ui-score ノードへ変換すること', () => {
     const tree: MdastNode = {
       type: 'root',
