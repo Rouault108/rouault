@@ -8,6 +8,7 @@ export interface BaseLayoutData {
   title?: string;
   content: string;
   note?: BreadcrumbSourceNote;
+  notes?: BreadcrumbSourceNote[];
 }
 
 export class BaseLayout {
@@ -20,7 +21,7 @@ export class BaseLayout {
   render(data: BaseLayoutData) {
     const title = data.title ? `${data.title} - Rouault` : 'Rouault';
     const noteLayoutAttribute = data.note ? ' note-layout' : '';
-    const breadcrumbsJson = JSON.stringify(buildBreadcrumbs(data.note))
+    const breadcrumbsJson = JSON.stringify(buildBreadcrumbs(data.note, data.notes ?? []))
       .replace(/&/g, '&amp;')
       .replace(/"/g, '&quot;')
       .replace(/</g, '&lt;')

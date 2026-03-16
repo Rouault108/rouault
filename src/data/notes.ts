@@ -7,6 +7,16 @@ import type { NoteStatus } from '../types/article-status.js';
 type SidebarScope = 'global' | 'self';
 type SidebarIconSetting = string;
 
+type NoteKind = 'leaf' | 'directory-index';
+
+interface NormalizedNotePath {
+  rawSlug: string;         // 例: "music/index"
+  slug: string;            // 例: "music"
+  permalink: string;       // 例: "/notes/music"
+  kind: NoteKind;
+  directoryPath?: string;  // directory-index のとき "music"
+}
+
 interface NoteSidebarConfig {
   scope?: SidebarScope;
   icon?: SidebarIconSetting;
@@ -27,7 +37,11 @@ export interface SourceNote {
 }
 
 export interface NoteCollectionItem extends SourceNote {
-  slug: string;
+  rawSlug: string;
+  slug: string; // 正規化済み slug
+  permalink: string;
+  noteKind: 'leaf' | 'directory-index';
+  directoryPath?: string;
   sortIndex: number;
   tocHeadings: TocHeading[];
   sidebarRoot?: string;
@@ -112,6 +126,43 @@ const readConfig = (dirPath: string): NoteDirectoryConfig | undefined => {
 const readNotesFile = (filePath: string): SourceNote[] => {
   const parsed = readJsonFile(filePath);
   return Array.isArray(parsed) ? parsed.filter(isSourceNote) : [];
+};
+
+const normalizeNotePath = (rawSlug: string): NormalizedNotePath => {
+  const normalized = rawSlug.trim().replace(/^\/+|\/+$/g, '');
+
+  if (normalized.length === 0) {
+    throw new Error('Empty slug is not allowed.');
+  }
+
+  if (normalized === 'index') {
+    throw new Error(
+      'content/index.md は未対応です。必要ならルートノート用の別仕様を定義してください。',
+    );
+  }
+
+  if (normalized.endsWith('/index')) {
+    const directoryPath = normalized.slice(0, -'/index'.length);
+
+    if (directoryPath.length === 0) {
+      throw new Error(`Invalid directory index slug: "${rawSlug}"`);
+    }
+
+    return {
+      rawSlug: normalized,
+      slug: directoryPath,
+      permalink: `/notes/${directoryPath}`,
+      kind: 'directory-index',
+      directoryPath,
+    };
+  }
+
+  return {
+    rawSlug: normalized,
+    slug: normalized,
+    permalink: `/notes/${normalized}`,
+    kind: 'leaf',
+  };
 };
 
 const calculateSortIndex = (slug: string, contentRoot: string): number => {
@@ -226,20 +277,28 @@ export const buildNotesCollection = (
   notes: readonly SourceNote[],
   contentRoot: string,
 ): NoteCollectionItem[] => {
-  return notes
+  const enriched = notes
     .filter((note): note is SourceNote & { slug: string } => {
       return typeof note.slug === 'string' && note.slug.trim().length > 0;
     })
     .map((note) => {
-      const slug = note.slug.trim();
-      const sidebarRoot = resolveSidebarRoot(slug, contentRoot);
+      const rawSlug = note.slug.trim();
+      const pathInfo = normalizeNotePath(rawSlug);
+      const sidebarRoot = resolveSidebarRoot(rawSlug, contentRoot);
       const sidebarIconSetting = toOptionalTrimmedString(note.sidebarIcon);
-      const sidebarIconContext = resolveSidebarIconContext(slug, contentRoot);
+      const sidebarIconContext = resolveSidebarIconContext(rawSlug, contentRoot);
       const sidebarResolvedIcon = resolveNoteSidebarIcon(sidebarIconSetting, undefined);
+
       return {
         ...note,
-        slug,
-        sortIndex: calculateSortIndex(slug, contentRoot),
+        rawSlug,
+        slug: pathInfo.slug,
+        permalink: pathInfo.permalink,
+        noteKind: pathInfo.kind,
+        ...(pathInfo.directoryPath !== undefined
+          ? { directoryPath: pathInfo.directoryPath }
+          : {}),
+        sortIndex: calculateSortIndex(rawSlug, contentRoot),
         tocHeadings: extractTocFromHtml(typeof note.content === 'string' ? note.content : ''),
         ...(sidebarRoot !== undefined ? { sidebarRoot } : {}),
         ...(sidebarResolvedIcon !== undefined ? { sidebarResolvedIcon } : {}),
@@ -247,8 +306,23 @@ export const buildNotesCollection = (
           ? { sidebarDirectoryIcons: sidebarIconContext.directoryIcons }
           : {}),
       };
-    })
-    .sort((left, right) => left.sortIndex - right.sortIndex);
+    });
+
+  const routeOwners = new Map<string, string>();
+
+  for (const note of enriched) {
+    const existingOwner = routeOwners.get(note.slug);
+    if (existingOwner !== undefined) {
+      throw new Error(
+        `Route collision detected for "${note.slug}". ` +
+          `Both "${existingOwner}" and "${note.rawSlug}" resolve to "${note.permalink}".`,
+      );
+    }
+
+    routeOwners.set(note.slug, note.rawSlug);
+  }
+
+  return enriched.sort((left, right) => left.sortIndex - right.sortIndex);
 };
 
 export const isPublicNote = (note: SourceNote): boolean => note.status !== 'draft';
