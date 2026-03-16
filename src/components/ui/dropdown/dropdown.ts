@@ -238,6 +238,32 @@ export class Dropdown extends LitElement {
     private readonly _triggerId = `dropdown-trigger-${Math.random().toString(36).substring(2, 11)}`;
     private _resolvedTriggerId = this._triggerId;
 
+    private _boundTriggerElement: HTMLElement | null = null;
+
+    private _attachTriggerListeners(trigger: HTMLElement | null): void {
+        if (!trigger) return;
+        trigger.addEventListener('click', this._handleTriggerClick);
+        trigger.addEventListener('keydown', this._handleTriggerKeyDown);
+    }
+
+    private _detachTriggerListeners(trigger: HTMLElement | null): void {
+        if (!trigger) return;
+        trigger.removeEventListener('click', this._handleTriggerClick);
+        trigger.removeEventListener('keydown', this._handleTriggerKeyDown);
+    }
+
+    private _syncTriggerElement(): void {
+        const nextTrigger = this._getTriggerElement();
+
+        if (this._boundTriggerElement !== nextTrigger) {
+          this._detachTriggerListeners(this._boundTriggerElement);
+          this._boundTriggerElement = nextTrigger;
+          this._attachTriggerListeners(this._boundTriggerElement);
+        }
+
+        this._updateTriggerAria(this.opened);
+    }
+
     override connectedCallback(): void {
         super.connectedCallback();
         this.addEventListener('menu-item-click', this._handleMenuItemClick as EventListener);
@@ -246,6 +272,8 @@ export class Dropdown extends LitElement {
     override disconnectedCallback(): void {
         super.disconnectedCallback();
         this.removeEventListener('menu-item-click', this._handleMenuItemClick as EventListener);
+        this._detachTriggerListeners(this._boundTriggerElement);
+        this._boundTriggerElement = null;
         this._cleanupFloating();
         this._cleanupClickOutside();
         this._cleanupScrollClose();
@@ -255,6 +283,10 @@ export class Dropdown extends LitElement {
         if (this._openFocusRafId !== null) {
             cancelAnimationFrame(this._openFocusRafId);
         }
+    }
+
+    override firstUpdated(): void {
+        this._syncTriggerElement();
     }
 
     override updated(changedProperties: PropertyValues<this>): void {
@@ -359,18 +391,20 @@ export class Dropdown extends LitElement {
         const trigger = this._getTriggerElement();
         const panel = this.shadowRoot?.querySelector<HTMLElement>('.panel');
         if (!trigger || !panel) return;
+
         this._cleanupFloating();
 
         const update = (): void => {
-            void computePosition(trigger, panel, {
-                placement: this._resolvePlacement(),
-                middleware: [offset(4), flip(), shift({ padding: 8 })],
-            }).then(({ x, y }) => {
-                Object.assign(panel.style, {
-                    left: `${String(x)}px`,
-                    top: `${String(y)}px`,
-                });
+          void computePosition(trigger, panel, {
+            strategy: 'fixed',
+            placement: this._resolvePlacement(),
+            middleware: [offset(4), flip(), shift({ padding: 8 })],
+          }).then(({ x, y }) => {
+            Object.assign(panel.style, {
+              left: `${String(x)}px`,
+              top: `${String(y)}px`,
             });
+          });
         };
 
         this._floatingCleanup = autoUpdate(trigger, panel, update);
@@ -663,25 +697,23 @@ export class Dropdown extends LitElement {
 
     override render() {
         return html`
-      <slot
-        name="trigger"
-        @click="${this._handleTriggerClick}"
-        @keydown="${this._handleTriggerKeyDown}"
-        @slotchange="${this._onTriggerSlotChange}"
-      ></slot>
+          <slot
+            name="trigger"
+            @slotchange="${this._onTriggerSlotChange}"
+          ></slot>
 
-      <div
-        class="panel"
-        role="menu"
-        id="${this._menuId}"
-        aria-labelledby="${this._resolvedTriggerId}"
-        aria-hidden="${this.opened ? 'false' : 'true'}"
-        ?inert="${!this.opened}"
-        @keydown="${this._handleMenuKeyDown}"
-      >
-        <slot class="menu-slot"></slot>
-      </div>
-    `;
+          <div
+            class="panel"
+            role="menu"
+            id="${this._menuId}"
+            aria-labelledby="${this._resolvedTriggerId}"
+            aria-hidden="${this.opened ? 'false' : 'true'}"
+            ?inert="${!this.opened}"
+            @keydown="${this._handleMenuKeyDown}"
+          >
+            <slot class="menu-slot"></slot>
+          </div>
+        `;
     }
 
     private _handleTriggerClick = (e: Event): void => {
@@ -693,9 +725,7 @@ export class Dropdown extends LitElement {
     };
 
     private _onTriggerSlotChange = (): void => {
-        const trigger = this._getTriggerElement();
-        if (!trigger) return;
-        this._updateTriggerAria(this.opened);
+        this._syncTriggerElement();
     };
 }
 
