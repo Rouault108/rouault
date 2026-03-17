@@ -224,6 +224,8 @@ export class LayoutToc extends LitElement {
 
   private _refreshVisibleHeadingsFrame: number | null = null;
 
+  private _didWarnMissingContentRootId = false;
+
   override connectedCallback(): void {
     super.connectedCallback();
     this._loadHeadingsFromSource();
@@ -278,6 +280,30 @@ export class LayoutToc extends LitElement {
     }
   }
 
+  private _warnMissingContentRootIdInDev(): void {
+    if (this._didWarnMissingContentRootId) {
+      return;
+    }
+
+    if (this.contentRootId.trim().length > 0) {
+      return;
+    }
+
+    const isDevelopment =
+      typeof location !== 'undefined' &&
+      (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+
+    if (!isDevelopment) {
+      return;
+    }
+
+    this._didWarnMissingContentRootId = true;
+    console.warn(
+      '[layout-toc] content-root-id が未指定です。静的ページでは任意ですが、タブや折りたたみなど可視範囲が動的に変わるページでは指定してください。',
+      this,
+    );
+  }
+
   private _loadHeadingsFromSource(): void {
     const inlineHeadings = this._parseHeadingsJson(this.headingsJson);
 
@@ -303,10 +329,11 @@ export class LayoutToc extends LitElement {
 
     this._allHeadings = nextHeadings;
 
-    if (typeof window === 'undefined' || this.contentRootId.trim().length === 0) {
-      this._applyVisibleHeadings(nextHeadings);
-      return;
-    }
+  if (typeof window === 'undefined' || this.contentRootId.trim().length === 0) {
+    this._warnMissingContentRootIdInDev();
+    this._applyVisibleHeadings(nextHeadings);
+    return;
+  }
 
     this._tocReady = false;
     this._scheduleVisibleHeadingsRefresh();
