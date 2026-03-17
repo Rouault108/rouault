@@ -1014,7 +1014,15 @@ const applyPreviewSandboxAttributes = (
   file?: VFileLike,
 ): Record<string, unknown> => {
   const result: Record<string, unknown> = { slot: 'preview' };
-  const allowedKeys = new Set(['title', 'allow-js', 'height']);
+  const allowedKeys = new Set([
+    'title',
+    'allow-js',
+    'allow-forms',
+    'allow-downloads',
+    'allow-pointer-lock',
+    'allow-popups',
+    'height',
+  ]);
   assertAllowedAttributes(attrs, allowedKeys, node, file, 'preview-sandbox');
 
   const title = pickOptional(attrs['title']);
@@ -1022,15 +1030,19 @@ const applyPreviewSandboxAttributes = (
     result['title'] = title;
   }
 
-  const allowJs = parseBooleanAttribute(
-    attrs['allow-js'],
-    node,
-    file,
-    'preview-sandbox',
+  const booleanKeys = [
     'allow-js',
-  );
-  if (allowJs === true) {
-    result['allow-js'] = true;
+    'allow-forms',
+    'allow-downloads',
+    'allow-pointer-lock',
+    'allow-popups',
+  ] as const;
+
+  for (const key of booleanKeys) {
+    const parsed = parseBooleanAttribute(attrs[key], node, file, 'preview-sandbox', key);
+    if (parsed === true) {
+      result[key] = true;
+    }
   }
 
   const height = pickOptional(attrs['height']);

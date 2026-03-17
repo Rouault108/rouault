@@ -44,7 +44,16 @@ describe('rehypePreviewSandbox', () => {
             {
               type: 'element',
               tagName: 'ui-preview-sandbox',
-              properties: { slot: 'preview', title: 'ボタンの sandbox', 'allow-js': true, height: '160' },
+              properties: {
+                slot: 'preview',
+                title: 'ボタンの sandbox',
+                'allow-js': true,
+                'allow-forms': true,
+                'allow-downloads': true,
+                'allow-pointer-lock': true,
+                'allow-popups': true,
+                height: '160',
+              },
               children: [
                 createCodeBlock('preview-html', '<button class="demo">押す</button>', {
                   filename: 'button.html',
@@ -74,6 +83,12 @@ describe('rehypePreviewSandbox', () => {
     expect(sandbox?.children?.[0]?.tagName).to.equal('template');
     expect(sandbox?.children?.[0]?.properties?.['data-preview-kind']).to.equal('html');
     expect(sandbox?.children?.[0]?.children?.[0]?.value).to.equal('<button class="demo">押す</button>');
+    expect(sandbox?.properties?.['allow-js']).to.equal(true);
+    expect(sandbox?.properties?.['allow-forms']).to.equal(true);
+    expect(sandbox?.properties?.['allow-downloads']).to.equal(true);
+    expect(sandbox?.properties?.['allow-pointer-lock']).to.equal(true);
+    expect(sandbox?.properties?.['allow-popups']).to.equal(true);
+    expect(sandbox?.properties?.['height']).to.equal('160');
 
     const codeGroup = preview?.children?.[1];
     expect(codeGroup?.tagName).to.equal('ui-code-group');

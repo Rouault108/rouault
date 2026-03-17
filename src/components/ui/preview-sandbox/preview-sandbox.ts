@@ -16,7 +16,14 @@ interface PreviewSandboxResizeMessage {
 }
 
 const DEFAULT_HEIGHT = 160;
-const URL_ATTRIBUTE_NAMES = new Set(['href', 'src', 'xlink:href', 'action', 'formaction', 'poster']);
+const LINK_URL_ATTRIBUTE_NAMES = new Set(['href', 'xlink:href']);
+const RESOURCE_URL_ATTRIBUTE_NAMES = new Set(['src', 'poster']);
+const FORM_URL_ATTRIBUTE_NAMES = new Set(['action', 'formaction']);
+const URL_ATTRIBUTE_NAMES = new Set([
+  ...LINK_URL_ATTRIBUTE_NAMES,
+  ...RESOURCE_URL_ATTRIBUTE_NAMES,
+  ...FORM_URL_ATTRIBUTE_NAMES,
+]);
 const DANGEROUS_ELEMENT_SELECTORS = 'script, iframe, object, embed, base';
 
 let previewSandboxUid = 0;
@@ -32,7 +39,23 @@ const removeControlCharacters = (value: string): string => {
   return result;
 };
 
-const isSafeUrlValue = (value: string): boolean => {
+const isAllowedProtocolForAttribute = (attributeName: string, protocol: string): boolean => {
+  if (LINK_URL_ATTRIBUTE_NAMES.has(attributeName)) {
+    return protocol === 'http:' || protocol === 'https:' || protocol === 'mailto:' || protocol === 'tel:';
+  }
+
+  if (RESOURCE_URL_ATTRIBUTE_NAMES.has(attributeName)) {
+    return protocol === 'http:' || protocol === 'https:';
+  }
+
+  if (FORM_URL_ATTRIBUTE_NAMES.has(attributeName)) {
+    return protocol === 'http:' || protocol === 'https:';
+  }
+
+  return false;
+};
+
+const isSafeUrlValue = (attributeName: string, value: string): boolean => {
   const trimmed = value.trim();
   if (trimmed.length === 0) {
     return true;
@@ -55,8 +78,7 @@ const isSafeUrlValue = (value: string): boolean => {
 
   try {
     const parsed = new URL(normalized, 'https://preview-sandbox.local');
-    const protocol = parsed.protocol.toLowerCase();
-    return protocol === 'http:' || protocol === 'https:' || protocol === 'mailto:' || protocol === 'tel:';
+    return isAllowedProtocolForAttribute(attributeName, parsed.protocol.toLowerCase());
   } catch {
     return false;
   }
@@ -148,6 +170,18 @@ export class PreviewSandbox extends LitElement {
   @property({ type: Boolean, attribute: 'allow-js', reflect: true })
   allowJs = false;
 
+  @property({ type: Boolean, attribute: 'allow-forms', reflect: true })
+  allowForms = false;
+
+  @property({ type: Boolean, attribute: 'allow-downloads', reflect: true })
+  allowDownloads = false;
+
+  @property({ type: Boolean, attribute: 'allow-pointer-lock', reflect: true })
+  allowPointerLock = false;
+
+  @property({ type: Boolean, attribute: 'allow-popups', reflect: true })
+  allowPopups = false;
+
   @state()
   private _srcdoc = '';
 
@@ -204,6 +238,10 @@ export class PreviewSandbox extends LitElement {
       !this.hasUpdated ||
       changedProperties.has('title') ||
       changedProperties.has('allowJs') ||
+      changedProperties.has('allowForms') ||
+      changedProperties.has('allowDownloads') ||
+      changedProperties.has('allowPointerLock') ||
+      changedProperties.has('allowPopups') ||
       changedProperties.has('height')
     ) {
       this._refreshSandboxDocument();
@@ -277,7 +315,7 @@ export class PreviewSandbox extends LitElement {
           continue;
         }
 
-        if (URL_ATTRIBUTE_NAMES.has(normalizedName) && !isSafeUrlValue(value)) {
+        if (URL_ATTRIBUTE_NAMES.has(normalizedName) && !isSafeUrlValue(normalizedName, value)) {
           element.removeAttribute(attributeName);
           continue;
         }
@@ -340,12 +378,31 @@ export class PreviewSandbox extends LitElement {
     return title === '' ? 'プレビュー sandbox' : title;
   }
 
+  private get _sandboxValue(): string {
+    const tokens = ['allow-scripts'];
+
+    if (this.allowForms) {
+      tokens.push('allow-forms');
+    }
+    if (this.allowDownloads) {
+      tokens.push('allow-downloads');
+    }
+    if (this.allowPointerLock) {
+      tokens.push('allow-pointer-lock');
+    }
+    if (this.allowPopups) {
+      tokens.push('allow-popups');
+    }
+
+    return tokens.join(' ');
+  }
+
   override render(): TemplateResult {
     return html`
       <div class="root" style=${`--_ui-preview-sandbox-height: ${String(this._resolvedHeight)}px;`}>
         <iframe
           title="${this._iframeTitle}"
-          sandbox="allow-scripts"
+          sandbox=${this._sandboxValue}
           .srcdoc=${this._srcdoc}
         ></iframe>
       </div>

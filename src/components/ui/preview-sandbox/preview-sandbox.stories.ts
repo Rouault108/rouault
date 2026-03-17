@@ -61,8 +61,10 @@ const meta: Meta<PreviewSandbox> = {
 HTML/CSS/JS を isolated iframe で描画する preview 用コンポーネントです。
 
 - payload は \`template[data-preview-kind]\` から受け取ります
-- sandbox iframe は \`allow-scripts\` のみ許可します
+- sandbox iframe は常に \`allow-scripts\` を含みます
 - author JS は \`allow-js\` 明示時だけ注入します
+- 追加 capability は \`allow-forms\` / \`allow-downloads\` / \`allow-pointer-lock\` / \`allow-popups\` で opt-in します
+- \`allow-modals\` / \`allow-same-origin\` / \`allow-top-navigation*\` は公開しません
 - \`ui-code-preview\` と組み合わせると isolated preview を構成できます
         `,
       },
@@ -147,6 +149,98 @@ export const AuthorJsOptIn: Story = {
     }
     if (messages.includes('disabled')) {
       throw new Error('allow-js なしでも author JS が実行されています');
+    }
+  },
+};
+
+export const SandboxCapabilityTokens: Story = {
+  render: () => html`
+    <div style="padding: 2rem; max-width: 720px; display: grid; gap: 1.5rem;">
+      <ui-preview-sandbox id="sandbox-default" title="default sandbox" height="120">
+        <template data-preview-kind="html"><button>default</button></template>
+      </ui-preview-sandbox>
+
+      <ui-preview-sandbox
+        id="sandbox-forms-downloads"
+        title="forms and downloads sandbox"
+        height="120"
+        allow-forms
+        allow-downloads
+      >
+        <template data-preview-kind="html"><button>forms-downloads</button></template>
+      </ui-preview-sandbox>
+
+      <ui-preview-sandbox
+        id="sandbox-pointer-popups"
+        title="pointer lock and popups sandbox"
+        height="120"
+        allow-pointer-lock
+        allow-popups
+      >
+        <template data-preview-kind="html"><button>pointer-popups</button></template>
+      </ui-preview-sandbox>
+
+      <ui-preview-sandbox id="sandbox-js-only" title="js only sandbox" height="120" allow-js>
+        <template data-preview-kind="html"><button>js-only</button></template>
+        <template data-preview-kind="js">window.__previewSandboxJsOnly = true;</template>
+      </ui-preview-sandbox>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const defaultSandbox = getSandbox(canvasElement, 'sandbox-default');
+    const formsDownloadsSandbox = getSandbox(canvasElement, 'sandbox-forms-downloads');
+    const pointerPopupsSandbox = getSandbox(canvasElement, 'sandbox-pointer-popups');
+    const jsOnlySandbox = getSandbox(canvasElement, 'sandbox-js-only');
+
+    await Promise.all([
+      defaultSandbox.updateComplete,
+      formsDownloadsSandbox.updateComplete,
+      pointerPopupsSandbox.updateComplete,
+      jsOnlySandbox.updateComplete,
+    ]);
+    await waitFrame();
+
+    const defaultIframe = getIframe(defaultSandbox);
+    const formsDownloadsIframe = getIframe(formsDownloadsSandbox);
+    const pointerPopupsIframe = getIframe(pointerPopupsSandbox);
+    const jsOnlyIframe = getIframe(jsOnlySandbox);
+
+    if (defaultIframe.getAttribute('sandbox') !== 'allow-scripts') {
+      throw new Error('デフォルト sandbox は allow-scripts のみである必要があります');
+    }
+
+    if (
+      formsDownloadsIframe.getAttribute('sandbox') !==
+      'allow-scripts allow-forms allow-downloads'
+    ) {
+      throw new Error(
+        'allow-forms / allow-downloads 指定時の sandbox token が期待値と一致しません',
+      );
+    }
+
+    if (
+      pointerPopupsIframe.getAttribute('sandbox') !==
+      'allow-scripts allow-pointer-lock allow-popups'
+    ) {
+      throw new Error(
+        'allow-pointer-lock / allow-popups 指定時の sandbox token が期待値と一致しません',
+      );
+    }
+
+    if (jsOnlyIframe.getAttribute('sandbox') !== 'allow-scripts') {
+      throw new Error(
+        'allow-js は author JS 注入フラグであり、sandbox token を増やしてはいけません',
+      );
+    }
+
+    const jsOnlySrcdoc = jsOnlyIframe.srcdoc;
+    if (!jsOnlySrcdoc.includes('window.__previewSandboxJsOnly = true;')) {
+      throw new Error('allow-js ありの author JS が srcdoc に注入されていません');
+    }
+
+    const defaultSrcdoc = defaultIframe.srcdoc;
+    if (defaultSrcdoc.includes('window.__previewSandboxJsOnly = true;')) {
+      throw new Error('allow-js なしの sandbox に author JS が注入されています');
     }
   },
 };

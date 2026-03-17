@@ -535,6 +535,72 @@ describe('remarkRouaultDirectives', () => {
     expect(sandbox?.children).to.have.length(3);
   });
 
+  it('preview-sandbox の追加 capability 属性を hProperties に反映すること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::code-preview{label="Sandbox例"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'text',
+              value:
+                '::preview-sandbox{title="capability sandbox" allow-js="true" allow-forms="true" allow-downloads="true" allow-pointer-lock="true" allow-popups="true" height="160"}',
+            },
+          ],
+        },
+        {
+          type: 'code',
+          lang: 'preview-html',
+          meta: 'filename="button.html"',
+          value: '<button class="demo">押す</button>',
+        },
+        {
+          type: 'code',
+          lang: 'preview-css',
+          meta: 'filename="button.css"',
+          value: '.demo { padding: 1rem; }',
+        },
+        {
+          type: 'code',
+          lang: 'preview-js',
+          meta: 'filename="button.js"',
+          value: 'document.querySelector(".demo")?.addEventListener("click", () => {});',
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    const preview = tree.children?.[0];
+    expect(preview?.data?.hName).to.equal('ui-code-preview');
+    expect(preview?.children).to.have.length(1);
+
+    const sandbox = preview?.children?.[0];
+    expect(sandbox?.data?.hName).to.equal('ui-preview-sandbox');
+    expect(sandbox?.data?.hProperties?.['slot']).to.equal('preview');
+    expect(sandbox?.data?.hProperties?.['title']).to.equal('capability sandbox');
+    expect(sandbox?.data?.hProperties?.['allow-js']).to.equal(true);
+    expect(sandbox?.data?.hProperties?.['allow-forms']).to.equal(true);
+    expect(sandbox?.data?.hProperties?.['allow-downloads']).to.equal(true);
+    expect(sandbox?.data?.hProperties?.['allow-pointer-lock']).to.equal(true);
+    expect(sandbox?.data?.hProperties?.['allow-popups']).to.equal(true);
+    expect(sandbox?.data?.hProperties?.['height']).to.equal('160');
+    expect(sandbox?.children).to.have.length(3);
+  });
+
   it('translation ディレクティブを ui-translation ノードへ変換すること', () => {
     const tree: MdastNode = {
       type: 'root',
@@ -1261,6 +1327,48 @@ describe('remarkRouaultDirectives', () => {
 
     expect(run).to.throw(
       '[markdown] preview-js を使う場合、preview-sandbox の allow-js="true" が必要です',
+    );
+  });
+
+  it('preview-sandbox の boolean 属性に不正値が来た場合はエラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::code-preview{label="Sandbox例"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'text',
+              value: '::preview-sandbox{title="invalid" allow-popups="maybe"}',
+            },
+          ],
+        },
+        {
+          type: 'code',
+          lang: 'preview-html',
+          value: '<button>例</button>',
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw(
+      '[markdown] preview-sandbox の allow-popups は true/false で指定してください',
     );
   });
 
