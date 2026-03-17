@@ -73,12 +73,14 @@ let _uidCounter = 0;
  * @cssprop --radius-sm - タブのフォーカスリング角丸
  * @cssprop --scrollbar-width - スクロールバー幅
  * @cssprop --scrollbar-thumb - スクロールバーのサム色
+ * @cssprop --ui-tabs-inline-bleed - Horizontal tablist をホスト幅から左右に少しはみ出させる量（デフォルト: 0px）
  */
 @customElement('ui-tabs')
 export class Tabs extends LitElement {
   static override styles = css`
     :host {
       display: block;
+      --_ui-tabs-inline-bleed: max(0px, var(--ui-tabs-inline-bleed, 0px));
     }
 
     /* ====== ルートレイアウト ====== */
@@ -98,14 +100,26 @@ export class Tabs extends LitElement {
     .tablist-container {
       position: relative;
       flex-shrink: 0;
+
+      /* panel はそのままに、tablist ヘッダーだけを少し外へ張り出す */
+      margin-inline: calc(-1 * var(--_ui-tabs-inline-bleed));
+    }
+
+    /* Horizontal のセパレーター線は tablist-container 側で描画する。
+       これにより本文幅より少し外まで線を伸ばせる */
+    .tablist-container::after {
+      content: '';
+      position: absolute;
+      inset-inline: 0;
+      bottom: calc(-0.5 * var(--border-width-thick, 2px));
+      border-bottom: var(--border-width, 1px) solid
+        var(--border-default, oklch(90% 0 0 / 0.12));
+      pointer-events: none;
     }
 
     [role='tablist'] {
       display: flex;
       position: relative;
-      /* Horizontal: 下ボーダー */
-      border-bottom: var(--border-width, 1px) solid
-        var(--border-default, oklch(90% 0 0 / 0.12));
       /* 幅超過時は横スクロール許容 */
       overflow-x: auto;
       /* CSS仕様上 overflow-x が auto/scroll のとき overflow-y: visible は
@@ -134,6 +148,14 @@ export class Tabs extends LitElement {
       padding-bottom: calc(var(--focus-ring-width, 2px) + var(--focus-ring-offset, 2px));
       /* Vertical時の右クリアランス（インジケーターが右ボーダーに重なる分） */
       padding-right: calc(var(--border-width-thick, 2px) + var(--space-1, 4px));
+    }
+
+    .orient-vertical .tablist-container {
+      margin-inline: 0;
+    }
+
+    .orient-vertical .tablist-container::after {
+      content: none;
     }
 
     /* ====== Tab ボタン (slotted) ====== */
@@ -269,11 +291,22 @@ export class Tabs extends LitElement {
     }
 
     /* ====== パネル ====== */
-
     .panels {
       display: grid;
       flex: 1;
       min-width: 0;
+      margin-block-start: var(
+        --ui-tabs-panel-gap,
+        var(--prose-flow-space, var(--space-4, 16px))
+      );
+    }
+
+    .orient-vertical .panels {
+      margin-block-start: 0;
+      margin-inline-start: var(
+        --ui-tabs-panel-gap,
+        var(--prose-flow-space, var(--space-4, 16px))
+      );
     }
 
     /* クロスフェード中に複数パネルが同時に display: block になっても

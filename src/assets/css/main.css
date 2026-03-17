@@ -233,6 +233,78 @@ ui-article-header + .prose {
   margin-block-start: var(--prose-section-space);
 }
 
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin-inline: 0;
+  text-align: start;
+}
+
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > ui-code-block {
+  --ui-code-block-breakout-width: 100%;
+  --ui-code-block-breakout-margin: 0;
+}
+
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > :is(ui-table, ui-score, ui-math) {
+  --ui-table-breakout-width: 100%;
+  --ui-table-breakout-margin: 0;
+}
+
+:is(.prose, .about-prose) > ui-tabs > [slot='panel']
+  > *
+  + :where(
+    p,
+    ul,
+    ol,
+    dl,
+    pre,
+    table,
+    figure,
+    h4,
+    h5,
+    h6,
+    ui-callout,
+    ui-card,
+    ui-code-block,
+    ui-code-group,
+    ui-details,
+    ui-info-box,
+    ui-image,
+    ui-video,
+    ui-score,
+    ui-table,
+    ui-tabs,
+    ui-translation
+  ) {
+  margin-block-start: var(--prose-flow-space);
+}
+
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > * + h3 {
+  margin-block-start: var(--prose-subsection-space);
+}
+
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > * + h2 {
+  margin-block-start: var(--prose-section-space);
+}
+
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] :is(h2, h3, h4, h5, h6)[id] {
+  cursor: pointer;
+}
+
+.prose > ui-tabs,
+.about-prose > ui-tabs {
+  --ui-tabs-inline-bleed: var(--space-2);
+}
+
+@media (max-width: 767px) {
+  .prose > ui-tabs,
+  .about-prose > ui-tabs {
+    --ui-tabs-inline-bleed: var(--space-1);
+  }
+}
+
 .prose :is(h2, h3, h4, h5, h6)[id] {
   cursor: pointer;
 }
