@@ -222,6 +222,40 @@
   --width-reading-fallback: 46rem; /* 736px */
 
   /* =========================================================================
+   * Typography - Reading Surface
+   * 記事本文 / About本文 / 将来の読書面用スケール
+   * ========================================================================= */
+  --reading-measure: var(--width-reading);
+
+  --reading-body-size: var(--text-lg);
+  --reading-body-line-height: var(--line-height-relaxed);
+
+  --reading-h2-size: var(--text-2xl);
+  --reading-h3-size: var(--text-xl);
+  --reading-h4-size: var(--text-lg);
+  --reading-h5-size: var(--text-base);
+  --reading-h6-size: var(--text-base);
+
+  --reading-h2-weight: var(--font-semibold);
+  --reading-h3-weight: var(--font-semibold);
+  --reading-h4-weight: var(--font-semibold);
+  --reading-h5-weight: var(--font-medium);
+  --reading-h6-weight: var(--font-medium);
+
+  --reading-h2-color: var(--fg-default);
+  --reading-h3-color: var(--fg-default);
+  --reading-h4-color: var(--fg-default);
+  --reading-h5-color: var(--fg-muted);
+  --reading-h6-color: var(--fg-subtle);
+
+  --reading-flow-space: var(--space-4);
+  --reading-h2-space: var(--space-8);
+  --reading-h3-space: var(--space-6);
+  --reading-h4-space: var(--space-4);
+  --reading-h5-space: var(--space-4);
+  --reading-h6-space: var(--space-4);
+
+  /* =========================================================================
    * Icons
    * ========================================================================= */
   --icon-xs: 12px;
