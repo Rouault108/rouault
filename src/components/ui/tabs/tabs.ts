@@ -118,23 +118,39 @@ export class Tabs extends LitElement {
     }
 
     [role='tablist'] {
+      --_ui-tabs-focus-clearance: calc(
+        var(--focus-ring-width, 2px) + var(--focus-ring-offset, 2px)
+      );
+
       display: flex;
       position: relative;
       /* 幅超過時は横スクロール許容 */
       overflow-x: auto;
-      /* CSS仕様上 overflow-x が auto/scroll のとき overflow-y: visible は
-         auto に強制変換されフォーカスリングがクリップされる。
-         padding + 負の margin でリング分のスペースを確保しつつレイアウトを相殺する */
-      padding-top: calc(var(--focus-ring-width, 2px) + var(--focus-ring-offset, 2px));
-      margin-top: calc(-1 * (var(--focus-ring-width, 2px) + var(--focus-ring-offset, 2px)));
-      padding-left: calc(var(--focus-ring-width, 2px) + var(--focus-ring-offset, 2px));
-      /* フォーカスリングがコンテナ端で隠れないよう余白 */
-      scroll-padding-inline: var(--space-4, 16px);
+
+      /* overflow-x:auto の場合、overflow-y は visible にできないため、
+         フォーカスリング分のクリアランスを内側に確保して、負の margin で相殺する */
+      padding-block-start: var(--_ui-tabs-focus-clearance);
+      margin-block-start: calc(-1 * var(--_ui-tabs-focus-clearance));
+
+      padding-block-end: var(--_ui-tabs-focus-clearance);
+      margin-block-end: calc(
+        -1 * (
+          var(--_ui-tabs-focus-clearance) +
+          (0.5 * var(--border-width-thick, 2px))
+        )
+      );
+
+      /* 左右端でもフォーカスリングが欠けにくいように inline 全体へ確保 */
+      padding-inline: var(--_ui-tabs-focus-clearance);
+
+      /* フォーカスリングがスクロール端で隠れないよう余白 */
+      scroll-padding-inline: calc(
+        var(--space-4, 16px) + var(--_ui-tabs-focus-clearance)
+      );
+
       /* カスタムスクロールバー: 視覚的ノイズを最小化 */
       scrollbar-width: var(--scrollbar-width, thin);
       scrollbar-color: var(--scrollbar-thumb, oklch(70% 0 0 / 0.3)) transparent;
-      /* インジケーターをセパレーター線に重ねるため、tablist 全体をわずかに下げる */
-      margin-bottom: calc(-0.5 * var(--border-width-thick, 2px));
     }
 
     .orient-vertical [role='tablist'] {
