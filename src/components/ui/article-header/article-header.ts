@@ -37,10 +37,11 @@ export class ArticleHeader extends LitElement {
 
       .article-header {
         display: block;
+        border-block-end: var(--border-style-subtle, 1px solid var(--border-default, oklch(20% 0 0 / 0.12)));
       }
 
       .heading {
-        margin: 0 0 var(--space-6, 24px);
+        margin-block: 0 var(--space-4, 16px);
         max-width: var(--width-reading, 72ch);
         font-size: clamp(var(--text-2xl, 24px), 4vw + 1rem, var(--text-4xl, 36px));
         font-weight: 700;
@@ -58,10 +59,10 @@ export class ArticleHeader extends LitElement {
         flex-wrap: wrap;
         align-items: center;
         list-style: none;
-        // margin: var(--space-6, 24px) 0 0;
+        margin-block: var(--space-3, 12px);
         padding: 0;
         gap: 0;
-        font-size: var(--text-sm, 13px);
+        font-size: var(--text-xs, 12px);
         font-weight: 500;
         color: var(--fg-muted, oklch(48% 0 0));
       }
@@ -130,7 +131,7 @@ export class ArticleHeader extends LitElement {
       }
 
       .tags-row {
-        margin-top: var(--space-3, 12px);
+        margin-block: var(--space-3, 12px);
       }
 
       /* heading または status-badge の直後（primary metadata なし）は余白を増やす */
@@ -183,6 +184,10 @@ export class ArticleHeader extends LitElement {
 
         .metadata-list {
           color: GrayText;
+        }
+
+        .article-header {
+          border-block-end-color: GrayText;
         }
 
         .link-text.source-link {
