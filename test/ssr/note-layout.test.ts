@@ -120,58 +120,58 @@ describe('NoteLayout', () => {
   });
 
   it('directory-index のページでは sidebar active-id に __index__ を使うこと', () => {
-  const layout = new NoteLayout();
-  const rendered = layout.render({
-    content: '<p>本文</p>',
-    note: {
-      slug: 'music',
-      title: '音楽',
-      noteKind: 'directory-index',
-      directoryPath: 'music',
-    },
-    notes: [
-      {
+    const layout = new NoteLayout();
+    const rendered = layout.render({
+      content: '<p>本文</p>',
+      note: {
         slug: 'music',
-        permalink: '/notes/music',
+        title: '音楽',
         noteKind: 'directory-index',
         directoryPath: 'music',
       },
-      {
-        slug: 'music/classical/mozart',
-        title: 'モーツァルト',
-        permalink: '/notes/music/classical/mozart',
+      notes: [
+        {
+          slug: 'music',
+          permalink: '/notes/music',
+          noteKind: 'directory-index',
+          directoryPath: 'music',
+        },
+        {
+          slug: 'music/classical/mozart',
+          title: 'モーツァルト',
+          permalink: '/notes/music/classical/mozart',
+        },
+      ],
+    });
+
+    expect(rendered).toContain('active-id="music/__index__"');
+    expect(rendered).toContain('"id":"music/__index__"');
+    });
+
+  it('current directory-index note を data.notes に補完して sidebar に出すこと', () => {
+    const layout = new NoteLayout();
+
+    const rendered = layout.render({
+      content: '<p>本文</p>',
+      note: {
+        slug: 'music',
+        title: '音楽',
+        noteKind: 'directory-index',
+        directoryPath: 'music',
+        permalink: '/notes/music',
       },
-    ],
+      notes: [
+        {
+          slug: 'music/classical/mozart',
+          title: 'モーツァルト',
+          permalink: '/notes/music/classical/mozart',
+          noteKind: 'leaf',
+        },
+      ],
+    });
+
+    expect(rendered).toContain('"id":"music/__index__"');
+    expect(rendered).toContain('"href":"/notes/music"');
+    expect(rendered).toContain('active-id="music/__index__"');
   });
-
-  expect(rendered).toContain('active-id="music/__index__"');
-  expect(rendered).toContain('"id":"music/__index__"');
-  });
-});
-
-it('current directory-index note を data.notes に補完して sidebar に出すこと', () => {
-  const layout = new NoteLayout();
-
-  const rendered = layout.render({
-    content: '<p>本文</p>',
-    note: {
-      slug: 'music',
-      title: '音楽',
-      noteKind: 'directory-index',
-      directoryPath: 'music',
-      permalink: '/notes/music',
-    },
-    notes: [
-      {
-        slug: 'music/classical/mozart',
-        title: 'モーツァルト',
-        permalink: '/notes/music/classical/mozart',
-        noteKind: 'leaf',
-      },
-    ],
-  });
-
-  expect(rendered).toContain('"id":"music/__index__"');
-  expect(rendered).toContain('"href":"/notes/music"');
-  expect(rendered).toContain('active-id="music/__index__"');
 });
