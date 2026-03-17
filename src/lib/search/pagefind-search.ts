@@ -10,6 +10,7 @@ import {
   normalizeSearchTags,
   type SearchSortMode,
 } from './search-url.js';
+import { normalizeSearchResultUrl } from './normalize-search-result-url.js';
 
 export interface PagefindFragmentData {
   url: string;
@@ -121,15 +122,6 @@ function hasOwnEntries(value: Record<string, number>): boolean {
   return Object.keys(value).length > 0;
 }
 
-function normalizePath(url: string): string {
-  try {
-    const resolved = new URL(url, window.location.origin);
-    return `${resolved.pathname}${resolved.search}${resolved.hash}`;
-  } catch {
-    return url;
-  }
-}
-
 function normalizeCatalogGenres(item: SearchCatalogItem): string[] {
   return Array.isArray(item.genres)
     ? item.genres.filter((genre): genre is string => typeof genre === 'string' && genre.trim().length > 0)
@@ -184,10 +176,12 @@ function sortCatalogItemsByQuery(
 }
 
 function toCatalogSearchResultItem(item: SearchCatalogItem): SearchResultItem {
+  const normalizedUrl = normalizeSearchResultUrl(item.url);
+
   return {
     title: item.title,
-    url: item.url,
-    path: normalizePath(item.url),
+    url: normalizedUrl,
+    path: normalizedUrl,
     excerptHtml: '',
     description: item.description?.trim() ?? '',
     date: item.date?.trim() ?? '',
@@ -371,12 +365,13 @@ export function createPagefindSearchAdapter(
         const items = await Promise.all(
           response.results.map(async (result) => {
             const data = await result.data();
-            const title = data.meta?.['title']?.trim() ?? normalizePath(data.url);
+            const normalizedUrl = normalizeSearchResultUrl(data.url);
+            const title = data.meta?.['title']?.trim() ?? normalizedUrl;
 
             return {
               title,
-              url: data.url,
-              path: normalizePath(data.url),
+              url: normalizedUrl,
+              path: normalizedUrl,
               excerptHtml: data.excerpt ?? '',
               description: data.meta?.['description']?.trim() ?? '',
               date: data.meta?.['date']?.trim() ?? '',

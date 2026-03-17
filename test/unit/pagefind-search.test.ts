@@ -12,8 +12,8 @@ describe('pagefind-search', () => {
   const catalogItems: SearchCatalogItem[] = [
     {
       title: 'ジャズ理論の基礎',
-      url: '/notes/music/jazz/jazz-theory/',
-      path: '/notes/music/jazz/jazz-theory/',
+      url: '/notes/music/jazz/jazz-theory',
+      path: '/notes/music/jazz/jazz-theory',
       description: 'ジャズ音楽の基本理論',
       date: '2026-02-01',
       keywords: ['music', 'jazz', '理論'],
@@ -21,8 +21,8 @@ describe('pagefind-search', () => {
     },
     {
       title: 'クラシック入門',
-      url: '/notes/music/classical/intro/',
-      path: '/notes/music/classical/intro/',
+      url: '/notes/music/classical/intro',
+      path: '/notes/music/classical/intro',
       description: '古典派メモ',
       date: '2026-01-10',
       keywords: ['music', 'classical', '古典派'],
@@ -67,7 +67,7 @@ describe('pagefind-search', () => {
             {
               data() {
                 return Promise.resolve({
-                  url: '/notes/music/jazz/jazz-theory/',
+                  url: '/notes/music/jazz/jazz-theory',
                   excerpt: '<mark>ジャズ</mark>理論の基礎',
                   meta: {
                     title: 'ジャズ理論の基礎',
@@ -122,8 +122,8 @@ describe('pagefind-search', () => {
     expect(result.items).to.deep.equal([
       {
         title: 'ジャズ理論の基礎',
-        url: '/notes/music/jazz/jazz-theory/',
-        path: '/notes/music/jazz/jazz-theory/',
+        url: '/notes/music/jazz/jazz-theory',
+        path: '/notes/music/jazz/jazz-theory',
         excerptHtml: '<mark>ジャズ</mark>理論の基礎',
         description: 'ジャズ音楽の基本理論',
         date: '2026-02-01',
@@ -251,8 +251,8 @@ describe('pagefind-search', () => {
     expect(result.items).to.deep.equal([
       {
         title: 'ジャズ理論の基礎',
-        url: '/notes/music/jazz/jazz-theory/',
-        path: '/notes/music/jazz/jazz-theory/',
+        url: '/notes/music/jazz/jazz-theory',
+        path: '/notes/music/jazz/jazz-theory',
         excerptHtml: '',
         description: 'ジャズ音楽の基本理論',
         date: '2026-02-01',

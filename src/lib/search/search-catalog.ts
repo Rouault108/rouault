@@ -4,6 +4,7 @@ import {
   tokenizeSearchText,
   type PreparedSearchQuery,
 } from './query-preprocessor.js';
+import { normalizeSearchResultUrl } from './normalize-search-result-url.js';
 
 export interface SearchCatalogItem {
   title: string;
@@ -77,8 +78,8 @@ function normalizeCatalogItems(payload: unknown): SearchCatalogItem[] {
     }
 
     const title = normalizeString(entry['title']);
-    const url = normalizeString(entry['url']);
-    const path = normalizeString(entry['path']);
+    const url = normalizeSearchResultUrl(normalizeString(entry['url']));
+    const path = normalizeSearchResultUrl(normalizeString(entry['path']));
     if (title.length === 0 || url.length === 0 || path.length === 0) {
       return [];
     }
@@ -267,7 +268,7 @@ function compareDialogItems(left: SearchDialogItem, right: SearchDialogItem, pre
 
 function normalizeDialogItem(item: SearchDialogItem): SearchDialogItem | null {
   const title = normalizeString(item.title);
-  const url = normalizeString(item.url);
+  const url = normalizeSearchResultUrl(normalizeString(item.url));
   if (title.length === 0 || url.length === 0) {
     return null;
   }
@@ -276,7 +277,7 @@ function normalizeDialogItem(item: SearchDialogItem): SearchDialogItem | null {
     title,
     url,
   };
-  const path = normalizeString(item.path);
+  const path = normalizeSearchResultUrl(normalizeString(item.path));
   const description = normalizeString(item.description);
   const date = normalizeString(item.date);
   const keywords = dedupeStrings(normalizeStringArray(item.keywords));

@@ -186,4 +186,33 @@ describe('search-catalog', () => {
       },
     ]);
   });
+
+  it('末尾スラッシュ違いの同一URLを1件にマージし、末尾スラッシュなしで表示すること', () => {
+    const merged = mergeSearchDialogItems(
+      [
+        {
+          title: 'JavaScriptの配列',
+          url: '/notes/program/sample-javascript/',
+          path: '/notes/program/sample-javascript/',
+          pagefindBacked: true,
+        },
+      ],
+      [
+        {
+          title: 'JavaScriptの配列',
+          url: '/notes/program/sample-javascript',
+          path: '/notes/program/sample-javascript',
+        },
+      ],
+      'java',
+    );
+
+    expect(merged).to.deep.equal([
+      {
+        title: 'JavaScriptの配列',
+        url: '/notes/program/sample-javascript',
+        path: '/notes/program/sample-javascript',
+      },
+    ]);
+  });
 });
