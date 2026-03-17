@@ -359,11 +359,54 @@ ui-article-header + .prose {
   margin-block-start: var(--reading-h6-space);
 }
 
-@media (hover: none) and (pointer: coarse) {
-  .prose :is(h2, h3, h4, h5, h6)[id] > .heading-anchor,
-  .about-prose :is(h2, h3, h4, h5, h6)[id] > .heading-anchor {
-    opacity: 1;
-  }
+:is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id] {
+  position: relative;
+  scroll-margin-top: calc(var(--header-height) + var(--space-8, 32px));
+}
+
+:is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id] > .heading-text {
+  text-decoration: none;
+}
+
+:is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id]:hover > .heading-text,
+:is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id]:focus-within > .heading-text {
+  text-decoration: underline;
+  text-decoration-thickness: var(--border-width);
+  text-underline-offset: 0.15em;
+  text-decoration-color: var(--border-strong, var(--fg-muted));
+}
+
+:is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id] > .heading-anchor {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 1.25em;
+  block-size: 1.25em;
+  margin-inline-start: var(--space-2, 8px);
+  line-height: 1;
+  vertical-align: -0.1em;
+  color: var(--fg-muted);
+  text-decoration: none;
+  opacity: 0;
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+:is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id] > .heading-anchor > iconify-icon {
+  display: block;
+  inline-size: 1em;
+  block-size: 1em;
+}
+
+:is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id]:hover > .heading-anchor,
+:is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id]:focus-within > .heading-anchor {
+  opacity: 1;
+}
+
+:is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id] > .heading-anchor:hover,
+:is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id] > .heading-anchor:focus-visible {
+  color: var(--primary);
 }
 
 @media print {
