@@ -88,8 +88,18 @@ export class AboutPage extends LitElement {
 
             <div class="about-prose">
               ${ABOUT_SECTIONS.flatMap((section) => [
-                html`<h2 id=${section.id}>${section.heading}</h2>`,
-                ...section.body.map((paragraph) => html`<p>${paragraph}</p>`),
+                html`
+                  <h2 id=${section.id}>
+                    <span class="heading-text">${section.heading}</span>
+                    <a
+                      class="heading-anchor"
+                      href=${`#${section.id}`}
+                      aria-label=${`「${section.heading}」への固定リンク`}
+                    >
+                      <iconify-icon icon="lucide:link" aria-hidden="true"></iconify-icon>
+                    </a>
+                  </h2>
+                `
               ])}
             </div>
           </div>

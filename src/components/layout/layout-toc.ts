@@ -1,7 +1,6 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { attachStickyFooterBoundary } from '../../lib/layout/sticky-footer-boundary.js';
-import { updateHashInCurrentUrl } from '../../lib/url-hash.js';
 import '../../lib/icons';
 import '../ui/toc/toc';
 import type { Heading, UiTocActiveChangeDetail } from '../ui/toc/toc';
@@ -216,7 +215,6 @@ export class LayoutToc extends LitElement {
     this._mobileMediaQuery = window.matchMedia('(max-width: 639px)');
     this._mobileMediaQuery.addEventListener('change', this._onMediaQueryChange);
     window.addEventListener('scroll', this._onWindowScroll, { passive: true });
-    document.addEventListener('click', this._onDocumentClick);
     this._syncMobileBarVisibility();
   }
 
@@ -224,7 +222,6 @@ export class LayoutToc extends LitElement {
     this._mobileMediaQuery?.removeEventListener('change', this._onMediaQueryChange);
     this._mobileMediaQuery = null;
     window.removeEventListener('scroll', this._onWindowScroll);
-    document.removeEventListener('click', this._onDocumentClick);
     this._detachStickyFooterBoundary?.();
     this._detachStickyFooterBoundary = null;
     super.disconnectedCallback();
@@ -371,38 +368,6 @@ export class LayoutToc extends LitElement {
     }
   };
 
-  private _onDocumentClick = (event: MouseEvent): void => {
-    if (event.defaultPrevented || event.button !== 0) {
-      return;
-    }
-    if (event.ctrlKey || event.shiftKey || event.altKey || event.metaKey) {
-      return;
-    }
-
-    const selection = window.getSelection();
-    if (selection && !selection.isCollapsed) {
-      return;
-    }
-
-    const target = event.target;
-    if (!(target instanceof Element)) {
-      return;
-    }
-    if (target.closest('a, button, input, select, textarea, summary, [role="button"]')) {
-      return;
-    }
-
-    const heading = target.closest<HTMLElement>(
-      ':is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id]',
-    );
-    if (!heading) {
-      return;
-    }
-
-    this._setActiveHeading(heading.id);
-    updateHashInCurrentUrl(heading.id, 'push');
-  };
-
   private _toggleMobilePanel = (): void => {
     this._panelOpen = !this._panelOpen;
   };
@@ -410,17 +375,6 @@ export class LayoutToc extends LitElement {
   private _closeMobilePanel = (): void => {
     this._panelOpen = false;
   };
-
-  private _setActiveHeading(id: string): void {
-    const index = this._headings.findIndex((heading) => heading.id === id);
-    if (index < 0) {
-      return;
-    }
-
-    this._activeId = id;
-    this._activeIndex = index;
-    this._activeTotal = this._headings.length;
-  }
 
   private _getProgressOffset(): number {
     const radius = 8;

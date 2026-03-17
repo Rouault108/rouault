@@ -123,31 +123,61 @@ test.describe('Router Navigation', () => {
   });
 
   test('hash なしで再読み込みしてもトップ位置のままであること', async ({ page }) => {
-  await page.goto(testNotePath);
+    await page.goto(testNotePath);
 
-  await expect(page.locator('ui-tabs')).toBeVisible();
-  await page.evaluate(
-    () =>
-      new Promise<void>((resolve) => {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => { resolve() });
-        });
-      }),
-  );
+    await expect(page.locator('ui-tabs')).toBeVisible();
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => { resolve() });
+          });
+        }),
+    );
 
-  await page.reload();
+    await page.reload();
 
-  await expect(page.locator('ui-tabs')).toBeVisible();
-  await page.evaluate(
-    () =>
-      new Promise<void>((resolve) => {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => { resolve() });
-        });
-      }),
-  );
+    await expect(page.locator('ui-tabs')).toBeVisible();
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => { resolve() });
+          });
+        }),
+    );
 
-  const scrollY = await page.evaluate(() => window.scrollY);
-  expect(scrollY).toBeLessThanOrEqual(2);
+    const scrollY = await page.evaluate(() => window.scrollY);
+    expect(scrollY).toBeLessThanOrEqual(2);
+  });
+
+  test('本文見出しの固定リンクがキーボードで起動できること', async ({ page }) => {
+    await page.goto(testNotePath);
+
+    const headingPermalink = page.locator('#main-content .prose h2 .heading-anchor').first();
+    await expect(headingPermalink).toBeVisible();
+
+    const href = await headingPermalink.getAttribute('href');
+    expect(href).not.toBeNull();
+
+    await headingPermalink.focus();
+    await page.keyboard.press('Enter');
+
+    await expect.poll(() => page.evaluate(() => window.location.hash)).toBe(href);
+  });
+  test('見出し本文クリックでは hash が更新されず、固定リンククリックでのみ更新されること', async ({ page }) => {
+    await page.goto(testNotePath);
+
+    const headingText = page.locator('#main-content .prose h2 .heading-text').first();
+    const headingPermalink = page.locator('#main-content .prose h2 .heading-anchor').first();
+
+    await headingText.click();
+    await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('');
+
+    const href = await headingPermalink.getAttribute('href');
+    expect(href).not.toBeNull();
+
+    await headingPermalink.click();
+    await expect.poll(() => page.evaluate(() => window.location.hash)).toBe(href);
   });
 });

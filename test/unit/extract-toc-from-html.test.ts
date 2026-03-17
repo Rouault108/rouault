@@ -21,4 +21,21 @@ describe('extractTocFromHtml', () => {
   it('空入力では空配列を返すこと', () => {
     expect(extractTocFromHtml('')).to.deep.equal([]);
   });
+
+  it('見出し内の固定リンクは TOC テキストに混ざらないこと', () => {
+    const html = `
+      <h2 id="intro">
+        <span class="heading-text">はじめに</span>
+        <a class="heading-anchor" href="#intro" aria-label="「はじめに」への固定リンク">
+          <iconify-icon icon="lucide:link" aria-hidden="true"></iconify-icon>
+        </a>
+      </h2>
+    `;
+
+    const toc = extractTocFromHtml(html);
+
+    expect(toc).to.deep.equal([
+      { id: 'intro', text: 'はじめに', level: 2 },
+    ]);
+  });
 });

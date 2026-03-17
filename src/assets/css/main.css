@@ -298,15 +298,87 @@ ui-article-header + .prose {
   --ui-tabs-inline-bleed: var(--space-2);
 }
 
+.prose :is(h2, h3, h4, h5, h6)[id],
+.about-prose :is(h2, h3, h4, h5, h6)[id] {
+  position: relative;
+  scroll-margin-top: calc(var(--header-height) + var(--space-8, 32px));
+}
+
+.prose :is(h2, h3, h4, h5, h6)[id] > .heading-text,
+.about-prose :is(h2, h3, h4, h5, h6)[id] > .heading-text {
+  text-decoration: none;
+}
+
+.prose :is(h2, h3, h4, h5, h6)[id]:hover > .heading-text,
+.prose :is(h2, h3, h4, h5, h6)[id]:focus-within > .heading-text,
+.about-prose :is(h2, h3, h4, h5, h6)[id]:hover > .heading-text,
+.about-prose :is(h2, h3, h4, h5, h6)[id]:focus-within > .heading-text {
+  text-decoration: underline;
+  text-decoration-thickness: var(--border-width);
+  text-underline-offset: 0.15em;
+  text-decoration-color: var(--border-strong, var(--fg-muted));
+}
+
+.prose :is(h2, h3, h4, h5, h6)[id] > .heading-anchor,
+.about-prose :is(h2, h3, h4, h5, h6)[id] > .heading-anchor {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 1.25em;
+  block-size: 1.25em;
+  margin-inline-start: var(--space-2, 8px);
+
+  line-height: 1;
+  vertical-align: -0.1em;
+
+  color: var(--fg-muted);
+  text-decoration: none;
+  opacity: 0;
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.prose :is(h2, h3, h4, h5, h6)[id] > .heading-anchor > iconify-icon,
+.about-prose :is(h2, h3, h4, h5, h6)[id] > .heading-anchor > iconify-icon {
+  display: block;
+  inline-size: 1em;
+  block-size: 1em;
+}
+
+.prose :is(h2, h3, h4, h5, h6)[id]:hover > .heading-anchor,
+.prose :is(h2, h3, h4, h5, h6)[id]:focus-within > .heading-anchor,
+.about-prose :is(h2, h3, h4, h5, h6)[id]:hover > .heading-anchor,
+.about-prose :is(h2, h3, h4, h5, h6)[id]:focus-within > .heading-anchor {
+  opacity: 1;
+}
+
+.prose :is(h2, h3, h4, h5, h6)[id] > .heading-anchor:hover,
+.prose :is(h2, h3, h4, h5, h6)[id] > .heading-anchor:focus-visible,
+.about-prose :is(h2, h3, h4, h5, h6)[id] > .heading-anchor:hover,
+.about-prose :is(h2, h3, h4, h5, h6)[id] > .heading-anchor:focus-visible {
+  color: var(--primary);
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .prose :is(h2, h3, h4, h5, h6)[id] > .heading-anchor,
+  .about-prose :is(h2, h3, h4, h5, h6)[id] > .heading-anchor {
+    opacity: 1;
+  }
+}
+
+@media print {
+  .prose .heading-anchor,
+  .about-prose .heading-anchor {
+    display: none;
+  }
+}
+
 @media (max-width: 767px) {
   .prose > ui-tabs,
   .about-prose > ui-tabs {
     --ui-tabs-inline-bleed: var(--space-1);
   }
-}
-
-.prose :is(h2, h3, h4, h5, h6)[id] {
-  cursor: pointer;
 }
 
 /* Proseコンテナ内のメディア要素はテキスト幅を超えて拡張 */
@@ -412,7 +484,7 @@ a:focus-visible {
  * - link-text は Shadow DOM/Light DOM 共通の明示クラス
  */
 .link-text[href],
-.prose a[href] {
+.prose a[href]:not(.heading-anchor) {
   cursor: pointer;
   color: var(--fg-default); /* 本文色を維持し、読むリズムを優先 */
   text-decoration: underline;
@@ -435,21 +507,21 @@ a:focus-visible {
 /* Progressive Enhancement: Relative Color Syntax 対応環境 */
 @supports (color: oklch(from white l c h)) {
   .link-text[href],
-  .prose a[href] {
+  .prose a[href]:not(.heading-anchor) {
     text-decoration-color: var(--link-decoration-color);
   }
 }
 
 /* Hover状態 - テキストと下線の両方を色付け */
 .link-text[href]:hover,
-.prose a[href]:hover {
+.prose a[href]:not(.heading-anchor):hover {
   color: var(--primary-hover);
   text-decoration-color: var(--primary-hover);
 }
 
 /* Focus-Visible状態 - テキスト色は変更せず、フォーカスリングのみで状態を示す */
 .link-text[href]:focus-visible,
-.prose a[href]:focus-visible {
+.prose a[href]:not(.heading-anchor):focus-visible {
   outline-style: solid;
   outline-width: var(--focus-ring-width);
   outline-offset: var(--focus-ring-offset);
@@ -464,7 +536,7 @@ a:focus-visible {
 
 /* Visited状態 - 個人メモでは既読管理より読むリズムを優先 */
 .link-text[href]:visited,
-.prose a[href]:visited {
+.prose a[href]:not(.heading-anchor):visited {
   color: var(--fg-default);
   text-decoration-color: var(--primary);
 }
@@ -472,7 +544,7 @@ a:focus-visible {
 /* Progressive Enhancement: Relative Color Syntax 対応環境 */
 @supports (color: oklch(from white l c h)) {
   .link-text[href]:visited,
-  .prose a[href]:visited {
+  .prose a[href]:not(.heading-anchor):visited {
     text-decoration-color: var(--link-decoration-color);
   }
 }
@@ -480,7 +552,7 @@ a:focus-visible {
 /* Touch (No Hover) 判定 - タッチデバイスでは発見可能性を優先 */
 @media (hover: none) and (pointer: coarse) {
   .link-text[href],
-  .prose a[href] {
+  .prose a[href]:not(.heading-anchor) {
     color: var(--primary);
     text-decoration-color: var(--link-decoration-color-touch);
   }
@@ -771,7 +843,7 @@ ui-list-item a.primary-link[href]:hover {
   }
 
   /* 下線は常に表示し、リンクであることを明示 */
-  .prose a {
+  .prose a:not(.heading-anchor) {
     text-decoration: underline;
     text-decoration-color: currentColor;
   }
@@ -1057,10 +1129,6 @@ app-router {
 
 .about-prose > * + h2 {
   margin-block-start: var(--prose-section-space);
-}
-
-.about-prose :is(h2, h3, h4, h5, h6)[id] {
-  cursor: pointer;
 }
 
 .about-hero {

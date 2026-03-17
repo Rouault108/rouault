@@ -1,15 +1,24 @@
 import { type HastNode, getOrCreateProperties } from './hast-utils.js';
 
 const HEADING_TAG_PATTERN = /^h([1-6])$/;
+const PERMALINK_HEADING_TAG_PATTERN = /^h([2-6])$/;
 const NON_WORD_PATTERN = /[^\p{Letter}\p{Number}\-_\s]+/gu;
 const SPACE_PATTERN = /\s+/g;
 const DASH_PATTERN = /-+/g;
 const FALLBACK_SLUG = 'section';
 
+const HEADING_TEXT_WRAPPER_CLASS = 'heading-text';
+const HEADING_PERMALINK_CLASS = 'heading-anchor';
+
 const isHeadingElement = (node: HastNode): boolean =>
   node.type === 'element'
   && typeof node.tagName === 'string'
   && HEADING_TAG_PATTERN.test(node.tagName);
+
+const isPermalinkHeadingElement = (node: HastNode): boolean =>
+  node.type === 'element'
+  && typeof node.tagName === 'string'
+  && PERMALINK_HEADING_TAG_PATTERN.test(node.tagName);
 
 const getTextContent = (node: HastNode): string => {
   if (node.type === 'text') {
@@ -43,20 +52,118 @@ const createUniqueSlug = (baseSlug: string, counters: Map<string, number>): stri
   return `${baseSlug}-${String(nextCount)}`;
 };
 
+const getClassNames = (node: HastNode): string[] => {
+  const raw = node.properties?.['className'];
+  if (Array.isArray(raw)) {
+    return raw.filter((value): value is string => typeof value === 'string');
+  }
+  if (typeof raw === 'string') {
+    return raw.split(/\s+/).filter((value) => value.length > 0);
+  }
+  return [];
+};
+
+const hasClassName = (node: HastNode, className: string): boolean =>
+  getClassNames(node).includes(className);
+
+const createElement = (
+  tagName: string,
+  properties: Record<string, unknown>,
+  children: HastNode[] = [],
+): HastNode => ({
+  type: 'element',
+  tagName,
+  properties,
+  children,
+});
+
+const hasExistingPermalink = (node: HastNode, id: string): boolean => {
+  if (!Array.isArray(node.children)) {
+    return false;
+  }
+
+  return node.children.some((child) => {
+    if (child.type !== 'element' || child.tagName !== 'a') {
+      return false;
+    }
+
+    if (hasClassName(child, HEADING_PERMALINK_CLASS)) {
+      return true;
+    }
+
+    return child.properties?.['href'] === `#${id}`;
+  });
+};
+
+const ensureHeadingPermalink = (node: HastNode, id: string, text: string): void => {
+  if (!isPermalinkHeadingElement(node)) {
+    return;
+  }
+
+  node.children ??= [];
+
+  if (hasExistingPermalink(node, id)) {
+    return;
+  }
+
+  const originalChildren = [...node.children];
+  const alreadyWrapped =
+    originalChildren.length === 1 && hasClassName(originalChildren[0] as HastNode, HEADING_TEXT_WRAPPER_CLASS);
+
+  if (!alreadyWrapped) {
+    node.children = [
+      createElement(
+        'span',
+        {
+          className: [HEADING_TEXT_WRAPPER_CLASS],
+        },
+        originalChildren,
+      ),
+    ];
+  }
+
+  node.children.push(
+    createElement(
+      'a',
+      {
+        className: [HEADING_PERMALINK_CLASS],
+        href: `#${id}`,
+        'aria-label': `「${text}」への固定リンク`,
+        'data-heading-permalink': 'true',
+      },
+      [
+        createElement('iconify-icon', {
+          icon: 'lucide:link',
+          'aria-hidden': 'true',
+        }),
+      ],
+    ),
+  );
+};
+
 const assignHeadingIds = (node: HastNode, counters: Map<string, number>): void => {
   if (isHeadingElement(node)) {
     const properties = getOrCreateProperties(node);
     const existingId = properties['id'];
+
     if (typeof existingId !== 'string' || existingId.trim().length === 0) {
       const text = getTextContent(node);
       const baseSlug = normalizeSlug(text);
       properties['id'] = createUniqueSlug(baseSlug, counters);
+    }
+
+    const id = typeof properties['id'] === 'string' ? properties['id'].trim() : '';
+    const text = getTextContent(node).trim();
+
+    if (id.length > 0 && text.length > 0) {
+      ensureHeadingPermalink(node, id, text);
     }
   }
 
   if (!Array.isArray(node.children)) {
     return;
   }
+
   for (const child of node.children) {
     assignHeadingIds(child, counters);
   }
