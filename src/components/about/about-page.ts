@@ -86,7 +86,7 @@ export class AboutPage extends LitElement {
               </ul>
             </div>
 
-            <div class="about-prose">
+            <div id="about-page-content" class="about-prose">
               ${ABOUT_SECTIONS.flatMap((section) => [
                 html`
                   <h2 id=${section.id}>
@@ -99,14 +99,19 @@ export class AboutPage extends LitElement {
                       <iconify-icon icon="lucide:link" aria-hidden="true"></iconify-icon>
                     </a>
                   </h2>
-                `
+                `,
+                ...section.body.map((paragraph) => html`<p>${paragraph}</p>`),
               ])}
             </div>
           </div>
         </article>
 
         <aside class="layout-toc-col" aria-label="目次">
-          <layout-toc headings-json=${JSON.stringify(ABOUT_HEADINGS)} home-href="/"></layout-toc>
+          <layout-toc
+            headings-json=${JSON.stringify(ABOUT_HEADINGS)}
+            content-root-id="about-page-content"
+            home-href="/"
+          ></layout-toc>
         </aside>
       </section>
     `;
