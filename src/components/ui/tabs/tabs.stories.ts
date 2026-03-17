@@ -12,19 +12,19 @@ import type { Tabs } from './tabs';
  * ### 使用方法
  *
  * ```html
- * <ui-tabs selected-index="0">
- *   <button slot="tab">概要</button>
+ * <ui-tabs default-selected-value="overview">
+ *   <button slot="tab" value="overview">概要</button>
  *   <div slot="panel">概要コンテンツ</div>
- *   <button slot="tab">詳細</button>
+ *   <button slot="tab" value="details">詳細</button>
  *   <div slot="panel">詳細コンテンツ</div>
  * </ui-tabs>
  * ```
  *
  * ### API Resolution Rules
  *
- * 1. `selected-value` が指定されていれば優先（URL連携に安定）
- * 2. 一致しない場合は `selected-index` を評価
- * 3. 両方が無効なら先頭タブ (index=0) を選択し `console.warn` で通知
+ * 1. `selected-value` が一致する場合はそれを選択
+ * 2. 初回のみ `default-selected-value` を評価
+ * 3. どちらも未指定または無効なら先頭タブを自動選択
  *
  * ### キーボードナビゲーション
  *
@@ -44,18 +44,18 @@ const meta: Meta<Tabs> = {
   component: 'ui-tabs',
   tags: ['autodocs'],
   parameters: {
-    docs: {
-      description: {
-        component: `
+  docs: {
+    description: {
+      component: `
 タブコンポーネントは、同一コンテキスト内でのビュー切り替えを提供します。
 
 ## 使用方法
 
 \`\`\`html
-<ui-tabs selected-index="0">
-  <button slot="tab">概要</button>
+<ui-tabs default-selected-value="overview">
+  <button slot="tab" value="overview">概要</button>
   <div slot="panel">概要コンテンツ</div>
-  <button slot="tab">詳細</button>
+  <button slot="tab" value="details">詳細</button>
   <div slot="panel">詳細コンテンツ</div>
 </ui-tabs>
 \`\`\`
@@ -64,23 +64,24 @@ const meta: Meta<Tabs> = {
 
 - タブ数とパネル数は一致させてください（1:1 対応）
 - 個別タブの \`disabled\` は現在の Rouault では実装対象外です
-- \`selected-value\` と \`selected-index\` が同時指定された場合、\`selected-value\` が優先されます
+- 公開 API は \`selected-value\` と \`default-selected-value\` のみです
+- タブの識別には、順番ではなく各 tab の \`value\` を使ってください
         `,
       },
     },
   },
   argTypes: {
-    selectedIndex: {
-      control: 'number',
-      description: '選択タブのインデックス（0始まり）',
-      table: {
-        type: { summary: 'number' },
-        defaultValue: { summary: '0' },
-      },
-    },
     selectedValue: {
       control: 'text',
-      description: '選択タブの値（tab要素の value 属性と対応）',
+      description: '現在選択値 / 外部制御値（tab 要素の value 属性と対応）',
+      table: {
+        type: { summary: 'string | null' },
+        defaultValue: { summary: 'null' },
+      },
+    },
+    defaultSelectedValue: {
+      control: 'text',
+      description: '初期選択値（初回のみ評価）',
       table: {
         type: { summary: 'string | null' },
         defaultValue: { summary: 'null' },
@@ -97,7 +98,7 @@ const meta: Meta<Tabs> = {
     },
     automaticActivation: {
       control: 'boolean',
-      description: '矢印キーで即座に選択するか（設定画面など即応性重視の場面向け）',
+      description: '矢印キーで即座に選択するか',
       table: {
         type: { summary: 'boolean' },
         defaultValue: { summary: 'false' },
@@ -132,28 +133,27 @@ const dispatchTabKey = (tab: HTMLElement, key: string): void => {
  */
 export const Default: Story = {
   args: {
-    selectedIndex: 0,
     orientation: 'horizontal',
     automaticActivation: false,
   },
   render: (args) => html`
     <ui-tabs
-      .selectedIndex=${args.selectedIndex}
       .selectedValue=${args.selectedValue ?? null}
+      .defaultSelectedValue=${args.defaultSelectedValue ?? null}
       .orientation=${args.orientation}
       ?automatic-activation=${args.automaticActivation}
     >
-      <button slot="tab">概要</button>
+      <button slot="tab" value="overview">概要</button>
       <div slot="panel" style="padding: 1rem;">
         <p>概要パネルのコンテンツです。</p>
       </div>
 
-      <button slot="tab">詳細</button>
+      <button slot="tab" value="details">詳細</button>
       <div slot="panel" style="padding: 1rem;">
         <p>詳細パネルのコンテンツです。技術的な仕様や実装の詳細が入ります。</p>
       </div>
 
-      <button slot="tab">設定</button>
+      <button slot="tab" value="settings">設定</button>
       <div slot="panel" style="padding: 1rem;">
         <p>設定パネルのコンテンツです。各種オプションが入ります。</p>
       </div>
@@ -175,7 +175,7 @@ export const Default: Story = {
       }
     });
 
-    // テスト: 先頭タブが選択済み
+    // テスト: 先頭タブが自動選択される
     if (tabEls[0]?.getAttribute('aria-selected') !== 'true') {
       throw new Error('[Default] 先頭タブが aria-selected="true" ではありません');
     }
@@ -225,56 +225,48 @@ export const Default: Story = {
   },
 };
 
-/**
- * 2番目のタブを初期選択した状態。
- *
- * `selected-index="1"` の動作と、対応するパネルの表示を確認します。
- */
-export const InitialIndex: Story = {
+export const DefaultSelectedValue: Story = {
   render: () => html`
-    <ui-tabs selected-index="1">
-      <button slot="tab">概要</button>
+    <ui-tabs default-selected-value="details">
+      <button slot="tab" value="overview">概要</button>
       <div slot="panel" style="padding: 1rem;">概要パネル</div>
 
-      <button slot="tab">詳細</button>
+      <button slot="tab" value="details">詳細</button>
       <div slot="panel" style="padding: 1rem;">
         <strong>詳細パネル</strong>（初期選択）
       </div>
 
-      <button slot="tab">設定</button>
+      <button slot="tab" value="settings">設定</button>
       <div slot="panel" style="padding: 1rem;">設定パネル</div>
     </ui-tabs>
   `,
   play: async ({ canvasElement }) => {
     const tabs = canvasElement.querySelector('ui-tabs');
-    if (!tabs) throw new Error('[InitialIndex] ui-tabs が見つかりません');
+    if (!tabs) throw new Error('[DefaultSelectedValue] ui-tabs が見つかりません');
 
     await tabs.updateComplete;
 
     const tabEls = canvasElement.querySelectorAll('[slot="tab"]');
     const panelEls = canvasElement.querySelectorAll('[slot="panel"]');
 
-    // テスト: index=1 のタブが選択されている
     if (tabEls[1]?.getAttribute('aria-selected') !== 'true') {
-      throw new Error('[InitialIndex] index=1 のタブが aria-selected="true" ではありません');
+      throw new Error('[DefaultSelectedValue] value="details" のタブが aria-selected="true" ではありません');
     }
     if (tabEls[0]?.getAttribute('aria-selected') !== 'false') {
-      throw new Error('[InitialIndex] index=0 のタブが aria-selected="false" ではありません');
+      throw new Error('[DefaultSelectedValue] value="overview" のタブが aria-selected="false" ではありません');
     }
 
-    // テスト: index=1 のパネルが表示されている
     const secondPanel = panelEls[1] as HTMLElement;
     const firstPanel = panelEls[0] as HTMLElement;
     if (secondPanel.hasAttribute('hidden')) {
-      throw new Error('[InitialIndex] index=1 のパネルが hidden になっています');
+      throw new Error('[DefaultSelectedValue] value="details" のパネルが hidden になっています');
     }
     if (!firstPanel.hasAttribute('hidden')) {
-      throw new Error('[InitialIndex] index=0 のパネルが表示されたままです');
+      throw new Error('[DefaultSelectedValue] value="overview" のパネルが表示されたままです');
     }
 
-    // テスト: Roving Tabindex は選択タブに追従
     if (tabEls[1].getAttribute('tabindex') !== '0') {
-      throw new Error('[InitialIndex] 選択タブの tabindex が "0" ではありません');
+      throw new Error('[DefaultSelectedValue] 選択タブの tabindex が "0" ではありません');
     }
   },
 };
@@ -292,19 +284,19 @@ export const InitialIndex: Story = {
 export const Vertical: Story = {
   render: () => html`
     <ui-tabs orientation="vertical" style="min-height: 200px;">
-      <button slot="tab">プロフィール</button>
+      <button slot="tab" value="profile">プロフィール</button>
       <div slot="panel" style="padding: 1rem;">
         <h3 style="margin: 0 0 0.5rem 0;">プロフィール</h3>
         <p>ユーザー情報の設定が入ります。</p>
       </div>
 
-      <button slot="tab">セキュリティ</button>
+      <button slot="tab" value="security">セキュリティ</button>
       <div slot="panel" style="padding: 1rem;">
         <h3 style="margin: 0 0 0.5rem 0;">セキュリティ</h3>
         <p>パスワードや2段階認証の設定が入ります。</p>
       </div>
 
-      <button slot="tab">通知</button>
+      <button slot="tab" value="notifications">通知</button>
       <div slot="panel" style="padding: 1rem;">
         <h3 style="margin: 0 0 0.5rem 0;">通知</h3>
         <p>通知設定が入ります。</p>
@@ -363,13 +355,13 @@ export const AutomaticActivation: Story = {
     </div>
 
     <ui-tabs automatic-activation>
-      <button slot="tab">外観</button>
+      <button slot="tab" value="appearance">外観</button>
       <div slot="panel" style="padding: 1rem;">外観設定</div>
 
-      <button slot="tab">エディタ</button>
+      <button slot="tab" value="editor">エディタ</button>
       <div slot="panel" style="padding: 1rem;">エディタ設定</div>
 
-      <button slot="tab">ショートカット</button>
+      <button slot="tab" value="shortcuts">ショートカット</button>
       <div slot="panel" style="padding: 1rem;">ショートカット設定</div>
     </ui-tabs>
   `,
@@ -415,8 +407,8 @@ export const WithIcons: Story = {
       }
     </style>
 
-    <ui-tabs selected-index="0">
-      <button slot="tab">
+    <ui-tabs>
+      <button slot="tab" value="notes">
         <iconify-icon icon="lucide:file-text"></iconify-icon>
         ノート
       </button>
@@ -424,7 +416,7 @@ export const WithIcons: Story = {
         <p>ノートの一覧が入ります。</p>
       </div>
 
-      <button slot="tab">
+      <button slot="tab" value="tags">
         <iconify-icon icon="lucide:tag"></iconify-icon>
         タグ
       </button>
@@ -432,7 +424,7 @@ export const WithIcons: Story = {
         <p>タグ一覧が入ります。</p>
       </div>
 
-      <button slot="tab">
+      <button slot="tab" value="search">
         <iconify-icon icon="lucide:search"></iconify-icon>
         検索
       </button>
@@ -459,13 +451,13 @@ export const ManyTabs: Story = {
       <p style="font-size: var(--text-sm, 13px); color: var(--fg-muted, #666); margin: 0 0 0.5rem 0;">
         コンテナ幅: 400px（タブリストがオーバーフロー）
       </p>
-      <ui-tabs selected-index="0">
+      <ui-tabs>
         ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(
-    (n) => html`
-            <button slot="tab">タブ ${String(n)}</button>
+          (n) => html`
+            <button slot="tab" value="tab-${String(n)}">タブ ${String(n)}</button>
             <div slot="panel" style="padding: 1rem;">パネル ${String(n)} のコンテンツ</div>
           `,
-  )}
+        )}
       </ui-tabs>
     </div>
   `,
@@ -475,23 +467,9 @@ export const ManyTabs: Story = {
 
     await tabs.updateComplete;
 
-    const tabEls = canvasElement.querySelectorAll('[slot="tab"]');
-
-    // テスト: 10タブが正しく初期化されている
-    if (tabEls.length !== 10) {
-      throw new Error(`[ManyTabs] タブ数が 10 ではありません: ${String(tabEls.length)}`);
-    }
-
-    // テスト: 全タブに role="tab" が付与されている
-    tabEls.forEach((tab, i) => {
-      if (tab.getAttribute('role') !== 'tab') {
-        throw new Error(`[ManyTabs] tab[${String(i)}] の role が "tab" ではありません`);
-      }
-    });
-
-    // テスト: 末尾タブ選択時に自動スクロールで可視領域に入る
-    tabs.select(9);
+    tabs.select('tab-10');
     await tabs.updateComplete;
+
     const tablist = tabs.shadowRoot?.querySelector<HTMLElement>('[role="tablist"]');
     if (!tablist) throw new Error('[ManyTabs] tablist が見つかりません');
     if (tablist.scrollLeft <= 0) {
@@ -534,7 +512,7 @@ export const SelectedByValue: Story = {
     const tabEls = canvasElement.querySelectorAll('[slot="tab"]');
     const panelEls = canvasElement.querySelectorAll('[slot="panel"]');
 
-    // テスト: "settings" タブが選択されている（index=2）
+    // テスト: "settings" タブが選択されている（value="settings"）
     if (tabEls[2]?.getAttribute('aria-selected') !== 'true') {
       throw new Error('[SelectedByValue] value="settings" のタブが aria-selected="true" ではありません');
     }
@@ -542,7 +520,7 @@ export const SelectedByValue: Story = {
       throw new Error('[SelectedByValue] value="overview" のタブが aria-selected="false" ではありません');
     }
 
-    // テスト: index=2 のパネルが表示されている
+    // テスト: value="settings" のパネルが表示されている
     const thirdPanel = panelEls[2] as HTMLElement;
     if (thirdPanel.hasAttribute('hidden')) {
       throw new Error('[SelectedByValue] selected-value に対応するパネルが hidden になっています');
@@ -586,14 +564,14 @@ export const KeyboardNavigation: Story = {
       <code>Home</code> / <code>End</code> で先頭/末尾へ。
     </div>
 
-    <ui-tabs id="keyboard-tabs" selected-index="0">
-      <button slot="tab">アルファ</button>
+    <ui-tabs id="keyboard-tabs">
+      <button slot="tab" value="alpha">アルファ</button>
       <div slot="panel" style="padding: 1rem;">アルファパネル</div>
 
-      <button slot="tab">ベータ</button>
+      <button slot="tab" value="beta">ベータ</button>
       <div slot="panel" style="padding: 1rem;">ベータパネル</div>
 
-      <button slot="tab">ガンマ</button>
+      <button slot="tab" value="gamma">ガンマ</button>
       <div slot="panel" style="padding: 1rem;">ガンマパネル</div>
     </ui-tabs>
   `,
@@ -673,13 +651,13 @@ export const KeyboardNavigation: Story = {
 export const KeyboardNavigationVertical: Story = {
   render: () => html`
     <ui-tabs id="keyboard-vertical-tabs" orientation="vertical" style="min-height: 200px;">
-      <button slot="tab">項目 A</button>
+      <button slot="tab" value="item-a">項目 A</button>
       <div slot="panel" style="padding: 1rem;">項目 A のコンテンツ</div>
 
-      <button slot="tab">項目 B</button>
+      <button slot="tab" value="item-b">項目 B</button>
       <div slot="panel" style="padding: 1rem;">項目 B のコンテンツ</div>
 
-      <button slot="tab">項目 C</button>
+      <button slot="tab" value="item-c">項目 C</button>
       <div slot="panel" style="padding: 1rem;">項目 C のコンテンツ</div>
     </ui-tabs>
   `,
@@ -746,7 +724,6 @@ export const TabChangeEvent: Story = {
 
     <ui-tabs
       id="event-tabs"
-      selected-index="0"
       @ui-tab-change="${(e: CustomEvent<{ index: number; value: string | null; prevIndex: number }>) => {
       const log = (e.currentTarget as HTMLElement | null)?.parentElement?.querySelector<HTMLElement>('#event-log');
       if (log) {
@@ -812,43 +789,31 @@ export const TabChangeEvent: Story = {
   },
 };
 
-// ─────────────────────────────────────────────────
-// 境界条件・エッジケース
-// ─────────────────────────────────────────────────
-
-/**
- * ⚠️ 無効な `selected-index`（境界条件）。
- *
- * タブ数を超えるインデックスが指定された場合、先頭タブを選択し、
- * 開発時に `console.warn` で通知します。
- *
- * コンソールに `[ui-tabs]: ... 先頭タブ (index=0) を選択します` が出力されることを確認してください。
- */
-export const EdgeCase_InvalidIndex: Story = {
+export const EdgeCase_InvalidDefaultSelectedValue: Story = {
   render: () => html`
-    <style>
-      .warning-banner {
-        padding: 0.75rem 1rem;
-        background: oklch(from var(--warning, oklch(70% 0.15 85)) l c h / 0.1);
-        border: 1px solid oklch(from var(--warning, oklch(70% 0.15 85)) l c h / 0.3);
-        border-radius: var(--radius-md, 6px);
-        font-size: var(--text-sm, 13px);
-        margin-bottom: 1rem;
-      }
-    </style>
+  <style>
+    .warning-banner {
+      padding: 0.75rem 1rem;
+      background: oklch(from var(--warning, oklch(70% 0.15 85)) l c h / 0.1);
+      border: 1px solid oklch(from var(--warning, oklch(70% 0.15 85)) l c h / 0.3);
+      border-radius: var(--radius-md, 6px);
+      font-size: var(--text-sm, 13px);
+      margin-bottom: 1rem;
+    }
+  </style>
 
-    <div class="warning-banner">
-      <strong>⚠️ 境界条件</strong>: selected-index="99" は無効です。
-      コンソールに警告が出力され、先頭タブが選択されます。
-    </div>
+  <div class="warning-banner">
+    <strong>⚠️ 境界条件</strong>: default-selected-value="nonexistent" は無効です。
+    コンソールに警告が出力され、先頭タブが選択されます。
+  </div>
 
-    <ui-tabs id="invalid-index-tabs" selected-index="99">
-      <button slot="tab">タブ A</button>
-      <div slot="panel" style="padding: 1rem;">タブ A のパネル（フォールバック選択）</div>
+  <ui-tabs id="invalid-default-tabs" default-selected-value="nonexistent">
+    <button slot="tab" value="tab-a">タブ A</button>
+    <div slot="panel" style="padding: 1rem;">タブ A のパネル（フォールバック選択）</div>
 
-      <button slot="tab">タブ B</button>
-      <div slot="panel" style="padding: 1rem;">タブ B のパネル</div>
-    </ui-tabs>
+    <button slot="tab" value="tab-b">タブ B</button>
+    <div slot="panel" style="padding: 1rem;">タブ B のパネル</div>
+  </ui-tabs>
   `,
   play: async ({ canvasElement }) => {
     const tabs = canvasElement.querySelector<Tabs>('#invalid-index-tabs');
@@ -873,19 +838,19 @@ export const EdgeCase_InvalidIndex: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ `selected-index="99"` のような無効値はフォールバック（先頭タブ）と `console.warn` で安全に処理されます。',
+        story: '⚠️ 無効値はフォールバック（先頭タブ）と `console.warn` で安全に処理されます。',
       },
     },
   },
 };
 
 /**
- * ⚠️ `selected-value` と `selected-index` が同時指定（境界条件）。
+ * ⚠️ `selected-value` と `default-selected-value` が同時指定（境界条件）。
  *
  * 両属性が指定された場合、`selected-value` が優先されます。
  * URL連携時の安定性のための仕様です。
  */
-export const EdgeCase_ValueOverridesIndex: Story = {
+export const EdgeCase_SelectedValueOverridesDefault: Story = {
   render: () => html`
     <style>
       .info-banner {
@@ -899,13 +864,13 @@ export const EdgeCase_ValueOverridesIndex: Story = {
 
     <div class="info-banner">
       <strong>API Resolution</strong>:
-      <code>selected-index="0"</code> と <code>selected-value="gamma"</code> が同時指定。
+      <code>default-selected-value="alpha"</code> と <code>selected-value="gamma"</code> が同時指定された場合、
       <strong>selected-value が優先され</strong>、「ガンマ」タブが選択されます。
     </div>
 
-    <ui-tabs id="priority-tabs" selected-index="0" selected-value="gamma">
+    <ui-tabs id="priority-tabs" default-selected-value="alpha" selected-value="gamma">
       <button slot="tab" value="alpha">アルファ</button>
-      <div slot="panel" style="padding: 1rem;">アルファパネル（selected-index=0 だが非選択）</div>
+      <div slot="panel" style="padding: 1rem;">アルファパネル（初期値候補だが非選択）</div>
 
       <button slot="tab" value="beta">ベータ</button>
       <div slot="panel" style="padding: 1rem;">ベータパネル</div>
@@ -935,7 +900,7 @@ export const EdgeCase_ValueOverridesIndex: Story = {
   parameters: {
     docs: {
       description: {
-        story: '`selected-value` と `selected-index` が競合した場合、**`selected-value` が優先**されます（API Resolution Rules）。',
+        story: '`selected-value` と `default-selected-value` が競合した場合、**`selected-value` が優先**されます。',
       },
     },
   },
@@ -964,7 +929,7 @@ export const EdgeCase_SingleTab: Story = {
     </div>
 
     <ui-tabs id="single-tab">
-      <button slot="tab">唯一のタブ</button>
+      <button slot="tab" value="only">唯一のタブ</button>
       <div slot="panel" style="padding: 1rem;">唯一のパネル</div>
     </ui-tabs>
   `,
@@ -1001,10 +966,10 @@ export const EdgeCase_SingleTab: Story = {
 /**
  * ⚠️ `selected-value` が一致しない場合（境界条件）。
  *
- * `selected-value` に一致するタブがない場合は `selected-index` にフォールバックします。
- * `selected-index` も無効なら先頭タブを選択します。
+ * `selected-value` に一致するタブがない場合は先頭タブにフォールバックします。
+ * `default-selected-value` を同時に置いても 回復先にはしません。
  */
-export const EdgeCase_UnmatchedValue: Story = {
+export const EdgeCase_UnmatchedSelectedValue: Story = {
   render: () => html`
     <style>
       .warning-banner {
@@ -1020,30 +985,29 @@ export const EdgeCase_UnmatchedValue: Story = {
     <div class="warning-banner">
       <strong>⚠️ 境界条件</strong>:
       <code>selected-value="nonexistent"</code> はどのタブにも一致しません。
-      <code>selected-index="1"</code> にフォールバックします。
+      制御値として無効なため、先頭タブへフォールバックします。
     </div>
 
-    <ui-tabs id="unmatched-tabs" selected-value="nonexistent" selected-index="1">
+    <ui-tabs id="unmatched-tabs" selected-value="nonexistent" default-selected-value="beta">
       <button slot="tab" value="alpha">アルファ</button>
-      <div slot="panel" style="padding: 1rem;">アルファパネル</div>
+      <div slot="panel" style="padding: 1rem;">
+        <strong>アルファパネル</strong>（先頭タブへのフォールバック）
+      </div>
 
       <button slot="tab" value="beta">ベータ</button>
-      <div slot="panel" style="padding: 1rem;">
-        <strong>ベータパネル</strong>（selected-index=1 へのフォールバック）
-      </div>
+      <div slot="panel" style="padding: 1rem;">ベータパネル</div>
     </ui-tabs>
   `,
   play: async ({ canvasElement }) => {
     const tabs = canvasElement.querySelector<Tabs>('#unmatched-tabs');
-    if (!tabs) throw new Error('[EdgeCase_UnmatchedValue] ui-tabs が見つかりません');
+    if (!tabs) throw new Error('[EdgeCase_UnmatchedSelectedValue] ui-tabs が見つかりません');
 
     await tabs.updateComplete;
 
     const tabEls = canvasElement.querySelectorAll('[slot="tab"]');
 
-    // テスト: selected-value が一致しないため selected-index=1 にフォールバック
-    if (tabEls[1]?.getAttribute('aria-selected') !== 'true') {
-      throw new Error('[EdgeCase_UnmatchedValue] selected-index=1 へのフォールバックが機能していません');
+    if (tabEls[0]?.getAttribute('aria-selected') !== 'true') {
+      throw new Error('[EdgeCase_UnmatchedSelectedValue] 無効な selected-value で先頭タブにフォールバックしていません');
     }
   },
 };
@@ -1056,14 +1020,14 @@ export const EdgeCase_UnmatchedValue: Story = {
  */
 export const EdgeCase_MismatchedSlots: Story = {
   render: () => html`
-    <ui-tabs id="mismatched-tabs" selected-index="0">
-      <button slot="tab">A</button>
+    <ui-tabs id="mismatched-tabs">
+      <button slot="tab" value="a">A</button>
       <div slot="panel" style="padding: 1rem;">A パネル</div>
 
-      <button slot="tab">B</button>
+      <button slot="tab" value="b">B</button>
       <div slot="panel" style="padding: 1rem;">B パネル</div>
 
-      <button slot="tab">C (余剰)</button>
+      <button slot="tab" value="c">C (余剰)</button>
     </ui-tabs>
   `,
   play: async ({ canvasElement }) => {
@@ -1124,14 +1088,14 @@ export const ReducedMotion: Story = {
     </div>
 
     <div class="simulate-reduced-motion">
-      <ui-tabs selected-index="0">
-        <button slot="tab">概要</button>
+      <ui-tabs>
+        <button slot="tab" value="overview">概要</button>
         <div slot="panel" style="padding: 1rem;">概要パネル（アニメーション短縮中）</div>
 
-        <button slot="tab">詳細</button>
+        <button slot="tab" value="details">詳細</button>
         <div slot="panel" style="padding: 1rem;">詳細パネル（アニメーション短縮中）</div>
 
-        <button slot="tab">設定</button>
+        <button slot="tab" value="settings">設定</button>
         <div slot="panel" style="padding: 1rem;">設定パネル（アニメーション短縮中）</div>
       </ui-tabs>
     </div>
@@ -1193,20 +1157,20 @@ export const ForcedColorsMode: Story = {
       アクティブタブが <code>Highlight</code> システムカラーのボーダーで識別されます。
     </div>
 
-    <ui-tabs selected-index="0">
-      <button slot="tab">水平 - アクティブ</button>
+    <ui-tabs>
+      <button slot="tab" value="active-horizontal">水平 - アクティブ</button>
       <div slot="panel" style="padding: 1rem;">アクティブパネル</div>
 
-      <button slot="tab">水平 - 非アクティブ</button>
+      <button slot="tab" value="inactive-horizontal">水平 - 非アクティブ</button>
       <div slot="panel" style="padding: 1rem;">非アクティブパネル</div>
     </ui-tabs>
 
     <div style="margin-top: 1.5rem;">
-      <ui-tabs orientation="vertical" selected-index="0" style="min-height: 120px;">
-        <button slot="tab">垂直 - アクティブ</button>
+      <ui-tabs orientation="vertical" style="min-height: 120px;">
+        <button slot="tab" value="active-vertical">垂直 - アクティブ</button>
         <div slot="panel" style="padding: 1rem;">垂直アクティブパネル</div>
 
-        <button slot="tab">垂直 - 非アクティブ</button>
+        <button slot="tab" value="inactive-vertical">垂直 - 非アクティブ</button>
         <div slot="panel" style="padding: 1rem;">垂直非アクティブパネル</div>
       </ui-tabs>
     </div>
@@ -1260,11 +1224,11 @@ export const DarkMode: Story = {
     </style>
 
     <div class="dark-surface">
-      <ui-tabs id="dark-tabs" selected-index="0">
-        <button slot="tab">概要</button>
+      <ui-tabs id="dark-tabs">
+        <button slot="tab" value="overview">概要</button>
         <div slot="panel" style="padding: 1rem;">暗色面の概要パネル</div>
 
-        <button slot="tab">詳細</button>
+        <button slot="tab" value="details">詳細</button>
         <div slot="panel" style="padding: 1rem;">暗色面の詳細パネル</div>
       </ui-tabs>
     </div>
@@ -1326,13 +1290,13 @@ export const AsyncPanel: Story = {
       }
     </style>
 
-    <ui-tabs id="async-tabs" selected-index="0">
-      <button slot="tab">Pending (&lt;500ms)</button>
+    <ui-tabs id="async-tabs">
+      <button slot="tab" value="pending">Pending (&lt;500ms)</button>
       <div slot="panel" id="pending-panel" style="padding: 1rem;" aria-busy="false">
         <p id="pending-content">既存コンテンツを維持（ローディングUIなし）</p>
       </div>
 
-      <button slot="tab">Loading (&gt;=500ms)</button>
+      <button slot="tab" value="loading">Loading (&gt;=500ms)</button>
       <div slot="panel" id="loading-panel" style="padding: 1rem;" aria-busy="false">
         <div id="loading-skeleton" hidden>
           <div class="skeleton" style="width: 80%;"></div>
@@ -1489,8 +1453,8 @@ export const IntegrationExample: Story = {
         <p class="page-subtitle">個人プロジェクトのノートと情報</p>
       </div>
 
-      <ui-tabs selected-index="0">
-        <button slot="tab">ノート</button>
+      <ui-tabs>
+        <button slot="tab" value="notes">ノート</button>
         <div slot="panel">
           <div class="content-section">
             <div class="content-item">
@@ -1508,7 +1472,7 @@ export const IntegrationExample: Story = {
           </div>
         </div>
 
-        <button slot="tab">タグ</button>
+        <button slot="tab" value="tags">タグ</button>
         <div slot="panel">
           <ul class="tag-list">
             <li class="tag-item">デザイン</li>

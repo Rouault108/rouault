@@ -402,7 +402,7 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 タブ UI を構成する。
 
 ```markdown
-::tabs{selected-index="0" orientation="horizontal"}
+::tabs{default-selected-value="overview" orientation="horizontal"}
 ::tab{value="overview"}
 概要
 ::
@@ -418,13 +418,13 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 ::
 ```
 
-| 属性                   | 内容                     | 値                       |
-| ---------------------- | ------------------------ | ------------------------ |
-| `selected-index`       | 初期選択番号             | `0` 以上の整数           |
-| `selected-value`       | 初期選択値               | 任意の文字列             |
-| `orientation`          | 並び方向                 | `horizontal`, `vertical` |
-| `automatic-activation` | フォーカス移動で自動選択 | 真偽値                   |
-| `value`                | `tab` の識別子           | 任意の文字列             |
+| 属性                     | 内容                    | 値                       |
+| ------------------------ | ----------------------- | ------------------------ |
+| `selected-value`         | 現在選択値 / 外部制御値 | 任意の文字列             |
+| `default-selected-value` | 初期選択値              | 任意の文字列             |
+| `orientation`            | 並び方向                | `horizontal`, `vertical` |
+| `automatic-activation`   | フォーカス移動で自動選択 | 真偽値                  |
+| `value`                  | `tab` の識別子          | 任意の文字列             |
 
 補足:
 

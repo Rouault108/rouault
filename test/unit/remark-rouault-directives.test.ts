@@ -331,7 +331,7 @@ describe('remarkRouaultDirectives', () => {
             {
               type: 'text',
               value:
-                '::tabs{selected-index="1" selected-value="details" orientation="vertical" automatic-activation="true"}',
+                '::tabs{selected-value="details" default-selected-value="overview" orientation="vertical" automatic-activation="true"}',
             },
           ],
         },
@@ -394,8 +394,8 @@ describe('remarkRouaultDirectives', () => {
 
     const tabs = tree.children?.[0];
     expect(tabs?.data?.hName).to.equal('ui-tabs');
-    expect(tabs?.data?.hProperties?.['selected-index']).to.equal('1');
     expect(tabs?.data?.hProperties?.['selected-value']).to.equal('details');
+    expect(tabs?.data?.hProperties?.['default-selected-value']).to.equal('overview');
     expect(tabs?.data?.hProperties?.['orientation']).to.equal('vertical');
     expect(tabs?.data?.hProperties?.['automatic-activation']).to.equal(true);
     expect(tabs?.children).to.have.length(4);
@@ -615,7 +615,7 @@ describe('remarkRouaultDirectives', () => {
       children: [
         {
           type: 'paragraph',
-          children: [{ type: 'text', value: '::tabs{selected-index="0"}' }],
+          children: [{ type: 'text', value: '::tabs{default-selected-value="overview"}' }],
         },
         {
           type: 'paragraph',

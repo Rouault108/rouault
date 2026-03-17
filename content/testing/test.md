@@ -114,7 +114,7 @@ https://note.com/info/n/nea1b96233fbf
 ここに説明を書く
 ::
 
-::tabs{selected-index="0" orientation="horizontal"}
+::tabs{default-selected-value="overview" orientation="horizontal"}
 ::tab{value="overview"}
 概要
 ::

@@ -50,7 +50,7 @@ remark 層では「著者入力の制約付けと独自構文の展開」を行�
 | `::info-box`     | `ui-info-box`       | `heading` / `icon` / `heading-level` / `landmark` / `variant`                                                         |
 | `::link-card`    | `ui-card`           | leaf directive。`url` 必須、`title` / `description` / `image`。終端 `::` は不要                                      |
 | `::score`        | `ui-score`          | `src` / `caption` / `label` / `description` / `aspect-ratio` / `loading` / `primary`                                  |
-| `::tabs`         | `ui-tabs`           | `selected-index` / `selected-value` / `orientation` / `automatic-activation`                                          |
+| `::tabs` | `ui-tabs` | `selected-value` / `default-selected-value` / `orientation` / `automatic-activation` |
 | `::translation`  | `ui-translation`    | `original` / `translated` / `lang` / `target-lang` / `render-mode` / `open`                                           |
 | `::preview`      | `div[slot=preview]` | 属性なし                                                                                                              |
 | `::toolbar`      | `div[slot=toolbar]` | 内部 / 互換用。著者向け公開文法では非推奨                                                                             |

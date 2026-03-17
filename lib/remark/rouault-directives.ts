@@ -903,28 +903,21 @@ const applyTabsAttributes = (
 ): Record<string, unknown> => {
   const result: Record<string, unknown> = {};
   const allowedKeys = new Set([
-    'selected-index',
     'selected-value',
+    'default-selected-value',
     'orientation',
     'automatic-activation',
   ]);
   assertAllowedAttributes(attrs, allowedKeys, node, file, 'tabs');
 
-  const selectedIndex = parseIntegerMin(
-    attrs['selected-index'],
-    node,
-    file,
-    'tabs',
-    'selected-index',
-    0,
-  );
-  if (typeof selectedIndex === 'number') {
-    result['selected-index'] = String(selectedIndex);
-  }
-
   const selectedValue = pickOptional(attrs['selected-value']);
   if (selectedValue) {
     result['selected-value'] = selectedValue;
+  }
+
+  const defaultSelectedValue = pickOptional(attrs['default-selected-value']);
+  if (defaultSelectedValue) {
+    result['default-selected-value'] = defaultSelectedValue;
   }
 
   const orientation = pickOptional(attrs['orientation'])?.toLowerCase();

@@ -18,27 +18,27 @@ let _uidCounter = 0;
  * ## 使用方法
  *
  * ```html
- * <ui-tabs selected-index="0">
- *   <button slot="tab">概要</button>
+ * <ui-tabs selected-value="overview">
+ *   <button slot="tab" value="overview">概要</button>
  *   <div slot="panel">概要コンテンツ</div>
- *   <button slot="tab">詳細</button>
+ *   <button slot="tab" value="details">詳細</button>
  *   <div slot="panel">詳細コンテンツ</div>
  * </ui-tabs>
  * ```
  *
  * ## API Resolution Rules
  *
- * 1. `selected-value` が指定されていれば優先（URL連携時の安定性のため）
- * 2. `selected-value` が一致しない場合は `selected-index` を評価
- * 3. 両方が無効な場合は先頭タブ (index=0) を選択し、開発時に `console.warn` で通知
+ * 1. `selected-value` が一致する場合はそのタブを選択します
+ * 2. 初期化前のみ `default-selected-value` を初期値として評価します
+ * 3. どちらも未指定または無効な場合は先頭タブ (index=0) を自動選択し、開発時に `console.warn` で通知します
  *
- * @slot tab - タブボタン要素（複数可）。`value` 属性で `selected-value` と対応付けられます。
+ * @slot tab - タブボタン要素（複数可）。`value` 属性で `selected-value` / `default-selected-value` と対応付けられます。
  * @slot panel - パネル要素（tab と 1:1 対応）
  *
  * @fires ui-tab-change - タブ変更時 detail: { index: number, value: string | null, prevIndex: number }
  *
- * @property {number} selected-index - 選択タブのインデックス（0始まり）
- * @property {string} selected-value - 選択タブの値（value 属性と対応）
+ * @property {string} selected-value - 現在選択されているタブの値（value 属性と対応）
+ * @property {string} default-selected-value - 初期選択にのみ使うタブの値（uncontrolled 初期値）
  * @property {'horizontal' | 'vertical'} orientation - タブ配置方向（デフォルト: horizontal）
  * @property {boolean} automatic-activation - 矢印キーで即座に選択するか（デフォルト: false）
  *
@@ -345,19 +345,18 @@ export class Tabs extends LitElement {
   private readonly _uid = ++_uidCounter;
 
   /**
-   * 現在選択されているタブのインデックス（0始まり）。
-   * `selected-value` との競合時は `selected-value` が優先されます。
-   */
-  @property({ type: Number, attribute: 'selected-index', reflect: true })
-  selectedIndex = 0;
-
-  /**
    * 現在選択されているタブの値（tab要素の `value` 属性と対応）。
    * URL連携時はハッシュまたはクエリパラメータとして利用されることを想定。
-   * `selected-index` より優先されます。
    */
   @property({ type: String, attribute: 'selected-value', reflect: true })
   selectedValue: string | null = null;
+
+  /**
+   * 初期選択にのみ使うタブの値（tab要素の `value` 属性と対応）。
+   * `selected-value` が未指定のときだけ初回解決で参照されます。
+   */
+  @property({ type: String, attribute: 'default-selected-value' })
+  defaultSelectedValue: string | null = null;
 
   /**
    * タブの配置方向。
@@ -456,8 +455,8 @@ export class Tabs extends LitElement {
     super.updated(changedProperties);
 
     if (
-      changedProperties.has('selectedIndex') ||
-      changedProperties.has('selectedValue')
+      changedProperties.has('selectedValue') ||
+      changedProperties.has('defaultSelectedValue')
     ) {
       this._resolveAndApply();
     }
@@ -498,56 +497,53 @@ export class Tabs extends LitElement {
     });
   }
 
-  // ─────────────────────────────────────────────────
-  // Private: 選択解決
-  // ─────────────────────────────────────────────────
-
   /**
-   * selected-value / selected-index の優先解決を行い、
+   * selected-value / default-selected-value を解決し、
    * 変化があれば _setActive を呼び出す。
    *
    * Resolution Rules:
-   * 1. selected-value が指定されていれば、value 属性が一致するタブを探す
-   * 2. 一致しない場合は selected-index を評価
-   * 3. 両方が無効なら先頭タブ (index=0) を選択し、開発時に console.warn
+   * 1. `selected-value` が一致する場合はそのタブを選択
+   * 2. 初期化前のみ `default-selected-value` を初期値として評価
+   * 3. どちらも未指定なら、初期化済みの現在値を維持
+   * 4. それでも解決できない場合は先頭タブ (index=0) を選択し、開発時に console.warn
    */
   private _resolveAndApply(): void {
     const count = this._interactiveCount;
     if (count === 0) return;
 
     let resolved = -1;
+    let warning: string | null = null;
 
-    // selected-value 優先（URL連携時の安定性）
     if (this.selectedValue !== null) {
-      resolved = this._tabEls.slice(0, count).findIndex(
-        (tab) => tab.getAttribute('value') === this.selectedValue,
-      );
-    }
-
-    // selected-value が一致しない場合は selected-index を評価
-    if (resolved === -1) {
-      if (this.selectedIndex >= 0 && this.selectedIndex < count) {
-        resolved = this.selectedIndex;
+      resolved = this._findTabIndexByValue(this.selectedValue, count);
+      if (resolved === -1) {
+        warning = `[ui-tabs]: selected-value="${this.selectedValue}" が有効なタブに一致しません。`;
       }
+    } else if (!this._initialized && this.defaultSelectedValue !== null) {
+      resolved = this._findTabIndexByValue(this.defaultSelectedValue, count);
+      if (resolved === -1) {
+        warning = `[ui-tabs]: default-selected-value="${this.defaultSelectedValue}" が有効なタブに一致しません。`;
+      }
+    } else if (this._initialized && this._activeIndex >= 0 && this._activeIndex < count) {
+      resolved = this._activeIndex;
     }
 
-    // 両方が無効 → 先頭タブを選択し、開発時に警告
     if (resolved === -1) {
       const isDev = (import.meta as DevImportMeta).env?.DEV === true;
-      if (isDev) {
-        console.warn(
-          `[ui-tabs]: selected-value="${String(this.selectedValue)}" および selected-index="${String(this.selectedIndex)}" が有効なタブに一致しません。先頭タブ (index=0) を選択します。`,
-          this,
-        );
+      if (isDev && warning !== null) {
+        console.warn(`${warning} 先頭タブ (index=0) を選択します。`, this);
       }
       resolved = 0;
     }
 
-    // 変化なし かつ 初期化済みなら更新不要（無限ループ防止）
     if (resolved === this._activeIndex && this._initialized) return;
 
     this._initialized = true;
     this._setActive(resolved, false);
+  }
+
+  private _findTabIndexByValue(value: string, count = this._interactiveCount): number {
+    return this._tabEls.slice(0, count).findIndex((tab) => tab.getAttribute('value') === value);
   }
 
   // ─────────────────────────────────────────────────
@@ -567,10 +563,6 @@ export class Tabs extends LitElement {
     this._applyAriaAndListeners();
     this._switchPanel(index, prevIndex);
 
-    // 公開プロパティを同期（値が変わる場合のみ更新して不要な再レンダリングを防ぐ）
-    if (this.selectedIndex !== index) {
-      this.selectedIndex = index;
-    }
     const newValue = this._tabEls[index]?.getAttribute('value') ?? null;
     if (this.selectedValue !== newValue) {
       this.selectedValue = newValue;
@@ -935,9 +927,17 @@ private _scrollTabElementIntoView(tabEl: HTMLElement): void {
 
   /**
    * プログラム的にタブを選択する。
-   * @param index - 選択するタブのインデックス
+   * @param value - 選択するタブの値（tab 要素の value 属性）
    */
-  select(index: number): void {
+  select(value: string): void {
+    const index = this._findTabIndexByValue(value);
+    if (index === -1) {
+      const isDev = (import.meta as DevImportMeta).env?.DEV === true;
+      if (isDev) {
+        console.warn(`[ui-tabs]: select("${value}") に一致する value を持つ tab がありません。`, this);
+      }
+      return;
+    }
     this._selectTab(index);
   }
 
