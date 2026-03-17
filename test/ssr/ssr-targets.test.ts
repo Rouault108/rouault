@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { SSR_NOTE_TARGET_TAGS, SSR_TARGET_TAGS } from '../../src/ssr/targets.js';
+import {
+  SSR_NOTE_TARGET_TAGS,
+  SSR_SEARCH_TARGET_TAGS,
+  SSR_TARGET_TAGS,
+} from '../../src/ssr/targets.js';
 
 const REQUIRED_NOTE_CONTENT_TAGS = [
   'ui-callout',
@@ -33,5 +37,10 @@ describe('ssr targets', () => {
     for (const tagName of REQUIRED_NOTE_CONTENT_TAGS) {
       expect(SSR_TARGET_TAGS).toContain(tagName);
     }
+  });
+
+  it('独立ページ系 UI タグを search target に含めること', () => {
+    expect(SSR_SEARCH_TARGET_TAGS).toContain('not-found-page');
+    expect(SSR_TARGET_TAGS).toContain('not-found-page');
   });
 });

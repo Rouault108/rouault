@@ -2,6 +2,12 @@
  * View Transition API を利用した SPA ルーター
  */
 
+import {
+  buildNotFoundPageMarkup,
+  NOT_FOUND_PAGE_META_DESCRIPTION,
+  NOT_FOUND_PAGE_TITLE,
+} from './not-found-page.js';
+
 type EventCallback = (...args: unknown[]) => unknown;
 type RouteHandler = () => unknown;
 
@@ -23,6 +29,20 @@ interface PendingNavigation {
   resolve: () => void;
   reject: (reason?: unknown) => void;
 }
+
+const SITE_TITLE = 'Rouault';
+
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
+const buildDocumentTitle = (pageTitle: string): string => {
+  const normalized = pageTitle.trim();
+  return normalized.length > 0 ? `${normalized} - ${SITE_TITLE}` : SITE_TITLE;
+};
 
 export interface RouterOptions {
   /** コンテンツ更新コールバック（設定時は outlet.innerHTML を直接変更しない） */
@@ -469,6 +489,24 @@ export class Router {
     }
   }
 
+  private finalizeContentUpdate(url: string, announcedTitle: string): void {
+    this.navigationHistory.push(url);
+
+    if (!this.isInitialLoad) {
+      this.emit('route:change', url);
+    }
+    this.isInitialLoad = false;
+
+    this.emit('content:load', url);
+
+    if (!this.options.onContentUpdate) {
+      this.reinitializeScripts();
+      this.manageFocus();
+    }
+
+    this.announcePageChange(announcedTitle);
+  }
+
   /**
    * コンテンツの更新を行う非同期関数
    * @param url 遷移先のURL
@@ -491,26 +529,14 @@ export class Router {
       const handlerResult = await this.executeRouteHandler(url);
       if (handlerResult !== null) {
         await this.setContent(handlerResult);
-        this.navigationHistory.push(url);
-        if (!this.isInitialLoad) {
-          this.emit('route:change', url);
-        }
-        this.isInitialLoad = false;
-        this.emit('content:load', url);
-        // onContentUpdate 未設定時のみ reinitializeScripts を実行
-        // （AppRouter 統合時は updated() ライフサイクルで処理するため）
-        if (!this.options.onContentUpdate) {
-          this.reinitializeScripts();
-          this.manageFocus();
-        }
-        this.announcePageChange(document.title);
+        this.finalizeContentUpdate(url, document.title);
         return;
       }
 
       const response = await fetch(this.resolveContentUrl(url), { signal });
 
       if (!response.ok) {
-        this.handleHttpError(response.status);
+        await this.handleHttpError(response.status);
         return;
       }
 
@@ -520,7 +546,7 @@ export class Router {
 
       const newContent = doc.querySelector('main')?.innerHTML;
       if (!newContent) {
-        this.handleHttpError(404);
+        await this.handleHttpError(404);
         return;
       }
 
@@ -536,34 +562,14 @@ export class Router {
 
       // メインコンテンツを更新先のコンテンツに変更
       await this.setContent(newContent);
+      this.finalizeContentUpdate(url, newTitle);
 
-      // 履歴に追加（初期ロードでも追加）
-      this.navigationHistory.push(url);
-
-      // イベント発火（初期ロード以外）
-      if (!this.isInitialLoad) {
-        this.emit('route:change', url);
-      }
-      this.isInitialLoad = false;
-
-      // コンテンツロードイベント
-      this.emit('content:load', url);
-
-      // onContentUpdate 未設定時のみ reinitializeScripts を実行
-      // （AppRouter 統合時は updated() ライフサイクルで処理するため）
-      if (!this.options.onContentUpdate) {
-        this.reinitializeScripts();
-        this.manageFocus();
-      }
-
-      // アクセシビリティ: aria-live通知
-      this.announcePageChange(newTitle);
     } catch (err) {
       console.error('Navigation failed:', err);
 
       // AbortError（タイムアウト）のハンドリング
       if (err instanceof Error && (err.name === 'AbortError' || err.name === 'TimeoutError')) {
-        this.showError('タイムアウト', 'ページの読み込みがタイムアウトしました。');
+        await this.showError('タイムアウト', 'ページの読み込みがタイムアウトしました。');
         this.emit('error', err);
         return;
       }
@@ -571,9 +577,9 @@ export class Router {
       this.emit('error', err instanceof Error ? err : new Error(String(err)));
 
       if (err instanceof TypeError && err.message.includes('fetch')) {
-        this.showError('ネットワークエラー', 'ネットワーク接続を確認してください。');
+        await this.showError('ネットワークエラー', 'ネットワーク接続を確認してください。');
       } else {
-        this.showError('エラー', 'ページの読み込みに失敗しました。');
+        await this.showError('エラー', 'ページの読み込みに失敗しました。');
       }
     } finally {
       // 処理完了後にタイマーをクリア
@@ -672,70 +678,83 @@ export class Router {
     }
   }
 
-  /**
-   * HTTPエラーのハンドリング
-   * @param status HTTPステータスコード
-   */
-  private handleHttpError(status: number) {
+  private async handleHttpError(status: number): Promise<void> {
     switch (status) {
       case 401:
-        this.showError('401 - 認証エラー', 'ログインが必要です。');
+        await this.showError('401 - 認証エラー', 'ログインが必要です。');
         break;
       case 403:
-        this.showError('403 - 権限エラー', 'このページにアクセスする権限がありません。');
+        await this.showError('403 - 権限エラー', 'このページにアクセスする権限がありません。');
         break;
       case 404:
-        this.showError('404 - ページが見つかりません', 'お探しのページは存在しません。');
+        await this.showNotFound();
         break;
       case 500:
-        this.showError('500 - サーバーエラー', 'サーバーで問題が発生しました。');
+        await this.showError('500 - サーバーエラー', 'サーバーで問題が発生しました。');
         break;
       case 503:
-        this.showError('503 - サービス利用不可', '現在サービスを利用できません。しばらくしてからお試しください。');
+        await this.showError(
+          '503 - サービス利用不可',
+          '現在サービスを利用できません。しばらくしてからお試しください。',
+        );
         break;
       default:
-        this.showError(`${String(status)} - エラー`, 'ページの読み込みに失敗しました。');
+        await this.showError(`${String(status)} - エラー`, 'ページの読み込みに失敗しました。');
     }
   }
 
-  /**
-   * エラーメッセージを表示
-   * @param title エラータイトル
-   * @param message エラーメッセージ
-   */
-  private showError(title: string, message: string) {
-    const errorHTML = `
-      <div class="error-page">
-        <h1>${title}</h1>
-        <p>${message}</p>
-      </div>
-    `;
-    void this.setContent(errorHTML);
+  private async showNotFound(): Promise<void> {
+    document.title = buildDocumentTitle(NOT_FOUND_PAGE_TITLE);
+    this.setMetaDescriptionContent(NOT_FOUND_PAGE_META_DESCRIPTION);
+    this.clearLayoutHeader();
+
+    await this.setContent(
+      buildNotFoundPageMarkup({
+        requestedPath: this.getCurrentUrl(),
+      }),
+    );
+
+    this.finalizeContentUpdate(this.getCurrentUrl(), document.title);
   }
 
-  /**
-   * メタディスクリプションを更新
-   * @param doc パース済みのドキュメント
-   */
-  private updateMetaDescription(doc: Document) {
-    const newDescription = doc.querySelector('meta[name="description"]')?.getAttribute('content');
+  private async showError(title: string, message: string): Promise<void> {
+    document.title = buildDocumentTitle(title);
+    this.setMetaDescriptionContent(message);
+    this.clearLayoutHeader();
+
+    const errorHTML = `
+      <div class="error-page" role="alert" aria-live="assertive">
+        <h1>${escapeHtml(title)}</h1>
+        <p>${escapeHtml(message)}</p>
+      </div>
+    `.trim();
+
+    await this.setContent(errorHTML);
+    this.finalizeContentUpdate(this.getCurrentUrl(), document.title);
+  }
+
+  private setMetaDescriptionContent(description: string | null): void {
+    const normalized = typeof description === 'string' ? description.trim() : '';
     const currentMetaTag = document.querySelector('meta[name="description"]');
 
-    if (newDescription !== null && newDescription !== undefined) {
-      let metaTag = currentMetaTag;
-      if (!metaTag) {
-        metaTag = document.createElement('meta');
-        metaTag.setAttribute('name', 'description');
-        document.head.appendChild(metaTag);
-      }
-      metaTag.setAttribute('content', newDescription);
+    if (normalized.length === 0) {
+      currentMetaTag?.remove();
       return;
     }
 
-    // 遷移先に description が存在しない場合は古い値を残さない
-    if (currentMetaTag) {
-      currentMetaTag.remove();
+    let metaTag = currentMetaTag;
+    if (!metaTag) {
+      metaTag = document.createElement('meta');
+      metaTag.setAttribute('name', 'description');
+      document.head.appendChild(metaTag);
     }
+
+    metaTag.setAttribute('content', normalized);
+  }
+
+  private updateMetaDescription(doc: Document): void {
+    const newDescription = doc.querySelector('meta[name="description"]')?.getAttribute('content') ?? null;
+    this.setMetaDescriptionContent(newDescription);
   }
 
   /**
@@ -934,5 +953,15 @@ export class Router {
     }
 
     this.navigationInProgress = false;
+  }
+
+  private clearLayoutHeader(): void {
+    const currentHeader = document.querySelector('layout-header');
+    if (!(currentHeader instanceof HTMLElement)) {
+      return;
+    }
+
+    currentHeader.setAttribute('breadcrumbs-json', '');
+    currentHeader.toggleAttribute('note-layout', false);
   }
 }

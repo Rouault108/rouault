@@ -10,9 +10,18 @@ import {
 
 export interface BaseLayoutData {
   title?: string;
+  description?: string;
   content: string;
   note?: BreadcrumbSourceNote;
   notes?: BreadcrumbSourceNote[];
+}
+
+function escapeAttribute(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 export class BaseLayout {
@@ -24,6 +33,7 @@ export class BaseLayout {
 
   render(data: BaseLayoutData) {
     const title = data.title ? `${data.title} - Rouault` : 'Rouault';
+    const description = data.description ?? 'Personal Note Viewer';
     const noteLayoutAttribute = data.note ? ' note-layout' : '';
     const breadcrumbsJson = JSON.stringify(buildBreadcrumbs(data.note, data.notes ?? []))
       .replace(/&/g, '&amp;')
@@ -64,7 +74,7 @@ export class BaseLayout {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
-  <meta name="description" content="Personal Note Viewer">
+  <meta name="description" content="${escapeAttribute(description)}">
   <script>${themeBootstrapScript}</script>
   <link rel="stylesheet" href="/assets/css/main.css">
   <script type="module" src="/src/client.ts"></script>

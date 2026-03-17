@@ -2,8 +2,8 @@
  * エラーハンドリングユーティリティ
  * アプリケーション全体で統一されたエラー処理を提供
  */
-
 import { type AppError, ErrorType, RouaultError } from '../types/errors.js';
+import { buildNotFoundPageMarkup } from './not-found-page.js';
 
 /**
  * HTTPレスポンスからエラーを分類
@@ -96,6 +96,10 @@ export function classifyError(error: unknown): RouaultError {
  * エラー情報からユーザー向けHTMLを生成
  */
 export function generateErrorHTML(error: AppError): string {
+  if (error.type === ErrorType.NOT_FOUND) {
+    return buildNotFoundPageMarkup();
+  }
+
   const statusText = error.statusCode ? `エラー ${String(error.statusCode)}` : 'エラー';
 
   return `
@@ -103,24 +107,13 @@ export function generateErrorHTML(error: AppError): string {
     <div class="error-content">
         <h1>${statusText}</h1>
         <p class="error-message">${error.message}</p>
-        ${
-          error.type === ErrorType.NOT_FOUND
-            ? `
-        <nav class="error-actions">
-            <a href="/" class="button button-primary">ホームに戻る</a>
-            <a href="/notes" class="button button-secondary">ノート一覧</a>
-        </nav>
-        `
-            : `
         <nav class="error-actions">
             <button onclick="history.back()" class="button button-primary">戻る</button>
             <button onclick="location.reload()" class="button button-secondary">再読み込み</button>
         </nav>
-        `
-        }
     </div>
 </div>
-    `.trim();
+  `.trim();
 }
 
 /**

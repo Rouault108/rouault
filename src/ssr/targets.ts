@@ -4,6 +4,7 @@ export const SSR_SHADOW_TARGET_TAGS = [
   'ui-search-dialog',
   'search-page',
   'tag-page',
+  'not-found-page',
   'ui-card',
   'ui-article-header',
   'layout-sidebar',
@@ -64,6 +65,7 @@ export const SSR_SEARCH_TARGET_TAGS = [
   'about-page',
   'search-page',
   'tag-page',
+  'not-found-page',
 ] as const satisfies readonly SsrTargetTag[];
 
 export const SSR_ALWAYS_LOAD_TAGS = [

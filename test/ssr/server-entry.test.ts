@@ -28,4 +28,16 @@ describe('server-entry', () => {
     expect(rendered).toContain('SSR Link Card');
     expect(rendered).toContain('https://example.com/article');
   });
+
+  it('not-found-page を SSR 描画できること', async () => {
+    const rendered = await renderCustomElement(
+      'not-found-page',
+      [{ name: 'requested-path', value: '/notes/does-not-exist' }],
+      '',
+    );
+
+    expect(rendered).toContain('shadowrootmode="open"');
+    expect(rendered).toContain('ページが見つかりません');
+    expect(rendered).toContain('/notes/does-not-exist');
+  });
 });

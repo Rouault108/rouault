@@ -147,13 +147,14 @@ describe('ErrorHandler', () => {
         message: 'ページが見つかりません',
         statusCode: 404,
       };
-
+    
       const html = generateErrorHTML(appError);
-
-      expect(html).to.include('404');
-      expect(html).to.include('ページが見つかりません');
-      expect(html).to.include('ホームに戻る');
-      expect(html).to.include('ノート一覧');
+    
+      expect(html).to.include('not-found-page');
+      expect(html).to.include('検索ページへ');
+      expect(html).to.include('このサイトについて');
+      expect(html).not.to.include('ホームに戻る');
+      expect(html).not.to.include('ノート一覧');
     });
 
     it('サーバーエラーの HTML を生成すること', () => {

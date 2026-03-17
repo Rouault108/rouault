@@ -53,6 +53,7 @@ import {
   type SsrShadowTargetTag,
   type SsrTargetTag,
 } from './targets.js';
+import '../components/not-found/not-found-page.js';
 
 export { SSR_TARGET_TAGS };
 

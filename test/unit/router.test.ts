@@ -1178,25 +1178,153 @@ describe('Router', () => {
 	// 6. エラーハンドリング
 	// ========================================
 	describe('6. エラーハンドリング', () => {
-		it('6.1 404エラー時に適切なエラーメッセージを表示すること', async () => {
-			globalThis.fetch = () => {
-				return Promise.resolve(new Response('Not Found', {
-					status: 404,
-					statusText: 'Not Found',
-				}));
-			};
+		function ensureMetaDescription(initialContent = 'before description'): HTMLMetaElement {
+		  let meta = document.head.querySelector<HTMLMetaElement>('meta[name="description"]');
 
-			router = new Router(outlet);
+		  if (!meta) {
+		    meta = document.createElement('meta');
+		    meta.setAttribute('name', 'description');
+		    document.head.append(meta);
+		  }
 
-			const link = await fixture<HTMLAnchorElement>(html` <a href="/404">Link</a> `);
-			simulateClick(link);
+		  meta.setAttribute('content', initialContent);
+		  return meta;
+		}
 
-			await waitUntil(() => outlet.textContent.includes('404'), '404エラー表示');
+		function ensureLayoutHeader(): HTMLElement {
+		  const existing = document.body.querySelector('layout-header');
+		  if (existing instanceof HTMLElement) {
+		    return existing;
+		  }
+	  
+		  const header = document.createElement('layout-header');
+		  document.body.prepend(header);
+		  return header;
+		}
 
-			expect(outlet.textContent).to.include('404');
+		async function navigateTo404(
+		  href = '/notes/does-not-exist',
+		): Promise<HTMLAnchorElement> {
+		  const link = await fixture<HTMLAnchorElement>(html`<a href="${href}">Broken link</a>`);
+		  simulateClick(link);
+		
+		  await waitUntil(
+		    () => document.body.textContent.includes('ページが見つかりません'),
+		    '404ページが描画されること',
+		  );
+	  
+		  return link;
+		}
+
+		it('6.1 404エラー時に 404 ページを表示すること', async () => {
+		  globalThis.fetch = () =>
+		    Promise.resolve(
+		      new Response('Not Found', {
+		        status: 404,
+		        statusText: 'Not Found',
+		      }),
+		    );
+		
+		  router = new Router(outlet);
+		
+		  const link = await fixture<HTMLAnchorElement>(html`<a href="/404">Link</a>`);
+		  simulateClick(link);
+		
+		  await waitUntil(
+		    () => outlet.textContent.includes('ページが見つかりません'),
+		    '404エラー表示',
+		  );
+	  
+		  expect(outlet.innerHTML).to.include('not-found-page');
+		  expect(outlet.textContent).to.include('ページが見つかりません');
+		  expect(outlet.textContent).to.include('検索ページへ');
 		});
 
-		it('6.2 500エラー時に適切なエラーメッセージを表示すること', async () => {
+		it('6.2 404表示時に document.title が 404 用に更新されること', async () => {
+		  globalThis.fetch = () =>
+		    Promise.resolve(
+		      new Response('Not Found', {
+		        status: 404,
+		        statusText: 'Not Found',
+		      }),
+		    );
+		
+		  document.title = 'Before Title - Rouault';
+		
+		  router = new Router(outlet);
+		
+		  await navigateTo404('/notes/missing-title-test');
+		
+		  await waitUntil(
+		    () => document.title.includes('ページが見つかりません'),
+		    'document.title が 404 用に更新されること',
+		  );
+	  
+		  expect(document.title).to.equal('ページが見つかりません - Rouault');
+		});
+
+		it('6.3 404表示時に meta description が 404 用に更新されること', async () => {
+		  globalThis.fetch = () =>
+		    Promise.resolve(
+		      new Response('Not Found', {
+		        status: 404,
+		        statusText: 'Not Found',
+		      }),
+		    );
+		
+		  const meta = ensureMetaDescription('before description');
+		
+		  router = new Router(outlet);
+		
+		  await navigateTo404('/notes/missing-meta-test');
+		
+		  await waitUntil(
+		    () =>
+		      document.head.querySelector('meta[name="description"]')?.getAttribute('content') ===
+		      'ページが見つかりません。検索またはサイト情報から再度辿ってください。',
+		    'meta description が 404 用に更新されること',
+		  );
+	  
+		  expect(meta.getAttribute('content')).to.equal(
+		    'ページが見つかりません。検索またはサイト情報から再度辿ってください。',
+		  );
+		});
+
+		it('6.4 404表示時に layout-header の breadcrumbs-json が空になり note-layout が外れること', async () => {
+		  globalThis.fetch = () =>
+		    Promise.resolve(
+		      new Response('Not Found', {
+		        status: 404,
+		        statusText: 'Not Found',
+		      }),
+		    );
+		
+		  const layoutHeader = ensureLayoutHeader();
+		  layoutHeader.setAttribute(
+		    'breadcrumbs-json',
+		    JSON.stringify([
+		      { title: 'Parent', url: '/notes/parent/' },
+		      { title: 'Current', url: '/notes/current/' },
+		    ]),
+		  );
+		  layoutHeader.setAttribute('note-layout', '');
+	  
+		  router = new Router(outlet);
+	  
+		  await navigateTo404('/notes/missing-header-test');
+	  
+		  await waitUntil(
+		    () =>
+		      layoutHeader.getAttribute('breadcrumbs-json') === '' &&
+		      layoutHeader.hasAttribute('note-layout'),
+		    'layout-header の stale state が 404 表示時にクリアされること',
+		  );
+
+		  expect(layoutHeader.getAttribute('breadcrumbs-json')).to.equal('');
+		  expect(layoutHeader.hasAttribute('note-layout')).to.equal(false);
+		});
+
+		it('6.5 500エラー時に適切なエラーメッセージを表示すること', async () => {
 			globalThis.fetch = () => {
 				return Promise.resolve(new Response('Internal Server Error', {
 					status: 500,
@@ -1216,7 +1344,7 @@ describe('Router', () => {
 			);
 		});
 
-		it('6.3 ネットワークエラー時に適切なメッセージを表示すること', async () => {
+		it('6.6 ネットワークエラー時に適切なメッセージを表示すること', async () => {
 			const consoleErrorStub = stubConsoleError();
 			globalThis.fetch = () => {
 				throw new TypeError('Failed to fetch');
@@ -1242,7 +1370,7 @@ describe('Router', () => {
 			}
 		});
 
-		it('6.4 401エラー時に認証エラーメッセージを表示すること', async () => {
+		it('6.7 401エラー時に認証エラーメッセージを表示すること', async () => {
 			globalThis.fetch = () => {
 				return Promise.resolve(new Response('Unauthorized', {
 					status: 401,
@@ -1262,7 +1390,7 @@ describe('Router', () => {
 			);
 		});
 
-		it('6.5 403エラー時に権限エラーメッセージを表示すること', async () => {
+		it('6.8 403エラー時に権限エラーメッセージを表示すること', async () => {
 			globalThis.fetch = () => {
 				return Promise.resolve(new Response('Forbidden', {
 					status: 403,
@@ -1282,7 +1410,7 @@ describe('Router', () => {
 			);
 		});
 
-		it('6.6 503エラー時にサービス利用不可メッセージを表示すること', async () => {
+		it('6.9 503エラー時にサービス利用不可メッセージを表示すること', async () => {
 			globalThis.fetch = () => {
 				return Promise.resolve(new Response('Service Unavailable', {
 					status: 503,
@@ -1302,7 +1430,7 @@ describe('Router', () => {
 			);
 		});
 
-		it('6.7 タイムアウト時に適切なメッセージを表示すること', async () => {
+		it('6.10 タイムアウト時に適切なメッセージを表示すること', async () => {
 			const consoleErrorStub = stubConsoleError();
 			globalThis.fetch = async (_input: RequestInfo | URL, init?: RequestInit) => {
 				return new Promise((resolve, reject) => {
@@ -1343,7 +1471,7 @@ describe('Router', () => {
 			}
 		});
 
-		it('6.8 CORSエラー時に適切なメッセージを表示すること', async () => {
+		it('6.11 CORSエラー時に適切なメッセージを表示すること', async () => {
 			const consoleErrorStub = stubConsoleError();
 			globalThis.fetch = () => {
 				throw new TypeError('CORS policy blocked');
