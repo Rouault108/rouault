@@ -223,6 +223,7 @@ export class NoteLayout {
     const dataIdBase = toSafeDataId(slug.length > 0 ? slug : 'note');
     const sidebarSourceId = `sidebar-source-${dataIdBase}`;
     const tocSourceId = `toc-source-${dataIdBase}`;
+    const contentRootId = `note-content-${dataIdBase}`;
     const tagsJson = escapeAttr(JSON.stringify(genres));
     const sidebarItemsJson = escapeAttr(JSON.stringify(sidebarTree));
     const tocHeadingsJson = escapeAttr(JSON.stringify(headings));
@@ -270,7 +271,7 @@ export class NoteLayout {
             heading="${heading}"${published}${updated}${status}${source}${license}
             tags-json="${tagsJson}"
           ></ui-article-header>
-          <div class="prose">
+          <div id="${escapeAttr(contentRootId)}" class="prose">
             ${data.content}
           </div>
         </article>
@@ -279,6 +280,7 @@ export class NoteLayout {
           <layout-toc
             source-id="${escapeAttr(tocSourceId)}"
             headings-json="${tocHeadingsJson}"
+            content-root-id="${escapeAttr(contentRootId)}"
             home-href="/"
           ></layout-toc>
         </aside>

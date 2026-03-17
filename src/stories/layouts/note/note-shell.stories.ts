@@ -84,7 +84,7 @@ export const Default: Story = {
                         published="2026-03-10"
                         updated="2026-03-10"
                       ></ui-article-header>
-                      <div class="prose">
+                      <div id="story-note-content" class="prose">
                         <h2 id="intro">はじめに</h2>
                         <p>
                           Note shell はコンテンツ、ナビゲーション、現在地を同時に提示しつつ、
@@ -109,6 +109,7 @@ export const Default: Story = {
                       <layout-toc
                         id="story-note-toc"
                         source-id="story-note-toc-source"
+                        content-root-id="story-note-content"
                         home-href="/"
                       ></layout-toc>
                     </aside>

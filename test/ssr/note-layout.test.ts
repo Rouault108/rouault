@@ -174,4 +174,19 @@ describe('NoteLayout', () => {
     expect(rendered).toContain('"href":"/notes/music"');
     expect(rendered).toContain('active-id="music/__index__"');
   });
+
+  it('本文ルートIDを付与し layout-toc に content-root-id を渡すこと', () => {
+    const layout = new NoteLayout();
+    const rendered = layout.render({
+      content: '<p>本文</p>',
+      note: {
+        slug: 'testing/tabs-test',
+        title: 'タブテスト',
+      },
+      notes: [],
+    });
+  
+    expect(rendered).toContain('id="note-content-testing-tabs-test" class="prose"');
+    expect(rendered).toContain('content-root-id="note-content-testing-tabs-test"');
+  });
 });
