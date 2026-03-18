@@ -1,0 +1,16 @@
+export const SEARCH_DEBOUNCE_MS = 150;
+export const DIALOG_LABEL = '検索';
+export const INPUT_PLACEHOLDER = '検索';
+export const CLEAR_BUTTON_LABEL = '検索をクリア';
+export const CLOSE_BUTTON_LABEL = '閉じる';
+export const LISTBOX_ID = 'search-listbox';
+export const SEARCH_RESULTS_ARIA_LABEL = '検索結果';
+export const LOADING_MESSAGE = 'インデックスを読み込んでいます...';
+export const EMPTY_HEADING = '結果が見つかりません';
+export const EMPTY_DESCRIPTION = '別のキーワードで検索してください';
+export const BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE = 'data-ui-search-dialog-open';
+export const VIRTUALIZATION_THRESHOLD = 100;
+export const VIRTUAL_ROW_HEIGHT_PX = 48;
+export const VIRTUAL_OVERSCAN = 6;
+export const SEARCH_WORKER_THRESHOLD = VIRTUALIZATION_THRESHOLD;
+export const SEARCH_DIALOG_HIGHLIGHT_SELECTOR = ':where(.result-item ui-search-highlight > mark)';
