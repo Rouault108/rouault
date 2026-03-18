@@ -29,13 +29,15 @@ export class Breadcrumbs extends LitElement {
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			padding: var(--space-2, 8px) 0;
+			padding-block: var(--space-2, 8px);
+			padding-inline: calc(var(--focus-ring-width, 2px) + var(--focus-ring-offset, 2px));
 			gap: var(--space-1, 4px);
 			font-size: var(--text-sm, 13px);
 			color: var(--fg-muted, oklch(48% 0 0));
 			inline-size: 100%;
 			min-inline-size: 0;
-			overflow: hidden;
+			box-sizing: border-box;
+			overflow: visible;
 		}
 
 		.breadcrumb-list {
@@ -48,7 +50,7 @@ export class Breadcrumbs extends LitElement {
 			padding: 0;
 			max-inline-size: 100%;
 			min-inline-size: 0;
-			overflow: hidden;
+			overflow: visible;
 		}
 
 		.breadcrumb-item {
@@ -57,10 +59,7 @@ export class Breadcrumbs extends LitElement {
 			gap: var(--space-2, 8px);
 			min-inline-size: 0;
 			flex: 0 1 auto;
-		}
-
-		.breadcrumb-item:last-child {
-			flex: 1 1 auto;
+			overflow: visible;
 		}
 
 		.breadcrumb-link {
@@ -68,9 +67,10 @@ export class Breadcrumbs extends LitElement {
 			align-items: center;
 			position: relative;
 			color: inherit;
-			/* 例外許可: Breadcrumbは構造型リンク。区切り・現在地・フォーカスリングで識別する。 */
 			text-decoration: none;
 			border-radius: var(--radius-sm, 4px);
+			padding-block: 1px;
+			padding-inline: var(--space-1, 4px);
 			max-inline-size: min(18ch, 100%);
 			min-inline-size: 0;
 			white-space: nowrap;
@@ -79,18 +79,9 @@ export class Breadcrumbs extends LitElement {
 			transition: color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
 		}
 
-		/* タッチ環境でもリンク操作しやすいように判定領域を拡張 */
+		/* タッチ領域拡張はリンク本体の padding で担保する */
 		.breadcrumb-link::after {
-			content: '';
-			position: absolute;
-			top: 50%;
-			left: 50%;
-			transform: translate(-50%, -50%);
-			inline-size: max(100%, var(--control-min-touch, 24px));
-			block-size: max(100%, var(--control-min-touch, 24px));
-			border-radius: inherit;
-			pointer-events: auto;
-			background: transparent;
+			content: none;
 		}
 
 		.breadcrumb-link:hover {
