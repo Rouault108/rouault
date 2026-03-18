@@ -64,7 +64,8 @@ const meta: Meta<Tabs> = {
 
 - タブ数とパネル数は一致させてください（1:1 対応）
 - 個別タブの \`disabled\` は現在の Rouault では実装対象外です
-- 公開 API は \`selected-value\` と \`default-selected-value\` のみです
+- 選択状態の制御 API は \`selected-value\` と \`default-selected-value\` です
+- レイアウト/挙動の設定には \`orientation\`・\`automatic-activation\`・\`url-sync\` を使います
 - タブの識別には、順番ではなく各 tab の \`value\` を使ってください
 - \`url-sync\` を付けた場合、主タブ状態を \`?tab=\` と同期します
 - \`url-sync\` はページの主タブ 1 系統にだけ使ってください
@@ -908,48 +909,48 @@ export const TabChangeEvent: Story = {
 
 export const EdgeCase_InvalidDefaultSelectedValue: Story = {
   render: () => html`
-  <style>
-    .warning-banner {
-      padding: 0.75rem 1rem;
-      background: oklch(from var(--warning, oklch(70% 0.15 85)) l c h / 0.1);
-      border: 1px solid oklch(from var(--warning, oklch(70% 0.15 85)) l c h / 0.3);
-      border-radius: var(--radius-md, 6px);
-      font-size: var(--text-sm, 13px);
-      margin-bottom: 1rem;
-    }
-  </style>
+    <style>
+      .warning-banner {
+        padding: 0.75rem 1rem;
+        background: oklch(from var(--warning, oklch(70% 0.15 85)) l c h / 0.1);
+        border: 1px solid oklch(from var(--warning, oklch(70% 0.15 85)) l c h / 0.3);
+        border-radius: var(--radius-md, 6px);
+        font-size: var(--text-sm, 13px);
+        margin-bottom: 1rem;
+      }
+    </style>
 
-  <div class="warning-banner">
-    <strong>⚠️ 境界条件</strong>: default-selected-value="nonexistent" は無効です。
-    コンソールに警告が出力され、先頭タブが選択されます。
-  </div>
+    <div class="warning-banner">
+      <strong>⚠️ 境界条件</strong>: default-selected-value="nonexistent" は無効です。
+      コンソールに警告が出力され、先頭タブが選択されます。
+    </div>
 
-  <ui-tabs id="invalid-default-tabs" default-selected-value="nonexistent">
-    <button slot="tab" value="tab-a">タブ A</button>
-    <div slot="panel" style="padding: 1rem;">タブ A のパネル（フォールバック選択）</div>
+    <ui-tabs id="invalid-default-tabs" default-selected-value="nonexistent">
+      <button slot="tab" value="tab-a">タブ A</button>
+      <div slot="panel" style="padding: 1rem;">タブ A のパネル（フォールバック選択）</div>
 
-    <button slot="tab" value="tab-b">タブ B</button>
-    <div slot="panel" style="padding: 1rem;">タブ B のパネル</div>
-  </ui-tabs>
+      <button slot="tab" value="tab-b">タブ B</button>
+      <div slot="panel" style="padding: 1rem;">タブ B のパネル</div>
+    </ui-tabs>
   `,
   play: async ({ canvasElement }) => {
-    const tabs = canvasElement.querySelector<Tabs>('#invalid-index-tabs');
-    if (!tabs) throw new Error('[EdgeCase_InvalidIndex] ui-tabs が見つかりません');
+    const tabs = canvasElement.querySelector<Tabs>('#invalid-default-tabs');
+    if (!tabs) {
+      throw new Error('[EdgeCase_InvalidDefaultSelectedValue] ui-tabs が見つかりません');
+    }
 
     await tabs.updateComplete;
 
     const tabEls = canvasElement.querySelectorAll('[slot="tab"]');
     const panelEls = canvasElement.querySelectorAll('[slot="panel"]');
 
-    // テスト: 無効なインデックスのため先頭タブが選択されている
     if (tabEls[0]?.getAttribute('aria-selected') !== 'true') {
-      throw new Error('[EdgeCase_InvalidIndex] フォールバックで先頭タブが選択されていません');
+      throw new Error('[EdgeCase_InvalidDefaultSelectedValue] フォールバックで先頭タブが選択されていません');
     }
 
-    // テスト: 先頭パネルが表示されている
     const firstPanel = panelEls[0] as HTMLElement;
     if (firstPanel.hasAttribute('hidden')) {
-      throw new Error('[EdgeCase_InvalidIndex] フォールバックで先頭パネルが表示されていません');
+      throw new Error('[EdgeCase_InvalidDefaultSelectedValue] フォールバックで先頭パネルが表示されていません');
     }
   },
   parameters: {
