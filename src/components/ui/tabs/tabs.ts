@@ -1,493 +1,96 @@
-import { css, html, LitElement, type PropertyValues } from 'lit';
-import { customElement, property, query, state } from 'lit/decorators.js';
+import { html, LitElement, type PropertyValues } from 'lit';
+import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
+import { tabsStyles } from './tabs.styles.js';
 import {
-  findHeadingElement,
-  revealHeadingInTabs,
-  resolveTabValueForDescendant,
-} from '../../../lib/toc/filter-visible-headings.js';
+  applyTabsAria,
+  readTabsSnapshot,
+  scrollTabElementIntoView,
+  switchPanels,
+  validateTabsSnapshot,
+} from './tabs-dom.js';
 import {
-  URL_STATE_CHANGE_EVENT,
-  dispatchUrlStateChange,
-  readDecodedHash,
-  readPrimaryTabValue,
-  writePrimaryTabValue,
-  type UrlHistoryMode,
-} from '../../../lib/tabs/url-state.js';
+  findTabIndexByValue,
+  resolveKeyNavigation,
+  resolveSelectedIndex,
+} from './tabs-model.js';
+import { TabsIndicatorController } from './tabs-indicator-controller.js';
+import {
+  TabsUrlSyncController,
+  type TabsUrlSyncHost,
+} from './tabs-url-sync-controller.js';
+import type {
+  CommitActiveIndexOptions,
+  DevImportMeta,
+  ResolveAndCommitOptions,
+  TabsOrientation,
+  TabsSnapshot,
+  UiTabChangeDetail,
+  UrlHistoryMode,
+} from './tabs.types.js';
+import { nextTabsUid } from './tabs.types.js';
 
-type TabsOrientation = 'horizontal' | 'vertical';
-type DevImportMeta = ImportMeta & { env?: { DEV?: boolean } };
-
-/** ユニークIDカウンター（同一ページ内で複数の ui-tabs が共存できるよう） */
-let _uidCounter = 0;
-
-/**
- * タブ (Tabs) コンポーネント `<ui-tabs>`
- *
- * 同一コンテキスト内でのビュー（パネル）切り替えを提供します。
- * WAI-ARIA Tabs パターン（Roving Tabindex）に準拠し、
- * スライディングインジケーターと opacity クロスフェードを実装します。
- *
- * ## 使用方法
- *
- * ```html
- * <ui-tabs selected-value="overview">
- *   <button slot="tab" value="overview">概要</button>
- *   <div slot="panel">概要コンテンツ</div>
- *   <button slot="tab" value="details">詳細</button>
- *   <div slot="panel">詳細コンテンツ</div>
- * </ui-tabs>
- * ```
- *
- * ## API Resolution Rules
- *
- * 1. `selected-value` が一致する場合はそのタブを選択します
- * 2. 初期化前のみ `default-selected-value` を初期値として評価します
- * 3. どちらも未指定または無効な場合は先頭タブ (index=0) を自動選択し、開発時に `console.warn` で通知します
- *
- * @slot tab - タブボタン要素（複数可）。`value` 属性で `selected-value` / `default-selected-value` と対応付けられます。
- * @slot panel - パネル要素（tab と 1:1 対応）
- *
- * @fires ui-tab-change - タブ変更時 detail: { index: number, value: string | null, prevIndex: number }
- *
- * @property {string} selected-value - 現在選択されているタブの値（value 属性と対応）
- * @property {string} default-selected-value - 初期選択にのみ使うタブの値（uncontrolled 初期値）
- * @property {'horizontal' | 'vertical'} orientation - タブ配置方向（デフォルト: horizontal）
- * @property {boolean} automatic-activation - 矢印キーで即座に選択するか（デフォルト: false）
- *
- * @attr [hydrated] - JS初期化完了後に自動付与。SSR/SSGのフォールバックCSSと切り替えに使用。
- *
- * @csspart tablist - タブリスト要素
- * @csspart indicator - スライディングインジケーター要素
- * @csspart panels - パネルコンテナ要素
- *
- * @cssprop --primary - アクティブなタブとインジケーターの色
- * @cssprop --fg-muted - デフォルトのタブテキスト色
- * @cssprop --fg-default - ホバー時のタブテキスト色
- * @cssprop --border-default - タブリストのボーダー色
- * @cssprop --border-width - ボーダー幅
- * @cssprop --border-width-thick - インジケーターの幅/高さ
- * @cssprop --control-height-md - タブの高さ（32px）
- * @cssprop --text-base - タブのフォントサイズ（14px）
- * @cssprop --font-medium - タブのフォントウェイト（500）
- * @cssprop --font-sans - タブのフォントファミリー
- * @cssprop --space-1 - スペーシング（4px）
- * @cssprop --space-3 - スペーシング（12px）
- * @cssprop --space-4 - スペーシング（16px）
- * @cssprop --control-min-touch - 最小タッチターゲット（24px）
- * @cssprop --duration-fast - タブカラートランジション（70ms）
- * @cssprop --duration-normal - パネルフェードトランジション（150ms）
- * @cssprop --duration-slow - インジケータートランジション（200ms）
- * @cssprop --ease-out - イージング関数
- * @cssprop --focus-ring-width - フォーカスリング幅
- * @cssprop --focus-ring-color - フォーカスリング色
- * @cssprop --focus-ring-offset - フォーカスリングオフセット
- * @cssprop --animation-focus - Adaptive Focusアニメーション
- * @cssprop --radius-sm - タブのフォーカスリング角丸
- * @cssprop --scrollbar-width - スクロールバー幅
- * @cssprop --scrollbar-thumb - スクロールバーのサム色
- * @cssprop --ui-tabs-inline-bleed - Horizontal tablist をホスト幅から左右に少しはみ出させる量（デフォルト: 0px）
- */
 @customElement('ui-tabs')
-export class Tabs extends LitElement {
-  static override styles = css`
-    :host {
-      display: block;
-      --_ui-tabs-inline-bleed: max(0px, var(--ui-tabs-inline-bleed, 0px));
-    }
+export class Tabs extends LitElement implements TabsUrlSyncHost {
+  static override styles = tabsStyles;
 
-    /* ====== ルートレイアウト ====== */
+  private readonly uid = nextTabsUid();
 
-    .root {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .root.orient-vertical {
-      flex-direction: row;
-      align-items: flex-start;
-    }
-
-    /* ====== Tablist コンテナ ====== */
-
-    .tablist-container {
-      position: relative;
-      flex-shrink: 0;
-
-      /* panel はそのままに、tablist ヘッダーだけを少し外へ張り出す */
-      margin-inline: calc(-1 * var(--_ui-tabs-inline-bleed));
-    }
-
-    /* Horizontal のセパレーター線は tablist-container 側で描画する。
-       これにより本文幅より少し外まで線を伸ばせる */
-    .tablist-container::after {
-      content: '';
-      position: absolute;
-      inset-inline: 0;
-      bottom: calc(-0.5 * var(--border-width-thick, 2px));
-      border-bottom: var(--border-width, 1px) solid
-        var(--border-default, oklch(90% 0 0 / 0.12));
-      pointer-events: none;
-    }
-
-    [role='tablist'] {
-      --_ui-tabs-focus-clearance: calc(
-        var(--focus-ring-width, 2px) + var(--focus-ring-offset, 2px)
-      );
-
-      display: flex;
-      position: relative;
-      /* 幅超過時は横スクロール許容 */
-      overflow-x: auto;
-
-      /* overflow-x:auto の場合、overflow-y は visible にできないため、
-         フォーカスリング分のクリアランスを内側に確保して、負の margin で相殺する */
-      padding-block-start: var(--_ui-tabs-focus-clearance);
-      margin-block-start: calc(-1 * var(--_ui-tabs-focus-clearance));
-
-      padding-block-end: var(--_ui-tabs-focus-clearance);
-      margin-block-end: calc(
-        -1 * (
-          var(--_ui-tabs-focus-clearance) +
-          (0.5 * var(--border-width-thick, 2px))
-        )
-      );
-
-      /* 左右端でもフォーカスリングが欠けにくいように inline 全体へ確保 */
-      padding-inline: var(--_ui-tabs-focus-clearance);
-
-      /* フォーカスリングがスクロール端で隠れないよう余白 */
-      scroll-padding-inline: calc(
-        var(--space-4, 16px) + var(--_ui-tabs-focus-clearance)
-      );
-
-      /* カスタムスクロールバー: 視覚的ノイズを最小化 */
-      scrollbar-width: var(--scrollbar-width, thin);
-      scrollbar-color: var(--scrollbar-thumb, oklch(70% 0 0 / 0.3)) transparent;
-    }
-
-    .orient-vertical [role='tablist'] {
-      flex-direction: column;
-      /* Vertical: 右ボーダー */
-      border-bottom: none;
-      border-right: var(--border-width, 1px) solid
-        var(--border-default, oklch(90% 0 0 / 0.12));
-      overflow-x: visible;
-      overflow-y: auto;
-      padding-bottom: calc(var(--focus-ring-width, 2px) + var(--focus-ring-offset, 2px));
-      /* Vertical時の右クリアランス（インジケーターが右ボーダーに重なる分） */
-      padding-right: calc(var(--border-width-thick, 2px) + var(--space-1, 4px));
-    }
-
-    .orient-vertical .tablist-container {
-      margin-inline: 0;
-    }
-
-    .orient-vertical .tablist-container::after {
-      content: none;
-    }
-
-    /* ====== Tab ボタン (slotted) ====== */
-
-    ::slotted([slot='tab']) {
-      /* Layout */
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: var(--space-1, 4px);
-
-      /* Size: High Density 準拠（見た目 32px + ヒットエリア 44px） */
-      height: var(--control-height-md, 32px);
-      box-sizing: content-box;
-      padding-block: max(
-        0px,
-        calc((var(--control-min-touch, 24px) - var(--control-height-md, 32px)) / 2)
-      );
-      padding-inline: var(--space-3, 12px);
-      flex-shrink: 0;
-      white-space: nowrap;
-
-      /* Typography */
-      font-size: var(--text-base, 14px);
-      font-weight: var(--font-medium, 500);
-      font-family: var(--font-sans);
-
-      /* Color: Muted（デフォルト） */
-      color: var(--fg-subtle, oklch(48% 0 0));
-
-      /* Reset */
-      background: none;
-      border: none;
-      cursor: pointer;
-      user-select: none;
-      text-decoration: none;
-      -webkit-tap-highlight-color: transparent;
-
-      /* タッチターゲット用 (::after 疑似要素が適用できないため相対位置のみ設定) */
-      position: relative;
-
-      /* Transition: color のみを明示指定（transition: all を回避） */
-      transition:
-        color var(--duration-fast, 70ms)
-          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        transform var(--duration-fast, 70ms)
-          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
-    }
-
-    ::slotted([slot='tab']:active) {
-      transform: scale(var(--scale-pressed, 0.96));
-    }
-
-    ::slotted([slot='tab']:hover) {
-      color: var(--fg-default, oklch(20% 0 0));
-    }
-
-    ::slotted([slot='tab'][aria-selected='true']) {
-      color: var(--primary, oklch(60% 0.15 250));
-    }
-
-    ::slotted([slot='tab']:focus-visible) {
-      outline: var(--focus-ring-width, 2px) solid
-        var(--focus-ring-color, oklch(60% 0.15 250));
-      outline-offset: var(--focus-ring-offset, 2px);
-      animation: var(--animation-focus);
-      border-radius: var(--radius-sm, 3px);
-      z-index: 2;
-    }
-
-    /* ====== Hydration フォールバック ====== */
-    /* JSによるインジケーター位置計算前（またはJS無効時）は、
-       CSSで直接アクティブタブにボーダーを描画して現在地を保証する */
-
-    ::slotted([slot='tab'][aria-selected='true']) {
-      /* Horizontal: デフォルト下線 */
-      border-bottom: var(--border-width-thick, 2px) solid
-        var(--primary, oklch(60% 0.15 250));
-    }
-
-    :host([orientation='vertical']) ::slotted([slot='tab'][aria-selected='true']) {
-      /* Vertical: 右線 */
-      border-bottom: none;
-      border-right: var(--border-width-thick, 2px) solid
-        var(--primary, oklch(60% 0.15 250));
-    }
-
-    /* Hydrated後: スライディングインジケーターへシームレスに引き継ぎ */
-    :host([hydrated]) ::slotted([slot='tab'][aria-selected='true']) {
-      border-bottom: none;
-      border-right: none;
-    }
-
-    /* ====== スライディングインジケーター ====== */
-    /* 独立した共有レイアウト軸（Shared Layout Axis）として実装。
-       NOTE: CSS transition on left/width を使用。
-             FLIP (translateX) の方が GPU合成を活かせるが、
-             Light DOM タブの位置をフレーム間で計算する複雑性を避けるため
-             CSS transition で実装している。視覚的結果は同等。 */
-
-    .indicator {
-      position: absolute;
-      /* Horizontal: セパレーター線そのものに重ねる */
-      bottom: 0;
-      height: var(--border-width-thick, 2px);
-      background: var(--primary, oklch(60% 0.15 250));
-      pointer-events: none;
-      z-index: 1;
-      transform-origin: left center;
-
-      /* CSS Transition */
-      transition:
-        left var(--duration-slow, 200ms)
-          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        width var(--duration-slow, 200ms)
-          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
-    }
-
-    /* Vertical: 右端（tablistの border-right に重なる） */
-    .orient-vertical .indicator {
-      right: calc(-1 * var(--border-width, 1px));
-      left: auto !important;
-      bottom: auto;
-      width: var(--border-width-thick, 2px) !important;
-      height: auto;
-      transform-origin: center top;
-
-      transition:
-        top var(--duration-slow, 200ms)
-          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        height var(--duration-slow, 200ms)
-          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
-    }
-
-    /* ====== パネル ====== */
-    .panels {
-      display: grid;
-      flex: 1;
-      min-width: 0;
-      margin-block-start: var(
-        --ui-tabs-panel-gap,
-        var(--prose-flow-space, var(--space-4, 16px))
-      );
-    }
-
-    .orient-vertical .panels {
-      margin-block-start: 0;
-      margin-inline-start: var(
-        --ui-tabs-panel-gap,
-        var(--prose-flow-space, var(--space-4, 16px))
-      );
-    }
-
-    /* クロスフェード中に複数パネルが同時に display: block になっても
-       レイアウトがずれないよう、全パネルを同じグリッドセルに重ねる */
-    ::slotted([slot='panel']) {
-      grid-area: 1 / 1;
-      display: block;
-      opacity: 0;
-      transition: opacity var(--duration-normal, 150ms)
-        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
-    }
-
-    /* hidden 属性で非表示（!important でユーザースタイルに勝つ） */
-    ::slotted([slot='panel'][hidden]) {
-      display: none !important;
-    }
-
-    /* アクティブパネル */
-    ::slotted([slot='panel'][data-panel-active]) {
-      opacity: 1;
-    }
-
-    /* ====== Reduced Motion ====== */
-    /* 状態変化の認識に必須なため完全無効化せず 0.01ms に短縮 */
-
-    @media (prefers-reduced-motion: reduce) {
-      .indicator {
-        transition-duration: 0.01ms !important;
-      }
-
-      ::slotted([slot='panel']) {
-        transition-duration: 0.01ms !important;
-      }
-
-      ::slotted([slot='tab']) {
-        transition-duration: 0.01ms !important;
-      }
-    }
-
-    /* ====== Forced Colors Mode ====== */
-    /* 背景色とシャドウが消失するため JS 制御インジケーターを非表示にし、
-       タブ自体のボーダーで「ネイティブ回帰」戦略を採用 */
-
-    @media (forced-colors: active) {
-      .indicator {
-        display: none;
-      }
-
-      /* 全タブに構造を示すボーダー */
-      ::slotted([slot='tab']) {
-        border: var(--border-width, 1px) solid CanvasText;
-      }
-
-      /* Horizontal: アクティブタブの下線（Highlight = システム選択色） */
-      ::slotted([slot='tab'][aria-selected='true']) {
-        border-bottom: var(--border-width-thick, 2px) solid Highlight !important;
-        color: Highlight;
-      }
-
-      /* Vertical: アクティブタブの右線 */
-      :host([orientation='vertical']) ::slotted([slot='tab'][aria-selected='true']) {
-        border-bottom: var(--border-width, 1px) solid CanvasText !important;
-        border-right: var(--border-width-thick, 2px) solid Highlight !important;
-      }
-    }
-  `;
-
-  /** インスタンスID（同一ページ内で一意なARIA IDを生成するため） */
-  private readonly _uid = ++_uidCounter;
-
-  /**
-   * 現在選択されているタブの値（tab要素の `value` 属性と対応）。
-   * URL連携時はハッシュまたはクエリパラメータとして利用されることを想定。
-   */
   @property({ type: String, attribute: 'selected-value', reflect: true })
   selectedValue: string | null = null;
 
-  /**
-   * 初期選択にのみ使うタブの値（tab要素の `value` 属性と対応）。
-   * `selected-value` が未指定のときだけ初回解決で参照されます。
-   */
   @property({ type: String, attribute: 'default-selected-value' })
   defaultSelectedValue: string | null = null;
 
-  /**
-   * タブの配置方向。
-   * - `horizontal`（デフォルト）: 水平タブリスト、矢印左右でナビゲーション
-   * - `vertical`: 垂直タブリスト、矢印上下でナビゲーション
-   */
   @property({ type: String, reflect: true })
   orientation: TabsOrientation = 'horizontal';
 
-  /**
-   * `true` の場合、矢印キーでのフォーカス移動と同時にタブを選択します。
-   * 設定画面などコンテンツがローカルにあり即応性が求められる場面向け。
-   * デフォルト（`false`）は Manual Activation: Enter/Space で選択。
-   */
   @property({ type: Boolean, attribute: 'automatic-activation', reflect: true })
   automaticActivation = false;
 
-  /**
-   * `true` の場合、主タブ状態を `?tab=` と同期する。
-   * 同一ページ内で意味的な主タブ 1 系統のみに付与することを想定。
-   */
   @property({ type: Boolean, attribute: 'url-sync', reflect: true })
   urlSync = false;
 
-  /** 現在アクティブな（選択済み）タブのインデックス */
-  @state() private _activeIndex = 0;
-
-  /**
-   * Roving Tabindex でフォーカスがある（tabindex="0" の）タブのインデックス。
-   * Manual Activation 時は _activeIndex と乖離することがある。
-   */
-  @state() private _focusedIndex = 0;
-
-  /** スロットに割り当てられたタブ要素のリスト */
-  @state() private _tabEls: Element[] = [];
-
-  /** スロットに割り当てられたパネル要素のリスト */
-  @state() private _panelEls: Element[] = [];
-
-  @query('.tablist-container') private _tablistContainerEl!: HTMLElement;
-  @query('[role="tablist"]') private _tablistEl!: HTMLElement;
-  @query('.indicator') private _indicatorEl!: HTMLElement;
-
-  /** タブ要素ごとのクリックハンドラ（disconnectedCallback でクリーンアップ用） */
-  private readonly _tabClickHandlers = new Map<Element, EventListener>();
-  /** 旧パネルの hidden フォールバックタイマー管理 */
-  private readonly _panelHideFallbackTimers = new WeakMap<HTMLElement, number>();
-
-  /** タブリストサイズ変化時にインジケーターを再計算するための ResizeObserver */
-  private _resizeObserver?: ResizeObserver;
-
-  /** 初期化済みフラグ（初回 _resolveAndApply は必ず適用するため） */
-  private _initialized = false;
-  /** tablist scroll 追従用ハンドラ */
-  private readonly _onTablistScroll = (): void => {
-    this._positionIndicator();
+  @state() private activeIndex = 0;
+  @state() private focusedIndex = 0;
+  @state() private snapshot: TabsSnapshot = {
+    tabs: [],
+    panels: [],
+    interactiveCount: 0,
   };
 
-  /** URL 由来の反映中に _setActive から push/replace を抑止する */
-  private _suppressUrlWrite = false;
+  private readonly tabClickHandlers = new Map<HTMLElement, EventListener>();
+  private readonly panelHideFallbackTimers = new Map<HTMLElement, number>();
 
-  /** history.state に Router 用の URL 情報を付与する */
-  private _createHistoryStateForUrl(url: string): Record<string, unknown> {
+  private initialized = false;
+
+  private readonly urlController = new TabsUrlSyncController(this);
+  private readonly indicatorController = new TabsIndicatorController(this);
+
+  // ─────────────────────────────────────────────────
+  // TabsUrlSyncHost
+  // ─────────────────────────────────────────────────
+
+  getHostElement(): HTMLElement {
+    return this;
+  }
+
+  isUrlSyncEnabled(): boolean {
+    return this.urlSync;
+  }
+
+  getActiveValue(): string | null {
+    return this.snapshot.tabs[this.activeIndex]?.getAttribute('value') ?? null;
+  }
+
+  createHistoryStateForUrl(url: string): Record<string, unknown> {
     const currentState =
       typeof history.state === 'object' && history.state !== null
         ? (history.state as Record<string, unknown>)
         : {};
 
     const parsed = new URL(url, window.location.origin);
+
     return {
       ...currentState,
       __routerUrl: `${parsed.pathname}${parsed.search}${parsed.hash}`,
@@ -495,87 +98,70 @@ export class Tabs extends LitElement {
     };
   }
 
-  private readonly _onLocationStateChange = (): void => {
-    if (!this.urlSync) return;
-
-    this._suppressUrlWrite = true;
-    try {
-      this._resolveAndApply({
-        emitEvent: true,
-        historyMode: 'none',
-        normalizeUrl: true,
-      });
-    } finally {
-      this._suppressUrlWrite = false;
-    }
-  };
-
-  /** 現在有効なタブ/パネルの数（1:1 対応の最小数） */
-  private get _interactiveCount(): number {
-    return Math.min(this._tabEls.length, this._panelEls.length);
-  }
-
-  override connectedCallback(): void {
-    super.connectedCallback();
-    this._resizeObserver = new ResizeObserver(() => {
-      this._positionIndicator();
+  onUrlStateChanged(): void {
+    this.resolveAndCommit({
+      emitEvent: true,
+      historyMode: 'none',
+      normalizeUrl: true,
     });
-
-    if (typeof window !== 'undefined') {
-      window.addEventListener('popstate', this._onLocationStateChange);
-      window.addEventListener('hashchange', this._onLocationStateChange);
-      window.addEventListener(
-        URL_STATE_CHANGE_EVENT,
-        this._onLocationStateChange as EventListener,
-      );
-    }
   }
+
+  // ─────────────────────────────────────────────────
+  // Indicator Host
+  // ─────────────────────────────────────────────────
+
+  getOrientation(): TabsOrientation {
+    return this.orientation;
+  }
+
+  getIndicatorElement(): HTMLElement | null {
+    return this.renderRoot.querySelector('.indicator');
+  }
+
+  getTablistElement(): HTMLElement | null {
+    return this.renderRoot.querySelector('[role="tablist"]');
+  }
+
+  getTablistContainerElement(): HTMLElement | null {
+    return this.renderRoot.querySelector('.tablist-container');
+  }
+
+  getActiveTabElement(): HTMLElement | null {
+    return this.snapshot.tabs[this.activeIndex] ?? null;
+  }
+
+  // ─────────────────────────────────────────────────
+  // Lifecycle
+  // ─────────────────────────────────────────────────
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
-    this._tablistEl.removeEventListener('scroll', this._onTablistScroll);
-    this._resizeObserver?.disconnect();
-    this._cleanupTabListeners();
-
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('popstate', this._onLocationStateChange);
-      window.removeEventListener('hashchange', this._onLocationStateChange);
-      window.removeEventListener(
-        URL_STATE_CHANGE_EVENT,
-        this._onLocationStateChange as EventListener,
-      );
-    }
+    this.cleanupTabListeners();
+    this.clearPanelHideFallbackTimers();
   }
 
   override firstUpdated(_changedProperties: PropertyValues<this>): void {
     super.firstUpdated(_changedProperties);
 
-    const tabSlot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="tab"]');
-    const panelSlot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="panel"]');
+    this.syncSnapshotFromSlots();
 
-    if (tabSlot) this._tabEls = tabSlot.assignedElements();
-    if (panelSlot) this._panelEls = panelSlot.assignedElements();
-
-    if (this._tabEls.length > 0) {
-      this._validateSlotPairing();
+    if (this.snapshot.interactiveCount > 0) {
       if (this.urlSync) {
-        this._suppressUrlWrite = true;
-        try {
-          this._resolveAndApply({
+        this.urlController.withSuppressedWrite(() => {
+          this.resolveAndCommit({
             emitEvent: false,
             historyMode: 'none',
             normalizeUrl: true,
           });
-        } finally {
-          this._suppressUrlWrite = false;
-        }
+        });
       } else {
-        this._resolveAndApply();
+        this.resolveAndCommit({
+          emitEvent: false,
+          historyMode: 'none',
+          normalizeUrl: false,
+        });
       }
     }
-
-    this._resizeObserver?.observe(this._tablistEl);
-    this._tablistEl.addEventListener('scroll', this._onTablistScroll, { passive: true });
 
     this.setAttribute('hydrated', '');
   }
@@ -588,320 +174,184 @@ export class Tabs extends LitElement {
       changedProperties.has('defaultSelectedValue') ||
       changedProperties.has('urlSync')
     ) {
-      if (this.urlSync) {
-        this._suppressUrlWrite = true;
-        try {
-          this._resolveAndApply({
+      if (this.snapshot.interactiveCount > 0) {
+        if (this.urlSync) {
+          this.urlController.withSuppressedWrite(() => {
+            this.resolveAndCommit({
+              emitEvent: false,
+              historyMode: 'none',
+              normalizeUrl: true,
+            });
+          });
+        } else {
+          this.resolveAndCommit({
             emitEvent: false,
             historyMode: 'none',
-            normalizeUrl: true,
+            normalizeUrl: false,
           });
-        } finally {
-          this._suppressUrlWrite = false;
         }
-      } else {
-        this._resolveAndApply();
       }
     }
 
     if (changedProperties.has('orientation')) {
-      void this.updateComplete.then(() => {
-        this._positionIndicator();
-      });
+      this.indicatorController.scheduleReposition();
     }
   }
 
   // ─────────────────────────────────────────────────
-  // Private: スロット変更
+  // Slot handling
   // ─────────────────────────────────────────────────
 
-  /** タブスロットの変更ハンドラ */
-  private _onTabSlotChange = (e: Event): void => {
-    const slot = e.target as HTMLSlotElement;
-    this._tabEls = slot.assignedElements();
-    this._onSlotChange();
+  private readonly onTabSlotChange = (): void => {
+    this.onSlotChange();
   };
 
-  /** パネルスロットの変更ハンドラ */
-  private _onPanelSlotChange = (e: Event): void => {
-    const slot = e.target as HTMLSlotElement;
-    this._panelEls = slot.assignedElements();
-    this._onSlotChange();
+  private readonly onPanelSlotChange = (): void => {
+    this.onSlotChange();
   };
 
-  /** スロット変更後の共通処理 */
-  private _onSlotChange(): void {
-    this._initialized = false;
-    this._validateSlotPairing();
+  private onSlotChange(): void {
+    this.initialized = false;
+    this.syncSnapshotFromSlots();
+
+    if (this.snapshot.interactiveCount === 0) {
+      this.cleanupTabListeners();
+      return;
+    }
 
     if (this.urlSync) {
-      this._suppressUrlWrite = true;
-      try {
-        this._resolveAndApply({
+      this.urlController.withSuppressedWrite(() => {
+        this.resolveAndCommit({
           emitEvent: false,
           historyMode: 'none',
           normalizeUrl: true,
         });
-      } finally {
-        this._suppressUrlWrite = false;
-      }
+      });
     } else {
-      this._resolveAndApply();
+      this.resolveAndCommit({
+        emitEvent: false,
+        historyMode: 'none',
+        normalizeUrl: false,
+      });
     }
 
     void this.updateComplete.then(() => {
-      this._positionIndicator();
-      this._scrollTabIntoView(this._activeIndex);
+      this.indicatorController.scheduleReposition();
+      this.scrollActiveTabIntoView();
     });
   }
 
-  /**
-   * selected-value / default-selected-value / ?tab= / hash を解決し、
-   * 必要なら _setActive を呼び出す。
-   *
-   * Resolution Rules:
-   * 1. url-sync 有効時、hash が現在の tabs 配下の見出しを指すならそのタブを優先
-   * 2. url-sync 有効時、?tab= が有効ならそれを優先
-   * 3. selected-value
-   * 4. 初期化前のみ default-selected-value
-   * 5. 初期化済みの現在値
-   * 6. 先頭タブ
-   */
-  private _resolveAndApply(options: {
-    emitEvent?: boolean;
-    historyMode?: UrlHistoryMode;
-    normalizeUrl?: boolean;
-  } = {}): void {
+  private syncSnapshotFromSlots(): void {
+    const tabSlot =
+      this.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="tab"]') ?? null;
+    const panelSlot =
+      this.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="panel"]') ?? null;
+
+    this.snapshot = readTabsSnapshot(tabSlot, panelSlot);
+    validateTabsSnapshot(this.snapshot, this.warnDev);
+  }
+
+  // ─────────────────────────────────────────────────
+  // Resolution / Commit
+  // ─────────────────────────────────────────────────
+
+  private resolveAndCommit(options: ResolveAndCommitOptions = {}): void {
     const {
       emitEvent = false,
       historyMode = 'none',
       normalizeUrl = true,
     } = options;
 
-    const count = this._interactiveCount;
-    if (count === 0) return;
-
-    let resolved = -1;
-    let warning: string | null = null;
-    let urlSource: 'hash' | 'query' | null = null;
-
-    if (this.urlSync) {
-      const urlResolution = this._resolveUrlDrivenIndex(count);
-      resolved = urlResolution.index;
-      warning = urlResolution.warning;
-      urlSource = urlResolution.source;
+    const count = this.snapshot.interactiveCount;
+    if (count === 0) {
+      return;
     }
 
-    if (resolved === -1 && this.selectedValue !== null) {
-      resolved = this._findTabIndexByValue(this.selectedValue, count);
-      if (resolved === -1) {
-        warning = `[ui-tabs]: selected-value="${this.selectedValue}" が有効なタブに一致しません。`;
-      }
-    } else if (resolved === -1 && !this._initialized && this.defaultSelectedValue !== null) {
-      resolved = this._findTabIndexByValue(this.defaultSelectedValue, count);
-      if (resolved === -1) {
-        warning = `[ui-tabs]: default-selected-value="${this.defaultSelectedValue}" が有効なタブに一致しません。`;
-      }
-    } else if (resolved === -1 && this._initialized && this._activeIndex >= 0 && this._activeIndex < count) {
-      resolved = this._activeIndex;
+    const urlResolution = this.urlSync
+      ? this.urlController.resolveUrlDrivenValue()
+      : { value: null, source: null } as const;
+
+    const resolved = resolveSelectedIndex(
+      {
+        selectedValue: this.selectedValue,
+        defaultSelectedValue: this.defaultSelectedValue,
+        currentActiveIndex: this.activeIndex,
+        initialized: this.initialized,
+        count,
+        urlValue: urlResolution.value,
+        urlSource: urlResolution.source,
+      },
+      (value) => findTabIndexByValue(this.snapshot.tabs, value, count),
+    );
+
+    if (resolved.warning !== null) {
+      this.warnDev(resolved.warning);
     }
 
-    if (resolved === -1) {
-      const isDev = (import.meta as DevImportMeta).env?.DEV === true;
-      if (isDev && warning !== null) {
-        console.warn(`${warning} 先頭タブ (index=0) を選択します。`, this);
-      }
-      resolved = 0;
-    }
+    const shouldUpdate =
+      !this.initialized || resolved.index !== this.activeIndex;
 
-    const shouldUpdate = !this._initialized || resolved !== this._activeIndex;
-    this._initialized = true;
+    this.initialized = true;
 
     if (shouldUpdate) {
-      this._setActive(resolved, emitEvent, historyMode);
+      this.commitActiveIndex(resolved.index, {
+        emitEvent,
+        historyMode,
+      });
     }
 
     if (this.urlSync && normalizeUrl) {
-      this._normalizeUrlState(urlSource);
+      this.urlController.normalizeActiveValue(
+        urlResolution.source,
+        this.getTabValueAt(this.activeIndex),
+      );
     }
   }
 
-  private _resolveUrlDrivenIndex(count: number): {
-    index: number;
-    source: 'hash' | 'query' | null;
-    warning: string | null;
-  } {
-    const hashValue = this._resolveValueFromHash();
-    if (hashValue !== null) {
-      const hashIndex = this._findTabIndexByValue(hashValue, count);
-      if (hashIndex !== -1) {
-        return {
-          index: hashIndex,
-          source: 'hash',
-          warning: null,
-        };
-      }
-    }
-
-    if (typeof window === 'undefined') {
-      return {
-        index: -1,
-        source: null,
-        warning: null,
-      };
-    }
-
-    const queryValue = readPrimaryTabValue(window.location.href);
-    if (queryValue === null) {
-      return {
-        index: -1,
-        source: null,
-        warning: null,
-      };
-    }
-
-    const queryIndex = this._findTabIndexByValue(queryValue, count);
-    if (queryIndex !== -1) {
-      return {
-        index: queryIndex,
-        source: 'query',
-        warning: null,
-      };
-    }
-
-    return {
-      index: -1,
-      source: 'query',
-      warning: `[ui-tabs]: ?tab=${queryValue} が有効なタブに一致しません。`,
-    };
-  }
-
-  private _resolveValueFromHash(): string | null {
-    if (typeof window === 'undefined') {
-      return null;
-    }
-
-    const hash = readDecodedHash(window.location.href);
-    if (hash.length === 0) {
-      return null;
-    }
-
-    const target = findHeadingElement(this, hash);
-    if (!(target instanceof HTMLElement)) {
-      return null;
-    }
-
-    revealHeadingInTabs(this, target);
-    return resolveTabValueForDescendant(this, target);
-  }
-
-  private _normalizeUrlState(source: 'hash' | 'query' | null): void {
-    if (typeof window === 'undefined' || !this.urlSync) {
-      return;
-    }
-
-    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    const currentQueryValue = readPrimaryTabValue(currentUrl);
-    const activeValue = this._tabEls[this._activeIndex]?.getAttribute('value') ?? null;
-
-    let nextUrl = currentUrl;
-
-    if (source === 'hash') {
-      nextUrl = writePrimaryTabValue(currentUrl, activeValue);
-    } else if (currentQueryValue !== null) {
-      nextUrl = writePrimaryTabValue(currentUrl, activeValue);
-    }
-
-    if (nextUrl !== currentUrl) {
-      this._writeUrlStateInternal(nextUrl, 'replace');
-    }
-  }
-
-  private _findTabIndexByValue(value: string, count = this._interactiveCount): number {
-    return this._tabEls
-      .slice(0, count)
-      .findIndex((tab) => tab.getAttribute('value') === value);
-  }
-
-  private _writeUrlState(value: string | null, historyMode: UrlHistoryMode): void {
-    if (
-      !this.urlSync ||
-      this._suppressUrlWrite ||
-      historyMode === 'none' ||
-      typeof window === 'undefined'
-    ) {
-      return;
-    }
-
-    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    const nextUrl = writePrimaryTabValue(currentUrl, value);
-    this._writeUrlStateInternal(nextUrl, historyMode);
-  }
-
-  private _writeUrlStateInternal(nextUrl: string, historyMode: UrlHistoryMode): void {
-    if (historyMode === 'none' || typeof window === 'undefined') {
-      return;
-    }
-
-    const previousUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    if (previousUrl === nextUrl) {
-      return;
-    }
-
-    const state = this._createHistoryStateForUrl(nextUrl);
-    if (historyMode === 'push') {
-      window.history.pushState(state, '', nextUrl);
-    } else {
-      window.history.replaceState(state, '', nextUrl);
-    }
-
-    dispatchUrlStateChange(previousUrl, nextUrl);
-  }
-
-  // ─────────────────────────────────────────────────
-  // Private: 状態更新
-  // ─────────────────────────────────────────────────
-
-  /**
-   * アクティブなタブを設定し、ARIA・パネル・インジケーターを更新する。
-   * @param index - 新しいアクティブインデックス
-   * @param emitEvent - ui-tab-change カスタムイベントを発火するか
-   * @param historyMode - URL 同期時の history 更新モード
-   */
-  private _setActive(
+  private commitActiveIndex(
     index: number,
-    emitEvent = true,
-    historyMode: UrlHistoryMode = 'none',
+    options: CommitActiveIndexOptions = {},
   ): void {
-    const prevIndex = this._activeIndex;
-    this._activeIndex = index;
-    this._focusedIndex = index;
+    const {
+      emitEvent = true,
+      historyMode = 'none',
+    } = options;
 
-    this._applyAriaAndListeners();
-    this._switchPanel(index, prevIndex);
+    if (index < 0 || index >= this.snapshot.interactiveCount) {
+      return;
+    }
 
-    const newValue = this._tabEls[index]?.getAttribute('value') ?? null;
+    const prevIndex = this.activeIndex;
+
+    this.activeIndex = index;
+    this.focusedIndex = index;
+
+    this.applyDomState(prevIndex);
+
+    const newValue = this.getTabValueAt(index);
     if (this.selectedValue !== newValue) {
       this.selectedValue = newValue;
     }
 
     if (this.urlSync) {
-      this._writeUrlState(newValue, historyMode);
+      this.urlController.writeSelectedValue(newValue, historyMode);
     }
 
     void this.updateComplete.then(() => {
-      this._positionIndicator();
-      this._scrollTabIntoView(index);
+      this.indicatorController.scheduleReposition();
+      this.scrollActiveTabIntoView();
     });
 
     if (emitEvent && prevIndex !== index) {
+      const detail: UiTabChangeDetail = {
+        index,
+        value: newValue,
+        prevIndex,
+      };
+
       this.dispatchEvent(
-        new CustomEvent('ui-tab-change', {
-          detail: {
-            index,
-            value: newValue,
-            prevIndex,
-          },
+        new CustomEvent<UiTabChangeDetail>('ui-tab-change', {
+          detail,
           bubbles: true,
           composed: true,
         }),
@@ -909,358 +359,161 @@ export class Tabs extends LitElement {
     }
   }
 
-  /**
-   * タブを選択する（ユーザーアクション起点）。
-   * 公開メソッドとしても使用可能。
-   */
-  private _selectTab(
-    index: number,
-    options: {
-      emitEvent?: boolean;
-      historyMode?: UrlHistoryMode;
-    } = {},
-  ): void {
-    if (index < 0 || index >= this._interactiveCount) return;
+  private applyDomState(prevIndex: number): void {
+    applyTabsAria(
+      this.snapshot,
+      this.uid,
+      this.activeIndex,
+      this.focusedIndex,
+    );
 
-    this._setActive(
-      index,
-      options.emitEvent ?? true,
-      options.historyMode ?? 'none',
+    this.bindTabClickListeners();
+
+    switchPanels(
+      this.snapshot.panels,
+      this.activeIndex,
+      prevIndex,
+      this.panelHideFallbackTimers,
     );
   }
 
-  private _focusTab(index: number): void {
-    if (index < 0 || index >= this._interactiveCount) return;
+  // ─────────────────────────────────────────────────
+  // Focus / selection
+  // ─────────────────────────────────────────────────
 
-    this._focusedIndex = index;
+  private selectTab(
+    index: number,
+    options: CommitActiveIndexOptions = {},
+  ): void {
+    if (index < 0 || index >= this.snapshot.interactiveCount) {
+      return;
+    }
 
-    this._tabEls.forEach((tab, i) => {
-      tab.setAttribute('tabindex', i === index ? '0' : '-1');
+    this.commitActiveIndex(index, {
+      emitEvent: options.emitEvent ?? true,
+      historyMode: options.historyMode ?? 'none',
     });
+  }
 
-    const tabEl = this._tabEls[index] as HTMLElement | undefined;
-    if (tabEl) {
+  private focusTab(index: number): void {
+    if (index < 0 || index >= this.snapshot.interactiveCount) {
+      return;
+    }
+
+    this.focusedIndex = index;
+
+    applyTabsAria(
+      this.snapshot,
+      this.uid,
+      this.activeIndex,
+      this.focusedIndex,
+    );
+
+    const tabEl = this.snapshot.tabs[index];
+    const tablist = this.getTablistElement();
+
+    if (tabEl && tablist) {
       tabEl.focus({ preventScroll: true });
-      this._scrollTabElementIntoView(tabEl);
+      scrollTabElementIntoView(tablist, tabEl, this.orientation);
     }
 
     if (this.automaticActivation) {
-      this._selectTab(index, {
+      this.selectTab(index, {
+        emitEvent: true,
         historyMode: this.urlSync ? 'replace' : 'none',
       });
     }
   }
 
-/**
- * 指定インデックスのタブをタブリスト内で可視領域へ寄せる。
- */
-private _scrollTabIntoView(index: number): void {
-  const tabEl = this._tabEls[index] as HTMLElement | undefined;
-  if (!tabEl) return;
+  private scrollActiveTabIntoView(): void {
+    const tablist = this.getTablistElement();
+    const activeTab = this.snapshot.tabs[this.activeIndex];
 
-  this._scrollTabElementIntoView(tabEl);
-}
-
-/**
- * scrollIntoView() を使わず、tablist コンテナ自身の scroll だけを調整する。
- * これにより、初期 hydration 時にページ全体が途中まで飛ぶのを防ぐ。
- */
-private _scrollTabElementIntoView(tabEl: HTMLElement): void {
-  const container = this._tablistEl;
-  if (tabEl.getClientRects().length === 0 || container.getClientRects().length === 0) return;
-
-  const containerRect = container.getBoundingClientRect();
-  const tabRect = tabEl.getBoundingClientRect();
-
-  if (this.orientation === 'vertical') {
-    if (tabRect.top < containerRect.top) {
-      container.scrollTop -= Math.ceil(containerRect.top - tabRect.top);
-    } else if (tabRect.bottom > containerRect.bottom) {
-      container.scrollTop += Math.ceil(tabRect.bottom - containerRect.bottom);
+    if (!tablist || !activeTab) {
+      return;
     }
-    return;
+
+    scrollTabElementIntoView(tablist, activeTab, this.orientation);
   }
 
-  if (tabRect.left < containerRect.left) {
-    container.scrollLeft -= Math.ceil(containerRect.left - tabRect.left);
-  } else if (tabRect.right > containerRect.right) {
-    container.scrollLeft += Math.ceil(tabRect.right - containerRect.right);
-  }
-}
-
   // ─────────────────────────────────────────────────
-  // Private: ARIA
+  // Keyboard
   // ─────────────────────────────────────────────────
 
-  /**
-   * ARIA属性とクリックリスナーをタブ・パネル要素に付与する。
-   * スロット変更や選択変更のたびに呼び出される。
-   */
-  private _applyAriaAndListeners(): void {
-    const { _tabEls, _panelEls, _uid, _activeIndex, _focusedIndex } = this;
-    const count = this._interactiveCount;
+  private readonly onKeyDown = (e: KeyboardEvent): void => {
+    const target = e.composedPath()[0] as HTMLElement;
+    const tabIndex = this.snapshot.tabs.indexOf(target);
 
-    // 既存クリックリスナーをクリーンアップしてから再設定
-    this._cleanupTabListeners();
+    if (tabIndex === -1 || tabIndex >= this.snapshot.interactiveCount) {
+      return;
+    }
 
-    // aria-controls/aria-labelledby 参照のため、パネルIDを先に確定させる
-    const panelIds = _panelEls.map((panel, i) => {
-      if (!panel.getAttribute('id')) {
-        panel.setAttribute('id', `ui-tabs-${String(_uid)}-panel-${String(i)}`);
-      }
-      return panel.getAttribute('id');
+    const result = resolveKeyNavigation({
+      key: e.key,
+      currentIndex: tabIndex,
+      count: this.snapshot.interactiveCount,
+      orientation: this.orientation,
     });
 
-    _tabEls.forEach((tab, i) => {
-      // セマンティクス
-      tab.setAttribute('role', 'tab');
-      // 既存のIDがあれば保持する
-      if (!tab.getAttribute('id')) {
-        tab.setAttribute('id', `ui-tabs-${String(_uid)}-tab-${String(i)}`);
-      }
-      if (i < count) {
-        tab.setAttribute('aria-controls', panelIds[i] ?? `ui-tabs-${String(_uid)}-panel-${String(i)}`);
-      } else {
-        tab.removeAttribute('aria-controls');
-      }
+    if (result.kind === 'none' || result.nextIndex === null) {
+      return;
+    }
 
-      // 状態
-      tab.setAttribute('aria-selected', i === _activeIndex && i < count ? 'true' : 'false');
+    e.preventDefault();
 
-      // Roving Tabindex: フォーカス位置の tab のみ tabindex="0"
-      tab.setAttribute('tabindex', i === _focusedIndex && i < count ? '0' : '-1');
+    if (result.kind === 'move-focus') {
+      this.focusTab(result.nextIndex);
+      return;
+    }
 
-      // クリックリスナー（イベント委譲の代わりに各タブへ直接設定）
+    this.selectTab(this.focusedIndex, {
+      emitEvent: true,
+      historyMode: this.urlSync ? 'push' : 'none',
+    });
+  };
+
+  // ─────────────────────────────────────────────────
+  // Click listeners
+  // ─────────────────────────────────────────────────
+
+  private bindTabClickListeners(): void {
+    this.cleanupTabListeners();
+
+    const count = this.snapshot.interactiveCount;
+
+    this.snapshot.tabs.forEach((tab, i) => {
       const handler: EventListener = () => {
         if (i < count) {
-          this._selectTab(i, {
+          this.selectTab(i, {
+            emitEvent: true,
             historyMode: this.urlSync ? 'push' : 'none',
           });
         }
       };
-      this._tabClickHandlers.set(tab, handler);
+
+      this.tabClickHandlers.set(tab, handler);
       tab.addEventListener('click', handler);
     });
-
-    _panelEls.forEach((panel, i) => {
-      panel.setAttribute('role', 'tabpanel');
-      // IDは上の map で確定済み（既存IDを保持）
-      const tabId = _tabEls[i]?.getAttribute('id') ?? `ui-tabs-${String(_uid)}-tab-${String(i)}`;
-      if (i < count) {
-        panel.setAttribute('aria-labelledby', tabId);
-      } else {
-        panel.removeAttribute('aria-labelledby');
-      }
-      // aria-busy のデフォルト値（非同期コンテンツ時は利用側が設定）
-      if (!panel.hasAttribute('aria-busy')) {
-        panel.setAttribute('aria-busy', 'false');
-      }
-      if (!panel.hasAttribute('aria-live')) {
-        panel.setAttribute('aria-live', 'off');
-      }
-    });
   }
 
-  /** タブ要素のクリックリスナーをクリーンアップ */
-  private _cleanupTabListeners(): void {
-    for (const [tab, handler] of this._tabClickHandlers) {
+  private cleanupTabListeners(): void {
+    for (const [tab, handler] of this.tabClickHandlers) {
       tab.removeEventListener('click', handler);
     }
-    this._tabClickHandlers.clear();
+    this.tabClickHandlers.clear();
   }
 
-  // ─────────────────────────────────────────────────
-  // Private: パネル切り替え
-  // ─────────────────────────────────────────────────
-
-  /**
-   * パネルの切り替えを行う（opacity クロスフェード）。
-   *
-   * フロー:
-   * 1. 新パネル: `hidden` を除去 → 次フレームで `data-panel-active` を付与（フェードイン）
-   * 2. 旧パネル: `data-panel-active` を除去（フェードアウト開始）
-   *             → transitionend 後に `hidden` を付与
-   *             → フォールバック: transitionend が発火しない場合は 200ms 後に強制 hidden
-   */
-  private _switchPanel(newIndex: number, oldIndex: number): void {
-    const newPanel = this._panelEls[newIndex] as HTMLElement | undefined;
-    const oldPanel = this._panelEls[oldIndex] as HTMLElement | undefined;
-
-    // 新旧以外の非アクティブパネルは即時に非表示
-    this._panelEls.forEach((panel, i) => {
-      if (i !== newIndex && i !== oldIndex) {
-        (panel as HTMLElement).removeAttribute('data-panel-active');
-        (panel as HTMLElement).setAttribute('aria-hidden', 'true');
-        (panel as HTMLElement).setAttribute('hidden', '');
-      }
-    });
-
-    // 新しいパネルをフェードイン
-    if (newPanel) {
-      newPanel.removeAttribute('hidden');
-      newPanel.removeAttribute('aria-hidden');
-      // hidden 除去後のスタイル計算を待ってからフェードイン開始
-      requestAnimationFrame(() => {
-        newPanel.setAttribute('data-panel-active', '');
-      });
+  private clearPanelHideFallbackTimers(): void {
+    for (const timer of this.panelHideFallbackTimers.values()) {
+      clearTimeout(timer);
     }
-
-    // 旧パネルをフェードアウト後に非表示（新パネルと異なる場合のみ）
-    if (oldPanel && oldPanel !== newPanel) {
-      oldPanel.removeAttribute('hidden');
-      oldPanel.removeAttribute('data-panel-active');
-      oldPanel.setAttribute('aria-hidden', 'true');
-
-      const fallbackTimer = this._panelHideFallbackTimers.get(oldPanel);
-      if (fallbackTimer !== undefined) {
-        clearTimeout(fallbackTimer);
-      }
-      const onTransitionEnd = () => {
-        oldPanel.setAttribute('hidden', '');
-        const timer = this._panelHideFallbackTimers.get(oldPanel);
-        if (timer !== undefined) {
-          clearTimeout(timer);
-          this._panelHideFallbackTimers.delete(oldPanel);
-        }
-      };
-      oldPanel.addEventListener('transitionend', onTransitionEnd, { once: true });
-
-      // フォールバック: トランジションが発火しない環境（prefers-reduced-motion: reduce 等）
-      const timer = window.setTimeout(() => {
-        if (!oldPanel.hasAttribute('hidden')) {
-          oldPanel.setAttribute('hidden', '');
-        }
-      }, 250);
-      this._panelHideFallbackTimers.set(oldPanel, timer);
-    } else if (oldPanel && oldPanel === newPanel) {
-      oldPanel.removeAttribute('hidden');
-      oldPanel.removeAttribute('aria-hidden');
-      oldPanel.setAttribute('data-panel-active', '');
-    }
-  }
-
-  // ─────────────────────────────────────────────────
-  // Private: インジケーター
-  // ─────────────────────────────────────────────────
-
-  /**
-   * スライディングインジケーターの位置を計算し適用する。
-   * CSS transition がブラウザ側で補間するため、
-   * style.left / style.width（または top / height）を更新するだけでよい。
-   */
-  private _positionIndicator(): void {
-    const indicator = this._indicatorEl;
-    const container = this._tablistContainerEl;
-    const activeTab = this._tabEls[this._activeIndex] as HTMLElement | undefined;
-
-    if (!activeTab) return;
-
-    // インジケーターは .tablist-container 内で position: absolute のため、
-    // 基準は .tablist-container の矩形とする
-    const containerRect = container.getBoundingClientRect();
-    const tabRect = activeTab.getBoundingClientRect();
-    const tabStyle = window.getComputedStyle(activeTab);
-    const paddingInlineStart = Number.parseFloat(tabStyle.paddingInlineStart) || 0;
-    const paddingInlineEnd = Number.parseFloat(tabStyle.paddingInlineEnd) || 0;
-
-    if (this.orientation === 'horizontal') {
-      // 文字幅に対して両端を少しだけ伸ばし、タブ余白の内側に収める。
-      const indicatorBleed = Math.min(4, paddingInlineStart, paddingInlineEnd);
-      const labelLeft = tabRect.left - containerRect.left + paddingInlineStart;
-      const labelWidth = Math.max(0, tabRect.width - paddingInlineStart - paddingInlineEnd);
-      indicator.style.left = `${String(labelLeft - indicatorBleed)}px`;
-      indicator.style.width = `${String(labelWidth + indicatorBleed * 2)}px`;
-      indicator.style.removeProperty('top');
-      indicator.style.removeProperty('height');
-    } else {
-      const top = tabRect.top - containerRect.top;
-      indicator.style.top = `${String(top)}px`;
-      indicator.style.height = `${String(tabRect.height)}px`;
-      indicator.style.removeProperty('left');
-      indicator.style.removeProperty('width');
-    }
-  }
-
-  // ─────────────────────────────────────────────────
-  // Private: キーボードナビゲーション
-  // ─────────────────────────────────────────────────
-
-  /**
-   * キーボードナビゲーションハンドラ。
-   * tablist 要素上の keydown イベントを処理する。
-   * composedPath()[0] を使用して、Shadow DOM 境界を越えた
-   * 実際のフォーカス要素（Light DOM のタブ）を取得する。
-   */
-  private _onKeyDown = (e: KeyboardEvent): void => {
-    const target = e.composedPath()[0] as Element;
-    const tabIndex = this._tabEls.indexOf(target);
-
-    if (tabIndex === -1) return;
-
-    const tabCount = this._interactiveCount;
-    if (tabCount === 0) return;
-    if (tabIndex >= tabCount) return;
-
-    const isHorizontal = this.orientation === 'horizontal';
-    const prevKey = isHorizontal ? 'ArrowLeft' : 'ArrowUp';
-    const nextKey = isHorizontal ? 'ArrowRight' : 'ArrowDown';
-
-    switch (e.key) {
-      case prevKey:
-        e.preventDefault();
-        this._focusTab((tabIndex - 1 + tabCount) % tabCount);
-        break;
-
-      case nextKey:
-        e.preventDefault();
-        this._focusTab((tabIndex + 1) % tabCount);
-        break;
-
-      case 'Home':
-        e.preventDefault();
-        this._focusTab(0);
-        break;
-
-      case 'End':
-        e.preventDefault();
-        this._focusTab(tabCount - 1);
-        break;
-
-      case 'Enter':
-      case ' ':
-        e.preventDefault();
-        this._selectTab(this._focusedIndex, {
-          historyMode: this.urlSync ? 'push' : 'none',
-        });
-        break;
-
-      default:
-        break;
-    }
-  };
-
-  /**
-   * タブ数とパネル数の 1:1 対応を検証する。
-   * 不一致時は有効件数（min）で動作し、開発時に警告する。
-   */
-  private _validateSlotPairing(): void {
-    if (this._tabEls.length === this._panelEls.length) return;
-    const isDev = (import.meta as DevImportMeta).env?.DEV === true;
-    if (!isDev) return;
-    console.warn(
-      `[ui-tabs]: slot="tab" (${String(this._tabEls.length)}) と slot="panel" (${String(this._panelEls.length)}) の数が一致しません。先頭から ${String(this._interactiveCount)} 件のみ有効化します。`,
-      this,
-    );
+    this.panelHideFallbackTimers.clear();
   }
 
   // ─────────────────────────────────────────────────
   // Public API
   // ─────────────────────────────────────────────────
 
-  /**
-   * プログラム的にタブを選択する。
-   * @param value - 選択するタブの値（tab 要素の value 属性）
-   */
   select(
     value: string,
     options: {
@@ -1268,23 +521,41 @@ private _scrollTabElementIntoView(tabEl: HTMLElement): void {
       emitEvent?: boolean;
     } = {},
   ): void {
-    const index = this._findTabIndexByValue(value);
+    const index = findTabIndexByValue(
+      this.snapshot.tabs,
+      value,
+      this.snapshot.interactiveCount,
+    );
+
     if (index === -1) {
-      const isDev = (import.meta as DevImportMeta).env?.DEV === true;
-      if (isDev) {
-        console.warn(
-          `[ui-tabs]: select("${value}") に一致する value を持つ tab がありません。`,
-          this,
-        );
-      }
+      this.warnDev(
+        `[ui-tabs]: select("${value}") に一致する value を持つ tab がありません。`,
+      );
       return;
     }
 
-    this._selectTab(index, {
+    this.selectTab(index, {
       emitEvent: options.emitEvent ?? true,
-      historyMode: options.historyMode ?? (this.urlSync ? 'replace' : 'none'),
+      historyMode:
+        options.historyMode ?? (this.urlSync ? 'replace' : 'none'),
     });
   }
+
+  // ─────────────────────────────────────────────────
+  // Utils
+  // ─────────────────────────────────────────────────
+
+  private getTabValueAt(index: number): string | null {
+    return this.snapshot.tabs[index]?.getAttribute('value') ?? null;
+  }
+
+  private readonly warnDev = (message: string): void => {
+    const isDev = (import.meta as DevImportMeta).env?.DEV === true;
+    if (!isDev) {
+      return;
+    }
+    console.warn(message, this);
+  };
 
   // ─────────────────────────────────────────────────
   // Render
@@ -1300,15 +571,15 @@ private _scrollTabElementIntoView(tabEl: HTMLElement): void {
             role="tablist"
             part="tablist"
             aria-orientation="${this.orientation}"
-            @keydown="${this._onKeyDown}"
+            @keydown="${this.onKeyDown}"
           >
-            <slot name="tab" @slotchange="${this._onTabSlotChange}"></slot>
+            <slot name="tab" @slotchange="${this.onTabSlotChange}"></slot>
           </div>
           <div class="indicator" part="indicator" aria-hidden="true"></div>
         </div>
 
         <div class="panels" part="panels">
-          <slot name="panel" @slotchange="${this._onPanelSlotChange}"></slot>
+          <slot name="panel" @slotchange="${this.onPanelSlotChange}"></slot>
         </div>
       </div>
     `;
