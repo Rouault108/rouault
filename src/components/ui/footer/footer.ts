@@ -29,7 +29,7 @@ ${FOOTER_SCOPE_SELECTOR} {
   block-size: var(--header-height);
   background: var(--bg-default);
   border-top: var(--border-width) solid var(--border-ghost);
-  color: var(--fg-muted);
+  color: var(--fg-default);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
