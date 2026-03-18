@@ -449,8 +449,6 @@ export class LayoutToc extends LitElement {
       return;
     }
 
-    await customElements.whenDefined('ui-tabs');
-
     const contentRoot = findContentRoot(this.contentRootId);
     this._contentRoot = contentRoot;
 
@@ -463,8 +461,15 @@ export class LayoutToc extends LitElement {
 
     this._attachPanelStateObserver(contentRoot);
 
+    const hasTabs = contentRoot.querySelector('ui-tabs') !== null;
+    if (hasTabs) {
+      await customElements.whenDefined('ui-tabs');
+    }
+
     await new Promise<void>((resolve) => {
-      window.requestAnimationFrame(() => { resolve() });
+      window.requestAnimationFrame(() => {
+        resolve();
+      });
     });
 
     const hash = this._readLocationHash();
