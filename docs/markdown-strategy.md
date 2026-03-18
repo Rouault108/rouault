@@ -45,7 +45,7 @@ remark 層では「著者入力の制約付けと独自構文の展開」を行�
 | `::callout`      | `ui-callout`        | `kind` / `variant` / `title` / `icon` / `heading-level` / `aria-label`                                                |
 | `::code-group`   | `ui-code-group`     | `aria-label`。内包 `code` のメタは `filename` / `label`                                                               |
 | `::code-preview` | `ui-code-preview`   | `label` / `controls` / `preview-padding` / `preview-align` / `preview-theme` / `preview-surface` / `preview-viewport` |
-| `::preview-sandbox` | `ui-preview-sandbox` | `title` / `allow-js` / `height`。`code-preview` 直下専用、内部は `preview-html/css/js` fenced code のみ |
+| `::preview-sandbox` | `ui-preview-sandbox` | `title` / `allow-js` / `height`。`code-preview` 直下専用、内部は `preview-html/css/js` fenced code のみ。`allow-js` は author script 許可のみを表す |
 | `::details`      | `ui-details`        | `aria-label` 必須。`summary` / `open` / `variant` / `region`                                                          |
 | `::info-box`     | `ui-info-box`       | `heading` / `icon` / `heading-level` / `landmark` / `variant`                                                         |
 | `::link-card`    | `ui-card`           | leaf directive。`url` 必須、`title` / `description` / `image`。終端 `::` は不要                                      |
@@ -72,6 +72,7 @@ remark 層では「著者入力の制約付けと独自構文の展開」を行�
 - `code-preview.preview-surface` は `surface|canvas|muted`
 - `code-preview.preview-viewport` は `full|tablet|mobile`
 - `preview-sandbox.height` は正の整数
+- `preview-sandbox.allow-js` は author supplied JavaScript の注入許可のみを表す
 - `preview-sandbox` 内の `code.lang` は `preview-html|preview-css|preview-js`
 - `translation.render-mode` は `popover|drawer|interlinear`
 - `link-card.url` は後段で `http/https` 絶対 URL として検証する
@@ -157,7 +158,8 @@ remark 段階では次を即時エラーにする。
 [`lib/rehype/preview-sandbox.ts`](/Users/ruo/Desktop/Programing/Rouault/lib/rehype/preview-sandbox.ts) は `ui-code-preview > ui-preview-sandbox` を検出し、内部の `preview-html` / `preview-css` / `preview-js` fenced code を次へ変換する。
 
 1. `template[data-preview-kind]` の inert payload
-2. 表示用の code area（1件なら単体 code block、複数なら `ui-code-group`）
+2. 高さ同期用 helper script を含む iframe `srcdoc`
+3. 表示用の code area（1件なら単体 code block、複数なら `ui-code-group`）
 
 この変換は `rehypeShikiCodeBlocks` より前に実行し、後続の Shiki と `rehypeRouaultComponents` に通常の code block として流す。
 
@@ -194,9 +196,10 @@ remark 段階では次を即時エラーにする。
 
 1. `translation` は block children を保持しない。子要素から拾うのは 1 段落目と 2 段落目のプレーンテキスト相当で、最終的には `original` / `translated` 属性へ昇格したあと `children: []` になる。
 2. `tabs` は slot 属性を付けるところまでで、`tab/panel` の個数整合までは検証しない。
-3. `code-preview` で `preview-sandbox` を使う場合、手書き `::preview` と手書き code area は禁止し、自動生成に固定する。
-4. ブロックディレクティブは paragraph テキストを自前解析しているため、micromark / `remark-directive` ベースの一般的な directive AST とは互換ではない。開始行と終端行は、独立した paragraph か、単一 text node に畳まれた 1 paragraph 内の独立行として存在する必要がある。
-5. `tabs.url-sync` は `?tab=` 同期を有効にする。現在はページの主タブ 1 系統のみを想定し、複数の query key は導入していない。
+3. `preview-sandbox.allow-js=false` は author supplied JavaScript を注入しないことだけを意味する。platform helper script の有無とは独立である。
+4. `code-preview` で `preview-sandbox` を使う場合、手書き `::preview` と手書き code area は禁止し、自動生成に固定する。
+5. ブロックディレクティブは paragraph テキストを自前解析しているため、micromark / `remark-directive` ベースの一般的な directive AST とは互換ではない。開始行と終端行は、独立した paragraph か、単一 text node に畳まれた 1 paragraph 内の独立行として存在する必要がある。
+6. `tabs.url-sync` は `?tab=` 同期を有効にする。現在はページの主タブ 1 系統のみを想定し、複数の query key は導入していない。
 
 ## テストで固定している範囲
 

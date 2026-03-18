@@ -167,6 +167,11 @@ export class PreviewSandbox extends LitElement {
   @property({ type: Number, reflect: true })
   height = DEFAULT_HEIGHT;
 
+  /**
+   * allow-js は author supplied JavaScript を srcdoc に注入するかを表す。
+   * iframe 内 script の不存在は保証しない。
+   * 高さ同期などに必要な platform helper script はこの属性の対象外である。
+   */
   @property({ type: Boolean, attribute: 'allow-js', reflect: true })
   allowJs = false;
 
@@ -271,6 +276,32 @@ export class PreviewSandbox extends LitElement {
     this._measuredHeight = height;
   };
 
+  private get _authorScriptAllowed(): boolean {
+    return this.allowJs;
+  }
+
+  private get _effectiveSandboxTokens(): readonly string[] {
+    const tokens: string[] = [];
+
+    if (this._authorScriptAllowed) {
+      tokens.push('allow-scripts');
+    }
+    if (this.allowForms) {
+      tokens.push('allow-forms');
+    }
+    if (this.allowDownloads) {
+      tokens.push('allow-downloads');
+    }
+    if (this.allowPointerLock) {
+      tokens.push('allow-pointer-lock');
+    }
+    if (this.allowPopups) {
+      tokens.push('allow-popups');
+    }
+
+    return tokens;
+  }
+
   private _readPayload(kind: PreviewPayloadKind): string {
     const template = this.querySelector(`template[data-preview-kind="${kind}"]`);
     if (!(template instanceof HTMLTemplateElement)) {
@@ -333,13 +364,27 @@ export class PreviewSandbox extends LitElement {
     return {
       html: this._sanitizeHtmlFragment(this._readPayload('html')),
       css: this._readPayload('css'),
-      js: this._readPayload('js'),
+      js: this._authorScriptAllowed ? this._readPayload('js') : '',
     };
   }
 
-  private _buildSrcdoc(payload: PreviewPayload): string {
-    const bootstrapScript = createBootstrapScript(this._messageToken);
-    const authorScript = this.allowJs && payload.js.trim() !== '' ? payload.js : '';
+  private _buildHelperScriptBlock(): string {
+    const helperScript = createBootstrapScript(this._messageToken);
+
+    return `<script>${escapeScriptText(helperScript)}</script>`;
+  }
+
+  private _buildAuthorScriptBlock(payload: PreviewPayload): string {
+    if (!this._authorScriptAllowed || payload.js.trim() === '') {
+      return '';
+    }
+
+    return `<script>${escapeScriptText(payload.js)}</script>`;
+  }
+
+  private _serializePreviewDocument(payload: PreviewPayload): string {
+    const helperScriptBlock = this._buildHelperScriptBlock();
+    const authorScriptBlock = this._buildAuthorScriptBlock(payload);
 
     return [
       '<!doctype html>',
@@ -356,8 +401,8 @@ export class PreviewSandbox extends LitElement {
       '</head>',
       '<body>',
       payload.html,
-      `<script>${escapeScriptText(bootstrapScript)}</script>`,
-      authorScript === '' ? '' : `<script>${escapeScriptText(authorScript)}</script>`,
+      helperScriptBlock,
+      authorScriptBlock,
       '</body>',
       '</html>',
     ].join('');
@@ -366,7 +411,7 @@ export class PreviewSandbox extends LitElement {
   private _refreshSandboxDocument(): void {
     const payload = this._buildPayload();
     this._measuredHeight = this.height;
-    this._srcdoc = this._buildSrcdoc(payload);
+    this._srcdoc = this._serializePreviewDocument(payload);
   }
 
   private get _resolvedHeight(): number {
@@ -379,22 +424,7 @@ export class PreviewSandbox extends LitElement {
   }
 
   private get _sandboxValue(): string {
-    const tokens = ['allow-scripts'];
-
-    if (this.allowForms) {
-      tokens.push('allow-forms');
-    }
-    if (this.allowDownloads) {
-      tokens.push('allow-downloads');
-    }
-    if (this.allowPointerLock) {
-      tokens.push('allow-pointer-lock');
-    }
-    if (this.allowPopups) {
-      tokens.push('allow-popups');
-    }
-
-    return tokens.join(' ');
+    return [...this._effectiveSandboxTokens].join(' ');
   }
 
   override render(): TemplateResult {

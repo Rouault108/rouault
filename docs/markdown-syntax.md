@@ -320,6 +320,7 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 - `preview-html` は必須かつ 1 個のみ
 - `preview-css` / `preview-js` は任意で、それぞれ 1 個まで
 - `preview-js` を使う場合は `allow-js="true"` が必須
+- `allow-js` は author supplied JavaScript の注入可否を表す。iframe 内 helper script の不存在は保証しない
 - `preview-sandbox` 使用時は手書きの `::preview` / code block を併用しない
 - code area は sandbox source から自動生成される
 

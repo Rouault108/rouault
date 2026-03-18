@@ -62,7 +62,8 @@ HTML/CSS/JS を isolated iframe で描画する preview 用コンポーネント
 
 - payload は \`template[data-preview-kind]\` から受け取ります
 - sandbox iframe は常に \`allow-scripts\` を含みます
-- author JS は \`allow-js\` 明示時だけ注入します
+- \`allow-js\` は author supplied JS の注入可否だけを表します
+- \`allow-js="false"\` でも高さ同期 helper script のため \`allow-scripts\` は維持されます
 - 追加 capability は \`allow-forms\` / \`allow-downloads\` / \`allow-pointer-lock\` / \`allow-popups\` で opt-in します
 - \`allow-modals\` / \`allow-same-origin\` / \`allow-top-navigation*\` は公開しません
 - \`ui-code-preview\` と組み合わせると isolated preview を構成できます
@@ -127,6 +128,22 @@ export const AuthorJsOptIn: Story = {
     const enabledSandbox = getSandbox(canvasElement, 'js-enabled-sandbox');
     const disabledSandbox = getSandbox(canvasElement, 'js-disabled-sandbox');
     await Promise.all([enabledSandbox.updateComplete, disabledSandbox.updateComplete]);
+
+    const enabledIframe = getIframe(enabledSandbox);
+    const disabledIframe = getIframe(disabledSandbox);
+
+    if (enabledIframe.getAttribute('sandbox') !== 'allow-scripts') {
+      throw new Error('allow-js ありでも sandbox token は allow-scripts のみである必要があります');
+    }
+    if (disabledIframe.getAttribute('sandbox') !== 'allow-scripts') {
+      throw new Error('allow-js なしでも helper script 用に allow-scripts を維持する必要があります');
+    }
+    if (!disabledIframe.srcdoc.includes("'ui-preview-sandbox'")) {
+      throw new Error('allow-js なしでも helper script が srcdoc に含まれている必要があります');
+    }
+    if (disabledIframe.srcdoc.includes("caseId: 'disabled'")) {
+      throw new Error('allow-js なしの sandbox に author JS が srcdoc 注入されています');
+    }
 
     const messages: string[] = [];
     const handleMessage = (event: MessageEvent<unknown>) => {
@@ -229,7 +246,7 @@ export const SandboxCapabilityTokens: Story = {
 
     if (jsOnlyIframe.getAttribute('sandbox') !== 'allow-scripts') {
       throw new Error(
-        'allow-js は author JS 注入フラグであり、sandbox token を増やしてはいけません',
+        'allow-js は author supplied JS 注入フラグであり、sandbox token を増やしてはいけません',
       );
     }
 
