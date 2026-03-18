@@ -66,6 +66,8 @@ const meta: Meta<Tabs> = {
 - 個別タブの \`disabled\` は現在の Rouault では実装対象外です
 - 公開 API は \`selected-value\` と \`default-selected-value\` のみです
 - タブの識別には、順番ではなく各 tab の \`value\` を使ってください
+- \`url-sync\` を付けた場合、主タブ状態を \`?tab=\` と同期します
+- \`url-sync\` はページの主タブ 1 系統にだけ使ってください
         `,
       },
     },
@@ -104,6 +106,14 @@ const meta: Meta<Tabs> = {
         defaultValue: { summary: 'false' },
       },
     },
+    urlSync: {
+      control: 'boolean',
+      description: '主タブ状態を ?tab= と同期するか',
+      table: {
+        type: { summary: 'boolean' },
+        defaultValue: { summary: 'false' },
+      },
+    },
   },
 };
 
@@ -119,6 +129,14 @@ const dispatchTabKey = (tab: HTMLElement, key: string): void => {
       cancelable: true,
     }),
   );
+};
+
+const replaceStoryUrl = (url: string): (() => void) => {
+  const original = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  history.replaceState(history.state, '', url);
+  return () => {
+    history.replaceState(history.state, '', original);
+  };
 };
 
 // ─────────────────────────────────────────────────
@@ -524,6 +542,105 @@ export const SelectedByValue: Story = {
     const thirdPanel = panelEls[2] as HTMLElement;
     if (thirdPanel.hasAttribute('hidden')) {
       throw new Error('[SelectedByValue] selected-value に対応するパネルが hidden になっています');
+    }
+  },
+};
+
+export const UrlSyncFromQuery: Story = {
+  render: () => html`
+    <ui-tabs url-sync>
+      <button slot="tab" value="overview">概要</button>
+      <div slot="panel" style="padding: 1rem;">概要パネル</div>
+
+      <button slot="tab" value="details">詳細</button>
+      <div slot="panel" style="padding: 1rem;">
+        <h3 id="details-heading" style="margin: 0;">Details Heading</h3>
+        詳細パネル
+      </div>
+    </ui-tabs>
+  `,
+  play: async ({ canvasElement }) => {
+    const restore = replaceStoryUrl('?tab=details');
+    try {
+      const tabs = canvasElement.querySelector<Tabs>('ui-tabs');
+      if (!tabs) throw new Error('[UrlSyncFromQuery] ui-tabs が見つかりません');
+
+      await tabs.updateComplete;
+
+      const tabEls = canvasElement.querySelectorAll<HTMLElement>('[slot="tab"]');
+      if (tabEls[1]?.getAttribute('aria-selected') !== 'true') {
+        throw new Error('[UrlSyncFromQuery] ?tab=details が初期選択に反映されていません');
+      }
+    } finally {
+      restore();
+    }
+  },
+};
+
+export const UrlSyncPushOnClick: Story = {
+  render: () => html`
+    <ui-tabs url-sync>
+      <button slot="tab" value="overview">概要</button>
+      <div slot="panel" style="padding: 1rem;">概要パネル</div>
+
+      <button slot="tab" value="details">詳細</button>
+      <div slot="panel" style="padding: 1rem;">詳細パネル</div>
+    </ui-tabs>
+  `,
+  play: async ({ canvasElement }) => {
+    const restore = replaceStoryUrl(window.location.pathname);
+    try {
+      const tabs = canvasElement.querySelector<Tabs>('ui-tabs');
+      if (!tabs) throw new Error('[UrlSyncPushOnClick] ui-tabs が見つかりません');
+
+      await tabs.updateComplete;
+
+      const detailsTab = canvasElement.querySelector<HTMLElement>('[slot="tab"][value="details"]');
+      if (!detailsTab) throw new Error('[UrlSyncPushOnClick] details タブが見つかりません');
+
+      detailsTab.click();
+      await tabs.updateComplete;
+
+      if (!window.location.search.includes('tab=details')) {
+        throw new Error('[UrlSyncPushOnClick] クリック後に ?tab=details へ更新されていません');
+      }
+    } finally {
+      restore();
+    }
+  },
+};
+
+export const UrlSyncHashOverridesQuery: Story = {
+  render: () => html`
+    <ui-tabs url-sync>
+      <button slot="tab" value="overview">概要</button>
+      <div slot="panel" style="padding: 1rem;">概要パネル</div>
+
+      <button slot="tab" value="details">詳細</button>
+      <div slot="panel" style="padding: 1rem;">
+        <h3 id="details-heading" style="margin: 0;">Details Heading</h3>
+        詳細パネル
+      </div>
+    </ui-tabs>
+  `,
+  play: async ({ canvasElement }) => {
+    const restore = replaceStoryUrl('?tab=overview#details-heading');
+    try {
+      const tabs = canvasElement.querySelector<Tabs>('ui-tabs');
+      if (!tabs) throw new Error('[UrlSyncHashOverridesQuery] ui-tabs が見つかりません');
+
+      await tabs.updateComplete;
+
+      const tabEls = canvasElement.querySelectorAll<HTMLElement>('[slot="tab"]');
+      if (tabEls[1]?.getAttribute('aria-selected') !== 'true') {
+        throw new Error('[UrlSyncHashOverridesQuery] hash が query より優先されていません');
+      }
+
+      if (!window.location.search.includes('tab=details')) {
+        throw new Error('[UrlSyncHashOverridesQuery] URL が ?tab=details に正規化されていません');
+      }
+    } finally {
+      restore();
     }
   },
 };

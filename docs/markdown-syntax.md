@@ -402,17 +402,21 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 タブ UI を構成する。
 
 ```markdown
-::tabs{default-selected-value="overview" orientation="horizontal"}
+::tabs{url-sync="true" default-selected-value="overview" orientation="horizontal"}
 ::tab{value="overview"}
 概要
 ::
 ::panel
+### Overview Heading
+
 概要の内容
 ::
 ::tab{value="details"}
 詳細
 ::
 ::panel
+### Details Heading
+
 詳細の内容
 ::
 ::
@@ -425,10 +429,16 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 | `orientation`            | 並び方向                | `horizontal`, `vertical` |
 | `automatic-activation`   | フォーカス移動で自動選択 | 真偽値                  |
 | `value`                  | `tab` の識別子          | 任意の文字列             |
+| `url-sync`             | 主タブ状態を `?tab=` と同期 | 真偽値                  |
+
+補足:
 
 補足:
 
 - `tab` と `panel` の対応は著者側で崩さない
+- `url-sync` はページの主タブ 1 系統のみに付ける
+- `url-sync` 有効時、hash が指す見出しが別タブ内にある場合は hash 側が優先される
+- `url-sync` のクエリキーは `tab` 固定
 
 ### Translation
 

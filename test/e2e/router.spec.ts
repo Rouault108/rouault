@@ -4,6 +4,7 @@ const beethovenPath = '/notes/music/classical/beethoven/symphony-9';
 const nutcrackerPath = '/notes/music/classical/tchaikovsky/the-nutcracker';
 const beethovenEntryPath = `${beethovenPath}/`;
 const testNotePath = '/notes/testing/test';
+const tabsTestPath = '/notes/testing/tabs-test';
 
 const getSidebarTreeItem = (page: Page, label: string): Locator =>
   page.getByRole('treeitem', { name: label, exact: true }).first();
@@ -195,5 +196,68 @@ test.describe('Router Navigation', () => {
     await expect(page).toHaveURL('/notes/does-not-exist');
     await expect(page.locator('not-found-page')).toContainText('ページが見つかりません');
     await expect(page.locator('not-found-page')).toContainText('検索ページへ');
+  });
+
+  test('?tab= 付き URL で初期タブが復元されること', async ({ page }) => {
+    await page.goto(`${tabsTestPath}?tab=details`);
+
+    const tabs = page.locator('ui-tabs').first();
+    const panels = tabs.locator('[slot="panel"]');
+
+    await expect(panels.nth(1)).not.toHaveAttribute('hidden', '');
+    await expect(panels.nth(0)).toHaveAttribute('hidden', '');
+  });
+
+  test('タブクリックで URL が変わっても SPA 状態が維持されること', async ({ page }) => {
+    await page.goto(tabsTestPath);
+
+    await page.evaluate(() => {
+      (window as typeof window & { __spaProbe?: { alive: boolean } }).__spaProbe = {
+        alive: true,
+      };
+    });
+
+    const detailsTab = page.locator('ui-tabs').first().locator('[slot="tab"][value="details"]');
+    await detailsTab.click();
+
+    await expect(page).toHaveURL(`${tabsTestPath}?tab=details`);
+
+    const probeAlive = await page.evaluate(() => {
+      return (window as typeof window & { __spaProbe?: { alive: boolean } }).__spaProbe?.alive === true;
+    });
+    expect(probeAlive).toBe(true);
+  });
+
+  test('戻る / 進むでタブ状態が復元されること', async ({ page }) => {
+    await page.goto(tabsTestPath);
+
+    const tabs = page.locator('ui-tabs').first();
+    const overviewTab = tabs.locator('[slot="tab"][value="overview"]');
+    const detailsTab = tabs.locator('[slot="tab"][value="details"]');
+    const panels = tabs.locator('[slot="panel"]');
+
+    await detailsTab.click();
+    await expect(page).toHaveURL(`${tabsTestPath}?tab=details`);
+    await expect(panels.nth(1)).not.toHaveAttribute('hidden', '');
+
+    await page.goBack();
+    await expect(page).toHaveURL(tabsTestPath);
+    await expect(overviewTab).toHaveAttribute('aria-selected', 'true');
+
+    await page.goForward();
+    await expect(page).toHaveURL(`${tabsTestPath}?tab=details`);
+    await expect(detailsTab).toHaveAttribute('aria-selected', 'true');
+  });
+
+  test('hash が query より優先され、URL が正規化されること', async ({ page }) => {
+    await page.goto(`${tabsTestPath}?tab=overview#details-heading`);
+
+    const tabs = page.locator('ui-tabs').first();
+    const detailsTab = tabs.locator('[slot="tab"][value="details"]');
+    const panels = tabs.locator('[slot="panel"]');
+
+    await expect(detailsTab).toHaveAttribute('aria-selected', 'true');
+    await expect(panels.nth(1)).not.toHaveAttribute('hidden', '');
+    await expect(page).toHaveURL(`${tabsTestPath}?tab=details#details-heading`);
   });
 });

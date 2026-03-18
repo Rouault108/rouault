@@ -331,7 +331,7 @@ describe('remarkRouaultDirectives', () => {
             {
               type: 'text',
               value:
-                '::tabs{selected-value="details" default-selected-value="overview" orientation="vertical" automatic-activation="true"}',
+                '::tabs{selected-value="details" default-selected-value="overview" orientation="vertical" automatic-activation="true" url-sync="true"}',
             },
           ],
         },
@@ -398,6 +398,7 @@ describe('remarkRouaultDirectives', () => {
     expect(tabs?.data?.hProperties?.['default-selected-value']).to.equal('overview');
     expect(tabs?.data?.hProperties?.['orientation']).to.equal('vertical');
     expect(tabs?.data?.hProperties?.['automatic-activation']).to.equal(true);
+    expect(tabs?.data?.hProperties?.['url-sync']).to.equal(true);
     expect(tabs?.children).to.have.length(4);
 
     const firstTab = tabs?.children?.[0];
@@ -407,6 +408,57 @@ describe('remarkRouaultDirectives', () => {
     expect(firstTab?.data?.hProperties?.['value']).to.equal('overview');
     expect(firstPanel?.data?.hName).to.equal('div');
     expect(firstPanel?.data?.hProperties?.['slot']).to.equal('panel');
+  });
+
+  it('tabs の url-sync="false" は出力しないこと', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'text',
+              value: '::tabs{url-sync="false"}',
+            },
+          ],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::tab{value="overview"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '概要' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::panel' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '概要パネル' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    const tabs = tree.children?.[0];
+    expect(tabs?.data?.hName).to.equal('ui-tabs');
+    expect(tabs?.data?.hProperties?.['url-sync']).to.equal(undefined);
   });
 
   it('code-preview と preview/toolbar スロットディレクティブを変換すること', () => {

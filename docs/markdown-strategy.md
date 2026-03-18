@@ -50,7 +50,7 @@ remark 層では「著者入力の制約付けと独自構文の展開」を行�
 | `::info-box`     | `ui-info-box`       | `heading` / `icon` / `heading-level` / `landmark` / `variant`                                                         |
 | `::link-card`    | `ui-card`           | leaf directive。`url` 必須、`title` / `description` / `image`。終端 `::` は不要                                      |
 | `::score`        | `ui-score`          | `src` / `caption` / `label` / `description` / `aspect-ratio` / `loading` / `primary`                                  |
-| `::tabs` | `ui-tabs` | `selected-value` / `default-selected-value` / `orientation` / `automatic-activation` |
+| `::tabs` | `ui-tabs` | `selected-value` / `default-selected-value` / `orientation` / `automatic-activation` / `url-sync` |
 | `::translation`  | `ui-translation`    | `original` / `translated` / `lang` / `target-lang` / `render-mode` / `open`                                           |
 | `::preview`      | `div[slot=preview]` | 属性なし                                                                                                              |
 | `::toolbar`      | `div[slot=toolbar]` | 内部 / 互換用。著者向け公開文法では非推奨                                                                             |
@@ -196,6 +196,7 @@ remark 段階では次を即時エラーにする。
 2. `tabs` は slot 属性を付けるところまでで、`tab/panel` の個数整合までは検証しない。
 3. `code-preview` で `preview-sandbox` を使う場合、手書き `::preview` と手書き code area は禁止し、自動生成に固定する。
 4. ブロックディレクティブは paragraph テキストを自前解析しているため、micromark / `remark-directive` ベースの一般的な directive AST とは互換ではない。開始行と終端行は、独立した paragraph か、単一 text node に畳まれた 1 paragraph 内の独立行として存在する必要がある。
+5. `tabs.url-sync` は `?tab=` 同期を有効にする。現在はページの主タブ 1 系統のみを想定し、複数の query key は導入していない。
 
 ## テストで固定している範囲
 

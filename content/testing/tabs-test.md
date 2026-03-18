@@ -11,7 +11,7 @@ status: "wip"
 
 ## タブ用のテストページです。
 
-::tabs{orientation="horizontal"}
+::tabs{url-sync="true" default-selected-value="overview" orientation="horizontal"}
 ::tab{value="overview"}
 JavaScript
 ::

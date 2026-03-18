@@ -1,6 +1,19 @@
 import { css, html, LitElement, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
+import {
+  findHeadingElement,
+  revealHeadingInTabs,
+  resolveTabValueForDescendant,
+} from '../../../lib/toc/filter-visible-headings.js';
+import {
+  URL_STATE_CHANGE_EVENT,
+  dispatchUrlStateChange,
+  readDecodedHash,
+  readPrimaryTabValue,
+  writePrimaryTabValue,
+  type UrlHistoryMode,
+} from '../../../lib/tabs/url-state.js';
 
 type TabsOrientation = 'horizontal' | 'vertical';
 type DevImportMeta = ImportMeta & { env?: { DEV?: boolean } };
@@ -423,6 +436,13 @@ export class Tabs extends LitElement {
   @property({ type: Boolean, attribute: 'automatic-activation', reflect: true })
   automaticActivation = false;
 
+  /**
+   * `true` の場合、主タブ状態を `?tab=` と同期する。
+   * 同一ページ内で意味的な主タブ 1 系統のみに付与することを想定。
+   */
+  @property({ type: Boolean, attribute: 'url-sync', reflect: true })
+  urlSync = false;
+
   /** 現在アクティブな（選択済み）タブのインデックス */
   @state() private _activeIndex = 0;
 
@@ -457,6 +477,39 @@ export class Tabs extends LitElement {
     this._positionIndicator();
   };
 
+  /** URL 由来の反映中に _setActive から push/replace を抑止する */
+  private _suppressUrlWrite = false;
+
+  /** history.state に Router 用の URL 情報を付与する */
+  private _createHistoryStateForUrl(url: string): Record<string, unknown> {
+    const currentState =
+      typeof history.state === 'object' && history.state !== null
+        ? (history.state as Record<string, unknown>)
+        : {};
+
+    const parsed = new URL(url, window.location.origin);
+    return {
+      ...currentState,
+      __routerUrl: `${parsed.pathname}${parsed.search}${parsed.hash}`,
+      __routerPath: parsed.pathname,
+    };
+  }
+
+  private readonly _onLocationStateChange = (): void => {
+    if (!this.urlSync) return;
+
+    this._suppressUrlWrite = true;
+    try {
+      this._resolveAndApply({
+        emitEvent: true,
+        historyMode: 'none',
+        normalizeUrl: true,
+      });
+    } finally {
+      this._suppressUrlWrite = false;
+    }
+  };
+
   /** 現在有効なタブ/パネルの数（1:1 対応の最小数） */
   private get _interactiveCount(): number {
     return Math.min(this._tabEls.length, this._panelEls.length);
@@ -467,6 +520,15 @@ export class Tabs extends LitElement {
     this._resizeObserver = new ResizeObserver(() => {
       this._positionIndicator();
     });
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('popstate', this._onLocationStateChange);
+      window.addEventListener('hashchange', this._onLocationStateChange);
+      window.addEventListener(
+        URL_STATE_CHANGE_EVENT,
+        this._onLocationStateChange as EventListener,
+      );
+    }
   }
 
   override disconnectedCallback(): void {
@@ -474,13 +536,20 @@ export class Tabs extends LitElement {
     this._tablistEl.removeEventListener('scroll', this._onTablistScroll);
     this._resizeObserver?.disconnect();
     this._cleanupTabListeners();
+
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('popstate', this._onLocationStateChange);
+      window.removeEventListener('hashchange', this._onLocationStateChange);
+      window.removeEventListener(
+        URL_STATE_CHANGE_EVENT,
+        this._onLocationStateChange as EventListener,
+      );
+    }
   }
 
   override firstUpdated(_changedProperties: PropertyValues<this>): void {
     super.firstUpdated(_changedProperties);
 
-    // slotchange が firstUpdated より遅く発火する場合のフォールバック:
-    // 初回レンダリング後にスロット要素を手動で取得して初期化する
     const tabSlot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="tab"]');
     const panelSlot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="panel"]');
 
@@ -489,14 +558,25 @@ export class Tabs extends LitElement {
 
     if (this._tabEls.length > 0) {
       this._validateSlotPairing();
-      this._resolveAndApply();
+      if (this.urlSync) {
+        this._suppressUrlWrite = true;
+        try {
+          this._resolveAndApply({
+            emitEvent: false,
+            historyMode: 'none',
+            normalizeUrl: true,
+          });
+        } finally {
+          this._suppressUrlWrite = false;
+        }
+      } else {
+        this._resolveAndApply();
+      }
     }
 
     this._resizeObserver?.observe(this._tablistEl);
     this._tablistEl.addEventListener('scroll', this._onTablistScroll, { passive: true });
 
-    // Hydration完了を示すマーカー属性を付与。
-    // これにより CSS がフォールバック下線からスライディングインジケーターへ切り替わる。
     this.setAttribute('hydrated', '');
   }
 
@@ -505,9 +585,23 @@ export class Tabs extends LitElement {
 
     if (
       changedProperties.has('selectedValue') ||
-      changedProperties.has('defaultSelectedValue')
+      changedProperties.has('defaultSelectedValue') ||
+      changedProperties.has('urlSync')
     ) {
-      this._resolveAndApply();
+      if (this.urlSync) {
+        this._suppressUrlWrite = true;
+        try {
+          this._resolveAndApply({
+            emitEvent: false,
+            historyMode: 'none',
+            normalizeUrl: true,
+          });
+        } finally {
+          this._suppressUrlWrite = false;
+        }
+      } else {
+        this._resolveAndApply();
+      }
     }
 
     if (changedProperties.has('orientation')) {
@@ -537,9 +631,24 @@ export class Tabs extends LitElement {
 
   /** スロット変更後の共通処理 */
   private _onSlotChange(): void {
-    this._initialized = false; // スロット内容が変わったため再初期化
+    this._initialized = false;
     this._validateSlotPairing();
-    this._resolveAndApply();
+
+    if (this.urlSync) {
+      this._suppressUrlWrite = true;
+      try {
+        this._resolveAndApply({
+          emitEvent: false,
+          historyMode: 'none',
+          normalizeUrl: true,
+        });
+      } finally {
+        this._suppressUrlWrite = false;
+      }
+    } else {
+      this._resolveAndApply();
+    }
+
     void this.updateComplete.then(() => {
       this._positionIndicator();
       this._scrollTabIntoView(this._activeIndex);
@@ -547,33 +656,53 @@ export class Tabs extends LitElement {
   }
 
   /**
-   * selected-value / default-selected-value を解決し、
-   * 変化があれば _setActive を呼び出す。
+   * selected-value / default-selected-value / ?tab= / hash を解決し、
+   * 必要なら _setActive を呼び出す。
    *
    * Resolution Rules:
-   * 1. `selected-value` が一致する場合はそのタブを選択
-   * 2. 初期化前のみ `default-selected-value` を初期値として評価
-   * 3. どちらも未指定なら、初期化済みの現在値を維持
-   * 4. それでも解決できない場合は先頭タブ (index=0) を選択し、開発時に console.warn
+   * 1. url-sync 有効時、hash が現在の tabs 配下の見出しを指すならそのタブを優先
+   * 2. url-sync 有効時、?tab= が有効ならそれを優先
+   * 3. selected-value
+   * 4. 初期化前のみ default-selected-value
+   * 5. 初期化済みの現在値
+   * 6. 先頭タブ
    */
-  private _resolveAndApply(): void {
+  private _resolveAndApply(options: {
+    emitEvent?: boolean;
+    historyMode?: UrlHistoryMode;
+    normalizeUrl?: boolean;
+  } = {}): void {
+    const {
+      emitEvent = false,
+      historyMode = 'none',
+      normalizeUrl = true,
+    } = options;
+
     const count = this._interactiveCount;
     if (count === 0) return;
 
     let resolved = -1;
     let warning: string | null = null;
+    let urlSource: 'hash' | 'query' | null = null;
 
-    if (this.selectedValue !== null) {
+    if (this.urlSync) {
+      const urlResolution = this._resolveUrlDrivenIndex(count);
+      resolved = urlResolution.index;
+      warning = urlResolution.warning;
+      urlSource = urlResolution.source;
+    }
+
+    if (resolved === -1 && this.selectedValue !== null) {
       resolved = this._findTabIndexByValue(this.selectedValue, count);
       if (resolved === -1) {
         warning = `[ui-tabs]: selected-value="${this.selectedValue}" が有効なタブに一致しません。`;
       }
-    } else if (!this._initialized && this.defaultSelectedValue !== null) {
+    } else if (resolved === -1 && !this._initialized && this.defaultSelectedValue !== null) {
       resolved = this._findTabIndexByValue(this.defaultSelectedValue, count);
       if (resolved === -1) {
         warning = `[ui-tabs]: default-selected-value="${this.defaultSelectedValue}" が有効なタブに一致しません。`;
       }
-    } else if (this._initialized && this._activeIndex >= 0 && this._activeIndex < count) {
+    } else if (resolved === -1 && this._initialized && this._activeIndex >= 0 && this._activeIndex < count) {
       resolved = this._activeIndex;
     }
 
@@ -585,14 +714,148 @@ export class Tabs extends LitElement {
       resolved = 0;
     }
 
-    if (resolved === this._activeIndex && this._initialized) return;
-
+    const shouldUpdate = !this._initialized || resolved !== this._activeIndex;
     this._initialized = true;
-    this._setActive(resolved, false);
+
+    if (shouldUpdate) {
+      this._setActive(resolved, emitEvent, historyMode);
+    }
+
+    if (this.urlSync && normalizeUrl) {
+      this._normalizeUrlState(urlSource);
+    }
+  }
+
+  private _resolveUrlDrivenIndex(count: number): {
+    index: number;
+    source: 'hash' | 'query' | null;
+    warning: string | null;
+  } {
+    const hashValue = this._resolveValueFromHash();
+    if (hashValue !== null) {
+      const hashIndex = this._findTabIndexByValue(hashValue, count);
+      if (hashIndex !== -1) {
+        return {
+          index: hashIndex,
+          source: 'hash',
+          warning: null,
+        };
+      }
+    }
+
+    if (typeof window === 'undefined') {
+      return {
+        index: -1,
+        source: null,
+        warning: null,
+      };
+    }
+
+    const queryValue = readPrimaryTabValue(window.location.href);
+    if (queryValue === null) {
+      return {
+        index: -1,
+        source: null,
+        warning: null,
+      };
+    }
+
+    const queryIndex = this._findTabIndexByValue(queryValue, count);
+    if (queryIndex !== -1) {
+      return {
+        index: queryIndex,
+        source: 'query',
+        warning: null,
+      };
+    }
+
+    return {
+      index: -1,
+      source: 'query',
+      warning: `[ui-tabs]: ?tab=${queryValue} が有効なタブに一致しません。`,
+    };
+  }
+
+  private _resolveValueFromHash(): string | null {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    const hash = readDecodedHash(window.location.href);
+    if (hash.length === 0) {
+      return null;
+    }
+
+    const target = findHeadingElement(this, hash);
+    if (!(target instanceof HTMLElement)) {
+      return null;
+    }
+
+    revealHeadingInTabs(this, target);
+    return resolveTabValueForDescendant(this, target);
+  }
+
+  private _normalizeUrlState(source: 'hash' | 'query' | null): void {
+    if (typeof window === 'undefined' || !this.urlSync) {
+      return;
+    }
+
+    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const currentQueryValue = readPrimaryTabValue(currentUrl);
+    const activeValue = this._tabEls[this._activeIndex]?.getAttribute('value') ?? null;
+
+    let nextUrl = currentUrl;
+
+    if (source === 'hash') {
+      nextUrl = writePrimaryTabValue(currentUrl, activeValue);
+    } else if (currentQueryValue !== null) {
+      nextUrl = writePrimaryTabValue(currentUrl, activeValue);
+    }
+
+    if (nextUrl !== currentUrl) {
+      this._writeUrlStateInternal(nextUrl, 'replace');
+    }
   }
 
   private _findTabIndexByValue(value: string, count = this._interactiveCount): number {
-    return this._tabEls.slice(0, count).findIndex((tab) => tab.getAttribute('value') === value);
+    return this._tabEls
+      .slice(0, count)
+      .findIndex((tab) => tab.getAttribute('value') === value);
+  }
+
+  private _writeUrlState(value: string | null, historyMode: UrlHistoryMode): void {
+    if (
+      !this.urlSync ||
+      this._suppressUrlWrite ||
+      historyMode === 'none' ||
+      typeof window === 'undefined'
+    ) {
+      return;
+    }
+
+    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const nextUrl = writePrimaryTabValue(currentUrl, value);
+    this._writeUrlStateInternal(nextUrl, historyMode);
+  }
+
+  private _writeUrlStateInternal(nextUrl: string, historyMode: UrlHistoryMode): void {
+    if (historyMode === 'none' || typeof window === 'undefined') {
+      return;
+    }
+
+    const previousUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (previousUrl === nextUrl) {
+      return;
+    }
+
+    const state = this._createHistoryStateForUrl(nextUrl);
+    if (historyMode === 'push') {
+      window.history.pushState(state, '', nextUrl);
+    } else {
+      window.history.replaceState(state, '', nextUrl);
+    }
+
+    dispatchUrlStateChange(previousUrl, nextUrl);
   }
 
   // ─────────────────────────────────────────────────
@@ -603,8 +866,13 @@ export class Tabs extends LitElement {
    * アクティブなタブを設定し、ARIA・パネル・インジケーターを更新する。
    * @param index - 新しいアクティブインデックス
    * @param emitEvent - ui-tab-change カスタムイベントを発火するか
+   * @param historyMode - URL 同期時の history 更新モード
    */
-  private _setActive(index: number, emitEvent = true): void {
+  private _setActive(
+    index: number,
+    emitEvent = true,
+    historyMode: UrlHistoryMode = 'none',
+  ): void {
     const prevIndex = this._activeIndex;
     this._activeIndex = index;
     this._focusedIndex = index;
@@ -615,6 +883,10 @@ export class Tabs extends LitElement {
     const newValue = this._tabEls[index]?.getAttribute('value') ?? null;
     if (this.selectedValue !== newValue) {
       this.selectedValue = newValue;
+    }
+
+    if (this.urlSync) {
+      this._writeUrlState(newValue, historyMode);
     }
 
     void this.updateComplete.then(() => {
@@ -641,32 +913,43 @@ export class Tabs extends LitElement {
    * タブを選択する（ユーザーアクション起点）。
    * 公開メソッドとしても使用可能。
    */
-  private _selectTab(index: number): void {
+  private _selectTab(
+    index: number,
+    options: {
+      emitEvent?: boolean;
+      historyMode?: UrlHistoryMode;
+    } = {},
+  ): void {
     if (index < 0 || index >= this._interactiveCount) return;
-    this._setActive(index, true);
+
+    this._setActive(
+      index,
+      options.emitEvent ?? true,
+      options.historyMode ?? 'none',
+    );
   }
 
   private _focusTab(index: number): void {
-  if (index < 0 || index >= this._interactiveCount) return;
+    if (index < 0 || index >= this._interactiveCount) return;
 
-  this._focusedIndex = index;
+    this._focusedIndex = index;
 
-  // Roving Tabindex の更新: フォーカスされるタブのみ tabindex="0"
-  this._tabEls.forEach((tab, i) => {
-    tab.setAttribute('tabindex', i === index ? '0' : '-1');
-  });
+    this._tabEls.forEach((tab, i) => {
+      tab.setAttribute('tabindex', i === index ? '0' : '-1');
+    });
 
-  const tabEl = this._tabEls[index] as HTMLElement | undefined;
-  if (tabEl) {
-    tabEl.focus({ preventScroll: true });
-    this._scrollTabElementIntoView(tabEl);
+    const tabEl = this._tabEls[index] as HTMLElement | undefined;
+    if (tabEl) {
+      tabEl.focus({ preventScroll: true });
+      this._scrollTabElementIntoView(tabEl);
+    }
+
+    if (this.automaticActivation) {
+      this._selectTab(index, {
+        historyMode: this.urlSync ? 'replace' : 'none',
+      });
+    }
   }
-
-  // Automatic Activation: フォーカス移動と同時に選択
-  if (this.automaticActivation) {
-    this._selectTab(index);
-  }
-}
 
 /**
  * 指定インデックスのタブをタブリスト内で可視領域へ寄せる。
@@ -750,7 +1033,9 @@ private _scrollTabElementIntoView(tabEl: HTMLElement): void {
       // クリックリスナー（イベント委譲の代わりに各タブへ直接設定）
       const handler: EventListener = () => {
         if (i < count) {
-          this._selectTab(i);
+          this._selectTab(i, {
+            historyMode: this.urlSync ? 'push' : 'none',
+          });
         }
       };
       this._tabClickHandlers.set(tab, handler);
@@ -907,16 +1192,15 @@ private _scrollTabElementIntoView(tabEl: HTMLElement): void {
    * 実際のフォーカス要素（Light DOM のタブ）を取得する。
    */
   private _onKeyDown = (e: KeyboardEvent): void => {
-    // Shadow DOM 境界を越えて実際にフォーカスされている要素を取得
     const target = e.composedPath()[0] as Element;
     const tabIndex = this._tabEls.indexOf(target);
 
-    // タブ要素からのイベントでなければ無視
     if (tabIndex === -1) return;
 
     const tabCount = this._interactiveCount;
     if (tabCount === 0) return;
     if (tabIndex >= tabCount) return;
+
     const isHorizontal = this.orientation === 'horizontal';
     const prevKey = isHorizontal ? 'ArrowLeft' : 'ArrowUp';
     const nextKey = isHorizontal ? 'ArrowRight' : 'ArrowDown';
@@ -924,13 +1208,11 @@ private _scrollTabElementIntoView(tabEl: HTMLElement): void {
     switch (e.key) {
       case prevKey:
         e.preventDefault();
-        // 先頭から前へ → 末尾へ循環
         this._focusTab((tabIndex - 1 + tabCount) % tabCount);
         break;
 
       case nextKey:
         e.preventDefault();
-        // 末尾から次へ → 先頭へ循環
         this._focusTab((tabIndex + 1) % tabCount);
         break;
 
@@ -946,9 +1228,10 @@ private _scrollTabElementIntoView(tabEl: HTMLElement): void {
 
       case 'Enter':
       case ' ':
-        // Manual Activation: Enter/Space で選択
         e.preventDefault();
-        this._selectTab(this._focusedIndex);
+        this._selectTab(this._focusedIndex, {
+          historyMode: this.urlSync ? 'push' : 'none',
+        });
         break;
 
       default:
@@ -978,16 +1261,29 @@ private _scrollTabElementIntoView(tabEl: HTMLElement): void {
    * プログラム的にタブを選択する。
    * @param value - 選択するタブの値（tab 要素の value 属性）
    */
-  select(value: string): void {
+  select(
+    value: string,
+    options: {
+      historyMode?: UrlHistoryMode;
+      emitEvent?: boolean;
+    } = {},
+  ): void {
     const index = this._findTabIndexByValue(value);
     if (index === -1) {
       const isDev = (import.meta as DevImportMeta).env?.DEV === true;
       if (isDev) {
-        console.warn(`[ui-tabs]: select("${value}") に一致する value を持つ tab がありません。`, this);
+        console.warn(
+          `[ui-tabs]: select("${value}") に一致する value を持つ tab がありません。`,
+          this,
+        );
       }
       return;
     }
-    this._selectTab(index);
+
+    this._selectTab(index, {
+      emitEvent: options.emitEvent ?? true,
+      historyMode: options.historyMode ?? (this.urlSync ? 'replace' : 'none'),
+    });
   }
 
   // ─────────────────────────────────────────────────

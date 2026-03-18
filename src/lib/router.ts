@@ -7,6 +7,11 @@ import {
   NOT_FOUND_PAGE_META_DESCRIPTION,
   NOT_FOUND_PAGE_TITLE,
 } from './not-found-page.js';
+import {
+  dispatchUrlStateChange,
+  isPrimaryTabOnlyNavigation,
+  readDecodedHash,
+} from './tabs/url-state.js';
 
 type EventCallback = (...args: unknown[]) => unknown;
 type RouteHandler = () => unknown;
@@ -80,9 +85,9 @@ export class Router {
       this.handleAnchorClick(e);
     };
     this.popstateHandler = () => {
-      this.currentUrl = this.readCurrentUrl();
+      const nextUrl = this.readCurrentUrl();
       void this.requestNavigation({
-        url: this.currentUrl,
+        url: nextUrl,
         historyMode: 'none',
       });
     };
@@ -450,8 +455,12 @@ export class Router {
   private async handleNavigation(request: NavigationRequest) {
     const normalizedUrl = this.normalizeUrl(request.url);
 
-    // before:navigate のいずれかのリスナーが false を返した場合は中断
     if (!this.emitCancelable('before:navigate', normalizedUrl)) {
+      return;
+    }
+
+    if (this.isUiStateOnlyNavigation(normalizedUrl)) {
+      await this.applyUiStateOnlyNavigation(request, normalizedUrl);
       return;
     }
 
@@ -467,8 +476,10 @@ export class Router {
 
       this.currentUrl = normalizedUrl;
 
-      // View Transition APIをサポートしていないブラウザはフォールバック
-      const startViewTransition = (document.startViewTransition as typeof document.startViewTransition | undefined)?.bind(document);
+      const startViewTransition = (
+        document.startViewTransition as typeof document.startViewTransition | undefined
+      )?.bind(document);
+
       if (!startViewTransition) {
         await this.updateContent(normalizedUrl);
         return;
@@ -863,6 +874,61 @@ export class Router {
   private stripHash(url: string): string {
     const normalized = new URL(url, window.location.origin);
     return `${normalized.pathname}${normalized.search}`;
+  }
+
+  /**
+   * ?tab= のみが変化した同一文書内状態遷移か判定する。
+   */
+  private isUiStateOnlyNavigation(nextUrl: string): boolean {
+    return isPrimaryTabOnlyNavigation(this.currentUrl, nextUrl);
+  }
+
+  /**
+   * コンテンツ再取得を伴わない UI 状態遷移を適用する。
+   */
+  private async applyUiStateOnlyNavigation(
+    request: NavigationRequest,
+    normalizedUrl: string,
+  ): Promise<void> {
+    const previousUrl = this.currentUrl;
+
+    if (request.historyMode === 'push') {
+      window.history.pushState(this.createHistoryState(request.state, normalizedUrl), '', normalizedUrl);
+    } else if (request.historyMode === 'replace') {
+      window.history.replaceState(this.createHistoryState(request.state, normalizedUrl), '', normalizedUrl);
+    }
+
+    this.currentUrl = normalizedUrl;
+    this.navigationHistory.push(normalizedUrl);
+    this.isInitialLoad = false;
+
+    dispatchUrlStateChange(previousUrl, normalizedUrl);
+    await this.scrollToHashAfterStateNavigation(normalizedUrl);
+
+    this.emit('after:navigate', normalizedUrl);
+  }
+
+  /**
+   * state-only navigation 時の hash スクロールを手動で補う。
+   */
+  private async scrollToHashAfterStateNavigation(url: string): Promise<void> {
+    const hash = readDecodedHash(url);
+    if (hash.length === 0) {
+      return;
+    }
+
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          resolve();
+        });
+      });
+    });
+
+    const target = document.getElementById(hash);
+    if (target instanceof HTMLElement) {
+      target.scrollIntoView({ block: 'start', inline: 'nearest' });
+    }
   }
 
   /**

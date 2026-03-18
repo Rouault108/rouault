@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Heading } from '../../src/components/ui/toc/toc.js';
 import {
   filterVisibleHeadings,
+  resolveTabValueForDescendant,
   revealHeadingInTabs,
 } from '../../src/lib/toc/filter-visible-headings.js';
 
@@ -111,5 +112,58 @@ describe('filterVisibleHeadings', () => {
     revealHeadingInTabs(contentRoot, target);
 
     expect(tabs.calls).toEqual(['details']);
+  });
+
+  it('descendant 見出しから属する panel の tab value を解決できること', () => {
+    document.body.innerHTML = `
+      <article id="content-root">
+        <ui-tabs id="tabs-root">
+          <div slot="tab" value="overview">概要</div>
+          <div slot="panel" role="tabpanel" aria-hidden="false">
+            <h3 id="overview-heading">Overview Heading</h3>
+          </div>
+
+          <div slot="tab" value="details">詳細</div>
+          <div slot="panel" role="tabpanel" aria-hidden="false">
+            <h3 id="details-heading">Details Heading</h3>
+          </div>
+        </ui-tabs>
+      </article>
+    `;
+
+    const tabs = document.getElementById('tabs-root');
+    const target = document.getElementById('details-heading');
+    if (!(tabs instanceof HTMLElement) || !(target instanceof HTMLElement)) return;
+
+    expect(resolveTabValueForDescendant(tabs, target)).to.equal('details');
+  });
+
+  it('ネストした tabs でも外側 host に対する panel value を解決できること', () => {
+    document.body.innerHTML = `
+      <article id="content-root">
+        <ui-tabs id="outer-tabs">
+          <div slot="tab" value="outer-a">A</div>
+          <div slot="panel" role="tabpanel" aria-hidden="false">
+            <ui-tabs>
+              <div slot="tab" value="inner-a">A-1</div>
+              <div slot="panel" role="tabpanel" aria-hidden="false">
+                <h3 id="nested-heading">Nested Heading</h3>
+              </div>
+            </ui-tabs>
+          </div>
+
+          <div slot="tab" value="outer-b">B</div>
+          <div slot="panel" role="tabpanel" aria-hidden="false">
+            <h3 id="other-heading">Other Heading</h3>
+          </div>
+        </ui-tabs>
+      </article>
+    `;
+
+    const tabs = document.getElementById('outer-tabs');
+    const target = document.getElementById('nested-heading');
+    if (!(tabs instanceof HTMLElement) || !(target instanceof HTMLElement)) return;
+
+    expect(resolveTabValueForDescendant(tabs, target)).to.equal('outer-a');
   });
 });

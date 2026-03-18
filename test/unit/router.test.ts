@@ -2101,4 +2101,109 @@ describe('Router', () => {
 			expect(outlet.innerHTML).to.include('Content');
 		});
 	});
+
+	// ========================================
+	// 13. ?tab= 状態遷移
+	// ========================================
+	describe('13. ?tab= 状態遷移', () => {
+		it('13.1 ?tab= だけが変わる場合は fetch しないこと', async () => {
+			let fetchCount = 0;
+
+			globalThis.fetch = () => {
+				fetchCount += 1;
+				return Promise.resolve(new Response('<html><body><main>Fetched</main></body></html>', {
+					status: 200,
+				}));
+			};
+
+			router = new Router(outlet, { skipInitialNavigation: true });
+
+			await router.navigate('/notes/testing/tabs-test?tab=overview');
+			fetchCount = 0;
+
+			await router.navigate('/notes/testing/tabs-test?tab=details');
+
+			expect(fetchCount).to.equal(0);
+			expect(router.getQuery()).to.include({ tab: 'details' });
+			expect(history.state).to.include({
+				__routerUrl: '/notes/testing/tabs-test?tab=details',
+				__routerPath: '/notes/testing/tabs-test',
+			});
+		});
+
+		it('13.2 popstate で ?tab= が変わっても fetch しないこと', async () => {
+			let fetchCount = 0;
+
+			globalThis.fetch = () => {
+				fetchCount += 1;
+				return Promise.resolve(new Response('<html><body><main>Fetched</main></body></html>', {
+					status: 200,
+				}));
+			};
+
+			router = new Router(outlet, { skipInitialNavigation: true });
+			await router.navigate('/notes/testing/tabs-test?tab=overview');
+			fetchCount = 0;
+
+			mockHistoryState = {
+				__routerUrl: '/notes/testing/tabs-test?tab=details',
+				__routerPath: '/notes/testing/tabs-test',
+			};
+
+			window.dispatchEvent(new PopStateEvent('popstate'));
+
+			await waitUntil(() => router.getQuery()['tab'] === 'details', 'tab state restored');
+
+			expect(fetchCount).to.equal(0);
+		});
+
+		it('13.3 ?tab= と hash のみが変わる場合も fetch しないこと', async () => {
+			let fetchCount = 0;
+			let scrolled = false;
+
+			const target = document.createElement('h2');
+			target.id = 'details-heading';
+			target.scrollIntoView = () => {
+				scrolled = true;
+			};
+			outlet.appendChild(target);
+
+			globalThis.fetch = () => {
+				fetchCount += 1;
+				return Promise.resolve(new Response('<html><body><main>Fetched</main></body></html>', {
+					status: 200,
+				}));
+			};
+
+			router = new Router(outlet, { skipInitialNavigation: true });
+			await router.navigate('/notes/testing/tabs-test?tab=overview');
+			fetchCount = 0;
+
+			await router.navigate('/notes/testing/tabs-test?tab=details#details-heading');
+
+			await waitUntil(() => scrolled, 'manual hash scroll');
+
+			expect(fetchCount).to.equal(0);
+			expect(router.getQuery()).to.include({ tab: 'details' });
+		});
+
+		it('13.4 tab 以外の query が変わる場合は通常遷移すること', async () => {
+			let fetchCount = 0;
+
+			globalThis.fetch = () => {
+				fetchCount += 1;
+				return Promise.resolve(new Response('<html><body><main>Fetched</main></body></html>', {
+					status: 200,
+				}));
+			};
+
+			router = new Router(outlet, { skipInitialNavigation: true });
+			await router.navigate('/notes/testing/tabs-test?tab=overview');
+			fetchCount = 0;
+
+			await router.navigate('/notes/testing/tabs-test?tab=overview&foo=1');
+
+			expect(fetchCount).to.equal(1);
+		});
+	});
 });

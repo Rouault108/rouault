@@ -907,6 +907,7 @@ const applyTabsAttributes = (
     'default-selected-value',
     'orientation',
     'automatic-activation',
+    'url-sync',
   ]);
   assertAllowedAttributes(attrs, allowedKeys, node, file, 'tabs');
 
@@ -937,6 +938,17 @@ const applyTabsAttributes = (
   );
   if (automaticActivation === true) {
     result['automatic-activation'] = true;
+  }
+
+  const urlSync = parseBooleanAttribute(
+    attrs['url-sync'],
+    node,
+    file,
+    'tabs',
+    'url-sync',
+  );
+  if (urlSync === true) {
+    result['url-sync'] = true;
   }
 
   return result;

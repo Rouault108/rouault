@@ -1,7 +1,13 @@
 import type { Heading } from '../../components/ui/toc/toc.js';
 
 type TabsLike = HTMLElement & {
-  select?: (value: string) => void;
+  select?: (
+    value: string,
+    options?: {
+      historyMode?: 'none' | 'push' | 'replace';
+      emitEvent?: boolean;
+    },
+  ) => void;
 };
 
 const isTabPanel = (value: Element | null): value is HTMLElement =>
@@ -75,6 +81,24 @@ const resolvePanelTabValue = (tabsHost: HTMLElement, panel: HTMLElement): string
   return value.length > 0 ? value : null;
 };
 
+export const resolveTabValueForDescendant = (
+  tabsHost: HTMLElement,
+  target: HTMLElement,
+): string | null => {
+  const children = Array.from(tabsHost.children).filter(
+    (child): child is HTMLElement => child instanceof HTMLElement,
+  );
+
+  const panels = children.filter((child) => child.getAttribute('slot') === 'panel');
+  const panel = panels.find((candidate) => candidate.contains(target));
+
+  if (!(panel instanceof HTMLElement)) {
+    return null;
+  }
+
+  return resolvePanelTabValue(tabsHost, panel);
+};
+
 export const revealHeadingInTabs = (contentRoot: HTMLElement, target: HTMLElement): void => {
   const ancestorPanels: HTMLElement[] = [];
   let current: HTMLElement | null = target.parentElement;
@@ -99,6 +123,6 @@ export const revealHeadingInTabs = (contentRoot: HTMLElement, target: HTMLElemen
       continue;
     }
 
-    tabsHost.select(value);
+    tabsHost.select(value, { historyMode: 'replace' });
   }
 };
