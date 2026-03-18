@@ -12,7 +12,7 @@ status: "wip"
 ## タブ用のテストページです。
 
 ::tabs{url-sync="true" default-selected-value="overview" orientation="horizontal"}
-::tab{value="overview"}
+::tab{value="javascript"}
 JavaScript
 ::
 ::panel
@@ -24,7 +24,7 @@ JavaScriptではこのように書きます。
 console.log("Hello, World!");
 ```
 ::
-::tab{value="details"}
+::tab{value="rust"}
 Rust
 ::
 ::panel
