@@ -1136,7 +1136,7 @@ app-router {
 
 .about-eyebrow {
   margin: 0;
-  color: var(--fg-muted);
+  color: var(--fg-default);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   letter-spacing: var(--tracking-wide);
@@ -1166,7 +1166,7 @@ app-router {
 
 .about-summary-label {
   margin: 0;
-  color: var(--fg-muted);
+  color: var(--fg-default);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   letter-spacing: var(--tracking-wide);
