@@ -1,0 +1,9 @@
+.DS_Store
+.velite
+dist
+node_modules
+playwright-report
+storybook-static
+test-results
+custom-elements.json
+pnpm-lock.yaml
