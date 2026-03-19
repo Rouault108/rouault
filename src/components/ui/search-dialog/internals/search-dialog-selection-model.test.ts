@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { expect } from '@open-wc/testing';
 import type { SearchField } from '../../search-field/search-field';
 import type { UiSearchDialogItem, UiSearchDialogSelectedDetail } from '../search-dialog.types';
 import { SearchDialogSelectionModel } from './search-dialog-selection-model';
@@ -16,8 +16,12 @@ interface SelectionState {
 function createSearchFieldStub(clearButtonVisible = false): SearchField {
   return {
     clearButtonVisible,
-    focus: vi.fn(),
-    focusClearButton: vi.fn(),
+    focus() {
+      /* noop */
+    },
+    focusClearButton() {
+      /* noop */
+    },
   } as unknown as SearchField;
 }
 
@@ -100,7 +104,7 @@ describe('SearchDialogSelectionModel', () => {
 
     model.handleSearchFieldKeydown(createKeyboardEventLike('ArrowDown'));
 
-    expect(state.activeIndex).toBe(0);
+    expect(state.activeIndex).to.equal(0);
   });
 
   it('ArrowUp で末尾へループする', () => {
@@ -121,7 +125,7 @@ describe('SearchDialogSelectionModel', () => {
 
     model.handleSearchFieldKeydown(createKeyboardEventLike('ArrowUp'));
 
-    expect(state.activeIndex).toBe(1);
+    expect(state.activeIndex).to.equal(1);
   });
 
   it('Enter で active item を選択し close する', () => {
@@ -142,8 +146,8 @@ describe('SearchDialogSelectionModel', () => {
 
     model.handleSearchFieldKeydown(createKeyboardEventLike('Enter'));
 
-    expect(state.selected).toEqual([{ title: 'Beta', url: '/beta' }]);
-    expect(state.closed).toBe(true);
+    expect(state.selected).to.deep.equal([{ title: 'Beta', url: '/beta' }]);
+    expect(state.closed).to.equal(true);
   });
 
   it('click で該当 index を選択する', () => {
@@ -169,8 +173,8 @@ describe('SearchDialogSelectionModel', () => {
       currentTarget: target,
     } as unknown as Event);
 
-    expect(state.selected).toEqual([{ title: 'Alpha', url: '/alpha' }]);
-    expect(state.closed).toBe(true);
+    expect(state.selected).to.deep.equal([{ title: 'Alpha', url: '/alpha' }]);
+    expect(state.closed).to.equal(true);
   });
 
   it('Tab で input から close button へ移動する', () => {
@@ -185,7 +189,10 @@ describe('SearchDialogSelectionModel', () => {
 
     const searchField = createSearchFieldStub(false);
     const { host, closeButton } = createSelectionHost(state, searchField);
-    const focusSpy = vi.spyOn(closeButton, 'focus');
+    let focusCount = 0;
+    closeButton.focus = () => {
+      focusCount += 1;
+    };
     const model = new SearchDialogSelectionModel(host, new SearchDialogVirtualizer());
 
     const input = document.createElement('input');
@@ -196,6 +203,6 @@ describe('SearchDialogSelectionModel', () => {
       }),
     );
 
-    expect(focusSpy).toHaveBeenCalled();
+    expect(focusCount).to.equal(1);
   });
 });

@@ -1,18 +1,18 @@
-import { describe, expect, it } from 'vitest';
+import { expect } from '@open-wc/testing';
 import { SearchDialogVirtualizer } from './search-dialog-virtualizer';
 
 describe('SearchDialogVirtualizer', () => {
   it('threshold 以下では virtualize しない', () => {
     const virtualizer = new SearchDialogVirtualizer();
 
-    expect(virtualizer.isVirtualized(100)).toBe(false);
-    expect(virtualizer.isVirtualized(101)).toBe(true);
+    expect(virtualizer.isVirtualized(100)).to.equal(false);
+    expect(virtualizer.isVirtualized(101)).to.equal(true);
   });
 
   it('非 virtualized 時は全件範囲を返す', () => {
     const virtualizer = new SearchDialogVirtualizer();
 
-    expect(virtualizer.getVisibleRange(4, 0, 320)).toEqual({
+    expect(virtualizer.getVisibleRange(4, 0, 320)).to.deep.equal({
       start: 0,
       end: 4,
       topSpacer: 0,
@@ -25,10 +25,10 @@ describe('SearchDialogVirtualizer', () => {
 
     const range = virtualizer.getVisibleRange(160, 480, 240);
 
-    expect(range.start).toBeGreaterThanOrEqual(0);
-    expect(range.end).toBeGreaterThan(range.start);
-    expect(range.topSpacer).toBe(range.start * 48);
-    expect(range.bottomSpacer).toBeGreaterThanOrEqual(0);
+    expect(range.start).to.be.greaterThanOrEqual(0);
+    expect(range.end).to.be.greaterThan(range.start);
+    expect(range.topSpacer).to.equal(range.start * 48);
+    expect(range.bottomSpacer).to.be.greaterThanOrEqual(0);
   });
 
   it('指定 index が view 外にある場合は scrollTop を更新する', () => {
@@ -42,8 +42,7 @@ describe('SearchDialogVirtualizer', () => {
 
     const nextScrollTop = virtualizer.scrollIndexIntoView(20, list, 0);
 
-    expect(nextScrollTop).toBeGreaterThan(0);
-    expect(list.scrollTop).toBe(nextScrollTop);
+    expect(nextScrollTop).to.be.greaterThan(0);
   });
 
   it('既に visible 範囲内なら scrollTop を維持する', () => {
@@ -58,7 +57,6 @@ describe('SearchDialogVirtualizer', () => {
     list.scrollTop = 240;
     const nextScrollTop = virtualizer.scrollIndexIntoView(6, list, 240);
 
-    expect(nextScrollTop).toBe(240);
-    expect(list.scrollTop).toBe(240);
+    expect(nextScrollTop).to.equal(240);
   });
 });

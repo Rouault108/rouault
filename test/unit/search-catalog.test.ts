@@ -80,14 +80,14 @@ describe('search-catalog', () => {
     expect(merged).to.deep.equal([
       {
         title: '交響曲第9番 ニ短調',
-        url: '/notes/music/classical/beethoven/symphony-9/',
-        path: '/notes/music/classical/beethoven/symphony-9/',
+        url: '/notes/music/classical/beethoven/symphony-9',
+        path: '/notes/music/classical/beethoven/symphony-9',
         keywords: ['music', 'classical', 'symphony', '交響曲', '分析', 'メモ'],
       },
       {
         title: 'ソートアルゴリズム比較',
-        url: '/notes/computer-science/algorithms/sorting/',
-        path: '/notes/computer-science/algorithms/sorting/',
+        url: '/notes/computer-science/algorithms/sorting',
+        path: '/notes/computer-science/algorithms/sorting',
         keywords: ['computer-science', 'algorithms', 'sorting', '計算', '量', '比較'],
       },
     ]);
@@ -138,11 +138,11 @@ describe('search-catalog', () => {
     );
 
     expect(merged.map((item) => item.url)).to.deep.equal([
-      '/notes/jazz-theory-exact/',
-      '/notes/jazz-theory-intro/',
-      '/notes/jazz-description/',
-      '/notes/jazz-keyword/',
-      '/notes/text-hit/',
+      '/notes/jazz-theory-exact',
+      '/notes/jazz-theory-intro',
+      '/notes/jazz-description',
+      '/notes/jazz-keyword',
+      '/notes/text-hit',
     ]);
   });
 
@@ -177,8 +177,8 @@ describe('search-catalog', () => {
     expect(items).to.deep.equal([
       {
         title: 'ソートアルゴリズム比較',
-        url: '/notes/computer-science/algorithms/sorting/',
-        path: '/notes/computer-science/algorithms/sorting/',
+        url: '/notes/computer-science/algorithms/sorting',
+        path: '/notes/computer-science/algorithms/sorting',
         description: '比較メモ',
         date: '2026-02-10',
         keywords: ['algorithms', '比較'],

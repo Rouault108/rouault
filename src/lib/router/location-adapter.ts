@@ -1,4 +1,8 @@
 export class LocationAdapter {
+  private sanitizeUrl(url: URL): void {
+    url.searchParams.delete('wtr-session-id');
+  }
+
   getQuery(currentUrl: string): Record<string, string> {
     const params: Record<string, string> = {};
     const searchParams = new URL(currentUrl, window.location.origin).searchParams;
@@ -51,6 +55,7 @@ export class LocationAdapter {
 
   normalizeUrl(url: string): string {
     const normalized = new URL(url, window.location.href);
+    this.sanitizeUrl(normalized);
     normalized.pathname = this.normalizePathname(normalized.pathname);
     return `${normalized.pathname}${normalized.search}${normalized.hash}`;
   }

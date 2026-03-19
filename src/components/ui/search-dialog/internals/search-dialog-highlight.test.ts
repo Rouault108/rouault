@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { expect } from '@open-wc/testing';
 import {
   renderSearchDialogHighlightedText,
   resolveSearchDialogItemPath,
@@ -16,7 +16,7 @@ describe('search-dialog-highlight', () => {
       'https://example.com/base',
     );
 
-    expect(resolved).toBe('/custom/alpha');
+    expect(resolved).to.equal('/custom/alpha');
   });
 
   it('path がない場合は url から pathname/search/hash を解決する', () => {
@@ -28,13 +28,13 @@ describe('search-dialog-highlight', () => {
       'https://example.com/base',
     );
 
-    expect(resolved).toBe('/docs/alpha?q=1#top');
+    expect(resolved).to.equal('/docs/alpha?q=1#top');
   });
 
   it('クエリ一致箇所を matched=true で分割する', () => {
     const parts = splitSearchDialogHighlightParts('Alpha Guide', 'gui');
 
-    expect(parts).toEqual([
+    expect(parts).to.deep.equal([
       { text: 'Alpha ', matched: false },
       { text: 'Gui', matched: true },
       { text: 'de', matched: false },
@@ -44,12 +44,12 @@ describe('search-dialog-highlight', () => {
   it('一致がない場合はそのまま 1 パートで返す', () => {
     const parts = splitSearchDialogHighlightParts('Alpha Guide', 'zzz');
 
-    expect(parts).toEqual([{ text: 'Alpha Guide', matched: false }]);
+    expect(parts).to.deep.equal([{ text: 'Alpha Guide', matched: false }]);
   });
 
   it('ハイライト不要なら文字列をそのまま返す', () => {
     const rendered = renderSearchDialogHighlightedText('Alpha Guide', 'zzz');
 
-    expect(rendered).toBe('Alpha Guide');
+    expect(rendered).to.equal('Alpha Guide');
   });
 });

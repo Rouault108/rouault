@@ -8,6 +8,10 @@ interface HastNode {
   value?: string;
   properties?: Record<string, unknown>;
   children?: HastNode[];
+  content?: {
+    type: string;
+    children: HastNode[];
+  };
 }
 
 const createCodeBlock = (
@@ -82,7 +86,9 @@ describe('rehypePreviewSandbox', () => {
     expect(sandbox?.children).to.have.length(3);
     expect(sandbox?.children?.[0]?.tagName).to.equal('template');
     expect(sandbox?.children?.[0]?.properties?.['data-preview-kind']).to.equal('html');
-    expect(sandbox?.children?.[0]?.children?.[0]?.value).to.equal('<button class="demo">押す</button>');
+    expect(sandbox?.children?.[0]?.content?.children?.[0]?.value).to.equal(
+      '<button class="demo">押す</button>',
+    );
     expect(sandbox?.properties?.['allow-js']).to.equal(true);
     expect(sandbox?.properties?.['allow-forms']).to.equal(true);
     expect(sandbox?.properties?.['allow-downloads']).to.equal(true);

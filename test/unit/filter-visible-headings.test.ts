@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { expect } from '@open-wc/testing';
 import type { Heading } from '../../src/components/ui/toc/toc.js';
 import {
   filterVisibleHeadings,
@@ -34,7 +34,7 @@ describe('filterVisibleHeadings', () => {
       { id: 'rust-heading', text: 'Rust の見出し', level: 3 },
     ];
 
-    expect(filterVisibleHeadings(contentRoot, headings)).toEqual([
+    expect(filterVisibleHeadings(contentRoot, headings)).to.deep.equal([
       { id: 'top', text: 'トップ', level: 2 },
       { id: 'js-heading', text: 'JavaScript の見出し', level: 3 },
     ]);
@@ -72,7 +72,7 @@ describe('filterVisibleHeadings', () => {
       { id: 'hidden-heading', text: '隠れた見出し', level: 3 },
     ];
 
-    expect(filterVisibleHeadings(contentRoot, headings)).toEqual([
+    expect(filterVisibleHeadings(contentRoot, headings)).to.deep.equal([
       { id: 'top', text: 'トップ', level: 2 },
       { id: 'visible-heading', text: '見える見出し', level: 3 },
     ]);
@@ -111,7 +111,7 @@ describe('filterVisibleHeadings', () => {
 
     revealHeadingInTabs(contentRoot, target);
 
-    expect(tabs.calls).toEqual(['details']);
+    expect(tabs.calls).to.deep.equal(['details']);
   });
 
   it('descendant 見出しから属する panel の tab value を解決できること', () => {
