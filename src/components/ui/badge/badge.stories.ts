@@ -71,7 +71,10 @@ const meta: Meta<Badge> = {
       control: 'select',
       options: ['solid', 'subtle', 'dot'],
       description: '視覚スタイル',
-      table: { type: { summary: "'solid' | 'subtle' | 'dot'" }, defaultValue: { summary: "'solid'" } },
+      table: {
+        type: { summary: "'solid' | 'subtle' | 'dot'" },
+        defaultValue: { summary: "'solid'" },
+      },
     },
     count: {
       control: 'number',
@@ -87,7 +90,10 @@ const meta: Meta<Badge> = {
       control: 'select',
       options: ['danger', 'primary', 'neutral', 'success', 'warning'],
       description: '意味的カラー',
-      table: { type: { summary: "'danger' | 'primary' | 'neutral' | 'success' | 'warning'" }, defaultValue: { summary: "'primary'" } },
+      table: {
+        type: { summary: "'danger' | 'primary' | 'neutral' | 'success' | 'warning'" },
+        defaultValue: { summary: "'primary'" },
+      },
     },
   },
 };
@@ -118,7 +124,7 @@ const relativeLuminance = ([r, g, b]: [number, number, number]): number => {
   const lr = linearize(r);
   const lg = linearize(g);
   const lb = linearize(b);
-  return (0.2126 * lr) + (0.7152 * lg) + (0.0722 * lb);
+  return 0.2126 * lr + 0.7152 * lg + 0.0722 * lb;
 };
 
 const contrastRatio = (fg: string, bg: string): number => {
@@ -155,12 +161,9 @@ export const Default: Story = {
     max: 99,
   },
   render: (args) => html`
-    <ui-badge
-      id="default-badge"
-      variant="${args.variant}"
-      color="${args.color}"
-      max="${args.max}"
-    >New</ui-badge>
+    <ui-badge id="default-badge" variant="${args.variant}" color="${args.color}" max="${args.max}"
+      >New</ui-badge
+    >
   `,
   play: async ({ canvasElement }) => {
     const badge = canvasElement.querySelector<Badge>('#default-badge');
@@ -168,14 +171,19 @@ export const Default: Story = {
     await badge.updateComplete;
 
     // テスト: デフォルトプロパティ
-    if (badge.variant !== 'solid') throw new Error(`variant="solid" を期待していましたが、実際には "${badge.variant}" でした`);
-    if (badge.color !== 'primary') throw new Error(`color="primary" を期待していましたが、実際には "${badge.color}" でした`);
-    if (badge.count !== null) throw new Error(`count=null を期待していましたが、実際には ${String(badge.count)} でした`);
-    if (badge.max !== 99) throw new Error(`max=99 を期待していましたが、実際には ${String(badge.max)} でした`);
+    if (badge.variant !== 'solid')
+      throw new Error(`variant="solid" を期待していましたが、実際には "${badge.variant}" でした`);
+    if (badge.color !== 'primary')
+      throw new Error(`color="primary" を期待していましたが、実際には "${badge.color}" でした`);
+    if (badge.count !== null)
+      throw new Error(`count=null を期待していましたが、実際には ${String(badge.count)} でした`);
+    if (badge.max !== 99)
+      throw new Error(`max=99 を期待していましたが、実際には ${String(badge.max)} でした`);
 
     // テスト: count が null のためスロットがレンダリングされる
     const slot = badge.shadowRoot?.querySelector('slot');
-    if (!slot) throw new Error('slot が見つかりません（count が null の場合は存在する必要があります）');
+    if (!slot)
+      throw new Error('slot が見つかりません（count が null の場合は存在する必要があります）');
 
     // テスト: role="status" は存在しない（スロット表示時は静的ラベル）
     const statusSpan = badge.shadowRoot?.querySelector('[role="status"]');
@@ -204,40 +212,59 @@ export const VariantColorMatrix: Story = {
 
     return html`
       <style>
-        .matrix { display: flex; flex-direction: column; gap: 1.5rem; }
-        .matrix-row { display: flex; flex-direction: column; gap: 0.5rem; }
-        .matrix-label {
-          font-size: 11px; font-weight: 500;
-          color: oklch(48% 0.01 250);
-          text-transform: uppercase; letter-spacing: 0.05em;
+        .matrix {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
         }
-        .matrix-badges { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+        .matrix-row {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+        .matrix-label {
+          font-size: 11px;
+          font-weight: 500;
+          color: oklch(48% 0.01 250);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .matrix-badges {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.75rem;
+          align-items: center;
+        }
       </style>
       <div class="matrix">
-        ${variants.map((variant) => html`
-          <div class="matrix-row">
-            <div class="matrix-label">${variant}</div>
-            <div class="matrix-badges">
-              ${colors.map((color) => variant === 'dot'
-      ? html`
-                    <ui-badge
-                      id="matrix-${variant}-${color}"
-                      variant="${variant}"
-                      color="${color}"
-                      aria-label="${color} の更新があります"
-                    ></ui-badge>
-                  `
-      : html`
-                    <ui-badge
-                      id="matrix-${variant}-${color}"
-                      variant="${variant}"
-                      color="${color}"
-                    >${color}</ui-badge>
-                  `
-    )}
+        ${variants.map(
+          (variant) => html`
+            <div class="matrix-row">
+              <div class="matrix-label">${variant}</div>
+              <div class="matrix-badges">
+                ${colors.map((color) =>
+                  variant === 'dot'
+                    ? html`
+                        <ui-badge
+                          id="matrix-${variant}-${color}"
+                          variant="${variant}"
+                          color="${color}"
+                          aria-label="${color} の更新があります"
+                        ></ui-badge>
+                      `
+                    : html`
+                        <ui-badge
+                          id="matrix-${variant}-${color}"
+                          variant="${variant}"
+                          color="${color}"
+                          >${color}</ui-badge
+                        >
+                      `,
+                )}
+              </div>
             </div>
-          </div>
-        `)}
+          `,
+        )}
       </div>
     `;
   },
@@ -245,7 +272,9 @@ export const VariantColorMatrix: Story = {
     const badges = canvasElement.querySelectorAll<Badge>('ui-badge');
     // 3 variants × 5 colors = 15
     if (badges.length !== 15) {
-      throw new Error(`15個のバッジ（3バリアント × 5カラー）を期待していましたが、実際には ${String(badges.length)}個でした`);
+      throw new Error(
+        `15個のバッジ（3バリアント × 5カラー）を期待していましたが、実際には ${String(badges.length)}個でした`,
+      );
     }
 
     await Promise.all([...badges].map((b) => b.updateComplete));
@@ -253,18 +282,32 @@ export const VariantColorMatrix: Story = {
     // テスト: 各バッジが正しい variant / color を持つ
     const solidPrimary = canvasElement.querySelector<Badge>('#matrix-solid-primary');
     if (!solidPrimary) throw new Error('#matrix-solid-primary が見つかりません');
-    if (solidPrimary.variant !== 'solid') throw new Error(`variant="solid" を期待していましたが、実際には "${solidPrimary.variant}" でした`);
-    if (solidPrimary.color !== 'primary') throw new Error(`color="primary" を期待していましたが、実際には "${solidPrimary.color}" でした`);
+    if (solidPrimary.variant !== 'solid')
+      throw new Error(
+        `variant="solid" を期待していましたが、実際には "${solidPrimary.variant}" でした`,
+      );
+    if (solidPrimary.color !== 'primary')
+      throw new Error(
+        `color="primary" を期待していましたが、実際には "${solidPrimary.color}" でした`,
+      );
 
     const subtleWarning = canvasElement.querySelector<Badge>('#matrix-subtle-warning');
     if (!subtleWarning) throw new Error('#matrix-subtle-warning が見つかりません');
-    if (subtleWarning.variant !== 'subtle') throw new Error(`variant="subtle" を期待していましたが、実際には "${subtleWarning.variant}" でした`);
-    if (subtleWarning.color !== 'warning') throw new Error(`color="warning" を期待していましたが、実際には "${subtleWarning.color}" でした`);
+    if (subtleWarning.variant !== 'subtle')
+      throw new Error(
+        `variant="subtle" を期待していましたが、実際には "${subtleWarning.variant}" でした`,
+      );
+    if (subtleWarning.color !== 'warning')
+      throw new Error(
+        `color="warning" を期待していましたが、実際には "${subtleWarning.color}" でした`,
+      );
 
     const dotDanger = canvasElement.querySelector<Badge>('#matrix-dot-danger');
     if (!dotDanger) throw new Error('#matrix-dot-danger が見つかりません');
-    if (dotDanger.variant !== 'dot') throw new Error(`variant="dot" を期待していましたが、実際には "${dotDanger.variant}" でした`);
-    if (dotDanger.color !== 'danger') throw new Error(`color="danger" を期待していましたが、実際には "${dotDanger.color}" でした`);
+    if (dotDanger.variant !== 'dot')
+      throw new Error(`variant="dot" を期待していましたが、実際には "${dotDanger.variant}" でした`);
+    if (dotDanger.color !== 'danger')
+      throw new Error(`color="danger" を期待していましたが、実際には "${dotDanger.color}" でした`);
 
     // テスト: Dot バリアントはコンテンツをレンダリングしない
     const dotSlot = dotDanger.shadowRoot?.querySelector('slot');
@@ -287,11 +330,11 @@ export const VariantColorMatrix: Story = {
 export const CountBadge: Story = {
   render: () => html`
     <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
-      <ui-badge id="count-1"   color="primary" count="1"></ui-badge>
-      <ui-badge id="count-9"   color="primary" count="9"></ui-badge>
-      <ui-badge id="count-99"  color="primary" count="99"></ui-badge>
+      <ui-badge id="count-1" color="primary" count="1"></ui-badge>
+      <ui-badge id="count-9" color="primary" count="9"></ui-badge>
+      <ui-badge id="count-99" color="primary" count="99"></ui-badge>
       <ui-badge id="count-100" color="primary" count="100"></ui-badge>
-      <ui-badge id="count-128" color="danger"  count="128"></ui-badge>
+      <ui-badge id="count-128" color="danger" count="128"></ui-badge>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -300,7 +343,12 @@ export const CountBadge: Story = {
     const badge100 = canvasElement.querySelector<Badge>('#count-100');
     const badge128 = canvasElement.querySelector<Badge>('#count-128');
     if (!badge1 || !badge99 || !badge100 || !badge128) throw new Error('バッジが見つかりません');
-    await Promise.all([badge1.updateComplete, badge99.updateComplete, badge100.updateComplete, badge128.updateComplete]);
+    await Promise.all([
+      badge1.updateComplete,
+      badge99.updateComplete,
+      badge100.updateComplete,
+      badge128.updateComplete,
+    ]);
 
     // テスト: count=1 → 表示 "1"
     const status1 = badge1.shadowRoot?.querySelector('[role="status"]');
@@ -313,14 +361,18 @@ export const CountBadge: Story = {
     const status99 = badge99.shadowRoot?.querySelector('[role="status"]');
     if (!status99) throw new Error('count=99 の role="status" が見つかりません');
     if (status99.textContent.trim() !== '99') {
-      throw new Error(`"99" を期待していましたが、実際には "${status99.textContent.trim()}" でした`);
+      throw new Error(
+        `"99" を期待していましたが、実際には "${status99.textContent.trim()}" でした`,
+      );
     }
 
     // テスト: count=100 → 表示 "99+"（max=99 を超過）
     const status100 = badge100.shadowRoot?.querySelector('[role="status"]');
     if (!status100) throw new Error('count=100 の role="status" が見つかりません');
     if (status100.textContent.trim() !== '99+') {
-      throw new Error(`"99+" を期待していましたが、実際には "${status100.textContent.trim()}" でした`);
+      throw new Error(
+        `"99+" を期待していましたが、実際には "${status100.textContent.trim()}" でした`,
+      );
     }
 
     // テスト: count=128 → aria-label は "128 件"（実数値）
@@ -328,7 +380,9 @@ export const CountBadge: Story = {
     if (!status128) throw new Error('count=128 の role="status" が見つかりません');
     const ariaLabel128 = status128.getAttribute('aria-label');
     if (ariaLabel128 !== '128 件') {
-      throw new Error(`aria-label="128 件" を期待していましたが、実際には "${ariaLabel128 ?? 'null'}" でした`);
+      throw new Error(
+        `aria-label="128 件" を期待していましたが、実際には "${ariaLabel128 ?? 'null'}" でした`,
+      );
     }
 
     // テスト: count が number の場合、slot は存在しない
@@ -351,22 +405,26 @@ export const CountBadge: Story = {
 export const TextBadge: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="font-size: 11px; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;">
+      <div
+        style="font-size: 11px; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;"
+      >
         Solid × Text
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
         <ui-badge id="text-solid-primary" variant="solid" color="primary">New</ui-badge>
-        <ui-badge id="text-solid-danger"  variant="solid" color="danger">Hot</ui-badge>
+        <ui-badge id="text-solid-danger" variant="solid" color="danger">Hot</ui-badge>
         <ui-badge id="text-solid-success" variant="solid" color="success">Live</ui-badge>
       </div>
-      <div style="font-size: 11px; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;">
+      <div
+        style="font-size: 11px; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;"
+      >
         Subtle × Text（推奨）
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
         <ui-badge id="text-subtle-primary" variant="subtle" color="primary">Beta</ui-badge>
         <ui-badge id="text-subtle-success" variant="subtle" color="success">Stable</ui-badge>
         <ui-badge id="text-subtle-warning" variant="subtle" color="warning">Draft</ui-badge>
-        <ui-badge id="text-subtle-danger"  variant="subtle" color="danger">Deprecated</ui-badge>
+        <ui-badge id="text-subtle-danger" variant="subtle" color="danger">Deprecated</ui-badge>
         <ui-badge id="text-subtle-neutral" variant="subtle" color="neutral">Archived</ui-badge>
       </div>
     </div>
@@ -378,7 +436,8 @@ export const TextBadge: Story = {
 
     // テスト: count が null のためスロットがレンダリングされる
     const slot = subtlePrimary.shadowRoot?.querySelector('slot');
-    if (!slot) throw new Error('slot が見つかりません（count が null の場合は存在する必要があります）');
+    if (!slot)
+      throw new Error('slot が見つかりません（count が null の場合は存在する必要があります）');
 
     // テスト: role="status" は存在しない（静的ラベル）
     const statusSpan = subtlePrimary.shadowRoot?.querySelector('[role="status"]');
@@ -407,15 +466,43 @@ export const TextBadge: Story = {
 export const DotVariant: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
-        <strong>Dot バリアント</strong>: テキストを持たないため、<code>aria-label</code> が必須です。
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
+        <strong>Dot バリアント</strong>: テキストを持たないため、<code>aria-label</code>
+        が必須です。
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
-        <ui-badge id="dot-primary" variant="dot" color="primary" aria-label="新しい更新があります"></ui-badge>
-        <ui-badge id="dot-danger"  variant="dot" color="danger"  aria-label="未読の通知があります"></ui-badge>
-        <ui-badge id="dot-success" variant="dot" color="success" aria-label="オンラインです"></ui-badge>
-        <ui-badge id="dot-warning" variant="dot" color="warning" aria-label="注意が必要です"></ui-badge>
-        <ui-badge id="dot-neutral" variant="dot" color="neutral" aria-label="オフラインです"></ui-badge>
+        <ui-badge
+          id="dot-primary"
+          variant="dot"
+          color="primary"
+          aria-label="新しい更新があります"
+        ></ui-badge>
+        <ui-badge
+          id="dot-danger"
+          variant="dot"
+          color="danger"
+          aria-label="未読の通知があります"
+        ></ui-badge>
+        <ui-badge
+          id="dot-success"
+          variant="dot"
+          color="success"
+          aria-label="オンラインです"
+        ></ui-badge>
+        <ui-badge
+          id="dot-warning"
+          variant="dot"
+          color="warning"
+          aria-label="注意が必要です"
+        ></ui-badge>
+        <ui-badge
+          id="dot-neutral"
+          variant="dot"
+          color="neutral"
+          aria-label="オフラインです"
+        ></ui-badge>
       </div>
       <div style="font-size: 11px; color: oklch(48% 0.01 250);">
         ↑ アイコンの右上などに配置して使用します
@@ -446,15 +533,18 @@ export const DotVariant: Story = {
     dotDanger.count = 5;
     await dotDanger.updateComplete;
     const imgSpanAfterCount = dotDanger.shadowRoot?.querySelector('[role="img"]');
-    if (!imgSpanAfterCount) throw new Error('dot バリアントに count を設定した後も role="img" は存在する必要があります');
+    if (!imgSpanAfterCount)
+      throw new Error('dot バリアントに count を設定した後も role="img" は存在する必要があります');
     const statusAfterCount = dotDanger.shadowRoot?.querySelector('[role="status"]');
-    if (statusAfterCount) throw new Error('dot バリアントに count を設定しても role="status" は表示されてはいけません');
+    if (statusAfterCount)
+      throw new Error('dot バリアントに count を設定しても role="status" は表示されてはいけません');
 
     // テスト: aria-label 属性の変更が再レンダリングに追従する
     dotDanger.setAttribute('aria-label', '新しい未読があります');
     await dotDanger.updateComplete;
     const imgSpanAfterLabelUpdate = dotDanger.shadowRoot?.querySelector('[role="img"]');
-    if (!imgSpanAfterLabelUpdate) throw new Error('aria-label 更新後に role="img" が見つかりません');
+    if (!imgSpanAfterLabelUpdate)
+      throw new Error('aria-label 更新後に role="img" が見つかりません');
     if (imgSpanAfterLabelUpdate.getAttribute('aria-label') !== '新しい未読があります') {
       throw new Error('dot バリアントの aria-label 更新が反映されていません');
     }
@@ -474,29 +564,35 @@ export const DotVariant: Story = {
 export const CountMaxCombinations: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="font-size: 11px; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;">
+      <div
+        style="font-size: 11px; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;"
+      >
         count ≤ max（そのまま表示）
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
-        <ui-badge id="cm-0"   color="primary" count="0"   max="99"></ui-badge>
-        <ui-badge id="cm-1"   color="primary" count="1"   max="99"></ui-badge>
-        <ui-badge id="cm-50"  color="primary" count="50"  max="99"></ui-badge>
-        <ui-badge id="cm-99"  color="primary" count="99"  max="99"></ui-badge>
+        <ui-badge id="cm-0" color="primary" count="0" max="99"></ui-badge>
+        <ui-badge id="cm-1" color="primary" count="1" max="99"></ui-badge>
+        <ui-badge id="cm-50" color="primary" count="50" max="99"></ui-badge>
+        <ui-badge id="cm-99" color="primary" count="99" max="99"></ui-badge>
       </div>
-      <div style="font-size: 11px; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;">
+      <div
+        style="font-size: 11px; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;"
+      >
         count > max（{max}+ 表示）
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
-        <ui-badge id="cm-100"  color="danger" count="100"  max="99"></ui-badge>
-        <ui-badge id="cm-999"  color="danger" count="999"  max="99"></ui-badge>
+        <ui-badge id="cm-100" color="danger" count="100" max="99"></ui-badge>
+        <ui-badge id="cm-999" color="danger" count="999" max="99"></ui-badge>
         <ui-badge id="cm-9999" color="danger" count="9999" max="99"></ui-badge>
       </div>
-      <div style="font-size: 11px; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;">
+      <div
+        style="font-size: 11px; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;"
+      >
         カスタム max
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
-        <ui-badge id="cm-custom-9"    color="warning" count="10"  max="9"></ui-badge>
-        <ui-badge id="cm-custom-999"  color="warning" count="1000" max="999"></ui-badge>
+        <ui-badge id="cm-custom-9" color="warning" count="10" max="9"></ui-badge>
+        <ui-badge id="cm-custom-999" color="warning" count="1000" max="999"></ui-badge>
       </div>
     </div>
   `,
@@ -510,28 +606,34 @@ export const CountMaxCombinations: Story = {
     if (!b0) throw new Error('#cm-0 が見つかりません');
     const s0 = b0.shadowRoot?.querySelector('[role="status"]');
     if (!s0) throw new Error('count=0 の role="status" が見つかりません');
-    if (s0.textContent.trim() !== '0') throw new Error(`"0" を期待していましたが、実際には "${s0.textContent.trim()}" でした`);
+    if (s0.textContent.trim() !== '0')
+      throw new Error(`"0" を期待していましたが、実際には "${s0.textContent.trim()}" でした`);
 
     // テスト: count=99, max=99 → 表示 "99"（等しいため "+" なし）
     const b99 = canvasElement.querySelector<Badge>('#cm-99');
     if (!b99) throw new Error('#cm-99 が見つかりません');
     const s99 = b99.shadowRoot?.querySelector('[role="status"]');
     if (!s99) throw new Error('count=99 の role="status" が見つかりません');
-    if (s99.textContent.trim() !== '99') throw new Error(`"99" を期待していましたが、実際には "${s99.textContent.trim()}" でした`);
+    if (s99.textContent.trim() !== '99')
+      throw new Error(`"99" を期待していましたが、実際には "${s99.textContent.trim()}" でした`);
 
     // テスト: count=100, max=99 → 表示 "99+"
     const b100 = canvasElement.querySelector<Badge>('#cm-100');
     if (!b100) throw new Error('#cm-100 が見つかりません');
     const s100 = b100.shadowRoot?.querySelector('[role="status"]');
     if (!s100) throw new Error('count=100 の role="status" が見つかりません');
-    if (s100.textContent.trim() !== '99+') throw new Error(`"99+" を期待していましたが、実際には "${s100.textContent.trim()}" でした`);
+    if (s100.textContent.trim() !== '99+')
+      throw new Error(`"99+" を期待していましたが、実際には "${s100.textContent.trim()}" でした`);
 
     // テスト: count=10, max=9 → 表示 "9+"
     const bCustom9 = canvasElement.querySelector<Badge>('#cm-custom-9');
     if (!bCustom9) throw new Error('#cm-custom-9 が見つかりません');
     const sCustom9 = bCustom9.shadowRoot?.querySelector('[role="status"]');
     if (!sCustom9) throw new Error('カスタム max=9 の role="status" が見つかりません');
-    if (sCustom9.textContent.trim() !== '9+') throw new Error(`"9+" を期待していましたが、実際には "${sCustom9.textContent.trim()}" でした`);
+    if (sCustom9.textContent.trim() !== '9+')
+      throw new Error(
+        `"9+" を期待していましたが、実際には "${sCustom9.textContent.trim()}" でした`,
+      );
   },
 };
 
@@ -549,20 +651,24 @@ export const ContentPriorityLogic: Story = {
   parameters: {
     docs: {
       description: {
-        story: '`count` が `number` の場合、スロット内容は無視されます（Content Priority Logic）。スロットに "New" と書いても数値のみが表示されます。',
+        story:
+          '`count` が `number` の場合、スロット内容は無視されます（Content Priority Logic）。スロットに "New" と書いても数値のみが表示されます。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
-        <strong>Content Priority Logic</strong>: <code>count</code> が <code>number</code> の場合、スロット内容は無視されます。
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
+        <strong>Content Priority Logic</strong>: <code>count</code> が
+        <code>number</code> の場合、スロット内容は無視されます。
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
         <!-- count が number → スロット "New" は無視され "5" が表示される -->
         <ui-badge id="priority-count" color="primary" count="5">New</ui-badge>
         <!-- count が null → スロット "New" が表示される -->
-        <ui-badge id="priority-slot"  color="primary">New</ui-badge>
+        <ui-badge id="priority-slot" color="primary">New</ui-badge>
       </div>
     </div>
   `,
@@ -576,7 +682,9 @@ export const ContentPriorityLogic: Story = {
     const statusSpan = withCount.shadowRoot?.querySelector('[role="status"]');
     if (!statusSpan) throw new Error('count 設定時に role="status" が見つかりません');
     if (statusSpan.textContent.trim() !== '5') {
-      throw new Error(`"5" を期待していましたが、実際には "${statusSpan.textContent.trim()}" でした`);
+      throw new Error(
+        `"5" を期待していましたが、実際には "${statusSpan.textContent.trim()}" でした`,
+      );
     }
 
     // テスト: count=5 → slot は存在しない
@@ -589,7 +697,8 @@ export const ContentPriorityLogic: Story = {
 
     // テスト: count=null → role="status" は存在しない
     const statusWithoutCount = withSlot.shadowRoot?.querySelector('[role="status"]');
-    if (statusWithoutCount) throw new Error('count が null のとき、role="status" は存在してはいけません');
+    if (statusWithoutCount)
+      throw new Error('count が null のとき、role="status" は存在してはいけません');
   },
 };
 
@@ -610,22 +719,25 @@ export const CountNormalization: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `count` の正規化ルール。`NaN`/`Infinity`/負数は `0`、小数は `Math.floor()` で整数化されます。',
+        story:
+          '⚠️ **境界条件**: `count` の正規化ルール。`NaN`/`Infinity`/負数は `0`、小数は `Math.floor()` で整数化されます。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
         <strong>⚠️ 境界条件</strong>: <code>count</code> の正規化ルール（NaN/Infinity/負数/小数）
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
-        <ui-badge id="norm-nan"      color="primary" .count="${NaN}"></ui-badge>
-        <ui-badge id="norm-inf"      color="primary" .count="${Infinity}"></ui-badge>
-        <ui-badge id="norm-neg-inf"  color="primary" .count="${-Infinity}"></ui-badge>
+        <ui-badge id="norm-nan" color="primary" .count="${NaN}"></ui-badge>
+        <ui-badge id="norm-inf" color="primary" .count="${Infinity}"></ui-badge>
+        <ui-badge id="norm-neg-inf" color="primary" .count="${-Infinity}"></ui-badge>
         <ui-badge id="norm-negative" color="primary" .count="${-5}"></ui-badge>
-        <ui-badge id="norm-float"    color="primary" .count="${3.9}"></ui-badge>
-        <ui-badge id="norm-zero"     color="primary" .count="${0}"></ui-badge>
+        <ui-badge id="norm-float" color="primary" .count="${3.9}"></ui-badge>
+        <ui-badge id="norm-zero" color="primary" .count="${0}"></ui-badge>
       </div>
     </div>
   `,
@@ -671,30 +783,33 @@ export const MaxNormalization: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `max` の正規化ルール。`1` 未満は `1` に補正されます。`max=0` でも表示は `"1+"` になります。',
+        story:
+          '⚠️ **境界条件**: `max` の正規化ルール。`1` 未満は `1` に補正されます。`max=0` でも表示は `"1+"` になります。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
         <strong>⚠️ 境界条件</strong>: <code>max</code> の正規化ルール（1未満は1に補正）
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
         <!-- max=0 → 1 に補正 → count=5 > 1 → "1+" -->
-        <ui-badge id="max-zero"     color="warning" count="5"  .max="${0}"></ui-badge>
+        <ui-badge id="max-zero" color="warning" count="5" .max="${0}"></ui-badge>
         <!-- max=-1 → 1 に補正 → count=5 > 1 → "1+" -->
-        <ui-badge id="max-negative" color="warning" count="5"  .max="${-1}"></ui-badge>
+        <ui-badge id="max-negative" color="warning" count="5" .max="${-1}"></ui-badge>
         <!-- max=0.9 → floor=0 → 1 に補正 → "1+" -->
-        <ui-badge id="max-float"    color="warning" count="5"  .max="${0.9}"></ui-badge>
+        <ui-badge id="max-float" color="warning" count="5" .max="${0.9}"></ui-badge>
         <!-- max=NaN → 1 に補正 → "1+" -->
-        <ui-badge id="max-nan"      color="warning" count="5"  .max="${NaN}"></ui-badge>
+        <ui-badge id="max-nan" color="warning" count="5" .max="${NaN}"></ui-badge>
         <!-- max=Infinity → 1 に補正 → "1+" -->
-        <ui-badge id="max-inf"      color="warning" count="5"  .max="${Infinity}"></ui-badge>
+        <ui-badge id="max-inf" color="warning" count="5" .max="${Infinity}"></ui-badge>
         <!-- max=1 → count=1 ≤ 1 → "1" -->
-        <ui-badge id="max-one"      color="primary" count="1"  max="1"></ui-badge>
+        <ui-badge id="max-one" color="primary" count="1" max="1"></ui-badge>
         <!-- max=1 → count=2 > 1 → "1+" -->
-        <ui-badge id="max-one-over" color="danger"  count="2"  max="1"></ui-badge>
+        <ui-badge id="max-one-over" color="danger" count="2" max="1"></ui-badge>
       </div>
     </div>
   `,
@@ -741,18 +856,24 @@ export const CountZero: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `count=0` は有効な数値として `"0"` が表示されます。`null` や `undefined` とは異なります。',
+        story:
+          '⚠️ **境界条件**: `count=0` は有効な数値として `"0"` が表示されます。`null` や `undefined` とは異なります。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
-        <strong>⚠️ 境界条件</strong>: <code>count=0</code> は <code>"0"</code> が表示されます（<code>null</code> とは異なります）。
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
+        <strong>⚠️ 境界条件</strong>: <code>count=0</code> は <code>"0"</code> が表示されます（<code
+          >null</code
+        >
+        とは異なります）。
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
-        <ui-badge id="zero-count"  color="primary" count="0">スロット（無視される）</ui-badge>
-        <ui-badge id="null-count"  color="primary">スロット（表示される）</ui-badge>
+        <ui-badge id="zero-count" color="primary" count="0">スロット（無視される）</ui-badge>
+        <ui-badge id="null-count" color="primary">スロット（表示される）</ui-badge>
       </div>
     </div>
   `,
@@ -766,7 +887,9 @@ export const CountZero: Story = {
     const statusZero = zeroCount.shadowRoot?.querySelector('[role="status"]');
     if (!statusZero) throw new Error('count=0 の role="status" が見つかりません');
     if (statusZero.textContent.trim() !== '0') {
-      throw new Error(`"0" を期待していましたが、実際には "${statusZero.textContent.trim()}" でした`);
+      throw new Error(
+        `"0" を期待していましたが、実際には "${statusZero.textContent.trim()}" でした`,
+      );
     }
     const slotZero = zeroCount.shadowRoot?.querySelector('slot');
     if (slotZero) throw new Error('count=0 のとき、slot は存在してはいけません');
@@ -795,7 +918,9 @@ export const CountUndefined: Story = {
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
         <strong>⚠️ 境界条件</strong>: <code>count=undefined</code> はスロット表示になります。
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
@@ -829,14 +954,18 @@ export const AriaLabelAccuracy: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: 表示が `99+` でも `aria-label` には実際の件数（例: `128 件`）が含まれます。スクリーンリーダーユーザーへの正確な情報提供のため。',
+        story:
+          '⚠️ **境界条件**: 表示が `99+` でも `aria-label` には実際の件数（例: `128 件`）が含まれます。スクリーンリーダーユーザーへの正確な情報提供のため。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
-        <strong>⚠️ 境界条件</strong>: 表示は <code>99+</code> でも <code>aria-label</code> には実際の件数が含まれます。
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
+        <strong>⚠️ 境界条件</strong>: 表示は <code>99+</code> でも
+        <code>aria-label</code> には実際の件数が含まれます。
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
         <!-- 表示: "99+" / aria-label: "128 件" -->
@@ -859,10 +988,14 @@ export const AriaLabelAccuracy: Story = {
     const s128 = b128.shadowRoot?.querySelector('[role="status"]');
     if (!s128) throw new Error('count=128 の role="status" が見つかりません');
     if (s128.textContent.trim() !== '99+') {
-      throw new Error(`表示が "99+" であることを期待していましたが、実際には "${s128.textContent.trim()}" でした`);
+      throw new Error(
+        `表示が "99+" であることを期待していましたが、実際には "${s128.textContent.trim()}" でした`,
+      );
     }
     if (s128.getAttribute('aria-label') !== '128 件') {
-      throw new Error(`aria-label="128 件" を期待していましたが、実際には "${s128.getAttribute('aria-label') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-label="128 件" を期待していましたが、実際には "${s128.getAttribute('aria-label') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: count=9999, max=99 → 表示 "99+", aria-label "9999 件"
@@ -871,7 +1004,9 @@ export const AriaLabelAccuracy: Story = {
     const s9999 = b9999.shadowRoot?.querySelector('[role="status"]');
     if (!s9999) throw new Error('count=9999 の role="status" が見つかりません');
     if (s9999.getAttribute('aria-label') !== '9999 件') {
-      throw new Error(`aria-label="9999 件" を期待していましたが、実際には "${s9999.getAttribute('aria-label') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-label="9999 件" を期待していましたが、実際には "${s9999.getAttribute('aria-label') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: count=50, max=99 → 表示 "50", aria-label "50 件"
@@ -880,10 +1015,14 @@ export const AriaLabelAccuracy: Story = {
     const s50 = b50.shadowRoot?.querySelector('[role="status"]');
     if (!s50) throw new Error('count=50 の role="status" が見つかりません');
     if (s50.textContent.trim() !== '50') {
-      throw new Error(`表示が "50" であることを期待していましたが、実際には "${s50.textContent.trim()}" でした`);
+      throw new Error(
+        `表示が "50" であることを期待していましたが、実際には "${s50.textContent.trim()}" でした`,
+      );
     }
     if (s50.getAttribute('aria-label') !== '50 件') {
-      throw new Error(`aria-label="50 件" を期待していましたが、実際には "${s50.getAttribute('aria-label') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-label="50 件" を期待していましたが、実際には "${s50.getAttribute('aria-label') ?? 'null'}" でした`,
+      );
     }
   },
 };
@@ -898,20 +1037,32 @@ export const DotIgnoresCount: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `variant="dot"` の場合、`count` を設定してもコンテンツはレンダリングされません。Dot は純粋に視覚的インジケーターです。',
+        story:
+          '⚠️ **境界条件**: `variant="dot"` の場合、`count` を設定してもコンテンツはレンダリングされません。Dot は純粋に視覚的インジケーターです。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
-        <strong>⚠️ 境界条件</strong>: <code>variant="dot"</code> は <code>count</code> を無視します。
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
+        <strong>⚠️ 境界条件</strong>: <code>variant="dot"</code> は
+        <code>count</code> を無視します。
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
         <!-- count=99 を設定してもコンテンツはレンダリングされない -->
-        <ui-badge id="dot-with-count" variant="dot" color="danger" count="99" aria-label="未読があります"></ui-badge>
+        <ui-badge
+          id="dot-with-count"
+          variant="dot"
+          color="danger"
+          count="99"
+          aria-label="未読があります"
+        ></ui-badge>
         <!-- スロットを設定してもコンテンツはレンダリングされない -->
-        <ui-badge id="dot-with-slot"  variant="dot" color="primary" aria-label="更新があります">New</ui-badge>
+        <ui-badge id="dot-with-slot" variant="dot" color="primary" aria-label="更新があります"
+          >New</ui-badge
+        >
       </div>
     </div>
   `,
@@ -925,7 +1076,8 @@ export const DotIgnoresCount: Story = {
     const imgWithCount = dotWithCount.shadowRoot?.querySelector('[role="img"]');
     if (!imgWithCount) throw new Error('数値を持つ dot バリアントの role="img" が見つかりません');
     const statusWithCount = dotWithCount.shadowRoot?.querySelector('[role="status"]');
-    if (statusWithCount) throw new Error('dot バリアントに count を設定しても role="status" は存在してはいけません');
+    if (statusWithCount)
+      throw new Error('dot バリアントに count を設定しても role="status" は存在してはいけません');
 
     // テスト: dot + slot → role="img" のみ（slot なし）
     const imgWithSlot = dotWithSlot.shadowRoot?.querySelector('[role="img"]');
@@ -946,19 +1098,27 @@ export const NonInteractive: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: バッジはフォーカス不可（`tabindex` なし）。インタラクティブな要素（クリック、削除等）は持ちません。',
+        story:
+          '⚠️ **境界条件**: バッジはフォーカス不可（`tabindex` なし）。インタラクティブな要素（クリック、削除等）は持ちません。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
         <strong>⚠️ 境界条件</strong>: バッジはフォーカス不可。クリックしても何も起きません。
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
-        <ui-badge id="non-interactive-solid"  color="primary" count="5"></ui-badge>
+        <ui-badge id="non-interactive-solid" color="primary" count="5"></ui-badge>
         <ui-badge id="non-interactive-subtle" variant="subtle" color="success">Beta</ui-badge>
-        <ui-badge id="non-interactive-dot"    variant="dot" color="danger" aria-label="更新があります"></ui-badge>
+        <ui-badge
+          id="non-interactive-dot"
+          variant="dot"
+          color="danger"
+          aria-label="更新があります"
+        ></ui-badge>
       </div>
     </div>
   `,
@@ -970,14 +1130,20 @@ export const NonInteractive: Story = {
       // テスト: tabindex が設定されていない（フォーカス不可）
       const tabindex = badge.getAttribute('tabindex');
       if (tabindex !== null) {
-        throw new Error(`tabindex が設定されていないことを期待していましたが、${badge.id} には "${tabindex}" が設定されていました`);
+        throw new Error(
+          `tabindex が設定されていないことを期待していましたが、${badge.id} には "${tabindex}" が設定されていました`,
+        );
       }
 
       // テスト: 非対話属性を持たない
-      if (badge.hasAttribute('disabled')) throw new Error(`${badge.id} に disabled が存在してはいけません`);
-      if (badge.hasAttribute('error')) throw new Error(`${badge.id} に error が存在してはいけません`);
-      if (badge.hasAttribute('aria-disabled')) throw new Error(`${badge.id} に aria-disabled が存在してはいけません`);
-      if (badge.hasAttribute('role')) throw new Error(`${badge.id} にホスト role が設定されてはいけません`);
+      if (badge.hasAttribute('disabled'))
+        throw new Error(`${badge.id} に disabled が存在してはいけません`);
+      if (badge.hasAttribute('error'))
+        throw new Error(`${badge.id} に error が存在してはいけません`);
+      if (badge.hasAttribute('aria-disabled'))
+        throw new Error(`${badge.id} に aria-disabled が存在してはいけません`);
+      if (badge.hasAttribute('role'))
+        throw new Error(`${badge.id} にホスト role が設定されてはいけません`);
 
       // テスト: focus() を呼んでもフォーカス対象にならない
       badge.focus();
@@ -1000,8 +1166,16 @@ export const ThemeContrastAudit: Story = {
     const colors = ['primary', 'danger', 'success', 'warning', 'neutral'] as const;
     return html`
       <style>
-        .theme-grid { display: grid; grid-template-columns: 1fr; gap: 1.25rem; }
-        .theme-block { padding: 1rem; border-radius: 10px; border: 1px solid oklch(76% 0.02 250 / 0.4); }
+        .theme-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 1.25rem;
+        }
+        .theme-block {
+          padding: 1rem;
+          border-radius: 10px;
+          border: 1px solid oklch(76% 0.02 250 / 0.4);
+        }
         .theme-title {
           margin-bottom: 0.75rem;
           font-size: 11px;
@@ -1009,7 +1183,13 @@ export const ThemeContrastAudit: Story = {
           letter-spacing: 0.05em;
           color: oklch(48% 0.01 250);
         }
-        .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 0.75rem; }
+        .row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          align-items: center;
+          margin-bottom: 0.75rem;
+        }
         .surface {
           display: flex;
           flex-wrap: wrap;
@@ -1042,16 +1222,48 @@ export const ThemeContrastAudit: Story = {
         >
           <div class="theme-title">Light Token Set</div>
           <div class="row">
-            ${colors.map((color) => html`<ui-badge id="contrast-light-solid-${color}" color="${color}">text</ui-badge>`)}
+            ${colors.map(
+              (color) =>
+                html`<ui-badge id="contrast-light-solid-${color}" color="${color}">text</ui-badge>`,
+            )}
           </div>
           <div class="row">
-            ${colors.map((color) => html`<ui-badge id="contrast-light-subtle-${color}" variant="subtle" color="${color}">text</ui-badge>`)}
+            ${colors.map(
+              (color) =>
+                html`<ui-badge id="contrast-light-subtle-${color}" variant="subtle" color="${color}"
+                  >text</ui-badge
+                >`,
+            )}
           </div>
-          <div id="contrast-light-dot-default-surface" class="surface" style="background: var(--bg-default);">
-            ${colors.map((color) => html`<ui-badge id="contrast-light-dot-${color}-default" variant="dot" color="${color}" aria-label="${color}"></ui-badge>`)}
+          <div
+            id="contrast-light-dot-default-surface"
+            class="surface"
+            style="background: var(--bg-default);"
+          >
+            ${colors.map(
+              (color) =>
+                html`<ui-badge
+                  id="contrast-light-dot-${color}-default"
+                  variant="dot"
+                  color="${color}"
+                  aria-label="${color}"
+                ></ui-badge>`,
+            )}
           </div>
-          <div id="contrast-light-dot-surface2-surface" class="surface" style="background: var(--bg-surface-2); margin-top: 0.5rem;">
-            ${colors.map((color) => html`<ui-badge id="contrast-light-dot-${color}-surface2" variant="dot" color="${color}" aria-label="${color}"></ui-badge>`)}
+          <div
+            id="contrast-light-dot-surface2-surface"
+            class="surface"
+            style="background: var(--bg-surface-2); margin-top: 0.5rem;"
+          >
+            ${colors.map(
+              (color) =>
+                html`<ui-badge
+                  id="contrast-light-dot-${color}-surface2"
+                  variant="dot"
+                  color="${color}"
+                  aria-label="${color}"
+                ></ui-badge>`,
+            )}
           </div>
         </section>
 
@@ -1076,16 +1288,48 @@ export const ThemeContrastAudit: Story = {
         >
           <div class="theme-title">Dark Token Set</div>
           <div class="row">
-            ${colors.map((color) => html`<ui-badge id="contrast-dark-solid-${color}" color="${color}">text</ui-badge>`)}
+            ${colors.map(
+              (color) =>
+                html`<ui-badge id="contrast-dark-solid-${color}" color="${color}">text</ui-badge>`,
+            )}
           </div>
           <div class="row">
-            ${colors.map((color) => html`<ui-badge id="contrast-dark-subtle-${color}" variant="subtle" color="${color}">text</ui-badge>`)}
+            ${colors.map(
+              (color) =>
+                html`<ui-badge id="contrast-dark-subtle-${color}" variant="subtle" color="${color}"
+                  >text</ui-badge
+                >`,
+            )}
           </div>
-          <div id="contrast-dark-dot-default-surface" class="surface" style="background: var(--bg-default);">
-            ${colors.map((color) => html`<ui-badge id="contrast-dark-dot-${color}-default" variant="dot" color="${color}" aria-label="${color}"></ui-badge>`)}
+          <div
+            id="contrast-dark-dot-default-surface"
+            class="surface"
+            style="background: var(--bg-default);"
+          >
+            ${colors.map(
+              (color) =>
+                html`<ui-badge
+                  id="contrast-dark-dot-${color}-default"
+                  variant="dot"
+                  color="${color}"
+                  aria-label="${color}"
+                ></ui-badge>`,
+            )}
           </div>
-          <div id="contrast-dark-dot-surface2-surface" class="surface" style="background: var(--bg-surface-2); margin-top: 0.5rem;">
-            ${colors.map((color) => html`<ui-badge id="contrast-dark-dot-${color}-surface2" variant="dot" color="${color}" aria-label="${color}"></ui-badge>`)}
+          <div
+            id="contrast-dark-dot-surface2-surface"
+            class="surface"
+            style="background: var(--bg-surface-2); margin-top: 0.5rem;"
+          >
+            ${colors.map(
+              (color) =>
+                html`<ui-badge
+                  id="contrast-dark-dot-${color}-surface2"
+                  variant="dot"
+                  color="${color}"
+                  aria-label="${color}"
+                ></ui-badge>`,
+            )}
           </div>
         </section>
       </div>
@@ -1100,17 +1344,26 @@ export const ThemeContrastAudit: Story = {
       if (!badge) throw new Error(`${id} が見つかりません`);
       const style = getComputedStyle(badge);
       const ratio = contrastRatio(style.color, style.backgroundColor);
-      if (ratio < min) throw new Error(`${id}: コントラスト比 ${ratio.toFixed(2)} が最小値 ${String(min)} を下回っています`);
+      if (ratio < min)
+        throw new Error(
+          `${id}: コントラスト比 ${ratio.toFixed(2)} が最小値 ${String(min)} を下回っています`,
+        );
     };
 
     const assertDotContrast = (badgeId: string, surfaceId: string, min: number) => {
       const badge = canvasElement.querySelector<Badge>(badgeId);
       const surface = canvasElement.querySelector<HTMLElement>(surfaceId);
-      if (!badge || !surface) throw new Error(`dot コントラスト比の検証ターゲットが見つかりません: ${badgeId} / ${surfaceId}`);
+      if (!badge || !surface)
+        throw new Error(
+          `dot コントラスト比の検証ターゲットが見つかりません: ${badgeId} / ${surfaceId}`,
+        );
       const dotStyle = getComputedStyle(badge);
       const surfaceStyle = getComputedStyle(surface);
       const ratio = contrastRatio(dotStyle.backgroundColor, surfaceStyle.backgroundColor);
-      if (ratio < min) throw new Error(`${badgeId}: 非テキストのコントラスト比 ${ratio.toFixed(2)} が最小値 ${String(min)} を下回っています`);
+      if (ratio < min)
+        throw new Error(
+          `${badgeId}: 非テキストのコントラスト比 ${ratio.toFixed(2)} が最小値 ${String(min)} を下回っています`,
+        );
     };
 
     await Promise.all(
@@ -1164,7 +1417,7 @@ export const ForcedColorsContract: Story = {
     if (!cssText.includes('ButtonFace')) {
       throw new Error('forced-colors ルールに ButtonFace トークンが見つかりません');
     }
-    if (!cssText.includes("width: 10px")) {
+    if (!cssText.includes('width: 10px')) {
       throw new Error('Dot の forced-colors 時のサイズ拡張 (10px) が見つかりません');
     }
   },
@@ -1183,21 +1436,36 @@ export const ForcedColorsContract: Story = {
 export const AllStates: Story = {
   render: () => html`
     <style>
-      .states-list { display: flex; flex-direction: column; gap: 1.5rem; }
-      .state-group { display: flex; flex-direction: column; gap: 0.5rem; }
-      .state-label {
-        font-size: 11px; font-weight: 500;
-        color: oklch(48% 0.01 250);
-        text-transform: uppercase; letter-spacing: 0.05em;
+      .states-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
       }
-      .state-badges { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+      .state-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .state-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: oklch(48% 0.01 250);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .state-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+      }
     </style>
     <div class="states-list">
       <div class="state-group">
         <div class="state-label">Solid × Colors（数値）</div>
         <div class="state-badges">
           <ui-badge id="all-solid-primary" color="primary" count="5"></ui-badge>
-          <ui-badge id="all-solid-danger"  color="danger"  count="12"></ui-badge>
+          <ui-badge id="all-solid-danger" color="danger" count="12"></ui-badge>
           <ui-badge id="all-solid-success" color="success" count="3"></ui-badge>
           <ui-badge id="all-solid-warning" color="warning" count="99"></ui-badge>
           <ui-badge id="all-solid-neutral" color="neutral" count="1"></ui-badge>
@@ -1227,7 +1495,7 @@ export const AllStates: Story = {
         <div class="state-label">Dot × Colors</div>
         <div class="state-badges">
           <ui-badge variant="dot" color="primary" aria-label="primary"></ui-badge>
-          <ui-badge variant="dot" color="danger"  aria-label="danger"></ui-badge>
+          <ui-badge variant="dot" color="danger" aria-label="danger"></ui-badge>
           <ui-badge variant="dot" color="success" aria-label="success"></ui-badge>
           <ui-badge variant="dot" color="warning" aria-label="warning"></ui-badge>
           <ui-badge variant="dot" color="neutral" aria-label="neutral"></ui-badge>
@@ -1250,7 +1518,10 @@ export const AllStates: Story = {
     // テスト: solid-primary の count が正しい
     const solidPrimary = canvasElement.querySelector<Badge>('#all-solid-primary');
     if (!solidPrimary) throw new Error('#all-solid-primary が見つかりません');
-    if (solidPrimary.count !== 5) throw new Error(`count=5 を期待していましたが、実際には ${String(solidPrimary.count)} でした`);
+    if (solidPrimary.count !== 5)
+      throw new Error(
+        `count=5 を期待していましたが、実際には ${String(solidPrimary.count)} でした`,
+      );
 
     // テスト: solid-warning の count=99 → 表示 "99"（max=99 と等しいため "+" なし）
     const solidWarning = canvasElement.querySelector<Badge>('#all-solid-warning');
@@ -1258,7 +1529,9 @@ export const AllStates: Story = {
     const statusWarning = solidWarning.shadowRoot?.querySelector('[role="status"]');
     if (!statusWarning) throw new Error('solid-warning の role="status" が見つかりません');
     if (statusWarning.textContent.trim() !== '99') {
-      throw new Error(`"99" を期待していましたが、実際には "${statusWarning.textContent.trim()}" でした`);
+      throw new Error(
+        `"99" を期待していましたが、実際には "${statusWarning.textContent.trim()}" でした`,
+      );
     }
   },
 };

@@ -31,7 +31,9 @@ const getCopyButton = (block: CodeBlock): CopyButtonElement => {
 
 const nextFrame = async (): Promise<void> =>
   new Promise<void>((resolve) => {
-    requestAnimationFrame(() => { resolve(); });
+    requestAnimationFrame(() => {
+      resolve();
+    });
   });
 
 const isRendered = (element: Element): boolean => element.getClientRects().length > 0;
@@ -150,7 +152,9 @@ console.log(greeting);</code></pre>
     await block.updateComplete;
 
     if (block.getAttribute('data-lang') !== 'ts') {
-      throw new Error(`Expected data-lang="ts", got "${block.getAttribute('data-lang') ?? 'null'}"`);
+      throw new Error(
+        `Expected data-lang="ts", got "${block.getAttribute('data-lang') ?? 'null'}"`,
+      );
     }
 
     const root = getRootFigure(block);
@@ -311,8 +315,12 @@ export const HeaderDisplayPriority: Story = {
 
     const showCaption = showBlock.shadowRoot?.querySelector<HTMLElement>('.caption');
     const hideCaption = hideBlock.shadowRoot?.querySelector<HTMLElement>('.caption');
-    const showCopy = showBlock.shadowRoot?.querySelector<HTMLElement>('.copy-button-shell ui-copy-button');
-    const hideCopy = hideBlock.shadowRoot?.querySelector<HTMLElement>('.copy-button-shell ui-copy-button');
+    const showCopy = showBlock.shadowRoot?.querySelector<HTMLElement>(
+      '.copy-button-shell ui-copy-button',
+    );
+    const hideCopy = hideBlock.shadowRoot?.querySelector<HTMLElement>(
+      '.copy-button-shell ui-copy-button',
+    );
     if (!showCaption || !hideCaption) {
       throw new Error('caption が見つかりません');
     }
@@ -321,14 +329,18 @@ export const HeaderDisplayPriority: Story = {
     }
 
     if (getComputedStyle(showCaption).display === 'none') {
-      throw new Error('親CSS変数 block 指定時は headless より優先して caption が表示されるべきです');
+      throw new Error(
+        '親CSS変数 block 指定時は headless より優先して caption が表示されるべきです',
+      );
     }
 
     if (getComputedStyle(hideCaption).display !== 'none') {
       throw new Error('親CSS変数 none 指定時は caption が非表示になるべきです');
     }
     if (!isRendered(showCopy)) {
-      throw new Error('親CSS変数 block 指定時は copy-button がレイアウト上で可視状態であるべきです');
+      throw new Error(
+        '親CSS変数 block 指定時は copy-button がレイアウト上で可視状態であるべきです',
+      );
     }
     if (isRendered(hideCopy)) {
       throw new Error('親CSS変数 none 指定時は copy-button がレイアウト上で非表示であるべきです');
@@ -438,7 +450,8 @@ export const ShikiHighlightedLines: Story = {
     >
       <pre
         class="shiki shiki-themes github-light github-dark has-highlighted has-diff"
-        data-raw="const highlighted = 1;\nconst added = 2;"
+        data-raw="const highlighted = 1;
+const added = 2;"
       >
         <code>
           <span class="line highlighted"><span style="color:#D73A49;--shiki-dark:#F97583">const</span><span style="color:#005CC5;--shiki-dark:#79B8FF"> highlighted = 1;</span></span>
@@ -621,7 +634,10 @@ export const MediaStyleContracts: Story = {
     if (!shadowStyle.includes('@media print')) {
       throw new Error('Shadow CSS に print スタイルが定義されていません');
     }
-    if (!shadowStyle.includes('.copy-button-shell') || !shadowStyle.includes('display: none !important')) {
+    if (
+      !shadowStyle.includes('.copy-button-shell') ||
+      !shadowStyle.includes('display: none !important')
+    ) {
       throw new Error('print 時の copy-button 非表示ルールが不足しています');
     }
 
@@ -629,10 +645,16 @@ export const MediaStyleContracts: Story = {
     if (!documentStyle.includes('@media (forced-colors: active)')) {
       throw new Error('document CSS に forced-colors ルールが定義されていません');
     }
-    if (!documentStyle.includes('ui-code-block pre .comment') || !documentStyle.includes('font-style: italic')) {
+    if (
+      !documentStyle.includes('ui-code-block pre .comment') ||
+      !documentStyle.includes('font-style: italic')
+    ) {
       throw new Error('forced-colors 時のコメント可視化（italic）ルールが不足しています');
     }
-    if (!documentStyle.includes('ui-code-block pre') || !documentStyle.includes('font-size: 9pt !important')) {
+    if (
+      !documentStyle.includes('ui-code-block pre') ||
+      !documentStyle.includes('font-size: 9pt !important')
+    ) {
       throw new Error('document CSS の print フォント調整ルールが不足しています');
     }
 
@@ -719,7 +741,9 @@ export const BoundaryFallbacksAndCopyExtraction: Story = {
     await Promise.all([fallback.updateComplete, copyBoundary.updateComplete]);
 
     if (fallback.intent !== 'neutral') {
-      throw new Error(`不正 intent は neutral にフォールバックすべきです。現在: "${fallback.intent}"`);
+      throw new Error(
+        `不正 intent は neutral にフォールバックすべきです。現在: "${fallback.intent}"`,
+      );
     }
 
     const fallbackRoot = getRootFigure(fallback);

@@ -13,6 +13,8 @@ describe('AboutPage', () => {
     expect(rendered).toContain('このページについて');
     expect(rendered).toContain('Rouaultは、 Ruo Miyataの個人的なメモ帳です。');
     expect(rendered).toContain('Creative Commons Attribution 4.0 International License');
-    expect(rendered).toContain('このサイトは、個人的な知的蓄積を長期的に整理・公開するためのナレッジベースとして設計されています。');
+    expect(rendered).toContain(
+      'このサイトは、個人的な知的蓄積を長期的に整理・公開するためのナレッジベースとして設計されています。',
+    );
   });
 });

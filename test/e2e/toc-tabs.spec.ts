@@ -12,15 +12,10 @@ test.describe('TOC follows active tab', () => {
     await expect(toc).not.toContainText('RustのHello, World!');
   });
 
-  test('?tab=rust 直アクセス時は Rust タブが初期選択され TOC も同期すること', async ({
-    page,
-  }) => {
+  test('?tab=rust 直アクセス時は Rust タブが初期選択され TOC も同期すること', async ({ page }) => {
     await page.goto(`${path}?tab=rust`);
 
-    await expect(page.getByRole('tab', { name: 'Rust' })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
+    await expect(page.getByRole('tab', { name: 'Rust' })).toHaveAttribute('aria-selected', 'true');
 
     const toc = page.locator('.layout-toc-col');
     await expect(toc).toContainText('RustのHello, World!');
@@ -43,10 +38,7 @@ test.describe('TOC follows active tab', () => {
   }) => {
     await page.goto(`${path}#rustのhello-world`);
 
-    await expect(page.getByRole('tab', { name: 'Rust' })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
+    await expect(page.getByRole('tab', { name: 'Rust' })).toHaveAttribute('aria-selected', 'true');
 
     const toc = page.locator('.layout-toc-col');
     await expect(toc).toContainText('RustのHello, World!');

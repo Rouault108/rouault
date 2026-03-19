@@ -54,48 +54,48 @@ Rouault における code block は、読書を中断させるノイズであっ
 
 ### 2.1 入力契約
 
-| 名前                | 種別                                         | 必須  | 内容           | 契約                                                                    |
-| ----------------- | ------------------------------------------ | --- | ------------ | --------------------------------------------------------------------- |
-| `filename`        | property / attribute                       | いいえ | ヘッダー表示名      | キャプション表示、コピー文言、文脈名の決定に使用します                                           |
-| `lang`            | property / attribute                       | いいえ | 言語識別子        | `data-lang` の生成、言語ラベル生成、A11y 文言生成に使用します                               |
-| `label`           | property / attribute                       | いいえ | 外部連携用ラベル     | 本コンポーネント単体では表示に使用しません                                                 |
-| `intent`          | property / attribute                       | いいえ | コード例の意味状態    | `neutral` / `valid` / `invalid`                                       |
-| `showLineNumbers` | property / attribute (`show-line-numbers`) | いいえ | 行番号表示        | true の場合、行番号表示用の行ラッパー整備を試みます                                          |
-| `copyMode`        | property / attribute (`copy-mode`)         | いいえ | コピー操作の表示モード  | `auto` / `always` / `hidden`                                          |
-| `wrap`            | property / attribute                       | いいえ | 折り返しモード      | true の場合、横スクロール優先ではなく折り返しを優先します                                       |
-| `highlightLines`  | property / attribute (`highlight-lines`)   | いいえ | 強調する論理行範囲    | `1,3-5` のような範囲文字列を受理します                                               |
-| `layout`          | property / attribute                       | いいえ | レイアウトモード     | `breakout` / `inline`                                                 |
-| `headless`        | property / attribute                       | いいえ | 互換 shorthand | 既存利用との互換のために、ヘッダー抑止と外装除去をまとめて要求します。新規利用では主要入力として推奨しません                |
-| `embedded`        | property / attribute                       | いいえ | 互換 shorthand | 既存利用との互換のために、`layout="inline"` 相当の埋め込み表示を要求します。新規利用では `layout` を優先します |
-| `initialCode`     | property / attribute (`initial-code`)      | いいえ | コピー初期値       | slot 未同期時のコピー値フォールバックに使用します                                           |
+| 名前              | 種別                                       | 必須   | 内容                   | 契約                                                                                                           |
+| ----------------- | ------------------------------------------ | ------ | ---------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `filename`        | property / attribute                       | いいえ | ヘッダー表示名         | キャプション表示、コピー文言、文脈名の決定に使用します                                                         |
+| `lang`            | property / attribute                       | いいえ | 言語識別子             | `data-lang` の生成、言語ラベル生成、A11y 文言生成に使用します                                                  |
+| `label`           | property / attribute                       | いいえ | 外部連携用ラベル       | 本コンポーネント単体では表示に使用しません                                                                     |
+| `intent`          | property / attribute                       | いいえ | コード例の意味状態     | `neutral` / `valid` / `invalid`                                                                                |
+| `showLineNumbers` | property / attribute (`show-line-numbers`) | いいえ | 行番号表示             | true の場合、行番号表示用の行ラッパー整備を試みます                                                            |
+| `copyMode`        | property / attribute (`copy-mode`)         | いいえ | コピー操作の表示モード | `auto` / `always` / `hidden`                                                                                   |
+| `wrap`            | property / attribute                       | いいえ | 折り返しモード         | true の場合、横スクロール優先ではなく折り返しを優先します                                                      |
+| `highlightLines`  | property / attribute (`highlight-lines`)   | いいえ | 強調する論理行範囲     | `1,3-5` のような範囲文字列を受理します                                                                         |
+| `layout`          | property / attribute                       | いいえ | レイアウトモード       | `breakout` / `inline`                                                                                          |
+| `headless`        | property / attribute                       | いいえ | 互換 shorthand         | 既存利用との互換のために、ヘッダー抑止と外装除去をまとめて要求します。新規利用では主要入力として推奨しません   |
+| `embedded`        | property / attribute                       | いいえ | 互換 shorthand         | 既存利用との互換のために、`layout="inline"` 相当の埋め込み表示を要求します。新規利用では `layout` を優先します |
+| `initialCode`     | property / attribute (`initial-code`)      | いいえ | コピー初期値           | slot 未同期時のコピー値フォールバックに使用します                                                              |
 
 ### 2.2 追加属性契約
 
 `ui-code-block` は typed property に加えて、次の属性を補助入力として受理します。
 
-| 名前                 | 位置                     | 内容         | 契約                          |
-| ------------------ | ---------------------- | ---------- | --------------------------- |
+| 名前               | 位置                      | 内容                 | 契約                                       |
+| ------------------ | ------------------------- | -------------------- | ------------------------------------------ |
 | `data-wrap="true"` | host または slotted `pre` | 旧来の折り返しモード | `wrap=true` と同義の互換入力として扱います |
-| `data-raw`         | slotted `pre`          | 生コード       | コピー値の一次情報として優先使用します         |
+| `data-raw`         | slotted `pre`             | 生コード             | コピー値の一次情報として優先使用します     |
 
 `data-wrap` は将来の正式契約では `wrap` に統合します。したがって、`data-wrap` は新規利用向けの正式 API ではなく、**互換入力**として扱います。
 
 ### 2.3 属性反映契約
 
-| property          | attribute           | reflect | 備考                                  |
-| ----------------- | ------------------- | ------- | ----------------------------------- |
-| `filename`        | `filename`          | あり      | キャプション表示名です                         |
-| `lang`            | `lang`              | あり      | 正規化後の `data-lang` も別途付与します          |
-| `label`           | `label`             | あり      | 外部連携用です                             |
-| `intent`          | `intent`            | あり      | 列挙外値は `neutral` にフォールバックします         |
-| `showLineNumbers` | `show-line-numbers` | あり      | boolean attribute として扱います           |
-| `copyMode`        | `copy-mode`         | あり      | `auto` / `always` / `hidden` を受理します |
-| `wrap`            | `wrap`              | あり      | boolean attribute として扱います           |
-| `highlightLines`  | `highlight-lines`   | あり      | 行範囲文字列です                            |
-| `layout`          | `layout`            | あり      | `breakout` / `inline` を受理します        |
-| `headless`        | `headless`          | あり      | boolean attribute として扱う互換入力です       |
-| `embedded`        | `embedded`          | あり      | boolean attribute として扱う互換入力です       |
-| `initialCode`     | `initial-code`      | なし      | コピー初期値です                            |
+| property          | attribute           | reflect | 備考                                        |
+| ----------------- | ------------------- | ------- | ------------------------------------------- |
+| `filename`        | `filename`          | あり    | キャプション表示名です                      |
+| `lang`            | `lang`              | あり    | 正規化後の `data-lang` も別途付与します     |
+| `label`           | `label`             | あり    | 外部連携用です                              |
+| `intent`          | `intent`            | あり    | 列挙外値は `neutral` にフォールバックします |
+| `showLineNumbers` | `show-line-numbers` | あり    | boolean attribute として扱います            |
+| `copyMode`        | `copy-mode`         | あり    | `auto` / `always` / `hidden` を受理します   |
+| `wrap`            | `wrap`              | あり    | boolean attribute として扱います            |
+| `highlightLines`  | `highlight-lines`   | あり    | 行範囲文字列です                            |
+| `layout`          | `layout`            | あり    | `breakout` / `inline` を受理します          |
+| `headless`        | `headless`          | あり    | boolean attribute として扱う互換入力です    |
+| `embedded`        | `embedded`          | あり    | boolean attribute として扱う互換入力です    |
+| `initialCode`     | `initial-code`      | なし    | コピー初期値です                            |
 
 ### 2.4 派生属性契約
 
@@ -107,7 +107,7 @@ Rouault における code block は、読書を中断させるノイズであっ
 
 `lang` は次の対応表に基づいて人間向け言語ラベルへ変換します。
 
-| 値                | 表示ラベル        |
+| 値               | 表示ラベル   |
 | ---------------- | ------------ |
 | `ts`, `tsx`      | `TypeScript` |
 | `js`, `jsx`      | `JavaScript` |
@@ -171,11 +171,11 @@ Rouault における code block は、読書を中断させるノイズであっ
 
 中間移行では、次の順序を採ります。
 
-1. **新規契約の主語を ****\`\`**** から外します。** 契約書、Storybook、新規実装では、`headless` を中心に説明しません。
+1. **新規契約の主語を \*\***\`\`\***\* から外します。** 契約書、Storybook、新規実装では、`headless` を中心に説明しません。
 2. **新しい直交 property を追加します。** 第一段階では少なくとも `showHeader`、`showFrame`、`showCopyAction` を導入し、表示責務を分離します。
 3. \`\`\*\* は互換 shorthand として再定義します。\*\* たとえば `headless=true` は「`showHeader=false` かつ `showFrame=false` を要求する shorthand」として扱います。`showCopyAction` については、将来的に独立制御を優先し、`headless` から暗黙に決定しない方がよいです。
 4. **優先順位を固定します。** 新しい直交 property と `headless` が同時指定された場合は、`headless` より `showHeader` / `showFrame` / `showCopyAction` を優先します。
-5. **最終段階で ****\`\`**** を非推奨化します。** 契約書上では互換入力として残しつつ、新規利用では使用しない方針を明示します。
+5. **最終段階で \*\***\`\`\***\* を非推奨化します。** 契約書上では互換入力として残しつつ、新規利用では使用しない方針を明示します。
 
 この中間移行方針により、現行 shorthand をいきなり除去せずに、**意味状態と表示責務を直交した API へ整理する導線**を確保できます。
 
@@ -183,13 +183,13 @@ Rouault における code block は、読書を中断させるノイズであっ
 
 将来的な責務分解は、少なくとも次のように整理する方がよいです。
 
-| property         | 担当する責務                       | 備考                                                  |
-| ---------------- | ---------------------------- | --------------------------------------------------- |
-| `showHeader`     | キャプション領域全体の表示有無              | `filename` / `intent` / copy affordance の配置土台を制御します |
-| `showFrame`      | 枠線・背景・角丸などの外装                | レイアウトとは分離して扱います                                     |
-| `showCopyAction` | copy affordance の存在または露出     | `copyMode` と組み合わせて扱います                              |
-| `copyMode`       | copy affordance の露出量         | `auto` / `always` / `hidden`                        |
-| `layout`         | `breakout` / `inline` のレイアウト | 幅とマージンの責務を持ちます                                      |
+| property         | 担当する責務                       | 備考                                                           |
+| ---------------- | ---------------------------------- | -------------------------------------------------------------- |
+| `showHeader`     | キャプション領域全体の表示有無     | `filename` / `intent` / copy affordance の配置土台を制御します |
+| `showFrame`      | 枠線・背景・角丸などの外装         | レイアウトとは分離して扱います                                 |
+| `showCopyAction` | copy affordance の存在または露出   | `copyMode` と組み合わせて扱います                              |
+| `copyMode`       | copy affordance の露出量           | `auto` / `always` / `hidden`                                   |
+| `layout`         | `breakout` / `inline` のレイアウト | 幅とマージンの責務を持ちます                                   |
 
 このとき、`showCopyAction=false` であれば `copyMode` は無効化され、`showCopyAction=true` のときのみ `copyMode` が露出量を決める、という二段階構造にすると契約が明確になります。
 
@@ -197,11 +197,11 @@ Rouault における code block は、読書を中断させるノイズであっ
 
 中間移行段階では、現行 shorthand と新しい直交 property の関係を次のように扱う方がよいです。
 
-| 現行入力             | 中間段階での解釈                                                  |
-| ---------------- | --------------------------------------------------------- |
+| 現行入力         | 中間段階での解釈                                                   |
+| ---------------- | ------------------------------------------------------------------ |
 | `headless=true`  | `showHeader=false` かつ `showFrame=false` を要求する互換 shorthand |
-| `headless=false` | 直交 property を指定しない限り既定表示に従う互換 shorthand                   |
-| `embedded=true`  | `layout="inline"` を要求する互換 shorthand                       |
+| `headless=false` | 直交 property を指定しない限り既定表示に従う互換 shorthand         |
+| `embedded=true`  | `layout="inline"` を要求する互換 shorthand                         |
 
 ここでは、`** を **`\*\* の shorthand にしない\*\*ことが重要です。copy affordance の存在は、ヘッダーや外装とは別責務として独立させた方が、`copyMode` と整合しやすくなります。
 
@@ -221,8 +221,8 @@ Rouault における code block は、読書を中断させるノイズであっ
 
 `ui-code-block` は named slot を持たず、既定スロットのみを持ちます。
 
-| 名前     | 種別   | 位置づけ | 内容                               |
-| ------ | ---- | ---- | -------------------------------- |
+| 名前         | 種別 | 位置づけ | 内容                                                |
+| ------------ | ---- | -------- | --------------------------------------------------- |
 | 既定スロット | slot | 正規入力 | `pre` または `pre` を内包する単一要素を受け取ります |
 
 正規入力は `pre` を1つ含む構造です。`slot.assignedElements({ flatten: true })` の走査では、\*\*最初に見つかった \*\*\`\` を対象とします。複数の `pre` を同時に与える構成は公開契約に含めません。利用者は1コンポーネントにつき1つの論理コードブロックを入力しなければなりません（MUST）。
@@ -245,8 +245,8 @@ Rouault における code block は、読書を中断させるノイズであっ
 
 `ui-code-block` は次の公開メソッドを持ちます。
 
-| 名前                 | 種別     | 契約                     |
-| ------------------ | ------ | ---------------------- |
+| 名前               | 種別   | 契約                                         |
+| ------------------ | ------ | -------------------------------------------- |
 | `getCodeContent()` | method | コピー用に正規化されたコード文字列を返します |
 
 `getCodeContent()` は次の順序でコード本文を解決します。
@@ -271,11 +271,11 @@ Rouault における code block は、読書を中断させるノイズであっ
 
 `intent` はコード例の意味状態を表します。
 
-| `intent` 値 | 意味   | 表示                            |
-| ---------- | ---- | ----------------------------- |
-| `neutral`  | 中立   | intent ラベルを表示しません             |
-| `valid`    | 正しい例 | `正しい例` ラベルと check icon を表示します |
-| `invalid`  | 誤り例  | `誤り例` ラベルと alert icon を表示します  |
+| `intent` 値 | 意味     | 表示                                        |
+| ----------- | -------- | ------------------------------------------- |
+| `neutral`   | 中立     | intent ラベルを表示しません                 |
+| `valid`     | 正しい例 | `正しい例` ラベルと check icon を表示します |
+| `invalid`   | 誤り例   | `誤り例` ラベルと alert icon を表示します   |
 
 `intent` はコードの意味づけであり、構文検証結果そのものではありません。意味の責務は利用側にあります。
 
@@ -345,7 +345,7 @@ slotted `pre` が横方向に overflow する場合のみ、`pre` に `tabindex=
 
 `layout` は新規契約における**主たるレイアウト入力**です。`embedded=true` は互換入力として `layout="inline"` 相当として扱います。
 
-したがって、レイアウトを記述する場合は `embedded` ではなく、**常に ****\`\`**** を優先して記述する**方がよいです。
+したがって、レイアウトを記述する場合は `embedded` ではなく、**常に \*\***\`\`\***\* を優先して記述する**方がよいです。
 
 ### 5.11 コピー値状態
 
@@ -418,10 +418,10 @@ slotted `pre` が横方向に overflow する場合のみ、`pre` に `tabindex=
 
 `ui-code-block` は Shadow DOM 内部要素を `::part()` で広く公開しません。公開している part は slotted content 側の次の2点です。
 
-| part 名 | 対象             | 役割            |
-| ------ | -------------- | ------------- |
-| `pre`  | slotted `pre`  | スクロール領域・コード容器 |
-| `code` | slotted `code` | コード本文         |
+| part 名 | 対象           | 役割                       |
+| ------- | -------------- | -------------------------- |
+| `pre`   | slotted `pre`  | スクロール領域・コード容器 |
+| `code`  | slotted `code` | コード本文                 |
 
 Shadow DOM 内部の `.root`、`.caption`、`.intent`、`.copy-button-shell` などの class 名は公開契約に含めません。利用者は内部 class 名に依存してはなりません（MUST NOT）。
 
@@ -487,24 +487,24 @@ slotted `pre` は `white-space: pre`、`overflow-x: auto`、`overflow-y: hidden`
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途       | トークン                                                                                   |
-| -------- | -------------------------------------------------------------------------------------- |
-| 背景       | `--bg-default`                                                                         |
-| 境界線      | `--border-style-subtle`                                                                |
-| 前景       | `--fg-default`                                                                         |
-| 補助文字色    | `--fg-muted`, `--fg-subtle`                                                            |
-| ハイライト背景  | `--bg-highlight-subtle`                                                                |
-| 成功色      | `--success`                                                                            |
-| 危険色      | `--danger`                                                                             |
-| 角丸       | `--radius-sm`, `--radius-md`                                                           |
-| 余白       | `--space-*`                                                                            |
-| フォント     | `--font-mono`, `--text-sm`, `--text-xs`                                                |
-| 行高       | `--line-height-none`                                                                   |
-| アイコンサイズ  | `--icon-sm`                                                                            |
+| 用途             | トークン                                                                               |
+| ---------------- | -------------------------------------------------------------------------------------- |
+| 背景             | `--bg-default`                                                                         |
+| 境界線           | `--border-style-subtle`                                                                |
+| 前景             | `--fg-default`                                                                         |
+| 補助文字色       | `--fg-muted`, `--fg-subtle`                                                            |
+| ハイライト背景   | `--bg-highlight-subtle`                                                                |
+| 成功色           | `--success`                                                                            |
+| 危険色           | `--danger`                                                                             |
+| 角丸             | `--radius-sm`, `--radius-md`                                                           |
+| 余白             | `--space-*`                                                                            |
+| フォント         | `--font-mono`, `--text-sm`, `--text-xs`                                                |
+| 行高             | `--line-height-none`                                                                   |
+| アイコンサイズ   | `--icon-sm`                                                                            |
 | コントロール高さ | `--control-height-sm`                                                                  |
 | フォーカスリング | `--focus-ring-width`, `--focus-ring-color`, `--focus-ring-offset`, `--animation-focus` |
-| 遷移時間     | `--duration-normal`, `--duration-instant`                                              |
-| イージング    | `--ease-out`                                                                           |
+| 遷移時間         | `--duration-normal`, `--duration-instant`                                              |
+| イージング       | `--ease-out`                                                                           |
 | タッチ時不透明度 | `--opacity-link-touch`                                                                 |
 
 ---
@@ -579,7 +579,7 @@ slot change のたびに次を行います。
 
 ### 9.6 Light DOM 変異契約
 
-`ui-code-block` は slotted content を読み取るだけではなく、**light DOM 上の ****\`\`**** に対して属性付与と限定的な構造整備を行います**。したがって、本コンポーネントは light DOM に対して完全非破壊ではありません。
+`ui-code-block` は slotted content を読み取るだけではなく、**light DOM 上の \*\***\`\`\***\* に対して属性付与と限定的な構造整備を行います**。したがって、本コンポーネントは light DOM に対して完全非破壊ではありません。
 
 公開契約としては次を満たします。
 
@@ -699,24 +699,24 @@ copy affordance は視覚表示しませんが、コード本文や copy 値の�
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
 
-| Story                                | 固定する契約                                                            |
-| ------------------------------------ | ----------------------------------------------------------------- |
-| `Default`                            | `data-lang`、`aria-description`、基本枠、コピー値同期が成立すること                  |
-| `IntentStates`                       | `neutral` / `valid` / `invalid` の表示差分と A11y 文言差分が成立すること           |
-| `HeaderDisplayPriority`              | `--ui-code-block-header-display` が `headless` より優先すること            |
+| Story                                | 固定する契約                                                                   |
+| ------------------------------------ | ------------------------------------------------------------------------------ |
+| `Default`                            | `data-lang`、`aria-description`、基本枠、コピー値同期が成立すること            |
+| `IntentStates`                       | `neutral` / `valid` / `invalid` の表示差分と A11y 文言差分が成立すること       |
+| `HeaderDisplayPriority`              | `--ui-code-block-header-display` が `headless` より優先すること                |
 | `FocusWithinInstantVisibility`       | focus-within 時に copy button が即時可視化されること                           |
-| `ShowLineNumbers`                    | プレーンテキスト入力で `.line` 生成と行番号表示が成立すること                               |
-| `ShikiHighlightedLines`              | Shiki の `.line`、highlight、diff、`data-raw` コピー優先が成立すること            |
-| `DeclaredHighlightLines`             | `highlight-lines` により論理行の強調が宣言的に適用されること                           |
+| `ShowLineNumbers`                    | プレーンテキスト入力で `.line` 生成と行番号表示が成立すること                  |
+| `ShikiHighlightedLines`              | Shiki の `.line`、highlight、diff、`data-raw` コピー優先が成立すること         |
+| `DeclaredHighlightLines`             | `highlight-lines` により論理行の強調が宣言的に適用されること                   |
 | `OverflowScrollableArea`             | overflow 時のみ `tabindex="0"`、`role="region"`、`aria-label` が付与されること |
-| `WrappedContentException`            | `wrap` または互換入力 `data-wrap="true"` で折り返しに切り替わること                   |
-| `CopyModeStates`                     | `copy-mode` の `auto` / `always` / `hidden` が視覚露出に反映されること          |
-| `LayoutModes`                        | `layout="breakout"` / `layout="inline"` の差分が成立すること                |
-| `DarkTokenAdaptation`                | トークン差し替えで背景、境界線、前景が追従すること                                         |
+| `WrappedContentException`            | `wrap` または互換入力 `data-wrap="true"` で折り返しに切り替わること            |
+| `CopyModeStates`                     | `copy-mode` の `auto` / `always` / `hidden` が視覚露出に反映されること         |
+| `LayoutModes`                        | `layout="breakout"` / `layout="inline"` の差分が成立すること                   |
+| `DarkTokenAdaptation`                | トークン差し替えで背景、境界線、前景が追従すること                             |
 | `MediaStyleContracts`                | print / forced-colors 契約が CSS に定義されていること                          |
 | `TouchCoarsePointerVisibility`       | coarse pointer 環境で copy button の視認性が上がること                         |
-| `BoundaryFallbacksAndCopyExtraction` | 不正 `intent` のフォールバックとコピー純度が成立すること                                 |
-| `NoMetadataOverlay`                  | メタデータなし時に overlay copy button モードへ移行すること                          |
+| `BoundaryFallbacksAndCopyExtraction` | 不正 `intent` のフォールバックとコピー純度が成立すること                       |
+| `NoMetadataOverlay`                  | メタデータなし時に overlay copy button モードへ移行すること                    |
 
 ---
 
@@ -827,7 +827,7 @@ Rouault 全体の保守性を考えると、将来的には**文字列正本 + �
 
 現行契約では、`filename` と `intent` がない場合に overlay モードへ移行します。一方で、`lang` は文脈名や `aria-description` の素材には使われますが、キャプション表示の主因にはなりません。
 
-これは、**意味メタデータとしての ****\`\`**** と、視覚ヘッダーを構成するメタデータとが分離されていない**ことを示しています。
+これは、**意味メタデータとしての \*\***\`\`\***\* と、視覚ヘッダーを構成するメタデータとが分離されていない**ことを示しています。
 
 長期的には、少なくとも次の2層へ分ける方がよいです。
 
@@ -999,4 +999,3 @@ Storybook では検証のため `.caption` や `.intent` を参照していま�
 ### 15.10 本節の扱い
 
 本節に記載した事項は、現行公開契約の限界または注意点です。これらを改善する場合は、**実装、Storybook、契約書の3点を同時に更新**し、暗黙挙動を残したまま公開契約へ昇格させない方がよいです。
-

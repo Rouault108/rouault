@@ -112,9 +112,7 @@ describe('layout-sidebar-tree-state', () => {
       },
     ];
 
-    const merged = mergeLayoutSidebarTreeState(nodes, [
-      'music/classical/tchaikovsky',
-    ]);
+    const merged = mergeLayoutSidebarTreeState(nodes, ['music/classical/tchaikovsky']);
 
     const music = merged[0];
     const classical = music?.children?.[0];

@@ -150,8 +150,16 @@ export const searchDialogStyles = css`
   }
 
   .empty-state {
-    --ui-search-dialog-empty-state-padding-inline: clamp(var(--space-5, 20px), 4vw, var(--space-7, 28px));
-    --ui-search-dialog-empty-state-padding-block-start: clamp(var(--space-5, 20px), 4vw, var(--space-7, 28px));
+    --ui-search-dialog-empty-state-padding-inline: clamp(
+      var(--space-5, 20px),
+      4vw,
+      var(--space-7, 28px)
+    );
+    --ui-search-dialog-empty-state-padding-block-start: clamp(
+      var(--space-5, 20px),
+      4vw,
+      var(--space-7, 28px)
+    );
     flex: 1 1 auto;
     min-block-size: 0;
     display: flex;

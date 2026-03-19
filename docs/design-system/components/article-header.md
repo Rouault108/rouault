@@ -57,18 +57,18 @@
 
 `tags` は正規入力です。`tagsJson` は補助入力です。実装は `tags` が空でない場合に `tags` を優先し、`tags` が空である場合に限り `tagsJson` からタグ配列を復元します。
 
-| 名前       | 種別            | 必須  | 内容 | 契約        |
-| ------- | ------- | --- | --------- | -------- |
-| `heading`| property / attribute   | はい  | 記事タイトル  | 公開契約上は必須です。実装上は空文字既定値を持ちますが、空文字運用は行いません。 |
-| `published`   | property / attribute     | いいえ | 公開日   | 代表日付の候補です。                                          |
-| `created`     | property / attribute                  | いいえ | 作成日            | 可視表示には用いず、日付の補助文脈にのみ用います。                           |
-| `updatedDate` | property                              | いいえ | 更新日            | HTML 属性名は `updated` です。代表日付の最優先候補です。                |
-| `tags`        | property                              | いいえ | タグ配列           | 正規入力です。空白除去と空要素除外のみを行います。                           |
-| `tagsJson`    | property / attribute (`tags-json`)    | いいえ | タグ配列の JSON 文字列 | 補助入力です。`tags` が空である場合にのみ採用します。                      |
-| `readingTime` | property / attribute (`reading-time`) | いいえ | 読了時間（分）        | 四捨五入後に 1 以上の整数値のみ表示します。                             |
-| `status`      | property / attribute                  | いいえ | 記事状態           | `draft` / `archived` / `wip` / `deprecated` のみ有効です。 |
-| `source`      | property / attribute                  | いいえ | 出典 URL         | `http:` / `https:` のみ表示対象です。                        |
-| `license`     | property / attribute                  | いいえ | ライセンス表示名       | 妥当性検証は行わず、そのまま表示します。                                |
+| 名前          | 種別                                  | 必須   | 内容                   | 契約                                                                             |
+| ------------- | ------------------------------------- | ------ | ---------------------- | -------------------------------------------------------------------------------- |
+| `heading`     | property / attribute                  | はい   | 記事タイトル           | 公開契約上は必須です。実装上は空文字既定値を持ちますが、空文字運用は行いません。 |
+| `published`   | property / attribute                  | いいえ | 公開日                 | 代表日付の候補です。                                                             |
+| `created`     | property / attribute                  | いいえ | 作成日                 | 可視表示には用いず、日付の補助文脈にのみ用います。                               |
+| `updatedDate` | property                              | いいえ | 更新日                 | HTML 属性名は `updated` です。代表日付の最優先候補です。                         |
+| `tags`        | property                              | いいえ | タグ配列               | 正規入力です。空白除去と空要素除外のみを行います。                               |
+| `tagsJson`    | property / attribute (`tags-json`)    | いいえ | タグ配列の JSON 文字列 | 補助入力です。`tags` が空である場合にのみ採用します。                            |
+| `readingTime` | property / attribute (`reading-time`) | いいえ | 読了時間（分）         | 四捨五入後に 1 以上の整数値のみ表示します。                                      |
+| `status`      | property / attribute                  | いいえ | 記事状態               | `draft` / `archived` / `wip` / `deprecated` のみ有効です。                       |
+| `source`      | property / attribute                  | いいえ | 出典 URL               | `http:` / `https:` のみ表示対象です。                                            |
+| `license`     | property / attribute                  | いいえ | ライセンス表示名       | 妥当性検証は行わず、そのまま表示します。                                         |
 
 ### 1.2 受理値と非受理値
 
@@ -108,17 +108,17 @@
 
 公開入力のうち、attribute 経路と property 経路の対応は固定します。
 
-| 入力名           | HTML 属性名       | property      | 契約                                   |
-| ------------- | -------------- | ------------- | ------------------------------------ |
-| `heading`     | `heading`      | `heading`     | attribute / property の双方を受理します。      |
-| `published`   | `published`    | `published`   | attribute / property の双方を受理します。      |
-| `created`     | `created`      | `created`     | attribute / property の双方を受理します。      |
-| `updatedDate` | `updated`      | `updatedDate` | HTML 属性名は `updated` に固定します。          |
-| `readingTime` | `reading-time` | `readingTime` | number 変換後に評価します。                    |
-| `status`      | `status`       | `status`      | attribute / property の双方を受理します。      |
-| `source`      | `source`       | `source`      | attribute / property の双方を受理します。      |
-| `license`     | `license`      | `license`     | attribute / property の双方を受理します。      |
-| `tags`        | なし             | `tags`        | property 専用の正規入力です。                  |
+| 入力名        | HTML 属性名    | property      | 契約                                                |
+| ------------- | -------------- | ------------- | --------------------------------------------------- |
+| `heading`     | `heading`      | `heading`     | attribute / property の双方を受理します。           |
+| `published`   | `published`    | `published`   | attribute / property の双方を受理します。           |
+| `created`     | `created`      | `created`     | attribute / property の双方を受理します。           |
+| `updatedDate` | `updated`      | `updatedDate` | HTML 属性名は `updated` に固定します。              |
+| `readingTime` | `reading-time` | `readingTime` | number 変換後に評価します。                         |
+| `status`      | `status`       | `status`      | attribute / property の双方を受理します。           |
+| `source`      | `source`       | `source`      | attribute / property の双方を受理します。           |
+| `license`     | `license`      | `license`     | attribute / property の双方を受理します。           |
+| `tags`        | なし           | `tags`        | property 専用の正規入力です。                       |
 | `tagsJson`    | `tags-json`    | `tagsJson`    | property / attribute の双方を受理する補助入力です。 |
 
 `tags` と `tagsJson` は同等入力ではありません。`tags` は正規入力です。`tagsJson` は補助入力です。
@@ -139,10 +139,10 @@
 
 採用された日付のラベルは次のとおりです。
 
-| 条件                    | 表示ラベル   |
-| --------------------- | ------- |
+| 条件                         | 表示ラベル   |
+| ---------------------------- | ------------ |
 | `updatedDate` を採用した場合 | `最終更新日` |
-| `published` を採用した場合   | `公開日`   |
+| `published` を採用した場合   | `公開日`     |
 
 `created` は独立した可視項目ではありません。`created` が存在する場合は、`time` 要素の `aria-label` に `作成日: ...` を補助文脈として付加します。
 
@@ -193,12 +193,12 @@
 
 `status` は列挙値として扱います。対応関係は次のとおりです。
 
-| `status` 値   | 表示ラベル | アイコン                    | トーンクラス              |
-| ------------ | ----- | ----------------------- | ------------------- |
-| `draft`      | 下書き   | `lucide:file-dashed`    | `status-draft`      |
+| `status` 値  | 表示ラベル | アイコン                | トーンクラス        |
+| ------------ | ---------- | ----------------------- | ------------------- |
+| `draft`      | 下書き     | `lucide:file-dashed`    | `status-draft`      |
 | `archived`   | アーカイブ | `lucide:archive`        | `status-archived`   |
-| `wip`        | 作業中   | `lucide:construction`   | `status-wip`        |
-| `deprecated` | 非推奨   | `lucide:alert-triangle` | `status-deprecated` |
+| `wip`        | 作業中     | `lucide:construction`   | `status-wip`        |
+| `deprecated` | 非推奨     | `lucide:alert-triangle` | `status-deprecated` |
 
 未知の値は描画しません。
 
@@ -332,23 +332,23 @@
 
 主な参照トークンは次のとおりです。
 
-| 用途                | トークン                                   |
-| ----------------- | -------------------------------------- |
-| 見出し色              | `--fg-default`                         |
-| 主要メタデータ色          | `--fg-muted`                           |
+| 用途                            | トークン                               |
+| ------------------------------- | -------------------------------------- |
+| 見出し色                        | `--fg-default`                         |
+| 主要メタデータ色                | `--fg-muted`                           |
 | 補助メタデータ色 / セパレータ色 | `--fg-subtle`                          |
-| 作業中ステータス          | `--fg-warning`                         |
-| 非推奨ステータス          | `--fg-danger`                          |
-| 読書幅               | `--width-reading`                      |
-| 余白                | `--space-*`                            |
-| フォントサイズ           | `--text-*`                             |
-| 行高                | `--line-height-tight`                  |
-| トラッキング            | `--tracking-tight`                     |
-| フォーカスリング色         | `--focus-ring-color`                   |
-| フォーカスリング幅         | `--focus-ring-width`                   |
-| フォーカスリングオフセット     | `--focus-ring-offset`                  |
-| 遷移時間              | `--duration-fast`, `--duration-normal` |
-| イージング             | `--ease-out`                           |
+| 作業中ステータス                | `--fg-warning`                         |
+| 非推奨ステータス                | `--fg-danger`                          |
+| 読書幅                          | `--width-reading`                      |
+| 余白                            | `--space-*`                            |
+| フォントサイズ                  | `--text-*`                             |
+| 行高                            | `--line-height-tight`                  |
+| トラッキング                    | `--tracking-tight`                     |
+| フォーカスリング色              | `--focus-ring-color`                   |
+| フォーカスリング幅              | `--focus-ring-width`                   |
+| フォーカスリングオフセット      | `--focus-ring-offset`                  |
+| 遷移時間                        | `--duration-fast`, `--duration-normal` |
+| イージング                      | `--ease-out`                           |
 
 ### 4.5 リンク表示契約
 
@@ -374,10 +374,10 @@
 
 タグクリック時には `tag-click` イベントを発火します。これは単なる通知ではなく、**ネイティブリンク遷移へ介入可能なキャンセル可能イベント**です。
 
-| 項目            | 契約                                 |
+| 項目          | 契約                               |
 | ------------- | ---------------------------------- |
-| イベント名         | `tag-click`                        |
-| `detail.tag`  | クリックされたタグ文字列                       |
+| イベント名    | `tag-click`                        |
+| `detail.tag`  | クリックされたタグ文字列           |
 | `detail.href` | `/tags/${encodeURIComponent(tag)}` |
 | `bubbles`     | `true`                             |
 | `composed`    | `true`                             |
@@ -408,17 +408,17 @@
 
 各 Story は単なる表示例ではなく、将来変更時の契約確認点です。
 
-| Story                         | 固定する契約                                                    |
-| ----------------------------- | --------------------------------------------------------- |
+| Story                         | 固定する契約                                                                                         |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `CompleteState`               | フル構成時の総合契約、更新日優先、作成日の `aria-label` 付加、出典リンク属性、タグ数、ステータス表示 |
-| `PublishedFallback`           | `updatedDate` 不在時に `published` へフォールバックする契約               |
-| `StatusStateMatrix`           | `status` 値ごとのラベル、アイコン、トーンクラス対応                            |
-| `TagEventContract`            | `tags` の property 経路、`tag-click` の発火条件とキャンセル可能性           |
-| `HeadingOnlyBoundary`         | 見出しのみ最小構成                                                 |
-| `NormalizationBoundary`       | `tags`・`readingTime`・`source` の正規化契約                      |
-| `UnsafeSourceOnlyBoundary`    | unsafe source 単独時に補助メタデータ行ごと非表示とする契約                      |
-| `AccessibilityMediaContracts` | タッチ環境、reduced-motion、forced-colors の CSS 契約               |
-| `DarkModeTokenContract`       | セマンティックトークン参照によるモード非依存契約                                  |
+| `PublishedFallback`           | `updatedDate` 不在時に `published` へフォールバックする契約                                          |
+| `StatusStateMatrix`           | `status` 値ごとのラベル、アイコン、トーンクラス対応                                                  |
+| `TagEventContract`            | `tags` の property 経路、`tag-click` の発火条件とキャンセル可能性                                    |
+| `HeadingOnlyBoundary`         | 見出しのみ最小構成                                                                                   |
+| `NormalizationBoundary`       | `tags`・`readingTime`・`source` の正規化契約                                                         |
+| `UnsafeSourceOnlyBoundary`    | unsafe source 単独時に補助メタデータ行ごと非表示とする契約                                           |
+| `AccessibilityMediaContracts` | タッチ環境、reduced-motion、forced-colors の CSS 契約                                                |
+| `DarkModeTokenContract`       | セマンティックトークン参照によるモード非依存契約                                                     |
 
 ---
 
@@ -430,7 +430,7 @@
 
 本書は公開契約を定義する文書であり、Storybook はその確認手段です。したがって、Storybook 上の確認観点が公開契約より広い場合でも、公開契約そのものは本書の定義を優先します。
 
-現行の Storybook では、`tags` を property-only と強く読める表現がありますが、現行実装は `tags-json` 補助経路を持ちます。したがって、公開契約上の位置づけは ``** が正規入力、**``** が補助入力** です。
+現行の Storybook では、`tags` を property-only と強く読める表現がありますが、現行実装は `tags-json` 補助経路を持ちます。したがって、公開契約上の位置づけは `** が正規入力、**`** が補助入力** です。
 
 ### 8.2 文書上の正規トークン名
 
@@ -675,4 +675,3 @@ Storybook では coarse pointer 向け契約を期待していますが、現行
 - `tags` が空であるときに `tagsJson` へフォールバックする Story を追加します。
 
 逆に、長期方針として `tagsJson` を adapter 層へ退避するのであれば、公開契約から外し、未対応項目ではなく削除候補として扱うのが適切です.
-

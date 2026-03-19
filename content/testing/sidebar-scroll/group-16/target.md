@@ -1,6 +1,6 @@
 ---
-title: "Sidebar Scroll Target"
-description: "サイドバーのルート遷移スクロール検証用の遷移先ノート"
+title: 'Sidebar Scroll Target'
+description: 'サイドバーのルート遷移スクロール検証用の遷移先ノート'
 date: 2026-03-14
 genre:
   - testing

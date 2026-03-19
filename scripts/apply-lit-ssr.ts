@@ -29,7 +29,7 @@ const listHtmlFiles = async (dirPath: string): Promise<string[]> => {
   for (const entry of entries) {
     const nextPath = path.join(dirPath, entry.name);
     if (entry.isDirectory()) {
-      htmlFiles.push(...await listHtmlFiles(nextPath));
+      htmlFiles.push(...(await listHtmlFiles(nextPath)));
       continue;
     }
 

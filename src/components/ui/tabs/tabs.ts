@@ -9,16 +9,9 @@ import {
   switchPanels,
   validateTabsSnapshot,
 } from './tabs-dom.js';
-import {
-  findTabIndexByValue,
-  resolveKeyNavigation,
-  resolveSelectedIndex,
-} from './tabs-model.js';
+import { findTabIndexByValue, resolveKeyNavigation, resolveSelectedIndex } from './tabs-model.js';
 import { TabsIndicatorController } from './tabs-indicator-controller.js';
-import {
-  TabsUrlSyncController,
-  type TabsUrlSyncHost,
-} from './tabs-url-sync-controller.js';
+import { TabsUrlSyncController, type TabsUrlSyncHost } from './tabs-url-sync-controller.js';
 import type {
   CommitActiveIndexOptions,
   DevImportMeta,
@@ -242,10 +235,8 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
   }
 
   private syncSnapshotFromSlots(): void {
-    const tabSlot =
-      this.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="tab"]') ?? null;
-    const panelSlot =
-      this.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="panel"]') ?? null;
+    const tabSlot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="tab"]') ?? null;
+    const panelSlot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="panel"]') ?? null;
 
     this.snapshot = readTabsSnapshot(tabSlot, panelSlot);
     validateTabsSnapshot(this.snapshot, this.warnDev);
@@ -256,11 +247,7 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
   // ─────────────────────────────────────────────────
 
   private resolveAndCommit(options: ResolveAndCommitOptions = {}): void {
-    const {
-      emitEvent = false,
-      historyMode = 'none',
-      normalizeUrl = true,
-    } = options;
+    const { emitEvent = false, historyMode = 'none', normalizeUrl = true } = options;
 
     const count = this.snapshot.interactiveCount;
     if (count === 0) {
@@ -269,7 +256,7 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
 
     const urlResolution = this.urlSync
       ? this.urlController.resolveUrlDrivenValue()
-      : { value: null, source: null } as const;
+      : ({ value: null, source: null } as const);
 
     const resolved = resolveSelectedIndex(
       {
@@ -288,8 +275,7 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
       this.warnDev(resolved.warning);
     }
 
-    const shouldUpdate =
-      !this.initialized || resolved.index !== this.activeIndex;
+    const shouldUpdate = !this.initialized || resolved.index !== this.activeIndex;
 
     this.initialized = true;
 
@@ -308,14 +294,8 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
     }
   }
 
-  private commitActiveIndex(
-    index: number,
-    options: CommitActiveIndexOptions = {},
-  ): void {
-    const {
-      emitEvent = true,
-      historyMode = 'none',
-    } = options;
+  private commitActiveIndex(index: number, options: CommitActiveIndexOptions = {}): void {
+    const { emitEvent = true, historyMode = 'none' } = options;
 
     if (index < 0 || index >= this.snapshot.interactiveCount) {
       return;
@@ -360,31 +340,18 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
   }
 
   private applyDomState(prevIndex: number): void {
-    applyTabsAria(
-      this.snapshot,
-      this.uid,
-      this.activeIndex,
-      this.focusedIndex,
-    );
+    applyTabsAria(this.snapshot, this.uid, this.activeIndex, this.focusedIndex);
 
     this.bindTabClickListeners();
 
-    switchPanels(
-      this.snapshot.panels,
-      this.activeIndex,
-      prevIndex,
-      this.panelHideFallbackTimers,
-    );
+    switchPanels(this.snapshot.panels, this.activeIndex, prevIndex, this.panelHideFallbackTimers);
   }
 
   // ─────────────────────────────────────────────────
   // Focus / selection
   // ─────────────────────────────────────────────────
 
-  private selectTab(
-    index: number,
-    options: CommitActiveIndexOptions = {},
-  ): void {
+  private selectTab(index: number, options: CommitActiveIndexOptions = {}): void {
     if (index < 0 || index >= this.snapshot.interactiveCount) {
       return;
     }
@@ -402,12 +369,7 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
 
     this.focusedIndex = index;
 
-    applyTabsAria(
-      this.snapshot,
-      this.uid,
-      this.activeIndex,
-      this.focusedIndex,
-    );
+    applyTabsAria(this.snapshot, this.uid, this.activeIndex, this.focusedIndex);
 
     const tabEl = this.snapshot.tabs[index];
     const tablist = this.getTablistElement();
@@ -521,23 +483,16 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
       emitEvent?: boolean;
     } = {},
   ): void {
-    const index = findTabIndexByValue(
-      this.snapshot.tabs,
-      value,
-      this.snapshot.interactiveCount,
-    );
+    const index = findTabIndexByValue(this.snapshot.tabs, value, this.snapshot.interactiveCount);
 
     if (index === -1) {
-      this.warnDev(
-        `[ui-tabs]: select("${value}") に一致する value を持つ tab がありません。`,
-      );
+      this.warnDev(`[ui-tabs]: select("${value}") に一致する value を持つ tab がありません。`);
       return;
     }
 
     this.selectTab(index, {
       emitEvent: options.emitEvent ?? true,
-      historyMode:
-        options.historyMode ?? (this.urlSync ? 'replace' : 'none'),
+      historyMode: options.historyMode ?? (this.urlSync ? 'replace' : 'none'),
     });
   }
 

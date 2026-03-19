@@ -40,22 +40,22 @@ remark 層では「著者入力の制約付けと独自構文の展開」を行�
 
 [`lib/remark/rouault-directives.ts`](/Users/ruo/Desktop/Programing/Rouault/lib/remark/rouault-directives.ts#L1142) は、段落テキストとして書かれた `::directive{...}` 記法を解析し、`data.hName` / `data.hProperties` を持つノードへ変換する。
 
-| 入力             | 出力                | 許可属性 / 補足                                                                                                       |
-| ---------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `::callout`      | `ui-callout`        | `kind` / `variant` / `title` / `icon` / `heading-level` / `aria-label`                                                |
-| `::code-group`   | `ui-code-group`     | `aria-label`。内包 `code` のメタは `filename` / `label`                                                               |
-| `::code-preview` | `ui-code-preview`   | `label` / `controls` / `preview-padding` / `preview-align` / `preview-theme` / `preview-surface` / `preview-viewport` |
+| 入力                | 出力                 | 許可属性 / 補足                                                                                                                                     |
+| ------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `::callout`         | `ui-callout`         | `kind` / `variant` / `title` / `icon` / `heading-level` / `aria-label`                                                                              |
+| `::code-group`      | `ui-code-group`      | `aria-label`。内包 `code` のメタは `filename` / `label`                                                                                             |
+| `::code-preview`    | `ui-code-preview`    | `label` / `controls` / `preview-padding` / `preview-align` / `preview-theme` / `preview-surface` / `preview-viewport`                               |
 | `::preview-sandbox` | `ui-preview-sandbox` | `title` / `allow-js` / `height`。`code-preview` 直下専用、内部は `preview-html/css/js` fenced code のみ。`allow-js` は author script 許可のみを表す |
-| `::details`      | `ui-details`        | `aria-label` 必須。`summary` / `open` / `variant` / `region`                                                          |
-| `::info-box`     | `ui-info-box`       | `heading` / `icon` / `heading-level` / `landmark` / `variant`                                                         |
-| `::link-card`    | `ui-card`           | leaf directive。`url` 必須、`title` / `description` / `image`。終端 `::` は不要                                      |
-| `::score`        | `ui-score`          | `src` / `caption` / `label` / `description` / `aspect-ratio` / `loading` / `primary`                                  |
-| `::tabs` | `ui-tabs` | `selected-value` / `default-selected-value` / `orientation` / `automatic-activation` / `url-sync` |
-| `::translation`  | `ui-translation`    | `original` / `translated` / `lang` / `target-lang` / `render-mode` / `open`                                           |
-| `::preview`      | `div[slot=preview]` | 属性なし                                                                                                              |
-| `::toolbar`      | `div[slot=toolbar]` | 内部 / 互換用。著者向け公開文法では非推奨                                                                             |
-| `::tab`          | `div[slot=tab]`     | `value`                                                                                                               |
-| `::panel`        | `div[slot=panel]`   | 属性なし                                                                                                              |
+| `::details`         | `ui-details`         | `aria-label` 必須。`summary` / `open` / `variant` / `region`                                                                                        |
+| `::info-box`        | `ui-info-box`        | `heading` / `icon` / `heading-level` / `landmark` / `variant`                                                                                       |
+| `::link-card`       | `ui-card`            | leaf directive。`url` 必須、`title` / `description` / `image`。終端 `::` は不要                                                                     |
+| `::score`           | `ui-score`           | `src` / `caption` / `label` / `description` / `aspect-ratio` / `loading` / `primary`                                                                |
+| `::tabs`            | `ui-tabs`            | `selected-value` / `default-selected-value` / `orientation` / `automatic-activation` / `url-sync`                                                   |
+| `::translation`     | `ui-translation`     | `original` / `translated` / `lang` / `target-lang` / `render-mode` / `open`                                                                         |
+| `::preview`         | `div[slot=preview]`  | 属性なし                                                                                                                                            |
+| `::toolbar`         | `div[slot=toolbar]`  | 内部 / 互換用。著者向け公開文法では非推奨                                                                                                           |
+| `::tab`             | `div[slot=tab]`      | `value`                                                                                                                                             |
+| `::panel`           | `div[slot=panel]`    | 属性なし                                                                                                                                            |
 
 補足:
 
@@ -92,14 +92,14 @@ remark 層では「著者入力の制約付けと独自構文の展開」を行�
 
 同ファイルは通常テキスト中の簡易記法も処理する。
 
-| 入力 | 出力 | 補足 |
-|---|---|---|
-| `:emoji[text]{aria-label="..."}` | `span` | `label` か `aria-label` があれば `role="img"` を付与 |
-| `:subscript[text]` / `~text~` | `sub` | 属性なし |
-| `:superscript[text]` / `^text^` | `sup` | 属性なし |
-| `:highlight[text]{origin="search"}` | `ui-highlight` | `origin` は `search|user`、`current` を許可 |
-| `==text==` | `ui-highlight` | 常に `origin="user"` |
-| `:sparkles:` など | 絵文字文字列 | 内蔵 shortcodes のみ置換 |
+| 入力                                | 出力           | 補足                                                 |
+| ----------------------------------- | -------------- | ---------------------------------------------------- | ----------------------- |
+| `:emoji[text]{aria-label="..."}`    | `span`         | `label` か `aria-label` があれば `role="img"` を付与 |
+| `:subscript[text]` / `~text~`       | `sub`          | 属性なし                                             |
+| `:superscript[text]` / `^text^`     | `sup`          | 属性なし                                             |
+| `:highlight[text]{origin="search"}` | `ui-highlight` | `origin` は `search                                  | user`、`current` を許可 |
+| `==text==`                          | `ui-highlight` | 常に `origin="user"`                                 |
+| `:sparkles:` など                   | 絵文字文字列   | 内蔵 shortcodes のみ置換                             |
 
 内蔵 shortcodes は `smile`, `grin`, `joy`, `thinking`, `sparkles`, `warning`, `fire`, `heart`, `check`, `x`, `memo`, `book`, `music`, `bulb`。
 

@@ -1,12 +1,12 @@
 ---
-title: "タブテスト"
-description: "これはタブテストです。"
+title: 'タブテスト'
+description: 'これはタブテストです。'
 date: 2026-03-15
 updated: 2026-03-15
 genre:
-    - testing
-    - test
-status: "wip"
+  - testing
+  - test
+status: 'wip'
 ---
 
 ## タブ用のテストページです。
@@ -16,18 +16,21 @@ status: "wip"
 JavaScript
 ::
 ::panel
+
 ### JavaScriptのHello, World!
 
 JavaScriptではこのように書きます。
 
 ```js
-console.log("Hello, World!");
+console.log('Hello, World!');
 ```
+
 ::
 ::tab{value="rust"}
 Rust
 ::
 ::panel
+
 ### RustのHello, World!
 
 Rustではこのように書きます。
@@ -37,6 +40,7 @@ fn main() {
     println!("Hello, World!");
 }
 ```
+
 ::
 ::
 

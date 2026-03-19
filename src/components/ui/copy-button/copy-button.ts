@@ -52,8 +52,14 @@ export class CopyButton extends LitElement {
       --_copy-button-icon-size: var(--icon-base, 16px);
 
       /* フラッシュ用のローカルカラー変数 */
-      --_flash-color-success: var(--bg-success-subtle, oklch(from var(--fg-success, var(--success, oklch(60% 0.15 160))) l c h / 0.15));
-      --_flash-color-error: var(--bg-danger-subtle, oklch(from var(--fg-danger, var(--danger, oklch(55% 0.2 28))) l c h / 0.1));
+      --_flash-color-success: var(
+        --bg-success-subtle,
+        oklch(from var(--fg-success, var(--success, oklch(60% 0.15 160))) l c h / 0.15)
+      );
+      --_flash-color-error: var(
+        --bg-danger-subtle,
+        oklch(from var(--fg-danger, var(--danger, oklch(55% 0.2 28))) l c h / 0.1)
+      );
 
       /* Hit Area Requirement: 視覚サイズ 24px / ヒット領域 44px */
       position: relative;
@@ -267,7 +273,8 @@ export class CopyButton extends LitElement {
 
   constructor() {
     super();
-    this._isDevelopment = (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV ?? true;
+    this._isDevelopment =
+      (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV ?? true;
   }
 
   override connectedCallback(): void {
@@ -537,12 +544,16 @@ export class CopyButton extends LitElement {
       </ui-button>
 
       <!-- Self-Contained Feedback: スクリーンリーダー用の状態通知 -->
-      <div class="sr-only" role="${this._liveRegionRole}" aria-live="${this._liveRegionAriaLive}" aria-atomic="true">
+      <div
+        class="sr-only"
+        role="${this._liveRegionRole}"
+        aria-live="${this._liveRegionAriaLive}"
+        aria-atomic="true"
+      >
         ${this._liveRegionText}
       </div>
     `;
   }
-
 }
 
 declare global {

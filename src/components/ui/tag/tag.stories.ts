@@ -80,7 +80,10 @@ const meta: Meta<Tag> = {
       control: 'select',
       options: ['default', 'outline', 'solid', 'plain'],
       description: 'スタイルバリアント',
-      table: { type: { summary: "'default' | 'outline' | 'solid' | 'plain'" }, defaultValue: { summary: "'default'" } },
+      table: {
+        type: { summary: "'default' | 'outline' | 'solid' | 'plain'" },
+        defaultValue: { summary: "'default'" },
+      },
     },
     size: {
       control: 'select',
@@ -92,7 +95,10 @@ const meta: Meta<Tag> = {
       control: 'select',
       options: ['neutral', 'red', 'blue', 'violet', 'pink', 'gold'],
       description: '意味的カラー',
-      table: { type: { summary: "'neutral' | 'red' | 'blue' | 'violet' | 'pink' | 'gold'" }, defaultValue: { summary: "'neutral'" } },
+      table: {
+        type: { summary: "'neutral' | 'red' | 'blue' | 'violet' | 'pink' | 'gold'" },
+        defaultValue: { summary: "'neutral'" },
+      },
     },
     removable: {
       control: 'boolean',
@@ -141,7 +147,8 @@ export const Default: Story = {
       color="${args.color}"
       ?removable="${args.removable}"
       ?disabled="${args.disabled}"
-    >JavaScript</ui-tag>
+      >JavaScript</ui-tag
+    >
   `,
   play: async ({ canvasElement }) => {
     const tag = canvasElement.querySelector<Tag>('#default-tag');
@@ -164,9 +171,12 @@ export const Default: Story = {
     if (link) throw new Error('href が設定されていないのにリンクが存在しています');
 
     // テスト: variant / size / color プロパティ
-    if (tag.variant !== 'default') throw new Error(`variant="default" を期待していましたが、実際には "${tag.variant}" でした`);
-    if (tag.size !== 'xs') throw new Error(`size="xs" を期待していましたが、実際には "${tag.size}" でした`);
-    if (tag.color !== 'neutral') throw new Error(`color="neutral" を期待していましたが、実際には "${tag.color}" でした`);
+    if (tag.variant !== 'default')
+      throw new Error(`variant="default" を期待していましたが、実際には "${tag.variant}" でした`);
+    if (tag.size !== 'xs')
+      throw new Error(`size="xs" を期待していましたが、実際には "${tag.size}" でした`);
+    if (tag.color !== 'neutral')
+      throw new Error(`color="neutral" を期待していましたが、実際には "${tag.color}" でした`);
   },
 };
 
@@ -187,42 +197,62 @@ export const VariantColorMatrix: Story = {
 
     return html`
       <style>
-        .matrix { display: flex; flex-direction: column; gap: 1.5rem; }
-        .matrix-row { display: flex; flex-direction: column; gap: 0.5rem; }
-        .matrix-label {
-          font-size: 11px; font-weight: 500;
-          color: oklch(48% 0.01 250);
-          text-transform: uppercase; letter-spacing: 0.05em;
+        .matrix {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
         }
-        .matrix-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+        .matrix-row {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+        .matrix-label {
+          font-size: 11px;
+          font-weight: 500;
+          color: oklch(48% 0.01 250);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .matrix-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          align-items: center;
+        }
       </style>
       <div class="matrix">
-        ${variants.map((variant) => html`
-          <div class="matrix-row">
-            <div class="matrix-label">${variant}</div>
-            <div class="matrix-tags">
-              ${colors.map((color) => html`
-                <ui-tag
-                  id="matrix-${variant}-${color}"
-                  variant="${variant}"
-                  color="${color}"
-                >${color}</ui-tag>
-              `)}
+        ${variants.map(
+          (variant) => html`
+            <div class="matrix-row">
+              <div class="matrix-label">${variant}</div>
+              <div class="matrix-tags">
+                ${colors.map(
+                  (color) => html`
+                    <ui-tag id="matrix-${variant}-${color}" variant="${variant}" color="${color}"
+                      >${color}</ui-tag
+                    >
+                  `,
+                )}
+              </div>
             </div>
-          </div>
-        `)}
+          `,
+        )}
         <div class="matrix-row">
           <div class="matrix-label">PALIN</div>
           <div class="matrix-tags">
             <ui-tag variant="plain">plain</ui-tag>
           </div>
+        </div>
       </div>
     `;
   },
   play: async ({ canvasElement }) => {
     const tags = canvasElement.querySelectorAll<Tag>('ui-tag');
     if (tags.length !== 24) {
-      throw new Error(`24個のタグ（4つのバリアント × 6色）を期待していましたが、実際には ${String(tags.length)}個でした`);
+      throw new Error(
+        `24個のタグ（4つのバリアント × 6色）を期待していましたが、実際には ${String(tags.length)}個でした`,
+      );
     }
 
     await Promise.all([...tags].map((t) => t.updateComplete));
@@ -234,8 +264,12 @@ export const VariantColorMatrix: Story = {
       for (const color of colors) {
         const tag = canvasElement.querySelector<Tag>(`#matrix-${variant}-${color}`);
         if (!tag) throw new Error(`#matrix-${variant}-${color} が見つかりません`);
-        if (tag.variant !== variant) throw new Error(`variant="${variant}" を期待していましたが、実際には "${tag.variant}" でした`);
-        if (tag.color !== color) throw new Error(`color="${color}" を期待していましたが、実際には "${tag.color}" でした`);
+        if (tag.variant !== variant)
+          throw new Error(
+            `variant="${variant}" を期待していましたが、実際には "${tag.variant}" でした`,
+          );
+        if (tag.color !== color)
+          throw new Error(`color="${color}" を期待していましたが、実際には "${tag.color}" でした`);
       }
     }
   },
@@ -270,13 +304,18 @@ export const Sizes: Story = {
     if (!xs || !sm) throw new Error('タグが見つかりません');
     await Promise.all([xs.updateComplete, sm.updateComplete]);
 
-    if (xs.size !== 'xs') throw new Error(`size="xs" を期待していましたが、実際には "${xs.size}" でした`);
-    if (sm.size !== 'sm') throw new Error(`size="sm" を期待していましたが、実際には "${sm.size}" でした`);
+    if (xs.size !== 'xs')
+      throw new Error(`size="xs" を期待していましたが、実際には "${xs.size}" でした`);
+    if (sm.size !== 'sm')
+      throw new Error(`size="sm" を期待していましたが、実際には "${sm.size}" でした`);
 
     // テスト: xs の高さが sm より小さい
     const xsRect = xs.getBoundingClientRect();
     const smRect = sm.getBoundingClientRect();
-    if (xsRect.height >= smRect.height) throw new Error(`xs の高さ (${String(xsRect.height)}) が sm の高さ (${String(smRect.height)}) より小さいことを期待していましたが、異なっていました`);
+    if (xsRect.height >= smRect.height)
+      throw new Error(
+        `xs の高さ (${String(xsRect.height)}) が sm の高さ (${String(smRect.height)}) より小さいことを期待していましたが、異なっていました`,
+      );
   },
 };
 
@@ -293,21 +332,27 @@ export const Sizes: Story = {
 export const DisabledVariants: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="font-size: 11px; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;">
+      <div
+        style="font-size: 11px; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;"
+      >
         Disabled × Variants
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
         <ui-tag id="disabled-default" variant="default" color="red" disabled>Default</ui-tag>
         <ui-tag id="disabled-outline" variant="outline" color="red" disabled>Outline</ui-tag>
-        <ui-tag id="disabled-solid"   variant="solid"   color="red" disabled>Solid</ui-tag>
+        <ui-tag id="disabled-solid" variant="solid" color="red" disabled>Solid</ui-tag>
       </div>
-      <div style="font-size: 11px; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;">
+      <div
+        style="font-size: 11px; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;"
+      >
         Disabled × Removable
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
         <ui-tag id="disabled-removable" color="blue" removable disabled>Removable Disabled</ui-tag>
       </div>
-      <div style="font-size: 11px; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;">
+      <div
+        style="font-size: 11px; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;"
+      >
         Disabled × Link
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
@@ -316,21 +361,34 @@ export const DisabledVariants: Story = {
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const tags = ['#disabled-default', '#disabled-outline', '#disabled-solid', '#disabled-removable', '#disabled-link'];
+    const tags = [
+      '#disabled-default',
+      '#disabled-outline',
+      '#disabled-solid',
+      '#disabled-removable',
+      '#disabled-link',
+    ];
     for (const sel of tags) {
       const tag = canvasElement.querySelector<Tag>(sel);
       if (!tag) throw new Error(`${sel} が見つかりません`);
       await tag.updateComplete;
-      if (!tag.disabled) throw new Error(`${sel} が無効状態（disabled）であることを期待していましたが、異なっていました`);
+      if (!tag.disabled)
+        throw new Error(
+          `${sel} が無効状態（disabled）であることを期待していましたが、異なっていました`,
+        );
     }
 
     // テスト: disabled な removable タグの削除ボタンは tabindex="-1"
     const removableTag = canvasElement.querySelector<Tag>('#disabled-removable');
     if (!removableTag) throw new Error('#disabled-removable が見つかりません');
     await removableTag.updateComplete;
-    const removeBtn = removableTag.shadowRoot?.querySelector<HTMLButtonElement>('.tag-remove-button');
+    const removeBtn =
+      removableTag.shadowRoot?.querySelector<HTMLButtonElement>('.tag-remove-button');
     if (!removeBtn) throw new Error('Remove button not found');
-    if (removeBtn.getAttribute('tabindex') !== '-1') throw new Error(`無効状態の削除ボタンの tabindex="-1" を期待していましたが、実際には "${removeBtn.getAttribute('tabindex') ?? 'null'}" でした`);
+    if (removeBtn.getAttribute('tabindex') !== '-1')
+      throw new Error(
+        `無効状態の削除ボタンの tabindex="-1" を期待していましたが、実際には "${removeBtn.getAttribute('tabindex') ?? 'null'}" でした`,
+      );
 
     // テスト: disabled な link タグのリンクは aria-disabled="true"
     const linkTag = canvasElement.querySelector<Tag>('#disabled-link');
@@ -338,7 +396,10 @@ export const DisabledVariants: Story = {
     await linkTag.updateComplete;
     const link = linkTag.shadowRoot?.querySelector<HTMLAnchorElement>('.tag-link');
     if (!link) throw new Error('リンクが見つかりません');
-    if (link.getAttribute('aria-disabled') !== 'true') throw new Error(`無効状態のリンクの aria-disabled="true" を期待していましたが、実際には "${link.getAttribute('aria-disabled') ?? 'null'}" でした`);
+    if (link.getAttribute('aria-disabled') !== 'true')
+      throw new Error(
+        `無効状態のリンクの aria-disabled="true" を期待していましたが、実際には "${link.getAttribute('aria-disabled') ?? 'null'}" でした`,
+      );
   },
 };
 
@@ -357,9 +418,9 @@ export const Removable: Story = {
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
         <ui-tag id="removable-neutral" color="neutral" removable>Neutral</ui-tag>
-        <ui-tag id="removable-blue"    color="blue"    removable>Computer Science</ui-tag>
-        <ui-tag id="removable-gold"    color="gold"    removable>Literature</ui-tag>
-        <ui-tag id="removable-solid"   variant="solid" color="red" removable>Solid</ui-tag>
+        <ui-tag id="removable-blue" color="blue" removable>Computer Science</ui-tag>
+        <ui-tag id="removable-gold" color="gold" removable>Literature</ui-tag>
+        <ui-tag id="removable-solid" variant="solid" color="red" removable>Solid</ui-tag>
       </div>
       <div
         id="remove-log"
@@ -380,24 +441,42 @@ export const Removable: Story = {
 
     // テスト: aria-label が設定されている
     const ariaLabel = removeBtn.getAttribute('aria-label');
-    if (!ariaLabel?.includes('削除')) throw new Error(`aria-label に "削除" が含まれることを期待していましたが、実際には "${ariaLabel ?? 'null'}" でした`);
+    if (!ariaLabel?.includes('削除'))
+      throw new Error(
+        `aria-label に "削除" が含まれることを期待していましたが、実際には "${ariaLabel ?? 'null'}" でした`,
+      );
 
     // テスト: ui-tag-remove イベントが発火する
     const eventPromise = new Promise<CustomEvent<{ value: string }>>((resolve) => {
-      tag.addEventListener('ui-tag-remove', (e) => { resolve(e as CustomEvent<{ value: string }>); }, { once: true });
+      tag.addEventListener(
+        'ui-tag-remove',
+        (e) => {
+          resolve(e as CustomEvent<{ value: string }>);
+        },
+        { once: true },
+      );
     });
 
     removeBtn.click();
 
     const event = await Promise.race([
       eventPromise,
-      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
 
     if (!event) throw new Error('ui-tag-remove イベントが発火しませんでした');
-    if (!event.bubbles) throw new Error('イベントがバブルすることを期待していましたが、異なっていました');
-    if (!event.composed) throw new Error('イベントが composed であることを期待していましたが、異なっていました');
-    if (typeof event.detail.value !== 'string') throw new Error(`detail.value が string 型であることを期待していましたが、実際には ${typeof event.detail.value} でした`);
+    if (!event.bubbles)
+      throw new Error('イベントがバブルすることを期待していましたが、異なっていました');
+    if (!event.composed)
+      throw new Error('イベントが composed であることを期待していましたが、異なっていました');
+    if (typeof event.detail.value !== 'string')
+      throw new Error(
+        `detail.value が string 型であることを期待していましたが、実際には ${typeof event.detail.value} でした`,
+      );
   },
 };
 
@@ -414,10 +493,10 @@ export const Removable: Story = {
 export const WithLink: Story = {
   render: () => html`
     <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
-      <ui-tag id="link-blue"   href="/tags/cs"          color="blue">Computer Science</ui-tag>
-      <ui-tag id="link-violet" href="/tags/music"       color="violet">Music</ui-tag>
-      <ui-tag id="link-gold"   href="/tags/literature"  color="gold">Literature</ui-tag>
-      <ui-tag id="link-solid"  href="/tags/new" variant="solid" color="red">New</ui-tag>
+      <ui-tag id="link-blue" href="/tags/cs" color="blue">Computer Science</ui-tag>
+      <ui-tag id="link-violet" href="/tags/music" color="violet">Music</ui-tag>
+      <ui-tag id="link-gold" href="/tags/literature" color="gold">Literature</ui-tag>
+      <ui-tag id="link-solid" href="/tags/new" variant="solid" color="red">New</ui-tag>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -429,11 +508,16 @@ export const WithLink: Story = {
     const link = tag.shadowRoot?.querySelector<HTMLAnchorElement>('.tag-link');
     if (!link) throw new Error('.tag-link が見つかりません');
     if (link.tagName.toLowerCase() !== 'a') {
-      throw new Error(`<a> 要素を期待していましたが、実際には <${link.tagName.toLowerCase()}> でした`);
+      throw new Error(
+        `<a> 要素を期待していましたが、実際には <${link.tagName.toLowerCase()}> でした`,
+      );
     }
 
     // テスト: href が設定されている
-    if (link.getAttribute('href') !== '/tags/cs') throw new Error(`href="/tags/cs" を期待していましたが、実際には "${link.getAttribute('href') ?? 'null'}" でした`);
+    if (link.getAttribute('href') !== '/tags/cs')
+      throw new Error(
+        `href="/tags/cs" を期待していましたが、実際には "${link.getAttribute('href') ?? 'null'}" でした`,
+      );
 
     // テスト: role="group" は存在しない（link only の場合）
     const group = tag.shadowRoot?.querySelector('[role="group"]');
@@ -456,9 +540,15 @@ export const LinkAndRemovable: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
-        <ui-tag id="link-removable-blue"   href="/tags/cs"         color="blue"   removable>Computer Science</ui-tag>
-        <ui-tag id="link-removable-gold"   href="/tags/literature" color="gold"   removable>Literature</ui-tag>
-        <ui-tag id="link-removable-violet" href="/tags/music"      color="violet" removable>Music</ui-tag>
+        <ui-tag id="link-removable-blue" href="/tags/cs" color="blue" removable
+          >Computer Science</ui-tag
+        >
+        <ui-tag id="link-removable-gold" href="/tags/literature" color="gold" removable
+          >Literature</ui-tag
+        >
+        <ui-tag id="link-removable-violet" href="/tags/music" color="violet" removable
+          >Music</ui-tag
+        >
       </div>
       <div
         id="link-remove-log"
@@ -489,25 +579,39 @@ export const LinkAndRemovable: Story = {
 
     // テスト: <a> が <button> の親でない（並列配置の確認）
     if (link.contains(removeBtn)) {
-      throw new Error('<a> の中に <button> を入れ子にすることはできません（HTML の入れ子規則違反）');
+      throw new Error(
+        '<a> の中に <button> を入れ子にすることはできません（HTML の入れ子規則違反）',
+      );
     }
 
     // テスト: aria-label に "タグ" が含まれる
     const ariaLabel = group.getAttribute('aria-label');
     if (!ariaLabel?.includes('タグ')) {
-      throw new Error(`aria-label に "タグ" が含まれることを期待していましたが、実際には "${ariaLabel ?? 'null'}" でした`);
+      throw new Error(
+        `aria-label に "タグ" が含まれることを期待していましたが、実際には "${ariaLabel ?? 'null'}" でした`,
+      );
     }
 
     // テスト: ui-tag-remove イベントが発火する
     const eventPromise = new Promise<CustomEvent<{ value: string }>>((resolve) => {
-      tag.addEventListener('ui-tag-remove', (e) => { resolve(e as CustomEvent<{ value: string }>); }, { once: true });
+      tag.addEventListener(
+        'ui-tag-remove',
+        (e) => {
+          resolve(e as CustomEvent<{ value: string }>);
+        },
+        { once: true },
+      );
     });
 
     removeBtn.click();
 
     const event = await Promise.race([
       eventPromise,
-      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
 
     if (!event) throw new Error('ui-tag-remove イベントが発火しませんでした');
@@ -528,21 +632,46 @@ export const WithIcon: Story = {
   render: () => html`
     <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
       <ui-tag id="icon-blue" color="blue">
-        <svg slot="icon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="6" cy="6" r="4.5"/>
-          <path d="M6 4v2l1.5 1.5"/>
+        <svg
+          slot="icon"
+          viewBox="0 0 12 12"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="6" cy="6" r="4.5" />
+          <path d="M6 4v2l1.5 1.5" />
         </svg>
         Computer Science
       </ui-tag>
       <ui-tag id="icon-gold" color="gold">
-        <svg slot="icon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
-          <path d="M6 1l1.5 3 3.5.5-2.5 2.5.5 3.5L6 9l-3 1.5.5-3.5L1 4.5 4.5 4z"/>
+        <svg
+          slot="icon"
+          viewBox="0 0 12 12"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          aria-hidden="true"
+        >
+          <path d="M6 1l1.5 3 3.5.5-2.5 2.5.5 3.5L6 9l-3 1.5.5-3.5L1 4.5 4.5 4z" />
         </svg>
         Literature
       </ui-tag>
       <ui-tag id="icon-removable" color="violet" removable>
-        <svg slot="icon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
-          <path d="M2 6a4 4 0 1 0 8 0 4 4 0 0 0-8 0z"/>
+        <svg
+          slot="icon"
+          viewBox="0 0 12 12"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          aria-hidden="true"
+        >
+          <path d="M2 6a4 4 0 1 0 8 0 4 4 0 0 0-8 0z" />
         </svg>
         Music
       </ui-tag>
@@ -576,14 +705,29 @@ export const WithIcon: Story = {
 export const AllStates: Story = {
   render: () => html`
     <style>
-      .states-list { display: flex; flex-direction: column; gap: 1.5rem; }
-      .state-group { display: flex; flex-direction: column; gap: 0.5rem; }
-      .state-label {
-        font-size: 11px; font-weight: 500;
-        color: oklch(48% 0.01 250);
-        text-transform: uppercase; letter-spacing: 0.05em;
+      .states-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
       }
-      .state-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+      .state-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .state-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: oklch(48% 0.01 250);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .state-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+      }
     </style>
     <div class="states-list">
       <div class="state-group">
@@ -591,10 +735,10 @@ export const AllStates: Story = {
         <div class="state-tags">
           <ui-tag id="all-neutral" color="neutral">Neutral</ui-tag>
           <ui-tag id="all-red" color="red">Red</ui-tag>
-          <ui-tag id="all-blue"    color="blue">Blue</ui-tag>
-          <ui-tag id="all-violet"  color="violet">Violet</ui-tag>
-          <ui-tag id="all-pink"    color="pink">Pink</ui-tag>
-          <ui-tag id="all-gold"    color="gold">Gold</ui-tag>
+          <ui-tag id="all-blue" color="blue">Blue</ui-tag>
+          <ui-tag id="all-violet" color="violet">Violet</ui-tag>
+          <ui-tag id="all-pink" color="pink">Pink</ui-tag>
+          <ui-tag id="all-gold" color="gold">Gold</ui-tag>
         </div>
       </div>
       <div class="state-group">
@@ -630,14 +774,14 @@ export const AllStates: Story = {
         <div class="state-label">Removable</div>
         <div class="state-tags">
           <ui-tag color="neutral" removable>Neutral</ui-tag>
-          <ui-tag color="blue"    removable>Blue</ui-tag>
-          <ui-tag color="gold"    removable>Gold</ui-tag>
+          <ui-tag color="blue" removable>Blue</ui-tag>
+          <ui-tag color="gold" removable>Gold</ui-tag>
         </div>
       </div>
       <div class="state-group">
         <div class="state-label">Link</div>
         <div class="state-tags">
-          <ui-tag href="/tags/cs"   color="blue">Link Blue</ui-tag>
+          <ui-tag href="/tags/cs" color="blue">Link Blue</ui-tag>
           <ui-tag href="/tags/gold" color="gold">Link Gold</ui-tag>
         </div>
       </div>
@@ -664,7 +808,8 @@ export const AllStates: Story = {
     // テスト: neutral タグ
     const neutral = canvasElement.querySelector<Tag>('#all-neutral');
     if (!neutral) throw new Error('#all-neutral が見つかりません');
-    if (neutral.color !== 'neutral') throw new Error('color="neutral" を期待していましたが、異なっていました');
+    if (neutral.color !== 'neutral')
+      throw new Error('color="neutral" を期待していましたが、異なっていました');
 
     // テスト: xs / sm サイズ
     const xs = canvasElement.querySelector<Tag>('#all-xs');
@@ -694,10 +839,11 @@ export const EventFiring: Story = {
           color="blue"
           removable
           @ui-tag-remove="${(e: CustomEvent<{ value: string }>) => {
-      const log = document.getElementById('event-log');
-      if (log) log.textContent = `ui-tag-remove: value="${e.detail.value}"`;
-    }}"
-        >Computer Science</ui-tag>
+            const log = document.getElementById('event-log');
+            if (log) log.textContent = `ui-tag-remove: value="${e.detail.value}"`;
+          }}"
+          >Computer Science</ui-tag
+        >
       </div>
       <div
         id="event-log"
@@ -713,7 +859,13 @@ export const EventFiring: Story = {
     await tag.updateComplete;
 
     const eventPromise = new Promise<CustomEvent<{ value: string }>>((resolve) => {
-      tag.addEventListener('ui-tag-remove', (e) => { resolve(e as CustomEvent<{ value: string }>); }, { once: true });
+      tag.addEventListener(
+        'ui-tag-remove',
+        (e) => {
+          resolve(e as CustomEvent<{ value: string }>);
+        },
+        { once: true },
+      );
     });
 
     const removeBtn = tag.shadowRoot?.querySelector<HTMLButtonElement>('.tag-remove-button');
@@ -722,17 +874,25 @@ export const EventFiring: Story = {
 
     const event = await Promise.race([
       eventPromise,
-      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
 
     if (!event) throw new Error('ui-tag-remove イベントが発火しませんでした');
-    if (!event.bubbles) throw new Error('イベントがバブルすることを期待していましたが、異なっていました');
-    if (!event.composed) throw new Error('イベントが composed であることを期待していましたが、異なっていました');
+    if (!event.bubbles)
+      throw new Error('イベントがバブルすることを期待していましたが、異なっていました');
+    if (!event.composed)
+      throw new Error('イベントが composed であることを期待していましたが、異なっていました');
 
     // テスト: detail.value がタグのテキスト内容
     const expectedValue = tag.textContent.trim();
     if (event.detail.value !== expectedValue) {
-      throw new Error(`detail.value="${expectedValue}" を期待していましたが、実際には "${event.detail.value}" でした`);
+      throw new Error(
+        `detail.value="${expectedValue}" を期待していましたが、実際には "${event.detail.value}" でした`,
+      );
     }
   },
 };
@@ -743,7 +903,9 @@ export const EventFiring: Story = {
 export const DisabledNoEvent: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
         <strong>確認</strong>: disabled 状態では削除イベントが発火しません。
       </div>
       <ui-tag
@@ -752,10 +914,11 @@ export const DisabledNoEvent: Story = {
         removable
         disabled
         @ui-tag-remove="${() => {
-      const log = document.getElementById('disabled-event-log');
-      if (log) log.textContent = '❌ イベントが発火してしまいました（バグ）';
-    }}"
-      >Disabled Tag</ui-tag>
+          const log = document.getElementById('disabled-event-log');
+          if (log) log.textContent = '❌ イベントが発火してしまいました（バグ）';
+        }}"
+        >Disabled Tag</ui-tag
+      >
       <div
         id="disabled-event-log"
         style="padding: 0.75rem 1rem; background: oklch(97% 0 0); border: 1px solid oklch(90% 0.01 250 / 0.2); border-radius: 6px; font-size: 13px; color: oklch(48% 0.01 250);"
@@ -769,10 +932,13 @@ export const DisabledNoEvent: Story = {
     if (!tag) throw new Error('#disabled-no-event が見つかりません');
     await tag.updateComplete;
 
-    if (!tag.disabled) throw new Error('タグが無効状態（disabled）であることを期待していましたが、異なっていました');
+    if (!tag.disabled)
+      throw new Error('タグが無効状態（disabled）であることを期待していましたが、異なっていました');
 
     let eventFired = false;
-    tag.addEventListener('ui-tag-remove', () => { eventFired = true; });
+    tag.addEventListener('ui-tag-remove', () => {
+      eventFired = true;
+    });
 
     // pointer-events: none のため直接クリックは届かないが、
     // ガードロジックも検証するため内部ボタンを直接呼び出す
@@ -786,7 +952,8 @@ export const DisabledNoEvent: Story = {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (eventFired) throw new Error('無効状態の時は ui-tag-remove イベントを発火すべきではありません');
+    if (eventFired)
+      throw new Error('無効状態の時は ui-tag-remove イベントを発火すべきではありません');
   },
 };
 
@@ -805,14 +972,18 @@ export const LinkRemovableNesting: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `href` + `removable` 併用時、`<a>` 内に `<button>` をネストしてはいけません（HTML 仕様違反）。`role="group"` + 並列配置で対応します。',
+        story:
+          '⚠️ **境界条件**: `href` + `removable` 併用時、`<a>` 内に `<button>` をネストしてはいけません（HTML 仕様違反）。`role="group"` + 並列配置で対応します。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
-        <strong>⚠️ 境界条件</strong>: <code>href + removable</code> 併用時は <code>&lt;a&gt;</code> 内に <code>&lt;button&gt;</code> をネストしません。
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
+        <strong>⚠️ 境界条件</strong>: <code>href + removable</code> 併用時は
+        <code>&lt;a&gt;</code> 内に <code>&lt;button&gt;</code> をネストしません。
       </div>
       <ui-tag id="nesting-test" href="/tags/cs" color="blue" removable>Computer Science</ui-tag>
     </div>
@@ -847,13 +1018,19 @@ export const LongTextTruncation: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: 長いテキストは省略（ellipsis）されます。レイアウト崩壊を物理的に防ぎます。',
+        story:
+          '⚠️ **境界条件**: 長いテキストは省略（ellipsis）されます。レイアウト崩壊を物理的に防ぎます。',
       },
     },
   },
   render: () => html`
-    <div id="long-text-container" style="display: flex; flex-direction: column; gap: 1rem; max-width: 200px;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
+    <div
+      id="long-text-container"
+      style="display: flex; flex-direction: column; gap: 1rem; max-width: 200px;"
+    >
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
         <strong>⚠️ 境界条件</strong>: 長いテキストは省略されます（max-width: 200px のコンテナ内）。
       </div>
       <ui-tag id="long-text" color="blue">
@@ -874,8 +1051,11 @@ export const LongTextTruncation: Story = {
     if (!container) throw new Error('#long-text-container が見つかりません');
     const tagRect = tag.getBoundingClientRect();
     const containerRect = container.getBoundingClientRect();
-    if (tagRect.width > containerRect.width + 1) { // 1px の誤差を許容
-      throw new Error(`タグの幅 (${String(tagRect.width)}) がコンテナの幅 (${String(containerRect.width)}) を超えています`);
+    if (tagRect.width > containerRect.width + 1) {
+      // 1px の誤差を許容
+      throw new Error(
+        `タグの幅 (${String(tagRect.width)}) がコンテナの幅 (${String(containerRect.width)}) を超えています`,
+      );
     }
   },
 };
@@ -890,13 +1070,16 @@ export const DisabledLinkPreventsNavigation: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `disabled` + `href` 併用時、リンクは `aria-disabled="true"` かつ `tabindex="-1"` になり、ページ遷移が抑止されます。',
+        story:
+          '⚠️ **境界条件**: `disabled` + `href` 併用時、リンクは `aria-disabled="true"` かつ `tabindex="-1"` になり、ページ遷移が抑止されます。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
         <strong>⚠️ 境界条件</strong>: <code>disabled + href</code> でリンクが無効化されます。
       </div>
       <ui-tag id="disabled-link-nav" href="/tags/cs" color="blue" disabled>Disabled Link</ui-tag>
@@ -912,12 +1095,16 @@ export const DisabledLinkPreventsNavigation: Story = {
 
     // テスト: aria-disabled="true"
     if (link.getAttribute('aria-disabled') !== 'true') {
-      throw new Error(`aria-disabled="true" を期待していましたが、実際には "${link.getAttribute('aria-disabled') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-disabled="true" を期待していましたが、実際には "${link.getAttribute('aria-disabled') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: tabindex="-1"
     if (link.getAttribute('tabindex') !== '-1') {
-      throw new Error(`tabindex="-1" を期待していましたが、実際には "${link.getAttribute('tabindex') ?? 'null'}" でした`);
+      throw new Error(
+        `tabindex="-1" を期待していましたが、実際には "${link.getAttribute('tabindex') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: href が設定されていない（disabled 時は href を除去）
@@ -945,14 +1132,18 @@ export const TouchTargetSize: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: 削除ボタンの視覚的サイズは 12px ですが、`::after` 疑似要素で最低 44×44px のタッチターゲットを確保します（WCAG 2.5.5）。',
+        story:
+          '⚠️ **境界条件**: 削除ボタンの視覚的サイズは 12px ですが、`::after` 疑似要素で最低 44×44px のタッチターゲットを確保します（WCAG 2.5.5）。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
-        <strong>⚠️ 境界条件</strong>: 削除ボタンの視覚的サイズは 12px ですが、タッチターゲットは最低 44×44px です。
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
+        <strong>⚠️ 境界条件</strong>: 削除ボタンの視覚的サイズは 12px ですが、タッチターゲットは最低
+        44×44px です。
       </div>
       <div style="display: flex; gap: 0.5rem; align-items: center;">
         <ui-tag id="touch-target-xs" size="xs" color="blue" removable>xs (20px)</ui-tag>
@@ -975,7 +1166,9 @@ export const TouchTargetSize: Story = {
     const removeAfterWidth = parsePx(removeAfterStyle.width);
     const removeAfterHeight = parsePx(removeAfterStyle.height);
     if (removeAfterWidth < 24 || removeAfterHeight < 24) {
-      throw new Error(`削除ボタンの疑似ターゲットは 24x24 以上である必要がありますが、実際には ${String(removeAfterWidth)}x${String(removeAfterHeight)} でした`);
+      throw new Error(
+        `削除ボタンの疑似ターゲットは 24x24 以上である必要がありますが、実際には ${String(removeAfterWidth)}x${String(removeAfterHeight)} でした`,
+      );
     }
 
     // テスト: リンク側も44px以上の疑似要素ターゲットを持つ
@@ -985,7 +1178,9 @@ export const TouchTargetSize: Story = {
     const linkAfterWidth = parsePx(linkAfterStyle.width);
     const linkAfterHeight = parsePx(linkAfterStyle.height);
     if (linkAfterWidth < 24 || linkAfterHeight < 24) {
-      throw new Error(`リンクの疑似ターゲットは 24x24 以上である必要がありますが、実際には ${String(linkAfterWidth)}x${String(linkAfterHeight)} でした`);
+      throw new Error(
+        `リンクの疑似ターゲットは 24x24 以上である必要がありますが、実際には ${String(linkAfterWidth)}x${String(linkAfterHeight)} でした`,
+      );
     }
 
     // テスト: aria-label が設定されていることを確認
@@ -1010,20 +1205,23 @@ export const GoldColorVisibility: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: Gold（黄色系）は高明度背景での白飛びを防ぐため、`delta-l-bg: -3%` / `delta-l-fg: -15%` の逆方向補正を適用します（index.md 基盤ルールの例外）。',
+        story:
+          '⚠️ **境界条件**: Gold（黄色系）は高明度背景での白飛びを防ぐため、`delta-l-bg: -3%` / `delta-l-fg: -15%` の逆方向補正を適用します（index.md 基盤ルールの例外）。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
         <strong>⚠️ 境界条件</strong>: Gold カラーは白飛び防止のため特殊な明度補正を適用します。
         他のカラーと並べて視認性を確認してください。
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
         <ui-tag id="gold-default" variant="default" color="gold">Gold Default</ui-tag>
         <ui-tag id="gold-outline" variant="outline" color="gold">Gold Outline</ui-tag>
-        <ui-tag id="gold-solid"   variant="solid"   color="gold">Gold Solid</ui-tag>
+        <ui-tag id="gold-solid" variant="solid" color="gold">Gold Solid</ui-tag>
         <ui-tag id="blue-default" variant="default" color="blue">Blue Default (比較)</ui-tag>
       </div>
     </div>
@@ -1036,21 +1234,30 @@ export const GoldColorVisibility: Story = {
     await Promise.all([goldTag.updateComplete, blueTag.updateComplete]);
 
     // テスト: color="gold" が設定されている
-    if (goldTag.color !== 'gold') throw new Error(`color="gold" を期待していましたが、実際には "${goldTag.color}" でした`);
+    if (goldTag.color !== 'gold')
+      throw new Error(`color="gold" を期待していましたが、実際には "${goldTag.color}" でした`);
 
     // テスト: variant="default" が設定されている
-    if (goldTag.variant !== 'default') throw new Error(`variant="default" を期待していましたが、実際には "${goldTag.variant}" でした`);
+    if (goldTag.variant !== 'default')
+      throw new Error(
+        `variant="default" を期待していましたが、実際には "${goldTag.variant}" でした`,
+      );
 
     // Gold の delta-l 補正は CSS カスタムプロパティで管理されているため、
     // ここでは属性の正確性を確認する
     const goldAttr = goldTag.getAttribute('color');
-    if (goldAttr !== 'gold') throw new Error(`color 属性 "gold" を期待していましたが、実際には "${goldAttr ?? 'null'}" でした`);
+    if (goldAttr !== 'gold')
+      throw new Error(
+        `color 属性 "gold" を期待していましたが、実際には "${goldAttr ?? 'null'}" でした`,
+      );
 
     // テスト: gold と blue は背景色が同一にならない
     const goldBg = getComputedStyle(goldTag).backgroundColor;
     const blueBg = getComputedStyle(blueTag).backgroundColor;
     if (goldBg === blueBg) {
-      throw new Error(`gold と blue の背景色が異なっていることを期待していましたが、どちらも "${goldBg}" でした`);
+      throw new Error(
+        `gold と blue の背景色が異なっていることを期待していましたが、どちらも "${goldBg}" でした`,
+      );
     }
   },
 };
@@ -1065,18 +1272,19 @@ export const DarkModeReference: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'ダーク背景上での可視性確認用ストーリーです。`default` / `outline` / `solid` と Gold を含む主要色を並べています。',
+        story:
+          'ダーク背景上での可視性確認用ストーリーです。`default` / `outline` / `solid` と Gold を含む主要色を並べています。',
       },
     },
     backgrounds: {
       default: 'dark',
-      values: [
-        { name: 'dark', value: '#121419' },
-      ],
+      values: [{ name: 'dark', value: '#121419' }],
     },
   },
   render: () => html`
-    <div style="display: flex; flex-direction: column; gap: 1rem; padding: 1rem; background: #121419; border-radius: 8px;">
+    <div
+      style="display: flex; flex-direction: column; gap: 1rem; padding: 1rem; background: #121419; border-radius: 8px;"
+    >
       <div style="font-size: 12px; color: #b9c0cb;">Dark Mode Reference</div>
       <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
         <ui-tag id="dark-default-blue" color="blue">Default Blue</ui-tag>
@@ -1090,7 +1298,8 @@ export const DarkModeReference: Story = {
   `,
   play: async ({ canvasElement }) => {
     const tags = canvasElement.querySelectorAll<Tag>('ui-tag');
-    if (tags.length !== 6) throw new Error(`6つのタグを期待していましたが、実際には ${String(tags.length)}個でした`);
+    if (tags.length !== 6)
+      throw new Error(`6つのタグを期待していましたが、実際には ${String(tags.length)}個でした`);
     await Promise.all([...tags].map((tag) => tag.updateComplete));
   },
 };
@@ -1103,8 +1312,11 @@ export const DarkModeReference: Story = {
 export const FocusAndKeyboard: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
-        <strong>キーボード確認</strong>: Link と Remove の両方にフォーカス可能で、削除ボタンは Enter / Space で起動できます。
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
+        <strong>キーボード確認</strong>: Link と Remove の両方にフォーカス可能で、削除ボタンは Enter
+        / Space で起動できます。
       </div>
       <ui-tag id="focus-keyboard" href="/tags/cs" color="blue" removable>Computer Science</ui-tag>
     </div>
@@ -1119,15 +1331,19 @@ export const FocusAndKeyboard: Story = {
     if (!link || !removeBtn) throw new Error('リンクまたは削除ボタンが見つかりません');
 
     // テスト: enabled 時はフォーカス除外されていない
-    if (link.getAttribute('tabindex') === '-1') throw new Error('有効状態の時はリンクがフォーカス可能である必要があります');
-    if (removeBtn.getAttribute('tabindex') === '-1') throw new Error('有効状態の時は削除ボタンがフォーカス可能である必要があります');
+    if (link.getAttribute('tabindex') === '-1')
+      throw new Error('有効状態の時はリンクがフォーカス可能である必要があります');
+    if (removeBtn.getAttribute('tabindex') === '-1')
+      throw new Error('有効状態の時は削除ボタンがフォーカス可能である必要があります');
 
     // テスト: プログラムフォーカス可能
     link.focus();
-    if (tag.shadowRoot?.activeElement !== link) throw new Error('リンクがフォーカスを受け取るべきです');
+    if (tag.shadowRoot?.activeElement !== link)
+      throw new Error('リンクがフォーカスを受け取るべきです');
 
     removeBtn.focus();
-    if (tag.shadowRoot.activeElement !== removeBtn) throw new Error('削除ボタンがフォーカスを受け取るべきです');
+    if (tag.shadowRoot.activeElement !== removeBtn)
+      throw new Error('削除ボタンがフォーカスを受け取るべきです');
 
     // テスト: Enter / Space キー入力を受け取れる
     const enter = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });

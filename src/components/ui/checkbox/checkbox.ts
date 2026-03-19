@@ -338,10 +338,7 @@ export class Checkbox extends LitElement {
     // ARIA 属性を Control 要素に反映
     const control = this.shadowRoot?.querySelector<HTMLElement>('.control');
     if (control) {
-      control.setAttribute(
-        'aria-checked',
-        this.indeterminate ? 'mixed' : String(this.checked),
-      );
+      control.setAttribute('aria-checked', this.indeterminate ? 'mixed' : String(this.checked));
       if (this.disabled) {
         control.setAttribute('aria-disabled', 'true');
       } else {
@@ -409,10 +406,7 @@ export class Checkbox extends LitElement {
     }
 
     if (this.required && !this.checked) {
-      this._internals.setValidity(
-        { valueMissing: true },
-        'このチェックボックスは必須です。',
-      );
+      this._internals.setValidity({ valueMissing: true }, 'このチェックボックスは必須です。');
       return;
     }
 
@@ -502,10 +496,7 @@ export class Checkbox extends LitElement {
     const ariaLabelledBy = this.label ? this._labelId : externalLabelledBy;
 
     return html`
-      <div
-        class="wrapper"
-        aria-disabled="${this.disabled ? 'true' : nothing}"
-      >
+      <div class="wrapper" aria-disabled="${this.disabled ? 'true' : nothing}">
         <!-- Control: キーボードフォーカスを受け取る。クリック・Space でトグル -->
         <span
           id="${this._controlId}"
@@ -553,25 +544,21 @@ export class Checkbox extends LitElement {
 
         <!-- ラベル: クリックでコントロールにフォーカスを移してトグル -->
         ${this.label
-        ? html`<label
-                    id="${this._labelId}"
-                    class="label"
-                    part="label"
-                    @click="${this._handleLabelClick}"
-                  @keydown="${this._handleLabelKeyDown}"
-                  >${this.label}</label>`
-        : nothing}
+          ? html`<label
+              id="${this._labelId}"
+              class="label"
+              part="label"
+              @click="${this._handleLabelClick}"
+              @keydown="${this._handleLabelKeyDown}"
+              >${this.label}</label
+            >`
+          : nothing}
       </div>
 
       <!-- エラーメッセージ -->
       ${showError
         ? html`
-            <span
-              id="${this._errorId}"
-              class="error-message"
-              role="status"
-              aria-live="polite"
-            >
+            <span id="${this._errorId}" class="error-message" role="status" aria-live="polite">
               ${this.errorMessage}
             </span>
           `

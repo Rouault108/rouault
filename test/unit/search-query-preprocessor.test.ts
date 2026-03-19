@@ -1,9 +1,6 @@
 import { expect } from '@open-wc/testing';
 
-import {
-  prepareSearchQuery,
-  tokenizeSearchText,
-} from '../../src/lib/search/query-preprocessor.js';
+import { prepareSearchQuery, tokenizeSearchText } from '../../src/lib/search/query-preprocessor.js';
 
 describe('search-query-preprocessor', () => {
   it('任意文字列を token 化して索引用文字列も返すこと', () => {

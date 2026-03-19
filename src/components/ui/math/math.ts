@@ -8,7 +8,8 @@ import '../../../lib/icons';
 type MathScrollState = 'none' | 'start' | 'middle' | 'end';
 
 const PRIMARY_REGION_LABEL = '数式（横スクロール可能）';
-const LATEX_DELIMITER_ERROR_MESSAGE = 'LaTeX構文エラー: latex プロパティに $$ は含めないでください。';
+const LATEX_DELIMITER_ERROR_MESSAGE =
+  'LaTeX構文エラー: latex プロパティに $$ は含めないでください。';
 const LATEX_PARSE_ERROR_PREFIX = 'LaTeX構文エラー: ';
 const ERROR_DETAILS_SUMMARY = '数式ソースを表示';
 
@@ -315,10 +316,7 @@ export class UiMath extends LitElement {
       this._queueOverflowMeasurement();
     }
 
-    if (
-      changedProperties.has('accessibleLabel') ||
-      internalChanges.has('_runtimeRenderedHtml')
-    ) {
+    if (changedProperties.has('accessibleLabel') || internalChanges.has('_runtimeRenderedHtml')) {
       this._syncRuntimeMathMlVisibility();
     }
   }
@@ -363,7 +361,7 @@ export class UiMath extends LitElement {
 
   private _syncSlottedContent(): void {
     const assignedNodes = this._defaultSlot?.assignedNodes({ flatten: true }) ?? [];
-    const hasMeaningfulNode = assignedNodes.some(node => this._isMeaningfulNode(node));
+    const hasMeaningfulNode = assignedNodes.some((node) => this._isMeaningfulNode(node));
 
     if (this._hasSlottedContent !== hasMeaningfulNode) {
       this._hasSlottedContent = hasMeaningfulNode;
@@ -414,7 +412,8 @@ export class UiMath extends LitElement {
         return;
       }
 
-      const message = error instanceof Error ? error.message : '数式をレンダリングできませんでした。';
+      const message =
+        error instanceof Error ? error.message : '数式をレンダリングできませんでした。';
       this._setRuntimeState('', '', `${LATEX_PARSE_ERROR_PREFIX}${message}`, true);
     }
   }
@@ -530,11 +529,7 @@ export class UiMath extends LitElement {
   }
 
   private _renderRuntimeMath(): TemplateResult {
-    return html`
-      <span class="runtime-katex">
-        ${unsafeHTML(this._runtimeRenderedHtml)}
-      </span>
-    `;
+    return html` <span class="runtime-katex"> ${unsafeHTML(this._runtimeRenderedHtml)} </span> `;
   }
 
   private _renderMathPayload(): TemplateResult {
@@ -567,7 +562,11 @@ export class UiMath extends LitElement {
     if (!this.block) return errorBody;
 
     return html`
-      <div class="math-display" id="${ifDefined(this.id !== '' ? this.id : undefined)}" data-scroll="none">
+      <div
+        class="math-display"
+        id="${ifDefined(this.id !== '' ? this.id : undefined)}"
+        data-scroll="none"
+      >
         ${errorBody}
       </div>
     `;
@@ -575,7 +574,11 @@ export class UiMath extends LitElement {
 
   private _renderInline(): TemplateResult {
     return html`
-      <span class="math-inline" role="math" aria-label="${ifDefined(this._resolvedAccessibleLabel || undefined)}">
+      <span
+        class="math-inline"
+        role="math"
+        aria-label="${ifDefined(this._resolvedAccessibleLabel || undefined)}"
+      >
         ${this._renderMathPayload()}
       </span>
     `;
@@ -592,7 +595,11 @@ export class UiMath extends LitElement {
         aria-label="${ifDefined(this.primary ? PRIMARY_REGION_LABEL : undefined)}"
         @scroll="${this._onScroll}"
       >
-        <div class="math-content" role="math" aria-label="${ifDefined(this._resolvedAccessibleLabel || undefined)}">
+        <div
+          class="math-content"
+          role="math"
+          aria-label="${ifDefined(this._resolvedAccessibleLabel || undefined)}"
+        >
           ${this._renderMathPayload()}
         </div>
       </div>

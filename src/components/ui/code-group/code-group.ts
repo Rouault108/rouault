@@ -574,7 +574,8 @@ export class CodeGroup extends LitElement {
 
   private _syncCopyPayload(activeBlock: CodeBlockHost): void {
     const contextName = this._resolveCopyContextName(activeBlock);
-    this._copyLabel = contextName === DEFAULT_TAB_LABEL ? 'コードをコピー' : `${contextName} のコードをコピー`;
+    this._copyLabel =
+      contextName === DEFAULT_TAB_LABEL ? 'コードをコピー' : `${contextName} のコードをコピー`;
 
     if (typeof activeBlock.getCodeContent === 'function') {
       this._copyValue = activeBlock.getCodeContent();

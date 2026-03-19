@@ -603,9 +603,7 @@ export class UiTooltip extends LitElement {
   }
 
   override render(): TemplateResult {
-    return html`
-      <slot @slotchange="${this._onSlotChange}"></slot>
-    `;
+    return html` <slot @slotchange="${this._onSlotChange}"></slot> `;
   }
 }
 

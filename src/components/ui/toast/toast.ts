@@ -7,7 +7,12 @@ type LegacyToastVariant = 'error';
 type ToastVariantInput = ToastVariant | LegacyToastVariant;
 type ToastRole = 'status' | 'alert';
 
-export const TOAST_VARIANTS = ['success', 'warning', 'danger', 'info'] as const satisfies ToastVariant[];
+export const TOAST_VARIANTS = [
+  'success',
+  'warning',
+  'danger',
+  'info',
+] as const satisfies ToastVariant[];
 export const MAX_TOAST_STACK = 3;
 export const DEFAULT_TOAST_DURATION_MS = 4000;
 export const DANGER_TOAST_DURATION_MS = 6000;
@@ -71,7 +76,8 @@ const resolveDuration = (duration: number | undefined, variant: ToastVariant): n
   return Math.max(0, Math.trunc(duration));
 };
 
-const snapshotItems = (items: readonly ToastItem[]): ToastItem[] => items.map((item) => ({ ...item }));
+const snapshotItems = (items: readonly ToastItem[]): ToastItem[] =>
+  items.map((item) => ({ ...item }));
 
 class ToastStore {
   private readonly _subscribers = new Set<ToastSubscriber>();
@@ -212,12 +218,19 @@ class ToastStore {
     if (variant === 'error') {
       if (IS_DEVELOPMENT && !this._didWarnLegacyError) {
         this._didWarnLegacyError = true;
-        console.warn('[ui-toast]: variant="error" は非推奨です。variant="danger" を使用してください。');
+        console.warn(
+          '[ui-toast]: variant="error" は非推奨です。variant="danger" を使用してください。',
+        );
       }
       return 'danger';
     }
 
-    if (variant === 'success' || variant === 'warning' || variant === 'danger' || variant === 'info') {
+    if (
+      variant === 'success' ||
+      variant === 'warning' ||
+      variant === 'danger' ||
+      variant === 'info'
+    ) {
       return variant;
     }
 
@@ -373,11 +386,13 @@ export class UiToast extends LitElement {
       color: var(--fg-default, oklch(20% 0 0));
       pointer-events: auto;
       inline-size: 100%;
-      animation: toast-slide-in var(--duration-slow, 200ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
+      animation: toast-slide-in var(--duration-slow, 200ms)
+        var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
     }
 
     .toast[data-exiting='true'] {
-      animation: toast-fade-out var(--duration-normal, 150ms) var(--ease-in, cubic-bezier(0.32, 0, 0.67, 0.24));
+      animation: toast-fade-out var(--duration-normal, 150ms)
+        var(--ease-in, cubic-bezier(0.32, 0, 0.67, 0.24));
       animation-fill-mode: both;
       pointer-events: none;
     }

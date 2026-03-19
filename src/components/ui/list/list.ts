@@ -218,13 +218,19 @@ export class List extends LitElement {
     this._mql = window.matchMedia('(max-width: 768px)');
     this._isMobile = this._mql.matches;
     this._mql.addEventListener('change', this._mqlHandler);
-    this.addEventListener('ui-list-context-request', this._handleListContextRequest as EventListener);
+    this.addEventListener(
+      'ui-list-context-request',
+      this._handleListContextRequest as EventListener,
+    );
   }
 
   override disconnectedCallback(): void {
     this._mql?.removeEventListener('change', this._mqlHandler);
     this._mql = null;
-    this.removeEventListener('ui-list-context-request', this._handleListContextRequest as EventListener);
+    this.removeEventListener(
+      'ui-list-context-request',
+      this._handleListContextRequest as EventListener,
+    );
     super.disconnectedCallback();
   }
 
@@ -266,14 +272,16 @@ export class List extends LitElement {
 
       if (column.primary === true && column.hideOnMobile === true && !this._warnedPrimaryMobile) {
         this._warnedPrimaryMobile = true;
-        console.warn('[ui-list] primary 列に hideOnMobile=true は指定できません。primary を優先します。');
+        console.warn(
+          '[ui-list] primary 列に hideOnMobile=true は指定できません。primary を優先します。',
+        );
       }
     }
   }
 
   private get _visibleColumns(): ColumnDef[] {
     if (!this._isMobile) return this.columns;
-    return this.columns.filter(column => {
+    return this.columns.filter((column) => {
       if (column.primary === true) return true;
       return column.hideOnMobile !== true;
     });
@@ -281,7 +289,7 @@ export class List extends LitElement {
 
   private get _gridTemplateColumns(): string {
     const supportsSubgrid = CSS.supports('grid-template-columns', 'subgrid');
-    const widths = this._visibleColumns.map(column => {
+    const widths = this._visibleColumns.map((column) => {
       if (!supportsSubgrid && column.width === '1fr') {
         return 'minmax(calc(var(--space-12, 48px) + var(--space-20, 80px)), 1fr)';
       }
@@ -296,7 +304,7 @@ export class List extends LitElement {
     const visible = this._visibleColumns;
     const target = visible[visibleIndex];
     if (!target) return visibleIndex + 1;
-    return this.columns.findIndex(column => column.id === target.id) + 1;
+    return this.columns.findIndex((column) => column.id === target.id) + 1;
   }
 
   private _normalizeCellIndex(index: number): number {
@@ -385,7 +393,9 @@ export class List extends LitElement {
     for (const node of path) {
       if (!(node instanceof HTMLElement)) continue;
       if (
-        node.matches('a, button, input, textarea, select, [role="button"], [contenteditable="true"]')
+        node.matches(
+          'a, button, input, textarea, select, [role="button"], [contenteditable="true"]',
+        )
       ) {
         return true;
       }
@@ -394,12 +404,13 @@ export class List extends LitElement {
   }
 
   private _getPrimaryLink(row: UiListItemLike): HTMLAnchorElement | null {
-    const primaryColumn = this.columns.find(column => column.primary === true) ?? this.columns[0];
+    const primaryColumn = this.columns.find((column) => column.primary === true) ?? this.columns[0];
     if (!primaryColumn) return null;
 
     const selector = `[slot="${CSS.escape(primaryColumn.id)}"]`;
     const primaryNode = row.querySelector(selector);
-    if (primaryNode instanceof HTMLAnchorElement && primaryNode.hasAttribute('href')) return primaryNode;
+    if (primaryNode instanceof HTMLAnchorElement && primaryNode.hasAttribute('href'))
+      return primaryNode;
 
     const nested = primaryNode?.querySelector<HTMLAnchorElement>('a[href]');
     if (nested) return nested;
@@ -429,7 +440,9 @@ export class List extends LitElement {
     if (!focusCell) return;
 
     await this.updateComplete;
-    const row = this._rowElements.find((candidate, index) => this._getRowId(candidate, index) === rowId);
+    const row = this._rowElements.find(
+      (candidate, index) => this._getRowId(candidate, index) === rowId,
+    );
     if (!row) return;
 
     const target = row.shadowRoot?.querySelector<HTMLElement>(
@@ -681,9 +694,12 @@ export class List extends LitElement {
         <div
           role="grid"
           class="grid"
-          style="grid-template-columns: ${this._gridTemplateColumns}; --_gtc: ${this._gridTemplateColumns};"
+          style="grid-template-columns: ${this._gridTemplateColumns}; --_gtc: ${this
+            ._gridTemplateColumns};"
           aria-colcount="${String(logicalColCount)}"
-          aria-rowcount="${ifDefined(effectiveRowCount > 0 ? String(effectiveRowCount) : undefined)}"
+          aria-rowcount="${ifDefined(
+            effectiveRowCount > 0 ? String(effectiveRowCount) : undefined,
+          )}"
           @keydown="${this._handleGridKeyDown}"
           @click="${this._handleGridClick}"
           @contextmenu="${this._handleGridContextMenu}"
@@ -742,14 +758,16 @@ export class List extends LitElement {
               </div>
             `
           : nothing}
-
         ${shouldShowPagination
           ? html`
-              <div style="margin-top: var(--space-3, 12px); display: flex; justify-content: center;">
+              <div
+                style="margin-top: var(--space-3, 12px); display: flex; justify-content: center;"
+              >
                 <ui-pagination
                   .current="${currentPage}"
                   .total="${totalPages}"
-                  .getHref="${this.getPageHref ?? ((page: number): string => `?page=${String(page)}`)}"
+                  .getHref="${this.getPageHref ??
+                  ((page: number): string => `?page=${String(page)}`)}"
                 ></ui-pagination>
               </div>
             `

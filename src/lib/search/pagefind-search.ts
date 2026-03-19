@@ -5,11 +5,7 @@ import {
   searchSearchCatalog,
   type SearchCatalogItem,
 } from './search-catalog.js';
-import {
-  normalizeSearchSort,
-  normalizeSearchTags,
-  type SearchSortMode,
-} from './search-url.js';
+import { normalizeSearchSort, normalizeSearchTags, type SearchSortMode } from './search-url.js';
 import { normalizeSearchResultUrl } from './normalize-search-result-url.js';
 
 export interface PagefindFragmentData {
@@ -124,7 +120,9 @@ function hasOwnEntries(value: Record<string, number>): boolean {
 
 function normalizeCatalogGenres(item: SearchCatalogItem): string[] {
   return Array.isArray(item.genres)
-    ? item.genres.filter((genre): genre is string => typeof genre === 'string' && genre.trim().length > 0)
+    ? item.genres.filter(
+        (genre): genre is string => typeof genre === 'string' && genre.trim().length > 0,
+      )
     : [];
 }
 

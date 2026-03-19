@@ -14,7 +14,8 @@ const truncateDescription = (value: string, maxLength = 140): string => {
   return `${value.slice(0, Math.max(0, maxLength - 1)).trimEnd()}…`;
 };
 
-const isDescriptionTextTruncated = (value: string, maxLength = 140): boolean => value.length > maxLength;
+const isDescriptionTextTruncated = (value: string, maxLength = 140): boolean =>
+  value.length > maxLength;
 
 /**
  * カード (Card) コンポーネント `<ui-card>`
@@ -121,7 +122,9 @@ export class Card extends LitElement {
     :host([variant='elevated']) {
       border: none;
       background: var(--bg-surface-2);
-      box-shadow: var(--elevation-md), inset 0 1px 0 0 oklch(100% 0 0 / 0.1);
+      box-shadow:
+        var(--elevation-md),
+        inset 0 1px 0 0 oklch(100% 0 0 / 0.1);
     }
 
     /* ────────────────────────────────────────────
@@ -184,7 +187,9 @@ export class Card extends LitElement {
     :host([clickable][variant='elevated']:focus-within),
     :host([card-kind='link'][variant='elevated']:hover),
     :host([card-kind='link'][variant='elevated']:focus-within) {
-      box-shadow: var(--elevation-lg), inset 0 1px 0 0 oklch(100% 0 0 / 0.1);
+      box-shadow:
+        var(--elevation-lg),
+        inset 0 1px 0 0 oklch(100% 0 0 / 0.1);
     }
 
     .link-card {
@@ -230,7 +235,9 @@ export class Card extends LitElement {
       font-weight: var(--font-semibold, 600);
       line-height: var(--line-height-tight, var(--link-card-title-line-height));
       margin: 0;
-      max-block-size: calc(1em * var(--link-card-title-line-height) * var(--link-card-title-lines) + 1px);
+      max-block-size: calc(
+        1em * var(--link-card-title-line-height) * var(--link-card-title-lines) + 1px
+      );
       overflow: hidden;
       overflow-wrap: anywhere;
     }
@@ -255,12 +262,11 @@ export class Card extends LitElement {
     }
 
     .link-card__description[data-line-overflowed='true'][data-text-truncated='false']::after {
-      background:
-        linear-gradient(
-          to right,
-          transparent 0%,
-          var(--ui-card-description-fade, var(--bg-surface-2)) 45%
-        );
+      background: linear-gradient(
+        to right,
+        transparent 0%,
+        var(--ui-card-description-fade, var(--bg-surface-2)) 45%
+      );
       bottom: 0;
       content: '…';
       inset-inline-end: 0;
@@ -436,7 +442,7 @@ export class Card extends LitElement {
     // link mode は Shadow DOM 内の主リンクを優先し、
     // generic mode は従来どおり Light DOM の最初のリンクへ委譲する。
     const primaryLink = this._isLinkCard
-      ? this.shadowRoot?.querySelector<HTMLAnchorElement>('a[href]') ?? null
+      ? (this.shadowRoot?.querySelector<HTMLAnchorElement>('a[href]') ?? null)
       : this.querySelector<HTMLAnchorElement>('a[href]');
     if (primaryLink) {
       e.preventDefault();
@@ -479,7 +485,8 @@ export class Card extends LitElement {
   }
 
   private _observeDescription(): void {
-    const description = this.shadowRoot?.querySelector<HTMLElement>('.link-card__description') ?? null;
+    const description =
+      this.shadowRoot?.querySelector<HTMLElement>('.link-card__description') ?? null;
     if (this._observedDescription === description) {
       return;
     }

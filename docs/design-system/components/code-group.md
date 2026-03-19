@@ -69,13 +69,13 @@ Rouault における code group は、比較可能性の向上と「没入して
 
 `ui-code-group` の正規入力は、**直下の **``** 列**です。比較対象となる各 `ui-code-block` は、少なくとも次の情報を公開します。
 
-| 名前           | 種別                   | 必須  | 内容                 |
-| ------------ | -------------------- | --- | ------------------ |
-| `group-key`  | attribute / property | はい  | group 内で一意な安定識別子です |
-| `tab-label`  | attribute / property | いいえ | タブ表示用ラベルです         |
-| `copy-label` | attribute / property | いいえ | コピー文脈用ラベルです        |
+| 名前         | 種別                 | 必須   | 内容                           |
+| ------------ | -------------------- | ------ | ------------------------------ |
+| `group-key`  | attribute / property | はい   | group 内で一意な安定識別子です |
+| `tab-label`  | attribute / property | いいえ | タブ表示用ラベルです           |
+| `copy-label` | attribute / property | いいえ | コピー文脈用ラベルです         |
 | `filename`   | attribute / property | いいえ | ファイル名メタデータです       |
-| `lang`       | attribute / property | いいえ | 言語名メタデータです         |
+| `lang`       | attribute / property | いいえ | 言語名メタデータです           |
 
 `group-key` は `ui-code-group` 内で一意でなければなりません。同一 group 内での重複は契約違反です。
 
@@ -94,12 +94,12 @@ Rouault における code group は、比較可能性の向上と「没入して
 
 ### 公開 property / attribute 契約
 
-| property               | attribute                | reflect | 既定値     | 内容                        |
-| ---------------------- | ------------------------ | ------- | ------- | ------------------------- |
-| `embedded`             | `embedded`               | あり      | `false` | 埋め込み表示モードです               |
-| `selectedValue`        | `selected-value`         | あり      | なし      | 外部制御用の現在選択値です             |
-| `defaultSelectedValue` | `default-selected-value` | なし      | なし      | 非制御時の初期選択値です              |
-| `activation`           | `activation`             | あり      | `auto`  | `auto` または `manual` を取ります |
+| property               | attribute                | reflect | 既定値  | 内容                              |
+| ---------------------- | ------------------------ | ------- | ------- | --------------------------------- |
+| `embedded`             | `embedded`               | あり    | `false` | 埋め込み表示モードです            |
+| `selectedValue`        | `selected-value`         | あり    | なし    | 外部制御用の現在選択値です        |
+| `defaultSelectedValue` | `default-selected-value` | なし    | なし    | 非制御時の初期選択値です          |
+| `activation`           | `activation`             | あり    | `auto`  | `auto` または `manual` を取ります |
 
 `selected-value` が与えられる場合、本コンポーネントは **controlled mode** として振る舞います。与えられない場合は **uncontrolled mode** として内部状態を保持します。
 
@@ -150,8 +150,8 @@ Rouault における code group は、比較可能性の向上と「没入して
 
 選択状態が変化した場合、`ui-code-group` は次のイベントを送出します。
 
-| 名前                     | 発火条件          | `detail`                                                |
-| ---------------------- | ------------- | ------------------------------------------------------- |
+| 名前                   | 発火条件                   | `detail`                                                |
+| ---------------------- | -------------------------- | ------------------------------------------------------- |
 | `ui-code-group-change` | 実際に選択値が変化したとき | `{ value, prevValue, index, prevIndex, userInitiated }` |
 
 イベントは次の特性を持ちます。
@@ -161,9 +161,9 @@ Rouault における code group は、比較可能性の向上と「没入して
 
 ### 公開メソッド契約
 
-| メソッド                 | 内容                             |
-| -------------------- | ------------------------------ |
-| `refresh()`          | child list、メタデータ、コピー文脈を再評価します  |
+| メソッド             | 内容                                                |
+| -------------------- | --------------------------------------------------- |
+| `refresh()`          | child list、メタデータ、コピー文脈を再評価します    |
 | `focusSelectedTab()` | 比較 UI 有効時に現在選択中の tab へフォーカスします |
 
 `refresh()` は、動的更新を明示的に同期させるための公開手段です。利用側は、内容変更が自動追従条件に含まれない場合、このメソッドで同期できます。
@@ -334,12 +334,12 @@ copy button は、常に active panel の文脈を表します。
 
 ### キーボード契約
 
-| キー                         | `activation="auto"` | `activation="manual"` |
-| -------------------------- | ------------------- | --------------------- |
-| `ArrowLeft` / `ArrowRight` | フォーカス移動と同時に選択       | フォーカスのみ移動             |
-| `Home` / `End`             | 先頭 / 末尾へ移動し、同時に選択   | 先頭 / 末尾へフォーカス移動       |
-| `Enter` / `Space`          | 現在フォーカス中の tab を選択   | 現在フォーカス中の tab を選択     |
-| `Tab`                      | 抑止しません              | 抑止しません                |
+| キー                       | `activation="auto"`             | `activation="manual"`         |
+| -------------------------- | ------------------------------- | ----------------------------- |
+| `ArrowLeft` / `ArrowRight` | フォーカス移動と同時に選択      | フォーカスのみ移動            |
+| `Home` / `End`             | 先頭 / 末尾へ移動し、同時に選択 | 先頭 / 末尾へフォーカス移動   |
+| `Enter` / `Space`          | 現在フォーカス中の tab を選択   | 現在フォーカス中の tab を選択 |
+| `Tab`                      | 抑止しません                    | 抑止しません                  |
 
 ### 書字方向契約
 
@@ -391,12 +391,12 @@ copy button は、常に active panel の文脈を表します。
 
 #### 外部調整面
 
-| 変数                                    | 意味               |
-| ------------------------------------- | ---------------- |
-| `--ui-code-group-width`               | group 全体の幅       |
-| `--ui-code-group-margin-inline`       | group の横方向マージン   |
-| `--ui-code-group-body-padding-block`  | body の上下 padding |
-| `--ui-code-group-body-padding-inline` | body の左右 padding |
+| 変数                                  | 意味                   |
+| ------------------------------------- | ---------------------- |
+| `--ui-code-group-width`               | group 全体の幅         |
+| `--ui-code-group-margin-inline`       | group の横方向マージン |
+| `--ui-code-group-body-padding-block`  | body の上下 padding    |
+| `--ui-code-group-body-padding-inline` | body の左右 padding    |
 
 #### 内部実装変数
 
@@ -438,14 +438,14 @@ copy button は、常に active panel の文脈を表します。
 
 `ui-code-group` が比較対象として扱う `ui-code-block` は、少なくとも次の公開面を持ちます。
 
-| 項目                                               | 必須  | 内容              |
-| ------------------------------------------------ | --- | --------------- |
-| `group-key`                                      | はい  | group 内の安定識別子です |
-| `getCodeContent()`                               | はい  | コピー用文字列を返します    |
-| `copyable`                                       | いいえ | copy 可否を返します    |
-| `tab-label` / `copy-label` / `filename` / `lang` | いいえ | 表示・文脈決定に使います    |
-| `ui-code-block-metadata-change`                  | いいえ | メタデータ更新通知です     |
-| `ui-code-block-content-change`                   | いいえ | 内容更新通知です        |
+| 項目                                             | 必須   | 内容                     |
+| ------------------------------------------------ | ------ | ------------------------ |
+| `group-key`                                      | はい   | group 内の安定識別子です |
+| `getCodeContent()`                               | はい   | コピー用文字列を返します |
+| `copyable`                                       | いいえ | copy 可否を返します      |
+| `tab-label` / `copy-label` / `filename` / `lang` | いいえ | 表示・文脈決定に使います |
+| `ui-code-block-metadata-change`                  | いいえ | メタデータ更新通知です   |
+| `ui-code-block-content-change`                   | いいえ | 内容更新通知です         |
 
 `getCodeContent()` は、比較 UI における copy 契約の前提です。
 
@@ -521,20 +521,20 @@ active item が `copyable=false`、または `getCodeContent()` を有効に提�
 
 各 Story やテストは見本ではなく、契約確認点として設計します。
 
-| 名称                            | 固定する契約                                      |
-| ----------------------------- | ------------------------------------------- |
-| `ComparisonPair`              | 2 件以上で比較 UI が有効化すること                        |
-| `SingleItemPassthrough`       | 1 件時に tab header を出さず、単一表示へ退行すること           |
-| `FallbackBoundary`            | 0 件時に fallback content を表示すること              |
-| `StableKeySelection`          | child 再順序付け後も同じ `group-key` を維持すること         |
-| `ControlledSelectionContract` | `selected-value` により外部制御できること               |
+| 名称                          | 固定する契約                                                     |
+| ----------------------------- | ---------------------------------------------------------------- |
+| `ComparisonPair`              | 2 件以上で比較 UI が有効化すること                               |
+| `SingleItemPassthrough`       | 1 件時に tab header を出さず、単一表示へ退行すること             |
+| `FallbackBoundary`            | 0 件時に fallback content を表示すること                         |
+| `StableKeySelection`          | child 再順序付け後も同じ `group-key` を維持すること              |
+| `ControlledSelectionContract` | `selected-value` により外部制御できること                        |
 | `ManualActivationContract`    | `activation="manual"` でフォーカス移動と選択確定が分離されること |
-| `LabelResolutionContract`     | `tab-label` と `copy-label` の解決順序が成立すること     |
-| `CopyDisabledContract`        | copy 不可状態で disabled が反映されること                |
-| `InvalidInputFallback`        | key 重複や非正規入力混在時に安全退行すること                    |
-| `PrintExpansionContract`      | 印刷時に全 panel が縦展開されること                       |
-| `ForcedColorsContract`        | 強制カラーで意味が維持されること                            |
-| `RTLContract`                 | RTL で論理方向に従うこと                              |
+| `LabelResolutionContract`     | `tab-label` と `copy-label` の解決順序が成立すること             |
+| `CopyDisabledContract`        | copy 不可状態で disabled が反映されること                        |
+| `InvalidInputFallback`        | key 重複や非正規入力混在時に安全退行すること                     |
+| `PrintExpansionContract`      | 印刷時に全 panel が縦展開されること                              |
+| `ForcedColorsContract`        | 強制カラーで意味が維持されること                                 |
+| `RTLContract`                 | RTL で論理方向に従うこと                                         |
 
 ---
 
@@ -796,4 +796,3 @@ copy button の意味を明確にするため、copy 可能性を公開契約へ
 ### 本節の扱い
 
 本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用する場合は、**実装、Storybook、契約書**の 3 点を同時に更新し、未対応状態を残したまま公開契約へ昇格させません。
-

@@ -3,19 +3,18 @@ import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import './search-dialog';
 import type { UiSearchDialog } from './search-dialog';
-import type {
-  UiSearchDialogItem,
-  UiSearchDialogSelectedDetail,
-} from './search-dialog.types'
+import type { UiSearchDialogItem, UiSearchDialogSelectedDetail } from './search-dialog.types';
 
 interface StoryArgs {
   items: UiSearchDialogItem[];
   loading: boolean;
   query: string;
   opened: boolean;
-  searcher: ((query: string) => Promise<readonly UiSearchDialogItem[]> | readonly UiSearchDialogItem[]) | null;
+  searcher:
+    | ((query: string) => Promise<readonly UiSearchDialogItem[]> | readonly UiSearchDialogItem[])
+    | null;
   dark: boolean;
-};
+}
 
 const FIXTURE_ITEMS: UiSearchDialogItem[] = [
   {

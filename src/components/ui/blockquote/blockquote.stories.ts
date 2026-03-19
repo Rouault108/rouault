@@ -238,7 +238,8 @@ export const SourceContract: Story = {
     if (slotQuote.getAttribute('cite') !== 'https://example.com/interview') {
       throw new Error('source slot ケースでも cite 属性を保持する必要があります');
     }
-    const sourceSlotElement = sourceSlot.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="source"]');
+    const sourceSlotElement =
+      sourceSlot.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="source"]');
     if (!sourceSlotElement) {
       throw new Error('source slot 要素が見つかりません');
     }
@@ -262,7 +263,9 @@ export const FocusContract: Story = {
   render: () => html`
     <ui-blockquote id="focus-contract">
       <p>本文はフォーカス対象ではなく、出典リンクのみを到達可能とする。</p>
-      <span slot="source">出典: <a id="focus-contract-link" href="https://example.com/source">設計資料</a></span>
+      <span slot="source"
+        >出典: <a id="focus-contract-link" href="https://example.com/source">設計資料</a></span
+      >
     </ui-blockquote>
   `,
   play: async ({ canvasElement }) => {
@@ -303,7 +306,7 @@ export const BoundaryConditions: Story = {
 
       <ui-blockquote id="boundary-empty-source-slot">
         <p>空白だけの source slot は無視する。</p>
-        <span slot="source">   </span>
+        <span slot="source"> </span>
       </ui-blockquote>
     </div>
   `,
@@ -311,7 +314,11 @@ export const BoundaryConditions: Story = {
     const invalidVariant = getBlockquote(canvasElement, 'boundary-invalid-variant');
     const hostLang = getBlockquote(canvasElement, 'boundary-host-lang');
     const emptySourceSlot = getBlockquote(canvasElement, 'boundary-empty-source-slot');
-    await Promise.all([invalidVariant.updateComplete, hostLang.updateComplete, emptySourceSlot.updateComplete]);
+    await Promise.all([
+      invalidVariant.updateComplete,
+      hostLang.updateComplete,
+      emptySourceSlot.updateComplete,
+    ]);
 
     const invalidQuote = getQuoteRoot(invalidVariant);
     if (invalidQuote.getAttribute('data-variant') !== 'default') {
@@ -351,7 +358,9 @@ export const DarkModeTokenContract: Story = {
           <p>Light surface on semantic tokens.</p>
         </ui-blockquote>
       </div>
-      <div style="padding: 1rem; color-scheme: dark; background: oklch(18% 0.01 250); color: oklch(95% 0.01 250);">
+      <div
+        style="padding: 1rem; color-scheme: dark; background: oklch(18% 0.01 250); color: oklch(95% 0.01 250);"
+      >
         <ui-blockquote id="dark-token-dark" source="Source: Dark Token">
           <p>Dark surface on semantic tokens.</p>
         </ui-blockquote>
@@ -378,7 +387,9 @@ export const DarkModeTokenContract: Story = {
     }
 
     if (cssText.includes('prefers-color-scheme')) {
-      throw new Error('blockquote は prefers-color-scheme 分岐ではなくトークンでモード追従する必要があります');
+      throw new Error(
+        'blockquote は prefers-color-scheme 分岐ではなくトークンでモード追従する必要があります',
+      );
     }
   },
 };

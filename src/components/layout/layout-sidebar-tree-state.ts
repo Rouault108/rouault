@@ -23,9 +23,7 @@ const toExpandedIds = (value: unknown): string[] => {
 /**
  * localStorage へ保存する展開状態を正規化する。
  */
-export const normalizeLayoutSidebarTreeState = (
-  value: unknown,
-): LayoutSidebarTreeState => {
+export const normalizeLayoutSidebarTreeState = (value: unknown): LayoutSidebarTreeState => {
   if (!isRecord(value)) {
     return { expandedIds: [] };
   }
@@ -38,9 +36,7 @@ export const normalizeLayoutSidebarTreeState = (
 /**
  * Storage から展開状態を読み出す。
  */
-export const readLayoutSidebarTreeState = (
-  storage: Storage | null,
-): LayoutSidebarTreeState => {
+export const readLayoutSidebarTreeState = (storage: Storage | null): LayoutSidebarTreeState => {
   if (storage === null) {
     return { expandedIds: [] };
   }
@@ -72,10 +68,7 @@ export const writeLayoutSidebarTreeState = (
   const normalized = normalizeLayoutSidebarTreeState(state);
 
   try {
-    storage.setItem(
-      LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY,
-      JSON.stringify(normalized),
-    );
+    storage.setItem(LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY, JSON.stringify(normalized));
   } catch {
     /* localStorage へ書き込めない環境では黙って無視する */
   }

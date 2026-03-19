@@ -31,7 +31,7 @@ const getContentWrapper = (details: Details): HTMLElement => {
 
 const getComponentCssText = (): string => {
   const styles = Details.styles;
-  const styleList = Array.isArray(styles) ? styles as CSSResult[] : [styles];
+  const styleList = Array.isArray(styles) ? (styles as CSSResult[]) : [styles];
   return styleList
     .map((style) => ('cssText' in style && typeof style.cssText === 'string' ? style.cssText : ''))
     .join('\n');
@@ -377,7 +377,9 @@ export const SummarySlotPriority: Story = {
 
     const assigned = summarySlot.assignedElements({ flatten: true });
     if (assigned.length !== 1) {
-      throw new Error(`summary slot の割り当て要素数は1件のはずですが ${String(assigned.length)} 件です`);
+      throw new Error(
+        `summary slot の割り当て要素数は1件のはずですが ${String(assigned.length)} 件です`,
+      );
     }
 
     const assignedText = assigned[0]?.textContent.replace(/\s+/g, ' ').trim() ?? '';
@@ -408,7 +410,7 @@ export const IconOnlyTrigger: Story = {
     const summary = details.shadowRoot?.querySelector<HTMLElement>('.summary');
     if (!summary) throw new Error('.summary が見つかりません');
 
-    if ((summary.textContent).trim() !== '') {
+    if (summary.textContent.trim() !== '') {
       throw new Error('icon-only ケースでは summary テキストが空である必要があります');
     }
     if (trigger.getAttribute('aria-label') !== '通知の詳細を開閉') {
@@ -428,7 +430,8 @@ export const IconOnlyTrigger: Story = {
     await details.updateComplete;
 
     if (!details.open) throw new Error('クリック後に open=true へ遷移しませんでした');
-    if (eventCount !== 1) throw new Error(`toggle が1回発火する想定ですが ${String(eventCount)} 回です`);
+    if (eventCount !== 1)
+      throw new Error(`toggle が1回発火する想定ですが ${String(eventCount)} 回です`);
   },
 };
 
@@ -495,7 +498,11 @@ export const RegionLandmark: Story = {
  */
 export const ReducedMotionContract: Story = {
   render: () => html`
-    <ui-details id="reduced-motion-contract" aria-label="Reduced Motion 契約" summary="Reduced Motion">
+    <ui-details
+      id="reduced-motion-contract"
+      aria-label="Reduced Motion 契約"
+      summary="Reduced Motion"
+    >
       <p style="margin: 0;">モーション抑制契約の退行検知用ストーリーです。</p>
     </ui-details>
   `,
@@ -552,7 +559,12 @@ export const DarkModeTokenContract: Story = {
   },
   render: () => html`
     <div style="padding: 1rem; background: #11151b; border-radius: 8px;">
-      <ui-details id="dark-mode-contract" aria-label="Dark Mode 契約" summary="Dark Surface Contract" open>
+      <ui-details
+        id="dark-mode-contract"
+        aria-label="Dark Mode 契約"
+        summary="Dark Surface Contract"
+        open
+      >
         <p style="margin: 0;">暗色面でもセマンティックトークン参照が崩れないことを確認します。</p>
       </ui-details>
     </div>

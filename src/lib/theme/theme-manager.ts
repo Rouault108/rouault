@@ -64,7 +64,9 @@ function getDefaultMediaQueryList(): ThemeMediaQueryLike | null {
   return window.matchMedia(DARK_MODE_MEDIA_QUERY);
 }
 
-export function readStoredThemePreference(storage: Storage | null = getDefaultStorage()): ThemePreference {
+export function readStoredThemePreference(
+  storage: Storage | null = getDefaultStorage(),
+): ThemePreference {
   if (storage === null) {
     return 'system';
   }
@@ -110,7 +112,8 @@ export function applyThemePreference(
   if (root !== null) {
     root.setAttribute(THEME_ATTRIBUTE, normalizedPreference);
     root.setAttribute(RESOLVED_THEME_ATTRIBUTE, resolvedTheme);
-    root.style.colorScheme = normalizedPreference === 'system' ? 'light dark' : normalizedPreference;
+    root.style.colorScheme =
+      normalizedPreference === 'system' ? 'light dark' : normalizedPreference;
   }
 
   const detail: ThemeChangeDetail = {

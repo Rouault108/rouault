@@ -11,14 +11,14 @@ const HEADING_TEXT_WRAPPER_CLASS = 'heading-text';
 const HEADING_PERMALINK_CLASS = 'heading-anchor';
 
 const isHeadingElement = (node: HastNode): boolean =>
-  node.type === 'element'
-  && typeof node.tagName === 'string'
-  && HEADING_TAG_PATTERN.test(node.tagName);
+  node.type === 'element' &&
+  typeof node.tagName === 'string' &&
+  HEADING_TAG_PATTERN.test(node.tagName);
 
 const isPermalinkHeadingElement = (node: HastNode): boolean =>
-  node.type === 'element'
-  && typeof node.tagName === 'string'
-  && PERMALINK_HEADING_TAG_PATTERN.test(node.tagName);
+  node.type === 'element' &&
+  typeof node.tagName === 'string' &&
+  PERMALINK_HEADING_TAG_PATTERN.test(node.tagName);
 
 const getTextContent = (node: HastNode): string => {
   if (node.type === 'text') {
@@ -108,7 +108,8 @@ const ensureHeadingPermalink = (node: HastNode, id: string, text: string): void 
 
   const originalChildren = [...node.children];
   const alreadyWrapped =
-    originalChildren.length === 1 && hasClassName(originalChildren[0] as HastNode, HEADING_TEXT_WRAPPER_CLASS);
+    originalChildren.length === 1 &&
+    hasClassName(originalChildren[0] as HastNode, HEADING_TEXT_WRAPPER_CLASS);
 
   if (!alreadyWrapped) {
     node.children = [

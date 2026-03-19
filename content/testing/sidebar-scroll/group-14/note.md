@@ -1,6 +1,6 @@
 ---
-title: "Sidebar Scroll Item 14"
-description: "サイドバーのスクロール検証用ノート 14"
+title: 'Sidebar Scroll Item 14'
+description: 'サイドバーのスクロール検証用ノート 14'
 date: 2026-03-14
 genre:
   - testing

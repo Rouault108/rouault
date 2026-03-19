@@ -228,9 +228,9 @@ export const Default: Story = {
     // テスト: 現在ページが aria-current="page" かつ href を保持（再訪可能性の保証）
     const currentLink = sh.querySelector('[aria-current="page"]');
     if (!currentLink) throw new Error(`[${S}] aria-current="page" が見つかりません`);
-    if ((currentLink.textContent).trim() !== '5') {
+    if (currentLink.textContent.trim() !== '5') {
       throw new Error(
-        `[${S}] 現在ページのテキストが "5" ではありません: "${(currentLink.textContent).trim()}"`,
+        `[${S}] 現在ページのテキストが "5" ではありません: "${currentLink.textContent.trim()}"`,
       );
     }
     if (currentLink.getAttribute('aria-label') !== '現在のページ、5ページ') {
@@ -239,7 +239,9 @@ export const Default: Story = {
       );
     }
     if (!currentLink.getAttribute('href')) {
-      throw new Error(`[${S}] 現在ページの href が存在しません（再訪可能性の保証が失われています）`);
+      throw new Error(
+        `[${S}] 現在ページの href が存在しません（再訪可能性の保証が失われています）`,
+      );
     }
 
     // テスト: 省略記号が aria-hidden="true" を持つ（スクリーンリーダー非通知）
@@ -318,7 +320,7 @@ export const FirstPage: Story = {
     // テスト: 現在ページが 1 かつ aria-current="page"
     const currentLink = sh.querySelector('[aria-current="page"]');
     if (!currentLink) throw new Error(`[${S}] aria-current="page" が見つかりません`);
-    if ((currentLink.textContent).trim() !== '1') {
+    if (currentLink.textContent.trim() !== '1') {
       throw new Error(`[${S}] 現在ページのテキストが "1" ではありません`);
     }
   },
@@ -381,7 +383,7 @@ export const LastPage: Story = {
     // テスト: 現在ページが 10
     const currentLink = sh.querySelector('[aria-current="page"]');
     if (!currentLink) throw new Error(`[${S}] aria-current="page" が見つかりません`);
-    if ((currentLink.textContent).trim() !== '10') {
+    if (currentLink.textContent.trim() !== '10') {
       throw new Error(`[${S}] 現在ページのテキストが "10" ではありません`);
     }
   },
@@ -432,7 +434,7 @@ export const SinglePage: Story = {
     // テスト: 現在ページが 1 かつ aria-current="page"
     const currentLink = sh.querySelector('[aria-current="page"]');
     if (!currentLink) throw new Error(`[${S}] aria-current="page" が見つかりません`);
-    if ((currentLink.textContent).trim() !== '1') {
+    if (currentLink.textContent.trim() !== '1') {
       throw new Error(`[${S}] 現在ページのテキストが "1" ではありません`);
     }
 
@@ -461,7 +463,9 @@ export const SmallTotal: Story = {
   render: (args) => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem;">
       <div>
-        <div style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+        <div
+          style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"
+        >
           total=7, current=4（ちょうど省略なし閾値・中間ページ）
         </div>
         <ui-pagination
@@ -472,7 +476,9 @@ export const SmallTotal: Story = {
         ></ui-pagination>
       </div>
       <div>
-        <div style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+        <div
+          style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"
+        >
           total=5, current=3（中間）
         </div>
         <ui-pagination
@@ -483,7 +489,9 @@ export const SmallTotal: Story = {
         ></ui-pagination>
       </div>
       <div>
-        <div style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+        <div
+          style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"
+        >
           total=2, current=1（最小構成）
         </div>
         <ui-pagination
@@ -577,7 +585,9 @@ export const EdgeCase_Total7vs8: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem;">
       <div>
-        <div style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+        <div
+          style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"
+        >
           total=7, current=4 — 省略なし（全ページ表示）
         </div>
         <ui-pagination
@@ -588,7 +598,9 @@ export const EdgeCase_Total7vs8: Story = {
         ></ui-pagination>
       </div>
       <div>
-        <div style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+        <div
+          style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"
+        >
           total=8, current=4 — 省略記号が発生（右側に 1 つ）
         </div>
         <ui-pagination
@@ -599,7 +611,9 @@ export const EdgeCase_Total7vs8: Story = {
         ></ui-pagination>
       </div>
       <div>
-        <div style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+        <div
+          style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"
+        >
           total=8, current=1 — 先頭ページ（省略記号 1 つ）
         </div>
         <ui-pagination
@@ -695,7 +709,9 @@ export const EdgeCase_OnePageGap: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem;">
       <div>
-        <div style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+        <div
+          style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"
+        >
           current=4, total=10 — 左ギャップ gap=2 → ページ 2 を表示（省略記号なし）
         </div>
         <ui-pagination
@@ -706,7 +722,9 @@ export const EdgeCase_OnePageGap: Story = {
         ></ui-pagination>
       </div>
       <div>
-        <div style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+        <div
+          style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"
+        >
           current=7, total=10 — 右ギャップ gap=2 → ページ 9 を表示（省略記号なし）
         </div>
         <ui-pagination
@@ -755,7 +773,7 @@ export const EdgeCase_OnePageGap: Story = {
     const shLeft = getShadow(elLeft, S);
     // テスト: ページ 2 のリンクが DOM に存在すること
     const page2Links = Array.from(shLeft.querySelectorAll('.page-btn')).filter(
-      (a) => (a.textContent).trim() === '2',
+      (a) => a.textContent.trim() === '2',
     );
     if (page2Links.length === 0) {
       throw new Error(`[${S}] current=4 の場合、ページ 2 のリンクが表示されるべきです`);
@@ -797,7 +815,7 @@ export const EdgeCase_OnePageGap: Story = {
     const shRight = getShadow(elRight, S);
     // テスト: ページ 9 のリンクが DOM に存在すること
     const page9Links = Array.from(shRight.querySelectorAll('.page-btn')).filter(
-      (a) => (a.textContent).trim() === '9',
+      (a) => a.textContent.trim() === '9',
     );
     if (page9Links.length === 0) {
       throw new Error(`[${S}] current=7 の場合、ページ 9 のリンクが表示されるべきです`);
@@ -832,7 +850,9 @@ export const EdgeCase_NearStart: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem;">
       <div>
-        <div style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+        <div
+          style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"
+        >
           current=2, total=10 — Range: [1, 2, 3, …, 10]（左に省略記号なし）
         </div>
         <ui-pagination
@@ -843,7 +863,9 @@ export const EdgeCase_NearStart: Story = {
         ></ui-pagination>
       </div>
       <div>
-        <div style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+        <div
+          style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"
+        >
           current=3, total=10 — Range: [1, 2, 3, 4, …, 10]（左に省略記号なし）
         </div>
         <ui-pagination
@@ -945,7 +967,9 @@ export const EdgeCase_NearEnd: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem;">
       <div>
-        <div style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+        <div
+          style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"
+        >
           current=8, total=10 — Range: [1, …, 7, 8, 9, 10]（右に省略記号なし）
         </div>
         <ui-pagination
@@ -956,7 +980,9 @@ export const EdgeCase_NearEnd: Story = {
         ></ui-pagination>
       </div>
       <div>
-        <div style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+        <div
+          style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"
+        >
           current=9, total=10 — Range: [1, …, 8, 9, 10]（右に省略記号なし）
         </div>
         <ui-pagination
@@ -1062,7 +1088,9 @@ export const Compact_Middle: Story = {
   },
   render: (args) => html`
     <div>
-      <div style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+      <div
+        style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"
+      >
         コンパクトモード — current=5, total=10（… 5 …）
       </div>
       <ui-pagination
@@ -1112,7 +1140,7 @@ export const Compact_Middle: Story = {
     // テスト: 現在ページが 5
     const currentLink = sh.querySelector('[aria-current="page"]');
     if (!currentLink) throw new Error(`[${S}] aria-current="page" が見つかりません`);
-    if ((currentLink.textContent).trim() !== '5') {
+    if (currentLink.textContent.trim() !== '5') {
       throw new Error(`[${S}] 現在ページのテキストが "5" ではありません`);
     }
 
@@ -1149,7 +1177,9 @@ export const Compact_FirstPage: Story = {
   render: (args) => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem;">
       <div>
-        <div style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+        <div
+          style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"
+        >
           コンパクト first — current=1（1 …）
         </div>
         <ui-pagination
@@ -1160,7 +1190,9 @@ export const Compact_FirstPage: Story = {
         ></ui-pagination>
       </div>
       <div>
-        <div style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+        <div
+          style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"
+        >
           コンパクト last — current=10（… 10）
         </div>
         <ui-pagination
@@ -1266,7 +1298,9 @@ export const Accessibility: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem;">
       <div>
-        <div style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+        <div
+          style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"
+        >
           中間ページ — 全 ARIA 属性チェック
         </div>
         <ui-pagination
@@ -1320,7 +1354,7 @@ export const Accessibility: Story = {
 
     // テスト: 非現在ページリンクの aria-label（例: ページ 4）
     const pageLinks = Array.from(sh.querySelectorAll('.page-btn'));
-    const page4Link = pageLinks.find((a) => (a.textContent).trim() === '4');
+    const page4Link = pageLinks.find((a) => a.textContent.trim() === '4');
     if (!page4Link) throw new Error(`[${S}] ページ 4 のリンクが見つかりません`);
     if (page4Link.getAttribute('aria-label') !== '4ページへ移動') {
       throw new Error(
@@ -1328,7 +1362,7 @@ export const Accessibility: Story = {
       );
     }
 
-    const page1Link = pageLinks.find((a) => (a.textContent).trim() === '1');
+    const page1Link = pageLinks.find((a) => a.textContent.trim() === '1');
     if (!page1Link) throw new Error(`[${S}] ページ 1 のリンクが見つかりません`);
     if (page1Link.getAttribute('aria-label') !== '1ページへ移動') {
       throw new Error(
@@ -1352,7 +1386,9 @@ export const Accessibility: Story = {
       throw new Error(`[${S}] 現在ページは <a> であるべきですが <${currentLink.tagName}> です`);
     }
     if (!currentLink.getAttribute('href')) {
-      throw new Error(`[${S}] 現在ページの href が存在しません（再訪可能性の保証が失われています）`);
+      throw new Error(
+        `[${S}] 現在ページの href が存在しません（再訪可能性の保証が失われています）`,
+      );
     }
   },
 };
@@ -1368,7 +1404,9 @@ export const GetHref: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem;">
       <div>
-        <div style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+        <div
+          style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"
+        >
           クエリパラメータ形式（デフォルト）: ?page=N
         </div>
         <ui-pagination
@@ -1379,7 +1417,9 @@ export const GetHref: Story = {
         ></ui-pagination>
       </div>
       <div>
-        <div style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+        <div
+          style="font-size: 11px; color: oklch(48% 0.01 250); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"
+        >
           パスベース形式: /notes/page/N/
         </div>
         <ui-pagination
@@ -1575,17 +1615,12 @@ export const ReducedMotion: Story = {
     </style>
 
     <div class="reduced-motion-info">
-      <strong>確認方法</strong>:
-      OS の「視差効果を減らす」または Chrome DevTools の
+      <strong>確認方法</strong>: OS の「視差効果を減らす」または Chrome DevTools の
       <code>prefers-reduced-motion: reduce</code> を有効化してください。
       ホバー・プレス時のトランジションが即座に完了します（0.01ms）。
     </div>
 
-    <ui-pagination
-      current="5"
-      total="10"
-      .getHref="${defaultHref}"
-    ></ui-pagination>
+    <ui-pagination current="5" total="10" .getHref="${defaultHref}"></ui-pagination>
   `,
   parameters: {
     docs: {
@@ -1639,8 +1674,8 @@ export const ForcedColorsMode: Story = {
 
     <div class="forced-colors-info">
       <strong>確認方法</strong>: Chrome DevTools → Rendering →
-      <code>forced-colors: active</code> を有効化してください。
-      現在ページが <code>Highlight</code> システムカラーの outline で識別されます。
+      <code>forced-colors: active</code> を有効化してください。 現在ページが
+      <code>Highlight</code> システムカラーの outline で識別されます。
     </div>
 
     <div style="display: flex; flex-direction: column; gap: 1rem;">
@@ -1683,7 +1718,10 @@ export const ForcedColorsMode: Story = {
       throw new Error(`[${S}] forced-colors のメディアクエリが存在しません`);
     }
     // WebKit は shorthand を longhand に分解し color token を小文字化するため、大文字小文字を区別しない検索を使用
-    if (!styleText.toLowerCase().includes('outline') || !styleText.toLowerCase().includes('highlight')) {
+    if (
+      !styleText.toLowerCase().includes('outline') ||
+      !styleText.toLowerCase().includes('highlight')
+    ) {
       throw new Error(`[${S}] Forced Colors の current page outline が存在しません`);
     }
     // ブラウザによって color token が小文字化されるため、大文字小文字を区別しない検索を使用
@@ -1756,8 +1794,15 @@ export const DarkMode: Story = {
         --focus-ring-color: #8fc2ff;
       "
     >
-      <div style="font-size: 11px; margin-bottom: 0.5rem;">ダークトークン適用例 — current=5, total=10</div>
-      <ui-pagination id="dark-pagination" current="5" total="10" .getHref="${defaultHref}"></ui-pagination>
+      <div style="font-size: 11px; margin-bottom: 0.5rem;">
+        ダークトークン適用例 — current=5, total=10
+      </div>
+      <ui-pagination
+        id="dark-pagination"
+        current="5"
+        total="10"
+        .getHref="${defaultHref}"
+      ></ui-pagination>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -1815,52 +1860,102 @@ export const AllStates: Story = {
     <div class="states-list">
       <div class="state-group">
         <div class="state-label">中間ページ — current=5, total=10（両端に省略記号）</div>
-        <ui-pagination id="all-mid" current="5" total="10" .getHref="${defaultHref}"></ui-pagination>
+        <ui-pagination
+          id="all-mid"
+          current="5"
+          total="10"
+          .getHref="${defaultHref}"
+        ></ui-pagination>
       </div>
 
       <div class="state-group">
         <div class="state-label">先頭ページ — current=1（Prev disabled）</div>
-        <ui-pagination id="all-first" current="1" total="10" .getHref="${defaultHref}"></ui-pagination>
+        <ui-pagination
+          id="all-first"
+          current="1"
+          total="10"
+          .getHref="${defaultHref}"
+        ></ui-pagination>
       </div>
 
       <div class="state-group">
         <div class="state-label">末尾ページ — current=10（Next disabled）</div>
-        <ui-pagination id="all-last" current="10" total="10" .getHref="${defaultHref}"></ui-pagination>
+        <ui-pagination
+          id="all-last"
+          current="10"
+          total="10"
+          .getHref="${defaultHref}"
+        ></ui-pagination>
       </div>
 
       <div class="state-group">
         <div class="state-label">1 ページのみ — total=1（両方 disabled）</div>
-        <ui-pagination id="all-single" current="1" total="1" .getHref="${defaultHref}"></ui-pagination>
+        <ui-pagination
+          id="all-single"
+          current="1"
+          total="1"
+          .getHref="${defaultHref}"
+        ></ui-pagination>
       </div>
 
       <div class="state-group">
         <div class="state-label">省略なし — total=7, current=4（全ページ表示）</div>
-        <ui-pagination id="all-small" current="4" total="7" .getHref="${defaultHref}"></ui-pagination>
+        <ui-pagination
+          id="all-small"
+          current="4"
+          total="7"
+          .getHref="${defaultHref}"
+        ></ui-pagination>
       </div>
 
       <div class="state-group">
         <div class="state-label">gap=2（左）— current=4, total=10（ページ 2 を実表示）</div>
-        <ui-pagination id="all-gap-l" current="4" total="10" .getHref="${defaultHref}"></ui-pagination>
+        <ui-pagination
+          id="all-gap-l"
+          current="4"
+          total="10"
+          .getHref="${defaultHref}"
+        ></ui-pagination>
       </div>
 
       <div class="state-group">
         <div class="state-label">gap=2（右）— current=7, total=10（ページ 9 を実表示）</div>
-        <ui-pagination id="all-gap-r" current="7" total="10" .getHref="${defaultHref}"></ui-pagination>
+        <ui-pagination
+          id="all-gap-r"
+          current="7"
+          total="10"
+          .getHref="${defaultHref}"
+        ></ui-pagination>
       </div>
 
       <div class="state-group">
         <div class="state-label">先頭付近 — current=2, total=10（左に省略記号なし）</div>
-        <ui-pagination id="all-near-s" current="2" total="10" .getHref="${defaultHref}"></ui-pagination>
+        <ui-pagination
+          id="all-near-s"
+          current="2"
+          total="10"
+          .getHref="${defaultHref}"
+        ></ui-pagination>
       </div>
 
       <div class="state-group">
         <div class="state-label">末尾付近 — current=9, total=10（右に省略記号なし）</div>
-        <ui-pagination id="all-near-e" current="9" total="10" .getHref="${defaultHref}"></ui-pagination>
+        <ui-pagination
+          id="all-near-e"
+          current="9"
+          total="10"
+          .getHref="${defaultHref}"
+        ></ui-pagination>
       </div>
 
       <div class="state-group">
         <div class="state-label">大量ページ — current=50, total=100</div>
-        <ui-pagination id="all-large" current="50" total="100" .getHref="${defaultHref}"></ui-pagination>
+        <ui-pagination
+          id="all-large"
+          current="50"
+          total="100"
+          .getHref="${defaultHref}"
+        ></ui-pagination>
       </div>
     </div>
   `,
@@ -1872,7 +1967,9 @@ export const AllStates: Story = {
 
     // テスト: すべての ui-pagination がレンダリングされている
     if (paginationEls.length !== 10) {
-      throw new Error(`[${S}] ui-pagination 数が 10 ではありません: ${String(paginationEls.length)} 個`);
+      throw new Error(
+        `[${S}] ui-pagination 数が 10 ではありません: ${String(paginationEls.length)} 個`,
+      );
     }
 
     // テスト: 各要素の nav が存在すること

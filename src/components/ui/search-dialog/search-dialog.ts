@@ -237,8 +237,7 @@ export class UiSearchDialog extends LitElement {
       hasCompletedSearch: this._hasCompletedSearch,
       visibleRange,
       getOptionId: (index) => this._selectionModel.getOptionId(index),
-      renderHighlightedText: (value) =>
-        renderSearchDialogHighlightedText(value, this.query),
+      renderHighlightedText: (value) => renderSearchDialogHighlightedText(value, this.query),
       resolvePath: (item) => resolveSearchDialogItemPath(item, window.location.href),
       onInput: this._onInput,
       onSearchFieldKeydown: this._onSearchFieldKeydown,

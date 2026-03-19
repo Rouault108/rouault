@@ -145,7 +145,11 @@ export const VariantStateMatrix: Story = {
 
       <div class="cell">
         <div class="label">section x host-labeled</div>
-        <ui-divider id="matrix-section-labeled" variant="section" aria-label="章区切り"></ui-divider>
+        <ui-divider
+          id="matrix-section-labeled"
+          variant="section"
+          aria-label="章区切り"
+        ></ui-divider>
       </div>
 
       <div class="cell">
@@ -155,7 +159,11 @@ export const VariantStateMatrix: Story = {
 
       <div class="cell">
         <div class="label">layout x host-labeled</div>
-        <ui-divider id="matrix-layout-labeled" variant="layout" aria-label="レイアウト境界"></ui-divider>
+        <ui-divider
+          id="matrix-layout-labeled"
+          variant="layout"
+          aria-label="レイアウト境界"
+        ></ui-divider>
       </div>
     </div>
   `,
@@ -168,7 +176,7 @@ export const VariantStateMatrix: Story = {
     ] as const;
 
     const hosts = matrix.map(({ id }) => getHost(canvasElement, id));
-    await Promise.all(hosts.map(host => host.updateComplete));
+    await Promise.all(hosts.map((host) => host.updateComplete));
 
     for (const item of matrix) {
       const host = getHost(canvasElement, item.id);
@@ -223,7 +231,11 @@ export const BoundaryConditions: Story = {
     const invalidVariant = getHost(canvasElement, 'boundary-invalid-variant');
     const hostLabel = getHost(canvasElement, 'boundary-host-label');
     const hostRole = getHost(canvasElement, 'boundary-host-role');
-    await Promise.all([invalidVariant.updateComplete, hostLabel.updateComplete, hostRole.updateComplete]);
+    await Promise.all([
+      invalidVariant.updateComplete,
+      hostLabel.updateComplete,
+      hostRole.updateComplete,
+    ]);
 
     const invalidHr = getInnerHr(invalidVariant);
     if (invalidHr.getAttribute('data-divider-variant') !== 'section') {
@@ -270,7 +282,10 @@ export const BoundaryConditions: Story = {
     }
 
     const plainMatchesScopedMargin = isNearlyEqual(toPx(plainStyle.marginTop), expectedMargin);
-    const plainMatchesScopedBorder = isNearlyEqual(toPx(plainStyle.borderTopWidth), expectedBorderWidth);
+    const plainMatchesScopedBorder = isNearlyEqual(
+      toPx(plainStyle.borderTopWidth),
+      expectedBorderWidth,
+    );
     if (plainMatchesScopedMargin && plainMatchesScopedBorder) {
       throw new Error('スコープ外の通常 hr に divider スタイルが漏れています');
     }
@@ -297,7 +312,9 @@ export const ScopeWithoutComponentInstance: Story = {
     </div>
   `,
   play: ({ canvasElement }) => {
-    document.querySelectorAll(`#${DOCUMENT_STYLE_ID}`).forEach(node => { node.remove(); });
+    document.querySelectorAll(`#${DOCUMENT_STYLE_ID}`).forEach((node) => {
+      node.remove();
+    });
     ensureDividerDocumentStyles();
 
     const styleTags = document.querySelectorAll<HTMLStyleElement>(`#${DOCUMENT_STYLE_ID}`);
@@ -325,7 +342,10 @@ export const ScopeWithoutComponentInstance: Story = {
     if (!isNearlyEqual(toPx(layoutStyle.marginTop), expectedMargin)) {
       throw new Error('インスタンスなしでも layout hr に margin 契約が必要です');
     }
-    if (!isNearlyEqual(toPx(proseStyle.borderTopWidth), 1) || !isNearlyEqual(toPx(layoutStyle.borderTopWidth), 1)) {
+    if (
+      !isNearlyEqual(toPx(proseStyle.borderTopWidth), 1) ||
+      !isNearlyEqual(toPx(layoutStyle.borderTopWidth), 1)
+    ) {
       throw new Error('インスタンスなしでも 1px border-top 契約が必要です');
     }
 
@@ -389,7 +409,10 @@ export const MediaAndTokenContracts: Story = {
 export const DarkModeTokenContract: Story = {
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
-      <div id="dark-contract-light" style="padding: 0.75rem; background: var(--bg-default); color: var(--fg-default);">
+      <div
+        id="dark-contract-light"
+        style="padding: 0.75rem; background: var(--bg-default); color: var(--fg-default);"
+      >
         <ui-divider id="dark-contract-divider-light"></ui-divider>
       </div>
       <div
@@ -419,7 +442,9 @@ export const DarkModeTokenContract: Story = {
       throw new Error('Dark Mode 追従に必要な border-ghost トークン参照が不足しています');
     }
     if (cssText.includes('prefers-color-scheme')) {
-      throw new Error('Divider は prefers-color-scheme 分岐ではなくトークンでモード追従する必要があります');
+      throw new Error(
+        'Divider は prefers-color-scheme 分岐ではなくトークンでモード追従する必要があります',
+      );
     }
   },
 };

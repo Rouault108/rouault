@@ -116,7 +116,9 @@ function splitPathTerms(path: string): string[] {
   );
 }
 
-function toSearchableContext(item: Pick<SearchCatalogItem, 'title' | 'path' | 'keywords' | 'description'>): {
+function toSearchableContext(
+  item: Pick<SearchCatalogItem, 'title' | 'path' | 'keywords' | 'description'>,
+): {
   title: string;
   description: string;
   path: string;
@@ -132,13 +134,19 @@ function toSearchableContext(item: Pick<SearchCatalogItem, 'title' | 'path' | 'k
     description: normalizeString(item.description).toLocaleLowerCase('ja'),
     path: item.path.toLocaleLowerCase('ja'),
     keywordString: keywords.map((keyword) => keyword.toLocaleLowerCase('ja')).join(' '),
-    terms: dedupeStrings([...keywords, ...splitPathTerms(item.path), ...titleTerms, ...descriptionTerms]).map(
-      (term) => term.toLocaleLowerCase('ja'),
-    ),
+    terms: dedupeStrings([
+      ...keywords,
+      ...splitPathTerms(item.path),
+      ...titleTerms,
+      ...descriptionTerms,
+    ]).map((term) => term.toLocaleLowerCase('ja')),
   };
 }
 
-function matchesPreparedQuery(item: SearchCatalogItem, preparedQuery: PreparedSearchQuery): boolean {
+function matchesPreparedQuery(
+  item: SearchCatalogItem,
+  preparedQuery: PreparedSearchQuery,
+): boolean {
   const normalizedQuery = preparedQuery.rawQuery.toLocaleLowerCase('ja');
   if (normalizedQuery.length === 0) {
     return false;
@@ -174,7 +182,9 @@ function toDialogItem(item: SearchCatalogItem): SearchDialogItem {
       ? { description: item.description }
       : {}),
     ...(typeof item.date === 'string' && item.date.length > 0 ? { date: item.date } : {}),
-    ...(Array.isArray(item.keywords) && item.keywords.length > 0 ? { keywords: item.keywords } : {}),
+    ...(Array.isArray(item.keywords) && item.keywords.length > 0
+      ? { keywords: item.keywords }
+      : {}),
   };
 }
 
@@ -242,7 +252,11 @@ function getDialogItemRank(item: SearchDialogItem, preparedQuery: PreparedSearch
   return 8;
 }
 
-function compareDialogItems(left: SearchDialogItem, right: SearchDialogItem, preparedQuery: PreparedSearchQuery): number {
+function compareDialogItems(
+  left: SearchDialogItem,
+  right: SearchDialogItem,
+  preparedQuery: PreparedSearchQuery,
+): number {
   const leftRank = getDialogItemRank(left, preparedQuery);
   const rightRank = getDialogItemRank(right, preparedQuery);
 
@@ -315,7 +329,9 @@ function mergeDialogItem(existing: SearchDialogItem, incoming: SearchDialogItem)
   const existingDescription = normalizeString(existing.description);
   const incomingDescription = normalizeString(incoming.description);
   const mergedDescription =
-    existingDescription.length >= incomingDescription.length ? existingDescription : incomingDescription;
+    existingDescription.length >= incomingDescription.length
+      ? existingDescription
+      : incomingDescription;
 
   return {
     title: existing.title,
@@ -330,7 +346,9 @@ function mergeDialogItem(existing: SearchDialogItem, incoming: SearchDialogItem)
   };
 }
 
-export async function loadSearchCatalog(fetcher: SearchCatalogFetcher = fetch): Promise<readonly SearchCatalogItem[]> {
+export async function loadSearchCatalog(
+  fetcher: SearchCatalogFetcher = fetch,
+): Promise<readonly SearchCatalogItem[]> {
   const response = await fetcher('/search-catalog.json');
   if (!response.ok) {
     throw new Error(`検索カタログの読み込みに失敗しました: ${response.status.toString()}`);
@@ -391,6 +409,8 @@ export function mergeSearchDialogItems(
       title: item.title,
       url: item.url,
       ...(typeof item.path === 'string' && item.path.length > 0 ? { path: item.path } : {}),
-      ...(Array.isArray(item.keywords) && item.keywords.length > 0 ? { keywords: item.keywords } : {}),
+      ...(Array.isArray(item.keywords) && item.keywords.length > 0
+        ? { keywords: item.keywords }
+        : {}),
     }));
 }

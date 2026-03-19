@@ -4,7 +4,14 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import '../../../lib/icons';
 import '../button/button';
 
-export type VideoState = 'EMPTY' | 'LOADING' | 'PAUSED' | 'PLAYING' | 'BUFFERING' | 'ENDED' | 'ERROR';
+export type VideoState =
+  | 'EMPTY'
+  | 'LOADING'
+  | 'PAUSED'
+  | 'PLAYING'
+  | 'BUFFERING'
+  | 'ENDED'
+  | 'ERROR';
 export type TrackKind = 'subtitles' | 'captions' | 'descriptions' | 'chapters' | 'metadata';
 
 export interface Track {
@@ -85,7 +92,8 @@ export class UiVideo extends LitElement {
       height: 100%;
       object-fit: cover;
       filter: brightness(var(--brightness-dimmed, 0.85));
-      transition: filter var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      transition: filter var(--duration-normal, 150ms)
+        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     .player-shell.is-playing .video-element,
@@ -117,10 +125,14 @@ export class UiVideo extends LitElement {
       width: calc(var(--control-min-touch, 24px) + var(--space-1, 4px));
       height: calc(var(--control-min-touch, 24px) + var(--space-1, 4px));
       padding: 0;
-      border: var(--border-width, 1px) solid var(--video-overlay-border, var(--border-default, oklch(86% 0 0)));
+      border: var(--border-width, 1px) solid
+        var(--video-overlay-border, var(--border-default, oklch(86% 0 0)));
       border-radius: var(--radius-full, 999px);
       background: var(--video-overlay-bg, var(--bg-surface-3, oklch(100% 0 0 / 0.88)));
-      box-shadow: var(--video-overlay-elevation, var(--elevation-md, 0 4px 12px oklch(0% 0 0 / 0.16)));
+      box-shadow: var(
+        --video-overlay-elevation,
+        var(--elevation-md, 0 4px 12px oklch(0% 0 0 / 0.16))
+      );
       color: var(--fg-default, oklch(20% 0 0));
       cursor: pointer;
       transition:
@@ -167,10 +179,14 @@ export class UiVideo extends LitElement {
       width: var(--control-min-touch, 24px);
       height: var(--control-min-touch, 24px);
       padding: 0;
-      border: var(--border-width, 1px) solid var(--video-overlay-border, var(--border-default, oklch(86% 0 0)));
+      border: var(--border-width, 1px) solid
+        var(--video-overlay-border, var(--border-default, oklch(86% 0 0)));
       border-radius: var(--radius-full, 999px);
       background: var(--video-overlay-bg, var(--bg-surface-3, oklch(100% 0 0 / 0.88)));
-      box-shadow: var(--video-overlay-elevation, var(--elevation-md, 0 4px 12px oklch(0% 0 0 / 0.16)));
+      box-shadow: var(
+        --video-overlay-elevation,
+        var(--elevation-md, 0 4px 12px oklch(0% 0 0 / 0.16))
+      );
       color: var(--fg-default, oklch(20% 0 0));
       cursor: pointer;
       opacity: 0;
@@ -229,7 +245,8 @@ export class UiVideo extends LitElement {
       line-height: 1;
       pointer-events: none;
       opacity: 0;
-      transition: opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      transition: opacity var(--duration-fast, 70ms)
+        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     .speed-badge.is-active {
@@ -251,7 +268,8 @@ export class UiVideo extends LitElement {
       pointer-events: none;
       text-shadow: 0 1px 3px oklch(0% 0 0 / 0.5);
       opacity: 0;
-      transition: opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      transition: opacity var(--duration-fast, 70ms)
+        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     .player-shell.is-fullscreen .fullscreen-caption.has-content {
@@ -336,12 +354,17 @@ export class UiVideo extends LitElement {
       flex-direction: column;
       gap: var(--space-1, 4px);
       padding: var(--space-3, 12px) var(--space-4, 16px);
-      border: var(--border-width, 1px) solid var(--video-overlay-border, var(--border-default, oklch(86% 0 0)));
+      border: var(--border-width, 1px) solid
+        var(--video-overlay-border, var(--border-default, oklch(86% 0 0)));
       border-radius: var(--radius-lg, 10px);
       background: var(--video-overlay-bg, var(--bg-surface-3, oklch(100% 0 0 / 0.88)));
-      box-shadow: var(--video-overlay-elevation, var(--elevation-md, 0 4px 12px oklch(0% 0 0 / 0.16)));
+      box-shadow: var(
+        --video-overlay-elevation,
+        var(--elevation-md, 0 4px 12px oklch(0% 0 0 / 0.16))
+      );
       opacity: 1;
-      transition: opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      transition: opacity var(--duration-fast, 70ms)
+        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     /* 初回再生前は非表示 */
@@ -438,7 +461,8 @@ export class UiVideo extends LitElement {
       border-radius: var(--radius-full, 999px);
       border: none;
       background: var(--primary, oklch(56% 0.16 252));
-      transition: transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      transition: transform var(--duration-fast, 70ms)
+        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     .seek-input:hover::-webkit-slider-thumb,
@@ -455,7 +479,8 @@ export class UiVideo extends LitElement {
       border-radius: var(--radius-full, 999px);
       border: none;
       background: var(--primary, oklch(56% 0.16 252));
-      transition: transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      transition: transform var(--duration-fast, 70ms)
+        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     .seek-input:hover::-moz-range-thumb,
@@ -513,7 +538,8 @@ export class UiVideo extends LitElement {
       line-height: 1;
       pointer-events: none;
       opacity: 0;
-      transition: opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      transition: opacity var(--duration-normal, 150ms)
+        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     .skip-indicator-left {
@@ -1092,7 +1118,8 @@ export class UiVideo extends LitElement {
     if (!error) return '動画の読み込み中にエラーが発生しました。';
 
     if (error.code === MediaError.MEDIA_ERR_ABORTED) return '動画の読み込みが中断されました。';
-    if (error.code === MediaError.MEDIA_ERR_NETWORK) return 'ネットワークの問題で動画を読み込めませんでした。';
+    if (error.code === MediaError.MEDIA_ERR_NETWORK)
+      return 'ネットワークの問題で動画を読み込めませんでした。';
     if (error.code === MediaError.MEDIA_ERR_DECODE) return '動画をデコードできませんでした。';
     if (error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
       return 'サポートされていない動画形式です。';
@@ -1528,7 +1555,7 @@ export class UiVideo extends LitElement {
         await document.exitFullscreen();
         return;
       }
-      // 非全画面状態のとき: 開始する      
+      // 非全画面状態のとき: 開始する
       await shell.requestFullscreen();
     } catch {
       // 操作環境により全画面APIが拒否されるため握りつぶす。
@@ -1637,7 +1664,11 @@ export class UiVideo extends LitElement {
     if (!(video instanceof HTMLVideoElement)) return;
 
     this._duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 0;
-    this._currentTime = this._clamp(video.currentTime, 0, this._duration > 0 ? this._duration : Infinity);
+    this._currentTime = this._clamp(
+      video.currentTime,
+      0,
+      this._duration > 0 ? this._duration : Infinity,
+    );
     this._bufferedEnd = this._duration > 0 ? this._getBufferedEnd(video) : 0;
     this._volume = video.muted ? 0 : this._clamp(video.volume, 0, 1);
     this.muted = video.muted;
@@ -1654,7 +1685,8 @@ export class UiVideo extends LitElement {
     if (!(video instanceof HTMLVideoElement)) return;
     if (this._status === 'ERROR') return;
 
-    this._duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : this._duration;
+    this._duration =
+      Number.isFinite(video.duration) && video.duration > 0 ? video.duration : this._duration;
     this._bufferedEnd = this._duration > 0 ? this._getBufferedEnd(video) : this._bufferedEnd;
 
     if (!video.paused && !video.ended) {
@@ -1705,7 +1737,11 @@ export class UiVideo extends LitElement {
   private _onTimeUpdate = (event: Event): void => {
     const video = event.currentTarget;
     if (!(video instanceof HTMLVideoElement)) return;
-    this._currentTime = this._clamp(video.currentTime, 0, this._seekMax > 0 ? this._seekMax : Infinity);
+    this._currentTime = this._clamp(
+      video.currentTime,
+      0,
+      this._seekMax > 0 ? this._seekMax : Infinity,
+    );
   };
 
   private _onProgress = (event: Event): void => {
@@ -1852,10 +1888,17 @@ export class UiVideo extends LitElement {
     if (this._status === 'ERROR') {
       return html`
         <div class="state-layer">
-          <div class="error-panel" role="${this._statusRole}" aria-live="${this._statusLive}" aria-atomic="true">
+          <div
+            class="error-panel"
+            role="${this._statusRole}"
+            aria-live="${this._statusLive}"
+            aria-atomic="true"
+          >
             <iconify-icon icon="lucide:triangle-alert" aria-hidden="true"></iconify-icon>
             <span class="state-text">${this._statusMessage}</span>
-            <button type="button" class="retry-button" @click="${this._onRetryClick}">再試行</button>
+            <button type="button" class="retry-button" @click="${this._onRetryClick}">
+              再試行
+            </button>
           </div>
         </div>
       `;
@@ -1923,13 +1966,25 @@ export class UiVideo extends LitElement {
           ${this._renderStateLayer()}
 
           <!-- 2倍速バッジ -->
-          <div class="speed-badge ${this._isLongPress ? 'is-active' : ''}" aria-hidden="true">2x</div>
+          <div class="speed-badge ${this._isLongPress ? 'is-active' : ''}" aria-hidden="true">
+            2x
+          </div>
 
           <!-- スキップインジケータ -->
-          <div class="skip-indicator skip-indicator-left ${this._skipIndicator === 'back' ? 'is-active' : ''}" aria-hidden="true">
+          <div
+            class="skip-indicator skip-indicator-left ${this._skipIndicator === 'back'
+              ? 'is-active'
+              : ''}"
+            aria-hidden="true"
+          >
             -${String(SKIP_SECONDS)}
           </div>
-          <div class="skip-indicator skip-indicator-right ${this._skipIndicator === 'forward' ? 'is-active' : ''}" aria-hidden="true">
+          <div
+            class="skip-indicator skip-indicator-right ${this._skipIndicator === 'forward'
+              ? 'is-active'
+              : ''}"
+            aria-hidden="true"
+          >
             +${String(SKIP_SECONDS)}
           </div>
 
@@ -1952,7 +2007,9 @@ export class UiVideo extends LitElement {
                 max="${String(this._seekMax)}"
                 step="0.1"
                 .value="${String(this._seekNow)}"
-                style="--seek-progress: ${String(this._seekProgress)}%; --seek-buffered: ${String(this._seekBufferedProgress)}%;"
+                style="--seek-progress: ${String(this._seekProgress)}%; --seek-buffered: ${String(
+                  this._seekBufferedProgress,
+                )}%;"
                 aria-label="再生位置"
                 aria-valuemin="0"
                 aria-valuemax="${String(this._seekMax)}"
@@ -2042,7 +2099,10 @@ export class UiVideo extends LitElement {
                         ?disabled="${this._controlDisabled}"
                         @click="${this._toggleCaptions}"
                       >
-                        <iconify-icon icon="${this._captionToggleIcon}" aria-hidden="true"></iconify-icon>
+                        <iconify-icon
+                          icon="${this._captionToggleIcon}"
+                          aria-hidden="true"
+                        ></iconify-icon>
                       </ui-button>
                     `
                   : nothing}
@@ -2056,7 +2116,10 @@ export class UiVideo extends LitElement {
                   ?disabled="${this._controlDisabled}"
                   @click="${this._toggleFullscreen}"
                 >
-                  <iconify-icon icon="${this._fullscreenButtonIcon}" aria-hidden="true"></iconify-icon>
+                  <iconify-icon
+                    icon="${this._fullscreenButtonIcon}"
+                    aria-hidden="true"
+                  ></iconify-icon>
                 </ui-button>
               </div>
             </div>
@@ -2065,9 +2128,7 @@ export class UiVideo extends LitElement {
 
         ${caption === ''
           ? nothing
-          : html`
-              <figcaption id="${this._captionId}" class="caption">${caption}</figcaption>
-            `}
+          : html` <figcaption id="${this._captionId}" class="caption">${caption}</figcaption> `}
 
         <p
           id="${this._statusId}"

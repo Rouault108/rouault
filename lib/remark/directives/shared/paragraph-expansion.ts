@@ -53,10 +53,7 @@ export const tryParseFoldedDirectiveParagraph = (
   return toDirectiveNode(marker, transformChildren(children, file), attrs, file);
 };
 
-export const expandDirectiveParagraph = (
-  node: MdastNode,
-  file?: VFileLike,
-): MdastNode[] | null => {
+export const expandDirectiveParagraph = (node: MdastNode, file?: VFileLike): MdastNode[] | null => {
   const rawText = getParagraphSingleText(node);
   if (!rawText?.includes('\n')) {
     return null;

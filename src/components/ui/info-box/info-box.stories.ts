@@ -174,7 +174,9 @@ export const Default: Story = {
       id="info-box-default"
       heading="${args.heading}"
       icon="${args.icon}"
-      heading-level="${ifDefined(args.headingLevel !== undefined ? String(args.headingLevel) : undefined)}"
+      heading-level="${ifDefined(
+        args.headingLevel !== undefined ? String(args.headingLevel) : undefined,
+      )}"
       ?landmark="${args.landmark}"
       variant="${args.variant}"
     >
@@ -347,8 +349,12 @@ export const ReadingPrerequisitePlacements: Story = {
                     </p>
                     <ul>
                       <li>結論、判断理由、未解決点を先に書きます。</li>
-                      <li>固有名詞や過去の文脈は、関連ノートの存在を前提に省略することがあります。</li>
-                      <li>導入解説や完全な手順が必要な場合は、本文中の出典や関連ノートを併読してください。</li>
+                      <li>
+                        固有名詞や過去の文脈は、関連ノートの存在を前提に省略することがあります。
+                      </li>
+                      <li>
+                        導入解説や完全な手順が必要な場合は、本文中の出典や関連ノートを併読してください。
+                      </li>
                     </ul>
                   </div>
                 </ui-info-box>
@@ -364,7 +370,6 @@ export const ReadingPrerequisitePlacements: Story = {
           `,
           'article header の直下に 1 回だけ置くパターンです。記事メタデータと混線せず、本文へ入る前の認知切り替えを作れます。',
         )}
-
         ${renderFoundationSection(
           '代替配置',
           html`
@@ -377,9 +382,7 @@ export const ReadingPrerequisitePlacements: Story = {
                   ></ui-article-header>
 
                   <div class="reading-prose">
-                    <p>
-                      冒頭で背景を一段だけ説明したあと、読む姿勢を短く合わせたいケースです。
-                    </p>
+                    <p>冒頭で背景を一段だけ説明したあと、読む姿勢を短く合わせたいケースです。</p>
 
                     <ui-info-box
                       id="prerequisite-inline"
@@ -428,7 +431,8 @@ export const ReadingPrerequisitePlacements: Story = {
                     >
                       <div class="reading-prose">
                         <p>
-                          ここから先は、過去の実装ログと Storybook のコンポーネント契約を把握している前提で進めます。
+                          ここから先は、過去の実装ログと Storybook
+                          のコンポーネント契約を把握している前提で進めます。
                         </p>
                       </div>
                     </ui-info-box>
@@ -444,7 +448,6 @@ export const ReadingPrerequisitePlacements: Story = {
           `,
           '前提条件の重さに応じて、本文導入内の短い提示か、特定セクション直前の再提示へ縮退させます。',
         )}
-
         ${renderFoundationSection(
           '文言の指針',
           html`
@@ -458,8 +461,8 @@ export const ReadingPrerequisitePlacements: Story = {
                 ルール説明ではなく読む補助として機能します。
               </p>
               <p class="pattern-note">
-                ステータスや更新日と混ぜないことで、article header は記事の現在地、
-                info-box は読むための前提という役割分担を保てます。
+                ステータスや更新日と混ぜないことで、article header は記事の現在地、 info-box
+                は読むための前提という役割分担を保てます。
               </p>
             </div>
           `,
@@ -470,7 +473,11 @@ export const ReadingPrerequisitePlacements: Story = {
     const recommendedBox = getHost(canvasElement, 'prerequisite-global');
     const inlineBox = getHost(canvasElement, 'prerequisite-inline');
     const sectionBox = getHost(canvasElement, 'prerequisite-section');
-    await Promise.all([recommendedBox.updateComplete, inlineBox.updateComplete, sectionBox.updateComplete]);
+    await Promise.all([
+      recommendedBox.updateComplete,
+      inlineBox.updateComplete,
+      sectionBox.updateComplete,
+    ]);
 
     const recommendedStage = canvasElement.querySelector<HTMLElement>('#placement-recommended');
     if (!recommendedStage) {
@@ -497,7 +504,9 @@ export const ReadingPrerequisitePlacements: Story = {
       throw new Error('推奨配置の見出し文言が期待値と一致しません');
     }
 
-    const inlineProse = canvasElement.querySelector<HTMLElement>('#placement-inline .reading-prose');
+    const inlineProse = canvasElement.querySelector<HTMLElement>(
+      '#placement-inline .reading-prose',
+    );
     if (!inlineProse) {
       throw new Error('導入内配置の本文コンテナが見つかりません');
     }
@@ -511,13 +520,18 @@ export const ReadingPrerequisitePlacements: Story = {
       throw new Error('導入内の短い前提は note として扱う必要があります');
     }
 
-    const sectionProse = canvasElement.querySelector<HTMLElement>('#placement-section .reading-prose');
+    const sectionProse = canvasElement.querySelector<HTMLElement>(
+      '#placement-section .reading-prose',
+    );
     if (!sectionProse) {
       throw new Error('局所前提配置の本文コンテナが見つかりません');
     }
 
     const sectionChildren = Array.from(sectionProse.children);
-    if (sectionChildren[1]?.id !== 'prerequisite-section' || sectionChildren[2]?.tagName.toLowerCase() !== 'h2') {
+    if (
+      sectionChildren[1]?.id !== 'prerequisite-section' ||
+      sectionChildren[2]?.tagName.toLowerCase() !== 'h2'
+    ) {
       throw new Error('局所前提は対象セクション見出しの直前に配置する必要があります');
     }
   },
@@ -590,13 +604,16 @@ export const VariantStateMatrix: Story = {
         const heading = getHeading(infoBox);
         if (testCase.expectedRole === 'region') {
           if (infoBox.getAttribute('aria-labelledby') !== heading.id) {
-            throw new Error(`${testCase.id}: region の aria-labelledby が heading id と一致しません`);
+            throw new Error(
+              `${testCase.id}: region の aria-labelledby が heading id と一致しません`,
+            );
           }
         } else if (infoBox.hasAttribute('aria-labelledby')) {
           throw new Error(`${testCase.id}: note では aria-labelledby を出力しません`);
         }
 
-        const expectedHeaderColor = testCase.variant === 'filled' ? 'rgb(20, 21, 22)' : 'rgb(70, 71, 72)';
+        const expectedHeaderColor =
+          testCase.variant === 'filled' ? 'rgb(20, 21, 22)' : 'rgb(70, 71, 72)';
         const actualHeaderColor = normalizeColor(getComputedStyle(header).color);
         if (actualHeaderColor !== normalizeColor(expectedHeaderColor)) {
           throw new Error(`${testCase.id}: ヘッダー色の切り替えが不正です`);
@@ -611,7 +628,8 @@ export const VariantStateMatrix: Story = {
         }
       }
 
-      const expectedBackground = testCase.variant === 'filled' ? 'rgb(230, 231, 232)' : 'rgba(0, 0, 0, 0)';
+      const expectedBackground =
+        testCase.variant === 'filled' ? 'rgb(230, 231, 232)' : 'rgba(0, 0, 0, 0)';
       const actualBackground = normalizeColor(getComputedStyle(container).backgroundColor);
       if (actualBackground !== normalizeColor(expectedBackground)) {
         throw new Error(`${testCase.id}: バリアント背景色の切り替えが不正です`);
@@ -627,11 +645,21 @@ export const VariantStateMatrix: Story = {
 export const HeadingLevelBoundaries: Story = {
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
-      <ui-info-box id="heading-valid" heading="有効レベル" heading-level="1">heading-level=1</ui-info-box>
-      <ui-info-box id="heading-zero" heading="無効レベル0" heading-level="0">heading-level=0</ui-info-box>
-      <ui-info-box id="heading-seven" heading="無効レベル7" heading-level="7">heading-level=7</ui-info-box>
-      <ui-info-box id="heading-decimal" heading="無効レベル2.5" heading-level="2.5">heading-level=2.5</ui-info-box>
-      <ui-info-box id="heading-no-title" heading-level="4">heading なし + heading-level=4</ui-info-box>
+      <ui-info-box id="heading-valid" heading="有効レベル" heading-level="1"
+        >heading-level=1</ui-info-box
+      >
+      <ui-info-box id="heading-zero" heading="無効レベル0" heading-level="0"
+        >heading-level=0</ui-info-box
+      >
+      <ui-info-box id="heading-seven" heading="無効レベル7" heading-level="7"
+        >heading-level=7</ui-info-box
+      >
+      <ui-info-box id="heading-decimal" heading="無効レベル2.5" heading-level="2.5"
+        >heading-level=2.5</ui-info-box
+      >
+      <ui-info-box id="heading-no-title" heading-level="4"
+        >heading なし + heading-level=4</ui-info-box
+      >
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -640,10 +668,19 @@ export const HeadingLevelBoundaries: Story = {
     const seven = getHost(canvasElement, 'heading-seven');
     const decimal = getHost(canvasElement, 'heading-decimal');
     const noTitle = getHost(canvasElement, 'heading-no-title');
-    await Promise.all([valid.updateComplete, zero.updateComplete, seven.updateComplete, decimal.updateComplete, noTitle.updateComplete]);
+    await Promise.all([
+      valid.updateComplete,
+      zero.updateComplete,
+      seven.updateComplete,
+      decimal.updateComplete,
+      noTitle.updateComplete,
+    ]);
 
     const validHeading = getHeading(valid);
-    if (validHeading.getAttribute('role') !== 'heading' || validHeading.getAttribute('aria-level') !== '1') {
+    if (
+      validHeading.getAttribute('role') !== 'heading' ||
+      validHeading.getAttribute('aria-level') !== '1'
+    ) {
       throw new Error('heading-level=1 で role/aria-level が正しく付与されていません');
     }
 
@@ -704,8 +741,12 @@ export const LandmarkRequiresHeadingBoundary: Story = {
 export const IconRenderingBoundary: Story = {
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
-      <ui-info-box id="icon-with-heading" heading="アイコン付き" icon="music">icon を表示します</ui-info-box>
-      <ui-info-box id="icon-without-heading" icon="music">heading なしでは icon を表示しません</ui-info-box>
+      <ui-info-box id="icon-with-heading" heading="アイコン付き" icon="music"
+        >icon を表示します</ui-info-box
+      >
+      <ui-info-box id="icon-without-heading" icon="music"
+        >heading なしでは icon を表示しません</ui-info-box
+      >
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -757,7 +798,7 @@ export const EmptySlotDoesNotRender: Story = {
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-info-box id="empty-slot"></ui-info-box>
-      <ui-info-box id="whitespace-only">   </ui-info-box>
+      <ui-info-box id="whitespace-only"> </ui-info-box>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -780,7 +821,14 @@ export const EmptySlotDoesNotRender: Story = {
  */
 export const StyleContracts: Story = {
   render: () => html`
-    <ui-info-box id="style-contracts" heading="Style Contracts" variant="filled" icon="palette" heading-level="2" landmark>
+    <ui-info-box
+      id="style-contracts"
+      heading="Style Contracts"
+      variant="filled"
+      icon="palette"
+      heading-level="2"
+      landmark
+    >
       style contract checks
     </ui-info-box>
   `,
@@ -817,7 +865,14 @@ export const StyleContracts: Story = {
  */
 export const DarkModeTokenContract: Story = {
   render: () => html`
-    <ui-info-box id="dark-mode-contract" heading="Dark Mode Contract" variant="filled" icon="moon" heading-level="2" landmark>
+    <ui-info-box
+      id="dark-mode-contract"
+      heading="Dark Mode Contract"
+      variant="filled"
+      icon="moon"
+      heading-level="2"
+      landmark
+    >
       semantic token contract checks
     </ui-info-box>
   `,
@@ -827,7 +882,9 @@ export const DarkModeTokenContract: Story = {
 
     const styles = String(InfoBox.styles);
     if (styles.includes('prefers-color-scheme')) {
-      throw new Error('info-box は prefers-color-scheme 分岐を持たずトークンでモード追従する必要があります');
+      throw new Error(
+        'info-box は prefers-color-scheme 分岐を持たずトークンでモード追従する必要があります',
+      );
     }
     if (!styles.includes('var(--bg-fill-muted, oklch(96% 0 0))')) {
       throw new Error('--bg-fill-muted の参照が不足しています');

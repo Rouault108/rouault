@@ -104,7 +104,11 @@ const toError = (file: VFileLike | undefined, node: MdastNode, message: string):
   return new Error(`[markdown] ${message}: ${sourcePath}${getNodeLocation(node)}`);
 };
 
-const toWarningMessage = (file: VFileLike | undefined, node: MdastNode, message: string): string => {
+const toWarningMessage = (
+  file: VFileLike | undefined,
+  node: MdastNode,
+  message: string,
+): string => {
   const sourcePath = file?.path ?? 'unknown file';
   return `[markdown] ${message}: ${sourcePath}${getNodeLocation(node)}`;
 };
@@ -140,11 +144,7 @@ const isExternalHttpUrl = (value: string): boolean => {
   }
 };
 
-const normalizeHttpUrl = (
-  value: string,
-  node: MdastNode,
-  file?: VFileLike,
-): string => {
+const normalizeHttpUrl = (value: string, node: MdastNode, file?: VFileLike): string => {
   try {
     const url = new URL(value);
     if (!HTTP_PROTOCOLS.has(url.protocol)) {
@@ -199,8 +199,9 @@ const parseHtmlMetadata = (html: string, pageUrl: string): HtmlMetadataPayload =
     const attrs = parseTagAttributes(attrsSource);
 
     if (tagName === 'meta') {
-      const key = pickOptionalString(attrs['property'])?.toLowerCase()
-        ?? pickOptionalString(attrs['name'])?.toLowerCase();
+      const key =
+        pickOptionalString(attrs['property'])?.toLowerCase() ??
+        pickOptionalString(attrs['name'])?.toLowerCase();
       const content = pickOptionalString(attrs['content']);
       if (key && content && !metaMap.has(key)) {
         metaMap.set(key, normalizeWhitespace(content));
@@ -270,7 +271,9 @@ const buildFallbackTitle = (href: string): string => {
   }
 };
 
-const isAutoLinkCardParagraph = (node: MdastNode): node is MdastNode & { children: MdastNode[] } => {
+const isAutoLinkCardParagraph = (
+  node: MdastNode,
+): node is MdastNode & { children: MdastNode[] } => {
   if (node.type !== 'paragraph' || !Array.isArray(node.children)) {
     return false;
   }
@@ -281,7 +284,11 @@ const isAutoLinkCardParagraph = (node: MdastNode): node is MdastNode & { childre
   }
 
   const onlyChild = meaningfulChildren[0];
-  return onlyChild?.type === 'link' && typeof onlyChild.url === 'string' && isExternalHttpUrl(onlyChild.url);
+  return (
+    onlyChild?.type === 'link' &&
+    typeof onlyChild.url === 'string' &&
+    isExternalHttpUrl(onlyChild.url)
+  );
 };
 
 const getDirectiveLinkCardSource = (node: MdastNode): LinkCardSource | null => {
@@ -392,7 +399,11 @@ class LinkCardMetadataResolver {
     let oembed: OEmbedPayload | null = null;
     if (htmlPayload.oembedUrl) {
       try {
-        const payload = await fetchJsonWithTimeout(this.fetcher, htmlPayload.oembedUrl, this.timeoutMs);
+        const payload = await fetchJsonWithTimeout(
+          this.fetcher,
+          htmlPayload.oembedUrl,
+          this.timeoutMs,
+        );
         if (payload && typeof payload === 'object') {
           const candidate = payload as Record<string, unknown>;
           oembed = {
@@ -423,9 +434,9 @@ class LinkCardMetadataResolver {
     const title = htmlPayload.ogTitle ?? htmlPayload.twitterTitle ?? oembed?.title;
     const description = htmlPayload.ogDescription ?? htmlPayload.twitterDescription;
     const image =
-      htmlPayload.ogImage
-      ?? htmlPayload.twitterImage
-      ?? resolveSafeHttpUrl(oembed?.thumbnail_url, htmlPayload.finalUrl);
+      htmlPayload.ogImage ??
+      htmlPayload.twitterImage ??
+      resolveSafeHttpUrl(oembed?.thumbnail_url, htmlPayload.finalUrl);
     const siteName = htmlPayload.ogSiteName ?? oembed?.provider_name;
 
     return {
@@ -448,7 +459,11 @@ const buildResolvedLinkCardProps = (
   const description = source.description ?? metadata.description;
   const explicitImage = source.image ? resolveSafeHttpUrl(source.image, href) : undefined;
   if (source.image && !explicitImage) {
-    addWarning(file, node, `link-card の image を解決できなかったため無視しました (${source.image})`);
+    addWarning(
+      file,
+      node,
+      `link-card の image を解決できなかったため無視しました (${source.image})`,
+    );
   }
   const imageSrc = explicitImage ?? metadata.image;
   const siteName = metadata.siteName ?? buildFallbackTitle(href);
@@ -507,13 +522,7 @@ const transformNodes = async (
       const metadata = await resolver.resolve(href, current, file);
       nodes[index] = toResolvedLinkCardNode(
         current,
-        buildResolvedLinkCardProps(
-          href,
-          metadata,
-          { url: href },
-          current,
-          file,
-        ),
+        buildResolvedLinkCardProps(href, metadata, { url: href }, current, file),
         'rouaultAutoLinkCard',
       );
       continue;

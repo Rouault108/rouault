@@ -166,7 +166,8 @@ export class UiScore extends LitElement {
 
     .score-content {
       opacity: 0;
-      transition: opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      transition: opacity var(--duration-normal, 150ms)
+        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     .score-content.is-visible {
@@ -368,7 +369,11 @@ export class UiScore extends LitElement {
     super.updated(changedProperties);
     const internalChanges = changedProperties as Map<string, unknown>;
 
-    if (changedProperties.has('src') || changedProperties.has('loading') || internalChanges.has('_hasInlineSvg')) {
+    if (
+      changedProperties.has('src') ||
+      changedProperties.has('loading') ||
+      internalChanges.has('_hasInlineSvg')
+    ) {
       this._scheduleLoad();
     }
 
@@ -485,7 +490,11 @@ export class UiScore extends LitElement {
     this._setOverflowFlags(isOverflowing, showLeftFade, showRightFade);
   }
 
-  private _setOverflowFlags(isOverflowing: boolean, showLeftFade: boolean, showRightFade: boolean): void {
+  private _setOverflowFlags(
+    isOverflowing: boolean,
+    showLeftFade: boolean,
+    showRightFade: boolean,
+  ): void {
     if (this._isOverflowing !== isOverflowing) {
       this._isOverflowing = isOverflowing;
     }

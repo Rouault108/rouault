@@ -1,7 +1,4 @@
-import type {
-  ReactiveController,
-  ReactiveControllerHost,
-} from 'lit';
+import type { ReactiveController, ReactiveControllerHost } from 'lit';
 import type { TabsOrientation } from './tabs.types.js';
 
 export interface TabsIndicatorHost {
@@ -68,19 +65,13 @@ export class TabsIndicatorController implements ReactiveController {
     const containerRect = container.getBoundingClientRect();
     const tabRect = activeTab.getBoundingClientRect();
     const tabStyle = window.getComputedStyle(activeTab);
-    const paddingInlineStart =
-      Number.parseFloat(tabStyle.paddingInlineStart) || 0;
-    const paddingInlineEnd =
-      Number.parseFloat(tabStyle.paddingInlineEnd) || 0;
+    const paddingInlineStart = Number.parseFloat(tabStyle.paddingInlineStart) || 0;
+    const paddingInlineEnd = Number.parseFloat(tabStyle.paddingInlineEnd) || 0;
 
     if (this.host.getOrientation() === 'horizontal') {
       const indicatorBleed = Math.min(4, paddingInlineStart, paddingInlineEnd);
-      const labelLeft =
-        tabRect.left - containerRect.left + paddingInlineStart;
-      const labelWidth = Math.max(
-        0,
-        tabRect.width - paddingInlineStart - paddingInlineEnd,
-      );
+      const labelLeft = tabRect.left - containerRect.left + paddingInlineStart;
+      const labelWidth = Math.max(0, tabRect.width - paddingInlineStart - paddingInlineEnd);
 
       indicator.style.left = `${String(labelLeft - indicatorBleed)}px`;
       indicator.style.width = `${String(labelWidth + indicatorBleed * 2)}px`;

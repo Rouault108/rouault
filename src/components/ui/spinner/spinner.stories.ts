@@ -198,7 +198,9 @@ export const VariantStateMatrix: Story = {
 
     const overlayWidth = toPx(getComputedStyle(overlaySpinner).width);
     if (!isNearlyEqual(overlayWidth, 40)) {
-      throw new Error(`size="lg" は --icon-xl(40px) に追従する必要があります: ${String(overlayWidth)}px`);
+      throw new Error(
+        `size="lg" は --icon-xl(40px) に追従する必要があります: ${String(overlayWidth)}px`,
+      );
     }
 
     const button = canvasElement.querySelector<HTMLButtonElement>('#matrix-button');
@@ -229,10 +231,16 @@ export const BoundaryConditions: Story = {
     const emptyLabel = getSpinner(canvasElement, 'boundary-empty-label');
     const roleOverride = getSpinner(canvasElement, 'boundary-role-override');
 
-    await Promise.all([invalidSize.updateComplete, emptyLabel.updateComplete, roleOverride.updateComplete]);
+    await Promise.all([
+      invalidSize.updateComplete,
+      emptyLabel.updateComplete,
+      roleOverride.updateComplete,
+    ]);
 
     if (invalidSize.size !== 'default') {
-      throw new Error(`無効 size は default にフォールバックする必要があります: ${invalidSize.size}`);
+      throw new Error(
+        `無効 size は default にフォールバックする必要があります: ${invalidSize.size}`,
+      );
     }
     if (invalidSize.getAttribute('size') !== 'default') {
       throw new Error('無効 size の属性値は default へ正規化される必要があります');

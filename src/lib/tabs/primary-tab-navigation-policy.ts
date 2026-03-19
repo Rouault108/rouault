@@ -13,11 +13,7 @@ export class PrimaryTabNavigationPolicy {
     return isPrimaryTabOnlyNavigation(currentUrl, nextUrl);
   }
 
-  async apply(
-    currentUrl: string,
-    nextUrl: string,
-    request: NavigationRequest,
-  ): Promise<void> {
+  async apply(currentUrl: string, nextUrl: string, request: NavigationRequest): Promise<void> {
     if (request.historyMode === 'push') {
       this.location.push(nextUrl, request.state);
     } else if (request.historyMode === 'replace') {

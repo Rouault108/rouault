@@ -45,10 +45,7 @@ describe('buildSidebarTree', () => {
     expect(findNode(tree as SidebarTreeNode[], 'music/classical')).to.not.equal(null);
     expect(findNode(tree as SidebarTreeNode[], 'computer-science')).to.not.equal(null);
 
-    const leaf = findNode(
-      tree as SidebarTreeNode[],
-      'music/classical/tchaikovsky/the-nutcracker',
-    );
+    const leaf = findNode(tree as SidebarTreeNode[], 'music/classical/tchaikovsky/the-nutcracker');
     expect(leaf?.label).to.equal('楽曲分析: くるみ割り人形');
   });
 
@@ -99,8 +96,12 @@ describe('buildSidebarTree', () => {
     expect(findNode(tree as SidebarTreeNode[], 'music/classical/tchaikovsky')).to.equal(null);
     expect(tree).to.have.length(1);
     expect(tree[0]?.id).to.equal('music/classical/beethoven');
-    expect(findNode(tree as SidebarTreeNode[], 'music/classical/beethoven/fidelio')).to.not.equal(null);
-    expect(findNode(tree as SidebarTreeNode[], 'music/classical/beethoven/symphony-9')).to.not.equal(null);
+    expect(findNode(tree as SidebarTreeNode[], 'music/classical/beethoven/fidelio')).to.not.equal(
+      null,
+    );
+    expect(
+      findNode(tree as SidebarTreeNode[], 'music/classical/beethoven/symphony-9'),
+    ).to.not.equal(null);
   });
 
   it('rootSlug 指定後も選択中ノートまでの展開状態を維持すること', () => {
@@ -161,92 +162,98 @@ describe('buildSidebarTree', () => {
     ]);
 
     expect(findNode(tree as SidebarTreeNode[], 'music')?.icon).to.equal('lucide:folder-root');
-    expect(findNode(tree as SidebarTreeNode[], 'music/classical')?.icon).to.equal('lucide:folder-kanban');
-    expect(findNode(tree as SidebarTreeNode[], 'music/classical/mozart')?.icon).to.equal('lucide:music-4');
+    expect(findNode(tree as SidebarTreeNode[], 'music/classical')?.icon).to.equal(
+      'lucide:folder-kanban',
+    );
+    expect(findNode(tree as SidebarTreeNode[], 'music/classical/mozart')?.icon).to.equal(
+      'lucide:music-4',
+    );
     expect(findNode(tree as SidebarTreeNode[], 'music/classical/beethoven')?.icon).to.equal(
       'lucide:folder-kanban',
     );
     expect(findNode(tree as SidebarTreeNode[], 'music/jazz')?.icon).to.equal(undefined);
-    expect(findNode(tree as SidebarTreeNode[], 'music/jazz/kind-of-blue')?.icon).to.equal(undefined);
+    expect(findNode(tree as SidebarTreeNode[], 'music/jazz/kind-of-blue')?.icon).to.equal(
+      undefined,
+    );
   });
 
   it('directory-index は開閉専用の親ノードと、リンク付きの __index__ 子ノードに分かれること', () => {
-  const tree = buildSidebarTree([
-    {
-      slug: 'music',
-      title: '音楽',
-      permalink: '/notes/music',
-      noteKind: 'directory-index',
-      directoryPath: 'music',
-    },
-    {
-      slug: 'music/classical/mozart',
-      title: 'モーツァルト',
-      permalink: '/notes/music/classical/mozart',
-    },
-  ]);
+    const tree = buildSidebarTree([
+      {
+        slug: 'music',
+        title: '音楽',
+        permalink: '/notes/music',
+        noteKind: 'directory-index',
+        directoryPath: 'music',
+      },
+      {
+        slug: 'music/classical/mozart',
+        title: 'モーツァルト',
+        permalink: '/notes/music/classical/mozart',
+      },
+    ]);
 
-  const root = findNode(tree as SidebarTreeNode[], 'music');
-  const indexNode = findNode(tree as SidebarTreeNode[], 'music/__index__');
+    const root = findNode(tree as SidebarTreeNode[], 'music');
+    const indexNode = findNode(tree as SidebarTreeNode[], 'music/__index__');
 
-  expect(root).to.not.equal(null);
-  expect(root?.label).to.equal('Music');
-  expect(root?.href).to.equal(undefined);
+    expect(root).to.not.equal(null);
+    expect(root?.label).to.equal('Music');
+    expect(root?.href).to.equal(undefined);
 
-  expect(indexNode).to.not.equal(null);
-  expect(indexNode?.label).to.equal('Music');
-  expect(indexNode?.href).to.equal('/notes/music');
+    expect(indexNode).to.not.equal(null);
+    expect(indexNode?.label).to.equal('Music');
+    expect(indexNode?.href).to.equal('/notes/music');
 
-  expect(findNode(tree as SidebarTreeNode[], 'music/classical/mozart')).to.not.equal(null);
+    expect(findNode(tree as SidebarTreeNode[], 'music/classical/mozart')).to.not.equal(null);
   });
 
   it('directory-index の selected は親ではなく __index__ 子ノードに付くこと', () => {
-  const tree = buildSidebarTree(
-    [
-      {
-        slug: 'music',
-        permalink: '/notes/music',
-        noteKind: 'directory-index',
-        directoryPath: 'music',
-      },
-      {
-        slug: 'music/classical/mozart',
-        title: 'モーツァルト',
-        permalink: '/notes/music/classical/mozart',
-      },
-    ],
-    'music',
-  );
+    const tree = buildSidebarTree(
+      [
+        {
+          slug: 'music',
+          permalink: '/notes/music',
+          noteKind: 'directory-index',
+          directoryPath: 'music',
+        },
+        {
+          slug: 'music/classical/mozart',
+          title: 'モーツァルト',
+          permalink: '/notes/music/classical/mozart',
+        },
+      ],
+      'music',
+    );
 
-  const root = findNode(tree as SidebarTreeNode[], 'music');
-  const indexNode = findNode(tree as SidebarTreeNode[], 'music/__index__');
+    const root = findNode(tree as SidebarTreeNode[], 'music');
+    const indexNode = findNode(tree as SidebarTreeNode[], 'music/__index__');
 
-  expect(root?.selected).to.not.equal(true);
-  expect(root?.expanded).to.equal(true);
-  expect(indexNode?.selected).to.equal(true);
+    expect(root?.selected).to.not.equal(true);
+    expect(root?.expanded).to.equal(true);
+    expect(indexNode?.selected).to.equal(true);
   });
 
   it('rootSlug 指定時も directory-index の __index__ 子ノードを保持すること', () => {
-  const tree = buildSidebarTree(
-    [
-      {
-        slug: 'music',
-        permalink: '/notes/music',
-        noteKind: 'directory-index',
-        directoryPath: 'music',
-      },
-      {
-        slug: 'music/classical/mozart',
-        title: 'モーツァルト',
-        permalink: '/notes/music/classical/mozart',
-      },
-    ],
-    'music',
-    'music',
-  );
+    const tree = buildSidebarTree(
+      [
+        {
+          slug: 'music',
+          permalink: '/notes/music',
+          noteKind: 'directory-index',
+          directoryPath: 'music',
+        },
+        {
+          slug: 'music/classical/mozart',
+          title: 'モーツァルト',
+          permalink: '/notes/music/classical/mozart',
+        },
+      ],
+      'music',
+      'music',
+    );
 
-  expect(tree).to.have.length(1);
-  expect(tree[0]?.id).to.equal('music');
-  expect(findNode(tree as SidebarTreeNode[], 'music/__index__')).to.not.equal(null);
+    expect(tree).to.have.length(1);
+    expect(tree[0]?.id).to.equal('music');
+    expect(findNode(tree as SidebarTreeNode[], 'music/__index__')).to.not.equal(null);
   });
 });

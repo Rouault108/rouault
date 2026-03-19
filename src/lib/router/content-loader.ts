@@ -40,11 +40,7 @@ export type LoadResult =
     };
 
 const escapeHtml = (value: string): string =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 export class ContentLoader {
   private timeoutDuration = 0;
@@ -103,7 +99,10 @@ export class ContentLoader {
     } catch (error) {
       console.error('Navigation failed:', error);
 
-      if (error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
+      if (
+        error instanceof Error &&
+        (error.name === 'AbortError' || error.name === 'TimeoutError')
+      ) {
         return this.createErrorResult('タイムアウト', 'ページの読み込みがタイムアウトしました。');
       }
 

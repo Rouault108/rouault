@@ -83,7 +83,7 @@ import '../kbd/kbd';
  */
 @customElement('ui-search-trigger')
 export class SearchTrigger extends LitElement {
-    static override styles = css`
+  static override styles = css`
     /* ── ホスト: インラインブロック ── */
     :host {
       display: inline-flex;
@@ -261,72 +261,72 @@ export class SearchTrigger extends LitElement {
     }
   `;
 
-    /**
-     * プレースホルダーテキスト
-     * @default "検索..."
-     */
-    @property({ type: String, reflect: true })
-    placeholder = '検索...';
+  /**
+   * プレースホルダーテキスト
+   * @default "検索..."
+   */
+  @property({ type: String, reflect: true })
+  placeholder = '検索...';
 
-    /**
-     * 無効状態
-     * @default false
-     */
-    @property({ type: Boolean, reflect: true })
-    disabled = false;
+  /**
+   * 無効状態
+   * @default false
+   */
+  @property({ type: Boolean, reflect: true })
+  disabled = false;
 
-    // ──────────────────────────────────────────────
-    // Event Handlers
-    // ──────────────────────────────────────────────
+  // ──────────────────────────────────────────────
+  // Event Handlers
+  // ──────────────────────────────────────────────
 
-    /**
-     * アクティベーション時のハンドラ。
-     * クリック・Enter・Space によって検索ダイアログを起動します。
-     *
-     * **Explicit Activation Only**: フォーカス取得（:focus）だけではモーダルを開きません。
-     */
-    private _handleActivate = (): void => {
-        if (this.disabled) return;
+  /**
+   * アクティベーション時のハンドラ。
+   * クリック・Enter・Space によって検索ダイアログを起動します。
+   *
+   * **Explicit Activation Only**: フォーカス取得（:focus）だけではモーダルを開きません。
+   */
+  private _handleActivate = (): void => {
+    if (this.disabled) return;
 
-        this.dispatchEvent(
-            new CustomEvent('open-search-dialog', {
-                bubbles: true,
-                composed: true,
-            }),
-        );
-    };
+    this.dispatchEvent(
+      new CustomEvent('open-search-dialog', {
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  };
 
-    // ──────────────────────────────────────────────
-    // Public API
-    // ──────────────────────────────────────────────
+  // ──────────────────────────────────────────────
+  // Public API
+  // ──────────────────────────────────────────────
 
-    /**
-     * 内部 button 要素にフォーカスを当てます。
-     */
-    override focus(options?: FocusOptions): void {
-        this.shadowRoot?.querySelector<HTMLButtonElement>('button')?.focus(options);
-    }
+  /**
+   * 内部 button 要素にフォーカスを当てます。
+   */
+  override focus(options?: FocusOptions): void {
+    this.shadowRoot?.querySelector<HTMLButtonElement>('button')?.focus(options);
+  }
 
-    /**
-     * 内部 button 要素からフォーカスを外します。
-     */
-    override blur(): void {
-        this.shadowRoot?.querySelector<HTMLButtonElement>('button')?.blur();
-    }
+  /**
+   * 内部 button 要素からフォーカスを外します。
+   */
+  override blur(): void {
+    this.shadowRoot?.querySelector<HTMLButtonElement>('button')?.blur();
+  }
 
-    /**
-     * プログラム的にアクティベートします（検索ダイアログを開く）。
-     */
-    override click(): void {
-        this.shadowRoot?.querySelector<HTMLButtonElement>('button')?.click();
-    }
+  /**
+   * プログラム的にアクティベートします（検索ダイアログを開く）。
+   */
+  override click(): void {
+    this.shadowRoot?.querySelector<HTMLButtonElement>('button')?.click();
+  }
 
-    // ──────────────────────────────────────────────
-    // Render
-    // ──────────────────────────────────────────────
+  // ──────────────────────────────────────────────
+  // Render
+  // ──────────────────────────────────────────────
 
-    override render() {
-        return html`
+  override render() {
+    return html`
       <button
         part="button"
         type="button"
@@ -340,16 +340,14 @@ export class SearchTrigger extends LitElement {
           <iconify-icon icon="lucide:search" aria-hidden="true"></iconify-icon>
         </span>
 
-        <span class="placeholder" part="placeholder" aria-hidden="true">
-          ${this.placeholder}
-        </span>
+        <span class="placeholder" part="placeholder" aria-hidden="true"> ${this.placeholder} </span>
       </button>
     `;
-    }
+  }
 }
 
 declare global {
-    interface HTMLElementTagNameMap {
-        'ui-search-trigger': SearchTrigger;
-    }
+  interface HTMLElementTagNameMap {
+    'ui-search-trigger': SearchTrigger;
+  }
 }

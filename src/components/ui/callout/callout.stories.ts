@@ -3,7 +3,13 @@ import { html } from 'lit';
 import './callout';
 import { Callout, type CalloutVariant } from './callout';
 
-const VARIANTS = ['note', 'tip', 'success', 'warning', 'danger'] as const satisfies CalloutVariant[];
+const VARIANTS = [
+  'note',
+  'tip',
+  'success',
+  'warning',
+  'danger',
+] as const satisfies CalloutVariant[];
 
 const FALLBACK_LABELS: Record<CalloutVariant, string> = {
   note: '補足',
@@ -113,7 +119,9 @@ export const Default: Story = {
       throw new Error(`Expected role="heading", got "${title.getAttribute('role') ?? 'null'}"`);
     }
     if (title.getAttribute('aria-level') !== '3') {
-      throw new Error(`Expected aria-level="3", got "${title.getAttribute('aria-level') ?? 'null'}"`);
+      throw new Error(
+        `Expected aria-level="3", got "${title.getAttribute('aria-level') ?? 'null'}"`,
+      );
     }
 
     const labelledby = root.getAttribute('aria-labelledby');
@@ -122,7 +130,9 @@ export const Default: Story = {
     }
 
     if (root.hasAttribute('aria-label')) {
-      throw new Error('title がある場合は aria-label ではなく aria-labelledby を使う必要があります');
+      throw new Error(
+        'title がある場合は aria-label ではなく aria-labelledby を使う必要があります',
+      );
     }
 
     const icon = getIcon(callout);
@@ -163,7 +173,12 @@ export const VariantStateMatrix: Story = {
         <div class="matrix-label">With Title</div>
         ${VARIANTS.map(
           (variant) => html`
-            <ui-callout id="${variant}-with-title" variant="${variant}" title="${variant} タイトル" heading-level="2">
+            <ui-callout
+              id="${variant}-with-title"
+              variant="${variant}"
+              title="${variant} タイトル"
+              heading-level="2"
+            >
               variant="${variant}" の見出し付き状態
             </ui-callout>
           `,
@@ -209,7 +224,9 @@ export const VariantStateMatrix: Story = {
         throw new Error(`#${variant}-with-title のデフォルトアイコンが不正です`);
       }
       if (getIcon(withTitle).getAttribute('aria-hidden') !== 'true') {
-        throw new Error(`#${variant}-with-title のアイコンは aria-hidden="true" である必要があります`);
+        throw new Error(
+          `#${variant}-with-title のアイコンは aria-hidden="true" である必要があります`,
+        );
       }
 
       const withoutTitle = canvasElement.querySelector<Callout>(`#${variant}-without-title`);
@@ -226,7 +243,9 @@ export const VariantStateMatrix: Story = {
         throw new Error(`#${variant}-without-title のデフォルトアイコンが不正です`);
       }
       if (getIcon(withoutTitle).getAttribute('aria-hidden') !== 'true') {
-        throw new Error(`#${variant}-without-title のアイコンは aria-hidden="true" である必要があります`);
+        throw new Error(
+          `#${variant}-without-title のアイコンは aria-hidden="true" である必要があります`,
+        );
       }
     }
   },
@@ -266,7 +285,13 @@ export const HeadingLevelBoundaries: Story = {
       throw new Error('境界条件テスト用 callout が見つかりません');
     }
 
-    await Promise.all([valid.updateComplete, zero.updateComplete, seven.updateComplete, decimal.updateComplete, noTitle.updateComplete]);
+    await Promise.all([
+      valid.updateComplete,
+      zero.updateComplete,
+      seven.updateComplete,
+      decimal.updateComplete,
+      noTitle.updateComplete,
+    ]);
 
     const validTitle = valid.shadowRoot?.querySelector<HTMLElement>('.title');
     if (!validTitle) throw new Error('#heading-valid の .title が見つかりません');
@@ -315,7 +340,12 @@ export const HeadingLevelBoundaries: Story = {
 export const IconOverrideAndBlankTitle: Story = {
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
-      <ui-callout id="icon-override" variant="danger" title="セキュリティ注意" icon="lucide:shield-alert">
+      <ui-callout
+        id="icon-override"
+        variant="danger"
+        title="セキュリティ注意"
+        icon="lucide:shield-alert"
+      >
         2段階認証を有効化してください。
       </ui-callout>
       <ui-callout id="blank-title" variant="success" title="   " heading-level="4">
@@ -358,7 +388,12 @@ export const AriaLabelOverrides: Story = {
       <ui-callout id="label-empty" variant="tip" aria-label="   ">
         空白ラベルはフォールバックへ戻す
       </ui-callout>
-      <ui-callout id="label-with-title" variant="danger" title="タイトルあり" aria-label="無視されるラベル">
+      <ui-callout
+        id="label-with-title"
+        variant="danger"
+        title="タイトルあり"
+        aria-label="無視されるラベル"
+      >
         title がある場合は aria-labelledby を使う
       </ui-callout>
     </div>
@@ -367,7 +402,8 @@ export const AriaLabelOverrides: Story = {
     const explicit = canvasElement.querySelector<Callout>('#label-explicit');
     const empty = canvasElement.querySelector<Callout>('#label-empty');
     const withTitle = canvasElement.querySelector<Callout>('#label-with-title');
-    if (!explicit || !empty || !withTitle) throw new Error('aria-label テスト対象 callout が見つかりません');
+    if (!explicit || !empty || !withTitle)
+      throw new Error('aria-label テスト対象 callout が見つかりません');
     await Promise.all([explicit.updateComplete, empty.updateComplete, withTitle.updateComplete]);
 
     const explicitRoot = getRoot(explicit);
@@ -408,7 +444,9 @@ export const InvalidVariantFallback: Story = {
 
     const root = getRoot(callout);
     if (root.getAttribute('data-variant') !== 'note') {
-      throw new Error(`Expected data-variant="note", got "${root.getAttribute('data-variant') ?? 'null'}"`);
+      throw new Error(
+        `Expected data-variant="note", got "${root.getAttribute('data-variant') ?? 'null'}"`,
+      );
     }
     if (root.getAttribute('aria-label') !== FALLBACK_LABELS.note) {
       throw new Error('不正 variant 時の aria-label フォールバックが不正です');
@@ -447,13 +485,21 @@ export const StyleContracts: Story = {
     if (!styles.includes('var(--bg-note-subtle)') || !styles.includes('var(--bg-tip-subtle)')) {
       throw new Error('variant 背景トークンが不足しています');
     }
-    if (!styles.includes('var(--bg-success-subtle)') || !styles.includes('var(--bg-warning-subtle)') || !styles.includes('var(--bg-danger-subtle)')) {
+    if (
+      !styles.includes('var(--bg-success-subtle)') ||
+      !styles.includes('var(--bg-warning-subtle)') ||
+      !styles.includes('var(--bg-danger-subtle)')
+    ) {
       throw new Error('variant 背景トークンが不足しています');
     }
     if (!styles.includes('var(--fg-muted)') || !styles.includes('var(--fg-info)')) {
       throw new Error('アクセント色トークンが不足しています');
     }
-    if (!styles.includes('var(--fg-success)') || !styles.includes('var(--fg-warning)') || !styles.includes('var(--fg-danger)')) {
+    if (
+      !styles.includes('var(--fg-success)') ||
+      !styles.includes('var(--fg-warning)') ||
+      !styles.includes('var(--fg-danger)')
+    ) {
       throw new Error('アクセント色トークンが不足しています');
     }
     if (!styles.includes('stroke-width: 1.5')) {
@@ -468,7 +514,12 @@ export const StyleContracts: Story = {
  */
 export const DarkModeTokenContract: Story = {
   render: () => html`
-    <ui-callout id="dark-mode-contract" variant="success" title="Dark Mode Contract" heading-level="2">
+    <ui-callout
+      id="dark-mode-contract"
+      variant="success"
+      title="Dark Mode Contract"
+      heading-level="2"
+    >
       semantic token contract checks
     </ui-callout>
   `,
@@ -479,7 +530,9 @@ export const DarkModeTokenContract: Story = {
 
     const styles = String(Callout.styles);
     if (styles.includes('prefers-color-scheme')) {
-      throw new Error('callout は prefers-color-scheme 分岐を持たずトークンでモード追従する必要があります');
+      throw new Error(
+        'callout は prefers-color-scheme 分岐を持たずトークンでモード追従する必要があります',
+      );
     }
     if (!styles.includes('var(--bg-note-subtle)') || !styles.includes('var(--fg-default)')) {
       throw new Error('Dark/Light 共通のセマンティックトークン参照が不足しています');

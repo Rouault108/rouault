@@ -28,8 +28,7 @@ export const Default: Story = {
     renderFoundationFrame(
       {
         title: 'Duration And Easing',
-        description:
-          'モーションは情報伝達のためにのみ使い、読書の集中を壊す装飾には使いません。',
+        description: 'モーションは情報伝達のためにのみ使い、読書の集中を壊す装飾には使いません。',
       },
       html`
         <style>
@@ -73,7 +72,6 @@ export const Default: Story = {
             },
           ]),
         )}
-
         ${renderFoundationSection(
           'Token Reference',
           renderTokenValueList([

@@ -227,7 +227,9 @@ export class Footnote extends LitElement {
 
     // SSR で埋め込まれた脚注本文を保持して、Light DOM 再描画時にも失わないようにする。
     const existingContent = this.querySelector<HTMLElement>('[data-part="content"]');
-    const sourceNodes = existingContent ? Array.from(existingContent.childNodes) : Array.from(this.childNodes);
+    const sourceNodes = existingContent
+      ? Array.from(existingContent.childNodes)
+      : Array.from(this.childNodes);
 
     const renderableNodes = sourceNodes.filter((node) => this._isRenderableContentNode(node));
     this._contentNodes = renderableNodes.map((node) => node.cloneNode(true));

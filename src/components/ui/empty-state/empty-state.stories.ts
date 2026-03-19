@@ -54,7 +54,8 @@ const getIllustration = (host: EmptyState): HTMLElement => {
   return illustration;
 };
 
-const isDisplayNone = (element: HTMLElement): boolean => getComputedStyle(element).display === 'none';
+const isDisplayNone = (element: HTMLElement): boolean =>
+  getComputedStyle(element).display === 'none';
 
 const parseRgb = (value: string): [number, number, number] => {
   const normalized = value.trim();
@@ -139,14 +140,20 @@ export const Default: Story = {
 
     const container = getContainer(host);
     if (container.getAttribute('data-variant') !== 'default') {
-      throw new Error(`data-variant="default" を期待していましたが、実際には "${container.getAttribute('data-variant') ?? 'null'}" でした`);
+      throw new Error(
+        `data-variant="default" を期待していましたが、実際には "${container.getAttribute('data-variant') ?? 'null'}" でした`,
+      );
     }
 
     if (host.getAttribute('role') !== 'status') {
-      throw new Error(`role="status" を期待していましたが、実際には "${host.getAttribute('role') ?? 'null'}" でした`);
+      throw new Error(
+        `role="status" を期待していましたが、実際には "${host.getAttribute('role') ?? 'null'}" でした`,
+      );
     }
     if (host.getAttribute('aria-atomic') !== 'true') {
-      throw new Error(`aria-atomic="true" を期待していましたが、実際には "${host.getAttribute('aria-atomic') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-atomic="true" を期待していましたが、実際には "${host.getAttribute('aria-atomic') ?? 'null'}" でした`,
+      );
     }
     if (host.hasAttribute('aria-label')) {
       throw new Error('aria-label は自動生成されてはいけません');
@@ -155,7 +162,9 @@ export const Default: Story = {
     const fallbackIcon = host.shadowRoot?.querySelector<HTMLElement>('iconify-icon.fallback-icon');
     if (!fallbackIcon) throw new Error('フォールバックアイコンがレンダリングされていません');
     if (fallbackIcon.getAttribute('icon') !== 'lucide:inbox') {
-      throw new Error(`icon="lucide:inbox" を期待していましたが、実際には "${fallbackIcon.getAttribute('icon') ?? 'null'}" でした`);
+      throw new Error(
+        `icon="lucide:inbox" を期待していましたが、実際には "${fallbackIcon.getAttribute('icon') ?? 'null'}" でした`,
+      );
     }
 
     if (!host.hasAttribute('has-description')) {
@@ -245,7 +254,11 @@ export const VariantStateMatrix: Story = {
     const defaultHost = getHost(canvasElement, 'matrix-default');
     const searchHost = getHost(canvasElement, 'matrix-search');
     const errorHost = getHost(canvasElement, 'matrix-error');
-    await Promise.all([defaultHost.updateComplete, searchHost.updateComplete, errorHost.updateComplete]);
+    await Promise.all([
+      defaultHost.updateComplete,
+      searchHost.updateComplete,
+      errorHost.updateComplete,
+    ]);
 
     if (getContainer(defaultHost).getAttribute('data-variant') !== 'default') {
       throw new Error('matrix-default は "default" である必要があります');
@@ -257,7 +270,11 @@ export const VariantStateMatrix: Story = {
       throw new Error('matrix-error は "error" である必要があります');
     }
 
-    if (defaultHost.hasAttribute('aria-label') || searchHost.hasAttribute('aria-label') || errorHost.hasAttribute('aria-label')) {
+    if (
+      defaultHost.hasAttribute('aria-label') ||
+      searchHost.hasAttribute('aria-label') ||
+      errorHost.hasAttribute('aria-label')
+    ) {
       throw new Error('どのバリアントでも aria-label は自動生成されてはいけません');
     }
 
@@ -298,7 +315,9 @@ export const IllustrationPriority: Story = {
 
     const illustration = getIllustration(host);
     if (isDisplayNone(illustration)) {
-      throw new Error('イラストレーションが割り当てられている場合、ラッパーが表示されている必要があります');
+      throw new Error(
+        'イラストレーションが割り当てられている場合、ラッパーが表示されている必要があります',
+      );
     }
 
     const icon = getIcon(host);
@@ -349,7 +368,11 @@ export const HeadingLevelFreedom: Story = {
       throw new Error('h4 のレイアウトが安定している必要があります');
     }
 
-    if (h2Host.hasAttribute('aria-label') || h3Host.hasAttribute('aria-label') || h4Host.hasAttribute('aria-label')) {
+    if (
+      h2Host.hasAttribute('aria-label') ||
+      h3Host.hasAttribute('aria-label') ||
+      h4Host.hasAttribute('aria-label')
+    ) {
       throw new Error('どの見出しレベルでも aria-label は自動生成されてはいけません');
     }
   },
@@ -417,10 +440,14 @@ export const DynamicSlotStateSync: Story = {
     await waitFrame();
 
     if (!host.hasAttribute('has-illustration')) {
-      throw new Error('イラストレーションが存在する場合、has-illustration 属性が追加されている必要があります');
+      throw new Error(
+        'イラストレーションが存在する場合、has-illustration 属性が追加されている必要があります',
+      );
     }
     if (!isDisplayNone(getIcon(host))) {
-      throw new Error('イラストレーションが存在する場合、アイコンラッパーは非表示である必要があります');
+      throw new Error(
+        'イラストレーションが存在する場合、アイコンラッパーは非表示である必要があります',
+      );
     }
 
     illustration.remove();
@@ -428,7 +455,9 @@ export const DynamicSlotStateSync: Story = {
     await waitFrame();
 
     if (host.hasAttribute('has-illustration')) {
-      throw new Error('イラストレーションが削除された場合、has-illustration 属性も削除されている必要があります');
+      throw new Error(
+        'イラストレーションが削除された場合、has-illustration 属性も削除されている必要があります',
+      );
     }
   },
 };
@@ -476,10 +505,14 @@ export const DarkModeContract: Story = {
     const descriptionContrast = contrastRatio(descriptionColor, backgroundColor);
 
     if (headingContrast < 4.5) {
-      throw new Error(`見出しのコントラスト比が WCAG AA を満たしていません: ${String(headingContrast)}`);
+      throw new Error(
+        `見出しのコントラスト比が WCAG AA を満たしていません: ${String(headingContrast)}`,
+      );
     }
     if (descriptionContrast < 4.5) {
-      throw new Error(`説明文のコントラスト比が WCAG AA を満たしていません: ${String(descriptionContrast)}`);
+      throw new Error(
+        `説明文のコントラスト比が WCAG AA を満たしていません: ${String(descriptionContrast)}`,
+      );
     }
 
     if (host.hasAttribute('aria-label')) {
@@ -497,7 +530,7 @@ export const BoundaryConditions: Story = {
 
       <ui-empty-state id="boundary-empty-description">
         <h2 slot="heading">Whitespace description should collapse</h2>
-        <p slot="description">   </p>
+        <p slot="description"></p>
       </ui-empty-state>
 
       <ui-empty-state id="boundary-heading-removal">

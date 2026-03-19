@@ -262,19 +262,24 @@ export const Default: Story = {
 
     // テスト: role="tree" が設定されていること
     if (fileTree.getAttribute('role') !== 'tree') {
-      throw new Error(`role="tree" を期待していましたが、実際には "${fileTree.getAttribute('role') ?? 'null'}" でした`);
+      throw new Error(
+        `role="tree" を期待していましたが、実際には "${fileTree.getAttribute('role') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: aria-orientation="vertical" が設定されていること
     if (fileTree.getAttribute('aria-orientation') !== 'vertical') {
-      throw new Error(`aria-orientation="vertical" を期待していましたが、実際には "${fileTree.getAttribute('aria-orientation') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-orientation="vertical" を期待していましたが、実際には "${fileTree.getAttribute('aria-orientation') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: デフォルトのバリアントが "default" であること
     if (fileTree.variant !== 'default') {
-      throw new Error(`variant="default" を期待していましたが、実際には "${fileTree.variant}" でした`);
+      throw new Error(
+        `variant="default" を期待していましたが、実際には "${fileTree.variant}" でした`,
+      );
     }
-
   },
 };
 
@@ -312,9 +317,10 @@ export const CardVariant: Story = {
 
     // テスト: variant 属性が反映されていること
     if (fileTree.getAttribute('variant') !== 'card') {
-      throw new Error(`variant 属性が "card" であることを期待していましたが、実際には "${fileTree.getAttribute('variant') ?? 'null'}" でした`);
+      throw new Error(
+        `variant 属性が "card" であることを期待していましたが、実際には "${fileTree.getAttribute('variant') ?? 'null'}" でした`,
+      );
     }
-
   },
 };
 
@@ -347,9 +353,10 @@ export const CompactDensity: Story = {
 
     // テスト: density が "compact" であること
     if (fileTree.density !== 'compact') {
-      throw new Error(`density="compact" を期待していましたが、実際には "${fileTree.density}" でした`);
+      throw new Error(
+        `density="compact" を期待していましたが、実際には "${fileTree.density}" でした`,
+      );
     }
-
   },
 };
 
@@ -382,7 +389,9 @@ export const EmptyState: Story = {
 
     // テスト: items が空であること
     if (fileTree.items.length !== 0) {
-      throw new Error(`items が空であることを期待していましたが、実際には長さ ${String(fileTree.items.length)} でした`);
+      throw new Error(
+        `items が空であることを期待していましたが、実際には長さ ${String(fileTree.items.length)} でした`,
+      );
     }
 
     // テスト: Empty State が表示されていること
@@ -393,9 +402,10 @@ export const EmptyState: Story = {
 
     // テスト: role="status" が設定されていること
     if (emptyState.getAttribute('role') !== 'status') {
-      throw new Error(`エンプティステートに role="status" が設定されていることを期待していましたが、実際には "${emptyState.getAttribute('role') ?? 'null'}" でした`);
+      throw new Error(
+        `エンプティステートに role="status" が設定されていることを期待していましたが、実際には "${emptyState.getAttribute('role') ?? 'null'}" でした`,
+      );
     }
-
   },
 };
 
@@ -452,7 +462,6 @@ export const LoadingState: Story = {
     if (!skeleton) {
       throw new Error('500ms 経過後はスケルトンが表示されている必要があります');
     }
-
   },
 };
 
@@ -485,7 +494,9 @@ export const LoadingCompletedQuickly: Story = {
 
     const skeleton = fileTree.shadowRoot?.querySelector('.skeleton');
     if (skeleton) {
-      throw new Error('500ms 以内にローディングが終了した場合、スケルトンは表示されない必要があります');
+      throw new Error(
+        '500ms 以内にローディングが終了した場合、スケルトンは表示されない必要があります',
+      );
     }
   },
 };
@@ -525,7 +536,9 @@ export const DeepNested: Story = {
       throw new Error('選択された項目が存在する必要があります');
     }
 
-    const inputStoriesItem = fileTree.shadowRoot?.querySelector<HTMLElement>('ui-tree-item[data-id="input-stories"]');
+    const inputStoriesItem = fileTree.shadowRoot?.querySelector<HTMLElement>(
+      'ui-tree-item[data-id="input-stories"]',
+    );
     if (!inputStoriesItem) {
       throw new Error('input-stories 項目が存在する必要があります');
     }
@@ -634,12 +647,20 @@ export const DensityComparison: Story = {
     <div class="density-comparison">
       <div class="density-item">
         <span class="density-label">Normal (32px)</span>
-        <ui-file-tree .items="${cloneTree(simpleTreeData)}" density="normal" variant="card"></ui-file-tree>
+        <ui-file-tree
+          .items="${cloneTree(simpleTreeData)}"
+          density="normal"
+          variant="card"
+        ></ui-file-tree>
       </div>
 
       <div class="density-item">
         <span class="density-label">Compact (24px)</span>
-        <ui-file-tree .items="${cloneTree(simpleTreeData)}" density="compact" variant="card"></ui-file-tree>
+        <ui-file-tree
+          .items="${cloneTree(simpleTreeData)}"
+          density="compact"
+          variant="card"
+        ></ui-file-tree>
       </div>
     </div>
   `,
@@ -730,7 +751,8 @@ export const ForcedColorsMode: Story = {
       <strong>確認方法</strong>:
       <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
         <li>
-          <strong>Windows</strong>: 設定 > アクセシビリティ > コントラストテーマ で高コントラストモードを有効化
+          <strong>Windows</strong>: 設定 > アクセシビリティ > コントラストテーマ
+          で高コントラストモードを有効化
         </li>
         <li>
           <strong>開発者ツール</strong>: Chrome DevTools > Rendering > Emulate CSS media feature
@@ -782,8 +804,7 @@ export const ReducedMotion: Story = {
           <strong>Windows</strong>: 設定 > アクセシビリティ > 視覚効果 > アニメーション効果をオフ
         </li>
         <li>
-          <strong>macOS</strong>: システム設定 > アクセシビリティ > ディスプレイ >
-          視差効果を減らす
+          <strong>macOS</strong>: システム設定 > アクセシビリティ > ディスプレイ > 視差効果を減らす
         </li>
         <li><strong>このストーリー</strong>: reduced-motion を強制的にシミュレートしています</li>
       </ul>
@@ -837,7 +858,8 @@ export const PrintStyles: Story = {
     </style>
 
     <div class="print-info">
-      <strong>確認方法</strong>: ブラウザの印刷プレビュー（Ctrl+P / Cmd+P）を開いて、以下の挙動を確認してください：
+      <strong>確認方法</strong>: ブラウザの印刷プレビュー（Ctrl+P /
+      Cmd+P）を開いて、以下の挙動を確認してください：
       <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
         <li>デフォルトのツリーは非表示になる</li>
         <li>data-printable="true" のツリーのみ表示される</li>
@@ -875,7 +897,9 @@ export const KeyboardNavigation: Story = {
   render: () => html`
     <div>
       <button id="tree-trigger" type="button">Tree Trigger</button>
-      <div style="max-height: 280px; overflow: auto; border: 1px solid var(--border-default); margin-top: 8px;">
+      <div
+        style="max-height: 280px; overflow: auto; border: 1px solid var(--border-default); margin-top: 8px;"
+      >
         <ui-file-tree .items="${cloneTree(simpleTreeData)}"></ui-file-tree>
       </div>
     </div>
@@ -890,7 +914,9 @@ export const KeyboardNavigation: Story = {
     await fileTree.updateComplete;
     trigger.focus();
 
-    const firstTreeItem = fileTree.shadowRoot?.querySelector<HTMLElement>('ui-tree-item[tabindex="0"]');
+    const firstTreeItem = fileTree.shadowRoot?.querySelector<HTMLElement>(
+      'ui-tree-item[tabindex="0"]',
+    );
     if (!firstTreeItem) {
       throw new Error('Expected first tree item with tabindex=0');
     }
@@ -901,28 +927,36 @@ export const KeyboardNavigation: Story = {
       throw new Error('Container not found');
     }
 
-    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }));
+    container.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }),
+    );
     await fileTree.updateComplete;
     const afterArrowDown = fileTree.activeId;
     if (afterArrowDown !== '1-1') {
       throw new Error(`Expected activeId to be "1-1", got "${afterArrowDown}"`);
     }
 
-    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true, composed: true }));
+    container.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'End', bubbles: true, composed: true }),
+    );
     await fileTree.updateComplete;
     const afterEnd = fileTree.activeId;
     if (afterEnd !== '4') {
       throw new Error(`Expected activeId to be "4" after End, got "${afterEnd}"`);
     }
 
-    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true, composed: true }));
+    container.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Home', bubbles: true, composed: true }),
+    );
     await fileTree.updateComplete;
     const afterHome = fileTree.activeId;
     if (afterHome !== '1') {
       throw new Error(`Expected activeId to be "1" after Home, got "${afterHome}"`);
     }
 
-    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'r', bubbles: true, composed: true }));
+    container.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'r', bubbles: true, composed: true }),
+    );
     await fileTree.updateComplete;
     const afterTypeAhead = fileTree.activeId;
     if (afterTypeAhead !== '4') {
@@ -936,7 +970,9 @@ export const KeyboardNavigation: Story = {
       throw new Error(`Expected exactly one tabindex=0 item, got ${String(activeItems.length)}`);
     }
 
-    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, composed: true }));
+    container.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, composed: true }),
+    );
     await Promise.resolve();
     if (document.activeElement !== trigger) {
       throw new Error('Escape should restore focus to the previous external trigger');
@@ -950,7 +986,11 @@ export const CardStateMatrix: Story = {
       <ui-file-tree .items="${cloneTree(simpleTreeData)}" variant="card"></ui-file-tree>
       <ui-file-tree .items="${[]}" variant="card"></ui-file-tree>
       <ui-file-tree .items="${[]}" variant="card" loading></ui-file-tree>
-      <ui-file-tree .items="${cloneTree(simpleTreeData)}" variant="card" density="compact"></ui-file-tree>
+      <ui-file-tree
+        .items="${cloneTree(simpleTreeData)}"
+        variant="card"
+        density="compact"
+      ></ui-file-tree>
     </div>
   `,
 };

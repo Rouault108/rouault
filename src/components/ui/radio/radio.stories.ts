@@ -134,18 +134,23 @@ export const Default: Story = {
     await radio.updateComplete;
 
     // テスト: デフォルトは未選択
-    if (radio.checked) throw new Error('デフォルトでは checked が false であることを期待していましたが true でした');
+    if (radio.checked)
+      throw new Error('デフォルトでは checked が false であることを期待していましたが true でした');
 
     // テスト: コントロールに role="radio" が設定されている
     const control = radio.shadowRoot?.querySelector('.control');
     if (!control) throw new Error('Shadow Root 内に control 要素が見つかりません');
     if (control.getAttribute('role') !== 'radio') {
-      throw new Error(`role="radio" を期待していましたが、実際には "${control.getAttribute('role') ?? 'null'}" でした`);
+      throw new Error(
+        `role="radio" を期待していましたが、実際には "${control.getAttribute('role') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: aria-checked="false" が設定されている
     if (control.getAttribute('aria-checked') !== 'false') {
-      throw new Error(`aria-checked="false" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-checked="false" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`,
+      );
     }
   },
 };
@@ -207,9 +212,12 @@ export const CheckedNormal: Story = {
     const control = radio.shadowRoot?.querySelector('.control');
     if (!control) throw new Error('control が見つかりません');
 
-    if (!radio.checked) throw new Error('checked が true であることを期待していましたが false でした');
+    if (!radio.checked)
+      throw new Error('checked が true であることを期待していましたが false でした');
     if (control.getAttribute('aria-checked') !== 'true') {
-      throw new Error(`aria-checked="true" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-checked="true" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`,
+      );
     }
   },
 };
@@ -238,9 +246,12 @@ export const UncheckedDisabled: Story = {
     const control = radio.shadowRoot?.querySelector('.control');
     if (!control) throw new Error('control が見つかりません');
 
-    if (!radio.disabled) throw new Error('disabled が true であることを期待していましたが false でした');
+    if (!radio.disabled)
+      throw new Error('disabled が true であることを期待していましたが false でした');
     if (control.getAttribute('aria-disabled') !== 'true') {
-      throw new Error(`aria-disabled="true" を期待していましたが、実際には "${control.getAttribute('aria-disabled') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-disabled="true" を期待していましたが、実際には "${control.getAttribute('aria-disabled') ?? 'null'}" でした`,
+      );
     }
   },
 };
@@ -308,7 +319,9 @@ export const UncheckedInvalid: Story = {
     if (!control) throw new Error('control が見つかりません');
 
     if (control.getAttribute('aria-invalid') !== 'true') {
-      throw new Error(`aria-invalid="true" を期待していましたが、実際には "${control.getAttribute('aria-invalid') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-invalid="true" を期待していましたが、実際には "${control.getAttribute('aria-invalid') ?? 'null'}" でした`,
+      );
     }
 
     const errorMsg = radio.shadowRoot?.querySelector('.error-message');
@@ -347,8 +360,10 @@ export const CheckedInvalid: Story = {
     if (!radio) throw new Error('ui-radio が見つかりません');
     await radio.updateComplete;
 
-    if (!radio.checked) throw new Error('checked が true であることを期待していましたが false でした');
-    if (!radio.invalid) throw new Error('invalid が true であることを期待していましたが false でした');
+    if (!radio.checked)
+      throw new Error('checked が true であることを期待していましたが false でした');
+    if (!radio.invalid)
+      throw new Error('invalid が true であることを期待していましたが false でした');
 
     const control = radio.shadowRoot?.querySelector('.control');
     if (!control) throw new Error('control が見つかりません');
@@ -380,13 +395,22 @@ export const RadioGroup: Story = {
       style="display: flex; flex-direction: column; gap: 0.5rem;"
     >
       <ui-radio id="group-a" name="shipping" value="standard" label="通常配送（3〜5日）"></ui-radio>
-      <ui-radio id="group-b" name="shipping" value="express"  label="速達（翌日）" checked></ui-radio>
+      <ui-radio
+        id="group-b"
+        name="shipping"
+        value="express"
+        label="速達（翌日）"
+        checked
+      ></ui-radio>
       <ui-radio id="group-c" name="shipping" value="same-day" label="当日配送"></ui-radio>
     </div>
   `,
   play: async ({ canvasElement }) => {
     const radios = canvasElement.querySelectorAll<Radio>('ui-radio[name="shipping"]');
-    if (radios.length !== 3) throw new Error(`3つのラジオボタンを期待していましたが、実際には ${String(radios.length)} つでした`);
+    if (radios.length !== 3)
+      throw new Error(
+        `3つのラジオボタンを期待していましたが、実際には ${String(radios.length)} つでした`,
+      );
 
     await Promise.all([...radios].map((r) => r.updateComplete));
 
@@ -403,9 +427,12 @@ export const RadioGroup: Story = {
     const ctrlC = c.shadowRoot?.querySelector('.control');
     if (!ctrlA || !ctrlB || !ctrlC) throw new Error('コントロールが見つかりません');
 
-    if (ctrlA.getAttribute('tabindex') !== '-1') throw new Error('ラジオ A の tabindex は "-1" である必要があります');
-    if (ctrlB.getAttribute('tabindex') !== '0') throw new Error('ラジオ B の tabindex は "0" である必要があります');
-    if (ctrlC.getAttribute('tabindex') !== '-1') throw new Error('ラジオ C の tabindex は "-1" である必要があります');
+    if (ctrlA.getAttribute('tabindex') !== '-1')
+      throw new Error('ラジオ A の tabindex は "-1" である必要があります');
+    if (ctrlB.getAttribute('tabindex') !== '0')
+      throw new Error('ラジオ B の tabindex は "0" である必要があります');
+    if (ctrlC.getAttribute('tabindex') !== '-1')
+      throw new Error('ラジオ C の tabindex は "-1" である必要があります');
   },
 };
 
@@ -421,9 +448,9 @@ export const GroupWithDisabled: Story = {
       aria-label="サイズ選択"
       style="display: flex; flex-direction: column; gap: 0.5rem;"
     >
-      <ui-radio id="size-s"  name="size" value="s"  label="S"></ui-radio>
-      <ui-radio id="size-m"  name="size" value="m"  label="M" checked></ui-radio>
-      <ui-radio id="size-l"  name="size" value="l"  label="L（在庫なし）" disabled></ui-radio>
+      <ui-radio id="size-s" name="size" value="s" label="S"></ui-radio>
+      <ui-radio id="size-m" name="size" value="m" label="M" checked></ui-radio>
+      <ui-radio id="size-l" name="size" value="l" label="L（在庫なし）" disabled></ui-radio>
       <ui-radio id="size-xl" name="size" value="xl" label="XL"></ui-radio>
     </div>
   `,
@@ -444,12 +471,16 @@ export const GroupWithDisabled: Story = {
 
     // テスト: disabled なラジオはクリックしても選択されない
     let changeEventFired = false;
-    radioL.addEventListener('change', () => { changeEventFired = true; });
+    radioL.addEventListener('change', () => {
+      changeEventFired = true;
+    });
     ctrlL.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     await new Promise((resolve) => setTimeout(resolve, 100));
-    if (radioL.checked) throw new Error('無効なラジオボタンはクリックしても選択されない必要があります');
+    if (radioL.checked)
+      throw new Error('無効なラジオボタンはクリックしても選択されない必要があります');
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (changeEventFired) throw new Error('無効なラジオボタンは change イベントを発火させない必要があります');
+    if (changeEventFired)
+      throw new Error('無効なラジオボタンは change イベントを発火させない必要があります');
   },
 };
 
@@ -528,7 +559,9 @@ export const AllStates: Story = {
   play: async ({ canvasElement }) => {
     const radios = canvasElement.querySelectorAll('ui-radio');
     if (radios.length !== 6) {
-      throw new Error(`6つのラジオボタンを期待していましたが、実際には ${String(radios.length)} つでした`);
+      throw new Error(
+        `6つのラジオボタンを期待していましたが、実際には ${String(radios.length)} つでした`,
+      );
     }
 
     // テスト: ラベルなしのコントロールは存在する
@@ -536,7 +569,8 @@ export const AllStates: Story = {
     if (!noLabel) throw new Error('ラベルなしのラジオボタンが見つかりません');
     await noLabel.updateComplete;
     const labelEl = noLabel.shadowRoot?.querySelector('.label');
-    if (labelEl) throw new Error('label プロパティが空の場合、ラベル要素は存在しない必要があります');
+    if (labelEl)
+      throw new Error('label プロパティが空の場合、ラベル要素は存在しない必要があります');
   },
 };
 
@@ -564,9 +598,9 @@ export const ClickSelect: Story = {
           value="a"
           label="選択肢 A"
           @change="${(e: Event) => {
-      const log = document.getElementById('click-log');
-      if (log) log.textContent = `change: value=${(e.target as Radio).value}`;
-    }}"
+            const log = document.getElementById('click-log');
+            if (log) log.textContent = `change: value=${(e.target as Radio).value}`;
+          }}"
         ></ui-radio>
         <ui-radio
           id="click-b"
@@ -575,9 +609,9 @@ export const ClickSelect: Story = {
           label="選択肢 B"
           checked
           @change="${(e: Event) => {
-      const log = document.getElementById('click-log');
-      if (log) log.textContent = `change: value=${(e.target as Radio).value}`;
-    }}"
+            const log = document.getElementById('click-log');
+            if (log) log.textContent = `change: value=${(e.target as Radio).value}`;
+          }}"
         ></ui-radio>
         <ui-radio
           id="click-c"
@@ -585,9 +619,9 @@ export const ClickSelect: Story = {
           value="c"
           label="選択肢 C"
           @change="${(e: Event) => {
-      const log = document.getElementById('click-log');
-      if (log) log.textContent = `change: value=${(e.target as Radio).value}`;
-    }}"
+            const log = document.getElementById('click-log');
+            if (log) log.textContent = `change: value=${(e.target as Radio).value}`;
+          }}"
         ></ui-radio>
       </div>
 
@@ -622,7 +656,13 @@ export const ClickSelect: Story = {
 
     // A をクリック → A が選択、B が未選択になる
     const changePromise = new Promise<Radio>((resolve) => {
-      radioA.addEventListener('change', (e) => { resolve(e.target as Radio); }, { once: true });
+      radioA.addEventListener(
+        'change',
+        (e) => {
+          resolve(e.target as Radio);
+        },
+        { once: true },
+      );
     });
 
     const ctrlA = radioA.shadowRoot?.querySelector<HTMLElement>('.control');
@@ -631,7 +671,11 @@ export const ClickSelect: Story = {
 
     const result = await Promise.race([
       changePromise,
-      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
 
     if (!result) throw new Error('change event が発火しませんでした');
@@ -644,15 +688,27 @@ export const ClickSelect: Story = {
     if (cChecked) throw new Error('C は未選択のままである必要があります');
 
     const inputPromise = new Promise<Radio>((resolve) => {
-      radioA.addEventListener('input', (e) => { resolve(e.target as Radio); }, { once: true });
+      radioA.addEventListener(
+        'input',
+        (e) => {
+          resolve(e.target as Radio);
+        },
+        { once: true },
+      );
     });
     ctrlA.click();
     const inputResult = await Promise.race([
       inputPromise,
-      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
     if (inputResult !== null) {
-      throw new Error('既に選択されているラジオボタンは input イベントを発火させない必要があります');
+      throw new Error(
+        '既に選択されているラジオボタンは input イベントを発火させない必要があります',
+      );
     }
   },
 };
@@ -664,7 +720,12 @@ export const ClickSelect: Story = {
  */
 export const LabelClickSelect: Story = {
   render: () => html`
-    <ui-radio id="label-click-radio" name="label-click-group" value="a" label="ラベルクリックで選択"></ui-radio>
+    <ui-radio
+      id="label-click-radio"
+      name="label-click-group"
+      value="a"
+      label="ラベルクリックで選択"
+    ></ui-radio>
   `,
   play: async ({ canvasElement }) => {
     const radio = canvasElement.querySelector<Radio>('#label-click-radio');
@@ -676,7 +737,10 @@ export const LabelClickSelect: Story = {
     label.click();
     await radio.updateComplete;
 
-    if (!radio.checked) throw new Error('ラベルクリック後に checked=true になることを期待していましたが false でした');
+    if (!radio.checked)
+      throw new Error(
+        'ラベルクリック後に checked=true になることを期待していましたが false でした',
+      );
   },
 };
 
@@ -727,19 +791,37 @@ export const ArrowKeyNavigation: Story = {
 
     // ArrowDown → B が選択される
     const changePromise = new Promise<Radio>((resolve) => {
-      radioB.addEventListener('change', (e) => { resolve(e.target as Radio); }, { once: true });
+      radioB.addEventListener(
+        'change',
+        (e) => {
+          resolve(e.target as Radio);
+        },
+        { once: true },
+      );
     });
 
-    ctrlA.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }));
+    ctrlA.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }),
+    );
 
     const result = await Promise.race([
       changePromise,
-      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
 
     if (!result) throw new Error('ArrowDown によって B の change イベントが発火しませんでした');
-    if (!radioB.checked) throw new Error('ArrowDown 後に B が選択されていることを期待していましたが選択されていません');
-    if (radioA.checked) throw new Error('ArrowDown 後に A が選択解除されていることを期待していましたが選択されています');
+    if (!radioB.checked)
+      throw new Error(
+        'ArrowDown 後に B が選択されていることを期待していましたが選択されていません',
+      );
+    if (radioA.checked)
+      throw new Error(
+        'ArrowDown 後に A が選択解除されていることを期待していましたが選択されています',
+      );
   },
 };
 
@@ -799,19 +881,38 @@ export const CircularNavigation: Story = {
 
     // C（最後）で ArrowDown → A（最初）に循環
     const changePromise = new Promise<Radio>((resolve) => {
-      radioA.addEventListener('change', (e) => { resolve(e.target as Radio); }, { once: true });
+      radioA.addEventListener(
+        'change',
+        (e) => {
+          resolve(e.target as Radio);
+        },
+        { once: true },
+      );
     });
 
-    ctrlC.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }));
+    ctrlC.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }),
+    );
 
     const result = await Promise.race([
       changePromise,
-      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
 
-    if (!result) throw new Error('循環ナビゲーションによって A の change イベントが発火しませんでした');
-    if (!radioA.checked) throw new Error('C からの循環ナビゲーション後に A が選択されていることを期待していましたが選択されていません');
-    if (radioC.checked) throw new Error('循環ナビゲーション後に C が選択解除されていることを期待していましたが選択されています');
+    if (!result)
+      throw new Error('循環ナビゲーションによって A の change イベントが発火しませんでした');
+    if (!radioA.checked)
+      throw new Error(
+        'C からの循環ナビゲーション後に A が選択されていることを期待していましたが選択されていません',
+      );
+    if (radioC.checked)
+      throw new Error(
+        '循環ナビゲーション後に C が選択解除されていることを期待していましたが選択されています',
+      );
   },
 };
 
@@ -822,7 +923,11 @@ export const CircularNavigation: Story = {
  */
 export const ReverseCircularNavigation: Story = {
   render: () => html`
-    <div role="radiogroup" aria-label="逆方向循環" style="display: flex; flex-direction: column; gap: 0.5rem;">
+    <div
+      role="radiogroup"
+      aria-label="逆方向循環"
+      style="display: flex; flex-direction: column; gap: 0.5rem;"
+    >
       <ui-radio id="rev-a" name="rev-group" value="a" label="選択肢 A" checked></ui-radio>
       <ui-radio id="rev-b" name="rev-group" value="b" label="選択肢 B"></ui-radio>
       <ui-radio id="rev-c" name="rev-group" value="c" label="選択肢 C"></ui-radio>
@@ -838,11 +943,19 @@ export const ReverseCircularNavigation: Story = {
     if (!ctrlA) throw new Error('コントロール A が見つかりません');
     ctrlA.focus();
 
-    ctrlA.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, composed: true }));
+    ctrlA.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, composed: true }),
+    );
     await Promise.all([radioA.updateComplete, radioC.updateComplete]);
 
-    if (!radioC.checked) throw new Error('最初の項目で ArrowUp を押した後に C が選択されていることを期待していましたが選択されていません');
-    if (radioA.checked) throw new Error('逆方向の循環ナビゲーション後に A が選択解除されていることを期待していましたが選択されています');
+    if (!radioC.checked)
+      throw new Error(
+        '最初の項目で ArrowUp を押した後に C が選択されていることを期待していましたが選択されていません',
+      );
+    if (radioA.checked)
+      throw new Error(
+        '逆方向の循環ナビゲーション後に A が選択解除されていることを期待していましたが選択されています',
+      );
   },
 };
 
@@ -856,7 +969,8 @@ export const DisabledClickBlocked: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `disabled` 状態ではクリックしても状態が変化せず、イベントも発火しません。',
+        story:
+          '⚠️ **境界条件**: `disabled` 状態ではクリックしても状態が変化せず、イベントも発火しません。',
       },
     },
   },
@@ -888,7 +1002,9 @@ export const DisabledClickBlocked: Story = {
     await radio.updateComplete;
 
     let changeEventFired = false;
-    radio.addEventListener('change', () => { changeEventFired = true; });
+    radio.addEventListener('change', () => {
+      changeEventFired = true;
+    });
 
     const control = radio.shadowRoot?.querySelector<HTMLElement>('.control');
     if (!control) throw new Error('control が見つかりません');
@@ -896,9 +1012,11 @@ export const DisabledClickBlocked: Story = {
     control.click();
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    if (radio.checked) throw new Error('無効なラジオボタンはクリックしても状態が変化しない必要があります');
+    if (radio.checked)
+      throw new Error('無効なラジオボタンはクリックしても状態が変化しない必要があります');
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (changeEventFired) throw new Error('無効なラジオボタンは change イベントを発火させない必要があります');
+    if (changeEventFired)
+      throw new Error('無効なラジオボタンは change イベントを発火させない必要があります');
   },
 };
 
@@ -912,7 +1030,8 @@ export const AlreadyCheckedNoEvent: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: 既に選択済みのラジオをクリックしても `change` イベントは発火しません。',
+        story:
+          '⚠️ **境界条件**: 既に選択済みのラジオをクリックしても `change` イベントは発火しません。',
       },
     },
   },
@@ -927,7 +1046,8 @@ export const AlreadyCheckedNoEvent: Story = {
           font-size: 13px;
         "
       >
-        <strong>⚠️ 境界条件</strong>: 既に選択済みのラジオをクリックしても change イベントは発火しません。
+        <strong>⚠️ 境界条件</strong>: 既に選択済みのラジオをクリックしても change
+        イベントは発火しません。
       </div>
       <ui-radio
         id="already-checked"
@@ -943,10 +1063,15 @@ export const AlreadyCheckedNoEvent: Story = {
     if (!radio) throw new Error('ui-radio が見つかりません');
     await radio.updateComplete;
 
-    if (!radio.checked) throw new Error('初期状態でラジオボタンが選択されていることを期待していましたが選択されていません');
+    if (!radio.checked)
+      throw new Error(
+        '初期状態でラジオボタンが選択されていることを期待していましたが選択されていません',
+      );
 
     let changeEventFired = false;
-    radio.addEventListener('change', () => { changeEventFired = true; });
+    radio.addEventListener('change', () => {
+      changeEventFired = true;
+    });
 
     const control = radio.shadowRoot?.querySelector<HTMLElement>('.control');
     if (!control) throw new Error('control が見つかりません');
@@ -955,7 +1080,10 @@ export const AlreadyCheckedNoEvent: Story = {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (changeEventFired) throw new Error('既に選択されているラジオボタンを再度クリックしても change イベントは発火しない必要があります');
+    if (changeEventFired)
+      throw new Error(
+        '既に選択されているラジオボタンを再度クリックしても change イベントは発火しない必要があります',
+      );
   },
 };
 
@@ -969,7 +1097,8 @@ export const RovingTabindexNoSelection: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: グループ内に checked なラジオがない場合、最初の非 disabled ラジオが `tabindex="0"` になります。',
+        story:
+          '⚠️ **境界条件**: グループ内に checked なラジオがない場合、最初の非 disabled ラジオが `tabindex="0"` になります。',
       },
     },
   },
@@ -1012,13 +1141,19 @@ export const RovingTabindexNoSelection: Story = {
 
     // 未選択グループ: A（最初）が tabindex="0"
     if (ctrlA.getAttribute('tabindex') !== '0') {
-      throw new Error(`A の tabindex="0" を期待していましたが、実際には "${ctrlA.getAttribute('tabindex') ?? 'null'}" でした`);
+      throw new Error(
+        `A の tabindex="0" を期待していましたが、実際には "${ctrlA.getAttribute('tabindex') ?? 'null'}" でした`,
+      );
     }
     if (ctrlB.getAttribute('tabindex') !== '-1') {
-      throw new Error(`B の tabindex="-1" を期待していましたが、実際には "${ctrlB.getAttribute('tabindex') ?? 'null'}" でした`);
+      throw new Error(
+        `B の tabindex="-1" を期待していましたが、実際には "${ctrlB.getAttribute('tabindex') ?? 'null'}" でした`,
+      );
     }
     if (ctrlC.getAttribute('tabindex') !== '-1') {
-      throw new Error(`C の tabindex="-1" を期待していましたが、実際には "${ctrlC.getAttribute('tabindex') ?? 'null'}" でした`);
+      throw new Error(
+        `C の tabindex="-1" を期待していましたが、実際には "${ctrlC.getAttribute('tabindex') ?? 'null'}" でした`,
+      );
     }
   },
 };
@@ -1033,14 +1168,22 @@ export const NoLabel: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `label` 属性が未設定の場合。コントロールのみが表示されます。外部から `aria-label` を提供してください。',
+        story:
+          '⚠️ **境界条件**: `label` 属性が未設定の場合。コントロールのみが表示されます。外部から `aria-label` を提供してください。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; align-items: center; gap: 0.5rem;">
-      <ui-radio id="no-label-radio" name="no-label-group" value="a" aria-label="ラベルなしラジオ"></ui-radio>
-      <span style="font-size: 14px; color: oklch(20% 0.01 250);">外部ラベル（aria-label で紐付け）</span>
+      <ui-radio
+        id="no-label-radio"
+        name="no-label-group"
+        value="a"
+        aria-label="ラベルなしラジオ"
+      ></ui-radio>
+      <span style="font-size: 14px; color: oklch(20% 0.01 250);"
+        >外部ラベル（aria-label で紐付け）</span
+      >
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -1056,7 +1199,9 @@ export const NoLabel: Story = {
     const control = radio.shadowRoot?.querySelector('.control');
     if (!control) throw new Error('ラベルがなくてもコントロールは存在する必要があります');
     if (control.getAttribute('aria-label') !== 'ラベルなしラジオ') {
-      throw new Error('aria-label がコントロールに転送されていることを期待していましたが転送されていません');
+      throw new Error(
+        'aria-label がコントロールに転送されていることを期待していましたが転送されていません',
+      );
     }
   },
 };
@@ -1069,11 +1214,23 @@ export const NoLabel: Story = {
 export const RequiredGroupValidation: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 420px;">
-      <ui-radio-group id="shipping-group" label="配送方法（必須）" required error-message="いずれかを選択してください">
-        <ui-radio id="req-standard" name="req-shipping" value="standard" label="通常配送"></ui-radio>
+      <ui-radio-group
+        id="shipping-group"
+        label="配送方法（必須）"
+        required
+        error-message="いずれかを選択してください"
+      >
+        <ui-radio
+          id="req-standard"
+          name="req-shipping"
+          value="standard"
+          label="通常配送"
+        ></ui-radio>
         <ui-radio id="req-express" name="req-shipping" value="express" label="速達"></ui-radio>
       </ui-radio-group>
-      <span id="shipping-error" aria-live="polite" style="font-size:13px; color: oklch(55% 0.2 28);">未選択</span>
+      <span id="shipping-error" aria-live="polite" style="font-size:13px; color: oklch(55% 0.2 28);"
+        >未選択</span
+      >
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -1081,21 +1238,28 @@ export const RequiredGroupValidation: Story = {
     const standard = canvasElement.querySelector<Radio>('#req-standard');
     const express = canvasElement.querySelector<Radio>('#req-express');
     const error = canvasElement.querySelector<HTMLElement>('#shipping-error');
-    if (!group || !standard || !express || !error) throw new Error('必須グループの要素が見つかりません');
+    if (!group || !standard || !express || !error)
+      throw new Error('必須グループの要素が見つかりません');
     await Promise.all([standard.updateComplete, express.updateComplete]);
 
     if (group.checkValidity()) throw new Error('初期状態ではグループが無効である必要があります');
-    if (group.reportValidity()) throw new Error('初期状態ではグループの reportValidity が false である必要があります');
+    if (group.reportValidity())
+      throw new Error('初期状態ではグループの reportValidity が false である必要があります');
 
     const expressControl = express.shadowRoot?.querySelector<HTMLElement>('.control');
     if (!expressControl) throw new Error('Express のコントロールが見つかりません');
     expressControl.click();
     await express.updateComplete;
 
-    if (!group.checkValidity()) throw new Error('1つのオプションを選択した後はグループが有効である必要があります');
-    if (!group.reportValidity()) throw new Error('選択後はグループの reportValidity が true である必要があります');
+    if (!group.checkValidity())
+      throw new Error('1つのオプションを選択した後はグループが有効である必要があります');
+    if (!group.reportValidity())
+      throw new Error('選択後はグループの reportValidity が true である必要があります');
     error.textContent = '選択済み';
-    if (error.textContent !== '選択済み') throw new Error('バリデーションメッセージが更新されることを期待していましたが更新されていません');
+    if (error.textContent !== '選択済み')
+      throw new Error(
+        'バリデーションメッセージが更新されることを期待していましたが更新されていません',
+      );
   },
 };
 
@@ -1116,7 +1280,11 @@ export const DarkThemeStates: Story = {
         --border-muted: oklch(62% 0.01 250 / 0.7);
       "
     >
-      <div role="radiogroup" aria-label="ダークテーマ確認" style="display:flex; flex-direction:column; gap:0.5rem;">
+      <div
+        role="radiogroup"
+        aria-label="ダークテーマ確認"
+        style="display:flex; flex-direction:column; gap:0.5rem;"
+      >
         <ui-radio id="dark-radio-a" name="dark-radio" value="a" label="未選択"></ui-radio>
         <ui-radio id="dark-radio-b" name="dark-radio" value="b" label="選択済み" checked></ui-radio>
       </div>
@@ -1130,7 +1298,9 @@ export const DarkThemeStates: Story = {
     const control = checked.shadowRoot?.querySelector('.control');
     if (!control) throw new Error('control が見つかりません');
     if (control.getAttribute('aria-checked') !== 'true') {
-      throw new Error('ダークテーマのストーリーでコントロールが選択されていることを期待していましたが選択されていません');
+      throw new Error(
+        'ダークテーマのストーリーでコントロールが選択されていることを期待していましたが選択されていません',
+      );
     }
   },
 };
@@ -1150,7 +1320,13 @@ export const ForcedColorsSimulation: Story = {
         --focus-ring-color: CanvasText;
       "
     >
-      <ui-radio id="forced-radio" name="forced-radio-group" value="a" label="強制カラー想定" checked></ui-radio>
+      <ui-radio
+        id="forced-radio"
+        name="forced-radio-group"
+        value="a"
+        label="強制カラー想定"
+        checked
+      ></ui-radio>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -1160,7 +1336,9 @@ export const ForcedColorsSimulation: Story = {
     const control = radio.shadowRoot?.querySelector('.control');
     if (!control) throw new Error('control が見つかりません');
     if (control.getAttribute('aria-checked') !== 'true') {
-      throw new Error('強制カラーシミュレーションで選択状態であることを期待していましたが選択されていません');
+      throw new Error(
+        '強制カラーシミュレーションで選択状態であることを期待していましたが選択されていません',
+      );
     }
   },
 };
@@ -1207,17 +1385,17 @@ export const FormIntegration: Story = {
       id="radio-form"
       class="form-demo"
       @submit="${(e: Event) => {
-      e.preventDefault();
-      const form = e.target as HTMLFormElement;
-      const data = new FormData(form);
-      const result = document.getElementById('radio-form-result');
-      if (result) {
-        const entries = [...data.entries()]
-          .map(([k, v]) => `${k}=${typeof v === 'string' ? v : v.name}`)
-          .join(', ');
-        result.textContent = entries.length > 0 ? entries : '（送信値なし）';
-      }
-    }}"
+        e.preventDefault();
+        const form = e.target as HTMLFormElement;
+        const data = new FormData(form);
+        const result = document.getElementById('radio-form-result');
+        if (result) {
+          const entries = [...data.entries()]
+            .map(([k, v]) => `${k}=${typeof v === 'string' ? v : v.name}`)
+            .join(', ');
+          result.textContent = entries.length > 0 ? entries : '（送信値なし）';
+        }
+      }}"
     >
       <h3 style="margin: 0; font-size: 16px;">配送方法を選択</h3>
 
@@ -1226,9 +1404,27 @@ export const FormIntegration: Story = {
         aria-label="配送方法"
         style="display: flex; flex-direction: column; gap: 0.5rem;"
       >
-        <ui-radio id="form-standard" name="shipping" value="standard" label="通常配送（無料）"></ui-radio>
-        <ui-radio id="form-express"  name="shipping" value="express"  label="速達（500円）" checked></ui-radio>
-        <ui-radio id="form-disabled" name="shipping" value="same-day" label="当日配送（準備中）" disabled checked></ui-radio>
+        <ui-radio
+          id="form-standard"
+          name="shipping"
+          value="standard"
+          label="通常配送（無料）"
+        ></ui-radio>
+        <ui-radio
+          id="form-express"
+          name="shipping"
+          value="express"
+          label="速達（500円）"
+          checked
+        ></ui-radio>
+        <ui-radio
+          id="form-disabled"
+          name="shipping"
+          value="same-day"
+          label="当日配送（準備中）"
+          disabled
+          checked
+        ></ui-radio>
       </div>
 
       <button
@@ -1249,7 +1445,9 @@ export const FormIntegration: Story = {
       </button>
 
       <div>
-        <div style="font-size: 12px; color: oklch(48% 0.01 250); margin-bottom: 0.25rem;">FormData:</div>
+        <div style="font-size: 12px; color: oklch(48% 0.01 250); margin-bottom: 0.25rem;">
+          FormData:
+        </div>
         <div id="radio-form-result" class="form-result">送信ボタンをクリックしてください</div>
       </div>
     </form>

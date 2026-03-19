@@ -48,15 +48,16 @@ const getFooterParts = (footer: HTMLElement) => {
     ':scope > .footer-content > .footer-nav > .footer-link',
   );
   const meta = footer.querySelector<HTMLElement>(':scope > .footer-content > .footer-meta');
-  const copyright =
-    footer.querySelector<HTMLElement>(':scope > .footer-content > .footer-meta > .copyright');
-  const copyrightIcon =
-    footer.querySelector<HTMLElement>(
-      ':scope > .footer-content > .footer-meta > .copyright > iconify-icon',
-    );
+  const copyright = footer.querySelector<HTMLElement>(
+    ':scope > .footer-content > .footer-meta > .copyright',
+  );
+  const copyrightIcon = footer.querySelector<HTMLElement>(
+    ':scope > .footer-content > .footer-meta > .copyright > iconify-icon',
+  );
   const separators = footer.querySelectorAll<HTMLElement>(':scope .separator');
-  const revision =
-    footer.querySelector<HTMLElement>(':scope > .footer-content > .footer-meta > .revision');
+  const revision = footer.querySelector<HTMLElement>(
+    ':scope > .footer-content > .footer-meta > .revision',
+  );
 
   assert(!!content, '.footer-content が見つかりません');
   assert(!!nav, '.footer-nav が見つかりません');
@@ -121,10 +122,7 @@ const meta: Meta<FooterStoryArgs> = {
       table: { type: { summary: 'number | undefined' } },
     },
   },
-  render: (args) =>
-    html`
-      ${renderFooter(buildRenderOptions(args))}
-    `,
+  render: (args) => html` ${renderFooter(buildRenderOptions(args))} `,
 };
 
 export default meta;
@@ -193,10 +191,7 @@ export const DefaultContract: Story = {
       copyright.textContent.includes(FOOTER_DEFAULT_APP_NAME),
       'copyright にアプリ名が含まれていません',
     );
-    assert(
-      footer.querySelector('[part]') === null,
-      'footer には part 属性を使用しないでください',
-    );
+    assert(footer.querySelector('[part]') === null, 'footer には part 属性を使用しないでください');
   },
 };
 
@@ -220,9 +215,7 @@ export const RevisionYearStateMatrix: Story = {
       </section>
 
       <section>
-        <h3 style="margin: 0 0 var(--space-2); font-size: var(--text-sm);">
-          # 付き revision
-        </h3>
+        <h3 style="margin: 0 0 var(--space-2); font-size: var(--text-sm);"># 付き revision</h3>
         ${renderFooter({
           id: 'footer-state-prefixed',
           year: 2032,
@@ -360,11 +353,9 @@ export const MediaAndTokenContracts: Story = {
     </div>
   `,
   play: () => {
-    document
-      .querySelectorAll(`#${FOOTER_DOCUMENT_STYLE_ID}`)
-      .forEach((node) => {
-        node.remove();
-      });
+    document.querySelectorAll(`#${FOOTER_DOCUMENT_STYLE_ID}`).forEach((node) => {
+      node.remove();
+    });
 
     ensureFooterDocumentStyles();
     ensureFooterDocumentStyles();
@@ -405,10 +396,7 @@ export const MediaAndTokenContracts: Story = {
 
     const forbidden = ['#000', '12px', '48px', 'opacity: 0.3', 'padding-inline: 16px'] as const;
     for (const snippet of forbidden) {
-      assert(
-        !cssText.includes(snippet),
-        `ハードコード値が混入しています: ${snippet}`,
-      );
+      assert(!cssText.includes(snippet), `ハードコード値が混入しています: ${snippet}`);
     }
   },
 };
@@ -450,8 +438,7 @@ export const DarkModeTokenContract: Story = {
       'Light/Dark の両方で border-top: solid を維持する必要があります',
     );
     assert(
-      lightStyle.backgroundColor !== 'transparent' &&
-        darkStyle.backgroundColor !== 'transparent',
+      lightStyle.backgroundColor !== 'transparent' && darkStyle.backgroundColor !== 'transparent',
       '背景色はトークン解決された実色である必要があります',
     );
     assert(
@@ -481,10 +468,7 @@ export const ForcedColorsContract: Story = {
       cssText.includes('@media (forced-colors: active)'),
       'forced-colors メディアクエリが必要です',
     );
-    assert(
-      cssText.includes('CanvasText'),
-      'forced-colors 時の CanvasText ボーダー定義が必要です',
-    );
+    assert(cssText.includes('CanvasText'), 'forced-colors 時の CanvasText ボーダー定義が必要です');
 
     if (window.matchMedia('(forced-colors: active)').matches) {
       const style = getComputedStyle(footer);
@@ -505,9 +489,6 @@ export const PrintContract: Story = {
   play: () => {
     const cssText = getCssText();
     assert(cssText.includes('@media print'), 'print メディアクエリが必要です');
-    assert(
-      cssText.includes('display: none !important'),
-      'print 時の display: none が必要です',
-    );
+    assert(cssText.includes('display: none !important'), 'print 時の display: none が必要です');
   },
 };

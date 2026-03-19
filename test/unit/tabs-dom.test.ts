@@ -1,8 +1,5 @@
 import { expect } from '@open-wc/testing';
-import {
-  applyTabsAria,
-  readTabsSnapshot,
-} from '../../src/components/ui/tabs/tabs-dom.js';
+import { applyTabsAria, readTabsSnapshot } from '../../src/components/ui/tabs/tabs-dom.js';
 
 const createSlotMock = (elements: Element[]): HTMLSlotElement => {
   const slot = document.createElement('slot');
@@ -18,10 +15,7 @@ describe('tabs-dom', () => {
     const tabB = document.createElement('button');
     const panelA = document.createElement('div');
 
-    const snapshot = readTabsSnapshot(
-      createSlotMock([tabA, tabB]),
-      createSlotMock([panelA]),
-    );
+    const snapshot = readTabsSnapshot(createSlotMock([tabA, tabB]), createSlotMock([panelA]));
 
     expect(snapshot.tabs.length).to.equal(2);
     expect(snapshot.panels.length).to.equal(1);

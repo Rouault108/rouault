@@ -275,7 +275,11 @@ export const VariantStateMatrix: Story = {
     const defaultHost = getHost(canvasElement, 'matrix-default');
     const stepsHost = getHost(canvasElement, 'matrix-steps');
     const interactiveHost = getHost(canvasElement, 'matrix-interactive');
-    await Promise.all([defaultHost.updateComplete, stepsHost.updateComplete, interactiveHost.updateComplete]);
+    await Promise.all([
+      defaultHost.updateComplete,
+      stepsHost.updateComplete,
+      interactiveHost.updateComplete,
+    ]);
 
     const mutedProbe = canvasElement.querySelector<HTMLElement>('#token-muted-probe');
     const primaryProbe = canvasElement.querySelector<HTMLElement>('#token-primary-probe');
@@ -383,7 +387,9 @@ export const BoundaryConditions: Story = {
     if (largeList.getAttribute('data-marker-digits') !== '3') {
       throw new Error('3桁ケースで data-marker-digits="3" が付与されていません');
     }
-    const largeMarkerColumn = getComputedStyle(largeList).getPropertyValue('--ol-marker-column').trim();
+    const largeMarkerColumn = getComputedStyle(largeList)
+      .getPropertyValue('--ol-marker-column')
+      .trim();
     if (largeMarkerColumn !== '4ch') {
       throw new Error(`3桁ケースでマーカー列幅が 4ch ではありません: ${largeMarkerColumn}`);
     }
@@ -658,10 +664,14 @@ export const DarkModeTokenContract: Story = {
     const expectedMuted = getComputedStyle(mutedProbe).color;
     const expectedPrimary = getComputedStyle(primaryProbe).color;
     if (defaultMarkerColor !== expectedMuted) {
-      throw new Error(`Dark Mode で default マーカー色が --fg-muted を追従していません: ${defaultMarkerColor}`);
+      throw new Error(
+        `Dark Mode で default マーカー色が --fg-muted を追従していません: ${defaultMarkerColor}`,
+      );
     }
     if (stepsMarkerColor !== expectedPrimary) {
-      throw new Error(`Dark Mode で steps マーカー色が --primary を追従していません: ${stepsMarkerColor}`);
+      throw new Error(
+        `Dark Mode で steps マーカー色が --primary を追従していません: ${stepsMarkerColor}`,
+      );
     }
   },
 };

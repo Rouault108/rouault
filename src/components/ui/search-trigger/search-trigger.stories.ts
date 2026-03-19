@@ -162,7 +162,9 @@ export const Default: Story = {
     const iconGlyph = icon.querySelector('iconify-icon');
     if (!iconGlyph) throw new Error('iconify-icon が見つかりません');
     if (iconGlyph.getAttribute('icon') !== 'lucide:search') {
-      throw new Error(`icon="lucide:search" を期待していましたが、実際には "${iconGlyph.getAttribute('icon') ?? 'null'}" でした`);
+      throw new Error(
+        `icon="lucide:search" を期待していましたが、実際には "${iconGlyph.getAttribute('icon') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: プレースホルダーが存在する
@@ -188,7 +190,9 @@ export const Default: Story = {
 export const StateDefault: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="font-size: 11px; font-weight: 500; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;">
+      <div
+        style="font-size: 11px; font-weight: 500; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;"
+      >
         Default State
       </div>
       <ui-search-trigger id="state-default"></ui-search-trigger>
@@ -216,7 +220,9 @@ export const StateDefault: Story = {
 export const StateDisabled: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="font-size: 11px; font-weight: 500; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;">
+      <div
+        style="font-size: 11px; font-weight: 500; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;"
+      >
         Disabled State
       </div>
       <ui-search-trigger id="state-disabled" disabled></ui-search-trigger>
@@ -246,7 +252,9 @@ export const StateDisabled: Story = {
 export const CustomPlaceholder: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="font-size: 11px; font-weight: 500; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;">
+      <div
+        style="font-size: 11px; font-weight: 500; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;"
+      >
         Custom Placeholder
       </div>
       <ui-search-trigger
@@ -262,14 +270,18 @@ export const CustomPlaceholder: Story = {
 
     // テスト: placeholder プロパティが設定されている
     if (trigger.placeholder !== 'ドキュメントを検索...') {
-      throw new Error(`placeholder="ドキュメントを検索..." を期待していましたが、実際には "${trigger.placeholder}" でした`);
+      throw new Error(
+        `placeholder="ドキュメントを検索..." を期待していましたが、実際には "${trigger.placeholder}" でした`,
+      );
     }
 
     // テスト: プレースホルダー要素にテキストが反映されている
     const placeholderEl = trigger.shadowRoot?.querySelector('.placeholder');
     if (!placeholderEl) throw new Error('プレースホルダー要素が見つかりません');
     if (!placeholderEl.textContent.includes('ドキュメントを検索...')) {
-      throw new Error(`プレースホルダーのテキストに "ドキュメントを検索..." が含まれることを期待していましたが、実際には "${placeholderEl.textContent}" でした`);
+      throw new Error(
+        `プレースホルダーのテキストに "ドキュメントを検索..." が含まれることを期待していましたが、実際には "${placeholderEl.textContent}" でした`,
+      );
     }
   },
 };
@@ -320,17 +332,16 @@ export const AllStates: Story = {
 
       <div class="state-group">
         <div class="state-label">Custom Placeholder</div>
-        <ui-search-trigger
-          id="all-custom"
-          placeholder="ドキュメントを検索..."
-        ></ui-search-trigger>
+        <ui-search-trigger id="all-custom" placeholder="ドキュメントを検索..."></ui-search-trigger>
       </div>
     </div>
   `,
   play: async ({ canvasElement }) => {
     const triggers = canvasElement.querySelectorAll('ui-search-trigger');
     if (triggers.length !== 3) {
-      throw new Error(`3つのトリガーを期待していましたが、実際には ${String(triggers.length)}個でした`);
+      throw new Error(
+        `3つのトリガーを期待していましたが、実際には ${String(triggers.length)}個でした`,
+      );
     }
 
     await Promise.all([...triggers].map((t) => t.updateComplete));
@@ -338,18 +349,22 @@ export const AllStates: Story = {
     // テスト: デフォルトは disabled でない
     const defaultTrigger = canvasElement.querySelector<SearchTrigger>('#all-default');
     if (!defaultTrigger) throw new Error('デフォルトのトリガーが見つかりません');
-    if (defaultTrigger.disabled) throw new Error('デフォルトのトリガーは無効化されていない必要があります');
+    if (defaultTrigger.disabled)
+      throw new Error('デフォルトのトリガーは無効化されていない必要があります');
 
     // テスト: disabled トリガーは disabled
     const disabledTrigger = canvasElement.querySelector<SearchTrigger>('#all-disabled');
     if (!disabledTrigger) throw new Error('無効化されたトリガーが見つかりません');
-    if (!disabledTrigger.disabled) throw new Error('無効化されたトリガーは無効化されている必要があります');
+    if (!disabledTrigger.disabled)
+      throw new Error('無効化されたトリガーは無効化されている必要があります');
 
     // テスト: カスタムプレースホルダー
     const customTrigger = canvasElement.querySelector<SearchTrigger>('#all-custom');
     if (!customTrigger) throw new Error('カスタムトリガーが見つかりません');
     if (customTrigger.placeholder !== 'ドキュメントを検索...') {
-      throw new Error(`カスタムプレースホルダーを期待していましたが、実際には "${customTrigger.placeholder}" でした`);
+      throw new Error(
+        `カスタムプレースホルダーを期待していましたが、実際には "${customTrigger.placeholder}" でした`,
+      );
     }
   },
 };
@@ -370,10 +385,11 @@ export const EventFiring: Story = {
       <ui-search-trigger
         id="event-trigger"
         @open-search-dialog="${(e: Event) => {
-      const root = (e.currentTarget as HTMLElement).parentElement;
-      const log = root?.querySelector<HTMLElement>('#event-log');
-      if (log) log.textContent = `open-search-dialog イベントが発火しました（target: ${(e.target as Element).tagName.toLowerCase()}）`;
-    }}"
+          const root = (e.currentTarget as HTMLElement).parentElement;
+          const log = root?.querySelector<HTMLElement>('#event-log');
+          if (log)
+            log.textContent = `open-search-dialog イベントが発火しました（target: ${(e.target as Element).tagName.toLowerCase()}）`;
+        }}"
       ></ui-search-trigger>
 
       <div
@@ -399,7 +415,13 @@ export const EventFiring: Story = {
 
     // テスト: open-search-dialog イベントが発火する
     const eventPromise = new Promise<CustomEvent>((resolve) => {
-      trigger.addEventListener('open-search-dialog', (e) => { resolve(e as CustomEvent); }, { once: true });
+      trigger.addEventListener(
+        'open-search-dialog',
+        (e) => {
+          resolve(e as CustomEvent);
+        },
+        { once: true },
+      );
     });
 
     const button = trigger.shadowRoot?.querySelector<HTMLButtonElement>('button');
@@ -408,7 +430,11 @@ export const EventFiring: Story = {
 
     const event = await Promise.race([
       eventPromise,
-      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
 
     if (!event) throw new Error('open-search-dialog イベントが発火しませんでした');
@@ -429,23 +455,25 @@ export const EventFiring: Story = {
 export const DisabledNoEvent: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="
+      <div
+        style="
         padding: 0.75rem 1rem;
         background: oklch(97% 0.01 80 / 0.3);
         border: 1px solid oklch(80% 0.05 80 / 0.4);
         border-radius: 6px;
         font-size: 13px;
-      ">
+      "
+      >
         <strong>確認</strong>: disabled 状態ではクリックしてもイベントが発火しません。
       </div>
       <ui-search-trigger
         id="disabled-no-event"
         disabled
         @open-search-dialog="${(e: Event) => {
-      const root = (e.currentTarget as HTMLElement).parentElement;
-      const log = root?.querySelector<HTMLElement>('#disabled-event-log');
-      if (log) log.textContent = '❌ イベントが発火してしまいました（バグ）';
-    }}"
+          const root = (e.currentTarget as HTMLElement).parentElement;
+          const log = root?.querySelector<HTMLElement>('#disabled-event-log');
+          if (log) log.textContent = '❌ イベントが発火してしまいました（バグ）';
+        }}"
       ></ui-search-trigger>
 
       <div
@@ -472,7 +500,9 @@ export const DisabledNoEvent: Story = {
     if (!trigger.disabled) throw new Error('disabled が true である必要があります');
 
     let eventFired = false;
-    trigger.addEventListener('open-search-dialog', () => { eventFired = true; });
+    trigger.addEventListener('open-search-dialog', () => {
+      eventFired = true;
+    });
 
     // disabled なので button.click() は pointer-events: none で無効化されているが、
     // 念のため _handleActivate の disabled ガードも検証するため直接呼び出す
@@ -480,7 +510,8 @@ export const DisabledNoEvent: Story = {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (eventFired) throw new Error('無効化されているときは open-search-dialog イベントが発火してはいけません');
+    if (eventFired)
+      throw new Error('無効化されているときは open-search-dialog イベントが発火してはいけません');
   },
 };
 
@@ -493,22 +524,25 @@ export const DisabledNoEvent: Story = {
 export const KeyboardActivation: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="
+      <div
+        style="
         padding: 0.75rem 1rem;
         background: oklch(97% 0 0);
         border: 1px solid oklch(90% 0.01 250 / 0.2);
         border-radius: 6px;
         font-size: 13px;
-      ">
-        <strong>操作方法</strong>: Tab でフォーカスを当て、Enter または Space でアクティベートしてください。
+      "
+      >
+        <strong>操作方法</strong>: Tab でフォーカスを当て、Enter または Space
+        でアクティベートしてください。
       </div>
       <ui-search-trigger
         id="keyboard-trigger"
         @open-search-dialog="${(e: Event) => {
-      const root = (e.currentTarget as HTMLElement).parentElement;
-      const log = root?.querySelector<HTMLElement>('#keyboard-log');
-      if (log) log.textContent = '✅ open-search-dialog イベントが発火しました';
-    }}"
+          const root = (e.currentTarget as HTMLElement).parentElement;
+          const log = root?.querySelector<HTMLElement>('#keyboard-log');
+          if (log) log.textContent = '✅ open-search-dialog イベントが発火しました';
+        }}"
       ></ui-search-trigger>
 
       <div
@@ -549,13 +583,17 @@ export const KeyboardActivation: Story = {
 
     // テスト: Enter と Space キーで open-search-dialog イベントが発火する
     let eventCount = 0;
-    trigger.addEventListener('open-search-dialog', () => { eventCount++; });
+    trigger.addEventListener('open-search-dialog', () => {
+      eventCount++;
+    });
 
     await userEvent.keyboard('{Enter}');
     await userEvent.keyboard(' ');
 
     if (eventCount < 2) {
-      throw new Error(`キーボード操作により少なくとも2つのイベントが発火することを期待していましたが、実際には ${String(eventCount)}個でした`);
+      throw new Error(
+        `キーボード操作により少なくとも2つのイベントが発火することを期待していましたが、実際には ${String(eventCount)}個でした`,
+      );
     }
   },
 };
@@ -575,13 +613,15 @@ export const KeyboardActivation: Story = {
 export const AriaAttributes: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="
+      <div
+        style="
         padding: 0.75rem 1rem;
         background: oklch(97% 0 0);
         border: 1px solid oklch(90% 0.01 250 / 0.2);
         border-radius: 6px;
         font-size: 13px;
-      ">
+      "
+      >
         <strong>確認</strong>: DevTools の Accessibility パネルで ARIA 属性を確認してください。
       </div>
       <ui-search-trigger id="aria-trigger"></ui-search-trigger>
@@ -598,22 +638,30 @@ export const AriaAttributes: Story = {
     // テスト: aria-label
     const ariaLabel = button.getAttribute('aria-label');
     if (ariaLabel !== '検索ダイアログを開く') {
-      throw new Error(`aria-label="検索ダイアログを開く" を期待していましたが、実際には "${ariaLabel ?? 'null'}" でした`);
+      throw new Error(
+        `aria-label="検索ダイアログを開く" を期待していましたが、実際には "${ariaLabel ?? 'null'}" でした`,
+      );
     }
 
     // テスト: aria-haspopup="dialog"
     const ariaHasPopup = button.getAttribute('aria-haspopup');
     if (ariaHasPopup !== 'dialog') {
-      throw new Error(`aria-haspopup="dialog" を期待していましたが、実際には "${ariaHasPopup ?? 'null'}" でした`);
+      throw new Error(
+        `aria-haspopup="dialog" を期待していましたが、実際には "${ariaHasPopup ?? 'null'}" でした`,
+      );
     }
 
     // テスト: aria-keyshortcuts
     const ariaKeyshortcuts = button.getAttribute('aria-keyshortcuts');
     if (!ariaKeyshortcuts?.includes('Control+K')) {
-      throw new Error(`aria-keyshortcuts に "Control+K" が含まれることを期待していましたが、実際には "${ariaKeyshortcuts ?? 'null'}" でした`);
+      throw new Error(
+        `aria-keyshortcuts に "Control+K" が含まれることを期待していましたが、実際には "${ariaKeyshortcuts ?? 'null'}" でした`,
+      );
     }
     if (!ariaKeyshortcuts.includes('Meta+K')) {
-      throw new Error(`aria-keyshortcuts に "Meta+K" が含まれることを期待していましたが、実際には "${ariaKeyshortcuts}" でした`);
+      throw new Error(
+        `aria-keyshortcuts に "Meta+K" が含まれることを期待していましたが、実際には "${ariaKeyshortcuts}" でした`,
+      );
     }
 
     // テスト: アイコンが aria-hidden="true"
@@ -651,28 +699,32 @@ export const FocusOnlyNoEvent: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: フォーカス取得（`:focus`）だけでは `open-search-dialog` イベントは発火しません。明示的なアクティベーションが必要です。',
+        story:
+          '⚠️ **境界条件**: フォーカス取得（`:focus`）だけでは `open-search-dialog` イベントは発火しません。明示的なアクティベーションが必要です。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="
+      <div
+        style="
         padding: 0.75rem 1rem;
         background: oklch(97% 0.01 80 / 0.3);
         border: 1px solid oklch(80% 0.05 80 / 0.4);
         border-radius: 6px;
         font-size: 13px;
-      ">
-        <strong>⚠️ 境界条件</strong>: フォーカスのみではイベントが発火しません（Explicit Activation Only）。
+      "
+      >
+        <strong>⚠️ 境界条件</strong>: フォーカスのみではイベントが発火しません（Explicit Activation
+        Only）。
       </div>
       <ui-search-trigger
         id="focus-only-trigger"
         @open-search-dialog="${(e: Event) => {
-      const root = (e.currentTarget as HTMLElement).parentElement;
-      const log = root?.querySelector<HTMLElement>('#focus-only-log');
-      if (log) log.textContent = '❌ フォーカスでイベントが発火してしまいました（バグ）';
-    }}"
+          const root = (e.currentTarget as HTMLElement).parentElement;
+          const log = root?.querySelector<HTMLElement>('#focus-only-log');
+          if (log) log.textContent = '❌ フォーカスでイベントが発火してしまいました（バグ）';
+        }}"
       ></ui-search-trigger>
 
       <div
@@ -697,7 +749,9 @@ export const FocusOnlyNoEvent: Story = {
     await trigger.updateComplete;
 
     let eventFired = false;
-    trigger.addEventListener('open-search-dialog', () => { eventFired = true; });
+    trigger.addEventListener('open-search-dialog', () => {
+      eventFired = true;
+    });
 
     // フォーカスのみ（クリックなし）
     const button = trigger.shadowRoot?.querySelector<HTMLButtonElement>('button');
@@ -711,7 +765,8 @@ export const FocusOnlyNoEvent: Story = {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (eventFired) throw new Error('フォーカスのみで open-search-dialog イベントが発火してはいけません');
+    if (eventFired)
+      throw new Error('フォーカスのみで open-search-dialog イベントが発火してはいけません');
   },
 };
 
@@ -725,20 +780,24 @@ export const EmptyPlaceholder: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `placeholder=""` を設定した場合、プレースホルダーテキストは空になります。',
+        story:
+          '⚠️ **境界条件**: `placeholder=""` を設定した場合、プレースホルダーテキストは空になります。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="
+      <div
+        style="
         padding: 0.75rem 1rem;
         background: oklch(97% 0.01 80 / 0.3);
         border: 1px solid oklch(80% 0.05 80 / 0.4);
         border-radius: 6px;
         font-size: 13px;
-      ">
-        <strong>⚠️ 境界条件</strong>: <code>placeholder=""</code> — プレースホルダーテキストが空の状態。
+      "
+      >
+        <strong>⚠️ 境界条件</strong>: <code>placeholder=""</code> —
+        プレースホルダーテキストが空の状態。
       </div>
       <ui-search-trigger id="empty-placeholder" placeholder=""></ui-search-trigger>
     </div>
@@ -750,7 +809,9 @@ export const EmptyPlaceholder: Story = {
 
     // テスト: placeholder プロパティが空文字列
     if (trigger.placeholder !== '') {
-      throw new Error(`placeholder="" を期待していましたが、実際には "${trigger.placeholder}" でした`);
+      throw new Error(
+        `placeholder="" を期待していましたが、実際には "${trigger.placeholder}" でした`,
+      );
     }
 
     // テスト: button は存在する（プレースホルダーが空でも機能する）
@@ -776,32 +837,36 @@ export const RapidClickMultipleEvents: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: 連続クリックでは `open-search-dialog` イベントが複数回発火します。親コンポーネント側でダイアログの重複表示を防いでください。',
+        story:
+          '⚠️ **境界条件**: 連続クリックでは `open-search-dialog` イベントが複数回発火します。親コンポーネント側でダイアログの重複表示を防いでください。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="
+      <div
+        style="
         padding: 0.75rem 1rem;
         background: oklch(97% 0.01 80 / 0.3);
         border: 1px solid oklch(80% 0.05 80 / 0.4);
         border-radius: 6px;
         font-size: 13px;
-      ">
-        <strong>⚠️ 境界条件</strong>: 連続クリックでイベントが複数回発火します。親側で重複防止が必要です。
+      "
+      >
+        <strong>⚠️ 境界条件</strong>:
+        連続クリックでイベントが複数回発火します。親側で重複防止が必要です。
       </div>
       <ui-search-trigger
         id="rapid-click-trigger"
         @open-search-dialog="${(e: Event) => {
-      const root = (e.currentTarget as HTMLElement).parentElement;
-      const log = root?.querySelector<HTMLElement>('#rapid-click-log');
-      const count = parseInt(log?.dataset['count'] ?? '0', 10) + 1;
-      if (log) {
-        log.dataset['count'] = String(count);
-        log.textContent = `open-search-dialog が ${String(count)} 回発火しました`;
-      }
-    }}"
+          const root = (e.currentTarget as HTMLElement).parentElement;
+          const log = root?.querySelector<HTMLElement>('#rapid-click-log');
+          const count = parseInt(log?.dataset['count'] ?? '0', 10) + 1;
+          if (log) {
+            log.dataset['count'] = String(count);
+            log.textContent = `open-search-dialog が ${String(count)} 回発火しました`;
+          }
+        }}"
       ></ui-search-trigger>
 
       <div
@@ -827,7 +892,9 @@ export const RapidClickMultipleEvents: Story = {
     await trigger.updateComplete;
 
     let eventCount = 0;
-    trigger.addEventListener('open-search-dialog', () => { eventCount++; });
+    trigger.addEventListener('open-search-dialog', () => {
+      eventCount++;
+    });
 
     const button = trigger.shadowRoot?.querySelector<HTMLButtonElement>('button');
     if (!button) throw new Error('button が見つかりません');
@@ -841,7 +908,9 @@ export const RapidClickMultipleEvents: Story = {
 
     // テスト: 3 回クリックで 3 回イベントが発火する
     if (eventCount !== 3) {
-      throw new Error(`3回のクリックで3つのイベントが発火することを期待していましたが、実際には ${String(eventCount)}個でした`);
+      throw new Error(
+        `3回のクリックで3つのイベントが発火することを期待していましたが、実際には ${String(eventCount)}個でした`,
+      );
     }
   },
 };
@@ -856,28 +925,32 @@ export const ProgrammaticActivation: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `element.click()` によるプログラム的アクティベーション。ショートカットキーハンドラから呼び出す際に使用します。',
+        story:
+          '⚠️ **境界条件**: `element.click()` によるプログラム的アクティベーション。ショートカットキーハンドラから呼び出す際に使用します。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="
+      <div
+        style="
         padding: 0.75rem 1rem;
         background: oklch(97% 0.01 80 / 0.3);
         border: 1px solid oklch(80% 0.05 80 / 0.4);
         border-radius: 6px;
         font-size: 13px;
-      ">
-        <strong>⚠️ 境界条件</strong>: <code>element.click()</code> でプログラム的にアクティベートできます。
+      "
+      >
+        <strong>⚠️ 境界条件</strong>:
+        <code>element.click()</code> でプログラム的にアクティベートできます。
       </div>
       <ui-search-trigger
         id="programmatic-trigger"
         @open-search-dialog="${(e: Event) => {
-      const root = (e.currentTarget as HTMLElement).parentElement;
-      const log = root?.querySelector<HTMLElement>('#programmatic-log');
-      if (log) log.textContent = '✅ プログラム的アクティベーション成功';
-    }}"
+          const root = (e.currentTarget as HTMLElement).parentElement;
+          const log = root?.querySelector<HTMLElement>('#programmatic-log');
+          if (log) log.textContent = '✅ プログラム的アクティベーション成功';
+        }}"
       ></ui-search-trigger>
 
       <div
@@ -903,7 +976,13 @@ export const ProgrammaticActivation: Story = {
 
     // テスト: click() パブリック API でイベントが発火する
     const eventPromise = new Promise<CustomEvent>((resolve) => {
-      trigger.addEventListener('open-search-dialog', (e) => { resolve(e as CustomEvent); }, { once: true });
+      trigger.addEventListener(
+        'open-search-dialog',
+        (e) => {
+          resolve(e as CustomEvent);
+        },
+        { once: true },
+      );
     });
 
     // プログラム的アクティベーション
@@ -911,10 +990,17 @@ export const ProgrammaticActivation: Story = {
 
     const event = await Promise.race([
       eventPromise,
-      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
 
-    if (!event) throw new Error('プログラム的な click() によって open-search-dialog イベントが発火しませんでした');
+    if (!event)
+      throw new Error(
+        'プログラム的な click() によって open-search-dialog イベントが発火しませんでした',
+      );
   },
 };
 
@@ -981,10 +1067,10 @@ export const InHeader: Story = {
         <ui-search-trigger
           id="header-trigger"
           @open-search-dialog="${(e: Event) => {
-      const root = (e.currentTarget as HTMLElement).closest('.header-story-root');
-      const log = root?.querySelector<HTMLElement>('#header-log');
-      if (log) log.textContent = '検索ダイアログが開きます...';
-    }}"
+            const root = (e.currentTarget as HTMLElement).closest('.header-story-root');
+            const log = root?.querySelector<HTMLElement>('#header-log');
+            if (log) log.textContent = '検索ダイアログが開きます...';
+          }}"
         ></ui-search-trigger>
       </header>
 
@@ -1015,16 +1101,27 @@ export const InHeader: Story = {
     if (!button) throw new Error('button が見つかりません');
 
     const eventPromise = new Promise<void>((resolve) => {
-      trigger.addEventListener('open-search-dialog', () => { resolve(); }, { once: true });
+      trigger.addEventListener(
+        'open-search-dialog',
+        () => {
+          resolve();
+        },
+        { once: true },
+      );
     });
 
     button.click();
 
     await Promise.race([
       eventPromise,
-      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]).then((result) => {
-      if (result === null) throw new Error('ヘッダーのコンテキストで open-search-dialog イベントが発火しませんでした');
+      if (result === null)
+        throw new Error('ヘッダーのコンテキストで open-search-dialog イベントが発火しませんでした');
     });
   },
 };
@@ -1107,7 +1204,9 @@ export const MobileIconOnly: Story = {
 
     const pseudo = getComputedStyle(button, '::after');
     if (pseudo.minWidth !== '24px' || pseudo.minHeight !== '24px') {
-      throw new Error(`タッチターゲットが 24px であることを期待していましたが、実際には ${pseudo.minWidth} x ${pseudo.minHeight} でした`);
+      throw new Error(
+        `タッチターゲットが 24px であることを期待していましたが、実際には ${pseudo.minWidth} x ${pseudo.minHeight} でした`,
+      );
     }
   },
 };
@@ -1167,10 +1266,14 @@ export const LongPlaceholderEllipsis: Story = {
 
     const style = getComputedStyle(placeholder);
     if (style.textOverflow !== 'ellipsis') {
-      throw new Error(`text-overflow: ellipsis を期待していましたが、実際には "${style.textOverflow}" でした`);
+      throw new Error(
+        `text-overflow: ellipsis を期待していましたが、実際には "${style.textOverflow}" でした`,
+      );
     }
     if (style.whiteSpace !== 'nowrap') {
-      throw new Error(`white-space: nowrap を期待していましたが、実際には "${style.whiteSpace}" でした`);
+      throw new Error(
+        `white-space: nowrap を期待していましたが、実際には "${style.whiteSpace}" でした`,
+      );
     }
   },
 };

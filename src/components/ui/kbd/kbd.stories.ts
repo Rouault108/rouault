@@ -106,10 +106,14 @@ export const Default: Story = {
 
     const key = requireShadowElement(kbd, 'kbd.kbd-key') as HTMLElement;
     if (key.tagName.toLowerCase() !== 'kbd') {
-      throw new Error(`ネイティブの <kbd> 要素を期待していましたが、実際には <${key.tagName.toLowerCase()}> でした`);
+      throw new Error(
+        `ネイティブの <kbd> 要素を期待していましたが、実際には <${key.tagName.toLowerCase()}> でした`,
+      );
     }
     if (normalizeText(key.textContent) !== 'Esc') {
-      throw new Error(`キーテキスト "Esc" を期待していましたが、実際には "${normalizeText(key.textContent)}" でした`);
+      throw new Error(
+        `キーテキスト "Esc" を期待していましたが、実際には "${normalizeText(key.textContent)}" でした`,
+      );
     }
     if (key.getAttribute('aria-label') !== 'エスケープ') {
       throw new Error(
@@ -178,7 +182,10 @@ export const VariantStateMatrix: Story = {
   `,
   play: async ({ canvasElement }) => {
     const all = [...canvasElement.querySelectorAll<Kbd>('ui-kbd')];
-    if (all.length !== 5) throw new Error(`5つの ui-kbd 要素を期待していましたが、実際には ${String(all.length)} つでした`);
+    if (all.length !== 5)
+      throw new Error(
+        `5つの ui-kbd 要素を期待していましたが、実際には ${String(all.length)} つでした`,
+      );
     await Promise.all(all.map((item) => item.updateComplete));
 
     const comboWin = canvasElement.querySelector<Kbd>('#matrix-combo-win');
@@ -186,7 +193,9 @@ export const VariantStateMatrix: Story = {
     const comboWinRoot = requireShadowElement(comboWin, 'kbd.kbd-combo') as HTMLElement;
     const winKeys = comboWin.shadowRoot?.querySelectorAll('kbd.kbd-key');
     if (winKeys?.length !== 2) {
-      throw new Error(`Windows のコンボには2つのキーを期待していましたが、実際には ${String(winKeys?.length ?? 0)} つでした`);
+      throw new Error(
+        `Windows のコンボには2つのキーを期待していましたが、実際には ${String(winKeys?.length ?? 0)} つでした`,
+      );
     }
     if (normalizeText(comboWinRoot.textContent) !== 'Ctrl + K') {
       throw new Error(`想定外のコンボテキストです: "${normalizeText(comboWinRoot.textContent)}"`);
@@ -208,20 +217,28 @@ export const VariantStateMatrix: Story = {
     if (!comboLong) throw new Error('#matrix-combo-long が見つかりません');
     const longKeys = comboLong.shadowRoot?.querySelectorAll<HTMLElement>('kbd.kbd-key');
     if (longKeys?.length !== 3) {
-      throw new Error(`長いコンボには3つのキーを期待していましたが、実際には ${String(longKeys?.length ?? 0)} つでした`);
+      throw new Error(
+        `長いコンボには3つのキーを期待していましたが、実際には ${String(longKeys?.length ?? 0)} つでした`,
+      );
     }
     const [firstLongKey, secondLongKey, thirdLongKey] = Array.from(longKeys);
     if (!firstLongKey || !secondLongKey || !thirdLongKey) {
       throw new Error('長いコンボのキーノードが見つかりません');
     }
     if (firstLongKey.getAttribute('aria-label') !== 'コントロール') {
-      throw new Error('1番目の長いコンボキーの aria-label が "コントロール" であることを期待していました');
+      throw new Error(
+        '1番目の長いコンボキーの aria-label が "コントロール" であることを期待していました',
+      );
     }
     if (secondLongKey.getAttribute('aria-label') !== 'シフト') {
-      throw new Error('2番目の長いコンボキーの aria-label が "シフト" であることを期待していました');
+      throw new Error(
+        '2番目の長いコンボキーの aria-label が "シフト" であることを期待していました',
+      );
     }
     if (thirdLongKey.getAttribute('aria-label') !== 'エンター') {
-      throw new Error('3番目の長いコンボキーの aria-label が "エンター" であることを期待していました');
+      throw new Error(
+        '3番目の長いコンボキーの aria-label が "エンター" であることを期待していました',
+      );
     }
   },
 };
@@ -263,7 +280,7 @@ export const ShortcutContractAlignment: Story = {
       );
     }
 
-    const tokens = (shortcutAttr).split(/\s+/);
+    const tokens = shortcutAttr.split(/\s+/);
     if (!tokens.includes('Control+K')) {
       throw new Error('aria-keyshortcuts に "Control+K" が含まれている必要があります');
     }
@@ -279,13 +296,19 @@ export const ShortcutContractAlignment: Story = {
     const winCombo = requireShadowElement(win, 'kbd.kbd-combo') as HTMLElement;
     const macCombo = requireShadowElement(mac, 'kbd.kbd-combo') as HTMLElement;
     if (normalizeText(winCombo.textContent) !== 'Ctrl + K') {
-      throw new Error(`視覚的なショートカット "Ctrl + K" を期待していましたが、実際には "${normalizeText(winCombo.textContent)}" でした`);
+      throw new Error(
+        `視覚的なショートカット "Ctrl + K" を期待していましたが、実際には "${normalizeText(winCombo.textContent)}" でした`,
+      );
     }
     // sr-only 要素（スクリーンリーダー専用テキスト）を除いた視覚テキストで比較する
     const macComboClone = macCombo.cloneNode(true) as HTMLElement;
-    macComboClone.querySelectorAll('.sr-only').forEach((el) => { el.remove() });
+    macComboClone.querySelectorAll('.sr-only').forEach((el) => {
+      el.remove();
+    });
     if (normalizeText(macComboClone.textContent) !== '⌘ + K') {
-      throw new Error(`視覚的なショートカット "⌘ + K" を期待していましたが、実際には "${normalizeText(macComboClone.textContent)}" でした`);
+      throw new Error(
+        `視覚的なショートカット "⌘ + K" を期待していましたが、実際には "${normalizeText(macComboClone.textContent)}" でした`,
+      );
     }
   },
 };
@@ -299,7 +322,10 @@ export const ShortcutContractAlignment: Story = {
  */
 export const SmallTextHardLimit: Story = {
   render: () => html`
-    <div id="small-text-container" style="font-size: 11px; display: inline-flex; align-items: center; gap: 0.5rem;">
+    <div
+      id="small-text-container"
+      style="font-size: 11px; display: inline-flex; align-items: center; gap: 0.5rem;"
+    >
       <span>親 11px:</span>
       <ui-kbd id="small-text-kbd" keys="Tab"></ui-kbd>
     </div>
@@ -315,7 +341,9 @@ export const SmallTextHardLimit: Story = {
       throw new Error('.kbd-key の計算済みフォントサイズの取得に失敗しました');
     }
     if (keyFontSize < 12) {
-      throw new Error(`.kbd-key のフォントサイズが 12px 以上であることを期待していましたが、実際には ${String(keyFontSize)}px でした`);
+      throw new Error(
+        `.kbd-key のフォントサイズが 12px 以上であることを期待していましたが、実際には ${String(keyFontSize)}px でした`,
+      );
     }
   },
 };
@@ -329,7 +357,10 @@ export const SmallTextHardLimit: Story = {
  */
 export const ComboNoWrapIntegrity: Story = {
   render: () => html`
-    <div id="nowrap-box" style="width: 72px; border: 1px dashed var(--border-default); padding: 0.5rem;">
+    <div
+      id="nowrap-box"
+      style="width: 72px; border: 1px dashed var(--border-default); padding: 0.5rem;"
+    >
       <ui-kbd id="nowrap-combo" variant="combo" keys="Ctrl + Shift + Enter"></ui-kbd>
     </div>
   `,
@@ -342,18 +373,26 @@ export const ComboNoWrapIntegrity: Story = {
     const comboStyle = getComputedStyle(combo);
 
     if (comboStyle.whiteSpace !== 'nowrap') {
-      throw new Error(`white-space: nowrap を期待していましたが、実際には "${comboStyle.whiteSpace}" でした`);
+      throw new Error(
+        `white-space: nowrap を期待していましたが、実際には "${comboStyle.whiteSpace}" でした`,
+      );
     }
     if (comboStyle.display !== 'inline-flex') {
-      throw new Error(`display: inline-flex を期待していましたが、実際には "${comboStyle.display}" でした`);
+      throw new Error(
+        `display: inline-flex を期待していましたが、実際には "${comboStyle.display}" でした`,
+      );
     }
     if (comboStyle.alignItems !== 'center') {
-      throw new Error(`align-items: center を期待していましたが、実際には "${comboStyle.alignItems}" でした`);
+      throw new Error(
+        `align-items: center を期待していましたが、実際には "${comboStyle.alignItems}" でした`,
+      );
     }
 
     const keys = host.shadowRoot?.querySelectorAll('kbd.kbd-key');
     if (keys?.length !== 3) {
-      throw new Error(`nowrap コンボには3つのキーを期待していましたが、実際には ${String(keys?.length ?? 0)} つでした`);
+      throw new Error(
+        `nowrap コンボには3つのキーを期待していましたが、実際には ${String(keys?.length ?? 0)} つでした`,
+      );
     }
     if (normalizeText(combo.textContent) !== 'Ctrl + Shift + Enter') {
       throw new Error(`想定外のコンボテキストです: "${normalizeText(combo.textContent)}"`);
@@ -375,15 +414,24 @@ export const BoundaryCases: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 0.75rem;">
       <div>
-        <span style="font-size: 11px; color: oklch(48% 0.01 250); width: 9rem; display: inline-block;">Text Auto</span>
+        <span
+          style="font-size: 11px; color: oklch(48% 0.01 250); width: 9rem; display: inline-block;"
+          >Text Auto</span
+        >
         <ui-kbd id="boundary-text-combo">Ctrl + K</ui-kbd>
       </div>
       <div>
-        <span style="font-size: 11px; color: oklch(48% 0.01 250); width: 9rem; display: inline-block;">Malformed</span>
+        <span
+          style="font-size: 11px; color: oklch(48% 0.01 250); width: 9rem; display: inline-block;"
+          >Malformed</span
+        >
         <ui-kbd id="boundary-malformed" variant="combo" keys="  Ctrl ++  +  K  "></ui-kbd>
       </div>
       <div>
-        <span style="font-size: 11px; color: oklch(48% 0.01 250); width: 9rem; display: inline-block;">Slot Symbol</span>
+        <span
+          style="font-size: 11px; color: oklch(48% 0.01 250); width: 9rem; display: inline-block;"
+          >Slot Symbol</span
+        >
         <ui-kbd id="boundary-slot-symbol">
           <span class="sr-only">コマンド</span>
           <span aria-hidden="true">⌘</span>
@@ -399,12 +447,18 @@ export const BoundaryCases: Story = {
       throw new Error('境界テストの要素が見つかりません');
     }
 
-    await Promise.all([textAuto.updateComplete, malformed.updateComplete, slotSymbol.updateComplete]);
+    await Promise.all([
+      textAuto.updateComplete,
+      malformed.updateComplete,
+      slotSymbol.updateComplete,
+    ]);
 
     const autoCombo = requireShadowElement(textAuto, 'kbd.kbd-combo') as HTMLElement;
     const autoKeys = textAuto.shadowRoot?.querySelectorAll('kbd.kbd-key');
     if (autoKeys?.length !== 2) {
-      throw new Error(`自動検出されたキーが2つであることを期待していましたが、実際には ${String(autoKeys?.length ?? 0)} つでした`);
+      throw new Error(
+        `自動検出されたキーが2つであることを期待していましたが、実際には ${String(autoKeys?.length ?? 0)} つでした`,
+      );
     }
     if (normalizeText(autoCombo.textContent) !== 'Ctrl + K') {
       throw new Error(`想定外の自動コンボテキストです: "${normalizeText(autoCombo.textContent)}"`);
@@ -413,16 +467,22 @@ export const BoundaryCases: Story = {
     const malformedCombo = requireShadowElement(malformed, 'kbd.kbd-combo') as HTMLElement;
     const malformedKeys = malformed.shadowRoot?.querySelectorAll('kbd.kbd-key');
     if (malformedKeys?.length !== 2) {
-      throw new Error(`不正な入力が2つのキーに正規化されることを期待していましたが、実際には ${String(malformedKeys?.length ?? 0)} つでした`);
+      throw new Error(
+        `不正な入力が2つのキーに正規化されることを期待していましたが、実際には ${String(malformedKeys?.length ?? 0)} つでした`,
+      );
     }
     if (normalizeText(malformedCombo.textContent) !== 'Ctrl + K') {
-      throw new Error(`正規化されたコンボテキスト "Ctrl + K" を期待していましたが、実際には "${normalizeText(malformedCombo.textContent)}" でした`);
+      throw new Error(
+        `正規化されたコンボテキスト "Ctrl + K" を期待していましたが、実際には "${normalizeText(malformedCombo.textContent)}" でした`,
+      );
     }
 
     const slot = requireShadowElement(slotSymbol, 'slot') as HTMLSlotElement;
     const assignedElements = slot.assignedElements();
     if (assignedElements.length !== 2) {
-      throw new Error(`記号キーに2つのスロット要素を期待していましたが、実際には ${String(assignedElements.length)} つでした`);
+      throw new Error(
+        `記号キーに2つのスロット要素を期待していましたが、実際には ${String(assignedElements.length)} つでした`,
+      );
     }
     const srOnlyText = assignedElements.at(0) as HTMLElement | undefined;
     if (!srOnlyText) {
@@ -430,17 +490,23 @@ export const BoundaryCases: Story = {
     }
     const srOnlyStyle = getComputedStyle(srOnlyText);
     if (srOnlyStyle.position !== 'absolute') {
-      throw new Error(`スロットされた SR 専用要素が非表示であることを期待していましたが、実際には position="${srOnlyStyle.position}" でした`);
+      throw new Error(
+        `スロットされた SR 専用要素が非表示であることを期待していましたが、実際には position="${srOnlyStyle.position}" でした`,
+      );
     }
     const hiddenSymbol = assignedElements.at(1);
     if (!hiddenSymbol) {
       throw new Error('2番目のスロットされた記号要素が見つかりません');
     }
     if (hiddenSymbol.getAttribute('aria-hidden') !== 'true') {
-      throw new Error('2番目のスロットされた記号要素に aria-hidden="true" が設定されている必要があります');
+      throw new Error(
+        '2番目のスロットされた記号要素に aria-hidden="true" が設定されている必要があります',
+      );
     }
     if (normalizeText(hiddenSymbol.textContent) !== '⌘') {
-      throw new Error(`スロットされた記号テキスト "⌘" を期待していましたが、実際には "${normalizeText(hiddenSymbol.textContent)}" でした`);
+      throw new Error(
+        `スロットされた記号テキスト "⌘" を期待していましたが、実際には "${normalizeText(hiddenSymbol.textContent)}" でした`,
+      );
     }
   },
 };
@@ -482,10 +548,13 @@ const toLuminance = ([r, g, b]: [number, number, number]): number => {
   const rs = normalize(r);
   const gs = normalize(g);
   const bs = normalize(b);
-  return (0.2126 * rs) + (0.7152 * gs) + (0.0722 * bs);
+  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
 };
 
-const contrastRatio = (foreground: [number, number, number], background: [number, number, number]): number => {
+const contrastRatio = (
+  foreground: [number, number, number],
+  background: [number, number, number],
+): number => {
   const fgLum = toLuminance(foreground);
   const bgLum = toLuminance(background);
   const lighter = Math.max(fgLum, bgLum);
@@ -497,7 +566,8 @@ const resolveBorderColor = (surface: HTMLElement): string => {
   const probe = document.createElement('div');
   probe.style.borderTopWidth = '1px';
   probe.style.borderTopStyle = 'solid';
-  probe.style.borderTopColor = 'color-mix(in oklab, var(--border-muted, oklch(20% 0 0 / 0.06)) 80%, transparent)';
+  probe.style.borderTopColor =
+    'color-mix(in oklab, var(--border-muted, oklch(20% 0 0 / 0.06)) 80%, transparent)';
   surface.append(probe);
   const color = getComputedStyle(probe).borderTopColor;
   probe.remove();
@@ -549,13 +619,17 @@ export const JapaneseSRConsistency: Story = {
       if (item.useSrOnly) {
         const srOnly = key.querySelector('.sr-only');
         if (!srOnly || normalizeText(srOnly.textContent) !== item.label) {
-          throw new Error(`${item.id} に対して SR 専用ラベル "${item.label}" を期待していましたが、実際には異なりました`);
+          throw new Error(
+            `${item.id} に対して SR 専用ラベル "${item.label}" を期待していましたが、実際には異なりました`,
+          );
         }
         continue;
       }
 
       if (key.getAttribute('aria-label') !== item.label) {
-        throw new Error(`${item.id} に対して aria-label="${item.label}" を期待していましたが、実際には "${key.getAttribute('aria-label') ?? 'null'}" でした`);
+        throw new Error(
+          `${item.id} に対して aria-label="${item.label}" を期待していましたが、実際には "${key.getAttribute('aria-label') ?? 'null'}" でした`,
+        );
       }
     }
   },
@@ -602,10 +676,14 @@ export const DarkModeTokenContract: Story = {
     const expectedBorderColor = resolveBorderColor(surface);
 
     if (style.color !== 'rgb(230, 232, 236)') {
-      throw new Error(`ダークモードのフォアグラウンドカラーを期待していましたが、実際には "${style.color}" でした`);
+      throw new Error(
+        `ダークモードのフォアグラウンドカラーを期待していましたが、実際には "${style.color}" でした`,
+      );
     }
     if (style.backgroundColor !== 'rgb(31, 35, 43)') {
-      throw new Error(`ダークモードのバックグラウンドカラーを期待していましたが、実際には "${style.backgroundColor}" でした`);
+      throw new Error(
+        `ダークモードのバックグラウンドカラーを期待していましたが、実際には "${style.backgroundColor}" でした`,
+      );
     }
     if (style.borderTopColor !== expectedBorderColor) {
       throw new Error(
@@ -613,7 +691,9 @@ export const DarkModeTokenContract: Story = {
       );
     }
     if (style.borderRadius !== '12px') {
-      throw new Error(`ダークモードの角丸が 12px であることを期待していましたが、実際には "${style.borderRadius}" でした`);
+      throw new Error(
+        `ダークモードの角丸が 12px であることを期待していましたが、実際には "${style.borderRadius}" でした`,
+      );
     }
 
     const fg = parseRgb(style.color);
@@ -624,7 +704,9 @@ export const DarkModeTokenContract: Story = {
 
     const ratio = contrastRatio(fg, bg);
     if (ratio < 4.5) {
-      throw new Error(`ダークモードのコントラスト比が 4.5 以上であることを期待していましたが、実際には ${ratio.toFixed(2)} でした`);
+      throw new Error(
+        `ダークモードのコントラスト比が 4.5 以上であることを期待していましたが、実際には ${ratio.toFixed(2)} でした`,
+      );
     }
   },
 };
@@ -674,10 +756,14 @@ export const MediaModeContracts: Story = {
       throw new Error('スタイルに forced-colors メディアクエリが含まれている必要があります');
     }
     if (!styleText.includes('forced-color-adjust: auto')) {
-      throw new Error('forced-colors スタイルに forced-color-adjust: auto が含まれている必要があります');
+      throw new Error(
+        'forced-colors スタイルに forced-color-adjust: auto が含まれている必要があります',
+      );
     }
     if (!styleText.includes('border: var(--border-width, 1px) solid var(--border-default)')) {
-      throw new Error('forced-colors のボーダーが var(--border-default) の参照を維持している必要があります');
+      throw new Error(
+        'forced-colors のボーダーが var(--border-default) の参照を維持している必要があります',
+      );
     }
     if (!styleText.includes('@media print')) {
       throw new Error('スタイルに print メディアクエリが含まれている必要があります');
@@ -689,7 +775,9 @@ export const MediaModeContracts: Story = {
       throw new Error('印刷ルールでキーのボックスシャドウが削除されている必要があります');
     }
     if (
-      !styleText.includes('border: var(--border-width, 1px) solid var(--border-default, oklch(85% 0 0))')
+      !styleText.includes(
+        'border: var(--border-width, 1px) solid var(--border-default, oklch(85% 0 0))',
+      )
     ) {
       throw new Error('印刷用のボーダーがボーダートークンの参照を維持している必要があります');
     }

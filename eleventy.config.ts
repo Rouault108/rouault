@@ -94,7 +94,10 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
     await writeSearchCatalogJson(path.resolve(process.cwd(), 'dist'));
 
     // Cloudflare Pages 用の rewrite ルールを出力ディレクトリへ明示コピーする。
-    await copyFile(path.resolve(process.cwd(), '_redirects'), path.resolve(process.cwd(), 'dist/_redirects'));
+    await copyFile(
+      path.resolve(process.cwd(), '_redirects'),
+      path.resolve(process.cwd(), 'dist/_redirects'),
+    );
 
     // 開発サーバーでは pagefind を都度再生成して検索候補を維持する。
     if (isServing) {

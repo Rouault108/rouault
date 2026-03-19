@@ -331,10 +331,13 @@ export const VariantStateMatrix: Story = {
 
     const zoomCaption = getImage(canvasElement, 'matrix-zoom-caption');
     const zoomCaptionTrigger = getTrigger(zoomCaption);
-    const zoomCaptionCaption = zoomCaption.shadowRoot?.querySelector<HTMLElement>('figcaption.caption');
+    const zoomCaptionCaption =
+      zoomCaption.shadowRoot?.querySelector<HTMLElement>('figcaption.caption');
     if (!zoomCaptionCaption) throw new Error('zoom+caption で figcaption が必要です');
     if (zoomCaptionTrigger.getAttribute('aria-describedby') !== zoomCaptionCaption.id) {
-      throw new Error('zoom+caption は trigger と figcaption を aria-describedby で関連付ける必要があります');
+      throw new Error(
+        'zoom+caption は trigger と figcaption を aria-describedby で関連付ける必要があります',
+      );
     }
 
     const zoomNoCaption = getImage(canvasElement, 'matrix-zoom-no-caption');
@@ -354,7 +357,8 @@ export const VariantStateMatrix: Story = {
       throw new Error('zoomable=false では button.trigger を描画してはいけません');
     }
     const staticCaptionImage = getThumbnail(staticCaption);
-    const staticCaptionCaption = staticCaption.shadowRoot?.querySelector<HTMLElement>('figcaption.caption');
+    const staticCaptionCaption =
+      staticCaption.shadowRoot?.querySelector<HTMLElement>('figcaption.caption');
     if (!staticCaptionCaption) throw new Error('static+caption で figcaption が必要です');
     if (staticCaptionImage.getAttribute('aria-describedby') !== staticCaptionCaption.id) {
       throw new Error('static+caption では img が figcaption を参照する必要があります');
@@ -545,7 +549,10 @@ export const BackdropCloseAndScrollLock: Story = {
     await image.updateComplete;
     await waitFrame();
 
-    if (document.body.style.overflow !== 'hidden' || document.documentElement.style.overflow !== 'hidden') {
+    if (
+      document.body.style.overflow !== 'hidden' ||
+      document.documentElement.style.overflow !== 'hidden'
+    ) {
       throw new Error('Lightbox open 中は body/html のスクロールをロックする必要があります');
     }
 
@@ -652,7 +659,11 @@ export const BoundaryConditions: Story = {
     const invalidLoading = getImage(canvasElement, 'boundary-invalid-loading');
     const missingSrc = getImage(canvasElement, 'boundary-missing-src');
     const noSize = getImage(canvasElement, 'boundary-no-size');
-    await Promise.all([invalidLoading.updateComplete, missingSrc.updateComplete, noSize.updateComplete]);
+    await Promise.all([
+      invalidLoading.updateComplete,
+      missingSrc.updateComplete,
+      noSize.updateComplete,
+    ]);
 
     const invalidThumb = getThumbnail(invalidLoading);
     if (invalidThumb.getAttribute('loading') !== 'lazy') {
@@ -663,7 +674,9 @@ export const BoundaryConditions: Story = {
 
     const invalidTrigger = getTrigger(invalidLoading);
     if (invalidTrigger.getAttribute('aria-label') !== '画像を拡大') {
-      throw new Error('alt="" の場合、aria-label は「画像を拡大」にフォールバックする必要があります');
+      throw new Error(
+        'alt="" の場合、aria-label は「画像を拡大」にフォールバックする必要があります',
+      );
     }
 
     const missingTrigger = getTrigger(missingSrc);

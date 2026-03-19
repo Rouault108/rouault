@@ -4,7 +4,8 @@ import './video';
 import type { Track, UiVideo } from './video';
 
 const SAMPLE_VIDEO_SRC = new URL('../../../assets/videos/sample-video.mp4', import.meta.url).href;
-const SAMPLE_POSTER_SRC = new URL('../../../assets/images/sample-video-poster.jpg', import.meta.url).href;
+const SAMPLE_POSTER_SRC = new URL('../../../assets/images/sample-video-poster.jpg', import.meta.url)
+  .href;
 const SAMPLE_VTT_SRC = new URL('../../../assets/other/sample-vtt.vtt', import.meta.url).href;
 
 const DEFAULT_TRACKS: Track[] = [
@@ -148,7 +149,9 @@ const getVideoElement = (component: UiVideo): HTMLVideoElement => {
 };
 
 const getOverlayPlayButton = (component: UiVideo): HTMLButtonElement => {
-  const button = component.shadowRoot?.querySelector<HTMLButtonElement>('.overlay-center .play-button');
+  const button = component.shadowRoot?.querySelector<HTMLButtonElement>(
+    '.overlay-center .play-button',
+  );
   if (!button) throw new Error('.overlay-center .play-button が見つかりません');
   return button;
 };
@@ -160,7 +163,9 @@ const getControlPlayButton = (component: UiVideo): HTMLElement => {
 };
 
 const getMuteButton = (component: UiVideo): HTMLElement => {
-  const button = component.shadowRoot?.querySelector<HTMLElement>('ui-button[aria-label*="ミュート"]');
+  const button = component.shadowRoot?.querySelector<HTMLElement>(
+    'ui-button[aria-label*="ミュート"]',
+  );
   if (!button) throw new Error('ミュートボタンが見つかりません');
   return button;
 };
@@ -203,7 +208,9 @@ const getFloatingBar = (component: UiVideo): HTMLElement => {
 };
 
 const getSkipIndicator = (component: UiVideo, direction: 'left' | 'right'): HTMLElement => {
-  const indicator = component.shadowRoot?.querySelector<HTMLElement>(`.skip-indicator-${direction}`);
+  const indicator = component.shadowRoot?.querySelector<HTMLElement>(
+    `.skip-indicator-${direction}`,
+  );
   if (!indicator) throw new Error(`.skip-indicator-${direction} が見つかりません`);
   return indicator;
 };
@@ -269,14 +276,25 @@ const meta: Meta<UiVideo> = {
   },
   argTypes: {
     src: { control: 'text', description: '動画URL', table: { type: { summary: 'string' } } },
-    poster: { control: 'text', description: 'ポスター画像URL', table: { type: { summary: 'string' } } },
-    caption: { control: 'text', description: '動画キャプション', table: { type: { summary: 'string' } } },
+    poster: {
+      control: 'text',
+      description: 'ポスター画像URL',
+      table: { type: { summary: 'string' } },
+    },
+    caption: {
+      control: 'text',
+      description: '動画キャプション',
+      table: { type: { summary: 'string' } },
+    },
     autoplay: { control: 'boolean', table: { type: { summary: 'boolean' } } },
     loop: { control: 'boolean', table: { type: { summary: 'boolean' } } },
     muted: { control: 'boolean', table: { type: { summary: 'boolean' } } },
     playsinline: { control: 'boolean', table: { type: { summary: 'boolean' } } },
     width: { control: { type: 'number', min: 1, step: 1 }, table: { type: { summary: 'number' } } },
-    height: { control: { type: 'number', min: 1, step: 1 }, table: { type: { summary: 'number' } } },
+    height: {
+      control: { type: 'number', min: 1, step: 1 },
+      table: { type: { summary: 'number' } },
+    },
   },
 };
 
@@ -307,7 +325,12 @@ export const Default: Story = {
     }
 
     const media = getVideoElement(video);
-    const mediaState: MediaMockState = { duration: 180, bufferedEnd: 40, ended: false, paused: true };
+    const mediaState: MediaMockState = {
+      duration: 180,
+      bufferedEnd: 40,
+      ended: false,
+      paused: true,
+    };
     installMediaMock(media, mediaState);
     installPlaybackMock(media, mediaState);
     media.volume = 0.75;
@@ -330,7 +353,9 @@ export const Default: Story = {
 
     const renderedTracks = getShadowRoot(video).querySelectorAll('track');
     if (renderedTracks.length !== 1) {
-      throw new Error(`tracks プロパティからの track 出力数が不正です: ${String(renderedTracks.length)}`);
+      throw new Error(
+        `tracks プロパティからの track 出力数が不正です: ${String(renderedTracks.length)}`,
+      );
     }
 
     const overlayPlay = getOverlayPlayButton(video);
@@ -381,11 +406,23 @@ export const VariantStateMatrix: Story = {
       </ui-video>
 
       <div class="label">autoplay x muted</div>
-      <ui-video id="matrix-autoplay" src="${SAMPLE_VIDEO_SRC}" poster="${SAMPLE_POSTER_SRC}" autoplay muted>
+      <ui-video
+        id="matrix-autoplay"
+        src="${SAMPLE_VIDEO_SRC}"
+        poster="${SAMPLE_POSTER_SRC}"
+        autoplay
+        muted
+      >
       </ui-video>
 
       <div class="label">loop x no-caption</div>
-      <ui-video id="matrix-loop" src="${SAMPLE_VIDEO_SRC}" poster="${SAMPLE_POSTER_SRC}" loop muted></ui-video>
+      <ui-video
+        id="matrix-loop"
+        src="${SAMPLE_VIDEO_SRC}"
+        poster="${SAMPLE_POSTER_SRC}"
+        loop
+        muted
+      ></ui-video>
 
       <div class="label">empty x disabled</div>
       <ui-video id="matrix-empty" caption="srcなし"></ui-video>
@@ -396,7 +433,12 @@ export const VariantStateMatrix: Story = {
     const autoplay = getVideoComponent(canvasElement, 'matrix-autoplay');
     const looping = getVideoComponent(canvasElement, 'matrix-loop');
     const empty = getVideoComponent(canvasElement, 'matrix-empty');
-    await Promise.all([standard.updateComplete, autoplay.updateComplete, looping.updateComplete, empty.updateComplete]);
+    await Promise.all([
+      standard.updateComplete,
+      autoplay.updateComplete,
+      looping.updateComplete,
+      empty.updateComplete,
+    ]);
 
     assertState(empty, 'empty');
     if (getFigure(empty).getAttribute('aria-disabled') !== 'true') {
@@ -410,7 +452,12 @@ export const VariantStateMatrix: Story = {
     }
 
     const autoplayMedia = getVideoElement(autoplay);
-    const autoplayState: MediaMockState = { duration: 90, bufferedEnd: 20, ended: false, paused: false };
+    const autoplayState: MediaMockState = {
+      duration: 90,
+      bufferedEnd: 20,
+      ended: false,
+      paused: false,
+    };
     installMediaMock(autoplayMedia, autoplayState);
     autoplayMedia.dispatchEvent(new Event('loadedmetadata'));
     await autoplay.updateComplete;
@@ -450,7 +497,12 @@ export const StateMachineAndKeyboard: Story = {
     await video.updateComplete;
 
     const media = getVideoElement(video);
-    const mediaState: MediaMockState = { duration: 120, bufferedEnd: 30, ended: false, paused: true };
+    const mediaState: MediaMockState = {
+      duration: 120,
+      bufferedEnd: 30,
+      ended: false,
+      paused: true,
+    };
     installMediaMock(media, mediaState);
     installPlaybackMock(media, mediaState);
     media.currentTime = 0;
@@ -480,34 +532,46 @@ export const StateMachineAndKeyboard: Story = {
     assertState(video, 'ended');
 
     const shell = getPlayerShell(video);
-    shell.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    shell.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+    );
     await video.updateComplete;
     assertState(video, 'playing');
 
     media.currentTime = 10;
-    shell.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+    shell.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
+    );
     if (Math.round(media.currentTime) !== 15) {
       throw new Error(`ArrowRight シークが不正です: ${String(media.currentTime)}`);
     }
 
     media.currentTime = 3;
-    shell.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }));
+    shell.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }),
+    );
     if (Math.round(media.currentTime) !== 0) {
       throw new Error(`ArrowLeft シークが不正です: ${String(media.currentTime)}`);
     }
 
     media.volume = 0.3;
-    shell.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }));
+    shell.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }),
+    );
     if (!(media.volume > 0.3)) {
       throw new Error(`ArrowUp 音量調整が不正です: ${String(media.volume)}`);
     }
     const afterArrowUp = media.volume;
-    shell.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+    shell.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }),
+    );
     if (!(media.volume < afterArrowUp)) {
       throw new Error(`ArrowDown 音量調整が不正です: ${String(media.volume)}`);
     }
 
-    shell.dispatchEvent(new KeyboardEvent('keydown', { key: 'm', bubbles: true, cancelable: true }));
+    shell.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'm', bubbles: true, cancelable: true }),
+    );
     if (!media.muted) {
       throw new Error('M キーでミュート切替できていません');
     }
@@ -521,7 +585,9 @@ export const StateMachineAndKeyboard: Story = {
         return Promise.resolve();
       },
     });
-    shell.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', bubbles: true, cancelable: true }));
+    shell.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'f', bubbles: true, cancelable: true }),
+    );
     if (fullscreenRequestCount !== 1) {
       throw new Error(`F キーの全画面切替が不正です: ${String(fullscreenRequestCount)}`);
     }
@@ -530,12 +596,16 @@ export const StateMachineAndKeyboard: Story = {
       value: originalRequestFullscreen,
     });
 
-    shell.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
+    shell.dispatchEvent(
+      new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }),
+    );
     await video.updateComplete;
     assertState(video, 'paused');
 
     const mutedBeforeEnter = media.muted as boolean;
-    getMuteButton(video).dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    getMuteButton(video).dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+    );
     await video.updateComplete;
     assertState(video, 'paused');
     if ((media.muted as boolean) !== mutedBeforeEnter) {
@@ -580,7 +650,11 @@ export const BoundaryConditions: Story = {
         .tracks=${INVALID_TRACKS}
       ></ui-video>
 
-      <ui-video id="boundary-error" src="${SAMPLE_VIDEO_SRC}" poster="${SAMPLE_POSTER_SRC}"></ui-video>
+      <ui-video
+        id="boundary-error"
+        src="${SAMPLE_VIDEO_SRC}"
+        poster="${SAMPLE_POSTER_SRC}"
+      ></ui-video>
 
       <ui-video id="boundary-empty-src" src=" "></ui-video>
     </div>
@@ -598,7 +672,9 @@ export const BoundaryConditions: Story = {
     ]);
 
     if (!autoplayUnmuted.muted) {
-      throw new Error('autoplay=true かつ muted=false の入力は muted=true に補正される必要があります');
+      throw new Error(
+        'autoplay=true かつ muted=false の入力は muted=true に補正される必要があります',
+      );
     }
 
     const invalidShell = getPlayerShell(invalidSize);
@@ -625,10 +701,9 @@ export const BoundaryConditions: Story = {
     await errorCase.updateComplete;
     assertState(errorCase, 'error');
 
-    await waitUntil(
-      () => queryRetryButton(errorCase) instanceof HTMLButtonElement,
-      { timeoutMs: 1000 },
-    );
+    await waitUntil(() => queryRetryButton(errorCase) instanceof HTMLButtonElement, {
+      timeoutMs: 1000,
+    });
 
     const retryButton = getRetryButton(errorCase);
     await waitUntil(
@@ -724,7 +799,9 @@ export const CaptionToggle: Story = {
   render: () => html`
     <div style="max-width: 800px; display: grid; gap: 1rem;">
       <div>
-        <div style="font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--fg-muted); margin-bottom: 0.5rem;">
+        <div
+          style="font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--fg-muted); margin-bottom: 0.5rem;"
+        >
           tracks あり（字幕ボタン表示）
         </div>
         <ui-video
@@ -737,7 +814,9 @@ export const CaptionToggle: Story = {
       </div>
 
       <div>
-        <div style="font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--fg-muted); margin-bottom: 0.5rem;">
+        <div
+          style="font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--fg-muted); margin-bottom: 0.5rem;"
+        >
           tracks なし（字幕ボタン非表示）
         </div>
         <ui-video
@@ -767,7 +846,12 @@ export const CaptionToggle: Story = {
 
     // メディアモックを設定して PAUSED 状態に遷移
     const media = getVideoElement(withTracks);
-    const mediaState: MediaMockState = { duration: 60, bufferedEnd: 20, ended: false, paused: true };
+    const mediaState: MediaMockState = {
+      duration: 60,
+      bufferedEnd: 20,
+      ended: false,
+      paused: true,
+    };
     installMediaMock(media, mediaState);
     media.currentTime = 0;
     media.volume = 1;
@@ -806,7 +890,9 @@ export const CaptionToggle: Story = {
     await withTracks.updateComplete;
 
     const shell = getPlayerShell(withTracks);
-    shell.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true, cancelable: true }));
+    shell.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'c', bubbles: true, cancelable: true }),
+    );
     await withTracks.updateComplete;
     if (captionBtn.getAttribute('aria-pressed') !== 'true') {
       throw new Error('C キーで字幕トグルできていません');
@@ -832,7 +918,12 @@ export const SkipButtons: Story = {
     await video.updateComplete;
 
     const media = getVideoElement(video);
-    const mediaState: MediaMockState = { duration: 120, bufferedEnd: 60, ended: false, paused: true };
+    const mediaState: MediaMockState = {
+      duration: 120,
+      bufferedEnd: 60,
+      ended: false,
+      paused: true,
+    };
     installMediaMock(media, mediaState);
     installPlaybackMock(media, mediaState);
     media.currentTime = 30;
@@ -858,7 +949,9 @@ export const SkipButtons: Story = {
     skipBack.click();
     await video.updateComplete;
     if (Math.round(media.currentTime) !== Math.round(beforeTime - 10)) {
-      throw new Error(`10秒戻りが不正です: expected=${String(beforeTime - 10)}, actual=${String(media.currentTime)}`);
+      throw new Error(
+        `10秒戻りが不正です: expected=${String(beforeTime - 10)}, actual=${String(media.currentTime)}`,
+      );
     }
 
     // 10秒進む操作
@@ -866,7 +959,9 @@ export const SkipButtons: Story = {
     skipForward.click();
     await video.updateComplete;
     if (Math.round(media.currentTime) !== Math.round(afterBackTime + 10)) {
-      throw new Error(`10秒進みが不正です: expected=${String(afterBackTime + 10)}, actual=${String(media.currentTime)}`);
+      throw new Error(
+        `10秒進みが不正です: expected=${String(afterBackTime + 10)}, actual=${String(media.currentTime)}`,
+      );
     }
   },
 };
@@ -889,7 +984,12 @@ export const LongPress2x: Story = {
     await video.updateComplete;
 
     const media = getVideoElement(video);
-    const mediaState: MediaMockState = { duration: 120, bufferedEnd: 60, ended: false, paused: false };
+    const mediaState: MediaMockState = {
+      duration: 120,
+      bufferedEnd: 60,
+      ended: false,
+      paused: false,
+    };
     installMediaMock(media, mediaState);
     installPlaybackMock(media, mediaState);
     media.currentTime = 0;
@@ -1017,7 +1117,12 @@ export const VolumeMuteSync: Story = {
     await video.updateComplete;
 
     const media = getVideoElement(video);
-    const mediaState: MediaMockState = { duration: 60, bufferedEnd: 20, ended: false, paused: true };
+    const mediaState: MediaMockState = {
+      duration: 60,
+      bufferedEnd: 20,
+      ended: false,
+      paused: true,
+    };
     installMediaMock(media, mediaState);
     installPlaybackMock(media, mediaState);
     // webkit ではロード前の video.volume が永続化されない場合があるためモックする
@@ -1083,7 +1188,12 @@ export const AutoHideCenterPlay: Story = {
     await video.updateComplete;
 
     const media = getVideoElement(video);
-    const mediaState: MediaMockState = { duration: 60, bufferedEnd: 20, ended: false, paused: true };
+    const mediaState: MediaMockState = {
+      duration: 60,
+      bufferedEnd: 20,
+      ended: false,
+      paused: true,
+    };
     installMediaMock(media, mediaState);
     installPlaybackMock(media, mediaState);
     // webkit で実際の動画読み込みイベントが干渉するのを防止
@@ -1140,7 +1250,9 @@ export const AutoHideCenterPlay: Story = {
 export const CaptionWithWebVtt: Story = {
   render: () => html`
     <div style="max-width: 800px;">
-      <div style="font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--fg-muted); margin-bottom: 0.5rem;">
+      <div
+        style="font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--fg-muted); margin-bottom: 0.5rem;"
+      >
         字幕トラック付き動画（WebVTT）
       </div>
       <ui-video
@@ -1198,7 +1310,12 @@ export const PrePlayState: Story = {
     await video.updateComplete;
 
     const media = getVideoElement(video);
-    const mediaState: MediaMockState = { duration: 60, bufferedEnd: 20, ended: false, paused: true };
+    const mediaState: MediaMockState = {
+      duration: 60,
+      bufferedEnd: 20,
+      ended: false,
+      paused: true,
+    };
     installMediaMock(media, mediaState);
     installPlaybackMock(media, mediaState);
     Object.defineProperty(media, 'load', {
@@ -1230,12 +1347,16 @@ export const PrePlayState: Story = {
     // 初回再生前: J/K/L キーが無効
     const shell = getPlayerShell(video);
     media.currentTime = 30;
-    shell.dispatchEvent(new KeyboardEvent('keydown', { key: 'l', bubbles: true, cancelable: true }));
+    shell.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'l', bubbles: true, cancelable: true }),
+    );
     if (Math.round(media.currentTime) !== 30) {
       throw new Error('初回再生前に L キーでスキップされました');
     }
 
-    shell.dispatchEvent(new KeyboardEvent('keydown', { key: 'j', bubbles: true, cancelable: true }));
+    shell.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'j', bubbles: true, cancelable: true }),
+    );
     if (Math.round(media.currentTime) !== 30) {
       throw new Error('初回再生前に J キーでスキップされました');
     }
@@ -1269,7 +1390,12 @@ export const KeyboardShortcutsJKL: Story = {
     await video.updateComplete;
 
     const media = getVideoElement(video);
-    const mediaState: MediaMockState = { duration: 120, bufferedEnd: 60, ended: false, paused: true };
+    const mediaState: MediaMockState = {
+      duration: 120,
+      bufferedEnd: 60,
+      ended: false,
+      paused: true,
+    };
     installMediaMock(media, mediaState);
     installPlaybackMock(media, mediaState);
     media.currentTime = 30;
@@ -1289,7 +1415,9 @@ export const KeyboardShortcutsJKL: Story = {
 
     // L キーで 10 秒進む
     media.currentTime = 30;
-    shell.dispatchEvent(new KeyboardEvent('keydown', { key: 'l', bubbles: true, cancelable: true }));
+    shell.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'l', bubbles: true, cancelable: true }),
+    );
     if (Math.round(media.currentTime) !== 40) {
       throw new Error(`L キーのスキップが不正です: ${String(media.currentTime)}`);
     }
@@ -1303,7 +1431,9 @@ export const KeyboardShortcutsJKL: Story = {
 
     // J キーで 10 秒戻る
     media.currentTime = 30;
-    shell.dispatchEvent(new KeyboardEvent('keydown', { key: 'j', bubbles: true, cancelable: true }));
+    shell.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'j', bubbles: true, cancelable: true }),
+    );
     if (Math.round(media.currentTime) !== 20) {
       throw new Error(`J キーのスキップが不正です: ${String(media.currentTime)}`);
     }
@@ -1316,12 +1446,16 @@ export const KeyboardShortcutsJKL: Story = {
     }
 
     // K キーで一時停止
-    shell.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', bubbles: true, cancelable: true }));
+    shell.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'k', bubbles: true, cancelable: true }),
+    );
     await video.updateComplete;
     assertState(video, 'paused');
 
     // K キーで再生再開
-    shell.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', bubbles: true, cancelable: true }));
+    shell.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'k', bubbles: true, cancelable: true }),
+    );
     await video.updateComplete;
     assertState(video, 'playing');
 
@@ -1357,7 +1491,12 @@ export const FloatingBarAutoHide: Story = {
     await video.updateComplete;
 
     const media = getVideoElement(video);
-    const mediaState: MediaMockState = { duration: 60, bufferedEnd: 20, ended: false, paused: true };
+    const mediaState: MediaMockState = {
+      duration: 60,
+      bufferedEnd: 20,
+      ended: false,
+      paused: true,
+    };
     installMediaMock(media, mediaState);
     installPlaybackMock(media, mediaState);
     media.currentTime = 0;
@@ -1390,7 +1529,8 @@ export const FloatingBarAutoHide: Story = {
       setTimeout(resolve, 3100);
     });
     await waitUntil(
-      () => Reflect.get(video as unknown as Record<string, unknown>, '_floatingBarVisible') === false,
+      () =>
+        Reflect.get(video as unknown as Record<string, unknown>, '_floatingBarVisible') === false,
       { timeoutMs: 900 },
     );
     await waitFrame();
@@ -1447,7 +1587,12 @@ export const DoubleTapSkip: Story = {
     await video.updateComplete;
 
     const media = getVideoElement(video);
-    const mediaState: MediaMockState = { duration: 120, bufferedEnd: 60, ended: false, paused: false };
+    const mediaState: MediaMockState = {
+      duration: 120,
+      bufferedEnd: 60,
+      ended: false,
+      paused: false,
+    };
     installMediaMock(media, mediaState);
     installPlaybackMock(media, mediaState);
     media.currentTime = 30;
@@ -1483,15 +1628,33 @@ export const DoubleTapSkip: Story = {
 
     // 右半分ダブルタップ: +10 秒
     media.currentTime = 30;
-    invokeShellClick(video, new MouseEvent('click', { bubbles: true, cancelable: true, clientX: rightX, clientY: centerY }));
+    invokeShellClick(
+      video,
+      new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        clientX: rightX,
+        clientY: centerY,
+      }),
+    );
     await new Promise<void>((resolve) => {
       setTimeout(resolve, 50);
     });
-    invokeShellClick(video, new MouseEvent('click', { bubbles: true, cancelable: true, clientX: rightX, clientY: centerY }));
+    invokeShellClick(
+      video,
+      new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        clientX: rightX,
+        clientY: centerY,
+      }),
+    );
     await video.updateComplete;
 
     if (Math.round(media.currentTime) !== 40) {
-      throw new Error(`右ダブルタップのスキップが不正です: expected=40, actual=${String(Math.round(media.currentTime))}`);
+      throw new Error(
+        `右ダブルタップのスキップが不正です: expected=40, actual=${String(Math.round(media.currentTime))}`,
+      );
     }
 
     const rightIndicator = getSkipIndicator(video, 'right');
@@ -1501,15 +1664,33 @@ export const DoubleTapSkip: Story = {
 
     // 左半分ダブルタップ: -10 秒
     media.currentTime = 30;
-    invokeShellClick(video, new MouseEvent('click', { bubbles: true, cancelable: true, clientX: leftX, clientY: centerY }));
+    invokeShellClick(
+      video,
+      new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        clientX: leftX,
+        clientY: centerY,
+      }),
+    );
     await new Promise<void>((resolve) => {
       setTimeout(resolve, 50);
     });
-    invokeShellClick(video, new MouseEvent('click', { bubbles: true, cancelable: true, clientX: leftX, clientY: centerY }));
+    invokeShellClick(
+      video,
+      new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        clientX: leftX,
+        clientY: centerY,
+      }),
+    );
     await video.updateComplete;
 
     if (Math.round(media.currentTime) !== 20) {
-      throw new Error(`左ダブルタップのスキップが不正です: expected=20, actual=${String(Math.round(media.currentTime))}`);
+      throw new Error(
+        `左ダブルタップのスキップが不正です: expected=20, actual=${String(Math.round(media.currentTime))}`,
+      );
     }
 
     const leftIndicator = getSkipIndicator(video, 'left');
@@ -1545,7 +1726,12 @@ export const DoubleTapFullscreen: Story = {
     await video.updateComplete;
 
     const media = getVideoElement(video);
-    const mediaState: MediaMockState = { duration: 60, bufferedEnd: 20, ended: false, paused: false };
+    const mediaState: MediaMockState = {
+      duration: 60,
+      bufferedEnd: 20,
+      ended: false,
+      paused: false,
+    };
     installMediaMock(media, mediaState);
     installPlaybackMock(media, mediaState);
     media.currentTime = 0;
@@ -1586,15 +1772,33 @@ export const DoubleTapFullscreen: Story = {
     });
 
     // デスクトップ: ダブルクリックで全画面
-    invokeShellClick(video, new MouseEvent('click', { bubbles: true, cancelable: true, clientX: centerX, clientY: centerY }));
+    invokeShellClick(
+      video,
+      new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        clientX: centerX,
+        clientY: centerY,
+      }),
+    );
     await new Promise<void>((resolve) => {
       setTimeout(resolve, 50);
     });
-    invokeShellClick(video, new MouseEvent('click', { bubbles: true, cancelable: true, clientX: centerX, clientY: centerY }));
+    invokeShellClick(
+      video,
+      new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        clientX: centerX,
+        clientY: centerY,
+      }),
+    );
     await video.updateComplete;
 
     if (fullscreenRequestCount !== 1) {
-      throw new Error(`ダブルクリックの全画面リクエスト数が不正です: ${String(fullscreenRequestCount)}`);
+      throw new Error(
+        `ダブルクリックの全画面リクエスト数が不正です: ${String(fullscreenRequestCount)}`,
+      );
     }
   },
 };

@@ -1,7 +1,4 @@
-import type {
-  TabsOrientation,
-  TabsSnapshot,
-} from './tabs.types.js';
+import type { TabsOrientation, TabsSnapshot } from './tabs.types.js';
 import { getInteractiveCount } from './tabs-model.js';
 
 export function readTabsSnapshot(
@@ -64,21 +61,14 @@ export function applyTabsAria(
       tab.removeAttribute('aria-controls');
     }
 
-    tab.setAttribute(
-      'aria-selected',
-      i === activeIndex && i < interactiveCount ? 'true' : 'false',
-    );
-    tab.setAttribute(
-      'tabindex',
-      i === focusedIndex && i < interactiveCount ? '0' : '-1',
-    );
+    tab.setAttribute('aria-selected', i === activeIndex && i < interactiveCount ? 'true' : 'false');
+    tab.setAttribute('tabindex', i === focusedIndex && i < interactiveCount ? '0' : '-1');
   });
 
   panels.forEach((panel, i) => {
     panel.setAttribute('role', 'tabpanel');
 
-    const tabId =
-      tabs[i]?.getAttribute('id') ?? `ui-tabs-${String(uid)}-tab-${String(i)}`;
+    const tabId = tabs[i]?.getAttribute('id') ?? `ui-tabs-${String(uid)}-tab-${String(i)}`;
 
     if (i < interactiveCount) {
       panel.setAttribute('aria-labelledby', tabId);
@@ -165,10 +155,7 @@ export function scrollTabElementIntoView(
   tabEl: HTMLElement,
   orientation: TabsOrientation,
 ): void {
-  if (
-    tabEl.getClientRects().length === 0 ||
-    container.getClientRects().length === 0
-  ) {
+  if (tabEl.getClientRects().length === 0 || container.getClientRects().length === 0) {
     return;
   }
 

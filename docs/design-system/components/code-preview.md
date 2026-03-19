@@ -8,7 +8,7 @@
 
 また、本コンポーネントは `ui-code-block` / `ui-code-group` との合成を前提としており、子コンポーネント側の breakout や角丸を無効化し、親側の外枠へ統合します。したがって、契約は単体コンポーネントに閉じず、**preview 面と code 面をひとつの視覚単位として成立させること**までを含みます。
 
-Rouault における code preview は、単なるデモ領域ではなく、**「See it, then understand it」****という読書順を支える要素です。したがって、本コンポーネントの契約は、インタラクティブな検証補助と、****「没入して読む」ことのできるデザイン**の維持を両立する方向で定義します。
+Rouault における code preview は、単なるデモ領域ではなく、**「See it, then understand it」\*\***という読書順を支える要素です。したがって、本コンポーネントの契約は、インタラクティブな検証補助と、\***\*「没入して読む」ことのできるデザイン**の維持を両立する方向で定義します。
 
 ---
 
@@ -54,23 +54,23 @@ Rouault における code preview は、単なるデモ領域ではなく、**�
 
 ### 3.2 入力契約
 
-| 名前                | 種別                                        | 必須  | 内容                    | 契約                                               |
-| ----------------- | ----------------------------------------- | --- | --------------------- | ------------------------------------------------ |
-| `label`           | property / attribute                      | いいえ | ヘッダー左側ラベル             | trim 後に非空の場合、視覚ラベルおよび group 名の基準になります            |
-| `controls`        | property / attribute                      | いいえ | built-in controls の指定 | 空白区切りで `theme` / `surface` / `viewport` を受け取ります  |
-| `previewPadding`  | property / attribute (`preview-padding`)  | いいえ | preview 面の内部余白        | `normal` / `compact` / `none`。既定値は `normal` です   |
-| `previewAlign`    | property / attribute (`preview-align`)    | いいえ | preview 面内の配置         | `center` / `start` / `stretch`。既定値は `center` です  |
-| `previewTheme`    | property / attribute (`preview-theme`)    | いいえ | preview 面にだけ適用するテーマ   | `page` / `light` / `dark`。既定値は `page` です         |
-| `previewSurface`  | property / attribute (`preview-surface`)  | いいえ | preview 面の背景コンテキスト    | `surface` / `canvas` / `muted`。既定値は `surface` です |
-| `previewViewport` | property / attribute (`preview-viewport`) | いいえ | preview 面のフレーム幅       | `full` / `tablet` / `mobile`。既定値は `full` です      |
+| 名前              | 種別                                      | 必須   | 内容                           | 契約                                                           |
+| ----------------- | ----------------------------------------- | ------ | ------------------------------ | -------------------------------------------------------------- |
+| `label`           | property / attribute                      | いいえ | ヘッダー左側ラベル             | trim 後に非空の場合、視覚ラベルおよび group 名の基準になります |
+| `controls`        | property / attribute                      | いいえ | built-in controls の指定       | 空白区切りで `theme` / `surface` / `viewport` を受け取ります   |
+| `previewPadding`  | property / attribute (`preview-padding`)  | いいえ | preview 面の内部余白           | `normal` / `compact` / `none`。既定値は `normal` です          |
+| `previewAlign`    | property / attribute (`preview-align`)    | いいえ | preview 面内の配置             | `center` / `start` / `stretch`。既定値は `center` です         |
+| `previewTheme`    | property / attribute (`preview-theme`)    | いいえ | preview 面にだけ適用するテーマ | `page` / `light` / `dark`。既定値は `page` です                |
+| `previewSurface`  | property / attribute (`preview-surface`)  | いいえ | preview 面の背景コンテキスト   | `surface` / `canvas` / `muted`。既定値は `surface` です        |
+| `previewViewport` | property / attribute (`preview-viewport`) | いいえ | preview 面のフレーム幅         | `full` / `tablet` / `mobile`。既定値は `full` です             |
 
 ### 3.3 スロット契約
 
-| 名前        | 種別         | 位置づけ    | 個数                            | 内容                                           |
-| --------- | ---------- | ------- | ----------------------------- | -------------------------------------------- |
-| `preview` | named slot | 必須の正規入力 | ちょうど 1 つの preview root を想定します | レンダリング結果を含む preview 用 root を受け取ります           |
-| 既定スロット    | slot       | 必須の正規入力 | ちょうど 1 つの code root を想定します    | `ui-code-block` または `ui-code-group` を直接配置します |
-| `toolbar` | named slot | 任意の補助入力 | 0 個以上                         | ヘッダー右側の補助操作を受け取ります                           |
+| 名前         | 種別       | 位置づけ       | 個数                                      | 内容                                                    |
+| ------------ | ---------- | -------------- | ----------------------------------------- | ------------------------------------------------------- |
+| `preview`    | named slot | 必須の正規入力 | ちょうど 1 つの preview root を想定します | レンダリング結果を含む preview 用 root を受け取ります   |
+| 既定スロット | slot       | 必須の正規入力 | ちょうど 1 つの code root を想定します    | `ui-code-block` または `ui-code-group` を直接配置します |
+| `toolbar`    | named slot | 任意の補助入力 | 0 個以上                                  | ヘッダー右側の補助操作を受け取ります                    |
 
 ### 3.4 正規構成
 
@@ -94,13 +94,13 @@ Rouault における code preview は、単なるデモ領域ではなく、**�
 
 ### 3.5 必須性と非正規構成の扱い
 
-| 項目             | 契約                                                  |
-| -------------- | --------------------------------------------------- |
-| `preview` スロット | 意味上必須です。正規利用では空にしません                                |
-| 既定スロット         | 意味上必須です。正規利用では空にしません                                |
-| code root      | `ui-code-block` または `ui-code-group` のいずれか 1 つに限定します |
-| wrapper 越し配置   | 非正規構成です。`embedded` 合成を保証しません                        |
-| 複数 code root   | 非正規構成です。読書単位としての保証対象外です                             |
+| 項目               | 契約                                                               |
+| ------------------ | ------------------------------------------------------------------ |
+| `preview` スロット | 意味上必須です。正規利用では空にしません                           |
+| 既定スロット       | 意味上必須です。正規利用では空にしません                           |
+| code root          | `ui-code-block` または `ui-code-group` のいずれか 1 つに限定します |
+| wrapper 越し配置   | 非正規構成です。`embedded` 合成を保証しません                      |
+| 複数 code root     | 非正規構成です。読書単位としての保証対象外です                     |
 
 ### 3.6 `controls` の公開文法
 
@@ -117,11 +117,11 @@ Rouault における code preview は、単なるデモ領域ではなく、**�
 
 built-in controls は、preview 面の見え方を切り替えるための内蔵 UI です。意味は次のとおりです。
 
-| control    | 対象属性               | 選択肢                            | 効果                          |
-| ---------- | ------------------ | ------------------------------ | --------------------------- |
+| control    | 対象属性           | 選択肢                         | 効果                                           |
+| ---------- | ------------------ | ------------------------------ | ---------------------------------------------- |
 | `theme`    | `preview-theme`    | `page` / `light` / `dark`      | preview 面に適用する色トークン群を切り替えます |
-| `surface`  | `preview-surface`  | `surface` / `canvas` / `muted` | preview 面の背景コンテキストを切り替えます   |
-| `viewport` | `preview-viewport` | `full` / `tablet` / `mobile`   | preview-frame の最大幅を切り替えます   |
+| `surface`  | `preview-surface`  | `surface` / `canvas` / `muted` | preview 面の背景コンテキストを切り替えます     |
+| `viewport` | `preview-viewport` | `full` / `tablet` / `mobile`   | preview-frame の最大幅を切り替えます           |
 
 これらの controls は **preview 面だけ** に作用します。code 面の色トークン、コード表示スタイル、copy 機能、構造には影響しません。
 
@@ -140,27 +140,27 @@ built-in controls は、preview 面の見え方を切り替えるための内蔵
 
 公開入力のうち、`label`、`controls`、`previewPadding`、`previewAlign`、`previewTheme`、`previewSurface`、`previewViewport` は、property と attribute の両面から操作できます。
 
-| property          | attribute          | reflect | 備考                       |
-| ----------------- | ------------------ | ------- | ------------------------ |
-| `label`           | `label`            | あり      | trim 後に空の場合、ラベルなしとして扱います |
-| `controls`        | `controls`         | あり      | 正規化後の値が反映されます            |
-| `previewPadding`  | `preview-padding`  | あり      | 不正値は `normal` に戻します      |
-| `previewAlign`    | `preview-align`    | あり      | 不正値は `center` に戻します      |
-| `previewTheme`    | `preview-theme`    | あり      | 不正値は `page` に戻します        |
-| `previewSurface`  | `preview-surface`  | あり      | 不正値は `surface` に戻します     |
-| `previewViewport` | `preview-viewport` | あり      | 不正値は `full` に戻します        |
+| property          | attribute          | reflect | 備考                                        |
+| ----------------- | ------------------ | ------- | ------------------------------------------- |
+| `label`           | `label`            | あり    | trim 後に空の場合、ラベルなしとして扱います |
+| `controls`        | `controls`         | あり    | 正規化後の値が反映されます                  |
+| `previewPadding`  | `preview-padding`  | あり    | 不正値は `normal` に戻します                |
+| `previewAlign`    | `preview-align`    | あり    | 不正値は `center` に戻します                |
+| `previewTheme`    | `preview-theme`    | あり    | 不正値は `page` に戻します                  |
+| `previewSurface`  | `preview-surface`  | あり    | 不正値は `surface` に戻します               |
+| `previewViewport` | `preview-viewport` | あり    | 不正値は `full` に戻します                  |
 
 ### 3.10 列挙外値・無効値の扱い
 
 `previewPadding`、`previewAlign`、`previewTheme`、`previewSurface`、`previewViewport` は列挙値のみを公開契約とします。列挙外値が与えられた場合、次の既定値へフォールバックします。
 
-| 入力                     | フォールバック   |
-| ---------------------- | --------- |
-| 不正な `preview-padding`  | `normal`  |
-| 不正な `preview-align`    | `center`  |
-| 不正な `preview-theme`    | `page`    |
-| 不正な `preview-surface`  | `surface` |
-| 不正な `preview-viewport` | `full`    |
+| 入力                      | フォールバック |
+| ------------------------- | -------------- |
+| 不正な `preview-padding`  | `normal`       |
+| 不正な `preview-align`    | `center`       |
+| 不正な `preview-theme`    | `page`         |
+| 不正な `preview-surface`  | `surface`      |
+| 不正な `preview-viewport` | `full`         |
 
 `controls` は列挙外トークンを保持しません。無効トークンは除外して再反映します。
 
@@ -184,13 +184,13 @@ built-in controls は、preview 面の見え方を切り替えるための内蔵
 
 `ui-code-preview` は、初期描画だけでなく、属性変更と slot 内容変更にも追従しなければなりません（MUST）。少なくとも次の変更に追従します。
 
-| 変更対象                                                                                           | 追従内容                                      |
-| ---------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| `label`                                                                                        | ヘッダー表示、視覚ラベル、group 名を再評価します               |
+| 変更対象                                                                                       | 追従内容                                                         |
+| ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `label`                                                                                        | ヘッダー表示、視覚ラベル、group 名を再評価します                 |
 | `controls`                                                                                     | 正規化、built-in controls の表示有無、ヘッダー表示を再評価します |
-| `preview-padding` / `preview-align` / `preview-theme` / `preview-surface` / `preview-viewport` | preview 面の見え方に再反映します                      |
-| `toolbar` スロット内容                                                                               | 有効な補助操作の有無を再評価し、ヘッダー表示を更新します              |
-| 既定スロット内容                                                                                       | `embedded` 合成の対象集合を再評価します                 |
+| `preview-padding` / `preview-align` / `preview-theme` / `preview-surface` / `preview-viewport` | preview 面の見え方に再反映します                                 |
+| `toolbar` スロット内容                                                                         | 有効な補助操作の有無を再評価し、ヘッダー表示を更新します         |
+| 既定スロット内容                                                                               | `embedded` 合成の対象集合を再評価します                          |
 
 ### 3.13 責務範囲
 
@@ -224,23 +224,23 @@ built-in controls は、preview 面の見え方を切り替えるための内蔵
 
 ヘッダー状態は、表示有無とラベル有無で読み分けます。
 
-| 状態          | 条件                                 | 振る舞い                             |
-| ----------- | ---------------------------------- | -------------------------------- |
-| 非表示         | `label` 空、`controls` 空、`toolbar` 空 | 表示に参加しません                        |
-| ラベルのみ       | `label` 非空                         | 左側にラベルを表示します                     |
-| toolbar のみ  | `toolbar` 有効                       | ラベルなしでもヘッダーを表示します                |
-| controls のみ | `controls` 有効                      | ラベルなしでも built-in controls を表示します |
-| 複合          | 上記の複数が同時成立                         | ラベル左、controls 右、toolbar 最右で共存します |
+| 状態          | 条件                                    | 振る舞い                                        |
+| ------------- | --------------------------------------- | ----------------------------------------------- |
+| 非表示        | `label` 空、`controls` 空、`toolbar` 空 | 表示に参加しません                              |
+| ラベルのみ    | `label` 非空                            | 左側にラベルを表示します                        |
+| toolbar のみ  | `toolbar` 有効                          | ラベルなしでもヘッダーを表示します              |
+| controls のみ | `controls` 有効                         | ラベルなしでも built-in controls を表示します   |
+| 複合          | 上記の複数が同時成立                    | ラベル左、controls 右、toolbar 最右で共存します |
 
 ### 4.3 `previewPadding` 状態
 
 `previewPadding` は preview 面の内部余白を制御します。
 
-| 値         | 意味           | 振る舞い                   |
-| --------- | ------------ | ---------------------- |
-| `normal`  | 既定           | `--space-4` 相当の余白を与えます |
-| `compact` | 密度高          | `--space-3` 相当の余白を与えます |
-| `none`    | edge-to-edge | 余白を 0 にします             |
+| 値        | 意味         | 振る舞い                         |
+| --------- | ------------ | -------------------------------- |
+| `normal`  | 既定         | `--space-4` 相当の余白を与えます |
+| `compact` | 密度高       | `--space-3` 相当の余白を与えます |
+| `none`    | edge-to-edge | 余白を 0 にします                |
 
 ヘッダー表示時は、header と preview-area の間で上下パディングが二重にならないよう、preview 面の上パディングを除去します。
 
@@ -248,19 +248,19 @@ built-in controls は、preview 面の見え方を切り替えるための内蔵
 
 `previewAlign` は preview 面内での配置を制御します。
 
-| 値         | 意味    | 振る舞い                                                                                         |
-| --------- | ----- | -------------------------------------------------------------------------------------------- |
-| `center`  | 中央配置  | `align-items: center; justify-content: center;`                                              |
-| `start`   | 左上配置  | `align-items: flex-start; justify-content: flex-start;`                                      |
+| 値        | 意味       | 振る舞い                                                                                               |
+| --------- | ---------- | ------------------------------------------------------------------------------------------------------ |
+| `center`  | 中央配置   | `align-items: center; justify-content: center;`                                                        |
+| `start`   | 左上配置   | `align-items: flex-start; justify-content: flex-start;`                                                |
 | `stretch` | 幅いっぱい | `align-items: stretch; justify-content: flex-start;` および preview スロット要素に `inline-size: 100%` |
 
 ### 4.5 `previewTheme` 状態
 
 `previewTheme` は preview 面専用の色トークン群を切り替えます。
 
-| 値       | 意味    | 振る舞い                       |
-| ------- | ----- | -------------------------- |
-| `page`  | ページ継承 | 周囲のテーマトークンを継承します           |
+| 値      | 意味       | 振る舞い                                     |
+| ------- | ---------- | -------------------------------------------- |
+| `page`  | ページ継承 | 周囲のテーマトークンを継承します             |
 | `light` | 強制ライト | preview 面でライト色系トークンに切り替えます |
 | `dark`  | 強制ダーク | preview 面でダーク色系トークンに切り替えます |
 
@@ -270,9 +270,9 @@ built-in controls は、preview 面の見え方を切り替えるための内蔵
 
 `previewSurface` は preview 面の背景コンテキストを制御します。
 
-| 値         | 意味   | 振る舞い                               |
-| --------- | ---- | ---------------------------------- |
-| `surface` | 通常面  | preview 面を surface 背景として扱います       |
+| 値        | 意味     | 振る舞い                                      |
+| --------- | -------- | --------------------------------------------- |
+| `surface` | 通常面   | preview 面を surface 背景として扱います       |
 | `canvas`  | ページ面 | preview 面を page / canvas 背景として扱います |
 | `muted`   | 控えめ面 | preview 面を muted 背景として扱います         |
 
@@ -282,11 +282,11 @@ built-in controls は、preview 面の見え方を切り替えるための内蔵
 
 `previewViewport` は `.preview-frame` の最大幅を制御します。
 
-| 値        | 意味     | 振る舞い    |
-| -------- | ------ | ------- |
-| `full`   | 親幅     | `100%`  |
-| `tablet` | タブレット幅 | `768px` |
-| `mobile` | モバイル幅  | `375px` |
+| 値       | 意味         | 振る舞い |
+| -------- | ------------ | -------- |
+| `full`   | 親幅         | `100%`   |
+| `tablet` | タブレット幅 | `768px`  |
+| `mobile` | モバイル幅   | `375px`  |
 
 この状態は preview スロット表示のフレーム幅だけを変えます。code 面の幅や host 幅そのものは変更しません。
 
@@ -433,13 +433,13 @@ preview 面は任意の HTML を受け取るため、サイズと overflow の�
 
 `ui-code-preview` は主として次の CSS Custom Properties を公開面として扱います。
 
-| 用途            | トークン                                   |
-| ------------- | -------------------------------------- |
-| 全体幅           | `--ui-code-preview-breakout-width`     |
-| 左右マージン        | `--ui-code-preview-breakout-margin`    |
-| 外枠角丸          | `--ui-code-preview-radius`             |
+| 用途               | トークン                               |
+| ------------------ | -------------------------------------- |
+| 全体幅             | `--ui-code-preview-breakout-width`     |
+| 左右マージン       | `--ui-code-preview-breakout-margin`    |
+| 外枠角丸           | `--ui-code-preview-radius`             |
 | preview 背景上書き | `--ui-code-preview-preview-bg`         |
-| preview 最小高さ  | `--ui-code-preview-preview-min-height` |
+| preview 最小高さ   | `--ui-code-preview-preview-min-height` |
 
 これらは外部からのレイアウト統合や showcase 用調整のための拡張面です。内部 class 名や内部 data 属性は公開スタイル契約に含みません。
 
@@ -449,12 +449,12 @@ preview 面には、preview 内容が局所テーマの中で描画できるよ�
 
 整理は次のとおりです。
 
-| 区分                            | 扱い                     |
-| ----------------------------- | ---------------------- |
-| `--ui-code-preview-*`         | 公開拡張面として扱います           |
-| preview スロットへ供給する意味カテゴリのトークン  | preview 専用テーマ供給として扱います |
-| `--_...` から始まる内部導出トークン        | 内部実装詳細であり公開契約に含めません    |
-| Shadow DOM 内部 class / data 属性 | 公開スタイル契約に含めません         |
+| 区分                                             | 扱い                                   |
+| ------------------------------------------------ | -------------------------------------- |
+| `--ui-code-preview-*`                            | 公開拡張面として扱います               |
+| preview スロットへ供給する意味カテゴリのトークン | preview 専用テーマ供給として扱います   |
+| `--_...` から始まる内部導出トークン              | 内部実装詳細であり公開契約に含めません |
+| Shadow DOM 内部 class / data 属性                | 公開スタイル契約に含めません           |
 
 とくに `--ui-code-preview-preview-bg` は、header と preview-area が共有する preview surface 背景の上書きとして扱います。ただし、現行実装の適用範囲は常に一様ではありません。`preview-surface="surface"` では `--ui-code-preview-preview-bg` による上書きが有効ですが、`preview-surface="canvas"` および `preview-surface="muted"` では、それぞれの面コンテキストが優先されます。したがって、このトークンは **任意の surface mode を横断して常に勝つ上書きトークン** ではなく、主として surface mode に対する拡張面として扱います。
 
@@ -555,12 +555,12 @@ built-in controls と `toolbar` スロット内容は同時に表示できます
 
 `ui-code-preview` には、公開状態として扱うものと、内部導出状態としてのみ扱うものがあります。
 
-| 種別       | 項目                                               | 扱い          |
-| -------- | ------------------------------------------------ | ----------- |
-| 公開入力状態   | `label`、`controls`、`preview-*`                   | 公開 API です   |
-| 公開合成結果   | ヘッダー表示、preview 面の見え方、`embedded` 付与結果             | 公開挙動として扱います |
-| 内部導出属性   | `data-show-header`、`data-has-label` など           | 内部実装詳細です    |
-| 内部 UI 構造 | built-in controls を構成する Shadow DOM / 内部 selector | 公開契約に含みません  |
+| 種別         | 項目                                                    | 扱い                   |
+| ------------ | ------------------------------------------------------- | ---------------------- |
+| 公開入力状態 | `label`、`controls`、`preview-*`                        | 公開 API です          |
+| 公開合成結果 | ヘッダー表示、preview 面の見え方、`embedded` 付与結果   | 公開挙動として扱います |
+| 内部導出属性 | `data-show-header`、`data-has-label` など               | 内部実装詳細です       |
+| 内部 UI 構造 | built-in controls を構成する Shadow DOM / 内部 selector | 公開契約に含みません   |
 
 したがって、利用者や上位レイヤは **公開入力と公開挙動** に依存し、内部導出属性や内部 DOM 形状には依存しません。
 
@@ -657,32 +657,32 @@ Storybook は契約確認のための重要な検証面ですが、**Story 内�
 
 ### 10.2 Story 一覧と固定契約
 
-| Story                             | 固定する契約                                                       |
-| --------------------------------- | ------------------------------------------------------------ |
-| `BasicWithCodeBlock`              | preview と code が基本構成として共存し、無ラベル時はフォールバック名を使うこと               |
-| `BasicWithCodeGroup`              | `ui-code-group` を code 面の正規構成として受け取れること                      |
-| `HeaderWithLabelOnly`             | `label` のみでヘッダーが表示され、group 名に反映されること                         |
-| `HeaderWithToolbarOnly`           | `toolbar` だけでヘッダーが表示されること                                    |
-| `HeaderWithLabelAndToolbar`       | ラベルと toolbar が共存できること                                        |
-| `HeaderWithBuiltInControlsOnly`   | built-in controls だけでヘッダーが表示されること                            |
-| `BuiltInShowcaseControlsContract` | theme / surface / viewport が preview 側だけを変えること               |
-| `BuiltInControlsWithToolbarSlot`  | built-in controls が toolbar より前に並ぶこと                         |
-| `HeaderHiddenBoundary`            | label / controls / toolbar がすべて空ならヘッダーが出ないこと                 |
-| `PreviewPaddingVariants`          | `normal` / `compact` / `none` が正しく余白を変えること                   |
-| `InvalidPaddingFallback`          | 不正な `preview-padding` が `normal` に戻ること                       |
-| `InvalidAlignFallback`            | 不正な `preview-align` が `center` に戻ること                         |
+| Story                             | 固定する契約                                                                   |
+| --------------------------------- | ------------------------------------------------------------------------------ |
+| `BasicWithCodeBlock`              | preview と code が基本構成として共存し、無ラベル時はフォールバック名を使うこと |
+| `BasicWithCodeGroup`              | `ui-code-group` を code 面の正規構成として受け取れること                       |
+| `HeaderWithLabelOnly`             | `label` のみでヘッダーが表示され、group 名に反映されること                     |
+| `HeaderWithToolbarOnly`           | `toolbar` だけでヘッダーが表示されること                                       |
+| `HeaderWithLabelAndToolbar`       | ラベルと toolbar が共存できること                                              |
+| `HeaderWithBuiltInControlsOnly`   | built-in controls だけでヘッダーが表示されること                               |
+| `BuiltInShowcaseControlsContract` | theme / surface / viewport が preview 側だけを変えること                       |
+| `BuiltInControlsWithToolbarSlot`  | built-in controls が toolbar より前に並ぶこと                                  |
+| `HeaderHiddenBoundary`            | label / controls / toolbar がすべて空ならヘッダーが出ないこと                  |
+| `PreviewPaddingVariants`          | `normal` / `compact` / `none` が正しく余白を変えること                         |
+| `InvalidPaddingFallback`          | 不正な `preview-padding` が `normal` に戻ること                                |
+| `InvalidAlignFallback`            | 不正な `preview-align` が `center` に戻ること                                  |
 | `ToolbarTargetSizeContract`       | toolbar 要素の最小サイズ指定が CSS に存在すること                              |
-| `PreviewAlignVariants`            | `center` / `start` / `stretch` が正しく配置を変えること                  |
-| `ChildBreakoutNeutralization`     | 子 code コンポーネントの breakout 無効化変数が供給されること                       |
-| `A11yGroupRoleContract`           | `role="group"` とアクセシブル名のフォールバックが成立すること                       |
-| `LabelDynamicUpdate`              | `label` の動的変更にヘッダーとアクセシブル名が追従すること                            |
-| `ForcedColorsContract`            | forced-colors 用 CSS が存在すること                                  |
-| `PrintStyleContract`              | print 用 CSS が存在し、ヘッダーツールが非表示になること                            |
-| `VisualHierarchyContract`         | header / preview と root の階層差が維持されること                         |
-| `DarkThemePreviewBackground`      | `--ui-code-preview-preview-bg` で preview surface 背景を上書きできること |
-| `ToolbarDynamicSlotDetection`     | toolbar の動的追加・削除にヘッダー表示が追従すること                               |
-| `CopyFunctionalityPreservation`   | slotted code child 側の copy 機能が損なわれないこと                       |
-| `NoJsContentIntegrity`            | preview / code 内容が light DOM に残ること                           |
+| `PreviewAlignVariants`            | `center` / `start` / `stretch` が正しく配置を変えること                        |
+| `ChildBreakoutNeutralization`     | 子 code コンポーネントの breakout 無効化変数が供給されること                   |
+| `A11yGroupRoleContract`           | `role="group"` とアクセシブル名のフォールバックが成立すること                  |
+| `LabelDynamicUpdate`              | `label` の動的変更にヘッダーとアクセシブル名が追従すること                     |
+| `ForcedColorsContract`            | forced-colors 用 CSS が存在すること                                            |
+| `PrintStyleContract`              | print 用 CSS が存在し、ヘッダーツールが非表示になること                        |
+| `VisualHierarchyContract`         | header / preview と root の階層差が維持されること                              |
+| `DarkThemePreviewBackground`      | `--ui-code-preview-preview-bg` で preview surface 背景を上書きできること       |
+| `ToolbarDynamicSlotDetection`     | toolbar の動的追加・削除にヘッダー表示が追従すること                           |
+| `CopyFunctionalityPreservation`   | slotted code child 側の copy 機能が損なわれないこと                            |
+| `NoJsContentIntegrity`            | preview / code 内容が light DOM に残ること                                     |
 
 ---
 
@@ -854,4 +854,3 @@ Storybook 側の説明および一部 play function は `aria-label` を前提�
 ### 13.15 本節の扱い
 
 本節に記載した差分は、本契約の否定ではなく **今後そろえるべき移行項目** です。実装、Storybook、契約書の 3 点を同時に更新し、設計のきれいさと保守性が一致した状態へ寄せます。
-

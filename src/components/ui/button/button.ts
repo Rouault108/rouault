@@ -483,7 +483,8 @@ export class Button extends LitElement {
   constructor() {
     super();
     this._internals = this.attachInternals();
-    this._isDevelopment = (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV ?? true;
+    this._isDevelopment =
+      (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV ?? true;
   }
 
   override connectedCallback(): void {
@@ -523,7 +524,7 @@ export class Button extends LitElement {
       e.preventDefault();
       this._internals.form.reset();
     }
-  }
+  };
 
   /**
    * Enter / Space のキーボード操作を click に正規化
@@ -617,14 +618,14 @@ export class Button extends LitElement {
         </span>
 
         ${this.loading
-        ? html`
+          ? html`
               <span class="spinner" part="spinner">
                 <slot name="spinner">
                   <span class="spinner-default"></span>
                 </slot>
               </span>
             `
-        : ''}
+          : ''}
       </button>
     `;
   }

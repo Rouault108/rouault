@@ -50,12 +50,7 @@ export default defineConfig({
   },
   collections: { notes },
   markdown: {
-    remarkPlugins: [
-      remarkMath,
-      remarkDisallowRawHtml,
-      remarkRouaultDirectives,
-      remarkLinkCards,
-    ],
+    remarkPlugins: [remarkMath, remarkDisallowRawHtml, remarkRouaultDirectives, remarkLinkCards],
     rehypePlugins: [
       rehypeKatex,
       rehypeHeadingIds,

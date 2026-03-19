@@ -35,7 +35,12 @@ export class UiSkeleton extends LitElement {
       inset: 0;
       pointer-events: none;
       transform: translateX(-100%);
-      background: linear-gradient(90deg, transparent 0%, var(--shimmer-highlight) 50%, transparent 100%);
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--shimmer-highlight) 50%,
+        transparent 100%
+      );
       animation: ui-skeleton-shimmer var(--shimmer-duration) linear infinite;
     }
 
@@ -207,7 +212,8 @@ export class UiSkeleton extends LitElement {
 
     const computedAspectRatio = this.isConnected ? getComputedStyle(this).aspectRatio : '';
     const hasAspectRatio = this.style.aspectRatio !== '' || computedAspectRatio !== 'auto';
-    const needsRectangularGuard = this.variant === 'rectangular' && blockSize === undefined && !hasAspectRatio;
+    const needsRectangularGuard =
+      this.variant === 'rectangular' && blockSize === undefined && !hasAspectRatio;
 
     if (needsRectangularGuard && !this._hasWarnedMissingRectangularSize) {
       this._hasWarnedMissingRectangularSize = true;

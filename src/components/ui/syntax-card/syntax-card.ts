@@ -324,8 +324,7 @@ export class SyntaxCard extends LitElement {
   override render() {
     return html`
       <header class="header">
-        ${this._renderKindTag()}
-        ${this._renderNameHeading()}
+        ${this._renderKindTag()} ${this._renderNameHeading()}
         <ui-copy-button
           class="copy-action"
           size="sm"

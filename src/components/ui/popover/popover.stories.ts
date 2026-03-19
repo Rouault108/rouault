@@ -160,7 +160,9 @@ export const DefaultContract: Story = {
       throw new Error('open 時に popover 座標が更新されていません');
     }
 
-    content.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    content.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+    );
     await nextFrame();
 
     if (document.activeElement !== trigger) {
@@ -288,7 +290,9 @@ export const VariantStateMatrix: Story = {
 
     const invalid = getHost(canvasElement, 'matrix-invalid');
     if (invalid.variant !== 'default') {
-      throw new Error(`invalid variant は default に正規化される必要があります: ${invalid.variant}`);
+      throw new Error(
+        `invalid variant は default に正規化される必要があります: ${invalid.variant}`,
+      );
     }
 
     for (const id of ['matrix-default', 'matrix-subtle', 'matrix-inverse'] as const) {
@@ -296,9 +300,15 @@ export const VariantStateMatrix: Story = {
       await nextFrame();
     }
 
-    const defaultBg = getComputedStyle(getContent(getHost(canvasElement, 'matrix-default'))).backgroundColor;
-    const subtleBg = getComputedStyle(getContent(getHost(canvasElement, 'matrix-subtle'))).backgroundColor;
-    const inverseBg = getComputedStyle(getContent(getHost(canvasElement, 'matrix-inverse'))).backgroundColor;
+    const defaultBg = getComputedStyle(
+      getContent(getHost(canvasElement, 'matrix-default')),
+    ).backgroundColor;
+    const subtleBg = getComputedStyle(
+      getContent(getHost(canvasElement, 'matrix-subtle')),
+    ).backgroundColor;
+    const inverseBg = getComputedStyle(
+      getContent(getHost(canvasElement, 'matrix-inverse')),
+    ).backgroundColor;
 
     if (defaultBg === subtleBg) {
       throw new Error('default と subtle の背景色は差分が必要です');

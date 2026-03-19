@@ -255,13 +255,19 @@ export class InfoBox extends LitElement {
           ? html`
               <div class="header">
                 ${icon.length > 0
-                  ? html`<iconify-icon class="icon" icon="lucide:${icon}" aria-hidden="true"></iconify-icon>`
+                  ? html`<iconify-icon
+                      class="icon"
+                      icon="lucide:${icon}"
+                      aria-hidden="true"
+                    ></iconify-icon>`
                   : nothing}
                 <div
                   id="${headingId}"
                   class="heading"
                   role="${headingLevel !== null ? 'heading' : nothing}"
-                  aria-level="${ifDefined(headingLevel !== null ? String(headingLevel) : undefined)}"
+                  aria-level="${ifDefined(
+                    headingLevel !== null ? String(headingLevel) : undefined,
+                  )}"
                 >
                   ${heading}
                 </div>

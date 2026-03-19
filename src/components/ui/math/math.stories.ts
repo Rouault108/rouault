@@ -228,7 +228,11 @@ export const VariantStateMatrix: Story = {
 
       <div class="cell" style="max-width: 560px;">
         <div class="label">block runtime / secondary</div>
-        <ui-math id="matrix-block-runtime-secondary" block .latex=${String.raw`\int_0^1 x^2 dx`}></ui-math>
+        <ui-math
+          id="matrix-block-runtime-secondary"
+          block
+          .latex=${String.raw`\int_0^1 x^2 dx`}
+        ></ui-math>
       </div>
 
       <div class="cell" style="max-width: 280px;">
@@ -273,7 +277,9 @@ export const VariantStateMatrix: Story = {
       throw new Error('inline + aria-label ケースで aria-label が反映されていません');
     }
     if (getSlottedMathMl(inlineLabeled)?.getAttribute('aria-hidden') !== 'true') {
-      throw new Error('aria-label 指定時の slotted MathML は SSR 側で aria-hidden="true" である必要があります');
+      throw new Error(
+        'aria-label 指定時の slotted MathML は SSR 側で aria-hidden="true" である必要があります',
+      );
     }
 
     const secondaryDisplay = getDisplayContainer(blockSecondary);
@@ -356,7 +362,10 @@ export const ErrorStates: Story = {
       throw new Error('静的エラーのメッセージ表示が不正です');
     }
 
-    await waitFor(() => getErrorBlock(runtimeErrorHost) !== null, 'runtime エラーUIが描画されません');
+    await waitFor(
+      () => getErrorBlock(runtimeErrorHost) !== null,
+      'runtime エラーUIが描画されません',
+    );
     const runtimeError = getErrorBlock(runtimeErrorHost);
     if (!runtimeError) throw new Error('runtime エラーUIが取得できません');
     if (runtimeError.getAttribute('role') !== 'alert') {
@@ -490,7 +499,10 @@ export const KeyboardInteraction: Story = {
     await waitFrame();
 
     const display = getDisplayContainer(host);
-    await waitFor(() => display.getAttribute('tabindex') === '0', 'キーボード操作用 tabindex が付与されません');
+    await waitFor(
+      () => display.getAttribute('tabindex') === '0',
+      'キーボード操作用 tabindex が付与されません',
+    );
 
     display.focus();
     await waitFrame();
@@ -536,7 +548,9 @@ export const DarkModeTokenContract: Story = {
     backgrounds: { default: 'dark' },
   },
   render: () => html`
-    <div style="color-scheme: dark; background: oklch(16% 0.02 250); color: oklch(92% 0.01 250); padding: 1rem;">
+    <div
+      style="color-scheme: dark; background: oklch(16% 0.02 250); color: oklch(92% 0.01 250); padding: 1rem;"
+    >
       <ui-math id="dark-runtime" block .latex=${String.raw`\sum_{i=1}^{n} a_i`}></ui-math>
     </div>
   `,
@@ -562,13 +576,20 @@ export const DarkModeTokenContract: Story = {
  * - 強制色メディアクエリでマスク無効化とシステムカラー追従を維持する
  */
 export const ForcedColorsContract: Story = {
-  render: () => html`<ui-math id="forced-colors-contract" .latex=${String.raw`x + y = z`}></ui-math>`,
+  render: () =>
+    html`<ui-math id="forced-colors-contract" .latex=${String.raw`x + y = z`}></ui-math>`,
   play: async ({ canvasElement }) => {
     const host = getMathHost(canvasElement, 'forced-colors-contract');
     await host.updateComplete;
 
     const sheets = host.shadowRoot?.adoptedStyleSheets ?? [];
-    const cssText = sheets.map((sheet) => Array.from(sheet.cssRules).map((rule) => rule.cssText).join('\n')).join('\n');
+    const cssText = sheets
+      .map((sheet) =>
+        Array.from(sheet.cssRules)
+          .map((rule) => rule.cssText)
+          .join('\n'),
+      )
+      .join('\n');
     const requiredPatterns: { label: string; pattern: RegExp }[] = [
       { label: 'forced-colors media query', pattern: /@media\s*\(forced-colors:\s*active\)/i },
       { label: 'mask-image none', pattern: /mask-image:\s*none/i },
@@ -582,7 +603,9 @@ export const ForcedColorsContract: Story = {
     }
 
     const hasScrollbarRule = /scrollbar-color:\s*canvastext\s+transparent/i.test(cssText);
-    const hasForcedColorsBlock = /@media\s*\(forced-colors:\s*active\)[\s\S]*\.math-display/.test(cssText);
+    const hasForcedColorsBlock = /@media\s*\(forced-colors:\s*active\)[\s\S]*\.math-display/.test(
+      cssText,
+    );
     if (!hasScrollbarRule && !hasForcedColorsBlock) {
       throw new Error('forced-colors 時のスクロール領域フォールバック定義が不足しています');
     }

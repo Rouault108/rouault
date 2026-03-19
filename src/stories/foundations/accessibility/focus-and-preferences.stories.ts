@@ -59,7 +59,9 @@ export const Default: Story = {
               label: 'Preference Notes',
               note: 'OS 設定変更時は Storybook 背景切替だけで代用せず、実機でも確認します。',
               content: html`
-                <div style="display: grid; gap: var(--space-2); font-size: var(--text-sm); line-height: var(--line-height-relaxed);">
+                <div
+                  style="display: grid; gap: var(--space-2); font-size: var(--text-sm); line-height: var(--line-height-relaxed);"
+                >
                   <div>Reduced motion: animation-duration を即時に短縮</div>
                   <div>Forced colors: Canvas / CanvasText へマップ</div>
                   <div>Print: 装飾面を減らし本文優先へ切替</div>
@@ -68,7 +70,6 @@ export const Default: Story = {
             },
           ]),
         )}
-
         ${renderFoundationSection(
           'Token Reference',
           renderTokenValueList([

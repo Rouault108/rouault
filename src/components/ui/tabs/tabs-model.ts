@@ -17,9 +17,7 @@ export function findTabIndexByValue(
   value: string,
   count = tabs.length,
 ): number {
-  return tabs
-    .slice(0, count)
-    .findIndex((tab) => tab.getAttribute('value') === value);
+  return tabs.slice(0, count).findIndex((tab) => tab.getAttribute('value') === value);
 }
 
 export function resolveSelectedIndex(
@@ -83,11 +81,7 @@ export function resolveSelectedIndex(
     }
 
     warning = `[ui-tabs]: default-selected-value="${defaultSelectedValue}" が有効なタブに一致しません。先頭タブ (index=0) を選択します。`;
-  } else if (
-    initialized &&
-    currentActiveIndex >= 0 &&
-    currentActiveIndex < count
-  ) {
+  } else if (initialized && currentActiveIndex >= 0 && currentActiveIndex < count) {
     return {
       index: currentActiveIndex,
       source: 'current',
@@ -102,9 +96,7 @@ export function resolveSelectedIndex(
   };
 }
 
-export function resolveKeyNavigation(
-  input: TabsKeyNavigationInput,
-): TabsKeyNavigationResult {
+export function resolveKeyNavigation(input: TabsKeyNavigationInput): TabsKeyNavigationResult {
   const { key, currentIndex, count, orientation } = input;
 
   if (count <= 0 || currentIndex < 0 || currentIndex >= count) {

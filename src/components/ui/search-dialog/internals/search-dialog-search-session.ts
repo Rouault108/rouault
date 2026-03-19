@@ -123,10 +123,7 @@ export class SearchDialogSearchSession {
     this._host.scrollActiveOptionIntoView();
   }
 
-  private async _runSearch(
-    query: string,
-    token: number,
-  ): Promise<readonly UiSearchDialogItem[]> {
+  private async _runSearch(query: string, token: number): Promise<readonly UiSearchDialogItem[]> {
     const searcher = this._host.getSearcher();
     if (typeof searcher === 'function') {
       return searcher(query);
@@ -173,8 +170,7 @@ export class SearchDialogSearchSession {
       const url = item.url.trim();
       if (title === '' || url === '') continue;
 
-      const path =
-        typeof item.path === 'string' && item.path.trim() !== '' ? item.path.trim() : '';
+      const path = typeof item.path === 'string' && item.path.trim() !== '' ? item.path.trim() : '';
       const key = `${url}::${title}`;
       if (seen.has(key)) continue;
       seen.add(key);

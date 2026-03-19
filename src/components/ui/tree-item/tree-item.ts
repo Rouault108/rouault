@@ -758,11 +758,7 @@ export class TreeItem extends LitElement {
 
             <span class="label">
               ${this.href
-                ? html`<a
-                    class="label-link"
-                    href="${this.href}"
-                    >${this.label}</a
-                  >`
+                ? html`<a class="label-link" href="${this.href}">${this.label}</a>`
                 : this.label}
             </span>
           </div>

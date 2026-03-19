@@ -11,7 +11,6 @@ import '../../lib/icons';
 import '../ui/toc/toc';
 import type { Heading, UiTocActiveChangeDetail } from '../ui/toc/toc';
 
-
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
@@ -329,11 +328,11 @@ export class LayoutToc extends LitElement {
 
     this._allHeadings = nextHeadings;
 
-  if (typeof window === 'undefined' || this.contentRootId.trim().length === 0) {
-    this._warnMissingContentRootIdInDev();
-    this._applyVisibleHeadings(nextHeadings);
-    return;
-  }
+    if (typeof window === 'undefined' || this.contentRootId.trim().length === 0) {
+      this._warnMissingContentRootIdInDev();
+      this._applyVisibleHeadings(nextHeadings);
+      return;
+    }
 
     this._tocReady = false;
     this._scheduleVisibleHeadingsRefresh();
@@ -351,9 +350,7 @@ export class LayoutToc extends LitElement {
         return [];
       }
 
-      return parsed
-        .map((item) => toHeading(item))
-        .filter((item): item is Heading => item !== null);
+      return parsed.map((item) => toHeading(item)).filter((item): item is Heading => item !== null);
     } catch {
       return [];
     }

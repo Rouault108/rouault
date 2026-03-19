@@ -35,10 +35,7 @@ export const readPrimaryTabValue = (input?: string | URL): string | null => {
   return raw.length > 0 ? raw : null;
 };
 
-export const writePrimaryTabValue = (
-  input: string | URL,
-  value: string | null,
-): string => {
+export const writePrimaryTabValue = (input: string | URL, value: string | null): string => {
   const url = toUrl(input);
   const normalized = value?.trim() ?? '';
 
@@ -51,10 +48,7 @@ export const writePrimaryTabValue = (
   return `${url.pathname}${url.search}${url.hash}`;
 };
 
-export const isPrimaryTabOnlyNavigation = (
-  currentUrl: string,
-  nextUrl: string,
-): boolean => {
+export const isPrimaryTabOnlyNavigation = (currentUrl: string, nextUrl: string): boolean => {
   const current = toUrl(currentUrl);
   const next = toUrl(nextUrl);
 
@@ -81,10 +75,7 @@ export const isPrimaryTabOnlyNavigation = (
   return currentTab !== nextTab;
 };
 
-export const dispatchUrlStateChange = (
-  previousUrl: string,
-  url: string,
-): void => {
+export const dispatchUrlStateChange = (previousUrl: string, url: string): void => {
   window.dispatchEvent(
     new CustomEvent<UrlStateChangeDetail>(URL_STATE_CHANGE_EVENT, {
       detail: {

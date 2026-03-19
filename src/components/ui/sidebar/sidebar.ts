@@ -41,8 +41,7 @@ export class UiSidebar extends LitElement {
       gap: var(--space-2, 8px);
       min-block-size: var(--control-height-lg, 40px);
       padding: var(--space-2, 8px) var(--space-4, 16px);
-      border-bottom: var(--border-width, 1px) solid
-        var(--border-default, oklch(20% 0 0 / 0.12));
+      border-bottom: var(--border-width, 1px) solid var(--border-default, oklch(20% 0 0 / 0.12));
       background: var(--bg-surface-2, oklch(100% 0 0));
     }
 
@@ -154,9 +153,9 @@ export class UiSidebar extends LitElement {
     }
 
     if (
-      changedProperties.has('state')
-      || changedProperties.has('mode')
-      || changedProperties.has('fixedBreakpoint')
+      changedProperties.has('state') ||
+      changedProperties.has('mode') ||
+      changedProperties.has('fixedBreakpoint')
     ) {
       this._syncStateToShell();
     }
@@ -224,9 +223,9 @@ export class UiSidebar extends LitElement {
     const nextFixedBreakpoint = this._shellElement.fixedBreakpoint;
 
     if (
-      nextState === this.state
-      && nextMode === this.mode
-      && nextFixedBreakpoint === this.fixedBreakpoint
+      nextState === this.state &&
+      nextMode === this.mode &&
+      nextFixedBreakpoint === this.fixedBreakpoint
     ) {
       return;
     }
@@ -293,12 +292,12 @@ export class UiSidebar extends LitElement {
 
   override render() {
     return html`
-        <ui-sidebar-shell
-          data-state=${this.state}
-          mode=${ifDefined(this._modeSetExplicitly ? this.mode : undefined)}
-          .fixedBreakpoint=${this.fixedBreakpoint}
-          @ui-sidebar-state-change=${this._onShellStateChange}
-        >
+      <ui-sidebar-shell
+        data-state=${this.state}
+        mode=${ifDefined(this._modeSetExplicitly ? this.mode : undefined)}
+        .fixedBreakpoint=${this.fixedBreakpoint}
+        @ui-sidebar-state-change=${this._onShellStateChange}
+      >
         <div class="sidebar-head" slot="header">
           <h2 class="heading">${this.heading}</h2>
           <slot name="header-actions"></slot>

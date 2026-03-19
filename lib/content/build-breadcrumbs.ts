@@ -90,7 +90,7 @@ export const buildBreadcrumbs = (
           ? getDirectoryLabel(currentPath)
           : typeof note.title === 'string' && note.title.trim().length > 0
             ? note.title.trim()
-            : directoryIndexMap.get(currentPath)?.label ?? normalizeSegmentLabel(segment);
+            : (directoryIndexMap.get(currentPath)?.label ?? normalizeSegmentLabel(segment));
 
       breadcrumbs.push({ label });
       continue;

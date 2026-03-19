@@ -170,8 +170,8 @@
    * Typography - Font Family
    * ========================================================================= */
   --font-sans:
-    'Rouault Sans', 'Noto Sans JP Variable', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Hiragino Sans',
-    'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', 'Segoe UI', 'Meiryo', sans-serif;
+    'Rouault Sans', 'Noto Sans JP Variable', 'Noto Sans JP', -apple-system, BlinkMacSystemFont,
+    'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', 'Segoe UI', 'Meiryo', sans-serif;
   --font-mono:
     'JetBrains Mono', 'Fira Code', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
   --font-serif: 'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', serif;
@@ -484,7 +484,7 @@
     --bg-tip-subtle: oklch(25% 0.05 var(--hue-primary));
     --bg-note-subtle: oklch(20% 0 0);
     --bg-table-ruler: oklch(from var(--fg-default) l c h / 0.08);
-      /* =========================================================================
+    /* =========================================================================
      * Semantic Tokens - Foreground (Dark Mode)
      * ========================================================================= */
     --fg-default: oklch(90% 0 0);

@@ -773,8 +773,7 @@ describe('remarkRouaultDirectives', () => {
           children: [
             {
               type: 'text',
-              value:
-                '::translation{lang="fr" target-lang="ja"}\nJe pense, donc je suis.',
+              value: '::translation{lang="fr" target-lang="ja"}\nJe pense, donc je suis.',
             },
           ],
         },
@@ -1260,9 +1259,7 @@ describe('remarkRouaultDirectives', () => {
       remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
     };
 
-    expect(run).to.throw(
-      '[markdown] preview-sandbox は code-preview の直下でのみ使用できます',
-    );
+    expect(run).to.throw('[markdown] preview-sandbox は code-preview の直下でのみ使用できます');
   });
 
   it('preview-sandbox に preview-html が無い場合はエラーにすること', () => {

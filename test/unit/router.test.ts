@@ -359,7 +359,9 @@ describe('Router', () => {
     await router.navigate('/notes/new-note');
 
     await waitUntil(
-      () => header.getAttribute('breadcrumbs-json') === '[{"label":"New Note","href":"/notes/new-note"}]',
+      () =>
+        header.getAttribute('breadcrumbs-json') ===
+        '[{"label":"New Note","href":"/notes/new-note"}]',
       'breadcrumbs-json が同期されること',
     );
 

@@ -53,22 +53,22 @@ Rouault における card は、本文を阻害する装飾ではなく、**読�
 - `cardKind="link"` かつ `href` 非空かつ `cardTitle` 非空のときに限り、有効モードは `link` です。
 - それ以外のすべての組み合わせでは、有効モードは `generic` です。
 
-したがって、**リンクカードとして扱う場合は **``** と **``** を与えなければなりません（MUST）**。要求モードとして `card-kind="link"` を指定していても、入力が不完全であれば link 固有の描画、挙動、視覚契約は成立しません。
+したがって、**リンクカードとして扱う場合は **`** と **`** を与えなければなりません（MUST）**。要求モードとして `card-kind="link"` を指定していても、入力が不完全であれば link 固有の描画、挙動、視覚契約は成立しません。
 
 また、`clickable` は generic カード専用の入力です。`link` モードでは `clickable` を解釈せず、カード全体が主リンクとして振る舞うのは link モード自体の契約によります。
 
 ### 入力契約
 
-| 名前            | 種別                                  | 必須   | 内容                    | 契約                                                                     |
-| ------------- | ----------------------------------- | ---- | --------------------- | ---------------------------------------------------------------------- |
-| `variant`     | property / attribute                | いいえ  | 外観スタイル                | `outlined` / `elevated` / `flat` / `ghost`                             |
-| `clickable`   | property / attribute                | いいえ  | generic カードのカード全体クリック | 有効モードが `generic` のときだけ意味を持ちます。`true` の場合、主要リンクへのクリック委譲とフォーカスリングを有効化します |
-| `cardKind`    | property / attribute (`card-kind`)  | いいえ  | 要求モード                 | `generic` / `link`。既定値は `generic` です                                   |
-| `href`        | property / attribute                | 条件付き | リンクカードの遷移先            | 有効モードを `link` にするために必須です                                               |
-| `cardTitle`   | property / attribute (`card-title`) | 条件付き | リンクカードの見出し            | 有効モードを `link` にするために必須です。空文字および空白のみは未指定として扱います                         |
-| `description` | property / attribute                | いいえ  | リンクカードの補足説明           | 140 文字を超える場合は文字列を切り詰めます                                                |
-| `imageSrc`    | property / attribute (`image-src`)  | いいえ  | リンクカード右側画像            | 与えない場合は画像なし 1 カラム構成になります                                               |
-| `siteName`    | property / attribute (`site-name`)  | いいえ  | リンクカードの出典サイト名         | 先頭のアイブロウとして表示します                                                       |
+| 名前          | 種別                                | 必須     | 内容                               | 契約                                                                                                                       |
+| ------------- | ----------------------------------- | -------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `variant`     | property / attribute                | いいえ   | 外観スタイル                       | `outlined` / `elevated` / `flat` / `ghost`                                                                                 |
+| `clickable`   | property / attribute                | いいえ   | generic カードのカード全体クリック | 有効モードが `generic` のときだけ意味を持ちます。`true` の場合、主要リンクへのクリック委譲とフォーカスリングを有効化します |
+| `cardKind`    | property / attribute (`card-kind`)  | いいえ   | 要求モード                         | `generic` / `link`。既定値は `generic` です                                                                                |
+| `href`        | property / attribute                | 条件付き | リンクカードの遷移先               | 有効モードを `link` にするために必須です                                                                                   |
+| `cardTitle`   | property / attribute (`card-title`) | 条件付き | リンクカードの見出し               | 有効モードを `link` にするために必須です。空文字および空白のみは未指定として扱います                                       |
+| `description` | property / attribute                | いいえ   | リンクカードの補足説明             | 140 文字を超える場合は文字列を切り詰めます                                                                                 |
+| `imageSrc`    | property / attribute (`image-src`)  | いいえ   | リンクカード右側画像               | 与えない場合は画像なし 1 カラム構成になります                                                                              |
+| `siteName`    | property / attribute (`site-name`)  | いいえ   | リンクカードの出典サイト名         | 先頭のアイブロウとして表示します                                                                                           |
 
 ### 文字列正規化契約
 
@@ -88,11 +88,11 @@ Rouault における card は、本文を阻害する装飾ではなく、**読�
 
 `ui-card` のスロットは `generic` モードでのみ意味を持ちます。
 
-| 名前       | 種別         | 位置づけ | 内容                         |
-| -------- | ---------- | ---- | -------------------------- |
-| `header` | named slot | 補助入力 | 見出し、カテゴリ、メタ情報などカード上部領域     |
-| 既定スロット   | slot       | 正規入力 | カード本文、説明、主要内容              |
-| `footer` | named slot | 補助入力 | 日付、補助メタ情報、アクション補助などカード下部領域 |
+| 名前         | 種別       | 位置づけ | 内容                                                 |
+| ------------ | ---------- | -------- | ---------------------------------------------------- |
+| `header`     | named slot | 補助入力 | 見出し、カテゴリ、メタ情報などカード上部領域         |
+| 既定スロット | slot       | 正規入力 | カード本文、説明、主要内容                           |
+| `footer`     | named slot | 補助入力 | 日付、補助メタ情報、アクション補助などカード下部領域 |
 
 `link` モードでは内部で専用マークアップを生成するため、上記スロットは描画されません。したがって、**スロット入力と **``** を同時に使って内部構造を混在させる運用には依存しません**。
 
@@ -102,16 +102,16 @@ Rouault における card は、本文を阻害する装飾ではなく、**読�
 
 公開入力のうち、`variant`、`clickable`、`cardKind` は reflect されます。`href`、`cardTitle`、`description`、`imageSrc`、`siteName` は property / attribute として入力できますが、reflect はしません。
 
-| property      | attribute     | reflect | 備考                        |
-| ------------- | ------------- | ------- | ------------------------- |
-| `variant`     | `variant`     | あり      | 既定値は `outlined` です        |
-| `clickable`   | `clickable`   | あり      | boolean attribute として扱います |
-| `cardKind`    | `card-kind`   | あり      | `generic` / `link` を受理します |
-| `href`        | `href`        | なし      | リンクカードの遷移先です              |
-| `cardTitle`   | `card-title`  | なし      | リンクカードの見出しです              |
-| `description` | `description` | なし      | リンクカードの補足説明です             |
-| `imageSrc`    | `image-src`   | なし      | リンクカード右側画像 URL です         |
-| `siteName`    | `site-name`   | なし      | リンクカードのサイト名です             |
+| property      | attribute     | reflect | 備考                             |
+| ------------- | ------------- | ------- | -------------------------------- |
+| `variant`     | `variant`     | あり    | 既定値は `outlined` です         |
+| `clickable`   | `clickable`   | あり    | boolean attribute として扱います |
+| `cardKind`    | `card-kind`   | あり    | `generic` / `link` を受理します  |
+| `href`        | `href`        | なし    | リンクカードの遷移先です         |
+| `cardTitle`   | `card-title`  | なし    | リンクカードの見出しです         |
+| `description` | `description` | なし    | リンクカードの補足説明です       |
+| `imageSrc`    | `image-src`   | なし    | リンクカード右側画像 URL です    |
+| `siteName`    | `site-name`   | なし    | リンクカードのサイト名です       |
 
 ### 列挙外値・無効値の扱い
 
@@ -165,12 +165,12 @@ Rouault における card は、本文を阻害する装飾ではなく、**読�
 
 `variant` は視覚的階層のみを切り替えます。意味は次表のとおりです。
 
-| `variant` 値 | 意味           | 想定用途             |
-| ----------- | ------------ | ---------------- |
-| `outlined`  | 枠線で輪郭を示す既定表現 | 通常の情報カード         |
-| `elevated`  | 影と面で浮上を示す    | 背景から一段持ち上げたいまとまり |
-| `flat`      | 背景色で領域を示す    | 影を使わずに面を作りたい場面   |
-| `ghost`     | 最小限の枠線のみ     | 主張を最も抑えたい場面      |
+| `variant` 値 | 意味                     | 想定用途                         |
+| ------------ | ------------------------ | -------------------------------- |
+| `outlined`   | 枠線で輪郭を示す既定表現 | 通常の情報カード                 |
+| `elevated`   | 影と面で浮上を示す       | 背景から一段持ち上げたいまとまり |
+| `flat`       | 背景色で領域を示す       | 影を使わずに面を作りたい場面     |
+| `ghost`      | 最小限の枠線のみ         | 主張を最も抑えたい場面           |
 
 `variant` は視覚重量を制御しますが、意味そのものを保証しません。たとえば `elevated` は重要度を保証するものではなく、背景との差を視覚的に増やすだけです。
 
@@ -287,7 +287,7 @@ Rouault における card は、本文を阻害する装飾ではなく、**読�
 
 有効モードが `generic` かつ `clickable=true` の場合、または有効モードが `link` の場合に限り、ホストに `cursor: pointer` を与えます。また、`outlined` では hover / focus-within 時にシャドウと境界線色変化を与え、`elevated` ではシャドウを強化します。
 
-一方で、現行実装では `flat` と `ghost` に固有の hover 変化は追加していません。したがって、**クリック可能であることの主要な視覚シグナルは、カーソル、フォーカスリング、内部リンクの存在、ならびに **``** / **``** のみで観測できる状態変化**です。`flat` / `ghost` の hover 差分、scale 変化、outlined 背景変化は正式契約に含めません。
+一方で、現行実装では `flat` と `ghost` に固有の hover 変化は追加していません。したがって、**クリック可能であることの主要な視覚シグナルは、カーソル、フォーカスリング、内部リンクの存在、ならびに **`** / **`** のみで観測できる状態変化**です。`flat` / `ghost` の hover 差分、scale 変化、outlined 背景変化は正式契約に含めません。
 
 ### リンクカードの視覚仕様
 
@@ -309,31 +309,31 @@ Rouault における card は、本文を阻害する装飾ではなく、**読�
 
 そのうち、コンポーネント固有の公開 CSS 変数は次のとおりです。
 
-| 用途        | CSS Custom Property          |
-| --------- | ---------------------------- |
+| 用途               | CSS Custom Property          |
+| ------------------ | ---------------------------- |
 | 説明文フェード背景 | `--ui-card-description-fade` |
 
 それ以外の見た目は、主としてデザイントークンを参照して構成します。
 
-| 用途                   | トークン                  |
-| -------------------- | --------------------- |
-| カード角丸                | `--radius-md`         |
-| カード余白                | `--space-4`           |
+| 用途                       | トークン              |
+| -------------------------- | --------------------- |
+| カード角丸                 | `--radius-md`         |
+| カード余白                 | `--space-4`           |
 | 既定境界線幅               | `--border-width`      |
 | 既定境界線色               | `--border-default`    |
-| outlined hover 時境界線色 | `--border-muted`      |
-| ghost 境界線色           | `--border-ghost`      |
-| elevated 背景          | `--bg-surface-2`      |
-| flat 背景              | `--bg-fill-muted`     |
+| outlined hover 時境界線色  | `--border-muted`      |
+| ghost 境界線色             | `--border-ghost`      |
+| elevated 背景              | `--bg-surface-2`      |
+| flat 背景                  | `--bg-fill-muted`     |
 | 控えめ文字色               | `--fg-muted`          |
 | 標準シャドウ               | `--elevation-md`      |
 | 強いシャドウ               | `--elevation-lg`      |
-| 遷移時間                 | `--duration-normal`   |
-| イージング                | `--ease-out`          |
-| フォーカスリング幅            | `--focus-ring-width`  |
-| フォーカスリング色            | `--focus-ring-color`  |
-| フォーカスリングオフセット        | `--focus-ring-offset` |
-| フォーカスアニメーション         | `--animation-focus`   |
+| 遷移時間                   | `--duration-normal`   |
+| イージング                 | `--ease-out`          |
+| フォーカスリング幅         | `--focus-ring-width`  |
+| フォーカスリング色         | `--focus-ring-color`  |
+| フォーカスリングオフセット | `--focus-ring-offset` |
+| フォーカスアニメーション   | `--animation-focus`   |
 
 ---
 
@@ -363,13 +363,13 @@ Rouault における card は、本文を阻害する装飾ではなく、**読�
 
 主要リンクは、`ui-card` の Light DOM 部分木を文書順で走査した最初の `a[href]` です。視覚的位置、強調表示、文言内容、表示非表示の意味論では選定しません。
 
-| 条件                                              | 振る舞い                     |
-| ----------------------------------------------- | ------------------------ |
-| 有効モード `generic` + `clickable=false`             | カード背景クリック委譲は行いません        |
-| 有効モード `generic` + `clickable=true` + 内部リンクあり    | 文書順で最初の `a[href]` へ委譲します |
-| 有効モード `generic` + `clickable=true` + 内部リンクなし    | 何も起こさず終了します              |
-| 有効モード `link`                                    | 主リンクへ委譲します               |
-| 主ボタン以外 / 修飾キー / 当該 card 内テキスト選択中 / 直接インタラクティブ要素 | 委譲しません                   |
+| 条件                                                                            | 振る舞い                              |
+| ------------------------------------------------------------------------------- | ------------------------------------- |
+| 有効モード `generic` + `clickable=false`                                        | カード背景クリック委譲は行いません    |
+| 有効モード `generic` + `clickable=true` + 内部リンクあり                        | 文書順で最初の `a[href]` へ委譲します |
+| 有効モード `generic` + `clickable=true` + 内部リンクなし                        | 何も起こさず終了します                |
+| 有効モード `link`                                                               | 主リンクへ委譲します                  |
+| 主ボタン以外 / 修飾キー / 当該 card 内テキスト選択中 / 直接インタラクティブ要素 | 委譲しません                          |
 
 利用者は、複数リンクがある generic カードにおいて、**文書順で最初の **``** が主要リンクとして選ばれる**ことを前提に設計しなければなりません（MUST）。
 
@@ -455,30 +455,30 @@ Rouault における card は、本文を阻害する装飾ではなく、**読�
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
 
-| Story                          | 固定する契約                                                              |
-| ------------------------------ | ------------------------------------------------------------------- |
-| `Default`                      | `role="article"` の自動設定、既定 `variant="outlined"`、3 スロット存在             |
-| `ElevatedVariant`              | `variant="elevated"` を受理し、JS property と属性が整合すること                    |
-| `FlatVariant`                  | `variant="flat"` を受理すること                                            |
-| `GhostVariant`                 | `variant="ghost"` を受理すること                                           |
-| `AllVariants`                  | 4 バリアントを並べて比較できること                                                  |
-| `WithAllSlots`                 | `header` / 既定 / `footer` の 3 スロット割当が成立すること、および各スロットの装飾責務が利用側にあること   |
-| `LinkCardWithImage`            | `card-kind="link"` で主リンク、装飾画像、固定 `<h3>` タイトル、focus-within 契約が成立すること |
-| `LinkCardWithoutImage`         | 画像なしリンクカード、説明文切り詰め、2 行制限、空白のみ入力の未指定化が成立すること                         |
-| `LinkCardRequiresHrefAndTitle` | `href` と `cardTitle` の両方がない限り有効モードが `link` にならないこと                  |
-| `Clickable`                    | generic clickable カードで背景クリック委譲が機能すること                               |
-| `ClickDelegationGuards`        | 修飾キーや直接インタラクティブ要素クリックで誤委譲しないこと                                      |
-| `TextSelectionGuard`           | テキスト選択中は委譲せず、解除後は委譲すること                                             |
-| `ClickableNoLink`              | 内部リンクなしでも例外を出さないこと                                                  |
-| `MultipleLinksPrimaryFirst`    | 複数リンク時に文書順で最初のリンクのみへ背景クリックを委譲すること                                   |
-| `InteractiveElementsGuard`     | 入力系要素、`role=button`、`role=link`、`tabindex` 要素への直接クリックで委譲しないこと       |
-| `FocusWithin`                  | カード自体に `tabindex` を付けず、内部リンクフォーカスでカード全体へリングを出すこと                    |
-| `DefaultRoleAutoSet`           | `role` 未指定時に `article` が入ること                                        |
-| `ExplicitRoleOverride`         | 明示 `role` を自動設定が上書きしないこと                                            |
-| `ClickableVariants`            | 各バリアントに clickable を適用しても基本契約が維持されること                                |
-| `DarkMode`                     | ダーク背景で elevated のシャドウが維持されること                                       |
-| `ForcedColorsMode`             | 強制カラー環境で構造が維持されること                                                  |
-| `ReducedMotion`                | モーション軽減環境でも clickable / link の基本契約が崩れないこと                           |
+| Story                          | 固定する契約                                                                                             |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `Default`                      | `role="article"` の自動設定、既定 `variant="outlined"`、3 スロット存在                                   |
+| `ElevatedVariant`              | `variant="elevated"` を受理し、JS property と属性が整合すること                                          |
+| `FlatVariant`                  | `variant="flat"` を受理すること                                                                          |
+| `GhostVariant`                 | `variant="ghost"` を受理すること                                                                         |
+| `AllVariants`                  | 4 バリアントを並べて比較できること                                                                       |
+| `WithAllSlots`                 | `header` / 既定 / `footer` の 3 スロット割当が成立すること、および各スロットの装飾責務が利用側にあること |
+| `LinkCardWithImage`            | `card-kind="link"` で主リンク、装飾画像、固定 `<h3>` タイトル、focus-within 契約が成立すること           |
+| `LinkCardWithoutImage`         | 画像なしリンクカード、説明文切り詰め、2 行制限、空白のみ入力の未指定化が成立すること                     |
+| `LinkCardRequiresHrefAndTitle` | `href` と `cardTitle` の両方がない限り有効モードが `link` にならないこと                                 |
+| `Clickable`                    | generic clickable カードで背景クリック委譲が機能すること                                                 |
+| `ClickDelegationGuards`        | 修飾キーや直接インタラクティブ要素クリックで誤委譲しないこと                                             |
+| `TextSelectionGuard`           | テキスト選択中は委譲せず、解除後は委譲すること                                                           |
+| `ClickableNoLink`              | 内部リンクなしでも例外を出さないこと                                                                     |
+| `MultipleLinksPrimaryFirst`    | 複数リンク時に文書順で最初のリンクのみへ背景クリックを委譲すること                                       |
+| `InteractiveElementsGuard`     | 入力系要素、`role=button`、`role=link`、`tabindex` 要素への直接クリックで委譲しないこと                  |
+| `FocusWithin`                  | カード自体に `tabindex` を付けず、内部リンクフォーカスでカード全体へリングを出すこと                     |
+| `DefaultRoleAutoSet`           | `role` 未指定時に `article` が入ること                                                                   |
+| `ExplicitRoleOverride`         | 明示 `role` を自動設定が上書きしないこと                                                                 |
+| `ClickableVariants`            | 各バリアントに clickable を適用しても基本契約が維持されること                                            |
+| `DarkMode`                     | ダーク背景で elevated のシャドウが維持されること                                                         |
+| `ForcedColorsMode`             | 強制カラー環境で構造が維持されること                                                                     |
+| `ReducedMotion`                | モーション軽減環境でも clickable / link の基本契約が崩れないこと                                         |
 
 ---
 
@@ -645,4 +645,3 @@ Storybook の説明には `flat` / `ghost` にも状態変化があるように�
 ### 11. Storybook 記述と契約書の扱い
 
 本節に記載した事項は、現行の公開契約として利用者が依存してよいものではありません。これらを正式契約へ昇格させる場合は、実装、Storybook、契約書の 3 点を同時に更新し、説明だけ先行させません。
-

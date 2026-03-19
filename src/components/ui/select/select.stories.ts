@@ -36,13 +36,14 @@ const OPTIONS_WITH_DISABLED: SelectOption[] = [
 
 const LONG_LABEL_OPTIONS: SelectOption[] = [
   { value: 'short', label: '短い' },
-  { value: 'long', label: 'とても長いラベルのテキストが入る選択肢のサンプルです（レイアウト確認用）' },
+  {
+    value: 'long',
+    label: 'とても長いラベルのテキストが入る選択肢のサンプルです（レイアウト確認用）',
+  },
   { value: 'medium', label: '中程度の長さのラベル' },
 ];
 
-const SINGLE_OPTION: SelectOption[] = [
-  { value: 'only', label: '唯一の選択肢' },
-];
+const SINGLE_OPTION: SelectOption[] = [{ value: 'only', label: '唯一の選択肢' }];
 
 const MANY_OPTIONS: SelectOption[] = Array.from({ length: 20 }, (_, index) => ({
   value: `item-${(index + 1).toString()}`,
@@ -222,7 +223,9 @@ export const Default: Story = {
       throw new Error('トリガーのアイコンは iconify-icon で描画されるべきです');
     }
     if (chevronIcon.getAttribute('icon') !== 'lucide:chevron-down') {
-      throw new Error(`icon="lucide:chevron-down" を期待しましたが、実際には "${chevronIcon.getAttribute('icon') ?? 'null'}" でした`);
+      throw new Error(
+        `icon="lucide:chevron-down" を期待しましたが、実際には "${chevronIcon.getAttribute('icon') ?? 'null'}" でした`,
+      );
     }
 
     const triggerRect = trigger.getBoundingClientRect();
@@ -474,7 +477,9 @@ export const Readonly: Story = {
 
     // テスト: tabindex が "-1" でないこと（フォーカス可能）
     if (trigger.getAttribute('tabindex') === '-1') {
-      throw new Error('読み取り専用の場合、tabindex は "-1" ではないべきです（フォーカス可能であるべき）');
+      throw new Error(
+        '読み取り専用の場合、tabindex は "-1" ではないべきです（フォーカス可能であるべき）',
+      );
     }
 
     // テスト: クリックしてもリストボックスが開かないこと
@@ -563,7 +568,9 @@ export const WithDisabledOptions: Story = {
     if (!activeEl) throw new Error('アクティブなオプション要素が見つかりません');
 
     if (activeEl.getAttribute('data-index') !== '2') {
-      throw new Error(`アクティブなインデックスは "2" を期待しましたが、実際には "${activeEl.getAttribute('data-index') ?? ''}" でした`);
+      throw new Error(
+        `アクティブなインデックスは "2" を期待しましたが、実際には "${activeEl.getAttribute('data-index') ?? ''}" でした`,
+      );
     }
 
     if (activeEl.getAttribute('aria-disabled') === 'true') {
@@ -642,35 +649,62 @@ export const AllStatesShowcase: Story = {
     <div class="states-grid">
       <div>
         <div class="state-label">Default（未選択）</div>
-        <ui-select label="都道府県" name="s1" placeholder="選択してください"
-          .options="${PREFECTURE_OPTIONS}"></ui-select>
+        <ui-select
+          label="都道府県"
+          name="s1"
+          placeholder="選択してください"
+          .options="${PREFECTURE_OPTIONS}"
+        ></ui-select>
       </div>
       <div>
         <div class="state-label">Selected（選択済み）</div>
-        <ui-select label="都道府県" name="s2" model-value="tokyo"
-          .options="${PREFECTURE_OPTIONS}"></ui-select>
+        <ui-select
+          label="都道府県"
+          name="s2"
+          model-value="tokyo"
+          .options="${PREFECTURE_OPTIONS}"
+        ></ui-select>
       </div>
       <div>
         <div class="state-label">With Help Text</div>
-        <ui-select label="都道府県" name="s3" placeholder="選択してください"
+        <ui-select
+          label="都道府県"
+          name="s3"
+          placeholder="選択してください"
           help-text="お住まいの都道府県を選択してください"
-          .options="${PREFECTURE_OPTIONS}"></ui-select>
+          .options="${PREFECTURE_OPTIONS}"
+        ></ui-select>
       </div>
       <div>
         <div class="state-label">Error</div>
-        <ui-select label="都道府県" name="s4" placeholder="選択してください"
-          ?error="${true}" error-message="都道府県を選択してください"
-          .options="${PREFECTURE_OPTIONS}"></ui-select>
+        <ui-select
+          label="都道府県"
+          name="s4"
+          placeholder="選択してください"
+          ?error="${true}"
+          error-message="都道府県を選択してください"
+          .options="${PREFECTURE_OPTIONS}"
+        ></ui-select>
       </div>
       <div>
         <div class="state-label">Disabled</div>
-        <ui-select label="都道府県" name="s5" model-value="osaka"
-          ?disabled="${true}" .options="${PREFECTURE_OPTIONS}"></ui-select>
+        <ui-select
+          label="都道府県"
+          name="s5"
+          model-value="osaka"
+          ?disabled="${true}"
+          .options="${PREFECTURE_OPTIONS}"
+        ></ui-select>
       </div>
       <div>
         <div class="state-label">Readonly</div>
-        <ui-select label="都道府県" name="s6" model-value="kyoto"
-          ?readonly="${true}" .options="${PREFECTURE_OPTIONS}"></ui-select>
+        <ui-select
+          label="都道府県"
+          name="s6"
+          model-value="kyoto"
+          ?readonly="${true}"
+          .options="${PREFECTURE_OPTIONS}"
+        ></ui-select>
       </div>
     </div>
   `,
@@ -693,9 +727,20 @@ export const FormIntegration: Story = {
         background: var(--bg-surface-2, #f5f5f5);
         border-radius: var(--radius-md, 6px);
       }
-      .form-demo h3 { margin: 0 0 1rem 0; }
-      .form-fields { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; }
-      .form-actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
+      .form-demo h3 {
+        margin: 0 0 1rem 0;
+      }
+      .form-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      .form-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+      }
       #form-result {
         margin-top: 1rem;
         padding: 0.75rem;
@@ -709,17 +754,17 @@ export const FormIntegration: Story = {
       id="select-form"
       class="form-demo"
       @submit="${(e: Event) => {
-      e.preventDefault();
-      const form = e.target as HTMLFormElement;
-      const data = new FormData(form);
-      const result = document.getElementById('form-result');
-      if (result) {
-        result.style.display = 'block';
-        const rawVal = data.get('prefecture');
-        const prefVal = rawVal instanceof File ? rawVal.name : (rawVal ?? '(未選択)');
-        result.textContent = `送信データ: prefecture=${prefVal}`;
-      }
-    }}"
+        e.preventDefault();
+        const form = e.target as HTMLFormElement;
+        const data = new FormData(form);
+        const result = document.getElementById('form-result');
+        if (result) {
+          result.style.display = 'block';
+          const rawVal = data.get('prefecture');
+          const prefVal = rawVal instanceof File ? rawVal.name : (rawVal ?? '(未選択)');
+          result.textContent = `送信データ: prefecture=${prefVal}`;
+        }
+      }}"
     >
       <h3>フォーム送信テスト</h3>
       <div class="form-fields">
@@ -829,7 +874,9 @@ export const KeyboardNavigation: Story = {
     trigger.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
     await select.updateComplete;
     if (select.modelValue !== 'apple') {
-      throw new Error(`選択された値は "apple" を期待しましたが、実際には "${String(select.modelValue)}" でした`);
+      throw new Error(
+        `選択された値は "apple" を期待しましたが、実際には "${String(select.modelValue)}" でした`,
+      );
     }
 
     // 制御フロー解析のリセット: modelValue チェック後に opened を別変数で評価
@@ -919,7 +966,9 @@ export const LongScrollableOptions: Story = {
     }
 
     if (activeEl.getAttribute('data-index') !== '12') {
-      throw new Error(`13番目の選択肢に到達することを期待しましたが、実際には "${activeEl.getAttribute('data-index') ?? 'null'}" でした`);
+      throw new Error(
+        `13番目の選択肢に到達することを期待しましたが、実際には "${activeEl.getAttribute('data-index') ?? 'null'}" でした`,
+      );
     }
 
     const listbox = document.querySelector<HTMLElement>('[data-ui-select-listbox]');
@@ -994,10 +1043,14 @@ export const ChangeEvent: Story = {
     await select.updateComplete;
 
     if (changeCount !== 1) {
-      throw new Error(`change イベントは1回発火するべきですが、実際には ${changeCount.toString()} 回でした`);
+      throw new Error(
+        `change イベントは1回発火するべきですが、実際には ${changeCount.toString()} 回でした`,
+      );
     }
     if (lastValue !== 'apple') {
-      throw new Error(`最後の値は "apple" を期待しましたが、実際には "${String(lastValue)}" でした`);
+      throw new Error(
+        `最後の値は "apple" を期待しましたが、実際には "${String(lastValue)}" でした`,
+      );
     }
   },
 };
@@ -1024,28 +1077,32 @@ export const ErrorStateTransition: Story = {
       <div style="display: flex; gap: 8px; margin-top: 12px;">
         <button
           @click="${(e: Event) => {
-      const btn = e.currentTarget as HTMLElement;
-      const container = btn.closest('div')?.parentElement;
-      const sel = container?.querySelector<Select>('#error-transition-select');
-      if (sel) {
-        sel.error = true;
-        sel.errorMessage = '都道府県を選択してください';
-      }
-    }}"
+            const btn = e.currentTarget as HTMLElement;
+            const container = btn.closest('div')?.parentElement;
+            const sel = container?.querySelector<Select>('#error-transition-select');
+            if (sel) {
+              sel.error = true;
+              sel.errorMessage = '都道府県を選択してください';
+            }
+          }}"
           style="padding: 0 12px; height: 32px; cursor: pointer;"
-        >エラーを表示</button>
+        >
+          エラーを表示
+        </button>
         <button
           @click="${(e: Event) => {
-      const btn = e.currentTarget as HTMLElement;
-      const container = btn.closest('div')?.parentElement;
-      const sel = container?.querySelector<Select>('#error-transition-select');
-      if (sel) {
-        sel.error = false;
-        sel.errorMessage = '';
-      }
-    }}"
+            const btn = e.currentTarget as HTMLElement;
+            const container = btn.closest('div')?.parentElement;
+            const sel = container?.querySelector<Select>('#error-transition-select');
+            if (sel) {
+              sel.error = false;
+              sel.errorMessage = '';
+            }
+          }}"
           style="padding: 0 12px; height: 32px; cursor: pointer;"
-        >エラーを解消</button>
+        >
+          エラーを解消
+        </button>
       </div>
     </div>
   `,
@@ -1163,7 +1220,9 @@ export const SingleOption: Story = {
     await select.updateComplete;
 
     if (select.modelValue !== 'only') {
-      throw new Error(`"only" が選択されることを期待しましたが、実際には "${String(select.modelValue)}" でした`);
+      throw new Error(
+        `"only" が選択されることを期待しましたが、実際には "${String(select.modelValue)}" でした`,
+      );
     }
   },
 };
@@ -1271,7 +1330,10 @@ export const SameValueReselect: Story = {
       model-value="apple"
       .options="${FRUIT_OPTIONS}"
     ></ui-select>
-    <div id="same-value-log" style="margin-top: 8px; font-size: 13px; color: var(--fg-muted, #888);">
+    <div
+      id="same-value-log"
+      style="margin-top: 8px; font-size: 13px; color: var(--fg-muted, #888);"
+    >
       change イベント発火回数: 0
     </div>
   `,
@@ -1299,10 +1361,14 @@ export const SameValueReselect: Story = {
     await select.updateComplete;
 
     if (changeCount !== 0) {
-      throw new Error(`同じ値を選択した場合、change イベントは発火しないべきですが、${changeCount.toString()} 回発火しました`);
+      throw new Error(
+        `同じ値を選択した場合、change イベントは発火しないべきですが、${changeCount.toString()} 回発火しました`,
+      );
     }
     if (select.modelValue !== 'apple') {
-      throw new Error(`modelValue は "apple" のままであるべきですが、実際には "${String(select.modelValue)}" でした`);
+      throw new Error(
+        `modelValue は "apple" のままであるべきですが、実際には "${String(select.modelValue)}" でした`,
+      );
     }
   },
 };
@@ -1319,8 +1385,8 @@ export const TypeaheadSearch: Story = {
   render: () => html`
     <div style="max-width: 400px;">
       <p style="font-size: 13px; color: var(--fg-muted, #888); margin-bottom: 1rem;">
-        フォーカスを当てて「a」を入力すると "Apple" にジャンプします。
-        「b」で "Banana"、「ch」で "Cherry" にジャンプします。
+        フォーカスを当てて「a」を入力すると "Apple" にジャンプします。 「b」で "Banana"、「ch」で
+        "Cherry" にジャンプします。
       </p>
       <ui-select
         id="typeahead-select"
@@ -1349,10 +1415,13 @@ export const TypeaheadSearch: Story = {
     }
 
     const chActiveId = trigger.getAttribute('aria-activedescendant');
-    if (!chActiveId) throw new Error('タイプアヘッド後、aria-activedescendant が設定されているべきです');
+    if (!chActiveId)
+      throw new Error('タイプアヘッド後、aria-activedescendant が設定されているべきです');
     const chActiveEl = document.getElementById(chActiveId);
     if (!chActiveEl?.textContent.includes('Cherry')) {
-      throw new Error(`"ch" 入力後に Cherry が選択されることを期待しましたが、実際には "${chActiveEl?.textContent ?? 'null'}" でした`);
+      throw new Error(
+        `"ch" 入力後に Cherry が選択されることを期待しましたが、実際には "${chActiveEl?.textContent ?? 'null'}" でした`,
+      );
     }
 
     // 1秒後にバッファリセットされることを検証
@@ -1362,10 +1431,13 @@ export const TypeaheadSearch: Story = {
     trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', bubbles: true }));
     await select.updateComplete;
     const bActiveId = trigger.getAttribute('aria-activedescendant');
-    if (!bActiveId) throw new Error('タイプアヘッド後、aria-activedescendant が設定されているべきです');
+    if (!bActiveId)
+      throw new Error('タイプアヘッド後、aria-activedescendant が設定されているべきです');
     const bActiveEl = document.getElementById(bActiveId);
     if (!bActiveEl?.textContent.includes('Banana')) {
-      throw new Error(`バッファリセット後の "b" 入力により Banana が選択されることを期待しましたが、実際には "${bActiveEl?.textContent ?? 'null'}" でした`);
+      throw new Error(
+        `バッファリセット後の "b" 入力により Banana が選択されることを期待しましたが、実際には "${bActiveEl?.textContent ?? 'null'}" でした`,
+      );
     }
 
     // テスト: Escape で閉じること

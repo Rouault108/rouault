@@ -201,17 +201,13 @@ export const renderFoundationSection = (
   <section class="foundation-section">
     <header class="foundation-section-header">
       <h2 class="foundation-section-title">${title}</h2>
-      ${description
-        ? html`<p class="foundation-section-description">${description}</p>`
-        : nothing}
+      ${description ? html`<p class="foundation-section-description">${description}</p>` : nothing}
     </header>
     ${content}
   </section>
 `;
 
-export const renderTokenSwatchGrid = (
-  swatches: TokenSwatchSpec[],
-): TemplateResult => html`
+export const renderTokenSwatchGrid = (swatches: TokenSwatchSpec[]): TemplateResult => html`
   <div class="foundation-grid">
     ${swatches.map(
       (swatch) => html`
@@ -227,9 +223,7 @@ export const renderTokenSwatchGrid = (
           <div>
             <p class="foundation-card-label">${swatch.label}</p>
             <p class="foundation-card-token">${swatch.token}</p>
-            ${swatch.note
-              ? html`<p class="foundation-card-note">${swatch.note}</p>`
-              : nothing}
+            ${swatch.note ? html`<p class="foundation-card-note">${swatch.note}</p>` : nothing}
           </div>
         </article>
       `,
@@ -237,9 +231,7 @@ export const renderTokenSwatchGrid = (
   </div>
 `;
 
-export const renderTokenSampleGrid = (
-  samples: TokenSampleSpec[],
-): TemplateResult => html`
+export const renderTokenSampleGrid = (samples: TokenSampleSpec[]): TemplateResult => html`
   <div class="foundation-grid">
     ${samples.map(
       (sample) => html`
@@ -256,9 +248,7 @@ export const renderTokenSampleGrid = (
           </div>
           <div>
             <p class="foundation-card-label">${sample.label}</p>
-            ${sample.note
-              ? html`<p class="foundation-card-note">${sample.note}</p>`
-              : nothing}
+            ${sample.note ? html`<p class="foundation-card-note">${sample.note}</p>` : nothing}
           </div>
         </article>
       `,

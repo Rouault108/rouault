@@ -178,7 +178,13 @@ export const VariantStateMatrix: Story = {
 
       <div class="cell media-box">
         <div class="label">rectangular x animated-media</div>
-        <div id="matrix-busy-region" class="busy-region" aria-busy="true" aria-live="polite" aria-label="読み込み中">
+        <div
+          id="matrix-busy-region"
+          class="busy-region"
+          aria-busy="true"
+          aria-live="polite"
+          aria-label="読み込み中"
+        >
           <ui-skeleton
             id="matrix-rect-media"
             variant="rectangular"
@@ -247,7 +253,12 @@ export const BoundaryConditions: Story = {
         height="24px"
       ></ui-skeleton>
 
-      <ui-skeleton id="boundary-aria-override" variant="text" width="75%" aria-hidden="false"></ui-skeleton>
+      <ui-skeleton
+        id="boundary-aria-override"
+        variant="text"
+        width="75%"
+        aria-hidden="false"
+      ></ui-skeleton>
 
       <ui-skeleton id="boundary-circular-width-only" variant="circular" width="48px"></ui-skeleton>
 
@@ -277,7 +288,9 @@ export const BoundaryConditions: Story = {
     ]);
 
     if (invalidVariant.variant !== 'rectangular') {
-      throw new Error(`不正 variant は rectangular にフォールバックする必要があります: ${invalidVariant.variant}`);
+      throw new Error(
+        `不正 variant は rectangular にフォールバックする必要があります: ${invalidVariant.variant}`,
+      );
     }
     if (invalidVariant.getAttribute('variant') !== 'rectangular') {
       throw new Error('不正 variant の属性値は rectangular に正規化される必要があります');
@@ -363,7 +376,13 @@ export const DarkMode: Story = {
         gap: 0.625rem;
       "
     >
-      <ui-skeleton id="dark-rect" variant="rectangular" width="100%" animated style="aspect-ratio: 16 / 9;"></ui-skeleton>
+      <ui-skeleton
+        id="dark-rect"
+        variant="rectangular"
+        width="100%"
+        animated
+        style="aspect-ratio: 16 / 9;"
+      ></ui-skeleton>
       <ui-skeleton id="dark-text" variant="text" width="74%"></ui-skeleton>
     </div>
   `,

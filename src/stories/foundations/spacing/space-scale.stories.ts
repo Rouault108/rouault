@@ -67,16 +67,19 @@ export const Default: Story = {
           ),
           '長さそのものと、並べたときの伸び方を同時に確認します。',
         )}
-
         ${renderFoundationSection(
           'Layout Rhythm Example',
           html`
             <div class="foundation-stage">
               <div style="display: grid; gap: var(--space-4);">
-                <div style="padding: var(--space-4); border: var(--border-style-subtle); border-radius: var(--radius-md);">
+                <div
+                  style="padding: var(--space-4); border: var(--border-style-subtle); border-radius: var(--radius-md);"
+                >
                   Card padding uses <code>--space-4</code>.
                 </div>
-                <div style="padding: var(--space-6); border: var(--border-style-subtle); border-radius: var(--radius-md);">
+                <div
+                  style="padding: var(--space-6); border: var(--border-style-subtle); border-radius: var(--radius-md);"
+                >
                   Larger callout padding uses <code>--space-6</code>.
                 </div>
                 <div style="padding-block: var(--space-8); border-top: var(--border-style-subtle);">
@@ -86,7 +89,6 @@ export const Default: Story = {
             </div>
           `,
         )}
-
         ${renderFoundationSection(
           'Token Reference',
           renderTokenValueList(scaleRows.map(({ label, token }) => ({ label, token }))),

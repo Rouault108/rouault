@@ -15,7 +15,8 @@ const DOCUMENT_STYLE_ID = 'ui-highlight-document-styles';
  * - `<ui-highlight>` 内部の `mark`
  * - `<ui-search-highlight>` 内部の `mark`
  */
-const HIGHLIGHT_SCOPE_SELECTOR = ':where(.prose mark, ui-highlight > mark, ui-search-highlight > mark)';
+const HIGHLIGHT_SCOPE_SELECTOR =
+  ':where(.prose mark, ui-highlight > mark, ui-search-highlight > mark)';
 
 const HIGHLIGHT_RULE_TEMPLATE = (scopeSelector: string): string => `
 ${scopeSelector} {

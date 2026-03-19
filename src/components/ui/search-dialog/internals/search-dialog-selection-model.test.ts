@@ -11,7 +11,7 @@ interface SelectionState {
   virtualScrollTop: number;
   selected: UiSearchDialogSelectedDetail[];
   closed: boolean;
-};
+}
 
 function createSearchFieldStub(clearButtonVisible = false): SearchField {
   return {

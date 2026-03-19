@@ -438,9 +438,12 @@ export class Banner extends LitElement {
       })
       .reduce((max, value) => Math.max(max, Number.isFinite(value) ? value : 0), 0);
 
-    this._dismissFallbackTimer = window.setTimeout(() => {
-      this._finalizeDismiss();
-    }, Math.max(durationMs + 50, 100));
+    this._dismissFallbackTimer = window.setTimeout(
+      () => {
+        this._finalizeDismiss();
+      },
+      Math.max(durationMs + 50, 100),
+    );
   };
 
   override render() {
@@ -449,7 +452,11 @@ export class Banner extends LitElement {
     return html`
       <span class="icon" aria-hidden="true">
         <slot name="icon">
-          <iconify-icon class="fallback-icon" icon="${VARIANT_CONFIG[resolvedVariant].icon}" aria-hidden="true"></iconify-icon>
+          <iconify-icon
+            class="fallback-icon"
+            icon="${VARIANT_CONFIG[resolvedVariant].icon}"
+            aria-hidden="true"
+          ></iconify-icon>
         </slot>
       </span>
 

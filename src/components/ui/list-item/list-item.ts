@@ -151,7 +151,8 @@ export class ListItem extends LitElement {
       align-items: center;
       gap: var(--space-1, 4px);
       opacity: 0;
-      transition: opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      transition: opacity var(--duration-fast, 70ms)
+        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     :host(:hover) .actions,
@@ -268,7 +269,7 @@ export class ListItem extends LitElement {
   requestListContext(): void {
     const event = new CustomEvent<ListContextRequestDetail>('ui-list-context-request', {
       detail: {
-        callback: payload => {
+        callback: (payload) => {
           this._columns = payload.columns;
           this._isMobile = payload.isMobile;
         },
@@ -280,7 +281,7 @@ export class ListItem extends LitElement {
   }
 
   private get _primaryColumnId(): string | null {
-    const primary = this._columns.find(col => col.primary === true);
+    const primary = this._columns.find((col) => col.primary === true);
     if (primary) return primary.id;
     return this._columns[0]?.id ?? null;
   }
@@ -297,11 +298,13 @@ export class ListItem extends LitElement {
       ];
     }
 
-    return this._columns.filter(col => {
+    return this._columns.filter((col) => {
       if (col.primary === true && col.hideOnMobile === true && !this._warnedPrimaryMobile) {
         this._warnedPrimaryMobile = true;
         // 仕様違反の列定義は警告しつつ常時表示にフォールバックする
-        console.warn('[ui-list-item] primary 列に hideOnMobile=true は指定できません。常時表示します。');
+        console.warn(
+          '[ui-list-item] primary 列に hideOnMobile=true は指定できません。常時表示します。',
+        );
       }
 
       if (col.primary === true) return true;
@@ -317,7 +320,7 @@ export class ListItem extends LitElement {
     const target = visible[visibleIndex];
     if (!target) return visibleIndex + 1;
 
-    return this._columns.findIndex(col => col.id === target.id) + 1;
+    return this._columns.findIndex((col) => col.id === target.id) + 1;
   }
 
   private _normalizeCellIndex(index: number): number {
@@ -357,7 +360,7 @@ export class ListItem extends LitElement {
       }
 
       const anchors = node.querySelectorAll<HTMLAnchorElement>('a[href]');
-      anchors.forEach(anchor => {
+      anchors.forEach((anchor) => {
         anchor.classList.add('primary-link');
         anchor.tabIndex = -1;
       });
@@ -452,13 +455,25 @@ export class ListItem extends LitElement {
     const actionTabIndex = this.active ? (normalized === 1 ? '0' : '-1') : '-1';
 
     return html`
-      <div role="gridcell" class="cell cell--primary" aria-colindex="1" data-col-index="0" tabindex="${mainTabIndex}">
+      <div
+        role="gridcell"
+        class="cell cell--primary"
+        aria-colindex="1"
+        data-col-index="0"
+        tabindex="${mainTabIndex}"
+      >
         <div class="cell-content">
           <slot></slot>
         </div>
       </div>
 
-      <div role="gridcell" class="cell cell--action" aria-colindex="2" data-col-index="1" tabindex="${actionTabIndex}">
+      <div
+        role="gridcell"
+        class="cell cell--action"
+        aria-colindex="2"
+        data-col-index="1"
+        tabindex="${actionTabIndex}"
+      >
         <div class="actions">
           <slot name="actions"></slot>
         </div>
@@ -505,7 +520,6 @@ export class ListItem extends LitElement {
           </div>
         `;
       })}
-
       ${(() => {
         const actionIndex = this._columns.length;
         const actionTabIndex = this.active && normalized === actionIndex ? '0' : '-1';

@@ -115,10 +115,7 @@ const enrichAttributesForNode = (
     return attributes;
   }
 
-  return [
-    ...attributes,
-    { name: 'initial-code', value: initialCode },
-  ];
+  return [...attributes, { name: 'initial-code', value: initialCode }];
 };
 
 const cloneAttributes = (attributes: readonly Parse5Attribute[]): SsrAttribute[] =>

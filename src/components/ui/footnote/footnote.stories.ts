@@ -233,12 +233,16 @@ export const Default: Story = {
       throw new Error('trigger の aria-controls が不正です');
     }
     if (normalizeText(trigger.textContent) !== '[1]') {
-      throw new Error(`trigger 表示は [1] のはずですが "${normalizeText(trigger.textContent)}" です`);
+      throw new Error(
+        `trigger 表示は [1] のはずですが "${normalizeText(trigger.textContent)}" です`,
+      );
     }
 
     const popover = getPopover(host);
     if (popoverHost.id !== 'fn-1-popover-host') {
-      throw new Error(`ui-popover host id は fn-1-popover-host を想定しています: ${popoverHost.id}`);
+      throw new Error(
+        `ui-popover host id は fn-1-popover-host を想定しています: ${popoverHost.id}`,
+      );
     }
     if (popover.id !== 'fn-1-popover') {
       throw new Error('popover id が fn-1-popover ではありません');
@@ -262,7 +266,9 @@ export const Default: Story = {
       throw new Error('footer link テキストに「脚注一覧で見る」が含まれていません');
     }
 
-    const endnotes = canvasElement.querySelector<HTMLElement>('section.footnotes[role="doc-endnotes"]');
+    const endnotes = canvasElement.querySelector<HTMLElement>(
+      'section.footnotes[role="doc-endnotes"]',
+    );
     if (!endnotes) throw new Error('section.footnotes[role="doc-endnotes"] が見つかりません');
     const endnoteItem = endnotes.querySelector<HTMLElement>('#fn-1');
     if (!endnoteItem) throw new Error('脚注一覧の #fn-1 が見つかりません');
@@ -327,13 +333,20 @@ export const VariantStateMatrix: Story = {
       <h2 class="sr-only">脚注</h2>
       <ol>
         <li id="fn-10">単独参照の脚注本文。 <a href="#fnref-10-1">↩︎</a></li>
-        <li id="fn-11">同一脚注を複数箇所から参照する場合の共有本文。 <a href="#fnref-11-1">↩︎</a></li>
+        <li id="fn-11">
+          同一脚注を複数箇所から参照する場合の共有本文。 <a href="#fnref-11-1">↩︎</a>
+        </li>
         <li id="fn-12">別番号の脚注本文。 <a href="#fnref-12-1">↩︎</a></li>
       </ol>
     </section>
   `,
   play: async ({ canvasElement }) => {
-    const ids = ['matrix-single', 'matrix-shared-owner', 'matrix-shared-follower', 'matrix-another'] as const;
+    const ids = [
+      'matrix-single',
+      'matrix-shared-owner',
+      'matrix-shared-follower',
+      'matrix-another',
+    ] as const;
     const hosts = ids.map((id) => getFootnote(canvasElement, id));
     await Promise.all(hosts.map((host) => host.updateComplete));
 
@@ -351,7 +364,9 @@ export const VariantStateMatrix: Story = {
       throw new Error('shared follower の aria-controls が fn-11-popover ではありません');
     }
     if (followerTrigger.id !== 'fnref-11-2') {
-      throw new Error(`shared follower の trigger id が fnref-11-2 ではありません: ${followerTrigger.id}`);
+      throw new Error(
+        `shared follower の trigger id が fnref-11-2 ではありません: ${followerTrigger.id}`,
+      );
     }
 
     const ownerPopover = sharedOwner.querySelector('[data-part="content"]');
@@ -359,14 +374,19 @@ export const VariantStateMatrix: Story = {
     if (sharedOwnerPopoverHost.id !== 'fn-11-popover-host') {
       throw new Error('shared owner の ui-popover host id が不正です');
     }
-    const followerPopoverHost = sharedFollower.querySelector('ui-popover[data-part="popover-host"]');
-    if (followerPopoverHost) throw new Error('shared follower は ui-popover host を描画してはいけません');
+    const followerPopoverHost = sharedFollower.querySelector(
+      'ui-popover[data-part="popover-host"]',
+    );
+    if (followerPopoverHost)
+      throw new Error('shared follower は ui-popover host を描画してはいけません');
     const followerPopover = sharedFollower.querySelector('[data-part="content"]');
     if (followerPopover) throw new Error('shared follower は popover 本体を描画してはいけません');
 
     const sharedPopovers = canvasElement.querySelectorAll('#fn-11-popover');
     if (sharedPopovers.length !== 1) {
-      throw new Error(`fn-11-popover は1つだけ存在する必要があります: ${String(sharedPopovers.length)}`);
+      throw new Error(
+        `fn-11-popover は1つだけ存在する必要があります: ${String(sharedPopovers.length)}`,
+      );
     }
 
     const labels = hosts.map((host) => normalizeText(getTrigger(host).textContent));
@@ -395,7 +415,9 @@ export const VariantStateMatrix: Story = {
         throw new Error('shared follower クリック中は active class が必要です');
       }
       if (ownerTrigger.getAttribute('aria-expanded') !== 'false') {
-        throw new Error('shared follower 経由で開いた場合、owner trigger は非展開のままである必要があります');
+        throw new Error(
+          'shared follower 経由で開いた場合、owner trigger は非展開のままである必要があります',
+        );
       }
 
       const footerLink = sharedPopover.querySelector<HTMLAnchorElement>('.footnote-list-link');
@@ -419,7 +441,9 @@ export const VariantStateMatrix: Story = {
       const followerClick = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
       followerTrigger.dispatchEvent(followerClick);
       if (followerClick.defaultPrevented) {
-        throw new Error('Popover 非対応環境の shared follower はネイティブリンクを維持する必要があります');
+        throw new Error(
+          'Popover 非対応環境の shared follower はネイティブリンクを維持する必要があります',
+        );
       }
     }
   },
@@ -526,7 +550,9 @@ export const DualAccessContract: Story = {
       const normalClick = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
       trigger.dispatchEvent(normalClick);
       if (normalClick.defaultPrevented) {
-        throw new Error('Popover 非対応環境では通常クリックもネイティブリンク挙動を維持する必要があります');
+        throw new Error(
+          'Popover 非対応環境では通常クリックもネイティブリンク挙動を維持する必要があります',
+        );
       }
     }
 
@@ -664,7 +690,12 @@ export const SsrHydrationContract: Story = {
       <p>
         SSR hydrate
         <ui-footnote id="ssr-footnote" ref-id="fn-60" index="60" ref-instance="1">
-          <ui-popover id="fn-60-popover-host" data-part="popover-host" placement="bottom-start" keep-link-fallback>
+          <ui-popover
+            id="fn-60-popover-host"
+            data-part="popover-host"
+            placement="bottom-start"
+            keep-link-fallback
+          >
             <a
               id="fnref-60-1"
               data-part="trigger"
@@ -713,7 +744,9 @@ export const SsrHydrationContract: Story = {
     if (!normalizeText(body.textContent).includes('SSR で埋め込まれた脚注本文。')) {
       throw new Error('SSR 由来の本文が footnote-body へ再利用されていません');
     }
-    if (body.querySelector('[data-part="trigger"], [data-part="content"], [data-part="popover-host"]')) {
+    if (
+      body.querySelector('[data-part="trigger"], [data-part="content"], [data-part="popover-host"]')
+    ) {
       throw new Error('内部制御要素が footnote-body に混入しています');
     }
     if (body.querySelector('.footnote-list-link, .footnote-popover-footer')) {
@@ -766,9 +799,12 @@ export const BoundaryConditions: Story = {
         長文
         <ui-footnote id="boundary-long" ref-id="fn-32" index="32" ref-instance="1">
           <span>
-            長文脚注: 表示領域の上限を超えると内部スクロールで読む。長文脚注: 表示領域の上限を超えると内部スクロールで読む。
-            長文脚注: 表示領域の上限を超えると内部スクロールで読む。長文脚注: 表示領域の上限を超えると内部スクロールで読む。
-            長文脚注: 表示領域の上限を超えると内部スクロールで読む。長文脚注: 表示領域の上限を超えると内部スクロールで読む。
+            長文脚注: 表示領域の上限を超えると内部スクロールで読む。長文脚注:
+            表示領域の上限を超えると内部スクロールで読む。 長文脚注:
+            表示領域の上限を超えると内部スクロールで読む。長文脚注:
+            表示領域の上限を超えると内部スクロールで読む。 長文脚注:
+            表示領域の上限を超えると内部スクロールで読む。長文脚注:
+            表示領域の上限を超えると内部スクロールで読む。
           </span>
         </ui-footnote>
       </p>
@@ -815,7 +851,9 @@ export const BoundaryConditions: Story = {
     if (longStyle.maxHeight === 'none') {
       throw new Error('長文脚注の max-height が無制限になっています');
     }
-    const longMaxHeightToken = getComputedStyle(longPopoverHost).getPropertyValue('--ui-popover-max-height').trim();
+    const longMaxHeightToken = getComputedStyle(longPopoverHost)
+      .getPropertyValue('--ui-popover-max-height')
+      .trim();
     if (longMaxHeightToken === '') {
       throw new Error('長文脚注の Popover max-height トークンが設定されていません');
     }

@@ -174,7 +174,9 @@ export class Callout extends LitElement {
     const headingLevel = this._resolvedHeadingLevel;
     const explicitLabel = this.getAttribute('aria-label')?.trim();
     const labelFallback =
-      explicitLabel && explicitLabel.length > 0 ? explicitLabel : VARIANT_CONFIG[this._resolvedVariant].fallbackLabel;
+      explicitLabel && explicitLabel.length > 0
+        ? explicitLabel
+        : VARIANT_CONFIG[this._resolvedVariant].fallbackLabel;
 
     return html`
       <aside
@@ -192,7 +194,9 @@ export class Callout extends LitElement {
                   id="${this._titleId}"
                   class="title"
                   role="${headingLevel !== null ? 'heading' : nothing}"
-                  aria-level="${ifDefined(headingLevel !== null ? String(headingLevel) : undefined)}"
+                  aria-level="${ifDefined(
+                    headingLevel !== null ? String(headingLevel) : undefined,
+                  )}"
                 >
                   ${title}
                 </div>

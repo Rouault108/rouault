@@ -64,7 +64,6 @@ export const Default: Story = {
             },
           ]),
         )}
-
         ${renderFoundationSection(
           'Border Language',
           renderTokenSampleGrid([
@@ -94,7 +93,6 @@ export const Default: Story = {
             },
           ]),
         )}
-
         ${renderFoundationSection(
           'Token Reference',
           renderTokenValueList([

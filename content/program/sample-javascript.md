@@ -1,5 +1,5 @@
 ---
-title: "JavaScriptの配列"
+title: 'JavaScriptの配列'
 description: "配列について O'Reilly の『JavaScript 第７版』を踏まえたメモ"
 date: 2026-03-14
 genre:
@@ -53,12 +53,15 @@ Array()コンストラクタを使う方法、Array.of()ファクトリメソッ
 ```javascript
 let empty = []; // 要素がない配列
 let primes = [2, 3, 5, 7, 11]; // 5つの数値要素を持つ配列
-let misc = [1.1, true, "a",]; // 3つの様々な型の要素を持つ配列、最後のカンマは無視される
+let misc = [1.1, true, 'a']; // 3つの様々な型の要素を持つ配列、最後のカンマは無視される
 
 let base = 1024;
 let table = [base, base + 1, base + 2, base + 3]; // 配列リテラルの中に式を記述することも可能
 
-let b = [[1, { x: 1, y: 2 }], [2, { x: 3, y: 4 }]]; // 配列リテラルの中にオブジェクトリテラルやほかの配列リテラルを記述することも可能
+let b = [
+  [1, { x: 1, y: 2 }],
+  [2, { x: 3, y: 4 }],
+]; // 配列リテラルの中にオブジェクトリテラルやほかの配列リテラルを記述することも可能
 
 let count = [1, , 3]; // インデックス1の要素が存在しない疎な配列
 let undefs = [, ,]; // 3つの要素が存在しない疎な配列 ただし末尾のカンマが無視されるためlengthの値は2になる
@@ -77,10 +80,10 @@ Setオブジェクトも反復可能なので配列から重複する要素を�
 let a = [1, 2, 3];
 let b1 = [0, ...a, 4]; // b1 = [0, 1, 2, 3, 4]
 b1[1] = 0; // b1 = [0, 0, 2, 3, 4] aは変更されない
-a[1] // 2
+a[1]; // 2
 
-let digits = [..."0123456789 ABCDEFG"];
-digits // ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", " ", "A", "B", "C", "D", "E", "F", "G"]
+let digits = [...'0123456789 ABCDEFG'];
+digits; // ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", " ", "A", "B", "C", "D", "E", "F", "G"]
 ```
 
 ### 7.1.3 Array()コンストラクタ
@@ -94,7 +97,7 @@ Array()コンストラクタで呼び出す方法には3種類ある
 ```javascript
 let a1 = Array(); // 空の配列
 let a2 = Array(10); // 長さ10の配列、要素はすべてundefined
-let a3 = Array(5, 4, 3, 2, 1, "testing, testing"); // [5, 4, 3, 2, 1, "testing, testing"]の要素を持つ配列
+let a3 = Array(5, 4, 3, 2, 1, 'testing, testing'); // [5, 4, 3, 2, 1, "testing, testing"]の要素を持つ配列
 ```
 
 ### 7.1.4 Array.of()
@@ -123,26 +126,26 @@ ES2015にはもう一つ配列を生成するためのファクトリメソッ�
 プロパティ名として0以上4294967295（2^32-1）未満の整数値を使った場合は、配列は自動的にlengthプロパティの値を変更する
 
 ```javascript
-let a7 = ["world"]; // 要素が1つの配列
+let a7 = ['world']; // 要素が1つの配列
 let value = a7[0]; // "world" a7の要素0を読み出す
 a7[1] = 3.14; // a7の要素1に3.14を代入する
 let i = 2;
 a7[i] = 3; // a7の要素2に3を代入する
-a7[i + 1] = "hello"; // a7の要素3に"hello"を代入する
+a7[i + 1] = 'hello'; // a7の要素3に"hello"を代入する
 a7[a7[i]] = a7[0]; // a7の要素3にa7の要素0を代入する
-a7 // ["world", 3.14, 3, "world", "hello"]
+a7; // ["world", 3.14, 3, "world", "hello"]
 
 let o1 = {}; // 空のオブジェクト
-o1[1] = "one"; // 要素1に"one"を代入する
-o1["1"] // "one" 要素1と"1"は同じ要素を指す 配列は数値インデックスを文字列に変換してプロパティ名として使うため
+o1[1] = 'one'; // 要素1に"one"を代入する
+o1['1']; // "one" 要素1と"1"は同じ要素を指す 配列は数値インデックスを文字列に変換してプロパティ名として使うため
 
 a7[-1.23] = true; // -1.23という名前のプロパティを作成する
-a7["1000"] = "one thousand"; // 要素1000に"one thousand"を代入する
-a7[1.000] // 3.14 要素1と1.000は同じ要素を指す
+a7['1000'] = 'one thousand'; // 要素1000に"one thousand"を代入する
+a7[1.0]; // 3.14 要素1と1.000は同じ要素を指す
 
 let a8 = [true, false];
-a8[2] // undefined a8は要素2を持たない
-a[-1] // undefined この名前のプロパティはない
+a8[2]; // undefined a8は要素2を持たない
+a[-1]; // undefined この名前のプロパティはない
 ```
 
 ## 7.3 疎な配列
@@ -165,11 +168,11 @@ let sparseArray = [1, , 3]; // 要素を省略した疎な配列
 
 let arr = new Array(3); // 長さ3の疎な配列を新しく生成する
 arr[1] = 2; // 要素1に2を代入する
-arr // [undefined, 2, undefined] 要素0と2がundefinedの疎の配列
+arr; // [undefined, 2, undefined] 要素0と2がundefinedの疎の配列
 
 let arr1 = [1, 2, 3]; // 3つの要素を持つ配列
 delete arr1[1]; // 要素1を削除する
-arr1 // [1, undefined, 3] 要素1がundefinedの疎な配列
+arr1; // [1, undefined, 3] 要素1がundefinedの疎な配列
 ```
 
 疎な配列はundefinedの値を持つ通常の配列と扱っても問題ない
@@ -182,14 +185,13 @@ lengthプロパティは動作を保つため、以下の2つの特殊なふる�
 
 - lengthプロパティの値を変更すると配列の要素数が変わる
 
-    配列の現在のlength以上のインデックスiを指定して配列の要素に値を設定した場合、lengthプロパティの値はi+1に変更される
+  配列の現在のlength以上のインデックスiを指定して配列の要素に値を設定した場合、lengthプロパティの値はi+1に変更される
 
 - lengthプロパティに現在の値より小さい非負数の整数nを設定した場合、n以上のインデックスを持つ配列の要素は配列から削除される
 
 ```javascript
 let a9 = []; // 空の配列
-a9.length // 0 空の配列のlengthプロパティは0
-["a", "b", "c"].length // 3 3つの要素を持つ配列のlengthプロパティは3
+a9.length[('a', 'b', 'c')].length; // 0 空の配列のlengthプロパティは0 // 3 3つの要素を持つ配列のlengthプロパティは3
 
 a10 = [1, 2, 3, 4, 5]; // 5つの要素を持つ配列
 a10.length = 3; // a10の要素数が3になる a10 = [1, 2, 3]
@@ -223,8 +225,8 @@ a11.push(3); // a11の末尾に3を追加する
 a11.push(4, 5); // a11の末尾に4と5を追加する a11 = [1, 2, 3, 4, 5]
 
 delete a11[1]; // a11の要素1を削除する
-2 in a11 // false a11の要素1は存在しない
-a11.length // 5 delete演算子は要素を削除するだけでlengthプロパティの値は変更しない
+2 in a11; // false a11の要素1は存在しない
+a11.length; // 5 delete演算子は要素を削除するだけでlengthプロパティの値は変更しない
 ```
 
 ## 7.6 配列の要素の巡回
@@ -239,27 +241,28 @@ for/ofループしている際に配列の各要素のインデックスを知�
 同様にmap()やfilter()メソッドなどもあるがこれらも§7.8.1参照
 
 ```javascript
-let letters = [..."Hello world"];
-let string = "";
+let letters = [...'Hello world'];
+let string = '';
 for (let letter of letters) {
-    string += letter;
+  string += letter;
 }
-string // "Hello world"
+string; // "Hello world"
 
-let everyother = "";
+let everyother = '';
 for (let [index, letter] of letters.entries()) {
-    if (index % 2 === 0) everyother += letter; // 偶数インデックスの文字だけを取得する
+  if (index % 2 === 0) everyother += letter; // 偶数インデックスの文字だけを取得する
 }
-everyother // "Hlowrd"
+everyother; // "Hlowrd"
 
-let vowels = "";
+let vowels = '';
 for (let i = 0; i < letters.length; i++) {
-    let letter = letters[i];
-    if (/[aeiou]/.test(letter)) { // 正規表現を使って母音を判定する
-        vowels += letter;
-    }
+  let letter = letters[i];
+  if (/[aeiou]/.test(letter)) {
+    // 正規表現を使って母音を判定する
+    vowels += letter;
+  }
 }
-vowels // "eoo"
+vowels; // "eoo"
 ```
 
 ## 7.7 多次元配列
@@ -270,7 +273,7 @@ JavaScriptでは本当の意味での多次元配列はサポートしていな�
 ```javascript
 let table1 = new Array(10); // 長さ10の配列
 for (let i = 0; i < table1.length; i++) {
-    table1[i] = new Array(10); // 長さ10の配列を生成
+  table1[i] = new Array(10); // 長さ10の配列を生成
 }
 ```
 
@@ -313,15 +316,20 @@ forEach()メソッドは配列の各要素に対して関数を呼び出すメ�
 forEach()メソッドにはすべての要素が関数に渡されるまで実行を中止する方法はないので注意
 
 ```javascript
-let data = [1, 2, 3, 4, 5], sum = 0;
+let data = [1, 2, 3, 4, 5],
+  sum = 0;
 // 配列の要素の総計を計算する
-data.forEach(value => { sum += value; }); // sum = 15
+data.forEach((value) => {
+  sum += value;
+}); // sum = 15
 
 // 配列の各要素をインクリメントする
-data.forEach((v, i, a) => { a[i] = v + 1; }); // data = [2, 3, 4, 5, 6]
+data.forEach((v, i, a) => {
+  a[i] = v + 1;
+}); // data = [2, 3, 4, 5, 6]
 ```
 
-#### 7.8.1.2 map()メソッド *Non-Destructive Method*
+#### 7.8.1.2 map()メソッド _Non-Destructive Method_
 
 map()メソッドは配列の要素を1つずつ指定した関数に引数として渡し、この関数から返された値を配列に格納しその配列を返す
 map()メソッドとforEach()メソッドの違いはmap()メソッドは新しい配列を返し、元の配列は変更しない点である
@@ -331,10 +339,10 @@ map()メソッドとforEach()メソッドの違いはmap()メソッドは新し�
 
 ```javascript
 let a12 = [1, 2, 3];
-let b2 = a12.map(x => x * x); // b2 = [1, 4, 9]
+let b2 = a12.map((x) => x * x); // b2 = [1, 4, 9]
 ```
 
-#### 7.8.1.3 filter()メソッド *Non-Destructive Method*
+#### 7.8.1.3 filter()メソッド _Non-Destructive Method_
 
 filter()メソッドは、配列の要素の部分集合となる配列を返す filter()メソッドに指定した関数が述語（predicate）関数になる
 この述語関数の戻り値がtrueの場合、その要素は返される配列に含まれる
@@ -343,7 +351,7 @@ filter()メソッドは元の配列を変更せず、新しい配列を返す
 
 ```javascript
 let a13 = [5, 4, 3, 2, 1];
-let smallvalues = a13.filter(x => x < 3); // smallvalues = [2, 1]: 3未満の要素を取得する
+let smallvalues = a13.filter((x) => x < 3); // smallvalues = [2, 1]: 3未満の要素を取得する
 let everyother1 = a13.filter((x, i) => i % 2 === 0); // everyother1 = [5, 3, 1]: 奇数インデックスの要素を取得する
 
 // 疎な配列を密な配列に変換する例
@@ -351,10 +359,10 @@ let sparse = [1, , 3, , 5];
 let dense = sparse.filter(() => true); // dense = [1, 3, 5]
 
 // undefinedやnullを持つ要素を取り除きたい場合の例
-a = a.filter(x => x !== undefined && x !== null);
+a = a.filter((x) => x !== undefined && x !== null);
 ```
 
-#### 7.8.1.4 find()メソッドとfindIndex()メソッド *Non-Destructive Method*
+#### 7.8.1.4 find()メソッドとfindIndex()メソッド _Non-Destructive Method_
 
 find()メソッドとfindIndex()メソッドはfileter()メソッドと同じく指定した述語関数がtrueを返す要素を探す
 ただし、find()メソッドとfindIndex()メソッドは最初に見つかった要素のみを返し、処理を中断する
@@ -363,13 +371,13 @@ find()メソッドとfindIndex()メソッドはfileter()メソッドと同じく
 
 ```javascript
 let a14 = [1, 2, 3, 4, 5];
-let even = a14.find(x => x % 2 === 0); // even = 2: 最初に見つかった偶数の要素を取得する
-a14.find(x => x % 7 === 0); // undefined: 7の倍数の要素はない
-let evenIndex = a14.findIndex(x => x % 2 === 0); // evenIndex = 1: 最初に見つかった偶数の要素のインデックスを取得する
-a14.findIndex(x => x % 7 === 0); // -1: 7の倍数の要素はない
+let even = a14.find((x) => x % 2 === 0); // even = 2: 最初に見つかった偶数の要素を取得する
+a14.find((x) => x % 7 === 0); // undefined: 7の倍数の要素はない
+let evenIndex = a14.findIndex((x) => x % 2 === 0); // evenIndex = 1: 最初に見つかった偶数の要素のインデックスを取得する
+a14.findIndex((x) => x % 7 === 0); // -1: 7の倍数の要素はない
 ```
 
-#### 7.8.1.5 every()メソッドとsome()メソッド *Non-Destructive Method*
+#### 7.8.1.5 every()メソッドとsome()メソッド _Non-Destructive Method_
 
 every()メソッドとsome()メソッドは配列に対して述語関数を適用しtrueかfalseを返す
 every()メソッドは記号論理学における全称量化子（∀）に相当し、すべての要素に対して指定した述語関数がtrueを返した場合にtrueを返す
@@ -382,14 +390,14 @@ every()メソッドもsome()メソッドも戻り値が確定した時点で処�
 
 ```javascript
 let a15 = [1, 2, 3, 4, 5];
-a15.every(x => x < 10); // true: すべての要素が10未満である
-a15.every(x => x % 2 === 0); // false: すべての要素が偶数ではないため
+a15.every((x) => x < 10); // true: すべての要素が10未満である
+a15.every((x) => x % 2 === 0); // false: すべての要素が偶数ではないため
 
-a15.some(x => x % 2 === 0); // true: 1つ以上の要素が偶数である
-a15.some(x => x > 5); // false: すべての要素が5未満であるため
+a15.some((x) => x % 2 === 0); // true: 1つ以上の要素が偶数である
+a15.some((x) => x > 5); // false: すべての要素が5未満であるため
 ```
 
-#### 7.8.1.6 reduce()メソッドとreduceRight()メソッド *Non-Destructive Method*
+#### 7.8.1.6 reduce()メソッドとreduceRight()メソッド _Non-Destructive Method_
 
 reduce()メソッドとreduceRight()メソッドは引数で指定された関数を使い、配列の要素を1つにまとめたものを返す
 これは関数型プログラミングにおけるinjectやfoldと呼ばれる操作に相当する
@@ -411,15 +419,15 @@ reduce()メソッドもreduceRight()メソッドも簡約化関数が呼び出�
 ```javascript
 let a16 = [1, 2, 3, 4, 5];
 let sum1 = a16.reduce((x, y) => x + y, 0); // sum1 = 15: 0 + 1 + 2 + 3 + 4 + 5
-let product = a16.reduce((x, y) => x* y, 1); // product = 120: 1 * 1 * 2 * 3 * 4 * 5
-let max = a16.reduce((x, y) => (x > y) ? x : y); // max = 5: 最大値を取得する
+let product = a16.reduce((x, y) => x * y, 1); // product = 120: 1 * 1 * 2 * 3 * 4 * 5
+let max = a16.reduce((x, y) => (x > y ? x : y)); // max = 5: 最大値を取得する
 
 // reduceRight()メソッドの例
 let a17 = [2, 3, 4];
 let pow = a17.reduceRight((acc, val) => Math.pow(val, acc)); // pow = 2.4178516392292583e+24: 2^(3^4) まずaccに4、valに3が渡される 結果の81がaccに渡される...
 ```
 
-### 7.8.2 flat()メソッドとflatMap()メソッドによる配列のフラット化 *Non-Destructive Method*
+### 7.8.2 flat()メソッドとflatMap()メソッドによる配列のフラット化 _Non-Destructive Method_
 
 ES2019よりflat()メソッドが追加された flat()メソッドは、このメソッドを呼び出した配列と同じ要素を持つ新しい配列を作成し、その配列を返す
 新しい配列を作成する際、元の配列の各要素をフラット化（展開）されて返す
@@ -438,12 +446,12 @@ let b3 = a18.flat(); // b3 = [1, 2, [3, 4]] 入れ子の1階層分だけ展開�
 let c = a18.flat(2); // c = [1, 2, 3, 4] 入れ子の2階層分展開される
 let d = a18.flat(4); // d = [1, 2, 3, 4] 入れ子の4階層分展開される この場合は入れ子の最大階層数を超えているため、すべての入れ子が展開される
 
-let phrases = ["hello world", "the quick brown fox"];
-let words = phrases.flatMap(phrase => phrase.split(" ")); // words = ["hello", "world", "the", "quick", "brown", "fox"]
-[-2, -1, 1, 2].flatMap(x => (x < 0) ? [] : Math.sqrt(x)); // [1, 1.4142135623730951]
+let phrases = ['hello world', 'the quick brown fox'];
+let words = phrases.flatMap((phrase) => phrase.split(' ')); // words = ["hello", "world", "the", "quick", "brown", "fox"]
+[-2, -1, 1, 2].flatMap((x) => (x < 0 ? [] : Math.sqrt(x))); // [1, 1.4142135623730951]
 ```
 
-### 7.8.3 concat()メソッドによる配列の結合 *Non-Destructive Method*
+### 7.8.3 concat()メソッドによる配列の結合 _Non-Destructive Method_
 
 concat()メソッドは、concat()メソッドを呼び出した配列の要素の後ろに、引数で指定された配列の要素を追加した新しい配列を生成して返す
 引数のうちいずれかが配列である場合、配列のまま追加するのではなく、配列の要素を展開して配列に追加する（入れ子の配列は展開されない）
@@ -455,10 +463,10 @@ let a19 = [1, 2, 3];
 a19.concat(4, 5); // [1, 2, 3, 4, 5]
 a19.concat([4, 5], [6, 7]); // [1, 2, 3, 4, 5, 6, 7]
 a19.concat(4, [5, [6, 7]]); // [1, 2, 3, 4, 5, [6, 7]]: 入れ子になった配列は展開されない
-a19 // [1, 2, 3]: 元の配列は変更されない
+a19; // [1, 2, 3]: 元の配列は変更されない
 ```
 
-### 7.8.4 push()メソッド、pop()メソッド、shift()メソッド、unshift()メソッドによるスタック/キュー *Destructive Method*
+### 7.8.4 push()メソッド、pop()メソッド、shift()メソッド、unshift()メソッドによるスタック/キュー _Destructive Method_
 
 push()メソッドとpop()メソッドを使用するとスタックと同じやり方で配列を操作できる
 push()メソッドは配列の最後に1個または複数の要素を追加し、追加した後の配列の長さを返す
@@ -501,7 +509,7 @@ a20.shift(); // [4, 5] a20 = [5, 1, 2, 3]
 配列には連続する領域や配列の「サブ配列（スライス）」を処理するメソッドが数多く定義されている
 ここではスライスの抽出、置換、要素の設定、コピーを行うメソッドについて説明する
 
-#### 7.8.5.1 slice()メソッド *Non-Destructive Method*
+#### 7.8.5.1 slice()メソッド _Non-Destructive Method_
 
 slice()メソッドは指定された配列のサブ配列（スライス）を返す
 返すスライス配列の先頭を第1引数で指定し、第2引数でスライス配列の末尾を指定する（第2引数は省略可能）
@@ -520,7 +528,7 @@ a21.slice(1, -1); // [2, 3, 4]: 1番目から最後から2番目の要素のス�
 a21.slice(-3, -2); // [3]: 最後から3番目から最後から2番目の要素のスライスを取得する
 ```
 
-#### 7.8.5.2 splice()メソッド *Destructive Method*
+#### 7.8.5.2 splice()メソッド _Destructive Method_
 
 splice()メソッドは、配列に要素を挿入したり配列から要素を削除したりする汎用的なメソッドであり、削除した要素を返す
 slice()メソッドやconcat()メソッドとは異なり、splice()メソッドは元の配列を変更する
@@ -542,11 +550,11 @@ a22.splice(1, 2); // [2, 3]; a22 = [1, 4]
 a22.splice(1); // [4]; a22 = [1]
 
 let a23 = [1, 2, 3, 4, 5];
-a23.splice(2, 0, "a", "b"); // []; a23 = [1, 2, "a", "b", 3, 4, 5]
+a23.splice(2, 0, 'a', 'b'); // []; a23 = [1, 2, "a", "b", 3, 4, 5]
 a23.splice(2, 2, [1, 2], 3); // ["a", "b"]; a23 = [1, 2, [1, 2], 3, 3, 4, 5]
 ```
 
-#### 7.8.5.3 fill()メソッド *Destructive Method*
+#### 7.8.5.3 fill()メソッド _Destructive Method_
 
 fill()メソッドは配列要素または配列のスライスを指定した値に設定する
 fill()メソッドは元の配列を変更し、変更した配列を返す
@@ -562,7 +570,7 @@ a24.fill(9, 1); // [0, 9, 9, 9, 9]; 1番目以降を9に設定する
 a24.fill(8, 2, -1); // [0, 9, 8, 8, 9]; インデックス2から最後から2番目を8に設定する
 ```
 
-#### 7.8.5.4 copyWithin()メソッド *Destructive Method*
+#### 7.8.5.4 copyWithin()メソッド _Destructive Method_
 
 copyWithin()メソッドは配列のスライスを指定した位置にコピーする
 copyWithin()メソッドは元の配列を変更し、変更した配列を返す ただし配列の長さは変更しない
@@ -588,7 +596,7 @@ a25.copyWithin(0, -2); // [4, 4, 3, 4, 4]; 最後から2番目の4から最後�
 また、配列の要素を並べ替えるsort()メソッドやreverse()メソッドもある
 この項では上記メソッドについて説明する
 
-#### 7.8.6.1 indexOf()メソッドとlastIndexOf()メソッド *Non-Destructive Method*
+#### 7.8.6.1 indexOf()メソッドとlastIndexOf()メソッド _Non-Destructive Method_
 
 indexOf()メソッドとlastIndexOf()メソッドは、配列中から指定した値を持つ要素を探し、要素が見つかったら最初に見つかったインデックスを返す
 見つからなかった場合-1を返す
@@ -611,20 +619,20 @@ a26.indexOf(3); // -1: 3は存在しないため
 
 // 配列a中に含まれる値xを持つ要素をすべて検索し、その要素のインデックスを持つ配列を返す関数
 function findAll(a, x) {
-    let results = [],
-        len = a.length,
-        pos = 0;
-    while (pos < len) {
-        pos = a.indexOf(x, pos); // pos以降でxを探す
-        if (pos === -1) break;
-        results.push(pos);
-        pos += 1;
-    }
-    return results;
+  let results = [],
+    len = a.length,
+    pos = 0;
+  while (pos < len) {
+    pos = a.indexOf(x, pos); // pos以降でxを探す
+    if (pos === -1) break;
+    results.push(pos);
+    pos += 1;
+  }
+  return results;
 }
 ```
 
-#### 7.8.6.2 includes()メソッド *Non-Destructive Method*
+#### 7.8.6.2 includes()メソッド _Non-Destructive Method_
 
 ES2016よりincludes()メソッドが追加された
 includes()メソッドは引数を1つ取り、引数で指定した値が配列に含まれている場合はtrueを返し、含まれていない場合はfalseを返す
@@ -640,7 +648,7 @@ a27.includes(NaN); // true: NaNは含まれている
 a27.indexOf(NaN); // -1: indexOf()メソッドではNaNは含まれていないと判断される
 ```
 
-#### 7.8.6.3 sort()メソッド *Destructive Method*
+#### 7.8.6.3 sort()メソッド _Destructive Method_
 
 sort()メソッドは配列の要素を並び替えするのに使用される
 sort()メソッドは新しい配列を生成するのではなく既存の配列をソートし、ソートした配列を返す
@@ -657,23 +665,25 @@ sort()メソッドは新しい配列を生成するのではなく既存の配�
 ```javascript
 // 数値順にソートする例
 let a28 = [33, 103, 3, 726, 200];
-a28.sort(function (a, b) { return a - b; }); // [3, 33, 103, 200, 726]
+a28.sort(function (a, b) {
+  return a - b;
+}); // [3, 33, 103, 200, 726]
 a28.sort((a, b) => a - b); // ラムダ式を使う場合
 
 a28.sort((a, b) => b - a); // [726, 200, 103, 33, 3]: 逆順にソートする
 
 // 大文字と小文字を区別せずにアルファベット順にソートする例
-let a29 = ["banana", "cherry", "Apple"];
+let a29 = ['banana', 'cherry', 'Apple'];
 a29.sort(function (s, t) {
-    let a = s.toLowerCase();
-    let b = t.toLowerCase();
-    if (a < b) return -1;
-    if (a > b) return 1;
-    return 0;
+  let a = s.toLowerCase();
+  let b = t.toLowerCase();
+  if (a < b) return -1;
+  if (a > b) return 1;
+  return 0;
 }); // ["Apple", "banana", "cherry"]
 ```
 
-#### 7.8.6.4 reverse()メソッド *Destructive Method*
+#### 7.8.6.4 reverse()メソッド _Destructive Method_
 
 reverse()メソッドは配列の要素を逆順にするときに使用される
 reverse()メソッドは新しい配列を生成するのではなく、既存の配列を逆順にし、逆順にした配列を返す
@@ -683,7 +693,7 @@ let a30 = [1, 2, 3, 4, 5];
 a30.reverse(); // [5, 4, 3, 2, 1]
 ```
 
-### 7.8.7 配列から文字列への変換 *Non-Destructive Method*
+### 7.8.7 配列から文字列への変換 _Non-Destructive Method_
 
 Arrayクラスには配列を文字列に変換するメソッドが3つ用意されていて、一般的にはログやエラーメッセージを作成するときに使う
 （配列の内容を後で再利用できるような形式でテキストにしたい場合はJSON.stringify()メソッドを使ってシリアライズするのがよい）
@@ -700,14 +710,14 @@ toString()メソッドはArray.prototype.toString()メソッドのエイリア�
 区切り文字が度の文字になるのかは処理系に依存する
 
 ```javascript
-let a31 = [1, "a", new Date()];
+let a31 = [1, 'a', new Date()];
 a31.join(); // "1,a,Wed Aug 26 2020 21:43:38 GMT+0900 (Japan Standard Time)"
-a31.join(" - "); // "1 - a - Wed Aug 26 2020 21:43:38 GMT+0900 (Japan Standard Time)"
-a31.join(""); // "1aWed Aug 26 2020 21:43:38 GMT+0900 (Japan Standard Time)"
+a31.join(' - '); // "1 - a - Wed Aug 26 2020 21:43:38 GMT+0900 (Japan Standard Time)"
+a31.join(''); // "1aWed Aug 26 2020 21:43:38 GMT+0900 (Japan Standard Time)"
 a31.toLocaleString(); // "1,a,2020/08/26 21:43:38"
 
 let b1 = new Array(10); // 長さ10の空の配列を生成
-b1.join("-"); // "---------": 配列の長さが10で要素がすべてundefinedのため、区切り文字で連結される
+b1.join('-'); // "---------": 配列の長さが10で要素がすべてundefinedのため、区切り文字で連結される
 ```
 
 ### 7.8.8 配列の静的関数
@@ -744,36 +754,39 @@ let a32 = {};
 // 要素を追加して配列のようなオブジェクトを作成する
 let j = 0;
 while (j < 10) {
-    a32[j] = j * j;
-    j++;
+  a32[j] = j * j;
+  j++;
 }
 a32.length = j;
 
 // 通常の配列のように配列のようなオブジェクト（a32）を処理する関数
 let total = 0;
 for (let i = 0; i < a32.length; i++) {
-    total += a32[i];
+  total += a32[i];
 }
 
 // 例えばoが配列のようなオブジェクトであるかどうかを判定する関数を書くとしたら下記になる
 // ただし、文字列は配列のようなオブジェクトとして扱われなくなっている（文字列は配列として扱うより文字列として扱った方がよいため）
 function isArrayLike(o) {
-    if (o &&             // nullやundefinedでない
-        typeof o === "object" &&             // オブジェクトである
-        Number.isFinite(o.length) &&         // 有限の数値である
-        o.length >= 0 && // 非負数である
-        Number.isInteger(o.length) &&        // 整数である
-        o.length < 4294967296) {             // 2^32未満である
-        return true;
-    } else {
-        return false;
-    }
+  if (
+    o && // nullやundefinedでない
+    typeof o === 'object' && // オブジェクトである
+    Number.isFinite(o.length) && // 有限の数値である
+    o.length >= 0 && // 非負数である
+    Number.isInteger(o.length) && // 整数である
+    o.length < 4294967296
+  ) {
+    // 2^32未満である
+    return true;
+  } else {
+    return false;
+  }
 }
 
 // 配列のようなオブジェクトはArray.prototypeを継承していないため、配列メソッドを直接呼び出しできないが、Function.call()メソッドを使って呼び出すことができる
-let a33 = { 0: "a", 1: "b", 2: "c", length: 3 }; // 配列のようなオブジェクト
-Array.prototype.join.call(a33, "+"); // "a+b+c": 配列のようなオブジェクトに対してjoin()メソッドを呼び出す
-Array.prototype.map.call(a33, x => x.toUpperCase()); // ["A", "B", "C"]: 配列のようなオブジェクトに対してmap()メソッドを呼び出す
+let a33 = { 0: 'a', 1: 'b', 2: 'c', length: 3 }; // 配列のようなオブジェクト
+Array.prototype.join.call(a33, '+'); // "a+b+c": 配列のようなオブジェクトに対してjoin()メソッドを呼び出す
+Array.prototype.map.call(a33, (x) => x.toUpperCase()); // ["A", "B", "C"]: 配列のようなオブジェクトに対してmap()メソッドを呼び出す
 Array.prototype.slice.call(a33, 0); // ["a", "b", "c"]: 配列のようなオブジェクトに対してslice()メソッドを呼び出し、間接的に配列を取得する
 Array.from(a33); // ["a", "b", "c"]: 配列のようなオブジェクトを配列に変換する
 ```
@@ -789,47 +802,47 @@ JavaScriptの文字列はUTF-16のUnicode文字の読み出し専用の配列の
 その際、文字列を含むプリミティブ値は不変であるため、push()やsort()などの破壊的なメソッドは使えない
 
 ```javascript
-let s = "test";
+let s = 'test';
 s.charAt(0); // "t"
 s[1]; // "e"
 
-Array.prototype.join.call(s, "-"); // "t-e-s-t": 文字列に対してjoin()メソッドを呼び出す
+Array.prototype.join.call(s, '-'); // "t-e-s-t": 文字列に対してjoin()メソッドを呼び出す
 ```
 
 ## 7.11 まとめ
 
 最後に配列のメソッドを破壊的・非破壊的メソッドにまとめる
 
-| 分類          | メソッド名         | 概要|
-|:---:|:---:|:---|
-|     破壊的      | push               | 配列の末尾に要素を追加し、変更後の配列の長さを返します。|
-|               | pop                | 配列の末尾の要素を削除し、その削除された要素を返します。|
-|               | shift              | 配列の先頭の要素を削除し、その削除された要素を返します。|
-|               | unshift            | 配列の先頭に要素を追加し、変更後の配列の長さを返します。|
-|               | splice             | 配列の指定位置に要素を追加・削除します。元の配列を変更します。|
-|               | sort               | 配列をソートし、元の配列を変更します。|
-|               | reverse            | 配列の要素を逆順に並び替え、元の配列を変更します。|
-|               | copyWithin         | 配列の指定範囲をコピーして別の位置に上書きします（元の配列を変更）。|
-|               | fill               | 配列内の指定範囲を静的な値で埋めます（元の配列を変更）。|
-|               | [forEach](#7811-foreachメソッド)            | 配列の各要素に対してコールバック関数を適用します。|
-|    非破壊的     | concat             | 2つ以上の配列を結合し、新しい配列を返します。|
-|               | [slice](#7851-sliceメソッド-non-destructive-method)              | 配列の指定範囲を抽出し、新しい配列を返します。|
-|               | [map](#7812-mapメソッド-non-destructive-method)                | 各要素に対してコールバック関数を適用した結果の新しい配列を返します。|
-|               | [filter](#7813-filterメソッド-non-destructive-method)             | 条件を満たす要素のみを含む新しい配列を返します。|
-|               | [reduce](#7816-reduceメソッドとreducerightメソッド-non-destructive-method)             | 配列を1つの値に畳み込みます（元の配列は変更されません）。|
-|               | reduceRight        | 配列を右から左に畳み込みます（元の配列は変更されません）。|
-|               | find               | 条件を満たす最初の要素を返します（元の配列は変更されません）。|
-|               | findIndex          | 条件を満たす最初の要素のインデックスを返します。|
-|               | includes           | 指定された値が配列に含まれているかを真偽値で返します。|
-|               | indexOf            | 指定された値の最初のインデックスを返します。|
-|               | lastIndexOf        | 指定された値の最後のインデックスを返します。|
-|               | every              | 全ての要素が条件を満たすかどうかを真偽値で返します。|
-|               | some               | 少なくとも1つの要素が条件を満たすかを真偽値で返します。|
-|               | join               | 配列の全要素を文字列として結合し、1つの文字列を返します。|
-|               | [flat](#782-flatメソッドとflatmapメソッドによる配列のフラット化-non-destructive-method)               | ネストされた配列を指定された深さまで展開した新しい配列を返します。|
-|               | [flatMap](#782-flatメソッドとflatmapメソッドによる配列のフラット化-non-destructive-method)            | mapとflatを組み合わせた新しい配列を返します。|
-|               | toString           | 配列を文字列に変換して返します。|
-|               | toReversed         | 配列を逆順にした新しい配列を返します（元の配列は変更されません）。|
-|               | toSorted           | 配列をソートした新しい配列を返します（元の配列は変更されません）。|
-|               | toSpliced          | 配列を指定範囲で操作した新しい配列を返します（元の配列は変更されません）。|
-|               | with               | 指定したインデックスの要素を置き換えた新しい配列を返します。|
+|   分類   |                                         メソッド名                                         | 概要                                                                       |
+| :------: | :----------------------------------------------------------------------------------------: | :------------------------------------------------------------------------- |
+|  破壊的  |                                            push                                            | 配列の末尾に要素を追加し、変更後の配列の長さを返します。                   |
+|          |                                            pop                                             | 配列の末尾の要素を削除し、その削除された要素を返します。                   |
+|          |                                           shift                                            | 配列の先頭の要素を削除し、その削除された要素を返します。                   |
+|          |                                          unshift                                           | 配列の先頭に要素を追加し、変更後の配列の長さを返します。                   |
+|          |                                           splice                                           | 配列の指定位置に要素を追加・削除します。元の配列を変更します。             |
+|          |                                            sort                                            | 配列をソートし、元の配列を変更します。                                     |
+|          |                                          reverse                                           | 配列の要素を逆順に並び替え、元の配列を変更します。                         |
+|          |                                         copyWithin                                         | 配列の指定範囲をコピーして別の位置に上書きします（元の配列を変更）。       |
+|          |                                            fill                                            | 配列内の指定範囲を静的な値で埋めます（元の配列を変更）。                   |
+|          |                              [forEach](#7811-foreachメソッド)                              | 配列の各要素に対してコールバック関数を適用します。                         |
+| 非破壊的 |                                           concat                                           | 2つ以上の配列を結合し、新しい配列を返します。                              |
+|          |                    [slice](#7851-sliceメソッド-non-destructive-method)                     | 配列の指定範囲を抽出し、新しい配列を返します。                             |
+|          |                      [map](#7812-mapメソッド-non-destructive-method)                       | 各要素に対してコールバック関数を適用した結果の新しい配列を返します。       |
+|          |                   [filter](#7813-filterメソッド-non-destructive-method)                    | 条件を満たす要素のみを含む新しい配列を返します。                           |
+|          |         [reduce](#7816-reduceメソッドとreducerightメソッド-non-destructive-method)         | 配列を1つの値に畳み込みます（元の配列は変更されません）。                  |
+|          |                                        reduceRight                                         | 配列を右から左に畳み込みます（元の配列は変更されません）。                 |
+|          |                                            find                                            | 条件を満たす最初の要素を返します（元の配列は変更されません）。             |
+|          |                                         findIndex                                          | 条件を満たす最初の要素のインデックスを返します。                           |
+|          |                                          includes                                          | 指定された値が配列に含まれているかを真偽値で返します。                     |
+|          |                                          indexOf                                           | 指定された値の最初のインデックスを返します。                               |
+|          |                                        lastIndexOf                                         | 指定された値の最後のインデックスを返します。                               |
+|          |                                           every                                            | 全ての要素が条件を満たすかどうかを真偽値で返します。                       |
+|          |                                            some                                            | 少なくとも1つの要素が条件を満たすかを真偽値で返します。                    |
+|          |                                            join                                            | 配列の全要素を文字列として結合し、1つの文字列を返します。                  |
+|          |  [flat](#782-flatメソッドとflatmapメソッドによる配列のフラット化-non-destructive-method)   | ネストされた配列を指定された深さまで展開した新しい配列を返します。         |
+|          | [flatMap](#782-flatメソッドとflatmapメソッドによる配列のフラット化-non-destructive-method) | mapとflatを組み合わせた新しい配列を返します。                              |
+|          |                                          toString                                          | 配列を文字列に変換して返します。                                           |
+|          |                                         toReversed                                         | 配列を逆順にした新しい配列を返します（元の配列は変更されません）。         |
+|          |                                          toSorted                                          | 配列をソートした新しい配列を返します（元の配列は変更されません）。         |
+|          |                                         toSpliced                                          | 配列を指定範囲で操作した新しい配列を返します（元の配列は変更されません）。 |
+|          |                                            with                                            | 指定したインデックスの要素を置き換えた新しい配列を返します。               |

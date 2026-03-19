@@ -92,7 +92,7 @@ import { customElement, property } from 'lit/decorators.js';
  */
 @customElement('ui-tag')
 export class Tag extends LitElement {
-    static override styles = css`
+  static override styles = css`
     /* ──────────────────────────────────────────────
        CSS カスタムプロパティ: カラーシステム
     ────────────────────────────────────────────── */
@@ -102,10 +102,10 @@ export class Tag extends LitElement {
       --fg-l: 45%;
 
       /* Hue マッピング（上位から上書き可能） */
-      --ui-tag-hue-blue:   var(--hue-blue,   230);
+      --ui-tag-hue-blue: var(--hue-blue, 230);
       --ui-tag-hue-violet: var(--hue-violet, 280);
-      --ui-tag-hue-pink:   var(--hue-pink,   340);
-      --ui-tag-hue-gold:   var(--hue-gold,   85);
+      --ui-tag-hue-pink: var(--hue-pink, 340);
+      --ui-tag-hue-gold: var(--hue-gold, 85);
 
       /* Chroma */
       --chroma-bg: var(--chroma-neutral, 0);
@@ -138,20 +138,16 @@ export class Tag extends LitElement {
 
       /* Final Color Calculation */
       background-color: oklch(
-        calc(var(--bg-l) + var(--delta-l-bg))
-        var(--chroma-bg)
-        var(--tag-hue, var(--hue-base, 0))
+        calc(var(--bg-l) + var(--delta-l-bg)) var(--chroma-bg) var(--tag-hue, var(--hue-base, 0))
       );
       color: oklch(
-        calc(var(--fg-l) + var(--delta-l-fg))
-        var(--chroma-fg)
-        var(--tag-hue, var(--hue-base, 0))
+        calc(var(--fg-l) + var(--delta-l-fg)) var(--chroma-fg) var(--tag-hue, var(--hue-base, 0))
       );
       border: var(--border-width, 1px) solid var(--border-color);
 
       /* Transition */
-      transition:
-        border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      transition: border-color var(--duration-fast, 70ms)
+        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     /* ── Size ── */
@@ -273,9 +269,7 @@ export class Tag extends LitElement {
     :host([variant='outline']) {
       background-color: transparent;
       --border-color: oklch(
-        calc(var(--fg-l) + var(--delta-l-fg))
-        var(--chroma-fg)
-        var(--tag-hue, var(--hue-base, 0))
+        calc(var(--fg-l) + var(--delta-l-fg)) var(--chroma-fg) var(--tag-hue, var(--hue-base, 0))
       );
     }
 
@@ -352,18 +346,18 @@ export class Tag extends LitElement {
     }
 
     /* リンク要素 */
-	    .tag-link {
-	      display: inline-flex;
-	      align-items: center;
-	      gap: var(--space-1, 4px);
+    .tag-link {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1, 4px);
       width: 100%;
       min-width: 0;
-	      overflow: hidden;
-	      color: inherit;
-	      /* 例外許可: Tagはチップ型リンク。枠線・形状・フォーカスリングで識別する。 */
-	      text-decoration: none;
-	      border-radius: inherit;
-	      position: relative;
+      overflow: hidden;
+      color: inherit;
+      /* 例外許可: Tagはチップ型リンク。枠線・形状・フォーカスリングで識別する。 */
+      text-decoration: none;
+      border-radius: inherit;
+      position: relative;
       /* ボーダーはホスト側で管理するため、リンク自体は transparent */
     }
 
@@ -455,8 +449,8 @@ export class Tag extends LitElement {
       border-radius: 2px;
 
       /* Transition */
-      transition:
-        opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      transition: opacity var(--duration-fast, 70ms)
+        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     .tag-remove-button:hover {
@@ -540,129 +534,127 @@ export class Tag extends LitElement {
     }
   `;
 
-    /**
-     * スタイルバリアント
-     * @default 'default'
-     */
-    @property({ type: String, reflect: true })
-    variant: 'default' | 'outline' | 'solid' | 'plain' = 'default';
+  /**
+   * スタイルバリアント
+   * @default 'default'
+   */
+  @property({ type: String, reflect: true })
+  variant: 'default' | 'outline' | 'solid' | 'plain' = 'default';
 
-    /**
-     * サイズ
-     * @default 'xs'
-     */
-    @property({ type: String, reflect: true })
-    size: 'xs' | 'sm' = 'xs';
+  /**
+   * サイズ
+   * @default 'xs'
+   */
+  @property({ type: String, reflect: true })
+  size: 'xs' | 'sm' = 'xs';
 
-    /**
-     * 意味的カラー
-     * @default 'neutral'
-     */
-    @property({ type: String, reflect: true })
-    color: 'neutral' | 'red' | 'blue' | 'violet' | 'pink' | 'gold' = 'neutral';
+  /**
+   * 意味的カラー
+   * @default 'neutral'
+   */
+  @property({ type: String, reflect: true })
+  color: 'neutral' | 'red' | 'blue' | 'violet' | 'pink' | 'gold' = 'neutral';
 
-    /**
-     * 削除ボタンを表示するか
-     * @default false
-     */
-    @property({ type: Boolean, reflect: true })
-    removable = false;
+  /**
+   * 削除ボタンを表示するか
+   * @default false
+   */
+  @property({ type: Boolean, reflect: true })
+  removable = false;
 
-    /**
-     * リンク先URL。指定するとテキスト部分が `<a>` タグになります。
-     */
-    @property({ type: String, reflect: true })
-    href: string | undefined = undefined;
+  /**
+   * リンク先URL。指定するとテキスト部分が `<a>` タグになります。
+   */
+  @property({ type: String, reflect: true })
+  href: string | undefined = undefined;
 
-    /**
-     * 非活性状態
-     * @default false
-     */
-    @property({ type: Boolean, reflect: true })
-    disabled = false;
+  /**
+   * 非活性状態
+   * @default false
+   */
+  @property({ type: Boolean, reflect: true })
+  disabled = false;
 
-    override updated(changedProperties: PropertyValues<this>): void {
-        super.updated(changedProperties);
+  override updated(changedProperties: PropertyValues<this>): void {
+    super.updated(changedProperties);
 
-        // disabled + href の場合: aria-disabled と tabindex を設定
-        if (changedProperties.has('disabled') || changedProperties.has('href')) {
-            const link = this.shadowRoot?.querySelector<HTMLAnchorElement>('.tag-link');
-            if (link) {
-                if (this.disabled) {
-                    link.setAttribute('aria-disabled', 'true');
-                    link.setAttribute('tabindex', '-1');
-                } else {
-                    link.removeAttribute('aria-disabled');
-                    link.removeAttribute('tabindex');
-                }
-            }
-
-            const removeBtn = this.shadowRoot?.querySelector<HTMLButtonElement>('.tag-remove-button');
-            if (removeBtn) {
-                if (this.disabled) {
-                    removeBtn.setAttribute('tabindex', '-1');
-                    removeBtn.setAttribute('aria-disabled', 'true');
-                } else {
-                    removeBtn.removeAttribute('tabindex');
-                    removeBtn.removeAttribute('aria-disabled');
-                }
-            }
-        }
-    }
-
-    /** 削除ボタンのクリックハンドラ */
-    private _handleRemove = (e: Event): void => {
-        e.stopPropagation();
-        if (this.disabled) return;
-
-        // タグのテキスト内容を取得
-        const textContent = this.textContent.trim();
-
-        this.dispatchEvent(
-            new CustomEvent<{ value: string }>('ui-tag-remove', {
-                bubbles: true,
-                composed: true,
-                detail: { value: textContent },
-            }),
-        );
-    };
-
-    /** disabled + href の場合: クリックを抑止 */
-    private _handleLinkClick = (e: MouseEvent): void => {
+    // disabled + href の場合: aria-disabled と tabindex を設定
+    if (changedProperties.has('disabled') || changedProperties.has('href')) {
+      const link = this.shadowRoot?.querySelector<HTMLAnchorElement>('.tag-link');
+      if (link) {
         if (this.disabled) {
-            e.preventDefault();
+          link.setAttribute('aria-disabled', 'true');
+          link.setAttribute('tabindex', '-1');
+        } else {
+          link.removeAttribute('aria-disabled');
+          link.removeAttribute('tabindex');
         }
-    };
+      }
 
-    /** 削除ボタンのラベル */
-    private get _removeLabel(): string {
-        const text = this.textContent.trim();
-        return text ? `${text}を削除` : '削除';
+      const removeBtn = this.shadowRoot?.querySelector<HTMLButtonElement>('.tag-remove-button');
+      if (removeBtn) {
+        if (this.disabled) {
+          removeBtn.setAttribute('tabindex', '-1');
+          removeBtn.setAttribute('aria-disabled', 'true');
+        } else {
+          removeBtn.removeAttribute('tabindex');
+          removeBtn.removeAttribute('aria-disabled');
+        }
+      }
     }
+  }
 
-    /** アイコンスロットのレンダリング */
-    private _renderIcon() {
-        const lightDomChildren = Array.from(this.children);
-        const hasIcon = lightDomChildren.some(
-            (child) => child.getAttribute('slot') === 'icon',
-        );
-        if (!hasIcon) return nothing;
+  /** 削除ボタンのクリックハンドラ */
+  private _handleRemove = (e: Event): void => {
+    e.stopPropagation();
+    if (this.disabled) return;
 
-        return html`
+    // タグのテキスト内容を取得
+    const textContent = this.textContent.trim();
+
+    this.dispatchEvent(
+      new CustomEvent<{ value: string }>('ui-tag-remove', {
+        bubbles: true,
+        composed: true,
+        detail: { value: textContent },
+      }),
+    );
+  };
+
+  /** disabled + href の場合: クリックを抑止 */
+  private _handleLinkClick = (e: MouseEvent): void => {
+    if (this.disabled) {
+      e.preventDefault();
+    }
+  };
+
+  /** 削除ボタンのラベル */
+  private get _removeLabel(): string {
+    const text = this.textContent.trim();
+    return text ? `${text}を削除` : '削除';
+  }
+
+  /** アイコンスロットのレンダリング */
+  private _renderIcon() {
+    const lightDomChildren = Array.from(this.children);
+    const hasIcon = lightDomChildren.some((child) => child.getAttribute('slot') === 'icon');
+    if (!hasIcon) return nothing;
+
+    return html`
       <span class="icon-slot" aria-hidden="true">
         <slot name="icon"></slot>
       </span>
     `;
-    }
+  }
 
-    /** テキストスロットのレンダリング */
-    private _renderText() {
-        return html`<span class="text-slot"><slot></slot></span>`;
-    }
+  /** テキストスロットのレンダリング */
+  private _renderText() {
+    return html`<span class="text-slot"><slot></slot></span>`;
+  }
 
-    /** 削除ボタンのレンダリング */
-    private _renderRemoveButton() {
-        return html`
+  /** 削除ボタンのレンダリング */
+  private _renderRemoveButton() {
+    return html`
       <button
         class="tag-remove-button"
         type="button"
@@ -686,72 +678,59 @@ export class Tag extends LitElement {
         </svg>
       </button>
     `;
-    }
+  }
 
-    override render() {
-        const hasHref = this.href !== undefined && this.href !== '';
-        const hasRemovable = this.removable;
+  override render() {
+    const hasHref = this.href !== undefined && this.href !== '';
+    const hasRemovable = this.removable;
 
-        // ── パターン 1: Link + Removable（並列配置）──
-        // HTML 仕様: Interactive content nesting 禁止のため、
-        // <a> と <button> を Flexbox で並列配置する
-        if (hasHref && hasRemovable) {
-            return html`
-        <div
-          class="tag-group"
-          role="group"
-          aria-label="${this.textContent.trim()} タグ"
-        >
+    // ── パターン 1: Link + Removable（並列配置）──
+    // HTML 仕様: Interactive content nesting 禁止のため、
+    // <a> と <button> を Flexbox で並列配置する
+    if (hasHref && hasRemovable) {
+      return html`
+        <div class="tag-group" role="group" aria-label="${this.textContent.trim()} タグ">
           <a
             class="tag-link"
             href="${this.disabled ? nothing : this.href}"
             @click="${this._handleLinkClick}"
           >
-            ${this._renderIcon()}
-            ${this._renderText()}
+            ${this._renderIcon()} ${this._renderText()}
           </a>
           ${this._renderRemoveButton()}
         </div>
       `;
-        }
+    }
 
-        // ── パターン 2: Link Only ──
-        if (hasHref) {
-            return html`
+    // ── パターン 2: Link Only ──
+    if (hasHref) {
+      return html`
         <a
           class="tag-link"
           href="${this.disabled ? nothing : this.href}"
           @click="${this._handleLinkClick}"
         >
-          ${this._renderIcon()}
-          ${this._renderText()}
+          ${this._renderIcon()} ${this._renderText()}
         </a>
       `;
-        }
+    }
 
-        // ── パターン 3: Removable Only ──
-        if (hasRemovable) {
-            return html`
+    // ── パターン 3: Removable Only ──
+    if (hasRemovable) {
+      return html`
         <span class="tag-root">
-          ${this._renderIcon()}
-          ${this._renderText()}
-          ${this._renderRemoveButton()}
+          ${this._renderIcon()} ${this._renderText()} ${this._renderRemoveButton()}
         </span>
       `;
-        }
-
-        // ── パターン 4: 通常（装飾的） ──
-        return html`
-      <span class="tag-root">
-        ${this._renderIcon()}
-        ${this._renderText()}
-      </span>
-    `;
     }
+
+    // ── パターン 4: 通常（装飾的） ──
+    return html` <span class="tag-root"> ${this._renderIcon()} ${this._renderText()} </span> `;
+  }
 }
 
 declare global {
-    interface HTMLElementTagNameMap {
-        'ui-tag': Tag;
-    }
+  interface HTMLElementTagNameMap {
+    'ui-tag': Tag;
+  }
 }

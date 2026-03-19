@@ -27,8 +27,7 @@ export const Default: Story = {
     renderFoundationFrame(
       {
         title: 'Elevation Shadows',
-        description:
-          'Rouault の影は強い演出ではなく、浮きすぎない面の分離に使います。',
+        description: 'Rouault の影は強い演出ではなく、浮きすぎない面の分離に使います。',
       },
       html`
         ${renderFoundationSection(
@@ -72,7 +71,6 @@ export const Default: Story = {
             },
           ]),
         )}
-
         ${renderFoundationSection(
           'Token Reference',
           renderTokenValueList([

@@ -14,7 +14,9 @@ describe('resolveTrailingSlashRewrite', () => {
   });
 
   it('既に trailing slash が付いているURLは rewrite しないこと', () => {
-    expect(resolveTrailingSlashRewrite('/notes/music/classical/beethoven/symphony-9/')).to.equal(null);
+    expect(resolveTrailingSlashRewrite('/notes/music/classical/beethoven/symphony-9/')).to.equal(
+      null,
+    );
   });
 
   it('拡張子付きリソースは rewrite しないこと', () => {

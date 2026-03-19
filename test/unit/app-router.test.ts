@@ -151,7 +151,12 @@ describe('app-router', () => {
     };
 
     host = await fixture<AppRouterElement>(
-      html`<app-router><main><h1>SSR Title</h1><p>SSR Body</p></main></app-router>`,
+      html`<app-router
+        ><main>
+          <h1>SSR Title</h1>
+          <p>SSR Body</p>
+        </main></app-router
+      >`,
     );
 
     await host.updateComplete;
@@ -182,7 +187,9 @@ describe('app-router', () => {
       );
 
     host = await fixture<AppRouterElement>(
-      html`<app-router><main><h1>SSR Title</h1></main></app-router>`,
+      html`<app-router
+        ><main><h1>SSR Title</h1></main></app-router
+      >`,
     );
     await host.updateComplete;
 
@@ -217,7 +224,9 @@ describe('app-router', () => {
       );
 
     host = await fixture<AppRouterElement>(
-      html`<app-router><main><h1>SSR Title</h1></main></app-router>`,
+      html`<app-router
+        ><main><h1>SSR Title</h1></main></app-router
+      >`,
     );
     await host.updateComplete;
 
@@ -225,8 +234,9 @@ describe('app-router', () => {
 
     await waitUntil(
       () =>
-        host?.querySelector('[aria-live="polite"]')?.textContent.includes('ページが読み込まれました') ??
-        false,
+        host
+          ?.querySelector('[aria-live="polite"]')
+          ?.textContent.includes('ページが読み込まれました') ?? false,
       'aria-live の通知が出ること',
     );
 
@@ -265,7 +275,9 @@ describe('app-router', () => {
       );
 
     host = await fixture<AppRouterElement>(
-      html`<app-router><main><h1>SSR Title</h1></main></app-router>`,
+      html`<app-router
+        ><main><h1>SSR Title</h1></main></app-router
+      >`,
     );
     await host.updateComplete;
 
@@ -296,7 +308,9 @@ describe('app-router', () => {
       });
 
     host = await fixture<AppRouterElement>(
-      html`<app-router><main><h1>SSR Title</h1></main></app-router>`,
+      html`<app-router
+        ><main><h1>SSR Title</h1></main></app-router
+      >`,
     );
     await host.updateComplete;
 

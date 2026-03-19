@@ -1,7 +1,4 @@
-import type {
-  ReactiveController,
-  ReactiveControllerHost,
-} from 'lit';
+import type { ReactiveController, ReactiveControllerHost } from 'lit';
 import {
   findHeadingElement,
   revealHeadingInTabs,
@@ -14,10 +11,7 @@ import {
   readPrimaryTabValue,
   writePrimaryTabValue,
 } from '../../../lib/tabs/url-state.js';
-import type {
-  TabsUrlSource,
-  UrlHistoryMode,
-} from './tabs.types.js';
+import type { TabsUrlSource, UrlHistoryMode } from './tabs.types.js';
 
 export interface TabsUrlSyncHost {
   getHostElement(): HTMLElement;
@@ -48,10 +42,7 @@ export class TabsUrlSyncController implements ReactiveController {
 
     window.addEventListener('popstate', this.onLocationStateChange);
     window.addEventListener('hashchange', this.onLocationStateChange);
-    window.addEventListener(
-      URL_STATE_CHANGE_EVENT,
-      this.onLocationStateChange as EventListener,
-    );
+    window.addEventListener(URL_STATE_CHANGE_EVENT, this.onLocationStateChange as EventListener);
   }
 
   hostDisconnected(): void {
@@ -61,10 +52,7 @@ export class TabsUrlSyncController implements ReactiveController {
 
     window.removeEventListener('popstate', this.onLocationStateChange);
     window.removeEventListener('hashchange', this.onLocationStateChange);
-    window.removeEventListener(
-      URL_STATE_CHANGE_EVENT,
-      this.onLocationStateChange as EventListener,
-    );
+    window.removeEventListener(URL_STATE_CHANGE_EVENT, this.onLocationStateChange as EventListener);
   }
 
   withSuppressedWrite<T>(fn: () => T): T {
@@ -127,10 +115,7 @@ export class TabsUrlSyncController implements ReactiveController {
     }
   }
 
-  writeSelectedValue(
-    value: string | null,
-    historyMode: UrlHistoryMode,
-  ): void {
+  writeSelectedValue(value: string | null, historyMode: UrlHistoryMode): void {
     if (
       !this.host.isUrlSyncEnabled() ||
       this.suppressWrite ||
@@ -167,10 +152,7 @@ export class TabsUrlSyncController implements ReactiveController {
     return resolveTabValueForDescendant(hostEl, target);
   }
 
-  private writeUrlStateInternal(
-    nextUrl: string,
-    historyMode: UrlHistoryMode,
-  ): void {
+  private writeUrlStateInternal(nextUrl: string, historyMode: UrlHistoryMode): void {
     if (historyMode === 'none' || typeof window === 'undefined') {
       return;
     }

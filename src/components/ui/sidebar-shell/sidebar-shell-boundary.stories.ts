@@ -115,8 +115,7 @@ const meta: Meta<UiSidebarShell> = {
   parameters: {
     docs: {
       description: {
-        component:
-          '`<ui-sidebar>` の境界条件、再入安全性、永続化、メディアクエリ、契約テスト。',
+        component: '`<ui-sidebar>` の境界条件、再入安全性、永続化、メディアクエリ、契約テスト。',
       },
     },
     layout: 'fullscreen',
@@ -174,7 +173,10 @@ export const RapidToggleReentrancySafety: Story = {
       host.collapse(); /* 既に collapsed */
     });
 
-    assert((eventCount as number) === 3, `同値設定後もイベント回数が 3 のまま (実際: ${eventCount.toString()})`);
+    assert(
+      (eventCount as number) === 3,
+      `同値設定後もイベント回数が 3 のまま (実際: ${eventCount.toString()})`,
+    );
 
     host.removeEventListener('ui-sidebar-state-change', listener);
   },
@@ -299,10 +301,7 @@ export const ModeAutoDetection: Story = {
     );
 
     /* --- mode 属性が反映されること --- */
-    assert(
-      host.getAttribute('mode') === expectedMode,
-      `mode 属性が "${expectedMode}" であること`,
-    );
+    assert(host.getAttribute('mode') === expectedMode, `mode 属性が "${expectedMode}" であること`);
   },
 };
 
@@ -357,10 +356,7 @@ export const HeaderSlotVisibilityByMode: Story = {
       '.sidebar-header slot[name="header"]',
     );
     const assigned = headerSlot?.assignedElements({ flatten: true }) ?? [];
-    assert(
-      assigned.length > 0,
-      'mode 切替後も header スロットに要素が割り当てられていること',
-    );
+    assert(assigned.length > 0, 'mode 切替後も header スロットに要素が割り当てられていること');
   },
 };
 
@@ -390,10 +386,7 @@ export const InertStrategyTiming: Story = {
 
     /* --- 初期状態: expanded, not inert --- */
     assert(!nav.inert, '初期状態で inert でないこと');
-    assert(
-      nav.style.visibility !== 'hidden',
-      '初期状態で visibility が hidden でないこと',
-    );
+    assert(nav.style.visibility !== 'hidden', '初期状態で visibility が hidden でないこと');
 
     /* --- Collapse: inert がアニメーション前に即座設定 → 最終的に visibility:hidden --- */
     host.state = 'collapsed';
@@ -408,10 +401,7 @@ export const InertStrategyTiming: Story = {
     await waitForEvent(host, 'ui-sidebar-state-change');
     await flush(host);
 
-    assert(
-      nav.style.visibility === 'hidden',
-      'collapse 完了後に visibility: hidden であること',
-    );
+    assert(nav.style.visibility === 'hidden', 'collapse 完了後に visibility: hidden であること');
 
     /* --- Expand: visibility:visible + inert解除がアニメーション前 --- */
     host.state = 'expanded';
@@ -464,8 +454,22 @@ export const DarkModeSurface: Story = {
           style="border: 1px dashed oklch(50% 0 0 / 0.2); min-height: 300px;"
         >
           <div role="tree" aria-label="ナビゲーション">
-            <a href="/notes" role="treeitem" aria-selected="false" tabindex="0" style="color: var(--fg-muted);">ノート</a>
-            <a href="/music" role="treeitem" aria-selected="false" tabindex="-1" style="color: var(--fg-muted);">音楽</a>
+            <a
+              href="/notes"
+              role="treeitem"
+              aria-selected="false"
+              tabindex="0"
+              style="color: var(--fg-muted);"
+              >ノート</a
+            >
+            <a
+              href="/music"
+              role="treeitem"
+              aria-selected="false"
+              tabindex="-1"
+              style="color: var(--fg-muted);"
+              >音楽</a
+            >
           </div>
         </ui-sidebar-shell>
       </div>
@@ -483,8 +487,22 @@ export const DarkModeSurface: Story = {
           style="border: 1px dashed oklch(80% 0 0 / 0.2); min-height: 300px;"
         >
           <div role="tree" aria-label="ナビゲーション">
-            <a href="/notes" role="treeitem" aria-selected="false" tabindex="0" style="color: var(--fg-muted);">ノート</a>
-            <a href="/music" role="treeitem" aria-selected="false" tabindex="-1" style="color: var(--fg-muted);">音楽</a>
+            <a
+              href="/notes"
+              role="treeitem"
+              aria-selected="false"
+              tabindex="0"
+              style="color: var(--fg-muted);"
+              >ノート</a
+            >
+            <a
+              href="/music"
+              role="treeitem"
+              aria-selected="false"
+              tabindex="-1"
+              style="color: var(--fg-muted);"
+              >音楽</a
+            >
           </div>
         </ui-sidebar-shell>
       </div>
@@ -543,10 +561,7 @@ export const ForcedColorsContract: Story = {
     const cssText = readCssText();
 
     /* --- forced-colors メディアクエリ --- */
-    assert(
-      cssText.includes('forced-colors'),
-      'CSS に forced-colors メディアクエリが含まれること',
-    );
+    assert(cssText.includes('forced-colors'), 'CSS に forced-colors メディアクエリが含まれること');
 
     /* --- Canvas / CanvasText --- */
     assert(cssText.includes('Canvas'), 'CSS に Canvas キーワードが含まれること');
@@ -591,10 +606,7 @@ export const ReducedMotionAndPrintContract: Story = {
 
     /* --- Print --- */
     assert(cssText.includes('@media print'), 'CSS に @media print が含まれること');
-    assert(
-      cssText.includes('display: none'),
-      '@media print 内で display: none が指定されること',
-    );
+    assert(cssText.includes('display: none'), '@media print 内で display: none が指定されること');
 
     /* --- 通常レンダリングでは表示されている --- */
     const hostStyle = getComputedStyle(host);
@@ -652,9 +664,7 @@ export const ScrimOpacityPublicToken: Story = {
     assert(!!customNav, 'カスタムスクリム側の nav が存在すること');
 
     /* カスタムプロパティが適用されていること */
-    const customValue = getComputedStyle(customHost).getPropertyValue(
-      '--ui-sidebar-scrim-opacity',
-    );
+    const customValue = getComputedStyle(customHost).getPropertyValue('--ui-sidebar-scrim-opacity');
     assert(
       customValue.trim() === '0.3',
       `カスタム --ui-sidebar-scrim-opacity が 0.3 であること (実際: "${customValue.trim()}")`,

@@ -33,7 +33,9 @@ const createContentRoot = async (): Promise<string> => {
 };
 
 afterEach(async () => {
-  await Promise.all(tempDirs.splice(0).map((dirPath) => rm(dirPath, { recursive: true, force: true })));
+  await Promise.all(
+    tempDirs.splice(0).map((dirPath) => rm(dirPath, { recursive: true, force: true })),
+  );
 });
 
 describe('buildNotesCollection', () => {
@@ -58,12 +60,8 @@ describe('buildNotesCollection', () => {
       'category/section-a/item-alpha',
       'category/section-a/item-beta',
     ]);
-    expect(collection[0]?.tocHeadings).toEqual([
-      { id: 'heading-b', text: '見出しB', level: 2 },
-    ]);
-    expect(collection[1]?.tocHeadings).toEqual([
-      { id: 'heading-a', text: '見出しA', level: 2 },
-    ]);
+    expect(collection[0]?.tocHeadings).toEqual([{ id: 'heading-b', text: '見出しB', level: 2 }]);
+    expect(collection[1]?.tocHeadings).toEqual([{ id: 'heading-a', text: '見出しA', level: 2 }]);
   });
 
   it('sidebar.scope を最も近い祖先から解決する', async () => {
@@ -98,16 +96,20 @@ describe('buildNotesCollection', () => {
 
     const collection = buildNotesCollection(notes, contentRoot);
 
-    expect(collection.find((note) => note.slug === 'category/section-a/item-beta')?.sidebarRoot).toBe(
-      'category/section-a',
-    );
     expect(
-      collection.find((note) => note.slug === 'category/section-a/item-gamma/page-one')?.sidebarRoot,
+      collection.find((note) => note.slug === 'category/section-a/item-beta')?.sidebarRoot,
     ).toBe('category/section-a');
     expect(
-      collection.find((note) => note.slug === 'category/section-a/item-alpha/page-two')?.sidebarRoot,
+      collection.find((note) => note.slug === 'category/section-a/item-gamma/page-one')
+        ?.sidebarRoot,
+    ).toBe('category/section-a');
+    expect(
+      collection.find((note) => note.slug === 'category/section-a/item-alpha/page-two')
+        ?.sidebarRoot,
     ).toBeUndefined();
-    expect(collection.find((note) => note.slug === 'category/section-b/page-three')?.sidebarRoot).toBeUndefined();
+    expect(
+      collection.find((note) => note.slug === 'category/section-b/page-three')?.sidebarRoot,
+    ).toBeUndefined();
   });
 
   it('sidebarIcon 未指定時は none を既定値としてサイドバー用 icon 情報を付与する', async () => {
@@ -167,8 +169,12 @@ describe('buildNotesCollection', () => {
 
     const collection = buildNotesCollection(notes, contentRoot);
     const itemBeta = collection.find((note) => note.slug === 'category/section-a/item-beta');
-    const pageTwo = collection.find((note) => note.slug === 'category/section-a/item-alpha/page-two');
-    const pageThree = collection.find((note) => note.slug === 'category/section-a/item-alpha/page-three');
+    const pageTwo = collection.find(
+      (note) => note.slug === 'category/section-a/item-alpha/page-two',
+    );
+    const pageThree = collection.find(
+      (note) => note.slug === 'category/section-a/item-alpha/page-three',
+    );
     const pageFour = collection.find((note) => note.slug === 'category/section-b/page-four');
 
     expect(itemBeta?.sidebarResolvedIcon).toBe('lucide:file-text');

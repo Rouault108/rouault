@@ -41,7 +41,9 @@ const removeControlCharacters = (value: string): string => {
 
 const isAllowedProtocolForAttribute = (attributeName: string, protocol: string): boolean => {
   if (LINK_URL_ATTRIBUTE_NAMES.has(attributeName)) {
-    return protocol === 'http:' || protocol === 'https:' || protocol === 'mailto:' || protocol === 'tel:';
+    return (
+      protocol === 'http:' || protocol === 'https:' || protocol === 'mailto:' || protocol === 'tel:'
+    );
   }
 
   if (RESOURCE_URL_ATTRIBUTE_NAMES.has(attributeName)) {

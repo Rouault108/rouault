@@ -34,9 +34,7 @@ describe('remarkDisallowRawHtml', () => {
       remarkDisallowRawHtml()(tree, { path: 'content/notes/sample.md' });
     };
 
-    expect(run).to.throw(
-      '[markdown] 生HTMLは使用できません: content/notes/sample.md:10:3',
-    );
+    expect(run).to.throw('[markdown] 生HTMLは使用できません: content/notes/sample.md:10:3');
   });
 
   it('生HTMLが存在しない場合はエラーを投げないこと', () => {

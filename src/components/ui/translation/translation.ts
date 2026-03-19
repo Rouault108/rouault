@@ -14,13 +14,11 @@ const VALID_RENDER_MODES = new Set<TranslationRenderMode>(['popover', 'drawer', 
 const DOCUMENT_STYLE_ID = 'ui-translation-document-styles';
 const MAX_TRIGGER_TEXT_LENGTH = 150;
 const MOBILE_VIEWPORT_MAX_WIDTH = 1279;
-const BOTTOM_SHEET_MEDIA_QUERY =
-  `(max-width: ${String(MOBILE_VIEWPORT_MAX_WIDTH)}px) and (hover: none) and (pointer: coarse)`;
+const BOTTOM_SHEET_MEDIA_QUERY = `(max-width: ${String(MOBILE_VIEWPORT_MAX_WIDTH)}px) and (hover: none) and (pointer: coarse)`;
 const POPOVER_EDGE_PADDING = 16;
 const POPOVER_TRIGGER_GAP = 8;
 const BOTTOM_SHEET_CLOSE_RATIO = 0.3;
 const BOTTOM_SHEET_CLOSE_VELOCITY = 0.75;
-
 
 const DOCUMENT_CSS = `
 ui-translation {
@@ -514,14 +512,21 @@ export class UiTranslation extends LitElement {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    const maxLeft = Math.max(POPOVER_EDGE_PADDING, viewportWidth - contentRect.width - POPOVER_EDGE_PADDING);
+    const maxLeft = Math.max(
+      POPOVER_EDGE_PADDING,
+      viewportWidth - contentRect.width - POPOVER_EDGE_PADDING,
+    );
     const left = Math.min(Math.max(triggerRect.left, POPOVER_EDGE_PADDING), maxLeft);
 
     const preferredBelowTop = triggerRect.bottom + POPOVER_TRIGGER_GAP;
     const preferredAboveTop = triggerRect.top - contentRect.height - POPOVER_TRIGGER_GAP;
-    const canPlaceBelow = preferredBelowTop + contentRect.height + POPOVER_EDGE_PADDING <= viewportHeight;
+    const canPlaceBelow =
+      preferredBelowTop + contentRect.height + POPOVER_EDGE_PADDING <= viewportHeight;
     const topCandidate = canPlaceBelow ? preferredBelowTop : preferredAboveTop;
-    const maxTop = Math.max(POPOVER_EDGE_PADDING, viewportHeight - contentRect.height - POPOVER_EDGE_PADDING);
+    const maxTop = Math.max(
+      POPOVER_EDGE_PADDING,
+      viewportHeight - contentRect.height - POPOVER_EDGE_PADDING,
+    );
     const top = Math.min(Math.max(topCandidate, POPOVER_EDGE_PADDING), maxTop);
 
     this.style.setProperty('--ui-translation-popover-left', `${String(Math.round(left))}px`);
@@ -770,8 +775,7 @@ export class UiTranslation extends LitElement {
         >
           ${this._resolvedOriginal}
         </button>
-        ${this._renderScrim()}
-        ${this._renderContent()}
+        ${this._renderScrim()} ${this._renderContent()}
       </span>
     `;
   }

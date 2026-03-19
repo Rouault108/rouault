@@ -301,17 +301,21 @@ Sandbox preview を使う場合:
 ````markdown
 ::code-preview{label="ボタン例" controls="viewport"}
 ::preview-sandbox{title="ボタンの sandbox" allow-js="true" height="160"}
+
 ```preview-html filename="button.html"
 <button class="demo-button">押す</button>
 ```
+
 ```preview-css filename="button.css"
 .demo-button { padding: 0.75rem 1rem; }
 ```
+
 ```preview-js filename="button.js"
 document.querySelector('.demo-button')?.addEventListener('click', () => {
   document.querySelector('.demo-button')?.toggleAttribute('data-active');
 });
 ```
+
 ::
 ::
 ````
@@ -372,12 +376,12 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 ::link-card{url="https://example.com/article" title="任意タイトル" description="任意説明" image="https://cdn.example.com/card.png"}
 ```
 
-| 属性          | 内容     | 値                  |
-| ------------- | -------- | ------------------- |
+| 属性          | 内容     | 値                    |
+| ------------- | -------- | --------------------- |
 | `url`         | 遷移先   | 外部 `http/https` URL |
-| `title`       | 見出し   | 任意の文字列        |
-| `description` | 補足説明 | 任意の文字列        |
-| `image`       | 右側画像 | 任意の URL          |
+| `title`       | 見出し   | 任意の文字列          |
+| `description` | 補足説明 | 任意の文字列          |
+| `image`       | 右側画像 | 任意の URL            |
 
 ### Score
 
@@ -408,6 +412,7 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 概要
 ::
 ::panel
+
 ### Overview Heading
 
 概要の内容
@@ -416,6 +421,7 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 詳細
 ::
 ::panel
+
 ### Details Heading
 
 詳細の内容
@@ -423,14 +429,14 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 ::
 ```
 
-| 属性                     | 内容                    | 値                       |
-| ------------------------ | ----------------------- | ------------------------ |
-| `selected-value`         | 現在選択値 / 外部制御値 | 任意の文字列             |
-| `default-selected-value` | 初期選択値              | 任意の文字列             |
-| `orientation`            | 並び方向                | `horizontal`, `vertical` |
-| `automatic-activation`   | フォーカス移動で自動選択 | 真偽値                  |
-| `value`                  | `tab` の識別子          | 任意の文字列             |
-| `url-sync`             | 主タブ状態を `?tab=` と同期 | 真偽値                  |
+| 属性                     | 内容                        | 値                       |
+| ------------------------ | --------------------------- | ------------------------ |
+| `selected-value`         | 現在選択値 / 外部制御値     | 任意の文字列             |
+| `default-selected-value` | 初期選択値                  | 任意の文字列             |
+| `orientation`            | 並び方向                    | `horizontal`, `vertical` |
+| `automatic-activation`   | フォーカス移動で自動選択    | 真偽値                   |
+| `value`                  | `tab` の識別子              | 任意の文字列             |
+| `url-sync`               | 主タブ状態を `?tab=` と同期 | 真偽値                   |
 
 補足:
 

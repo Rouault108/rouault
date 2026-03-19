@@ -61,7 +61,6 @@ export const Default: Story = {
           ]),
           'h1-h4 を個別カードで比較し、見出しの密度差を確認します。',
         )}
-
         ${renderFoundationSection(
           'Token Contract',
           renderTokenValueList([
@@ -99,9 +98,15 @@ export const Default: Story = {
       throw new Error('見出しサイズの階層差が崩れています');
     }
     if (h1Style.fontWeight !== '700') {
-      throw new Error(`H1 の font-weight は 700 を期待していましたが、実際には ${h1Style.fontWeight} でした`);
+      throw new Error(
+        `H1 の font-weight は 700 を期待していましたが、実際には ${h1Style.fontWeight} でした`,
+      );
     }
-    if (h2Style.fontWeight !== '600' || h3Style.fontWeight !== '600' || h4Style.fontWeight !== '600') {
+    if (
+      h2Style.fontWeight !== '600' ||
+      h3Style.fontWeight !== '600' ||
+      h4Style.fontWeight !== '600'
+    ) {
       throw new Error('H2-H4 の font-weight は 600 を期待しています');
     }
     if (Number.parseFloat(h1Style.lineHeight) <= h1Size) {
@@ -110,7 +115,9 @@ export const Default: Story = {
     if (h4Style.letterSpacing !== 'normal') {
       const normalizedLetterSpacing = Number.parseFloat(h4Style.letterSpacing);
       if (Number.isNaN(normalizedLetterSpacing) || normalizedLetterSpacing !== 0) {
-        throw new Error(`H4 の letter-spacing は normal または 0 を期待していましたが、実際には ${h4Style.letterSpacing} でした`);
+        throw new Error(
+          `H4 の letter-spacing は normal または 0 を期待していましたが、実際には ${h4Style.letterSpacing} でした`,
+        );
       }
     }
   },

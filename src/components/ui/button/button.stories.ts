@@ -5,27 +5,27 @@ import { defineButtonA11yContract, type Button } from './button';
 
 /**
  * ## ボタン (Button)
- * 
+ *
  * アクションの優先度を視覚的な「重さ（Weight）」で制御します。
  * 「静謐さ」を保つため、画面内に **Primary（塗りつぶし）ボタンは原則1つのみ** とし、
  * 残りは Secondary または Ghost を使用することで視覚的ノイズを極限まで抑制します。
- * 
+ *
  * ### デザイン哲学
- * 
+ *
  * - **役割**: アクションの優先度を視覚的な「重さ（Weight）」で制御
  * - **触感 (Tactility)**: マイクロインタラクションにより、入力がシステムに受容されたことをデジタルに伝える
  * - **最小化設計 (Minimality)**: UIの透明化を追求し、コンテンツを圧迫しないよう黒子として機能
- * 
+ *
  * ### バリアント選択のガイドライン
- * 
+ *
  * 1. **Primary**: 画面内で最も重要なアクション（画面内に1つのみ推奨）
  * 2. **Secondary**: 標準アクション。構造を明示すべき場合（ダイアログの選択肢等）
  * 3. **Outline**: 軽量アクション。カード内/モーダル内で視覚的ノイズを抑制
  * 4. **Ghost**: 最小限の主張。高密度UI（ツールバー等）で使用
  * 5. **Danger**: 破壊的アクション（削除、リセット等）
- * 
+ *
  * ### 使用上の注意
- * 
+ *
  * - **フォーム送信**: type="submit" を明示してください（デフォルトは button）
  * - **アイコンのみ**: icon-only 使用時は aria-label が必須です
  * - **大サイズは非推奨**: lg サイズはデザインレビューなしで使用禁止
@@ -162,7 +162,7 @@ type Story = StoryObj<Button>;
 
 /**
  * デフォルトのボタン（Secondary バリアント）。
- * 
+ *
  * 標準的なアクションに使用します。背景色と境界線で構造を明示します。
  */
 export const Default: Story = {
@@ -195,19 +195,23 @@ export const Default: Story = {
 
     // テスト: デフォルトのtype属性が"button"であること
     if (buttonElement.getAttribute('type') !== 'button') {
-      throw new Error(`type="button" を期待していましたが、実際には "${buttonElement.getAttribute('type') ?? 'null'}" でした`);
+      throw new Error(
+        `type="button" を期待していましたが、実際には "${buttonElement.getAttribute('type') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: デフォルトのvariantが"secondary"であること
     if (button.variant !== 'secondary') {
-      throw new Error(`variant="secondary" を期待していましたが、実際には "${button.variant}" でした`);
+      throw new Error(
+        `variant="secondary" を期待していましたが、実際には "${button.variant}" でした`,
+      );
     }
   },
 };
 
 /**
  * 全バリアントの一覧。
- * 
+ *
  * Primary、Secondary、Outline、Ghost、Danger の5つのバリアントを比較できます。
  */
 export const AllVariants: Story = {
@@ -264,9 +268,9 @@ export const AllVariants: Story = {
 
 /**
  * 全サイズの一覧。
- * 
+ *
  * Small、Medium、Large の3つのサイズを比較できます。
- * 
+ *
  * **注意**: Large サイズは非推奨です。
  */
 export const AllSizes: Story = {
@@ -289,7 +293,7 @@ export const AllSizes: Story = {
 
 /**
  * プライマリボタン。
- * 
+ *
  * 画面内で最も重要なアクションに使用します。
  * **画面内に1つのみ配置することを原則**とします。
  */
@@ -299,17 +303,15 @@ export const Primary: Story = {
     size: 'md',
   },
   render: (args) => html`
-    <ui-button variant="${args.variant}" size="${args.size}">
-      送信
-    </ui-button>
+    <ui-button variant="${args.variant}" size="${args.size}"> 送信 </ui-button>
   `,
 };
 
 /**
  * アウトラインボタン。
- * 
+ *
  * Secondaryより控えめで、カード内やモーダル内で使用すると視覚的ノイズを抑制できます。
- * 
+ *
  * **迷った場合**: Secondary と Outline で迷う場合は、Secondary を優先してください。
  */
 export const Outline: Story = {
@@ -318,15 +320,13 @@ export const Outline: Story = {
     size: 'md',
   },
   render: (args) => html`
-    <ui-button variant="${args.variant}" size="${args.size}">
-      詳細を見る
-    </ui-button>
+    <ui-button variant="${args.variant}" size="${args.size}"> 詳細を見る </ui-button>
   `,
 };
 
 /**
  * ゴーストボタン。
- * 
+ *
  * 最小限の主張。アイコンボタンやツールバーなど、高密度なUIで使用します。
  */
 export const Ghost: Story = {
@@ -335,15 +335,13 @@ export const Ghost: Story = {
     size: 'md',
   },
   render: (args) => html`
-    <ui-button variant="${args.variant}" size="${args.size}">
-      キャンセル
-    </ui-button>
+    <ui-button variant="${args.variant}" size="${args.size}"> キャンセル </ui-button>
   `,
 };
 
 /**
  * Dangerボタン。
- * 
+ *
  * 破壊的アクション（削除、リセット等）に使用します。
  * ホバー時に背景が赤く反転し、無意識に警告します。
  */
@@ -353,9 +351,7 @@ export const Danger: Story = {
     size: 'md',
   },
   render: (args) => html`
-    <ui-button variant="${args.variant}" size="${args.size}">
-      削除
-    </ui-button>
+    <ui-button variant="${args.variant}" size="${args.size}"> 削除 </ui-button>
   `,
   play: async ({ canvasElement }) => {
     const button = canvasElement.querySelector('ui-button');
@@ -374,7 +370,7 @@ export const Danger: Story = {
 
 /**
  * ローディング状態。
- * 
+ *
  * 処理中であることを示します。
  * ラベルテキストは維持され、スピナーが並列表示されることで、
  * ユーザーが「何を実行したか」を見失わないよう配慮しています。
@@ -386,11 +382,7 @@ export const Loading: Story = {
     loading: true,
   },
   render: (args) => html`
-    <ui-button
-      variant="${args.variant}"
-      size="${args.size}"
-      ?loading="${args.loading}"
-    >
+    <ui-button variant="${args.variant}" size="${args.size}" ?loading="${args.loading}">
       保存中...
     </ui-button>
   `,
@@ -409,7 +401,9 @@ export const Loading: Story = {
 
     // テスト: aria-busy="true" が設定されていること
     if (buttonElement.getAttribute('aria-busy') !== 'true') {
-      throw new Error(`aria-busy="true" を期待していましたが、実際には "${buttonElement.getAttribute('aria-busy') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-busy="true" を期待していましたが、実際には "${buttonElement.getAttribute('aria-busy') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: disabled状態であること
@@ -427,7 +421,7 @@ export const Loading: Story = {
 
 /**
  * 無効状態。
- * 
+ *
  * 操作不可能な状態を示します。
  * スタイルは薄くなり、ポインターイベントが除去されます。
  */
@@ -438,11 +432,7 @@ export const Disabled: Story = {
     disabled: true,
   },
   render: (args) => html`
-    <ui-button
-      variant="${args.variant}"
-      size="${args.size}"
-      ?disabled="${args.disabled}"
-    >
+    <ui-button variant="${args.variant}" size="${args.size}" ?disabled="${args.disabled}">
       無効なボタン
     </ui-button>
   `,
@@ -468,7 +458,7 @@ export const Disabled: Story = {
 
 /**
  * アイコン付きボタン。
- * 
+ *
  * テキストとアイコンを組み合わせたボタンです。
  */
 export const WithIcon: Story = {
@@ -492,7 +482,7 @@ export const WithIcon: Story = {
 
 /**
  * アイコンのみのボタン。
- * 
+ *
  * aria-label を必ず設定してください。
  * 正方形（1:1）を強制し、Universal Clarity を担保します。
  */
@@ -537,16 +527,18 @@ export const IconOnly: Story = {
 
     // テスト: icon-only 属性が設定されていること
     if (!button.iconOnly) {
-      throw new Error('iconOnly プロパティが true であることを期待していましたが、実際には false でした');
+      throw new Error(
+        'iconOnly プロパティが true であることを期待していましたが、実際には false でした',
+      );
     }
   },
 };
 
 /**
  * フォーム送信ボタン。
- * 
+ *
  * type="submit" を明示することで、フォーム送信に使用できます。
- * 
+ *
  * **重要**: ネイティブ <button> と異なり、デフォルトは type="button" です。
  */
 export const FormSubmit: Story = {
@@ -559,10 +551,10 @@ export const FormSubmit: Story = {
     <form
       id="submit-form"
       @submit="${(e: Event) => {
-      e.preventDefault();
-      const form = e.currentTarget as HTMLFormElement;
-      form.dataset['submitCount'] = String(Number(form.dataset['submitCount'] ?? '0') + 1);
-    }}"
+        e.preventDefault();
+        const form = e.currentTarget as HTMLFormElement;
+        form.dataset['submitCount'] = String(Number(form.dataset['submitCount'] ?? '0') + 1);
+      }}"
     >
       <ui-button
         id="submit-button"
@@ -589,7 +581,9 @@ export const FormSubmit: Story = {
 
     // テスト: type属性が"submit"であること
     if (buttonElement.getAttribute('type') !== 'submit') {
-      throw new Error(`type="submit" を期待していましたが、実際には "${buttonElement.getAttribute('type') ?? 'null'}" でした`);
+      throw new Error(
+        `type="submit" を期待していましたが、実際には "${buttonElement.getAttribute('type') ?? 'null'}" でした`,
+      );
     }
 
     const form = canvasElement.querySelector<HTMLFormElement>('#submit-form');
@@ -598,26 +592,38 @@ export const FormSubmit: Story = {
     }
 
     const submitCountBeforeEnter = Number(form.dataset['submitCount'] ?? '0');
-    buttonElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true }));
-    await new Promise(resolve => setTimeout(resolve, 0));
+    buttonElement.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true }),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     const submitCountAfterEnter = Number(form.dataset['submitCount'] ?? '0');
     if (submitCountAfterEnter <= submitCountBeforeEnter) {
-      throw new Error(`Enter キー押下後に送信回数が増大することを期待していましたが、実際には ${String(submitCountAfterEnter)}回（増加なし）でした`);
+      throw new Error(
+        `Enter キー押下後に送信回数が増大することを期待していましたが、実際には ${String(submitCountAfterEnter)}回（増加なし）でした`,
+      );
     }
 
     const submitCountBeforeSpace = submitCountAfterEnter;
-    buttonElement.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, composed: true }));
-    buttonElement.dispatchEvent(new KeyboardEvent('keyup', { key: ' ', bubbles: true, composed: true }));
-    await new Promise(resolve => setTimeout(resolve, 0));
+    buttonElement.dispatchEvent(
+      new KeyboardEvent('keydown', { key: ' ', bubbles: true, composed: true }),
+    );
+    buttonElement.dispatchEvent(
+      new KeyboardEvent('keyup', { key: ' ', bubbles: true, composed: true }),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     const submitCountAfterSpace = Number(form.dataset['submitCount'] ?? '0');
     if (submitCountAfterSpace <= submitCountBeforeSpace) {
-      throw new Error(`Space キー押下後に送信回数が増大することを期待していましたが、実際には ${String(submitCountAfterSpace)}回（増加なし）でした`);
+      throw new Error(
+        `Space キー押下後に送信回数が増大することを期待していましたが、実際には ${String(submitCountAfterSpace)}回（増加なし）でした`,
+      );
     }
 
     if (!Number.isFinite(submitCountAfterSpace) || submitCountAfterSpace <= 0) {
-      throw new Error(`送信回数が正の数になることを期待していましたが、実際には "${form.dataset['submitCount'] ?? 'undefined'}" でした`);
+      throw new Error(
+        `送信回数が正の数になることを期待していましたが、実際には "${form.dataset['submitCount'] ?? 'undefined'}" でした`,
+      );
     }
   },
 };
@@ -655,13 +661,15 @@ export const FormReset: Story = {
       throw new Error('フォームリセットのテストに必要な要素が見つかりません');
     }
 
-    await new Promise(resolve => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     input.value = '変更後';
     button.click();
 
     if (input.value !== '初期値') {
-      throw new Error(`リセット後の値が '初期値' になることを期待していましたが、実際には '${input.value}' でした`);
+      throw new Error(
+        `リセット後の値が '初期値' になることを期待していましたが、実際には '${input.value}' でした`,
+      );
     }
   },
 };
@@ -682,10 +690,10 @@ export const ExternalFormOwnerSubmit: Story = {
     <form
       id="external-owner-form"
       @submit="${(e: Event) => {
-      e.preventDefault();
-      const form = e.currentTarget as HTMLFormElement;
-      form.dataset['submitCount'] = String(Number(form.dataset['submitCount'] ?? '0') + 1);
-    }}"
+        e.preventDefault();
+        const form = e.currentTarget as HTMLFormElement;
+        form.dataset['submitCount'] = String(Number(form.dataset['submitCount'] ?? '0') + 1);
+      }}"
     >
       <input type="text" value="dummy" />
     </form>
@@ -709,18 +717,20 @@ export const ExternalFormOwnerSubmit: Story = {
       throw new Error('外部フォームオーナーのテストに必要な要素が見つかりません');
     }
 
-    await new Promise(resolve => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
     button.click();
 
     if (form.dataset['submitCount'] !== '1') {
-      throw new Error(`送信回数が 1 になることを期待していましたが、実際には '${form.dataset['submitCount'] ?? 'undefined'}' でした`);
+      throw new Error(
+        `送信回数が 1 になることを期待していましたが、実際には '${form.dataset['submitCount'] ?? 'undefined'}' でした`,
+      );
     }
   },
 };
 
 /**
  * ダイアログでの使用例。
- * 
+ *
  * Primary は1つのみ、その他は Secondary を使用する原則を示します。
  */
 export const DialogExample: Story = {
@@ -747,9 +757,7 @@ export const DialogExample: Story = {
     <div class="dialog-demo">
       <div class="dialog-content">
         <h3 style="margin: 0 0 0.5rem 0;">確認</h3>
-        <p style="margin: 0; color: var(--fg-muted, #666);">
-          この操作を実行してもよろしいですか？
-        </p>
+        <p style="margin: 0; color: var(--fg-muted, #666);">この操作を実行してもよろしいですか？</p>
       </div>
 
       <div class="dialog-actions">
@@ -762,7 +770,7 @@ export const DialogExample: Story = {
 
 /**
  * ツールバーでの使用例。
- * 
+ *
  * Ghost バリアントを使用して高密度なUIを実現します。
  */
 export const ToolbarExample: Story = {
@@ -802,7 +810,7 @@ export const ToolbarExample: Story = {
 
 /**
  * カード内での使用例。
- * 
+ *
  * Outline バリアントを使用して視覚的ノイズを抑制します。
  */
 export const CardExample: Story = {
@@ -850,7 +858,7 @@ export const CardExample: Story = {
 
 /**
  * フォーカス状態のデモ。
- * 
+ *
  * Adaptive Focus により、移動中のノイズを低減し、停止時に明確化します。
  */
 export const FocusState: Story = {
@@ -876,8 +884,8 @@ export const FocusState: Story = {
 
     <div class="focus-demo">
       <div class="focus-info">
-        <strong>操作方法</strong>: Tab キーを押してボタンにフォーカスを当ててください。
-        Adaptive Focus により、フォーカスリングが適切に表示されます。
+        <strong>操作方法</strong>: Tab キーを押してボタンにフォーカスを当ててください。 Adaptive
+        Focus により、フォーカスリングが適切に表示されます。
       </div>
 
       <div>
@@ -898,7 +906,7 @@ export const FocusState: Story = {
 
     // フォーカスを当てる
     uiButton.focus();
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     const buttonElement = uiButton.shadowRoot?.querySelector('button');
     if (!buttonElement) {
@@ -914,7 +922,7 @@ export const FocusState: Story = {
 
 /**
  * ❌ アクセシビリティエラーの例。
- * 
+ *
  * icon-only 使用時に aria-label がない場合、開発モードでエラーが出力されます。
  * このストーリーは意図的にアクセシビリティ違反を示すためのものです。
  */
@@ -944,23 +952,19 @@ export const IconOnlyWithoutAriaLabel: Story = {
     </style>
 
     <div class="error-demo">
-      <strong>⚠️ 意図的なエラーケース</strong>: 
-      このボタンには aria-label がないため、コンソールにエラーが出力されます。
-      開発者ツールのコンソールを確認してください。
+      <strong>⚠️ 意図的なエラーケース</strong>: このボタンには aria-label
+      がないため、コンソールにエラーが出力されます。 開発者ツールのコンソールを確認してください。
     </div>
 
-    <ui-button
-      variant="${args.variant}"
-      size="${args.size}"
-      ?icon-only="${args.iconOnly}"
-    >
+    <ui-button variant="${args.variant}" size="${args.size}" ?icon-only="${args.iconOnly}">
       <iconify-icon icon="lucide:settings"></iconify-icon>
     </ui-button>
   `,
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **意図的なエラーケース**: aria-label がないため、コンソールにエラーが出力されます。アクセシビリティのため、icon-only 使用時は必ず aria-label を設定してください。',
+        story:
+          '⚠️ **意図的なエラーケース**: aria-label がないため、コンソールにエラーが出力されます。アクセシビリティのため、icon-only 使用時は必ず aria-label を設定してください。',
       },
     },
     // 意図的な違反ケースのため、自動a11yチェック対象からは除外
@@ -991,7 +995,7 @@ export const IconOnlyWithoutAriaLabel: Story = {
 
 /**
  * ⚠️ 非推奨サイズの警告例。
- * 
+ *
  * lg サイズは非推奨です。使用時にコンソールに警告が出力されます。
  */
 export const DeprecatedLargeSize: Story = {
@@ -1003,8 +1007,12 @@ export const DeprecatedLargeSize: Story = {
     <style>
       .warning-demo {
         padding: 1rem;
-        background: var(--bg-warning-subtle, oklch(from var(--warning, oklch(70% 0.15 85)) l c h / 0.1));
-        border: 1px solid var(--border-warning, oklch(from var(--warning, oklch(70% 0.15 85)) l c h / 0.3));
+        background: var(
+          --bg-warning-subtle,
+          oklch(from var(--warning, oklch(70% 0.15 85)) l c h / 0.1)
+        );
+        border: 1px solid
+          var(--border-warning, oklch(from var(--warning, oklch(70% 0.15 85)) l c h / 0.3));
         border-radius: var(--radius-md, 6px);
         margin-bottom: 1rem;
       }
@@ -1015,19 +1023,17 @@ export const DeprecatedLargeSize: Story = {
     </style>
 
     <div class="warning-demo">
-      <strong>⚠️ 非推奨サイズ</strong>: 
-      lg サイズはデザインレビューなしでの使用を禁止します。
+      <strong>⚠️ 非推奨サイズ</strong>: lg サイズはデザインレビューなしでの使用を禁止します。
       コンソールに警告が出力されます。
     </div>
 
-    <ui-button variant="${args.variant}" size="${args.size}">
-      Large サイズ（非推奨）
-    </ui-button>
+    <ui-button variant="${args.variant}" size="${args.size}"> Large サイズ（非推奨） </ui-button>
   `,
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **非推奨**: lg サイズはデザインレビューなしでの使用を禁止します。強調が必要な場合は md サイズに variant="primary" を組み合わせてください。',
+        story:
+          '⚠️ **非推奨**: lg サイズはデザインレビューなしでの使用を禁止します。強調が必要な場合は md サイズに variant="primary" を組み合わせてください。',
       },
     },
   },
@@ -1048,7 +1054,7 @@ export const DeprecatedLargeSize: Story = {
 
 /**
  * Forced Colors Mode での表示確認。
- * 
+ *
  * Windows の高コントラストモードなど、強制カラーモード環境での表示を確認します。
  * システムカラー（Highlight, HighlightText, CanvasText）へのフォールバックを検証できます。
  */
@@ -1076,13 +1082,22 @@ export const ForcedColorsMode: Story = {
         flex-wrap: wrap;
       }
     </style>
-    
+
     <div class="forced-colors-info">
-      <strong>確認方法</strong>: 
+      <strong>確認方法</strong>:
       <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
-        <li><strong>Windows</strong>: 設定 > アクセシビリティ > コントラストテーマ で高コントラストモードを有効化</li>
-        <li><strong>macOS</strong>: システム設定 > アクセシビリティ > ディスプレイ > コントラストを上げる</li>
-        <li><strong>開発者ツール</strong>: Chrome DevTools > Rendering > Emulate CSS media feature forced-colors: active</li>
+        <li>
+          <strong>Windows</strong>: 設定 > アクセシビリティ > コントラストテーマ
+          で高コントラストモードを有効化
+        </li>
+        <li>
+          <strong>macOS</strong>: システム設定 > アクセシビリティ > ディスプレイ >
+          コントラストを上げる
+        </li>
+        <li>
+          <strong>開発者ツール</strong>: Chrome DevTools > Rendering > Emulate CSS media feature
+          forced-colors: active
+        </li>
       </ul>
     </div>
 
@@ -1104,7 +1119,8 @@ export const ForcedColorsMode: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Forced Colors Mode（高コントラストモード）での表示を確認します。境界線とシステムカラーにより構造が明確化されます。',
+        story:
+          'Forced Colors Mode（高コントラストモード）での表示を確認します。境界線とシステムカラーにより構造が明確化されます。',
       },
     },
   },
@@ -1179,8 +1195,8 @@ export const DarkMode: Story = {
 
     <div class="dark-mode-demo">
       <div class="dark-mode-info">
-        DevTools の Rendering で <code>prefers-color-scheme: dark</code> を有効化すると、
-        Secondary の Edge Highlight（上端の inset shadow）まで確認できます。
+        DevTools の Rendering で <code>prefers-color-scheme: dark</code> を有効化すると、 Secondary
+        の Edge Highlight（上端の inset shadow）まで確認できます。
       </div>
 
       <div class="dark-mode-groups">
@@ -1218,18 +1234,22 @@ export const DarkMode: Story = {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
     if (prefersDark && !computedStyle.boxShadow.includes('inset')) {
-      throw new Error('ダークモードでは Secondary ボタンにエッジハイライト（inset shadow）が必要です');
+      throw new Error(
+        'ダークモードでは Secondary ボタンにエッジハイライト（inset shadow）が必要です',
+      );
     }
 
     if (!prefersDark) {
-      console.warn('DarkMode story: prefers-color-scheme: dark を有効化して Edge Highlight を確認してください');
+      console.warn(
+        'DarkMode story: prefers-color-scheme: dark を有効化して Edge Highlight を確認してください',
+      );
     }
   },
 };
 
 /**
  * Reduced Motion での表示確認。
- * 
+ *
  * prefers-reduced-motion 環境下でのアニメーション抑制を確認します。
  * トランジションが即座に適用され、スピナーアニメーションが停止します。
  */
@@ -1249,15 +1269,21 @@ export const ReducedMotion: Story = {
         gap: 1rem;
         flex-wrap: wrap;
       }
-
     </style>
-    
+
     <div class="reduced-motion-info">
-      <strong>確認方法</strong>: 
+      <strong>確認方法</strong>:
       <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
-        <li><strong>Windows</strong>: 設定 > アクセシビリティ > 視覚効果 > アニメーション効果をオフ</li>
-        <li><strong>macOS</strong>: システム設定 > アクセシビリティ > ディスプレイ > 視差効果を減らす</li>
-        <li><strong>開発者ツール</strong>: Chrome DevTools > Rendering > Emulate CSS media feature prefers-reduced-motion: reduce</li>
+        <li>
+          <strong>Windows</strong>: 設定 > アクセシビリティ > 視覚効果 > アニメーション効果をオフ
+        </li>
+        <li>
+          <strong>macOS</strong>: システム設定 > アクセシビリティ > ディスプレイ > 視差効果を減らす
+        </li>
+        <li>
+          <strong>開発者ツール</strong>: Chrome DevTools > Rendering > Emulate CSS media feature
+          prefers-reduced-motion: reduce
+        </li>
       </ul>
       <p style="margin: 0.5rem 0 0 0;">
         ローディングスピナーのアニメーションが停止し、トランジションが即座に適用されることを確認してください。
@@ -1273,14 +1299,17 @@ export const ReducedMotion: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'prefers-reduced-motion 環境下でのアニメーション抑制を確認します。スピナーは静的になり、トランジションは即座に適用されます。',
+        story:
+          'prefers-reduced-motion 環境下でのアニメーション抑制を確認します。スピナーは静的になり、トランジションは即座に適用されます。',
       },
     },
   },
   play: async ({ canvasElement }) => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!prefersReducedMotion) {
-      console.warn('ReducedMotion story: prefers-reduced-motion: reduce を有効化して確認してください');
+      console.warn(
+        'ReducedMotion story: prefers-reduced-motion: reduce を有効化して確認してください',
+      );
       return;
     }
 
@@ -1302,18 +1331,22 @@ export const ReducedMotion: Story = {
     const focusStyle = getComputedStyle(internalButton);
 
     if (spinnerStyle.animationName !== 'none') {
-      throw new Error(`スピナーのアニメーションが無効化されることを期待していましたが、実際には '${spinnerStyle.animationName}' でした`);
+      throw new Error(
+        `スピナーのアニメーションが無効化されることを期待していましたが、実際には '${spinnerStyle.animationName}' でした`,
+      );
     }
 
     if (focusStyle.animationName !== 'none') {
-      throw new Error(`フォーカス時のアニメーションが無効化されることを期待していましたが、実際には '${focusStyle.animationName}' でした`);
+      throw new Error(
+        `フォーカス時のアニメーションが無効化されることを期待していましたが、実際には '${focusStyle.animationName}' でした`,
+      );
     }
   },
 };
 
 /**
  * 印刷スタイルの確認。
- * 
+ *
  * @media print 時のスタイルを確認します。
  * 仕様に従い、ui-button は非表示になります。
  */
@@ -1347,10 +1380,10 @@ export const PrintStyles: Story = {
         font-size: var(--text-sm, 13px);
       }
     </style>
-    
+
     <div class="print-info">
-      <strong>確認方法</strong>: 
-      ブラウザの印刷プレビュー（Ctrl+P / Cmd+P）を開いて、以下の挙動を確認してください：
+      <strong>確認方法</strong>: ブラウザの印刷プレビュー（Ctrl+P /
+      Cmd+P）を開いて、以下の挙動を確認してください：
       <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
         <li>すべての ui-button が非表示になる</li>
         <li>アクション名が必要な場合は静的テキストを別要素で用意する</li>
@@ -1392,7 +1425,8 @@ export const PrintStyles: Story = {
   parameters: {
     docs: {
       description: {
-        story: '印刷時の仕様確認です。ui-button はインタラクティブ要素のため印刷時に非表示となります。',
+        story:
+          '印刷時の仕様確認です。ui-button はインタラクティブ要素のため印刷時に非表示となります。',
       },
     },
   },

@@ -11,9 +11,7 @@ const waitFrame = async (): Promise<void> =>
   });
 
 const normalizeText = (value: string | null | undefined): string =>
-  (value ?? '')
-    .replace(/\s+/g, ' ')
-    .trim();
+  (value ?? '').replace(/\s+/g, ' ').trim();
 
 const getField = (canvasElement: Element, id: string): SyntaxField => {
   const field = canvasElement.querySelector<SyntaxField>(`#${id}`);
@@ -60,7 +58,9 @@ const getDocumentStyleText = (): string => {
 
 const assertNoAriaRequired = (field: SyntaxField): void => {
   if (field.hasAttribute('aria-required')) {
-    throw new Error('required 表現は aria-required ではなく .field-required[aria-label="必須"] を使用する必要があります');
+    throw new Error(
+      'required 表現は aria-required ではなく .field-required[aria-label="必須"] を使用する必要があります',
+    );
   }
 };
 
@@ -143,7 +143,9 @@ export const RequiredWithTypeAndDefault: Story = {
 
     expectedOrder.forEach((className, index) => {
       if (!children[index]?.classList.contains(className)) {
-        throw new Error(`field-term の要素順序が不正です。expected=${className} index=${String(index)}`);
+        throw new Error(
+          `field-term の要素順序が不正です。expected=${className} index=${String(index)}`,
+        );
       }
     });
 
@@ -167,7 +169,11 @@ export const RequiredWithTypeAndDefault: Story = {
     }
 
     const description = getDescription(field);
-    if (!normalizeText(description.textContent).includes('コンポーネントに渡すプロパティオブジェクト。')) {
+    if (
+      !normalizeText(description.textContent).includes(
+        'コンポーネントに渡すプロパティオブジェクト。',
+      )
+    ) {
       throw new Error('説明文が dd 内に描画されていません');
     }
   },
@@ -216,13 +222,7 @@ export const OptionalMinimalField: Story = {
 export const WhitespaceBoundary: Story = {
   render: () => html`
     <dl class="syntax-fields">
-      <ui-syntax-field
-        id="whitespace-field"
-        name="  user_id  "
-        type="    "
-        default="   "
-        required
-      >
+      <ui-syntax-field id="whitespace-field" name="  user_id  " type="    " default="   " required>
         <strong>識別子</strong> を保持する。
       </ui-syntax-field>
     </dl>
@@ -288,7 +288,9 @@ export const MixedVariantsInDescriptionList: Story = {
     ]);
     await waitFrame();
 
-    const wrappers = canvasElement.querySelectorAll('#mixed-list > ui-syntax-field > .field-wrapper');
+    const wrappers = canvasElement.querySelectorAll(
+      '#mixed-list > ui-syntax-field > .field-wrapper',
+    );
     if (wrappers.length !== 3) {
       throw new Error('3件の ui-syntax-field それぞれが .field-wrapper を描画する必要があります');
     }
@@ -305,7 +307,9 @@ export const MixedVariantsInDescriptionList: Story = {
       throw new Error('default-only 項目は .field-default を描画する必要があります');
     }
     if (defaultLabel.classList.contains('field-default-with-type')) {
-      throw new Error('type が無い項目の default には type 後スペース用クラスを付与してはいけません');
+      throw new Error(
+        'type が無い項目の default には type 後スペース用クラスを付与してはいけません',
+      );
     }
 
     if (getDefaultLabel(typeOnlyField)) {
@@ -448,9 +452,7 @@ export const DarkModeTokenContract: Story = {
 export const DynamicDescriptionUpdate: Story = {
   render: () => html`
     <dl class="syntax-fields">
-      <ui-syntax-field id="dynamic-description" name="profile">
-        初期説明文。
-      </ui-syntax-field>
+      <ui-syntax-field id="dynamic-description" name="profile"> 初期説明文。 </ui-syntax-field>
     </dl>
   `,
   play: async ({ canvasElement }) => {
@@ -472,4 +474,3 @@ export const DynamicDescriptionUpdate: Story = {
     }
   },
 };
-

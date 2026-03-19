@@ -402,7 +402,10 @@ export const VariantStateMatrix: Story = {
       throw new Error('primary 未指定の build-inline は role を出力してはいけません');
     }
 
-    await waitFor(() => getRuntimeSvg(runtimeEager) !== null, 'eager の runtime SVG が描画されませんでした');
+    await waitFor(
+      () => getRuntimeSvg(runtimeEager) !== null,
+      'eager の runtime SVG が描画されませんでした',
+    );
     await runtimeEager.updateComplete;
     if (getCaption(runtimeEager)) {
       throw new Error('caption 未指定ケースで figcaption を描画してはいけません');
@@ -414,7 +417,10 @@ export const VariantStateMatrix: Story = {
     if (runtimeLazy.loading !== 'lazy') {
       throw new Error('runtime lazy ケースで loading が lazy のまま保持されていません');
     }
-    await waitFor(() => getRuntimeSvg(runtimeLazy) !== null, 'lazy の runtime SVG が描画されませんでした');
+    await waitFor(
+      () => getRuntimeSvg(runtimeLazy) !== null,
+      'lazy の runtime SVG が描画されませんでした',
+    );
     await runtimeLazy.updateComplete;
     if (getFigure(runtimeLazy).getAttribute('aria-busy') !== 'false') {
       throw new Error('runtime lazy の読み込み完了後は aria-busy="false" が必要です');
@@ -463,7 +469,12 @@ export const LoadingAndErrorStates: Story = {
     const loadingLazy = getScore(canvasElement, 'state-loading-lazy');
     const error = getScore(canvasElement, 'state-error');
     const missingSrc = getScore(canvasElement, 'state-missing-src');
-    await Promise.all([loading.updateComplete, loadingLazy.updateComplete, error.updateComplete, missingSrc.updateComplete]);
+    await Promise.all([
+      loading.updateComplete,
+      loadingLazy.updateComplete,
+      error.updateComplete,
+      missingSrc.updateComplete,
+    ]);
 
     const originalFetch = globalThis.fetch;
     let resolveDelayedFetch: (response: Response) => void = () => {
@@ -474,8 +485,12 @@ export const LoadingAndErrorStates: Story = {
     });
 
     try {
-      globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-        const requestUrl = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      globalThis.fetch = (async (
+        input: RequestInfo | URL,
+        init?: RequestInit,
+      ): Promise<Response> => {
+        const requestUrl =
+          typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
         if (requestUrl === '/__score-delayed.svg') {
           return delayedFetchPromise;
         }
@@ -500,7 +515,10 @@ export const LoadingAndErrorStates: Story = {
       });
       resolveDelayedFetch(delayedSvgResponse);
 
-      await waitFor(() => getRuntimeSvg(loading) !== null, '遅延フェッチ完了後に SVG が描画されませんでした');
+      await waitFor(
+        () => getRuntimeSvg(loading) !== null,
+        '遅延フェッチ完了後に SVG が描画されませんでした',
+      );
       await loading.updateComplete;
       if (getFigure(loading).getAttribute('aria-busy') !== 'false') {
         throw new Error('遅延フェッチ完了後は aria-busy="false" である必要があります');
@@ -515,7 +533,10 @@ export const LoadingAndErrorStates: Story = {
     if (!getSkeleton(loadingLazy)) {
       throw new Error('runtime fetch lazy ケースには skeleton 要素が必要です');
     }
-    await waitFor(() => getRuntimeSvg(loadingLazy) !== null, 'loading lazy ケースの SVG が描画されませんでした');
+    await waitFor(
+      () => getRuntimeSvg(loadingLazy) !== null,
+      'loading lazy ケースの SVG が描画されませんでした',
+    );
     await loadingLazy.updateComplete;
     if (getFigure(loadingLazy).getAttribute('aria-busy') !== 'false') {
       throw new Error('loading lazy 完了後は aria-busy="false" である必要があります');
@@ -558,7 +579,12 @@ export const BoundaryConditions: Story = {
         aspect-ratio="broken-ratio"
       ></ui-score>
 
-      <ui-score id="boundary-sanitize" src="${MALICIOUS_SCORE_SRC}" label="サニタイズ確認" loading="eager"></ui-score>
+      <ui-score
+        id="boundary-sanitize"
+        src="${MALICIOUS_SCORE_SRC}"
+        label="サニタイズ確認"
+        loading="eager"
+      ></ui-score>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -577,8 +603,14 @@ export const BoundaryConditions: Story = {
       throw new Error(`aspect-ratio 不正時は 3/1 フォールバックが必要です: ${aspectStyle}`);
     }
 
-    await waitFor(() => getRuntimeSvg(invalidInput) !== null, 'invalid-input の SVG が描画されませんでした');
-    await waitFor(() => getRuntimeSvg(sanitizeCase) !== null, 'sanitize ケースの SVG が描画されませんでした');
+    await waitFor(
+      () => getRuntimeSvg(invalidInput) !== null,
+      'invalid-input の SVG が描画されませんでした',
+    );
+    await waitFor(
+      () => getRuntimeSvg(sanitizeCase) !== null,
+      'sanitize ケースの SVG が描画されませんでした',
+    );
 
     const sanitizedSvg = getRuntimeSvg(sanitizeCase);
     if (!sanitizedSvg) throw new Error('sanitize ケースの SVG が見つかりません');
@@ -656,7 +688,9 @@ export const VisualModesAndInkContrast: Story = {
       return normalized === 'rgb(0,0,0)' || normalized === 'oklch(000)';
     };
     if (!isBlackColor(lightColor) || !isBlackColor(darkColor)) {
-      throw new Error(`譜面インク色は常に黒である必要があります: light=${lightColor}, dark=${darkColor}`);
+      throw new Error(
+        `譜面インク色は常に黒である必要があります: light=${lightColor}, dark=${darkColor}`,
+      );
     }
   },
 };
@@ -664,13 +698,18 @@ export const VisualModesAndInkContrast: Story = {
 export const OverflowAndFadeHints: Story = {
   render: () => html`
     <div style="max-width: 360px;">
-      <ui-score id="overflow-fade-score" label="横スクロールヒント確認">${OVERFLOW_INLINE_SCORE_TEMPLATE}</ui-score>
+      <ui-score id="overflow-fade-score" label="横スクロールヒント確認"
+        >${OVERFLOW_INLINE_SCORE_TEMPLATE}</ui-score
+      >
     </div>
   `,
   play: async ({ canvasElement }) => {
     const score = getScore(canvasElement, 'overflow-fade-score');
     await score.updateComplete;
-    await waitFor(() => getInlineSvg(score).getAttribute('aria-hidden') === 'true', 'inline SVG の準備が完了しませんでした');
+    await waitFor(
+      () => getInlineSvg(score).getAttribute('aria-hidden') === 'true',
+      'inline SVG の準備が完了しませんでした',
+    );
 
     const scroll = getScrollContainer(score);
     await waitFor(
@@ -709,7 +748,10 @@ export const AccessibilityMediaContracts: Story = {
   play: async ({ canvasElement }) => {
     const score = getScore(canvasElement, 'a11y-media-score');
     await score.updateComplete;
-    await waitFor(() => getRuntimeSvg(score) !== null, 'A11yメディア契約ケースの SVG が描画されませんでした');
+    await waitFor(
+      () => getRuntimeSvg(score) !== null,
+      'A11yメディア契約ケースの SVG が描画されませんでした',
+    );
 
     const styleTag = score.shadowRoot?.querySelector('style');
     const styleFromTag = styleTag?.textContent ?? '';

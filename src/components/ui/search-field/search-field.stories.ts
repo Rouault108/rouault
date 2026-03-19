@@ -80,7 +80,12 @@ type Story = StoryObj<SearchField>;
 export const Default: Story = {
   render: () => html`
     <div style="max-width: 32rem;">
-      <ui-search-field id="search-field-default" label="検索" hide-label placeholder="メモを検索"></ui-search-field>
+      <ui-search-field
+        id="search-field-default"
+        label="検索"
+        hide-label
+        placeholder="メモを検索"
+      ></ui-search-field>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -96,18 +101,39 @@ export const Default: Story = {
     assert(input.type === 'search', '内部 input が type="search" ではありません');
     assert(clearButton.hidden, '初期状態では clear button が非表示である必要があります');
     assert(input.getAttribute('aria-label') === '検索', 'aria-label が設定されていません');
-    assert(inputStyle.paddingTop === '0px', '入力テキストの縦位置合わせのため padding-block-start は 0px である必要があります');
-    assert(inputStyle.paddingBottom === '0px', '入力テキストの縦位置合わせのため padding-block-end は 0px である必要があります');
-    assert(inputStyle.height === '44px', '入力欄の高さはコントロール全体と一致している必要があります');
-    assert(inputStyle.lineHeight === '44px', '入力欄の line-height はコントロール高と一致している必要があります');
-    assert(inputStyle.fontFamily.includes('Rouault Sans'), '入力欄はグローバルなメトリクス補正済みフォントを継承している必要があります');
+    assert(
+      inputStyle.paddingTop === '0px',
+      '入力テキストの縦位置合わせのため padding-block-start は 0px である必要があります',
+    );
+    assert(
+      inputStyle.paddingBottom === '0px',
+      '入力テキストの縦位置合わせのため padding-block-end は 0px である必要があります',
+    );
+    assert(
+      inputStyle.height === '44px',
+      '入力欄の高さはコントロール全体と一致している必要があります',
+    );
+    assert(
+      inputStyle.lineHeight === '44px',
+      '入力欄の line-height はコントロール高と一致している必要があります',
+    );
+    assert(
+      inputStyle.fontFamily.includes('Rouault Sans'),
+      '入力欄はグローバルなメトリクス補正済みフォントを継承している必要があります',
+    );
   },
 };
 
 export const ClearableState: Story = {
   render: () => html`
     <div style="max-width: 32rem;">
-      <ui-search-field id="search-field-clear" label="検索" hide-label placeholder="メモを検索" value="router"></ui-search-field>
+      <ui-search-field
+        id="search-field-clear"
+        label="検索"
+        hide-label
+        placeholder="メモを検索"
+        value="router"
+      ></ui-search-field>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -165,23 +191,50 @@ export const ComboboxAriaAndImperativeApi: Story = {
     host.setSelectionRange(0, 3);
     await waitFrame();
 
-    assert(input.getAttribute('role') === 'combobox', 'role="combobox" が内部 input に反映されていません');
-    assert(input.getAttribute('aria-controls') === 'search-listbox', 'aria-controls が反映されていません');
+    assert(
+      input.getAttribute('role') === 'combobox',
+      'role="combobox" が内部 input に反映されていません',
+    );
+    assert(
+      input.getAttribute('aria-controls') === 'search-listbox',
+      'aria-controls が反映されていません',
+    );
     assert(input.getAttribute('aria-expanded') === 'true', 'aria-expanded が反映されていません');
-    assert(input.getAttribute('aria-activedescendant') === 'search-option-0', 'aria-activedescendant が反映されていません');
-    assert(input.selectionStart === 0 && input.selectionEnd === 3, 'setSelectionRange() が機能していません');
+    assert(
+      input.getAttribute('aria-activedescendant') === 'search-option-0',
+      'aria-activedescendant が反映されていません',
+    );
+    assert(
+      input.selectionStart === 0 && input.selectionEnd === 3,
+      'setSelectionRange() が機能していません',
+    );
 
     host.focusClearButton();
     await waitFrame();
-    assert(host.shadowRoot?.activeElement === clearButton, 'focusClearButton() で clear button に移動できていません');
+    assert(
+      host.shadowRoot?.activeElement === clearButton,
+      'focusClearButton() で clear button に移動できていません',
+    );
   },
 };
 
 export const DisabledAndReadonlyBoundary: Story = {
   render: () => html`
     <div style="display: grid; gap: 1rem; max-width: 32rem;">
-      <ui-search-field id="search-field-readonly" label="検索" hide-label value="router" readonly></ui-search-field>
-      <ui-search-field id="search-field-disabled" label="検索" hide-label value="router" disabled></ui-search-field>
+      <ui-search-field
+        id="search-field-readonly"
+        label="検索"
+        hide-label
+        value="router"
+        readonly
+      ></ui-search-field>
+      <ui-search-field
+        id="search-field-disabled"
+        label="検索"
+        hide-label
+        value="router"
+        disabled
+      ></ui-search-field>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -193,9 +246,15 @@ export const DisabledAndReadonlyBoundary: Story = {
 
     const readonlyClearButton = getClearButton(readonlyHost);
     const disabledClearButton = getClearButton(disabledHost);
-    assert(!readonlyHost.clearButtonVisible, 'readonly 状態では clearButtonVisible=false である必要があります');
+    assert(
+      !readonlyHost.clearButtonVisible,
+      'readonly 状態では clearButtonVisible=false である必要があります',
+    );
     assert(readonlyClearButton.hidden, 'readonly 状態では clear button を表示してはいけません');
-    assert(!disabledHost.clearButtonVisible, 'disabled 状態では clearButtonVisible=false である必要があります');
+    assert(
+      !disabledHost.clearButtonVisible,
+      'disabled 状態では clearButtonVisible=false である必要があります',
+    );
     assert(disabledClearButton.hidden, 'disabled 状態では clear button を表示してはいけません');
   },
 };
@@ -227,8 +286,17 @@ export const SurfaceBorderCustomization: Story = {
     }
 
     const fieldStyle = getComputedStyle(field);
-    assert(fieldStyle.borderTopWidth === '1px', 'カスタム border width が .field に反映されていません');
-    assert(fieldStyle.borderTopStyle === 'solid', 'カスタム border style が .field に反映されていません');
-    assert(fieldStyle.borderTopColor !== 'rgba(0, 0, 0, 0)', 'カスタム border color が .field に反映されていません');
+    assert(
+      fieldStyle.borderTopWidth === '1px',
+      'カスタム border width が .field に反映されていません',
+    );
+    assert(
+      fieldStyle.borderTopStyle === 'solid',
+      'カスタム border style が .field に反映されていません',
+    );
+    assert(
+      fieldStyle.borderTopColor !== 'rgba(0, 0, 0, 0)',
+      'カスタム border color が .field に反映されていません',
+    );
   },
 };

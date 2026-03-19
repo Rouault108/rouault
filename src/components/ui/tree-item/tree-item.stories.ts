@@ -165,7 +165,9 @@ export const Default: Story = {
 
     // テスト: デフォルトのdensityが"normal"であること
     if (treeItem.density !== 'normal') {
-      throw new Error(`density="normal" を期待していましたが、実際には "${treeItem.density}" でした`);
+      throw new Error(
+        `density="normal" を期待していましたが、実際には "${treeItem.density}" でした`,
+      );
     }
 
     // テスト: role="treeitem"が設定されていること
@@ -241,7 +243,9 @@ export const AllDensities: Story = {
   play: async ({ canvasElement }) => {
     const treeItems = canvasElement.querySelectorAll<TreeItem>('ui-tree-item');
     if (treeItems.length !== 2) {
-      throw new Error(`2つのツリーアイテムを期待していましたが、実際には ${String(treeItems.length)}個でした`);
+      throw new Error(
+        `2つのツリーアイテムを期待していましたが、実際には ${String(treeItems.length)}個でした`,
+      );
     }
 
     const normal = treeItems[0];
@@ -263,7 +267,9 @@ export const AllDensities: Story = {
     const compactHeight = Math.round(compactRow.getBoundingClientRect().height);
 
     if (normalHeight < 30 || normalHeight > 34) {
-      throw new Error(`Normal 密度の高さは約 32px であるべきですが、実際には ${String(normalHeight)}px でした`);
+      throw new Error(
+        `Normal 密度の高さは約 32px であるべきですが、実際には ${String(normalHeight)}px でした`,
+      );
     }
     if (compactHeight < 22 || compactHeight > 26) {
       throw new Error(
@@ -336,13 +342,17 @@ export const WithChildren: Story = {
     // テスト: aria-expandedが設定されていること（子要素がある場合）
     const ariaExpanded = treeItem.getAttribute('aria-expanded');
     if (ariaExpanded !== 'true') {
-      throw new Error(`aria-expanded="true" を期待していましたが、実際には "${String(ariaExpanded)}" でした`);
+      throw new Error(
+        `aria-expanded="true" を期待していましたが、実際には "${String(ariaExpanded)}" でした`,
+      );
     }
 
     // テスト: 子要素が存在すること
     const children = treeItem.querySelectorAll('ui-tree-item[slot="children"]');
     if (children.length !== 3) {
-      throw new Error(`3つの子要素を期待していましたが、実際には ${String(children.length)}個でした`);
+      throw new Error(
+        `3つの子要素を期待していましたが、実際には ${String(children.length)}個でした`,
+      );
     }
   },
 };
@@ -378,12 +388,16 @@ export const DeepNesting: Story = {
 
     const nestedItems = canvasElement.querySelectorAll<TreeItem>('ui-tree-item');
     if (nestedItems.length < 5) {
-      throw new Error(`深いネスト構造のアイテムを期待していましたが、実際には ${String(nestedItems.length)}個でした`);
+      throw new Error(
+        `深いネスト構造のアイテムを期待していましたが、実際には ${String(nestedItems.length)}個でした`,
+      );
     }
 
     const rootLevel = root.getAttribute('aria-level');
     if (rootLevel !== '1') {
-      throw new Error(`ルートの aria-level="1" を期待していましたが、実際には "${String(rootLevel)}" でした`);
+      throw new Error(
+        `ルートの aria-level="1" を期待していましたが、実際には "${String(rootLevel)}" でした`,
+      );
     }
 
     const thirdLevelNode = canvasElement.querySelector<TreeItem>(
@@ -396,7 +410,9 @@ export const DeepNesting: Story = {
 
     const thirdLevel = thirdLevelNode.getAttribute('aria-level');
     if (thirdLevel !== '3') {
-      throw new Error(`3階層目の aria-level="3" を期待していましたが、実際には "${String(thirdLevel)}" でした`);
+      throw new Error(
+        `3階層目の aria-level="3" を期待していましたが、実際には "${String(thirdLevel)}" でした`,
+      );
     }
   },
 };
@@ -513,7 +529,9 @@ export const CompactSelectedExpanded: Story = {
     await treeItem.updateComplete;
 
     if (treeItem.density !== 'compact') {
-      throw new Error(`density="compact" を期待していましたが、実際には "${treeItem.density}" でした`);
+      throw new Error(
+        `density="compact" を期待していましたが、実際には "${treeItem.density}" でした`,
+      );
     }
 
     if (treeItem.getAttribute('aria-selected') !== 'true') {
@@ -646,7 +664,9 @@ export const LeafNode: Story = {
     // テスト: aria-expandedが設定されていないこと（子要素なし）
     const ariaExpanded = treeItem.getAttribute('aria-expanded');
     if (ariaExpanded !== null) {
-      throw new Error(`aria-expanded が null であることを期待していましたが、実際には "${ariaExpanded}" でした`);
+      throw new Error(
+        `aria-expanded が null であることを期待していましたが、実際には "${ariaExpanded}" でした`,
+      );
     }
 
     // テスト: 展開アイコンがhiddenクラスを持つこと
@@ -715,7 +735,9 @@ export const KeyboardInteraction: Story = {
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!selectedEventFired) {
-      throw new Error('Enter キーの押下時に selected-change イベントが発火することを期待していましたが、発火しませんでした');
+      throw new Error(
+        'Enter キーの押下時に selected-change イベントが発火することを期待していましたが、発火しませんでした',
+      );
     }
 
     if (!treeItem.selected) {
@@ -732,7 +754,9 @@ export const KeyboardInteraction: Story = {
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!selectedEventFired) {
-      throw new Error('Space キーの押下時に selected-change イベントが発火することを期待していましたが、発火しませんでした');
+      throw new Error(
+        'Space キーの押下時に selected-change イベントが発火することを期待していましたが、発火しませんでした',
+      );
     }
 
     // テスト: ArrowRight キーで展開すること
@@ -746,7 +770,9 @@ export const KeyboardInteraction: Story = {
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!expandedEventFired) {
-      throw new Error('ArrowRight キーの押下時に expanded-change イベントが発火することを期待していましたが、発火しませんでした');
+      throw new Error(
+        'ArrowRight キーの押下時に expanded-change イベントが発火することを期待していましたが、発火しませんでした',
+      );
     }
 
     if (!treeItem.expanded) {
@@ -775,7 +801,9 @@ export const KeyboardInteraction: Story = {
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!expandedEventFired) {
-      throw new Error('ArrowLeft キーの押下時に expanded-change イベントが発火することを期待していましたが、発火しませんでした');
+      throw new Error(
+        'ArrowLeft キーの押下時に expanded-change イベントが発火することを期待していましたが、発火しませんでした',
+      );
     }
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (treeItem.expanded) {
@@ -792,7 +820,9 @@ export const KeyboardInteraction: Story = {
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!arrowLeftDelegated) {
-      throw new Error('収縮済みの状態で ArrowLeft キーが押された際に tree-item-arrow-left イベントが発火することを期待していましたが、発火しませんでした');
+      throw new Error(
+        '収縮済みの状態で ArrowLeft キーが押された際に tree-item-arrow-left イベントが発火することを期待していましたが、発火しませんでした',
+      );
     }
   },
 };
@@ -852,7 +882,9 @@ export const ClickInteraction: Story = {
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!expandedEventFired) {
-      throw new Error('展開アイコンのクリック時に expanded-change イベントが発火することを期待していましたが、発火しませんでした');
+      throw new Error(
+        '展開アイコンのクリック時に expanded-change イベントが発火することを期待していましたが、発火しませんでした',
+      );
     }
 
     if (!treeItem.expanded) {
@@ -860,7 +892,9 @@ export const ClickInteraction: Story = {
     }
 
     if (treeItem.selected) {
-      throw new Error('展開アイコンのクリック後も selected=false を維持することを期待していましたが、維持されませんでした');
+      throw new Error(
+        '展開アイコンのクリック後も selected=false を維持することを期待していましたが、維持されませんでした',
+      );
     }
 
     // テスト: アイテムクリックで選択されること
@@ -874,7 +908,9 @@ export const ClickInteraction: Story = {
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!selectedEventFired) {
-      throw new Error('アイテムのクリック時に selected-change イベントが発火することを期待していましたが、発火しませんでした');
+      throw new Error(
+        'アイテムのクリック時に selected-change イベントが発火することを期待していましたが、発火しませんでした',
+      );
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -989,7 +1025,9 @@ export const CompactDensityTouchTarget: Story = {
   play: async ({ canvasElement }) => {
     const treeItems = canvasElement.querySelectorAll<TreeItem>('ui-tree-item');
     if (treeItems.length !== 3) {
-      throw new Error(`3つのツリーアイテムを期待していましたが、実際には ${String(treeItems.length)}個でした`);
+      throw new Error(
+        `3つのツリーアイテムを期待していましたが、実際には ${String(treeItems.length)}個でした`,
+      );
     }
 
     const firstItem = treeItems[0];
@@ -1010,7 +1048,9 @@ export const CompactDensityTouchTarget: Story = {
     // テスト: Compact密度のアイテムの高さが24px前後であること
     const height = itemElement.getBoundingClientRect().height;
     if (height < 20 || height > 28) {
-      throw new Error(`アイテムの高さが 24px 前後であることを期待していましたが、実際には ${String(height)}px でした`);
+      throw new Error(
+        `アイテムの高さが 24px 前後であることを期待していましたが、実際には ${String(height)}px でした`,
+      );
     }
   },
 };
@@ -1155,8 +1195,15 @@ export const ReducedMotion: Story = {
 
     const durations = window.getComputedStyle(children).transitionDuration;
     // ブラウザは 0.01ms を秒単位 (0.00001s / 1e-05s) に変換して報告する場合がある
-    if (!durations.includes('0.01ms') && !durations.includes('0s') && !durations.includes('1e-05s') && !durations.includes('0.00001s')) {
-      throw new Error(`reduced-motion 時のような transition-duration を期待していましたが、実際には "${durations}" でした`);
+    if (
+      !durations.includes('0.01ms') &&
+      !durations.includes('0s') &&
+      !durations.includes('1e-05s') &&
+      !durations.includes('0.00001s')
+    ) {
+      throw new Error(
+        `reduced-motion 時のような transition-duration を期待していましたが、実際には "${durations}" でした`,
+      );
     }
   },
   parameters: {
@@ -1309,9 +1356,9 @@ export const NavigableRowActivation: Story = {
     });
 
     const clickHandler = (event: Event): void => {
-      const hasAnchorInPath = event.composedPath().some(
-        (target) => target instanceof HTMLAnchorElement,
-      );
+      const hasAnchorInPath = event
+        .composedPath()
+        .some((target) => target instanceof HTMLAnchorElement);
       if (hasAnchorInPath) {
         anchorPathCount += 1;
       }
@@ -1330,7 +1377,9 @@ export const NavigableRowActivation: Story = {
       await nextFrame();
 
       if (selectedCount !== 1) {
-        throw new Error(`selected-change は 1 回だけ発火する必要があります: ${String(selectedCount)}`);
+        throw new Error(
+          `selected-change は 1 回だけ発火する必要があります: ${String(selectedCount)}`,
+        );
       }
 
       if (anchorPathCount < 1) {

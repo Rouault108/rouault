@@ -1,6 +1,6 @@
 ---
-title: "交響曲第9番 ニ短調"
-description: "ベートーヴェンの最後の交響曲の分析"
+title: '交響曲第9番 ニ短調'
+description: 'ベートーヴェンの最後の交響曲の分析'
 date: 2026-01-20
 genre:
   - music

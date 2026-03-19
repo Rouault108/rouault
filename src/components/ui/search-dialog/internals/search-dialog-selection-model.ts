@@ -1,8 +1,5 @@
 import type { SearchField } from '../../search-field/search-field';
-import type {
-  UiSearchDialogItem,
-  UiSearchDialogSelectedDetail,
-} from '../search-dialog.types';
+import type { UiSearchDialogItem, UiSearchDialogSelectedDetail } from '../search-dialog.types';
 import { SearchDialogVirtualizer } from './search-dialog-virtualizer';
 
 export interface SearchDialogSelectionHost {
@@ -180,11 +177,7 @@ export class SearchDialogSelectionModel {
 
     const activeIndex = this._host.getActiveIndex();
     const nextIndex =
-      activeIndex < 0
-        ? delta === 1
-          ? 0
-          : total - 1
-        : (activeIndex + delta + total) % total;
+      activeIndex < 0 ? (delta === 1 ? 0 : total - 1) : (activeIndex + delta + total) % total;
 
     this._host.setActiveIndex(nextIndex);
     this.scrollActiveOptionIntoView();

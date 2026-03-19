@@ -6,28 +6,28 @@ import type { CopyButton } from './copy-button';
 
 /**
  * ## コピーボタン (Copy Button)
- * 
+ *
  * 「コピー」というアクションとその結果（成功・失敗）を自己完結して提供する機能特化型コンポーネントです。
- * 
+ *
  * ### デザイン哲学
- * 
+ *
  * - **役割**: クリップボード操作を完全に自己完結的に処理
  * - **No Noise**: 通常時は ghost ボタンとして振る舞い、視覚的な主張を抑制
  * - **No Tooltip**: "Copy" アイコンの普遍性を信頼し、ツールチップは不要
  * - **Digital Tactility**: 成功時のアイコン切り替えと微細な発光で、確実な手応えを提供
  * - **Robustness**: 失敗時には明確なエラーフィードバック
- * 
+ *
  * ### 技術的特徴
- * 
+ *
  * - **State Machine**: Idle → Success (2000ms) / Error (3000ms) → Idle
  * - **Layout Stability**: アイコン切り替え時のガタつき防止
  * - **Focus Stability**: フォーカスリングが親ボタンに保持される
  * - **Self-Contained Feedback**: role="status" による支援技術への通知
  * - **Flash Effect**: 成功/失敗時の背景フラッシュ
  * - **Hit Area**: 視覚サイズ 24px / ヒット領域 44px
- * 
+ *
  * ### 使用上の注意
- * 
+ *
  * - **label は必須**: aria-label のベースとなるため、必ず設定してください
  * - **value**: クリップボードに書き込むテキストを設定してください
  * - **サイズ**: デフォルトは sm (24px) です
@@ -146,7 +146,7 @@ const withMockedClipboardWrite = async (
 
 /**
  * デフォルトのコピーボタン。
- * 
+ *
  * コードブロック内などで使用する標準的なコピーボタンです。
  */
 export const Default: Story = {
@@ -184,7 +184,7 @@ export const Default: Story = {
 
 /**
  * コードブロック内での使用例。
- * 
+ *
  * 実際のコードブロックと組み合わせた使用例です。
  */
 export const WithCodeBlock: Story = {
@@ -241,7 +241,7 @@ console.log(greeting);</code></pre>
 
 /**
  * URL コピーの例。
- * 
+ *
  * URL を共有するためのコピーボタンの使用例です。
  */
 export const URLCopy: Story = {
@@ -285,7 +285,7 @@ export const URLCopy: Story = {
 
 /**
  * 成功状態のシミュレーション。
- * 
+ *
  * コピー成功時の視覚的フィードバックを確認できます。
  * アイコンが Check に変わり、緑色の背景フラッシュが表示されます。
  */
@@ -313,8 +313,8 @@ export const SuccessState: Story = {
 
     <div class="success-demo">
       <div class="success-info">
-        <strong>操作</strong>: ボタンをクリックしてコピー成功時の視覚的フィードバックを確認してください。
-        <br><br>
+        <strong>操作</strong>:
+        ボタンをクリックしてコピー成功時の視覚的フィードバックを確認してください。 <br /><br />
         <strong>期待される動作</strong>:
         <ul style="margin: 0.5rem 0 0 1rem; padding: 0;">
           <li>アイコンが Check (✓) に変わる</li>
@@ -335,9 +335,9 @@ export const SuccessState: Story = {
 
 /**
  * エラー状態のシミュレーション（手動）。
- * 
+ *
  * Clipboard API が利用できない環境や権限が拒否された場合のエラーフィードバックを確認できます。
- * 
+ *
  * **注意**: この Story は自動的にエラー状態をシミュレートできません。
  * エラー状態を確認するには、ブラウザの開発者ツールでクリップボード API をブロックしてください。
  */
@@ -367,10 +367,10 @@ export const ErrorState: Story = {
     <div class="error-demo">
       <div class="error-info">
         <strong>エラー状態のテスト</strong>
-        <br><br>
-        エラー状態を確認するには、ブラウザの開発者ツールで Clipboard API をブロックするか、
-        HTTPS 以外の環境でテストしてください。
-        <br><br>
+        <br /><br />
+        エラー状態を確認するには、ブラウザの開発者ツールで Clipboard API をブロックするか、 HTTPS
+        以外の環境でテストしてください。
+        <br /><br />
         <strong>期待される動作</strong>:
         <ul style="margin: 0.5rem 0 0 1rem; padding: 0;">
           <li>アイコンが AlertTriangle (⚠) に変わる</li>
@@ -391,7 +391,7 @@ export const ErrorState: Story = {
 
 /**
  * 複数のコピーボタン。
- * 
+ *
  * 同じページに複数のコピーボタンを配置した場合の動作を確認できます。
  */
 export const MultipleButtons: Story = {
@@ -422,26 +422,17 @@ export const MultipleButtons: Story = {
     <div class="multiple-demo">
       <div class="copy-item">
         <span class="copy-item-label">Email: example@example.com</span>
-        <ui-copy-button
-          value="example@example.com"
-          label="メールアドレスをコピー"
-        ></ui-copy-button>
+        <ui-copy-button value="example@example.com" label="メールアドレスをコピー"></ui-copy-button>
       </div>
 
       <div class="copy-item">
         <span class="copy-item-label">Phone: +81-3-1234-5678</span>
-        <ui-copy-button
-          value="+81-3-1234-5678"
-          label="電話番号をコピー"
-        ></ui-copy-button>
+        <ui-copy-button value="+81-3-1234-5678" label="電話番号をコピー"></ui-copy-button>
       </div>
 
       <div class="copy-item">
         <span class="copy-item-label">API Key: sk_test_1234567890</span>
-        <ui-copy-button
-          value="sk_test_1234567890"
-          label="APIキーをコピー"
-        ></ui-copy-button>
+        <ui-copy-button value="sk_test_1234567890" label="APIキーをコピー"></ui-copy-button>
       </div>
     </div>
   `,
@@ -449,7 +440,7 @@ export const MultipleButtons: Story = {
 
 /**
  * ダークモードでの表示。
- * 
+ *
  * ダークモードでの Flash Effect の視認性を確認できます。
  */
 export const DarkMode: Story = {
@@ -497,22 +488,29 @@ export const DarkMode: Story = {
   play: async ({ canvasElement }) => {
     const successButton = getCopyButton(canvasElement, '#dark-success');
     const errorButton = getCopyButton(canvasElement, '#dark-error');
-    await withMockedClipboardWrite(async (value: string) => {
-      if (value === 'dark-error') {
-        throw new Error('forced dark mode error');
-      }
-      return Promise.resolve();
-    }, async () => {
-      await userEvent.click(getInnerUiButton(successButton));
-      await userEvent.click(getInnerUiButton(errorButton));
-      await sleep(100);
-    });
+    await withMockedClipboardWrite(
+      async (value: string) => {
+        if (value === 'dark-error') {
+          throw new Error('forced dark mode error');
+        }
+        return Promise.resolve();
+      },
+      async () => {
+        await userEvent.click(getInnerUiButton(successButton));
+        await userEvent.click(getInnerUiButton(errorButton));
+        await sleep(100);
+      },
+    );
 
     if (successButton.getAttribute('state') !== 'success') {
-      throw new Error(`ダークモードの成功ボタンが success 状態であることを期待していましたが、実際には "${successButton.getAttribute('state') ?? 'null'}" でした`);
+      throw new Error(
+        `ダークモードの成功ボタンが success 状態であることを期待していましたが、実際には "${successButton.getAttribute('state') ?? 'null'}" でした`,
+      );
     }
     if (errorButton.getAttribute('state') !== 'error') {
-      throw new Error(`ダークモードのエラーボタンが error 状態であることを期待していましたが、実際には "${errorButton.getAttribute('state') ?? 'null'}" でした`);
+      throw new Error(
+        `ダークモードのエラーボタンが error 状態であることを期待していましたが、実際には "${errorButton.getAttribute('state') ?? 'null'}" でした`,
+      );
     }
   },
   parameters: {
@@ -522,7 +520,7 @@ export const DarkMode: Story = {
 
 /**
  * Forced Colors Mode のシミュレーション。
- * 
+ *
  * ハイコントラストモードでの表示を確認できます。
  * 実際の Forced Colors Mode では、Flash Effect の背景色が消失する可能性があります。
  */
@@ -560,7 +558,7 @@ export const ForcedColorsMode: Story = {
     <div class="forced-colors-demo">
       <div class="forced-colors-info">
         <strong>Forced Colors Mode</strong>
-        <br><br>
+        <br /><br />
         このモードでは、アイコンの形状変化とボーダーの強調が主な視覚的フィードバックとなります。
         Windows のハイコントラストモードで実際の動作を確認できます。
       </div>
@@ -584,22 +582,29 @@ export const ForcedColorsMode: Story = {
   play: async ({ canvasElement }) => {
     const successButton = getCopyButton(canvasElement, '#forced-success');
     const errorButton = getCopyButton(canvasElement, '#forced-error');
-    await withMockedClipboardWrite(async (value: string) => {
-      if (value === 'forced-error') {
-        throw new Error('forced high contrast error');
-      }
-      return Promise.resolve();
-    }, async () => {
-      await userEvent.click(getInnerUiButton(successButton));
-      await userEvent.click(getInnerUiButton(errorButton));
-      await sleep(100);
-    });
+    await withMockedClipboardWrite(
+      async (value: string) => {
+        if (value === 'forced-error') {
+          throw new Error('forced high contrast error');
+        }
+        return Promise.resolve();
+      },
+      async () => {
+        await userEvent.click(getInnerUiButton(successButton));
+        await userEvent.click(getInnerUiButton(errorButton));
+        await sleep(100);
+      },
+    );
 
     if (successButton.getAttribute('state') !== 'success') {
-      throw new Error(`ハイコントラストモードの成功ボタンが success 状態であることを期待していましたが、実際には "${successButton.getAttribute('state') ?? 'null'}" でした`);
+      throw new Error(
+        `ハイコントラストモードの成功ボタンが success 状態であることを期待していましたが、実際には "${successButton.getAttribute('state') ?? 'null'}" でした`,
+      );
     }
     if (errorButton.getAttribute('state') !== 'error') {
-      throw new Error(`ハイコントラストモードのエラーボタンが error 状態であることを期待していましたが、実際には "${errorButton.getAttribute('state') ?? 'null'}" でした`);
+      throw new Error(
+        `ハイコントラストモードのエラーボタンが error 状態であることを期待していましたが、実際には "${errorButton.getAttribute('state') ?? 'null'}" でした`,
+      );
     }
   },
   parameters: {
@@ -609,7 +614,7 @@ export const ForcedColorsMode: Story = {
 
 /**
  * ❌ ラベル未設定のエラー例。
- * 
+ *
  * label 属性が設定されていない場合、開発モードでエラーが出力されます。
  * このストーリーは意図的にアクセシビリティ違反を示すためのものです。
  */
@@ -633,7 +638,7 @@ export const MissingLabel: Story = {
     <div class="missing-label-demo">
       <div class="missing-label-info">
         <strong>⚠️ アクセシビリティエラー</strong>
-        <br><br>
+        <br /><br />
         このボタンには label 属性が設定されていません。
         開発者コンソールにエラーメッセージが表示されます。
       </div>
@@ -653,14 +658,16 @@ export const MissingLabel: Story = {
     // テスト: 本番アクセシビリティ崩壊を防ぐため、aria-label は安全な既定値へフォールバック
     const uiButton = getInnerUiButton(button);
     if (uiButton.getAttribute('aria-label') !== 'コピー') {
-      throw new Error(`フォールバックの aria-label が "コピー" であることを期待していましたが、実際には "${uiButton.getAttribute('aria-label') ?? 'null'}" でした`);
+      throw new Error(
+        `フォールバックの aria-label が "コピー" であることを期待していましたが、実際には "${uiButton.getAttribute('aria-label') ?? 'null'}" でした`,
+      );
     }
   },
 };
 
 /**
  * イベントハンドリングの例。
- * 
+ *
  * copy と copy-error イベントをキャッチして、カスタムフィードバックを実装する例です。
  */
 export const WithEventHandlers: Story = {
@@ -707,25 +714,25 @@ export const WithEventHandlers: Story = {
         label="${args.label}"
         size="${args.size}"
         @copy="${(e: CustomEvent<{ value: string }>) => {
-      const log = document.getElementById('event-log');
-      if (log) {
-        const item = document.createElement('div');
-        item.className = 'event-log-item event-log-success';
-        item.textContent = `[${new Date().toLocaleTimeString()}] ✓ Copy success: ${e.detail.value}`;
-        log.appendChild(item);
-        log.scrollTop = log.scrollHeight;
-      }
-    }}"
+          const log = document.getElementById('event-log');
+          if (log) {
+            const item = document.createElement('div');
+            item.className = 'event-log-item event-log-success';
+            item.textContent = `[${new Date().toLocaleTimeString()}] ✓ Copy success: ${e.detail.value}`;
+            log.appendChild(item);
+            log.scrollTop = log.scrollHeight;
+          }
+        }}"
         @copy-error="${(e: CustomEvent<{ error: unknown }>) => {
-      const log = document.getElementById('event-log');
-      if (log) {
-        const item = document.createElement('div');
-        item.className = 'event-log-item event-log-error';
-        item.textContent = `[${new Date().toLocaleTimeString()}] ✗ Copy error: ${String(e.detail.error)}`;
-        log.appendChild(item);
-        log.scrollTop = log.scrollHeight;
-      }
-    }}"
+          const log = document.getElementById('event-log');
+          if (log) {
+            const item = document.createElement('div');
+            item.className = 'event-log-item event-log-error';
+            item.textContent = `[${new Date().toLocaleTimeString()}] ✗ Copy error: ${String(e.detail.error)}`;
+            log.appendChild(item);
+            log.scrollTop = log.scrollHeight;
+          }
+        }}"
       ></ui-copy-button>
 
       <div id="event-log" class="event-log">
@@ -739,10 +746,10 @@ export const WithEventHandlers: Story = {
 
 /**
  * 🧪 自動テスト用ストーリー（成功状態）
- * 
+ *
  * このストーリーは Clipboard API をモックして、成功状態の動作を自動的にテストします。
  * Storybook の iframe 内でも確実に動作するように設計されています。
- * 
+ *
  * @internal このストーリーは自動テスト専用です。通常のドキュメントには表示されません。
  */
 export const TestSuccessState: Story = {
@@ -772,13 +779,18 @@ export const TestSuccessState: Story = {
       copiedValue = customEvent.detail.value;
     });
 
-    await withMockedClipboardWrite(async () => Promise.resolve(), async () => {
-      await userEvent.click(uiButton);
-      await sleep(100);
-    });
+    await withMockedClipboardWrite(
+      async () => Promise.resolve(),
+      async () => {
+        await userEvent.click(uiButton);
+        await sleep(100);
+      },
+    );
 
     if (button.getAttribute('state') !== 'success') {
-      throw new Error(`state="success" を期待していましたが、実際には "${button.getAttribute('state') ?? 'null'}" でした`);
+      throw new Error(
+        `state="success" を期待していましたが、実際には "${button.getAttribute('state') ?? 'null'}" でした`,
+      );
     }
 
     const icon = button.shadowRoot?.querySelector('iconify-icon');
@@ -786,11 +798,15 @@ export const TestSuccessState: Story = {
       throw new Error('アイコンが見つかりません');
     }
     if (icon.getAttribute('icon') !== 'lucide:check') {
-      throw new Error(`アイコンが "lucide:check" であることを期待していましたが、実際には "${icon.getAttribute('icon') ?? 'null'}" でした`);
+      throw new Error(
+        `アイコンが "lucide:check" であることを期待していましたが、実際には "${icon.getAttribute('icon') ?? 'null'}" でした`,
+      );
     }
 
     if (!uiButton.getAttribute('aria-label')?.includes('コピーしました')) {
-      throw new Error(`aria-label に成功メッセージが含まれていることを期待していましたが、実際には "${uiButton.getAttribute('aria-label') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-label に成功メッセージが含まれていることを期待していましたが、実際には "${uiButton.getAttribute('aria-label') ?? 'null'}" でした`,
+      );
     }
 
     const liveRegion = button.shadowRoot?.querySelector('.sr-only');
@@ -798,17 +814,25 @@ export const TestSuccessState: Story = {
       throw new Error('ライブリージョンが見つかりません');
     }
     if (liveRegion.getAttribute('role') !== 'status') {
-      throw new Error(`ライブリージョンの role が "status" であることを期待していましたが、実際には "${liveRegion.getAttribute('role') ?? 'null'}" でした`);
+      throw new Error(
+        `ライブリージョンの role が "status" であることを期待していましたが、実際には "${liveRegion.getAttribute('role') ?? 'null'}" でした`,
+      );
     }
     if (liveRegion.getAttribute('aria-live') !== 'polite') {
-      throw new Error(`ライブリージョンの aria-live が "polite" であることを期待していましたが、実際には "${liveRegion.getAttribute('aria-live') ?? 'null'}" でした`);
+      throw new Error(
+        `ライブリージョンの aria-live が "polite" であることを期待していましたが、実際には "${liveRegion.getAttribute('aria-live') ?? 'null'}" でした`,
+      );
     }
     if (!liveRegion.textContent.includes('コピーしました')) {
-      throw new Error(`ライブリージョンのテキストに成功メッセージが含まれていることを期待していましたが、実際には "${liveRegion.textContent}" でした`);
+      throw new Error(
+        `ライブリージョンのテキストに成功メッセージが含まれていることを期待していましたが、実際には "${liveRegion.textContent}" でした`,
+      );
     }
 
     if (copyEventCount !== 1 || copiedValue !== button.value) {
-      throw new Error(`コピーイベントが1回発行され、正しい値がコピーされることを期待していましたが、実際には count: ${String(copyEventCount)}, value: "${copiedValue}" でした`);
+      throw new Error(
+        `コピーイベントが1回発行され、正しい値がコピーされることを期待していましたが、実際には count: ${String(copyEventCount)}, value: "${copiedValue}" でした`,
+      );
     }
   },
 };
@@ -868,19 +892,39 @@ export const SizeStateMatrix: Story = {
     <div class="size-state-matrix">
       <div class="size-state-item">
         <span>sm / success</span>
-        <ui-copy-button id="matrix-sm-success" value="sm-success" label="sm成功" size="sm"></ui-copy-button>
+        <ui-copy-button
+          id="matrix-sm-success"
+          value="sm-success"
+          label="sm成功"
+          size="sm"
+        ></ui-copy-button>
       </div>
       <div class="size-state-item">
         <span>sm / error</span>
-        <ui-copy-button id="matrix-sm-error" value="sm-error" label="sm失敗" size="sm"></ui-copy-button>
+        <ui-copy-button
+          id="matrix-sm-error"
+          value="sm-error"
+          label="sm失敗"
+          size="sm"
+        ></ui-copy-button>
       </div>
       <div class="size-state-item">
         <span>md / success</span>
-        <ui-copy-button id="matrix-md-success" value="md-success" label="md成功" size="md"></ui-copy-button>
+        <ui-copy-button
+          id="matrix-md-success"
+          value="md-success"
+          label="md成功"
+          size="md"
+        ></ui-copy-button>
       </div>
       <div class="size-state-item">
         <span>md / error</span>
-        <ui-copy-button id="matrix-md-error" value="md-error" label="md失敗" size="md"></ui-copy-button>
+        <ui-copy-button
+          id="matrix-md-error"
+          value="md-error"
+          label="md失敗"
+          size="md"
+        ></ui-copy-button>
       </div>
     </div>
   `,
@@ -890,24 +934,34 @@ export const SizeStateMatrix: Story = {
     const mdSuccess = getCopyButton(canvasElement, '#matrix-md-success');
     const mdError = getCopyButton(canvasElement, '#matrix-md-error');
 
-    await withMockedClipboardWrite(async (value: string) => {
-      if (value.includes('error')) {
-        throw new Error('forced error');
-      }
-      return Promise.resolve();
-    }, async () => {
-      await userEvent.click(getInnerUiButton(smSuccess));
-      await userEvent.click(getInnerUiButton(smError));
-      await userEvent.click(getInnerUiButton(mdSuccess));
-      await userEvent.click(getInnerUiButton(mdError));
-      await sleep(100);
-    });
+    await withMockedClipboardWrite(
+      async (value: string) => {
+        if (value.includes('error')) {
+          throw new Error('forced error');
+        }
+        return Promise.resolve();
+      },
+      async () => {
+        await userEvent.click(getInnerUiButton(smSuccess));
+        await userEvent.click(getInnerUiButton(smError));
+        await userEvent.click(getInnerUiButton(mdSuccess));
+        await userEvent.click(getInnerUiButton(mdError));
+        await sleep(100);
+      },
+    );
 
-    if (smSuccess.getAttribute('state') !== 'success' || mdSuccess.getAttribute('state') !== 'success') {
-      throw new Error(`マトリックス内の成功ボタンが success 状態になることを期待していましたが、実際には sm: "${smSuccess.getAttribute('state') ?? 'null'}", md: "${mdSuccess.getAttribute('state') ?? 'null'}" でした`);
+    if (
+      smSuccess.getAttribute('state') !== 'success' ||
+      mdSuccess.getAttribute('state') !== 'success'
+    ) {
+      throw new Error(
+        `マトリックス内の成功ボタンが success 状態になることを期待していましたが、実際には sm: "${smSuccess.getAttribute('state') ?? 'null'}", md: "${mdSuccess.getAttribute('state') ?? 'null'}" でした`,
+      );
     }
     if (smError.getAttribute('state') !== 'error' || mdError.getAttribute('state') !== 'error') {
-      throw new Error(`マトリックス内のエラーボタンが error 状態になることを期待していましたが、実際には sm: "${smError.getAttribute('state') ?? 'null'}", md: "${mdError.getAttribute('state') ?? 'null'}" でした`);
+      throw new Error(
+        `マトリックス内のエラーボタンが error 状態になることを期待していましたが、実際には sm: "${smError.getAttribute('state') ?? 'null'}", md: "${mdError.getAttribute('state') ?? 'null'}" でした`,
+      );
     }
   },
 };
@@ -944,13 +998,18 @@ export const TestErrorState: Story = {
       failedValue = customEvent.detail.value;
     });
 
-    await withMockedClipboardWrite(async () => Promise.reject(new Error('Clipboard write failed')), async () => {
-      await userEvent.click(uiButton);
-      await sleep(100);
-    });
+    await withMockedClipboardWrite(
+      async () => Promise.reject(new Error('Clipboard write failed')),
+      async () => {
+        await userEvent.click(uiButton);
+        await sleep(100);
+      },
+    );
 
     if (button.getAttribute('state') !== 'error') {
-      throw new Error(`state="error" を期待していましたが、実際には "${button.getAttribute('state') ?? 'null'}" でした`);
+      throw new Error(
+        `state="error" を期待していましたが、実際には "${button.getAttribute('state') ?? 'null'}" でした`,
+      );
     }
 
     const icon = button.shadowRoot?.querySelector('iconify-icon');
@@ -959,11 +1018,15 @@ export const TestErrorState: Story = {
     }
 
     if (icon.getAttribute('icon') !== 'lucide:alert-triangle') {
-      throw new Error(`アイコンが "lucide:alert-triangle" であることを期待していましたが、実際には "${icon.getAttribute('icon') ?? 'null'}" でした`);
+      throw new Error(
+        `アイコンが "lucide:alert-triangle" であることを期待していましたが、実際には "${icon.getAttribute('icon') ?? 'null'}" でした`,
+      );
     }
 
     if (!uiButton.getAttribute('aria-label')?.includes('コピー失敗')) {
-      throw new Error(`aria-label にエラーメッセージが含まれていることを期待していましたが、実際には "${uiButton.getAttribute('aria-label') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-label にエラーメッセージが含まれていることを期待していましたが、実際には "${uiButton.getAttribute('aria-label') ?? 'null'}" でした`,
+      );
     }
 
     const liveRegion = button.shadowRoot?.querySelector('.sr-only');
@@ -972,19 +1035,27 @@ export const TestErrorState: Story = {
     }
 
     if (liveRegion.getAttribute('role') !== 'alert') {
-      throw new Error(`ライブリージョンの role が "alert" であることを期待していましたが、実際には "${liveRegion.getAttribute('role') ?? 'null'}" でした`);
+      throw new Error(
+        `ライブリージョンの role が "alert" であることを期待していましたが、実際には "${liveRegion.getAttribute('role') ?? 'null'}" でした`,
+      );
     }
 
     if (liveRegion.getAttribute('aria-live') !== 'assertive') {
-      throw new Error(`ライブリージョンの aria-live が "assertive" であることを期待していましたが、実際には "${liveRegion.getAttribute('aria-live') ?? 'null'}" でした`);
+      throw new Error(
+        `ライブリージョンの aria-live が "assertive" であることを期待していましたが、実際には "${liveRegion.getAttribute('aria-live') ?? 'null'}" でした`,
+      );
     }
 
     if (!liveRegion.textContent.includes('コピー失敗')) {
-      throw new Error(`ライブリージョンのテキストにエラーメッセージが含まれていることを期待していましたが、実際には "${liveRegion.textContent}" でした`);
+      throw new Error(
+        `ライブリージョンのテキストにエラーメッセージが含まれていることを期待していましたが、実際には "${liveRegion.textContent}" でした`,
+      );
     }
 
     if (copyErrorEventCount !== 1 || failedValue !== button.value) {
-      throw new Error(`コピーエラーイベントが1回発行され、正しい値が設定されることを期待していましたが、実際には count: ${String(copyErrorEventCount)}, value: "${failedValue}" でした`);
+      throw new Error(
+        `コピーエラーイベントが1回発行され、正しい値が設定されることを期待していましたが、実際には count: ${String(copyErrorEventCount)}, value: "${failedValue}" でした`,
+      );
     }
   },
 };
@@ -998,7 +1069,12 @@ export const TestStateTimerReset: Story = {
   tags: ['!autodocs'],
   render: () => html`
     <div style="display: flex; gap: 1rem;">
-      <ui-copy-button id="success-btn" value="success" label="成功テスト" size="sm"></ui-copy-button>
+      <ui-copy-button
+        id="success-btn"
+        value="success"
+        label="成功テスト"
+        size="sm"
+      ></ui-copy-button>
       <ui-copy-button id="error-btn" value="error" label="失敗テスト" size="sm"></ui-copy-button>
     </div>
   `,
@@ -1012,30 +1088,41 @@ export const TestStateTimerReset: Story = {
     const successUiButton = getInnerUiButton(successButton);
     const errorUiButton = getInnerUiButton(errorButton);
 
-    await withMockedClipboardWrite(async (value: string) => {
-      if (value === 'error') {
-        throw new Error('forced error');
-      }
-      return Promise.resolve();
-    }, async () => {
-      await userEvent.click(successUiButton);
-      await sleep(2100);
-      if (successButton.getAttribute('state') !== 'idle') {
-        throw new Error(`2000ms後に成功状態が idle にリセットされることを期待していましたが、実際には "${successButton.getAttribute('state') ?? 'null'}" でした`);
-      }
-      if (successUiButton.getAttribute('aria-label') !== '成功テスト') {
-        throw new Error(`成功ボタンの aria-label が基本ラベルにリセットされることを期待していましたが、実際には "${successUiButton.getAttribute('aria-label') ?? 'null'}" でした`);
-      }
+    await withMockedClipboardWrite(
+      async (value: string) => {
+        if (value === 'error') {
+          throw new Error('forced error');
+        }
+        return Promise.resolve();
+      },
+      async () => {
+        await userEvent.click(successUiButton);
+        await sleep(2100);
+        if (successButton.getAttribute('state') !== 'idle') {
+          throw new Error(
+            `2000ms後に成功状態が idle にリセットされることを期待していましたが、実際には "${successButton.getAttribute('state') ?? 'null'}" でした`,
+          );
+        }
+        if (successUiButton.getAttribute('aria-label') !== '成功テスト') {
+          throw new Error(
+            `成功ボタンの aria-label が基本ラベルにリセットされることを期待していましたが、実際には "${successUiButton.getAttribute('aria-label') ?? 'null'}" でした`,
+          );
+        }
 
-      await userEvent.click(errorUiButton);
-      await sleep(3100);
-      if (errorButton.getAttribute('state') !== 'idle') {
-        throw new Error(`3000ms後にエラー状態が idle にリセットされることを期待していましたが、実際には "${errorButton.getAttribute('state') ?? 'null'}" でした`);
-      }
-      if (errorUiButton.getAttribute('aria-label') !== '失敗テスト') {
-        throw new Error(`エラーボタンの aria-label が基本ラベルにリセットされることを期待していましたが、実際には "${errorUiButton.getAttribute('aria-label') ?? 'null'}" でした`);
-      }
-    });
+        await userEvent.click(errorUiButton);
+        await sleep(3100);
+        if (errorButton.getAttribute('state') !== 'idle') {
+          throw new Error(
+            `3000ms後にエラー状態が idle にリセットされることを期待していましたが、実際には "${errorButton.getAttribute('state') ?? 'null'}" でした`,
+          );
+        }
+        if (errorUiButton.getAttribute('aria-label') !== '失敗テスト') {
+          throw new Error(
+            `エラーボタンの aria-label が基本ラベルにリセットされることを期待していましたが、実際には "${errorUiButton.getAttribute('aria-label') ?? 'null'}" でした`,
+          );
+        }
+      },
+    );
   },
 };
 
@@ -1066,27 +1153,36 @@ export const TestRapidClicksReplay: Story = {
       copyEventCount += 1;
     });
 
-    await withMockedClipboardWrite(async () => Promise.resolve(), async () => {
-      await userEvent.click(uiButton);
-      await sleep(80);
-      const firstLabel = uiButton.getAttribute('aria-label');
+    await withMockedClipboardWrite(
+      async () => Promise.resolve(),
+      async () => {
+        await userEvent.click(uiButton);
+        await sleep(80);
+        const firstLabel = uiButton.getAttribute('aria-label');
 
-      await userEvent.click(uiButton);
-      await sleep(80);
-      const secondLabel = uiButton.getAttribute('aria-label');
+        await userEvent.click(uiButton);
+        await sleep(80);
+        const secondLabel = uiButton.getAttribute('aria-label');
 
-      if (button.getAttribute('state') !== 'success') {
-        throw new Error(`連打後も success 状態が維持されることを期待していましたが、実際には "${button.getAttribute('state') ?? 'null'}" でした`);
-      }
+        if (button.getAttribute('state') !== 'success') {
+          throw new Error(
+            `連打後も success 状態が維持されることを期待していましたが、実際には "${button.getAttribute('state') ?? 'null'}" でした`,
+          );
+        }
 
-      if (!firstLabel?.includes('コピーしました') || !secondLabel?.includes('コピーしました')) {
-        throw new Error(`連打時も aria-label が成功メッセージに更新されることを期待していましたが、実際には first: "${firstLabel ?? 'null'}", second: "${secondLabel ?? 'null'}" でした`);
-      }
+        if (!firstLabel?.includes('コピーしました') || !secondLabel?.includes('コピーしました')) {
+          throw new Error(
+            `連打時も aria-label が成功メッセージに更新されることを期待していましたが、実際には first: "${firstLabel ?? 'null'}", second: "${secondLabel ?? 'null'}" でした`,
+          );
+        }
 
-      if (copyEventCount !== 2) {
-        throw new Error(`2連打後にコピーイベントが2回発行されることを期待していましたが、実際には ${String(copyEventCount)}回でした`);
-      }
-    });
+        if (copyEventCount !== 2) {
+          throw new Error(
+            `2連打後にコピーイベントが2回発行されることを期待していましたが、実際には ${String(copyEventCount)}回でした`,
+          );
+        }
+      },
+    );
   },
 };
 
@@ -1114,27 +1210,36 @@ export const TestLoadingIndicatorThreshold: Story = {
     const button = getCopyButton(canvasElement);
     const uiButton = getInnerUiButton(button);
 
-    await withMockedClipboardWrite(async () => {
-      await sleep(80);
-      return Promise.resolve();
-    }, async () => {
-      await userEvent.click(uiButton);
-      await sleep(25);
+    await withMockedClipboardWrite(
+      async () => {
+        await sleep(80);
+        return Promise.resolve();
+      },
+      async () => {
+        await userEvent.click(uiButton);
+        await sleep(25);
 
-      const loadingIcon = button.shadowRoot?.querySelector('iconify-icon');
-      if (loadingIcon?.getAttribute('icon') !== 'lucide:loader-circle') {
-        throw new Error(`遅延コピー中にローディングアイコンが表示されることを期待していましたが、実際には "${loadingIcon?.getAttribute('icon') ?? 'null'}" でした`);
-      }
+        const loadingIcon = button.shadowRoot?.querySelector('iconify-icon');
+        if (loadingIcon?.getAttribute('icon') !== 'lucide:loader-circle') {
+          throw new Error(
+            `遅延コピー中にローディングアイコンが表示されることを期待していましたが、実際には "${loadingIcon?.getAttribute('icon') ?? 'null'}" でした`,
+          );
+        }
 
-      if (!uiButton.getAttribute('aria-label')?.includes('コピー中')) {
-        throw new Error(`aria-label にローディングメッセージが含まれていることを期待していましたが、実際には "${uiButton.getAttribute('aria-label') ?? 'null'}" でした`);
-      }
+        if (!uiButton.getAttribute('aria-label')?.includes('コピー中')) {
+          throw new Error(
+            `aria-label にローディングメッセージが含まれていることを期待していましたが、実際には "${uiButton.getAttribute('aria-label') ?? 'null'}" でした`,
+          );
+        }
 
-      await sleep(100);
-    });
+        await sleep(100);
+      },
+    );
 
     if (button.getAttribute('state') !== 'success') {
-      throw new Error(`遅延コピー終了後に success 状態になることを期待していましたが、実際には "${button.getAttribute('state') ?? 'null'}" でした`);
+      throw new Error(
+        `遅延コピー終了後に success 状態になることを期待していましたが、実際には "${button.getAttribute('state') ?? 'null'}" でした`,
+      );
     }
   },
 };

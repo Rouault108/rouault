@@ -147,9 +147,9 @@ describe('ErrorHandler', () => {
         message: 'ページが見つかりません',
         statusCode: 404,
       };
-    
+
       const html = generateErrorHTML(appError);
-    
+
       expect(html).to.include('not-found-page');
       expect(html).to.include('検索ページへ');
       expect(html).to.include('このサイトについて');

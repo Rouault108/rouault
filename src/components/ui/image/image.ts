@@ -169,7 +169,8 @@ export class UiImage extends LitElement {
       outline: none;
       cursor: zoom-out;
       transform: scale(var(--scale-enter, 0.97));
-      transition: transform var(--duration-slower, 300ms) var(--ease-in, cubic-bezier(0.55, 0, 1, 0.45));
+      transition: transform var(--duration-slower, 300ms)
+        var(--ease-in, cubic-bezier(0.55, 0, 1, 0.45));
     }
 
     .lightbox.is-open .lightbox-dialog {
@@ -523,7 +524,9 @@ export class UiImage extends LitElement {
         loading="${this._resolvedLoading}"
         decoding="async"
         width="${ifDefined(this._resolvedWidth !== null ? String(this._resolvedWidth) : undefined)}"
-        height="${ifDefined(this._resolvedHeight !== null ? String(this._resolvedHeight) : undefined)}"
+        height="${ifDefined(
+          this._resolvedHeight !== null ? String(this._resolvedHeight) : undefined,
+        )}"
         @load="${this._onThumbnailLoad}"
         @error="${this._onThumbnailError}"
       />
@@ -605,20 +608,18 @@ export class UiImage extends LitElement {
           : html`
               <div class="static-frame">
                 <div class="media-shell" style="${ifDefined(this._surfaceStyle)}">
-                  ${this._isBusy ? html`<div class="placeholder" aria-hidden="true"></div>` : nothing}
+                  ${this._isBusy
+                    ? html`<div class="placeholder" aria-hidden="true"></div>`
+                    : nothing}
                   ${this._isErrorState
                     ? this._renderErrorFallback()
                     : this._renderThumbnailImage(this._captionRef)}
                 </div>
               </div>
             `}
-
         ${caption === ''
           ? nothing
-          : html`
-              <figcaption id="${this._captionId}" class="caption">${caption}</figcaption>
-            `}
-
+          : html` <figcaption id="${this._captionId}" class="caption">${caption}</figcaption> `}
         ${this._renderLightbox()}
       </figure>
     `;

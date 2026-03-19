@@ -12,7 +12,7 @@ interface SessionState {
   hasCompletedSearch: boolean;
   liveMessage: string;
   scrolled: boolean;
-};
+}
 
 function createState(): SessionState {
   return {

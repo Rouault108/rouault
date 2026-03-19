@@ -1,6 +1,13 @@
 import { type HastNode, type VFileLike } from './hast-utils.js';
 
-const URL_ATTRIBUTE_NAMES = new Set(['href', 'src', 'xlink:href', 'action', 'formaction', 'poster']);
+const URL_ATTRIBUTE_NAMES = new Set([
+  'href',
+  'src',
+  'xlink:href',
+  'action',
+  'formaction',
+  'poster',
+]);
 const DANGEROUS_ATTRIBUTE_NAMES = new Set(['srcdoc']);
 const ALLOWED_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
 const ALLOWED_STYLE_PROPERTIES = new Set([
@@ -115,11 +122,7 @@ const getStylePropertyNames = (styleValue: string): string[] => {
  */
 export function rehypeDisallowDangerousProps() {
   return (tree: unknown, file?: VFileLike) => {
-    const visit = (
-      node: unknown,
-      parentWithinKatex = false,
-      parentWithinShiki = false,
-    ): void => {
+    const visit = (node: unknown, parentWithinKatex = false, parentWithinShiki = false): void => {
       if (!node || typeof node !== 'object') {
         return;
       }

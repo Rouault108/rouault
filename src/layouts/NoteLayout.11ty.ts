@@ -23,7 +23,7 @@ interface SidebarNoteLike {
   directoryPath?: string;
   sidebarResolvedIcon?: string;
   sidebarDirectoryIcons?: Record<string, string>;
-};
+}
 
 interface NoteData extends SidebarNoteLike {
   description?: string;
@@ -56,10 +56,7 @@ function escapeAttr(value: string): string {
 }
 
 function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 /**
@@ -72,7 +69,9 @@ function escapeJsonForScript(value: unknown): string {
     .replace(/&/g, '\\u0026');
 }
 
-function normalizeHeadings(value: TocHeading[] | undefined): { id: string; text: string; level: number }[] {
+function normalizeHeadings(
+  value: TocHeading[] | undefined,
+): { id: string; text: string; level: number }[] {
   if (!Array.isArray(value)) {
     return [];
   }
@@ -196,22 +195,13 @@ export class NoteLayout {
   render(data: NoteLayoutData) {
     const note = data.note;
     const slug = typeof note?.slug === 'string' ? note.slug : '';
-    const sidebarActiveId =
-      note?.noteKind === 'directory-index'
-        ? `${slug}/__index__`
-        : slug;
+    const sidebarActiveId = note?.noteKind === 'directory-index' ? `${slug}/__index__` : slug;
     const heading = escapeAttr(note?.title ?? '');
     const published = note?.date ? ` published="${escapeAttr(note.date)}"` : '';
-    const updated = note?.updated
-      ? ` updated="${escapeAttr(note.updated)}"`
-      : '';
+    const updated = note?.updated ? ` updated="${escapeAttr(note.updated)}"` : '';
     const status = note?.status ? ` status="${escapeAttr(note.status)}"` : '';
-    const source = note?.source
-      ? ` source="${escapeAttr(note.source)}"`
-      : '';
-    const license = note?.license
-      ? ` license="${escapeAttr(note.license)}"`
-      : '';
+    const source = note?.source ? ` source="${escapeAttr(note.source)}"` : '';
+    const license = note?.license ? ` license="${escapeAttr(note.license)}"` : '';
     const genres = Array.isArray(note?.genre)
       ? note.genre.map((item) => item.trim()).filter((item) => item.length > 0)
       : [];

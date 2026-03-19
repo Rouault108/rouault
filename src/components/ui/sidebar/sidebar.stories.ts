@@ -401,7 +401,10 @@ export const ShellApiDelegation: Story = {
     const expandedEvent = await expandPromise;
     await flush(host);
 
-    assert(expandedEvent.detail.state === 'expanded', 'expand() で expanded イベントが発火すること');
+    assert(
+      expandedEvent.detail.state === 'expanded',
+      'expand() で expanded イベントが発火すること',
+    );
 
     const collapsePromise = waitForEvent<CustomEvent<{ state: string; mode: string }>>(
       host,
@@ -411,7 +414,10 @@ export const ShellApiDelegation: Story = {
     const collapsedEvent = await collapsePromise;
     await flush(host);
 
-    assert(collapsedEvent.detail.state === 'collapsed', 'toggle() で collapsed イベントが発火すること');
+    assert(
+      collapsedEvent.detail.state === 'collapsed',
+      'toggle() で collapsed イベントが発火すること',
+    );
 
     host.collapse();
     await wait(40);

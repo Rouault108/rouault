@@ -29,7 +29,8 @@ export class Blockquote extends LitElement {
       margin-inline: 0;
       padding-block: 0;
       padding-inline: var(--space-4, 16px) 0;
-      border-inline-start: var(--border-width-thick, 2px) solid var(--border-default, oklch(70% 0 0 / 0.28));
+      border-inline-start: var(--border-width-thick, 2px) solid
+        var(--border-default, oklch(70% 0 0 / 0.28));
       color: var(--fg-default, oklch(20% 0 0));
       font-style: normal;
     }
@@ -131,7 +132,7 @@ export class Blockquote extends LitElement {
     return children.some((element) => {
       if (!(element instanceof HTMLElement)) return false;
       if (element.getAttribute('slot') !== 'source') return false;
-      return (element.textContent).trim().length > 0;
+      return element.textContent.trim().length > 0;
     });
   }
 

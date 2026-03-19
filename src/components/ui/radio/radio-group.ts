@@ -103,7 +103,11 @@ export class RadioGroup extends LitElement {
         aria-invalid="${showError ? 'true' : nothing}"
         aria-describedby="${describedBy}"
       >
-        <slot @slotchange="${() => { this.requestUpdate(); }}"></slot>
+        <slot
+          @slotchange="${() => {
+            this.requestUpdate();
+          }}"
+        ></slot>
       </div>
       ${showError
         ? html`

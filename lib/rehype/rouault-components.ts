@@ -625,10 +625,9 @@ const collectFootnoteDefinitions = (
         rewriteFootnoteBackrefs(item, resolvedIndex);
 
         if (!definitions.has(refId)) {
-          const contentNodes =
-            (item.children ?? [])
-              .map((child) => cloneWithoutFootnoteBackrefs(child))
-              .filter((child): child is HastNode => child !== null);
+          const contentNodes = (item.children ?? [])
+            .map((child) => cloneWithoutFootnoteBackrefs(child))
+            .filter((child): child is HastNode => child !== null);
 
           definitions.set(refId, {
             refId,

@@ -26,7 +26,9 @@ const readNodeClassList = (node: HastNode | undefined): string[] =>
   getClassList(node?.properties?.['className'] ?? node?.properties?.['class']);
 
 const getLineElements = (codeNode: HastNode | undefined): HastNode[] =>
-  (codeNode?.children ?? []).filter((child) => child.type === 'element' && child.tagName === 'span');
+  (codeNode?.children ?? []).filter(
+    (child) => child.type === 'element' && child.tagName === 'span',
+  );
 
 describe('rehypeShikiCodeBlocks', () => {
   it('fenced code を Shiki の classic 構造へ変換し、meta を保持する', async () => {

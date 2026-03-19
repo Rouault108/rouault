@@ -28,8 +28,7 @@ export const Default: Story = {
     renderFoundationFrame(
       {
         title: 'Reading Width',
-        description:
-          '一覧やシェルは広く、本文だけが `--width-reading` に従って静かに絞られます。',
+        description: '一覧やシェルは広く、本文だけが `--width-reading` に従って静かに絞られます。',
       },
       html`
         ${renderFoundationSection(
@@ -43,7 +42,9 @@ export const Default: Story = {
               },
               content: html`
                 <div class="container" style="margin-inline: 0; background: var(--bg-fill-muted);">
-                  <div style="padding: var(--space-3); border: var(--border-style-subtle);">Wide container</div>
+                  <div style="padding: var(--space-3); border: var(--border-style-subtle);">
+                    Wide container
+                  </div>
                 </div>
               `,
             },
@@ -54,14 +55,18 @@ export const Default: Story = {
                 background: 'var(--bg-surface-1)',
               },
               content: html`
-                <div class="container-reading" style="margin-inline: 0; background: var(--bg-fill-muted);">
-                  <div style="padding: var(--space-3); border: var(--border-style-subtle);">Reading width</div>
+                <div
+                  class="container-reading"
+                  style="margin-inline: 0; background: var(--bg-fill-muted);"
+                >
+                  <div style="padding: var(--space-3); border: var(--border-style-subtle);">
+                    Reading width
+                  </div>
                 </div>
               `,
             },
           ]),
         )}
-
         ${renderFoundationSection(
           'Prose Measure',
           html`
@@ -76,7 +81,6 @@ export const Default: Story = {
             </div>
           `,
         )}
-
         ${renderFoundationSection(
           'Token Reference',
           renderTokenValueList([

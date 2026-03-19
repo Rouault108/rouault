@@ -20,10 +20,7 @@ const attachLinkSpy = (card: Card): (() => number) => {
 };
 
 /** 指定セレクタのリンクにクリックスパイを設定し、クリック数カウンタを返す */
-const attachNamedLinkSpy = (
-  card: Card,
-  selector: string,
-): (() => number) => {
+const attachNamedLinkSpy = (card: Card, selector: string): (() => number) => {
   const link = card.querySelector<HTMLAnchorElement>(selector);
   let count = 0;
   link?.addEventListener('click', (e) => {
@@ -34,10 +31,7 @@ const attachNamedLinkSpy = (
 };
 
 /** ブラウザテストで既定挙動を制御できるクリックイベントを発火する */
-const dispatchTestClick = (
-  element: Element,
-  init: MouseEventInit = {},
-): boolean =>
+const dispatchTestClick = (element: Element, init: MouseEventInit = {}): boolean =>
   element.dispatchEvent(
     new MouseEvent('click', {
       bubbles: true,
@@ -156,7 +150,9 @@ export const Default: Story = {
     // テスト: variant="outlined" が reflect されること
     const variant = card.getAttribute('variant');
     if (variant !== 'outlined') {
-      throw new Error(`variant="outlined" を期待していましたが、実際には "${variant ?? 'null'}" でした`);
+      throw new Error(
+        `variant="outlined" を期待していましたが、実際には "${variant ?? 'null'}" でした`,
+      );
     }
 
     // テスト: clickable 属性が存在しないこと
@@ -167,7 +163,9 @@ export const Default: Story = {
     // テスト: Shadow DOM に 3 つのスロットが存在すること
     const slots = card.shadowRoot?.querySelectorAll('slot');
     if (!slots || slots.length < 3) {
-      throw new Error(`3つのスロットを期待していましたが、実際には ${String(slots?.length ?? 0)}個でした`);
+      throw new Error(
+        `3つのスロットを期待していましたが、実際には ${String(slots?.length ?? 0)}個でした`,
+      );
     }
 
     const headerSlot = card.shadowRoot?.querySelector('slot[name="header"]');
@@ -216,12 +214,16 @@ export const ElevatedVariant: Story = {
 
     // テスト: variant="elevated" が設定されること
     if (card.getAttribute('variant') !== 'elevated') {
-      throw new Error(`variant="elevated" を期待していましたが、実際には "${card.getAttribute('variant') ?? 'null'}" でした`);
+      throw new Error(
+        `variant="elevated" を期待していましたが、実際には "${card.getAttribute('variant') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: JS プロパティが正しく設定されること
     if (card.variant !== 'elevated') {
-      throw new Error(`card.variant="elevated" を期待していましたが、実際には "${card.variant}" でした`);
+      throw new Error(
+        `card.variant="elevated" を期待していましたが、実際には "${card.variant}" でした`,
+      );
     }
   },
 };
@@ -258,7 +260,9 @@ export const FlatVariant: Story = {
     await card.updateComplete;
 
     if (card.getAttribute('variant') !== 'flat') {
-      throw new Error(`variant="flat" を期待していましたが、実際には "${card.getAttribute('variant') ?? 'null'}" でした`);
+      throw new Error(
+        `variant="flat" を期待していましたが、実際には "${card.getAttribute('variant') ?? 'null'}" でした`,
+      );
     }
   },
 };
@@ -292,7 +296,9 @@ export const GhostVariant: Story = {
     await card.updateComplete;
 
     if (card.getAttribute('variant') !== 'ghost') {
-      throw new Error(`variant="ghost" を期待していましたが、実際には "${card.getAttribute('variant') ?? 'null'}" でした`);
+      throw new Error(
+        `variant="ghost" を期待していましたが、実際には "${card.getAttribute('variant') ?? 'null'}" でした`,
+      );
     }
   },
 };
@@ -309,7 +315,7 @@ export const AllVariants: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 480px;">
       ${(['outlined', 'elevated', 'flat', 'ghost'] as const).map(
-    (variant) => html`
+        (variant) => html`
           <div>
             <div
               style="
@@ -332,7 +338,7 @@ export const AllVariants: Story = {
             </ui-card>
           </div>
         `,
-  )}
+      )}
     </div>
   `,
 };
@@ -398,9 +404,7 @@ export const WithAllSlots: Story = {
 
     // テスト: デフォルトスロットにコンテンツが割り当てられていること
     // スロットなしの子要素（p タグ）が存在すること
-    const defaultContent = Array.from(card.children).find(
-      (child) => !child.hasAttribute('slot'),
-    );
+    const defaultContent = Array.from(card.children).find((child) => !child.hasAttribute('slot'));
     if (!defaultContent) throw new Error('デフォルトスロットにコンテンツが割り当てられていません');
   },
 };
@@ -448,7 +452,9 @@ export const LinkCardWithImage: Story = {
       card.shadowRoot?.querySelector<HTMLElement>('.link-card__title') ?? shadowLink,
     );
     if (linkStyle.outlineStyle !== 'none') {
-      throw new Error(`内部リンクの outline は none であるべきですが、実際には "${linkStyle.outlineStyle}" でした`);
+      throw new Error(
+        `内部リンクの outline は none であるべきですが、実際には "${linkStyle.outlineStyle}" でした`,
+      );
     }
     if (titleStyle.getPropertyValue('-webkit-line-clamp').trim() !== '2') {
       throw new Error('タイトルの line clamp は 2 行である必要があります');
@@ -467,7 +473,9 @@ export const LinkCardWithImage: Story = {
     await card.updateComplete;
 
     if (count !== 1) {
-      throw new Error(`背景クリックで link mode の主リンクが 1 回発火する想定でしたが ${String(count)} 回でした`);
+      throw new Error(
+        `背景クリックで link mode の主リンクが 1 回発火する想定でしたが ${String(count)} 回でした`,
+      );
     }
   },
 };
@@ -500,11 +508,13 @@ export const LinkCardWithoutImage: Story = {
     const shadowLink = card.shadowRoot?.querySelector<HTMLAnchorElement>('a.link-card');
     const shadowImage = card.shadowRoot?.querySelector('img.link-card__media');
     const title = card.shadowRoot?.querySelector('.link-card__title')?.textContent?.trim();
-    const description = card.shadowRoot?.querySelector('.link-card__description')?.textContent?.trim();
+    const description = card.shadowRoot
+      ?.querySelector('.link-card__description')
+      ?.textContent?.trim();
     const descriptionStyle = window.getComputedStyle(
-      card.shadowRoot?.querySelector<HTMLElement>('.link-card__description')
-        ?? shadowLink
-        ?? document.body,
+      card.shadowRoot?.querySelector<HTMLElement>('.link-card__description') ??
+        shadowLink ??
+        document.body,
     );
 
     if (!shadowLink) throw new Error('画像なし link mode の主リンクが見つかりません');
@@ -540,33 +550,33 @@ export const LinkCardWithoutImage: Story = {
  */
 export const Clickable: Story = {
   render: () => html`
-    <div id="click-log" style="
+    <div
+      id="click-log"
+      style="
       padding: 0.75rem;
       background: var(--bg-surface-2);
       border-radius: var(--radius-md);
       font-size: var(--text-sm);
       margin-bottom: 1rem;
       font-family: var(--font-mono);
-    ">
+    "
+    >
       カード背景をクリックしてください
     </div>
 
-    <ui-card
-      id="clickable-card"
-      clickable
-      style="max-width: 360px;"
-    >
+    <ui-card id="clickable-card" clickable style="max-width: 360px;">
       <h3 style="margin: 0 0 0.5rem; font-size: var(--text-base);">
         <a
           href="/notes/1"
           id="primary-link"
           style="color: inherit; text-decoration: none;"
           @click="${(e: MouseEvent) => {
-      e.preventDefault();
-      const log = document.getElementById('click-log');
-      if (log) log.textContent = '✅ クリック委譲が機能しました → /notes/1 へ遷移';
-    }}"
-        >クリック可能なノートカード</a>
+            e.preventDefault();
+            const log = document.getElementById('click-log');
+            if (log) log.textContent = '✅ クリック委譲が機能しました → /notes/1 へ遷移';
+          }}"
+          >クリック可能なノートカード</a
+        >
       </h3>
       <p style="margin: 0; color: var(--fg-muted); font-size: var(--text-sm);">
         カードのどこをクリックしても、上のリンクへ委譲されます。
@@ -585,7 +595,9 @@ export const Clickable: Story = {
     }
 
     if (!card.clickable) {
-      throw new Error('card.clickable プロパティが true であることを期待していましたが、実際には false でした');
+      throw new Error(
+        'card.clickable プロパティが true であることを期待していましたが、実際には false でした',
+      );
     }
 
     // テスト: カード背景クリックでリンクが発火すること
@@ -596,7 +608,9 @@ export const Clickable: Story = {
     await card.updateComplete;
 
     if (getCount() !== 1) {
-      throw new Error(`カード背景クリックで主要リンクへの委譲（発火回数: 1）を期待していましたが、実際には ${String(getCount())}回でした`);
+      throw new Error(
+        `カード背景クリックで主要リンクへの委譲（発火回数: 1）を期待していましたが、実際には ${String(getCount())}回でした`,
+      );
     }
   },
 };
@@ -742,7 +756,11 @@ export const TextSelectionGuard: Story = {
   render: () => html`
     <ui-card id="selection-card" clickable style="max-width: 400px;">
       <h3 style="margin: 0 0 0.5rem; font-size: var(--text-base);">
-        <a href="/notes/selection" id="selection-link" style="color: inherit; text-decoration: none;">
+        <a
+          href="/notes/selection"
+          id="selection-link"
+          style="color: inherit; text-decoration: none;"
+        >
           テキスト選択テスト
         </a>
       </h3>
@@ -804,7 +822,9 @@ export const TextSelectionGuard: Story = {
 export const ClickableNoLink: Story = {
   render: () => html`
     <ui-card id="no-link-card" clickable style="max-width: 360px;">
-      <h3 style="margin: 0 0 0.5rem; font-size: var(--text-base);">リンクなしの clickable カード</h3>
+      <h3 style="margin: 0 0 0.5rem; font-size: var(--text-base);">
+        リンクなしの clickable カード
+      </h3>
       <p style="margin: 0; font-size: var(--text-sm); color: var(--fg-muted);">
         内部に <code>&lt;a href&gt;</code> がない場合、クリックしても何も起きません（エラーなし）。
       </p>
@@ -871,10 +891,14 @@ export const MultipleLinksPrimaryFirst: Story = {
     await card.updateComplete;
 
     if (getPrimaryCount() !== 1) {
-      throw new Error(`主要リンクのクリック数が 1 であるべきですが ${String(getPrimaryCount())} です`);
+      throw new Error(
+        `主要リンクのクリック数が 1 であるべきですが ${String(getPrimaryCount())} です`,
+      );
     }
     if (getSecondaryCount() !== 0) {
-      throw new Error(`副リンクのクリック数は 0 であるべきですが ${String(getSecondaryCount())} です`);
+      throw new Error(
+        `副リンクのクリック数は 0 であるべきですが ${String(getSecondaryCount())} です`,
+      );
     }
 
     // 副リンク直接クリック時は委譲せず副リンク自身で処理されること
@@ -884,7 +908,9 @@ export const MultipleLinksPrimaryFirst: Story = {
     await card.updateComplete;
 
     if (getSecondaryCount() !== 1) {
-      throw new Error(`副リンクのクリック数が 1 であるべきですが ${String(getSecondaryCount())} です`);
+      throw new Error(
+        `副リンクのクリック数が 1 であるべきですが ${String(getSecondaryCount())} です`,
+      );
     }
     if (getPrimaryCount() !== 1) {
       throw new Error('副リンク直接クリックで主要リンクが増加しています（誤委譲の可能性）');
@@ -904,7 +930,11 @@ export const InteractiveElementsGuard: Story = {
   render: () => html`
     <ui-card id="interactive-guard-card" clickable style="max-width: 440px;">
       <h3 style="margin: 0 0 0.5rem; font-size: var(--text-base);">
-        <a href="/notes/interactive" id="interactive-primary" style="color: inherit; text-decoration: none;">
+        <a
+          href="/notes/interactive"
+          id="interactive-primary"
+          style="color: inherit; text-decoration: none;"
+        >
           主要リンク
         </a>
       </h3>
@@ -977,7 +1007,8 @@ export const InteractiveElementsGuard: Story = {
 export const FocusWithin: Story = {
   render: () => html`
     <div style="font-size: var(--text-sm); color: var(--fg-muted); margin-bottom: 1rem;">
-      Tab キーでカード内リンクにフォーカスを当て、カード全体にフォーカスリングが表示されることを確認してください。
+      Tab
+      キーでカード内リンクにフォーカスを当て、カード全体にフォーカスリングが表示されることを確認してください。
     </div>
 
     <ui-card id="focus-card" clickable style="max-width: 360px;">
@@ -1001,7 +1032,7 @@ export const FocusWithin: Story = {
     if (card.hasAttribute('tabindex')) {
       throw new Error(
         'Focusable Container Anti-pattern: カード自体に tabindex が設定されています。' +
-        '内部リンクにフォーカスを委ねてください。',
+          '内部リンクにフォーカスを委ねてください。',
       );
     }
 
@@ -1071,7 +1102,9 @@ export const ExplicitRoleOverride: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 400px;">
       <div>
-        <div style="font-size: var(--text-xs); color: var(--fg-muted); margin-bottom: 0.5rem; font-family: var(--font-mono);">
+        <div
+          style="font-size: var(--text-xs); color: var(--fg-muted); margin-bottom: 0.5rem; font-family: var(--font-mono);"
+        >
           role="section"（明示指定）
         </div>
         <ui-card id="section-card" role="section">
@@ -1082,7 +1115,9 @@ export const ExplicitRoleOverride: Story = {
       </div>
 
       <div>
-        <div style="font-size: var(--text-xs); color: var(--fg-muted); margin-bottom: 0.5rem; font-family: var(--font-mono);">
+        <div
+          style="font-size: var(--text-xs); color: var(--fg-muted); margin-bottom: 0.5rem; font-family: var(--font-mono);"
+        >
           role="none"（装飾的な分離のみ）
         </div>
         <ui-card id="none-card" role="none">
@@ -1136,7 +1171,7 @@ export const ClickableVariants: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 480px;">
       ${(['outlined', 'elevated', 'flat', 'ghost'] as const).map(
-    (variant) => html`
+        (variant) => html`
           <div>
             <div
               style="
@@ -1161,7 +1196,7 @@ export const ClickableVariants: Story = {
             </ui-card>
           </div>
         `,
-  )}
+      )}
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -1175,7 +1210,9 @@ export const ClickableVariants: Story = {
 
       // テスト: 全カードに clickable 属性が設定されること
       if (!card.hasAttribute('clickable')) {
-        throw new Error(`variant="${card.getAttribute('variant') ?? ''}" のカードに clickable 属性がありません`);
+        throw new Error(
+          `variant="${card.getAttribute('variant') ?? ''}" のカードに clickable 属性がありません`,
+        );
       }
 
       // テスト: 全カードに variant 属性が設定されること
@@ -1282,7 +1319,8 @@ export const ForcedColorsMode: Story = {
         border: 1px solid var(--border-default);
       "
     >
-      Chrome DevTools → Rendering → <code>forced-colors: active</code> を有効にして確認してください。
+      Chrome DevTools → Rendering →
+      <code>forced-colors: active</code> を有効にして確認してください。
     </div>
 
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 400px;">
@@ -1305,7 +1343,9 @@ export const ForcedColorsMode: Story = {
   play: async ({ canvasElement }) => {
     const cards = canvasElement.querySelectorAll<Card>('ui-card');
     if (cards.length !== 4) {
-      throw new Error(`ForcedColorsMode: カードが 4 つ存在すべきですが ${String(cards.length)} つです`);
+      throw new Error(
+        `ForcedColorsMode: カードが 4 つ存在すべきですが ${String(cards.length)} つです`,
+      );
     }
 
     for (const card of cards) {

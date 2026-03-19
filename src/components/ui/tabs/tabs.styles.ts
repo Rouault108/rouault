@@ -27,15 +27,12 @@ export const tabsStyles = css`
     position: absolute;
     inset-inline: 0;
     bottom: calc(-0.5 * var(--border-width-thick, 2px));
-    border-bottom: var(--border-width, 1px) solid
-      var(--border-default, oklch(90% 0 0 / 0.12));
+    border-bottom: var(--border-width, 1px) solid var(--border-default, oklch(90% 0 0 / 0.12));
     pointer-events: none;
   }
 
   [role='tablist'] {
-    --_ui-tabs-focus-clearance: calc(
-      var(--focus-ring-width, 2px) + var(--focus-ring-offset, 2px)
-    );
+    --_ui-tabs-focus-clearance: calc(var(--focus-ring-width, 2px) + var(--focus-ring-offset, 2px));
 
     display: flex;
     position: relative;
@@ -46,17 +43,12 @@ export const tabsStyles = css`
 
     padding-block-end: var(--_ui-tabs-focus-clearance);
     margin-block-end: calc(
-      -1 * (
-        var(--_ui-tabs-focus-clearance) +
-        (0.5 * var(--border-width-thick, 2px))
-      )
+      -1 * (var(--_ui-tabs-focus-clearance) + (0.5 * var(--border-width-thick, 2px)))
     );
 
     padding-inline: var(--_ui-tabs-focus-clearance);
 
-    scroll-padding-inline: calc(
-      var(--space-4, 16px) + var(--_ui-tabs-focus-clearance)
-    );
+    scroll-padding-inline: calc(var(--space-4, 16px) + var(--_ui-tabs-focus-clearance));
 
     scrollbar-width: var(--scrollbar-width, thin);
     scrollbar-color: var(--scrollbar-thumb, oklch(70% 0 0 / 0.3)) transparent;
@@ -65,13 +57,10 @@ export const tabsStyles = css`
   .orient-vertical [role='tablist'] {
     flex-direction: column;
     border-bottom: none;
-    border-right: var(--border-width, 1px) solid
-      var(--border-default, oklch(90% 0 0 / 0.12));
+    border-right: var(--border-width, 1px) solid var(--border-default, oklch(90% 0 0 / 0.12));
     overflow-x: visible;
     overflow-y: auto;
-    padding-bottom: calc(
-      var(--focus-ring-width, 2px) + var(--focus-ring-offset, 2px)
-    );
+    padding-bottom: calc(var(--focus-ring-width, 2px) + var(--focus-ring-offset, 2px));
     padding-right: calc(var(--border-width-thick, 2px) + var(--space-1, 4px));
   }
 
@@ -93,9 +82,7 @@ export const tabsStyles = css`
     box-sizing: content-box;
     padding-block: max(
       0px,
-      calc(
-        (var(--control-min-touch, 24px) - var(--control-height-md, 32px)) / 2
-      )
+      calc((var(--control-min-touch, 24px) - var(--control-height-md, 32px)) / 2)
     );
     padding-inline: var(--space-3, 12px);
     flex-shrink: 0;
@@ -117,10 +104,8 @@ export const tabsStyles = css`
     position: relative;
 
     transition:
-      color var(--duration-fast, 70ms)
-        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-      transform var(--duration-fast, 70ms)
-        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+      transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
   }
 
   ::slotted([slot='tab']:active) {
@@ -136,8 +121,7 @@ export const tabsStyles = css`
   }
 
   ::slotted([slot='tab']:focus-visible) {
-    outline: var(--focus-ring-width, 2px) solid
-      var(--focus-ring-color, oklch(60% 0.15 250));
+    outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
     outline-offset: var(--focus-ring-offset, 2px);
     animation: var(--animation-focus);
     border-radius: var(--radius-sm, 3px);
@@ -145,14 +129,12 @@ export const tabsStyles = css`
   }
 
   ::slotted([slot='tab'][aria-selected='true']) {
-    border-bottom: var(--border-width-thick, 2px) solid
-      var(--primary, oklch(60% 0.15 250));
+    border-bottom: var(--border-width-thick, 2px) solid var(--primary, oklch(60% 0.15 250));
   }
 
   :host([orientation='vertical']) ::slotted([slot='tab'][aria-selected='true']) {
     border-bottom: none;
-    border-right: var(--border-width-thick, 2px) solid
-      var(--primary, oklch(60% 0.15 250));
+    border-right: var(--border-width-thick, 2px) solid var(--primary, oklch(60% 0.15 250));
   }
 
   :host([hydrated]) ::slotted([slot='tab'][aria-selected='true']) {
@@ -170,10 +152,8 @@ export const tabsStyles = css`
     transform-origin: left center;
 
     transition:
-      left var(--duration-slow, 200ms)
-        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-      width var(--duration-slow, 200ms)
-        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      left var(--duration-slow, 200ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+      width var(--duration-slow, 200ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
   }
 
   .orient-vertical .indicator {
@@ -185,28 +165,20 @@ export const tabsStyles = css`
     transform-origin: center top;
 
     transition:
-      top var(--duration-slow, 200ms)
-        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-      height var(--duration-slow, 200ms)
-        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      top var(--duration-slow, 200ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+      height var(--duration-slow, 200ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
   }
 
   .panels {
     display: grid;
     flex: 1;
     min-width: 0;
-    margin-block-start: var(
-      --ui-tabs-panel-gap,
-      var(--prose-flow-space, var(--space-4, 16px))
-    );
+    margin-block-start: var(--ui-tabs-panel-gap, var(--prose-flow-space, var(--space-4, 16px)));
   }
 
   .orient-vertical .panels {
     margin-block-start: 0;
-    margin-inline-start: var(
-      --ui-tabs-panel-gap,
-      var(--prose-flow-space, var(--space-4, 16px))
-    );
+    margin-inline-start: var(--ui-tabs-panel-gap, var(--prose-flow-space, var(--space-4, 16px)));
   }
 
   ::slotted([slot='panel']) {

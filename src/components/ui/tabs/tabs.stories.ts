@@ -44,9 +44,9 @@ const meta: Meta<Tabs> = {
   component: 'ui-tabs',
   tags: ['autodocs'],
   parameters: {
-  docs: {
-    description: {
-      component: `
+    docs: {
+      description: {
+        component: `
 タブコンポーネントは、同一コンテキスト内でのビュー切り替えを提供します。
 
 ## 使用方法
@@ -190,7 +190,9 @@ export const Default: Story = {
     // テスト: タブの role
     tabEls.forEach((tab, i) => {
       if (tab.getAttribute('role') !== 'tab') {
-        throw new Error(`[Default] tab[${String(i)}] の role が "tab" ではありません: ${String(tab.getAttribute('role'))}`);
+        throw new Error(
+          `[Default] tab[${String(i)}] の role が "tab" ではありません: ${String(tab.getAttribute('role'))}`,
+        );
       }
     });
 
@@ -214,7 +216,8 @@ export const Default: Story = {
       const controls = tab.getAttribute('aria-controls');
       if (!controls) throw new Error(`[Default] tab[${String(i)}] に aria-controls がありません`);
       const panel = canvasElement.querySelector(`#${controls}`);
-      if (!panel) throw new Error(`[Default] aria-controls="${controls}" に対応するパネルが見つかりません`);
+      if (!panel)
+        throw new Error(`[Default] aria-controls="${controls}" に対応するパネルが見つかりません`);
       const labelledby = panel.getAttribute('aria-labelledby');
       if (labelledby !== tab.getAttribute('id')) {
         throw new Error(`[Default] panel の aria-labelledby が tab の id と一致しません`);
@@ -251,9 +254,7 @@ export const DefaultSelectedValue: Story = {
       <div slot="panel" style="padding: 1rem;">概要パネル</div>
 
       <button slot="tab" value="details">詳細</button>
-      <div slot="panel" style="padding: 1rem;">
-        <strong>詳細パネル</strong>（初期選択）
-      </div>
+      <div slot="panel" style="padding: 1rem;"><strong>詳細パネル</strong>（初期選択）</div>
 
       <button slot="tab" value="settings">設定</button>
       <div slot="panel" style="padding: 1rem;">設定パネル</div>
@@ -269,10 +270,14 @@ export const DefaultSelectedValue: Story = {
     const panelEls = canvasElement.querySelectorAll('[slot="panel"]');
 
     if (tabEls[1]?.getAttribute('aria-selected') !== 'true') {
-      throw new Error('[DefaultSelectedValue] value="details" のタブが aria-selected="true" ではありません');
+      throw new Error(
+        '[DefaultSelectedValue] value="details" のタブが aria-selected="true" ではありません',
+      );
     }
     if (tabEls[0]?.getAttribute('aria-selected') !== 'false') {
-      throw new Error('[DefaultSelectedValue] value="overview" のタブが aria-selected="false" ではありません');
+      throw new Error(
+        '[DefaultSelectedValue] value="overview" のタブが aria-selected="false" ではありません',
+      );
     }
 
     const secondPanel = panelEls[1] as HTMLElement;
@@ -368,9 +373,8 @@ export const AutomaticActivation: Story = {
     </style>
 
     <div class="auto-info">
-      <strong>Automatic Activation</strong>:
-      Tab キーでフォーカスしてから Arrow Left/Right を押すと、
-      Enter/Space なしにタブが切り替わります。
+      <strong>Automatic Activation</strong>: Tab キーでフォーカスしてから Arrow Left/Right
+      を押すと、 Enter/Space なしにタブが切り替わります。
     </div>
 
     <ui-tabs automatic-activation>
@@ -466,8 +470,12 @@ export const WithIcons: Story = {
  */
 export const ManyTabs: Story = {
   render: () => html`
-    <div style="max-width: 400px; border: 1px dashed var(--border-default, #e0e0e0); padding: 0.5rem;">
-      <p style="font-size: var(--text-sm, 13px); color: var(--fg-muted, #666); margin: 0 0 0.5rem 0;">
+    <div
+      style="max-width: 400px; border: 1px dashed var(--border-default, #e0e0e0); padding: 0.5rem;"
+    >
+      <p
+        style="font-size: var(--text-sm, 13px); color: var(--fg-muted, #666); margin: 0 0 0.5rem 0;"
+      >
         コンテナ幅: 400px（タブリストがオーバーフロー）
       </p>
       <ui-tabs>
@@ -533,10 +541,14 @@ export const SelectedByValue: Story = {
 
     // テスト: "settings" タブが選択されている（value="settings"）
     if (tabEls[2]?.getAttribute('aria-selected') !== 'true') {
-      throw new Error('[SelectedByValue] value="settings" のタブが aria-selected="true" ではありません');
+      throw new Error(
+        '[SelectedByValue] value="settings" のタブが aria-selected="true" ではありません',
+      );
     }
     if (tabEls[0]?.getAttribute('aria-selected') !== 'false') {
-      throw new Error('[SelectedByValue] value="overview" のタブが aria-selected="false" ではありません');
+      throw new Error(
+        '[SelectedByValue] value="overview" のタブが aria-selected="false" ではありません',
+      );
     }
 
     // テスト: value="settings" のパネルが表示されている
@@ -677,8 +689,7 @@ export const KeyboardNavigation: Story = {
 
     <div class="keyboard-info">
       Tab キーでフォーカスしてから:
-      <code>← →</code> でフォーカス移動、
-      <code>Enter</code> / <code>Space</code> で選択、
+      <code>← →</code> でフォーカス移動、 <code>Enter</code> / <code>Space</code> で選択、
       <code>Home</code> / <code>End</code> で先頭/末尾へ。
     </div>
 
@@ -709,11 +720,15 @@ export const KeyboardNavigation: Story = {
 
     // フォーカスが tab[1] に移動している
     if (tabEls[1]?.getAttribute('tabindex') !== '0') {
-      throw new Error('[KeyboardNavigation] ArrowRight 後に tab[1] の tabindex が "0" ではありません');
+      throw new Error(
+        '[KeyboardNavigation] ArrowRight 後に tab[1] の tabindex が "0" ではありません',
+      );
     }
     // 選択は tab[0] のまま
     if (tabEls[0]?.getAttribute('aria-selected') !== 'true') {
-      throw new Error('[KeyboardNavigation] Manual Activation: ArrowRight 後も aria-selected は変わらないはずです');
+      throw new Error(
+        '[KeyboardNavigation] Manual Activation: ArrowRight 後も aria-selected は変わらないはずです',
+      );
     }
 
     // ─── テスト: Enter で選択 ───
@@ -721,7 +736,9 @@ export const KeyboardNavigation: Story = {
     await tabs.updateComplete;
 
     if (tabEls[1].getAttribute('aria-selected') !== 'true') {
-      throw new Error('[KeyboardNavigation] Enter 後に tab[1] が aria-selected="true" ではありません');
+      throw new Error(
+        '[KeyboardNavigation] Enter 後に tab[1] が aria-selected="true" ではありません',
+      );
     }
 
     // ─── テスト: End で末尾へ ───
@@ -794,7 +811,9 @@ export const KeyboardNavigationVertical: Story = {
     await tabs.updateComplete;
 
     if (tabEls[1]?.getAttribute('tabindex') !== '0') {
-      throw new Error('[KeyboardNavigationVertical] ArrowDown 後に tab[1] の tabindex が "0" ではありません');
+      throw new Error(
+        '[KeyboardNavigationVertical] ArrowDown 後に tab[1] の tabindex が "0" ではありません',
+      );
     }
 
     // テスト: ArrowLeft は無視される（垂直時）
@@ -811,7 +830,9 @@ export const KeyboardNavigationVertical: Story = {
     await tabs.updateComplete;
 
     if (tabEls[0]?.getAttribute('tabindex') !== '0') {
-      throw new Error('[KeyboardNavigationVertical] ArrowUp 後に tab[0] の tabindex が "0" ではありません');
+      throw new Error(
+        '[KeyboardNavigationVertical] ArrowUp 後に tab[0] の tabindex が "0" ではありません',
+      );
     }
   },
 };
@@ -842,12 +863,16 @@ export const TabChangeEvent: Story = {
 
     <ui-tabs
       id="event-tabs"
-      @ui-tab-change="${(e: CustomEvent<{ index: number; value: string | null; prevIndex: number }>) => {
-      const log = (e.currentTarget as HTMLElement | null)?.parentElement?.querySelector<HTMLElement>('#event-log');
-      if (log) {
-        log.textContent = `ui-tab-change: index=${String(e.detail.index)}, value=${e.detail.value ?? 'null'}, prevIndex=${String(e.detail.prevIndex)}`;
-      }
-    }}"
+      @ui-tab-change="${(
+        e: CustomEvent<{ index: number; value: string | null; prevIndex: number }>,
+      ) => {
+        const log = (
+          e.currentTarget as HTMLElement | null
+        )?.parentElement?.querySelector<HTMLElement>('#event-log');
+        if (log) {
+          log.textContent = `ui-tab-change: index=${String(e.detail.index)}, value=${e.detail.value ?? 'null'}, prevIndex=${String(e.detail.prevIndex)}`;
+        }
+      }}"
     >
       <button slot="tab" value="overview">概要</button>
       <div slot="panel" style="padding: 1rem;">概要パネル</div>
@@ -880,7 +905,9 @@ export const TabChangeEvent: Story = {
 
     // テスト: イベントが発火している
     if (events.length !== 1) {
-      throw new Error(`[TabChangeEvent] イベント発火回数が 1 ではありません: ${String(events.length)}`);
+      throw new Error(
+        `[TabChangeEvent] イベント発火回数が 1 ではありません: ${String(events.length)}`,
+      );
     }
 
     // テスト: detail の内容
@@ -890,10 +917,14 @@ export const TabChangeEvent: Story = {
       throw new Error(`[TabChangeEvent] detail.index が 1 ではありません: ${String(detail.index)}`);
     }
     if (detail.value !== 'details') {
-      throw new Error(`[TabChangeEvent] detail.value が "details" ではありません: ${String(detail.value)}`);
+      throw new Error(
+        `[TabChangeEvent] detail.value が "details" ではありません: ${String(detail.value)}`,
+      );
     }
     if (detail.prevIndex !== 0) {
-      throw new Error(`[TabChangeEvent] detail.prevIndex が 0 ではありません: ${String(detail.prevIndex)}`);
+      throw new Error(
+        `[TabChangeEvent] detail.prevIndex が 0 ではありません: ${String(detail.prevIndex)}`,
+      );
     }
 
     // テスト: 同じタブを再クリックしてもイベントは発火しない
@@ -945,12 +976,16 @@ export const EdgeCase_InvalidDefaultSelectedValue: Story = {
     const panelEls = canvasElement.querySelectorAll('[slot="panel"]');
 
     if (tabEls[0]?.getAttribute('aria-selected') !== 'true') {
-      throw new Error('[EdgeCase_InvalidDefaultSelectedValue] フォールバックで先頭タブが選択されていません');
+      throw new Error(
+        '[EdgeCase_InvalidDefaultSelectedValue] フォールバックで先頭タブが選択されていません',
+      );
     }
 
     const firstPanel = panelEls[0] as HTMLElement;
     if (firstPanel.hasAttribute('hidden')) {
-      throw new Error('[EdgeCase_InvalidDefaultSelectedValue] フォールバックで先頭パネルが表示されていません');
+      throw new Error(
+        '[EdgeCase_InvalidDefaultSelectedValue] フォールバックで先頭パネルが表示されていません',
+      );
     }
   },
   parameters: {
@@ -981,8 +1016,8 @@ export const EdgeCase_SelectedValueOverridesDefault: Story = {
     </style>
 
     <div class="info-banner">
-      <strong>API Resolution</strong>:
-      <code>default-selected-value="alpha"</code> と <code>selected-value="gamma"</code> が同時指定された場合、
+      <strong>API Resolution</strong>: <code>default-selected-value="alpha"</code> と
+      <code>selected-value="gamma"</code> が同時指定された場合、
       <strong>selected-value が優先され</strong>、「ガンマ」タブが選択されます。
     </div>
 
@@ -1009,7 +1044,9 @@ export const EdgeCase_SelectedValueOverridesDefault: Story = {
 
     // テスト: selected-value="gamma" が優先され index=2 が選択されている
     if (tabEls[2]?.getAttribute('aria-selected') !== 'true') {
-      throw new Error('[EdgeCase_ValueOverridesIndex] selected-value が優先されていません。index=2 が選択されていません。');
+      throw new Error(
+        '[EdgeCase_ValueOverridesIndex] selected-value が優先されていません。index=2 が選択されていません。',
+      );
     }
     if (tabEls[0]?.getAttribute('aria-selected') !== 'false') {
       throw new Error('[EdgeCase_ValueOverridesIndex] index=0 のタブが誤って選択されています');
@@ -1018,7 +1055,8 @@ export const EdgeCase_SelectedValueOverridesDefault: Story = {
   parameters: {
     docs: {
       description: {
-        story: '`selected-value` と `default-selected-value` が競合した場合、**`selected-value` が優先**されます。',
+        story:
+          '`selected-value` と `default-selected-value` が競合した場合、**`selected-value` が優先**されます。',
       },
     },
   },
@@ -1125,7 +1163,9 @@ export const EdgeCase_UnmatchedSelectedValue: Story = {
     const tabEls = canvasElement.querySelectorAll('[slot="tab"]');
 
     if (tabEls[0]?.getAttribute('aria-selected') !== 'true') {
-      throw new Error('[EdgeCase_UnmatchedSelectedValue] 無効な selected-value で先頭タブにフォールバックしていません');
+      throw new Error(
+        '[EdgeCase_UnmatchedSelectedValue] 無効な selected-value で先頭タブにフォールバックしていません',
+      );
     }
   },
 };
@@ -1200,8 +1240,8 @@ export const ReducedMotion: Story = {
     </style>
 
     <div class="reduced-motion-info">
-      <strong>確認方法</strong>:
-      OS の「視差効果を減らす」（macOS）または「アニメーション効果をオフ」（Windows）を有効にしてください。
+      <strong>確認方法</strong>: OS
+      の「視差効果を減らす」（macOS）または「アニメーション効果をオフ」（Windows）を有効にしてください。
       インジケーターの移動とパネルのフェードが即座に完了します（0.01ms）。
     </div>
 
@@ -1221,7 +1261,8 @@ export const ReducedMotion: Story = {
   parameters: {
     docs: {
       description: {
-        story: '`prefers-reduced-motion: reduce` 時はすべてのトランジションが `0.01ms` に短縮されます。完全無効化はしません（状態変化の認識に必要なため）。',
+        story:
+          '`prefers-reduced-motion: reduce` 時はすべてのトランジションが `0.01ms` に短縮されます。完全無効化はしません（状態変化の認識に必要なため）。',
       },
     },
   },
@@ -1269,10 +1310,9 @@ export const ForcedColorsMode: Story = {
     </style>
 
     <div class="forced-colors-info">
-      <strong>確認方法</strong>:
-      Chrome DevTools → Rendering → Emulate CSS media feature
-      <code>forced-colors: active</code> で確認できます。
-      アクティブタブが <code>Highlight</code> システムカラーのボーダーで識別されます。
+      <strong>確認方法</strong>: Chrome DevTools → Rendering → Emulate CSS media feature
+      <code>forced-colors: active</code> で確認できます。 アクティブタブが
+      <code>Highlight</code> システムカラーのボーダーで識別されます。
     </div>
 
     <ui-tabs>
@@ -1296,7 +1336,8 @@ export const ForcedColorsMode: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Forced Colors Mode では JS 制御のインジケーターが非表示になり、`Highlight` システムカラーのボーダーで選択状態を示します（ネイティブ回帰戦略）。',
+        story:
+          'Forced Colors Mode では JS 制御のインジケーターが非表示になり、`Highlight` システムカラーのボーダーで選択状態を示します（ネイティブ回帰戦略）。',
       },
     },
   },
@@ -1357,7 +1398,9 @@ export const DarkMode: Story = {
 
     await tabs.updateComplete;
 
-    const activeTab = canvasElement.querySelector<HTMLElement>('[slot="tab"][aria-selected="true"]');
+    const activeTab = canvasElement.querySelector<HTMLElement>(
+      '[slot="tab"][aria-selected="true"]',
+    );
     if (!activeTab) throw new Error('[DarkMode] アクティブタブが見つかりません');
 
     const color = getComputedStyle(activeTab).color;
@@ -1399,12 +1442,18 @@ export const AsyncPanel: Story = {
       }
 
       @keyframes shimmer {
-        0% { background-position: -400px 0; }
-        100% { background-position: 400px 0; }
+        0% {
+          background-position: -400px 0;
+        }
+        100% {
+          background-position: 400px 0;
+        }
       }
 
       @media (prefers-reduced-motion: reduce) {
-        .skeleton { animation: none; }
+        .skeleton {
+          animation: none;
+        }
       }
     </style>
 

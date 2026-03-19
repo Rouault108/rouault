@@ -34,8 +34,14 @@ export class Kbd extends LitElement {
     :host {
       display: inline;
       vertical-align: baseline;
-      font-family:
-        var(--font-sans, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif);
+      font-family: var(
+        --font-sans,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        'Segoe UI',
+        sans-serif
+      );
       font-size: max(0.75rem, var(--text-xs, 12px));
       font-weight: var(--font-medium, 500);
       letter-spacing: var(--tracking-normal, 0);
@@ -54,11 +60,8 @@ export class Kbd extends LitElement {
       min-inline-size: var(--space-3, 12px);
       min-block-size: calc(0.75em + var(--space-3, 12px));
       background: var(--bg-fill-muted, oklch(96% 0 0));
-      border: var(--border-width, 1px) solid color-mix(
-        in oklab,
-        var(--border-muted, oklch(20% 0 0 / 0.06)) 80%,
-        transparent
-      );
+      border: var(--border-width, 1px) solid
+        color-mix(in oklab, var(--border-muted, oklch(20% 0 0 / 0.06)) 80%, transparent);
       box-shadow:
         inset 0 1px 0 oklch(100% 0 0 / 0.7),
         0 1px 2px oklch(0% 0 0 / 0.04);
@@ -167,7 +170,7 @@ export class Kbd extends LitElement {
     // スロットに明示的な要素がある場合は、テキスト解析せずにスロットを優先します。
     if (this.childElementCount > 0) return '';
 
-    return (this.textContent).replace(/\s+/g, ' ').trim();
+    return this.textContent.replace(/\s+/g, ' ').trim();
   }
 
   private _getReading(token: string): string | undefined {
@@ -192,9 +195,7 @@ export class Kbd extends LitElement {
     }
 
     return html`
-      <kbd class="kbd-key" part="key" aria-label=${ifDefined(reading)}>
-        ${token}
-      </kbd>
+      <kbd class="kbd-key" part="key" aria-label=${ifDefined(reading)}> ${token} </kbd>
     `;
   }
 
@@ -218,9 +219,9 @@ export class Kbd extends LitElement {
     if (mode === 'combo') {
       return html`
         <kbd class="kbd-combo" part="combo">
-          ${tokens.map((token, index) => html`
-            ${index > 0 ? ' + ' : nothing}${this._renderKeyToken(token)}
-          `)}
+          ${tokens.map(
+            (token, index) => html` ${index > 0 ? ' + ' : nothing}${this._renderKeyToken(token)} `,
+          )}
         </kbd>
       `;
     }

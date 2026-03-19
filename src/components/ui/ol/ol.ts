@@ -161,7 +161,9 @@ export class Ol extends LitElement {
   }
 
   private _getDirectItems(list: HTMLOListElement): HTMLLIElement[] {
-    return [...list.children].filter((child): child is HTMLLIElement => child instanceof HTMLLIElement);
+    return [...list.children].filter(
+      (child): child is HTMLLIElement => child instanceof HTMLLIElement,
+    );
   }
 
   /**

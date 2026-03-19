@@ -14,7 +14,8 @@ export const linkTextStyles = css`
     text-decoration-color: var(--primary, oklch(55% 0.2 250));
     transition:
       color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-      text-decoration-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      text-decoration-color var(--duration-fast, 70ms)
+        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
   }
 
   @supports (color: oklch(from white l c h)) {

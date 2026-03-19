@@ -15,9 +15,7 @@ export function rehypeDisallowStaticMark() {
       const current = node as HastNode;
       if (current.type === 'element' && current.tagName === 'mark') {
         const sourcePath = file?.path ?? 'unknown file';
-        throw new Error(
-          `[highlight] 著者コンテンツで静的 <mark> は使用できません: ${sourcePath}`,
-        );
+        throw new Error(`[highlight] 著者コンテンツで静的 <mark> は使用できません: ${sourcePath}`);
       }
 
       if (!Array.isArray(current.children)) {

@@ -95,7 +95,7 @@ import { live } from 'lit/directives/live.js';
  */
 @customElement('ui-textarea')
 export class Textarea extends LitElement {
-    static override styles = css`
+  static override styles = css`
     /* ── ホスト: 縦並びコンテナ ── */
     :host {
       display: flex;
@@ -331,468 +331,462 @@ export class Textarea extends LitElement {
     }
   `;
 
-    // Form Association を有効化
-    static formAssociated = true;
+  // Form Association を有効化
+  static formAssociated = true;
 
-    // ──────────────────────────────────────────────
-    // Properties
-    // ──────────────────────────────────────────────
+  // ──────────────────────────────────────────────
+  // Properties
+  // ──────────────────────────────────────────────
 
-    /**
-     * 入力項目のラベル（必須）
-     */
-    @property({ type: String, reflect: true })
-    label = '';
+  /**
+   * 入力項目のラベル（必須）
+   */
+  @property({ type: String, reflect: true })
+  label = '';
 
-    /**
-     * ラベルを視覚的に非表示（aria-label には反映）
-     * @default false
-     */
-    @property({ type: Boolean, attribute: 'hide-label', reflect: true })
-    hideLabel = false;
+  /**
+   * ラベルを視覚的に非表示（aria-label には反映）
+   * @default false
+   */
+  @property({ type: Boolean, attribute: 'hide-label', reflect: true })
+  hideLabel = false;
 
-    /**
-     * フォーム送信時のフィールド名
-     */
-    @property({ type: String, reflect: true })
-    name = '';
+  /**
+   * フォーム送信時のフィールド名
+   */
+  @property({ type: String, reflect: true })
+  name = '';
 
-    /**
-     * ヒントテキスト
-     */
-    @property({ type: String, reflect: true })
-    placeholder = '';
+  /**
+   * ヒントテキスト
+   */
+  @property({ type: String, reflect: true })
+  placeholder = '';
 
-    /**
-     * 入力値
-     */
-    @property({ type: String })
-    value = '';
+  /**
+   * 入力値
+   */
+  @property({ type: String })
+  value = '';
 
-    /**
-     * 補助テキスト
-     */
-    @property({ type: String, attribute: 'help-text', reflect: true })
-    helpText = '';
+  /**
+   * 補助テキスト
+   */
+  @property({ type: String, attribute: 'help-text', reflect: true })
+  helpText = '';
 
-    /**
-     * エラーメッセージ
-     */
-    @property({ type: String, attribute: 'error-message', reflect: true })
-    errorMessage = '';
+  /**
+   * エラーメッセージ
+   */
+  @property({ type: String, attribute: 'error-message', reflect: true })
+  errorMessage = '';
 
-    /**
-     * エラー状態の強制
-     * @default false
-     */
-    @property({ type: Boolean, reflect: true })
-    error = false;
+  /**
+   * エラー状態の強制
+   * @default false
+   */
+  @property({ type: Boolean, reflect: true })
+  error = false;
 
-    /**
-     * 操作無効化
-     * @default false
-     */
-    @property({ type: Boolean, reflect: true })
-    disabled = false;
+  /**
+   * 操作無効化
+   * @default false
+   */
+  @property({ type: Boolean, reflect: true })
+  disabled = false;
 
-    /**
-     * 読み取り専用モード
-     * @default false
-     */
-    @property({ type: Boolean, reflect: true })
-    readonly = false;
+  /**
+   * 読み取り専用モード
+   * @default false
+   */
+  @property({ type: Boolean, reflect: true })
+  readonly = false;
 
-    /**
-     * 必須入力フラグ
-     * @default false
-     */
-    @property({ type: Boolean, reflect: true })
-    required = false;
+  /**
+   * 必須入力フラグ
+   * @default false
+   */
+  @property({ type: Boolean, reflect: true })
+  required = false;
 
-    /**
-     * タイポグラフィモード
-     * - `default`: UI 用（14px, 密度優先）
-     * - `prose`: コンテンツ執筆用（16px, 可読性優先）
-     * @default 'default'
-     */
-    @property({ type: String, reflect: true })
-    variant: 'default' | 'prose' = 'default';
+  /**
+   * タイポグラフィモード
+   * - `default`: UI 用（14px, 密度優先）
+   * - `prose`: コンテンツ執筆用（16px, 可読性優先）
+   * @default 'default'
+   */
+  @property({ type: String, reflect: true })
+  variant: 'default' | 'prose' = 'default';
 
-    /**
-     * 初期表示行数
-     * @default 3
-     */
-    @property({ type: Number, reflect: true })
-    rows = 3;
+  /**
+   * 初期表示行数
+   * @default 3
+   */
+  @property({ type: Number, reflect: true })
+  rows = 3;
 
-    /**
-     * 自動伸長時の最大行数。
-     * 未指定時は無制限に伸長します。
-     */
-    @property({ type: Number, attribute: 'max-rows', reflect: true })
-    maxRows?: number;
+  /**
+   * 自動伸長時の最大行数。
+   * 未指定時は無制限に伸長します。
+   */
+  @property({ type: Number, attribute: 'max-rows', reflect: true })
+  maxRows?: number;
 
-    /**
-     * 自動高さ拡張の有効化
-     * @default true
-     */
-    @property({ type: Boolean, attribute: 'auto-grow', reflect: true })
-    autoGrow = true;
+  /**
+   * 自動高さ拡張の有効化
+   * @default true
+   */
+  @property({ type: Boolean, attribute: 'auto-grow', reflect: true })
+  autoGrow = true;
 
-    /**
-     * CSS resize プロパティ。
-     * `auto-grow=false` の場合のみ `'vertical'` を許容します。
-     * @default 'none'
-     */
-    @property({ type: String, reflect: true })
-    resize: 'none' | 'vertical' = 'none';
+  /**
+   * CSS resize プロパティ。
+   * `auto-grow=false` の場合のみ `'vertical'` を許容します。
+   * @default 'none'
+   */
+  @property({ type: String, reflect: true })
+  resize: 'none' | 'vertical' = 'none';
 
-    // ──────────────────────────────────────────────
-    // Private fields
-    // ──────────────────────────────────────────────
+  // ──────────────────────────────────────────────
+  // Private fields
+  // ──────────────────────────────────────────────
 
-    @query('textarea')
-    private _textarea?: HTMLTextAreaElement;
+  @query('textarea')
+  private _textarea?: HTMLTextAreaElement;
 
-    private _internals: ElementInternals;
-    private _nativeErrorMessage = '';
-    private _hasNativeError = false;
-    private _defaultValue = '';
+  private _internals: ElementInternals;
+  private _nativeErrorMessage = '';
+  private _hasNativeError = false;
+  private _defaultValue = '';
 
-    // 一意な ID を生成（レンダリング毎の再生成を防止）
-    private readonly _textareaId = `textarea-${Math.random().toString(36).substring(2, 11)}`;
-    private readonly _errorId = `error-${Math.random().toString(36).substring(2, 11)}`;
-    private readonly _helpId = `help-${Math.random().toString(36).substring(2, 11)}`;
+  // 一意な ID を生成（レンダリング毎の再生成を防止）
+  private readonly _textareaId = `textarea-${Math.random().toString(36).substring(2, 11)}`;
+  private readonly _errorId = `error-${Math.random().toString(36).substring(2, 11)}`;
+  private readonly _helpId = `help-${Math.random().toString(36).substring(2, 11)}`;
 
-    constructor() {
-        super();
-        this._internals = this.attachInternals();
+  constructor() {
+    super();
+    this._internals = this.attachInternals();
 
-        // delegatesFocus を有効化（外部からのフォーカスを内部 textarea に転送）
-        if (!this.shadowRoot) {
-            this.attachShadow({ mode: 'open', delegatesFocus: true });
-        }
+    // delegatesFocus を有効化（外部からのフォーカスを内部 textarea に転送）
+    if (!this.shadowRoot) {
+      this.attachShadow({ mode: 'open', delegatesFocus: true });
+    }
+  }
+
+  // ──────────────────────────────────────────────
+  // Lifecycle
+  // ──────────────────────────────────────────────
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this._defaultValue = this.value;
+
+    if (!this.label) {
+      console.error(
+        '[ui-textarea]: label は必須です。アクセシビリティのためにラベルを提供してください。',
+        this,
+      );
+    }
+  }
+
+  override firstUpdated(): void {
+    this._internals.setFormValue(this.value);
+    this._syncValidity();
+    // 初期高さを設定
+    this._updateHeight();
+  }
+
+  override updated(changedProperties: Map<string, unknown>): void {
+    super.updated(changedProperties);
+
+    if (changedProperties.has('value')) {
+      this._internals.setFormValue(this.value);
     }
 
-    // ──────────────────────────────────────────────
-    // Lifecycle
-    // ──────────────────────────────────────────────
-
-    override connectedCallback(): void {
-        super.connectedCallback();
-        this._defaultValue = this.value;
-
-        if (!this.label) {
-            console.error(
-                '[ui-textarea]: label は必須です。アクセシビリティのためにラベルを提供してください。',
-                this,
-            );
-        }
+    if (changedProperties.has('label') && !this.label) {
+      console.error(
+        '[ui-textarea]: label は必須です。アクセシビリティのためにラベルを提供してください。',
+        this,
+      );
     }
 
-    override firstUpdated(): void {
-        this._internals.setFormValue(this.value);
-        this._syncValidity();
-        // 初期高さを設定
-        this._updateHeight();
+    const validationProps = ['value', 'required', 'error', 'errorMessage'];
+    if (validationProps.some((prop) => changedProperties.has(prop))) {
+      this._syncValidity();
     }
 
-    override updated(changedProperties: Map<string, unknown>): void {
-        super.updated(changedProperties);
+    // value や rows/maxRows が変わった場合は高さを再計算
+    if (
+      changedProperties.has('value') ||
+      changedProperties.has('rows') ||
+      changedProperties.has('maxRows') ||
+      changedProperties.has('autoGrow') ||
+      changedProperties.has('variant')
+    ) {
+      this._updateHeight();
+    }
+  }
 
-        if (changedProperties.has('value')) {
-            this._internals.setFormValue(this.value);
-        }
+  // ──────────────────────────────────────────────
+  // Auto Grow
+  // ──────────────────────────────────────────────
 
-        if (changedProperties.has('label') && !this.label) {
-            console.error(
-                '[ui-textarea]: label は必須です。アクセシビリティのためにラベルを提供してください。',
-                this,
-            );
-        }
+  /**
+   * Auto Grow の高さ計算。
+   *
+   * **Implementation Contract**:
+   * 1. `height: auto` へ一時リセット
+   * 2. `scrollHeight` を採用して即時反映（0ms）
+   * 3. `max-rows` 指定時は上限を設け、超過分のみ内部スクロール
+   * 4. `rows` 未満には縮めない（最小高さを保証）
+   */
+  private _updateHeight(): void {
+    const ta = this._textarea;
+    if (!ta) return;
 
-        const validationProps = ['value', 'required', 'error', 'errorMessage'];
-        if (validationProps.some((prop) => changedProperties.has(prop))) {
-            this._syncValidity();
-        }
-
-        // value や rows/maxRows が変わった場合は高さを再計算
-        if (
-            changedProperties.has('value') ||
-            changedProperties.has('rows') ||
-            changedProperties.has('maxRows') ||
-            changedProperties.has('autoGrow') ||
-            changedProperties.has('variant')
-        ) {
-            this._updateHeight();
-        }
+    if (!this.autoGrow) {
+      // auto-grow 無効時: min-height のみ設定し、resize に委ねる
+      const minH = this._calcMinHeight(ta);
+      ta.style.minHeight = `${minH.toString()}px`;
+      ta.style.height = '';
+      ta.style.maxHeight = '';
+      ta.style.overflowY = 'auto';
+      ta.classList.remove('overflow-scroll');
+      return;
     }
 
-    // ──────────────────────────────────────────────
-    // Auto Grow
-    // ──────────────────────────────────────────────
+    ta.style.minHeight = '';
+    ta.style.overflowY = '';
 
-    /**
-     * Auto Grow の高さ計算。
-     *
-     * **Implementation Contract**:
-     * 1. `height: auto` へ一時リセット
-     * 2. `scrollHeight` を採用して即時反映（0ms）
-     * 3. `max-rows` 指定時は上限を設け、超過分のみ内部スクロール
-     * 4. `rows` 未満には縮めない（最小高さを保証）
-     */
-    private _updateHeight(): void {
-        const ta = this._textarea;
-        if (!ta) return;
+    // 1. height を auto にリセットして scrollHeight を正確に取得
+    ta.style.height = 'auto';
 
-        if (!this.autoGrow) {
-            // auto-grow 無効時: min-height のみ設定し、resize に委ねる
-            const minH = this._calcMinHeight(ta);
-            ta.style.minHeight = `${minH.toString()}px`;
-            ta.style.height = '';
-            ta.style.maxHeight = '';
-            ta.style.overflowY = 'auto';
-            ta.classList.remove('overflow-scroll');
-            return;
-        }
+    const scrollH = ta.scrollHeight;
+    const minH = this._calcMinHeight(ta);
+    const newH = Math.max(scrollH, minH);
 
-        ta.style.minHeight = '';
-        ta.style.overflowY = '';
+    if (this.maxRows !== undefined) {
+      const maxH = this._calcMaxHeight(ta);
+      if (newH > maxH) {
+        // max-rows 超過: 上限で固定し内部スクロールを許可
+        ta.style.height = `${maxH.toString()}px`;
+        ta.classList.add('overflow-scroll');
+      } else {
+        ta.style.height = `${newH.toString()}px`;
+        ta.classList.remove('overflow-scroll');
+      }
+    } else {
+      // 無制限伸長
+      ta.style.height = `${newH.toString()}px`;
+      ta.classList.remove('overflow-scroll');
+    }
+  }
 
-        // 1. height を auto にリセットして scrollHeight を正確に取得
-        ta.style.height = 'auto';
+  /**
+   * `rows` 属性に基づく最小高さを計算します。
+   * padding と border を含む実際の高さを返します。
+   */
+  private _calcMinHeight(ta: HTMLTextAreaElement): number {
+    const style = getComputedStyle(ta);
+    const lineHeight = parseFloat(style.lineHeight) || (this.variant === 'prose' ? 28 : 21);
+    const paddingTop = parseFloat(style.paddingTop) || 8;
+    const paddingBottom = parseFloat(style.paddingBottom) || 8;
+    const borderTop = parseFloat(style.borderTopWidth) || 1;
+    const borderBottom = parseFloat(style.borderBottomWidth) || 1;
+    return lineHeight * this.rows + paddingTop + paddingBottom + borderTop + borderBottom;
+  }
 
-        const scrollH = ta.scrollHeight;
-        const minH = this._calcMinHeight(ta);
-        const newH = Math.max(scrollH, minH);
+  /**
+   * `max-rows` 属性に基づく最大高さを計算します。
+   */
+  private _calcMaxHeight(ta: HTMLTextAreaElement): number {
+    if (this.maxRows === undefined) return Infinity;
+    const style = getComputedStyle(ta);
+    const lineHeight = parseFloat(style.lineHeight) || (this.variant === 'prose' ? 28 : 21);
+    const paddingTop = parseFloat(style.paddingTop) || 8;
+    const paddingBottom = parseFloat(style.paddingBottom) || 8;
+    const borderTop = parseFloat(style.borderTopWidth) || 1;
+    const borderBottom = parseFloat(style.borderBottomWidth) || 1;
+    return lineHeight * this.maxRows + paddingTop + paddingBottom + borderTop + borderBottom;
+  }
 
-        if (this.maxRows !== undefined) {
-            const maxH = this._calcMaxHeight(ta);
-            if (newH > maxH) {
-                // max-rows 超過: 上限で固定し内部スクロールを許可
-                ta.style.height = `${maxH.toString()}px`;
-                ta.classList.add('overflow-scroll');
-            } else {
-                ta.style.height = `${newH.toString()}px`;
-                ta.classList.remove('overflow-scroll');
-            }
-        } else {
-            // 無制限伸長
-            ta.style.height = `${newH.toString()}px`;
-            ta.classList.remove('overflow-scroll');
-        }
+  // ──────────────────────────────────────────────
+  // Event Handlers
+  // ──────────────────────────────────────────────
+
+  private _handleInput = (e: Event): void => {
+    const ta = e.target as HTMLTextAreaElement;
+    this.value = ta.value;
+    // Auto Grow: ユーザー入力起因の高さ変化は 0ms 固定
+    this._updateHeight();
+  };
+
+  private _handleChange = (e: Event): void => {
+    const ta = e.target as HTMLTextAreaElement;
+    this.value = ta.value;
+  };
+
+  private _handleFocus = (): void => {
+    this.dispatchEvent(
+      new FocusEvent('focus', {
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  };
+
+  private _handleBlur = (): void => {
+    this.dispatchEvent(
+      new FocusEvent('blur', {
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  };
+
+  // ──────────────────────────────────────────────
+  // Validation
+  // ──────────────────────────────────────────────
+
+  /**
+   * バリデーション状態をチェック
+   */
+  checkValidity(): boolean {
+    this._syncValidity();
+    return this._internals.checkValidity();
+  }
+
+  /**
+   * バリデーション状態をレポート
+   */
+  reportValidity(): boolean {
+    this._syncValidity();
+    return this._internals.reportValidity();
+  }
+
+  formResetCallback(): void {
+    this.value = this._defaultValue;
+    this._internals.setFormValue(this.value);
+    this._syncValidity();
+    this._updateHeight();
+  }
+
+  formDisabledCallback(disabled: boolean): void {
+    this.disabled = disabled;
+  }
+
+  formStateRestoreCallback(state: string | File | FormData | null): void {
+    if (typeof state !== 'string') return;
+    this.value = state;
+    this._internals.setFormValue(this.value);
+    this._syncValidity();
+    this._updateHeight();
+  }
+
+  private _syncValidity(): void {
+    // 強制エラー（customError）を優先
+    if (this.error) {
+      this._hasNativeError = false;
+      this._nativeErrorMessage = '';
+      const forcedMessage = this.errorMessage || '入力にエラーがあります。';
+      this._internals.setValidity({ customError: true }, forcedMessage, this._textarea);
+      return;
     }
 
-    /**
-     * `rows` 属性に基づく最小高さを計算します。
-     * padding と border を含む実際の高さを返します。
-     */
-    private _calcMinHeight(ta: HTMLTextAreaElement): number {
-        const style = getComputedStyle(ta);
-        const lineHeight = parseFloat(style.lineHeight) || (this.variant === 'prose' ? 28 : 21);
-        const paddingTop = parseFloat(style.paddingTop) || 8;
-        const paddingBottom = parseFloat(style.paddingBottom) || 8;
-        const borderTop = parseFloat(style.borderTopWidth) || 1;
-        const borderBottom = parseFloat(style.borderBottomWidth) || 1;
-        return lineHeight * this.rows + paddingTop + paddingBottom + borderTop + borderBottom;
+    if (!this._textarea) return;
+
+    const validity = this._textarea.validity;
+
+    if (!validity.valid) {
+      this._hasNativeError = true;
+      this._nativeErrorMessage = this._textarea.validationMessage || 'Invalid input';
+      this._internals.setValidity(
+        {
+          valueMissing: validity.valueMissing,
+          tooShort: validity.tooShort,
+          tooLong: validity.tooLong,
+          badInput: validity.badInput,
+        },
+        this._nativeErrorMessage,
+        this._textarea,
+      );
+    } else {
+      this._hasNativeError = false;
+      this._nativeErrorMessage = '';
+      this._internals.setValidity({});
     }
+  }
 
-    /**
-     * `max-rows` 属性に基づく最大高さを計算します。
-     */
-    private _calcMaxHeight(ta: HTMLTextAreaElement): number {
-        if (this.maxRows === undefined) return Infinity;
-        const style = getComputedStyle(ta);
-        const lineHeight = parseFloat(style.lineHeight) || (this.variant === 'prose' ? 28 : 21);
-        const paddingTop = parseFloat(style.paddingTop) || 8;
-        const paddingBottom = parseFloat(style.paddingBottom) || 8;
-        const borderTop = parseFloat(style.borderTopWidth) || 1;
-        const borderBottom = parseFloat(style.borderBottomWidth) || 1;
-        return lineHeight * this.maxRows + paddingTop + paddingBottom + borderTop + borderBottom;
+  private get _hasError(): boolean {
+    return this.error || this._hasNativeError;
+  }
+
+  private get _currentErrorMessage(): string {
+    if (this.error && this.errorMessage) {
+      return this.errorMessage;
     }
+    if (this._hasNativeError) {
+      return this._nativeErrorMessage;
+    }
+    return '';
+  }
 
-    // ──────────────────────────────────────────────
-    // Event Handlers
-    // ──────────────────────────────────────────────
+  // ──────────────────────────────────────────────
+  // Public API
+  // ──────────────────────────────────────────────
 
-    private _handleInput = (e: Event): void => {
-        const ta = e.target as HTMLTextAreaElement;
-        this.value = ta.value;
-        // Auto Grow: ユーザー入力起因の高さ変化は 0ms 固定
-        this._updateHeight();
+  /**
+   * 内部 textarea にフォーカスを当てる
+   */
+  override focus(options?: FocusOptions): void {
+    this._textarea?.focus(options);
+  }
+
+  /**
+   * 内部 textarea からフォーカスを外す
+   */
+  override blur(): void {
+    this._textarea?.blur();
+  }
+
+  /**
+   * テキストを選択状態にする
+   */
+  select(): void {
+    this._textarea?.select();
+  }
+
+  // ──────────────────────────────────────────────
+  // Render
+  // ──────────────────────────────────────────────
+
+  override render() {
+    const currentErrorMessage = this._currentErrorMessage;
+    const hasError = this._hasError;
+
+    const labelClasses = {
+      label: true,
+      'label--hidden': this.hideLabel,
     };
 
-    private _handleChange = (e: Event): void => {
-        const ta = e.target as HTMLTextAreaElement;
-        this.value = ta.value;
+    const textareaClasses = {
+      error: hasError,
+      prose: this.variant === 'prose',
+      'resize-vertical': !this.autoGrow && this.resize === 'vertical',
     };
 
-    private _handleFocus = (): void => {
-        this.dispatchEvent(
-            new FocusEvent('focus', {
-                bubbles: true,
-                composed: true,
-            }),
-        );
+    const errorMessageClasses = {
+      'error-message': true,
+      'error-message--visible': hasError && !!currentErrorMessage,
     };
 
-    private _handleBlur = (): void => {
-        this.dispatchEvent(
-            new FocusEvent('blur', {
-                bubbles: true,
-                composed: true,
-            }),
-        );
-    };
+    // aria-describedby の値を決定
+    const describedBy =
+      hasError && currentErrorMessage ? this._errorId : this.helpText ? this._helpId : undefined;
 
-    // ──────────────────────────────────────────────
-    // Validation
-    // ──────────────────────────────────────────────
-
-    /**
-     * バリデーション状態をチェック
-     */
-    checkValidity(): boolean {
-        this._syncValidity();
-        return this._internals.checkValidity();
-    }
-
-    /**
-     * バリデーション状態をレポート
-     */
-    reportValidity(): boolean {
-        this._syncValidity();
-        return this._internals.reportValidity();
-    }
-
-    formResetCallback(): void {
-        this.value = this._defaultValue;
-        this._internals.setFormValue(this.value);
-        this._syncValidity();
-        this._updateHeight();
-    }
-
-    formDisabledCallback(disabled: boolean): void {
-        this.disabled = disabled;
-    }
-
-    formStateRestoreCallback(state: string | File | FormData | null): void {
-        if (typeof state !== 'string') return;
-        this.value = state;
-        this._internals.setFormValue(this.value);
-        this._syncValidity();
-        this._updateHeight();
-    }
-
-    private _syncValidity(): void {
-        // 強制エラー（customError）を優先
-        if (this.error) {
-            this._hasNativeError = false;
-            this._nativeErrorMessage = '';
-            const forcedMessage = this.errorMessage || '入力にエラーがあります。';
-            this._internals.setValidity({ customError: true }, forcedMessage, this._textarea);
-            return;
-        }
-
-        if (!this._textarea) return;
-
-        const validity = this._textarea.validity;
-
-        if (!validity.valid) {
-            this._hasNativeError = true;
-            this._nativeErrorMessage = this._textarea.validationMessage || 'Invalid input';
-            this._internals.setValidity(
-                {
-                    valueMissing: validity.valueMissing,
-                    tooShort: validity.tooShort,
-                    tooLong: validity.tooLong,
-                    badInput: validity.badInput,
-                },
-                this._nativeErrorMessage,
-                this._textarea,
-            );
-        } else {
-            this._hasNativeError = false;
-            this._nativeErrorMessage = '';
-            this._internals.setValidity({});
-        }
-    }
-
-    private get _hasError(): boolean {
-        return this.error || this._hasNativeError;
-    }
-
-    private get _currentErrorMessage(): string {
-        if (this.error && this.errorMessage) {
-            return this.errorMessage;
-        }
-        if (this._hasNativeError) {
-            return this._nativeErrorMessage;
-        }
-        return '';
-    }
-
-    // ──────────────────────────────────────────────
-    // Public API
-    // ──────────────────────────────────────────────
-
-    /**
-     * 内部 textarea にフォーカスを当てる
-     */
-    override focus(options?: FocusOptions): void {
-        this._textarea?.focus(options);
-    }
-
-    /**
-     * 内部 textarea からフォーカスを外す
-     */
-    override blur(): void {
-        this._textarea?.blur();
-    }
-
-    /**
-     * テキストを選択状態にする
-     */
-    select(): void {
-        this._textarea?.select();
-    }
-
-    // ──────────────────────────────────────────────
-    // Render
-    // ──────────────────────────────────────────────
-
-    override render() {
-        const currentErrorMessage = this._currentErrorMessage;
-        const hasError = this._hasError;
-
-        const labelClasses = {
-            label: true,
-            'label--hidden': this.hideLabel,
-        };
-
-        const textareaClasses = {
-            error: hasError,
-            prose: this.variant === 'prose',
-            'resize-vertical': !this.autoGrow && this.resize === 'vertical',
-        };
-
-        const errorMessageClasses = {
-            'error-message': true,
-            'error-message--visible': hasError && !!currentErrorMessage,
-        };
-
-        // aria-describedby の値を決定
-        const describedBy =
-            hasError && currentErrorMessage
-                ? this._errorId
-                : this.helpText
-                    ? this._helpId
-                    : undefined;
-
-        return html`
-      <label for="${this._textareaId}" class="${classMap(labelClasses)}">
-        ${this.label}
-      </label>
+    return html`
+      <label for="${this._textareaId}" class="${classMap(labelClasses)}"> ${this.label} </label>
 
       <textarea
         id="${this._textareaId}"
@@ -814,12 +808,10 @@ export class Textarea extends LitElement {
       ></textarea>
 
       ${this.helpText && !hasError
-                ? html`<div class="help-text" id="${this._helpId}">${this.helpText}</div>`
-                : ''
-            }
-
+        ? html`<div class="help-text" id="${this._helpId}">${this.helpText}</div>`
+        : ''}
       ${currentErrorMessage
-                ? html`<div
+        ? html`<div
             class="${classMap(errorMessageClasses)}"
             id="${this._errorId}"
             role="status"
@@ -827,14 +819,13 @@ export class Textarea extends LitElement {
           >
             ${currentErrorMessage}
           </div>`
-                : ''
-            }
+        : ''}
     `;
-    }
+  }
 }
 
 declare global {
-    interface HTMLElementTagNameMap {
-        'ui-textarea': Textarea;
-    }
+  interface HTMLElementTagNameMap {
+    'ui-textarea': Textarea;
+  }
 }

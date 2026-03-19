@@ -6,7 +6,7 @@
 
 `ui-details` は、本文の流れを断ち切らずに補足情報を段階的に開示するためのコンポーネントです。単に開閉できる箱を描画するのではなく、**何が開閉トリガーであるか**、**閉状態の内容をどのように操作対象から隔離するか**、**開閉状態をどのイベントと ARIA 属性で公開するか**を公開契約として固定します。
 
-また、本コンポーネントは native `<details>` を直接利用しません。これは、閉じるアニメーション、閉状態のフォーカス隔離、内部レイアウト制御を一貫して扱うためです。その代わりに、**ネイティブ **``**、**``**、**``**、**`` を組み合わせて disclosure を構成します。
+また、本コンポーネントは native `<details>` を直接利用しません。これは、閉じるアニメーション、閉状態のフォーカス隔離、内部レイアウト制御を一貫して扱うためです。その代わりに、**ネイティブ **`**、**`**、**`**、**` を組み合わせて disclosure を構成します。
 
 Rouault における details は、補足、注記、FAQ、設計上の但し書きなどを必要な時だけ展開するための要素です。したがって、本コンポーネントの契約は、開閉可能性の明示と、**「没入して読む」ことのできるデザイン**の維持を両立する方向で定義します。
 
@@ -58,20 +58,20 @@ Rouault における details は、補足、注記、FAQ、設計上の但し書
 
 ### 入力契約
 
-| 名前          | 種別                                  | 必須  | 内容             | 契約                                                           |
-| ----------- | ----------------------------------- | --- | -------------- | ------------------------------------------------------------ |
-| `ariaLabel` | property / attribute (`aria-label`) | はい  | トリガーのアクセシブルネーム | 空文字および未指定は許可しません                                             |
-| `summary`   | property / attribute                | いいえ | サマリーテキスト       | `summary` スロット未指定時のみ使用します                                    |
-| `open`      | property / attribute                | いいえ | 開閉状態           | `true` で展開、`false` で折りたたみます                                  |
-| `variant`   | property / attribute                | いいえ | 外枠バリアント        | `default` / `bordered`                                       |
-| `region`    | property / attribute                | いいえ | ランドマーク化        | `true` の場合、コンテンツに `role="region"` と `aria-labelledby` を付与します |
+| 名前        | 種別                                | 必須   | 内容                         | 契約                                                                          |
+| ----------- | ----------------------------------- | ------ | ---------------------------- | ----------------------------------------------------------------------------- |
+| `ariaLabel` | property / attribute (`aria-label`) | はい   | トリガーのアクセシブルネーム | 空文字および未指定は許可しません                                              |
+| `summary`   | property / attribute                | いいえ | サマリーテキスト             | `summary` スロット未指定時のみ使用します                                      |
+| `open`      | property / attribute                | いいえ | 開閉状態                     | `true` で展開、`false` で折りたたみます                                       |
+| `variant`   | property / attribute                | いいえ | 外枠バリアント               | `default` / `bordered`                                                        |
+| `region`    | property / attribute                | いいえ | ランドマーク化               | `true` の場合、コンテンツに `role="region"` と `aria-labelledby` を付与します |
 
 ### スロット契約
 
-| 名前        | 種別         | 位置づけ  | 内容                  |
-| --------- | ---------- | ----- | ------------------- |
-| `summary` | named slot | 見出し入力 | リッチな見出し領域を受け取ります    |
-| 既定スロット    | slot       | 本文入力  | 折りたたみコンテンツ本体を受け取ります |
+| 名前         | 種別       | 位置づけ   | 内容                                   |
+| ------------ | ---------- | ---------- | -------------------------------------- |
+| `summary`    | named slot | 見出し入力 | リッチな見出し領域を受け取ります       |
+| 既定スロット | slot       | 本文入力   | 折りたたみコンテンツ本体を受け取ります |
 
 `summary` スロットは、アイコン、強調、複数行テキストを含むリッチな見出しを受け取れます。`summary` スロットが存在する場合、`summary` property の文字列は表示に寄与しません。
 
@@ -87,8 +87,8 @@ Rouault における details は、補足、注記、FAQ、設計上の但し書
 
 `ui-details` は、状態変化を外部へ通知するために `toggle` イベントを発火します。
 
-| 名前       | 種別            | 発火条件          | detail              |
-| -------- | ------------- | ------------- | ------------------- |
+| 名前     | 種別          | 発火条件            | detail              |
+| -------- | ------------- | ------------------- | ------------------- |
 | `toggle` | `CustomEvent` | `open` が変化した時 | `{ open: boolean }` |
 
 `toggle` は `bubbles: true` かつ `composed: true` で発火します。初期描画時には発火しません。値が変化しない同値代入でも発火しません。
@@ -97,13 +97,13 @@ Rouault における details は、補足、注記、FAQ、設計上の但し書
 
 公開入力のうち、`ariaLabel`、`summary`、`open`、`variant`、`region` は property と attribute の両面から操作できます。`ariaLabel` の HTML 属性名は `aria-label` です。`open` と `region` は boolean attribute として扱います。
 
-| property    | attribute    | reflect | 備考                            |
-| ----------- | ------------ | ------- | ----------------------------- |
-| `ariaLabel` | `aria-label` | なし      | 必須です                          |
-| `summary`   | `summary`    | あり      | `summary` スロット未指定時のみ表示に寄与します  |
-| `open`      | `open`       | あり      | 開閉状態とトリガー / コンテンツ属性を同期します     |
-| `variant`   | `variant`    | あり      | `default` / `bordered` を受理します |
-| `region`    | `region`     | あり      | `true` の場合のみランドマーク化します        |
+| property    | attribute    | reflect | 備考                                            |
+| ----------- | ------------ | ------- | ----------------------------------------------- |
+| `ariaLabel` | `aria-label` | なし    | 必須です                                        |
+| `summary`   | `summary`    | あり    | `summary` スロット未指定時のみ表示に寄与します  |
+| `open`      | `open`       | あり    | 開閉状態とトリガー / コンテンツ属性を同期します |
+| `variant`   | `variant`    | あり    | `default` / `bordered` を受理します             |
+| `region`    | `region`     | あり    | `true` の場合のみランドマーク化します           |
 
 ### 列挙外値・無効値の扱い
 
@@ -145,10 +145,10 @@ Rouault における details は、補足、注記、FAQ、設計上の但し書
 
 見出しの入力経路は次の 2 系統です。
 
-| 入力経路               | 優先順位 | 内容                      |
-| ------------------ | ---- | ----------------------- |
-| `summary` スロット     | 高    | リッチな見出しを受け取ります          |
-| `summary` property | 低    | プレーンテキストのフォールバックとして扱います |
+| 入力経路           | 優先順位 | 内容                                           |
+| ------------------ | -------- | ---------------------------------------------- |
+| `summary` スロット | 高       | リッチな見出しを受け取ります                   |
+| `summary` property | 低       | プレーンテキストのフォールバックとして扱います |
 
 両方を同時に与えた場合、表示に参加するのは `summary` スロットです。`summary` property はフォールバックとしてのみ意味を持ちます。
 
@@ -156,10 +156,10 @@ Rouault における details は、補足、注記、FAQ、設計上の但し書
 
 `variant` は視覚的な外枠の有無だけを切り替えます。意味は次表のとおりです。
 
-| `variant` 値 | 意味   | 想定用途                        |
-| ----------- | ---- | --------------------------- |
-| `default`   | 外枠なし | 本文中の軽い補足、注記、FAQ 項目          |
-| `bordered`  | 外枠あり | 他のセクションから独立させたい補足、カード的なまとまり |
+| `variant` 値 | 意味     | 想定用途                                               |
+| ------------ | -------- | ------------------------------------------------------ |
+| `default`    | 外枠なし | 本文中の軽い補足、注記、FAQ 項目                       |
+| `bordered`   | 外枠あり | 他のセクションから独立させたい補足、カード的なまとまり |
 
 `variant` は情報の重要度や開閉ロジックそのものを変更しません。あくまで視覚的な境界の強さを調整する契約です。
 
@@ -291,23 +291,23 @@ Rouault における details は、補足、注記、FAQ、設計上の但し書
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途        | トークン                                                                                      |
-| --------- | ----------------------------------------------------------------------------------------- |
-| 既定文字色     | `--fg-default`                                                                            |
-| 控えめ文字色    | `--fg-muted`                                                                              |
-| 既定境界線     | `--border-default`                                                                        |
-| 角丸        | `--radius-sm` / `--radius-md`                                                             |
-| 余白        | `--space-2` / `--space-3` / `--space-4`                                                   |
-| アイコン寸法    | `--icon-base`                                                                             |
-| 行高        | `--line-height-normal`                                                                    |
-| フォントサイズ   | `--text-base`                                                                             |
-| フォントウェイト  | `--font-medium`                                                                           |
+| 用途               | トークン                                                                                  |
+| ------------------ | ----------------------------------------------------------------------------------------- |
+| 既定文字色         | `--fg-default`                                                                            |
+| 控えめ文字色       | `--fg-muted`                                                                              |
+| 既定境界線         | `--border-default`                                                                        |
+| 角丸               | `--radius-sm` / `--radius-md`                                                             |
+| 余白               | `--space-2` / `--space-3` / `--space-4`                                                   |
+| アイコン寸法       | `--icon-base`                                                                             |
+| 行高               | `--line-height-normal`                                                                    |
+| フォントサイズ     | `--text-base`                                                                             |
+| フォントウェイト   | `--font-medium`                                                                           |
 | フォントファミリー | `--font-sans`                                                                             |
-| 遷移時間      | `--duration-fast` / `--duration-slow`                                                     |
-| イージング     | `--ease-in` / `--ease-out`                                                                |
-| フォーカスリング  | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
-| タッチ領域最小高  | `--control-min-touch`                                                                     |
-| アイコン位置補正  | `--ui-details-icon-align-self` / `--ui-details-icon-offset-block-start`                   |
+| 遷移時間           | `--duration-fast` / `--duration-slow`                                                     |
+| イージング         | `--ease-in` / `--ease-out`                                                                |
+| フォーカスリング   | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
+| タッチ領域最小高   | `--control-min-touch`                                                                     |
+| アイコン位置補正   | `--ui-details-icon-align-self` / `--ui-details-icon-offset-block-start`                   |
 
 ---
 
@@ -359,12 +359,12 @@ Rouault における details は、補足、注記、FAQ、設計上の但し書
 
 `ui-details` は外部スタイル拡張を全面自由とはしません。公開するのは、本書に列挙した CSS Custom Properties と `::part(...)` に限定される拡張面です。
 
-| part 名            | 役割              |
-| ----------------- | --------------- |
-| `trigger`         | 開閉トリガー          |
-| `summary`         | 見出し表示領域         |
+| part 名           | 役割                           |
+| ----------------- | ------------------------------ |
+| `trigger`         | 開閉トリガー                   |
+| `summary`         | 見出し表示領域                 |
 | `content-wrapper` | 開閉アニメーションを担うラッパ |
-| `content`         | 実際の本文領域         |
+| `content`         | 実際の本文領域                 |
 
 利用者は `::part(trigger)`、`::part(summary)`、`::part(content-wrapper)`、`::part(content)` に対して装飾調整を行えます。ただし、意味を変更するための display 構造破壊やインタラクション破壊は行ってはなりません（MUST NOT）。
 
@@ -424,19 +424,19 @@ FAQ の個別項目や軽量な注記のような細粒度補足では、通常 
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
 
-| Story                            | 固定する契約                                                       |
-| -------------------------------- | ------------------------------------------------------------ |
-| `Default`                        | 初期閉状態で `aria-expanded` / `aria-hidden` / `inert` が同期すること     |
-| `VariantStateMatrix`             | `variant × open/closed` の組み合わせで表示差分と状態同期が崩れないこと              |
-| `ToggleEventAndStateSync`        | 状態変化 1 回につき `toggle` が 1 回だけ発火し、`detail.open` が変更後値を返すこと     |
-| `KeyboardInteraction`            | トリガー実体が native `button` であること                                |
-| `SummarySlotPriority`            | `summary` スロットが `summary` property より優先されること                 |
-| `IconOnlyTrigger`                | サマリー未指定でも `aria-label` により操作可能であること                          |
-| `AccessibleNameRequiredBoundary` | `aria-label` 空文字が実行時エラーとなること                                 |
-| `RegionLandmark`                 | `region=true` で `role="region"` と `aria-labelledby` が付与されること |
-| `ReducedMotionContract`          | reduced motion で duration 短縮と delay 除去が維持されること               |
-| `ForcedColorsContract`           | forced-colors でシステムカラー追従が維持されること                             |
-| `DarkModeTokenContract`          | ダーク面でもセマンティックトークン参照が維持されること                                  |
+| Story                            | 固定する契約                                                                       |
+| -------------------------------- | ---------------------------------------------------------------------------------- |
+| `Default`                        | 初期閉状態で `aria-expanded` / `aria-hidden` / `inert` が同期すること              |
+| `VariantStateMatrix`             | `variant × open/closed` の組み合わせで表示差分と状態同期が崩れないこと             |
+| `ToggleEventAndStateSync`        | 状態変化 1 回につき `toggle` が 1 回だけ発火し、`detail.open` が変更後値を返すこと |
+| `KeyboardInteraction`            | トリガー実体が native `button` であること                                          |
+| `SummarySlotPriority`            | `summary` スロットが `summary` property より優先されること                         |
+| `IconOnlyTrigger`                | サマリー未指定でも `aria-label` により操作可能であること                           |
+| `AccessibleNameRequiredBoundary` | `aria-label` 空文字が実行時エラーとなること                                        |
+| `RegionLandmark`                 | `region=true` で `role="region"` と `aria-labelledby` が付与されること             |
+| `ReducedMotionContract`          | reduced motion で duration 短縮と delay 除去が維持されること                       |
+| `ForcedColorsContract`           | forced-colors でシステムカラー追従が維持されること                                 |
+| `DarkModeTokenContract`          | ダーク面でもセマンティックトークン参照が維持されること                             |
 
 ---
 
@@ -517,7 +517,7 @@ Rouault の本文設計との整合を考えると、**icon-only は限定用途
 
 ### ハッシュ到達時の自動展開
 
-最も優先して正式契約へ昇格させるのは、**URL フラグメントが **``** 内部要素を指す場合に、親 **``** を自動で展開する機能**です。
+最も優先して正式契約へ昇格させるのは、**URL フラグメントが **`** 内部要素を指す場合に、親 **`** を自動で展開する機能**です。
 
 現行契約では、閉状態コンテンツは `aria-hidden` と `inert` により隔離され、視覚的にも非表示です。そのため、details 内部に見出し、脚注、注記アンカー、コードブロック見出しなどを含める運用を行う場合、`#fragment` による直接到達と閉状態が衝突します。
 
@@ -640,4 +640,3 @@ URL hash が `ui-details` 内部要素を指す場合に親 `ui-details` を自�
 ### 本節の扱い
 
 本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用する場合は、実装、Storybook、契約書の 3 点を同時に更新し、未対応状態を残したまま公開契約へ昇格させません。
-

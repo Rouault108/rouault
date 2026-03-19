@@ -18,10 +18,7 @@ export interface ContentConfig {
  * @param config - ディレクトリの _config.json 内容（存在しない場合は undefined）
  * @returns ソート済みの新しい配列（元配列は変更しない）
  */
-export function applyOrdering(
-  items: string[],
-  config?: ContentConfig,
-): string[] {
+export function applyOrdering(items: string[], config?: ContentConfig): string[] {
   const order = config?.order ?? [];
   const orderMap = new Map(order.map((name, i) => [name, i]));
 

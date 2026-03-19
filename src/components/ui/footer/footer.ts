@@ -118,9 +118,7 @@ const sanitizeRevisionValue = (value: string): string => {
   if (normalized === FOOTER_DEFAULT_REVISION) {
     return FOOTER_DEFAULT_REVISION;
   }
-  return VALID_REVISION_PATTERN.test(normalized)
-    ? normalized
-    : FOOTER_DEFAULT_REVISION;
+  return VALID_REVISION_PATTERN.test(normalized) ? normalized : FOOTER_DEFAULT_REVISION;
 };
 
 const resolveBuildRevision = (): string | undefined => {
@@ -141,15 +139,11 @@ export const resolveFooterYear = (year?: number): number => {
 
 export const resolveFooterRevision = (revision?: string): string => {
   const source =
-    typeof revision === 'string'
-      ? revision
-      : (resolveBuildRevision() ?? FOOTER_DEFAULT_REVISION);
+    typeof revision === 'string' ? revision : (resolveBuildRevision() ?? FOOTER_DEFAULT_REVISION);
   return sanitizeRevisionValue(source);
 };
 
-export const buildFooterData = (
-  options: UiFooterRenderOptions = {},
-): UiFooterData => {
+export const buildFooterData = (options: UiFooterRenderOptions = {}): UiFooterData => {
   const year = resolveFooterYear(options.year);
   const resolvedRevision = resolveFooterRevision(options.revision);
 
@@ -170,9 +164,7 @@ export const ensureFooterDocumentStyles = (): void => {
   document.head.appendChild(style);
 };
 
-export const renderFooter = (
-  options: UiFooterRenderOptions = {},
-): TemplateResult => {
+export const renderFooter = (options: UiFooterRenderOptions = {}): TemplateResult => {
   ensureFooterDocumentStyles();
 
   const data = buildFooterData(options);
@@ -185,7 +177,17 @@ export const renderFooter = (
           <span class="copyright">
             <span><a href="https://example.com">${data.appName}</a></span>
             <iconify-icon icon="lucide:copyright" aria-hidden="true"></iconify-icon>
-            <span>${data.year.toString()} by Ruo Miyata is licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a><img src="https://mirrors.creativecommons.org/presskit/icons/cc.svg" alt="" style="max-width: 1em;max-height:1em;margin-left: .2em;"><img src="https://mirrors.creativecommons.org/presskit/icons/by.svg" alt="" style="max-width: 1em;max-height:1em;margin-left: .2em;"></span>
+            <span
+              >${data.year.toString()} by Ruo Miyata is licensed under
+              <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a
+              ><img
+                src="https://mirrors.creativecommons.org/presskit/icons/cc.svg"
+                alt=""
+                style="max-width: 1em;max-height:1em;margin-left: .2em;" /><img
+                src="https://mirrors.creativecommons.org/presskit/icons/by.svg"
+                alt=""
+                style="max-width: 1em;max-height:1em;margin-left: .2em;"
+            /></span>
           </span>
           <span class="separator" aria-hidden="true">·</span>
           <span class="revision">${data.revision}</span>

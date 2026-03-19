@@ -20,7 +20,9 @@ test.describe('Tag Page', () => {
     await expect(page.locator('#main-content')).toContainText('交響曲第9番 ニ短調 作品125');
 
     const probeAlive = await page.evaluate(() => {
-      return (window as typeof window & { __tagProbe?: { alive: boolean } }).__tagProbe?.alive === true;
+      return (
+        (window as typeof window & { __tagProbe?: { alive: boolean } }).__tagProbe?.alive === true
+      );
     });
     expect(probeAlive).toBe(true);
   });
@@ -44,7 +46,10 @@ test.describe('Tag Page', () => {
     await expect(page.locator('#main-content h1').first()).toHaveText('交響曲第9番 ニ短調 作品125');
 
     const probeAlive = await page.evaluate(() => {
-      return (window as typeof window & { __tagCardProbe?: { alive: boolean } }).__tagCardProbe?.alive === true;
+      return (
+        (window as typeof window & { __tagCardProbe?: { alive: boolean } }).__tagCardProbe
+          ?.alive === true
+      );
     });
     expect(probeAlive).toBe(true);
   });

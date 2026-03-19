@@ -18,8 +18,8 @@ export class EmptyState extends LitElement {
       align-items: center;
       justify-content: center;
       text-align: center;
-      animation: empty-state-enter var(--duration-normal, 200ms) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1))
-        both;
+      animation: empty-state-enter var(--duration-normal, 200ms)
+        var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)) both;
     }
 
     [hidden] {
@@ -232,13 +232,17 @@ export class EmptyState extends LitElement {
     const headingSlot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="heading"]');
     if (headingSlot) this._syncHeadingSlot(headingSlot);
 
-    const descriptionSlot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="description"]');
+    const descriptionSlot = this.shadowRoot?.querySelector<HTMLSlotElement>(
+      'slot[name="description"]',
+    );
     if (descriptionSlot) this._syncDescriptionSlot(descriptionSlot);
 
     const actionSlot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="action"]');
     if (actionSlot) this._syncActionSlot(actionSlot);
 
-    const illustrationSlot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="illustration"]');
+    const illustrationSlot = this.shadowRoot?.querySelector<HTMLSlotElement>(
+      'slot[name="illustration"]',
+    );
     if (illustrationSlot) this._syncIllustrationSlot(illustrationSlot);
   }
 

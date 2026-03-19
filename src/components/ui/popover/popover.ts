@@ -471,7 +471,10 @@ export class UiPopover extends LitElement {
     }
 
     if (this._supportsPopoverApi) {
-      if (content.getAttribute('popover') !== 'auto' && content.getAttribute('popover') !== 'manual') {
+      if (
+        content.getAttribute('popover') !== 'auto' &&
+        content.getAttribute('popover') !== 'manual'
+      ) {
         content.setAttribute('popover', 'auto');
       }
     } else {
@@ -509,7 +512,10 @@ export class UiPopover extends LitElement {
   }
 
   private _syncAriaExpanded(): void {
-    this._setTriggerState(this._triggerElement, this._openState && this._activeTrigger === this._triggerElement);
+    this._setTriggerState(
+      this._triggerElement,
+      this._openState && this._activeTrigger === this._triggerElement,
+    );
     if (this._activeTrigger && this._activeTrigger !== this._triggerElement) {
       this._setTriggerState(this._activeTrigger, this._openState);
     }
@@ -656,7 +662,11 @@ export class UiPopover extends LitElement {
     const trigger = event.currentTarget;
     if (!(trigger instanceof HTMLElement)) return;
 
-    if (this.keepLinkFallback && !this._supportsPopoverApi && trigger instanceof HTMLAnchorElement) {
+    if (
+      this.keepLinkFallback &&
+      !this._supportsPopoverApi &&
+      trigger instanceof HTMLAnchorElement
+    ) {
       return;
     }
 

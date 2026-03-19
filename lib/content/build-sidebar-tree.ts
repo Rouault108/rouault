@@ -21,13 +21,9 @@ const normalizeSegmentLabel = (segment: string): string =>
     .trim()
     .replace(/\b\p{Letter}/gu, (value) => value.toUpperCase());
 
-const getDirectoryIndexNodeId = (directoryPath: string): string =>
-  `${directoryPath}/__index__`;
+const getDirectoryIndexNodeId = (directoryPath: string): string => `${directoryPath}/__index__`;
 
-const resolveSelectedNodeId = (
-  notes: SidebarSourceNote[],
-  selectedSlug: string,
-): string => {
+const resolveSelectedNodeId = (notes: SidebarSourceNote[], selectedSlug: string): string => {
   const normalized = selectedSlug.trim();
   if (normalized.length === 0) {
     return '';
@@ -39,8 +35,7 @@ const resolveSelectedNodeId = (
 
   if (selectedNote?.noteKind === 'directory-index') {
     const directoryPath =
-      typeof selectedNote.directoryPath === 'string' &&
-      selectedNote.directoryPath.trim().length > 0
+      typeof selectedNote.directoryPath === 'string' && selectedNote.directoryPath.trim().length > 0
         ? selectedNote.directoryPath.trim()
         : normalized;
 

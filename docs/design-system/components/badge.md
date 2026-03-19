@@ -52,14 +52,14 @@
 
 `count` は数値入力として扱います。数値が存在する場合、スロット内容は無視します。`max` は表示上限として扱い、実数値そのものを切り捨てたり丸めたりするものではありません。`count > max` の場合に限り、表示文字列を `${max}+` とします。
 
-| 名前              | 種別                                  | 必須       | 内容      | 契約                                                                                    |
-| --------------- | ----------------------------------- | -------- | ------- | ------------------------------------------------------------------------------------- |
-| `variant`       | property / attribute                | いいえ      | 視覚バリアント | `solid` / `subtle` / `dot` を受け付けます。未知の値は存在しないものとして扱います。                               |
-| `count`         | property / attribute                | いいえ      | 件数      | 数値として解釈できる場合に限り数値表示を採用します。存在しない場合はスロット経路へ移行します。                                       |
-| `max`           | property / attribute                | いいえ      | 表示上限    | 表示文字列の上限値です。既定値は `99` です。数値として解釈できない場合は既定値を採用します。                                     |
-| `color`         | property / attribute                | いいえ      | 意味色     | `primary` / `neutral` / `success` / `warning` / `danger` を受け付けます。未知の値は存在しないものとして扱います。 |
-| `ariaLabelText` | property / attribute (`aria-label`) | dot 時は必須 | 代替テキスト  | `variant="dot"` では指定しなければなりません（MUST）。                                                 |
-| default slot    | slot                                | 条件付き     | テキストラベル | `count` が存在せず、`variant !== "dot"` の場合にのみ表示します。空スロットは有効状態として扱いません。                     |
+| 名前            | 種別                                | 必須         | 内容           | 契約                                                                                                              |
+| --------------- | ----------------------------------- | ------------ | -------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `variant`       | property / attribute                | いいえ       | 視覚バリアント | `solid` / `subtle` / `dot` を受け付けます。未知の値は存在しないものとして扱います。                               |
+| `count`         | property / attribute                | いいえ       | 件数           | 数値として解釈できる場合に限り数値表示を採用します。存在しない場合はスロット経路へ移行します。                    |
+| `max`           | property / attribute                | いいえ       | 表示上限       | 表示文字列の上限値です。既定値は `99` です。数値として解釈できない場合は既定値を採用します。                      |
+| `color`         | property / attribute                | いいえ       | 意味色         | `primary` / `neutral` / `success` / `warning` / `danger` を受け付けます。未知の値は存在しないものとして扱います。 |
+| `ariaLabelText` | property / attribute (`aria-label`) | dot 時は必須 | 代替テキスト   | `variant="dot"` では指定しなければなりません（MUST）。                                                            |
+| default slot    | slot                                | 条件付き     | テキストラベル | `count` が存在せず、`variant !== "dot"` の場合にのみ表示します。空スロットは有効状態として扱いません。            |
 
 責務には、件数の正規化、表示文字列の決定、dot の代替テキスト付与、意味色の適用、および必要なアクセシビリティ属性の付与を含みます。
 
@@ -79,13 +79,13 @@
 
 ### Property / Attribute 対応
 
-| 入力              | Property        | Attribute    | 既定値       | 解釈上の注意                    |
-| --------------- | --------------- | ------------ | --------- | ------------------------- |
-| `variant`       | `variant`       | `variant`    | `solid`   | 未定義値には依存しません。             |
-| `count`         | `count`         | `count`      | 不在        | 数値化できない値は不在として扱います。       |
+| 入力            | Property        | Attribute    | 既定値    | 解釈上の注意                                 |
+| --------------- | --------------- | ------------ | --------- | -------------------------------------------- |
+| `variant`       | `variant`       | `variant`    | `solid`   | 未定義値には依存しません。                   |
+| `count`         | `count`         | `count`      | 不在      | 数値化できない値は不在として扱います。       |
 | `max`           | `max`           | `max`        | `99`      | 数値化できない値は既定値 `99` を採用します。 |
-| `color`         | `color`         | `color`      | `primary` | 未定義値には依存しません。             |
-| `ariaLabelText` | `ariaLabelText` | `aria-label` | なし        | dot 時は必須です。空文字列は無効です。     |
+| `color`         | `color`         | `color`      | `primary` | 未定義値には依存しません。                   |
+| `ariaLabelText` | `ariaLabelText` | `aria-label` | なし      | dot 時は必須です。空文字列は無効です。       |
 
 property と attribute のいずれから入力しても、表示状態の決定順序は変わりません。利用者は、attribute のシリアライズ形式や内部再反映の有無に依存しません。
 
@@ -153,12 +153,12 @@ dot 状態では `role="img"`、スロット状態では無ロールの静的表
 
 表示文字列は `count > max ? `\${max}+`:`\${count}\`\` とします。アクセシブルネームは表示文字列ではなく、**正規化後の実数値**を用いて `${count} 件` とします。したがって、表示が `99+` でも読み上げは `128 件` のようになります。
 
-| 状態     | 条件                                                 | 表示             | アクセシビリティ                                            |
-| ------ | -------------------------------------------------- | -------------- | --------------------------------------------------- |
-| dot 状態 | `variant === "dot"` かつ `aria-label` が存在する場合        | 8px の正円のみ      | 内部要素に `role="img"` を付与し、`aria-label` で意味を与えます。      |
-| 数値状態   | `variant !== "dot"` または dot 不成立、かつ `count` が存在する場合 | 数値または `{max}+` | 内部要素に `role="status"` を付与し、`aria-label` には実数値を与えます。 |
-| スロット状態 | 数値状態が成立せず、非空スロットが存在する場合                            | スロット内容         | 静的ラベルとして扱い、`role="status"` は付与しません。                 |
-| 不成立状態  | dot / count / slot のいずれも成立しない場合                    | 表示しません         | アクセシビリティ対象を持ちません。                                   |
+| 状態         | 条件                                                               | 表示                | アクセシビリティ                                                         |
+| ------------ | ------------------------------------------------------------------ | ------------------- | ------------------------------------------------------------------------ |
+| dot 状態     | `variant === "dot"` かつ `aria-label` が存在する場合               | 8px の正円のみ      | 内部要素に `role="img"` を付与し、`aria-label` で意味を与えます。        |
+| 数値状態     | `variant !== "dot"` または dot 不成立、かつ `count` が存在する場合 | 数値または `{max}+` | 内部要素に `role="status"` を付与し、`aria-label` には実数値を与えます。 |
+| スロット状態 | 数値状態が成立せず、非空スロットが存在する場合                     | スロット内容        | 静的ラベルとして扱い、`role="status"` は付与しません。                   |
+| 不成立状態   | dot / count / slot のいずれも成立しない場合                        | 表示しません        | アクセシビリティ対象を持ちません。                                       |
 
 最小状態は `count` を持たず、非空スロットに短い文字列のみが与えられた状態です。この場合、通常の pill ラベルとして表示します。
 
@@ -220,31 +220,31 @@ slot に複数ノードや装飾要素を与えた場合でも描画自体は行
 
 主な参照トークンは次表のとおりです。
 
-| 用途              | トークン                             |
-| --------------- | -------------------------------- |
+| 用途                | トークン                         |
+| ------------------- | -------------------------------- |
 | primary 背景 / 前景 | `--primary`, `--on-primary`      |
 | success 背景 / 前景 | `--success`, `--on-success`      |
 | danger 背景 / 前景  | `--danger`, `--on-danger`        |
 | warning 背景 / 前景 | `--warning`, `--on-warning`      |
 | neutral 背景 / 前景 | `--fg-default`, `--bg-default`   |
-| subtle 背景       | `--bg-surface-2`, `--bg-default` |
-| フォントサイズ         | `--text-2xs`                     |
-| フォントウェイト        | `--font-bold`                    |
+| subtle 背景         | `--bg-surface-2`, `--bg-default` |
+| フォントサイズ      | `--text-2xs`                     |
+| フォントウェイト    | `--font-bold`                    |
 | 文字間隔            | `--tracking-wider`               |
-| 高さ              | `--control-height-2xs`           |
-| 角丸              | `--radius-full`                  |
-| 余白              | `--space-1`, `--space-2`         |
-| ボーダー幅           | `--border-width`                 |
+| 高さ                | `--control-height-2xs`           |
+| 角丸                | `--radius-full`                  |
+| 余白                | `--space-1`, `--space-2`         |
+| ボーダー幅          | `--border-width`                 |
 
 ### 色の意味
 
-| `color` 値 | 用途の目安          |
-| --------- | -------------- |
-| `primary` | 既定の件数、一般的な状態   |
-| `neutral` | 中立状態、アーカイブ的表示  |
-| `success` | 正常、安定、公開済み     |
-| `warning` | 下書き、注意、準備中     |
-| `danger`  | 非推奨、エラー寄りの強い注意 |
+| `color` 値 | 用途の目安                   |
+| ---------- | ---------------------------- |
+| `primary`  | 既定の件数、一般的な状態     |
+| `neutral`  | 中立状態、アーカイブ的表示   |
+| `success`  | 正常、安定、公開済み         |
+| `warning`  | 下書き、注意、準備中         |
+| `danger`   | 非推奨、エラー寄りの強い注意 |
 
 ### スタイル公開面
 
@@ -377,25 +377,25 @@ slot に複数ノードや装飾要素を与えた場合でも描画自体は行
 
 各 Story はデモではなく**契約確認点**として扱います。将来の変更時には、各 Story が固定する契約を維持します。
 
-| Story                  | 固定する契約                                       |
-| ---------------------- | -------------------------------------------- |
-| `Default`              | 既定状態が `solid` / `primary` / slot 経路であること     |
+| Story                  | 固定する契約                                                  |
+| ---------------------- | ------------------------------------------------------------- |
+| `Default`              | 既定状態が `solid` / `primary` / slot 経路であること          |
 | `VariantColorMatrix`   | 全 `variant` × 全 `color` の視覚マトリクスと dot の無内容契約 |
 | `CountBadge`           | 数値状態、`99+` 表示、および `aria-label` の実数値保証        |
-| `TextBadge`            | `count=null` 時の slot 表示と `role="status"` 不在  |
-| `DotVariant`           | dot の `role="img"`、`aria-label`、count 無視契約   |
-| `CountMaxCombinations` | `count` と `max` の組み合わせ、および閾値境界               |
+| `TextBadge`            | `count=null` 時の slot 表示と `role="status"` 不在            |
+| `DotVariant`           | dot の `role="img"`、`aria-label`、count 無視契約             |
+| `CountMaxCombinations` | `count` と `max` の組み合わせ、および閾値境界                 |
 | `ContentPriorityLogic` | `count` が数値のとき slot を無視する優先ロジック              |
-| `CountNormalization`   | `NaN` / `Infinity` / 負数 / 小数の正規化             |
-| `MaxNormalization`     | `max` の下限補正と整数化                              |
-| `CountZero`            | `0` を有効件数として扱う契約                             |
-| `CountUndefined`       | `undefined` が slot 経路へ入る契約                   |
-| `AriaLabelAccuracy`    | 表示省略後も読み上げ値が実数値を維持する契約                       |
-| `DotIgnoresCount`      | dot が slot / count の両方を無視する契約                |
-| `NonInteractive`       | 非インタラクティブ設計とフォーカス不可契約                        |
-| `ThemeContrastAudit`   | Light / Dark 相当トークン下でのコントラスト監査契約             |
-| `ForcedColorsContract` | forced-colors 退避ルールの存在契約                     |
-| `AllStates`            | 全体状態一覧による視覚的退行検知                             |
+| `CountNormalization`   | `NaN` / `Infinity` / 負数 / 小数の正規化                      |
+| `MaxNormalization`     | `max` の下限補正と整数化                                      |
+| `CountZero`            | `0` を有効件数として扱う契約                                  |
+| `CountUndefined`       | `undefined` が slot 経路へ入る契約                            |
+| `AriaLabelAccuracy`    | 表示省略後も読み上げ値が実数値を維持する契約                  |
+| `DotIgnoresCount`      | dot が slot / count の両方を無視する契約                      |
+| `NonInteractive`       | 非インタラクティブ設計とフォーカス不可契約                    |
+| `ThemeContrastAudit`   | Light / Dark 相当トークン下でのコントラスト監査契約           |
+| `ForcedColorsContract` | forced-colors 退避ルールの存在契約                            |
+| `AllStates`            | 全体状態一覧による視覚的退行検知                              |
 
 ---
 
@@ -423,7 +423,7 @@ slot に複数ノードや装飾要素を与えた場合でも描画自体は行
 
 現行実装と Storybook から読み取れる契約として、もっとも重要なのは次の 3 点です。
 
-- **表示優先順位は ****dot > count > slot**** で固定します。**
+- **表示優先順位は \*\***dot > count > slot\***\* で固定します。**
 - **数値表示は可視文字列と読み上げ文字列を分離します。**
 - **バッジは最後まで非インタラクティブのまま維持します。**
 
@@ -498,4 +498,3 @@ slot に複数ノードや装飾要素を与えた場合でも描画自体は行
 5. 将来拡張候補である `countAriaLabel`、`announce`、`emptyPolicy` の要否を個別に判断します。
 
 この順序であれば、まず意味論の中核を固定し、その後にアクセシビリティと拡張性の公開面を拡張できます。
-

@@ -8,12 +8,12 @@ let inputInstanceCounter = 0;
 
 /**
  * 入力フィールド (Input) コンポーネント
- * 
+ *
  * 思考を妨げない「透明な」入力インターフェースを提供します。
  * Universal Clarity（入力領域の明示）とContextual Feedback（近接したエラー表示）を実現します。
- * 
+ *
  * @slot - デフォルトスロット（使用されません）
- * 
+ *
  * @property {string} label - 入力項目のラベル（必須）
  * @property {boolean} hideLabel - ラベルを視覚的に非表示（スクリーンリーダーには残る）
  * @property {'filled' | 'outline'} variant - 外観バリアント
@@ -31,12 +31,12 @@ let inputInstanceCounter = 0;
  * @property {number} minlength - 最小文字数
  * @property {number} maxlength - 最大文字数
  * @property {string} autocomplete - オートコンプリート設定
- * 
+ *
  * @fires input - 入力値が変更された時
  * @fires change - 入力がコミットされた時（フォーカスを外した時等）
  * @fires focus - フォーカスが当たった時
  * @fires blur - フォーカスが外れた時
- * 
+ *
  * @cssprop --bg-fill-muted - デフォルト背景色
  * @cssprop --bg-default - フォーカス時の背景色
  * @cssprop --bg-danger-subtle - エラー時の背景色
@@ -63,31 +63,31 @@ let inputInstanceCounter = 0;
  * @cssprop --animation-focus - Adaptive Focusアニメーション
  * @cssprop --opacity-disabled - Disabled時の不透明度
  * @cssprop --line-height-normal - 標準行間 (1.5)
- * 
+ *
  * @example
  * ```html
  * <!-- 基本的な使用 -->
  * <ui-input label="メールアドレス" type="email" name="email"></ui-input>
- * 
+ *
  * <!-- ヘルプテキスト付き -->
- * <ui-input 
- *   label="パスワード" 
- *   type="password" 
+ * <ui-input
+ *   label="パスワード"
+ *   type="password"
  *   help-text="8文字以上で入力してください"
  * ></ui-input>
- * 
+ *
  * <!-- エラー状態 -->
- * <ui-input 
- *   label="ユーザー名" 
- *   error 
+ * <ui-input
+ *   label="ユーザー名"
+ *   error
  *   error-message="このユーザー名は既に使用されています"
  * ></ui-input>
- * 
+ *
  * <!-- ラベルを視覚的に非表示 -->
- * <ui-input 
- *   label="ユーザーID" 
- *   hide-label 
- *   type="text" 
+ * <ui-input
+ *   label="ユーザーID"
+ *   hide-label
+ *   type="text"
  *   placeholder="ユーザーIDを入力"
  * ></ui-input>
  * ```
@@ -138,19 +138,19 @@ export class Input extends LitElement {
       height: var(--control-height-md, 32px);
       padding: 0 var(--space-2, 8px);
       box-sizing: border-box;
-      
+
       /* Border & Radius */
       border-radius: var(--radius-md, 6px);
       border: var(--border-width, 1px) solid transparent;
-      
+
       /* Typography */
       font-family: inherit;
       font-size: var(--text-base, 14px);
-      
+
       /* Default State: Universal Clarity */
       background: var(--bg-fill-muted, oklch(95% 0 0));
       color: var(--fg-default, oklch(20% 0 0));
-      
+
       /* Transition: 明示的なプロパティリストを使用 */
       transition:
         background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
@@ -244,17 +244,17 @@ export class Input extends LitElement {
         background: Canvas !important;
         color: CanvasText !important;
       }
-      
+
       input.error {
         border-width: var(--border-width-thick, 2px);
         border-color: CanvasText !important;
       }
-      
+
       input:focus-visible {
         outline: 3px solid CanvasText;
         box-shadow: none;
       }
-      
+
       input:disabled {
         border-color: GrayText;
         color: GrayText !important;
@@ -269,11 +269,11 @@ export class Input extends LitElement {
         border: var(--border-width, 1px) solid currentColor !important;
         color: var(--fg-default, oklch(20% 0 0)) !important;
       }
-      
+
       input.error {
         border-color: var(--border-danger, oklch(55% 0.2 28)) !important;
       }
-      
+
       input:disabled,
       input:read-only {
         opacity: 0.6;
@@ -434,7 +434,7 @@ export class Input extends LitElement {
     if (!this.label) {
       console.error(
         '[ui-input]: label は必須です。アクセシビリティのためにラベルを提供してください。',
-        this
+        this,
       );
     }
   }
@@ -463,7 +463,7 @@ export class Input extends LitElement {
     if (changedProperties.has('label') && !this.label) {
       console.error(
         '[ui-input]: label は必須です。アクセシビリティのためにラベルを提供してください。',
-        this
+        this,
       );
     }
 
@@ -479,7 +479,7 @@ export class Input extends LitElement {
       'errorMessage',
       'disabled',
     ];
-    if (validationProps.some(prop => changedProperties.has(prop))) {
+    if (validationProps.some((prop) => changedProperties.has(prop))) {
       this._syncValidity();
     }
   }
@@ -487,12 +487,12 @@ export class Input extends LitElement {
   private _handleInput = (e: Event): void => {
     const input = e.target as HTMLInputElement;
     this.value = input.value;
-  }
+  };
 
   private _handleChange = (e: Event): void => {
     const input = e.target as HTMLInputElement;
     this.value = input.value;
-  }
+  };
 
   private _handleKeyDown = (e: KeyboardEvent): void => {
     // IME変換中でないEnterキーの押下のみ処理
@@ -503,15 +503,15 @@ export class Input extends LitElement {
         this._internals.form.requestSubmit();
       }
     }
-  }
+  };
 
   private _handleFocus = (): void => {
     this.dispatchEvent(new FocusEvent('focus'));
-  }
+  };
 
   private _handleBlur = (): void => {
     this.dispatchEvent(new FocusEvent('blur'));
-  }
+  };
 
   override render() {
     const currentErrorMessage = this._currentErrorMessage;
@@ -534,11 +534,12 @@ export class Input extends LitElement {
     // aria-describedby の値を決定
     // エラー状態時はエラーメッセージがある場合のみ errorId を参照し、
     // helpText は非エラー時のみ参照（エラー時は help-text が DOM から除去される）
-    const describedBy = hasError && currentErrorMessage
-      ? this._errorId
-      : !hasError && this.helpText
-        ? this._helpId
-        : undefined;
+    const describedBy =
+      hasError && currentErrorMessage
+        ? this._errorId
+        : !hasError && this.helpText
+          ? this._helpId
+          : undefined;
 
     return html`
       <label for="${this._inputId}" class="${classMap(labelClasses)}">
@@ -572,7 +573,6 @@ export class Input extends LitElement {
       ${this.helpText && !hasError
         ? html`<div class="help-text" id="${this._helpId}">${this.helpText}</div>`
         : ''}
-
       ${currentErrorMessage
         ? html`<div
             class="${classMap(errorMessageClasses)}"
@@ -685,8 +685,7 @@ export class Input extends LitElement {
       this.minlength !== undefined &&
       currentValue.length > 0 &&
       currentValue.length < this.minlength;
-    const manualTooLong =
-      this.maxlength !== undefined && currentValue.length > this.maxlength;
+    const manualTooLong = this.maxlength !== undefined && currentValue.length > this.maxlength;
 
     if (!validity.valid || manualTooShort || manualTooLong) {
       this._hasNativeError = true;
@@ -705,7 +704,7 @@ export class Input extends LitElement {
           badInput: validity.badInput,
         },
         this._nativeErrorMessage,
-        this._input
+        this._input,
       );
     } else {
       // バリデーション成功
@@ -727,7 +726,7 @@ export class Input extends LitElement {
     console.warn(
       `[ui-input]: type="${this.type}" はサポートされていません。text にフォールバックします。`,
       `サポートされているtype: ${this._supportedTypes.join(', ')}`,
-      this
+      this,
     );
     this.type = 'text';
   }

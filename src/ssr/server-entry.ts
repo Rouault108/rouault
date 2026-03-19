@@ -92,10 +92,8 @@ const DOCUMENT_STYLE_DEFINITIONS: Partial<Record<SsrTargetTag, SsrDocumentStyleD
   },
 };
 
-const getAttributeValue = (
-  attributes: readonly SsrAttribute[],
-  name: string,
-): string | undefined => attributes.find((attribute) => attribute.name === name)?.value;
+const getAttributeValue = (attributes: readonly SsrAttribute[], name: string): string | undefined =>
+  attributes.find((attribute) => attribute.name === name)?.value;
 
 const parseBooleanLikeAttribute = (value: string | undefined, defaultValue: boolean): boolean => {
   if (value === undefined) {
@@ -106,12 +104,7 @@ const parseBooleanLikeAttribute = (value: string | undefined, defaultValue: bool
   if (normalized === '' || normalized === 'true' || normalized === '1' || normalized === 'on') {
     return true;
   }
-  if (
-    normalized === 'false' ||
-    normalized === '0' ||
-    normalized === 'off' ||
-    normalized === 'no'
-  ) {
+  if (normalized === 'false' || normalized === '0' || normalized === 'off' || normalized === 'no') {
     return false;
   }
 
@@ -143,20 +136,23 @@ const renderImageShadowElement = async (
   const width = parsePositiveIntegerAttribute(getAttributeValue(attributes, 'width'));
   const height = parsePositiveIntegerAttribute(getAttributeValue(attributes, 'height'));
 
-  return await collectResult(renderThunked(html`
-    <ui-image
-      src=${src}
-      alt=${alt}
-      caption=${ifDefined(caption)}
-      loading=${loading}
-      zoomable=${ifDefined(hasZoomableAttribute ? String(zoomable) : undefined)}
-      .zoomable=${zoomable}
-      width=${ifDefined(width !== undefined ? String(width) : undefined)}
-      .width=${width}
-      height=${ifDefined(height !== undefined ? String(height) : undefined)}
-      .height=${height}
-    >${unsafeHTML(innerHtml)}</ui-image>
-  `));
+  return await collectResult(
+    renderThunked(html`
+      <ui-image
+        src=${src}
+        alt=${alt}
+        caption=${ifDefined(caption)}
+        loading=${loading}
+        zoomable=${ifDefined(hasZoomableAttribute ? String(zoomable) : undefined)}
+        .zoomable=${zoomable}
+        width=${ifDefined(width !== undefined ? String(width) : undefined)}
+        .width=${width}
+        height=${ifDefined(height !== undefined ? String(height) : undefined)}
+        .height=${height}
+        >${unsafeHTML(innerHtml)}</ui-image
+      >
+    `),
+  );
 };
 
 const escapeAttributeValue = (value: string): string =>

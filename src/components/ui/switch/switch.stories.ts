@@ -1308,7 +1308,8 @@ export const MotionProfile: Story = {
   parameters: {
     docs: {
       description: {
-        story: '通常時は thumb が従来よりも長めの duration で、減速しながら停止することを検証します。',
+        story:
+          '通常時は thumb が従来よりも長めの duration で、減速しながら停止することを検証します。',
       },
     },
   },
@@ -1327,7 +1328,9 @@ export const MotionProfile: Story = {
     const isExpectedDuration = transformDuration === '220ms' || transformDuration === '0.22s';
 
     if (!isExpectedDuration) {
-      throw new Error(`thumb の duration は 220ms を期待しましたが、実際は "${transformDuration}" です`);
+      throw new Error(
+        `thumb の duration は 220ms を期待しましたが、実際は "${transformDuration}" です`,
+      );
     }
 
     if (!transitionTimingFunction.includes('cubic-bezier(0.22, 1, 0.36, 1)')) {

@@ -144,7 +144,9 @@ export const getDirectiveNameFromNode = (node: MdastNode): DirectiveName | null 
   return directiveNameByNodeType[type] ?? null;
 };
 
-export const getDirectiveNameFromNodeType = (nodeType: string | undefined): DirectiveName | null => {
+export const getDirectiveNameFromNodeType = (
+  nodeType: string | undefined,
+): DirectiveName | null => {
   if (typeof nodeType !== 'string') {
     return null;
   }

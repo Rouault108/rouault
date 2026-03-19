@@ -24,10 +24,13 @@ test.describe('Sidebar Selected Item Scroll', () => {
     await page.setViewportSize({ width: 1280, height: 480 });
     await page.goto(`${sourcePath}/`);
 
-    const beforeNavigation = await page.locator('layout-sidebar').evaluate<SidebarSnapshot, {
-      groupId: string;
-      noteId: string;
-    }>(
+    const beforeNavigation = await page.locator('layout-sidebar').evaluate<
+      SidebarSnapshot,
+      {
+        groupId: string;
+        noteId: string;
+      }
+    >(
       (host, ids) => {
         const layoutSidebar = host as HTMLElement;
         const uiSidebar = layoutSidebar.shadowRoot?.querySelector('ui-sidebar');
@@ -83,10 +86,7 @@ test.describe('Sidebar Selected Item Scroll', () => {
         arg?: boolean | ScrollIntoViewOptions,
       ): void {
         const element = this instanceof HTMLElement ? this : null;
-        const options =
-          typeof arg === 'object'
-            ? arg
-            : undefined;
+        const options = typeof arg === 'object' ? arg : undefined;
 
         recorded.push({
           dataId: element?.dataset['id'] ?? null,
@@ -102,10 +102,13 @@ test.describe('Sidebar Selected Item Scroll', () => {
     await expect(page).toHaveURL(targetPath);
     await expect(page.locator('#main-content h1').first()).toHaveText('Sidebar Scroll Target');
 
-    const afterNavigation = await page.locator('layout-sidebar').evaluate<SidebarSnapshot, {
-      groupId: string;
-      noteId: string;
-    }>(
+    const afterNavigation = await page.locator('layout-sidebar').evaluate<
+      SidebarSnapshot,
+      {
+        groupId: string;
+        noteId: string;
+      }
+    >(
       (host, ids) => {
         const layoutSidebar = host as HTMLElement;
         const uiSidebar = layoutSidebar.shadowRoot?.querySelector('ui-sidebar');
@@ -148,11 +151,12 @@ test.describe('Sidebar Selected Item Scroll', () => {
     expect(afterNavigation.targetSelected).toBe(true);
 
     const targetScrollCalls = await page.evaluate((selectedId) => {
-      const probe = (
-        window as typeof window & {
-          __sidebarScrollProbe?: ScrollProbeEntry[];
-        }
-      ).__sidebarScrollProbe ?? [];
+      const probe =
+        (
+          window as typeof window & {
+            __sidebarScrollProbe?: ScrollProbeEntry[];
+          }
+        ).__sidebarScrollProbe ?? [];
 
       return probe.filter((entry) => entry.dataId === selectedId);
     }, targetNoteId);

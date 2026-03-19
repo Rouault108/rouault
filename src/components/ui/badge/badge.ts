@@ -75,7 +75,7 @@ import { ifDefined } from 'lit/directives/if-defined.js';
  */
 @customElement('ui-badge')
 export class Badge extends LitElement {
-    static override styles = css`
+  static override styles = css`
     /* ──────────────────────────────────────────────
        CSS カスタムプロパティ: カラーシステム
     ────────────────────────────────────────────── */
@@ -196,110 +196,113 @@ export class Badge extends LitElement {
     }
   `;
 
-    /**
-     * 視覚スタイル
-     * @default 'solid'
-     */
-    @property({ type: String, reflect: true })
-    variant: 'solid' | 'subtle' | 'dot' = 'solid';
+  /**
+   * 視覚スタイル
+   * @default 'solid'
+   */
+  @property({ type: String, reflect: true })
+  variant: 'solid' | 'subtle' | 'dot' = 'solid';
 
-    /**
-     * 表示する数値。`null` / `undefined` の場合はスロットを表示。
-     * `number` の場合は正規化ルールを適用。
-     * @default null
-     */
-    @property({ type: Number, reflect: true })
-    count: number | null | undefined = null;
+  /**
+   * 表示する数値。`null` / `undefined` の場合はスロットを表示。
+   * `number` の場合は正規化ルールを適用。
+   * @default null
+   */
+  @property({ type: Number, reflect: true })
+  count: number | null | undefined = null;
 
-    /**
-     * 数値の最大表示リミット。表示は `{max}+`。
-     * `Math.floor()` で整数化し、`1` 未満は `1` に補正。
-     * @default 99
-     */
-    @property({ type: Number, reflect: true })
-    max = 99;
+  /**
+   * 数値の最大表示リミット。表示は `{max}+`。
+   * `Math.floor()` で整数化し、`1` 未満は `1` に補正。
+   * @default 99
+   */
+  @property({ type: Number, reflect: true })
+  max = 99;
 
-    /**
-     * 意味的カラー
-     * @default 'primary'
-     */
-    @property({ type: String, reflect: true })
-    color: 'danger' | 'primary' | 'neutral' | 'success' | 'warning' = 'primary';
+  /**
+   * 意味的カラー
+   * @default 'primary'
+   */
+  @property({ type: String, reflect: true })
+  color: 'danger' | 'primary' | 'neutral' | 'success' | 'warning' = 'primary';
 
-    /**
-     * Dotバリアント用の代替テキスト。
-     * Dotはテキストを持たないため、`aria-label` の付与が必須。
-     * @default null
-     */
-    @property({ attribute: 'aria-label', type: String })
-    ariaLabelText: string | null = null;
+  /**
+   * Dotバリアント用の代替テキスト。
+   * Dotはテキストを持たないため、`aria-label` の付与が必須。
+   * @default null
+   */
+  @property({ attribute: 'aria-label', type: String })
+  ariaLabelText: string | null = null;
 
-    /**
-     * `count` の正規化処理。
-     * - `null` / `undefined` → `null`（スロット表示）
-     * - `NaN` / `Infinity` / `-Infinity` → `0`
-     * - 負数 → `0`
-     * - `Math.floor()` で整数化
-     */
-    private get _normalizedCount(): number | null {
-        if (this.count === null || this.count === undefined) return null;
-        const n = this.count;
-        if (!isFinite(n) || isNaN(n)) return 0;
-        return Math.max(0, Math.floor(n));
+  /**
+   * `count` の正規化処理。
+   * - `null` / `undefined` → `null`（スロット表示）
+   * - `NaN` / `Infinity` / `-Infinity` → `0`
+   * - 負数 → `0`
+   * - `Math.floor()` で整数化
+   */
+  private get _normalizedCount(): number | null {
+    if (this.count === null || this.count === undefined) return null;
+    const n = this.count;
+    if (!isFinite(n) || isNaN(n)) return 0;
+    return Math.max(0, Math.floor(n));
+  }
+
+  /**
+   * `max` の正規化処理。
+   * - `Math.floor()` で整数化
+   * - `1` 未満は `1` に補正
+   */
+  private get _normalizedMax(): number {
+    const m = this.max;
+    if (!isFinite(m) || isNaN(m)) return 1;
+    return Math.max(1, Math.floor(m));
+  }
+
+  /**
+   * 表示文字列を返す。
+   * `count > max ? \`${max}+\` : \`${count}\``
+   */
+  private get _displayText(): string | null {
+    const count = this._normalizedCount;
+    if (count === null) return null;
+    const max = this._normalizedMax;
+    return count > max ? `${String(max)}+` : String(count);
+  }
+
+  /**
+   * `aria-label` 用の実数値文字列を返す。
+   * 表示が `99+` でも実際の件数（例: 128）を使用する。
+   */
+  private get _ariaLabel(): string | null {
+    const count = this._normalizedCount;
+    if (count === null) return null;
+    return `${String(count)} 件`;
+  }
+
+  override render() {
+    // Dot バリアント: コンテンツを物理的にレンダリングしない
+    if (this.variant === 'dot') {
+      return html`<span
+        role="img"
+        aria-label=${ifDefined(this.ariaLabelText ?? undefined)}
+      ></span>`;
     }
 
-    /**
-     * `max` の正規化処理。
-     * - `Math.floor()` で整数化
-     * - `1` 未満は `1` に補正
-     */
-    private get _normalizedMax(): number {
-        const m = this.max;
-        if (!isFinite(m) || isNaN(m)) return 1;
-        return Math.max(1, Math.floor(m));
+    const displayText = this._displayText;
+
+    // count が number の場合: Live Notification として role="status" でレンダリング
+    if (displayText !== null) {
+      return html`<span role="status" aria-label="${this._ariaLabel ?? ''}">${displayText}</span>`;
     }
 
-    /**
-     * 表示文字列を返す。
-     * `count > max ? \`${max}+\` : \`${count}\``
-     */
-    private get _displayText(): string | null {
-        const count = this._normalizedCount;
-        if (count === null) return null;
-        const max = this._normalizedMax;
-        return count > max ? `${String(max)}+` : String(count);
-    }
-
-    /**
-     * `aria-label` 用の実数値文字列を返す。
-     * 表示が `99+` でも実際の件数（例: 128）を使用する。
-     */
-    private get _ariaLabel(): string | null {
-        const count = this._normalizedCount;
-        if (count === null) return null;
-        return `${String(count)} 件`;
-    }
-
-    override render() {
-        // Dot バリアント: コンテンツを物理的にレンダリングしない
-        if (this.variant === 'dot') {
-            return html`<span role="img" aria-label=${ifDefined(this.ariaLabelText ?? undefined)}></span>`;
-        }
-
-        const displayText = this._displayText;
-
-        // count が number の場合: Live Notification として role="status" でレンダリング
-        if (displayText !== null) {
-            return html`<span role="status" aria-label="${this._ariaLabel ?? ''}">${displayText}</span>`;
-        }
-
-        // count が null / undefined の場合: スロットをレンダリング（Static Label）
-        return html`<span><slot></slot></span>`;
-    }
+    // count が null / undefined の場合: スロットをレンダリング（Static Label）
+    return html`<span><slot></slot></span>`;
+  }
 }
 
 declare global {
-    interface HTMLElementTagNameMap {
-        'ui-badge': Badge;
-    }
+  interface HTMLElementTagNameMap {
+    'ui-badge': Badge;
+  }
 }

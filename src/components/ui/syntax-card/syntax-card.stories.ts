@@ -134,8 +134,14 @@ type Story = StoryObj<SyntaxCard>;
  */
 export const MethodWithMembersAndReturns: Story = {
   render: () => html`
-    <ui-syntax-card id="method-card" kind="フック" name="useEffect" data-lang="ts" heading-level="3"
-      style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+    <ui-syntax-card
+      id="method-card"
+      kind="フック"
+      name="useEffect"
+      data-lang="ts"
+      heading-level="3"
+      style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;"
+    >
       <pre slot="signature"><code>function useEffect(
   effect: () =&gt; void | (() =&gt; void),
   deps?: readonly unknown[]
@@ -153,7 +159,9 @@ export const MethodWithMembersAndReturns: Story = {
       </ui-syntax-section>
 
       <ui-syntax-section label="戻り値">
-        <p>void。effect が返したクリーンアップ関数は、再実行前およびアンマウント時に呼び出されます。</p>
+        <p>
+          void。effect が返したクリーンアップ関数は、再実行前およびアンマウント時に呼び出されます。
+        </p>
       </ui-syntax-section>
     </ui-syntax-card>
   `,
@@ -173,7 +181,9 @@ export const MethodWithMembersAndReturns: Story = {
 
     const syntaxFields = card.querySelectorAll('ui-syntax-field');
     if (syntaxFields.length !== 2) {
-      throw new Error(`members は ui-syntax-field を2件使用する必要があります。actual=${String(syntaxFields.length)}`);
+      throw new Error(
+        `members は ui-syntax-field を2件使用する必要があります。actual=${String(syntaxFields.length)}`,
+      );
     }
 
     const heading = getHeading(card);
@@ -215,8 +225,13 @@ export const MethodWithMembersAndReturns: Story = {
  */
 export const SingleSectionOnly: Story = {
   render: () => html`
-    <ui-syntax-card id="single-section-card" kind="Query" name="SELECT" data-lang="sql"
-      style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+    <ui-syntax-card
+      id="single-section-card"
+      kind="Query"
+      name="SELECT"
+      data-lang="sql"
+      style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;"
+    >
       <pre slot="signature"><code>SELECT id, name
 FROM users
 WHERE deleted_at IS NULL;</code></pre>
@@ -258,8 +273,13 @@ WHERE deleted_at IS NULL;</code></pre>
  */
 export const EmptyContentContract: Story = {
   render: () => html`
-    <ui-syntax-card id="empty-content-card" kind="Struct" name="User" data-lang="ts"
-      style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+    <ui-syntax-card
+      id="empty-content-card"
+      kind="Struct"
+      name="User"
+      data-lang="ts"
+      style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;"
+    >
       <pre slot="signature"><code>type User = {
   id: string;
   name: string;
@@ -285,7 +305,9 @@ export const EmptyContentContract: Story = {
     const isBottomBorderCleared =
       signatureStyle.borderBottomStyle === 'none' || signatureStyle.borderBottomWidth === '0px';
     if (!isBottomBorderCleared) {
-      throw new Error('data-content-empty 時は Signature Area の border-bottom が除去される必要があります');
+      throw new Error(
+        'data-content-empty 時は Signature Area の border-bottom が除去される必要があります',
+      );
     }
 
     const copyButton = getCopyButton(card);
@@ -302,14 +324,28 @@ export const EmptyContentContract: Story = {
 export const HeadingLevelFallback: Story = {
   render: () => html`
     <div style="display: grid; gap: 1rem;">
-      <ui-syntax-card id="heading-valid-card" kind="Component" name="SyntaxCard" heading-level="2"
-        style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
-        <pre slot="signature"><code>&lt;ui-syntax-card kind="Method" name="fetch"&gt;&lt;/ui-syntax-card&gt;</code></pre>
+      <ui-syntax-card
+        id="heading-valid-card"
+        kind="Component"
+        name="SyntaxCard"
+        heading-level="2"
+        style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;"
+      >
+        <pre
+          slot="signature"
+        ><code>&lt;ui-syntax-card kind="Method" name="fetch"&gt;&lt;/ui-syntax-card&gt;</code></pre>
       </ui-syntax-card>
 
-      <ui-syntax-card id="heading-invalid-card" kind="Component" name="BrokenHeading" heading-level="9"
-        style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
-        <pre slot="signature"><code>&lt;ui-syntax-card heading-level="9"&gt;&lt;/ui-syntax-card&gt;</code></pre>
+      <ui-syntax-card
+        id="heading-invalid-card"
+        kind="Component"
+        name="BrokenHeading"
+        heading-level="9"
+        style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;"
+      >
+        <pre
+          slot="signature"
+        ><code>&lt;ui-syntax-card heading-level="9"&gt;&lt;/ui-syntax-card&gt;</code></pre>
       </ui-syntax-card>
     </div>
   `,
@@ -321,12 +357,16 @@ export const HeadingLevelFallback: Story = {
 
     const validHeading = getHeading(validCard);
     if (validHeading.tagName !== 'H2') {
-      throw new Error(`heading-level=2 は h2 で描画される必要があります。actual=${validHeading.tagName}`);
+      throw new Error(
+        `heading-level=2 は h2 で描画される必要があります。actual=${validHeading.tagName}`,
+      );
     }
 
     const invalidHeading = getHeading(invalidCard);
     if (invalidHeading.tagName !== 'H4') {
-      throw new Error(`heading-level=9 は h4 にフォールバックする必要があります。actual=${invalidHeading.tagName}`);
+      throw new Error(
+        `heading-level=9 は h4 にフォールバックする必要があります。actual=${invalidHeading.tagName}`,
+      );
     }
   },
 };
@@ -338,13 +378,23 @@ export const HeadingLevelFallback: Story = {
 export const LangAttribute: Story = {
   render: () => html`
     <div style="display: grid; gap: 1rem;">
-      <ui-syntax-card id="lang-ts-card" kind="Method" name="parse" data-lang="ts"
-        style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+      <ui-syntax-card
+        id="lang-ts-card"
+        kind="Method"
+        name="parse"
+        data-lang="ts"
+        style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;"
+      >
         <pre slot="signature"><code>function parse(input: string): Ast</code></pre>
       </ui-syntax-card>
 
-      <ui-syntax-card id="lang-sql-card" kind="Query" name="FindUsers" data-lang="sql"
-        style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+      <ui-syntax-card
+        id="lang-sql-card"
+        kind="Query"
+        name="FindUsers"
+        data-lang="sql"
+        style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;"
+      >
         <pre slot="signature"><code>SELECT * FROM users;</code></pre>
       </ui-syntax-card>
     </div>
@@ -381,19 +431,31 @@ export const LangAttribute: Story = {
 export const CopyFailureIsolation: Story = {
   render: () => html`
     <div style="display: grid; gap: 1rem;">
-      <ui-syntax-card id="no-pre-card" kind="Method" name="fetchData"
-        style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+      <ui-syntax-card
+        id="no-pre-card"
+        kind="Method"
+        name="fetchData"
+        style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;"
+      >
         <p slot="signature">pre なし</p>
       </ui-syntax-card>
 
-      <ui-syntax-card id="multi-pre-card" kind="Method" name="duplicate"
-        style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+      <ui-syntax-card
+        id="multi-pre-card"
+        kind="Method"
+        name="duplicate"
+        style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;"
+      >
         <pre slot="signature"><code>const a = 1;</code></pre>
         <pre slot="signature"><code>const b = 2;</code></pre>
       </ui-syntax-card>
 
-      <ui-syntax-card id="empty-pre-card" kind="Method" name="blank"
-        style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+      <ui-syntax-card
+        id="empty-pre-card"
+        kind="Method"
+        name="blank"
+        style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;"
+      >
         <pre slot="signature"><code>   </code></pre>
       </ui-syntax-card>
     </div>
@@ -403,7 +465,11 @@ export const CopyFailureIsolation: Story = {
     const multiPreCard = getCard(canvasElement, 'multi-pre-card');
     const emptyPreCard = getCard(canvasElement, 'empty-pre-card');
 
-    await Promise.all([noPreCard.updateComplete, multiPreCard.updateComplete, emptyPreCard.updateComplete]);
+    await Promise.all([
+      noPreCard.updateComplete,
+      multiPreCard.updateComplete,
+      emptyPreCard.updateComplete,
+    ]);
     await waitFrame();
 
     if (multiPreCard.querySelectorAll('pre[slot="signature"]').length !== 2) {
@@ -422,8 +488,13 @@ export const CopyFailureIsolation: Story = {
  */
 export const DefaultOnlyMembers: Story = {
   render: () => html`
-    <ui-syntax-card id="default-only-card" kind="Struct" name="Article" data-lang="ts"
-      style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+    <ui-syntax-card
+      id="default-only-card"
+      kind="Struct"
+      name="Article"
+      data-lang="ts"
+      style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;"
+    >
       <pre slot="signature"><code>type Article = {
   id: string;
   title: string;
@@ -431,9 +502,7 @@ export const DefaultOnlyMembers: Story = {
 
       <ui-syntax-section label="プロパティ">
         <dl>
-          <ui-syntax-field name="id" type="string" required>
-            記事の識別子です。
-          </ui-syntax-field>
+          <ui-syntax-field name="id" type="string" required> 記事の識別子です。 </ui-syntax-field>
         </dl>
       </ui-syntax-section>
     </ui-syntax-card>
@@ -468,8 +537,13 @@ export const DefaultOnlyMembers: Story = {
  */
 export const ForcedColorsContract: Story = {
   render: () => html`
-    <ui-syntax-card id="forced-colors-contract" kind="Method" name="hydrate" data-lang="ts"
-      style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+    <ui-syntax-card
+      id="forced-colors-contract"
+      kind="Method"
+      name="hydrate"
+      data-lang="ts"
+      style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;"
+    >
       <pre slot="signature"><code>hydrate(root, app);</code></pre>
     </ui-syntax-card>
   `,
@@ -505,8 +579,13 @@ export const ForcedColorsContract: Story = {
  */
 export const PrintContract: Story = {
   render: () => html`
-    <ui-syntax-card id="print-contract" kind="Query" name="FindAll" data-lang="sql"
-      style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+    <ui-syntax-card
+      id="print-contract"
+      kind="Query"
+      name="FindAll"
+      data-lang="sql"
+      style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;"
+    >
       <pre slot="signature"><code>SELECT * FROM posts;</code></pre>
     </ui-syntax-card>
   `,
@@ -532,8 +611,12 @@ export const PrintContract: Story = {
  */
 export const CopyDisabledInteractionContract: Story = {
   render: () => html`
-    <ui-syntax-card id="copy-disabled-interaction" kind="Method" name="noop"
-      style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;">
+    <ui-syntax-card
+      id="copy-disabled-interaction"
+      kind="Method"
+      name="noop"
+      style="--ui-syntax-card-breakout-width: 100%; --ui-syntax-card-breakout-margin: 0;"
+    >
       <p slot="signature">pre なし</p>
     </ui-syntax-card>
   `,

@@ -1,7 +1,4 @@
-import type {
-  TranslationRenderMode,
-  UiTranslation,
-} from './translation';
+import type { TranslationRenderMode, UiTranslation } from './translation';
 
 export type TranslationIntentMode = 'lookup' | 'parallel';
 
@@ -43,7 +40,9 @@ const isEditableTarget = (value: EventTarget | null): boolean => {
 };
 
 const normalizeIntentMode = (value: string | null | undefined): TranslationIntentMode =>
-  VALID_INTENT_MODES.has(value as TranslationIntentMode) ? (value as TranslationIntentMode) : 'lookup';
+  VALID_INTENT_MODES.has(value as TranslationIntentMode)
+    ? (value as TranslationIntentMode)
+    : 'lookup';
 
 const createDefaultViewportResolver = (mobileBreakpoint: number): (() => boolean) => {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
@@ -89,13 +88,15 @@ export class TranslationOrchestrator {
     }
 
     this._root = resolvedRoot;
-    this._keyTarget = options.keyTarget ?? (typeof document !== 'undefined' ? document : resolvedRoot);
+    this._keyTarget =
+      options.keyTarget ?? (typeof document !== 'undefined' ? document : resolvedRoot);
     this._storage = options.storage ?? (typeof window !== 'undefined' ? window.localStorage : null);
     this._storageKey = options.storageKey ?? TRANSLATION_MODE_STORAGE_KEY;
     this._studyMode = options.studyMode ?? false;
 
     const mobileBreakpoint = options.mobileBreakpoint ?? DEFAULT_TRANSLATION_MOBILE_BREAKPOINT;
-    this._isMobileViewport = options.isMobileViewport ?? createDefaultViewportResolver(mobileBreakpoint);
+    this._isMobileViewport =
+      options.isMobileViewport ?? createDefaultViewportResolver(mobileBreakpoint);
     this._intentMode = this._readIntentMode();
   }
 
@@ -222,8 +223,7 @@ export class TranslationOrchestrator {
   private _createObserver(): MutationObserver | null {
     if (typeof MutationObserver === 'undefined') return null;
 
-    const observerTarget =
-      this._root instanceof Document ? this._root.documentElement : this._root;
+    const observerTarget = this._root instanceof Document ? this._root.documentElement : this._root;
 
     const observer = new MutationObserver(() => {
       this._applyResolvedRenderMode();
@@ -279,11 +279,7 @@ export class TranslationOrchestrator {
     }
 
     const wantsInlineToggle =
-      normalizedKey === 'p' &&
-      !event.shiftKey &&
-      !event.altKey &&
-      !event.ctrlKey &&
-      !event.metaKey;
+      normalizedKey === 'p' && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey;
 
     if (!wantsInlineToggle) return;
 

@@ -67,7 +67,6 @@ export const Default: Story = {
             },
           ]),
         )}
-
         ${renderFoundationSection(
           'Status Colors',
           renderTokenSwatchGrid([
@@ -101,7 +100,6 @@ export const Default: Story = {
           ]),
           '状態色は banner, toast, callout などの意味論 UI に接続されます。',
         )}
-
         ${renderFoundationSection(
           'Token Reference',
           renderTokenValueList([
@@ -123,7 +121,9 @@ export const Default: Story = {
       throw new Error('.foundation-story が見つかりません');
     }
     if (swatches.length < 6) {
-      throw new Error(`6件以上の色サンプルを期待していましたが、実際には ${String(swatches.length)} 件でした`);
+      throw new Error(
+        `6件以上の色サンプルを期待していましたが、実際には ${String(swatches.length)} 件でした`,
+      );
     }
 
     const primaryValue = getComputedStyle(storyRoot).getPropertyValue('--primary').trim();

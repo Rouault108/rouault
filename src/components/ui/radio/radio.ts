@@ -64,7 +64,7 @@ import { customElement, property } from 'lit/decorators.js';
  */
 @customElement('ui-radio')
 export class Radio extends LitElement {
-    static override styles = css`
+  static override styles = css`
     :host {
       display: inline-flex;
       flex-direction: column;
@@ -197,360 +197,357 @@ export class Radio extends LitElement {
     }
   `;
 
-    // Form Association を有効化
-    static formAssociated = true;
+  // Form Association を有効化
+  static formAssociated = true;
 
-    /**
-     * 選択状態
-     * @default false
-     */
-    @property({ type: Boolean, reflect: true })
-    checked = false;
+  /**
+   * 選択状態
+   * @default false
+   */
+  @property({ type: Boolean, reflect: true })
+  checked = false;
 
-    /**
-     * フォーム送信時の識別子。同一 `name` でグループを形成します。
-     */
-    @property({ type: String, reflect: true })
-    name = '';
+  /**
+   * フォーム送信時の識別子。同一 `name` でグループを形成します。
+   */
+  @property({ type: String, reflect: true })
+  name = '';
 
-    /**
-     * フォーム送信時の値
-     * @default 'on'
-     */
-    @property({ type: String, reflect: true })
-    value = 'on';
+  /**
+   * フォーム送信時の値
+   * @default 'on'
+   */
+  @property({ type: String, reflect: true })
+  value = 'on';
 
-    /**
-     * ラベルテキスト
-     */
-    @property({ type: String, reflect: true })
-    label = '';
+  /**
+   * ラベルテキスト
+   */
+  @property({ type: String, reflect: true })
+  label = '';
 
-    /**
-     * 無効化
-     * @default false
-     */
-    @property({ type: Boolean, reflect: true })
-    disabled = false;
+  /**
+   * 無効化
+   * @default false
+   */
+  @property({ type: Boolean, reflect: true })
+  disabled = false;
 
-    /**
-     * バリデーションエラー状態（外部から設定）
-     * @default false
-     */
-    @property({ type: Boolean, reflect: true })
-    invalid = false;
+  /**
+   * バリデーションエラー状態（外部から設定）
+   * @default false
+   */
+  @property({ type: Boolean, reflect: true })
+  invalid = false;
 
-    /**
-     * エラーメッセージ
-     */
-    @property({ type: String, attribute: 'error-message', reflect: true })
-    errorMessage = '';
+  /**
+   * エラーメッセージ
+   */
+  @property({ type: String, attribute: 'error-message', reflect: true })
+  errorMessage = '';
 
-    private _internals: ElementInternals;
+  private _internals: ElementInternals;
 
-    // 一意な ID（レンダリング毎の再生成を防止）
-    private readonly _controlId = `radio-${Math.random().toString(36).substring(2, 11)}`;
-    private readonly _labelId = `radio-label-${Math.random().toString(36).substring(2, 11)}`;
-    private readonly _errorId = `radio-error-${Math.random().toString(36).substring(2, 11)}`;
+  // 一意な ID（レンダリング毎の再生成を防止）
+  private readonly _controlId = `radio-${Math.random().toString(36).substring(2, 11)}`;
+  private readonly _labelId = `radio-label-${Math.random().toString(36).substring(2, 11)}`;
+  private readonly _errorId = `radio-error-${Math.random().toString(36).substring(2, 11)}`;
 
-    constructor() {
-        super();
-        this._internals = this.attachInternals();
+  constructor() {
+    super();
+    this._internals = this.attachInternals();
+  }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this._syncFormValue();
+    this._syncValidity();
+    // Roving Tabindex の初期化
+    this._updateTabindex();
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this._notifyGroupTabindexUpdate();
+  }
+
+  override updated(changedProperties: PropertyValues<this>): void {
+    super.updated(changedProperties);
+
+    if (
+      changedProperties.has('checked') ||
+      changedProperties.has('disabled') ||
+      changedProperties.has('name') ||
+      changedProperties.has('value')
+    ) {
+      this._syncFormValue();
     }
 
-    override connectedCallback(): void {
-        super.connectedCallback();
-        this._syncFormValue();
-        this._syncValidity();
-        // Roving Tabindex の初期化
-        this._updateTabindex();
+    if (
+      changedProperties.has('checked') ||
+      changedProperties.has('invalid') ||
+      changedProperties.has('errorMessage')
+    ) {
+      this._syncValidity();
     }
 
-    override disconnectedCallback(): void {
-        super.disconnectedCallback();
-        this._notifyGroupTabindexUpdate();
+    // Roving Tabindex の更新
+    if (
+      changedProperties.has('checked') ||
+      changedProperties.has('disabled') ||
+      changedProperties.has('name')
+    ) {
+      this._updateTabindex();
+      this._notifyGroupTabindexUpdate();
     }
 
-    override updated(changedProperties: PropertyValues<this>): void {
-        super.updated(changedProperties);
+    // ARIA 属性を Control 要素に反映
+    const control = this.shadowRoot?.querySelector<HTMLElement>('.control');
+    if (control) {
+      control.setAttribute('aria-checked', String(this.checked));
+      if (this.disabled) {
+        control.setAttribute('aria-disabled', 'true');
+      } else {
+        control.removeAttribute('aria-disabled');
+      }
+      const showError = this.invalid && !!this.errorMessage;
+      const externalLabel = this.getAttribute('aria-label');
+      const externalLabelledBy = this.getAttribute('aria-labelledby');
+      const externalDescribedBy = this.getAttribute('aria-describedby');
+      const describedByIds: string[] = [];
+      if (externalDescribedBy) describedByIds.push(externalDescribedBy);
+      if (showError) describedByIds.push(this._errorId);
+      const describedBy = describedByIds.join(' ');
 
-        if (
-            changedProperties.has('checked') ||
-            changedProperties.has('disabled') ||
-            changedProperties.has('name') ||
-            changedProperties.has('value')
-        ) {
-            this._syncFormValue();
+      if (this.label) {
+        control.setAttribute('aria-labelledby', this._labelId);
+      } else if (externalLabelledBy) {
+        control.setAttribute('aria-labelledby', externalLabelledBy);
+      } else {
+        control.removeAttribute('aria-labelledby');
+      }
+
+      if (externalLabel) {
+        control.setAttribute('aria-label', externalLabel);
+      } else {
+        control.removeAttribute('aria-label');
+      }
+
+      if (showError) {
+        control.setAttribute('aria-invalid', 'true');
+      } else {
+        control.removeAttribute('aria-invalid');
+      }
+
+      if (describedBy.length > 0) {
+        control.setAttribute('aria-describedby', describedBy);
+      } else {
+        control.removeAttribute('aria-describedby');
+      }
+    }
+  }
+
+  /** フォーム値を ElementInternals に同期 */
+  private _syncFormValue(): void {
+    if (this.checked && !this.disabled && this.name) {
+      this._internals.setFormValue(this.value);
+    } else {
+      this._internals.setFormValue(null);
+    }
+  }
+
+  /** バリデーション状態を ElementInternals に同期 */
+  private _syncValidity(): void {
+    if (this.invalid && this.errorMessage) {
+      this._internals.setValidity({ customError: true }, this.errorMessage);
+      return;
+    }
+    this._internals.setValidity({});
+  }
+
+  /**
+   * Roving Tabindex の更新。
+   * - グループ内に checked なラジオがある場合: checked のみ tabindex="0"
+   * - グループ内に checked なラジオがない場合: 最初の非 disabled ラジオが tabindex="0"
+   */
+  private _updateTabindex(): void {
+    const group = this._getGroupMembers();
+    if (group.length === 0) return;
+
+    const checkedMember = group.find((r) => r.checked && !r.disabled);
+    if (checkedMember) {
+      // checked なラジオのみ tabindex="0"
+      group.forEach((r) => {
+        const ctrl = r.shadowRoot?.querySelector<HTMLElement>('.control');
+        if (ctrl) {
+          ctrl.setAttribute('tabindex', r === checkedMember ? '0' : '-1');
         }
-
-        if (
-            changedProperties.has('checked') ||
-            changedProperties.has('invalid') ||
-            changedProperties.has('errorMessage')
-        ) {
-            this._syncValidity();
+      });
+    } else {
+      // checked がない場合: 最初の非 disabled ラジオが tabindex="0"
+      const firstEnabled = group.find((r) => !r.disabled);
+      group.forEach((r) => {
+        const ctrl = r.shadowRoot?.querySelector<HTMLElement>('.control');
+        if (ctrl) {
+          ctrl.setAttribute('tabindex', r === firstEnabled ? '0' : '-1');
         }
-
-        // Roving Tabindex の更新
-        if (
-            changedProperties.has('checked') ||
-            changedProperties.has('disabled') ||
-            changedProperties.has('name')
-        ) {
-            this._updateTabindex();
-            this._notifyGroupTabindexUpdate();
-        }
-
-        // ARIA 属性を Control 要素に反映
-        const control = this.shadowRoot?.querySelector<HTMLElement>('.control');
-        if (control) {
-            control.setAttribute('aria-checked', String(this.checked));
-            if (this.disabled) {
-                control.setAttribute('aria-disabled', 'true');
-            } else {
-                control.removeAttribute('aria-disabled');
-            }
-            const showError = this.invalid && !!this.errorMessage;
-            const externalLabel = this.getAttribute('aria-label');
-            const externalLabelledBy = this.getAttribute('aria-labelledby');
-            const externalDescribedBy = this.getAttribute('aria-describedby');
-            const describedByIds: string[] = [];
-            if (externalDescribedBy) describedByIds.push(externalDescribedBy);
-            if (showError) describedByIds.push(this._errorId);
-            const describedBy = describedByIds.join(' ');
-
-            if (this.label) {
-                control.setAttribute('aria-labelledby', this._labelId);
-            } else if (externalLabelledBy) {
-                control.setAttribute('aria-labelledby', externalLabelledBy);
-            } else {
-                control.removeAttribute('aria-labelledby');
-            }
-
-            if (externalLabel) {
-                control.setAttribute('aria-label', externalLabel);
-            } else {
-                control.removeAttribute('aria-label');
-            }
-
-            if (showError) {
-                control.setAttribute('aria-invalid', 'true');
-            } else {
-                control.removeAttribute('aria-invalid');
-            }
-
-            if (describedBy.length > 0) {
-                control.setAttribute('aria-describedby', describedBy);
-            } else {
-                control.removeAttribute('aria-describedby');
-            }
-        }
+      });
     }
+  }
 
-    /** フォーム値を ElementInternals に同期 */
-    private _syncFormValue(): void {
-        if (this.checked && !this.disabled && this.name) {
-            this._internals.setFormValue(this.value);
-        } else {
-            this._internals.setFormValue(null);
-        }
+  /** 同一グループの roving tabindex を再同期 */
+  private _notifyGroupTabindexUpdate(): void {
+    const group = this._getGroupMembers();
+    group.forEach((radio) => {
+      radio._updateTabindex();
+    });
+  }
+
+  /**
+   * 同一 `name` を持つグループメンバーを取得（DOM順）
+   */
+  private _getGroupMembers(): Radio[] {
+    if (!this.name) return [this];
+    // フォームが存在する場合はフォーム内を、なければ document 全体を検索
+    const root = this.closest('form') ?? (this.getRootNode() as Document | ShadowRoot);
+    const all = root.querySelectorAll<Radio>(`ui-radio[name="${CSS.escape(this.name)}"]`);
+    return [...all];
+  }
+
+  /**
+   * このラジオを選択し、同一グループの他のラジオを未選択にします。
+   * `change` / `input` イベントを発火します。
+   */
+  private _select(): void {
+    if (this.disabled || this.checked) return;
+
+    // グループ内の他のラジオを未選択に
+    const group = this._getGroupMembers();
+    group.forEach((r) => {
+      if (r !== this && r.checked) {
+        r.checked = false;
+        void r.updateComplete;
+      }
+    });
+
+    this.checked = true;
+    this._syncFormValue();
+    this._syncValidity();
+    this._updateTabindex();
+
+    this.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+    this.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+  }
+
+  /** クリックによる選択 */
+  private _handleClick = (): void => {
+    this._select();
+  };
+
+  /** ラベルクリックで選択（span は labelable ではないため手動連携） */
+  private _handleLabelClick = (e: MouseEvent): void => {
+    e.preventDefault();
+    this.focus();
+    this._select();
+  };
+
+  /** ラベルのキーボード操作: Enter で選択（ESLint: click-events-have-key-events 対応） */
+  private _handleLabelKeyDown = (e: KeyboardEvent): void => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      this._select();
     }
+  };
 
-    /** バリデーション状態を ElementInternals に同期 */
-    private _syncValidity(): void {
-        if (this.invalid && this.errorMessage) {
-            this._internals.setValidity({ customError: true }, this.errorMessage);
-            return;
-        }
-        this._internals.setValidity({});
-    }
+  /**
+   * キーボード操作:
+   * - Arrow Keys: グループ内を循環移動・即時選択
+   * - Space: 現在のラジオを選択（未選択の場合）
+   */
+  private _handleKeyDown = (e: KeyboardEvent): void => {
+    const group = this._getGroupMembers().filter((r) => !r.disabled);
+    if (group.length === 0) return;
 
-    /**
-     * Roving Tabindex の更新。
-     * - グループ内に checked なラジオがある場合: checked のみ tabindex="0"
-     * - グループ内に checked なラジオがない場合: 最初の非 disabled ラジオが tabindex="0"
-     */
-    private _updateTabindex(): void {
-        const group = this._getGroupMembers();
-        if (group.length === 0) return;
+    const currentIndex = group.indexOf(this);
 
-        const checkedMember = group.find((r) => r.checked && !r.disabled);
-        if (checkedMember) {
-            // checked なラジオのみ tabindex="0"
-            group.forEach((r) => {
-                const ctrl = r.shadowRoot?.querySelector<HTMLElement>('.control');
-                if (ctrl) {
-                    ctrl.setAttribute('tabindex', r === checkedMember ? '0' : '-1');
-                }
-            });
-        } else {
-            // checked がない場合: 最初の非 disabled ラジオが tabindex="0"
-            const firstEnabled = group.find((r) => !r.disabled);
-            group.forEach((r) => {
-                const ctrl = r.shadowRoot?.querySelector<HTMLElement>('.control');
-                if (ctrl) {
-                    ctrl.setAttribute('tabindex', r === firstEnabled ? '0' : '-1');
-                }
-            });
-        }
-    }
-
-    /** 同一グループの roving tabindex を再同期 */
-    private _notifyGroupTabindexUpdate(): void {
-        const group = this._getGroupMembers();
-        group.forEach((radio) => {
-            radio._updateTabindex();
-        });
-    }
-
-    /**
-     * 同一 `name` を持つグループメンバーを取得（DOM順）
-     */
-    private _getGroupMembers(): Radio[] {
-        if (!this.name) return [this];
-        // フォームが存在する場合はフォーム内を、なければ document 全体を検索
-        const root = this.closest('form') ?? this.getRootNode() as Document | ShadowRoot;
-        const all = root.querySelectorAll<Radio>(`ui-radio[name="${CSS.escape(this.name)}"]`);
-        return [...all];
-    }
-
-    /**
-     * このラジオを選択し、同一グループの他のラジオを未選択にします。
-     * `change` / `input` イベントを発火します。
-     */
-    private _select(): void {
-        if (this.disabled || this.checked) return;
-
-        // グループ内の他のラジオを未選択に
-        const group = this._getGroupMembers();
-        group.forEach((r) => {
-            if (r !== this && r.checked) {
-                r.checked = false;
-                void r.updateComplete;
-            }
-        });
-
-        this.checked = true;
-        this._syncFormValue();
-        this._syncValidity();
-        this._updateTabindex();
-
-        this.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
-        this.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-    }
-
-    /** クリックによる選択 */
-    private _handleClick = (): void => {
-        this._select();
-    };
-
-    /** ラベルクリックで選択（span は labelable ではないため手動連携） */
-    private _handleLabelClick = (e: MouseEvent): void => {
+    switch (e.key) {
+      case 'ArrowDown':
+      case 'ArrowRight': {
         e.preventDefault();
-        this.focus();
+        const nextIndex = (currentIndex + 1) % group.length;
+        const next = group[nextIndex];
+        if (next) {
+          next._select();
+          next.focus();
+        }
+        break;
+      }
+      case 'ArrowUp':
+      case 'ArrowLeft': {
+        e.preventDefault();
+        const prevIndex = (currentIndex - 1 + group.length) % group.length;
+        const prev = group[prevIndex];
+        if (prev) {
+          prev._select();
+          prev.focus();
+        }
+        break;
+      }
+      case ' ': {
+        e.preventDefault();
         this._select();
-    };
-
-    /** ラベルのキーボード操作: Enter で選択（ESLint: click-events-have-key-events 対応） */
-    private _handleLabelKeyDown = (e: KeyboardEvent): void => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            this._select();
-        }
-    };
-
-    /**
-     * キーボード操作:
-     * - Arrow Keys: グループ内を循環移動・即時選択
-     * - Space: 現在のラジオを選択（未選択の場合）
-     */
-    private _handleKeyDown = (e: KeyboardEvent): void => {
-        const group = this._getGroupMembers().filter((r) => !r.disabled);
-        if (group.length === 0) return;
-
-        const currentIndex = group.indexOf(this);
-
-        switch (e.key) {
-            case 'ArrowDown':
-            case 'ArrowRight': {
-                e.preventDefault();
-                const nextIndex = (currentIndex + 1) % group.length;
-                const next = group[nextIndex];
-                if (next) {
-                    next._select();
-                    next.focus();
-                }
-                break;
-            }
-            case 'ArrowUp':
-            case 'ArrowLeft': {
-                e.preventDefault();
-                const prevIndex = (currentIndex - 1 + group.length) % group.length;
-                const prev = group[prevIndex];
-                if (prev) {
-                    prev._select();
-                    prev.focus();
-                }
-                break;
-            }
-            case ' ': {
-                e.preventDefault();
-                this._select();
-                break;
-            }
-            default:
-                break;
-        }
-    };
-
-    /**
-     * バリデーション状態をチェック
-     */
-    checkValidity(): boolean {
-        return this._internals.checkValidity();
+        break;
+      }
+      default:
+        break;
     }
+  };
 
-    /**
-     * バリデーション状態をレポート
-     */
-    reportValidity(): boolean {
-        return this._internals.reportValidity();
-    }
+  /**
+   * バリデーション状態をチェック
+   */
+  checkValidity(): boolean {
+    return this._internals.checkValidity();
+  }
 
-    /**
-     * コントロールにフォーカスを当てる
-     */
-    override focus(options?: FocusOptions): void {
-        this.shadowRoot?.querySelector<HTMLElement>('.control')?.focus(options);
-    }
+  /**
+   * バリデーション状態をレポート
+   */
+  reportValidity(): boolean {
+    return this._internals.reportValidity();
+  }
 
-    /**
-     * コントロールからフォーカスを外す
-     */
-    override blur(): void {
-        this.shadowRoot?.querySelector<HTMLElement>('.control')?.blur();
-    }
+  /**
+   * コントロールにフォーカスを当てる
+   */
+  override focus(options?: FocusOptions): void {
+    this.shadowRoot?.querySelector<HTMLElement>('.control')?.focus(options);
+  }
 
-    override render() {
-        const showError = this.invalid && !!this.errorMessage;
-        const externalLabel = this.getAttribute('aria-label');
-        const externalLabelledBy = this.getAttribute('aria-labelledby');
-        const externalDescribedBy = this.getAttribute('aria-describedby');
-        const ariaDescribedByIds: string[] = [];
-        if (externalDescribedBy) ariaDescribedByIds.push(externalDescribedBy);
-        if (showError) ariaDescribedByIds.push(this._errorId);
-        const ariaDescribedBy = ariaDescribedByIds.join(' ');
-        const ariaLabelledBy = this.label ? this._labelId : externalLabelledBy;
+  /**
+   * コントロールからフォーカスを外す
+   */
+  override blur(): void {
+    this.shadowRoot?.querySelector<HTMLElement>('.control')?.blur();
+  }
 
-        // Roving Tabindex: checked なら 0、そうでなければ -1（_updateTabindex で上書きされる）
-        // 初期レンダリング時のデフォルト値として設定
-        const tabindex = this.checked ? '0' : '-1';
+  override render() {
+    const showError = this.invalid && !!this.errorMessage;
+    const externalLabel = this.getAttribute('aria-label');
+    const externalLabelledBy = this.getAttribute('aria-labelledby');
+    const externalDescribedBy = this.getAttribute('aria-describedby');
+    const ariaDescribedByIds: string[] = [];
+    if (externalDescribedBy) ariaDescribedByIds.push(externalDescribedBy);
+    if (showError) ariaDescribedByIds.push(this._errorId);
+    const ariaDescribedBy = ariaDescribedByIds.join(' ');
+    const ariaLabelledBy = this.label ? this._labelId : externalLabelledBy;
 
-        return html`
-      <div
-        class="wrapper"
-        aria-disabled="${this.disabled ? 'true' : nothing}"
-      >
+    // Roving Tabindex: checked なら 0、そうでなければ -1（_updateTabindex で上書きされる）
+    // 初期レンダリング時のデフォルト値として設定
+    const tabindex = this.checked ? '0' : '-1';
+
+    return html`
+      <div class="wrapper" aria-disabled="${this.disabled ? 'true' : nothing}">
         <!-- Control: キーボードフォーカスを受け取る。クリックで選択 -->
         <span
           id="${this._controlId}"
@@ -571,35 +568,31 @@ export class Radio extends LitElement {
 
         <!-- ラベル: クリックでコントロールにフォーカスを移して選択 -->
         ${this.label
-                ? html`<label
-                    id="${this._labelId}"
-                    class="label"
-                    part="label"
-                    @click="${this._handleLabelClick}"
-                    @keydown="${this._handleLabelKeyDown}"
-                  >${this.label}</label>`
-                : nothing}
+          ? html`<label
+              id="${this._labelId}"
+              class="label"
+              part="label"
+              @click="${this._handleLabelClick}"
+              @keydown="${this._handleLabelKeyDown}"
+              >${this.label}</label
+            >`
+          : nothing}
       </div>
 
       <!-- エラーメッセージ -->
       ${showError
-                ? html`
-            <span
-              id="${this._errorId}"
-              class="error-message"
-              role="status"
-              aria-live="polite"
-            >
+        ? html`
+            <span id="${this._errorId}" class="error-message" role="status" aria-live="polite">
               ${this.errorMessage}
             </span>
           `
-                : nothing}
+        : nothing}
     `;
-    }
+  }
 }
 
 declare global {
-    interface HTMLElementTagNameMap {
-        'ui-radio': Radio;
-    }
+  interface HTMLElementTagNameMap {
+    'ui-radio': Radio;
+  }
 }

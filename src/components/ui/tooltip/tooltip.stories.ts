@@ -68,7 +68,10 @@ const closeByLeave = async (trigger: HTMLElement): Promise<void> => {
   await nextFrame();
 };
 
-const movePointerFromTriggerToPanel = async (trigger: HTMLElement, panel: HTMLElement): Promise<void> => {
+const movePointerFromTriggerToPanel = async (
+  trigger: HTMLElement,
+  panel: HTMLElement,
+): Promise<void> => {
   trigger.dispatchEvent(new MouseEvent('mouseleave', { relatedTarget: panel }));
   panel.dispatchEvent(new MouseEvent('mouseenter', { relatedTarget: trigger }));
   await nextFrame();
@@ -84,7 +87,9 @@ const getVerticalGap = (triggerRect: DOMRect, panelRect: DOMRect): number => {
     return Math.round(panelRect.top - triggerRect.bottom);
   }
 
-  return -Math.round(Math.min(triggerRect.bottom, panelRect.bottom) - Math.max(triggerRect.top, panelRect.top));
+  return -Math.round(
+    Math.min(triggerRect.bottom, panelRect.bottom) - Math.max(triggerRect.top, panelRect.top),
+  );
 };
 
 const meta: Meta<UiTooltip> = {

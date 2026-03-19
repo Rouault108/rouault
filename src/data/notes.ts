@@ -10,11 +10,11 @@ type SidebarIconSetting = string;
 type NoteKind = 'leaf' | 'directory-index';
 
 interface NormalizedNotePath {
-  rawSlug: string;         // 例: "music/index"
-  slug: string;            // 例: "music"
-  permalink: string;       // 例: "/notes/music"
+  rawSlug: string; // 例: "music/index"
+  slug: string; // 例: "music"
+  permalink: string; // 例: "/notes/music"
   kind: NoteKind;
-  directoryPath?: string;  // directory-index のとき "music"
+  directoryPath?: string; // directory-index のとき "music"
 }
 
 interface NoteSidebarConfig {
@@ -101,11 +101,11 @@ const toDirectoryConfig = (value: unknown): NoteDirectoryConfig | undefined => {
     ...(order !== undefined ? { order } : {}),
     ...(sidebarScope !== undefined || sidebarIcon !== undefined
       ? {
-        sidebar: {
-          ...(sidebarScope !== undefined ? { scope: sidebarScope } : {}),
-          ...(sidebarIcon !== undefined ? { icon: sidebarIcon } : {}),
-        },
-      }
+          sidebar: {
+            ...(sidebarScope !== undefined ? { scope: sidebarScope } : {}),
+            ...(sidebarIcon !== undefined ? { icon: sidebarIcon } : {}),
+          },
+        }
       : {}),
   };
 };
@@ -128,10 +128,7 @@ const readNotesFile = (filePath: string): SourceNote[] => {
   return Array.isArray(parsed) ? parsed.filter(isSourceNote) : [];
 };
 
-const normalizeNotePath = (
-  inputSlug: string,
-  contentRoot: string,
-): NormalizedNotePath => {
+const normalizeNotePath = (inputSlug: string, contentRoot: string): NormalizedNotePath => {
   const normalized = inputSlug.trim().replace(/^\/+|\/+$/g, '');
 
   if (normalized.length === 0) {
@@ -307,9 +304,7 @@ export const buildNotesCollection = (
         slug: pathInfo.slug,
         permalink: pathInfo.permalink,
         noteKind: pathInfo.kind,
-        ...(pathInfo.directoryPath !== undefined
-          ? { directoryPath: pathInfo.directoryPath }
-          : {}),
+        ...(pathInfo.directoryPath !== undefined ? { directoryPath: pathInfo.directoryPath } : {}),
         sortIndex: calculateSortIndex(sourceSlug, contentRoot),
         tocHeadings: extractTocFromHtml(typeof note.content === 'string' ? note.content : ''),
         ...(sidebarRoot !== undefined ? { sidebarRoot } : {}),

@@ -1,6 +1,11 @@
 import type { MdastNode, MdastNodeData, VFileLike } from '../types';
 import { IMAGE_LOADING_MODES } from './constants';
-import { assertAllowedAttributes, extractLeadingAttributeBlock, parseAttributes, pickOptional } from './attributes';
+import {
+  assertAllowedAttributes,
+  extractLeadingAttributeBlock,
+  parseAttributes,
+  pickOptional,
+} from './attributes';
 import { parseBooleanAttribute, parseIntegerMin } from './attribute-parsers';
 import { toError } from './errors';
 
@@ -39,7 +44,10 @@ export const applyImageAttributes = (
   return result;
 };
 
-export const mergeNodeHProperties = (node: MdastNode, properties: Record<string, unknown>): void => {
+export const mergeNodeHProperties = (
+  node: MdastNode,
+  properties: Record<string, unknown>,
+): void => {
   if (Object.keys(properties).length === 0) {
     return;
   }
@@ -52,7 +60,10 @@ export const mergeNodeHProperties = (node: MdastNode, properties: Record<string,
   node.data = nextData;
 };
 
-export const normalizeImageAttributeBlocks = (nodes: MdastNode[], file?: VFileLike): MdastNode[] => {
+export const normalizeImageAttributeBlocks = (
+  nodes: MdastNode[],
+  file?: VFileLike,
+): MdastNode[] => {
   const result = [...nodes];
 
   for (let index = 0; index < result.length; index += 1) {

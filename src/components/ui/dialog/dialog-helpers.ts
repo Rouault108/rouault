@@ -18,7 +18,10 @@ export const waitForDialogAnimations = async (dialog: HTMLDialogElement): Promis
 };
 
 // 明示的なトリガーがあればそれを使い、なければ現在フォーカス中の要素を開閉トリガーとして記録する。
-export const captureTrigger = (ownerDocument: Document, trigger?: HTMLElement): HTMLElement | null => {
+export const captureTrigger = (
+  ownerDocument: Document,
+  trigger?: HTMLElement,
+): HTMLElement | null => {
   if (trigger instanceof HTMLElement) {
     return trigger;
   }

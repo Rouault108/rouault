@@ -65,7 +65,8 @@ export class NotFoundPage extends LitElement {
       return '';
     }
 
-    const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`.trim();
+    const currentPath =
+      `${window.location.pathname}${window.location.search}${window.location.hash}`.trim();
     return currentPath === '/404.html' ? '' : currentPath;
   }
 

@@ -29,10 +29,7 @@ export const buildUrlWithHash = (
   return `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`;
 };
 
-export const updateHashInCurrentUrl = (
-  hash: string,
-  mode: HistoryUpdateMode = 'push',
-): string => {
+export const updateHashInCurrentUrl = (hash: string, mode: HistoryUpdateMode = 'push'): string => {
   const nextUrl = buildUrlWithHash(hash);
   const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
 

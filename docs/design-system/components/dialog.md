@@ -51,21 +51,21 @@ Rouault における dialog は、本文の流れを断ち切るための過剰�
 
 ### 3.1 入力契約
 
-| 名前 | 種別 | 必須 | 内容 | 契約 |
-| --- | --- | --- | --- | --- |
-| `opened` | property / attribute | いいえ | 開閉状態 | 唯一の公開開閉状態です。`true` で開き、`false` で閉じます。既定値は `false` です |
-| `modal` | property / attribute | いいえ | モーダル種別 | `true` は背景抑止付きのモーダル対話、`false` は背景操作可能な非モーダル対話です。既定値は `true` です |
-| `titleId` | property / attribute (`title-id`) | いいえ | ラベル要素 ID | `title` スロット内の単一要素 ID を参照し、`aria-labelledby` に反映します。開く場合は `aria-label` と合わせていずれか一方が必須です |
-| `descriptionId` | property / attribute (`description-id`) | いいえ | 説明要素 ID | 既定スロット内の説明要素 ID、または空白区切りの ID 群を参照し、`aria-describedby` に反映します |
-| `ariaLabelText` | property / attribute (`aria-label`) | いいえ | アクセシブル名 | 可視 title を置かない場合のアクセシブルネームです |
+| 名前            | 種別                                    | 必須   | 内容           | 契約                                                                                                                               |
+| --------------- | --------------------------------------- | ------ | -------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `opened`        | property / attribute                    | いいえ | 開閉状態       | 唯一の公開開閉状態です。`true` で開き、`false` で閉じます。既定値は `false` です                                                   |
+| `modal`         | property / attribute                    | いいえ | モーダル種別   | `true` は背景抑止付きのモーダル対話、`false` は背景操作可能な非モーダル対話です。既定値は `true` です                              |
+| `titleId`       | property / attribute (`title-id`)       | いいえ | ラベル要素 ID  | `title` スロット内の単一要素 ID を参照し、`aria-labelledby` に反映します。開く場合は `aria-label` と合わせていずれか一方が必須です |
+| `descriptionId` | property / attribute (`description-id`) | いいえ | 説明要素 ID    | 既定スロット内の説明要素 ID、または空白区切りの ID 群を参照し、`aria-describedby` に反映します                                     |
+| `ariaLabelText` | property / attribute (`aria-label`)     | いいえ | アクセシブル名 | 可視 title を置かない場合のアクセシブルネームです                                                                                  |
 
 ### 3.2 スロット契約
 
-| 名前 | 種別 | 位置づけ | 内容 |
-| --- | --- | --- | --- |
-| `title` | named slot | 見出し領域 | ダイアログ題名を受け取ります |
-| 既定スロット | slot | 本文領域 | ダイアログ本文、説明、フォームなどを受け取ります |
-| `actions` | named slot | 操作領域 | 確認、キャンセルなどの操作群を受け取ります |
+| 名前         | 種別       | 位置づけ   | 内容                                             |
+| ------------ | ---------- | ---------- | ------------------------------------------------ |
+| `title`      | named slot | 見出し領域 | ダイアログ題名を受け取ります                     |
+| 既定スロット | slot       | 本文領域   | ダイアログ本文、説明、フォームなどを受け取ります |
+| `actions`    | named slot | 操作領域   | 確認、キャンセルなどの操作群を受け取ります       |
 
 `title` スロットは見出し表示のための領域です。`title-id` を使う場合、その参照先はこのスロット内に存在しなければなりません（MUST）。`actions` スロットは操作領域として扱います。既定スロットは本文領域であり、内部スクロールの対象になります。
 
@@ -98,10 +98,10 @@ Rouault における dialog は、本文の流れを断ち切るための過剰�
 
 `ui-dialog` は、開閉制御を Shadow DOM の内部実装から分離するため、次の公開メソッドを持ちます。
 
-| 名前 | 種別 | 契約 |
-| --- | --- | --- |
+| 名前             | 種別   | 契約                                                                                                |
+| ---------------- | ------ | --------------------------------------------------------------------------------------------------- |
 | `open(trigger?)` | method | ダイアログを開きます。`trigger` を省略した場合は現在の `activeElement` を開閉元候補として採用します |
-| `close()` | method | ダイアログを閉じます |
+| `close()`        | method | ダイアログを閉じます                                                                                |
 
 `open(trigger?)` は、`trigger` が与えられた場合、その要素をフォーカス返却先として保持します。省略時は `document.activeElement` を基準に自動採用します。`open()` を既に開いている状態で再度呼んだ場合は no-op です。`close()` を閉じている状態で呼んだ場合も no-op です。
 
@@ -117,12 +117,12 @@ open に失敗した場合、`ui-dialog-opened` は発火しません。現行�
 
 `ui-dialog` は、開閉、キャンセル、およびモード切替の契約を次のイベントで公開します。
 
-| 名前 | 種別 | 発火契約 |
-| --- | --- | --- |
-| `ui-dialog-opened` | `CustomEvent<{ trigger: HTMLElement | null }>` | 開くアニメーション完了後に発火します |
-| `ui-dialog-cancel` | `CustomEvent<{ reason: 'escape' }>` | Esc 経路で close に入る直前に発火します |
-| `ui-dialog-closed` | `CustomEvent<{ reason: 'close-button' | 'cancel-escape' | 'programmatic' | 'attribute-sync' }>` | 閉じ処理が完了し、ネイティブ dialog が閉じた後に発火します |
-| `ui-dialog-mode-changed` | `CustomEvent<{ previous: 'modal' | 'non-modal'; current: 'modal' | 'non-modal' }>` | open 中に `modal` が切り替わり、新モード同期が完了した後に発火します |
+| 名前                     | 種別                                  | 発火契約                                |
+| ------------------------ | ------------------------------------- | --------------------------------------- | ------------------------------------ | -------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `ui-dialog-opened`       | `CustomEvent<{ trigger: HTMLElement   | null }>`                                | 開くアニメーション完了後に発火します |
+| `ui-dialog-cancel`       | `CustomEvent<{ reason: 'escape' }>`   | Esc 経路で close に入る直前に発火します |
+| `ui-dialog-closed`       | `CustomEvent<{ reason: 'close-button' | 'cancel-escape'                         | 'programmatic'                       | 'attribute-sync' }>`                                                 | 閉じ処理が完了し、ネイティブ dialog が閉じた後に発火します |
+| `ui-dialog-mode-changed` | `CustomEvent<{ previous: 'modal'      | 'non-modal'; current: 'modal'           | 'non-modal' }>`                      | open 中に `modal` が切り替わり、新モード同期が完了した後に発火します |
 
 `ui-dialog-opened` の `detail.trigger` は、`open(trigger)` に与えた要素、または `open()` 時に自動採用した要素です。`ui-dialog-cancel` は Esc 起因の通知であり、閉鎖を抑止する cancelable event ではありません。`ui-dialog-closed` の `detail.reason` は、close button、Esc、公開 `close()`、`opened=false` のいずれが入口だったかを区別します。
 
@@ -136,13 +136,13 @@ open に失敗した場合、`ui-dialog-opened` は発火しません。現行�
 
 公開入力のうち、`opened`、`modal`、`titleId`、`descriptionId`、`ariaLabelText` は property と attribute の両面から操作できます。`titleId` の HTML 属性名は `title-id`、`descriptionId` の HTML 属性名は `description-id`、`ariaLabelText` の HTML 属性名は `aria-label` です。boolean 値は attribute の有無で反映します。
 
-| property | attribute | reflect | 備考 |
-| --- | --- | --- | --- |
-| `opened` | `opened` | あり | boolean attribute として扱います |
-| `modal` | `modal` | あり | boolean attribute として扱います |
-| `titleId` | `title-id` | あり | `aria-labelledby` に反映します |
-| `descriptionId` | `description-id` | あり | `aria-describedby` に反映します |
-| `ariaLabelText` | `aria-label` | あり | `aria-labelledby` 未指定時のアクセシブルネームとして使います |
+| property        | attribute        | reflect | 備考                                                         |
+| --------------- | ---------------- | ------- | ------------------------------------------------------------ |
+| `opened`        | `opened`         | あり    | boolean attribute として扱います                             |
+| `modal`         | `modal`          | あり    | boolean attribute として扱います                             |
+| `titleId`       | `title-id`       | あり    | `aria-labelledby` に反映します                               |
+| `descriptionId` | `description-id` | あり    | `aria-describedby` に反映します                              |
+| `ariaLabelText` | `aria-label`     | あり    | `aria-labelledby` 未指定時のアクセシブルネームとして使います |
 
 ### 3.11 列挙外値・無効値の扱い
 
@@ -334,19 +334,19 @@ close button 自体のフォーカス表示は `ui-button` 側契約に委ねま
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途 | トークン |
-| --- | --- |
-| 背景 | `--bg-default` / `--bg-surface-3` |
-| 前景色 | `--fg-default` |
-| 角丸 | `--radius-xl` |
-| 影 | `--elevation-xl` |
-| 余白 | `--space-*` |
-| スクリム不透明度 | `--opacity-scrim` |
-| ブラー | `--blur-lg` |
-| アニメーション時間 | `--duration-slower` |
-| イージング | `--ease-out` / `--ease-in` |
-| 開始スケール | `--scale-enter` |
-| 枠線幅 | `--border-width` |
+| 用途               | トークン                          |
+| ------------------ | --------------------------------- |
+| 背景               | `--bg-default` / `--bg-surface-3` |
+| 前景色             | `--fg-default`                    |
+| 角丸               | `--radius-xl`                     |
+| 影                 | `--elevation-xl`                  |
+| 余白               | `--space-*`                       |
+| スクリム不透明度   | `--opacity-scrim`                 |
+| ブラー             | `--blur-lg`                       |
+| アニメーション時間 | `--duration-slower`               |
+| イージング         | `--ease-out` / `--ease-in`        |
+| 開始スケール       | `--scale-enter`                   |
+| 枠線幅             | `--border-width`                  |
 
 ---
 
@@ -386,13 +386,13 @@ close button 自体のフォーカス表示は `ui-button` 側契約に委ねま
 
 閉鎖経路は最終的に共通の close 完了処理へ収束しますが、入口ごとの差分は次のとおりです。
 
-| 経路 | `ui-dialog-cancel` | `ui-dialog-closed` | フォーカス返却 | 備考 |
-| --- | --- | --- | --- | --- |
-| close button | 発火しません | 発火します | 行います | `reason='close-button'` を用います |
-| Esc (`modal=true`) | 発火します | 発火します | 行います | `reason='cancel-escape'` を用います |
-| Esc (`modal=false`) | 発火します | 発火します | 行います | `reason='cancel-escape'` を用います |
-| 公開 `close()` | 発火しません | 発火します | 行います | `reason='programmatic'` を用います |
-| `opened=false` | 発火しません | 発火します | 行います | `reason='attribute-sync'` を用います |
+| 経路                | `ui-dialog-cancel` | `ui-dialog-closed` | フォーカス返却 | 備考                                 |
+| ------------------- | ------------------ | ------------------ | -------------- | ------------------------------------ |
+| close button        | 発火しません       | 発火します         | 行います       | `reason='close-button'` を用います   |
+| Esc (`modal=true`)  | 発火します         | 発火します         | 行います       | `reason='cancel-escape'` を用います  |
+| Esc (`modal=false`) | 発火します         | 発火します         | 行います       | `reason='cancel-escape'` を用います  |
+| 公開 `close()`      | 発火しません       | 発火します         | 行います       | `reason='programmatic'` を用います   |
+| `opened=false`      | 発火しません       | 発火します         | 行います       | `reason='attribute-sync'` を用います |
 
 利用側は、Esc 経路だけが `ui-dialog-cancel` を伴うこと、`ui-dialog-closed` が `detail.reason` により閉鎖理由を区別することを前提にできます。
 
@@ -482,22 +482,22 @@ close 中に再度 `open()` した場合、閉鎖を打ち消して開状態を�
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
 
-| Story | 固定する契約 |
-| --- | --- |
-| `ModalCriticalDecision` | モーダルな基本構成が title / description / actions とともに成立すること |
-| `ModalCriticalDecisionOpenClose` | `open()` / `close()`、`aria-modal`、ラベル／説明付与、初期フォーカス、scroll lock、フォーカス返却が成立すること |
-| `ModalCriticalDecisionCloseButton` | close button の実経路で閉じられること |
-| `ModalEscCancelSequence` | モーダル Esc で `cancel -> closed` の順序を維持すること |
-| `NonModalLightweightInfo` | `modal=false` で `aria-modal` を持たず、Esc で閉じ、背景クリックでは閉じないこと |
-| `NoActionsInitialFocusFallback` | `actions` 未提供時に close button へ初期フォーカスすること |
-| `TriggerFallbackAndReentrancySafety` | trigger 自動採用、多重 open / close の再入安全性、不要イベント非発火が成立すること |
-| `AriaLabelFallback` | `aria-labelledby` を使わず `aria-label` だけで名前付けできること |
-| `MultiDialogScrollLockReferenceCount` | 現行実装の互換確認です。長期契約として複数 open を保証するものではありません |
-| `AttributeDrivenOpenState` | `opened` 属性駆動でも開閉とイベントが成立すること |
-| `LiveModalModeSwitching` | open 中の `modal` 切り替えで `aria-modal`、body ロック、モード変更イベントが同期すること |
-| `VisualDarkMode` | ダークモード相当トークンで視覚破綻しないこと |
-| `VisualForcedColors` | forced-colors 相当で境界と可読性を維持すること |
-| `VisualReducedMotion` | reduced motion 相当で開閉契約が維持されること |
+| Story                                 | 固定する契約                                                                                                    |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `ModalCriticalDecision`               | モーダルな基本構成が title / description / actions とともに成立すること                                         |
+| `ModalCriticalDecisionOpenClose`      | `open()` / `close()`、`aria-modal`、ラベル／説明付与、初期フォーカス、scroll lock、フォーカス返却が成立すること |
+| `ModalCriticalDecisionCloseButton`    | close button の実経路で閉じられること                                                                           |
+| `ModalEscCancelSequence`              | モーダル Esc で `cancel -> closed` の順序を維持すること                                                         |
+| `NonModalLightweightInfo`             | `modal=false` で `aria-modal` を持たず、Esc で閉じ、背景クリックでは閉じないこと                                |
+| `NoActionsInitialFocusFallback`       | `actions` 未提供時に close button へ初期フォーカスすること                                                      |
+| `TriggerFallbackAndReentrancySafety`  | trigger 自動採用、多重 open / close の再入安全性、不要イベント非発火が成立すること                              |
+| `AriaLabelFallback`                   | `aria-labelledby` を使わず `aria-label` だけで名前付けできること                                                |
+| `MultiDialogScrollLockReferenceCount` | 現行実装の互換確認です。長期契約として複数 open を保証するものではありません                                    |
+| `AttributeDrivenOpenState`            | `opened` 属性駆動でも開閉とイベントが成立すること                                                               |
+| `LiveModalModeSwitching`              | open 中の `modal` 切り替えで `aria-modal`、body ロック、モード変更イベントが同期すること                        |
+| `VisualDarkMode`                      | ダークモード相当トークンで視覚破綻しないこと                                                                    |
+| `VisualForcedColors`                  | forced-colors 相当で境界と可読性を維持すること                                                                  |
+| `VisualReducedMotion`                 | reduced motion 相当で開閉契約が維持されること                                                                   |
 
 ---
 

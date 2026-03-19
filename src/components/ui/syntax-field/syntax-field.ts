@@ -214,7 +214,8 @@ export class SyntaxField extends LitElement {
 
         for (const node of Array.from(record.addedNodes)) {
           if (wrapper && node === wrapper) continue;
-          if (this._descriptionNodes.includes(node) || addedDescriptionNodes.includes(node)) continue;
+          if (this._descriptionNodes.includes(node) || addedDescriptionNodes.includes(node))
+            continue;
           addedDescriptionNodes.push(node);
         }
       }

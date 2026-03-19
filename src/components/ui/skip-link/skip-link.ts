@@ -99,13 +99,7 @@ export class SkipLink extends LitElement {
 
   override render() {
     return html`
-      <a
-        href="${this.href}"
-        part="link"
-        @click="${this.handleLinkClick}"
-      >
-        ${this.label}
-      </a>
+      <a href="${this.href}" part="link" @click="${this.handleLinkClick}"> ${this.label} </a>
     `;
   }
 

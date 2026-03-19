@@ -100,14 +100,18 @@ const getDismissButton = (host: Banner): HTMLElement => {
 const assertRole = (host: Banner, expected: 'status' | 'alert'): void => {
   const actual = host.getAttribute('role');
   if (actual !== expected) {
-    throw new Error(`role="${expected}" を期待していましたが、実際には "${actual ?? 'null'}" でした`);
+    throw new Error(
+      `role="${expected}" を期待していましたが、実際には "${actual ?? 'null'}" でした`,
+    );
   }
 };
 
 const assertResolvedVariant = (host: Banner, expected: BannerVariant): void => {
   const actual = host.getAttribute('data-resolved-variant');
   if (actual !== expected) {
-    throw new Error(`data-resolved-variant="${expected}" を期待していましたが、実際には "${actual ?? 'null'}" でした`);
+    throw new Error(
+      `data-resolved-variant="${expected}" を期待していましたが、実際には "${actual ?? 'null'}" でした`,
+    );
   }
 };
 
@@ -176,7 +180,9 @@ export const Default: Story = {
     assertRole(banner, 'alert');
 
     if (banner.getAttribute('aria-atomic') !== 'true') {
-      throw new Error(`aria-atomic="true" を期待していましたが、実際には "${banner.getAttribute('aria-atomic') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-atomic="true" を期待していましたが、実際には "${banner.getAttribute('aria-atomic') ?? 'null'}" でした`,
+      );
     }
 
     const actions = getActions(banner);
@@ -269,14 +275,20 @@ export const VariantStateCombinations: Story = {
       assertRole(item.host, ROLE_BY_VARIANT[item.variant]);
       const fallback = getFallbackIcon(item.host);
       if (fallback.getAttribute('icon') !== ICON_BY_VARIANT[item.variant]) {
-        throw new Error(`${item.variant} のアイコンとして "${ICON_BY_VARIANT[item.variant]}" を期待していましたが、実際には "${fallback.getAttribute('icon') ?? 'null'}" でした`);
+        throw new Error(
+          `${item.variant} のアイコンとして "${ICON_BY_VARIANT[item.variant]}" を期待していましたが、実際には "${fallback.getAttribute('icon') ?? 'null'}" でした`,
+        );
       }
     }
 
-    if (getActions(info).hidden) throw new Error('info + アクションの組み合わせでは .actions の表示が必要です');
-    if (getActions(warning).hidden) throw new Error('warning + アクションの組み合わせでは .actions の表示が必要です');
-    if (getActions(error).hidden) throw new Error('error + アクションの組み合わせでは .actions の表示が必要です');
-    if (!getActions(success).hidden) throw new Error('success（アクションなし）では .actions の非表示が必要です');
+    if (getActions(info).hidden)
+      throw new Error('info + アクションの組み合わせでは .actions の表示が必要です');
+    if (getActions(warning).hidden)
+      throw new Error('warning + アクションの組み合わせでは .actions の表示が必要です');
+    if (getActions(error).hidden)
+      throw new Error('error + アクションの組み合わせでは .actions の表示が必要です');
+    if (!getActions(success).hidden)
+      throw new Error('success（アクションなし）では .actions の非表示が必要です');
 
     getDismissButton(error);
     getDismissButton(success);
@@ -285,7 +297,9 @@ export const VariantStateCombinations: Story = {
       throw new Error('info は dismissible ではないため閉じる ui-button を持つべきではありません');
     }
     if (queryDismissButton(warning)) {
-      throw new Error('warning は dismissible ではないため閉じる ui-button を持つべきではありません');
+      throw new Error(
+        'warning は dismissible ではないため閉じる ui-button を持つべきではありません',
+      );
     }
 
     const infoActionStyle = getComputedStyle(getActionLink(info));
@@ -343,9 +357,7 @@ export const SlotBoundaryConditions: Story = {
         計画メンテナンスは明日0時に開始します。
       </ui-banner>
 
-      <ui-banner id="slot-no-action" variant="success">
-        バックアップに成功しました。
-      </ui-banner>
+      <ui-banner id="slot-no-action" variant="success"> バックアップに成功しました。 </ui-banner>
 
       <ui-banner id="slot-multi-action" variant="warning">
         お使いのセッションはまもなく期限切れになります。
@@ -383,11 +395,14 @@ export const SlotBoundaryConditions: Story = {
       throw new Error('success のフォールバックアイコンが不正です');
     }
 
-    const multiActionSlot = multiAction.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="action"]');
+    const multiActionSlot =
+      multiAction.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="action"]');
     if (!multiActionSlot) throw new Error('slot[name="action"] が見つかりません');
     const actionElements = multiActionSlot.assignedElements({ flatten: true });
     if (actionElements.length !== 2) {
-      throw new Error(`複数アクションは2要素を期待していましたが、実際には ${String(actionElements.length)}個でした`);
+      throw new Error(
+        `複数アクションは2要素を期待していましたが、実際には ${String(actionElements.length)}個でした`,
+      );
     }
     if (getActions(multiAction).hidden) {
       throw new Error('複数アクション指定時は .actions の表示が必要です');
@@ -395,7 +410,9 @@ export const SlotBoundaryConditions: Story = {
 
     const linkStyle = getComputedStyle(getActionLink(multiAction));
     if (linkStyle.textDecorationLine !== 'underline') {
-      throw new Error('アクションスロット内のアンカーは、クラスなしでも下線契約を満たす必要があります');
+      throw new Error(
+        'アクションスロット内のアンカーは、クラスなしでも下線契約を満たす必要があります',
+      );
     }
   },
 };
@@ -513,9 +530,7 @@ export const InvalidVariantFallbackAndStyleContracts: Story = {
  */
 export const AtomicOverridePersistence: Story = {
   render: () => html`
-    <ui-banner id="atomic-override" variant="info" aria-atomic="false">
-      残り時間 29:59
-    </ui-banner>
+    <ui-banner id="atomic-override" variant="info" aria-atomic="false"> 残り時間 29:59 </ui-banner>
   `,
   play: async ({ canvasElement }) => {
     const banner = getHost(canvasElement, 'atomic-override');
@@ -564,7 +579,9 @@ export const ReducedMotionDismissImmediate: Story = {
         await waitFrame();
 
         if (canvasElement.contains(banner)) {
-          throw new Error('reduced-motion では dismiss 後に即時で DOM から削除される必要があります');
+          throw new Error(
+            'reduced-motion では dismiss 後に即時で DOM から削除される必要があります',
+          );
         }
         if (document.activeElement !== nextFocus) {
           throw new Error('reduced-motion dismiss 後のフォーカス移動先が不正です');
@@ -609,7 +626,9 @@ export const DarkModeTokenContract: Story = {
 
     const cssText = String(Banner.styles);
     if (cssText.includes('prefers-color-scheme')) {
-      throw new Error('banner は prefers-color-scheme 分岐ではなくトークン参照でモード追従する必要があります');
+      throw new Error(
+        'banner は prefers-color-scheme 分岐ではなくトークン参照でモード追従する必要があります',
+      );
     }
   },
 };

@@ -8,7 +8,6 @@ issuedWarnings.add('dev-mode');
 import { setCustomElementsManifest } from '@storybook/web-components-vite';
 import customElements from '../custom-elements.json';
 
-
 // Fontsource - セルフホストフォント（unicode-range分割済み）
 // Noto Sans JP: Variable フォント（400-900）
 import '@fontsource-variable/noto-sans-jp';
@@ -30,12 +29,12 @@ import type { Preview } from '@storybook/web-components';
 const preview: Preview = {
   parameters: {
     // アクションの自動検知
-    actions: { argTypesRegex: "^on[A-Z].*" },
+    actions: { argTypesRegex: '^on[A-Z].*' },
 
     a11y: {
       element: '#storybook-root',
     },
-    
+
     // コントロールのマッチング設定
     controls: {
       matchers: {
@@ -43,9 +42,9 @@ const preview: Preview = {
         date: /Date$/i,
       },
       // Lion/Lit コンポーネント用の展開設定
-      expanded: true, 
+      expanded: true,
     },
-    
+
     // オプション: 背景色の設定など
     backgrounds: {
       default: 'light',

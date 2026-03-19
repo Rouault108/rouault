@@ -52,11 +52,7 @@ describe('remarkLinkCards', () => {
     const plugin = remarkLinkCards({
       fetch: (async (input: string | URL | Request) => {
         const url =
-          typeof input === 'string'
-            ? input
-            : input instanceof URL
-              ? input.toString()
-              : input.url;
+          typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
         calls.push(url);
 
         if (url === 'https://example.com/post') {
@@ -102,7 +98,9 @@ describe('remarkLinkCards', () => {
     expect(card?.data?.hProperties?.['href']).to.equal('https://example.com/post');
     expect(card?.data?.hProperties?.['card-title']).to.equal('著者指定タイトル');
     expect(card?.data?.hProperties?.['description']).to.equal('OGP の説明');
-    expect(card?.data?.hProperties?.['image-src']).to.equal('https://example.com/twitter-image.png');
+    expect(card?.data?.hProperties?.['image-src']).to.equal(
+      'https://example.com/twitter-image.png',
+    );
     expect(card?.data?.hProperties?.['site-name']).to.equal('Example Provider');
     expect(card?.data?.hProperties?.['clickable']).to.equal(true);
     expect(calls).to.deep.equal(['https://example.com/post', 'https://example.com/oembed']);

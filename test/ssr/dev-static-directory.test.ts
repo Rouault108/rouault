@@ -76,13 +76,21 @@ describe('dev-static-directory', () => {
   });
 
   it('route prefix 配下の静的ファイルパスを解決すること', () => {
-    const resolved = resolveStaticFilePath('/pagefind/pagefind.js', '/pagefind/', '/tmp/rouault/dist/pagefind');
+    const resolved = resolveStaticFilePath(
+      '/pagefind/pagefind.js',
+      '/pagefind/',
+      '/tmp/rouault/dist/pagefind',
+    );
 
     expect(resolved).toBe(path.resolve('/tmp/rouault/dist/pagefind', 'pagefind.js'));
   });
 
   it('route prefix からのパストラバーサルを拒否すること', () => {
-    const resolved = resolveStaticFilePath('/pagefind/../secret.txt', '/pagefind/', '/tmp/rouault/dist/pagefind');
+    const resolved = resolveStaticFilePath(
+      '/pagefind/../secret.txt',
+      '/pagefind/',
+      '/tmp/rouault/dist/pagefind',
+    );
 
     expect(resolved).toBeNull();
   });
@@ -100,13 +108,9 @@ describe('dev-static-directory', () => {
     const { response, state } = createMockResponse();
     let nextCalled = false;
 
-    middleware(
-      request as IncomingMessage,
-      response,
-      () => {
-        nextCalled = true;
-      },
-    );
+    middleware(request as IncomingMessage, response, () => {
+      nextCalled = true;
+    });
 
     expect(nextCalled).toBe(false);
     expect(state.statusCode).toBe(200);
@@ -128,13 +132,9 @@ describe('dev-static-directory', () => {
     const { response, state } = createMockResponse();
     let nextCalled = false;
 
-    middleware(
-      request as IncomingMessage,
-      response,
-      () => {
-        nextCalled = true;
-      },
-    );
+    middleware(request as IncomingMessage, response, () => {
+      nextCalled = true;
+    });
 
     expect(nextCalled).toBe(true);
     expect(state.ended).toBe(false);

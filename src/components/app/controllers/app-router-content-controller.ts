@@ -26,10 +26,7 @@ export class AppRouterContentController implements ReactiveController {
     this.didInitializeFromSsr = true;
   }
 
-  async handleContentUpdate(
-    newContent: string,
-    onAfterUpdate: () => Promise<void>,
-  ): Promise<void> {
+  async handleContentUpdate(newContent: string, onAfterUpdate: () => Promise<void>): Promise<void> {
     this.shouldRunPostNavigationHooks = true;
     this.setPageContent(newContent);
     await onAfterUpdate();

@@ -3,10 +3,7 @@ import { customElement, property, query, state } from 'lit/decorators.js';
 import '../../lib/icons';
 import '../ui/sidebar/sidebar';
 import type { TreeNode } from '../ui/file-tree/file-tree';
-import type {
-  UiSidebar,
-  UiSidebarExpandDetail,
-} from '../ui/sidebar/sidebar';
+import type { UiSidebar, UiSidebarExpandDetail } from '../ui/sidebar/sidebar';
 import type { UiSidebarStateChangeDetail } from '../ui/sidebar-shell/sidebar-shell';
 import { attachStickyFooterBoundary } from '../../lib/layout/sticky-footer-boundary.js';
 import {
@@ -47,8 +44,8 @@ const toTreeNode = (value: unknown): TreeNode | null => {
   const childrenValue = value['children'];
   const children = Array.isArray(childrenValue)
     ? childrenValue
-      .map((item) => toTreeNode(item))
-      .filter((item): item is TreeNode => item !== null)
+        .map((item) => toTreeNode(item))
+        .filter((item): item is TreeNode => item !== null)
     : undefined;
   const icon = toOptionalString(value['icon']);
   const href = toOptionalString(value['href']);
@@ -159,13 +156,19 @@ export class LayoutSidebar extends LitElement {
     super.connectedCallback();
     this._storage = this._resolveStorage();
     this._loadItemsFromSource();
-    window.addEventListener('layout-sidebar-toggle-request', this._onToggleRequest as EventListener);
+    window.addEventListener(
+      'layout-sidebar-toggle-request',
+      this._onToggleRequest as EventListener,
+    );
     const stickyTarget = this.parentElement instanceof HTMLElement ? this.parentElement : this;
     this._detachStickyFooterBoundary = attachStickyFooterBoundary(stickyTarget);
   }
 
   override disconnectedCallback(): void {
-    window.removeEventListener('layout-sidebar-toggle-request', this._onToggleRequest as EventListener);
+    window.removeEventListener(
+      'layout-sidebar-toggle-request',
+      this._onToggleRequest as EventListener,
+    );
     this._detachStickyFooterBoundary?.();
     this._detachStickyFooterBoundary = null;
     super.disconnectedCallback();
@@ -186,16 +189,11 @@ export class LayoutSidebar extends LitElement {
   }
 
   private _loadItemsFromSource(): void {
-    this._persistedExpandedIds = new Set(
-      readLayoutSidebarTreeState(this._storage).expandedIds,
-    );
+    this._persistedExpandedIds = new Set(readLayoutSidebarTreeState(this._storage).expandedIds);
 
     const inlineItems = this._parseItemsJson(this.itemsJson);
     if (inlineItems !== null) {
-      this._items = mergeLayoutSidebarTreeState(
-        inlineItems,
-        [...this._persistedExpandedIds],
-      );
+      this._items = mergeLayoutSidebarTreeState(inlineItems, [...this._persistedExpandedIds]);
       return;
     }
 
@@ -219,10 +217,7 @@ export class LayoutSidebar extends LitElement {
       const items = parsed
         .map((item) => toTreeNode(item))
         .filter((item): item is TreeNode => item !== null);
-      this._items = mergeLayoutSidebarTreeState(
-        items,
-        [...this._persistedExpandedIds],
-      );
+      this._items = mergeLayoutSidebarTreeState(items, [...this._persistedExpandedIds]);
     } catch {
       this._items = [];
     }
@@ -271,9 +266,7 @@ export class LayoutSidebar extends LitElement {
     }
     const detail: unknown = event.detail;
     const trigger =
-      isRecord(detail) && detail['trigger'] instanceof HTMLElement
-        ? detail['trigger']
-        : undefined;
+      isRecord(detail) && detail['trigger'] instanceof HTMLElement ? detail['trigger'] : undefined;
     this._sidebarElement?.toggle(trigger);
   };
 

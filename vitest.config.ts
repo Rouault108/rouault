@@ -57,7 +57,7 @@ export default defineConfig({
             }),
             // ヘッドレスでCI/自動テストに最適化
             headless: true,
-            instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }]
+            instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
           },
 
           // Storybook の設定を Vitest に適用するセットアップファイル

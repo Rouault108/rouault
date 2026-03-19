@@ -146,7 +146,7 @@ describe('NoteLayout', () => {
 
     expect(rendered).toContain('active-id="music/__index__"');
     expect(rendered).toContain('"id":"music/__index__"');
-    });
+  });
 
   it('current directory-index note を data.notes に補完して sidebar に出すこと', () => {
     const layout = new NoteLayout();
@@ -185,7 +185,7 @@ describe('NoteLayout', () => {
       },
       notes: [],
     });
-  
+
     expect(rendered).toContain('id="note-content-testing-tabs-test" class="prose"');
     expect(rendered).toContain('content-root-id="note-content-testing-tabs-test"');
   });

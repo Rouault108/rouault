@@ -2,10 +2,10 @@ import {
   buildBreadcrumbs,
   type BreadcrumbSourceNote,
 } from '../../lib/content/build-breadcrumbs.js';
-import { 
-  THEME_ATTRIBUTE, 
-  THEME_STORAGE_KEY, 
-  RESOLVED_THEME_ATTRIBUTE 
+import {
+  THEME_ATTRIBUTE,
+  THEME_STORAGE_KEY,
+  RESOLVED_THEME_ATTRIBUTE,
 } from '../lib/theme/theme-manager.js';
 
 export interface BaseLayoutData {

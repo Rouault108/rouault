@@ -63,30 +63,30 @@ Rouault における dropdown は、本文読書の流れを恒常的に分断�
 
 #### `ui-dropdown`
 
-| 名前 | 種別 | 必須 | 内容 | 契約 |
-| --- | --- | --- | --- | --- |
-| `opened` | property / attribute | いいえ | 開閉状態 | `true` で開、`false` で閉。既定値は `false` です |
-| `side` | property / attribute | いいえ | 出現する辺 | `top` / `right` / `bottom` / `left`。既定値は `bottom` です |
-| `align` | property / attribute | いいえ | 交差軸方向の整列 | `start` / `center` / `end`。既定値は `start` です |
-| `disabled` | property / attribute | いいえ | 開閉操作の無効化 | `true` の場合、dropdown は開閉操作を受け付けません |
+| 名前       | 種別                 | 必須   | 内容             | 契約                                                        |
+| ---------- | -------------------- | ------ | ---------------- | ----------------------------------------------------------- |
+| `opened`   | property / attribute | いいえ | 開閉状態         | `true` で開、`false` で閉。既定値は `false` です            |
+| `side`     | property / attribute | いいえ | 出現する辺       | `top` / `right` / `bottom` / `left`。既定値は `bottom` です |
+| `align`    | property / attribute | いいえ | 交差軸方向の整列 | `start` / `center` / `end`。既定値は `start` です           |
+| `disabled` | property / attribute | いいえ | 開閉操作の無効化 | `true` の場合、dropdown は開閉操作を受け付けません          |
 
 #### `ui-menu-item`
 
-| 名前 | 種別 | 必須 | 内容 | 契約 |
-| --- | --- | --- | --- | --- |
-| `value` | property / attribute | **はい** | 選択値 | `menu-item-select` の `detail.value` に入る安定した意味値です |
-| `variant` | property / attribute | いいえ | 項目の意味強度 | `default` / `danger`。既定値は `default` です |
-| `disabled` | property / attribute | いいえ | 項目の無効化 | `true` の場合、選択できず、キーボード移動でもスキップされます |
-| `text-value` | property / attribute | いいえ | type-ahead およびテキスト名の正規化値 | 未指定時は `textContent.trim()` を使います |
+| 名前         | 種別                 | 必須     | 内容                                  | 契約                                                          |
+| ------------ | -------------------- | -------- | ------------------------------------- | ------------------------------------------------------------- |
+| `value`      | property / attribute | **はい** | 選択値                                | `menu-item-select` の `detail.value` に入る安定した意味値です |
+| `variant`    | property / attribute | いいえ   | 項目の意味強度                        | `default` / `danger`。既定値は `default` です                 |
+| `disabled`   | property / attribute | いいえ   | 項目の無効化                          | `true` の場合、選択できず、キーボード移動でもスキップされます |
+| `text-value` | property / attribute | いいえ   | type-ahead およびテキスト名の正規化値 | 未指定時は `textContent.trim()` を使います                    |
 
 ### スロット契約
 
 #### `ui-dropdown`
 
-| 名前 | 種別 | 位置付け | 内容 |
-| --- | --- | --- | --- |
-| `trigger` | named slot | 正規入力 | 開閉起点となる単一トリガー要素 |
-| 既定スロット | slot | 正規入力 | `ui-menu-item` および `ui-menu-separator` を並べます |
+| 名前         | 種別       | 位置付け | 内容                                                 |
+| ------------ | ---------- | -------- | ---------------------------------------------------- |
+| `trigger`    | named slot | 正規入力 | 開閉起点となる単一トリガー要素                       |
+| 既定スロット | slot       | 正規入力 | `ui-menu-item` および `ui-menu-separator` を並べます |
 
 `trigger` スロットには **単一トリガー**を置きます。複数要素を割り当てる構成は公開契約に含めません。
 
@@ -94,8 +94,8 @@ Rouault における dropdown は、本文読書の流れを恒常的に分断�
 
 #### `ui-menu-item`
 
-| 名前 | 種別 | 位置付け | 内容 |
-| --- | --- | --- | --- |
+| 名前         | 種別 | 位置付け | 内容                                           |
+| ------------ | ---- | -------- | ---------------------------------------------- |
 | 既定スロット | slot | 正規入力 | 項目ラベル、またはアイコンとラベルの組み合わせ |
 
 `ui-menu-item` のラベルは既定スロット内容、または `text-value` から決定します。`menu-item-select` の `detail.label` は表示ラベルとして扱い、意味値の一次情報源にはしません。
@@ -131,11 +131,11 @@ Rouault における dropdown は、本文読書の流れを恒常的に分断�
 
 #### `ui-dropdown`
 
-| 名前 | 発火条件 | `detail` |
-| --- | --- | --- |
+| 名前               | 発火条件                        | `detail`                           |
+| ------------------ | ------------------------------- | ---------------------------------- |
 | `menu-item-select` | `ui-menu-item` が選択されたとき | `{ value: string, label: string }` |
-| `open` | `open()` により開いたとき | なし |
-| `close` | `close()` により閉じたとき | なし |
+| `open`             | `open()` により開いたとき       | なし                               |
+| `close`            | `close()` により閉じたとき      | なし                               |
 
 `menu-item-select` はクリック選択、または Enter / Space による選択で発火します。
 
@@ -159,11 +159,11 @@ Rouault における dropdown は、本文読書の流れを恒常的に分断�
 
 ### 公開メソッド
 
-| 名前 | 種別 | 契約 |
-| --- | --- | --- |
-| `open()` | method | 無効状態でなく、かつ未展開時のみ開きます |
+| 名前                         | 種別   | 契約                                                       |
+| ---------------------------- | ------ | ---------------------------------------------------------- |
+| `open()`                     | method | 無効状態でなく、かつ未展開時のみ開きます                   |
 | `close(restoreFocus = true)` | method | 展開時のみ閉じます。既定ではトリガーへフォーカスを戻します |
-| `toggle()` | method | 開閉を反転します |
+| `toggle()`                   | method | 開閉を反転します                                           |
 
 `close()` の `restoreFocus` 引数は公開面として扱います。`false` を指定した場合、閉鎖後のフォーカス復帰には依存しません。
 
@@ -181,16 +181,16 @@ Rouault における dropdown は、本文読書の流れを恒常的に分断�
 
 `opened`、`side`、`align`、`disabled`、`value`、`variant`、`text-value` は reflect されます。boolean 値は attribute の有無で反映します。
 
-| 要素 | property | attribute | reflect | 備考 |
-| --- | --- | --- | --- | --- |
-| `ui-dropdown` | `opened` | `opened` | あり | boolean attribute |
-| `ui-dropdown` | `side` | `side` | あり | `top` / `right` / `bottom` / `left` |
-| `ui-dropdown` | `align` | `align` | あり | `start` / `center` / `end` |
-| `ui-dropdown` | `disabled` | `disabled` | あり | boolean attribute |
-| `ui-menu-item` | `value` | `value` | あり | 文字列、必須 |
-| `ui-menu-item` | `variant` | `variant` | あり | `default` / `danger` |
-| `ui-menu-item` | `disabled` | `disabled` | あり | boolean attribute |
-| `ui-menu-item` | `textValue` | `text-value` | あり | type-ahead とラベル正規化に使います |
+| 要素           | property    | attribute    | reflect | 備考                                |
+| -------------- | ----------- | ------------ | ------- | ----------------------------------- |
+| `ui-dropdown`  | `opened`    | `opened`     | あり    | boolean attribute                   |
+| `ui-dropdown`  | `side`      | `side`       | あり    | `top` / `right` / `bottom` / `left` |
+| `ui-dropdown`  | `align`     | `align`      | あり    | `start` / `center` / `end`          |
+| `ui-dropdown`  | `disabled`  | `disabled`   | あり    | boolean attribute                   |
+| `ui-menu-item` | `value`     | `value`      | あり    | 文字列、必須                        |
+| `ui-menu-item` | `variant`   | `variant`    | あり    | `default` / `danger`                |
+| `ui-menu-item` | `disabled`  | `disabled`   | あり    | boolean attribute                   |
+| `ui-menu-item` | `textValue` | `text-value` | あり    | type-ahead とラベル正規化に使います |
 
 ### 入力正規化と非対応値契約
 
@@ -338,18 +338,18 @@ trigger は利用側が供給する要素ですが、dropdown は開閉コンポ
 
 ### キーボード契約
 
-| キー | trigger 上での動作 | panel 上での動作 |
-| --- | --- | --- |
-| `Enter` | 開閉を反転 | 現在項目を選択 |
-| `Space` | 開閉を反転 | 現在項目を選択 |
-| `ArrowDown` | 閉状態なら開き、最初の有効項目へ | 次の有効項目へ |
-| `ArrowUp` | 閉状態なら開き、最後の有効項目へ | 前の有効項目へ |
-| `Home` | なし | 最初の有効項目へ |
-| `End` | なし | 最後の有効項目へ |
-| `Escape` | なし | 閉じて trigger に戻す |
-| `Tab` | 通常のフォーカス移動 | 閉じて次へ進む |
-| `Shift+Tab` | 通常のフォーカス移動 | 閉じて前へ戻る |
-| 文字キー | なし | type-ahead により前方一致検索 |
+| キー        | trigger 上での動作               | panel 上での動作              |
+| ----------- | -------------------------------- | ----------------------------- |
+| `Enter`     | 開閉を反転                       | 現在項目を選択                |
+| `Space`     | 開閉を反転                       | 現在項目を選択                |
+| `ArrowDown` | 閉状態なら開き、最初の有効項目へ | 次の有効項目へ                |
+| `ArrowUp`   | 閉状態なら開き、最後の有効項目へ | 前の有効項目へ                |
+| `Home`      | なし                             | 最初の有効項目へ              |
+| `End`       | なし                             | 最後の有効項目へ              |
+| `Escape`    | なし                             | 閉じて trigger に戻す         |
+| `Tab`       | 通常のフォーカス移動             | 閉じて次へ進む                |
+| `Shift+Tab` | 通常のフォーカス移動             | 閉じて前へ戻る                |
+| 文字キー    | なし                             | type-ahead により前方一致検索 |
 
 ### Type-ahead 契約
 
@@ -409,28 +409,28 @@ panel は画面上に一時的に現れる補助面であり、恒常的な card
 
 本コンポーネントは主として次のトークンに依存します。
 
-| 用途 | トークン |
-| --- | --- |
-| panel 背景 | `--bg-surface-2` |
-| panel 境界線 | `--border-default` / `--border-width` |
-| panel 角丸 | `--radius-md` |
-| item 角丸 | `--radius-sm` |
-| panel 影 | `--elevation-lg` |
-| Z 軸 | `--z-popover` |
-| item 高さ | `--control-height-md` |
-| タッチ補助高さ | `--control-min-touch` |
-| 余白 | `--space-1` / `--space-2` / `--space-3` |
-| 文字色 | `--fg-default` / `--fg-subtle` |
-| 通常 hover 背景 | `--bg-surface-active` |
-| danger 文字色 | `--danger` |
-| danger hover 背景 | `--bg-danger-subtle` |
-| disabled 不透明度 | `--opacity-disabled` |
-| icon 寸法 | `--icon-base` |
-| アニメーション時間 | `--duration-normal` / `--duration-instant` / `--duration-fast` |
-| イージング | `--ease-out` |
-| 初期 scale | `--scale-enter` |
-| フォーカスリング | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
-| separator | `--border-muted` |
+| 用途               | トークン                                                                                  |
+| ------------------ | ----------------------------------------------------------------------------------------- |
+| panel 背景         | `--bg-surface-2`                                                                          |
+| panel 境界線       | `--border-default` / `--border-width`                                                     |
+| panel 角丸         | `--radius-md`                                                                             |
+| item 角丸          | `--radius-sm`                                                                             |
+| panel 影           | `--elevation-lg`                                                                          |
+| Z 軸               | `--z-popover`                                                                             |
+| item 高さ          | `--control-height-md`                                                                     |
+| タッチ補助高さ     | `--control-min-touch`                                                                     |
+| 余白               | `--space-1` / `--space-2` / `--space-3`                                                   |
+| 文字色             | `--fg-default` / `--fg-subtle`                                                            |
+| 通常 hover 背景    | `--bg-surface-active`                                                                     |
+| danger 文字色      | `--danger`                                                                                |
+| danger hover 背景  | `--bg-danger-subtle`                                                                      |
+| disabled 不透明度  | `--opacity-disabled`                                                                      |
+| icon 寸法          | `--icon-base`                                                                             |
+| アニメーション時間 | `--duration-normal` / `--duration-instant` / `--duration-fast`                            |
+| イージング         | `--ease-out`                                                                              |
+| 初期 scale         | `--scale-enter`                                                                           |
+| フォーカスリング   | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
+| separator          | `--border-muted`                                                                          |
 
 ---
 
@@ -539,34 +539,34 @@ trigger slot に複数要素を与えた場合、その構成自体が契約外�
 
 各 Story は見本ではなく、契約確認点として扱います。将来変更時には、少なくとも次の契約を維持します。
 
-| Story | 固定する契約 |
-| --- | --- |
-| `Default` | 既定状態が閉であり、`open()` / `close()` が動作すること |
-| `DefaultVariantNormal` | `role="menu"` と通常 command item 群が成立すること |
-| `DangerVariantNormal` | `variant="danger"` 項目が視覚的警告項目として存在できること |
-| `DefaultVariantDisabledItem` | 無効項目が内部 button の `disabled` と `aria-disabled` を持つこと |
-| `DangerVariantDisabledItem` | `danger` と `disabled` を併用できること |
-| `DropdownDisabled` | dropdown 自体の `disabled` で開閉を禁止できること |
-| `WithIcons` | アイコン付き項目を並べられること |
-| `WithSeparators` | separator が `role="separator"` を持つこと |
-| `EventHandling` | `menu-item-select` の `detail` が取得でき、選択後に閉じること |
-| `KeyboardNavigation` | WAI-ARIA menu pattern 相当の移動と閉鎖が成立すること |
-| `AllItemsDisabled` | 全項目無効の境界状態を扱えること |
-| `SingleItem` | 単一項目でも成立すること |
-| `ManyItems` | 多数項目時に panel がスクロールすること |
-| `LongLabels` | 長いラベルでも panel 幅が暴走しないこと |
-| `ProgrammaticControl` | `open()` / `close()` / `toggle()` が冪等に扱えること |
-| `AriaAttributes` | trigger / panel / item の ARIA 関係が成立すること |
-| `SideTop` | `side="top"` による辺指定が反映されること |
-| `ContextMenuExample` | 行内 command menu として使えること |
-| `ForcedColorsMode` | 強制カラー環境で構造が失われないこと |
-| `ReducedMotion` | reduced motion 環境で開閉が成立すること |
-| `ClickOutsideClose` | 外側クリックで閉じること |
-| `ScrollClose` | スクロールで閉じること |
-| `TypeaheadNavigation` | type-ahead が前方一致で動作すること |
-| `NonButtonTriggerAria` | 非 button trigger に `role="button"` と `aria-disabled` を補えること |
-| `DarkModeSurface` | 暗背景上で panel の可読性を維持できること |
-| `EmptyMenu` | 空メニューの境界状態でも破綻しないこと |
+| Story                        | 固定する契約                                                         |
+| ---------------------------- | -------------------------------------------------------------------- |
+| `Default`                    | 既定状態が閉であり、`open()` / `close()` が動作すること              |
+| `DefaultVariantNormal`       | `role="menu"` と通常 command item 群が成立すること                   |
+| `DangerVariantNormal`        | `variant="danger"` 項目が視覚的警告項目として存在できること          |
+| `DefaultVariantDisabledItem` | 無効項目が内部 button の `disabled` と `aria-disabled` を持つこと    |
+| `DangerVariantDisabledItem`  | `danger` と `disabled` を併用できること                              |
+| `DropdownDisabled`           | dropdown 自体の `disabled` で開閉を禁止できること                    |
+| `WithIcons`                  | アイコン付き項目を並べられること                                     |
+| `WithSeparators`             | separator が `role="separator"` を持つこと                           |
+| `EventHandling`              | `menu-item-select` の `detail` が取得でき、選択後に閉じること        |
+| `KeyboardNavigation`         | WAI-ARIA menu pattern 相当の移動と閉鎖が成立すること                 |
+| `AllItemsDisabled`           | 全項目無効の境界状態を扱えること                                     |
+| `SingleItem`                 | 単一項目でも成立すること                                             |
+| `ManyItems`                  | 多数項目時に panel がスクロールすること                              |
+| `LongLabels`                 | 長いラベルでも panel 幅が暴走しないこと                              |
+| `ProgrammaticControl`        | `open()` / `close()` / `toggle()` が冪等に扱えること                 |
+| `AriaAttributes`             | trigger / panel / item の ARIA 関係が成立すること                    |
+| `SideTop`                    | `side="top"` による辺指定が反映されること                            |
+| `ContextMenuExample`         | 行内 command menu として使えること                                   |
+| `ForcedColorsMode`           | 強制カラー環境で構造が失われないこと                                 |
+| `ReducedMotion`              | reduced motion 環境で開閉が成立すること                              |
+| `ClickOutsideClose`          | 外側クリックで閉じること                                             |
+| `ScrollClose`                | スクロールで閉じること                                               |
+| `TypeaheadNavigation`        | type-ahead が前方一致で動作すること                                  |
+| `NonButtonTriggerAria`       | 非 button trigger に `role="button"` と `aria-disabled` を補えること |
+| `DarkModeSurface`            | 暗背景上で panel の可読性を維持できること                            |
+| `EmptyMenu`                  | 空メニューの境界状態でも破綻しないこと                               |
 
 `NavigationExample` は command menu family の公開契約から外します。ナビゲーション用途を示す Story は別 family に移すか、参考例から削除します。
 
@@ -774,4 +774,3 @@ trigger slot に複数要素が入った場合、現行実装は最初の 1 要�
 本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用または是正する場合は、実装、Storybook、契約書の 3 点を同時に更新し、未整合状態を残したまま公開契約へ昇格させません。
 
 また、本節には **将来拡張節で明示したが現行実装には未導入の機能** と、**現行実装が本書の長期契約とまだ噛み合っていない事項** の両方を含みます。したがって、単なる TODO 一覧ではなく、公開契約へ昇格させる前に整理すべき差分一覧として扱います。
-

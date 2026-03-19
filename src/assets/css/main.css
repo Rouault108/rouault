@@ -313,7 +313,9 @@ ui-article-header + .prose {
   --ui-table-breakout-margin: 0;
 }
 
-:is(.prose, .about-prose) > ui-tabs > [slot='panel']
+:is(.prose, .about-prose)
+  > ui-tabs
+  > [slot='panel']
   > *
   + :where(
     p,

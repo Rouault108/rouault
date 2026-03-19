@@ -153,19 +153,21 @@ function createSearchResponse(
       return true;
     }
 
-    const haystacks = [item.title, item.description, ...item.tags].map((value) => value.toLowerCase());
+    const haystacks = [item.title, item.description, ...item.tags].map((value) =>
+      value.toLowerCase(),
+    );
     return haystacks.some((value) => value.includes(normalizedQuery));
   });
 
   const filteredItems =
     selectedGenres.length > 0
-      ? queryMatchedItems.filter((item) =>
-        selectedGenres.some((tag) => item.tags.includes(tag)),
-      )
+      ? queryMatchedItems.filter((item) => selectedGenres.some((tag) => item.tags.includes(tag)))
       : queryMatchedItems;
 
   const sortedItems =
-    sortMode === 'date-desc' ? [...filteredItems].sort((left, right) => right.date.localeCompare(left.date, 'ja')) : filteredItems;
+    sortMode === 'date-desc'
+      ? [...filteredItems].sort((left, right) => right.date.localeCompare(left.date, 'ja'))
+      : filteredItems;
 
   return {
     total: sortedItems.length,
@@ -213,7 +215,8 @@ const getFilterDetails = (host: SearchPage): Details => {
 };
 
 const getFilterTrigger = (host: SearchPage): HTMLButtonElement => {
-  const trigger = getFilterDetails(host).shadowRoot?.querySelector<HTMLButtonElement>('button.trigger');
+  const trigger =
+    getFilterDetails(host).shadowRoot?.querySelector<HTMLButtonElement>('button.trigger');
   if (!trigger) {
     throw new Error('filter details の trigger が見つかりません');
   }
@@ -231,7 +234,8 @@ const getFilterSearchField = (host: SearchPage): SearchField => {
 };
 
 const getFilterCheckbox = (host: SearchPage, label: string): Checkbox => {
-  const checkboxes = host.shadowRoot?.querySelectorAll<Checkbox>('ui-checkbox.filter-option-checkbox') ?? [];
+  const checkboxes =
+    host.shadowRoot?.querySelectorAll<Checkbox>('ui-checkbox.filter-option-checkbox') ?? [];
   const checkbox = [...checkboxes].find((candidate) => candidate.label === label);
   if (!checkbox) {
     throw new Error(`"${label}" の filter checkbox が見つかりません`);
@@ -298,9 +302,12 @@ export const QueryAndClearFlow: Story = {
     try {
       await flush(host);
 
-      const searchField = host.shadowRoot?.querySelector<SearchField>('ui-search-field.search-input-control');
+      const searchField = host.shadowRoot?.querySelector<SearchField>(
+        'ui-search-field.search-input-control',
+      );
       const input = getSearchInput(searchField);
-      const clearButton = searchField?.shadowRoot?.querySelector<HTMLButtonElement>('.clear-button');
+      const clearButton =
+        searchField?.shadowRoot?.querySelector<HTMLButtonElement>('.clear-button');
       assert(!!searchField, 'search-page 内に主検索用 ui-search-field が見つかりません');
       assert(!!clearButton, 'search-page 内の clear button が見つかりません');
 
@@ -311,7 +318,10 @@ export const QueryAndClearFlow: Story = {
       const resultLinks = host.shadowRoot?.querySelectorAll('.result-link') ?? [];
       const currentUrl = new URL(window.location.href);
       assert(resultLinks.length === 2, 'query 入力後に結果が期待通り絞り込まれていません');
-      assert(currentUrl.searchParams.get('q') === 'router', 'query 入力時に URL が同期されていません');
+      assert(
+        currentUrl.searchParams.get('q') === 'router',
+        'query 入力時に URL が同期されていません',
+      );
       assert(!clearButton.hidden, 'query 入力後に clear button が表示されていません');
 
       clearButton.click();
@@ -320,7 +330,10 @@ export const QueryAndClearFlow: Story = {
       const metaRowText = host.shadowRoot?.querySelector('.meta-row')?.textContent ?? '';
       const clearedUrl = new URL(window.location.href);
       assert(input.value === '', 'clear 後に input.value が空になっていません');
-      assert(clearedUrl.searchParams.get('q') === null, 'clear 後に URL の query が除去されていません');
+      assert(
+        clearedUrl.searchParams.get('q') === null,
+        'clear 後に URL の query が除去されていません',
+      );
       assert(metaRowText.includes('0 件の結果'), 'clear 後の件数表示が更新されていません');
     } finally {
       history.replaceState(history.state, '', originalUrl);
@@ -351,9 +364,13 @@ export const FilterPanelFlow: Story = {
       await flush(host);
 
       const filterDetails = getFilterDetails(host);
-      const filterSummaryText = host.shadowRoot?.querySelector('.filter-summary-state')?.textContent ?? '';
+      const filterSummaryText =
+        host.shadowRoot?.querySelector('.filter-summary-state')?.textContent ?? '';
       assert(!filterDetails.open, '初期状態のフィルターパネルは閉じている必要があります');
-      assert(filterSummaryText.includes('すべてのタグ'), '初期 summary が "すべてのタグ" ではありません');
+      assert(
+        filterSummaryText.includes('すべてのタグ'),
+        '初期 summary が "すべてのタグ" ではありません',
+      );
 
       getFilterTrigger(host).click();
       await flush(host);
@@ -373,8 +390,12 @@ export const FilterPanelFlow: Story = {
       filterSearchInput.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
       await flush(host);
 
-      const visibleCheckboxesAfterFilter = host.shadowRoot?.querySelectorAll('ui-checkbox.filter-option-checkbox') ?? [];
-      assert(visibleCheckboxesAfterFilter.length === 1, 'ローカルタグ検索で候補が絞り込まれていません');
+      const visibleCheckboxesAfterFilter =
+        host.shadowRoot?.querySelectorAll('ui-checkbox.filter-option-checkbox') ?? [];
+      assert(
+        visibleCheckboxesAfterFilter.length === 1,
+        'ローカルタグ検索で候補が絞り込まれていません',
+      );
       assert(
         `${window.location.pathname}${window.location.search}` === urlBeforeFilterSearch,
         'ローカルタグ検索で URL が変わってはいけません',
@@ -390,10 +411,15 @@ export const FilterPanelFlow: Story = {
 
       const urlAfterTagSelect = new URL(window.location.href);
       const resultLinksAfterTagSelect = host.shadowRoot?.querySelectorAll('.result-link') ?? [];
-      assert(urlAfterTagSelect.searchParams.getAll('tag').includes('lit'), 'タグ選択時に URL が同期されていません');
+      assert(
+        urlAfterTagSelect.searchParams.getAll('tag').includes('lit'),
+        'タグ選択時に URL が同期されていません',
+      );
       assert(resultLinksAfterTagSelect.length === 1, 'タグ選択で結果数が更新されていません');
 
-      const mainSearchField = host.shadowRoot?.querySelector<SearchField>('ui-search-field.search-input-control');
+      const mainSearchField = host.shadowRoot?.querySelector<SearchField>(
+        'ui-search-field.search-input-control',
+      );
       const mainSearchInput = getSearchInput(mainSearchField);
       mainSearchInput.value = 'router';
       mainSearchInput.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
@@ -403,10 +429,16 @@ export const FilterPanelFlow: Story = {
       const litCheckboxAfterQuery = getFilterCheckbox(host, 'lit');
       const performanceCheckboxAfterQuery = getFilterCheckbox(host, 'performance');
       const selectedTag = host.shadowRoot?.querySelector<HTMLElement>('.selected-tags ui-tag');
-      assert(urlAfterQuery.searchParams.get('q') === 'router', 'query 入力時に URL が同期されていません');
+      assert(
+        urlAfterQuery.searchParams.get('q') === 'router',
+        'query 入力時に URL が同期されていません',
+      );
       assert(litCheckboxAfterQuery.checked, 'query 後も選択中タグは維持される必要があります');
       assert(!litCheckboxAfterQuery.disabled, '0件の選択済みタグは再操作可能である必要があります');
-      assert(performanceCheckboxAfterQuery.disabled, '0件の未選択タグは disabled である必要があります');
+      assert(
+        performanceCheckboxAfterQuery.disabled,
+        '0件の未選択タグは disabled である必要があります',
+      );
       assert(!!selectedTag, '選択中タグの removable chip が表示されていません');
 
       selectedTag.dispatchEvent(
@@ -420,13 +452,17 @@ export const FilterPanelFlow: Story = {
 
       const urlAfterRemove = new URL(window.location.href);
       const resultLinksAfterRemove = host.shadowRoot?.querySelectorAll('.result-link') ?? [];
-      const filterSummaryAfterRemove = host.shadowRoot?.querySelector('.filter-summary-state')?.textContent ?? '';
+      const filterSummaryAfterRemove =
+        host.shadowRoot?.querySelector('.filter-summary-state')?.textContent ?? '';
       assert(
         !urlAfterRemove.searchParams.getAll('tag').includes('lit'),
         'removable chip 削除後に URL から tag が除去されていません',
       );
       assert(resultLinksAfterRemove.length === 2, 'removable chip 削除後に結果数が戻っていません');
-      assert(filterSummaryAfterRemove.includes('すべてのタグ'), '最後のタグ削除後に summary が戻っていません');
+      assert(
+        filterSummaryAfterRemove.includes('すべてのタグ'),
+        '最後のタグ削除後に summary が戻っていません',
+      );
     } finally {
       history.replaceState(history.state, '', originalUrl);
       restoreSearchMock();
@@ -460,7 +496,10 @@ export const FilterPanelReorderRegression: Story = {
       await settleSearch(host);
 
       const statesAfterLitSelect = getFilterOptionStates(host);
-      assert(statesAfterLitSelect[0]?.label === 'lit', '非先頭タグ選択後に選択タグが先頭へ移動していません');
+      assert(
+        statesAfterLitSelect[0]?.label === 'lit',
+        '非先頭タグ選択後に選択タグが先頭へ移動していません',
+      );
       assertFilterSelectionConsistency(host, 'lit 選択後');
 
       const architectureCheckbox = getFilterCheckbox(host, 'architecture');
@@ -468,8 +507,14 @@ export const FilterPanelReorderRegression: Story = {
       await settleSearch(host);
 
       const statesAfterArchitectureSelect = getFilterOptionStates(host);
-      assert(statesAfterArchitectureSelect[0]?.label === 'architecture', '高頻度タグ選択後に並び順が更新されていません');
-      assert(statesAfterArchitectureSelect[1]?.label === 'lit', '先に選択したタグの相対位置が期待通りではありません');
+      assert(
+        statesAfterArchitectureSelect[0]?.label === 'architecture',
+        '高頻度タグ選択後に並び順が更新されていません',
+      );
+      assert(
+        statesAfterArchitectureSelect[1]?.label === 'lit',
+        '先に選択したタグの相対位置が期待通りではありません',
+      );
       assertFilterSelectionConsistency(host, 'architecture 選択後');
 
       const architectureCheckboxAtTop = getFilterCheckbox(host, 'architecture');
@@ -479,11 +524,16 @@ export const FilterPanelReorderRegression: Story = {
       const statesAfterArchitectureRemove = getFilterOptionStates(host);
       const topStateAfterRemove = statesAfterArchitectureRemove[0];
       assert(topStateAfterRemove !== undefined, '先頭のタグ状態が存在しません');
-      assert(topStateAfterRemove.label === 'lit', '先頭タグ解除後に残った選択タグが先頭へ戻っていません');
+      assert(
+        topStateAfterRemove.label === 'lit',
+        '先頭タグ解除後に残った選択タグが先頭へ戻っていません',
+      );
       assert(topStateAfterRemove.selected, '残った選択タグが選択状態ではありません');
       assert(topStateAfterRemove.checked, '残った選択タグの checkbox が checked ではありません');
 
-      const architectureState = statesAfterArchitectureRemove.find((state) => state.label === 'architecture');
+      const architectureState = statesAfterArchitectureRemove.find(
+        (state) => state.label === 'architecture',
+      );
       assert(!architectureState?.selected, '解除したタグが data-selected=true のままです');
       assert(!architectureState?.checked, '解除したタグの checkbox が checked のままです');
       assertFilterSelectionConsistency(host, 'architecture 解除後');

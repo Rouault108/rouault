@@ -1,16 +1,8 @@
 const escapeHtml = (value: string): string =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 const escapeAttr = (value: string): string =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 export const NOT_FOUND_PAGE_TITLE = 'ページが見つかりません';
 export const NOT_FOUND_PAGE_META_DESCRIPTION =
@@ -25,16 +17,12 @@ export interface BuildNotFoundPageMarkupOptions {
   requestedPath?: string;
 }
 
-export function buildNotFoundPageMarkup(
-  options: BuildNotFoundPageMarkupOptions = {},
-): string {
+export function buildNotFoundPageMarkup(options: BuildNotFoundPageMarkupOptions = {}): string {
   const requestedPath =
     typeof options.requestedPath === 'string' ? options.requestedPath.trim() : '';
 
   const requestedPathAttribute =
-    requestedPath.length > 0
-      ? ` requested-path="${escapeAttr(requestedPath)}"`
-      : '';
+    requestedPath.length > 0 ? ` requested-path="${escapeAttr(requestedPath)}"` : '';
 
   const requestedPathFallback =
     requestedPath.length > 0

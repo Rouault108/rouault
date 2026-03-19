@@ -109,10 +109,10 @@ Rouault では、リンクを「`a` 要素であるかどうか」ではなく�
 
 中心となる分類は、次の2系統です。
 
-| 分類 | 主用途 | 代表クラス | 非色シグナル | 主な適用先 |
-|---|---|---|---|---|
-| **Text Link** | 読み物中の本文リンク | `.link-text` / `.prose a[href]` | **常時下線** | 記事本文、本文内タグ、本文内参照 |
-| **Control Link** | UI構造内の移動・操作リンク | `.link-control` / `.ui-link` | 行構造、配置、current表示、focus ring | サイドバー、カード、補助ナビゲーション |
+| 分類             | 主用途                     | 代表クラス                      | 非色シグナル                          | 主な適用先                             |
+| ---------------- | -------------------------- | ------------------------------- | ------------------------------------- | -------------------------------------- |
+| **Text Link**    | 読み物中の本文リンク       | `.link-text` / `.prose a[href]` | **常時下線**                          | 記事本文、本文内タグ、本文内参照       |
+| **Control Link** | UI構造内の移動・操作リンク | `.link-control` / `.ui-link`    | 行構造、配置、current表示、focus ring | サイドバー、カード、補助ナビゲーション |
 
 Rouault の要点は、**本文リンクとUIリンクを同じ見た目にしない**ことです。本文リンクは読む流れを壊さないことを優先し、UIリンクは構造内の操作対象であることを優先します。
 
@@ -120,14 +120,14 @@ Rouault の要点は、**本文リンクとUIリンクを同じ見た目にし�
 
 Text Link は、次の契約を持ちます。
 
-| 項目 | 契約 |
-|---|---|
-| 基本色 | `var(--fg-default)` |
-| 識別手段 | **常時下線** |
-| hover | テキスト色と下線色を `primary-hover` に寄せる |
-| focus | テキスト色は維持し、`focus-visible` リングで示す |
-| visited | 既読色で分岐しない |
-| touch | 発見可能性を優先し、テキスト自体も `primary` に寄せる |
+| 項目     | 契約                                                  |
+| -------- | ----------------------------------------------------- |
+| 基本色   | `var(--fg-default)`                                   |
+| 識別手段 | **常時下線**                                          |
+| hover    | テキスト色と下線色を `primary-hover` に寄せる         |
+| focus    | テキスト色は維持し、`focus-visible` リングで示す      |
+| visited  | 既読色で分岐しない                                    |
+| touch    | 発見可能性を優先し、テキスト自体も `primary` に寄せる |
 
 現状では `.prose a[href]:not(.heading-anchor)` も同契約で扱われます。つまり、本文中では明示クラスがなくても Text Link 契約が自動適用されます。
 
@@ -135,14 +135,14 @@ Text Link は、次の契約を持ちます。
 
 Control Link は**構造型リンク**です。常時下線は必須ではありません。
 
-| 項目 | 契約 |
-|---|---|
-| 基本色 | `var(--fg-default)` |
-| 基本装飾 | 下線なし |
-| hover | `primary` に変化し、下線を追加 |
-| active | `scale(var(--scale-pressed))` |
-| focus | `focus-visible` リング |
-| visited | 既読色で分岐しない |
+| 項目     | 契約                           |
+| -------- | ------------------------------ |
+| 基本色   | `var(--fg-default)`            |
+| 基本装飾 | 下線なし                       |
+| hover    | `primary` に変化し、下線を追加 |
+| active   | `scale(var(--scale-pressed))`  |
+| focus    | `focus-visible` リング         |
+| visited  | 既読色で分岐しない             |
 
 Control Link では、色以外の識別を**各コンポーネント側**で担保します。具体的には、次のような要素です。
 
@@ -156,11 +156,11 @@ Control Link では、色以外の識別を**各コンポーネント側**で担
 
 現状の CSS では、Control Link 系に対してさらに次の運用バリアントがあります。
 
-| バリアント | クラス | 用途 |
-|---|---|---|
-| **Nav** | `.ui-link` / `.link-control` | 標準のナビゲーションリンク |
-| **Action** | `.link-action` | 作成、編集など操作誘導が強いリンク |
-| **Subtle** | `.link-subtle` | 日付、補助情報、メタデータ |
+| バリアント | クラス                       | 用途                               |
+| ---------- | ---------------------------- | ---------------------------------- |
+| **Nav**    | `.ui-link` / `.link-control` | 標準のナビゲーションリンク         |
+| **Action** | `.link-action`               | 作成、編集など操作誘導が強いリンク |
+| **Subtle** | `.link-subtle`               | 日付、補助情報、メタデータ         |
 
 `link-action` は初期状態から `primary` 系で表示されます。`link-subtle` は `fg-muted` を基準とし、hover で前景化します。
 
@@ -200,12 +200,12 @@ Rouault には `card-link` による **Stretched Link** パターンがありま
 
 これはリンク自体ではなく、`::after` でクリック領域を面に広げるパターンです。
 
-| 項目 | 契約 |
-|---|---|
-| 適用先 | カード全体をクリック領域化したい場合 |
-| 必須条件 | 親コンテナに `position: relative` |
-| focus 表示 | リンク自身ではなく親カードに委譲 |
-| 注意 | 内部の別リンクやボタンは z-index 調整が必要 |
+| 項目       | 契約                                        |
+| ---------- | ------------------------------------------- |
+| 適用先     | カード全体をクリック領域化したい場合        |
+| 必須条件   | 親コンテナに `position: relative`           |
+| focus 表示 | リンク自身ではなく親カードに委譲            |
+| 注意       | 内部の別リンクやボタンは z-index 調整が必要 |
 
 したがって、Rouault の Block Link は「面リンク」であっても、**フォーカスの責務はカード側に持たせる**設計です。
 
@@ -232,12 +232,12 @@ Rouault には `card-link` による **Stretched Link** パターンがありま
 
 Rouault では、`selected` / `current` / `active` / `focused` は同義ではありません。
 
-| 用語 | 意味 | 代表的な表現 |
-|---|---|---|
+| 用語         | 意味                                 | 代表的な表現                                          |
+| ------------ | ------------------------------------ | ----------------------------------------------------- |
 | **selected** | ウィジェット内部で選択されている項目 | `aria-selected`, `selectedValue`, `TreeNode.selected` |
-| **current** | ナビゲーション上の現在地 | `aria-current="page"`, `aria-current="location"` |
-| **active** | 現在注目中、または現在基準となる要素 | `activeId`, `_activeIndex`, active panel |
-| **focused** | キーボードフォーカスが実際にある要素 | `tabindex=0`, DOM focus |
+| **current**  | ナビゲーション上の現在地             | `aria-current="page"`, `aria-current="location"`      |
+| **active**   | 現在注目中、または現在基準となる要素 | `activeId`, `_activeIndex`, active panel              |
+| **focused**  | キーボードフォーカスが実際にある要素 | `tabindex=0`, DOM focus                               |
 
 この4つは分離して扱う必要があります。
 
@@ -247,13 +247,13 @@ Tabs は、**selected の典型**です。
 
 現状の `ui-tabs` は、次の状態を持ちます。
 
-| 状態 | 実装 |
-|---|---|
-| 公開選択値 | `selected-value` |
-| 初期値 | `default-selected-value` |
-| 内部選択位置 | `activeIndex` |
-| 内部フォーカス位置 | `focusedIndex` |
-| DOM表現 | `role="tab"` + `aria-selected` + `tabindex` |
+| 状態               | 実装                                        |
+| ------------------ | ------------------------------------------- |
+| 公開選択値         | `selected-value`                            |
+| 初期値             | `default-selected-value`                    |
+| 内部選択位置       | `activeIndex`                               |
+| 内部フォーカス位置 | `focusedIndex`                              |
+| DOM表現            | `role="tab"` + `aria-selected` + `tabindex` |
 
 解決順序は次のとおりです。
 
@@ -301,11 +301,11 @@ Sidebar は少し特殊で、**見た目上の現在地**を `selected` で持�
 
 同時に、**キーボードフォーカス位置**は `activeId` で別管理です。
 
-| 概念 | Sidebar / File Tree での表現 |
-|---|---|
-| 現在ページ | `TreeNode.selected = true` |
-| フォーカス位置 | `activeId` |
-| 展開状態 | `expanded` |
+| 概念           | Sidebar / File Tree での表現 |
+| -------------- | ---------------------------- |
+| 現在ページ     | `TreeNode.selected = true`   |
+| フォーカス位置 | `activeId`                   |
+| 展開状態       | `expanded`                   |
 
 したがって Sidebar Tree では、「現在ページ」と「現在フォーカスされている行」は分離されています。
 
@@ -337,12 +337,12 @@ Rouault では、`active` が DOM focus を意味しない箇所が多くあり�
 
 新規実装では、次の判断基準を採用します。
 
-| 問い | 採用すべき表現 |
-|---|---|
-| これは widget 内の選択か | `selected` / `aria-selected` |
-| これはページや現在位置か | `current` / `aria-current` |
-| これは内部アルゴリズム上の基準IDか | `activeId` / `activeIndex` |
-| これは実際の DOM focus か | `tabindex`, `.focus()` |
+| 問い                               | 採用すべき表現               |
+| ---------------------------------- | ---------------------------- |
+| これは widget 内の選択か           | `selected` / `aria-selected` |
+| これはページや現在位置か           | `current` / `aria-current`   |
+| これは内部アルゴリズム上の基準IDか | `activeId` / `activeIndex`   |
+| これは実際の DOM focus か          | `tabindex`, `.focus()`       |
 
 ---
 
@@ -352,12 +352,12 @@ Rouault では、`active` が DOM focus を意味しない箇所が多くあり�
 
 Rouault には Overlay が1種類ではなく、少なくとも次の4系統があります。
 
-| 種別 | 主実装 | モーダル性 | 主用途 |
-|---|---|---|---|
-| **Dialog** | `ui-dialog` | modal / non-modal 切替可 | 確認、設定、入力 |
-| **Search Dialog** | `ui-search-dialog` | modal | グローバル検索 |
-| **Popover** | `ui-popover` | non-modal | 補助情報、軽量な詳細表示 |
-| **Sidebar Overlay** | `ui-sidebar-shell[mode="overlay"]` | 画面上は半モーダル | モバイルナビゲーション |
+| 種別                | 主実装                             | モーダル性               | 主用途                   |
+| ------------------- | ---------------------------------- | ------------------------ | ------------------------ |
+| **Dialog**          | `ui-dialog`                        | modal / non-modal 切替可 | 確認、設定、入力         |
+| **Search Dialog**   | `ui-search-dialog`                 | modal                    | グローバル検索           |
+| **Popover**         | `ui-popover`                       | non-modal                | 補助情報、軽量な詳細表示 |
+| **Sidebar Overlay** | `ui-sidebar-shell[mode="overlay"]` | 画面上は半モーダル       | モバイルナビゲーション   |
 
 Rouault ではこれらを一律に扱わず、**フォーカス拘束の強さ**と**URLを持つべきかどうか**で分けています。
 
@@ -396,14 +396,14 @@ Rouault の Overlay は、**状態変更を同期的に見せても、内部で�
 
 `ui-dialog` は Native `<dialog>` をラップします。
 
-| 項目 | 現状契約 |
-|---|---|
-| 開く | `showModal()` または `show()` |
-| 閉じる | close animation 後に `dialog.close()` |
-| accessible name | `title-id` または `aria-label` が必須 |
-| body scroll lock | `data-ui-dialog-open` |
-| focus return | トリガーへ戻す |
-| Escape | modal / non-modal の条件に応じて close |
+| 項目             | 現状契約                               |
+| ---------------- | -------------------------------------- |
+| 開く             | `showModal()` または `show()`          |
+| 閉じる           | close animation 後に `dialog.close()`  |
+| accessible name  | `title-id` または `aria-label` が必須  |
+| body scroll lock | `data-ui-dialog-open`                  |
+| focus return     | トリガーへ戻す                         |
+| Escape           | modal / non-modal の条件に応じて close |
 
 特に重要なのは、Rouault では Dialog が**常に body scroll lock と trigger focus return を伴う**ことです。
 
@@ -411,13 +411,13 @@ Rouault の Overlay は、**状態変更を同期的に見せても、内部で�
 
 `ui-search-dialog` は `ui-dialog` の単なる見た目違いではなく、**専用の modal Overlay** として設計されています。
 
-| 項目 | 現状契約 |
-|---|---|
-| 基盤 | Native `<dialog>` |
-| body scroll lock | `data-ui-search-dialog-open` |
-| 初期フォーカス | 検索フィールド |
-| close 手段 | close button / backdrop / cancel / Esc |
-| 選択モデル | listbox + active option |
+| 項目             | 現状契約                               |
+| ---------------- | -------------------------------------- |
+| 基盤             | Native `<dialog>`                      |
+| body scroll lock | `data-ui-search-dialog-open`           |
+| 初期フォーカス   | 検索フィールド                         |
+| close 手段       | close button / backdrop / cancel / Esc |
+| 選択モデル       | listbox + active option                |
 
 Search Dialog は Overlay であると同時に、**検索中の操作文脈**を持つため、focus return と body lock を dialog helper 群で共有しています。
 
@@ -425,15 +425,15 @@ Search Dialog は Overlay であると同時に、**検索中の操作文脈**�
 
 `ui-popover` は非モーダル Overlay です。
 
-| 項目 | 現状契約 |
-|---|---|
-| API | Popover API を優先し、未対応時は fallback |
-| role | `dialog` |
-| `aria-modal` | `false` |
-| 位置決め | Floating UI (`computePosition`) |
-| クリック外閉じ | fallback 時は document listener |
-| body scroll lock | なし |
-| focus return | close 時に trigger へ戻せる |
+| 項目             | 現状契約                                  |
+| ---------------- | ----------------------------------------- |
+| API              | Popover API を優先し、未対応時は fallback |
+| role             | `dialog`                                  |
+| `aria-modal`     | `false`                                   |
+| 位置決め         | Floating UI (`computePosition`)           |
+| クリック外閉じ   | fallback 時は document listener           |
+| body scroll lock | なし                                      |
+| focus return     | close 時に trigger へ戻せる               |
 
 Popover は Dialog と違い、**body をロックしない**ことが本質です。また、`aria-haspopup="dialog"` を trigger 側に自動補完します。
 
@@ -454,12 +454,12 @@ Popover は Dialog と違い、**body をロックしない**ことが本質で�
 
 現状トークンは、次の順です。
 
-| Token | 値 | 用途 |
-|---|---:|---|
-| `--z-backdrop` | 200 | scrim / backdrop |
-| `--z-modal` | 300 | sidebar overlay 等 |
-| `--z-popover` | 400 | popover、浮動トグル |
-| `--z-toast` | 500 | toast |
+| Token          |  値 | 用途                |
+| -------------- | --: | ------------------- |
+| `--z-backdrop` | 200 | scrim / backdrop    |
+| `--z-modal`    | 300 | sidebar overlay 等  |
+| `--z-popover`  | 400 | popover、浮動トグル |
+| `--z-toast`    | 500 | toast               |
 
 設計上の読み方としては、**modal より popover が上**です。これは一般的な慣例と逆転し得ますが、現状トークンとしてはそうなっています。
 
@@ -467,11 +467,11 @@ Popover は Dialog と違い、**body をロックしない**ことが本質で�
 
 ### 3.8 実務ルール
 
-| 要件 | 採用すべき Overlay |
-|---|---|
-| 操作フローを止める | `ui-dialog` |
-| 検索UI | `ui-search-dialog` |
-| 補助情報、軽量な詳細 | `ui-popover` |
+| 要件                       | 採用すべき Overlay         |
+| -------------------------- | -------------------------- |
+| 操作フローを止める         | `ui-dialog`                |
+| 検索UI                     | `ui-search-dialog`         |
+| 補助情報、軽量な詳細       | `ui-popover`               |
 | モバイルのナビゲーション面 | `ui-sidebar-shell` overlay |
 
 body scroll lock が必要なら Dialog 系、不要なら Popover 系、という切り分けが基本です。
@@ -486,13 +486,13 @@ Rouault では、URL同期は「何でも URL に書く」のではなく、**�
 
 現状の主要パターンは、次のとおりです。
 
-| 状態 | URL 形式 | 主実装 |
-|---|---|---|
-| ページ見出し | `#heading-id` | TOC / hash |
-| 主タブ | `?tab=...` | `ui-tabs[url-sync]` |
-| 検索語 | `?q=...` | search page |
-| 検索タグ | `?tag=...` | search page |
-| 検索ソート | `?sort=...` | search page |
+| 状態         | URL 形式      | 主実装              |
+| ------------ | ------------- | ------------------- |
+| ページ見出し | `#heading-id` | TOC / hash          |
+| 主タブ       | `?tab=...`    | `ui-tabs[url-sync]` |
+| 検索語       | `?q=...`      | search page         |
+| 検索タグ     | `?tag=...`    | search page         |
+| 検索ソート   | `?sort=...`   | search page         |
 
 ### 4.2 Tabs の URL同期
 
@@ -546,11 +546,11 @@ hash または既存 `?tab=` から active tab が確定したあとは、`norma
 
 #### 書き込み
 
-| 操作 | 履歴操作 |
-|---|---|
-| 検索入力 | `replaceState` |
-| タグ切替 | `pushState` |
-| ソート変更 | `pushState` |
+| 操作       | 履歴操作       |
+| ---------- | -------------- |
+| 検索入力   | `replaceState` |
+| タグ切替   | `pushState`    |
+| ソート変更 | `pushState`    |
 
 この差は妥当です。検索入力は文字ごとの中間状態なので戻る履歴を汚しやすく、タグ切替やソート変更はユーザー意図が明確だからです。
 
@@ -564,12 +564,12 @@ hash または既存 `?tab=` から active tab が確定したあとは、`norma
 
 `location-adapter.ts` の役割は、次のとおりです。
 
-| 関数 | 役割 |
-|---|---|
-| `normalizeUrl()` | 比較・履歴更新向け canonical URL を作る |
-| `normalizePathname()` | 末尾スラッシュを除去する |
-| `resolveContentUrl()` | 取得直前のみ trailing slash を補う |
-| `stripHash()` | path + search 単位で比較する |
+| 関数                  | 役割                                    |
+| --------------------- | --------------------------------------- |
+| `normalizeUrl()`      | 比較・履歴更新向け canonical URL を作る |
+| `normalizePathname()` | 末尾スラッシュを除去する                |
+| `resolveContentUrl()` | 取得直前のみ trailing slash を補う      |
+| `stripHash()`         | path + search 単位で比較する            |
 
 このため Rouault の URL は、**表示・比較では末尾スラッシュなし、取得直前だけスラッシュ補完あり**という二層構造です。
 
@@ -590,14 +590,14 @@ hash または既存 `?tab=` から active tab が確定したあとは、`norma
 
 新規機能で URL同期を入れるかどうかは、次で判断します。
 
-| 問い | 判断 |
-|---|---|
-| 共有したい状態か | URL へ載せる |
-| 戻る / 進むで復元されるべきか | URL へ載せる |
-| 一時的な hover / Overlay 開閉か | URL へ載せない |
+| 問い                             | 判断           |
+| -------------------------------- | -------------- |
+| 共有したい状態か                 | URL へ載せる   |
+| 戻る / 進むで復元されるべきか    | URL へ載せる   |
+| 一時的な hover / Overlay 開閉か  | URL へ載せない |
 | 同一ページ内の主セクション選択か | `?tab=` を優先 |
-| 見出し到達点か | `#hash` を優先 |
-| 検索条件か | query string |
+| 見出し到達点か                   | `#hash` を優先 |
+| 検索条件か                       | query string   |
 
 ---
 
@@ -615,9 +615,9 @@ README でも、恒久的リンクはプロジェクトの目的に含まれて�
 
 Rouault における URL の役割分担は、次のとおりです。
 
-| URL 種別 | 形式 | 主な役割 |
-|---|---|---|
-| **Canonical URL** | `/{slug}` | 最新版の表示、SEO、通常のシェア |
+| URL 種別          | 形式               | 主な役割                         |
+| ----------------- | ------------------ | -------------------------------- |
+| **Canonical URL** | `/{slug}`          | 最新版の表示、SEO、通常のシェア  |
 | **Permanent URL** | `/archives/{hash}` | 引用、過去版参照、内容固定の参照 |
 
 この分離は README のパーマリンク戦略と一致しています。`Permanent URL` は過去版参照用であり、`robots: noindex` の扱いも想定されています。
@@ -635,12 +635,12 @@ URL同期が扱うのは、同一ページ内または同一論理ページ上�
 
 一方で恒久的リンクが扱うのは、**表示状態ではなく内容の固定**です。
 
-| 観点 | URL同期 | 恒久的リンク |
-|---|---|---|
-| 主対象 | 表示状態、到達位置、検索条件 | コンテンツの特定版 |
-| 例 | `?tab=...`, `#heading-id`, `?q=...` | `/archives/{hash}` |
-| 主目的 | 再訪、戻る / 進む、共有 | 引用、版保証、過去版参照 |
-| 変化単位 | UI state | コンテンツ本体 |
+| 観点     | URL同期                             | 恒久的リンク             |
+| -------- | ----------------------------------- | ------------------------ |
+| 主対象   | 表示状態、到達位置、検索条件        | コンテンツの特定版       |
+| 例       | `?tab=...`, `#heading-id`, `?q=...` | `/archives/{hash}`       |
+| 主目的   | 再訪、戻る / 進む、共有             | 引用、版保証、過去版参照 |
+| 変化単位 | UI state                            | コンテンツ本体           |
 
 したがって、`?tab=` や `#hash` を持つ URL だけでは、引用対象の版保証はできません。**恒久的リンクは URL同期では埋められない責務を持つ**ため、独立した節にする価値があります。
 
@@ -648,13 +648,13 @@ URL同期が扱うのは、同一ページ内または同一論理ページ上�
 
 README では、Permanent URL のハッシュについて次の契約が定義されています。
 
-| 項目 | 契約 |
-|---|---|
-| URL構造 | `/archives/{hash}` |
-| ハッシュ長 | 12文字 |
-| ハッシュ形式 | 小文字の16進数 |
-| ハッシュ元 | 正規化後の Markdown 全体 |
-| 除外項目 | `updated_at` |
+| 項目         | 契約                     |
+| ------------ | ------------------------ |
+| URL構造      | `/archives/{hash}`       |
+| ハッシュ長   | 12文字                   |
+| ハッシュ形式 | 小文字の16進数           |
+| ハッシュ元   | 正規化後の Markdown 全体 |
+| 除外項目     | `updated_at`             |
 
 また、正規化処理として次が明示されています。
 
@@ -681,11 +681,11 @@ README では、同一内容に戻した場合は既存ハッシュを再利用�
 
 README の UI要件では、次の3点が明示されています。
 
-| 要素 | 契約 |
-|---|---|
+| 要素              | 契約                                               |
+| ----------------- | -------------------------------------------------- |
 | デフォルト提示URL | Permanent URL を優先し、Canonical URL は補足とする |
-| コピー機能 | Permanent URL をワンクリックでコピーできる |
-| アーカイブ警告 | 過去版では「最新版はこちら」を案内する |
+| コピー機能        | Permanent URL をワンクリックでコピーできる         |
+| アーカイブ警告    | 過去版では「最新版はこちら」を案内する             |
 
 したがって UI 設計では、Permanent URL は隠れた内部概念ではなく、**ユーザーが実際に取得し、共有し、読み分ける URL** として扱う必要があります。
 
@@ -704,11 +704,11 @@ Patterns の観点では、次の分離が重要です。
 
 新規実装では、次の判断基準を採用します。
 
-| 問い | 判断 |
-|---|---|
-| 今の表示状態を共有したいか | URL同期を使う |
-| 内容の版を固定して共有したいか | Permanent URL を使う |
-| SEO や通常導線が主目的か | Canonical URL を使う |
+| 問い                           | 判断                     |
+| ------------------------------ | ------------------------ |
+| 今の表示状態を共有したいか     | URL同期を使う            |
+| 内容の版を固定して共有したいか | Permanent URL を使う     |
+| SEO や通常導線が主目的か       | Canonical URL を使う     |
 | 引用・脚注・外部参照が主目的か | Permanent URL を優先する |
 
 ---

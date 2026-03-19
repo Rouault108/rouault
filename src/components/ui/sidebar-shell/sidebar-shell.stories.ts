@@ -222,10 +222,7 @@ export const FixedExpanded: Story = {
  */
 export const FixedCollapsedZenMode: Story = {
   render: () => html`
-    <div
-      id="shell-zen"
-      style="display: grid; grid-template-columns: 0px 1fr; min-height: 400px;"
-    >
+    <div id="shell-zen" style="display: grid; grid-template-columns: 0px 1fr; min-height: 400px;">
       <ui-sidebar-shell id="sidebar-fixed-collapsed" data-state="collapsed" mode="fixed">
         <div role="tree" aria-label="ナビゲーション">
           <a href="/notes" role="treeitem" tabindex="0" aria-selected="true">ノート</a>
@@ -245,10 +242,7 @@ export const FixedCollapsedZenMode: Story = {
     const sidebarContent = getSidebarContent(host);
 
     /* --- collapsed 状態 --- */
-    assert(
-      host.getAttribute('data-state') === 'collapsed',
-      'data-state="collapsed" であること',
-    );
+    assert(host.getAttribute('data-state') === 'collapsed', 'data-state="collapsed" であること');
 
     /* --- inert --- */
     assert(nav.inert, 'collapsed 時に nav は inert であること');
@@ -320,7 +314,10 @@ export const OverlayExpanded: Story = {
     );
 
     /* --- z-index --- */
-    assert(navStyle.zIndex === '300', `nav の z-index が 300 であること (実際: ${navStyle.zIndex})`);
+    assert(
+      navStyle.zIndex === '300',
+      `nav の z-index が 300 であること (実際: ${navStyle.zIndex})`,
+    );
     assert(
       scrimStyle.zIndex === '200',
       `scrim の z-index が 200 であること (実際: ${scrimStyle.zIndex})`,
@@ -335,10 +332,7 @@ export const OverlayExpanded: Story = {
 
     /* --- header スロット表示（overlay では表示） --- */
     const headerStyle = getComputedStyle(sidebarHeader);
-    assert(
-      headerStyle.display !== 'none',
-      'Overlay モードでは .sidebar-header が表示されること',
-    );
+    assert(headerStyle.display !== 'none', 'Overlay モードでは .sidebar-header が表示されること');
 
     /* --- inert なし --- */
     assert(!nav.inert, 'expanded 時に nav は inert でないこと');
@@ -438,8 +432,10 @@ export const FixedToggleStateTransition: Story = {
     assert(document.activeElement === trigger, 'トリガーにフォーカスが当たっていること');
 
     /* --- Collapse --- */
-    const collapseEventPromise =
-      waitForEvent<CustomEvent<UiSidebarStateChangeDetail>>(host, 'ui-sidebar-state-change');
+    const collapseEventPromise = waitForEvent<CustomEvent<UiSidebarStateChangeDetail>>(
+      host,
+      'ui-sidebar-state-change',
+    );
     host.collapse();
     const collapseEvent = await collapseEventPromise;
     await flush(host);
@@ -454,10 +450,7 @@ export const FixedToggleStateTransition: Story = {
       collapseEvent.detail.state === 'collapsed',
       'イベント detail.state が collapsed であること',
     );
-    assert(
-      collapseEvent.detail.mode === 'fixed',
-      'イベント detail.mode が fixed であること',
-    );
+    assert(collapseEvent.detail.mode === 'fixed', 'イベント detail.mode が fixed であること');
 
     /* --- Fixed モードではフォーカスが移動しない --- */
     assert(
@@ -466,8 +459,10 @@ export const FixedToggleStateTransition: Story = {
     );
 
     /* --- Expand --- */
-    const expandEventPromise =
-      waitForEvent<CustomEvent<UiSidebarStateChangeDetail>>(host, 'ui-sidebar-state-change');
+    const expandEventPromise = waitForEvent<CustomEvent<UiSidebarStateChangeDetail>>(
+      host,
+      'ui-sidebar-state-change',
+    );
     host.expand();
     const expandEvent = await expandEventPromise;
     await flush(host);
@@ -478,10 +473,7 @@ export const FixedToggleStateTransition: Story = {
       (nav.style.visibility as string) === 'visible',
       'expand 後に visibility: visible であること',
     );
-    assert(
-      expandEvent.detail.state === 'expanded',
-      'イベント detail.state が expanded であること',
-    );
+    assert(expandEvent.detail.state === 'expanded', 'イベント detail.state が expanded であること');
 
     /* --- Fixed モードではフォーカスが移動しない --- */
     assert(
@@ -512,7 +504,9 @@ export const OverlayOpenCloseFocusManagement: Story = {
           音楽
         </button>
         <div role="tree" aria-label="ナビゲーション">
-          <a href="/notes" role="treeitem" tabindex="0" id="first-link" aria-selected="true">ノート</a>
+          <a href="/notes" role="treeitem" tabindex="0" id="first-link" aria-selected="true"
+            >ノート</a
+          >
           <a href="/music" role="treeitem" tabindex="-1" aria-selected="false">音楽</a>
         </div>
       </ui-sidebar-shell>
@@ -626,7 +620,9 @@ export const OverlayEscapeKeyClose: Story = {
 
       <ui-sidebar-shell id="sidebar-esc-overlay" data-state="collapsed" mode="overlay">
         <div role="tree" aria-label="ナビゲーション">
-          <a href="/notes" role="treeitem" tabindex="0" id="esc-first-link" aria-selected="true">ノート</a>
+          <a href="/notes" role="treeitem" tabindex="0" id="esc-first-link" aria-selected="true"
+            >ノート</a
+          >
         </div>
       </ui-sidebar-shell>
 
@@ -662,10 +658,7 @@ export const OverlayEscapeKeyClose: Story = {
     await flush(overlayHost);
 
     assert((overlayHost.state as string) === 'collapsed', 'Esc キーで Overlay が格納されること');
-    assert(
-      document.activeElement === trigger,
-      'Esc 格納後にトリガーへフォーカスが返却されること',
-    );
+    assert(document.activeElement === trigger, 'Esc 格納後にトリガーへフォーカスが返却されること');
 
     /* --- Fixed: Esc では閉じない --- */
     const fixedHost = getHost(canvasElement, 'sidebar-esc-fixed');
@@ -709,8 +702,10 @@ export const EventDetailAndNoBubbling: Story = {
     parent.addEventListener('ui-sidebar-state-change', parentListener);
 
     /* --- Collapse --- */
-    const eventPromise =
-      waitForEvent<CustomEvent<UiSidebarStateChangeDetail>>(host, 'ui-sidebar-state-change');
+    const eventPromise = waitForEvent<CustomEvent<UiSidebarStateChangeDetail>>(
+      host,
+      'ui-sidebar-state-change',
+    );
     host.collapse();
     const event = await eventPromise;
     await flush(host);
@@ -741,7 +736,9 @@ export const NoFocusTrapInOverlay: Story = {
 
       <ui-sidebar-shell id="sidebar-no-trap" data-state="collapsed" mode="overlay">
         <div role="tree" aria-label="ナビゲーション">
-          <a href="/notes" role="treeitem" tabindex="0" id="trap-link" aria-selected="true">ノート</a>
+          <a href="/notes" role="treeitem" tabindex="0" id="trap-link" aria-selected="true"
+            >ノート</a
+          >
         </div>
       </ui-sidebar-shell>
     </div>

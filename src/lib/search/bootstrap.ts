@@ -10,7 +10,9 @@ import {
 
 interface SearchDialogElement extends HTMLElement {
   open(trigger?: HTMLElement): void;
-  searcher?: (query: string) => Promise<readonly UiSearchDialogItem[]> | readonly UiSearchDialogItem[];
+  searcher?: (
+    query: string,
+  ) => Promise<readonly UiSearchDialogItem[]> | readonly UiSearchDialogItem[];
 }
 
 let initialized = false;
@@ -59,9 +61,7 @@ export function initSearch(): void {
           }))
         : [];
     const catalogItems =
-      catalogResult.status === 'fulfilled'
-        ? searchSearchCatalog(catalogResult.value, query)
-        : [];
+      catalogResult.status === 'fulfilled' ? searchSearchCatalog(catalogResult.value, query) : [];
 
     if (pagefindResult.status === 'rejected' && catalogItems.length === 0) {
       throw pagefindResult.reason;
@@ -95,12 +95,18 @@ export function initSearch(): void {
     }
 
     const target = event.target;
-    if (target instanceof HTMLElement && (target.isContentEditable || target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) {
+    if (
+      target instanceof HTMLElement &&
+      (target.isContentEditable ||
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement)
+    ) {
       return;
     }
 
     event.preventDefault();
-    const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
+    const trigger =
+      document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
     dialog.open(trigger);
   });
 }

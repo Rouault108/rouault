@@ -44,7 +44,7 @@ if (!firstItem) {
 
 const buildRows = (rows: StoryItem[]): TemplateResult[] => {
   return rows.map(
-    item => html`
+    (item) => html`
       <ui-list-item item-id="${item.id}" href="${item.href ?? ''}">
         <a slot="title" href="${item.href ?? '#'}">${item.title}</a>
         <time slot="date" datetime="${item.date}">${item.date}</time>
@@ -98,7 +98,8 @@ export const Default: Story = {
     if (!grid) throw new Error('grid が見つかりません');
 
     const headers = list.shadowRoot?.querySelectorAll('[role="columnheader"]');
-    if (headers?.length !== 4) throw new Error(`columnheader 数が不正です: ${String(headers?.length)}`);
+    if (headers?.length !== 4)
+      throw new Error(`columnheader 数が不正です: ${String(headers?.length)}`);
 
     const rowHosts = list.querySelectorAll('ui-list-item');
     if (rowHosts.length !== 5) throw new Error(`行数が不正です: ${String(rowHosts.length)}`);
@@ -106,7 +107,9 @@ export const Default: Story = {
       throw new Error('先頭行の data-item-id が同期されていません');
     }
 
-    const firstCell = rowHosts[0].shadowRoot?.querySelector('[role="gridcell"][data-col-index="0"]');
+    const firstCell = rowHosts[0].shadowRoot?.querySelector(
+      '[role="gridcell"][data-col-index="0"]',
+    );
     if (!firstCell) throw new Error('先頭セルが描画されていません');
   },
 };
@@ -137,8 +140,9 @@ export const SortCycle: Story = {
     await list.updateComplete;
 
     const sortEvents: { key: string | null; direction: SortDirection }[] = [];
-    list.addEventListener('ui-sort-change', event => {
-      const detail = (event as CustomEvent<{ key: string | null; direction: SortDirection }>).detail;
+    list.addEventListener('ui-sort-change', (event) => {
+      const detail = (event as CustomEvent<{ key: string | null; direction: SortDirection }>)
+        .detail;
       sortEvents.push(detail);
       list.sortKey = detail.key;
       list.sortDirection = detail.direction;
@@ -172,17 +176,21 @@ export const KeyboardRowNavigation: Story = {
     await list.updateComplete;
 
     const activeChanges: { rowId: string; colIndex: number }[] = [];
-    list.addEventListener('ui-active-change', event => {
+    list.addEventListener('ui-active-change', (event) => {
       const detail = (event as CustomEvent<{ rowId: string; colIndex: number }>).detail;
       activeChanges.push(detail);
     });
 
     const firstRow = list.querySelectorAll('ui-list-item')[0];
-    const firstMetaCell = firstRow?.shadowRoot?.querySelector<HTMLElement>('.cell[data-col-index="1"]');
+    const firstMetaCell = firstRow?.shadowRoot?.querySelector<HTMLElement>(
+      '.cell[data-col-index="1"]',
+    );
     if (!firstMetaCell) throw new Error('初期セルが見つかりません');
 
     firstMetaCell.focus();
-    firstMetaCell.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }));
+    firstMetaCell.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }),
+    );
     await list.updateComplete;
 
     if (list.activeRow !== 'n-2' || list.activeCellIndex !== 1) {
@@ -204,7 +212,7 @@ export const CellHorizontalNavigation: Story = {
     await list.updateComplete;
 
     const changes: { rowId: string; colIndex: number }[] = [];
-    list.addEventListener('ui-active-change', event => {
+    list.addEventListener('ui-active-change', (event) => {
       changes.push((event as CustomEvent<{ rowId: string; colIndex: number }>).detail);
     });
 
@@ -242,10 +250,10 @@ export const PreviewAndContextRequests: Story = {
     let previewRowId: string | null = null;
     const contextRowIds: string[] = [];
 
-    list.addEventListener('ui-preview-request', event => {
+    list.addEventListener('ui-preview-request', (event) => {
       previewRowId = (event as CustomEvent<{ rowId: string }>).detail.rowId;
     });
-    list.addEventListener('ui-context-request', event => {
+    list.addEventListener('ui-context-request', (event) => {
       contextRowIds.push((event as CustomEvent<{ rowId: string }>).detail.rowId);
     });
 
@@ -262,7 +270,8 @@ export const PreviewAndContextRequests: Story = {
     cell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, composed: true, button: 2 }));
     await list.updateComplete;
 
-    if ((previewRowId as string | null) !== 'n-2') throw new Error('Shift+Space の preview 要求が不正です');
+    if ((previewRowId as string | null) !== 'n-2')
+      throw new Error('Shift+Space の preview 要求が不正です');
     if (contextRowIds.length !== 2 || contextRowIds[0] !== 'n-2' || contextRowIds[1] !== 'n-2') {
       throw new Error('コンテキストメニュー要求が不正です');
     }
@@ -324,7 +333,8 @@ export const MobileColumnsAndSupplement: Story = {
     await list.updateComplete;
 
     const headers = list.shadowRoot?.querySelectorAll('[role="columnheader"]');
-    if (headers?.length !== 2) throw new Error(`モバイル時のヘッダー数が不正です: ${String(headers?.length)}`);
+    if (headers?.length !== 2)
+      throw new Error(`モバイル時のヘッダー数が不正です: ${String(headers?.length)}`);
 
     const firstRow = list.querySelector('ui-list-item');
     await firstRow?.updateComplete;
@@ -357,7 +367,9 @@ export const SingleRowBoundary: Story = {
     const cell = row?.shadowRoot?.querySelector<HTMLElement>('.cell[data-col-index="0"]');
     if (!cell) throw new Error('検証対象セルが見つかりません');
 
-    cell.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }));
+    cell.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }),
+    );
     await list.updateComplete;
 
     if (activeChangeCount !== 0) throw new Error('単一行で ArrowDown による遷移は発生しません');

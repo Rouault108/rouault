@@ -36,7 +36,9 @@ export class LocationAdapter {
       }
     }
 
-    return this.normalizeUrl(`${window.location.pathname}${window.location.search}${window.location.hash}`);
+    return this.normalizeUrl(
+      `${window.location.pathname}${window.location.search}${window.location.hash}`,
+    );
   }
 
   createHistoryState(

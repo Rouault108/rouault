@@ -127,7 +127,8 @@ export class Details extends LitElement {
       overflow: hidden;
       visibility: hidden;
       transition:
-        grid-template-rows var(--duration-slow, 200ms) var(--ease-in, cubic-bezier(0.55, 0, 1, 0.45)),
+        grid-template-rows var(--duration-slow, 200ms)
+          var(--ease-in, cubic-bezier(0.55, 0, 1, 0.45)),
         opacity var(--duration-slow, 200ms) var(--ease-in, cubic-bezier(0.55, 0, 1, 0.45)),
         visibility 0s linear var(--duration-slow, 200ms);
     }
@@ -137,7 +138,8 @@ export class Details extends LitElement {
       opacity: 1;
       visibility: visible;
       transition:
-        grid-template-rows var(--duration-slow, 200ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        grid-template-rows var(--duration-slow, 200ms)
+          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
         opacity var(--duration-slow, 200ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
         visibility 0s linear 0s;
     }

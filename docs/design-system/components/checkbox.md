@@ -59,17 +59,17 @@ Rouault における checkbox は、フォーム UI のための汎用コント�
 
 ### 3.2 入力契約
 
-| 名前              | 種別                                     | 必須  | 内容      | 契約                               |
-| --------------- | -------------------------------------- | --- | ------- | -------------------------------- |
-| `checked`       | property / attribute                   | いいえ | 選択状態    | `true` の場合のみ選択済みとして扱います          |
-| `indeterminate` | property                               | いいえ | 中間状態    | プロパティ入力専用です。外部属性入力は公開契約に含みません    |
-| `name`          | property / attribute                   | いいえ | フォーム送信名 | 空文字列の場合、送信値に参加しません               |
-| `value`         | property / attribute                   | いいえ | フォーム送信値 | 既定値は `'on'` です                   |
-| `label`         | property / attribute                   | いいえ | 可視ラベル   | テキストのみを受け付けます                    |
-| `disabled`      | property / attribute                   | いいえ | 無効状態    | `true` の場合は操作不可、送信対象外です          |
-| `required`      | property / attribute                   | いいえ | 必須状態    | `checked=false` のとき妥当性エラー要因になります |
-| `invalid`       | property / attribute                   | いいえ | 外部エラー状態 | `errorMessage` と組み合わせて使用します      |
-| `errorMessage`  | property / attribute (`error-message`) | いいえ | エラー文言   | `invalid=true` と併用します            |
+| 名前            | 種別                                   | 必須   | 内容           | 契約                                                       |
+| --------------- | -------------------------------------- | ------ | -------------- | ---------------------------------------------------------- |
+| `checked`       | property / attribute                   | いいえ | 選択状態       | `true` の場合のみ選択済みとして扱います                    |
+| `indeterminate` | property                               | いいえ | 中間状態       | プロパティ入力専用です。外部属性入力は公開契約に含みません |
+| `name`          | property / attribute                   | いいえ | フォーム送信名 | 空文字列の場合、送信値に参加しません                       |
+| `value`         | property / attribute                   | いいえ | フォーム送信値 | 既定値は `'on'` です                                       |
+| `label`         | property / attribute                   | いいえ | 可視ラベル     | テキストのみを受け付けます                                 |
+| `disabled`      | property / attribute                   | いいえ | 無効状態       | `true` の場合は操作不可、送信対象外です                    |
+| `required`      | property / attribute                   | いいえ | 必須状態       | `checked=false` のとき妥当性エラー要因になります           |
+| `invalid`       | property / attribute                   | いいえ | 外部エラー状態 | `errorMessage` と組み合わせて使用します                    |
+| `errorMessage`  | property / attribute (`error-message`) | いいえ | エラー文言     | `invalid=true` と併用します                                |
 
 ### 3.3 属性反映契約
 
@@ -77,28 +77,28 @@ Rouault における checkbox は、フォーム UI のための汎用コント�
 
 `indeterminate` は property のみを公開入力とします。一方で、実装はスタイリングのため host 上へ `indeterminate` 属性を導出反映します。この属性は**公開 API ではなく内部状態の可視化**です。
 
-| property        | attribute       | reflect | 備考                                             |
-| --------------- | --------------- | ------- | ---------------------------------------------- |
-| `checked`       | `checked`       | あり      | boolean attribute として扱います                      |
-| `indeterminate` | なし（入力不可）        | なし      | property 入力のみです。host の `indeterminate` は導出属性です |
-| `name`          | `name`          | あり      | 送信名です                                          |
-| `value`         | `value`         | あり      | 既定値は `'on'` です                                 |
-| `label`         | `label`         | あり      | テキストラベルです                                      |
-| `disabled`      | `disabled`      | あり      | boolean attribute として扱います                      |
-| `required`      | `required`      | あり      | boolean attribute として扱います                      |
-| `invalid`       | `invalid`       | あり      | 外部エラー状態です                                      |
-| `errorMessage`  | `error-message` | あり      | エラー文言です                                        |
+| property        | attribute        | reflect | 備考                                                          |
+| --------------- | ---------------- | ------- | ------------------------------------------------------------- |
+| `checked`       | `checked`        | あり    | boolean attribute として扱います                              |
+| `indeterminate` | なし（入力不可） | なし    | property 入力のみです。host の `indeterminate` は導出属性です |
+| `name`          | `name`           | あり    | 送信名です                                                    |
+| `value`         | `value`          | あり    | 既定値は `'on'` です                                          |
+| `label`         | `label`          | あり    | テキストラベルです                                            |
+| `disabled`      | `disabled`       | あり    | boolean attribute として扱います                              |
+| `required`      | `required`       | あり    | boolean attribute として扱います                              |
+| `invalid`       | `invalid`        | あり    | 外部エラー状態です                                            |
+| `errorMessage`  | `error-message`  | あり    | エラー文言です                                                |
 
 ### 3.4 公開イベント契約
 
 `ui-checkbox` は、**ユーザー操作による状態変化時にのみ**次のイベントを発火します。
 
-| 名前       | 発火条件                                                        | bubbles | composed | cancelable | 契約           |
-| -------- | ----------------------------------------------------------- | ------- | -------- | ---------- | ------------ |
-| `input`  | control のクリック、label のクリック、または control 上の Space キーで状態が変化した直後 | あり      | あり       | なし         | 状態更新後の一次通知です |
-| `change` | `input` 発火後                                                 | あり      | あり       | なし         | 確定通知です       |
+| 名前     | 発火条件                                                                                 | bubbles | composed | cancelable | 契約                     |
+| -------- | ---------------------------------------------------------------------------------------- | ------- | -------- | ---------- | ------------------------ |
+| `input`  | control のクリック、label のクリック、または control 上の Space キーで状態が変化した直後 | あり    | あり     | なし       | 状態更新後の一次通知です |
+| `change` | `input` 発火後                                                                           | あり    | あり     | なし       | 確定通知です             |
 
-イベント順序は ``** → **`` で固定します。どちらのイベントも、`checked` および `indeterminate` の内部状態、FormData 参加状態、妥当性状態の同期が完了した後に発火します。
+イベント順序は `** → **` で固定します。どちらのイベントも、`checked` および `indeterminate` の内部状態、FormData 参加状態、妥当性状態の同期が完了した後に発火します。
 
 プロパティの直接代入による状態変更では、これらのイベントは自動発火しません。利用者は**プログラム変更とユーザー操作を同一視してはなりません**（MUST NOT）。
 
@@ -106,12 +106,12 @@ Rouault における checkbox は、フォーム UI のための汎用コント�
 
 `ui-checkbox` は、Shadow DOM 内の操作対象を直接探索させないため、次の公開メソッドを持ちます。
 
-| 名前                 | 種別     | 契約                                                                             |
-| ------------------ | ------ | ------------------------------------------------------------------------------ |
+| 名前               | 種別   | 契約                                                                                                        |
+| ------------------ | ------ | ----------------------------------------------------------------------------------------------------------- |
 | `focus(options?)`  | method | `disabled=false` の場合に限り内部 control にフォーカスを委譲します。`disabled=true` の場合は no-op とします |
-| `blur()`           | method | 内部 control からフォーカスを外します                                                        |
-| `checkValidity()`  | method | 現在の妥当性状態を返します                                                                  |
-| `reportValidity()` | method | 妥当性状態をレポートします                                                                  |
+| `blur()`           | method | 内部 control からフォーカスを外します                                                                       |
+| `checkValidity()`  | method | 現在の妥当性状態を返します                                                                                  |
+| `reportValidity()` | method | 妥当性状態をレポートします                                                                                  |
 
 ### 3.6 フォーム初期値・reset / state restore 契約
 
@@ -330,26 +330,26 @@ Indeterminate → Unchecked
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途        | トークン                                                                                      |
-| --------- | ----------------------------------------------------------------------------------------- |
-| 選択背景・境界線  | `--primary`                                                                               |
+| 用途             | トークン                                                                                  |
+| ---------------- | ----------------------------------------------------------------------------------------- |
+| 選択背景・境界線 | `--primary`                                                                               |
 | 選択アイコン色   | `--on-primary`                                                                            |
-| 未選択背景     | `--bg-fill-muted`                                                                         |
-| 未選択境界線    | `--border-muted`                                                                          |
-| hover 境界線 | `--border-default`                                                                        |
-| エラー境界線    | `--border-danger`                                                                         |
-| ラベル色      | `--fg-default`                                                                            |
-| エラー文字色    | `--fg-danger`                                                                             |
-| 無効不透明度    | `--opacity-disabled`                                                                      |
-| 角丸        | `--radius-sm`                                                                             |
-| ボーダー幅     | `--border-width`                                                                          |
-| 押下スケール    | `--scale-pressed`                                                                         |
-| 遷移時間      | `--duration-fast`                                                                         |
-| イージング     | `--ease-out`                                                                              |
-| フォーカスリング  | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
+| 未選択背景       | `--bg-fill-muted`                                                                         |
+| 未選択境界線     | `--border-muted`                                                                          |
+| hover 境界線     | `--border-default`                                                                        |
+| エラー境界線     | `--border-danger`                                                                         |
+| ラベル色         | `--fg-default`                                                                            |
+| エラー文字色     | `--fg-danger`                                                                             |
+| 無効不透明度     | `--opacity-disabled`                                                                      |
+| 角丸             | `--radius-sm`                                                                             |
+| ボーダー幅       | `--border-width`                                                                          |
+| 押下スケール     | `--scale-pressed`                                                                         |
+| 遷移時間         | `--duration-fast`                                                                         |
+| イージング       | `--ease-out`                                                                              |
+| フォーカスリング | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
 | 最小タッチ領域   | `--control-min-touch`                                                                     |
 | タイポグラフィ   | `--text-base` / `--text-sm` / `--line-height-normal`                                      |
-| 余白        | `--space-2`                                                                               |
+| 余白             | `--space-2`                                                                               |
 
 ---
 
@@ -389,7 +389,7 @@ print 専用スタイルは定義していません。印刷時の表示制御�
 - label のクリック
 - control 上での Space キー
 
-このとき、状態遷移後に ``**、ついで **`` を発火します。
+このとき、状態遷移後に `**、ついで **` を発火します。
 
 Enter キーは control の正規操作には含みません。checkbox は button ではないため、キーボード起動は Space を正規とします。label 自体の Enter 起動も公開契約に含みません。
 
@@ -397,12 +397,12 @@ Enter キーは control の正規操作には含みません。checkbox は butt
 
 `ui-checkbox` は Form-Associated Custom Element です。したがって、内部にネイティブ `<input type="checkbox">` を持たなくても、FormData に参加できます。
 
-| 条件                                                | 振る舞い                 |
-| ------------------------------------------------- | -------------------- |
+| 条件                                                  | 振る舞い                         |
+| ----------------------------------------------------- | -------------------------------- |
 | `checked=true` かつ `disabled=false` かつ `name!==''` | `value` を送信値として設定します |
-| `checked=false`                                   | 送信値は `null` です       |
-| `disabled=true`                                   | 送信値は `null` です       |
-| `name=''`                                         | 送信値は `null` です       |
+| `checked=false`                                       | 送信値は `null` です             |
+| `disabled=true`                                       | 送信値は `null` です             |
+| `name=''`                                             | 送信値は `null` です             |
 
 同一 `name` を持つ複数の `ui-checkbox` は、**相互排他グループではなく独立した送信単位**として扱います。したがって、同名 checkbox 群に対して単一選択制御や値の集約意味を与えることは本コンポーネントの責務ではありません。
 
@@ -412,10 +412,10 @@ Enter キーは control の正規操作には含みません。checkbox は butt
 
 妥当性は `ElementInternals` に同期されます。
 
-| 条件                                  | 妥当性            |
-| ----------------------------------- | -------------- |
+| 条件                                    | 妥当性         |
+| --------------------------------------- | -------------- |
 | `invalid=true` かつ `errorMessage` 非空 | `customError`  |
-| `required=true` かつ `checked=false`  | `valueMissing` |
+| `required=true` かつ `checked=false`    | `valueMissing` |
 | それ以外                                | valid          |
 
 `checkValidity()` と `reportValidity()` はこの内部状態に従います。
@@ -428,10 +428,10 @@ Enter キーは control の正規操作には含みません。checkbox は butt
 
 外部スタイル拡張は、CSS Custom Properties と `::part(...)` を通じて行います。公開 part は次の 2 つです。
 
-| part 名    | 役割               |
-| --------- | ---------------- |
+| part 名   | 役割                   |
+| --------- | ---------------------- |
 | `control` | 視覚上の checkbox 本体 |
-| `label`   | 可視ラベル            |
+| `label`   | 可視ラベル             |
 
 `error-message` は現行公開 part に含みません。したがって、エラー文言のスタイリングは公開トークンの範囲で成立させ、内部 `.error-message` class や Shadow DOM 内部構造への依存は公開契約として認めません。
 
@@ -481,30 +481,30 @@ Enter キーは control の正規操作には含みません。checkbox は butt
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
 
-| Story                        | 固定する契約                                                                                                                             |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `Default`                    | 既定状態が未選択であり、`role="checkbox"`、`aria-checked="false"`、`tabindex="0"` を持つこと                                                          |
-| `UncheckedNormal`            | 未選択時の基本状態が成立すること                                                                                                                   |
-| `CheckedNormal`              | checked 時に `aria-checked="true"` と check icon が成立すること                                                                              |
-| `IndeterminateNormal`        | indeterminate 時に `aria-checked="mixed"` と minus icon が成立すること                                                                       |
-| `UncheckedDisabled`          | disabled 時に `aria-disabled="true"` かつ `tabindex="-1"` となること                                                                        |
-| `CheckedDisabled`            | checked + disabled が両立し、操作不能であること                                                                                                  |
-| `IndeterminateDisabled`      | indeterminate + disabled が両立し、操作不能であること                                                                                            |
-| `UncheckedInvalid`           | `invalid + errorMessage` により `aria-invalid`、error message、`aria-describedby` が成立すること。visible error はこの組み合わせでのみ成立することの参照 Storyとします  |
-| `CheckedInvalid`             | checked 状態でも外部 invalid を重ねられること                                                                                                    |
-| `AllStates`                  | 主要状態の一覧が同時描画できること                                                                                                                  |
-| `ClickToggle`                | クリックで状態がトグルし、`input`、ついで `change` が発火すること                                                                                          |
-| `LabelClickToggle`           | ラベルクリックで状態がトグルすること                                                                                                                 |
-| `KeyboardToggle`             | Space キーで状態がトグルすること                                                                                                                |
-| `IndeterminateToUnchecked`   | indeterminate からのユーザー遷移先が unchecked であること                                                                                          |
-| `CheckedClearsIndeterminate` | `checked=true` により `indeterminate` が自動解除されること                                                                                      |
-| `DisabledClickBlocked`       | disabled 時にクリックが無効化され、状態変化もイベント発火も起きないこと                                                                                           |
-| `NoLabel`                    | ラベルなし運用では外部 ARIA 名が必要であること。`label` がない場合のアクセシブル名入力経路を確認する Story として扱います                                                            |
-| `DarkThemeStates`            | トークン差し替えによるダークテーマ表示が成立すること                                                                                                         |
-| `ForcedColorsSimulation`     | forced colors 相当の表示が成立すること                                                                                                         |
-| `FormIntegration`            | checked / disabled / name 条件に応じて FormData 参加が切り替わること。同一 `name` を持つ複数 checkbox は相互排他ではなく独立送信単位として扱う契約の参照 Story とします                 |
+| Story                        | 固定する契約                                                                                                                                                                     |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Default`                    | 既定状態が未選択であり、`role="checkbox"`、`aria-checked="false"`、`tabindex="0"` を持つこと                                                                                     |
+| `UncheckedNormal`            | 未選択時の基本状態が成立すること                                                                                                                                                 |
+| `CheckedNormal`              | checked 時に `aria-checked="true"` と check icon が成立すること                                                                                                                  |
+| `IndeterminateNormal`        | indeterminate 時に `aria-checked="mixed"` と minus icon が成立すること                                                                                                           |
+| `UncheckedDisabled`          | disabled 時に `aria-disabled="true"` かつ `tabindex="-1"` となること                                                                                                             |
+| `CheckedDisabled`            | checked + disabled が両立し、操作不能であること                                                                                                                                  |
+| `IndeterminateDisabled`      | indeterminate + disabled が両立し、操作不能であること                                                                                                                            |
+| `UncheckedInvalid`           | `invalid + errorMessage` により `aria-invalid`、error message、`aria-describedby` が成立すること。visible error はこの組み合わせでのみ成立することの参照 Storyとします           |
+| `CheckedInvalid`             | checked 状態でも外部 invalid を重ねられること                                                                                                                                    |
+| `AllStates`                  | 主要状態の一覧が同時描画できること                                                                                                                                               |
+| `ClickToggle`                | クリックで状態がトグルし、`input`、ついで `change` が発火すること                                                                                                                |
+| `LabelClickToggle`           | ラベルクリックで状態がトグルすること                                                                                                                                             |
+| `KeyboardToggle`             | Space キーで状態がトグルすること                                                                                                                                                 |
+| `IndeterminateToUnchecked`   | indeterminate からのユーザー遷移先が unchecked であること                                                                                                                        |
+| `CheckedClearsIndeterminate` | `checked=true` により `indeterminate` が自動解除されること                                                                                                                       |
+| `DisabledClickBlocked`       | disabled 時にクリックが無効化され、状態変化もイベント発火も起きないこと                                                                                                          |
+| `NoLabel`                    | ラベルなし運用では外部 ARIA 名が必要であること。`label` がない場合のアクセシブル名入力経路を確認する Story として扱います                                                        |
+| `DarkThemeStates`            | トークン差し替えによるダークテーマ表示が成立すること                                                                                                                             |
+| `ForcedColorsSimulation`     | forced colors 相当の表示が成立すること                                                                                                                                           |
+| `FormIntegration`            | checked / disabled / name 条件に応じて FormData 参加が切り替わること。同一 `name` を持つ複数 checkbox は相互排他ではなく独立送信単位として扱う契約の参照 Story とします          |
 | `RequiredValidation`         | required と `checkValidity()` の組み合わせが成立すること。required は内部妥当性制約であり、visible error は `invalid + errorMessage` により外部制御することの参照 Story とします |
-| `SelectAllPattern`           | 親子 checkbox の tri-state パターン例が成立すること                                                                                               |
+| `SelectAllPattern`           | 親子 checkbox の tri-state パターン例が成立すること                                                                                                                              |
 
 ### 10.1 Storybook 契約の読み方
 
@@ -675,4 +675,3 @@ Enter キーは control の正規操作には含みません。checkbox は butt
 ### 13.15 本節の扱い
 
 本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用または修正する場合は、実装、Storybook、契約書の 3 点を同時に更新し、未整合状態を残したまま公開契約へ昇格させません。
-

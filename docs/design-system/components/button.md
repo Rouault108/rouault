@@ -53,24 +53,24 @@ Rouault における button は、操作要素であると同時に、**本文�
 
 ### 入力契約
 
-| 名前 | 種別 | 必須 | 内容 | 契約 |
-| --- | --- | --- | --- | --- |
-| `variant` | property / attribute | いいえ | 視覚的強度 | `primary` / `secondary` / `outline` / `ghost` / `danger` |
-| `size` | property / attribute | いいえ | ボタンサイズ | `sm` / `md` / `lg`。既定値は `md`、`lg` は非推奨です |
-| `iconOnly` | property / attribute (`icon-only`) | いいえ | アイコンのみ表示 | `true` の場合、既定スロットはアイコン単独入力のみを正規入力とし、`aria-label` が必須です |
-| `ariaLabel` | property / attribute (`aria-label`) | いいえ | アクセシブル名 | `iconOnly=true` の場合にのみ使用します |
-| `pressed` | property / attribute | いいえ | トグル押下状態 | 外部制御専用です。与えた場合のみ `aria-pressed` を出力し、自動反転は行いません |
-| `loading` | property / attribute | いいえ | 処理中状態 | `true` の場合は内部 button を非活性化し、`aria-busy="true"` を付与します |
-| `disabled` | property / attribute | いいえ | 不活性状態 | `true` の場合は内部 button を非活性化します |
-| `type` | property / attribute | いいえ | フォーム動作種別 | `button` / `submit` / `reset`。既定値は `button` です |
-| `form` | property / attribute | いいえ | フォーム所有者 | フォーム外配置時に関連付けできます |
+| 名前        | 種別                                | 必須   | 内容             | 契約                                                                                     |
+| ----------- | ----------------------------------- | ------ | ---------------- | ---------------------------------------------------------------------------------------- |
+| `variant`   | property / attribute                | いいえ | 視覚的強度       | `primary` / `secondary` / `outline` / `ghost` / `danger`                                 |
+| `size`      | property / attribute                | いいえ | ボタンサイズ     | `sm` / `md` / `lg`。既定値は `md`、`lg` は非推奨です                                     |
+| `iconOnly`  | property / attribute (`icon-only`)  | いいえ | アイコンのみ表示 | `true` の場合、既定スロットはアイコン単独入力のみを正規入力とし、`aria-label` が必須です |
+| `ariaLabel` | property / attribute (`aria-label`) | いいえ | アクセシブル名   | `iconOnly=true` の場合にのみ使用します                                                   |
+| `pressed`   | property / attribute                | いいえ | トグル押下状態   | 外部制御専用です。与えた場合のみ `aria-pressed` を出力し、自動反転は行いません           |
+| `loading`   | property / attribute                | いいえ | 処理中状態       | `true` の場合は内部 button を非活性化し、`aria-busy="true"` を付与します                 |
+| `disabled`  | property / attribute                | いいえ | 不活性状態       | `true` の場合は内部 button を非活性化します                                              |
+| `type`      | property / attribute                | いいえ | フォーム動作種別 | `button` / `submit` / `reset`。既定値は `button` です                                    |
+| `form`      | property / attribute                | いいえ | フォーム所有者   | フォーム外配置時に関連付けできます                                                       |
 
 ### スロット契約
 
-| 名前 | 種別 | 位置づけ | 内容 |
-| --- | --- | --- | --- |
-| 既定スロット | slot | 正規入力 | ラベル、アイコン、またはその組み合わせを受け取ります |
-| `spinner` | named slot | 補助入力 | ローディング中の既定スピナーを置き換えます |
+| 名前         | 種別       | 位置づけ | 内容                                                 |
+| ------------ | ---------- | -------- | ---------------------------------------------------- |
+| 既定スロット | slot       | 正規入力 | ラベル、アイコン、またはその組み合わせを受け取ります |
+| `spinner`    | named slot | 補助入力 | ローディング中の既定スピナーを置き換えます           |
 
 既定スロットはラベル、アイコン、またはその組み合わせを受け取ります。`spinner` スロットは `loading=true` の場合にのみ描画へ参加します。`loading=false` の場合、`spinner` スロット内容は表示に寄与しません。
 
@@ -80,11 +80,11 @@ Rouault における button は、操作要素であると同時に、**本文�
 
 `ui-button` は、ホスト要素に対する基本操作を内部 button へ委譲するため、次の公開メソッドを持ちます。
 
-| 名前 | 種別 | 契約 |
-| --- | --- | --- |
+| 名前              | 種別   | 契約                                 |
+| ----------------- | ------ | ------------------------------------ |
 | `focus(options?)` | method | 内部 button にフォーカスを委譲します |
-| `blur()` | method | 内部 button からフォーカスを外します |
-| `click()` | method | 内部 button の click を起動します |
+| `blur()`          | method | 内部 button からフォーカスを外します |
+| `click()`         | method | 内部 button の click を起動します    |
 
 これらは Shadow DOM 内部実装を利用側に露出させないための公開面です。利用者は Shadow DOM を直接探索せず、これらの公開メソッドを使用します。
 
@@ -92,17 +92,17 @@ Rouault における button は、操作要素であると同時に、**本文�
 
 公開入力のうち、`variant`、`size`、`iconOnly`、`ariaLabel`、`pressed`、`loading`、`disabled`、`type`、`form` は property と attribute の両面から操作できます。`ariaLabel` の HTML 属性名は `aria-label`、`iconOnly` の HTML 属性名は `icon-only` です。boolean 値は attribute の有無で反映します。
 
-| property | attribute | reflect | 備考 |
-| --- | --- | --- | --- |
-| `variant` | `variant` | あり | 列挙値以外は未サポートです |
-| `size` | `size` | あり | `lg` は非推奨です |
-| `iconOnly` | `icon-only` | あり | boolean attribute として扱います |
-| `ariaLabel` | `aria-label` | あり | `iconOnly=true` の場合にのみ使用します |
-| `pressed` | `pressed` | あり | 定義時のみ `aria-pressed` を出力します |
-| `loading` | `loading` | あり | boolean attribute として扱います |
-| `disabled` | `disabled` | あり | boolean attribute として扱います |
-| `type` | `type` | あり | 既定値は `button` です |
-| `form` | `form` | あり | 外部フォーム所有者を指定できます |
+| property    | attribute    | reflect | 備考                                   |
+| ----------- | ------------ | ------- | -------------------------------------- |
+| `variant`   | `variant`    | あり    | 列挙値以外は未サポートです             |
+| `size`      | `size`       | あり    | `lg` は非推奨です                      |
+| `iconOnly`  | `icon-only`  | あり    | boolean attribute として扱います       |
+| `ariaLabel` | `aria-label` | あり    | `iconOnly=true` の場合にのみ使用します |
+| `pressed`   | `pressed`    | あり    | 定義時のみ `aria-pressed` を出力します |
+| `loading`   | `loading`    | あり    | boolean attribute として扱います       |
+| `disabled`  | `disabled`   | あり    | boolean attribute として扱います       |
+| `type`      | `type`       | あり    | 既定値は `button` です                 |
+| `form`      | `form`       | あり    | 外部フォーム所有者を指定できます       |
 
 ### 列挙外値・無効値の扱い
 
@@ -128,13 +128,13 @@ Rouault における button は、操作要素であると同時に、**本文�
 
 `variant` は視覚的強度のみを切り替えます。意味は次表のとおりです。
 
-| `variant` 値 | 意味 | 想定用途 |
-| --- | --- | --- |
-| `primary` | 最も強い強調 | 画面内の主要操作 |
-| `secondary` | 標準操作 | 通常の決定、保存、確認 |
-| `outline` | 軽量な明示 | カード内、モーダル内、補助操作 |
-| `ghost` | 最小限の主張 | ツールバー、高密度 UI、アイコンボタン |
-| `danger` | 破壊的操作 | 削除、リセット、破棄 |
+| `variant` 値 | 意味         | 想定用途                              |
+| ------------ | ------------ | ------------------------------------- |
+| `primary`    | 最も強い強調 | 画面内の主要操作                      |
+| `secondary`  | 標準操作     | 通常の決定、保存、確認                |
+| `outline`    | 軽量な明示   | カード内、モーダル内、補助操作        |
+| `ghost`      | 最小限の主張 | ツールバー、高密度 UI、アイコンボタン |
+| `danger`     | 破壊的操作   | 削除、リセット、破棄                  |
 
 `variant` は操作意味を補助しますが、意味そのものを保証しません。たとえば `danger` は視覚的警告を与えますが、確認ダイアログや undo の有無は別契約です。
 
@@ -248,30 +248,30 @@ button は可読本文より強く主張してはなりません。とくに art
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途 | トークン |
-| --- | --- |
-| Primary 背景 | `--primary` |
-| Primary hover | `--primary-hover` |
-| Primary 文字色 | `--on-primary` |
-| Secondary 背景 | `--bg-surface-2` |
-| Secondary hover 背景 | `--bg-fill-muted` |
-| Ghost hover 背景 | `--bg-hover` |
-| Danger 背景 | `--bg-danger-subtle` |
-| Danger 境界線 | `--border-danger` |
-| Danger 文字色 | `--danger` |
-| Danger hover 文字色 | `--on-danger` |
-| 既定境界線 | `--border-default` |
-| 既定文字色 | `--fg-default` |
-| 控えめ文字色 | `--fg-muted` |
-| 角丸 | `--radius-md` |
-| 高さ | `--control-height-sm` / `--control-height-md` / `--control-height-lg` |
-| 余白 | `--space-*` |
-| アイコンサイズ | `--icon-sm` / `--icon-base` / `--icon-md` |
-| 影 | `--elevation-sm` / `--elevation-md` |
-| 遷移時間 | `--duration-fast` |
-| イージング | `--ease-out` |
-| 押下スケール | `--scale-pressed` |
-| フォーカスリング | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
+| 用途                 | トークン                                                                                  |
+| -------------------- | ----------------------------------------------------------------------------------------- |
+| Primary 背景         | `--primary`                                                                               |
+| Primary hover        | `--primary-hover`                                                                         |
+| Primary 文字色       | `--on-primary`                                                                            |
+| Secondary 背景       | `--bg-surface-2`                                                                          |
+| Secondary hover 背景 | `--bg-fill-muted`                                                                         |
+| Ghost hover 背景     | `--bg-hover`                                                                              |
+| Danger 背景          | `--bg-danger-subtle`                                                                      |
+| Danger 境界線        | `--border-danger`                                                                         |
+| Danger 文字色        | `--danger`                                                                                |
+| Danger hover 文字色  | `--on-danger`                                                                             |
+| 既定境界線           | `--border-default`                                                                        |
+| 既定文字色           | `--fg-default`                                                                            |
+| 控えめ文字色         | `--fg-muted`                                                                              |
+| 角丸                 | `--radius-md`                                                                             |
+| 高さ                 | `--control-height-sm` / `--control-height-md` / `--control-height-lg`                     |
+| 余白                 | `--space-*`                                                                               |
+| アイコンサイズ       | `--icon-sm` / `--icon-base` / `--icon-md`                                                 |
+| 影                   | `--elevation-sm` / `--elevation-md`                                                       |
+| 遷移時間             | `--duration-fast`                                                                         |
+| イージング           | `--ease-out`                                                                              |
+| 押下スケール         | `--scale-pressed`                                                                         |
+| フォーカスリング     | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
 
 ---
 
@@ -318,14 +318,14 @@ button は可読本文より強く主張してはなりません。とくに art
 
 `ui-button` は Form Associated Custom Elements として実装されています。したがって、内部 button が Shadow DOM 内にあっても、フォーム送信およびリセットをコンポーネント外のフォームへ橋渡しできます。
 
-| 条件 | 振る舞い |
-| --- | --- |
-| `type="button"` | フォーム副作用を持ちません |
-| `type="submit"` かつフォーム関連付けあり | `requestSubmit()` を実行します |
-| `type="reset"` かつフォーム関連付けあり | `reset()` を実行します |
-| `form` 属性あり | フォーム外配置でも関連付けを維持します |
-| 祖先フォームと `form` 属性が併存 | `form` 属性による明示指定を優先します |
-| `form` 属性が無効 ID | 外部フォーム所有者を持ちません |
+| 条件                                     | 振る舞い                               |
+| ---------------------------------------- | -------------------------------------- |
+| `type="button"`                          | フォーム副作用を持ちません             |
+| `type="submit"` かつフォーム関連付けあり | `requestSubmit()` を実行します         |
+| `type="reset"` かつフォーム関連付けあり  | `reset()` を実行します                 |
+| `form` 属性あり                          | フォーム外配置でも関連付けを維持します |
+| 祖先フォームと `form` 属性が併存         | `form` 属性による明示指定を優先します  |
+| `form` 属性が無効 ID                     | 外部フォーム所有者を持ちません         |
 
 利用者はフォーム所有者決定を `ui-button` 独自規則ではなく、HTML 標準に準拠した関連付けとして扱います。
 
@@ -333,11 +333,11 @@ button は可読本文より強く主張してはなりません。とくに art
 
 `ui-button` は外部スタイル拡張を全面自由とはしません。公開するのは、CSS Custom Properties と `::part(...)` に限定される拡張面です。
 
-| part 名 | 役割 |
-| --- | --- |
-| `button` | 内部ネイティブ button |
-| `label` | ラベル表示領域 |
-| `spinner` | ローディング表示領域 |
+| part 名   | 役割                  |
+| --------- | --------------------- |
+| `button`  | 内部ネイティブ button |
+| `label`   | ラベル表示領域        |
+| `spinner` | ローディング表示領域  |
 
 利用者は `::part(button)`、`::part(label)`、`::part(spinner)` に対して装飾調整を行えます。ただし、意味を変更するための display 構造破壊やインタラクション破壊は行ってはなりません（MUST NOT）。
 
@@ -406,32 +406,32 @@ button は可読本文より強く主張してはなりません。とくに art
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
 
-| Story | 固定する契約 |
-| --- | --- |
-| `Default` | 既定 `variant` が `secondary`、既定 `type` が `button` であること |
-| `AllVariants` | 5 つの視覚バリアントが存在すること |
-| `AllSizes` | `sm` / `md` / `lg` を描画できること |
-| `Primary` | 主要操作用の強い視覚重量を持つこと |
-| `Outline` | `secondary` より軽い補助操作として成立すること |
-| `Ghost` | 高密度 UI 向けの最小主張スタイルを持つこと |
-| `Danger` | `danger` variant が受理されること |
-| `Loading` | `aria-busy="true"`、disabled 化、スピナー表示を行うこと |
-| `Disabled` | disabled 状態で内部 button が不活性であること |
-| `WithIcon` | アイコンとラベルを併置できること |
-| `IconOnly` | `iconOnly` と `aria-label` の組み合わせが成立すること |
-| `FormSubmit` | `type="submit"` が Enter / Space 操作でも送信されること |
-| `FormReset` | `type="reset"` がフォーム値を初期値へ戻すこと |
-| `ExternalFormOwnerSubmit` | `form` 属性によりフォーム外配置でも送信できること |
-| `DialogExample` | ダイアログ内のアクション優先度表現に使用できること |
-| `ToolbarExample` | `ghost` の icon-only が高密度 UI で成立すること |
-| `CardExample` | `outline` / `ghost` がカード内補助操作として成立すること |
-| `FocusState` | 公開 `focus()` が内部 button に到達すること |
-| `IconOnlyWithoutAriaLabel` | 契約違反例を明示できること |
-| `DeprecatedLargeSize` | `lg` が受理されるが非推奨であること |
-| `ForcedColorsMode` | 強制カラー環境で構造が維持されること |
-| `DarkMode` | ダークモードで `secondary` の edge highlight を確認できること |
-| `ReducedMotion` | reduced motion でアニメーションが抑制されること |
-| `PrintStyles` | 印刷時に非表示となること |
+| Story                      | 固定する契約                                                      |
+| -------------------------- | ----------------------------------------------------------------- |
+| `Default`                  | 既定 `variant` が `secondary`、既定 `type` が `button` であること |
+| `AllVariants`              | 5 つの視覚バリアントが存在すること                                |
+| `AllSizes`                 | `sm` / `md` / `lg` を描画できること                               |
+| `Primary`                  | 主要操作用の強い視覚重量を持つこと                                |
+| `Outline`                  | `secondary` より軽い補助操作として成立すること                    |
+| `Ghost`                    | 高密度 UI 向けの最小主張スタイルを持つこと                        |
+| `Danger`                   | `danger` variant が受理されること                                 |
+| `Loading`                  | `aria-busy="true"`、disabled 化、スピナー表示を行うこと           |
+| `Disabled`                 | disabled 状態で内部 button が不活性であること                     |
+| `WithIcon`                 | アイコンとラベルを併置できること                                  |
+| `IconOnly`                 | `iconOnly` と `aria-label` の組み合わせが成立すること             |
+| `FormSubmit`               | `type="submit"` が Enter / Space 操作でも送信されること           |
+| `FormReset`                | `type="reset"` がフォーム値を初期値へ戻すこと                     |
+| `ExternalFormOwnerSubmit`  | `form` 属性によりフォーム外配置でも送信できること                 |
+| `DialogExample`            | ダイアログ内のアクション優先度表現に使用できること                |
+| `ToolbarExample`           | `ghost` の icon-only が高密度 UI で成立すること                   |
+| `CardExample`              | `outline` / `ghost` がカード内補助操作として成立すること          |
+| `FocusState`               | 公開 `focus()` が内部 button に到達すること                       |
+| `IconOnlyWithoutAriaLabel` | 契約違反例を明示できること                                        |
+| `DeprecatedLargeSize`      | `lg` が受理されるが非推奨であること                               |
+| `ForcedColorsMode`         | 強制カラー環境で構造が維持されること                              |
+| `DarkMode`                 | ダークモードで `secondary` の edge highlight を確認できること     |
+| `ReducedMotion`            | reduced motion でアニメーションが抑制されること                   |
+| `PrintStyles`              | 印刷時に非表示となること                                          |
 
 ---
 
@@ -569,4 +569,3 @@ button は可読本文より強く主張してはなりません。とくに art
 ### 8. 本節の扱い
 
 本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用する場合は、実装、Storybook、契約書の 3 点を同時に更新し、未対応状態を残したまま公開契約へ昇格させません。
-

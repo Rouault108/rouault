@@ -181,26 +181,34 @@ export const Default: Story = {
     await checkbox.updateComplete;
 
     // テスト: デフォルトは未選択
-    if (checkbox.checked) throw new Error('デフォルトで checked が false であることを期待しています');
+    if (checkbox.checked)
+      throw new Error('デフォルトで checked が false であることを期待しています');
 
     // テスト: デフォルトは indeterminate でない
-    if (checkbox.indeterminate) throw new Error('デフォルトで indeterminate が false であることを期待しています');
+    if (checkbox.indeterminate)
+      throw new Error('デフォルトで indeterminate が false であることを期待しています');
 
     // テスト: コントロールに role="checkbox" が設定されている
     const control = checkbox.shadowRoot?.querySelector('.control');
     if (!control) throw new Error('Shadow root 内にコントロール要素が見つかりませんでした');
     if (control.getAttribute('role') !== 'checkbox') {
-      throw new Error(`role="checkbox" を期待していましたが、実際には "${control.getAttribute('role') ?? 'null'}" でした`);
+      throw new Error(
+        `role="checkbox" を期待していましたが、実際には "${control.getAttribute('role') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: aria-checked="false" が設定されている
     if (control.getAttribute('aria-checked') !== 'false') {
-      throw new Error(`aria-checked="false" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-checked="false" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: tabindex="0" が設定されている（フォーカス可能）
     if (control.getAttribute('tabindex') !== '0') {
-      throw new Error(`tabindex="0" を期待していましたが、実際には "${control.getAttribute('tabindex') ?? 'null'}" でした`);
+      throw new Error(
+        `tabindex="0" を期待していましたが、実際には "${control.getAttribute('tabindex') ?? 'null'}" でした`,
+      );
     }
   },
 };
@@ -216,11 +224,7 @@ export const Default: Story = {
  */
 export const UncheckedNormal: Story = {
   render: () => html`
-    <ui-checkbox
-      id="unchecked-normal"
-      label="未選択（通常）"
-      name="unchecked-normal"
-    ></ui-checkbox>
+    <ui-checkbox id="unchecked-normal" label="未選択（通常）" name="unchecked-normal"></ui-checkbox>
   `,
   play: async ({ canvasElement }) => {
     const checkbox = canvasElement.querySelector<Checkbox>('#unchecked-normal');
@@ -230,9 +234,12 @@ export const UncheckedNormal: Story = {
     const control = checkbox.shadowRoot?.querySelector('.control');
     if (!control) throw new Error('コントロールが見つかりません');
 
-    if (checkbox.checked) throw new Error('未選択状態（unchecked）を期待していましたが選択状態でした');
+    if (checkbox.checked)
+      throw new Error('未選択状態（unchecked）を期待していましたが選択状態でした');
     if (control.getAttribute('aria-checked') !== 'false') {
-      throw new Error(`aria-checked="false" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-checked="false" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`,
+      );
     }
   },
 };
@@ -260,24 +267,29 @@ export const CheckedNormal: Story = {
     if (!control) throw new Error('コントロールが見つかりません');
 
     // テスト: checked プロパティが true
-    if (!checkbox.checked) throw new Error('checked が true であることを期待していましたが false でした');
+    if (!checkbox.checked)
+      throw new Error('checked が true であることを期待していましたが false でした');
 
     // テスト: aria-checked="true"
     if (control.getAttribute('aria-checked') !== 'true') {
-      throw new Error(`aria-checked="true" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-checked="true" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: チェックアイコンが表示されている
     const checkIcon = checkbox.shadowRoot?.querySelector('.icon-check');
     if (!checkIcon) throw new Error('チェックアイコンが見つかりません');
     const checkStyle = getComputedStyle(checkIcon);
-    if (checkStyle.display === 'none') throw new Error('選択時はチェックアイコンが表示されている必要があります');
+    if (checkStyle.display === 'none')
+      throw new Error('選択時はチェックアイコンが表示されている必要があります');
 
     // テスト: Minus アイコンは非表示
     const minusIcon = checkbox.shadowRoot?.querySelector('.icon-minus');
     if (!minusIcon) throw new Error('マイナスアイコンが見つかりません');
     const minusStyle = getComputedStyle(minusIcon);
-    if (minusStyle.display !== 'none') throw new Error('選択時はマイナスアイコンが非表示である必要があります');
+    if (minusStyle.display !== 'none')
+      throw new Error('選択時はマイナスアイコンが非表示である必要があります');
   },
 };
 
@@ -316,20 +328,24 @@ export const IndeterminateNormal: Story = {
 
     // テスト: aria-checked="mixed"
     if (control.getAttribute('aria-checked') !== 'mixed') {
-      throw new Error(`aria-checked="mixed" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-checked="mixed" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: Minus アイコンが表示されている
     const minusIcon = parent.shadowRoot?.querySelector('.icon-minus');
     if (!minusIcon) throw new Error('マイナスアイコンが見つかりません');
     const minusStyle = getComputedStyle(minusIcon);
-    if (minusStyle.display === 'none') throw new Error('中間状態のときはマイナスアイコンが表示されている必要があります');
+    if (minusStyle.display === 'none')
+      throw new Error('中間状態のときはマイナスアイコンが表示されている必要があります');
 
     // テスト: Check アイコンは非表示
     const checkIcon = parent.shadowRoot?.querySelector('.icon-check');
     if (!checkIcon) throw new Error('チェックアイコンが見つかりません');
     const checkStyle = getComputedStyle(checkIcon);
-    if (checkStyle.display !== 'none') throw new Error('中間状態のときはチェックアイコンが非表示である必要があります');
+    if (checkStyle.display !== 'none')
+      throw new Error('中間状態のときはチェックアイコンが非表示である必要があります');
   },
 };
 
@@ -357,16 +373,21 @@ export const UncheckedDisabled: Story = {
     if (!control) throw new Error('コントロールが見つかりません');
 
     // テスト: disabled プロパティが true
-    if (!checkbox.disabled) throw new Error('disabled が true であることを期待していましたが false でした');
+    if (!checkbox.disabled)
+      throw new Error('disabled が true であることを期待していましたが false でした');
 
     // テスト: aria-disabled="true"
     if (control.getAttribute('aria-disabled') !== 'true') {
-      throw new Error(`aria-disabled="true" を期待していましたが、実際には "${control.getAttribute('aria-disabled') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-disabled="true" を期待していましたが、実際には "${control.getAttribute('aria-disabled') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: tabindex="-1"（フォーカス不可）
     if (control.getAttribute('tabindex') !== '-1') {
-      throw new Error(`tabindex="-1" を期待していましたが、実際には "${control.getAttribute('tabindex') ?? 'null'}" でした`);
+      throw new Error(
+        `tabindex="-1" を期待していましたが、実際には "${control.getAttribute('tabindex') ?? 'null'}" でした`,
+      );
     }
   },
 };
@@ -393,18 +414,24 @@ export const CheckedDisabled: Story = {
     await checkbox.updateComplete;
 
     // テスト: checked かつ disabled
-    if (!checkbox.checked) throw new Error('checked が true であることを期待していましたが false でした');
-    if (!checkbox.disabled) throw new Error('disabled が true であることを期待していましたが false でした');
+    if (!checkbox.checked)
+      throw new Error('checked が true であることを期待していましたが false でした');
+    if (!checkbox.disabled)
+      throw new Error('disabled が true であることを期待していましたが false でした');
 
     const control = checkbox.shadowRoot?.querySelector('.control');
     if (!control) throw new Error('コントロールが見つかりません');
 
     // テスト: aria-checked="true" かつ aria-disabled="true"
     if (control.getAttribute('aria-checked') !== 'true') {
-      throw new Error(`aria-checked="true" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-checked="true" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`,
+      );
     }
     if (control.getAttribute('aria-disabled') !== 'true') {
-      throw new Error(`aria-disabled="true" を期待していましたが、実際には "${control.getAttribute('aria-disabled') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-disabled="true" を期待していましたが、実際には "${control.getAttribute('aria-disabled') ?? 'null'}" でした`,
+      );
     }
   },
 };
@@ -436,10 +463,14 @@ export const IndeterminateDisabled: Story = {
 
     // テスト: aria-checked="mixed" かつ aria-disabled="true"
     if (control.getAttribute('aria-checked') !== 'mixed') {
-      throw new Error(`aria-checked="mixed" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-checked="mixed" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`,
+      );
     }
     if (control.getAttribute('aria-disabled') !== 'true') {
-      throw new Error(`aria-disabled="true" を期待していましたが、実際には "${control.getAttribute('aria-disabled') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-disabled="true" を期待していましたが、実際には "${control.getAttribute('aria-disabled') ?? 'null'}" でした`,
+      );
     }
   },
 };
@@ -470,7 +501,9 @@ export const UncheckedInvalid: Story = {
 
     // テスト: aria-invalid="true"
     if (control.getAttribute('aria-invalid') !== 'true') {
-      throw new Error(`aria-invalid="true" を期待していましたが、実際には "${control.getAttribute('aria-invalid') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-invalid="true" を期待していましたが、実際には "${control.getAttribute('aria-invalid') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: エラーメッセージが表示されている
@@ -513,18 +546,24 @@ export const CheckedInvalid: Story = {
     await checkbox.updateComplete;
 
     // テスト: checked かつ invalid
-    if (!checkbox.checked) throw new Error('checked が true であることを期待していますが false でした');
-    if (!checkbox.invalid) throw new Error('invalid が true であることを期待していますが false でした');
+    if (!checkbox.checked)
+      throw new Error('checked が true であることを期待していますが false でした');
+    if (!checkbox.invalid)
+      throw new Error('invalid が true であることを期待していますが false でした');
 
     const control = checkbox.shadowRoot?.querySelector('.control');
     if (!control) throw new Error('コントロールが見つかりません');
 
     // テスト: aria-checked="true" かつ aria-invalid="true"
     if (control.getAttribute('aria-checked') !== 'true') {
-      throw new Error(`aria-checked="true" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-checked="true" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`,
+      );
     }
     if (control.getAttribute('aria-invalid') !== 'true') {
-      throw new Error(`aria-invalid="true" を期待していましたが、実際には "${control.getAttribute('aria-invalid') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-invalid="true" を期待していましたが、実際には "${control.getAttribute('aria-invalid') ?? 'null'}" でした`,
+      );
     }
   },
 };
@@ -625,14 +664,19 @@ export const AllStates: Story = {
     await indet.updateComplete;
 
     const indetDisabled = canvasElement.querySelector<Checkbox>('#all-indet-disabled');
-    if (!indetDisabled) throw new Error('中間状態かつ無効（indeterminate+disabled）のチェックボックスが見つかりません');
+    if (!indetDisabled)
+      throw new Error(
+        '中間状態かつ無効（indeterminate+disabled）のチェックボックスが見つかりません',
+      );
     indetDisabled.indeterminate = true;
     await indetDisabled.updateComplete;
 
     // テスト: 全チェックボックスが存在する
     const checkboxes = canvasElement.querySelectorAll('ui-checkbox');
     if (checkboxes.length !== 9) {
-      throw new Error(`9個のチェックボックスを期待していましたが、実際には ${String(checkboxes.length)}個でした`);
+      throw new Error(
+        `9個のチェックボックスを期待していましたが、実際には ${String(checkboxes.length)}個でした`,
+      );
     }
   },
 };
@@ -654,12 +698,12 @@ export const ClickToggle: Story = {
         label="クリックでトグル"
         name="toggle"
         @change="${(e: Event) => {
-      const cb = e.target as Checkbox;
-      const log = document.getElementById('toggle-log');
-      if (log) {
-        log.textContent = `change イベント: checked=${String(cb.checked)}`;
-      }
-    }}"
+          const cb = e.target as Checkbox;
+          const log = document.getElementById('toggle-log');
+          if (log) {
+            log.textContent = `change イベント: checked=${String(cb.checked)}`;
+          }
+        }}"
       ></ui-checkbox>
 
       <div
@@ -684,18 +728,27 @@ export const ClickToggle: Story = {
     await checkbox.updateComplete;
 
     // テスト: 初期状態は未選択
-    if (checkbox.checked) throw new Error('初期状態が未選択であることを期待していましたが選択状態でした');
+    if (checkbox.checked)
+      throw new Error('初期状態が未選択であることを期待していましたが選択状態でした');
 
     // change/input イベントを Promise で受け取る
-    const changePromise = new Promise<boolean>(resolve => {
-      checkbox.addEventListener('change', (e) => {
-        resolve((e.target as Checkbox).checked);
-      }, { once: true });
+    const changePromise = new Promise<boolean>((resolve) => {
+      checkbox.addEventListener(
+        'change',
+        (e) => {
+          resolve((e.target as Checkbox).checked);
+        },
+        { once: true },
+      );
     });
-    const inputPromise = new Promise<boolean>(resolve => {
-      checkbox.addEventListener('input', (e) => {
-        resolve((e.target as Checkbox).checked);
-      }, { once: true });
+    const inputPromise = new Promise<boolean>((resolve) => {
+      checkbox.addEventListener(
+        'input',
+        (e) => {
+          resolve((e.target as Checkbox).checked);
+        },
+        { once: true },
+      );
     });
 
     // コントロールをクリック
@@ -705,33 +758,56 @@ export const ClickToggle: Story = {
 
     const newChecked = await Promise.race([
       changePromise,
-      new Promise<null>(resolve => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
 
     if (newChecked === null) throw new Error('change イベントが発火しませんでした');
-    if (!newChecked) throw new Error('クリック後に checked が true になることを期待していましたが false でした');
+    if (!newChecked)
+      throw new Error('クリック後に checked が true になることを期待していましたが false でした');
     const inputChecked = await Promise.race([
       inputPromise,
-      new Promise<null>(resolve => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
     if (inputChecked === null) throw new Error('input イベントが発火しませんでした');
-    if (!inputChecked) throw new Error('クリック後に input イベントの checked が true になることを期待していましたが false でした');
+    if (!inputChecked)
+      throw new Error(
+        'クリック後に input イベントの checked が true になることを期待していましたが false でした',
+      );
 
     // テスト: 2回目のクリックで未選択に戻る
-    const changePromise2 = new Promise<boolean>(resolve => {
-      checkbox.addEventListener('change', (e) => {
-        resolve((e.target as Checkbox).checked);
-      }, { once: true });
+    const changePromise2 = new Promise<boolean>((resolve) => {
+      checkbox.addEventListener(
+        'change',
+        (e) => {
+          resolve((e.target as Checkbox).checked);
+        },
+        { once: true },
+      );
     });
 
     control.click();
     const newChecked2 = await Promise.race([
       changePromise2,
-      new Promise<null>(resolve => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
 
     if (newChecked2 === null) throw new Error('2回目の change イベントが発火しませんでした');
-    if (newChecked2) throw new Error('2回目のクリック後に checked が false になることを期待していましたが true でした');
+    if (newChecked2)
+      throw new Error(
+        '2回目のクリック後に checked が false になることを期待していましたが true でした',
+      );
   },
 };
 
@@ -759,7 +835,10 @@ export const LabelClickToggle: Story = {
     label.click();
     await checkbox.updateComplete;
 
-    if (!checkbox.checked) throw new Error('ラベルクリック後に checked が true になることを期待していましたが false でした');
+    if (!checkbox.checked)
+      throw new Error(
+        'ラベルクリック後に checked が true になることを期待していましたが false でした',
+      );
   },
 };
 
@@ -772,7 +851,9 @@ export const LabelClickToggle: Story = {
 export const KeyboardToggle: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0 0); border: 1px solid oklch(90% 0.01 250 / 0.2); border-radius: 6px; font-size: 13px;">
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0 0); border: 1px solid oklch(90% 0.01 250 / 0.2); border-radius: 6px; font-size: 13px;"
+      >
         <strong>操作方法</strong>: Tab キーでフォーカスを当て、Space キーでトグルしてください。
       </div>
       <ui-checkbox
@@ -794,21 +875,35 @@ export const KeyboardToggle: Story = {
     control.focus();
 
     // Space キーイベントを発火
-    const changePromise = new Promise<boolean>(resolve => {
-      checkbox.addEventListener('change', (e) => {
-        resolve((e.target as Checkbox).checked);
-      }, { once: true });
+    const changePromise = new Promise<boolean>((resolve) => {
+      checkbox.addEventListener(
+        'change',
+        (e) => {
+          resolve((e.target as Checkbox).checked);
+        },
+        { once: true },
+      );
     });
 
-    control.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, composed: true }));
+    control.dispatchEvent(
+      new KeyboardEvent('keydown', { key: ' ', bubbles: true, composed: true }),
+    );
 
     const newChecked = await Promise.race([
       changePromise,
-      new Promise<null>(resolve => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
 
-    if (newChecked === null) throw new Error('Space キー操作で change イベントが発火しませんでした');
-    if (!newChecked) throw new Error('Space キー操作後に checked が true になることを期待していましたが false でした');
+    if (newChecked === null)
+      throw new Error('Space キー操作で change イベントが発火しませんでした');
+    if (!newChecked)
+      throw new Error(
+        'Space キー操作後に checked が true になることを期待していましたが false でした',
+      );
   },
 };
 
@@ -827,14 +922,18 @@ export const IndeterminateToUnchecked: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: Indeterminate 状態でクリック/Space すると `checked: false`（Unchecked）に遷移します。Checked にはなりません。',
+        story:
+          '⚠️ **境界条件**: Indeterminate 状態でクリック/Space すると `checked: false`（Unchecked）に遷移します。Checked にはなりません。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
-        <strong>⚠️ 境界条件</strong>: Indeterminate 状態でクリックすると Unchecked になります（Checked にはなりません）。
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
+        <strong>⚠️ 境界条件</strong>: Indeterminate 状態でクリックすると Unchecked
+        になります（Checked にはなりません）。
       </div>
       <ui-checkbox
         id="indet-to-unchecked"
@@ -856,31 +955,49 @@ export const IndeterminateToUnchecked: Story = {
 
     // テスト: 初期状態が indeterminate
     if (control.getAttribute('aria-checked') !== 'mixed') {
-      throw new Error('クリック前に aria-checked="mixed" であることを期待していましたが false でした');
+      throw new Error(
+        'クリック前に aria-checked="mixed" であることを期待していましたが false でした',
+      );
     }
 
     // クリック
-    const changePromise = new Promise<Checkbox>(resolve => {
-      checkbox.addEventListener('change', (e) => {
-        resolve(e.target as Checkbox);
-      }, { once: true });
+    const changePromise = new Promise<Checkbox>((resolve) => {
+      checkbox.addEventListener(
+        'change',
+        (e) => {
+          resolve(e.target as Checkbox);
+        },
+        { once: true },
+      );
     });
 
     control.click();
     const result = await Promise.race([
       changePromise,
-      new Promise<null>(resolve => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
 
     if (!result) throw new Error('change イベントが発火しませんでした');
 
     // テスト: checked=false, indeterminate=false に遷移
-    if (result.checked) throw new Error('中間状態でのクリック後に checked が false になることを期待していましたが true でした');
-    if (result.indeterminate) throw new Error('クリック後に indeterminate が false になることを期待していましたが true でした');
+    if (result.checked)
+      throw new Error(
+        '中間状態でのクリック後に checked が false になることを期待していましたが true でした',
+      );
+    if (result.indeterminate)
+      throw new Error(
+        'クリック後に indeterminate が false になることを期待していましたが true でした',
+      );
 
     await checkbox.updateComplete;
     if (control.getAttribute('aria-checked') !== 'false') {
-      throw new Error(`遷移後に aria-checked="false" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`);
+      throw new Error(
+        `遷移後に aria-checked="false" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`,
+      );
     }
   },
 };
@@ -895,14 +1012,18 @@ export const CheckedClearsIndeterminate: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `checked=true` を設定すると `indeterminate` は自動的に `false` になります。',
+        story:
+          '⚠️ **境界条件**: `checked=true` を設定すると `indeterminate` は自動的に `false` になります。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
-        <strong>⚠️ 境界条件</strong>: checked=true を設定すると indeterminate は自動的に false になります。
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
+        <strong>⚠️ 境界条件</strong>: checked=true を設定すると indeterminate は自動的に false
+        になります。
       </div>
       <ui-checkbox
         id="checked-clears-indet"
@@ -921,7 +1042,10 @@ export const CheckedClearsIndeterminate: Story = {
 
     const indetBefore: boolean = checkbox.indeterminate;
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!indetBefore) throw new Error('初期状態で indeterminate が true であることを期待していましたが false でした');
+    if (!indetBefore)
+      throw new Error(
+        '初期状態で indeterminate が true であることを期待していましたが false でした',
+      );
 
     // checked を true に設定 → indeterminate が自動解除されるはず
     checkbox.checked = true;
@@ -931,14 +1055,18 @@ export const CheckedClearsIndeterminate: Story = {
     const indetAfter: boolean = checkbox.indeterminate;
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (indetAfter) {
-      throw new Error('checked=true 設定後に indeterminate が false になることを期待していましたが true でした');
+      throw new Error(
+        'checked=true 設定後に indeterminate が false になることを期待していましたが true でした',
+      );
     }
 
     // テスト: aria-checked="true"
     const control = checkbox.shadowRoot?.querySelector('.control');
     if (!control) throw new Error('コントロールが見つかりません');
     if (control.getAttribute('aria-checked') !== 'true') {
-      throw new Error(`aria-checked="true" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-checked="true" を期待していましたが、実際には "${control.getAttribute('aria-checked') ?? 'null'}" でした`,
+      );
     }
   },
 };
@@ -953,13 +1081,16 @@ export const DisabledClickBlocked: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `disabled` 状態ではクリックしても状態が変化せず、イベントも発火しません。',
+        story:
+          '⚠️ **境界条件**: `disabled` 状態ではクリックしても状態が変化せず、イベントも発火しません。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
         <strong>⚠️ 境界条件</strong>: disabled 状態ではクリックしても状態が変化しません。
       </div>
       <ui-checkbox
@@ -977,21 +1108,25 @@ export const DisabledClickBlocked: Story = {
 
     // eslint-disable-next-line @typescript-eslint/no-inferrable-types
     let changeEventFired: boolean = false;
-    checkbox.addEventListener('change', () => { changeEventFired = true; });
+    checkbox.addEventListener('change', () => {
+      changeEventFired = true;
+    });
 
     const control = checkbox.shadowRoot?.querySelector<HTMLElement>('.control');
     if (!control) throw new Error('コントロールが見つかりません');
 
     // クリック
     control.click();
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     // テスト: 状態が変化していない
-    if (checkbox.checked) throw new Error('無効状態のチェックボックスはクリックしても状態が変化してはいけません');
+    if (checkbox.checked)
+      throw new Error('無効状態のチェックボックスはクリックしても状態が変化してはいけません');
 
     // テスト: change イベントが発火していない
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (changeEventFired) throw new Error('無効状態のチェックボックスは change イベントを発火してはいけません');
+    if (changeEventFired)
+      throw new Error('無効状態のチェックボックスは change イベントを発火してはいけません');
   },
 };
 
@@ -1005,14 +1140,21 @@ export const NoLabel: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `label` 属性が未設定の場合。コントロールのみが表示されます。外部から `aria-label` を提供してください。',
+        story:
+          '⚠️ **境界条件**: `label` 属性が未設定の場合。コントロールのみが表示されます。外部から `aria-label` を提供してください。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; align-items: center; gap: 0.5rem;">
-      <ui-checkbox id="no-label-checkbox" name="no-label" aria-label="ラベルなしチェックボックス"></ui-checkbox>
-      <span style="font-size: 14px; color: oklch(20% 0.01 250);">外部ラベル（aria-label で紐付け）</span>
+      <ui-checkbox
+        id="no-label-checkbox"
+        name="no-label"
+        aria-label="ラベルなしチェックボックス"
+      ></ui-checkbox>
+      <span style="font-size: 14px; color: oklch(20% 0.01 250);"
+        >外部ラベル（aria-label で紐付け）</span
+      >
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -1067,7 +1209,9 @@ export const DarkThemeStates: Story = {
     const checkedControl = checked.shadowRoot?.querySelector('.control');
     if (!checkedControl) throw new Error('選択済みのコントロールが見つかりません');
     if (checkedControl.getAttribute('aria-checked') !== 'true') {
-      throw new Error('選択済みのコントロールが aria-checked="true" であることを期待していましたが false でした');
+      throw new Error(
+        '選択済みのコントロールが aria-checked="true" であることを期待していましたが false でした',
+      );
     }
   },
 };
@@ -1090,7 +1234,12 @@ export const ForcedColorsSimulation: Story = {
         --focus-ring-color: CanvasText;
       "
     >
-      <ui-checkbox id="forced-colors-checked" label="強制カラー想定" name="fc-1" checked></ui-checkbox>
+      <ui-checkbox
+        id="forced-colors-checked"
+        label="強制カラー想定"
+        name="fc-1"
+        checked
+      ></ui-checkbox>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -1101,7 +1250,9 @@ export const ForcedColorsSimulation: Story = {
     const control = checkbox.shadowRoot?.querySelector('.control');
     if (!control) throw new Error('コントロールが見つかりません');
     if (control.getAttribute('aria-checked') !== 'true') {
-      throw new Error('強制カラーのシミュレーションにおいて選択状態であることを期待していましたが未選択状態でした');
+      throw new Error(
+        '強制カラーのシミュレーションにおいて選択状態であることを期待していましたが未選択状態でした',
+      );
     }
   },
 };
@@ -1149,17 +1300,17 @@ export const FormIntegration: Story = {
       id="checkbox-form"
       class="form-demo"
       @submit="${(e: Event) => {
-      e.preventDefault();
-      const form = e.target as HTMLFormElement;
-      const data = new FormData(form);
-      const result = document.getElementById('form-result');
-      if (result) {
-        const entries = [...data.entries()]
-          .map(([k, v]) => `${k}=${typeof v === 'string' ? v : v.name}`)
-          .join(', ');
-        result.textContent = entries.length > 0 ? entries : '（送信値なし）';
-      }
-    }}"
+        e.preventDefault();
+        const form = e.target as HTMLFormElement;
+        const data = new FormData(form);
+        const result = document.getElementById('form-result');
+        if (result) {
+          const entries = [...data.entries()]
+            .map(([k, v]) => `${k}=${typeof v === 'string' ? v : v.name}`)
+            .join(', ');
+          result.textContent = entries.length > 0 ? entries : '（送信値なし）';
+        }
+      }}"
     >
       <h3 style="margin: 0; font-size: 16px;">フォーム送信テスト</h3>
 
@@ -1187,12 +1338,17 @@ export const FormIntegration: Story = {
         disabled
       ></ui-checkbox>
 
-      <button type="submit" style="padding: 0 12px; height: 32px; background: oklch(60% 0.15 250); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+      <button
+        type="submit"
+        style="padding: 0 12px; height: 32px; background: oklch(60% 0.15 250); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;"
+      >
         送信
       </button>
 
       <div>
-        <div style="font-size: 12px; color: oklch(48% 0.01 250); margin-bottom: 0.25rem;">FormData:</div>
+        <div style="font-size: 12px; color: oklch(48% 0.01 250); margin-bottom: 0.25rem;">
+          FormData:
+        </div>
         <div id="form-result" class="form-result">送信ボタンをクリックしてください</div>
       </div>
     </form>
@@ -1213,10 +1369,12 @@ export const FormIntegration: Story = {
     const data = new FormData(form);
 
     // agree は未チェックなので送信されない
-    if (data.has('agree')) throw new Error('未選択のチェックボックスは FormData に含まれてはいけません');
+    if (data.has('agree'))
+      throw new Error('未選択のチェックボックスは FormData に含まれてはいけません');
 
     // newsletter はチェック済みなので送信される
-    if (!data.has('newsletter')) throw new Error('選択済みのチェックボックスは FormData に含まれている必要があります');
+    if (!data.has('newsletter'))
+      throw new Error('選択済みのチェックボックスは FormData に含まれている必要があります');
     const newsletterVal = data.get('newsletter');
     if (newsletterVal !== 'subscribe') {
       const valStr = typeof newsletterVal === 'string' ? newsletterVal : '(文字列以外)';
@@ -1224,7 +1382,8 @@ export const FormIntegration: Story = {
     }
 
     // disabled は checked でも送信されない
-    if (data.has('locked')) throw new Error('無効状態のチェックボックスは FormData に含まれてはいけません');
+    if (data.has('locked'))
+      throw new Error('無効状態のチェックボックスは FormData に含まれてはいけません');
   },
 };
 
@@ -1261,20 +1420,20 @@ export const RequiredValidation: Story = {
         id="required-form"
         novalidate
         @submit="${(e: Event) => {
-      e.preventDefault();
-      const form = e.target as HTMLFormElement;
-      const cb = form.querySelector<Checkbox>('#required-cb');
-      if (!cb) return;
+          e.preventDefault();
+          const form = e.target as HTMLFormElement;
+          const cb = form.querySelector<Checkbox>('#required-cb');
+          if (!cb) return;
 
-      if (!cb.checkValidity()) {
-        cb.invalid = true;
-        cb.errorMessage = '利用規約への同意が必要です';
-      } else {
-        cb.invalid = false;
-        cb.errorMessage = '';
-        alert('送信成功！');
-      }
-    }}"
+          if (!cb.checkValidity()) {
+            cb.invalid = true;
+            cb.errorMessage = '利用規約への同意が必要です';
+          } else {
+            cb.invalid = false;
+            cb.errorMessage = '';
+            alert('送信成功！');
+          }
+        }}"
         style="display: flex; flex-direction: column; gap: 1rem;"
       >
         <ui-checkbox
@@ -1284,15 +1443,18 @@ export const RequiredValidation: Story = {
           value="agreed"
           required
           @change="${(e: Event) => {
-      const cb = e.target as Checkbox;
-      if (cb.checked) {
-        cb.invalid = false;
-        cb.errorMessage = '';
-      }
-    }}"
+            const cb = e.target as Checkbox;
+            if (cb.checked) {
+              cb.invalid = false;
+              cb.errorMessage = '';
+            }
+          }}"
         ></ui-checkbox>
 
-        <button type="submit" style="padding: 0 12px; height: 32px; background: oklch(60% 0.15 250); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; width: fit-content;">
+        <button
+          type="submit"
+          style="padding: 0 12px; height: 32px; background: oklch(60% 0.15 250); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; width: fit-content;"
+        >
           送信
         </button>
       </form>
@@ -1304,7 +1466,8 @@ export const RequiredValidation: Story = {
     await checkbox.updateComplete;
 
     // テスト: required プロパティが true
-    if (!checkbox.required) throw new Error('required プロパティが true であることを期待していましたが false でした');
+    if (!checkbox.required)
+      throw new Error('required プロパティが true であることを期待していましたが false でした');
 
     // テスト: 未チェックの状態で checkValidity() が false
     if (checkbox.checkValidity()) {
@@ -1361,20 +1524,38 @@ export const SelectAllPattern: Story = {
         label="すべて選択"
         name="select-all"
         @change="${(e: Event) => {
-      const parent = e.target as Checkbox;
-      const root = parent.closest('.select-all-demo');
-      if (!root) return;
-      const children = root.querySelectorAll<Checkbox>('.child-checkbox');
-      children.forEach(child => {
-        child.checked = parent.checked;
-      });
-    }}"
+          const parent = e.target as Checkbox;
+          const root = parent.closest('.select-all-demo');
+          if (!root) return;
+          const children = root.querySelectorAll<Checkbox>('.child-checkbox');
+          children.forEach((child) => {
+            child.checked = parent.checked;
+          });
+        }}"
       ></ui-checkbox>
 
       <div class="children">
-        <ui-checkbox class="child-checkbox" label="項目 A" name="item-a" value="a" @change="${updateParent}"></ui-checkbox>
-        <ui-checkbox class="child-checkbox" label="項目 B" name="item-b" value="b" @change="${updateParent}"></ui-checkbox>
-        <ui-checkbox class="child-checkbox" label="項目 C" name="item-c" value="c" @change="${updateParent}"></ui-checkbox>
+        <ui-checkbox
+          class="child-checkbox"
+          label="項目 A"
+          name="item-a"
+          value="a"
+          @change="${updateParent}"
+        ></ui-checkbox>
+        <ui-checkbox
+          class="child-checkbox"
+          label="項目 B"
+          name="item-b"
+          value="b"
+          @change="${updateParent}"
+        ></ui-checkbox>
+        <ui-checkbox
+          class="child-checkbox"
+          label="項目 C"
+          name="item-c"
+          value="c"
+          @change="${updateParent}"
+        ></ui-checkbox>
       </div>
     </div>
   `,
@@ -1383,13 +1564,16 @@ export const SelectAllPattern: Story = {
     const children = canvasElement.querySelectorAll<Checkbox>('.child-checkbox');
 
     if (!parent) throw new Error('親チェックボックスが見つかりません');
-    if (children.length !== 3) throw new Error(`3個の子項目を期待していましたが、実際には ${String(children.length)}個でした`);
+    if (children.length !== 3)
+      throw new Error(
+        `3個の子項目を期待していましたが、実際には ${String(children.length)}個でした`,
+      );
 
     await parent.updateComplete;
 
     // テスト: 初期状態は全て未選択
     if (parent.checked) throw new Error('初期状態で親チェックボックスは未選択である必要があります');
-    children.forEach(child => {
+    children.forEach((child) => {
       if (child.checked) throw new Error('初期状態で子項目は未選択である必要があります');
     });
   },
@@ -1404,7 +1588,7 @@ function updateParent(e: Event): void {
   const children = root.querySelectorAll<Checkbox>('.child-checkbox');
   if (!parent) return;
 
-  const checkedCount = [...children].filter(c => c.checked).length;
+  const checkedCount = [...children].filter((c) => c.checked).length;
   if (checkedCount === 0) {
     parent.indeterminate = false;
     parent.checked = false;

@@ -183,7 +183,9 @@ export const Default: Story = {
 
     // テスト: aria-label が label プロパティと一致する
     if (ta.getAttribute('aria-label') !== 'メモ') {
-      throw new Error(`aria-label="メモ" が期待されていましたが、実際には "${ta.getAttribute('aria-label') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-label="メモ" が期待されていましたが、実際には "${ta.getAttribute('aria-label') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: rows 属性が設定されている
@@ -192,11 +194,14 @@ export const Default: Story = {
     }
 
     // テスト: disabled でない
-    if (ta.disabled) throw new Error('textarea が無効化されていることを期待していましたが、有効になっています');
+    if (ta.disabled)
+      throw new Error('textarea が無効化されていることを期待していましたが、有効になっています');
 
     // テスト: aria-invalid="false"
     if (ta.getAttribute('aria-invalid') !== 'false') {
-      throw new Error(`aria-invalid="false" が期待されていましたが、実際には "${ta.getAttribute('aria-invalid') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-invalid="false" が期待されていましたが、実際には "${ta.getAttribute('aria-invalid') ?? 'null'}" でした`,
+      );
     }
   },
 };
@@ -214,7 +219,9 @@ export const Default: Story = {
 export const VariantDefault: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 480px;">
-      <div style="font-size: 11px; font-weight: 500; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;">
+      <div
+        style="font-size: 11px; font-weight: 500; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;"
+      >
         variant="default" (UI, 14px)
       </div>
       <ui-textarea
@@ -232,7 +239,9 @@ export const VariantDefault: Story = {
     await el.updateComplete;
 
     if (el.variant !== 'default') {
-      throw new Error(`デフォルトバリアントが期待されていましたが、実際には "${el.variant}" でした`);
+      throw new Error(
+        `デフォルトバリアントが期待されていましたが、実際には "${el.variant}" でした`,
+      );
     }
 
     const ta = el.shadowRoot?.querySelector<HTMLTextAreaElement>('textarea');
@@ -254,7 +263,9 @@ export const VariantDefault: Story = {
 export const VariantProse: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 480px;">
-      <div style="font-size: 11px; font-weight: 500; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;">
+      <div
+        style="font-size: 11px; font-weight: 500; color: oklch(48% 0.01 250); text-transform: uppercase; letter-spacing: 0.05em;"
+      >
         variant="prose" (Content, 16px)
       </div>
       <ui-textarea
@@ -319,7 +330,9 @@ export const ErrorState: Story = {
 
     // テスト: aria-invalid="true"
     if (ta.getAttribute('aria-invalid') !== 'true') {
-      throw new Error(`aria-invalid="true" が期待されていましたが、実際には "${ta.getAttribute('aria-invalid') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-invalid="true" が期待されていましたが、実際には "${ta.getAttribute('aria-invalid') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: error クラスが付いている
@@ -331,7 +344,9 @@ export const ErrorState: Story = {
     const errMsg = el.shadowRoot?.querySelector('.error-message--visible');
     if (!errMsg) throw new Error('エラーメッセージが表示されるべきです');
     if (!errMsg.textContent.includes('本文を入力してください')) {
-      throw new Error(`"本文を入力してください"というエラーメッセージが表示されるべきですが、実際には "${errMsg.textContent}" でした`);
+      throw new Error(
+        `"本文を入力してください"というエラーメッセージが表示されるべきですが、実際には "${errMsg.textContent}" でした`,
+      );
     }
 
     // テスト: aria-describedby が設定されている
@@ -367,7 +382,9 @@ export const ErrorStateProse: Story = {
     if (!ta) throw new Error('textareaが見つかりません');
 
     if (ta.getAttribute('aria-invalid') !== 'true') {
-      throw new Error(`aria-invalid="true" が期待されていましたが、実際には "${ta.getAttribute('aria-invalid') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-invalid="true" が期待されていましたが、実際には "${ta.getAttribute('aria-invalid') ?? 'null'}" でした`,
+      );
     }
     if (!ta.classList.contains('error')) throw new Error('error クラスを持つべきです');
     if (!ta.classList.contains('prose')) throw new Error('prose クラスを持つべきです');
@@ -407,10 +424,16 @@ export const StateDisabled: Story = {
     if (!elDefault || !elProse) throw new Error('ui-textareaが見つかりません');
     await Promise.all([elDefault.updateComplete, elProse.updateComplete]);
 
-    for (const [id, el] of [['#disabled-default', elDefault], ['#disabled-prose', elProse]] as const) {
+    for (const [id, el] of [
+      ['#disabled-default', elDefault],
+      ['#disabled-prose', elProse],
+    ] as const) {
       const ta = el.shadowRoot?.querySelector<HTMLTextAreaElement>('textarea');
       if (!ta) throw new Error(`${id}: textareaが見つかりません`);
-      if (!ta.disabled) throw new Error(`${id}: textarea が無効化されていることを期待していましたが、有効になっています`);
+      if (!ta.disabled)
+        throw new Error(
+          `${id}: textarea が無効化されていることを期待していましたが、有効になっています`,
+        );
     }
   },
 };
@@ -447,10 +470,14 @@ export const StateReadonly: Story = {
     if (!elDefault || !elProse) throw new Error('ui-textareaが見つかりません');
     await Promise.all([elDefault.updateComplete, elProse.updateComplete]);
 
-    for (const [id, el] of [['#readonly-default', elDefault], ['#readonly-prose', elProse]] as const) {
+    for (const [id, el] of [
+      ['#readonly-default', elDefault],
+      ['#readonly-prose', elProse],
+    ] as const) {
       const ta = el.shadowRoot?.querySelector<HTMLTextAreaElement>('textarea');
       if (!ta) throw new Error(`${id}: textareaが見つかりません`);
-      if (!ta.readOnly) throw new Error(`${id}: textarea が読み取り専用であることを期待していましたが、違います`);
+      if (!ta.readOnly)
+        throw new Error(`${id}: textarea が読み取り専用であることを期待していましたが、違います`);
     }
   },
 };
@@ -554,7 +581,9 @@ export const HiddenLabel: Story = {
 export const AutoGrow: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 480px;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0 0); border: 1px solid oklch(90% 0.01 250 / 0.2); border-radius: 6px; font-size: 13px;">
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0 0); border: 1px solid oklch(90% 0.01 250 / 0.2); border-radius: 6px; font-size: 13px;"
+      >
         <strong>操作方法</strong>: テキストを入力すると高さが即時拡張します（Auto Grow）。
       </div>
       <ui-textarea
@@ -585,7 +614,9 @@ export const AutoGrow: Story = {
 
     const expandedHeight = ta.offsetHeight;
     if (expandedHeight <= initialHeight) {
-      throw new Error(`高さの拡張を期待していましたが、拡張されていません。初期: ${String(initialHeight)}, 拡張後: ${String(expandedHeight)}`);
+      throw new Error(
+        `高さの拡張を期待していましたが、拡張されていません。初期: ${String(initialHeight)}, 拡張後: ${String(expandedHeight)}`,
+      );
     }
 
     // テスト: 値をクリアすると最小高さ（rows=3）に戻る
@@ -609,7 +640,9 @@ export const AutoGrow: Story = {
 export const MaxRows: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 480px;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0 0); border: 1px solid oklch(90% 0.01 250 / 0.2); border-radius: 6px; font-size: 13px;">
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0 0); border: 1px solid oklch(90% 0.01 250 / 0.2); border-radius: 6px; font-size: 13px;"
+      >
         <strong>操作方法</strong>: 5行を超えると内部スクロールが発生します（max-rows="5"）。
       </div>
       <ui-textarea
@@ -649,7 +682,9 @@ export const MaxRows: Story = {
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     if (ta.classList.contains('overflow-scroll')) {
-      throw new Error('コンテンツが max-rows 内にある場合は overflow-scroll クラスを持つべきではありません');
+      throw new Error(
+        'コンテンツが max-rows 内にある場合は overflow-scroll クラスを持つべきではありません',
+      );
     }
   },
 };
@@ -662,7 +697,9 @@ export const MaxRows: Story = {
 export const AutoGrowDisabled: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 480px;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
         <strong>操作方法</strong>: 右下のグリップをドラッグして手動でリサイズできます。
       </div>
       <ui-textarea
@@ -688,7 +725,9 @@ export const AutoGrowDisabled: Story = {
 
     // テスト: resize-vertical クラスが付いている
     if (!ta.classList.contains('resize-vertical')) {
-      throw new Error('auto-grow=false かつ resize=vertical の時は resize-vertical クラスを持つべきです');
+      throw new Error(
+        'auto-grow=false かつ resize=vertical の時は resize-vertical クラスを持つべきです',
+      );
     }
   },
 };
@@ -729,42 +768,98 @@ export const AllVariantsAndStates: Story = {
     <div class="showcase">
       <div class="showcase-group">
         <div class="showcase-label">Default / Default</div>
-        <ui-textarea id="all-default-default" label="メモ" variant="default" rows="2" placeholder="Default..."></ui-textarea>
+        <ui-textarea
+          id="all-default-default"
+          label="メモ"
+          variant="default"
+          rows="2"
+          placeholder="Default..."
+        ></ui-textarea>
       </div>
       <div class="showcase-group">
         <div class="showcase-label">Prose / Default</div>
-        <ui-textarea id="all-prose-default" label="本文" variant="prose" rows="2" placeholder="Prose..."></ui-textarea>
+        <ui-textarea
+          id="all-prose-default"
+          label="本文"
+          variant="prose"
+          rows="2"
+          placeholder="Prose..."
+        ></ui-textarea>
       </div>
       <div class="showcase-group">
         <div class="showcase-label">Default / Error</div>
-        <ui-textarea id="all-default-error" label="メモ" variant="default" error error-message="エラーが発生しました" rows="2"></ui-textarea>
+        <ui-textarea
+          id="all-default-error"
+          label="メモ"
+          variant="default"
+          error
+          error-message="エラーが発生しました"
+          rows="2"
+        ></ui-textarea>
       </div>
       <div class="showcase-group">
         <div class="showcase-label">Prose / Error</div>
-        <ui-textarea id="all-prose-error" label="本文" variant="prose" error error-message="本文は必須です" rows="2"></ui-textarea>
+        <ui-textarea
+          id="all-prose-error"
+          label="本文"
+          variant="prose"
+          error
+          error-message="本文は必須です"
+          rows="2"
+        ></ui-textarea>
       </div>
       <div class="showcase-group">
         <div class="showcase-label">Default / Disabled</div>
-        <ui-textarea id="all-default-disabled" label="メモ" variant="default" disabled value="無効状態" rows="2"></ui-textarea>
+        <ui-textarea
+          id="all-default-disabled"
+          label="メモ"
+          variant="default"
+          disabled
+          value="無効状態"
+          rows="2"
+        ></ui-textarea>
       </div>
       <div class="showcase-group">
         <div class="showcase-label">Prose / Disabled</div>
-        <ui-textarea id="all-prose-disabled" label="本文" variant="prose" disabled value="無効状態" rows="2"></ui-textarea>
+        <ui-textarea
+          id="all-prose-disabled"
+          label="本文"
+          variant="prose"
+          disabled
+          value="無効状態"
+          rows="2"
+        ></ui-textarea>
       </div>
       <div class="showcase-group">
         <div class="showcase-label">Default / Readonly</div>
-        <ui-textarea id="all-default-readonly" label="メモ" variant="default" readonly value="読み取り専用" rows="2"></ui-textarea>
+        <ui-textarea
+          id="all-default-readonly"
+          label="メモ"
+          variant="default"
+          readonly
+          value="読み取り専用"
+          rows="2"
+        ></ui-textarea>
       </div>
       <div class="showcase-group">
         <div class="showcase-label">Prose / Readonly</div>
-        <ui-textarea id="all-prose-readonly" label="本文" variant="prose" readonly value="読み取り専用" rows="2"></ui-textarea>
+        <ui-textarea
+          id="all-prose-readonly"
+          label="本文"
+          variant="prose"
+          readonly
+          value="読み取り専用"
+          rows="2"
+        ></ui-textarea>
       </div>
     </div>
   `,
   play: async ({ canvasElement }) => {
     const elements = canvasElement.querySelectorAll<Textarea>('ui-textarea');
     if (elements.length !== 8) {
-      throw new Error(`8つの ui-textarea を期待していましたが、実際には ${String(elements.length)}個でした`);
+      throw new Error(
+        `8つの ui-textarea を期待していましたが、実際には ${String(elements.length)}個でした`,
+      );
     }
     await Promise.all([...elements].map((el) => el.updateComplete));
 
@@ -785,7 +880,10 @@ export const AllVariantsAndStates: Story = {
       const el = canvasElement.querySelector<Textarea>(id);
       if (!el) throw new Error(`${id} が見つかりません`);
       const ta = el.shadowRoot?.querySelector<HTMLTextAreaElement>('textarea');
-      if (!ta?.disabled) throw new Error(`${id}: textarea が無効化されていることを期待していましたが、有効になっています`);
+      if (!ta?.disabled)
+        throw new Error(
+          `${id}: textarea が無効化されていることを期待していましたが、有効になっています`,
+        );
     }
 
     // テスト: readonly 状態のものは readOnly
@@ -794,7 +892,8 @@ export const AllVariantsAndStates: Story = {
       const el = canvasElement.querySelector<Textarea>(id);
       if (!el) throw new Error(`${id} が見つかりません`);
       const ta = el.shadowRoot?.querySelector<HTMLTextAreaElement>('textarea');
-      if (!ta?.readOnly) throw new Error(`${id}: textarea が読み取り専用であることを期待していましたが、違います`);
+      if (!ta?.readOnly)
+        throw new Error(`${id}: textarea が読み取り専用であることを期待していましたが、違います`);
     }
   },
 };
@@ -817,7 +916,10 @@ export const EventFiring: Story = {
         rows="3"
         placeholder="入力してください..."
       ></ui-textarea>
-      <div id="event-log" style="padding: 0.75rem 1rem; background: oklch(97% 0 0); border: 1px solid oklch(90% 0.01 250 / 0.2); border-radius: 6px; font-size: 13px; color: oklch(48% 0.01 250); min-height: 2.5rem;">
+      <div
+        id="event-log"
+        style="padding: 0.75rem 1rem; background: oklch(97% 0 0); border: 1px solid oklch(90% 0.01 250 / 0.2); border-radius: 6px; font-size: 13px; color: oklch(48% 0.01 250); min-height: 2.5rem;"
+      >
         入力するとここに表示されます
       </div>
     </div>
@@ -829,7 +931,13 @@ export const EventFiring: Story = {
 
     // テスト: input イベントが発火する
     const inputPromise = new Promise<Event>((resolve) => {
-      el.addEventListener('input', (e) => { resolve(e); }, { once: true });
+      el.addEventListener(
+        'input',
+        (e) => {
+          resolve(e);
+        },
+        { once: true },
+      );
     });
 
     const ta = el.shadowRoot?.querySelector<HTMLTextAreaElement>('textarea');
@@ -840,21 +948,35 @@ export const EventFiring: Story = {
 
     const inputEvent = await Promise.race([
       inputPromise,
-      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
 
     if (!inputEvent) throw new Error('inputイベントが発火しません');
 
     // テスト: change イベントが発火する
     const changePromise = new Promise<Event>((resolve) => {
-      el.addEventListener('change', (e) => { resolve(e); }, { once: true });
+      el.addEventListener(
+        'change',
+        (e) => {
+          resolve(e);
+        },
+        { once: true },
+      );
     });
 
     ta.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
 
     const changeEvent = await Promise.race([
       changePromise,
-      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
 
     if (!changeEvent) throw new Error('changeイベントが発火しません');
@@ -873,7 +995,10 @@ export const FocusBlurEvents: Story = {
         rows="3"
         placeholder="フォーカスを当ててください..."
       ></ui-textarea>
-      <div id="focus-log" style="padding: 0.75rem 1rem; background: oklch(97% 0 0); border: 1px solid oklch(90% 0.01 250 / 0.2); border-radius: 6px; font-size: 13px; color: oklch(48% 0.01 250); min-height: 2.5rem;">
+      <div
+        id="focus-log"
+        style="padding: 0.75rem 1rem; background: oklch(97% 0 0); border: 1px solid oklch(90% 0.01 250 / 0.2); border-radius: 6px; font-size: 13px; color: oklch(48% 0.01 250); min-height: 2.5rem;"
+      >
         フォーカス状態: 未フォーカス
       </div>
     </div>
@@ -885,28 +1010,48 @@ export const FocusBlurEvents: Story = {
 
     // テスト: focus イベントが発火する
     const focusPromise = new Promise<Event>((resolve) => {
-      el.addEventListener('focus', (e) => { resolve(e); }, { once: true });
+      el.addEventListener(
+        'focus',
+        (e) => {
+          resolve(e);
+        },
+        { once: true },
+      );
     });
 
     el.focus();
 
     const focusEvent = await Promise.race([
       focusPromise,
-      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
 
     if (!focusEvent) throw new Error('focus event was not fired');
 
     // テスト: blur イベントが発火する
     const blurPromise = new Promise<Event>((resolve) => {
-      el.addEventListener('blur', (e) => { resolve(e); }, { once: true });
+      el.addEventListener(
+        'blur',
+        (e) => {
+          resolve(e);
+        },
+        { once: true },
+      );
     });
 
     el.blur();
 
     const blurEvent = await Promise.race([
       blurPromise,
-      new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 500)),
+      new Promise<null>((resolve) =>
+        setTimeout(() => {
+          resolve(null);
+        }, 500),
+      ),
     ]);
 
     if (!blurEvent) throw new Error('blur event was not fired');
@@ -927,13 +1072,16 @@ export const BoundaryRows1: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `rows=1` でも正常に動作し、Auto Grow が機能します。1行未満には縮まないことを保証します。',
+        story:
+          '⚠️ **境界条件**: `rows=1` でも正常に動作し、Auto Grow が機能します。1行未満には縮まないことを保証します。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
         <strong>⚠️ 境界条件</strong>: <code>rows=1</code> — 最小行数。入力すると拡張します。
       </div>
       <ui-textarea
@@ -965,7 +1113,9 @@ export const BoundaryRows1: Story = {
 
     const expandedHeight = ta.offsetHeight;
     if (expandedHeight <= initialHeight) {
-      throw new Error(`Expected height to expand from rows=1. Initial: ${String(initialHeight)}, Expanded: ${String(expandedHeight)}`);
+      throw new Error(
+        `Expected height to expand from rows=1. Initial: ${String(initialHeight)}, Expanded: ${String(expandedHeight)}`,
+      );
     }
   },
 };
@@ -980,13 +1130,16 @@ export const BoundaryEmptyLabel: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `label` が空文字列の場合、コンソールエラーが出力されます。アクセシビリティのため必ずラベルを設定してください。',
+        story:
+          '⚠️ **境界条件**: `label` が空文字列の場合、コンソールエラーが出力されます。アクセシビリティのため必ずラベルを設定してください。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 28 / 0.3); border: 1px solid oklch(80% 0.1 28 / 0.4); border-radius: 6px; font-size: 13px;">
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 28 / 0.3); border: 1px solid oklch(80% 0.1 28 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
         <strong>⚠️ 境界条件</strong>: <code>label=""</code> — コンソールにエラーが出力されます。
       </div>
       <ui-textarea
@@ -1039,14 +1192,18 @@ export const BoundaryErrorWithoutMessage: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `error=true` でも `error-message` が空の場合、エラーメッセージは表示されませんが、`aria-invalid="true"` が適用され、`checkValidity()` は `false` になります。',
+        story:
+          '⚠️ **境界条件**: `error=true` でも `error-message` が空の場合、エラーメッセージは表示されませんが、`aria-invalid="true"` が適用され、`checkValidity()` は `false` になります。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
-        <strong>⚠️ 境界条件</strong>: <code>error=true</code> + <code>error-message=""</code> — メッセージなしエラー。
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
+        <strong>⚠️ 境界条件</strong>: <code>error=true</code> + <code>error-message=""</code> —
+        メッセージなしエラー。
       </div>
       <ui-textarea
         id="boundary-error-no-msg"
@@ -1068,7 +1225,9 @@ export const BoundaryErrorWithoutMessage: Story = {
 
     // テスト: aria-invalid="true" は設定される
     if (ta.getAttribute('aria-invalid') !== 'true') {
-      throw new Error(`Expected aria-invalid="true", got "${ta.getAttribute('aria-invalid') ?? 'null'}"`);
+      throw new Error(
+        `Expected aria-invalid="true", got "${ta.getAttribute('aria-invalid') ?? 'null'}"`,
+      );
     }
 
     // テスト: error クラスは付く
@@ -1099,13 +1258,16 @@ export const BoundaryDisabledAndError: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `disabled` + `error` の同時設定。disabled スタイルが優先されますが、エラー状態も保持されます。',
+        story:
+          '⚠️ **境界条件**: `disabled` + `error` の同時設定。disabled スタイルが優先されますが、エラー状態も保持されます。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
         <strong>⚠️ 境界条件</strong>: <code>disabled</code> + <code>error</code> の同時設定。
       </div>
       <ui-textarea
@@ -1137,7 +1299,9 @@ export const BoundaryDisabledAndError: Story = {
 
     // テスト: aria-invalid="true"
     if (ta.getAttribute('aria-invalid') !== 'true') {
-      throw new Error(`Expected aria-invalid="true", got "${ta.getAttribute('aria-invalid') ?? 'null'}"`);
+      throw new Error(
+        `Expected aria-invalid="true", got "${ta.getAttribute('aria-invalid') ?? 'null'}"`,
+      );
     }
   },
 };
@@ -1152,13 +1316,16 @@ export const BoundaryRequired: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `required` 属性。空欄の場合 `checkValidity()` が `false` を返します。',
+        story:
+          '⚠️ **境界条件**: `required` 属性。空欄の場合 `checkValidity()` が `false` を返します。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
         <strong>⚠️ 境界条件</strong>: <code>required</code> — 空欄では無効。
       </div>
       <ui-textarea
@@ -1213,7 +1380,9 @@ export const BoundaryProgrammaticValue: Story = {
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
         <strong>⚠️ 境界条件</strong>: プログラムによる <code>value</code> 変更時の Auto Grow。
       </div>
       <ui-textarea
@@ -1241,7 +1410,9 @@ export const BoundaryProgrammaticValue: Story = {
 
     const expandedHeight = ta.offsetHeight;
     if (expandedHeight <= initialHeight) {
-      throw new Error(`Expected height to expand. Initial: ${String(initialHeight)}, Expanded: ${String(expandedHeight)}`);
+      throw new Error(
+        `Expected height to expand. Initial: ${String(initialHeight)}, Expanded: ${String(expandedHeight)}`,
+      );
     }
 
     // テスト: プログラムで空にすると最小高さに戻る
@@ -1265,13 +1436,16 @@ export const BoundaryRowsMaxRowsInversion: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `rows=6` と `max-rows=3` のような逆転指定も利用側責務として受け入れ、コンポーネント側で clamp しません。',
+        story:
+          '⚠️ **境界条件**: `rows=6` と `max-rows=3` のような逆転指定も利用側責務として受け入れ、コンポーネント側で clamp しません。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
         <strong>⚠️ 境界条件</strong>: <code>rows=6</code> + <code>max-rows=3</code>（逆転指定）
       </div>
       <ui-textarea
@@ -1347,7 +1521,8 @@ export const ForcedColorsPreview: Story = {
   parameters: {
     docs: {
       description: {
-        story: '`@media (forced-colors: active)` のフォールバック定義を前提に、エラー・無効状態の構造が維持されることを確認します。',
+        story:
+          '`@media (forced-colors: active)` のフォールバック定義を前提に、エラー・無効状態の構造が維持されることを確認します。',
       },
     },
   },
@@ -1379,7 +1554,8 @@ export const ForcedColorsPreview: Story = {
     const disabledTa = disabledEl.shadowRoot?.querySelector<HTMLTextAreaElement>('textarea');
     if (!errorTa || !disabledTa) throw new Error('textarea not found');
 
-    if (errorTa.getAttribute('aria-invalid') !== 'true') throw new Error('Error textarea should be invalid');
+    if (errorTa.getAttribute('aria-invalid') !== 'true')
+      throw new Error('Error textarea should be invalid');
     if (!disabledTa.disabled) throw new Error('Disabled textarea should remain disabled');
   },
 };
@@ -1391,7 +1567,8 @@ export const ReducedMotionPreview: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'reduced motion 相当として `--duration-fast: 0.01ms` と `--animation-focus: none` を適用した表示を確認します。',
+        story:
+          'reduced motion 相当として `--duration-fast: 0.01ms` と `--animation-focus: none` を適用した表示を確認します。',
       },
     },
   },
@@ -1462,7 +1639,9 @@ export const PrintPreview: Story = {
     const errorTa = errorEl.shadowRoot?.querySelector<HTMLTextAreaElement>('textarea');
     if (!defaultTa || !errorTa) throw new Error('textarea not found');
 
-    if (defaultTa.value !== '印刷時も読みやすい本文') throw new Error('Default print value mismatch');
-    if (errorTa.getAttribute('aria-invalid') !== 'true') throw new Error('Error print textarea should be invalid');
+    if (defaultTa.value !== '印刷時も読みやすい本文')
+      throw new Error('Default print value mismatch');
+    if (errorTa.getAttribute('aria-invalid') !== 'true')
+      throw new Error('Error print textarea should be invalid');
   },
 };

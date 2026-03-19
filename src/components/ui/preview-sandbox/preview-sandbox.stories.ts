@@ -113,13 +113,15 @@ export const AuthorJsOptIn: Story = {
       <ui-preview-sandbox id="js-enabled-sandbox" title="JS enabled sandbox" height="160" allow-js>
         <template data-preview-kind="html"><button class="demo">押す</button></template>
         <template data-preview-kind="js"
-          >parent.postMessage({ source: 'preview-sandbox-author-js', caseId: 'enabled' }, '*');</template
+          >parent.postMessage({ source: 'preview-sandbox-author-js', caseId: 'enabled' },
+          '*');</template
         >
       </ui-preview-sandbox>
       <ui-preview-sandbox id="js-disabled-sandbox" title="JS disabled sandbox" height="160">
         <template data-preview-kind="html"><button class="demo">押す</button></template>
         <template data-preview-kind="js"
-          >parent.postMessage({ source: 'preview-sandbox-author-js', caseId: 'disabled' }, '*');</template
+          >parent.postMessage({ source: 'preview-sandbox-author-js', caseId: 'disabled' },
+          '*');</template
         >
       </ui-preview-sandbox>
     </div>
@@ -136,7 +138,9 @@ export const AuthorJsOptIn: Story = {
       throw new Error('allow-js ありでも sandbox token は allow-scripts のみである必要があります');
     }
     if (disabledIframe.getAttribute('sandbox') !== 'allow-scripts') {
-      throw new Error('allow-js なしでも helper script 用に allow-scripts を維持する必要があります');
+      throw new Error(
+        'allow-js なしでも helper script 用に allow-scripts を維持する必要があります',
+      );
     }
     if (!disabledIframe.srcdoc.includes("'ui-preview-sandbox'")) {
       throw new Error('allow-js なしでも helper script が srcdoc に含まれている必要があります');
@@ -227,8 +231,7 @@ export const SandboxCapabilityTokens: Story = {
     }
 
     if (
-      formsDownloadsIframe.getAttribute('sandbox') !==
-      'allow-scripts allow-forms allow-downloads'
+      formsDownloadsIframe.getAttribute('sandbox') !== 'allow-scripts allow-forms allow-downloads'
     ) {
       throw new Error(
         'allow-forms / allow-downloads 指定時の sandbox token が期待値と一致しません',
@@ -267,7 +270,10 @@ export const SanitizationBoundary: Story = {
     <div style="padding: 2rem; max-width: 720px;">
       <ui-preview-sandbox id="sanitize-sandbox" title="sanitize sandbox" height="160">
         <template data-preview-kind="html"
-          >&lt;script&gt;parent.postMessage({ source: 'bad' }, '*');&lt;/script&gt;&lt;a href="javascript:alert(1)" onclick="alert(1)"&gt;危険&lt;/a&gt;&lt;iframe src="/evil"&gt;&lt;/iframe&gt;&lt;button style="background: red;"&gt;安全&lt;/button&gt;</template
+          >&lt;script&gt;parent.postMessage({ source: 'bad' }, '*');&lt;/script&gt;&lt;a
+          href="javascript:alert(1)" onclick="alert(1)"&gt;危険&lt;/a&gt;&lt;iframe
+          src="/evil"&gt;&lt;/iframe&gt;&lt;button style="background:
+          red;"&gt;安全&lt;/button&gt;</template
         >
       </ui-preview-sandbox>
     </div>
@@ -279,7 +285,7 @@ export const SanitizationBoundary: Story = {
 
     const iframe = getIframe(sandbox);
     const srcdoc = iframe.srcdoc;
-    if (srcdoc.includes('<script>parent.postMessage({ source: \'bad\' }, \'*\');</script>')) {
+    if (srcdoc.includes("<script>parent.postMessage({ source: 'bad' }, '*');</script>")) {
       throw new Error('危険な script 要素が除去されていません');
     }
     if (srcdoc.includes('onclick=')) {
@@ -306,7 +312,12 @@ export const CodePreviewIntegration: Story = {
         preview-viewport="full"
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
-        <ui-preview-sandbox id="integrated-sandbox" slot="preview" title="integrated sandbox" height="160">
+        <ui-preview-sandbox
+          id="integrated-sandbox"
+          slot="preview"
+          title="integrated sandbox"
+          height="160"
+        >
           <template data-preview-kind="html"><button class="demo">押す</button></template>
           <template data-preview-kind="css">button { color: rgb(12 12 12); }</template>
         </ui-preview-sandbox>

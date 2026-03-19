@@ -40,13 +40,23 @@ export const Default: Story = {
           html`
             <div class="foundation-stage" style="padding: 0; overflow: clip;">
               <div class="app-root" id="app-shell-root">
-                <ui-skip-link id="app-shell-skip-link" href="#app-shell-main" label="メインコンテンツへ移動"></ui-skip-link>
+                <ui-skip-link
+                  id="app-shell-skip-link"
+                  href="#app-shell-main"
+                  label="メインコンテンツへ移動"
+                ></ui-skip-link>
                 <layout-header></layout-header>
-                <main id="app-shell-main" tabindex="-1" class="container-reading" style="padding-block: var(--space-8);">
+                <main
+                  id="app-shell-main"
+                  tabindex="-1"
+                  class="container-reading"
+                  style="padding-block: var(--space-8);"
+                >
                   <div style="display: grid; gap: var(--space-4);">
                     <h2 style="margin: 0;">静かなアプリケーションシェル</h2>
                     <p style="margin: 0;">
-                      Header は常に最上部で現在地を示し、本文は reading width に従って落ち着いた幅に収まります。
+                      Header は常に最上部で現在地を示し、本文は reading width
+                      に従って落ち着いた幅に収まります。
                     </p>
                     <p style="margin: 0;">
                       Footer は build revision と年を静かに示し、視線の終端を整えます。

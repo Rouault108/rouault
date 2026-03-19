@@ -26,8 +26,7 @@ function isSafeResolvedPath(rootDirectory: string, candidatePath: string): boole
   const resolvedCandidate = path.resolve(candidatePath);
 
   return (
-    resolvedCandidate === resolvedRoot ||
-    resolvedCandidate.startsWith(`${resolvedRoot}${path.sep}`)
+    resolvedCandidate === resolvedRoot || resolvedCandidate.startsWith(`${resolvedRoot}${path.sep}`)
   );
 }
 

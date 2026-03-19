@@ -37,7 +37,10 @@ export class ArticleHeader extends LitElement {
 
       .article-header {
         display: block;
-        border-block-end: var(--border-style-subtle, 1px solid var(--border-default, oklch(20% 0 0 / 0.12)));
+        border-block-end: var(
+          --border-style-subtle,
+          1px solid var(--border-default, oklch(20% 0 0 / 0.12))
+        );
       }
 
       .heading {
@@ -99,7 +102,7 @@ export class ArticleHeader extends LitElement {
       }
 
       .metadata-list--primary .meta-icon {
-        color: var(--fg-sabtle, oklch(60% 0 0))
+        color: var(--fg-sabtle, oklch(60% 0 0));
       }
 
       /* セカンダリリスト内のアイコンはフォントサイズに合わせて縮小 */
@@ -374,7 +377,8 @@ export class ArticleHeader extends LitElement {
                 aria-label="タグ: ${tag}"
                 @click="${(event: MouseEvent) => {
                   this._handleTagClick(event, tag);
-                }}">
+                }}"
+              >
                 ${tag}
               </ui-tag>
             `;

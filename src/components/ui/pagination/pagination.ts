@@ -14,10 +14,7 @@ function toFiniteInt(value: number, fallback: number): number {
 /** ページネーション入力を安全な表示値へ正規化します。 */
 function normalizePagination(current: number, total: number): { current: number; total: number } {
   const normalizedTotal = Math.max(1, toFiniteInt(total, 1));
-  const normalizedCurrent = Math.min(
-    normalizedTotal,
-    Math.max(1, toFiniteInt(current, 1)),
-  );
+  const normalizedCurrent = Math.min(normalizedTotal, Math.max(1, toFiniteInt(current, 1)));
   return { current: normalizedCurrent, total: normalizedTotal };
 }
 
@@ -193,12 +190,12 @@ export class Pagination extends LitElement {
       min-width: var(--control-height-md, 32px);
       padding: 0;
 
-	    font-family: var(--font-sans);
-	    font-size: var(--text-base, 0.875rem);
-	    font-variant-numeric: tabular-nums; /* 等幅数字: 仕様の注記に従い font-mono は不使用 */
-	    line-height: 1;
-	    /* 例外許可: Paginationはボタン型リンク。輪郭・背景・現在地インジケータで非色シグナルを示す。 */
-	    text-decoration: none;
+      font-family: var(--font-sans);
+      font-size: var(--text-base, 0.875rem);
+      font-variant-numeric: tabular-nums; /* 等幅数字: 仕様の注記に従い font-mono は不使用 */
+      line-height: 1;
+      /* 例外許可: Paginationはボタン型リンク。輪郭・背景・現在地インジケータで非色シグナルを示す。 */
+      text-decoration: none;
 
       border-radius: var(--radius-md, 0.375rem);
 
@@ -520,9 +517,7 @@ export class Pagination extends LitElement {
 
     return html`
       <li class="item">
-        <a class="page-btn" href="${getHref(item)}" aria-label="${item}ページへ移動">
-          ${item}
-        </a>
+        <a class="page-btn" href="${getHref(item)}" aria-label="${item}ページへ移動"> ${item} </a>
       </li>
     `;
   }

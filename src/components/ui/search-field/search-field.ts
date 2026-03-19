@@ -321,11 +321,7 @@ export class SearchField extends LitElement {
     this._input.select();
   }
 
-  setSelectionRange(
-    start: number,
-    end: number,
-    direction?: SelectionDirectionValue,
-  ): void {
+  setSelectionRange(start: number, end: number, direction?: SelectionDirectionValue): void {
     this._input.setSelectionRange(start, end, direction);
   }
 
@@ -387,9 +383,7 @@ export class SearchField extends LitElement {
     };
 
     return html`
-      <label for=${this._inputId} class=${classMap(labelClasses)}>
-        ${this.label}
-      </label>
+      <label for=${this._inputId} class=${classMap(labelClasses)}> ${this.label} </label>
 
       <div class="field">
         <span class="icon" aria-hidden="true">

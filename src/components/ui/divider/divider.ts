@@ -15,7 +15,8 @@ export const DOCUMENT_STYLE_ID = 'ui-divider-document-styles';
  * - `<ui-divider>` 内部の `hr`
  * - レイアウト境界用 `hr[data-divider-variant="layout"]`
  */
-export const DIVIDER_SCOPE_SELECTOR = ':where(.prose hr, ui-divider > hr, hr[data-divider-variant="layout"])';
+export const DIVIDER_SCOPE_SELECTOR =
+  ':where(.prose hr, ui-divider > hr, hr[data-divider-variant="layout"])';
 
 const DOCUMENT_CSS = `
 ${DIVIDER_SCOPE_SELECTOR} {
@@ -79,9 +80,7 @@ export class Divider extends LitElement {
   }
 
   override render() {
-    return html`
-      <hr data-divider-variant="${this._resolvedVariant}" />
-    `;
+    return html` <hr data-divider-variant="${this._resolvedVariant}" /> `;
   }
 }
 

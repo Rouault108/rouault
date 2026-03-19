@@ -34,9 +34,7 @@ export function remarkDisallowRawHtml() {
             ? `:${String(line)}:${String(column)}`
             : '';
 
-        throw new Error(
-          `[markdown] 生HTMLは使用できません: ${sourcePath}${location}`,
-        );
+        throw new Error(`[markdown] 生HTMLは使用できません: ${sourcePath}${location}`);
       }
 
       if (!Array.isArray(current.children)) {

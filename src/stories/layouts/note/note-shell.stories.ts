@@ -41,8 +41,7 @@ const meta: Meta = {
     layout: 'fullscreen',
     docs: {
       description: {
-        component:
-          'NoteLayout 相当の 3 カラム構造を Storybook 上で確認するためのストーリーです。',
+        component: 'NoteLayout 相当の 3 カラム構造を Storybook 上で確認するためのストーリーです。',
       },
     },
   },
@@ -91,16 +90,16 @@ export const Default: Story = {
                           本文の集中を崩さないことを目的とします。
                         </p>
                         <h2 id="design">設計原則</h2>
-                        <p>
-                          補助 UI には細い境界だけを与え、本文面は過剰に囲いません。
-                        </p>
+                        <p>補助 UI には細い境界だけを与え、本文面は過剰に囲いません。</p>
                         <h3 id="layout">レイアウト契約</h3>
                         <p>
-                          desktop では 3 カラム、tablet では本文 + TOC、mobile では本文優先へ縮退します。
+                          desktop では 3 カラム、tablet では本文 + TOC、mobile
+                          では本文優先へ縮退します。
                         </p>
                         <h2 id="conclusion">まとめ</h2>
                         <p>
-                          Storybook 上では構造と読み味を同時に確認し、詳細な breakpoints はブラウザ幅変更で見ます。
+                          Storybook 上では構造と読み味を同時に確認し、詳細な breakpoints
+                          はブラウザ幅変更で見ます。
                         </p>
                       </div>
                     </article>
@@ -134,8 +133,11 @@ export const Default: Story = {
     const sidebarHost = canvasElement.querySelector<LayoutSidebar>('#story-note-sidebar');
     const tocHost = canvasElement.querySelector<LayoutToc>('#story-note-toc');
     const main = canvasElement.querySelector<HTMLElement>('#note-shell-main');
-    const sidebarSourceElement = canvasElement.querySelector<HTMLScriptElement>('#story-note-sidebar-source');
-    const tocSourceElement = canvasElement.querySelector<HTMLScriptElement>('#story-note-toc-source');
+    const sidebarSourceElement = canvasElement.querySelector<HTMLScriptElement>(
+      '#story-note-sidebar-source',
+    );
+    const tocSourceElement =
+      canvasElement.querySelector<HTMLScriptElement>('#story-note-toc-source');
 
     if (!sidebarHost || !tocHost) {
       throw new Error('layout component が見つかりません');
@@ -143,7 +145,10 @@ export const Default: Story = {
     if (!(main instanceof HTMLElement)) {
       throw new Error('#note-shell-main が見つかりません');
     }
-    if (!(sidebarSourceElement instanceof HTMLScriptElement) || !(tocSourceElement instanceof HTMLScriptElement)) {
+    if (
+      !(sidebarSourceElement instanceof HTMLScriptElement) ||
+      !(tocSourceElement instanceof HTMLScriptElement)
+    ) {
       throw new Error('JSON source script が見つかりません');
     }
 

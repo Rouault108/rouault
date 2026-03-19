@@ -185,12 +185,17 @@ const transformCodePreview = (node: HastNode): void => {
     snippets.filter((snippet) => snippet.kind === kind),
   );
 
-  sandboxNode.children = orderedSnippets.map((snippet) => createTemplateNode(snippet.kind, snippet.source));
+  sandboxNode.children = orderedSnippets.map((snippet) =>
+    createTemplateNode(snippet.kind, snippet.source),
+  );
   if (orderedSnippets.length === 0) {
     return;
   }
 
-  node.children = [...node.children, createCodeAreaNode(orderedSnippets, resolveCodeGroupLabel(node, sandboxNode))];
+  node.children = [
+    ...node.children,
+    createCodeAreaNode(orderedSnippets, resolveCodeGroupLabel(node, sandboxNode)),
+  ];
 };
 
 /**

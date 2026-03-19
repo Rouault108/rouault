@@ -169,10 +169,7 @@ export class CodeBlock extends LitElement {
       --_ui-code-block-header-display: block;
 
       display: block;
-      width: var(
-        --ui-code-block-breakout-width,
-        var(--_ui-code-block-breakout-width-default)
-      );
+      width: var(--ui-code-block-breakout-width, var(--_ui-code-block-breakout-width-default));
       margin-inline: var(
         --ui-code-block-breakout-margin,
         var(--_ui-code-block-breakout-margin-default)
@@ -201,8 +198,7 @@ export class CodeBlock extends LitElement {
       overflow: hidden;
       border: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12));
       background: var(--bg-default, oklch(1 0 0));
-      border-radius:
-        var(--ui-code-block-radius-top, var(--radius-md, 6px))
+      border-radius: var(--ui-code-block-radius-top, var(--radius-md, 6px))
         var(--ui-code-block-radius-top, var(--radius-md, 6px))
         var(--ui-code-block-radius-bottom, var(--radius-md, 6px))
         var(--ui-code-block-radius-bottom, var(--radius-md, 6px));
@@ -221,11 +217,9 @@ export class CodeBlock extends LitElement {
     }
 
     .caption {
-      display: var(
-        --ui-code-block-header-display,
-        var(--_ui-code-block-header-display, block)
-      );
-      padding: var(--space-2, 8px) var(--ui-code-block-padding, var(--space-2, 8px)) 0 var(--space-3, 12px);
+      display: var(--ui-code-block-header-display, var(--_ui-code-block-header-display, block));
+      padding: var(--space-2, 8px) var(--ui-code-block-padding, var(--space-2, 8px)) 0
+        var(--space-3, 12px);
       color: var(--fg-muted, oklch(45% 0 0));
       font-size: var(--text-xs, 12px);
       font-weight: var(--font-medium, 500);
@@ -262,7 +256,8 @@ export class CodeBlock extends LitElement {
           (
             var(--control-height-sm, 24px) -
               (var(--text-sm, 0.8125rem) * var(--line-height-none, 1))
-          ) / 2
+          ) /
+          2
       );
       inset-inline-end: 0;
       z-index: 1;
@@ -452,9 +447,11 @@ export class CodeBlock extends LitElement {
     const root = (pre.querySelector('code') ?? pre).cloneNode(true) as HTMLElement;
     root
       .querySelectorAll('.line-number,[data-line-number],.ui-code-block-line-number')
-      .forEach((element) => { element.remove(); });
+      .forEach((element) => {
+        element.remove();
+      });
 
-    return (root.textContent).replace(/\r\n?/g, '\n');
+    return root.textContent.replace(/\r\n?/g, '\n');
   }
 
   private get _resolvedIntent(): CodeBlockIntent {
@@ -601,7 +598,10 @@ export class CodeBlock extends LitElement {
     }
 
     // 行番号の適用を優先し、.line が無い場合はプレーン行ラッパーへ正規化する
-    const sourceText = (pre.getAttribute('data-raw') ?? container.textContent).replace(/\r\n?/g, '\n');
+    const sourceText = (pre.getAttribute('data-raw') ?? container.textContent).replace(
+      /\r\n?/g,
+      '\n',
+    );
     const lines = sourceText.split('\n');
 
     container.textContent = '';
@@ -665,20 +665,17 @@ export class CodeBlock extends LitElement {
         <figcaption class="caption">
           <div class="caption-layout">
             <span class="caption-main">
-              <span
-                class="filename"
-                @mouseenter="${this._onFilenameMouseEnter}"
-              >
+              <span class="filename" @mouseenter="${this._onFilenameMouseEnter}">
                 ${this._resolvedFilename}
               </span>
               ${intentMeta
-        ? html`
+                ? html`
                     <span class="intent" data-intent="${this._resolvedIntent}">
                       <iconify-icon icon="${intentMeta.icon}" aria-hidden="true"></iconify-icon>
                       <span>${intentMeta.label}</span>
                     </span>
                   `
-        : nothing}
+                : nothing}
             </span>
             <span class="copy-button-shell">
               <ui-copy-button

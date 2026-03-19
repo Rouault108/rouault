@@ -123,4 +123,5 @@ Write-Utf8NoBom -Path $file -Content ($old+"`nYOUR_TEXT_HERE`n")
   - アイコンはiconify/lucideを使用してください。lib/components/icon.tsでアイコンセット全体をインポートしているためそのまま使用できます。
 
 ## 関連ドキュメント
+
 - [デザインシステム](./content/design-system.md)

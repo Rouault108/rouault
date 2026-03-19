@@ -43,7 +43,9 @@ test.describe('Router Navigation', () => {
     await expectMainHeading(page, 'くるみ割り人形');
 
     const probeAlive = await page.evaluate(() => {
-      return (window as typeof window & { __spaProbe?: { alive: boolean } }).__spaProbe?.alive === true;
+      return (
+        (window as typeof window & { __spaProbe?: { alive: boolean } }).__spaProbe?.alive === true
+      );
     });
     expect(probeAlive).toBe(true);
   });
@@ -131,7 +133,9 @@ test.describe('Router Navigation', () => {
       () =>
         new Promise<void>((resolve) => {
           requestAnimationFrame(() => {
-            requestAnimationFrame(() => { resolve() });
+            requestAnimationFrame(() => {
+              resolve();
+            });
           });
         }),
     );
@@ -143,7 +147,9 @@ test.describe('Router Navigation', () => {
       () =>
         new Promise<void>((resolve) => {
           requestAnimationFrame(() => {
-            requestAnimationFrame(() => { resolve() });
+            requestAnimationFrame(() => {
+              resolve();
+            });
           });
         }),
     );
@@ -166,7 +172,9 @@ test.describe('Router Navigation', () => {
 
     await expect.poll(() => page.evaluate(() => window.location.hash)).toBe(href);
   });
-  test('見出し本文クリックでは hash が更新されず、固定リンククリックでのみ更新されること', async ({ page }) => {
+  test('見出し本文クリックでは hash が更新されず、固定リンククリックでのみ更新されること', async ({
+    page,
+  }) => {
     await page.goto(testNotePath);
 
     const headingText = page.locator('#main-content .prose h2 .heading-text').first();
@@ -223,7 +231,9 @@ test.describe('Router Navigation', () => {
     await expect(page).toHaveURL(`${tabsTestPath}?tab=details`);
 
     const probeAlive = await page.evaluate(() => {
-      return (window as typeof window & { __spaProbe?: { alive: boolean } }).__spaProbe?.alive === true;
+      return (
+        (window as typeof window & { __spaProbe?: { alive: boolean } }).__spaProbe?.alive === true
+      );
     });
     expect(probeAlive).toBe(true);
   });

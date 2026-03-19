@@ -34,8 +34,6 @@ describe('extractTocFromHtml', () => {
 
     const toc = extractTocFromHtml(html);
 
-    expect(toc).to.deep.equal([
-      { id: 'intro', text: 'はじめに', level: 2 },
-    ]);
+    expect(toc).to.deep.equal([{ id: 'intro', text: 'はじめに', level: 2 }]);
   });
 });

@@ -574,16 +574,10 @@ export class FileTree extends LitElement {
 
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    this._scrollElementWithinContainer(
-      treeItem,
-      prefersReducedMotion ? 'instant' : 'smooth',
-    );
+    this._scrollElementWithinContainer(treeItem, prefersReducedMotion ? 'instant' : 'smooth');
   }
 
-  private _scrollElementWithinContainer(
-    element: HTMLElement,
-    behavior: ScrollBehavior,
-  ): void {
+  private _scrollElementWithinContainer(element: HTMLElement, behavior: ScrollBehavior): void {
     const container = this._findScrollContainer(element);
     if (!container) return;
 
@@ -616,7 +610,6 @@ export class FileTree extends LitElement {
     let current: HTMLElement | null = start;
 
     for (;;) {
-
       const parent = this._getComposedParentElement(current);
       if (!parent) return null;
 
@@ -813,9 +806,7 @@ export class FileTree extends LitElement {
           @tree-item-arrow-left="${this._handleItemArrowLeft}"
         >
           ${node.children && node.children.length > 0
-            ? html`
-                <div slot="children">${this._renderTreeItems(node.children, depth + 1)}</div>
-              `
+            ? html` <div slot="children">${this._renderTreeItems(node.children, depth + 1)}</div> `
             : nothing}
         </ui-tree-item>
       `;

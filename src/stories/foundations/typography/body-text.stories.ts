@@ -12,13 +12,9 @@ import {
 const toPx = (value: string): number => {
   const trimmed = value.trim();
   if (trimmed.endsWith('rem')) {
-    const rootFontSize = Number.parseFloat(
-      getComputedStyle(document.documentElement).fontSize,
-    );
+    const rootFontSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
     const remValue = Number.parseFloat(trimmed);
-    return Number.isFinite(rootFontSize) && Number.isFinite(remValue)
-      ? remValue * rootFontSize
-      : 0;
+    return Number.isFinite(rootFontSize) && Number.isFinite(remValue) ? remValue * rootFontSize : 0;
   }
   const parsed = Number.parseFloat(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -64,7 +60,10 @@ export const Default: Story = {
               label: '通常本文',
               note: 'body の基準。注釈や UI テキストの基準にもなります。',
               content: html`
-                <div id="body-text-sample" style="font-size: var(--text-base); line-height: var(--line-height-normal);">
+                <div
+                  id="body-text-sample"
+                  style="font-size: var(--text-base); line-height: var(--line-height-normal);"
+                >
                   UI テキストは静かに、しかし十分に読み取れる必要があります。
                 </div>
               `,
@@ -79,7 +78,8 @@ export const Default: Story = {
                 <div id="prose-sample" class="prose" style="margin-inline: 0;">
                   <h2 id="prose-h2">静かな読書体験</h2>
                   <p id="prose-intro">
-                    Rouault は <a id="body-link-sample" href="/notes/serene-reading">静かな読書体験</a>
+                    Rouault は
+                    <a id="body-link-sample" href="/notes/serene-reading">静かな読書体験</a>
                     を中心に設計されています。
                   </p>
                   <h3 id="prose-h3">余白の設計</h3>
@@ -100,7 +100,6 @@ export const Default: Story = {
           ]),
           '本文の基準サイズと記事本文の読み幅・要素間コントラストを同時に確認します。',
         )}
-
         ${renderFoundationSection(
           'Typography Tokens',
           renderTokenValueList([
@@ -183,19 +182,29 @@ export const Default: Story = {
       throw new Error(`.prose 先頭の h2 は余白なしである必要があります: ${h2Style.marginTop}`);
     }
     if (!isNearlyEqual(toPx(introStyle.marginTop), proseFlowSpace)) {
-      throw new Error(`p の margin-top は --space-4 を期待していましたが、実際には ${introStyle.marginTop} でした`);
+      throw new Error(
+        `p の margin-top は --space-4 を期待していましたが、実際には ${introStyle.marginTop} でした`,
+      );
     }
     if (!isNearlyEqual(toPx(h3Style.marginTop), proseSubsectionSpace)) {
-      throw new Error(`h3 の margin-top は --space-6 を期待していましたが、実際には ${h3Style.marginTop} でした`);
+      throw new Error(
+        `h3 の margin-top は --space-6 を期待していましたが、実際には ${h3Style.marginTop} でした`,
+      );
     }
     if (!isNearlyEqual(toPx(bodyStyle.marginTop), proseFlowSpace)) {
-      throw new Error(`h3 後の p は --space-4 を期待していましたが、実際には ${bodyStyle.marginTop} でした`);
+      throw new Error(
+        `h3 後の p は --space-4 を期待していましたが、実際には ${bodyStyle.marginTop} でした`,
+      );
     }
     if (!isNearlyEqual(toPx(listStyle.marginTop), proseFlowSpace)) {
-      throw new Error(`ul の margin-top は --space-4 を期待していましたが、実際には ${listStyle.marginTop} でした`);
+      throw new Error(
+        `ul の margin-top は --space-4 を期待していましたが、実際には ${listStyle.marginTop} でした`,
+      );
     }
     if (!isNearlyEqual(toPx(calloutStyle.marginTop), proseFlowSpace)) {
-      throw new Error(`ui-callout の margin-top は --space-4 を期待していましたが、実際には ${calloutStyle.marginTop} でした`);
+      throw new Error(
+        `ui-callout の margin-top は --space-4 を期待していましたが、実際には ${calloutStyle.marginTop} でした`,
+      );
     }
     if (!isNearlyEqual(readTokenPx(prose, '--prose-flow-space'), proseFlowSpace)) {
       throw new Error('`--prose-flow-space` が `--space-4` と一致していません');

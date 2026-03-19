@@ -28,7 +28,12 @@ const MATRIX_CASES: readonly MatrixCase[] = [
   { id: 'matrix-popover-open', mode: 'popover', open: true, label: 'popover / open' },
   { id: 'matrix-drawer-closed', mode: 'drawer', open: false, label: 'drawer / closed' },
   { id: 'matrix-drawer-open', mode: 'drawer', open: true, label: 'drawer / open' },
-  { id: 'matrix-interlinear-closed', mode: 'interlinear', open: false, label: 'interlinear / closed' },
+  {
+    id: 'matrix-interlinear-closed',
+    mode: 'interlinear',
+    open: false,
+    label: 'interlinear / closed',
+  },
   { id: 'matrix-interlinear-open', mode: 'interlinear', open: true, label: 'interlinear / open' },
 ];
 
@@ -56,7 +61,8 @@ const getContent = (host: UiTranslation): HTMLElement => {
   return content;
 };
 
-const normalize = (value: string | null | undefined): string => (value ?? '').replace(/\s+/g, ' ').trim();
+const normalize = (value: string | null | undefined): string =>
+  (value ?? '').replace(/\s+/g, ' ').trim();
 
 const createMemoryStorage = (
   initialEntries: Record<string, string> = {},
@@ -213,7 +219,10 @@ export const Default: Story = {
 
     const observed: boolean[] = [];
     host.addEventListener('translation-toggle', (event: Event) => {
-      const customEvent = event as CustomEvent<{ open: boolean; renderMode: TranslationRenderMode }>;
+      const customEvent = event as CustomEvent<{
+        open: boolean;
+        renderMode: TranslationRenderMode;
+      }>;
       observed.push(customEvent.detail.open);
     });
 
@@ -297,8 +306,8 @@ export const VariantStateMatrix: Story = {
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const hosts = MATRIX_CASES.map(item => getHost(canvasElement, item.id));
-    await Promise.all(hosts.map(host => host.updateComplete));
+    const hosts = MATRIX_CASES.map((item) => getHost(canvasElement, item.id));
+    await Promise.all(hosts.map((host) => host.updateComplete));
 
     for (const item of MATRIX_CASES) {
       const host = getHost(canvasElement, item.id);
@@ -387,7 +396,11 @@ export const BoundaryConditions: Story = {
     const invalidMode = getHost(canvasElement, 'boundary-invalid-mode');
     const emptyTarget = getHost(canvasElement, 'boundary-empty-target');
     const emptyTranslated = getHost(canvasElement, 'boundary-empty-translated');
-    await Promise.all([invalidMode.updateComplete, emptyTarget.updateComplete, emptyTranslated.updateComplete]);
+    await Promise.all([
+      invalidMode.updateComplete,
+      emptyTarget.updateComplete,
+      emptyTranslated.updateComplete,
+    ]);
 
     if (invalidMode.renderMode !== 'popover') {
       throw new Error('不正 render-mode は popover へフォールバックする必要があります');
@@ -424,7 +437,7 @@ export const BoundaryConditions: Story = {
     const originalWarn = console.warn;
     const warnMessages: string[] = [];
     console.warn = (...args: unknown[]): void => {
-      warnMessages.push(args.map(arg => (typeof arg === 'string' ? arg : String(arg))).join(' '));
+      warnMessages.push(args.map((arg) => (typeof arg === 'string' ? arg : String(arg))).join(' '));
     };
 
     try {
@@ -442,9 +455,8 @@ export const BoundaryConditions: Story = {
 
     if (
       !warnMessages.some(
-        message =>
-          message.includes('[ui-translation]') &&
-          message.includes(String(MAX_TRIGGER_TEXT_LENGTH)),
+        (message) =>
+          message.includes('[ui-translation]') && message.includes(String(MAX_TRIGGER_TEXT_LENGTH)),
       )
     ) {
       throw new Error('長文 trigger 警告（150文字超過）が検出できませんでした');
@@ -452,7 +464,9 @@ export const BoundaryConditions: Story = {
 
     const styleTags = document.querySelectorAll<HTMLStyleElement>(`#${DOCUMENT_STYLE_ID}`);
     if (styleTags.length !== 1) {
-      throw new Error(`translation の style 注入は1回であるべきですが ${String(styleTags.length)} 回です`);
+      throw new Error(
+        `translation の style 注入は1回であるべきですが ${String(styleTags.length)} 回です`,
+      );
     }
 
     const [styleTag] = Array.from(styleTags);
@@ -501,7 +515,8 @@ export const OrchestratorContract: Story = {
     const storage = createMemoryStorage({
       [TRANSLATION_MODE_STORAGE_KEY]: 'parallel',
     });
-    const modeChanges: { intentMode: TranslationIntentMode; renderMode: TranslationRenderMode }[] = [];
+    const modeChanges: { intentMode: TranslationIntentMode; renderMode: TranslationRenderMode }[] =
+      [];
 
     const orchestrator = new TranslationOrchestrator({
       root: canvasElement,
@@ -558,7 +573,9 @@ export const OrchestratorContract: Story = {
       trigger.click();
       await lookupHost1.updateComplete;
       if (!lookupHost1.open) {
-        throw new Error('P ショートカット検証前に trigger クリックで open=true になる必要があります');
+        throw new Error(
+          'P ショートカット検証前に trigger クリックで open=true になる必要があります',
+        );
       }
 
       trigger.dispatchEvent(
@@ -646,7 +663,9 @@ export const DarkModeContract: Story = {
 
     const cssText = styleTag.textContent;
     if (cssText.includes('prefers-color-scheme')) {
-      throw new Error('translation は prefers-color-scheme 直接分岐ではなくトークン参照でモード追従する必要があります');
+      throw new Error(
+        'translation は prefers-color-scheme 直接分岐ではなくトークン参照でモード追従する必要があります',
+      );
     }
     if (!cssText.includes('inset 0 1px 0 0')) {
       throw new Error('Popover/Drawer の上端ハイライト契約が不足しています');
@@ -701,7 +720,9 @@ export const MobileLookupBottomSheet: Story = {
       }
 
       if (getComputedStyle(content).position !== 'fixed') {
-        throw new Error('mobile lookup content は fixed の bottom-sheet として描画される必要があります');
+        throw new Error(
+          'mobile lookup content は fixed の bottom-sheet として描画される必要があります',
+        );
       }
 
       content.dispatchEvent(

@@ -143,7 +143,9 @@ export const ComparisonPair: Story = {
     const tabs = getTabs(group);
     const panels = getPanels(group);
     if (tabs.length !== 2 || panels.length !== 2) {
-      throw new Error(`タブ/パネル数が想定外です: tabs=${String(tabs.length)} panels=${String(panels.length)}`);
+      throw new Error(
+        `タブ/パネル数が想定外です: tabs=${String(tabs.length)} panels=${String(panels.length)}`,
+      );
     }
     const firstTab = tabs[0];
     const secondTab = tabs[1];
@@ -184,7 +186,9 @@ export const ComparisonPair: Story = {
     const firstPre = firstPanel.querySelector('pre');
     if (!firstPre) throw new Error('1つ目のパネルの pre が見つかりません');
     if (getComputedStyle(firstPre).backgroundColor !== 'rgba(0, 0, 0, 0)') {
-      throw new Error('code-group の body 内では、スロットされた pre の背景は透明（transparent）でなければなりません');
+      throw new Error(
+        'code-group の body 内では、スロットされた pre の背景は透明（transparent）でなければなりません',
+      );
     }
 
     const copyButtonBefore = getCopyButton(group);
@@ -260,7 +264,9 @@ export const LabelFallbackContract: Story = {
     expected.forEach((label, index) => {
       const actual = tabTexts[index] ?? '';
       if (actual !== label) {
-        throw new Error(`フォールバック順序が不正です。index=${String(index)} expected="${label}" actual="${actual}"`);
+        throw new Error(
+          `フォールバック順序が不正です。index=${String(index)} expected="${label}" actual="${actual}"`,
+        );
       }
     });
 
@@ -297,10 +303,7 @@ export const LabelFallbackContract: Story = {
 export const OverflowAndCompensation: Story = {
   render: () => html`
     <div style="width: 320px;">
-      <ui-code-group
-        id="overflow-group"
-        style="--header-tools-width: 120px;"
-      >
+      <ui-code-group id="overflow-group" style="--header-tools-width: 120px;">
         <ui-code-block label="長いタブラベル 01" filename="file-01.ts">
           <pre><code>const v01 = 1;</code></pre>
         </ui-code-block>

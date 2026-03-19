@@ -67,10 +67,7 @@ const validateDirectiveChildrenConstraint = (
   }
 };
 
-const validateChildOccurrenceConstraints = (
-  node: MdastNode,
-  file: VFileLike | undefined,
-): void => {
+const validateChildOccurrenceConstraints = (node: MdastNode, file: VFileLike | undefined): void => {
   const children = node.children ?? [];
   if (children.length === 0) {
     return;
@@ -145,11 +142,7 @@ const validateFenceCodeLanguageRequirements = (
 
   for (const child of children) {
     if (child.type !== 'code') {
-      throw toError(
-        file,
-        child,
-        `${directiveName} には fenced code block のみ配置できます`,
-      );
+      throw toError(file, child, `${directiveName} には fenced code block のみ配置できます`);
     }
   }
 

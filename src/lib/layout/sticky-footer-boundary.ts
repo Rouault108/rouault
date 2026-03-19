@@ -43,9 +43,7 @@ const readPxCustomProperty = (element: HTMLElement, propertyName: string): numbe
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-export const attachStickyFooterBoundary = (
-  target: HTMLElement,
-): (() => void) => {
+export const attachStickyFooterBoundary = (target: HTMLElement): (() => void) => {
   if (typeof window === 'undefined') {
     // SSR環境では何もしないクリーンアップ関数を返す
     return (): void => undefined;

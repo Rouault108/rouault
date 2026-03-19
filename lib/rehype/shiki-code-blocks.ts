@@ -1,9 +1,4 @@
-import {
-  bundledLanguages,
-  bundledLanguagesAlias,
-  codeToHast,
-  type BundledLanguage,
-} from 'shiki';
+import { bundledLanguages, bundledLanguagesAlias, codeToHast, type BundledLanguage } from 'shiki';
 import {
   transformerMetaHighlight,
   transformerNotationDiff,
@@ -145,7 +140,8 @@ const toShikiMeta = (codeNode: HastNode): Record<string, unknown> => {
   return meta;
 };
 
-const normalizeLineEndings = (value: string): string => value.replace(/\r\n?/g, '\n').replace(/\n$/, '');
+const normalizeLineEndings = (value: string): string =>
+  value.replace(/\r\n?/g, '\n').replace(/\n$/, '');
 
 const highlightCodeBlock = async (node: HastNode): Promise<void> => {
   const codeNode = findCodeChild(node);

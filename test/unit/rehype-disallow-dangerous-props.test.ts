@@ -135,7 +135,9 @@ describe('rehypeDisallowDangerousProps', () => {
     const run = () => {
       rehypeDisallowDangerousProps()(tree, { path: 'content/notes/sample.md' });
     };
-    expect(run).to.throw('[markdown] 危険な属性 "onclick" は使用できません: content/notes/sample.md');
+    expect(run).to.throw(
+      '[markdown] 危険な属性 "onclick" は使用できません: content/notes/sample.md',
+    );
   });
 
   it('危険な URL スキームを禁止すること', () => {

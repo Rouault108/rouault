@@ -74,7 +74,8 @@ export const DefaultInList: Story = {
 
     if (row.getAttribute('role') !== 'row') throw new Error('row role が設定されていません');
     if (row.getAttribute('aria-selected') !== 'true') throw new Error('aria-selected が不正です');
-    if (row.getAttribute('data-item-id') !== item.id) throw new Error('data-item-id 同期が不正です');
+    if (row.getAttribute('data-item-id') !== item.id)
+      throw new Error('data-item-id 同期が不正です');
 
     const cells = row.shadowRoot?.querySelectorAll('[role="gridcell"]');
     if (cells?.length !== 4) throw new Error(`セル数が不正です: ${String(cells?.length)}`);
@@ -115,7 +116,7 @@ export const EmitsActiveChangeOnArrow: Story = {
     await row.updateComplete;
 
     const events: { rowId: string; colIndex: number }[] = [];
-    list.addEventListener('ui-active-change', event => {
+    list.addEventListener('ui-active-change', (event) => {
       events.push((event as CustomEvent<{ rowId: string; colIndex: number }>).detail);
     });
 

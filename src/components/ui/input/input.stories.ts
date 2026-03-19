@@ -5,27 +5,27 @@ import '../button/button';
 
 /**
  * ## 入力フィールド (Input)
- * 
+ *
  * 思考を妨げない「透明な」入力インターフェースを提供します。
  * Universal Clarity（入力領域の明示）とContextual Feedback（近接したエラー表示）を実現します。
- * 
+ *
  * ### デザイン哲学
- * 
+ *
  * - **役割**: 思考を妨げない「透明な」入力インターフェース
  * - **Universal Clarity**: 入力待機時には `--bg-fill-muted` によって領域を静かに明示し、「どこに入力できるか」を迷わせません
  * - **Variant**: `filled` は面で、`outline` は線で入力領域を明示します
  * - **Contextual Feedback**: バリデーションエラーやヘルプテキストは、視線の移動を最小限に抑えるため、入力フィールドに近接して表示
  * - **Clear Canvas**: フォーカス時は「紙」のような白地に戻し、執筆に集中させます
- * 
+ *
  * ### 状態遷移
- * 
+ *
  * 1. **Default**: 背景色で領域を明示（Discoverability）
  * 2. **Hover**: ボーダーを表示し、入力可能領域のエッジをフィードバック（Tactility）
  * 3. **Focus**: 白地に戻し、執筆に集中（Clear Canvas）。フォーカスリングで明確化（Adaptive Focus）
  * 4. **Error**: ボーダー+背景色の変化で色覚多様性に配慮
- * 
+ *
  * ### 使用上の注意
- * 
+ *
  * - **ラベルは必須**: アクセシビリティのため、`label` 属性は必ず設定してください
  * - **Help TextとError Messageは排他的**: エラー状態の場合、Help Textは非表示になります
  * - **未サポートのtype**: `date`, `time`, `file`, `checkbox`, `radio` 等は専用コンポーネントで対応します
@@ -223,7 +223,7 @@ type Story = StoryObj<Input>;
 
 /**
  * デフォルトの入力フィールド。
- * 
+ *
  * 基本的な使用例です。ラベルとプレースホルダーを設定します。
  */
 export const Default: Story = {
@@ -268,7 +268,9 @@ export const Default: Story = {
 
     // テスト: デフォルトのtype属性が設定されていること
     if (inputElement.getAttribute('type') !== 'email') {
-      throw new Error(`type="email" を期待していましたが、実際には "${inputElement.getAttribute('type') ?? 'null'}" でした`);
+      throw new Error(
+        `type="email" を期待していましたが、実際には "${inputElement.getAttribute('type') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: aria-label が設定されていること
@@ -280,7 +282,7 @@ export const Default: Story = {
 
 /**
  * ヘルプテキスト付きの入力フィールド。
- * 
+ *
  * 補助的な説明を入力フィールドの下に表示します。
  */
 export const WithHelpText: Story = {
@@ -318,14 +320,16 @@ export const WithHelpText: Story = {
     }
 
     if (!inputElement.getAttribute('aria-describedby')) {
-      throw new Error('help-text が存在する場合、aria-describedby はヘルプテキストを参照している必要があります');
+      throw new Error(
+        'help-text が存在する場合、aria-describedby はヘルプテキストを参照している必要があります',
+      );
     }
   },
 };
 
 /**
  * エラー状態の入力フィールド。
- * 
+ *
  * バリデーションエラーを表示します。
  * エラー状態の場合、Help Textは非表示となり、Error Messageのみが表示されます。
  */
@@ -365,7 +369,9 @@ export const ErrorState: Story = {
 
     // テスト: aria-invalid="true" が設定されていること
     if (inputElement.getAttribute('aria-invalid') !== 'true') {
-      throw new Error(`aria-invalid="true" を期待していましたが、実際には "${inputElement.getAttribute('aria-invalid') ?? 'null'}" でした`);
+      throw new Error(
+        `aria-invalid="true" を期待していましたが、実際には "${inputElement.getAttribute('aria-invalid') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: エラーメッセージが表示されていること
@@ -376,7 +382,9 @@ export const ErrorState: Story = {
 
     const describedBy = inputElement.getAttribute('aria-describedby');
     if (!describedBy) {
-      throw new Error('エラー状態では aria-describedby がエラーメッセージを参照している必要があります');
+      throw new Error(
+        'エラー状態では aria-describedby がエラーメッセージを参照している必要があります',
+      );
     }
 
     // テスト: ヘルプテキストが非表示であること
@@ -389,7 +397,7 @@ export const ErrorState: Story = {
 
 /**
  * ラベルを視覚的に非表示にした入力フィールド。
- * 
+ *
  * フィールドの文脈からラベルが明らかな場合に使用します。
  * スクリーンリーダーには常にラベルが提供されます。
  */
@@ -433,7 +441,7 @@ export const HiddenLabel: Story = {
 
 /**
  * 無効状態の入力フィールド。
- * 
+ *
  * 操作不可能な状態を示します。
  */
 export const Disabled: Story = {
@@ -475,7 +483,7 @@ export const Disabled: Story = {
 
 /**
  * 読み取り専用の入力フィールド。
- * 
+ *
  * フォーカス可能だがコピーのみ許可します。
  */
 export const Readonly: Story = {
@@ -517,9 +525,9 @@ export const Readonly: Story = {
 
 /**
  * 必須フィールドのバリデーション。
- * 
+ *
  * required 属性を使用したバリデーションの例です。
- * 
+ *
  * **検証方法**:
  * 1. 入力フィールドを**空欄のまま**「送信」ボタンをクリック → エラー状態が表示されます
  * 2. 何か入力してから「送信」ボタンをクリック → 成功メッセージが表示されます
@@ -562,23 +570,23 @@ export const Required: Story = {
         id="required-form"
         novalidate
         @submit="${(e: Event) => {
-      e.preventDefault();
-      const form = e.target as HTMLFormElement;
-      const input = form.querySelector('ui-input');
-      if (!input) return;
+          e.preventDefault();
+          const form = e.target as HTMLFormElement;
+          const input = form.querySelector('ui-input');
+          if (!input) return;
 
-      // ブラウザのバリデーションチェック
-      if (!input.checkValidity()) {
-        // バリデーションエラー: ui-inputのerror状態を設定
-        input.error = true;
-        input.errorMessage = 'この項目は必須です';
-      } else {
-        // バリデーション成功: エラー状態をクリア
-        input.error = false;
-        input.errorMessage = '';
-        alert('フォームが送信されました！');
-      }
-    }}"
+          // ブラウザのバリデーションチェック
+          if (!input.checkValidity()) {
+            // バリデーションエラー: ui-inputのerror状態を設定
+            input.error = true;
+            input.errorMessage = 'この項目は必須です';
+          } else {
+            // バリデーション成功: エラー状態をクリア
+            input.error = false;
+            input.errorMessage = '';
+            alert('フォームが送信されました！');
+          }
+        }}"
       >
         <ui-input
           id="required-input"
@@ -588,18 +596,16 @@ export const Required: Story = {
           ?required="${args.required}"
           help-text="${args.helpText}"
           @input="${(e: Event) => {
-      // 入力時にエラー状態をクリア
-      const input = e.target as Input;
-      if (input.error) {
-        input.error = false;
-        input.errorMessage = '';
-      }
-    }}"
+            // 入力時にエラー状態をクリア
+            const input = e.target as Input;
+            if (input.error) {
+              input.error = false;
+              input.errorMessage = '';
+            }
+          }}"
         ></ui-input>
-        
-        <ui-button type="submit" variant="primary" style="margin-top: 1rem;">
-          送信
-        </ui-button>
+
+        <ui-button type="submit" variant="primary" style="margin-top: 1rem;"> 送信 </ui-button>
       </form>
     </div>
   `,
@@ -641,7 +647,7 @@ export const Required: Story = {
 
 /**
  * 全タイプの一覧。
- * 
+ *
  * サポートされている全てのタイプを比較できます。
  */
 export const AllTypes: Story = {
@@ -667,7 +673,9 @@ export const AllTypes: Story = {
   play: ({ canvasElement }) => {
     const inputs = Array.from(canvasElement.querySelectorAll<Input>('ui-input'));
     if (inputs.length !== 6) {
-      throw new Error(`6つの入力バリアントを期待していましたが、実際には ${inputs.length.toString()} つでした`);
+      throw new Error(
+        `6つの入力バリアントを期待していましたが、実際には ${inputs.length.toString()} つでした`,
+      );
     }
 
     const actualTypes = inputs
@@ -675,14 +683,16 @@ export const AllTypes: Story = {
       .join(',');
     const expectedTypes = 'text,email,password,number,tel,url';
     if (actualTypes !== expectedTypes) {
-      throw new Error(`タイプの順序が一致しません。期待値: "${expectedTypes}"、実際の値: "${actualTypes}"`);
+      throw new Error(
+        `タイプの順序が一致しません。期待値: "${expectedTypes}"、実際の値: "${actualTypes}"`,
+      );
     }
   },
 };
 
 /**
  * フォーカス状態のデモ。
- * 
+ *
  * Adaptive Focus により、移動中のノイズを低減し、停止時に明確化します。
  */
 export const FocusState: Story = {
@@ -732,7 +742,7 @@ export const FocusState: Story = {
 
     // フォーカスを当てる
     input.focus();
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     const inputElement = input.shadowRoot?.querySelector('input');
     if (!inputElement) {
@@ -748,7 +758,7 @@ export const FocusState: Story = {
 
 /**
  * フォーム統合の例。
- * 
+ *
  * 複数の入力フィールドをフォームで使用する例です。
  */
 export const FormIntegration: Story = {
@@ -782,19 +792,14 @@ export const FormIntegration: Story = {
     <form
       class="form-demo"
       @submit="${(e: Event) => {
-      e.preventDefault();
-      alert('フォームが送信されました！');
-    }}"
+        e.preventDefault();
+        alert('フォームが送信されました！');
+      }}"
     >
       <h3>ユーザー登録</h3>
 
       <div class="form-fields">
-        <ui-input
-          label="氏名"
-          type="text"
-          name="name"
-          required
-        ></ui-input>
+        <ui-input label="氏名" type="text" name="name" required></ui-input>
 
         <ui-input
           label="メールアドレス"
@@ -812,12 +817,7 @@ export const FormIntegration: Story = {
           help-text="8文字以上で入力してください"
         ></ui-input>
 
-        <ui-input
-          label="電話番号"
-          type="tel"
-          name="phone"
-          placeholder="03-1234-5678"
-        ></ui-input>
+        <ui-input label="電話番号" type="tel" name="phone" placeholder="03-1234-5678"></ui-input>
       </div>
 
       <div class="form-actions">
@@ -834,7 +834,9 @@ export const FormIntegration: Story = {
 
     const fields = Array.from(form.querySelectorAll<Input>('ui-input'));
     if (fields.length !== 4) {
-      throw new Error(`フォームに4つのフィールドがあることを期待していましたが、${fields.length.toString()} 個見つかりました`);
+      throw new Error(
+        `フォームに4つのフィールドがあることを期待していましたが、${fields.length.toString()} 個見つかりました`,
+      );
     }
 
     const formData = new FormData(form);
@@ -849,7 +851,7 @@ export const FormIntegration: Story = {
 
 /**
  * バリデーション例。
- * 
+ *
  * pattern属性を使用したバリデーションの例です。
  */
 export const WithValidation: Story = {
@@ -887,7 +889,9 @@ export const WithValidation: Story = {
   play: async ({ canvasElement }) => {
     const inputs = Array.from(canvasElement.querySelectorAll<Input>('ui-input'));
     if (inputs.length !== 2) {
-      throw new Error(`バリデーション用の入力フィールドが2つあることを期待していましたが、${inputs.length.toString()} 個見つかりました`);
+      throw new Error(
+        `バリデーション用の入力フィールドが2つあることを期待していましたが、${inputs.length.toString()} 個見つかりました`,
+      );
     }
 
     const zipcode = inputs[0];
@@ -926,7 +930,7 @@ export const WithValidation: Story = {
 
 /**
  * ❌ ラベルなしのエラー例。
- * 
+ *
  * label が設定されていない場合、開発モードでエラーが出力されます。
  * このストーリーは意図的にアクセシビリティ違反を示すためのものです。
  */
@@ -950,8 +954,7 @@ export const WithoutLabel: Story = {
 
     <div class="error-demo">
       <div class="error-message">
-        ⚠️ アクセシビリティエラー: label が設定されていません。
-        コンソールを確認してください。
+        ⚠️ アクセシビリティエラー: label が設定されていません。 コンソールを確認してください。
       </div>
       <ui-input type="text" placeholder="ラベルがありません"></ui-input>
     </div>
@@ -976,7 +979,7 @@ export const WithoutLabel: Story = {
 
 /**
  * ❌ サポート外の type を指定した例。
- * 
+ *
  * date, time, file, checkbox, radio 等は専用コンポーネントで対応します。
  * 未定義のtypeが渡された場合は text にフォールバックし、開発時にコンソール警告を出力します。
  */
@@ -1000,8 +1003,8 @@ export const UnsupportedType: Story = {
 
     <div class="warning-demo">
       <div class="warning-message">
-        ⚠️ サポート外の type="date" が指定されています。
-        コンソールを確認してください（text にフォールバックされます）。
+        ⚠️ サポート外の type="date" が指定されています。 コンソールを確認してください（text
+        にフォールバックされます）。
       </div>
       <ui-input label="日付" type="date" name="date"></ui-input>
     </div>
@@ -1021,14 +1024,16 @@ export const UnsupportedType: Story = {
 
     // テスト: type が text にフォールバックされていること
     if (inputElement.getAttribute('type') !== 'text') {
-      throw new Error(`text にフォールバックされることを期待していましたが、実際には '${inputElement.getAttribute('type') ?? 'null'}' でした`);
+      throw new Error(
+        `text にフォールバックされることを期待していましたが、実際には '${inputElement.getAttribute('type') ?? 'null'}' でした`,
+      );
     }
   },
 };
 
 /**
  * 強制カラーモードのプレビュー。
- * 
+ *
  * Windows High Contrast Mode などでの表示を確認できます。
  * ボーダーとスペーシングにより構造を明示し、意味を維持します。
  */
@@ -1071,10 +1076,9 @@ export const ForcedColorsMode: Story = {
 
     <div class="forced-colors-demo">
       <h3>Forced Colors Mode</h3>
-      
+
       <div class="forced-colors-info">
-        💡 Windows の設定で「ハイコントラスト」を有効にすると、
-        このモードでの表示を確認できます。
+        💡 Windows の設定で「ハイコントラスト」を有効にすると、 このモードでの表示を確認できます。
       </div>
 
       <div class="demo-fields">
@@ -1106,10 +1110,12 @@ export const ForcedColorsMode: Story = {
   play: async ({ canvasElement }) => {
     const inputs = Array.from(canvasElement.querySelectorAll<Input>('ui-input'));
     if (inputs.length !== 3) {
-      throw new Error(`強制カラーモードのデモに3つの入力フィールドがあることを期待していましたが、${inputs.length.toString()} 個見つかりました`);
+      throw new Error(
+        `強制カラーモードのデモに3つの入力フィールドがあることを期待していましたが、${inputs.length.toString()} 個見つかりました`,
+      );
     }
 
-    await Promise.all(inputs.map(input => input.updateComplete));
+    await Promise.all(inputs.map((input) => input.updateComplete));
 
     const errorInput = inputs[1];
     const disabledInput = inputs[2];
@@ -1129,7 +1135,7 @@ export const ForcedColorsMode: Story = {
 
 /**
  * モーション低減モードのデモ。
- * 
+ *
  * prefers-reduced-motion 環境下では、全てのトランジションが 0.01ms に短縮されます。
  * 背景色・ボーダー色の変化は視覚的に即座に適用されます。
  */
@@ -1165,7 +1171,7 @@ export const MotionReduction: Story = {
 
     <div class="motion-demo">
       <h3>Motion Reduction</h3>
-      
+
       <div class="motion-info">
         💡 OS の設定で「アニメーションを減らす」を有効にすると、
         トランジションが即座に適用されます。
@@ -1190,14 +1196,16 @@ export const MotionReduction: Story = {
       .toString()
       .includes('@media (prefers-reduced-motion: reduce)');
     if (!hasReduceRule) {
-      throw new Error('Input styles に prefers-reduced-motion メディアクエリが含まれている必要があります');
+      throw new Error(
+        'Input styles に prefers-reduced-motion メディアクエリが含まれている必要があります',
+      );
     }
   },
 };
 
 /**
  * エラー状態の遷移テスト。
- * 
+ *
  * エラー解消時に Help Text が再表示されることを確認します。
  */
 export const ErrorStateTransition: Story = {
@@ -1223,7 +1231,7 @@ export const ErrorStateTransition: Story = {
 
     <div class="transition-demo">
       <h3>エラー状態の遷移</h3>
-      
+
       <ui-input
         id="transition-input"
         label="ユーザー名"
@@ -1236,14 +1244,14 @@ export const ErrorStateTransition: Story = {
         <ui-button
           variant="danger"
           @click="${(e: Event) => {
-      const trigger = e.currentTarget as HTMLElement | null;
-      const container = trigger?.closest('.transition-demo');
-      const input = container?.querySelector<Input>('#transition-input') ?? null;
-      if (input) {
-        input.error = true;
-        input.errorMessage = 'ユーザー名は3文字以上で入力してください';
-      }
-    }}"
+            const trigger = e.currentTarget as HTMLElement | null;
+            const container = trigger?.closest('.transition-demo');
+            const input = container?.querySelector<Input>('#transition-input') ?? null;
+            if (input) {
+              input.error = true;
+              input.errorMessage = 'ユーザー名は3文字以上で入力してください';
+            }
+          }}"
         >
           エラーを表示
         </ui-button>
@@ -1251,14 +1259,14 @@ export const ErrorStateTransition: Story = {
         <ui-button
           variant="secondary"
           @click="${(e: Event) => {
-      const trigger = e.currentTarget as HTMLElement | null;
-      const container = trigger?.closest('.transition-demo');
-      const input = container?.querySelector<Input>('#transition-input') ?? null;
-      if (input) {
-        input.error = false;
-        input.errorMessage = '';
-      }
-    }}"
+            const trigger = e.currentTarget as HTMLElement | null;
+            const container = trigger?.closest('.transition-demo');
+            const input = container?.querySelector<Input>('#transition-input') ?? null;
+            if (input) {
+              input.error = false;
+              input.errorMessage = '';
+            }
+          }}"
         >
           エラーを解消
         </ui-button>
@@ -1348,10 +1356,14 @@ export const EventDispatchSingle: Story = {
     await input.updateComplete;
 
     if (inputCount !== 1) {
-      throw new Error(`input イベントが1回発火することを期待していましたが、${inputCount.toString()} 回発火しました`);
+      throw new Error(
+        `input イベントが1回発火することを期待していましたが、${inputCount.toString()} 回発火しました`,
+      );
     }
     if (changeCount !== 1) {
-      throw new Error(`change イベントが1回発火することを期待していましたが、${changeCount.toString()} 回発火しました`);
+      throw new Error(
+        `change イベントが1回発火することを期待していましたが、${changeCount.toString()} 回発火しました`,
+      );
     }
   },
 };
@@ -1384,7 +1396,9 @@ export const FormDataParticipation: Story = {
     const formData = new FormData(form);
     const email = formData.get('email') as string | null;
     if (email !== 'user@example.com') {
-      throw new Error(`FormData の email が "user@example.com" であることを期待していましたが、実際には ${email ?? 'null'} でした`);
+      throw new Error(
+        `FormData の email が "user@example.com" であることを期待していましたが、実際には ${email ?? 'null'} でした`,
+      );
     }
   },
 };
@@ -1414,7 +1428,9 @@ export const DynamicTypeFallback: Story = {
     }
 
     if (inputElement.type !== 'text') {
-      throw new Error(`text にフォールバックされることを期待していましたが、実際には "${inputElement.type}" でした`);
+      throw new Error(
+        `text にフォールバックされることを期待していましたが、実際には "${inputElement.type}" でした`,
+      );
     }
   },
 };
@@ -1447,11 +1463,15 @@ export const ErrorWithoutMessage: Story = {
     }
 
     if (inputElement.getAttribute('aria-invalid') !== 'true') {
-      throw new Error(`aria-invalid が true であることを期待していましたが、実際には ${String(inputElement.getAttribute('aria-invalid'))} でした`);
+      throw new Error(
+        `aria-invalid が true であることを期待していましたが、実際には ${String(inputElement.getAttribute('aria-invalid'))} でした`,
+      );
     }
 
     if (inputElement.hasAttribute('aria-describedby')) {
-      throw new Error('aria-describedby が存在することを期待していましたが、実際には存在しませんでした');
+      throw new Error(
+        'aria-describedby が存在することを期待していましたが、実際には存在しませんでした',
+      );
     }
   },
 };
@@ -1515,11 +1535,42 @@ export const VariantStateMatrix: Story = {
     </style>
     <div class="state-matrix">
       <ui-input id="matrix-default" label="Default" name="default"></ui-input>
-      <ui-input id="matrix-required" label="Required" name="required" required help-text="Required field"></ui-input>
-      <ui-input id="matrix-error" label="Error" name="error" error error-message="Invalid value"></ui-input>
-      <ui-input id="matrix-readonly" label="Readonly" name="readonly" value="Fixed value" readonly></ui-input>
-      <ui-input id="matrix-disabled" label="Disabled" name="disabled" value="Disabled value" disabled></ui-input>
-      <ui-input id="matrix-hidden-label" label="User ID" name="userId" type="text" hide-label placeholder="User ID"></ui-input>
+      <ui-input
+        id="matrix-required"
+        label="Required"
+        name="required"
+        required
+        help-text="Required field"
+      ></ui-input>
+      <ui-input
+        id="matrix-error"
+        label="Error"
+        name="error"
+        error
+        error-message="Invalid value"
+      ></ui-input>
+      <ui-input
+        id="matrix-readonly"
+        label="Readonly"
+        name="readonly"
+        value="Fixed value"
+        readonly
+      ></ui-input>
+      <ui-input
+        id="matrix-disabled"
+        label="Disabled"
+        name="disabled"
+        value="Disabled value"
+        disabled
+      ></ui-input>
+      <ui-input
+        id="matrix-hidden-label"
+        label="User ID"
+        name="userId"
+        type="text"
+        hide-label
+        placeholder="User ID"
+      ></ui-input>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -1532,13 +1583,15 @@ export const VariantStateMatrix: Story = {
       '#matrix-hidden-label',
     ] as const;
     const components = ids
-      .map(id => canvasElement.querySelector<Input>(id))
+      .map((id) => canvasElement.querySelector<Input>(id))
       .filter((item): item is Input => item !== null);
     if (components.length !== ids.length) {
-      throw new Error('状態組み合わせマトリクスで全てのバリアント/状態の組み合わせが描画されていません');
+      throw new Error(
+        '状態組み合わせマトリクスで全てのバリアント/状態の組み合わせが描画されていません',
+      );
     }
 
-    await Promise.all(components.map(component => component.updateComplete));
+    await Promise.all(components.map((component) => component.updateComplete));
 
     const errorInput = canvasElement.querySelector<Input>('#matrix-error');
     const errorNative = errorInput?.shadowRoot?.querySelector('input');
@@ -1582,9 +1635,19 @@ export const DarkMode: Story = {
       }
     </style>
     <div class="dark-surface">
-      <ui-input id="dark-default" label="Email" type="email" placeholder="dark@example.com"></ui-input>
+      <ui-input
+        id="dark-default"
+        label="Email"
+        type="email"
+        placeholder="dark@example.com"
+      ></ui-input>
       <ui-input id="dark-error" label="Username" error error-message="Invalid username"></ui-input>
-      <ui-input id="dark-disabled" label="Disabled" value="disabled@example.com" disabled></ui-input>
+      <ui-input
+        id="dark-disabled"
+        label="Disabled"
+        value="disabled@example.com"
+        disabled
+      ></ui-input>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -1641,8 +1704,8 @@ export const LabelClickFocusTransfer: Story = {
       throw new Error('ラベルまたは input 要素が shadow root に見つかりません');
     }
 
-    (label).click();
-    await new Promise(resolve => setTimeout(resolve, 0));
+    label.click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     if (input.shadowRoot?.activeElement !== inputElement) {
       throw new Error('ラベルをクリックでネイティブの input 要素にフォーカスが移動していません');
@@ -1659,18 +1722,13 @@ export const EnterSubmitFromInput: Story = {
       id="enter-submit-form"
       data-submit-count="0"
       @submit="${(e: Event) => {
-      e.preventDefault();
-      const form = e.currentTarget as HTMLFormElement;
-      const current = Number(form.dataset['submitCount'] ?? '0');
-      form.dataset['submitCount'] = (current + 1).toString();
-    }}"
+        e.preventDefault();
+        const form = e.currentTarget as HTMLFormElement;
+        const current = Number(form.dataset['submitCount'] ?? '0');
+        form.dataset['submitCount'] = (current + 1).toString();
+      }}"
     >
-      <ui-input
-        id="enter-submit-input"
-        label="Keyword"
-        name="keyword"
-        value="Rouault"
-      ></ui-input>
+      <ui-input id="enter-submit-input" label="Keyword" name="keyword" value="Rouault"></ui-input>
       <button type="submit">Submit</button>
     </form>
   `,
@@ -1697,7 +1755,9 @@ export const EnterSubmitFromInput: Story = {
     await input.updateComplete;
 
     if (form.dataset['submitCount'] !== '1') {
-      throw new Error(`Enter でフォーム送信が1回発火することを期待していましたが、実際には ${form.dataset['submitCount'] ?? '0'} 回発火しました`);
+      throw new Error(
+        `Enter でフォーム送信が1回発火することを期待していましたが、実際には ${form.dataset['submitCount'] ?? '0'} 回発火しました`,
+      );
     }
   },
 };
@@ -1709,8 +1769,20 @@ export const FormDataDisabledReadonlyBoundary: Story = {
   render: () => html`
     <form id="formdata-boundary-form">
       <ui-input id="fd-enabled" label="Enabled" name="enabled" value="enabled-value"></ui-input>
-      <ui-input id="fd-disabled" label="Disabled" name="disabled" value="disabled-value" disabled></ui-input>
-      <ui-input id="fd-readonly" label="Readonly" name="readonly" value="readonly-value" readonly></ui-input>
+      <ui-input
+        id="fd-disabled"
+        label="Disabled"
+        name="disabled"
+        value="disabled-value"
+        disabled
+      ></ui-input>
+      <ui-input
+        id="fd-readonly"
+        label="Readonly"
+        name="readonly"
+        value="readonly-value"
+        readonly
+      ></ui-input>
     </form>
   `,
   play: async ({ canvasElement }) => {
@@ -1727,15 +1799,21 @@ export const FormDataDisabledReadonlyBoundary: Story = {
     const formData = new FormData(form);
     const enabledData = formData.get('enabled') as string | null;
     if (enabledData !== 'enabled-value') {
-      throw new Error(`フォームの enabled が "enabled-value" であることを期待していましたが、実際には ${enabledData ?? 'null'} でした`);
+      throw new Error(
+        `フォームの enabled が "enabled-value" であることを期待していましたが、実際には ${enabledData ?? 'null'} でした`,
+      );
     }
     const disabledData = formData.get('disabled') as string | null;
     if (formData.has('disabled')) {
-      throw new Error(`フォームに disabled が含まれないことを期待していましたが、実際には ${disabledData ?? 'null'} として含まれていました`);
+      throw new Error(
+        `フォームに disabled が含まれないことを期待していましたが、実際には ${disabledData ?? 'null'} として含まれていました`,
+      );
     }
     const readonlyData = formData.get('readonly') as string | null;
     if (readonlyData !== 'readonly-value') {
-      throw new Error(`フォームの readonly が "readonly-value" であることを期待していましたが、実際には ${readonlyData ?? 'null'} でした`);
+      throw new Error(
+        `フォームの readonly が "readonly-value" であることを期待していましたが、実際には ${readonlyData ?? 'null'} でした`,
+      );
     }
   },
 };

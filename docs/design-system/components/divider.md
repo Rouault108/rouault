@@ -50,17 +50,17 @@ Rouault における divider は、**話題の転換や構造の一区切りを�
 
 ### 入力契約
 
-| 名前 | 種別 | 必須 | 内容 | 契約 |
-| --- | --- | --- | --- | --- |
+| 名前      | 種別                 | 必須   | 内容               | 契約                                          |
+| --------- | -------------------- | ------ | ------------------ | --------------------------------------------- |
 | `variant` | property / attribute | いいえ | 区切り線の用途種別 | `section` / `layout`。既定値は `section` です |
 
 ### 属性反映契約
 
 `variant` は property / attribute の両面から操作できます。`reflect: true` を持ち、ホスト属性へ反映します。
 
-| property | attribute | reflect | 備考 |
-| --- | --- | --- | --- |
-| `variant` | `variant` | あり | 列挙外値は描画時に `section` へフォールバックします |
+| property  | attribute | reflect | 備考                                                |
+| --------- | --------- | ------- | --------------------------------------------------- |
+| `variant` | `variant` | あり    | 列挙外値は描画時に `section` へフォールバックします |
 
 ### 出力契約
 
@@ -209,12 +209,12 @@ divider スタイルは、次の仕様を満たします。
 
 本コンポーネントは、主として次のトークンまたは意味的変数に依存します。
 
-| 用途 | トークン |
-| --- | --- |
-| 区切り線スタイル | `--border-style-subtle` |
-| 既定境界線色のフォールバック | `--border-default` |
-| 余白 | `--space-12` |
-| forced-colors 時の境界線色 | `--border-ghost` |
+| 用途                         | トークン                |
+| ---------------------------- | ----------------------- |
+| 区切り線スタイル             | `--border-style-subtle` |
+| 既定境界線色のフォールバック | `--border-default`      |
+| 余白                         | `--space-12`            |
+| forced-colors 時の境界線色   | `--border-ghost`        |
 
 `ui-divider` は色モードごとの個別分岐に依存せず、できる限りセマンティックトークン参照で環境差分へ追従します。
 
@@ -314,15 +314,15 @@ divider スタイルは、次の仕様を満たします。
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
 
-| Story | 固定する契約 |
-| --- | --- |
-| `Default` | `ui-divider` が `hr` を出力し、既定 `variant` が `section` であること |
-| `VariantStateMatrix` | `section` / `layout` の両 variant が出力され、host 属性を `hr` へ転送しないこと |
-| `BoundaryConditions` | 不正 `variant` が `section` にフォールバックし、スコープ漏れが発生しないこと |
+| Story                           | 固定する契約                                                                                                |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `Default`                       | `ui-divider` が `hr` を出力し、既定 `variant` が `section` であること                                       |
+| `VariantStateMatrix`            | `section` / `layout` の両 variant が出力され、host 属性を `hr` へ転送しないこと                             |
+| `BoundaryConditions`            | 不正 `variant` が `section` にフォールバックし、スコープ漏れが発生しないこと                                |
 | `ScopeWithoutComponentInstance` | `ui-divider` が存在しなくても `.prose hr` と `hr[data-divider-variant="layout"]` にスタイルが適用されること |
-| `MediaAndTokenContracts` | スタイル注入が 1 回のみであり、forced-colors / print / token 参照が維持され、document 単位で保持されること |
-| `DarkModeTokenContract` | ダークモード追従を `prefers-color-scheme` 分岐ではなくトークン参照で成立させること |
-| `SelectorSpecificityContract` | divider スタイルが低特異性で提供され、ページ層からの正当な上書きを阻害しないこと |
+| `MediaAndTokenContracts`        | スタイル注入が 1 回のみであり、forced-colors / print / token 参照が維持され、document 単位で保持されること  |
+| `DarkModeTokenContract`         | ダークモード追従を `prefers-color-scheme` 分岐ではなくトークン参照で成立させること                          |
+| `SelectorSpecificityContract`   | divider スタイルが低特異性で提供され、ページ層からの正当な上書きを阻害しないこと                            |
 
 ---
 
@@ -679,4 +679,3 @@ import 副作用を設計として保証し続けるよりも、文書スコー�
 ### 14. 本節の扱い
 
 本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用する場合は、実装、Storybook、契約書の 3 点を同時に更新し、未対応状態を残したまま公開契約へ昇格させません。
-

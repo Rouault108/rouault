@@ -1,14 +1,8 @@
 ﻿import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './highlight';
-import type {
-  Highlight,
-  HighlightOrigin,
-} from './highlight';
-import {
-  DOCUMENT_STYLE_ID,
-  HIGHLIGHT_SCOPE_SELECTOR,
-} from './highlight';
+import type { Highlight, HighlightOrigin } from './highlight';
+import { DOCUMENT_STYLE_ID, HIGHLIGHT_SCOPE_SELECTOR } from './highlight';
 
 const ORIGINS = ['search', 'user'] as const satisfies HighlightOrigin[];
 
@@ -204,7 +198,10 @@ export const Default: Story = {
       throw new Error('mark に角丸トークンが適用されていません');
     }
 
-    if (!isNearlyEqual(toPx(markStyle.paddingLeft), 0) || !isNearlyEqual(toPx(markStyle.paddingRight), 0)) {
+    if (
+      !isNearlyEqual(toPx(markStyle.paddingLeft), 0) ||
+      !isNearlyEqual(toPx(markStyle.paddingRight), 0)
+    ) {
       throw new Error('mark に左右 padding を入れてはいけません');
     }
 
@@ -228,9 +225,7 @@ export const Default: Story = {
  */
 export const SlottedTextFromMarkdown: Story = {
   render: () => html`
-    <ui-highlight id="markdown-highlight" origin="user"
-      >Markdown ハイライト</ui-highlight
-    >
+    <ui-highlight id="markdown-highlight" origin="user">Markdown ハイライト</ui-highlight>
   `,
   play: async ({ canvasElement }) => {
     const host = getHost(canvasElement, 'markdown-highlight');
@@ -238,10 +233,14 @@ export const SlottedTextFromMarkdown: Story = {
 
     const mark = getInnerMark(host);
     const directMarks = host.querySelectorAll(':scope > mark');
-    const directTextNodes = Array.from(host.childNodes).filter((node) => node.nodeType === Node.TEXT_NODE);
+    const directTextNodes = Array.from(host.childNodes).filter(
+      (node) => node.nodeType === Node.TEXT_NODE,
+    );
 
     if (directMarks.length !== 1) {
-      throw new Error(`mark は 1 つだけ描画される必要があります: actual=${String(directMarks.length)}`);
+      throw new Error(
+        `mark は 1 つだけ描画される必要があります: actual=${String(directMarks.length)}`,
+      );
     }
 
     if (directTextNodes.length !== 0) {
@@ -298,7 +297,12 @@ export const VariantStateMatrix: Story = {
 
       <div class="cell">
         <div class="label">search x current</div>
-        <ui-highlight id="matrix-search-current" origin="search" current text="現在の検索ヒット"></ui-highlight>
+        <ui-highlight
+          id="matrix-search-current"
+          origin="search"
+          current
+          text="現在の検索ヒット"
+        ></ui-highlight>
       </div>
 
       <div class="cell">
@@ -308,7 +312,12 @@ export const VariantStateMatrix: Story = {
 
       <div class="cell">
         <div class="label">user x current</div>
-        <ui-highlight id="matrix-user-current" origin="user" current text="現在の手動ハイライト"></ui-highlight>
+        <ui-highlight
+          id="matrix-user-current"
+          origin="user"
+          current
+          text="現在の手動ハイライト"
+        ></ui-highlight>
       </div>
     </div>
   `,
@@ -535,7 +544,11 @@ export const DarkModeTokenAndContrastContract: Story = {
       <div class="prose">
         <p><mark id="dark-contract-light-prose">Light prose mark</mark></p>
       </div>
-      <ui-highlight id="dark-contract-light-component" origin="search" text="Light component mark"></ui-highlight>
+      <ui-highlight
+        id="dark-contract-light-component"
+        origin="search"
+        text="Light component mark"
+      ></ui-highlight>
     </div>
 
     <div id="highlight-theme-dark" class="theme">
@@ -545,7 +558,12 @@ export const DarkModeTokenAndContrastContract: Story = {
       <div class="prose">
         <p><mark id="dark-contract-dark-prose">Dark prose mark</mark></p>
       </div>
-      <ui-highlight id="dark-contract-dark-component" origin="user" current text="Dark component mark"></ui-highlight>
+      <ui-highlight
+        id="dark-contract-dark-component"
+        origin="user"
+        current
+        text="Dark component mark"
+      ></ui-highlight>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -587,10 +605,11 @@ export const DarkModeTokenAndContrastContract: Story = {
         throw new Error(`${scenario.label}: mark の文字色が --fg-default を追従していません`);
       }
 
-      if (proseStyle.backgroundColor !== 'rgba(0, 0, 0, 0)' || componentStyle.backgroundColor !== 'rgba(0, 0, 0, 0)') {
-        throw new Error(
-          `${scenario.label}: mark は塗りつぶし背景を持たない必要があります`,
-        );
+      if (
+        proseStyle.backgroundColor !== 'rgba(0, 0, 0, 0)' ||
+        componentStyle.backgroundColor !== 'rgba(0, 0, 0, 0)'
+      ) {
+        throw new Error(`${scenario.label}: mark は塗りつぶし背景を持たない必要があります`);
       }
 
       if (proseStyle.boxShadow === 'none' || componentStyle.boxShadow === 'none') {
@@ -608,7 +627,9 @@ export const DarkModeTokenAndContrastContract: Story = {
     }
 
     if (shadowValues[0] === shadowValues[2] && shadowValues[1] === shadowValues[3]) {
-      throw new Error('Light/Dark で線状ハイライトが同一になっており、テーマトークン差分を反映できていません');
+      throw new Error(
+        'Light/Dark で線状ハイライトが同一になっており、テーマトークン差分を反映できていません',
+      );
     }
   },
 };

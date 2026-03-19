@@ -74,7 +74,7 @@ import { customElement, property } from 'lit/decorators.js';
  */
 @customElement('ui-switch')
 export class Switch extends LitElement {
-    static override styles = css`
+  static override styles = css`
     /* ── コンポーネントローカルトークン ── */
     :host {
       --switch-thumb-size: 18px;
@@ -84,8 +84,10 @@ export class Switch extends LitElement {
       /* トラックの内側基準で絶対配置されるため、ボーダー幅を差し引いて視覚上の余白を揃える */
       --switch-thumb-pos-off: calc(var(--switch-track-padding) - var(--border-width, 1px));
       --switch-thumb-pos-on: calc(
-        var(--switch-track-width) - var(--switch-thumb-size) - var(--switch-track-padding) -
-          var(--border-width, 1px)
+        var(--switch-track-width) - var(--switch-thumb-size) - var(--switch-track-padding) - var(
+            --border-width,
+            1px
+          )
       );
       --switch-track-bg-off: color-mix(
         in oklch,
@@ -159,11 +161,15 @@ export class Switch extends LitElement {
       border: var(--border-width, 1px) solid var(--switch-track-border-off);
       background-color: var(--switch-track-bg-off);
       transition:
-        background-color var(--switch-track-motion-duration, 140ms) var(--switch-motion-easing, cubic-bezier(0.22, 1, 0.36, 1)),
-        border-color var(--switch-track-motion-duration, 140ms) var(--switch-motion-easing, cubic-bezier(0.22, 1, 0.36, 1)),
-        box-shadow var(--switch-track-motion-duration, 140ms) var(--switch-motion-easing, cubic-bezier(0.22, 1, 0.36, 1));
+        background-color var(--switch-track-motion-duration, 140ms)
+          var(--switch-motion-easing, cubic-bezier(0.22, 1, 0.36, 1)),
+        border-color var(--switch-track-motion-duration, 140ms)
+          var(--switch-motion-easing, cubic-bezier(0.22, 1, 0.36, 1)),
+        box-shadow var(--switch-track-motion-duration, 140ms)
+          var(--switch-motion-easing, cubic-bezier(0.22, 1, 0.36, 1));
       box-sizing: border-box;
-      box-shadow: inset 0 0 0 0.5px color-mix(in oklch, var(--switch-track-border-off) 50%, transparent);
+      box-shadow: inset 0 0 0 0.5px
+        color-mix(in oklch, var(--switch-track-border-off) 50%, transparent);
     }
 
     .track::after {
@@ -180,11 +186,16 @@ export class Switch extends LitElement {
     :host([checked]) .track {
       background-color: var(--switch-track-bg-on);
       border-color: var(--switch-track-border-on);
-      box-shadow: inset 0 0 0 0.5px color-mix(in oklch, var(--switch-track-border-on) 45%, transparent);
+      box-shadow: inset 0 0 0 0.5px
+        color-mix(in oklch, var(--switch-track-border-on) 45%, transparent);
     }
 
     .wrapper:hover .track {
-      background-color: color-mix(in oklch, var(--switch-track-bg-off) 96%, var(--fg-default, oklch(20% 0 0)) 4%);
+      background-color: color-mix(
+        in oklch,
+        var(--switch-track-bg-off) 96%,
+        var(--fg-default, oklch(20% 0 0)) 4%
+      );
       border-color: var(--switch-track-border-hover);
       box-shadow: inset 0 0 0 0.5px
         color-mix(in oklch, var(--switch-track-border-hover) 55%, transparent);
@@ -239,13 +250,11 @@ export class Switch extends LitElement {
     }
 
     .wrapper:active .thumb {
-      transform: translateX(var(--switch-thumb-pos-off)) translateY(-50%) scaleX(1.03)
-        scaleY(0.99);
+      transform: translateX(var(--switch-thumb-pos-off)) translateY(-50%) scaleX(1.03) scaleY(0.99);
     }
 
     :host([checked]) .wrapper:active .thumb {
-      transform: translateX(var(--switch-thumb-pos-on)) translateY(-50%) scaleX(1.03)
-        scaleY(0.99);
+      transform: translateX(var(--switch-thumb-pos-on)) translateY(-50%) scaleX(1.03) scaleY(0.99);
     }
 
     :host([disabled]) .track {
@@ -277,7 +286,11 @@ export class Switch extends LitElement {
     }
 
     :host([disabled][checked]) .thumb {
-      background-color: color-mix(in oklch, var(--switch-thumb-bg-off) 97%, var(--primary, oklch(55% 0.2 250)) 3%);
+      background-color: color-mix(
+        in oklch,
+        var(--switch-thumb-bg-off) 97%,
+        var(--primary, oklch(55% 0.2 250)) 3%
+      );
       border-color: color-mix(in oklch, var(--primary, oklch(55% 0.2 250)) 8%, transparent);
     }
 
@@ -326,7 +339,6 @@ export class Switch extends LitElement {
       }
     }
   `;
-
 
   /**
    * ON/OFF 状態

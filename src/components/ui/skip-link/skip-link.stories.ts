@@ -5,30 +5,30 @@ import type { SkipLink } from './skip-link';
 
 /**
  * ## スキップリンク (Skip Link)
- * 
+ *
  * キーボードユーザーやスクリーンリーダー利用者が、反復的なナビゲーション（ヘッダーやサイドバー）を
  * 飛び越え、メインコンテンツへ即座に到達するための特急レーンです。
- * 
+ *
  * ### デザイン哲学
- * 
+ *
  * - **役割**: アクセシビリティの最優先事項として、ページの最初のインタラクティブ要素として配置されます。
  * - **Distinct Utility**: フォーカス時、コンテキストに埋没することなく、独立した「システム通知」として中央上部に出現します。
  * - **Instant Presence**: 思考の即応性を最優先するため、余韻（Fade）を排除し、フォーカスと同時に物理的に即時表示します。
- * 
+ *
  * ### 実装要件
- * 
+ *
  * - ページの `<body>` 直下に配置される最初のインタラクティブ要素として実装します。
  * - ターゲット要素（`<main id="main-content">` など）には `tabindex="-1"` を付与し、プログラム的なフォーカス移動を保証します。
- * 
+ *
  * ### キーボードナビゲーション
- * 
+ *
  * - **Tab**: ページ読み込み後、最初の Tab キー押下でこのリンクにフォーカスが当たります。
  * - **Enter**: ターゲット要素（`#main-content`）へジャンプし、フォーカスを移動します。
  * - **Space**: ネイティブリンクでは挙動が保証されません。
  * - **Esc**: ブラウザのデフォルト挙動に委ねます（通常は何も起きない、またはフォーカスを外す）。
- * 
+ *
  * ### アクセシビリティ
- * 
+ *
  * - **First Tab Stop**: ページ読み込み後、最初の Tab キー押下で必ずこのリンクにフォーカスが当たる構造を維持します。
  * - **Screen Reader Support**: デフォルト状態で `clip-path: inset(50%)` を使用することで、視覚的に非表示でも確実にA11yツリーに残し、スクリーンリーダーが認識可能な状態を保証します。
  * - **Target Element Focus**: スキップ後、ターゲット要素（`#main-content`）にフォーカスが移動します。
@@ -104,7 +104,7 @@ const focusByKeyboard = (element: HTMLElement): void => {
 
 /**
  * デフォルトのスキップリンク。
- * 
+ *
  * **操作方法**: Tab キーを押してスキップリンクにフォーカスを当ててください。
  * 中央上部に即座に表示されます。
  */
@@ -176,8 +176,13 @@ export const Default: Story = {
       <!-- Main Content: ターゲット要素 -->
       <main id="main-content" tabindex="-1" class="demo-main">
         <h2>メインコンテンツ</h2>
-        <p>ここがメインコンテンツです。スキップリンクを使用すると、ナビゲーションをスキップしてここに直接ジャンプできます。</p>
-        <p>Tab キーを押してスキップリンクにフォーカスを当て、Enter キーを押すとこのコンテンツにフォーカスが移動します。</p>
+        <p>
+          ここがメインコンテンツです。スキップリンクを使用すると、ナビゲーションをスキップしてここに直接ジャンプできます。
+        </p>
+        <p>
+          Tab キーを押してスキップリンクにフォーカスを当て、Enter
+          キーを押すとこのコンテンツにフォーカスが移動します。
+        </p>
       </main>
     </div>
   `,
@@ -197,14 +202,18 @@ export const Default: Story = {
     // テスト: 正しいhref属性が設定されていること
     const href = anchor.getAttribute('href');
     if (href !== '#main-content') {
-      throw new Error(`href が "#main-content" であることを期待していましたが、実際には "${href ?? 'null'}" でした`);
+      throw new Error(
+        `href が "#main-content" であることを期待していましたが、実際には "${href ?? 'null'}" でした`,
+      );
     }
 
     // テスト: 正しいテキストコンテンツが設定されていること
     // Note: アンカー要素はテキストコンテンツを持つため、aria-labelは冗長であり設定されない
-    const anchorText = (anchor.textContent).trim();
+    const anchorText = anchor.textContent.trim();
     if (anchorText !== 'メインコンテンツへスキップ') {
-      throw new Error(`テキストコンテンツが "メインコンテンツへスキップ" であることを期待していましたが、実際には "${anchorText}" でした`);
+      throw new Error(
+        `テキストコンテンツが "メインコンテンツへスキップ" であることを期待していましたが、実際には "${anchorText}" でした`,
+      );
     }
 
     // テスト: ターゲット要素が存在し、tabindex="-1"が設定されていること
@@ -214,7 +223,9 @@ export const Default: Story = {
     }
     const tabindex = mainContent.getAttribute('tabindex');
     if (tabindex !== '-1') {
-      throw new Error(`メインコンテンツの tabindex が "-1" であることを期待していましたが、実際には "${tabindex ?? 'null'}" でした`);
+      throw new Error(
+        `メインコンテンツの tabindex が "-1" であることを期待していましたが、実際には "${tabindex ?? 'null'}" でした`,
+      );
     }
   },
 };
@@ -264,17 +275,21 @@ export const HiddenByDefault: Story = {
 
     const computedStyle = window.getComputedStyle(anchor);
     if (computedStyle.opacity !== '0') {
-      throw new Error(`デフォルト状態: opacity が "0" であることを期待していましたが、実際には "${computedStyle.opacity}" でした`);
+      throw new Error(
+        `デフォルト状態: opacity が "0" であることを期待していましたが、実際には "${computedStyle.opacity}" でした`,
+      );
     }
     if (computedStyle.clipPath === 'none') {
-      throw new Error('デフォルト状態: 要素を非表示にするための clip-path を期待していましたが、"none" でした');
+      throw new Error(
+        'デフォルト状態: 要素を非表示にするための clip-path を期待していましたが、"none" でした',
+      );
     }
   },
 };
 
 /**
  * カスタムターゲットとラベルを持つスキップリンク。
- * 
+ *
  * 異なるIDセレクタとラベルテキストを指定できます。
  */
 export const CustomTarget: Story = {
@@ -338,14 +353,18 @@ export const CustomTarget: Story = {
     // テスト: カスタムhref属性が正しく設定されていること
     const href = anchor.getAttribute('href');
     if (href !== '#custom-content') {
-      throw new Error(`href が "#custom-content" であることを期待していましたが、実際には "${href ?? 'null'}" でした`);
+      throw new Error(
+        `href が "#custom-content" であることを期待していましたが、実際には "${href ?? 'null'}" でした`,
+      );
     }
 
     // テスト: カスタムラベルが正しく設定されていること
     // Note: アンカー要素はテキストコンテンツを持つため、aria-labelは冗長であり設定されない
-    const anchorText = (anchor.textContent).trim();
+    const anchorText = anchor.textContent.trim();
     if (anchorText !== 'カスタムコンテンツへスキップ') {
-      throw new Error(`テキストコンテンツが "カスタムコンテンツへスキップ" であることを期待していましたが、実際には "${anchorText}" でした`);
+      throw new Error(
+        `テキストコンテンツが "カスタムコンテンツへスキップ" であることを期待していましたが、実際には "${anchorText}" でした`,
+      );
     }
 
     // テスト: カスタムターゲット要素が存在すること
@@ -358,7 +377,7 @@ export const CustomTarget: Story = {
 
 /**
  * フォーカス状態のデモ。
- * 
+ *
  * スキップリンクが自動的にフォーカスされた状態で表示されます。
  * これにより、フォーカス時のスタイルを確認できます。
  */
@@ -384,14 +403,13 @@ export const Focused: Story = {
 
     <div class="demo-container">
       <!-- フォーカス済みのSkip Link -->
-      <ui-skip-link
-        href="${args.href}"
-        label="${args.label}"
-        id="focused-skip-link"
-      ></ui-skip-link>
+      <ui-skip-link href="${args.href}" label="${args.label}" id="focused-skip-link"></ui-skip-link>
 
       <div class="demo-info">
-        <p><strong>注意</strong>: このストーリーでは、スキップリンクが自動的にフォーカスされています。</p>
+        <p>
+          <strong>注意</strong>:
+          このストーリーでは、スキップリンクが自動的にフォーカスされています。
+        </p>
         <p>中央上部に表示されているスキップリンクを確認できます。</p>
       </div>
 
@@ -420,23 +438,29 @@ export const Focused: Story = {
     // フォーカスを当てる（:focus-visible の検証）
     focusByKeyboard(anchor);
     // 次のフレームを待つ（スタイル適用のため）
-    await new Promise(resolve => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     const computedStyle = window.getComputedStyle(anchor);
 
     // テスト: position が fixed であること
     if (computedStyle.position !== 'fixed') {
-      throw new Error(`position が "fixed" であることを期待していましたが、実際には "${computedStyle.position}" でした`);
+      throw new Error(
+        `position が "fixed" であることを期待していましたが、実際には "${computedStyle.position}" でした`,
+      );
     }
 
     // テスト: フォーカス状態の検証 - opacity が 1 であること
     if (computedStyle.opacity !== '1') {
-      throw new Error(`フォーカス状態: opacity が "1" であることを期待していましたが、実際には "${computedStyle.opacity}" でした`);
+      throw new Error(
+        `フォーカス状態: opacity が "1" であることを期待していましたが、実際には "${computedStyle.opacity}" でした`,
+      );
     }
 
     // テスト: フォーカス状態の検証 - clip-path が none であること
     if (computedStyle.clipPath !== 'none') {
-      throw new Error(`フォーカス状態: clip-path が "none" であることを期待していましたが、実際には "${computedStyle.clipPath}" でした`);
+      throw new Error(
+        `フォーカス状態: clip-path が "none" であることを期待していましたが、実際には "${computedStyle.clipPath}" でした`,
+      );
     }
 
     // テスト: フォーカス状態の検証 - transform が中央配置であること
@@ -446,14 +470,16 @@ export const Focused: Story = {
       computedStyle.transform === 'translateX(-50%)' ||
       computedStyle.transform === 'translate(-50%, 0px)';
     if (!hasTransform) {
-      throw new Error(`フォーカス状態: transform が中央配置の変換を含むことを期待していましたが、実際には "${computedStyle.transform}" でした`);
+      throw new Error(
+        `フォーカス状態: transform が中央配置の変換を含むことを期待していましたが、実際には "${computedStyle.transform}" でした`,
+      );
     }
   },
 };
 
 /**
  * スキップナビゲーションフロー。
- * 
+ *
  * スキップリンクをアクティベートした後、ターゲット要素にフォーカスが移動することを確認します。
  * これはアクセシビリティの核心機能です。
  */
@@ -555,7 +581,7 @@ export const SkipNavigationFlow: Story = {
 
     // テスト: スキップリンクにフォーカスを当てる
     focusByKeyboard(anchor);
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     // テスト: 現在のフォーカスがスキップリンクにあることを確認
     if (skipLink.shadowRoot?.activeElement !== anchor) {
@@ -568,18 +594,22 @@ export const SkipNavigationFlow: Story = {
     // ここでは、ターゲット要素が正しく設定されていることを確認します。
     const targetId = anchor.getAttribute('href');
     if (targetId !== '#main-content') {
-      throw new Error(`href が "#main-content" であることを期待していましたが、実際には "${targetId ?? 'null'}" でした`);
+      throw new Error(
+        `href が "#main-content" であることを期待していましたが、実際には "${targetId ?? 'null'}" でした`,
+      );
     }
 
     // テスト: ターゲット要素にtabindex="-1"が設定されていることを確認
     if (mainContent.getAttribute('tabindex') !== '-1') {
-      throw new Error('プログラムによるフォーカスのため、ターゲット要素には tabindex="-1" が必要です');
+      throw new Error(
+        'プログラムによるフォーカスのため、ターゲット要素には tabindex="-1" が必要です',
+      );
     }
 
     // テスト: ネイティブなリンクのクリックはStorybookのiframe環境でページナビゲーションを引き起こし
     // Vitestブラウザ接続が切断されるため、プログラム的なフォーカス移動でスキップ挙動をシミュレートする
     mainContent.focus();
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     const activeElement = mainContent.ownerDocument.activeElement;
     if (activeElement !== mainContent) {
@@ -590,7 +620,7 @@ export const SkipNavigationFlow: Story = {
 
 /**
  * ダークモードでのスキップリンク。
- * 
+ *
  * ダークモードでは、スキップリンクは「闇の中の発光体」として機能し、
  * box-shadowを持たないことを確認します（Depth Strategy準拠）。
  */
@@ -625,7 +655,7 @@ export const DarkMode: Story = {
         --bg-default: oklch(12% 0.02 250);
         --border-on-inverted: oklch(from var(--bg-default) l c h / 0.2);
         --shadow-lg: none; /* ダークモードでは影を削除 */
-        
+
         min-height: 300px;
         padding: 2rem;
         background: var(--bg-default);
@@ -639,7 +669,7 @@ export const DarkMode: Story = {
         border-radius: var(--radius-md, 6px);
         border: 1px solid oklch(90% 0.01 250 / 0.12); /* --border-default in dark mode */
       }
-      
+
       .demo-info code {
         background: oklch(22% 0.02 250);
       }
@@ -663,9 +693,14 @@ export const DarkMode: Story = {
       ></ui-skip-link>
 
       <div class="demo-info">
-        <p><strong>ダークモード</strong>: このストーリーでは、スキップリンクが自動的にフォーカスされています。</p>
-        <p>スキップリンクは<strong>明るい背景</strong>（白系）に<strong>暗いテキスト</strong>（黒系）で表示され、<br>
-          「闇の中の発光体」として浮遊感を表現しています。</p>
+        <p>
+          <strong>ダークモード</strong>:
+          このストーリーでは、スキップリンクが自動的にフォーカスされています。
+        </p>
+        <p>
+          スキップリンクは<strong>明るい背景</strong>（白系）に<strong>暗いテキスト</strong>（黒系）で表示され、<br />
+          「闇の中の発光体」として浮遊感を表現しています。
+        </p>
         <div class="demo-note">
           <strong>技術的な注記</strong>: ダークモードでは <code>box-shadow: none</code> となり、
           背景色自体のコントラストで浮遊感を表現します（Dark Mode Depth Strategy準拠）。
@@ -694,24 +729,28 @@ export const DarkMode: Story = {
 
     // フォーカスを当てる（:focus-visible の検証）
     focusByKeyboard(anchor);
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     const computedStyle = window.getComputedStyle(anchor);
 
     // テスト: フォーカス状態の基本検証
     if (computedStyle.opacity !== '1') {
-      throw new Error(`フォーカス状態: opacity が "1" であることを期待していましたが、実際には "${computedStyle.opacity}" でした`);
+      throw new Error(
+        `フォーカス状態: opacity が "1" であることを期待していましたが、実際には "${computedStyle.opacity}" でした`,
+      );
     }
 
     if (computedStyle.clipPath !== 'none') {
-      throw new Error(`フォーカス状態: clip-path が "none" であることを期待していましたが、実際には "${computedStyle.clipPath}" でした`);
+      throw new Error(
+        `フォーカス状態: clip-path が "none" であることを期待していましたが、実際には "${computedStyle.clipPath}" でした`,
+      );
     }
   },
 };
 
 /**
  * 強制カラーモード（Windows高コントラストモード等）でのスキップリンク。
- * 
+ *
  * forced-colors: active 環境下では、アウトラインが強制的に適用され、
  * システムカラーに準拠することを確認します。
  */
@@ -773,8 +812,14 @@ export const ForcedColorsMode: Story = {
       ></ui-skip-link>
 
       <div class="demo-info">
-        <p><strong>強制カラーモード</strong>: このストーリーでは、スキップリンクが自動的にフォーカスされています。</p>
-        <p>Windows高コントラストモードまたはブラウザの開発者ツールで forced-colors をエミュレートして確認してください。</p>
+        <p>
+          <strong>強制カラーモード</strong>:
+          このストーリーでは、スキップリンクが自動的にフォーカスされています。
+        </p>
+        <p>
+          Windows高コントラストモードまたはブラウザの開発者ツールで forced-colors
+          をエミュレートして確認してください。
+        </p>
         <ul>
           <li>アウトラインが 3px の太さで表示されること</li>
           <li>システムカラー（CanvasText, Canvas）が適用されること</li>
@@ -803,19 +848,23 @@ export const ForcedColorsMode: Story = {
 
     // フォーカスを当てる（:focus-visible の検証）
     focusByKeyboard(anchor);
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     // テスト: 基本的なフォーカス状態の確認
     const computedStyle = window.getComputedStyle(anchor);
 
     if (computedStyle.opacity !== '1') {
-      throw new Error(`フォーカス状態: opacity が "1" であることを期待していましたが、実際には "${computedStyle.opacity}" でした`);
+      throw new Error(
+        `フォーカス状態: opacity が "1" であることを期待していましたが、実際には "${computedStyle.opacity}" でした`,
+      );
     }
 
     // Note: forced-colors: active はOSレベルの設定が必要なため、自動テストでは検証しない。
     // フォーカス時の基本スタイル（opacity, clip-path）のみを確認する。
     if (computedStyle.clipPath !== 'none') {
-      throw new Error(`フォーカス状態: clip-path が "none" であることを期待していましたが、実際には "${computedStyle.clipPath}" でした`);
+      throw new Error(
+        `フォーカス状態: clip-path が "none" であることを期待していましたが、実際には "${computedStyle.clipPath}" でした`,
+      );
     }
   },
 };
@@ -842,7 +891,11 @@ export const LabelBoundaries: Story = {
 
     <div class="demo-container">
       <section class="demo-section">
-        <ui-skip-link href="#short-label-content" label="移動" id="short-label-skip-link"></ui-skip-link>
+        <ui-skip-link
+          href="#short-label-content"
+          label="移動"
+          id="short-label-skip-link"
+        ></ui-skip-link>
         <main id="short-label-content" tabindex="-1">
           <h2>短いラベル</h2>
         </main>
@@ -887,16 +940,20 @@ export const LabelBoundaries: Story = {
     }
 
     focusByKeyboard(longAnchor);
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     const shortStyle = window.getComputedStyle(shortAnchor);
     if (shortStyle.whiteSpace !== 'nowrap') {
-      throw new Error(`短いラベルの white-space が 'nowrap' であることを期待していましたが、実際には '${shortStyle.whiteSpace}' でした`);
+      throw new Error(
+        `短いラベルの white-space が 'nowrap' であることを期待していましたが、実際には '${shortStyle.whiteSpace}' でした`,
+      );
     }
 
     const longStyle = window.getComputedStyle(longAnchor);
     if (longStyle.textOverflow !== 'ellipsis') {
-      throw new Error(`長いラベルの text-overflow が 'ellipsis' であることを期待していましたが、実際には '${longStyle.textOverflow}' でした`);
+      throw new Error(
+        `長いラベルの text-overflow が 'ellipsis' であることを期待していましたが、実際には '${longStyle.textOverflow}' でした`,
+      );
     }
     if (longStyle.overflow !== 'hidden' && longStyle.overflowX !== 'hidden') {
       throw new Error('長いラベルの overflow が hidden であることを期待していました');
@@ -908,7 +965,7 @@ export const LabelBoundaries: Story = {
 
 /**
  * 存在しないターゲットへの警告。
- * 
+ *
  * ターゲット要素が存在しない場合、開発者向けにコンソール警告が出力されることを確認します。
  * これは開発者体験（DX）の向上のための機能です。
  */
@@ -958,8 +1015,14 @@ export const MissingTargetWarning: Story = {
 
       <div class="demo-info">
         <p><strong>⚠️ 開発者向け警告テスト</strong></p>
-        <p>このストーリーでは、存在しないターゲット（<code>#non-existent-target</code>）を指定しています。</p>
-        <p><strong>ブラウザのコンソールを開いて、警告メッセージが出力されていることを確認してください。</strong></p>
+        <p>
+          このストーリーでは、存在しないターゲット（<code>#non-existent-target</code>）を指定しています。
+        </p>
+        <p>
+          <strong
+            >ブラウザのコンソールを開いて、警告メッセージが出力されていることを確認してください。</strong
+          >
+        </p>
         <p>期待されるメッセージ:</p>
         <pre><code>[ui-skip-link]: Target element with selector '#non-existent-target' not found in the document.</code></pre>
       </div>
@@ -984,7 +1047,9 @@ export const MissingTargetWarning: Story = {
     // テスト: href属性が正しく設定されていること
     const href = anchor.getAttribute('href');
     if (href !== '#non-existent-target') {
-      throw new Error(`href が "#non-existent-target" であることを期待していましたが、実際には "${href ?? 'null'}" でした`);
+      throw new Error(
+        `href が "#non-existent-target" であることを期待していましたが、実際には "${href ?? 'null'}" でした`,
+      );
     }
 
     // テスト: ターゲット要素が存在しないことを確認

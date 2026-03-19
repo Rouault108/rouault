@@ -28,8 +28,7 @@ export const Default: Story = {
     renderFoundationFrame(
       {
         title: 'Radius And Border',
-        description:
-          '角丸は小さく、境界は細く。本文より手前にある UI だけが構造を示します。',
+        description: '角丸は小さく、境界は細く。本文より手前にある UI だけが構造を示します。',
       },
       html`
         ${renderFoundationSection(
@@ -77,7 +76,6 @@ export const Default: Story = {
             },
           ]),
         )}
-
         ${renderFoundationSection(
           'Border Patterns',
           renderTokenSampleGrid([
@@ -124,7 +122,6 @@ export const Default: Story = {
             },
           ]),
         )}
-
         ${renderFoundationSection(
           'Token Reference',
           renderTokenValueList([

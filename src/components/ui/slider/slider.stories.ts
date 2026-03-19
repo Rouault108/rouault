@@ -146,7 +146,8 @@ export const Default: Story = {
     await slider.updateComplete;
 
     // テスト: value が 50
-    if (slider.value !== 50) throw new Error(`期待される値は50でしたが、実際は ${String(slider.value)} でした`);
+    if (slider.value !== 50)
+      throw new Error(`期待される値は50でしたが、実際は ${String(slider.value)} でした`);
 
     // テスト: input[type="range"] が存在する
     const input = slider.shadowRoot?.querySelector<HTMLInputElement>('input[type="range"]');
@@ -154,18 +155,26 @@ export const Default: Story = {
 
     // テスト: aria-label が設定されている
     if (input.getAttribute('aria-label') !== '音量') {
-      throw new Error(`期待される aria-label は "音量" でしたが、実際は "${input.getAttribute('aria-label') ?? 'null'}" でした`);
+      throw new Error(
+        `期待される aria-label は "音量" でしたが、実際は "${input.getAttribute('aria-label') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: aria-valuemin / aria-valuemax / aria-valuenow
     if (input.getAttribute('aria-valuemin') !== '0') {
-      throw new Error(`期待される aria-valuemin は "0" でしたが、実際は "${input.getAttribute('aria-valuemin') ?? 'null'}" でした`);
+      throw new Error(
+        `期待される aria-valuemin は "0" でしたが、実際は "${input.getAttribute('aria-valuemin') ?? 'null'}" でした`,
+      );
     }
     if (input.getAttribute('aria-valuemax') !== '100') {
-      throw new Error(`期待される aria-valuemax は "100" でしたが、実際は "${input.getAttribute('aria-valuemax') ?? 'null'}" でした`);
+      throw new Error(
+        `期待される aria-valuemax は "100" でしたが、実際は "${input.getAttribute('aria-valuemax') ?? 'null'}" でした`,
+      );
     }
     if (input.getAttribute('aria-valuenow') !== '50') {
-      throw new Error(`期待される aria-valuenow は "50" でしたが、実際は "${input.getAttribute('aria-valuenow') ?? 'null'}" でした`);
+      throw new Error(
+        `期待される aria-valuenow は "50" でしたが、実際は "${input.getAttribute('aria-valuenow') ?? 'null'}" でした`,
+      );
     }
 
     // テスト: Thumb が存在する
@@ -189,20 +198,15 @@ export const Default: Story = {
  */
 export const AtMinValue: Story = {
   render: () => html`
-    <ui-slider
-      id="at-min"
-      label="最小値"
-      min="0"
-      max="100"
-      value="0"
-    ></ui-slider>
+    <ui-slider id="at-min" label="最小値" min="0" max="100" value="0"></ui-slider>
   `,
   play: async ({ canvasElement }) => {
     const slider = canvasElement.querySelector<Slider>('#at-min');
     if (!slider) throw new Error('ui-slider が見つかりません');
     await slider.updateComplete;
 
-    if (slider.value !== 0) throw new Error(`期待される値は0でしたが、実際は ${String(slider.value)} でした`);
+    if (slider.value !== 0)
+      throw new Error(`期待される値は0でしたが、実際は ${String(slider.value)} でした`);
 
     const fill = slider.shadowRoot?.querySelector<HTMLElement>('.fill');
     if (!fill) throw new Error('Fill が見つかりません');
@@ -220,20 +224,15 @@ export const AtMinValue: Story = {
  */
 export const AtMaxValue: Story = {
   render: () => html`
-    <ui-slider
-      id="at-max"
-      label="最大値"
-      min="0"
-      max="100"
-      value="100"
-    ></ui-slider>
+    <ui-slider id="at-max" label="最大値" min="0" max="100" value="100"></ui-slider>
   `,
   play: async ({ canvasElement }) => {
     const slider = canvasElement.querySelector<Slider>('#at-max');
     if (!slider) throw new Error('ui-slider が見つかりません');
     await slider.updateComplete;
 
-    if (slider.value !== 100) throw new Error(`期待される値は100でしたが、実際は ${String(slider.value)} でした`);
+    if (slider.value !== 100)
+      throw new Error(`期待される値は100でしたが、実際は ${String(slider.value)} でした`);
 
     const fill = slider.shadowRoot?.querySelector<HTMLElement>('.fill');
     if (!fill) throw new Error('Fill が見つかりません');
@@ -266,17 +265,21 @@ export const DisabledNormal: Story = {
     await slider.updateComplete;
 
     // テスト: disabled プロパティが true
-    if (!slider.disabled) throw new Error('disabled が true であることを期待しましたが、 false でした');
+    if (!slider.disabled)
+      throw new Error('disabled が true であることを期待しましたが、 false でした');
 
     const input = slider.shadowRoot?.querySelector<HTMLInputElement>('input[type="range"]');
     if (!input) throw new Error('input が見つかりません');
 
     // テスト: input に disabled 属性が付与されている
-    if (!input.disabled) throw new Error('input が無効化されていることを期待しましたが、有効でした');
+    if (!input.disabled)
+      throw new Error('input が無効化されていることを期待しましたが、有効でした');
 
     // テスト: aria-disabled="true"
     if (input.getAttribute('aria-disabled') !== 'true') {
-      throw new Error(`期待される aria-disabled は "true" でしたが、実際は "${input.getAttribute('aria-disabled') ?? 'null'}" でした`);
+      throw new Error(
+        `期待される aria-disabled は "true" でしたが、実際は "${input.getAttribute('aria-disabled') ?? 'null'}" でした`,
+      );
     }
   },
 };
@@ -302,8 +305,10 @@ export const DisabledAtMin: Story = {
     if (!slider) throw new Error('ui-slider が見つかりません');
     await slider.updateComplete;
 
-    if (!slider.disabled) throw new Error('disabled が true であることを期待しましたが、 false でした');
-    if (slider.value !== 0) throw new Error(`期待される値は0でしたが、実際は ${String(slider.value)} でした`);
+    if (!slider.disabled)
+      throw new Error('disabled が true であることを期待しましたが、 false でした');
+    if (slider.value !== 0)
+      throw new Error(`期待される値は0でしたが、実際は ${String(slider.value)} でした`);
   },
 };
 
@@ -328,8 +333,10 @@ export const DisabledAtMax: Story = {
     if (!slider) throw new Error('ui-slider が見つかりません');
     await slider.updateComplete;
 
-    if (!slider.disabled) throw new Error('disabled が true であることを期待しましたが、 false でした');
-    if (slider.value !== 100) throw new Error(`期待される値は100でしたが、実際は ${String(slider.value)} でした`);
+    if (!slider.disabled)
+      throw new Error('disabled が true であることを期待しましたが、 false でした');
+    if (slider.value !== 100)
+      throw new Error(`期待される値は100でしたが、実際は ${String(slider.value)} でした`);
   },
 };
 
@@ -353,13 +360,23 @@ export const WithSlots: Story = {
       max="100"
       value="60"
       @input="${(e: Event) => {
-      const slider = e.target as Slider;
-      const suffix = slider.querySelector<HTMLElement>('[slot="suffix"][data-role="value"]');
-      if (suffix) suffix.textContent = String(slider.value);
-    }}"
+        const slider = e.target as Slider;
+        const suffix = slider.querySelector<HTMLElement>('[slot="suffix"][data-role="value"]');
+        if (suffix) suffix.textContent = String(slider.value);
+      }}"
     >
-      <iconify-icon slot="prefix" icon="lucide:volume-x" aria-hidden="true" style="font-size: 1.2em;"></iconify-icon>
-      <span data-role="value" slot="suffix" style="font-size: 14px; min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums;">60</span>
+      <iconify-icon
+        slot="prefix"
+        icon="lucide:volume-x"
+        aria-hidden="true"
+        style="font-size: 1.2em;"
+      ></iconify-icon>
+      <span
+        data-role="value"
+        slot="suffix"
+        style="font-size: 14px; min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums;"
+        >60</span
+      >
     </ui-slider>
   `,
   play: async ({ canvasElement }) => {
@@ -386,15 +403,19 @@ export const BrightnessControl: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 400px;">
       <div style="font-size: 13px; color: oklch(48% 0.01 250);">明るさ調整</div>
-      <ui-slider
-        id="brightness"
-        label="明るさ"
-        min="0"
-        max="100"
-        value="70"
-      >
-        <iconify-icon slot="prefix" icon="lucide:moon-star" aria-hidden="true" style="font-size: 1.1em; opacity: 0.7;"></iconify-icon>
-        <iconify-icon slot="suffix" icon="lucide:sun" aria-hidden="true" style="font-size: 1.1em;"></iconify-icon>
+      <ui-slider id="brightness" label="明るさ" min="0" max="100" value="70">
+        <iconify-icon
+          slot="prefix"
+          icon="lucide:moon-star"
+          aria-hidden="true"
+          style="font-size: 1.1em; opacity: 0.7;"
+        ></iconify-icon>
+        <iconify-icon
+          slot="suffix"
+          icon="lucide:sun"
+          aria-hidden="true"
+          style="font-size: 1.1em;"
+        ></iconify-icon>
       </ui-slider>
     </div>
   `,
@@ -403,7 +424,8 @@ export const BrightnessControl: Story = {
     if (!slider) throw new Error('ui-slider が見つかりません');
     await slider.updateComplete;
 
-    if (slider.value !== 70) throw new Error(`期待される値は70でしたが、実際は ${String(slider.value)} でした`);
+    if (slider.value !== 70)
+      throw new Error(`期待される値は70でしたが、実際は ${String(slider.value)} でした`);
   },
 };
 
@@ -463,12 +485,26 @@ export const AllStates: Story = {
 
       <div class="state-group">
         <div class="state-label">Step=10 (value=30)</div>
-        <ui-slider id="all-step10" label="ステップ10" min="0" max="100" step="10" value="30"></ui-slider>
+        <ui-slider
+          id="all-step10"
+          label="ステップ10"
+          min="0"
+          max="100"
+          step="10"
+          value="30"
+        ></ui-slider>
       </div>
 
       <div class="state-group">
         <div class="state-label">Decimal Step=0.1 (value=1.5)</div>
-        <ui-slider id="all-decimal" label="小数ステップ" min="0" max="2" step="0.1" value="1.5"></ui-slider>
+        <ui-slider
+          id="all-decimal"
+          label="小数ステップ"
+          min="0"
+          max="2"
+          step="0.1"
+          value="1.5"
+        ></ui-slider>
       </div>
 
       <div class="state-group">
@@ -502,7 +538,10 @@ export const AllStates: Story = {
     if (!disabledSlider?.disabled) throw new Error('無効化されたスライダーは無効であるべきです');
 
     const decimalSlider = canvasElement.querySelector<Slider>('#all-decimal');
-    if (decimalSlider?.value !== 1.5) throw new Error(`小数スライダーの値は1.5であるべきでしたが、実際は ${String(decimalSlider?.value)} でした`);
+    if (decimalSlider?.value !== 1.5)
+      throw new Error(
+        `小数スライダーの値は1.5であるべきでしたが、実際は ${String(decimalSlider?.value)} でした`,
+      );
   },
 };
 
@@ -518,7 +557,10 @@ export const AllStates: Story = {
  */
 export const EventFiring: Story = {
   render: () => html`
-    <div data-story-root="event-firing" style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
+    <div
+      data-story-root="event-firing"
+      style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;"
+    >
       <ui-slider
         id="event-slider"
         label="イベントテスト"
@@ -526,15 +568,15 @@ export const EventFiring: Story = {
         max="100"
         value="50"
         @input="${(e: Event) => {
-      const slider = e.target as Slider;
-      const log = slider.parentElement?.querySelector<HTMLElement>('[data-role="event-log"]');
-      if (log) log.textContent = `input: value=${String(slider.value)}`;
-    }}"
+          const slider = e.target as Slider;
+          const log = slider.parentElement?.querySelector<HTMLElement>('[data-role="event-log"]');
+          if (log) log.textContent = `input: value=${String(slider.value)}`;
+        }}"
         @change="${(e: Event) => {
-      const slider = e.target as Slider;
-      const log = slider.parentElement?.querySelector<HTMLElement>('[data-role="event-log"]');
-      if (log) log.textContent = `change: value=${String(slider.value)}（確定）`;
-    }}"
+          const slider = e.target as Slider;
+          const log = slider.parentElement?.querySelector<HTMLElement>('[data-role="event-log"]');
+          if (log) log.textContent = `change: value=${String(slider.value)}（確定）`;
+        }}"
       ></ui-slider>
 
       <div
@@ -563,7 +605,13 @@ export const EventFiring: Story = {
 
     // テスト: input イベントが発火する
     const inputEventPromise = new Promise<void>((resolve) => {
-      slider.addEventListener('input', () => { resolve(); }, { once: true });
+      slider.addEventListener(
+        'input',
+        () => {
+          resolve();
+        },
+        { once: true },
+      );
     });
 
     // input の値を変更して input イベントを発火
@@ -574,7 +622,13 @@ export const EventFiring: Story = {
 
     // テスト: change イベントが発火する
     const changeEventPromise = new Promise<void>((resolve) => {
-      slider.addEventListener('change', () => { resolve(); }, { once: true });
+      slider.addEventListener(
+        'change',
+        () => {
+          resolve();
+        },
+        { once: true },
+      );
     });
 
     input.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
@@ -595,8 +649,11 @@ export const EventFiring: Story = {
 export const KeyboardNavigation: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0 0); border: 1px solid oklch(90% 0.01 250 / 0.2); border-radius: 6px; font-size: 13px;">
-        <strong>操作方法</strong>: Tab でフォーカスを当て、矢印キー / Home / End / PageUp / PageDown で操作してください。
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0 0); border: 1px solid oklch(90% 0.01 250 / 0.2); border-radius: 6px; font-size: 13px;"
+      >
+        <strong>操作方法</strong>: Tab でフォーカスを当て、矢印キー / Home / End / PageUp / PageDown
+        で操作してください。
       </div>
       <ui-slider
         id="keyboard-slider"
@@ -626,7 +683,9 @@ export const KeyboardNavigation: Story = {
     await slider.updateComplete;
 
     if (slider.value !== 55) {
-      throw new Error(`ArrowRight シミュレーション後、期待される値は55でしたが、実際は ${String(slider.value)} でした`);
+      throw new Error(
+        `ArrowRight シミュレーション後、期待される値は55でしたが、実際は ${String(slider.value)} でした`,
+      );
     }
 
     // テスト: Home キー相当（min へ）
@@ -635,7 +694,9 @@ export const KeyboardNavigation: Story = {
     await slider.updateComplete;
 
     if ((slider.value as number) !== 0) {
-      throw new Error(`Home シミュレーション後、期待される値は0でしたが、実際は ${String(slider.value)} でした`);
+      throw new Error(
+        `Home シミュレーション後、期待される値は0でしたが、実際は ${String(slider.value)} でした`,
+      );
     }
 
     // テスト: End キー相当（max へ）
@@ -644,27 +705,35 @@ export const KeyboardNavigation: Story = {
     await slider.updateComplete;
 
     if ((slider.value as number) !== 100) {
-      throw new Error(`End シミュレーション後、期待される値は100でしたが、実際は ${String(slider.value)} でした`);
+      throw new Error(
+        `End シミュレーション後、期待される値は100でしたが、実際は ${String(slider.value)} でした`,
+      );
     }
 
     // テスト: PageDown で step * 10（=50）減少
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'PageDown', bubbles: true }));
     await slider.updateComplete;
     if ((slider.value as number) !== 50) {
-      throw new Error(`PageDown 後、期待される値は50でしたが、実際は ${String(slider.value)} でした`);
+      throw new Error(
+        `PageDown 後、期待される値は50でしたが、実際は ${String(slider.value)} でした`,
+      );
     }
 
     // テスト: PageUp で step * 10（=50）増加して max へクランプ
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'PageUp', bubbles: true }));
     await slider.updateComplete;
     if ((slider.value as number) !== 100) {
-      throw new Error(`PageUp 後、期待される値は100でしたが、実際は ${String(slider.value)} でした`);
+      throw new Error(
+        `PageUp 後、期待される値は100でしたが、実際は ${String(slider.value)} でした`,
+      );
     }
 
     // テスト: Focus Proxy のセレクタ戦略（input:focus-visible ~ .track .thumb）を維持
     const cssText = (Slider as unknown as { styles?: { cssText?: string } }).styles?.cssText ?? '';
     if (!cssText.includes('input:focus-visible ~ .track .thumb')) {
-      throw new Error('フォーカスプロキシのセレクタには "input:focus-visible ~ .track .thumb" が含まれているべきです');
+      throw new Error(
+        'フォーカスプロキシのセレクタには "input:focus-visible ~ .track .thumb" が含まれているべきです',
+      );
     }
   },
 };
@@ -690,8 +759,11 @@ export const MinGreaterThanMax: Story = {
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
-        <strong>⚠️ 境界条件</strong>: <code>min="100" max="0"</code> → 自動的に <code>min=0, max=100</code> に正規化されます。
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
+        <strong>⚠️ 境界条件</strong>: <code>min="100" max="0"</code> → 自動的に
+        <code>min=0, max=100</code> に正規化されます。
       </div>
       <ui-slider
         id="min-gt-max"
@@ -715,13 +787,17 @@ export const MinGreaterThanMax: Story = {
     const inputMax = parseFloat(input.max);
 
     if (inputMin >= inputMax) {
-      throw new Error(`正規化された min < max が期待されましたが、min=${String(inputMin)}, max=${String(inputMax)} でした`);
+      throw new Error(
+        `正規化された min < max が期待されましたが、min=${String(inputMin)}, max=${String(inputMax)} でした`,
+      );
     }
 
     // テスト: value が正規化された範囲内にある
     const value = slider.value ?? 0;
     if (value < inputMin || value > inputMax) {
-      throw new Error(`期待される値は [${String(inputMin)}, ${String(inputMax)}] の範囲内でしたが、実際は ${String(value)} でした`);
+      throw new Error(
+        `期待される値は [${String(inputMin)}, ${String(inputMax)}] の範囲内でしたが、実際は ${String(value)} でした`,
+      );
     }
   },
 };
@@ -742,8 +818,11 @@ export const InvalidStepFallback: Story = {
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
-        <strong>⚠️ 境界条件</strong>: <code>step="0"</code> → <code>step=1</code> にフォールバックします。
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
+        <strong>⚠️ 境界条件</strong>: <code>step="0"</code> →
+        <code>step=1</code> にフォールバックします。
       </div>
       <ui-slider
         id="invalid-step"
@@ -766,7 +845,9 @@ export const InvalidStepFallback: Story = {
     // テスト: step が 1 にフォールバックされている
     const inputStep = parseFloat(input.step);
     if (inputStep !== 1) {
-      throw new Error(`期待される step は1（フォールバック）でしたが、実際は step=${String(inputStep)} でした`);
+      throw new Error(
+        `期待される step は1（フォールバック）でしたが、実際は step=${String(inputStep)} でした`,
+      );
     }
   },
 };
@@ -787,8 +868,11 @@ export const ValueOutOfRange: Story = {
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
-        <strong>⚠️ 境界条件</strong>: <code>value="150"</code>（max=100 超過）→ <code>value=100</code> にクランプされます。
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
+        <strong>⚠️ 境界条件</strong>: <code>value="150"</code>（max=100 超過）→
+        <code>value=100</code> にクランプされます。
       </div>
       <ui-slider
         id="value-out-of-range"
@@ -806,7 +890,9 @@ export const ValueOutOfRange: Story = {
 
     // テスト: value が max にクランプされている
     if (slider.value !== 100) {
-      throw new Error(`期待される値は100（クランプ）でしたが、実際は ${String(slider.value)} でした`);
+      throw new Error(
+        `期待される値は100（クランプ）でしたが、実際は ${String(slider.value)} でした`,
+      );
     }
 
     const fill = slider.shadowRoot?.querySelector<HTMLElement>('.fill');
@@ -833,8 +919,11 @@ export const ValueBelowMin: Story = {
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
-        <strong>⚠️ 境界条件</strong>: <code>value="-10"</code>（min=0 未満）→ <code>value=0</code> にクランプされます。
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
+        <strong>⚠️ 境界条件</strong>: <code>value="-10"</code>（min=0 未満）→
+        <code>value=0</code> にクランプされます。
       </div>
       <ui-slider
         id="value-below-min"
@@ -873,8 +962,11 @@ export const DecimalStepPrecision: Story = {
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
-        <strong>⚠️ 境界条件</strong>: <code>step="0.1"</code> での浮動小数点誤差対策。値は小数第1位に丸められます。
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
+        <strong>⚠️ 境界条件</strong>:
+        <code>step="0.1"</code> での浮動小数点誤差対策。値は小数第1位に丸められます。
       </div>
       <ui-slider
         id="decimal-precision"
@@ -884,7 +976,12 @@ export const DecimalStepPrecision: Story = {
         step="0.1"
         value="1.5"
       >
-        <span slot="suffix" id="decimal-display" style="font-size: 13px; min-width: 3ch; font-variant-numeric: tabular-nums;">1.5</span>
+        <span
+          slot="suffix"
+          id="decimal-display"
+          style="font-size: 13px; min-width: 3ch; font-variant-numeric: tabular-nums;"
+          >1.5</span
+        >
       </ui-slider>
     </div>
   `,
@@ -929,15 +1026,13 @@ export const ValueUnspecified: Story = {
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
-        <strong>⚠️ 境界条件</strong>: <code>value</code> 未指定 → <code>min=20</code> が初期値として採用されます。
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
+        <strong>⚠️ 境界条件</strong>: <code>value</code> 未指定 →
+        <code>min=20</code> が初期値として採用されます。
       </div>
-      <ui-slider
-        id="value-unspecified"
-        label="value未指定テスト"
-        min="20"
-        max="80"
-      ></ui-slider>
+      <ui-slider id="value-unspecified" label="value未指定テスト" min="20" max="80"></ui-slider>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -953,7 +1048,9 @@ export const ValueUnspecified: Story = {
     const fill = slider.shadowRoot?.querySelector<HTMLElement>('.fill');
     if (!fill) throw new Error('Fill が見つかりません');
     if (fill.style.width !== '0%') {
-      throw new Error(`期待されるフィル幅は "0%"（min の位置）でしたが、実際は "${fill.style.width}" でした`);
+      throw new Error(
+        `期待されるフィル幅は "0%"（min の位置）でしたが、実際は "${fill.style.width}" でした`,
+      );
     }
   },
 };
@@ -968,14 +1065,18 @@ export const ValueSnapToStep: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `step="10"` で `value="35"` → 最も近い有効ステップ `40` にスナップされます。',
+        story:
+          '⚠️ **境界条件**: `step="10"` で `value="35"` → 最も近い有効ステップ `40` にスナップされます。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
-        <strong>⚠️ 境界条件</strong>: <code>step="10", value="35"</code> → 最も近い有効ステップ <code>40</code> にスナップされます。
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
+        <strong>⚠️ 境界条件</strong>: <code>step="10", value="35"</code> → 最も近い有効ステップ
+        <code>40</code> にスナップされます。
       </div>
       <ui-slider
         id="value-snap"
@@ -994,7 +1095,9 @@ export const ValueSnapToStep: Story = {
 
     // テスト: value が 40 にスナップされている（35 は 30 と 40 の中間より 40 に近い）
     if (slider.value !== 40) {
-      throw new Error(`期待される値は40（スナップ）でしたが、実際は ${String(slider.value)} でした`);
+      throw new Error(
+        `期待される値は40（スナップ）でしたが、実際は ${String(slider.value)} でした`,
+      );
     }
   },
 };
@@ -1009,13 +1112,16 @@ export const DisabledClickBlocked: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: `disabled` 状態ではクリックしても状態が変化せず、イベントも発火しません。',
+        story:
+          '⚠️ **境界条件**: `disabled` 状態ではクリックしても状態が変化せず、イベントも発火しません。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
         <strong>⚠️ 境界条件</strong>: disabled 状態では操作しても状態が変化しません。
       </div>
       <ui-slider
@@ -1035,8 +1141,12 @@ export const DisabledClickBlocked: Story = {
 
     let inputFired = false;
     let changeFired = false;
-    slider.addEventListener('input', () => { inputFired = true; });
-    slider.addEventListener('change', () => { changeFired = true; });
+    slider.addEventListener('input', () => {
+      inputFired = true;
+    });
+    slider.addEventListener('change', () => {
+      changeFired = true;
+    });
 
     const input = slider.shadowRoot?.querySelector<HTMLInputElement>('input[type="range"]');
     if (!input) throw new Error('input が見つかりません');
@@ -1049,13 +1159,17 @@ export const DisabledClickBlocked: Story = {
 
     // テスト: disabled 時はイベントが発火しない
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (inputFired) throw new Error('無効化されたスライダーは input イベントを発火すべきではありません');
+    if (inputFired)
+      throw new Error('無効化されたスライダーは input イベントを発火すべきではありません');
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (changeFired) throw new Error('無効化されたスライダーは change イベントを発火すべきではありません');
+    if (changeFired)
+      throw new Error('無効化されたスライダーは change イベントを発火すべきではありません');
 
     // テスト: value が変化していない
     if (slider.value !== 50) {
-      throw new Error(`無効化されたスライダーの値は50のままであるべきでしたが、実際は ${String(slider.value)} でした`);
+      throw new Error(
+        `無効化されたスライダーの値は50のままであるべきでしたが、実際は ${String(slider.value)} でした`,
+      );
     }
   },
 };
@@ -1076,8 +1190,11 @@ export const MinEqualsMax: Story = {
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
-        <strong>⚠️ 境界条件</strong>: <code>min="50" max="50"</code>（範囲ゼロ）。スライダーは操作不能です。
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
+      >
+        <strong>⚠️ 境界条件</strong>:
+        <code>min="50" max="50"</code>（範囲ゼロ）。スライダーは操作不能です。
       </div>
       <ui-slider
         id="min-equals-max"
@@ -1114,22 +1231,20 @@ export const NegativeRange: Story = {
   parameters: {
     docs: {
       description: {
-        story: '⚠️ **境界条件**: 負の範囲 `min="-50" max="50"` での動作確認。`value="0"` は中間値（50%）になります。',
+        story:
+          '⚠️ **境界条件**: 負の範囲 `min="-50" max="50"` での動作確認。`value="0"` は中間値（50%）になります。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
-      <div style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;">
-        <strong>⚠️ 境界条件</strong>: <code>min="-50" max="50" value="0"</code> → フィルが 50% になります。
-      </div>
-      <ui-slider
-        id="negative-range"
-        label="負の範囲テスト"
-        min="-50"
-        max="50"
-        value="0"
+      <div
+        style="padding: 0.75rem 1rem; background: oklch(97% 0.01 80 / 0.3); border: 1px solid oklch(80% 0.05 80 / 0.4); border-radius: 6px; font-size: 13px;"
       >
+        <strong>⚠️ 境界条件</strong>: <code>min="-50" max="50" value="0"</code> → フィルが 50%
+        になります。
+      </div>
+      <ui-slider id="negative-range" label="負の範囲テスト" min="-50" max="50" value="0">
         <span slot="prefix" style="font-size: 13px; font-variant-numeric: tabular-nums;">-50</span>
         <span slot="suffix" style="font-size: 13px; font-variant-numeric: tabular-nums;">+50</span>
       </ui-slider>
@@ -1163,7 +1278,8 @@ export const DarkMode: Story = {
     backgrounds: { default: 'dark' },
     docs: {
       description: {
-        story: 'Dark Mode のトークンを与えた状態でトラック境界と Thumb の分離が保たれるかを確認します。',
+        story:
+          'Dark Mode のトークンを与えた状態でトラック境界と Thumb の分離が保たれるかを確認します。',
       },
     },
   },
@@ -1224,16 +1340,13 @@ export const HighContrastFallback: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Forced Colors 向けの Thumb 境界線フォールバック（CanvasText）と太線トークンの定義を確認します。',
+        story:
+          'Forced Colors 向けの Thumb 境界線フォールバック（CanvasText）と太線トークンの定義を確認します。',
       },
     },
   },
   render: () => html`
-    <ui-slider
-      id="high-contrast-slider"
-      label="高コントラスト確認"
-      value="60"
-    ></ui-slider>
+    <ui-slider id="high-contrast-slider" label="高コントラスト確認" value="60"></ui-slider>
   `,
   play: async ({ canvasElement }) => {
     const slider = canvasElement.querySelector<Slider>('#high-contrast-slider');
@@ -1245,10 +1358,14 @@ export const HighContrastFallback: Story = {
       throw new Error('forced-colors メディアクエリが期待されましたが含まれていません');
     }
     if (!cssText.includes('CanvasText')) {
-      throw new Error('forced-colors モードで CanvasText フォールバックが期待されましたが含まれていません');
+      throw new Error(
+        'forced-colors モードで CanvasText フォールバックが期待されましたが含まれていません',
+      );
     }
     if (!cssText.includes('--border-width-thick')) {
-      throw new Error('forced-colors 用に --border-width-thick トークンの使用が期待されましたが含まれていません');
+      throw new Error(
+        'forced-colors 用に --border-width-thick トークンの使用が期待されましたが含まれていません',
+      );
     }
   },
 };
@@ -1265,12 +1382,7 @@ export const MissingLabelFallback: Story = {
     },
   },
   render: () => html`
-    <ui-slider
-      id="missing-label-slider"
-      min="0"
-      max="100"
-      value="20"
-    ></ui-slider>
+    <ui-slider id="missing-label-slider" min="0" max="100" value="20"></ui-slider>
   `,
   play: async ({ canvasElement }) => {
     const slider = canvasElement.querySelector<Slider>('#missing-label-slider');
@@ -1280,7 +1392,9 @@ export const MissingLabelFallback: Story = {
     const input = slider.shadowRoot?.querySelector<HTMLInputElement>('input[type="range"]');
     if (!input) throw new Error('input が見つかりません');
     if (input.getAttribute('aria-label') !== 'Slider') {
-      throw new Error(`フォールバックの aria-label は "Slider" が期待されましたが、実際は "${input.getAttribute('aria-label') ?? 'null'}" でした`);
+      throw new Error(
+        `フォールバックの aria-label は "Slider" が期待されましたが、実際は "${input.getAttribute('aria-label') ?? 'null'}" でした`,
+      );
     }
   },
 };
