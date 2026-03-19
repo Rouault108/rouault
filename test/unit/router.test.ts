@@ -303,7 +303,7 @@ describe('Router', () => {
 
     expect(pushedUrl).to.equal('/docs/example');
     expect(router.getCurrentPath()).to.equal('/docs/example');
-    expect(router.getHistory()).to.deep.equal(['/docs/example']);
+    expect(router.getHistory()).to.deep.equal(['/', '/docs/example']);
     expect(fetchedUrl).to.include('/docs/example/');
   });
 

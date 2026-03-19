@@ -223,8 +223,8 @@ describe('pagefind-search', () => {
     expect(result.items).to.deep.equal([
       {
         title: '日付なしノート',
-        url: '/notes/no-date/',
-        path: '/notes/no-date/',
+        url: '/notes/no-date',
+        path: '/notes/no-date',
         excerptHtml: '',
         description: '',
         date: '',

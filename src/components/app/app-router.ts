@@ -3,15 +3,21 @@
  */
 
 import { html, LitElement, nothing, type PropertyValues } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { RouterController } from '../../lib/controllers/router-controller.js';
 import { AppRouterAnnouncementController } from './controllers/app-router-announcement-controller.js';
 import { AppRouterContentController } from './controllers/app-router-content-controller.js';
 import { AppRouterPostRenderController } from './controllers/app-router-post-render-controller.js';
 
-@customElement('app-router')
 export class AppRouter extends LitElement {
+  static override properties = {
+    _pageContent: { state: true },
+    _ariaAnnouncement: { state: true },
+  };
+
+  declare private _pageContent: string;
+  declare private _ariaAnnouncement: string;
+
   /** シャドウDOMを無効化してライトDOMを使用する */
   override createRenderRoot(): this {
     return this;
@@ -29,14 +35,14 @@ export class AppRouter extends LitElement {
 
   private _postRenderController = new AppRouterPostRenderController(this);
 
+  constructor() {
+    super();
+    this._pageContent = '';
+    this._ariaAnnouncement = '';
+  }
+
   /** SSR で注入する初期本文。 */
   serverContent = '';
-
-  /** fetch されたページの HTML コンテンツ */
-  @state() private _pageContent = '';
-
-  /** スクリーンリーダーへの通知テキスト */
-  @state() private _ariaAnnouncement = '';
 
   override connectedCallback(): void {
     this._contentController.captureInitialContent(this);
@@ -105,4 +111,8 @@ declare global {
   interface HTMLElementTagNameMap {
     'app-router': AppRouter;
   }
+}
+
+if (!customElements.get('app-router')) {
+  customElements.define('app-router', AppRouter);
 }

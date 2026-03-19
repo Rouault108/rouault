@@ -1468,9 +1468,7 @@ describe('remarkRouaultDirectives', () => {
       remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
     };
 
-    expect(run).to.throw(
-      '[markdown] preview-sandbox を使う code-preview では手書きの preview スロットを併用できません',
-    );
+    expect(run).to.throw('[markdown] preview と preview-sandbox は同一親の直下で併用できません');
   });
 
   it('preview-sandbox を使う code-preview で手書き code area を併用した場合はエラーにすること', () => {

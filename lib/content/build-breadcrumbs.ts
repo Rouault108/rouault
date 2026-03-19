@@ -22,6 +22,14 @@ const getDirectoryLabel = (directoryPath: string): string => {
   return normalizeSegmentLabel(segment);
 };
 
+const resolveDirectoryLabel = (entry: BreadcrumbSourceNote, directoryPath: string): string => {
+  if (typeof entry.title === 'string' && entry.title.trim().length > 0) {
+    return entry.title.trim();
+  }
+
+  return getDirectoryLabel(directoryPath);
+};
+
 export const buildBreadcrumbs = (
   note: BreadcrumbSourceNote | null | undefined,
   notes: readonly BreadcrumbSourceNote[] = [],
@@ -60,7 +68,7 @@ export const buildBreadcrumbs = (
         : undefined;
 
     directoryIndexMap.set(directoryPath, {
-      label: getDirectoryLabel(directoryPath),
+      label: resolveDirectoryLabel(entry, directoryPath),
       ...(href !== undefined ? { href } : {}),
     });
   }

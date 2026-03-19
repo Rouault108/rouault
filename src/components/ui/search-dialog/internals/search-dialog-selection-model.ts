@@ -29,7 +29,7 @@ export class SearchDialogSelectionModel {
   readonly handleSearchFieldKeydown = (event: KeyboardEvent): void => {
     this._onInputKeydown(event);
 
-    if (event.defaultPrevented && event.key !== 'Tab') {
+    if (event.defaultPrevented) {
       return;
     }
 

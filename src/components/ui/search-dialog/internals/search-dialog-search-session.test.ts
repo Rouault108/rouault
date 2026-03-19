@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { expect } from '@open-wc/testing';
 import type { UiSearchDialogItem, UiSearchDialogSearcher } from '../search-dialog.types';
 import { SearchDialogSearchSession } from './search-dialog-search-session';
 
@@ -52,15 +52,13 @@ function createHost(state: SessionState) {
   };
 }
 
+async function waitForSearch(): Promise<void> {
+  await new Promise<void>((resolve) => {
+    window.setTimeout(() => resolve(), 170);
+  });
+}
+
 describe('SearchDialogSearchSession', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
   it('空クエリなら結果をクリアする', () => {
     const state = createState();
     state.results = [{ title: 'old', url: '/old' }];
@@ -72,10 +70,10 @@ describe('SearchDialogSearchSession', () => {
 
     session.handleQueryChanged();
 
-    expect(state.results).toEqual([]);
-    expect(state.activeIndex).toBe(-1);
-    expect(state.hasCompletedSearch).toBe(false);
-    expect(state.liveMessage).toBe('');
+    expect(state.results).to.deep.equal([]);
+    expect(state.activeIndex).to.equal(-1);
+    expect(state.hasCompletedSearch).to.equal(false);
+    expect(state.liveMessage).to.equal('');
   });
 
   it('loading 中は loading message を出す', () => {
@@ -87,7 +85,7 @@ describe('SearchDialogSearchSession', () => {
 
     session.handleLoadingChanged();
 
-    expect(state.liveMessage).toBe('インデックスを読み込んでいます...');
+    expect(state.liveMessage).to.equal('インデックスを読み込んでいます...');
   });
 
   it('items から title/path/keywords を同期検索する', async () => {
@@ -102,32 +100,33 @@ describe('SearchDialogSearchSession', () => {
     const session = new SearchDialogSearchSession(createHost(state));
 
     session.handleQueryChanged();
-    await vi.advanceTimersByTimeAsync(160);
+    await waitForSearch();
 
-    expect(state.results.map((item) => item.url)).toEqual(['/delta', '/gamma']);
-    expect(state.activeIndex).toBe(0);
-    expect(state.hasCompletedSearch).toBe(true);
-    expect(state.liveMessage).toContain('2 件');
-    expect(state.scrolled).toBe(true);
+    expect(state.results.map((item) => item.url)).to.deep.equal(['/delta', '/gamma']);
+    expect(state.activeIndex).to.equal(0);
+    expect(state.hasCompletedSearch).to.equal(true);
+    expect(state.liveMessage).to.contain('2 件');
+    expect(state.scrolled).to.equal(true);
   });
 
   it('custom searcher の結果を正規化し、空 title/url と重複を落とす', async () => {
     const state = createState();
     state.query = 'alpha';
-    state.searcher = vi.fn().mockResolvedValue([
-      { title: ' Alpha ', url: '/alpha ' },
-      { title: 'Alpha', url: '/alpha' },
-      { title: '', url: '/empty-title' },
-      { title: 'Empty Url', url: '' },
-      { title: 'Beta', url: '/beta', path: ' /beta ' },
-    ] satisfies UiSearchDialogItem[]);
+    state.searcher = async () =>
+      [
+        { title: ' Alpha ', url: '/alpha ' },
+        { title: 'Alpha', url: '/alpha' },
+        { title: '', url: '/empty-title' },
+        { title: 'Empty Url', url: '' },
+        { title: 'Beta', url: '/beta', path: ' /beta ' },
+      ] satisfies UiSearchDialogItem[];
 
     const session = new SearchDialogSearchSession(createHost(state));
 
     session.handleQueryChanged();
-    await vi.advanceTimersByTimeAsync(160);
+    await waitForSearch();
 
-    expect(state.results).toEqual([
+    expect(state.results).to.deep.equal([
       { title: 'Alpha', url: '/alpha' },
       { title: 'Beta', url: '/beta', path: '/beta' },
     ]);
@@ -141,8 +140,8 @@ describe('SearchDialogSearchSession', () => {
     const session = new SearchDialogSearchSession(createHost(state));
 
     session.requestSearchNow();
-    await vi.advanceTimersByTimeAsync(160);
+    await waitForSearch();
 
-    expect(state.results).toEqual([{ title: 'Alpha', url: '/alpha' }]);
+    expect(state.results).to.deep.equal([{ title: 'Alpha', url: '/alpha' }]);
   });
 });
