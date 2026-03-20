@@ -90,7 +90,7 @@ type TreeNode = BranchNode | LeafNode;
 | `id` | string | はい | ノード識別子 | tree 全体で一意、かつ安定でなければなりません（MUST） |
 | `label` | string | はい | 表示ラベル | type-ahead の照合対象です |
 | `icon` | string | いいえ | アイコン名 | 視覚補助用です |
-| `children` | `TreeNode[]` | `branch` で必須 | 子ノード列 | 空配列を許容しますが、遅延ロード状態の表現には使いません |
+| `children` | `TreeNode[]` | `branch` で必須 | 子ノード列 | 1 件以上の子ノードを持たなければなりません（MUST）。空配列は許容しません |
 | `href` | string | `leaf` で必須 | 遷移先 | 葉ノードのみが持ちます |
 
 ### ノード種別契約
@@ -100,6 +100,7 @@ type TreeNode = BranchNode | LeafNode;
 - `branch` は展開可能ですが、直接遷移先を持ちません。
 - `leaf` は遷移先を持ちますが、子ノードを持ちません。
 - `href` と `children` を同時に持つノードは、正規契約では**不正入力**です。
+- `branch` は 1 件以上の `children` を持たなければなりません（MUST）。
 
 これにより、展開操作と遷移操作の意味を 1 行の中で混在させません。
 
@@ -108,7 +109,7 @@ type TreeNode = BranchNode | LeafNode;
 | 名前 | 種別 | 必須 | 内容 | 契約 |
 | --- | --- | --- | --- | --- |
 | `items` | property | はい | 不変の tree 構造 | 入力ノードはインプレースで変更されません |
-| `selectedId` | property / attribute (`selected-id`) | いいえ | 現在選択中の葉ノード ID | 現在位置を表します。`null` 相当を許容します |
+| `selectedId` | property / attribute (`selected-id`) | いいえ | 現在位置に対応する葉ノード ID | tree 上の現在位置を表します。`null` 相当を許容します |
 | `expandedIds` | property | いいえ | 展開中 branch の ID 集合 | controlled 利用時に与えます |
 | `defaultExpandedIds` | property | いいえ | 初期展開 branch の ID 集合 | uncontrolled 利用時の初期値です |
 | `variant` | property / attribute | いいえ | 視覚バリアント | `default` / `card` |
@@ -126,6 +127,7 @@ type TreeNode = BranchNode | LeafNode;
 - `selectedId` は**外部状態**です。
 - `expandedIds` は controlled / uncontrolled の両方を許容します。
 - `activeId` は**内部状態**です。公開入力として扱いません。
+- 選択表示は `selectedId` にのみ基づき、`activeId` とは独立に `aria-selected` と視覚強調へ反映されます。
 
 したがって、`ui-file-tree` は `selectedId` に基づいて現在位置を描画しますが、roving tabindex 用の一時フォーカス位置は内部で保持します。
 
@@ -209,7 +211,7 @@ type TreeNode = BranchNode | LeafNode;
 
 ### 選択状態
 
-`selectedId` は、現在位置としての**選択状態**を表します。
+`selectedId` は、tree 上の**現在位置に対応する選択状態**を表します。
 
 - `selectedId` は、`leaf` ノードのみを指します。
 - 同時に複数選択を持ちません。
@@ -222,6 +224,7 @@ type TreeNode = BranchNode | LeafNode;
 - controlled 利用時は `expandedIds` を正とします。
 - uncontrolled 利用時は `defaultExpandedIds` を初期値として内部管理します。
 - `selectedId` を可視化するための親パス自動展開は、**表示補助としてのみ**行います。外部 controlled 状態を暗黙に書き換えてはなりません（MUST NOT）。
+- controlled 利用時に選択項目の可視化が必要な場合、外部の `expandedIds` とは別に、内部の補助的な可視化用展開集合（例: `effectiveExpandedIds`）を導出して扱います。外部状態そのものを変更してはなりません（MUST NOT）。
 
 ### アクティブ状態
 
@@ -281,6 +284,8 @@ type TreeNode = BranchNode | LeafNode;
 - `loadingStrategy="retain"` かつ `loading=true` の場合は `aria-busy="true"` を付与します。
 - Empty State は `role="status"` を持ちます。
 - アクティブ項目はロービング tabindex で一意に管理します。
+- 選択状態は `selectedId` に対応する項目へ一意に反映し、tree item 側では `aria-selected="true"` と視覚強調で表現します。
+- `activeId` は roving tabindex 用の内部フォーカス位置であり、選択意味は持ちません。
 - `Escape` により、直前の tree 外フォーカス要素へ復帰を試みます。
 
 ### キーボード契約
@@ -296,7 +301,7 @@ type TreeNode = BranchNode | LeafNode;
 | `Home` | 最初の可視項目へ移動 |
 | `End` | 最後の可視項目へ移動 |
 | `Enter` | アクティブ項目の主操作を確定 |
-| `Space` | アクティブ項目の補助操作または主操作を確定 |
+| `Space` | アクティブ項目の主操作を確定 |
 | `Escape` | 直前の tree 外フォーカス要素へ復帰 |
 | 文字入力 | type-ahead による前方一致検索 |
 
@@ -305,6 +310,8 @@ type TreeNode = BranchNode | LeafNode;
 - `leaf` に対する主操作は**選択**です。
 - `branch` に対する主操作は**展開 / 収縮**です。
 - `branch` は直接遷移先を持たないため、選択対象として扱いません。
+
+Enter と Space の意味は同一です。どちらもアクティブ項目の主操作を確定するキーとして扱います。補助操作専用キーとしての意味は持ちません。
 
 ### type-ahead 契約
 
@@ -440,6 +447,15 @@ tree 外部から tree 内へフォーカスが入ったとき、直前の外部
 - `ui-file-tree` は階層意味論、可視ノード列、フォーカス移動、選択 / 展開の判断を担います。
 - `ui-tree-item` は単一行の表示と、ユーザー操作の通知を担います。
 - 左右キー、Enter、Space の最終意味決定は `ui-file-tree` 側が担います。
+`ui-tree-item` は、`ui-file-tree` の compound child として扱います。`ui-file-tree` が tree 全体の意味論と状態を所有し、`ui-tree-item` は単一行の表示と low-level な操作通知を担います。
+
+#### `integration event` から root 公開イベントへの橋渡し契約
+
+- `ui-tree-item` が `tree-item-primary-action-request` を通知した場合、`ui-file-tree` はノード種別に応じて意味を決定します。
+- `leaf` に対する `tree-item-primary-action-request` は、`ui-tree-request-select` を経て、キャンセルされなければ `ui-tree-select` へ橋渡しします。
+- `branch` に対する `tree-item-primary-action-request` は、`ui-tree-request-toggle` を経て、キャンセルされなければ `ui-tree-toggle` へ橋渡しします。
+- `ui-tree-item` が `tree-item-expanded-request` を通知した場合、`ui-file-tree` は `ui-tree-request-toggle` / `ui-tree-toggle` へ橋渡しします。
+- `ui-tree-item` が `tree-item-focus-first-child-request` または `tree-item-focus-parent-request` を通知した場合、`ui-file-tree` は `activeId` を更新し、必要に応じて `ui-tree-active-change` を発火します。
 
 ---
 
@@ -463,7 +479,7 @@ tree 外部から tree 内へフォーカスが入ったとき、直前の外部
 
 ### `branch` の空配列子
 
-`children=[]` の `branch` は許容します。ただし、未ロード状態の表現には用いません。
+`children=[]` の `branch` は不正入力です。正規契約では、`branch` は 1 件以上の子ノードを持たなければなりません（MUST）。未ロード状態の表現にも用いません。
 
 ### `printable=false`
 
@@ -656,6 +672,10 @@ tree 外部から tree 内へフォーカスが入ったとき、直前の外部
 
 現行実装は `items` を省略可能な property として持ち、既定値 `[]` を用います。本書では、構造入力を常に明示的に与える前提で `items` を必須入力として扱います。
 
+#### `branch` の空配列子
+
+現行実装および現行 Storybook では、`children=[]` の `branch` を許容し得ます。本書では、`branch` は 1 件以上の子ノードを持つものとして定義し、空配列 branch は不正入力とします。
+
 ### 優先度 2: 選択・展開・アクティブ状態の主導権整理
 
 #### `activeId` の扱い
@@ -666,6 +686,10 @@ tree 外部から tree 内へフォーカスが入ったとき、直前の外部
 
 現行実装は選択時に `activeId` も同時更新します。本書では `selectedId` と `activeId` を別概念として分離します。
 
+#### 選択状態のアクセシビリティ表現
+
+現行実装では、`selectedId` が現在位置を表すことと、tree item 側での `aria-selected` 表現との対応が文書上で十分に明文化されていません。本書では、`selectedId` に一致する項目のみが選択状態として扱われ、`activeId` とは独立に `aria-selected` と視覚強調へ反映される前提です。
+
 #### 葉ノード専用選択の未強制
 
 現行実装は `selected-change` を受けたノードをそのまま選択状態にするため、`branch` を選択対象から除外していません。本書では、選択対象は `leaf` のみとし、`branch` の主操作は展開 / 収縮に限定します。
@@ -673,6 +697,10 @@ tree 外部から tree 内へフォーカスが入ったとき、直前の外部
 #### `activeId` の妥当性補正
 
 現行実装は、`items` 更新時に `activeId` が空文字列である場合のみ selected 項目または先頭可視項目を採用します。既存の `activeId` が新しい可視ノード集合に存在しない場合でも、自動補正は行いません。本書では、内部 `activeId` は妥当な可視ノードへ補正される前提です。
+
+#### 選択項目可視化のための補助展開集合
+
+現行実装では、`selectedId` を可視化するための親パス展開と、controlled な `expandedIds` との関係が十分に明文化されていません。本書では、controlled 利用時であっても、外部の `expandedIds` 自体は変更せず、必要に応じて内部の補助的な可視化用展開集合を導出して可視ノード列へ反映する前提です。
 
 ### 優先度 3: イベント設計と責務分界の整理
 
@@ -687,6 +715,10 @@ tree 外部から tree 内へフォーカスが入ったとき、直前の外部
 #### キーボード責務の分離
 
 現行実装は、上下移動・Home / End・Escape・type-ahead を `ui-file-tree` 側で処理し、展開 / 収縮および Enter / Space に伴う選択確定の一部を `ui-tree-item` 側のイベントに依存しています。本書では、最終的な意味決定を `ui-file-tree` 側へより明確に集約する前提です。
+
+#### `integration event` と root 公開イベントの橋渡し
+
+現行実装は、`ui-tree-item` 側の通知イベントと `ui-file-tree` 側の公開イベントの対応関係を文書上で十分に固定していません。本書では、`ui-tree-item` は low-level な integration event を通知し、`ui-file-tree` が request / commit の root 公開イベントへ橋渡しする前提です。
 
 ### 優先度 4: 公開操作面と可視化挙動の整理
 
