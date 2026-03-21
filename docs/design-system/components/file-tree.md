@@ -84,14 +84,14 @@ type TreeNode = BranchNode | LeafNode;
 
 #### TreeNode 契約
 
-| 名前 | 種別 | 必須 | 内容 | 契約 |
-| --- | --- | --- | --- | --- |
-| `kind` | `'branch' \| 'leaf'` | はい | ノード種別 | `branch` と `leaf` を明示的に区別します |
-| `id` | string | はい | ノード識別子 | tree 全体で一意、かつ安定でなければなりません（MUST） |
-| `label` | string | はい | 表示ラベル | type-ahead の照合対象です |
-| `icon` | string | いいえ | アイコン名 | 視覚補助用です |
-| `children` | `TreeNode[]` | `branch` で必須 | 子ノード列 | 1 件以上の子ノードを持たなければなりません（MUST）。空配列は許容しません |
-| `href` | string | `leaf` で必須 | 遷移先 | 葉ノードのみが持ちます |
+| 名前       | 種別                 | 必須            | 内容         | 契約                                                                     |
+| ---------- | -------------------- | --------------- | ------------ | ------------------------------------------------------------------------ |
+| `kind`     | `'branch' \| 'leaf'` | はい            | ノード種別   | `branch` と `leaf` を明示的に区別します                                  |
+| `id`       | string               | はい            | ノード識別子 | tree 全体で一意、かつ安定でなければなりません（MUST）                    |
+| `label`    | string               | はい            | 表示ラベル   | type-ahead の照合対象です                                                |
+| `icon`     | string               | いいえ          | アイコン名   | 視覚補助用です                                                           |
+| `children` | `TreeNode[]`         | `branch` で必須 | 子ノード列   | 1 件以上の子ノードを持たなければなりません（MUST）。空配列は許容しません |
+| `href`     | string               | `leaf` で必須   | 遷移先       | 葉ノードのみが持ちます                                                   |
 
 ### ノード種別契約
 
@@ -106,19 +106,19 @@ type TreeNode = BranchNode | LeafNode;
 
 ### 入力契約
 
-| 名前 | 種別 | 必須 | 内容 | 契約 |
-| --- | --- | --- | --- | --- |
-| `items` | property | はい | 不変の tree 構造 | 入力ノードはインプレースで変更されません |
-| `selectedId` | property / attribute (`selected-id`) | いいえ | 現在位置に対応する葉ノード ID | tree 上の現在位置を表します。`null` 相当を許容します |
-| `expandedIds` | property | いいえ | 展開中 branch の ID 集合 | controlled 利用時に与えます |
-| `defaultExpandedIds` | property | いいえ | 初期展開 branch の ID 集合 | uncontrolled 利用時の初期値です |
-| `variant` | property / attribute | いいえ | 視覚バリアント | `default` / `card` |
-| `density` | property / attribute | いいえ | 行密度 | `normal` / `compact` |
-| `loading` | property / attribute | いいえ | ローディング状態 | 既定値は `false` です |
-| `loadingStrategy` | property / attribute (`loading-strategy`) | いいえ | ローディング時の表示戦略 | `retain` / `replace`。既定値は `retain` です |
-| `printable` | property / attribute | いいえ | 印刷対象とするか | `variant` とは独立です |
-| `aria-label` | attribute | いいえ | tree のアクセシブル名 | `aria-labelledby` がない場合に使用できます |
-| `aria-labelledby` | attribute | いいえ | tree のアクセシブル名参照 | `aria-label` より優先されます |
+| 名前                 | 種別                                      | 必須   | 内容                          | 契約                                                 |
+| -------------------- | ----------------------------------------- | ------ | ----------------------------- | ---------------------------------------------------- |
+| `items`              | property                                  | はい   | 不変の tree 構造              | 入力ノードはインプレースで変更されません             |
+| `selectedId`         | property / attribute (`selected-id`)      | いいえ | 現在位置に対応する葉ノード ID | tree 上の現在位置を表します。`null` 相当を許容します |
+| `expandedIds`        | property                                  | いいえ | 展開中 branch の ID 集合      | controlled 利用時に与えます                          |
+| `defaultExpandedIds` | property                                  | いいえ | 初期展開 branch の ID 集合    | uncontrolled 利用時の初期値です                      |
+| `variant`            | property / attribute                      | いいえ | 視覚バリアント                | `default` / `card`                                   |
+| `density`            | property / attribute                      | いいえ | 行密度                        | `normal` / `compact`                                 |
+| `loading`            | property / attribute                      | いいえ | ローディング状態              | 既定値は `false` です                                |
+| `loadingStrategy`    | property / attribute (`loading-strategy`) | いいえ | ローディング時の表示戦略      | `retain` / `replace`。既定値は `retain` です         |
+| `printable`          | property / attribute                      | いいえ | 印刷対象とするか              | `variant` とは独立です                               |
+| `aria-label`         | attribute                                 | いいえ | tree のアクセシブル名         | `aria-labelledby` がない場合に使用できます           |
+| `aria-labelledby`    | attribute                                 | いいえ | tree のアクセシブル名参照     | `aria-label` より優先されます                        |
 
 ### 状態主導権契約
 
@@ -144,13 +144,13 @@ type TreeNode = BranchNode | LeafNode;
 
 `ui-file-tree` は、要求イベントと確定イベントを区別します。
 
-| 名前 | detail | cancelable | 発火条件 |
-| --- | --- | --- | --- |
-| `ui-tree-request-select` | `{ id: string }` | はい | 葉ノード選択要求時 |
-| `ui-tree-select` | `{ id: string }` | いいえ | 葉ノード選択確定後 |
-| `ui-tree-request-toggle` | `{ id: string, expanded: boolean }` | はい | branch 展開変更要求時 |
-| `ui-tree-toggle` | `{ id: string, expanded: boolean }` | いいえ | branch 展開変更確定後 |
-| `ui-tree-active-change` | `{ id: string }` | いいえ | アクティブ項目が変化した時 |
+| 名前                     | detail                              | cancelable | 発火条件                   |
+| ------------------------ | ----------------------------------- | ---------- | -------------------------- |
+| `ui-tree-request-select` | `{ id: string }`                    | はい       | 葉ノード選択要求時         |
+| `ui-tree-select`         | `{ id: string }`                    | いいえ     | 葉ノード選択確定後         |
+| `ui-tree-request-toggle` | `{ id: string, expanded: boolean }` | はい       | branch 展開変更要求時      |
+| `ui-tree-toggle`         | `{ id: string, expanded: boolean }` | いいえ     | branch 展開変更確定後      |
+| `ui-tree-active-change`  | `{ id: string }`                    | いいえ     | アクティブ項目が変化した時 |
 
 これらのイベントは `bubbles: true` かつ `composed: true` で発火します。公開イベントの `detail` は**最小限の snapshot**に限定し、実ノード参照は渡しません。
 
@@ -158,27 +158,27 @@ type TreeNode = BranchNode | LeafNode;
 
 `ui-file-tree` は、次のメソッドを公開します。
 
-| 名前 | 内容 |
-| --- | --- |
-| `focus()` | 現在のアクティブ項目へフォーカスを移します |
+| 名前              | 内容                                                                                      |
+| ----------------- | ----------------------------------------------------------------------------------------- |
+| `focus()`         | 現在のアクティブ項目へフォーカスを移します                                                |
 | `focusSelected()` | `selectedId` に一致する項目へフォーカスを移します。一致がない場合は先頭可視項目へ移します |
-| `focusFirst()` | 先頭可視項目へフォーカスを移します |
+| `focusFirst()`    | 先頭可視項目へフォーカスを移します                                                        |
 
 外部利用者は、Shadow DOM 内部構造を探索してフォーカスを与えることに依存してはなりません（MUST NOT）。
 
 ### 属性反映契約
 
-| property | attribute | reflect | 備考 |
-| --- | --- | --- | --- |
-| `items` | なし | なし | property 専用です |
-| `selectedId` | `selected-id` | なし | property を正とします |
-| `expandedIds` | なし | なし | property 専用です |
-| `defaultExpandedIds` | なし | なし | property 専用です |
-| `variant` | `variant` | あり | `default` / `card` |
-| `density` | `density` | あり | `normal` / `compact` |
-| `loading` | `loading` | あり | boolean attribute として扱います |
-| `loadingStrategy` | `loading-strategy` | あり | `retain` / `replace` |
-| `printable` | `printable` | あり | boolean attribute として扱います |
+| property             | attribute          | reflect | 備考                             |
+| -------------------- | ------------------ | ------- | -------------------------------- |
+| `items`              | なし               | なし    | property 専用です                |
+| `selectedId`         | `selected-id`      | なし    | property を正とします            |
+| `expandedIds`        | なし               | なし    | property 専用です                |
+| `defaultExpandedIds` | なし               | なし    | property 専用です                |
+| `variant`            | `variant`          | あり    | `default` / `card`               |
+| `density`            | `density`          | あり    | `normal` / `compact`             |
+| `loading`            | `loading`          | あり    | boolean attribute として扱います |
+| `loadingStrategy`    | `loading-strategy` | あり    | `retain` / `replace`             |
+| `printable`          | `printable`        | あり    | boolean attribute として扱います |
 
 ### ローカライズ契約
 
@@ -238,10 +238,10 @@ type TreeNode = BranchNode | LeafNode;
 
 ローディング中の表示戦略は `loadingStrategy` により決まります。
 
-| 戦略 | 内容 |
-| --- | --- |
-| `retain` | 既存の tree を維持したまま busy 状態を表します |
-| `replace` | tree を skeleton へ置き換えます |
+| 戦略      | 内容                                           |
+| --------- | ---------------------------------------------- |
+| `retain`  | 既存の tree を維持したまま busy 状態を表します |
+| `replace` | tree を skeleton へ置き換えます                |
 
 既定値は `retain` です。読書中の位置認識を失わせにくいためです。
 
@@ -292,18 +292,18 @@ type TreeNode = BranchNode | LeafNode;
 
 `ui-file-tree` は、tree ルートとして次のキーボード意味論を持ちます。
 
-| キー | 振る舞い |
-| --- | --- |
-| `ArrowDown` | 次の可視項目へ移動 |
-| `ArrowUp` | 前の可視項目へ移動 |
-| `ArrowRight` | `branch` なら展開、展開済みなら先頭子へ移動 |
-| `ArrowLeft` | `branch` なら収縮、収縮済みまたは `leaf` なら親へ移動 |
-| `Home` | 最初の可視項目へ移動 |
-| `End` | 最後の可視項目へ移動 |
-| `Enter` | アクティブ項目の主操作を確定 |
-| `Space` | アクティブ項目の主操作を確定 |
-| `Escape` | 直前の tree 外フォーカス要素へ復帰 |
-| 文字入力 | type-ahead による前方一致検索 |
+| キー         | 振る舞い                                              |
+| ------------ | ----------------------------------------------------- |
+| `ArrowDown`  | 次の可視項目へ移動                                    |
+| `ArrowUp`    | 前の可視項目へ移動                                    |
+| `ArrowRight` | `branch` なら展開、展開済みなら先頭子へ移動           |
+| `ArrowLeft`  | `branch` なら収縮、収縮済みまたは `leaf` なら親へ移動 |
+| `Home`       | 最初の可視項目へ移動                                  |
+| `End`        | 最後の可視項目へ移動                                  |
+| `Enter`      | アクティブ項目の主操作を確定                          |
+| `Space`      | アクティブ項目の主操作を確定                          |
+| `Escape`     | 直前の tree 外フォーカス要素へ復帰                    |
+| 文字入力     | type-ahead による前方一致検索                         |
 
 ### 主操作契約
 
@@ -360,22 +360,22 @@ tree 外部から tree 内へフォーカスが入ったとき、直前の外部
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途 | トークン |
-| --- | --- |
-| フォント | `--font-sans` |
-| 基本文字サイズ | `--text-sm` |
-| 基本前景色 | `--fg-muted` |
-| 補助前景色 | `--fg-subtle` |
-| Card 背景 | `--bg-surface-2` |
-| 境界線 | `--border-default` |
-| 境界線幅 | `--border-width` |
-| 角丸 | `--radius-md` / `--radius-sm` |
-| シャドウ | `--elevation-md` |
-| 余白 | `--space-2` / `--space-4` / `--space-8` |
-| 遷移時間 | `--duration-fast` |
-| イージング | `--ease-out` |
-| Skeleton 背景 | `--skeleton-bg` |
-| Skeleton 高さ | `--control-height-md` |
+| 用途           | トークン                                |
+| -------------- | --------------------------------------- |
+| フォント       | `--font-sans`                           |
+| 基本文字サイズ | `--text-sm`                             |
+| 基本前景色     | `--fg-muted`                            |
+| 補助前景色     | `--fg-subtle`                           |
+| Card 背景      | `--bg-surface-2`                        |
+| 境界線         | `--border-default`                      |
+| 境界線幅       | `--border-width`                        |
+| 角丸           | `--radius-md` / `--radius-sm`           |
+| シャドウ       | `--elevation-md`                        |
+| 余白           | `--space-2` / `--space-4` / `--space-8` |
+| 遷移時間       | `--duration-fast`                       |
+| イージング     | `--ease-out`                            |
+| Skeleton 背景  | `--skeleton-bg`                         |
+| Skeleton 高さ  | `--control-height-md`                   |
 
 ### スタイル拡張契約
 
@@ -447,7 +447,7 @@ tree 外部から tree 内へフォーカスが入ったとき、直前の外部
 - `ui-file-tree` は階層意味論、可視ノード列、フォーカス移動、選択 / 展開の判断を担います。
 - `ui-tree-item` は単一行の表示と、ユーザー操作の通知を担います。
 - 左右キー、Enter、Space の最終意味決定は `ui-file-tree` 側が担います。
-`ui-tree-item` は、`ui-file-tree` の compound child として扱います。`ui-file-tree` が tree 全体の意味論と状態を所有し、`ui-tree-item` は単一行の表示と low-level な操作通知を担います。
+  `ui-tree-item` は、`ui-file-tree` の compound child として扱います。`ui-file-tree` が tree 全体の意味論と状態を所有し、`ui-tree-item` は単一行の表示と low-level な操作通知を担います。
 
 #### `integration event` から root 公開イベントへの橋渡し契約
 
@@ -499,24 +499,24 @@ tree 外部から tree 内へフォーカスが入ったとき、直前の外部
 
 各 Story は見本ではなく、契約確認点として扱います。
 
-| Story | 固定する契約 |
-| --- | --- |
-| `Default` | `role="tree"`、`aria-orientation="vertical"`、既定 `variant="default"` を満たすこと |
-| `CardVariant` | `variant="card"` が受理されること |
-| `CompactDensity` | `density="compact"` が受理されること |
-| `EmptyState` | 空入力時に `role="status"` を持つ empty state を描画すること |
-| `LoadingRetain` | `loadingStrategy="retain"` で既存 tree を保ったまま busy 表示できること |
-| `LoadingReplace` | `loadingStrategy="replace"` で skeleton に置き換わること |
-| `DeepNested` | `selectedId` に対応する現在位置を視認できること |
-| `ManyItems` | 多数項目でも基本操作が成立すること |
-| `VariantComparison` | `default` / `card` の視覚差分が成立すること |
-| `DensityComparison` | `normal` / `compact` の密度差が成立すること |
-| `EventHandling` | request / commit 系イベントを監視できること |
-| `ForcedColorsMode` | forced colors 環境で構造が維持されること |
-| `ReducedMotion` | reduced motion 環境でモーションが抑制されること |
-| `PrintStyles` | `printable=true` の場合のみ印刷表示されること |
+| Story                | 固定する契約                                                                          |
+| -------------------- | ------------------------------------------------------------------------------------- |
+| `Default`            | `role="tree"`、`aria-orientation="vertical"`、既定 `variant="default"` を満たすこと   |
+| `CardVariant`        | `variant="card"` が受理されること                                                     |
+| `CompactDensity`     | `density="compact"` が受理されること                                                  |
+| `EmptyState`         | 空入力時に `role="status"` を持つ empty state を描画すること                          |
+| `LoadingRetain`      | `loadingStrategy="retain"` で既存 tree を保ったまま busy 表示できること               |
+| `LoadingReplace`     | `loadingStrategy="replace"` で skeleton に置き換わること                              |
+| `DeepNested`         | `selectedId` に対応する現在位置を視認できること                                       |
+| `ManyItems`          | 多数項目でも基本操作が成立すること                                                    |
+| `VariantComparison`  | `default` / `card` の視覚差分が成立すること                                           |
+| `DensityComparison`  | `normal` / `compact` の密度差が成立すること                                           |
+| `EventHandling`      | request / commit 系イベントを監視できること                                           |
+| `ForcedColorsMode`   | forced colors 環境で構造が維持されること                                              |
+| `ReducedMotion`      | reduced motion 環境でモーションが抑制されること                                       |
+| `PrintStyles`        | `printable=true` の場合のみ印刷表示されること                                         |
 | `KeyboardNavigation` | Arrow、Home、End、Enter、Space、type-ahead、Escape によるナビゲーションが成立すること |
-| `FocusMethods` | `focus()` / `focusSelected()` / `focusFirst()` が動作すること |
+| `FocusMethods`       | `focus()` / `focusSelected()` / `focusFirst()` が動作すること                         |
 
 ---
 
@@ -776,4 +776,3 @@ tree 外部から tree 内へフォーカスが入ったとき、直前の外部
 ### 本節の扱い
 
 本節に記載した差分は、将来の実装修正対象です。正規契約へ合わせる場合は、実装、Storybook、契約書を同時に更新する必要があります。
-

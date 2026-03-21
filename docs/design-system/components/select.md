@@ -65,31 +65,31 @@ Rouault における select は、フォーム入力要素であると同時に�
 
 ### 正式な公開入力
 
-| 名前             | 種別                                     | 必須  | 型                         | 既定値        | 内容         |
-| -------------- | -------------------------------------- | --- | ------------------------- | ---------- | ---------- |
-| `label`        | property / attribute                   | はい  | `string`                  | なし         | 入力ラベル      |
-| `name`         | property / attribute                   | いいえ | `string`                  | なし         | フォーム送信名    |
-| `value`        | property / attribute                   | いいえ | `string \| null`          | `null`     | 選択値        |
-| `placeholder`  | property / attribute                   | いいえ | `string`                  | `''`       | 未選択時表示     |
+| 名前           | 種別                                   | 必須   | 型                        | 既定値     | 内容                 |
+| -------------- | -------------------------------------- | ------ | ------------------------- | ---------- | -------------------- |
+| `label`        | property / attribute                   | はい   | `string`                  | なし       | 入力ラベル           |
+| `name`         | property / attribute                   | いいえ | `string`                  | なし       | フォーム送信名       |
+| `value`        | property / attribute                   | いいえ | `string \| null`          | `null`     | 選択値               |
+| `placeholder`  | property / attribute                   | いいえ | `string`                  | `''`       | 未選択時表示         |
 | `helpText`     | property / attribute (`help-text`)     | いいえ | `string`                  | `''`       | 非エラー時の補助説明 |
-| `error`        | property / attribute                   | いいえ | `boolean`                 | `false`    | エラー状態      |
-| `errorMessage` | property / attribute (`error-message`) | いいえ | `string`                  | `''`       | エラー説明      |
-| `disabled`     | property / attribute                   | いいえ | `boolean`                 | `false`    | 操作無効化      |
-| `required`     | property / attribute                   | いいえ | `boolean`                 | `false`    | 選択必須       |
-| `variant`      | property / attribute                   | いいえ | `'filled' \| 'outline'`   | `'filled'` | 外観バリアント    |
-| `options`      | property                               | はい  | `readonly SelectOption[]` | なし         | 選択肢配列      |
+| `error`        | property / attribute                   | いいえ | `boolean`                 | `false`    | エラー状態           |
+| `errorMessage` | property / attribute (`error-message`) | いいえ | `string`                  | `''`       | エラー説明           |
+| `disabled`     | property / attribute                   | いいえ | `boolean`                 | `false`    | 操作無効化           |
+| `required`     | property / attribute                   | いいえ | `boolean`                 | `false`    | 選択必須             |
+| `variant`      | property / attribute                   | いいえ | `'filled' \| 'outline'`   | `'filled'` | 外観バリアント       |
+| `options`      | property                               | はい   | `readonly SelectOption[]` | なし       | 選択肢配列           |
 
 ### `SelectOption` 契約
 
-| 名前         | 型         | 必須  | 契約       |
-| ---------- | --------- | --- | -------- |
-| `value`    | `string`  | はい  | 一意な非空文字列 |
-| `label`    | `string`  | はい  | 表示ラベル    |
-| `disabled` | `boolean` | いいえ | 選択不可     |
+| 名前       | 型        | 必須   | 契約             |
+| ---------- | --------- | ------ | ---------------- |
+| `value`    | `string`  | はい   | 一意な非空文字列 |
+| `label`    | `string`  | はい   | 表示ラベル       |
+| `disabled` | `boolean` | いいえ | 選択不可         |
 
 ### 値モデル契約
 
-`value` は ``** または **``** のいずれか** でなければなりません。
+`value` は `** または **`** のいずれか** でなければなりません。
 
 - `null` は未選択を表す唯一の値です。
 - `''` は未選択値として使いません。
@@ -103,12 +103,12 @@ Rouault における select は、フォーム入力要素であると同時に�
 
 `error` と `errorMessage` の許可組み合わせは次のとおりです。
 
-| `error` | `errorMessage` | 契約       |
-| ------- | -------------- | -------- |
-| `false` | 空              | 通常状態     |
-| `false` | 非空             | 契約違反     |
-| `true`  | 非空             | 正常なエラー状態 |
-| `true`  | 空              | 契約違反     |
+| `error` | `errorMessage` | 契約             |
+| ------- | -------------- | ---------------- |
+| `false` | 空             | 通常状態         |
+| `false` | 非空           | 契約違反         |
+| `true`  | 非空           | 正常なエラー状態 |
+| `true`  | 空             | 契約違反         |
 
 `helpText` は `error=false` の場合にのみ表示します。`helpText` と `errorMessage` は同時表示しません。
 
@@ -138,9 +138,9 @@ Rouault における select は、フォーム入力要素であると同時に�
 
 ### 正式イベント
 
-| 名前             | 型             | detail                                                                                                                                       | 発火条件        | 契約                                 |
-| -------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------------------------------- |
-| `value-change` | `CustomEvent` | `{ value: string \| null, previousValue: string \| null, reason: 'selection' \| 'options-change' \| 'reset' \| 'programmatic' }`             | 値が変化したとき    | `bubbles: true` / `composed: true` |
+| 名前           | 型            | detail                                                                                                                                       | 発火条件               | 契約                               |
+| -------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ---------------------------------- |
+| `value-change` | `CustomEvent` | `{ value: string \| null, previousValue: string \| null, reason: 'selection' \| 'options-change' \| 'reset' \| 'programmatic' }`             | 値が変化したとき       | `bubbles: true` / `composed: true` |
 | `open-change`  | `CustomEvent` | `{ opened: boolean, reason: 'trigger' \| 'keyboard' \| 'selection' \| 'escape' \| 'outside-pointer' \| 'outside-scroll' \| 'programmatic' }` | 開閉状態が変化したとき | `bubbles: true` / `composed: true` |
 
 ### イベント契約
@@ -158,16 +158,16 @@ Rouault における select は、フォーム入力要素であると同時に�
 
 ## 公開メソッド
 
-| 名前                 | 契約                            |
-| ------------------ | ----------------------------- |
-| `focus(options?)`  | Trigger へフォーカスを移します           |
-| `blur()`           | Trigger からフォーカスを外します          |
-| `open()`           | popup を開きます                   |
-| `close()`          | popup を閉じます                   |
-| `toggle()`         | popup の開閉を反転します               |
+| 名前               | 契約                                           |
+| ------------------ | ---------------------------------------------- |
+| `focus(options?)`  | Trigger へフォーカスを移します                 |
+| `blur()`           | Trigger からフォーカスを外します               |
+| `open()`           | popup を開きます                               |
+| `close()`          | popup を閉じます                               |
+| `toggle()`         | popup の開閉を反転します                       |
 | `checkValidity()`  | 現在値と `required` に基づいて妥当性を返します |
-| `reportValidity()` | 妥当性を報告します                     |
-| `reset()`          | 値を初期値へ戻します                    |
+| `reportValidity()` | 妥当性を報告します                             |
+| `reset()`          | 値を初期値へ戻します                           |
 
 `open()`、`close()`、`toggle()` は開閉の唯一の命令面です。利用者は `opened` を直接書き換えるのではなく、これらを使います。
 
@@ -175,20 +175,20 @@ Rouault における select は、フォーム入力要素であると同時に�
 
 ## 属性反映契約
 
-| property       | attribute       | reflect | 備考                            |
-| -------------- | --------------- | ------- | ----------------------------- |
-| `label`        | `label`         | あり      | 必須                            |
-| `name`         | `name`          | あり      | フォーム送信名                       |
-| `value`        | `value`         | あり      | `null` は attribute 未設定として扱います |
-| `placeholder`  | `placeholder`   | あり      | 未選択時のみ表示                      |
-| `helpText`     | `help-text`     | あり      | 非エラー時のみ表示                     |
-| `error`        | `error`         | あり      | boolean attribute             |
-| `errorMessage` | `error-message` | あり      | `error=true` のときのみ意味を持ちます     |
-| `disabled`     | `disabled`      | あり      | boolean attribute             |
-| `required`     | `required`      | あり      | boolean attribute             |
-| `variant`      | `variant`       | あり      | `filled` / `outline`          |
-| `options`      | なし              | なし      | property 専用                   |
-| `opened`       | `opened`        | あり      | 読み取り専用状態                      |
+| property       | attribute       | reflect | 備考                                     |
+| -------------- | --------------- | ------- | ---------------------------------------- |
+| `label`        | `label`         | あり    | 必須                                     |
+| `name`         | `name`          | あり    | フォーム送信名                           |
+| `value`        | `value`         | あり    | `null` は attribute 未設定として扱います |
+| `placeholder`  | `placeholder`   | あり    | 未選択時のみ表示                         |
+| `helpText`     | `help-text`     | あり    | 非エラー時のみ表示                       |
+| `error`        | `error`         | あり    | boolean attribute                        |
+| `errorMessage` | `error-message` | あり    | `error=true` のときのみ意味を持ちます    |
+| `disabled`     | `disabled`      | あり    | boolean attribute                        |
+| `required`     | `required`      | あり    | boolean attribute                        |
+| `variant`      | `variant`       | あり    | `filled` / `outline`                     |
+| `options`      | なし            | なし    | property 専用                            |
+| `opened`       | `opened`        | あり    | 読み取り専用状態                         |
 
 ---
 
@@ -252,8 +252,8 @@ Rouault における select は、フォーム入力要素であると同時に�
 
 ### Variant 状態
 
-| 値         | 意味        |
-| --------- | --------- |
+| 値        | 意味               |
+| --------- | ------------------ |
 | `filled`  | 既定の面を持つ入力 |
 | `outline` | 境界中心の軽量入力 |
 
@@ -309,17 +309,17 @@ Rouault における select は、フォーム入力要素であると同時に�
 
 ### キーボード操作契約
 
-| キー          | 振る舞い                                      |
-| ----------- | ----------------------------------------- |
-| `Enter`     | close 中なら open、open 中なら active option を選択 |
-| `Space`     | close 中なら open、open 中なら active option を選択 |
-| `ArrowDown` | close 中なら open、open 中なら次の有効 option へ      |
-| `ArrowUp`   | close 中なら open、open 中なら前の有効 option へ      |
-| `Home`      | open 中に先頭有効 option へ                      |
-| `End`       | open 中に末尾有効 option へ                      |
-| `Escape`    | open 中なら close                            |
-| `Tab`       | popup を閉じて通常の focus 遷移を許可                 |
-| 印字可能文字      | type-ahead により前方一致移動                      |
+| キー         | 振る舞い                                            |
+| ------------ | --------------------------------------------------- |
+| `Enter`      | close 中なら open、open 中なら active option を選択 |
+| `Space`      | close 中なら open、open 中なら active option を選択 |
+| `ArrowDown`  | close 中なら open、open 中なら次の有効 option へ    |
+| `ArrowUp`    | close 中なら open、open 中なら前の有効 option へ    |
+| `Home`       | open 中に先頭有効 option へ                         |
+| `End`        | open 中に末尾有効 option へ                         |
+| `Escape`     | open 中なら close                                   |
+| `Tab`        | popup を閉じて通常の focus 遷移を許可               |
+| 印字可能文字 | type-ahead により前方一致移動                       |
 
 ### Type-ahead 契約
 
@@ -337,9 +337,9 @@ Type-ahead は **候補ジャンプ補助** であり、検索入力ではあり
 
 ### 送信契約
 
-| 条件              | 送信値          |
-| --------------- | ------------ |
-| `name` 未指定      | FormData 不参加 |
+| 条件            | 送信値          |
+| --------------- | --------------- |
+| `name` 未指定   | FormData 不参加 |
 | `disabled=true` | FormData 不参加 |
 | `value=null`    | FormData 不参加 |
 | `value='x'`     | `name=x` を送信 |
@@ -507,25 +507,25 @@ Trigger と option の表示は一貫した省略規則を持ちます。省略�
 
 各 Story は見本ではなく、**契約確認点** として扱います。少なくとも次を固定します。
 
-| Story                | 固定する契約                                         |
-| -------------------- | ---------------------------------------------- |
-| `Default`            | button + listbox パターンで成立すること                   |
+| Story                | 固定する契約                                                    |
+| -------------------- | --------------------------------------------------------------- |
+| `Default`            | button + listbox パターンで成立すること                         |
 | `WithValue`          | 選択値に対応する label が Trigger に表示されること              |
-| `WithHelpText`       | 通常状態で `helpText` が表示されること                      |
+| `WithHelpText`       | 通常状態で `helpText` が表示されること                          |
 | `ErrorState`         | `error=true` かつ `errorMessage` 非空でエラー表示が成立すること |
-| `Disabled`           | open 不可、FormData 不参加であること                      |
-| `Required`           | 未選択時に妥当性エラーになること                               |
-| `HiddenLabel`        | 視覚非表示でも label がアクセシブル名の source であること           |
+| `Disabled`           | open 不可、FormData 不参加であること                            |
+| `Required`           | 未選択時に妥当性エラーになること                                |
+| `HiddenLabel`        | 視覚非表示でも label がアクセシブル名の source であること       |
 | `Typeahead`          | 前方一致と 1 秒バッファが成立すること                           |
-| `OptionsUpdate`      | `options` 更新時に値正規化と再描画が成立すること                  |
-| `ResetIntegration`   | form reset で初期値へ戻ること                           |
-| `EmptyOptions`       | popup を開かず破綻しないこと                              |
-| `AllDisabledOptions` | popup を開かず破綻しないこと                              |
-| `OpenChangeEvent`    | open / close ごとに `open-change` が発火すること         |
-| `ValueChangeEvent`   | 値変更時のみ `value-change` が発火すること                  |
-| `DarkMode`           | 暗背景上で視覚破綻しないこと                                 |
-| `ForcedColors`       | forced-colors で構造が維持されること                      |
-| `ReducedMotion`      | reduced-motion でモーションが抑制されること                  |
+| `OptionsUpdate`      | `options` 更新時に値正規化と再描画が成立すること                |
+| `ResetIntegration`   | form reset で初期値へ戻ること                                   |
+| `EmptyOptions`       | popup を開かず破綻しないこと                                    |
+| `AllDisabledOptions` | popup を開かず破綻しないこと                                    |
+| `OpenChangeEvent`    | open / close ごとに `open-change` が発火すること                |
+| `ValueChangeEvent`   | 値変更時のみ `value-change` が発火すること                      |
+| `DarkMode`           | 暗背景上で視覚破綻しないこと                                    |
+| `ForcedColors`       | forced-colors で構造が維持されること                            |
+| `ReducedMotion`      | reduced-motion でモーションが抑制されること                     |
 
 ---
 
@@ -539,8 +539,8 @@ Trigger と option の表示は一貫した省略規則を持ちます。省略�
 
 `defaultValue` は、初期値と現在値を分離して扱うための公開入力です。
 
-| 名前             | 種別                   | 型                | 目的                      |
-| -------------- | -------------------- | ---------------- | ----------------------- |
+| 名前           | 種別                 | 型               | 目的                                |
+| -------------- | -------------------- | ---------------- | ----------------------------------- |
 | `defaultValue` | property / attribute | `string \| null` | form reset 時に戻る初期値を明示する |
 
 追加価値は次のとおりです。
@@ -559,8 +559,8 @@ Trigger と option の表示は一貫した省略規則を持ちます。省略�
 
 `clearable` は、選択済み状態から未選択状態へ明示的に戻すための機能です。
 
-| 名前          | 種別                   | 型         | 目的                            |
-| ----------- | -------------------- | --------- | ----------------------------- |
+| 名前        | 種別                 | 型        | 目的                                   |
+| ----------- | -------------------- | --------- | -------------------------------------- |
 | `clearable` | property / attribute | `boolean` | `value` を `null` に戻す UI を提供する |
 
 追加価値は次のとおりです。
@@ -582,10 +582,10 @@ Trigger と option の表示は一貫した省略規則を持ちます。省略�
 
 優先度の高い公開面は次のいずれかです。
 
-| 名前               | 種別                   | 型        | 目的               |
-| ---------------- | -------------------- | -------- | ---------------- |
+| 名前             | 種別                 | 型       | 目的                             |
+| ---------------- | -------------------- | -------- | -------------------------------- |
 | `emptyStateText` | property / attribute | `string` | 候補が存在しないことを短文で示す |
-| `empty-state`    | slot                 | slot     | 空状態の説明 UI を差し替える |
+| `empty-state`    | slot                 | slot     | 空状態の説明 UI を差し替える     |
 
 長期保守性の観点では、まず `` を優先します。slot は表現自由度が高い反面、責務が増えやすいためです。
 
@@ -622,8 +622,8 @@ Trigger と option の表示は一貫した省略規則を持ちます。省略�
 
 `hideLabel` は、視覚的にはラベルを隠しつつ、アクセシブル名の source としての label を保持するための入力です。
 
-| 名前          | 種別                                  | 型         | 目的              |
-| ----------- | ----------------------------------- | --------- | --------------- |
+| 名前        | 種別                                | 型        | 目的                     |
+| ----------- | ----------------------------------- | --------- | ------------------------ |
 | `hideLabel` | property / attribute (`hide-label`) | `boolean` | label を視覚非表示にする |
 
 これは新機能というより、**長期契約としての正式復帰候補** です。Accessibility 契約の一部として扱う価値があります。
@@ -638,7 +638,7 @@ type SelectOption = {
   label: string;
   description?: string;
   disabled?: boolean;
-}
+};
 ```
 
 ただし、本文読書を妨げない静かな UI という方針上、常用機能としてはやや強すぎることがあります。そのため、**設定画面や説明負荷の高い選択肢群に限って検討** するのが妥当です。
@@ -675,16 +675,16 @@ type SelectOption = {
 
 ### 推奨順位
 
-| 優先度  | 項目                   | 目的                   |
-| ---- | -------------------- | -------------------- |
-| 最優先  | `defaultValue`       | 初期値と reset 契約の固定     |
-| 最優先  | `clearable`          | 未選択へ戻る操作の明示          |
-| 最優先  | 空状態表示                | 候補不在の説明責務を明文化        |
-| 最優先  | 再整合イベント拡張            | `options` 更新理由の透明化   |
+| 優先度   | 項目                 | 目的                       |
+| -------- | -------------------- | -------------------------- |
+| 最優先   | `defaultValue`       | 初期値と reset 契約の固定  |
+| 最優先   | `clearable`          | 未選択へ戻る操作の明示     |
+| 最優先   | 空状態表示           | 候補不在の説明責務を明文化 |
+| 最優先   | 再整合イベント拡張   | `options` 更新理由の透明化 |
 | 条件付き | `hideLabel`          | Accessibility 契約の正式化 |
-| 条件付き | `option.description` | 説明負荷の高い候補の補助         |
-| 条件付き | `optionGroup`        | 候補群の認知整理             |
-| 条件付き | popup 配置ポリシー         | overlay 制御の共通化       |
+| 条件付き | `option.description` | 説明負荷の高い候補の補助   |
+| 条件付き | `optionGroup`        | 候補群の認知整理           |
+| 条件付き | popup 配置ポリシー   | overlay 制御の共通化       |
 
 本コンポーネントに今後追加するべきなのは、派手な機能ではなく、**未選択へ戻す、空状態を説明する、初期値を固定する、候補更新の意味を透明化する** といった、状態機械を完成させる機能です。
 
@@ -763,7 +763,7 @@ Focus 系イベントの再生成は順序と意味論を複雑化しやすい�
 
 #### 2. 値型の `string | null` への単純化
 
-現行実装は `string | number` を受け入れ、未選択を空文字で表します。本書が採用する ``** と **``** による未選択表現** には未対応です。
+現行実装は `string | number` を受け入れ、未選択を空文字で表します。本書が採用する `** と **`** による未選択表現** には未対応です。
 
 #### 3. `options` 不整合値の `null` 正規化
 
@@ -783,7 +783,7 @@ Focus 系イベントの再生成は順序と意味論を複雑化しやすい�
 
 #### 7. `opened` の内部管理化
 
-現行実装は `opened` を外部入力として公開し、外部から直接書き換えられます。本書が採用する **内部管理 state と **``** / **``** / **``** 命令面** には未対応です。
+現行実装は `opened` を外部入力として公開し、外部から直接書き換えられます。本書が採用する **内部管理 state と **`** / **`** / **``** 命令面** には未対応です。
 
 #### 8. 公開メソッド `open()` / `close()` / `toggle()` / `reset()`
 
@@ -901,4 +901,3 @@ Focus 系イベントの再生成は順序と意味論を複雑化しやすい�
 - `option.description` / `optionGroup` / popup 配置ポリシー
 
 本節に記載した項目は、契約へ昇格させる場合に **実装・Storybook・契約書を同時に更新** しなければなりません。長期契約だけを先に固定し、現行実装が追随していない状態を放置してはなりません。
-

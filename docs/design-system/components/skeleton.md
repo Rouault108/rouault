@@ -73,23 +73,23 @@ Rouault における Skeleton は、読書体験への没入を阻害しない�
 
 ### 公開入力
 
-| 名前 | 種別 | 必須 | 内容 | 契約 |
-| --- | --- | --- | --- | --- |
-| `variant` | property / attribute | いいえ | 用途別形状種別 | `text` / `circular` / `rectangular`。既定値は `rectangular` |
-| `width` | property / attribute | いいえ | 幅 | CSS 寸法文字列。前後空白は正規化されます |
-| `height` | property / attribute | いいえ | 高さ | CSS 寸法文字列。前後空白は正規化されます |
-| `animated` | property / attribute | いいえ | Shimmer 表示 | 既定値は `false`。`true` の場合のみ Shimmer を許可します |
+| 名前       | 種別                 | 必須   | 内容           | 契約                                                        |
+| ---------- | -------------------- | ------ | -------------- | ----------------------------------------------------------- |
+| `variant`  | property / attribute | いいえ | 用途別形状種別 | `text` / `circular` / `rectangular`。既定値は `rectangular` |
+| `width`    | property / attribute | いいえ | 幅             | CSS 寸法文字列。前後空白は正規化されます                    |
+| `height`   | property / attribute | いいえ | 高さ           | CSS 寸法文字列。前後空白は正規化されます                    |
+| `animated` | property / attribute | いいえ | Shimmer 表示   | 既定値は `false`。`true` の場合のみ Shimmer を許可します    |
 
 ### 属性反映契約
 
 公開入力は property と attribute の両面から操作できます。`animated` は boolean attribute として扱います。`variant`、`width`、`height` は reflect されます。
 
-| property | attribute | reflect | 備考 |
-| --- | --- | --- | --- |
-| `variant` | `variant` | あり | 列挙外値は `rectangular` に正規化されます |
-| `width` | `width` | あり | 文字列前後の空白は除去されます |
-| `height` | `height` | あり | 文字列前後の空白は除去されます |
-| `animated` | `animated` | あり | boolean attribute として扱います |
+| property   | attribute  | reflect | 備考                                      |
+| ---------- | ---------- | ------- | ----------------------------------------- |
+| `variant`  | `variant`  | あり    | 列挙外値は `rectangular` に正規化されます |
+| `width`    | `width`    | あり    | 文字列前後の空白は除去されます            |
+| `height`   | `height`   | あり    | 文字列前後の空白は除去されます            |
+| `animated` | `animated` | あり    | boolean attribute として扱います          |
 
 ### 正規化契約
 
@@ -258,14 +258,14 @@ Shimmer は状態の主担い手ではなく、待機状態を弱く補助する
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途 | トークン |
-| --- | --- |
-| 既定背景 | `--bg-fill-neutral` |
-| テキスト系 / 既定角丸 | `--radius-sm` |
-| 円形角丸 | `--radius-full` |
-| Shimmer ハイライト | `--skeleton-shimmer` |
-| Shimmer 時間 | `--shimmer-duration` |
-| 強制カラー境界線幅 | `--border-width` |
+| 用途                  | トークン             |
+| --------------------- | -------------------- |
+| 既定背景              | `--bg-fill-neutral`  |
+| テキスト系 / 既定角丸 | `--radius-sm`        |
+| 円形角丸              | `--radius-full`      |
+| Shimmer ハイライト    | `--skeleton-shimmer` |
+| Shimmer 時間          | `--shimmer-duration` |
+| 強制カラー境界線幅    | `--border-width`     |
 
 トークンの解決優先順位は次のとおりです。
 
@@ -407,15 +407,15 @@ Shimmer は状態の主担い手ではなく、待機状態を弱く補助する
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
 
-| Story | 固定する契約 |
-| --- | --- |
-| `Default` | `text` の既定高さが `1em` であり、`aria-hidden="true"` を維持し、既定ではアニメーションしないこと |
-| `VariantStateMatrix` | `text` / `circular` / `rectangular` の用途別代表状態を描画できること |
-| `BoundaryConditions` | 不正 `variant` の正規化、`aria-hidden` 強制、`circular` の正円補完、`rectangular` の高さ未補完、寸法文字列の trim、環境設定優先によるアニメーション停止が成立すること |
-| `RectangularGuard` | `rectangular` で高さ未指定かつ `aspect-ratio` もない場合、開発時警告が未解決期間につき一度だけ観測できること |
-| `BusyStateTransitions` | 親コンテナの `aria-busy` が `true` から `false` へ遷移でき、Skeleton 自体は終始 `aria-hidden="true"` であること |
-| `DarkMode` | 暗色トークン差し替え下でも形状とアニメーション契約が維持されること |
-| `StyleOverrideBoundary` | 推奨上書きと契約破壊的上書きの境界が理解可能であること |
+| Story                   | 固定する契約                                                                                                                                                          |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Default`               | `text` の既定高さが `1em` であり、`aria-hidden="true"` を維持し、既定ではアニメーションしないこと                                                                     |
+| `VariantStateMatrix`    | `text` / `circular` / `rectangular` の用途別代表状態を描画できること                                                                                                  |
+| `BoundaryConditions`    | 不正 `variant` の正規化、`aria-hidden` 強制、`circular` の正円補完、`rectangular` の高さ未補完、寸法文字列の trim、環境設定優先によるアニメーション停止が成立すること |
+| `RectangularGuard`      | `rectangular` で高さ未指定かつ `aspect-ratio` もない場合、開発時警告が未解決期間につき一度だけ観測できること                                                          |
+| `BusyStateTransitions`  | 親コンテナの `aria-busy` が `true` から `false` へ遷移でき、Skeleton 自体は終始 `aria-hidden="true"` であること                                                       |
+| `DarkMode`              | 暗色トークン差し替え下でも形状とアニメーション契約が維持されること                                                                                                    |
+| `StyleOverrideBoundary` | 推奨上書きと契約破壊的上書きの境界が理解可能であること                                                                                                                |
 
 ---
 
@@ -546,4 +546,3 @@ Shimmer は状態の主担い手ではなく、待機状態を弱く補助する
 ### 6. Storybook の設計意図検証
 
 本契約では `StyleOverrideBoundary` など、設計意図そのものを検証する Story を追加対象として位置づけました。一方、現行 Story 群は主に実装回帰確認が中心であり、設計境界の検証はまだ十分ではありません。
-

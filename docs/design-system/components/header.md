@@ -64,8 +64,8 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 
 ### 入力契約
 
-| 名前 | 種別 | 必須 | 内容 | 契約 |
-| --- | --- | --- | --- | --- |
+| 名前              | 種別                                      | 必須   | 内容                                              | 契約                                                                                                 |
+| ----------------- | ----------------------------------------- | ------ | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `sidebarExpanded` | property / attribute (`sidebar-expanded`) | いいえ | start ゾーンを sidebar 列へ同期させる layout 入力 | `true` の場合は `--sidebar-width` を予約し、`false` の場合は内容幅へ縮退します。既定値は `true` です |
 
 ### `sidebarExpanded` の解釈契約
@@ -81,11 +81,11 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 
 ### スロット契約
 
-| 名前 | 種別 | 位置づけ | 内容 |
-| --- | --- | --- | --- |
-| `start` | named slot | ナビゲーション開始点 | サイドバートグル、セクション切替、ロゴなどを受け取ります |
-| `center` | named slot | 文脈表示 | パンくずリスト、ページ文脈、現在地表示などを受け取ります |
-| `end` | named slot | 補助操作 | 検索、テーマ切替、補助アクションなどを受け取ります |
+| 名前     | 種別       | 位置づけ             | 内容                                                     |
+| -------- | ---------- | -------------------- | -------------------------------------------------------- |
+| `start`  | named slot | ナビゲーション開始点 | サイドバートグル、セクション切替、ロゴなどを受け取ります |
+| `center` | named slot | 文脈表示             | パンくずリスト、ページ文脈、現在地表示などを受け取ります |
+| `end`    | named slot | 補助操作             | 検索、テーマ切替、補助アクションなどを受け取ります       |
 
 3 スロットはいずれも任意です。空であってもコンポーネントは描画を継続します。
 
@@ -127,8 +127,8 @@ header は単一行・固定高さのレイアウトとして扱います。`blo
 
 ### 公開イベント
 
-| 名前 | 型 | 発火条件 | 契約 |
-| --- | --- | --- | --- |
+| 名前                       | 型                                   | 発火条件                                              | 契約                                                                               |
+| -------------------------- | ------------------------------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `ui-header-sidebar-toggle` | `CustomEvent<{ expanded: boolean }>` | 初回レンダリング後に `sidebarExpanded` が変化したとき | `detail.expanded` に反映後の状態を含みます。`bubbles=false`、`composed=false` です |
 
 このイベントは、内部ユーザー操作を起点とするトグル要求ではありません。利用側が `sidebarExpanded` を変更した結果として発火する**状態通知**です。したがって、利用者はこのイベントを「開閉ボタンが押された通知」として扱ってはなりません（MUST NOT）。
@@ -155,11 +155,11 @@ header は単一行・固定高さのレイアウトとして扱います。`blo
 
 `ui-header` は、外部から上書き可能な CSS Custom Properties として次を公開します。
 
-| 名前 | 既定値 | 用途 |
-| --- | --- | --- |
-| `--ui-header-backdrop-saturate` | `0.5` | Glassmorphism 背景の `saturate()` 強度 |
-| `--ui-header-center-start-inset` | `0px` | center ゾーンの開始側インセット |
-| `--ui-header-center-end-inset` | `0px` | center ゾーンの終了側インセット |
+| 名前                             | 既定値 | 用途                                   |
+| -------------------------------- | ------ | -------------------------------------- |
+| `--ui-header-backdrop-saturate`  | `0.5`  | Glassmorphism 背景の `saturate()` 強度 |
+| `--ui-header-center-start-inset` | `0px`  | center ゾーンの開始側インセット        |
+| `--ui-header-center-end-inset`   | `0px`  | center ゾーンの終了側インセット        |
 
 これらは公開拡張面です。一方で、`--ui-header-edge-highlight` はコンポーネントローカルトークンであり、公開契約には含めません。
 
@@ -167,11 +167,11 @@ header は単一行・固定高さのレイアウトとして扱います。`blo
 
 公開トークンは次の値域で扱います。
 
-| 名前 | 想定する値型 | 既定動作 | 無効値の扱い |
-| --- | --- | --- | --- |
-| `--ui-header-backdrop-saturate` | CSS の `<number>` | `saturate(0.5)` として評価します | 無効値は当該宣言が無効になり、UA の CSS 評価結果に従います |
-| `--ui-header-center-start-inset` | CSS の `<length-percentage>` を含む inset 相当値 | `0px` | 無効値は当該宣言が無効になり、既定値または他宣言へフォールバックします |
-| `--ui-header-center-end-inset` | CSS の `<length-percentage>` を含む inset 相当値 | `0px` | 無効値は当該宣言が無効になり、既定値または他宣言へフォールバックします |
+| 名前                             | 想定する値型                                     | 既定動作                         | 無効値の扱い                                                           |
+| -------------------------------- | ------------------------------------------------ | -------------------------------- | ---------------------------------------------------------------------- |
+| `--ui-header-backdrop-saturate`  | CSS の `<number>`                                | `saturate(0.5)` として評価します | 無効値は当該宣言が無効になり、UA の CSS 評価結果に従います             |
+| `--ui-header-center-start-inset` | CSS の `<length-percentage>` を含む inset 相当値 | `0px`                            | 無効値は当該宣言が無効になり、既定値または他宣言へフォールバックします |
+| `--ui-header-center-end-inset`   | CSS の `<length-percentage>` を含む inset 相当値 | `0px`                            | 無効値は当該宣言が無効になり、既定値または他宣言へフォールバックします |
 
 利用者は、`--ui-header-center-start-inset` および `--ui-header-center-end-inset` に `calc(...)` を与えてかまいません。負値も CSS としては与えられますが、header 契約としては与えるべきではありません（SHOULD NOT）。
 
@@ -179,9 +179,9 @@ header は単一行・固定高さのレイアウトとして扱います。`blo
 
 ### 属性反映契約
 
-| property | attribute | reflect | 備考 |
-| --- | --- | --- | --- |
-| `sidebarExpanded` | `sidebar-expanded` | あり | boolean attribute として扱います |
+| property          | attribute          | reflect | 備考                             |
+| ----------------- | ------------------ | ------- | -------------------------------- |
+| `sidebarExpanded` | `sidebar-expanded` | あり    | boolean attribute として扱います |
 
 ### 公開しないもの
 
@@ -328,20 +328,20 @@ header は単一行・固定高さのレイアウトとして扱います。`blo
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途 | トークン |
-| --- | --- |
-| ヘッダー高さ | `--header-height` |
-| z-index | `--z-fixed` |
-| 背景 | `--glass-panel` / `--bg-default` |
-| 境界線 | `--border-width` / `--border-default` |
-| 文字色 | `--fg-default` |
-| フォントサイズ | `--text-base` |
-| blur 強度 | `--blur-md` |
-| 最大幅 | `--bp-xl` |
-| モバイル境界 | `640px`（現行は固定値です） |
-| 左右余白 | `--space-4` |
-| zone ギャップ | `--space-2` |
-| サイドバー幅 | `--sidebar-width` |
+| 用途           | トークン                              |
+| -------------- | ------------------------------------- |
+| ヘッダー高さ   | `--header-height`                     |
+| z-index        | `--z-fixed`                           |
+| 背景           | `--glass-panel` / `--bg-default`      |
+| 境界線         | `--border-width` / `--border-default` |
+| 文字色         | `--fg-default`                        |
+| フォントサイズ | `--text-base`                         |
+| blur 強度      | `--blur-md`                           |
+| 最大幅         | `--bp-xl`                             |
+| モバイル境界   | `640px`（現行は固定値です）           |
+| 左右余白       | `--space-4`                           |
+| zone ギャップ  | `--space-2`                           |
+| サイドバー幅   | `--sidebar-width`                     |
 
 ---
 
@@ -465,15 +465,15 @@ header は固定高さであり、自動伸長しません。start / center / en
 
 本節では、Storybook 上の Story のうち、**公開契約として将来変更時にも維持しなければならないもの**だけを列挙します。ここに含める Story は、見本や雰囲気確認ではなく、property、attribute、slot、event、状態遷移などの契約面を確認するものに限定します。
 
-| Story | 固定する契約 |
-| --- | --- |
-| `DefaultExpanded` | 3 zone、3 slot、sticky header、`sidebarExpanded=true` の基本構造が成立すること |
-| `ZenModeCollapsed` | `sidebarExpanded=false` で start ゾーン幅が縮退すること |
-| `SidebarToggleEvent` | `ui-header-sidebar-toggle` が `detail.expanded` を含み、`bubbles=false`、`composed=false` であること |
-| `EmptySlots` | `center` が空でもレイアウト構造が維持されること |
-| `AttributeDrivenToggle` | property / attribute 双方向反映が成立すること |
-| `RapidToggleReentrancy` | 同一値設定で冗長イベントが発火せず、高速変更で有効変化分だけ発火すること |
-| `DynamicSlotContent` | スロット内容の動的差し替え後も slot 割り当てが維持されること |
+| Story                   | 固定する契約                                                                                         |
+| ----------------------- | ---------------------------------------------------------------------------------------------------- |
+| `DefaultExpanded`       | 3 zone、3 slot、sticky header、`sidebarExpanded=true` の基本構造が成立すること                       |
+| `ZenModeCollapsed`      | `sidebarExpanded=false` で start ゾーン幅が縮退すること                                              |
+| `SidebarToggleEvent`    | `ui-header-sidebar-toggle` が `detail.expanded` を含み、`bubbles=false`、`composed=false` であること |
+| `EmptySlots`            | `center` が空でもレイアウト構造が維持されること                                                      |
+| `AttributeDrivenToggle` | property / attribute 双方向反映が成立すること                                                        |
+| `RapidToggleReentrancy` | 同一値設定で冗長イベントが発火せず、高速変更で有効変化分だけ発火すること                             |
+| `DynamicSlotContent`    | スロット内容の動的差し替え後も slot 割り当てが維持されること                                         |
 
 ここに含める Story は、公開 API や状態契約の変更がない限り安易に削除しません。削除または意味変更を行う場合は、対応する公開契約の変更を先に明示します。
 
@@ -481,14 +481,14 @@ header は固定高さであり、自動伸長しません。start / center / en
 
 本節では、**公開 API そのものではなく、見え方や環境別描画の回帰を確認する Story** を列挙します。これらは重要ですが、契約試験と同じ強度の公開面としては扱いません。
 
-| Story | 確認目的 |
-| --- | --- |
-| `ResponsiveVisualComparison` | 異なる幅での start / center / end の見え方を比較すること |
-| `ForcedColorsMode` | 強制カラー環境で header 構造と境界線が視認可能であること |
-| `ReducedMotion` | reduced motion 環境で過度なモーションに依存せず描画が成立すること |
-| `PrintStyles` | 印刷時に非表示となること |
-| `DarkModeGlassmorphism` | ダークモードで背景表現と境界の見え方が破綻しないこと |
-| `CustomBackdropSaturate` | `--ui-header-backdrop-saturate` 上書き時の見え方を比較できること |
+| Story                        | 確認目的                                                          |
+| ---------------------------- | ----------------------------------------------------------------- |
+| `ResponsiveVisualComparison` | 異なる幅での start / center / end の見え方を比較すること          |
+| `ForcedColorsMode`           | 強制カラー環境で header 構造と境界線が視認可能であること          |
+| `ReducedMotion`              | reduced motion 環境で過度なモーションに依存せず描画が成立すること |
+| `PrintStyles`                | 印刷時に非表示となること                                          |
+| `DarkModeGlassmorphism`      | ダークモードで背景表現と境界の見え方が破綻しないこと              |
+| `CustomBackdropSaturate`     | `--ui-header-backdrop-saturate` 上書き時の見え方を比較できること  |
 
 これらの Story は、視覚回帰や環境対応確認のために維持します。ただし、個々の見え方は foundation token や app-shell policy の変更に伴って更新され得ます。
 
@@ -865,4 +865,3 @@ Forced Colors、Reduced Motion、Print、Dark Mode、Backdrop Saturation は Sto
 3. sidebar 状態機械を header へ持ち込まないこと
 4. header を layout host として保つこと
 5. child content の意味論を肩代わりしないこと
-

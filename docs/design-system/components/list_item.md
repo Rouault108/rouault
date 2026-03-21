@@ -67,31 +67,31 @@
 
 `ui-list-item` の長期契約として公開する入力は次のとおりです。
 
-| 名前                | 種別                                         | 必須  | 内容                 | 契約                                    |
-| ----------------- | ------------------------------------------ | --- | ------------------ | ------------------------------------- |
-| `itemId`          | property / attribute (`item-id`)           | はい  | 行 ID               | `ui-active-change` の識別子です。空文字列は許可しません |
-| `active`          | property / attribute                       | いいえ | 行がアクティブか           | `true` の場合に行強調とセルロービングを有効にします         |
-| `activeCellIndex` | property / attribute (`active-cell-index`) | いいえ | 行内アクティブセル位置        | **可視セル順 + action セル** を基準とします         |
-| `rowIndex`        | property / attribute (`row-index`)         | いいえ | 1-based の論理行 index | 指定時に `aria-rowindex` を出力します           |
+| 名前              | 種別                                       | 必須   | 内容                   | 契約                                                    |
+| ----------------- | ------------------------------------------ | ------ | ---------------------- | ------------------------------------------------------- |
+| `itemId`          | property / attribute (`item-id`)           | はい   | 行 ID                  | `ui-active-change` の識別子です。空文字列は許可しません |
+| `active`          | property / attribute                       | いいえ | 行がアクティブか       | `true` の場合に行強調とセルロービングを有効にします     |
+| `activeCellIndex` | property / attribute (`active-cell-index`) | いいえ | 行内アクティブセル位置 | **可視セル順 + action セル** を基準とします             |
+| `rowIndex`        | property / attribute (`row-index`)         | いいえ | 1-based の論理行 index | 指定時に `aria-rowindex` を出力します                   |
 
 ### 非契約入力
 
 次の表面は現行実装に存在していても、長期契約には含めません。
 
-| 名前        | 扱い  | 理由                              |
-| --------- | --- | ------------------------------- |
+| 名前      | 扱い   | 理由                                           |
+| --------- | ------ | ---------------------------------------------- |
 | `href`    | 非契約 | 主遷移責務は `ui-list-item` が持たないためです |
-| `managed` | 非契約 | 親管理下かどうかは接続関係で決まるためです           |
+| `managed` | 非契約 | 親管理下かどうかは接続関係で決まるためです     |
 
 これらは将来削除または内部化してよく、外部利用者は依存しません。
 
 ### スロット契約
 
-| 名前                  | 種別         | 内容         | 契約                                  |
-| ------------------- | ---------- | ---------- | ----------------------------------- |
-| 列 ID 対応スロット         | named slot | 各列のセル内容    | `columns[].id` と一致する slot 名だけを受理します |
-| `actions`           | named slot | 行末操作群      | action セルに描画します                     |
-| `mobile-supplement` | named slot | モバイル時の補助情報 | 非表示化したメタ情報の要約再掲だけに使います              |
+| 名前                | 種別       | 内容                 | 契約                                              |
+| ------------------- | ---------- | -------------------- | ------------------------------------------------- |
+| 列 ID 対応スロット  | named slot | 各列のセル内容       | `columns[].id` と一致する slot 名だけを受理します |
+| `actions`           | named slot | 行末操作群           | action セルに描画します                           |
+| `mobile-supplement` | named slot | モバイル時の補助情報 | 非表示化したメタ情報の要約再掲だけに使います      |
 
 既定スロットは通常運用の公開入力ではありません。親未接続時のフォールバックに限って存在してよいですが、外部利用者は正規入力として依存しません。
 
@@ -103,10 +103,10 @@
 
 `ui-list-item` は親 `ui-list` から次の情報を受け取る前提で動作します。
 
-| 名前         | 内容         | 契約                                |
-| ---------- | ---------- | --------------------------------- |
-| `columns`  | 列定義配列      | `id` は一意であり、slot 名として有効でなければなりません |
-| `isMobile` | モバイル表示かどうか | 真の場合は mobile 縮退契約を適用します           |
+| 名前       | 内容                 | 契約                                                     |
+| ---------- | -------------------- | -------------------------------------------------------- |
+| `columns`  | 列定義配列           | `id` は一意であり、slot 名として有効でなければなりません |
+| `isMobile` | モバイル表示かどうか | 真の場合は mobile 縮退契約を適用します                   |
 
 列定義には次の不変条件を課します。
 
@@ -122,17 +122,17 @@
 
 `ui-list-item` が公開する固有イベントは `ui-active-change` のみです。
 
-| 名前                 | 種別          | detail                | 契約                      |
-| ------------------ | ----------- | --------------------- | ----------------------- |
+| 名前               | 種別        | detail                | 契約                                           |
+| ------------------ | ----------- | --------------------- | ---------------------------------------------- |
 | `ui-active-change` | CustomEvent | `{ rowId, colIndex }` | 行内セルのアクティブ位置変更要求を親へ返します |
 
 `rowId` は `itemId` です。`colIndex` は **可視セル順 + action セル** を基準とします。論理列 index は外部契約へ露出しません。
 
-`ui-active-change` は ``** かつ **`` で送出します。キャンセル可能イベントとしては扱いません。
+`ui-active-change` は `** かつ **` で送出します。キャンセル可能イベントとしては扱いません。
 
 ### 非公開協調面
 
-親子間で使う `ui-list-context-request` および同種の再同期機構は、``** と **``** の内部協調契約**です。一般利用者向け公開 API としては扱いません。
+親子間で使う `ui-list-context-request` および同種の再同期機構は、`** と **`** の内部協調契約**です。一般利用者向け公開 API としては扱いません。
 
 同様に、`requestListContext()` は長期契約では公開メソッドとみなしません。再同期の駆動責務は親 `ui-list` 側に置きます。
 
@@ -316,11 +316,11 @@ action セルは、可視列列群の末尾に常に存在する独立セルで�
 
 `ui-list-item` は、**非 action セルに対する単純 click** と **左右矢印キー** により `ui-active-change` を送出します。
 
-| 入力           | 前提                            | 結果                                     |
-| ------------ | ----------------------------- | -------------------------------------- |
+| 入力         | 前提                                               | 結果                                              |
+| ------------ | -------------------------------------------------- | ------------------------------------------------- |
 | `click`      | 非 action セルであり、テキスト選択操作ではないこと | 対象セル index で `ui-active-change` を送出します |
-| `ArrowLeft`  | 左境界でないこと                      | 1 つ前のセル index を送出します                   |
-| `ArrowRight` | 右境界でないこと                      | 1 つ次のセル index を送出します                   |
+| `ArrowLeft`  | 左境界でないこと                                   | 1 つ前のセル index を送出します                   |
+| `ArrowRight` | 右境界でないこと                                   | 1 つ次のセル index を送出します                   |
 
 `focusin` は状態遷移の正規トリガーに含めません。フォーカス追従は表示整合のために存在してよいですが、外部契約上の状態変化源としては扱いません。
 
@@ -374,19 +374,19 @@ action セル内操作は **selection-neutral** です。action セル内の `bu
 
 各 Story は見本ではなく、契約確認点です。少なくとも次を固定します。
 
-| Story                             | 固定する契約                                                                               |
-| --------------------------------- | ------------------------------------------------------------------------------------ |
-| `DefaultInList`                   | `ui-list` 配下で `role="row"`、`role="gridcell"`、主列 / 補助列 / action セル構造が成立すること           |
+| Story                             | 固定する契約                                                                                          |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `DefaultInList`                   | `ui-list` 配下で `role="row"`、`role="gridcell"`、主列 / 補助列 / action セル構造が成立すること       |
 | `VisibleIndexContract`            | `activeCellIndex`、`ui-active-change.detail.colIndex`、`aria-colindex` が可視セル順基準で一致すること |
-| `ActionCellSelectionNeutral`      | action セル内操作が行アクティブ変更を暗黙に伴わないこと                                                      |
-| `FocusableContentBoundary`        | 非 action セル内に自然 tab stop を持つ要素を置かないこと                                                |
-| `MobileSupplement`                | モバイル時に hidden metadata だけが主列へ再掲されること                                                 |
-| `UnknownSlotIgnoredWithWarning`   | 未知 slot が描画に寄与せず、警告対象になること                                                           |
-| `TextSelectionDoesNotActivateRow` | テキスト選択操作が行アクティブ変更を引き起こさないこと                                                          |
-| `MissingSlotBoundary`             | 既知列 slot 未提供時もセル構造を維持すること                                                            |
-| `ForcedColorsMode`                | forced-colors 環境で境界とフォーカス可視性を維持すること                                                  |
-| `ReducedMotion`                   | reduced-motion 環境で不要な視覚遷移を極小化すること                                                    |
-| `PrintContract`                   | 印刷時に行情報を残し、操作ノイズだけを除去すること                                                            |
+| `ActionCellSelectionNeutral`      | action セル内操作が行アクティブ変更を暗黙に伴わないこと                                               |
+| `FocusableContentBoundary`        | 非 action セル内に自然 tab stop を持つ要素を置かないこと                                              |
+| `MobileSupplement`                | モバイル時に hidden metadata だけが主列へ再掲されること                                               |
+| `UnknownSlotIgnoredWithWarning`   | 未知 slot が描画に寄与せず、警告対象になること                                                        |
+| `TextSelectionDoesNotActivateRow` | テキスト選択操作が行アクティブ変更を引き起こさないこと                                                |
+| `MissingSlotBoundary`             | 既知列 slot 未提供時もセル構造を維持すること                                                          |
+| `ForcedColorsMode`                | forced-colors 環境で境界とフォーカス可視性を維持すること                                              |
+| `ReducedMotion`                   | reduced-motion 環境で不要な視覚遷移を極小化すること                                                   |
+| `PrintContract`                   | 印刷時に行情報を残し、操作ノイズだけを除去すること                                                    |
 
 現行 Storybook に実在する Story は、`DefaultInList`、`ActiveCellIndexFocus`、`EmitsActiveChangeOnArrow`、`EdgeBoundaryStops`、`MissingSlotBoundary`、`MobileSupplement`、`StandaloneFallback`、`DarkMode` です。`VisibleIndexContract`、`ActionCellSelectionNeutral`、`FocusableContentBoundary`、`UnknownSlotIgnoredWithWarning`、`TextSelectionDoesNotActivateRow`、`ForcedColorsMode`、`ReducedMotion`、`PrintContract` は、長期契約として固定したい検証観点であり、現行 Story 実装が未追随である可能性があります。
 
@@ -526,4 +526,3 @@ action セル内操作は **selection-neutral** です。action セル内の `bu
 ### 単体フォールバック
 
 現行実装に単体描画が存在していても、本契約では通常運用面に昇格させません。障害耐性のための境界条件にとどめます。
-

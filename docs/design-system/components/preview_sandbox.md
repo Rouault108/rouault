@@ -58,16 +58,16 @@
 
 ### 入力契約
 
-| 名前                 | 種別                                          | 既定値          | 内容                           | 契約                                          |
-| ------------------ | ------------------------------------------- | ------------ | ---------------------------- | ------------------------------------------- |
-| `iframeTitle`      | property / attribute (`iframe-title`)       | `""`         | iframe のアクセシブル名              | 空文字または空白のみの場合は `プレビュー sandbox` を用います        |
-| `height`           | property / attribute                        | `160`        | preview の最小初期高さ兼 fallback 高さ | 有限正数以外は `160` に正規化し、整数 px の切り上げ値として扱います     |
-| `baseUrl`          | property / attribute (`base-url`)           | 埋め込み元文書の URL | 相対 URL の解決基準                 | 絶対 URL でなければなりません。無効値は埋め込み元文書の URL に正規化します  |
-| `allowJs`          | property / attribute (`allow-js`)           | `false`      | author JS の注入可否              | `true` の場合のみ `js` payload を有効入力として扱います      |
-| `allowForms`       | property / attribute (`allow-forms`)        | `false`      | form capability              | sandbox token に `allow-forms` を追加します        |
-| `allowDownloads`   | property / attribute (`allow-downloads`)    | `false`      | download capability          | sandbox token に `allow-downloads` を追加します    |
-| `allowPointerLock` | property / attribute (`allow-pointer-lock`) | `false`      | pointer lock capability      | sandbox token に `allow-pointer-lock` を追加します |
-| `allowPopups`      | property / attribute (`allow-popups`)       | `false`      | popup capability             | sandbox token に `allow-popups` を追加します       |
+| 名前               | 種別                                        | 既定値               | 内容                                   | 契約                                                                       |
+| ------------------ | ------------------------------------------- | -------------------- | -------------------------------------- | -------------------------------------------------------------------------- |
+| `iframeTitle`      | property / attribute (`iframe-title`)       | `""`                 | iframe のアクセシブル名                | 空文字または空白のみの場合は `プレビュー sandbox` を用います               |
+| `height`           | property / attribute                        | `160`                | preview の最小初期高さ兼 fallback 高さ | 有限正数以外は `160` に正規化し、整数 px の切り上げ値として扱います        |
+| `baseUrl`          | property / attribute (`base-url`)           | 埋め込み元文書の URL | 相対 URL の解決基準                    | 絶対 URL でなければなりません。無効値は埋め込み元文書の URL に正規化します |
+| `allowJs`          | property / attribute (`allow-js`)           | `false`              | author JS の注入可否                   | `true` の場合のみ `js` payload を有効入力として扱います                    |
+| `allowForms`       | property / attribute (`allow-forms`)        | `false`              | form capability                        | sandbox token に `allow-forms` を追加します                                |
+| `allowDownloads`   | property / attribute (`allow-downloads`)    | `false`              | download capability                    | sandbox token に `allow-downloads` を追加します                            |
+| `allowPointerLock` | property / attribute (`allow-pointer-lock`) | `false`              | pointer lock capability                | sandbox token に `allow-pointer-lock` を追加します                         |
+| `allowPopups`      | property / attribute (`allow-popups`)       | `false`              | popup capability                       | sandbox token に `allow-popups` を追加します                               |
 
 ### 入力文法契約
 
@@ -190,9 +190,9 @@
 
 `ui-preview-sandbox` は次の payload を受け付けます。
 
-| kind   | 内容            | 入力形                                       |
-| ------ | ------------- | ----------------------------------------- |
-| `html` | body fragment | `template` の内容を HTML fragment として扱います     |
+| kind   | 内容          | 入力形                                            |
+| ------ | ------------- | ------------------------------------------------- |
+| `html` | body fragment | `template` の内容を HTML fragment として扱います  |
 | `css`  | style text    | `template.textContent` を CSS text として扱います |
 | `js`   | script text   | `template.textContent` を JS text として扱います  |
 
@@ -434,10 +434,10 @@ preview 文書は常に `<html lang="ja">` を用います。`lang` は公開入
 
 外部から保証するスタイル拡張面は次に限定します。
 
-| 公開面                       | 役割            |
-| ------------------------- | ------------- |
-| `:host` への通常 CSS          | 外側レイアウトへの参加   |
-| `--ui-preview-sandbox-bg` | iframe 背景色の調整 |
+| 公開面                    | 役割                   |
+| ------------------------- | ---------------------- |
+| `:host` への通常 CSS      | 外側レイアウトへの参加 |
+| `--ui-preview-sandbox-bg` | iframe 背景色の調整    |
 
 内部 class 名、Shadow DOM 構造、属性順序には依存しません。
 
@@ -547,15 +547,15 @@ preview 文書は light base です。外側アプリケーションの theme �
 
 各 Story は見本ではなく契約確認点です。将来変更時には、次を維持します。
 
-| Story                     | 固定する契約                                                           |
-| ------------------------- | ---------------------------------------------------------------- |
-| `HtmlOnly`                | HTML payload のみで preview 文書を構成できること                              |
-| `AuthorJsOptIn`           | `allowJs` が author JS の注入可否だけを切り替えること                            |
-| `SandboxCapabilityTokens` | opt-in capability だけが追加されること                                     |
-| `SanitizationBoundary`    | 危険要素・属性・URL が除去されること                                             |
-| `CodePreviewIntegration`  | 上位 UI の状態変更が `srcdoc` を不用意に変えないこと                                |
+| Story                     | 固定する契約                                                                                  |
+| ------------------------- | --------------------------------------------------------------------------------------------- |
+| `HtmlOnly`                | HTML payload のみで preview 文書を構成できること                                              |
+| `AuthorJsOptIn`           | `allowJs` が author JS の注入可否だけを切り替えること                                         |
+| `SandboxCapabilityTokens` | opt-in capability だけが追加されること                                                        |
+| `SanitizationBoundary`    | 危険要素・属性・URL が除去されること                                                          |
+| `CodePreviewIntegration`  | 上位 UI の状態変更が `srcdoc` を不用意に変えないこと                                          |
 | `HeightBehavior`          | baseline helper により高さ追従が成立し、`height` が最小初期高さ兼 fallback 高さとして働くこと |
-| `NonDestructiveUpdates`   | `iframeTitle` 変更と高さ表示値更新が破壊的再構築を起こさないこと                          |
+| `NonDestructiveUpdates`   | `iframeTitle` 変更と高さ表示値更新が破壊的再構築を起こさないこと                              |
 
 Storybook は token の**集合**を検証し、属性文字列の順序には依存しません。
 
@@ -846,4 +846,3 @@ Storybook と自動テストでは、次の不整合を **失敗として扱い�
 8. 高さ、遷移、診断の規則を deterministic に定義します
 
 これらを崩さない限り、実装詳細を差し替えても契約は維持できます。
-

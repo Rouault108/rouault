@@ -396,6 +396,7 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
 - **Screen Reader Support**: Default State で `clip-path: inset(50%)` を使用することで、視覚的に非表示でも確実にA11yツリーに残し、スクリーンリーダーが認識可能な状態を保証します。
 - **Target Element Focus**: スキップ後、ターゲット要素（`#main-content`）にフォーカスが移動します。
   - **Visual Feedback**: ターゲット要素のフォーカス状態は、グローバルの `:focus-visible` スタイルまたはブラウザデフォルトに委ねます。必要に応じて、以下のような一瞬のハイライトを追加することも検討できます：
+
     ```css
     main:focus {
       animation: skip-target-flash var(--duration-fast) var(--ease-out);
@@ -472,6 +473,7 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
   - **Rationale**: `index.md` で定義された「見出し・UIラベル」への `"palt"` 適用方針に準拠します。ボタンラベルは短いテキスト（UIラベル）であり、文字詰めを有効にすることで密度を高め、「塊」としての構造美を強調します。
 - `letter-spacing`: `0.02em` (視認性のための微調整)
 - `transition`:
+
   ```css
   background-color var(--duration-fast) var(--ease-out),
   color var(--duration-fast) var(--ease-out),
@@ -481,6 +483,7 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
   ```
 
   - **Rationale**: `index.md` の方針に従い、`transition: all` を避け、明示的なプロパティリストを使用します。これにより、意図しないプロパティの遷移によるパフォーマンスとアクセシビリティへの悪影響を防ぎます。
+
 - `:active`:
   - `transform: scale(var(--scale-pressed))` — 微細な縮小 (0.96) により「押し込み」のタクタイルシグナルを表現します。
   - `box-shadow: none` — 平面に押し付けられた「沈み込み」を表現するため、浮遊感を示す影を即座に除去します。**Edge Highlight を含むすべての `box-shadow` を除去**し、完全に平面に押し付けられた状態を表現します。
@@ -749,6 +752,7 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
     - `index.md` で定義された `--animation-flash` のタイミング・カーブ（`var(--duration-fast)` / `var(--ease-out)`）を採用し、背景色を一瞬発光させてフェードアウトさせます。
     - **Implementation Strategy**: 標準の `@keyframes flash` を流用せず、コンポーネント専用のローカル変数とキーフレームを定義します。これにより、`--bg-surface-active` の意味論的役割（リスト行選択状態）を保護し、将来的なメンテナンス時の混乱を回避します。
     - **Keyframes Naming**: `flash-copy-success`, `flash-copy-error` のようにサフィックスで揃え、グローバル定義との混乱を避けます。
+
     ```css
     :host {
       /* コンポーネントローカル変数 */
@@ -787,6 +791,7 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
     ```
 
     - **Dark Mode Viability**: ダークモードでの Flash Effect 色（`--bg-success-subtle`: L 25%, `--bg-danger-subtle`: L 25%）は、`--bg-default` (L 12%) と比較して十分な明度差（ΔL = 13%）があり、視認可能です。
+
 - **Color State**:
   - **Idle**: `var(--fg-muted)`
   - **Success**: `var(--fg-success)`
@@ -795,6 +800,7 @@ Relative Color Syntax 非対応環境では `--primary` へフォールバック
 - **Hit Area Requirement**:
   - 視覚的サイズは `size="sm"` (24px) ですが、`::after` 擬似要素を使用して必ず `--control-min-touch` (44px) 以上の物理ヒットエリアを確保してください。
   - **Implementation** (`index.md` 参照):
+
     ```css
     /* Hit Area Requirement: 視覚サイズ 24px / ヒット領域 44px */
     ui-copy-button {
@@ -3307,6 +3313,7 @@ Windows ハイコントラストモード (`forced-colors: active`) への対応
   - `@media (prefers-reduced-motion: reduce)` 環境下では、`index.md` のグローバル定義により全てのトランジション・アニメーションが自動的に `0.01ms` に短縮されます。
 - **Forced Colors Mode**:
   - **Indent Guide Visibility**: `forced-colors: active` 環境では透過ボーダー（`--border-ghost`）が消失するため、以下のスタイルを適用します：
+
   ```css
   @media (forced-colors: active) {
     [role='group'] {
@@ -3316,6 +3323,7 @@ Windows ハイコントラストモード (`forced-colors: active`) への対応
   ```
 
   - **Selected State**: 選択状態をシステムカラーで明確化します：
+
   ```css
   @media (forced-colors: active) {
     [role='treeitem'][aria-selected='true'] {
@@ -3416,6 +3424,7 @@ type TreeNode = {
 - `color`: `--fg-muted` (非アクティブ項目の基本色)
 - `user-select`: `none` (ラベルテキストの意図しない選択を防止)
 - `transition`:
+
   ```css
   background-color var(--duration-fast) var(--ease-out),
   border-color var(--duration-fast) var(--ease-out)
@@ -4462,6 +4471,7 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
 - **Item**: `<ui-button variant="ghost" size="md">` (32px) をベースに使用。
   - **Interaction**: ホバー時は `var(--bg-hover)` を適用し、操作可能であることを示唆します。
   - **Transition**:
+
     ```css
     transition:
       background-color var(--duration-fast) var(--ease-out),
@@ -4471,12 +4481,14 @@ Spaceキーが期待通りスクロールしない環境が確認された場合
     ```
 
     - **Note**: `transition: all` は使用しません。意図しないプロパティの遷移を防ぐため、明示的なプロパティリストを使用します。
+
   - **Icon**: `ChevronLeft` / `ChevronRight` (Size: `--icon-base` 16px)。テキストラベルは使用しない。
   - **Disabled State**: 先頭ページ時の `Prev`、最終ページ時の `Next` は非表示にせず、**`<span aria-disabled="true">`** として描画します（`href` は持たせない）。視覚的には `opacity: var(--opacity-disabled)` を適用し、Forced Colorsでは `color: GrayText` にフォールバックします。
   - **Typography**: `var(--font-sans)` + `font-variant-numeric: tabular-nums`。
     - **Note**: `font-mono` は使用しません。デザインシステム全体の調和を優先し、OpenType機能を用いて標準フォント内で数字の等幅性を確保します。
   - **Touch Target**:
     - 物理的な高さは32pxを維持しつつ、**`@media (hover: none) and (pointer: coarse)` のときのみ** `::after` 疑似要素で 44px 以上 (`--control-min-touch`) のヒットエリアを確保します。これにより、`index.md` の入力特性戦略とターゲットサイズ基準を両立します。
+
 - **Active State (Current Page)**:
   - **Markup**: **`<a aria-current="page" href="...">`** として描画し、再訪（リロード・新規タブ）可能性を残します。
   - **Background**: `var(--bg-surface-active)` (面による明確な現在地示唆)
@@ -6530,11 +6542,13 @@ Windows ハイコントラストモード (`forced-colors: active`) では、背
 - **Native**: `<kbd>` タグ。
 - **実DOM要件（必須）**: 「`<ui-kbd>`」は仕様書上のコンポーネント名であり、**最終DOMには必ずネイティブの `<kbd>` を出力**します。`<div role="text">` 等の代替実装は禁止します。
 - **Key Combination Pattern**: 修飾キーを含む組み合わせ（例: `Ctrl + K`）は、外側 `<kbd>` で個々の `<kbd>` を包みます。外側 `<kbd>` にはビジュアルスタイル（`background`、`border`、`box-shadow`）を適用しません。セパレータ（`+`）はテキストノードとして記述します。
+
   ```html
   <kbd class="kbd-combo"><kbd class="kbd-key">Ctrl</kbd> + <kbd class="kbd-key">K</kbd></kbd>
   ```
 
   - _Rationale_: 外側 `<kbd>` は「ショートカット全体」を、内側 `<kbd>` は「個々のキー」を意味し、HTMLセマンティクスの入れ子構造を活用します。
+
 - **単体キーのマークアップ**:
   ```html
   <kbd class="kbd-key">Esc</kbd>
@@ -8663,6 +8677,7 @@ ENDED   -> PAUSED (seek/play)
     - スクロール可能な `.math-display` コンテナには `tabindex="0"` を付与し、キーボードフォーカス可能にします。
     - フォーカス時は `:focus-visible` スタイルを適用します（`index.md` のキーボードナビゲーション戦略に準拠）。
     - フォーカス取得後、キーボード操作（`←` `→` キー、スペースキー等）でブラウザネイティブのスクロールを機能させます。
+
     ```html
     <!-- スクロール可能な場合のみ tabindex を付与 -->
     <!-- role="region" は primary=true の主題数式にのみ付与 -->

@@ -65,20 +65,20 @@ tooltip 内容は `text` による**プレーンテキスト入力**のみを受
 
 ### 4.1 入力契約
 
-| 名前           | 種別                                   | 必須  | 内容                      | 契約                                                                                                                                                      |
-| ------------ | ------------------------------------ | --- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `text`       | property / attribute                 | いいえ | tooltip 文言              | 空白のみを含む場合は tooltip を表示しません                                                                                                                              |
-| `variant`    | property / attribute                 | いいえ | 視覚バリアント                 | `default` / `subtle` / `inverse`                                                                                                                        |
-| `placement`  | property / attribute                 | いいえ | 基本配置                    | `top` / `top-start` / `top-end` / `bottom` / `bottom-start` / `bottom-end` / `left` / `left-start` / `left-end` / `right` / `right-start` / `right-end` |
-| `offset`     | property / attribute                 | いいえ | trigger と tooltip の基本距離 | 既定値は `8`。0 以上の有限数を受理します                                                                                                                                 |
-| `openDelay`  | property / attribute (`open-delay`)  | いいえ | 表示遅延                    | ミリ秒単位。非負の有限数として扱います                                                                                                                                     |
-| `closeDelay` | property / attribute (`close-delay`) | いいえ | 非表示遅延                   | ミリ秒単位。非負の有限数として扱います                                                                                                                                     |
-| `disabled`   | property / attribute                 | いいえ | tooltip 抑止              | `true` の場合は開きません                                                                                                                                        |
+| 名前         | 種別                                 | 必須   | 内容                          | 契約                                                                                                                                                    |
+| ------------ | ------------------------------------ | ------ | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `text`       | property / attribute                 | いいえ | tooltip 文言                  | 空白のみを含む場合は tooltip を表示しません                                                                                                             |
+| `variant`    | property / attribute                 | いいえ | 視覚バリアント                | `default` / `subtle` / `inverse`                                                                                                                        |
+| `placement`  | property / attribute                 | いいえ | 基本配置                      | `top` / `top-start` / `top-end` / `bottom` / `bottom-start` / `bottom-end` / `left` / `left-start` / `left-end` / `right` / `right-start` / `right-end` |
+| `offset`     | property / attribute                 | いいえ | trigger と tooltip の基本距離 | 既定値は `8`。0 以上の有限数を受理します                                                                                                                |
+| `openDelay`  | property / attribute (`open-delay`)  | いいえ | 表示遅延                      | ミリ秒単位。非負の有限数として扱います                                                                                                                  |
+| `closeDelay` | property / attribute (`close-delay`) | いいえ | 非表示遅延                    | ミリ秒単位。非負の有限数として扱います                                                                                                                  |
+| `disabled`   | property / attribute                 | いいえ | tooltip 抑止                  | `true` の場合は開きません                                                                                                                               |
 
 ### 4.2 スロット契約
 
-| 名前     | 種別   | 位置づけ | 内容                              |
-| ------ | ---- | ---- | ------------------------------- |
+| 名前         | 種別 | 位置づけ | 内容                                          |
+| ------------ | ---- | -------- | --------------------------------------------- |
 | 既定スロット | slot | 正規入力 | tooltip を紐づける trigger 要素を受け取ります |
 
 既定スロットは trigger 要素を受け取ります。`ui-tooltip` は、`slot.assignedElements({ flatten: true })[0]` を優先し、存在しない場合のみ `firstElementChild` を fallback として扱います。したがって、**正規入力は 1 個の **`` です。
@@ -99,15 +99,15 @@ trigger は hover と focus の双方を受け取る要素であることを前�
 
 ### 4.5 属性反映契約
 
-| property     | attribute     | reflect | 備考                                                      |
-| ------------ | ------------- | ------- | ------------------------------------------------------- |
-| `text`       | `text`        | なし      | HTML 属性からは与えられますが、property 変更が attribute に反映される保証はありません |
-| `variant`    | `variant`     | あり      | 列挙外値は `default` に正規化します                                 |
-| `placement`  | `placement`   | あり      | 列挙外値は `top` に正規化します                                     |
-| `offset`     | `offset`      | あり      | 非有限値は `8` に正規化します                                       |
-| `openDelay`  | `open-delay`  | あり      | 非有限値または負値は `0` に正規化します                                  |
-| `closeDelay` | `close-delay` | あり      | 非有限値または負値は `0` に正規化します                                  |
-| `disabled`   | `disabled`    | あり      | boolean attribute として扱います                               |
+| property     | attribute     | reflect | 備考                                                                                  |
+| ------------ | ------------- | ------- | ------------------------------------------------------------------------------------- |
+| `text`       | `text`        | なし    | HTML 属性からは与えられますが、property 変更が attribute に反映される保証はありません |
+| `variant`    | `variant`     | あり    | 列挙外値は `default` に正規化します                                                   |
+| `placement`  | `placement`   | あり    | 列挙外値は `top` に正規化します                                                       |
+| `offset`     | `offset`      | あり    | 非有限値は `8` に正規化します                                                         |
+| `openDelay`  | `open-delay`  | あり    | 非有限値または負値は `0` に正規化します                                               |
+| `closeDelay` | `close-delay` | あり    | 非有限値または負値は `0` に正規化します                                               |
+| `disabled`   | `disabled`    | あり    | boolean attribute として扱います                                                      |
 
 ### 4.6 無効値の扱い
 
@@ -256,26 +256,26 @@ tooltip surface は小さな余白、角丸、境界線、影を持ちます。�
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途     | トークン                                     |
-| ------ | ---------------------------------------- |
-| 最大幅余白  | `--space-4`                              |
-| 内側余白   | `--space-1` / `--space-2`                |
-| 境界線幅   | `--border-width`                         |
-| 既定背景   | `--bg-surface-2`                         |
-| 控えめ背景  | `--bg-fill-muted`                        |
-| 既定文字色  | `--fg-default`                           |
+| 用途         | トークン                                 |
+| ------------ | ---------------------------------------- |
+| 最大幅余白   | `--space-4`                              |
+| 内側余白     | `--space-1` / `--space-2`                |
+| 境界線幅     | `--border-width`                         |
+| 既定背景     | `--bg-surface-2`                         |
+| 控えめ背景   | `--bg-fill-muted`                        |
+| 既定文字色   | `--fg-default`                           |
 | 控えめ文字色 | `--fg-muted`                             |
-| 既定境界線  | `--border-default`                       |
+| 既定境界線   | `--border-default`                       |
 | 控えめ境界線 | `--border-ghost`                         |
-| 角丸     | `--radius-sm`                            |
-| 影      | `--elevation-md` / `--elevation-lg`      |
-| 文字サイズ  | `--text-xs`                              |
-| 太字     | `--font-medium`                          |
-| 字間     | `--tracking-wide`                        |
-| 行高     | `--line-height-normal`                   |
-| 遷移時間   | `--duration-fast` / `--duration-instant` |
-| イージング  | `--ease-out`                             |
-| 重なり順   | `--z-popover`                            |
+| 角丸         | `--radius-sm`                            |
+| 影           | `--elevation-md` / `--elevation-lg`      |
+| 文字サイズ   | `--text-xs`                              |
+| 太字         | `--font-medium`                          |
+| 字間         | `--tracking-wide`                        |
+| 行高         | `--line-height-normal`                   |
+| 遷移時間     | `--duration-fast` / `--duration-instant` |
+| イージング   | `--ease-out`                             |
+| 重なり順     | `--z-popover`                            |
 
 ### 7.5 トークン到達性
 
@@ -411,25 +411,25 @@ tooltip panel と document style は、host と同じ `ownerDocument` の `body`
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
 
-| Story                                 | 固定する契約                                                                                                                                                                          |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DefaultInfoIcon`                     | 初期状態で panel を生成しないこと、hover / focus で開くこと、表示中のみ `aria-describedby` を付与すること、trigger が単体で名前を持つこと、focus 起因の Escape で閉じること                                                           |
-| `VariantStateMatrix`                  | `default` / `subtle` / `inverse` の 3 variant が存在すること、`disabled` では開かないこと、無効 variant が `default` に正規化されること、複数 instance が互いを自動 close しないこと、後から開いた panel が前面に来ること                  |
-| `TransformZoomContract`               | transform zoom 後も trigger と tooltip の gap が実質維持されること                                                                                                                            |
+| Story                                 | 固定する契約                                                                                                                                                                                                                                     |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `DefaultInfoIcon`                     | 初期状態で panel を生成しないこと、hover / focus で開くこと、表示中のみ `aria-describedby` を付与すること、trigger が単体で名前を持つこと、focus 起因の Escape で閉じること                                                                      |
+| `VariantStateMatrix`                  | `default` / `subtle` / `inverse` の 3 variant が存在すること、`disabled` では開かないこと、無効 variant が `default` に正規化されること、複数 instance が互いを自動 close しないこと、後から開いた panel が前面に来ること                        |
+| `TransformZoomContract`               | transform zoom 後も trigger と tooltip の gap が実質維持されること                                                                                                                                                                               |
 | `BoundaryConditions`                  | 空 text では開かないこと、無効 `variant` / `placement` / `offset` / `openDelay` / `closeDelay` が正規化されること、負の `offset` が `0` に clamp されること、trigger 不在でも破綻しないこと、切断時 cleanup が成立すること、再接続後も開けること |
-| `AriaDescribedByPreservationContract` | 既存 `aria-describedby` token の順序を保持したまま tooltip id を末尾追加すること、close / suppress / trigger replacement 時に tooltip id のみを除去すること                                                      |
-| `LiveSuppressionContract`             | open 中に `disabled=true` または `text.trim()===''` になった場合、panel が破棄され、`aria-describedby` 追加分も除去されること                                                                                |
-| `DelayReschedulingBoundary`           | `openDelay` / `closeDelay` の変更が、既に開始済み timer へ遡及適用されず、次回 schedule からのみ有効になること                                                                                                   |
-| `TriggerReplacementContract`          | open 中に trigger identity が差し替わった場合、一旦 close し、旧 trigger から説明関係が除去されること                                                                                                          |
-| `FirstTriggerOnlyBoundary`            | 複数 slotted 要素が存在する場合、先頭要素のみが trigger として扱われること                                                                                                                                  |
-| `DescendantInteractionContract`       | trigger の子孫要素上の hover / focus でも open すること                                                                                                                                      |
-| `FocusScopedEscapeContract`           | trigger subtree に focus がある場合の `Escape` close を保証し、hover-only 状態に対する `Escape` close を保証対象に含めないこと                                                                                |
-| `OwnerDocumentContract`               | panel と document style が host と同じ `ownerDocument` に対して生成・注入されること                                                                                                                |
-| `PlainProseNormalizationContract`     | `text` が HTML として解釈されず、plain prose として表示されること                                                                                                                                   |
-| `AccessibleNameRequiredBoundary`      | icon-only trigger が tooltip に依存せず、自前で可読な名前を持つこと                                                                                                                                 |
-| `DarkModeContract`                    | dark 背景上でも `default` と `inverse` が視覚的に区別でき、`z-popover` と shadow が維持されること                                                                                                        |
-| `VisualModeContracts`                 | document style が注入されること、Reduced Motion / Forced Colors / Print の定義を含むこと、初期状態で panel を生成しないこと                                                                                    |
-| `TreeItemIntegrationContract`         | 上位コンポーネントが `disabled` を切り替えることで、長いラベル時のみ tooltip を有効化できること                                                                                                                      |
+| `AriaDescribedByPreservationContract` | 既存 `aria-describedby` token の順序を保持したまま tooltip id を末尾追加すること、close / suppress / trigger replacement 時に tooltip id のみを除去すること                                                                                      |
+| `LiveSuppressionContract`             | open 中に `disabled=true` または `text.trim()===''` になった場合、panel が破棄され、`aria-describedby` 追加分も除去されること                                                                                                                    |
+| `DelayReschedulingBoundary`           | `openDelay` / `closeDelay` の変更が、既に開始済み timer へ遡及適用されず、次回 schedule からのみ有効になること                                                                                                                                   |
+| `TriggerReplacementContract`          | open 中に trigger identity が差し替わった場合、一旦 close し、旧 trigger から説明関係が除去されること                                                                                                                                            |
+| `FirstTriggerOnlyBoundary`            | 複数 slotted 要素が存在する場合、先頭要素のみが trigger として扱われること                                                                                                                                                                       |
+| `DescendantInteractionContract`       | trigger の子孫要素上の hover / focus でも open すること                                                                                                                                                                                          |
+| `FocusScopedEscapeContract`           | trigger subtree に focus がある場合の `Escape` close を保証し、hover-only 状態に対する `Escape` close を保証対象に含めないこと                                                                                                                   |
+| `OwnerDocumentContract`               | panel と document style が host と同じ `ownerDocument` に対して生成・注入されること                                                                                                                                                              |
+| `PlainProseNormalizationContract`     | `text` が HTML として解釈されず、plain prose として表示されること                                                                                                                                                                                |
+| `AccessibleNameRequiredBoundary`      | icon-only trigger が tooltip に依存せず、自前で可読な名前を持つこと                                                                                                                                                                              |
+| `DarkModeContract`                    | dark 背景上でも `default` と `inverse` が視覚的に区別でき、`z-popover` と shadow が維持されること                                                                                                                                                |
+| `VisualModeContracts`                 | document style が注入されること、Reduced Motion / Forced Colors / Print の定義を含むこと、初期状態で panel を生成しないこと                                                                                                                      |
+| `TreeItemIntegrationContract`         | 上位コンポーネントが `disabled` を切り替えることで、長いラベル時のみ tooltip を有効化できること                                                                                                                                                  |
 
 ### 11.1 運用方針
 
@@ -445,26 +445,26 @@ Story 名は、単なる視覚バリエーションではなく、**破壊的変
 
 ### 12.1 実装修正が必要な事項
 
-| 対象                          | 現状                                                                                    | 修正方針                                                                                                                    |
-| --------------------------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `tooltip.ts` の `offset` 正規化 | 非有限値は `8` に正規化しているが、負の有限値を clamp していない                                                | `willUpdate()` と `_resolvedOffset` の双方で `toNonNegativeFiniteNumber(this.offset, DEFAULT_OFFSET)` を用い、負値を `0` に clamp する |
-| `tooltip.ts` の document 参照  | style 注入と panel 生成が top-level `document.head` / `document.body` 前提になっている              | `this.ownerDocument` を基準に style 注入と panel 生成を行い、`ownerDocument` 単位で完結させる                                                |
-| `tooltip.ts` の trigger 差し替え | trigger が `null` になった場合は close するが、open 中の trigger identity 変化を明示的 close 条件としては扱っていない | `_syncTriggerElement()` で旧 trigger と新 trigger が異なる場合、open 中なら説明関係を解除したうえで一旦 close する                                    |
+| 対象                             | 現状                                                                                                                  | 修正方針                                                                                                                               |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `tooltip.ts` の `offset` 正規化  | 非有限値は `8` に正規化しているが、負の有限値を clamp していない                                                      | `willUpdate()` と `_resolvedOffset` の双方で `toNonNegativeFiniteNumber(this.offset, DEFAULT_OFFSET)` を用い、負値を `0` に clamp する |
+| `tooltip.ts` の document 参照    | style 注入と panel 生成が top-level `document.head` / `document.body` 前提になっている                                | `this.ownerDocument` を基準に style 注入と panel 生成を行い、`ownerDocument` 単位で完結させる                                          |
+| `tooltip.ts` の trigger 差し替え | trigger が `null` になった場合は close するが、open 中の trigger identity 変化を明示的 close 条件としては扱っていない | `_syncTriggerElement()` で旧 trigger と新 trigger が異なる場合、open 中なら説明関係を解除したうえで一旦 close する                     |
 
 ### 12.2 Story 追加・修正が必要な事項
 
-| 対象                   | 現状                                                 | 修正方針                                                                                     |
-| -------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `BoundaryConditions` | `offset="NaN"` は見ているが、負の `offset` clamp は未検証       | 負の `offset` 例を追加し、`host.offset === 0` を確認する                                              |
-| `BoundaryConditions` | reconnect は見ているが、trigger 差し替えは未検証                  | `TriggerReplacementContract` を追加し、open 中に trigger を差し替えたら close することを確認する                |
-| `DefaultInfoIcon`    | `aria-describedby` の追加 / 除去は見るが、既存 token の順序保持は未検証 | `AriaDescribedByPreservationContract` を追加し、既存 token が壊れないことを確認する                         |
-| delay 系 Story        | invalid 値正規化は見るが、pending timer 中の prop 変更は未検証      | `DelayReschedulingBoundary` を追加し、既存 timer へ遡及しないことを確認する                                  |
-| suppress 系 Story     | 初期 suppress は見るが、open 中 suppress は未検証              | `LiveSuppressionContract` を追加し、open 中 `disabled` / 空 text 化で close することを確認する             |
-| trigger 境界           | 複数 slotted 要素や子孫 interaction を未検証                  | `FirstTriggerOnlyBoundary` と `DescendantInteractionContract` を追加する                       |
-| Escape 境界            | focus 起因の Escape close は見るが、hover-only 非保証は未検証     | `FocusScopedEscapeContract` を追加する                                                        |
-| ownerDocument        | `document.getElementById(...)` を直接見ている             | `host.ownerDocument.getElementById(...)` を使うように Story を修正し、`OwnerDocumentContract` を追加する |
-| prose 契約             | plain prose の非 HTML 解釈を未検証                         | `PlainProseNormalizationContract` を追加する                                                  |
-| accessible name      | 正例はあるが、境界 Story がない                                | `AccessibleNameRequiredBoundary` を追加する                                                   |
+| 対象                 | 現状                                                                    | 修正方針                                                                                                 |
+| -------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `BoundaryConditions` | `offset="NaN"` は見ているが、負の `offset` clamp は未検証               | 負の `offset` 例を追加し、`host.offset === 0` を確認する                                                 |
+| `BoundaryConditions` | reconnect は見ているが、trigger 差し替えは未検証                        | `TriggerReplacementContract` を追加し、open 中に trigger を差し替えたら close することを確認する         |
+| `DefaultInfoIcon`    | `aria-describedby` の追加 / 除去は見るが、既存 token の順序保持は未検証 | `AriaDescribedByPreservationContract` を追加し、既存 token が壊れないことを確認する                      |
+| delay 系 Story       | invalid 値正規化は見るが、pending timer 中の prop 変更は未検証          | `DelayReschedulingBoundary` を追加し、既存 timer へ遡及しないことを確認する                              |
+| suppress 系 Story    | 初期 suppress は見るが、open 中 suppress は未検証                       | `LiveSuppressionContract` を追加し、open 中 `disabled` / 空 text 化で close することを確認する           |
+| trigger 境界         | 複数 slotted 要素や子孫 interaction を未検証                            | `FirstTriggerOnlyBoundary` と `DescendantInteractionContract` を追加する                                 |
+| Escape 境界          | focus 起因の Escape close は見るが、hover-only 非保証は未検証           | `FocusScopedEscapeContract` を追加する                                                                   |
+| ownerDocument        | `document.getElementById(...)` を直接見ている                           | `host.ownerDocument.getElementById(...)` を使うように Story を修正し、`OwnerDocumentContract` を追加する |
+| prose 契約           | plain prose の非 HTML 解釈を未検証                                      | `PlainProseNormalizationContract` を追加する                                                             |
+| accessible name      | 正例はあるが、境界 Story がない                                         | `AccessibleNameRequiredBoundary` を追加する                                                              |
 
 ### 12.3 修正優先順位
 
@@ -620,4 +620,3 @@ panel は body 配下に生成され、`::part(...)` も公開していません
 ### 15.8 本節の扱い
 
 本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用する場合は、実装、Storybook、契約書の 3 点を同時に更新し、未対応状態を残したまま公開契約へ昇格させません。
-

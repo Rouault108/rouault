@@ -55,32 +55,32 @@ Rouault における textarea は、UI 上の入力欄であるだけでなく�
 
 ### 入力契約
 
-| 名前 | 種別 | 必須 | 内容 | 契約 |
-| --- | --- | --- | --- | --- |
-| `label` | property / attribute | はい | 入力欄のラベル | 空文字・空白のみは不可です |
-| `hideLabel` | property / attribute (`hide-label`) | いいえ | ラベルの視覚非表示 | 視覚的にのみ隠し、名前付け自体は維持します |
-| `name` | property / attribute | いいえ | フォーム送信名 | 未指定時は送信対象に含めません |
-| `placeholder` | property / attribute | いいえ | プレースホルダー | 補助的ヒントであり、ラベル代替にはしません |
-| `value` | property | いいえ | 現在値 | 現在値の正本です。外部からの代入でも内部値と高さ再計算は同期しますが、`input` / `change` は自動発火しません |
-| `defaultValue` | property / attribute (`default-value`) | いいえ | 初期値 | 初期表示値かつ reset 基準値です |
-| `helpText` | property / attribute (`help-text`) | いいえ | 補助テキスト | 入力意図や制約を示す常設説明です |
-| `errorMessage` | property / attribute (`error-message`) | いいえ | エラーメッセージ | 可視エラー文言です。UI 文言の唯一の正規ソースです |
-| `error` | property / attribute | いいえ | 強制 invalid 状態 | `true` の場合、ネイティブ validity より優先します |
-| `disabled` | property / attribute | いいえ | 操作無効 | 非操作・非検証・非送信として扱います |
-| `readonly` | property / attribute | いいえ | 読み取り専用 | 非編集だが可フォーカス・可送信として扱います |
-| `required` | property / attribute | いいえ | 必須入力 | 公開検証面として正規に依存できる native validity です |
-| `variant` | property / attribute | いいえ | タイポグラフィモード | `default` / `prose`。表示密度と可読性だけを切り替えます |
-| `rows` | property / attribute | いいえ | 最小表示行数 | 正の整数として扱い、`1` 未満は `1` に正規化します |
-| `maxRows` | property / attribute (`max-rows`) | いいえ | 自動伸長時の最大行数 | 未指定でなければ `rows` 以上に正規化します |
-| `autoGrow` | property / attribute (`auto-grow`) | いいえ | 自動高さ拡張 | 既定値は `true` です |
-| `resize` | property / attribute | いいえ | 手動リサイズ方向 | `none` / `vertical`。実効性があるのは `autoGrow=false` 時のみです |
+| 名前           | 種別                                   | 必須   | 内容                 | 契約                                                                                                        |
+| -------------- | -------------------------------------- | ------ | -------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `label`        | property / attribute                   | はい   | 入力欄のラベル       | 空文字・空白のみは不可です                                                                                  |
+| `hideLabel`    | property / attribute (`hide-label`)    | いいえ | ラベルの視覚非表示   | 視覚的にのみ隠し、名前付け自体は維持します                                                                  |
+| `name`         | property / attribute                   | いいえ | フォーム送信名       | 未指定時は送信対象に含めません                                                                              |
+| `placeholder`  | property / attribute                   | いいえ | プレースホルダー     | 補助的ヒントであり、ラベル代替にはしません                                                                  |
+| `value`        | property                               | いいえ | 現在値               | 現在値の正本です。外部からの代入でも内部値と高さ再計算は同期しますが、`input` / `change` は自動発火しません |
+| `defaultValue` | property / attribute (`default-value`) | いいえ | 初期値               | 初期表示値かつ reset 基準値です                                                                             |
+| `helpText`     | property / attribute (`help-text`)     | いいえ | 補助テキスト         | 入力意図や制約を示す常設説明です                                                                            |
+| `errorMessage` | property / attribute (`error-message`) | いいえ | エラーメッセージ     | 可視エラー文言です。UI 文言の唯一の正規ソースです                                                           |
+| `error`        | property / attribute                   | いいえ | 強制 invalid 状態    | `true` の場合、ネイティブ validity より優先します                                                           |
+| `disabled`     | property / attribute                   | いいえ | 操作無効             | 非操作・非検証・非送信として扱います                                                                        |
+| `readonly`     | property / attribute                   | いいえ | 読み取り専用         | 非編集だが可フォーカス・可送信として扱います                                                                |
+| `required`     | property / attribute                   | いいえ | 必須入力             | 公開検証面として正規に依存できる native validity です                                                       |
+| `variant`      | property / attribute                   | いいえ | タイポグラフィモード | `default` / `prose`。表示密度と可読性だけを切り替えます                                                     |
+| `rows`         | property / attribute                   | いいえ | 最小表示行数         | 正の整数として扱い、`1` 未満は `1` に正規化します                                                           |
+| `maxRows`      | property / attribute (`max-rows`)      | いいえ | 自動伸長時の最大行数 | 未指定でなければ `rows` 以上に正規化します                                                                  |
+| `autoGrow`     | property / attribute (`auto-grow`)     | いいえ | 自動高さ拡張         | 既定値は `true` です                                                                                        |
+| `resize`       | property / attribute                   | いいえ | 手動リサイズ方向     | `none` / `vertical`。実効性があるのは `autoGrow=false` 時のみです                                           |
 
 ### 列挙値契約
 
-| 名前 | 受理値 | 既定値 | 契約 |
-| --- | --- | --- | --- |
-| `variant` | `default` / `prose` | `default` | 表示密度・行間・余白の切替に用います |
-| `resize` | `none` / `vertical` | `none` | `autoGrow=false` 時のみ `vertical` を正規運用とします |
+| 名前      | 受理値              | 既定値    | 契約                                                  |
+| --------- | ------------------- | --------- | ----------------------------------------------------- |
+| `variant` | `default` / `prose` | `default` | 表示密度・行間・余白の切替に用います                  |
+| `resize`  | `none` / `vertical` | `none`    | `autoGrow=false` 時のみ `vertical` を正規運用とします |
 
 列挙外文字列を属性として与えること自体は技術的には可能ですが、公開契約には含めません。利用者は列挙外値に依存してはなりません（MUST NOT）。
 
@@ -94,24 +94,24 @@ Rouault における textarea は、UI 上の入力欄であるだけでなく�
 
 `ui-textarea` は、Shadow DOM 内部の textarea を外部から安全に操作するため、次の公開メソッドを持ちます。
 
-| 名前 | 種別 | 契約 |
-| --- | --- | --- |
-| `focus(options?)` | method | 内部 textarea にフォーカスを委譲します |
-| `blur()` | method | 内部 textarea からフォーカスを外します |
-| `select()` | method | 内部 textarea のテキストを選択します |
-| `checkValidity()` | method | 現在の公開検証面を同期したうえで真偽値を返します |
+| 名前               | 種別   | 契約                                                 |
+| ------------------ | ------ | ---------------------------------------------------- |
+| `focus(options?)`  | method | 内部 textarea にフォーカスを委譲します               |
+| `blur()`           | method | 内部 textarea からフォーカスを外します               |
+| `select()`         | method | 内部 textarea のテキストを選択します                 |
+| `checkValidity()`  | method | 現在の公開検証面を同期したうえで真偽値を返します     |
 | `reportValidity()` | method | 現在の公開検証面を同期したうえで検証結果を報告します |
 
 ### フォーム関連付け契約
 
 `ui-textarea` は Form Associated Custom Element として実装されます。したがって、`value` は内部 textarea の値であると同時に、フォーム送信値としても扱います。
 
-| 条件 | 振る舞い |
-| --- | --- |
-| `name` 未指定 | 送信対象に含めません |
-| 通常入力 | `value` をフォーム値として保持します |
-| `formResetCallback()` | `defaultValue` に戻します |
-| `formDisabledCallback(true)` | コンポーネント全体を無効化します |
+| 条件                              | 振る舞い                                                                                                  |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `name` 未指定                     | 送信対象に含めません                                                                                      |
+| 通常入力                          | `value` をフォーム値として保持します                                                                      |
+| `formResetCallback()`             | `defaultValue` に戻します                                                                                 |
+| `formDisabledCallback(true)`      | コンポーネント全体を無効化します                                                                          |
 | `formStateRestoreCallback(state)` | 文字列 state のみを復元対象の現在値として `value` に反映します。`File` / `FormData` / `null` は無視します |
 
 ### 値所有権と reset 基準値契約
@@ -124,25 +124,25 @@ Rouault における textarea は、UI 上の入力欄であるだけでなく�
 
 公開入力のうち、`label`、`hideLabel`、`name`、`placeholder`、`defaultValue`、`helpText`、`errorMessage`、`error`、`disabled`、`readonly`、`required`、`variant`、`rows`、`maxRows`、`autoGrow`、`resize` は reflect されます。`value` は reflect されません。
 
-| property | attribute | reflect | 備考 |
-| --- | --- | --- | --- |
-| `label` | `label` | あり | 必須契約です |
-| `hideLabel` | `hide-label` | あり | boolean attribute です |
-| `name` | `name` | あり | フォーム送信名です |
-| `placeholder` | `placeholder` | あり | 補助的ヒントです |
-| `value` | なし | なし | 現在値であり property ベースで扱います |
-| `defaultValue` | `default-value` | あり | 初期値および reset 基準値です |
-| `helpText` | `help-text` | あり | 補助テキストです |
-| `errorMessage` | `error-message` | あり | 可視エラー文言です |
-| `error` | `error` | あり | boolean attribute です |
-| `disabled` | `disabled` | あり | boolean attribute です |
-| `readonly` | `readonly` | あり | boolean attribute です |
-| `required` | `required` | あり | boolean attribute です |
-| `variant` | `variant` | あり | `default` / `prose` |
-| `rows` | `rows` | あり | 正の整数として扱います |
-| `maxRows` | `max-rows` | あり | `rows` 以上に正規化します |
-| `autoGrow` | `auto-grow` | あり | 既定値は `true` です |
-| `resize` | `resize` | あり | `none` / `vertical` |
+| property       | attribute       | reflect | 備考                                   |
+| -------------- | --------------- | ------- | -------------------------------------- |
+| `label`        | `label`         | あり    | 必須契約です                           |
+| `hideLabel`    | `hide-label`    | あり    | boolean attribute です                 |
+| `name`         | `name`          | あり    | フォーム送信名です                     |
+| `placeholder`  | `placeholder`   | あり    | 補助的ヒントです                       |
+| `value`        | なし            | なし    | 現在値であり property ベースで扱います |
+| `defaultValue` | `default-value` | あり    | 初期値および reset 基準値です          |
+| `helpText`     | `help-text`     | あり    | 補助テキストです                       |
+| `errorMessage` | `error-message` | あり    | 可視エラー文言です                     |
+| `error`        | `error`         | あり    | boolean attribute です                 |
+| `disabled`     | `disabled`      | あり    | boolean attribute です                 |
+| `readonly`     | `readonly`      | あり    | boolean attribute です                 |
+| `required`     | `required`      | あり    | boolean attribute です                 |
+| `variant`      | `variant`       | あり    | `default` / `prose`                    |
+| `rows`         | `rows`          | あり    | 正の整数として扱います                 |
+| `maxRows`      | `max-rows`      | あり    | `rows` 以上に正規化します              |
+| `autoGrow`     | `auto-grow`     | あり    | 既定値は `true` です                   |
+| `resize`       | `resize`        | あり    | `none` / `vertical`                    |
 
 ### 責務範囲
 
@@ -164,10 +164,10 @@ Rouault における textarea は、UI 上の入力欄であるだけでなく�
 
 `variant` は入力内容の用途に応じたタイポグラフィ差分です。
 
-| `variant` 値 | 意味 | 想定用途 |
-| --- | --- | --- |
-| `default` | UI 用の密度優先 | メモ、設定、短い説明文 |
-| `prose` | 可読性優先 | 本文、長文、執筆欄 |
+| `variant` 値 | 意味            | 想定用途               |
+| ------------ | --------------- | ---------------------- |
+| `default`    | UI 用の密度優先 | メモ、設定、短い説明文 |
+| `prose`      | 可読性優先      | 本文、長文、執筆欄     |
 
 `default` は `14px` 相当、標準行間、ややコンパクトな余白を前提とします。`prose` は `16px` 相当、ゆったりした行間、少し大きい余白を前提とします。
 
@@ -254,12 +254,12 @@ Rouault における textarea は、UI 上の入力欄であるだけでなく�
 
 本コンポーネントでは、補助文とエラー文を排他的には扱いません。説明順序は常に **help → error** です。
 
-| 状態 | `aria-describedby` |
-| --- | --- |
-| `helpText` のみ | help text の ID |
-| `errorMessage` のみ | error message の ID |
+| 状態                                    | `aria-describedby`                                    |
+| --------------------------------------- | ----------------------------------------------------- |
+| `helpText` のみ                         | help text の ID                                       |
+| `errorMessage` のみ                     | error message の ID                                   |
 | `helpText` と `errorMessage` の両方あり | help text の ID と error message の ID をこの順で連結 |
-| どちらもなし | 未設定 |
+| どちらもなし                            | 未設定                                                |
 
 したがって、補助文が入力意図を説明し、エラー文が現在の不整合を説明するという役割分担を維持します。
 
@@ -303,27 +303,27 @@ Auto Grow は装飾ではなく、**入力行為を中断しないための振�
 
 本コンポーネントは主として次のトークンに依存します。
 
-| 用途 | トークン |
-| --- | --- |
-| 通常背景 | `--bg-fill-muted` |
-| フォーカス背景 | `--bg-default` |
-| エラー背景 | `--bg-danger-subtle` |
-| 通常文字色 | `--fg-default` |
-| 無効時文字色 | `--fg-subtle` |
-| 補助文文字色 | `--fg-muted` |
-| エラー文字色 | `--fg-danger` |
-| 通常ボーダー色 | `--border-default` |
-| エラーボーダー色 | `--border-danger` |
-| ボーダー幅 | `--border-width` / `--border-width-thick` |
-| 角丸 | `--radius-md` / `--radius-full` |
-| フォントウェイト | `--font-medium` |
-| 文字間隔 | `--tracking-normal` |
+| 用途             | トークン                                                                                  |
+| ---------------- | ----------------------------------------------------------------------------------------- |
+| 通常背景         | `--bg-fill-muted`                                                                         |
+| フォーカス背景   | `--bg-default`                                                                            |
+| エラー背景       | `--bg-danger-subtle`                                                                      |
+| 通常文字色       | `--fg-default`                                                                            |
+| 無効時文字色     | `--fg-subtle`                                                                             |
+| 補助文文字色     | `--fg-muted`                                                                              |
+| エラー文字色     | `--fg-danger`                                                                             |
+| 通常ボーダー色   | `--border-default`                                                                        |
+| エラーボーダー色 | `--border-danger`                                                                         |
+| ボーダー幅       | `--border-width` / `--border-width-thick`                                                 |
+| 角丸             | `--radius-md` / `--radius-full`                                                           |
+| フォントウェイト | `--font-medium`                                                                           |
+| 文字間隔         | `--tracking-normal`                                                                       |
 | フォーカスリング | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
-| 余白 | `--space-1` / `--space-2` / `--space-3` |
-| 文字サイズ | `--text-sm` / `--text-base` / `--text-lg` |
-| 行間 | `--line-height-normal` / `--line-height-relaxed` |
-| 遷移 | `--duration-fast` / `--ease-out` |
-| スクロールバー | `--scrollbar-width` / `--scrollbar-thumb` / `--scrollbar-thumb-hover` |
+| 余白             | `--space-1` / `--space-2` / `--space-3`                                                   |
+| 文字サイズ       | `--text-sm` / `--text-base` / `--text-lg`                                                 |
+| 行間             | `--line-height-normal` / `--line-height-relaxed`                                          |
+| 遷移             | `--duration-fast` / `--ease-out`                                                          |
+| スクロールバー   | `--scrollbar-width` / `--scrollbar-thumb` / `--scrollbar-thumb-hover`                     |
 
 なお、ソース JSDoc には `--opacity-disabled` が現れますが、現行 CSS はこのトークンを実際には参照していません。したがって、**現時点では公開ランタイム契約に含めません。**
 
@@ -355,11 +355,11 @@ Auto Grow は装飾ではなく、**入力行為を中断しないための振�
 
 `ui-textarea` は、入力変更とフォーカス遷移をホストで扱えるようにします。
 
-| イベント | 契約 |
-| --- | --- |
-| `input` | ユーザー入力に起因する現在値変更時に発生します |
-| `change` | ユーザー操作によるコミットタイミングで発生します |
-| `focusin` | 内部 textarea がフォーカスを受けたことをホストで観測できます |
+| イベント   | 契約                                                           |
+| ---------- | -------------------------------------------------------------- |
+| `input`    | ユーザー入力に起因する現在値変更時に発生します                 |
+| `change`   | ユーザー操作によるコミットタイミングで発生します               |
+| `focusin`  | 内部 textarea がフォーカスを受けたことをホストで観測できます   |
 | `focusout` | 内部 textarea からフォーカスが外れたことをホストで観測できます |
 
 ここでいうイベントは、**ユーザー操作に起因する状態遷移の通知**です。外部から `value` を代入した場合、内部値同期と高さ再計算は行いますが、`input` / `change` を再送しません。利用者は、プログラム更新の検知に DOM イベントではなく自身の状態管理を用いる必要があります。
@@ -450,37 +450,37 @@ invalid 状態は成立します。ただし、可視エラー文言は表示さ
 
 各 Story は見本ではなく、**公開契約の確認点**として扱います。内部 class や Shadow DOM 詳細の観測は、この節の対象外です。
 
-| Story | 固定する契約 |
-| --- | --- |
-| `Default` | 既定 `variant` が `default`、`rows=3` であること |
-| `VariantDefault` | `default` が表示密度優先モードとして描画されること |
-| `VariantProse` | `prose` が長文向け表示モードとして描画されること |
-| `ErrorState` | invalid 状態、可視エラーメッセージ、`aria-describedby` による error 参照が成立すること |
-| `ErrorStateProse` | `prose` でも error 表示が同様に成立すること |
-| `StateDisabled` | disabled 状態で非操作・非送信として扱われること |
-| `StateReadonly` | readonly 状態で非編集だが可フォーカス・可送信であること |
-| `WithHelpText` | help text が常設説明として描画されること |
-| `HelpAndError` | help と error が併存し、順序が help → error であること |
-| `HiddenLabel` | 視覚非表示でも label ベースの名前付け契約が維持されること |
-| `AutoGrow` | 入力増加で高さが伸び、空に戻すと最小高さへ戻ること |
-| `MaxRows` | `maxRows` 超過時のみ内部スクロールへ切り替わること |
-| `AutoGrowDisabled` | `autoGrow=false` と `resize="vertical"` の組み合わせが成立すること |
-| `AllVariantsAndStates` | variant × state の主要組み合わせが描画できること |
-| `EventFiring` | ユーザー操作時に `input` / `change` を外部で観測できること |
-| `FocusEvents` | `focus()` により内部 textarea へフォーカスが移り、`focusin` / `focusout` を観測できること |
-| `BoundaryRows1` | `rows=1` でも伸長契約が壊れないこと |
-| `BoundaryRowsNormalization` | `rows<=0` が `1` に正規化されること |
-| `BoundaryMaxRowsNormalization` | `maxRows<rows` が `rows` に正規化されること |
-| `BoundaryEmptyLabel` | 空ラベルが契約違反として検知されること |
-| `BoundaryErrorWithoutMessage` | メッセージなしでも invalid 状態が成立すること |
-| `BoundaryDisabledAndError` | disabled と error の併存時にフォーム意味として disabled が優先されること |
-| `BoundaryRequired` | required による invalid が働くこと |
-| `BoundaryProgrammaticValue` | プログラム更新でも高さ再計算が行われ、`input` / `change` は自動発火しないこと |
-| `LayoutResizeRecalc` | 幅変化やタイポグラフィ変化で再計測が行われること |
-| `DarkModePreview` | トークン差し替え環境でもラベル・値・説明構造が維持されること |
-| `ForcedColorsPreview` | 強制カラー環境でも error / disabled の構造が維持されること |
-| `ReducedMotionPreview` | reduced motion 相当で遷移が短縮されること |
-| `PrintPreview` | 印刷時にも内容可読性が維持されること |
+| Story                          | 固定する契約                                                                              |
+| ------------------------------ | ----------------------------------------------------------------------------------------- |
+| `Default`                      | 既定 `variant` が `default`、`rows=3` であること                                          |
+| `VariantDefault`               | `default` が表示密度優先モードとして描画されること                                        |
+| `VariantProse`                 | `prose` が長文向け表示モードとして描画されること                                          |
+| `ErrorState`                   | invalid 状態、可視エラーメッセージ、`aria-describedby` による error 参照が成立すること    |
+| `ErrorStateProse`              | `prose` でも error 表示が同様に成立すること                                               |
+| `StateDisabled`                | disabled 状態で非操作・非送信として扱われること                                           |
+| `StateReadonly`                | readonly 状態で非編集だが可フォーカス・可送信であること                                   |
+| `WithHelpText`                 | help text が常設説明として描画されること                                                  |
+| `HelpAndError`                 | help と error が併存し、順序が help → error であること                                    |
+| `HiddenLabel`                  | 視覚非表示でも label ベースの名前付け契約が維持されること                                 |
+| `AutoGrow`                     | 入力増加で高さが伸び、空に戻すと最小高さへ戻ること                                        |
+| `MaxRows`                      | `maxRows` 超過時のみ内部スクロールへ切り替わること                                        |
+| `AutoGrowDisabled`             | `autoGrow=false` と `resize="vertical"` の組み合わせが成立すること                        |
+| `AllVariantsAndStates`         | variant × state の主要組み合わせが描画できること                                          |
+| `EventFiring`                  | ユーザー操作時に `input` / `change` を外部で観測できること                                |
+| `FocusEvents`                  | `focus()` により内部 textarea へフォーカスが移り、`focusin` / `focusout` を観測できること |
+| `BoundaryRows1`                | `rows=1` でも伸長契約が壊れないこと                                                       |
+| `BoundaryRowsNormalization`    | `rows<=0` が `1` に正規化されること                                                       |
+| `BoundaryMaxRowsNormalization` | `maxRows<rows` が `rows` に正規化されること                                               |
+| `BoundaryEmptyLabel`           | 空ラベルが契約違反として検知されること                                                    |
+| `BoundaryErrorWithoutMessage`  | メッセージなしでも invalid 状態が成立すること                                             |
+| `BoundaryDisabledAndError`     | disabled と error の併存時にフォーム意味として disabled が優先されること                  |
+| `BoundaryRequired`             | required による invalid が働くこと                                                        |
+| `BoundaryProgrammaticValue`    | プログラム更新でも高さ再計算が行われ、`input` / `change` は自動発火しないこと             |
+| `LayoutResizeRecalc`           | 幅変化やタイポグラフィ変化で再計測が行われること                                          |
+| `DarkModePreview`              | トークン差し替え環境でもラベル・値・説明構造が維持されること                              |
+| `ForcedColorsPreview`          | 強制カラー環境でも error / disabled の構造が維持されること                                |
+| `ReducedMotionPreview`         | reduced motion 相当で遷移が短縮されること                                                 |
+| `PrintPreview`                 | 印刷時にも内容可読性が維持されること                                                      |
 
 ---
 
@@ -656,4 +656,3 @@ invalid 状態は成立します。ただし、可視エラー文言は表示さ
 ### 本節の扱い
 
 本節に記載した差分は、実装を否定するためのものではありません。契約、実装、Storybook を今後整合させるための差分一覧です。これらを解消する際は、契約書、実装、Storybook の 3 点を同時に更新し、どれか一つだけを先行させないことが重要です。
-

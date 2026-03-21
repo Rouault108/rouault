@@ -109,18 +109,18 @@ Rouault の通常の読書文脈では、Overlay は dialog ではなく、**一
 
 `ui-sidebar-shell` は次の公開入力を持ちます。
 
-| 名前 | 種別 | 必須 | 内容 | 契約 |
-| --- | --- | --- | --- | --- |
-| `state` | property / attribute (`data-state`) | いいえ | controlled な開閉状態 | `expanded` / `collapsed` |
-| `defaultState` | property / attribute (`default-state`) | いいえ | uncontrolled 初期状態 | `expanded` / `collapsed`。既定値は `expanded` |
-| `mode` | property / attribute | いいえ | モード指定 | `fixed` / `overlay` / `auto`。既定値は `auto` |
-| `resolvedMode` | read-only property | はい | 実効モード | `fixed` / `overlay` |
-| `fixedBreakpoint` | property / attribute (`fixed-breakpoint`) | いいえ | `mode="auto"` 時の切替幅 | 数値。既定値は `1280` |
-| `persist` | property / attribute | いいえ | state 永続化可否 | `true` / `false`。既定値は `true` |
-| `persistenceKey` | property / attribute (`persistence-key`) | いいえ | 永続化キー | 文字列。既定値は `rouault.sidebar.state` |
-| `navLabel` | property / attribute (`nav-label`) | いいえ | `nav` の accessible name | 文字列。既定値はローカライズ層で供給 |
+| 名前                 | 種別                                          | 必須   | 内容                               | 契約                                                            |
+| -------------------- | --------------------------------------------- | ------ | ---------------------------------- | --------------------------------------------------------------- |
+| `state`              | property / attribute (`data-state`)           | いいえ | controlled な開閉状態              | `expanded` / `collapsed`                                        |
+| `defaultState`       | property / attribute (`default-state`)        | いいえ | uncontrolled 初期状態              | `expanded` / `collapsed`。既定値は `expanded`                   |
+| `mode`               | property / attribute                          | いいえ | モード指定                         | `fixed` / `overlay` / `auto`。既定値は `auto`                   |
+| `resolvedMode`       | read-only property                            | はい   | 実効モード                         | `fixed` / `overlay`                                             |
+| `fixedBreakpoint`    | property / attribute (`fixed-breakpoint`)     | いいえ | `mode="auto"` 時の切替幅           | 数値。既定値は `1280`                                           |
+| `persist`            | property / attribute                          | いいえ | state 永続化可否                   | `true` / `false`。既定値は `true`                               |
+| `persistenceKey`     | property / attribute (`persistence-key`)      | いいえ | 永続化キー                         | 文字列。既定値は `rouault.sidebar.state`                        |
+| `navLabel`           | property / attribute (`nav-label`)            | いいえ | `nav` の accessible name           | 文字列。既定値はローカライズ層で供給                            |
 | `initialFocusPolicy` | property / attribute (`initial-focus-policy`) | いいえ | Overlay 展開時の初期フォーカス方針 | `current-item` / `header-action` / `first-interactive` / `none` |
-| `restoreFocusPolicy` | property / attribute (`restore-focus-policy`) | いいえ | Overlay 格納時のフォーカス復帰方針 | `trigger` / `previous-active-element` / `none` |
+| `restoreFocusPolicy` | property / attribute (`restore-focus-policy`) | いいえ | Overlay 格納時のフォーカス復帰方針 | `trigger` / `previous-active-element` / `none`                  |
 
 #### Normative
 
@@ -152,10 +152,10 @@ Rouault の通常の読書文脈では、Overlay は dialog ではなく、**一
 
 `ui-sidebar-shell` は次のスロットを持ちます。
 
-| 名前 | 種別 | 位置づけ | 内容 |
-| --- | --- | --- | --- |
-| 既定スロット | slot | 正規入力 | ナビゲーション本文 |
-| `header` | named slot | Overlay 補助入力 | Overlay 表示時の補助ヘッダー |
+| 名前         | 種別       | 位置づけ         | 内容                         |
+| ------------ | ---------- | ---------------- | ---------------------------- |
+| 既定スロット | slot       | 正規入力         | ナビゲーション本文           |
+| `header`     | named slot | Overlay 補助入力 | Overlay 表示時の補助ヘッダー |
 
 #### Normative
 
@@ -177,11 +177,11 @@ Rouault の通常の読書文脈では、Overlay は dialog ではなく、**一
 
 `ui-sidebar-shell` は次の公開メソッドを持ちます。
 
-| 名前 | 種別 | 契約 |
-| --- | --- | --- |
-| `expand(trigger?)` | method | 展開要求を行います |
-| `collapse(reason?)` | method | 格納要求を行います |
-| `toggle(trigger?)` | method | 現在の state に応じて展開・格納要求を切り替えます |
+| 名前                   | 種別   | 契約                                                             |
+| ---------------------- | ------ | ---------------------------------------------------------------- |
+| `expand(trigger?)`     | method | 展開要求を行います                                               |
+| `collapse(reason?)`    | method | 格納要求を行います                                               |
+| `toggle(trigger?)`     | method | 現在の state に応じて展開・格納要求を切り替えます                |
 | `focusInitialTarget()` | method | 現在の `initialFocusPolicy` に従って初期フォーカスを再実行します |
 
 #### Normative
@@ -254,12 +254,12 @@ attribute と property が競合する場合、**直近で設定されたもの*
 
 Overlay 展開時の初期フォーカスは `initialFocusPolicy` に従います。
 
-| 値 | 契約 |
-| --- | --- |
-| `current-item` | `aria-current="page"` を持つ要素を優先します |
-| `header-action` | `header` スロット内の最初の対話要素を優先します |
-| `first-interactive` | shell 内の最初の対話要素を優先します |
-| `none` | 自動フォーカス移動を行いません |
+| 値                  | 契約                                            |
+| ------------------- | ----------------------------------------------- |
+| `current-item`      | `aria-current="page"` を持つ要素を優先します    |
+| `header-action`     | `header` スロット内の最初の対話要素を優先します |
+| `first-interactive` | shell 内の最初の対話要素を優先します            |
+| `none`              | 自動フォーカス移動を行いません                  |
 
 #### Normative
 
@@ -273,11 +273,11 @@ Overlay 展開時の初期フォーカスは `initialFocusPolicy` に従いま�
 
 Overlay 格納時のフォーカス復帰は `restoreFocusPolicy` に従います。
 
-| 値 | 契約 |
-| --- | --- |
-| `trigger` | 直近の開閉トリガー候補へ復帰します |
+| 値                        | 契約                                  |
+| ------------------------- | ------------------------------------- |
+| `trigger`                 | 直近の開閉トリガー候補へ復帰します    |
 | `previous-active-element` | 展開前の `activeElement` へ復帰します |
-| `none` | 自動復帰を行いません |
+| `none`                    | 自動復帰を行いません                  |
 
 #### Normative
 
@@ -295,12 +295,12 @@ Overlay 格納時のフォーカス復帰は `restoreFocusPolicy` に従いま�
 
 本コンポーネントは、少なくとも次の公開イベントを持ちます。
 
-| イベント名 | 内容 | cancelable |
-| --- | --- | --- |
-| `ui-sidebar-state-will-change` | state 変更が受理されたことを示します | いいえ |
-| `ui-sidebar-state-change` | 論理状態変更が確定したことを示します | いいえ |
-| `ui-sidebar-state-settled` | 主視覚遷移が完了したことを示します | いいえ |
-| `ui-sidebar-resolved-mode-change` | `resolvedMode` が変化したことを示します | いいえ |
+| イベント名                        | 内容                                    | cancelable |
+| --------------------------------- | --------------------------------------- | ---------- |
+| `ui-sidebar-state-will-change`    | state 変更が受理されたことを示します    | いいえ     |
+| `ui-sidebar-state-change`         | 論理状態変更が確定したことを示します    | いいえ     |
+| `ui-sidebar-state-settled`        | 主視覚遷移が完了したことを示します      | いいえ     |
+| `ui-sidebar-resolved-mode-change` | `resolvedMode` が変化したことを示します | いいえ     |
 
 #### Normative
 
@@ -921,4 +921,3 @@ tree / list / menu のキーボード責務まで shell が抱えるべきでは
 6. フォーカス開始位置と復帰方針を policy として公開入力化すること。
 7. 永続化は uncontrolled state に限定すること。
 8. 読書面の主役性を壊さないこと。
-

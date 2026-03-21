@@ -52,17 +52,17 @@
 
 ### 入力契約
 
-| 名前               | 種別                                       | 必須     | 内容                | 契約                                 |
-| ---------------- | ---------------------------------------- | ------ | ----------------- | ---------------------------------- |
-| `density`        | property / attribute                     | いいえ    | 行密度               | `normal` / `compact`。既定値は `normal` |
-| `scrollMode`     | property / attribute                     | いいえ    | スクロール領域の公開方針      | `auto` / `always`。既定値は `auto`      |
-| `ariaLabel`      | property / attribute (`aria-label`)      | 条件付き必須 | スクロール領域のアクセシブルネーム | `ariaLabelledby` がない場合は必須          |
-| `ariaLabelledby` | property / attribute (`aria-labelledby`) | 条件付き必須 | スクロール領域の参照ラベル     | `ariaLabel` がない場合は必須               |
+| 名前             | 種別                                     | 必須         | 内容                               | 契約                                    |
+| ---------------- | ---------------------------------------- | ------------ | ---------------------------------- | --------------------------------------- |
+| `density`        | property / attribute                     | いいえ       | 行密度                             | `normal` / `compact`。既定値は `normal` |
+| `scrollMode`     | property / attribute                     | いいえ       | スクロール領域の公開方針           | `auto` / `always`。既定値は `auto`      |
+| `ariaLabel`      | property / attribute (`aria-label`)      | 条件付き必須 | スクロール領域のアクセシブルネーム | `ariaLabelledby` がない場合は必須       |
+| `ariaLabelledby` | property / attribute (`aria-labelledby`) | 条件付き必須 | スクロール領域の参照ラベル         | `ariaLabel` がない場合は必須            |
 
 ### スロット契約
 
-| 名前     | 種別   | 位置づけ | 内容                         |
-| ------ | ---- | ---- | -------------------------- |
+| 名前         | 種別 | 位置づけ | 内容                                       |
+| ------------ | ---- | -------- | ------------------------------------------ |
 | 既定スロット | slot | 正規入力 | 直下に配置された単一のネイティブ `<table>` |
 
 既定スロットには、**直下に配置された単一のネイティブ **``** 1 個だけ**を正規入力として受け取ります。空白テキストノードやコメントノードの混在は許容しますが、複数の `<table>` を並べる構成、`<table>` 以外の主要要素を前後に混在させる構成、または table を伴わない構成は公開契約上の対象外です。
@@ -73,8 +73,8 @@
 
 `ui-table` は次の公開メソッドを持ちます。
 
-| メソッド      | 内容                    |
-| --------- | --------------------- |
+| メソッド  | 内容                                       |
+| --------- | ------------------------------------------ |
 | `focus()` | 内部スクロール領域へフォーカスを委譲します |
 | `blur()`  | 内部スクロール領域からフォーカスを外します |
 
@@ -84,12 +84,12 @@
 
 公開入力のうち、`density`、`scrollMode`、`ariaLabel`、`ariaLabelledby` は property と attribute の両面から操作できます。`density` と `scrollMode` はホスト属性へ反映され、スタイルと状態判定の入力となります。
 
-| property         | attribute         | reflect | 備考                                  |
-| ---------------- | ----------------- | ------- | ----------------------------------- |
-| `density`        | `density`         | あり      | 密度切替に用います                           |
-| `scrollMode`     | `scroll-mode`     | あり      | `auto` / `always` の方針を示します          |
-| `ariaLabel`      | `aria-label`      | なし      | 内部スクロール領域の `aria-label` に反映します      |
-| `ariaLabelledby` | `aria-labelledby` | なし      | 内部スクロール領域の `aria-labelledby` に反映します |
+| property         | attribute         | reflect | 備考                                                |
+| ---------------- | ----------------- | ------- | --------------------------------------------------- |
+| `density`        | `density`         | あり    | 密度切替に用います                                  |
+| `scrollMode`     | `scroll-mode`     | あり    | `auto` / `always` の方針を示します                  |
+| `ariaLabel`      | `aria-label`      | なし    | 内部スクロール領域の `aria-label` に反映します      |
+| `ariaLabelledby` | `aria-labelledby` | なし    | 内部スクロール領域の `aria-labelledby` に反映します |
 
 ### 列挙外値・無効値の扱い
 
@@ -122,10 +122,10 @@
 
 `density` は `normal` と `compact` の 2 状態を持ちます。
 
-| `density` 値 | 意味   | 想定用途              |
-| ----------- | ---- | ----------------- |
-| `normal`    | 標準密度 | 通常の本文内表、比較表、注記付き表 |
-| `compact`   | 高密度  | 列数や行数が多い一覧、比較表    |
+| `density` 値 | 意味     | 想定用途                           |
+| ------------ | -------- | ---------------------------------- |
+| `normal`     | 標準密度 | 通常の本文内表、比較表、注記付き表 |
+| `compact`    | 高密度   | 列数や行数が多い一覧、比較表       |
 
 `density` は **視覚密度だけ**を表し、セル内 interactive content の可触領域や UI 密度全般までは規定しません。
 
@@ -133,10 +133,10 @@
 
 `scrollMode` は `auto` と `always` の 2 状態を持ちます。
 
-| `scrollMode` 値 | 意味                                                            |
-| -------------- | ------------------------------------------------------------- |
-| `auto`         | 実際に横方向 overflow が発生した場合にだけ、スクロール領域を focusable region として公開します |
-| `always`       | overflow の有無にかかわらず、スクロール領域を常に focusable region として公開します       |
+| `scrollMode` 値 | 意味                                                                                           |
+| --------------- | ---------------------------------------------------------------------------------------------- |
+| `auto`          | 実際に横方向 overflow が発生した場合にだけ、スクロール領域を focusable region として公開します |
+| `always`        | overflow の有無にかかわらず、スクロール領域を常に focusable region として公開します            |
 
 既定値は `auto` です。したがって、**不要な tab stop を増やさないこと**を既定方針とします。
 
@@ -281,23 +281,23 @@ Shadow DOM の `::slotted()` はスロット直下の要素にしか適用でき
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途           | トークン                                                                                                      |
-| ------------ | --------------------------------------------------------------------------------------------------------- |
-| 行ホバー背景       | `--bg-table-ruler`                                                                                        |
-| 既定境界線色       | `--border-default`                                                                                        |
-| 通常ボーダー幅      | `--border-width`                                                                                          |
-| 強調ボーダー幅      | `--border-width-thick`                                                                                    |
-| 本文文字色        | `--fg-default`                                                                                            |
-| 控えめ文字色       | `--fg-muted`                                                                                              |
+| 用途                     | トークン                                                                                                  |
+| ------------------------ | --------------------------------------------------------------------------------------------------------- |
+| 行ホバー背景             | `--bg-table-ruler`                                                                                        |
+| 既定境界線色             | `--border-default`                                                                                        |
+| 通常ボーダー幅           | `--border-width`                                                                                          |
+| 強調ボーダー幅           | `--border-width-thick`                                                                                    |
+| 本文文字色               | `--fg-default`                                                                                            |
+| 控えめ文字色             | `--fg-muted`                                                                                              |
 | ヘッダーフォントウェイト | `--font-medium`                                                                                           |
-| ヘッダーフォントサイズ  | `--text-xs`                                                                                               |
-| コンパクト本文サイズ   | `--text-sm`                                                                                               |
-| 通常本文サイズ      | `--text-base`                                                                                             |
-| 余白           | `--space-2` / `--space-3` / `--space-4`                                                                   |
-| 字間           | `--tracking-wide`                                                                                         |
-| 遷移時間         | `--duration-fast`                                                                                         |
-| イージング        | `--ease-out`                                                                                              |
-| フォーカスリング     | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--radius-sm` / `--animation-focus` |
+| ヘッダーフォントサイズ   | `--text-xs`                                                                                               |
+| コンパクト本文サイズ     | `--text-sm`                                                                                               |
+| 通常本文サイズ           | `--text-base`                                                                                             |
+| 余白                     | `--space-2` / `--space-3` / `--space-4`                                                                   |
+| 字間                     | `--tracking-wide`                                                                                         |
+| 遷移時間                 | `--duration-fast`                                                                                         |
+| イージング               | `--ease-out`                                                                                              |
+| フォーカスリング         | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--radius-sm` / `--animation-focus` |
 
 ---
 
@@ -500,26 +500,26 @@ warning の発火単位は、**同一 document 内で、違反種別ごとに 1 
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
 
-| Story                    | 固定する契約                                                                                    |
-| ------------------------ | ----------------------------------------------------------------------------------------- |
-| `Default`                | 基本構造の table が描画され、slotted table、thead、tbody、headers、rows、既定 density が成立すること               |
-| `Compact`                | `density="compact"` が property / attribute の両方で成立すること                                     |
-| `WithCaption`            | `caption` を含む table を正しく受け入れること                                                           |
-| `WithTfoot`              | `tfoot` を含むサマリー行構造を受け入れること                                                                |
-| `MultipleTbody`          | 複数 `tbody` を用いた Long Table Strategy が成立すること                                               |
-| `ColspanRowspan`         | `colspan` / `rowspan` を妨げないこと                                                             |
-| `NumericData`            | `data-type="number"` を持つ数値セルが tabular numerals と既定 end 配置を得ること                            |
+| Story                    | 固定する契約                                                                                                            |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `Default`                | 基本構造の table が描画され、slotted table、thead、tbody、headers、rows、既定 density が成立すること                    |
+| `Compact`                | `density="compact"` が property / attribute の両方で成立すること                                                        |
+| `WithCaption`            | `caption` を含む table を正しく受け入れること                                                                           |
+| `WithTfoot`              | `tfoot` を含むサマリー行構造を受け入れること                                                                            |
+| `MultipleTbody`          | 複数 `tbody` を用いた Long Table Strategy が成立すること                                                                |
+| `ColspanRowspan`         | `colspan` / `rowspan` を妨げないこと                                                                                    |
+| `NumericData`            | `data-type="number"` を持つ数値セルが tabular numerals と既定 end 配置を得ること                                        |
 | `AlignmentSupport`       | `data-align="start"` / `center` / `end` を正式 API とし、`align` はコンテンツ起源 HTML 向けの凍結互換としてのみ扱うこと |
-| `HorizontalScroll`       | ワイド表に対して横スクロール可能であり、`scrollMode` に応じてキーボードフォーカス可能であること                                    |
-| `BoundaryNoAriaLabel`    | 現行互換確認用の Story であり、開発時 warning 対象の確認に留めること                                                |
-| `BoundarySingleRow`      | 1 行だけの table でも正常に描画されること                                                                 |
-| `BoundaryHeaderOnly`     | 空の `tbody` を含む table でも構造が崩れないこと                                                          |
-| `DensityToggle`          | `density` の動的切替がホスト属性反映とともに成立すること                                                         |
-| `AccessibilityStructure` | `caption`、`scope`、`thead`、`tbody`、`tfoot` を含むアクセシブル構造を保持できること                             |
-| `AllStates`              | 主要バリアント構成を一覧で同時確認できること                                                                    |
-| `ProseIntegration`       | 上位 prose レイヤとの統合確認であり、`ui-table` 単体の中核契約ではないこと                                            |
-| `DarkMode`               | ダーク背景でも色トークン解決により可読性が損なわれないこと                                                             |
-| `VisualAccessibility`    | Reduced Motion / Forced Colors / Active Ruler に関する視覚契約が成立すること                             |
+| `HorizontalScroll`       | ワイド表に対して横スクロール可能であり、`scrollMode` に応じてキーボードフォーカス可能であること                         |
+| `BoundaryNoAriaLabel`    | 現行互換確認用の Story であり、開発時 warning 対象の確認に留めること                                                    |
+| `BoundarySingleRow`      | 1 行だけの table でも正常に描画されること                                                                               |
+| `BoundaryHeaderOnly`     | 空の `tbody` を含む table でも構造が崩れないこと                                                                        |
+| `DensityToggle`          | `density` の動的切替がホスト属性反映とともに成立すること                                                                |
+| `AccessibilityStructure` | `caption`、`scope`、`thead`、`tbody`、`tfoot` を含むアクセシブル構造を保持できること                                    |
+| `AllStates`              | 主要バリアント構成を一覧で同時確認できること                                                                            |
+| `ProseIntegration`       | 上位 prose レイヤとの統合確認であり、`ui-table` 単体の中核契約ではないこと                                              |
+| `DarkMode`               | ダーク背景でも色トークン解決により可読性が損なわれないこと                                                              |
+| `VisualAccessibility`    | Reduced Motion / Forced Colors / Active Ruler に関する視覚契約が成立すること                                            |
 
 ---
 
@@ -790,4 +790,3 @@ warning の発火単位は、**同一 document 内で、違反種別ごとに 1 
 本節に記載した事項は、目標契約に向けた未追従項目です。これらを解消する場合は、実装、Storybook、契約書の 3 点を同時に更新し、互換措置と目標契約を混在させたまま放置しません。
 
 特に開発時 warning については、構造違反の検知対象、runtime で自動検知しない対象、違反種別ごとの 1 document 1 回という発火単位を揃えて更新します。
-

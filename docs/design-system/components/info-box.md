@@ -51,7 +51,7 @@ Rouault における info-box は、読書を中断させる強い UI ではな�
 
 `icon` は、見出し左側に表示する Lucide アイコン名を受け取ります。公開契約としては、`music` のような**プレフィックスなしのアイコン名**のみを正規入力とし、内部で `lucide:${name}` を解決します。利用者は `lucide:` を含む完全名の入力に依存しません。不正形式や未知のアイコン名は、長期的には**非描画**として扱うのが正規方針です。
 
-`headingLevel` は、`heading` が存在し、かつ値が `1` から `6` までの整数である場合にのみ適用します。この条件を満たすときだけ、ヘッダー文字列要素に `role="heading"` と `aria-level` を付与します。無効値は例外にせず、無視します。``** を成立させるには、**``** の有効値も必要**です。
+`headingLevel` は、`heading` が存在し、かつ値が `1` から `6` までの整数である場合にのみ適用します。この条件を満たすときだけ、ヘッダー文字列要素に `role="heading"` と `aria-level` を付与します。無効値は例外にせず、無視します。`** を成立させるには、**`** の有効値も必要**です。
 
 `landmark=true`、`heading` あり、`headingLevel` 有効、かつ内容が空でない場合に限り、ホスト要素を `role="region"` として公開し、内部見出しを `aria-labelledby` で参照します。それ以外の状態では、ホスト要素に**意味ロールを既定付与しません**。したがって、**ランドマーク化は heading・headingLevel・非空内容を前提条件とする条件付き契約**です。
 
@@ -61,18 +61,18 @@ Rouault における info-box は、読書を中断させる強い UI ではな�
 
 ### 入力契約
 
-| 名前             | 種別                                     | 必須  | 内容        | 契約                                                                                                  |
-| -------------- | -------------------------------------- | --- | --------- | --------------------------------------------------------------------------------------------------- |
-| `heading`      | property / attribute                   | いいえ | ヘッダーラベル   | trim 後に空でなければヘッダーを描画します                                                                             |
-| `icon`         | property / attribute                   | いいえ | ヘッダーアイコン名 | `heading` がある場合のみ描画します。`music` のような Lucide 名を受け取ります                                                 |
-| `headingLevel` | property / attribute (`heading-level`) | いいえ | 見出し階層     | `heading` があり、`1`-`6` の整数のときのみ `role="heading"` / `aria-level` を付与します。`landmark=true` を成立させる場合は必須です |
-| `landmark`     | property / attribute                   | いいえ | ランドマーク化   | `true` かつ `heading` あり、`headingLevel` 有効、非空内容のときだけ `role="region"` になります                            |
-| `variant`      | property / attribute                   | いいえ | 視覚バリアント   | `default` / `filled`。既定値は `default` です                                                              |
+| 名前           | 種別                                   | 必須   | 内容               | 契約                                                                                                                                |
+| -------------- | -------------------------------------- | ------ | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `heading`      | property / attribute                   | いいえ | ヘッダーラベル     | trim 後に空でなければヘッダーを描画します                                                                                           |
+| `icon`         | property / attribute                   | いいえ | ヘッダーアイコン名 | `heading` がある場合のみ描画します。`music` のような Lucide 名を受け取ります                                                        |
+| `headingLevel` | property / attribute (`heading-level`) | いいえ | 見出し階層         | `heading` があり、`1`-`6` の整数のときのみ `role="heading"` / `aria-level` を付与します。`landmark=true` を成立させる場合は必須です |
+| `landmark`     | property / attribute                   | いいえ | ランドマーク化     | `true` かつ `heading` あり、`headingLevel` 有効、非空内容のときだけ `role="region"` になります                                      |
+| `variant`      | property / attribute                   | いいえ | 視覚バリアント     | `default` / `filled`。既定値は `default` です                                                                                       |
 
 ### スロット契約
 
-| 名前     | 種別   | 位置づけ | 内容                              |
-| ------ | ---- | ---- | ------------------------------- |
+| 名前         | 種別 | 位置づけ | 内容                                                           |
+| ------------ | ---- | -------- | -------------------------------------------------------------- |
 | 既定スロット | slot | 正規入力 | 参照情報、説明、リスト、定義リスト、補助本文などを受け取ります |
 
 既定スロットは静的コンテンツを受け取ります。コンポーネント自身は内容の意味解釈を行わず、**要素ノードまたは非空白テキストノードが存在するかどうか**のみを描画条件として扱います。空ラッパー要素を渡さないこと、本文内部のタイポグラフィや要素間余白を整えることは利用側の責務です。
@@ -93,13 +93,13 @@ Rouault における info-box は、読書を中断させる強い UI ではな�
 
 公開入力のうち、`heading`、`icon`、`headingLevel`、`landmark`、`variant` は property と attribute の両面から操作できます。`headingLevel` の HTML 属性名は `heading-level` です。boolean 値は attribute の有無で反映します。
 
-| property       | attribute       | reflect | 備考                        |
-| -------------- | --------------- | ------- | ------------------------- |
-| `heading`      | `heading`       | あり      | 空白のみは見出しなしとして扱います         |
-| `icon`         | `icon`          | あり      | `heading` がない場合は描画に参加しません |
-| `headingLevel` | `heading-level` | あり      | 有効値は `1`-`6` の整数です        |
-| `landmark`     | `landmark`      | あり      | boolean attribute として扱います |
-| `variant`      | `variant`       | あり      | 列挙外値は描画時に `default` 扱いです  |
+| property       | attribute       | reflect | 備考                                     |
+| -------------- | --------------- | ------- | ---------------------------------------- |
+| `heading`      | `heading`       | あり    | 空白のみは見出しなしとして扱います       |
+| `icon`         | `icon`          | あり    | `heading` がない場合は描画に参加しません |
+| `headingLevel` | `heading-level` | あり    | 有効値は `1`-`6` の整数です              |
+| `landmark`     | `landmark`      | あり    | boolean attribute として扱います         |
+| `variant`      | `variant`       | あり    | 列挙外値は描画時に `default` 扱いです    |
 
 ### 列挙外値・無効値の扱い
 
@@ -155,10 +155,10 @@ Rouault における info-box は、読書を中断させる強い UI ではな�
 
 `variant` は視覚的な重さのみを切り替えます。意味は次のとおりです。
 
-| `variant` 値 | 意味         | 想定用途                 |
-| ----------- | ---------- | -------------------- |
-| `default`   | 境界線主体の中立表示 | 補足情報、作品情報、軽い参照情報     |
-| `filled`    | 面を持つ静かな強調  | 前提条件、章の要点、本文導入前の補助情報 |
+| `variant` 値 | 意味                 | 想定用途                                 |
+| ------------ | -------------------- | ---------------------------------------- |
+| `default`    | 境界線主体の中立表示 | 補足情報、作品情報、軽い参照情報         |
+| `filled`     | 面を持つ静かな強調   | 前提条件、章の要点、本文導入前の補助情報 |
 
 `filled` は強調ではありますが、警告バナーのような強い注意喚起ではありません。読書面を壊さない範囲で、まとまりを少し前に出すための差分です。
 
@@ -249,21 +249,21 @@ Storybook の配置例が示すとおり、`ui-article-header` と役割を混�
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途        | トークン                      |
-| --------- | ------------------------- |
-| 境界線       | `--border-style-subtle`   |
-| 角丸        | `--radius-md`             |
-| filled 背景 | `--bg-fill-muted`         |
-| 既定文字色     | `--fg-default`            |
-| 補助文字色     | `--fg-muted`              |
-| ヘッダー上下余白  | `--space-3` / `--space-4` |
-| 本文余白      | `--space-4`               |
-| ヘッダーギャップ  | `--space-2`               |
+| 用途               | トークン                  |
+| ------------------ | ------------------------- |
+| 境界線             | `--border-style-subtle`   |
+| 角丸               | `--radius-md`             |
+| filled 背景        | `--bg-fill-muted`         |
+| 既定文字色         | `--fg-default`            |
+| 補助文字色         | `--fg-muted`              |
+| ヘッダー上下余白   | `--space-3` / `--space-4` |
+| 本文余白           | `--space-4`               |
+| ヘッダーギャップ   | `--space-2`               |
 | ヘッダー文字サイズ | `--text-xs`               |
-| ヘッダー太さ    | `--font-semibold`         |
-| 文字間       | `--tracking-wide`         |
-| 行高        | `--line-height-tight`     |
-| アイコンサイズ   | `--icon-xs`               |
+| ヘッダー太さ       | `--font-semibold`         |
+| 文字間             | `--tracking-wide`         |
+| 行高               | `--line-height-tight`     |
+| アイコンサイズ     | `--icon-xs`               |
 
 ---
 
@@ -372,18 +372,18 @@ Storybook の閲覧用ストーリーが示すとおり、記事タイトル、�
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
 
-| Story                             | 固定する契約                                                               |
-| --------------------------------- | -------------------------------------------------------------------- |
+| Story                             | 固定する契約                                                                            |
+| --------------------------------- | --------------------------------------------------------------------------------------- |
 | `Default`                         | `heading`、`icon`、`headingLevel`、`landmark`、`variant` の基本組み合わせが成立すること |
 | `ReadingPrerequisitePlacements`   | 読む前提条件を article header と分離して配置できること                                  |
-| `VariantStateMatrix`              | `default` / `filled`、`heading` 有無、`landmark` の主要分岐が成立すること            |
+| `VariantStateMatrix`              | `default` / `filled`、`heading` 有無、`landmark` の主要分岐が成立すること               |
 | `HeadingLevelBoundaries`          | `headingLevel` の有効値・無効値の扱いが固定されること                                   |
-| `LandmarkRequiresHeadingBoundary` | `landmark=true` でも `heading` が空なら `region` を公開しないこと                  |
-| `IconRenderingBoundary`           | アイコンは `heading` があるときだけ描画し、装飾扱いであること                                 |
-| `InvalidVariantFallback`          | 不正な `variant` が `default` にフォールバックすること                               |
-| `EmptySlotDoesNotRender`          | 意味のある内容がない場合は描画せず、意味ロールも公開しないこと                                      |
+| `LandmarkRequiresHeadingBoundary` | `landmark=true` でも `heading` が空なら `region` を公開しないこと                       |
+| `IconRenderingBoundary`           | アイコンは `heading` があるときだけ描画し、装飾扱いであること                           |
+| `InvalidVariantFallback`          | 不正な `variant` が `default` にフォールバックすること                                  |
+| `EmptySlotDoesNotRender`          | 意味のある内容がない場合は描画せず、意味ロールも公開しないこと                          |
 | `StyleContracts`                  | トークン利用と forced-colors ブロックが維持されること                                   |
-| `DarkModeTokenContract`           | ダークモードはトークン追従で成立し、固有の `prefers-color-scheme` 分岐を持たないこと               |
+| `DarkModeTokenContract`           | ダークモードはトークン追従で成立し、固有の `prefers-color-scheme` 分岐を持たないこと    |
 
 ---
 
@@ -417,7 +417,7 @@ Storybook の閲覧用ストーリーが示すとおり、記事タイトル、�
 - `density="comfortable" | "compact"`
 - `size="md" | "sm"`
 
-長期的には、``** は視覚的強度、**``** は空間密度**として責務分離するのが最も保守しやすいです。
+長期的には、`** は視覚的強度、**`** は空間密度**として責務分離するのが最も保守しやすいです。
 
 #### 2. Print 契約
 
@@ -548,4 +548,3 @@ Storybook の閲覧用ストーリーが示すとおり、記事タイトル、�
 ### 13. 本節の扱い
 
 本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用する場合は、実装、Storybook、契約書の 3 点を同時に更新し、未対応状態を残したまま公開契約へ昇格させません。
-

@@ -61,16 +61,16 @@
 
 `ui-file-tree` の正規契約との整合のため、本書では次を固定します。
 
-1. ``** は **``** の **``** から導かれる表示状態とする。**
-2. ``** は現在位置表示を兼ねるが、**``** / focus とは別概念とする。**
-3. ``** は **``** の展開状態から与えられる controlled input とする。**
+1. `** は **`** の **``** から導かれる表示状態とする。**
+2. `** は現在位置表示を兼ねるが、**`** / focus とは別概念とする。**
+3. `** は **`** の展開状態から与えられる controlled input とする。**
 4. ``** は root の公開イベントを直接発火せず、行レベルの integration event を通知する。**
 5. **Enter / Space / 左右キーの最終意味決定は **``** が担う。**
-6. ``** と **``** を同時に持つ状態は正規契約では不正入力とする。**
-7. ``** は **``** のノードデータと整合するため、string property を安定契約に含める。**
+6. `** と **`** を同時に持つ状態は正規契約では不正入力とする。**
+7. `** は **`** のノードデータと整合するため、string property を安定契約に含める。**
 8. ``** は視覚高さ 24px、最小操作領域 44px 以上で固定する。**
 
-ここで重要なのは、`ui-tree-item` の `selected` は**一時フォーカスではなく、**``** に対応する現在位置表示**である点です。一方で、tree 上のキーボード移動対象は `activeId` であり、これは `ui-file-tree` 側が所有します。`ui-file-tree` はこの分離を前提に設計されています。
+ここで重要なのは、`ui-tree-item` の `selected` は**一時フォーカスではなく、**``** に対応する現在位置表示**である点です。一方で、tree 上のキーボード移動対象は `activeId`であり、これは`ui-file-tree` 側が所有します。`ui-file-tree` はこの分離を前提に設計されています。
 
 ---
 
@@ -82,14 +82,14 @@
 
 ### 入力契約
 
-| 名前         | 種別                   | 必須     | 内容        | 契約                                                   |
-| ---------- | -------------------- | ------ | --------- | ---------------------------------------------------- |
-| `selected` | property / attribute | いいえ    | 選択表示状態    | `ui-file-tree.selectedId` に対応する現在位置表示です。focus とは別です  |
-| `expanded` | property / attribute | いいえ    | 展開表示状態    | controlled input です。`ui-file-tree` から与えられる展開状態を表示します |
-| `label`    | property / attribute | **はい** | 主ラベル      | 非空必須です。可視ラベル、リンクテキスト、トランケーション時の補助表示の原文として用います        |
-| `icon`     | property / attribute | いいえ    | 補助アイコン識別子 | `ui-file-tree` のノードデータと整合する string property です       |
-| `href`     | property / attribute | いいえ    | 遷移先       | リーフ項目のみが持つことを想定します                                   |
-| `density`  | property / attribute | いいえ    | 行密度       | `normal` / `compact` を受理します。既定値は `normal` です         |
+| 名前       | 種別                 | 必須     | 内容               | 契約                                                                                       |
+| ---------- | -------------------- | -------- | ------------------ | ------------------------------------------------------------------------------------------ |
+| `selected` | property / attribute | いいえ   | 選択表示状態       | `ui-file-tree.selectedId` に対応する現在位置表示です。focus とは別です                     |
+| `expanded` | property / attribute | いいえ   | 展開表示状態       | controlled input です。`ui-file-tree` から与えられる展開状態を表示します                   |
+| `label`    | property / attribute | **はい** | 主ラベル           | 非空必須です。可視ラベル、リンクテキスト、トランケーション時の補助表示の原文として用います |
+| `icon`     | property / attribute | いいえ   | 補助アイコン識別子 | `ui-file-tree` のノードデータと整合する string property です                               |
+| `href`     | property / attribute | いいえ   | 遷移先             | リーフ項目のみが持つことを想定します                                                       |
+| `density`  | property / attribute | いいえ   | 行密度             | `normal` / `compact` を受理します。既定値は `normal` です                                  |
 
 `label` はプレーンテキスト契約です。HTML 断片やリッチテキストを渡す用途は公開契約に含めません。
 
@@ -109,9 +109,9 @@
 
 ### スロット契約
 
-| 名前         | 種別         | 位置づけ | 内容                                  |
-| ---------- | ---------- | ---- | ----------------------------------- |
-| `children` | named slot | 正規入力 | 直接の子要素である `ui-tree-item` を受け取ります    |
+| 名前       | 種別       | 位置づけ | 内容                                                   |
+| ---------- | ---------- | -------- | ------------------------------------------------------ |
+| `children` | named slot | 正規入力 | 直接の子要素である `ui-tree-item` を受け取ります       |
 | `icon`     | named slot | 補助入力 | `icon` property の代替として補助アイコンを受け取ります |
 
 `children` スロットは、**ツリー構造を DOM ネストで表すための唯一の正規入力**です。データ配列を渡して内部再帰描画する API は公開しません。
@@ -124,12 +124,12 @@
 
 `ui-tree-item` は、次の **行レベルの integration event** を公開します。
 
-| 名前                                    | 発火条件                            | detail                                    | bubbles / composed | 契約                                          |
-| ------------------------------------- | ------------------------------- | ----------------------------------------- | ------------------ | ------------------------------------------- |
-| `tree-item-primary-action-request`    | 行クリック、`Enter`、`Space` による主操作要求時 | `{ hasChildren: boolean, href?: string }` | `true` / `true`    | 当該行の主操作要求を通知します。最終意味は `ui-file-tree` が決定します |
-| `tree-item-expanded-request`          | 展開アイコン操作、または左右キーによる開閉要求時        | `{ expanded: boolean }`                   | `true` / `true`    | 当該ブランチの展開変更要求を通知します                         |
-| `tree-item-focus-first-child-request` | 展開済みブランチで `ArrowRight` 押下時      | なし                                        | `true` / `true`    | 最初の子へのフォーカス移動要求を通知します                       |
-| `tree-item-focus-parent-request`      | 収縮済みブランチまたはリーフで `ArrowLeft` 押下時 | なし                                        | `true` / `true`    | 親へのフォーカス移動要求を通知します                          |
+| 名前                                  | 発火条件                                          | detail                                    | bubbles / composed | 契約                                                                   |
+| ------------------------------------- | ------------------------------------------------- | ----------------------------------------- | ------------------ | ---------------------------------------------------------------------- |
+| `tree-item-primary-action-request`    | 行クリック、`Enter`、`Space` による主操作要求時   | `{ hasChildren: boolean, href?: string }` | `true` / `true`    | 当該行の主操作要求を通知します。最終意味は `ui-file-tree` が決定します |
+| `tree-item-expanded-request`          | 展開アイコン操作、または左右キーによる開閉要求時  | `{ expanded: boolean }`                   | `true` / `true`    | 当該ブランチの展開変更要求を通知します                                 |
+| `tree-item-focus-first-child-request` | 展開済みブランチで `ArrowRight` 押下時            | なし                                      | `true` / `true`    | 最初の子へのフォーカス移動要求を通知します                             |
+| `tree-item-focus-parent-request`      | 収縮済みブランチまたはリーフで `ArrowLeft` 押下時 | なし                                      | `true` / `true`    | 親へのフォーカス移動要求を通知します                                   |
 
 これらは `ui-file-tree` が受け取るための integration event です。アプリケーションが直接監視すべき root 公開イベントは、`ui-file-tree` 側の `ui-tree-request-select` / `ui-tree-select` / `ui-tree-request-toggle` / `ui-tree-toggle` / `ui-tree-active-change` です。`ui-file-tree` は request / commit の二段階イベントを root で公開する契約を持ちます。
 
@@ -145,22 +145,22 @@
 
 ### 公開メソッド
 
-| 名前                | 種別     | 契約                                                       |
-| ----------------- | ------ | -------------------------------------------------------- |
+| 名前              | 種別   | 契約                                                                                             |
+| ----------------- | ------ | ------------------------------------------------------------------------------------------------ |
 | `focus(options?)` | method | ホスト要素としての `ui-tree-item` へフォーカスを要求した場合、内部の実フォーカス対象へ委譲します |
 
 `ui-file-tree` は root 側で `focus()` / `focusSelected()` / `focusFirst()` を公開する契約を持ちます。`ui-tree-item` 側は行単位の `focus()` のみを安定契約とします。
 
 ### 属性反映契約
 
-| property   | attribute  | reflect | 備考                          |
-| ---------- | ---------- | ------- | --------------------------- |
-| `selected` | `selected` | あり      | boolean attribute として扱います   |
-| `expanded` | `expanded` | あり      | boolean attribute として扱います   |
-| `label`    | `label`    | あり      | 非空必須です                      |
-| `icon`     | `icon`     | あり      | 補助アイコン識別子です                 |
-| `href`     | `href`     | あり      | リーフの遷移先です                   |
-| `density`  | `density`  | あり      | `normal` / `compact` を受理します |
+| property   | attribute  | reflect | 備考                              |
+| ---------- | ---------- | ------- | --------------------------------- |
+| `selected` | `selected` | あり    | boolean attribute として扱います  |
+| `expanded` | `expanded` | あり    | boolean attribute として扱います  |
+| `label`    | `label`    | あり    | 非空必須です                      |
+| `icon`     | `icon`     | あり    | 補助アイコン識別子です            |
+| `href`     | `href`     | あり    | リーフの遷移先です                |
+| `density`  | `density`  | あり    | `normal` / `compact` を受理します |
 
 内部用属性は安定契約に含めません。
 
@@ -203,10 +203,10 @@
 
 ### 7. 密度状態
 
-| `density` 値 | 意味     | 視覚高さ | 最小操作領域  |
-| ----------- | ------ | ---- | ------- |
-| `normal`    | 標準読書密度 | 32px | 44px 以上 |
-| `compact`   | 高密度表示  | 24px | 44px 以上 |
+| `density` 値 | 意味         | 視覚高さ | 最小操作領域 |
+| ------------ | ------------ | -------- | ------------ |
+| `normal`     | 標準読書密度 | 32px     | 44px 以上    |
+| `compact`    | 高密度表示   | 24px     | 44px 以上    |
 
 `compact` は視覚高さを下げても、最小操作領域は 44px 以上を維持します。
 
@@ -216,12 +216,12 @@
 
 ### 9. キーボード状態
 
-| キー           | 行レベルの通知                             |
-| ------------ | ----------------------------------- |
-| `Enter`      | `tree-item-primary-action-request`  |
-| `Space`      | `tree-item-primary-action-request`  |
+| キー         | 行レベルの通知                                                         |
+| ------------ | ---------------------------------------------------------------------- |
+| `Enter`      | `tree-item-primary-action-request`                                     |
+| `Space`      | `tree-item-primary-action-request`                                     |
 | `ArrowRight` | 未展開ブランチなら展開要求、展開済みなら最初の子へのフォーカス移動要求 |
-| `ArrowLeft`  | 展開済みブランチなら収縮要求、それ以外なら親へのフォーカス移動要求   |
+| `ArrowLeft`  | 展開済みブランチなら収縮要求、それ以外なら親へのフォーカス移動要求     |
 
 `Up` / `Down` / `Home` / `End` / type-ahead は `ui-tree-item` 単体では扱いません。これは `ui-file-tree` 側の責務です。
 
@@ -327,20 +327,20 @@
 
 `ui-tree-item` は単独で tree 全体の状態を所有しません。`ui-file-tree` または上位コンテナとの責務分担は次のとおりです。
 
-| 項目                                          | `ui-tree-item` | `ui-file-tree` / 上位                        |
-| ------------------------------------------- | -------------- | ------------------------------------------ |
-| 行描画                                         | 担当             | しない                                        |
-| `selected` 表示                               | 担当             | `selectedId` を所有する                         |
-| `expanded` 表示                               | 担当             | `expandedIds` / `defaultExpandedIds` を所有する |
-| 低レベル操作要求の通知                                 | 担当             | 解釈する                                       |
-| `ui-tree-request-select` / `ui-tree-select` | しない            | 担当                                         |
-| `ui-tree-request-toggle` / `ui-tree-toggle` | しない            | 担当                                         |
-| `ui-tree-active-change`                     | しない            | 担当                                         |
-| `Up` / `Down` / `Home` / `End` / type-ahead | しない            | 担当                                         |
-| roving tabindex                             | 属性受理のみ         | `activeId` を所有し担当                          |
-| 現在位置ノードの可視化                                 | しない            | 担当                                         |
-| ancestor 自動展開                               | しない            | 担当                                         |
-| ルーティング確定                                    | しない            | 担当                                         |
+| 項目                                        | `ui-tree-item` | `ui-file-tree` / 上位                           |
+| ------------------------------------------- | -------------- | ----------------------------------------------- |
+| 行描画                                      | 担当           | しない                                          |
+| `selected` 表示                             | 担当           | `selectedId` を所有する                         |
+| `expanded` 表示                             | 担当           | `expandedIds` / `defaultExpandedIds` を所有する |
+| 低レベル操作要求の通知                      | 担当           | 解釈する                                        |
+| `ui-tree-request-select` / `ui-tree-select` | しない         | 担当                                            |
+| `ui-tree-request-toggle` / `ui-tree-toggle` | しない         | 担当                                            |
+| `ui-tree-active-change`                     | しない         | 担当                                            |
+| `Up` / `Down` / `Home` / `End` / type-ahead | しない         | 担当                                            |
+| roving tabindex                             | 属性受理のみ   | `activeId` を所有し担当                         |
+| 現在位置ノードの可視化                      | しない         | 担当                                            |
+| ancestor 自動展開                           | しない         | 担当                                            |
+| ルーティング確定                            | しない         | 担当                                            |
 
 ### `ui-file-tree` から `ui-tree-item` へのマッピング契約
 
@@ -411,26 +411,26 @@ selected 表示を優先します。
 
 各 Story は見本ではなく、`ui-file-tree` と整合した契約確認点として扱います。
 
-| Story                      | 固定する契約                                                             |
-| -------------------------- | ------------------------------------------------------------------ |
-| `Default`                  | `role="treeitem"` と `aria-level="1"` を持つこと                         |
-| `Selected`                 | `selected=true` で selected 表示と `aria-selected="true"` が成立すること      |
-| `WithChildren`             | ブランチで `aria-expanded` を持つこと                                        |
-| `DeepNesting`              | direct child ネストに応じて `aria-level` が正しく増加すること                       |
-| `Collapsed`                | 収縮時に子要素が操作対象から除外されること                                              |
-| `SelectedAndExpanded`      | selected と展開状態を同時に保持できること                                          |
-| `LongLabel`                | 省略時のみ補助表示が有効になること                                                  |
-| `CustomIconSlot`           | `icon` スロットによる補助アイコン表示ができること                                       |
-| `LeafNode`                 | リーフでは `aria-expanded` を持たず、`expanded=true` 入力が正規化されること             |
+| Story                      | 固定する契約                                                                      |
+| -------------------------- | --------------------------------------------------------------------------------- |
+| `Default`                  | `role="treeitem"` と `aria-level="1"` を持つこと                                  |
+| `Selected`                 | `selected=true` で selected 表示と `aria-selected="true"` が成立すること          |
+| `WithChildren`             | ブランチで `aria-expanded` を持つこと                                             |
+| `DeepNesting`              | direct child ネストに応じて `aria-level` が正しく増加すること                     |
+| `Collapsed`                | 収縮時に子要素が操作対象から除外されること                                        |
+| `SelectedAndExpanded`      | selected と展開状態を同時に保持できること                                         |
+| `LongLabel`                | 省略時のみ補助表示が有効になること                                                |
+| `CustomIconSlot`           | `icon` スロットによる補助アイコン表示ができること                                 |
+| `LeafNode`                 | リーフでは `aria-expanded` を持たず、`expanded=true` 入力が正規化されること       |
 | `PrimaryActionRequest`     | 行クリック、`Enter`、`Space` で `tree-item-primary-action-request` を通知すること |
-| `ExpandControlRequest`     | 展開アイコンクリックで `tree-item-expanded-request` のみを通知すること                 |
-| `KeyboardBranchNavigation` | `ArrowRight` / `ArrowLeft` の integration event 契約が成立すること           |
-| `TabIndexDelegation`       | ホスト `tabindex` が実フォーカス対象へ反映されること                                   |
-| `AllDensities`             | `normal` 32px / `compact` 24px の視覚高さを持つこと                          |
-| `CompactTouchTarget`       | `compact` でも最小操作領域が 44px 以上であること                                   |
-| `ForcedColorsMode`         | 強制カラー環境で selected 表示とフォーカスが維持されること                                 |
-| `ReducedMotion`            | reduced motion 相当で遷移時間が極小化されること                                    |
-| `RealWorldFileTree`        | selected ノードの経路強調を破綻なく表現できること                                      |
+| `ExpandControlRequest`     | 展開アイコンクリックで `tree-item-expanded-request` のみを通知すること            |
+| `KeyboardBranchNavigation` | `ArrowRight` / `ArrowLeft` の integration event 契約が成立すること                |
+| `TabIndexDelegation`       | ホスト `tabindex` が実フォーカス対象へ反映されること                              |
+| `AllDensities`             | `normal` 32px / `compact` 24px の視覚高さを持つこと                               |
+| `CompactTouchTarget`       | `compact` でも最小操作領域が 44px 以上であること                                  |
+| `ForcedColorsMode`         | 強制カラー環境で selected 表示とフォーカスが維持されること                        |
+| `ReducedMotion`            | reduced motion 相当で遷移時間が極小化されること                                   |
+| `RealWorldFileTree`        | selected ノードの経路強調を破綻なく表現できること                                 |
 
 ---
 
@@ -564,4 +564,3 @@ compound tree widget における現在位置表示は、`selectedId` / `selecte
 ### 7. `expanded` は引き続き controlled input とします
 
 `ui-file-tree` 側は `expandedIds` に controlled / uncontrolled の両方を許容しますが、個々の `ui-tree-item` に渡される `expanded` は、描画時点では常に**解決済みの snapshot**であるため、行側の stable contract としては controlled input のままです。
-

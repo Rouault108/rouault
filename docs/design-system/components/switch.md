@@ -98,14 +98,14 @@
 
 ### 入力一覧
 
-| 名前 | 種別 | 既定値 | 契約 |
-| --- | --- | --- | --- |
-| `checked` | property / attribute | `false` | 現在値。`true` で ON、`false` で OFF |
-| `disabled` | property / attribute | `false` | 完全に非操作化する。Tab 移動対象から外れる |
-| `readonly` | property / attribute | `false` | 値は表示するが変更は受け付けない。Tab 移動対象には残る |
-| `label` | property / attribute | `''` | 内部に描画する単純テキストラベル |
-| `labelledBy` | property | `undefined` | 外部ラベル要素 ID。設定行などで外部ラベルを名前源とする |
-| `describedBy` | property | `undefined` | 外部説明要素 ID。補助文や説明文を関連付ける |
+| 名前          | 種別                 | 既定値      | 契約                                                    |
+| ------------- | -------------------- | ----------- | ------------------------------------------------------- |
+| `checked`     | property / attribute | `false`     | 現在値。`true` で ON、`false` で OFF                    |
+| `disabled`    | property / attribute | `false`     | 完全に非操作化する。Tab 移動対象から外れる              |
+| `readonly`    | property / attribute | `false`     | 値は表示するが変更は受け付けない。Tab 移動対象には残る  |
+| `label`       | property / attribute | `''`        | 内部に描画する単純テキストラベル                        |
+| `labelledBy`  | property             | `undefined` | 外部ラベル要素 ID。設定行などで外部ラベルを名前源とする |
+| `describedBy` | property             | `undefined` | 外部説明要素 ID。補助文や説明文を関連付ける             |
 
 ### 入力契約
 
@@ -136,8 +136,8 @@
 
 `ui-switch` の正式な公開イベントは **`checked-change`** です。
 
-| 名前 | 発火条件 | detail | 契約 |
-| --- | --- | --- | --- |
+| 名前             | 発火条件                           | detail                 | 契約                               |
+| ---------------- | ---------------------------------- | ---------------------- | ---------------------------------- |
 | `checked-change` | ユーザー操作により値が変化したとき | `{ checked: boolean }` | `bubbles: true` / `composed: true` |
 
 ### イベント契約
@@ -158,10 +158,10 @@
 
 ## 公開メソッド
 
-| 名前 | 契約 |
-| --- | --- |
+| 名前              | 契約                                |
+| ----------------- | ----------------------------------- |
 | `focus(options?)` | 内部 control にフォーカスを委譲する |
-| `blur()` | 内部 control からフォーカスを外す |
+| `blur()`          | 内部 control からフォーカスを外す   |
 
 公開メソッドはこれに限定します。Shadow DOM の内部要素探索は公開契約に含めません。
 
@@ -331,11 +331,11 @@
 
 公開する part は次に限定します。
 
-| part 名 | 役割 |
-| --- | --- |
-| `control` | switch 本体 |
-| `thumb` | 可動表示要素 |
-| `label` | 内部ラベル |
+| part 名   | 役割         |
+| --------- | ------------ |
+| `control` | switch 本体  |
+| `thumb`   | 可動表示要素 |
+| `label`   | 内部ラベル   |
 
 `track`、wrapper、補助要素などの内部構成は part として公開しません。
 
@@ -400,23 +400,23 @@
 
 各 Story は見本ではなく、契約確認点として扱います。長期的には少なくとも次を固定します。
 
-| Story | 固定する契約 |
-| --- | --- |
-| `Default` | 既定値が OFF であること |
-| `On` | ON 状態が成立すること |
-| `Disabled` | disabled で非操作・Tab 除外であること |
-| `Readonly` | readonly でフォーカス可能かつ非変更であること |
-| `InternalLabel` | `label` による内部ラベルが成立すること |
-| `ExternalLabelledBy` | `labelledBy` による外部ラベル連携が成立すること |
-| `DescribedBy` | `describedBy` により説明文関連付けが成立すること |
-| `NoLabelNeedsAriaLabel` | ラベルなしでは `aria-label` が必要であること |
-| `PointerToggle` | control click で `checked-change` が発火すること |
-| `InternalLabelClickToggle` | 内部ラベル click で toggle すること |
-| `KeyboardSpaceToggle` | Space でのみ toggle すること |
-| `KeyboardEnterNoToggle` | Enter では toggle しないこと |
-| `RepeatKeyIgnored` | キーリピートで連続 toggle しないこと |
-| `ReducedMotion` | reduced motion で transition が極小化されること |
-| `ForcedColors` | forced-colors 環境で状態差分が視認できること |
+| Story                      | 固定する契約                                     |
+| -------------------------- | ------------------------------------------------ |
+| `Default`                  | 既定値が OFF であること                          |
+| `On`                       | ON 状態が成立すること                            |
+| `Disabled`                 | disabled で非操作・Tab 除外であること            |
+| `Readonly`                 | readonly でフォーカス可能かつ非変更であること    |
+| `InternalLabel`            | `label` による内部ラベルが成立すること           |
+| `ExternalLabelledBy`       | `labelledBy` による外部ラベル連携が成立すること  |
+| `DescribedBy`              | `describedBy` により説明文関連付けが成立すること |
+| `NoLabelNeedsAriaLabel`    | ラベルなしでは `aria-label` が必要であること     |
+| `PointerToggle`            | control click で `checked-change` が発火すること |
+| `InternalLabelClickToggle` | 内部ラベル click で toggle すること              |
+| `KeyboardSpaceToggle`      | Space でのみ toggle すること                     |
+| `KeyboardEnterNoToggle`    | Enter では toggle しないこと                     |
+| `RepeatKeyIgnored`         | キーリピートで連続 toggle しないこと             |
+| `ReducedMotion`            | reduced motion で transition が極小化されること  |
+| `ForcedColors`             | forced-colors 環境で状態差分が視認できること     |
 
 `SettingsPanel` のような複合 UI は `ui-switch` 単体の Story ではなく、上位コンポーネントの Story で担保します。
 
@@ -617,4 +617,3 @@ switch は二値であること自体が意味論です。三値状態や indete
 - トグル以外の複雑な状態が必要になったら switch ではなく別 control を検討する
 
 結果として、`ui-switch` 自体は小さく、予測可能で、保守しやすいまま維持できます。
-

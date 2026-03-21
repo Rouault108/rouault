@@ -71,21 +71,21 @@ Rouault における tabs は、複数の情報面を高密度に並置するた
 
 ### 入力契約
 
-| 名前                     | 種別                                              | 必須  | 内容       | 契約                                                                |
-| ---------------------- | ----------------------------------------------- | --- | -------- | ----------------------------------------------------------------- |
-| `selectedValue`        | property / attribute (`selected-value`)         | いいえ | 現在選択値    | `slot="tab"` 要素の `value` 属性と一致する値を選択します。`ui-tabs` 自身が保持する正規選択状態です |
-| `defaultSelectedValue` | property / attribute (`default-selected-value`) | いいえ | 初期選択値    | `selectedValue` が未指定のときに限り、初回解決時または再初期化時の初期種別として評価します             |
-| `orientation`          | property / attribute                            | いいえ | 操作方向     | `horizontal` / `vertical`。主としてキーボード意味論と `aria-orientation` を規定します |
-| `automaticActivation`  | property / attribute (`automatic-activation`)   | いいえ | 自動選択     | `true` の場合、矢印キーによるフォーカス移動と同時に選択を更新します。低コストなパネル切替面に限定して使用します       |
-| `urlSync`              | property / attribute (`url-sync`)               | いいえ | URL 同期   | `true` の場合、主タブ状態を `?tab=` と同期します。単一主系統でのみ使用します                    |
-| `aria-label`           | attribute                                       | いいえ | タブリスト名   | 内部 `tablist` の accessible name として転写します                           |
-| `aria-labelledby`      | attribute                                       | いいえ | タブリスト名参照 | 内部 `tablist` の accessible name として転写します                           |
+| 名前                   | 種別                                            | 必須   | 内容             | 契約                                                                                                            |
+| ---------------------- | ----------------------------------------------- | ------ | ---------------- | --------------------------------------------------------------------------------------------------------------- |
+| `selectedValue`        | property / attribute (`selected-value`)         | いいえ | 現在選択値       | `slot="tab"` 要素の `value` 属性と一致する値を選択します。`ui-tabs` 自身が保持する正規選択状態です              |
+| `defaultSelectedValue` | property / attribute (`default-selected-value`) | いいえ | 初期選択値       | `selectedValue` が未指定のときに限り、初回解決時または再初期化時の初期種別として評価します                      |
+| `orientation`          | property / attribute                            | いいえ | 操作方向         | `horizontal` / `vertical`。主としてキーボード意味論と `aria-orientation` を規定します                           |
+| `automaticActivation`  | property / attribute (`automatic-activation`)   | いいえ | 自動選択         | `true` の場合、矢印キーによるフォーカス移動と同時に選択を更新します。低コストなパネル切替面に限定して使用します |
+| `urlSync`              | property / attribute (`url-sync`)               | いいえ | URL 同期         | `true` の場合、主タブ状態を `?tab=` と同期します。単一主系統でのみ使用します                                    |
+| `aria-label`           | attribute                                       | いいえ | タブリスト名     | 内部 `tablist` の accessible name として転写します                                                              |
+| `aria-labelledby`      | attribute                                       | いいえ | タブリスト名参照 | 内部 `tablist` の accessible name として転写します                                                              |
 
 ### スロット契約
 
-| 名前      | 種別         | 位置づけ | 内容                   |
-| ------- | ---------- | ---- | -------------------- |
-| `tab`   | named slot | 正規入力 | タブ見出し要素を受け取ります       |
+| 名前    | 種別       | 位置づけ | 内容                                     |
+| ------- | ---------- | -------- | ---------------------------------------- |
+| `tab`   | named slot | 正規入力 | タブ見出し要素を受け取ります             |
 | `panel` | named slot | 正規入力 | 各タブに対応するパネル要素を受け取ります |
 
 `slot="tab"` と `slot="panel"` は**先頭から順序対応**します。関連付けは DOM 上の近接ではなく、各スロット内の順序で決定します。利用者は、タブ数とパネル数を一致させなければなりません（MUST）。
@@ -106,8 +106,8 @@ Rouault における tabs は、複数の情報面を高密度に並置するた
 
 `ui-tabs` は、プログラムから選択状態を変更するため、次の公開メソッドを持ちます。
 
-| 名前                        | 種別     | 契約                                                |
-| ------------------------- | ------ | ------------------------------------------------- |
+| 名前                      | 種別   | 契約                                                                                      |
+| ------------------------- | ------ | ----------------------------------------------------------------------------------------- |
 | `select(value, options?)` | method | 一致する `value` を持つタブを選択します。一致しない場合は開発時警告のみで何も変更しません |
 
 `options.historyMode` は `urlSync=true` の場合の履歴更新方法を表します。`options.emitEvent` は `ui-tab-change` 発火の有無を表します。
@@ -118,10 +118,10 @@ Rouault における tabs は、複数の情報面を高密度に並置するた
 
 `ui-tabs` は、選択変更について**事前要求**と**事後通知**を分離します。
 
-| 名前                      | 種別          | detail                                | 契約                                                                       |
-| ----------------------- | ----------- | ------------------------------------- | ------------------------------------------------------------------------ |
+| 名前                    | 種別        | detail                                | 契約                                                                                                       |
+| ----------------------- | ----------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `ui-tab-request-change` | CustomEvent | `{ index, value, prevIndex, source }` | 選択確定前に発火します。`cancelable=true` であり、利用者は `preventDefault()` により選択変更を拒否できます |
-| `ui-tab-change`         | CustomEvent | `{ index, value, prevIndex, source }` | 選択が実際に変化した場合にのみ、確定後に発火します。同じタブの再選択では発火しません                               |
+| `ui-tab-change`         | CustomEvent | `{ index, value, prevIndex, source }` | 選択が実際に変化した場合にのみ、確定後に発火します。同じタブの再選択では発火しません                       |
 
 `source` は少なくとも `click`、`keyboard`、`api`、`url`、`reconcile` を識別できなければなりません（MUST）。
 
@@ -133,13 +133,13 @@ Rouault における tabs は、複数の情報面を高密度に並置するた
 
 公開入力のうち、`selectedValue`、`orientation`、`automaticActivation`、`urlSync` は reflect します。`defaultSelectedValue` は reflect しません。
 
-| property               | attribute                | reflect | 備考                        |
-| ---------------------- | ------------------------ | ------- | ------------------------- |
-| `selectedValue`        | `selected-value`         | あり      | 内部操作でも更新されます              |
-| `defaultSelectedValue` | `default-selected-value` | なし      | 初期候補としてのみ評価します            |
-| `orientation`          | `orientation`            | あり      | `horizontal` / `vertical` |
-| `automaticActivation`  | `automatic-activation`   | あり      | boolean attribute として扱います |
-| `urlSync`              | `url-sync`               | あり      | boolean attribute として扱います |
+| property               | attribute                | reflect | 備考                             |
+| ---------------------- | ------------------------ | ------- | -------------------------------- |
+| `selectedValue`        | `selected-value`         | あり    | 内部操作でも更新されます         |
+| `defaultSelectedValue` | `default-selected-value` | なし    | 初期候補としてのみ評価します     |
+| `orientation`          | `orientation`            | あり    | `horizontal` / `vertical`        |
+| `automaticActivation`  | `automatic-activation`   | あり    | boolean attribute として扱います |
+| `urlSync`              | `url-sync`               | あり    | boolean attribute として扱います |
 
 ### 選択解決契約
 
@@ -161,7 +161,7 @@ Rouault における tabs は、複数の情報面を高密度に並置するた
 5. 初期化済みの現在値
 6. 先頭タブへのフォールバック
 
-重要なのは、**無効な **``** は **``** へ回復しない**点です。制御値が無効である場合は、先頭タブへフォールバックします。
+重要なのは、**無効な **`** は **`** へ回復しない**点です。制御値が無効である場合は、先頭タブへフォールバックします。
 
 ### 責務範囲
 
@@ -293,15 +293,15 @@ URL 同期時の履歴更新は次のとおりです。
 
 水平方向の前後判定は、物理キー固定ではなく**論理方向**で扱います。LTR では `ArrowLeft` が前、`ArrowRight` が次です。RTL ではこの対応を反転します。
 
-| キー                | 水平              | 垂直          |
-| ----------------- | --------------- | ----------- |
-| `ArrowLeft`       | LTR では前、RTL では次 | 無効          |
-| `ArrowRight`      | LTR では次、RTL では前 | 無効          |
-| `ArrowUp`         | 無効              | 前タブへフォーカス   |
-| `ArrowDown`       | 無効              | 次タブへフォーカス   |
-| `Home`            | 先頭へフォーカス        | 先頭へフォーカス    |
-| `End`             | 末尾へフォーカス        | 末尾へフォーカス    |
-| `Enter` / `Space` | フォーカス中タブを選択     | フォーカス中タブを選択 |
+| キー              | 水平                   | 垂直                   |
+| ----------------- | ---------------------- | ---------------------- |
+| `ArrowLeft`       | LTR では前、RTL では次 | 無効                   |
+| `ArrowRight`      | LTR では次、RTL では前 | 無効                   |
+| `ArrowUp`         | 無効                   | 前タブへフォーカス     |
+| `ArrowDown`       | 無効                   | 次タブへフォーカス     |
+| `Home`            | 先頭へフォーカス       | 先頭へフォーカス       |
+| `End`             | 末尾へフォーカス       | 末尾へフォーカス       |
+| `Enter` / `Space` | フォーカス中タブを選択 | フォーカス中タブを選択 |
 
 フォーカス移動は循環します。先頭から前へ移動すると末尾へ、末尾から次へ移動すると先頭へ戻ります。
 
@@ -360,20 +360,20 @@ Forced Colors 環境では JS 制御インジケーターを非表示とし、�
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途       | トークン                                                                                      |
-| -------- | ----------------------------------------------------------------------------------------- |
-| 選択色      | `--primary`                                                                               |
-| 通常文字色    | `--fg-subtle` / `--fg-default`                                                            |
-| 境界線      | `--border-default` / `--border-width` / `--border-width-thick`                            |
-| 余白       | `--space-*`                                                                               |
-| 高さ       | `--control-height-md`                                                                     |
-| 角丸       | `--radius-sm`                                                                             |
+| 用途             | トークン                                                                                  |
+| ---------------- | ----------------------------------------------------------------------------------------- |
+| 選択色           | `--primary`                                                                               |
+| 通常文字色       | `--fg-subtle` / `--fg-default`                                                            |
+| 境界線           | `--border-default` / `--border-width` / `--border-width-thick`                            |
+| 余白             | `--space-*`                                                                               |
+| 高さ             | `--control-height-md`                                                                     |
+| 角丸             | `--radius-sm`                                                                             |
 | フォーカスリング | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
-| 遷移時間     | `--duration-fast` / `--duration-normal` / `--duration-slow`                               |
-| イージング    | `--ease-out`                                                                              |
-| 押下スケール   | `--scale-pressed`                                                                         |
-| スクロールバー  | `--scrollbar-width` / `--scrollbar-thumb`                                                 |
-| パネル間隔    | `--ui-tabs-panel-gap`                                                                     |
+| 遷移時間         | `--duration-fast` / `--duration-normal` / `--duration-slow`                               |
+| イージング       | `--ease-out`                                                                              |
+| 押下スケール     | `--scale-pressed`                                                                         |
+| スクロールバー   | `--scrollbar-width` / `--scrollbar-thumb`                                                 |
+| パネル間隔       | `--ui-tabs-panel-gap`                                                                     |
 | インラインにじみ | `--ui-tabs-inline-bleed`                                                                  |
 
 ---
@@ -432,11 +432,11 @@ Forced Colors 環境では JS 制御インジケーターを非表示とし、�
 
 `ui-tabs` は外部スタイル拡張面として `::part(...)` と CSS Custom Properties を公開します。
 
-| part 名      | 役割        |
-| ----------- | --------- |
-| `tablist`   | タブリスト要素   |
+| part 名     | 役割               |
+| ----------- | ------------------ |
+| `tablist`   | タブリスト要素     |
 | `indicator` | 選択インジケーター |
-| `panels`    | パネルコンテナ   |
+| `panels`    | パネルコンテナ     |
 
 利用者は `::part(tablist)`、`::part(indicator)`、`::part(panels)` に対して装飾調整を行えます。ただし、スロット順序や ARIA 関係を破壊するような構造変更を意図した利用はサポートしません。
 
@@ -524,36 +524,36 @@ Forced Colors 環境では JS 制御インジケーターを非表示とし、�
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
 
-| Story                                    | 固定する契約                                                                    |
-| ---------------------------------------- | ------------------------------------------------------------------------- |
-| `Default`                                | 先頭タブ自動選択、role / aria / Roving Tabindex が成立すること                            |
-| `DefaultSelectedValue`                   | `default-selected-value` により初期選択できること                                     |
-| `Vertical`                               | `orientation="vertical"` で `aria-orientation="vertical"` になること            |
-| `AutomaticActivation`                    | 矢印移動だけで選択が更新されること                                                         |
-| `WithIcons`                              | アイコンとラベルの組み合わせを受け入れられること                                                  |
-| `ManyTabs`                               | オーバーフロー時にスクロールし、選択タブを可視範囲へ追従できること                                         |
-| `SelectedByValue`                        | `selected-value` により任意タブを選択できること                                          |
-| `UrlSyncFromQuery`                       | `?tab=` により初期選択できること                                                      |
-| `UrlSyncPushOnClick`                     | クリックで `?tab=` が更新されること                                                    |
-| `UrlSyncHashOverridesQuery`              | ハッシュがクエリより優先され、URL が正規化されること                                              |
-| `KeyboardNavigation`                     | Manual Activation における矢印移動、`Enter` / `Space`、`Home` / `End`、循環移動が成立すること   |
-| `KeyboardNavigationVertical`             | 垂直時に `ArrowUp` / `ArrowDown` が有効で、左右キーが無効であること                            |
-| `KeyboardNavigationRTL`                  | RTL 水平時に `ArrowLeft` / `ArrowRight` が論理方向で反転すること                          |
-| `TabRequestChangeEvent`                  | `ui-tab-request-change` が事前発火し、cancelable であること                           |
-| `TabChangeEvent`                         | `ui-tab-change` の detail と再選択非発火が成立すること                                   |
-| `NoEventOnInitialization`                | 初期解決が常時 `ui-tab-change` を発火しないこと                                          |
-| `NoEventOnSlotReinit`                    | `slotchange` に伴う再初期化が常時 `ui-tab-change` を発火しないこと                          |
-| `EdgeCase_InvalidDefaultSelectedValue`   | 無効な `default-selected-value` が先頭フォールバックになること                              |
-| `EdgeCase_SelectedValueOverridesDefault` | `selected-value` が `default-selected-value` より優先されること                     |
-| `EdgeCase_SingleTab`                     | 1 タブ構成でも循環ナビゲーションが破綻しないこと                                                 |
-| `EdgeCase_UnmatchedSelectedValue`        | 無効な `selected-value` が先頭フォールバックになること                                      |
-| `EdgeCase_MismatchedSlots`               | 不一致時に余剰タブが選択されないこと                                                        |
-| `ReducedMotion`                          | reduced motion 時に遷移時間が極小化されること                                            |
-| `ForcedColorsMode`                       | forced-colors 時にインジケーター非表示と境界線回帰が成立すること                                   |
-| `DarkMode`                               | 暗色面でも選択状態の可読性を保てること                                                       |
+| Story                                    | 固定する契約                                                                                  |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `Default`                                | 先頭タブ自動選択、role / aria / Roving Tabindex が成立すること                                |
+| `DefaultSelectedValue`                   | `default-selected-value` により初期選択できること                                             |
+| `Vertical`                               | `orientation="vertical"` で `aria-orientation="vertical"` になること                          |
+| `AutomaticActivation`                    | 矢印移動だけで選択が更新されること                                                            |
+| `WithIcons`                              | アイコンとラベルの組み合わせを受け入れられること                                              |
+| `ManyTabs`                               | オーバーフロー時にスクロールし、選択タブを可視範囲へ追従できること                            |
+| `SelectedByValue`                        | `selected-value` により任意タブを選択できること                                               |
+| `UrlSyncFromQuery`                       | `?tab=` により初期選択できること                                                              |
+| `UrlSyncPushOnClick`                     | クリックで `?tab=` が更新されること                                                           |
+| `UrlSyncHashOverridesQuery`              | ハッシュがクエリより優先され、URL が正規化されること                                          |
+| `KeyboardNavigation`                     | Manual Activation における矢印移動、`Enter` / `Space`、`Home` / `End`、循環移動が成立すること |
+| `KeyboardNavigationVertical`             | 垂直時に `ArrowUp` / `ArrowDown` が有効で、左右キーが無効であること                           |
+| `KeyboardNavigationRTL`                  | RTL 水平時に `ArrowLeft` / `ArrowRight` が論理方向で反転すること                              |
+| `TabRequestChangeEvent`                  | `ui-tab-request-change` が事前発火し、cancelable であること                                   |
+| `TabChangeEvent`                         | `ui-tab-change` の detail と再選択非発火が成立すること                                        |
+| `NoEventOnInitialization`                | 初期解決が常時 `ui-tab-change` を発火しないこと                                               |
+| `NoEventOnSlotReinit`                    | `slotchange` に伴う再初期化が常時 `ui-tab-change` を発火しないこと                            |
+| `EdgeCase_InvalidDefaultSelectedValue`   | 無効な `default-selected-value` が先頭フォールバックになること                                |
+| `EdgeCase_SelectedValueOverridesDefault` | `selected-value` が `default-selected-value` より優先されること                               |
+| `EdgeCase_SingleTab`                     | 1 タブ構成でも循環ナビゲーションが破綻しないこと                                              |
+| `EdgeCase_UnmatchedSelectedValue`        | 無効な `selected-value` が先頭フォールバックになること                                        |
+| `EdgeCase_MismatchedSlots`               | 不一致時に余剰タブが選択されないこと                                                          |
+| `ReducedMotion`                          | reduced motion 時に遷移時間が極小化されること                                                 |
+| `ForcedColorsMode`                       | forced-colors 時にインジケーター非表示と境界線回帰が成立すること                              |
+| `DarkMode`                               | 暗色面でも選択状態の可読性を保てること                                                        |
 | `AsyncPanel`                             | パネル側 `aria-busy` 運用パターンと loading UI 共存が成立すること                             |
-| `AccessibleName`                         | `aria-label` または `aria-labelledby` により tablist の accessible name を与えられること |
-| `IntegrationExample`                     | ノート UI 文脈で自然に使用できること                                                      |
+| `AccessibleName`                         | `aria-label` または `aria-labelledby` により tablist の accessible name を与えられること      |
+| `IntegrationExample`                     | ノート UI 文脈で自然に使用できること                                                          |
 
 ---
 
@@ -746,4 +746,3 @@ Forced Colors 環境では JS 制御インジケーターを非表示とし、�
 ### 14. 本節の扱い
 
 本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用する場合は、実装、Storybook、契約書の 3 点を同時に更新し、未対応状態を残したまま公開契約へ昇格させません。
-

@@ -86,13 +86,13 @@ progress 自体は数値進捗を表現する部品です。自然言語の説�
 
 ### 入力契約
 
-| 名前 | 種別 | 必須 | 内容 | 契約 |
-| --- | --- | --- | --- | --- |
-| `value` | property / attribute | はい | 現在値 | 有限数であり、`0 <= value <= max` を満たさなければなりません |
-| `max` | property / attribute | はい | 最大値 | 有限数であり、`max > 0` を満たさなければなりません |
-| `label` | property | 条件付き | アクセシブル名 | `labelRef` が未指定の場合に使います |
-| `labelRef` | property / attribute (`label-ref`) | 条件付き | 外部ラベル参照 | `label` の代替です。存在する要素 ID を参照しなければなりません |
-| `valueText` | property / attribute (`value-text`) | いいえ | 読み上げ用補助文言 | 進捗値と矛盾しない補助表現でなければなりません |
+| 名前        | 種別                                | 必須     | 内容               | 契約                                                           |
+| ----------- | ----------------------------------- | -------- | ------------------ | -------------------------------------------------------------- |
+| `value`     | property / attribute                | はい     | 現在値             | 有限数であり、`0 <= value <= max` を満たさなければなりません   |
+| `max`       | property / attribute                | はい     | 最大値             | 有限数であり、`max > 0` を満たさなければなりません             |
+| `label`     | property                            | 条件付き | アクセシブル名     | `labelRef` が未指定の場合に使います                            |
+| `labelRef`  | property / attribute (`label-ref`)  | 条件付き | 外部ラベル参照     | `label` の代替です。存在する要素 ID を参照しなければなりません |
+| `valueText` | property / attribute (`value-text`) | いいえ   | 読み上げ用補助文言 | 進捗値と矛盾しない補助表現でなければなりません                 |
 
 `label` と `labelRef` のいずれか一方は必須です。両方を同時に与える場合、`labelRef` を優先します。
 
@@ -100,13 +100,13 @@ progress 自体は数値進捗を表現する部品です。自然言語の説�
 
 `value` と `max` は HTML 属性として観測可能です。`labelRef` と `valueText` も対応する属性名を持ちます。
 
-| property | attribute | 備考 |
-| --- | --- | --- |
-| `value` | `value` | 現在値です |
-| `max` | `max` | 最大値です |
-| `label` | なし | property 専用です |
-| `labelRef` | `label-ref` | 外部ラベル参照です |
-| `valueText` | `value-text` | 補助文言です |
+| property    | attribute    | 備考               |
+| ----------- | ------------ | ------------------ |
+| `value`     | `value`      | 現在値です         |
+| `max`       | `max`        | 最大値です         |
+| `label`     | なし         | property 専用です  |
+| `labelRef`  | `label-ref`  | 外部ラベル参照です |
+| `valueText` | `value-text` | 補助文言です       |
 
 ### 文字列入力の正規化契約
 
@@ -222,11 +222,11 @@ progress 自体は数値進捗を表現する部品です。自然言語の説�
 
 アクセシブル名の決定規則は次のとおりです。
 
-| 条件 | 出力 |
-| --- | --- |
-| `labelRef` が有効 | 外部ラベル参照を出力し、内蔵ラベル属性は出力しません |
-| `labelRef` が無効で `label` が有効 | 内蔵ラベル属性を出力します |
-| いずれも無効 | 契約違反です |
+| 条件                               | 出力                                                 |
+| ---------------------------------- | ---------------------------------------------------- |
+| `labelRef` が有効                  | 外部ラベル参照を出力し、内蔵ラベル属性は出力しません |
+| `labelRef` が無効で `label` が有効 | 内蔵ラベル属性を出力します                           |
+| いずれも無効                       | 契約違反です                                         |
 
 ### 値属性
 
@@ -286,27 +286,27 @@ progress 自体は数値進捗を表現する部品です。自然言語の説�
 
 ### 公開トークン
 
-| 用途 | トークン |
-| --- | --- |
-| トラック高さ | `--ui-progress-track-size` |
-| 充填色 | `--ui-progress-fill-color` |
-| トラック色 | `--ui-progress-track-color` |
-| 角丸 | `--ui-progress-radius` |
-| 変化時間 | `--ui-progress-duration` |
-| 変化イージング | `--ui-progress-easing` |
+| 用途           | トークン                    |
+| -------------- | --------------------------- |
+| トラック高さ   | `--ui-progress-track-size`  |
+| 充填色         | `--ui-progress-fill-color`  |
+| トラック色     | `--ui-progress-track-color` |
+| 角丸           | `--ui-progress-radius`      |
+| 変化時間       | `--ui-progress-duration`    |
+| 変化イージング | `--ui-progress-easing`      |
 
 コンポーネント固有トークンの既定値は、foundation token によって定義されることがあります。ただし、foundation token 名そのものは本コンポーネントの公開 API ではありません。
 
 ### トークン値域
 
-| トークン | 想定値 |
-| --- | --- |
-| `--ui-progress-track-size` | 正の長さ値 |
-| `--ui-progress-fill-color` | 有効な CSS color |
-| `--ui-progress-track-color` | 有効な CSS color |
-| `--ui-progress-radius` | 有効な border-radius 値 |
-| `--ui-progress-duration` | 有効な time 値 |
-| `--ui-progress-easing` | 有効な easing 関数 |
+| トークン                    | 想定値                  |
+| --------------------------- | ----------------------- |
+| `--ui-progress-track-size`  | 正の長さ値              |
+| `--ui-progress-fill-color`  | 有効な CSS color        |
+| `--ui-progress-track-color` | 有効な CSS color        |
+| `--ui-progress-radius`      | 有効な border-radius 値 |
+| `--ui-progress-duration`    | 有効な time 値          |
+| `--ui-progress-easing`      | 有効な easing 関数      |
 
 不正なトークン値に対する描画は公開保証しません。
 
@@ -341,15 +341,15 @@ progress 自体は数値進捗を表現する部品です。自然言語の説�
 
 Storybook は見本ではなく契約確認点を保持する場所です。少なくとも次の観点を継続的に検証します。
 
-| 検証観点 | 固定する契約 |
-| --- | --- |
-| 名前付き進捗 | 名前付き progress として成立すること |
-| 補助文言 | `valueText` が補助表現として扱われること |
-| 外部ラベル参照 | `labelRef` が `label` より優先されること |
-| 契約違反入力 | 警告または復旧が行われること |
-| Reduced Motion | motion 抑制時にアニメーションが停止すること |
-| Forced Colors | システムカラー優先で可読性を維持すること |
-| Print | 自然言語固定に依存せず値可読性を維持すること |
+| 検証観点       | 固定する契約                                 |
+| -------------- | -------------------------------------------- |
+| 名前付き進捗   | 名前付き progress として成立すること         |
+| 補助文言       | `valueText` が補助表現として扱われること     |
+| 外部ラベル参照 | `labelRef` が `label` より優先されること     |
+| 契約違反入力   | 警告または復旧が行われること                 |
+| Reduced Motion | motion 抑制時にアニメーションが停止すること  |
+| Forced Colors  | システムカラー優先で可読性を維持すること     |
+| Print          | 自然言語固定に依存せず値可読性を維持すること |
 
 Storybook では次を正規例として提示しません。
 
@@ -526,4 +526,3 @@ Storybook では次を正規例として提示しません。
 ### Storybook の正規例
 
 現行 Storybook には無名状態の境界条件例と、色差が意味状態に見え得る例が残っています。目標契約では、これらを正規例として扱いません。
-

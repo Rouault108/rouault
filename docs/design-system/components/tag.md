@@ -85,17 +85,17 @@
 
 ### 入力契約
 
-| 名前            | 種別                   | 必須   | 内容                         | 契約                                                      |
-| ------------- | -------------------- | ---- | -------------------------- | ------------------------------------------------------- |
-| `variant`     | property / attribute | いいえ  | 視覚バリアント                    | `default` / `outline` / `solid` / `plain`               |
-| `size`        | property / attribute | いいえ  | サイズ                        | `xs` / `sm`                                             |
-| `color`       | property / attribute | いいえ  | 意味的カラー                     | `neutral` / `red` / `blue` / `violet` / `pink` / `gold` |
-| `href`        | property / attribute | いいえ  | 遷移先 URL                    | 非空文字列の場合、開く操作を提供します                                     |
-| `removable`   | property / attribute | いいえ  | 除去可能状態                     | `true` の場合、除去操作を提供します                                   |
-| `disabled`    | property / attribute | いいえ  | 非活性状態                      | 開く操作または除去操作を無効化します                                      |
-| `value`       | property / attribute | 条件付き | 安定識別子                      | `removable=true` の場合は必須です                               |
-| `removeLabel` | property / attribute | 条件付き | 除去操作用アクセシブル名               | `removable=true` かつ自動生成文言で不足する場合に指定します                  |
-| `groupLabel`  | property / attribute | 条件付き | `href + removable` 時のグループ名 | `href + removable` で自動生成文言を使わない場合に指定します                 |
+| 名前          | 種別                 | 必須     | 内容                              | 契約                                                        |
+| ------------- | -------------------- | -------- | --------------------------------- | ----------------------------------------------------------- |
+| `variant`     | property / attribute | いいえ   | 視覚バリアント                    | `default` / `outline` / `solid` / `plain`                   |
+| `size`        | property / attribute | いいえ   | サイズ                            | `xs` / `sm`                                                 |
+| `color`       | property / attribute | いいえ   | 意味的カラー                      | `neutral` / `red` / `blue` / `violet` / `pink` / `gold`     |
+| `href`        | property / attribute | いいえ   | 遷移先 URL                        | 非空文字列の場合、開く操作を提供します                      |
+| `removable`   | property / attribute | いいえ   | 除去可能状態                      | `true` の場合、除去操作を提供します                         |
+| `disabled`    | property / attribute | いいえ   | 非活性状態                        | 開く操作または除去操作を無効化します                        |
+| `value`       | property / attribute | 条件付き | 安定識別子                        | `removable=true` の場合は必須です                           |
+| `removeLabel` | property / attribute | 条件付き | 除去操作用アクセシブル名          | `removable=true` かつ自動生成文言で不足する場合に指定します |
+| `groupLabel`  | property / attribute | 条件付き | `href + removable` 時のグループ名 | `href + removable` で自動生成文言を使わない場合に指定します |
 
 ### 入力の意味制約
 
@@ -106,10 +106,10 @@
 
 ### スロット契約
 
-| 名前     | 種別         | 位置づけ | 内容               |
-| ------ | ---------- | ---- | ---------------- |
-| 既定スロット | slot       | 正規入力 | タグの可視ラベルを受け取ります  |
-| `icon` | named slot | 補助入力 | 先頭の装飾アイコンを受け取ります |
+| 名前         | 種別       | 位置づけ | 内容                             |
+| ------------ | ---------- | -------- | -------------------------------- |
+| 既定スロット | slot       | 正規入力 | タグの可視ラベルを受け取ります   |
+| `icon`       | named slot | 補助入力 | 先頭の装飾アイコンを受け取ります |
 
 既定スロットはタグの可視ラベルを受け取ります。長いラベルは 1 行に固定され、省略表示されます。
 
@@ -125,8 +125,8 @@
 
 `ui-tag` は、除去操作に対して次のカスタムイベントを公開します。
 
-| 名前              | 発火条件     | detail              | bubbles | composed | cancelable |
-| --------------- | -------- | ------------------- | ------- | -------- | ---------- |
+| 名前            | 発火条件         | detail              | bubbles | composed | cancelable |
+| --------------- | ---------------- | ------------------- | ------- | -------- | ---------- |
 | `ui-tag-remove` | 除去ボタン起動時 | `{ value: string }` | `true`  | `true`   | `false`    |
 
 `detail.value` には、常に公開入力 `value` の値を返します。表示ラベル、DOM 構造、スロット内容の変化によって変動してはなりません（MUST NOT）。
@@ -141,17 +141,17 @@
 
 公開入力は property と attribute の両面から操作できます。boolean 値は attribute の有無で反映します。
 
-| property      | attribute      | reflect | 備考                        |
-| ------------- | -------------- | ------- | ------------------------- |
-| `variant`     | `variant`      | あり      | 列挙値以外は未サポートです             |
-| `size`        | `size`         | あり      | `xs` / `sm` を受理します        |
-| `color`       | `color`        | あり      | `plain` では意味を持ちません        |
-| `href`        | `href`         | あり      | 空文字列はリンクとして扱いません          |
-| `removable`   | `removable`    | あり      | boolean attribute として扱います |
-| `disabled`    | `disabled`     | あり      | 静的タグでは使用しません              |
-| `value`       | `value`        | あり      | 除去識別子です                   |
-| `removeLabel` | `remove-label` | あり      | 除去ボタンのアクセシブル名です           |
-| `groupLabel`  | `group-label`  | あり      | 複合状態のグループ名です              |
+| property      | attribute      | reflect | 備考                             |
+| ------------- | -------------- | ------- | -------------------------------- |
+| `variant`     | `variant`      | あり    | 列挙値以外は未サポートです       |
+| `size`        | `size`         | あり    | `xs` / `sm` を受理します         |
+| `color`       | `color`        | あり    | `plain` では意味を持ちません     |
+| `href`        | `href`         | あり    | 空文字列はリンクとして扱いません |
+| `removable`   | `removable`    | あり    | boolean attribute として扱います |
+| `disabled`    | `disabled`     | あり    | 静的タグでは使用しません         |
+| `value`       | `value`        | あり    | 除去識別子です                   |
+| `removeLabel` | `remove-label` | あり    | 除去ボタンのアクセシブル名です   |
+| `groupLabel`  | `group-label`  | あり    | 複合状態のグループ名です         |
 
 ### 列挙外値・無効値の扱い
 
@@ -199,12 +199,12 @@
 
 ### バリアント状態
 
-| `variant` 値 | 意味       | 想定用途               | 非推奨用途   |
-| ----------- | -------- | ------------------ | ------- |
-| `default`   | 控えめな面表現  | 通常の分類ラベル、本文近傍のメタ情報 | 強い注意喚起  |
-| `outline`   | 軽い境界線表現  | 背景干渉を避けたい分類        | 常時強調    |
-| `solid`     | 強い塗り表現   | 例外的な強調、限られた状態ラベル   | 多数並列表示  |
-| `plain`     | 最小限の文字表現 | 本文近傍の補助ラベル         | 色相による分類 |
+| `variant` 値 | 意味             | 想定用途                             | 非推奨用途     |
+| ------------ | ---------------- | ------------------------------------ | -------------- |
+| `default`    | 控えめな面表現   | 通常の分類ラベル、本文近傍のメタ情報 | 強い注意喚起   |
+| `outline`    | 軽い境界線表現   | 背景干渉を避けたい分類               | 常時強調       |
+| `solid`      | 強い塗り表現     | 例外的な強調、限られた状態ラベル     | 多数並列表示   |
+| `plain`      | 最小限の文字表現 | 本文近傍の補助ラベル                 | 色相による分類 |
 
 `plain` は常に無彩色の最小表現です。`plain` に対して `color` を指定しても意味論は変わりません。
 
@@ -343,30 +343,30 @@
 
 本コンポーネントは、主として次の公開トークンに依存します。
 
-| 用途           | トークン                                                                                      |
-| ------------ | ----------------------------------------------------------------------------------------- |
-| ベース色相        | `--hue-base`                                                                              |
-| Blue 色相      | `--hue-blue`                                                                              |
-| Violet 色相    | `--hue-violet`                                                                            |
-| Pink 色相      | `--hue-pink`                                                                              |
-| Gold 色相      | `--hue-gold`                                                                              |
-| Subtle 彩度    | `--chroma-subtle`                                                                         |
-| UI 彩度        | `--chroma-ui`                                                                             |
-| Neutral 彩度   | `--chroma-neutral`                                                                        |
-| High 彩度      | `--chroma-high`                                                                           |
-| 境界線幅         | `--border-width`                                                                          |
-| 既定ホバー境界線色    | `--border-default`                                                                        |
-| 余白           | `--space-1` / `--space-2`                                                                 |
-| 角丸           | `--radius-sm`                                                                             |
-| 文字サイズ        | `--text-xs`                                                                               |
-| フォントウェイト     | `--font-medium`                                                                           |
-| アイコンサイズ      | `--icon-xs`                                                                               |
-| 高さ           | `--control-height-xs` / `--control-height-sm`                                             |
+| 用途               | トークン                                                                                  |
+| ------------------ | ----------------------------------------------------------------------------------------- |
+| ベース色相         | `--hue-base`                                                                              |
+| Blue 色相          | `--hue-blue`                                                                              |
+| Violet 色相        | `--hue-violet`                                                                            |
+| Pink 色相          | `--hue-pink`                                                                              |
+| Gold 色相          | `--hue-gold`                                                                              |
+| Subtle 彩度        | `--chroma-subtle`                                                                         |
+| UI 彩度            | `--chroma-ui`                                                                             |
+| Neutral 彩度       | `--chroma-neutral`                                                                        |
+| High 彩度          | `--chroma-high`                                                                           |
+| 境界線幅           | `--border-width`                                                                          |
+| 既定ホバー境界線色 | `--border-default`                                                                        |
+| 余白               | `--space-1` / `--space-2`                                                                 |
+| 角丸               | `--radius-sm`                                                                             |
+| 文字サイズ         | `--text-xs`                                                                               |
+| フォントウェイト   | `--font-medium`                                                                           |
+| アイコンサイズ     | `--icon-xs`                                                                               |
+| 高さ               | `--control-height-xs` / `--control-height-sm`                                             |
 | 最小操作領域       | `--control-min-touch`                                                                     |
-| 無効時不透明度      | `--opacity-disabled`                                                                      |
-| フォーカスリング     | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
-| アニメーション      | `--duration-fast` / `--ease-out`                                                          |
-| `solid` の文字色 | `--white`                                                                                 |
+| 無効時不透明度     | `--opacity-disabled`                                                                      |
+| フォーカスリング   | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
+| アニメーション     | `--duration-fast` / `--ease-out`                                                          |
+| `solid` の文字色   | `--white`                                                                                 |
 
 ---
 
@@ -474,27 +474,27 @@
 
 各 Story は見本ではなく、**契約確認点**として扱います。Storybook はデモではなく実行可能な契約の一部とし、契約書の記述と矛盾してはなりません（MUST NOT）。
 
-| Story                            | 固定する契約                                                               |
-| -------------------------------- | -------------------------------------------------------------------- |
-| `Default`                        | 既定状態が `default` / `xs` / `neutral` の静的タグであること                        |
-| `VariantColorMatrix`             | `default` / `outline` / `solid` に対する色差、および `plain` が無彩色最小表現であること     |
-| `Sizes`                          | `xs` と `sm` の高さ差が成立すること                                              |
-| `DisabledVariants`               | disabled が視覚状態だけでなく開く操作 / 除去操作の抑止も伴うこと                               |
+| Story                            | 固定する契約                                                                               |
+| -------------------------------- | ------------------------------------------------------------------------------------------ |
+| `Default`                        | 既定状態が `default` / `xs` / `neutral` の静的タグであること                               |
+| `VariantColorMatrix`             | `default` / `outline` / `solid` に対する色差、および `plain` が無彩色最小表現であること    |
+| `Sizes`                          | `xs` と `sm` の高さ差が成立すること                                                        |
+| `DisabledVariants`               | disabled が視覚状態だけでなく開く操作 / 除去操作の抑止も伴うこと                           |
 | `Removable`                      | `value` を伴う除去操作状態が成立し、`ui-tag-remove.detail.value` が `value` と一致すること |
-| `WithLink`                       | `href` 指定時にネイティブ `<a>` が描画されること                                      |
-| `LinkAndRemovable`               | `href + removable` が `role="group"` + 並列配置になり、一対象二操作モデルを満たすこと        |
-| `WithIcon`                       | `icon` スロットが装飾先頭アイコンとして描画されること                                       |
-| `AllStates`                      | 主な色・バリアント・サイズ・操作状態を一覧確認できること                                         |
-| `DisabledNoEvent`                | disabled 時に `ui-tag-remove` が発火しないこと                                 |
-| `LinkRemovableNesting`           | `interactive content` の不正な入れ子を作らないこと                                 |
+| `WithLink`                       | `href` 指定時にネイティブ `<a>` が描画されること                                           |
+| `LinkAndRemovable`               | `href + removable` が `role="group"` + 並列配置になり、一対象二操作モデルを満たすこと      |
+| `WithIcon`                       | `icon` スロットが装飾先頭アイコンとして描画されること                                      |
+| `AllStates`                      | 主な色・バリアント・サイズ・操作状態を一覧確認できること                                   |
+| `DisabledNoEvent`                | disabled 時に `ui-tag-remove` が発火しないこと                                             |
+| `LinkRemovableNesting`           | `interactive content` の不正な入れ子を作らないこと                                         |
 | `LongTextTruncation`             | 長いラベルがレイアウト崩壊せず省略されること                                               |
-| `DisabledLinkPreventsNavigation` | disabled link がフォーカス除外かつ遷移抑止であること                                    |
-| `TouchTargetSize`                | 最小保証値 24 px の補助ターゲットがあること                                            |
-| `GoldColorVisibility`            | `gold` が他色と区別可能で白飛びしにくいこと                                            |
-| `DarkModeReference`              | ダーク背景上で主要状態を確認できること                                                  |
-| `FocusAndKeyboard`               | 開く操作 + 除去操作の双方がフォーカス対象になること                                          |
-| `AccessibleNameOverrides`        | `removeLabel` / `groupLabel` が優先して使われること                             |
-| `StaticDisabledInvalid`          | 静的タグに `disabled` を使わない契約を明示すること                                      |
+| `DisabledLinkPreventsNavigation` | disabled link がフォーカス除外かつ遷移抑止であること                                       |
+| `TouchTargetSize`                | 最小保証値 24 px の補助ターゲットがあること                                                |
+| `GoldColorVisibility`            | `gold` が他色と区別可能で白飛びしにくいこと                                                |
+| `DarkModeReference`              | ダーク背景上で主要状態を確認できること                                                     |
+| `FocusAndKeyboard`               | 開く操作 + 除去操作の双方がフォーカス対象になること                                        |
+| `AccessibleNameOverrides`        | `removeLabel` / `groupLabel` が優先して使われること                                        |
+| `StaticDisabledInvalid`          | 静的タグに `disabled` を使わない契約を明示すること                                         |
 
 ---
 
@@ -588,7 +588,7 @@
 
 ### 結論
 
-新規で追加を検討する価値が高いのは、``** の正式実装**と ``** / **``** によるアクセシブル名上書き**です。これらは、現行実装の不安定さを直接解消し、契約の中核である識別とアクセシビリティを強化します。
+新規で追加を検討する価値が高いのは、`** の正式実装**と `** / **``** によるアクセシブル名上書き**です。これらは、現行実装の不安定さを直接解消し、契約の中核である識別とアクセシビリティを強化します。
 
 一方で、リンク属性の受け渡しや `part` の限定公開は、需要がある場合に限って採用します。省略表示の補助やアイコン制約強化、除去アイコン差し替えは、上位の契約整備が済んだ後に評価します。
 
@@ -653,4 +653,3 @@
 ### 12. 本節の扱い
 
 本節に記載した事項は、現行公開実装として利用者が依存してよいものではありません。これらを採用または修正する場合は、実装、Storybook、契約書の 3 点を同時に更新し、未整合のまま公開契約へ昇格させません。
-
