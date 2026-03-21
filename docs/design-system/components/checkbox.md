@@ -49,11 +49,11 @@ Rouault における checkbox は、フォーム UI のための汎用コント�
 
 `checked=true` と `indeterminate=true` の両立は許可しません。`checked` が `true` になった時点で `indeterminate` は解除されます。
 
-`invalid` は外部制御用のエラー状態です。ただし、意味のあるエラー状態として扱うには `errorMessage` と組み合わせて使用しなければなりません（MUST）。`invalid` 単独使用は視覚状態と妥当性状態を不整合にし得るため、正規入力としません。
+`invalid` は外部制御用のエラー状態です。`errorMessage` は可視エラー文言です。両者は併用できますが、**同一の入力ではありません**。`invalid=true` は意味上のエラー状態を表し、`errorMessage` はその状態をコンポーネント内で可視化する場合に用います。したがって、`invalid=true` かつ `errorMessage=''` は許容されます。ただし、この場合は**可視エラーを表示しない外部制御状態**として扱います。
 
-`label` は可視ラベル用のテキスト入力です。Rich text、HTML、複数行の構造的ラベル、補助アイコン付きラベルは公開契約に含みません。これらが必要な場合は上位ラッパーで構成します。
+`label` は可視ラベル用のテキスト入力です。通常の単一行・複数行テキストラベルを受け付けます。Rich text、HTML、ラベル内部の独立インタラクションを伴う構造的ラベルは公開契約に含みません。これらが必要な場合は上位ラッパーで構成します。
 
-アクセシブル名の決定は、**可視ラベルがある場合は可視ラベルに一本化**します。したがって、`label` を与える場合、外部 `aria-label` を併用する構成は正規入力に含みません。`label=''` の場合に限り、外部 `aria-label` または `aria-labelledby` を正規入力として扱います。
+アクセシブル名の決定は、**可視ラベルがある場合は可視ラベルを優先**します。したがって、`label` を与える場合の外部 `aria-label` 併用は推奨しません。`label=''` の場合に限り、外部 `aria-label` または `aria-labelledby` を正規入力として扱います。
 
 `aria-describedby` は外部入力を受け付けますが、内部エラーメッセージを持つ場合はそれを**連結**して扱います。外部 `aria-describedby` を内部実装が上書きすることには依存しません。
 
@@ -68,8 +68,8 @@ Rouault における checkbox は、フォーム UI のための汎用コント�
 | `label`         | property / attribute                   | いいえ | 可視ラベル     | テキストのみを受け付けます                                 |
 | `disabled`      | property / attribute                   | いいえ | 無効状態       | `true` の場合は操作不可、送信対象外です                    |
 | `required`      | property / attribute                   | いいえ | 必須状態       | `checked=false` のとき妥当性エラー要因になります           |
-| `invalid`       | property / attribute                   | いいえ | 外部エラー状態 | `errorMessage` と組み合わせて使用します                    |
-| `errorMessage`  | property / attribute (`error-message`) | いいえ | エラー文言     | `invalid=true` と併用します                                |
+| `invalid`       | property / attribute                   | いいえ | 外部エラー状態 | 意味上のエラー状態を表します                               |
+| `errorMessage`  | property / attribute (`error-message`) | いいえ | エラー文言     | 非空の場合、可視エラー文言として扱います                   |
 
 ### 3.3 属性反映契約
 
@@ -98,7 +98,7 @@ Rouault における checkbox は、フォーム UI のための汎用コント�
 | `input`  | control のクリック、label のクリック、または control 上の Space キーで状態が変化した直後 | あり    | あり     | なし       | 状態更新後の一次通知です |
 | `change` | `input` 発火後                                                                           | あり    | あり     | なし       | 確定通知です             |
 
-イベント順序は `** → **` で固定します。どちらのイベントも、`checked` および `indeterminate` の内部状態、FormData 参加状態、妥当性状態の同期が完了した後に発火します。
+イベント順序は `input → change` で固定します。どちらのイベントも、`checked` および `indeterminate` の内部状態、FormData 参加状態、妥当性状態の同期が完了した後に発火します。
 
 プロパティの直接代入による状態変更では、これらのイベントは自動発火しません。利用者は**プログラム変更とユーザー操作を同一視してはなりません**（MUST NOT）。
 
@@ -120,7 +120,7 @@ Rouault における checkbox は、フォーム UI のための汎用コント�
 - `form.reset()` 時は、`checked` を初期値へ戻します。
 - `form.reset()` 時は、`indeterminate` を常に `false` へ戻します。
 - `form.reset()` 時に、`invalid` と `errorMessage` は自動解除しません。これらは外部表示制御として扱います。
-- state restore を実装する場合、復元対象は `checked` を最優先とし、`indeterminate` は復元対象に含めません。
+- state restore を実装する場合、少なくとも `checked` を復元対象とします。`indeterminate` を復元対象に含めるかどうかは、アプリケーション側の tri-state 運用規約に従います。
 
 したがって、本コンポーネントにおいて reset の対象となるのは主として**フォーム送信値に関わる状態**であり、外部エラー表示や導出的な tri-state 表示は自動復元対象に含めません。
 
@@ -129,7 +129,7 @@ Rouault における checkbox は、フォーム UI のための汎用コント�
 本コンポーネントは列挙型 property を持ちませんが、boolean / string の与え方によって不正または非正規状態が生じ得ます。
 
 - `indeterminate=true` と `checked=true` の同時指定は許可しません。`checked=true` が優先され、`indeterminate` は解除されます。
-- `invalid=true` かつ `errorMessage=''` は正規運用に含みません。この組み合わせでは visible error を成立させません。
+- `invalid=true` かつ `errorMessage=''` は許容されます。この組み合わせでは visible error を表示せず、意味上のエラー状態のみを表します。
 - `label=''` の場合、外部から `aria-label` または `aria-labelledby` を提供しなければなりません（MUST）。
 - `label` を与える場合、外部 `aria-label` の併用は正規入力に含みません。可視ラベルをアクセシブル名に優先します。
 - `name=''` は許容されますが、フォーム送信値には参加しません。
@@ -168,13 +168,13 @@ Rouault における checkbox は、フォーム UI のための汎用コント�
 
 ### 4.4 中間状態からの遷移
 
-ユーザー操作によって `indeterminate` 状態を解除する場合、遷移先は `checked=false` です。すなわち、
+standalone な checkbox としてユーザー操作によって `indeterminate` 状態を解除する場合、既定遷移は `checked=false` です。すなわち、
 
 ```text
 Indeterminate → Unchecked
 ```
 
-です。`Indeterminate → Checked` には遷移しません。これは Storybook 上でも固定されている境界条件です。
+です。ただし、この遷移は tri-state 親子選択ロジック全体の意味付けを固定するものではありません。アプリケーションが親子同期規約を持つ場合、上位レイヤは `indeterminate` の解除後に次状態を明示的に制御できます。
 
 ### 4.5 相互排他状態
 
@@ -192,15 +192,15 @@ Indeterminate → Unchecked
 
 ### 4.8 外部エラー状態
 
-`invalid=true` かつ `errorMessage` が非空の場合、visible error として扱います。この場合に限り、エラーボーダーとエラーメッセージを表示し、`aria-invalid="true"` を出力します。
+`invalid=true` の場合、意味上の外部エラー状態として扱います。`errorMessage` が非空の場合は、visible error としてエラーボーダーとエラーメッセージを表示します。
 
-`invalid=true` かつ `errorMessage` が空の場合は、公開契約として採用しません。この組み合わせでは visible error を成立させません。
+`aria-invalid="true"` は、`invalid=true` の場合、または内部妥当性が invalid の場合に出力します。したがって、`invalid=true` かつ `errorMessage=''` は、可視エラーを伴わない意味上のエラー状態として許容されます。
 
 ### 4.9 妥当性優先順位
 
 現行実装では、妥当性同期時の優先順位は次のとおりです。
 
-1. `invalid=true` かつ `errorMessage` 非空 → `customError`
+1. `invalid=true` → `customError`
 2. `required=true` かつ `checked=false` → `valueMissing`
 3. それ以外 → valid
 
@@ -220,7 +220,7 @@ Indeterminate → Unchecked
 
 ## 5. DOM / Accessibility
 
-ルートは `:host` です。Shadow DOM 内部に `.wrapper`、`.control`、必要に応じた `.label`、必要に応じた `.error-message` を持ちます。
+ルートは `:host` です。Shadow DOM 内部に `.wrapper`、対話主体となる `.control`、必要に応じた `.label`、必要に応じた `.error-message` を持ちます。
 
 ```text
 <ui-checkbox>
@@ -237,11 +237,11 @@ Indeterminate → Unchecked
 
 アクセシビリティ上の重要点は次のとおりです。
 
-- 対話主体は Shadow DOM 内の `.control[role="checkbox"]` です。
+- 対話主体は Shadow DOM 内の `.control` です。実装はこの要素に checkbox として必要な role / state / focusability を与えます。
 - `checked=false / true / indeterminate=true` に応じて `aria-checked="false" / "true" / "mixed"` を出力します。
 - `disabled=true` の場合、`aria-disabled="true"` を出力します。
 - `required=true` の場合、`aria-required="true"` を出力します。
-- `invalid=true` かつ `errorMessage` 非空の場合のみ `aria-invalid="true"` を出力します。
+- `invalid=true` の場合、または内部妥当性が invalid の場合に `aria-invalid="true"` を出力します。
 - `label` がある場合、内部 control は `aria-labelledby` でそのラベルを参照します。
 - `label` がない場合は、外部から `aria-label` または `aria-labelledby` を提供しなければなりません（MUST）。
 - `label` がある場合、外部 `aria-label` の併用は正規入力に含みません。アクセシブル名の決定は可視ラベルに一本化します。
@@ -250,9 +250,9 @@ Indeterminate → Unchecked
 
 ### 5.2 ラベル契約
 
-`label` は内部 `<label>` 要素として描画されますが、ネイティブ checkbox と label 要素の自動連携には依存していません。ラベルクリック時は、実装が明示的に control へフォーカスを移し、状態トグルを実行します。
+`label` は内部ラベル要素として描画されます。ラベルクリック時は、実装が明示的に control へフォーカスを移し、状態トグルを実行します。
 
-したがって、本コンポーネントにおけるラベルは、**視覚ラベル兼クリック領域**であって、独立したキーボード操作主体ではありません。ラベル Enter 起動は公開契約に含みません。
+したがって、本コンポーネントにおけるラベルは、**視覚ラベル兼クリック領域**です。独立したキーボード操作主体としては扱いません。
 
 ### 5.3 フォーカス契約
 
@@ -266,7 +266,7 @@ Indeterminate → Unchecked
 2. `label` がない場合は外部 `aria-labelledby`
 3. `label` がない場合の外部 `aria-label`
 
-この順序は単なる実装都合ではなく、公開契約です。したがって、可視ラベルがある状態で `aria-label` により別名へ上書きする運用は正規入力に含みません。
+この順序は公開契約です。したがって、可視ラベルがある状態で `aria-label` により別名へ上書きする運用は推奨しません。
 
 ### 5.5 `aria-describedby` 合成契約
 
@@ -289,10 +289,10 @@ Indeterminate → Unchecked
 
 ### 6.1 情報順位
 
-- 未選択は、淡い背景と境界線によって「選択可能な構造」として静かに存在します。
+- 未選択は、背景と境界線によって「選択可能な構造」であることを明確に示します。
 - 選択済みは、塗り背景とチェックアイコンによって明確に示します。
 - 中間状態は、塗り背景と minus アイコンによって、選択済みとは異なる部分状態であることを示します。
-- 無効状態は、ラベル行全体の不透明度低下によって操作不能を示します。
+- 無効状態は、不透明度低下に加えて、通常状態より弱いコントラストによって操作不能を示します。
 - エラー状態は、境界線とエラーメッセージによって示します。
 
 ### 6.2 レイアウト
@@ -301,7 +301,7 @@ Indeterminate → Unchecked
 
 ### 6.3 寸法契約
 
-- control の視覚サイズは `16px × 16px` です。
+- control の視覚サイズは `16px × 16px` を基準とします。テーマやプラットフォーム要件に応じて拡張できます。
 - label との間隔は `--space-2` に従います。
 - タッチターゲット補助は `.control::before` で確保します。
 - 最小タッチ領域は `44px × 44px` を下限とします。
@@ -389,9 +389,9 @@ print 専用スタイルは定義していません。印刷時の表示制御�
 - label のクリック
 - control 上での Space キー
 
-このとき、状態遷移後に `**、ついで **` を発火します。
+このとき、状態遷移後に `input`、ついで `change` を発火します。
 
-Enter キーは control の正規操作には含みません。checkbox は button ではないため、キーボード起動は Space を正規とします。label 自体の Enter 起動も公開契約に含みません。
+Enter キーは control の正規操作には含みません。checkbox は button ではないため、キーボード起動は Space を正規とします。
 
 ### 8.2 フォーム関連付け契約
 
@@ -414,13 +414,13 @@ Enter キーは control の正規操作には含みません。checkbox は butt
 
 | 条件                                    | 妥当性         |
 | --------------------------------------- | -------------- |
-| `invalid=true` かつ `errorMessage` 非空 | `customError`  |
+| `invalid=true`                          | `customError`  |
 | `required=true` かつ `checked=false`    | `valueMissing` |
 | それ以外                                | valid          |
 
 `checkValidity()` と `reportValidity()` はこの内部状態に従います。
 
-ただし、ここで用いる**内部妥当性メッセージ文字列**は公開契約に含みません。required 違反時に内部でどの文言を `setValidity()` へ渡すか、あるいは UA がどのようにレポートするかには依存しません。可視エラーとして利用者が依存してよい公開面は、`invalid` と `errorMessage` の組み合わせのみです。
+ただし、ここで用いる**内部妥当性メッセージ文字列**は公開契約に含みません。required 違反時に内部でどの文言を `setValidity()` へ渡すか、あるいは UA がどのようにレポートするかには依存しません。可視エラーとして利用者が依存してよい公開面は、`errorMessage` が非空の場合のエラー表示です。`invalid` 自体は意味上のエラー状態として単独でも利用できます。
 
 したがって、`reportValidity()` の結果としてブラウザが表示するネイティブ UI は視覚契約に含めません。画面上のエラー表現を固定したい場合、上位レイヤは `checkValidity()` の結果を見て `invalid` と `errorMessage` を明示的に制御します。
 
@@ -451,7 +451,7 @@ Enter キーは control の正規操作には含みません。checkbox は butt
 
 ### 9.3 indeterminate のユーザー解除
 
-`indeterminate=true` の checkbox をユーザーが操作した場合、次状態は `checked=false` です。checked にはなりません。
+standalone な `indeterminate=true` の checkbox をユーザーが操作した場合、既定の次状態は `checked=false` です。親子同期を持つ構成では、上位レイヤがこの結果を上書きできます。
 
 ### 9.4 disabled 時の操作
 
@@ -463,7 +463,7 @@ Enter キーは control の正規操作には含みません。checkbox は butt
 
 ### 9.6 invalid 単独指定
 
-`invalid=true` かつ `errorMessage=''` は公開契約として採用しません。視覚状態だけが先行し、妥当性と ARIA が一致しないためです。
+`invalid=true` かつ `errorMessage=''` は許容されます。この場合、可視エラーは表示せず、意味上のエラー状態のみを表します。
 
 ### 9.7 フォーム送信名なし
 
@@ -477,7 +477,7 @@ Enter キーは control の正規操作には含みません。checkbox は butt
 
 ## 10. Storybook 契約
 
-本節では、``** に実在する Story 名のみ**を用います。仮想的な確認項目名は使用しません。追加の契約確認点は、既存 Story の「固定する契約」に内包して記述します。
+本節では、`checkbox.stories.ts` に実在する Story 名のみを用います。仮想的な確認項目名は使用しません。追加の契約確認点は、既存 Story の「固定する契約」に内包して記述します。
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
 
@@ -490,7 +490,7 @@ Enter キーは control の正規操作には含みません。checkbox は butt
 | `UncheckedDisabled`          | disabled 時に `aria-disabled="true"` かつ `tabindex="-1"` となること                                                                                                             |
 | `CheckedDisabled`            | checked + disabled が両立し、操作不能であること                                                                                                                                  |
 | `IndeterminateDisabled`      | indeterminate + disabled が両立し、操作不能であること                                                                                                                            |
-| `UncheckedInvalid`           | `invalid + errorMessage` により `aria-invalid`、error message、`aria-describedby` が成立すること。visible error はこの組み合わせでのみ成立することの参照 Storyとします           |
+| `UncheckedInvalid`           | `invalid` により意味上のエラー状態が成立し、`errorMessage` がある場合は `aria-invalid`、error message、`aria-describedby` が成立することの参照 Story とします                       |
 | `CheckedInvalid`             | checked 状態でも外部 invalid を重ねられること                                                                                                                                    |
 | `AllStates`                  | 主要状態の一覧が同時描画できること                                                                                                                                               |
 | `ClickToggle`                | クリックで状態がトグルし、`input`、ついで `change` が発火すること                                                                                                                |
@@ -503,12 +503,12 @@ Enter キーは control の正規操作には含みません。checkbox は butt
 | `DarkThemeStates`            | トークン差し替えによるダークテーマ表示が成立すること                                                                                                                             |
 | `ForcedColorsSimulation`     | forced colors 相当の表示が成立すること                                                                                                                                           |
 | `FormIntegration`            | checked / disabled / name 条件に応じて FormData 参加が切り替わること。同一 `name` を持つ複数 checkbox は相互排他ではなく独立送信単位として扱う契約の参照 Story とします          |
-| `RequiredValidation`         | required と `checkValidity()` の組み合わせが成立すること。required は内部妥当性制約であり、visible error は `invalid + errorMessage` により外部制御することの参照 Story とします |
+| `RequiredValidation`         | required と `checkValidity()` の組み合わせが成立すること。required は内部妥当性制約であり、visible error は `errorMessage` の有無を含む外部制御で扱うことの参照 Story とします     |
 | `SelectAllPattern`           | 親子 checkbox の tri-state パターン例が成立すること                                                                                                                              |
 
 ### 10.1 Storybook 契約の読み方
 
-- **Story 名は **``** の export 名と完全一致**させます。
+- **Story 名は `checkbox.stories.ts` の export 名と完全一致**させます。
 - 実在しない Story 名を契約表へ追加しません。
 - 単独 Story を持たない契約確認点は、既存 Story の説明へ吸収します。
 - まだ Story 上で明示確認していない契約は、Storybook 契約ではなく本文の公開契約・境界条件・未整合事項として扱います。
@@ -525,7 +525,7 @@ Enter キーは control の正規操作には含みません。checkbox は butt
 1. `indeterminate` は property 入力専用とし、導出属性と外部入力契約を混同しないこと。
 2. `checked` と `indeterminate` の排他を維持すること。
 3. ユーザー操作イベントとプログラム変更を分離し続けること。
-4. required と visible error を分離し、表示責務を上位へ残すこと。
+4. required による内部妥当性と、`invalid` / `errorMessage` による外部エラー表現を混同しないこと。
 
 ---
 
@@ -553,7 +553,7 @@ Enter キーは control の正規操作には含みません。checkbox は butt
 この拡張を採用する場合、次を満たします。
 
 - 初期 checked 状態を reset 基準として明示します。
-- `indeterminate` の reset 時扱いを契約化します。
+- `indeterminate` の reset 時扱いを契約化し、必要に応じて tri-state 運用規約と整合させます。
 - ネイティブ checkbox と近い期待値を維持します。
 - programmatic state と default state を分離します。
 
@@ -567,7 +567,7 @@ Enter キーは control の正規操作には含みません。checkbox は butt
 
 - テキスト属性ラベルと slot ラベルの責務を明確に分けます。
 - アクセシブル名の決定規則を再定義します。
-- ラベル内リンクなどの相互作用衝突を避けます。
+- ラベル内リンクなどの相互作用衝突を避け、checkbox 本体の操作主体を曖昧にしません。
 - 読書面で過剰な装飾を導入しません。
 
 #### 12.2.2 エラー状態の一元化
@@ -578,7 +578,7 @@ Enter キーは control の正規操作には含みません。checkbox は butt
 
 - required failure と custom error の責務差を消しません。
 - 自動表示と手動表示のどちらを採るかを明示します。
-- `aria-invalid` の出し分け規則を明文化します。
+- `aria-invalid`、visible error、内部妥当性の出し分け規則を明文化します。
 - 外部フォームライブラリとの整合を崩しません。
 
 ### 12.3 採用しない方針
@@ -606,7 +606,7 @@ Enter キーは control の正規操作には含みません。checkbox は butt
 
 現行実装は `invalid` 属性があるだけで視覚上はエラー境界線を表示します。しかし、`errorMessage` が空の場合は `setValidity({ customError: true }, ...)` を行わず、`aria-invalid` も出力しません。
 
-したがって、``** 単独では視覚状態と妥当性状態が一致しません**。契約書では visible error を `invalid + errorMessage` に限定しています。
+したがって、**`invalid` 単独では意味上のエラー状態・視覚状態・妥当性状態・ARIA 状態が一致していません**。契約書では `invalid` を意味上のエラー状態として許容しつつ、実装側では少なくとも `aria-invalid` と内部妥当性の整合を取る必要があります。
 
 ### 13.3 フォーム reset / state restore 契約
 
@@ -620,23 +620,23 @@ Enter キーは control の正規操作には含みません。checkbox は butt
 
 ### 13.5 ラベルのキーボード契約
 
-実装にはラベルに対する Enter キー処理がありますが、契約書ではラベルをクリック領域としてのみ扱い、ラベル Enter 起動を公開契約に含めていません。
+実装にはラベルに対する Enter キー処理がありますが、契約書ではラベルをクリック領域として扱い、独立したキーボード操作主体とはみなしません。
 
-したがって、**ラベル Enter 起動は現行実装に残っているが、契約上は採用していない挙動**です。
+したがって、**ラベル Enter 起動は現行実装に残っているが、契約上は依存対象にしない挙動**です。
 
 ### 13.6 アクセシブル名入力の競合制御
 
-`label` がある状態でも、外部 `aria-label` を同時に与えられます。現行実装はこの競合を明示的に防いでいません。したがって、**可視ラベル優先は契約上の規律であり、実装上の強制ではありません**。
+`label` がある状態でも、外部 `aria-label` を同時に与えられます。現行実装はこの競合を明示的に防いでいません。したがって、**可視ラベル優先は契約上の推奨規律であり、実装上の強制ではありません**。
 
 ### 13.7 `focus()` と disabled の関係
 
 現行実装は `disabled=true` でも公開 `focus()` が内部 control の `focus()` をそのまま呼び出します。契約書では no-op と定義しています。
 
-したがって、**disabled 時の **``** 挙動は現行実装と契約書で未整合**です。
+したがって、**disabled 時の `focus()` 挙動は現行実装と契約書で未整合**です。
 
 ### 13.8 `aria-describedby` の重複整理
 
-現行実装は、外部 `aria-describedby` と内部 error ID を連結しますが、重複 ID の除去や順序正規化までは行いません。したがって、``** の整合性確保は利用側責務**です。
+現行実装は、外部 `aria-describedby` と内部 error ID を連結しますが、重複 ID の除去や順序正規化までは行いません。したがって、`aria-describedby` の整合性確保は利用側責務です。
 
 ### 13.9 タッチターゲット寸法の整合性
 
@@ -658,7 +658,7 @@ Enter キーは control の正規操作には含みません。checkbox は butt
 
 契約書では、`label=''` の場合のアクセシブル名決定順序を `aria-labelledby`、ついで `aria-label` と定義しています。しかし現行実装は、`label` がない状態で外部 `aria-labelledby` と `aria-label` の両方が与えられた場合、**優先規則を強制せず両方をそのまま control へ設定**します。
 
-したがって、``** なし時のアクセシブル名優先順位は契約上は定義済みでも、実装上は未強制**です。
+したがって、`label` なし時のアクセシブル名優先順位は契約上は定義済みでも、実装上は未強制です。
 
 ### 13.13 実装内 JSDoc / コメントの未整合
 
