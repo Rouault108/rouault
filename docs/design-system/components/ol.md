@@ -93,13 +93,13 @@
 
 ### 公開入力
 
-| 名前             | 種別               | 必須  | 内容        | 契約                              |
-| -------------- | ---------------- | --- | --------- | ------------------------------- |
-| root `<ol>`    | child node       | はい  | 順序付きリスト本体 | 正規入力ではホスト直下に `<ol>` を 1 つだけ持ちます |
-| `variant`      | host attribute   | いいえ | 表現バリアント   | 現時点の正式値は `steps` のみです           |
-| `ol[start]`    | native attribute | いいえ | 開始番号      | 視覚マーカーと整合します                    |
-| `ol[reversed]` | native attribute | いいえ | 降順番号      | 視覚マーカーと整合します                    |
-| `li[value]`    | native attribute | いいえ | 明示番号      | 当該項目の番号を上書きします                  |
+| 名前           | 種別             | 必須   | 内容               | 契約                                                |
+| -------------- | ---------------- | ------ | ------------------ | --------------------------------------------------- |
+| root `<ol>`    | child node       | はい   | 順序付きリスト本体 | 正規入力ではホスト直下に `<ol>` を 1 つだけ持ちます |
+| `variant`      | host attribute   | いいえ | 表現バリアント     | 現時点の正式値は `steps` のみです                   |
+| `ol[start]`    | native attribute | いいえ | 開始番号           | 視覚マーカーと整合します                            |
+| `ol[reversed]` | native attribute | いいえ | 降順番号           | 視覚マーカーと整合します                            |
+| `li[value]`    | native attribute | いいえ | 明示番号           | 当該項目の番号を上書きします                        |
 
 ### 正規入力契約
 
@@ -277,15 +277,15 @@ nested `<ol>` は `<li>` の子として許可します。これは ordered list
 
 `ui-ol` は、少なくとも次の概念トークンに依存します。
 
-| 用途          | トークン                  |
-| ----------- | --------------------- |
-| 項目間余白       | `--space-2`           |
-| マーカー色       | `--fg-muted`          |
-| 手順マーカー色     | `--primary`           |
-| 数字書体        | `--font-mono`         |
-| 数字太さ        | `--font-medium`       |
-| 補助 hit area | `--control-min-touch` |
-| 小型操作要素の最低高  | `--control-height-sm` |
+| 用途                 | トークン              |
+| -------------------- | --------------------- |
+| 項目間余白           | `--space-2`           |
+| マーカー色           | `--fg-muted`          |
+| 手順マーカー色       | `--primary`           |
+| 数字書体             | `--font-mono`         |
+| 数字太さ             | `--font-medium`       |
+| 補助 hit area        | `--control-min-touch` |
+| 小型操作要素の最低高 | `--control-height-sm` |
 
 ここで重要なのは個々の値ではなく、**spacing / color / type / touch support が foundation token で供給されること**です。
 
@@ -390,14 +390,14 @@ Storybook の役割に含めません。
 
 各 Story では、少なくとも次の観測対象を明示します。
 
-| 観測対象 | 内容                                              |
-| ---- | ----------------------------------------------- |
-| 構造   | 正規入力が描画されること                                    |
-| 番号意味 | `start` / `reversed` / `li[value]` が視覚表現と整合すること |
-| 整列   | 番号桁数が変わっても本文開始位置が揃うこと                           |
-| 変種   | `variant` が許可された差分だけを生むこと                       |
-| 境界   | nested ordered list や構造違反時の扱いが契約どおりであること        |
-| 環境   | forced colors、トークン差し替え時に公開契約が崩れないこと             |
+| 観測対象 | 内容                                                         |
+| -------- | ------------------------------------------------------------ |
+| 構造     | 正規入力が描画されること                                     |
+| 番号意味 | `start` / `reversed` / `li[value]` が視覚表現と整合すること  |
+| 整列     | 番号桁数が変わっても本文開始位置が揃うこと                   |
+| 変種     | `variant` が許可された差分だけを生むこと                     |
+| 境界     | nested ordered list や構造違反時の扱いが契約どおりであること |
+| 環境     | forced colors、トークン差し替え時に公開契約が崩れないこと    |
 
 ### Storybook で観測しない対象
 
@@ -431,27 +431,27 @@ visual diff は補助手段です。番号意味、属性意味、構造違反�
 
 ### Story 一覧
 
-| Story                          | 入力条件                                              | 観測点                                                       | 失敗条件                                                         | 第一確認手段            | 補助確認手段            |
-| ------------------------------ | ------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------ | ----------------- | ----------------- |
-| `Default`                      | 正規入力の最小構成                                         | ordered list が描画され、先頭番号が既定開始値と整合し、本文開始位置が安定していること         | root `<ol>` を前提とする基本構造が崩れること、既定番号が不整合になること                   | DOM 観測            | computed style 観測 |
-| `StartAndValue`                | `start` と `li[value]` を含む構成                       | 開始番号、途中番号飛び、以後の番号進行が視覚的に整合すること                            | 途中番号変更後の進行が崩れること、視覚番号がネイティブ意味とずれること                          | DOM 観測            | computed style 観測 |
-| `Reversed`                     | `reversed` を含む構成                                  | 降順の意味と視覚番号が一致すること                                         | 降順時に視覚番号だけが昇順になること、または開始値解釈が破綻すること                           | DOM 観測            | computed style 観測 |
-| `MarkerAlignment`              | 1 桁・2 桁・3 桁以上が混在する構成                              | 番号桁数が変わっても本文開始位置が揃うこと                                     | `9` と `10`、`99` と `100` などで本文開始位置がずれること                      | computed style 観測 | visual diff       |
-| `VariantSteps`                 | `variant="steps"` の構成                             | 許可された差分がマーカーの tone に限定されること                               | 本文色、本文位置、spacing、番号意味まで変化すること                                | computed style 観測 | visual diff       |
-| `NestedOrderedList`            | `<li>` 配下に nested `<ol>` を持つ構成                    | nested ordered list が独立した ordered list として整列すること          | 親 list の marker 契約が子 list に破壊的に漏れること、または子 list の本文開始位置が崩れること | DOM 観測            | computed style 観測 |
-| `NestedUnorderedListIsolation` | `<li>` 配下に nested `<ul>` を持つ構成                    | nested unordered list が `ui-ol` の ordered list 契約対象外であること | ordered list 用 marker や整列規則が nested unordered list に漏れること    | DOM 観測            | computed style 観測 |
-| `StructureViolation`           | root `<ol>` 不在、複数 root `<ol>`、`ol` 直下の非 `li` 混在など | 非正規入力が非保証であること、または互換救済としてのみ扱うことが明示されること                   | 非正規入力を正規入力と同格に見せること                                          | DOM 観測            | visual diff       |
-| `EnvironmentContracts`         | forced colors 相当およびトークン差し替え構成                     | 環境差があっても公開契約が崩れないこと                                       | 色依存の意味破綻、トークン差し替えで整列や可読性が崩れること                               | computed style 観測 | visual diff       |
+| Story                          | 入力条件                                                        | 観測点                                                                                | 失敗条件                                                                                       | 第一確認手段        | 補助確認手段        |
+| ------------------------------ | --------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------- | ------------------- |
+| `Default`                      | 正規入力の最小構成                                              | ordered list が描画され、先頭番号が既定開始値と整合し、本文開始位置が安定していること | root `<ol>` を前提とする基本構造が崩れること、既定番号が不整合になること                       | DOM 観測            | computed style 観測 |
+| `StartAndValue`                | `start` と `li[value]` を含む構成                               | 開始番号、途中番号飛び、以後の番号進行が視覚的に整合すること                          | 途中番号変更後の進行が崩れること、視覚番号がネイティブ意味とずれること                         | DOM 観測            | computed style 観測 |
+| `Reversed`                     | `reversed` を含む構成                                           | 降順の意味と視覚番号が一致すること                                                    | 降順時に視覚番号だけが昇順になること、または開始値解釈が破綻すること                           | DOM 観測            | computed style 観測 |
+| `MarkerAlignment`              | 1 桁・2 桁・3 桁以上が混在する構成                              | 番号桁数が変わっても本文開始位置が揃うこと                                            | `9` と `10`、`99` と `100` などで本文開始位置がずれること                                      | computed style 観測 | visual diff         |
+| `VariantSteps`                 | `variant="steps"` の構成                                        | 許可された差分がマーカーの tone に限定されること                                      | 本文色、本文位置、spacing、番号意味まで変化すること                                            | computed style 観測 | visual diff         |
+| `NestedOrderedList`            | `<li>` 配下に nested `<ol>` を持つ構成                          | nested ordered list が独立した ordered list として整列すること                        | 親 list の marker 契約が子 list に破壊的に漏れること、または子 list の本文開始位置が崩れること | DOM 観測            | computed style 観測 |
+| `NestedUnorderedListIsolation` | `<li>` 配下に nested `<ul>` を持つ構成                          | nested unordered list が `ui-ol` の ordered list 契約対象外であること                 | ordered list 用 marker や整列規則が nested unordered list に漏れること                         | DOM 観測            | computed style 観測 |
+| `StructureViolation`           | root `<ol>` 不在、複数 root `<ol>`、`ol` 直下の非 `li` 混在など | 非正規入力が非保証であること、または互換救済としてのみ扱うことが明示されること        | 非正規入力を正規入力と同格に見せること                                                         | DOM 観測            | visual diff         |
+| `EnvironmentContracts`         | forced colors 相当およびトークン差し替え構成                    | 環境差があっても公開契約が崩れないこと                                                | 色依存の意味破綻、トークン差し替えで整列や可読性が崩れること                                   | computed style 観測 | visual diff         |
 
 ### 確認方法の固定契約
 
 確認方法は、次のように固定します。
 
-| 確認方法              | 用途                                        | 主要に使う Story                                                                                                                                     | 採らない用途         |
-| ----------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| DOM 観測            | 構造、属性意味、正規入力 / 非正規入力の区別、nested list の境界確認 | `Default`、`StartAndValue`、`Reversed`、`NestedOrderedList`、`NestedUnorderedListIsolation`、`StructureViolation`                                    | 色差や本文位置の主要確認   |
-| computed style 観測 | 本文開始位置、色差、spacing、tone、環境トークン反映の確認        | `Default`、`StartAndValue`、`Reversed`、`MarkerAlignment`、`VariantSteps`、`NestedOrderedList`、`NestedUnorderedListIsolation`、`EnvironmentContracts` | 構造違反の意味判定      |
-| visual diff       | 総合的な見た目崩れの補助確認                            | `MarkerAlignment`、`VariantSteps`、`StructureViolation`、`EnvironmentContracts`                                                                    | 番号意味や構造意味の主要確認 |
+| 確認方法            | 用途                                                                | 主要に使う Story                                                                                                                                       | 採らない用途                 |
+| ------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------- |
+| DOM 観測            | 構造、属性意味、正規入力 / 非正規入力の区別、nested list の境界確認 | `Default`、`StartAndValue`、`Reversed`、`NestedOrderedList`、`NestedUnorderedListIsolation`、`StructureViolation`                                      | 色差や本文位置の主要確認     |
+| computed style 観測 | 本文開始位置、色差、spacing、tone、環境トークン反映の確認           | `Default`、`StartAndValue`、`Reversed`、`MarkerAlignment`、`VariantSteps`、`NestedOrderedList`、`NestedUnorderedListIsolation`、`EnvironmentContracts` | 構造違反の意味判定           |
+| visual diff         | 総合的な見た目崩れの補助確認                                        | `MarkerAlignment`、`VariantSteps`、`StructureViolation`、`EnvironmentContracts`                                                                        | 番号意味や構造意味の主要確認 |
 
 各 Story は、表に定めた **第一確認手段** を必須とします。補助確認手段だけで合格としません。
 
@@ -693,7 +693,7 @@ nested ordered list の可読性をさらに高めるために、深度別の sp
 
 ## 現行実装との差分と未整合
 
-本節は、**望ましい長期契約** と **現行 **``** / **`` の差分を、次の 2 類型に分けて整理するものです。
+本節は、**望ましい長期契約** と **現行 **`** / **` の差分を、次の 2 類型に分けて整理するものです。
 
 - **実装にあるが長期契約へ採らないもの**
 - **将来契約へ昇格し得るが未固定なもの**
@@ -777,5 +777,4 @@ print は現時点で正式契約外ですが、要件が増えるなら screen 
 
 `ui-ol` の長期契約を一文で要約すると、次のとおりです。
 
-``** は、単一の ordered list を、ネイティブ番号意味と整合したまま静かに整列表示するためのコンポーネントです。**``** は prose policy でも DOM 正規化器でもありません。**
-
+`** は、単一の ordered list を、ネイティブ番号意味と整合したまま静かに整列表示するためのコンポーネントです。**`** は prose policy でも DOM 正規化器でもありません。**

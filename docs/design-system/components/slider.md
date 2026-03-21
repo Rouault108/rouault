@@ -50,22 +50,22 @@ Rouault における slider は、値調整のための操作部品であると�
 
 `label` は公開契約上必須です。実装上は未指定時に開発時警告を出し、アクセシブル名として `"Slider"` をフォールバック使用しますが、これは障害回避用の最低保証にすぎません。利用者は必ず文脈に即した `label` を指定しなければなりません。
 
-| 名前         | 種別                   | 必須  | 内容            | 契約                                     |
-| ---------- | -------------------- | --- | ------------- | -------------------------------------- |
-| `min`      | property / attribute | いいえ | 最小値           | 数値として扱います。既定値は `0` です                  |
-| `max`      | property / attribute | いいえ | 最大値           | 数値として扱います。既定値は `100` です                |
-| `step`     | property / attribute | いいえ | 増減の刻み幅        | `> 0` の数値を正規入力とします。既定値は `1` です         |
-| `value`    | property / attribute | いいえ | 現在値           | 未指定時は正規化後の `min` を採用します                |
-| `label`    | property / attribute | はい  | スクリーンリーダー用ラベル | 空文字は契約違反です。実装上は `"Slider"` をフォールバックします |
-| `disabled` | property / attribute | いいえ | 無効状態          | `true` の場合、操作を受け付けません                  |
+| 名前       | 種別                 | 必須   | 内容                       | 契約                                                             |
+| ---------- | -------------------- | ------ | -------------------------- | ---------------------------------------------------------------- |
+| `min`      | property / attribute | いいえ | 最小値                     | 数値として扱います。既定値は `0` です                            |
+| `max`      | property / attribute | いいえ | 最大値                     | 数値として扱います。既定値は `100` です                          |
+| `step`     | property / attribute | いいえ | 増減の刻み幅               | `> 0` の数値を正規入力とします。既定値は `1` です                |
+| `value`    | property / attribute | いいえ | 現在値                     | 未指定時は正規化後の `min` を採用します                          |
+| `label`    | property / attribute | はい   | スクリーンリーダー用ラベル | 空文字は契約違反です。実装上は `"Slider"` をフォールバックします |
+| `disabled` | property / attribute | いいえ | 無効状態                   | `true` の場合、操作を受け付けません                              |
 
 ### スロット契約
 
 スロットは `prefix` と `suffix` を持ちます。
 
-| 名前       | 種別         | 位置づけ | 内容                      |
-| -------- | ---------- | ---- | ----------------------- |
-| `prefix` | named slot | 補助表示 | アイコン、単位、最小値ラベルなどを配置します  |
+| 名前     | 種別       | 位置づけ | 内容                                           |
+| -------- | ---------- | -------- | ---------------------------------------------- |
+| `prefix` | named slot | 補助表示 | アイコン、単位、最小値ラベルなどを配置します   |
 | `suffix` | named slot | 補助表示 | アイコン、現在値、最大値ラベルなどを配置します |
 
 `prefix` と `suffix` は補助表示のための公開面です。`ui-slider` 自身は現在値テキストを自動描画しません。現在値表示が必要な場合、利用側が `suffix` などで構成します。
@@ -78,8 +78,8 @@ Rouault における slider は、値調整のための操作部品であると�
 
 `ui-slider` は、ホスト要素への基本操作を内部 input へ委譲するため、次の公開メソッドを持ちます。
 
-| 名前                | 種別     | 契約                                    |
-| ----------------- | ------ | ------------------------------------- |
+| 名前              | 種別   | 契約                                                |
+| ----------------- | ------ | --------------------------------------------------- |
 | `focus(options?)` | method | 内部 `input[type="range"]` にフォーカスを委譲します |
 | `blur()`          | method | 内部 `input[type="range"]` からフォーカスを外します |
 
@@ -91,14 +91,14 @@ Rouault における slider は、値調整のための操作部品であると�
 
 一方で、公開入力として定義していないネイティブ `input[type="range"]` 属性を包括的に透過する契約は持ちません。`name`、`tabindex`、`autofocus`、`required` などを host へ与えても、内部 input へ自動委譲される前提では扱いません。
 
-| property   | attribute  | reflect | 備考                             |
-| ---------- | ---------- | ------- | ------------------------------ |
-| `min`      | `min`      | あり      | 列挙ではなく数値として扱います                |
-| `max`      | `max`      | あり      | 列挙ではなく数値として扱います                |
-| `step`     | `step`     | あり      | `<= 0` または非数値は `1` にフォールバックします |
-| `value`    | `value`    | あり      | 正規化後の値へ同期されます                  |
-| `label`    | `label`    | あり      | 空文字は契約違反です                     |
-| `disabled` | `disabled` | あり      | boolean attribute として扱います      |
+| property   | attribute  | reflect | 備考                                             |
+| ---------- | ---------- | ------- | ------------------------------------------------ |
+| `min`      | `min`      | あり    | 列挙ではなく数値として扱います                   |
+| `max`      | `max`      | あり    | 列挙ではなく数値として扱います                   |
+| `step`     | `step`     | あり    | `<= 0` または非数値は `1` にフォールバックします |
+| `value`    | `value`    | あり    | 正規化後の値へ同期されます                       |
+| `label`    | `label`    | あり    | 空文字は契約違反です                             |
+| `disabled` | `disabled` | あり    | boolean attribute として扱います                 |
 
 ### フォーム連携契約
 
@@ -182,8 +182,8 @@ property や attribute の設定、またはそれに伴う正規化による値
 
 したがって、公開契約として `ui-slider` 自身が独自保証するのは `PageUp` と `PageDown` のみです。Arrow 系および `Home` と `End` は、range input の標準意味を利用する前提で扱います。
 
-| キー         | 契約                  |
-| ---------- | ------------------- |
+| キー       | 契約                       |
+| ---------- | -------------------------- |
 | `PageUp`   | `step * 10` で増加させます |
 | `PageDown` | `step * 10` で減少させます |
 
@@ -304,35 +304,35 @@ Arrow 系および `Home` と `End` の振る舞いは、現行標準契約で�
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途                | トークン                   |
-| ----------------- | ---------------------- |
-| Fill 色            | `--primary`            |
-| Track 背景          | `--border-default`     |
-| Thumb 背景          | `--white`              |
-| Thumb 境界線幅        | `--border-width`       |
-| Thumb 影           | `--elevation-md`       |
-| Thumb サイズ         | `--icon-base`          |
-| 完全角丸              | `--radius-full`        |
-| 最小タッチターゲット        | `--control-min-touch`  |
+| 用途                       | トークン               |
+| -------------------------- | ---------------------- |
+| Fill 色                    | `--primary`            |
+| Track 背景                 | `--border-default`     |
+| Thumb 背景                 | `--white`              |
+| Thumb 境界線幅             | `--border-width`       |
+| Thumb 影                   | `--elevation-md`       |
+| Thumb サイズ               | `--icon-base`          |
+| 完全角丸                   | `--radius-full`        |
+| 最小タッチターゲット       | `--control-min-touch`  |
 | フォーカスリング幅         | `--focus-ring-width`   |
 | フォーカスリング色         | `--focus-ring-color`   |
-| フォーカスリングオフセット     | `--focus-ring-offset`  |
-| フォーカスアニメーション      | `--animation-focus`    |
-| 無効時不透明度           | `--opacity-disabled`   |
-| Hover 時スケール       | `--scale-hover-lg`     |
-| Dragging 時スケール    | `--scale-dragging`     |
-| スペーシング            | `--space-2`            |
-| Forced Colors 用太線 | `--border-width-thick` |
+| フォーカスリングオフセット | `--focus-ring-offset`  |
+| フォーカスアニメーション   | `--animation-focus`    |
+| 無効時不透明度             | `--opacity-disabled`   |
+| Hover 時スケール           | `--scale-hover-lg`     |
+| Dragging 時スケール        | `--scale-dragging`     |
+| スペーシング               | `--space-2`            |
+| Forced Colors 用太線       | `--border-width-thick` |
 
 ### 公開 part
 
 外部スタイル拡張のため、次の `::part(...)` を公開します。
 
-| part 名  | 役割            |
-| ------- | ------------- |
-| `track` | 値域全体のトラック     |
+| part 名 | 役割                       |
+| ------- | -------------------------- |
+| `track` | 値域全体のトラック         |
 | `fill`  | 現在値までのアクティブ領域 |
-| `thumb` | 現在位置を示すつまみ    |
+| `thumb` | 現在位置を示すつまみ       |
 
 利用者は `::part(track)`、`::part(fill)`、`::part(thumb)` に対して装飾調整を行えます。ただし、**range input と overlay 構造を破壊する変更**は行ってはなりません。
 
@@ -404,32 +404,32 @@ Arrow 系および `Home` と `End` の振る舞いは、現行標準契約で�
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
 
-| Story                  | 固定する契約                                                             |
-| ---------------------- | ------------------------------------------------------------------ |
-| `Default`              | 中間値、ARIA 属性、内部 input の存在が成立すること                                    |
-| `AtMinValue`           | `value=min` のとき Fill 幅が `0%` であること                                 |
-| `AtMaxValue`           | `value=max` のとき Fill 幅が `100%` であること                               |
-| `DisabledNormal`       | disabled 状態で input が無効化され `aria-disabled="true"` を持つこと             |
-| `DisabledAtMin`        | disabled かつ最小値の組み合わせが成立すること                                        |
-| `DisabledAtMax`        | disabled かつ最大値の組み合わせが成立すること                                        |
-| `WithSlots`            | `prefix` と `suffix` スロットを併用できること                                   |
-| `BrightnessControl`    | 補助アイコンを付けた実用構成が成立すること                                              |
-| `AllStates`            | 主要状態群を一覧表示できること                                                    |
-| `EventFiring`          | `input` と `change` の再発火契約が成立すること                                   |
+| Story                  | 固定する契約                                                                                       |
+| ---------------------- | -------------------------------------------------------------------------------------------------- |
+| `Default`              | 中間値、ARIA 属性、内部 input の存在が成立すること                                                 |
+| `AtMinValue`           | `value=min` のとき Fill 幅が `0%` であること                                                       |
+| `AtMaxValue`           | `value=max` のとき Fill 幅が `100%` であること                                                     |
+| `DisabledNormal`       | disabled 状態で input が無効化され `aria-disabled="true"` を持つこと                               |
+| `DisabledAtMin`        | disabled かつ最小値の組み合わせが成立すること                                                      |
+| `DisabledAtMax`        | disabled かつ最大値の組み合わせが成立すること                                                      |
+| `WithSlots`            | `prefix` と `suffix` スロットを併用できること                                                      |
+| `BrightnessControl`    | 補助アイコンを付けた実用構成が成立すること                                                         |
+| `AllStates`            | 主要状態群を一覧表示できること                                                                     |
+| `EventFiring`          | `input` と `change` の再発火契約が成立すること                                                     |
 | `KeyboardNavigation`   | `PageUp` と `PageDown` の独自保証と、その他キーが range input 標準挙動に依存することが成立すること |
-| `MinGreaterThanMax`    | `min > max` が自動入れ替えされること                                           |
-| `InvalidStepFallback`  | `step <= 0` が `1` にフォールバックされること                                    |
-| `ValueOutOfRange`      | 範囲上限超過値が `max` へクランプされること                                          |
-| `ValueBelowMin`        | 範囲下限未満値が `min` へクランプされること                                          |
-| `DecimalStepPrecision` | 小数ステップで精度丸めが成立すること                                                 |
-| `ValueUnspecified`     | `value` 未指定時に `min` が採用されること                                       |
-| `ValueSnapToStep`      | `step` 非整合値が最近傍ステップへスナップされること                                      |
-| `DisabledClickBlocked` | disabled 時にイベントが発火せず値も変わらないこと                                      |
-| `MinEqualsMax`         | 範囲ゼロでも disabled へ自動昇格せず、有効入力として描画継続すること                            |
-| `NegativeRange`        | 負の範囲で中間値が正しく描画されること                                                |
-| `DarkMode`             | ダークトークン環境で視認性が維持されること                                              |
-| `HighContrastFallback` | forced-colors 向けフォールバック定義が存在すること                                   |
-| `MissingLabelFallback` | `label` 未指定時に最低限のアクセシブル名フォールバックが成立すること                             |
+| `MinGreaterThanMax`    | `min > max` が自動入れ替えされること                                                               |
+| `InvalidStepFallback`  | `step <= 0` が `1` にフォールバックされること                                                      |
+| `ValueOutOfRange`      | 範囲上限超過値が `max` へクランプされること                                                        |
+| `ValueBelowMin`        | 範囲下限未満値が `min` へクランプされること                                                        |
+| `DecimalStepPrecision` | 小数ステップで精度丸めが成立すること                                                               |
+| `ValueUnspecified`     | `value` 未指定時に `min` が採用されること                                                          |
+| `ValueSnapToStep`      | `step` 非整合値が最近傍ステップへスナップされること                                                |
+| `DisabledClickBlocked` | disabled 時にイベントが発火せず値も変わらないこと                                                  |
+| `MinEqualsMax`         | 範囲ゼロでも disabled へ自動昇格せず、有効入力として描画継続すること                               |
+| `NegativeRange`        | 負の範囲で中間値が正しく描画されること                                                             |
+| `DarkMode`             | ダークトークン環境で視認性が維持されること                                                         |
+| `HighContrastFallback` | forced-colors 向けフォールバック定義が存在すること                                                 |
+| `MissingLabelFallback` | `label` 未指定時に最低限のアクセシブル名フォールバックが成立すること                               |
 
 ---
 
@@ -631,4 +631,3 @@ Arrow 系および `Home` と `End` の振る舞いは、現行標準契約で�
 ### 16. 本節の扱い
 
 本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用する場合は、実装、Storybook、契約書の 3 点を同時に更新し、未対応状態を残したまま公開契約へ昇格させません。
-

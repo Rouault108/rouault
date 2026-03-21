@@ -53,18 +53,18 @@ Rouault における toc は、ナビゲーション要素であると同時に�
 
 ### 3.1 入力契約
 
-| 名前         | 種別                   | 必須  | 内容          | 契約                                                |
-| ---------- | -------------------- | --- | ----------- | ------------------------------------------------- |
-| `headers`  | property             | はい  | 見出しデータ配列    | `Heading[]`。描画の唯一のソースであり、immutable input として扱います。 |
-| `activeId` | property / attribute | いいえ | 現在アクティブな見出し | `string`。属性名は `active-id`、既定値は空文字列です。             |
+| 名前       | 種別                 | 必須   | 内容                   | 契約                                                                    |
+| ---------- | -------------------- | ------ | ---------------------- | ----------------------------------------------------------------------- |
+| `headers`  | property             | はい   | 見出しデータ配列       | `Heading[]`。描画の唯一のソースであり、immutable input として扱います。 |
+| `activeId` | property / attribute | いいえ | 現在アクティブな見出し | `string`。属性名は `active-id`、既定値は空文字列です。                  |
 
 ### 3.2 `Heading` 契約
 
-| 名前      | 型        | 必須 | 内容               |
-| ------- | -------- | -- | ---------------- |
-| `id`    | `string` | はい | 見出し要素の一意識別子      |
+| 名前    | 型       | 必須 | 内容                         |
+| ------- | -------- | ---- | ---------------------------- |
+| `id`    | `string` | はい | 見出し要素の一意識別子       |
 | `text`  | `string` | はい | toc 上に表示する見出し文字列 |
-| `level` | `number` | はい | 見出しレベル。通常は 1〜6   |
+| `level` | `number` | はい | 見出しレベル。通常は 1〜6    |
 
 `Heading` は見出し一覧の公開データモデルであり、利用者は次を満たさなければなりません（MUST）。
 
@@ -84,18 +84,18 @@ Rouault における toc は、ナビゲーション要素であると同時に�
 
 `ui-toc` は、**次にアクティブとみなすべき見出し候補**を検出したときに `ui-toc-active-change` を発火します。これは内部状態の確定通知ではなく、外部へ渡す**現在地変更要求 / 提案通知**です。
 
-| 名前                     | 種別          | detail 型                  | 契約                                       |
-| ---------------------- | ----------- | ------------------------- | ---------------------------------------- |
+| 名前                   | 種別        | detail 型                 | 契約                                             |
+| ---------------------- | ----------- | ------------------------- | ------------------------------------------------ |
 | `ui-toc-active-change` | CustomEvent | `UiTocActiveChangeDetail` | `bubbles: true`、`composed: true` で発火します。 |
 
 `detail` の内容は次のとおりです。
 
-| 名前       | 型                     | 内容                            |
-| -------- | --------------------- | ----------------------------- |
-| `id`     | `string`              | 次にアクティブとすべき見出し ID             |
+| 名前     | 型                    | 内容                                                       |
+| -------- | --------------------- | ---------------------------------------------------------- |
+| `id`     | `string`              | 次にアクティブとすべき見出し ID                            |
 | `source` | `'scroll' \| 'click'` | 提案の原因。意味上の原因であり、視覚効果名ではありません。 |
-| `index`  | `number`              | `headers` 配列中のインデックス          |
-| `total`  | `number`              | `headers` の総件数                |
+| `index`  | `number`              | `headers` 配列中のインデックス                             |
+| `total`  | `number`              | `headers` の総件数                                         |
 
 `index` は `id` が `headers` に一致しない場合、`-1` になり得ます。利用者は `index >= 0` を前提にしてはなりません（MUST NOT）。
 
@@ -123,10 +123,10 @@ Rouault における toc は、ナビゲーション要素であると同時に�
 
 ### 3.5 属性反映契約
 
-| property   | attribute   | reflect | 備考                    |
-| ---------- | ----------- | ------- | --------------------- |
-| `activeId` | `active-id` | あり      | 空文字列を許容します。           |
-| `headers`  | なし          | なし      | property 経由でのみ受け取ります。 |
+| property   | attribute   | reflect | 備考                              |
+| ---------- | ----------- | ------- | --------------------------------- |
+| `activeId` | `active-id` | あり    | 空文字列を許容します。            |
+| `headers`  | なし        | なし    | property 経由でのみ受け取ります。 |
 
 `headers` は配列入力であり、HTML 属性文字列からの構築は契約に含みません。利用者は property で渡します。
 
@@ -172,11 +172,11 @@ Rouault における toc は、ナビゲーション要素であると同時に�
 
 長文見出しは、**正規化後レベル**に応じて省略表示へ切り替わります。
 
-| 条件              | 表示契約                   |
-| --------------- | ---------------------- |
-| 正規化後レベル 0 の項目   | 最大 2 行まで表示し、超過分を省略します。 |
-| 正規化後レベル 1 以上の項目 | 1 行 ellipsis で省略します。   |
-| アクティブ項目         | 省略規則を変えません。            |
+| 条件                        | 表示契約                                  |
+| --------------------------- | ----------------------------------------- |
+| 正規化後レベル 0 の項目     | 最大 2 行まで表示し、超過分を省略します。 |
+| 正規化後レベル 1 以上の項目 | 1 行 ellipsis で省略します。              |
+| アクティブ項目              | 省略規則を変えません。                    |
 
 ### 4.6 tooltip 有効状態
 
@@ -287,24 +287,24 @@ tooltip は、**省略が起きている項目**にのみ出します。アク�
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途             | トークン                                                                                        |
-| -------------- | ------------------------------------------------------------------------------------------- |
-| 非アクティブ文字色      | `--fg-muted`                                                                                |
-| hover 文字色      | `--fg-default`                                                                              |
-| アクティブ文字色       | `--primary`                                                                                 |
-| フォントサイズ        | `--text-base`                                                                               |
-| 垂直余白           | `--space-1`                                                                                 |
-| 階層インデント単位      | `--space-2`                                                                                 |
-| 左側基準余白         | `--space-3`                                                                                 |
-| インジケーター幅       | `--border-width-thick`                                                                      |
-| インジケーター角丸      | `--radius-full`                                                                             |
-| リンク角丸          | `--radius-sm`                                                                               |
-| クリック起因フェード時間   | `--duration-fast`                                                                           |
+| 用途                         | トークン                                                                                    |
+| ---------------------------- | ------------------------------------------------------------------------------------------- |
+| 非アクティブ文字色           | `--fg-muted`                                                                                |
+| hover 文字色                 | `--fg-default`                                                                              |
+| アクティブ文字色             | `--primary`                                                                                 |
+| フォントサイズ               | `--text-base`                                                                               |
+| 垂直余白                     | `--space-1`                                                                                 |
+| 階層インデント単位           | `--space-2`                                                                                 |
+| 左側基準余白                 | `--space-3`                                                                                 |
+| インジケーター幅             | `--border-width-thick`                                                                      |
+| インジケーター角丸           | `--radius-full`                                                                             |
+| リンク角丸                   | `--radius-sm`                                                                               |
+| クリック起因フェード時間     | `--duration-fast`                                                                           |
 | スクロールアニメーション上限 | `--duration-slower`                                                                         |
-| イージング          | `--ease-out`                                                                                |
-| フォーカスリング       | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--focus-ring-radius` |
-| フォーカスアニメーション   | `--animation-focus`                                                                         |
-| スクロールオフセット補正   | `--header-height`                                                                           |
+| イージング                   | `--ease-out`                                                                                |
+| フォーカスリング             | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--focus-ring-radius` |
+| フォーカスアニメーション     | `--animation-focus`                                                                         |
+| スクロールオフセット補正     | `--header-height`                                                                           |
 
 ---
 
@@ -446,38 +446,38 @@ Storybook は次の 4 群で構成します。
 
 ### 10.2 必須 Story 一覧
 
-| Story                                     | 固定する契約                                                                                         |
-| ----------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `DefaultStructure`                        | `nav[aria-label="Table of Contents"]` と `ul > li > a` の構造を持ち、公開スロットや独自 role を持たないこと。           |
-| `ControlledActiveId`                      | `activeId` は外部入力でのみ確定し、与えた値に一致する単一項目にのみ `aria-current="location"` が付与されること。                    |
-| `ExternalActiveIdNoSideEffect`            | 外部から `activeId` を変更しても `ui-toc-active-change`、本文スクロール、URL 更新が発生しないこと。                          |
+| Story                                     | 固定する契約                                                                                                                           |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `DefaultStructure`                        | `nav[aria-label="Table of Contents"]` と `ul > li > a` の構造を持ち、公開スロットや独自 role を持たないこと。                          |
+| `ControlledActiveId`                      | `activeId` は外部入力でのみ確定し、与えた値に一致する単一項目にのみ `aria-current="location"` が付与されること。                       |
+| `ExternalActiveIdNoSideEffect`            | 外部から `activeId` を変更しても `ui-toc-active-change`、本文スクロール、URL 更新が発生しないこと。                                    |
 | `ProposalEventFromClick`                  | 有効なリンククリックで `ui-toc-active-change` が `source='click'` で発火し、親が `activeId` を更新したときにのみ表示が切り替わること。 |
-| `ProposalEventFromScroll`                 | スクロール観測により現在地候補が変わると `ui-toc-active-change` が `source='scroll'` で発火すること。                       |
-| `ProposalEventPayload`                    | `detail.id` / `detail.source` / `detail.index` / `detail.total` が契約どおりの意味を持ち、構造変化通知ではないこと。     |
-| `NoEventOnExternalReassign`               | 同じ `activeId` の再代入や外部からの反映自体では提案イベントが発火しないこと。                                                  |
-| `NearestPreviousResolution`               | 現在地候補が「観測オフセット直前の見出し優先」で決まること。                                                                 |
-| `NoVisibleHeadingFallsBackToPrevious`     | 可視見出しが一時的に 0 件でも、現在地候補が直前見出しへ解決されること。                                                          |
-| `ValidClickOnly`                          | ターゲット見出し要素が存在する場合に限り、クリック由来の提案イベントと副作用が成立すること。                                                 |
-| `MissingTargetIsNoOp`                     | ターゲット不在クリックでは、表示・イベント・URL のいずれも変化しないこと。                                                        |
-| `NoDuplicateHashPush`                     | 有効クリック時でも同一 hash への重複 `push` を行わないこと。                                                          |
-| `EmptyHeaders`                            | `headers=[]` では何も描画しないこと。                                                                      |
-| `SingleItem`                              | 1 件のみでも正常に描画できること。                                                                             |
-| `ActiveIdNotFound`                        | 未一致 `activeId` でも壊れず、アクティブ項目 0 件として表示できること。                                                    |
-| `NormalizedLevels`                        | 最小レベル基準の相対正規化が成立し、H3 のみでも level 0 として扱われること。                                                   |
-| `SparseLevels`                            | 歯抜けレベルを圧縮せず、差分をそのまま表示に反映すること。                                                                  |
-| `IndicatorBaselineStability`              | 深い階層でもアクティブインジケーターの基準線がぶれないこと。                                                                 |
-| `LongTextNormalizedClamp`                 | 正規化後レベル 0 は 2 行 clamp、レベル 1 以上は 1 行 ellipsis となること。                                            |
-| `ActiveLayoutStability`                   | アクティブ項目が切り替わっても全文展開せず、toc 全体の高さが大きく揺れないこと。                                                     |
-| `TooltipOnTruncation`                     | 省略が生じた項目にのみ tooltip が有効化されること。                                                                 |
-| `TooltipAlsoAvailableForActiveTruncation` | アクティブ項目でも省略中であれば tooltip が利用可能であること。                                                           |
-| `AccessibilityStructure`                  | `aria-current="location"`、ネイティブリンク、`nav` ランドマーク、`focus-visible` が維持されること。                      |
-| `KeyboardAndTouchTarget`                  | roving tabindex を使わず、coarse pointer で 44px 以上の実効タッチターゲットを満たすこと。                                |
-| `ReducedMotionAndForcedColors`            | Reduced Motion / Forced Colors 下でも状態表現が破綻しないこと。                                                |
-| `DarkModeTokens`                          | テーマ差し替え環境でアクティブ / 非アクティブの色差が保たれること。                                                            |
-| `AutoScrollOnlyWhenOutOfView`             | アクティブ項目が可視範囲内にある限り、自動追従スクロールしないこと。                                                             |
-| `AutoScrollWithNearest`                   | 可視範囲外でのみ `nearest` による最小スクロールを行うこと。                                                            |
-| `InvalidHeadingFiltering`                 | 不正な `Heading` を除外し、少なくとも描画全体を壊さないこと。                                                           |
-| `ImmutableHeadersContract`                | 同一参照の破壊的更新ではなく、再代入によって契約上の更新を行うこと。                                                             |
+| `ProposalEventFromScroll`                 | スクロール観測により現在地候補が変わると `ui-toc-active-change` が `source='scroll'` で発火すること。                                  |
+| `ProposalEventPayload`                    | `detail.id` / `detail.source` / `detail.index` / `detail.total` が契約どおりの意味を持ち、構造変化通知ではないこと。                   |
+| `NoEventOnExternalReassign`               | 同じ `activeId` の再代入や外部からの反映自体では提案イベントが発火しないこと。                                                         |
+| `NearestPreviousResolution`               | 現在地候補が「観測オフセット直前の見出し優先」で決まること。                                                                           |
+| `NoVisibleHeadingFallsBackToPrevious`     | 可視見出しが一時的に 0 件でも、現在地候補が直前見出しへ解決されること。                                                                |
+| `ValidClickOnly`                          | ターゲット見出し要素が存在する場合に限り、クリック由来の提案イベントと副作用が成立すること。                                           |
+| `MissingTargetIsNoOp`                     | ターゲット不在クリックでは、表示・イベント・URL のいずれも変化しないこと。                                                             |
+| `NoDuplicateHashPush`                     | 有効クリック時でも同一 hash への重複 `push` を行わないこと。                                                                           |
+| `EmptyHeaders`                            | `headers=[]` では何も描画しないこと。                                                                                                  |
+| `SingleItem`                              | 1 件のみでも正常に描画できること。                                                                                                     |
+| `ActiveIdNotFound`                        | 未一致 `activeId` でも壊れず、アクティブ項目 0 件として表示できること。                                                                |
+| `NormalizedLevels`                        | 最小レベル基準の相対正規化が成立し、H3 のみでも level 0 として扱われること。                                                           |
+| `SparseLevels`                            | 歯抜けレベルを圧縮せず、差分をそのまま表示に反映すること。                                                                             |
+| `IndicatorBaselineStability`              | 深い階層でもアクティブインジケーターの基準線がぶれないこと。                                                                           |
+| `LongTextNormalizedClamp`                 | 正規化後レベル 0 は 2 行 clamp、レベル 1 以上は 1 行 ellipsis となること。                                                             |
+| `ActiveLayoutStability`                   | アクティブ項目が切り替わっても全文展開せず、toc 全体の高さが大きく揺れないこと。                                                       |
+| `TooltipOnTruncation`                     | 省略が生じた項目にのみ tooltip が有効化されること。                                                                                    |
+| `TooltipAlsoAvailableForActiveTruncation` | アクティブ項目でも省略中であれば tooltip が利用可能であること。                                                                        |
+| `AccessibilityStructure`                  | `aria-current="location"`、ネイティブリンク、`nav` ランドマーク、`focus-visible` が維持されること。                                    |
+| `KeyboardAndTouchTarget`                  | roving tabindex を使わず、coarse pointer で 44px 以上の実効タッチターゲットを満たすこと。                                              |
+| `ReducedMotionAndForcedColors`            | Reduced Motion / Forced Colors 下でも状態表現が破綻しないこと。                                                                        |
+| `DarkModeTokens`                          | テーマ差し替え環境でアクティブ / 非アクティブの色差が保たれること。                                                                    |
+| `AutoScrollOnlyWhenOutOfView`             | アクティブ項目が可視範囲内にある限り、自動追従スクロールしないこと。                                                                   |
+| `AutoScrollWithNearest`                   | 可視範囲外でのみ `nearest` による最小スクロールを行うこと。                                                                            |
+| `InvalidHeadingFiltering`                 | 不正な `Heading` を除外し、少なくとも描画全体を壊さないこと。                                                                          |
+| `ImmutableHeadersContract`                | 同一参照の破壊的更新ではなく、再代入によって契約上の更新を行うこと。                                                                   |
 
 ### 10.3 Storybook 実装方針
 
@@ -648,26 +648,26 @@ export const ReducedMotionAndForcedColors;
 
 現行 `toc.stories.ts` にある Story は、原則として次のように移します。
 
-| 現行 Story                      | 新 Story                                                                                       | 扱い                                   |
-| ----------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------ |
+| 現行 Story                    | 新 Story                                                                                      | 扱い                                        |
+| ----------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------- |
 | `Default`                     | `DefaultStructure`                                                                            | 改名して `toc.api.stories.ts` へ移動        |
 | `WithActiveItem`              | `ControlledActiveId`                                                                          | 改名して `toc.api.stories.ts` へ移動        |
 | `Nested`                      | `NormalizedLevels`                                                                            | 改名して `toc.visual.stories.ts` へ移動     |
-| `DeepNesting`                 | `IndicatorBaselineStability`                                                                  | 分解し、深い階層確認は visual へ移動               |
-| `ActiveFirst`                 | `ControlledActiveId` に統合                                                                      | 単独 Story ではなく args 差し替え候補            |
-| `ActiveLast`                  | `ControlledActiveId` に統合                                                                      | 単独 Story ではなく args 差し替え候補            |
+| `DeepNesting`                 | `IndicatorBaselineStability`                                                                  | 分解し、深い階層確認は visual へ移動        |
+| `ActiveFirst`                 | `ControlledActiveId` に統合                                                                   | 単独 Story ではなく args 差し替え候補       |
+| `ActiveLast`                  | `ControlledActiveId` に統合                                                                   | 単独 Story ではなく args 差し替え候補       |
 | `SingleItem`                  | `SingleItem`                                                                                  | そのまま `toc.boundaries.stories.ts` へ移動 |
 | `EmptyHeaders`                | `EmptyHeaders`                                                                                | そのまま `toc.boundaries.stories.ts` へ移動 |
-| `OnlySubheadings`             | `NormalizedLevels` に統合                                                                        | H3 only を同 Story の派生 args とする        |
+| `OnlySubheadings`             | `NormalizedLevels` に統合                                                                     | H3 only を同 Story の派生 args とする       |
 | `SparseLevels`                | `SparseLevels`                                                                                | そのまま `toc.visual.stories.ts` へ移動     |
-| `LongText`                    | `LongTextNormalizedClamp` + `TooltipOnTruncation` + `TooltipAlsoAvailableForActiveTruncation` | 3 Story へ分割                          |
-| `ClickToActivate`             | `ProposalEventFromClick` + `ValidClickOnly`                                                   | API と effects に分割                    |
+| `LongText`                    | `LongTextNormalizedClamp` + `TooltipOnTruncation` + `TooltipAlsoAvailableForActiveTruncation` | 3 Story へ分割                              |
+| `ClickToActivate`             | `ProposalEventFromClick` + `ValidClickOnly`                                                   | API と effects に分割                       |
 | `ActiveIdNotFound`            | `ActiveIdNotFound`                                                                            | そのまま `toc.boundaries.stories.ts` へ移動 |
 | `AccessibilityStructure`      | `AccessibilityStructure`                                                                      | そのまま `toc.a11y.stories.ts` へ移動       |
 | `KeyboardAndTouchTarget`      | `KeyboardAndTouchTarget`                                                                      | そのまま `toc.a11y.stories.ts` へ移動       |
 | `DarkMode`                    | `DarkModeTokens`                                                                              | 改名して `toc.visual.stories.ts` へ移動     |
-| `VisualAccessibility`         | `ReducedMotionAndForcedColors`                                                                | a11y 専用に絞って改名                        |
-| `AllStates`                   | 廃止                                                                                            | 役割が広すぎるため分割して置換                      |
+| `VisualAccessibility`         | `ReducedMotionAndForcedColors`                                                                | a11y 専用に絞って改名                       |
+| `AllStates`                   | 廃止                                                                                          | 役割が広すぎるため分割して置換              |
 | `AutoScrollOnlyWhenOutOfView` | `AutoScrollOnlyWhenOutOfView`                                                                 | そのまま `toc.effects.stories.ts` へ移動    |
 | `AutoScrollWithNearest`       | `AutoScrollWithNearest`                                                                       | そのまま `toc.effects.stories.ts` へ移動    |
 
@@ -1021,4 +1021,3 @@ Rouault の中核価値に直結する機能ではないため、優先度は低
 ### 14.17 本節の扱い
 
 本節に記載した事項は、正式契約としては確定済みです。したがって、今後は「採用するかどうか」を再議論するのではなく、**実装・Storybook・補助文書をどの順で追随させるか**を管理対象とします。
-

@@ -82,15 +82,15 @@
 
 ### 入力契約
 
-| 名前         | 種別                   | 必須  | 内容              | 契約                                                  |
-| ---------- | -------------------- | --- | --------------- | --------------------------------------------------- |
-| `src`      | property / attribute | いいえ | 画像 URL          | 空文字または空白のみは未指定として扱います                               |
-| `alt`      | property / attribute | いいえ | 代替テキスト          | 意味のある画像では必須です。装飾画像のみ空文字を許可します                       |
-| `caption`  | property / attribute | いいえ | 補助説明            | 空文字または空白のみの場合は `figcaption` を描画しません                 |
-| `zoomable` | property / attribute | いいえ | 拡大モード採用可否       | `true` は拡大モード、`false` は静的モードです。開閉可能性そのものは表しません      |
-| `width`    | property / attribute | いいえ | intrinsic 幅ヒント  | `height` と組で有効な場合のみアスペクト比固定に使います。表示ピクセル寸法の強制ではありません |
-| `height`   | property / attribute | いいえ | intrinsic 高さヒント | `width` と組で有効な場合のみアスペクト比固定に使います。表示ピクセル寸法の強制ではありません  |
-| `loading`  | property / attribute | いいえ | サムネイル読み込み優先度    | `lazy` / `eager`。列挙外値は `lazy` にフォールバックします           |
+| 名前       | 種別                 | 必須   | 内容                     | 契約                                                                                          |
+| ---------- | -------------------- | ------ | ------------------------ | --------------------------------------------------------------------------------------------- |
+| `src`      | property / attribute | いいえ | 画像 URL                 | 空文字または空白のみは未指定として扱います                                                    |
+| `alt`      | property / attribute | いいえ | 代替テキスト             | 意味のある画像では必須です。装飾画像のみ空文字を許可します                                    |
+| `caption`  | property / attribute | いいえ | 補助説明                 | 空文字または空白のみの場合は `figcaption` を描画しません                                      |
+| `zoomable` | property / attribute | いいえ | 拡大モード採用可否       | `true` は拡大モード、`false` は静的モードです。開閉可能性そのものは表しません                 |
+| `width`    | property / attribute | いいえ | intrinsic 幅ヒント       | `height` と組で有効な場合のみアスペクト比固定に使います。表示ピクセル寸法の強制ではありません |
+| `height`   | property / attribute | いいえ | intrinsic 高さヒント     | `width` と組で有効な場合のみアスペクト比固定に使います。表示ピクセル寸法の強制ではありません  |
+| `loading`  | property / attribute | いいえ | サムネイル読み込み優先度 | `lazy` / `eager`。列挙外値は `lazy` にフォールバックします                                    |
 
 ### `zoomable` 契約
 
@@ -122,24 +122,24 @@
 
 長期的に安定した契約として、`ui-image` は次の状態概念を持つものとして扱います。
 
-| 状態名        | 意味                            |
-| ---------- | ----------------------------- |
-| `empty`    | `src` が未指定であり、画像リソースを持たない状態   |
-| `loading`  | `src` はあるが、まだ読み込み完了していない状態    |
-| `loaded`   | 画像が利用可能で表示できる状態               |
+| 状態名     | 意味                                                 |
+| ---------- | ---------------------------------------------------- |
+| `empty`    | `src` が未指定であり、画像リソースを持たない状態     |
+| `loading`  | `src` はあるが、まだ読み込み完了していない状態       |
+| `loaded`   | 画像が利用可能で表示できる状態                       |
 | `error`    | `src` はあるが、読み込みまたはデコードに失敗した状態 |
-| `expanded` | Lightbox が開いている状態             |
-| `canOpen`  | 拡大モードであり、かつ現時点で open 可能な状態    |
+| `expanded` | Lightbox が開いている状態                            |
+| `canOpen`  | 拡大モードであり、かつ現時点で open 可能な状態       |
 
-ここで重要なのは、``** と **``** を分離すること**です。`src` 未指定は通信失敗やデコード失敗ではありません。長期的には、これらを同一の意味として扱いません。
+ここで重要なのは、`** と **`** を分離すること**です。`src` 未指定は通信失敗やデコード失敗ではありません。長期的には、これらを同一の意味として扱いません。
 
 ### 公開メソッド
 
 `ui-image` は、Lightbox の開閉を外部から制御するため、次の公開メソッドを持ちます。
 
-| 名前                | 種別     | 契約                                                              |
-| ----------------- | ------ | --------------------------------------------------------------- |
-| `openLightbox()`  | method | `canOpen=true` の場合にのみ展開します。`canOpen=false` の場合は no-op とします      |
+| 名前              | 種別   | 契約                                                                                                        |
+| ----------------- | ------ | ----------------------------------------------------------------------------------------------------------- |
+| `openLightbox()`  | method | `canOpen=true` の場合にのみ展開します。`canOpen=false` の場合は no-op とします                              |
 | `closeLightbox()` | method | 展開中の Lightbox を閉じます。復帰先が存在し、かつフォーカス可能な場合に限り trigger へフォーカスを戻します |
 
 両メソッドは idempotent でなければなりません。すなわち、既に open / closed の状態で重ねて呼び出しても壊れてはなりません（MUST）。
@@ -148,15 +148,15 @@
 
 公開入力のうち、`src`、`alt`、`caption`、`zoomable`、`width`、`height`、`loading` は property と attribute の両面から操作できます。
 
-| property   | attribute  | reflect | 備考                                     |
-| ---------- | ---------- | ------- | -------------------------------------- |
-| `src`      | `src`      | なし      | 文字列です                                  |
-| `alt`      | `alt`      | なし      | 文字列です                                  |
-| `caption`  | `caption`  | なし      | 文字列です                                  |
-| `zoomable` | `zoomable` | あり      | 長期的には標準 boolean attribute に寄せるのが望ましいです |
-| `width`    | `width`    | なし      | 数値として解釈します                             |
-| `height`   | `height`   | なし      | 数値として解釈します                             |
-| `loading`  | `loading`  | あり      | `lazy` / `eager` 以外は `lazy` に正規化します    |
+| property   | attribute  | reflect | 備考                                                      |
+| ---------- | ---------- | ------- | --------------------------------------------------------- |
+| `src`      | `src`      | なし    | 文字列です                                                |
+| `alt`      | `alt`      | なし    | 文字列です                                                |
+| `caption`  | `caption`  | なし    | 文字列です                                                |
+| `zoomable` | `zoomable` | あり    | 長期的には標準 boolean attribute に寄せるのが望ましいです |
+| `width`    | `width`    | なし    | 数値として解釈します                                      |
+| `height`   | `height`   | なし    | 数値として解釈します                                      |
+| `loading`  | `loading`  | あり    | `lazy` / `eager` 以外は `lazy` に正規化します             |
 
 ### 入力正規化契約
 
@@ -290,12 +290,12 @@
 
 `ui-image` では、画像の名称と説明を別契約として扱います。
 
-| 要素           | accessible name  | accessible description |
-| ------------ | ---------------- | ---------------------- |
+| 要素         | accessible name             | accessible description |
+| ------------ | --------------------------- | ---------------------- |
 | trigger      | `alt`。空なら「画像を拡大」 | `caption`              |
-| static image | `alt`            | `caption`              |
-| dialog       | `alt`。空なら「画像」    | `caption`              |
-| close button | 固定ラベル            | なし                     |
+| static image | `alt`                       | `caption`              |
+| dialog       | `alt`。空なら「画像」       | `caption`              |
+| close button | 固定ラベル                  | なし                   |
 
 `caption` は accessible name を構成しません。`caption` をもって `alt` の代替と見なしてはなりません（MUST NOT）。
 
@@ -350,7 +350,7 @@ Lightbox は全画面固定配置で、暗い scrim と blur により背景か�
 
 空状態および読み込み失敗状態では、画像面を消さず、意味のあるフォールバック面を表示します。
 
-ただし、長期的には ``** と **``** の意味を文言上でも分離する**のが望ましいです。
+ただし、長期的には `** と **`** の意味を文言上でも分離する**のが望ましいです。
 
 - `empty`: 画像未指定
 - `error`: 画像を読み込めませんでした
@@ -361,25 +361,25 @@ Lightbox は全画面固定配置で、暗い scrim と blur により背景か�
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途           | トークン                                                                                      |
-| ------------ | ----------------------------------------------------------------------------------------- |
+| 用途             | トークン                                                                                  |
+| ---------------- | ----------------------------------------------------------------------------------------- |
 | 境界線幅         | `--border-width`                                                                          |
 | 境界線色         | `--border-ghost`                                                                          |
-| 背景面          | `--bg-fill-neutral`                                                                       |
-| 角丸           | `--radius-md`                                                                             |
-| 余白           | `--space-*`                                                                               |
-| ミュート文字色      | `--fg-muted`                                                                              |
-| 文字サイズ        | `--text-sm`                                                                               |
-| 行間           | `--line-height-normal` / `--line-height-relaxed`                                          |
-| フォーカスリング     | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
+| 背景面           | `--bg-fill-neutral`                                                                       |
+| 角丸             | `--radius-md`                                                                             |
+| 余白             | `--space-*`                                                                               |
+| ミュート文字色   | `--fg-muted`                                                                              |
+| 文字サイズ       | `--text-sm`                                                                               |
+| 行間             | `--line-height-normal` / `--line-height-relaxed`                                          |
+| フォーカスリング | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
 | モーダル z-index | `--z-modal`                                                                               |
-| スクラム透過率      | `--opacity-scrim`                                                                         |
+| スクラム透過率   | `--opacity-scrim`                                                                         |
 | ブラー量         | `--blur-md`                                                                               |
 | 遷移時間         | `--duration-slower`                                                                       |
-| イージング        | `--ease-in` / `--ease-out`                                                                |
-| 入場スケール       | `--scale-enter`                                                                           |
+| イージング       | `--ease-in` / `--ease-out`                                                                |
+| 入場スケール     | `--scale-enter`                                                                           |
 | 明度補正         | `--brightness-dimmed`                                                                     |
-| アイコンサイズ      | `--icon-xl`                                                                               |
+| アイコンサイズ   | `--icon-xl`                                                                               |
 
 ---
 
@@ -495,15 +495,15 @@ dialog ID や caption ID は内部生成です。これらの文字列値は mou
 
 各 Story は見本ではなく、契約確認点として扱います。将来変更時には、少なくとも次を維持します。
 
-| Story                            | 固定する契約                                                                        |
-| -------------------------------- | ----------------------------------------------------------------------------- |
-| `Default`                        | `loading` から `loaded` への遷移、`aria-busy`、zoomable trigger の対話属性、dialog の意味付け    |
-| `VariantStateMatrix`             | `zoomable` / `static`、caption 有無、`empty` / `loading` / `loaded` / `error` の分岐 |
-| `LoadingAndErrorStates`          | `loading` placeholder、`error` fallback、trigger の可用性分岐                         |
-| `LightboxKeyboardAndFocusReturn` | open 時の初期フォーカス、Tab 循環、Escape close、close 後復帰                                  |
-| `BackdropCloseAndScrollLock`     | open 中のスクロールロック、backdrop close、close 後復元                                      |
-| `EnvironmentAndProseContracts`   | dark / reduced-motion / forced-colors / print / inline 文脈の視覚契約                |
-| `BoundaryConditions`             | 列挙外値正規化、`alt=""`、`src` 未指定、寸法無効値の扱い                                           |
+| Story                            | 固定する契約                                                                                  |
+| -------------------------------- | --------------------------------------------------------------------------------------------- |
+| `Default`                        | `loading` から `loaded` への遷移、`aria-busy`、zoomable trigger の対話属性、dialog の意味付け |
+| `VariantStateMatrix`             | `zoomable` / `static`、caption 有無、`empty` / `loading` / `loaded` / `error` の分岐          |
+| `LoadingAndErrorStates`          | `loading` placeholder、`error` fallback、trigger の可用性分岐                                 |
+| `LightboxKeyboardAndFocusReturn` | open 時の初期フォーカス、Tab 循環、Escape close、close 後復帰                                 |
+| `BackdropCloseAndScrollLock`     | open 中のスクロールロック、backdrop close、close 後復元                                       |
+| `EnvironmentAndProseContracts`   | dark / reduced-motion / forced-colors / print / inline 文脈の視覚契約                         |
+| `BoundaryConditions`             | 列挙外値正規化、`alt=""`、`src` 未指定、寸法無効値の扱い                                      |
 
 ---
 
@@ -584,7 +584,7 @@ Lightbox に close ボタンを追加すること自体に価値があります�
 
 #### 4. `breakout` / `full-bleed` 表示モード
 
-画像を本文幅より大きく見せる要求がある場合、明示的な layout mode 契約は価値があります。ただし、これは既定動作にしてはなりません。**既定は **`` とし、`breakout` や `full-bleed` は opt-in に限ります。
+画像を本文幅より大きく見せる要求がある場合、明示的な layout mode 契約は価値があります。ただし、これは既定動作にしてはなりません。**既定は **`` とし、`breakout`や`full-bleed` は opt-in に限ります。
 
 この拡張の価値は、画像を派手に見せることではなく、**本文グリッドとの関係を曖昧な実装依存にしないこと**にあります。
 
@@ -699,4 +699,3 @@ Storybook は breakout 的な文脈を示唆しますが、現行実装は基本
 ### 13. 本節の扱い
 
 本節に記載した差分は、直ちにすべて実装しなければならないという意味ではありません。ただし、将来修正する場合は、**実装、Storybook、契約書の 3 点を同時に更新し、半端な中間状態を公開契約にしません**。
-

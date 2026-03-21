@@ -80,21 +80,21 @@ Rouault における highlight は、**「没入して読む」ことのでき�
 
 `ui-highlight` は、`kind`、`current-match`、`text` を公開入力として扱います。
 
-| 名前              | 種別                   | 必須  | 内容                           | 契約                                           |
-| --------------- | -------------------- | --- | ---------------------------- | -------------------------------------------- |
-| `kind`          | property / attribute | いいえ | highlight の意味分類              | `search` / `annotation`。既定値は `annotation` です |
-| `currentMatch`  | property             | いいえ | 検索ヒット列の現在位置かどうか              | `kind="search"` のときのみ意味を持ちます                 |
-| `current-match` | attribute            | いいえ | `currentMatch` の attribute 形 | boolean attribute として扱います                    |
-| `text`          | property / attribute | いいえ | 表示文字列                        | 未指定または `null` の場合のみ初期子テキスト fallback を許可します   |
+| 名前            | 種別                 | 必須   | 内容                           | 契約                                                               |
+| --------------- | -------------------- | ------ | ------------------------------ | ------------------------------------------------------------------ |
+| `kind`          | property / attribute | いいえ | highlight の意味分類           | `search` / `annotation`。既定値は `annotation` です                |
+| `currentMatch`  | property             | いいえ | 検索ヒット列の現在位置かどうか | `kind="search"` のときのみ意味を持ちます                           |
+| `current-match` | attribute            | いいえ | `currentMatch` の attribute 形 | boolean attribute として扱います                                   |
+| `text`          | property / attribute | いいえ | 表示文字列                     | 未指定または `null` の場合のみ初期子テキスト fallback を許可します |
 
 ### 意味分類契約
 
 `kind` は次の 2 値のみを正規入力とします。
 
-| 値            | 意味    | 想定用途                 |
-| ------------ | ----- | -------------------- |
-| `search`     | 検索ヒット | 本文内検索、全文検索結果、検索移動対象  |
-| `annotation` | 注目箇所  | 利用者注釈、手動マーク、文脈上の注意箇所 |
+| 値           | 意味       | 想定用途                                 |
+| ------------ | ---------- | ---------------------------------------- |
+| `search`     | 検索ヒット | 本文内検索、全文検索結果、検索移動対象   |
+| `annotation` | 注目箇所   | 利用者注釈、手動マーク、文脈上の注意箇所 |
 
 列挙外値は公開契約外です。実装がフォールバックを持つ場合でも、利用者は列挙外値に依存しません。
 
@@ -120,11 +120,11 @@ Rouault における highlight は、**「没入して読む」ことのでき�
 
 `kind` と `current-match` は reflect されます。`text` は attribute 入力を受理しますが、property から attribute への reflect は公開契約に含めません。
 
-| property       | attribute       | reflect | 備考                           |
-| -------------- | --------------- | ------- | ---------------------------- |
-| `kind`         | `kind`          | あり      | 正規値のみを契約対象とします               |
-| `currentMatch` | `current-match` | あり      | `kind="search"` のときのみ意味を持ちます |
-| `text`         | `text`          | なし      | 値と fallback 制御を分離します         |
+| property       | attribute       | reflect | 備考                                     |
+| -------------- | --------------- | ------- | ---------------------------------------- |
+| `kind`         | `kind`          | あり    | 正規値のみを契約対象とします             |
+| `currentMatch` | `current-match` | あり    | `kind="search"` のときのみ意味を持ちます |
+| `text`         | `text`          | なし    | 値と fallback 制御を分離します           |
 
 ---
 
@@ -246,8 +246,8 @@ fallback を許可する条件は次のとおりです。
 
 `mark` には次の属性を安定公開面として許可します。
 
-| 属性                   | 契約                          |
-| -------------------- | --------------------------- |
+| 属性                 | 契約                                  |
+| -------------------- | ------------------------------------- |
 | `data-kind`          | 解決後の `kind` を出力します          |
 | `data-current-match` | `true` / `false` の文字列を出力します |
 
@@ -411,18 +411,18 @@ highlight は**検索 UI そのものではなく、本文内の意味マーク�
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、少なくとも次を固定します。
 
-| Story                              | 固定する契約                                                          |
-| ---------------------------------- | --------------------------------------------------------------- |
-| `Default`                          | `ui-highlight` がネイティブ `<mark>` を出力し、不要な対話属性を持たないこと              |
-| `ExplicitTextContract`             | `text` を明示した場合、その値が最優先されること                                     |
-| `FallbackTextContract`             | `text` 未指定時のみ初期子テキスト fallback が働くこと                             |
-| `KindMatrix`                       | `kind="search"` / `kind="annotation"` で `data-kind` が正しく出力されること |
-| `CurrentMatchContract`             | `kind="search"` と `current-match` の関係が正しく表現されること                |
-| `WhitespaceNormalizationContract`  | 初期子テキスト解決で前後 `trim()` のみを行い、空白を自動補完しないこと                        |
-| `UpdateLifecycleContract`          | 初期子テキスト fallback が初回接続時 1 回のみであり、接続後の Light DOM 変更に追従しないこと      |
+| Story                              | 固定する契約                                                                                 |
+| ---------------------------------- | -------------------------------------------------------------------------------------------- |
+| `Default`                          | `ui-highlight` がネイティブ `<mark>` を出力し、不要な対話属性を持たないこと                  |
+| `ExplicitTextContract`             | `text` を明示した場合、その値が最優先されること                                              |
+| `FallbackTextContract`             | `text` 未指定時のみ初期子テキスト fallback が働くこと                                        |
+| `KindMatrix`                       | `kind="search"` / `kind="annotation"` で `data-kind` が正しく出力されること                  |
+| `CurrentMatchContract`             | `kind="search"` と `current-match` の関係が正しく表現されること                              |
+| `WhitespaceNormalizationContract`  | 初期子テキスト解決で前後 `trim()` のみを行い、空白を自動補完しないこと                       |
+| `UpdateLifecycleContract`          | 初期子テキスト fallback が初回接続時 1 回のみであり、接続後の Light DOM 変更に追従しないこと |
 | `BoundaryConditions`               | 列挙外 `kind`、空文字、要素子、ネスト、隣接 highlight の境界が明示されること                 |
-| `MediaAndTokenContracts`           | `forced-colors` / `print` / トークン参照契約を保持すること                     |
-| `DarkModeTokenAndContrastContract` | Light / Dark 両方でセマンティックトークンを追従すること                              |
+| `MediaAndTokenContracts`           | `forced-colors` / `print` / トークン参照契約を保持すること                                   |
+| `DarkModeTokenAndContrastContract` | Light / Dark 両方でセマンティックトークンを追従すること                                      |
 
 ---
 
@@ -737,4 +737,3 @@ next / previous hit、scrollIntoView、検索ヒット総数管理、current ind
 3. `text === ''` fallback をやめること
 
 この 3 点で、highlight 契約の中心にある歪みの大半を解消できます。
-

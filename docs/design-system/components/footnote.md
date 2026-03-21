@@ -55,13 +55,13 @@
 
 本契約では、識別子の役割を次のように固定します。
 
-| 項目            | 役割         | 契約                 |
-| ------------- | ---------- | ------------------ |
-| `refId`       | 論理脚注の安定識別子 | 同一脚注を一意に表す主識別子です   |
-| `index`       | 表示番号       | 提示専用です。識別子として扱いません |
-| `refInstance` | 参照位置番号     | 同一脚注への複数参照を区別します   |
+| 項目          | 役割                 | 契約                                 |
+| ------------- | -------------------- | ------------------------------------ |
+| `refId`       | 論理脚注の安定識別子 | 同一脚注を一意に表す主識別子です     |
+| `index`       | 表示番号             | 提示専用です。識別子として扱いません |
+| `refInstance` | 参照位置番号         | 同一脚注への複数参照を区別します     |
 
-したがって、**識別は ****\`\`**** を主軸**とし、`index` は表示専用値として扱います。`index` から論理同一性を推定する設計には依存しません。
+したがって、**識別は \*\***\`\`\***\* を主軸**とし、`index` は表示専用値として扱います。`index` から論理同一性を推定する設計には依存しません。
 
 ### 本文の正本
 
@@ -84,15 +84,15 @@
 
 `ui-footnote` は、本文中に置かれる**脚注参照コンポーネント**です。公開入力は `refId`、`index`、`refInstance`、`shared`、および owner reference に対する本文断片です。
 
-`ui-footnote` は、**Trigger を常にネイティブな ****\`\`**** として維持**しなければなりません（MUST）。Popover の有無や利用可否にかかわらず、脚注一覧へのリンク経路自体は失われません。
+`ui-footnote` は、**Trigger を常にネイティブな \*\***\`\`\***\* として維持**しなければなりません（MUST）。Popover の有無や利用可否にかかわらず、脚注一覧へのリンク経路自体は失われません。
 
 ### 入力契約
 
-| 名前            | 種別                                    | 必須  | 内容                    | 契約                                        |
-| ------------- | ------------------------------------- | --- | --------------------- | ----------------------------------------- |
-| `refId`       | property / attribute (`ref-id`)       | はい  | 論理脚注の安定識別子            | 文書内で一意でなければなりません                          |
-| `index`       | property / attribute                  | はい  | 表示番号                  | 提示専用です。識別子としては使いません                       |
-| `refInstance` | property / attribute (`ref-instance`) | はい  | 同一脚注への参照位置番号          | 同一 `refId` 配下で一意でなければなりません                |
+| 名前          | 種別                                  | 必須   | 内容                       | 契約                                               |
+| ------------- | ------------------------------------- | ------ | -------------------------- | -------------------------------------------------- |
+| `refId`       | property / attribute (`ref-id`)       | はい   | 論理脚注の安定識別子       | 文書内で一意でなければなりません                   |
+| `index`       | property / attribute                  | はい   | 表示番号                   | 提示専用です。識別子としては使いません             |
+| `refInstance` | property / attribute (`ref-instance`) | はい   | 同一脚注への参照位置番号   | 同一 `refId` 配下で一意でなければなりません        |
 | `shared`      | property / attribute                  | いいえ | owner/reference の暫定表現 | `false` は owner、`true` は reference を意味します |
 
 `refId` の自動補完や `index` からの代用生成には、長期契約として依存しません。入力不足を黙って補完するよりも、上位生成系で明示的に値を与える方を正規とします。
@@ -156,7 +156,7 @@ Trigger は常に `href="#${refId}"` を持つアンカーです。Popover が�
 
 長期契約では、ID 群は `refId` を主軸として生成します。
 
-| 用途              | 生成規則                        |
+| 用途            | 生成規則                    |
 | --------------- | --------------------------- |
 | endnote item ID | `{refId}`                   |
 | trigger ID      | `{refId}-ref-{refInstance}` |
@@ -164,7 +164,7 @@ Trigger は常に `href="#${refId}"` を持つアンカーです。Popover が�
 | popover host ID | `{refId}-popover-host`      |
 | label ID        | `{refId}-label`             |
 
-ここで重要なのは、**trigger ID を ****\`\`**** から生成しない**ことです。表示番号の変更が識別子の変更へ波及しないよう、ID は安定識別子 `refId` に基づかなければなりません（MUST）。
+ここで重要なのは、**trigger ID を \*\***\`\`\***\* から生成しない**ことです。表示番号の変更が識別子の変更へ波及しないよう、ID は安定識別子 `refId` に基づかなければなりません（MUST）。
 
 ### 正規化契約
 
@@ -247,11 +247,11 @@ Popover 内の footer link は、脚注一覧へ移動する明示経路です�
 
 Popover が開いている間、active trigger には `aria-expanded="true"` が反映されます。close 後のフォーカス先は、close 理由に応じて次のように固定します。
 
-| close 理由                      | フォーカス先        |
-| ----------------------------- | ------------- |
-| `Escape`                      | その trigger    |
-| dismiss / outside interaction | その trigger    |
-| footer link による遷移             | trigger へ戻さない |
+| close 理由                    | フォーカス先       |
+| ----------------------------- | ------------------ |
+| `Escape`                      | その trigger       |
+| dismiss / outside interaction | その trigger       |
+| footer link による遷移        | trigger へ戻さない |
 
 ### 7. キーボード遷移契約
 
@@ -337,7 +337,7 @@ SSR 済み DOM を再利用する場合でも、Hydration は**内部予約構�
 
 末尾脚注一覧は `section.footnotes[role="doc-endnotes"]` とし、各脚注項目は `id="{refId}"` を持ちます。
 
-同一脚注が複数箇所から参照される場合、endnote item は **各 ****\`\`**** ごとの backlink 群** を持つことを正規とします。代表 1 個の backlink だけに縮約する設計には依存しません。
+同一脚注が複数箇所から参照される場合、endnote item は **各 \*\***\`\`\***\* ごとの backlink 群** を持つことを正規とします。代表 1 個の backlink だけに縮約する設計には依存しません。
 
 ### Accessibility 契約
 
@@ -378,21 +378,21 @@ Trigger の `:focus-visible` は `outline` と `outline-offset` により描画�
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途                | トークン                                                                                      |
-| ----------------- | ----------------------------------------------------------------------------------------- |
-| Trigger 既定文字色     | `--fg-muted`                                                                              |
-| Hover / Focus 色   | `--primary`                                                                               |
-| 本文文字色             | `--fg-default`                                                                            |
-| 末尾脚注境界線           | `--border-default`                                                                        |
-| 補助境界線             | `--border-ghost`                                                                          |
-| target 背景         | `--bg-active`                                                                             |
-| Popover 背景・前景・境界線 | `ui-popover` 側トークン                                                                        |
-| 角丸                | `--radius-sm`                                                                             |
-| 余白                | `--space-*`                                                                               |
-| フォーカスリング          | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
-| モーション             | `--duration-fast` / `--duration-instant` / `--ease-out`                                   |
-| 文字サイズ             | `--text-xs` / `--text-sm`                                                                 |
-| 行高                | `--line-height-none` / `--line-height-relaxed`                                            |
+| 用途                       | トークン                                                                                  |
+| -------------------------- | ----------------------------------------------------------------------------------------- |
+| Trigger 既定文字色         | `--fg-muted`                                                                              |
+| Hover / Focus 色           | `--primary`                                                                               |
+| 本文文字色                 | `--fg-default`                                                                            |
+| 末尾脚注境界線             | `--border-default`                                                                        |
+| 補助境界線                 | `--border-ghost`                                                                          |
+| target 背景                | `--bg-active`                                                                             |
+| Popover 背景・前景・境界線 | `ui-popover` 側トークン                                                                   |
+| 角丸                       | `--radius-sm`                                                                             |
+| 余白                       | `--space-*`                                                                               |
+| フォーカスリング           | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
+| モーション                 | `--duration-fast` / `--duration-instant` / `--ease-out`                                   |
+| 文字サイズ                 | `--text-xs` / `--text-sm`                                                                 |
+| 行高                       | `--line-height-none` / `--line-height-relaxed`                                            |
 
 ---
 
@@ -498,15 +498,15 @@ DOM 子要素を書き換えることによる本文更新には依存しませ�
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、少なくとも次の観点を固定します。
 
-| Story                      | 固定する契約                                                              |
-| -------------------------- | ------------------------------------------------------------------- |
-| `Default`                  | Trigger / Popover / Footer Link / endnotes の基本整合が成立すること             |
-| `VariantStateMatrix`       | owner/reference の役割分担、同一脚注に対する Popover 一意性、active trigger 切替が成立すること |
-| `DualAccessContract`       | 通常クリックは補助表示、修飾キー付きクリック・中クリックはネイティブリンクを維持すること                        |
-| `KeyboardAndFocusContract` | `Escape`、`Tab`、dismiss に対する close とフォーカス復帰契約が成立すること                 |
-| `SsrHydrationContract`     | SSR 由来内部構造の再接続、内部制御要素の本文混入防止、公開入力と内部入力の境界維持が成立すること                  |
-| `BoundaryConditions`       | 不正入力診断、ID 一意性、長文スクロール、interactive ancestor 禁止、更新モデルが成立すること          |
-| `VisualModeContracts`      | Reduced Motion / Forced Colors / Print / トークン参照が維持されること             |
+| Story                      | 固定する契約                                                                                     |
+| -------------------------- | ------------------------------------------------------------------------------------------------ |
+| `Default`                  | Trigger / Popover / Footer Link / endnotes の基本整合が成立すること                              |
+| `VariantStateMatrix`       | owner/reference の役割分担、同一脚注に対する Popover 一意性、active trigger 切替が成立すること   |
+| `DualAccessContract`       | 通常クリックは補助表示、修飾キー付きクリック・中クリックはネイティブリンクを維持すること         |
+| `KeyboardAndFocusContract` | `Escape`、`Tab`、dismiss に対する close とフォーカス復帰契約が成立すること                       |
+| `SsrHydrationContract`     | SSR 由来内部構造の再接続、内部制御要素の本文混入防止、公開入力と内部入力の境界維持が成立すること |
+| `BoundaryConditions`       | 不正入力診断、ID 一意性、長文スクロール、interactive ancestor 禁止、更新モデルが成立すること     |
+| `VisualModeContracts`      | Reduced Motion / Forced Colors / Print / トークン参照が維持されること                            |
 
 ---
 

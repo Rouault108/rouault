@@ -59,10 +59,10 @@
 
 ### 入力契約
 
-| 名前 | 種別 | 必須 | 内容 | 契約 |
-| --- | --- | --- | --- | --- |
+| 名前          | 種別                 | 必須   | 内容               | 契約                                                        |
+| ------------- | -------------------- | ------ | ------------------ | ----------------------------------------------------------- |
 | `placeholder` | property / attribute | いいえ | 視覚表示用テキスト | 既定値は `"検索..."` です。アクセシブル名には使用しません。 |
-| `disabled` | property / attribute | いいえ | 無効状態 | `true` の場合、内部 button を無効化し、起動しません。 |
+| `disabled`    | property / attribute | いいえ | 無効状態           | `true` の場合、内部 button を無効化し、起動しません。       |
 
 ### 入力値正規化契約
 
@@ -80,9 +80,9 @@
 
 `ui-search-trigger` は、明示的なアクティベーション時に `open-search-dialog` を発火します。
 
-| 名前 | 発火条件 | bubbles | composed | cancelable | detail |
-| --- | --- | --- | --- | --- | --- |
-| `open-search-dialog` | click または button 既定のキーボード起動 | `true` | `true` | `false` | なし |
+| 名前                 | 発火条件                                 | bubbles | composed | cancelable | detail |
+| -------------------- | ---------------------------------------- | ------- | -------- | ---------- | ------ |
+| `open-search-dialog` | click または button 既定のキーボード起動 | `true`  | `true`   | `false`    | なし   |
 
 このイベントは、検索ダイアログを **自動で開く command** ではなく、**上位レイヤに起動要求を通知する request event** です。利用側はこのイベントを監視し、`ui-search-dialog` の表示制御へ橋渡しします。
 
@@ -97,11 +97,11 @@
 
 `ui-search-trigger` は、ホスト要素に対する基本操作を内部 button へ委譲するため、次の公開メソッドを持ちます。
 
-| 名前 | 種別 | 契約 |
-| --- | --- | --- |
+| 名前              | 種別   | 契約                                   |
+| ----------------- | ------ | -------------------------------------- |
 | `focus(options?)` | method | 内部 button にフォーカスを委譲します。 |
-| `blur()` | method | 内部 button からフォーカスを外します。 |
-| `click()` | method | 内部 button の click を起動します。 |
+| `blur()`          | method | 内部 button からフォーカスを外します。 |
+| `click()`         | method | 内部 button の click を起動します。    |
 
 これらは Shadow DOM 内部実装を利用側に露出させないための公開面です。利用者は Shadow DOM を直接探索せず、これらの公開メソッドを使用します。
 
@@ -115,19 +115,19 @@
 
 `placeholder` と `disabled` は property と attribute の両面から操作できます。`disabled` は boolean attribute として扱います。
 
-| property | attribute | reflect | 備考 |
-| --- | --- | --- | --- |
-| `placeholder` | `placeholder` | あり | 既定値は `"検索..."` です。 |
-| `disabled` | `disabled` | あり | boolean attribute として扱います。 |
+| property      | attribute     | reflect | 備考                               |
+| ------------- | ------------- | ------- | ---------------------------------- |
+| `placeholder` | `placeholder` | あり    | 既定値は `"検索..."` です。        |
+| `disabled`    | `disabled`    | あり    | boolean attribute として扱います。 |
 
 ### CSS Parts 契約
 
 現行実装が公開している `part` は次のとおりです。
 
-| part 名 | 役割 |
-| --- | --- |
-| `button` | 内部ネイティブ button |
-| `icon` | 検索アイコンのラッパー |
+| part 名       | 役割                     |
+| ------------- | ------------------------ |
+| `button`      | 内部ネイティブ button    |
+| `icon`        | 検索アイコンのラッパー   |
 | `placeholder` | プレースホルダー表示領域 |
 
 利用者は `::part(...)` に対して装飾調整を行えます。ただし、意味を変更するための display 構造破壊、button 性の喪失、アクセシビリティ属性の破壊は行いません。
@@ -289,26 +289,26 @@
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途 | トークン |
-| --- | --- |
-| 通常背景 | `--bg-fill-muted` |
-| フォーカス / 押下背景 | `--bg-default` |
-| 境界線幅 | `--border-width` |
-| 境界線色 | `--border-default` |
-| 高さ | `--control-height-md` |
-| 角丸 | `--radius-md` |
-| 余白 | `--space-2` / `--space-3` |
-| アイコンサイズ | `--icon-base` |
-| アイコン色 | `--fg-muted` |
-| プレースホルダー色 | `--fg-subtle` |
-| フォントサイズ | `--text-base` |
-| フォントウェイト | `--font-normal` |
-| 押下スケール | `--scale-pressed` |
-| 遷移時間 | `--duration-fast` |
-| イージング | `--ease-out` |
-| フォーカスリング | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
-| 無効時不透明度 | `--opacity-disabled` |
-| 最低タッチサイズ | `--control-min-touch` |
+| 用途                  | トークン                                                                                  |
+| --------------------- | ----------------------------------------------------------------------------------------- |
+| 通常背景              | `--bg-fill-muted`                                                                         |
+| フォーカス / 押下背景 | `--bg-default`                                                                            |
+| 境界線幅              | `--border-width`                                                                          |
+| 境界線色              | `--border-default`                                                                        |
+| 高さ                  | `--control-height-md`                                                                     |
+| 角丸                  | `--radius-md`                                                                             |
+| 余白                  | `--space-2` / `--space-3`                                                                 |
+| アイコンサイズ        | `--icon-base`                                                                             |
+| アイコン色            | `--fg-muted`                                                                              |
+| プレースホルダー色    | `--fg-subtle`                                                                             |
+| フォントサイズ        | `--text-base`                                                                             |
+| フォントウェイト      | `--font-normal`                                                                           |
+| 押下スケール          | `--scale-pressed`                                                                         |
+| 遷移時間              | `--duration-fast`                                                                         |
+| イージング            | `--ease-out`                                                                              |
+| フォーカスリング      | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
+| 無効時不透明度        | `--opacity-disabled`                                                                      |
+| 最低タッチサイズ      | `--control-min-touch`                                                                     |
 
 ---
 
@@ -402,28 +402,28 @@ button がフォーカスを得ても、`open-search-dialog` は発火しませ�
 
 各 Story は見本ではなく、**契約確認点** として扱います。将来変更時には、次の契約を維持します。
 
-| Story | 固定する契約 |
-| --- | --- |
-| `Default` | 内部 button が `type="button"`、固定 ARIA 属性を持つこと |
-| `StateDefault` | 既定状態で無効化されていないこと |
-| `StateDisabled` | `disabled` が内部 button に反映されること |
-| `CustomPlaceholder` | `placeholder` が視覚表示へ反映されること |
-| `AllStates` | 既定、無効、カスタムプレースホルダーを同時に確認できること |
-| `EventFiring` | `open-search-dialog` が `bubbles: true`、`composed: true` で発火すること |
-| `DisabledNoEvent` | `disabled` 時にイベントが発火しないこと |
-| `KeyboardActivation` | Enter / Space によって起動できること |
-| `AriaAttributes` | `aria-label`、`aria-haspopup`、`aria-keyshortcuts` が維持されること |
-| `FocusOnlyNoEvent` | フォーカス取得だけでは起動しないこと |
-| `EmptyPlaceholder` | 空プレースホルダーでも button と ARIA が維持されること |
-| `RapidClickMultipleEvents` | 連続クリックで複数回イベントが発火すること |
-| `ProgrammaticActivation` | 公開 `click()` で起動できること |
-| `SingleActivationSingleEvent` | 1 アクティベーションにつきイベントが 1 回だけ発火すること |
-| `FormContextNoSubmit` | form 内に配置しても submit の起点にならないこと |
-| `InHeader` | ヘッダー文脈でも検索導線として成立すること |
-| `DarkMode` | トークン差し替えで暗色背景上でも可読性を維持すること |
-| `MobileIconOnly` | モバイルでプレースホルダーが非表示になること |
-| `ForcedColors` | 強制カラー環境で境界と背景が判別可能であること |
-| `LongPlaceholderEllipsis` | 長文プレースホルダーが省略表示されること |
+| Story                         | 固定する契約                                                             |
+| ----------------------------- | ------------------------------------------------------------------------ |
+| `Default`                     | 内部 button が `type="button"`、固定 ARIA 属性を持つこと                 |
+| `StateDefault`                | 既定状態で無効化されていないこと                                         |
+| `StateDisabled`               | `disabled` が内部 button に反映されること                                |
+| `CustomPlaceholder`           | `placeholder` が視覚表示へ反映されること                                 |
+| `AllStates`                   | 既定、無効、カスタムプレースホルダーを同時に確認できること               |
+| `EventFiring`                 | `open-search-dialog` が `bubbles: true`、`composed: true` で発火すること |
+| `DisabledNoEvent`             | `disabled` 時にイベントが発火しないこと                                  |
+| `KeyboardActivation`          | Enter / Space によって起動できること                                     |
+| `AriaAttributes`              | `aria-label`、`aria-haspopup`、`aria-keyshortcuts` が維持されること      |
+| `FocusOnlyNoEvent`            | フォーカス取得だけでは起動しないこと                                     |
+| `EmptyPlaceholder`            | 空プレースホルダーでも button と ARIA が維持されること                   |
+| `RapidClickMultipleEvents`    | 連続クリックで複数回イベントが発火すること                               |
+| `ProgrammaticActivation`      | 公開 `click()` で起動できること                                          |
+| `SingleActivationSingleEvent` | 1 アクティベーションにつきイベントが 1 回だけ発火すること                |
+| `FormContextNoSubmit`         | form 内に配置しても submit の起点にならないこと                          |
+| `InHeader`                    | ヘッダー文脈でも検索導線として成立すること                               |
+| `DarkMode`                    | トークン差し替えで暗色背景上でも可読性を維持すること                     |
+| `MobileIconOnly`              | モバイルでプレースホルダーが非表示になること                             |
+| `ForcedColors`                | 強制カラー環境で境界と背景が判別可能であること                           |
+| `LongPlaceholderEllipsis`     | 長文プレースホルダーが省略表示されること                                 |
 
 ---
 
@@ -579,4 +579,3 @@ button は `aria-keyshortcuts="Control+K Meta+K"` を持ちますが、現行コ
 ### 10. 本節の扱い
 
 本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用する場合は、実装、Storybook、契約書の 3 点を同時に更新し、未整合状態を残したまま公開契約へ昇格させません。
-

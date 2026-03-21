@@ -73,49 +73,49 @@
 
 `ui-sidebar` は、次の公開入力を持ちます。
 
-| 名前                | 種別                                        | 必須  | 内容                      | 契約                           |
-| ----------------- | ----------------------------------------- | --- | ----------------------- | ---------------------------- |
-| `state`           | property / attribute (`data-state`)       | いいえ | 開閉状態                    | `expanded` / `collapsed`     |
-| `mode`            | property / attribute                      | いいえ | 表示モード                   | `fixed` / `overlay` / `auto` |
-| `items`           | property                                  | はい  | ツリー構造データ                | `SidebarTreeNode[]`          |
-| `loading`         | property / attribute                      | いいえ | 読み込み状態                  | `true` / `false`             |
-| `selectedId`      | property / attribute (`selected-id`)      | いいえ | 現在選択中の項目 ID             | 文字列または未指定                    |
-| `focusedId`       | property / attribute (`focused-id`)       | いいえ | 現在フォーカス中の項目 ID          | 文字列または未指定                    |
-| `density`         | property / attribute                      | いいえ | ツリー密度                   | `normal` / `compact`         |
-| `variant`         | property / attribute                      | いいえ | ツリー見た目                  | `default` / `card`           |
-| `label`           | property / attribute                      | いいえ | landmark 名              | 文字列                          |
-| `heading`         | property / attribute                      | いいえ | 視覚見出し                   | 文字列                          |
-| `headingLevel`    | property / attribute (`heading-level`)    | いいえ | 見出しレベル                  | `2` 〜 `6`                    |
-| `fixedBreakpoint` | property / attribute (`fixed-breakpoint`) | いいえ | `auto` 時の fixed 判定閾値    | 正の整数                         |
+| 名前              | 種別                                      | 必須   | 内容                            | 契約                         |
+| ----------------- | ----------------------------------------- | ------ | ------------------------------- | ---------------------------- |
+| `state`           | property / attribute (`data-state`)       | いいえ | 開閉状態                        | `expanded` / `collapsed`     |
+| `mode`            | property / attribute                      | いいえ | 表示モード                      | `fixed` / `overlay` / `auto` |
+| `items`           | property                                  | はい   | ツリー構造データ                | `SidebarTreeNode[]`          |
+| `loading`         | property / attribute                      | いいえ | 読み込み状態                    | `true` / `false`             |
+| `selectedId`      | property / attribute (`selected-id`)      | いいえ | 現在選択中の項目 ID             | 文字列または未指定           |
+| `focusedId`       | property / attribute (`focused-id`)       | いいえ | 現在フォーカス中の項目 ID       | 文字列または未指定           |
+| `density`         | property / attribute                      | いいえ | ツリー密度                      | `normal` / `compact`         |
+| `variant`         | property / attribute                      | いいえ | ツリー見た目                    | `default` / `card`           |
+| `label`           | property / attribute                      | いいえ | landmark 名                     | 文字列                       |
+| `heading`         | property / attribute                      | いいえ | 視覚見出し                      | 文字列                       |
+| `headingLevel`    | property / attribute (`heading-level`)    | いいえ | 見出しレベル                    | `2` 〜 `6`                   |
+| `fixedBreakpoint` | property / attribute (`fixed-breakpoint`) | いいえ | `auto` 時の fixed 判定閾値      | 正の整数                     |
 | `closable`        | property / attribute                      | いいえ | overlay 用の既定 close 導線表示 | `true` / `false`             |
 
 ### 既定値
 
-| 名前                | 既定値        |
-| ----------------- | ---------- |
-| `state`           | `expanded` |
-| `mode`            | `auto`     |
-| `loading`         | `false`    |
-| `density`         | `normal`   |
-| `variant`         | `default`  |
-| `label`           | `ナビゲーション`  |
-| `heading`         | `ナビゲーション`  |
-| `headingLevel`    | `2`        |
-| `fixedBreakpoint` | `1280`     |
-| `closable`        | `true`     |
+| 名前              | 既定値           |
+| ----------------- | ---------------- |
+| `state`           | `expanded`       |
+| `mode`            | `auto`           |
+| `loading`         | `false`          |
+| `density`         | `normal`         |
+| `variant`         | `default`        |
+| `label`           | `ナビゲーション` |
+| `heading`         | `ナビゲーション` |
+| `headingLevel`    | `2`              |
+| `fixedBreakpoint` | `1280`           |
+| `closable`        | `true`           |
 
 ### 入力値の妥当性契約
 
 列挙値および数値入力は、次の規則で正規化します。
 
-| 名前                | 無効値の扱い                                             |
-| ----------------- | -------------------------------------------------- |
+| 名前              | 無効値の扱い                                                    |
+| ----------------- | --------------------------------------------------------------- |
 | `state`           | `expanded` / `collapsed` 以外は既定値 `expanded` に正規化します |
 | `mode`            | `fixed` / `overlay` / `auto` 以外は既定値 `auto` に正規化します |
 | `density`         | `normal` / `compact` 以外は既定値 `normal` に正規化します       |
 | `variant`         | `default` / `card` 以外は既定値 `default` に正規化します        |
-| `headingLevel`    | `2` 〜 `6` 以外は既定値 `2` に正規化します                       |
-| `fixedBreakpoint` | 非数値、負値、0、極端に小さい値は既定値 `1280` に正規化します                |
+| `headingLevel`    | `2` 〜 `6` 以外は既定値 `2` に正規化します                      |
+| `fixedBreakpoint` | 非数値、負値、0、極端に小さい値は既定値 `1280` に正規化します   |
 
 公開 property と反映 attribute は、**常に正規化後の値を表す**ものとします。利用者が与えた値と公開値が乖離しないことを前提とします。
 
@@ -123,23 +123,23 @@
 
 `items` に渡す各要素は `SidebarTreeNode` とします。
 
-| 名前           | 種別                  | 必須  | 内容           |
-| ------------ | ------------------- | --- | ------------ |
-| `id`         | string              | はい  | ツリー全体で一意な識別子 |
-| `label`      | string              | はい  | 表示ラベル        |
-| `icon`       | string              | いいえ | アイコン名        |
-| `href`       | string              | いいえ | 遷移先          |
-| `children`   | `SidebarTreeNode[]` | いいえ | 子ノード         |
-| `isExpanded` | boolean             | いいえ | 展開状態         |
-| `isSelected` | boolean             | いいえ | 選択状態         |
-| `isDisabled` | boolean             | いいえ | 無効状態         |
+| 名前         | 種別                | 必須   | 内容                     |
+| ------------ | ------------------- | ------ | ------------------------ |
+| `id`         | string              | はい   | ツリー全体で一意な識別子 |
+| `label`      | string              | はい   | 表示ラベル               |
+| `icon`       | string              | いいえ | アイコン名               |
+| `href`       | string              | いいえ | 遷移先                   |
+| `children`   | `SidebarTreeNode[]` | いいえ | 子ノード                 |
+| `isExpanded` | boolean             | いいえ | 展開状態                 |
+| `isSelected` | boolean             | いいえ | 選択状態                 |
+| `isDisabled` | boolean             | いいえ | 無効状態                 |
 
 `SidebarTreeNode` は**不変入力**として扱います。`ui-sidebar` は受け取った `items` を破壊的に変更してはなりません（MUST NOT）。選択・展開変更はイベントで通知し、利用者が新しい `items` を再入力します。
 
 ### スロット契約
 
-| 名前               | 種別         | 内容          |
-| ---------------- | ---------- | ----------- |
+| 名前             | 種別       | 内容                   |
+| ---------------- | ---------- | ---------------------- |
 | `header-actions` | named slot | ヘッダー右側の補助操作 |
 
 `header-actions` は補助操作専用です。主要操作、状態喪失を引き起こす必須操作、fixed でも常時到達可能でなければならない導線を置いてはなりません（MUST NOT）。
@@ -148,13 +148,13 @@ close 操作は slot へ委ねず、`closable` により標準導線を提供し
 
 ### 公開メソッド
 
-| 名前                 | 契約                |
-| ------------------ | ----------------- |
-| `expand(trigger?)` | sidebar を展開します    |
-| `collapse()`       | sidebar を格納します    |
-| `toggle(trigger?)` | 開閉を反転します          |
+| 名前               | 契約                               |
+| ------------------ | ---------------------------------- |
+| `expand(trigger?)` | sidebar を展開します               |
+| `collapse()`       | sidebar を格納します               |
+| `toggle(trigger?)` | 開閉を反転します                   |
 | `focusSelected()`  | 選択中項目へフォーカスを移動します |
-| `focusFirstItem()` | 先頭項目へフォーカスを移動します  |
+| `focusFirstItem()` | 先頭項目へフォーカスを移動します   |
 
 公開メソッドは**冪等**です。同じ最終状態に対する重複呼び出しで、不要な状態変化イベントを再発火してはなりません。
 
@@ -164,13 +164,13 @@ close 操作は slot へ委ねず、`closable` により標準導線を提供し
 
 ### 公開イベント
 
-| 名前                         | detail                   | bubbles | composed | 契約                |
-| -------------------------- | ------------------------ | ------- | -------- | ----------------- |
-| `ui-sidebar-state-change`  | `{ state }`              | `true`  | `true`   | 開閉状態の変化通知         |
+| 名前                       | detail                   | bubbles | composed | 契約                        |
+| -------------------------- | ------------------------ | ------- | -------- | --------------------------- |
+| `ui-sidebar-state-change`  | `{ state }`              | `true`  | `true`   | 開閉状態の変化通知          |
 | `ui-sidebar-mode-change`   | `{ mode }`               | `true`  | `true`   | 実効モードの変化通知        |
-| `ui-sidebar-select`        | `{ id, node }`           | `true`  | `true`   | 項目選択通知            |
-| `ui-sidebar-expand`        | `{ id, expanded, node }` | `true`  | `true`   | 項目展開変更通知          |
-| `ui-sidebar-focus-change`  | `{ id, node }`           | `true`  | `true`   | ツリー内フォーカス移動通知     |
+| `ui-sidebar-select`        | `{ id, node }`           | `true`  | `true`   | 項目選択通知                |
+| `ui-sidebar-expand`        | `{ id, expanded, node }` | `true`  | `true`   | 項目展開変更通知            |
+| `ui-sidebar-focus-change`  | `{ id, node }`           | `true`  | `true`   | ツリー内フォーカス移動通知  |
 | `ui-sidebar-request-close` | `{ reason }`             | `true`  | `true`   | 利用者操作による close 要求 |
 
 ### イベント発火順序契約
@@ -185,18 +185,18 @@ close 操作は slot へ委ねず、`closable` により標準導線を提供し
 
 | property          | attribute          | reflect |
 | ----------------- | ------------------ | ------- |
-| `state`           | `data-state`       | あり      |
-| `mode`            | `mode`             | あり      |
-| `loading`         | `loading`          | あり      |
-| `selectedId`      | `selected-id`      | あり      |
-| `focusedId`       | `focused-id`       | あり      |
-| `density`         | `density`          | あり      |
-| `variant`         | `variant`          | あり      |
-| `label`           | `label`            | なし      |
-| `heading`         | `heading`          | なし      |
-| `headingLevel`    | `heading-level`    | あり      |
-| `fixedBreakpoint` | `fixed-breakpoint` | あり      |
-| `closable`        | `closable`         | あり      |
+| `state`           | `data-state`       | あり    |
+| `mode`            | `mode`             | あり    |
+| `loading`         | `loading`          | あり    |
+| `selectedId`      | `selected-id`      | あり    |
+| `focusedId`       | `focused-id`       | あり    |
+| `density`         | `density`          | あり    |
+| `variant`         | `variant`          | あり    |
+| `label`           | `label`            | なし    |
+| `heading`         | `heading`          | なし    |
+| `headingLevel`    | `heading-level`    | あり    |
+| `fixedBreakpoint` | `fixed-breakpoint` | あり    |
+| `closable`        | `closable`         | あり    |
 
 `items` は property 専用です。HTML 属性経由での入力はサポートしません。
 
@@ -219,10 +219,10 @@ close 操作は slot へ委ねず、`closable` により標準導線を提供し
 
 `mode` は `fixed`、`overlay`、`auto` を持ちます。
 
-| 値         | 意味                                                          |
-| --------- | ----------------------------------------------------------- |
-| `fixed`   | レイアウトに常設される補助面                                              |
-| `overlay` | 本文上に重なる一時的補助面                                               |
+| 値        | 意味                                                                  |
+| --------- | --------------------------------------------------------------------- |
+| `fixed`   | レイアウトに常設される補助面                                          |
+| `overlay` | 本文上に重なる一時的補助面                                            |
 | `auto`    | `fixedBreakpoint` と viewport に基づき `fixed` / `overlay` を自動選択 |
 
 `mode="auto"` は正規の公開契約です。初期 HTML に属性があるかどうかで特別な挙動を変えてはなりません（MUST NOT）。
@@ -266,7 +266,7 @@ close 操作は slot へ委ねず、`closable` により標準導線を提供し
 
 ### `mode` の扱い
 
-`mode` は `fixed` / `overlay` / `auto` の入力であり、`auto` の場合に限って内部で実効モードを評価します。`auto` の評価結果は公開されますが、**mode**** 自体の意味は変わりません**。
+`mode` は `fixed` / `overlay` / `auto` の入力であり、`auto` の場合に限って内部で実効モードを評価します。`auto` の評価結果は公開されますが、**mode\*\*** 自体の意味は変わりません\*\*。
 
 ### `items` の扱い
 
@@ -345,9 +345,9 @@ overlay は dialog ではありません。次を契約とします。
 
 `variant` は sidebar 独自の装飾ではなく、tree 領域の見た目切替です。
 
-| 値         | 意味                 |
-| --------- | ------------------ |
-| `default` | 背景を持たない静かな表示       |
+| 値        | 意味                                 |
+| --------- | ------------------------------------ |
+| `default` | 背景を持たない静かな表示             |
 | `card`    | 独立ウィジェットとして切り出した表示 |
 
 ### 参照トークン
@@ -457,19 +457,19 @@ fixed では不可視でもよい補助操作だけを置きます。必須操�
 
 各 Story は見本ではなく、契約確認点です。少なくとも次を維持します。
 
-| Story                        | 固定する契約                                                                    |
-| ---------------------------- | ------------------------------------------------------------------------- |
+| Story                        | 固定する契約                                                                                      |
+| ---------------------------- | ------------------------------------------------------------------------------------------------- |
 | `AutoModeSwitching`          | `mode="auto"` で viewport に応じて実効モードが切り替わり、`ui-sidebar-mode-change` が発火すること |
-| `FixedExpandedDefault`       | fixed かつ expanded で tree が利用可能であること                                       |
-| `OverlayExpandedClosable`    | overlay かつ closable で標準 close 導線が存在すること                                   |
-| `OverlayCollapsedInitial`    | 初期 collapsed で非活性状態から始まること                                                |
-| `SelectionAndFocusSeparated` | `selectedId` と `focusedId` が独立に扱われること                                     |
-| `ImmutableItemsInput`        | `items` 入力が破壊的変更されないこと                                                    |
-| `TreeEventIntegration`       | tree 由来イベントが sidebar イベントへ再公開されること                                        |
-| `StateControlledFlow`        | close 要求が request-close として通知され、親が state を再入力することで反映されること                 |
-| `MethodIdempotency`          | `expand()` / `collapse()` / `toggle()` が冪等であること                           |
-| `OverlayFocusSemantics`      | overlay が初期フォーカスとフォーカス返却を持ち、focus trap を持たないこと                            |
-| `PrintHidden`                | print で sidebar が出力されないこと                                                 |
+| `FixedExpandedDefault`       | fixed かつ expanded で tree が利用可能であること                                                  |
+| `OverlayExpandedClosable`    | overlay かつ closable で標準 close 導線が存在すること                                             |
+| `OverlayCollapsedInitial`    | 初期 collapsed で非活性状態から始まること                                                         |
+| `SelectionAndFocusSeparated` | `selectedId` と `focusedId` が独立に扱われること                                                  |
+| `ImmutableItemsInput`        | `items` 入力が破壊的変更されないこと                                                              |
+| `TreeEventIntegration`       | tree 由来イベントが sidebar イベントへ再公開されること                                            |
+| `StateControlledFlow`        | close 要求が request-close として通知され、親が state を再入力することで反映されること            |
+| `MethodIdempotency`          | `expand()` / `collapse()` / `toggle()` が冪等であること                                           |
+| `OverlayFocusSemantics`      | overlay が初期フォーカスとフォーカス返却を持ち、focus trap を持たないこと                         |
+| `PrintHidden`                | print で sidebar が出力されないこと                                                               |
 
 ---
 
@@ -627,4 +627,3 @@ overlay における close 操作は、毎回 `header-actions` へ個別にボ�
 ### 本節の扱い
 
 本節に記載した事項は、採用されるまでは公開契約として依存してよいものではありません。実装、Storybook、契約書の 3 点をそろえて更新したときにのみ、正式契約として昇格させます。
-

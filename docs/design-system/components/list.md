@@ -79,16 +79,16 @@ Rouault における list は、検索結果、ノート一覧、索引、履歴
 
 ### 入力契約
 
-| 名前                | 種別                                         | 必須  | 内容                  | 契約                               |
-| ----------------- | ------------------------------------------ | --- | ------------------- | -------------------------------- |
-| `columns`         | property                                   | はい  | 列定義配列               | 一覧の論理列を定義します                     |
-| `currentRowId`    | property / attribute (`current-row-id`)    | いいえ | 現在行 ID              | `null` は current 行なしを表します        |
-| `currentColumnId` | property / attribute (`current-column-id`) | いいえ | 現在列 ID              | `null` は current 列なしを表します        |
-| `sort`            | property                                   | いいえ | ソート状態               | `{ key, direction }` を扱います       |
-| `pagination`      | property                                   | いいえ | ページ状態               | `{ offset, limit, total }` を扱います |
-| `getPageHref`     | property                                   | いいえ | ページ番号から URL を生成する関数 | `pagination` 使用時のリンク生成に使います      |
-| `ariaLabel`       | property / attribute (`aria-label`)        | いいえ | grid 全体の名称          | 省略時は上位文脈に依存します                   |
-| `showActions`     | property / attribute (`show-actions`)      | いいえ | 行末操作領域の有無           | `true` の場合のみ補助操作列を表示します          |
+| 名前              | 種別                                       | 必須   | 内容                              | 契約                                      |
+| ----------------- | ------------------------------------------ | ------ | --------------------------------- | ----------------------------------------- |
+| `columns`         | property                                   | はい   | 列定義配列                        | 一覧の論理列を定義します                  |
+| `currentRowId`    | property / attribute (`current-row-id`)    | いいえ | 現在行 ID                         | `null` は current 行なしを表します        |
+| `currentColumnId` | property / attribute (`current-column-id`) | いいえ | 現在列 ID                         | `null` は current 列なしを表します        |
+| `sort`            | property                                   | いいえ | ソート状態                        | `{ key, direction }` を扱います           |
+| `pagination`      | property                                   | いいえ | ページ状態                        | `{ offset, limit, total }` を扱います     |
+| `getPageHref`     | property                                   | いいえ | ページ番号から URL を生成する関数 | `pagination` 使用時のリンク生成に使います |
+| `ariaLabel`       | property / attribute (`aria-label`)        | いいえ | grid 全体の名称                   | 省略時は上位文脈に依存します              |
+| `showActions`     | property / attribute (`show-actions`)      | いいえ | 行末操作領域の有無                | `true` の場合のみ補助操作列を表示します   |
 
 ### 正本入力の意味
 
@@ -112,15 +112,15 @@ current は **行 ID と列 ID** の組で表します。`currentColumnId` は `
 
 ### 既定値と正規化
 
-| 項目                | 既定値 / 正規化                           | 契約                       |
-| ----------------- | ----------------------------------- | ------------------------ |
-| `currentRowId`    | `null`                              | current 行なしとして扱います       |
-| `currentColumnId` | `null`                              | current 列なしとして扱います       |
-| `sort`            | `{ key: null, direction: null }` 相当 | 非ソート状態として扱います            |
-| `pagination`      | `null`                              | ページネーション非表示とします          |
-| `getPageHref`     | `null`                              | 未指定時は非リンク表示または既定関数に依存します |
-| `ariaLabel`       | `null`                              | 上位文脈で十分なら省略できます          |
-| `showActions`     | `false`                             | 操作列なしとして扱います             |
+| 項目              | 既定値 / 正規化                       | 契約                                             |
+| ----------------- | ------------------------------------- | ------------------------------------------------ |
+| `currentRowId`    | `null`                                | current 行なしとして扱います                     |
+| `currentColumnId` | `null`                                | current 列なしとして扱います                     |
+| `sort`            | `{ key: null, direction: null }` 相当 | 非ソート状態として扱います                       |
+| `pagination`      | `null`                                | ページネーション非表示とします                   |
+| `getPageHref`     | `null`                                | 未指定時は非リンク表示または既定関数に依存します |
+| `ariaLabel`       | `null`                                | 上位文脈で十分なら省略できます                   |
+| `showActions`     | `false`                               | 操作列なしとして扱います                         |
 
 `currentRowId` または `currentColumnId` が不正値であっても、`ui-list` は例外を投げることを正本契約としません。ただし、開発時には警告または検証失敗として扱います。
 
@@ -128,7 +128,7 @@ current は **行 ID と列 ID** の組で表します。`currentColumnId` は `
 
 長期設計では、`items` を `ui-list` の正本入力として扱いません。行メタデータは `ui-list-item` 側へ集約するか、必要であれば上位画面が row registry として管理します。
 
-したがって、``** が **``** から行 ID を推測する運用には依存しません。** 行 ID は各 `ui-list-item` が明示しなければなりません（MUST）。
+したがって、`** が **`** から行 ID を推測する運用には依存しません。** 行 ID は各 `ui-list-item` が明示しなければなりません（MUST）。
 
 ### current 成立条件
 
@@ -145,16 +145,16 @@ current は、`currentRowId` と `currentColumnId` の**組**としてのみ成�
 
 各列は `ColumnDef` として扱います。
 
-| 名前              | 型         | 必須  | 内容        | 契約                           |
-| --------------- | --------- | --- | --------- | ---------------------------- |
-| `id`            | `string`  | はい  | 列識別子      | 一覧内で一意でなければなりません             |
-| `label`         | `string`  | はい  | 見出しラベル    | ヘッダー表示に使います                  |
-| `width`         | `string`  | はい  | 列幅        | CSS Grid 列幅として解釈可能でなければなりません |
-| `sortable`      | `boolean` | いいえ | ソート可能か    | `true` の場合のみヘッダー操作対象です       |
-| `sortKey`       | `string`  | いいえ | ソートキー     | `id` と分けたい場合に用います            |
-| `hideOnMobile`  | `boolean` | いいえ | モバイル時非表示か | `true` の場合、モバイルで抑制候補になります    |
-| `lead`          | `boolean` | いいえ | 主列か       | モバイルでも保持すべき主列です              |
-| `defaultAction` | `boolean` | いいえ | 行起動先の基準列か | 既定遷移先の解決に用います                |
+| 名前            | 型        | 必須   | 内容               | 契約                                            |
+| --------------- | --------- | ------ | ------------------ | ----------------------------------------------- |
+| `id`            | `string`  | はい   | 列識別子           | 一覧内で一意でなければなりません                |
+| `label`         | `string`  | はい   | 見出しラベル       | ヘッダー表示に使います                          |
+| `width`         | `string`  | はい   | 列幅               | CSS Grid 列幅として解釈可能でなければなりません |
+| `sortable`      | `boolean` | いいえ | ソート可能か       | `true` の場合のみヘッダー操作対象です           |
+| `sortKey`       | `string`  | いいえ | ソートキー         | `id` と分けたい場合に用います                   |
+| `hideOnMobile`  | `boolean` | いいえ | モバイル時非表示か | `true` の場合、モバイルで抑制候補になります     |
+| `lead`          | `boolean` | いいえ | 主列か             | モバイルでも保持すべき主列です                  |
+| `defaultAction` | `boolean` | いいえ | 行起動先の基準列か | 既定遷移先の解決に用います                      |
 
 ### `lead` と `defaultAction` の分離
 
@@ -168,11 +168,11 @@ current は、`currentRowId` と `currentColumnId` の**組**としてのみ成�
 
 列集合は、次の 3 層に分離して扱います。
 
-| 名称     | 正体                 | current の対象 | `aria-colcount` への算入          |
-| ------ | ------------------ | ----------- | ----------------------------- |
-| 論理列    | `columns` そのもの     | はい          | はい                            |
-| 可視列    | 論理列から環境条件で導出された表示列 | 間接的に関与します   | はい                            |
-| 補助操作領域 | `actions`          | いいえ         | `showActions=true` の場合のみ加算します |
+| 名称         | 正体                                 | current の対象     | `aria-colcount` への算入                |
+| ------------ | ------------------------------------ | ------------------ | --------------------------------------- |
+| 論理列       | `columns` そのもの                   | はい               | はい                                    |
+| 可視列       | 論理列から環境条件で導出された表示列 | 間接的に関与します | はい                                    |
+| 補助操作領域 | `actions`                            | いいえ             | `showActions=true` の場合のみ加算します |
 
 `mobile-supplement` は列集合に参加しません。これは可視列から脱落した情報を補助的に再提示する領域です。
 
@@ -180,8 +180,8 @@ current は、`currentRowId` と `currentColumnId` の**組**としてのみ成�
 
 ### スロット契約
 
-| 名前     | 種別   | 位置づけ | 内容                      |
-| ------ | ---- | ---- | ----------------------- |
+| 名前         | 種別 | 位置づけ | 内容                            |
+| ------------ | ---- | -------- | ------------------------------- |
 | 既定スロット | slot | 正規入力 | `ui-list-item` 群を受け取ります |
 
 既定スロットに受け取る正規入力は `ui-list-item` です。`ui-list` は slot 直下または flatten 後に見つかった `ui-list-item` を行として収集します。`ui-list-item` 以外の要素は行として管理しません。
@@ -190,16 +190,16 @@ current は、`currentRowId` と `currentColumnId` の**組**としてのみ成�
 
 `ui-list-item` は、見た目だけを持つ任意子要素ではありません。`ui-list` が一覧全体の秩序を維持するための**必須協調相手**です。したがって、`ui-list-item` 側の公開面は次の最小インターフェースを満たさなければなりません（MUST）。
 
-| 項目          | 形態                                      | 契約                                          |
-| ----------- | --------------------------------------- | ------------------------------------------- |
-| 行識別         | `row-id` attribute または `rowId` property | 安定した行 ID を返せなければなりません                       |
-| current 行状態 | `current` property                      | current 行であることを反映できなければなりません                |
-| current 列状態 | `currentColumnId` property              | current 列 ID を解釈できなければなりません                 |
-| 行番号         | `rowIndex` property                     | grid の行番号として反映できなければなりません                   |
-| 列コンテキスト取得   | `requestListContext()` method           | 呼び出し時に親から列情報再同期を受けられなければなりません               |
-| 行→親通知       | `ui-current-change` event               | 親へ current row / column の変更要求を通知できなければなりません |
-| 列情報要求       | `ui-list-context-request` event         | 親へ列コンテキスト要求を通知できなければなりません                   |
-| セル識別        | `data-column-id`                        | 内部セルは列 ID を識別できなければなりません                    |
+| 項目               | 形態                                       | 契約                                                             |
+| ------------------ | ------------------------------------------ | ---------------------------------------------------------------- |
+| 行識別             | `row-id` attribute または `rowId` property | 安定した行 ID を返せなければなりません                           |
+| current 行状態     | `current` property                         | current 行であることを反映できなければなりません                 |
+| current 列状態     | `currentColumnId` property                 | current 列 ID を解釈できなければなりません                       |
+| 行番号             | `rowIndex` property                        | grid の行番号として反映できなければなりません                    |
+| 列コンテキスト取得 | `requestListContext()` method              | 呼び出し時に親から列情報再同期を受けられなければなりません       |
+| 行→親通知          | `ui-current-change` event                  | 親へ current row / column の変更要求を通知できなければなりません |
+| 列情報要求         | `ui-list-context-request` event            | 親へ列コンテキスト要求を通知できなければなりません               |
+| セル識別           | `data-column-id`                           | 内部セルは列 ID を識別できなければなりません                     |
 
 この協調インターフェースは `ui-list-item` を汎用行ビューではなく、`ui-list` 専用の行ホストとして位置づけます。したがって、`ui-list` は `ui-list-item` 以外の子要素と組み合わせる汎用 container へ拡張しません。
 
@@ -209,37 +209,37 @@ current は、`currentRowId` と `currentColumnId` の**組**としてのみ成�
 
 予約スロットは次のとおりです。
 
-| スロット名               | 位置づけ     | 契約                             |
-| ------------------- | -------- | ------------------------------ |
-| `<column-id>`       | データセル    | `columns.id` に対応します            |
-| `actions`           | 補助操作領域   | `showActions=true` の場合のみ表示対象です |
-| `mobile-supplement` | モバイル補助情報 | 非表示列の要約に限定します                  |
+| スロット名          | 位置づけ         | 契約                                      |
+| ------------------- | ---------------- | ----------------------------------------- |
+| `<column-id>`       | データセル       | `columns.id` に対応します                 |
+| `actions`           | 補助操作領域     | `showActions=true` の場合のみ表示対象です |
+| `mobile-supplement` | モバイル補助情報 | 非表示列の要約に限定します                |
 
 ### 属性反映契約
 
 長期設計では、文字列・真偽値の単純入力のみを属性反映対象とします。構造的 state は property を正本とします。
 
-| property          | attribute           | reflect | 備考                  |
-| ----------------- | ------------------- | ------- | ------------------- |
-| `currentRowId`    | `current-row-id`    | あり      | current 行 ID を保持します |
-| `currentColumnId` | `current-column-id` | あり      | current 列 ID を保持します |
-| `ariaLabel`       | `aria-label`        | あり      | grid 名称に使います        |
-| `showActions`     | `show-actions`      | あり      | 補助操作領域の有無を制御します     |
-| `columns`         | なし                  | なし      | property 専用です       |
-| `sort`            | なし                  | なし      | property 専用です       |
-| `pagination`      | なし                  | なし      | property 専用です       |
-| `getPageHref`     | なし                  | なし      | property 専用です       |
+| property          | attribute           | reflect | 備考                           |
+| ----------------- | ------------------- | ------- | ------------------------------ |
+| `currentRowId`    | `current-row-id`    | あり    | current 行 ID を保持します     |
+| `currentColumnId` | `current-column-id` | あり    | current 列 ID を保持します     |
+| `ariaLabel`       | `aria-label`        | あり    | grid 名称に使います            |
+| `showActions`     | `show-actions`      | あり    | 補助操作領域の有無を制御します |
+| `columns`         | なし                | なし    | property 専用です              |
+| `sort`            | なし                | なし    | property 専用です              |
+| `pagination`      | なし                | なし    | property 専用です              |
+| `getPageHref`     | なし                | なし    | property 専用です              |
 
 ### 公開イベント契約
 
 `ui-list` は次のイベントを公開します。
 
-| 名前                   | `detail`                                                                                                               | 発火契機                  | 契約                                 |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------- | --------------------- | ---------------------------------- |
-| `ui-current-change`  | `{ rowId: string; columnId: string }`                                                                                  | current 行・列の変更要求時     | bubbles / composed / cancelable です |
-| `ui-sort-change`     | `{ key: string \| null; direction: 'asc' \| 'desc' \| null }`                                                          | ソート可能ヘッダーを操作したとき      | bubbles / composed / cancelable です |
-| `ui-preview-request` | `{ rowId: string }`                                                                                                    | `Shift+Space` を押下したとき | bubbles / composed / cancelable です |
-| `ui-context-request` | `{ rowId: string; origin: 'keyboard' \| 'pointer'; anchorPoint?: { x: number; y: number }; anchorRect?: DOMRectLike }` | `Shift+F10` または右クリック時 | bubbles / composed / cancelable です |
+| 名前                 | `detail`                                                                                                               | 発火契機                         | 契約                                 |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------- | ------------------------------------ |
+| `ui-current-change`  | `{ rowId: string; columnId: string }`                                                                                  | current 行・列の変更要求時       | bubbles / composed / cancelable です |
+| `ui-sort-change`     | `{ key: string \| null; direction: 'asc' \| 'desc' \| null }`                                                          | ソート可能ヘッダーを操作したとき | bubbles / composed / cancelable です |
+| `ui-preview-request` | `{ rowId: string }`                                                                                                    | `Shift+Space` を押下したとき     | bubbles / composed / cancelable です |
+| `ui-context-request` | `{ rowId: string; origin: 'keyboard' \| 'pointer'; anchorPoint?: { x: number; y: number }; anchorRect?: DOMRectLike }` | `Shift+F10` または右クリック時   | bubbles / composed / cancelable です |
 
 `ui-current-change` は要求イベントです。`ui-list` 自身が current state を内部確定することに依存しません。利用側が `currentRowId` と `currentColumnId` を更新することで一覧状態が確定します。
 
@@ -267,11 +267,11 @@ current は、`currentRowId` と `currentColumnId` の**組**としてのみ成�
 
 違反入力の扱いは、次の 3 類型に固定します。
 
-| 類型      | 例                                                   | 扱い                             |
-| ------- | --------------------------------------------------- | ------------------------------ |
-| 構造違反    | `columns.id` 重複、`row-id` 欠落、片側だけの current           | 開発時に必ず検出し、既定では例外または検証失敗として扱います |
-| 意味違反    | `lead` と `hideOnMobile` の競合、存在しない `currentColumnId` | 開発時に警告または検証失敗として扱います           |
-| 許容可能な省略 | `sort=null`、`pagination=null`、`showActions=false`   | 正常系として扱います                     |
+| 類型           | 例                                                            | 扱い                                                         |
+| -------------- | ------------------------------------------------------------- | ------------------------------------------------------------ |
+| 構造違反       | `columns.id` 重複、`row-id` 欠落、片側だけの current          | 開発時に必ず検出し、既定では例外または検証失敗として扱います |
+| 意味違反       | `lead` と `hideOnMobile` の競合、存在しない `currentColumnId` | 開発時に警告または検証失敗として扱います                     |
+| 許容可能な省略 | `sort=null`、`pagination=null`、`showActions=false`           | 正常系として扱います                                         |
 
 不正入力に対して本番で例外を投げるかどうかは実装方針に依存しますが、**開発時には必ず検出可能**でなければなりません（MUST）。
 
@@ -305,11 +305,11 @@ current 行または current 列が解決できない場合、`ui-list` は代�
 
 ソート可能列をクリックまたは Enter / Space で操作した場合、`ui-sort-change` を発火します。状態遷移は既定では三段階循環です。
 
-| 現在                                     | 次                                         |
-| -------------------------------------- | ----------------------------------------- |
+| 現在                                          | 次                                        |
+| --------------------------------------------- | ----------------------------------------- |
 | 対象外列または `sort.key !== resolvedSortKey` | `key=resolvedSortKey`, `direction='asc'`  |
-| `direction='asc'`                      | `key=resolvedSortKey`, `direction='desc'` |
-| `direction='desc'`                     | `key=null`, `direction=null`              |
+| `direction='asc'`                             | `key=resolvedSortKey`, `direction='desc'` |
+| `direction='desc'`                            | `key=null`, `direction=null`              |
 
 `resolvedSortKey` は `column.sortKey ?? column.id` です。
 
@@ -409,17 +409,17 @@ current 行または current 列が解決できない場合、`ui-list` は代�
 
 `ui-list` は、行またはセル上で発生した `keydown` を受け、次を処理します。
 
-| キー            | 契約                            |
-| ------------- | ----------------------------- |
-| `ArrowDown`   | 次行の同列へ current を移動します         |
-| `ArrowUp`     | 前行の同列へ current を移動します         |
-| `Home`        | 先頭行の同列へ current を移動します        |
-| `End`         | 末尾行の同列へ current を移動します        |
-| `PageDown`    | 既定のページステップで下方へ current を移動します |
-| `PageUp`      | 既定のページステップで上方へ current を移動します |
-| `Enter`       | 非インタラクティブターゲット上では既定起動先を要求します  |
-| `Shift+Space` | `ui-preview-request` を発火します   |
-| `Shift+F10`   | `ui-context-request` を発火します   |
+| キー          | 契約                                                     |
+| ------------- | -------------------------------------------------------- |
+| `ArrowDown`   | 次行の同列へ current を移動します                        |
+| `ArrowUp`     | 前行の同列へ current を移動します                        |
+| `Home`        | 先頭行の同列へ current を移動します                      |
+| `End`         | 末尾行の同列へ current を移動します                      |
+| `PageDown`    | 既定のページステップで下方へ current を移動します        |
+| `PageUp`      | 既定のページステップで上方へ current を移動します        |
+| `Enter`       | 非インタラクティブターゲット上では既定起動先を要求します |
+| `Shift+Space` | `ui-preview-request` を発火します                        |
+| `Shift+F10`   | `ui-context-request` を発火します                        |
 
 `ArrowLeft` / `ArrowRight` は `ui-list` の責務ではありません。**横方向セル移動は **``** の責務**です。
 
@@ -429,13 +429,13 @@ Space 単体はスクロール用途としてブラウザ既定動作を維持�
 
 `ui-list` における行起動は、**任意の click を遷移へ変換する処理ではありません**。誤起動を避けるため、次の条件では自動起動を抑止します。
 
-| 条件                                                     | 契約      |
-| ------------------------------------------------------ | ------- |
+| 条件                                                     | 契約           |
+| -------------------------------------------------------- | -------------- |
 | `metaKey` / `ctrlKey` / `shiftKey` / `altKey` 付き click | 行起動しません |
-| 左クリック以外                                                | 行起動しません |
-| テキスト選択中                                                | 行起動しません |
-| リンク・ボタン・フォーム部品などのインタラクティブ要素上                           | 行起動しません |
-| 既定起動先未解決                                               | 遷移しません  |
+| 左クリック以外                                           | 行起動しません |
+| テキスト選択中                                           | 行起動しません |
+| リンク・ボタン・フォーム部品などのインタラクティブ要素上 | 行起動しません |
+| 既定起動先未解決                                         | 遷移しません   |
 
 一方で、行起動が抑止されても、current 更新そのものは個別に成立し得ます。したがって、**遷移と current 更新は同一ではありません**。
 
@@ -497,17 +497,17 @@ Space 単体はスクロール用途としてブラウザ既定動作を維持�
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途       | トークン                                                                  |
-| -------- | --------------------------------------------------------------------- |
-| 境界線      | `--border-default`                                                    |
-| 角丸       | `--radius-md` / `--radius-sm`                                         |
-| 見出し文字色   | `--fg-muted`                                                          |
-| 強調文字色    | `--fg-default`                                                        |
+| 用途             | トークン                                                              |
+| ---------------- | --------------------------------------------------------------------- |
+| 境界線           | `--border-default`                                                    |
+| 角丸             | `--radius-md` / `--radius-sm`                                         |
+| 見出し文字色     | `--fg-muted`                                                          |
+| 強調文字色       | `--fg-default`                                                        |
 | フォーカスリング | `--focus-ring-width` / `--focus-ring-color`                           |
-| 余白       | `--space-1` / `--space-3` / `--space-4` / `--space-12` / `--space-20` |
-| 文字サイズ    | `--text-xs` / `--text-base`                                           |
+| 余白             | `--space-1` / `--space-3` / `--space-4` / `--space-12` / `--space-20` |
+| 文字サイズ       | `--text-xs` / `--text-base`                                           |
 | コントロール高さ | `--control-height-md`                                                 |
-| アイコンサイズ  | `--icon-sm`                                                           |
+| アイコンサイズ   | `--icon-sm`                                                           |
 
 ---
 
@@ -563,15 +563,15 @@ print 契約は本書の正本範囲に含めません。印刷時の扱いは�
 
 `ui-list` は `ui-list-item` に対して内部的に強く依存します。少なくとも次の連携が成立していなければなりません。
 
-| 項目            | 契約                                       |
-| ------------- | ---------------------------------------- |
-| 行識別           | `row-id` 属性または `rowId` property を解決できること |
-| current 状態    | `current` property を受け取れること              |
-| current 列     | `currentColumnId` property を受け取れること      |
-| 行番号           | `rowIndex` property を受け取れること             |
-| 列コンテキスト要求     | `requestListContext()` を呼べること            |
-| 逆方向通知         | `ui-current-change` を発火できること             |
-| 列コンテキスト要求イベント | `ui-list-context-request` を発火できること       |
+| 項目                       | 契約                                                  |
+| -------------------------- | ----------------------------------------------------- |
+| 行識別                     | `row-id` 属性または `rowId` property を解決できること |
+| current 状態               | `current` property を受け取れること                   |
+| current 列                 | `currentColumnId` property を受け取れること           |
+| 行番号                     | `rowIndex` property を受け取れること                  |
+| 列コンテキスト要求         | `requestListContext()` を呼べること                   |
+| 逆方向通知                 | `ui-current-change` を発火できること                  |
+| 列コンテキスト要求イベント | `ui-list-context-request` を発火できること            |
 
 このため、`ui-list` は任意の子要素を行として扱う汎用 container ではありません。`ui-list-item` と組で成立する専用一覧コンポーネントです。
 
@@ -645,19 +645,19 @@ Enter または click による行起動時、既定起動先が見つからな�
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
 
-| Story                        | 固定する契約                                                      |
-| ---------------------------- | ----------------------------------------------------------- |
-| `Default`                    | grid、columnheader、行収集、row-id 同期が成立すること                      |
-| `Empty`                      | 空状態で `role="status"` と `aria-live="polite"` を持つこと           |
-| `SortCycle`                  | ソート可能列が `asc → desc → null` の三段階循環を持つこと                     |
-| `KeyboardRowNavigation`      | `ArrowDown` により同列の次行へ current が移ること                         |
-| `CellHorizontalNavigation`   | 横方向セル移動契約が `ui-list-item` 連携で成立すること                         |
-| `PreviewAndContextRequests`  | `Shift+Space` と `Shift+F10` / `contextmenu` が所定イベントを発火すること  |
-| `PaginationContract`         | `offset` / `limit` / `total` に基づいてページ計算が成立すること              |
-| `MobileColumnsAndSupplement` | モバイル時に非表示列が抑制され、補助情報が表示されること                                |
-| `SingleRowBoundary`          | 単一行で `ArrowDown` による行移動が発生しないこと                             |
-| `DarkMode`                   | トークン差し替え下でも一覧として読めること                                       |
-| `ValidationFailures`         | 構造違反が開発時に検出可能であること                                          |
+| Story                        | 固定する契約                                                                       |
+| ---------------------------- | ---------------------------------------------------------------------------------- |
+| `Default`                    | grid、columnheader、行収集、row-id 同期が成立すること                              |
+| `Empty`                      | 空状態で `role="status"` と `aria-live="polite"` を持つこと                        |
+| `SortCycle`                  | ソート可能列が `asc → desc → null` の三段階循環を持つこと                          |
+| `KeyboardRowNavigation`      | `ArrowDown` により同列の次行へ current が移ること                                  |
+| `CellHorizontalNavigation`   | 横方向セル移動契約が `ui-list-item` 連携で成立すること                             |
+| `PreviewAndContextRequests`  | `Shift+Space` と `Shift+F10` / `contextmenu` が所定イベントを発火すること          |
+| `PaginationContract`         | `offset` / `limit` / `total` に基づいてページ計算が成立すること                    |
+| `MobileColumnsAndSupplement` | モバイル時に非表示列が抑制され、補助情報が表示されること                           |
+| `SingleRowBoundary`          | 単一行で `ArrowDown` による行移動が発生しないこと                                  |
+| `DarkMode`                   | トークン差し替え下でも一覧として読めること                                         |
+| `ValidationFailures`         | 構造違反が開発時に検出可能であること                                               |
 | `ControlledCurrent`          | `ui-current-change` を受けて外部が state を戻したときにのみ current が確定すること |
 
 `CellHorizontalNavigation` は `ui-list` 単体契約ではなく、`ui-list-item` との結合契約を確認する Story として扱います。
@@ -891,4 +891,3 @@ actions 領域を `aria-colcount` や current モデルから条件付きで分�
 ### 13. 本節の扱い
 
 本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用または厳密化する場合は、実装、Storybook、関連契約書の 3 点を同時に更新し、未対応状態を残したまま公開契約へ昇格させません。
-

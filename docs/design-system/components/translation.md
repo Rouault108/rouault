@@ -59,18 +59,18 @@ Rouault における translation は、注釈や脚注に近い本文補助要�
 - `ui-translation` は、単一インスタンスの開閉、意味論、視覚表現、ポインター / フォーカス / キーボード操作を担当します。
 - `TranslationOrchestrator` は、複数 `ui-translation` への render mode 配布、intent mode の永続化、端末条件に応じた mode 解決、グローバルショートカットを担当します。
 
-したがって、**個別要素の **``** 状態**と、**集合全体の **`` は別の状態として扱います。
+したがって、**個別要素の **`** 状態**と、**集合全体の **` は別の状態として扱います。
 
 ### 3.3 入力契約
 
-| 名前           | 種別                                   | 必須  | 内容      | 契約                                                                                                                             |
-| ------------ | ------------------------------------ | --- | ------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `original`   | property / attribute                 | いいえ | 原文テキスト  | 空の場合は Trigger 文言として `翻訳を表示` を用います                                                                                              |
-| `translated` | property / attribute                 | いいえ | 翻訳テキスト  | 空の場合、翻訳未提供として扱い Trigger を非活性化します                                                                                               |
-| `lang`       | property / attribute                 | いいえ | 原文言語コード | 空でも描画は継続しますが、指定を推奨します                                                                                                          |
-| `targetLang` | property / attribute (`target-lang`) | いいえ | 翻訳言語コード | 既定値は `ja` であり、空文字は `ja` にフォールバックします                                                                                            |
-| `renderMode` | property / attribute (`render-mode`) | いいえ | 表示方式    | 単体利用時の表示方式入力です。`popover` / `drawer` / `interlinear` を受理し、不正値は `popover` にフォールバックします。`TranslationOrchestrator` 管理下では派生状態として扱います |
-| `open`       | property / attribute                 | いいえ | 開閉状態    | `true` の場合に翻訳 content を表示します                                                                                                   |
+| 名前         | 種別                                 | 必須   | 内容           | 契約                                                                                                                                                                               |
+| ------------ | ------------------------------------ | ------ | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `original`   | property / attribute                 | いいえ | 原文テキスト   | 空の場合は Trigger 文言として `翻訳を表示` を用います                                                                                                                              |
+| `translated` | property / attribute                 | いいえ | 翻訳テキスト   | 空の場合、翻訳未提供として扱い Trigger を非活性化します                                                                                                                            |
+| `lang`       | property / attribute                 | いいえ | 原文言語コード | 空でも描画は継続しますが、指定を推奨します                                                                                                                                         |
+| `targetLang` | property / attribute (`target-lang`) | いいえ | 翻訳言語コード | 既定値は `ja` であり、空文字は `ja` にフォールバックします                                                                                                                         |
+| `renderMode` | property / attribute (`render-mode`) | いいえ | 表示方式       | 単体利用時の表示方式入力です。`popover` / `drawer` / `interlinear` を受理し、不正値は `popover` にフォールバックします。`TranslationOrchestrator` 管理下では派生状態として扱います |
+| `open`       | property / attribute                 | いいえ | 開閉状態       | `true` の場合に翻訳 content を表示します                                                                                                                                           |
 
 ### 3.4 表示方式契約
 
@@ -82,11 +82,11 @@ Rouault における translation は、注釈や脚注に近い本文補助要�
 
 `ui-translation` 単体の `renderMode` は、Layout policy と Adaptive surface をまとめた単一入力です。一方、`TranslationOrchestrator` 管理下では、Intent と device profile から解決済み surface が導かれます。
 
-| `renderMode` 値 | Layout policy      | 通常 surface                                         | content の意味論  | 主な用途             |
-| -------------- | ------------------ | -------------------------------------------------- | ------------- | ---------------- |
-| `popover`      | `floating-surface` | desktop では `popover`、mobile-like では `bottom-sheet` | `role="note"` | 文脈を維持した軽い lookup |
-| `drawer`       | `side-surface`     | `drawer`                                           | `role="note"` | 画面端での継続的な参照      |
-| `interlinear`  | `inline-surface`   | `interlinear`                                      | `role="note"` | 原文直下での対訳読書       |
+| `renderMode` 値 | Layout policy      | 通常 surface                                            | content の意味論 | 主な用途                  |
+| --------------- | ------------------ | ------------------------------------------------------- | ---------------- | ------------------------- |
+| `popover`       | `floating-surface` | desktop では `popover`、mobile-like では `bottom-sheet` | `role="note"`    | 文脈を維持した軽い lookup |
+| `drawer`        | `side-surface`     | `drawer`                                                | `role="note"`    | 画面端での継続的な参照    |
+| `interlinear`   | `inline-surface`   | `interlinear`                                           | `role="note"`    | 原文直下での対訳読書      |
 
 `popover`、`drawer`、`interlinear` は、いずれも**本文補助 surface**として扱い、dialog 的な意味論は採りません。したがって、lookup 系 surface も modal dialog ではなく、読みを補助する note surface です。
 
@@ -94,10 +94,10 @@ Rouault における translation は、注釈や脚注に近い本文補助要�
 
 `ui-translation` は、利用側が内部 DOM を直接探索しなくてもよいよう、次の公開メソッドを持ちます。
 
-| 名前                           | 種別     | 契約                       |
-| ---------------------------- | ------ | ------------------------ |
-| `openTranslation()`          | method | 翻訳を開きます                  |
-| `closeTranslation()`         | method | 翻訳を閉じます                  |
+| 名前                         | 種別   | 契約                                |
+| ---------------------------- | ------ | ----------------------------------- |
+| `openTranslation()`          | method | 翻訳を開きます                      |
+| `closeTranslation()`         | method | 翻訳を閉じます                      |
 | `toggleTranslation()`        | method | 翻訳の開閉を反転します              |
 | `requestModeToggle(source?)` | method | 上位に mode toggle 要求を送出します |
 
@@ -107,11 +107,11 @@ Rouault における translation は、注釈や脚注に近い本文補助要�
 
 ### 3.6 公開イベント
 
-| 名前                                | detail                       | bubbles | composed | 契約                                                            |
-| --------------------------------- | ---------------------------- | ------- | -------- | ------------------------------------------------------------- |
-| `translation-toggle`              | `{ open, renderMode }`       | あり      | あり       | 単一要素の開閉通知。公開イベントとして扱います                                       |
-| `translation-request-mode-toggle` | `{ source }`                 | あり      | あり       | 上位オーケストレータへの mode toggle 要求。内部連携イベントとして扱い、外部の安定公開 API には含めません |
-| `translation-mode-change`         | `{ intentMode, renderMode }` | あり      | あり       | オーケストレータによる集合状態変更通知。公開イベントとして扱います                             |
+| 名前                              | detail                       | bubbles | composed | 契約                                                                                                     |
+| --------------------------------- | ---------------------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------- |
+| `translation-toggle`              | `{ open, renderMode }`       | あり    | あり     | 単一要素の開閉通知。公開イベントとして扱います                                                           |
+| `translation-request-mode-toggle` | `{ source }`                 | あり    | あり     | 上位オーケストレータへの mode toggle 要求。内部連携イベントとして扱い、外部の安定公開 API には含めません |
+| `translation-mode-change`         | `{ intentMode, renderMode }` | あり    | あり     | オーケストレータによる集合状態変更通知。公開イベントとして扱います                                       |
 
 `translation-toggle` は `ui-translation` 自身が発火します。`translation-request-mode-toggle` は `ui-translation` 側から送出されますが、これは**内部連携のための要求イベント**であり、外部アプリケーションが安定依存してよい公開 API ではありません。`translation-mode-change` は `TranslationOrchestrator` が発火します。
 
@@ -119,15 +119,15 @@ Rouault における translation は、注釈や脚注に近い本文補助要�
 
 `TranslationOrchestrator` は、`root`、`keyTarget`、`storage`、`storageKey`、`studyMode`、`mobileBreakpoint`、`isMobileViewport` を構成入力として扱います。
 
-| 名前                 | 種別                 | 必須  | 内容          | 契約                                         |
-| ------------------ | ------------------ | --- | ----------- | ------------------------------------------ |
-| `root`             | constructor option | いいえ | 管理対象ルート     | 既定値は `document` です。未解決の場合は例外です             |
-| `keyTarget`        | constructor option | いいえ | グローバルキー入力対象 | 既定値は `document` または `root` です              |
-| `storage`          | constructor option | いいえ | 永続化先        | `getItem` / `setItem` を持つ Storage 互換を受理します |
-| `storageKey`       | constructor option | いいえ | 永続化キー       | 既定値は `rouault:translation-mode` です         |
-| `studyMode`        | constructor option | いいえ | 学習モード       | `parallel` を `interlinear` へ解決し得ます         |
-| `mobileBreakpoint` | constructor option | いいえ | モバイル閾値      | 既定値は `1280` です                             |
-| `isMobileViewport` | constructor option | いいえ | モバイル判定関数    | 指定時は既定の `matchMedia` 判定を置き換えます             |
+| 名前               | 種別               | 必須   | 内容                   | 契約                                                  |
+| ------------------ | ------------------ | ------ | ---------------------- | ----------------------------------------------------- |
+| `root`             | constructor option | いいえ | 管理対象ルート         | 既定値は `document` です。未解決の場合は例外です      |
+| `keyTarget`        | constructor option | いいえ | グローバルキー入力対象 | 既定値は `document` または `root` です                |
+| `storage`          | constructor option | いいえ | 永続化先               | `getItem` / `setItem` を持つ Storage 互換を受理します |
+| `storageKey`       | constructor option | いいえ | 永続化キー             | 既定値は `rouault:translation-mode` です              |
+| `studyMode`        | constructor option | いいえ | 学習モード             | `parallel` を `interlinear` へ解決し得ます            |
+| `mobileBreakpoint` | constructor option | いいえ | モバイル閾値           | 既定値は `1280` です                                  |
+| `isMobileViewport` | constructor option | いいえ | モバイル判定関数       | 指定時は既定の `matchMedia` 判定を置き換えます        |
 
 `TranslationOrchestrator` は、`start()`、`destroy()`、`setIntentMode()`、`toggleIntentMode()`、`setStudyMode()`、`refresh()` を公開メソッドとして持ちます。
 
@@ -155,12 +155,12 @@ Rouault における translation は、注釈や脚注に近い本文補助要�
 
 ### 3.10 属性反映契約
 
-| property     | attribute     | reflect | 備考                            |
-| ------------ | ------------- | ------- | ----------------------------- |
-| `lang`       | `lang`        | あり      | 空の場合は Trigger の `lang` を省略します |
-| `targetLang` | `target-lang` | あり      | 空文字は `ja` に正規化されます            |
-| `renderMode` | `render-mode` | あり      | 不正値は `popover` 扱いです           |
-| `open`       | `open`        | あり      | boolean attribute として扱います     |
+| property     | attribute     | reflect | 備考                                      |
+| ------------ | ------------- | ------- | ----------------------------------------- |
+| `lang`       | `lang`        | あり    | 空の場合は Trigger の `lang` を省略します |
+| `targetLang` | `target-lang` | あり    | 空文字は `ja` に正規化されます            |
+| `renderMode` | `render-mode` | あり    | 不正値は `popover` 扱いです               |
+| `open`       | `open`        | あり    | boolean attribute として扱います          |
 
 `original` と `translated` は公開 property / attribute として扱えますが、reflect はしません。表示結果は内部描画へ反映されます。
 
@@ -231,13 +231,13 @@ lookup 系 mode では、mouse pointer の `pointerenter`、キーボードフ�
 
 `TranslationOrchestrator` は次のショートカットを扱います。
 
-| 操作                     | 条件                                                                                  | 効果                                                |
-| ---------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------- |
-| `Ctrl/Cmd + Shift + L` | editable 要素以外、`defaultPrevented` でなく、key repeat でない                                 | `lookup` / `parallel` をグローバル切り替え                  |
+| 操作                   | 条件                                                                                                       | 効果                                                       |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `Ctrl/Cmd + Shift + L` | editable 要素以外、`defaultPrevented` でなく、key repeat でない                                            | `lookup` / `parallel` をグローバル切り替え                 |
 | `P`                    | 修飾キーなし、開いている `ui-translation` 上、lookup 系 mode、`defaultPrevented` でなく、key repeat でない | `translation-request-mode-toggle` を経由して mode 切り替え |
-| `Escape`               | 開いている `ui-translation` 上                                                            | 当該翻訳を閉じ、Trigger へフォーカスを戻す                         |
+| `Escape`               | 開いている `ui-translation` 上                                                                             | 当該翻訳を閉じ、Trigger へフォーカスを戻す                 |
 
-`P` は interlinear では受理しません。つまり、**本文内の open translation から **``** / **``** を文脈的に切り替えられるのは lookup 系 mode のときだけ**です。
+`P` は interlinear では受理しません。つまり、**本文内の open translation から **`** / **`** を文脈的に切り替えられるのは lookup 系 mode のときだけ**です。
 
 ### 4.11 複数インスタンス状態
 
@@ -350,21 +350,21 @@ Trigger は透明背景の inline button とし、破線状の下線表現で翻
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途         | トークン                                                                                      |
-| ---------- | ----------------------------------------------------------------------------------------- |
-| 本文文字色      | `--fg-default`                                                                            |
-| 補助文字色      | `--fg-muted`                                                                              |
-| 境界線        | `--border-default`                                                                        |
+| 用途         | トークン                                                                                  |
+| ------------ | ----------------------------------------------------------------------------------------- |
+| 本文文字色   | `--fg-default`                                                                            |
+| 補助文字色   | `--fg-muted`                                                                              |
+| 境界線       | `--border-default`                                                                        |
 | Surface 背景 | `--bg-surface-2`                                                                          |
-| Focus ring | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
+| Focus ring   | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
 | 角丸         | `--radius-sm` / `--radius-md` / `--radius-lg`                                             |
-| Elevation  | `--elevation-lg`                                                                          |
+| Elevation    | `--elevation-lg`                                                                          |
 | 余白         | `--space-*`                                                                               |
-| 文字サイズ      | `--text-sm`                                                                               |
+| 文字サイズ   | `--text-sm`                                                                               |
 | 行高         | `--line-height-relaxed`                                                                   |
-| z-index    | `--z-popover`                                                                             |
-| モーション      | `--duration-fast` / `--ease-out`                                                          |
-| タッチ領域      | `--control-min-touch`                                                                     |
+| z-index      | `--z-popover`                                                                             |
+| モーション   | `--duration-fast` / `--ease-out`                                                          |
+| タッチ領域   | `--control-min-touch`                                                                     |
 
 ---
 
@@ -443,13 +443,13 @@ desktop では `parallel` intent が `drawer` に解決され、継続読みに�
 
 長期契約では、少なくとも次の入力行列を固定します。
 
-| 入力種別                 | lookup 系                                      | interlinear                    | 備考                               |
-| -------------------- | --------------------------------------------- | ------------------------------ | -------------------------------- |
-| mouse                | hover open 可、click toggle 可                   | click toggle 可                 | primary button かつ修飾キーなしを正規経路とします |
-| touch                | hover open 不可、tap toggle 可                    | tap toggle 可                   | bottom sheet gesture close を持ちます |
-| pen                  | touch 相当として扱います                               | touch 相当として扱います                | hover 可能デバイスでも参照契約は touch 側へ寄せます |
-| keyboard             | focus open、Escape close、`P` で mode toggle 要求可 | focus open、Escape close、`P` 無効 | `P` は lookup 系かつ open 時のみ有効です    |
-| assistive technology | button activation を正規経路とします                   | button activation を正規経路とします    | 独自ジェスチャーには依存しません                 |
+| 入力種別             | lookup 系                                           | interlinear                          | 備考                                                |
+| -------------------- | --------------------------------------------------- | ------------------------------------ | --------------------------------------------------- |
+| mouse                | hover open 可、click toggle 可                      | click toggle 可                      | primary button かつ修飾キーなしを正規経路とします   |
+| touch                | hover open 不可、tap toggle 可                      | tap toggle 可                        | bottom sheet gesture close を持ちます               |
+| pen                  | touch 相当として扱います                            | touch 相当として扱います             | hover 可能デバイスでも参照契約は touch 側へ寄せます |
+| keyboard             | focus open、Escape close、`P` で mode toggle 要求可 | focus open、Escape close、`P` 無効   | `P` は lookup 系かつ open 時のみ有効です            |
+| assistive technology | button activation を正規経路とします                | button activation を正規経路とします | 独自ジェスチャーには依存しません                    |
 
 ### 8.9 永続化優先順位契約
 
@@ -474,7 +474,7 @@ desktop では `parallel` intent が `drawer` に解決され、継続読みに�
 
 ### 9.2 Mode toggle 要求契約
 
-`ui-translation` は `P` キーや `requestModeToggle()` を通じて mode toggle を要求できますが、**自分で **``** を持ちません**。要求を処理して `renderMode` を再配布するのは `TranslationOrchestrator` の責務です。
+`ui-translation` は `P` キーや `requestModeToggle()` を通じて mode toggle を要求できますが、**自分で **``** を持ちません**。要求を処理して `renderMode`を再配布するのは`TranslationOrchestrator` の責務です。
 
 ### 9.3 外部制御契約
 
@@ -558,24 +558,24 @@ open な `popover` は、viewport の resize / scroll に追従して位置を�
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
 
-| Story                          | 固定する契約                                                                                        |
-| ------------------------------ | --------------------------------------------------------------------------------------------- |
-| `Default`                      | Trigger / Content の基本 A11y 契約、`open` と `aria-expanded` / `hidden` の同期、`translation-toggle` 発火 |
-| `VariantStateMatrix`           | `renderMode × open` の意味論整合、lookup と interlinear の role 差分                                     |
-| `BoundaryConditions`           | 不正 mode フォールバック、空 `target-lang` の `ja` フォールバック、翻訳未提供時の disabled、長文警告、style 注入の単一性             |
+| Story                          | 固定する契約                                                                                                             |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `Default`                      | Trigger / Content の基本 A11y 契約、`open` と `aria-expanded` / `hidden` の同期、`translation-toggle` 発火               |
+| `VariantStateMatrix`           | `renderMode × open` の意味論整合、lookup と interlinear の role 差分                                                     |
+| `BoundaryConditions`           | 不正 mode フォールバック、空 `target-lang` の `ja` フォールバック、翻訳未提供時の disabled、長文警告、style 注入の単一性 |
 | `OrchestratorContract`         | localStorage 初期値読取、グローバルショートカット、`intentMode` と `renderMode` の対応表、`translation-mode-change` 発火 |
-| `DarkModeContract`             | `prefers-color-scheme` 直接分岐を持たず、トークン追従と上端 highlight を維持すること                                   |
-| `MobileLookupBottomSheet`      | モバイル lookup の bottom sheet 化、scrim 表示、下方向スワイプと scrim click による close                          |
-| `ForcedColorsAndPrintContract` | 非色シグナル、forced-colors 境界線、print 時の lookup 非表示と interlinear 表示                                  |
-| `LookupInteractionBoundary`    | lookup 系の hover / focus open、Escape close                                                     |
-| `AttributeDrivenStateChange`   | property / attribute 変更による `open`・`renderMode` 反映、および no-op 時にイベントが増発しないこと                    |
-| `RapidToggleReentrancySafety`  | 連続 toggle でも状態遷移が破綻せず、同一状態への再設定で副作用を重複させないこと                                                  |
-| `LocalStoragePersistence`      | 永続化の既定動作、`persist: false` 時の非永続動作、storage 利用不可時の graceful degradation                         |
-| `ManagedVsUnmanagedOwnership`  | 単体利用時の `renderMode` 入力と、管理下での派生状態との差分                                                         |
-| `SingleOpenPolicy`             | lookup 系 single-open と interlinear multi-open の境界                                             |
-| `DeviceProfileResolution`      | 共通 device profile に基づく mode 解決と bottom-sheet 化の整合                                             |
-| `AccessibleNamingContract`     | Trigger と content の `aria-labelledby` / `aria-controls` / `aria-details` 関係                   |
-| `EventVisibilityContract`      | 公開イベントと内部連携イベントの区別                                                                            |
+| `DarkModeContract`             | `prefers-color-scheme` 直接分岐を持たず、トークン追従と上端 highlight を維持すること                                     |
+| `MobileLookupBottomSheet`      | モバイル lookup の bottom sheet 化、scrim 表示、下方向スワイプと scrim click による close                                |
+| `ForcedColorsAndPrintContract` | 非色シグナル、forced-colors 境界線、print 時の lookup 非表示と interlinear 表示                                          |
+| `LookupInteractionBoundary`    | lookup 系の hover / focus open、Escape close                                                                             |
+| `AttributeDrivenStateChange`   | property / attribute 変更による `open`・`renderMode` 反映、および no-op 時にイベントが増発しないこと                     |
+| `RapidToggleReentrancySafety`  | 連続 toggle でも状態遷移が破綻せず、同一状態への再設定で副作用を重複させないこと                                         |
+| `LocalStoragePersistence`      | 永続化の既定動作、`persist: false` 時の非永続動作、storage 利用不可時の graceful degradation                             |
+| `ManagedVsUnmanagedOwnership`  | 単体利用時の `renderMode` 入力と、管理下での派生状態との差分                                                             |
+| `SingleOpenPolicy`             | lookup 系 single-open と interlinear multi-open の境界                                                                   |
+| `DeviceProfileResolution`      | 共通 device profile に基づく mode 解決と bottom-sheet 化の整合                                                           |
+| `AccessibleNamingContract`     | Trigger と content の `aria-labelledby` / `aria-controls` / `aria-details` 関係                                          |
+| `EventVisibilityContract`      | 公開イベントと内部連携イベントの区別                                                                                     |
 
 ---
 
@@ -756,4 +756,3 @@ popover の位置決めは best-effort placement です。viewport 内 clamp と
 ### 15.13 本節の扱い
 
 本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用する場合は、実装、Storybook、契約書の 3 点を同時に更新し、未対応状態を残したまま公開契約へ昇格させません。
-

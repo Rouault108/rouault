@@ -87,14 +87,14 @@
 
 ### 入力契約
 
-| 名前 | 種別 | 必須 | 内容 | 契約 |
-| --- | --- | --- | --- | --- |
-| `opened` | property / attribute | はい | 開閉状態 | `true` で開き、`false` で閉じます。唯一の開閉真実源です |
-| `query` | property / attribute | はい | 入力文字列 | 表示値であり、検索キーでもあります。検索評価時は `trim()` 後の値を使います |
-| `items` | property | 条件付き | ローカル検索対象 | `searcher` を使わない場合の検索対象です |
-| `searcher` | property | 条件付き | 外部検索関数 | `items` の代わりに検索を完全外部化するための入力です |
-| `messages` | property | いいえ | 文言セット | ラベル、loading、empty、error などの文言です |
-| `matchFields` | property | いいえ | 一致対象面 | 既定では `title` / `path` / `keywords` です |
+| 名前          | 種別                 | 必須     | 内容             | 契約                                                                       |
+| ------------- | -------------------- | -------- | ---------------- | -------------------------------------------------------------------------- |
+| `opened`      | property / attribute | はい     | 開閉状態         | `true` で開き、`false` で閉じます。唯一の開閉真実源です                    |
+| `query`       | property / attribute | はい     | 入力文字列       | 表示値であり、検索キーでもあります。検索評価時は `trim()` 後の値を使います |
+| `items`       | property             | 条件付き | ローカル検索対象 | `searcher` を使わない場合の検索対象です                                    |
+| `searcher`    | property             | 条件付き | 外部検索関数     | `items` の代わりに検索を完全外部化するための入力です                       |
+| `messages`    | property             | いいえ   | 文言セット       | ラベル、loading、empty、error などの文言です                               |
+| `matchFields` | property             | いいえ   | 一致対象面       | 既定では `title` / `path` / `keywords` です                                |
 
 `items` と `searcher` は同時に必須ではありませんが、**どちらか一方**を検索ソースとして与えます。両方が与えられた場合、公開契約では**設定エラー**として扱い、暗黙優先は設けません。責務の明快さを優先し、ローカル検索と外部検索の同時混在は認めません。
 
@@ -114,13 +114,13 @@ interface UiSearchDialogItem {
 }
 ```
 
-| 名前 | 必須 | 内容 | 契約 |
-| --- | --- | --- | --- |
-| `id` | はい | 安定識別子 | 重複除去、option 識別、選択 detail の主キーです |
-| `title` | はい | 主表示 | 空文字は正規結果として扱いません |
-| `url` | はい | 遷移先識別値 | 選択通知に含める主値です |
-| `path` | いいえ | 補助表示 | 人間が読むための補助ラベルです |
-| `keywords` | いいえ | 補助一致対象 | 既定一致対象面に含みます |
+| 名前       | 必須   | 内容         | 契約                                            |
+| ---------- | ------ | ------------ | ----------------------------------------------- |
+| `id`       | はい   | 安定識別子   | 重複除去、option 識別、選択 detail の主キーです |
+| `title`    | はい   | 主表示       | 空文字は正規結果として扱いません                |
+| `url`      | はい   | 遷移先識別値 | 選択通知に含める主値です                        |
+| `path`     | いいえ | 補助表示     | 人間が読むための補助ラベルです                  |
+| `keywords` | いいえ | 補助一致対象 | 既定一致対象面に含みます                        |
 
 `path` は**表示専用ラベル**として扱います。`url` の正規化表示と同一視しません。`path` の自動導出を行う場合でも、それは convenience であり、公開契約の中心ではありません。
 
@@ -147,9 +147,9 @@ interface UiSearchDialogSearchResult {
   };
 }
 
-type UiSearchDialogSearcher =
-  (context: UiSearchDialogSearchContext) =>
-    Promise<UiSearchDialogSearchResult> | UiSearchDialogSearchResult;
+type UiSearchDialogSearcher = (
+  context: UiSearchDialogSearchContext,
+) => Promise<UiSearchDialogSearchResult> | UiSearchDialogSearchResult;
 ```
 
 この契約では、`searcher` は query 文字列だけでなく、中断、件数上限、locale を受け取れます。戻り値は `items` だけでなく、必要に応じて `total`、`isPartial`、`error` を返せます。
@@ -158,34 +158,29 @@ type UiSearchDialogSearcher =
 
 #### 要求イベント
 
-| イベント名 | detail | 契約 |
-| --- | --- | --- |
-| `ui-search-dialog-open-requested` | なし | 開く要求を通知します |
+| イベント名                         | detail                    | 契約                   |
+| ---------------------------------- | ------------------------- | ---------------------- |
+| `ui-search-dialog-open-requested`  | なし                      | 開く要求を通知します   |
 | `ui-search-dialog-close-requested` | `{ reason: CloseReason }` | 閉じる要求を通知します |
-| `ui-search-dialog-query-changed` | `{ query: string }` | 入力変更を通知します |
+| `ui-search-dialog-query-changed`   | `{ query: string }`       | 入力変更を通知します   |
 
 ```ts
-type CloseReason =
-  | 'selection'
-  | 'escape'
-  | 'backdrop'
-  | 'close-button'
-  | 'programmatic';
+type CloseReason = 'selection' | 'escape' | 'backdrop' | 'close-button' | 'programmatic';
 ```
 
 要求イベントは、**状態更新要求**を外部へ伝えるためのイベントです。`opened` と `query` を controlled に保つため、内部操作はこのイベント経由で上位へ通知します。
 
 #### ライフサイクルイベント
 
-| イベント名 | detail | 契約 |
-| --- | --- | --- |
+| イベント名                | detail                             | 契約                             |
+| ------------------------- | ---------------------------------- | -------------------------------- |
 | `ui-search-dialog-opened` | `{ trigger: HTMLElement \| null }` | 開状態が成立したあとに発火します |
-| `ui-search-dialog-closed` | `{ reason: CloseReason }` | 閉状態が成立したあとに発火します |
+| `ui-search-dialog-closed` | `{ reason: CloseReason }`          | 閉状態が成立したあとに発火します |
 
 #### 選択イベント
 
-| イベント名 | detail | 契約 |
-| --- | --- | --- |
+| イベント名                  | detail                         | 契約                   |
+| --------------------------- | ------------------------------ | ---------------------- |
 | `ui-search-dialog-selected` | `UiSearchDialogSelectedDetail` | 結果選択時に発火します |
 
 ```ts
@@ -206,10 +201,10 @@ interface UiSearchDialogSelectedDetail {
 
 公開イベントは次の特性を持ちます。
 
-| 項目 | 契約 |
-| --- | --- |
-| `bubbles` | `true` |
-| `composed` | `true` |
+| 項目         | 契約             |
+| ------------ | ---------------- |
+| `bubbles`    | `true`           |
+| `composed`   | `true`           |
 | `cancelable` | event ごとに定義 |
 
 要求イベントと選択イベントは、上位層で委譲購読しやすいように `bubbles=true`、`composed=true` を採用します。
@@ -218,12 +213,12 @@ interface UiSearchDialogSelectedDetail {
 
 ### 公開メソッド
 
-| 名前 | 種別 | 契約 |
-| --- | --- | --- |
-| `focusInput()` | method | 入力欄へフォーカスを移します |
-| `focusActiveResult()` | method | active result がある場合にそこへ移します |
-| `requestOpen(trigger?)` | method | 開く要求を通知します |
-| `requestClose(reason?)` | method | 閉じる要求を通知します |
+| 名前                    | 種別   | 契約                                     |
+| ----------------------- | ------ | ---------------------------------------- |
+| `focusInput()`          | method | 入力欄へフォーカスを移します             |
+| `focusActiveResult()`   | method | active result がある場合にそこへ移します |
+| `requestOpen(trigger?)` | method | 開く要求を通知します                     |
+| `requestClose(reason?)` | method | 閉じる要求を通知します                   |
 
 `open()` / `close()` のような**強制状態変更メソッド**は、controlled 契約とは相性が悪いため採りません。公開メソッドは request ベースに寄せます。
 
@@ -468,14 +463,14 @@ search dialog が `ui-search-field` に要求するのは内部 DOM ではなく
 
 ## キーボード契約
 
-| キー | 契約 |
-| --- | --- |
+| キー        | 契約                                                     |
+| ----------- | -------------------------------------------------------- |
 | `ArrowDown` | active result を次へ進めます。末尾の次は先頭へ循環します |
-| `ArrowUp` | active result を前へ戻します。先頭の前は末尾へ循環します |
-| `Enter` | 入力欄上では active result を選択します |
-| `Esc` | `close-requested` を `reason='escape'` で通知します |
-| `Tab` | 入力欄、clear control、close button 間の秩序を維持します |
-| `Space` | 結果行に直接フォーカスしている場合は選択に使えます |
+| `ArrowUp`   | active result を前へ戻します。先頭の前は末尾へ循環します |
+| `Enter`     | 入力欄上では active result を選択します                  |
+| `Esc`       | `close-requested` を `reason='escape'` で通知します      |
+| `Tab`       | 入力欄、clear control、close button 間の秩序を維持します |
+| `Space`     | 結果行に直接フォーカスしている場合は選択に使えます       |
 
 `loading` 中は active move や選択を行いません。古い結果一覧を操作可能なまま残すことは公開契約に含めません。
 
@@ -520,25 +515,25 @@ dialog は画面上部寄りに配置し、中央へ寄せます。最大幅は�
 
 本コンポーネントは主として次のトークンに依存します。
 
-| 用途 | トークン |
-| --- | --- |
-| dialog 背景 | `--bg-surface-3` |
-| 既定文字色 | `--fg-default` |
-| 控えめ文字色 | `--fg-muted` / `--fg-subtle` |
-| 既定境界線 | `--border-default` |
-| 角丸 | `--radius-xl` / `--radius-md` / `--radius-sm` |
-| 影 | `--elevation-xl` |
-| scrim opacity | `--opacity-scrim` |
-| blur | `--blur-lg` |
-| active row 背景 | `--bg-surface-active` |
-| hover 背景 | `--bg-hover` |
-| 入力背景 | `--bg-fill-muted` |
-| focus ring | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
-| 余白 | `--space-*` |
-| 文字サイズ | `--text-xs` / `--text-sm` / `--text-base` / `--text-lg` / `--text-xl` |
-| アイコンサイズ | `--icon-base` |
-| モーション | `--duration-fast` / `--duration-normal` / `--ease-in` / `--ease-out` |
-| z-index | `--z-modal` / `--z-backdrop` |
+| 用途            | トークン                                                                                  |
+| --------------- | ----------------------------------------------------------------------------------------- |
+| dialog 背景     | `--bg-surface-3`                                                                          |
+| 既定文字色      | `--fg-default`                                                                            |
+| 控えめ文字色    | `--fg-muted` / `--fg-subtle`                                                              |
+| 既定境界線      | `--border-default`                                                                        |
+| 角丸            | `--radius-xl` / `--radius-md` / `--radius-sm`                                             |
+| 影              | `--elevation-xl`                                                                          |
+| scrim opacity   | `--opacity-scrim`                                                                         |
+| blur            | `--blur-lg`                                                                               |
+| active row 背景 | `--bg-surface-active`                                                                     |
+| hover 背景      | `--bg-hover`                                                                              |
+| 入力背景        | `--bg-fill-muted`                                                                         |
+| focus ring      | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
+| 余白            | `--space-*`                                                                               |
+| 文字サイズ      | `--text-xs` / `--text-sm` / `--text-base` / `--text-lg` / `--text-xl`                     |
+| アイコンサイズ  | `--icon-base`                                                                             |
+| モーション      | `--duration-fast` / `--duration-normal` / `--ease-in` / `--ease-out`                      |
+| z-index         | `--z-modal` / `--z-backdrop`                                                              |
 
 ---
 
@@ -594,20 +589,20 @@ trim 後 query が空なら検索は行わず、状態は `idle` です。empty 
 
 各 Story は見本ではなく、**契約確認点**として扱います。
 
-| Story | 固定する契約 |
-| --- | --- |
-| `ControlledOpenedContract` | `opened` が外部制御であること |
-| `ControlledQueryContract` | `query` が外部制御であること |
-| `FocusReturnContract` | close 後に trigger へ focus が戻ること |
-| `LoadingStateEditableInput` | loading 中でも入力継続ができること |
-| `EmptyStateContract` | 非空 query かつ 0 件で empty を表示すること |
-| `ErrorStateContract` | search failure を empty と区別できること |
-| `KeyboardLoopAndEnterSelection` | Arrow key 循環移動と Enter 選択が成立すること |
-| `StableItemIdentityContract` | 結果更新時に ID 基準で active を維持できること |
-| `CloseReasonContract` | close reason が区別されること |
-| `MatchingSemanticsContract` | 一致対象面とハイライト規則が一致すること |
-| `VirtualizationSemanticsContract` | 仮想化の有無で意味論が変わらないこと |
-| `DarkModeTokenContract` | dark token でも視認性が維持されること |
+| Story                             | 固定する契約                                   |
+| --------------------------------- | ---------------------------------------------- |
+| `ControlledOpenedContract`        | `opened` が外部制御であること                  |
+| `ControlledQueryContract`         | `query` が外部制御であること                   |
+| `FocusReturnContract`             | close 後に trigger へ focus が戻ること         |
+| `LoadingStateEditableInput`       | loading 中でも入力継続ができること             |
+| `EmptyStateContract`              | 非空 query かつ 0 件で empty を表示すること    |
+| `ErrorStateContract`              | search failure を empty と区別できること       |
+| `KeyboardLoopAndEnterSelection`   | Arrow key 循環移動と Enter 選択が成立すること  |
+| `StableItemIdentityContract`      | 結果更新時に ID 基準で active を維持できること |
+| `CloseReasonContract`             | close reason が区別されること                  |
+| `MatchingSemanticsContract`       | 一致対象面とハイライト規則が一致すること       |
+| `VirtualizationSemanticsContract` | 仮想化の有無で意味論が変わらないこと           |
+| `DarkModeTokenContract`           | dark token でも視認性が維持されること          |
 
 ---
 
@@ -812,4 +807,3 @@ virtualization threshold、row height、overscan、debounce は定数として�
 ### 15. 本節の扱い
 
 これらを採用する場合は、実装、Storybook、test、契約書を同時に更新し、目標契約と実装契約のずれを長期放置しません。
-

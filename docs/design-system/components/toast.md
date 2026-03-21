@@ -82,11 +82,11 @@ Rouault における toast は、読書や閲覧を遮断せず、必要な変�
 
 `ui-toast` の `variant`、`duration`、`dismissible` は、**host 自身の表示状態を直接変えるものではなく**、instance method `show(message, options?)` を呼ぶ際の既定値です。既存通知の状態は変更しません。
 
-| 名前 | 種別 | 必須 | 内容 | 契約 |
-| --- | --- | --- | --- | --- |
-| `variant` | property / attribute | いいえ | 既定 variant | 既定値は `info` です |
-| `duration` | property / attribute | いいえ | 既定 duration | 既定値は `4000` ms です |
-| `dismissible` | property / attribute | いいえ | 既定 dismissible | 既定値は `true` です |
+| 名前          | 種別                 | 必須   | 内容             | 契約                    |
+| ------------- | -------------------- | ------ | ---------------- | ----------------------- |
+| `variant`     | property / attribute | いいえ | 既定 variant     | 既定値は `info` です    |
+| `duration`    | property / attribute | いいえ | 既定 duration    | 既定値は `4000` ms です |
+| `dismissible` | property / attribute | いいえ | 既定 dismissible | 既定値は `true` です    |
 
 ### 4.3 host 配置契約
 
@@ -98,23 +98,23 @@ Rouault における toast は、読書や閲覧を遮断せず、必要な変�
 
 ### 4.4 入力契約（`ToastManager.show(options)`）
 
-| 名前 | 種別 | 必須 | 内容 | 契約 |
-| --- | --- | --- | --- | --- |
-| `message` | string | はい | 通知本文 | 空白正規化後に空文字列となる場合は通知を生成しません |
-| `variant` | property | いいえ | 通知種別 | `success` / `info` / `warning` / `danger`。後方互換で `error` を受理します |
-| `duration` | number | いいえ | 自動消滅までの時間 | 有限数なら 0 以上の整数へ丸めます。未指定または無効値は既定値へフォールバックします |
-| `dismissible` | boolean | いいえ | 手動クローズ可否 | `duration > 0` の場合のみ任意指定できます。`duration = 0` の場合は常に `true` です |
+| 名前          | 種別     | 必須   | 内容               | 契約                                                                                |
+| ------------- | -------- | ------ | ------------------ | ----------------------------------------------------------------------------------- |
+| `message`     | string   | はい   | 通知本文           | 空白正規化後に空文字列となる場合は通知を生成しません                                |
+| `variant`     | property | いいえ | 通知種別           | `success` / `info` / `warning` / `danger`。後方互換で `error` を受理します          |
+| `duration`    | number   | いいえ | 自動消滅までの時間 | 有限数なら 0 以上の整数へ丸めます。未指定または無効値は既定値へフォールバックします |
+| `dismissible` | boolean  | いいえ | 手動クローズ可否   | `duration > 0` の場合のみ任意指定できます。`duration = 0` の場合は常に `true` です  |
 
 ### 4.5 列挙値契約
 
 `variant` の公開正規値は次の 4 種です。
 
-| 値 | 意味 | live region |
-| --- | --- | --- |
-| `info` | 情報通知 | `status` |
-| `success` | 正常完了通知 | `status` |
-| `warning` | 注意喚起 | `alert` |
-| `danger` | 失敗・重大警告 | `alert` |
+| 値        | 意味           | live region |
+| --------- | -------------- | ----------- |
+| `info`    | 情報通知       | `status`    |
+| `success` | 正常完了通知   | `status`    |
+| `warning` | 注意喚起       | `alert`     |
+| `danger`  | 失敗・重大警告 | `alert`     |
 
 後方互換値として `error` を受理しますが、公開契約上は非推奨です。利用者は `danger` を使用しなければなりません（SHOULD）。
 
@@ -131,11 +131,11 @@ Rouault における toast は、読書や閲覧を遮断せず、必要な変�
 
 既定値は次のとおりです。
 
-| 条件 | 解決値 |
-| --- | --- |
-| `variant = danger` かつ `duration` 未指定または無効 | `6000` ms |
-| 上記以外で `duration` 未指定または無効 | `4000` ms |
-| `duration` に有限数を指定 | `Math.max(0, trunc(duration))` |
+| 条件                                                | 解決値                         |
+| --------------------------------------------------- | ------------------------------ |
+| `variant = danger` かつ `duration` 未指定または無効 | `6000` ms                      |
+| 上記以外で `duration` 未指定または無効              | `4000` ms                      |
+| `duration` に有限数を指定                           | `Math.max(0, trunc(duration))` |
 
 ### 4.7 重複統合契約
 
@@ -178,24 +178,24 @@ Rouault における toast は、読書や閲覧を遮断せず、必要な変�
 
 #### `ui-toast`
 
-| 名前 | 種別 | 契約 |
-| --- | --- | --- |
-| `show(message, options?)` | method | host 既定値を用いて通知を追加します |
-| `dismiss(id)` | method | 指定 ID の通知を閉じます |
-| `clear()` | method | すべての通知を即時消去します |
-| `UiToast.show(options)` | static method | `ToastManager.show()` へ委譲します |
-| `UiToast.dismiss(id)` | static method | `ToastManager.dismiss()` へ委譲します |
-| `UiToast.clear()` | static method | `ToastManager.clear()` へ委譲します |
+| 名前                      | 種別          | 契約                                  |
+| ------------------------- | ------------- | ------------------------------------- |
+| `show(message, options?)` | method        | host 既定値を用いて通知を追加します   |
+| `dismiss(id)`             | method        | 指定 ID の通知を閉じます              |
+| `clear()`                 | method        | すべての通知を即時消去します          |
+| `UiToast.show(options)`   | static method | `ToastManager.show()` へ委譲します    |
+| `UiToast.dismiss(id)`     | static method | `ToastManager.dismiss()` へ委譲します |
+| `UiToast.clear()`         | static method | `ToastManager.clear()` へ委譲します   |
 
 #### `ToastManager`
 
-| 名前 | 種別 | 契約 |
-| --- | --- | --- |
-| `show(options)` | function | 通知を追加し、生成された `id` を返します。生成しなかった場合は `null` を返します |
-| `dismiss(id)` | function | 指定通知を退出状態へ移し、存在しない場合は `false` を返します |
-| `clear()` | function | すべての通知・タイマー・退出タイマーを即時破棄します |
+| 名前                    | 種別     | 契約                                                                                                                      |
+| ----------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `show(options)`         | function | 通知を追加し、生成された `id` を返します。生成しなかった場合は `null` を返します                                          |
+| `dismiss(id)`           | function | 指定通知を退出状態へ移し、存在しない場合は `false` を返します                                                             |
+| `clear()`               | function | すべての通知・タイマー・退出タイマーを即時破棄します                                                                      |
 | `subscribe(subscriber)` | function | 読み取り専用スナップショットの購読を開始し、解除関数を返します。購読開始時には現在スナップショットを直ちに 1 回通知します |
-| `getSnapshot()` | function | 読み取り専用スナップショットを複製して返します |
+| `getSnapshot()`         | function | 読み取り専用スナップショットを複製して返します                                                                            |
 
 `pause()`、`resume()`、`setVisibilityPaused()` は内部制御またはテスト補助のための API とみなし、本書では公開主契約へ含めません。
 
@@ -217,11 +217,11 @@ Rouault における toast は、読書や閲覧を遮断せず、必要な変�
 
 `ui-toast` の `variant`、`duration`、`dismissible` は property と attribute の両面から操作できます。boolean 値は attribute の有無で反映します。
 
-| property | attribute | reflect | 備考 |
-| --- | --- | --- | --- |
-| `variant` | `variant` | あり | host 既定値 |
-| `duration` | `duration` | あり | host 既定値 |
-| `dismissible` | `dismissible` | あり | host 既定値 |
+| property      | attribute     | reflect | 備考        |
+| ------------- | ------------- | ------- | ----------- |
+| `variant`     | `variant`     | あり    | host 既定値 |
+| `duration`    | `duration`    | あり    | host 既定値 |
+| `dismissible` | `dismissible` | あり    | host 既定値 |
 
 ---
 
@@ -377,33 +377,33 @@ toast は **通常文書より上、blocking modal より下** を最低限の�
 
 本コンポーネントは主として次のトークンに依存します。
 
-| 用途 | トークン |
-| --- | --- |
-| 位置余白 | `--space-4` / `--space-8` |
-| スタック間隔 | `--space-2` |
-| 内部余白 | `--space-3` / `--space-4` |
-| 最大幅 | `--toast-max-width` |
-| z-index | `--z-toast` |
-| 既定背景 | `--bg-surface-2` |
-| success 背景 | `--bg-success-subtle` |
-| warning 背景 | `--bg-warning-subtle` |
-| danger 背景 | `--bg-danger-subtle` |
-| 既定文字色 | `--fg-default` |
-| 控えめ文字色 | `--fg-muted` |
-| info 色 | `--fg-info` / `--primary` |
-| success 色 | `--fg-success` |
-| warning 色 | `--fg-warning` |
-| danger 色 | `--fg-danger` |
-| 境界線 | `--border-default` / `--border-width` |
-| 角丸 | `--radius-md` / `--radius-sm` |
-| 影 | `--elevation-lg` |
-| アイコン寸法 | `--icon-base` / `--icon-sm` |
-| 文字寸法 | `--text-sm` |
-| 行高 | `--line-height-normal` |
-| フォーカス | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
-| モーション時間 | `--duration-fast` / `--duration-normal` / `--duration-slow` |
-| イージング | `--ease-out` / `--ease-in` |
-| タッチ領域 | `--control-min-touch` |
+| 用途           | トークン                                                                                  |
+| -------------- | ----------------------------------------------------------------------------------------- |
+| 位置余白       | `--space-4` / `--space-8`                                                                 |
+| スタック間隔   | `--space-2`                                                                               |
+| 内部余白       | `--space-3` / `--space-4`                                                                 |
+| 最大幅         | `--toast-max-width`                                                                       |
+| z-index        | `--z-toast`                                                                               |
+| 既定背景       | `--bg-surface-2`                                                                          |
+| success 背景   | `--bg-success-subtle`                                                                     |
+| warning 背景   | `--bg-warning-subtle`                                                                     |
+| danger 背景    | `--bg-danger-subtle`                                                                      |
+| 既定文字色     | `--fg-default`                                                                            |
+| 控えめ文字色   | `--fg-muted`                                                                              |
+| info 色        | `--fg-info` / `--primary`                                                                 |
+| success 色     | `--fg-success`                                                                            |
+| warning 色     | `--fg-warning`                                                                            |
+| danger 色      | `--fg-danger`                                                                             |
+| 境界線         | `--border-default` / `--border-width`                                                     |
+| 角丸           | `--radius-md` / `--radius-sm`                                                             |
+| 影             | `--elevation-lg`                                                                          |
+| アイコン寸法   | `--icon-base` / `--icon-sm`                                                               |
+| 文字寸法       | `--text-sm`                                                                               |
+| 行高           | `--line-height-normal`                                                                    |
+| フォーカス     | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
+| モーション時間 | `--duration-fast` / `--duration-normal` / `--duration-slow`                               |
+| イージング     | `--ease-out` / `--ease-in`                                                                |
+| タッチ領域     | `--control-min-touch`                                                                     |
 
 ---
 
@@ -513,18 +513,18 @@ host が通知生成後に接続された場合でも、未消滅の通知は初
 
 ### 10.1 現行確認済みの Story
 
-| Story | 固定する契約 |
-| --- | --- |
-| `Default` | success 通知が描画され、`role="status"` と閉じるボタンの `aria-label` が成立すること |
-| `VariantStateCombinations` | `success/info` は `status`、`warning/danger` は `alert` であること。`danger` の既定 duration が 6000 ms であること |
-| `OverflowAndOrderIntegrity` | 新着が先頭に積まれ、4 件目で最古が削除され、最大 3 件で保たれること |
-| `DuplicateMergeAndDurationReset` | 同一 duplicate key は統合され、再通知で duration がリセットされること |
-| `HoverPauseAndResumeTimer` | hover 中はタイマー停止、hover 解除後に再開すること |
-| `FocusPauseAndResumeTimer` | focus 中はタイマー停止、focusout 後に再開すること |
-| `VisibilityPauseAndResumeTimer` | hidden 中はタイマー停止、visible 復帰後に再開すること |
-| `DuplicateKeyRespectsVariant` | 同一本文でも variant が異なれば統合しないこと |
-| `DarkModeAndStyleContracts` | ダーク背景で toast 背景が透明化せず、forced-colors / reduced-motion / print 契約が CSS に存在すること |
-| `LegacyErrorVariantMapping` | `variant="error"` が `danger` に内部マッピングされ、`role="alert"` になること |
+| Story                            | 固定する契約                                                                                                       |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `Default`                        | success 通知が描画され、`role="status"` と閉じるボタンの `aria-label` が成立すること                               |
+| `VariantStateCombinations`       | `success/info` は `status`、`warning/danger` は `alert` であること。`danger` の既定 duration が 6000 ms であること |
+| `OverflowAndOrderIntegrity`      | 新着が先頭に積まれ、4 件目で最古が削除され、最大 3 件で保たれること                                                |
+| `DuplicateMergeAndDurationReset` | 同一 duplicate key は統合され、再通知で duration がリセットされること                                              |
+| `HoverPauseAndResumeTimer`       | hover 中はタイマー停止、hover 解除後に再開すること                                                                 |
+| `FocusPauseAndResumeTimer`       | focus 中はタイマー停止、focusout 後に再開すること                                                                  |
+| `VisibilityPauseAndResumeTimer`  | hidden 中はタイマー停止、visible 復帰後に再開すること                                                              |
+| `DuplicateKeyRespectsVariant`    | 同一本文でも variant が異なれば統合しないこと                                                                      |
+| `DarkModeAndStyleContracts`      | ダーク背景で toast 背景が透明化せず、forced-colors / reduced-motion / print 契約が CSS に存在すること              |
+| `LegacyErrorVariantMapping`      | `variant="error"` が `danger` に内部マッピングされ、`role="alert"` になること                                      |
 
 ### 10.2 追加予定の確認点
 
@@ -694,34 +694,34 @@ toast は機能を盛るほど責務が崩れやすいため、追加候補は�
 
 ### 12.1 優先追加候補に対する未対応状況
 
-| 項目 | 現行状況 |
-| --- | --- |
-| `dedupeKey` | 未対応。重複統合は `variant + normalizedMessage` に依存します |
-| `update(id, patch)` | 未対応。既存 toast の更新 API はありません |
-| 明示的な寿命ポリシー | 未対応。寿命表現は `duration` 数値に依存します |
-| 消去理由の観測 | 未対応。`timeout` / `dismiss` / `clear` / `overflow` の区別を外部観測できません |
-| 単一 action | 未対応。通知本文と閉じるボタンのみです |
-| close label のローカライズ | 未対応。`通知を閉じる` 固定です |
-| queue / backlog | 未対応。上限超過時は最古を即時削除します |
+| 項目                       | 現行状況                                                                        |
+| -------------------------- | ------------------------------------------------------------------------------- |
+| `dedupeKey`                | 未対応。重複統合は `variant + normalizedMessage` に依存します                   |
+| `update(id, patch)`        | 未対応。既存 toast の更新 API はありません                                      |
+| 明示的な寿命ポリシー       | 未対応。寿命表現は `duration` 数値に依存します                                  |
+| 消去理由の観測             | 未対応。`timeout` / `dismiss` / `clear` / `overflow` の区別を外部観測できません |
+| 単一 action                | 未対応。通知本文と閉じるボタンのみです                                          |
+| close label のローカライズ | 未対応。`通知を閉じる` 固定です                                                 |
+| queue / backlog            | 未対応。上限超過時は最古を即時削除します                                        |
 
 ### 12.2 そのほかの未対応事項
 
 次の項目は前節の優先追加候補には含めていませんが、将来厳密化や拡張の余地があります。
 
-| 項目 | 現行状況 |
-| --- | --- |
-| 停止理由の個別管理 | 未対応。タイマー停止は `pausedByInteraction` と `pausedByVisibility` の 2 フラグで管理され、hover と focus は個別 reason として保持されません |
-| 内部制御 API の物理分離 | 未対応。`pause` / `resume` / `setVisibilityPaused` は実装上 `ToastManager` から export されており、内部用 API として物理分離されていません |
-| 複数 host の重複警告 | 未対応。正規構成は 1 document 1 host ですが、重複 host を検出して警告または抑止する仕組みはありません |
-| 表示文字列と dedupe 用正規化の分離 | 未対応。`normalizeMessage()` の結果が表示文言と重複統合キーの両方に使われます |
-| title / description の構造化 | 未対応。本文は単一の `message` 文字列です |
-| 配置の公開切り替え | 未対応。通常時右上・狭幅時下端に固定されています |
-| 公開スナップショットの型分離 | 未対応。公開契約上は内部補助情報に依存不可ですが、型の物理的分離は未実施です |
-| `part` 公開 | 未対応。外部スタイル拡張は CSS Custom Properties 中心です |
-| rich content | 未対応。HTML コンテンツや任意スロットは受け付けません |
-| 通知スコープ / チャネル分離 | 未対応。通知は単一グローバルストアで管理され、`scope` / `channel` / `hostId` のような分離キーを持ちません |
-| overflow 時の保護 / pinning / priority 保持 | 未対応。上限超過時は常に最古を削除し、persistent toast や高重要度通知を保護する仕組みはありません |
-| live region の詳細制御 | 未対応。`role` の切り替えはありますが、`aria-live` / `aria-atomic` / `aria-relevant` などの詳細制御や公開設定面はありません |
+| 項目                                        | 現行状況                                                                                                                                      |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| 停止理由の個別管理                          | 未対応。タイマー停止は `pausedByInteraction` と `pausedByVisibility` の 2 フラグで管理され、hover と focus は個別 reason として保持されません |
+| 内部制御 API の物理分離                     | 未対応。`pause` / `resume` / `setVisibilityPaused` は実装上 `ToastManager` から export されており、内部用 API として物理分離されていません    |
+| 複数 host の重複警告                        | 未対応。正規構成は 1 document 1 host ですが、重複 host を検出して警告または抑止する仕組みはありません                                         |
+| 表示文字列と dedupe 用正規化の分離          | 未対応。`normalizeMessage()` の結果が表示文言と重複統合キーの両方に使われます                                                                 |
+| title / description の構造化                | 未対応。本文は単一の `message` 文字列です                                                                                                     |
+| 配置の公開切り替え                          | 未対応。通常時右上・狭幅時下端に固定されています                                                                                              |
+| 公開スナップショットの型分離                | 未対応。公開契約上は内部補助情報に依存不可ですが、型の物理的分離は未実施です                                                                  |
+| `part` 公開                                 | 未対応。外部スタイル拡張は CSS Custom Properties 中心です                                                                                     |
+| rich content                                | 未対応。HTML コンテンツや任意スロットは受け付けません                                                                                         |
+| 通知スコープ / チャネル分離                 | 未対応。通知は単一グローバルストアで管理され、`scope` / `channel` / `hostId` のような分離キーを持ちません                                     |
+| overflow 時の保護 / pinning / priority 保持 | 未対応。上限超過時は常に最古を削除し、persistent toast や高重要度通知を保護する仕組みはありません                                             |
+| live region の詳細制御                      | 未対応。`role` の切り替えはありますが、`aria-live` / `aria-atomic` / `aria-relevant` などの詳細制御や公開設定面はありません                   |
 
 ### 12.3 本節の扱い
 
@@ -740,4 +740,3 @@ toast は機能を盛るほど責務が崩れやすいため、追加候補は�
 3. `warning` / `danger` と `info` / `success` の live region 強度差を維持すること。
 4. hover / focus / visibility による寿命一時停止を、読み取り補助契約として維持すること。
 5. toast を blocking UI や小型ダイアログへ逸脱させないこと。
-

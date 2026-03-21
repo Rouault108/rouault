@@ -47,34 +47,34 @@ Rouault における radio は、読みの流れを壊す強い UI ではなく�
 
 `ui-radio` は、`checked`、`name`、`value`、`label`、`disabled`、`invalid`、`errorMessage` を公開入力として扱います。`ui-radio-group` は、`label`、`required`、`invalid`、`errorMessage` を公開入力として扱います。
 
-`ui-radio-group` は ``** を公開入力として持ちません**。単一選択グループの排他境界とフォーム送信名は、常に各 `ui-radio` の `name` によって定義します。
+`ui-radio-group` は ``** を公開入力として持ちません**。単一選択グループの排他境界とフォーム送信名は、常に各 `ui-radio`の`name` によって定義します。
 
 `ui-radio` は Form-Associated Custom Element として実装されており、`checked === true`、`disabled === false`、`name !== ''` のときにのみフォーム値を持ちます。`ui-radio-group` 自体はフォーム関連付けを持たず、送信値を持ちません。
 
-`ui-radio` の排他制御は、`ui-radio-group` への所属ではなく、**同一 **``** を持つ **``** 群の探索**によって成立します。したがって、`ui-radio-group` を用いない `div[role="radiogroup"]` 構成でも、同一 `name` であれば排他選択は成立します。逆に、`ui-radio-group` 内に置かれていても `name` が揃っていなければ単一グループとしては扱いません。
+`ui-radio` の排他制御は、`ui-radio-group` への所属ではなく、**同一 **`** を持つ **`** 群の探索**によって成立します。したがって、`ui-radio-group` を用いない `div[role="radiogroup"]` 構成でも、同一 `name` であれば排他選択は成立します。逆に、`ui-radio-group` 内に置かれていても `name` が揃っていなければ単一グループとしては扱いません。
 
 このため、`name` の真実源は常に `ui-radio` 側にあります。`ui-radio-group` は意味論上のグループを表しますが、排他境界を上書きする設定入力は持ちません。
 
 ### 入力契約（`ui-radio`）
 
-| 名前             | 種別                                     | 必須  | 内容            | 契約                                     |
-| -------------- | -------------------------------------- | --- | ------------- | -------------------------------------- |
-| `checked`      | property / attribute                   | いいえ | 選択状態          | `true` のとき選択状態です                       |
-| `name`         | property / attribute                   | いいえ | フォーム名・グループ識別子 | 同一 `name` の `ui-radio` 群が排他的に扱われます     |
-| `value`        | property / attribute                   | いいえ | フォーム送信値       | 既定値は `on` です                           |
-| `label`        | property / attribute                   | いいえ | 可視ラベル         | 空文字列の場合、内部ラベル要素は描画しません                 |
-| `disabled`     | property / attribute                   | いいえ | 無効状態          | `true` の場合、選択不可・フォーム送信除外です             |
-| `invalid`      | property / attribute                   | いいえ | エラー状態         | `errorMessage` と組み合わせて使用する前提です         |
-| `errorMessage` | property / attribute (`error-message`) | いいえ | エラー文言         | `invalid=true` かつ非空文字列の場合に表示と妥当性へ反映します |
+| 名前           | 種別                                   | 必須   | 内容                       | 契約                                                          |
+| -------------- | -------------------------------------- | ------ | -------------------------- | ------------------------------------------------------------- |
+| `checked`      | property / attribute                   | いいえ | 選択状態                   | `true` のとき選択状態です                                     |
+| `name`         | property / attribute                   | いいえ | フォーム名・グループ識別子 | 同一 `name` の `ui-radio` 群が排他的に扱われます              |
+| `value`        | property / attribute                   | いいえ | フォーム送信値             | 既定値は `on` です                                            |
+| `label`        | property / attribute                   | いいえ | 可視ラベル                 | 空文字列の場合、内部ラベル要素は描画しません                  |
+| `disabled`     | property / attribute                   | いいえ | 無効状態                   | `true` の場合、選択不可・フォーム送信除外です                 |
+| `invalid`      | property / attribute                   | いいえ | エラー状態                 | `errorMessage` と組み合わせて使用する前提です                 |
+| `errorMessage` | property / attribute (`error-message`) | いいえ | エラー文言                 | `invalid=true` かつ非空文字列の場合に表示と妥当性へ反映します |
 
 ### 入力契約（`ui-radio-group`）
 
-| 名前             | 種別                                     | 必須  | 内容        | 契約                                          |
-| -------------- | -------------------------------------- | --- | --------- | ------------------------------------------- |
-| `label`        | property / attribute                   | いいえ | グループラベル   | 非空時は `radiogroup` の `aria-label` として使用します   |
-| `required`     | property / attribute                   | いいえ | 必須選択      | `true` の場合、配下の `ui-radio` から 1 つ以上の選択を要求します |
-| `invalid`      | property / attribute                   | いいえ | グループエラー状態 | `errorMessage` と組み合わせてエラー表示に使用します           |
-| `errorMessage` | property / attribute (`error-message`) | いいえ | グループエラー文言 | `invalid=true` かつ非空文字列の場合に表示します             |
+| 名前           | 種別                                   | 必須   | 内容               | 契約                                                             |
+| -------------- | -------------------------------------- | ------ | ------------------ | ---------------------------------------------------------------- |
+| `label`        | property / attribute                   | いいえ | グループラベル     | 非空時は `radiogroup` の `aria-label` として使用します           |
+| `required`     | property / attribute                   | いいえ | 必須選択           | `true` の場合、配下の `ui-radio` から 1 つ以上の選択を要求します |
+| `invalid`      | property / attribute                   | いいえ | グループエラー状態 | `errorMessage` と組み合わせてエラー表示に使用します              |
+| `errorMessage` | property / attribute (`error-message`) | いいえ | グループエラー文言 | `invalid=true` かつ非空文字列の場合に表示します                  |
 
 ### 作者入力エラー通知契約
 
@@ -102,31 +102,31 @@ Rouault における radio は、読みの流れを壊す強い UI ではなく�
 
 ### スロット契約
 
-| 対象               | 名前     | 種別   | 位置づけ | 内容                      |
-| ---------------- | ------ | ---- | ---- | ----------------------- |
-| `ui-radio`       | なし     | -    | -    | `ui-radio` はスロットを公開しません |
-| `ui-radio-group` | 既定スロット | slot | 正規入力 | 配下の `ui-radio` 群を受け取ります |
+| 対象             | 名前         | 種別 | 位置づけ | 内容                                |
+| ---------------- | ------------ | ---- | -------- | ----------------------------------- |
+| `ui-radio`       | なし         | -    | -        | `ui-radio` はスロットを公開しません |
+| `ui-radio-group` | 既定スロット | slot | 正規入力 | 配下の `ui-radio` 群を受け取ります  |
 
 `ui-radio-group` の既定スロットは、原則として `ui-radio` を受け取ることを想定します。任意要素を配置すること自体は技術的に可能ですが、グループ妥当性判定は `querySelectorAll('ui-radio')` に依存しているため、選択項目として扱われるのは `ui-radio` のみです。
 
-また、`ui-radio-group` の `required` 判定対象は **直下子要素に限定されません**。light DOM 配下のすべての `ui-radio` descendant を対象とし、ラッパー要素を 1 段以上挟んでいても検証対象に含みます。したがって、グループ境界を設計する際は、見た目上の入れ子ではなく、**どの **``** が同じ **``** の descendant であるか** を基準に扱います。
+また、`ui-radio-group` の `required` 判定対象は **直下子要素に限定されません**。light DOM 配下のすべての `ui-radio` descendant を対象とし、ラッパー要素を 1 段以上挟んでいても検証対象に含みます。したがって、グループ境界を設計する際は、見た目上の入れ子ではなく、**どの **`** が同じ **`** の descendant であるか** を基準に扱います。
 
 ### 公開メソッド
 
 #### `ui-radio`
 
-| 名前                 | 種別     | 契約                            |
-| ------------------ | ------ | ----------------------------- |
-| `focus(options?)`  | method | 内部 `.control` 要素にフォーカスを委譲します  |
-| `blur()`           | method | 内部 `.control` 要素からフォーカスを外します  |
-| `checkValidity()`  | method | `ElementInternals` の妥当性を返します  |
-| `reportValidity()` | method | `ElementInternals` の妥当性を報告します |
+| 名前               | 種別   | 契約                                         |
+| ------------------ | ------ | -------------------------------------------- |
+| `focus(options?)`  | method | 内部 `.control` 要素にフォーカスを委譲します |
+| `blur()`           | method | 内部 `.control` 要素からフォーカスを外します |
+| `checkValidity()`  | method | `ElementInternals` の妥当性を返します        |
+| `reportValidity()` | method | `ElementInternals` の妥当性を報告します      |
 
 #### `ui-radio-group`
 
-| 名前                 | 種別     | 契約                                                                                               |
-| ------------------ | ------ | ------------------------------------------------------------------------------------------------ |
-| `checkValidity()`  | method | `required` 条件に基づき、配下の `ui-radio` に選択があるかを返します                                                    |
+| 名前               | 種別   | 契約                                                                                                                                                    |
+| ------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `checkValidity()`  | method | `required` 条件に基づき、配下の `ui-radio` に選択があるかを返します                                                                                     |
 | `reportValidity()` | method | グループ妥当性を評価し、`invalid` と `errorMessage` を同期します。`errorMessage` が空のときのみ既定文言を補い、妥当化後は既定文言に限って自動解除します |
 
 ### イベント契約
@@ -145,24 +145,24 @@ Rouault における radio は、読みの流れを壊す強い UI ではなく�
 
 #### `ui-radio`
 
-| property       | attribute       | reflect | 備考                        |
-| -------------- | --------------- | ------- | ------------------------- |
-| `checked`      | `checked`       | あり      | boolean attribute として扱います |
-| `name`         | `name`          | あり      | グループ識別に使用します              |
-| `value`        | `value`         | あり      | 既定値は `on` です              |
-| `label`        | `label`         | あり      | 可視ラベルを表します                |
-| `disabled`     | `disabled`      | あり      | boolean attribute として扱います |
-| `invalid`      | `invalid`       | あり      | boolean attribute として扱います |
-| `errorMessage` | `error-message` | あり      | エラーメッセージを表します             |
+| property       | attribute       | reflect | 備考                             |
+| -------------- | --------------- | ------- | -------------------------------- |
+| `checked`      | `checked`       | あり    | boolean attribute として扱います |
+| `name`         | `name`          | あり    | グループ識別に使用します         |
+| `value`        | `value`         | あり    | 既定値は `on` です               |
+| `label`        | `label`         | あり    | 可視ラベルを表します             |
+| `disabled`     | `disabled`      | あり    | boolean attribute として扱います |
+| `invalid`      | `invalid`       | あり    | boolean attribute として扱います |
+| `errorMessage` | `error-message` | あり    | エラーメッセージを表します       |
 
 #### `ui-radio-group`
 
-| property       | attribute       | reflect | 備考                        |
-| -------------- | --------------- | ------- | ------------------------- |
-| `label`        | `label`         | なし      | グループラベルです                 |
-| `required`     | `required`      | あり      | boolean attribute として扱います |
-| `invalid`      | `invalid`       | あり      | boolean attribute として扱います |
-| `errorMessage` | `error-message` | なし      | グループエラーメッセージです            |
+| property       | attribute       | reflect | 備考                             |
+| -------------- | --------------- | ------- | -------------------------------- |
+| `label`        | `label`         | なし    | グループラベルです               |
+| `required`     | `required`      | あり    | boolean attribute として扱います |
+| `invalid`      | `invalid`       | あり    | boolean attribute として扱います |
+| `errorMessage` | `error-message` | なし    | グループエラーメッセージです     |
 
 ### グループ化契約
 
@@ -215,11 +215,11 @@ Rouault における radio は、読みの流れを壊す強い UI ではなく�
 
 `ui-radio` のエラー状態は、`invalid=true` かつ `errorMessage` が非空であるときに成立します。このとき、内部コントロールは `aria-invalid="true"` を持ち、エラーメッセージ要素が描画され、`aria-describedby` にエラー要素 ID が加わります。
 
-`invalid=true` でも `errorMessage=''` の場合、実装上はエラー表示も `aria-invalid` も出力されません。したがって、公開契約としては ``** は **``** と組み合わせて使用する状態入力** として扱います。
+`invalid=true` でも `errorMessage=''` の場合、実装上はエラー表示も `aria-invalid` も出力されません。したがって、公開契約としては `** は **`** と組み合わせて使用する状態入力** として扱います。
 
 ### 6. グループ妥当性状態
 
-`ui-radio-group` で `required=false` の場合、常に妥当です。`required=true` の場合、配下の `ui-radio` のうち ``** かつ **``** の要素が 1 つ以上存在すること** を妥当条件とします。
+`ui-radio-group` で `required=false` の場合、常に妥当です。`required=true` の場合、配下の `ui-radio` のうち `** かつ **`** の要素が 1 つ以上存在すること** を妥当条件とします。
 
 `reportValidity()` を呼んだ結果、妥当でない場合は `invalid=true` となり、`errorMessage` が空であれば既定メッセージ `いずれか1つを選択してください。` を設定します。妥当になった後、そのメッセージが既定文言であった場合に限り空文字列へ戻します。
 
@@ -291,7 +291,7 @@ roving tabindex はグループ単位で次のように決まります。
 
 `ui-radio` はネイティブ `<input type="radio">` ではなく、`role="radio"` を持つカスタムコントロールです。したがって、アクセシビリティは **ARIA 属性反映とキーボード操作の正規化** によって成立します。
 
-アクセシブル名の優先順位は、実装契約として **内部 **``** → 外部 **``** → 外部 **`` と解釈します。`label` を与える構成では、可視ラベルを主たる名前源として扱い、外部ラベル属性は補助的な入力としてのみ扱います。
+アクセシブル名の優先順位は、実装契約として **内部 **`** → 外部 **`** → 外部 **`` と解釈します。`label` を与える構成では、可視ラベルを主たる名前源として扱い、外部ラベル属性は補助的な入力としてのみ扱います。
 
 ### Accessibility 契約（`ui-radio-group`）
 
@@ -327,10 +327,10 @@ roving tabindex はグループ単位で次のように決まります。
 
 `ui-radio` は次の `part` を公開します。
 
-| part 名    | 役割             |
-| --------- | -------------- |
+| part 名   | 役割                         |
+| --------- | ---------------------------- |
 | `control` | ラジオ本体の視覚コントロール |
-| `label`   | 可視ラベル          |
+| `label`   | 可視ラベル                   |
 
 `ui-radio-group` は `part` を公開しません。
 
@@ -384,35 +384,35 @@ roving tabindex はグループ単位で次のように決まります。
 
 #### `ui-radio`
 
-| 用途        | トークン                                                                                      |
-| --------- | ----------------------------------------------------------------------------------------- |
-| 選択リング色    | `--primary`                                                                               |
-| 選択時中心背景   | `--bg-default`                                                                            |
-| 未選択背景     | `--bg-fill-muted`                                                                         |
-| 未選択境界線    | `--border-muted`                                                                          |
-| hover 境界線 | `--border-default`                                                                        |
-| 既定境界線幅    | `--border-width`                                                                          |
+| 用途               | トークン                                                                                  |
+| ------------------ | ----------------------------------------------------------------------------------------- |
+| 選択リング色       | `--primary`                                                                               |
+| 選択時中心背景     | `--bg-default`                                                                            |
+| 未選択背景         | `--bg-fill-muted`                                                                         |
+| 未選択境界線       | `--border-muted`                                                                          |
+| hover 境界線       | `--border-default`                                                                        |
+| 既定境界線幅       | `--border-width`                                                                          |
 | コントロール円形化 | `--radius-full`                                                                           |
-| エラー境界線    | `--border-danger`                                                                         |
-| ラベル文字色    | `--fg-default`                                                                            |
-| エラー文字色    | `--fg-danger`                                                                             |
-| 無効不透明度    | `--opacity-disabled`                                                                      |
-| 押下スケール    | `--scale-pressed`                                                                         |
-| フォーカスリング  | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
-| タッチターゲット  | `--control-min-touch`                                                                     |
-| 文字サイズ     | `--text-base` / `--text-sm`                                                               |
-| スペーシング    | `--space-1` / `--space-2`                                                                 |
-| 行間        | `--line-height-normal`                                                                    |
+| エラー境界線       | `--border-danger`                                                                         |
+| ラベル文字色       | `--fg-default`                                                                            |
+| エラー文字色       | `--fg-danger`                                                                             |
+| 無効不透明度       | `--opacity-disabled`                                                                      |
+| 押下スケール       | `--scale-pressed`                                                                         |
+| フォーカスリング   | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
+| タッチターゲット   | `--control-min-touch`                                                                     |
+| 文字サイズ         | `--text-base` / `--text-sm`                                                               |
+| スペーシング       | `--space-1` / `--space-2`                                                                 |
+| 行間               | `--line-height-normal`                                                                    |
 
 #### `ui-radio-group`
 
-| 用途       | トークン                   |
-| -------- | ---------------------- |
-| 項目間隔     | `--space-2`            |
-| エラー上余白   | `--space-1`            |
-| エラー文字色   | `--fg-danger`          |
+| 用途             | トークン               |
+| ---------------- | ---------------------- |
+| 項目間隔         | `--space-2`            |
+| エラー上余白     | `--space-1`            |
+| エラー文字色     | `--fg-danger`          |
 | エラー文字サイズ | `--text-sm`            |
-| エラー行間    | `--line-height-normal` |
+| エラー行間       | `--line-height-normal` |
 
 ---
 
@@ -465,7 +465,7 @@ roving tabindex はグループ単位で次のように決まります。
 
 `ui-radio` の `checkValidity()` / `reportValidity()` は、自身の `invalid` と `errorMessage` にのみ依存します。`required` 検証は `ui-radio` 単体では行いません。
 
-`ui-radio-group` の `checkValidity()` / `reportValidity()` は、light DOM 配下の全 `ui-radio` descendant の選択有無に基づいてグループ妥当性を計算します。ただし、**グループの **``** を各 **``** へ自動伝播しません。これは未定事項ではなく固定方針です。** したがって、グループエラー表示と各 radio の danger border は別契約です。
+`ui-radio-group` の `checkValidity()` / `reportValidity()` は、light DOM 配下の全 `ui-radio` descendant の選択有無に基づいてグループ妥当性を計算します。ただし、**グループの **`** を各 **`** へ自動伝播しません。これは未定事項ではなく固定方針です。** したがって、グループエラー表示と各 radio の danger border は別契約です。
 
 また、`reportValidity()` が既定文言を補った場合、その文言は妥当化後に自動解除されますが、利用者が与えた独自 `errorMessage` は自動解除しません。
 
@@ -511,7 +511,7 @@ roving tabindex はグループ単位で次のように決まります。
 
 同一 `ui-radio-group` 内でも `name` が異なれば、排他制御は別グループとして動作します。現行実装では `ui-radio-group` は `name` の整合性を保証しません。
 
-ただし、長期的な契約としては、**同一 **``** を単一選択グループとして公開する場合、配下 **``** は単一の非空 **``** を共有しなければなりません（MUST）**。この条件を満たさない構成は、利用者入力ではなく作者入力の不整合です。
+ただし、長期的な契約としては、**同一 **`** を単一選択グループとして公開する場合、配下 **`** は単一の非空 **``** を共有しなければなりません（MUST）**。この条件を満たさない構成は、利用者入力ではなく作者入力の不整合です。
 
 ### 9. `ui-radio-group` 外の同名要素
 
@@ -525,37 +525,37 @@ roving tabindex はグループ単位で次のように決まります。
 
 各 Story は見本ではなく、**契約確認点** として扱います。将来変更時には、次の契約を維持します。
 
-| Story                                 | 固定する契約                                                               |
-| ------------------------------------- | -------------------------------------------------------------------- |
-| `Default`                             | 既定で未選択であり、`.control` が `role="radio"` と `aria-checked="false"` を持つこと |
-| `UncheckedNormal`                     | 未選択状態で `aria-checked="false"` を持つこと                                  |
-| `CheckedNormal`                       | 選択状態で `aria-checked="true"` を持つこと                                    |
-| `UncheckedDisabled`                   | 無効状態で `aria-disabled="true"` を持つこと                                   |
-| `CheckedDisabled`                     | 選択済みかつ無効状態が成立すること                                                    |
-| `UncheckedInvalid`                    | エラー状態で `aria-invalid`、`aria-describedby`、エラーメッセージ表示が成立すること           |
-| `CheckedInvalid`                      | 選択済みでも外部から invalid を強制できること                                          |
-| `RadioGroup`                          | 同一 `name` 群で排他制御と roving tabindex が成立すること                            |
-| `GroupWithDisabled`                   | disabled 要素がクリックでも選択されず、イベントも発火しないこと                                 |
-| `AllStates`                           | 主要状態一覧を同一画面で確認できること                                                  |
-| `ClickSelect`                         | クリックで選択が移動し、旧選択が解除されること                                              |
-| `LabelClickSelect`                    | ラベルクリックで選択できること                                                      |
-| `ArrowKeyNavigation`                  | 矢印キーで移動先を即時選択できること                                                   |
-| `CircularNavigation`                  | 末尾から先頭へ循環移動できること                                                     |
-| `ReverseCircularNavigation`           | 先頭から末尾へ循環移動できること                                                     |
-| `DisabledClickBlocked`                | disabled 状態ではクリックで変化しないこと                                            |
-| `AlreadyCheckedNoEvent`               | 既選択要素の再クリックで `change` が発火しないこと                                       |
+| Story                                 | 固定する契約                                                                              |
+| ------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `Default`                             | 既定で未選択であり、`.control` が `role="radio"` と `aria-checked="false"` を持つこと     |
+| `UncheckedNormal`                     | 未選択状態で `aria-checked="false"` を持つこと                                            |
+| `CheckedNormal`                       | 選択状態で `aria-checked="true"` を持つこと                                               |
+| `UncheckedDisabled`                   | 無効状態で `aria-disabled="true"` を持つこと                                              |
+| `CheckedDisabled`                     | 選択済みかつ無効状態が成立すること                                                        |
+| `UncheckedInvalid`                    | エラー状態で `aria-invalid`、`aria-describedby`、エラーメッセージ表示が成立すること       |
+| `CheckedInvalid`                      | 選択済みでも外部から invalid を強制できること                                             |
+| `RadioGroup`                          | 同一 `name` 群で排他制御と roving tabindex が成立すること                                 |
+| `GroupWithDisabled`                   | disabled 要素がクリックでも選択されず、イベントも発火しないこと                           |
+| `AllStates`                           | 主要状態一覧を同一画面で確認できること                                                    |
+| `ClickSelect`                         | クリックで選択が移動し、旧選択が解除されること                                            |
+| `LabelClickSelect`                    | ラベルクリックで選択できること                                                            |
+| `ArrowKeyNavigation`                  | 矢印キーで移動先を即時選択できること                                                      |
+| `CircularNavigation`                  | 末尾から先頭へ循環移動できること                                                          |
+| `ReverseCircularNavigation`           | 先頭から末尾へ循環移動できること                                                          |
+| `DisabledClickBlocked`                | disabled 状態ではクリックで変化しないこと                                                 |
+| `AlreadyCheckedNoEvent`               | 既選択要素の再クリックで `change` が発火しないこと                                        |
 | `RovingTabindexNoSelection`           | 未選択グループで最初の有効要素が `tabindex="0"` を持つこと                                |
-| `InitialCheckedConflictNormalization` | 初期競合時に単一勝者へ無イベントで正規化されること                                            |
-| `ProgrammaticCheckedNormalization`    | programmatic な `checked=true` でも排他制御は成立し、`change` / `input` は発火しないこと |
+| `InitialCheckedConflictNormalization` | 初期競合時に単一勝者へ無イベントで正規化されること                                        |
+| `ProgrammaticCheckedNormalization`    | programmatic な `checked=true` でも排他制御は成立し、`change` / `input` は発火しないこと  |
 | `GroupNameMismatchDiagnostic`         | `ui-radio-group` 配下の `name` 不一致が開発時の non-fatal diagnostic として警告されること |
-| `CrossGroupSameNameBoundary`          | 別 `ui-radio-group` に跨る同名 radio が構造違反として診断対象になること                     |
-| `TouchTargetContract`                 | 最低操作領域が 24px 契約であり、44px を単体保証しないこと                                   |
-| `LabelKeyboardNonContract`            | キーボード契約が `.control` に限定され、ラベルには依存しないこと                               |
-| `NoLabel`                             | ラベルなしでも `aria-label` を転送して使えること                                      |
-| `RequiredGroupValidation`             | `ui-radio-group` が `required` 妥当性を判定できること                            |
-| `DarkThemeStates`                     | トークン差し替えで暗色環境でも状態が読めること                                              |
-| `ForcedColorsSimulation`              | 強制カラー想定でも選択状態が読めること                                                  |
-| `FormIntegration`                     | FACE としてフォーム送信値が統合されること                                              |
+| `CrossGroupSameNameBoundary`          | 別 `ui-radio-group` に跨る同名 radio が構造違反として診断対象になること                   |
+| `TouchTargetContract`                 | 最低操作領域が 24px 契約であり、44px を単体保証しないこと                                 |
+| `LabelKeyboardNonContract`            | キーボード契約が `.control` に限定され、ラベルには依存しないこと                          |
+| `NoLabel`                             | ラベルなしでも `aria-label` を転送して使えること                                          |
+| `RequiredGroupValidation`             | `ui-radio-group` が `required` 妥当性を判定できること                                     |
+| `DarkThemeStates`                     | トークン差し替えで暗色環境でも状態が読めること                                            |
+| `ForcedColorsSimulation`              | 強制カラー想定でも選択状態が読めること                                                    |
+| `FormIntegration`                     | FACE としてフォーム送信値が統合されること                                                 |
 
 ---
 
@@ -594,7 +594,7 @@ roving tabindex はグループ単位で次のように決まります。
 - **構造優先モデル**：`ui-radio-group` が存在する場合、その境界を最優先する
 - ``** 優先モデル**：常に `name` + form/root を正準境界とし、`ui-radio-group` は意味論補助に留める
 
-設計のきれいさと保守性を優先するなら、``** を意味論上の正準 group boundary とし、**``** はその内部整合条件として扱う** 方が明瞭です。そうすれば、排他制御、`required` 判定、アクセシビリティの説明を 1 つの境界概念へ寄せられます。
+設計のきれいさと保守性を優先するなら、`** を意味論上の正準 group boundary とし、**`** はその内部整合条件として扱う** 方が明瞭です。そうすれば、排他制御、`required` 判定、アクセシビリティの説明を 1 つの境界概念へ寄せられます。
 
 ### 2. `checked` の状態遷移モデル
 
@@ -842,7 +842,7 @@ Rouault の文脈では、`ui-radio` 自体は **静かな単一選択部品** �
 
 ### 2. `ui-radio-group` と `name` の整合診断
 
-契約は固定済みです。``** 配下で単一選択肢として提示される **``** 群は、単一の非空 **``** を共有しなければなりません（MUST）。**
+契約は固定済みです。`** 配下で単一選択肢として提示される **`** 群は、単一の非空 **``** を共有しなければなりません（MUST）。**
 
 ただし現行実装は、この不整合を開発時の non-fatal diagnostic として検出する処理をまだ持ちません。実装反映時は、次を満たします。
 
@@ -859,7 +859,7 @@ Rouault の文脈では、`ui-radio` 自体は **静かな単一選択部品** �
 
 ### 4. 動的構造変更時の group 妥当性再評価
 
-契約上、`ui-radio-group` の `required` 妥当性は **現在配下に存在する有効 **``** 群** に追随する方が自然です。しかし現行実装は、`change` イベント時にのみ `reportValidity()` を行い、`slotchange` 時は `requestUpdate()` のみを行います。したがって、次のような変化では group 妥当性が自動再計算されません。
+契約上、`ui-radio-group` の `required` 妥当性は **現在配下に存在する有効 **``** 群** に追随する方が自然です。しかし現行実装は、`change`イベント時にのみ`reportValidity()` を行い、`slotchange`時は`requestUpdate()` のみを行います。したがって、次のような変化では group 妥当性が自動再計算されません。
 
 - 選択済み `ui-radio` の削除
 - 選択済み `ui-radio` の `disabled=true` 化
@@ -884,4 +884,3 @@ Rouault の文脈では、`ui-radio` 自体は **静かな単一選択部品** �
 ### 6. 本節の扱い
 
 本節は、契約が未定である事項を列挙するものではありません。**契約は既に固定済みであり、現行実装または Storybook がまだ追随していない差分だけ** を記録します。これらを反映する場合は、実装、Storybook、契約書の 3 点を同時に更新し、再び未固定状態へ戻しません。
-

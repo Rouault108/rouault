@@ -82,14 +82,14 @@ Rouault における popover は、本文の流れを断ち切るモーダルで
 
 ### 入力契約
 
-| 名前 | 種別 | 必須 | 内容 | 契約 |
-| --- | --- | --- | --- | --- |
-| `variant` | property / attribute | いいえ | 視覚バリアント | `default` / `subtle` / `inverse` |
-| `placement` | property / attribute | いいえ | 配置位置 | Floating UI の `Placement` を受理します。既定値は `bottom-start` です |
-| `offset` | property / attribute | いいえ | anchor からの距離 | 非負の有限数を受理します。既定値は `8`、負数は `0` に正規化します |
-| `opened` | property / attribute | いいえ | controlled 開状態 | 外部制御の単一真実源です。`defaultOpened` と同時指定してはなりません（MUST NOT） |
-| `defaultOpened` | property | いいえ | uncontrolled 初期開状態 | 初期値としてのみ使用します。初期化後の単一真実源にはなりません |
-| `disabled` | property / attribute | いいえ | 不活性状態 | `true` の場合は新規に開かず、開状態なら閉じます |
+| 名前            | 種別                 | 必須   | 内容                    | 契約                                                                             |
+| --------------- | -------------------- | ------ | ----------------------- | -------------------------------------------------------------------------------- |
+| `variant`       | property / attribute | いいえ | 視覚バリアント          | `default` / `subtle` / `inverse`                                                 |
+| `placement`     | property / attribute | いいえ | 配置位置                | Floating UI の `Placement` を受理します。既定値は `bottom-start` です            |
+| `offset`        | property / attribute | いいえ | anchor からの距離       | 非負の有限数を受理します。既定値は `8`、負数は `0` に正規化します                |
+| `opened`        | property / attribute | いいえ | controlled 開状態       | 外部制御の単一真実源です。`defaultOpened` と同時指定してはなりません（MUST NOT） |
+| `defaultOpened` | property             | いいえ | uncontrolled 初期開状態 | 初期値としてのみ使用します。初期化後の単一真実源にはなりません                   |
+| `disabled`      | property / attribute | いいえ | 不活性状態              | `true` の場合は新規に開かず、開状態なら閉じます                                  |
 
 `variant` の既定値は `default` です。`placement` の既定値は `bottom-start` です。`offset` の既定値は `8` です。`opened`、`defaultOpened`、`disabled` の既定値は `false` です。
 
@@ -97,19 +97,19 @@ Rouault における popover は、本文の流れを断ち切るモーダルで
 
 `ui-popover` は次の 2 つの起動モードを持ちます。
 
-| モード | 契約 |
-| --- | --- |
-| anchored mode | `slot="trigger"` に与えた trigger を唯一の起動主体として扱います |
-| controller mode | `openForTrigger()` に渡した要素を明示的な起動主体として扱います |
+| モード          | 契約                                                             |
+| --------------- | ---------------------------------------------------------------- |
+| anchored mode   | `slot="trigger"` に与えた trigger を唯一の起動主体として扱います |
+| controller mode | `openForTrigger()` に渡した要素を明示的な起動主体として扱います  |
 
 anchored mode が既定です。controller mode は共有 trigger や外部制御のための明示的モードであり、暗黙挙動として扱いません。
 
 ### スロット契約
 
-| 名前 | 種別 | 位置づけ | 内容 |
-| --- | --- | --- | --- |
+| 名前      | 種別       | 位置づけ                 | 内容                                                    |
+| --------- | ---------- | ------------------------ | ------------------------------------------------------- |
 | `trigger` | named slot | anchored mode の正規入力 | 開閉起点となる単一の interactive element を受け取ります |
-| `content` | named slot | 全モード共通の正規入力 | 浮遊表示される単一の HTMLElement を受け取ります |
+| `content` | named slot | 全モード共通の正規入力   | 浮遊表示される単一の HTMLElement を受け取ります         |
 
 各スロットは **単一要素** を正規入力とします。複数要素を同一スロットへ与える構成は契約違反です。開発時には warning または例外として顕在化しなければなりません（SHOULD）。テキストノードのみを与える構成は正規入力ではありません。
 
@@ -119,11 +119,11 @@ anchored mode が既定です。controller mode は共有 trigger や外部制�
 
 `ui-popover` は、開閉を外部から制御するため、次の公開メソッドを持ちます。
 
-| 名前 | 種別 | 契約 |
-| --- | --- | --- |
+| 名前                                | 種別   | 契約                                          |
+| ----------------------------------- | ------ | --------------------------------------------- |
 | `openForTrigger(trigger, options?)` | method | 指定 trigger を active trigger として開きます |
-| `close(options?)` | method | 閉じます |
-| `toggleForTrigger(trigger?)` | method | 現在状態を反転します |
+| `close(options?)`                   | method | 閉じます                                      |
+| `toggleForTrigger(trigger?)`        | method | 現在状態を反転します                          |
 
 `openForTrigger()` は controller mode の正規 API です。anchored mode であっても、共有 trigger を明示的に扱う場合はこのメソッドを使用します。
 
@@ -144,10 +144,10 @@ anchored mode が既定です。controller mode は共有 trigger や外部制�
 
 `ui-popover` は、変更要求と変更結果を分離したイベントを発火します。すべて `bubbles: true` かつ `composed: true` です。
 
-| 名前 | cancelable | detail | 契約 |
-| --- | --- | --- | --- |
-| `ui-popover-open-change-request` | はい | `{ nextOpen, reason, trigger, content }` | 状態変更前に発火します |
-| `ui-popover-open-change` | いいえ | `{ open, reason, trigger, content, returnFocus }` | 状態変更後に発火します |
+| 名前                             | cancelable | detail                                            | 契約                   |
+| -------------------------------- | ---------- | ------------------------------------------------- | ---------------------- |
+| `ui-popover-open-change-request` | はい       | `{ nextOpen, reason, trigger, content }`          | 状態変更前に発火します |
+| `ui-popover-open-change`         | いいえ     | `{ open, reason, trigger, content, returnFocus }` | 状態変更後に発火します |
 
 `reason` は少なくとも次を取ります。
 
@@ -163,13 +163,13 @@ anchored mode が既定です。controller mode は共有 trigger や外部制�
 
 ### 属性反映契約
 
-| property | attribute | reflect | 備考 |
-| --- | --- | --- | --- |
-| `variant` | `variant` | あり | 列挙外値は `default` へ正規化します |
-| `placement` | `placement` | あり | 無効値は `bottom-start` へ正規化します |
-| `offset` | `offset` | あり | 非有限値は既定値、負数は `0` へ正規化します |
-| `opened` | `opened` | あり | controlled モードでのみ単一真実源として扱います |
-| `disabled` | `disabled` | あり | boolean attribute として扱います |
+| property    | attribute   | reflect | 備考                                            |
+| ----------- | ----------- | ------- | ----------------------------------------------- |
+| `variant`   | `variant`   | あり    | 列挙外値は `default` へ正規化します             |
+| `placement` | `placement` | あり    | 無効値は `bottom-start` へ正規化します          |
+| `offset`    | `offset`    | あり    | 非有限値は既定値、負数は `0` へ正規化します     |
+| `opened`    | `opened`    | あり    | controlled モードでのみ単一真実源として扱います |
+| `disabled`  | `disabled`  | あり    | boolean attribute として扱います                |
 
 `defaultOpened` は初期化専用 property です。属性反映の安定契約に含めません。
 
@@ -177,11 +177,11 @@ anchored mode が既定です。controller mode は共有 trigger や外部制�
 
 content および trigger に対する属性所有権は次のとおりです。
 
-| 区分 | 属性 | 契約 |
-| --- | --- | --- |
-| コンポーネント専有 | `popover` / `hidden` / `data-open` / `data-variant` / `aria-expanded` / `aria-controls` | 表示制御と shell 状態のためにコンポーネントが管理します |
-| 利用者専有 | `role` / `aria-modal` / `aria-labelledby` / `aria-describedby` | 意味論は利用者または上位ラッパーが管理します |
-| 共有 | `id` | 未指定時はコンポーネントが自動採番し、利用者指定がある場合はそれを尊重します |
+| 区分               | 属性                                                                                    | 契約                                                                         |
+| ------------------ | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| コンポーネント専有 | `popover` / `hidden` / `data-open` / `data-variant` / `aria-expanded` / `aria-controls` | 表示制御と shell 状態のためにコンポーネントが管理します                      |
+| 利用者専有         | `role` / `aria-modal` / `aria-labelledby` / `aria-describedby`                          | 意味論は利用者または上位ラッパーが管理します                                 |
+| 共有               | `id`                                                                                    | 未指定時はコンポーネントが自動採番し、利用者指定がある場合はそれを尊重します |
 
 `popover`、`hidden`、`data-open` など表示制御系属性はコンポーネント専有とします。利用者はこれらへ安定依存してはなりません（MUST NOT）。`role` と関連 ARIA は shell 本体の責務に含めません。
 
@@ -234,15 +234,15 @@ close には reason を持ちます。少なくとも、`trigger`、`escape`、`
 
 `returnFocus` の既定値は reason によって決まります。
 
-| reason | 既定 `returnFocus` |
-| --- | --- |
-| `trigger` | `true` |
-| `escape` | `true` |
-| `outside-pointer` | `false` |
-| `disabled` | `false` |
-| `slot-invalidated` | `false` |
-| `disconnected` | `false` |
-| `programmatic` | 呼び出し側指定。未指定時は `false` |
+| reason             | 既定 `returnFocus`                 |
+| ------------------ | ---------------------------------- |
+| `trigger`          | `true`                             |
+| `escape`           | `true`                             |
+| `outside-pointer`  | `false`                            |
+| `disabled`         | `false`                            |
+| `slot-invalidated` | `false`                            |
+| `disconnected`     | `false`                            |
+| `programmatic`     | 呼び出し側指定。未指定時は `false` |
 
 ### Popover API 状態
 
@@ -357,29 +357,29 @@ active trigger には背景と小さな角丸を与えます。ただし、こ�
 
 本コンポーネントは主として次のトークンに依存します。
 
-| 用途 | トークン |
-| --- | --- |
-| z-index | `--z-popover` |
-| 最大幅 | `--ui-popover-max-width` |
-| 最大高 | `--ui-popover-max-height` |
-| 余白 | `--ui-popover-padding` |
-| 境界線幅 | `--border-width` |
-| 既定境界線 | `--border-default` |
-| 控えめ境界線 | `--border-ghost` |
-| 既定背景 | `--bg-surface-2` |
-| subtle 背景 | `--bg-fill-neutral` |
-| active trigger 背景 | `--bg-active` |
-| 既定文字色 | `--fg-default` |
-| 控えめ文字色 | `--fg-muted` |
-| inverse 背景参照 | `--fg-default` |
-| inverse 文字色参照 | `--bg-default` |
-| 角丸 | `--radius-md` / `--radius-sm` |
-| 影 | `--elevation-md` / `--elevation-lg` |
-| 行送り | `--line-height-relaxed` |
-| 遷移時間 | `--duration-fast` |
-| 即時時間 | `--duration-instant` |
-| イージング | `--ease-out` / `--ease-in` |
-| 間隔 | `--space-3` / `--space-4` |
+| 用途                | トークン                            |
+| ------------------- | ----------------------------------- |
+| z-index             | `--z-popover`                       |
+| 最大幅              | `--ui-popover-max-width`            |
+| 最大高              | `--ui-popover-max-height`           |
+| 余白                | `--ui-popover-padding`              |
+| 境界線幅            | `--border-width`                    |
+| 既定境界線          | `--border-default`                  |
+| 控えめ境界線        | `--border-ghost`                    |
+| 既定背景            | `--bg-surface-2`                    |
+| subtle 背景         | `--bg-fill-neutral`                 |
+| active trigger 背景 | `--bg-active`                       |
+| 既定文字色          | `--fg-default`                      |
+| 控えめ文字色        | `--fg-muted`                        |
+| inverse 背景参照    | `--fg-default`                      |
+| inverse 文字色参照  | `--bg-default`                      |
+| 角丸                | `--radius-md` / `--radius-sm`       |
+| 影                  | `--elevation-md` / `--elevation-lg` |
+| 行送り              | `--line-height-relaxed`             |
+| 遷移時間            | `--duration-fast`                   |
+| 即時時間            | `--duration-instant`                |
+| イージング          | `--ease-out` / `--ease-in`          |
+| 間隔                | `--space-3` / `--space-4`           |
 
 ---
 
@@ -509,15 +509,15 @@ content は `overflow-y: auto` と `max-height` により、viewport を超え�
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、少なくとも次の確認点を維持します。
 
-| 確認点 | 固定する契約 |
-| --- | --- |
-| 基本開閉 | anchored mode の open / close、`aria-controls`、`aria-expanded` が成立すること |
-| 制御モデル | controlled / uncontrolled が分離して振る舞うこと |
-| dismiss reason | `escape`、`outside-pointer`、`disabled`、`programmatic` が区別されること |
-| shared trigger | owner trigger / active trigger の責務分離と focus return 先が成立すること |
-| 境界条件 | invalid 値正規化、要素欠如時の非起動、reconnect 耐性、長文 content 境界、単一要素制約 |
-| 環境差分 | Reduced Motion / Forced Colors / Print が成立すること |
-| visual variant | `default` / `subtle` / `inverse` の差分が維持されること |
+| 確認点         | 固定する契約                                                                          |
+| -------------- | ------------------------------------------------------------------------------------- |
+| 基本開閉       | anchored mode の open / close、`aria-controls`、`aria-expanded` が成立すること        |
+| 制御モデル     | controlled / uncontrolled が分離して振る舞うこと                                      |
+| dismiss reason | `escape`、`outside-pointer`、`disabled`、`programmatic` が区別されること              |
+| shared trigger | owner trigger / active trigger の責務分離と focus return 先が成立すること             |
+| 境界条件       | invalid 値正規化、要素欠如時の非起動、reconnect 耐性、長文 content 境界、単一要素制約 |
+| 環境差分       | Reduced Motion / Forced Colors / Print が成立すること                                 |
+| visual variant | `default` / `subtle` / `inverse` の差分が維持されること                               |
 
 ---
 
@@ -768,12 +768,12 @@ document 単位スタイル供給、stack 管理、dismiss controller、z-index 
 
 差分は個別にばらばらに反映するより、次の単位でまとめて変更する方がよいです。
 
-| 変更単位 | 含める項目 |
-| --- | --- |
-| API 再設計 | 制御モデル、イベントモデル、reason、既定意味論 |
-| 入力厳格化 | 単一要素制約、trigger モード、active trigger 契約 |
-| 責務切り出し | link fallback、outside dismiss の保証範囲 |
-| 基盤分離 | document スタイル供給、overlay foundation 連携 |
+| 変更単位     | 含める項目                                        |
+| ------------ | ------------------------------------------------- |
+| API 再設計   | 制御モデル、イベントモデル、reason、既定意味論    |
+| 入力厳格化   | 単一要素制約、trigger モード、active trigger 契約 |
+| 責務切り出し | link fallback、outside dismiss の保証範囲         |
+| 基盤分離     | document スタイル供給、overlay foundation 連携    |
 
 とくに **API 再設計** と **入力厳格化** は同一マイルストーンで扱う方が望ましいです。これらを分離すると、Storybook と利用側コードが一時的に二重仕様になります。
 
@@ -858,4 +858,3 @@ document 単位スタイル供給、stack 管理、dismiss controller、z-index 
 ### 本節の扱い
 
 本節の差分は、単なる TODO ではありません。`ui-popover` を長期的に **意味論を持たない shell** として保つための移行境界です。実装、Storybook、契約書は、この方針に沿って同時に更新しなければなりません（MUST）。
-

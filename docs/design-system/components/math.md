@@ -63,20 +63,20 @@ Rouault における math は、本文の読解を中断させずに式を提示
 
 ### 入力契約
 
-| 名前                  | 種別                   | 必須  | 内容                 | 契約                                                                          |
-| ------------------- | -------------------- | --- | ------------------ | --------------------------------------------------------------------------- |
-| `latex`             | property             | いいえ | ランタイム描画用 LaTeX 文字列 | slot に正規入力がない場合にのみ使用します                                                     |
-| `block`             | property / attribute | いいえ | display mode       | `true` の場合は別行数式として描画します                                                     |
+| 名前                | 種別                 | 必須   | 内容                          | 契約                                                                                                            |
+| ------------------- | -------------------- | ------ | ----------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `latex`             | property             | いいえ | ランタイム描画用 LaTeX 文字列 | slot に正規入力がない場合にのみ使用します                                                                       |
+| `block`             | property / attribute | いいえ | display mode                  | `true` の場合は別行数式として描画します                                                                         |
 | `primary`           | property / attribute | いいえ | ランドマーク制御フラグ        | 公開入力名は維持しますが、契約上は `block=true` のときのみ region ランドマーク付与に使用します                  |
-| `aria-label`        | attribute            | いいえ | 手動読み上げテキスト         | 空白以外を指定した場合は `label` 読み上げモードへ切り替え、数式ロール要素へ反映します                             |
-| `error-message`     | attribute            | いいえ | 外部注入エラーメッセージ       | 表示状態を上書きし、既定では `external/unspecified` として数式を描画せずエラー UI を表示します               |
-| `show-error-source` | property / attribute | いいえ | エラー時ソース開示フラグ       | `true` の場合に限り、入力ソースが存在すれば `details` / `summary` による開示を許可します。既定値は `false` です |
-| `id`                | global attribute     | いいえ | アンカー識別子            | 公開アンカー対象はホスト要素です                                                            |
+| `aria-label`        | attribute            | いいえ | 手動読み上げテキスト          | 空白以外を指定した場合は `label` 読み上げモードへ切り替え、数式ロール要素へ反映します                           |
+| `error-message`     | attribute            | いいえ | 外部注入エラーメッセージ      | 表示状態を上書きし、既定では `external/unspecified` として数式を描画せずエラー UI を表示します                  |
+| `show-error-source` | property / attribute | いいえ | エラー時ソース開示フラグ      | `true` の場合に限り、入力ソースが存在すれば `details` / `summary` による開示を許可します。既定値は `false` です |
+| `id`                | global attribute     | いいえ | アンカー識別子                | 公開アンカー対象はホスト要素です                                                                                |
 
 ### スロット契約
 
-| 名前     | 種別   | 位置づけ | 内容                                |
-| ------ | ---- | ---- | --------------------------------- |
+| 名前         | 種別 | 位置づけ | 内容                                                 |
+| ------------ | ---- | -------- | ---------------------------------------------------- |
 | 既定スロット | slot | 正規入力 | SSR 済み数式や手組み MathML + 可視表現を受け取ります |
 
 既定スロットは、**SSR 数式専用入力** です。受け入れる正規形は、MathML と可視表現の組み合わせ、または KaTeX 等により生成された SSR 数式出力です。空白テキストのみは入力なしとみなします。
@@ -107,13 +107,13 @@ slot 側の読み上げモード正規化は、`ui-math` 自身では行いま�
 
 ### 属性反映契約
 
-| property          | attribute       | reflect | 備考                          |
-| ----------------- | --------------- | ------- | --------------------------- |
-| `block`           | `block`         | あり      | boolean attribute として扱います   |
-| `primary`         | `primary`       | あり      | boolean attribute として扱います   |
-| `accessibleLabel` | `aria-label`    | なし      | 公開入力名は `aria-label` として扱います |
-| `errorMessage`    | `error-message` | なし      | 静的エラー表示用です                  |
-| `latex`           | なし              | なし      | property 専用です               |
+| property          | attribute       | reflect | 備考                                     |
+| ----------------- | --------------- | ------- | ---------------------------------------- |
+| `block`           | `block`         | あり    | boolean attribute として扱います         |
+| `primary`         | `primary`       | あり    | boolean attribute として扱います         |
+| `accessibleLabel` | `aria-label`    | なし    | 公開入力名は `aria-label` として扱います |
+| `errorMessage`    | `error-message` | なし    | 静的エラー表示用です                     |
+| `latex`           | なし            | なし    | property 専用です                        |
 
 ### 列挙外値・無効値の扱い
 
@@ -154,7 +154,7 @@ slot に正規入力がなく、`error-message` もなく、`latex` が空でな
 
 ### 4. `external` エラー状態
 
-`error-message` が明示されている場合、数式描画は行わずエラー UI を表示します。この状態は上位レイヤ、ビルド工程、データ取得、または上流整形で注入された ``** 系エラー** を表します。`external` エラーでは `role="alert"` を既定で付与しません。
+`error-message` が明示されている場合、数式描画は行わずエラー UI を表示します。この状態は上位レイヤ、ビルド工程、データ取得、または上流整形で注入された ``** 系エラー** を表します。`external`エラーでは`role="alert"` を既定で付与しません。
 
 `external` は次の予約済み下位分類を持ちます。
 
@@ -311,13 +311,13 @@ Storybook や内部テストでこれらの内部 detail を参照すること�
 
 `external` の下位分類は、**共通レイアウト骨格を維持したまま、文言・補助情報・トーンのみを差し替える** 契約とします。下位分類ごとの表示差分は次のとおりです。
 
-| 下位分類               | 見出しの性格 | 補助説明                       | 推奨補助情報              | 視覚トーン  |
-| ------------------ | ------ | -------------------------- | ------------------- | ------ |
-| `build-failed`     | 生成失敗   | ビルドまたは事前生成で描画不能になったことを示します | ビルド工程名、失敗時点、再生成の必要性 | danger |
-| `data-missing`     | 欠落     | 数式ソースまたは参照先が存在しないことを示します   | 欠落対象、参照名、復旧待ち可否     | muted  |
-| `runtime-failed`   | 実行時失敗  | 実行時条件が満たされず描画できないことを示します   | 実行環境差分、再試行可否        | danger |
-| `upstream-invalid` | 上流契約違反 | 上流整形済み入力が契約違反であることを示します    | 上流入力種別、契約違反の所在      | danger |
-| `unspecified`      | 外部エラー  | 外部要因で描画不能であることのみを示します      | なし、または最小限の説明        | muted  |
+| 下位分類           | 見出しの性格 | 補助説明                                             | 推奨補助情報                           | 視覚トーン |
+| ------------------ | ------------ | ---------------------------------------------------- | -------------------------------------- | ---------- |
+| `build-failed`     | 生成失敗     | ビルドまたは事前生成で描画不能になったことを示します | ビルド工程名、失敗時点、再生成の必要性 | danger     |
+| `data-missing`     | 欠落         | 数式ソースまたは参照先が存在しないことを示します     | 欠落対象、参照名、復旧待ち可否         | muted      |
+| `runtime-failed`   | 実行時失敗   | 実行時条件が満たされず描画できないことを示します     | 実行環境差分、再試行可否               | danger     |
+| `upstream-invalid` | 上流契約違反 | 上流整形済み入力が契約違反であることを示します       | 上流入力種別、契約違反の所在           | danger     |
+| `unspecified`      | 外部エラー   | 外部要因で描画不能であることのみを示します           | なし、または最小限の説明               | muted      |
 
 ここでいう `danger` は、致命性や注意喚起を示す視覚トーンであり、`role="alert"` を意味しません。`muted` は、本文の読解を過度に中断しないための抑制されたトーンです。
 
@@ -331,24 +331,24 @@ overflow する display 数式のみ `:focus-visible` によるアウトライ�
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途              | トークン                           |
-| --------------- | ------------------------------ |
-| 通常文字色           | `--fg-default`                 |
-| 控えめ文字色          | `--fg-muted`                   |
-| 危険境界線           | `--border-danger`              |
-| 危険背景            | `--bg-danger-subtle`           |
-| 危険文字色           | `--fg-danger`                  |
-| 補助背景            | `--bg-fill-muted`              |
-| フォーカス幅          | `--focus-ring-width`           |
-| フォーカス色          | `--focus-ring-color`           |
-| フォーカスオフセット      | `--focus-ring-offset`          |
-| フォーカスアニメーション    | `--animation-focus`            |
-| スクロールバー幅        | `--scrollbar-width`            |
-| スクロールバー hover 色 | `--scrollbar-thumb-hover`      |
-| 余白              | `--space-*`                    |
-| 角丸              | `--radius-*`                   |
-| 数式倍率            | `--text-math-scale`            |
-| フェード幅           | `--space-4` または `--fade-width` |
+| 用途                     | トークン                          |
+| ------------------------ | --------------------------------- |
+| 通常文字色               | `--fg-default`                    |
+| 控えめ文字色             | `--fg-muted`                      |
+| 危険境界線               | `--border-danger`                 |
+| 危険背景                 | `--bg-danger-subtle`              |
+| 危険文字色               | `--fg-danger`                     |
+| 補助背景                 | `--bg-fill-muted`                 |
+| フォーカス幅             | `--focus-ring-width`              |
+| フォーカス色             | `--focus-ring-color`              |
+| フォーカスオフセット     | `--focus-ring-offset`             |
+| フォーカスアニメーション | `--animation-focus`               |
+| スクロールバー幅         | `--scrollbar-width`               |
+| スクロールバー hover 色  | `--scrollbar-thumb-hover`         |
+| 余白                     | `--space-*`                       |
+| 角丸                     | `--radius-*`                      |
+| 数式倍率                 | `--text-math-scale`               |
+| フェード幅               | `--space-4` または `--fade-width` |
 
 ---
 
@@ -522,16 +522,16 @@ slot に投入する MathML / 可視 HTML のアクセシビリティ状態は�
 
 各 Story は見本ではなく、**契約確認点** として扱います。将来変更時には、次の契約を維持します。
 
-| Story                   | 固定する契約                                                                                                         |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `Default`               | `block + primary` の基本 display 数式が region として成立すること                                                             |
-| `VariantStateMatrix`    | inline / block / primary / `aria-label` の組み合わせ責務が保たれること                                                        |
+| Story                   | 固定する契約                                                                                                                                      |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Default`               | `block + primary` の基本 display 数式が region として成立すること                                                                                 |
+| `VariantStateMatrix`    | inline / block / primary / `aria-label` の組み合わせ責務が保たれること                                                                            |
 | `ErrorStates`           | `external` と `author-invalid` の role 差分、`external` 下位分類ごとのトーン差分、および `show-error-source` による opt-in 開示契約が保たれること |
-| `BoundaryConditions`    | `error-message` 優先、slot の runtime 優先、空白 `aria-label` 無効化、inline で region 非付与が保たれること                            |
-| `KeyboardInteraction`   | overflow 時のみフォーカス可能となり、スクロール状態が遷移すること                                                                          |
-| `IdAnchorContract`      | host 要素の `id` を公開アンカーとして扱えること。内部 id ミラーは公開 API ではないこと                                                          |
-| `DarkModeTokenContract` | KaTeX が `color: inherit` により暗色トークンへ追従すること                                                                      |
-| `ForcedColorsContract`  | 強制色時のマスク無効化とシステムカラー追従定義が存在すること                                                                                 |
+| `BoundaryConditions`    | `error-message` 優先、slot の runtime 優先、空白 `aria-label` 無効化、inline で region 非付与が保たれること                                       |
+| `KeyboardInteraction`   | overflow 時のみフォーカス可能となり、スクロール状態が遷移すること                                                                                 |
+| `IdAnchorContract`      | host 要素の `id` を公開アンカーとして扱えること。内部 id ミラーは公開 API ではないこと                                                            |
+| `DarkModeTokenContract` | KaTeX が `color: inherit` により暗色トークンへ追従すること                                                                                        |
+| `ForcedColorsContract`  | 強制色時のマスク無効化とシステムカラー追従定義が存在すること                                                                                      |
 
 ---
 
@@ -782,4 +782,3 @@ slotted MathML の `aria-hidden` 自動付け替え、label mode への自動変
 ### 13. 本節の扱い
 
 本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用する場合は、実装、Storybook、契約書の 3 点を同時に更新し、未対応状態を残したまま公開契約へ昇格させません。
-

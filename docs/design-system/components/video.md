@@ -64,41 +64,41 @@ Rouault における video は、強い娯楽 UI ではなく、**読む体験�
 
 ### 入力契約
 
-| 名前 | 種別 | 必須 | 内容 | 契約 |
-| --- | --- | --- | --- | --- |
-| `src` | property / attribute | いいえ | 動画 URL | 前後空白は除去して扱います。空文字列または空白のみは未設定とみなし、`EMPTY` 状態に遷移します |
-| `poster` | property / attribute | いいえ | ポスター画像 URL | 前後空白は除去して扱います |
-| `autoplay` | property / attribute | いいえ | 自動再生 | `true` の場合でも `muted=false` は許可せず、`muted=true` に補正します |
-| `loop` | property / attribute | いいえ | ループ再生 | ネイティブ `<video>` の `loop` に反映します |
-| `muted` | property / attribute | いいえ | ミュート状態 | 既定値は `true` です。手動再生時は現在値をそのまま尊重します |
-| `playsinline` | property / attribute (`playsinline`) | いいえ | インライン再生 | 既定値は `true` です |
-| `aspectRatio` | property / attribute | いいえ | 表示アスペクト比 | 有効な `aspect-ratio` 相当値を受け取ります。未指定時は `16 / 9` にフォールバックします |
-| `caption` | property / attribute | いいえ | 図版キャプション | 前後空白は除去して扱います。空文字列はキャプションなしとして扱います |
-| `title` | property / attribute | いいえ | プレイヤー題名 | 全画面時タイトルおよびプレイヤー識別に使います |
-| `ariaLabel` | property / attribute | いいえ | アクセシブル名 | `title` がない場合のプレイヤー全体の名前として使います |
-| `captionsPolicy` | property / attribute | いいえ | 字幕初期化戦略 | `off` / `track-default` / `on` を受け取ります。既定値は `track-default` です |
-| `tracks` | property | いいえ | 字幕 / テキストトラック群 | `Track[]` を受け取る正規入力です。attribute 文字列経由の設定はサポートしません |
-| `width` | property / attribute | いいえ | 互換入力 | `aspectRatio` が未指定の場合に限り、`height` と組で互換的に比率算出へ使います。新規利用では非推奨です |
-| `height` | property / attribute | いいえ | 互換入力 | `aspectRatio` が未指定の場合に限り、`width` と組で互換的に比率算出へ使います。新規利用では非推奨です |
+| 名前             | 種別                                 | 必須   | 内容                      | 契約                                                                                                  |
+| ---------------- | ------------------------------------ | ------ | ------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `src`            | property / attribute                 | いいえ | 動画 URL                  | 前後空白は除去して扱います。空文字列または空白のみは未設定とみなし、`EMPTY` 状態に遷移します          |
+| `poster`         | property / attribute                 | いいえ | ポスター画像 URL          | 前後空白は除去して扱います                                                                            |
+| `autoplay`       | property / attribute                 | いいえ | 自動再生                  | `true` の場合でも `muted=false` は許可せず、`muted=true` に補正します                                 |
+| `loop`           | property / attribute                 | いいえ | ループ再生                | ネイティブ `<video>` の `loop` に反映します                                                           |
+| `muted`          | property / attribute                 | いいえ | ミュート状態              | 既定値は `true` です。手動再生時は現在値をそのまま尊重します                                          |
+| `playsinline`    | property / attribute (`playsinline`) | いいえ | インライン再生            | 既定値は `true` です                                                                                  |
+| `aspectRatio`    | property / attribute                 | いいえ | 表示アスペクト比          | 有効な `aspect-ratio` 相当値を受け取ります。未指定時は `16 / 9` にフォールバックします                |
+| `caption`        | property / attribute                 | いいえ | 図版キャプション          | 前後空白は除去して扱います。空文字列はキャプションなしとして扱います                                  |
+| `title`          | property / attribute                 | いいえ | プレイヤー題名            | 全画面時タイトルおよびプレイヤー識別に使います                                                        |
+| `ariaLabel`      | property / attribute                 | いいえ | アクセシブル名            | `title` がない場合のプレイヤー全体の名前として使います                                                |
+| `captionsPolicy` | property / attribute                 | いいえ | 字幕初期化戦略            | `off` / `track-default` / `on` を受け取ります。既定値は `track-default` です                          |
+| `tracks`         | property                             | いいえ | 字幕 / テキストトラック群 | `Track[]` を受け取る正規入力です。attribute 文字列経由の設定はサポートしません                        |
+| `width`          | property / attribute                 | いいえ | 互換入力                  | `aspectRatio` が未指定の場合に限り、`height` と組で互換的に比率算出へ使います。新規利用では非推奨です |
+| `height`         | property / attribute                 | いいえ | 互換入力                  | `aspectRatio` が未指定の場合に限り、`width` と組で互換的に比率算出へ使います。新規利用では非推奨です  |
 
 ### `Track` 契約
 
 `tracks` property は、次の構造を持つ `Track` を要素とする配列を受け取ります。
 
-| 名前 | 型 | 必須 | 契約 |
-| --- | --- | --- | --- |
-| `src` | `string` | はい | 前後空白を除去し、空文字列は無効です |
-| `srclang` | `string` | はい | 前後空白を除去し、空文字列は無効です |
-| `label` | `string` | はい | 前後空白を除去し、空文字列は無効です |
-| `kind` | `TrackKind` | はい | `subtitles` / `captions` / `descriptions` / `chapters` / `metadata` のみ受理します |
-| `default` | `boolean` | いいえ | ネイティブ `<track default>` に反映します |
+| 名前      | 型          | 必須   | 契約                                                                               |
+| --------- | ----------- | ------ | ---------------------------------------------------------------------------------- |
+| `src`     | `string`    | はい   | 前後空白を除去し、空文字列は無効です                                               |
+| `srclang` | `string`    | はい   | 前後空白を除去し、空文字列は無効です                                               |
+| `label`   | `string`    | はい   | 前後空白を除去し、空文字列は無効です                                               |
+| `kind`    | `TrackKind` | はい   | `subtitles` / `captions` / `descriptions` / `chapters` / `metadata` のみ受理します |
+| `default` | `boolean`   | いいえ | ネイティブ `<track default>` に反映します                                          |
 
 列挙外 `kind`、空の `src` / `srclang` / `label` を持つトラックは無効として破棄します。利用者は無効トラックが描画されることを期待してはなりません（MUST NOT）。
 
 ### スロット契約
 
-| 名前 | 種別 | 位置づけ | 内容 |
-| --- | --- | --- | --- |
+| 名前     | 種別       | 位置づけ           | 内容                                                   |
+| -------- | ---------- | ------------------ | ------------------------------------------------------ |
 | `tracks` | named slot | 互換・低レベル入力 | ネイティブ `<track>` 要素を light DOM から追加できます |
 
 `tracks` property が正規入力です。`slot="tracks"` は、既存のネイティブ `<track>` 供給を併用したい場合の escape hatch に位置付けます。新規実装では `tracks` property の利用を優先します。
@@ -107,19 +107,19 @@ Rouault における video は、強い娯楽 UI ではなく、**読む体験�
 
 `ui-video` は次の公開メソッドを持ちます。
 
-| 名前 | 種別 | 契約 |
-| --- | --- | --- |
-| `playVideo()` | method | 再生を開始します。`ENDED` 状態では先頭に戻して再生します |
-| `pauseVideo()` | method | 再生を停止します |
-| `retry()` | method | エラー状態から再読み込みを試行します |
+| 名前           | 種別   | 契約                                                     |
+| -------------- | ------ | -------------------------------------------------------- |
+| `playVideo()`  | method | 再生を開始します。`ENDED` 状態では先頭に戻して再生します |
+| `pauseVideo()` | method | 再生を停止します                                         |
+| `retry()`      | method | エラー状態から再読み込みを試行します                     |
 
 ### 公開メソッドの失敗セマンティクス
 
-| 名前 | 成功時 | 無効条件 | 失敗時の扱い |
-| --- | --- | --- | --- |
-| `playVideo()` | 再生開始を試み、成功すれば `PLAYING` へ遷移します。`ENDED` では先頭へ戻してから再生します | `EMPTY` または `ERROR` では no-op です | `video.play()` が拒否された場合でも例外を外部へ再送出せず、状態を `ERROR` に遷移させます |
-| `pauseVideo()` | 一時停止し、通常は `PAUSED` へ遷移します | 再生対象がない場合は no-op です | 例外を公開 API として送出しません |
-| `retry()` | `video.load()` を呼び、状態を `LOADING` に戻します | `src` が未設定の場合は no-op です | 失敗理由の詳細コードは公開しません |
+| 名前           | 成功時                                                                                    | 無効条件                               | 失敗時の扱い                                                                             |
+| -------------- | ----------------------------------------------------------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `playVideo()`  | 再生開始を試み、成功すれば `PLAYING` へ遷移します。`ENDED` では先頭へ戻してから再生します | `EMPTY` または `ERROR` では no-op です | `video.play()` が拒否された場合でも例外を外部へ再送出せず、状態を `ERROR` に遷移させます |
+| `pauseVideo()` | 一時停止し、通常は `PAUSED` へ遷移します                                                  | 再生対象がない場合は no-op です        | 例外を公開 API として送出しません                                                        |
+| `retry()`      | `video.load()` を呼び、状態を `LOADING` に戻します                                        | `src` が未設定の場合は no-op です      | 失敗理由の詳細コードは公開しません                                                       |
 
 利用者は、これらのメソッドが**状態遷移中心の API**であり、失敗理由を例外や戻り値で精密に取得する API ではないことを前提に扱います。
 
@@ -136,15 +136,15 @@ Rouault における video は、強い娯楽 UI ではなく、**読む体験�
 
 `ui-video` は次の状態を持ちます。
 
-| 状態 | 意味 |
-| --- | --- |
-| `EMPTY` | 有効な動画ソースが存在しません |
-| `LOADING` | メタデータまたは再生準備を読み込み中です |
-| `PAUSED` | 再生可能だが一時停止中です |
-| `PLAYING` | 再生中です |
-| `BUFFERING` | 再生継続のために待機中です |
-| `ENDED` | 再生末尾まで到達しています |
-| `ERROR` | 読み込みまたは再生開始に失敗しました |
+| 状態        | 意味                                     |
+| ----------- | ---------------------------------------- |
+| `EMPTY`     | 有効な動画ソースが存在しません           |
+| `LOADING`   | メタデータまたは再生準備を読み込み中です |
+| `PAUSED`    | 再生可能だが一時停止中です               |
+| `PLAYING`   | 再生中です                               |
+| `BUFFERING` | 再生継続のために待機中です               |
+| `ENDED`     | 再生末尾まで到達しています               |
+| `ERROR`     | 読み込みまたは再生開始に失敗しました     |
 
 ### 1. 初期状態
 
@@ -258,18 +258,18 @@ Rouault における video は、強い娯楽 UI ではなく、**読む体験�
 
 プレイヤーは次のキーボードショートカットを定義します。
 
-| キー | 契約 |
-| --- | --- |
+| キー                    | 契約                  |
+| ----------------------- | --------------------- |
 | `Space` / `Enter` / `k` | 再生 / 一時停止トグル |
-| `j` | 10 秒戻る |
-| `l` | 10 秒進む |
-| `ArrowLeft` | 5 秒戻る |
-| `ArrowRight` | 5 秒進む |
-| `ArrowUp` | 音量を 0.1 増やす |
-| `ArrowDown` | 音量を 0.1 下げる |
-| `m` | ミュート切り替え |
-| `f` | 全画面切り替え |
-| `c` | 字幕切り替え |
+| `j`                     | 10 秒戻る             |
+| `l`                     | 10 秒進む             |
+| `ArrowLeft`             | 5 秒戻る              |
+| `ArrowRight`            | 5 秒進む              |
+| `ArrowUp`               | 音量を 0.1 増やす     |
+| `ArrowDown`             | 音量を 0.1 下げる     |
+| `m`                     | ミュート切り替え      |
+| `f`                     | 全画面切り替え        |
+| `c`                     | 字幕切り替え          |
 
 ### フォーカス主体とキーボード到達性
 
@@ -281,15 +281,15 @@ Rouault における video は、強い娯楽 UI ではなく、**読む体験�
 
 各状態における主要コントロールの可用性は次のとおりです。
 
-| 状態 | 中央再生ボタン | フローティングバー | シーク | 音量 | 字幕 | 全画面 | retry |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `EMPTY` | disabled | 非表示 | 不可 | 不可 | 不可 | 不可 | 不可 |
-| `LOADING` | 原則不可 | 非表示または待機扱い | 不可 | 不可 | 原則不可 | 不可 | 不可 |
-| `PAUSED` | 可 | 条件付き表示 | 可 | 可 | トラックがあれば可 | 可 | 不可 |
-| `PLAYING` | 可 | 条件付き表示 | 可 | 可 | トラックがあれば可 | 可 | 不可 |
-| `BUFFERING` | 可 | 条件付き表示 | 原則可 | 可 | トラックがあれば可 | 可 | 不可 |
-| `ENDED` | 可（再始動） | 条件付き表示 | 可 | 可 | トラックがあれば可 | 可 | 不可 |
-| `ERROR` | 非表示 | 非表示 | 不可 | 不可 | 不可 | 不可 | 可 |
+| 状態        | 中央再生ボタン | フローティングバー   | シーク | 音量 | 字幕               | 全画面 | retry |
+| ----------- | -------------- | -------------------- | ------ | ---- | ------------------ | ------ | ----- |
+| `EMPTY`     | disabled       | 非表示               | 不可   | 不可 | 不可               | 不可   | 不可  |
+| `LOADING`   | 原則不可       | 非表示または待機扱い | 不可   | 不可 | 原則不可           | 不可   | 不可  |
+| `PAUSED`    | 可             | 条件付き表示         | 可     | 可   | トラックがあれば可 | 可     | 不可  |
+| `PLAYING`   | 可             | 条件付き表示         | 可     | 可   | トラックがあれば可 | 可     | 不可  |
+| `BUFFERING` | 可             | 条件付き表示         | 原則可 | 可   | トラックがあれば可 | 可     | 不可  |
+| `ENDED`     | 可（再始動）   | 条件付き表示         | 可     | 可   | トラックがあれば可 | 可     | 不可  |
+| `ERROR`     | 非表示         | 非表示               | 不可   | 不可 | 不可               | 不可   | 可    |
 
 ここで「条件付き表示」とは、初回再生済みフラグ、再生中かどうか、オートハイド、ポインター操作、全画面状態などに依存して表示 / 非表示が切り替わることを意味します。
 
@@ -307,14 +307,14 @@ Rouault における video は、強い娯楽 UI ではなく、**読む体験�
 
 本コンポーネントは、次の内部定数に依存します。これらは**固定値として扱い、公開入力では変更できません**。
 
-| 項目 | 値 | 契約 |
-| --- | --- | --- |
-| 長押し判定 | 500 ms | 再生中のみ 2 倍速ジェスチャ判定に使います |
-| ダブルタップ判定 | 300 ms | 粗ポインター環境で左右 10 秒スキップ判定に使います |
-| 中央オーバーレイ自動非表示 | 1000 ms | 再生開始後の中央再生ボタン退避に使います |
-| フローティングバー自動非表示 | 3000 ms | 再生中のコントロール退避に使います |
-| スキップ量 | 10 s | ダブルタップ、`j` / `l`、スキップボタンに使います |
-| 矢印シーク量 | 5 s | `ArrowLeft` / `ArrowRight` に使います |
+| 項目                         | 値      | 契約                                               |
+| ---------------------------- | ------- | -------------------------------------------------- |
+| 長押し判定                   | 500 ms  | 再生中のみ 2 倍速ジェスチャ判定に使います          |
+| ダブルタップ判定             | 300 ms  | 粗ポインター環境で左右 10 秒スキップ判定に使います |
+| 中央オーバーレイ自動非表示   | 1000 ms | 再生開始後の中央再生ボタン退避に使います           |
+| フローティングバー自動非表示 | 3000 ms | 再生中のコントロール退避に使います                 |
+| スキップ量                   | 10 s    | ダブルタップ、`j` / `l`、スキップボタンに使います  |
+| 矢印シーク量                 | 5 s     | `ArrowLeft` / `ArrowRight` に使います              |
 
 利用者は、これらの値が外部設定で変更可能であることを期待してはなりません（MUST NOT）。
 
@@ -362,15 +362,15 @@ Rouault における video は、強い娯楽 UI ではなく、**読む体験�
 
 ### 個別コントロールのアクセシビリティ契約
 
-| コントロール | アクセシブル名 / 状態 | 契約 |
-| --- | --- | --- |
-| 中央再生ボタン / 再生ボタン | `aria-label` を持ちます | 再生中か否かに応じて意味が切り替わります。`EMPTY` では disabled です |
-| シークバー | `aria-label="再生位置"` | `aria-valuenow` と `aria-valuetext` により、現在位置を時刻表現で伝えます |
-| 音量スライダー | `aria-label="音量"` | `aria-valuenow` と `aria-valuetext` により、現在音量を伝えます |
-| ミュートボタン | `aria-label` を持ちます | ミュート状態の切り替え対象であり、視覚アイコンだけに依存しません |
-| 字幕ボタン | `aria-label` を持ちます | `captions` / `subtitles` が存在するときのみ描画対象です |
-| 全画面ボタン | `aria-label` を持ちます | 全画面切り替えの意味が名称で伝わります |
-| retry ボタン | `aria-label` または可読ラベルを持ちます | `ERROR` でのみ主要操作面として現れ、フォーカス遷移先になります |
+| コントロール                | アクセシブル名 / 状態                   | 契約                                                                     |
+| --------------------------- | --------------------------------------- | ------------------------------------------------------------------------ |
+| 中央再生ボタン / 再生ボタン | `aria-label` を持ちます                 | 再生中か否かに応じて意味が切り替わります。`EMPTY` では disabled です     |
+| シークバー                  | `aria-label="再生位置"`                 | `aria-valuenow` と `aria-valuetext` により、現在位置を時刻表現で伝えます |
+| 音量スライダー              | `aria-label="音量"`                     | `aria-valuenow` と `aria-valuetext` により、現在音量を伝えます           |
+| ミュートボタン              | `aria-label` を持ちます                 | ミュート状態の切り替え対象であり、視覚アイコンだけに依存しません         |
+| 字幕ボタン                  | `aria-label` を持ちます                 | `captions` / `subtitles` が存在するときのみ描画対象です                  |
+| 全画面ボタン                | `aria-label` を持ちます                 | 全画面切り替えの意味が名称で伝わります                                   |
+| retry ボタン                | `aria-label` または可読ラベルを持ちます | `ERROR` でのみ主要操作面として現れ、フォーカス遷移先になります           |
 
 ### live region 契約
 
@@ -434,19 +434,19 @@ Rouault における video は、強い娯楽 UI ではなく、**読む体験�
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途 | トークン |
-| --- | --- |
-| 境界線 | `--border-width` / `--border-ghost` / `--border-default` |
-| 背景 | `--bg-fill-neutral` / `--bg-surface-2` / `--bg-surface-3` |
-| 前景色 | `--fg-default` / `--fg-muted` / `--fg-on-primary` |
-| 主色 | `--primary` |
-| 角丸 | `--radius-md` / `--radius-lg` / `--radius-full` |
-| スペーシング | `--space-*` |
-| アイコン寸法 | `--icon-md` / `--icon-xl` |
-| 影 | `--elevation-md` |
-| モーション | `--duration-fast` / `--duration-normal` / `--ease-out` |
-| フォーカス | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
-| 補助 | `--blur-sm` / `--scale-hover-lg` / `--scale-pressed` |
+| 用途         | トークン                                                                                  |
+| ------------ | ----------------------------------------------------------------------------------------- |
+| 境界線       | `--border-width` / `--border-ghost` / `--border-default`                                  |
+| 背景         | `--bg-fill-neutral` / `--bg-surface-2` / `--bg-surface-3`                                 |
+| 前景色       | `--fg-default` / `--fg-muted` / `--fg-on-primary`                                         |
+| 主色         | `--primary`                                                                               |
+| 角丸         | `--radius-md` / `--radius-lg` / `--radius-full`                                           |
+| スペーシング | `--space-*`                                                                               |
+| アイコン寸法 | `--icon-md` / `--icon-xl`                                                                 |
+| 影           | `--elevation-md`                                                                          |
+| モーション   | `--duration-fast` / `--duration-normal` / `--ease-out`                                    |
+| フォーカス   | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
+| 補助         | `--blur-sm` / `--scale-hover-lg` / `--scale-pressed`                                      |
 
 ---
 
@@ -501,12 +501,12 @@ UI 文言は統合して構いませんが、原因語彙は内部および公�
 
 `ui-video` は、ネイティブ media event をそのまま再送出するのではなく、次の公開カスタムイベントのみを安定契約とします。
 
-| イベント名 | detail | 契約 |
-| --- | --- | --- |
-| `ui-video-state-change` | `{ state }` | 再生状態機械の遷移を通知します |
-| `ui-video-error` | `{ code, message? }` | 正規化済みエラー原因を通知します |
-| `ui-video-captions-change` | `{ active }` | 字幕表示の有効 / 無効を通知します |
-| `ui-video-fullscreen-change` | `{ fullscreen }` | 全画面状態の変化を通知します |
+| イベント名                   | detail               | 契約                              |
+| ---------------------------- | -------------------- | --------------------------------- |
+| `ui-video-state-change`      | `{ state }`          | 再生状態機械の遷移を通知します    |
+| `ui-video-error`             | `{ code, message? }` | 正規化済みエラー原因を通知します  |
+| `ui-video-captions-change`   | `{ active }`         | 字幕表示の有効 / 無効を通知します |
+| `ui-video-fullscreen-change` | `{ fullscreen }`     | 全画面状態の変化を通知します      |
 
 外部利用者は、`play`、`pause`、`timeupdate`、`ended` などのネイティブ動画イベントを `ui-video` の安定 API とみなしてはなりません（MUST NOT）。
 
@@ -576,23 +576,23 @@ Story は次の 2 層に分けます。
 
 契約書と結び付けるのは前者のみです。将来変更時には、少なくとも次の公開契約 Story を維持します。
 
-| Story | 固定する契約 |
-| --- | --- |
-| `Default` | 初期 `LOADING`、`loadedmetadata` / `canplay` 後の `PAUSED`、アクセシブルネーミング、`tracks` 描画が成立すること |
-| `VariantStateMatrix` | `default` / `autoplay+muted` / `loop` / `empty` の組み合わせが成立すること |
-| `StateMachineAndKeyboard` | 状態機械と主要キーボード操作が一貫すること |
-| `BoundaryConditions` | autoplay 補正、`aspectRatio` フォールバック、空白 `caption` 無視、invalid tracks 除外、retry が成立すること |
-| `A11yEnvironmentGuards` | Reduced Motion / Forced Colors / Print スタイルが存在すること |
-| `CaptionToggle` | `captionsPolicy` とトラック構成に応じて字幕トグルと初期状態が成立すること |
-| `SkipButtons` | 10 秒戻る / 10 秒進む操作が成立すること |
-| `LongPress2x` | 長押し中のみ 2x バッジと 2 倍速が有効になること |
-| `FullscreenTitle` | 全画面時に `title` を左上タイトルとして表示できること |
-| `VolumeMuteSync` | ミュートと音量スライダー表示が同期すること |
-| `AutoHideCenterPlay` | 再生開始後に中央ボタンが自動非表示となり、一時停止で再表示されること |
-| `PrePlayState` | 初回再生前の UI 振る舞いが固定されていること |
-| `InputCapabilityGestures` | 粗ポインター / 精密ポインターでジェスチャ分岐が成立すること |
-| `FloatingBarAutoHide` | 再生中のフローティングバー自動非表示が成立すること |
-| `PublicEvents` | `ui-video-state-change`、`ui-video-error`、`ui-video-captions-change`、`ui-video-fullscreen-change` が成立すること |
+| Story                     | 固定する契約                                                                                                       |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `Default`                 | 初期 `LOADING`、`loadedmetadata` / `canplay` 後の `PAUSED`、アクセシブルネーミング、`tracks` 描画が成立すること    |
+| `VariantStateMatrix`      | `default` / `autoplay+muted` / `loop` / `empty` の組み合わせが成立すること                                         |
+| `StateMachineAndKeyboard` | 状態機械と主要キーボード操作が一貫すること                                                                         |
+| `BoundaryConditions`      | autoplay 補正、`aspectRatio` フォールバック、空白 `caption` 無視、invalid tracks 除外、retry が成立すること        |
+| `A11yEnvironmentGuards`   | Reduced Motion / Forced Colors / Print スタイルが存在すること                                                      |
+| `CaptionToggle`           | `captionsPolicy` とトラック構成に応じて字幕トグルと初期状態が成立すること                                          |
+| `SkipButtons`             | 10 秒戻る / 10 秒進む操作が成立すること                                                                            |
+| `LongPress2x`             | 長押し中のみ 2x バッジと 2 倍速が有効になること                                                                    |
+| `FullscreenTitle`         | 全画面時に `title` を左上タイトルとして表示できること                                                              |
+| `VolumeMuteSync`          | ミュートと音量スライダー表示が同期すること                                                                         |
+| `AutoHideCenterPlay`      | 再生開始後に中央ボタンが自動非表示となり、一時停止で再表示されること                                               |
+| `PrePlayState`            | 初回再生前の UI 振る舞いが固定されていること                                                                       |
+| `InputCapabilityGestures` | 粗ポインター / 精密ポインターでジェスチャ分岐が成立すること                                                        |
+| `FloatingBarAutoHide`     | 再生中のフローティングバー自動非表示が成立すること                                                                 |
+| `PublicEvents`            | `ui-video-state-change`、`ui-video-error`、`ui-video-captions-change`、`ui-video-fullscreen-change` が成立すること |
 
 ---
 
@@ -810,4 +810,3 @@ Rouault の方向性に最もよく適合する拡張候補のひとつが、**�
 ### 12. 本節の扱い
 
 本節に記載した事項は、契約としては**すでに採用済み**ですが、実装と Storybook はまだ追随していません。これらを完了させるときは、**実装、Storybook、契約書の 3 点を同時に更新**します。
-

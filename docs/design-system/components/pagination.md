@@ -72,11 +72,11 @@
 
 公開入力は次のとおりです。
 
-| 名前        | 種別                   | 必須  | 意味                            |
-| --------- | -------------------- | --- | ----------------------------- |
-| `current` | property / attribute | はい  | 現在ページ番号                       |
-| `total`   | property / attribute | はい  | 総ページ数                         |
-| `getHref` | property             | はい  | ページ番号から URL を返す関数             |
+| 名前      | 種別                 | 必須   | 意味                                   |
+| --------- | -------------------- | ------ | -------------------------------------- |
+| `current` | property / attribute | はい   | 現在ページ番号                         |
+| `total`   | property / attribute | はい   | 総ページ数                             |
+| `getHref` | property             | はい   | ページ番号から URL を返す関数          |
 | `mode`    | property / attribute | いいえ | 表示モード。`regular` または `compact` |
 
 既定の `mode` は `regular` とします。
@@ -112,7 +112,7 @@
 - `regular` は通常表示です。
 - `compact` は省略優先の圧縮表示です。
 
-本コンポーネントは、pointer 種別、viewport 幅、container 幅から自動的に `mode` を決定する責務を持ちません。**どの場面で ********compact******** を使うかは上位レイヤの責務**です。
+本コンポーネントは、pointer 種別、viewport 幅、container 幅から自動的に `mode` を決定する責務を持ちません。**どの場面で **\*\*****compact**\*\*\*\*** を使うかは上位レイヤの責務\*\*です。
 
 ### イベント契約
 
@@ -128,10 +128,10 @@
 
 公開 part は次のとおりです。
 
-| part 名 | 役割               |
-| ------ | ---------------- |
-| `nav`  | ルートの `nav` 要素    |
-| `list` | ページ項目群を保持するリスト要素 |
+| part 名 | 役割                             |
+| ------- | -------------------------------- |
+| `nav`   | ルートの `nav` 要素              |
+| `list`  | ページ項目群を保持するリスト要素 |
 
 ### 公開しない面
 
@@ -399,22 +399,22 @@ pagination は補助導線です。永続アニメーション、過大な拡大
 
 Storybook または同等の検証では、少なくとも次を確認しなければなりません。
 
-| 検証項目                       | 確認内容                                     |
-| -------------------------- | ---------------------------------------- |
-| current page link          | 現在ページが `aria-current="page"` を持つリンクであること |
-| prev/next disabled         | 境界で `<span aria-disabled="true">` になること  |
-| single page                | `total = 1` で省略記号が出ないこと                  |
-| small total                | `total <= 7` で全ページが表示されること               |
-| threshold 7/8              | `total = 7` と `total = 8` の閾値が維持されること    |
-| one-page gap               | 欠落が 1 ページのときに実ページ番号が表示されること              |
-| near start / near end      | 冗長な省略記号が表示されないこと                         |
-| compact mode               | `compact` で current と省略記号だけに圧縮されること      |
+| 検証項目                   | 確認内容                                                    |
+| -------------------------- | ----------------------------------------------------------- |
+| current page link          | 現在ページが `aria-current="page"` を持つリンクであること   |
+| prev/next disabled         | 境界で `<span aria-disabled="true">` になること             |
+| single page                | `total = 1` で省略記号が出ないこと                          |
+| small total                | `total <= 7` で全ページが表示されること                     |
+| threshold 7/8              | `total = 7` と `total = 8` の閾値が維持されること           |
+| one-page gap               | 欠落が 1 ページのときに実ページ番号が表示されること         |
+| near start / near end      | 冗長な省略記号が表示されないこと                            |
+| compact mode               | `compact` で current と省略記号だけに圧縮されること         |
 | aria labels                | `nav`、ページ、current、prev、next のラベルが維持されること |
-| no custom event assumption | コンポーネント固有イベントに依存しないこと                    |
-| reduced motion             | motion 縮退が成立すること                         |
-| forced colors              | 強制カラーで識別性が維持されること                        |
-| dark theme tokens          | トークン差し替えで暗色環境に適応できること                    |
-| structural privacy         | 内部 class や helper 関数に依存しないこと             |
+| no custom event assumption | コンポーネント固有イベントに依存しないこと                  |
+| reduced motion             | motion 縮退が成立すること                                   |
+| forced colors              | 強制カラーで識別性が維持されること                          |
+| dark theme tokens          | トークン差し替えで暗色環境に適応できること                  |
+| structural privacy         | 内部 class や helper 関数に依存しないこと                   |
 
 ---
 
@@ -563,4 +563,3 @@ Storybook または同等の検証では、少なくとも次を確認しなけ�
 現行 Storybook は `compact` 表示の検証のために private state `_isCompact` を型アサーション経由で直接変更しています。本書はこれを公開契約とみなしません。これは検証上の便宜であり、利用側が依存してよい拡張点ではありません。
 
 以上の差分は、実装が誤っているという意味ではありません。責務を分離し、公開契約の境界を明確にするための再構成です。
-

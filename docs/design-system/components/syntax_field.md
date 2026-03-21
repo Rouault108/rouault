@@ -57,19 +57,19 @@ Rouault における syntax field は、仕様情報を静かに読ませるた�
 
 ### 入力契約
 
-| 名前             | 種別                               | 必須  | 内容      | 契約                                                                    |
-| -------------- | -------------------------------- | --- | ------- | --------------------------------------------------------------------- |
-| `name`         | property / attribute             | はい  | フィールド名  | trim 後の文字列を表示します。空文字は非推奨ではなく契約違反です                                    |
-| `fieldType`    | property / attribute (`type`)    | いいえ | 型定義     | 空文字・空白のみは未指定として扱います                                                   |
-| `required`     | property / attribute             | いいえ | 省略不可フラグ | `true` の場合のみ `.field-required[aria-label="必須"]` を描画します。意味は「仕様上省略不可」です |
-| `defaultValue` | property / attribute (`default`) | いいえ | 省略時既定値  | 空文字・空白のみは未指定として扱います。trim 後に空でない場合、field 省略時に採用される仕様上の既定値を表します         |
+| 名前           | 種別                             | 必須   | 内容           | 契約                                                                                                            |
+| -------------- | -------------------------------- | ------ | -------------- | --------------------------------------------------------------------------------------------------------------- |
+| `name`         | property / attribute             | はい   | フィールド名   | trim 後の文字列を表示します。空文字は非推奨ではなく契約違反です                                                 |
+| `fieldType`    | property / attribute (`type`)    | いいえ | 型定義         | 空文字・空白のみは未指定として扱います                                                                          |
+| `required`     | property / attribute             | いいえ | 省略不可フラグ | `true` の場合のみ `.field-required[aria-label="必須"]` を描画します。意味は「仕様上省略不可」です               |
+| `defaultValue` | property / attribute (`default`) | いいえ | 省略時既定値   | 空文字・空白のみは未指定として扱います。trim 後に空でない場合、field 省略時に採用される仕様上の既定値を表します |
 
 `required=true` と trim 後に空でない `defaultValue` は契約違反です。実装が描画を継続しても、公開契約上の正規入力とはみなしません。
 
 ### 子ノード契約
 
-| 名前     | 種別                 | 位置づけ | 内容                                    |
-| ------ | ------------------ | ---- | ------------------------------------- |
+| 名前         | 種別               | 位置づけ | 内容                                               |
+| ------------ | ------------------ | -------- | -------------------------------------------------- |
 | 既定子ノード | Light DOM children | 正規入力 | 説明文として `dd.field-description` に反映されます |
 
 説明文は slot ではなく、ホスト要素の既定子ノードをそのまま受け取ります。テキストノード、インライン要素、強調要素などのマークアップは保持されます。
@@ -98,12 +98,12 @@ Rouault における syntax field は、仕様情報を静かに読ませるた�
 
 公開入力のうち、`name`、`fieldType`、`required`、`defaultValue` は property と attribute の両面から操作できます。`fieldType` の HTML 属性名は `type`、`defaultValue` の HTML 属性名は `default` です。
 
-| property       | attribute  | reflect | 備考                        |
-| -------------- | ---------- | ------- | ------------------------- |
-| `name`         | `name`     | なし      | trim 後の文字列を表示します          |
-| `fieldType`    | `type`     | なし      | 空白のみは未指定として扱います           |
-| `required`     | `required` | なし      | boolean attribute として扱います |
-| `defaultValue` | `default`  | なし      | 空白のみは未指定として扱います           |
+| property       | attribute  | reflect | 備考                             |
+| -------------- | ---------- | ------- | -------------------------------- |
+| `name`         | `name`     | なし    | trim 後の文字列を表示します      |
+| `fieldType`    | `type`     | なし    | 空白のみは未指定として扱います   |
+| `required`     | `required` | なし    | boolean attribute として扱います |
+| `defaultValue` | `default`  | なし    | 空白のみは未指定として扱います   |
 
 本コンポーネントは property の attribute 反映を契約に含みません。利用者は reflect 挙動に依存してはなりません（MUST NOT）。
 
@@ -123,11 +123,11 @@ Rouault における syntax field は、仕様情報を静かに読ませるた�
 
 `ui-syntax-field` は Light DOM で動作し、`shadowRoot` を持ちません。ホスト直下に `.field-wrapper` を描画し、その直下に `dt.field-term` と `dd.field-description` の 2 要素を持ちます。
 
-| 要素                     | 役割       | 契約                                             |
-| ---------------------- | -------- | ---------------------------------------------- |
-| `.field-wrapper`       | 項目の外枠    | 直接の子として `dt` と `dd` のみを持ちます                    |
+| 要素                   | 役割             | 契約                                                         |
+| ---------------------- | ---------------- | ------------------------------------------------------------ |
+| `.field-wrapper`       | 項目の外枠       | 直接の子として `dt` と `dd` のみを持ちます                   |
 | `dt.field-term`        | 項目名と補助情報 | `name`、`required`、`type`、`default` を順序付きで表示します |
-| `dd.field-description` | 説明文      | 説明文表示面として機能します                                 |
+| `dd.field-description` | 説明文           | 説明文表示面として機能します                                 |
 
 ### 要素順序契約
 
@@ -272,19 +272,19 @@ host である `ui-syntax-field` 自体は `display: contents` として振る�
 
 本コンポーネントは、主として次のトークンに依存します。
 
-| 用途        | トークン                          |
-| --------- | ----------------------------- |
-| 既定文字色     | `--fg-default`                |
-| 控えめ文字色    | `--fg-muted`                  |
-| 警告色       | `--fg-warning`                |
-| ホバー背景     | `--bg-hover`                  |
-| 既定境界線     | `--border-default`            |
-| 角丸        | `--radius-sm` / `--radius-md` |
-| 余白        | `--space-*`                   |
-| 等幅フォント    | `--font-mono`                 |
+| 用途               | トークン                      |
+| ------------------ | ----------------------------- |
+| 既定文字色         | `--fg-default`                |
+| 控えめ文字色       | `--fg-muted`                  |
+| 警告色             | `--fg-warning`                |
+| ホバー背景         | `--bg-hover`                  |
+| 既定境界線         | `--border-default`            |
+| 角丸               | `--radius-sm` / `--radius-md` |
+| 余白               | `--space-*`                   |
+| 等幅フォント       | `--font-mono`                 |
 | サンセリフフォント | `--font-sans`                 |
-| 遷移時間      | `--duration-fast`             |
-| イージング     | `--ease-out`                  |
+| 遷移時間           | `--duration-fast`             |
+| イージング         | `--ease-out`                  |
 
 ---
 
@@ -406,16 +406,16 @@ host である `ui-syntax-field` 自体は `display: contents` として振る�
 
 各 Story は見本ではなく、**契約確認点** として扱います。将来変更時には、次の契約を維持します。
 
-| Story                               | 固定する契約                                                                 |
-| ----------------------------------- | ---------------------------------------------------------------------- |
+| Story                               | 固定する契約                                                                                                  |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | `RequiredWithTypeAndDefault`        | 現行実装が `required`、`type`、`default` の併用を描画できることを示すが、**公開契約上は非正規入力であること** |
-| `OptionalMinimalField`              | 任意最小構成で余計なメタ情報を描画しないこと                                                 |
-| `WhitespaceBoundary`                | 空白のみの `type` / `default` は非表示となり、trim 済み `name` を表示すること                |
-| `MixedVariantsInDescriptionList`    | 複数 field を `<dl>` 内で並べても各項目が独立した `dt` / `dd` ペアを持つこと                   |
-| `LightDomAndStyleInjectionContract` | Light DOM で動作し、document style が重複注入されないこと                              |
-| `ResponsiveAndMediaContracts`       | 768px 境界、hover、reduced-motion、forced-colors、print の各契約が CSS に含まれること    |
-| `DarkModeTokenContract`             | 色指定がセマンティックトークン参照に依存していること                                             |
-| `DynamicDescriptionUpdate`          | 初回描画後に追加された説明ノードが `dd` に追従すること                                         |
+| `OptionalMinimalField`              | 任意最小構成で余計なメタ情報を描画しないこと                                                                  |
+| `WhitespaceBoundary`                | 空白のみの `type` / `default` は非表示となり、trim 済み `name` を表示すること                                 |
+| `MixedVariantsInDescriptionList`    | 複数 field を `<dl>` 内で並べても各項目が独立した `dt` / `dd` ペアを持つこと                                  |
+| `LightDomAndStyleInjectionContract` | Light DOM で動作し、document style が重複注入されないこと                                                     |
+| `ResponsiveAndMediaContracts`       | 768px 境界、hover、reduced-motion、forced-colors、print の各契約が CSS に含まれること                         |
+| `DarkModeTokenContract`             | 色指定がセマンティックトークン参照に依存していること                                                          |
+| `DynamicDescriptionUpdate`          | 初回描画後に追加された説明ノードが `dd` に追従すること                                                        |
 
 ---
 
@@ -691,4 +691,3 @@ field 単体にコピー機能を持たせる価値は低いです。コピー�
 ### 13. 本節の扱い
 
 本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用または厳密化する場合は、実装、Storybook、契約書の 3 点を同時に更新し、未対応状態を残したまま公開契約へ昇格させません。
-
