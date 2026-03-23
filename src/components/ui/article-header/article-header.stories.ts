@@ -421,7 +421,7 @@ export const TagEventContract: Story = {
       throw new Error('tag-click がキャンセル可能であることを期待していました');
 
     const expectedTag = '設計と実装';
-    const expectedHref = `/tags/${encodeURIComponent(expectedTag)}`;
+    const expectedHref = `/tags/${encodeURIComponent(expectedTag)}/`;
     if (event.detail.tag !== expectedTag) {
       throw new Error(
         `detail.tag に "${expectedTag}" を期待していましたが、実際には "${event.detail.tag}" でした`,

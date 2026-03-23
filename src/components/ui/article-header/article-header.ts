@@ -331,7 +331,7 @@ export class ArticleHeader extends LitElement {
   }
 
   private _buildTagHref(tag: string): string {
-    return `/tags/${encodeURIComponent(tag)}`;
+    return `/tags/${encodeURIComponent(tag)}/`;
   }
 
   private _handleTagClick = (event: MouseEvent, tag: string): void => {
