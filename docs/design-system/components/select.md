@@ -21,15 +21,18 @@ Rouault における select は、フォーム入力要素であると同時に�
 - `ui-select` は **単一選択専用** です。複数選択は対象外です。
 - `ui-select` は **自由入力不可** です。検索入力や候補フィルタリングは責務に含めません。
 - Trigger は **button**、popup は **listbox** とします。
-- 選択値は `` とし、`null` を未選択の唯一の表現とします。
+- 選択値は `string | null` とし、`null` を未選択の唯一の表現とします。
 - option の `value` は **一意な非空文字列** とします。
-- `options` と整合しない値は保持せず、``** に正規化** します。
+- `options` と整合しない値は保持せず、`null` に正規化します。
+- `defaultValue` を正式公開入力として持ち、reset 復元先を明示します。
+- `hideLabel` を正式公開入力として持ち、視覚非表示とアクセシブル名を両立させます。
+- `emptyStateText` を正式公開入力として持ち、候補不在時の説明責務を明示します。
 - 開閉状態は **内部管理** とし、外部からの完全制御対象にはしません。
 - `readonly` は採用しません。非変更表示が必要な場合は別コンポーネントで扱います。
 - フォーム送信では、**未選択時は送信値を持ちません**。
-- エラー状態は `error` と `errorMessage` の組で表し、許可する組み合わせを固定します。
+- エラー状態は `error` と `errorMessage` の組で表し、説明を伴わない視覚エラー状態は正式契約に含めません。
 
-これにより、値モデル、状態遷移、ARIA、フォーム意味論の基準を単純化します。
+これにより、値モデル、状態遷移、ARIA、フォーム意味論、候補不在時の説明責務の基準を単純化します。
 
 ### 適用範囲
 
@@ -52,6 +55,10 @@ Rouault における select は、フォーム入力要素であると同時に�
 - 仮想スクロール
 - 複数選択
 - オプショングループ
+- `option.description` のような二次説明付き option
+- `clearable` のような選択解除 affordance 内蔵
+- `options` 更新理由を `cause` まで含めて公開する詳細監査イベント
+- popup 配置ポリシーの個別公開入力
 - 自由記述入力
 - サーバーサイド検索
 - モバイル OS ネイティブ picker への委譲
@@ -65,19 +72,22 @@ Rouault における select は、フォーム入力要素であると同時に�
 
 ### 正式な公開入力
 
-| 名前           | 種別                                   | 必須   | 型                        | 既定値     | 内容                 |
-| -------------- | -------------------------------------- | ------ | ------------------------- | ---------- | -------------------- |
-| `label`        | property / attribute                   | はい   | `string`                  | なし       | 入力ラベル           |
-| `name`         | property / attribute                   | いいえ | `string`                  | なし       | フォーム送信名       |
-| `value`        | property / attribute                   | いいえ | `string \| null`          | `null`     | 選択値               |
-| `placeholder`  | property / attribute                   | いいえ | `string`                  | `''`       | 未選択時表示         |
-| `helpText`     | property / attribute (`help-text`)     | いいえ | `string`                  | `''`       | 非エラー時の補助説明 |
-| `error`        | property / attribute                   | いいえ | `boolean`                 | `false`    | エラー状態           |
-| `errorMessage` | property / attribute (`error-message`) | いいえ | `string`                  | `''`       | エラー説明           |
-| `disabled`     | property / attribute                   | いいえ | `boolean`                 | `false`    | 操作無効化           |
-| `required`     | property / attribute                   | いいえ | `boolean`                 | `false`    | 選択必須             |
-| `variant`      | property / attribute                   | いいえ | `'filled' \| 'outline'`   | `'filled'` | 外観バリアント       |
-| `options`      | property                               | はい   | `readonly SelectOption[]` | なし       | 選択肢配列           |
+| 名前             | 種別                                   | 必須   | 型                        | 既定値     | 内容                             |
+| ---------------- | -------------------------------------- | ------ | ------------------------- | ---------- | -------------------------------- |
+| `label`          | property / attribute                   | はい   | `string`                  | なし       | 入力ラベル                       |
+| `hideLabel`      | property / attribute (`hide-label`)    | いいえ | `boolean`                 | `false`    | label を視覚非表示にする         |
+| `name`           | property / attribute                   | いいえ | `string`                  | なし       | フォーム送信名                   |
+| `value`          | property / attribute                   | いいえ | `string \| null`          | `null`     | 現在の選択値                     |
+| `defaultValue`   | property / attribute (`default-value`) | いいえ | `string \| null`          | `null`     | reset 復元先となる初期値         |
+| `placeholder`    | property / attribute                   | いいえ | `string`                  | `''`       | 未選択時表示                     |
+| `emptyStateText` | property / attribute (`empty-state-text`) | いいえ | `string`               | `''`       | 候補不在時の短い説明             |
+| `helpText`       | property / attribute (`help-text`)     | いいえ | `string`                  | `''`       | 非エラー時の補助説明             |
+| `error`          | property / attribute                   | いいえ | `boolean`                 | `false`    | エラー状態                       |
+| `errorMessage`   | property / attribute (`error-message`) | いいえ | `string`                  | `''`       | エラー説明                       |
+| `disabled`       | property / attribute                   | いいえ | `boolean`                 | `false`    | 操作無効化                       |
+| `required`       | property / attribute                   | いいえ | `boolean`                 | `false`    | 選択必須                         |
+| `variant`        | property / attribute                   | いいえ | `'filled' \| 'outline'`   | `'filled'` | 外観バリアント                   |
+| `options`        | property                               | はい   | `readonly SelectOption[]` | なし       | 選択肢配列                       |
 
 ### `SelectOption` 契約
 
@@ -89,19 +99,20 @@ Rouault における select は、フォーム入力要素であると同時に�
 
 ### 値モデル契約
 
-`value` は `** または **`** のいずれか** でなければなりません。
+`value` は `string` または `null` のいずれかでなければなりません。
 
 - `null` は未選択を表す唯一の値です。
 - `''` は未選択値として使いません。
 - `options` に存在しない値は無効です。
 - `options` 更新によって現在値が無効化された場合、値は `null` に正規化されます。
 - 数値やオブジェクトを `value` に使ってはなりません。
+- `defaultValue` も `value` と同じ値型契約に従います。
 
-この契約により、未選択値、フォーム送信値、表示状態を一貫させます。
+この契約により、未選択値、フォーム送信値、表示状態、reset 復元先を一貫させます。
 
 ### エラー表現契約
 
-`error` と `errorMessage` の許可組み合わせは次のとおりです。
+`ui-select` における視覚的エラー状態は、**利用者へ読める説明が存在すること** を前提とします。したがって、`error` と `errorMessage` の許可組み合わせは次のとおりです。
 
 | `error` | `errorMessage` | 契約             |
 | ------- | -------------- | ---------------- |
@@ -110,15 +121,20 @@ Rouault における select は、フォーム入力要素であると同時に�
 | `true`  | 非空           | 正常なエラー状態 |
 | `true`  | 空             | 契約違反         |
 
-`helpText` は `error=false` の場合にのみ表示します。`helpText` と `errorMessage` は同時表示しません。
+- `helpText` は `error=false` の場合にのみ表示します。
+- `helpText` と `errorMessage` は同時表示しません。
+- `error=true` かつ `errorMessage=''` を正式契約に含めない理由は、赤枠だけの状態を許すと、エラー説明責務がコンポーネントと上位フォームのどちらにあるかが不明瞭になるためです。
+- 上位フォームが別位置に要約エラーを表示する場合でも、`ui-select` 自身をエラー状態として描画するなら、当該コンポーネントに対応する説明文を同時に与えなければなりません。
 
 ### 開閉状態契約
 
 開閉状態は内部管理です。利用者は開閉状態を **監視** できますが、**所有** はしません。
 
-- `opened` は読み取り専用の公開状態です。
+- `opened` は内部状態を reflect する読み取り専用の公開状態です。
 - `opened` を外部入力として制御してはなりません。
-- 外部から開閉を指示する場合は公開メソッドを使います。
+- 外部から開閉を指示する場合は `open()`、`close()`、`toggle()` を使います。
+- 外部から `opened` property または attribute を直接変更しても、それを命令とはみなしません。
+- 外部変更により `opened` 表示と内部状態が不一致になった場合、コンポーネントは内部状態を正として `opened` を再同期します。
 - popup の生成・破棄、focus 遷移、outside interaction の処理はコンポーネント内部責務です。
 
 ### 非採用の公開入力
@@ -138,10 +154,10 @@ Rouault における select は、フォーム入力要素であると同時に�
 
 ### 正式イベント
 
-| 名前           | 型            | detail                                                                                                                                       | 発火条件               | 契約                               |
-| -------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ---------------------------------- |
-| `value-change` | `CustomEvent` | `{ value: string \| null, previousValue: string \| null, reason: 'selection' \| 'options-change' \| 'reset' \| 'programmatic' }`             | 値が変化したとき       | `bubbles: true` / `composed: true` |
-| `open-change`  | `CustomEvent` | `{ opened: boolean, reason: 'trigger' \| 'keyboard' \| 'selection' \| 'escape' \| 'outside-pointer' \| 'outside-scroll' \| 'programmatic' }` | 開閉状態が変化したとき | `bubbles: true` / `composed: true` |
+| 名前           | 型            | detail                                                                                                                                                 | 発火条件               | 契約                               |
+| -------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------- | ---------------------------------- |
+| `value-change` | `CustomEvent` | `{ value: string \| null, previousValue: string \| null, reason: 'selection' \| 'options-change' \| 'reset' \| 'programmatic' }`                   | 値が変化したとき       | `bubbles: true` / `composed: true` |
+| `open-change`  | `CustomEvent` | `{ opened: boolean, reason: 'trigger' \| 'keyboard' \| 'selection' \| 'escape' \| 'outside-pointer' \| 'outside-scroll' \| 'programmatic' }`       | 開閉状態が変化したとき | `bubbles: true` / `composed: true` |
 
 ### イベント契約
 
@@ -175,20 +191,23 @@ Rouault における select は、フォーム入力要素であると同時に�
 
 ## 属性反映契約
 
-| property       | attribute       | reflect | 備考                                     |
-| -------------- | --------------- | ------- | ---------------------------------------- |
-| `label`        | `label`         | あり    | 必須                                     |
-| `name`         | `name`          | あり    | フォーム送信名                           |
-| `value`        | `value`         | あり    | `null` は attribute 未設定として扱います |
-| `placeholder`  | `placeholder`   | あり    | 未選択時のみ表示                         |
-| `helpText`     | `help-text`     | あり    | 非エラー時のみ表示                       |
-| `error`        | `error`         | あり    | boolean attribute                        |
-| `errorMessage` | `error-message` | あり    | `error=true` のときのみ意味を持ちます    |
-| `disabled`     | `disabled`      | あり    | boolean attribute                        |
-| `required`     | `required`      | あり    | boolean attribute                        |
-| `variant`      | `variant`       | あり    | `filled` / `outline`                     |
-| `options`      | なし            | なし    | property 専用                            |
-| `opened`       | `opened`        | あり    | 読み取り専用状態                         |
+| property         | attribute          | reflect | 備考                                               |
+| ---------------- | ------------------ | ------- | -------------------------------------------------- |
+| `label`          | `label`            | あり    | 必須                                               |
+| `hideLabel`      | `hide-label`       | あり    | boolean attribute                                  |
+| `name`           | `name`             | あり    | フォーム送信名                                     |
+| `value`          | `value`            | あり    | `null` は attribute 未設定として扱います           |
+| `defaultValue`   | `default-value`    | あり    | `null` は attribute 未設定として扱います           |
+| `placeholder`    | `placeholder`      | あり    | 未選択時のみ表示                                   |
+| `emptyStateText` | `empty-state-text` | あり    | 候補不在時のみ意味を持ちます                       |
+| `helpText`       | `help-text`        | あり    | 非エラー時のみ表示                                 |
+| `error`          | `error`            | あり    | boolean attribute                                  |
+| `errorMessage`   | `error-message`    | あり    | `error=true` のときのみ意味を持ちます              |
+| `disabled`       | `disabled`         | あり    | boolean attribute                                  |
+| `required`       | `required`         | あり    | boolean attribute                                  |
+| `variant`        | `variant`          | あり    | `filled` / `outline`                               |
+| `options`        | なし               | なし    | property 専用                                      |
+| `opened`         | `opened`           | あり    | 内部状態の reflect 専用。外部からの書き換えは命令ではありません |
 
 ---
 
@@ -196,7 +215,7 @@ Rouault における select は、フォーム入力要素であると同時に�
 
 ### 基本状態
 
-最小状態は、`label` と `options` を持ち、`value=null`、`opened=false`、`disabled=false`、`required=false`、`error=false`、`variant='filled'` の状態です。
+最小状態は、`label` と `options` を持ち、`value=null`、`defaultValue=null`、`opened=false`、`disabled=false`、`required=false`、`error=false`、`variant='filled'` の状態です。
 
 ### 選択状態
 
@@ -221,7 +240,10 @@ Rouault における select は、フォーム入力要素であると同時に�
 
 開いている間、listbox は active option を 1 件だけ持ちます。
 
+- DOM focus は listbox 自身にあります。
 - active option は DOM focus の代替ではなく、listbox 内部の選択移動状態です。
+- listbox は `aria-activedescendant` により active option の id を指します。
+- option 要素は open 中に個別の DOM focus を受けません。
 - disabled option は active option 候補から除外します。
 - Arrow キー移動は循環します。
 
@@ -284,8 +306,14 @@ Rouault における select は、フォーム入力要素であると同時に�
     [div.error-message]
 
   <overlay-root>
-    <div id="listbox-id" role="listbox" tabindex="-1" aria-labelledby="label-id">
-      <div role="option" aria-selected="…">…</div>
+    <div
+      id="listbox-id"
+      role="listbox"
+      tabindex="-1"
+      aria-labelledby="label-id"
+      aria-activedescendant="option-id"
+    >
+      <div id="option-id" role="option" aria-selected="…">…</div>
       …
     </div>
   </overlay-root>
@@ -298,12 +326,17 @@ Rouault における select は、フォーム入力要素であると同時に�
 - popup は `role="listbox"` です。
 - option は `role="option"` を持ちます。
 - Trigger のアクセシブル名は **label 要素** から決定します。
+- `hideLabel=true` の場合でも label 要素はアクセシブル名の source として保持しなければなりません。
+- `hideLabel=true` は label の削除を意味しません。視覚非表示のみを意味します。
 - `aria-label` をアクセシブル名の主経路として使いません。
 - open 中は Trigger が `aria-expanded="true"` を持ちます。
-- open 時、listbox に focus を移します。
+- open 時、DOM focus は listbox に移します。
 - close 時、Trigger に focus を戻します。
+- open 中、listbox は `aria-activedescendant` により active option を指します。
+- open 中、option 要素へ roving tabindex は与えません。
 - `error=true` の場合、Trigger は `aria-invalid="true"` を持ちます。
-- `helpText` と `errorMessage` は `aria-describedby` の参照先を排他的に切り替えます。
+- `helpText`、`errorMessage`、`emptyStateText` は同時に主説明として競合してはなりません。
+- 通常時は `helpText` を、エラー時は `errorMessage` を、候補不在時は `emptyStateText` を `aria-describedby` の参照先として使います。
 - `errorMessage` 要素は `role="status"` と `aria-live="polite"` を持ちます。
 - disabled option は `aria-disabled="true"` を持ちます。
 
@@ -355,9 +388,12 @@ Type-ahead は **候補ジャンプ補助** であり、検索入力ではあり
 
 ### Reset 契約
 
-- form reset 時、`value` は初期値へ戻ります。
-- 初期値が `options` と整合しない場合は `null` に正規化します。
-- reset に伴う値変化は `value-change` を発火します。
+- 初期値は `defaultValue` とします。
+- `defaultValue` 未指定時の初期値は `null` です。
+- 初回接続時、`value` が未指定で `defaultValue` が指定されている場合、現在値は `defaultValue` で初期化します。
+- `defaultValue` が `options` と整合しない場合、初期値および復元値は `null` に正規化します。
+- `reset()` および form reset は `defaultValue` を復元先とします。
+- reset に伴って値が実際に変化した場合のみ、`value-change` を `reason: 'reset'` で発火します。
 
 ---
 
@@ -368,8 +404,11 @@ Type-ahead は **候補ジャンプ補助** であり、検索入力ではあり
 Popup listbox は overlay layer に描画されます。overlay layer は設計上の概念であり、具体的な Portal 先は実装詳細です。ただし、次を契約として固定します。
 
 - popup は host の overflow 制約から独立して表示できます。
-- popup は Trigger と同一の `dir`、主要トークン、テーマ文脈を継承します。
+- popup の表示方向は、open 時点の Trigger の解決済み `dir` と一致しなければなりません。
+- popup の配色・境界・面・状態表示に必要な CSS Custom Properties は、Trigger と同等の計算結果を得られなければなりません。
+- Portal 境界によりテーマ文脈が自然継承できない実装では、overlay root へ必要なトークンを明示的に複写しなければなりません。
 - popup の z-index は design system の overlay 階層で管理します。
+- `dir`、トークン、テーマ文脈の継承保証が成立しない場合、Portal 先固定の都合を優先してはなりません。視覚的一貫性の維持を優先します。
 
 ### 寸法契約
 
@@ -413,10 +452,12 @@ Popup listbox は overlay layer に描画されます。overlay layer は設計�
 
 - `filled` は淡い面を持つ既定入力です。
 - `outline` は境界を主とする軽量入力です。
-- placeholder は選択済み値より弱い文字色です。
-- hover / focus / opened は識別可能でありつつ、過度に強くない差分を持ちます。
-- error は danger 系トークンで示します。
-- disabled は不透明度とカーソルで非活性を示します。
+- placeholder は選択済み値と視覚的に区別されなければなりません。
+- hover、focus、opened は、それぞれ既定状態と識別可能な差分を持たなければなりません。
+- focus 表現は色だけに依存してはなりません。
+- opened 状態は Chevron の回転だけに依存してはなりません。
+- error は danger 系トークンで示し、`errorMessage` と意味的に対応していなければなりません。
+- disabled は操作不能であることを示しつつ、値または placeholder の可読性を不必要に損なってはなりません。
 
 ### Popup 表現
 
@@ -474,11 +515,23 @@ Popup listbox は overlay layer に描画されます。overlay layer は設計�
 
 ### 空の `options`
 
-`options=[]` の場合、popup は開きません。Trigger は inert ではなく、必要に応じて disabled 相当の視覚処理または説明文を持つべきです。
+`options=[]` の場合、popup は開いてはなりません。
+
+- Trigger は focusable のままとします。
+- Trigger は `aria-disabled="true"` を持ち、開閉操作に対しては no-op とします。
+- 値変更は起こりません。
+- `emptyStateText` が非空の場合は、それを候補不在の正式な説明として表示します。
+- `emptyStateText` が空の場合に限り、`helpText` により候補不在を説明できます。
 
 ### 全 option disabled
 
-有効 option が 1 件もない場合、popup は開きません。
+有効 option が 1 件もない場合、popup は開いてはなりません。
+
+- Trigger は focusable のままとします。
+- Trigger は `aria-disabled="true"` を持ち、開閉操作に対しては no-op とします。
+- 値変更は起こりません。
+- `emptyStateText` が非空の場合は、それを「現在は選択できる候補がない」ことの正式な説明として表示します。
+- `emptyStateText` が空の場合に限り、`helpText` により補助説明できます。
 
 ### 単一 option
 
@@ -519,8 +572,8 @@ Trigger と option の表示は一貫した省略規則を持ちます。省略�
 | `Typeahead`          | 前方一致と 1 秒バッファが成立すること                           |
 | `OptionsUpdate`      | `options` 更新時に値正規化と再描画が成立すること                |
 | `ResetIntegration`   | form reset で初期値へ戻ること                                   |
-| `EmptyOptions`       | popup を開かず破綻しないこと                                    |
-| `AllDisabledOptions` | popup を開かず破綻しないこと                                    |
+| `EmptyOptions`       | popup を開かず、`emptyStateText` または補助説明で状態が説明されること |
+| `AllDisabledOptions` | popup を開かず、選択不能状態が説明されること                    |
 | `OpenChangeEvent`    | open / close ごとに `open-change` が発火すること                |
 | `ValueChangeEvent`   | 値変更時のみ `value-change` が発火すること                      |
 | `DarkMode`           | 暗背景上で視覚破綻しないこと                                    |
@@ -529,179 +582,19 @@ Trigger と option の表示は一貫した省略規則を持ちます。省略�
 
 ---
 
-## 追加を検討する価値が高い機能
-
-本節は、長期契約を前提としたうえで、`ui-select` に **新規で追加を検討する価値がある機能** を整理するものです。ここでいう「価値が高い」とは、見た目の装飾を増やすことではなく、**状態モデル、フォーム意味論、利用者の操作復元性をより明確にすること** を指します。
-
-### 最優先で検討する価値がある機能
-
-#### 1. `defaultValue`
-
-`defaultValue` は、初期値と現在値を分離して扱うための公開入力です。
-
-| 名前           | 種別                 | 型               | 目的                                |
-| -------------- | -------------------- | ---------------- | ----------------------------------- |
-| `defaultValue` | property / attribute | `string \| null` | form reset 時に戻る初期値を明示する |
-
-追加価値は次のとおりです。
-
-- form reset の復元先を明示できます。
-- 初回描画時の初期値と、その後の programmatic update を区別できます。
-- Storybook とテストで reset 契約を安定して検証できます。
-
-採用する場合は、次を契約として固定します。
-
-- `defaultValue` が `options` と整合しない場合は `null` に正規化します。
-- `reset()` および form reset は `defaultValue` を復元先とします。
-- `value` 未指定かつ `defaultValue` 指定時は、初期表示に `defaultValue` を用います。
-
-#### 2. `clearable`
-
-`clearable` は、選択済み状態から未選択状態へ明示的に戻すための機能です。
-
-| 名前        | 種別                 | 型        | 目的                                   |
-| ----------- | -------------------- | --------- | -------------------------------------- |
-| `clearable` | property / attribute | `boolean` | `value` を `null` に戻す UI を提供する |
-
-追加価値は次のとおりです。
-
-- `required=false` の select において、未選択へ戻る操作を UI として保証できます。
-- キーボード・ポインター双方で「戻す」操作を明示できます。
-- 状態遷移を `null` まで含めて完結できます。
-
-採用する場合は、次を契約として固定します。
-
-- `required=true` の場合、clear は許可しません。
-- clear 実行時、`value` は `null` になります。
-- clear は `value-change` を `reason: 'clear'` で発火します。
-- clear 後の focus は Trigger に戻します。
-
-#### 3. 空状態表示
-
-空状態表示は、`options=[]` または有効 option 不在時に、利用者へ状態を説明するための機能です。
-
-優先度の高い公開面は次のいずれかです。
-
-| 名前             | 種別                 | 型       | 目的                             |
-| ---------------- | -------------------- | -------- | -------------------------------- |
-| `emptyStateText` | property / attribute | `string` | 候補が存在しないことを短文で示す |
-| `empty-state`    | slot                 | slot     | 空状態の説明 UI を差し替える     |
-
-長期保守性の観点では、まず `` を優先します。slot は表現自由度が高い反面、責務が増えやすいためです。
-
-採用する場合は、次を契約として固定します。
-
-- `options=[]` または有効 option 不在時にのみ意味を持ちます。
-- popup を開かない方針を維持する場合、Trigger 近傍の補助説明として出します。
-- popup を開く方針へ将来変更する場合でも、empty state は選択不能であることを明示しなければなりません。
-
-#### 4. `options` 更新理由を含む再整合イベント
-
-`options` 更新による値正規化は、利用者から見ると「勝手に値が消えた」ように見えることがあります。これを防ぐため、`value-change` の detail を拡張し、値変化の理由をより透明化する機能には高い価値があります。
-
-推奨する detail 例は次のとおりです。
-
-```ts
-{
-  value: string | null;
-  previousValue: string | null;
-  reason: 'selection' | 'options-change' | 'reset' | 'programmatic' | 'clear';
-  cause?: 'removed' | 'disabled' | 'replaced';
-}
-```
-
-追加価値は次のとおりです。
-
-- `options` 更新に伴う値喪失の理由を観測できます。
-- ログ、監査、デバッグが容易になります。
-- 「削除された」「無効化された」「置換された」を区別できます。
-
-### 条件付きで検討する価値がある機能
-
-#### 5. `hideLabel`
-
-`hideLabel` は、視覚的にはラベルを隠しつつ、アクセシブル名の source としての label を保持するための入力です。
-
-| 名前        | 種別                                | 型        | 目的                     |
-| ----------- | ----------------------------------- | --------- | ------------------------ |
-| `hideLabel` | property / attribute (`hide-label`) | `boolean` | label を視覚非表示にする |
-
-これは新機能というより、**長期契約としての正式復帰候補** です。Accessibility 契約の一部として扱う価値があります。
-
-#### 6. `option.description`
-
-説明付き option は、意味の近い候補が並ぶ場面で有用です。
-
-```ts
-type SelectOption = {
-  value: string;
-  label: string;
-  description?: string;
-  disabled?: boolean;
-};
-```
-
-ただし、本文読書を妨げない静かな UI という方針上、常用機能としてはやや強すぎることがあります。そのため、**設定画面や説明負荷の高い選択肢群に限って検討** するのが妥当です。
-
-#### 7. `optionGroup`
-
-候補数が増える場合、グルーピングは認知負荷を下げます。ただし、ARIA、描画、キーボード操作が複雑になるため、基底 `Select` に入れるなら用途が十分にある場合に限ります。
-
-#### 8. Popup 配置ポリシー
-
-例として、次のような公開面です。
-
-- `placement`
-- `matchTriggerWidth`
-- `strategy`
-
-ただし、これは `Select` 個別機能というより overlay 基盤の責務です。採用する場合は、`Select` に個別 prop を増やすより、**overlay policy を上位で共通化** する方が設計としてきれいです。
-
-### 別コンポーネントへ分離すべき機能
-
-次の機能は価値自体はありますが、基底 `Select` に載せると責務が変質するため、別コンポーネントへ分離した方がよいです。
-
-- searchable select / combobox
-- 非同期候補取得と loading state
-- 複数選択
-
-### 見送るべき機能
-
-長期契約の一貫性を守るため、次の機能は基底 `Select` へ戻さない方がよいです。
-
-- `readonly` の再導入
-- `string | number` への `value` 型の再拡張
-- option 全体を自由に差し替えられる無制限テンプレート拡張
-
-### 推奨順位
-
-| 優先度   | 項目                 | 目的                       |
-| -------- | -------------------- | -------------------------- |
-| 最優先   | `defaultValue`       | 初期値と reset 契約の固定  |
-| 最優先   | `clearable`          | 未選択へ戻る操作の明示     |
-| 最優先   | 空状態表示           | 候補不在の説明責務を明文化 |
-| 最優先   | 再整合イベント拡張   | `options` 更新理由の透明化 |
-| 条件付き | `hideLabel`          | Accessibility 契約の正式化 |
-| 条件付き | `option.description` | 説明負荷の高い候補の補助   |
-| 条件付き | `optionGroup`        | 候補群の認知整理           |
-| 条件付き | popup 配置ポリシー   | overlay 制御の共通化       |
-
-本コンポーネントに今後追加するべきなのは、派手な機能ではなく、**未選択へ戻す、空状態を説明する、初期値を固定する、候補更新の意味を透明化する** といった、状態機械を完成させる機能です。
-
----
-
 ## 要約
 
-本書の要点は次の 6 点です。
+本書の要点は次の 7 点です。
 
 1. `ui-select` は **自由入力ではなく選択専用** です。
-2. 値は `` に限定します。
-3. 未選択は ``** のみ** で表します。
+2. 値は `string | null` に限定します。
+3. 未選択は `null` のみで表します。
 4. `options` と不整合な値は保持しません。
-5. 開閉状態は **内部管理** です。
-6. Trigger は **button**、popup は **listbox** です。
+5. `defaultValue` を初期値および reset 復元先として固定します。
+6. 開閉状態は **内部管理** です。
+7. Trigger は **button**、popup は **listbox** です。
 
-この 6 点を守ることで、状態・フォーム・ARIA・視覚契約のねじれを防ぎます。
+この 7 点を守ることで、状態・フォーム・ARIA・視覚契約のねじれを防ぎます。
 
 ---
 
@@ -763,7 +656,7 @@ Focus 系イベントの再生成は順序と意味論を複雑化しやすい�
 
 #### 2. 値型の `string | null` への単純化
 
-現行実装は `string | number` を受け入れ、未選択を空文字で表します。本書が採用する `** と **`** による未選択表現** には未対応です。
+現行実装は `string | number` を受け入れ、未選択を空文字で表します。本書が採用する **`string | null` と `null` による未選択表現** には未対応です。
 
 #### 3. `options` 不整合値の `null` 正規化
 
@@ -783,7 +676,7 @@ Focus 系イベントの再生成は順序と意味論を複雑化しやすい�
 
 #### 7. `opened` の内部管理化
 
-現行実装は `opened` を外部入力として公開し、外部から直接書き換えられます。本書が採用する **内部管理 state と **`** / **`** / **``** 命令面** には未対応です。
+現行実装は `opened` を外部入力として公開し、外部から直接書き換えられます。本書が採用する **内部管理 state と `open()` / `close()` / `toggle()` 命令面** には未対応です。
 
 #### 8. 公開メソッド `open()` / `close()` / `toggle()` / `reset()`
 
@@ -795,7 +688,7 @@ Focus 系イベントの再生成は順序と意味論を複雑化しやすい�
 
 #### 10. `checkValidity()` / `reportValidity()` の意味づけ
 
-現行実装は `ElementInternals.checkValidity()` / `reportValidity()` を委譲するだけで、独自制約は設定していません。そのため、本書が想定する **現在値と **``** に基づく妥当性モデル** には未対応です。
+現行実装は `ElementInternals.checkValidity()` / `reportValidity()` を委譲するだけで、独自制約は設定していません。そのため、本書が想定する **現在値と `required` に基づく妥当性モデル** には未対応です。
 
 #### 11. Form reset 契約
 
@@ -807,7 +700,7 @@ Focus 系イベントの再生成は順序と意味論を複雑化しやすい�
 
 #### 13. 未選択時の FormData 不参加
 
-現行実装は未選択でも `setFormValue(String(this.modelValue))` を呼ぶため、空文字が送信対象になります。本書が採用する **未選択時 **``** 相当** には未対応です。
+現行実装は未選択でも `setFormValue(String(this.modelValue))` を呼ぶため、空文字が送信対象になります。本書が採用する **未選択時 FormData 不参加** には未対応です。
 
 #### 14. `value-change` / `open-change` の追加
 
@@ -843,21 +736,21 @@ Focus 系イベントの再生成は順序と意味論を複雑化しやすい�
 
 #### 22. Overlay 文脈継承の保証
 
-現行実装は `document.body` 直下へ Portal し、`document.head` にグローバル style を注入します。本書が要求する ``**、主要トークン、テーマ文脈の継承保証** には未対応です。
+現行実装は `document.body` 直下へ Portal し、`document.head` にグローバル style を注入します。本書が要求する **`dir`、主要トークン、テーマ文脈の継承保証** には未対応です。
 
 #### 23. Overlay root の所有権抽象化
 
 本書は overlay layer を設計概念として扱いますが、現行実装は `document.body` 固定です。したがって、**Portal 先の抽象化** には未対応です。
 
-### B. 追加検討機能に対して未対応の事項
+### B. 本文へ採用した追加事項に対して未対応の事項
 
-#### 24. `defaultValue`
+#### 24. `hideLabel` の正式契約化
 
-追加候補として最優先に位置付けた `defaultValue` は未実装です。
+`hideLabel` は現行実装でサポート済みですが、本書が要求する **label を削除せず視覚非表示として扱う Accessibility 契約** への明文化と Storybook との整合整理は未完了です。
 
-#### 25. `clearable`
+#### 25. `emptyStateText`
 
-選択済みから未選択へ戻す clear affordance は未実装です。
+候補不在を説明する正式な空状態 API としての `emptyStateText` は未実装です。
 
 #### 26. `emptyStateText` / `empty-state`
 
@@ -883,7 +776,6 @@ Focus 系イベントの再生成は順序と意味論を複雑化しやすい�
 
 次の事項は「未対応」というより、**長期契約へ移行する際に明示的に壊すか残すかを決める必要がある現行仕様** です。移行監査上の注意点として整理します。
 
-- `hideLabel` は現行実装でサポート済みです。長期契約へ正式復帰させるか、限定的互換機能に留めるかを決める必要があります。
 - `change` は現行の正式イベントです。`value-change` へ移行する場合、互換 alias の維持期間を設計する必要があります。
 - `focus` / `blur` の再送出は現行公開面です。削除する場合は移行影響が出ます。
 - `error=true` かつ `errorMessage=''` は Storybook で検証済みの現行境界条件です。禁止へ変える場合は Storybook と実装を同時更新する必要があります。
@@ -897,7 +789,7 @@ Focus 系イベントの再生成は順序と意味論を複雑化しやすい�
 - `open()` / `close()` / `toggle()` / `reset()` などの公開命令面
 - `error=true` かつ message なしの現行許容
 - overlay 文脈継承と Portal 先抽象化
-- `defaultValue` / `clearable` / `emptyStateText` / 詳細な再整合イベント
-- `option.description` / `optionGroup` / popup 配置ポリシー
+- `hideLabel` の正式契約化
+- `emptyStateText` の追加
 
 本節に記載した項目は、契約へ昇格させる場合に **実装・Storybook・契約書を同時に更新** しなければなりません。長期契約だけを先に固定し、現行実装が追随していない状態を放置してはなりません。

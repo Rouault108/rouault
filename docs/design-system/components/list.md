@@ -24,6 +24,8 @@ Rouault における list は、検索結果、ノート一覧、索引、履歴
 - 関連契約
 - 境界条件
 - Storybook 契約
+- current 行の可視範囲復帰
+- loading / pending 状態
 - 現行実装との差分および未対応事項
 
 一方で、本書は次の事項を扱いません。
@@ -33,7 +35,12 @@ Rouault における list は、検索結果、ノート一覧、索引、履歴
 - 実データの取得、検索、絞り込み、並び替え処理そのもの
 - 行クリック後にどの画面へ遷移するかというルーティング設計
 - コンテキストメニューやプレビュー UI の具体実装
-- 上位画面全体の選択モデル、バルクアクション、ツールバー連携
+- typeahead navigation
+- section / group header
+- 上位画面全体の selection model、バルクアクション、ツールバー連携
+- 仮想スクロール
+- 列リサイズ、列並べ替え
+- 多段ソート / 複合ソート UI
 
 これらは `ui-list-item`、上位画面、または別コンポーネントの責務です。
 
@@ -43,7 +50,7 @@ Rouault における list は、検索結果、ノート一覧、索引、履歴
 
 ### slot-driven を正本とします
 
-`ui-list` は data-driven table へ後退しません。**行内容の正本は既定スロットに置かれた **``** 群**であり、`ui-list` 自身は行内容を描画しません。
+`ui-list` は data-driven table へ後退しません。**行内容の正本は既定スロットに置かれた `ui-list-item` 群**であり、`ui-list` 自身は行内容を描画しません。
 
 ### current は列 ID ベースで扱います
 
@@ -67,28 +74,31 @@ Rouault における list は、検索結果、ノート一覧、索引、履歴
 
 ### pagination は表示行数から逆算しません
 
-ページングは一覧の上位状態です。**現在表示行数から **``** を推測する方式には依存しません。** ページ情報は明示入力として扱います。
+ページングは一覧の上位状態です。**現在表示行数から `limit` を推測する方式には依存しません。** ページ情報は明示入力として扱います。
 
 ---
 
 ## 公開契約
 
-`ui-list` は、`columns`、`currentRowId`、`currentColumnId`、`sort`、`pagination`、`getPageHref` を公開入力として扱います。行 DOM は既定スロットに配置される `ui-list-item` 群として受け取ります。
+`ui-list` は、`columns`、`currentRowId`、`currentColumnId`、`sort`、`pagination`、`getPageHref`、`loading`、`loadingLabel`、`autoRevealCurrent` を公開入力として扱います。行 DOM は既定スロットに配置される `ui-list-item` 群として受け取ります。
 
-`ui-list` はヘッダー行、空状態、current 同期、縦方向キーボード移動、ソート要求、ページネーション表示を担当します。各行のセル内容そのものは `ui-list-item` 側の責務です。したがって、``** は data table ではなく、行内容を外部宣言で受ける current-aware list-grid shell** です。
+`ui-list` はヘッダー行、空状態、loading 状態、current 同期、縦方向キーボード移動、ソート要求、ページネーション表示、current 行の可視範囲復帰を担当します。各行のセル内容そのものは `ui-list-item` 側の責務です。したがって、`ui-list` は data table ではなく、行内容を外部宣言で受ける current-aware list-grid shell です。
 
 ### 入力契約
 
-| 名前              | 種別                                       | 必須   | 内容                              | 契約                                      |
-| ----------------- | ------------------------------------------ | ------ | --------------------------------- | ----------------------------------------- |
-| `columns`         | property                                   | はい   | 列定義配列                        | 一覧の論理列を定義します                  |
-| `currentRowId`    | property / attribute (`current-row-id`)    | いいえ | 現在行 ID                         | `null` は current 行なしを表します        |
-| `currentColumnId` | property / attribute (`current-column-id`) | いいえ | 現在列 ID                         | `null` は current 列なしを表します        |
-| `sort`            | property                                   | いいえ | ソート状態                        | `{ key, direction }` を扱います           |
-| `pagination`      | property                                   | いいえ | ページ状態                        | `{ offset, limit, total }` を扱います     |
-| `getPageHref`     | property                                   | いいえ | ページ番号から URL を生成する関数 | `pagination` 使用時のリンク生成に使います |
-| `ariaLabel`       | property / attribute (`aria-label`)        | いいえ | grid 全体の名称                   | 省略時は上位文脈に依存します              |
-| `showActions`     | property / attribute (`show-actions`)      | いいえ | 行末操作領域の有無                | `true` の場合のみ補助操作列を表示します   |
+| 名前                | 種別                                       | 必須   | 内容                                  | 契約                                                       |
+| ------------------- | ------------------------------------------ | ------ | ------------------------------------- | ---------------------------------------------------------- |
+| `columns`           | property                                   | はい   | 列定義配列                            | 一覧の論理列を定義します                                   |
+| `currentRowId`      | property / attribute (`current-row-id`)    | いいえ | 現在行 ID                             | `null` は current 行なしを表します                         |
+| `currentColumnId`   | property / attribute (`current-column-id`) | いいえ | 現在列 ID                             | `null` は current 列なしを表します                         |
+| `sort`              | property                                   | いいえ | ソート状態                            | `{ key, direction }` を扱います                            |
+| `pagination`        | property                                   | いいえ | ページ状態                            | `{ offset, limit, total }` を扱います                      |
+| `getPageHref`       | property                                   | いいえ | ページ番号から URL を生成する関数     | `pagination` 使用時のリンク生成に使います                  |
+| `loading`           | property / attribute (`loading`)           | いいえ | 読み込み中か                          | `true` の間は空状態と混同しません                          |
+| `loadingLabel`      | property / attribute (`loading-label`)     | いいえ | loading 状態の説明文                  | 省略時は既定文言を用いてもかまいません                     |
+| `autoRevealCurrent` | property / attribute (`auto-reveal-current`) | いいえ | current 解決後に自動で可視範囲復帰するか | `true` の場合のみ opt-in で current 行を視界へ復帰させます |
+| `ariaLabel`         | property / attribute (`aria-label`)        | いいえ | grid 全体の名称                       | 省略時は上位文脈に依存します                               |
+| `showActions`       | property / attribute (`show-actions`)      | いいえ | 行末操作領域の有無                    | `true` の場合のみ補助操作列を表示します                    |
 
 ### 正本入力の意味
 
@@ -110,17 +120,43 @@ current は **行 ID と列 ID** の組で表します。`currentColumnId` は `
 
 `ui-list` はページ情報を**現在表示行数から導出しません**。したがって、最後のページ、部分ロード、仮想化、空ロード中状態でもページ意味論を安定して維持できます。
 
+#### `loading` / `loadingLabel`
+
+`loading` は、一覧が**まだ結果未確定である状態**を表す真偽値です。`loading=true` の間、`ui-list` は空状態と loading 状態を混同しません。
+
+`loadingLabel` は loading 状態の説明文です。アクセシブルな状態説明に使います。行内容の placeholder や skeleton は `ui-list-item` 側または上位画面の責務であり、`ui-list` 自体は loading の**意味**だけを持ちます。
+
+#### `autoRevealCurrent`
+
+`autoRevealCurrent` は、current が解決された後に current 行を視界へ復帰させるかを制御する opt-in 入力です。既定では `false` とし、`ui-list` は暗黙に自動スクロールしません。
+
+可視範囲復帰は current の意味を変えません。current の値、列意味、選択状態を補完・変更するための仕組みとしては扱いません。
+
+#### 命令的 API
+
+`ui-list` は current 行の可視範囲復帰のため、次の命令的 API を公開してよいものとします。
+
+| 名前              | 形態     | 契約                                                                 |
+| ----------------- | -------- | -------------------------------------------------------------------- |
+| `revealCurrent()` | method   | 現在の current 行を視界へ復帰させます。current が解決不能なら no-op です |
+| `scrollCurrentIntoView()` | method alias | 互換的な別名を置いてもかまいませんが、正本 API 名は `revealCurrent()` とします |
+
+`revealCurrent()` は current の意味を変更しません。位置だけを補助します。
+
 ### 既定値と正規化
 
-| 項目              | 既定値 / 正規化                       | 契約                                             |
-| ----------------- | ------------------------------------- | ------------------------------------------------ |
-| `currentRowId`    | `null`                                | current 行なしとして扱います                     |
-| `currentColumnId` | `null`                                | current 列なしとして扱います                     |
-| `sort`            | `{ key: null, direction: null }` 相当 | 非ソート状態として扱います                       |
-| `pagination`      | `null`                                | ページネーション非表示とします                   |
-| `getPageHref`     | `null`                                | 未指定時は非リンク表示または既定関数に依存します |
-| `ariaLabel`       | `null`                                | 上位文脈で十分なら省略できます                   |
-| `showActions`     | `false`                               | 操作列なしとして扱います                         |
+| 項目                | 既定値 / 正規化                       | 契約                                                         |
+| ------------------- | ------------------------------------- | ------------------------------------------------------------ |
+| `currentRowId`      | `null`                                | current 行なしとして扱います                                 |
+| `currentColumnId`   | `null`                                | current 列なしとして扱います                                 |
+| `sort`              | `{ key: null, direction: null }` 相当 | 非ソート状態として扱います                                   |
+| `pagination`        | `null`                                | ページネーション非表示とします                               |
+| `getPageHref`       | `null`                                | 未指定時は非リンク表示または既定関数に依存します             |
+| `loading`           | `false`                               | 非 loading 状態として扱います                                |
+| `loadingLabel`      | `null`                                | 省略時は実装既定の loading 説明文を使ってもかまいません      |
+| `autoRevealCurrent` | `false`                               | 自動可視範囲復帰なしとして扱います                           |
+| `ariaLabel`         | `null`                                | 上位文脈で十分なら省略できます                               |
+| `showActions`       | `false`                               | 操作列なしとして扱います                                     |
 
 `currentRowId` または `currentColumnId` が不正値であっても、`ui-list` は例外を投げることを正本契約としません。ただし、開発時には警告または検証失敗として扱います。
 
@@ -128,7 +164,7 @@ current は **行 ID と列 ID** の組で表します。`currentColumnId` は `
 
 長期設計では、`items` を `ui-list` の正本入力として扱いません。行メタデータは `ui-list-item` 側へ集約するか、必要であれば上位画面が row registry として管理します。
 
-したがって、`** が **`** から行 ID を推測する運用には依存しません。** 行 ID は各 `ui-list-item` が明示しなければなりません（MUST）。
+したがって、`ui-list` が `items` から行 ID を推測する運用には依存しません。**行 ID は各 `ui-list-item` が明示しなければなりません（MUST）。**
 
 ### current 成立条件
 
@@ -172,11 +208,13 @@ current は、`currentRowId` と `currentColumnId` の**組**としてのみ成�
 | ------------ | ------------------------------------ | ------------------ | --------------------------------------- |
 | 論理列       | `columns` そのもの                   | はい               | はい                                    |
 | 可視列       | 論理列から環境条件で導出された表示列 | 間接的に関与します | はい                                    |
-| 補助操作領域 | `actions`                            | いいえ             | `showActions=true` の場合のみ加算します |
+| 補助操作領域 | `actions`                            | いいえ             | `showActions=true` かつ描画時のみ加算します |
 
 `mobile-supplement` は列集合に参加しません。これは可視列から脱落した情報を補助的に再提示する領域です。
 
 `currentColumnId` は常に**論理列 ID**を指します。可視列の順序や有無によって current の意味が変化することには依存しません。
+
+`actions` は補助操作領域であり、**current 列、既定起動先列、主列の判定対象には含めません**。`showActions=false` の場合、`actions` は構造上の列としても扱いません。
 
 ### スロット契約
 
@@ -184,24 +222,29 @@ current は、`currentRowId` と `currentColumnId` の**組**としてのみ成�
 | ------------ | ---- | -------- | ------------------------------- |
 | 既定スロット | slot | 正規入力 | `ui-list-item` 群を受け取ります |
 
-既定スロットに受け取る正規入力は `ui-list-item` です。`ui-list` は slot 直下または flatten 後に見つかった `ui-list-item` を行として収集します。`ui-list-item` 以外の要素は行として管理しません。
+既定スロットに受け取る正規入力は `ui-list-item` です。`ui-list` は slot 直下または flatten 後に見つかった `ui-list-item` を行として収集します。将来別の row host 実装を導入する場合も、本書で定義する row host 契約を満たさない要素は行として管理しません。
 
 ### `ui-list-item` 協調インターフェース
 
-`ui-list-item` は、見た目だけを持つ任意子要素ではありません。`ui-list` が一覧全体の秩序を維持するための**必須協調相手**です。したがって、`ui-list-item` 側の公開面は次の最小インターフェースを満たさなければなりません（MUST）。
+`ui-list-item` は、`ui-list` と組み合わせる際の**正規 row host 実装**です。`ui-list` は任意の子要素を暗黙に行として解釈する汎用 container ではありませんが、長期契約上の依存先はタグ名そのものではなく、**row host 契約**です。
 
-| 項目               | 形態                                       | 契約                                                             |
-| ------------------ | ------------------------------------------ | ---------------------------------------------------------------- |
-| 行識別             | `row-id` attribute または `rowId` property | 安定した行 ID を返せなければなりません                           |
-| current 行状態     | `current` property                         | current 行であることを反映できなければなりません                 |
-| current 列状態     | `currentColumnId` property                 | current 列 ID を解釈できなければなりません                       |
-| 行番号             | `rowIndex` property                        | grid の行番号として反映できなければなりません                    |
-| 列コンテキスト取得 | `requestListContext()` method              | 呼び出し時に親から列情報再同期を受けられなければなりません       |
-| 行→親通知          | `ui-current-change` event                  | 親へ current row / column の変更要求を通知できなければなりません |
-| 列情報要求         | `ui-list-context-request` event            | 親へ列コンテキスト要求を通知できなければなりません               |
-| セル識別           | `data-column-id`                           | 内部セルは列 ID を識別できなければなりません                     |
+現時点で正規にサポートする row host は `ui-list-item` のみとします。ただし、将来 `ui-list-item` 以外の実装を導入する場合でも、次の公開面を満たす要素であれば、**同一 row host 契約に準拠する実装**として扱えます。
 
-この協調インターフェースは `ui-list-item` を汎用行ビューではなく、`ui-list` 専用の行ホストとして位置づけます。したがって、`ui-list` は `ui-list-item` 以外の子要素と組み合わせる汎用 container へ拡張しません。
+| 項目           | 形態                                       | 契約                                                                 |
+| -------------- | ------------------------------------------ | -------------------------------------------------------------------- |
+| 行識別         | `row-id` attribute または `rowId` property | 安定した行 ID を返さなければなりません                               |
+| current 行状態 | `current` property                         | current 行であることを反映できなければなりません                     |
+| current 列状態 | `currentColumnId` property                 | current 列 ID を解釈できなければなりません                           |
+| 行番号         | `rowIndex` property                        | grid の行番号として反映できなければなりません                        |
+| 列定義受領     | `columns` property                         | 親が供給した論理列定義を解釈できなければなりません                   |
+| モバイル状態   | `isMobile` property                        | 親が供給した表示モードに従って可視列縮退を反映できなければなりません |
+| 操作領域状態   | `showActions` property                     | 親が供給した操作領域表示条件を反映できなければなりません             |
+| 行→親通知      | `ui-current-change` event                  | 親へ current row / column の変更要求を通知できなければなりません     |
+| セル識別       | `data-column-id`                           | 内部セルは列 ID を識別できなければなりません                         |
+
+親子間で必要になる再同期機構は存在してよいですが、それは**内部協調面**です。`requestListContext()` のような再同期都合を row host の公開契約には含めません。
+
+したがって、`ui-list` の正規入力は**row host 契約を満たす行要素**です。本書時点ではその代表実装を `ui-list-item` とします。`ui-list` は任意子要素対応の汎用 container へ拡張しませんが、将来の差し替え可能性までタグ名に固定する設計は採りません。
 
 ### スロット名契約
 
@@ -209,11 +252,13 @@ current は、`currentRowId` と `currentColumnId` の**組**としてのみ成�
 
 予約スロットは次のとおりです。
 
-| スロット名          | 位置づけ         | 契約                                      |
-| ------------------- | ---------------- | ----------------------------------------- |
-| `<column-id>`       | データセル       | `columns.id` に対応します                 |
-| `actions`           | 補助操作領域     | `showActions=true` の場合のみ表示対象です |
-| `mobile-supplement` | モバイル補助情報 | 非表示列の要約に限定します                |
+| スロット名          | 位置づけ         | 契約                                                                 |
+| ------------------- | ---------------- | -------------------------------------------------------------------- |
+| `<column-id>`       | データセル       | `columns.id` に対応します                                             |
+| `actions`           | 補助操作領域     | `showActions=true` の場合に限り描画対象です                           |
+| `mobile-supplement` | モバイル補助情報 | 非表示列の要約に限定します                                            |
+
+`actions` は**補助操作領域**であり、data column と同列の意味を持ちません。`showActions=false` の場合、`actions` スロット内容は表示に寄与しません。内部実装都合でプレースホルダーを持つことは妨げませんが、その存在に外部契約は依存しません。
 
 ### 属性反映契約
 
@@ -285,11 +330,11 @@ current は、`currentRowId` と `currentColumnId` の**組**としてのみ成�
 
 ## 状態モデル
 
-`ui-list` の主要状態は、**どの列を表示するか**、**どの行・列が current か**、**ソートがどの段階か**、**ページ情報が何か**、**空一覧か**によって読み分けます。
+`ui-list` の主要状態は、**どの列を表示するか**、**どの行・列が current か**、**ソートがどの段階か**、**ページ情報が何か**、**loading か**、**空一覧か**によって読み分けます。
 
 ### 基本状態
 
-最小状態は、`columns` が与えられ、スロットに 1 行以上の `ui-list-item` が存在し、`currentRowId=null`、`currentColumnId=null`、`sort.key=null`、`sort.direction=null`、`pagination=null` の状態です。この状態では、静的な一覧グリッドとして振る舞います。
+最小状態は、`columns` が与えられ、スロットに 1 行以上の `ui-list-item` が存在し、`currentRowId=null`、`currentColumnId=null`、`sort.key=null`、`sort.direction=null`、`pagination=null`、`loading=false`、`autoRevealCurrent=false` の状態です。この状態では、静的な一覧グリッドとして振る舞います。
 
 ### current 状態
 
@@ -300,6 +345,14 @@ current は `currentRowId` と `currentColumnId` の組で表します。`ui-lis
 `currentColumnId` は論理列 ID です。可視列への射影は `ui-list-item` 側で解釈してもよいですが、current の正本意味は変えません。
 
 current 行または current 列が解決できない場合、`ui-list` は代替 current を生成しません。これは入力不整合として扱います。
+
+### current 行の可視範囲復帰状態
+
+`revealCurrent()` は、解決済み current 行を視界へ復帰させる補助操作です。これは current の意味を変更せず、位置だけを補助します。
+
+`autoRevealCurrent=true` の場合、`ui-list` は current 解決後または current が再同期された後に、自動で `revealCurrent()` 相当の処理を行ってもかまいません。一方、既定では `autoRevealCurrent=false` とし、**暗黙の自動スクロールには依存しません**。
+
+current が未解決、該当行が未収集、または loading 中で実行対象行がまだ存在しない場合、可視範囲復帰は no-op でかまいません。
 
 ### ソート状態
 
@@ -313,11 +366,22 @@ current 行または current 列が解決できない場合、`ui-list` は代�
 
 `resolvedSortKey` は `column.sortKey ?? column.id` です。
 
+### loading 状態
+
+`loading=true` は、一覧内容が未確定である状態を表します。検索結果取得中、ページ切替中、条件変更直後など、一時的に行収集結果が空であっても、**それだけで空状態とは解釈しません**。
+
+loading 中は、次を固定契約とします。
+
+- `ui-list` は空状態と loading 状態を混同しません。
+- loading 表示文は `loadingLabel` または実装既定文言で示します。
+- 行内容の skeleton や placeholder は `ui-list-item` 側または上位画面の責務です。
+- loading 中であっても、既知の current 値そのものは失効しません。ただし該当行が未収集なら可視範囲復帰は no-op でかまいません。
+
 ### 空状態
 
-表示対象行が 0 件の場合、空状態メッセージを表示します。このとき、ページネーションは表示してもよいですが、既定では非表示とします。
+表示対象行が 0 件であり、かつ `loading=false` の場合、空状態メッセージを表示します。このとき、ページネーションは表示してもよいですが、既定では非表示とします。
 
-空状態の判定基準は、**スロット上に収集された **``** 数が 0 件であること**です。
+空状態の判定基準は、**スロット上に収集された `ui-list-item` 数が 0 件であること**です。
 
 ### ページネーション状態
 
@@ -421,7 +485,7 @@ current 行または current 列が解決できない場合、`ui-list` は代�
 | `Shift+Space` | `ui-preview-request` を発火します                        |
 | `Shift+F10`   | `ui-context-request` を発火します                        |
 
-`ArrowLeft` / `ArrowRight` は `ui-list` の責務ではありません。**横方向セル移動は **``** の責務**です。
+`ArrowLeft` / `ArrowRight` は `ui-list` の責務ではありません。**横方向セル移動は `ui-list-item` の責務**です。
 
 Space 単体はスクロール用途としてブラウザ既定動作を維持します。`Enter` は、イベントターゲットがリンク・ボタン・フォーム部品などのインタラクティブ要素でない場合にのみ既定起動先を要求します。
 
@@ -561,19 +625,23 @@ print 契約は本書の正本範囲に含めません。印刷時の扱いは�
 
 ### `ui-list-item` 連携契約
 
-`ui-list` は `ui-list-item` に対して内部的に強く依存します。少なくとも次の連携が成立していなければなりません。
+`ui-list` は row host に対して内部的に強く依存します。現時点でその正規実装は `ui-list-item` です。少なくとも次の連携が成立していなければなりません。
 
-| 項目                       | 契約                                                  |
-| -------------------------- | ----------------------------------------------------- |
-| 行識別                     | `row-id` 属性または `rowId` property を解決できること |
-| current 状態               | `current` property を受け取れること                   |
-| current 列                 | `currentColumnId` property を受け取れること           |
-| 行番号                     | `rowIndex` property を受け取れること                  |
-| 列コンテキスト要求         | `requestListContext()` を呼べること                   |
-| 逆方向通知                 | `ui-current-change` を発火できること                  |
-| 列コンテキスト要求イベント | `ui-list-context-request` を発火できること            |
+| 項目           | 形態                                       | 契約                                                                 |
+| -------------- | ------------------------------------------ | -------------------------------------------------------------------- |
+| 行識別         | `row-id` attribute または `rowId` property | 安定した行 ID を返さなければなりません                               |
+| current 行状態 | `current` property                         | current 行であることを反映できなければなりません                     |
+| current 列状態 | `currentColumnId` property                 | current 列 ID を解釈できなければなりません                           |
+| 行番号         | `rowIndex` property                        | grid の行番号として反映できなければなりません                        |
+| 列定義受領     | `columns` property                         | 親が供給した論理列定義を解釈できなければなりません                   |
+| モバイル状態   | `isMobile` property                        | 親が供給した表示モードに従って可視列縮退を反映できなければなりません |
+| 操作領域状態   | `showActions` property                     | 親が供給した操作領域表示条件を反映できなければなりません             |
+| 行→親通知      | `ui-current-change` event                  | 親へ current row / column の変更要求を通知できなければなりません     |
+| セル識別       | `data-column-id`                           | 内部セルは列 ID を識別できなければなりません                         |
 
-このため、`ui-list` は任意の子要素を行として扱う汎用 container ではありません。`ui-list-item` と組で成立する専用一覧コンポーネントです。
+親子間で必要になる再同期機構は存在してよいですが、それは**内部協調面**です。`requestListContext()` のような再同期都合を row host の公開契約には含めません。
+
+このため、`ui-list` は任意の子要素を行として扱う汎用 container ではありません。一方で、依存の正本は `ui-list-item` というタグ名そのものではなく、上記の **row host 契約** です。本書時点の正規組み合わせは `ui-list` と `ui-list-item` ですが、将来別実装を導入する場合も、同一契約を満たすことを条件とします。
 
 ### ソート連携契約
 
@@ -637,7 +705,9 @@ Enter または click による行起動時、既定起動先が見つからな�
 
 ### `showActions=false` と `actions` スロット
 
-`showActions=false` のとき、`actions` スロット内容は描画してもよいですが、論理列や current モデルには参加しません。UI を成立させる前提として `actions` の存在には依存しません。
+`showActions=false` のとき、`actions` スロット内容は**描画に寄与しません**。`actions` は論理列にも current モデルにも参加しません。
+
+内部実装上の整列都合で補助要素を保持することは妨げませんが、外部契約はそれを列として扱いません。したがって、`showActions=false` の状態で action セルの存在、列 index、`aria-colcount`、クリック領域に依存してはなりません。
 
 ---
 
@@ -659,6 +729,8 @@ Enter または click による行起動時、既定起動先が見つからな�
 | `DarkMode`                   | トークン差し替え下でも一覧として読めること                                         |
 | `ValidationFailures`         | 構造違反が開発時に検出可能であること                                               |
 | `ControlledCurrent`          | `ui-current-change` を受けて外部が state を戻したときにのみ current が確定すること |
+| `LoadingState`               | `loading=true` の間、空状態と混同せず状態説明を表示できること                      |
+| `RevealCurrent`              | `revealCurrent()` または `autoRevealCurrent` により current 行を視界へ復帰できること |
 
 `CellHorizontalNavigation` は `ui-list` 単体契約ではなく、`ui-list-item` との結合契約を確認する Story として扱います。
 
@@ -668,7 +740,7 @@ Enter または click による行起動時、既定起動先が見つからな�
 
 `ui-list` の要点は、ヘッダー付きグリッドを描画すること自体ではありません。**行内容を外部宣言のまま保ちつつ、一覧として必要な移動秩序、列秩序、current 同期、要求イベントを一元化すること**にあります。
 
-したがって、今後の変更でも次の 6 点は崩しません。
+したがって、今後の変更でも次の 8 点は崩しません。
 
 1. 行実体は `ui-list-item` への委譲を維持します。
 2. current は行 ID と列 ID の組で扱います。
@@ -676,107 +748,8 @@ Enter または click による行起動時、既定起動先が見つからな�
 4. `lead` と `defaultAction` を混同しません。
 5. pagination を表示行数から逆算しません。
 6. 横移動と縦移動の責務を混同しません。
-
----
-
-## 新規で追加を検討する価値がある機能
-
-本節は、`ui-list` の責務を肥大化させず、**閲覧導線を安定させる機能**に限って追加候補を整理するものです。管理画面や表計算 UI に近づく拡張は採りません。
-
-### 最優先で検討する価値がある機能
-
-#### current 行の可視範囲復帰
-
-`ui-list` は current を中心に一覧秩序を管理するため、current 行を視界へ復帰させる機能は責務と整合します。本文から一覧へ戻ったとき、検索条件変更後、ページ遷移後に current を見失わないことは、閲覧導線の安定性に直結します。
-
-追加する場合は、次のような契約を採ります。
-
-- 命令的 API として `revealCurrent()` または `scrollCurrentIntoView()` を提供します。
-- 既定では自動スクロールしません。
-- 自動復帰を許す場合は `autoRevealCurrent` のような明示入力で opt-in とします。
-- 可視範囲復帰は current の意味を変えず、位置だけを補助します。
-
-この機能は current 契約の自然な延長であり、`ui-list` 自体に持たせる価値が高いです。
-
-#### loading / pending 状態
-
-空状態と loading 状態は意味が異なります。検索結果やページ切替が非同期になる場合、loading を持たない一覧は、一時的な空表示と未取得状態を区別できません。
-
-追加する場合は、次のような契約を採ります。
-
-- `loading: boolean` を公開入力とします。
-- 必要に応じて `loadingLabel` を持たせ、アクセシブルな状態説明を可能にします。
-- loading 中は空状態と混同しません。
-- 行内容の placeholder は `ui-list-item` 側または上位画面の責務とし、`ui-list` 自体は loading の意味だけを持ちます。
-
-この機能は、空状態契約を壊さずに非同期導線を安定させるため、優先度が高いです。
-
-#### typeahead navigation
-
-一覧内で文字入力により目的行へ移動できる機能は、キーボード中心の閲覧を強く補助します。とくにノート一覧や検索結果では、目的の行へ素早く current を移せる価値があります。
-
-追加する場合は、次のような契約を採ります。
-
-- 文字入力による検索対象文字列を row host 側から取得できるようにします。
-- `ui-list` は typeahead 用の短期バッファを管理してもよいですが、行内容そのものの解析には依存しません。
-- typeahead は current 変更要求として扱い、selection とは結び付けません。
-- IME 入力やテキスト編集要素上では発動しません。
-
-この機能は、一覧の情報密度を増やさずに探索効率を上げられるため、導入価値があります。
-
-### 条件付きで検討する価値がある機能
-
-#### section / group header
-
-ノート一覧や履歴一覧を日付、タグ、プロジェクト単位で群分けして読む需要がある場合、group header は価値があります。ただし、row index、ARIA、current 移動規則が複雑になるため、常設の前提にはしません。
-
-追加する場合は、次のような契約を採ります。
-
-- data-driven grouping ではなく、slot-driven の設計を崩さない構成を優先します。
-- group header は行ではなく、区切りとして意味づけます。
-- current は group header ではなく data row を対象とします。
-- group header の導入によりキーボード移動規則を曖昧にしません。
-
-一覧を索引として使う需要が明確な場合に限り、検討価値があります。
-
-#### selection model
-
-複数行操作、一括タグ付け、一括削除のような要件が将来的に生じる場合、selection model は検討価値があります。ただし、閲覧位置としての current と操作対象としての selection を混同すると、設計が急速に汚れます。
-
-追加する場合は、次のような契約を採ります。
-
-- `selectedRowIds` のような別 state を導入します。
-- `selectionMode` を `single` / `multiple` のように独立定義します。
-- `ui-selection-change` のような別イベントを持たせます。
-- current と selection を相互に暗黙同期しません。
-
-閲覧中心の画面では必須ではありませんが、バルクアクションの導入が決まった場合には明確な分離前提で検討します。
-
-### 採用しない方針
-
-#### 仮想スクロール
-
-slot-driven の row host、current、focus、ARIA rowindex、モバイル補助情報との整合が難しく、`ui-list` の責務を大きく濁します。大規模件数が本当に問題になるまで採りません。
-
-#### 列リサイズ / 列並べ替え
-
-これは管理画面やデータグリッドの要求であり、読むための静かな一覧には過剰です。本文への導線より表操作が主役になるため採りません。
-
-#### 多段ソート / 複合ソート UI
-
-一覧を表計算的に使う方向へ寄り過ぎます。必要な場合は上位画面の検索・絞り込み設計で扱い、`ui-list` 自体の責務には含めません。
-
-### 優先順位の固定
-
-今後の拡張優先順位は、次の順で扱います。
-
-1. current 行の可視範囲復帰
-2. loading / pending 状態
-3. typeahead navigation
-4. section / group header
-5. selection model
-
-仮想スクロール、列リサイズ、列並べ替え、多段ソートは、`ui-list` の正本方針と衝突しやすいため採用候補へ含めません。
+7. loading と空状態を混同しません。
+8. current の意味と可視範囲復帰を混同しません。
 
 ---
 

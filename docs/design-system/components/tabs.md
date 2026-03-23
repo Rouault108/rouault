@@ -35,8 +35,17 @@ Rouault における tabs は、複数の情報面を高密度に並置するた
 - 複数タブ系統の URL 名前空間設計
 - パネル内の非同期取得戦略やキャッシュ戦略
 - 個別タブの無効化ポリシー
+- `panel-presence` のようなパネル presence 戦略の選択
+- `activation="delayed"` など、Manual / Automatic 以外の activation 戦略
+- 左右スクロールボタンや端フェードなどのオーバーフロー補助 UI
+- `reason` など、`ui-tab-change.detail` の追加分類
+- `indicator-placement` のようなインジケーター位置 API
+- `selectNext()` / `selectPrevious()` のような順序移動 API
+- タブ内コンテンツ取得・キャッシュ・バリデーション・送信の内蔵
+- `fullWidth` や画面全体分割など、tabs 自身が負うレイアウト責務
+- 強い装飾アニメーションによる選択表現
 
-これらは上位レイヤまたは別コンポーネントの責務です。
+これらは上位レイヤ、スタイル拡張面、または別コンポーネントの責務です。
 
 ---
 
@@ -48,7 +57,7 @@ Rouault における tabs は、複数の情報面を高密度に並置するた
 
 1. `selectedValue` は **コンポーネント所有の正規選択状態**です。外部からの代入は同期要求として扱いますが、React 的な厳密 controlled component 契約は採りません。
 2. `defaultSelectedValue` は **初期種別**であり、`selectedValue` が与えられている場合の競合解決には参加しません。
-3. `slot="tab"` の正規入力は **ネイティブ **``** 要素**です。リンクや入れ子 interactive 構造は正規入力に含めません。
+3. `slot="tab"` の正規入力は **ネイティブ `<button>` 要素**です。リンクや入れ子 interactive 構造は正規入力に含めません。
 4. `value` は表示文言ではなく、**安定・一意・不変の論理識別子**です。
 5. 動的再構成時の選択保持は **index ではなく value 基準**で行います。
 6. イベントは **事前要求** と **事後通知** を分離します。
@@ -63,11 +72,11 @@ Rouault における tabs は、複数の情報面を高密度に並置するた
 
 `orientation` の既定値は `horizontal` です。`automaticActivation` の既定値は `false` です。`urlSync` の既定値は `false` です。
 
-`selectedValue` は、`ui-tabs` が保持する**正規選択状態**です。外部からの代入は現在選択状態への同期要求として扱いますが、`ui-tabs` 自身もユーザー操作に応じてこの状態を更新します。したがって、本コンポーネントは React 的な厳密 controlled component 契約を採りません。フレームワーク統合層は、`ui-tab-change` を購読してアプリケーション状態を同期させる前提で扱います。
+`selectedValue` は、`ui-tabs` が外部へ公開する現在選択値です。外部からの代入は、その値への選択同期要求として扱います。一方で、`ui-tabs` 自身もユーザー操作や URL 解決に応じて現在選択値を更新し、その結果を `selected-value` 属性へ反映します。したがって、本コンポーネントは React 的な厳密 controlled component 契約は採りません。利用者は、`selectedValue` を外部状態の唯一の真実源として扱うのではなく、`ui-tab-change` を購読して必要な同期を行う前提で扱います。
 
-`defaultSelectedValue` は、初回解決時またはスロット再初期化時の初期候補としてのみ評価します。いったん初期化後は、通常更新のたびに再適用しません。
+`defaultSelectedValue` は、`selectedValue` が選択解決に参加しない場合に限って参照される初期候補です。評価されるのは、初回初期化時と、スロット再構成に伴う再初期化時だけです。通常更新のたびに再適用される入力ではありません。したがって、利用者は `defaultSelectedValue` を継続制御用の入力として扱ってはなりません（MUST NOT）。
 
-`urlSync` を有効化する場合、主タブ状態を `?tab=` と同期します。ただし、URL クエリ名は固定であり名前空間化されません。そのため、**同一ページ上の独立した複数タブ系統に **``** を同時使用してはなりません（MUST NOT）**。`url-sync` はページの主タブ 1 系統に限定して使います。
+`urlSync` を有効化する場合、主タブ状態を `?tab=` と同期します。URL クエリ名は固定であり名前空間化されません。そのため、同一ページ上の独立した複数タブ系統で `url-sync` を同時使用してはなりません（MUST NOT）。`url-sync` は、ページの主タブ 1 系統に限定して使用します。
 
 ### 入力契約
 
@@ -92,27 +101,42 @@ Rouault における tabs は、複数の情報面を高密度に並置するた
 
 `slot="tab"` の正規入力は、ネイティブの `<button>` 要素です。`slot="panel"` 要素は `HTMLElement` でなければなりません。
 
-`slot="tab"` 要素は `value` 属性を持つことを前提とします。`value` が欠落しても描画自体は継続し得ますが、`selectedValue`、`defaultSelectedValue`、`select(value)`、`urlSync` の契約が成立しません。したがって、**すべてのタブに安定した **``** を与えなければなりません（MUST）**。
+`slot="tab"` 要素は `value` 属性を持つことを前提とします。`value` が欠落しても描画自体は継続し得ますが、`selectedValue`、`defaultSelectedValue`、`select(value)`、`urlSync` の契約が成立しません。したがって、**すべてのタブに安定した `value`** を与えなければなりません（MUST）。
 
 `value` は表示文言ではなく、**安定・一意・不変の論理識別子**です。同一の `value` を複数タブで重複させる構成はサポート対象外です。利用者は重複や表示文言依存に基づく運用をしてはなりません（MUST NOT）。
 
 `urlSync=true` の場合、`value` は URL に埋め込まれても意味が崩れない安定値でなければなりません（SHOULD）。表示名、翻訳文字列、動的生成ラベルをそのまま `value` として使ってはなりません（SHOULD NOT）。
 
-`slot="tab"` の主要操作対象は、**スロットに割り当てられた **``** 要素自身**です。内部に別の主要フォーカス対象をネストし、その内側要素を実質的なタブ本体として運用する構成はサポートしません。`a[href]` などの遷移要素をタブ本体として用いる構成も正規入力に含めません。
+`slot="tab"` の主要操作対象は、**スロットに割り当てられた `<button>` 要素自身**です。内部に別の主要フォーカス対象をネストし、その内側要素を実質的なタブ本体として運用する構成はサポートしません。`a[href]` などの遷移要素をタブ本体として用いる構成も正規入力に含めません。
 
 `slot="panel"` は対応するタブにより表示・非表示が制御される受け皿です。利用者は、`slot="panel"` 自身を独立した可視状態コンポーネントとして扱ってはなりません（MUST NOT）。
 
 ### 公開メソッド
 
-`ui-tabs` は、プログラムから選択状態を変更するため、次の公開メソッドを持ちます。
+`ui-tabs` は、プログラムから選択状態またはフォーカス状態を変更するため、次の公開メソッドを持ちます。
 
-| 名前                      | 種別   | 契約                                                                                      |
-| ------------------------- | ------ | ----------------------------------------------------------------------------------------- |
-| `select(value, options?)` | method | 一致する `value` を持つタブを選択します。一致しない場合は開発時警告のみで何も変更しません |
+| 名前                      | 種別   | 契約                                                                                                                                  |
+| ------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `select(value, options?)` | method | 一致する `value` を持つタブを選択します。一致しない場合は開発時警告のみを出し、選択状態・フォーカス状態・URL を変更しません。 |
+| `focus(value)`            | method | 一致する `value` を持つタブへ roving focus を移します。一致しない場合は開発時警告のみを出し、選択状態・URL を変更しません。   |
+| `focusNext()`             | method | 現在の roving focus から次タブへフォーカスを移します。末尾では先頭へ循環します。選択状態は変更しません。                       |
+| `focusPrevious()`         | method | 現在の roving focus から前タブへフォーカスを移します。先頭では末尾へ循環します。選択状態は変更しません。                       |
+| `focusFirst()`            | method | 先頭タブへフォーカスを移します。選択状態は変更しません。                                                                             |
+| `focusLast()`             | method | 末尾タブへフォーカスを移します。選択状態は変更しません。                                                                             |
 
-`options.historyMode` は `urlSync=true` の場合の履歴更新方法を表します。`options.emitEvent` は `ui-tab-change` 発火の有無を表します。
+`select(value, options?)` の引数契約は次のとおりです。
 
-`select(value, options?)` は `ui-tab-request-change` / `ui-tab-change` の二相契約に従います。`options.emitEvent=false` は、公開イベントを抑制した内部整合化処理にのみ用います。
+| 名前                  | 型                            | 必須   | 既定値   | 契約                                                               |
+| --------------------- | ----------------------------- | ------ | -------- | ------------------------------------------------------------------ |
+| `value`               | `string`                      | はい   | なし     | 選択対象の論理識別子です。`slot="tab"` の `value` と一致させます。 |
+| `options.historyMode` | `'auto' | 'push' | 'replace'` | いいえ | `'auto'` | `urlSync=true` の場合の履歴更新方法です。                          |
+| `options.emitEvent`   | `boolean`                     | いいえ | `true`   | `ui-tab-request-change` / `ui-tab-change` を発火させるかを表します。 |
+
+`options.historyMode='auto'` の場合、`select(value)` は API 起点の変更として扱い、既定では `replace` を用います。`urlSync=false` の場合、`historyMode` は無視されます。
+
+`select(value, options?)` は、原則として `ui-tab-request-change` と `ui-tab-change` の二相契約に従います。`emitEvent=false` は、公開操作ではなく、再初期化や URL 正規化などの内部整合化に限って用います。利用者は通常の選択変更で `emitEvent=false` に依存してはなりません（SHOULD NOT）。
+
+`focus(value)`、`focusNext()`、`focusPrevious()`、`focusFirst()`、`focusLast()` は、**常にフォーカス状態のみを変更する API** です。`automaticActivation=true` であっても、これらの公開フォーカス API は選択状態や URL を変更しません。選択確定が必要な場合は `select(value, options?)` を用います。
 
 ### 公開イベント
 
@@ -127,7 +151,7 @@ Rouault における tabs は、複数の情報面を高密度に並置するた
 
 `ui-tab-request-change` は `bubbles: true`、`composed: true`、`cancelable: true` で発火します。`ui-tab-change` は `bubbles: true`、`composed: true`、`cancelable: false` で発火します。
 
-`ui-tab-change` は、**内部状態更新、DOM 反映、**``** 更新、および必要な URL 同期の後**に発火します。したがって、イベントハンドラ内で観測される `selectedValue`、ARIA 状態、パネル可視状態、URL は、原則として新しい選択状態です。
+`ui-tab-change` は、**内部状態更新、DOM 反映、`selected-value` 属性更新**、および必要な URL 同期の後**に発火します。したがって、イベントハンドラ内で観測される `selectedValue`、ARIA 状態、パネル可視状態、URL は、原則として新しい選択状態です。
 
 ### 属性反映契約
 
@@ -147,21 +171,23 @@ Rouault における tabs は、複数の情報面を高密度に並置するた
 
 `urlSync=false` の場合、解決順序は次のとおりです。
 
-1. `selectedValue` が有効ならそれを選択
-2. 初期化前のみ `defaultSelectedValue` を評価
-3. 初期化済みかつ現在 index が妥当ならその状態を維持
-4. それ以外は先頭タブへフォールバック
+1. `selectedValue` が有効ならそれを選択します。
+2. 初期化前または再初期化時に限り、`defaultSelectedValue` が有効ならそれを選択します。
+3. それ以外で、現在保持している選択値が新しいタブ集合でも有効なら、その値を維持します。
+4. どれも成立しない場合は、先頭タブへフォールバックします。
 
-`urlSync=true` の場合、URL 駆動値が有効ならそれを最優先します。
+`urlSync=true` の場合、URL 駆動値が有効ならそれを優先します。解決順序は次のとおりです。
 
 1. ハッシュから解決できるタブ値
 2. `?tab=` から解決できるタブ値
 3. `selectedValue`
-4. 初期化前のみ `defaultSelectedValue`
-5. 初期化済みの現在値
+4. 初期化前または再初期化時に限る `defaultSelectedValue`
+5. 現在保持している選択値
 6. 先頭タブへのフォールバック
 
-重要なのは、**無効な **`** は **`** へ回復しない**点です。制御値が無効である場合は、先頭タブへフォールバックします。
+無効な `selectedValue` は `defaultSelectedValue` へ回復しません。これは、継続制御入力が無効である事実を曖昧にしないためです。`selectedValue` が与えられていても一致する `value` が存在しない場合は、開発時警告を出した上で先頭タブへフォールバックします。
+
+再初期化時には、まず既存の選択値を value 基準で保持できるかを評価し、保持できない場合に限って `selectedValue`、`defaultSelectedValue`、先頭タブの順で再解決します。したがって、`defaultSelectedValue` は「初回だけ」ではなく、「再初期化時の初期候補」としても作用します。
 
 ### 責務範囲
 
@@ -189,7 +215,9 @@ Rouault における tabs は、複数の情報面を高密度に並置するた
 
 ### 3. フォーカス状態
 
-`focusedIndex` は現在の Roving Tabindex 対象を表します。Manual Activation では `focusedIndex` と `activeIndex` が一時的に分離し得ます。Automatic Activation では、フォーカス移動と同時に選択も更新されるため、両者は原則として一致します。
+`focusedIndex` は現在の Roving Tabindex 対象を表します。Manual Activation では `focusedIndex` と `activeIndex` が一時的に分離し得ます。Automatic Activation では、**キーボード移動に限って**フォーカス移動と同時に選択も更新されるため、両者は原則として一致します。
+
+一方で、公開フォーカス API（`focus(value)`、`focusNext()`、`focusPrevious()`、`focusFirst()`、`focusLast()`）は、`automaticActivation` の値にかかわらず、**フォーカス状態のみを変更する公開面**です。これらは `activeIndex`、`selectedValue`、URL を直接は変更しません。
 
 選択保持とフォーカス保持は、動的再構成時にも **value 基準** で評価します。既存の `activeValue` または `focusedValue` が新しい集合にも存在する場合はそれを保持し、存在しない場合にのみフォールバック規則へ移行します。
 
@@ -201,7 +229,9 @@ Rouault における tabs は、複数の情報面を高密度に並置するた
 
 ### 5. Automatic Activation 状態
 
-`automaticActivation=true` の場合、矢印キー移動と同時に選択を更新します。フォーカスの移動だけでパネルも切り替わります。
+`automaticActivation=true` の場合、**タブリスト上のキーボード移動**と同時に選択を更新します。矢印キー移動に伴ってパネルも切り替わります。
+
+ただし、この結合はキーボード操作に対する interaction semantics であり、公開フォーカス API にまで拡張しません。`focus(value)` などの公開 API は、`automaticActivation=true` でもフォーカス状態のみを変更します。
 
 Automatic Activation は、切替対象が**即時・同期的・低コスト**に切り替わる場合にのみ正規入力です。非同期読み込み、重い再描画、大きなレイアウト再計算を伴う面では使ってはなりません（SHOULD NOT）。読書面での予期せぬ内容変化を抑えるため、既定値は Manual Activation のままとします。
 
@@ -276,7 +306,7 @@ URL 同期時の履歴更新は次のとおりです。
 
 ### Light DOM 属性所有権契約
 
-`ui-tabs` は、Light DOM 上の `slot="tab"` / `slot="panel"` 要素に対して、対話成立に必要な属性を書き込みます。このとき、次の属性は ``** が所有する属性** として扱います。
+`ui-tabs` は、Light DOM 上の `slot="tab"` / `slot="panel"` 要素に対して、対話成立に必要な属性を書き込みます。このとき、次の属性は `ui-tabs` が所有する属性として扱います。
 
 - `slot="tab"` 側: `role`、`id`、`aria-controls`、`aria-selected`、`tabindex`
 - `slot="panel"` 側: `role`、`id`、`aria-labelledby`、`hidden`、`aria-hidden`、`data-panel-active`
@@ -398,11 +428,11 @@ Forced Colors 環境では JS 制御インジケーターを非表示とし、�
 
 ### URL 同期契約
 
-`urlSync=true` の場合、`?tab=` が主タブ状態の公開面になります。加えて、ハッシュがホスト要素配下の見出しに解決できる場合は、その見出しを含むタブを可視化して優先選択します。
+`urlSync=true` の場合、`?tab=` が主タブ状態の公開 URL 面になります。加えて、ハッシュが `ui-tabs` ホスト配下の見出し要素に解決できる場合は、その見出しを含むタブを優先して選択します。
 
-ここでいうハッシュ解決の対象は、``** ホスト配下に存在する要素**に限ります。ページ全体の任意アンカーや、他コンポーネント配下の見出しを見て選択を変更する契約ではありません。
+ここでいうハッシュ解決の対象は、`ui-tabs` ホスト配下に存在する要素に限ります。ページ全体の任意アンカーや、他コンポーネント配下の見出しを見て選択を変更する契約ではありません。
 
-`urlSync` は tabs 本体の付加機能であり、ルータ全体の状態管理やフレームワーク固有の履歴 state 形式まで所有する契約は採りません。扱うのは `?tab=` とホスト配下ハッシュ解決までです。
+`urlSync` は tabs 本体の付加機能であり、ルータ全体の状態管理やフレームワーク固有の `history.state` 形式までは所有しません。扱うのは `?tab=` とホスト配下ハッシュ解決までです。
 
 ハッシュ由来でタブが解決された場合、コンポーネントは `?tab=` を現在アクティブ値へ正規化します。クエリ由来で解決された場合も、現在選択値と URL が不整合であれば `replaceState` で正規化します。
 
@@ -522,38 +552,33 @@ Forced Colors 環境では JS 制御インジケーターを非表示とし、�
 
 ## Storybook 契約
 
-各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
+各 Story は見本ではなく、**現行実装に対する契約確認点**として扱います。本節では、現行 Storybook の export 一覧と一致する Story のみを列挙します。未実装または未検証の契約は、本節ではなく「現行実装で未対応の事項」で管理します。
 
-| Story                                    | 固定する契約                                                                                  |
-| ---------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `Default`                                | 先頭タブ自動選択、role / aria / Roving Tabindex が成立すること                                |
-| `DefaultSelectedValue`                   | `default-selected-value` により初期選択できること                                             |
-| `Vertical`                               | `orientation="vertical"` で `aria-orientation="vertical"` になること                          |
-| `AutomaticActivation`                    | 矢印移動だけで選択が更新されること                                                            |
-| `WithIcons`                              | アイコンとラベルの組み合わせを受け入れられること                                              |
-| `ManyTabs`                               | オーバーフロー時にスクロールし、選択タブを可視範囲へ追従できること                            |
-| `SelectedByValue`                        | `selected-value` により任意タブを選択できること                                               |
-| `UrlSyncFromQuery`                       | `?tab=` により初期選択できること                                                              |
-| `UrlSyncPushOnClick`                     | クリックで `?tab=` が更新されること                                                           |
-| `UrlSyncHashOverridesQuery`              | ハッシュがクエリより優先され、URL が正規化されること                                          |
-| `KeyboardNavigation`                     | Manual Activation における矢印移動、`Enter` / `Space`、`Home` / `End`、循環移動が成立すること |
-| `KeyboardNavigationVertical`             | 垂直時に `ArrowUp` / `ArrowDown` が有効で、左右キーが無効であること                           |
-| `KeyboardNavigationRTL`                  | RTL 水平時に `ArrowLeft` / `ArrowRight` が論理方向で反転すること                              |
-| `TabRequestChangeEvent`                  | `ui-tab-request-change` が事前発火し、cancelable であること                                   |
-| `TabChangeEvent`                         | `ui-tab-change` の detail と再選択非発火が成立すること                                        |
-| `NoEventOnInitialization`                | 初期解決が常時 `ui-tab-change` を発火しないこと                                               |
-| `NoEventOnSlotReinit`                    | `slotchange` に伴う再初期化が常時 `ui-tab-change` を発火しないこと                            |
-| `EdgeCase_InvalidDefaultSelectedValue`   | 無効な `default-selected-value` が先頭フォールバックになること                                |
-| `EdgeCase_SelectedValueOverridesDefault` | `selected-value` が `default-selected-value` より優先されること                               |
-| `EdgeCase_SingleTab`                     | 1 タブ構成でも循環ナビゲーションが破綻しないこと                                              |
-| `EdgeCase_UnmatchedSelectedValue`        | 無効な `selected-value` が先頭フォールバックになること                                        |
-| `EdgeCase_MismatchedSlots`               | 不一致時に余剰タブが選択されないこと                                                          |
-| `ReducedMotion`                          | reduced motion 時に遷移時間が極小化されること                                                 |
-| `ForcedColorsMode`                       | forced-colors 時にインジケーター非表示と境界線回帰が成立すること                              |
-| `DarkMode`                               | 暗色面でも選択状態の可読性を保てること                                                        |
-| `AsyncPanel`                             | パネル側 `aria-busy` 運用パターンと loading UI 共存が成立すること                             |
-| `AccessibleName`                         | `aria-label` または `aria-labelledby` により tablist の accessible name を与えられること      |
-| `IntegrationExample`                     | ノート UI 文脈で自然に使用できること                                                          |
+| Story                             | 固定する契約                                                                                  |
+| --------------------------------- | --------------------------------------------------------------------------------------------- |
+| `VisualAccessibility`             | 基本的な role / aria / フォーカス可視性が破綻しないこと                                       |
+| `Default`                         | 先頭タブ自動選択、role / aria / Roving Tabindex が成立すること                                |
+| `InitialIndex`                    | 初期選択入力により先頭以外から開始できること                                                  |
+| `Vertical`                        | `orientation="vertical"` で `aria-orientation="vertical"` になること                          |
+| `AutomaticActivation`             | 矢印移動だけで選択が更新されること                                                            |
+| `WithIcons`                       | アイコンとラベルの組み合わせを受け入れられること                                              |
+| `ManyTabs`                        | オーバーフロー時にスクロールし、選択タブを可視範囲へ追従できること                            |
+| `SelectedByValue`                 | 選択値指定により任意タブを選択できること                                                      |
+| `KeyboardNavigation`              | Manual Activation における矢印移動、`Enter` / `Space`、`Home` / `End`、循環移動が成立すること |
+| `KeyboardNavigationVertical`      | 垂直時に `ArrowUp` / `ArrowDown` が有効であること                                             |
+| `TabChangeEvent`                  | `ui-tab-change` の detail と、同値再選択時の非発火が成立すること                              |
+| `EdgeCase_InvalidIndex`           | 無効な初期 index 指定が回復的に処理されること                                                 |
+| `EdgeCase_ValueOverridesIndex`    | value 系の選択入力が index 系入力より優先されること                                           |
+| `EdgeCase_SingleTab`              | 1 タブ構成でも循環ナビゲーションが破綻しないこと                                              |
+| `EdgeCase_UnmatchedValue`         | 無効な選択値指定が回復的に処理されること                                                      |
+| `EdgeCase_MismatchedSlots`        | 不一致時に余剰タブまたは余剰パネルが正規対応関係を持たないこと                                |
+| `ReducedMotion`                   | reduced motion 時に遷移時間が極小化されること                                                 |
+| `ForcedColorsMode`                | forced-colors 時にインジケーター非表示と境界線回帰が成立すること                              |
+| `DarkMode`                        | 暗色面でも選択状態の可読性を保てること                                                        |
+| `AsyncPanel`                      | パネル側 `aria-busy` 運用パターンと loading UI 共存が成立すること                             |
+| `IntegrationExample`              | ノート UI 文脈で自然に使用できること                                                          |
+
+`ui-tab-request-change`、RTL 論理方向、accessible name、URL クエリからの初期選択、ハッシュ優先、初期化時非発火、再初期化時非発火など、現行 Story と一致しない契約確認点は、本節には列挙しません。これらは Story が実在するようになった時点で本節へ昇格させます。
 
 ---
 
@@ -568,122 +593,6 @@ Forced Colors 環境では JS 制御インジケーターを非表示とし、�
 3. `selectedValue` の解決順位を不用意に変更しないこと。
 4. `urlSync` の優先順位と履歴更新方針を維持すること。
 5. 選択表示を本文を侵食しない静かな強度に保つこと。
-
----
-
-## 将来拡張の原則
-
-本節は現行実装の公開契約ではなく、将来追加を検討する場合の設計指針です。追加機能は、tabs を多機能化するためではなく、**読書の没入を壊さずに意味と運用性を補強する場合に限って**採用します。
-
-また、本節でいう「追加機能」は、**未対応契約への実装追随**とは区別します。すなわち、`ui-tab-request-change`、accessible name、RTL 論理方向、value 基準保持など、すでに本書で正規契約として固定した事項は、将来機能ではなく**追随実装すべき基底事項**です。本節では、それを超えてなお追加価値がある機能のみを扱います。
-
-### 最優先で検討する価値がある拡張
-
-#### 1. URL クエリ名の名前空間化
-
-現行の `?tab=` はページ主タブ 1 系統には適しますが、複数タブ系統を同居させるには弱いです。将来、`tab-key` または `query-key` のような公開入力を導入し、`?tab-main=` のような名前空間化を検討する価値があります。
-
-この拡張を採用する場合、次を満たします。
-
-- 既定値は現行の `tab` を維持し、破壊的変更を避けます。
-- 複数インスタンス併存時の責務分離を明確にします。
-- ハッシュ優先規則との整合を保ちます。
-- 同一ページ上で同一 query key が重複する場合は開発時警告を出します。
-
-この機能は、単なる利便性向上ではなく、URL 同期契約の適用範囲を広げる**構造的拡張**として位置付けます。
-
-#### 2. 公開フォーカス API
-
-現行公開面は `select(value)` のみです。将来、`focus(value)`、`focusNext()`、`focusPrevious()`、`focusFirst()`、`focusLast()` などの公開面を追加する価値があります。ただし、これは高機能化ではなく、複合 UI でのアクセシビリティ制御を補う場合に限ります。
-
-この拡張を採用する場合、次を満たします。
-
-- Manual Activation 時に選択とフォーカスを分離したまま制御できます。
-- `automaticActivation=true` のときにフォーカス API が選択まで伴うかどうかを明確に分けます。
-- 既存の roving tabindex 契約を破壊しません。
-
-この機能は、tabs を「選択部品」であると同時に、**複合キーボード UI の構成要素**として使いやすくするための拡張です。
-
-#### 3. パネル presence バリアント
-
-現行契約では、パネルは persistent mount を維持し、可視状態のみを切り替えます。これは読書面では妥当ですが、重いパネルを多く含む画面では負荷が高くなり得ます。そのため、既定契約を壊さず、`panel-presence` のような別入力で presence 戦略を選べるようにする価値があります。
-
-候補は次のとおりです。
-
-- `persistent`: 現行契約どおり、常時 mount を維持
-- `lazy`: 初回選択時まで mount しない
-- `on-demand`: 初回選択時に mount し、その後は保持
-
-この拡張を採用する場合、次を満たします。
-
-- 既定値は `persistent` を維持します。
-- lazy / on-demand は、イベント契約、ARIA 契約、フォーカス契約に追加影響を与えるため、別契約として明記します。
-- `destroy-inactive` のような強い破棄戦略は、さらに別段階の拡張として扱います。
-
-この機能は、読書面向けの静かな既定契約を維持しつつ、**重い運用面への適用範囲を広げる**拡張です。
-
-### 条件付きで価値がある拡張
-
-#### 4. 手動・自動以外の activation 戦略
-
-現行は Manual / Automatic の 2 値です。非同期切替が多い画面では、一定条件で自動切替を抑制する戦略や、遅延つき activation を検討する余地があります。
-
-候補は次のとおりです。
-
-- `activation="manual | automatic | delayed"`
-- `activation-delay={ms}`
-
-ただし、読書中の予期せぬ切替を増やさないことを優先します。したがって、この機能は一般的な既定機能ではなく、**特殊な性能・操作要件がある場合に限る拡張**として扱います。
-
-#### 5. オーバーフロー補助 UI
-
-タブ数が多い画面では、スクロール可能であるだけでは発見可能性が不足する場合があります。そのため、オーバーフロー時の補助 UI を追加する価値があります。
-
-候補は次のとおりです。
-
-- 左右スクロールボタン
-- 端のフェード表現
-- 現在位置の視覚補助
-- ホイール / トラックパッド操作の補助
-
-ただし、これらは tabs の意味論そのものではなく、presentation 拡張です。したがって、可能な限り `::part(...)` と CSS Custom Properties で解決し、コンポーネント本体の責務に持ち込みすぎません。
-
-#### 6. イベント detail の再同期理由拡張
-
-現行契約では `source` を持ちますが、将来さらに `reason` を分ける価値があります。たとえば、`user-select`、`url-sync`、`slot-reconcile`、`fallback`、`api-call` のような区別です。
-
-この拡張は派手な機能ではありませんが、分析計測、ログ、複合 UI のデバッグ容易性を高めます。したがって、**ライブラリ品質の向上**としては意味がありますが、優先順位は上位 3 項目より下です。
-
-### 優先度は低いが追加余地がある拡張
-
-#### 7. インジケーター位置 API の拡張
-
-たとえば `indicator-placement="inner | full | edge"` のような指定です。ただし、これは視覚差分の話であり、`::part(indicator)` とデザイントークンで十分に表現できるなら追加不要です。
-
-#### 8. プログラム的な順序移動 API
-
-`selectNext()`、`selectPrevious()` のような API です。便利ではありますが、まずは公開フォーカス API を優先します。
-
-### 採用しない方針
-
-次の方向は、tabs の責務を汚しやすいため採りません。
-
-- タブ内コンテンツの取得やキャッシュを内蔵すること
-- レイアウト責務として `fullWidth` や画面全体分割を tabs 自身に持ち込むこと
-- パネル内容のバリデーションや送信責務を tabs に持ち込むこと
-- 強い装飾アニメーションで選択状態を表すこと
-- 個別タブの disabled を基底契約へそのまま持ち込むこと
-
-### 優先順位の要約
-
-実装追随を除いた純粋な将来拡張として、優先順位は次の順で固定します。
-
-1. URL クエリ名の名前空間化
-2. 公開フォーカス API
-3. パネル presence バリアント
-4. activation 戦略の追加
-5. オーバーフロー補助 UI
-6. イベント detail の再同期理由拡張
 
 ---
 
@@ -729,7 +638,7 @@ Forced Colors 環境では JS 制御インジケーターを非表示とし、�
 
 ### 10. `orientation` の値検証と正規化
 
-本書では `orientation` を `horizontal` / `vertical` のみからなる入力として扱います。しかし現行実装は `String` property として受け取り、値検証や既定値への正規化を行いません。`resolveKeyNavigation()` も `horizontal` 以外を事実上 `vertical` として扱います。したがって、**不正な **``** 値に対する入力検証・正規化は未実装**です。
+本書では `orientation` を `horizontal` / `vertical` のみからなる入力として扱います。しかし現行実装は `String` property として受け取り、値検証や既定値への正規化を行いません。`resolveKeyNavigation()` も `horizontal` 以外を事実上 `vertical` として扱います。したがって、**不正な `orientation` 値**に対する入力検証・正規化は未実装**です。
 
 ### 11. RTL 論理方向ナビゲーション
 

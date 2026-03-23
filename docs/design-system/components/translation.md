@@ -14,9 +14,11 @@ Rouault における translation は、注釈や脚注に近い本文補助要�
 
 ## 2. 適用範囲
 
-本書は、`ui-translation` および `TranslationOrchestrator` の次の事項を対象とします。
+本書は、`ui-translation` および `TranslationOrchestrator` の**現在の公開契約**を対象とします。対象は次のとおりです。
 
-- 公開契約
+- 公開入力
+- 公開メソッド
+- 公開イベント
 - 状態モデル
 - DOM / Accessibility
 - Visual Contract
@@ -24,10 +26,7 @@ Rouault における translation は、注釈や脚注に近い本文補助要�
 - オーケストレータ連携契約
 - 関連契約
 - 境界条件
-- Storybook 契約
-- 固定した設計判断
-- 将来拡張の原則
-- 現行実装で未対応の事項
+- Storybook による検証観点
 
 一方で、本書は次の事項を対象外とします。
 
@@ -37,8 +36,20 @@ Rouault における translation は、注釈や脚注に近い本文補助要�
 - 対訳の永続ストレージ設計全体
 - 画面単位での学習モード切り替え UI
 - 原文と訳文の意味的整合性評価
+- `translated` に plain text 以外の rich content を受け入れる拡張
+- `before-open` / `before-close` など open 状態の事前フック
+- group 単位のオーケストレーション
+- 将来拡張案、未実装事項、移行タスク
+- Story 名、テスト構成、Autodocs の編成など検証実装の詳細
 
-これらは上位レイヤまたは別機能の責務です。
+また、次の方向は本コンポーネントの公開契約として採りません。
+
+- Trigger を link と button のハイブリッドにすること
+- 翻訳生成ロジックをコンポーネントへ内蔵すること
+- 常時アニメーションや過度な attention-grabbing effect を加えること
+- 訳文側に過剰な装飾や複数アクションを持ち込み、本文より強く主張させること
+
+これらは上位レイヤ、別文書、または将来検討事項として扱います。
 
 ---
 
@@ -59,7 +70,7 @@ Rouault における translation は、注釈や脚注に近い本文補助要�
 - `ui-translation` は、単一インスタンスの開閉、意味論、視覚表現、ポインター / フォーカス / キーボード操作を担当します。
 - `TranslationOrchestrator` は、複数 `ui-translation` への render mode 配布、intent mode の永続化、端末条件に応じた mode 解決、グローバルショートカットを担当します。
 
-したがって、**個別要素の **`** 状態**と、**集合全体の **` は別の状態として扱います。
+したがって、個別要素の `open` 状態と、集合全体の `intentMode` / `studyMode` は別の状態として扱います。
 
 ### 3.3 入力契約
 
@@ -124,9 +135,9 @@ Rouault における translation は、注釈や脚注に近い本文補助要�
 | `root`             | constructor option | いいえ | 管理対象ルート         | 既定値は `document` です。未解決の場合は例外です      |
 | `keyTarget`        | constructor option | いいえ | グローバルキー入力対象 | 既定値は `document` または `root` です                |
 | `storage`          | constructor option | いいえ | 永続化先               | `getItem` / `setItem` を持つ Storage 互換を受理します |
-| `storageKey`       | constructor option | いいえ | 永続化キー             | 既定値は `rouault:translation-mode` です              |
+| `storageKey`       | constructor option | いいえ | 永続化キー             | 既定値は実装定数に従います。利用側は既定文字列そのものに依存してはなりません |
 | `studyMode`        | constructor option | いいえ | 学習モード             | `parallel` を `interlinear` へ解決し得ます            |
-| `mobileBreakpoint` | constructor option | いいえ | モバイル閾値           | 既定値は `1280` です                                  |
+| `mobileBreakpoint` | constructor option | いいえ | 互換用モバイル閾値     | 既定判定は実装定数に従います。長期的な正規判定は共通 device profile を優先します |
 | `isMobileViewport` | constructor option | いいえ | モバイル判定関数       | 指定時は既定の `matchMedia` 判定を置き換えます        |
 
 `TranslationOrchestrator` は、`start()`、`destroy()`、`setIntentMode()`、`toggleIntentMode()`、`setStudyMode()`、`refresh()` を公開メソッドとして持ちます。
@@ -237,7 +248,7 @@ lookup 系 mode では、mouse pointer の `pointerenter`、キーボードフ�
 | `P`                    | 修飾キーなし、開いている `ui-translation` 上、lookup 系 mode、`defaultPrevented` でなく、key repeat でない | `translation-request-mode-toggle` を経由して mode 切り替え |
 | `Escape`               | 開いている `ui-translation` 上                                                                             | 当該翻訳を閉じ、Trigger へフォーカスを戻す                 |
 
-`P` は interlinear では受理しません。つまり、**本文内の open translation から **`** / **`** を文脈的に切り替えられるのは lookup 系 mode のときだけ**です。
+`P` は interlinear では受理しません。したがって、本文内の open な translation から `lookup` / `parallel` の切り替えを文脈的に要求できるのは、lookup 系 mode のときだけです。
 
 ### 4.11 複数インスタンス状態
 
@@ -305,13 +316,13 @@ content は翻訳を表す単一要素です。
 
 本コンポーネントで重要なのは、**翻訳 UI を付け足すこと**ではなく、**原文・訳文・補注・参照 surface の意味差を崩さないこと**です。
 
-### 5.4 スタイル注入契約
+### 5.4 スタイル契約
 
-`ui-translation` は Light DOM を採用し、文書全体に共有される style を `document.head` へ 1 回だけ注入します。したがって、本コンポーネントは**インスタンス局所ではなく document-global なスタイル副作用**を持ちます。
+`ui-translation` は Light DOM を採用します。必要な共有スタイルは、同一文書内で重複しないよう管理されます。
 
-この style 注入は多重接続でも重複せず、既存 style があれば再利用します。一方で、個別インスタンスの破棄時に style は撤去しません。利用側はこの共有スタイルの存在を前提にし、同一文書内での重複注入や撤去に依存してはなりません。
+ただし、style の注入先、注入回数の実現方法、破棄時の撤去戦略は実装詳細であり、利用側が依存してはなりません。利用側が安定依存してよいのは、**本コンポーネントが共有スタイル前提で動作すること**と、**内部 DOM 構造および `[data-part]` が公開テーマ API ではないこと**です。
 
-内部 DOM 構造および `[data-part]` 名は**公開テーマ API ではありません**。外部が安定依存してよいスタイリング面は、公開トークンおよび将来別途明示される正式 API に限ります。
+外部が安定依存してよいスタイリング面は、公開トークンおよび将来別途明示される正式 API に限ります。
 
 ---
 
@@ -472,9 +483,13 @@ desktop では `parallel` intent が `drawer` に解決され、継続読みに�
 
 `lang` と `targetLang` は、翻訳品質そのものではなく、**読み上げ・言語認識の補助情報**として扱います。したがって、本契約は「正しい翻訳か」を保証しませんが、少なくとも原文と翻訳文に異なる言語タグを与えられることを重視します。
 
+`lang` と `targetLang` の妥当性は、単なる空有無だけでなく、**BCP 47 形式として明らかに不正でないこと**を開発時に確認対象とします。ただし、この検証は**形式検証**に留め、翻訳品質保証とは混同しません。
+
+不正または空の言語タグが与えられても、現行契約では描画を停止せず、例外も送出しません。`targetLang` の空文字は `ja` に正規化し、`lang` の空文字は未指定として扱います。不正タグは開発時警告の対象ですが、実行時描画は継続します。
+
 ### 9.2 Mode toggle 要求契約
 
-`ui-translation` は `P` キーや `requestModeToggle()` を通じて mode toggle を要求できますが、**自分で **``** を持ちません**。要求を処理して `renderMode`を再配布するのは`TranslationOrchestrator` の責務です。
+`ui-translation` は `P` キーまたは `requestModeToggle()` を通じて mode toggle を要求できますが、`intentMode` を自分で保持・決定しません。要求を受理し、`renderMode` を再解決して配下へ再配布するのは `TranslationOrchestrator` の責務です。
 
 ### 9.3 外部制御契約
 
@@ -491,6 +506,8 @@ desktop では `parallel` intent が `drawer` に解決され、継続読みに�
 - `original` が 150 文字を超える
 - `lang` が未指定
 - `target-lang` が未指定
+- `lang` が BCP 47 形式として明らかに不正である
+- `target-lang` が BCP 47 形式として明らかに不正である
 
 これらは描画停止や例外送出ではなく、console warning にとどまります。
 
@@ -556,26 +573,24 @@ open な `popover` は、viewport の resize / scroll に追従して位置を�
 
 ## 11. Storybook 契約
 
-各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
+Storybook は見本ではなく、公開契約を継続検証するための確認面です。本書が固定するのは Story 名ではなく、次の検証観点です。
 
-| Story                          | 固定する契約                                                                                                             |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| `Default`                      | Trigger / Content の基本 A11y 契約、`open` と `aria-expanded` / `hidden` の同期、`translation-toggle` 発火               |
-| `VariantStateMatrix`           | `renderMode × open` の意味論整合、lookup と interlinear の role 差分                                                     |
-| `BoundaryConditions`           | 不正 mode フォールバック、空 `target-lang` の `ja` フォールバック、翻訳未提供時の disabled、長文警告、style 注入の単一性 |
-| `OrchestratorContract`         | localStorage 初期値読取、グローバルショートカット、`intentMode` と `renderMode` の対応表、`translation-mode-change` 発火 |
-| `DarkModeContract`             | `prefers-color-scheme` 直接分岐を持たず、トークン追従と上端 highlight を維持すること                                     |
-| `MobileLookupBottomSheet`      | モバイル lookup の bottom sheet 化、scrim 表示、下方向スワイプと scrim click による close                                |
-| `ForcedColorsAndPrintContract` | 非色シグナル、forced-colors 境界線、print 時の lookup 非表示と interlinear 表示                                          |
-| `LookupInteractionBoundary`    | lookup 系の hover / focus open、Escape close                                                                             |
-| `AttributeDrivenStateChange`   | property / attribute 変更による `open`・`renderMode` 反映、および no-op 時にイベントが増発しないこと                     |
-| `RapidToggleReentrancySafety`  | 連続 toggle でも状態遷移が破綻せず、同一状態への再設定で副作用を重複させないこと                                         |
-| `LocalStoragePersistence`      | 永続化の既定動作、`persist: false` 時の非永続動作、storage 利用不可時の graceful degradation                             |
-| `ManagedVsUnmanagedOwnership`  | 単体利用時の `renderMode` 入力と、管理下での派生状態との差分                                                             |
-| `SingleOpenPolicy`             | lookup 系 single-open と interlinear multi-open の境界                                                                   |
-| `DeviceProfileResolution`      | 共通 device profile に基づく mode 解決と bottom-sheet 化の整合                                                           |
-| `AccessibleNamingContract`     | Trigger と content の `aria-labelledby` / `aria-controls` / `aria-details` 関係                                          |
-| `EventVisibilityContract`      | 公開イベントと内部連携イベントの区別                                                                                     |
+| 検証観点 | 維持する契約 |
+| -------- | ------------ |
+| 基本状態と A11y | Trigger / Content の基本 A11y 契約、`open` と `aria-expanded` / `hidden` の同期、`translation-toggle` 発火 |
+| 表示方式の整合 | `renderMode × open` の意味論整合、lookup 系と interlinear の差分 |
+| 境界条件 | 不正 mode フォールバック、空 `target-lang` の `ja` フォールバック、翻訳未提供時の disabled、長文警告 |
+| オーケストレータ連携 | 永続化読取、グローバルショートカット、`intentMode` と `renderMode` の対応、`translation-mode-change` 発火 |
+| 環境差分 | reduced motion、forced colors、print、mobile bottom-sheet 化 |
+| ルックアップ操作 | hover / focus / click / Escape / scrim / gesture の契約 |
+| 外部制御 | property / attribute 変更による `open`・`renderMode` 反映、および no-op 時にイベントが増発しないこと |
+| 管理境界 | 単体利用時の `renderMode` 入力と、管理下での派生状態との差分 |
+| 複数インスタンス | lookup 系 single-open と interlinear multi-open の境界 |
+| device profile | mode 解決と bottom-sheet 化判定が同一 device profile に整合すること |
+| Accessible naming | Trigger と content の `aria-labelledby` / `aria-controls` / `aria-details` 関係 |
+| イベント公開境界 | 公開イベントと内部連携イベントの区別 |
+
+Storybook / Autodocs 上の具体的な Story 名、構成単位、分割方法は検証実装の詳細であり、本契約の固定対象には含めません。
 
 ---
 
@@ -590,169 +605,62 @@ open な `popover` は、viewport の resize / scroll に追従して位置を�
 3. モバイル lookup を desktop popover の縮小版ではなく、bottom sheet として扱うこと。
 4. 単体要素の `open` 状態と、集合全体の `intentMode` を分離すること。
 
----
-
-## 13. 固定した設計判断
-
-本節は、長期的な保守性と設計のきれいさを優先して、translation の公開契約として**採用する方針を明示的に固定したもの**です。現行実装がこれに完全一致しない場合でも、ここを仕様上の正本として扱います。
-
-### 13.1 `renderMode` の位置づけ
-
-`renderMode` は、単体利用では公開入力です。一方、`TranslationOrchestrator` 管理下では派生状態です。したがって、管理下で外部が安定依存してよいソースオブトゥルースは `intentMode`、`studyMode`、および個別要素の `open` であり、個別 `renderMode` ではありません。
-
-### 13.2 Intent / Layout policy / Adaptive surface の三層分離
-
-translation の表示は、**Intent**、**Layout policy**、**Adaptive surface** の 3 層で説明します。
-
-- Intent は `lookup` / `parallel` です。
-- Layout policy は `floating-surface` / `side-surface` / `inline-surface` です。
-- Adaptive surface は `popover` / `bottom-sheet` / `drawer` / `interlinear` です。
-
-この三層を分けることで、mobile での `popover` → `bottom-sheet` 変形や、`parallel` → `interlinear` 解決は例外ではなく適応規則として扱います。
-
-### 13.3 共通 Device profile
-
-mode 解決と bottom-sheet 化判定は、共通 device profile に従います。viewport 幅だけで mobile を定義してはなりません。少なくとも `compactViewport`、`coarsePointer`、`hoverless`、`mobileLike` を同一基準で扱います。
-
-### 13.4 Single-open 方針
-
-lookup 系 surface は scope 内 single-open、interlinear は multi-open とします。既定 scope は `TranslationOrchestrator` 単位です。この方針により、floating / side surface と inline surface の運用哲学を分離します。
-
-### 13.5 入力行列の固定
-
-mouse、touch、pen、keyboard、assistive technology ごとの正規操作を公開契約に含めます。特に pen は touch 相当とし、hover 可能であっても lookup hover open の正規入力にはしません。
-
-### 13.6 Surface 意味論の固定
-
-lookup 系 surface は dialog ではなく、本文補助の `note` surface として扱います。`interlinear` も同じく `note` ですが、浮動 surface ではなく本文フロー内補注として扱います。
-
-### 13.7 イベントの公開境界
-
-`translation-toggle` と `translation-mode-change` は公開イベントです。`translation-request-mode-toggle` は内部連携イベントであり、外部が安定依存してよい公開 API には含めません。
-
-### 13.8 スタイリング公開面
-
-内部 DOM 構造および `[data-part]` は公開スタイリング API ではありません。外部が安定依存してよいのは公開トークンです。
-
-### 13.9 Content model
-
-`translated` は plain text only に固定します。rich content を許す場合は、HTML 文字列の受け入れではなく別 API を導入します。
-
-### 13.10 永続化優先順位
-
-優先順位は、runtime call、constructor / 初期構成、persisted value、system default の順に固定します。
-
-### 13.11 配置保証
-
-popover の位置決めは best-effort placement です。viewport 内 clamp と上下反転は保証しますが、他 overlay との衝突回避や複雑レイアウトへの完全追従は保証しません。
-
-### 13.12 契約と実装の関係
-
-本節で固定した判断は、現行実装説明よりも優先します。実装が追随していない箇所は、「現行実装で未対応の事項」に記録し、将来的な実装課題として扱います。
+また、本書では**契約本文を正本**として扱います。現行実装が本文に未追随の事項は、公開契約そのものとして利用者が依存してよいものではなく、実装差分、検証タスク、または issue として別途管理します。未対応状態を残したまま公開契約へ昇格させてはなりません。
 
 ---
 
-## 14. 将来拡張の原則
-
-本節は現行実装の公開契約ではなく、将来追加を検討する場合の設計指針です。追加機能は、翻訳 UI を肥大化させるためではなく、**読書の没入を守りながら参照性と学習性を補強する場合に限って**採用します。
-
-### 14.1 最優先で検討する価値がある拡張
-
-#### 14.1.1 言語タグの厳密化
-
-現行では `lang` / `target-lang` の空有無しか扱っていません。将来拡張では、BCP 47 妥当性の検証や、開発時警告の厳密化を追加する価値があります。
-
-この拡張を採用する場合、次を満たします。
-
-- 不正タグの扱いを警告か例外かで明確化します。
-- 実行時描画継続の可否を契約として固定します。
-- 単なる形式検証に留め、翻訳品質保証とは混同しません。
-
-#### 14.1.2 Rich translated content
-
-現行の `translated` は plain text 前提です。将来拡張では、ルビ、注釈、強調、辞書リンクなどを含む rich content を扱う価値があります。
-
-この拡張を採用する場合、次を満たします。
-
-- 原文より訳文が視覚的主役にならないこと。
-- interactive element の入れ子によって Trigger / Content のキーボード契約を壊さないこと。
-- XSS や unsafe HTML ではなく、構造化入力として設計すること。
-
-### 14.2 条件付きで価値がある拡張
-
-#### 14.2.1 Open 状態の事前フック
-
-現行は `translation-toggle` の事後通知のみです。将来、分析計測や上位ガードが必要であれば、`before-open` / `before-close` 的な事前フックを追加する価値があります。
-
-ただし、これを採用する場合でも、単純な参照コンポーネントをアプリケーション制御専用部品へ変質させないようにします。
-
-#### 14.2.2 Group 単位のオーケストレーション
-
-現行の `TranslationOrchestrator` は `root` 配下の全 translation を一括管理します。将来、章単位やペイン単位で mode を分けたい場合、group 単位のオーケストレーション追加は検討価値があります。
-
-### 14.3 採用しない方針
-
-次の方向は、読書の没入を損ないやすいため採りません。
-
-- Trigger を link と button のハイブリッドにすること
-- 翻訳生成ロジックをコンポーネントへ内蔵すること
-- 常時アニメーションや過度な attention grabbing effect を加えること
-- 訳文側に過剰な装飾や複数アクションを持ち込み、本文より強く主張させること
-
----
-
-## 15. 現行実装で未対応の事項
+## 13. 現行実装で未対応の事項
 
 本節は、現行の `translation.ts`、`translation-orchestrator.ts`、`translation.stories.ts` を基準として、**本契約で固定したが、現時点では未実装または未強制の事項**を整理するものです。
 
-### 15.1 共通 Device profile resolver
+### 13.1 共通 Device profile resolver
 
 契約では、mode 解決と bottom-sheet 化判定を共通 device profile に統一します。しかし現時点では、オーケストレータ側とコンポーネント側で判定基準が分かれています。したがって、**共通 resolver は未実装**です。
 
-### 15.2 Lookup 系 single-open の強制
+### 13.2 Lookup 系 single-open の強制
 
 契約では、lookup 系 surface は scope 内 single-open とします。しかし現時点では、複数の `ui-translation` を同時に open にできます。したがって、**single-open の排他制御は未実装**です。
 
-### 15.3 Surface 意味論の `note` への統一
+### 13.3 Surface 意味論の `note` への統一
 
 契約では、lookup 系 surface も含めて translation content を本文補助の `note` surface として扱います。しかし現時点の lookup 系 surface は dialog 的意味論で実装されています。したがって、**意味論の統一は未反映**です。
 
-### 15.4 Accessible naming の反映
+### 13.4 Accessible naming の反映
 
 契約では、content は `aria-labelledby` により対応する Trigger を参照し、Trigger / content の関係がアクセシブル名として結び付けられる前提です。しかし現時点では、Trigger 側 ID と content 側 `aria-labelledby` の組が実装上まだ固定されていません。したがって、**accessible naming 契約は未反映**です。
 
-### 15.5 Trigger 側の dialog 前提属性の整理
+### 13.5 Trigger 側の dialog 前提属性の整理
 
 契約では、lookup 系 surface を dialog ではなく本文補助の `note` surface として扱います。したがって、Trigger 側も dialog 前提の属性に依存してはなりません。しかし現時点では、lookup 系 surface の意味論変更に対応して Trigger 側属性まで整理し切れていません。したがって、**Trigger 側の意味論調整は未完了**です。
 
-### 15.6 公開イベントと内部イベントの分離
+### 13.6 公開イベントと内部イベントの分離
 
 契約では、`translation-request-mode-toggle` を内部連携イベントとして扱います。しかし現時点では、公開面と内部面が実装上明示的に分離されていません。したがって、**イベント可視性の境界は未強制**です。
 
-### 15.7 内部連携イベントの受理条件強化
+### 13.7 内部連携イベントの受理条件強化
 
 契約では、内部連携イベントはオーケストレータ連携のための限定的な経路として扱います。しかし現時点では、`translation-request-mode-toggle` の発火元や文脈妥当性を厳密に検証する受理条件は未整備です。したがって、**内部イベントの発火元検証と受理条件強化は未実装**です。
 
-### 15.8 Pen 入力の明示的取り扱い
+### 13.8 Pen 入力の明示的取り扱い
 
 契約では、pen を touch 相当として扱います。しかし現時点では、その方針が実装上明示的に固定されているわけではありません。したがって、**pen 入力契約は未固定**です。
 
-### 15.9 永続化優先順位の明示的実装
+### 13.9 永続化優先順位の明示的実装
 
 契約では、runtime call、constructor / 初期構成、persisted value、system default の優先順位を固定します。しかし現時点では、この優先順位が仕様として明示的に表現されているわけではありません。したがって、**優先順位の明文化は未完了**です。
 
-### 15.10 Internal DOM 非公開の実装補助
+### 13.10 Internal DOM 非公開の実装補助
 
 契約では、`[data-part]` を公開 API とみなしません。しかし現時点では Light DOM と共有 style 注入により、外部から内部構造へ比較的容易に到達できます。したがって、**内部構造非公開を補助する仕組みは未整備**です。
 
-### 15.11 Storybook 契約の追加分
+### 13.11 Storybook 契約の追加分
 
 契約では、`ManagedVsUnmanagedOwnership`、`SingleOpenPolicy`、`DeviceProfileResolution`、`AccessibleNamingContract`、`EventVisibilityContract` などの独立 Story を前提とします。しかし現時点では、それらは未整備です。
 
-### 15.12 既存 Story / Autodocs の旧契約残存
+### 13.12 既存 Story / Autodocs の旧契約残存
 
 契約では、lookup 系 surface の意味論や accessible naming などを更新済みの前提で固定しています。しかし現時点では、既存 Story や Autodocs の一部が旧契約を前提にした検証や説明を残しています。したがって、**不足している Story を追加するだけでなく、既存 Story / Autodocs の契約更新も未完了**です。
 
-### 15.13 本節の扱い
+### 13.13 本節の扱い
 
 本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用する場合は、実装、Storybook、契約書の 3 点を同時に更新し、未対応状態を残したまま公開契約へ昇格させません。

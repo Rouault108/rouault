@@ -8,7 +8,7 @@
 
 Rouault における dropdown は、本文読書の流れを恒常的に分断しないことを前提に、必要な局面でのみ操作密度を局所的に上げるための UI として位置付けます。したがって、本コンポーネントの契約は、単に開閉できることではなく、**意味、構成、フォーカス、選択、閉鎖条件を一貫した規則として固定すること**を目的とします。
 
-また、`ui-menu-item` と `ui-menu-separator` は `ui-dropdown` から独立した汎用コンテナではありません。これらは dropdown family の構成要素として扱い、単体再解釈には依存しません。
+また、`ui-menu-item` と `ui-menu-separator` は、`ui-dropdown` と協調して command menu を構成するための family 要素です。これらは描画可能な汎用箱としてではなく、dropdown 文脈において選択、区切り、フォーカス移動、アクセシビリティ関係を成立させる構成要素として扱います。family 外での単独使用は妨げませんが、その場合に dropdown 文脈と同一の公開保証が成立するとはみなしません。
 
 ---
 
@@ -32,10 +32,26 @@ Rouault における dropdown は、本文読書の流れを恒常的に分断�
 - ルーティング、ダイアログ起動、削除確認など上位レイヤの副作用
 - ナビゲーションメニュー、リンクリスト、サイトメニュー全体の設計
 - コンテキストメニュー以外の任意 popover / arbitrary overlay
-- 選択状態を保持する menubar / command palette / listbox への拡張設計全体
+- menubar、command palette、listbox など別 family 全体の設計
+- `ui-menu-item` に command 以外の意味を混在させる拡張
+- `ui-menu-item` の trailing 側 shortcut / meta 表示 API の設計
+- group label / section heading の要素設計
+- `close` reason の公開設計
+- submenu の設計
+- trigger 幅追従のような視覚オプション設計
 - アイコンセット自体の供給
 
-これらは上位レイヤまたは別コンポーネントの責務です。
+また、本書では次の方向を採りません。
+
+- 任意コンテンツ popover 全般を dropdown に持ち込むこと
+- フォーム、検索欄、複雑なレイアウトを menu 内の正規入力とすること
+- trigger slot の複数起点を同時に正式サポートすること
+- command item に link、selection、submenu の意味を混在させること
+- ナビゲーションメニューを `ui-menu-item` の亜種で済ませること
+- loading / pending / confirm を item 自体に抱え込むこと
+- `closeOnSelect=false` のような振る舞い変更を汎用 option として安易に追加すること
+
+これらは上位レイヤまたは別コンポーネントの責務であり、本書の公開契約には含めません。
 
 ---
 
@@ -51,101 +67,29 @@ Rouault における dropdown は、本文読書の流れを恒常的に分断�
 
 ---
 
-## 公開契約
-
-`ui-dropdown` は、トリガー 1 個とメニュー本体 1 個を持つ command menu コンポーネントです。メニュー本体には、正規入力として `ui-menu-item` と `ui-menu-separator` を配置します。
-
-`ui-dropdown` の公開入力は `opened`、`side`、`align`、`disabled` です。公開イベントは `menu-item-select`、`open`、`close` です。公開メソッドは `open()`、`close()`、`toggle()` です。
-
-`ui-menu-item` の公開入力は `value`、`variant`、`disabled`、`text-value` です。`ui-menu-separator` は公開入力を持ちません。
-
-### 入力契約
-
-#### `ui-dropdown`
-
-| 名前       | 種別                 | 必須   | 内容             | 契約                                                        |
-| ---------- | -------------------- | ------ | ---------------- | ----------------------------------------------------------- |
-| `opened`   | property / attribute | いいえ | 開閉状態         | `true` で開、`false` で閉。既定値は `false` です            |
-| `side`     | property / attribute | いいえ | 出現する辺       | `top` / `right` / `bottom` / `left`。既定値は `bottom` です |
-| `align`    | property / attribute | いいえ | 交差軸方向の整列 | `start` / `center` / `end`。既定値は `start` です           |
-| `disabled` | property / attribute | いいえ | 開閉操作の無効化 | `true` の場合、dropdown は開閉操作を受け付けません          |
-
-#### `ui-menu-item`
-
-| 名前         | 種別                 | 必須     | 内容                                  | 契約                                                          |
-| ------------ | -------------------- | -------- | ------------------------------------- | ------------------------------------------------------------- |
-| `value`      | property / attribute | **はい** | 選択値                                | `menu-item-select` の `detail.value` に入る安定した意味値です |
-| `variant`    | property / attribute | いいえ   | 項目の意味強度                        | `default` / `danger`。既定値は `default` です                 |
-| `disabled`   | property / attribute | いいえ   | 項目の無効化                          | `true` の場合、選択できず、キーボード移動でもスキップされます |
-| `text-value` | property / attribute | いいえ   | type-ahead およびテキスト名の正規化値 | 未指定時は `textContent.trim()` を使います                    |
-
-### スロット契約
-
-#### `ui-dropdown`
-
-| 名前         | 種別       | 位置付け | 内容                                                 |
-| ------------ | ---------- | -------- | ---------------------------------------------------- |
-| `trigger`    | named slot | 正規入力 | 開閉起点となる単一トリガー要素                       |
-| 既定スロット | slot       | 正規入力 | `ui-menu-item` および `ui-menu-separator` を並べます |
-
-`trigger` スロットには **単一トリガー**を置きます。複数要素を割り当てる構成は公開契約に含めません。
-
-既定スロットの正規入力は `ui-menu-item` と `ui-menu-separator` です。任意要素を配置した場合でも描画自体は行われ得ますが、ロービングフォーカス、type-ahead、選択イベント、ARIA の整合などのキーボード・選択契約には含めません。
-
-#### `ui-menu-item`
-
-| 名前         | 種別 | 位置付け | 内容                                           |
-| ------------ | ---- | -------- | ---------------------------------------------- |
-| 既定スロット | slot | 正規入力 | 項目ラベル、またはアイコンとラベルの組み合わせ |
-
-`ui-menu-item` のラベルは既定スロット内容、または `text-value` から決定します。`menu-item-select` の `detail.label` は表示ラベルとして扱い、意味値の一次情報源にはしません。
-
-### 構成制約契約
-
-`ui-dropdown` の正規構成は、**trigger 1 個**と、既定スロット内の **`ui-menu-item` / `ui-menu-separator` 列**です。描画可能であることと、正規入力として契約されることは同一ではありません。
-
-次の構成は、描画自体が成立し得ても、正規入力としては扱いません。
-
-- `trigger` slot に複数要素を入れる構成
-- 既定スロットに任意要素を混在させる構成
-- `ui-menu-separator` のみで構成されるメニュー
-- 空メニューを通常運用の基本形として使う構成
-- `href` やページ遷移を前提とする navigation item を `ui-menu-item` として表現する構成
-
-したがって、利用側は「表示できた」ことをもって構成が契約内であると判断してはなりません（MUST NOT）。キーボード移動、type-ahead、選択イベント、ARIA の整合を前提にする場合は、正規構成に従わなければなりません（MUST）。
-
-### 項目種別契約
-
-現行 family における `ui-menu-item` は **command item** です。これは操作の発火対象であり、リンク、選択状態付き項目、submenu trigger を兼務しません。
-
-したがって、次の意味は `ui-menu-item` に持ち込みません。
-
-- リンク遷移
-- 単一選択 / 複数選択の保持
-- submenu 展開起点
-- 現在位置表示
-
-将来これらが必要な場合は、`ui-menu-link`、`ui-menu-checkbox`、`ui-menu-radio`、`ui-submenu-trigger` のように **型を分けて追加**します。1 種の item に複数意味を混在させません。
-
 ### 公開イベント
 
 #### `ui-dropdown`
 
-| 名前               | 発火条件                        | `detail`                           |
-| ------------------ | ------------------------------- | ---------------------------------- |
-| `menu-item-select` | `ui-menu-item` が選択されたとき | `{ value: string, label: string }` |
-| `open`             | `open()` により開いたとき       | なし                               |
-| `close`            | `close()` により閉じたとき      | なし                               |
+| 名前               | 発火条件                                 | `detail`                           |
+| ------------------ | ---------------------------------------- | ---------------------------------- |
+| `menu-item-select` | `ui-menu-item` が選択されたとき          | `{ value: string, label: string }` |
+| `open`             | 実効開状態が `false` から `true` へ変わったとき  | なし                               |
+| `close`            | 実効開状態が `true` から `false` へ変わったとき | なし                               |
 
-`menu-item-select` はクリック選択、または Enter / Space による選択で発火します。
+`menu-item-select` は、クリック選択または Enter / Space による選択で発火します。
 
-`open` と `close` は、`open()` / `close()` を経由した場合に発火します。`opened` property を外部から直接書き換えた場合、表示状態は変化し得ますが、`open` / `close` イベント発火までは公開保証しません。イベント観測に依存する場合は、`opened` の直接代入ではなく公開メソッドを用いなければなりません（MUST）。
+`open` と `close` は、**状態遷移通知**です。これらは「開閉状態が変わった」という事実を通知するものであり、配置計算、フォーカス移動、スクロール監視の確立または解除までが完了したことを意味しません。
+
+したがって、`open` / `close` を完了通知として扱ってはなりません（MUST NOT）。開閉後の副作用を観測したい場合は、必要に応じて次の更新サイクルまたは利用側の後続処理で扱います。
+
+また、`open` / `close` は **状態変更の入口に依存せず**、`opened` の変更、`open()` / `close()` / `toggle()`、選択、Escape、Tab / Shift+Tab、外側クリック、scroll などにより実効状態が変化した場合に同一意味で発火します。
 
 ### イベント伝播契約
 
-公開イベント `open`、`close`、`menu-item-select` は、コンポーネント外部で観測できるイベントとして扱います。これらは dropdown family 内部の局所イベントではなく、利用側が依存してよい公開イベントです。
+公開イベント `open`、`close`、`menu-item-select` は、コンポーネント外部で観測できる公開イベントです。
 
-一方、`ui-menu-item` の `menu-item-click` は内部イベントです。これは family 内連携のために使うものであり、外部 API には含めません。利用側は `menu-item-click` ではなく `menu-item-select` を購読しなければなりません（MUST）。
+一方、`ui-menu-item` の `menu-item-click` は family 内部の連携イベントであり、外部 API には含めません。利用側は `menu-item-click` ではなく `menu-item-select` を購読しなければなりません（MUST）。
 
 また、公開イベントは結果通知であり、キャンセルによって内部状態遷移を差し止める契約は持ちません。選択前介入や閉鎖前介入は公開契約に含めません。
 
@@ -159,23 +103,28 @@ Rouault における dropdown は、本文読書の流れを恒常的に分断�
 
 ### 公開メソッド
 
-| 名前                         | 種別   | 契約                                                       |
-| ---------------------------- | ------ | ---------------------------------------------------------- |
-| `open()`                     | method | 無効状態でなく、かつ未展開時のみ開きます                   |
-| `close(restoreFocus = true)` | method | 展開時のみ閉じます。既定ではトリガーへフォーカスを戻します |
-| `toggle()`                   | method | 開閉を反転します                                           |
+| 名前                         | 種別   | 契約                                                                 |
+| ---------------------------- | ------ | -------------------------------------------------------------------- |
+| `open()`                     | method | 無効状態でなく、かつ既閉状態のときに開きます                         |
+| `close(restoreFocus = true)` | method | 既開状態のときに閉じます。既定では trigger へのフォーカス復帰を試みます |
+| `toggle()`                   | method | 無効状態でないとき、現在状態を反転します                             |
 
-`close()` の `restoreFocus` 引数は公開面として扱います。`false` を指定した場合、閉鎖後のフォーカス復帰には依存しません。
+`open()` / `close()` / `toggle()` は、`opened` を介した状態変更の公開ショートハンドです。これらは新しい意味を持つ別系統 API ではありません。
+
+`close()` の `restoreFocus` 引数は公開面として扱います。`false` を指定した場合、閉鎖後のフォーカス復帰先には依存しません。
 
 ### 制御モデル契約
 
-`ui-dropdown` の制御モデルは、**状態変更の正規 API としての `open()` / `close()` / `toggle()`** と、**現在状態の反映面としての `opened`** の二層から成ります。
+`ui-dropdown` の開閉状態は `opened` によって表し、**`opened` が唯一の公開状態値**です。`open()` / `close()` / `toggle()` は、この公開状態値を規則どおりに遷移させるための補助 API です。
 
-- `open()` / `close()` / `toggle()` は状態変更の正規 API です。
-- `opened` は現在状態を表す公開 property / attribute です。
-- `opened` の直接代入は表示制御には使えますが、イベント整合、閉鎖理由、フォーカス復帰までを一括保証する API ではありません。
+- `opened=true` は開状態、`opened=false` は閉状態を表します。
+- `open()` / `close()` / `toggle()` は、`opened` を正規規則に従って変更します。
+- `opened` を外部から変更した場合も、実効開閉状態の変更として扱います。
+- `open` / `close` は、状態遷移の入口ではなく、**実効状態変化そのもの**に対応して発火します。
 
-したがって、本コンポーネントは完全 controlled component としては扱いません。外部制御を行う場合でも、**状態遷移を公開契約どおりに発生させたいときはメソッドを用います**。`opened` は状態の投影面であり、単独では完全な状態遷移 API ではありません。
+したがって、本コンポーネントにおいて `opened` とメソッド群は矛盾する二重 API ではありません。利用側は宣言的には `opened` を、命令的には `open()` / `close()` / `toggle()` を用いてよく、どちらを入口にしても公開状態機械は同一です。
+
+ただし、本コンポーネントは React 的な controlled component 用語法における「親が唯一の真実源で、内部が一切状態を持たない」ことを保証するものではありません。ここで固定するのは、**公開状態値と状態遷移規則が一貫していること**です。
 
 ### 属性反映契約
 
@@ -200,7 +149,26 @@ Rouault における dropdown は、本文読書の流れを恒常的に分断�
 
 したがって、利用側は `top-start`、`bottom-end` のような複合 placement 文字列を前提とした設計に依存してはなりません（MUST NOT）。配置の正式入力は `side` と `align` です。
 
+`ui-menu-item` の `text-value` は、type-ahead と機械可読ラベルを安定化させるための **正式入力**です。`text-value` は convenience ではなく、表示内容が装飾、icon、補助表示、複数言語表記を含む場合にも検索性と機械可読性を保つための契約入力として扱います。
+
+したがって、type-ahead の一次情報源は `text-value` です。`textContent.trim()` は `text-value` 未指定時の fallback に限ります。複雑な表示構成で安定した検索文字列が必要な場合、利用側は `text-value` を与えるべきです（SHOULD）。
+
 また、本契約書に列挙していない値、または `ui-menu-item` / `ui-menu-separator` 以外を前提とした item 種別は、将来の拡張余地であって現行の公開契約ではありません。描画や型受理が成立しても、公開保証へは昇格しません。
+
+### 項目種別契約
+
+現行の `ui-menu-item` は **command item 専用**です。したがって、`ui-menu-item` に selection、navigation、submenu trigger など別の意味を混在させません。
+
+選択状態付き item を将来導入する場合は、`menuitemcheckbox` または `menuitemradio` 相当の意味を `ui-menu-item` に後付けせず、`ui-menu-checkbox`、`ui-menu-radio` のように **型を分離して追加**します。
+
+この原則は、単なる実装方針ではなく公開契約上の境界です。したがって、利用側は `ui-menu-item` を command item 以外の意味で解釈してはなりません（MUST NOT）。
+
+また、将来別型を追加する場合も、少なくとも次を満たさなければなりません（MUST）。
+
+- command item と selection item を型と ARIA の両面で分離すること
+- `aria-checked` 等の意味論を視覚差分だけで代用しないこと
+- type-ahead、矢印移動、Enter / Space の既存契約を壊さないこと
+- 単一選択と複数選択を曖昧に混在させないこと
 
 ### 配置解決契約
 
@@ -250,7 +218,11 @@ Rouault における dropdown は、本文読書の流れを恒常的に分断�
 
 ### Danger 項目状態
 
-`variant="danger"` は視覚的警告を表す状態です。削除、リセット、破棄など破壊的操作に用います。これは意味を補助するものであり、確認ダイアログや undo の有無までは保証しません。
+`variant="danger"` は、単なる色差ではなく、**誤操作時の損失が通常項目より大きい command** を表す意味属性です。典型例は、削除、破棄、リセット、解除、切断などです。
+
+`danger` は視覚的警告を伴ってよいですが、その本質は色ではなく意味区別にあります。したがって、利用側は「赤く見せたい項目」を `danger` にするのではなく、**通常項目とは異なる注意水準を要する操作**に限って用いなければなりません（SHOULD）。
+
+なお、`danger` は確認ダイアログ、二段階確認、undo の提供までは保証しません。これらの要否は上位レイヤの責務です。
 
 ### 空メニュー状態
 
@@ -262,9 +234,13 @@ Rouault における dropdown は、本文読書の流れを恒常的に分断�
 
 ### フォーカス復帰状態
 
-`close(true)`、Escape による閉鎖、選択による閉鎖では、既定で trigger へフォーカスを戻します。
+閉鎖後のフォーカス復帰は、**閉鎖契機ごとに一律ではなく、利用者の次の操作を妨げないこと**を優先して扱います。
 
-一方、外側クリック、スクロール、Tab / Shift+Tab による閉鎖では `close(false)` を通るため、trigger へのフォーカス復帰には依存しません。
+- 項目選択、Escape、または `close(true)` による閉鎖では、dropdown は trigger へのフォーカス復帰を試みます。
+- `Tab` / `Shift+Tab` による閉鎖では、ブラウザーの通常の逐次フォーカス移動を優先します。
+- 外側クリックおよび scroll による閉鎖では、その時点のユーザー操作文脈を優先し、trigger への復帰を保証しません。
+
+したがって、利用側は「閉じたら常に trigger に戻る」ことを前提にしてはなりません（MUST NOT）。閉鎖後のフォーカス先が重要なユースケースでは、閉鎖契機と `close()` 呼び出し引数を明示的に設計しなければなりません（MUST）。
 
 ---
 
@@ -304,58 +280,82 @@ Rouault における dropdown は、本文読書の流れを恒常的に分断�
 
 ### Accessibility 契約
 
-アクセシビリティ上の重要点は次のとおりです。
+アクセシビリティ上の公開契約は、特定属性の機械的列挙ではなく、**trigger / menu / menuitem の関係が外部から一貫して知覚できること**にあります。
 
-- panel は `role="menu"` を持ちます。
-- panel は trigger の ID を `aria-labelledby` で参照します。
-- trigger は `aria-haspopup="menu"`、`aria-expanded`、`aria-controls` を持ちます。
-- `ui-menu-item` の内部 button は `role="menuitem"`、`tabindex="-1"` を持ちます。
-- 閉状態の panel は `aria-hidden="true"` かつ `inert` です。
-- 非ネイティブ trigger には `role="button"` と `tabindex` を補います。
-- 無効な非ネイティブ trigger には `aria-disabled="true"` と `tabindex="-1"` を付与します。
+- 開状態の panel は menu として公開されます。
+- 閉状態の panel は、アクセシビリティツリーおよび逐次フォーカス移動の対象外でなければなりません（MUST）。
+- trigger は、自身が menu を開閉する操作起点であること、および現在の展開状態を外部へ示さなければなりません（MUST）。
+- 各 `ui-menu-item` は、選択可能項目として menu 内に公開されなければなりません（MUST）。
+- roving focus において、開状態でキーボード到達対象となる項目は 1 個だけでなければなりません（MUST）。
 
-本コンポーネントで重要なのは、**見た目が menu らしいことではなく、trigger / menu / menuitem の関係を実体として成立させること**です。
+これらを実現するために `aria-haspopup`、`aria-expanded`、`aria-controls`、`aria-labelledby`、`role="menu"`、`role="menuitem"`、`inert`、`aria-hidden` などを用いることはありますが、**公開契約は属性名そのものではなく、達成すべき意味関係**です。
 
 ### Trigger 契約
 
-trigger は **button 相当の操作要素**です。正規入力としては、ネイティブ `<button>`、または button semantics を適切に提供するカスタム要素を置きます。
+trigger は **menu button として操作可能な単一要素**です。正規入力としては、ネイティブ `<button>`、または利用側が button 相当の操作性をすでに与えた要素を置きます。
 
 - trigger は 1 個だけを正規 trigger とします。
-- 非ネイティブ trigger の場合、dropdown 側が `role="button"` と `tabindex` を補います。
-- trigger 自体の視覚設計や内部 DOM は dropdown が規定しません。
+- trigger はポインターおよびキーボードから開閉起点として操作可能でなければなりません（MUST）。
 - `a[href]` を trigger の正規入力としては扱いません。
+- trigger 自体の視覚設計や内部 DOM は dropdown が規定しません。
+
+非ネイティブ要素を trigger に使う場合、**button としての基礎操作性の一次責任は利用側**にあります。dropdown は menu button として必要な関連付けを与えますが、任意要素を完全な button へ再定義することまでは保証しません。
 
 ### Trigger 所有権契約
 
-trigger は利用側が供給する要素ですが、dropdown は開閉コンポーネントとして必要な最低限の関連付けを所有します。
+trigger は利用側が供給する要素ですが、dropdown は menu button として必要な最低限の関連付けを所有します。
 
 - trigger の選定は dropdown が行います。
-- `aria-haspopup`、`aria-expanded`、`aria-controls` などの関連属性は dropdown が管理します。
-- trigger に ID が必要な場合、その関連付けは dropdown が担います。
-- 非ネイティブ trigger に対する `role="button"` と `tabindex` の補完は dropdown の責務です。
+- menu との関連付けに必要な状態表現は dropdown が管理します。
+- trigger に識別子が必要な場合、その関連付けは dropdown が担います。
+- trigger が非ネイティブ要素であっても、dropdown が保証するのは **menu button 関係の付与**であり、button の全既定挙動の再現ではありません。
 
-一方で、trigger の視覚設計、内部 DOM、native `disabled` 属性の完全同期、button としての全既定挙動の再現は dropdown の責務に含めません。したがって、`ui-dropdown[disabled]` は **開閉無効化契約**であり、供給された trigger 要素そのものの完全な native disabled 化を意味しません。
+したがって、`ui-dropdown[disabled]` は **dropdown としての開閉無効化契約**です。供給された trigger 要素そのものが native `disabled` と同等に振る舞うことまでは意味しません。
 
 ### キーボード契約
 
-| キー        | trigger 上での動作               | panel 上での動作              |
-| ----------- | -------------------------------- | ----------------------------- |
-| `Enter`     | 開閉を反転                       | 現在項目を選択                |
-| `Space`     | 開閉を反転                       | 現在項目を選択                |
-| `ArrowDown` | 閉状態なら開き、最初の有効項目へ | 次の有効項目へ                |
-| `ArrowUp`   | 閉状態なら開き、最後の有効項目へ | 前の有効項目へ                |
-| `Home`      | なし                             | 最初の有効項目へ              |
-| `End`       | なし                             | 最後の有効項目へ              |
-| `Escape`    | なし                             | 閉じて trigger に戻す         |
-| `Tab`       | 通常のフォーカス移動             | 閉じて次へ進む                |
-| `Shift+Tab` | 通常のフォーカス移動             | 閉じて前へ戻る                |
-| 文字キー    | なし                             | type-ahead により前方一致検索 |
+本コンポーネントのキーボード操作は、**開状態では roving focus により 1 個の現在項目だけが到達可能である**ことを前提に定義します。
+
+ここでいう **現在項目** とは、開状態の menu 内でキーボード移動の基準となる有効な `ui-menu-item` を指します。現在項目は、内部の実フォーカス対象である menuitem 要素と一致します。separator、無効項目、正規構成外の要素は現在項目になりません。
+
+開状態で有効項目が 1 件以上ある場合、現在項目は常に高々 1 件です。現在項目以外の有効項目は roving focus 上の非到達状態に置かれます。
+
+| キー        | trigger 上での動作                        | panel 上での動作                                  |
+| ----------- | ----------------------------------------- | ------------------------------------------------- |
+| `Enter`     | 閉状態なら開く                            | 現在項目を選択                                    |
+| `Space`     | 閉状態なら開く                            | 現在項目を選択                                    |
+| `ArrowDown` | 閉状態なら開き、最初の有効項目を現在項目にする | 次の有効項目へ移動。末尾では先頭へ循環してよい     |
+| `ArrowUp`   | 閉状態なら開き、最後の有効項目を現在項目にする | 前の有効項目へ移動。先頭では末尾へ循環してよい     |
+| `Home`      | なし                                      | 最初の有効項目へ移動                              |
+| `End`       | なし                                      | 最後の有効項目へ移動                              |
+| `Escape`    | なし                                      | 閉じる。既定では trigger へのフォーカス復帰を試みる |
+| `Tab`       | 通常の逐次フォーカス移動                  | 閉じたうえで、通常の逐次フォーカス移動を妨げない    |
+| `Shift+Tab` | 通常の逐次フォーカス移動                  | 閉じたうえで、逆方向の逐次フォーカス移動を妨げない  |
+| 文字キー    | なし                                      | type-ahead により一致する有効項目へ移動            |
+
+現在項目の初期決定規則は次のとおりです。
+
+- `Enter` / `Space` / `ArrowDown` 起点で開いた場合は、最初の有効項目を現在項目にします。
+- `ArrowUp` 起点で開いた場合は、最後の有効項目を現在項目にします。
+- 有効項目が存在しない場合、現在項目は成立しません。
+
+また、`Tab` / `Shift+Tab` による閉鎖後の次フォーカス先はブラウザーの通常規則に従います。dropdown は、閉鎖後の「次要素」または「前要素」を独自に仮想化しません。
 
 ### Type-ahead 契約
 
-type-ahead は 1 秒バッファで動作します。入力文字列を小文字化し、**有効項目の `text-value` または `textContent.trim().toLowerCase()` に対する前方一致**で最初の一致項目へフォーカスします。
+type-ahead は 1 秒バッファで動作します。入力文字列は小文字化して扱い、**有効項目の `text-value`、未指定時は `textContent.trim()`** を正規化元として前方一致検索します。
 
-このため、type-ahead の品質は項目ラベルのテキスト構造に依存します。装飾テキスト、不可視テキスト、複数言語表記などを混在させる場合は、`text-value` によって安定した先頭文字列を与えなければなりません（SHOULD）。
+検索の基準点は現在項目です。現在項目がある場合、検索はその次の有効項目から循環的に開始してよく、一致が見つからなければ状態を変えません。
+
+したがって、type-ahead の対象は次の要素に限られます。
+
+- `ui-menu-item` であること
+- `disabled` でないこと
+- 正規構成内にあること
+
+separator、正規構成外の要素、補助表示専用の要素は type-ahead の対象に含めません。
+
+装飾テキスト、不可視テキスト、複数言語表記、icon と補助表示が混在する場合は、利用側は `text-value` に安定した検索文字列を与えるべきです（SHOULD）。`textContent.trim()` は fallback であって、複雑構成に対する一次契約ではありません。
 
 ### アクセシブルネーム契約
 
@@ -477,15 +477,17 @@ panel は画面上に一時的に現れる補助面であり、恒常的な card
 
 ### 閉鎖契約
 
-開状態の menu は次の契機で閉じます。
+開状態の menu は、次の契機で閉じます。
 
 - 項目選択
 - Escape
 - Tab / Shift+Tab
 - ドキュメント外側クリック
 - window scroll
+- `opened=false` への状態変更
+- `close()` または `toggle()` による閉鎖
 
-一方で、Enter / Space の trigger 操作は、閉状態からの展開と、開状態での反転に使われます。
+ただし、閉鎖後のフォーカス復帰は契機ごとに同一ではありません。項目選択、Escape、`close(true)` では trigger への復帰を試みますが、Tab 移動、外側クリック、scroll ではユーザーの次操作を優先し、trigger への復帰を保証しません。
 
 ### フォーカス契約
 
@@ -519,7 +521,18 @@ Shadow DOM 内部 class 名、DOM 順序、内部 `button` の実装細部は公
 
 ### 非 button trigger
 
-button semantics を補える非ネイティブ trigger でも最低限の操作性は成立します。ただし、button の完全互換ではなく、native button の既定挙動すべてを置換する契約ではありません。
+非ネイティブ要素を trigger に用いること自体は妨げませんが、公開契約上の正規入力は **button 相当の操作性をすでに備えた単一要素**です。
+
+したがって、非 button trigger で成立が期待できるのは、menu button としての最低限の関連付けと開閉操作までです。dropdown は任意要素を完全な native button と同等に変換する契約を持ちません。
+
+利用側が非ネイティブ trigger を採る場合は、少なくとも次を満たさなければなりません（MUST）。
+
+- フォーカス可能であること
+- ポインター操作で開閉起点になれること
+- Enter / Space による起動意味が破綻しないこと
+- trigger 自身のアクセシブルネームが安定していること
+
+これらが満たされない場合、その trigger は描画できても正規入力とは見なしません。
 
 ### 空メニュー
 
@@ -532,6 +545,16 @@ button semantics を補える非ネイティブ trigger でも最低限の操作
 ### 複数 trigger 要素
 
 trigger slot に複数要素を与えた場合、その構成自体が契約外です。残余要素の挙動には依存してはなりません。
+
+### Family 境界契約
+
+`ui-dropdown`、`ui-menu-item`、`ui-menu-separator` は、**dropdown family として協調動作すること**を前提に契約されます。
+
+- `ui-menu-item` は dropdown 配下で command item として使われるときに、選択、roving focus、type-ahead、ARIA 関係の保証対象になります。
+- `ui-menu-separator` は dropdown 配下でグループ境界を示すときに、separator としての意味を持ちます。
+- これらの要素を family 外で単独使用しても描画自体は成立し得ますが、dropdown family において保証されるキーボード、選択、関連付け契約は成立しません。
+
+したがって、`ui-menu-item` と `ui-menu-separator` は family 外でも無条件に同一意味を保つ汎用 primitive ではありません。公開保証は **dropdown family の文脈内**に限ります。
 
 ---
 
@@ -569,115 +592,6 @@ trigger slot に複数要素を与えた場合、その構成自体が契約外�
 | `EmptyMenu`                  | 空メニューの境界状態でも破綻しないこと                               |
 
 `NavigationExample` は command menu family の公開契約から外します。ナビゲーション用途を示す Story は別 family に移すか、参考例から削除します。
-
----
-
-## 将来拡張の原則
-
-本節は現行実装の公開契約ではなく、将来追加を検討する場合の設計指針です。追加機能は、dropdown を肥大化させるためではなく、**意味の明確化と操作の一貫性向上**に資する場合に限って採用します。
-
-### 最優先で検討する価値がある機能
-
-#### 選択状態付き item の型分離
-
-現行の `ui-menu-item` は command item です。`menuitemcheckbox` または `menuitemradio` 相当の選択状態を導入する場合は、`ui-menu-checkbox` / `ui-menu-radio` のように型を分けます。
-
-この拡張を採用する場合、次を満たします。
-
-- command item と selection item を型と ARIA の両面で明確に分離します。
-- 視覚差分だけでなく、`aria-checked` 等の意味論を伴わせます。
-- type-ahead、矢印移動、Enter / Space の契約を壊しません。
-- 単一選択と複数選択を曖昧に混在させません。
-
-#### Shortcut / meta 表示領域
-
-command menu では、項目ラベルとは別にキーボードショートカットや補助情報を静かに提示したい場合があります。そのため、`ui-menu-item` に trailing 側の補助表示領域を追加する価値があります。
-
-この機能を採用する場合、次を満たします。
-
-- 表示ラベルと shortcut / meta 表示を分離します。
-- type-ahead と `detail.label` は主ラベルだけを対象とします。
-- shortcut 表示はアクセシブルネームの一次情報源にしません。
-- 補助表示は command の意味を補うものであり、主ラベルを置き換えません。
-
-実装形態は、`slot="meta"`、`slot="shortcut"`、またはそれに準ずる trailing 領域として設計します。単なる装飾文字列ではなく、**主ラベルとは別の意味面**として扱います。
-
-#### `text-value` の正式実装
-
-本書では `text-value` を導入しています。これは単なる便利属性ではなく、type-ahead と機械可読ラベルを安定化させるための基盤機能です。
-
-この機能を採用する場合、次を満たします。
-
-- type-ahead の一次情報源として `text-value` を優先します。
-- `detail.label` の生成規則と `text-value` の役割を分離します。
-- icon、補助テキスト、複数言語表記を含む項目でも検索性を安定化させます。
-- `textContent.trim()` 依存は fallback としてだけ残します。
-
-`text-value` は新しい意味を足す機能ではなく、既存 family の操作品質を高めるための機能です。そのため、拡張というより **目標契約に近づけるための優先実装項目** として扱います。
-
-### 条件付きで検討する価値がある機能
-
-#### Group label / section heading
-
-大きな menu では、separator だけでなくセクションラベルを持つ価値があります。ただし、装飾見出しではなく、グループ意味を補う場合に限ります。
-
-この機能を採用する場合、次を満たします。
-
-- 選択不可、非フォーカスの補助要素として扱います。
-- group label は command item と視覚的に明確に区別します。
-- separator だけでは意味が弱い大きめの menu に限定して用います。
-
-#### `close` reason の公開
-
-現行の `close` は、閉じたという事実のみを通知します。利用側で閉鎖契機に応じた分岐が頻発する場合は、`reason` を公開する価値があります。
-
-この機能を採用する場合、次を満たします。
-
-- `reason` は列挙値で固定します。
-- 少なくとも `select` / `escape` / `tab` / `outside` / `scroll` / `programmatic` を候補とします。
-- 追加後に後方互換が揺れないよう、列挙集合を安易に拡張しません。
-
-これは API を一段重くするため、明確な利用要件がある場合に限って採用します。
-
-#### Submenu
-
-階層的コマンド群が必要な場合、submenu は検討価値があります。ただし、本文読書の流れを乱しやすく、キーボード契約も複雑化するため、優先度は高くありません。
-
-この機能を採用する場合、次を満たします。
-
-- 単層 menu の契約を壊さず、別型として段階的に追加します。
-- フォーカス遷移、外側クリック、親子 close chain を明示的に定義します。
-- submenu trigger と command item を同型にしません。
-
-#### Trigger 幅追従
-
-toolbar や密度の高い操作面では、panel 幅を trigger 幅にそろえたい場合があります。この用途に限り、`match-trigger-width` のような視覚オプションは検討価値があります。
-
-ただし、Rouault における dropdown は常設選択 UI ではなく局所的 command menu であるため、既定機能としては扱いません。必要性が明確な場面に限って追加します。
-
-### 採用しない方針
-
-次の方向は dropdown の責務を汚しやすいため採りません。
-
-- 任意コンテンツ popover 全般を dropdown に持ち込むこと
-- フォーム、検索欄、複雑なレイアウトを menu 内の正規入力とすること
-- trigger slot の複数起点を同時に正式サポートすること
-- command item に link、selection、submenu の意味を混在させること
-- ナビゲーションメニューを `ui-menu-item` の亜種で済ませること
-- loading / pending / confirm を item 自体に抱え込むこと
-- `closeOnSelect=false` のような振る舞い変更を汎用 option として安易に追加すること
-
-### 将来拡張を採用する場合の確認点
-
-将来拡張を採用する場合、Storybook と契約書では少なくとも次を追加確認対象とします。
-
-- `MenuCheckbox` / `MenuRadio` 相当 Story による選択状態確認
-- `MenuItemWithShortcut` 相当 Story による主ラベルと補助表示の分離確認
-- `TextValueTypeahead` 相当 Story による機械可読ラベルの確認
-- `GroupedMenu` によるグループラベルの意味確認
-- `CloseReason` による閉鎖理由の安定性確認
-- `Submenu` によるキーボード遷移確認
-- `MatchTriggerWidth` による幅追従時の視覚整合確認
 
 ---
 
@@ -727,23 +641,23 @@ trigger slot に複数要素が入った場合、現行実装は最初の 1 要�
 
 ### command item 以外の item 種別
 
-現行 `ui-menu-item` は command item のみを扱います。checkbox item、radio item、submenu trigger は未対応です。
+本書では `ui-menu-item` を command item 専用に固定しました。checkbox item、radio item、submenu trigger は現行 family の公開契約に含みません。したがって、**型分離原則は本文に存在するが、対応する別型コンポーネントは未導入**です。
 
 ### Shortcut / meta 表示領域
 
-本書では、主ラベルと分離された trailing 側の shortcut / meta 表示領域を将来機能として位置付けています。しかし、現行実装の `ui-menu-item` は既定スロットのみを持ち、主ラベルと補助表示を構造的に分離する API を公開していません。したがって、**shortcut 表示を契約的に扱うための構造が未対応**です。
+本書では、主ラベルと分離された trailing 側の shortcut / meta 表示 API を適用範囲の対象外としています。現行実装の `ui-menu-item` は既定スロットのみを持ち、主ラベルと補助表示を構造的に分離する API を公開していません。したがって、**補助表示を契約的に扱うための構造は現行 family の対象外**です。
 
 ### Group label / section heading
 
-本書では、separator だけでは意味が弱い大きめの menu に対して group label の導入余地を残しています。しかし、現行実装には非選択・非フォーカスの group label 要素が存在しません。したがって、**グループ意味を視覚線以外で表す機能は未対応**です。
+本書では、group label / section heading を適用範囲の対象外としています。現行実装には非選択・非フォーカスの group label 要素が存在しません。したがって、**グループ意味を separator 以外で表す機能は現行 family の公開契約に含みません**。
 
 ### `close` reason の公開
 
-本書では、条件付きで `close` reason を公開する可能性を整理しています。しかし、現行 `close` イベントは detail を持たず、`select` / `escape` / `tab` / `outside` / `scroll` / `programmatic` を識別できません。したがって、**閉鎖契機の機械可読な識別は未対応**です。
+本書では、`close` は閉じたという事実のみを通知し、reason は公開しません。現行 `close` イベントも detail を持たず、`select` / `escape` / `tab` / `outside` / `scroll` / `programmatic` を識別できません。したがって、**閉鎖契機の機械可読な識別は現行契約に含みません**。
 
 ### Trigger 幅追従
 
-本書では、条件付き機能として trigger 幅追従を検討対象にしています。しかし、現行 panel は `min-width: 180px` と `max-width: 280px` を持つ固定系の幅契約であり、trigger 幅への追従 option はありません。したがって、**toolbar などで必要になる幅同期機能は未対応**です。
+本書では、trigger 幅追従を適用範囲の対象外としています。現行 panel は `min-width: 180px` と `max-width: 280px` を持つ固定系の幅契約であり、trigger 幅への追従 option はありません。したがって、**toolbar などで必要になる幅同期機能は現行 family の公開契約に含みません**。
 
 ### `open` / `close` イベントの発火タイミング
 
@@ -773,4 +687,4 @@ trigger slot に複数要素が入った場合、現行実装は最初の 1 要�
 
 本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用または是正する場合は、実装、Storybook、契約書の 3 点を同時に更新し、未整合状態を残したまま公開契約へ昇格させません。
 
-また、本節には **将来拡張節で明示したが現行実装には未導入の機能** と、**現行実装が本書の長期契約とまだ噛み合っていない事項** の両方を含みます。したがって、単なる TODO 一覧ではなく、公開契約へ昇格させる前に整理すべき差分一覧として扱います。
+また、本節には **現行実装が本書の長期契約とまだ噛み合っていない事項** と、**適用範囲では除外したが、将来別文書または別 family として整理し得る事項** の両方を含みます。したがって、単なる TODO 一覧ではなく、公開契約との距離を明示する差分一覧として扱います。

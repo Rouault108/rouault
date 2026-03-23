@@ -1,4 +1,4 @@
-# Tooltip コンポーネント契約書
+# Tooltip
 
 ## 1. 文書の目的
 
@@ -23,7 +23,6 @@ Rouault における tooltip は読書の主役ではありません。本文や
 - 境界条件
 - Storybook 契約
 - 実装修正方針
-- 将来機能の検討方針
 - 現行実装で未対応の事項
 
 一方、本書は次の事項を扱いません。
@@ -34,6 +33,15 @@ Rouault における tooltip は読書の主役ではありません。本文や
 - 長文ヘルプ、操作手順、チュートリアル表示
 - 画面単位でのヘルプ戦略や文言設計全体
 - trigger 側コンポーネントの truncate 判定や説明文生成
+- trigger 側要素の overflow measurement と、それに基づく自動的な `disabled` 切り替え
+- `hover + focus` 以外の起動モードを切り替えるための公開 API
+- `aria-describedby` の結合方式を切り替えるための公開 API
+- `open` property や `show()` / `hide()` などの外部制御 API
+- long press や tap-to-toggle などのタッチ専用起動
+- arrow 表示
+- collision policy の細かな外部制御
+
+truncate 時のみ tooltip を有効化したい場合は、上位レイヤまたは別 utility が overflow 判定と `disabled` 制御を担います。`ui-tooltip` 本体はその判定責務を持たず、与えられた trigger と文言を説明補助として提示することに限定します。
 
 これらは上位レイヤまたは別コンポーネントの責務です。
 
@@ -45,7 +53,7 @@ Rouault における tooltip は読書の主役ではありません。本文や
 
 1. **tooltip は非インタラクティブな短文補足に限定すること。**
 2. **開閉は hover / focus 起点の内部状態として扱うこと。**
-3. ``** の付与と除去を trigger に対して正しく反映すること。**
+3. **`aria-describedby` の付与と除去を trigger に対して正しく反映すること。**
 4. **表示レイヤを trigger から分離しつつ、位置追従と可読性を維持すること。**
 5. **外部制御や過剰な自由度を安易に持ち込まず、責務を狭く保つこと。**
 
@@ -53,13 +61,13 @@ Rouault における tooltip は読書の主役ではありません。本文や
 
 ## 4. 公開契約
 
-`ui-tooltip` は、`text`、`variant`、`placement`、`offset`、`openDelay`、`closeDelay`、`disabled` を公開入力として扱います。スロットは既定スロットのみを持ち、**最初に割り当てられた単一の **``** を trigger** として扱います。
+`ui-tooltip` は、`text`、`variant`、`size`、`placement`、`offset`、`openDelay`、`closeDelay`、`disabled` を公開入力として扱います。スロットは既定スロットのみを持ち、**最初に割り当てられた単一の `HTMLElement` を trigger** として扱います。
 
 tooltip 内容は `text` による**プレーンテキスト入力**のみを受け付けます。HTML は解釈せず、内部的にも `textContent` として扱います。したがって、強調、リンク、任意マークアップを tooltip 内容の公開契約には含めません。
 
 `text` は **plain prose** として扱います。先頭末尾空白は空判定にのみ用い、表示時の改行や連続空白は通常の折り返し規則に従って視覚的に正規化されます。tooltip は短文補足を対象とし、長文説明の収容を目的としません。
 
-`variant` の既定値は `default`、`placement` の既定値は `top`、`offset` の既定値は `8`、`openDelay` と `closeDelay` の既定値はいずれも `0`、`disabled` の既定値は `false` です。
+`variant` の既定値は `default`、`size` の既定値は `md`、`placement` の既定値は `top`、`offset` の既定値は `8`、`openDelay` と `closeDelay` の既定値はいずれも `0`、`disabled` の既定値は `false` です。
 
 `ui-tooltip` の開閉は公開 property では制御しません。**hover または focus を起点とした内部状態**としてのみ開閉します。したがって、利用者は `open` のような外部制御面を期待してはなりません（MUST NOT）。
 
@@ -69,6 +77,7 @@ tooltip 内容は `text` による**プレーンテキスト入力**のみを受
 | ------------ | ------------------------------------ | ------ | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `text`       | property / attribute                 | いいえ | tooltip 文言                  | 空白のみを含む場合は tooltip を表示しません                                                                                                             |
 | `variant`    | property / attribute                 | いいえ | 視覚バリアント                | `default` / `subtle` / `inverse`                                                                                                                        |
+| `size`       | property / attribute                 | いいえ | 可読幅の等級                  | `sm` / `md` / `lg`。既定値は `md` とし、具体的な最大幅値は内部設計値で管理します                                                                       |
 | `placement`  | property / attribute                 | いいえ | 基本配置                      | `top` / `top-start` / `top-end` / `bottom` / `bottom-start` / `bottom-end` / `left` / `left-start` / `left-end` / `right` / `right-start` / `right-end` |
 | `offset`     | property / attribute                 | いいえ | trigger と tooltip の基本距離 | 既定値は `8`。0 以上の有限数を受理します                                                                                                                |
 | `openDelay`  | property / attribute (`open-delay`)  | いいえ | 表示遅延                      | ミリ秒単位。非負の有限数として扱います                                                                                                                  |
@@ -81,7 +90,7 @@ tooltip 内容は `text` による**プレーンテキスト入力**のみを受
 | ------------ | ---- | -------- | --------------------------------------------- |
 | 既定スロット | slot | 正規入力 | tooltip を紐づける trigger 要素を受け取ります |
 
-既定スロットは trigger 要素を受け取ります。`ui-tooltip` は、`slot.assignedElements({ flatten: true })[0]` を優先し、存在しない場合のみ `firstElementChild` を fallback として扱います。したがって、**正規入力は 1 個の **`` です。
+既定スロットは trigger 要素を受け取ります。`ui-tooltip` は、`slot.assignedElements({ flatten: true })[0]` を優先し、存在しない場合のみ `firstElementChild` を fallback として扱います。したがって、**正規入力は 1 個の `HTMLElement`** です。
 
 trigger は hover と focus の双方を受け取る要素であることを前提とします。`disabled` なネイティブ form control のように、focus や pointer interaction を安定して受け取れない要素を直接 trigger とする構成は、公開契約としてサポートしません。必要な場合は、その外側の wrapper 要素を trigger とします。
 
@@ -103,6 +112,7 @@ trigger は hover と focus の双方を受け取る要素であることを前�
 | ------------ | ------------- | ------- | ------------------------------------------------------------------------------------- |
 | `text`       | `text`        | なし    | HTML 属性からは与えられますが、property 変更が attribute に反映される保証はありません |
 | `variant`    | `variant`     | あり    | 列挙外値は `default` に正規化します                                                   |
+| `size`       | `size`        | あり    | 列挙外値は `md` に正規化します                                                        |
 | `placement`  | `placement`   | あり    | 列挙外値は `top` に正規化します                                                       |
 | `offset`     | `offset`      | あり    | 非有限値は `8` に正規化します                                                         |
 | `openDelay`  | `open-delay`  | あり    | 非有限値または負値は `0` に正規化します                                               |
@@ -111,7 +121,7 @@ trigger は hover と focus の双方を受け取る要素であることを前�
 
 ### 4.6 無効値の扱い
 
-`variant` と `placement` は列挙値を公開契約とします。列挙外値はそれぞれ `default`、`top` に正規化します。
+`variant`、`size`、`placement` は列挙値を公開契約とします。列挙外値はそれぞれ `default`、`md`、`top` に正規化します。
 
 `offset` は 0 以上の有限数を受理し、非有限値は `8` に正規化します。負の有限値は `0` に clamp します。
 
@@ -135,7 +145,7 @@ trigger は hover と focus の双方を受け取る要素であることを前�
 
 ### 5.1 基本状態
 
-最小状態は、`text` に空でない文言を持ち、`variant="default"`、`placement="top"`、`offset=8`、`openDelay=0`、`closeDelay=0`、`disabled=false` の状態です。この状態では trigger への hover または focus により tooltip を表示できます。
+最小状態は、`text` に空でない文言を持ち、`variant="default"`、`size="md"`、`placement="top"`、`offset=8`、`openDelay=0`、`closeDelay=0`、`disabled=false` の状態です。この状態では trigger への hover または focus により tooltip を表示できます。
 
 ### 5.2 開状態
 
@@ -156,6 +166,10 @@ tooltip は、trigger から tooltip 自体へ pointer を移した場合も表�
 開待ち中に close 条件へ移った場合は open timer を取り消します。逆に、close 待ち中に再び hover / focus 条件へ戻った場合は close timer を取り消します。
 
 なお、timer 待機中に `openDelay` または `closeDelay` が変更されても、**既に開始済みの timer へは遡及適用しません**。変更後の値は、次に新しく schedule される open / close から適用します。
+
+また、複数 tooltip を連続的に探索する文脈では、**個別 instance の `openDelay` を壊さない opt-in の共有遅延文脈**を導入しても構いません。この協調は、初回 open では各 instance の既定 delay を尊重しつつ、同一文脈内で後続 tooltip の open を短い delay、または delay なしにできる範囲に限定します。
+
+この共有遅延文脈は tooltip の説明補助という責務を拡張せず、複数 tooltip 間の探索体験だけを改善するための補助契約として扱います。
 
 ### 5.6 抑止状態
 
@@ -181,7 +195,7 @@ tooltip の開位置は `placement` を起点としますが、実際の表示�
 
 ## 6. DOM / Accessibility
 
-ルートは `:host` です。Shadow DOM 内には slot だけを持ち、可視 panel は open 時に **host と同じ **``** の body** 直下へ動的生成します。
+ルートは `:host` です。Shadow DOM 内には slot だけを持ち、可視 panel は open 時に **host と同じ `ownerDocument` の body** 直下へ動的生成します。
 
 ```text
 <ui-tooltip data-tooltip-id="...">
@@ -240,6 +254,8 @@ tooltip は情報の主役ではありません。本文、見出し、リスト
 
 ルートの `:host` は `inline-flex` です。tooltip panel 自体は `position: fixed` で document 座標系に置かれます。最大幅は可読な短文補足を保てる範囲に制限し、狭い viewport でも左右に余白を残します。
 
+tooltip の可読幅は `size` により `sm` / `md` / `lg` の等級で選択できます。`size` は任意のピクセル値ではなく、**短文補足の可読性を段階的に調整するための列挙値**です。具体的な最大幅は設計トークンまたは内部設計値で管理し、利用者が任意値を直接注入する契約は持ちません。
+
 tooltip surface は小さな余白、角丸、境界線、影を持ちます。文字は `text-xs` 相当のサイズ、`font-medium` 相当の太さで表示します。`white-space: normal` と `overflow-wrap: anywhere` を用い、長い語でも折り返します。
 
 ### 7.3 視覚仕様
@@ -279,7 +295,7 @@ tooltip surface は小さな余白、角丸、境界線、影を持ちます。�
 
 ### 7.5 トークン到達性
 
-tooltip panel は host の Shadow DOM 内ではなく document body 配下に生成されます。したがって、テーマトークンは **body / document まで到達するスコープ**で定義されていなければなりません（MUST）。host ローカルだけで定義した CSS custom properties に依存する設計はサポートしません。
+tooltip panel は host の Shadow DOM 内ではなく document body 配下に生成されます。したがって、テーマトークンは **body / document まで到達するスコープ**で定義されていることが推奨されます。host ローカルだけで定義した CSS custom properties に依存する設計では、tooltip panel に値が届かない可能性があります。
 
 ---
 
@@ -326,7 +342,7 @@ tooltip の位置決めは `floating-ui` による `computePosition(..., { strat
 
 ### 9.3 スタイル注入契約
 
-tooltip 用の document CSS は `ui-tooltip-document-styles` という id を持つ `<style>` として、**host と同じ **``** の head** に 1 回だけ注入されます。複数 instance があっても重複注入しません。
+tooltip 用の document CSS は `ui-tooltip-document-styles` という id を持つ `<style>` として、**host と同じ `ownerDocument` の head** に 1 回だけ注入されます。複数 instance があっても重複注入しません。
 
 ### 9.4 多重表示契約
 
@@ -338,13 +354,15 @@ component が DOM から切り離される際は、待機中 timer、位置追�
 
 ### 9.6 スタイル拡張契約
 
-`ui-tooltip` は `::part(...)` を公開しません。panel は Shadow DOM 外に生成されるため、内部 class や `data-ui-*` 属性への依存を公開拡張面として扱いません。利用者は、**CSS Custom Properties によるトークン差し替え**を基本とし、内部セレクタ構造への依存はしてはなりません（MUST NOT）。
+`ui-tooltip` は `::part(...)` を公開しません。panel は Shadow DOM 外に生成されるため、内部 class や `data-ui-*` 属性は公開拡張面として扱いません。利用者向けの拡張面は、**CSS Custom Properties によるトークン差し替え**を基本とします。内部セレクタ構造への依存は将来変更に弱いため、推奨しません。
 
-また、`data-tooltip-id`、`data-ui-tooltip-content`、`data-ui-tooltip-surface`、`data-ui-tooltip-hit-area` などの内部属性や、body 直下の DOM 構造は**公開契約ではありません**。これらは内部実装および Storybook 検査の都合で存在し得ますが、利用側の拡張点として依存してはなりません（MUST NOT）。
+また、`data-tooltip-id`、`data-ui-tooltip-content`、`data-ui-tooltip-surface`、`data-ui-tooltip-hit-area` などの内部属性や、body 直下の DOM 構造は**公開契約ではありません**。これらは内部実装および Storybook 検査の都合で存在し得ますが、利用側の拡張点としては扱わないでください。
 
 ### 9.7 統合契約
 
 `ui-tooltip` は、trigger 側コンポーネントが必要に応じて `disabled` を切り替えることで、truncate 時のみ補助説明を出す用途にも利用できます。tooltip 自体は truncate 判定を持たず、表示要否の判断は上位コンポーネント側の責務です。
+
+overflow measurement や truncate 判定を簡略化する補助 hook / utility を別に設計することはできますが、それは `ui-tooltip` 本体の公開契約には含めません。`ui-tooltip` 自体は、与えられた trigger、文言、delay、配置、可読幅等級を用いて説明補助を提示することに限定します。
 
 ---
 
@@ -409,7 +427,7 @@ tooltip panel と document style は、host と同じ `ownerDocument` の `body`
 
 ## 11. Storybook 契約
 
-各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
+各 Story は契約確認のための**現行の検査実装**として扱います。ここで固定したいのは Story 名そのものではなく、各 Story が担う契約確認点です。したがって、Story の分割・統合・改名は許容しますが、下表の確認論点は同等以上の粒度で維持しなければなりません。
 
 | Story                                 | 固定する契約                                                                                                                                                                                                                                     |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -433,7 +451,7 @@ tooltip panel と document style は、host と同じ `ownerDocument` の `body`
 
 ### 11.1 運用方針
 
-Story 名は、単なる視覚バリエーションではなく、**破壊的変更を検出したい契約単位**に合わせて命名します。複数の論点を 1 つの Story に過密に詰め込むのではなく、A11y、state、boundary、integration を分離して固定します。
+Story 名は現時点の便宜的な識別子です。将来の再編成で変更して構いませんが、A11y、state、boundary、integration の確認論点が失われないことを優先します。複数の論点を 1 つの Story に過密に詰め込むのではなく、契約確認点の独立性が保てる粒度で維持します。
 
 また、play 関数では公開契約の確認を優先し、内部 DOM 構造や `data-ui-*` 属性への依存は必要最小限に留めます。内部属性を参照する場合も、それは公開拡張面ではなく、**Storybook 上の検査補助**としてのみ扱います。
 
@@ -483,73 +501,7 @@ Story 名は、単なる視覚バリエーションではなく、**破壊的変
 
 ---
 
-## 13. 新規で追加を検討する価値がある機能
-
-本節は、`ui-tooltip` の責務を維持したまま、将来追加を検討する価値がある機能を整理するものです。ここでいう「価値がある」とは、単に表現力を増やすことではなく、**説明補助としての精度、運用性、一貫性を高められること**を意味します。
-
-一方で、tooltip を popover や help dialog に近づける方向の拡張は、本コンポーネントの責務を曖昧化しやすいため、原則として採用しません。
-
-### 13.1 グローバルな delay 協調
-
-最も追加価値が高い候補は、複数 tooltip 間で open delay を協調させる機能です。初回 hover では既定の `openDelay` を適用しつつ、同一画面内で連続して別 tooltip を探索する際には、後続 tooltip を短い delay、または delay なしで開けるようにします。
-
-この機能は、ツールバー、アイコン群、密集したリスト項目などで tooltip を連続的に読む場合の体験を大きく改善します。しかも、tooltip を非インタラクティブな短文補足のまま保てるため、責務の逸脱がありません。
-
-導入する場合は、個別 instance の `openDelay` を壊さず、`delayGroup` のような opt-in の共有遅延文脈として設計するのが望ましいです。
-
-### 13.2 Overflow / Truncate 連携の補助機構
-
-長いラベルが省略表示された場合にのみ tooltip を有効化する用途は、実運用で非常に多いです。現行契約でも `disabled` を上位が切り替えることで実現できますが、その都度 overflow 判定と状態連携を書くのは冗長です。
-
-ただし、この機能は **tooltip 本体へ直接入れるべきではありません。** tooltip 自体が truncate 判定や layout measurement の責務を負うと、再利用性と責務分離が悪化します。
-
-追加するなら、`useTooltipWhenOverflowed(...)` のような補助 hook、あるいは別ユーティリティとして設計し、tooltip 本体は `disabled` 制御を受けるだけに留めるのが適切です。
-
-### 13.3 `size` による最大幅等級
-
-tooltip の最大幅を、自由な数値ではなく、`sm` / `md` / `lg` のような列挙で選べるようにする機能には検討価値があります。短いラベル補助と、やや長い補足文では、読みやすい幅が異なるためです。
-
-ただし、`maxWidth` のような任意値 API は避けた方がよいです。tooltip は設計トークンの支配下に置くべきであり、自由度を上げすぎると視覚的一貫性を損ねます。導入する場合は、**可読性の等級**として `size` を設け、具体値は内部設計値に留めます。
-
-### 13.4 限定的な interaction mode 切り替え
-
-一部の文脈では、`hover + focus` の既定起動ではなく、`focus-only` または `hover-only` の挙動を選びたい場合があります。このため、`interactionMode="hover-focus|focus-only|hover-only"` のような限定的 API には、条件付きで検討価値があります。
-
-ただし、ここで click 起動や toggle 起動まで許可すると tooltip の状態機械が急速に複雑化し、別コンポーネントとの責務境界が崩れます。したがって、導入する場合でも mode は最小限の列挙に制限します。
-
-### 13.5 `aria-describedby` 連携の拡張
-
-現行契約では、既存 `aria-describedby` を保持したまま tooltip id を末尾追加します。これは安全な既定方針ですが、将来的には既存 description との関係を調整したいケースもあり得ます。
-
-ただし、この種の A11y 拡張は設計・検証コストが高く、誤用時の悪影響も大きいです。したがって、`describedByMode` のような切り替え面を導入する価値は理論上ありますが、優先度は高くありません。採用する場合は、`append` を既定とし、それ以外は強い制約付きの opt-in に限定するのが妥当です。
-
-### 13.6 追加を推奨しない機能
-
-次の機能は、一見便利でも tooltip の責務を曖昧化しやすいため、本コンポーネントへの追加は推奨しません。
-
-- `open` property や `show()` / `hide()` などの外部制御 API
-- HTML、リンク、ボタン、フォーム要素を含むリッチコンテンツ
-- long press や tap-to-toggle などのタッチ専用起動
-- arrow 表示
-- collision policy の細かな外部制御
-
-これらは tooltip を状態管理コンポーネント、または interactive overlay に近づけます。必要な場合は、tooltip を拡張するのではなく、popover、help popup、coachmark など別責務のコンポーネントとして設計すべきです。
-
-### 13.7 推奨順位
-
-長期的な価値、責務の明確さ、保守性を総合すると、追加を検討する優先順位は次のとおりです。
-
-1. **グローバルな delay 協調**
-2. **Overflow / Truncate 連携の補助機構**
-3. ``** による最大幅等級**
-4. **限定的な interaction mode 切り替え**
-5. ``** 連携の拡張**
-
-この順序は、tooltip の本質である「短時間の説明補助」を保ちながら、利用体験を改善できる度合いに基づきます。
-
----
-
-## 14. 補足
+## 13. 補足
 
 `ui-tooltip` の要点は、浮遊要素を描画すること自体ではありません。**trigger の意味を補足する説明関係を、必要な瞬間だけ成立させ、読書の流れを止めずに退くこと**にあります。
 
@@ -562,33 +514,33 @@ tooltip の最大幅を、自由な数値ではなく、`sm` / `md` / `lg` の�
 
 ---
 
-## 15. 現行実装で未対応の事項
+## 14. 現行実装で未対応の事項
 
-本節は、現行の `tooltip.ts` および `tooltip.stories.ts` を基準として、**将来拡張としては考え得るが、現時点では公開契約に含めない事項**と、**本書で確定した契約に対する既知差分**を整理するものです。
+本節は、現行の `tooltip.ts` および `tooltip.stories.ts` を基準とした**非規範的な実装スナップショット**です。公開契約そのものは 4〜11 章を正とし、本節は未対応事項、既知差分、移行上の注意の整理にのみ用います。将来拡張候補の採否や公開契約の確定は、本節ではなく本文側で扱います。
 
-### 15.1 開閉の外部制御
+### 14.1 開閉の外部制御
 
 現行実装には `open` property、`show()`、`hide()` のような imperative API はありません。tooltip の表示可否は hover / focus に固定されています。
 
-### 15.2 リッチコンテンツ / インタラクティブコンテンツ
+### 14.2 リッチコンテンツ / インタラクティブコンテンツ
 
 tooltip 内容は `text` によるプレーンテキストのみです。slot による HTML、リンク、ボタン、フォーム要素の埋め込みには未対応です。
 
-### 15.3 タッチ専用起動契約
+### 14.3 タッチ専用起動契約
 
 現行実装は hover / focus / Escape を前提としており、long press、tap-to-toggle、モバイル専用 dismiss gesture などのタッチ特化契約は持ちません。
 
-### 15.4 矢印表示
+### 14.4 矢印表示
 
 tooltip arrow は現行契約に含みません。placement は panel 本体の side と offset で表現し、矢印の有無や形状は未対応です。
 
-### 15.5 外部スタイルの詳細制御
+### 14.5 外部スタイルの詳細制御
 
 panel は body 配下に生成され、`::part(...)` も公開していません。そのため、surface 形状や hit area の詳細を component API として外部制御する契約は未対応です。
 
-### 15.6 現行契約に未追随の実装差分
+### 14.6 現行契約に未追随の実装差分
 
-次の事項は、将来拡張の未対応という意味ではなく、**本書で確定した契約に対して現行 **``** がまだ追随していない差分**です。
+次の事項は、将来拡張の未対応という意味ではなく、**本書で確定した契約に対して現行 `tooltip.ts` がまだ追随していない差分**です。
 
 - `offset` は契約上「非有限値は `8`、負の有限値は `0` に clamp」としていますが、現行実装は非有限値しか正規化しておらず、負の有限値を clamp していません。
 - panel 生成と document style 注入は契約上 `ownerDocument` 基準としていますが、現行実装は top-level `document.head` / `document.body` を直接参照しています。
@@ -596,7 +548,7 @@ panel は body 配下に生成され、`::part(...)` も公開していません
 
 したがって、これら 3 点は**契約書上の理想像ではなく、実装修正の対象として追跡すべき既知差分**です。実装と Storybook を契約へ一致させる際は、本節ではなく前掲の「`tooltip.ts` / `tooltip.stories.ts` の修正方針」を正とします。
 
-### 15.7 現行 Storybook が未固定の契約差分
+### 14.7 現行 Storybook が未固定の契約差分
 
 現行 `tooltip.stories.ts` は、hover / focus open、`aria-describedby` の付与・除去、variant 差分、disabled、transform zoom、reconnect、dark mode、media / style 契約、tree-item 統合までは確認しています。
 
@@ -617,6 +569,6 @@ panel は body 配下に生成され、`::part(...)` も公開していません
 
 これらは「機能が存在しない」のではなく、**契約として Storybook 上でまだ固定し切れていない**項目です。したがって、将来の回帰を防ぐには、前掲の Storybook 契約表に対応する Story を追加する必要があります。
 
-### 15.8 本節の扱い
+### 14.8 本節の扱い
 
 本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用する場合は、実装、Storybook、契約書の 3 点を同時に更新し、未対応状態を残したまま公開契約へ昇格させません。

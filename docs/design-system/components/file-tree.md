@@ -33,10 +33,16 @@ Rouault における file tree は、本文より強く主張してはなりま�
 - slug 正規化や router の上位設計
 - `ui-tree-item` 単体の詳細契約
 - 検索、仮想化、遅延ロード、ドラッグアンドドロップ
+- `reveal(id)` / `revealSelected()` のような可視化専用公開 API
+- `expandAll()` / `collapseAll()` のような一括補助操作
+- 印刷時の追加オプション入力（例: `printExpandBehavior`）
+- 複数選択
+- インライン rename
+- tree 内検索の内蔵
 - サーバーサイドのデータ取得戦略
 - 永続化形式や保存先の仕様
 
-これらは上位レイヤまたは別契約の責務です。
+これらは上位レイヤ、別契約、または別コンポーネントとして扱うべき事項です。
 
 ---
 
@@ -54,6 +60,24 @@ Rouault における file tree は、本文より強く主張してはなりま�
 
 ---
 
+## 規範語彙
+
+本書では、要求水準を次の語で表します。
+
+- **MUST**: 必須要件です。満たさない実装は本契約に準拠しません。
+- **MUST NOT**: 禁止要件です。これに反する実装は本契約に準拠しません。
+- **SHOULD**: 推奨要件です。特段の理由がない限り従うべきです。
+- **SHOULD NOT**: 非推奨要件です。特段の理由がない限り採用すべきではありません。
+- **MAY**: 任意要件です。採用してもしなくても構いません。
+
+本書における叙述文は、特段の明示がない限り説明または注記であり、単独では拘束力を持ちません。拘束力を持つ要件は、原則として上記の規範語を用いて記述します。
+
+既定値を示す場合は「既定値は ... です」ではなく、「... を指定しない場合、... でなければなりません（MUST）」の形式で記述します。
+
+無効値の扱いを示す場合は「無視します」「扱います」ではなく、「... の場合、... しなければなりません（MUST）」または「... してはなりません（MUST NOT）」の形式で記述します。
+
+---
+
 ## 公開契約
 
 `ui-file-tree` は、**不変の構造入力**と、**外部から与えられる選択・展開状態**、および**内部で管理されるアクティブ状態**から構成されます。
@@ -63,20 +87,24 @@ Rouault における file tree は、本文より強く主張してはなりま�
 `items` は、次の `TreeNode` 配列を受け取ります。
 
 ```ts
+type TreeIcon = string;
+
 interface TreeNodeBase {
   id: string;
   label: string;
-  icon?: string;
+  icon?: TreeIcon;
 }
 
 interface BranchNode extends TreeNodeBase {
   kind: 'branch';
-  children: TreeNode[];
+  children: readonly TreeNode[];
+  href?: never;
 }
 
 interface LeafNode extends TreeNodeBase {
   kind: 'leaf';
   href: string;
+  children?: never;
 }
 
 type TreeNode = BranchNode | LeafNode;
@@ -84,65 +112,63 @@ type TreeNode = BranchNode | LeafNode;
 
 #### TreeNode 契約
 
-| 名前       | 種別                 | 必須            | 内容         | 契約                                                                     |
-| ---------- | -------------------- | --------------- | ------------ | ------------------------------------------------------------------------ |
-| `kind`     | `'branch' \| 'leaf'` | はい            | ノード種別   | `branch` と `leaf` を明示的に区別します                                  |
-| `id`       | string               | はい            | ノード識別子 | tree 全体で一意、かつ安定でなければなりません（MUST）                    |
-| `label`    | string               | はい            | 表示ラベル   | type-ahead の照合対象です                                                |
-| `icon`     | string               | いいえ          | アイコン名   | 視覚補助用です                                                           |
-| `children` | `TreeNode[]`         | `branch` で必須 | 子ノード列   | 1 件以上の子ノードを持たなければなりません（MUST）。空配列は許容しません |
-| `href`     | string               | `leaf` で必須   | 遷移先       | 葉ノードのみが持ちます                                                   |
+| 名前         | 種別                    | 必須           | 内容     | 契約                                        |
+| ---------- | --------------------- | ------------ | ------ | ----------------------------------------- |
+| `kind`     | `'branch' \| 'leaf'`  | はい           | ノード種別  | `branch` と `leaf` を明示的に区別しなければなりません（MUST） |
+| `id`       | string                | はい           | ノード識別子 | tree 全体で一意かつ安定でなければなりません（MUST）            |
+| `label`    | string                | はい           | 表示ラベル  | type-ahead の照合対象です                        |
+| `icon`     | `TreeIcon`            | いいえ          | アイコン表現 | 現時点では string を受理します。意味解釈は視覚補助に限定します       |
+| `children` | `readonly TreeNode[]` | `branch` で必須 | 子ノード列  | `branch` のみが持ちます                          |
+| `href`     | string                | `leaf` で必須   | 遷移先    | `leaf` のみが持ちます                            |
 
 ### ノード種別契約
 
-`branch` と `leaf` は排他的です。
+* `branch` と `leaf` は排他的でなければなりません（MUST）。
+* `href` と `children` を同時に持つノードは不正入力として扱わなければなりません（MUST）。
+* `leaf` は子ノードを持ってはなりません（MUST NOT）。
+* `branch` は直接遷移先を持ってはなりません（MUST NOT）。
 
-- `branch` は展開可能ですが、直接遷移先を持ちません。
-- `leaf` は遷移先を持ちますが、子ノードを持ちません。
-- `href` と `children` を同時に持つノードは、正規契約では**不正入力**です。
-- `branch` は 1 件以上の `children` を持たなければなりません（MUST）。
+#### Rouault 固有制約
 
-これにより、展開操作と遷移操作の意味を 1 行の中で混在させません。
+本契約は、一般的な tree UI の完全な汎用契約ではなく、Rouault におけるノート木を前提としたコンポーネント契約です。したがって、次の制約を Rouault 固有制約として採用します。
+
+* `branch` は 1 件以上の `children` を持たなければなりません（MUST）。
+* `children=[]` の `branch` は不正入力として扱わなければなりません（MUST）。
+* 空ディレクトリ、未ロード branch、カテゴリページ branch を表したい場合は、将来の別契約で明示的に拡張しなければなりません（MUST）。
 
 ### 入力契約
 
-| 名前                 | 種別                                      | 必須   | 内容                          | 契約                                                 |
-| -------------------- | ----------------------------------------- | ------ | ----------------------------- | ---------------------------------------------------- |
-| `items`              | property                                  | はい   | 不変の tree 構造              | 入力ノードはインプレースで変更されません             |
-| `selectedId`         | property / attribute (`selected-id`)      | いいえ | 現在位置に対応する葉ノード ID | tree 上の現在位置を表します。`null` 相当を許容します |
-| `expandedIds`        | property                                  | いいえ | 展開中 branch の ID 集合      | controlled 利用時に与えます                          |
-| `defaultExpandedIds` | property                                  | いいえ | 初期展開 branch の ID 集合    | uncontrolled 利用時の初期値です                      |
-| `variant`            | property / attribute                      | いいえ | 視覚バリアント                | `default` / `card`                                   |
-| `density`            | property / attribute                      | いいえ | 行密度                        | `normal` / `compact`                                 |
-| `loading`            | property / attribute                      | いいえ | ローディング状態              | 既定値は `false` です                                |
-| `loadingStrategy`    | property / attribute (`loading-strategy`) | いいえ | ローディング時の表示戦略      | `retain` / `replace`。既定値は `retain` です         |
-| `printable`          | property / attribute                      | いいえ | 印刷対象とするか              | `variant` とは独立です                               |
-| `aria-label`         | attribute                                 | いいえ | tree のアクセシブル名         | `aria-labelledby` がない場合に使用できます           |
-| `aria-labelledby`    | attribute                                 | いいえ | tree のアクセシブル名参照     | `aria-label` より優先されます                        |
+| 名前                 | 種別                                      | 必須   | 内容                          | 契約                                                                 |
+| -------------------- | ----------------------------------------- | ------ | ----------------------------- | -------------------------------------------------------------------- |
+| `items`              | property                                  | はい   | 不変の tree 構造              | `readonly TreeNode[]` として与えなければなりません（MUST）           |
+| `selectedId`         | property / attribute (`selected-id`)      | いいえ | 現在位置に対応する葉ノード ID | 選択なしは `null` で表さなければなりません（MUST）                   |
+| `expandedIds`        | property                                  | いいえ | 展開中 branch の ID 集合      | `ReadonlySet<string>` として与えなければなりません（MUST）           |
+| `defaultExpandedIds` | property                                  | いいえ | 初期展開 branch の ID 集合    | `ReadonlySet<string>` として与えなければなりません（MUST）           |
+| `variant`            | property / attribute                      | いいえ | 視覚バリアント                | `default` または `card` のみを受理します                             |
+| `density`            | property / attribute                      | いいえ | 行密度                        | `normal` または `compact` のみを受理します                           |
+| `loading`            | property / attribute                      | いいえ | ローディング状態              | boolean として解釈しなければなりません（MUST）                       |
+| `loadingStrategy`    | property / attribute (`loading-strategy`) | いいえ | ローディング時の表示戦略      | `retain` または `replace` のみを受理します                           |
+| `printable`          | property / attribute                      | いいえ | 印刷対象とするか              | boolean として解釈しなければなりません（MUST）                       |
+| `aria-label`         | attribute                                 | いいえ | tree のアクセシブル名         | `aria-labelledby` がない場合のみ利用されます                         |
+| `aria-labelledby`    | attribute                                 | いいえ | tree のアクセシブル名参照     | `aria-label` より優先されます                                        |
 
 ### 状態主導権契約
 
-`ui-file-tree` は、次の主導権分離を前提とします。
-
-- `selectedId` は**外部状態**です。
-- `expandedIds` は controlled / uncontrolled の両方を許容します。
-- `activeId` は**内部状態**です。公開入力として扱いません。
-- 選択表示は `selectedId` にのみ基づき、`activeId` とは独立に `aria-selected` と視覚強調へ反映されます。
-
-したがって、`ui-file-tree` は `selectedId` に基づいて現在位置を描画しますが、roving tabindex 用の一時フォーカス位置は内部で保持します。
+- `selectedId` は外部状態でなければなりません（MUST）。
+- `expandedIds` は controlled / uncontrolled の両方式を許容しても構いません（MAY）。
+- `activeId` は内部状態でなければなりません（MUST）。公開入力として扱ってはなりません（MUST NOT）。
+- 選択表示は `selectedId` のみに基づいて決定しなければなりません（MUST）。
+- `activeId` は roving tabindex 用の内部フォーカス位置であり、選択意味を持ってはなりません（MUST NOT）。
 
 ### controlled / uncontrolled 契約
 
-展開状態は、次の 2 方式を許容します。
-
-- **controlled**: `expandedIds` を与え、変更通知を受けて外部 state を更新します。
-- **uncontrolled**: `defaultExpandedIds` を与え、以後はコンポーネント内部で展開状態を保持します。
-
-`expandedIds` と `defaultExpandedIds` を同時に与える場合、`expandedIds` を優先します。
+- `expandedIds` が与えられている場合、展開状態は controlled として扱わなければなりません（MUST）。
+- `expandedIds` が与えられておらず、`defaultExpandedIds` のみが与えられている場合、展開状態は uncontrolled として扱わなければなりません（MUST）。
+- `expandedIds` と `defaultExpandedIds` が同時に与えられた場合、`expandedIds` を優先しなければなりません（MUST）。
 
 ### 公開イベント
 
-`ui-file-tree` は、要求イベントと確定イベントを区別します。
+`ui-file-tree` は、要求イベントと確定イベントを区別しなければなりません（MUST）。
 
 | 名前                     | detail                              | cancelable | 発火条件                   |
 | ------------------------ | ----------------------------------- | ---------- | -------------------------- |
@@ -152,11 +178,13 @@ type TreeNode = BranchNode | LeafNode;
 | `ui-tree-toggle`         | `{ id: string, expanded: boolean }` | いいえ     | branch 展開変更確定後      |
 | `ui-tree-active-change`  | `{ id: string }`                    | いいえ     | アクティブ項目が変化した時 |
 
-これらのイベントは `bubbles: true` かつ `composed: true` で発火します。公開イベントの `detail` は**最小限の snapshot**に限定し、実ノード参照は渡しません。
+- すべての公開イベントは `bubbles: true` かつ `composed: true` で発火しなければなりません（MUST）。
+- 公開イベントの `detail` に実ノード参照を含めてはなりません（MUST NOT）。
+- 公開イベントの `detail` は最小限の snapshot のみを含めなければなりません（MUST）。
 
 ### 公開メソッド契約
 
-`ui-file-tree` は、次のメソッドを公開します。
+`ui-file-tree` は、次のメソッドを公開しなければなりません（MUST）。
 
 | 名前              | 内容                                                                                      |
 | ----------------- | ----------------------------------------------------------------------------------------- |
@@ -164,34 +192,50 @@ type TreeNode = BranchNode | LeafNode;
 | `focusSelected()` | `selectedId` に一致する項目へフォーカスを移します。一致がない場合は先頭可視項目へ移します |
 | `focusFirst()`    | 先頭可視項目へフォーカスを移します                                                        |
 
-外部利用者は、Shadow DOM 内部構造を探索してフォーカスを与えることに依存してはなりません（MUST NOT）。
+- 外部利用者は Shadow DOM 内部構造の探索に依存してフォーカスを与えてはなりません（MUST NOT）。
 
 ### 属性反映契約
 
-| property             | attribute          | reflect | 備考                             |
-| -------------------- | ------------------ | ------- | -------------------------------- |
-| `items`              | なし               | なし    | property 専用です                |
-| `selectedId`         | `selected-id`      | なし    | property を正とします            |
-| `expandedIds`        | なし               | なし    | property 専用です                |
-| `defaultExpandedIds` | なし               | なし    | property 専用です                |
-| `variant`            | `variant`          | あり    | `default` / `card`               |
-| `density`            | `density`          | あり    | `normal` / `compact`             |
-| `loading`            | `loading`          | あり    | boolean attribute として扱います |
-| `loadingStrategy`    | `loading-strategy` | あり    | `retain` / `replace`             |
-| `printable`          | `printable`        | あり    | boolean attribute として扱います |
+| property             | attribute          | reflect | 備考                                                  |
+| -------------------- | ------------------ | ------- | ----------------------------------------------------- |
+| `items`              | なし               | なし    | property 専用です                                     |
+| `selectedId`         | `selected-id`      | なし    | attribute は string のみを受理します                  |
+| `expandedIds`        | なし               | なし    | property 専用です                                     |
+| `defaultExpandedIds` | なし               | なし    | property 専用です                                     |
+| `variant`            | `variant`          | あり    | `default` / `card`                                    |
+| `density`            | `density`          | あり    | `normal` / `compact`                                  |
+| `loading`            | `loading`          | あり    | boolean attribute として扱います                      |
+| `loadingStrategy`    | `loading-strategy` | あり    | `retain` / `replace`                                  |
+| `printable`          | `printable`        | あり    | boolean attribute として扱います                      |
+
+#### attribute から property への変換規則
+
+- boolean attribute は、属性が存在する場合に `true`、存在しない場合に `false` と解釈しなければなりません（MUST）。
+- `selected-id` attribute は、trim 後の非空文字列のみを有効値として扱わなければなりません（MUST）。
+- `selected-id` attribute が空文字列または空白のみである場合、`selectedId = null` として扱わなければなりません（MUST）。
+- `variant`、`density`、`loading-strategy` attribute は、trim 後の小文字文字列として解釈しなければなりません（MUST）。
+- 列挙外の attribute 値を受け取った場合、対応する property は既定値へフォールバックしなければなりません（MUST）。
+- 列挙外値を受け取った事実は、開発時に警告しても構いません（MAY）。
 
 ### ローカライズ契約
 
-- `aria-label` / `aria-labelledby` によりアクセシブル名を外部から制御できます。
-- Empty State の表示文言は公開 API に含めません。
+- `aria-label` または `aria-labelledby` によりアクセシブル名を外部から制御できなければなりません（MUST）。
+- Empty State の表示文言は公開 API に含めてはなりません（MUST NOT）。
 - 利用者は Empty State 文言の完全一致に依存してはなりません（MUST NOT）。
 
 ### 列挙外値・無効値の扱い
 
-- `variant`、`density`、`loadingStrategy` は列挙値のみを正とします。
-- `selectedId` が `leaf` ノードを指さない場合、選択表示は成立しません。
-- `expandedIds` に `leaf` ノード ID が含まれていても無視します。
-- `id` 重複は不正入力です。開発時には検出・警告すべきです（SHOULD）。
+- `variant`、`density`、`loadingStrategy` は列挙値のみを正とし、列挙外値は既定値へフォールバックしなければなりません（MUST）。
+- `selectedId` が存在しない `id`、または `branch` の `id` を指す場合、選択表示を行ってはなりません（MUST NOT）。
+- `expandedIds` または `defaultExpandedIds` に `leaf` ノード ID が含まれている場合、その要素は無視しなければなりません（MUST）。
+- `id` 重複は不正入力です。少なくとも開発時には検出し、警告しなければなりません（SHOULD）。
+- `href` と `children` を同時に持つノード、`kind` と実体形状が一致しないノード、`children=[]` の `branch` は不正入力として扱わなければなりません（MUST）。
+- 開発時には、少なくとも次の契約違反を検出し、警告または例外で報告すべきです（SHOULD）。
+  - `id` 重複
+  - `branch` / `leaf` の不正形状
+  - `selectedId` が `leaf` を指していない状態
+  - `expandedIds` または `defaultExpandedIds` に `leaf` が含まれる状態
+  - 不明な列挙値
 
 ### 責務範囲
 
@@ -251,11 +295,13 @@ type TreeNode = BranchNode | LeafNode;
 
 ### 印刷状態
 
-`printable=true` の場合、印刷時には tree を表示対象とします。印刷時の展開挙動は次のとおりです。
+`printable=true` の場合、印刷時には tree を表示対象に含めなければなりません（MUST）。
 
-- 既定では、可視性を優先して**全展開表示**します。
-- 印刷後には、画面用の展開状態へ復帰します。
-- 印刷可否は `variant` と独立です。
+- 印刷時には、現在位置および階層構造が判読可能でなければなりません（MUST）。
+- 印刷時の展開方針は公開契約に含めません。
+- 実装は、全展開表示、選択パス展開、現状維持のいずれを採っても構いません（MAY）。
+- ただし、選択項目が存在する場合、その項目が印刷結果から消失してはなりません（MUST NOT）。
+- 印刷可否は `variant` と独立でなければなりません（MUST）。
 
 ---
 
@@ -278,83 +324,123 @@ type TreeNode = BranchNode | LeafNode;
 
 ### Accessibility 契約
 
-- ルートホストは常に `role="tree"` を持ちます。
-- ルートホストは常に `aria-orientation="vertical"` を持ちます。
-- `aria-label` と `aria-labelledby` のどちらも未指定の場合、既定のアクセシブル名を設定します。
-- `loadingStrategy="retain"` かつ `loading=true` の場合は `aria-busy="true"` を付与します。
-- Empty State は `role="status"` を持ちます。
-- アクティブ項目はロービング tabindex で一意に管理します。
-- 選択状態は `selectedId` に対応する項目へ一意に反映し、tree item 側では `aria-selected="true"` と視覚強調で表現します。
-- `activeId` は roving tabindex 用の内部フォーカス位置であり、選択意味は持ちません。
-- `Escape` により、直前の tree 外フォーカス要素へ復帰を試みます。
+- ルートホストは常に `role="tree"` を持たなければなりません（MUST）。
+- ルートホストは常に `aria-orientation="vertical"` を持たなければなりません（MUST）。
+- アクセシブル名は、利用者が `aria-label` または `aria-labelledby` により提供しなければなりません（MUST）。
+- `aria-label` と `aria-labelledby` のどちらも与えられていない場合、コンポーネントはアクセシブル名を自動生成してはなりません（MUST NOT）。
+- `loadingStrategy="retain"` かつ `loading=true` の場合、ルートホストに `aria-busy="true"` を付与しなければなりません（MUST）。
+- Empty State は `role="status"` を持たなければなりません（MUST）。
+- アクティブ項目は roving tabindex で一意に管理しなければなりません（MUST）。
+- 選択状態は `selectedId` に一致する項目にのみ反映しなければなりません（MUST）。
+- `activeId` は内部フォーカス位置であり、選択意味を持ってはなりません（MUST NOT）。
 
 ### キーボード契約
 
-`ui-file-tree` は、tree ルートとして次のキーボード意味論を持ちます。
+`ui-file-tree` は tree ルートとして次のキーボード意味論を持たなければなりません（MUST）。
 
 | キー         | 振る舞い                                              |
 | ------------ | ----------------------------------------------------- |
 | `ArrowDown`  | 次の可視項目へ移動                                    |
 | `ArrowUp`    | 前の可視項目へ移動                                    |
-| `ArrowRight` | `branch` なら展開、展開済みなら先頭子へ移動           |
-| `ArrowLeft`  | `branch` なら収縮、収縮済みまたは `leaf` なら親へ移動 |
+| `ArrowRight` | `branch` なら展開し、展開済みなら先頭子へ移動         |
+| `ArrowLeft`  | `branch` なら収縮し、収縮済みまたは `leaf` なら親へ移動 |
 | `Home`       | 最初の可視項目へ移動                                  |
 | `End`        | 最後の可視項目へ移動                                  |
 | `Enter`      | アクティブ項目の主操作を確定                          |
 | `Space`      | アクティブ項目の主操作を確定                          |
-| `Escape`     | 直前の tree 外フォーカス要素へ復帰                    |
 | 文字入力     | type-ahead による前方一致検索                         |
 
-### 主操作契約
-
-- `leaf` に対する主操作は**選択**です。
-- `branch` に対する主操作は**展開 / 収縮**です。
-- `branch` は直接遷移先を持たないため、選択対象として扱いません。
-
-Enter と Space の意味は同一です。どちらもアクティブ項目の主操作を確定するキーとして扱います。補助操作専用キーとしての意味は持ちません。
+- `leaf` に対する主操作は選択でなければなりません（MUST）。
+- `branch` に対する主操作は展開 / 収縮でなければなりません（MUST）。
+- `branch` を選択対象として扱ってはなりません（MUST NOT）。
+- `Enter` と `Space` は同一の主操作確定キーとして扱わなければなりません（MUST）。
 
 ### type-ahead 契約
 
-- 一定時間内の連続文字入力をバッファ連結し、前方一致検索を行います。
-- 検索開始位置は現在のアクティブ項目の次です。
-- 一周して一致がなければ移動しません。
-- 大文字・小文字は区別しません。
+- 一定時間内の連続文字入力をバッファ連結し、前方一致検索を行わなければなりません（MUST）。
+- 検索開始位置は現在のアクティブ項目の次でなければなりません（MUST）。
+- 一周して一致がなければ移動してはなりません（MUST NOT）。
+- 比較前に Unicode 正規化を行わなければなりません（MUST）。
+- 大文字 / 小文字の差は比較時に無視しなければなりません（MUST）。
+- 前後空白は比較前に除去しなければなりません（MUST）。
+
+#### 日本語ラベルに対する追加契約
+
+Rouault は日本語ノートを主要対象とするため、実装は少なくとも次を考慮しなければなりません（SHOULD）。
+
+- 全角 / 半角の差
+- かな / カナの差
+- 濁点結合の差
+
+これらを完全一致で扱えない場合でも、少なくとも Unicode 正規化と前後空白除去は必須です（MUST）。
 
 ### フォーカス復帰契約
 
-tree 外部から tree 内へフォーカスが入ったとき、直前の外部要素を保持します。`Escape` 時は、その要素が DOM 上に残っていればそこへフォーカスを戻します。
+- `Escape` による外部要素へのフォーカス復帰は、標準 tree の必須契約には含めません。
+- Rouault の製品方針として採用する場合でも、任意機能として扱わなければなりません（MAY）。
+- 採用する場合、対象要素が DOM 上に存在し、かつ programmatic focus 可能な場合にのみ復帰を試みても構いません（MAY）。
+- 復帰失敗を理由に例外を送出してはなりません（MUST NOT）。
 
 ---
 
 ## Visual Contract
 
-`ui-file-tree` の視覚契約は、本文読解を妨げない補助ナビゲーションであることにあります。
+`ui-file-tree` の視覚契約は、本文読解を妨げない補助ナビゲーションであることにあります。したがって、本節では印象語ではなく、状態差分と検証可能な表現差を定義します。
 
-### 情報順位
+### 視覚状態の優先順位
 
-- `default` は背景を持たず、構造の存在を静かに示します。
-- `card` は独立した補助ウィジェットとして認識しやすい表現を持ちます。
-- 選択状態は、本文より強すぎないが見失わない程度の強度で示します。
-- アクティブ状態は、キーボード利用時にのみ明確に知覚できれば足ります。
-- Skeleton や Empty State は補助情報として控えめに表現します。
+- 通常状態は基底状態です。
+- 選択状態は通常状態より高い視認優先度を持たなければなりません（MUST）。
+- アクティブ状態は、キーボード操作中にのみ明確に知覚できれば足ります。
+- 選択状態とアクティブ状態が同時に成立する場合、両者を識別できなければなりません（MUST）。
+- Empty State および Skeleton は主操作面として見えてはなりません（MUST NOT）。
 
 ### コンテナ仕様
 
-- `default` は transparent 背景、border なし、最小限の余白を持ちます。
-- `card` は背景、境界線、角丸、必要最小限の影を持ちます。
-- 視覚バリアントは意味論を変えません。
+#### `variant="default"`
+
+- 背景は transparent でなければなりません（MUST）。
+- 常設 border を持ってはなりません（MUST NOT）。
+- 余白は最小限でなければなりません（MUST）。
+
+#### `variant="card"`
+
+- 背景を持たなければなりません（MUST）。
+- 境界線を持たなければなりません（MUST）。
+- 角丸を持たなければなりません（MUST）。
+- 影は任意ですが、付与する場合でも 1 層に限定すべきです（SHOULD）。
+- `variant` の違いは視覚差に限られ、意味論を変更してはなりません（MUST NOT）。
+
+### 選択状態
+
+- 選択状態は通常状態と視認上区別できなければなりません（MUST）。
+- 選択状態の識別は、色差だけに依存してはなりません（MUST NOT）。
+- 選択状態は、背景・前景・境界・ウェイトのうち少なくとも 2 要素で差を持つべきです（SHOULD）。
+
+### アクティブ状態
+
+- アクティブ状態は、roving tabindex に対応するフォーカスリングまたは同等の非色依存表現で示さなければなりません（MUST）。
+- アクティブ状態の表現は、通常状態および選択状態と識別可能でなければなりません（MUST）。
+- ポインター操作のみの利用時に常時強調してはなりません（SHOULD NOT）。
 
 ### Empty State
 
-- 中央寄せです。
-- 控えめな前景色を用います。
-- CTA や装飾的アイコンを必須としません。
+- Empty State は中央寄せでなければなりません（MUST）。
+- Empty State は補助前景色で表示しなければなりません（MUST）。
+- CTA、装飾アイコン、アニメーションを必須としてはなりません（MUST NOT）。
 
 ### Loading
 
-- `retain` では既存 tree を維持しつつ busy 状態を示します。
-- `replace` では縦積み skeleton を表示します。
-- `prefers-reduced-motion: reduce` ではアニメーションを停止または極小化します。
+- `retain` では既存 tree を可視のまま維持しなければなりません（MUST）。
+- `replace` では tree を skeleton に置き換えなければなりません（MUST）。
+- Skeleton は複数行の縦積みでなければなりません（MUST）。
+- Skeleton の各行高は通常行高と概ね一致しなければなりません（SHOULD）。
+- `prefers-reduced-motion: reduce` ではアニメーションを停止または極小化しなければなりません（MUST）。
+
+### 密度契約
+
+- `density="normal"` と `density="compact"` は視認可能な行高差を持たなければなりません（MUST）。
+- ただし `compact` であっても、キーボードフォーカスリングと選択状態が判読不能になってはなりません（MUST NOT）。
 
 ### 参照トークン
 
@@ -372,8 +458,6 @@ tree 外部から tree 内へフォーカスが入ったとき、直前の外部
 | 角丸           | `--radius-md` / `--radius-sm`           |
 | シャドウ       | `--elevation-md`                        |
 | 余白           | `--space-2` / `--space-4` / `--space-8` |
-| 遷移時間       | `--duration-fast`                       |
-| イージング     | `--ease-out`                            |
 | Skeleton 背景  | `--skeleton-bg`                         |
 | Skeleton 高さ  | `--control-height-md`                   |
 
@@ -389,11 +473,12 @@ tree 外部から tree 内へフォーカスが入ったとき、直前の外部
 
 ### Reduced Motion
 
-`prefers-reduced-motion: reduce` 環境では、移動時スクロールとローディングアニメーションを抑制します。
+`prefers-reduced-motion: reduce` 環境では、移動時スクロールおよびローディング表現を、動きに依存しない表現へ切り替えなければなりません（MUST）。
 
 ### Dark Mode
 
-`prefers-color-scheme: dark` 環境では、境界認識を補助する最小限のハイライトを許容します。
+`prefers-color-scheme: dark` 環境では、通常状態、選択状態、アクティブ状態の識別が維持されなければなりません（MUST）。  
+識別は色差のみに依存してはなりません（MUST NOT）。
 
 ### Forced Colors
 
@@ -404,11 +489,12 @@ tree 外部から tree 内へフォーカスが入ったとき、直前の外部
 
 ### Print
 
-`@media print` では、`printable=true` の tree のみ表示対象とします。
+`@media print` では、`printable=true` の tree のみ表示対象としなければなりません（MUST）。
 
-- 印刷時は全展開表示を既定とします。
-- 背景色とシャドウは除去し、境界線中心の表現へ切り替えます。
-- 印刷可否は `variant` と独立です。
+- 背景色とシャドウは、可読性を阻害する場合には除去すべきです（SHOULD）。
+- 境界線中心の表現へ切り替えても構いません（MAY）。
+- 印刷可否は `variant` と独立でなければなりません（MUST）。
+- 印刷時の展開アルゴリズムは本契約では固定しません。
 
 ---
 
@@ -435,12 +521,12 @@ tree 外部から tree 内へフォーカスが入ったとき、直前の外部
 
 ### スクロール契約
 
-アクティブ項目または選択項目の可視化には、最も近いスクロール可能祖先を探索して用います。
-
-- tree 自身がスクロールコンテナであることは保証しません。
-- 初期可視化は即時反映を優先します。
-- ユーザー移動時は通常環境では smooth scroll を用います。
-- `prefers-reduced-motion: reduce` 環境では即時反映へ切り替えます。
+- アクティブ項目または選択項目が不可視である場合、利用者が現在位置を認識できるよう可視化しなければなりません（MUST）。
+- 可視化は、対象項目が表示領域内に入ることを結果として保証すれば足ります。
+- どのスクロールコンテナを利用するか、どの API を用いるかは公開契約に含めません。
+- 初期可視化では、アニメーションよりも位置認識の確実性を優先しなければなりません（SHOULD）。
+- 利用者操作に伴う可視化では、通常環境でアニメーションを用いても構いません（MAY）。
+- `prefers-reduced-motion: reduce` 環境では、アニメーションに依存してはなりません（MUST NOT）。
 
 ### `ui-tree-item` との責務分界契約
 
@@ -471,11 +557,22 @@ tree 外部から tree 内へフォーカスが入ったとき、直前の外部
 
 ### 無効な `expandedIds`
 
-`expandedIds` に `leaf` ノード ID が含まれていても無視します。
+`expandedIds` または `defaultExpandedIds` に `leaf` ノード ID が含まれている場合、その要素は無視します。
 
 ### ID 重複
 
-`id` 重複は不正入力です。開発時には警告または例外で検出することが望まれます（SHOULD）。
+`id` 重複は不正入力です。少なくとも開発時には検出し、警告しなければなりません（SHOULD）。
+
+### 不正なノード形状
+
+次のノード形状は不正入力です。
+
+- `href` と `children` を同時に持つノード
+- `kind='leaf'` で `href` を欠くノード
+- `kind='branch'` で `children` を欠くノード
+- `kind` と実体形状が一致しないノード
+
+少なくとも開発時には検出し、警告または例外で報告すべきです（SHOULD）。
 
 ### `branch` の空配列子
 
@@ -493,146 +590,66 @@ tree 外部から tree 内へフォーカスが入ったとき、直前の外部
 
 `replace` では既存 tree を skeleton に置き換えるため、選択可視性は一時的に失われます。
 
+### 開発時バリデーションの扱い
+
+開発時バリデーションは、利用者入力の誤りを早期に発見するための補助契約です。  
+本番環境で同一水準の検証を必須とはしませんが、開発時には少なくとも契約違反を沈黙させない実装が望まれます（SHOULD）。
+
 ---
 
 ## Storybook 契約
 
-各 Story は見本ではなく、契約確認点として扱います。
+Storybook は見本集ではなく、契約確認のための検証面を提供しなければなりません（MUST）。  
+本契約で固定するのは Story 名ではなく、次の**検証観点**です。
 
-| Story                | 固定する契約                                                                          |
-| -------------------- | ------------------------------------------------------------------------------------- |
-| `Default`            | `role="tree"`、`aria-orientation="vertical"`、既定 `variant="default"` を満たすこと   |
-| `CardVariant`        | `variant="card"` が受理されること                                                     |
-| `CompactDensity`     | `density="compact"` が受理されること                                                  |
-| `EmptyState`         | 空入力時に `role="status"` を持つ empty state を描画すること                          |
-| `LoadingRetain`      | `loadingStrategy="retain"` で既存 tree を保ったまま busy 表示できること               |
-| `LoadingReplace`     | `loadingStrategy="replace"` で skeleton に置き換わること                              |
-| `DeepNested`         | `selectedId` に対応する現在位置を視認できること                                       |
-| `ManyItems`          | 多数項目でも基本操作が成立すること                                                    |
-| `VariantComparison`  | `default` / `card` の視覚差分が成立すること                                           |
-| `DensityComparison`  | `normal` / `compact` の密度差が成立すること                                           |
-| `EventHandling`      | request / commit 系イベントを監視できること                                           |
-| `ForcedColorsMode`   | forced colors 環境で構造が維持されること                                              |
-| `ReducedMotion`      | reduced motion 環境でモーションが抑制されること                                       |
-| `PrintStyles`        | `printable=true` の場合のみ印刷表示されること                                         |
-| `KeyboardNavigation` | Arrow、Home、End、Enter、Space、type-ahead、Escape によるナビゲーションが成立すること |
-| `FocusMethods`       | `focus()` / `focusSelected()` / `focusFirst()` が動作すること                         |
+### 必須検証観点
 
----
+1. ルート意味論  
+   - `role="tree"` と `aria-orientation="vertical"` が成立すること。
 
-## 追加を検討する価値がある機能
+2. 視覚バリアント  
+   - `variant="default"` と `variant="card"` の視覚差分が成立すること。
 
-本節は、`ui-file-tree` に将来的に追加を検討する価値がある機能を整理するものです。ここでいう「価値がある」とは、機能数を増やすこと自体ではなく、**契約を明確にし、外部制御しやすくし、読書体験を損なわないこと**を指します。
+3. 密度差分  
+   - `density="normal"` と `density="compact"` の行高差が成立すること。
 
-### 最優先で検討する価値がある機能
+4. Empty State  
+   - `items=[]` かつ `loading=false` で `role="status"` を持つ Empty State が描画されること。
 
-#### 公開フォーカスメソッド
+5. Loading  
+   - `loadingStrategy="retain"` で既存 tree を維持したまま busy 表示できること。
+   - `loadingStrategy="replace"` で skeleton に置き換わること。
 
-次の公開メソッドは、最優先で検討する価値があります。
+6. 深い階層  
+   - 深い階層でも `selectedId` に対応する現在位置を視認できること。
 
-- `focus()`
-- `focusSelected()`
-- `focusFirst()`
+7. 多数項目  
+   - 多数項目でも基本操作が破綻しないこと。
 
-現行実装では、外部から適切にフォーカスを入れるために Shadow DOM 内部構造へ依存しやすい状態です。公開メソッドを追加することで、内部 DOM 依存を避けながら、フォーカス導線を契約として固定できます。
+8. イベント  
+   - request / commit 系イベントを監視できること。
+   - `detail` が最小 snapshot に限定されていること。
 
-#### 選択状態・展開状態の外部制御 API
+9. キーボード  
+   - Arrow、Home、End、Enter、Space、type-ahead によるナビゲーションが成立すること。
 
-次の入力面は、正式に追加または昇格させる価値があります。
+10. 公開メソッド  
+    - `focus()`、`focusSelected()`、`focusFirst()` が動作すること。
 
-- `selectedId`
-- `expandedIds`
-- `defaultExpandedIds`
+11. Forced Colors  
+    - forced colors 環境で構造認識が維持されること。
 
-これは機能追加であると同時に、構造入力と UI 状態を分離するための基盤です。router、sidebar、breadcrumb、URL 同期などの上位レイヤとの整合を取りやすくなります。
+12. Reduced Motion  
+    - reduced motion 環境でモーション依存が除去されること。
 
-#### 可視化補助 API
+13. Print  
+    - `printable=true` の場合のみ印刷対象となること。
 
-深い階層を持つ tree では、現在位置や指定項目を確実に可視化する機能が重要です。次のような API は追加価値があります。
+### Story 構成方針
 
-- `reveal(id: string)`
-- `revealSelected()`
-
-これらは、必要に応じて親パスを展開し、対象項目をスクロールコンテナ内へ可視化するための補助 API です。読者が現在位置を見失いにくくなるため、Rouault の文脈と整合します。
-
-#### `loadingStrategy` の正式化
-
-ローディング時の表示戦略を正式な公開機能として固定する価値があります。
-
-- `retain`: 既存 tree を維持したまま busy 状態を示します。
-- `replace`: tree を skeleton に置き換えます。
-
-読書体験の観点では `retain` を既定とする方が自然です。一方で、完全更新を優先したい場面では `replace` に意味があります。戦略を明示的に選べるようにすることで、ローディング時の体験をページ特性に応じて調整できます。
-
-#### 開発時バリデーション
-
-開発時に次の不正状態を検出する機能は、追加価値が高いです。
-
-- `id` 重複
-- `branch` / `leaf` の不正形状
-- `selectedId` が `leaf` を指していない状態
-- `expandedIds` に `leaf` が含まれる状態
-- 不明な列挙値
-
-これは見た目の機能ではありませんが、契約違反を早期に発見し、利用側の誤用を抑止するうえで非常に有効です。
-
-### 条件付きで検討する価値がある機能
-
-#### 全展開・全収縮 API
-
-次の公開メソッドは、条件付きで検討する価値があります。
-
-- `expandAll()`
-- `collapseAll()`
-
-設定画面、デバッグ、印刷前確認などでは有用です。ただし、通常の読書体験において常用する中核機能ではありません。公開する場合も、主操作ではなく補助操作として扱います。
-
-#### 遅延展開 / 非同期 branch ロード
-
-大規模な tree を扱う場合、branch 単位で遅延ロードを行う機能は検討価値があります。ただし、これはデータモデルとローディング契約を拡張するため、ノート数や階層深度が実際に問題化した場合に限って採用するのが適切です。
-
-採用する場合でも、次の点を別契約として明確化する必要があります。
-
-- 未ロード branch の表現
-- 読み込み中 branch の表現
-- 失敗時の表示
-- 再試行の責務
-
-#### 印刷挙動の追加オプション
-
-`printable` に加えて、印刷時の展開方針を選べる入力は条件付きで検討価値があります。
-
-- `printExpandBehavior="expanded"`
-- `printExpandBehavior="preserve"`
-
-ただし、印刷は主機能ではないため、導入優先度は高くありません。まずは `printable` の意味契約を安定させる方を優先します。
-
-### 追加を推奨しない機能
-
-次の機能は、少なくとも現在の Rouault の文脈では追加を推奨しません。
-
-- 複数選択
-- ドラッグアンドドロップ
-- インライン rename
-- tree 内検索の内蔵
-- 過度な装飾アニメーション
-
-これらは file tree を作業主体の UI へ寄せやすく、本文読解を補助する静かなナビゲーションという役割から外れやすいためです。必要になった場合でも、`ui-file-tree` そのものではなく、上位機能または別コンポーネントとして分離する方が望まれます。
-
-### 優先順位
-
-長期的な観点では、追加優先順位は次の順が妥当です。
-
-1. 公開フォーカスメソッド
-2. 選択状態・展開状態の外部制御 API
-3. 可視化補助 API
-4. `loadingStrategy` の正式化
-5. 開発時バリデーション
-6. 全展開・全収縮 API
-7. 遅延展開 / 非同期 branch ロード
-8. 印刷挙動の追加オプション
-
-この順であれば、機能追加がそのまま契約の整理につながりやすく、設計を不必要に複雑化しません。
+- 上記観点を 1 Story 1 観点で分けても、複数観点を matrix 化しても構いません（MAY）。
+- Story 名、Story 数、ファイル構成は公開契約に含めません。
+- ただし、上記検証観点が失われてはなりません（MUST NOT）。
 
 ---
 
@@ -758,20 +775,27 @@ tree 外部から tree 内へフォーカスが入ったとき、直前の外部
 
 現行 Storybook は、可変 `TreeNode`、`activeId` 公開、`ui-tree-select` / `ui-tree-expand` / `ui-tree-focus-change` といった現行契約を前提に構成されています。本書で想定する `selectedId` / `expandedIds`、request / commit 系イベント、公開フォーカスメソッド、`loadingStrategy="retain"` / `"replace"` といった正規契約に対応した Story は、まだ整備されていません。
 
-### 優先度 7: 追加検討機能の未実装
+### 優先度 7: 契約外事項の非採用整理
 
-#### 追加検討機能の現行未対応
+#### 契約外事項の扱い
 
-「追加を検討する価値がある機能」で列挙した次の機能は、現行実装では未対応です。
+本書で適用範囲外とした事項は、現行実装に存在しなくても差分不足とはみなしません。
 
-- 公開フォーカスメソッド
-- `selectedId` / `expandedIds` / `defaultExpandedIds`
-- `reveal(id)` / `revealSelected()`
-- `loadingStrategy`
-- 開発時バリデーション
-- `expandAll()` / `collapseAll()` の公開 API
+対象外事項の例:
+
+- `reveal(id)` / `revealSelected()` のような可視化専用公開 API
+- `expandAll()` / `collapseAll()` のような一括補助操作
 - 遅延展開 / 非同期 branch ロード
-- 印刷挙動の追加オプション
+- 印刷時の追加オプション入力
+- 複数選択
+- インライン rename
+- tree 内検索の内蔵
+
+これらは `ui-file-tree` の正規契約へ直ちに含めるべき機能ではなく、必要になった場合でも上位レイヤ、別契約、または別コンポーネントとして分離して扱うことを優先します。
+
+### 本節の扱い
+
+本節に記載した差分は、将来の実装修正対象です。正規契約へ合わせる場合は、実装、Storybook、契約書を同時に更新する必要があります。
 
 ### 本節の扱い
 

@@ -20,13 +20,14 @@
 
 ## この文書の読み方
 
-本書は、次の 3 層で構成します。
+本書は、次の 2 層で構成します。
 
-- **Normative**: 今後の実装と利用者が依存してよい公開契約
+- **Normative**: 実装と利用者が依存してよい公開契約
 - **Rationale**: その契約を採る理由
-- **Future Considerations**: 将来検討事項。現時点では依存禁止
 
 以後、**Normative** と明記した節のみを正式契約として扱います。
+
+将来拡張の候補は独立節としては持たず、**採用するものは本文へ吸収し、採用しないものは適用範囲で対象外として明記**します。
 
 ---
 
@@ -63,6 +64,8 @@ Rouault の通常の読書文脈では、Overlay は dialog ではなく、**一
 - 公開 API
 - 状態モデル
 - Overlay / Fixed の意味論
+- mode 自動切替時の state 解決規則
+- ナビゲーション確定時の自動格納規則
 - フォーカス契約
 - イベント契約
 - DOM / Accessibility 契約
@@ -75,12 +78,18 @@ Rouault の通常の読書文脈では、Overlay は dialog ではなく、**一
 本書は次を対象外とします。
 
 - サイドバー内部の情報設計
-- ルーティング
+- ルーティングそのもの
 - 現在地の決定ロジック
 - 親レイアウトの列幅決定
 - 開閉トリガー UI の描画
 - 完全モーダル統合
 - 子要素側の roving tabindex や tree 操作モデル
+- `dismissPolicy` のような包括的 dismiss 抽象
+- `ui-sidebar-layout` の個別契約
+- `sizePreset` / `widthPolicy` のような幅 preset 入力
+- `initialFocusTarget` のような明示ターゲット指定入力
+- shell 自身が router を知ること
+- child navigation semantics の内包
 
 ---
 
@@ -109,18 +118,29 @@ Rouault の通常の読書文脈では、Overlay は dialog ではなく、**一
 
 `ui-sidebar-shell` は次の公開入力を持ちます。
 
-| 名前                 | 種別                                          | 必須   | 内容                               | 契約                                                            |
-| -------------------- | --------------------------------------------- | ------ | ---------------------------------- | --------------------------------------------------------------- |
-| `state`              | property / attribute (`data-state`)           | いいえ | controlled な開閉状態              | `expanded` / `collapsed`                                        |
-| `defaultState`       | property / attribute (`default-state`)        | いいえ | uncontrolled 初期状態              | `expanded` / `collapsed`。既定値は `expanded`                   |
-| `mode`               | property / attribute                          | いいえ | モード指定                         | `fixed` / `overlay` / `auto`。既定値は `auto`                   |
-| `resolvedMode`       | read-only property                            | はい   | 実効モード                         | `fixed` / `overlay`                                             |
-| `fixedBreakpoint`    | property / attribute (`fixed-breakpoint`)     | いいえ | `mode="auto"` 時の切替幅           | 数値。既定値は `1280`                                           |
-| `persist`            | property / attribute                          | いいえ | state 永続化可否                   | `true` / `false`。既定値は `true`                               |
-| `persistenceKey`     | property / attribute (`persistence-key`)      | いいえ | 永続化キー                         | 文字列。既定値は `rouault.sidebar.state`                        |
-| `navLabel`           | property / attribute (`nav-label`)            | いいえ | `nav` の accessible name           | 文字列。既定値はローカライズ層で供給                            |
-| `initialFocusPolicy` | property / attribute (`initial-focus-policy`) | いいえ | Overlay 展開時の初期フォーカス方針 | `current-item` / `header-action` / `first-interactive` / `none` |
-| `restoreFocusPolicy` | property / attribute (`restore-focus-policy`) | いいえ | Overlay 格納時のフォーカス復帰方針 | `trigger` / `previous-active-element` / `none`                  |
+| 名前                   | 公開面                                      | 既定値                        | 内容                                   | 契約                                                            |
+| ---------------------- | ------------------------------------------- | ----------------------------- | -------------------------------------- | --------------------------------------------------------------- |
+| `state`                | property / attribute (`data-state`)         | なし                          | controlled な開閉状態                  | `expanded` / `collapsed`                                        |
+| `defaultState`         | property / attribute (`default-state`)      | `expanded`                    | uncontrolled 初期状態                  | `expanded` / `collapsed`                                        |
+| `mode`                 | property / attribute                        | `auto`                        | モード指定                             | `fixed` / `overlay` / `auto`                                    |
+| `fixedBreakpoint`      | property / attribute (`fixed-breakpoint`)   | `1280`                        | `mode="auto"` 時の切替幅               | 数値。非有限値は `1280`、`320` 未満は `320` に正規化            |
+| `modeTransitionPolicy` | property / attribute (`mode-transition-policy`) | `collapse-on-overlay-entry` | `resolvedMode` 変化時の state 解決方針 | `preserve` / `collapse-on-overlay-entry`                        |
+| `persist`              | property / attribute                        | `true`                        | state 永続化可否                       | `true` / `false`                                                |
+| `persistenceKey`       | property / attribute (`persistence-key`)    | 実装既定値                    | 永続化キー                             | 文字列                                                          |
+| `navLabel`             | property / attribute (`nav-label`)          | なし                          | `nav` の accessible name               | 文字列。未指定時は `aria-label` または `aria-labelledby` で補う |
+| `closeOnNavigation`    | property / attribute (`close-on-navigation`) | `overlay-only`               | navigation 確定時の自動格納方針        | `true` / `false` / `overlay-only`                               |
+| `initialFocusPolicy`   | property / attribute (`initial-focus-policy`) | `current-item`              | Overlay 展開時の初期フォーカス方針     | `current-item` / `header-action` / `first-interactive` / `none` |
+| `restoreFocusPolicy`   | property / attribute (`restore-focus-policy`) | `trigger`                   | Overlay 格納時のフォーカス復帰方針     | `trigger` / `previous-active-element` / `none`                  |
+
+### 公開観測値
+
+#### Normative
+
+`ui-sidebar-shell` は次の公開観測値を持ちます。
+
+| 名前           | 公開面             | 内容       | 契約                |
+| -------------- | ------------------ | ---------- | ------------------- |
+| `resolvedMode` | read-only property | 実効モード | `fixed` / `overlay` |
 
 #### Normative
 
@@ -132,7 +152,7 @@ Rouault の通常の読書文脈では、Overlay は dialog ではなく、**一
 
 1. 永続化復元値（`persist=true` の場合）
 2. `defaultState`
-3. 既定値 `expanded`
+3. `expanded`
 
 #### Normative
 
@@ -140,11 +160,19 @@ Rouault の通常の読書文脈では、Overlay は dialog ではなく、**一
 
 #### Normative
 
-`fixedBreakpoint` は数値として解釈し、非有限値は `1280` とします。`320` 未満は `320` に正規化します。
+`modeTransitionPolicy` は、**`mode="auto"` による `resolvedMode` 変化時の uncontrolled state 解決**にのみ適用します。controlled state では、`resolvedMode` の変化は通知してよいですが、state 自体の決定は外部所有者が行います。
+
+#### Normative
+
+`closeOnNavigation` は、shell 自身が router を知ることを意味しません。shell は **navigation 確定通知を受けたときに限り**、本方針に従って格納判定を行います。
 
 #### Normative
 
 `persist` は **uncontrolled state** にのみ適用します。controlled state に対しては、コンポーネント自身が永続化を主導してはなりません（MUST NOT）。
+
+#### Normative
+
+同一時点で property と attribute の両方が与えられている場合、**property を正規の入力ソース・オブ・トゥルース**として扱わなければなりません（MUST）。attribute は文字列表現として受理してよいですが、競合時に property を上書きしてはなりません（MUST NOT）。
 
 ### スロット契約
 
@@ -177,12 +205,13 @@ Rouault の通常の読書文脈では、Overlay は dialog ではなく、**一
 
 `ui-sidebar-shell` は次の公開メソッドを持ちます。
 
-| 名前                   | 種別   | 契約                                                             |
-| ---------------------- | ------ | ---------------------------------------------------------------- |
-| `expand(trigger?)`     | method | 展開要求を行います                                               |
-| `collapse(reason?)`    | method | 格納要求を行います                                               |
-| `toggle(trigger?)`     | method | 現在の state に応じて展開・格納要求を切り替えます                |
-| `focusInitialTarget()` | method | 現在の `initialFocusPolicy` に従って初期フォーカスを再実行します |
+| 名前                       | 種別   | 契約                                                                 |
+| -------------------------- | ------ | -------------------------------------------------------------------- |
+| `expand(trigger?)`         | method | 展開要求を行います                                                   |
+| `collapse(reason?)`        | method | 格納要求を行います                                                   |
+| `toggle(trigger?)`         | method | 現在の state に応じて展開・格納要求を切り替えます                    |
+| `focusInitialTarget()`     | method | 現在の `initialFocusPolicy` に従って初期フォーカスを再実行します     |
+| `notifyNavigationCommit()` | method | navigation 確定通知を受け取り、`closeOnNavigation` に従って格納判定を行います |
 
 #### Normative
 
@@ -190,7 +219,19 @@ Rouault の通常の読書文脈では、Overlay は dialog ではなく、**一
 
 #### Normative
 
-`collapse(reason?)` の `reason` は `api` / `scrim` / `escape` / `navigation` / `unknown` のいずれかとします。これにより、上位レイヤは格納理由に応じた副作用分岐を行えます。
+`notifyNavigationCommit()` は routing を内包しません。これは、上位レイヤまたは子要素アダプタが **「navigation が確定した」** という事実だけを shell へ通知するための入口です。
+
+#### Normative
+
+`closeOnNavigation` の解釈は次のとおりです。
+
+- `false`: `notifyNavigationCommit()` を受けても自動格納しません
+- `true`: `resolvedMode` にかかわらず `collapse(reason='navigation')` を行います
+- `overlay-only`: `resolvedMode='overlay'` の場合に限り `collapse(reason='navigation')` を行います
+
+#### Normative
+
+`collapse(reason?)` の `reason` は `api` / `scrim` / `escape` / `navigation` / `mode-transition` / `unknown` のいずれかとします。これにより、上位レイヤは格納理由に応じた副作用分岐を行えます。
 
 ---
 
@@ -215,9 +256,10 @@ Rouault の通常の読書文脈では、Overlay は dialog ではなく、**一
 Overlay は**非モーダル drawer**です。すなわち、次を満たします。
 
 - 背景全面の inert 化は要求しません
-- Focus Trap を要求しません
-- 背景へのフォーカス移動を不具合とみなしません
-- scrim は視覚的前景化と pointer close affordance を担います
+- Focus Trap は提供しません
+- 背景へフォーカス移動できること自体は許容します
+- ただし、フォーカス移動は予測可能でなければならず、Overlay の開閉と無関係な不意の逸脱を継続的に生じさせてはなりません（MUST NOT）
+- scrim は視覚的前景化と pointer による close affordance を担います
 
 #### Normative
 
@@ -244,7 +286,30 @@ Fixed は**常設補助ナビゲーション**です。常時表示を前提と�
 
 #### Normative
 
-attribute と property が競合する場合、**直近で設定されたもの**を優先してよいですが、少なくとも「property が最終ソース・オブ・トゥルース」であることを推奨します。
+attribute と property が競合する場合、**property を正規の入力ソース・オブ・トゥルース**として扱わなければなりません（MUST）。attribute は初期 HTML 記述および文字列表現のために受理してよいですが、競合時に property を上書きしてはなりません（MUST NOT）。
+
+### `resolvedMode` 変化時の state 解決
+
+#### Normative
+
+`mode="auto"` により `resolvedMode` が変化した場合、uncontrolled state の解決は `modeTransitionPolicy` に従います。
+
+| 値                           | 契約                                                                 |
+| ---------------------------- | -------------------------------------------------------------------- |
+| `preserve`                   | `resolvedMode` 変化前の state を維持します                           |
+| `collapse-on-overlay-entry`  | `fixed -> overlay` へ遷移した時に限り `collapsed` へ正規化します     |
+
+#### Normative
+
+`modeTransitionPolicy='collapse-on-overlay-entry'` では、`overlay -> fixed` の遷移時に自動展開してはなりません（MUST NOT）。Fixed での展開有無は、その時点の state をそのまま引き継ぎます。
+
+#### Normative
+
+`modeTransitionPolicy` による state 変化は、**uncontrolled state にのみ**適用します。controlled state では、`resolvedMode` の変化を通知してよいですが、state を内部で変更してはなりません（MUST NOT）。
+
+#### Normative
+
+`modeTransitionPolicy` により `collapsed` へ遷移した場合、その格納理由は `mode-transition` として扱います。
 
 ---
 
@@ -281,11 +346,19 @@ Overlay 格納時のフォーカス復帰は `restoreFocusPolicy` に従いま�
 
 #### Normative
 
-復帰先が未接続である場合は、代替探索を行わず、フォーカス復帰を省略してよいです。
+選択された復帰先が未接続、無効、または非対話状態である場合は、次の共通代替順を適用します。
+
+1. もう一方の標準候補（`trigger` または `previous-active-element`）
+2. host 内の最初の対話要素
+3. フォーカス復帰なし
+
+#### Normative
+
+`restoreFocusPolicy="none"` の場合を除き、実装は**可能な限り予測可能な復帰先**を与えることを優先しなければなりません（SHOULD）。単に復帰を省略してよいのは、上記候補がいずれも成立しない場合に限ります。
 
 #### Rationale
 
-初期フォーカスや復帰先を DOM 探索順だけに依存すると、ナビゲーション構造や `header` スロットの役割が増えた時点で壊れやすくなります。方針を enum 化しておく方が、長期保守に向きます。
+初期フォーカスや復帰先を DOM 探索順だけに依存すると、ナビゲーション構造や `header` スロットの役割が増えた時点で壊れやすくなります。方針を enum 化し、さらに無効候補時の代替順まで固定しておく方が、長期保守に向きます。
 
 ---
 
@@ -295,21 +368,25 @@ Overlay 格納時のフォーカス復帰は `restoreFocusPolicy` に従いま�
 
 本コンポーネントは、少なくとも次の公開イベントを持ちます。
 
-| イベント名                        | 内容                                    | cancelable |
-| --------------------------------- | --------------------------------------- | ---------- |
-| `ui-sidebar-state-will-change`    | state 変更が受理されたことを示します    | いいえ     |
-| `ui-sidebar-state-change`         | 論理状態変更が確定したことを示します    | いいえ     |
-| `ui-sidebar-state-settled`        | 主視覚遷移が完了したことを示します      | いいえ     |
-| `ui-sidebar-resolved-mode-change` | `resolvedMode` が変化したことを示します | いいえ     |
+| イベント名                              | 内容                                      | cancelable |
+| --------------------------------------- | ----------------------------------------- | ---------- |
+| `ui-sidebar-state-request-accepted`     | state 変更要求が受理されたことを示します  | いいえ     |
+| `ui-sidebar-state-change`               | 論理状態変更が確定したことを示します      | いいえ     |
+| `ui-sidebar-state-settled`              | 主視覚遷移が完了したことを示します        | いいえ     |
+| `ui-sidebar-resolved-mode-change`       | `resolvedMode` が変化したことを示します   | いいえ     |
 
 #### Normative
 
-`ui-sidebar-state-change` の detail は、少なくとも次を持ちます。
+`ui-sidebar-state-request-accepted`、`ui-sidebar-state-change`、`ui-sidebar-state-settled` の detail は、少なくとも次を持たなければなりません（MUST）。
 
 - `state`
 - `resolvedMode`
 - `reason`
 - `controlled`
+
+#### Normative
+
+`reason` は `api` / `scrim` / `escape` / `navigation` / `mode-transition` / `unknown` のいずれかとします。
 
 #### Normative
 
@@ -321,11 +398,19 @@ Overlay 格納時のフォーカス復帰は `restoreFocusPolicy` に従いま�
 
 #### Normative
 
-イベントは host 要素から直接購読することを前提とし、親要素でのイベント委譲を前提にしません。`bubbles=false`、`composed=false` を既定とします。
+利用者は host 要素からイベントを直接購読することを前提とします。親要素でのイベント委譲や Shadow DOM 境界越えの伝播方式に依存してはなりません（MUST NOT）。
 
 #### Normative
 
-同値 no-op は `ui-sidebar-state-will-change`、`ui-sidebar-state-change`、`ui-sidebar-state-settled` を発火しません。
+イベントの伝播方式は公開契約の本体ではありません。実装は `bubbles=false` および `composed=false` を採ってよいですが、公開契約として固定するのは**host 直接購読で安定して観測できること**に限ります。
+
+#### Normative
+
+同値 no-op は `ui-sidebar-state-request-accepted`、`ui-sidebar-state-change`、`ui-sidebar-state-settled` を発火しません。
+
+#### Rationale
+
+非 cancelable な事前通知に `will-change` という名前を与えると、取り消し可能であるという期待を誘発しやすくなります。ここでは「要求が受理された」という意味をイベント名に直接反映し、命名と意味のずれを避けます。
 
 ---
 
@@ -333,11 +418,19 @@ Overlay 格納時のフォーカス復帰は `restoreFocusPolicy` に従いま�
 
 #### Normative
 
-展開・格納要求は再入安全でなければなりません（MUST）。連続要求が来た場合、本コンポーネントは逐次実行キューまたは等価な仕組みで状態遷移を直列化します。
+展開・格納要求は再入安全でなければなりません（MUST）。連続要求が来た場合でも、外部から観測される状態遷移は破綻してはならず、最終状態は要求列と整合していなければなりません（MUST）。
 
 #### Normative
 
-同一状態への要求は no-op として扱ってよいですが、`restoreFocusPolicy` のための返却先候補更新だけは成立してよいです。
+再入安全性の達成手段は公開契約に含めません。逐次実行キュー、最新要求優先、内部トランザクション化など、どの方式を採るかは実装に委ねます。ただし、外部観測面として次を満たさなければなりません（MUST）。
+
+- 同一時相で state が相互矛盾するように観測されないこと
+- `ui-sidebar-state-change` と `ui-sidebar-state-settled` の順序が崩れないこと
+- focus 復帰候補の記録が連続要求で破綻しないこと
+
+#### Normative
+
+同一状態への要求は no-op として扱ってよいですが、`restoreFocusPolicy="trigger"` のための返却先候補更新だけは成立してよいです。
 
 ---
 
@@ -516,31 +609,25 @@ z-index は数値そのものではなく、次の**相対順序**を満たさ�
 
 #### Normative
 
-Storybook は見本ではなく契約検証です。少なくとも、次を独立した Story として維持します。
+Storybook は見本ではなく契約検証です。少なくとも、次の契約群を独立に検証できなければなりません（MUST）。
 
-- controlled state
-- uncontrolled state
-- persistence on / off
-- `mode="auto"` と `resolvedMode`
-- Overlay 非モーダル性
-- Esc close
-- scrim close
-- `initialFocusPolicy` の各分岐
-- `restoreFocusPolicy` の各分岐
-- state event と settled event の分離
-- parent layout が track を解放しないこと
-- forced-colors / reduced-motion
+- controlled / uncontrolled の状態所有権
+- `mode="auto"` と `resolvedMode` の分離
+- Overlay の非モーダル性
+- scrim close と Esc close
+- 初期フォーカスと復帰フォーカス
+- `ui-sidebar-state-change` と `ui-sidebar-state-settled` の時相分離
+- `collapsed` が到達可能性停止を意味し、親レイアウトの幅解放を保証しないこと
+- reduced motion / forced colors
 - rapid toggle に対する再入安全性
-- attribute 変更と property 変更の双方向同期
-- implicit auto mode 判定と mode 属性反映
-- `header` スロットの mode 依存可視性
-- `inert` / `visibility` の切替タイミング
-- dark mode 面の維持
-- scrim opacity パブリックトークンの上書き
+
+#### Normative
+
+Story 名、Story 数、個別 Story の粒度、周辺テーマ検証の詳細は公開契約に含めません。これらは契約検証マトリクスまたは Storybook 実装側で管理します。
 
 #### Rationale
 
-現行実装の Storybook / Boundary Story は、通常の見た目確認より広く、**属性反映、永続化、`header` スロット可視性、`inert` 戦略タイミング、dark mode、forced colors、reduced motion、scrim token** まで検証対象に含めています。したがって、契約書側もこれらの存在を明示しておいた方が、現行実装との対応関係が崩れにくくなります。
+契約書に Story の細目まで列挙すると、検証観点の増減だけで仕様書の更新が必要になります。本文では**何を検証すべきか**だけを固定し、**何本の Story でどう分割するか**は検証文書へ分離した方が保守しやすくなります。
 
 ---
 
@@ -557,187 +644,6 @@ Rouault の sidebar は、本文を読む行為を補助するための導線で
 ### layout 責務を分ける理由
 
 レイアウト列幅とナビゲーション到達可能性は別概念です。これを 1 コンポーネントに押し込むと、`collapsed` の意味が画面ごとに変わります。shell は面の意味を守り、layout は幅を扱う方が保守しやすくなります。
-
----
-
-## 新規で追加を検討する価値がある機能
-
-本節は現時点の公開契約ではありません。ここに記載した事項へ依存してはなりません（MUST NOT）。
-
-本節では、`ui-sidebar-shell` に新規で追加する価値がある機能を、**読書面の主役性を壊さず、責務境界を濁らせず、契約として意味を持たせられるか**という観点で整理します。
-
-追加候補は「便利そうだから」ではなく、次の基準で選別します。
-
-- 既存契約の穴を埋めるか
-- state / mode / focus / dismiss の意味論を明瞭にするか
-- 読書面への復帰を速くするか
-- layout、routing、child semantics の責務を不必要に抱え込まないか
-
-### 最優先で検討する価値がある機能
-
-#### 1. `closeOnNavigation`
-
-Overlay でナビゲーション項目を選択した後に自動で格納するかどうかを制御する入力です。モバイルや小画面では、遷移後も drawer が残ると本文への復帰が遅れやすいため、読書導線の観点から価値が高いです。
-
-**狙い**
-
-- ナビゲーション選択後の本文復帰を速くする
-- 画面ごとに「閉じる / 閉じない」がぶれるのを防ぐ
-- `collapse(reason='navigation')` と一貫した意味論を与える
-
-**望ましい契約**
-
-- `closeOnNavigation: boolean | 'overlay-only'`
-- 既定値は `overlay-only`
-- shell 自身は router を知りません
-- 子要素または上位レイヤが navigation 完了または選択イベントを通知し、shell はそれを受けて格納します
-
-**採用理由**
-
-これは単なる便利機能ではなく、Rouault の「没入して読む」体験に対し、**本文へ戻りやすくするための基礎機能**です。
-
-#### 2. `modeTransitionPolicy`
-
-`resolvedMode` が `fixed` と `overlay` の間で変化したときに、`state` をどのように扱うかを定義する入力です。レスポンシブ境界で `expanded` / `collapsed` をどう引き継ぐかは、現状のままだと画面ごとにばらつきやすい論点です。
-
-**狙い**
-
-- ブレークポイント跨ぎの state 挙動を安定化する
-- persistence と responsive auto 判定の競合を減らす
-- Storybook 上で mode 切替時の期待値を固定しやすくする
-
-**望ましい契約**
-
-- `modeTransitionPolicy: 'preserve-state' | 'expand-on-fixed' | 'collapse-on-overlay'`
-- 既定値候補は `preserve-state` または `expand-on-fixed`
-- `ui-sidebar-resolved-mode-change` と整合すること
-
-**採用理由**
-
-これは見た目の機能ではなく、**状態機械の境界条件を仕様化する機能**です。長期的な保守性に直接効きます。
-
-#### 3. `dismissPolicy`
-
-Overlay の閉じ方を、個別フラグではなく 1 つの方針入力で整理するための入力です。`closeOnOutsideClick`、`closeOnEscape`、`closeOnNavigation` などを個別追加していくと、仕様が断片化しやすくなります。
-
-**狙い**
-
-- non-modal drawer の意味論を一段上の抽象で整理する
-- scrim、Esc、navigation、outside-focus などの閉じ方を一貫して扱う
-- 画面固有の if 文で挙動が増殖するのを防ぐ
-
-**望ましい契約**
-
-- `dismissPolicy: 'explicit-only' | 'scrim-and-escape' | 'passive-auto'`
-- `explicit-only`: トリガーまたは API による明示操作でのみ閉じる
-- `scrim-and-escape`: scrim と Esc で閉じる
-- `passive-auto`: navigation や outside-focus を含めて受動的に閉じ得る
-
-**採用理由**
-
-Overlay の意味論を今後も非モーダル drawer として維持するなら、dismiss の整理は核になります。個別フラグを増やすより、**契約の抽象度を上げる方が設計としてきれい**です。
-
-### 条件付きで検討する価値がある機能
-
-#### 4. `ui-sidebar-layout` との正式分離
-
-これは `ui-sidebar-shell` 自体への機能追加ではなく、責務分割を明示するための相方コンポーネント導入です。親レイアウトの track 幅解放や Zen Mode 的な 2 カラム制御を正規に扱いたい場合に価値があります。
-
-**狙い**
-
-- `collapsed` を到達可能性停止として純化する
-- 列幅解放を shell の責務から切り離す
-- layout と shell の責務混線を防ぐ
-
-**望ましい契約**
-
-- `ui-sidebar-shell` は面の意味だけを扱う
-- `ui-sidebar-layout` は sidebar track の予約 / 解放だけを扱う
-- 両者は疎結合に保つ
-
-**採用理由**
-
-これは shell を肥大化させずに設計をきれいに保つための分離策です。複数画面で Zen Mode や列幅制御が必要になった段階で価値が高まります。
-
-#### 5. `sizePreset` / `widthPolicy`
-
-サイドバー幅を意味的な preset として制御するための入力です。ノート一覧主体、目次主体、補助メタデータ主体など、サイドバーの情報密度に応じて適正幅が変わる場合に有効です。
-
-**狙い**
-
-- 幅を単なる CSS 値ではなく意味的な契約にする
-- overlay と fixed で適正幅を変えやすくする
-- 画面ごとの ad-hoc な幅指定を減らす
-
-**望ましい契約**
-
-- `sizePreset: 'compact' | 'default' | 'wide'`
-- 必要なら `fixedSizePreset` と `overlaySizePreset` に分離
-- 自由ドラッグリサイズは当面採らない
-
-**採用理由**
-
-幅の意味を preset に寄せると、デザイン整合性と保守性を両立しやすくなります。ただし責務を増やし過ぎないため、まずは preset に留める方がよいです。
-
-#### 6. `initialFocusTarget`
-
-`initialFocusPolicy` に加えて、必要なときだけ明示的な初期フォーカス先を指定するための入力です。複雑なナビゲーション構造や、header action を強く優先したい文脈で価値があります。
-
-**狙い**
-
-- policy だけでは表現しにくい初期フォーカス要求に対応する
-- DOM 探索順への依存を減らす
-- 構造変更後もフォーカス開始位置を固定しやすくする
-
-**望ましい契約**
-
-- `initialFocusTarget?: string`
-- selector より `id` や slot ベースの安全な解決を優先する
-- 見つからない場合は `initialFocusPolicy` にフォールバックする
-
-**採用理由**
-
-必要な画面では有効ですが、常用すると構造依存が増えるため、導入は限定的であるべきです。
-
-#### 7. `restoreFocusFallback`
-
-格納時の復帰先が未接続または無効であった場合に、どこへフォーカスを戻すかを追加制御する入力です。ルート遷移や条件付きレンダリングが多い画面で有効です。
-
-**狙い**
-
-- フォーカスロスト感を減らす
-- close reason ごとに復帰戦略を整えやすくする
-- 予期しない focus nowhere 状態を減らす
-
-**望ましい契約**
-
-- `restoreFocusFallback: 'none' | 'host' | 'first-trigger-in-document'`
-- 既定値は `none`
-- `restoreFocusPolicy` より優先度は低く、補助手段として扱う
-
-**採用理由**
-
-通常は不要ですが、上位ルーティングや条件付き描画が強い環境では有効です。必要になるまで本体契約へ昇格させない方がきれいです。
-
-### 採用を推奨しない方向
-
-以下は一見便利に見えても、`ui-sidebar-shell` の責務を濁らせやすいため、採用を推奨しません。
-
-#### 1. shell 自身が router を知ること
-
-navigation close を実現したいとしても、router 依存を本体へ入れるべきではありません。routing 層への依存は再利用性を大きく落とします。
-
-#### 2. Focus Trap の常設化
-
-Overlay を非モーダル drawer と定義した設計と衝突します。完全モーダル性が必要なら、上位統合で扱う方がよいです。
-
-#### 3. 自由ドラッグによる幅変更
-
-一見有用ですが、永続化、レスポンシブ、読書面との干渉、タッチ環境対応などを一気に複雑化させます。まずは preset で十分です。
-
-#### 4. child navigation semantics の内包
-
-tree / list / menu のキーボード責務まで shell が抱えるべきではありません。子要素側コンポーネントへ委譲した方が、設計は明瞭です。
 
 ---
 
@@ -772,7 +678,7 @@ tree / list / menu のキーボード責務まで shell が抱えるべきでは
 - 現行は `state` / `mode` / `fixedBreakpoint` 中心ですが、本書では `defaultState`、`persist`、`persistenceKey`、`resolvedMode`、各種 focus policy を追加しています。
 - 現行は `mode` 未指定時に auto 判定されますが、本書では `mode="auto"` を明示値として要求します。
 - 現行は LocalStorage 永続化を内部で持ちますが、本書では uncontrolled state に限定しています。
-- 現行は `ui-sidebar-state-change` のみですが、本書では `will-change`、`change`、`settled`、`resolved-mode-change` へ分離しています。
+- 現行は `ui-sidebar-state-change` のみですが、本書では `state-request-accepted`、`change`、`settled`、`resolved-mode-change` へ分離しています。
 - 現行は Esc 処理が局所的ですが、本書では host 単位での一貫性を推奨しています。
 - 現行は `collapsed` とレイアウト解放が Story 上で近接していますが、本書では両者を明確に分離しています。
 
@@ -809,7 +715,7 @@ tree / list / menu のキーボード責務まで shell が抱えるべきでは
 
 現行実装が発火する公開イベントは `ui-sidebar-state-change` のみです。detail も `{ state, mode }` に限定されます。したがって、次は**現行未対応**です。
 
-- `ui-sidebar-state-will-change`
+- `ui-sidebar-state-request-accepted`
 - `ui-sidebar-state-settled`
 - `ui-sidebar-resolved-mode-change`
 - `detail.reason`
@@ -917,7 +823,7 @@ tree / list / menu のキーボード責務まで shell が抱えるべきでは
 2. `collapsed` は到達可能性停止を意味し、レイアウト解放を意味しないこと。
 3. Overlay は既定で非モーダル drawer であること。
 4. `state` / `defaultState`、`mode` / `resolvedMode` を分離すること。
-5. イベントは `will-change` / `change` / `settled` / `resolved-mode-change` に分離すること。
+5. イベントは `state-request-accepted` / `change` / `settled` / `resolved-mode-change` に分離すること。
 6. フォーカス開始位置と復帰方針を policy として公開入力化すること。
 7. 永続化は uncontrolled state に限定すること。
 8. 読書面の主役性を壊さないこと。

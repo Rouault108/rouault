@@ -10,34 +10,6 @@ Rouault における popover は、本文の流れを断ち切るモーダルで
 
 ---
 
-## 目次
-
-- [適用範囲](#適用範囲)
-- [公開契約](#公開契約)
-  - [設計方針](#設計方針)
-  - [入力契約](#入力契約)
-  - [動作モード契約](#動作モード契約)
-  - [スロット契約](#スロット契約)
-  - [公開メソッド](#公開メソッド)
-  - [trigger 所有権契約](#trigger-所有権契約)
-  - [公開イベント](#公開イベント)
-  - [属性反映契約](#属性反映契約)
-  - [属性所有権契約](#属性所有権契約)
-  - [列挙外値・無効値の扱い](#列挙外値無効値の扱い)
-  - [責務範囲](#責務範囲)
-- [状態モデル](#状態モデル)
-- [DOM / Accessibility](#dom--accessibility)
-- [Visual Contract](#visual-contract)
-- [環境別の振る舞い](#環境別の振る舞い)
-- [関連契約](#関連契約)
-- [境界条件](#境界条件)
-- [Storybook 契約](#storybook-契約)
-- [補足](#補足)
-- [将来拡張の原則](#将来拡張の原則)
-- [現行実装との差分と移行方針](#現行実装との差分と移行方針)
-
----
-
 ## 適用範囲
 
 本書は、`ui-popover` の次の事項を対象とします。
@@ -50,19 +22,21 @@ Rouault における popover は、本文の流れを断ち切るモーダルで
 - 関連契約
 - 境界条件
 - Storybook 契約
-- 将来拡張の原則
 - 現行実装との差分と移行方針
 
 一方で、本書は次の事項を扱いません。
 
-- `dialog`、`menu`、`tooltip`、`listbox` など role 固有のキーボードモデル
+- `dialog`、`menu`、`tooltip`、`listbox` など role 固有の意味論およびキーボードモデル
 - focus trap や modal dialog 相当の閉域制御
 - link fallback を含む脚注・注釈・恒久リンクの情報設計
-- arrow 表現、キャレット表現、アニメーション演出の個別設計
-- 複数 overlay の積層規則やアプリケーション全体の overlay 管理
+- popover 表示と遷移を併用する dual-access wrapper の契約
+- `ui-info-popover`、`ui-footnote-popover`、`ui-annotation-popover` など上位 semantic wrapper の契約
+- arrow 表現、キャレット表現、origin 表現、個別アニメーション演出の設計
+- anchor 幅追従、幅ポリシー、再配置戦略など用途拡張向けの付加 API
+- 複数 overlay の積層規則、dismiss controller、document 単位 style 供給基盤など overlay foundation の設計
 - ルーティング、脚注遷移、タブ連動など上位レイヤの制御
 
-これらは上位レイヤまたは別コンポーネントの責務です。
+これらは上位レイヤ、別コンポーネント、または別基盤の責務です。
 
 ---
 
@@ -111,23 +85,84 @@ anchored mode が既定です。controller mode は共有 trigger や外部制�
 | `trigger` | named slot | anchored mode の正規入力 | 開閉起点となる単一の interactive element を受け取ります |
 | `content` | named slot | 全モード共通の正規入力   | 浮遊表示される単一の HTMLElement を受け取ります         |
 
-各スロットは **単一要素** を正規入力とします。複数要素を同一スロットへ与える構成は契約違反です。開発時には warning または例外として顕在化しなければなりません（SHOULD）。テキストノードのみを与える構成は正規入力ではありません。
+各スロットは **単一の `HTMLElement`** を正規入力とします。複数要素を同一スロットへ与える構成、またはテキストノードのみを与える構成は契約違反です。契約違反は、**開発環境では `console.warn` により顕在化しなければなりません（MUST）**。**本番環境では例外送出を既定挙動とせず、当該構成を no-op として扱います。**
 
-`trigger` には、`button`、`a`、またはそれと同等の対話要素を使用しなければなりません（MUST）。`content` は全モードで必須です。anchored mode では `trigger` も必須です。controller mode では `slot="trigger"` を省略しても構いませんが、その場合は `openForTrigger()` 呼び出しごとに起動主体を明示しなければなりません（MUST）。
+本書における **interactive element** とは、少なくとも次のいずれかを満たす `HTMLElement` を指します。
+
+- 有効な `button`
+- `href` を持つ `a`
+- 有効な form control（`input`、`select`、`textarea` など）
+- 利用者が keyboard / pointer 起動責務を与え、`tabIndex >= 0` を持つ `HTMLElement`
+
+`trigger` は interactive element でなければなりません（MUST）。`content` は全モードで必須です。anchored mode では `trigger` も必須です。controller mode では `slot="trigger"` を省略しても構いませんが、その場合は `openForTrigger()` 呼び出しごとに起動主体を明示しなければなりません（MUST）。
 
 ### 公開メソッド
 
 `ui-popover` は、開閉を外部から制御するため、次の公開メソッドを持ちます。
 
-| 名前                                | 種別   | 契約                                          |
-| ----------------------------------- | ------ | --------------------------------------------- |
-| `openForTrigger(trigger, options?)` | method | 指定 trigger を active trigger として開きます |
-| `close(options?)`                   | method | 閉じます                                      |
-| `toggleForTrigger(trigger?)`        | method | 現在状態を反転します                          |
+| 名前                                | 種別   | 契約                                                                 |
+| ----------------------------------- | ------ | -------------------------------------------------------------------- |
+| `openForTrigger(trigger, options?)` | method | 指定 trigger を active trigger として開きます                        |
+| `close(options?)`                   | method | `reason='programmatic'` で閉じます                                   |
+| `toggleForTrigger(trigger?)`        | method | 解決された trigger を基準に、open / close または active trigger 切替を行います |
 
 `openForTrigger()` は controller mode の正規 API です。anchored mode であっても、共有 trigger を明示的に扱う場合はこのメソッドを使用します。
 
-`close(options?)` は `returnFocus` を受け取ります。`toggleForTrigger()` は `trigger` を省略した場合、anchored mode では owner trigger、controller mode では現在の active trigger を使用します。
+#### `openForTrigger(trigger, options?)`
+
+`trigger` は interactive element でなければなりません（MUST）。無効要素、切断済み要素、または interactive element でない要素が渡された場合、**開発環境では `console.warn` により顕在化し、本番環境では no-op** とします。
+
+`openForTrigger()` は次のとおり振る舞います。
+
+- 現在が closed である場合:
+  - `reason='trigger'`、`nextOpen=true` の `ui-popover-open-change-request` を発火します。
+  - request が受理された場合、open を成立させ、指定 trigger を active trigger に設定します。
+- 現在が open であり、指定 trigger が現在の active trigger と同一である場合:
+  - open 状態は変化しません。
+  - `ui-popover-open-change-request` / `ui-popover-open-change` は再発火しません。
+  - 必要であれば位置再計算だけを行って構いません。
+- 現在が open であり、指定 trigger が現在の active trigger と異なる場合:
+  - open 状態は維持したまま、active trigger を新しい trigger へ切り替えます。
+  - `aria-expanded` と `aria-controls` は旧 active trigger から解除し、新 active trigger へ移管しなければなりません（MUST）。
+  - この切替は open 真偽値の変更ではないため、`ui-popover-open-change-request` / `ui-popover-open-change` の発火対象に含めません。
+
+#### `close(options?)`
+
+`close(options?)` は `reason='programmatic'` による close を行います。`returnFocus` を省略した場合の既定値は `false` です。
+
+- 現在が open である場合:
+  - `reason='programmatic'`、`nextOpen=false` の `ui-popover-open-change-request` を発火します。
+  - request が受理された場合、close を成立させます。
+- 現在が closed である場合:
+  - no-op とし、event は発火しません。
+
+#### `toggleForTrigger(trigger?)`
+
+`toggleForTrigger()` は `trigger` を省略した場合、anchored mode では owner trigger、controller mode では現在の active trigger を使用します。解決後の trigger が存在しない場合は、**開発環境では `console.warn`、本番環境では no-op** とします。
+
+`toggleForTrigger()` は次のとおり振る舞います。
+
+- 現在が closed である場合:
+  - 解決された trigger を用いて `openForTrigger()` と同じ契約で開きます。
+- 現在が open であり、解決された trigger が現在の active trigger と同一である場合:
+  - `reason='trigger'` により閉じます。
+  - `returnFocus` の既定値は `true` です。
+- 現在が open であり、解決された trigger が現在の active trigger と異なる場合:
+  - close は行わず、active trigger のみを切り替えます。
+  - この切替は open 真偽値の変更ではないため、`ui-popover-open-change-request` / `ui-popover-open-change` の発火対象に含めません。
+
+#### メソッド起点の `reason`
+
+公開メソッド起点の `reason` は次のとおり固定します。
+
+| 起点                                                        | `reason`         |
+| ----------------------------------------------------------- | ---------------- |
+| `openForTrigger()` による closed → open                     | `trigger`        |
+| `toggleForTrigger()` による open → close                    | `trigger`        |
+| `close()` による close                                      | `programmatic`   |
+| `disabled=true` への遷移に伴う強制 close                    | `disabled`       |
+| slot 差し替えにより必要要素を失った場合の close             | `slot-invalidated` |
+| disconnect に伴う close                                     | `disconnected`   |
 
 ### trigger 所有権契約
 
@@ -226,7 +261,7 @@ uncontrolled モードでは `defaultOpened` を初期値として内部状態�
 
 ### active trigger 状態
 
-`ui-popover` は現在の起動主体を `active trigger` として持ちます。`aria-expanded="true"` は active trigger にのみ反映します。共有 trigger 運用では、owner trigger と follower trigger の両方を同時に展開状態へしません。
+`ui-popover` は現在の起動主体を `active trigger` として持ちます。`aria-expanded="true"` は active trigger にのみ反映します。共有 trigger 運用では、owner trigger と active trigger を同時に展開状態へしてはなりません（MUST NOT）。active trigger が切り替わる場合、旧 active trigger に残っていた `aria-expanded` と `aria-controls` は解除し、新 active trigger へ同一状態更新として移管しなければなりません（MUST）。
 
 ### dismiss reason 状態
 
@@ -280,7 +315,7 @@ content は shadow 内に複製されません。
 
 ### グローバル副作用契約
 
-`ui-popover` は、Shadow DOM 内だけでは完結しません。表示に必要な style は document 単位で供給されます。ただし、長期的にはこの責務を overlay foundation または stylesheet provider へ分離する方が望ましいです。
+`ui-popover` は Shadow DOM 内だけでは完結しません。表示に必要な style は document 単位で供給します。本書の公開契約は、必要なスタイル供給が document 単位で存在することまでを固定し、注入方式や所有主体などの実装詳細は固定しません。
 
 公開契約として固定するのは次の点だけです。
 
@@ -311,12 +346,14 @@ content 要素には次を反映します。
 
 アクセシビリティ上の重要点は次のとおりです。
 
-- trigger の対話主体は利用者が供給した interactive element です。
-- `aria-expanded` は active trigger にのみ反映します。
-- `aria-controls` は content の `id` と一致しなければなりません（MUST）。
-- `Escape` による close を提供します。
-- open 時に focus を自動移動しません。
+- trigger の対話主体は、利用者が供給した interactive element です。本書における interactive element は、`button`、`a[href]`、有効な form control、または利用者が keyboard 起動責務を与えた `tabIndex >= 0` の `HTMLElement` を指します。
+- `aria-expanded` は active trigger にのみ反映します。owner trigger と active trigger が異なる場合、owner trigger は `aria-expanded="false"` を維持します。
+- `aria-controls` は active trigger から current content の `id` を参照しなければなりません（MUST）。content に `id` が存在しない場合は、コンポーネントが安定した `id` を補います。
+- content 要素の差し替え、content `id` の変化、または active trigger の切替が起きた場合、`aria-controls` の参照先は同一状態更新で再同期しなければなりません（MUST）。旧 active trigger に `aria-controls` が残留してはなりません（MUST NOT）。
+- open 時に focus を content へ自動移動しません。
 - focus trap は提供しません。
+- `Escape` による close は、open 中に同一 `Document` 上で発生した未修飾 `keydown` を監視して提供します。`event.key === 'Escape'` かつ `event.defaultPrevented === false` の場合、`reason='escape'` の close 要求を行います。
+- content 内部の widget 等が `Escape` を独自処理したい場合は、当該 `keydown` を `preventDefault()` することで shell dismiss を抑止できます。
 - close 後のフォーカス復帰は `reason` と `returnFocus` に従います。
 
 本コンポーネントで重要なのは、**popover 自身が対話主体ではなく、anchor / content 関係を補助すること**です。意味論付き popup を必要とする場合は、上位ラッパーで role と keyboard model を別途与えなければなりません（MUST）。
@@ -337,11 +374,11 @@ content 要素には次を反映します。
 
 ### レイアウト
 
-content は `position: fixed` で配置します。左右・上下は Floating UI により計算され、viewport 端では flip / shift により逃がします。最大幅は `min(90vw, 28rem)`、最大高は `60vh`、縦方向 overflow は `auto` です。
+content は **viewport 基準の浮遊面** として anchor 近傍へ配置します。配置方向は `placement` に従い、viewport 端では反転または押し戻しにより表示領域外への逸脱を避けなければなりません（MUST）。最大幅と最大高は公開トークンにより調整可能でなければならず、長文 content でも viewport を越えて表示不能になってはなりません（MUST NOT）。縦方向 overflow は scroll 可能でなければなりません。
 
 ### 開閉表示
 
-開状態では `display: block`、`opacity: 1`、`transform: translateY(0)` です。閉状態では `opacity: 0`、`transform: translateY(4px)` です。トランジションは短く、読書のテンポを阻害しない長さに固定します。
+開状態では、content は視認可能かつ操作可能でなければなりません（MUST）。閉状態では、content は視認不可であり、pointer hit target およびキーボードフォーカス移動対象として機能してはなりません（MUST NOT）。実装は `opacity`、`transform`、`visibility`、`hidden`、Popover API など任意の手段を使用して構いませんが、具体的な CSS 値は公開契約に含めません。遷移を設ける場合、その長さは短く、読書のテンポを阻害しない範囲に固定します。
 
 ### Trigger 視覚状態
 
@@ -395,7 +432,7 @@ active trigger には背景と小さな角丸を与えます。ただし、こ�
 
 ### Forced Colors
 
-`forced-colors: active` 環境では、content は `Canvas` / `CanvasText` / `CanvasText` 境界線へフォールバックし、shadow は除去します。trigger は `LinkText` を参照します。
+`forced-colors: active` 環境では、content は system color にフォールバックし、背景・文字色・境界線が識別可能でなければなりません（MUST）。shadow は除去します。trigger は link 風表現へ固定せず、**テキスト可読性、focus indicator、active 状態の識別**が system color 上で失われないことを契約とします。
 
 ### Print
 
@@ -463,10 +500,6 @@ popover は成立しません。anchored mode として開いてはなりませ�
 
 全モードで不正構成です。open は成立しません。
 
-### `opened` と `defaultOpened` の同時指定
-
-契約違反です。コンポーネントは warning または例外で顕在化しなければなりません（SHOULD）。
-
 ### invalid `variant`
 
 列挙外の `variant` は `default` へ正規化します。
@@ -486,6 +519,22 @@ popover は成立しません。anchored mode として開いてはなりませ�
 ### shared trigger
 
 `openForTrigger()` により slot 外 trigger を active trigger にできます。このとき、active trigger の `aria-expanded` は `true`、owner trigger の `aria-expanded` は `false` を維持します。
+
+### open 中に同一 trigger へ `openForTrigger()`
+
+現在が open であり、指定 trigger が現在の active trigger と同一である場合、open 状態は変化しません。`ui-popover-open-change-request` / `ui-popover-open-change` は再発火しません。必要であれば位置再計算だけを行って構いません。
+
+### open 中に別 trigger へ `openForTrigger()`
+
+現在が open であり、指定 trigger が現在の active trigger と異なる場合、close は行いません。open 状態を維持したまま active trigger を切り替え、`aria-expanded` と `aria-controls` を新しい trigger へ移管します。この切替は open 真偽値の変更ではないため、`ui-popover-open-change-request` / `ui-popover-open-change` の発火対象に含めません。
+
+### 無効な trigger を渡した `openForTrigger()` / `toggleForTrigger()`
+
+無効要素、切断済み要素、または interactive element でない要素が渡された場合、開発環境では `console.warn` により顕在化し、本番環境では no-op とします。例外送出は既定契約に含めません。
+
+### `opened` と `defaultOpened` の同時指定
+
+契約違反です。開発環境では `console.warn` により顕在化しなければなりません（MUST）。本番環境では `opened` を優先し、`defaultOpened` は無視します。例外送出は既定契約に含めません。
 
 ### reconnect
 
@@ -509,156 +558,38 @@ content は `overflow-y: auto` と `max-height` により、viewport を超え�
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、少なくとも次の確認点を維持します。
 
-| 確認点         | 固定する契約                                                                          |
-| -------------- | ------------------------------------------------------------------------------------- |
-| 基本開閉       | anchored mode の open / close、`aria-controls`、`aria-expanded` が成立すること        |
-| 制御モデル     | controlled / uncontrolled が分離して振る舞うこと                                      |
-| dismiss reason | `escape`、`outside-pointer`、`disabled`、`programmatic` が区別されること              |
-| shared trigger | owner trigger / active trigger の責務分離と focus return 先が成立すること             |
-| 境界条件       | invalid 値正規化、要素欠如時の非起動、reconnect 耐性、長文 content 境界、単一要素制約 |
-| 環境差分       | Reduced Motion / Forced Colors / Print が成立すること                                 |
-| visual variant | `default` / `subtle` / `inverse` の差分が維持されること                               |
+| 確認点                     | 固定する契約                                                                                                    |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| 基本開閉                   | anchored mode の open / close、`aria-controls`、`aria-expanded` が成立すること                                 |
+| request cancel             | `ui-popover-open-change-request` を `preventDefault()` した場合、内部状態、属性反映、`aria-*` が変化しないこと |
+| 制御モデル                 | controlled / uncontrolled が分離して振る舞うこと                                                               |
+| dismiss reason             | `escape`、`outside-pointer`、`disabled`、`programmatic` が区別されること                                       |
+| 公開メソッド冪等性         | open 状態で同一 trigger へ `openForTrigger()` を再度呼んでも no-op であり、event が再発火しないこと           |
+| active trigger 切替        | open 中に別 trigger へ切り替えた場合、open を維持したまま `aria-expanded` / `aria-controls` が移管されること  |
+| shared trigger             | owner trigger / active trigger の責務分離と focus return 先が成立すること                                      |
+| controller mode            | trigger slot なし構成でも `openForTrigger()` / `close()` / focus return が契約どおり成立すること              |
+| slot 再同期                | slot 差し替え時に参照再同期が行われ、必要要素喪失時は `reason='slot-invalidated'` で close すること            |
+| event 順序                 | 状態変更が成立する場合は request → change の順で発火し、拒否時は request のみで終わること                     |
+| reconnect                  | reconnect 後に open / close が再び成立し、controller mode の active trigger を暗黙に owner trigger へ巻き戻さないこと |
+| 境界条件                   | invalid 値正規化、要素欠如時の非起動、長文 content 境界、単一要素制約が成立すること                            |
+| 環境差分                   | Reduced Motion / Forced Colors / Print が成立すること                                                          |
+| visual variant             | `default` / `subtle` / `inverse` の差分が維持されること                                                        |
 
 ---
 
 ## 補足
 
-`ui-popover` の要点は、単に何かを浮かせることではありません。**anchor と content の関係を崩さず、環境差を吸収しつつ、本文の近くで静かに補足を提示すること**にあります。
-
-したがって、今後の変更でも次の 4 点は崩さない方がよいです。
+`ui-popover` の要点は、anchor と content の関係を崩さず、環境差を吸収しつつ、本文の近くで静かに補足を提示することにあります。したがって、今後の変更でも次の方針は維持しなければなりません（MUST）。
 
 1. `ui-popover` は意味論を持たない shell として維持すること。
 2. controlled / uncontrolled を混在させないこと。
-3. role と keyboard model は shell 本体へ持ち込まないこと。
-4. link fallback は別ラッパーの責務として維持すること。
+3. anchored mode / controller mode を正式な起動モードとして維持すること。
+4. role と keyboard model は shell 本体へ持ち込まないこと。
+5. link fallback、dual-access、脚注・注釈固有の情報設計は別ラッパーの責務として維持すること。
+6. overlay stack、dismiss controller、document 単位 style 供給基盤は shell 本体へ抱え込まず、必要であれば別基盤で扱うこと。
+7. active state を本文上の恒常状態表示へ転用しないこと。
 
----
-
-## 将来拡張の原則
-
-本節は現行実装の公開契約ではなく、将来追加を検討する場合の設計指針です。追加機能は、popover を多機能化するためではなく、**読書の補助として必要な意味だけを増やす場合に限って**採用します。
-
-### 追加機能の判断基準
-
-新規機能を追加する場合は、まず次の観点で採否を判断します。
-
-- shell 本体の責務を濁さないか
-- 意味論付き wrapper として追加した方が自然ではないか
-- overlay foundation へ寄せた方が再利用性と保守性が高くないか
-- 読書体験に対して視覚ノイズや操作ノイズを増やさないか
-- 既存契約の controlled / uncontrolled、anchored / controller mode と整合するか
-
-この判断基準に照らすと、**本体へ直接追加する価値が高い機能は限定的**です。価値が高いものの多くは、wrapper または基盤として追加した方が設計がきれいになります。
-
-### 最優先で検討する価値がある追加
-
-#### 脚注・注釈専用の dual-access wrapper
-
-最も価値が高いのは、`ui-popover` 本体ではなく、**脚注・注釈用の専用 wrapper** を追加することです。
-
-この wrapper は、次の契約を持つとよいです。
-
-- anchor の `href` を正規入力として持ちます。
-- 対応環境では popover 表示を優先します。
-- 非対応環境または wrapper 方針上必要な場合はリンク遷移を維持します。
-- 一時表示と恒久リンクの責務を分離します。
-
-Rouault の読書文脈では、これは単なる機能追加ではなく、**「表示」と「遷移」を分けて扱うための情報設計上の整備**として価値があります。
-
-#### controller mode の明示 API
-
-本体側で最も追加価値が高いのは、**controller mode を明示的に扱う API** の整備です。現行契約は `openForTrigger()` を中心に controller mode を表現していますが、長期的には次のような追加に価値があります。
-
-- `anchorElement` のような明示 property
-- `setAnchorElement()` のような補助 API
-- `reposition()` のような再配置 API
-- controller mode 専用の request / result detail の補助情報
-
-これらは本体責務を拡張し過ぎずに、**shared trigger や外部制御を正式モードとして読みやすくする**効果があります。
-
-#### semantic wrapper 群
-
-`dialog`、`menu`、`tooltip`、`listbox`、脚注用 popover などは、`ui-popover` の上位 wrapper として別契約に分離する価値があります。
-
-この方向では、追加価値が高いのは本体機能の肥大化ではなく、**shell を保ったまま意味を増やすこと**です。とくに次のような wrapper は長期的な整理に資します。
-
-- `ui-info-popover`
-- `ui-footnote-popover`
-- `ui-annotation-popover`
-- `ui-menu-popover`
-
-ただし、`tooltip` は起動契約が click ではなく hover / focus 寄りであるため、同一系統へ無理に含めない方がよいです。
-
-### 条件付きで検討する価値がある追加
-
-#### 幅ポリシー
-
-popover を補足面だけでなく、軽量な選択面や補助パネルにも使う場合は、**anchor 幅との関係を制御する機能**に価値があります。
-
-候補は次のようなものです。
-
-- `inlineSize="content" | "anchor"`
-- `matchAnchorWidth`
-- `minInlineSize="anchor"`
-
-ただし、読書補助の用途だけを見るなら必須ではありません。dropdown 的再利用や選択 UI への展開が見えてきたときに検討するのが妥当です。
-
-#### position update policy
-
-scroll container や複雑なレイアウトが増える場合は、**いつ位置再計算を行うか**を外部から選べる機能に価値があります。
-
-候補は次のようなものです。
-
-- `updateStrategy="auto" | "manual"`
-- `reposition()`
-- `observeResize` / `observeScroll` の切り替え
-
-これは shell 基盤化の文脈では有効ですが、現在の Rouault の用途では優先度は高くありません。
-
-#### arrow / origin 表現
-
-popover の出所を示す arrow は場合によって検討価値があります。ただし、Rouault の読書文脈では視覚ノイズになりやすいため、必要性は限定的です。
-
-採用する場合でも、主契約ではなく **任意視覚オプション** として扱う方がよいです。
-
-#### shared trigger ヘルパー API
-
-controller mode を多用する場合は、shared trigger 専用の補助 API を増やす余地があります。ただし、owner / active の責務境界を曖昧にしないことが前提です。
-
-たとえば、trigger 群の登録、active trigger の明示切替、focus return 先の選択補助などは検討余地がありますが、過剰に抽象化すると shell の責務を濁します。
-
-### 優先して分離・整備する価値があるもの
-
-#### overlay foundation
-
-document 単位スタイル供給、stack 管理、dismiss controller、z-index 戦略は、overlay foundation として別基盤へ寄せる価値があります。
-
-これは新規機能というより、**本体から責務を外しつつ再利用可能な機能へ昇格させる整理**です。`ui-popover` だけでなく、他の overlay 系コンポーネントにも波及効果があります。
-
-### 優先順位
-
-新規追加を検討する優先順位は、次の順が望ましいです。
-
-1. 脚注・注釈専用の dual-access wrapper
-2. controller mode の明示 API
-3. semantic wrapper 群
-4. 幅ポリシー
-5. position update policy
-6. arrow / origin 表現
-7. shared trigger ヘルパー API
-8. overlay foundation
-
-この順序は、見た目の装飾よりも、**責務分離と利用文脈の明確化を優先する**という本書全体の方針に従います。
-
-### 採用しない方針
-
-次の方向は採りません。
-
-- modal dialog 相当の focus trap を `ui-popover` に持ち込むこと
-- trigger 生成責務まで `ui-popover` に持ち込むこと
-- role ごとの複雑なキーボードモデルを単一コンポーネントへ混在させること
-- link fallback を shell 本体の責務として抱え込むこと
-- 本文上の恒常状態表示を popover active state で代替すること
+要するに、本コンポーネントで増やしてよいのは **anchor / content 関係の維持、開閉、dismiss、最小限の状態反映** に直接必要な契約だけです。意味論、遷移設計、基盤化、用途拡張は、`ui-popover` 本体ではなく別責務として扱います。
 
 ---
 
@@ -699,7 +630,7 @@ document 単位スタイル供給、stack 管理、dismiss controller、z-index 
    - trigger への既定 `aria-haspopup="dialog"` も廃止します。
    - `ui-popover` を意味論なし shell として固定します。
 
-この 3 点は同一変更群として扱う方がよいです。理由は、**状態変更 API、イベント、意味論**が同時に更新されないと、利用者から見たコンポーネント像が中途半端になるためです。
+この 3 点は同一変更群として扱うとして扱います。理由は、**状態変更 API、イベント、意味論**が同時に更新されないと、利用者から見たコンポーネント像が中途半端になるためです。
 
 #### 優先度 B: A の直後に追随させる差分
 
@@ -766,7 +697,7 @@ document 単位スタイル供給、stack 管理、dismiss controller、z-index 
 
 ### 一括で変更するべき単位
 
-差分は個別にばらばらに反映するより、次の単位でまとめて変更する方がよいです。
+差分は個別にばらばらに反映するより、次の単位でまとめて変更するとして扱います。
 
 | 変更単位     | 含める項目                                        |
 | ------------ | ------------------------------------------------- |

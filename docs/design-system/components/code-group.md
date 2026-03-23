@@ -2,12 +2,12 @@
 
 ## 概要
 
-本書は、`ui-code-group` の**合成契約**を定義します。
+本書は、`ui-code-group` の合成契約を定義します。
 
-`ui-code-group` は、複数の `ui-code-block` を比較可能な単一提示面へ束ねるコンポーネントです。責務は、単に block をタブ化することではありません。**比較対象の識別、選択状態の安定化、copy 文脈の同期、入力違反時の安全退行**を一貫した公開契約として提供することにあります。
+`ui-code-group` は、複数の `ui-code-block` を比較可能な単一提示面へ束ねるコンポーネントです。責務は、単に block をタブ化することではありません。**比較対象の識別、選択状態の安定化、copy 文脈の同期、比較 UI の成立条件、入力違反時の退行規則**を、一貫した公開契約として提供することにあります。
 
 本設計では、`ui-code-group` は `ui-code-block` 本体契約全体には依存しません。  
-依存するのは、`ui-code-block` 文書に定義された **group item 契約**だけです。これにより、group 側が block 側の未定義面へ暗黙依存する状態を解消します。
+依存するのは、`ui-code-block` 文書に定義された **group item 契約**だけです。
 
 ---
 
@@ -34,6 +34,9 @@
 - preview 面を伴う複合表示
 - URL ルーティング仕様全体
 - 実行系 preview や sandbox の責務
+- authoring lint / CI の最終判定基準
+
+これらは上位レイヤまたは `code-composition.md` の責務です。
 
 ---
 
@@ -56,11 +59,16 @@ block 側の互換入力や単体表示専用入力には依存しません。
 ### 2.4 `label` を解決候補に使いません
 
 曖昧な補助識別子 `label` は、本設計では group のラベル解決に用いません。  
-可視ラベルは `tabLabel`、ファイル名、言語名だけで解決します。
+可視ラベルは `tabLabel`、`filename`、`lang` だけで解決します。
 
-### 2.5 比較 UI が成立しないときは静かに退行します
+### 2.5 比較 UI の成立条件を曖昧にしません
 
-比較対象が不足する場合や入力違反がある場合、破綻したタブ UI を無理に出すのではなく、単純表示へ安全退行します。
+比較 UI は「複数あるから出す」のではなく、**比較対象として有効な child が 2 件以上あるときのみ**成立します。
+
+### 2.6 読書維持と比較成立を分けて扱います
+
+契約違反があっても、可能な限りコード本文の読書は維持してよいです。  
+ただし、比較 UI の正規成立とは区別します。
 
 ---
 
@@ -74,10 +82,10 @@ block 側の互換入力や単体表示専用入力には依存しません。
 ### child に要求する契約
 
 | 項目 | 必須 | 内容 |
-| ---- | ---- | ---- |
+| --- | --- | --- |
 | `groupKey` / `group-key` | はい | group 内で一意な安定識別子です。 |
 | `getCodeContent()` | はい | copy 用文字列を返します。 |
-| `copyable` | いいえ | copy 可否を表します。既定は true とみなします。 |
+| `copyable` | いいえ | copy 可否を表します。既定は `true` とみなします。 |
 | `tabLabel` / `tab-label` | いいえ | タブラベルです。 |
 | `copyLabel` / `copy-label` | いいえ | copy 文脈ラベルです。 |
 | `filename` | いいえ | タブまたは copy 文脈の補助解決に使います。 |
@@ -91,10 +99,16 @@ block 側の互換入力や単体表示専用入力には依存しません。
 - wrapper 要素配下の `ui-code-block` は比較対象に含めません。
 - `ui-code-block` 以外の直下要素が混在する場合、その構成は比較 UI の正規入力に含みません。
 
+### 補足
+
+- 上記は runtime の公開契約です。
+- authoring 時に wrapper を許すかどうか、lint でどこまで禁止するかは `code-composition.md` に従います。
+- 本コンポーネントは wrapper を辿ることを長期保証しません。
+
 ## 3.3 公開 property / attribute
 
 | property | attribute | reflect | 既定値 | 内容 |
-| -------- | --------- | ------- | ------ | ---- |
+| --- | --- | --- | --- | --- |
 | `selectedValue` | `selected-value` | あり | なし | controlled mode における現在選択値です。 |
 | `defaultSelectedValue` | `default-selected-value` | なし | なし | uncontrolled mode における初期選択値です。 |
 | `activation` | `activation` | あり | `auto` | `auto` / `manual` を受理します。 |
@@ -115,7 +129,7 @@ block 側の互換入力や単体表示専用入力には依存しません。
 - `selectedValue` が有効な `groupKey` を指す場合、その項目を選択します。
 - 非制御時に `defaultSelectedValue` が有効な `groupKey` を指す場合、その項目を初期選択します。
 - いずれも解決できない場合、最初の有効項目を選択します。
-- child list 再解決後も、同じ `groupKey` が存在する限り選択状態を維持します。
+- child 再解決後も、同じ `groupKey` が存在する限り選択状態を維持します。
 - index は補助情報であり、主識別子ではありません。
 
 ## 3.5 タブラベル決定契約
@@ -130,7 +144,7 @@ block 側の互換入力や単体表示専用入力には依存しません。
 
 - `label` は参照しません。
 - `groupKey` は内部識別子であり、可視ラベルには使いません。
-- 上記のいずれでも解決できない場合、その child は比較 UI 上の正規比較対象に含めません。
+- 上記のいずれでも解決できない場合、その child は比較 UI 上の有効比較対象に含めません。
 - 比較軸がファイル名や言語名と異なる場合、利用側は `tabLabel` を明示しなければなりません。
 
 ## 3.6 copy 文脈決定契約
@@ -178,7 +192,7 @@ child list と child metadata を再評価し、選択状態・copy 状態・ラ
 選択状態が変化した場合に送出します。
 
 | 項目 | 内容 |
-| ---- | ---- |
+| --- | --- |
 | 名前 | `ui-code-group-change` |
 | `detail` | `{ value, prevValue, index, prevIndex, userInitiated }` |
 | bubbles | `true` |
@@ -196,7 +210,7 @@ child list と child metadata を再評価し、選択状態・copy 状態・ラ
 
 ## 4. 状態モデル
 
-`ui-code-group` は、**選択状態を stable key で管理する合成コンポーネント**です。
+`ui-code-group` は、stable key による選択状態を管理する合成コンポーネントです。
 
 ### 状態分類
 
@@ -206,6 +220,8 @@ child list と child metadata を再評価し、選択状態・copy 状態・ラ
    `groupKey`、`tabLabel`、`copyLabel`、`copyable`、`getCodeContent()`
 3. **派生状態**  
    現在選択 child、copy 文脈ラベル、tab 集合、disabled 状態
+4. **縮退状態**  
+   比較 UI 無効、単一表示、fallback 表示
 
 ### 契約
 
@@ -254,21 +270,22 @@ group が copy button を内包する場合、active item に応じて次を同�
 ## 6.1 group 自体に `embedded` 状態を持ちません
 
 本設計では、`ui-code-group` 自体は `embedded` のような親所有前提の公開状態を持ちません。  
-複合表示時の視覚統合は、継承される CSS Custom Properties により行います。
+複合表示時の視覚統合は、CSS Custom Properties により行います。
 
 ## 6.2 合成用 CSS Custom Properties
 
-重要な公開変数は次のとおりです。
+`ui-code-group` は、`code-composition.md` に定義される共通トークンを受け入れてよいです。  
+代表例は次のとおりです。
 
-- `--ui-code-group-radius-top`
-- `--ui-code-group-radius-bottom`
-- `--ui-code-group-tablist-border`
-- `--ui-code-group-panel-padding`
+- `--ui-code-surface-radius-top`
+- `--ui-code-surface-radius-bottom`
+- `--ui-code-tablist-border`
+- `--ui-code-panel-padding`
 
 ### 契約
 
-- `ui-code-preview` などの親は、これらを上書きしてよいです。
-- これらは視覚統合用であり、意味状態ではありません。
+- これらは視覚合成用であり、意味状態ではありません。
+- 親がこれらを与えても、`selectedValue`、`activation`、イベント契約は変化しません。
 
 ---
 
@@ -276,25 +293,19 @@ group が copy button を内包する場合、active item に応じて次を同�
 
 ## 7.1 小画面
 
-- tablist が横スクロール可能な場合でも、active tab の視認性を維持します。
-- copy button により active tab が隠れません。
-- 情報密度が過密になる場合は、情報密度を下げる方向で退行します。
+- tablist は横スクロールしてよいです。
+- 比較 UI を成立させることが本文可読性を損なう場合、情報密度を下げる方向で退行してよいです。
 
-## 7.2 Forced Colors
+## 7.2 Print
 
-- システムカラーへ確実にフォールバックします。
-- 色差だけに依存せず、境界と構造で意味が伝わります。
+- 印刷時に複数 tab をどう展開するかは実装設計によります。
+- ただし、印刷結果が selected item しか示さないのか、全 item を展開するのかは実装内で一貫していなければなりません。
+- copy UI は印刷面に出しません。
 
-## 7.3 Print
+## 7.3 No-JS
 
-- 通常時に非表示の panel も、印刷時には展開表示します。
-- tab header は印刷時の比較操作 UI としては不要です。
-- 印刷展開は通常時の選択状態を破壊しません。
-
-## 7.4 No-JS
-
-- light DOM 上の child block は残るため、最低限の情報は保持されます。
-- JavaScript 未実行時に完全な比較 UI が成立することは保証しません。
+- light DOM に child block が残るため、最低限のコード本文は失われません。
+- タブ UI の完全成立は保証対象外です。
 
 ---
 
@@ -302,70 +313,61 @@ group が copy button を内包する場合、active item に応じて次を同�
 
 ## 8.1 `ui-code-block` との契約
 
-`ui-code-group` が依存するのは、`ui-code-block` の **group item 契約**です。  
-block 側の互換入力や単体表示専用入力には依存しません。
+`ui-code-group` は、`ui-code-block` の group item 契約のみに依存します。
 
 ## 8.2 `ui-code-preview` との契約
 
-`ui-code-preview` は `ui-code-group` の公開属性を書き換えて意味状態を管理しません。  
-必要な視覚統合は、継承 CSS 変数で行います。
+`ui-code-preview` は `ui-code-group` の選択状態を所有しません。  
+必要な外部同期は `ui-code-group-change` を通じて上位オーケストレーション層が担います。
 
-## 8.3 URL 同期との境界
+## 8.3 `code-composition.md` との関係
 
-`ui-code-group` 自体は URL 同期の責務を持ちません。  
-ただし、`groupKey` を公開することで、上位レイヤが URL 同期を構成できるようにします。
+URL 同期、永続化、分析イベント、authoring lint、違反の重大度分類は `code-composition.md` に従います。  
+本書は group 単体の公開契約だけを定義します。
 
 ---
 
 ## 9. 境界条件
 
-### 9.1 `groupKey` 重複
-
-同一 group 内で `groupKey` が重複する場合は契約違反です。
-
-- 開発時は警告します。
-- 比較 UI は有効化しません。
-- source order のまま単純表示へ退行します。
-
-### 9.2 `groupKey` 欠落
-
-`groupKey` を持たない child は有効比較対象とみなしません。  
-開発時警告の対象です。
-
-### 9.3 1 件のみ
-
-比較 UI は有効化しません。単一表示へ退行します。
-
-### 9.4 0 件
-
-fallback content を表示します。
-
-### 9.5 `selectedValue` が不正
-
-存在しない `groupKey` を指す場合、最初の有効項目へ退行します。
-
-### 9.6 child 再順序付け
-
-同じ `groupKey` が存在する限り選択状態を維持します。
-
-### 9.7 非正規入力の混在
-
-`ui-code-block` 以外の直下子要素が混在する場合は契約違反です。  
-開発時警告を出し、比較 UI は有効化しません。
-
-### 9.8 タブラベル未解決
-
-`tabLabel` / `filename` / `lang` のいずれでも可視ラベルを解決できない child は、比較 UI 上の有効対象に含めません。
+| 条件 | 扱い |
+| --- | --- |
+| child が 0 件 | fallback content をそのまま表示します。 |
+| child が 1 件 | 比較 UI を生成せず単一表示へ退行します。 |
+| `groupKey` 欠落 | その child は有効比較対象に含めません。 |
+| `groupKey` 重複 | 重複集合は有効比較対象に含めません。 |
+| タブラベル未解決 | その child は有効比較対象に含めません。 |
+| `ui-code-block` 以外の直下要素混在 | 正規契約不成立です。比較 UI を無効化してよいです。 |
+| wrapper 越し child | 正規契約不成立です。比較対象に含めません。 |
 
 ---
 
 ## 10. 契約違反時の扱い
 
-契約違反時の基本方針は、**開発時警告 + 本番安全退行**です。
+### 10.1 重大違反
 
-- 常時例外送出を前提としません。
-- 比較 UI の破綻よりも、読書面の保持を優先します。
-- 開発時には、原因が識別できる警告を出します。
+次は **重大違反** として扱います。
+
+- `groupKey` 重複
+- `ui-code-block` 以外の直下要素混在により比較対象集合が不明瞭になる場合
+- wrapper 越し child に依存しないと比較対象を確定できない場合
+
+#### 契約
+
+- 重大違反時は比較 UI を成立させてはなりません。
+- 可能であれば本文読書だけを残す単純表示へ退行します。
+
+### 10.2 軽微違反
+
+次は **軽微違反** として扱います。
+
+- `tabLabel` 欠落だが `filename` または `lang` で代替可能
+- `copyLabel` 欠落
+- 一部 child のみ比較対象から脱落するが、残余集合で比較 UI が成立する場合
+
+#### 契約
+
+- 軽微違反時は、問題の child を除外して残余集合で比較 UI を成立させてよいです。
+- このとき、選択値が無効化された child を指していた場合は再解決します。
 
 ---
 
@@ -373,24 +375,26 @@ fallback content を表示します。
 
 少なくとも次を検証対象に含めます。
 
-- stable key による選択維持
+- controlled / uncontrolled の両モード
 - `activation="auto"` と `activation="manual"`
-- `tabLabel` と `copyLabel` の分離
-- `copyable=false`
-- `groupKey` 重複 / 欠落時の警告と退行
-- 1 件 / 0 件退行
-- 小画面
+- `groupKey` による再解決
+- `tabLabel` / `copyLabel` の分離
+- `filename` / `lang` フォールバック
+- `groupKey` 重複時の重大違反処理
+- 1 件時の単一表示
 - Forced Colors
 - Print
+- No-JS 相当構造保持
 
 ---
 
 ## 12. 補足
 
-本設計の要点は次の 3 点です。
+本設計の要点は次の 4 点です。
 
-1. `ui-code-group` は `ui-code-block` の **group item 契約**だけに依存すること
-2. `label` をラベル解決に使わないこと
-3. `embedded` のような親所有状態を廃し、視覚統合を CSS 変数へ寄せること
+1. 比較対象の主識別子を `groupKey` に固定すること
+2. `ui-code-block` への依存面を group item 契約に限定すること
+3. 比較 UI 成立条件を「有効比較対象 2 件以上」に固定すること
+4. 重大違反と軽微違反を区別し、静かな劣化を減らすこと
 
-この 3 点を固定することで、`ui-code-group` は比較 UI の責務に集中でき、`ui-code-block` との契約境界も明確になります。
+これにより、`ui-code-group` は block 実装の内部都合に引きずられず、長期保守しやすい比較コンポーネントとして成立します。

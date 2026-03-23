@@ -37,8 +37,12 @@
 - 脚注本文の執筆規約、編集規約、文体規約
 - Popover の配置アルゴリズム詳細
 - ルーティング、履歴管理、スクロール復元などの上位アプリケーション制御
+- `脚注 {n}`、`脚注一覧で見る` などの固定文言をどの程度差し替え可能にするかという文言カスタマイズ戦略
+- 長文脚注に対して要約表示モードや抜粋表示モードを導入するかどうかという読書体験上の派生表示戦略
+- 複数参照に対する backlink 群の生成補助・表示補助・ラベル整形補助など、endnotes 生成側または上位 footnote model 側で扱うべき補助機能
+- `open()`、`close()`、`focusTrigger()` などの外部制御 API を公開するかどうかという制御面の拡張方針
 
-これらは上位レイヤまたは関連コンポーネントの責務です。
+これらは上位レイヤ、関連コンポーネント、または将来要件が明確になった段階で別途定義すべき事項です。本書では、`ui-footnote` を**脚注参照の意味コンポーネント**として保つため、条件付き機能や補助機能の拡張方針を正規契約へ含めません。
 
 ---
 
@@ -71,12 +75,21 @@
 
 ### 役割モデル
 
-長期契約としての役割は、**owner reference** と **reference** の 2 種です。現行公開入力に `shared` がありますが、これは役割モデルを暫定的に表現するフラグにすぎません。
+長期契約としての役割は、**primary reference** と **secondary reference** の 2 種です。
 
-- `shared=false` は owner reference を意味します
-- `shared=true` は reference を意味します
+- **primary reference** は、同一 `refId` に対する正規の代表参照です
+- **secondary reference** は、同一脚注を追加で指す追従参照です
+- secondary reference は本文所有権を持ちません
+- primary / secondary の区別は、表示実体の数ではなく、論理脚注に対する役割で決まります
 
-長期的には boolean ではなく、役割が明示された API へ寄せます。
+現行公開入力に `shared` がありますが、これは役割モデルを暫定的に表現するフラグにすぎません。
+
+- `shared=false` は primary reference を意味します
+- `shared=true` は secondary reference を意味します
+
+長期契約としては、boolean 1 つで役割・本文所有権・共有解決の意味を同時に背負う設計には依存しません。公開 API は、将来的に **役割が明示された表現** へ寄せることを前提とします。
+
+したがって、本書で固定する意味論は `shared` そのものではなく、**primary reference / secondary reference という役割モデル**です。`shared` は現行互換のための暫定表現であり、長期的な正規表現ではありません。
 
 ---
 
@@ -88,31 +101,60 @@
 
 ### 入力契約
 
-| 名前          | 種別                                  | 必須   | 内容                       | 契約                                               |
-| ------------- | ------------------------------------- | ------ | -------------------------- | -------------------------------------------------- |
-| `refId`       | property / attribute (`ref-id`)       | はい   | 論理脚注の安定識別子       | 文書内で一意でなければなりません                   |
-| `index`       | property / attribute                  | はい   | 表示番号                   | 提示専用です。識別子としては使いません             |
-| `refInstance` | property / attribute (`ref-instance`) | はい   | 同一脚注への参照位置番号   | 同一 `refId` 配下で一意でなければなりません        |
-| `shared`      | property / attribute                  | いいえ | owner/reference の暫定表現 | `false` は owner、`true` は reference を意味します |
+| 名前          | 種別                                  | 必須   | 内容                               | 契約                                                                 |
+| ------------- | ------------------------------------- | ------ | ---------------------------------- | -------------------------------------------------------------------- |
+| `refId`       | property / attribute (`ref-id`)       | はい   | 論理脚注の安定識別子               | 同一 footnote scope 内で一意でなければなりません                     |
+| `index`       | property / attribute                  | はい   | 表示番号                           | 提示専用です。識別子としては使いません                               |
+| `refInstance` | property / attribute (`ref-instance`) | はい   | 同一脚注への参照位置番号           | 同一 `refId` 配下で一意でなければなりません                          |
+| `shared`      | property / attribute                  | いいえ | 役割モデルの暫定表現               | `false` は primary reference、`true` は secondary reference を意味します |
 
 `refId` の自動補完や `index` からの代用生成には、長期契約として依存しません。入力不足を黙って補完するよりも、上位生成系で明示的に値を与える方を正規とします。
 
+また、長期契約として正規に固定するのは `shared` ではなく、**primary reference / secondary reference の役割意味**です。したがって、将来的な公開 API は `role` などの**意味が直接読める表現**へ置き換わってよく、その場合も本書の役割契約が優先されます。
+
+`ui-footnote` が明示的な role API へ移行した場合、`shared` は互換目的の暫定入力または廃止候補として扱います。本書は boolean の継続採用を要件としません。
+
 ### 役割契約
 
-- **owner reference** は、同一 `refId` に対して **ちょうど 1 つ** 存在しなければなりません（MUST）
-- **reference** は 0 個以上存在できます
-- reference は本文所有権を持ちません
-- reference は owner reference を前提としてのみ成立します
+長期契約としての役割は、**primary reference** と **secondary reference** の 2 種です。
+
+- **primary reference** は、同一 `refId` に対する正規の代表参照です
+- **secondary reference** は、同一 `refId` を追加で指す追従参照です
+- secondary reference は本文所有権を持ちません
+- secondary reference は、同一 scope 内に primary reference または同等の上位脚注データが存在する場合にのみ成立します
+
+現行公開入力の `shared=false` は primary reference、`shared=true` は secondary reference を表す**暫定表現**とします。
+
+### primary reference 一意性契約
+
+同一 footnote scope・同一 `refId` に対して、**意味上の primary reference は 1 つだけ** 定義されなければなりません（MUST）。
+
+ただし、この一意性は **DOM 上に必ず 1 個の owner 実体が存在すること** までを強制しません。
+
+長期契約として一意でなければならないのは、次のどちらかです。
+
+1. 同一 scope 内に primary reference が 1 つ存在すること
+2. 同一 scope 内に、primary reference と等価な上位 footnote data model が存在すること
+
+したがって、shared popover、部分 Hydration、断片再利用、SSR 再接続などの都合で、表示実体の持ち方が将来変わっても、**論理上の primary reference 一意性**が守られていれば契約違反とはしません。
 
 ### 本文入力契約
 
-owner reference は、Popover 用の本文断片を子要素として受け取れます。reference は本文入力を受け取りません。
+`ui-footnote` 自体が受け取る本文入力は、**primary reference に対する局所表示断片**に限ります。secondary reference は本文入力を受け取りません。
 
-ただし、長期契約では、これらの子要素は **脚注本文の正本そのものではなく、正本から導出された局所表示断片** として扱います。したがって、次の運用には依存しません。
+ただし、長期契約として、脚注本文の**正本**は `ui-footnote` に属しません。正本は **endnote item または上位 footnote data model** に属します。
 
-- owner reference ごとに異なる本文を持たせる運用
-- endnotes 本文と Popover 本文を別々に手で管理する運用
-- reference へ本文を与える運用
+したがって、`ui-footnote` に与えられる本文断片は、常に次の性質を満たさなければなりません（MUST）。
+
+- 正本から導出された派生表示であること
+- endnotes 本文と意味的に一致すること
+- `ui-footnote` ごとに独自編集される前提を持たないこと
+
+長期契約として、次の運用には依存しません。
+
+- primary reference ごとに別本文を手で持たせる運用
+- endnotes 本文と Popover 本文を別々に管理する運用
+- secondary reference へ本文を与える運用
 
 脚注本文の正規入力は、テキスト、インライン要素、段落、リスト、本文内リンクなどの**読書用コンテンツ**です。フォーム要素、複雑な対話 UI、ネストした Popover / Dialog、独自ショートカットを持つ複合 widget などの高い相互作用を持つ要素はサポート対象としません（SHOULD NOT）。
 
@@ -177,14 +219,19 @@ Trigger は常に `href="#${refId}"` を持つアンカーです。Popover が�
 本コンポーネントは、少なくとも開発時に次を診断対象とします。
 
 - `refId` 未指定
-- `refId` 重複
-- owner reference 不在の reference
+- 同一 footnote scope 内での `refId` 重複
+- owner reference 不在の secondary reference
 - 同一 `refId` 配下での `refInstance` 重複
-- reference への本文入力
+- secondary reference への本文入力
 - interactive ancestor 内での使用
-- endnotes 不在または backlink 不整合
+- endnotes 不在
+- backlink 不整合
+- scope をまたいだ owner/reference 接続
+- scope をまたいだ `refId` 解決への依存
 
 本番では読書経路を壊さない範囲で degrade しても構いませんが、開発時は不整合を黙殺しません。
+
+長期契約として、診断は補助機能ではなく、**役割モデル・scope 解決・endnotes 整合を破る入力を早期に表面化するための正規機能**です。利用者機能を増やすことよりも、契約違反を静かに通さないことを優先します。
 
 ### 責務範囲
 
@@ -255,14 +302,20 @@ Popover が開いている間、active trigger には `aria-expanded="true"` が
 
 ### 7. キーボード遷移契約
 
-`ui-footnote` は、少なくとも次の遷移を保証します。
+`ui-footnote` の trigger は常にネイティブな `<a>` であるため、キーボード契約も**リンクとしての操作モデル**を優先します。
 
-- `Enter` / `Space` / click による trigger 活性化
+`ui-footnote` は、少なくとも次を保証します。
+
+- `Enter` による trigger 活性化
 - `Escape` による Popover close
 - footer link 上の `Tab` による読書フロー継続
-- ネイティブリンク操作の保持
+- 修飾キー付き操作を含むネイティブリンク操作の保持
 
-キーボードモデルは `ui-popover` の一般契約に従属するのではなく、**脚注参照として必要なフォーカス遷移**を優先して固定します。
+`Space` については、ネイティブリンクの既定操作を上書きする独自活性化を**必須契約としません**。したがって、長期契約としては `Space` による一律 open / navigate を要求しません。
+
+Popover 利用可能環境における補助表示は、`Enter` または click により成立すれば足ります。リンクとしての意味を崩してまで、ボタン同等の活性化モデルへ寄せることには依存しません。
+
+キーボードモデルは `ui-popover` の一般契約に従属するのではなく、**脚注参照リンクとしての自然さ**と**読書フローの継続性**を優先して固定します。
 
 ### 8. Hydration 状態
 
@@ -276,9 +329,31 @@ SSR 済み DOM を再利用する場合でも、Hydration は**内部予約構�
 
 ### footnote scope 契約
 
-脚注の owner/reference/endnotes/backlinks は、**同一の footnote scope** に属します。footnote scope は通常、1 つの記事または 1 つの note root です。
+脚注の primary reference、secondary reference、endnotes、backlinks の解決単位は、**document 全体ではなく footnote scope 単位**です。
 
-長期契約として、owner/reference の解決スコープは **document 全体ではなく footnote scope 単位** です。したがって、同一 document に複数記事や複数 preview が共存しても、別 scope 間で干渉しません。
+footnote scope は、次の条件を満たす **最も近い上位要素 1 つ** によって定義されます。
+
+1. `data-footnote-scope` 属性を持つ要素
+2. 上記が存在しない場合、`article`
+3. 上記も存在しない場合、`[role="article"]`
+4. いずれも存在しない場合、`ui-footnote` を含む最小の note root 相当要素
+5. それも存在しない場合に限り、`document` を scope とみなします
+
+長期契約として、scope は**黙示的に推定できるだけでなく、必要な場合は明示的に境界化できること**を前提とします。したがって、`data-footnote-scope` のような明示 scope 境界は正規に採用可能な構成手段です。
+
+同一 scope 内で、次を解決しなければなりません（MUST）。
+
+- primary reference と secondary reference の対応付け
+- `refId` 重複の検査
+- `refInstance` 重複の検査
+- endnote item の解決
+- backlink 群の完全性検査
+
+別 scope に属する要素同士は、同じ `refId` を持っていても**相互に接続してはなりません**（MUST NOT）。
+
+同一 `ui-footnote` に対して複数の scope 候補が成立する場合は、**DOM 上で最も近い上位要素**を優先します。これにより、同一 document に複数記事、複数 preview、複数 note root が共存しても、脚注解決は局所に閉じます。
+
+`document` 全体を前提としたグローバル解決は、明示的な scope が構成できない場合の最終フォールバックに限ります。
 
 ### owner reference の DOM 契約
 
@@ -521,128 +596,6 @@ DOM 子要素を書き換えることによる本文更新には依存しませ�
 3. Popover は脚注一覧の代替ではなく補助経路であること。
 4. owner/reference の役割は分離されること。
 5. 識別子は `refId` を主軸に安定していること。
-
----
-
-## 新規で追加を検討する価値がある機能
-
-本節は、`ui-footnote` に対して新規追加を検討する価値がある機能を整理するものです。ここでいう「価値」は、機能数の増加ではなく、**設計のきれいさ・保守性・読書体験の一貫性**にどれだけ寄与するかで評価します。
-
-脚注は本文の補助要素であるため、自由度を増やし過ぎると本文を食い始めます。したがって、本コンポーネントで高く評価するのは、見た目の派手さや操作の多さではなく、**論理モデルを明確化する機能**、**不整合を防ぐ機能**、**複数文脈共存時の安定性を高める機能**です。
-
-### 最優先で検討する価値がある機能
-
-#### 1. footnote scope を明示する機能
-
-最優先で検討する価値があります。長期契約では owner/reference/endnotes/backlinks の解決を footnote scope 単位で扱うため、実装上も scope を明示的に表現できる方がよいです。
-
-候補は次のようなものです。
-
-- `scope-id`
-- 上位 footnote root の明示
-- owner/reference 解決を scope 内へ限定する仕組み
-- scope 単位の ID 衝突検査
-
-これは見た目の機能ではありませんが、複数記事、複数 preview、複数 note root が同一 document に共存する状況で、もっとも設計のきれいさに効く機能です。
-
-#### 2. `shared` を置き換える明示的な役割 API
-
-高い価値があります。現行の `shared` は boolean 1 つで owner/reference の違い、本体所有権の有無、共有解決の有無を同時に背負っています。長期的には意味が重すぎます。
-
-したがって、次のいずれかを追加する価値があります。
-
-- `role="owner|reference"`
-- `variant="owner|reference"`
-- `ui-footnote-owner` / `ui-footnote-reference` への分割
-
-本契約では role モデルを優先するため、boolean を意味的に置き換える追加は、API の明瞭化という観点で非常に価値があります。
-
-#### 3. 開発時診断機能
-
-高い価値があります。脚注は本文中では小さな要素ですが、実際には owner/reference/endnotes/backlinks の整合に依存するため、不整合を静かに見逃すと長期保守で破綻しやすいです。
-
-追加価値が高い診断は次のとおりです。
-
-- `refId` 重複の検出
-- owner reference 不在の reference 検出
-- 同一 `refId` 配下での `refInstance` 重複検出
-- reference への本文入力検出
-- interactive ancestor 内配置の検出
-- endnotes 不在または backlink 不整合の検出
-
-これは利用者機能を増やさず、契約違反を早期に表面化できるため、もっとも費用対効果が高い追加候補です。
-
-#### 4. 文言差し替え機能
-
-一定の価値があります。現行契約では `脚注 {n}` や `脚注一覧で見る` といった固定文言を前提にしていますが、将来的な多言語化や文体統一を考えると、差し替え口を持つ価値があります。
-
-ただし、自由度を上げ過ぎると本文契約が崩れるため、まずは次の程度に留めるのが適切です。
-
-- ラベル文言の差し替え
-- footer link 文言の差し替え
-- formatter による番号文言生成
-
-slot による全文差し替えのような自由度の高い設計は、必要性が明確になるまで前提にしません。
-
-### 条件付きで検討する価値がある機能
-
-#### 5. 長文脚注の要約表示モード
-
-脚注本文が長文化する文書では検討価値があります。現行契約では長文脚注を Popover 内スクロールで扱いますが、本文没入を優先するなら、Popover では冒頭のみ見せて endnotes へ誘導する方がよい場合があります。
-
-候補は次のようなものです。
-
-- `preview-mode="full|excerpt"`
-- `preview-lines`
-- 要約表示 + 「脚注一覧で続き読む」導線
-
-ただし、本文正本と派生表示の整合を複雑にしやすいため、長文脚注が実際に多い場合に限定して検討します。
-
-#### 6. backlink 群の表示補助
-
-同一脚注への複数参照が多い文書では検討価値があります。本契約では各 `refInstance` ごとの backlink 群を正規としていますが、その生成補助や表示補助があると上位実装が安定します。
-
-候補は次のようなものです。
-
-- backlink 一覧生成補助
-- `refInstance` ごとのラベル整形
-- backlink 表示モード補助
-
-ただし、これは `ui-footnote` 単体へ入れるより、endnotes 生成側または上位 footnote model 側へ寄せた方が責務分離はきれいです。
-
-#### 7. 外部制御 API
-
-検索結果、注釈一覧、外部ナビゲーションから footnote を開きたい要件が明確にある場合は検討価値があります。たとえば `open()`、`close()`、`focusTrigger()` などです。
-
-ただし、`ui-footnote` を意味コンポーネントとして保つ観点では、外部制御 API は要件が出るまで追加しない方が安全です。先に入れると、脚注参照という意味部品が制御対象 widget へ寄り過ぎます。
-
-### 追加しない方がよい機能
-
-#### 1. hover による自動表示
-
-本文読書中のノイズになりやすく、意図せぬ開閉が増えるため採用しません。脚注は意図的参照を前提とします。
-
-#### 2. 脚注本文内での高機能インタラクション
-
-フォーム、タブ、ネスト dialog、複雑な複合 widget などは採用しません。脚注本文は補助読解用であり、独立した操作面ではありません。
-
-#### 3. Trigger の過剰な見た目バリエーション
-
-脚注は本文の補助信号であるため、装飾差より一貫性を優先します。視覚バリエーションの乱立は採用しません。
-
-### 優先順位
-
-追加を実際に検討する場合の優先順位は次のとおりです。
-
-1. footnote scope を明示する機能
-2. `shared` を置き換える明示的な役割 API
-3. 開発時診断機能
-4. 文言差し替え機能
-5. 長文脚注の要約表示モード
-6. backlink 群の表示補助
-7. 外部制御 API（要件が明確な場合のみ）
-
-ここで重要なのは、上位 3 項目がいずれも**見た目の追加機能ではなく、設計の明確化機能**であることです。`ui-footnote` では、機能を広げるよりも、役割・整合・解決範囲を締める追加の方が長期価値は高いです。
 
 ---
 

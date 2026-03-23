@@ -17,7 +17,7 @@
 
 ## 適用範囲
 
-本書は、`ui-sidebar` の次の事項を対象とします。
+本書は、`ui-sidebar` の**現在の正式な公開契約**のみを対象とします。対象とするのは次の事項です。
 
 - 公開 API
 - 状態モデル
@@ -29,6 +29,14 @@
 - Storybook 契約
 - 現行実装との差分
 
+また、本書には次の内容を**正式契約として本文へ取り込み済み**です。
+
+- overlay における標準 close 導線
+- `mode="auto"` を含む requested mode / effective mode の区別
+- `ui-sidebar-mode-change` による実効モード変化通知
+- `selectedId` と `focusedId` の分離
+- `label` / `heading` / `headingLevel` による landmark 名と視覚見出しの制御
+
 一方で、本書は次の事項を対象外とします。
 
 - アプリケーション全体の情報設計
@@ -37,6 +45,13 @@
 - 本文表示の切替ロジック
 - 検索、フィルタリング、ソートなどの上位ナビゲーション責務
 - データ取得、永続化、サーバ同期
+- 現在項目を sidebar 内で可視化する reveal API
+- sidebar 幅のリサイズ
+- `expandedIds` などによる controlled な展開状態 API
+- tree 自体のラベルを sidebar とは別に分離制御する拡張
+- header 全体差し替え、または overlay 専用補助領域の導入
+
+上記の対象外項目は、将来的な検討候補であっても、本書の**現時点の公開契約**には含めません。これらを正式契約へ昇格させる場合は、実装、Storybook、本文契約の 3 点をそろえて改めて追加します。
 
 ---
 
@@ -63,7 +78,19 @@
 
 ### 下位コンポーネントとの関係
 
-`ui-sidebar` は `ui-sidebar-shell` と `ui-file-tree` を利用しますが、公開契約上は**単なる透過ラッパーではありません**。下位契約をそのまま露出するのではなく、sidebar として必要な意味に整理して束ねます。
+`ui-sidebar` は `ui-sidebar-shell` と `ui-file-tree` を利用しますが、公開契約上は**透過ラッパーではありません**。下位契約をそのまま露出するのではなく、sidebar として必要な意味に整理して束ねます。
+
+`ui-sidebar` と `ui-sidebar-shell` の統合規則は、次のとおりです。
+
+- `ui-sidebar` は shell を**controlled な開閉コンポーネント**として利用します。`ui-sidebar` が公開する `state` が唯一の開閉状態源です
+- `ui-sidebar` は shell に対して `persist=false` を固定し、shell 由来の永続化責務を公開契約へ持ち込みません
+- `ui-sidebar` は shell に対して `closeOnNavigation=false` を固定し、navigation 確定による自動格納を標準契約に含めません
+- `ui-sidebar` は shell の `resolvedMode` を内部で利用しますが、これを read-only property として再公開しません。利用者へ公開するのは `ui-sidebar-mode-change` に含まれる `effectiveMode` のみです
+- `ui-sidebar` は shell の `defaultState`、`persist`、`persistenceKey`、`closeOnNavigation`、`initialFocusPolicy`、`restoreFocusPolicy`、`header` slot、shell 固有イベントを公開 API として再公開しません
+- `ui-sidebar` は shell の `header` slot を内部実装として利用してよいですが、その内部構成は公開契約に含めません。利用者に公開する補助差し込み面は `header-actions` のみです
+- `ui-sidebar` の公開イベントは wrapper が再構成した最終イベントです。利用者は shell 由来イベントへ直接依存してはなりません（MUST NOT）
+
+したがって、`ui-sidebar` の利用者が依存してよい対象は、常に本書で定義する `ui-sidebar` の公開 property / method / event のみです。
 
 ---
 
@@ -77,7 +104,7 @@
 | ----------------- | ----------------------------------------- | ------ | ------------------------------- | ---------------------------- |
 | `state`           | property / attribute (`data-state`)       | いいえ | 開閉状態                        | `expanded` / `collapsed`     |
 | `mode`            | property / attribute                      | いいえ | 表示モード                      | `fixed` / `overlay` / `auto` |
-| `items`           | property                                  | はい   | ツリー構造データ                | `SidebarTreeNode[]`          |
+| `items`           | property                                  | いいえ | ツリー構造データ                | `SidebarTreeNode[]`          |
 | `loading`         | property / attribute                      | いいえ | 読み込み状態                    | `true` / `false`             |
 | `selectedId`      | property / attribute (`selected-id`)      | いいえ | 現在選択中の項目 ID             | 文字列または未指定           |
 | `focusedId`       | property / attribute (`focused-id`)       | いいえ | 現在フォーカス中の項目 ID       | 文字列または未指定           |
@@ -91,31 +118,36 @@
 
 ### 既定値
 
-| 名前              | 既定値           |
-| ----------------- | ---------------- |
-| `state`           | `expanded`       |
-| `mode`            | `auto`           |
-| `loading`         | `false`          |
-| `density`         | `normal`         |
-| `variant`         | `default`        |
-| `label`           | `ナビゲーション` |
-| `heading`         | `ナビゲーション` |
-| `headingLevel`    | `2`              |
-| `fixedBreakpoint` | `1280`           |
-| `closable`        | `true`           |
+| 名前              | 既定値                         |
+| ----------------- | ------------------------------ |
+| `state`           | `expanded`                     |
+| `mode`            | `auto`                         |
+| `items`           | `[]`                           |
+| `loading`         | `false`                        |
+| `density`         | `normal`                       |
+| `variant`         | `default`                      |
+| `label`           | `サイドバー ナビゲーション`    |
+| `heading`         | `目次`                         |
+| `headingLevel`    | `2`                            |
+| `fixedBreakpoint` | `1280`                         |
+| `closable`        | `true`                         |
+
+`label` と `heading` の既定値は便宜上のフォールバックです。アプリケーション統合では、ページ内の他 landmark や見出しとの重複を避けるため、文脈に応じた値を明示指定することを推奨します。
 
 ### 入力値の妥当性契約
 
 列挙値および数値入力は、次の規則で正規化します。
 
-| 名前              | 無効値の扱い                                                    |
-| ----------------- | --------------------------------------------------------------- |
-| `state`           | `expanded` / `collapsed` 以外は既定値 `expanded` に正規化します |
-| `mode`            | `fixed` / `overlay` / `auto` 以外は既定値 `auto` に正規化します |
-| `density`         | `normal` / `compact` 以外は既定値 `normal` に正規化します       |
-| `variant`         | `default` / `card` 以外は既定値 `default` に正規化します        |
-| `headingLevel`    | `2` 〜 `6` 以外は既定値 `2` に正規化します                      |
-| `fixedBreakpoint` | 非数値、負値、0、極端に小さい値は既定値 `1280` に正規化します   |
+| 名前              | 無効値の扱い                                                                  |
+| ----------------- | ----------------------------------------------------------------------------- |
+| `state`           | `expanded` / `collapsed` 以外は既定値 `expanded` に正規化します               |
+| `mode`            | `fixed` / `overlay` / `auto` 以外は既定値 `auto` に正規化します               |
+| `density`         | `normal` / `compact` 以外は既定値 `normal` に正規化します                     |
+| `variant`         | `default` / `card` 以外は既定値 `default` に正規化します                      |
+| `headingLevel`    | `2` 〜 `6` 以外は既定値 `2` に正規化します                                    |
+| `fixedBreakpoint` | 非有限値は `1280` に正規化し、`320` 未満の値は `320` に切り上げて正規化します |
+
+`fixedBreakpoint` の正規化規則は shell と同一とします。`ui-sidebar` は host 独自規則を追加せず、shell と矛盾する再正規化を行ってはなりません（MUST NOT）。
 
 公開 property と反映 attribute は、**常に正規化後の値を表す**ものとします。利用者が与えた値と公開値が乖離しないことを前提とします。
 
@@ -131,10 +163,15 @@
 | `href`       | string              | いいえ | 遷移先                   |
 | `children`   | `SidebarTreeNode[]` | いいえ | 子ノード                 |
 | `isExpanded` | boolean             | いいえ | 展開状態                 |
-| `isSelected` | boolean             | いいえ | 選択状態                 |
 | `isDisabled` | boolean             | いいえ | 無効状態                 |
 
-`SidebarTreeNode` は**不変入力**として扱います。`ui-sidebar` は受け取った `items` を破壊的に変更してはなりません（MUST NOT）。選択・展開変更はイベントで通知し、利用者が新しい `items` を再入力します。
+`SidebarTreeNode` は**不変入力**として扱います。`ui-sidebar` は受け取った `items` を破壊的に変更してはなりません（MUST NOT）。
+
+選択状態は `selectedId` を唯一の公開状態源とします。`SidebarTreeNode` に選択状態を重複保持してはなりません（MUST NOT）。
+
+フォーカス状態は `focusedId` を唯一の公開状態源とします。`SidebarTreeNode` にフォーカス状態を埋め込んではなりません（MUST NOT）。
+
+展開状態は現時点では `items` 内の `isExpanded` を状態源とします。展開変更はイベントで通知し、利用者が `isExpanded` を更新した新しい `items` を再入力します。
 
 ### スロット契約
 
@@ -144,42 +181,63 @@
 
 `header-actions` は補助操作専用です。主要操作、状態喪失を引き起こす必須操作、fixed でも常時到達可能でなければならない導線を置いてはなりません（MUST NOT）。
 
+`ui-sidebar` は内部実装として shell の `header` slot を利用してよいですが、その構成は公開契約に含めません。利用者に公開する差し込み面は `header-actions` のみです。
+
 close 操作は slot へ委ねず、`closable` により標準導線を提供します。
 
 ### 公開メソッド
 
-| 名前               | 契約                               |
-| ------------------ | ---------------------------------- |
-| `expand(trigger?)` | sidebar を展開します               |
-| `collapse()`       | sidebar を格納します               |
-| `toggle(trigger?)` | 開閉を反転します                   |
-| `focusSelected()`  | 選択中項目へフォーカスを移動します |
-| `focusFirstItem()` | 先頭項目へフォーカスを移動します   |
+| 名前               | 契約                                                         |
+| ------------------ | ------------------------------------------------------------ |
+| `expand(trigger?)` | `state` を `expanded` に設定します                           |
+| `collapse()`       | `state` を `collapsed` に設定します                          |
+| `toggle(trigger?)` | 現在の `state` を反転します                                  |
+| `focusSelected()`  | 現在の `selectedId` に対応する項目へフォーカスを移動します   |
+| `focusFirstItem()` | 現在表示中の tree における先頭項目へフォーカスを移動します   |
+
+公開メソッドは **imperative API** です。呼び出しにより対象状態が実際に変化する場合、対応する公開 property を同期更新し、その後に対応イベントを dispatch します。
 
 公開メソッドは**冪等**です。同じ最終状態に対する重複呼び出しで、不要な状態変化イベントを再発火してはなりません。
 
 アニメーション中または遷移中に複数の開閉命令が来た場合は、**last-write-wins** を採用します。最終入力の意図だけを残し、中間状態を公開契約に含めません。
 
-`trigger` は overlay におけるフォーカス返却先として使用します。fixed では記録してもよいですが、返却先としての意味は持ちません。
+`trigger` は overlay におけるフォーカス返却先の記録にのみ用います。fixed では保持してもよいですが、返却先としての意味は持ちません。
+
+`ui-sidebar` は shell の `collapse(reason?)` を公開 API として再公開しません。close reason の公開面は `ui-sidebar-request-close` に限定します。
 
 ### 公開イベント
 
-| 名前                       | detail                   | bubbles | composed | 契約                        |
-| -------------------------- | ------------------------ | ------- | -------- | --------------------------- |
-| `ui-sidebar-state-change`  | `{ state }`              | `true`  | `true`   | 開閉状態の変化通知          |
-| `ui-sidebar-mode-change`   | `{ mode }`               | `true`  | `true`   | 実効モードの変化通知        |
-| `ui-sidebar-select`        | `{ id, node }`           | `true`  | `true`   | 項目選択通知                |
-| `ui-sidebar-expand`        | `{ id, expanded, node }` | `true`  | `true`   | 項目展開変更通知            |
-| `ui-sidebar-focus-change`  | `{ id, node }`           | `true`  | `true`   | ツリー内フォーカス移動通知  |
-| `ui-sidebar-request-close` | `{ reason }`             | `true`  | `true`   | 利用者操作による close 要求 |
+| 名前                       | detail                           | bubbles | composed | 契約                               |
+| -------------------------- | -------------------------------- | ------- | -------- | ---------------------------------- |
+| `ui-sidebar-state-change`  | `{ state }`                      | `true`  | `true`   | 開閉状態の変化通知                 |
+| `ui-sidebar-mode-change`   | `{ effectiveMode }`              | `true`  | `true`   | 実効モードの変化通知               |
+| `ui-sidebar-select`        | `{ id }`                         | `true`  | `true`   | 項目選択通知                       |
+| `ui-sidebar-expand`        | `{ id, expanded }`               | `true`  | `true`   | 項目展開変更通知                   |
+| `ui-sidebar-focus-change`  | `{ id }`                         | `true`  | `true`   | ツリー内フォーカス移動通知         |
+| `ui-sidebar-request-close` | `{ reason }`                     | `true`  | `true`   | 利用者操作による close 要求        |
 
 ### イベント発火順序契約
 
-公開イベントは、**関連 property を更新した後に同期 dispatch** します。したがって、イベントリスナ内で `state`、`mode`、`selectedId`、`focusedId` を読むと、更新後の値を取得できます。
+公開イベントは、**当該イベントが表す公開状態が実際に更新済みである場合に限り、更新後に同期 dispatch** します。
 
-### イベント detail の参照契約
+- `ui-sidebar-state-change` は `state` 更新後に dispatch します
+- `ui-sidebar-mode-change` は `effectiveMode` の再評価後に dispatch します
+- `ui-sidebar-select` は `selectedId` 更新後に dispatch します
+- `ui-sidebar-focus-change` は `focusedId` 更新後に dispatch します
 
-`event.detail` に含まれる `node` は、読み取り専用の意味で公開します。clone であることは保証しませんが、利用者は破壊的変更を行ってはなりません（MUST NOT）。
+`ui-sidebar-request-close` は**要求イベント**であり、`state` 更新を前提としません。request-close の dispatch だけでは `state` は変化しません。
+
+`ui-sidebar-request-close.detail.reason` は `close-button` / `scrim` / `escape` のいずれかとします。navigation 確定、mode 変化、API 呼び出しは本イベントの reason に含めません。
+
+### イベント detail 契約
+
+公開イベントの `detail` には、可変オブジェクト参照を含めません。`detail` は文字列・真偽値・数値などの安定したスカラー値のみで構成します。
+
+`effectiveMode` は shell の `resolvedMode` に対応する `ui-sidebar` 側の公開名です。`ui-sidebar` は `resolvedMode` という名前の property や event を公開しません。
+
+追加情報が必要な場合、利用者は自身が保持する `items` を `id` により再解決します。`ui-sidebar` はイベント detail を通じて内部データ参照を外部へ貸し出しません。
+
+shell 由来イベントの伝播方式、detail 形状、発火時相は `ui-sidebar` の公開契約へそのまま持ち込みません。利用者が依存してよいのは、本節で定義した wrapper 再構成後の公開イベントのみです。
 
 ### 属性反映契約
 
@@ -199,6 +257,8 @@ close 操作は slot へ委ねず、`closable` により標準導線を提供し
 | `closable`        | `closable`         | あり    |
 
 `items` は property 専用です。HTML 属性経由での入力はサポートしません。
+
+`state` の反映 attribute に `data-state` を用いるのは、状態表現を CSS 用フックとして明示し、意味属性との混同を避けるためです。公開 API 名は `state` で一貫しており、attribute 名の差異は意味差を表しません。
 
 ---
 
@@ -229,7 +289,14 @@ close 操作は slot へ委ねず、`closable` により標準導線を提供し
 
 ### 実効モード
 
-利用者が `mode="auto"` を指定した場合、内部評価により `fixed` または `overlay` が選ばれます。この結果は**実効モード**として扱い、`ui-sidebar-mode-change` で通知します。
+`ui-sidebar` は、**requested mode** と **effective mode** を区別します。
+
+- requested mode: 利用者が入力する公開 property `mode`
+- effective mode: 実際に適用されている内部評価後のモード
+
+`mode="fixed"` または `mode="overlay"` の場合、requested mode と effective mode は一致します。
+
+`mode="auto"` の場合、`fixedBreakpoint` と viewport に基づいて effective mode を `fixed` または `overlay` に決定します。effective mode の変化は `ui-sidebar-mode-change` により通知します。
 
 ### 開閉状態
 
@@ -244,11 +311,17 @@ close 操作は slot へ委ねず、`closable` により標準導線を提供し
 
 `selectedId` は現在選択中の項目を表します。本文表示との対応づけに使うのは、この状態です。
 
+`selectedId` は選択状態の唯一の公開状態源です。`items` 内の各ノードに選択状態を重複保持してはなりません（MUST NOT）。
+
+`selectedId` が `items` 内に存在しない場合、選択なしとして扱います。他の状態を巻き添えで変更しません。
+
 ### フォーカス状態
 
-`focusedId` は roving focus の現在位置を表します。キーボード移動やフォーカス復元に使うのは、この状態です。
+`focusedId` は roving focus の現在位置を表します。キーボード移動、フォーカス復元、`focusSelected()` の補助判断に使うのは、この状態です。
 
-`selectedId` と `focusedId` は一致してもよいですが、常に一致しなければならないわけではありません。
+`focusedId` はフォーカス状態の唯一の公開状態源です。`selectedId` と一致してもよいですが、常に一致しなければならないわけではありません。
+
+`focusedId` が `items` 内に存在しない場合、そのフォーカス状態だけを無効として扱います。`selectedId` を暗黙に変更してはなりません（MUST NOT）。
 
 ### 読み込み状態
 
@@ -260,13 +333,30 @@ close 操作は slot へ委ねず、`closable` により標準導線を提供し
 
 ### `state` の扱い
 
-`state` は**controlled 契約**を基本とします。内部操作で state を勝手に永続化したり、外部入力と競合する独自状態源を持ったりしません。
+`state` は、外部から読み書き可能な公開状態です。利用者は property / attribute の更新、または公開メソッドの呼び出しにより `state` を制御できます。
 
-利用者操作により close が必要な場合は、`ui-sidebar-request-close` を発火し、利用側が `state="collapsed"` を再入力するのを基本フローとします。
+`ui-sidebar` は内部で `ui-sidebar-shell` を利用しますが、開閉については shell を**controlled** として扱います。したがって、shell 側の内部判断が `ui-sidebar` の公開 `state` を自律的に変更してはなりません（MUST NOT）。
+
+一方で、close ボタン、scrim click、Escape などの**利用者操作由来の close** は、`ui-sidebar-request-close` を dispatch する要求導線として扱います。これらの操作は、自動で `state` を変更しません。
+
+したがって、`ui-sidebar` の開閉制御には次の 2 系統があります。
+
+- **直接制御**: property / attribute 更新、または `expand()` / `collapse()` / `toggle()`
+- **要求通知**: `ui-sidebar-request-close`
+
+両者を混同しません。
+
+navigation 確定による自動格納は `ui-sidebar` の標準契約に含めません。`ui-sidebar` は shell に対して `closeOnNavigation=false` を前提として統合します。navigation に応じた格納が必要な場合は、利用側が `ui-sidebar-request-close` または `state` 制御を用いて明示的に扱います。
 
 ### `mode` の扱い
 
-`mode` は `fixed` / `overlay` / `auto` の入力であり、`auto` の場合に限って内部で実効モードを評価します。`auto` の評価結果は公開されますが、**mode\*\*** 自体の意味は変わりません\*\*。
+`mode` は requested mode を表す公開入力です。`auto` の場合に限り、内部で effective mode を導出します。
+
+`mode` 自体の意味は requested mode として固定されます。`mode="auto"` のときでも、公開上の `mode` は `auto` のままであり、effective mode と混同してはなりません。
+
+`effectiveMode` は内部で shell の `resolvedMode` から導出しますが、`ui-sidebar` はそれを read-only property として再公開しません。利用者が観測できるのは `ui-sidebar-mode-change` の `detail.effectiveMode` のみです。
+
+初期 HTML に属性があるかどうかで特別な挙動を変えてはなりません（MUST NOT）。
 
 ### `items` の扱い
 
@@ -275,6 +365,8 @@ close 操作は slot へ委ねず、`closable` により標準導線を提供し
 ### 永続化責務
 
 開閉状態、選択状態、展開状態、実効モードなどの永続化は、すべて利用側責務です。`ui-sidebar` 自身は localStorage やサーバ保存を行いません。
+
+`ui-sidebar` は内部で利用する shell に対して `persist=false` を固定します。したがって、shell 由来の `persist`、`persistenceKey`、復元順位は `ui-sidebar` の公開契約に含めません。
 
 ---
 
@@ -315,12 +407,18 @@ sidebar の landmark 名は `label` で決定します。landmark のアクセ�
 
 ### overlay のアクセシビリティ
 
-overlay は dialog ではありません。次を契約とします。
+overlay は **non-modal な補助面** であり、dialog ではありません。次を契約とします。
 
+- `role="dialog"` を自動付与しないこと
+- `aria-modal="true"` を自動付与しないこと
+- 背景コンテンツを `inert` 化しないこと
+- 背景コンテンツをアクセシビリティ tree から除去しないこと
 - 初回展開時に適切な初期フォーカスを与えること
-- 格納時にトリガーへフォーカス返却できること
-- Escape による close 要求を出せること
+- 格納時に trigger へフォーカス返却できること
+- Escape により `ui-sidebar-request-close` を dispatch できること
 - focus trap を持たないこと
+
+背景操作を全面的に禁止するかどうかは、アプリケーション全体の modal policy の責務です。`ui-sidebar` 自身は non-modal 契約を越えて背景制御を強制しません。
 
 ### 内部詳細への非依存
 
@@ -350,22 +448,17 @@ overlay は dialog ではありません。次を契約とします。
 | `default` | 背景を持たない静かな表示             |
 | `card`    | 独立ウィジェットとして切り出した表示 |
 
-### 参照トークン
+### 視覚意味契約
 
-本コンポーネントは、次のトークンを参照します。
+本コンポーネントは、次の視覚意味を満たさなければなりません。
 
-- `--fg-default`
-- `--fg-muted`
-- `--bg-surface-2`
-- `--border-default`
-- `--border-ghost`
-- `--border-width`
-- `--control-height-lg`
-- `--space-2`
-- `--space-4`
-- `--font-sans`
-- `--text-sm`
-- `--font-medium`
+- 本文より低い視覚優先度を保つこと
+- fixed では静かな常設面として振る舞うこと
+- overlay では一時的に前景化してよいが、dialog のような強い遮断 UI にしないこと
+- ヘッダーは説明的な帯に留め、操作ツールバーへ肥大化させないこと
+- `variant="card"` の場合に限り、独立した補助面としての輪郭表現を強めてよいこと
+
+具体的なデザイントークン名、トークン分解、テーマ実装上の参照先は本契約の固定対象に含めません。ここで固定するのは視覚意味であり、トークン名ではありません。
 
 ---
 
@@ -385,7 +478,9 @@ landmark と tree の意味論を維持しつつ、システム色へ適応し�
 
 ### Print
 
-sidebar の print 方針は既定で**非表示**とします。印刷対象へ含める必要がある場合は、sidebar ではなく別の印刷用ナビゲーション表現を上位レイヤで用意します。
+sidebar は既定で print 出力に含めません。
+
+印刷時にナビゲーション情報が必要な場合、上位レイヤで印刷専用の表現を追加してもよいものとします。ただし、そのために sidebar 自身へ印刷専用責務を逆流させてはなりません（MUST NOT）。
 
 ---
 
@@ -396,20 +491,40 @@ sidebar の print 方針は既定で**非表示**とします。印刷対象へ�
 次は `ui-sidebar` 固有の契約です。
 
 - `mode` / `state` / `selectedId` / `focusedId` の意味
+- `effectiveMode` を `ui-sidebar-mode-change` で通知する統合観測面
 - `label` / `heading` / `headingLevel` の意味
-- 公開 method / event の意味
-- slot の制約
+- `header-actions` の制約
+- `closable` による標準 close 導線
+- `ui-sidebar-request-close` を用いた要求通知モデル
+- shell / tree の内部イベントを最終公開イベントへ再構成すること
 - print 非表示方針
 
 ### shell 継承契約
 
-次は主として `ui-sidebar-shell` に委譲する契約です。
+次は主として `ui-sidebar-shell` に委譲しつつ、`ui-sidebar` が**意味を絞って継承する**契約です。
 
 - overlay / fixed の空間表現
+- overlay を非モーダル drawer として扱うこと
 - scrim
 - 初期フォーカス
 - フォーカス返却
 - Escape handling
+- `mode="auto"` 時の実効モード導出
+- `fixedBreakpoint` の正規化規則
+
+ただし、次は shell の公開契約であっても `ui-sidebar` は継承しません。
+
+- `defaultState`
+- `persist`
+- `persistenceKey`
+- `closeOnNavigation`
+- `initialFocusPolicy`
+- `restoreFocusPolicy`
+- `resolvedMode` という名前の read-only property
+- shell 固有イベント
+- `header` slot
+- `collapse(reason?)`
+- `notifyNavigationCommit()`
 
 ### tree 継承契約
 
@@ -421,7 +536,7 @@ sidebar の print 方針は既定で**非表示**とします。印刷対象へ�
 - skeleton の具体表示
 - empty state の具体表示
 
-`ui-sidebar` はこれらを再実装しませんが、利用者に対する最終的な統合 API は `ui-sidebar` が保証します。
+`ui-sidebar` は shell と tree を再実装しませんが、利用者に対する**最終的な公開 property / method / event の一貫性**は `ui-sidebar` が保証します。
 
 ---
 
@@ -429,7 +544,9 @@ sidebar の print 方針は既定で**非表示**とします。印刷対象へ�
 
 ### `mode="auto"`
 
-viewport 変化により実効モードが変わる場合、`ui-sidebar-mode-change` を発火します。mode の変化を `state-change` に混ぜません。
+viewport 条件の変化により effective mode が変わる場合、`ui-sidebar-mode-change` を発火します。`detail` は `{ effectiveMode }` とします。
+
+requested mode である `mode` の変化と、derived state である effective mode の変化は別概念です。effective mode の変化を `ui-sidebar-state-change` に混ぜてはなりません（MUST NOT）。
 
 ### `state="collapsed"` の初期値
 
@@ -441,11 +558,19 @@ viewport 変化により実効モードが変わる場合、`ui-sidebar-mode-cha
 
 ### 空ツリー
 
-`items=[]` は有効入力です。sidebar は壊れずに描画されなければなりません（MUST）。具体的な empty state 表示は tree 契約へ委譲します。
+`items=[]` は有効入力です。sidebar は壊れずに描画されなければなりません（MUST）。
+
+empty state の具体表示、文言、アイコン、skeleton との切替閾値は tree 契約へ委譲します。`ui-sidebar` は、空入力を異常扱いしないことだけを固定します。
 
 ### `header-actions`
 
-fixed では不可視でもよい補助操作だけを置きます。必須操作は、ここに依存してはなりません。
+`header-actions` には、補助操作だけを配置できます。主要操作、状態喪失を引き起こす必須操作、fixed でも常時到達可能でなければならない導線を置いてはなりません（MUST NOT）。
+
+`header-actions` に置かれた要素は DOM 順に tab 到達できることを前提とします。fixed では不可視、overlay でのみ可視という条件付き表示は許容しますが、表示有無によって主要操作の有無が変わってはなりません（MUST NOT）。
+
+`ui-sidebar` は内部実装として `header-actions` を shell の `header` slot 内へ配置してよいですが、その DOM 構成や slot 配線は公開契約に含めません。
+
+close 操作は slot へ委ねず、`closable` による標準導線を優先します。
 
 ### rapid toggle
 
@@ -455,132 +580,20 @@ fixed では不可視でもよい補助操作だけを置きます。必須操�
 
 ## Storybook 契約
 
-各 Story は見本ではなく、契約確認点です。少なくとも次を維持します。
+Storybook は、個別 Story 名を固定する場ではなく、**公開契約の検証観点**を維持する場とします。少なくとも次の観点を継続的に検証しなければなりません。
 
-| Story                        | 固定する契約                                                                                      |
-| ---------------------------- | ------------------------------------------------------------------------------------------------- |
-| `AutoModeSwitching`          | `mode="auto"` で viewport に応じて実効モードが切り替わり、`ui-sidebar-mode-change` が発火すること |
-| `FixedExpandedDefault`       | fixed かつ expanded で tree が利用可能であること                                                  |
-| `OverlayExpandedClosable`    | overlay かつ closable で標準 close 導線が存在すること                                             |
-| `OverlayCollapsedInitial`    | 初期 collapsed で非活性状態から始まること                                                         |
-| `SelectionAndFocusSeparated` | `selectedId` と `focusedId` が独立に扱われること                                                  |
-| `ImmutableItemsInput`        | `items` 入力が破壊的変更されないこと                                                              |
-| `TreeEventIntegration`       | tree 由来イベントが sidebar イベントへ再公開されること                                            |
-| `StateControlledFlow`        | close 要求が request-close として通知され、親が state を再入力することで反映されること            |
-| `MethodIdempotency`          | `expand()` / `collapse()` / `toggle()` が冪等であること                                           |
-| `OverlayFocusSemantics`      | overlay が初期フォーカスとフォーカス返却を持ち、focus trap を持たないこと                         |
-| `PrintHidden`                | print で sidebar が出力されないこと                                                               |
+- `mode="auto"` で viewport 条件に応じて effective mode が切り替わること
+- fixed / overlay の両方で `state` の意味が一貫していること
+- overlay において標準 close 導線と `ui-sidebar-request-close` が成立すること
+- `selectedId` と `focusedId` が独立して扱われること
+- `items` 入力が破壊的変更されないこと
+- tree 由来イベントが sidebar の公開イベントとして再構成されること
+- `expand()` / `collapse()` / `toggle()` が冪等であること
+- rapid toggle が last-write-wins で収束すること
+- overlay が non-modal であり、初期フォーカスとフォーカス返却を持ち、focus trap を持たないこと
+- print 既定が非表示であること
 
----
-
-## 将来拡張の原則
-
-### 最優先で検討する価値がある機能
-
-#### 1. 標準 close 導線
-
-overlay における close 操作は、毎回 `header-actions` へ個別にボタンを差し込むのではなく、`ui-sidebar` 自身の標準機能として提供する価値があります。
-
-この機能を採用する場合は、次を満たします。
-
-- `closable` により close 導線の有無を制御できること
-- close 導線のアクセシブル名を `closeLabel` などで明示できること
-- close ボタンの配置規則を固定し、Story ごとにばらつかせないこと
-- close 操作は `ui-sidebar-request-close` を発火し、controlled な close フローへ接続すること
-
-この機能は sidebar を重くするためではなく、overlay を**単独で完結する補助面**として成立させるために追加します。
-
-#### 2. 現在項目の reveal API
-
-本文側で現在表示中のノートや章に対応する tree 項目を、sidebar 内で即座に可視化する API は追加価値が高いです。
-
-この機能を採用する場合は、次を満たします。
-
-- `revealItem(id)` のように、任意 ID を可視領域へ導く API を持つこと
-- `revealSelected()` のように、現在の `selectedId` を対象とする簡易 API を持てること
-- reveal 時に必要な親ノード展開とスクロールを一貫して扱うこと
-- reveal は選択変更やフォーカス変更を暗黙に伴わないことを原則とすること
-
-この機能は検索やフィルタではなく、**読書面と移動面の同期**を補助する最小機能として位置づけます。
-
-#### 3. `mode="auto"` の正規化と `ui-sidebar-mode-change`
-
-`auto` を公開契約上の正規モードとして扱い、実効モードの変化を正規イベントで購読できるようにする価値があります。
-
-この機能を採用する場合は、次を満たします。
-
-- `mode` は `fixed` / `overlay` / `auto` の 3 値に固定すること
-- 初期属性有無に依存した特別処理を公開契約へ持ち込まないこと
-- 実効モードの変化は `ui-sidebar-mode-change` で通知すること
-- `state-change` と `mode-change` を混同しないこと
-
-この機能は見た目の追加ではなく、sidebar の**制御モデルをきれいにする API 拡張**です。
-
-#### 4. `selectedId` と `focusedId` の分離
-
-現在選択している項目と、キーボード操作上の現在フォーカス位置は、長期的には別状態として持つ方が明確です。
-
-この機能を採用する場合は、次を満たします。
-
-- `selectedId` は本文表示と対応づく選択状態として扱うこと
-- `focusedId` は roving focus の現在位置として扱うこと
-- `select` と `focus-change` のイベント意味論を分離すること
-- reveal、フォーカス復元、キーボード移動の仕様を `focusedId` 基準で整理すること
-
-この機能は、ツリー操作の意味論を明確にし、sidebar を**読書用ナビゲーションとして誤解なく扱えるようにする**ための拡張です。
-
-### 条件付きで検討価値がある機能
-
-#### 5. 幅のリサイズ
-
-長いファイル名、深い階層、情報量の多い tree を扱う場合に限り、sidebar 幅の調整機能は検討価値があります。
-
-この機能を採用する場合は、次を満たします。
-
-- `resizable`、`width`、`minWidth`、`maxWidth` のような最小限の公開面に留めること
-- 永続化は利用側責務とし、sidebar 自身は保存先を持たないこと
-- overlay と fixed で幅変更体験が不自然に分岐しないこと
-- 本文面の没入感を壊す過剰なドラッグ UI にしないこと
-
-#### 6. landmark 名と見出し制御の拡張
-
-アクセシビリティと文書構造の整合性を高めるため、`label`、`heading`、`headingLevel` をさらに厳密に制御できる拡張は検討価値があります。
-
-この機能を採用する場合は、次を満たします。
-
-- landmark 名と視覚見出しを独立に制御できること
-- 必要であれば tree 自体のラベルも分離制御できること
-- ページ全体の heading 階層を壊さないこと
-- shell 固定のアクセシブル名へ依存しないこと
-
-#### 7. controlled な展開状態 API
-
-`items` を不変入力として保つなら、展開状態も外部制御できる API は長期的に検討価値があります。
-
-この機能を採用する場合は、次を満たします。
-
-- `expandedIds` のような明示的な入力を持つこと
-- 展開変更は `ui-sidebar-expand` または専用イベントで通知すること
-- `items` 自体へ破壊的に `isExpanded` を書き戻さないこと
-- `selected` / `focused` / `expanded` の 3 状態を混線させないこと
-
-#### 8. header 全体差し替えまたは overlay 専用補助領域
-
-複雑なアプリケーション統合が必要な場合は、header 全体差し替え、または overlay 専用の補助操作領域を条件付きで検討できます。
-
-この機能を採用する場合は、次を満たします。
-
-- `heading` と header slot の責務を二重化しないこと
-- fixed では見えず overlay でのみ見える要素であることを明示すること
-- toolbar 化して本文より強い存在感を持たせないこと
-- close 導線など頻出機能を ad hoc な slot 依存に戻さないこと
-
-### 採用しない方針
-
-- sidebar 自体への検索 UI の内蔵
-- 本文レイアウト切替責務の吸収
-- 他ナビゲーション部品との機能統合
-- overlay と fixed の見た目差分の過剰拡大
+Story 名、ファイル分割、境界 Story と通常 Story の配分は固定契約に含めません。検証観点が維持される限り、Story 構成の再編を許容します。
 
 ---
 
@@ -588,24 +601,22 @@ overlay における close 操作は、毎回 `header-actions` へ個別にボ�
 
 本節は、本書の契約と現行実装との差分を整理するものです。以下は**将来の修正対象**であり、現時点で実装済みとは限りません。
 
-### 未対応または未整合の事項
+### 未対応事項
 
 - `mode` は現行実装では `fixed` / `overlay` のみであり、`auto` を正規の公開値として持っていません
-- `mode` 自動判定は初期属性有無に依存した特別処理を持っており、本書の単純な `auto` 契約とは異なります
-- `selectedId` と `focusedId` は現行では `activeId` に統合されており、本書の分離契約とは異なります
+- `mode` 自動判定は初期属性有無に依存した特別処理を持っており、本書の `auto` 契約に未追随です
+- `selectedId` と `focusedId` は現行では `activeId` に統合されており、本書の分離契約に未追随です
 - `items` は現行では下位 tree により破壊的に更新され得ます
-- 現行入力型は `TreeNode` であり、状態名も `expanded` / `selected` を使用します。本書の `SidebarTreeNode`（`isExpanded` / `isSelected` / `isDisabled`）契約とは一致していません
-- `items` は現行では必須入力ではなく、既定値 `[]` で動作します。本書の「必須入力」契約とは一致していません
+- 現行入力型は `TreeNode` であり、本書の `SidebarTreeNode` 契約に未追随です
 - `ui-sidebar-mode-change` は現行未実装です
-- `ui-sidebar-request-close` による controlled close フローは現行未実装です
+- `ui-sidebar-request-close` による要求通知モデルは現行未実装です
 - `focusSelected()` と `focusFirstItem()` は現行未実装です
-- `ui-sidebar-state-change` は現行では `bubbles: false` / `composed: false` で再送出され、detail も `{ state, mode }` を含みます。本書の公開イベント契約とは一致していません
-- `ui-sidebar-expand` と `ui-sidebar-focus-change` の detail は現行では `node` を含まず、本書の detail 契約とは一致していません
+- `ui-sidebar-state-change` は現行では shell 由来 detail を引きずっており、本書の公開イベント detail 契約に未追随です
 - `headingLevel` は現行未実装であり、見出しは固定 `<h2>` です
-- `label` による landmark 名制御は現行未実装です。現行の landmark 名は shell 側固定文字列です
-- `closable` による標準 close 導線は現行未整備です。slot に置いたボタンも sidebar 標準機能としては配線されません
-- `fixedBreakpoint` は現行では shell 側で 320 px 未満を切り上げ、非数値を 1280 へ正規化します。さらに observer により host 側へ逆同期されるため、正規化責務の所在が本書契約と一致していません
-- sidebar 自身は永続化を行わない契約ですが、現行実装では shell が state 変化時に localStorage へ書き込みます。`ui-sidebar` 経由では復元は実質無効化される一方、書き込み副作用は残っています
+- `label` による landmark 名制御は現行未実装です
+- `closable` による標準 close 導線は現行未整備です
+- `ui-sidebar` は永続化しない契約ですが、現行実装では shell 由来の localStorage 書き込み副作用が残っています
+- `fixedBreakpoint` の正規化規則は現行実装が本書契約へ未追随です
 - method の冪等性と rapid toggle の last-write-wins を Storybook 契約として十分固定していません
 - print 非表示は現行では結果としてそうなっている側面が強く、sidebar 自身の明示方針としては未固定です
 
@@ -616,13 +627,14 @@ overlay における close 操作は、毎回 `header-actions` へ個別にボ�
 1. `mode` を `fixed` / `overlay` / `auto` に再設計する
 2. `activeId` を `selectedId` / `focusedId` へ分離する
 3. `items` の破壊的更新を廃止し、`SidebarTreeNode` へ入力型を整理する
-4. `mode-change` と `request-close` を追加する
-5. `ui-sidebar-state-change` を含むイベント境界と detail 形状を本書契約へそろえる
-6. `focusSelected()` / `focusFirstItem()` を実装する
-7. `label` / `headingLevel` / `closable` を導入する
-8. shell 由来の localStorage 書き込み副作用を除去し、永続化責務を利用側へ一本化する
-9. `fixedBreakpoint` の正規化責務を host 側へ集約する
-10. Storybook を本書の契約確認点へ更新する
+4. `closable` と `ui-sidebar-request-close` を導入し、close ボタン / scrim / Escape を要求通知へ統一する
+5. shell / tree 由来イベントを `ui-sidebar` の公開イベントへ再構成する
+6. `ui-sidebar-mode-change` を実装し、shell の `resolvedMode` を `effectiveMode` として再公開する
+7. `fixedBreakpoint` の正規化規則を shell と一致させる
+8. shell を controlled + `persist=false` + `closeOnNavigation=false` で統合し、永続化副作用を除去する
+9. `label` / `headingLevel` / `closable` を実装する
+10. `focusSelected()` / `focusFirstItem()` を実装する
+11. Storybook を本書の契約確認点へ更新する
 
 ### 本節の扱い
 

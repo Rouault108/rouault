@@ -32,13 +32,21 @@
 - CDN 配信、キャッシュ、署名 URL の管理
 - 画像最適化パイプライン全体
 - コンテンツ管理系の入力 UI
+- レスポンシブ画像配信、`srcset` / `sizes` / `<picture>` の公開契約
+- thumbnail 用ソースと expanded 用ソースを分離する配信契約
+- 公開状態の readonly property 化
+- `load` / `error` / `open` / `close` などの公開イベント契約
+- `breakout` / `full-bleed` など、本文幅を越えるレイアウトモードの公開契約
 - 図版番号、参照番号、脚注との自動連携
 - 画像著作権管理、クレジット管理、ライセンス管理
 - ギャラリー、カルーセル、スライドショー
+- ダウンロード、共有、コピーなどのアクション群の常設
+- ピンチズームや自由ズーム UI
+- キャプションへのリッチテキスト編集責務
 - アップロード、トリミング、画像編集 UI
 - ページ全体のレイアウトシステム
 
-これらは上位レイヤまたは別コンポーネントの責務です。
+これらは上位レイヤまたは別コンポーネントの責務です。特に、レスポンシブ配信、expanded 専用ソース、公開状態、公開イベントは将来必要になる可能性がありますが、本書の対象には含めません。必要になった場合は、`ui-image` の単一図版 primitive としての責務境界を崩さないよう、別契約として追加します。
 
 ---
 
@@ -131,7 +139,7 @@
 | `expanded` | Lightbox が開いている状態                            |
 | `canOpen`  | 拡大モードであり、かつ現時点で open 可能な状態       |
 
-ここで重要なのは、`** と **`** を分離すること**です。`src` 未指定は通信失敗やデコード失敗ではありません。長期的には、これらを同一の意味として扱いません。
+ここで重要なのは、`empty` と `error` を分離することです。`src` 未指定は通信失敗やデコード失敗ではありません。長期的には、これらを同一の意味として扱いません。
 
 ### 公開メソッド
 
@@ -239,82 +247,56 @@
 
 ## DOM / アクセシビリティ
 
-ルートは `figure.root` です。モードとリソース状態により、サムネイル面と Lightbox 面が分岐します。
-
-```text
-<ui-image>
-  #shadow-root
-    <figure class="root" aria-busy="...">
-      [button.trigger]
-        <div class="media-shell">
-          [div.placeholder]
-          [img.thumbnail-image] | [div.empty-or-error-fallback]
-        </div>
-      [div.static-frame]
-        <div class="media-shell">
-          [div.placeholder]
-          [img.thumbnail-image] | [div.empty-or-error-fallback]
-        </div>
-      [figcaption.caption]
-      [div.lightbox]
-        <div class="lightbox-dialog" role="dialog" aria-modal="true">
-          [button.close]
-          <img class="lightbox-image">
-        </div>
-    </figure>
-</ui-image>
-```
-
-上記は **長期的に望ましい DOM 契約**です。現行実装では close ボタンを持ちませんが、dialog として一般化するには close affordance を含む方が保守しやすいです。
+本節は、外部から観測可能な意味論と対話契約のみを定義します。内部 class 名、内部生成 ID の文字列値、Shadow DOM 内のノード順序や入れ子構造は公開契約ではありません。外部コードおよび E2E テストは、公開 prop / attr / method、role、`aria-*`、および視覚的・対話的に観測可能な結果のみに依存しなければなりません（MUST）。
 
 ### DOM 存在条件契約
 
-- `zoomable=true` の場合、サムネイル面は `button.trigger` として描画します
-- `zoomable=false` の場合、サムネイル面は静的フレームとして描画し、`button.trigger` は生成しません
-- `zoomable=true` でも、`canOpen=false` の間は trigger は `disabled` でよいです
-- `caption` が空でない場合にのみ `figcaption.caption` を描画します
-- Lightbox DOM は、長期的には `zoomable=true` の場合に常に存在させ、開閉は `aria-hidden` と状態クラスで制御するのが望ましいです
-- `aria-controls` を用いる場合、その参照先は実在しなければなりません（MUST）
+- `zoomable=true` の場合、サムネイル面はネイティブ `button` として描画します
+- `zoomable=false` の場合、サムネイル面は非対話要素として描画します
+- `zoomable=true` でも `canOpen=false` の間は対話要素を `disabled` としてよいです
+- `caption` が空でない場合にのみキャプションを描画します
+- Lightbox は、開いている間は dialog としてアクセシビリティツリーに存在しなければなりません（MUST）
+- Lightbox を閉じている間は、DOM に保持しても破棄してもよいですが、保持する場合はアクセシビリティツリーおよび逐次フォーカス順から除外しなければなりません（MUST）
+- `aria-controls` を用いる場合、その参照先は属性が存在する間、実在しなければなりません（MUST）
 
 ### アクセシビリティ契約
 
-- 画像全体は `figure` / `figcaption` の関係で意味づけます
-- 読み込み中は `figure.root` の `aria-busy` で表現します
-- `zoomable=true` の場合、サムネイル面はネイティブ `button` を用います
-- trigger には `aria-haspopup="dialog"`、`aria-expanded`、`aria-controls` を付与します
-- Lightbox dialog は `role="dialog"`、`aria-modal="true"` を持ちます
-- close ボタンを持つ場合、その accessible name は「閉じる」等の明示名を持たなければなりません（MUST）
-- `caption` は accessible description として扱います
+- 画像単位は `figure` / `figcaption` と等価な意味関係で扱います
+- 読み込み中は画像単位に `aria-busy="true"` 相当の状態を与えます
+- `zoomable=true` の場合、trigger には `aria-haspopup="dialog"` と open 状態に整合する `aria-expanded` を付与します
+- `aria-controls` は任意ですが、付与する場合は参照整合を満たさなければなりません
+- Lightbox は `role="dialog"` および `aria-modal="true"` を持ちます
+- close affordance を持つ場合、その accessible name は「閉じる」等の明示名でなければなりません（MUST）
 
 ### Accessible Name / Description 解決順序
 
-`ui-image` では、画像の名称と説明を別契約として扱います。
+`ui-image` では、画像の名称と、画像に対する操作要素の名称を別契約として扱います。長期契約では、trigger の名称規則を次のとおり固定します。
 
-| 要素         | accessible name             | accessible description |
-| ------------ | --------------------------- | ---------------------- |
-| trigger      | `alt`。空なら「画像を拡大」 | `caption`              |
-| static image | `alt`                       | `caption`              |
-| dialog       | `alt`。空なら「画像」       | `caption`              |
-| close button | 固定ラベル                  | なし                   |
+| 要素 | accessible name | accessible description |
+| --- | --- | --- |
+| trigger | `alt` が空でなければ `${alt}を拡大`、空なら「画像を拡大」 | なし |
+| static image | `alt` | `caption` が空でなければ `caption` |
+| dialog | `alt` が空でなければ `alt`、空なら「画像」 | `caption` が空でなければ `caption` |
+| close button | 「閉じる」等の固定ラベル | なし |
 
 `caption` は accessible name を構成しません。`caption` をもって `alt` の代替と見なしてはなりません（MUST NOT）。
+
+また、同一 caption の重複読み上げを避けるため、trigger は既定では `caption` を accessible description として参照しません。trigger に `caption` を関連付ける別方針を採る場合は、本書とは別契約として明示しなければなりません（MUST）。
 
 ### キーボード契約
 
 Lightbox 展開中は、少なくとも次を満たします。
 
 - `Escape` で close できること
-- `Tab` / `Shift+Tab` によって dialog 内のフォーカスを循環できること
+- `Tab` / `Shift+Tab` によって dialog 内のフォーカス可能要素を循環できること
 - 開いた直後の初期フォーカス先が明確であること
 - close 後のフォーカス復帰先が明確であること
 
-長期的には、dialog 内に close ボタンを含む一般的なフォーカストラップを前提とする方が望ましいです。現行の「dialog 自身のみが focusable」という暫定契約には依存しません。
-
 ### フォーカス復帰契約
 
-Lightbox close 後は、**同一インスタンスの trigger が依然として存在し、かつフォーカス可能である場合に限り** trigger へ戻します。存在しない場合、disabled になった場合、またはコンポーネント自体が文書から外れた場合は no-op を許容します。
+Lightbox close 後は、同一インスタンスの trigger が依然として存在し、かつフォーカス可能である場合に限り trigger へ戻します。存在しない場合、`disabled` になった場合、またはコンポーネント自体が文書から外れた場合は no-op を許容します。
 
-したがって、本コンポーネントのフォーカス復帰契約は、**常に戻すこと**ではなく、**戻せる場合に戻すこと**です。
+したがって、本コンポーネントのフォーカス復帰契約は、常に戻すことではなく、戻せる場合に戻すことです。
 
 ---
 
@@ -324,17 +306,26 @@ Lightbox close 後は、**同一インスタンスの trigger が依然として
 
 ### 平時の表示面
 
-サムネイル領域は `.media-shell` により構成します。境界線、角丸、背景面を持ちますが、平時は過度に主張しません。プレースホルダーは `loading` 時のみ表示し、画像は読み込み完了時に自然に出現します。
+サムネイル領域は、境界線、角丸、背景面を備えた静かな表示面として構成します。平時は過度に主張しません。プレースホルダーは `loading` 時のみ表示し、画像は読み込み完了時に自然に出現します。
 
 ### アスペクト比契約
 
-`width` と `height` の両方が有効な場合、`.media-shell` に `aspect-ratio` を与えます。これにより、画像読み込み前から面積を予約し、CLS を抑制します。
+`width` と `height` の両方が有効な場合、表示面には `aspect-ratio` 相当の予約寸法を与えます。これにより、画像読み込み前から面積を予約し、CLS を抑制します。
 
 両寸法が有効でない場合でも、`loading` / `empty` / `error` では最小高さを確保し、面が潰れないようにします。
 
-### キャプション契約
+### キャプション関連付け契約
 
-キャプションは画像本体より一段弱いトーンで表示します。本文補助であり、主本文の視線誘導を奪わないことを優先します。
+`caption` が空でない場合にのみキャプションを描画します。`caption` は視覚補足であると同時に、画像本体または Lightbox dialog の accessible description として利用できます。
+
+ただし、既定では trigger の accessible description には用いません。これは、本文中で既に視認できる caption を、trigger 操作時に重複して読み上げないためです。
+
+したがって、長期契約では次を固定します。
+
+- `caption` は `alt` の代替ではありません
+- `caption` は static image または dialog の説明参照先として利用できます
+- trigger は既定では `caption` を説明参照しません
+- trigger に `caption` を関連付ける場合は、重複読み上げの扱いを含めて別契約として明示しなければなりません（MUST）
 
 ### モード別の視覚契約
 
@@ -346,11 +337,13 @@ Lightbox close 後は、**同一インスタンスの trigger が依然として
 
 Lightbox は全画面固定配置で、暗い scrim と blur により背景から切り離します。拡大画像は viewport 内に収まるよう `object-fit: contain` で描画します。トランジションは、演出ではなく、読書状態から精読状態への移行を認知可能にするための最小限とします。
 
+また、Lightbox には明示的な close affordance を視覚的に配置します。これは主役のアクションではなく、退避操作として静かに見つけられる強さに留めます。すなわち、close affordance は可発見でなければなりませんが、画像内容より強く主張してはなりません（MUST NOT）。
+
 ### `empty` / `error` フォールバック契約
 
 空状態および読み込み失敗状態では、画像面を消さず、意味のあるフォールバック面を表示します。
 
-ただし、長期的には `** と **`** の意味を文言上でも分離する**のが望ましいです。
+ただし、長期的には `empty` と `error` の意味を文言上でも分離するのが望ましいです。
 
 - `empty`: 画像未指定
 - `error`: 画像を読み込めませんでした
@@ -417,17 +410,21 @@ Lightbox は全画面固定配置で、暗い scrim と blur により背景か�
 
 ### Lightbox 開閉契約
 
-長期的に望ましい close policy は次のとおりです。
+Lightbox を持つ場合、`ui-image` は一般化された dialog 契約に従います。したがって、Lightbox の close は偶発的な画像クリックに委ねず、明示的かつ一貫した契機で行わなければなりません（MUST）。
+
+close policy は次のとおりです。
 
 - `closeLightbox()` の呼び出しで close します
 - バックドロップクリックで close します
-- close ボタンで close します
+- 明示的な close button で close します
 - `Escape` で close します
 - `src` 変更で close します
 - `zoomable=false` への変更で close します
 - 展開中インスタンスの切断で close します
 
-一方で、**dialog 内容面のクリックは close 契機に含めません**。これは、Lightbox 内に close ボタンや補助 UI を追加しても破綻しないためです。
+一方で、dialog 内容面のクリックは close 契機に含めません。これは、Lightbox 内に close button や補助 UI を追加しても対話契約が破綻しないようにするためです。
+
+また、Lightbox を表示する実装では、利用者が視覚的にも発見できる close affordance を持たなければなりません（MUST）。close affordance は追加機能ではなく、dialog 契約の一部です。
 
 ### スクロールロック契約
 
@@ -471,7 +468,7 @@ dialog ID や caption ID は内部生成です。これらの文字列値は mou
 
 ### `zoomable=false`
 
-`zoomable=false` の場合、`button.trigger` は描画せず、静的フレームとして表示します。Lightbox も存在しません。
+`zoomable=false` の場合、サムネイル面は非対話要素として表示します。Lightbox は存在しません。
 
 ### `width` / `height` の一部または全部が無効
 
@@ -493,17 +490,22 @@ dialog ID や caption ID は内部生成です。これらの文字列値は mou
 
 ## Storybook 契約
 
-各 Story は見本ではなく、契約確認点として扱います。将来変更時には、少なくとも次を維持します。
+Storybook は公開契約そのものではなく、公開契約を検証するための手段です。したがって、固定すべきなのは Story 名ではなく確認観点です。Story の命名、分割、統合、再配置は、下記の確認観点を維持する限り公開契約の変更ではありません。
 
-| Story                            | 固定する契約                                                                                  |
-| -------------------------------- | --------------------------------------------------------------------------------------------- |
-| `Default`                        | `loading` から `loaded` への遷移、`aria-busy`、zoomable trigger の対話属性、dialog の意味付け |
-| `VariantStateMatrix`             | `zoomable` / `static`、caption 有無、`empty` / `loading` / `loaded` / `error` の分岐          |
-| `LoadingAndErrorStates`          | `loading` placeholder、`error` fallback、trigger の可用性分岐                                 |
-| `LightboxKeyboardAndFocusReturn` | open 時の初期フォーカス、Tab 循環、Escape close、close 後復帰                                 |
-| `BackdropCloseAndScrollLock`     | open 中のスクロールロック、backdrop close、close 後復元                                       |
-| `EnvironmentAndProseContracts`   | dark / reduced-motion / forced-colors / print / inline 文脈の視覚契約                         |
-| `BoundaryConditions`             | 列挙外値正規化、`alt=""`、`src` 未指定、寸法無効値の扱い                                      |
+少なくとも次の確認観点を、Storybook または同等の検証手段で維持します。
+
+| 確認観点 | 維持する契約 |
+| --- | --- |
+| リソース状態 | `empty` / `loading` / `loaded` / `error` の分岐が視覚面・意味面の両方で整合すること |
+| モード分岐 | `zoomable` と `static` が対話性・DOM 意味論・視覚面で整合すること |
+| 対話属性 | trigger の `aria-haspopup`、`aria-expanded`、必要に応じた `aria-controls` が open 状態と整合すること |
+| accessible name / description | trigger、static image、dialog、close affordance の名称規則と説明規則が本書の契約どおりであること |
+| Lightbox 開閉 | open、backdrop close、`Escape` close、`src` 変更時 close、スクロールロックが整合すること |
+| フォーカス管理 | 初期フォーカス、dialog 内循環、close 後の復帰が契約どおりであること |
+| 境界条件 | 列挙外値正規化、`alt=""`、`src` 未指定、寸法無効値の扱いが契約どおりであること |
+| 環境差分 | dark、reduced-motion、forced-colors、print、本文文脈で契約を崩さないこと |
+
+Story 名は実装付随物であり、公開契約ではありません。したがって、将来の再編成では Story 名の維持ではなく、上記確認観点の維持を優先します。
 
 ---
 
@@ -519,114 +521,6 @@ dialog ID や caption ID は内部生成です。これらの文字列値は mou
 4. `width` / `height` を表示寸法指定と同一視しません。
 5. close 後のフォーカス復帰とスクロールロック解除を崩しません。
 6. 本文既定表示は `inline` とし、`breakout` は opt-in に限ります。
-
----
-
-## 将来拡張の原則
-
-本節は現行実装の説明ではなく、将来追加を検討する場合の設計指針です。追加機能は、画像コンポーネントを多機能化するためではなく、**読書の没入を壊さずに精読性、意味づけ、性能、対話一貫性を補強する場合に限って**採用します。
-
-### 追加検討の優先順位
-
-長期的な設計のきれいさと保守性を基準にした場合、追加検討の優先順位は次の順を基本とします。
-
-1. `srcset` / `sizes` / `<picture>` 対応
-2. 明示的な close affordance と一般化された dialog 契約
-3. expanded 用高解像度ソース
-4. `breakout` / `full-bleed` の opt-in layout mode
-5. 公開状態の readonly 化
-6. 必要性が確定した場合に限る公開イベント
-
-この優先順位は、**見た目の派手さ**ではなく、**既存責務を汚さずに完成度を高められるか**を基準にしています。
-
-### 最優先で検討する価値がある拡張
-
-#### 1. `srcset` / `sizes` / `<picture>` 契約
-
-現行公開面は単一 `src` ですが、画像密度や viewport に応じた最適配信は価値があります。これは装飾ではなく、**転送最適化と表示品質の両立**です。
-
-本文中に多数の画像が置かれる構成では、単一 `src` のままだと、モバイルでは過大画像、デスクトップでは粗い画像のどちらかに寄りやすくなります。したがって、この拡張は単なる機能追加ではなく、**画像 primitive としての完成度を上げるための基礎機能**です。
-
-採用する場合は、次を満たします。
-
-- `src` 単独利用を引き続き正規入力として維持します
-- `alt`、`caption`、`empty` / `error`、Lightbox 契約を崩しません
-- thumbnail と expanded の読み込み戦略を分けて定義できます
-- Storybook で画像選択条件とフォールバック順序を検証可能にします
-
-#### 2. 明示的な close affordance
-
-Lightbox に close ボタンを追加すること自体に価値がありますが、より本質的なのは、**Lightbox を一般的な dialog 契約として完成させること**です。
-
-現行の背景クリックと `Escape` だけの close モデルは簡潔ですが、可発見性が弱く、dialog としての一般化にも限界があります。close affordance を採用する場合は、単なるボタン追加ではなく、次を同時に固定します。
-
-- 一般化されたフォーカストラップ
-- 初期フォーカス先の再定義
-- close 後のフォーカス復帰規則
-- backdrop click と dialog 内容 click の明確な分離
-
-したがって、この拡張の目的は、**見た目の補強**ではなく、**対話契約の完成**です。
-
-#### 3. expanded 用高解像度ソース
-
-現行は thumbnail と Lightbox が同一 `src` を共有する前提ですが、長期的には、**通常時は軽く、精読時のみ高精細**という二層構成が価値を持ちます。
-
-この拡張は、ギャラリー化ではなく、単一図版の読取品質を保つためのものです。特に図表やスクリーンショットのように、拡大時の判読性が重要なケースで有効です。
-
-採用する場合は、次のいずれかの契約へ寄せます。
-
-- `lightbox-src` のような expanded 専用入力を持ちます
-- responsive source 契約の中で expanded 用ソースを選択できるようにします
-
-単一図版 primitive としては、前者の方が責務境界を保ちやすいです。
-
-### 条件付きで価値がある拡張
-
-#### 4. `breakout` / `full-bleed` 表示モード
-
-画像を本文幅より大きく見せる要求がある場合、明示的な layout mode 契約は価値があります。ただし、これは既定動作にしてはなりません。**既定は **`` とし、`breakout`や`full-bleed` は opt-in に限ります。
-
-この拡張の価値は、画像を派手に見せることではなく、**本文グリッドとの関係を曖昧な実装依存にしないこと**にあります。
-
-採用する場合は、次を満たします。
-
-- 既定は本文列内表示のままとします
-- `inline` / `breakout` / `full-bleed` のように mode を明示します
-- キャプションと本文の接続関係を崩しません
-- Storybook で `.prose` 文脈との差分を確認可能にします
-
-#### 5. 公開状態の readonly 化
-
-見た目の機能追加ではありませんが、長期的な保守性には価値があります。`busy`、`error`、`expanded`、`canOpen` などの状態を readonly property として公開すると、外部統合やテストが Shadow DOM 内部構造へ依存せずに済みます。
-
-この拡張の価値は、**契約書で定義している状態概念と、実装の観測面を一致させること**です。
-
-ただし、外部統合要件が弱い段階では必須ではありません。UI primitive としての純度を優先する場合は、後回しにできます。
-
-#### 6. `load` / `error` / `open` / `close` の公開イベント
-
-外部統合要件が明確になった場合のみ、カスタムイベントを別契約として追加できます。分析、同期、上位制御には有用ですが、安易に追加すると image が stateful controller 化しやすくなります。
-
-採用する場合は、次を満たします。
-
-- イベント名、発火契機、detail 形状を文書化します
-- 冪等な open / close 契約と整合させます
-- 上位レイヤが内部状態に過度に依存しない設計を維持します
-
-必要性が明確になるまでは公開しません。
-
-### 追加しない方がよい機能
-
-次の方向は採りません。
-
-- ギャラリー、カルーセル、スライドショー責務を内包すること
-- ダウンロード、共有、コピーなどのアクション群を Lightbox へ常設すること
-- ピンチズームや自由ズーム UI を内包すること
-- キャプションへリッチテキスト編集責務を持ち込むこと
-- アップロード、トリミング、編集 UI を内包すること
-- 図版番号、出典、クレジット集約を image 単体へ持ち込むこと
-
-これらは、単一図版 primitive としての責務境界を壊しやすく、Rouault の「没入して読む」設計にも反しやすいです。
 
 ---
 

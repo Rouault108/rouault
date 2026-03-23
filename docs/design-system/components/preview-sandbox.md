@@ -31,14 +31,13 @@
 
 - 公開入力契約
 - payload 入力モデル
-- script / network / sanitization / rebuild / height / interaction の各 policy
+- activation / script / network / sanitization / rebuild / height / interaction の各 policy
 - DOM / Accessibility
 - Visual Contract
 - 環境別の振る舞い
 - 統合契約
 - 境界条件
 - 開発時診断方針
-- 新規機能の追加方針
 - 現行実装からの移行課題
 
 本書は、次の事項を対象外とします。
@@ -49,25 +48,34 @@
 - `ui-code-preview` 側の viewport UI、theme UI、code 表示 UI
 - preview 内 state の永続化
 - 大規模アプリケーション実行基盤としての性能保証
+- `networkPolicy` のような外部到達性切替機能
+- `renderMode` のような利用意図モード
+- `previewState` のような外部観測可能な状態公開
+- `themeMode` / `documentLang` のような preview 文書環境の可変化
+- `sandboxProfile` のような抽象 profile API
+- `errorMode` のような失敗表示戦略の切替
 
 ---
 
 ## 公開契約
 
-`ui-preview-sandbox` は、`iframeTitle`、`height`、`baseUrl`、`allowJs`、`allowForms`、`allowDownloads`、`allowPointerLock`、`allowPopups` を公開入力として扱います。preview 内容は、**直下子の **`` から受け取ります。
+`ui-preview-sandbox` は、`iframeTitle`、`height`、`baseUrl`、`allowJs`、`allowForms`、`allowDownloads`、`allowPointerLock`、`allowPopups` を公開入力として扱います。preview 内容は、**直下子の `template[data-preview-kind]`** から受け取ります。
 
 ### 入力契約
 
-| 名前               | 種別                                        | 既定値               | 内容                                   | 契約                                                                       |
-| ------------------ | ------------------------------------------- | -------------------- | -------------------------------------- | -------------------------------------------------------------------------- |
-| `iframeTitle`      | property / attribute (`iframe-title`)       | `""`                 | iframe のアクセシブル名                | 空文字または空白のみの場合は `プレビュー sandbox` を用います               |
-| `height`           | property / attribute                        | `160`                | preview の最小初期高さ兼 fallback 高さ | 有限正数以外は `160` に正規化し、整数 px の切り上げ値として扱います        |
-| `baseUrl`          | property / attribute (`base-url`)           | 埋め込み元文書の URL | 相対 URL の解決基準                    | 絶対 URL でなければなりません。無効値は埋め込み元文書の URL に正規化します |
-| `allowJs`          | property / attribute (`allow-js`)           | `false`              | author JS の注入可否                   | `true` の場合のみ `js` payload を有効入力として扱います                    |
-| `allowForms`       | property / attribute (`allow-forms`)        | `false`              | form capability                        | sandbox token に `allow-forms` を追加します                                |
-| `allowDownloads`   | property / attribute (`allow-downloads`)    | `false`              | download capability                    | sandbox token に `allow-downloads` を追加します                            |
-| `allowPointerLock` | property / attribute (`allow-pointer-lock`) | `false`              | pointer lock capability                | sandbox token に `allow-pointer-lock` を追加します                         |
-| `allowPopups`      | property / attribute (`allow-popups`)       | `false`              | popup capability                       | sandbox token に `allow-popups` を追加します                               |
+| 名前               | 種別                                        | 既定値               | 内容                           | 契約                                                                                                                                  |
+| ------------------ | ------------------------------------------- | -------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `iframeTitle`      | property / attribute (`iframe-title`)       | `""`                 | iframe のアクセシブル名        | 空文字または空白のみの場合は `プレビュー sandbox` を用います                                                                          |
+| `height`           | property / attribute                        | `160`                | preview の基準高さ             | `heightMode="fixed"` では固定高さ、`auto` / `bounded-auto` では最小初期高さ兼 fallback 高さとして扱います。有限正数以外は `160` に正規化します |
+| `maxHeight`        | property / attribute (`max-height`)         | 未指定               | preview の上限高さ             | `heightMode="bounded-auto"` の場合だけ意味を持ちます。有限正数でなければ未指定として扱います                                         |
+| `baseUrl`          | property / attribute (`base-url`)           | 埋め込み元文書の URL | 相対 URL の解決基準            | 絶対 URL でなければなりません。無効値は埋め込み元文書の URL に正規化します                                                            |
+| `allowJs`          | property / attribute (`allow-js`)           | `false`              | author JS の注入可否           | `true` の場合のみ `js` payload を有効入力として扱います                                                                               |
+| `activationPolicy` | property / attribute (`activation-policy`)  | `eager`              | 初回構築タイミング             | `eager` / `visible` / `manual` だけを受け付けます。無効値は `eager` に正規化します                                                   |
+| `heightMode`       | property / attribute (`height-mode`)        | `auto`               | 高さ解決方式                   | `fixed` / `auto` / `bounded-auto` だけを受け付けます。無効値は `auto` に正規化します                                                 |
+| `allowForms`       | property / attribute (`allow-forms`)        | `false`              | form capability                | sandbox token に `allow-forms` を追加します                                                                                           |
+| `allowDownloads`   | property / attribute (`allow-downloads`)    | `false`              | download capability            | sandbox token に `allow-downloads` を追加します                                                                                       |
+| `allowPointerLock` | property / attribute (`allow-pointer-lock`) | `false`              | pointer lock capability        | sandbox token に `allow-pointer-lock` を追加します                                                                                    |
+| `allowPopups`      | property / attribute (`allow-popups`)       | `false`              | popup capability               | sandbox token に `allow-popups` を追加します                                                                                          |
 
 ### 入力文法契約
 
@@ -75,8 +83,16 @@
 - `height` attribute は数値文字列だけを受け付けます
 - `height="160px"` のような CSS length は無効です
 - 無効な `height` 入力は `160` に正規化します
+- `maxHeight` property は number を受け付けます
+- `maxHeight` attribute は数値文字列だけを受け付けます
+- `maxHeight="480px"` のような CSS length は無効です
+- 無効な `maxHeight` 入力は未指定として扱います
 - `baseUrl` は absolute URL 文字列または `URL` 相当値を受け付けます
 - 無効な `baseUrl` 入力は埋め込み元文書の URL に正規化します
+- `activationPolicy` は `eager` / `visible` / `manual` だけを受け付けます
+- 無効な `activationPolicy` 入力は `eager` に正規化します
+- `heightMode` は `fixed` / `auto` / `bounded-auto` だけを受け付けます
+- 無効な `heightMode` 入力は `auto` に正規化します
 - boolean 公開属性は、属性が存在すれば `true`、存在しなければ `false` として扱います
 
 ### 既定仕様
@@ -86,6 +102,8 @@
 - preview 文書の既定言語は `ja` です
 - preview 文書の既定 `color-scheme` は `light` です
 - `base` 要素による基準 URL の差し替えは許可しません
+
+これらの既定値は、**Rouault における reading-first preview の既定**として固定するものです。これは汎用 sandbox コンポーネント一般の普遍既定を主張するものではありません。
 
 ### 非公開事項
 
@@ -110,7 +128,7 @@
 
 ### Payload Policy
 
-- payload は **直下子の **`` だけを受け付けます
+- payload は **直下子の `template[data-preview-kind]`** だけを受け付けます
 - kind は `html` / `css` / `js` だけを受け付けます
 - 各 kind は **0 個または 1 個**だけを許可します
 - 同一 kind の複数定義は **契約違反**です
@@ -120,12 +138,13 @@
 
 ### Script Policy
 
-- sandbox iframe には、**baseline capability として **``** を含めます**
+- sandbox iframe には、**baseline capability として `allow-scripts` を含めます**
 - baseline `allow-scripts` は helper script のために存在します
 - `allowJs` は **author JS の注入可否だけ**を制御します
 - `allowJs=false` の場合でも helper script は成立します
 - `allowJs=true` は **trusted author code execution** を意味します
-- ここでいう `trusted` とは、**利用者が CSS / JS payload を信頼済み入力として扱う**ことを意味します
+- ここでいう `trusted` とは、**本コンポーネントの利用者およびその入力経路の管理者が、当該 preview に供給する CSS / JS payload を信頼済み入力として扱う**ことを意味します
+- `html` payload は `allowJs` の値にかかわらず非特権入力として扱い、完全 sanitizer 相当の保証は行いません
 - author JS は iframe 内 DOM 書き換え、内部状態保持、network access、`parent.postMessage()` を行えます
 - author JS には親 DOM 参照権限、same-origin 権限、永続ストレージ権限を与えません
 - author JS は classic script として扱います
@@ -143,31 +162,46 @@
 ### Network Policy
 
 - 本コンポーネントは **trusted demo mode** として動作します
-- preview は network-free を保証しません
-- 許可された絶対 URL と相対 URL は保持します
+- preview は **network-free を保証しません**
 - 相対 URL は `baseUrl` を基準に解決します
+- 許可された URL は文書中に保持され得ます
 - CSS / HTML / JS は外部リソースアクセスを発生させ得ます
-- network access の抑止は本コンポーネントの責務ではありません
+- **network access の抑止、到達性の遮断、取得結果の制御は本コンポーネントの責務ではありません**
 - URL allowlist は **構文上の許可規則**であり、取得・遷移・起動の成功保証ではありません
+- 一方で、`javascript:`、`vbscript:`、`data:` およびそれらを難読化した危険 URL は、**安全上の理由から禁止**します
+- したがって、本節は **危険な URL の禁止** と **network-free 非保証** を併記するものであり、後者は前者を弱めるものではありません
 
 ### Rebuild Policy
 
 - preview 文書は差分更新しません
 - 有効入力の変更だけが再構築判定に参加します
 - payload 変更、`allowJs` 変更、capability 変更は **破壊的再構築**です
-- `iframeTitle` 変更と高さ表示値更新は **非破壊更新**です
+- `iframeTitle` 変更、`height` / `maxHeight` / `heightMode` の変更、表示高さ更新は **非破壊更新**です
+- `activationPolicy` は **初回構築タイミングだけ**を制御し、構築済み preview の再構築判定には参加しません
 - preview 内 state の継続利用には依存しません
+
+### Activation Policy
+
+- `activationPolicy="eager"` の場合、preview は接続後に初回構築します
+- `activationPolicy="visible"` の場合、preview は viewport 近傍に達した時点で初回構築します
+- `activationPolicy="manual"` の場合、preview は利用者または上位 UI からの明示的な活性化までは初回構築しません
+- activation は **初回構築の開始条件**であり、構築後の挙動、capability、network、sanitization の意味を変更しません
+- 未活性状態では preview 文書は未構築であってよく、その間の高さは `height` を用います
+- 一度構築した preview は、以後 `activationPolicy` の違いによって自動破棄しません
 
 ### Height Policy
 
-- `height` は **最小初期高さ兼 fallback 高さ**です
-- helper script が有効な場合、preview は内容高へ自動追従します
+- `height` は preview の基準高さです
+- `heightMode="fixed"` の場合、解決済み高さは常に `resolvedHeight = height` です
+- `heightMode="auto"` の場合、`height` は最小初期高さ兼 fallback 高さとして働き、解決済み高さは `resolvedHeight = max(height, measuredHeight)` です
+- `heightMode="bounded-auto"` の場合、`height` は最小初期高さ兼 fallback 高さとして働き、`maxHeight` が有効なら `resolvedHeight = min(max(height, measuredHeight), maxHeight)` を用います
+- `heightMode="bounded-auto"` かつ `maxHeight` が未指定または無効な場合は、`auto` と同じ扱いに縮退してよいものとします
+- `fixed` 以外では、helper script が有効な場合に preview は内容高へ自動追従します
 - 自動追従は **増加・縮小の両方**に追従します
-- 解決済み高さは `` です
+- ただし `auto` と `bounded-auto` では、`height` を下限として維持します
 - 解決済み高さは常に整数 px の切り上げ値です
 - 高さ計測は best effort です
-- 高さ計測に失敗した場合は `height` を用います
-- 上限高さは持ちません
+- 高さ計測に失敗した場合は `resolvedHeight = height` を用います
 - 初回描画完了後に少なくとも 1 回計測します
 - DOM / layout 変化後には再計測します
 - 高頻度変化に対する再計測は coalesce してよく、更新頻度の抑制を許可します
@@ -271,6 +305,8 @@ URL 属性は次の方針で扱います。
 - `javascript:` / `vbscript:` / `data:` は拒否します
 - 制御文字や空白を混ぜた難読化 URL も拒否対象に含めます
 
+`data:` を許可すると、preview 用途としては便利でも安全境界の説明が複雑になりやすいため、本書では**利便性より安全側を優先して拒否**します。
+
 `css` payload と `js` payload には、同等の sanitization を適用しません。閉じタグ破壊だけを防ぎます。
 
 ---
@@ -335,10 +371,21 @@ opt-in token は次のとおりです。
 
 - `iframeTitle`
 - `height`
+- `maxHeight`
 - `baseUrl`
 - `allowJs`
+- `activationPolicy`
+- `heightMode`
 - opt-in capability 群
 - `html` / `css` / `js` payload
+
+### 活性化状態
+
+- `isActivated`
+- 初回構築前の未活性状態
+- 初回構築後の活性状態
+
+`isActivated` は公開状態ではなく、`activationPolicy` に従って内部的に管理します。
 
 ### 実行状態
 
@@ -350,10 +397,12 @@ opt-in token は次のとおりです。
 
 高さは、次の順で決まります。
 
-1. `height` を最小初期高さとして適用します
-2. helper script が計測に成功した場合は `measuredHeight` を得ます
-3. 解決済み高さとして `resolvedHeight = max(height, measuredHeight)` を用います
-4. 計測不能時は `resolvedHeight = height` を用います
+1. 未活性状態では `resolvedHeight = height` を用います
+2. `heightMode="fixed"` の場合は `resolvedHeight = height` を用います
+3. `heightMode="auto"` の場合、helper script が計測に成功すれば `resolvedHeight = max(height, measuredHeight)` を用います
+4. `heightMode="bounded-auto"` かつ `maxHeight` が有効な場合は `resolvedHeight = min(max(height, measuredHeight), maxHeight)` を用います
+5. `heightMode="bounded-auto"` かつ `maxHeight` が未指定または無効な場合は `resolvedHeight = max(height, measuredHeight)` を用います
+6. 計測不能時は `resolvedHeight = height` を用います
 
 ### 監視状態
 
@@ -366,6 +415,8 @@ opt-in token は次のとおりです。
 次の変更は再構築対象に含めません。
 
 - `iframeTitle` の変更
+- `height` / `maxHeight` / `heightMode` の変更
+- `activationPolicy` の変更
 - 高さ表示値の更新
 - payload に無関係な descendant 変更
 - `allowJs=false` のときの `js` payload 内容変更
@@ -428,7 +479,7 @@ preview 文書は、破壊的再構築時に全体を破棄して再生成しま
 
 ### 文書言語契約
 
-preview 文書は常に `<html lang="ja">` を用います。`lang` は公開入力ではありません。
+preview 文書は常に `<html lang="ja">` を用います。`lang` は公開入力ではありません。これは **Rouault の既定運用に合わせた固定仕様**であり、汎用 sandbox に対する一般原則を意味しません。
 
 ### スタイル拡張契約
 
@@ -465,7 +516,7 @@ preview 文書は常に `<html lang="ja">` を用います。`lang` は公開入
 
 ### 高さ追従
 
-自動高さ追従の目的は、iframe 内スクロールの常態化ではなく、**内容高に近い表示**です。高さ計測は best effort であり、失敗時は `resolvedHeight = height` に戻ります。
+自動高さ追従の目的は、iframe 内スクロールの常態化ではなく、**内容高に近い表示**です。高さ計測は best effort であり、失敗時は `resolvedHeight = height` に戻ります。計測に成功した場合でも、**`height` は下限として維持**されます。
 
 ---
 
@@ -518,7 +569,7 @@ helper script が成立しない場合、自動高さ追従は成立しません
 
 ### `DOMParser` 非対応環境
 
-`html` payload の sanitization が成立しないため、`html` payload は空として扱います。
+`html` payload の sanitization が成立しないため、`html` payload は **縮退動作として空**として扱います。これは互換性確保よりも安全側の裁定を優先するためです。
 
 ### `ResizeObserver` / `MutationObserver`
 
@@ -578,13 +629,17 @@ Storybook は token の**集合**を検証し、属性文字列の順序には�
 
 ### 契約違反入力
 
-- 同一 kind の複数定義は契約違反です
-- payload template の descendant 配置は契約違反です
-- `template[data-preview-kind]` 以外の直下子要素は契約違反です
-- 本番時は、**直下子要素だけ**を評価対象とし、kind ごとに **DOM 順最初の 1 件**だけを採用します
-- 2 件目以降の同一 kind template は無視します
-- descendant 配置の template は入力候補に含めません
-- 空白テキストノードとコメントノードは無視します
+- 同一 kind の複数定義は **契約違反**です
+- payload template の descendant 配置は **契約違反**です
+- `template[data-preview-kind]` 以外の直下子要素は **契約違反**です
+- 本コンポーネントは、本番時には fail-soft を優先し、**回復可能な契約違反入力**に対して描画継続を許可します
+- 回復規則は次のとおりです
+  - 評価対象は **直下子要素だけ**とします
+  - kind ごとに **DOM 順最初の 1 件**だけを採用します
+  - 2 件目以降の同一 kind template は無視します
+  - descendant 配置の template は入力候補に含めません
+  - 空白テキストノードとコメントノードは無視します
+- これらの回復規則は **契約違反を正当化するものではなく、本番描画を継続するための定義済み回復**です
 
 ### 高さ計測不能
 
@@ -636,151 +691,6 @@ Storybook と自動テストでは、次の不整合を **失敗として扱い�
 
 ---
 
-## 新規で追加を検討する価値がある機能
-
-本節は、`ui-preview-sandbox` に将来的に追加を検討する価値がある機能を整理するものです。ここで挙げる機能は、便利機能の追加ではなく、**実行条件と利用意図を明示するための policy 拡張候補**として扱います。
-
-### 最優先で検討する価値がある機能
-
-#### `networkPolicy`
-
-`networkPolicy` は、preview の外部到達性を declarative に切り替えるための機能です。現契約は `trusted demo mode` を前提としていますが、用途によっては network-free または local-only に近い preview を明示したい場面があります。
-
-長期的には、少なくとも次の離散値を検討できます。
-
-- `trusted-demo`
-- `local-only`
-
-`local-only` を導入する場合は、絶対 URL の拒否、相対 URL の制限、CSS の `@import` / `url(...)` の扱い、form action や author JS による network access の扱いを一体で定義します。
-
-#### `activationPolicy`
-
-`activationPolicy` は、preview 文書の初回構築タイミングを制御するための機能です。preview が多い文書では、すべてを eager に構築しない方が reading-first と Performance 契約の両方に整合します。
-
-長期的には、少なくとも次の離散値を検討できます。
-
-- `eager`
-- `visible`
-- `manual`
-
-`visible` は viewport 近傍での初回構築、`manual` は利用者操作による初回構築として定義できます。
-
-#### `heightMode`
-
-`heightMode` は、高さ挙動を `height` 単独の意味論から分離するための機能です。現契約では `height` が最小初期高さ兼 fallback 高さとして機能しますが、本文中 preview の巨大化を抑えたい場面では、`fixed`、`auto`、`bounded-auto` を区別できる方が契約が明確になります。
-
-長期的には、少なくとも次の離散値を検討できます。
-
-- `fixed`
-- `auto`
-- `bounded-auto`
-
-#### `maxHeight`
-
-`maxHeight` は、`heightMode="bounded-auto"` と組み合わせて preview の上限高さを制御するための機能です。reading-first の文脈では、長大な preview が本文の流れを破壊しないようにする価値があります。
-
-導入する場合は、少なくとも次の式で契約を閉じます。
-
-`resolvedHeight = min(max(height, measuredHeight), maxHeight)`
-
-#### `renderMode`
-
-`renderMode` は、静的 preview と対話 preview の意図差を明示するための機能です。`allowJs=false` だけでは、author JS を無効にする意味しか表現できず、preview 全体の利用意図までは表しきれません。
-
-長期的には、少なくとも次の離散値を検討できます。
-
-- `static`
-- `interactive`
-
-`static` は静的表示を優先し、`interactive` は対話性を許容する profile として定義できます。
-
-### 条件付きで検討する価値がある機能
-
-#### `previewState`
-
-`previewState` は、preview の状態を最小限に外部観測可能にするための機能です。これは公開イベントや操作 API を増やすのではなく、testability や上位 UI との表示同期を改善するための補助的機能です。
-
-追加する場合は、少なくとも次の状態値を検討できます。
-
-- `idle`
-- `rendering`
-- `ready`
-- `error`
-
-ただし、これは双方向通信 API へ拡張しないことを前提とします。
-
-#### `themeMode`
-
-`themeMode` は、preview 文書の theme を declarative に与えるための機能です。現契約では `color-scheme: light` を固定仕様としていますが、再現対象によっては dark theme preview が必要になる場合があります。
-
-追加する場合は、少なくとも次の離散値を検討できます。
-
-- `light`
-- `dark`
-
-ただし、reading-first の基本方針との整合を保つため、優先度は `networkPolicy` や `heightMode` より低く扱います。
-
-#### `documentLang`
-
-`documentLang` は、preview 文書の `lang` を明示するための機能です。現契約では `ja` を固定していますが、多言語 UI や他言語の code sample を正しく表現したい場合には追加価値があります。
-
-ただし、Rouault 全体が日本語中心で運用される限り、優先度は高くありません。
-
-#### `sandboxProfile`
-
-`sandboxProfile` は、個別 capability フラグを profile として束ねるための機能です。想定ユースケースが十分に定型化した場合は、個別フラグ群より profile の方が API を読みやすくできます。
-
-たとえば、次のような profile を検討できます。
-
-- `static-html`
-- `interactive-demo`
-- `form-demo`
-
-ただし、profile と個別フラグの競合規則を別途定義する必要があるため、導入は慎重に判断します。
-
-#### `errorMode`
-
-`errorMode` は、author JS や preview 構築失敗時の見え方を declarative に制御するための機能です。現契約では author JS の失敗を preview 外へ再送しないことまでは定義していますが、失敗時の表示戦略は固定していません。
-
-追加する場合は、少なくとも次の離散値を検討できます。
-
-- `silent`
-- `placeholder`
-- `diagnostic`
-
-ただし、これは `previewState` より後に検討してよく、優先度は最優先群より低く扱います。
-
-### 追加しない方がよい機能
-
-次の機能は、現行の責務境界を濁らせやすいため、原則として追加しません。
-
-- 親アプリとの公開 `postMessage` API
-- preview 内 state の保存・復元機構
-- `allow-same-origin` 系の same-origin 拡張
-- IDE 風の高機能実行基盤
-
-これらは `ui-preview-sandbox` を preview 容器ではなく実行ホストへ変質させやすく、設計のきれいさと保守性を損ないます。
-
-### 優先順位
-
-最優先で検討する価値がある機能は次のとおりです。
-
-1. `networkPolicy`
-2. `activationPolicy`
-3. `heightMode` と `maxHeight`
-4. `renderMode`
-
-条件付きで検討する価値がある機能は次のとおりです。
-
-1. `previewState`
-2. `themeMode` / `documentLang`
-3. `sandboxProfile`
-4. `errorMode`
-
-追加価値が高いのは、機能を増やすものではなく、**実行条件を明示するもの**です。特に `networkPolicy`、`activationPolicy`、`heightMode` は、契約のきれいさ・保守性・読書体験の三方に効きます。
-
----
-
 ## 現行実装からの移行課題
 
 本節は、**現行実装を踏まえたときに、契約または追加検討機能として未だ対応していない事項**を列挙するものです。以下には、契約書に既に記載しているが現行実装が未対応のものと、照合の結果として補足が必要になったものを含みます。
@@ -790,9 +700,17 @@ Storybook と自動テストでは、次の不整合を **失敗として扱い�
 - `title` を `iframeTitle` に改め、ホスト要素のグローバル `title` 属性の意味と分離します
 - `baseUrl` を正式公開入力として導入します
 - `baseUrl` を URL sanitization の基準と preview 文書内の相対 URL 解決へ反映します
+- `activationPolicy` を正式公開入力として導入します
+- `heightMode` を正式公開入力として導入します
+- `maxHeight` を正式公開入力として導入します
+- `height` の意味を「最小初期高さ兼 fallback 高さ」だけでなく、高さ mode に応じた基準高さとして再定義します
 - `height` の丸め規則を切り捨てと切り上げの混在から、切り上げへ統一します
 - `height` attribute の数値文字列制約を実装し、CSS length を無効入力として扱います
+- `maxHeight` attribute の数値文字列制約を実装し、CSS length を無効入力として扱います
 - 無効な `baseUrl` 入力を埋め込み元文書の URL へ正規化します
+- 無効な `activationPolicy` 入力を `eager` に正規化します
+- 無効な `heightMode` 入力を `auto` に正規化します
+- 無効な `maxHeight` 入力を未指定として扱います
 
 ### sandbox / capability 契約の未対応事項
 
@@ -816,9 +734,13 @@ Storybook と自動テストでは、次の不整合を **失敗として扱い�
 
 ### 再構築 / 高さ / 更新契約の未対応事項
 
-- `iframeTitle` 変更と高さ更新を非破壊更新へ寄せます
-- 高さ計測結果に `max(height, measuredHeight)` を適用します
-- `resolvedHeight` を常に `height` 以上に保ち、計測値のみで `height` 未満へ縮小しないようにします
+- `activationPolicy` に応じた初回構築タイミングを実装します
+- 未活性状態では `resolvedHeight = height` を用いる規則を実装します
+- `heightMode="fixed"` の固定高さ挙動を実装します
+- `heightMode="auto"` の `resolvedHeight = max(height, measuredHeight)` を実装します
+- `heightMode="bounded-auto"` と `maxHeight` による上限付き自動追従を実装します
+- `heightMode="bounded-auto"` かつ `maxHeight` 無効時の `auto` への縮退規則を実装します
+- `iframeTitle` 変更、`height` / `maxHeight` / `heightMode` の変更、高さ更新を非破壊更新へ寄せます
 - `allowJs=false` のときに無効な `js` payload 変更で `_srcdoc` を再生成しないようにします
 - payload 変更、`allowJs` 変更、capability 変更だけを破壊的再構築対象に限定します
 

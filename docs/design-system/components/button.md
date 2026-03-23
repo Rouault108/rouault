@@ -31,9 +31,14 @@ Rouault における button は、操作要素であると同時に、**本文�
 - 画面単位でのアクション優先度設計全体
 - どの画面で `primary` を何個まで許可するかというプロダクト判断
 - アイコンセット自体の供給
+- `start-icon` / `end-icon` のような名前付きアイコンスロットの公開契約
+- `name` / `value` / `formNoValidate` のような submitter 拡張
+- `href` を持たせて link と button を混在させること
+- `pressed` の自動反転によって制御モデルを二重化すること
+- `fullWidth` / `block` のようなレイアウト責務
 - フォームバリデーション結果の生成
 - 送信先 API や操作結果の通知設計
-- ルーティングやダイアログ統合など上位レイヤの制御
+- 確認ダイアログ、ショートカット、ルーティングやダイアログ統合など上位レイヤの制御
 
 これらは上位レイヤまたは別コンポーネントの責務です。
 
@@ -41,9 +46,17 @@ Rouault における button は、操作要素であると同時に、**本文�
 
 ## 公開契約
 
-`ui-button` は、`variant`、`size`、`iconOnly`、`ariaLabel`、`pressed`、`loading`、`disabled`、`type`、`form` を公開入力として扱います。スロットは既定スロットと `spinner` スロットを持ちます。内部実装はネイティブ `<button>` ですが、利用者は `ui-button` を契約単位として扱います。
+`ui-button` は、`variant`、`size`、`iconOnly`、`ariaLabel`、`pressed`、`loading`、`disabled`、`type`、`form`、`ariaExpanded`、`ariaControls`、`ariaHasPopup`、`ariaDescribedBy` を公開入力として扱います。スロットは既定スロットと `spinner` スロットを持ちます。内部実装はネイティブ `<button>` ですが、利用者は `ui-button` を契約単位として扱います。
 
 `variant` の既定値は `secondary` です。`size` の既定値は `md` です。`type` の既定値は `button` です。これはネイティブ `<button>` の既定値とは異なるため、フォーム送信に用いる場合は `type="submit"` を明示しなければなりません（MUST）。
+
+`iconOnly` を `true` にする場合、既定スロットはアイコン単独入力のみを正規入力とし、アクセシブル名として `aria-label` を与えなければなりません（MUST）。実装上は開発時警告にとどまる箇所がありますが、公開契約としては必須です。
+
+`ariaLabel` は `iconOnly=true` の場合にのみ用います。可視テキストを持つ通常の button のアクセシブル名は既定スロット内の可視ラベルから決定し、`ariaLabel` による上書き運用には依存しません。可視ラベルを持つ状態で `ariaLabel` を併用する構成はサポート対象外です。
+
+`ariaExpanded`、`ariaControls`、`ariaHasPopup`、`ariaDescribedBy` は、button を trigger として使用する場合の関係属性です。これらは内部ネイティブ button に反映しますが、属性の存在だけで独自アイコン、独自アニメーション、独自配置変更を自動的に発生させません。
+
+`size="lg"` は非推奨です。実装は受理しますが、デザインレビュー承認済みのケースに限定して扱います（SHOULD）。
 
 `iconOnly` を `true` にする場合、既定スロットはアイコン単独入力のみを正規入力とし、アクセシブル名として `aria-label` を与えなければなりません（MUST）。実装上は開発時警告にとどまる箇所がありますが、公開契約としては必須です。
 
@@ -53,17 +66,21 @@ Rouault における button は、操作要素であると同時に、**本文�
 
 ### 入力契約
 
-| 名前        | 種別                                | 必須   | 内容             | 契約                                                                                     |
-| ----------- | ----------------------------------- | ------ | ---------------- | ---------------------------------------------------------------------------------------- |
-| `variant`   | property / attribute                | いいえ | 視覚的強度       | `primary` / `secondary` / `outline` / `ghost` / `danger`                                 |
-| `size`      | property / attribute                | いいえ | ボタンサイズ     | `sm` / `md` / `lg`。既定値は `md`、`lg` は非推奨です                                     |
-| `iconOnly`  | property / attribute (`icon-only`)  | いいえ | アイコンのみ表示 | `true` の場合、既定スロットはアイコン単独入力のみを正規入力とし、`aria-label` が必須です |
-| `ariaLabel` | property / attribute (`aria-label`) | いいえ | アクセシブル名   | `iconOnly=true` の場合にのみ使用します                                                   |
-| `pressed`   | property / attribute                | いいえ | トグル押下状態   | 外部制御専用です。与えた場合のみ `aria-pressed` を出力し、自動反転は行いません           |
-| `loading`   | property / attribute                | いいえ | 処理中状態       | `true` の場合は内部 button を非活性化し、`aria-busy="true"` を付与します                 |
-| `disabled`  | property / attribute                | いいえ | 不活性状態       | `true` の場合は内部 button を非活性化します                                              |
-| `type`      | property / attribute                | いいえ | フォーム動作種別 | `button` / `submit` / `reset`。既定値は `button` です                                    |
-| `form`      | property / attribute                | いいえ | フォーム所有者   | フォーム外配置時に関連付けできます                                                       |
+| 名前               | 種別                                      | 必須   | 内容                     | 契約                                                                                     |
+| ------------------ | ----------------------------------------- | ------ | ------------------------ | ---------------------------------------------------------------------------------------- |
+| `variant`          | property / attribute                      | いいえ | 視覚的強度               | `primary` / `secondary` / `outline` / `ghost` / `danger`                                |
+| `size`             | property / attribute                      | いいえ | ボタンサイズ             | `sm` / `md` / `lg`。既定値は `md`、`lg` は非推奨です                                    |
+| `iconOnly`         | property / attribute (`icon-only`)        | いいえ | アイコンのみ表示         | `true` の場合、既定スロットはアイコン単独入力のみを正規入力とし、`aria-label` が必須です |
+| `ariaLabel`        | property / attribute (`aria-label`)       | いいえ | アクセシブル名           | `iconOnly=true` の場合にのみ使用します                                                   |
+| `pressed`          | property / attribute                      | いいえ | トグル押下状態           | 外部制御専用です。与えた場合のみ `aria-pressed` を出力し、自動反転は行いません          |
+| `loading`          | property / attribute                      | いいえ | 処理中状態               | `true` の場合は内部 button を非活性化し、`aria-busy="true"` を付与します                |
+| `disabled`         | property / attribute                      | いいえ | 不活性状態               | `true` の場合は内部 button を非活性化します                                             |
+| `type`             | property / attribute                      | いいえ | フォーム動作種別         | `button` / `submit` / `reset`。既定値は `button` です                                   |
+| `form`             | property / attribute                      | いいえ | フォーム所有者           | フォーム外配置時に関連付けできます                                                      |
+| `ariaExpanded`     | property / attribute (`aria-expanded`)    | いいえ | 開閉状態                 | trigger 用途の関係属性として内部 button に反映します                                    |
+| `ariaControls`     | property / attribute (`aria-controls`)    | いいえ | 関連要素 ID              | trigger 用途の関係属性として内部 button に反映します                                    |
+| `ariaHasPopup`     | property / attribute (`aria-haspopup`)    | いいえ | popup 種別               | trigger 用途の関係属性として内部 button に反映します                                    |
+| `ariaDescribedBy`  | property / attribute (`aria-describedby`) | いいえ | 説明要素 ID              | trigger 用途の関係属性として内部 button に反映します                                    |
 
 ### スロット契約
 
@@ -90,19 +107,23 @@ Rouault における button は、操作要素であると同時に、**本文�
 
 ### 属性反映契約
 
-公開入力のうち、`variant`、`size`、`iconOnly`、`ariaLabel`、`pressed`、`loading`、`disabled`、`type`、`form` は property と attribute の両面から操作できます。`ariaLabel` の HTML 属性名は `aria-label`、`iconOnly` の HTML 属性名は `icon-only` です。boolean 値は attribute の有無で反映します。
+公開入力のうち、`variant`、`size`、`iconOnly`、`ariaLabel`、`pressed`、`loading`、`disabled`、`type`、`form`、`ariaExpanded`、`ariaControls`、`ariaHasPopup`、`ariaDescribedBy` は property と attribute の両面から操作できます。`ariaLabel` の HTML 属性名は `aria-label`、`iconOnly` の HTML 属性名は `icon-only` です。boolean 値は attribute の有無で反映します。ARIA 関連属性は host に与えられた値を内部ネイティブ button に pass-through します。
 
-| property    | attribute    | reflect | 備考                                   |
-| ----------- | ------------ | ------- | -------------------------------------- |
-| `variant`   | `variant`    | あり    | 列挙値以外は未サポートです             |
-| `size`      | `size`       | あり    | `lg` は非推奨です                      |
-| `iconOnly`  | `icon-only`  | あり    | boolean attribute として扱います       |
-| `ariaLabel` | `aria-label` | あり    | `iconOnly=true` の場合にのみ使用します |
-| `pressed`   | `pressed`    | あり    | 定義時のみ `aria-pressed` を出力します |
-| `loading`   | `loading`    | あり    | boolean attribute として扱います       |
-| `disabled`  | `disabled`   | あり    | boolean attribute として扱います       |
-| `type`      | `type`       | あり    | 既定値は `button` です                 |
-| `form`      | `form`       | あり    | 外部フォーム所有者を指定できます       |
+| property          | attribute          | reflect | 備考                                                |
+| ----------------- | ------------------ | ------- | --------------------------------------------------- |
+| `variant`         | `variant`          | あり    | 列挙値以外は未サポートです                          |
+| `size`            | `size`             | あり    | `lg` は非推奨です                                   |
+| `iconOnly`        | `icon-only`        | あり    | boolean attribute として扱います                    |
+| `ariaLabel`       | `aria-label`       | あり    | `iconOnly=true` の場合にのみ使用します              |
+| `pressed`         | `pressed`          | あり    | 定義時のみ `aria-pressed` を出力します              |
+| `loading`         | `loading`          | あり    | boolean attribute として扱います                    |
+| `disabled`        | `disabled`         | あり    | boolean attribute として扱います                    |
+| `type`            | `type`             | あり    | 既定値は `button` です                              |
+| `form`            | `form`             | あり    | 外部フォーム所有者を指定できます                    |
+| `ariaExpanded`    | `aria-expanded`    | あり    | 内部 button に pass-through します                  |
+| `ariaControls`    | `aria-controls`    | あり    | 内部 button に pass-through します                  |
+| `ariaHasPopup`    | `aria-haspopup`    | あり    | 内部 button に pass-through します                  |
+| `ariaDescribedBy` | `aria-describedby` | あり    | 内部 button に pass-through します                  |
 
 ### 列挙外値・無効値の扱い
 
@@ -110,9 +131,9 @@ Rouault における button は、操作要素であると同時に、**本文�
 
 ### 責務範囲
 
-責務範囲には、内部 button の描画、状態に応じた属性反映、ローディング中のスピナー表示、フォーム送信・リセットの橋渡し、キーボード操作の正規化、および必要なアクセシビリティ属性の付与を含みます。
+責務範囲には、内部 button の描画、状態に応じた属性反映、ローディング中のスピナー表示、フォーム送信・リセットの橋渡し、キーボード操作の正規化、`pressed` の意味状態と視覚状態の対応維持、および trigger 用途で必要な ARIA 関連属性の付与を含みます。
 
-一方で、クリック後に何を実行するか、破壊的操作前に確認ダイアログを出すか、`primary` の数を画面単位でどう制約するか、ローディング文言をどう変更するかは責務に含めません。
+一方で、クリック後に何を実行するか、破壊的操作前に確認ダイアログを出すか、`primary` の数を画面単位でどう制約するか、ローディング文言をどう変更するか、trigger 固有の独自アイコンや独自アニメーションをどう見せるかは責務に含めません。
 
 ---
 
@@ -158,6 +179,8 @@ Rouault における button は、操作要素であると同時に、**本文�
 
 `pressed` が `true` または `false` の場合に限り、内部 button へ `aria-pressed` を出力します。`pressed` が `undefined` の場合、トグルボタンとしては扱いません。
 
+`pressed` が定義される場合、視覚差分は意味状態と一致しなければなりません。差分は `secondary`、`outline`、`ghost` を中心に、背景のわずかな濃度差、境界線の強弱差、文字色の補正など、**静かで継続的に読める差分**にとどめます。`primary` と `danger` では、読書面での常時強調を増やさないため、pressed 差分を必要最小限に抑えます。
+
 `pressed` は toggle button の状態表現にのみ用います。選択中タブ、現在ページ、ナビゲーション current state の表現には用いません。これらは別契約です。
 
 ### 7. フォーム状態
@@ -201,6 +224,8 @@ Enter は `keydown` で click に正規化します。Space は `keydown` で押
 - 可視テキストを持つ通常の button では、アクセシブル名は可視ラベルから決定します。`aria-label` による上書き運用には依存しません。
 - `loading=true` の場合、内部 button に `aria-busy="true"` を付与します。
 - `pressed` が定義される場合、内部 button に `aria-pressed` を付与します。
+- `aria-expanded`、`aria-controls`、`aria-haspopup`、`aria-describedby` が与えられた場合、内部 button にそのまま反映します。
+- これらの ARIA 関連属性は意味関係の付与を目的とし、属性の存在だけで独自アイコン、独自アニメーション、独自配置変更を発生させません。
 - フォーカス可視表示は `:focus-visible` で扱います。
 - 最低 44×44 px のタッチ領域を疑似要素で補います。
 
@@ -233,6 +258,8 @@ Enter は `keydown` で click に正規化します。Space は `keydown` で押
 - `outline` は透明背景と境界線を持ちます。
 - `ghost` は通常時透明、hover 時のみ淡い背景を持ちます。
 - `danger` は通常時に淡い警告背景、hover 時に強い警告面へ反転します。
+
+`pressed` が定義される場合、視覚差分は `aria-pressed` と一致しなければなりません。差分は `secondary`、`outline`、`ghost` を中心に静かな強度で定義し、本文近傍で過剰に強い selected 表現を持ち込みません。`primary` と `danger` では常時強調を増やさないため、pressed 差分を必要最小限に抑えます。
 
 button は可読本文より強く主張してはなりません。とくに article / prose 文脈では、hover、focus、pressed などの状態差分は、可視性を確保しつつも、見出しや本文の視線誘導を奪わない強度に抑えます。常時アニメーション、過度な発光、持続的な高コントラスト強調には依存しません。
 
@@ -288,6 +315,8 @@ button は可読本文より強く主張してはなりません。とくに art
 ### Forced Colors
 
 `forced-colors: active` 環境では、システムカラーを優先します。`Highlight`、`HighlightText`、`CanvasText` を使用し、box-shadow は除去します。`primary` と `danger` は独自色ではなくシステム色へフォールバックします。
+
+`pressed` が定義される場合、Forced Colors でも `aria-pressed` と視覚差分の対応を維持します。`aria-selected` や独自 `.active` class には依存せず、内部 button に出力される `aria-pressed` を基準に状態差分を表現します。
 
 ### Print
 
@@ -432,6 +461,8 @@ button は可読本文より強く主張してはなりません。とくに art
 | `DarkMode`                 | ダークモードで `secondary` の edge highlight を確認できること     |
 | `ReducedMotion`            | reduced motion でアニメーションが抑制されること                   |
 | `PrintStyles`              | 印刷時に非表示となること                                          |
+| `PressedState`            | `pressed` と視覚差分および `aria-pressed` の対応が一致すること                             |
+| `AriaExpandedTrigger`     | `aria-expanded` / `aria-controls` / `aria-haspopup` / `aria-describedby` が内部 button に反映されること |
 
 ---
 
@@ -448,81 +479,9 @@ button は可読本文より強く主張してはなりません。とくに art
 
 ---
 
-## 将来拡張の原則
-
-本節は現行実装の公開契約ではなく、将来追加を検討する場合の設計指針です。追加機能は、button を多機能化するためではなく、**読書の没入を壊さずに意味と操作性を補強する場合に限って**採用します。
-
-### 最優先で検討する価値がある拡張
-
-#### 1. `pressed` の視覚状態
-
-`pressed` は現行でも意味状態として存在しますが、将来拡張では視覚差分を追加する価値があります。ただし、toggle state の可視化は常時強い主張であってはなりません。読書面に近い文脈では、背景のわずかな濃度差、境界線の強弱差、文字色の補正など、**静かで継続的に読める差分**にとどめます。
-
-この拡張を採用する場合、次を満たします。
-
-- `pressed` は引き続き外部制御専用とし、自動反転は追加しません。
-- 視覚差分は `secondary`、`outline`、`ghost` を中心に定義し、本文近傍で過剰に強い selected 表現を持ち込みません。
-- `primary` と `danger` に対しては、読書面での常時強調を増やさないため、pressed 差分を必要最小限に抑えます。
-- `aria-pressed` と視覚差分の対応を一致させ、意味と見た目のずれを残しません。
-
-#### 2. ARIA 関連属性の pass-through
-
-`aria-expanded`、`aria-controls`、`aria-haspopup`、`aria-describedby` は、button を trigger として用いる場面で追加検討の価値があります。これは視覚装飾の追加ではなく、**意味論の補強**です。
-
-この拡張を採用する場合、次を満たします。
-
-- 追加属性は内部ネイティブ button に反映します。
-- 追加属性の存在だけで、自動的に独自アイコン、独自アニメーション、独自配置変更を発生させません。
-- 読書文脈では、開閉トリガーであっても本文の視線誘導を奪わない静かな表現を維持します。
-- trigger 固有の見た目差分が必要な場合は、button ではなく上位コンポーネント側で引き受けます。
-
-### 条件付きで価値がある拡張
-
-#### 3. `start-icon` / `end-icon` 名前付きスロット
-
-記事 UI やドキュメント UI でアイコン配置の秩序を固定したい場合、`start-icon` / `end-icon` の追加は検討価値があります。目的は装飾の増加ではなく、**ラベルを主、アイコンを従とする構造の固定**です。
-
-この拡張を採用する場合、次を満たします。
-
-- ラベルを常に視覚上の主役とし、アイコンは補助情報にとどめます。
-- icon-only 以外では、アイコンの寸法、余白、位置を内部契約で固定し、本文近傍で視覚ノイズを増やしません。
-- 既定スロットへの自由配置と名前付きスロットの責務を重複させません。
-- decorative icon はアクセシブル名の計算を汚染しない扱いに固定します。
-
-#### 4. submitter 拡張（`name` / `value` / `formNoValidate`）
-
-フォームを本格的に扱う場合、submitter としての契約を強める拡張は価値があります。ただし、これは読書体験を改善する機能ではなく、フォーム責務の拡張です。したがって、フォーム使用量が増えるまでは追加しません。
-
-この拡張を採用する場合、次を満たします。
-
-- HTML button の submitter 契約に寄せ、独自規則を増やしません。
-- 視覚仕様は増やさず、意味と送信結果の制御だけを追加します。
-- button 単体にバリデーション表示や送信結果通知の責務を持ち込まないようにします。
-- 読書中心の画面では、フォーム専用拡張を通常 button の標準前提にしません。
-
-### 採用しない方針
-
-次の方向は、読書の没入を損ないやすく、button の責務も汚しやすいため採りません。
-
-- `href` を持たせて link と button を混在させること
-- `pressed` の自動反転を導入して制御モデルを二重化すること
-- `fullWidth` / `block` のようなレイアウト責務を button に持ち込むこと
-- 確認ダイアログ、ショートカット、通知など上位アプリケーション責務を内蔵すること
-
-### 将来拡張を採用する場合の確認点
-
-将来拡張を採用する場合、Storybook と契約書では少なくとも次を追加確認対象とします。
-
-- `PressedState` または同等 Story による `pressed` 視覚差分の確認
-- `AriaExpandedTrigger` など、trigger 属性反映 Story の確認
-- `StartIcon` / `EndIcon` の配置秩序と読書面でのノイズ確認
-- submitter 拡張採用時の `name` / `value` / `formNoValidate` のフォーム連携確認
-
----
-
 ## 現行実装で未対応の事項
 
-本節は、現行の `button.ts` および `button.stories.ts` を基準として、**契約書内で将来拡張または厳密化対象として触れているが、現時点では未実装、未強制、または未整合である事項**を整理するものです。
+本節は、現行の `button.ts` および `button.stories.ts` を基準として、**本文で公開契約として定義しているが、現時点では未実装、未強制、または未整合である事項**を整理するものです。
 
 ### 1. `pressed` の視覚状態
 
@@ -536,36 +495,24 @@ button は可読本文より強く主張してはなりません。とくに art
 
 したがって、現時点の `ui-button` は、menu button、disclosure button、dialog trigger などの用途に必要な ARIA 関係属性を**包括的には公開していません**。
 
-### 3. 名前付きアイコンスロット
-
-現行実装が公開しているスロットは、既定スロットと `spinner` スロットのみです。`start-icon` / `end-icon` のような名前付きアイコンスロットは存在しません。
-
-そのため、ラベル付き button におけるアイコンの位置秩序は、現時点では既定スロット内容の構成に委ねられています。**アイコン配置の構造契約は未だ固定されていません**。
-
-### 4. submitter 拡張
-
-現行実装は `type` と `form` によって submit / reset の橋渡しを行いますが、`name`、`value`、`formNoValidate` など、ネイティブ submitter に近づけるための拡張は未対応です。
-
-したがって、複数 submit button の識別、送信経路ごとの値分岐、送信時バリデーション抑止など、**submitter 固有の細かな制御は現時点では扱いません**。
-
-### 5. 契約違反入力の実行時強制
+### 3. 契約違反入力の実行時強制
 
 現行契約では、`iconOnly=true` の場合に `aria-label` を必須とし、`iconOnly=true` でテキストを併置する構成も契約違反としています。しかし、現行実装が実行時に強制しているのは開発時警告に限られます。描画停止や例外送出は行いません。
 
 同様に、`size="lg"` の非推奨も開発時警告にとどまります。したがって、**契約違反入力に対する実行時の強制力は未実装**です。
 
-### 6. `ariaLabel` 利用範囲の実装側制限
+### 4. `ariaLabel` 利用範囲の実装側制限
 
 契約書では `ariaLabel` を `iconOnly=true` の場合に限定して扱っていますが、現行実装は `ariaLabel` が与えられた場合、常に内部 button へ `aria-label` を反映します。
 
 このため、**可視ラベルを持つ通常 button で `ariaLabel` を併用できてしまう状態**が残っています。契約上はサポート対象外ですが、実装側で利用範囲を制限しているわけではありません。
 
-### 7. Storybook による未対応確認
+### 5. Storybook による未対応確認
 
-現行 Storybook には、通常状態の `pressed` 視覚差分確認、ARIA 関連属性 pass-through 確認、名前付きアイコンスロット確認、submitter 拡張確認に対応する Story は存在しません。
+現行 Storybook には、通常状態の `pressed` 視覚差分確認、および ARIA 関連属性 pass-through 確認に対応する Story は存在しません。
 
-したがって、これらは**契約候補としては整理済みであっても、現行 Storybook 契約には未反映**です。
+したがって、これらは**本文契約としては定義済みであっても、現行 Storybook 契約には未反映**です。
 
-### 8. 本節の扱い
+### 6. 本節の扱い
 
-本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用する場合は、実装、Storybook、契約書の 3 点を同時に更新し、未対応状態を残したまま公開契約へ昇格させません。
+本節に記載した事項は、現行公開契約として利用者が実装依存してよい未完成状態を容認するものではありません。これらを解消する場合は、実装、Storybook、契約書の 3 点を同時に更新し、未整合状態を残したまま運用しません。

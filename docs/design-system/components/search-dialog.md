@@ -20,18 +20,19 @@
 
 ## 適用範囲
 
-本書は、`ui-search-dialog` の次の事項を対象とします。
+本書は、`ui-search-dialog` の**公開契約**を対象とします。対象は次のとおりです。
 
 - 設計原則
-- 公開契約
+- 入力・出力・公開イベント・公開メソッド
 - 状態モデル
 - 検索契約
 - 選択契約
-- DOM / Accessibility
+- Accessibility 契約
+- キーボード契約
 - Visual Contract
 - 環境別の振る舞い
-- Storybook 契約
-- 追加を検討する価値がある機能
+- 境界条件
+- Storybook / test で固定すべき契約
 - 現行実装で未対応の事項
 
 一方で、本書は次の事項を扱いません。
@@ -43,8 +44,9 @@
 - `ui-search-field`、`ui-spinner`、`ui-search-highlight` の内部実装詳細
 - 検索ランキングアルゴリズムの高度化全般
 - 最近見た項目、お気に入り、個人化の設計
+- 将来機能の列挙そのもの
 
-これらは上位レイヤ、または別コンポーネント／別契約の責務です。
+将来拡張は、本文の各契約に**拡張余地として織り込む**のであり、独立した機能要望一覧としては扱いません。これにより、採用済み契約と未採用案の混在を避けます。
 
 ---
 
@@ -136,15 +138,17 @@ interface UiSearchDialogSearchContext {
   locale?: string;
 }
 
+interface UiSearchDialogSearchError {
+  code: string;
+  message?: string;
+  retryable?: boolean;
+}
+
 interface UiSearchDialogSearchResult {
   items: readonly UiSearchDialogItem[];
   total?: number;
   isPartial?: boolean;
-  error?: {
-    code: string;
-    message?: string;
-    retryable?: boolean;
-  };
+  error?: UiSearchDialogSearchError;
 }
 
 type UiSearchDialogSearcher = (
@@ -154,21 +158,33 @@ type UiSearchDialogSearcher = (
 
 この契約では、`searcher` は query 文字列だけでなく、中断、件数上限、locale を受け取れます。戻り値は `items` だけでなく、必要に応じて `total`、`isPartial`、`error` を返せます。
 
+追加で、次を固定します。
+
+* `searcher` が **例外を送出した場合**、コンポーネントはその検索を `error` 状態として扱います
+* `searcher` が **`error` を含む構造化結果**を返した場合、コンポーネントはその検索を `error` 状態として扱います
+* 例外送出と構造化エラー結果は、UI 上は同一の `error` 状態へ正規化します
+* `signal.aborted === true` に起因する中断は `error` とみなさず、**破棄された旧検索**として扱います
+* `error.retryable === true` の場合でも、再試行は内部で自律実行しません。再試行は、同一 query に対する再検索要求として上位から駆動します
+
+これにより、通信失敗、検索器内部失敗、構造化エラー、旧検索中断を同一レイヤで整理できます。
+
 ### 公開イベント契約
 
 #### 要求イベント
 
-| イベント名                         | detail                    | 契約                   |
-| ---------------------------------- | ------------------------- | ---------------------- |
-| `ui-search-dialog-open-requested`  | なし                      | 開く要求を通知します   |
-| `ui-search-dialog-close-requested` | `{ reason: CloseReason }` | 閉じる要求を通知します |
-| `ui-search-dialog-query-changed`   | `{ query: string }`       | 入力変更を通知します   |
+| イベント名                         | detail                               | 契約                   |
+| ---------------------------------- | ------------------------------------ | ---------------------- |
+| `ui-search-dialog-open-requested`  | `{ trigger: HTMLElement \| null }`   | 開く要求を通知します   |
+| `ui-search-dialog-close-requested` | `{ reason: CloseReason }`            | 閉じる要求を通知します |
+| `ui-search-dialog-query-changed`   | `{ query: string }`                  | 入力変更を通知します   |
 
 ```ts
 type CloseReason = 'selection' | 'escape' | 'backdrop' | 'close-button' | 'programmatic';
 ```
 
 要求イベントは、**状態更新要求**を外部へ伝えるためのイベントです。`opened` と `query` を controlled に保つため、内部操作はこのイベント経由で上位へ通知します。
+
+`ui-search-dialog-open-requested` の `detail.trigger` は、起動元要素を外部へ引き渡すための補助情報です。主用途は、close 後の focus 復帰先の決定です。起動元が存在しない場合は `null` とします。
 
 #### ライフサイクルイベント
 
@@ -213,31 +229,45 @@ interface UiSearchDialogSelectedDetail {
 
 ### 公開メソッド
 
-| 名前                    | 種別   | 契約                                     |
-| ----------------------- | ------ | ---------------------------------------- |
-| `focusInput()`          | method | 入力欄へフォーカスを移します             |
-| `focusActiveResult()`   | method | active result がある場合にそこへ移します |
-| `requestOpen(trigger?)` | method | 開く要求を通知します                     |
-| `requestClose(reason?)` | method | 閉じる要求を通知します                   |
+| 名前                     | 種別   | 契約                                                                 |
+| ------------------------ | ------ | -------------------------------------------------------------------- |
+| `focusInput()`           | method | 検索入力へフォーカスを移します。内部的には `ui-search-field.focus()` に委譲します。 |
+| `focusClearButton()`     | method | clear button が利用可能な場合のみ、clear button へフォーカスを移します。利用不能時は no-op です。 |
+| `requestOpen(trigger?)`  | method | 開く要求を通知します。`trigger` を与えた場合、その参照を open request の detail に含めます。 |
+| `requestClose(reason?)`  | method | 閉じる要求を通知します。reason 未指定時は `programmatic` として扱います。 |
 
 `open()` / `close()` のような**強制状態変更メソッド**は、controlled 契約とは相性が悪いため採りません。公開メソッドは request ベースに寄せます。
 
+また、本コンポーネントは **入力欄に主フォーカスを保持し、結果一覧の active state を `aria-activedescendant` で表現するモデル**を採るため、active result へ直接フォーカスを移す公開メソッドは持ちません。
+
 ### 文言契約
 
-文言は固定文字列ではなく、`messages` から供給されるものとして扱います。最低限、次のキーを持ちます。
+文言は固定文字列ではなく、`messages` から供給されるものとして扱います。
 
-- `dialogLabel`
-- `closeLabel`
-- `clearLabel`
-- `loadingHeading`
-- `loadingDescription`
-- `emptyHeading`
-- `emptyDescription`
-- `errorHeading`
-- `errorDescription`
-- `keyboardHint`
+```ts
+interface UiSearchDialogMessages {
+  dialogLabel: string;
+  closeLabel: string;
+  clearLabel: string;
+  loadingHeading: string;
+  loadingDescription: string;
+  emptyHeading: string;
+  emptyDescription: string;
+  errorHeading: string;
+  errorDescription: string;
+  keyboardHint: string;
+}
+```
 
-これにより、日本語固定 UI として閉じるか、差し替え可能な UI とするかを上位で選べます。
+契約は次のとおりです。
+
+* `messages` は**部分指定**を許容します
+* 未指定キーはコンポーネント既定文言へフォールバックします
+* `messages` に含まれる各キーは、空文字列を許容しません
+* `dialogLabel`、`closeLabel`、`clearLabel` は、視覚文言だけでなくアクセシビリティ名の供給元にもなります
+* `errorDescription` は、検索器が返した `error.message` をそのまま露出することを必須としません。既定では安全側に要約表示してよく、詳細露出は上位判断とします
+
+これにより、差し替え可能性を維持しつつ、公開契約としての文言供給面を固定します。
 
 ### 責務範囲
 
@@ -345,9 +375,10 @@ trim 後 query が空です。検索を行いません。結果一覧も empty s
 
 ### 順序契約
 
-- ローカル検索では、**元配列の安定順序**を保持します。
-- 外部 `searcher` 利用時は、**返却順を最終順位**として尊重します。
-- コンポーネント側で独自再ソートは行いません。
+- ローカル検索では、**元配列の安定順序**を保持します
+- 外部 `searcher` 利用時は、**返却順を最終順位**として尊重します
+- コンポーネント側で独自再ソートは行いません
+- 重複除去が発生した場合も、**最初に採用された項目の順序**を保持します
 
 ### latest query wins
 
@@ -361,7 +392,11 @@ trim 後 query が空です。検索を行いません。結果一覧も empty s
 - `title` が非空文字列であること
 - `url` が非空文字列であること
 
-重複除去は `id` 基準で行います。
+重複除去は `id` 基準で行います。重複が複数件ある場合は、**最初に出現した項目を採用し、以後の同一 `id` 項目は破棄**します。
+
+### latest query wins
+
+非同期検索中に query が変わった場合、古い query に対する応答は採用しません。`searcher` には `AbortSignal` を渡し、可能なら検索器側でも中断を受け付けます。
 
 ---
 
@@ -371,19 +406,19 @@ trim 後 query が空です。検索を行いません。結果一覧も empty s
 
 結果一覧表示中は `activeId` を持ちます。active result は index ではなく ID 基準で扱います。
 
-- 初期 active は先頭結果です。
-- `ArrowDown` / `ArrowUp` で循環移動します。
-- 結果集合が差し替わった場合、同一 `id` が残っていれば active を維持します。
-- 同一 `id` が存在しなければ先頭へ戻します。
+- 初期 active は先頭結果です
+- `ArrowDown` / `ArrowUp` で循環移動します
+- 結果集合が差し替わった場合、同一 `id` が残っていれば active を維持します
+- 同一 `id` が存在しなければ先頭へ戻します
 
 ### 選択方法
 
-次の経路で選択できます。
+選択は次の経路で行います。
 
 - 入力欄上での `Enter`
-- 結果行上での `Enter`
 - 結果行 click
-- 結果行上での `Space`
+
+本コンポーネントは、**入力欄に主フォーカスを保持したまま `aria-activedescendant` で active result を表現するモデル**を採ります。したがって、公開契約としては**結果行への直接フォーカス移動を要求しません**。
 
 選択時は `ui-search-dialog-selected` を発火します。選択イベントはナビゲーションを意味しません。上位が必要に応じて遷移します。
 
@@ -401,43 +436,44 @@ dialog の close reason は少なくとも次を区別します。
 
 ### フォーカス復帰
 
-close 後は trigger へフォーカスを戻します。trigger がなければ、上位が与える fallback focus policy に従います。検索面を閉じたあとに focus が消失する状態は許容しません。
+close 後の focus 復帰は、**`ui-search-dialog` の close 契約**として扱います。
+
+- 直近の open 要求または open 成立時に `trigger` 参照がある場合、close 後はその要素へ focus を戻します。
+- `trigger` が `null`、未接続、`disabled`、または focus 不可能な場合は、上位が与える fallback focus policy に従います。
+- 検索面を閉じたあとに focus が消失する状態は許容しません。
+
+`ui-search-trigger` は起動の起点ではありますが、close 後の focus 復帰を自律的に決定・実行する主体ではありません。
+
+### 選択と close の順序
+
+選択によって閉じる場合のイベント順序は、次のとおり固定します。
+
+1. `ui-search-dialog-selected`
+2. `ui-search-dialog-close-requested` with `reason='selection'`
+3. 外部が `opened=false` を反映
+4. `ui-search-dialog-closed` with `reason='selection'`
+
+外部が `opened=false` を反映しない限り、`ui-search-dialog-closed` は発火しません。
 
 ---
 
 ## DOM / Accessibility
 
-ルートは `:host` です。Shadow DOM 内部では、dialog、live region、header、body、footer を持ちます。
-
-```text
-<ui-search-dialog>
-  #shadow-root
-    <dialog aria-modal="true" ...>
-      <div aria-live="polite" aria-atomic="true">...</div>
-      <div class="header">
-        <ui-search-field ...></ui-search-field>
-        <button type="button">...</button>
-      </div>
-      <div class="body">
-        [loading-state]
-        [empty-state]
-        [error-state]
-        [result-list]
-      </div>
-      <div class="footer" aria-hidden="true">...</div>
-    </dialog>
-</ui-search-dialog>
-```
+ルートは `:host` です。内部実装は Shadow DOM を前提としてよいですが、**内部要素の階層や class 名そのものは公開契約に含めません**。
 
 ### Accessibility 契約
 
-- 対話主体はネイティブ `<dialog>` です。
-- dialog は `aria-modal="true"` と適切なラベルを持ちます。
-- 検索入力は combobox として listbox に結び付きます。
-- 結果一覧は `role="listbox"`、各結果行は `role="option"` を持ちます。
-- active option は `aria-activedescendant` で入力に結び付きます。
-- loading / empty / error は live region または status として適切に読み上げられます。
-- footer のキーバインド説明は補助情報であり、既定では `aria-hidden="true"` とします。
+- 対話主体はネイティブ `<dialog>` です
+- dialog は `aria-modal="true"` と適切なラベルを持ちます
+- 検索入力は combobox として listbox に結び付きます
+- 結果一覧は `role="listbox"`、各結果行は `role="option"` を持ちます
+- active option は `aria-activedescendant` で入力に結び付きます
+- loading / empty / error は live region または `role="status"` 相当として適切に読み上げられます
+- footer のキーバインド説明は補助情報であり、既定では `aria-hidden="true"` とします
+
+### フォーカスモデル
+
+本コンポーネントの主フォーカスは、検索入力にあります。結果一覧の active state は `aria-activedescendant` で表現し、**roving tabindex による結果行直接フォーカスモデルは公開契約に採りません**。
 
 ### DOM 安定性契約
 
@@ -446,33 +482,64 @@ close 後は trigger へフォーカスを戻します。trigger がなければ
 - 全件の option が常に DOM 上に存在すること
 - DOM 上の option 数が結果総数と一致すること
 - DOM 順序だけで active item を復元できること
+- 内部スクロールコンテナの具体階層や要素名
 
 公開契約として重要なのは、**意味論が仮想化の有無で変わらないこと**です。
 
+追加で、次を固定します。
+
+- `aria-activedescendant` が指す active option は、**active である間 DOM 上に存在しなければなりません**
+- 仮想化を行う場合でも、active option を DOM から消したまま `aria-activedescendant` だけを残すことは許容しません
+
 ### `ui-search-field` 依存境界
 
-search dialog が `ui-search-field` に要求するのは内部 DOM ではなく、次の抽象操作です。
+search dialog が `ui-search-field` に依存してよいのは、内部 DOM ではなく**公開契約**に限ります。依存してよい公開面は次のとおりです。
 
-- `focusInput()`
-- `hasClearControl()`
-- `focusClearControl()`
+- `focus(options?)`
+- `focusClearButton()`
+- `clearButtonVisible`
+- `value`
+- `input` event
+- `inputRole`
+- `inputAriaControls`
+- `inputAriaExpanded`
+- `inputAriaAutocomplete`
+- `inputAriaActivedescendant`
+- `inputAriaBusy`
+- `inputAriaDescribedby`
 
-依存先コンポーネントの内部 DOM に直接依存しません。
+依存先コンポーネントの内部 DOM、内部 button ノード、内部 input ノード、class 名、Shadow DOM 階層には直接依存しません。
+
+`ui-search-field` は primitive 単体としては自己管理型 input ですが、`ui-search-dialog` との統合時には、**controlled な `query` の表示面**として接続してよいものとします。このとき、`ui-search-dialog` は外部から与えられた `query` を `ui-search-field.value` へ反映し、ユーザー編集は `input` event を介して上位の controlled state へ橋渡しします。
+
+統合時の更新経路は次のとおり固定します。
+
+1. ユーザーが `ui-search-field` を編集する
+2. `ui-search-field` は同期済み `value` を伴って `input` を通知する
+3. `ui-search-dialog` は `ui-search-dialog-query-changed` を発火する
+4. 上位が `query` を更新する
+5. 更新後の `query` が `ui-search-dialog` から `ui-search-field.value` へ再反映される
+
+したがって、`ui-search-field` の自己管理は primitive 単体時の所有モデルであり、`ui-search-dialog` 統合時の controlled query 契約と矛盾しません。
 
 ---
 
 ## キーボード契約
 
-| キー        | 契約                                                     |
-| ----------- | -------------------------------------------------------- |
-| `ArrowDown` | active result を次へ進めます。末尾の次は先頭へ循環します |
-| `ArrowUp`   | active result を前へ戻します。先頭の前は末尾へ循環します |
-| `Enter`     | 入力欄上では active result を選択します                  |
-| `Esc`       | `close-requested` を `reason='escape'` で通知します      |
-| `Tab`       | 入力欄、clear control、close button 間の秩序を維持します |
-| `Space`     | 結果行に直接フォーカスしている場合は選択に使えます       |
+| キー        | 契約                                                                 |
+| ----------- | -------------------------------------------------------------------- |
+| `ArrowDown` | active result を次へ進めます。末尾の次は先頭へ循環します             |
+| `ArrowUp`   | active result を前へ戻します。先頭の前は末尾へ循環します             |
+| `Enter`     | 入力欄上で active result が存在する場合、その結果を選択します        |
+| `Esc`       | `ui-search-dialog-close-requested` を `reason='escape'` で通知します |
+| `Tab`       | 入力欄、clear control、close button 間の秩序を維持します             |
 
-`loading` 中は active move や選択を行いません。古い結果一覧を操作可能なまま残すことは公開契約に含めません。
+追加で、次を固定します。
+
+- IME composition 中の `Enter` は結果選択に使いません
+- `loading` 中は active move や選択を行いません
+- 古い結果一覧を操作可能なまま残すことは公開契約に含めません
+- 結果行に直接フォーカスしたときの追加キーバインドは、将来の内部実装で持ち得ても、公開契約には含めません
 
 ---
 
@@ -511,29 +578,23 @@ dialog は画面上部寄りに配置し、中央へ寄せます。最大幅は�
 - 自動 preview 展開
 - loading 中の派手な演出
 
-### 参照トークン
+### デザイントークンとの関係
 
-本コンポーネントは主として次のトークンに依存します。
+本コンポーネントは、個別トークン名の固定よりも、**意味カテゴリへの依存**を公開契約とします。少なくとも次のカテゴリが供給されていることを前提とします。
 
-| 用途            | トークン                                                                                  |
-| --------------- | ----------------------------------------------------------------------------------------- |
-| dialog 背景     | `--bg-surface-3`                                                                          |
-| 既定文字色      | `--fg-default`                                                                            |
-| 控えめ文字色    | `--fg-muted` / `--fg-subtle`                                                              |
-| 既定境界線      | `--border-default`                                                                        |
-| 角丸            | `--radius-xl` / `--radius-md` / `--radius-sm`                                             |
-| 影              | `--elevation-xl`                                                                          |
-| scrim opacity   | `--opacity-scrim`                                                                         |
-| blur            | `--blur-lg`                                                                               |
-| active row 背景 | `--bg-surface-active`                                                                     |
-| hover 背景      | `--bg-hover`                                                                              |
-| 入力背景        | `--bg-fill-muted`                                                                         |
-| focus ring      | `--focus-ring-width` / `--focus-ring-color` / `--focus-ring-offset` / `--animation-focus` |
-| 余白            | `--space-*`                                                                               |
-| 文字サイズ      | `--text-xs` / `--text-sm` / `--text-base` / `--text-lg` / `--text-xl`                     |
-| アイコンサイズ  | `--icon-base`                                                                             |
-| モーション      | `--duration-fast` / `--duration-normal` / `--ease-in` / `--ease-out`                      |
-| z-index         | `--z-modal` / `--z-backdrop`                                                              |
+- surface
+- foreground
+- muted foreground
+- border
+- active / hover background
+- focus ring
+- spacing
+- radius
+- elevation
+- motion
+- z-index
+
+具体的なトークン名の選定と配線はデザインシステム層の責務です。本書では、個別トークン名そのものを互換性の基準にしません。
 
 ---
 
@@ -587,153 +648,31 @@ trim 後 query が空なら検索は行わず、状態は `idle` です。empty 
 
 ## Storybook 契約
 
-各 Story は見本ではなく、**契約確認点**として扱います。
+各 Story は見本ではなく、**観測可能な契約確認点**として扱います。
 
-| Story                             | 固定する契約                                   |
-| --------------------------------- | ---------------------------------------------- |
-| `ControlledOpenedContract`        | `opened` が外部制御であること                  |
-| `ControlledQueryContract`         | `query` が外部制御であること                   |
-| `FocusReturnContract`             | close 後に trigger へ focus が戻ること         |
-| `LoadingStateEditableInput`       | loading 中でも入力継続ができること             |
-| `EmptyStateContract`              | 非空 query かつ 0 件で empty を表示すること    |
-| `ErrorStateContract`              | search failure を empty と区別できること       |
-| `KeyboardLoopAndEnterSelection`   | Arrow key 循環移動と Enter 選択が成立すること  |
-| `StableItemIdentityContract`      | 結果更新時に ID 基準で active を維持できること |
-| `CloseReasonContract`             | close reason が区別されること                  |
-| `MatchingSemanticsContract`       | 一致対象面とハイライト規則が一致すること       |
-| `VirtualizationSemanticsContract` | 仮想化の有無で意味論が変わらないこと           |
-| `DarkModeTokenContract`           | dark token でも視認性が維持されること          |
+| Story                             | 固定する契約                                                                 |
+| --------------------------------- | ---------------------------------------------------------------------------- |
+| `ControlledOpenedContract`        | 内部操作だけでは最終開閉状態が確定せず、外部の `opened` 反映で確定すること   |
+| `ControlledQueryContract`         | 入力変更が `ui-search-dialog-query-changed` を経由して外部へ返ること         |
+| `FocusReturnContract`             | close 成立後に trigger へ focus が戻ること                                   |
+| `LoadingStateEditableInput`       | loading 中でも入力継続ができ、旧検索結果を操作対象にしないこと               |
+| `EmptyStateContract`              | 非空 query かつ 0 件で empty を表示すること                                  |
+| `ErrorStateContract`              | search failure を empty と区別し、error UI が表示されること                  |
+| `KeyboardLoopAndEnterSelection`   | Arrow key 循環移動と Enter 選択が成立すること                                |
+| `StableItemIdentityContract`      | 結果更新時に ID 基準で active を維持できること                               |
+| `CloseReasonContract`             | `escape` / `backdrop` / `close-button` / `selection` / `programmatic` を区別できること |
+| `SelectionEventOrderContract`     | 選択時に `selected` → `close-requested` → 外部反映 → `closed` の順になること |
+| `MatchingSemanticsContract`       | 一致対象面とハイライト規則が一致すること                                     |
+| `VirtualizationSemanticsContract` | 仮想化の有無で意味論が変わらず、active option が常にアクセシブルであること   |
+| `DarkModeTokenContract`           | dark token でも視認性が維持されること                                        |
 
 ---
-
-## 追加を検討する価値がある機能
-
-本節は、`ui-search-dialog` に将来追加する価値がある機能を、**責務の明確化に寄与するもの**と、**探索効率を上げるもの**に分けて整理するものです。ここでいう「価値がある」とは、単に機能数を増やせるという意味ではなく、読書体験を壊さずに検索面の完成度を上げられることを意味します。
-
-### 最優先で検討する価値がある機能
-
-#### 1. 明示的な error state と retry 導線
-
-現行の検索 UI において、最も優先度が高い追加機能は error state の明示化です。zero result と検索失敗を区別できない構成は、利用者にも上位実装にも不利益が大きいためです。
-
-この機能を追加する場合は、少なくとも次を満たします。
-
-- `empty` と `error` を別状態として扱う
-- `errorHeading` と `errorDescription` を文言契約に含める
-- `retryable` な失敗には再試行導線を用意する
-- retry は内部再実行ではなく、要求イベントまたは `searcher` 再実行として扱う
-
-#### 2. 検索結果項目の安定 ID
-
-結果項目の安定 ID は、検索体験を派手に変える機能ではありませんが、契約の強度を大きく上げます。active result の維持、重複除去、分析、履歴保存、将来の grouped result に必要なためです。
-
-この機能を追加する場合は、次を満たします。
-
-- `UiSearchDialogItem.id` を必須化する
-- 重複除去を `id` 基準へ統一する
-- option 識別と `aria-activedescendant` も ID 基準に寄せる
-- 選択 detail に `id` を含める
-
-#### 3. 選択 detail の拡張
-
-選択イベントに `url` と `title` だけを含める設計は最小限ではありますが、上位でのナビゲーション、分析、履歴保存には情報が不足します。
-
-この機能を追加する場合は、次の情報を含める方がよいです。
-
-- `id`
-- `query`
-- `index`
-- `item`
-- `selectionMethod`
-
-これにより、選択時の文脈を追加の状態参照なしに上位へ渡せます。
-
-#### 4. request event と close reason の強化
-
-controlled 契約を採る場合、内部状態変更よりも request event の明確化が重要です。とくに close reason を構造化すると、Esc、backdrop、close button、selection、programmatic を区別でき、上位状態機械が組みやすくなります。
-
-この機能を追加する場合は、次を満たします。
-
-- `ui-search-dialog-open-requested` を正式な公開イベントとして固定する
-- `ui-search-dialog-close-requested` に `reason` を必須 detail として含める
-- `ui-search-dialog-closed` にも同じ reason を引き継ぐ
-- `query` 更新は `ui-search-dialog-query-changed` で外部へ返す
-
-#### 5. `searcher` 契約の拡張
-
-検索責務を外部化する設計を採るなら、`searcher` は単純な `query => results` から、文脈付き契約へ拡張する価値があります。非同期検索、中断、部分結果、locale、エラー情報を扱えるためです。
-
-この機能を追加する場合は、次を満たします。
-
-- `AbortSignal` を渡す
-- 必要なら `limit` と `locale` を渡す
-- `items` だけでなく `error`、`total`、`isPartial` を返せるようにする
-- stale response を UI が採用しないことを維持する
-
-### 条件付きで検討する価値がある機能
-
-#### 6. 文言外部化と locale 対応
-
-Rouault を日本語中心で維持するなら必須ではありませんが、文体統一、差し替え、アクセシビリティ改善を柔軟に行いたい場合には価値があります。
-
-この機能を追加する場合は、次を満たします。
-
-- `messages` を公開入力として扱う
-- loading / empty / error / close / clear などの文言を外部化する
-- locale を `searcher` 契約や正規化規則と接続できるようにする
-
-#### 7. 一致対象面の明示設定
-
-検索対象が将来増える場合、`matchFields` による opt-in 設定は価値があります。`excerpt`、`tags`、`aliases` を追加したい場面で有効です。
-
-この機能を追加する場合は、次を満たします。
-
-- 既定一致対象面は狭く保つ
-- 追加面は opt-in とする
-- ハイライト規則も同じ対象面・正規化規則に従わせる
-
-#### 8. 結果グルーピング
-
-検索対象が単一種別であるうちは不要ですが、記事、ノート、見出し、注釈など複数種別を横断する場合には価値があります。
-
-この機能を追加する場合は、次を満たします。
-
-- グループ見出しが keyboard navigation を壊さない
-- active result はグループをまたいでも一貫して扱える
-- 視覚情報量を増やしすぎず、本文より検索面が主役にならない
-
-### 原則として優先しない機能
-
-次の機能は便利に見えても、読書の没入や責務分離を損ないやすいため、原則として優先しません。
-
-- 常時表示の preview pane
-- 選択時の自動遷移内蔵
-- 最近の検索履歴や頻出項目の複雑な個人化
-- 複数検索ソースの暗黙マージ
-- 派手なアニメーションや進捗演出
-
-これらは探索効率よりも検索面の主役化につながりやすいため、別コンポーネントまたは別レイヤで扱う方が適切です。
-
-### 優先順位の要約
-
-優先順位をまとめると次の順です。
-
-1. 明示的な error state と retry 導線
-2. 検索結果項目の安定 ID
-3. 選択 detail の拡張
-4. request event と close reason の強化
-5. `searcher` 契約の拡張
-6. 文言外部化と locale 対応
-7. 一致対象面の明示設定
-8. 結果グルーピング
-
-この順序は、見た目の豊かさではなく、**契約の強度、責務分離、探索効率**を優先して定めます。
 
 ## 補足
 
 `ui-search-dialog` の要点は、検索機能を多く持つことではありません。**外部が状態を持ち、dialog は探索面としてふるまい、結果を通知して静かに閉じること**にあります。
 
-今後の変更でも、少なくとも次は崩さない方がよいです。
+今後の変更でも、少なくとも次は崩しません。
 
 - `opened` と `query` は controlled state として扱うこと
 - 選択と遷移を分離すること
@@ -741,6 +680,8 @@ Rouault を日本語中心で維持するなら必須ではありませんが、
 - 結果項目を安定 ID で扱うこと
 - 仮想化しても意味論を変えないこと
 - close 後の focus return を維持すること
+
+将来拡張は、本文契約を壊さない範囲でのみ扱います。拡張案がある場合でも、まず本文契約へ吸収できるかを検討し、吸収できないものだけを別文書で管理します。
 
 ---
 

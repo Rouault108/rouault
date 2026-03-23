@@ -24,7 +24,6 @@ Rouault における search field は、検索導線でありながら、**本�
 - 関連契約
 - 境界条件
 - Storybook 契約
-- 新規で追加を検討する価値がある機能
 - 現行実装で未対応の事項
 
 一方で、本書は次の事項を扱いません。
@@ -35,96 +34,90 @@ Rouault における search field は、検索導線でありながら、**本�
 - URL 同期や検索結果一覧の制御
 - 入力値の debounce、正規化、トリミング、履歴管理
 - フォーム送信、検索実行、サーバー問い合わせの上位制御
-- エラー表示、補助説明文、履歴候補、ショートカットヒントの提示
+- 意味付き独自イベント（`query-change`、`query-commit` など）
+- Form Associated Custom Element としてのフォーム統合
+- `clear()` とは別の値更新専用派生 API
+- slot やトークンによるアイコン差し替え面
+- エラー表示、履歴候補、検索結果件数、live region の提示そのもの
 
 これらは上位レイヤまたは別コンポーネントの責務です。
+
+ただし、外部説明ノードとの関連付け、およびネイティブ input が本来持つ入力ヒント属性の反映は、`ui-search-field` の責務を壊さない範囲の公開契約として扱います。
 
 ---
 
 ## 公開契約
 
-`ui-search-field` は、`label`、`hideLabel`、`name`、`placeholder`、`value`、`autocomplete`、`disabled`、`readonly`、`clearable`、`clearButtonLabel`、`inputRole`、`inputAriaControls`、`inputAriaExpanded`、`inputAriaAutocomplete`、`inputAriaActivedescendant`、`inputAriaBusy` を公開入力として扱います。また、`clearButtonVisible` を**公開読み取り状態**として扱います。内部実装は検索アイコン、`<input type="search">`、clear button を持つ複合構造ですが、利用者は `ui-search-field` を契約単位として扱います。
+`ui-search-field` は、`label`、`hideLabel`、`name`、`placeholder`、`value`、`autocomplete`、`disabled`、`readonly`、`clearable`、`clearButtonLabel`、`inputRole`、`inputAriaControls`、`inputAriaExpanded`、`inputAriaAutocomplete`、`inputAriaActivedescendant`、`inputAriaBusy`、`inputAriaDescribedby`、`enterKeyHint`、`inputMode`、`spellcheck`、`autocapitalize` を公開入力として扱います。また、`clearButtonVisible` を**公開読み取り状態**として扱います。内部実装は検索アイコン、`<input type="search">`、clear button を持つ複合構造ですが、利用者は `ui-search-field` を契約単位として扱います。
 
-`label` は必須です。実装上は未指定時に開発時警告を出すにとどまりますが、公開契約としては**必須入力**です。`hideLabel=true` はラベルの単なる非表示ではなく、**視覚的に隠しつつアクセシブル名を維持する状態**として扱います。
+本書では契約強度を次の 4 段階で扱います。
 
-`value` は、**自己管理型の現在値**です。内部 input からの変更時には `ui-search-field` 自身の `value` が更新され、`input` または `change` が再送出されます。`clear()` による消去も `value` を空文字へ更新し、`input` を再送出します。
-
-`value` は**生入力を保持する公開値**として扱います。本コンポーネントは `value` に対して trim、debounce、正規化、全角半角統一、case folding、検索語分割を行いません。これらの変換は上位レイヤの責務です。
-
-利用者が `value` property を直接代入した場合、本コンポーネントはそれを**静かな状態更新**として扱います。すなわち、property 代入それ自体では `input` も `change` も発火しません。イベント発火はユーザー操作、または `clear()` のような公開操作に結び付く場合に限ります。
-
-`inputRole` および各種 `inputAria*` は、検索候補 UI と組み合わせる場合の**限定的な Combobox 用 ARIA 受け皿**です。これらは内部 input にそのまま反映するための公開面であり、`ui-search-field` 自身が listbox や popup を描画するわけではありません。本コンポーネントは Combobox 本体ではなく、**検索入力本体に限定的な ARIA adapter を付与できる primitive**として扱います。
+- **必須**: 利用者が満たさなければならない入力です。
+- **保証**: 利用者が依存してよい安定挙動です。
+- **許容**: 値は受け取りますが、意味の妥当性は利用者責務です。
+- **契約外**: 実装上は反映され得ますが、意味や将来互換を保証しません。
 
 ### 入力契約
 
-| 名前                        | 種別                                        | 必須   | 内容                          | 契約                                                                |
-| --------------------------- | ------------------------------------------- | ------ | ----------------------------- | ------------------------------------------------------------------- |
-| `label`                     | property / attribute                        | はい   | ラベル文字列                  | 空文字は契約違反です                                                |
-| `hideLabel`                 | property / attribute (`hide-label`)         | いいえ | ラベルの視覚非表示            | `true` の場合もアクセシブル名は維持します                           |
-| `name`                      | property / attribute                        | いいえ | 内部 input の name            | 文字列をそのまま内部 input に反映します。フォーム参加は保証しません |
-| `placeholder`               | property / attribute                        | いいえ | プレースホルダー              | 補助文言であり、ラベルの代替にはしません                            |
-| `value`                     | property / attribute                        | いいえ | 入力値                        | 自己管理型の現在値です。property 代入は無音で反映します             |
-| `autocomplete`              | property / attribute                        | いいえ | 自動補完ヒント                | 既定値は `off` です                                                 |
-| `disabled`                  | property / attribute                        | いいえ | 不活性状態                    | `true` の場合、入力と clear を禁止します                            |
-| `readonly`                  | property / attribute                        | いいえ | 読み取り専用状態              | `true` の場合、編集と clear を禁止します                            |
-| `clearable`                 | property / attribute                        | いいえ | clear 機能の有効化            | 既定値は `true` です                                                |
-| `clearButtonLabel`          | property / attribute (`clear-button-label`) | いいえ | clear button のアクセシブル名 | 既定値は `検索をクリア` です                                        |
-| `inputRole`                 | property のみ                               | いいえ | 内部 input の role            | 主用途は `combobox` です                                            |
-| `inputAriaControls`         | property のみ                               | いいえ | 関連 popup / listbox ID       | 内部 input の `aria-controls` に反映します                          |
-| `inputAriaExpanded`         | property のみ                               | いいえ | 展開状態                      | `true` / `false` / 空文字を受理します                               |
-| `inputAriaAutocomplete`     | property のみ                               | いいえ | 補完方式                      | `list` / `both` / `inline` / `none` / 空文字を受理します            |
-| `inputAriaActivedescendant` | property のみ                               | いいえ | 現在アクティブな候補 ID       | 内部 input の `aria-activedescendant` に反映します                  |
-| `inputAriaBusy`             | property のみ                               | いいえ | 候補更新中状態                | `true` / `false` / 空文字を受理します                               |
+| 名前                        | 種別                                        | 必須   | 内容                              | 契約                                                                 |
+| --------------------------- | ------------------------------------------- | ------ | --------------------------------- | -------------------------------------------------------------------- |
+| `label`                     | property / attribute                        | はい   | ラベル文字列                      | 空文字は契約違反です                                                 |
+| `hideLabel`                 | property / attribute (`hide-label`)         | いいえ | ラベルの視覚非表示                | `true` の場合もアクセシブル名は維持します                            |
+| `name`                      | property / attribute                        | いいえ | 内部 input の name                | 文字列をそのまま内部 input に反映します。フォーム参加は保証しません  |
+| `placeholder`               | property / attribute                        | いいえ | プレースホルダー                  | 補助文言であり、ラベルの代替にはしません                             |
+| `value`                     | property / attribute                        | いいえ | 入力値                            | 自己管理型の現在値です。property 代入は無音で反映します              |
+| `autocomplete`              | property / attribute                        | いいえ | 自動補完ヒント                    | 既定値は `off` です                                                  |
+| `disabled`                  | property / attribute                        | いいえ | 不活性状態                        | `true` の場合、入力と clear を禁止します                             |
+| `readonly`                  | property / attribute                        | いいえ | 読み取り専用状態                  | `true` の場合、編集と clear を禁止します                             |
+| `clearable`                 | property / attribute                        | いいえ | clear 機能の有効化                | 既定値は `true` です                                                 |
+| `clearButtonLabel`          | property / attribute (`clear-button-label`) | いいえ | clear button のアクセシブル名     | 既定値は `検索をクリア` です                                         |
+| `inputRole`                 | property のみ                               | いいえ | 内部 input の role                | 主用途は `combobox` です                                             |
+| `inputAriaControls`         | property のみ                               | いいえ | 関連 popup / listbox ID           | 内部 input の `aria-controls` に反映します                           |
+| `inputAriaExpanded`         | property のみ                               | いいえ | 展開状態                          | `true` / `false` / 空文字を受理します                                |
+| `inputAriaAutocomplete`     | property のみ                               | いいえ | 補完方式                          | `list` / `both` / `inline` / `none` / 空文字を受理します             |
+| `inputAriaActivedescendant` | property のみ                               | いいえ | 現在アクティブな候補 ID           | 内部 input の `aria-activedescendant` に反映します                   |
+| `inputAriaBusy`             | property のみ                               | いいえ | 候補更新中状態                    | `true` / `false` / 空文字を受理します                                |
+| `inputAriaDescribedby`      | property のみ                               | いいえ | 外部説明ノード ID 群              | 内部 input の `aria-describedby` に反映します。説明文自体は描画しません |
+| `enterKeyHint`              | property / attribute (`enterkeyhint`)       | いいえ | 仮想キーボードの Enter 表示ヒント | 内部 input の `enterkeyhint` に反映します                            |
+| `inputMode`                 | property / attribute (`inputmode`)          | いいえ | 入力モードヒント                  | 内部 input の `inputmode` に反映します                               |
+| `spellcheck`                | property / attribute                        | いいえ | スペルチェック可否                | 内部 input の `spellcheck` に反映します                              |
+| `autocapitalize`            | property / attribute                        | いいえ | 自動大文字化ヒント                | 内部 input の `autocapitalize` に反映します                          |
 
 ### 公開状態
 
-`ui-search-field` は、利用者が Shadow DOM 内部構造へ依存せずに状態を読めるよう、次の派生状態を公開します。
-
-| 名前                 | 種別              | 契約                                                                                   |
-| -------------------- | ----------------- | -------------------------------------------------------------------------------------- |
-| `clearButtonVisible` | readonly property | `clearable && !disabled && !readonly && value.length > 0` を満たすときのみ `true` です |
-
-`clearButtonVisible` は DOM 実装の詳細を公開するものではありません。保証するのは、**clear 操作が視覚的かつ操作的に利用可能かどうか**であり、内部 button ノードの常時存在や `hidden` 属性の使い方までは公開契約に含めません。
+| 名前 | 種別 | 契約 |
+| --- | --- | --- |
+| `clearButtonVisible` | readonly property | `clearable && !disabled && !readonly && value.length > 0` のときのみ `true` です。保証するのは **clear 操作が視覚的かつ操作的に利用可能であること** であり、内部 button ノードの保持方法は公開しません。 |
 
 ### 公開メソッド
 
-`ui-search-field` は、内部 input または clear button への主要操作を Shadow DOM 外へ公開するため、次の公開メソッドを持ちます。
+| 名前 | 種別 | 契約 |
+| --- | --- | --- |
+| `focus(options?)` | method | 内部 input にフォーカスを委譲します。 |
+| `blur()` | method | 内部 input からフォーカスを外します。 |
+| `select()` | method | 内部 input の全選択を行います。 |
+| `setSelectionRange(start, end, direction?)` | method | 内部 input の選択範囲を設定します。 |
+| `clear()` | method | 編集可能時のみ `value` を空文字へ更新し、内部 input に同期し、`input` を 1 回通知し、内部 input へ再フォーカスします。`disabled=true` または `readonly=true` の場合は no-op です。 |
+| `focusClearButton()` | method | `clearButtonVisible === true` のときのみ clear button にフォーカスします。それ以外は no-op です。 |
 
-| 名前                                        | 種別   | 契約                                                                                  |
-| ------------------------------------------- | ------ | ------------------------------------------------------------------------------------- |
-| `focus(options?)`                           | method | 内部 input にフォーカスを委譲します                                                   |
-| `blur()`                                    | method | 内部 input からフォーカスを外します                                                   |
-| `select()`                                  | method | 内部 input の全選択を行います                                                         |
-| `setSelectionRange(start, end, direction?)` | method | 内部 input の選択範囲を設定します                                                     |
-| `clear(options?)`                           | method | 編集可能時のみ `value` を空文字へ更新し、`input` を再送出し、入力へ再フォーカスします |
-| `focusClearButton()`                        | method | clear button が可視のときのみ clear button にフォーカスを移します                     |
-
-これらは Shadow DOM 内部探索へ依存させないための公開面です。利用者は内部 input や内部 button を直接取得せず、まずこれらの公開メソッドを利用します。
-
-これらのメソッドは、**接続済みかつ描画済みのコンポーネントに対して呼び出す**ことを前提とします。本コンポーネントは未接続状態や利用側のライフサイクル不整合を吸収するための待機・再試行機構を持ちません。`select()` および `setSelectionRange()` は内部 input へ直接委譲する公開面であり、選択可能状態の管理や独自例外制御を追加しません。`focusClearButton()` は clear button 非表示時には no-op です。
+これらのメソッドは、**接続済みかつ描画済みのインスタンス**に対して呼び出すことを前提とします。未接続状態に対する待機・再試行・独自例外吸収は契約に含めません。
 
 ### イベント契約
 
-`ui-search-field` は内部 input のイベントをそのまま露出するのではなく、必要なイベントをホスト要素から再送出します。
+`ui-search-field` が公開するイベントは、内部 input のネイティブイベント転送ではありません。**ホスト要素から新たに通知する host notification** です。利用者が依存してよいのは、**イベント種別**と**発火時点で同期済みの `ui-search-field.value`** に限ります。`InputEvent.data`、`inputType`、`isComposing`、詳細な `composedPath()`、元の `target` などの保持は保証しません。
 
-再送出されるイベントは、**元のネイティブイベントをそのまま転送するものではなく、ホスト要素から新たに生成されるイベント**です。したがって、利用者は `InputEvent.data`、`inputType`、`isComposing`、詳細な `composedPath()`、元の `target` など、ネイティブイベント固有の付随情報に依存しません。利用者が依存してよいのは、イベント種別と、発火時点で同期済みの `ui-search-field.value` です。
+| 名前 | 発火条件 | bubbles | composed | 契約 |
+| --- | --- | --- | --- | --- |
+| `input` | 内部 input の入力時、または `clear()` 実行時 | あり | あり | `value` 同期後にホスト要素から通知します。 |
+| `change` | 内部 input の `change` 時 | あり | あり | `value` 同期後にホスト要素から通知します。 |
+| `focus` | 内部 input が focus した時 | なし | なし | ホスト要素から通知します。ネイティブ `focus` の完全転送ではありません。 |
+| `blur` | 内部 input が blur した時 | なし | なし | ホスト要素から通知します。ネイティブ `blur` の完全転送ではありません。 |
 
-| 名前     | 発火条件                                     | bubbles | composed | 契約                         |
-| -------- | -------------------------------------------- | ------- | -------- | ---------------------------- |
-| `input`  | 内部 input の入力時、または `clear()` 実行時 | あり    | あり     | `value` 更新後に再送出します |
-| `change` | 内部 input の change 時                      | あり    | あり     | `value` 更新後に再送出します |
-| `focus`  | 内部 input が focus した時                   | なし    | なし     | ホスト要素から再送出します   |
-| `blur`   | 内部 input が blur した時                    | なし    | なし     | ホスト要素から再送出します   |
-
-`input` と `change` は、受信時点で `ui-search-field.value` が同期済みであることを保証します。`clear()` は `value` 更新、内部 input への同期、`input` の再送出、再フォーカスの順で処理します。
-
-`clear()` は `input` を再送出しますが、`change` は再送出しません。利用者は clear 操作完了の検知を `input` 側で扱います。
-
-`focus` および `blur` もホスト要素から再送出されますが、`focusin` / `focusout` は公開しません。また、これらは内部 input の状態変化をホスト外へ通知するための公開面であり、`relatedTarget` などの詳細情報保持を保証しません。
+`clear()` は `input` を通知しますが、`change` は通知しません。
 
 ### 属性反映契約
 
-公開入力のうち、`label`、`hideLabel`、`name`、`placeholder`、`value`、`autocomplete`、`disabled`、`readonly`、`clearable`、`clearButtonLabel` は property と attribute の両面から入力できます。ただし、`inputRole` および各種 `inputAria*` は **property 専用**です。
+公開入力のうち、`label`、`hideLabel`、`name`、`placeholder`、`value`、`autocomplete`、`disabled`、`readonly`、`clearable`、`clearButtonLabel`、`enterKeyHint`、`inputMode`、`spellcheck`、`autocapitalize` は property と attribute の両面から入力できます。ただし、`inputRole` および各種 `inputAria*` は **property 専用**です。
 
 | property                    | attribute            | reflect | 備考                               |
 | --------------------------- | -------------------- | ------- | ---------------------------------- |
@@ -144,28 +137,17 @@ Rouault における search field は、検索導線でありながら、**本�
 | `inputAriaAutocomplete`     | なし                 | なし    | property のみ                      |
 | `inputAriaActivedescendant` | なし                 | なし    | property のみ                      |
 | `inputAriaBusy`             | なし                 | なし    | property のみ                      |
-
-### 値モデルと状態更新
-
-本コンポーネントは、外部から現在値を読める一方で、内部のユーザー操作に応じて自ら `value` を更新する**自己管理型**のモデルを採用します。利用者は、完全制御コンポーネントとして扱うのではなく、現在値を読む、必要に応じて上書きする、イベントで追従する、という使い方を前提とします。
-
-`value` property の代入は、公開状態を書き換えるための無音操作です。入力イベントの代替にはしません。検索開始、debounce、URL 同期、検索語正規化は、常に上位レイヤが担当します。
-
-### 列挙外値・無効値の扱い
-
-`inputAriaExpanded`、`inputAriaAutocomplete`、`inputAriaBusy` は、公開上は列挙値を契約とします。実装は実行時に値検証を行わないため、列挙外値を与えること自体は可能ですが、アクセシビリティ上の意味は未定義です。利用者は列挙外値に依存しません。
-
-`inputRole` は実装上任意文字列を受理しますが、契約上の主用途は `combobox` です。検索入力以外の役割を付与する用途には用いません。
-
-`autocomplete` は HTML 標準に準拠した文字列を内部 input へそのまま反映します。本コンポーネントは値の正当性を独自検証しません。
-
-`label` 欠落や ARIA 列挙外値のような契約違反入力に対して、本コンポーネントが行う実行時強制は限定的です。`label` 欠落時には開発時警告を出しますが、描画停止や例外送出は行いません。ARIA 列挙外値についても自動補正や拒否は行いません。契約の主たる強制力は、文書契約、Storybook 契約、および開発時検知に置きます。
+| `inputAriaDescribedby`      | なし                 | なし    | property のみ                      |
+| `enterKeyHint`              | `enterkeyhint`       | なし    | 内部 input に反映します            |
+| `inputMode`                 | `inputmode`          | なし    | 内部 input に反映します            |
+| `spellcheck`                | `spellcheck`         | なし    | 内部 input に反映します            |
+| `autocapitalize`            | `autocapitalize`     | なし    | 内部 input に反映します            |
 
 ### 責務範囲
 
-責務範囲には、内部検索 input の描画、検索アイコンの配置、ラベルの視覚非表示処理、clear button の出し分け、公開状態の提供、入力イベントの再送出、フォーカス委譲、限定的な Combobox 用 ARIA 属性の反映を含みます。
+責務範囲には、内部検索 input の描画、検索アイコンの配置、ラベルの視覚非表示処理、clear button の出し分け、公開状態の提供、入力イベントの再送出、フォーカス委譲、限定的な Combobox 用 ARIA 属性の反映、外部説明ノードとの関連付け、およびネイティブ入力ヒント属性の反映を含みます。
 
-一方で、候補一覧の開閉、候補選択ロジック、検索実行タイミング、検索 API 呼び出し、URL 同期、検索結果面の更新、説明文やエラー文言の提示、フォーム送信参加は責務に含めません。
+一方で、候補一覧の開閉、候補選択ロジック、検索実行タイミング、検索 API 呼び出し、URL 同期、検索結果面の更新、説明文やエラー文言そのものの描画、意味付き独自イベント、フォーム送信参加、値更新専用の派生 API、slot やアイコン差し替え面は責務に含めません。
 
 ---
 
@@ -215,25 +197,23 @@ clear button の表示条件は、次式で固定します。
 
 ## DOM / Accessibility
 
-ルートは `:host` です。Shadow DOM 内部にラベル、field コンテナ、検索アイコン、`<input type="search">`、clear button を持ちます。
+ルートは `:host` です。Shadow DOM 内部には、**ラベル**、**検索 input**、**検索アイコン**、**clear 操作用 button** が存在します。公開契約が保証するのは役割と意味であり、内部 class 名、ノード数、アイコン実装、`hidden` 属性の有無、絶対配置か否かといった実装方式ではありません。
+
+下記は説明用の概略であり、**参考構造**です。これ自体を公開 DOM 契約とはみなしません。
 
 ```text
 <ui-search-field>
   #shadow-root
-    <label for="..." class="label [label--hidden]">...</label>
-    <div class="field">
-      <span class="icon" aria-hidden="true">
-        <iconify-icon icon="lucide:search"></iconify-icon>
-      </span>
-      <input type="search" ... />
-      <button class="clear-button" type="button" [hidden]>
-        <iconify-icon icon="lucide:circle-x" aria-hidden="true"></iconify-icon>
-      </button>
-    </div>
+    <label>...</label>
+    <container>
+      <search-icon aria-hidden="true" />
+      <input type="search" />
+      <button type="button">clear</button>
+    </container>
 </ui-search-field>
 ```
 
-`ui-search-field` は `delegatesFocus: true` を有効にしており、ホストへの `focus()` は内部 input に到達します。公開メソッド `focus()`、`blur()`、`select()`、`setSelectionRange()`、`clear()` も内部 input または clear button に委譲されます。
+`ui-search-field` は `delegatesFocus: true` を有効にし、ホストへの `focus()` を内部 input へ委譲します。公開メソッドは Shadow DOM 内探索の代替であり、利用者は内部ノードの直接取得に依存しません。
 
 ### Accessibility 契約
 
@@ -249,8 +229,10 @@ clear button の表示条件は、次式で固定します。
 - 検索アイコンは装飾要素であり、`aria-hidden="true"` を持ちます。
 - clear button は `aria-label` として `clearButtonLabel` を持ちます。
 - Combobox 用 ARIA は内部 input に反映されますが、popup / option 自体の整合性は上位レイヤの責務です。
-- pass-through の対象は `role`、`aria-controls`、`aria-expanded`、`aria-autocomplete`、`aria-activedescendant`、`aria-busy` に限定します。
-- `aria-describedby`、`aria-labelledby`、`aria-haspopup`、`aria-owns` など、そのほかの ARIA を本コンポーネントの公開入力としては受け付けません。
+- pass-through の対象は `role`、`aria-controls`、`aria-expanded`、`aria-autocomplete`、`aria-activedescendant`、`aria-busy`、`aria-describedby` に限定します。
+- `inputAriaDescribedby` は説明関係の接続のみを扱います。説明文、エラー文言、ショートカットヒント自体の描画責務は持ちません。
+- `aria-labelledby`、`aria-haspopup`、`aria-owns` など、そのほかの ARIA を本コンポーネントの公開入力としては受け付けません。
+- `enterKeyHint`、`inputMode`、`spellcheck`、`autocapitalize` は支援技術を含む入力環境へのヒントとして内部 input に反映されます。
 - フォーカス可視表示は input と clear button の `:focus-visible` で扱います。
 - `.field::after` と `.clear-button::after` により、最小タッチ領域を補います。
 
@@ -258,15 +240,15 @@ clear button の表示条件は、次式で固定します。
 
 ### フォーム関連の注意
 
-`ui-search-field` は Form Associated Custom Element ではありません。したがって、外側フォームとの送信値連携は公開契約に含めません。
+`ui-search-field` は Form Associated Custom Element ではありません。したがって、外側フォームへの送信値統合、`FormData` 連携、ネイティブバリデーション参加は公開契約に含めません。
 
-`name` は内部 input へ反映する公開入力ですが、現行契約では**フォーム参加の予約面ではなく、入力要素へ引き渡すメタデータ**として扱います。`name` を持つことによって、外側フォーム送信、`FormData` 連携、バリデーション参加が自動成立することは保証しません。
+`name` は内部 input へ渡す補助入力であり、フォーム統合の予約面ではありません。将来フォーム参加を導入する場合でも、現行の `name` 契約を自動拡張したものとして扱いません。
 
 ---
 
 ## Visual Contract
 
-`ui-search-field` の視覚契約は、検索入力としての認知しやすさを維持しながら、**本文や見出しより前に出すぎない静かな入力面**として成立させることにあります。
+`ui-search-field` の視覚契約は、**検索開始点として即時に認知できること**と、**本文領域の主情報順位を逆転させないこと**の両立にあります。したがって、検証対象は、情報順位、寸法、余白、状態差、フォーカス可視性、環境適応の 6 点です。
 
 ### 情報順位
 
@@ -289,7 +271,7 @@ clear button の表示条件は、次式で固定します。
 - clear button は右側に絶対配置し、入力本文の末尾と重なりません。
 - input フォントはグローバルな文字メトリクス補正済みフォントを継承します。
 
-本文近傍では、検索入力は導線として十分に知覚できれば足ります。常時強い境界線、持続的な発光、過度な立体表現には依存しません。
+本文近傍での既定表示は、**低彩度・低装飾・明確なフォーカス可視性**を原則とします。境界線、影、hover 差、アニメーションは状態差の判別に必要な最小限に留め、常時の強調表現には使いません。
 
 ### フォーカス表示
 
@@ -381,8 +363,17 @@ clear 操作は、単なる見た目の消去ではなく、**状態更新と再
 | `inputAriaAutocomplete`     | `aria-autocomplete`     | 補完方式を外部から与えます         |
 | `inputAriaActivedescendant` | `aria-activedescendant` | 現在候補 ID を外部から与えます     |
 | `inputAriaBusy`             | `aria-busy`             | 候補更新中状態を外部から与えます   |
+| `inputAriaDescribedby`      | `aria-describedby`      | 外部説明ノード ID 群を参照します   |
 
 利用者は、これらの属性を与えたからといって候補描画やキーボードナビゲーションが自動で成立することを期待しません。
+
+### 説明関連付け契約
+
+`inputAriaDescribedby` は、補助説明、ショートカット案内、補足状態、外部エラー文言などの**説明ノードとの接続面**です。`ui-search-field` は関連付けのみを扱い、説明文そのものの描画責務は持ちません。
+
+### ネイティブ入力ヒント契約
+
+`enterKeyHint`、`inputMode`、`spellcheck`、`autocapitalize` は、検索責務を拡張するための機能ではなく、**ネイティブ `<input>` が本来持つ入力環境ヒントを公開するための pass-through 面**です。これらは内部 input に反映されますが、入力値の正規化、変換、検索確定の意味付けは行いません。
 
 ### フォーム非統合契約
 
@@ -396,49 +387,48 @@ clear 操作は、単なる見た目の消去ではなく、**状態更新と再
 
 本コンポーネントは slot を公開しません。検索アイコンと clear アイコンも現行契約では差し替え面を持ちません。したがって、任意コンテンツの差し込み、内部装飾ノードの交換、内部レイアウトの再編成は公開拡張面に含めません。
 
+### `ui-search-dialog` 統合契約
+
+`ui-search-field` は primitive 単体としては**自己管理型 input** です。ただし、`ui-search-dialog` のような上位コンポーネントが controlled な `query` を所有する場合、`ui-search-field` はその**表示面**として接続してよいものとします。
+
+この統合において、次を固定します。
+
+- 上位コンポーネントは `value` property へ外部状態を再反映できます。
+- `value` property 代入は無音反映であり、外部状態同期の妨げになりません。
+- ユーザー編集時は、同期済み `value` を伴う `input` event をホストから通知します。
+- `focus()` は検索入力への focus 委譲 API として利用できます。
+- `focusClearButton()` は `clearButtonVisible === true` の場合のみ利用可能です。
+- `clearButtonVisible` は clear 操作の可用性判定に用いてよく、内部 button ノードの存在判定には用いません。
+
+したがって、`ui-search-field` は自己管理型 primitive でありながら、上位の controlled state と接続可能な入力面として利用できます。
+
 ---
 
 ## 境界条件
 
-### ラベル欠落
+### ラベル欠落または空文字
 
-`label` が空文字の場合、実装は接続時に開発時警告を出しますが、描画自体は継続し得ます。公開契約上は契約違反です。
+`label` の欠落または空文字は契約違反です。実装が警告のみで描画を継続しても、その状態はサポート対象ではありません。
 
-### hide-label
+### `value` の property 直接代入
 
-`hideLabel=true` の場合、ラベルは視覚的に隠れますが、削除されません。`placeholder` のみをアクセシブル名源として扱う構成にはしません。
+`value` の property 直接代入は無音更新です。この操作によって `input` または `change` が自動通知されることを期待しません。
 
-### property 直接代入
+### `clear()` の no-op 条件
 
-利用者が `value` を直接代入した場合、その更新は無音で反映されます。この操作によって `input` または `change` が自動発火することを期待しません。
+`disabled=true` または `readonly=true` の場合、`clear()` は no-op です。
 
-### 値なし
+### `focusClearButton()` の no-op 条件
 
-`value=""` の場合、`clearButtonVisible` は `false` です。`clearable=true` でも clear button は表示しません。
+`clearButtonVisible === false` の場合、`focusClearButton()` は no-op です。
 
-### clearable=false
+### ARIA 参照先の不整合
 
-`clearable=false` の場合、値が存在しても clear button は表示しません。`focusClearButton()` も no-op です。
+`inputAriaControls` または `inputAriaActivedescendant` に不正な ID を与えること自体は可能ですが、意味妥当性は利用者責務です。本コンポーネントは参照先の実在を検証しません。
 
-### readonly と disabled
+### 契約外 ARIA 値
 
-`readonly=true` または `disabled=true` の場合、値が存在しても clear button は表示しません。`clear()` も no-op です。
-
-### Combobox 属性のみ付与
-
-`inputAriaControls` や `inputAriaExpanded` を与えても、`inputRole` を適切に与えなければ意味論としては不完全です。本コンポーネントは整合性を自動補正しません。
-
-### 無効な参照 ID
-
-`inputAriaControls` や `inputAriaActivedescendant` に存在しない ID を与えること自体は可能ですが、アクセシビリティ上の意味は未定義です。本コンポーネントは参照先の実在を検証しません。
-
-### clear button へのフォーカス移動
-
-`focusClearButton()` は clear button が可視のときのみ動作します。非表示状態では no-op です。
-
-### clear button の DOM 実装
-
-公開契約が保証するのは clear 操作の利用可能性であり、clear button ノードの常時存在、`hidden` 属性による実装、内部 class 名には依存しません。
+`inputRole`、`inputAriaExpanded`、`inputAriaAutocomplete`、`inputAriaBusy` に契約外の値を与えた場合、値は反映され得ますが、意味や互換性は保証しません。
 
 ---
 
@@ -446,13 +436,15 @@ clear 操作は、単なる見た目の消去ではなく、**状態更新と再
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
 
-| Story                          | 固定する契約                                                                                                                                                                                            |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Default`                      | 検索アイコンが存在し、内部 input が `type="search"` であり、初期状態で clear 操作が利用不能であり、アクセシブル名が `label` により決定され、入力高さ・line-height・padding-block の既定が固定されること |
-| `ClearableState`               | 値あり状態で clear button が表示され、クリック時に `value` と内部 input 値が空文字となり、`input` が 1 回だけ再送出され、入力へ再フォーカスされること                                                   |
-| `ComboboxAriaAndImperativeApi` | Combobox 用 ARIA が内部 input に反映され、`focus()` と `setSelectionRange()` が機能し、`focusClearButton()` で clear button に到達できること                                                            |
-| `DisabledAndReadonlyBoundary`  | `readonly` と `disabled` のいずれでも clear button を表示しないこと                                                                                                                                     |
-| `SurfaceBorderCustomization`   | CSS Custom Properties による背景・border width・border color の上書きが `.field` に反映されること                                                                                                       |
+| Story                          | 固定する契約                                                                                                                                                                                                 |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Default`                      | 検索アイコンが存在し、内部 input が `type="search"` であり、初期状態で clear 操作が利用不能であり、アクセシブル名が `label` により決定され、入力高さ・line-height・padding-block の既定が固定されること      |
+| `ClearableState`               | 値あり状態で clear button が表示され、クリック時に `value` と内部 input 値が空文字となり、`input` が 1 回だけ再送出され、入力へ再フォーカスされること                                                        |
+| `ComboboxAriaAndImperativeApi` | Combobox 用 ARIA が内部 input に反映され、`focus()` と `setSelectionRange()` が機能し、`focusClearButton()` で clear button に到達できること                                                                 |
+| `DescriptionAssociation`       | `inputAriaDescribedby` が内部 input の `aria-describedby` に反映され、説明ノードの描画責務を追加しないこと                                                                                                   |
+| `NativeInputHints`             | `enterKeyHint`、`inputMode`、`spellcheck`、`autocapitalize` が内部 input に反映され、検索確定ロジックや入力値変換を追加しないこと                                                                             |
+| `DisabledAndReadonlyBoundary`  | `readonly` と `disabled` のいずれでも clear button を表示せず、`clear()` が no-op であること                                                                                                                 |
+| `SurfaceBorderCustomization`   | CSS Custom Properties による背景・border width・border color の上書きが `.field` に反映されること                                                                                                            |
 
 ---
 
@@ -467,102 +459,6 @@ clear 操作は、単なる見た目の消去ではなく、**状態更新と再
 3. `value` を自己管理型の現在値として扱い、property 代入とイベント発火を分離すること。
 4. clear 操作を単なる装飾ではなく、`value` 更新と再フォーカスを伴う正規操作として扱うこと。
 5. Combobox 支援は限定的な属性受け皿に留め、候補表示責務と混在させないこと。
-
----
-
-## 新規で追加を検討する価値がある機能
-
-本節は、`ui-search-field` の責務を維持したまま、公開契約の安定性、アクセシビリティ統合、プラットフォーム適応性を高める観点から、**新規で追加を検討する価値がある機能**を整理するものです。
-
-ここでいう「検討する価値がある」とは、単に便利であることではなく、**検索入力 primitive としての責務を壊さず、長期的な保守性を改善すること**を意味します。
-
-### 最優先で検討する価値がある機能
-
-#### 意味付き独自イベント
-
-現行の `input` / `change` は互換的な公開面として有用ですが、元のネイティブイベント詳細を保持しません。したがって、アプリケーション統合用には、意味を明示した独自イベントを別途持つ余地があります。
-
-たとえば、次のようなイベントを追加候補とします。
-
-- `query-change`
-- `query-commit`
-
-これらは単なるイベント追加ではなく、**検索語更新**と**検索語確定**を文脈付きで扱うための公開面です。`detail` には少なくとも `value` と `source` を含め、`source` は `user` / `clear` / `programmatic`、または `change` / `enter` / `blur` のように意味単位で設計します。
-
-この機能を追加する場合でも、既存の `input` / `change` を置き換えません。ネイティブ互換面とアプリケーション意味面を分離して共存させます。
-
-#### 外部説明との関連付け API
-
-現行契約では、`aria-describedby` などの説明参照面を公開していません。一方で、検索入力には補助説明、ショートカット案内、補足状態、外部エラー文言との関連付けが必要になる場合があります。
-
-そのため、**説明文自体を描画する責務を持たず、外部説明ノードとの関連付けだけを許可する API**には追加価値があります。
-
-候補は次のいずれかです。
-
-- `inputAriaDescribedby`
-- `descriptionIds`
-
-どちらを採る場合でも、責務は「説明文の描画」ではなく「説明関係の接続」に限定します。これにより、検索入力 primitive の責務を維持したままアクセシビリティ統合を強化できます。
-
-#### ネイティブ入力ヒントの pass-through
-
-検索入力では、検索ロジックそのものよりも、IME やモバイルキーボードに対する入力ヒントの有無が体験差として現れます。したがって、ネイティブ `<input>` が持つ入力ヒント面を限定的に公開する価値があります。
-
-候補は次のとおりです。
-
-- `enterKeyHint`
-- `inputMode`
-- `spellcheck`
-- `autocapitalize`
-
-これらは検索責務を拡張するのではなく、**ネイティブ input としての素性をより適切に公開するための追加面**として扱います。
-
-### 条件付きで検討する価値がある機能
-
-#### Form Associated Custom Element 化
-
-将来的に、検索入力を外側フォーム送信や `FormData` と統合したい要件が明確に生じる場合に限り、Form Associated Custom Element 化を検討できます。
-
-ただし、これは `ui-search-field` の責務を大きく変える変更です。現行契約ではフォーム非統合を明示しているため、採用する場合は小規模拡張として扱わず、**責務の再定義を伴う変更**として扱います。
-
-#### `clear()` の派生 API
-
-現行の `clear()` は、値消去、`input` 再送出、再フォーカスを一体化した正規操作です。この設計は妥当ですが、将来的に無音 clear や非フォーカス clear が必要になる可能性はあります。
-
-その場合は、たとえば次のような派生 API を検討できます。
-
-- `resetValue()`
-- `setValueSilently()`
-
-ただし、現時点では API 数を増やすよりも、まず意味付きイベント契約を整える方が優先です。
-
-#### アイコン差し替え面
-
-ブランド要件や密度調整のために、検索アイコンまたは clear アイコンの差し替えを求める可能性はあります。その場合は slot または限定的な token 面を検討できます。
-
-ただし、これは視覚契約の安定性を崩しやすく、本文読解の静けさを損ねる可能性があります。したがって、条件付きの検討項目に留めます。
-
-### 追加しない方がよい機能
-
-#### suggestion listbox / popup の内蔵
-
-候補一覧や popup の描画は、検索入力 primitive の責務ではありません。これを内蔵すると、`ui-search-field` は検索入力本体ではなく検索 UI 複合体へ変質します。したがって、この機能は本コンポーネントへ追加しません。
-
-#### loading state / results count / live region の内蔵
-
-検索中表示、件数表示、結果通知の live region は、検索結果面または dialog 側の責務です。`ui-search-field` へ取り込むと、入力 primitive と結果表示責務が混在します。したがって、この機能は本コンポーネントへ追加しません。
-
-#### debounce、Enter 検索、Escape によるキャンセルや clear の内蔵
-
-これらは入力 primitive 単体ではなく、overlay、dialog、候補表示、検索実行戦略と組み合わさって初めて意味が確定する挙動です。したがって、本コンポーネントではなく上位レイヤで扱います。
-
-#### 履歴候補や最近の検索語の内蔵
-
-履歴管理は UI primitive の責務ではなく、アプリケーション状態、保存方針、プライバシー方針に属します。したがって、この機能は本コンポーネントへ追加しません。
-
-### 本節の扱い
-
-本節に記載した機能は、すべて将来の追加候補であり、現時点の公開契約には含めません。採用する場合は、**責務範囲に適合するか**、**既存の公開契約と矛盾しないか**、**Storybook で固定可能か**の 3 点を満たしたうえで追加します。
 
 ---
 
@@ -589,14 +485,6 @@ Form Associated Custom Element ではないため、外側フォームとの送�
 ### ARIA 値と参照先の整合性検証
 
 `inputRole` や各種 `inputAria*` はそのまま反映しますが、値の妥当性や参照先の実在は検証しません。
-
-### 外部説明参照の pass-through
-
-`aria-describedby` に相当する公開入力は持ちません。したがって、外部説明文、補助文、エラー文言、ショートカット案内との関連付けを `ui-search-field` 単体では完結できません。
-
-### ネイティブ入力ヒントの pass-through
-
-`enterkeyhint`、`inputmode`、`spellcheck`、`autocapitalize` など、ネイティブ input の入力ヒント属性を公開入力として受け付けません。
 
 ### 意味付き独自イベント
 

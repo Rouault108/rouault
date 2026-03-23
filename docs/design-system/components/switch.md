@@ -30,18 +30,28 @@
 - Visual Contract
 - スタイル拡張面
 - 境界条件
-- 現行実装との差分
+- 開発時適合性
+- Storybook 契約
 
 本書は、次の事項を扱いません。
 
 - 設定値の永続化
 - API 呼び出し
 - 設定行全体のレイアウト
-- 説明文やエラー文の文言設計
+- 説明文やエラー文の描画
+- エラー表示
+- バリデーション
 - フォーム送信値の生成
+- FormData 参加
+- reset 参加
 - 監査ログや権限制御
+- 非同期 pending / loading 表示
+- 三値状態 / indeterminate
+- `click()` 公開メソッド
+- `before-checked-change`
+- 現行実装への追従を目的とした互換イベントの常設保証
 
-これらは上位レイヤまたは別コンポーネントの責務です。
+これらは上位レイヤまたは別コンポーネントの責務、あるいは本コンポーネントの正式公開契約の外側にあります。
 
 ---
 
@@ -98,22 +108,28 @@
 
 ### 入力一覧
 
-| 名前          | 種別                 | 既定値      | 契約                                                    |
-| ------------- | -------------------- | ----------- | ------------------------------------------------------- |
-| `checked`     | property / attribute | `false`     | 現在値。`true` で ON、`false` で OFF                    |
-| `disabled`    | property / attribute | `false`     | 完全に非操作化する。Tab 移動対象から外れる              |
-| `readonly`    | property / attribute | `false`     | 値は表示するが変更は受け付けない。Tab 移動対象には残る  |
-| `label`       | property / attribute | `''`        | 内部に描画する単純テキストラベル                        |
-| `labelledBy`  | property             | `undefined` | 外部ラベル要素 ID。設定行などで外部ラベルを名前源とする |
-| `describedBy` | property             | `undefined` | 外部説明要素 ID。補助文や説明文を関連付ける             |
+| 名前          | 種別                 | 既定値      | 契約                                                                 |
+| ------------- | -------------------- | ----------- | -------------------------------------------------------------------- |
+| `checked`     | property / attribute | `false`     | 現在値。`true` で ON、`false` で OFF                                 |
+| `disabled`    | property / attribute | `false`     | 完全に非操作化する。Tab 移動対象から外れる                           |
+| `readonly`    | property / attribute | `false`     | 値は表示するが変更は受け付けない。Tab 移動対象には残る               |
+| `label`       | property / attribute | `''`        | 内部に描画する単純テキストラベル                                     |
+| `labelledBy`  | property             | `undefined` | 外部ラベル要素 IDREF。空白区切りで複数 ID を指定できる               |
+| `describedBy` | property             | `undefined` | 外部説明要素 IDREF。空白区切りで複数 ID を指定できる                 |
+| `aria-label`  | host attribute        | なし        | `label` も `labelledBy` も指定しない場合のアクセシブル名             |
 
 ### 入力契約
 
 - `checked` は二値のみを取ります。三値や indeterminate は扱いません。
-- `disabled` と `readonly` は同時に `true` にしてはなりません（MUST NOT）。両立時は `disabled` を優先するのではなく、呼び出し側の契約違反とみなします。
+- `checked`、`disabled`、`readonly` の attribute は boolean attribute として扱います。attribute が存在するとき `true`、存在しないとき `false` です。
+- property と attribute の反映結果は意味的に一致しなければなりません（MUST）。
+- `disabled` と `readonly` は同時に `true` にしてはなりません（MUST NOT）。
 - `label` は **単純テキスト** のみを受け付けます。HTML、slot、アイコン、リンク、ボタンなどの複合内容は公開契約に含めません。
-- `label` と `labelledBy` は **同時に使いません**。可視ラベルを内部に持つか、外部要素を名前源とするかのどちらか一方を選びます。
-- `label` も `labelledBy` も指定しない場合は、ホストに `aria-label` を与えなければなりません（MUST）。
+- アクセシブル名の入力は、`label`、`labelledBy`、`aria-label` のうち **いずれか 1 系統のみ** を使います。
+- `label` を使う場合、`labelledBy` と `aria-label` は併用しません。
+- `labelledBy` を使う場合、`label` と `aria-label` は併用しません。
+- `label` も `labelledBy` も指定しない場合、host に `aria-label` を与えなければなりません（MUST）。
+- `labelledBy` および `describedBy` が参照する ID は、文書内で解決可能でなければなりません（MUST）。
 
 ### フォーム非依存契約
 
@@ -123,8 +139,8 @@
 - `value`
 - `required`
 - `form`
-- reset 参加
 - FormData への自動出力
+- reset 参加
 
 フォーム参加が必要な場合は、`ui-form-switch` 相当の別コンポーネントで扱います。
 
@@ -211,21 +227,21 @@
 
 ### 対話主体
 
-対話主体は `role="switch"` を持つ内部 control 要素です。host 自体は対話主体ではありません。
+対話主体は `role="switch"` を持つ単一の内部 control 要素です。host 自体は対話主体ではありません。
 
 ### アクセシブル名の決定規則
 
-アクセシブル名は次の優先順位で決定します。
+アクセシブル名は次のいずれか 1 系統で決定します。
 
 1. `label`
 2. `labelledBy`
-3. ホストの `aria-label`
+3. host の `aria-label`
 
-複数を同時に与えて名前解決を競合させてはなりません（MUST NOT）。
+複数系統を同時に与えて名前解決を競合させてはなりません（MUST NOT）。
 
 ### アクセシブル説明
 
-補助説明が必要な場合は `describedBy` を用います。`aria-describedby` の包括的 pass-through は公開契約に含めません。説明文の描画自体は上位レイヤの責務です。
+補助説明が必要な場合は `describedBy` を用います。`describedBy` は `aria-describedby` に対応し、空白区切りで複数 IDREF を指定できます。説明文の描画自体は上位レイヤの責務です。
 
 ### ARIA 契約
 
@@ -233,16 +249,24 @@
 
 - `role="switch"`
 - `aria-checked`
-- `aria-disabled`（disabled 時）
-- `aria-readonly`（readonly 時）
+- `tabindex="0"`（`disabled` でない場合）
+- `aria-disabled="true"`（disabled 時）
+- `aria-readonly="true"`（readonly 時）
 - `aria-labelledby` または `aria-label`
 - `aria-describedby`（`describedBy` 指定時）
 
-### ラベル契約
+### ラベル構造契約
 
-- 内部 `label` を持つ場合、ラベル click は control と同等の起動面として扱います。
-- 外部ラベルを使う場合、ラベルの描画責務は `ui-switch` にありません。
-- 外部ラベルとの関連付けは `labelledBy` で行います。
+- `label` を使う場合、内部ラベル文字列は control のアクセシブル名に正しく反映されなければなりません（MUST）。
+- `role="switch"` を持つ対話主体の内部に、別の interactive 要素や意味を持つ子孫要素を公開契約として要求してはなりません（MUST NOT）。
+- 内部ラベルを視覚上表示する場合、構造は公開契約に含めません。ただし、アクセシブル名の決定と起動面の同等性は保証しなければなりません（MUST）。
+- 外部ラベルを使う場合、ラベルの描画責務は `ui-switch` にありません。関連付けは `labelledBy` で行います。
+
+### 起動面の同等性
+
+- control 本体の pointer 操作で toggle できます。
+- 内部ラベルを視覚上表示する場合、そのラベル領域も control と同等の起動面として扱わなければなりません（MUST）。
+- ただし、この同等性は DOM 構造ではなく、観測可能な挙動として保証します。
 
 ---
 
@@ -291,37 +315,56 @@
 - 疑似要素の構成
 - Shadow DOM の細部
 
+### 関連付けの安定性
+
+`label`、`labelledBy`、`describedBy` に関わる内部関連付けに ID を用いる場合、その生成規則は **deterministic** でなければなりません（MUST）。
+
+ここでいう deterministic とは、同一入力・同一構成に対して、SSR / hydration / 再描画 / テスト実行のいずれでも意味的に安定した関連付け結果が得られることを指します。
+
+利用者は内部 ID の具体値に依存してはなりません（MUST NOT）。公開契約として重要なのは ID 文字列そのものではなく、次が安定して成立することです。
+
+- アクセシブル名の関連付け
+- アクセシブル説明の関連付け
+- スナップショットおよび E2E テストでの再現性
+- SSR / hydration 時の不整合回避
+
 ---
 
 ## Visual Contract
 
-`ui-switch` の視覚契約は、**静かな二値差分** にあります。
+`ui-switch` の視覚契約は、**低ノイズで判別可能な二値差分** にあります。
 
 ### 情報順位
 
-- ON / OFF は判別可能でなければなりません（MUST）
-- しかし本文や見出しより強く主張してはなりません（MUST NOT）
-- disabled / readonly / focused は、状態差として読み取れなければなりません（MUST）
+- ON / OFF は、色のみに依存せず判別可能でなければなりません（MUST）。
+- disabled / readonly / focused は、ON / OFF とは別の状態差として判別可能でなければなりません（MUST）。
+- focus-visible は、通常表示および forced-colors 環境の双方で視認可能でなければなりません（MUST）。
+- 状態理解に不要な装飾や過剰アニメーションで、本文や見出しより視覚的優先度を上げてはなりません（MUST NOT）。
 
 ### レイアウト
 
-- control の判別性を最優先します
-- 内部 `label` は単一行・短文を基本とします
-- 長文や複数行説明は `ui-switch` ではなく上位レイヤで扱います
+- control 自体の判別性を最優先します。
+- 内部 `label` は単一行・短文を基本とします。
+- 長文や複数行説明は `ui-switch` ではなく上位レイヤで扱います。
 
 ### 状態差分
 
-- OFF: 控えめなトラックと左側 thumb
-- ON: 控えめだが明確なトラック差分と右側 thumb
-- Disabled: 非参加状態であることが読める
-- Readonly: 非参加ではなく変更不能であることが読める
-- Focused: 明確な focus-visible ring を持つ
+- OFF では、thumb 位置と track 表現の双方で OFF と判別できます。
+- ON では、thumb 位置と track 表現の双方で ON と判別できます。
+- Disabled では、非参加状態であることが読めます。
+- Readonly では、非参加ではなく変更不能であることが読めます。
+- Focused では、明確な focus-visible ring または同等の視覚提示を持ちます。
 
 ### モーション
 
-- 通常環境では短い補助モーションを許可します
-- `prefers-reduced-motion: reduce` では極小化します
-- 状態理解に不要な過剰アニメーションは導入しません
+- 通常環境では短い補助モーションを許可します。
+- `prefers-reduced-motion: reduce` では、状態理解に不要な transition / animation を極小化または無効化しなければなりません（MUST）。
+- モーションは状態理解の補助であり、モーションがなくても ON / OFF を判別できなければなりません（MUST）。
+
+### 強制色モード
+
+- forced-colors 環境でも、ON / OFF / Focused の差分が判別可能でなければなりません（MUST）。
+- ON / OFF の判別を背景色だけに依存してはなりません（MUST NOT）。
 
 ---
 
@@ -396,6 +439,29 @@
 
 ---
 
+## 開発時適合性
+
+`ui-switch` は、公開契約に反する入力構成を **開発時警告** として検出してよいです。これは公開 API の追加ではなく、契約違反の早期発見を目的とした適合性支援です。
+
+### 警告対象
+
+少なくとも次は開発時警告の対象としてよいです。
+
+- `label`、`labelledBy`、`aria-label` のいずれもなく、アクセシブル名が解決できない
+- `label` と `labelledBy` を併用している
+- `labelledBy` と `aria-label` を併用している
+- `disabled` と `readonly` を併用している
+- `labelledBy` または `describedBy` が解決不能な IDREF を参照している
+- 空文字ラベルを意図せず与えている
+
+### 警告契約
+
+- 警告は開発時に限定してよく、本番利用時の正常系挙動を阻害してはなりません（MUST NOT）。
+- 警告は実行時例外ではなく、非破壊の diagnostics として扱います。
+- 警告の文言や出力方法そのものは公開契約に含めません。
+
+---
+
 ## Storybook 契約
 
 各 Story は見本ではなく、契約確認点として扱います。長期的には少なくとも次を固定します。
@@ -417,132 +483,16 @@
 | `RepeatKeyIgnored`         | キーリピートで連続 toggle しないこと             |
 | `ReducedMotion`            | reduced motion で transition が極小化されること  |
 | `ForcedColors`             | forced-colors 環境で状態差分が視認できること     |
+| `InvalidLabelConfigWarning`  | ラベル指定の競合が開発時警告として検出できること         |
+| `DisabledReadonlyWarning`    | `disabled` と `readonly` の併用が開発時警告として検出できること |
 
 `SettingsPanel` のような複合 UI は `ui-switch` 単体の Story ではなく、上位コンポーネントの Story で担保します。
 
 ---
 
-## 新規で追加を検討する価値がある機能
+## 参考: 現行実装との差分（非規範）
 
-本節は、`ui-switch` を多機能化するためではなく、**目標契約をより実装可能かつ監査可能にするために追加を検討する価値がある機能** を整理するものです。
-
-評価基準は次のとおりです。
-
-- atomic control としての責務を保てること
-- 公開契約の曖昧さを減らせること
-- 上位コンポーネントの責務を不必要に侵食しないこと
-- 長期保守性、テスト容易性、アクセシビリティを改善すること
-
-### 最優先で追加を検討する価値がある機能
-
-#### `readonly`
-
-`disabled` とは別に、**フォーカス可能だが変更できない** 状態を表現する `readonly` は、最優先で追加を検討する価値があります。
-
-この機能により、次を分離できます。
-
-- `disabled`: 非参加・非フォーカス・非操作
-- `readonly`: 参加・フォーカス可能・非変更
-
-設定 UI では「現在値は読ませたいが、条件が満たされるまでは変更させない」という場面が多いため、`readonly` は意味論・アクセシビリティ・視覚契約の三面で有効です。
-
-#### `labelledBy`
-
-外部見出しや設定名をアクセシブル名の源として利用するための `labelledBy` は、追加価値が高い公開入力です。
-
-`ui-switch` を atomic control に保ったまま、`ui-setting-row` のような上位コンポーネントと意味的に接続できます。内部 `label` だけに依存しない構成を正式化することで、設定行文脈での利用が安定します。
-
-#### `describedBy`
-
-補助説明、注記、制約説明を外部要素として関連付けるための `describedBy` も、追加価値が高い公開入力です。
-
-これにより、説明文の描画責務を switch 本体へ持ち込まずに、支援技術へ適切な文脈を提供できます。`ui-switch` の責務を増やさず、設定行との接続面だけを明確化できる点に価値があります。
-
-#### `checked-change`
-
-正式イベントとして `checked-change` を追加する価値は高いです。
-
-`change` と `input` は意味論が弱く、利用者がどちらを監視すべきかを迷わせます。`checked-change` を **唯一の意味論イベント** として採用すれば、次が明確になります。
-
-- 何が変化したのか
-- いつ監視すべきか
-- detail に何が入るべきか
-
-これにより、イベント契約と Storybook 契約の双方を整理できます。
-
-#### 開発時警告
-
-契約違反を開発時に検出する warning は、派手な機能ではありませんが保守性への寄与が大きいため、追加を検討する価値があります。
-
-対象例は次のとおりです。
-
-- `label`、`labelledBy`、`aria-label` のいずれもない
-- `label` と `labelledBy` を併用している
-- `disabled` と `readonly` を併用している
-- 空文字ラベルを意図せず与えている
-
-実行時例外ではなく開発時警告にとどめることで、契約違反の早期発見と実運用の安定性を両立できます。
-
-#### deterministic な関連付け ID
-
-内部ラベル関連付けに用いる ID を deterministic にすることも、追加価値があります。
-
-これは利用者向けの新機能というより、SSR / hydration 耐性、スナップショット安定性、テスト再現性の改善です。公開 API を増やさずに品質基盤を強化できるため、長期的には優先度が高い改善です。
-
-### 条件付きで追加を検討する価値がある機能
-
-#### `click()` 公開メソッド
-
-`focus()` / `blur()` に加えて `click()` を公開する案には一定の価値があります。
-
-テストや外部制御の一貫性は上がりますが、host に対する標準の `click()` と責務が重なりやすいため、必須ではありません。導入する場合は、**内部 control への委譲を保証するための補助 API** と位置付けます。
-
-#### `before-checked-change`
-
-状態変更前にキャンセル可能なイベントを設ける案もあります。
-
-これは確認ダイアログや条件付き拒否に使えますが、atomic control 本体としてはやや重く、上位レイヤの責務を侵食しやすいです。必要な場面が明確になった場合に限って検討し、常設の公開契約には慎重であるべきです。
-
-### `ui-switch` 本体に入れない方がよい機能
-
-#### フォーム参加
-
-`name`、`value`、`required`、FormData 参加、reset 参加といったフォーム機能は、`ui-switch` 本体に入れない方がよいです。
-
-これは atomic control としての責務を太らせるため、必要なら `ui-form-switch` として別コンポーネントに分離します。
-
-#### 説明文・エラー文の内部描画
-
-補助説明やエラー文との関連付けは必要ですが、描画責務そのものを `ui-switch` に持ち込むべきではありません。
-
-説明文やエラー文は `ui-setting-row` などの上位コンポーネントが担い、`ui-switch` は関連付け手段のみを持つ方が設計としてきれいです。
-
-#### 三値状態 / indeterminate
-
-switch は二値であること自体が意味論です。三値状態や indeterminate は `ui-switch` 本体の責務に含めません。必要なら別 control を検討します。
-
-#### 非同期 pending / loading 状態
-
-「保存中」「反映待ち」といった非同期状態は、`ui-switch` 本体の責務としては重すぎます。必要なら上位レイヤで `readonly`、ステータス表示、進行表示を組み合わせて扱います。
-
-### 優先順位
-
-追加を検討する価値が高い順は、概ね次のとおりです。
-
-1. `readonly`
-2. `labelledBy`
-3. `describedBy`
-4. `checked-change`
-5. 開発時警告
-6. deterministic な関連付け ID
-
-これらは、機能を増やすというより **目標契約を現実の実装へ落とし込むための不足面** として捉えるのが適切です。
-
----
-
-## 現行実装との差分
-
-本節は、現行の `switch.ts` および `switch.stories.ts` と、上記の目標契約との差分を整理するものです。ここに記載した事項は、現行利用者が依存してよい公開契約ではありません。
+本節は、現行の `switch.ts` および `switch.stories.ts` と、本書が定義する目標契約との差分を整理するための **非規範メモ** です。本節は公開契約の一部ではなく、利用者が依存してよい保証を定義するものではありません。
 
 ### 1. イベント意味論
 

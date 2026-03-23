@@ -14,15 +14,14 @@ Rouault における Skeleton は、読書体験への没入を阻害しない�
 
 本コンポーネントの長期固定方針は次のとおりです。
 
-- `ui-skeleton` は**non-semantic visual primitive** とする。
-- 読み込み状態の意味論は `ui-skeleton` ではなく、**上位の loading container** が担う。
-- `variant` は単なる見た目ではなく、**用途を伴う形状契約**として扱う。
-- `animated` は既定で無効とし、**視覚補助としてのみ opt-in** できる。
-- `rectangular` の高さはコンポーネント側で恣意的に補完しない。
-- 利用者が壊してよい面と壊してはならない面を分離し、**外部 CSS の保証境界**を明確にする。
-- 印刷、高コントラスト、Reduced Motion といった環境要請は、利用者入力より優先する。
-
-これらは、現行実装よりも優先して維持すべき設計原則です。
+- `ui-skeleton` は、意味状態を公開しない**非意味論的な視覚プリミティブ**とします。
+- 読み込み中であることの通知や説明は、`ui-skeleton` ではなく**上位コンテナ**が担います。
+- `variant` は見た目の差分ではなく、**用途を伴う形状契約**として扱います。
+- `animated` は既定で無効とし、**補助的な視覚効果としてのみ opt-in** できるものとします。
+- `rectangular` の高さは、コンポーネント側で暗黙補完しません。
+- 外部から調整してよい面と、保証しない面を分離し、**公開拡張面**を明確にします。
+- 印刷、高コントラスト、Reduced Motion などの環境要請は、利用者入力より優先します。
+- 本書は、実装手段ではなく**観測可能な契約**を固定します。したがって、内部 CSS の実現方法、テスト分割、Story 名、警告の細かな実装方式そのものは固定対象に含めません。
 
 ---
 
@@ -31,27 +30,32 @@ Rouault における Skeleton は、読書体験への没入を阻害しない�
 本書は、`ui-skeleton` の次の事項を対象とします。
 
 - 責務境界
-- 公開契約
+- 公開入力
+- 正規化規則
+- 寸法契約
 - 状態モデル
 - DOM / Accessibility
-- Visual Contract
+- 視覚契約
 - トークン契約
 - 環境別の振る舞い
 - スタイル拡張境界
+- 開発時診断の原則
 - 境界条件
-- Storybook 契約
-- 現行実装との差分
+- 検証観点
 
 一方で、本書は次の事項を扱いません。
 
 - データ取得そのものの状態管理
 - 非同期処理の開始・中断・失敗制御
 - 読み込み完了後にどの実コンテンツへ置き換えるかという画面設計
-- `aria-busy` や `aria-live` をどのコンテナへ与えるかという上位レイヤ設計
+- `aria-busy`、`aria-live`、`role="status"` などの読み込み意味論をどのコンテナへ与えるかという上位レイヤ設計
 - Skeleton 群の並びや段組みなど、ページ全体のプレースホルダーレイアウト
+- 複数行テキスト Skeleton の自動生成を行うレイアウト API
+- `article`、`card`、`list-item` などの用途別 preset 群
+- `pulse`、`wave`、`bounce` などの複数アニメーション種別
 - サーバー描画・ストリーミング・プリフェッチ戦略
 
-これらは画面または上位の loading pattern の責務です。
+これらは画面または上位のローディングパターンの責務であり、`ui-skeleton` 単体の公開契約には含めません。
 
 ---
 
@@ -73,30 +77,33 @@ Rouault における Skeleton は、読書体験への没入を阻害しない�
 
 ### 公開入力
 
-| 名前       | 種別                 | 必須   | 内容           | 契約                                                        |
-| ---------- | -------------------- | ------ | -------------- | ----------------------------------------------------------- |
-| `variant`  | property / attribute | いいえ | 用途別形状種別 | `text` / `circular` / `rectangular`。既定値は `rectangular` |
-| `width`    | property / attribute | いいえ | 幅             | CSS 寸法文字列。前後空白は正規化されます                    |
-| `height`   | property / attribute | いいえ | 高さ           | CSS 寸法文字列。前後空白は正規化されます                    |
-| `animated` | property / attribute | いいえ | Shimmer 表示   | 既定値は `false`。`true` の場合のみ Shimmer を許可します    |
+| 名前          | 種別                 | 必須   | 内容               | 契約                                                                 |
+| ------------- | -------------------- | ------ | ------------------ | -------------------------------------------------------------------- |
+| `variant`     | property / attribute | いいえ | 用途別形状種別     | `text` / `circular` / `rectangular`。既定値は `rectangular`          |
+| `width`       | property / attribute | いいえ | 幅                 | CSS 寸法文字列。前後空白は正規化されます                             |
+| `height`      | property / attribute | いいえ | 高さ               | CSS 寸法文字列。前後空白は正規化されます                             |
+| `aspectRatio` | property / attribute | いいえ | 矩形比率           | `rectangular` の比率指定。property 名は `aspectRatio`、attribute 名は `aspect-ratio` |
+| `animated`    | property / attribute | いいえ | Shimmer 表示可否   | 既定値は `false`。`true` の場合のみ Shimmer を許可します             |
 
 ### 属性反映契約
 
-公開入力は property と attribute の両面から操作できます。`animated` は boolean attribute として扱います。`variant`、`width`、`height` は reflect されます。
+公開入力は property と attribute の両面から操作できます。`animated` は boolean attribute として扱います。`variant`、`width`、`height`、`aspectRatio` は reflect されます。
 
-| property   | attribute  | reflect | 備考                                      |
-| ---------- | ---------- | ------- | ----------------------------------------- |
-| `variant`  | `variant`  | あり    | 列挙外値は `rectangular` に正規化されます |
-| `width`    | `width`    | あり    | 文字列前後の空白は除去されます            |
-| `height`   | `height`   | あり    | 文字列前後の空白は除去されます            |
-| `animated` | `animated` | あり    | boolean attribute として扱います          |
+| property      | attribute       | reflect | 備考                                                        |
+| ------------- | --------------- | ------- | ----------------------------------------------------------- |
+| `variant`     | `variant`       | あり    | 列挙外値は `rectangular` に正規化されます                   |
+| `width`       | `width`         | あり    | 文字列前後の空白は除去されます                              |
+| `height`      | `height`        | あり    | 文字列前後の空白は除去されます                              |
+| `aspectRatio` | `aspect-ratio`  | あり    | 前後空白は除去されます。空文字は未指定として扱います        |
+| `animated`    | `animated`      | あり    | boolean attribute として扱います                            |
 
 ### 正規化契約
 
-`variant`、`width`、`height` の正規化は、更新サイクル内の確定値に対して適用されます。したがって、property 経由でも attribute 経由でも、最終的に観測される値は同一の正規化規則へ収束しなければなりません（MUST）。
+`variant`、`width`、`height`、`aspectRatio` の正規化は、更新サイクル内の確定値に対して適用されます。したがって、property 経由でも attribute 経由でも、最終的に観測される値は同一の正規化規則へ収束しなければなりません（MUST）。
 
 - `variant` に列挙外値が与えられた場合、`rectangular` へ収束します。
-- `width` と `height` の前後空白は除去されます。
+- `width`、`height`、`aspectRatio` の前後空白は除去されます。
+- `aspectRatio` に空文字が与えられた場合は未指定として扱います。
 - 正規化後の値が reflect 対象であるため、属性値として観測される内容も最終的には正規化済み値になります。
 
 ### 列挙外値・無効値の扱い
@@ -123,7 +130,13 @@ Rouault における Skeleton は、読書体験への没入を阻害しない�
 
 #### `rectangular`
 
-`rectangular` は**非テキストの矩形領域予告**に用いる `variant` です。カード、画像、図版、ブロック領域、サムネイルなどに使います。`rectangular` は文字行の代替として使うべきではありません（SHOULD NOT）。
+- `width` 指定があれば、それを `inline-size` に用います。
+- `height` 指定があれば、それを `block-size` に用います。
+- `height` が未指定で `aspectRatio` が指定されている場合、`block-size` の決定はその比率に委ねられます。
+- `height` と `aspectRatio` の双方が指定されている場合、明示 `height` を優先します。
+- `height` と `aspectRatio` の双方が未指定である場合、コンポーネント側に暗黙の高さフォールバックはありません。
+
+`rectangular` は、`height` または `aspectRatio` のいずれかを与えることを正規運用とします（MUST）。`height` と `aspectRatio` の双方が未指定の入力は**契約外入力**です。実装はその入力を受理し得ますが、視覚成立を保証しません。開発時には診断対象として扱うことができます。
 
 ### 寸法契約
 
@@ -173,29 +186,35 @@ Rouault における Skeleton は、読書体験への没入を阻害しない�
 
 `ui-skeleton` の状態は、意味状態ではなく**描画状態**として定義します。
 
-### 基本状態
+### 形状状態
 
-最小状態は、`variant="rectangular"`、`animated=false`、`width=""`、`height=""` です。この状態は描画可能ではありますが、正規運用としては不完全です。`rectangular` に高さ情報がないため、長期契約上は invalid-but-renderable に分類されます。
+- `text`
+- `circular`
+- `rectangular`
 
-### `text` 状態
+各状態は、用途別の占有領域を表す描画種別です。
 
-`text` は単一行テキスト予告面です。高さ既定値は `1em` で、周囲の文字サイズに追従します。用途は本文行、見出し行、ラベル行です。
+### 寸法状態
 
-### `circular` 状態
+寸法状態は、公開入力から導かれる描画成立条件です。
 
-`circular` は円形メディア予告面です。片側寸法のみが与えられても正円を維持します。
-
-### `rectangular` 状態
-
-`rectangular` は非テキスト矩形予告面です。高さは暗黙補完されません。利用側が `height` または `aspect-ratio` を与えて寸法責務を負います。
+- `text` は `height` 未指定時に `1em` を既定値とします。
+- `circular` は片側寸法のみが与えられた場合でも正円を維持します。
+- `rectangular` は `height` または `aspectRatio` が与えられている場合に正規入力として成立します。
 
 ### アニメーション状態
 
-`animated=true` の場合、Shimmer を描画できます。`animated=false` の場合、Shimmer は存在しません。ただし、環境設定によっては `animated=true` でも Shimmer は停止します。
+- `animated=false` の場合、Shimmer は存在しません。
+- `animated=true` の場合、Shimmer を描画できます。
+- ただし、`forced-colors: active` または `prefers-reduced-motion: reduce` が成立する環境では、`animated=true` であっても Shimmer は停止または非生成となり得ます。
 
 ### 支援技術状態
 
 `ui-skeleton` は常に `aria-hidden="true"` を維持します。利用者が `aria-hidden="false"` を与えても、Skeleton を読み上げ対象へ昇格させることはできません。
+
+### 契約外入力
+
+`variant="rectangular"` で `height` と `aspectRatio` の双方が未指定である場合、その入力は契約外です。実装は描画を拒否する必要まではありませんが、視覚成立は保証しません。
 
 ---
 
@@ -220,37 +239,39 @@ Rouault における Skeleton は、読書体験への没入を阻害しない�
 
 ### 上位レイヤとの責務分離
 
-長期的には、読み込み状態のアクセシビリティは `ui-skeleton` に混在させず、**別の loading container 契約**として定義するのが望ましいです。したがって、`ui-skeleton` に `role="status"`、`aria-live`、`aria-busy` のような意味論を内包させる設計は採りません。
+読み込み状態のアクセシビリティは、`ui-skeleton` の責務ではありません。`role="status"`、`aria-live`、`aria-busy`、待機理由の説明文、完了通知は、必要に応じて**上位コンテナ**が提供しなければなりません（MUST）。
+
+したがって、`ui-skeleton` 自体に読み込み意味論を内包させる設計は採りません。
 
 ---
 
-## Visual Contract
+## 視覚契約
 
 `ui-skeleton` の視覚契約は、最終コンテンツの見た目を模倣することではなく、**占有領域を静かに予告すること**にあります。
 
 ### 基本外観
 
-- ホストは `display: block` です。
-- `overflow: hidden` により、Shimmer はホスト境界内で切り取られます。
+- `ui-skeleton` は、単一の連続した占有面として知覚されなければなりません。
+- Shimmer を描画する場合でも、その視覚効果は Skeleton 面の範囲内に収まらなければなりません。
 - 既定背景は `--bg-fill-neutral` を基準とします。
 - 既定角丸は `--radius-sm` を基準とします。
-- `circular` では `--radius-full` により完全な円形へ切り替えます。
+- `circular` は `--radius-full` により完全な円形として知覚されなければなりません。
+
+上記を満たす限り、内部 CSS の実現方法は固定しません。
 
 ### Shimmer 表示
 
-`animated=true` の場合、`::after` に線形グラデーションを持つ Shimmer を描画します。アニメーション時間は `--shimmer-duration`、ハイライト色は `--skeleton-shimmer` を最上位入力として解決し、内部的には `--shimmer-highlight` を介して描画します。
-
-Shimmer はホスト面の上に重なる**視覚レイヤ**であり、レイアウトには寄与しません。また、入力やクリック対象にもなりません。したがって、Shimmer の有無は寸法計算、ヒットテスト、意味論に影響してはなりません（MUST NOT）。
+`animated=true` の場合、Shimmer を描画できます。Shimmer は Skeleton 面の上に重なる**視覚レイヤ**であり、レイアウト、ヒットテスト、意味論に影響してはなりません（MUST NOT）。
 
 Shimmer は状態の主担い手ではなく、待機状態を弱く補助する視覚効果です。読書面に近い文脈では、**存在は認識できるが本文の主役にならない強さ**に抑えます。`variant` ごとに独自の強い演出差分を導入するべきではありません（SHOULD NOT）。
 
-### 寸法とレイアウト
+### 寸法と形状
 
 - `text` は単一行の文字列占有幅を予告する細い帯です。
 - `circular` は必ず正円でなければなりません。
-- `rectangular` はメディアやブロック領域の比率を予告するため、高さ情報を必須とします。
+- `rectangular` はメディアやブロック領域の比率または高さを予告する矩形面です。
 
-とくに `rectangular` は、高さを暗黙補完しないこと自体が契約です。これは、用途ごとに必要な矩形比率が異なり、コンポーネント側が恣意的な既定高さを持つべきではないためです。
+とくに `rectangular` は、高さを暗黙補完しないこと自体が契約です。用途ごとに必要な矩形比率が異なるため、コンポーネント側が恣意的な既定高さを持つべきではありません。
 
 ---
 
@@ -311,21 +332,18 @@ Shimmer は状態の主担い手ではなく、待機状態を弱く補助する
 
 ## スタイル拡張境界
 
-`ui-skeleton` は `::part(...)` を公開しません。内部 DOM に依存した拡張面も持ちません。利用者は次の拡張面のみを使用します。
+`ui-skeleton` は `::part(...)` を公開しません。内部 DOM に依存した拡張面も持ちません。利用者は次の公開拡張面のみを保証対象として使用します。
 
-- ホスト要素に対する通常の CSS
-- `width` / `height` 属性または property
-- `style` 属性による `aspect-ratio` 指定
-- CSS Custom Properties による配色・角丸・Shimmer 時間調整
+- `variant` / `width` / `height` / `aspectRatio` / `animated`
+- ホスト要素に対する外側レイアウト調整
+- CSS Custom Properties による配色・角丸・Shimmer 調整
 
-内部構造が空であることを前提に、Shadow DOM 内の要素探索や内部 class への依存を行ってはなりません（MUST NOT）。
-
-また、ホスト自体が Skeleton 面であるため、外部 CSS 上書きには保証境界があります。
+内部構造を前提にした Shadow DOM 内要素の探索や内部 class への依存を行ってはなりません（MUST NOT）。
 
 ### 保証対象内
 
 - 寸法指定
-- `aspect-ratio`
+- 比率指定
 - マージンなどの外側レイアウト調整
 - 配色トークン、角丸トークン、Shimmer 関連トークン
 
@@ -335,23 +353,21 @@ Shimmer は状態の主担い手ではなく、待機状態を弱く補助する
 - グリッドやフレックス文脈における配置制御
 - ページ固有のレスポンシブ配置
 
-### 契約破壊的な上書き
+### 保証しない変更
 
-- `display`
-- `overflow`
-- `position`
-- `background`
-- `border-radius`
+ホストの**基盤描画**や**切り取り**や**形状成立**を直接置き換える変更は、保証対象外です。たとえば `display`、`overflow`、`background`、`border-radius`、`position` などを変更して Skeleton 面そのものの成立条件を変える操作は、その代表例です。
 
-これらを直接上書きすると、視覚契約または Shimmer の切り取り契約を壊し得ます。利用者がホスト基盤スタイルを直接置き換える場合、その結果はコンポーネント契約の保証対象外とみなします。
+上記の列挙は例示であり、網羅列挙ではありません。判断基準は、Skeleton の占有面、形状、切り取り、Shimmer の視覚レイヤ成立を壊すかどうかです。
 
 ---
 
 ## 開発時警告契約
 
-`variant="rectangular"` で `height` も `aspect-ratio` も与えられていない場合、実装は開発時警告を出すことができます。判定にはインライン指定された `aspect-ratio` だけでなく、計算済みスタイルとして解決される `aspect-ratio` も含みます。
+`variant="rectangular"` で `height` と `aspectRatio` の双方が実質的に解決されない場合、実装は開発時警告を出すことができます。
 
-この警告は CLS 防止のための診断機構であり、描画停止や例外送出は行いません。また、同一の未解決状態に対しては連続更新ごとに繰り返し警告するのではなく、**未解決期間につき一度**を原則とします。いったん条件が解消された後に再び未解決状態へ戻った場合は、改めて警告し得ます。
+この警告は、視覚安定性の不足を知らせる**診断機構**です。描画停止や例外送出は行いません。
+
+警告頻度の細部は実装に委ねますが、同一要素の同一未解決状態に対して反復的にログを氾濫させてはなりません（MUST NOT）。判断基準は、診断として有用であることと、開発体験を不必要に損なわないことです。
 
 ---
 
@@ -373,9 +389,9 @@ Shimmer は状態の主担い手ではなく、待機状態を弱く補助する
 
 `variant="circular"` で寸法を省略した場合、互換上の既定サイズとして `1em` を使えますが、正規運用では明示寸法を与えることを推奨します。
 
-### `rectangular` の高さ未指定
+### `rectangular` の高さ・比率未指定
 
-`variant="rectangular"` で `height` と `aspect-ratio` の双方を省略した場合、高さの暗黙フォールバックはありません。見た目上の高さは 0 になり得ます。この状態は invalid-but-renderable です。
+`variant="rectangular"` で `height` と `aspectRatio` の双方を省略した場合、コンポーネントは高さを暗黙補完しません。この入力は契約外です。実装は描画を拒否する必要まではありませんが、視覚成立を保証しません。
 
 ### 不正な `variant`
 
@@ -385,9 +401,9 @@ Shimmer は状態の主担い手ではなく、待機状態を弱く補助する
 
 利用者が `aria-hidden="false"` を与えても、実装は `true` に再同期します。Skeleton を読み上げ対象へ昇格させることはできません。
 
-### `width` / `height` の前後空白
+### `width` / `height` / `aspectRatio` の前後空白
 
-`width=" 60% "`、`height=" 1.5em "` のような入力は、前後空白が除去されて保持されます。
+`width=" 60% "`、`height=" 1.5em "`、`aspect-ratio=" 16 / 9 "` のような入力は、前後空白が除去されて保持されます。
 
 ### アニメーションの opt-in
 
@@ -395,7 +411,7 @@ Shimmer は状態の主担い手ではなく、待機状態を弱く補助する
 
 ### 環境設定によるアニメーション停止
 
-`animated=true` であっても、`forced-colors: active` または `prefers-reduced-motion: reduce` が成立する環境では Shimmer は停止します。利用側入力よりも環境設定が優先されます。
+`animated=true` であっても、`forced-colors: active` または `prefers-reduced-motion: reduce` が成立する環境では Shimmer は停止または非生成となります。利用側入力よりも環境設定が優先されます。
 
 ### 印刷時
 
@@ -405,116 +421,29 @@ Shimmer は状態の主担い手ではなく、待機状態を弱く補助する
 
 ## Storybook 契約
 
-各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
+Storybook は見本集ではなく、**契約確認のための検証面**として扱います。ただし、本書が固定するのは Story 名や分割方法ではなく、次の**検証観点**です。
 
-| Story                   | 固定する契約                                                                                                                                                          |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Default`               | `text` の既定高さが `1em` であり、`aria-hidden="true"` を維持し、既定ではアニメーションしないこと                                                                     |
-| `VariantStateMatrix`    | `text` / `circular` / `rectangular` の用途別代表状態を描画できること                                                                                                  |
-| `BoundaryConditions`    | 不正 `variant` の正規化、`aria-hidden` 強制、`circular` の正円補完、`rectangular` の高さ未補完、寸法文字列の trim、環境設定優先によるアニメーション停止が成立すること |
-| `RectangularGuard`      | `rectangular` で高さ未指定かつ `aspect-ratio` もない場合、開発時警告が未解決期間につき一度だけ観測できること                                                          |
-| `BusyStateTransitions`  | 親コンテナの `aria-busy` が `true` から `false` へ遷移でき、Skeleton 自体は終始 `aria-hidden="true"` であること                                                       |
-| `DarkMode`              | 暗色トークン差し替え下でも形状とアニメーション契約が維持されること                                                                                                    |
-| `StyleOverrideBoundary` | 推奨上書きと契約破壊的上書きの境界が理解可能であること                                                                                                                |
+- 既定状態で `aria-hidden="true"` を維持し、既定ではアニメーションしないこと
+- `text` / `circular` / `rectangular` の用途別代表状態を描画できること
+- `variant` の正規化、寸法文字列の正規化、`circular` の正円維持が成立すること
+- `rectangular` で `height` と `aspectRatio` の双方が未指定の場合、契約外入力として診断できること
+- 親コンテナの `aria-busy` 遷移と分離され、Skeleton 自体は終始 `aria-hidden="true"` であること
+- 暗色トークン差し替え、Reduced Motion、Forced Colors、Print において契約が維持されること
+- 公開拡張面と保証外変更の境界が理解可能であること
 
----
-
-## 追加を検討する価値がある機能
-
-本節は、`ui-skeleton` の責務境界を維持したまま、将来的に追加を検討する価値がある機能を整理するものです。ここでいう「検討価値」は、単なる利便性ではなく、**契約の一貫性を崩さず、長期保守性を上げるかどうか**を基準に判断します。
-
-### 最優先で検討する価値がある機能
-
-#### `aspectRatio` の正式公開入力化
-
-現行契約では、`rectangular` の正規運用に `height` または `aspect-ratio` を要求しています。しかし `aspect-ratio` は現時点で CSS 側へ委ねられており、公開入力としては固定されていません。
-
-長期的には、`aspectRatio` を property / attribute として正式公開する価値があります。これにより、矩形 Skeleton の主要な寸法責務が API 面へ昇格し、`rectangular` の正規入力がより明確になります。
-
-期待される効果は次のとおりです。
-
-- `rectangular` の高さ安定性を API として表現できる。
-- CLS 防止のための入力経路が明確になる。
-- `width` / `height` は公開入力だが比率だけ CSS 依存、という中途半端さを解消できる。
-- Storybook とテストで、比率指定を正式契約として検証しやすくなる。
-
-本機能は、設計のきれいさ、利用側の理解容易性、実装の一貫性のいずれにも寄与するため、最優先候補とします。
-
-#### 用途別角丸トークンの分離
-
-現行契約では、既定角丸を `--radius-sm`、円形のみ `--radius-full` としています。しかし長期的には、`text` と `rectangular` の視覚的役割差をトークンレベルで分離できる余地があります。
-
-追加候補としては、次のような分離が考えられます。
-
-- `--skeleton-text-radius`
-- `--skeleton-rect-radius`
-
-これにより、本文行 placeholder とメディア placeholder の角丸を無理なく分けられます。一方で、property として角丸バリエーションを増やすのではなく、まずはトークン分離で吸収する方が保守的です。
-
-#### Shimmer 強度の限定的制御
-
-現行契約では、Shimmer は有無と時間、およびハイライト色を中心に制御します。長期的には、読書面に近い文脈とメディア寄りの文脈で、Shimmer の目立ち方を微調整したくなる可能性があります。
-
-ただし、`ui-skeleton` は演出コンポーネントではないため、アニメーション種別を増やすべきではありません。検討価値があるのは、強度に限定した制御です。
-
-追加候補としては、次のようなものが考えられます。
-
-- `--skeleton-shimmer-opacity`
-- `--skeleton-shimmer-intensity`
-
-本機能は、状態の主張を強めるためではなく、**静かな視覚補助としての強度を画面文脈に合わせて下げる**ために検討するものです。
-
-### 条件付きで検討価値がある機能
-
-#### `circular` の既定寸法トークン化
-
-現行契約では、`circular` は無寸法時に互換上の下限として `1em` を使えます。一方で、アバターや円形メディアの placeholder としては、`1em` は意味的にやや弱い既定値です。
-
-そのため、必要になった場合に限り、既定寸法をトークンで与える余地があります。たとえば、`--skeleton-circular-default-size` のようなトークンです。
-
-ただし、本契約は `circular` に明示寸法を与える運用を推奨しているため、本機能は本体 API の中心ではありません。需要が実際に発生した場合にのみ検討します。
-
-#### 限定的な表示モード切り替え
-
-現行契約では、ホストは `display: block` を前提としています。本文中の短い要素やラベル的要素で Skeleton を使いたい場面では、将来的に限定的な `inline-block` 的表示モードが欲しくなる可能性があります。
-
-ただし、表示モードを正式 API にすると、視覚契約と外部 CSS 境界が複雑になります。そのため、実需要が明確に確認されるまでは導入しません。
-
-必要になった場合でも、自由な `display` 指定ではなく、厳しく制限された表示モード切り替えとしてのみ検討します。
-
-### 本体に含めない方がよい機能
-
-`ui-skeleton` の責務境界を維持するため、次の機能は本体へ含めない方針を採ります。
-
-#### 読み込み意味論の内包
-
-`aria-busy`、`aria-live`、`role="status"` などは、`ui-skeleton` 本体に内包しません。読み込み状態の意味論は、上位の loading container が担います。
-
-#### 複数行テキスト Skeleton の自動生成
-
-`lines` のような API によって複数行 placeholder を自動生成する設計は、`ui-skeleton` を単体 primitive からレイアウト部品へ変質させます。複数行は複数の Skeleton を積むか、別コンポーネントとして扱います。
-
-#### Preset 群の内包
-
-`article`、`card`、`list-item` などの用途別 preset を `ui-skeleton` 本体へ内包しません。これらは上位レイヤまたは別コンポーネントで扱う方が責務分離に適合します。
-
-#### アニメーション種別の追加
-
-`pulse`、`wave`、`bounce` など、複数のアニメーション種別を導入しません。`ui-skeleton` は演出部品ではなく、静かな予告面であるべきです。Shimmer は単一の補助表現として維持します。
+実際の Story 名、Story 数、分割単位は固定しません。将来の Story 再編は、上記検証観点が維持される限り許容されます。
 
 ---
 
-## 補足
+## 不変条件
 
-`ui-skeleton` の要点は、凝ったローディング演出にあるのではありません。**最終コンテンツの占有領域を静かに予告し、待機状態を視覚化しつつ、意味論は上位レイヤへ委ねること**にあります。
-
-したがって、今後の変更でも次の点は崩しません。
+今後の変更でも、次の点は崩しません。
 
 1. Skeleton 自体を支援技術から隠すこと。
-2. `rectangular` の高さをコンポーネント側で恣意的に自動補完しないこと。
+2. `rectangular` の高さをコンポーネント側で暗黙補完しないこと。
 3. `animated` を opt-in とし、静止状態を既定に保つこと。
 4. `variant` を用途契約として扱うこと。
-5. モーション抑制・高コントラスト・印刷へのフォールバックを維持すること。
+5. モーション抑制・高コントラスト・印刷への環境応答を維持すること。
 6. 読み込み意味論を `ui-skeleton` に混在させないこと。
 
 ---
