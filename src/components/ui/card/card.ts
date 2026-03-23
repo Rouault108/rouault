@@ -1,4 +1,4 @@
-import { css, html, LitElement } from 'lit';
+import { css, html, LitElement, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 
@@ -17,72 +17,59 @@ const truncateDescription = (value: string, maxLength = 140): string => {
 const isDescriptionTextTruncated = (value: string, maxLength = 140): boolean =>
   value.length > maxLength;
 
+const INTERACTIVE_TARGET_SELECTOR = [
+  'a',
+  'button',
+  'input',
+  'textarea',
+  'select',
+  'summary',
+  '[role="button"]',
+  '[role="link"]',
+  '[contenteditable="true"]',
+  '[tabindex]:not([tabindex="-1"])',
+].join(', ');
+
 /**
  * カード (Card) コンポーネント `<ui-card>`
  *
- * 関連する情報をグルーピングし、一つのまとまりとして提示するコンテナです。
- * Light モードでは「影」で、Dark モードでは「表面の質感（Surface Tone & Edge）」で
- * 背景からの物理的な分離を表現します。
- *
- * ## スロット
- *
- * - `header` - カードのヘッダーエリア
- * - (default) - カードのメインコンテンツ
- * - `footer` - カードのフッターエリア
- *
- * ## バリアント
- *
- * - `outlined` (デフォルト): 枠線で輪郭を示す。Hover 時に浮上（shadow 獲得・背景不透明化）。
- * - `elevated`: 影で背景から浮き上がっていることを示す。Hover 時にシャドウ強化。
- * - `flat`: 背景色で領域を示す（影なし）。影が不要だが明確な視覚的分離が必要な場面。
- * - `ghost`: 最小限の枠線のみ。最も静謐。
- *
- * ## クリック委譲戦略 (Robust Delegation)
- *
- * `clickable` 属性が有効な場合、カード全体のクリックを内部の主要リンク（最初の `<a href>`）へ
- * 委譲します。以下の条件では委譲をキャンセルし、ネイティブ挙動・コピー操作を阻害しません:
- *
- * - 主ボタン以外のクリック（中クリック・右クリック等）
- * - 修飾キー押下（metaKey / ctrlKey / shiftKey / altKey）- 別タブで開く等の操作を優先
- * - テキスト選択中 - コピー操作を阻害しない
- * - `<a>` / `<button>` / `[role="button"]` への直接クリック - ネイティブ挙動を優先
- *
- * ## アクセシビリティ
- *
- * - **Role**: `role="article"` がデフォルトで設定されます（属性未指定時のみ）。
- *   独立記事でない場合は `role="section"` や `role="none"` を明示してください。
- * - **Focusable Container Anti-pattern の回避**: カード自体はフォーカス対象外。
- *   内部リンク・ボタンにフォーカスを当てる構造を採用します。
- * - **視覚的フォーカスリング**: CSS `:focus-within` によりカード全体にフォーカスリングを描画。
- *   「クリック可能な領域＝フォーカス領域」のメンタルモデルを一致させます。
- * - **Flush Content**: カバー画像等をパディングなしで配置する場合、画像に
- *   `border-radius: inherit` を指定し、カードの角丸に従わせてください。
+ * 関連する情報をひとまとまりの読解単位として提示するコンテナです。
+ * `cardKind` は要求モードを表し、実際の描画は trim 後の入力完全性から解決した
+ * 有効モードに従います。`cardKind="link"` でも `href` と `cardTitle` が揃わなければ
+ * generic カードとして縮退します。
  *
  * @slot header - カードヘッダー
  * @slot - カードコンテンツ（デフォルトスロット）
  * @slot footer - カードフッター
  *
  * @property {'outlined'|'elevated'|'flat'|'ghost'} variant - 外観スタイル（デフォルト: 'outlined'）
- * @property {boolean} clickable - クリック可能モード（ホバーエフェクト + クリック委譲を有効化）
+ * @property {boolean} clickable - generic カードの背景クリック委譲を有効化
+ * @property {'generic'|'link'} cardKind - 要求モード
+ * @property {string} href - リンクカードの遷移先
+ * @property {string} cardTitle - リンクカードの見出し
+ * @property {string} description - リンクカードの補足説明
+ * @property {string} imageSrc - リンクカードの補助画像 URL
+ * @property {string} siteName - リンクカードの出典サイト名
  *
  * @cssprop --space-4 - カードのパディング（デフォルト: 1rem）
  * @cssprop --radius-md - カードの角丸（デフォルト: 6px）
  * @cssprop --border-width - 枠線の太さ
  * @cssprop --border-default - outlined バリアントの枠線色
- * @cssprop --border-muted - outlined hover 時の枠線色
+ * @cssprop --border-muted - outlined hover / focus 時の枠線色
  * @cssprop --border-ghost - ghost バリアントの枠線色
- * @cssprop --bg-surface-1 - outlined hover 時の背景色
  * @cssprop --bg-surface-2 - elevated バリアントの背景色
  * @cssprop --bg-fill-muted - flat バリアントの背景色
- * @cssprop --elevation-md - elevated バリアントのシャドウ
- * @cssprop --elevation-sm - hover 時の浮上シャドウ
- * @cssprop --scale-hover-sm - hover 時のスケール（デフォルト: 1.02）
+ * @cssprop --fg-muted - 補助テキスト色
+ * @cssprop --elevation-md - 標準シャドウ
+ * @cssprop --elevation-lg - 強調シャドウ
  * @cssprop --duration-normal - トランジション時間
+ * @cssprop --duration-instant - reduced motion 時のトランジション時間
  * @cssprop --ease-out - イージング関数
  * @cssprop --focus-ring-width - フォーカスリングの太さ
  * @cssprop --focus-ring-color - フォーカスリングの色
  * @cssprop --focus-ring-offset - フォーカスリングのオフセット
  * @cssprop --animation-focus - フォーカスリングのアニメーション
+ * @cssprop --ui-card-description-fade - 説明文省略フェードの背景色
  */
 @customElement('ui-card')
 export class Card extends LitElement {
@@ -103,12 +90,8 @@ export class Card extends LitElement {
       background: transparent;
       box-shadow: none;
 
-      /* トランジション対象に background-color を含めることで
-         Outlined Hover 時の背景変化を滑らかにする。
-         border-color は linear でシャープに変化させる。 */
+      /* hover / focus 時の輪郭とシャドウ変化を滑らかにする。 */
       transition:
-        transform var(--duration-normal, 150ms) var(--ease-out),
-        background-color var(--duration-normal, 150ms) var(--ease-out),
         box-shadow var(--duration-normal, 150ms) var(--ease-out),
         border-color var(--duration-normal, 150ms) linear,
         outline-color var(--duration-normal, 150ms) var(--ease-out);
@@ -150,18 +133,13 @@ export class Card extends LitElement {
     /* ────────────────────────────────────────────
        Clickable: カーソルとインタラクション
     ──────────────────────────────────────────── */
-    :host([clickable]) {
-      cursor: pointer;
-    }
-
-    :host([card-kind='link']) {
+    :host([data-interactive]) {
       cursor: pointer;
     }
 
     /* フォーカスリング: 内部要素にフォーカスがある時、カード全体に描画する。
        これにより「クリック可能な領域＝フォーカス領域」のメンタルモデルが一致する。 */
-    :host([clickable]:focus-within),
-    :host([card-kind='link']:focus-within) {
+    :host([data-interactive]:focus-within) {
       outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color);
       outline-offset: var(--focus-ring-offset, 2px);
       animation: var(--animation-focus);
@@ -169,12 +147,10 @@ export class Card extends LitElement {
 
     /* ────────────────────────────────────────────
        State Mutation: Outlined クリッカブル Hover
-       「枠」から「物体（面）」へ。背景不透明化・Shadow 獲得・枠線が光に溶け込む。
+       outlined は hover / focus 時にシャドウと枠線色で操作可能性を示す。
     ──────────────────────────────────────────── */
-    :host([clickable][variant='outlined']:hover),
-    :host([clickable][variant='outlined']:focus-within),
-    :host([card-kind='link'][variant='outlined']:hover),
-    :host([card-kind='link'][variant='outlined']:focus-within) {
+    :host([data-interactive][variant='outlined']:hover),
+    :host([data-interactive][variant='outlined']:focus-within) {
       box-shadow: var(--elevation-md);
       border-color: var(--border-muted);
     }
@@ -183,10 +159,8 @@ export class Card extends LitElement {
        State Mutation: Elevated クリッカブル Hover
        Shadow が elevation-md から elevation-lg へ強化。
     ──────────────────────────────────────────── */
-    :host([clickable][variant='elevated']:hover),
-    :host([clickable][variant='elevated']:focus-within),
-    :host([card-kind='link'][variant='elevated']:hover),
-    :host([card-kind='link'][variant='elevated']:focus-within) {
+    :host([data-interactive][variant='elevated']:hover),
+    :host([data-interactive][variant='elevated']:focus-within) {
       box-shadow:
         var(--elevation-lg),
         inset 0 1px 0 0 oklch(100% 0 0 / 0.1);
@@ -284,18 +258,11 @@ export class Card extends LitElement {
 
     /* ────────────────────────────────────────────
        Reduced Motion
-       transform を無効化し、色変化のみを即時適用。
+       トランジション時間を短縮し、動きの知覚を最小化する。
     ──────────────────────────────────────────── */
     @media (prefers-reduced-motion: reduce) {
       :host {
         transition-duration: var(--duration-instant, 0ms);
-      }
-
-      :host([clickable]:hover),
-      :host([clickable]:focus-within),
-      :host([card-kind='link']:hover),
-      :host([card-kind='link']:focus-within) {
-        transform: none;
       }
     }
 
@@ -308,10 +275,8 @@ export class Card extends LitElement {
         border: var(--border-width, 1px) solid CanvasText !important;
       }
 
-      :host([clickable]:hover),
-      :host([clickable]:focus-within),
-      :host([card-kind='link']:hover),
-      :host([card-kind='link']:focus-within) {
+      :host([data-interactive]:hover),
+      :host([data-interactive]:focus-within) {
         outline: 2px solid Highlight;
         outline-offset: -2px;
       }
@@ -343,7 +308,7 @@ export class Card extends LitElement {
 
   /**
    * カードの外観スタイルを決定するバリアント。
-   * - `outlined` (デフォルト): 枠線で輪郭。Hover で浮上（shadow + 背景）
+   * - `outlined` (デフォルト): 枠線で輪郭。Hover / focus でシャドウと枠線色を変化
    * - `elevated`: 影で浮き上がりを表現。Hover でシャドウ強化
    * - `flat`: 背景色で領域を示す（影なし）
    * - `ghost`: 最小限の枠線のみ（最も静謐）
@@ -352,11 +317,8 @@ export class Card extends LitElement {
   variant: CardVariant = 'outlined';
 
   /**
-   * `true` の場合、以下を有効化:
-   * - `cursor: pointer`
-   * - Hover 時の Scale（Tactility）と各バリアントの State Mutation
-   * - `focus-within` 時のカード全体へのフォーカスリング描画
-   * - カード全体クリックの内部主要リンクへの委譲
+   * `generic` カードで `true` の場合、背景クリック委譲とフォーカスリングを有効化します。
+   * `link` 有効モードではこの値に関わらず、カード全体が主リンクとして振る舞います。
    */
   @property({ type: Boolean, reflect: true })
   clickable = false;
@@ -392,8 +354,36 @@ export class Card extends LitElement {
   private _observedDescription: HTMLElement | null = null;
   private _overflowMeasureFrame = 0;
 
+  private get _normalizedHref(): string {
+    return this.href.trim();
+  }
+
+  private get _normalizedCardTitle(): string {
+    return this.cardTitle.trim();
+  }
+
+  private get _normalizedDescription(): string {
+    return this.description.trim();
+  }
+
+  private get _normalizedImageSrc(): string {
+    return this.imageSrc.trim();
+  }
+
+  private get _normalizedSiteName(): string {
+    return this.siteName.trim();
+  }
+
   private get _isLinkCard(): boolean {
-    return this.cardKind === 'link' && this.href.trim().length > 0;
+    return (
+      this.cardKind === 'link' &&
+      this._normalizedHref.length > 0 &&
+      this._normalizedCardTitle.length > 0
+    );
+  }
+
+  private get _isInteractiveCard(): boolean {
+    return this._isLinkCard || this.clickable;
   }
 
   /**
@@ -404,15 +394,54 @@ export class Card extends LitElement {
     const path = event.composedPath();
     for (const node of path) {
       if (!(node instanceof HTMLElement)) continue;
-      if (
-        node.matches(
-          'a, button, input, textarea, select, [role="button"], [contenteditable="true"]',
-        )
-      ) {
+      if (node.matches(INTERACTIVE_TARGET_SELECTOR)) {
         return true;
       }
     }
     return false;
+  }
+
+  private _isNodeWithinCard(node: Node | null): boolean {
+    if (!node) {
+      return false;
+    }
+
+    if (node === this || this.contains(node)) {
+      return true;
+    }
+
+    return this.shadowRoot !== null && node.getRootNode() === this.shadowRoot;
+  }
+
+  private _hasLocalTextSelection(): boolean {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || selection.toString().length === 0) {
+      return false;
+    }
+
+    if (
+      this._isNodeWithinCard(selection.anchorNode) ||
+      this._isNodeWithinCard(selection.focusNode)
+    ) {
+      return true;
+    }
+
+    for (let index = 0; index < selection.rangeCount; index += 1) {
+      const range = selection.getRangeAt(index);
+      if (
+        this._isNodeWithinCard(range.commonAncestorContainer) ||
+        this._isNodeWithinCard(range.startContainer) ||
+        this._isNodeWithinCard(range.endContainer)
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private _syncHostState(): void {
+    this.toggleAttribute('data-interactive', this._isInteractiveCard);
   }
 
   /**
@@ -421,11 +450,11 @@ export class Card extends LitElement {
    * 以下の条件では委譲をキャンセルします:
    * - 主ボタン以外（中クリック・右クリック等）
    * - 修飾キー押下（metaKey / ctrlKey / shiftKey / altKey）
-   * - テキスト選択中（コピー操作を阻害しない）
-   * - `<a>` / `<button>` / `[role="button"]` への直接クリック
+   * - 当該カード内部でテキスト選択中（コピー操作を阻害しない）
+   * - 独立して操作可能な要素への直接クリック
    */
   private readonly _handleClick = (e: MouseEvent): void => {
-    if (!this.clickable && !this._isLinkCard) return;
+    if (!this._isInteractiveCard) return;
 
     // 主ボタン（左クリック）のみ委譲
     if (e.button !== 0) return;
@@ -434,7 +463,7 @@ export class Card extends LitElement {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
 
     // テキスト選択中は委譲しない（コピー操作を阻害しない）
-    if ((window.getSelection()?.toString().length ?? 0) > 0) return;
+    if (this._hasLocalTextSelection()) return;
 
     // インタラクティブ要素への直接クリックは委譲しない
     if (this._isInteractiveTarget(e)) return;
@@ -456,7 +485,12 @@ export class Card extends LitElement {
     if (!this.getAttribute('role')) {
       this.setAttribute('role', 'article');
     }
+    this._syncHostState();
     this.addEventListener('click', this._handleClick);
+  }
+
+  protected override willUpdate(_changedProperties: PropertyValues<this>): void {
+    this._syncHostState();
   }
 
   override firstUpdated(): void {
@@ -525,18 +559,19 @@ export class Card extends LitElement {
   }
 
   private renderLinkCard() {
-    const siteName = this.siteName.trim();
-    const title = this.cardTitle.trim();
-    const rawDescription = this.description.trim();
+    const href = this._normalizedHref;
+    const siteName = this._normalizedSiteName;
+    const title = this._normalizedCardTitle;
+    const rawDescription = this._normalizedDescription;
     const description = truncateDescription(rawDescription);
     const textTruncated = isDescriptionTextTruncated(rawDescription);
-    const imageSrc = this.imageSrc.trim();
+    const imageSrc = this._normalizedImageSrc;
     const hasImage = imageSrc.length > 0;
 
     return html`
       <a
         class="link-card ${hasImage ? '' : 'link-card--no-image'}"
-        href=${ifDefined(this.href || undefined)}
+        href=${ifDefined(href || undefined)}
       >
         <div class="link-card__body">
           ${siteName.length > 0 ? html`<p class="link-card__eyebrow">${siteName}</p>` : null}

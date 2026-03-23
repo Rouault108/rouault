@@ -51,7 +51,7 @@ const dispatchTestClick = (element: Element, init: MouseEventInit = {}): boolean
  *
  * | バリアント | 用途 |
  * |------------|------|
- * | `outlined` | 枠線で輪郭。Hover 時に浮上（デフォルト） |
+ * | `outlined` | 枠線で輪郭。hover / focus 時にシャドウと枠線色で応答（デフォルト） |
  * | `elevated` | 影で浮き上がりを表現 |
  * | `flat` | 背景色で領域を示す（影なし） |
  * | `ghost` | 最小限の枠線のみ（最も静謐） |
@@ -62,8 +62,8 @@ const dispatchTestClick = (element: Element, init: MouseEventInit = {}): boolean
  * |------|------|
  * | 主ボタン以外（中クリック等） | ブラウザのネイティブ操作を優先 |
  * | 修飾キー押下（Ctrl / Cmd / Shift / Alt） | 別タブで開く等の操作を優先 |
- * | テキスト選択中 | コピー操作を阻害しない |
- * | `<a>` / `<button>` / `[role="button"]` への直接クリック | ネイティブ挙動を優先 |
+ * | 当該カード内でテキスト選択中 | コピー操作を阻害しない |
+ * | `<a>` / `<button>` / `summary` / `role` / `tabindex` 要素への直接クリック | ネイティブ挙動を優先 |
  */
 const meta: Meta<Card> = {
   title: 'Components/Card',
@@ -504,17 +504,17 @@ export const LinkCardWithoutImage: Story = {
     if (!card) throw new Error('ui-card が見つかりません');
 
     await card.updateComplete;
+    const shadowRoot = card.shadowRoot;
+    if (!shadowRoot) throw new Error('shadowRoot が見つかりません');
 
-    const shadowLink = card.shadowRoot?.querySelector<HTMLAnchorElement>('a.link-card');
-    const shadowImage = card.shadowRoot?.querySelector('img.link-card__media');
-    const title = card.shadowRoot?.querySelector('.link-card__title')?.textContent?.trim();
-    const description = card.shadowRoot
-      ?.querySelector('.link-card__description')
-      ?.textContent?.trim();
+    const shadowLink = shadowRoot.querySelector<HTMLAnchorElement>('a.link-card');
+    const shadowImage = shadowRoot.querySelector('img.link-card__media');
+    const title = (shadowRoot.querySelector('.link-card__title')?.textContent ?? '').trim();
+    const description = (
+      shadowRoot.querySelector('.link-card__description')?.textContent ?? ''
+    ).trim();
     const descriptionStyle = window.getComputedStyle(
-      card.shadowRoot?.querySelector<HTMLElement>('.link-card__description') ??
-        shadowLink ??
-        document.body,
+      shadowRoot.querySelector<HTMLElement>('.link-card__description') ?? shadowLink ?? document.body,
     );
 
     if (!shadowLink) throw new Error('画像なし link mode の主リンクが見つかりません');
@@ -523,13 +523,76 @@ export const LinkCardWithoutImage: Story = {
       throw new Error('タイトルが描画されていません');
     }
     if (!description || description.length > 140 || !description.endsWith('…')) {
-      throw new Error(`説明文の truncate が想定どおりではありません: ${description ?? 'null'}`);
+      throw new Error(`説明文の truncate が想定どおりではありません: ${description}`);
     }
     if (descriptionStyle.getPropertyValue('-webkit-line-clamp').trim() !== '2') {
       throw new Error('説明文の line clamp は 2 行である必要があります');
     }
     if (descriptionStyle.maxBlockSize === 'none') {
       throw new Error('説明文には見切れ防止の max-block-size が必要です');
+    }
+  },
+};
+
+// ────────────────────────────────────────────
+// LinkCardRequiresHrefAndTitle: link mode の必須入力
+// ────────────────────────────────────────────
+
+/**
+ * `card-kind="link"` を要求しても、trim 後の `href` と `cardTitle` が揃わなければ
+ * 有効モードは generic に縮退します。
+ */
+export const LinkCardRequiresHrefAndTitle: Story = {
+  render: () => html`
+    <div style="display: grid; gap: 1rem; max-width: 520px;">
+      <ui-card
+        id="link-card-missing-title"
+        card-kind="link"
+        href="https://example.com/needs-title"
+        card-title="   "
+      >
+        <p>タイトルが空白のみなので generic として描画されます。</p>
+      </ui-card>
+
+      <ui-card
+        id="link-card-missing-href"
+        card-kind="link"
+        href="   "
+        card-title="href が無いリンクカード"
+      >
+        <p>href が空白のみなので generic として描画されます。</p>
+      </ui-card>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const invalidCards = [
+      canvasElement.querySelector<Card>('#link-card-missing-title'),
+      canvasElement.querySelector<Card>('#link-card-missing-href'),
+    ];
+
+    for (const card of invalidCards) {
+      if (!card) throw new Error('必須入力欠落テスト用の ui-card が見つかりません');
+
+      await card.updateComplete;
+
+      if (card.getAttribute('card-kind') !== 'link') {
+        throw new Error('要求モードとしての card-kind="link" は保持される必要があります');
+      }
+
+      const shadowLink = card.shadowRoot?.querySelector('a.link-card');
+      if (shadowLink) {
+        throw new Error('必須入力が不足した card-kind="link" に link card DOM が描画されています');
+      }
+
+      const slots = card.shadowRoot?.querySelectorAll('slot');
+      if (!slots || slots.length < 3) {
+        throw new Error('縮退後の generic カードに 3 スロットが存在しません');
+      }
+
+      const cursor = window.getComputedStyle(card).cursor;
+      if (cursor === 'pointer') {
+        throw new Error('必須入力が不足した link 要求カードに pointer cursor が出ています');
+      }
     }
   },
 };
@@ -747,27 +810,33 @@ export const ClickDelegationGuards: Story = {
 // ────────────────────────────────────────────
 
 /**
- * **境界条件**: テキスト選択中のクリックは委譲されません。
+ * **境界条件**: 当該カード内のテキスト選択中だけクリック委譲を停止します。
  *
  * ナレッジ管理ツールにおける「テキスト選択性（Selectability）」の維持を確認します。
- * ユーザーがテキストをコピーしようとしている際に、意図せず遷移しないことが重要です。
+ * カード外部の選択は、このカードのクリック委譲を止める理由にしません。
  */
 export const TextSelectionGuard: Story = {
   render: () => html`
-    <ui-card id="selection-card" clickable style="max-width: 400px;">
-      <h3 style="margin: 0 0 0.5rem; font-size: var(--text-base);">
-        <a
-          href="/notes/selection"
-          id="selection-link"
-          style="color: inherit; text-decoration: none;"
-        >
-          テキスト選択テスト
-        </a>
-      </h3>
-      <p id="selectable-text" style="margin: 0; font-size: var(--text-sm);">
-        このテキストを選択してからカードをクリックしても、リンクへ遷移しません。
+    <div style="display: grid; gap: 1rem; max-width: 400px;">
+      <p id="outside-selectable-text" style="margin: 0; font-size: var(--text-sm);">
+        カードの外側にあるテキストです。この選択は card のクリック委譲を止めません。
       </p>
-    </ui-card>
+
+      <ui-card id="selection-card" clickable>
+        <h3 style="margin: 0 0 0.5rem; font-size: var(--text-base);">
+          <a
+            href="/notes/selection"
+            id="selection-link"
+            style="color: inherit; text-decoration: none;"
+          >
+            テキスト選択テスト
+          </a>
+        </h3>
+        <p id="selectable-text" style="margin: 0; font-size: var(--text-sm);">
+          このテキストを選択してからカードをクリックしても、リンクへ遷移しません。
+        </p>
+      </ui-card>
+    </div>
   `,
   play: async ({ canvasElement }) => {
     const card = canvasElement.querySelector<Card>('#selection-card');
@@ -776,36 +845,46 @@ export const TextSelectionGuard: Story = {
     await card.updateComplete;
 
     const getCount = attachLinkSpy(card);
-
-    // テキストを選択状態にする（instanceof で型安全かつ ESLint フレンドリーに判定）
-    const textEl = card.querySelector('#selectable-text');
-    const rawNode = textEl?.firstChild;
-    if (rawNode instanceof Text) {
+    const selectTextContents = (element: Element) => {
       const range = document.createRange();
-      range.setStart(rawNode, 0);
-      range.setEnd(rawNode, Math.min(10, rawNode.data.length));
+      range.selectNodeContents(element);
       window.getSelection()?.removeAllRanges();
       window.getSelection()?.addRange(range);
+    };
+
+    // カード内部の選択は委譲を止める
+    const textEl = card.querySelector('#selectable-text');
+    if (textEl instanceof HTMLElement) {
+      selectTextContents(textEl);
+    }
+    if ((window.getSelection()?.toString().length ?? 0) === 0) {
+      throw new Error('カード内部テキストの選択状態を作成できませんでした');
     }
 
-    // テキスト選択中にカードクリック
     dispatchTestClick(card);
     await card.updateComplete;
 
-    // 選択を解除
-    window.getSelection()?.removeAllRanges();
-
     if (getCount() !== 0) {
-      throw new Error('テキスト選択中にクリックで委譲が発生してはいけません');
+      throw new Error('カード内部でテキスト選択中にクリック委譲が発生してはいけません');
     }
 
-    // 選択解除後は委譲されること（正常動作の確認）
+    // カード外部の選択は委譲を止めない
+    const outsideText = canvasElement.querySelector('#outside-selectable-text');
+    if (outsideText instanceof HTMLElement) {
+      selectTextContents(outsideText);
+    }
+    if ((window.getSelection()?.toString().length ?? 0) === 0) {
+      throw new Error('カード外部テキストの選択状態を作成できませんでした');
+    }
+
     dispatchTestClick(card);
     await card.updateComplete;
 
     if (getCount() !== 1) {
-      throw new Error('テキスト選択解除後はクリックで委譲が発生するはずです');
+      throw new Error('カード外部の選択ではクリック委譲が維持される必要があります');
     }
+
+    window.getSelection()?.removeAllRanges();
   },
 };
 
@@ -924,7 +1003,8 @@ export const MultipleLinksPrimaryFirst: Story = {
 
 /**
  * **境界条件**: 入力系・編集系要素への直接クリックでは委譲されないことを確認します。
- * `input` / `select` / `textarea` / `[contenteditable="true"]` / `[role="button"]`
+ * `input` / `select` / `textarea` / `summary` / `[contenteditable="true"]` /
+ * `[role="button"]` / `[role="link"]` / `[tabindex]`
  */
 export const InteractiveElementsGuard: Story = {
   render: () => html`
@@ -945,8 +1025,14 @@ export const InteractiveElementsGuard: Story = {
           <option>select</option>
         </select>
         <textarea id="guard-textarea">textarea</textarea>
+        <details>
+          <summary id="guard-summary">summary</summary>
+          <div>details content</div>
+        </details>
         <div id="guard-editable" contenteditable="true">contenteditable</div>
         <div id="guard-role-button" role="button" tabindex="0">role=button</div>
+        <div id="guard-role-link" role="link" tabindex="0">role=link</div>
+        <div id="guard-tabindex" tabindex="0">tabindex=0</div>
       </div>
     </ui-card>
   `,
@@ -961,8 +1047,11 @@ export const InteractiveElementsGuard: Story = {
       '#guard-input',
       '#guard-select',
       '#guard-textarea',
+      '#guard-summary',
       '#guard-editable',
       '#guard-role-button',
+      '#guard-role-link',
+      '#guard-tabindex',
     ] as const;
 
     for (const selector of interactiveSelectors) {
@@ -1163,9 +1252,9 @@ export const ExplicitRoleOverride: Story = {
  * 全バリアントに `clickable` を適用した状態の視覚比較です。
  *
  * Hover 時の State Mutation を各バリアントで確認してください:
- * - **outlined**: Shadow 獲得・背景不透明化・枠線が薄くなる（浮上の演出）
+ * - **outlined**: Shadow 獲得と枠線色変化
  * - **elevated**: Shadow が `--elevation-md` → `--elevation-lg` へ強化
- * - **flat / ghost**: Scale のみ（Shadow・背景の変化なし）
+ * - **flat / ghost**: 専用 hover 差分は持たず、カーソルとフォーカスリングが主シグナル
  */
 export const ClickableVariants: Story = {
   render: () => html`
@@ -1368,8 +1457,8 @@ export const ForcedColorsMode: Story = {
  * `prefers-reduced-motion: reduce` 環境でのモーション軽減確認です。
  *
  * OS のモーション低減設定を有効にすると:
- * - `transform: scale()` が無効化される（hover 時のスケール変化なし）
- * - `transition-duration` が `0ms` に短縮される（色変化は即座）
+ * - `transition-duration` が `0ms` に短縮される
+ * - カード契約自体は維持され、クリック委譲やフォーカスリングは崩れない
  *
  * ### 確認方法
  * OS の「視覚効果を減らす」設定を有効化、または
@@ -1387,8 +1476,8 @@ export const ReducedMotion: Story = {
         border: 1px solid var(--border-default);
       "
     >
-      OS の「視覚効果を減らす」設定を有効にした状態でホバーすると、
-      スケール変化が無効化されていることを確認できます。
+      OS の「視覚効果を減らす」設定を有効にした状態で、
+      遷移時間が短縮されてもカード契約が維持されることを確認できます。
     </div>
 
     <ui-card id="reduced-motion-card" clickable style="max-width: 360px;">
@@ -1398,7 +1487,7 @@ export const ReducedMotion: Story = {
         </a>
       </h3>
       <p style="margin: 0; font-size: var(--text-sm); color: var(--fg-muted);">
-        通常: hover で scale(1.02)。モーション軽減時: スケール変化なし。
+        モーション軽減時でも、クリック委譲とフォーカスリングは維持されます。
       </p>
     </ui-card>
   `,
