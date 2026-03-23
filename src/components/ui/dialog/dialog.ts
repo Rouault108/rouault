@@ -15,12 +15,37 @@ const CLOSE_BUTTON_LABEL = '閉じる';
 const BODY_DIALOG_OPEN_ATTRIBUTE = 'data-ui-dialog-open';
 const ACCESSIBLE_NAME_REQUIRED_MESSAGE =
   '[ui-dialog] aria-labelledby (title-id) または aria-label のいずれかを設定してください。';
+const INVALID_TITLE_REFERENCE_MESSAGE =
+  '[ui-dialog] title-id は title スロット内の実在要素を参照してください。';
+const INVALID_DESCRIPTION_REFERENCE_MESSAGE =
+  '[ui-dialog] description-id は既定スロット内の実在要素を参照してください。';
 const FOCUSABLE_SELECTOR =
   'button:not([disabled]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 const dialogBodyScrollLock = createBodyScrollLock(BODY_DIALOG_OPEN_ATTRIBUTE);
 
 export interface UiDialogOpenedDetail {
   trigger: HTMLElement | null;
+}
+
+export type UiDialogCloseReason =
+  | 'close-button'
+  | 'cancel-escape'
+  | 'programmatic'
+  | 'attribute-sync';
+
+export type UiDialogMode = 'modal' | 'non-modal';
+
+export interface UiDialogCancelDetail {
+  reason: 'escape';
+}
+
+export interface UiDialogClosedDetail {
+  reason: UiDialogCloseReason;
+}
+
+export interface UiDialogModeChangedDetail {
+  previous: UiDialogMode;
+  current: UiDialogMode;
 }
 
 @customElement('ui-dialog')
@@ -246,6 +271,7 @@ export class UiDialog extends LitElement {
   private _isDocumentKeydownListening = false;
   private _hasBodyScrollLock = false;
   private _operation: Promise<void> = Promise.resolve();
+  private _closeReason: UiDialogCloseReason | null = null;
 
   private static _openDialogs: UiDialog[] = [];
 
@@ -260,6 +286,11 @@ export class UiDialog extends LitElement {
 
   protected override updated(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has('opened')) {
+      const previousOpened = changedProperties.get('opened');
+      if (previousOpened && !this.opened && this._closeReason === null) {
+        this._closeReason = 'attribute-sync';
+      }
+
       this._enqueue(async () => {
         if (this.opened) {
           await this._openDialog();
@@ -270,8 +301,9 @@ export class UiDialog extends LitElement {
     }
 
     if (changedProperties.has('modal') && this._dialogElement?.open) {
+      const previousModal = changedProperties.get('modal');
       this._enqueue(async () => {
-        await this._syncModalMode();
+        await this._syncModalMode(previousModal ? 'modal' : 'non-modal');
       });
     }
   }
@@ -279,11 +311,13 @@ export class UiDialog extends LitElement {
   open(trigger?: HTMLElement): void {
     if (this.opened) return;
     this._triggerElement = captureTrigger(this.ownerDocument, trigger);
+    this._closeReason = null;
     this.opened = true;
   }
 
-  close(): void {
+  close(reason: UiDialogCloseReason = 'programmatic'): void {
     if (!this.opened && !this._dialogElement?.open) return;
+    this._closeReason = reason;
     this.opened = false;
   }
 
@@ -300,6 +334,7 @@ export class UiDialog extends LitElement {
 
     if (dialog.open) {
       UiDialog._registerOpenDialog(this);
+      this._syncBodyScrollLock();
       this._syncDocumentKeydownListener();
       this._focusInitialElement();
       await waitForDialogAnimations(dialog);
@@ -310,8 +345,7 @@ export class UiDialog extends LitElement {
 
     this._triggerElement ??= captureTrigger(this.ownerDocument);
 
-    if (!this._hasAccessibleName()) {
-      console.error(ACCESSIBLE_NAME_REQUIRED_MESSAGE);
+    if (!this._validateOpenAccessibility()) {
       this.opened = false;
       return;
     }
@@ -322,7 +356,7 @@ export class UiDialog extends LitElement {
     }
 
     UiDialog._registerOpenDialog(this);
-    this._lockBodyScroll();
+    this._syncBodyScrollLock();
     this._syncDocumentKeydownListener();
     this._focusInitialElement();
 
@@ -340,6 +374,7 @@ export class UiDialog extends LitElement {
       UiDialog._unregisterOpenDialog(this);
       this._syncDocumentKeydownListener();
       this._unlockBodyScroll();
+      this._closeReason = null;
       return;
     }
     if (this._isClosing) return;
@@ -388,10 +423,15 @@ export class UiDialog extends LitElement {
   }
 
   private _emitCancelEvent(): void {
-    this.dispatchEvent(new CustomEvent('ui-dialog-cancel'));
+    this.dispatchEvent(
+      new CustomEvent<UiDialogCancelDetail>('ui-dialog-cancel', {
+        detail: { reason: 'escape' },
+      }),
+    );
   }
 
   private _lockBodyScroll(): void {
+    if (!this.modal) return;
     if (this._hasBodyScrollLock) return;
     dialogBodyScrollLock.lock();
     this._hasBodyScrollLock = true;
@@ -403,7 +443,16 @@ export class UiDialog extends LitElement {
     this._hasBodyScrollLock = false;
   }
 
-  private async _syncModalMode(): Promise<void> {
+  private _syncBodyScrollLock(): void {
+    if (this.modal) {
+      this._lockBodyScroll();
+      return;
+    }
+
+    this._unlockBodyScroll();
+  }
+
+  private async _syncModalMode(previousMode: UiDialogMode): Promise<void> {
     const dialog = this._dialogElement;
     if (!dialog?.open) return;
     if (!this.opened) return;
@@ -413,19 +462,23 @@ export class UiDialog extends LitElement {
     dialog.close();
 
     if (!showNativeDialog(dialog, this.modal)) {
+      this._isSyncingModalMode = false;
       UiDialog._unregisterOpenDialog(this);
+      this._closeReason = null;
       this._syncDocumentKeydownListener();
       this._unlockBodyScroll();
       this.opened = false;
       this._restoreTriggerFocus();
-      this.dispatchEvent(new CustomEvent('ui-dialog-closed'));
       return;
     }
 
     UiDialog._registerOpenDialog(this);
+    this._syncBodyScrollLock();
     this._syncDocumentKeydownListener();
     this._focusInitialElement();
     await waitForDialogAnimations(dialog);
+    if (!this._isCurrentlyOpened()) return;
+    this._dispatchModeChangedEvent(previousMode, this._currentMode());
   }
 
   private _isCurrentlyOpened(): boolean {
@@ -440,11 +493,21 @@ export class UiDialog extends LitElement {
     );
   }
 
+  private _dispatchModeChangedEvent(previous: UiDialogMode, current: UiDialogMode): void {
+    if (previous === current) return;
+
+    this.dispatchEvent(
+      new CustomEvent<UiDialogModeChangedDetail>('ui-dialog-mode-changed', {
+        detail: { previous, current },
+      }),
+    );
+  }
+
   private _onNativeCancel = (event: Event): void => {
     if (!this.modal) return;
     event.preventDefault();
     this._emitCancelEvent();
-    this.close();
+    this.close('cancel-escape');
   };
 
   private _onNonModalKeydown = (event: KeyboardEvent): void => {
@@ -452,7 +515,7 @@ export class UiDialog extends LitElement {
     if (event.key !== 'Escape') return;
     event.preventDefault();
     this._emitCancelEvent();
-    this.close();
+    this.close('cancel-escape');
   };
 
   private _onDocumentKeydown = (event: KeyboardEvent): void => {
@@ -474,7 +537,12 @@ export class UiDialog extends LitElement {
     this._syncDocumentKeydownListener();
     this._unlockBodyScroll();
     this._restoreTriggerFocus();
-    this.dispatchEvent(new CustomEvent('ui-dialog-closed'));
+    this.dispatchEvent(
+      new CustomEvent<UiDialogClosedDetail>('ui-dialog-closed', {
+        detail: { reason: this._closeReason ?? 'attribute-sync' },
+      }),
+    );
+    this._closeReason = null;
   };
 
   private _resolveIdAttribute(value: string | undefined): string | typeof nothing {
@@ -488,17 +556,62 @@ export class UiDialog extends LitElement {
     return normalized ?? nothing;
   }
 
-  private _hasAccessibleName(): boolean {
-    return (
-      this._normalizeString(this.titleId) !== undefined ||
-      this._normalizeString(this.ariaLabelText) !== undefined
-    );
+  private _validateOpenAccessibility(): boolean {
+    const titleId = this._normalizeString(this.titleId);
+    const ariaLabelText = this._normalizeString(this.ariaLabelText);
+
+    if (titleId !== undefined) {
+      if (!this._isValidTitleReference(titleId)) {
+        console.error(INVALID_TITLE_REFERENCE_MESSAGE);
+        return false;
+      }
+    } else if (ariaLabelText === undefined) {
+      console.error(ACCESSIBLE_NAME_REQUIRED_MESSAGE);
+      return false;
+    }
+
+    const descriptionId = this._normalizeString(this.descriptionId);
+    if (descriptionId !== undefined && !this._isValidDescriptionReference(descriptionId)) {
+      console.error(INVALID_DESCRIPTION_REFERENCE_MESSAGE);
+    }
+
+    return true;
   }
 
   private _normalizeString(value: string | undefined): string | undefined {
     if (typeof value !== 'string') return undefined;
     const normalized = value.trim();
     return normalized === '' ? undefined : normalized;
+  }
+
+  private _isValidTitleReference(titleId: string): boolean {
+    return this._isIdAssignedToSlot(titleId, 'title');
+  }
+
+  private _isValidDescriptionReference(descriptionId: string): boolean {
+    return descriptionId
+      .split(/\s+/)
+      .every((id) => id !== '' && this._isIdAssignedToSlot(id, null));
+  }
+
+  private _isIdAssignedToSlot(id: string, slotName: string | null): boolean {
+    const target = this.ownerDocument.getElementById(id);
+    if (!target) return false;
+
+    const assignedElements = this._getAssignedElements(slotName);
+    return assignedElements.some(
+      (assignedElement) => assignedElement === target || assignedElement.contains(target),
+    );
+  }
+
+  private _getAssignedElements(slotName: string | null): Element[] {
+    const selector = slotName === null ? 'slot:not([name])' : `slot[name="${slotName}"]`;
+    const slot = this.shadowRoot?.querySelector<HTMLSlotElement>(selector);
+    return slot?.assignedElements({ flatten: true }) ?? [];
+  }
+
+  private _currentMode(): UiDialogMode {
+    return this.modal ? 'modal' : 'non-modal';
   }
 
   private _syncDocumentKeydownListener(): void {
@@ -576,7 +689,7 @@ export class UiDialog extends LitElement {
   }
 
   private _onCloseButtonClick = (): void => {
-    this.close();
+    this.close('close-button');
   };
 }
 

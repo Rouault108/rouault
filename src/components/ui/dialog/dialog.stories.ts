@@ -1,7 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './dialog';
-import { type UiDialog, type UiDialogOpenedDetail } from './dialog';
+import {
+  type UiDialog,
+  type UiDialogCancelDetail,
+  type UiDialogClosedDetail,
+  type UiDialogModeChangedDetail,
+  type UiDialogOpenedDetail,
+} from './dialog';
 
 const wait = async (ms: number): Promise<void> =>
   new Promise((resolve) => {
@@ -154,7 +160,9 @@ const meta: Meta<UiDialog> = {
 - \`modal=true\`: \`showModal()\`、Focus Trap、\`aria-modal="true"\`
 - \`modal=false\`: \`show()\`、Esc で手動クローズ（背景クリックでは閉じない）
 - Enter/Exit アニメーション完了後に \`ui-dialog-opened\` / \`ui-dialog-closed\` を発火
-- Esc 時は \`ui-dialog-cancel\` を発火
+- \`ui-dialog-closed.detail.reason\` で閉鎖経路を区別
+- open 中の \`modal\` 切替では \`ui-dialog-mode-changed\` を発火
+- Esc 時は \`ui-dialog-cancel.detail.reason="escape"\` を発火
         `,
       },
     },
@@ -264,9 +272,9 @@ export const ModalCriticalDecisionOpenClose: Story = {
       'ダイアログ表示中に body 要素に data-ui-dialog-open 属性が付与されていません',
     );
 
-    const closedPromise = waitForEvent(host, 'ui-dialog-closed');
+    const closedPromise = waitForEvent<CustomEvent<UiDialogClosedDetail>>(host, 'ui-dialog-closed');
     host.close();
-    await closedPromise;
+    const closedEvent = await closedPromise;
     await flush(host);
 
     assert(
@@ -281,6 +289,10 @@ export const ModalCriticalDecisionOpenClose: Story = {
     assert(
       !document.body.hasAttribute('data-ui-dialog-open'),
       'close() 後に body 要素の data-ui-dialog-open 属性が解除されていません',
+    );
+    assert(
+      closedEvent.detail.reason === 'programmatic',
+      `close() の closed reason は "programmatic" である必要がありますが、実際には "${closedEvent.detail.reason}" でした`,
     );
   },
 };
@@ -305,9 +317,9 @@ export const ModalCriticalDecisionCloseButton: Story = {
 
     const closeButton = getCloseButton(host);
     const dialog = getNativeDialog(host);
-    const closedPromise = waitForEvent(host, 'ui-dialog-closed');
+    const closedPromise = waitForEvent<CustomEvent<UiDialogClosedDetail>>(host, 'ui-dialog-closed');
     closeButton.click();
-    await closedPromise;
+    const closedEvent = await closedPromise;
     await flush(host);
 
     assert(!host.opened, 'close ボタン押下後に opened="false" である必要があります');
@@ -315,6 +327,10 @@ export const ModalCriticalDecisionCloseButton: Story = {
     assert(
       document.activeElement === trigger,
       'close ボタン押下後にトリガーへフォーカスが返却されていません',
+    );
+    assert(
+      closedEvent.detail.reason === 'close-button',
+      `close ボタン経路の closed reason は "close-button" である必要がありますが、実際には "${closedEvent.detail.reason}" でした`,
     );
   },
 };
@@ -363,15 +379,19 @@ export const ModalEscCancelSequence: Story = {
       eventOrder.push('closed');
     });
 
-    const cancelPromise = waitForEvent(host, 'ui-dialog-cancel');
-    const closedPromise = waitForEvent(host, 'ui-dialog-closed');
+    const cancelPromise = waitForEvent<CustomEvent<UiDialogCancelDetail>>(host, 'ui-dialog-cancel');
+    const closedPromise = waitForEvent<CustomEvent<UiDialogClosedDetail>>(host, 'ui-dialog-closed');
     dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
     await cancelPromise;
-    await closedPromise;
+    const closedEvent = await closedPromise;
     await flush(host);
 
     assert(eventOrder.join('>') === 'cancel>closed', 'Esc 経路のイベント順序が不正です');
     assert(!dialog.open, 'Esc キー押下後にダイアログが閉じていません');
+    assert(
+      closedEvent.detail.reason === 'cancel-escape',
+      `Esc 経路の closed reason は "cancel-escape" である必要がありますが、実際には "${closedEvent.detail.reason}" でした`,
+    );
   },
 };
 
@@ -425,19 +445,29 @@ export const NonModalLightweightInfo: Story = {
       '非モーダル検証のため、ダイアログ外へフォーカスを移せていません',
     );
 
-    const cancelByEscPromise = waitForEvent(host, 'ui-dialog-cancel');
-    const closedByEscPromise = waitForEvent(host, 'ui-dialog-closed');
+    const cancelByEscPromise = waitForEvent<CustomEvent<UiDialogCancelDetail>>(
+      host,
+      'ui-dialog-cancel',
+    );
+    const closedByEscPromise = waitForEvent<CustomEvent<UiDialogClosedDetail>>(
+      host,
+      'ui-dialog-closed',
+    );
     trigger.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, composed: true }),
     );
     await cancelByEscPromise;
-    await closedByEscPromise;
+    const closedEvent = await closedByEscPromise;
     await flush(host);
 
     assert(!dialog.open, 'Esc キー押下後にダイアログが閉じていません');
     assert(
       document.activeElement === trigger,
       'Esc によるクローズ後にトリガーへフォーカスが返却されていません',
+    );
+    assert(
+      closedEvent.detail.reason === 'cancel-escape',
+      `非モーダル Esc の closed reason は "cancel-escape" である必要がありますが、実際には "${closedEvent.detail.reason}" でした`,
     );
   },
 };
@@ -551,9 +581,9 @@ export const TriggerFallbackAndReentrancySafety: Story = {
     });
     await flush(host);
 
-    const closedPromise = waitForEvent(host, 'ui-dialog-closed');
+    const closedPromise = waitForEvent<CustomEvent<UiDialogClosedDetail>>(host, 'ui-dialog-closed');
     host.close();
-    await closedPromise;
+    const closedEvent = await closedPromise;
     await flush(host);
     assert(
       closedCount === 1,
@@ -562,6 +592,10 @@ export const TriggerFallbackAndReentrancySafety: Story = {
     assert(
       document.activeElement === trigger,
       'トリガー省略時のフォーカス返却先が activeElement になっていません',
+    );
+    assert(
+      closedEvent.detail.reason === 'programmatic',
+      `close() の closed reason は "programmatic" である必要がありますが、実際には "${closedEvent.detail.reason}" でした`,
     );
 
     const reopenedPromise = waitForEvent(host, 'ui-dialog-opened');
@@ -607,13 +641,20 @@ export const TriggerFallbackAndReentrancySafety: Story = {
       'close 中に再度 open() した場合にネイティブの dialog 要素が閉じてはいけません',
     );
 
-    const finalClosedPromise = waitForEvent(host, 'ui-dialog-closed');
+    const finalClosedPromise = waitForEvent<CustomEvent<UiDialogClosedDetail>>(
+      host,
+      'ui-dialog-closed',
+    );
     host.close();
-    await finalClosedPromise;
+    const finalClosedEvent = await finalClosedPromise;
     await flush(host);
     assert(
       hasExpectedCount(closedCount, 2),
       `最終クローズ後の ui-dialog-closed イベントが 2 回であることを期待していましたが、実際には ${String(closedCount)} 回でした`,
+    );
+    assert(
+      finalClosedEvent.detail.reason === 'programmatic',
+      `最終クローズの closed reason は "programmatic" である必要がありますが、実際には "${finalClosedEvent.detail.reason}" でした`,
     );
 
     await ensureNoEvent(host, 'ui-dialog-closed', () => {
@@ -682,12 +723,12 @@ export const MultiDialogScrollLockReferenceCount: Story = {
       <button id="multi-trigger-a" type="button">Aを開く</button>
       <button id="multi-trigger-b" type="button">Bを開く</button>
 
-      <ui-dialog id="dialog-multi-a" .modal=${false} title-id="multi-title-a">
+      <ui-dialog id="dialog-multi-a" title-id="multi-title-a">
         <h2 slot="title" id="multi-title-a">ダイアログA</h2>
         <p>A本文</p>
       </ui-dialog>
 
-      <ui-dialog id="dialog-multi-b" .modal=${false} title-id="multi-title-b">
+      <ui-dialog id="dialog-multi-b" title-id="multi-title-b">
         <h2 slot="title" id="multi-title-b">ダイアログB</h2>
         <p>B本文</p>
       </ui-dialog>
@@ -721,22 +762,30 @@ export const MultiDialogScrollLockReferenceCount: Story = {
       '2件目のダイアログオープン後に body 要素のロック属性が失われています',
     );
 
-    const closeAPromise = waitForEvent(hostA, 'ui-dialog-closed');
+    const closeAPromise = waitForEvent<CustomEvent<UiDialogClosedDetail>>(hostA, 'ui-dialog-closed');
     hostA.close();
-    await closeAPromise;
+    const closedAEvent = await closeAPromise;
     await flush(hostA);
     assert(
       document.body.hasAttribute('data-ui-dialog-open'),
       '1件だけクローズした段階で body 要素のロック属性を解除してはいけません',
     );
+    assert(
+      closedAEvent.detail.reason === 'programmatic',
+      `A の closed reason は "programmatic" である必要がありますが、実際には "${closedAEvent.detail.reason}" でした`,
+    );
 
-    const closeBPromise = waitForEvent(hostB, 'ui-dialog-closed');
+    const closeBPromise = waitForEvent<CustomEvent<UiDialogClosedDetail>>(hostB, 'ui-dialog-closed');
     hostB.close();
-    await closeBPromise;
+    const closedBEvent = await closeBPromise;
     await flush(hostB);
     assert(
       !document.body.hasAttribute('data-ui-dialog-open'),
       '最終的なクローズ後に body 要素のロック属性が解除されていません',
+    );
+    assert(
+      closedBEvent.detail.reason === 'programmatic',
+      `B の closed reason は "programmatic" である必要がありますが、実際には "${closedBEvent.detail.reason}" でした`,
     );
   },
 };
@@ -776,13 +825,17 @@ export const AttributeDrivenOpenState: Story = {
     assert(host.opened, 'opened="true" 設定後にダイアログが開いていません');
     assert(dialog.open, 'opened="true" 設定後にネイティブの dialog 要素が開いていません');
 
-    const closePromise = waitForEvent(host, 'ui-dialog-closed');
+    const closePromise = waitForEvent<CustomEvent<UiDialogClosedDetail>>(host, 'ui-dialog-closed');
     host.opened = false;
-    await closePromise;
+    const closedEvent = await closePromise;
     await flush(host);
 
     assert(!host.opened, 'opened="false" 設定後にダイアログが閉じていません');
     assert(!dialog.open, 'opened="false" 設定後にネイティブの dialog 要素が閉じていません');
+    assert(
+      closedEvent.detail.reason === 'attribute-sync',
+      `opened=false の closed reason は "attribute-sync" である必要がありますが、実際には "${closedEvent.detail.reason}" でした`,
+    );
   },
 };
 
@@ -829,15 +882,38 @@ export const LiveModalModeSwitching: Story = {
       '初期状態では aria-modal="true" である必要があります',
     );
 
+    const modeChangedPromise = waitForEvent<CustomEvent<UiDialogModeChangedDetail>>(
+      host,
+      'ui-dialog-mode-changed',
+    );
+    let unexpectedOpenOrClose = false;
+    const unexpectedListener = (): void => {
+      unexpectedOpenOrClose = true;
+    };
+    host.addEventListener('ui-dialog-opened', unexpectedListener);
+    host.addEventListener('ui-dialog-closed', unexpectedListener);
+
     host.modal = false;
     await flush(host);
     await waitFrame();
+    const modeChangedEvent = await modeChangedPromise;
     await flush(host);
+
+    host.removeEventListener('ui-dialog-opened', unexpectedListener);
+    host.removeEventListener('ui-dialog-closed', unexpectedListener);
 
     assert(dialog.open, 'modal=false へ切り替え後もダイアログは開いたままである必要があります');
     assert(
       dialog.getAttribute('aria-modal') === null,
       'modal=false へ切り替え後は aria-modal 属性を除去する必要があります',
+    );
+    assert(
+      modeChangedEvent.detail.previous === 'modal' && modeChangedEvent.detail.current === 'non-modal',
+      `mode-changed detail が不正です: ${modeChangedEvent.detail.previous} -> ${modeChangedEvent.detail.current}`,
+    );
+    assert(
+      !unexpectedOpenOrClose,
+      'modal 切り替えでは ui-dialog-opened / ui-dialog-closed を再発火してはいけません',
     );
 
     trigger.focus();
@@ -846,18 +922,22 @@ export const LiveModalModeSwitching: Story = {
       'modal 切り替え検証のため、ダイアログ外へフォーカスを移せていません',
     );
 
-    const cancelPromise = waitForEvent(host, 'ui-dialog-cancel');
-    const closedPromise = waitForEvent(host, 'ui-dialog-closed');
+    const cancelPromise = waitForEvent<CustomEvent<UiDialogCancelDetail>>(host, 'ui-dialog-cancel');
+    const closedPromise = waitForEvent<CustomEvent<UiDialogClosedDetail>>(host, 'ui-dialog-closed');
     trigger.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, composed: true }),
     );
     await cancelPromise;
-    await closedPromise;
+    const closedEvent = await closedPromise;
     await flush(host);
 
     assert(
       !dialog.open,
       'modal=false へ切り替え後、外側フォーカスからの Esc で閉じる必要があります',
+    );
+    assert(
+      closedEvent.detail.reason === 'cancel-escape',
+      `mode 切り替え後の Esc closed reason は "cancel-escape" である必要がありますが、実際には "${closedEvent.detail.reason}" でした`,
     );
   },
 };

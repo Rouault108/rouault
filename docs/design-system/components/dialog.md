@@ -613,78 +613,44 @@ backdrop click で閉じるか、Esc を無効化するか、close button を隠
 
 ---
 
-## 13. 現行実装で未対応の事項
+## 13. 実装追従メモ
 
-本節は、現行の `dialog.ts` および `dialog.stories.ts` を基準として、**本書が定義する正規契約に対して、まだ実装が追従していない事項**を整理するものです。
+本節は、現行の `dialog.ts` および `dialog.stories.ts` を基準として、**本書が定義する契約へどこまで追従済みか**、および **なお整理途上の事項は何か**を記録するものです。
 
-### 13.1 `opened` を唯一の正規状態とする整理
+2026-03-24 時点で、次の事項は実装と Storybook が本書へ追従済みです。
 
-現行実装は `open()` / `close()` と `opened` を併用できますが、公開設計としての主従関係が十分に整理されていません。本書では `opened` を唯一の公開開閉状態と定義しましたが、実装と Storybook はまだ convenience API と状態 API の区別を明確にしていません。
+- `opened` を唯一の公開開閉状態として扱う整理
+- `modal=false` 時に body スクロールロックを行わない契約
+- `title-id` の参照整合性検証
+- `description-id` の既定スロット参照検証
+- `ui-dialog-closed.detail.reason` の公開
+- `ui-dialog-cancel.detail.reason='escape'` の公開
+- `ui-dialog-mode-changed` の公開
+- open 中の `modal` 切り替えで `opened` / `closed` を再発火しないイベント意味論
+- close button / Esc / `close()` / `opened=false` の閉鎖理由の区別
 
-### 13.2 非モーダル時の body スクロールロック
+一方で、次の事項は依然として整理途上です。
 
-本書では `modal=false` 時に body スクロールロックを行わないことを正規契約としました。現行実装は非モーダル時にも body ロックを行うため、未整合です。
+### 13.1 単一 dialog 契約
 
-### 13.3 `title-id` の参照整合性検証
+本書では複数 dialog の積層管理を `ui-dialog` 自身の責務から外しました。一方、現行実装は非モーダル Esc の最前面判定のために静的 open dialog リストを保持しています。これは互換性維持のための実装詳細であり、長期契約としては扱いません。
 
-本書では `title-id` が `title` スロット内の実在要素を参照することを必須としました。現行実装は文字列有無を主に見ており、参照整合性までは十分に検証していません。
+### 13.2 disconnect 時の意味論
 
-### 13.4 `description-id` の配置契約
+`disconnectedCallback()` における破棄時処理は実装されていますが、破棄を close と同一視するか、イベントやフォーカス返却をどう観測するかという契約面は本書でまだ固定していません。
 
-本書では `description-id` を既定スロット内の説明要素、または空白区切り ID 群として定義しました。現行実装・Storybook はこの配置規則と複数 ID 契約を明示していません。
+### 13.3 Storybook の body 属性名依存
 
-### 13.5 `ui-dialog-closed` の `detail.reason`
+本書では `data-ui-dialog-open` のような body 属性名自体を公開契約として扱いません。しかし現行 Storybook には、この属性名を直接検証する回帰確認が残っています。これは公開契約確認ではなく、実装互換確認として読みます。
 
-本書では `ui-dialog-closed` が `reason` を持つことを正規契約としました。現行実装の `ui-dialog-closed` は detail を持たず、閉鎖理由を識別できません。
+### 13.4 Storybook の内部 DOM / class 名依存
 
-### 13.6 `ui-dialog-cancel` の detail
+本書では内部 DOM 構造、wrapper 要素、class 名を公開契約から外しました。一方、現行 Storybook は `.close-button` や shadowRoot 内の `dialog` 探索を含みます。これは回帰確認としては有効ですが、公開契約の検証としては限定的です。
 
-本書では `ui-dialog-cancel` に `reason='escape'` を持たせました。現行実装は cancel detail を公開していません。
+### 13.5 複数 dialog 互換 Story の残存
 
-### 13.7 `ui-dialog-mode-changed` の追加
+`MultiDialogScrollLockReferenceCount` は長期契約ではなく、現行互換を確認する Story として残しています。本書の単一 dialog 契約と混同しないよう、将来的には互換 Story の分離または削除を検討します。
 
-本書では open 中の `modal` 切り替えを close/open ではなく mode change として扱い、`ui-dialog-mode-changed` を定義しました。現行実装・Storybook はこのイベント契約を持ちません。
+### 13.6 本節の扱い
 
-### 13.8 `modal` 切り替え時のイベント意味論
-
-本書では mode change 時に `opened` / `closed` を再発火しないことを定義しました。現行実装は内部再同期中心であり、イベント意味論が十分に固定されていません。
-
-### 13.9 単一 dialog 契約
-
-本書では複数 dialog の積層管理を `ui-dialog` 自身の責務から外しました。現行実装は静的リストと参照カウントにより複数 open を扱っていますが、これは長期契約としては採用しません。
-
-### 13.10 フォーカス返却失敗時の明示契約
-
-本書では返却先が無効な場合に補償フォーカスを行わないことを明示しました。現行実装は振る舞いを持っていても、その契約境界は明示されていません。
-
-### 13.11 内部 DOM 構造の非公開化
-
-本書では header / body / footer を意味上の領域として扱い、wrapper 要素や class 名を非公開としました。現行文書は具体 DOM に寄りすぎており、実装差し替え耐性が不足していました。
-
-### 13.12 disconnect 時の意味論
-
-本書では、dialog の close と host の破棄を別概念として扱う方向を前提にしています。現行実装は `disconnectedCallback()` を持ちますが、破棄時のイベント・フォーカス返却・状態観測の意味論はまだ公開契約として固まっていません。
-
-### 13.13 Dismiss Policy の固定化
-
-本書では close button と Esc を常時許可し、outside press close を不許可とする基底契約を定義しました。現行実装は結果的にこの振る舞いを持っていても、公開 API としての固定化は未完了です。
-
-### 13.14 非モーダル Esc の最前面判定依存
-
-本書では `ui-dialog` を単一 dialog 契約として整理し、積層時の最前面解決を上位責務へ外しました。一方、現行実装は `modal=false` 時の Esc 処理を静的 open dialog リストと最前面判定に依存させています。これは新契約の責務分離に未追従です。
-
-### 13.15 Body スクロールロック属性名への Storybook 依存
-
-本書では `data-ui-dialog-open` のような body 属性名自体を公開契約として扱いません。公開契約は、モーダル時のみ背景スクロールを抑止することです。しかし現行 Storybook はこの属性名の存在を直接検証しており、非公開の実装詳細へ依存しています。
-
-### 13.16 Storybook の内部 DOM / class 名依存
-
-本書では内部 DOM 構造、wrapper 要素、class 名を公開契約から外しました。一方、現行 Storybook は `.close-button` や shadowRoot 内の `dialog` 直接探索など、内部構造に依存した検証を含みます。これは回帰確認としては有効でも、契約確認としては新方針に未追従です。
-
-### 13.17 複数 dialog 互換 Story の残存
-
-本書では複数 dialog の積層管理を `ui-dialog` 自身の責務から外しました。しかし現行 Storybook には `MultiDialogScrollLockReferenceCount` が残っており、旧来の複数 open と body ロック参照カウント挙動を前提にした互換確認が含まれます。長期契約と整合させるには、この Story を削除するか、互換確認用の非契約 Story であることをより明確に分離する必要があります。
-
-### 13.18 本節の扱い
-
-本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用する場合は、実装、Storybook、契約書の 3 点を同時に更新し、未対応状態を残したまま公開契約へ昇格させません。
+本節は、現時点で依存可能な公開契約と、なお整理途上の実装詳細を切り分けるためのメモです。未整理事項を公開契約へ昇格させる場合は、実装、Storybook、契約書の 3 点を同時に更新します。
