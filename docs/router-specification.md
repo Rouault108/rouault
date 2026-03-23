@@ -68,7 +68,7 @@ router 外部へ本文描画を委譲する場合は、単発 callback ではな
 
 ### navigation URL
 
-遷移要求およびブラウザ表示に用いる正規化済み URL です。Rouault では、ルート `/` を除き末尾 `/` を持たず、`wtr-session-id` を除去した pathname + search + hash を指します。
+遷移要求およびブラウザ表示に用いる正規化済み URL です。Rouault では、`wtr-session-id` を除去した pathname + search + hash を指します。pathname は通常ルート `/` を除き末尾 `/` を持ちませんが、検索仕様の例外として `/tags/<tag>/` は trailing slash を保持し、`/search/` は `/search` へ正規化します。
 
 ### fetch target URL
 
@@ -591,7 +591,9 @@ getCurrentPath(): string
 `LocationAdapter` は URL を次のように正規化します。
 
 - `wtr-session-id` query を除去する
-- ルート `/` を除き、表示用 pathname 末尾 `/` を除去する
+- `/search/` と `/search` は表示用 pathname として `/search` に正規化する
+- `/tags/<tag>/` は表示用 pathname として trailing slash を保持する
+- 上記以外では、ルート `/` を除き表示用 pathname 末尾 `/` を除去する
 - navigation URL は pathname + search + hash で表現する
 - fetch target URL は pathname + search で表現し、hash を含めない
 - fetch target URL は静的出力物取得のため pathname 末尾 `/` を補うことがある
@@ -602,6 +604,7 @@ getCurrentPath(): string
 | ------------------------------------ | -------------------- | ----------------- |
 | `/docs/example/`                     | `/docs/example`      | `/docs/example/`  |
 | `/search/?q=test&wtr-session-id=abc` | `/search?q=test`     | `/search/?q=test` |
+| `/tags/music/`                       | `/tags/music/`       | `/tags/music/`    |
 | `/notes/a#section-1`                 | `/notes/a#section-1` | `/notes/a/`       |
 
 ### state-only 判定における query 比較
@@ -990,7 +993,6 @@ if (result.outcome !== 'completed') {
 ```ts
 const router = new Router(outlet, {
   skipInitialNavigation: true,
-  skipAriaLiveRegion: true,
   contentAdapter: {
     async prepare({ html }) {
       let previous = currentContent;
@@ -1020,4 +1022,3 @@ await router.start();
 - 外部描画統合は単発 callback ではなく 2 相 commit で扱う
 - DOM 後処理の責務位置は、描画の主体に一致させる
 - outcome を伴わない曖昧な完了判定を導入しない
-

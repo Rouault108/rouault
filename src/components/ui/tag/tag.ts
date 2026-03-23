@@ -630,13 +630,16 @@ export class Tag extends LitElement {
 
   /** 削除ボタンのラベル */
   private get _removeLabel(): string {
-    const text = this.textContent.trim();
+    const text = this.textContent?.trim() ?? '';
     return text ? `${text}を削除` : '削除';
   }
 
   /** アイコンスロットのレンダリング */
   private _renderIcon() {
-    const lightDomChildren = this.children ? Array.from(this.children) : [];
+    const lightDomChildren =
+      'children' in this
+        ? Array.from((this as typeof this & { children?: ArrayLike<Element> }).children ?? [])
+        : [];
     const hasIcon = lightDomChildren.some((child) => child.getAttribute('slot') === 'icon');
     if (!hasIcon) return nothing;
 
@@ -689,7 +692,7 @@ export class Tag extends LitElement {
     // <a> と <button> を Flexbox で並列配置する
     if (hasHref && hasRemovable) {
       return html`
-        <div class="tag-group" role="group" aria-label="${this.textContent.trim()} タグ">
+        <div class="tag-group" role="group" aria-label="${this.textContent?.trim() ?? ''} タグ">
           <a
             class="tag-link"
             href="${this.disabled ? nothing : this.href}"

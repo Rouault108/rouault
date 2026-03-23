@@ -54,9 +54,16 @@ describe('rehypeRouaultComponents', () => {
               properties: {
                 className: ['language-ts'],
                 filename: 'sample.ts',
-                label: '正解例',
+                'group-key': 'sample',
+                'tab-label': '正解例',
+                'copy-label': '正解コード',
+                copyable: 'false',
                 intent: 'valid',
                 'show-line-numbers': true,
+                'copy-mode': 'always',
+                wrap: true,
+                'highlight-lines': '1,3-4',
+                layout: 'inline',
               },
               children: [{ type: 'text', value: 'const sample = 1;' }],
             },
@@ -71,13 +78,27 @@ describe('rehypeRouaultComponents', () => {
     const code = block?.children?.[0]?.children?.[0];
     expect(block?.tagName).to.equal('ui-code-block');
     expect(block?.properties?.['filename']).to.equal('sample.ts');
-    expect(block?.properties?.['label']).to.equal('正解例');
+    expect(block?.properties?.['group-key']).to.equal('sample');
+    expect(block?.properties?.['tab-label']).to.equal('正解例');
+    expect(block?.properties?.['copy-label']).to.equal('正解コード');
+    expect(block?.properties?.['copyable']).to.equal('false');
     expect(block?.properties?.['intent']).to.equal('valid');
     expect(block?.properties?.['show-line-numbers']).to.equal(true);
+    expect(block?.properties?.['copy-mode']).to.equal('always');
+    expect(block?.properties?.['wrap']).to.equal(true);
+    expect(block?.properties?.['highlight-lines']).to.equal('1,3-4');
+    expect(block?.properties?.['layout']).to.equal('inline');
     expect(code?.properties?.['filename']).to.equal(undefined);
-    expect(code?.properties?.['label']).to.equal(undefined);
+    expect(code?.properties?.['group-key']).to.equal(undefined);
+    expect(code?.properties?.['tab-label']).to.equal(undefined);
+    expect(code?.properties?.['copy-label']).to.equal(undefined);
+    expect(code?.properties?.['copyable']).to.equal(undefined);
     expect(code?.properties?.['intent']).to.equal(undefined);
     expect(code?.properties?.['show-line-numbers']).to.equal(undefined);
+    expect(code?.properties?.['copy-mode']).to.equal(undefined);
+    expect(code?.properties?.['wrap']).to.equal(undefined);
+    expect(code?.properties?.['highlight-lines']).to.equal(undefined);
+    expect(code?.properties?.['layout']).to.equal(undefined);
   });
 
   it('table を ui-table にラップし、caption から aria-label を補完すること', () => {

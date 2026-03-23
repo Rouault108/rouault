@@ -50,7 +50,7 @@ describe('remarkLinkCards', () => {
     };
 
     const plugin = remarkLinkCards({
-      fetch: (async (input: string | URL | Request) => {
+      fetch: ((input: string | URL | Request) => {
         const url =
           typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
         calls.push(url);
@@ -102,7 +102,7 @@ describe('remarkLinkCards', () => {
       'https://example.com/twitter-image.png',
     );
     expect(card?.data?.hProperties?.['site-name']).to.equal('Example Provider');
-    expect(card?.data?.hProperties?.['clickable']).to.equal(true);
+    expect(card?.data?.hProperties?.['clickable']).to.equal(undefined);
     expect(calls).to.deep.equal(['https://example.com/post', 'https://example.com/oembed']);
   });
 
@@ -136,7 +136,7 @@ describe('remarkLinkCards', () => {
     };
 
     const plugin = remarkLinkCards({
-      fetch: (async () =>
+      fetch: (() =>
         new Response(
           `
             <html>
@@ -178,7 +178,7 @@ describe('remarkLinkCards', () => {
 
     const file = createFile();
     const plugin = remarkLinkCards({
-      fetch: (async () => {
+      fetch: (() => {
         throw new Error('network down');
       }) as typeof fetch,
     });
@@ -221,7 +221,7 @@ describe('remarkLinkCards', () => {
     };
 
     const plugin = remarkLinkCards({
-      fetch: (async () => {
+      fetch: (() => {
         calls.push('https://example.com/dedupe');
         return new Response(
           `

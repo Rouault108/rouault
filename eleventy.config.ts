@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { copyFile, mkdir, writeFile } from 'node:fs/promises';
+import { copyFile } from 'node:fs/promises';
 import type { UserConfig } from '@11ty/eleventy';
 import EleventyVitePlugin from '@11ty/eleventy-plugin-vite';
 import type { Connect, ViteDevServer } from 'vite';
@@ -38,10 +38,17 @@ const registerDevelopmentStaticDirectories = (server: ViteDevServer): void => {
   );
 };
 
-const writeSearchCatalogJson = async (outputDirectory: string): Promise<void> => {
-  const outputPath = path.resolve(outputDirectory, 'search-catalog.json');
-  await mkdir(path.dirname(outputPath), { recursive: true });
-  await writeFile(outputPath, serializeSearchCatalog(loadNotesData()), 'utf8');
+const registerSearchCatalogMiddleware = (server: ViteDevServer): void => {
+  server.middlewares.use((req, res, next) => {
+    if (req.url !== '/search-catalog.json') {
+      next();
+      return;
+    }
+
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.end(serializeSearchCatalog(loadNotesData()));
+  });
 };
 
 /**
@@ -91,8 +98,6 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
   });
 
   eleventyConfig.on('eleventy.after', async () => {
-    await writeSearchCatalogJson(path.resolve(process.cwd(), 'dist'));
-
     // Cloudflare Pages 用の rewrite ルールを出力ディレクトリへ明示コピーする。
     await copyFile(
       path.resolve(process.cwd(), '_redirects'),
@@ -114,11 +119,13 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
           name: 'rouault-trailing-slash-rewrite',
           configureServer(server: ViteDevServer) {
             registerDevelopmentStaticDirectories(server);
+            registerSearchCatalogMiddleware(server);
             registerTrailingSlashRewrite(server);
           },
           configurePreviewServer(server: ViteDevServer) {
             return () => {
               registerDevelopmentStaticDirectories(server);
+              registerSearchCatalogMiddleware(server);
               registerTrailingSlashRewrite(server);
             };
           },

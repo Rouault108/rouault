@@ -65,11 +65,11 @@ let i: string = 'Hello World!';
 
 ::code-group{aria-label="実装比較"}
 
-```ts label="正しい例"
+```ts group-key="valid-simple" tab-label="正しい例"
 const value = 1;
 ```
 
-```ts label="誤り例"
+```ts group-key="invalid-simple" tab-label="誤り例"
 const value = '1';
 ```
 
@@ -77,11 +77,11 @@ const value = '1';
 
 ::code-group{aria-label="実装比較"}
 
-```ts filename="valid.ts" label="正しい例"
+```ts filename="valid.ts" group-key="valid" tab-label="正しい例"
 const value = 1;
 ```
 
-```ts filename="invalid.ts" label="誤り例"
+```ts filename="invalid.ts" group-key="invalid" tab-label="誤り例"
 const value = '1';
 ```
 
@@ -133,7 +133,7 @@ https://note.com/info/n/nea1b96233fbf
 
 ### その他独自記法
 
-::details{aria-label="補足を開閉" summary="補足情報" open="true" variant="bordered"}
+::details{summary="補足情報" open="true" variant="bordered"}
 ここに詳細を書く
 ::
 

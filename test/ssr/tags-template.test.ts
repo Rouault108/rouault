@@ -7,11 +7,10 @@ describe('TagPagesTemplate', () => {
     const template = new TagPagesTemplate();
     const data = template.data();
 
-    expect(data.pagination.data).toBe('paginationTagPages');
-    expect(Array.isArray(data.paginationTagPages)).toBe(true);
+    expect(data.pagination.data).toBe('tagPages');
   });
 
-  it('タグ専用の静的一覧を描画すること', () => {
+  it('タグ専用の search-page 初期表示を描画すること', () => {
     const template = new TagPagesTemplate();
     const rendered = template.render({
       tagPage: {
@@ -38,10 +37,11 @@ describe('TagPagesTemplate', () => {
       },
     });
 
-    expect(rendered).toContain('<tag-page tag-page-json="');
-    expect(rendered).toContain('&quot;tag&quot;:&quot;music&quot;');
-    expect(rendered).toContain('&quot;noteCount&quot;:2');
-    expect(rendered).toContain('&quot;title&quot;:&quot;交響曲メモ&quot;');
-    expect(rendered).not.toContain('<search-page');
+    expect(rendered).toContain('<search-page initial-search-state-json="');
+    expect(rendered).toContain('initial-search-response-json="');
+    expect(rendered).toContain('&quot;tagMode&quot;:&quot;or&quot;');
+    expect(rendered).toContain('&quot;tags&quot;:[&quot;music&quot;]');
+    expect(rendered).toContain('&quot;canonicalUrl&quot;:&quot;/notes/music/symphony/&quot;');
+    expect(rendered).toContain('&quot;pathLabel&quot;:&quot;notes / music / symphony&quot;');
   });
 });

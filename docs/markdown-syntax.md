@@ -221,23 +221,22 @@ $$
 補足、注意、警告などの強調ブロック。
 
 ```markdown
-::callout{kind="warning" title="注意"}
+::callout{kind="warning" heading="注意"}
 この操作は元に戻せません。
 ::
 ```
 
-| 属性            | 内容               | 値                                            |
-| --------------- | ------------------ | --------------------------------------------- |
-| `kind`          | 種別               | `note`, `tip`, `success`, `warning`, `danger` |
-| `variant`       | `kind` の別名      | `note`, `tip`, `success`, `warning`, `danger` |
-| `title`         | 見出し文言         | 任意の文字列                                  |
-| `icon`          | アイコン名         | 任意の文字列                                  |
-| `heading-level` | 見出しレベル       | `1` から `6`                                  |
-| `aria-label`    | 補助技術向けラベル | 任意の文字列                                  |
+| 属性            | 内容                 | 値                                            |
+| --------------- | -------------------- | --------------------------------------------- |
+| `kind`          | 種別                 | `note`, `tip`, `success`, `warning`, `danger` |
+| `heading`       | 可視見出し           | 任意の文字列                                  |
+| `label`         | 見出しなし時のラベル | 任意の文字列                                  |
+| `icon`          | アイコン名           | 任意の文字列                                  |
+| `heading-level` | 見出しレベル         | `1` から `6`                                  |
 
 補足:
 
-- `kind` と `variant` を同時指定する場合は同じ値にする
+- `heading` がない場合のみ `label` がアクセシブル名に使われる
 
 ### Code Group
 
@@ -246,29 +245,38 @@ $$
 ````markdown
 ::code-group{aria-label="実装比較"}
 
-```ts filename="valid.ts" label="正しい例"
+```ts filename="valid.ts" group-key="valid" tab-label="正しい例"
 const value = 1;
 ```
 
-```ts filename="invalid.ts" label="誤り例"
+```ts filename="invalid.ts" group-key="invalid" tab-label="誤り例"
 const value = '1';
 ```
 
 ::
 ````
 
-| 属性         | 内容                             | 値           |
-| ------------ | -------------------------------- | ------------ |
-| `aria-label` | 全体の説明ラベル                 | 任意の文字列 |
-| `filename`   | 各コードブロックのファイル名表示 | 任意の文字列 |
-| `label`      | 各コード例の補助ラベル           | 任意の文字列 |
+| 属性         | 内容                       | 値           |
+| ------------ | -------------------------- | ------------ |
+| `aria-label` | 全体の説明ラベル           | 任意の文字列 |
+| `group-key`  | 各コード例の安定識別子     | 任意の文字列 |
+| `tab-label`  | 各コード例の可視タブラベル | 任意の文字列 |
+| `copy-label` | コピー文脈ラベル           | 任意の文字列 |
+| `filename`   | 各コードブロックの補助情報 | 任意の文字列 |
+
+補足:
+
+- `group-key` は `ui-code-group` 配下では必須
+- タブラベルは `tab-label > filename > lang` の順で解決
+- コピー文脈は `copy-label > filename > lang > tab-label` の順で解決
+- fenced code meta では `copyable` / `copy-mode` / `wrap` / `highlight-lines` / `layout` / `intent` / `show-line-numbers` も利用可能
 
 ### Code Preview
 
 プレビュー領域とコードをセットで見せる。
 
 ````markdown
-::code-preview{label="ボタン例" controls="theme surface viewport" preview-theme="light" preview-surface="surface" preview-viewport="tablet" preview-padding="compact" preview-align="center"}
+::code-preview{heading="ボタン例" controls="theme surface viewport" preview-theme="light" preview-surface="surface" preview-viewport="tablet" preview-padding="compact" preview-align="center"}
 ::preview
 ここにプレビュー内容を書く
 ::
@@ -282,7 +290,7 @@ const value = '1';
 
 | 属性               | 内容                           | 値                                          |
 | ------------------ | ------------------------------ | ------------------------------------------- |
-| `label`            | code preview 全体の名前        | 任意の文字列                                |
+| `heading`          | code preview 全体の見出し      | 任意の文字列                                |
 | `controls`         | built-in showcase controls     | 空白区切りで `theme`, `surface`, `viewport` |
 | `preview-padding`  | プレビュー余白                 | `normal`, `compact`, `none`                 |
 | `preview-align`    | プレビュー配置                 | `center`, `start`, `stretch`                |
@@ -299,7 +307,7 @@ const value = '1';
 Sandbox preview を使う場合:
 
 ````markdown
-::code-preview{label="ボタン例" controls="viewport"}
+::code-preview{heading="ボタン例" controls="viewport"}
 ::preview-sandbox{title="ボタンの sandbox" allow-js="true" height="160"}
 
 ```preview-html filename="button.html"
@@ -333,14 +341,14 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 開閉可能な補足領域。
 
 ```markdown
-::details{aria-label="補足を開閉" summary="補足情報" open="true" variant="bordered"}
+::details{summary="補足情報" open="true" variant="bordered"}
 ここに詳細を書く
 ::
 ```
 
 | 属性         | 内容                | 値                    |
 | ------------ | ------------------- | --------------------- |
-| `aria-label` | アクセシブル名      | 任意の文字列          |
+| `aria-label` | icon-only 時のアクセシブル名 | 任意の文字列 |
 | `summary`    | トグル見出し        | 任意の文字列          |
 | `open`       | 初期状態を開く      | 真偽値                |
 | `variant`    | 外観                | `default`, `bordered` |
@@ -348,7 +356,9 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 
 補足:
 
-- `aria-label` は必須
+- 通常利用では `summary` が必須
+- icon-only 利用では `aria-label` が必須
+- `summary` と `aria-label` は同時指定できない
 
 ### Info Box
 
@@ -623,6 +633,16 @@ HTML は禁止されている。
 ```
 
 `outline` は未対応なのでエラーになる。
+
+### `summary` と `aria-label` を同時指定する
+
+```markdown
+::details{summary="補足情報" aria-label="補足を開閉"}
+本文
+::
+```
+
+通常利用では可視 summary がアクセシブルネームの主ソースになるため、両方の同時指定はエラーになる。
 
 ## 書き分けの目安
 

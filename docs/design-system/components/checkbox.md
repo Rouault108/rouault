@@ -414,11 +414,11 @@ Enter キーは control の正規操作には含みません。checkbox は butt
 
 妥当性は `ElementInternals` に同期されます。
 
-| 条件                                    | 妥当性         |
-| --------------------------------------- | -------------- |
-| `invalid=true`                          | `customError`  |
-| `required=true` かつ `checked=false`    | `valueMissing` |
-| それ以外                                | valid          |
+| 条件                                 | 妥当性         |
+| ------------------------------------ | -------------- |
+| `invalid=true`                       | `customError`  |
+| `required=true` かつ `checked=false` | `valueMissing` |
+| それ以外                             | valid          |
 
 `checkValidity()` と `reportValidity()` はこの内部状態に従います。
 
@@ -483,30 +483,32 @@ standalone な `indeterminate=true` の checkbox をユーザーが操作した�
 
 各 Story は見本ではなく、**契約確認点**として扱います。将来変更時には、次の契約を維持します。
 
-| Story                        | 固定する契約                                                                                                                                                                     |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Default`                    | 既定状態が未選択であり、`role="checkbox"`、`aria-checked="false"`、`tabindex="0"` を持つこと                                                                                     |
-| `UncheckedNormal`            | 未選択時の基本状態が成立すること                                                                                                                                                 |
-| `CheckedNormal`              | checked 時に `aria-checked="true"` と check icon が成立すること                                                                                                                  |
-| `IndeterminateNormal`        | indeterminate 時に `aria-checked="mixed"` と minus icon が成立すること                                                                                                           |
-| `UncheckedDisabled`          | disabled 時に `aria-disabled="true"` かつ `tabindex="-1"` となること                                                                                                             |
-| `CheckedDisabled`            | checked + disabled が両立し、操作不能であること                                                                                                                                  |
-| `IndeterminateDisabled`      | indeterminate + disabled が両立し、操作不能であること                                                                                                                            |
-| `UncheckedInvalid`           | `invalid` により意味上のエラー状態が成立し、`errorMessage` がある場合は `aria-invalid`、error message、`aria-describedby` が成立することの参照 Story とします                       |
-| `CheckedInvalid`             | checked 状態でも外部 invalid を重ねられること                                                                                                                                    |
-| `AllStates`                  | 主要状態の一覧が同時描画できること                                                                                                                                               |
-| `ClickToggle`                | クリックで状態がトグルし、`input`、ついで `change` が発火すること                                                                                                                |
-| `LabelClickToggle`           | ラベルクリックで状態がトグルすること                                                                                                                                             |
-| `KeyboardToggle`             | Space キーで状態がトグルすること                                                                                                                                                 |
-| `IndeterminateToUnchecked`   | indeterminate からのユーザー遷移先が unchecked であること                                                                                                                        |
-| `CheckedClearsIndeterminate` | `checked=true` により `indeterminate` が自動解除されること                                                                                                                       |
-| `DisabledClickBlocked`       | disabled 時にクリックが無効化され、状態変化もイベント発火も起きないこと                                                                                                          |
-| `NoLabel`                    | ラベルなし運用では外部 ARIA 名が必要であること。`label` がない場合のアクセシブル名入力経路を確認する Story として扱います                                                        |
-| `DarkThemeStates`            | トークン差し替えによるダークテーマ表示が成立すること                                                                                                                             |
-| `ForcedColorsSimulation`     | forced colors 相当の表示が成立すること                                                                                                                                           |
-| `FormIntegration`            | checked / disabled / name 条件に応じて FormData 参加が切り替わること。同一 `name` を持つ複数 checkbox は相互排他ではなく独立送信単位として扱う契約の参照 Story とします          |
-| `RequiredValidation`         | required と `checkValidity()` の組み合わせが成立すること。required は内部妥当性制約であり、visible error は `errorMessage` の有無を含む外部制御で扱うことの参照 Story とします     |
-| `SelectAllPattern`           | 親子 checkbox の tri-state パターン例が成立すること                                                                                                                              |
+| Story                        | 固定する契約                                                                                                                                                                         |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Default`                    | 既定状態が未選択であり、`role="checkbox"`、`aria-checked="false"`、`tabindex="0"` を持つこと                                                                                         |
+| `UncheckedNormal`            | 未選択時の基本状態が成立すること                                                                                                                                                     |
+| `CheckedNormal`              | checked 時に `aria-checked="true"` と check icon が成立すること                                                                                                                      |
+| `IndeterminateNormal`        | indeterminate 時に `aria-checked="mixed"` と minus icon が成立すること                                                                                                               |
+| `UncheckedDisabled`          | disabled 時に `aria-disabled="true"` かつ `tabindex="-1"` となること                                                                                                                 |
+| `CheckedDisabled`            | checked + disabled が両立し、操作不能であること                                                                                                                                      |
+| `IndeterminateDisabled`      | indeterminate + disabled が両立し、操作不能であること                                                                                                                                |
+| `UncheckedInvalid`           | `invalid` により意味上のエラー状態が成立し、`errorMessage` がある場合は `aria-invalid`、error message、`aria-describedby` が成立することの参照 Story とします                        |
+| `CheckedInvalid`             | checked 状態でも外部 invalid を重ねられること                                                                                                                                        |
+| `InvalidWithoutMessage`      | `invalid=true` 単独でも意味上のエラー状態と内部妥当性が成立し、visible error は表示しないこと                                                                                        |
+| `AllStates`                  | 主要状態の一覧が同時描画できること                                                                                                                                                   |
+| `ClickToggle`                | クリックで状態がトグルし、`input`、ついで `change` が発火すること                                                                                                                    |
+| `LabelClickToggle`           | ラベルクリックで状態がトグルすること                                                                                                                                                 |
+| `KeyboardToggle`             | Space キーで状態がトグルすること                                                                                                                                                     |
+| `IndeterminateToUnchecked`   | indeterminate からのユーザー遷移先が unchecked であること                                                                                                                            |
+| `CheckedClearsIndeterminate` | `checked=true` により `indeterminate` が自動解除されること                                                                                                                           |
+| `DisabledClickBlocked`       | disabled 時にクリックが無効化され、状態変化もイベント発火も起きないこと                                                                                                              |
+| `NoLabel`                    | ラベルなし運用では外部 ARIA 名が必要であること。`label` がない場合のアクセシブル名入力経路を確認する Story として扱います                                                            |
+| `DarkThemeStates`            | トークン差し替えによるダークテーマ表示が成立すること                                                                                                                                 |
+| `ForcedColorsSimulation`     | forced colors 相当の表示が成立すること                                                                                                                                               |
+| `ReducedMotionContract`      | reduced motion 向けの CSS 契約がコンポーネントへ含まれていること                                                                                                                     |
+| `FormIntegration`            | checked / disabled / name 条件に応じて FormData 参加が切り替わること。同一 `name` を持つ複数 checkbox は相互排他ではなく独立送信単位として扱う契約の参照 Story とします              |
+| `RequiredValidation`         | required と `checkValidity()` の組み合わせが成立し、required 違反時は `aria-invalid` を出しつつ、visible error は `errorMessage` の有無を含む外部制御で扱うことの参照 Story とします |
+| `SelectAllPattern`           | 親子 checkbox の tri-state パターン例が成立すること                                                                                                                                  |
 
 ### 10.1 Storybook 契約の読み方
 
@@ -533,86 +535,28 @@ standalone な `indeterminate=true` の checkbox をユーザーが操作した�
 
 ---
 
-## 12. 現行実装で未対応または未整合の事項
+## 12. 現行実装で利用側責務として残る事項
 
-本節は、現行の `checkbox.ts` および `checkbox.stories.ts` を基準として、**契約書内で厳密化しているが、現時点では未実装、未強制、または未整合である事項**を整理するものです。
+`checkbox.ts` および `checkbox.stories.ts` を本書の契約へ揃えた後も、次の点は runtime enforcement ではなく、利用側責務または非ゴールとして残ります。
 
-### 12.1 required 違反時の visible error 自動化
+### 12.1 label なし時のアクセシブル名供給
 
-現行実装は `required=true` かつ `checked=false` のとき `ElementInternals` 上は invalid になりますが、visible error と `aria-invalid` は自動では出しません。Storybook でも、required 失敗の可視化は外部ロジックで `invalid` と `errorMessage` を設定しています。
+実装は、`label=''` のときに `aria-labelledby`、ついで `aria-label` の優先順で control へ転送します。しかし、**外部 ARIA 名がまったく与えられていない場合に実行時エラーまでは出しません**。
 
-したがって、**required と visible error の自動連動は未実装**です。
+したがって、`label=''` で運用する場合のアクセシブル名供給は、引き続き利用側 MUST です。
 
-### 12.2 `invalid` 単独指定時の不整合
+### 12.2 `aria-describedby` の重複整理
 
-現行実装は `invalid` 属性があるだけで視覚上はエラー境界線を表示します。しかし、`errorMessage` が空の場合は `setValidity({ customError: true }, ...)` を行わず、`aria-invalid` も出力しません。
+実装は、外部 `aria-describedby` と内部 error ID を外部 → 内部の順で連結しますが、重複 ID の除去、並べ替え、意味解釈までは行いません。
 
-したがって、**`invalid` 単独では意味上のエラー状態・視覚状態・妥当性状態・ARIA 状態が一致していません**。契約書では `invalid` を意味上のエラー状態として許容しつつ、実装側では少なくとも `aria-invalid` と内部妥当性の整合を取る必要があります。
+したがって、`aria-describedby` の整合性確保は利用側責務です。
 
-### 12.3 フォーム reset / state restore 契約
+### 12.3 構造的ラベル
 
-現行実装は FormData 参加には対応していますが、`formResetCallback()` や `formStateRestoreCallback()` に相当する復元契約は実装していません。したがって、**契約書で定義した reset / restore 挙動は未実装**です。
+実装は `label` を string property に限定しています。HTML を含む複合ラベル、リンクを含む構造的ラベル、補助説明付きラベルは本コンポーネントの責務に含めません。
 
-### 12.4 イベント順序
+これらが必要な場合は、上位レイヤまたは別コンポーネントで構成します。
 
-現行実装は状態変化時に `change`、ついで `input` を発火しています。一方、契約書では `input`、ついで `change` を正規順序として定義しています。
+### 12.4 本節の扱い
 
-したがって、**イベント順序は現行実装と契約書で未整合**です。
-
-### 12.5 ラベルのキーボード契約
-
-実装にはラベルに対する Enter キー処理がありますが、契約書ではラベルをクリック領域として扱い、独立したキーボード操作主体とはみなしません。
-
-したがって、**ラベル Enter 起動は現行実装に残っているが、契約上は依存対象にしない挙動**です。
-
-### 12.6 アクセシブル名入力の競合制御
-
-`label` がある状態でも、外部 `aria-label` を同時に与えられます。現行実装はこの競合を明示的に防いでいません。したがって、**可視ラベル優先は契約上の推奨規律であり、実装上の強制ではありません**。
-
-### 12.7 `focus()` と disabled の関係
-
-現行実装は `disabled=true` でも公開 `focus()` が内部 control の `focus()` をそのまま呼び出します。契約書では no-op と定義しています。
-
-したがって、**disabled 時の `focus()` 挙動は現行実装と契約書で未整合**です。
-
-### 12.8 `aria-describedby` の重複整理
-
-現行実装は、外部 `aria-describedby` と内部 error ID を連結しますが、重複 ID の除去や順序正規化までは行いません。したがって、`aria-describedby` の整合性確保は利用側責務です。
-
-### 12.9 タッチターゲット寸法の整合性
-
-実装コメントには 44×44px と読める記述がありますが、既定トークン `--control-min-touch` は `24px` です。契約書では 44×44px を下限として定義しています。
-
-したがって、**タッチターゲット寸法は現行実装と契約書で未整合**です。
-
-### 12.10 Rich label 非対応
-
-現行実装は `label` を string property に限定しており、HTML を含む複合ラベルや補助説明を受け取れません。これは意図的な簡素化でもありますが、**ラベル表現の拡張性は未対応**です。
-
-### 12.11 Storybook controls と `indeterminate`
-
-現行 Storybook では `indeterminate` に control が残っており、利用者からは通常の公開入力に見えます。一方、契約書では property-only の制御状態として定義しています。
-
-したがって、**Storybook controls 上の見え方と契約書の定義が未整合**です。
-
-### 12.12 アクセシブル名の競合入力（`label` なし時）
-
-契約書では、`label=''` の場合のアクセシブル名決定順序を `aria-labelledby`、ついで `aria-label` と定義しています。しかし現行実装は、`label` がない状態で外部 `aria-labelledby` と `aria-label` の両方が与えられた場合、**優先規則を強制せず両方をそのまま control へ設定**します。
-
-したがって、`label` なし時のアクセシブル名優先順位は契約上は定義済みでも、実装上は未強制です。
-
-### 12.12 実装内 JSDoc / コメントの未整合
-
-現行実装の JSDoc および inline comment には、現在の契約と一致しない記述が残っています。たとえば、`@fires input` は「change と同タイミング」と記述され、`willUpdate()` 周辺には `indeterminate` に対して `reflect: true` を前提とした古い説明が残っています。
-
-したがって、**公開契約と実装内ドキュメントが未整合**です。コード利用者が型定義やソースコメントを参照した場合、契約書と異なる理解に至る余地があります。
-
-### 12.14 Reduced Motion の Storybook 契約未カバー
-
-現行実装は `prefers-reduced-motion: reduce` に対応したスタイルを持ち、契約書でも Reduced Motion を環境別の振る舞いとして定義しています。しかし `checkbox.stories.ts` には、Reduced Motion を直接確認する Story が存在しません。
-
-したがって、**Reduced Motion は実装されているが、Storybook 契約としては未カバー**です。
-
-### 12.15 本節の扱い
-
-本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用または修正する場合は、実装、Storybook、契約書の 3 点を同時に更新し、未整合状態を残したまま公開契約へ昇格させません。
+本節に記載した事項は、未整合ではなく、公開契約の境界として扱います。今後これらの点を変更する場合も、実装、Storybook、契約書の 3 点を同時に更新し、部分的な変更だけを公開契約へ昇格させません。

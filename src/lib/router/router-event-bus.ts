@@ -1,56 +1,31 @@
-import type { EventCallback } from './router-types.js';
+import type { RouterEventMap } from './router-types.js';
+
+type EventKey = keyof RouterEventMap;
+type EventCallback<K extends EventKey> = (payload: RouterEventMap[K]) => void;
 
 export class RouterEventBus {
-  private eventListeners = new Map<string, Set<EventCallback>>();
+  private eventListeners = new Map<EventKey, Set<(payload: unknown) => void>>();
 
-  on(event: string, callback: EventCallback): void {
+  on<K extends EventKey>(event: K, callback: EventCallback<K>): void {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, new Set());
     }
-    this.eventListeners.get(event)?.add(callback);
+    this.eventListeners.get(event)?.add(callback as (payload: unknown) => void);
   }
 
-  off(event: string, callback: EventCallback): void {
-    this.eventListeners.get(event)?.delete(callback);
+  off<K extends EventKey>(event: K, callback: EventCallback<K>): void {
+    this.eventListeners.get(event)?.delete(callback as (payload: unknown) => void);
   }
 
-  emit(event: string, ...args: unknown[]): void {
+  emit<K extends EventKey>(event: K, payload: RouterEventMap[K]): void {
     const listeners = this.eventListeners.get(event);
     if (!listeners) {
       return;
     }
 
-    listeners.forEach((callback) => {
-      try {
-        callback(...args);
-      } catch (error) {
-        console.error(`Error in ${event} event handler:`, error);
-      }
-    });
-  }
-
-  emitCancelable(event: string, ...args: unknown[]): boolean {
-    const listeners = this.eventListeners.get(event);
-    if (!listeners) {
-      return true;
-    }
-
     for (const callback of listeners) {
-      try {
-        const result = callback(...args);
-        if (result === false) {
-          return false;
-        }
-      } catch (error) {
-        console.error(`Error in ${event} event handler:`, error);
-        if (event !== 'error') {
-          this.emit('error', error instanceof Error ? error : new Error(String(error)));
-        }
-        return false;
-      }
+      callback(payload);
     }
-
-    return true;
   }
 
   clear(): void {

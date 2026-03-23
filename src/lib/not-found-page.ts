@@ -10,7 +10,7 @@ export const NOT_FOUND_PAGE_META_DESCRIPTION =
 export const NOT_FOUND_PAGE_DESCRIPTION =
   'URLが変更されたか、公開を終了したか、リンク先が誤っている可能性があります。検索またはサイト情報から再度辿ってください。';
 
-export const SEARCH_PAGE_HREF = '/search/';
+export const SEARCH_PAGE_HREF = '/search';
 export const ABOUT_PAGE_HREF = '/about/';
 
 export interface BuildNotFoundPageMarkupOptions {

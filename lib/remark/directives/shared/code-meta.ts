@@ -4,6 +4,9 @@ import { assertAllowedAttributes, pickOptional } from './attributes';
 import { parseBooleanAttribute } from './attribute-parsers';
 import { toError } from './errors';
 
+const CODE_BLOCK_COPY_MODES = new Set(['auto', 'always', 'hidden']);
+const CODE_BLOCK_LAYOUTS = new Set(['standalone', 'inline']);
+
 export interface ParsedCodeMeta {
   readonly attrs: Record<string, string>;
   readonly raw: string;
@@ -65,7 +68,20 @@ export const normalizeCodeBlockMeta = (node: MdastNode, file?: VFileLike): void 
 
   const { attrs, raw } = parseCodeMeta(node.meta, node, file);
   const properties: Record<string, unknown> = {};
-  const allowedKeys = new Set(['filename', 'label', 'intent', 'show-line-numbers']);
+  const allowedKeys = new Set([
+    'filename',
+    'label',
+    'intent',
+    'show-line-numbers',
+    'copy-mode',
+    'group-key',
+    'tab-label',
+    'copy-label',
+    'copyable',
+    'wrap',
+    'highlight-lines',
+    'layout',
+  ]);
   assertAllowedAttributes(attrs, allowedKeys, node, file, 'code meta');
 
   const filename = pickOptional(attrs['filename']);
@@ -76,6 +92,21 @@ export const normalizeCodeBlockMeta = (node: MdastNode, file?: VFileLike): void 
   const label = pickOptional(attrs['label']);
   if (label) {
     properties['label'] = label;
+  }
+
+  const groupKey = pickOptional(attrs['group-key']);
+  if (groupKey) {
+    properties['group-key'] = groupKey;
+  }
+
+  const tabLabel = pickOptional(attrs['tab-label']);
+  if (tabLabel) {
+    properties['tab-label'] = tabLabel;
+  }
+
+  const copyLabel = pickOptional(attrs['copy-label']);
+  if (copyLabel) {
+    properties['copy-label'] = copyLabel;
   }
 
   const intent = pickOptional(attrs['intent'])?.toLowerCase();
@@ -95,6 +126,37 @@ export const normalizeCodeBlockMeta = (node: MdastNode, file?: VFileLike): void 
   );
   if (showLineNumbers === true) {
     properties['show-line-numbers'] = true;
+  }
+
+  const copyMode = pickOptional(attrs['copy-mode'])?.toLowerCase();
+  if (copyMode) {
+    if (!CODE_BLOCK_COPY_MODES.has(copyMode)) {
+      throw toError(file, node, 'code meta の copy-mode は auto/always/hidden のみ指定可能です');
+    }
+    properties['copy-mode'] = copyMode;
+  }
+
+  const copyable = parseBooleanAttribute(attrs['copyable'], node, file, 'code meta', 'copyable');
+  if (copyable === false) {
+    properties['copyable'] = 'false';
+  }
+
+  const wrap = parseBooleanAttribute(attrs['wrap'], node, file, 'code meta', 'wrap');
+  if (wrap === true) {
+    properties['wrap'] = true;
+  }
+
+  const highlightLines = pickOptional(attrs['highlight-lines']);
+  if (highlightLines) {
+    properties['highlight-lines'] = highlightLines;
+  }
+
+  const layout = pickOptional(attrs['layout'])?.toLowerCase();
+  if (layout) {
+    if (!CODE_BLOCK_LAYOUTS.has(layout)) {
+      throw toError(file, node, 'code meta の layout は standalone/inline のみ指定可能です');
+    }
+    properties['layout'] = layout;
   }
 
   if (raw !== '') {

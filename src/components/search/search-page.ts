@@ -1,8 +1,7 @@
-import { css, html, LitElement, nothing, unsafeCSS } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
+import { css, html, LitElement, nothing, unsafeCSS, type PropertyValues } from 'lit';
+import { customElement, property, state } from 'lit/decorators.js';
 import { live } from 'lit/directives/live.js';
 import { repeat } from 'lit/directives/repeat.js';
-import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import '../../lib/icons';
 import '../../components/ui/card/card.js';
 import '../../components/ui/checkbox/checkbox.js';
@@ -15,20 +14,33 @@ import '../../components/ui/tag/tag.js';
 import type { SelectOption } from '../../components/ui/select/select.js';
 import { HIGHLIGHT_RULE_TEMPLATE } from '../ui/highlight/highlight.js';
 import { pageShellStyles } from '../page/page-shell-styles.js';
-import { pagefindSearchAdapter, type SearchResultItem } from '../../lib/search/pagefind-search.js';
+import {
+  pagefindSearchAdapter,
+  type SearchResponse,
+  type SearchResultItem,
+} from '../../lib/search/pagefind-search.js';
 import { navigateToUrl } from '../../lib/search/navigation.js';
 import {
   DEFAULT_SEARCH_SORT_MODE,
-  buildSearchHref,
+  DEFAULT_SEARCH_TAG_MODE,
+  buildUrlForSearchState,
+  isSingleTagDefaultState,
   normalizeSearchTags,
   parseSearchStateFromUrl,
+  type SearchState,
+  type SearchTagMode,
   type SearchSortMode,
 } from '../../lib/search/search-url.js';
+import type { SearchSnippet } from '../../lib/search/search-types.js';
 
 const SEARCH_DEBOUNCE_MS = 150;
 const SEARCH_SORT_OPTIONS: SelectOption[] = [
   { value: DEFAULT_SEARCH_SORT_MODE, label: '関連度順' },
   { value: 'date-desc', label: '新しい順' },
+];
+const SEARCH_TAG_MODE_OPTIONS: SelectOption[] = [
+  { value: 'or', label: 'いずれか' },
+  { value: 'and', label: 'すべて' },
 ];
 
 type SearchControlTarget = EventTarget & { value: unknown };
@@ -38,6 +50,16 @@ interface GenreFilterEntry {
   count: number;
   selected: boolean;
   disabled: boolean;
+}
+
+function isSameSearchState(left: SearchState, right: SearchState): boolean {
+  return (
+    left.q === right.q &&
+    left.tagMode === right.tagMode &&
+    left.sort === right.sort &&
+    left.tags.length === right.tags.length &&
+    left.tags.every((tag, index) => tag === right.tags[index])
+  );
 }
 
 @customElement('search-page')
@@ -319,11 +341,20 @@ export class SearchPage extends LitElement {
     `,
   ];
 
+  @property({ type: String, attribute: 'initial-search-state-json' })
+  initialSearchStateJson = '';
+
+  @property({ type: String, attribute: 'initial-search-response-json' })
+  initialSearchResponseJson = '';
+
   @state()
   private _query = '';
 
   @state()
   private _selectedTags: string[] = [];
+
+  @state()
+  private _tagMode: SearchTagMode = DEFAULT_SEARCH_TAG_MODE;
 
   @state()
   private _sortMode: SearchSortMode = DEFAULT_SEARCH_SORT_MODE;
@@ -341,7 +372,7 @@ export class SearchPage extends LitElement {
   private _errorMessage = '';
 
   @state()
-  private _genreCounts: Record<string, number> = {};
+  private _tagCounts: Record<string, number> = {};
 
   @state()
   private _allGenreCounts: Record<string, number> = {};
@@ -354,11 +385,40 @@ export class SearchPage extends LitElement {
 
   private _searchTimerId: number | undefined;
   private _requestToken = 0;
+  private _didApplyInitialPayload = false;
+
+  protected override willUpdate(_changedProperties: PropertyValues): void {
+    if (this._didApplyInitialPayload) {
+      return;
+    }
+
+    const initialState = this._parseInitialState();
+    const initialResponse = this._parseInitialResponse();
+
+    if (initialState) {
+      this._query = initialState.q;
+      this._selectedTags = initialState.tags;
+      this._tagMode = initialState.tagMode;
+      this._sortMode = initialState.sort;
+    }
+
+    if (initialResponse?.mode === 'explore') {
+      this._results = initialResponse.items;
+      this._tagCounts = initialResponse.tagCounts;
+      this._allGenreCounts = initialResponse.allTagCounts;
+      this._loaded = true;
+    }
+
+    this._didApplyInitialPayload = true;
+  }
 
   override connectedCallback(): void {
     super.connectedCallback();
     window.addEventListener('popstate', this._onPopState);
     this._syncStateFromLocation();
+    if (this._canUseInitialPayload()) {
+      return;
+    }
     void this._refreshResults();
   }
 
@@ -380,8 +440,9 @@ export class SearchPage extends LitElement {
     const url = new URL(window.location.href);
     const state = parseSearchStateFromUrl(url);
 
-    this._query = state.query;
+    this._query = state.q;
     this._selectedTags = state.tags;
+    this._tagMode = state.tagMode;
     this._sortMode = state.sort;
   }
 
@@ -405,22 +466,26 @@ export class SearchPage extends LitElement {
         this._query,
         this._selectedTags,
         this._sortMode,
+        this._tagMode,
       );
       if (currentToken !== this._requestToken) {
         return;
       }
 
       this._results = result.items;
-      this._genreCounts = result.genreCounts;
-      this._allGenreCounts = result.allGenreCounts;
+      this._tagCounts = result.tagCounts;
+      this._allGenreCounts = result.allTagCounts;
       this._loaded = true;
+      if (result.diagnostics.degraded) {
+        console.warn('[search-page] 検索結果が縮退状態です', result.diagnostics);
+      }
     } catch (error: unknown) {
       if (currentToken !== this._requestToken) {
         return;
       }
 
       this._results = [];
-      this._genreCounts = {};
+      this._tagCounts = {};
       this._errorMessage =
         error instanceof Error ? error.message : '検索の読み込みに失敗しました。';
       this._loaded = true;
@@ -431,12 +496,27 @@ export class SearchPage extends LitElement {
     }
   }
 
-  private _replaceUrl(): void {
-    const nextUrl = buildSearchHref({
-      query: this._query,
+  private _currentSearchState(): SearchState {
+    return {
+      q: this._query,
       tags: this._selectedTags,
+      tagMode: this._tagMode,
       sort: this._sortMode,
-    });
+    };
+  }
+
+  private _canUseInitialPayload(): boolean {
+    const initialState = this._parseInitialState();
+    const initialResponse = this._parseInitialResponse();
+    if (initialState === null || initialResponse?.mode !== 'explore') {
+      return false;
+    }
+
+    return isSameSearchState(initialState, this._currentSearchState());
+  }
+
+  private _replaceUrl(): void {
+    const nextUrl = buildUrlForSearchState(this._currentSearchState());
 
     if (nextUrl === `${window.location.pathname}${window.location.search}`) {
       return;
@@ -446,11 +526,7 @@ export class SearchPage extends LitElement {
   }
 
   private _pushUrl(): void {
-    const nextUrl = buildSearchHref({
-      query: this._query,
-      tags: this._selectedTags,
-      sort: this._sortMode,
-    });
+    const nextUrl = buildUrlForSearchState(this._currentSearchState());
 
     if (nextUrl === `${window.location.pathname}${window.location.search}`) {
       return;
@@ -531,6 +607,19 @@ export class SearchPage extends LitElement {
     void this._refreshResults();
   };
 
+  private _onTagModeChange = (event: Event): void => {
+    const { value } = (event as CustomEvent<{ value: string | number }>).detail;
+    const selectedValue = typeof value === 'string' ? value : String(value);
+    const nextTagMode: SearchTagMode = selectedValue === 'and' ? 'and' : DEFAULT_SEARCH_TAG_MODE;
+    if (nextTagMode === this._tagMode) {
+      return;
+    }
+
+    this._tagMode = nextTagMode;
+    this._pushUrl();
+    void this._refreshResults();
+  };
+
   private _onResultClick = (event: MouseEvent, url: string): void => {
     if (
       event.defaultPrevented ||
@@ -550,7 +639,7 @@ export class SearchPage extends LitElement {
   private _buildGenreFilterEntries(): GenreFilterEntry[] {
     const map = new Map<string, number>(Object.entries(this._allGenreCounts));
 
-    for (const [tag, count] of Object.entries(this._genreCounts)) {
+    for (const [tag, count] of Object.entries(this._tagCounts)) {
       map.set(tag, count);
     }
 
@@ -607,7 +696,8 @@ export class SearchPage extends LitElement {
       return 'すべてのタグ';
     }
 
-    return `${this._selectedTags.length.toString()}タグ選択中`;
+    const modeLabel = this._tagMode === 'and' ? 'すべて' : 'いずれか';
+    return `${this._selectedTags.length.toString()}タグ選択中 / ${modeLabel}`;
   }
 
   private _filterSummaryDetail(): string {
@@ -657,7 +747,6 @@ export class SearchPage extends LitElement {
     return html`
       <ui-details
         class="filter-details"
-        aria-label="タグフィルターを開閉"
         variant="bordered"
         region
         ?open=${this._filtersOpen}
@@ -765,7 +854,7 @@ export class SearchPage extends LitElement {
           <ui-empty-state class="empty-hint" variant="default">
             <span slot="heading">キーワードまたはタグで絞り込めます</span>
             <span slot="description"
-              >ヘッダーのダイアログは即時検索、ここでは結果を一覧で比較できます。</span
+              >ヘッダーのダイアログは即時検索、ここではタグ演算子も含めて一覧で比較できます。</span
             >
           </ui-empty-state>
         `;
@@ -774,7 +863,7 @@ export class SearchPage extends LitElement {
       return html`
         <ui-empty-state class="empty-hint" variant="search">
           <span slot="heading">一致するメモが見つかりません</span>
-          <span slot="description">検索語を変えるか、タグの組み合わせを緩めてください。</span>
+          <span slot="description">検索語を変えるか、タグの組み合わせや演算子を見直してください。</span>
         </ui-empty-state>
       `;
     }
@@ -782,8 +871,6 @@ export class SearchPage extends LitElement {
     return html`
       <ol class="results-list">
         ${this._results.map((item) => {
-          const secondaryText = item.excerptHtml.length > 0 ? item.excerptHtml : item.description;
-
           return html`
             <li>
               <ui-card class="result-card" clickable variant="outlined">
@@ -794,14 +881,12 @@ export class SearchPage extends LitElement {
                     this._onResultClick(event, item.url);
                   }}
                 >
-                  <div class="result-path">${item.path}</div>
+                  <div class="result-path">${item.pathLabel}</div>
                   <h2 class="result-title">${item.title}</h2>
-                  ${item.date.length > 0
-                    ? html`<div class="result-meta">更新日: ${item.date}</div>`
+                  ${item.date.original
+                    ? html`<div class="result-meta">更新日: ${item.date.original}</div>`
                     : nothing}
-                  ${secondaryText.length > 0
-                    ? html`<p class="result-excerpt">${unsafeHTML(secondaryText)}</p>`
-                    : nothing}
+                  ${this._renderResultSecondaryText(item.snippet, item.description)}
                 </a>
               </ui-card>
             </li>
@@ -813,14 +898,19 @@ export class SearchPage extends LitElement {
 
   override render() {
     const activeCount = this._results.length;
+    const currentState = this._currentSearchState();
+    const isTagDefaultView = isSingleTagDefaultState(currentState);
+    const singleTag = isTagDefaultView ? currentState.tags[0] ?? '' : '';
 
     return html`
       <section class="search-page page-shell" aria-label="検索結果">
         <div class="hero">
-          <p class="eyebrow">Search / Filter</p>
-          <h1 class="heading">検索</h1>
+          <p class="eyebrow">${isTagDefaultView ? 'Tag / Explore' : 'Search / Filter'}</p>
+          <h1 class="heading">${isTagDefaultView ? `#${singleTag}` : '検索'}</h1>
           <p class="description">
-            genre をタグとして扱い、キーワード検索と AND 条件で絞り込みます。
+            ${isTagDefaultView
+              ? 'このタグに属するノートを起点に、検索語や追加タグで探索を広げられます。'
+              : 'タグとキーワードを組み合わせ、複数タグは OR / AND を切り替えて探索します。'}
           </p>
         </div>
 
@@ -838,6 +928,19 @@ export class SearchPage extends LitElement {
           <div class="toolbar-row">
             <div class="meta-row">
               <span>${activeCount.toString()} 件の結果</span>
+            </div>
+
+            <div class="sort-field">
+              <span class="sort-label">タグ演算子</span>
+              <ui-select
+                class="sort-select"
+                label="タグ演算子"
+                hide-label
+                variant="outline"
+                .modelValue=${this._tagMode}
+                .options=${SEARCH_TAG_MODE_OPTIONS}
+                @change=${this._onTagModeChange}
+              ></ui-select>
             </div>
 
             <div class="sort-field">
@@ -860,6 +963,60 @@ export class SearchPage extends LitElement {
         <div class="results-section">${this._renderResults()}</div>
       </section>
     `;
+  }
+
+  private _renderResultSecondaryText(snippet: SearchSnippet | null, description: string): unknown {
+    const normalizedDescription = description.trim();
+    const sourceSegments =
+      snippet?.segments.length
+        ? snippet.segments
+        : normalizedDescription.length > 0
+          ? [{ text: normalizedDescription, matched: false }]
+          : [];
+
+    if (sourceSegments.length === 0) {
+      return nothing;
+    }
+
+    return html`
+      <p class="result-excerpt">
+        ${sourceSegments.map((segment) =>
+          segment.matched ? html`<mark>${segment.text}</mark>` : segment.text,
+        )}
+      </p>
+    `;
+  }
+
+  private _parseInitialState(): SearchState | null {
+    const normalized = this.initialSearchStateJson.trim();
+    if (normalized.length === 0) {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(normalized) as Partial<SearchState>;
+      return {
+        q: typeof parsed.q === 'string' ? parsed.q : '',
+        tags: normalizeSearchTags(Array.isArray(parsed.tags) ? parsed.tags : []),
+        tagMode: parsed.tagMode === 'and' ? 'and' : DEFAULT_SEARCH_TAG_MODE,
+        sort: parsed.sort === 'date-desc' ? 'date-desc' : DEFAULT_SEARCH_SORT_MODE,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  private _parseInitialResponse(): SearchResponse | null {
+    const normalized = this.initialSearchResponseJson.trim();
+    if (normalized.length === 0) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(normalized) as SearchResponse;
+    } catch {
+      return null;
+    }
   }
 }
 

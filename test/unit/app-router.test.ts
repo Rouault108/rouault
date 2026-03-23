@@ -1,10 +1,10 @@
 import { expect, fixture, html, waitUntil } from '@open-wc/testing';
 import '../../src/components/app/app-router.js';
-import type { Router } from '../../src/lib/router.js';
+import type { NavigationResult } from '../../src/lib/router.js';
 
 type AppRouterElement = HTMLElement & {
   updateComplete: Promise<unknown>;
-  navigate(url: string): Promise<void>;
+  navigate(url: string): Promise<NavigationResult>;
 };
 
 describe('app-router', () => {
@@ -14,7 +14,6 @@ describe('app-router', () => {
   let originalPushState: typeof history.pushState;
   let originalReplaceState: typeof history.replaceState;
   let originalHistoryStateDescriptor: PropertyDescriptor | undefined;
-  let originalStartViewTransitionDescriptor: PropertyDescriptor | undefined;
   let originalScrollToDescriptor: PropertyDescriptor | undefined;
   let originalFocusDescriptor: PropertyDescriptor | undefined;
 
@@ -32,10 +31,6 @@ describe('app-router', () => {
     originalPushState = history.pushState.bind(history);
     originalReplaceState = history.replaceState.bind(history);
     originalHistoryStateDescriptor = Object.getOwnPropertyDescriptor(history, 'state');
-    originalStartViewTransitionDescriptor = Object.getOwnPropertyDescriptor(
-      document,
-      'startViewTransition',
-    );
     originalScrollToDescriptor = Object.getOwnPropertyDescriptor(window, 'scrollTo');
     originalFocusDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'focus');
 
@@ -72,31 +67,6 @@ describe('app-router', () => {
       };
     }) as typeof history.replaceState;
 
-    const mockStartViewTransition: NonNullable<typeof document.startViewTransition> = (
-      callback?: ViewTransitionUpdateCallback | StartViewTransitionOptions,
-    ) => {
-      const updateCallback = typeof callback === 'function' ? callback : callback?.update;
-      const done = updateCallback
-        ? Promise.resolve(updateCallback()).then(() => undefined)
-        : Promise.resolve();
-
-      return {
-        finished: done,
-        ready: done,
-        updateCallbackDone: done,
-        skipTransition() {
-          /* noop */
-        },
-        types: new Set<string>() as unknown as ViewTransitionTypeSet,
-      };
-    };
-
-    Object.defineProperty(document, 'startViewTransition', {
-      configurable: true,
-      writable: true,
-      value: mockStartViewTransition,
-    });
-
     Object.defineProperty(window, 'scrollTo', {
       configurable: true,
       writable: true,
@@ -120,12 +90,6 @@ describe('app-router', () => {
       Reflect.deleteProperty(history, 'state');
     }
 
-    if (originalStartViewTransitionDescriptor) {
-      Object.defineProperty(document, 'startViewTransition', originalStartViewTransitionDescriptor);
-    } else {
-      Reflect.deleteProperty(document, 'startViewTransition');
-    }
-
     if (originalScrollToDescriptor) {
       Object.defineProperty(window, 'scrollTo', originalScrollToDescriptor);
     } else {
@@ -139,7 +103,7 @@ describe('app-router', () => {
     }
   });
 
-  it('SSR された main の内容を初回接続時に保持し #main-content へ描画すること', async () => {
+  it('SSR された main の内容を保持し、初回 fetch を行わないこと', async () => {
     let fetchCalled = false;
     globalThis.fetch = () => {
       fetchCalled = true;
@@ -159,17 +123,20 @@ describe('app-router', () => {
       >`,
     );
 
-    await host.updateComplete;
+    const appHost = host;
+    if (!appHost) {
+      throw new Error('host が作成されていません。');
+    }
 
-    const mains = host.querySelectorAll('main');
+    await appHost.updateComplete;
 
     expect(fetchCalled).to.equal(false);
-    expect(mains.length).to.equal(1);
-    expect(host.querySelector('#main-content')?.innerHTML).to.contain('SSR Title');
-    expect(host.querySelector('#main-content')?.innerHTML).to.contain('SSR Body');
+    expect(appHost.querySelectorAll('main').length).to.equal(1);
+    expect(appHost.querySelector('#main-content')?.innerHTML).to.contain('SSR Title');
+    expect(appHost.querySelector('#main-content')?.innerHTML).to.contain('SSR Body');
   });
 
-  it('navigate() で main を更新し app-router:content-rendered を発火すること', async () => {
+  it('navigate() は NavigationResult を返し main を更新すること', async () => {
     let renderedCount = 0;
 
     globalThis.fetch = () =>
@@ -191,63 +158,34 @@ describe('app-router', () => {
         ><main><h1>SSR Title</h1></main></app-router
       >`,
     );
-    await host.updateComplete;
+    const appHost = host;
+    if (!appHost) {
+      throw new Error('host が作成されていません。');
+    }
 
-    host.addEventListener('app-router:content-rendered', () => {
+    await appHost.updateComplete;
+
+    appHost.addEventListener('app-router:content-rendered', () => {
       renderedCount += 1;
     });
 
-    await host.navigate('/client-page');
+    const result = await appHost.navigate('/client-page');
 
     await waitUntil(
-      () => host?.querySelector('#main-content')?.textContent.includes('Client Page') ?? false,
+      () => {
+        const text = appHost.querySelector('#main-content')?.textContent ?? '';
+        return text.includes('Client Page');
+      },
       'ページコンテンツが差し替わること',
     );
 
+    expect(result.outcome).to.equal('completed');
+    expect(result.renderedKind).to.equal('page');
     expect(document.title).to.equal('Client Routed');
     expect(renderedCount).to.be.greaterThan(0);
   });
 
-  it('Router 側の aria-live は作らず AppRouter 側の宣言的 aria-live のみを使うこと', async () => {
-    globalThis.fetch = () =>
-      Promise.resolve(
-        new Response(
-          `
-            <!doctype html>
-            <html>
-              <head><title>Announce Page</title></head>
-              <body><main><h1>Announced</h1></main></body>
-            </html>
-          `,
-          { status: 200 },
-        ),
-      );
-
-    host = await fixture<AppRouterElement>(
-      html`<app-router
-        ><main><h1>SSR Title</h1></main></app-router
-      >`,
-    );
-    await host.updateComplete;
-
-    await host.navigate('/announce-page');
-
-    await waitUntil(
-      () =>
-        host
-          ?.querySelector('[aria-live="polite"]')
-          ?.textContent.includes('ページが読み込まれました') ?? false,
-      'aria-live の通知が出ること',
-    );
-
-    expect(host.querySelectorAll('[aria-live="polite"]').length).to.equal(1);
-    expect(host.querySelector('[aria-live="polite"]')?.textContent).to.contain(
-      'ページが読み込まれました',
-    );
-  });
-
-  it('コンテンツ更新後に reinitialize hook を実行し見出しへ focus すること', async () => {
-    let hookCalls = 0;
+  it('post-commit controller が aria-live と focus を担うこと', async () => {
     let focusedTagName = '';
     let focusOptions: FocusOptions | undefined;
 
@@ -279,27 +217,28 @@ describe('app-router', () => {
         ><main><h1>SSR Title</h1></main></app-router
       >`,
     );
-    await host.updateComplete;
+    const appHost = host;
+    if (!appHost) {
+      throw new Error('host が作成されていません。');
+    }
 
-    const controllerRecord = host as unknown as {
-      _routerController: { router: Router | null };
-    };
+    await appHost.updateComplete;
 
-    controllerRecord._routerController.router?.addReinitializeHook(() => {
-      hookCalls += 1;
-    });
-
-    await host.navigate('/focused-page');
+    await appHost.navigate('/focused-page');
 
     await waitUntil(
-      () => hookCalls === 1 && focusedTagName === 'H1',
-      'reinitialize hook と focus が実行されること',
+      () =>
+        (appHost.querySelector('[aria-live="polite"]')?.textContent.includes('ページが読み込まれました') ??
+          false) &&
+        focusedTagName === 'H1',
+      'aria-live と focus が更新されること',
     );
 
+    expect(appHost.querySelectorAll('[aria-live="polite"]').length).to.equal(1);
     expect(focusOptions).to.deep.equal({ preventScroll: true });
   });
 
-  it('loading:start / loading:end に応じて aria-busy を切り替えること', async () => {
+  it('navigation:busy-change に応じて aria-busy を切り替えること', async () => {
     let resolveResponse: ((value: Response) => void) | undefined;
 
     globalThis.fetch = () =>
@@ -312,20 +251,21 @@ describe('app-router', () => {
         ><main><h1>SSR Title</h1></main></app-router
       >`,
     );
-    await host.updateComplete;
+    const appHost = host;
+    if (!appHost) {
+      throw new Error('host が作成されていません。');
+    }
 
-    const navigationPromise = host.navigate('/slow-page');
+    await appHost.updateComplete;
+
+    const navigationPromise = appHost.navigate('/slow-page');
 
     await waitUntil(
-      () => host?.querySelector('#main-content')?.getAttribute('aria-busy') === 'true',
+      () => appHost.querySelector('#main-content')?.getAttribute('aria-busy') === 'true',
       'ナビゲーション中は aria-busy=true になること',
     );
 
-    if (!resolveResponse) {
-      throw new Error('resolveResponse が設定されていません。');
-    }
-
-    resolveResponse(
+    resolveResponse?.(
       new Response(
         `
           <!doctype html>
@@ -341,10 +281,59 @@ describe('app-router', () => {
     await navigationPromise;
 
     await waitUntil(
-      () => !host?.querySelector('#main-content')?.hasAttribute('aria-busy'),
+      () => !appHost.querySelector('#main-content')?.hasAttribute('aria-busy'),
       '完了後は aria-busy が外れること',
     );
 
-    expect(host.querySelector('#main-content')?.hasAttribute('aria-busy')).to.equal(false);
+    expect(appHost.querySelector('#main-content')?.hasAttribute('aria-busy')).to.equal(false);
+  });
+
+  it('shell adapter 経由で layout-header を同期すること', async () => {
+    const header = await fixture<HTMLElement>(
+      html`<layout-header breadcrumbs-json='[{"label":"Old","href":"/old"}]'></layout-header>`,
+    );
+
+    globalThis.fetch = () =>
+      Promise.resolve(
+        new Response(
+          `
+            <!doctype html>
+            <html>
+              <head><title>Header Sync</title></head>
+              <body>
+                <layout-header
+                  note-layout
+                  breadcrumbs-json='[{"label":"New Note","href":"/notes/new-note"}]'
+                ></layout-header>
+                <main><h1>Header Synced</h1></main>
+              </body>
+            </html>
+          `,
+          { status: 200 },
+        ),
+      );
+
+    host = await fixture<AppRouterElement>(
+      html`<app-router
+        ><main><h1>SSR Title</h1></main></app-router
+      >`,
+    );
+    const appHost = host;
+    if (!appHost) {
+      throw new Error('host が作成されていません。');
+    }
+
+    await appHost.updateComplete;
+
+    await appHost.navigate('/notes/new-note');
+
+    await waitUntil(
+      () =>
+        header.getAttribute('breadcrumbs-json') ===
+        '[{"label":"New Note","href":"/notes/new-note"}]',
+      'breadcrumbs-json が同期されること',
+    );
+
+    expect(header.hasAttribute('note-layout')).to.equal(true);
   });
 });

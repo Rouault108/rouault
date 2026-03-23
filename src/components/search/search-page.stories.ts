@@ -12,10 +12,11 @@ const ORIGINAL_GET_AVAILABLE_GENRES =
   pagefindSearchAdapter.getAvailableGenres.bind(pagefindSearchAdapter);
 
 interface MockSearchItem {
+  canonicalUrl: string;
   title: string;
   url: string;
-  path: string;
-  excerptHtml: string;
+  pathLabel: string;
+  snippet: string;
   description: string;
   date: string;
   tags: readonly string[];
@@ -29,37 +30,41 @@ interface FilterOptionState {
 
 const MOCK_ITEMS: readonly MockSearchItem[] = [
   {
+    canonicalUrl: '/notes/router-design/',
     title: 'Router 設計メモ',
     url: '/notes/router-design',
-    path: '/notes/router-design',
-    excerptHtml: 'Router の設計と遷移制御をまとめたメモです。',
+    pathLabel: 'notes / router-design',
+    snippet: 'Router の設計と遷移制御をまとめたメモです。',
     description: 'Router の設計ノート',
     date: '2026-03-01',
     tags: ['router', 'architecture'],
   },
   {
+    canonicalUrl: '/notes/lit-performance/',
     title: 'Lit レンダリング最適化',
     url: '/notes/lit-performance',
-    path: '/notes/lit-performance',
-    excerptHtml: 'Lit の描画最適化と差分更新をまとめています。',
+    pathLabel: 'notes / lit-performance',
+    snippet: 'Lit の描画最適化と差分更新をまとめています。',
     description: 'Lit の描画最適化メモ',
     date: '2026-02-12',
     tags: ['lit', 'performance'],
   },
   {
+    canonicalUrl: '/notes/a11y-log/',
     title: 'アクセシビリティ実装ログ',
     url: '/notes/a11y-log',
-    path: '/notes/a11y-log',
-    excerptHtml: 'フォーム操作とラベル設計を検証したメモです。',
+    pathLabel: 'notes / a11y-log',
+    snippet: 'フォーム操作とラベル設計を検証したメモです。',
     description: 'A11y 実装の記録',
     date: '2026-01-22',
     tags: ['a11y', 'architecture'],
   },
   {
+    canonicalUrl: '/notes/router-event-boundary/',
     title: 'Router イベント境界の設計',
     url: '/notes/router-event-boundary',
-    path: '/notes/router-event-boundary',
-    excerptHtml: 'Router のイベント境界と購読戦略を整理しています。',
+    pathLabel: 'notes / router-event-boundary',
+    snippet: 'Router のイベント境界と購読戦略を整理しています。',
     description: 'Router のイベント境界設計メモ',
     date: '2026-01-11',
     tags: ['architecture', 'eventing'],
@@ -137,14 +142,23 @@ function createSearchResponse(
   query: string,
   selectedGenres: readonly string[],
   sortMode: string,
+  tagMode: 'or' | 'and' = 'or',
 ): SearchResponse {
   const normalizedQuery = query.trim().toLowerCase();
   if (normalizedQuery.length === 0 && selectedGenres.length === 0) {
     return {
+      mode: 'explore',
+      rankingProfileId: 'rouault-search-v1',
       total: 0,
       items: [],
-      genreCounts: {},
-      allGenreCounts: ALL_GENRE_COUNTS,
+      tagCounts: {},
+      allTagCounts: ALL_GENRE_COUNTS,
+      diagnostics: {
+        degraded: false,
+        activeSources: ['catalog'],
+        failures: [],
+        issues: [],
+      },
     } satisfies SearchResponse;
   }
 
@@ -161,7 +175,11 @@ function createSearchResponse(
 
   const filteredItems =
     selectedGenres.length > 0
-      ? queryMatchedItems.filter((item) => selectedGenres.some((tag) => item.tags.includes(tag)))
+      ? queryMatchedItems.filter((item) =>
+          tagMode === 'and'
+            ? selectedGenres.every((tag) => item.tags.includes(tag))
+            : selectedGenres.some((tag) => item.tags.includes(tag)),
+        )
       : queryMatchedItems;
 
   const sortedItems =
@@ -170,23 +188,39 @@ function createSearchResponse(
       : filteredItems;
 
   return {
+    mode: 'explore',
+    rankingProfileId: 'rouault-search-v1',
     total: sortedItems.length,
     items: sortedItems.map((item) => ({
+      canonicalUrl: item.canonicalUrl,
       title: item.title,
       url: item.url,
-      path: item.path,
-      excerptHtml: item.excerptHtml,
+      pathLabel: item.pathLabel,
       description: item.description,
-      date: item.date,
+      date: {
+        epochMs: Date.parse(item.date),
+        original: item.date,
+      },
+      tags: [...item.tags],
+      snippet: {
+        segments: [{ text: item.snippet, matched: false }],
+      },
+      reasons: [{ kind: 'title-prefix', tokens: [query] }],
     })),
-    genreCounts: buildGenreCounts(sortedItems),
-    allGenreCounts: buildGenreCounts(queryMatchedItems, { includeAllKnownTags: true }),
+    tagCounts: buildGenreCounts(sortedItems),
+    allTagCounts: buildGenreCounts(queryMatchedItems, { includeAllKnownTags: true }),
+    diagnostics: {
+      degraded: false,
+      activeSources: ['catalog'],
+      failures: [],
+      issues: [],
+    },
   } satisfies SearchResponse;
 }
 
 function installSearchMock(): void {
-  pagefindSearchAdapter.search = (query, selectedGenres, sortMode) =>
-    Promise.resolve(createSearchResponse(query, selectedGenres, sortMode));
+  pagefindSearchAdapter.search = (query, selectedGenres, sortMode, tagMode = 'or') =>
+    Promise.resolve(createSearchResponse(query, selectedGenres, sortMode, tagMode));
 
   pagefindSearchAdapter.getAvailableGenres = () => Promise.resolve(ALL_GENRE_COUNTS);
 }

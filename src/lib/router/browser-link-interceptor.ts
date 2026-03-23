@@ -1,5 +1,10 @@
 import { LocationAdapter } from './location-adapter.js';
-import type { NavigationRequest } from './router-types.js';
+import type { NavigationResult } from './router-types.js';
+
+interface InterceptorRequest {
+  url: string;
+  historyMode: 'none' | 'push' | 'replace';
+}
 
 export class BrowserLinkInterceptor {
   private clickHandler: (event: MouseEvent) => void;
@@ -8,7 +13,7 @@ export class BrowserLinkInterceptor {
   constructor(
     private location: LocationAdapter,
     private getCurrentUrl: () => string,
-    private requestNavigation: (request: NavigationRequest) => Promise<void>,
+    private requestNavigation: (request: InterceptorRequest) => Promise<NavigationResult>,
   ) {
     this.clickHandler = (event: MouseEvent) => {
       this.handleAnchorClick(event);

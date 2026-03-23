@@ -95,7 +95,7 @@
 - `src/lib/router/browser-link-interceptor.ts`
 - `src/lib/router/location-adapter.ts`
 - `src/lib/search/search-url.ts`
-- `src/lib/search/normalize-search-result-url.ts`
+- `src/lib/search/document-url.ts`
 - `lib/content/build-sidebar-tree.ts`
 - `lib/content/build-breadcrumbs.ts`
 
@@ -212,6 +212,8 @@ Rouault には `card-link` による **Stretched Link** パターンがありま
 ### 1.9 Router との境界
 
 リンクが内部遷移として扱われるのは、`browser-link-interceptor.ts` の条件を満たす場合だけです。
+
+router の公開契約そのものは `docs/router-specification.md` を正とし、本書では UI パターンに関係する境界だけを要約します。
 
 内部遷移の対象は概ね次のとおりです。
 
@@ -542,36 +544,44 @@ hash または既存 `?tab=` から active tab が確定したあとは、`norma
 #### 読み込み
 
 - `connectedCallback()` で `window.location.href` から状態復元
+- `/search?...` と `/tags/<tag>/` の両入口を受理する
 - `popstate` で再同期
 
 #### 書き込み
 
-| 操作       | 履歴操作       |
-| ---------- | -------------- |
-| 検索入力   | `replaceState` |
-| タグ切替   | `pushState`    |
-| ソート変更 | `pushState`    |
+| 操作           | 履歴操作       |
+| -------------- | -------------- |
+| 検索入力       | `replaceState` |
+| タグ切替       | `pushState`    |
+| タグ演算子変更 | `pushState`    |
+| ソート変更     | `pushState`    |
 
-この差は妥当です。検索入力は文字ごとの中間状態なので戻る履歴を汚しやすく、タグ切替やソート変更はユーザー意図が明確だからです。
+この差は妥当です。検索入力は文字ごとの中間状態なので戻る履歴を汚しやすく、タグ切替・タグ演算子変更・ソート変更はユーザー意図が明確だからです。
+
+また、`/tags/<tag>/` は **単一タグ既定ビュー専用 URL** です。`q !== ''`、複数タグ、`tagMode !== 'or'`、`sort !== 'relevance'` のいずれかになった時点で、UI は対応する `/search?...` へ遷移します。
 
 ### 4.5 検索結果 URL の正規化
 
-`normalize-search-result-url.ts` では、末尾スラッシュを削ります。
+検索結果項目では、次の 3 種類を分離して扱います。
 
-したがって Rouault の検索結果表示では、**`/foo` と `/foo/` を同一視し、表示上は canonical を末尾スラッシュなしに寄せる**方針です。
+- `canonicalUrl`: 文書識別用。`normalizeDocumentCanonicalUrl()` により query / hash を除去し、末尾 slash ありへ正規化する
+- `url`: 実際の遷移先。安全な内部 URL だけを採用する
+- `pathLabel`: `canonicalUrl` から導出する表示専用ラベル
+
+したがって Rouault の検索結果表示では、**生の `url` や `canonicalUrl` をそのまま表示せず、常に `pathLabel` を使う**のが正です。
 
 ### 4.6 Router の URL正規化
 
 `location-adapter.ts` の役割は、次のとおりです。
 
-| 関数                  | 役割                                    |
-| --------------------- | --------------------------------------- |
-| `normalizeUrl()`      | 比較・履歴更新向け canonical URL を作る |
-| `normalizePathname()` | 末尾スラッシュを除去する                |
-| `resolveContentUrl()` | 取得直前のみ trailing slash を補う      |
-| `stripHash()`         | path + search 単位で比較する            |
+| 関数                  | 役割                                               |
+| --------------------- | -------------------------------------------------- |
+| `normalizeUrl()`      | 比較・履歴更新向け canonical URL を作る            |
+| `normalizePathname()` | `/search` を正規化し、`/tags/<tag>/` は保持する    |
+| `resolveContentUrl()` | 取得直前のみ trailing slash を補う                 |
+| `stripHash()`         | path + search 単位で比較する                       |
 
-このため Rouault の URL は、**表示・比較では末尾スラッシュなし、取得直前だけスラッシュ補完あり**という二層構造です。
+このため Rouault の URL は、**表示・比較では `/search` を slash なし、`/tags/<tag>/` を slash あり、それ以外は通常 slash なし**、取得直前だけ必要に応じて slash 補完ありという二層構造です。
 
 ### 4.7 Router が介入しないリンク
 

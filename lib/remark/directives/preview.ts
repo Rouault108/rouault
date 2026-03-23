@@ -18,7 +18,7 @@ export const applyCodePreviewAttributes = (
 ): Record<string, unknown> => {
   const result: Record<string, unknown> = {};
   const allowedKeys = new Set([
-    'label',
+    'heading',
     'controls',
     'preview-padding',
     'preview-align',
@@ -28,9 +28,9 @@ export const applyCodePreviewAttributes = (
   ]);
   assertAllowedAttributes(attrs, allowedKeys, node, file, 'code-preview');
 
-  const label = pickOptional(attrs['label']);
-  if (label) {
-    result['label'] = label;
+  const heading = pickOptional(attrs['heading']);
+  if (heading) {
+    result['heading'] = heading;
   }
 
   const controls = parseEnumListAttribute(

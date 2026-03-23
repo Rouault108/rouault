@@ -21,6 +21,8 @@ test.describe('SSR Rendering', () => {
     await expect(page.locator('#main-content h1').first()).toHaveText('交響曲第9番 ニ短調 作品125');
     await expect(page.locator('text=楽章構成').first()).toBeVisible();
     await expect(page.locator('text=第4楽章「歓喜の歌」').first()).toBeVisible();
+    await expect(page.locator('ui-article-header')).toContainText('music');
+    await expect(page.locator('ui-article-header')).toContainText('classical');
 
     const hasHeaderShadowRoot = await page
       .locator('layout-header')
@@ -62,12 +64,12 @@ test.describe('SSR Rendering', () => {
     expect(hasTableShadowRoot).toBe(true);
   });
 
-  test('タグページのカードが JavaScript 無効時も初期表示されること', async ({ page }) => {
+  test('タグページが JavaScript 無効時も search-page として初期表示されること', async ({ page }) => {
     await page.goto('/tags/music/');
 
     await expect(page.locator('#main-content h1').first()).toHaveText('#music');
     await expect(page.locator('#main-content')).toContainText(
-      'このタグに属する公開ノートを新しい順で一覧します。',
+      'このタグに属するノートを起点に、検索語や追加タグで探索を広げられます。',
     );
     await expect(page.locator('ui-card').first()).toContainText('交響曲第9番 ニ短調 作品125');
 

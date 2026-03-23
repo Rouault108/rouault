@@ -1,4 +1,4 @@
-import type { UiSearchDialogItem } from '../../components/ui/search-dialog/search-dialog.js';
+import type { UiSearchDialogItem } from '../../components/ui/search-dialog/search-dialog.types.js';
 import {
   prepareSearchQuery,
   tokenizeSearchText,
@@ -277,7 +277,9 @@ function compareDialogItems(
     return titleComparison;
   }
 
-  return (left.path ?? '').localeCompare(right.path ?? '', 'ja');
+  const leftPath = left.path ?? '';
+  const rightPath = right.path ?? '';
+  return leftPath.localeCompare(rightPath, 'ja');
 }
 
 function normalizeDialogItem(item: SearchDialogItem): SearchDialogItem | null {
@@ -333,11 +335,14 @@ function mergeDialogItem(existing: SearchDialogItem, incoming: SearchDialogItem)
       ? existingDescription
       : incomingDescription;
 
+  const existingPath = normalizeString(existing.path);
+  const incomingPath = normalizeString(incoming.path);
+
   return {
     title: existing.title,
     url: existing.url,
-    ...(normalizeString(existing.path).length > 0 || normalizeString(incoming.path).length > 0
-      ? { path: normalizeString(existing.path) || normalizeString(incoming.path) }
+    ...(existingPath.length > 0 || incomingPath.length > 0
+      ? { path: existingPath || incomingPath }
       : {}),
     ...(mergedDescription.length > 0 ? { description: mergedDescription } : {}),
     ...(mergedDate.length > 0 ? { date: mergedDate } : {}),

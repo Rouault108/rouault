@@ -1,12 +1,14 @@
 import { expect, fixture, html, waitUntil } from '@open-wc/testing';
-import { Router } from '../../src/lib/router.js';
+import { PrimaryTabNavigationPolicy } from '../../src/lib/tabs/primary-tab-navigation-policy.js';
+import {
+  Router,
+  RouterDestroyedError,
+  RouterNotStartedError,
+  RouterOwnershipError,
+  type NavigationResult,
+} from '../../src/lib/router.js';
 import { URL_STATE_CHANGE_EVENT } from '../../src/lib/tabs/url-state.js';
 
-/**
- * テスト用クリックシミュレーション。
- * アンカー要素に直接 dispatchEvent すると実ブラウザ遷移が発生しうるため、
- * 子要素（<span>）にイベントを発行して Router の closest('a') 判定だけを通す。
- */
 function simulateClick(element: HTMLElement, options: MouseEventInit = {}): void {
   let target = element;
   let tempSpan: HTMLSpanElement | null = null;
@@ -38,7 +40,6 @@ describe('Router', () => {
   let originalPushState: typeof history.pushState;
   let originalReplaceState: typeof history.replaceState;
   let originalHistoryStateDescriptor: PropertyDescriptor | undefined;
-  let originalStartViewTransitionDescriptor: PropertyDescriptor | undefined;
   let originalScrollToDescriptor: PropertyDescriptor | undefined;
 
   let mockHistoryState: unknown;
@@ -49,7 +50,7 @@ describe('Router', () => {
     originalFetch = globalThis.fetch;
     globalThis.fetch = () =>
       Promise.resolve(
-        new Response('<html><body><main>Default Mock</main></body></html>', {
+        new Response('<html><head><title>Default</title></head><body><main>Default Mock</main></body></html>', {
           status: 200,
         }),
       );
@@ -57,10 +58,6 @@ describe('Router', () => {
     originalPushState = history.pushState.bind(history);
     originalReplaceState = history.replaceState.bind(history);
     originalHistoryStateDescriptor = Object.getOwnPropertyDescriptor(history, 'state');
-    originalStartViewTransitionDescriptor = Object.getOwnPropertyDescriptor(
-      document,
-      'startViewTransition',
-    );
     originalScrollToDescriptor = Object.getOwnPropertyDescriptor(window, 'scrollTo');
 
     mockHistoryState = history.state;
@@ -96,31 +93,6 @@ describe('Router', () => {
       };
     }) as typeof history.replaceState;
 
-    const mockStartViewTransition: NonNullable<typeof document.startViewTransition> = (
-      callback?: ViewTransitionUpdateCallback | StartViewTransitionOptions,
-    ) => {
-      const updateCallback = typeof callback === 'function' ? callback : callback?.update;
-      const done = updateCallback
-        ? Promise.resolve(updateCallback()).then(() => undefined)
-        : Promise.resolve();
-
-      return {
-        finished: done,
-        ready: done,
-        updateCallbackDone: done,
-        skipTransition() {
-          /* noop */
-        },
-        types: new Set<string>() as unknown as ViewTransitionTypeSet,
-      };
-    };
-
-    Object.defineProperty(document, 'startViewTransition', {
-      configurable: true,
-      writable: true,
-      value: mockStartViewTransition,
-    });
-
     Object.defineProperty(window, 'scrollTo', {
       configurable: true,
       writable: true,
@@ -144,12 +116,6 @@ describe('Router', () => {
       Reflect.deleteProperty(history, 'state');
     }
 
-    if (originalStartViewTransitionDescriptor) {
-      Object.defineProperty(document, 'startViewTransition', originalStartViewTransitionDescriptor);
-    } else {
-      Reflect.deleteProperty(document, 'startViewTransition');
-    }
-
     if (originalScrollToDescriptor) {
       Object.defineProperty(window, 'scrollTo', originalScrollToDescriptor);
     } else {
@@ -157,158 +123,103 @@ describe('Router', () => {
     }
   });
 
-  it('skipInitialNavigation=false の場合は初期ナビゲーションを実行すること', async () => {
+  it('constructor は副作用を持たず、start() 前はリンクを横取りしないこと', async () => {
     let fetchCount = 0;
     globalThis.fetch = () => {
       fetchCount += 1;
       return Promise.resolve(
-        new Response(
-          '<html><head><title>Initial</title></head><body><main>Initial Page</main></body></html>',
-          {
-            status: 200,
-          },
-        ),
-      );
-    };
-
-    router = new Router(outlet);
-
-    await waitUntil(() => fetchCount === 1, '初期ナビゲーションが実行されること');
-    expect(outlet.textContent).to.contain('Initial Page');
-    expect(document.title).to.equal('Initial');
-  });
-
-  it('skipInitialNavigation=true の場合は初期ナビゲーションをスキップし current URL を履歴に積むこと', () => {
-    let fetchCalled = false;
-    globalThis.fetch = () => {
-      fetchCalled = true;
-      return Promise.resolve(
-        new Response('<html><body><main>Should Not Load</main></body></html>', {
+        new Response('<html><head><title>Init</title></head><body><main>Init</main></body></html>', {
           status: 200,
         }),
       );
     };
 
-    mockHistoryState = { __routerUrl: '/initial-state' };
-    router = new Router(outlet, { skipInitialNavigation: true });
-
-    expect(fetchCalled).to.equal(false);
-    expect(router.getHistory()).to.deep.equal(['/initial-state']);
-    expect(router.getCurrentPath()).to.equal('/initial-state');
-  });
-
-  it('内部リンクはインターセプトしてコンテンツを更新すること', async () => {
-    globalThis.fetch = () =>
-      Promise.resolve(
-        new Response(
-          `
-            <!doctype html>
-            <html>
-              <head><title>Next Page</title></head>
-              <body><main><h1>Next Content</h1></main></body>
-            </html>
-          `,
-          { status: 200 },
-        ),
-      );
-
-    router = new Router(outlet, { skipInitialNavigation: true });
+    router = new Router(outlet);
 
     const link = await fixture<HTMLAnchorElement>(html`<a href="/next-page">Next</a>`);
-
     let defaultPrevented = false;
     const observer = (event: Event) => {
       defaultPrevented = event.defaultPrevented;
-      if (!defaultPrevented) {
-        event.preventDefault();
-      }
+      event.preventDefault();
     };
     document.addEventListener('click', observer);
-
     simulateClick(link);
-
     document.removeEventListener('click', observer);
 
-    await waitUntil(
-      () => outlet.textContent.includes('Next Content'),
-      'コンテンツが更新されること',
-    );
-
-    expect(defaultPrevented).to.equal(true);
-    expect(document.title).to.equal('Next Page');
-    expect(outlet.querySelector('h1')?.textContent.trim()).to.equal('Next Content');
+    expect(fetchCount).to.equal(0);
+    expect(defaultPrevented).to.equal(false);
+    expect(outlet.textContent).to.contain('Initial Content');
   });
 
-  it('外部リンク・hashリンク・data-no-router リンクはインターセプトしないこと', async () => {
-    router = new Router(outlet, { skipInitialNavigation: true });
+  it('start() は初回遷移結果を返し、2回目以降は null を返すこと', async () => {
+    router = new Router(outlet);
 
-    const cases = [
-      html`<a href="https://example.com">External</a>`,
-      html`<a href="#local-fragment">Hash</a>`,
-      html`<a href="/no-router" data-no-router>No Router</a>`,
-    ];
+    const firstResult = await router.start();
+    const secondResult = await router.start();
 
-    for (const template of cases) {
-      const link = await fixture<HTMLAnchorElement>(template);
-
-      let defaultPrevented = false;
-      const observer = (event: Event) => {
-        defaultPrevented = event.defaultPrevented;
-        event.preventDefault();
-      };
-      document.addEventListener('click', observer);
-
-      simulateClick(link);
-
-      document.removeEventListener('click', observer);
-      expect(defaultPrevented).to.equal(false);
-
-      link.remove();
-    }
+    expect(firstResult?.outcome).to.equal('completed');
+    expect(firstResult?.committed).to.equal(true);
+    expect(firstResult?.renderedKind).to.equal('page');
+    expect(secondResult).to.equal(null);
+    expect(outlet.textContent).to.contain('Default Mock');
+    expect(document.title).to.equal('Default');
   });
 
-  it('navigate() は表示 URL を canonical に揃えつつ fetch では trailing slash を補うこと', async () => {
-    let pushedUrl = '';
-    let fetchedUrl = '';
-
-    history.pushState = ((data: unknown, _unused: string, url?: string | URL | null) => {
-      if (url === null || url === undefined) {
-        return;
-      }
-
-      pushedUrl = url.toString();
-      const target = new URL(url.toString(), window.location.href);
-      mockHistoryState = {
-        ...(data && typeof data === 'object' ? data : {}),
-        __routerUrl: `${target.pathname}${target.search}${target.hash}`,
-        __routerPath: target.pathname,
-      };
-    }) as typeof history.pushState;
-
-    globalThis.fetch = (input: RequestInfo | URL) => {
-      fetchedUrl = input instanceof Request ? input.url : String(input);
-      return Promise.resolve(
-        new Response(
-          '<html><head><title>Canonical</title></head><body><main>Canonical Page</main></body></html>',
-          {
-            status: 200,
-          },
-        ),
-      );
-    };
-
+  it('skipInitialNavigation=true の start() は null を返し、navigate() で遷移できること', async () => {
     router = new Router(outlet, { skipInitialNavigation: true });
 
-    await router.navigate('/docs/example/');
+    const startResult = await router.start();
+    const navigateResult = await router.navigate({
+      url: '/docs/example/',
+      historyMode: 'push',
+    });
 
-    expect(pushedUrl).to.equal('/docs/example');
+    expect(startResult).to.equal(null);
+    expect(navigateResult.outcome).to.equal('completed');
+    expect(navigateResult.normalizedUrl).to.equal('/docs/example');
     expect(router.getCurrentPath()).to.equal('/docs/example');
-    expect(router.getHistory()).to.deep.equal(['/', '/docs/example']);
-    expect(fetchedUrl).to.include('/docs/example/');
   });
 
-  it('addRoute() した route handler が一致した場合は fetch をスキップすること', async () => {
+  it('start() 前の navigate() は not-started 失敗結果を返すこと', async () => {
+    router = new Router(outlet, { skipInitialNavigation: true });
+
+    const result = await router.navigate({
+      url: '/before-start',
+      historyMode: 'push',
+    });
+
+    expect(result.outcome).to.equal('failed');
+    expect(result.errorReason).to.equal('not-started');
+    expect(result.error).to.be.instanceOf(RouterNotStartedError);
+    expect(outlet.textContent).to.contain('Initial Content');
+  });
+
+  it('destroy() 後の navigate() は destroyed 失敗結果を返し、所有権を解放すること', async () => {
+    router = new Router(outlet, { skipInitialNavigation: true });
+    await router.start();
+    router.destroy();
+
+    const result = await router.navigate({
+      url: '/after-destroy',
+      historyMode: 'push',
+    });
+    const nextRouter = new Router(outlet, { skipInitialNavigation: true });
+
+    expect(result.outcome).to.equal('failed');
+    expect(result.errorReason).to.equal('destroyed');
+    expect(result.error).to.be.instanceOf(RouterDestroyedError);
+    nextRouter.destroy();
+  });
+
+  it('live Router の二重生成では RouterOwnershipError を送出すること', () => {
+    router = new Router(outlet, { skipInitialNavigation: true });
+
+    expect(() => new Router(outlet, { skipInitialNavigation: true })).to.throw(RouterOwnershipError);
+  });
+
+  it('addDocumentRoute() は exact pathname と defensive searchParams で評価すること', async () => {
     let fetchCalled = false;
+    let observedSearchValues: string[] = [];
     globalThis.fetch = () => {
       fetchCalled = true;
       return Promise.resolve(
@@ -319,95 +230,99 @@ describe('Router', () => {
     };
 
     router = new Router(outlet, { skipInitialNavigation: true });
-    router.addRoute('/virtual-route', () => '<section><h1>From Handler</h1></section>');
+    router.addDocumentRoute('/virtual-route', ({ normalizedUrl, searchParams }) => {
+      observedSearchValues = searchParams.getAll('tag');
+      searchParams.append('tag', 'mutated');
 
-    await router.navigate('/virtual-route');
+      return {
+        kind: 'page',
+        html: `<section><h1>From Handler</h1><p>${normalizedUrl}</p></section>`,
+        title: 'Virtual - Rouault',
+        metaDescription: 'virtual route',
+        shell: null,
+      };
+    });
+
+    await router.start();
+    const result = await router.navigate({
+      url: '/virtual-route?tag=a&tag=b',
+      historyMode: 'push',
+    });
 
     expect(fetchCalled).to.equal(false);
+    expect(observedSearchValues).to.deep.equal(['a', 'b']);
+    expect(result.source).to.equal('document-route');
+    expect(result.renderedKind).to.equal('page');
     expect(outlet.innerHTML).to.contain('From Handler');
   });
 
-  it('title・meta description・layout-header を遷移先 document に同期すること', async () => {
-    const header = await fixture<HTMLElement>(
-      html`<layout-header breadcrumbs-json='[{"label":"Old","href":"/old"}]'></layout-header>`,
-    );
-
-    globalThis.fetch = () =>
-      Promise.resolve(
-        new Response(
-          `
-            <!doctype html>
-            <html>
-              <head>
-                <title>Routed Title</title>
-                <meta name="description" content="Updated Description" />
-              </head>
-              <body>
-                <layout-header
-                  note-layout
-                  breadcrumbs-json='[{"label":"New Note","href":"/notes/new-note"}]'
-                ></layout-header>
-                <main><h1>Header Synced</h1></main>
-              </body>
-            </html>
-          `,
-          { status: 200 },
-        ),
-      );
-
+  it('getSearchParams() は重複値を保持し、防御的コピーを返すこと', async () => {
     router = new Router(outlet, { skipInitialNavigation: true });
-    await router.navigate('/notes/new-note');
-
-    await waitUntil(
-      () =>
-        header.getAttribute('breadcrumbs-json') ===
-        '[{"label":"New Note","href":"/notes/new-note"}]',
-      'breadcrumbs-json が同期されること',
-    );
-
-    expect(document.title).to.equal('Routed Title');
-    expect(document.querySelector('meta[name="description"]')?.getAttribute('content')).to.equal(
-      'Updated Description',
-    );
-    expect(header.hasAttribute('note-layout')).to.equal(true);
-  });
-
-  it('onContentUpdate 指定時は outlet.innerHTML を直接変更せず callback 側へ委譲すること', async () => {
-    let callbackHtml = '';
-    let callbackCount = 0;
-
-    globalThis.fetch = () =>
-      Promise.resolve(
-        new Response(
-          `
-            <!doctype html>
-            <html>
-              <head><title>Callback Page</title></head>
-              <body><main><h1>Callback Content</h1></main></body>
-            </html>
-          `,
-          { status: 200 },
-        ),
-      );
-
-    router = new Router(outlet, {
-      skipInitialNavigation: true,
-      skipAriaLiveRegion: true,
-      onContentUpdate: (html) => {
-        callbackHtml = html;
-        callbackCount += 1;
-      },
+    await router.start();
+    await router.navigate({
+      url: '/notes/testing?tag=a&tag=b&empty=',
+      historyMode: 'push',
     });
 
-    await router.navigate('/callback-page');
+    const first = router.getSearchParams();
+    first.append('tag', 'mutated');
+    const second = router.getSearchParams();
 
-    expect(callbackCount).to.equal(1);
-    expect(callbackHtml).to.contain('Callback Content');
-    expect(outlet.innerHTML).to.equal('Initial Content');
-    expect(document.querySelectorAll('[aria-live="polite"]').length).to.equal(0);
+    expect(second.getAll('tag')).to.deep.equal(['a', 'b']);
+    expect(second.get('empty')).to.equal('');
   });
 
-  it('tab クエリだけが変化する state-only navigation では fetch せず ui-url-state-change を dispatch すること', async () => {
+  it('before navigate hook の false は cancelled を返すこと', async () => {
+    router = new Router(outlet, { skipInitialNavigation: true });
+    router.addBeforeNavigateHook(() => false);
+    await router.start();
+
+    const result = await router.navigate({
+      url: '/cancelled',
+      historyMode: 'push',
+    });
+
+    expect(result.outcome).to.equal('cancelled');
+    expect(result.committed).to.equal(false);
+    expect(result.source).to.equal('none');
+  });
+
+  it('shell/post-commit failure は completed + degraded に落とすこと', async () => {
+    router = new Router(outlet, {
+      skipInitialNavigation: true,
+      shellAdapter: {
+        apply: () => {
+          throw new Error('shell failed');
+        },
+      },
+      postCommitController: {
+        run: () => {
+          throw new Error('post failed');
+        },
+      },
+    });
+    await router.start();
+
+    const errors: string[] = [];
+    router.on('error', ({ stage }) => {
+      errors.push(stage);
+    });
+
+    const result = await router.navigate({
+      url: '/degraded',
+      historyMode: 'push',
+    });
+
+    expect(result.outcome).to.equal('completed');
+    expect(result.degraded).to.equal(true);
+    expect(result.issues.map((issue) => issue.code)).to.deep.equal([
+      'shell-sync-failed',
+      'post-commit-failed',
+    ]);
+    expect(errors).to.deep.equal(['shell', 'post-commit']);
+  });
+
+  it('state-only navigation は policy 注入時のみ fetch せず結果イベントを返すこと', async () => {
     let fetchCalled = false;
     globalThis.fetch = () => {
       fetchCalled = true;
@@ -423,7 +338,11 @@ describe('Router', () => {
       __routerPath: '/notes/testing',
     };
 
-    router = new Router(outlet, { skipInitialNavigation: true });
+    router = new Router(outlet, {
+      skipInitialNavigation: true,
+      urlStateNavigationPolicy: new PrimaryTabNavigationPolicy(),
+    });
+    await router.start();
 
     let eventDetail:
       | {
@@ -431,47 +350,75 @@ describe('Router', () => {
           url: string;
         }
       | undefined;
+    let windowEventDetail:
+      | {
+          previousUrl: string;
+          url: string;
+        }
+      | undefined;
+    let afterNavigateResult: NavigationResult | undefined;
+
+    router.on('ui-url-state-change', (detail) => {
+      eventDetail = detail;
+    });
+    router.on('after:navigate', (detail) => {
+      afterNavigateResult = detail;
+    });
 
     const listener = (event: Event) => {
       const customEvent = event as CustomEvent<{ previousUrl: string; url: string }>;
-      eventDetail = customEvent.detail;
+      windowEventDetail = customEvent.detail;
     };
     window.addEventListener(URL_STATE_CHANGE_EVENT, listener);
 
     try {
-      await router.navigate('/notes/testing?tab=details');
+      const result = await router.navigate({
+        url: '/notes/testing?tab=details',
+        historyMode: 'push',
+      });
+
+      expect(fetchCalled).to.equal(false);
+      expect(result.stateOnly).to.equal(true);
+      expect(result.source).to.equal('state-only');
+      expect(eventDetail).to.deep.equal({
+        previousUrl: '/notes/testing?tab=overview',
+        url: '/notes/testing?tab=details',
+      });
+      expect(windowEventDetail).to.deep.equal(eventDetail);
+      expect(afterNavigateResult?.outcome).to.equal('completed');
     } finally {
       window.removeEventListener(URL_STATE_CHANGE_EVENT, listener);
     }
-
-    expect(fetchCalled).to.equal(false);
-    expect(eventDetail).to.deep.equal({
-      previousUrl: '/notes/testing?tab=overview',
-      url: '/notes/testing?tab=details',
-    });
-    expect(router.getHistory()).to.deep.equal([
-      '/notes/testing?tab=overview',
-      '/notes/testing?tab=details',
-    ]);
   });
 
-  it('destroy() 後は document click をインターセプトしないこと', async () => {
+  it('navigation:busy-change は full navigation の開始と終了でだけ発火すること', async () => {
+    let resolveResponse: ((value: Response) => void) | undefined;
+    globalThis.fetch = () =>
+      new Promise<Response>((resolve) => {
+        resolveResponse = resolve;
+      });
+
     router = new Router(outlet, { skipInitialNavigation: true });
-    router.destroy();
+    await router.start();
 
-    const link = await fixture<HTMLAnchorElement>(html`<a href="/destroyed">Destroyed</a>`);
+    const busyStates: boolean[] = [];
+    router.on('navigation:busy-change', ({ isNavigating }) => {
+      busyStates.push(isNavigating);
+    });
 
-    let defaultPrevented = false;
-    const observer = (event: Event) => {
-      defaultPrevented = event.defaultPrevented;
-      event.preventDefault();
-    };
-    document.addEventListener('click', observer);
+    const navigationPromise = router.navigate({
+      url: '/slow-page',
+      historyMode: 'push',
+    });
 
-    simulateClick(link);
+    await waitUntil(() => busyStates.length > 0, 'busy 状態が true になること');
+    resolveResponse?.(
+      new Response('<html><head><title>Slow</title></head><body><main>Slow</main></body></html>', {
+        status: 200,
+      }),
+    );
+    await navigationPromise;
 
-    document.removeEventListener('click', observer);
-
-    expect(defaultPrevented).to.equal(false);
+    expect(busyStates).to.deep.equal([true, false]);
   });
 });

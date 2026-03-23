@@ -43,7 +43,7 @@ describe('rehypePreviewSandbox', () => {
         {
           type: 'element',
           tagName: 'ui-code-preview',
-          properties: { label: 'Sandbox例' },
+          properties: { heading: 'Sandbox例' },
           children: [
             {
               type: 'element',
@@ -84,9 +84,10 @@ describe('rehypePreviewSandbox', () => {
     const sandbox = preview?.children?.[0];
     expect(sandbox?.tagName).to.equal('ui-preview-sandbox');
     expect(sandbox?.children).to.have.length(3);
-    expect(sandbox?.children?.[0]?.tagName).to.equal('template');
-    expect(sandbox?.children?.[0]?.properties?.['data-preview-kind']).to.equal('html');
-    expect(sandbox?.children?.[0]?.content?.children?.[0]?.value).to.equal(
+    const firstSandboxChild = sandbox?.children?.[0];
+    expect(firstSandboxChild?.tagName).to.equal('template');
+    expect(firstSandboxChild?.properties?.['data-preview-kind']).to.equal('html');
+    expect(firstSandboxChild?.content?.children[0]?.value).to.equal(
       '<button class="demo">押す</button>',
     );
     expect(sandbox?.properties?.['allow-js']).to.equal(true);

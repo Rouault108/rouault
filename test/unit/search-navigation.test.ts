@@ -7,7 +7,7 @@ describe('search-navigation', () => {
     const host = await fixture<HTMLElement>(html`<app-router></app-router>`);
     let navigatedUrl = '';
 
-    (host as HTMLElement & { navigate: (url: string) => Promise<void> }).navigate = (
+    (host as HTMLElement & { navigate: (url: string) => Promise<unknown> }).navigate = (
       url: string,
     ) => {
       navigatedUrl = url;

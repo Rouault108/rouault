@@ -1,13 +1,85 @@
-/**
- * AppRouter - SPA ルーターの Lit ラッパーコンポーネント
- */
-
 import { html, LitElement, nothing, type PropertyValues } from 'lit';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+import { PrimaryTabNavigationPolicy } from '../../lib/tabs/primary-tab-navigation-policy.js';
+import { RouterNotStartedError, type NavigationResult, type ShellAdapter } from '../../lib/router.js';
 import { RouterController } from '../../lib/controllers/router-controller.js';
-import { AppRouterAnnouncementController } from './controllers/app-router-announcement-controller.js';
 import { AppRouterContentController } from './controllers/app-router-content-controller.js';
 import { AppRouterPostRenderController } from './controllers/app-router-post-render-controller.js';
+
+interface BreadcrumbShellItem {
+  label: string;
+  href?: string;
+}
+
+const parseBreadcrumbs = (value: string | null): BreadcrumbShellItem[] => {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    return [];
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .map((item) => {
+        if (typeof item !== 'object' || item === null) {
+          return null;
+        }
+
+        const record = item as Record<string, unknown>;
+        const label = typeof record['label'] === 'string' ? record['label'].trim() : '';
+        const href = typeof record['href'] === 'string' ? record['href'].trim() : '';
+        if (label.length === 0) {
+          return null;
+        }
+
+        return href.length > 0 ? { label, href } : { label };
+      })
+      .filter((item): item is BreadcrumbShellItem => item !== null);
+  } catch {
+    return [];
+  }
+};
+
+const createLayoutHeaderShellAdapter = (): ShellAdapter => ({
+  extract(documentSnapshot: Document) {
+    const nextHeader = documentSnapshot.querySelector('layout-header');
+
+    return {
+      header: {
+        breadcrumbs: parseBreadcrumbs(nextHeader?.getAttribute('breadcrumbs-json') ?? null),
+        noteLayout: nextHeader?.hasAttribute('note-layout') ?? false,
+      },
+    };
+  },
+  apply(shell) {
+    const currentHeader = document.querySelector('layout-header');
+    if (!(currentHeader instanceof HTMLElement)) {
+      return;
+    }
+
+    const breadcrumbsJson = JSON.stringify(shell?.header.breadcrumbs ?? []);
+    currentHeader.setAttribute('breadcrumbs-json', breadcrumbsJson);
+    currentHeader.toggleAttribute('note-layout', shell?.header.noteLayout ?? false);
+  },
+});
+
+const createNotStartedResult = (url: string): NavigationResult => ({
+  outcome: 'failed',
+  requestedUrl: url,
+  normalizedUrl: url,
+  historyMode: 'push',
+  stateOnly: false,
+  committed: false,
+  degraded: false,
+  issues: [],
+  source: 'none',
+  renderedKind: null,
+  error: new RouterNotStartedError('app-router が未初期化です。'),
+  errorReason: 'not-started',
+});
 
 export class AppRouter extends LitElement {
   static override properties = {
@@ -18,22 +90,17 @@ export class AppRouter extends LitElement {
   declare private _pageContent: string;
   declare private _ariaAnnouncement: string;
 
-  /** シャドウDOMを無効化してライトDOMを使用する */
   override createRenderRoot(): this {
     return this;
   }
 
   private _routerController = new RouterController(this);
-
   private _contentController = new AppRouterContentController(this, (html) => {
     this._pageContent = html;
   });
-
-  private _announcementController = new AppRouterAnnouncementController(this, (text) => {
+  private _postRenderController = new AppRouterPostRenderController(this, (text) => {
     this._ariaAnnouncement = text;
   });
-
-  private _postRenderController = new AppRouterPostRenderController(this);
 
   constructor() {
     super();
@@ -41,27 +108,23 @@ export class AppRouter extends LitElement {
     this._ariaAnnouncement = '';
   }
 
-  /** SSR で注入する初期本文。 */
   serverContent = '';
 
   override connectedCallback(): void {
     this._contentController.captureInitialContent(this);
     super.connectedCallback();
 
-    const router = this._routerController.initRouter(
-      this,
-      async (newContent) => {
-        await this._contentController.handleContentUpdate(newContent, async () => {
-          await this.updateComplete;
-        });
-      },
-      {
-        skipInitialNavigation: true,
-        skipAriaLiveRegion: true,
-      },
-    );
+    const router = this._routerController.initRouter(this, {
+      skipInitialNavigation: true,
+      contentAdapter: this._contentController.createContentAdapter(async () => {
+        await this.updateComplete;
+      }),
+      postCommitController: this._postRenderController.createPostCommitController(this),
+      shellAdapter: createLayoutHeaderShellAdapter(),
+      urlStateNavigationPolicy: new PrimaryTabNavigationPolicy(),
+    });
 
-    this._announcementController.connect(router);
+    void router.start();
   }
 
   protected override updated(changedProperties: PropertyValues): void {
@@ -71,13 +134,6 @@ export class AppRouter extends LitElement {
       return;
     }
 
-    this._postRenderController.handleContentRendered(
-      this._contentController.shouldRunPostRenderHooks(),
-      this._routerController.router,
-      this.querySelector('#main-content'),
-    );
-    this._contentController.consumePostRenderHooksFlag();
-
     this.dispatchEvent(
       new CustomEvent('app-router:content-rendered', {
         bubbles: true,
@@ -86,8 +142,16 @@ export class AppRouter extends LitElement {
     );
   }
 
-  async navigate(url: string): Promise<void> {
-    await this._routerController.router?.navigate(url);
+  async navigate(url: string): Promise<NavigationResult> {
+    const router = this._routerController.router;
+    if (!router) {
+      return createNotStartedResult(url);
+    }
+
+    return router.navigate({
+      url,
+      historyMode: 'push',
+    });
   }
 
   override render() {

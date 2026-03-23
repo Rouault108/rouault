@@ -93,21 +93,7 @@ preview ヘッダー左側の見出しは `heading` で表します。
 - 不正トークンは無視します。
 - `preview-*` の列挙外値はそれぞれ既定値へフォールバックします。
 
-## 3.2 互換契約
-
-次の入力は互換のために受理してもよいですが、新規利用では推奨しません。
-
-| 名前 | 種別 | 移行先 |
-| --- | --- | --- |
-| `label` | property / attribute | `heading` |
-| 子要素への `embedded` 依存 | 設計上の旧前提 | 視覚統合は親外枠と CSS Custom Properties へ移行 |
-
-### 契約
-
-- `label` を受理する場合でも、内部では `heading` へ正規化して扱います。
-- `embedded` を前提とする親子合成は長期契約に含めません。
-
-## 3.3 スロット契約
+## 3.2 スロット契約
 
 | 名前 | 種別 | 必須 | 個数 | 内容 |
 | --- | --- | --- | --- | --- |
@@ -115,7 +101,7 @@ preview ヘッダー左側の見出しは `heading` で表します。
 | 既定スロット | slot | 正規構成では必須 | ちょうど 1 | `ui-code-block` または `ui-code-group` を直接受け取ります。 |
 | `toolbar` | named slot | いいえ | 0 個以上 | ヘッダー右側の補助操作を受け取ります。 |
 
-## 3.4 正規構成
+## 3.3 正規構成
 
 本契約における正規構成は、次の条件をすべて満たす入力です。
 
@@ -133,7 +119,7 @@ preview ヘッダー左側の見出しは `heading` で表します。
 - wrapper 越しの code root
 - 既定スロットへの無関係要素混在
 
-## 3.5 code root との合成契約
+## 3.4 code root との合成契約
 
 `ui-code-preview` は code root の公開属性を設定・除去しません。  
 ただし、次の構成を推奨します。
@@ -147,7 +133,7 @@ preview ヘッダー左側の見出しは `heading` で表します。
 - 視覚統合が必要な場合、CSS Custom Properties により外装を寄せます。
 - 子が standalone 外装のまま描画されても、それは authoring 上の構成問題であり、preview が隠蔽しません。
 
-## 3.6 `controls` の公開文法
+## 3.5 `controls` の公開文法
 
 `controls` は空白区切り文字列です。受理する値は次の 3 種のみです。
 
@@ -162,7 +148,7 @@ preview ヘッダー左側の見出しは `heading` で表します。
 - トークン順は意味を持ちません。
 - built-in controls の内部表示順は公開 API として固定しません。
 
-## 3.7 built-in controls の意味
+## 3.6 built-in controls の意味
 
 | control | 対象属性 | 選択肢 | 効果 |
 | --- | --- | --- | --- |
@@ -176,7 +162,7 @@ preview ヘッダー左側の見出しは `heading` で表します。
 - code 面の配色や copy 契約には影響しません。
 - built-in controls は `preview-*` 属性の編集 UI です。
 
-## 3.8 公開イベント
+## 3.7 公開イベント
 
 ### `ui-code-preview-state-change`
 

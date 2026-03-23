@@ -35,7 +35,7 @@ describe('remarkRouaultDirectives', () => {
       children: [
         {
           type: 'paragraph',
-          children: [{ type: 'text', value: '::callout{kind="warning" title="注意"}' }],
+          children: [{ type: 'text', value: '::callout{kind="warning" heading="注意"}' }],
         },
         {
           type: 'paragraph',
@@ -53,18 +53,23 @@ describe('remarkRouaultDirectives', () => {
     expect(tree.children).to.have.length(1);
     const callout = tree.children?.[0];
     expect(callout?.data?.hName).to.equal('ui-callout');
-    expect(callout?.data?.hProperties?.['variant']).to.equal('warning');
-    expect(callout?.data?.hProperties?.['title']).to.equal('注意');
+    expect(callout?.data?.hProperties?.['kind']).to.equal('warning');
+    expect(callout?.data?.hProperties?.['heading']).to.equal('注意');
     expect(callout?.children?.[0]?.type).to.equal('paragraph');
   });
 
-  it('空行なしで1段落に畳まれた callout も変換できること', () => {
+  it('空行なしで1段落に畳まれた callout でも label と heading-level を転送できること', () => {
     const tree: MdastNode = {
       type: 'root',
       children: [
         {
           type: 'paragraph',
-          children: [{ type: 'text', value: '::callout{kind="tip" title="補足"}\n本文です。\n::' }],
+          children: [
+            {
+              type: 'text',
+              value: '::callout{kind="tip" label="補足" heading-level="2"}\n本文です。\n::',
+            },
+          ],
         },
       ],
     };
@@ -74,9 +79,88 @@ describe('remarkRouaultDirectives', () => {
     expect(tree.children).to.have.length(1);
     const callout = tree.children?.[0];
     expect(callout?.data?.hName).to.equal('ui-callout');
-    expect(callout?.data?.hProperties?.['variant']).to.equal('tip');
-    expect(callout?.data?.hProperties?.['title']).to.equal('補足');
+    expect(callout?.data?.hProperties?.['kind']).to.equal('tip');
+    expect(callout?.data?.hProperties?.['label']).to.equal('補足');
+    expect(callout?.data?.hProperties?.['heading-level']).to.equal('2');
     expect(callout?.children?.[0]?.type).to.equal('paragraph');
+  });
+
+  it('旧 callout 属性 variant は未対応エラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::callout{variant="warning"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '本文です。' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw('[markdown] callout 属性 "variant" は未対応です');
+  });
+
+  it('旧 callout 属性 title は未対応エラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::callout{title="注意"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '本文です。' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw('[markdown] callout 属性 "title" は未対応です');
+  });
+
+  it('旧 callout 属性 aria-label は未対応エラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::callout{aria-label="補足"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '本文です。' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw('[markdown] callout 属性 "aria-label" は未対応です');
   });
 
   it('code-group ディレクティブを ui-code-group ノードへ変換すること', () => {
@@ -90,13 +174,13 @@ describe('remarkRouaultDirectives', () => {
         {
           type: 'code',
           lang: 'ts',
-          meta: 'filename="one.ts" label="正しい例"',
+          meta: 'filename="one.ts" group-key="one" tab-label="正しい例" copy-label="正しい例コード"',
           value: 'const one = 1;',
         },
         {
           type: 'code',
           lang: 'ts',
-          meta: 'filename="two.ts" label="誤り例"',
+          meta: 'filename="two.ts" group-key="two" tab-label="誤り例"',
           value: 'const two = 2;',
         },
         {
@@ -117,9 +201,12 @@ describe('remarkRouaultDirectives', () => {
     const firstCode = group?.children?.[0];
     const secondCode = group?.children?.[1];
     expect(firstCode?.data?.hProperties?.['filename']).to.equal('one.ts');
-    expect(firstCode?.data?.hProperties?.['label']).to.equal('正しい例');
+    expect(firstCode?.data?.hProperties?.['group-key']).to.equal('one');
+    expect(firstCode?.data?.hProperties?.['tab-label']).to.equal('正しい例');
+    expect(firstCode?.data?.hProperties?.['copy-label']).to.equal('正しい例コード');
     expect(secondCode?.data?.hProperties?.['filename']).to.equal('two.ts');
-    expect(secondCode?.data?.hProperties?.['label']).to.equal('誤り例');
+    expect(secondCode?.data?.hProperties?.['group-key']).to.equal('two');
+    expect(secondCode?.data?.hProperties?.['tab-label']).to.equal('誤り例');
   });
 
   it('standalone fenced code の meta を正規化すること', () => {
@@ -129,7 +216,8 @@ describe('remarkRouaultDirectives', () => {
         {
           type: 'code',
           lang: 'ts',
-          meta: '{1} filename="sample.ts" label="例" intent="invalid" show-line-numbers="true"',
+          meta:
+            '{1} filename="sample.ts" group-key="sample" tab-label="例" copy-label="例コード" copyable="false" intent="invalid" show-line-numbers="true" copy-mode="always" wrap="true" highlight-lines="1,3-4" layout="inline"',
           value: 'const sample = 1;',
         },
       ],
@@ -139,11 +227,18 @@ describe('remarkRouaultDirectives', () => {
 
     const code = tree.children?.[0];
     expect(code?.data?.hProperties?.['filename']).to.equal('sample.ts');
-    expect(code?.data?.hProperties?.['label']).to.equal('例');
+    expect(code?.data?.hProperties?.['group-key']).to.equal('sample');
+    expect(code?.data?.hProperties?.['tab-label']).to.equal('例');
+    expect(code?.data?.hProperties?.['copy-label']).to.equal('例コード');
+    expect(code?.data?.hProperties?.['copyable']).to.equal('false');
     expect(code?.data?.hProperties?.['intent']).to.equal('invalid');
     expect(code?.data?.hProperties?.['show-line-numbers']).to.equal(true);
+    expect(code?.data?.hProperties?.['copy-mode']).to.equal('always');
+    expect(code?.data?.hProperties?.['wrap']).to.equal(true);
+    expect(code?.data?.hProperties?.['highlight-lines']).to.equal('1,3-4');
+    expect(code?.data?.hProperties?.['layout']).to.equal('inline');
     expect(code?.data?.hProperties?.['data-shiki-meta']).to.equal(
-      '{1} filename="sample.ts" label="例" intent="invalid" show-line-numbers="true"',
+      '{1} filename="sample.ts" group-key="sample" tab-label="例" copy-label="例コード" copyable="false" intent="invalid" show-line-numbers="true" copy-mode="always" wrap="true" highlight-lines="1,3-4" layout="inline"',
     );
   });
 
@@ -156,8 +251,7 @@ describe('remarkRouaultDirectives', () => {
           children: [
             {
               type: 'text',
-              value:
-                '::details{aria-label="補足を開閉" summary="補足情報" variant="bordered" open="true" region="true"}',
+              value: '::details{summary="補足情報" variant="bordered" open="true" region="true"}',
             },
           ],
         },
@@ -176,11 +270,115 @@ describe('remarkRouaultDirectives', () => {
 
     const details = tree.children?.[0];
     expect(details?.data?.hName).to.equal('ui-details');
-    expect(details?.data?.hProperties?.['aria-label']).to.equal('補足を開閉');
     expect(details?.data?.hProperties?.['summary']).to.equal('補足情報');
     expect(details?.data?.hProperties?.['variant']).to.equal('bordered');
     expect(details?.data?.hProperties?.['open']).to.equal(true);
     expect(details?.data?.hProperties?.['region']).to.equal(true);
+  });
+
+  it('details ディレクティブの icon-only 利用で aria-label を転送すること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::details{aria-label="補足を開閉" open="true"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '詳細本文です。' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    const details = tree.children?.[0];
+    expect(details?.data?.hName).to.equal('ui-details');
+    expect(details?.data?.hProperties?.['aria-label']).to.equal('補足を開閉');
+    expect(details?.data?.hProperties?.['open']).to.equal(true);
+  });
+
+  it('details ディレクティブで summary と aria-label の両方がない場合はエラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::details{open="true"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '詳細本文です。' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw('[markdown] details では summary または aria-label のいずれかが必須です');
+  });
+
+  it('details ディレクティブで summary と aria-label の同時指定はエラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::details{summary="補足情報" aria-label="補足を開閉"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '詳細本文です。' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw('[markdown] details では summary と aria-label を同時指定できません');
+  });
+
+  it('details ディレクティブの icon-only 利用で空の aria-label はエラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::details{aria-label="   "}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '詳細本文です。' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw('[markdown] details の icon-only 利用では aria-label に空文字を指定できません');
   });
 
   it('info-box ディレクティブを ui-info-box ノードへ変換すること', () => {
@@ -471,7 +669,7 @@ describe('remarkRouaultDirectives', () => {
             {
               type: 'text',
               value:
-                '::code-preview{label="ボタン例" controls="theme surface viewport" preview-align="stretch" preview-theme="dark" preview-surface="muted" preview-viewport="mobile"}',
+                '::code-preview{heading="ボタン例" controls="theme surface viewport" preview-align="stretch" preview-theme="dark" preview-surface="muted" preview-viewport="mobile"}',
             },
           ],
         },
@@ -515,7 +713,7 @@ describe('remarkRouaultDirectives', () => {
 
     const preview = tree.children?.[0];
     expect(preview?.data?.hName).to.equal('ui-code-preview');
-    expect(preview?.data?.hProperties?.['label']).to.equal('ボタン例');
+    expect(preview?.data?.hProperties?.['heading']).to.equal('ボタン例');
     expect(preview?.data?.hProperties?.['controls']).to.equal('theme surface viewport');
     expect(preview?.data?.hProperties?.['preview-align']).to.equal('stretch');
     expect(preview?.data?.hProperties?.['preview-theme']).to.equal('dark');
@@ -532,7 +730,7 @@ describe('remarkRouaultDirectives', () => {
       children: [
         {
           type: 'paragraph',
-          children: [{ type: 'text', value: '::code-preview{label="Sandbox例"}' }],
+          children: [{ type: 'text', value: '::code-preview{heading="Sandbox例"}' }],
         },
         {
           type: 'paragraph',
@@ -593,7 +791,7 @@ describe('remarkRouaultDirectives', () => {
       children: [
         {
           type: 'paragraph',
-          children: [{ type: 'text', value: '::code-preview{label="Sandbox例"}' }],
+          children: [{ type: 'text', value: '::code-preview{heading="Sandbox例"}' }],
         },
         {
           type: 'paragraph',
@@ -692,7 +890,7 @@ describe('remarkRouaultDirectives', () => {
       children: [
         {
           type: 'paragraph',
-          children: [{ type: 'text', value: '::code-preview{label="ボタン例"}' }],
+          children: [{ type: 'text', value: '::code-preview{heading="ボタン例"}' }],
         },
         {
           type: 'paragraph',
@@ -1145,6 +1343,45 @@ describe('remarkRouaultDirectives', () => {
     );
   });
 
+  it('code-preview の旧 label 属性は未対応エラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::code-preview{label="旧入力"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::preview' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '本文' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'code',
+          lang: 'ts',
+          value: 'const ok = true;',
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw('[markdown] code-preview 属性 "label" は未対応です');
+  });
+
   it('code-preview の controls に重複値が来た場合はエラーにすること', () => {
     const tree: MdastNode = {
       type: 'root',
@@ -1268,7 +1505,7 @@ describe('remarkRouaultDirectives', () => {
       children: [
         {
           type: 'paragraph',
-          children: [{ type: 'text', value: '::code-preview{label="Sandbox例"}' }],
+          children: [{ type: 'text', value: '::code-preview{heading="Sandbox例"}' }],
         },
         {
           type: 'paragraph',
@@ -1303,7 +1540,7 @@ describe('remarkRouaultDirectives', () => {
       children: [
         {
           type: 'paragraph',
-          children: [{ type: 'text', value: '::code-preview{label="Sandbox例"}' }],
+          children: [{ type: 'text', value: '::code-preview{heading="Sandbox例"}' }],
         },
         {
           type: 'paragraph',
@@ -1343,7 +1580,7 @@ describe('remarkRouaultDirectives', () => {
       children: [
         {
           type: 'paragraph',
-          children: [{ type: 'text', value: '::code-preview{label="Sandbox例"}' }],
+          children: [{ type: 'text', value: '::code-preview{heading="Sandbox例"}' }],
         },
         {
           type: 'paragraph',
@@ -1385,7 +1622,7 @@ describe('remarkRouaultDirectives', () => {
       children: [
         {
           type: 'paragraph',
-          children: [{ type: 'text', value: '::code-preview{label="Sandbox例"}' }],
+          children: [{ type: 'text', value: '::code-preview{heading="Sandbox例"}' }],
         },
         {
           type: 'paragraph',
@@ -1427,7 +1664,7 @@ describe('remarkRouaultDirectives', () => {
       children: [
         {
           type: 'paragraph',
-          children: [{ type: 'text', value: '::code-preview{label="Sandbox例"}' }],
+          children: [{ type: 'text', value: '::code-preview{heading="Sandbox例"}' }],
         },
         {
           type: 'paragraph',
@@ -1474,7 +1711,7 @@ describe('remarkRouaultDirectives', () => {
       children: [
         {
           type: 'paragraph',
-          children: [{ type: 'text', value: '::code-preview{label="Sandbox例"}' }],
+          children: [{ type: 'text', value: '::code-preview{heading="Sandbox例"}' }],
         },
         {
           type: 'paragraph',

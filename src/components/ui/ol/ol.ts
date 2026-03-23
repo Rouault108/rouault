@@ -145,7 +145,11 @@ export class Ol extends LitElement {
    * 直下 `li` のみが存在する場合は `ol` を自動補完する。
    */
   private _ensureRootList(): void {
-    const directItems = [...this.children].filter(
+    const children =
+      'children' in this
+        ? Array.from((this as typeof this & { children?: ArrayLike<Element> }).children ?? [])
+        : [];
+    const directItems = children.filter(
       (child): child is HTMLLIElement => child instanceof HTMLLIElement,
     );
     if (directItems.length === 0) return;
@@ -228,7 +232,11 @@ export class Ol extends LitElement {
   private _syncOrderedLists(): void {
     this._ensureRootList();
 
-    const rootLists = [...this.children].filter(
+    const children =
+      'children' in this
+        ? Array.from((this as typeof this & { children?: ArrayLike<Element> }).children ?? [])
+        : [];
+    const rootLists = children.filter(
       (child): child is HTMLOListElement => child instanceof HTMLOListElement,
     );
 

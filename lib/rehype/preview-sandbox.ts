@@ -155,9 +155,9 @@ const createCodeAreaNode = (snippets: PreviewSnippet[], label: string): HastNode
 };
 
 const resolveCodeGroupLabel = (previewNode: HastNode, sandboxNode: HastNode): string => {
-  const previewLabel = pickOptionalString(previewNode.properties?.['label']);
-  if (previewLabel) {
-    return `${previewLabel} のコード例`;
+  const previewHeading = pickOptionalString(previewNode.properties?.['heading']);
+  if (previewHeading) {
+    return `${previewHeading} のコード例`;
   }
 
   const sandboxTitle = pickOptionalString(sandboxNode.properties?.['title']);

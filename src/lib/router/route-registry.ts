@@ -1,33 +1,42 @@
-import type { RouteDefinition, RouteHandler } from './router-types.js';
+import type {
+  DocumentRouteContext,
+  DocumentRouteHandler,
+  DocumentSnapshot,
+  RoutePattern,
+} from './router-types.js';
+
+interface RouteDefinition {
+  pattern: RoutePattern;
+  handler: DocumentRouteHandler;
+}
 
 export class RouteRegistry {
   private routes: RouteDefinition[] = [];
 
-  add(pattern: string | RegExp, handler: RouteHandler): void {
+  add(pattern: RoutePattern, handler: DocumentRouteHandler): void {
     this.routes.push({ pattern, handler });
   }
 
-  async execute(url: string): Promise<string | null> {
+  async execute(context: DocumentRouteContext): Promise<DocumentSnapshot | null> {
     for (const route of this.routes) {
-      let matched = false;
-
-      if (typeof route.pattern === 'string') {
-        if (route.pattern.includes('*')) {
-          const regexPattern = route.pattern.replace(/\*/g, '.*');
-          matched = new RegExp(`^${regexPattern}$`).test(url);
-        } else {
-          matched = route.pattern === url;
-        }
-      } else {
-        matched = route.pattern.test(url);
+      if (!this.matches(route.pattern, context.pathname)) {
+        continue;
       }
 
-      if (matched) {
-        const result: unknown = await route.handler();
-        return typeof result === 'string' ? result : null;
-      }
+      return route.handler({
+        ...context,
+        searchParams: new URLSearchParams(context.searchParams),
+      });
     }
 
     return null;
+  }
+
+  private matches(pattern: RoutePattern, pathname: string): boolean {
+    if (typeof pattern === 'string') {
+      return pattern === pathname;
+    }
+
+    return pattern.test(pathname);
   }
 }

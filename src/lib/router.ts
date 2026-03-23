@@ -1,177 +1,644 @@
-/**
- * View Transition API を利用した SPA ルーター
- */
-
 import { PrimaryTabNavigationPolicy } from './tabs/primary-tab-navigation-policy.js';
+import { dispatchUrlStateChange, readDecodedHash } from './tabs/url-state.js';
 import { BrowserLinkInterceptor } from './router/browser-link-interceptor.js';
 import { ContentCommitter } from './router/content-committer.js';
 import { ContentLoader } from './router/content-loader.js';
+import { FocusManager } from './router/focus-manager.js';
 import { LocationAdapter } from './router/location-adapter.js';
-import { NavigationQueue } from './router/navigation-queue.js';
-import { NavigationRunner } from './router/navigation-runner.js';
-import { ReinitializeHookRegistry } from './router/reinitialize-hook-registry.js';
+import { NavigationQueue, type QueuedNavigationRequest } from './router/navigation-queue.js';
 import { RouteRegistry } from './router/route-registry.js';
-import { RouterEventBus } from './router/router-event-bus.js';
 import { RouterAnnouncer } from './router/router-announcer.js';
-import { StandaloneNavigationEffects } from './router/standalone-navigation-effects.js';
-import type { EventCallback, RouteHandler, RouterOptions } from './router/router-types.js';
+import { RouterEventBus } from './router/router-event-bus.js';
+import type {
+  BeforeNavigateContext,
+  BeforeNavigateHook,
+  DocumentSnapshot,
+  NavigateRequest,
+  NavigationResult,
+  PostCommitController,
+  RouterEventMap,
+  RouterOptions,
+  UrlStateNavigationPolicy,
+} from './router/router-types.js';
+import {
+  RouterDestroyedError,
+  RouterNotStartedError,
+  RouterOwnershipError,
+} from './router/router-types.js';
 
-export type { RouterOptions } from './router/router-types.js';
+export type {
+  BeforeNavigateContext,
+  BeforeNavigateHook,
+  ContentUpdateAdapter,
+  ContentUpdatePayload,
+  DocumentRouteContext,
+  DocumentRouteHandler,
+  DocumentShellSnapshot,
+  DocumentSnapshot,
+  ErrorSnapshotReason,
+  HeaderShellSnapshot,
+  HistoryMode,
+  NavigateRequest,
+  NavigationErrorReason,
+  NavigationIssue,
+  NavigationResult,
+  NavigationOutcome,
+  PostCommitController,
+  PreparedContentUpdate,
+  RoutePattern,
+  RouterEventMap,
+  RouterOptions,
+  ShellAdapter,
+  UrlStateNavigationDecision,
+  UrlStateNavigationPolicy,
+} from './router/router-types.js';
+export {
+  RouterDestroyedError,
+  RouterNotStartedError,
+  RouterOwnershipError,
+} from './router/router-types.js';
 
-export class Router {
-  private eventBus = new RouterEventBus();
-  private reinitializeHooks = new ReinitializeHookRegistry();
-  private location = new LocationAdapter();
-  private routeRegistry = new RouteRegistry();
-  private announcer: RouterAnnouncer;
-  private standaloneEffects: StandaloneNavigationEffects | null;
-  private loader: ContentLoader;
-  private committer: ContentCommitter;
-  private tabNavigationPolicy: PrimaryTabNavigationPolicy;
-  private runner: NavigationRunner;
-  private queue: NavigationQueue;
-  private linkInterceptor: BrowserLinkInterceptor;
-  private isDestroyed = false;
+const LIVE_ROUTER_OWNERS = new WeakMap<Document, Router>();
 
-  constructor(
-    outlet: HTMLElement,
-    private options: RouterOptions = {},
-  ) {
-    this.announcer = new RouterAnnouncer(!options.skipAriaLiveRegion);
-    this.standaloneEffects = options.onContentUpdate
-      ? null
-      : new StandaloneNavigationEffects(outlet, this.reinitializeHooks, this.announcer);
-    this.loader = new ContentLoader(this.routeRegistry, this.location);
-    this.committer = new ContentCommitter(outlet, options.onContentUpdate);
-    this.tabNavigationPolicy = new PrimaryTabNavigationPolicy(this.location);
-    this.runner = new NavigationRunner(
-      this.location.readCurrentUrl(),
-      this.eventBus,
-      this.location,
-      this.loader,
-      this.committer,
-      this.tabNavigationPolicy,
-      this.standaloneEffects,
-    );
-    this.queue = new NavigationQueue(async (request) =>
-      this.runner.run({
-        ...request,
-        url: this.location.normalizeUrl(request.url),
-      }),
-    );
-    this.linkInterceptor = new BrowserLinkInterceptor(
-      this.location,
-      () => this.runner.getCurrentUrl(),
-      async (request) => this.requestNavigation(request),
-    );
+class DefaultPostCommitController implements PostCommitController {
+  private focusManager = new FocusManager();
+  private announcer = new RouterAnnouncer(true);
 
-    this.init();
-  }
-
-  setTimeout(ms: number): void {
-    this.loader.setTimeout(ms);
-  }
-
-  private init(): void {
-    this.linkInterceptor.attach();
+  attach(): void {
     this.announcer.attach();
-    this.runner.start(!!this.options.skipInitialNavigation, async (request) =>
-      this.requestNavigation(request),
-    );
   }
 
   destroy(): void {
-    this.isDestroyed = true;
-    this.linkInterceptor.detach();
-    this.eventBus.clear();
-    this.reinitializeHooks.clear();
-    this.queue.dispose();
     this.announcer.destroy();
   }
 
-  on(event: string, callback: EventCallback): void {
+  run(context: {
+    outlet: HTMLElement;
+    previousUrl: string | null;
+    url: string;
+    isInitial: boolean;
+    stateOnly: boolean;
+    renderedKind: 'page' | 'not-found' | 'error' | null;
+  }): void {
+    if (context.stateOnly) {
+      return;
+    }
+
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    this.focusManager.focusMainContent(context.outlet);
+    this.announcer.announcePageChange();
+  }
+}
+
+type NormalizedNavigationRequest = QueuedNavigationRequest;
+
+const isAbortError = (error: unknown): boolean =>
+  error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError');
+
+export class Router {
+  private eventBus = new RouterEventBus();
+  private location = new LocationAdapter();
+  private routeRegistry = new RouteRegistry();
+  private loader: ContentLoader;
+  private committer: ContentCommitter;
+  private beforeNavigateHooks = new Set<BeforeNavigateHook>();
+  private linkInterceptor: BrowserLinkInterceptor;
+  private queue: NavigationQueue;
+  private defaultPostCommitController: DefaultPostCommitController | null;
+  private started = false;
+  private destroyed = false;
+  private isBusy = false;
+  private currentUrl = this.location.readCurrentUrl();
+  private hasCommittedNavigation = false;
+
+  constructor(
+    private outlet: HTMLElement,
+    private options: RouterOptions = {},
+  ) {
+    const currentOwner = LIVE_ROUTER_OWNERS.get(document);
+    if (currentOwner && !currentOwner.destroyed) {
+      throw new RouterOwnershipError('document ごとに live Router は 1 つだけです。');
+    }
+
+    LIVE_ROUTER_OWNERS.set(document, this);
+
+    this.loader = new ContentLoader(this.routeRegistry, this.location);
+    this.committer = new ContentCommitter(this.outlet, this.location, this.options.contentAdapter);
+
+    this.defaultPostCommitController = options.postCommitController
+      ? null
+      : new DefaultPostCommitController();
+
+    this.linkInterceptor = new BrowserLinkInterceptor(
+      this.location,
+      () => this.currentUrl,
+      async (request) => this.navigate(request),
+    );
+    this.queue = new NavigationQueue(
+      async (request, signal) => this.runNavigation(request, signal),
+      (request) => this.createSupersededResult(request),
+    );
+  }
+
+  async start(): Promise<NavigationResult | null> {
+    if (this.destroyed || this.started) {
+      return null;
+    }
+
+    this.started = true;
+    this.linkInterceptor.attach();
+    this.defaultPostCommitController?.attach();
+
+    if (this.options.skipInitialNavigation === true) {
+      return null;
+    }
+
+    return this.navigate({
+      url: this.currentUrl,
+      historyMode: 'none',
+    });
+  }
+
+  destroy(): void {
+    if (this.destroyed) {
+      return;
+    }
+
+    this.destroyed = true;
+    this.started = false;
+    this.linkInterceptor.detach();
+    this.beforeNavigateHooks.clear();
+    this.eventBus.clear();
+    this.queue.dispose();
+    this.defaultPostCommitController?.destroy();
+
+    if (LIVE_ROUTER_OWNERS.get(document) === this) {
+      LIVE_ROUTER_OWNERS.delete(document);
+    }
+  }
+
+  on<K extends keyof RouterEventMap>(event: K, callback: (payload: RouterEventMap[K]) => void): void {
     this.eventBus.on(event, callback);
   }
 
-  off(event: string, callback: EventCallback): void {
+  off<K extends keyof RouterEventMap>(event: K, callback: (payload: RouterEventMap[K]) => void): void {
     this.eventBus.off(event, callback);
   }
 
   isNavigating(): boolean {
-    return this.runner.isNavigating();
+    return this.isBusy;
   }
 
-  async navigate(path: string, state: Record<string, unknown> = {}): Promise<void> {
-    await this.requestNavigation({
-      url: path,
-      historyMode: 'push',
-      state,
-    });
+  addBeforeNavigateHook(hook: BeforeNavigateHook): void {
+    this.beforeNavigateHooks.add(hook);
   }
 
-  addReinitializeHook(hook: () => void): void {
-    this.reinitializeHooks.add(hook);
+  removeBeforeNavigateHook(hook: BeforeNavigateHook): void {
+    this.beforeNavigateHooks.delete(hook);
   }
 
-  removeReinitializeHook(hook: () => void): void {
-    this.reinitializeHooks.remove(hook);
-  }
+  addDocumentRoute(
+    pattern: string | RegExp,
+    handler: Parameters<RouteRegistry['add']>[1],
+  ): void {
+    if (this.destroyed) {
+      throw new RouterDestroyedError('destroy() 後は route を追加できません。');
+    }
 
-  runReinitializeHooks(): void {
-    this.reinitializeHooks.run();
-  }
-
-  addRoute(pattern: string | RegExp, handler: RouteHandler): void {
     this.routeRegistry.add(pattern, handler);
   }
 
-  getParams(): Record<string, string> {
-    const path = new URL(this.getCurrentUrl(), window.location.origin).pathname;
-    const params: Record<string, string> = {};
-    const segments = path.split('/').filter(Boolean);
-
-    if (segments.length >= 2 && segments[0] === 'posts') {
-      if (segments.length === 2 && segments[1]) {
-        params['id'] = segments[1];
-      } else if (segments.length === 3 && segments[1] && segments[2]) {
-        params['category'] = segments[1];
-        params['id'] = segments[2];
-      }
-    }
-
-    return params;
-  }
-
-  getQuery(): Record<string, string> {
-    return this.location.getQuery(this.getCurrentUrl());
+  getSearchParams(): URLSearchParams {
+    return new URLSearchParams(this.location.getSearchParams(this.currentUrl));
   }
 
   getCurrentPath(): string {
-    return this.location.getPath(this.getCurrentUrl());
+    return this.location.getPath(this.currentUrl);
   }
 
-  getHistory(): string[] {
-    return this.runner.getHistory();
-  }
+  async navigate(request: NavigateRequest): Promise<NavigationResult> {
+    const normalizedRequest = this.normalizeRequest(request);
 
-  private getCurrentUrl(): string {
-    return this.runner.getCurrentUrl();
-  }
+    if (this.destroyed) {
+      return this.createFailureResult(
+        normalizedRequest,
+        new RouterDestroyedError('destroy() 済みの Router です。'),
+        'destroyed',
+      );
+    }
 
-  private requestNavigation(request: {
-    url: string;
-    historyMode: 'none' | 'push' | 'replace';
-    state?: Record<string, unknown>;
-  }): Promise<void> {
-    const normalizedRequest = {
-      ...request,
-      url: this.location.normalizeUrl(request.url),
-    };
-
-    if (this.isDestroyed) {
-      return Promise.resolve();
+    if (!this.started) {
+      return this.createFailureResult(
+        normalizedRequest,
+        new RouterNotStartedError('start() 前の Router です。'),
+        'not-started',
+      );
     }
 
     return this.queue.enqueue(normalizedRequest);
   }
+
+  private normalizeRequest(request: NavigateRequest): NormalizedNavigationRequest {
+    const requestedUrl = request.url;
+    const historyMode = request.historyMode ?? 'push';
+    return {
+      requestedUrl,
+      normalizedUrl: this.location.normalizeUrl(requestedUrl),
+      historyMode,
+      state: request.state,
+    };
+  }
+
+  private async runNavigation(
+    request: NormalizedNavigationRequest,
+    externalSignal: AbortSignal,
+  ): Promise<NavigationResult> {
+    const beforeNavigateResult = await this.runBeforeNavigateHooks(request);
+    if (beforeNavigateResult) {
+      return beforeNavigateResult;
+    }
+
+    const currentUrl = this.currentUrl;
+    const statePolicy = this.options.urlStateNavigationPolicy;
+    const stateDecision = statePolicy
+      ? await statePolicy.evaluate({
+          currentUrl,
+          requestedUrl: request.requestedUrl,
+          normalizedUrl: request.normalizedUrl,
+          historyMode: request.historyMode,
+        })
+      : { kind: 'full' as const };
+
+    if (stateDecision.kind === 'state-only') {
+      const result = await this.runStateOnlyNavigation(request, currentUrl, stateDecision.scrollToHash);
+      this.eventBus.emit('after:navigate', result);
+      return result;
+    }
+
+    this.setBusy(true);
+
+    let timeoutId: number | null = null;
+    const executionController = new AbortController();
+    const onExternalAbort = () => {
+      executionController.abort();
+    };
+    externalSignal.addEventListener('abort', onExternalAbort, { once: true });
+
+    const timeoutMs = this.options.navigationTimeoutMs ?? null;
+    if (typeof timeoutMs === 'number' && timeoutMs > 0) {
+      timeoutId = window.setTimeout(() => {
+        executionController.abort();
+      }, timeoutMs);
+    }
+
+    try {
+      const loadResult = await this.loader.load(
+        request.normalizedUrl,
+        executionController.signal,
+        this.options.shellAdapter,
+      );
+
+      if (executionController.signal.aborted && externalSignal.aborted) {
+        return this.createSupersededResult(request);
+      }
+
+      const durableCommitResult = await this.commitLoadedSnapshot(request, currentUrl, loadResult.snapshot);
+      const finalResult = {
+        ...durableCommitResult,
+        source: loadResult.source,
+        error: loadResult.error,
+        errorReason: loadResult.errorReason,
+      };
+
+      if (loadResult.snapshot.kind === 'error') {
+        finalResult.errorReason = loadResult.errorReason;
+      }
+
+      this.eventBus.emit('after:navigate', finalResult);
+      return finalResult;
+    } catch (error) {
+      if (executionController.signal.aborted && externalSignal.aborted && isAbortError(error)) {
+        const result = this.createSupersededResult(request);
+        this.eventBus.emit('after:navigate', result);
+        return result;
+      }
+
+      const loadResult = this.loader.createExceptionResult(error);
+      const durableCommitResult = await this.commitLoadedSnapshot(
+        request,
+        currentUrl,
+        loadResult.snapshot,
+        error instanceof Error ? error : undefined,
+        loadResult.errorReason,
+      );
+      const finalResult = {
+        ...durableCommitResult,
+        source: 'fetch' as const,
+        error: loadResult.error ?? (error instanceof Error ? error : undefined),
+        errorReason: loadResult.errorReason,
+      };
+      this.eventBus.emit('error', {
+        error: finalResult.error ?? new Error('navigation failed'),
+        stage: 'load',
+      });
+      this.eventBus.emit('after:navigate', finalResult);
+      return finalResult;
+    } finally {
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+      externalSignal.removeEventListener('abort', onExternalAbort);
+      this.setBusy(false);
+    }
+  }
+
+  private async commitLoadedSnapshot(
+    request: NormalizedNavigationRequest,
+    previousUrl: string,
+    snapshot: DocumentSnapshot,
+    baseError?: Error,
+    baseErrorReason?: NavigationResult['errorReason'],
+  ): Promise<NavigationResult> {
+    try {
+      await this.committer.commit({
+        snapshot,
+        normalizedUrl: request.normalizedUrl,
+        historyMode: request.historyMode,
+        state: request.state,
+      });
+    } catch (error) {
+      const normalizedError = error instanceof Error ? error : new Error(String(error));
+      this.eventBus.emit('error', {
+        error: normalizedError,
+        stage: 'commit',
+      });
+
+      return {
+        outcome: 'failed',
+        requestedUrl: request.requestedUrl,
+        normalizedUrl: request.normalizedUrl,
+        historyMode: request.historyMode,
+        stateOnly: false,
+        committed: false,
+        degraded: false,
+        issues: [],
+        source: 'none',
+        renderedKind: null,
+        error: normalizedError,
+        errorReason: 'unexpected',
+      };
+    }
+
+    this.currentUrl = request.normalizedUrl;
+    const isInitial = !this.hasCommittedNavigation;
+    this.hasCommittedNavigation = true;
+
+    const result: NavigationResult = {
+      outcome: 'completed',
+      requestedUrl: request.requestedUrl,
+      normalizedUrl: request.normalizedUrl,
+      historyMode: request.historyMode,
+      stateOnly: false,
+      committed: true,
+      degraded: false,
+      issues: [],
+      source: 'none',
+      renderedKind: snapshot.kind,
+      error: snapshot.kind === 'error' ? baseError : undefined,
+      errorReason: snapshot.kind === 'error' ? baseErrorReason : undefined,
+    };
+
+    this.eventBus.emit('content:load', {
+      previousUrl,
+      url: request.normalizedUrl,
+      isInitial,
+    });
+
+    await this.applyShell(snapshot, request.normalizedUrl, result);
+    await this.runPostCommit(previousUrl, request.normalizedUrl, isInitial, snapshot.kind, result);
+
+    return result;
+  }
+
+  private async applyShell(
+    snapshot: DocumentSnapshot,
+    normalizedUrl: string,
+    result: NavigationResult,
+  ): Promise<void> {
+    if (!this.options.shellAdapter?.apply) {
+      return;
+    }
+
+    try {
+      await this.options.shellAdapter.apply(snapshot.shell ?? null, {
+        navigationUrl: normalizedUrl,
+      });
+    } catch (error) {
+      const normalizedError = error instanceof Error ? error : new Error(String(error));
+      result.degraded = true;
+      result.issues.push({
+        code: 'shell-sync-failed',
+        error: normalizedError,
+      });
+      this.eventBus.emit('error', {
+        error: normalizedError,
+        stage: 'shell',
+      });
+    }
+  }
+
+  private async runPostCommit(
+    previousUrl: string,
+    normalizedUrl: string,
+    isInitial: boolean,
+    renderedKind: NavigationResult['renderedKind'],
+    result: NavigationResult,
+  ): Promise<void> {
+    const controller = this.options.postCommitController ?? this.defaultPostCommitController;
+    if (!controller) {
+      return;
+    }
+
+    try {
+      await controller.run({
+        outlet: this.outlet,
+        previousUrl,
+        url: normalizedUrl,
+        isInitial,
+        stateOnly: false,
+        renderedKind,
+      });
+    } catch (error) {
+      const normalizedError = error instanceof Error ? error : new Error(String(error));
+      result.degraded = true;
+      result.issues.push({
+        code: 'post-commit-failed',
+        error: normalizedError,
+      });
+      this.eventBus.emit('error', {
+        error: normalizedError,
+        stage: 'post-commit',
+      });
+    }
+  }
+
+  private async runStateOnlyNavigation(
+    request: NormalizedNavigationRequest,
+    previousUrl: string,
+    scrollToHash: boolean | undefined,
+  ): Promise<NavigationResult> {
+    if (request.historyMode === 'push') {
+      this.location.push(request.normalizedUrl, request.state);
+    } else if (request.historyMode === 'replace') {
+      this.location.replace(request.normalizedUrl, request.state);
+    }
+
+    this.currentUrl = request.normalizedUrl;
+    const detail = {
+      previousUrl,
+      url: request.normalizedUrl,
+    };
+    this.eventBus.emit('ui-url-state-change', detail);
+    dispatchUrlStateChange(previousUrl, request.normalizedUrl);
+
+    if (scrollToHash) {
+      await this.scrollToHash(request.normalizedUrl);
+    }
+
+    return {
+      outcome: 'completed',
+      requestedUrl: request.requestedUrl,
+      normalizedUrl: request.normalizedUrl,
+      historyMode: request.historyMode,
+      stateOnly: true,
+      committed: true,
+      degraded: false,
+      issues: [],
+      source: 'state-only',
+      renderedKind: null,
+    };
+  }
+
+  private async scrollToHash(url: string): Promise<void> {
+    const hash = readDecodedHash(url);
+    if (hash.length === 0) {
+      return;
+    }
+
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          resolve();
+        });
+      });
+    });
+
+    const target = document.getElementById(hash);
+    if (target instanceof HTMLElement) {
+      target.scrollIntoView({ block: 'start', inline: 'nearest' });
+    }
+  }
+
+  private async runBeforeNavigateHooks(
+    request: NormalizedNavigationRequest,
+  ): Promise<NavigationResult | null> {
+    const context: BeforeNavigateContext = {
+      currentUrl: this.currentUrl,
+      requestedUrl: request.requestedUrl,
+      normalizedUrl: request.normalizedUrl,
+      historyMode: request.historyMode,
+    };
+
+    for (const hook of this.beforeNavigateHooks) {
+      try {
+        const hookResult = await hook(context);
+        if (hookResult === false) {
+          return {
+            outcome: 'cancelled',
+            requestedUrl: request.requestedUrl,
+            normalizedUrl: request.normalizedUrl,
+            historyMode: request.historyMode,
+            stateOnly: false,
+            committed: false,
+            degraded: false,
+            issues: [],
+            source: 'none',
+            renderedKind: null,
+          };
+        }
+      } catch (error) {
+        const normalizedError = error instanceof Error ? error : new Error(String(error));
+        this.eventBus.emit('error', {
+          error: normalizedError,
+          stage: 'before-navigate',
+        });
+        return {
+          outcome: 'failed',
+          requestedUrl: request.requestedUrl,
+          normalizedUrl: request.normalizedUrl,
+          historyMode: request.historyMode,
+          stateOnly: false,
+          committed: false,
+          degraded: false,
+          issues: [],
+          source: 'none',
+          renderedKind: null,
+          error: normalizedError,
+          errorReason: 'unexpected',
+        };
+      }
+    }
+
+    return null;
+  }
+
+  private setBusy(nextValue: boolean): void {
+    if (this.isBusy === nextValue) {
+      return;
+    }
+
+    this.isBusy = nextValue;
+    this.eventBus.emit('navigation:busy-change', {
+      isNavigating: nextValue,
+    });
+  }
+
+  private createFailureResult(
+    request: NormalizedNavigationRequest,
+    error: Error,
+    reason: NavigationResult['errorReason'],
+  ): NavigationResult {
+    return {
+      outcome: 'failed',
+      requestedUrl: request.requestedUrl,
+      normalizedUrl: request.normalizedUrl,
+      historyMode: request.historyMode,
+      stateOnly: false,
+      committed: false,
+      degraded: false,
+      issues: [],
+      source: 'none',
+      renderedKind: null,
+      error,
+      errorReason: reason,
+    };
+  }
+
+  private createSupersededResult(request: NormalizedNavigationRequest): NavigationResult {
+    return {
+      outcome: 'superseded',
+      requestedUrl: request.requestedUrl,
+      normalizedUrl: request.normalizedUrl,
+      historyMode: request.historyMode,
+      stateOnly: false,
+      committed: false,
+      degraded: false,
+      issues: [],
+      source: 'none',
+      renderedKind: null,
+    };
+  }
 }
+
+export const rouaultDefaultTabNavigationPolicy: UrlStateNavigationPolicy =
+  new PrimaryTabNavigationPolicy();

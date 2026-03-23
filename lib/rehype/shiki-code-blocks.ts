@@ -128,7 +128,20 @@ const toShikiMeta = (codeNode: HastNode): Record<string, unknown> => {
     meta['__raw'] = rawMeta;
   }
 
-  for (const key of ['filename', 'label', 'intent', 'show-line-numbers']) {
+  for (const key of [
+    'filename',
+    'label',
+    'intent',
+    'show-line-numbers',
+    'copy-mode',
+    'group-key',
+    'tab-label',
+    'copy-label',
+    'copyable',
+    'wrap',
+    'highlight-lines',
+    'layout',
+  ]) {
     const value = properties[key];
     if (value === undefined) {
       continue;

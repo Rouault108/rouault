@@ -3,21 +3,16 @@ export class LocationAdapter {
     url.searchParams.delete('wtr-session-id');
   }
 
-  getQuery(currentUrl: string): Record<string, string> {
-    const params: Record<string, string> = {};
-    const searchParams = new URL(currentUrl, window.location.origin).searchParams;
+  private toUrl(input?: string | URL): URL {
+    if (input instanceof URL) {
+      return new URL(input.toString(), window.location.origin);
+    }
 
-    searchParams.forEach((value, key) => {
-      if (key !== 'wtr-session-id') {
-        params[key] = value;
-      }
-    });
+    if (typeof input === 'string' && input.length > 0) {
+      return new URL(input, window.location.origin);
+    }
 
-    return params;
-  }
-
-  getPath(currentUrl: string): string {
-    return new URL(currentUrl, window.location.origin).pathname;
+    return new URL(window.location.href);
   }
 
   readCurrentUrl(): string {
@@ -30,7 +25,7 @@ export class LocationAdapter {
 
       const historyPath = currentState['__routerPath'];
       if (typeof historyPath === 'string' && historyPath.length > 0) {
-        const resolved = new URL(window.location.href);
+        const resolved = this.toUrl();
         resolved.pathname = historyPath;
         return this.normalizeUrl(`${resolved.pathname}${resolved.search}${resolved.hash}`);
       }
@@ -45,18 +40,18 @@ export class LocationAdapter {
     state: Record<string, unknown> | undefined,
     normalizedUrl: string,
   ): Record<string, unknown> {
+    const parsed = this.toUrl(normalizedUrl);
     const currentState = this.isHistoryStateObject(state) ? state : {};
-    const parsedUrl = new URL(normalizedUrl, window.location.origin);
 
     return {
       ...currentState,
-      __routerUrl: `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`,
-      __routerPath: parsedUrl.pathname,
+      __routerUrl: `${parsed.pathname}${parsed.search}${parsed.hash}`,
+      __routerPath: parsed.pathname,
     };
   }
 
   normalizeUrl(url: string): string {
-    const normalized = new URL(url, window.location.href);
+    const normalized = this.toUrl(url);
     this.sanitizeUrl(normalized);
     normalized.pathname = this.normalizePathname(normalized.pathname);
     return `${normalized.pathname}${normalized.search}${normalized.hash}`;
@@ -67,16 +62,36 @@ export class LocationAdapter {
       return pathname;
     }
 
+    if (pathname === '/search/' || pathname === '/search') {
+      return '/search';
+    }
+
+    if (/^\/tags\/[^/]+\/$/u.test(pathname)) {
+      return pathname;
+    }
+
     return pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
   }
 
+  getPath(url: string): string {
+    return this.toUrl(url).pathname;
+  }
+
+  getHash(url: string): string {
+    return this.toUrl(url).hash;
+  }
+
+  getSearchParams(url: string): URLSearchParams {
+    return new URLSearchParams(this.toUrl(url).search);
+  }
+
   stripHash(url: string): string {
-    const normalized = new URL(url, window.location.origin);
+    const normalized = this.toUrl(url);
     return `${normalized.pathname}${normalized.search}`;
   }
 
   resolveContentUrl(url: string): string {
-    const normalized = new URL(url, window.location.origin);
+    const normalized = this.toUrl(url);
     const pathname = normalized.pathname;
     const lastSegment = pathname.split('/').pop() ?? '';
 
@@ -84,7 +99,7 @@ export class LocationAdapter {
       normalized.pathname = `${pathname}/`;
     }
 
-    return `${normalized.pathname}${normalized.search}${normalized.hash}`;
+    return `${normalized.pathname}${normalized.search}`;
   }
 
   push(normalizedUrl: string, state?: Record<string, unknown>): void {

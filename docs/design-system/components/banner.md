@@ -437,19 +437,19 @@ dismiss 実行後、要素は DOM から除去されます。非表示状態へ�
 
 各 Story はデモではなく、**契約確認点**として扱います。将来変更時には、各 Story が固定する契約を維持します。
 
-| Story                           | 固定する契約                                                                                  |
-| ------------------------------- | --------------------------------------------------------------------------------------------- |
-| `Default`                       | 基本の `warning` バナー、`alert` の自動付与、`aria-atomic="true"` の補完、action 領域の表示   |
-| `VariantStateCombinations`      | `variant` ごとの `role`、フォールバックアイコン、action 有無、dismissible 有無の組み合わせ    |
-| `RoleOverridePersistence`       | `role` の明示指定が自動マッピングより優先されること                                           |
-| `SlotBoundaryConditions`        | `slot="icon"` の上書き、action 未指定時の非表示、複数 action の許容                           |
-| `DismissFocusManagement`        | dismiss 後の DOM 除去、前進型フォーカス移動                                                   |
-| `InvalidVariantFallback`        | 不正 `variant` が `info` へ収束し、意味・アイコン・見た目が `info` と整合すること             |
-| `AtomicOverridePersistence`     | `aria-atomic` 明示指定の保持                                                                  |
-| `ReducedMotionDismissImmediate` | reduced motion 環境での即時 dismiss                                                           |
-| `DarkModeVisualOutcome`         | ダークモード対応が UI outcome として成立すること                                              |
-| `ForcedColorsVisualOutcome`     | forced colors 環境で本文、action、dismiss の可視性が公開契約どおり維持されること             |
-| `PrintVisualOutcome`            | print 環境で icon、action、dismiss が非表示になり、本文のみで通知意味が維持されること         |
+| Story                           | 固定する契約                                                                                |
+| ------------------------------- | ------------------------------------------------------------------------------------------- |
+| `Default`                       | 基本の `warning` バナー、`alert` の自動付与、`aria-atomic="true"` の補完、action 領域の表示 |
+| `VariantStateCombinations`      | `variant` ごとの `role`、フォールバックアイコン、action 有無、dismissible 有無の組み合わせ  |
+| `RoleOverridePersistence`       | `role` の明示指定が自動マッピングより優先され、契約外値では自動マッピングへ復帰すること     |
+| `SlotBoundaryConditions`        | `slot="icon"` の上書き、action 未指定時の非表示、複数 action の許容                         |
+| `DismissFocusManagement`        | dismiss 後の DOM 除去、前進型フォーカス移動                                                 |
+| `InvalidVariantFallback`        | 不正 `variant` が `info` へ収束し、意味・アイコンが `info` と整合すること                   |
+| `AtomicOverridePersistence`     | `aria-atomic` 明示指定の保持                                                                |
+| `ReducedMotionDismissImmediate` | reduced motion 環境での即時 dismiss                                                         |
+| `DarkModeVisualOutcome`         | ダークモード対応が UI outcome として成立すること                                            |
+| `ForcedColorsVisualOutcome`     | forced colors 環境で本文、action、dismiss の可視性が公開契約どおり維持されること            |
+| `PrintVisualOutcome`            | print 環境で icon、action、dismiss が非表示になり、本文のみで通知意味が維持されること       |
 
 ### 10.1 Storybook から読める契約境界
 
@@ -459,13 +459,15 @@ Storybook 上で観測される host attribute のうち、`data-resolved-varian
 
 ### 10.2 追加が必要な検証
 
-設計のきれいさと保守性を優先する場合、次の検証を追加します。
+現行 Storybook では、本章で追加が必要としていた主要検証を取り込み済みです。
 
-- `role` に `status` / `alert` 以外を与えた場合を公開契約外として扱うこと
-- `slot="action"` にテキスト単独を与えても action 領域成立条件に含めないこと
-- forced colors 環境で dismiss 操作の可視性が維持されること
-- print 環境で icon、action、dismiss が非表示になること
-- 本文が action 非依存で意味完結している構成を Story 上で維持すること
+取り込み済みの確認点は次のとおりです。
+
+- `role` に `status` / `alert` 以外を与えても、自動 `role` 解決を阻害しないこと
+- action 領域が要素割り当ての有無で解決されること
+- forced colors 環境で dismiss 操作と action 導線の可視性が保たれること
+- print 契約として icon、action、dismiss を落とすルールが維持されること
+- 本文が action 非依存で意味完結している Story 構成を維持すること
 
 これらは内部 selector の存在確認ではなく、**公開契約としての結果**を検証します。
 
@@ -479,19 +481,18 @@ Storybook 上で観測される host attribute のうち、`data-resolved-varian
 
 ---
 
-## 12. 現行実装を踏まえた未対応事項
+## 12. 現行実装を踏まえた差分整理
 
-本章は、現行実装を基準に、契約書で規定したが実装が未追随のもの、または本文で将来拡張として言及しているが未実装のものを記録します。本章は将来候補の一般論ではなく、現時点の差分整理です。
+本章は、現行実装を基準に、契約書で規定した面の収束状況と、将来拡張として残している非実装項目を整理するものです。
 
-### 12.1 契約と実装が未一致の項目
+### 12.1 今回解消した契約差分
 
-| 項目                                        | 現行実装                                                                 | 現行契約                                             | 未対応内容                                                                                   |
-| ------------------------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `role` の許容範囲                           | `role` 属性が存在すれば明示指定として保持します                          | `status` / `alert` のみを公開契約値とします          | 不正 `role` の矯正、拒否、または契約外入力としての明示的処理が未実装です                     |
-| `slot="action"` の成立条件                  | 割り当て要素に加え、空白以外のテキストノードでも `.actions` を表示します | 割り当て要素がある場合のみ action 領域を成立させます | テキスト単独を成立条件から除外する実装修正が未完了です                                       |
-| forced colors / print における dismiss 操作 | CSS は `.dismiss` を対象にしています                                     | dismiss 操作の可視性 / 非表示結果のみを契約します    | render される `ui-button` に `.dismiss` class がなく、媒体別スタイルの内部 hook が未整合です |
-
-上記 3 点は、契約書の明確化だけでは完了せず、実装修正が必要です。
+| 項目                                        | 対応内容                                                                                   | 現在の状態                                                                |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| `role` の契約外入力                         | `status` / `alert` 以外が指定された場合は、自動 `role` 解決へ復帰させます                  | 公開契約は引き続き `status` / `alert` のみです                            |
+| `slot="action"` の成立条件                  | `.actions` は `slot="action"` の割り当て要素が 1 個以上ある場合にのみ表示します            | 要素基準の解決へ収束しました                                              |
+| forced colors / print における dismiss 操作 | render される `ui-button` に `.dismiss` hook を与え、媒体別ルールと DOM 構造を整合させます | dismiss の可視性 / 非表示契約を CSS と render の両面で一致させました      |
+| スタイリング拡張境界                        | document CSS から `--ui-banner-fg-color` への外部依存を除去しました                        | `ui-banner` 固有の公開 CSS custom property を持たない契約と整合しています |
 
 ### 12.2 現時点で未実装の機能
 
@@ -506,24 +507,16 @@ Storybook 上で観測される host attribute のうち、`data-resolved-varian
 
 現行 `ui-banner` は、dismiss の内部完了処理と前進型フォーカス移動を自前で持ちますが、外側が介入・同期・上書きするための公開 API は持ちません。
 
-### 12.3 現時点で未追加の検証
+### 12.3 現時点での検証状況
 
-契約を実装へ収束させるためには、次の Storybook 検証が未追加です。
-
-- `role="log"` など契約外の明示値を与えた場合の扱い
-- `slot="action"` にテキスト単独を与えた場合に `.actions` が表示されないこと
-- forced colors 環境で dismiss 操作が視認可能であること
-- print 環境で icon、action、dismiss が非表示になること
-
-将来拡張候補を採用した場合の追加検証は、10.2 の規定に従います。
+契約差分として列挙していた Storybook 検証は追加済みです。今後は将来拡張 API を採用する段階で、10.2 に列挙した追加検証を段階的に取り込みます。
 
 ### 12.4 優先順位
 
-保守性を優先する場合、対応順序は次のとおりです。
+今後の優先順位は、契約差分の解消ではなく公開拡張 API の要否整理です。
 
-1. `slot="action"` の成立条件を契約どおり要素基準へ寄せます
-2. dismiss 操作の forced colors / print 用内部 hook を整合させます
-3. `role` の契約外入力に対する実装方針を固定します
-4. その後に dismiss イベント、focus strategy、dismiss-label のような公開拡張 API を検討します
+1. dismiss イベント導入の必要性を評価します
+2. `dismiss-focus-strategy` のような列挙型ベース拡張の必要性を評価します
+3. 文言外部化方針が固まった時点で `dismiss-label` の採用可否を判断します
 
-この順序により、**まず契約と実装の不一致を解消し、その後で機能拡張を行う**という、きれいな移行順序を維持できます。
+この順序により、**契約と実装を先に揃え、その後で公開 API を広げる**という移行順序を維持できます。

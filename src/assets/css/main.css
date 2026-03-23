@@ -496,12 +496,6 @@ a[href] {
   text-decoration-color: var(--primary);
 }
 
-/* ui-bannerのactionリンクはバリアント色を優先 */
-ui-banner a[slot='action'][href] {
-  color: var(--ui-banner-fg-color, inherit);
-  text-decoration-color: var(--ui-banner-fg-color, currentColor);
-}
-
 @supports (color: oklch(from white l c h)) {
   a[href] {
     text-decoration-color: var(--link-decoration-color);

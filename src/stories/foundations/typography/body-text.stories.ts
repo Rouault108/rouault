@@ -91,7 +91,7 @@ export const Default: Story = {
                     <li>段落間は標準間隔を維持する。</li>
                     <li>節の切り替えでは少し大きく呼吸させる。</li>
                   </ul>
-                  <ui-callout id="prose-callout" variant="tip" title="余白は構造である">
+                  <ui-callout id="prose-callout" kind="tip" heading="余白は構造である">
                     境界線ではなくスペーシングで章の切り替わりを示します。
                   </ui-callout>
                 </div>

@@ -12,8 +12,8 @@ describe('pagefind-search', () => {
   const catalogItems: SearchCatalogItem[] = [
     {
       title: 'ジャズ理論の基礎',
-      url: '/notes/music/jazz/jazz-theory',
-      path: '/notes/music/jazz/jazz-theory',
+      url: '/notes/music/jazz/jazz-theory/',
+      path: '/notes/music/jazz/jazz-theory/',
       description: 'ジャズ音楽の基本理論',
       date: '2026-02-01',
       keywords: ['music', 'jazz', '理論'],
@@ -21,17 +21,18 @@ describe('pagefind-search', () => {
     },
     {
       title: 'クラシック入門',
-      url: '/notes/music/classical/intro',
-      path: '/notes/music/classical/intro',
+      url: '/notes/music/classical/intro/',
+      path: '/notes/music/classical/intro/',
       description: '古典派メモ',
       date: '2026-01-10',
       keywords: ['music', 'classical', '古典派'],
       genres: ['music', 'classical'],
     },
   ];
+
   let searchCalls: {
     term: string | null;
-    filters?: Record<string, string[]>;
+    filters?: Record<string, unknown>;
     sort?: Record<string, 'asc' | 'desc'>;
   }[];
   let adapter: SearchAdapter;
@@ -52,7 +53,7 @@ describe('pagefind-search', () => {
       search(term, options = {}) {
         const searchCall: {
           term: string | null;
-          filters?: Record<string, string[]>;
+          filters?: Record<string, unknown>;
           sort?: Record<string, 'asc' | 'desc'>;
         } = { term };
         if (options.filters !== undefined) {
@@ -73,6 +74,7 @@ describe('pagefind-search', () => {
                     title: 'ジャズ理論の基礎',
                     description: 'ジャズ音楽の基本理論',
                     date: '2026-02-01',
+                    genre: 'music,jazz',
                   },
                 });
               },
@@ -107,46 +109,44 @@ describe('pagefind-search', () => {
     });
   });
 
-  it('Pagefind 検索結果をアプリ用モデルに正規化すること', async () => {
+  it('Pagefind 検索結果を仕様形へ正規化すること', async () => {
     const result = await adapter.search('ジャズ理論', ['music'], 'relevance');
 
     expect(searchCalls).to.deep.equal([
       {
         term: 'ジャズ 理論',
         filters: {
-          genre: ['music'],
+          genre: {
+            any: ['music'],
+          },
         },
       },
     ]);
     expect(result.total).to.equal(1);
-    expect(result.items).to.deep.equal([
-      {
-        title: 'ジャズ理論の基礎',
-        url: '/notes/music/jazz/jazz-theory',
-        path: '/notes/music/jazz/jazz-theory',
-        excerptHtml: '<mark>ジャズ</mark>理論の基礎',
-        description: 'ジャズ音楽の基本理論',
-        date: '2026-02-01',
-      },
-    ]);
-    expect(result.genreCounts).to.deep.equal({
+    expect(result.items[0]?.canonicalUrl).to.equal('/notes/music/jazz/jazz-theory/');
+    expect(result.items[0]?.title).to.equal('ジャズ理論の基礎');
+    expect(result.items[0]?.url).to.equal('/notes/music/jazz/jazz-theory');
+    expect(result.items[0]?.pathLabel).to.equal('notes / music / jazz / jazz-theory');
+    expect(result.items[0]?.description).to.equal('ジャズ音楽の基本理論');
+    expect(result.items[0]?.date).to.deep.equal({
+      epochMs: Date.parse('2026-02-01'),
+      original: '2026-02-01',
+    });
+    expect(result.items[0]?.tags).to.deep.equal(['jazz', 'music']);
+    expect(result.items[0]?.snippet).to.deep.equal({
+      segments: [
+        { text: 'ジャズ', matched: true },
+        { text: '理論の基礎', matched: false },
+      ],
+    });
+    expect(result.items[0]?.reasons.map((reason) => reason.kind)).to.include('title-prefix');
+    expect(result.items[0]?.reasons.map((reason) => reason.kind)).to.include('body-match');
+    expect(result.items[0]?.reasons.map((reason) => reason.kind)).to.include('tag-filter-match');
+    expect(result.tagCounts).to.deep.equal({
       jazz: 1,
       music: 1,
     });
-    expect(result.allGenreCounts).to.deep.equal({
-      classical: 1,
-      jazz: 1,
-      music: 2,
-    });
-  });
-
-  it('クエリもタグもない時は検索を走らせないこと', async () => {
-    const result = await adapter.search('', [], 'relevance');
-
-    expect(searchCalls).to.deep.equal([]);
-    expect(result.total).to.equal(0);
-    expect(result.items).to.deep.equal([]);
-    expect(result.allGenreCounts).to.deep.equal({
+    expect(result.allTagCounts).to.deep.equal({
       classical: 1,
       jazz: 1,
       music: 2,
@@ -160,7 +160,22 @@ describe('pagefind-search', () => {
       {
         term: null,
         filters: {
-          genre: ['music', 'jazz'],
+          genre: {
+            any: ['jazz', 'music'],
+          },
+        },
+      },
+    ]);
+  });
+
+  it('AND 条件では複数タグをそのまま Pagefind へ渡すこと', async () => {
+    await adapter.search('', ['music', 'jazz'], 'relevance', 'and');
+
+    expect(searchCalls).to.deep.equal([
+      {
+        term: null,
+        filters: {
+          genre: ['jazz', 'music'],
         },
       },
     ]);
@@ -179,59 +194,6 @@ describe('pagefind-search', () => {
     ]);
   });
 
-  it('日付が空でも date sort 検索結果を返すこと', async () => {
-    const api: PagefindApi = {
-      filters() {
-        return Promise.resolve({
-          genre: {
-            music: 1,
-          },
-        });
-      },
-      search() {
-        return Promise.resolve({
-          results: [
-            {
-              data() {
-                return Promise.resolve({
-                  url: '/notes/no-date/',
-                  meta: {
-                    title: '日付なしノート',
-                  },
-                });
-              },
-            },
-          ],
-          unfilteredResultCount: 1,
-          filters: {
-            genre: {
-              music: 1,
-            },
-          },
-          totalFilters: {
-            genre: {
-              music: 1,
-            },
-          },
-        });
-      },
-    };
-    const noDateAdapter = createPagefindSearchAdapter(() => Promise.resolve(api));
-
-    const result = await noDateAdapter.search('ノート', [], 'date-desc');
-
-    expect(result.items).to.deep.equal([
-      {
-        title: '日付なしノート',
-        url: '/notes/no-date',
-        path: '/notes/no-date',
-        excerptHtml: '',
-        description: '',
-        date: '',
-      },
-    ]);
-  });
-
   it('Pagefind 読み込み失敗時は search-catalog へフォールバックすること', async () => {
     const fallbackAdapter = createPagefindSearchAdapter(
       () => Promise.reject(new Error('Failed to fetch dynamically imported module')),
@@ -240,32 +202,33 @@ describe('pagefind-search', () => {
       },
     );
 
-    expect(await fallbackAdapter.getAvailableGenres()).to.deep.equal({
-      classical: 1,
-      jazz: 1,
-      music: 2,
-    });
-
     const result = await fallbackAdapter.search('ジャズ', ['music'], 'relevance');
 
-    expect(result.items).to.deep.equal([
-      {
-        title: 'ジャズ理論の基礎',
-        url: '/notes/music/jazz/jazz-theory',
-        path: '/notes/music/jazz/jazz-theory',
-        excerptHtml: '',
-        description: 'ジャズ音楽の基本理論',
-        date: '2026-02-01',
-      },
-    ]);
-    expect(result.genreCounts).to.deep.equal({
+    expect(result.items[0]?.canonicalUrl).to.equal('/notes/music/jazz/jazz-theory/');
+    expect(result.items[0]?.title).to.equal('ジャズ理論の基礎');
+    expect(result.items[0]?.url).to.equal('/notes/music/jazz/jazz-theory/');
+    expect(result.items[0]?.pathLabel).to.equal('notes / music / jazz / jazz-theory');
+    expect(result.items[0]?.description).to.equal('ジャズ音楽の基本理論');
+    expect(result.items[0]?.date).to.deep.equal({
+      epochMs: Date.parse('2026-02-01'),
+      original: '2026-02-01',
+    });
+    expect(result.items[0]?.tags).to.deep.equal(['jazz', 'music']);
+    expect(result.items[0]?.snippet).to.deep.equal({
+      segments: [{ text: 'ジャズ音楽の基本理論', matched: false }],
+    });
+    expect(result.items[0]?.reasons.map((reason) => reason.kind)).to.include('title-prefix');
+    expect(result.items[0]?.reasons.map((reason) => reason.kind)).to.include('body-match');
+    expect(result.items[0]?.reasons.map((reason) => reason.kind)).to.include('tag-filter-match');
+    expect(result.tagCounts).to.deep.equal({
       jazz: 1,
       music: 1,
     });
-    expect(result.allGenreCounts).to.deep.equal({
+    expect(result.allTagCounts).to.deep.equal({
       jazz: 1,
       music: 1,
     });
+    expect(result.diagnostics.failures).to.deep.equal(['pagefind-load-failed']);
   });
 
   it('Pagefind module を fetch 経由で読み込み basePath を明示できること', async () => {
@@ -312,12 +275,10 @@ describe('pagefind-search', () => {
     expect(importedUrls).to.deep.equal(['blob:pagefind-module']);
     expect(optionCalls).to.deep.equal([{ basePath: '/pagefind/' }]);
     expect(revokedUrls).to.deep.equal(['blob:pagefind-module']);
-    const searchResult = await module.search('', {});
-    expect(searchResult).to.deep.equal({
+    expect(await module.search('', {})).to.deep.equal({
       results: [],
       unfilteredResultCount: 0,
     });
-    const filterResult = await module.filters();
-    expect(filterResult).to.deep.equal({});
+    expect(await module.filters()).to.deep.equal({});
   });
 });

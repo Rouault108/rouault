@@ -2,7 +2,7 @@ import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { TagPageEntry, TagPageNoteSummary } from '../../data/tagPages.js';
 import { navigateToUrl } from '../../lib/search/navigation.js';
-import { DEFAULT_SEARCH_SORT_MODE, buildSearchHref } from '../../lib/search/search-url.js';
+import { DEFAULT_SEARCH_SORT_MODE, buildUrlForSearchState } from '../../lib/search/search-url.js';
 import { pageShellStyles } from '../page/page-shell-styles.js';
 import '../ui/card/card.js';
 import '../ui/empty-state/empty-state.js';
@@ -189,9 +189,10 @@ export class TagPage extends LitElement {
       return nothing;
     }
 
-    const searchHref = buildSearchHref({
-      query: '',
+    const searchHref = buildUrlForSearchState({
+      q: '',
       tags: [tagPage.tag],
+      tagMode: 'or',
       sort: DEFAULT_SEARCH_SORT_MODE,
     });
 

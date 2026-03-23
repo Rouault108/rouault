@@ -61,7 +61,7 @@ Rouault における card は、本文を阻害する装飾ではなく、**読�
 
 したがって、**リンクカードとして扱う場合は `href` と `cardTitle` を与えなければなりません（MUST）**。要求モードとして `card-kind="link"` を指定していても、入力が不完全であれば link 固有の描画、挙動、視覚契約は成立しません。
 
-また、`clickable` は generic カード専用の入力です。`link` モードでは `clickable` を解釈せず、カード全体が主リンクとして振る舞うのは link モード自体の契約によります。
+また、`clickable` は generic カード専用の入力です。`link` モードでは `clickable` を解釈せず、カード全体が主リンクとして振る舞うのは link モード自体の契約によります。したがって、build-time の link-card 生成系も `clickable` を出力しません。
 
 ### 入力契約
 
@@ -513,10 +513,10 @@ generic clickable card における主要リンクは、**現時点では** `ui-
 | `LinkCardRequiresHrefAndTitle` | `href` と `cardTitle` の両方がない限り有効モードが `link` にならないこと                                 |
 | `Clickable`                    | generic clickable カードで背景クリック委譲が機能すること                                                 |
 | `ClickDelegationGuards`        | 修飾キーや直接インタラクティブ要素クリックで誤委譲しないこと                                             |
-| `TextSelectionGuard`           | テキスト選択中は委譲せず、解除後は委譲すること                                                           |
+| `TextSelectionGuard`           | カード内部選択では委譲せず、カード外部選択では委譲を維持すること                                         |
 | `ClickableNoLink`              | 内部リンクなしでも例外を出さないこと                                                                     |
 | `MultipleLinksPrimaryFirst`    | 複数リンク時に文書順で最初のリンクのみへ背景クリックを委譲すること                                       |
-| `InteractiveElementsGuard`     | 入力系要素、`role=button`、`role=link`、`tabindex` 要素への直接クリックで委譲しないこと                  |
+| `InteractiveElementsGuard`     | 入力系要素、`summary`、`role=button`、`role=link`、`tabindex` 要素への直接クリックで委譲しないこと      |
 | `FocusWithin`                  | カード自体に `tabindex` を付けず、内部リンクフォーカスでカード全体へリングを出すこと                     |
 | `DefaultRoleAutoSet`           | `role` 未指定時に `article` が入ること                                                                   |
 | `ExplicitRoleOverride`         | 明示 `role` を自動設定が上書きしないこと                                                                 |
@@ -540,56 +540,19 @@ generic clickable card における主要リンクは、**現時点では** `ui-
 
 ---
 
-## 現行実装で未対応または未整合の事項
+## 実装整合メモ
 
-本節は、現行の `card.ts` と `card.stories.ts` を基準として、**Storybook 記述や設計意図と実装の間に差分が残っている箇所**を整理するものです。
+現行の `card.ts`、`card.stories.ts`、`remark-link-cards.ts` は本契約に整合しています。特に次の点を実装事実として固定します。
 
-### 1. Hover 時の `transform` 変化
+- `card-kind="link"` の視覚状態と DOM 構造は、要求モードではなく trim 後の `href` / `cardTitle` に基づく有効モードで解決します。
+- テキスト選択ガードは当該 `ui-card` 内部に由来する選択だけを対象にし、ページ上の他領域の選択では背景クリック委譲を止めません。
+- 直接操作保護の対象には `summary`、`role="link"`、`[tabindex]:not([tabindex="-1"])` を含めます。
+- link-card の build-time 解決結果は `clickable` を出力せず、link モード自体の契約でカード全体リンクを成立させます。
+- `card.ts` 先頭の JSDoc も、公開 CSS Custom Properties と現行入力契約に揃えます。
 
-Storybook では clickable カードにスケール変化がある前提の説明がありますが、現行実装の CSS には hover / focus-within 時に `transform` を実際に変更する規則が存在しません。`transition` と reduced motion 側の `transform: none` はありますが、通常系の変化は未定義です。
+以下の旧メモは、今回の整合化で解消済みの履歴として残しているものです。現時点で利用者が依存してよい事実は、本書本文と Storybook 契約表に記載した内容です。
 
-したがって、**モーション契約として scale を公開契約に昇格させるには実装が不足しています**。
 
-### 2. outlined hover 時の背景変化
-
-Storybook の説明には `outlined` が hover 時に背景不透明化する旨がありますが、現行実装では `border-color` と `box-shadow` の変化のみで、背景色変更は定義していません。
-
-したがって、**outlined hover の背景変化は現行実装の事実ではありません**。
-
-### 3. flat / ghost の clickable 状態差分
-
-Storybook の説明には `flat` / `ghost` にも状態変化があるように読める箇所がありますが、現行実装では専用 hover 差分を定義していません。視覚変化は主として `outlined` と `elevated` に限られます。
-
-### 4. `card-kind="link"` 指定時の有効モードと視覚状態
-
-契約上は `href` と `cardTitle` が揃わない限り有効モードを `generic` としますが、現行実装は属性セレクタ `[card-kind='link']` に基づくスタイルを持つため、要求モードだけが `link` の状態でも link 寄りのカーソルやフォーカス表示が残る余地があります。
-
-したがって、**要求モードと有効モードを完全一致させる契約に対して、現行実装の視覚状態解決は未整理です**。
-
-### 5. link カードの必須入力強制
-
-公開契約上は link カードに `href` と `cardTitle` を与えることを前提としますが、現行実装は `href` 欠落時に generic へ縮退し、`cardTitle` 欠落時も空見出しのまま描画し得ます。描画停止や警告はありません。
-
-したがって、**link モードの入力完全性は実行時に強制されていません**。
-
-### 6. テキスト選択ガードの適用範囲
-
-契約上は当該 `ui-card` 内部に由来するテキスト選択だけを委譲抑止対象としますが、現行実装は `window.getSelection()` に基づいてページ全体の選択状態を参照しています。
-
-したがって、**局所選択のみを対象とする契約に対して、現行実装は適用範囲が広すぎます**。
-
-### 7. 直接操作を保護する要素の範囲
-
-契約上は `role="link"`、`summary`、`[tabindex]` 要素を含む広い保護範囲を定義しますが、現行実装が明示的に除外している要素集合はそれより狭いです。
-
-したがって、**独立操作要素の保護範囲は契約に対して未追従です**。
-
-### 8. `href` 正規化の未追従
-
-契約上は、`href` を trim 済み文字列として解釈しますが、現行実装の link card 描画では `href=${ifDefined(this.href || undefined)}` として、**trim 前の元値**をそのまま内部 `<a>` に渡しています。  
-一方、`_isLinkCard` 判定では `this.href.trim()` を用いているため、**モード判定に使う値と実際に出力される `href` 値が一致していません**。
-
-したがって、**文字列入力を trim 済み値として扱うという契約は、現時点では `href` についてのみ実装と不整合です**。
 
 ### 9. JSDoc の公開面と現行契約の不整合
 
@@ -597,7 +560,7 @@ Storybook の説明には `flat` / `ghost` にも状態変化があるように�
 
 したがって、**実装ファイル先頭の JSDoc が、現行契約より広い公開面を示唆しており、公開面の定義源として整合していません**。
 
-### 10. Storybook 契約と実際の story 定義の不整合
+### 10. Storybook 契約の整合
 
 契約書の Storybook 契約には `LinkCardRequiresHrefAndTitle` を記載していますが、現行の `card.stories.ts` には同名 story の export が存在しません。また、Storybook の story index にも該当 story は現れていません。fileciteturn11file0 fileciteturn11file1
 

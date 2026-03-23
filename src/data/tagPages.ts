@@ -1,7 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
-
-import { filterPublicNotes, type SourceNote } from './notes.js';
+import { filterPublicNotes, loadNotesData, type SourceNote } from './notes.js';
 
 export interface TagPageNoteSummary {
   title: string;
@@ -17,16 +14,6 @@ export interface TagPageEntry {
   noteCount: number;
   notes: TagPageNoteSummary[];
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
-
-const isSourceNote = (value: unknown): value is SourceNote => isRecord(value);
-
-const readNotesFile = (filePath: string): SourceNote[] => {
-  const parsed = JSON.parse(readFileSync(filePath, 'utf-8')) as unknown;
-  return Array.isArray(parsed) ? parsed.filter(isSourceNote) : [];
-};
 
 function normalizeString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
@@ -121,10 +108,5 @@ export function buildTagPagesData(notes: readonly SourceNote[]): TagPageEntry[] 
 }
 
 export const loadTagPagesData = (): TagPageEntry[] => {
-  const velitePath = join(process.cwd(), '.velite', 'notes.json');
-  if (!existsSync(velitePath)) {
-    return [];
-  }
-
-  return buildTagPagesData(readNotesFile(velitePath));
+  return buildTagPagesData(loadNotesData());
 };

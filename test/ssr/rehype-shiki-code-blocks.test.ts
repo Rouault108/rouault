@@ -49,6 +49,10 @@ describe('rehypeShikiCodeBlocks', () => {
                 label: '例',
                 intent: 'invalid',
                 'show-line-numbers': true,
+                'copy-mode': 'always',
+                wrap: true,
+                'highlight-lines': '1,3-4',
+                layout: 'inline',
                 'data-shiki-meta': '{1}',
               },
               children: [
@@ -76,6 +80,10 @@ describe('rehypeShikiCodeBlocks', () => {
     expect(code?.properties?.['label']).toBe('例');
     expect(code?.properties?.['intent']).toBe('invalid');
     expect(code?.properties?.['show-line-numbers']).toBe(true);
+    expect(code?.properties?.['copy-mode']).toBe('always');
+    expect(code?.properties?.['wrap']).toBe(true);
+    expect(code?.properties?.['highlight-lines']).toBe('1,3-4');
+    expect(code?.properties?.['layout']).toBe('inline');
     expect(code?.properties?.['data-shiki-meta']).toBeUndefined();
 
     const lines = getLineElements(code);

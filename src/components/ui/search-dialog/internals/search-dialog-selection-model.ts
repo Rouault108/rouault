@@ -206,6 +206,7 @@ export class SearchDialogSelectionModel {
     this._host.dispatchSelected({
       url: item.url,
       title: item.title,
+      ...(item.canonicalUrl ? { canonicalUrl: item.canonicalUrl } : {}),
     });
     this._host.close();
   }

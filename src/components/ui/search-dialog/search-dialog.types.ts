@@ -24,6 +24,7 @@ export interface VisibleRange {
 export interface UiSearchDialogItem {
   title: string;
   url: string;
+  canonicalUrl?: string;
   path?: string;
   keywords?: readonly string[];
 }
@@ -35,6 +36,7 @@ export interface UiSearchDialogOpenedDetail {
 export interface UiSearchDialogSelectedDetail {
   url: string;
   title: string;
+  canonicalUrl?: string;
 }
 
 export type UiSearchDialogSearcher = (

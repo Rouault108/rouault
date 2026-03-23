@@ -137,7 +137,7 @@ describe('search-catalog', () => {
       'jazz theory',
     );
 
-    expect(merged.map((item) => item.url)).to.deep.equal([
+    expect(merged.map((item): string => item.url)).to.deep.equal([
       '/notes/jazz-theory-exact',
       '/notes/jazz-theory-intro',
       '/notes/jazz-description',

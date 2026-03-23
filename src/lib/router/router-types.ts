@@ -1,30 +1,208 @@
-export type EventCallback = (...args: unknown[]) => unknown;
-export type RouteHandler = () => unknown;
-
 export type HistoryMode = 'none' | 'push' | 'replace';
 
-export interface NavigationRequest {
+export type NavigationOutcome = 'completed' | 'cancelled' | 'superseded' | 'failed';
+
+export type NavigationErrorReason =
+  | 'auth'
+  | 'forbidden'
+  | 'timeout'
+  | 'network'
+  | 'server'
+  | 'service-unavailable'
+  | 'unexpected'
+  | 'destroyed'
+  | 'not-started';
+
+export interface NavigationIssue {
+  code: 'shell-sync-failed' | 'post-commit-failed';
+  error?: Error | undefined;
+}
+
+export interface NavigateRequest {
   url: string;
+  historyMode?: HistoryMode;
+  state?: Record<string, unknown> | undefined;
+}
+
+export interface NavigationResult {
+  outcome: NavigationOutcome;
+  requestedUrl: string;
+  normalizedUrl: string;
   historyMode: HistoryMode;
-  state?: Record<string, unknown>;
+  stateOnly: boolean;
+  committed: boolean;
+  degraded: boolean;
+  issues: NavigationIssue[];
+  source: 'document-route' | 'fetch' | 'state-only' | 'none';
+  renderedKind: 'page' | 'not-found' | 'error' | null;
+  error?: Error | undefined;
+  errorReason?: NavigationErrorReason | undefined;
 }
 
-export interface RouteDefinition {
-  pattern: string | RegExp;
-  handler: RouteHandler;
+export interface ContentUpdatePayload {
+  html: string;
+  renderedKind: 'page' | 'not-found' | 'error';
+  navigationUrl: string;
 }
 
-export interface PendingNavigation {
-  request: NavigationRequest;
-  resolve: () => void;
-  reject: (reason?: unknown) => void;
+export interface PreparedContentUpdate {
+  commit(): void | Promise<void>;
+  rollback(): void | Promise<void>;
+}
+
+export interface ContentUpdateAdapter {
+  prepare(update: ContentUpdatePayload): PreparedContentUpdate | Promise<PreparedContentUpdate>;
+}
+
+export interface HeaderShellSnapshot {
+  breadcrumbs: {
+    label: string;
+    href?: string;
+  }[];
+  noteLayout: boolean;
+}
+
+export interface DocumentShellSnapshot {
+  header: HeaderShellSnapshot;
+}
+
+export interface ShellAdapter {
+  extract?(
+    document: Document,
+  ): DocumentShellSnapshot | null | Promise<DocumentShellSnapshot | null>;
+  apply?(
+    shell: DocumentShellSnapshot | null,
+    context: { navigationUrl: string },
+  ): void | Promise<void>;
+}
+
+export type UrlStateNavigationDecision =
+  | { kind: 'full' }
+  | {
+      kind: 'state-only';
+      scrollToHash?: boolean;
+    };
+
+export interface UrlStateNavigationPolicy {
+  evaluate(context: {
+    currentUrl: string;
+    requestedUrl: string;
+    normalizedUrl: string;
+    historyMode: HistoryMode;
+  }): UrlStateNavigationDecision | Promise<UrlStateNavigationDecision>;
+}
+
+export interface PostCommitController {
+  run(context: {
+    outlet: HTMLElement;
+    previousUrl: string | null;
+    url: string;
+    isInitial: boolean;
+    stateOnly: boolean;
+    renderedKind: 'page' | 'not-found' | 'error' | null;
+  }): void | Promise<void>;
 }
 
 export interface RouterOptions {
-  /** コンテンツ更新コールバック（設定時は outlet.innerHTML を直接変更しない） */
-  onContentUpdate?: (html: string) => void | Promise<void>;
-  /** 初期ナビゲーションをスキップする（AppRouter が SSG コンテンツを保持するため） */
-  skipInitialNavigation?: boolean;
-  /** 外部で aria-live リージョンを管理する場合は true にする */
-  skipAriaLiveRegion?: boolean;
+  contentAdapter?: ContentUpdateAdapter | undefined;
+  shellAdapter?: ShellAdapter | undefined;
+  urlStateNavigationPolicy?: UrlStateNavigationPolicy | undefined;
+  postCommitController?: PostCommitController | undefined;
+  skipInitialNavigation?: boolean | undefined;
+  navigationTimeoutMs?: number | null | undefined;
+}
+
+export interface DocumentRouteContext {
+  url: string;
+  normalizedUrl: string;
+  pathname: string;
+  searchParams: URLSearchParams;
+  hash: string;
+  signal: AbortSignal;
+}
+
+export type ErrorSnapshotReason =
+  | 'auth'
+  | 'forbidden'
+  | 'timeout'
+  | 'network'
+  | 'server'
+  | 'service-unavailable'
+  | 'unexpected';
+
+export type DocumentSnapshot =
+  | {
+      kind: 'page';
+      html: string;
+      title: string;
+      metaDescription: string | null;
+      shell?: DocumentShellSnapshot | null | undefined;
+      announcedTitle?: string | null | undefined;
+    }
+  | {
+      kind: 'not-found';
+      html: string;
+      title: string;
+      metaDescription: string;
+      shell?: DocumentShellSnapshot | null | undefined;
+      announcedTitle?: string | null | undefined;
+    }
+  | {
+      kind: 'error';
+      reason: ErrorSnapshotReason;
+      statusCode?: number | undefined;
+      html: string;
+      title: string;
+      metaDescription: string;
+      shell?: DocumentShellSnapshot | null | undefined;
+      announcedTitle?: string | null | undefined;
+    };
+
+export type RoutePattern = string | RegExp;
+
+export type DocumentRouteHandler = (
+  context: DocumentRouteContext,
+) => DocumentSnapshot | Promise<DocumentSnapshot>;
+
+export interface BeforeNavigateContext {
+  currentUrl: string;
+  requestedUrl: string;
+  normalizedUrl: string;
+  historyMode: HistoryMode;
+}
+
+export type BeforeNavigateHook = (
+  context: BeforeNavigateContext,
+) => true | false | undefined | Promise<true | false | undefined>;
+
+export interface RouterEventMap {
+  'navigation:busy-change': {
+    isNavigating: boolean;
+  };
+  'content:load': {
+    previousUrl: string | null;
+    url: string;
+    isInitial: boolean;
+  };
+  'after:navigate': NavigationResult;
+  'ui-url-state-change': {
+    previousUrl: string;
+    url: string;
+  };
+  error: {
+    error: Error;
+    stage: 'before-navigate' | 'load' | 'commit' | 'shell' | 'post-commit';
+  };
+}
+
+export class RouterOwnershipError extends Error {
+  override name = 'RouterOwnershipError' as const;
+}
+
+export class RouterDestroyedError extends Error {
+  override name = 'RouterDestroyedError' as const;
+}
+
+export class RouterNotStartedError extends Error {
+  override name = 'RouterNotStartedError' as const;
 }

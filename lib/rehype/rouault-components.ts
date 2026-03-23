@@ -153,6 +153,21 @@ const moveCodeMetaToHost = (preNode: HastNode, hostProperties: Record<string, un
     hostProperties['label'] = label;
   }
 
+  const groupKey = pickOptionalString(codeProperties['group-key']);
+  if (groupKey) {
+    hostProperties['group-key'] = groupKey;
+  }
+
+  const tabLabel = pickOptionalString(codeProperties['tab-label']);
+  if (tabLabel) {
+    hostProperties['tab-label'] = tabLabel;
+  }
+
+  const copyLabel = pickOptionalString(codeProperties['copy-label']);
+  if (copyLabel) {
+    hostProperties['copy-label'] = copyLabel;
+  }
+
   const intent = pickOptionalString(codeProperties['intent'])?.toLowerCase();
   if (intent && CODE_BLOCK_INTENTS.has(intent)) {
     hostProperties['intent'] = intent;
@@ -162,10 +177,41 @@ const moveCodeMetaToHost = (preNode: HastNode, hostProperties: Record<string, un
     hostProperties['show-line-numbers'] = true;
   }
 
+  const copyMode = pickOptionalString(codeProperties['copy-mode'])?.toLowerCase();
+  if (copyMode) {
+    hostProperties['copy-mode'] = copyMode;
+  }
+
+  if (typeof codeProperties['copyable'] === 'string') {
+    hostProperties['copyable'] = codeProperties['copyable'];
+  }
+
+  if (toBooleanAttribute(codeProperties['wrap'])) {
+    hostProperties['wrap'] = true;
+  }
+
+  const highlightLines = pickOptionalString(codeProperties['highlight-lines']);
+  if (highlightLines) {
+    hostProperties['highlight-lines'] = highlightLines;
+  }
+
+  const layout = pickOptionalString(codeProperties['layout'])?.toLowerCase();
+  if (layout) {
+    hostProperties['layout'] = layout;
+  }
+
   delete codeProperties['filename'];
   delete codeProperties['label'];
+  delete codeProperties['group-key'];
+  delete codeProperties['tab-label'];
+  delete codeProperties['copy-label'];
   delete codeProperties['intent'];
   delete codeProperties['show-line-numbers'];
+  delete codeProperties['copy-mode'];
+  delete codeProperties['copyable'];
+  delete codeProperties['wrap'];
+  delete codeProperties['highlight-lines'];
+  delete codeProperties['layout'];
 };
 
 const toUiCodeBlock = (node: HastNode): void => {

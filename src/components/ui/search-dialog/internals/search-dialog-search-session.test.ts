@@ -54,7 +54,9 @@ function createHost(state: SessionState) {
 
 async function waitForSearch(): Promise<void> {
   await new Promise<void>((resolve) => {
-    window.setTimeout(() => resolve(), 170);
+    window.setTimeout(() => {
+      resolve();
+    }, 170);
   });
 }
 
@@ -112,7 +114,7 @@ describe('SearchDialogSearchSession', () => {
   it('custom searcher の結果を正規化し、空 title/url と重複を落とす', async () => {
     const state = createState();
     state.query = 'alpha';
-    state.searcher = async () =>
+    state.searcher = () =>
       [
         { title: ' Alpha ', url: '/alpha ' },
         { title: 'Alpha', url: '/alpha' },

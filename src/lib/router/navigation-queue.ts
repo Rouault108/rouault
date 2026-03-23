@@ -1,72 +1,92 @@
-import type { NavigationRequest, PendingNavigation } from './router-types.js';
+import type { HistoryMode, NavigationResult } from './router-types.js';
+
+export interface QueuedNavigationRequest {
+  requestedUrl: string;
+  normalizedUrl: string;
+  historyMode: HistoryMode;
+  state: Record<string, unknown> | undefined;
+}
+
+interface PendingNavigation {
+  request: QueuedNavigationRequest;
+  resolve: (result: NavigationResult) => void;
+}
+
+interface ActiveNavigation {
+  controller: AbortController;
+  superseded: boolean;
+}
 
 export class NavigationQueue {
-  private navigationInProgress = false;
+  private activeNavigation: ActiveNavigation | null = null;
   private pendingNavigation: PendingNavigation | null = null;
   private isDisposed = false;
 
-  constructor(private runNavigation: (request: NavigationRequest) => Promise<void>) {}
+  constructor(
+    private runNavigation: (
+      request: QueuedNavigationRequest,
+      signal: AbortSignal,
+    ) => Promise<NavigationResult>,
+    private createSupersededResult: (request: QueuedNavigationRequest) => NavigationResult,
+  ) {}
 
-  enqueue(request: NavigationRequest): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
+  enqueue(request: QueuedNavigationRequest): Promise<NavigationResult> {
+    return new Promise<NavigationResult>((resolve) => {
       if (this.isDisposed) {
-        resolve();
+        resolve(this.createSupersededResult(request));
         return;
       }
 
-      if (this.navigationInProgress) {
+      if (this.activeNavigation) {
+        this.activeNavigation.superseded = true;
+        this.activeNavigation.controller.abort();
+
         if (this.pendingNavigation) {
-          this.pendingNavigation.resolve();
+          this.pendingNavigation.resolve(this.createSupersededResult(this.pendingNavigation.request));
         }
+
         this.pendingNavigation = {
           request,
           resolve,
-          reject,
         };
         return;
       }
 
-      this.navigationInProgress = true;
-      void this.processNavigationLoop(request, resolve, reject);
+      void this.startNavigation({
+        request,
+        resolve,
+      });
     });
   }
 
   dispose(): void {
     this.isDisposed = true;
+    this.activeNavigation?.controller.abort();
+
     if (this.pendingNavigation) {
-      this.pendingNavigation.resolve();
+      this.pendingNavigation.resolve(this.createSupersededResult(this.pendingNavigation.request));
       this.pendingNavigation = null;
     }
   }
 
-  private async processNavigationLoop(
-    initialRequest: NavigationRequest,
-    initialResolve: () => void,
-    initialReject: (reason?: unknown) => void,
-  ): Promise<void> {
-    let currentRequest = initialRequest;
-    let currentResolve = initialResolve;
-    let currentReject = initialReject;
+  private async startNavigation(pending: PendingNavigation): Promise<void> {
+    const controller = new AbortController();
+    this.activeNavigation = {
+      controller,
+      superseded: false,
+    };
 
-    for (;;) {
-      try {
-        await this.runNavigation(currentRequest);
-        currentResolve();
-      } catch (error) {
-        currentReject(error);
-      }
+    const result = await this.runNavigation(pending.request, controller.signal);
+    pending.resolve(result);
 
-      if (!this.pendingNavigation) {
-        break;
-      }
+    const nextPending = this.pendingNavigation;
+    this.pendingNavigation = null;
+    this.activeNavigation = null;
 
-      const next = this.pendingNavigation;
-      this.pendingNavigation = null;
-      currentRequest = next.request;
-      currentResolve = next.resolve;
-      currentReject = next.reject;
+    if (!nextPending || this.isDisposed) {
+      return;
     }
 
-    this.navigationInProgress = false;
+    await this.startNavigation(nextPending);
   }
 }

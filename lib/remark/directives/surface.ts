@@ -11,34 +11,28 @@ export const applyCalloutAttributes = (
   file?: VFileLike,
 ): Record<string, unknown> => {
   const result: Record<string, unknown> = {};
-  const allowedKeys = new Set(['kind', 'variant', 'title', 'icon', 'heading-level', 'aria-label']);
+  const allowedKeys = new Set(['kind', 'heading', 'label', 'icon', 'heading-level']);
   assertAllowedAttributes(attrs, allowedKeys, node, file, 'callout');
 
-  const kind = pickOptional(attrs['kind'])?.toLowerCase();
-  const variant = pickOptional(attrs['variant'])?.toLowerCase();
-  if (kind && variant && kind !== variant) {
-    throw toError(file, node, 'callout の kind と variant が矛盾しています');
+  const kind = pickOptional(attrs['kind'])?.toLowerCase() ?? 'note';
+  if (!CALLOUT_VARIANTS.has(kind)) {
+    throw toError(file, node, `callout の kind "${kind}" は未対応です`);
+  }
+  result['kind'] = kind;
+
+  const heading = pickOptional(attrs['heading']);
+  if (heading) {
+    result['heading'] = heading;
   }
 
-  const resolvedVariant = variant ?? kind ?? 'note';
-  if (!CALLOUT_VARIANTS.has(resolvedVariant)) {
-    throw toError(file, node, `callout の kind/variant "${resolvedVariant}" は未対応です`);
-  }
-  result['variant'] = resolvedVariant;
-
-  const title = pickOptional(attrs['title']);
-  if (title) {
-    result['title'] = title;
+  const label = pickOptional(attrs['label']);
+  if (label) {
+    result['label'] = label;
   }
 
   const icon = pickOptional(attrs['icon']);
   if (icon) {
     result['icon'] = icon;
-  }
-
-  const ariaLabel = pickOptional(attrs['aria-label']);
-  if (ariaLabel) {
-    result['aria-label'] = ariaLabel;
   }
 
   const headingLevel = parseIntegerInRange(
@@ -83,15 +77,28 @@ export const applyDetailsAttributes = (
   const allowedKeys = new Set(['aria-label', 'summary', 'open', 'variant', 'region']);
   assertAllowedAttributes(attrs, allowedKeys, node, file, 'details');
 
+  const hasAriaLabelAttribute = Object.prototype.hasOwnProperty.call(attrs, 'aria-label');
   const ariaLabel = pickOptional(attrs['aria-label']);
-  if (!ariaLabel) {
-    throw toError(file, node, 'details の aria-label は必須です');
-  }
-  result['aria-label'] = ariaLabel;
-
   const summary = pickOptional(attrs['summary']);
+
+  if (summary && hasAriaLabelAttribute) {
+    throw toError(file, node, 'details では summary と aria-label を同時指定できません');
+  }
+
+  if (!summary && hasAriaLabelAttribute && !ariaLabel) {
+    throw toError(file, node, 'details の icon-only 利用では aria-label に空文字を指定できません');
+  }
+
+  if (!summary && !ariaLabel) {
+    throw toError(file, node, 'details では summary または aria-label のいずれかが必須です');
+  }
+
   if (summary) {
     result['summary'] = summary;
+  }
+
+  if (ariaLabel) {
+    result['aria-label'] = ariaLabel;
   }
 
   const open = parseBooleanAttribute(attrs['open'], node, file, 'details', 'open');

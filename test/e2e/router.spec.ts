@@ -102,7 +102,7 @@ test.describe('Router Navigation', () => {
 
   test('検索ページ下端から記事へ遷移してもスクロール位置が先頭に戻ること', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 480 });
-    await page.goto('/search/?tag=music');
+    await page.goto('/search?tag=music');
 
     const resultLinks = page.locator('.result-link');
     await expect(resultLinks).toHaveCount(3);
@@ -193,13 +193,13 @@ test.describe('Router Navigation', () => {
   test('未知のURLへ SPA 遷移したとき 404 ページへ切り替わること', async ({ page }) => {
     await page.goto(beethovenEntryPath);
 
-    await page.evaluate(async () => {
-      const router = document.querySelector('app-router') as HTMLElement & {
-        navigate?: (path: string) => Promise<void>;
-      };
+      await page.evaluate(async () => {
+        const router = document.querySelector('app-router') as HTMLElement & {
+        navigate?: (path: string) => Promise<unknown>;
+        };
 
-      await router.navigate?.('/notes/does-not-exist');
-    });
+        await router.navigate?.('/notes/does-not-exist');
+      });
 
     await expect(page).toHaveURL('/notes/does-not-exist');
     await expect(page.locator('not-found-page')).toContainText('ページが見つかりません');

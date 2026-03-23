@@ -11,6 +11,7 @@
   - `lib/content/build-breadcrumbs.ts`
   - `src/layouts/NoteLayout.11ty.ts`
   - `src/lib/router.ts`
+  - `docs/router-specification.md`
   - `src/lib/trailing-slash-rewrite.ts`
   - `src/lib/search/normalize-search-result-url.ts`
 
@@ -223,6 +224,10 @@ sidebar UI の内部状態管理に用いる stable ID。
   - クライアント側 pathname 正規化
   - canonical URL ベースの遷移制御
   - 取得直前の trailing slash 補完
+
+- `docs/router-specification.md`
+  - router 公開契約の正規仕様
+  - navigation URL と fetch target URL の責務境界
 
 - `src/lib/trailing-slash-rewrite.ts`
   - 直接アクセス時の rewrite 補助

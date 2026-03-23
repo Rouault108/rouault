@@ -471,7 +471,6 @@ const buildResolvedLinkCardProps = (
   return {
     'card-kind': 'link',
     href,
-    clickable: true,
     'card-title': title,
     ...(description ? { description } : {}),
     ...(imageSrc ? { 'image-src': imageSrc } : {}),

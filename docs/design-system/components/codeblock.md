@@ -107,6 +107,8 @@ copy button を見せるかどうかと、実際に copy 可能かどうかは�
 - `intent` の列挙外値は `neutral` にフォールバックします。
 - `copyMode` の列挙外値は `auto` にフォールバックします。
 - `layout` の列挙外値は `standalone` にフォールバックします。
+- `copyMode="auto"` は、copy 値が解決できる場合にのみ copy UI を表示します。
+- `copyMode="always"` は、copy 値が空でも copy UI 自体は表示してよいですが、その場合は disabled とします。
 - `copyable=false` の場合、`getCodeContent()` が値を返せても公開上は copy 不可として扱います。
 - `highlightLines` の解釈不能断片は無視し、解釈可能な範囲のみ採用します。
 
@@ -242,6 +244,7 @@ copy 用の文字列を返します。
 ## 7.3 copy button
 
 - `copyMode="hidden"` の場合、copy UI を表示しません。
+- `copyMode="auto"` の場合、copy 値が解決できるときだけ copy UI を表示します。
 - `copyable=false` の場合、表示しても disabled でなければなりません。
 - copy 成功・失敗の通知方式そのものは本書の対象外です。
 

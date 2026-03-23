@@ -1,52 +1,95 @@
 import { HeadManager } from './head-manager.js';
-import { ShellSynchronizer } from './shell-synchronizer.js';
-import type { LoadResult } from './content-loader.js';
+import { LocationAdapter } from './location-adapter.js';
+import type {
+  ContentUpdateAdapter,
+  DocumentSnapshot,
+  HistoryMode,
+} from './router-types.js';
+
+interface CommitRequest {
+  snapshot: DocumentSnapshot;
+  normalizedUrl: string;
+  historyMode: HistoryMode;
+  state: Record<string, unknown> | undefined;
+}
+
+interface PreparedMutation {
+  commit(): void | Promise<void>;
+  rollback(): void | Promise<void>;
+}
 
 export class ContentCommitter {
   private headManager = new HeadManager();
-  private shellSynchronizer = new ShellSynchronizer();
 
   constructor(
     private outlet: HTMLElement,
-    private onContentUpdate?: (html: string) => void | Promise<void>,
+    private location: LocationAdapter,
+    private contentAdapter?: ContentUpdateAdapter,
   ) {}
 
-  async commit(result: LoadResult): Promise<string> {
-    switch (result.kind) {
-      case 'handler': {
-        await this.setContent(result.html);
-        return document.title;
+  async commit(request: CommitRequest): Promise<void> {
+    const previousTitle = document.title;
+    const previousMetaDescription =
+      document.querySelector('meta[name="description"]')?.getAttribute('content') ?? null;
+    const previousUrl = this.location.readCurrentUrl();
+    const previousHistoryState: unknown = history.state;
+    const preparedMutation = await this.prepareContentMutation(request.snapshot, request.normalizedUrl);
+    let historyApplied = false;
+
+    try {
+      this.headManager.setTitle(request.snapshot.title);
+      this.headManager.setMetaDescription(request.snapshot.metaDescription);
+      await preparedMutation.commit();
+      this.applyHistory(request.historyMode, request.normalizedUrl, request.state);
+      historyApplied = request.historyMode !== 'none';
+    } catch (error) {
+      await preparedMutation.rollback();
+      this.headManager.setTitle(previousTitle);
+      this.headManager.setMetaDescription(previousMetaDescription);
+
+      if (historyApplied) {
+        window.history.replaceState(previousHistoryState, '', previousUrl);
       }
-      case 'page': {
-        this.headManager.setTitle(result.title);
-        this.headManager.setMetaDescription(result.metaDescription);
-        this.shellSynchronizer.applyFromDocument(result.document);
-        await this.setContent(result.html);
-        return result.title;
-      }
-      case 'not-found': {
-        this.headManager.setTitle(result.title);
-        this.headManager.setMetaDescription(result.metaDescription);
-        this.shellSynchronizer.clear();
-        await this.setContent(result.html);
-        return result.title;
-      }
-      case 'error': {
-        this.headManager.setTitle(result.title);
-        this.headManager.setMetaDescription(result.metaDescription);
-        this.shellSynchronizer.clear();
-        await this.setContent(result.html);
-        return result.title;
-      }
+
+      throw error;
     }
   }
 
-  private async setContent(html: string): Promise<void> {
-    if (this.onContentUpdate) {
-      await this.onContentUpdate(html);
+  private async prepareContentMutation(
+    snapshot: DocumentSnapshot,
+    normalizedUrl: string,
+  ): Promise<PreparedMutation> {
+    if (this.contentAdapter) {
+      return this.contentAdapter.prepare({
+        html: snapshot.html,
+        renderedKind: snapshot.kind,
+        navigationUrl: normalizedUrl,
+      });
+    }
+
+    const previousHtml = this.outlet.innerHTML;
+    return {
+      commit: () => {
+        this.outlet.innerHTML = snapshot.html;
+      },
+      rollback: () => {
+        this.outlet.innerHTML = previousHtml;
+      },
+    };
+  }
+
+  private applyHistory(
+    historyMode: HistoryMode,
+    normalizedUrl: string,
+    state?: Record<string, unknown>,
+  ): void {
+    if (historyMode === 'push') {
+      this.location.push(normalizedUrl, state);
       return;
     }
 
-    this.outlet.innerHTML = html;
+    if (historyMode === 'replace') {
+      this.location.replace(normalizedUrl, state);
+    }
   }
 }

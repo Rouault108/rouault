@@ -1,8 +1,9 @@
 import type { ReactiveController, ReactiveControllerHost } from 'lit';
+import type { ContentUpdateAdapter } from '../../../lib/router.js';
 
 export class AppRouterContentController implements ReactiveController {
   private didInitializeFromSsr = false;
-  private shouldRunPostNavigationHooks = false;
+  private currentContent = '';
 
   constructor(
     host: ReactiveControllerHost,
@@ -21,22 +22,30 @@ export class AppRouterContentController implements ReactiveController {
     }
 
     const existingMain = hostElement.querySelector('main');
-    this.setPageContent(existingMain?.innerHTML ?? '');
+    this.currentContent = existingMain?.innerHTML ?? '';
+    this.setPageContent(this.currentContent);
     hostElement.replaceChildren();
     this.didInitializeFromSsr = true;
   }
 
-  async handleContentUpdate(newContent: string, onAfterUpdate: () => Promise<void>): Promise<void> {
-    this.shouldRunPostNavigationHooks = true;
-    this.setPageContent(newContent);
-    await onAfterUpdate();
-  }
+  createContentAdapter(waitForUpdate: () => Promise<unknown>): ContentUpdateAdapter {
+    return {
+      prepare: ({ html }) => {
+        const previousContent = this.currentContent;
 
-  shouldRunPostRenderHooks(): boolean {
-    return this.shouldRunPostNavigationHooks;
-  }
-
-  consumePostRenderHooksFlag(): void {
-    this.shouldRunPostNavigationHooks = false;
+        return {
+          commit: async () => {
+            this.currentContent = html;
+            this.setPageContent(html);
+            await waitForUpdate();
+          },
+          rollback: async () => {
+            this.currentContent = previousContent;
+            this.setPageContent(previousContent);
+            await waitForUpdate();
+          },
+        };
+      },
+    };
   }
 }

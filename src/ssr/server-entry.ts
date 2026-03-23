@@ -15,6 +15,10 @@ import { type ImageLoading } from '../components/ui/image/image.js';
 import '../components/search/search-page.js';
 import '../components/tag/tag-page.js';
 import '../components/ui/article-header/article-header.js';
+import {
+  ARTICLE_HEADER_TAGS_DATA_ATTRIBUTE,
+  parseArticleHeaderTagsAdapterValue,
+} from '../components/ui/article-header/article-header-tags-adapter.js';
 import '../components/layout/layout-sidebar.js';
 import '../components/layout/layout-toc.js';
 import '../components/ui/callout/callout.js';
@@ -61,6 +65,17 @@ interface SsrAttribute {
   name: string;
   value: string;
 }
+
+const ARTICLE_HEADER_BRIDGED_ATTRIBUTE_NAMES = new Set([
+  'heading',
+  'published',
+  'created',
+  'updated',
+  'reading-time',
+  'status',
+  'source',
+  'license',
+]);
 
 export interface SsrDocumentStyleDefinition {
   id: string;
@@ -155,6 +170,48 @@ const renderImageShadowElement = async (
   );
 };
 
+const renderArticleHeaderShadowElement = async (
+  attributes: readonly SsrAttribute[],
+  innerHtml: string,
+): Promise<string> => {
+  /* eslint-disable lit/binding-positions, lit/no-invalid-html */
+  const staticTagName = unsafeStatic('ui-article-header');
+  const passthroughAttributes = attributes.filter(
+    (attribute) => !ARTICLE_HEADER_BRIDGED_ATTRIBUTE_NAMES.has(attribute.name),
+  );
+  const staticAttributes = unsafeStatic(serializeAttributes(passthroughAttributes));
+  const heading = getAttributeValue(attributes, 'heading') ?? '';
+  const published = getAttributeValue(attributes, 'published');
+  const created = getAttributeValue(attributes, 'created');
+  const updated = getAttributeValue(attributes, 'updated');
+  const readingTime = getAttributeValue(attributes, 'reading-time');
+  const status = getAttributeValue(attributes, 'status');
+  const source = getAttributeValue(attributes, 'source');
+  const license = getAttributeValue(attributes, 'license');
+  const tags = parseArticleHeaderTagsAdapterValue(
+    getAttributeValue(attributes, ARTICLE_HEADER_TAGS_DATA_ATTRIBUTE),
+  );
+
+  return await collectResult(
+    renderThunked(html`
+      <${staticTagName}
+        ${staticAttributes}
+        heading=${heading}
+        published=${ifDefined(published)}
+        created=${ifDefined(created)}
+        updated=${ifDefined(updated)}
+        reading-time=${ifDefined(readingTime)}
+        status=${ifDefined(status)}
+        source=${ifDefined(source)}
+        license=${ifDefined(license)}
+        .tags=${tags}
+        >${unsafeHTML(innerHtml)}</${staticTagName}
+      >
+    `),
+  );
+  /* eslint-enable lit/binding-positions, lit/no-invalid-html */
+};
+
 const escapeAttributeValue = (value: string): string =>
   value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -228,6 +285,10 @@ export const renderCustomElement = async (
 
   if (tagName === 'ui-image') {
     return renderImageShadowElement(attributes, innerHtml);
+  }
+
+  if (tagName === 'ui-article-header') {
+    return renderArticleHeaderShadowElement(attributes, innerHtml);
   }
 
   const rendered = await collectResult(

@@ -2,10 +2,12 @@ import { expect } from '@open-wc/testing';
 
 import {
   DEFAULT_SEARCH_SORT_MODE,
-  buildSearchHref,
+  DEFAULT_SEARCH_TAG_MODE,
+  buildSearchStateUrl,
   buildTagHref,
   normalizeSearchQuery,
   normalizeSearchSort,
+  normalizeSearchTagMode,
   normalizeSearchTags,
   parseSearchStateFromUrl,
 } from '../../src/lib/search/search-url.js';
@@ -16,10 +18,10 @@ describe('search-url', () => {
     expect(normalizeSearchQuery('   ')).to.equal('');
   });
 
-  it('タグ配列を正規化すること', () => {
+  it('タグ配列を正規化し昇順化すること', () => {
     expect(normalizeSearchTags([' music ', '', 'jazz', 'music', '  theory  '])).to.deep.equal([
-      'music',
       'jazz',
+      'music',
       'theory',
     ]);
   });
@@ -29,38 +31,57 @@ describe('search-url', () => {
     expect(normalizeSearchSort('unknown')).to.equal(DEFAULT_SEARCH_SORT_MODE);
   });
 
-  it('URL から検索状態を復元すること', () => {
+  it('タグ演算子を正規化すること', () => {
+    expect(normalizeSearchTagMode('and')).to.equal('and');
+    expect(normalizeSearchTagMode('unknown')).to.equal(DEFAULT_SEARCH_TAG_MODE);
+  });
+
+  it('検索URLから検索状態を復元すること', () => {
     const state = parseSearchStateFromUrl(
-      new URL('https://example.com/search?q=%20jazz%20theory%20&tag=music&tag=jazz&tag=music'),
+      new URL(
+        'https://example.com/search?q=%20jazz%20theory%20&tag=music&tag=jazz&tag=music&tagMode=and',
+      ),
     );
 
     expect(state).to.deep.equal({
-      query: 'jazz theory',
-      tags: ['music', 'jazz'],
+      q: 'jazz theory',
+      tags: ['jazz', 'music'],
+      tagMode: 'and',
       sort: 'relevance',
     });
   });
 
-  it('URL から並び順を復元すること', () => {
-    const state = parseSearchStateFromUrl(
-      new URL('https://example.com/search?q=%E6%A4%9C%E7%B4%A2&sort=date-desc'),
-    );
+  it('タグページURLから単一タグ既定状態を復元すること', () => {
+    const state = parseSearchStateFromUrl(new URL('https://example.com/tags/music/'));
 
     expect(state).to.deep.equal({
-      query: '検索',
-      tags: [],
-      sort: 'date-desc',
+      q: '',
+      tags: ['music'],
+      tagMode: 'or',
+      sort: 'relevance',
     });
   });
 
   it('検索URLを構築すること', () => {
     expect(
-      buildSearchHref({ query: 'jazz theory', tags: ['music', 'jazz'], sort: 'date-desc' }),
-    ).to.equal('/search?q=jazz+theory&tag=music&tag=jazz&sort=date-desc');
+      buildSearchStateUrl({
+        q: 'jazz theory',
+        tags: ['music', 'jazz'],
+        tagMode: 'and',
+        sort: 'date-desc',
+      }),
+    ).to.equal('/search?q=jazz+theory&tag=jazz&tag=music&tagMode=and&sort=date-desc');
     expect(
-      buildSearchHref({ query: 'jazz theory', tags: ['music', 'jazz'], sort: 'relevance' }),
-    ).to.equal('/search?q=jazz+theory&tag=music&tag=jazz');
-    expect(buildSearchHref({ query: '', tags: [], sort: 'relevance' })).to.equal('/search');
+      buildSearchStateUrl({
+        q: 'jazz theory',
+        tags: ['music', 'jazz'],
+        tagMode: 'or',
+        sort: 'relevance',
+      }),
+    ).to.equal('/search?q=jazz+theory&tag=jazz&tag=music');
+    expect(
+      buildSearchStateUrl({ q: '', tags: [], tagMode: 'or', sort: 'relevance' }),
+    ).to.equal('/search');
   });
 
   it('タグURLを構築すること', () => {
