@@ -4,12 +4,20 @@ import {
   SSR_SEARCH_TARGET_TAGS,
   type SsrTargetTag,
 } from '../ssr/targets.js';
+import {
+  ARTICLE_HEADER_TAGS_DATA_ATTRIBUTE,
+  parseArticleHeaderTagsAdapterValue,
+} from '../components/ui/article-header/article-header-tags-adapter.js';
 
 let shellModulesPromise: Promise<void> | null = null;
 let noteModulesPromise: Promise<void> | null = null;
 let searchModulesPromise: Promise<void> | null = null;
 
 type ComponentModuleLoader = () => Promise<unknown>;
+
+interface ArticleHeaderWithTags extends HTMLElement {
+  tags: string[];
+}
 
 const TAG_MODULE_LOADERS: Record<SsrTargetTag, ComponentModuleLoader> = {
   'ui-skip-link': () => import('../components/ui/skip-link/skip-link.js'),
@@ -62,6 +70,25 @@ const loadModulesForTags = async (tagNames: readonly SsrTargetTag[]): Promise<vo
   );
 };
 
+const hydrateArticleHeaderTags = (root: ParentNode): void => {
+  const headers = root.querySelectorAll<ArticleHeaderWithTags>('ui-article-header');
+
+  for (const header of headers) {
+    if (header.tags.length > 0) {
+      continue;
+    }
+
+    const tags = parseArticleHeaderTagsAdapterValue(
+      header.getAttribute(ARTICLE_HEADER_TAGS_DATA_ATTRIBUTE),
+    );
+    if (tags.length === 0) {
+      continue;
+    }
+
+    header.tags = tags;
+  }
+};
+
 export const loadShellModules = async (): Promise<void> => {
   shellModulesPromise ??= (async () => {
     await loadModulesForTags(SSR_ALWAYS_LOAD_TAGS);
@@ -76,6 +103,7 @@ export const loadNoteModules = async (): Promise<void> => {
   })();
 
   await noteModulesPromise;
+  hydrateArticleHeaderTags(document);
 };
 
 export const loadSearchModules = async (): Promise<void> => {
@@ -101,5 +129,9 @@ export const loadModulesForDocument = async (root: ParentNode = document): Promi
 
   if (pendingLoads.length > 0) {
     await Promise.all(pendingLoads);
+  }
+
+  if (matchesAnyTag(root, ['ui-article-header'])) {
+    hydrateArticleHeaderTags(root);
   }
 };
