@@ -151,6 +151,19 @@ export const CompleteState: Story = {
       );
     }
 
+    const tagsNav = header.shadowRoot?.querySelector('nav[aria-label="タグ"]');
+    if (!tagsNav) throw new Error('タグナビゲーションが見つかりません');
+
+    const tagList = tagsNav.querySelector('.tag-list');
+    if (!tagList) throw new Error('.tag-list が見つかりません');
+
+    const tagItems = tagList.querySelectorAll('.tag-item');
+    if (tagItems.length !== 3) {
+      throw new Error(
+        `3つの .tag-item を期待していましたが、実際には ${String(tagItems.length)}個でした`,
+      );
+    }
+
     const status = header.shadowRoot?.querySelector('.status');
     if (!status) throw new Error('.status が見つかりません');
     if (!status.classList.contains('status-wip')) {
@@ -489,6 +502,16 @@ export const NormalizationBoundary: Story = {
       );
     }
 
+    const tagsNav = header.shadowRoot?.querySelector('nav[aria-label="タグ"]');
+    if (!tagsNav) throw new Error('タグナビゲーションが見つかりません');
+
+    const tagItems = tagsNav.querySelectorAll('.tag-item');
+    if (tagItems.length !== 2) {
+      throw new Error(
+        `2つの .tag-item を期待していましたが、実際には ${String(tagItems.length)}個でした`,
+      );
+    }
+
     const reading = header.shadowRoot?.querySelector('.reading-time');
     if (!reading)
       throw new Error(
@@ -504,6 +527,42 @@ export const NormalizationBoundary: Story = {
     const source = header.shadowRoot?.querySelector('.source-link');
     if (source) {
       throw new Error('安全でない出典 URL は存在してはいけません');
+    }
+  },
+};
+
+/**
+ * 境界条件: 日付は strict YYYY-MM-DD のみ表示し、空白ライセンスは補助行を作らない
+ */
+export const StrictDateBoundary: Story = {
+  render: () => html`
+    <ui-article-header
+      id="strict-date-boundary"
+      heading="strict date 境界"
+      updated="2026-02-01T00:00:00.000Z"
+      published="2026/02/01"
+      created="2026-01-15T09:30:00.000Z"
+      license="   "
+    ></ui-article-header>
+  `,
+  play: async ({ canvasElement }) => {
+    const header = canvasElement.querySelector<ArticleHeader>('#strict-date-boundary');
+    if (!header) throw new Error('#strict-date-boundary が見つかりません');
+    await header.updateComplete;
+
+    const time = header.shadowRoot?.querySelector('time');
+    if (time) {
+      throw new Error('非正規日付のみが与えられたとき、time 要素は存在してはいけません');
+    }
+
+    const primaryMetadata = header.shadowRoot?.querySelector('.metadata-list--primary');
+    if (primaryMetadata) {
+      throw new Error('非正規日付のみが与えられたとき、主要メタデータ行は存在してはいけません');
+    }
+
+    const secondaryMetadata = header.shadowRoot?.querySelector('.metadata-list--secondary');
+    if (secondaryMetadata) {
+      throw new Error('空白のみライセンスでは補助メタデータ行は存在してはいけません');
     }
   },
 };

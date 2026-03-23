@@ -102,7 +102,7 @@ export class ArticleHeader extends LitElement {
       }
 
       .metadata-list--primary .meta-icon {
-        color: var(--fg-sabtle, oklch(60% 0 0));
+        color: var(--fg-subtle, oklch(60% 0 0));
       }
 
       /* セカンダリリスト内のアイコンはフォントサイズに合わせて縮小 */
@@ -137,18 +137,29 @@ export class ArticleHeader extends LitElement {
         margin-block: var(--space-3, 12px);
       }
 
-      /* heading または status-badge の直後（primary metadata なし）は余白を増やす */
-      .heading + .tags-row,
-      .status-badge + .heading + .tags-row {
-        margin-top: var(--space-3, 12px);
+      .tags-nav {
+        display: block;
       }
 
-      .tag-links {
+      .tag-list {
         display: inline-flex;
         flex-wrap: wrap;
         align-items: center;
         gap: var(--space-2, 8px);
         min-width: 0;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .tag-item {
+        display: inline-flex;
+      }
+
+      /* heading または status-badge の直後（primary metadata なし）は余白を増やす */
+      .heading + .tags-row,
+      .status-badge + .heading + .tags-row {
+        margin-top: var(--space-3, 12px);
       }
 
       /* ステータスバッジ: 見出し上部の信頼性シグナル。メタデータリストとは独立して配置。 */
@@ -225,9 +236,6 @@ export class ArticleHeader extends LitElement {
   @property({ attribute: false })
   tags: string[] = [];
 
-  @property({ type: String, attribute: 'tags-json' })
-  tagsJson = '';
-
   @property({ type: Number, attribute: 'reading-time' })
   readingTime: number | null = null;
 
@@ -240,39 +248,32 @@ export class ArticleHeader extends LitElement {
   @property({ type: String })
   license = '';
 
+  private get _createdDate(): string {
+    return formatArticleDate(this.created);
+  }
+
+  private get _publishedDate(): string {
+    return formatArticleDate(this.published);
+  }
+
+  private get _updatedDisplayDate(): string {
+    return formatArticleDate(this.updatedDate);
+  }
+
   private get _displayDate(): string {
-    return formatArticleDate(this._displayDateTime);
+    return this._displayDateTime;
   }
 
   private get _displayDateTime(): string {
-    return (this.updatedDate || this.published).trim();
+    return this._updatedDisplayDate || this._publishedDate;
   }
 
   private get _displayDateLabel(): string {
-    return this.updatedDate ? '最終更新日' : '公開日';
+    return this._updatedDisplayDate ? '最終更新日' : '公開日';
   }
 
   private get _normalizedTags(): string[] {
-    const source = this.tags.length > 0 ? this.tags : this._tagsFromJson;
-
-    return source.map((tag) => tag.trim()).filter((tag) => tag.length > 0);
-  }
-
-  private get _tagsFromJson(): string[] {
-    if (this.tagsJson.trim().length === 0) {
-      return [];
-    }
-
-    try {
-      const parsed = JSON.parse(this.tagsJson) as unknown;
-      if (!Array.isArray(parsed)) {
-        return [];
-      }
-
-      return parsed.filter((item): item is string => typeof item === 'string');
-    } catch {
-      return [];
-    }
+    return this.tags.map((tag) => tag.trim()).filter((tag) => tag.length > 0);
   }
 
   private get _displayReadingTime(): number | null {
@@ -306,7 +307,7 @@ export class ArticleHeader extends LitElement {
 
   // 補助メタデータ（出典・ライセンス）: 帰属情報。主要メタデータとは優先度が異なる。
   private get _hasSecondaryMetadata(): boolean {
-    return this._safeSourceHref !== null || this.license.length > 0;
+    return this._safeSourceHref !== null || this._normalizedLicense !== null;
   }
 
   private get _safeSourceHref(): string | null {
@@ -322,6 +323,11 @@ export class ArticleHeader extends LitElement {
     } catch {
       return null;
     }
+  }
+
+  private get _normalizedLicense(): string | null {
+    const normalized = this.license.trim();
+    return normalized.length > 0 ? normalized : null;
   }
 
   private _buildTagHref(tag: string): string {
@@ -348,7 +354,7 @@ export class ArticleHeader extends LitElement {
     const displayDateTime = this._displayDateTime;
     if (!displayDate || !displayDateTime) return nothing;
 
-    const createdDate = formatArticleDate(this.created);
+    const createdDate = this._createdDate;
     const createdSuffix = createdDate ? `、作成日: ${createdDate}` : '';
     const ariaLabel = `${this._displayDateLabel}: ${displayDate}${createdSuffix}`;
 
@@ -366,25 +372,27 @@ export class ArticleHeader extends LitElement {
     if (tags.length === 0) return nothing;
 
     return html`
-      <div class="tags-row" aria-label="タグ">
-        <span class="tag-links">
+      <nav class="tags-row tags-nav" aria-label="タグ">
+        <ul class="tag-list">
           ${tags.map((tag) => {
             const href = this._buildTagHref(tag);
             return html`
-              <ui-tag
-                class="tag-link"
-                href="${href}"
-                aria-label="タグ: ${tag}"
-                @click="${(event: MouseEvent) => {
-                  this._handleTagClick(event, tag);
-                }}"
-              >
-                ${tag}
-              </ui-tag>
+              <li class="tag-item">
+                <ui-tag
+                  class="tag-link"
+                  href="${href}"
+                  aria-label="タグ: ${tag}"
+                  @click="${(event: MouseEvent) => {
+                    this._handleTagClick(event, tag);
+                  }}"
+                >
+                  ${tag}
+                </ui-tag>
+              </li>
             `;
           })}
-        </span>
-      </div>
+        </ul>
+      </nav>
     `;
   }
 
@@ -423,12 +431,13 @@ export class ArticleHeader extends LitElement {
   }
 
   private _renderLicenseItem(): TemplateResult | typeof nothing {
-    if (!this.license) return nothing;
+    const license = this._normalizedLicense;
+    if (!license) return nothing;
 
     return html`
       <li class="metadata-item metadata-license">
         <iconify-icon class="meta-icon" icon="lucide:scale" aria-hidden="true"></iconify-icon>
-        <span>${this.license}</span>
+        <span>${license}</span>
       </li>
     `;
   }

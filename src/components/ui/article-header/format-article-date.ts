@@ -1,4 +1,4 @@
-const ISO_DATE_PREFIX_PATTERN = /^(\d{4}-\d{2}-\d{2})(?:[T\s].*)?$/;
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 export const formatArticleDate = (value: string): string => {
   const normalized = value.trim();
@@ -6,6 +6,5 @@ export const formatArticleDate = (value: string): string => {
     return '';
   }
 
-  const matched = ISO_DATE_PREFIX_PATTERN.exec(normalized);
-  return matched?.[1] ?? normalized;
+  return ISO_DATE_PATTERN.test(normalized) ? normalized : '';
 };

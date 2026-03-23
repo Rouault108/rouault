@@ -54,11 +54,11 @@
 
 ### 1.1 入力面
 
-`heading` は必須入力です。`published`、`created`、`updatedDate`、`tags`、`tagsJson`、`readingTime`、`status`、`source`、`license` は任意入力です。
+`heading` は必須入力です。`published`、`created`、`updatedDate`、`tags`、`readingTime`、`status`、`source`、`license` は任意入力です。
 
 `updatedDate` は property 名です。対応する HTML 属性名は `updated` です。
 
-`tags` は正規入力です。`tagsJson` は移行完了までの補助入力です。実装は `tags` が空でない場合に `tags` を優先し、`tags` が空である場合に限り `tagsJson` からタグ配列を復元します。新規利用では `tags` のみを使用します。`tagsJson` を前提とした新規の公開契約拡張、Storybook 契約追加、上位 API 設計は行いません。`tagsJson` は Markdown bridge または adapter 層へ退避させる移行対象です。
+`tags` は正規入力です。現行契約では property 専用で受理し、表示前に正規化します。HTML 文字列からの供給が必要な場合は、`ui-article-header` の公開契約ではなく、Markdown bridge または adapter 層で `tags` property へ受け渡します。
 
 `source` と `license` は現行では単純入力です。ただし、帰属情報の拡張は `sourceLabel` や `licenseHref` のような場当たり的な prop 追加では受けません。必要になった時点で、表示ラベル、遷移先、種別を分離した構造化帰属情報モデルとして扱います。
 
@@ -69,7 +69,6 @@
 | `created`     | property / attribute                  | いいえ | 作成日                 | `YYYY-MM-DD` 形式の正規値を受理します。可視表示には用いず、日付の補助文脈にのみ用います。                                              |
 | `updatedDate` | property                              | いいえ | 更新日                 | `YYYY-MM-DD` 形式の正規値を受理します。HTML 属性名は `updated` です。代表日付の最優先候補です。                                        |
 | `tags`        | property                              | いいえ | タグ配列               | 正規入力です。現行契約では各要素を表示名兼識別子として扱う文字列配列です。前後空白除去と空要素除外を行います。構造化が必要になった場合は `key` / `label` / 必要に応じて `href` を持つ別契約へ移行します。 |
-| `tagsJson`    | property / attribute (`tags-json`)    | いいえ | タグ配列の JSON 文字列 | 移行完了までの補助入力です。`tags` が空である場合にのみ採用します。新規利用および新規 Story では使用しません。                        |
 | `readingTime` | property / attribute (`reading-time`) | いいえ | 読了時間（分）         | 四捨五入後に 1 以上の整数値のみ表示します。                                                                                            |
 | `status`      | property / attribute                  | いいえ | 読者向け注意状態       | `draft` / `archived` / `wip` / `deprecated` のみ有効です。単一表示のみ許容します。                                                     |
 | `source`      | property / attribute                  | いいえ | 出典 URL               | `http:` / `https:` のみ表示対象です。現行契約では単一 URL を受理します。帰属情報の拡張が必要になった場合は、個別 prop 増築ではなく構造化帰属情報モデルへ移行します。 |
@@ -84,7 +83,6 @@
 - `status` が未知値である場合は、非表示とします。
 - `source` が `http:` / `https:` 以外である場合は、無効値として扱います。
 - `license` は trim 後に空文字列となる場合は、無効値として扱います。
-- `tagsJson` が JSON 配列であり、かつ各要素が文字列である場合は、補助入力として採用します。
 
 ### 1.3 責務境界
 
@@ -127,9 +125,7 @@
 | `source`      | `source`       | `source`      | attribute / property の双方を受理します。           |
 | `license`     | `license`      | `license`     | attribute / property の双方を受理します。           |
 | `tags`        | なし           | `tags`        | property 専用の正規入力です。                       |
-| `tagsJson`    | `tags-json`    | `tagsJson`    | property / attribute の双方を受理する補助入力です。 |
-
-`tags` と `tagsJson` は同等入力ではありません。`tags` は正規入力です。`tagsJson` は補助入力です。
+`tags` は property 専用の正規入力です。
 
 ---
 
@@ -179,7 +175,6 @@
 タグは描画前に正規化します。正規化規則は次のとおりです。
 
 - `tags` が 1 件以上存在する場合は、`tags` を採用します。
-- `tags` が空である場合は、`tagsJson` を JSON 配列として解釈し、文字列要素のみを補助入力として採用します。
 - 各タグ文字列の前後空白は除去します。
 - 空文字列は除外します。
 - 現行の文字列タグ契約では、各要素を論理的に `key` と `label` が同一である 1 件のタグとして解釈します。
@@ -188,8 +183,6 @@
 - 重複は保持します。ただし、これは現行の文字列タグ契約に限った互換規則です。構造化入力へ移行する場合は、重複可否を `key` 単位で再定義します。
 
 正規化後の配列が空である場合は、タグ行を表示しません。
-
-`tagsJson` は移行完了までの補助経路であり、公開契約上の拡張起点にはしません。構造化タグ入力が必要になった場合は、`tagsJson` を延命せず、Markdown bridge または adapter 層で `key` / `label` / 必要に応じて `href` を持つ入力モデルへ正規化した上で導入します。
 
 現行の標準形 `href` は互換目的の基準情報です。最終的な URL 規則そのものは親レイヤまたはルーティング層の責務です。
 
@@ -243,8 +236,8 @@ status は現行契約では単一の読者向け注意状態として扱いま�
 - `license` が空白のみ文字列である場合は、非表示とします。
 - `status` は列挙値一致である場合にのみ表示します。
 - `status` の前後空白は吸収しません。
-- `tags` および `tagsJson` 由来の各タグ文字列は trim した上で評価します。
-- `tags` および `tagsJson` 由来の各タグ文字列が空文字列である場合は、除外します。
+- `tags` 由来の各タグ文字列は trim した上で評価します。
+- `tags` 由来の各タグ文字列が空文字列である場合は、除外します。
 
 この契約は、可視表示の正規化を本コンポーネント内で完結させつつ、意味妥当性の拡張判断は adapter 層または親レイヤへ委譲するためのものです。
 
@@ -448,7 +441,8 @@ tag-click は現行イベント名を維持しつつ、意味論上はタグ act
 | `StatusStateMatrix`           | `status` 値ごとのラベル、アイコン、トーンクラス対応                                                                                    |
 | `TagEventContract`            | `tags` の property 経路、`tag-click` の発火条件とキャンセル可能性                                                                      |
 | `HeadingOnlyBoundary`         | 見出しのみ最小構成                                                                                                                     |
-| `NormalizationBoundary`       | `tags`・`readingTime`・`source` の正規化契約                                                                                           |
+| `NormalizationBoundary`       | `tags`・`readingTime`・`source` の正規化契約、およびタグ行の `nav > ul > li > ui-tag` 構造                                           |
+| `StrictDateBoundary`          | 非正規日付を表示しない契約、`created` を `aria-label` に混入させない契約、空白ライセンスで補助行を生成しない契約                     |
 | `UnsafeSourceOnlyBoundary`    | unsafe source 単独時に補助メタデータ行ごと非表示とする契約                                                                             |
 | `AccessibilityMediaContracts` | `prefers-reduced-motion` MUST、`forced-colors` MUST、coarse pointer discoverability SHOULD の CSS 契約                                 |
 | `DarkModeTokenContract`       | public semantic tokens 参照によるモード非依存契約                                                                                      |
@@ -471,13 +465,11 @@ tag-click は現行イベント名を維持しつつ、意味論上はタグ act
 
 本書は公開契約を定義する文書であり、Storybook はその確認手段です。したがって、Storybook 上の確認観点が公開契約より広い場合でも、公開契約そのものは本書の定義を優先します。
 
-現行の Storybook では、`tags` を property-only と強く読める表現がありますが、現行実装は `tags-json` 補助経路を持ちます。したがって、公開契約上の位置づけは **`tags` が正規入力、`tagsJson` が補助入力** です。
-
-新規 Story は `tags` を正規経路として定義し、`tagsJson` は移行確認用または後方互換確認用に限定します。`tagsJson` を前提とした新規仕様追加は行いません。
+Storybook は `tags` を property-only の正規経路として確認します。HTML 文字列からの受け渡しが必要な経路は、Storybook 契約ではなく adapter 層の責務です。
 
 ### 8.2 文書上の正規トークン名
 
-主要メタデータのアイコン色に対する CSS には `var(--fg-sabtle, ...)` という綴りが存在しますが、文書契約上の正規トークン名は `--fg-subtle` です。誤記が実装に存在する場合でも、本書では public semantic token の正規名称のみを用います。`--fg-sabtle` は公開契約名ではありません。
+主要メタデータのアイコン色に対する public semantic token の正規名は `--fg-subtle` です。`--fg-sabtle` は過去の誤記であり、公開契約名ではありません。
 
 ---
 
@@ -508,7 +500,7 @@ tag-click は現行イベント名を維持しつつ、意味論上はタグ act
 
 - タグ一覧ページの有無および内容は扱いません。
 - タグ識別子体系、slug 規則、最終的な URL policy は扱いません。
-- `tagsJson` から正規タグ入力への変換、および Markdown bridge / adapter 層での入力整形は扱いません。
+- HTML 文字列から `tags` property への受け渡し、および Markdown bridge / adapter 層での入力整形は扱いません。
 - 出典リンク先の到達可能性は扱いません。
 - ライセンス表記の法的妥当性は扱いません。
 - 帰属情報の構造化、複数件管理、表示ラベル設計は扱いません。
@@ -523,27 +515,22 @@ tag-click は現行イベント名を維持しつつ、意味論上はタグ act
 
 ---
 
-## 10. 現行実装で未対応の事項
+## 10. 現行実装との整合メモ
 
-本章では、文書契約に対して現行実装がまだ満たしていない事項を列挙します。
+本章では、文書契約と現行実装の対応関係、および移行途上の扱いを整理します。
 
 ### 10.1 タッチ環境向けメディアクエリ
 
-`AccessibilityMediaContracts` Story は `@media (hover: none) and (pointer: coarse)` の存在を期待していますが、現行の `article-header.ts` には当該メディアクエリが存在しません。したがって、**Storybook 側の期待契約と実装契約は一致していません**。
+`AccessibilityMediaContracts` Story が確認する `@media (hover: none) and (pointer: coarse)` は、`article-header.ts` 単体ではなく、共通の link text style 契約である `linkTextStyles` により Shadow DOM 内へ合成されます。
 
-未対応なのはメディアクエリ文字面だけではありません。現行実装には、タッチ環境で hover に依存しない discoverability を補強する専用スタイルも存在しません。したがって、touch 向け契約としては **メディアクエリ定義** と **その内部での discoverability 調整** の両方が未対応です。
+したがって、touch 向けの coarse pointer discoverability 契約は、**`ui-article-header` が `linkTextStyles` を採用していること**を通じて成立します。本コンポーネント固有 CSS に同一メディアクエリを重複定義することは契約条件ではありません。
 
 ### 10.2 トークン名の実装修正
 
-主要メタデータのアイコン色に対する CSS に `var(--fg-sabtle, ...)` という綴りが存在します。これは `--fg-subtle` の誤記です。文書契約上の正規値は `--fg-subtle` です。現行実装側では修正対象です。
+主要メタデータのアイコン色に対する public semantic token 名は `--fg-subtle` です。過去に存在した `--fg-sabtle` は誤記であり、現行実装では採用しません。
 
-### 10.3 tagsJson 補助入力の確認面
+### 10.3 タグ入力の移行完了
 
-現行実装は `tags-json` 属性および `tagsJson` property を補助入力として受理しますが、Storybook の `argTypes` には `tagsJson` が存在せず、専用 Story もありません。そのため、**実装は存在するが、公開入力面としての確認導線と検証面が不足しています**。
+`tagsJson` 補助入力は廃止済みです。`ui-article-header` の公開入力面は `tags` property のみとし、HTML 文字列からの橋渡しは adapter 層で扱います。
 
-現段階で `tagsJson` を公開契約に残すのであれば、少なくとも次のいずれかが必要です。
-
-- `argTypes` に `tagsJson` を追加します。
-- `tags` が空であるときに `tagsJson` へフォールバックする Story を追加します。
-
-逆に、長期方針として `tagsJson` を adapter 層へ退避するのであれば、公開契約から外し、未対応項目ではなく削除候補として扱うのが適切です。
+SSR およびレイアウト層では、必要に応じて adapter 用のメタデータを介して `tags` property を設定しますが、これは公開契約ではありません。したがって、`ui-article-header` 自体は `tagsJson` を受理しません。

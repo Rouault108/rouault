@@ -214,7 +214,8 @@ export class NoteLayout {
     const sidebarSourceId = `sidebar-source-${dataIdBase}`;
     const tocSourceId = `toc-source-${dataIdBase}`;
     const contentRootId = `note-content-${dataIdBase}`;
-    const tagsJson = escapeAttr(JSON.stringify(genres));
+    const articleHeaderTags =
+      genres.length > 0 ? ` data-tags="${escapeAttr(JSON.stringify(genres))}"` : '';
     const sidebarItemsJson = escapeAttr(JSON.stringify(sidebarTree));
     const tocHeadingsJson = escapeAttr(JSON.stringify(headings));
     const pagefindTitle = note?.title ? escapeHtml(note.title) : '';
@@ -258,8 +259,7 @@ export class NoteLayout {
             ${pagefindTokenizedDescription.length > 0 ? `<span data-pagefind-weight="3">${pagefindTokenizedDescription}</span>` : ''}
           </div>
           <ui-article-header
-            heading="${heading}"${published}${updated}${status}${source}${license}
-            tags-json="${tagsJson}"
+            heading="${heading}"${published}${updated}${status}${source}${license}${articleHeaderTags}
           ></ui-article-header>
           <div id="${escapeAttr(contentRootId)}" class="prose">
             ${data.content}

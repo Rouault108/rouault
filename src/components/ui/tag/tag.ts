@@ -636,7 +636,7 @@ export class Tag extends LitElement {
 
   /** アイコンスロットのレンダリング */
   private _renderIcon() {
-    const lightDomChildren = Array.from(this.children);
+    const lightDomChildren = this.children ? Array.from(this.children) : [];
     const hasIcon = lightDomChildren.some((child) => child.getAttribute('slot') === 'icon');
     if (!hasIcon) return nothing;
 

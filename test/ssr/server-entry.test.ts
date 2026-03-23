@@ -40,4 +40,22 @@ describe('server-entry', () => {
     expect(rendered).toContain('ページが見つかりません');
     expect(rendered).toContain('/notes/does-not-exist');
   });
+
+  it('ui-article-header に data-tags がある場合、SSR 時にタグを描画できること', async () => {
+    const rendered = await renderCustomElement(
+      'ui-article-header',
+      [
+        { name: 'heading', value: 'SSR Article Header' },
+        { name: 'published', value: '2026-02-01' },
+        { name: 'data-tags', value: '["music","classical"]' },
+      ],
+      '',
+    );
+
+    expect(rendered).toContain('shadowrootmode="open"');
+    expect(rendered).toContain('SSR Article Header');
+    expect(rendered).toContain('music');
+    expect(rendered).toContain('classical');
+    expect(rendered).toContain('data-tags="[');
+  });
 });
