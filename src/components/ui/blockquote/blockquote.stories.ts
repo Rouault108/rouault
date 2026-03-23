@@ -24,6 +24,21 @@ const getSourceCaption = (block: Blockquote): HTMLElement => {
   return caption;
 };
 
+const getSourceSlotElement = (block: Blockquote): HTMLSlotElement | null =>
+  block.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="source"]') ?? null;
+
+const getAssignedSourceElements = (block: Blockquote): Element[] => {
+  const slot = getSourceSlotElement(block);
+  if (!slot) throw new Error('source slot 要素が見つかりません');
+  return slot.assignedElements({ flatten: true });
+};
+
+const getSourceFallbackText = (block: Blockquote): string => {
+  const cite = block.shadowRoot?.querySelector<HTMLElement>('figcaption.source cite');
+  if (!cite) throw new Error('figcaption.source cite が見つかりません');
+  return cite.textContent.replace(/\s+/g, ' ').trim();
+};
+
 const readCssText = (styles: unknown): string => String(styles);
 
 const meta: Meta<Blockquote> = {
@@ -34,13 +49,16 @@ const meta: Meta<Blockquote> = {
     docs: {
       description: {
         component: `
-引用文のためのコンポーネントです。
+	引用本文を意味要素として表現するコンポーネントです。
 
-- 出典なし: \`blockquote\` 単体
-- 出典あり: \`figure > blockquote + figcaption > cite\`
-- 状態: \`variant="default" | "nested"\`
-- 属性: \`cite\`（引用元URL）, \`quote-lang\`（引用文の言語）
-        `,
+	- 出典なし: \`blockquote\` 単体
+	- 出典あり: \`figure > blockquote + figcaption > cite\`
+	- 状態: \`variant="default" | "nested"\`
+	- \`source\`: 簡易テキスト出典
+	- \`slot="source"\`: 優先可視出典
+	- \`cite\`: 機械可読 URL
+	- \`quote-lang\`: 引用本文言語
+	        `,
       },
     },
   },
@@ -54,17 +72,17 @@ const meta: Meta<Blockquote> = {
     source: {
       control: 'text',
       table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
-      description: '出典テキスト（空なら figcaption を出さない）',
+      description: '簡易テキスト出典。trim 後に空なら未指定として扱う',
     },
     cite: {
       control: 'text',
       table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
-      description: 'blockquote の cite 属性',
+      description: '機械可読な引用元 URL。trim 後に非空の場合のみ blockquote[cite] に反映する',
     },
     quoteLang: {
       control: 'text',
       table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
-      description: 'blockquote の lang 属性',
+      description: '引用本文言語。未指定時のみ host の lang を参照する',
     },
   },
 };
@@ -194,7 +212,9 @@ export const VariantStateMatrix: Story = {
  * Source Contract:
  * - cite 属性の伝播
  * - quote-lang / lang の伝播
- * - source プロパティと source スロットの両対応
+ * - source は簡易テキスト出典
+ * - slot="source" は優先可視出典
+ * - 無効な source slot は source へフォールバックする
  */
 export const SourceContract: Story = {
   render: () => html`
@@ -212,12 +232,56 @@ export const SourceContract: Story = {
         <p>設計は見えないところにこそ現れる。</p>
         <span slot="source">著者, <em>Interview</em></span>
       </ui-blockquote>
+
+      <ui-blockquote
+        id="source-slot-priority-contract"
+        source="Fallback Source"
+        cite="https://example.com/priority"
+      >
+        <p>可視出典は優先入力を採用する。</p>
+        <span slot="source">Visible Source, <em>Priority Slot</em></span>
+      </ui-blockquote>
+
+      <ui-blockquote
+        id="source-empty-slot-fallback-contract"
+        source="Fallback Source From Empty Slot"
+      >
+        <p>空白のみの source slot は可視出典として扱わない。</p>
+        <span slot="source"> </span>
+      </ui-blockquote>
+
+      <ui-blockquote
+        id="source-decorative-slot-fallback-contract"
+        source="Fallback Source From Decorative Slot"
+      >
+        <p>文字情報を持たない装飾のみの source slot は可視出典として扱わない。</p>
+        <span slot="source" aria-hidden="true">
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+            <circle cx="8" cy="8" r="6"></circle>
+          </svg>
+        </span>
+      </ui-blockquote>
     </div>
   `,
   play: async ({ canvasElement }) => {
     const sourceProp = getBlockquote(canvasElement, 'source-prop-contract');
     const sourceSlot = getBlockquote(canvasElement, 'source-slot-contract');
-    await Promise.all([sourceProp.updateComplete, sourceSlot.updateComplete]);
+    const sourceSlotPriority = getBlockquote(canvasElement, 'source-slot-priority-contract');
+    const sourceEmptySlotFallback = getBlockquote(
+      canvasElement,
+      'source-empty-slot-fallback-contract',
+    );
+    const sourceDecorativeSlotFallback = getBlockquote(
+      canvasElement,
+      'source-decorative-slot-fallback-contract',
+    );
+    await Promise.all([
+      sourceProp.updateComplete,
+      sourceSlot.updateComplete,
+      sourceSlotPriority.updateComplete,
+      sourceEmptySlotFallback.updateComplete,
+      sourceDecorativeSlotFallback.updateComplete,
+    ]);
 
     const propQuote = getQuoteRoot(sourceProp);
     if (propQuote.getAttribute('cite') !== 'https://example.com/compiler-talk') {
@@ -226,11 +290,10 @@ export const SourceContract: Story = {
     if (propQuote.getAttribute('lang') !== 'en') {
       throw new Error('quote-lang は blockquote.lang に反映される必要があります');
     }
-    const propSource = sourceProp.shadowRoot?.querySelector('figcaption.source cite');
-    if (!propSource) {
-      throw new Error('source プロパティケースの figcaption.source cite が見つかりません');
+    if (getSourceSlotElement(sourceProp)) {
+      throw new Error('source のみのケースでは source slot を描画してはいけません');
     }
-    if (!propSource.textContent.includes('Grace Hopper')) {
+    if (!getSourceFallbackText(sourceProp).includes('Grace Hopper')) {
       throw new Error('source プロパティ値が figcaption > cite に反映されていません');
     }
 
@@ -238,18 +301,55 @@ export const SourceContract: Story = {
     if (slotQuote.getAttribute('cite') !== 'https://example.com/interview') {
       throw new Error('source slot ケースでも cite 属性を保持する必要があります');
     }
-    const sourceSlotElement =
-      sourceSlot.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="source"]');
-    if (!sourceSlotElement) {
-      throw new Error('source slot 要素が見つかりません');
-    }
-    const assignedSource = sourceSlotElement.assignedElements({ flatten: true }).at(0);
+    const sourceSlotElements = getAssignedSourceElements(sourceSlot);
+    const assignedSource = sourceSlotElements.at(0);
     if (!assignedSource) {
       throw new Error('source slot に要素が割り当てられていません');
+    }
+    if ((getSourceSlotElement(sourceSlot)?.textContent ?? '').trim() !== '') {
+      throw new Error('source slot 専用ケースでフォールバック本文を混在させてはいけません');
     }
     const slotSourceEm = assignedSource.querySelector('em');
     if (slotSourceEm?.textContent.trim() !== 'Interview') {
       throw new Error('source slot のリッチテキストが cite 内に保持されていません');
+    }
+
+    const priorityQuote = getQuoteRoot(sourceSlotPriority);
+    if (priorityQuote.getAttribute('cite') !== 'https://example.com/priority') {
+      throw new Error('優先 source slot ケースでも cite 属性を保持する必要があります');
+    }
+    const prioritySlot = getSourceSlotElement(sourceSlotPriority);
+    if (!prioritySlot) {
+      throw new Error('優先 source slot ケースでは slot[name="source"] が必要です');
+    }
+    if (prioritySlot.textContent.trim() !== '') {
+      throw new Error('有効な source slot がある場合、source は可視出典として混在してはいけません');
+    }
+    const priorityAssignedSource = prioritySlot.assignedElements({ flatten: true }).at(0);
+    if (!(priorityAssignedSource instanceof HTMLElement)) {
+      throw new Error('優先 source slot に要素が割り当てられていません');
+    }
+    if (!priorityAssignedSource.textContent.includes('Visible Source')) {
+      throw new Error('同時指定時は source slot の内容を優先表示する必要があります');
+    }
+    if (priorityAssignedSource.textContent.includes('Fallback Source')) {
+      throw new Error('同時指定時に source プロパティの文字列を可視出典へ昇格させてはいけません');
+    }
+
+    if (getSourceSlotElement(sourceEmptySlotFallback)) {
+      throw new Error('空白のみの source slot は描画経路として採用してはいけません');
+    }
+    if (getSourceFallbackText(sourceEmptySlotFallback) !== 'Fallback Source From Empty Slot') {
+      throw new Error('空白のみの source slot では source を可視出典として使う必要があります');
+    }
+
+    if (getSourceSlotElement(sourceDecorativeSlotFallback)) {
+      throw new Error('装飾のみの source slot は描画経路として採用してはいけません');
+    }
+    if (
+      getSourceFallbackText(sourceDecorativeSlotFallback) !== 'Fallback Source From Decorative Slot'
+    ) {
+      throw new Error('装飾のみの source slot では source を可視出典として使う必要があります');
     }
   },
 };
@@ -290,6 +390,7 @@ export const FocusContract: Story = {
  * 事故が多い境界条件:
  * - 不正 variant のフォールバック
  * - 空白 source / 空白 source slot の抑止
+ * - 装飾のみ source slot の抑止
  * - host の lang フォールバック
  * - 空白 cite の無効化
  */
@@ -308,16 +409,27 @@ export const BoundaryConditions: Story = {
         <p>空白だけの source slot は無視する。</p>
         <span slot="source"> </span>
       </ui-blockquote>
+
+      <ui-blockquote id="boundary-decorative-source-slot">
+        <p>装飾だけの source slot は無視する。</p>
+        <span slot="source" aria-hidden="true">
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+            <circle cx="8" cy="8" r="6"></circle>
+          </svg>
+        </span>
+      </ui-blockquote>
     </div>
   `,
   play: async ({ canvasElement }) => {
     const invalidVariant = getBlockquote(canvasElement, 'boundary-invalid-variant');
     const hostLang = getBlockquote(canvasElement, 'boundary-host-lang');
     const emptySourceSlot = getBlockquote(canvasElement, 'boundary-empty-source-slot');
+    const decorativeSourceSlot = getBlockquote(canvasElement, 'boundary-decorative-source-slot');
     await Promise.all([
       invalidVariant.updateComplete,
       hostLang.updateComplete,
       emptySourceSlot.updateComplete,
+      decorativeSourceSlot.updateComplete,
     ]);
 
     const invalidQuote = getQuoteRoot(invalidVariant);
@@ -341,6 +453,10 @@ export const BoundaryConditions: Story = {
 
     if (emptySourceSlot.shadowRoot?.querySelector('figure')) {
       throw new Error('空白のみの source slot は figcaption 描画条件に含めてはいけません');
+    }
+
+    if (decorativeSourceSlot.shadowRoot?.querySelector('figure')) {
+      throw new Error('装飾のみの source slot は figcaption 描画条件に含めてはいけません');
     }
   },
 };

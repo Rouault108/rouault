@@ -123,21 +123,29 @@ export class Blockquote extends LitElement {
     return hostLang === '' ? undefined : hostLang;
   }
 
-  private get _hasSourceSlot(): boolean {
+  private get _hasVisibleSourceSlot(): boolean {
     const children =
-      typeof (this as { children?: Iterable<Element> }).children === 'object'
-        ? Array.from((this as { children?: Iterable<Element> }).children ?? [])
+      'children' in this
+        ? Array.from((this as typeof this & { children?: ArrayLike<Element> }).children ?? [])
         : [];
 
     return children.some((element) => {
       if (!(element instanceof HTMLElement)) return false;
       if (element.getAttribute('slot') !== 'source') return false;
-      return element.textContent.trim().length > 0;
+      return (element.textContent?.trim() ?? '').length > 0;
     });
   }
 
   private get _hasSource(): boolean {
-    return this._resolvedSourceText.length > 0 || this._hasSourceSlot;
+    return this._resolvedSourceText.length > 0 || this._hasVisibleSourceSlot;
+  }
+
+  private _renderSourceContent() {
+    if (this._hasVisibleSourceSlot) {
+      return html`<slot name="source"></slot>`;
+    }
+
+    return this._resolvedSourceText;
   }
 
   private _renderQuote() {
@@ -162,9 +170,7 @@ export class Blockquote extends LitElement {
       <figure>
         ${this._renderQuote()}
         <figcaption class="source">
-          <cite>
-            <slot name="source">${this._resolvedSourceText}</slot>
-          </cite>
+          <cite>${this._renderSourceContent()}</cite>
         </figcaption>
       </figure>
     `;
