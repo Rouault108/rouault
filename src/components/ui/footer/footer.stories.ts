@@ -1,26 +1,38 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import {
-  FOOTER_DEFAULT_APP_NAME,
-  FOOTER_DEFAULT_REVISION,
+  FOOTER_DEFAULT_NAV_LABEL,
+  FOOTER_DOCUMENT_CSS,
   FOOTER_DOCUMENT_STYLE_ID,
-  FOOTER_SCOPE_SELECTOR,
   ensureFooterDocumentStyles,
   renderFooter,
-  resolveFooterYear,
-  type UiFooterRenderOptions,
+  type FooterRenderOptions,
 } from './footer';
-
-interface FooterStoryArgs {
-  revision?: string;
-  year?: number;
-}
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
     throw new Error(message);
   }
 }
+
+const DEFAULT_OPTIONS: FooterRenderOptions = {
+  id: 'footer-default',
+  meta: {
+    siteName: 'Rouault',
+    siteUrl: '/',
+    copyrightText: '© 2026 Ruo Miyata. CC BY 4.0.',
+    buildLabel: 'build 4a2b9f1',
+  },
+  links: [
+    { href: '/about', label: 'このサイトについて' },
+    { href: '/contact', label: 'お問い合わせ' },
+  ],
+};
+
+const renderStoryFooter = (options: FooterRenderOptions) => {
+  ensureFooterDocumentStyles();
+  return renderFooter(options);
+};
 
 const getFooter = (canvasElement: Element, id: string): HTMLElement => {
   const footer = canvasElement.querySelector<HTMLElement>(`#${id}`);
@@ -41,55 +53,15 @@ const getCssText = (): string => {
   return styleTag.textContent;
 };
 
-const getFooterParts = (footer: HTMLElement) => {
-  const content = footer.querySelector<HTMLElement>(':scope > .footer-content');
-  const nav = footer.querySelector<HTMLElement>(':scope > .footer-content > .footer-nav');
-  const navLinks = footer.querySelectorAll<HTMLAnchorElement>(
-    ':scope > .footer-content > .footer-nav > .footer-link',
-  );
-  const meta = footer.querySelector<HTMLElement>(':scope > .footer-content > .footer-meta');
-  const copyright = footer.querySelector<HTMLElement>(
-    ':scope > .footer-content > .footer-meta > .copyright',
-  );
-  const copyrightIcon = footer.querySelector<HTMLElement>(
-    ':scope > .footer-content > .footer-meta > .copyright > iconify-icon',
-  );
-  const separators = footer.querySelectorAll<HTMLElement>(':scope .separator');
-  const revision = footer.querySelector<HTMLElement>(
-    ':scope > .footer-content > .footer-meta > .revision',
-  );
-
-  assert(!!content, '.footer-content が見つかりません');
-  assert(!!nav, '.footer-nav が見つかりません');
-  assert(navLinks.length === 2, '.footer-link は 2 件必要です');
-  assert(!!meta, '.footer-meta が見つかりません');
-  assert(!!copyright, '.copyright が見つかりません');
-  assert(!!copyrightIcon, '.copyright icon が見つかりません');
-  assert(separators.length === 2, '.separator は 2 件必要です');
-  assert(!!revision, '.revision が見つかりません');
-
-  return { content, nav, navLinks, meta, copyright, copyrightIcon, separators, revision };
+const getInner = (footer: HTMLElement): HTMLElement => {
+  const inner = footer.querySelector<HTMLElement>(':scope > .ui-footer__inner');
+  if (!(inner instanceof HTMLElement)) {
+    throw new Error('.ui-footer__inner が見つかりません');
+  }
+  return inner;
 };
 
-const parseYear = (copyright: string): number | null => {
-  const matched = /(\d{1,4})\s+/u.exec(copyright);
-  if (!matched?.[1]) return null;
-  const parsed = Number.parseInt(matched[1], 10);
-  return Number.isNaN(parsed) ? null : parsed;
-};
-
-const toNumber = (value: string): number => {
-  const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-};
-
-const buildRenderOptions = (args: FooterStoryArgs): UiFooterRenderOptions => ({
-  id: 'footer-default',
-  ...(typeof args.revision === 'string' ? { revision: args.revision } : {}),
-  ...(typeof args.year === 'number' ? { year: args.year } : {}),
-});
-
-const meta: Meta<FooterStoryArgs> = {
+const meta: Meta = {
   title: 'Components/Footer',
   component: 'footer',
   tags: ['autodocs'],
@@ -98,292 +70,252 @@ const meta: Meta<FooterStoryArgs> = {
     docs: {
       description: {
         component: `
-フッターは Web Component ではなく、ネイティブ \`<footer>\` を使用します。
+フッターは純粋描画の \`renderFooter(options)\` として提供されます。
 
-- DOM: \`.footer-content > .copyright / .separator / .revision\`
-- DOM: \`.footer-content > .footer-nav / .footer-meta\`
-- Navigation: \`/about\` / \`/contact\`
-- Separator: すべて \`aria-hidden="true"\`
-- トークン: \`--bg-default\` / \`--border-ghost\` / \`--font-mono\` / \`--text-xs\`
-- Revision: \`#<short-hash>\`（未定義時は \`#dev\`）
+- 必須入力: \`meta.siteName\` / \`meta.copyrightText\`
+- 任意入力: \`meta.siteUrl\` / \`meta.buildLabel\` / \`links\` / \`a11y.navLabel\`
+- 最小状態では build 領域と nav を描画しません
+- 文書スタイル注入は \`ensureFooterDocumentStyles()\` に分離されています
+- 公開トークン: \`--footer-bg\` / \`--footer-fg\` / \`--footer-border\` など
         `,
       },
     },
   },
-  argTypes: {
-    revision: {
-      control: 'text',
-      description: 'Git short hash。無効値は #dev にフォールバック',
-      table: { type: { summary: 'string | undefined' } },
-    },
-    year: {
-      control: 'number',
-      description: '著作権年。無効値は現在年へフォールバック',
-      table: { type: { summary: 'number | undefined' } },
-    },
-  },
-  render: (args) => html` ${renderFooter(buildRenderOptions(args))} `,
+  render: () => html`${renderStoryFooter(DEFAULT_OPTIONS)}`,
 };
 
 export default meta;
-type Story = StoryObj<FooterStoryArgs>;
+type Story = StoryObj;
 
-/**
- * 基本契約:
- * - ネイティブ footer ランドマークを使用
- * - DOM 構造が仕様どおり
- * - aria-hidden 付きセパレータ
- */
 export const DefaultContract: Story = {
   play: ({ canvasElement }) => {
     const footer = getFooter(canvasElement, 'footer-default');
-    const { content, nav, navLinks, meta, copyright, copyrightIcon, separators, revision } =
-      getFooterParts(footer);
+    const inner = getInner(footer);
+    const metaElement = footer.querySelector<HTMLElement>('.ui-footer__meta');
+    const nav = footer.querySelector<HTMLElement>('nav');
+    const site = footer.querySelector<HTMLElement>('.ui-footer__site');
+    const siteLink = footer.querySelector<HTMLAnchorElement>('.ui-footer__site a');
+    const copyright = footer.querySelector<HTMLElement>('.ui-footer__copyright');
+    const build = footer.querySelector<HTMLElement>('.ui-footer__build');
+    const links = footer.querySelectorAll<HTMLAnchorElement>('nav a');
 
     assert(
       canvasElement.querySelectorAll('footer').length === 1,
       'Default ストーリーでは footer が 1 つのみ存在する必要があります',
     );
-    assert(
-      footer.getAttribute('role') === null,
-      'role 属性を手動で付与せず暗黙 role="contentinfo" を利用する必要があります',
-    );
+    assert(footer.getAttribute('role') === null, 'role 属性は手動付与しません');
     assert(footer.classList.contains('ui-footer'), '.ui-footer クラスが必要です');
+    assert(inner.children.length === 2, '完全状態では meta と nav の 2 領域が必要です');
+    assert(metaElement instanceof HTMLElement, '主要メタ領域が必要です');
+    assert(nav instanceof HTMLElement, 'links がある場合は nav が必要です');
+    assert(site instanceof HTMLElement, 'siteName 領域が必要です');
+    assert(siteLink instanceof HTMLAnchorElement, 'siteUrl がある場合は siteName をリンク化します');
+    assert(copyright instanceof HTMLElement, 'copyright 領域が必要です');
+    assert(build instanceof HTMLElement, 'build 領域が必要です');
+    assert(siteLink.getAttribute('href') === '/', 'siteName の href が不正です');
     assert(
-      nav.getAttribute('aria-label') === 'フッターナビゲーション',
-      'footer-nav には aria-label="フッターナビゲーション" が必要です',
+      copyright.textContent.trim() === DEFAULT_OPTIONS.meta.copyrightText,
+      'copyrightText が不正です',
     );
+    assert(build.textContent.trim() === DEFAULT_OPTIONS.meta.buildLabel, 'buildLabel が不正です');
     assert(
-      content.children.length === 2,
-      '.footer-content 直下は footer-nav / footer-meta の 2 要素である必要があります',
+      nav.getAttribute('aria-label') === FOOTER_DEFAULT_NAV_LABEL,
+      '既定の navLabel が必要です',
     );
-    assert(meta.children.length === 3, '.footer-meta 直下は 3 要素である必要があります');
-    for (const separator of separators) {
-      assert(
-        separator.getAttribute('aria-hidden') === 'true',
-        'separator には aria-hidden="true" が必要です',
-      );
-    }
-    assert(navLinks[0]?.getAttribute('href') === '/about', '/about リンクが必要です');
-    assert(navLinks[1]?.getAttribute('href') === '/contact', '/contact リンクが必要です');
+    assert(links.length === 2, '有効な links が 2 件描画される必要があります');
     assert(
-      revision.textContent.startsWith('#'),
-      'revision は # プレフィックス付きである必要があります',
+      Array.from(links).every((link) => link.getAttribute('target') === null),
+      'target は自動付与しません',
     );
-    assert(
-      copyrightIcon.getAttribute('icon') === 'lucide:copyright',
-      'コピーライト記号は lucide icon を使用する必要があります',
-    );
-    assert(
-      copyrightIcon.getAttribute('aria-hidden') === 'true',
-      'コピーライト icon は aria-hidden="true" である必要があります',
-    );
-
-    const expectedYear = resolveFooterYear();
-    const actualYear = parseYear(copyright.textContent);
-    assert(
-      actualYear === expectedYear,
-      `copyright 年が不正です (期待: ${expectedYear.toString()}, 実際: ${
-        actualYear?.toString() ?? 'null'
-      })`,
-    );
-    assert(
-      copyright.textContent.includes(FOOTER_DEFAULT_APP_NAME),
-      'copyright にアプリ名が含まれていません',
-    );
-    assert(footer.querySelector('[part]') === null, 'footer には part 属性を使用しないでください');
   },
 };
 
-/**
- * 状態マトリクス:
- * - revision: 正常値 / #付き / 無効値フォールバック
- * - year: 明示値 / 無効値フォールバック
- */
-export const RevisionYearStateMatrix: Story = {
+export const MinimalState: Story = {
+  render: () =>
+    html`${renderStoryFooter({
+      id: 'footer-minimal',
+      meta: {
+        siteName: 'Rouault',
+        copyrightText: '© 2026 Ruo Miyata.',
+      },
+    })}`,
+  play: ({ canvasElement }) => {
+    const footer = getFooter(canvasElement, 'footer-minimal');
+    const metaElement = footer.querySelector<HTMLElement>('.ui-footer__meta');
+    const nav = footer.querySelector('nav');
+    const siteLink = footer.querySelector('.ui-footer__site a');
+    const build = footer.querySelector('.ui-footer__build');
+
+    assert(metaElement instanceof HTMLElement, '最小状態でも主要メタ領域は必要です');
+    assert(nav === null, 'links が無い場合は nav を描画しません');
+    assert(siteLink === null, 'siteUrl が無い場合は siteName をリンク化しません');
+    assert(build === null, 'buildLabel が無い場合は build 領域を描画しません');
+  },
+};
+
+export const LinkAndBuildVariants: Story = {
   render: () => html`
-    <div style="display: grid; gap: var(--space-4);">
+    <div style="display: grid; gap: var(--space-6);">
       <section>
         <h3 style="margin: 0 0 var(--space-2); font-size: var(--text-sm);">
-          明示 year + 正常 revision
+          siteUrl / buildLabel / links あり
         </h3>
-        ${renderFooter({
-          id: 'footer-state-valid',
-          year: 2031,
-          revision: '4a2b9f1',
-        })}
-      </section>
-
-      <section>
-        <h3 style="margin: 0 0 var(--space-2); font-size: var(--text-sm);"># 付き revision</h3>
-        ${renderFooter({
-          id: 'footer-state-prefixed',
-          year: 2032,
-          revision: '#abc1234',
-        })}
-      </section>
-
-      <section>
-        <h3 style="margin: 0 0 var(--space-2); font-size: var(--text-sm);">
-          無効 revision のフォールバック
-        </h3>
-        ${renderFooter({
-          id: 'footer-state-invalid-revision',
-          year: 2033,
-          revision: 'release-1',
+        ${renderStoryFooter({
+          id: 'footer-variant-full',
+          meta: {
+            siteName: 'Rouault',
+            siteUrl: 'https://rouault.example',
+            copyrightText: '© 2026 Ruo Miyata. CC BY 4.0.',
+            buildLabel: 'release 2026.03.24',
+          },
+          links: [
+            { href: '/license', label: 'ライセンス' },
+            { href: 'mailto:hello@example.com', label: '連絡', external: true },
+            { href: 'javascript:alert(1)', label: 'invalid' },
+            { href: '/ignored', label: '   ' },
+          ],
+          a11y: {
+            navLabel: 'フッター補助導線',
+          },
         })}
       </section>
 
       <section>
         <h3 style="margin: 0 0 var(--space-2); font-size: var(--text-sm);">
-          無効 year のフォールバック
+          siteUrl 無効 / buildLabel なし / links なし
         </h3>
-        ${renderFooter({
-          id: 'footer-state-invalid-year',
-          year: Number.NaN,
-          revision: 'f0e1d2c',
+        ${renderStoryFooter({
+          id: 'footer-variant-minimal',
+          meta: {
+            siteName: 'Rouault',
+            siteUrl: 'javascript:alert(1)',
+            copyrightText: '© 2026 Ruo Miyata.',
+          },
+          links: [],
         })}
       </section>
     </div>
   `,
   play: ({ canvasElement }) => {
-    const currentYear = resolveFooterYear();
-    const cases = [
-      { id: 'footer-state-valid', expectedYear: 2031, expectedRevision: '#4a2b9f1' },
-      { id: 'footer-state-prefixed', expectedYear: 2032, expectedRevision: '#abc1234' },
-      {
-        id: 'footer-state-invalid-revision',
-        expectedYear: 2033,
-        expectedRevision: `#${FOOTER_DEFAULT_REVISION}`,
-      },
-      { id: 'footer-state-invalid-year', expectedYear: currentYear, expectedRevision: '#f0e1d2c' },
-    ] as const;
+    const full = getFooter(canvasElement, 'footer-variant-full');
+    const minimal = getFooter(canvasElement, 'footer-variant-minimal');
+    const fullLinks = full.querySelectorAll<HTMLAnchorElement>('nav a');
+    const fullNav = full.querySelector<HTMLElement>('nav');
+    const fullSiteLink = full.querySelector<HTMLAnchorElement>('.ui-footer__site a');
+    const fullBuild = full.querySelector<HTMLElement>('.ui-footer__build');
+    const minimalSiteLink = minimal.querySelector('.ui-footer__site a');
 
-    for (const testCase of cases) {
-      const footer = getFooter(canvasElement, testCase.id);
-      const parts = getFooterParts(footer);
-      const actualYear = parseYear(parts.copyright.textContent);
-      const actualRevision = parts.revision.textContent.trim();
-
-      assert(
-        actualYear === testCase.expectedYear,
-        `${testCase.id}: year が不正です (期待: ${testCase.expectedYear.toString()}, 実際: ${
-          actualYear?.toString() ?? 'null'
-        })`,
-      );
-      assert(
-        actualRevision === testCase.expectedRevision,
-        `${testCase.id}: revision が不正です (期待: ${testCase.expectedRevision}, 実際: ${
-          actualRevision
-        })`,
-      );
-      assert(
-        Array.from(parts.separators).every(
-          (separator) => separator.getAttribute('aria-hidden') === 'true',
-        ),
-        `${testCase.id}: separator の aria-hidden が失われています`,
-      );
-    }
+    assert(
+      fullSiteLink instanceof HTMLAnchorElement,
+      '有効な siteUrl はリンク化される必要があります',
+    );
+    assert(fullSiteLink.href.includes('https://rouault.example/'), 'siteUrl の href が不正です');
+    assert(fullBuild instanceof HTMLElement, 'buildLabel が描画されていません');
+    assert(
+      fullBuild.textContent.trim() === 'release 2026.03.24',
+      'buildLabel が描画されていません',
+    );
+    assert(
+      fullNav?.getAttribute('aria-label') === 'フッター補助導線',
+      'カスタム navLabel が反映されていません',
+    );
+    assert(fullLinks.length === 2, '無効な links は個別に除外される必要があります');
+    assert(fullLinks[1]?.dataset['external'] === 'true', 'external ヒントが反映されていません');
+    assert(minimalSiteLink === null, '無効な siteUrl ではリンク化しません');
+    assert(minimal.querySelector('nav') === null, 'links が 0 件なら nav を描画しません');
+    assert(
+      minimal.querySelector('.ui-footer__build') === null,
+      'buildLabel が無ければ build 領域を描画しません',
+    );
   },
 };
 
-/**
- * 事故が多い境界条件:
- * - separator opacity の外部上書き
- * - 不正 year/revision のフォールバック
- * - navigation と meta の分離維持
- */
-export const BoundaryConditions: Story = {
+export const AccessibilityContract: Story = {
+  render: () =>
+    html`${renderStoryFooter({
+      id: 'footer-accessibility',
+      meta: {
+        siteName: 'Rouault',
+        siteUrl: '/',
+        copyrightText: '© 2026 Ruo Miyata. CC BY 4.0.',
+      },
+      links: [
+        { href: '/about', label: 'このサイトについて' },
+        { href: '/help', label: 'ヘルプ' },
+      ],
+      a11y: {
+        navLabel: 'フッター内の補助ナビゲーション',
+      },
+    })}`,
+  play: ({ canvasElement }) => {
+    const footer = getFooter(canvasElement, 'footer-accessibility');
+    const inner = getInner(footer);
+    const metaElement = footer.querySelector<HTMLElement>('.ui-footer__meta');
+    const nav = footer.querySelector<HTMLElement>('nav');
+
+    assert(nav instanceof HTMLElement, 'nav が必要です');
+    assert(
+      nav.getAttribute('aria-label') === 'フッター内の補助ナビゲーション',
+      'aria-label が不正です',
+    );
+    assert(metaElement instanceof HTMLElement, '主要メタ領域が必要です');
+    assert(inner.firstElementChild === metaElement, 'DOM 順序は meta が先である必要があります');
+    assert(inner.lastElementChild === nav, 'DOM 順序は nav が後である必要があります');
+    assert(
+      footer.querySelector('[aria-hidden="true"]') === null,
+      '現行契約では装飾要素を持ち込みません',
+    );
+  },
+};
+
+export const TokenContract: Story = {
   render: () => html`
-    <div style="--separator-opacity: 0.62;">
-      ${renderFooter({
-        id: 'footer-boundary',
-        revision: '',
-        year: -10,
+    <div style="--footer-build-opacity: 0.55;">
+      ${renderStoryFooter({
+        id: 'footer-token-contract',
+        meta: {
+          siteName: 'Rouault',
+          siteUrl: '/',
+          copyrightText: '© 2026 Ruo Miyata.',
+          buildLabel: 'build token-check',
+        },
+        links: [{ href: '/about', label: 'About' }],
       })}
     </div>
   `,
   play: ({ canvasElement }) => {
-    const footer = getFooter(canvasElement, 'footer-boundary');
-    const { navLinks, copyright, separators, revision } = getFooterParts(footer);
-    const firstSeparator = separators[0];
-    assert(!!firstSeparator, 'separator が見つかりません');
-
-    const separatorOpacity = toNumber(getComputedStyle(firstSeparator).opacity);
-    assert(
-      Math.abs(separatorOpacity - 0.62) < 0.01,
-      `separator opacity のトークン上書きが反映されていません (実際: ${separatorOpacity.toString()})`,
-    );
-
-    assert(
-      parseYear(copyright.textContent) === resolveFooterYear(),
-      '無効 year は現在年へフォールバックする必要があります',
-    );
-    assert(
-      revision.textContent.trim() === `#${FOOTER_DEFAULT_REVISION}`,
-      '無効 revision は #dev へフォールバックする必要があります',
-    );
-
-    const navLink0 = navLinks[0];
-    const navLink1 = navLinks[1];
-    assert(!!navLink0, '1件目の footer-link が見つかりません');
-    assert(!!navLink1, '2件目の footer-link が見つかりません');
-    assert(
-      navLink0.textContent.includes('このサイトについて'),
-      '1件目の footer-link は「このサイトについて」である必要があります',
-    );
-    assert(
-      navLink1.textContent.includes('お問い合わせ'),
-      '2件目の footer-link は「お問い合わせ」である必要があります',
-    );
-  },
-};
-
-/**
- * トークン/媒体契約:
- * - スタイル注入は 1 回のみ
- * - 必須トークンと媒体クエリを保持
- * - 禁止されたハードコードを含まない
- */
-export const MediaAndTokenContracts: Story = {
-  render: () => html`
-    <div style="display: grid; gap: var(--space-4);">
-      ${renderFooter({ id: 'footer-contract-a' })}
-      ${renderFooter({ id: 'footer-contract-b', revision: '4a2b9f1' })}
-    </div>
-  `,
-  play: () => {
     document.querySelectorAll(`#${FOOTER_DOCUMENT_STYLE_ID}`).forEach((node) => {
       node.remove();
     });
+
+    const renderResult = renderFooter(DEFAULT_OPTIONS);
+    assert(
+      typeof renderResult.strings.length === 'number',
+      'renderFooter は TemplateResult を返す必要があります',
+    );
+    assert(
+      document.querySelectorAll(`#${FOOTER_DOCUMENT_STYLE_ID}`).length === 0,
+      'renderFooter は文書副作用を持ってはいけません',
+    );
 
     ensureFooterDocumentStyles();
     ensureFooterDocumentStyles();
 
     const styleTags = document.querySelectorAll(`#${FOOTER_DOCUMENT_STYLE_ID}`);
-    assert(
-      styleTags.length === 1,
-      `フッタースタイル注入は 1 回である必要があります (実際: ${styleTags.length.toString()} 回)`,
-    );
+    assert(styleTags.length === 1, 'スタイル注入は明示的かつ 1 回である必要があります');
 
     const cssText = getCssText();
     const requiredTokens = [
-      FOOTER_SCOPE_SELECTOR,
-      'var(--bg-default)',
-      'var(--border-width)',
-      'var(--border-ghost)',
-      'var(--font-mono)',
-      'var(--text-xs)',
-      'var(--font-medium)',
-      'var(--fg-muted)',
-      'var(--tracking-wide)',
-      'var(--header-height)',
-      'var(--bp-xl)',
-      'var(--space-2)',
-      'var(--space-3)',
-      'var(--space-4)',
-      'var(--space-8)',
-      '--separator-opacity',
+      '--footer-bg',
+      '--footer-fg',
+      '--footer-fg-muted',
+      '--footer-border',
+      '--footer-border-width',
+      '--footer-max-inline-size',
+      '--footer-padding-block',
+      '--footer-padding-inline',
+      '--footer-gap',
+      '--footer-build-opacity',
       '@media (forced-colors: active)',
       '@media print',
       'CanvasText',
@@ -394,72 +326,29 @@ export const MediaAndTokenContracts: Story = {
       assert(cssText.includes(token), `必須契約が不足しています: ${token}`);
     }
 
-    const forbidden = ['#000', '12px', '48px', 'opacity: 0.3', 'padding-inline: 16px'] as const;
-    for (const snippet of forbidden) {
-      assert(!cssText.includes(snippet), `ハードコード値が混入しています: ${snippet}`);
-    }
-  },
-};
+    assert(!cssText.includes('prefers-color-scheme'), 'ダークモード分岐はトークン解決へ委譲します');
+    assert(FOOTER_DOCUMENT_CSS.includes('.ui-footer__build'), 'build 領域のトークン契約が必要です');
 
-/**
- * Dark Mode 契約:
- * - prefers-color-scheme 分岐ではなくトークン参照で追従
- * - light / dark 両面で境界線が維持される
- */
-export const DarkModeTokenContract: Story = {
-  render: () => html`
-    <div style="display: grid; gap: var(--space-4);">
-      <div style="background: var(--bg-default); color: var(--fg-default);">
-        ${renderFooter({ id: 'footer-dark-light', revision: 'a1b2c3d' })}
-      </div>
-      <div
-        style="
-          color-scheme: dark;
-          background: oklch(12% 0.02 250);
-          color: oklch(92% 0.01 250);
-        "
-      >
-        ${renderFooter({ id: 'footer-dark-dark', revision: 'e4f5a6b' })}
-      </div>
-    </div>
-  `,
-  parameters: {
-    backgrounds: { default: 'dark' },
-  },
-  play: ({ canvasElement }) => {
-    const lightFooter = getFooter(canvasElement, 'footer-dark-light');
-    const darkFooter = getFooter(canvasElement, 'footer-dark-dark');
-
-    const lightStyle = getComputedStyle(lightFooter);
-    const darkStyle = getComputedStyle(darkFooter);
-
+    const footer = getFooter(canvasElement, 'footer-token-contract');
+    const build = footer.querySelector<HTMLElement>('.ui-footer__build');
+    assert(build instanceof HTMLElement, 'build 領域が必要です');
+    const buildOpacity = Number.parseFloat(getComputedStyle(build).opacity);
     assert(
-      lightStyle.borderTopStyle === 'solid' && darkStyle.borderTopStyle === 'solid',
-      'Light/Dark の両方で border-top: solid を維持する必要があります',
-    );
-    assert(
-      lightStyle.backgroundColor !== 'transparent' && darkStyle.backgroundColor !== 'transparent',
-      '背景色はトークン解決された実色である必要があります',
-    );
-    assert(
-      lightStyle.color !== 'transparent' && darkStyle.color !== 'transparent',
-      '文字色はトークン解決された実色である必要があります',
-    );
-
-    const cssText = getCssText();
-    assert(
-      !cssText.includes('prefers-color-scheme'),
-      'footer は prefers-color-scheme 分岐ではなくトークン参照で追従する必要があります',
+      Math.abs(buildOpacity - 0.55) < 0.01,
+      '公開トークンで build opacity を上書きできる必要があります',
     );
   },
 };
 
-/**
- * Forced Colors 契約:
- * - CanvasText ボーダー定義を保持
- */
 export const ForcedColorsContract: Story = {
-  render: () => html`${renderFooter({ id: 'footer-forced-colors' })}`,
+  render: () =>
+    html`${renderStoryFooter({
+      id: 'footer-forced-colors',
+      meta: {
+        siteName: 'Rouault',
+        copyrightText: '© 2026 Ruo Miyata.',
+      },
+    })}`,
   play: ({ canvasElement }) => {
     const footer = getFooter(canvasElement, 'footer-forced-colors');
     const cssText = getCssText();
@@ -468,27 +357,37 @@ export const ForcedColorsContract: Story = {
       cssText.includes('@media (forced-colors: active)'),
       'forced-colors メディアクエリが必要です',
     );
-    assert(cssText.includes('CanvasText'), 'forced-colors 時の CanvasText ボーダー定義が必要です');
+    assert(cssText.includes('CanvasText'), 'forced-colors 時の system color が必要です');
 
     if (window.matchMedia('(forced-colors: active)').matches) {
       const style = getComputedStyle(footer);
       assert(
         style.borderTopStyle === 'solid',
-        'forced-colors 有効時も border-top の構造が維持される必要があります',
+        'forced-colors でも border-top の構造を維持する必要があります',
+      );
+      assert(
+        style.color !== 'transparent',
+        'forced-colors でも主要文字が判読可能である必要があります',
       );
     }
   },
 };
 
-/**
- * Print 契約:
- * - 印刷時に footer 非表示
- */
-export const PrintContract: Story = {
-  render: () => html`${renderFooter({ id: 'footer-print-contract' })}`,
+export const PrintPolicyContract: Story = {
+  render: () =>
+    html`${renderStoryFooter({
+      id: 'footer-print-policy',
+      meta: {
+        siteName: 'Rouault',
+        copyrightText: '© 2026 Ruo Miyata.',
+      },
+    })}`,
   play: () => {
     const cssText = getCssText();
     assert(cssText.includes('@media print'), 'print メディアクエリが必要です');
-    assert(cssText.includes('display: none !important'), 'print 時の display: none が必要です');
+    assert(
+      cssText.includes('display: none !important'),
+      '画面用 footer は印刷時に非表示である必要があります',
+    );
   },
 };

@@ -259,14 +259,26 @@ const renderLightElement = async (
 
   const footer = new LayoutFooter();
   for (const attribute of attributes) {
-    if (attribute.name === 'revision') {
-      footer.revision = attribute.value;
+    if (attribute.name === 'footer-id') {
+      footer.footerId = attribute.value;
     }
-    if (attribute.name === 'year') {
-      const parsed = Number.parseInt(attribute.value, 10);
-      if (Number.isFinite(parsed)) {
-        footer.year = parsed;
-      }
+    if (attribute.name === 'site-name') {
+      footer.siteName = attribute.value;
+    }
+    if (attribute.name === 'site-url') {
+      footer.siteUrl = attribute.value;
+    }
+    if (attribute.name === 'copyright-text') {
+      footer.copyrightText = attribute.value;
+    }
+    if (attribute.name === 'build-label') {
+      footer.buildLabel = attribute.value;
+    }
+    if (attribute.name === 'nav-label') {
+      footer.navLabel = attribute.value;
+    }
+    if (attribute.name === 'links-json') {
+      footer.linksJson = attribute.value;
     }
   }
 

@@ -59,11 +59,11 @@ export const Default: Story = {
                       に従って落ち着いた幅に収まります。
                     </p>
                     <p style="margin: 0;">
-                      Footer は build revision と年を静かに示し、視線の終端を整えます。
+                      Footer は本文の終端でメタ情報と補助導線を静かに整列させます。
                     </p>
                   </div>
                 </main>
-                <layout-footer revision="abcdef1" year="2026"></layout-footer>
+                <layout-footer build-label="build abcdef1"></layout-footer>
               </div>
             </div>
           `,
