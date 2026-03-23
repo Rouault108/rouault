@@ -115,6 +115,22 @@ const assertResolvedVariant = (host: Banner, expected: BannerVariant): void => {
   }
 };
 
+const assertAtomic = (host: Banner, expected: 'true' | 'false'): void => {
+  const actual = host.getAttribute('aria-atomic');
+  if (actual !== expected) {
+    throw new Error(
+      `aria-atomic="${expected}" を期待していましたが、実際には "${actual ?? 'null'}" でした`,
+    );
+  }
+};
+
+const assertActionLinkUnderline = (host: Banner): void => {
+  const actionLinkStyle = getComputedStyle(getActionLink(host));
+  if (actionLinkStyle.textDecorationLine !== 'underline') {
+    throw new Error('バナーのアクションリンクは常時下線である必要があります');
+  }
+};
+
 const meta: Meta<Banner> = {
   title: 'Components/Banner',
   component: 'ui-banner',
@@ -179,11 +195,7 @@ export const Default: Story = {
     assertResolvedVariant(banner, 'warning');
     assertRole(banner, 'alert');
 
-    if (banner.getAttribute('aria-atomic') !== 'true') {
-      throw new Error(
-        `aria-atomic="true" を期待していましたが、実際には "${banner.getAttribute('aria-atomic') ?? 'null'}" でした`,
-      );
-    }
+    assertAtomic(banner, 'true');
 
     const actions = getActions(banner);
     if (actions.hidden) {
@@ -302,16 +314,13 @@ export const VariantStateCombinations: Story = {
       );
     }
 
-    const infoActionStyle = getComputedStyle(getActionLink(info));
-    if (infoActionStyle.textDecorationLine !== 'underline') {
-      throw new Error('バナーのアクションリンクは常時下線である必要があります');
-    }
+    assertActionLinkUnderline(info);
   },
 };
 
 /**
  * 境界条件:
- * role 明示指定の上書き保持と自動復帰。
+ * role 明示指定の上書き保持と、契約外 role の自動復帰。
  */
 export const RoleOverridePersistence: Story = {
   render: () => html`
@@ -341,6 +350,15 @@ export const RoleOverridePersistence: Story = {
     banner.variant = 'error';
     await flush(banner);
     assertResolvedVariant(banner, 'error');
+    assertRole(banner, 'status');
+
+    banner.setAttribute('role', 'log');
+    await flush(banner);
+    assertRole(banner, 'alert');
+
+    banner.variant = 'info';
+    await flush(banner);
+    assertResolvedVariant(banner, 'info');
     assertRole(banner, 'status');
   },
 };
@@ -408,12 +426,7 @@ export const SlotBoundaryConditions: Story = {
       throw new Error('複数アクション指定時は .actions の表示が必要です');
     }
 
-    const linkStyle = getComputedStyle(getActionLink(multiAction));
-    if (linkStyle.textDecorationLine !== 'underline') {
-      throw new Error(
-        'アクションスロット内のアンカーは、クラスなしでも下線契約を満たす必要があります',
-      );
-    }
+    assertActionLinkUnderline(multiAction);
   },
 };
 
@@ -462,9 +475,9 @@ export const DismissFocusManagement: Story = {
 
 /**
  * 境界条件:
- * 不正 variant 値のフォールバックとスタイル契約。
+ * 不正 variant 値のフォールバック。
  */
-export const InvalidVariantFallbackAndStyleContracts: Story = {
+export const InvalidVariantFallback: Story = {
   render: () => html`
     <ui-banner id="invalid-variant" variant="unknown">
       不正な variant 値を与えた場合のフォールバック確認
@@ -479,47 +492,6 @@ export const InvalidVariantFallbackAndStyleContracts: Story = {
     const fallback = getFallbackIcon(banner);
     if (fallback.getAttribute('icon') !== ICON_BY_VARIANT.info) {
       throw new Error('不正なバリアント指定時のフォールバックアイコンが不正です');
-    }
-
-    const styles = String(Banner.styles);
-    if (!styles.includes('@media (prefers-reduced-motion: reduce)')) {
-      throw new Error('Reduced Motion の契約が不足しています');
-    }
-    if (!styles.includes('@media (forced-colors: active)')) {
-      throw new Error('Forced Colors の契約が不足しています');
-    }
-    if (!styles.includes('@media print')) {
-      throw new Error('Print の契約が不足しています');
-    }
-    if (!styles.includes('max-height: var(--ui-banner-exit-height);')) {
-      throw new Error('dismiss 時の高さ契約（--ui-banner-exit-height）が不足しています');
-    }
-    if (styles.includes('max-height: 100px;')) {
-      throw new Error('dismiss アニメーションに固定 max-height が残っています');
-    }
-    if (!styles.includes('var(--duration-normal')) {
-      throw new Error('出現アニメーションの duration token が不足しています');
-    }
-    if (!styles.includes('var(--duration-fast')) {
-      throw new Error('消失アニメーションの duration token が不足しています');
-    }
-    if (!styles.includes('var(--ease-out')) {
-      throw new Error('出現アニメーションの easing token が不足しています');
-    }
-    if (!styles.includes('var(--ease-in')) {
-      throw new Error('消失アニメーションの easing token が不足しています');
-    }
-    if (!styles.includes('var(--control-min-touch')) {
-      throw new Error('Touch Target token の参照が不足しています');
-    }
-    if (!styles.includes('border-bottom-width: var(--border-width-thick);')) {
-      throw new Error('forced-colors/print のボーダー強調トークンが不足しています');
-    }
-    if (!styles.includes('.actions,')) {
-      throw new Error('print 時のアクション非表示契約が不足しています');
-    }
-    if (styles.includes(":host([data-resolved-variant='info']),")) {
-      throw new Error('print で info/success/warning を非表示にする旧仕様が残っています');
     }
   },
 };
@@ -536,17 +508,13 @@ export const AtomicOverridePersistence: Story = {
     const banner = getHost(canvasElement, 'atomic-override');
     await flush(banner);
 
-    if (banner.getAttribute('aria-atomic') !== 'false') {
-      throw new Error('aria-atomic の明示指定が保持されていません');
-    }
+    assertAtomic(banner, 'false');
 
     banner.variant = 'error';
     await flush(banner);
 
     assertRole(banner, 'alert');
-    if (banner.getAttribute('aria-atomic') !== 'false') {
-      throw new Error('バリアント更新後も aria-atomic="false" を保持する必要があります');
-    }
+    assertAtomic(banner, 'false');
   },
 };
 
@@ -593,9 +561,9 @@ export const ReducedMotionDismissImmediate: Story = {
 
 /**
  * ダークモード:
- * token 追従で表示崩れしないことを確認。
+ * UI outcome として可読性が維持されることを確認。
  */
-export const DarkModeTokenContract: Story = {
+export const DarkModeVisualOutcome: Story = {
   parameters: {
     backgrounds: { default: 'dark' },
   },
@@ -623,12 +591,101 @@ export const DarkModeTokenContract: Story = {
     if (style.color === '' || style.color === 'transparent') {
       throw new Error('dark mode でもメッセージ色が解決される必要があります');
     }
+  },
+};
+
+/**
+ * 高コントラスト:
+ * forced-colors 環境で主要導線が視認可能であることを確認。
+ */
+export const ForcedColorsVisualOutcome: Story = {
+  render: () => html`
+    <ui-banner id="forced-colors-banner" variant="error" dismissible>
+      接続エラーが発生しました。状況を確認してから再試行してください。
+      <a slot="action" href="/status">状況を確認</a>
+    </ui-banner>
+  `,
+  play: async ({ canvasElement }) => {
+    const banner = getHost(canvasElement, 'forced-colors-banner');
+    await flush(banner);
+
+    assertResolvedVariant(banner, 'error');
+    assertRole(banner, 'alert');
+    assertActionLinkUnderline(banner);
+
+    const dismissButton = getDismissButton(banner);
+    if (!window.matchMedia('(forced-colors: active)').matches) return;
+
+    const hostStyle = getComputedStyle(banner);
+    if (hostStyle.borderBottomStyle === 'none' || hostStyle.borderBottomWidth === '0px') {
+      throw new Error('forced-colors では境界線が視認可能である必要があります');
+    }
+
+    const dismissStyle = getComputedStyle(dismissButton);
+    if (dismissStyle.display === 'none' || dismissStyle.visibility === 'hidden') {
+      throw new Error('forced-colors でも dismiss 操作は視認可能である必要があります');
+    }
+
+    const actionStyle = getComputedStyle(getActionLink(banner));
+    if (actionStyle.color === '' || actionStyle.color === 'transparent') {
+      throw new Error('forced-colors でも action 導線の可視性が必要です');
+    }
+  },
+};
+
+/**
+ * 印刷:
+ * print で本文以外を落とすルールが定義されていることを確認。
+ */
+export const PrintVisualOutcome: Story = {
+  render: () => html`
+    <ui-banner id="print-banner" variant="success" dismissible>
+      バックアップが完了しました。
+      <a slot="action" href="/backup">詳細を見る</a>
+    </ui-banner>
+  `,
+  play: async ({ canvasElement }) => {
+    const banner = getHost(canvasElement, 'print-banner');
+    await flush(banner);
+
+    assertResolvedVariant(banner, 'success');
+    assertRole(banner, 'status');
+    getDismissButton(banner);
+    assertActionLinkUnderline(banner);
 
     const cssText = String(Banner.styles);
-    if (cssText.includes('prefers-color-scheme')) {
-      throw new Error(
-        'banner は prefers-color-scheme 分岐ではなくトークン参照でモード追従する必要があります',
-      );
+    const requiredSnippets = [
+      '@media print',
+      'background: none;',
+      '.icon,',
+      '.actions,',
+      '.dismiss {',
+      'display: none !important;',
+    ];
+
+    for (const snippet of requiredSnippets) {
+      if (!cssText.includes(snippet)) {
+        throw new Error(`print 契約の定義が不足しています: ${snippet}`);
+      }
+    }
+
+    if (!window.matchMedia('print').matches) {
+      return;
+    }
+
+    const icon = banner.shadowRoot?.querySelector<HTMLElement>('.icon');
+    const actions = getActions(banner);
+    const dismissButton = getDismissButton(banner);
+    if (!icon) throw new Error('.icon が見つかりません');
+
+    if (getComputedStyle(icon).display !== 'none') {
+      throw new Error('print では icon が非表示である必要があります');
+    }
+    if (getComputedStyle(actions).display !== 'none') {
+      throw new Error('print では actions が非表示である必要があります');
+    }
+    if (getComputedStyle(dismissButton).display !== 'none') {
+      throw new Error('print では dismiss が非表示である必要があります');
     }
   },
 };

@@ -12,6 +12,7 @@ interface BannerVariantConfig {
 }
 
 const VALID_VARIANTS = new Set<BannerVariant>(['info', 'warning', 'error', 'success']);
+const VALID_ROLES = new Set<BannerRole>(['status', 'alert']);
 const DISMISS_LABEL = '通知を閉じる';
 
 const FOCUSABLE_SELECTOR =
@@ -35,8 +36,6 @@ const VARIANT_CONFIG: Record<BannerVariant, BannerVariantConfig> = {
     role: 'status',
   },
 };
-
-const normalizeText = (value: string): string => value.replace(/\s+/g, ' ').trim();
 
 @customElement('ui-banner')
 export class Banner extends LitElement {
@@ -283,12 +282,8 @@ export class Banner extends LitElement {
     super.connectedCallback();
     this._syncResolvedVariantAttribute();
     this._ensureAtomic();
-
-    if (this.getAttribute('role') !== null) {
-      this._roleExplicitlySet = true;
-    } else {
-      this._applyAutoRole();
-    }
+    this._syncRoleAttributeState();
+    this._syncActionStateFromLightDom();
   }
 
   override disconnectedCallback(): void {
@@ -299,21 +294,10 @@ export class Banner extends LitElement {
     }
   }
 
-  override firstUpdated(): void {
-    this._syncActionSlotState();
-  }
-
   override attributeChangedCallback(name: string, old: string | null, value: string | null): void {
     super.attributeChangedCallback(name, old, value);
     if (name !== 'role' || this._isApplyingRoleAttribute) return;
-
-    if (value === null) {
-      this._roleExplicitlySet = false;
-      this._applyAutoRole();
-      return;
-    }
-
-    this._roleExplicitlySet = true;
+    this._syncRoleAttributeState();
   }
 
   protected override updated(changedProperties: PropertyValues<this>): void {
@@ -350,23 +334,37 @@ export class Banner extends LitElement {
     this._isApplyingRoleAttribute = false;
   }
 
-  private _syncActionSlotState(): void {
-    const slot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="action"]');
-    if (!slot) return;
-    this._syncActionSlot(slot);
+  private _syncRoleAttributeState(): void {
+    const currentRole = this.getAttribute('role');
+
+    if (currentRole === null) {
+      this._roleExplicitlySet = false;
+      this._applyAutoRole();
+      return;
+    }
+
+    if (VALID_ROLES.has(currentRole as BannerRole)) {
+      this._roleExplicitlySet = true;
+      return;
+    }
+
+    this._roleExplicitlySet = false;
+    this._applyAutoRole();
+  }
+
+  private _syncActionStateFromLightDom(): void {
+    const children =
+      'children' in this
+        ? Array.from((this as typeof this & { children?: ArrayLike<Element> }).children ?? [])
+        : [];
+
+    this._hasActions = children.some(
+      (element) => element.getAttribute('slot') === 'action',
+    );
   }
 
   private _syncActionSlot(slot: HTMLSlotElement): void {
-    const hasElements = slot.assignedElements({ flatten: true }).length > 0;
-    const hasText =
-      normalizeText(
-        slot
-          .assignedNodes({ flatten: true })
-          .map((node) => node.textContent ?? '')
-          .join(' '),
-      ) !== '';
-
-    this._hasActions = hasElements || hasText;
+    this._hasActions = slot.assignedElements({ flatten: true }).length > 0;
   }
 
   private _onActionSlotChange = (event: Event): void => {
@@ -388,7 +386,7 @@ export class Banner extends LitElement {
     const mainTarget = this.ownerDocument.querySelector<HTMLElement>(`main ${FOCUSABLE_SELECTOR}`);
     if (mainTarget) return mainTarget;
 
-    return this.ownerDocument.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+    return null;
   }
 
   private _finalizeDismiss(): void {
@@ -471,6 +469,7 @@ export class Banner extends LitElement {
       ${this.dismissible
         ? html`
             <ui-button
+              class="dismiss"
               type="button"
               variant="ghost"
               size="sm"
