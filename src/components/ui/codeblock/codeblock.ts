@@ -1,9 +1,11 @@
-import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
-import { customElement, property, query } from 'lit/decorators.js';
+import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
+import { customElement, property, query, state } from 'lit/decorators.js';
 import '../../../lib/icons';
 import '../copy-button/copy-button';
 
 type CodeBlockIntent = 'neutral' | 'valid' | 'invalid';
+type CodeBlockCopyMode = 'auto' | 'always' | 'hidden';
+type CodeBlockLayout = 'standalone' | 'inline';
 
 interface IntentMeta {
   readonly label: string;
@@ -12,6 +14,9 @@ interface IntentMeta {
 }
 
 const VALID_INTENTS = new Set<CodeBlockIntent>(['neutral', 'valid', 'invalid']);
+const VALID_COPY_MODES = new Set<CodeBlockCopyMode>(['auto', 'always', 'hidden']);
+const VALID_LAYOUTS = new Set<CodeBlockLayout>(['standalone', 'inline']);
+const FALSE_BOOLEAN_ATTRIBUTE_VALUES = new Set(['false', '0', 'off', 'no']);
 
 const INTENT_META: Record<Exclude<CodeBlockIntent, 'neutral'>, IntentMeta> = {
   valid: {
@@ -42,6 +47,50 @@ const LANGUAGE_LABEL_MAP: Record<string, string> = {
   yaml: 'YAML',
 };
 
+const copyableAttributeConverter = {
+  fromAttribute: (value: string | null): boolean => {
+    if (value === null) {
+      return true;
+    }
+
+    return !FALSE_BOOLEAN_ATTRIBUTE_VALUES.has(value.trim().toLowerCase());
+  },
+  toAttribute: (value: boolean): string | null => (value ? '' : 'false'),
+};
+
+const normalizeLineEndings = (value: string): string => value.replace(/\r\n?/g, '\n');
+
+const parseHighlightLines = (value: string): Set<number> => {
+  const lines = new Set<number>();
+  const tokens = value
+    .split(',')
+    .map((token) => token.trim())
+    .filter((token) => token !== '');
+
+  for (const token of tokens) {
+    const rangeMatch = token.match(/^(\d+)-(\d+)$/);
+    if (rangeMatch) {
+      const start = Number.parseInt(rangeMatch[1] ?? '', 10);
+      const end = Number.parseInt(rangeMatch[2] ?? '', 10);
+      if (!Number.isFinite(start) || !Number.isFinite(end) || start <= 0 || end < start) {
+        continue;
+      }
+
+      for (let index = start; index <= end; index += 1) {
+        lines.add(index);
+      }
+      continue;
+    }
+
+    const single = Number.parseInt(token, 10);
+    if (Number.isFinite(single) && single > 0) {
+      lines.add(single);
+    }
+  }
+
+  return lines;
+};
+
 export const DOCUMENT_STYLE_ID = 'ui-code-block-document-styles';
 export const DOCUMENT_CSS = `/* ============================================================
    <ui-code-block> document styles
@@ -56,7 +105,7 @@ ui-code-block pre {
   font-family: var(--font-mono, monospace);
   font-size: var(--text-sm, 0.8125rem);
   line-height: var(--line-height-none, 1);
-  padding: var(--space-3, 12px);
+  padding: var(--ui-code-surface-padding, var(--ui-code-block-padding, var(--space-3, 12px)));
   overflow-x: auto;
   overflow-y: hidden;
   white-space: pre;
@@ -73,7 +122,8 @@ ui-code-block pre.shiki .line {
   display: block;
 }
 
-ui-code-block pre .line.highlighted {
+ui-code-block pre .line.highlighted,
+ui-code-block pre .line.ui-explicit-highlight {
   background: color-mix(in oklch, var(--bg-highlight-subtle, oklch(96% 0.04 65)) 78%, transparent);
 }
 
@@ -135,8 +185,9 @@ ui-code-block[show-line-numbers] pre .line::before {
   font-variant-numeric: tabular-nums;
 }
 
-ui-code-block pre[data-wrap='true'],
-ui-code-block[data-wrap='true'] pre {
+ui-code-block[wrap] pre,
+ui-code-block[data-wrap='true'] pre,
+ui-code-block pre[data-wrap='true'] {
   white-space: pre-wrap;
   word-wrap: break-word;
 }
@@ -161,47 +212,54 @@ ui-code-block[data-wrap='true'] pre {
 export class CodeBlock extends LitElement {
   static override styles = css`
     :host {
-      /* Breakout: 親からの変数指定があればそちらを優先 */
-      --_ui-code-block-breakout-width-default: calc(100% + var(--space-8, 2rem));
-      --_ui-code-block-breakout-margin-default: var(--space-n4, -1rem);
-
-      /* 表示優先順位: 親CSS変数 > headless > default */
-      --_ui-code-block-header-display: block;
+      --_ui-code-surface-breakout-width-default: calc(100% + var(--space-8, 2rem));
+      --_ui-code-surface-breakout-margin-default: var(--space-n4, -1rem);
+      --_ui-code-header-display: block;
 
       display: block;
-      width: var(--ui-code-block-breakout-width, var(--_ui-code-block-breakout-width-default));
+      width: var(
+        --ui-code-surface-breakout-width,
+        var(--ui-code-block-breakout-width, var(--_ui-code-surface-breakout-width-default))
+      );
       margin-inline: var(
-        --ui-code-block-breakout-margin,
-        var(--_ui-code-block-breakout-margin-default)
+        --ui-code-surface-breakout-margin,
+        var(--ui-code-block-breakout-margin, var(--_ui-code-surface-breakout-margin-default))
       );
     }
 
     @media (min-width: 768px) {
       :host {
-        --_ui-code-block-breakout-width-default: calc(100% + var(--space-16, 4rem));
-        --_ui-code-block-breakout-margin-default: var(--space-n8, -2rem);
+        --_ui-code-surface-breakout-width-default: calc(100% + var(--space-16, 4rem));
+        --_ui-code-surface-breakout-margin-default: var(--space-n8, -2rem);
       }
     }
 
     :host([headless]) {
-      --_ui-code-block-header-display: none;
-    }
-
-    :host([embedded]) {
-      --ui-code-block-breakout-width: 100%;
-      --ui-code-block-breakout-margin: 0;
+      --_ui-code-header-display: none;
     }
 
     .root {
       margin: 0;
       position: relative;
       overflow: hidden;
-      border: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12));
-      background: var(--bg-default, oklch(1 0 0));
-      border-radius: var(--ui-code-block-radius-top, var(--radius-md, 6px))
-        var(--ui-code-block-radius-top, var(--radius-md, 6px))
-        var(--ui-code-block-radius-bottom, var(--radius-md, 6px))
-        var(--ui-code-block-radius-bottom, var(--radius-md, 6px));
+      border: var(
+        --ui-code-block-border,
+        var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12))
+      );
+      background: var(--ui-code-block-background, var(--bg-default, oklch(1 0 0)));
+      border-radius: var(
+          --ui-code-surface-radius-top,
+          var(--ui-code-block-radius-top, var(--radius-md, 6px))
+        )
+        var(--ui-code-surface-radius-top, var(--ui-code-block-radius-top, var(--radius-md, 6px)))
+        var(
+          --ui-code-surface-radius-bottom,
+          var(--ui-code-block-radius-bottom, var(--radius-md, 6px))
+        )
+        var(
+          --ui-code-surface-radius-bottom,
+          var(--ui-code-block-radius-bottom, var(--radius-md, 6px))
+        );
     }
 
     :host([headless]) .root {
@@ -211,15 +269,19 @@ export class CodeBlock extends LitElement {
       overflow: visible;
     }
 
-    :host([embedded]):not([headless]) .root {
+    .root[data-layout='inline'] {
       border: none;
       border-radius: 0;
     }
 
     .caption {
-      display: var(--ui-code-block-header-display, var(--_ui-code-block-header-display, block));
-      padding: var(--space-2, 8px) var(--ui-code-block-padding, var(--space-2, 8px)) 0
-        var(--space-3, 12px);
+      display: var(
+        --ui-code-header-display,
+        var(--ui-code-block-header-display, var(--_ui-code-header-display, block))
+      );
+      padding: var(--space-2, 8px)
+        var(--ui-code-surface-padding, var(--ui-code-block-padding, var(--space-2, 8px))) 0
+        var(--ui-code-surface-padding, var(--ui-code-block-padding, var(--space-3, 12px)));
       color: var(--fg-muted, oklch(45% 0 0));
       font-size: var(--text-xs, 12px);
       font-weight: var(--font-medium, 500);
@@ -248,11 +310,10 @@ export class CodeBlock extends LitElement {
       white-space: nowrap;
     }
 
-    /* メタデータのないキャプションをオーバーレイ化し、コピーボタンのみ表示 */
     .caption-overlay > .caption {
       position: absolute;
       top: calc(
-        var(--space-3, 12px) -
+        var(--ui-code-surface-padding, var(--ui-code-block-padding, var(--space-3, 12px))) -
           (
             var(--control-height-sm, 24px) -
               (var(--text-sm, 0.8125rem) * var(--line-height-none, 1))
@@ -354,11 +415,35 @@ export class CodeBlock extends LitElement {
   @property({ type: String, reflect: true })
   label = '';
 
+  @property({ type: String, attribute: 'group-key', reflect: true })
+  groupKey = '';
+
+  @property({ type: String, attribute: 'tab-label', reflect: true })
+  tabLabel = '';
+
+  @property({ type: String, attribute: 'copy-label', reflect: true })
+  copyLabel = '';
+
   @property({ type: String, reflect: true })
   intent: CodeBlockIntent = 'neutral';
 
   @property({ type: Boolean, attribute: 'show-line-numbers', reflect: true })
   showLineNumbers = false;
+
+  @property({ type: String, attribute: 'copy-mode', reflect: true })
+  copyMode: CodeBlockCopyMode = 'auto';
+
+  @property({ reflect: true, converter: copyableAttributeConverter })
+  copyable = true;
+
+  @property({ type: Boolean, reflect: true })
+  wrap = false;
+
+  @property({ type: String, attribute: 'highlight-lines', reflect: true })
+  highlightLines = '';
+
+  @property({ type: String })
+  layout: CodeBlockLayout = 'standalone';
 
   @property({ type: Boolean, reflect: true })
   headless = false;
@@ -369,13 +454,17 @@ export class CodeBlock extends LitElement {
   @property({ type: String, attribute: 'initial-code' })
   initialCode = '';
 
+  @state()
   private _copyValue = '';
 
   @query('slot:not([name])')
   private _defaultSlot?: HTMLSlotElement;
 
-  @query('ui-copy-button')
-  private _copyButton?: HTMLElement & { value: string };
+  private _contentObserver?: MutationObserver;
+
+  private _hasCompletedFirstUpdate = false;
+
+  private _isSyncingPre = false;
 
   private _resizeObserver?: ResizeObserver;
 
@@ -385,11 +474,22 @@ export class CodeBlock extends LitElement {
     this._resizeObserver = new ResizeObserver(() => {
       this._updateScrollableState();
     });
+    this._contentObserver = new MutationObserver(() => {
+      if (this._isSyncingPre) {
+        return;
+      }
+
+      this._syncSlottedPre();
+      if (this._hasCompletedFirstUpdate) {
+        this._dispatchChange(['content'], true);
+      }
+    });
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this._resizeObserver?.disconnect();
+    this._contentObserver?.disconnect();
   }
 
   override willUpdate(changedProperties: PropertyValues<this>): void {
@@ -397,6 +497,14 @@ export class CodeBlock extends LitElement {
 
     if (changedProperties.has('intent') && !VALID_INTENTS.has(this.intent)) {
       this.intent = 'neutral';
+    }
+
+    if (changedProperties.has('copyMode') && !VALID_COPY_MODES.has(this.copyMode)) {
+      this.copyMode = 'auto';
+    }
+
+    if (changedProperties.has('layout') && !VALID_LAYOUTS.has(this.layout)) {
+      this.layout = 'standalone';
     }
 
     if (changedProperties.has('lang')) {
@@ -407,27 +515,65 @@ export class CodeBlock extends LitElement {
         this.setAttribute('data-lang', normalizedLang);
       }
     }
-
-    if (changedProperties.has('initialCode') && this._copyValue === '') {
-      this._copyValue = this.initialCode.replace(/\r\n?/g, '\n');
-    }
   }
 
   override updated(changedProperties: PropertyValues<this>): void {
     super.updated(changedProperties);
 
+    if (changedProperties.has('layout') || changedProperties.has('embedded')) {
+      this._applyLayoutSurfaceVars();
+    }
+
+    const requiresPreResync =
+      changedProperties.has('showLineNumbers') ||
+      changedProperties.has('highlightLines') ||
+      changedProperties.has('wrap') ||
+      changedProperties.has('layout');
+
     if (
       changedProperties.has('filename') ||
       changedProperties.has('lang') ||
       changedProperties.has('intent') ||
-      changedProperties.has('initialCode')
+      requiresPreResync
     ) {
-      this._updateAccessibleMetadata();
-      this._updateCopyButtonValue();
+      this._syncSlottedPre();
     }
 
-    if (changedProperties.has('showLineNumbers')) {
-      this._syncSlottedPre();
+    if (changedProperties.has('initialCode') && this._findPreElement() === null) {
+      this._copyValue = normalizeLineEndings(this.initialCode);
+    }
+
+    if (!this._hasCompletedFirstUpdate) {
+      this._hasCompletedFirstUpdate = true;
+      return;
+    }
+
+    const metadataChanged =
+      changedProperties.has('filename') ||
+      changedProperties.has('lang') ||
+      changedProperties.has('intent') ||
+      changedProperties.has('groupKey') ||
+      changedProperties.has('tabLabel') ||
+      changedProperties.has('copyLabel') ||
+      changedProperties.has('copyable') ||
+      changedProperties.has('copyMode') ||
+      changedProperties.has('layout') ||
+      changedProperties.has('label');
+
+    const affectsCopyValue =
+      changedProperties.has('initialCode') ||
+      changedProperties.has('showLineNumbers') ||
+      changedProperties.has('highlightLines');
+
+    if (metadataChanged || affectsCopyValue) {
+      const kinds: Array<'content' | 'metadata'> = [];
+      if (metadataChanged) {
+        kinds.push('metadata');
+      }
+      if (affectsCopyValue) {
+        kinds.push('content');
+      }
+      this._dispatchChange(kinds, affectsCopyValue);
     }
   }
 
@@ -437,25 +583,31 @@ export class CodeBlock extends LitElement {
    */
   getCodeContent(): string {
     const pre = this._findPreElement();
-    if (!pre) return '';
-
-    const raw = pre.getAttribute('data-raw');
-    if (typeof raw === 'string') {
-      return raw;
+    if (pre) {
+      return this._readSlottedCodeText(pre);
     }
 
-    const root = (pre.querySelector('code') ?? pre).cloneNode(true) as HTMLElement;
-    root
-      .querySelectorAll('.line-number,[data-line-number],.ui-code-block-line-number')
-      .forEach((element) => {
-        element.remove();
-      });
-
-    return root.textContent.replace(/\r\n?/g, '\n');
+    return normalizeLineEndings(this.initialCode);
   }
 
   private get _resolvedIntent(): CodeBlockIntent {
     return VALID_INTENTS.has(this.intent) ? this.intent : 'neutral';
+  }
+
+  private get _resolvedCopyMode(): CodeBlockCopyMode {
+    return VALID_COPY_MODES.has(this.copyMode) ? this.copyMode : 'auto';
+  }
+
+  private get _resolvedLayout(): CodeBlockLayout {
+    if (this.getAttribute('layout') === null && this.embedded) {
+      return 'inline';
+    }
+
+    if (VALID_LAYOUTS.has(this.layout)) {
+      return this.layout;
+    }
+
+    return 'standalone';
   }
 
   private get _resolvedFilename(): string {
@@ -507,9 +659,31 @@ export class CodeBlock extends LitElement {
     return `${this._contextName} のコードをコピー`;
   }
 
-  /** キャプションに表示すべきメタデータ（ファイル名またはintent）が存在するか */
   private get _hasCaptionContent(): boolean {
     return this._resolvedFilename !== '' || this._resolvedIntent !== 'neutral';
+  }
+
+  private get _hasCopyValue(): boolean {
+    return this._copyValue !== '';
+  }
+
+  private get _copyDisabled(): boolean {
+    return !this.copyable || !this._hasCopyValue;
+  }
+
+  private get _shouldRenderCopyButton(): boolean {
+    switch (this._resolvedCopyMode) {
+      case 'hidden':
+        return false;
+      case 'always':
+        return true;
+      case 'auto':
+        return this._hasCopyValue;
+    }
+  }
+
+  private get _shouldRenderCaption(): boolean {
+    return this._hasCaptionContent || this._shouldRenderCopyButton;
   }
 
   private get _intentMeta(): IntentMeta | null {
@@ -527,35 +701,65 @@ export class CodeBlock extends LitElement {
     document.head.append(style);
   }
 
+  private _applyLayoutSurfaceVars(): void {
+    if (this._resolvedLayout === 'inline') {
+      this.style.setProperty('--_ui-code-surface-breakout-width-default', '100%');
+      this.style.setProperty('--_ui-code-surface-breakout-margin-default', '0');
+      return;
+    }
+
+    this.style.removeProperty('--_ui-code-surface-breakout-width-default');
+    this.style.removeProperty('--_ui-code-surface-breakout-margin-default');
+  }
+
   /** テキスト省略時のみtitle属性を付与し、冗長なツールチップを回避 */
-  private _onFilenameMouseEnter = (e: MouseEvent): void => {
-    const el = e.currentTarget as HTMLElement;
-    if (el.scrollWidth > el.clientWidth) {
-      el.title = this._resolvedFilename;
+  private _onFilenameMouseEnter = (event: MouseEvent): void => {
+    const element = event.currentTarget as HTMLElement;
+    if (element.scrollWidth > element.clientWidth) {
+      element.title = this._resolvedFilename;
     } else {
-      el.removeAttribute('title');
+      element.removeAttribute('title');
     }
   };
 
   private _onSlotChange = (): void => {
     this._syncSlottedPre();
+    if (this._hasCompletedFirstUpdate) {
+      this._dispatchChange(['content'], true);
+    }
   };
 
   private _syncSlottedPre(): void {
     const pre = this._findPreElement();
+    this._resizeObserver?.disconnect();
+    this._contentObserver?.disconnect();
+
     if (!pre) {
-      this._copyValue = '';
+      this._copyValue = normalizeLineEndings(this.initialCode);
       return;
     }
 
-    this._resizeObserver?.disconnect();
     this._resizeObserver?.observe(pre);
 
-    this._applyPreAttributes(pre);
-    this._ensureLineWrappers(pre);
-    this._updateAccessibleMetadata(pre);
-    this._updateScrollableState(pre);
-    this._updateCopyButtonValue();
+    this._isSyncingPre = true;
+    try {
+      this._applyPreAttributes(pre);
+      this._ensureLineWrappers(pre);
+      this._applyHighlightLines(pre);
+      this._updateAccessibleMetadata(pre);
+      this._updateScrollableState(pre);
+      this._copyValue = this._readSlottedCodeText(pre);
+    } finally {
+      this._isSyncingPre = false;
+    }
+
+    this._contentObserver?.observe(pre, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ['data-wrap'],
+    });
   }
 
   private _findPreElement(): HTMLPreElement | null {
@@ -585,23 +789,18 @@ export class CodeBlock extends LitElement {
   }
 
   private _ensureLineWrappers(pre: HTMLPreElement): void {
-    if (!this.showLineNumbers) return;
+    const needsLineWrappers = this.showLineNumbers || this.highlightLines.trim() !== '';
+    if (!needsLineWrappers) return;
 
     const code = pre.querySelector('code');
     const container = code ?? pre;
     if (container.querySelector('.line')) return;
 
-    // Shikiトークンを保持するため、要素ノードを含む場合は破壊的な再構築を避ける。
-    // 行ラッパー未付与のプレーンテキスト入力のみを正規化対象にする。
     if (container.childElementCount > 0) {
       return;
     }
 
-    // 行番号の適用を優先し、.line が無い場合はプレーン行ラッパーへ正規化する
-    const sourceText = (pre.getAttribute('data-raw') ?? container.textContent).replace(
-      /\r\n?/g,
-      '\n',
-    );
+    const sourceText = normalizeLineEndings(container.textContent ?? '');
     const lines = sourceText.split('\n');
 
     container.textContent = '';
@@ -619,6 +818,52 @@ export class CodeBlock extends LitElement {
     });
   }
 
+  private _applyHighlightLines(pre: HTMLPreElement): void {
+    const lines = Array.from(pre.querySelectorAll<HTMLElement>('.line'));
+    lines.forEach((line) => {
+      line.classList.remove('ui-explicit-highlight');
+      line.removeAttribute('data-ui-highlight-line');
+    });
+
+    if (lines.length === 0) {
+      return;
+    }
+
+    const highlighted = parseHighlightLines(this.highlightLines);
+    if (highlighted.size === 0) {
+      return;
+    }
+
+    lines.forEach((line, index) => {
+      if (!highlighted.has(index + 1)) {
+        return;
+      }
+
+      line.classList.add('ui-explicit-highlight');
+      line.setAttribute('data-ui-highlight-line', '');
+    });
+  }
+
+  private _readSlottedCodeText(pre: HTMLPreElement): string {
+    const root = (pre.querySelector('code') ?? pre).cloneNode(true) as HTMLElement;
+    root
+      .querySelectorAll('.line-number,[data-line-number],.ui-code-block-line-number')
+      .forEach((element) => {
+        element.remove();
+      });
+
+    return normalizeLineEndings(root.textContent ?? '');
+  }
+
+  private _hasLegacyWrap(pre?: HTMLPreElement | null): boolean {
+    const hostWrap = this.getAttribute('data-wrap')?.trim().toLowerCase() === 'true';
+    if (hostWrap) {
+      return true;
+    }
+
+    return pre?.getAttribute('data-wrap')?.trim().toLowerCase() === 'true';
+  }
+
   private _updateAccessibleMetadata(targetPre?: HTMLPreElement): void {
     const pre = targetPre ?? this._findPreElement();
     if (!pre) return;
@@ -633,6 +878,14 @@ export class CodeBlock extends LitElement {
     const pre = targetPre ?? this._findPreElement();
     if (!pre) return;
 
+    const wrapEnabled = this.wrap || (!this.hasAttribute('wrap') && this._hasLegacyWrap(pre));
+    if (wrapEnabled) {
+      pre.removeAttribute('tabindex');
+      pre.removeAttribute('role');
+      pre.removeAttribute('aria-label');
+      return;
+    }
+
     const isOverflowing = pre.scrollWidth > pre.clientWidth + 1;
     if (isOverflowing) {
       pre.setAttribute('tabindex', '0');
@@ -646,46 +899,69 @@ export class CodeBlock extends LitElement {
     pre.removeAttribute('aria-label');
   }
 
-  private _updateCopyButtonValue(): void {
-    const normalizedInitialCode = this.initialCode.replace(/\r\n?/g, '\n');
-    this._copyValue = this.getCodeContent() || normalizedInitialCode;
-    if (this._copyButton) {
-      this._copyButton.value = this._copyValue;
+  private _dispatchChange(kinds: Array<'content' | 'metadata'>, affectsCopyValue: boolean): void {
+    if (kinds.length === 0) {
+      return;
     }
+
+    this.dispatchEvent(
+      new CustomEvent('ui-code-block-change', {
+        detail: { kinds, affectsCopyValue },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  private _renderCopyButton(): TemplateResult | typeof nothing {
+    if (!this._shouldRenderCopyButton) {
+      return nothing;
+    }
+
+    return html`
+      <span class="copy-button-shell">
+        <ui-copy-button
+          size="sm"
+          value="${this._copyValue}"
+          label="${this._copyButtonLabel}"
+          ?disabled="${this._copyDisabled}"
+        ></ui-copy-button>
+      </span>
+    `;
   }
 
   override render() {
     const intentMeta = this._intentMeta;
+    const captionClass = this._hasCaptionContent ? '' : 'caption-overlay';
 
     return html`
       <figure
-        class="root ${this._hasCaptionContent ? '' : 'caption-overlay'}"
+        class="root ${captionClass}"
         aria-description="${this._ariaDescription}"
+        data-layout="${this._resolvedLayout}"
       >
-        <figcaption class="caption">
-          <div class="caption-layout">
-            <span class="caption-main">
-              <span class="filename" @mouseenter="${this._onFilenameMouseEnter}">
-                ${this._resolvedFilename}
-              </span>
-              ${intentMeta
-                ? html`
-                    <span class="intent" data-intent="${this._resolvedIntent}">
-                      <iconify-icon icon="${intentMeta.icon}" aria-hidden="true"></iconify-icon>
-                      <span>${intentMeta.label}</span>
+        ${this._shouldRenderCaption
+          ? html`
+              <figcaption class="caption">
+                <div class="caption-layout">
+                  <span class="caption-main">
+                    <span class="filename" @mouseenter="${this._onFilenameMouseEnter}">
+                      ${this._resolvedFilename}
                     </span>
-                  `
-                : nothing}
-            </span>
-            <span class="copy-button-shell">
-              <ui-copy-button
-                size="sm"
-                value="${this._copyValue || this.initialCode.replace(/\r\n?/g, '\n')}"
-                label="${this._copyButtonLabel}"
-              ></ui-copy-button>
-            </span>
-          </div>
-        </figcaption>
+                    ${intentMeta
+                      ? html`
+                          <span class="intent" data-intent="${this._resolvedIntent}">
+                            <iconify-icon icon="${intentMeta.icon}" aria-hidden="true"></iconify-icon>
+                            <span>${intentMeta.label}</span>
+                          </span>
+                        `
+                      : nothing}
+                  </span>
+                  ${this._renderCopyButton()}
+                </div>
+              </figcaption>
+            `
+          : nothing}
 
         <slot @slotchange="${this._onSlotChange}"></slot>
       </figure>
