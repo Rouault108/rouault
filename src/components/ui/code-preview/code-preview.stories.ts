@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './code-preview';
+import type { CodePreviewStateChangeDetail } from './code-preview';
 import { CodePreview } from './code-preview';
 import '../codeblock/codeblock';
 import '../code-group/code-group';
@@ -43,10 +44,10 @@ const getPreviewFrame = (preview: CodePreview): HTMLElement => {
   return frame;
 };
 
-const getHeaderLabel = (preview: CodePreview): HTMLElement => {
-  const label = preview.shadowRoot?.querySelector<HTMLElement>('.header-label');
-  if (!label) throw new Error('.header-label が見つかりません');
-  return label;
+const getHeaderHeading = (preview: CodePreview): HTMLElement => {
+  const heading = preview.shadowRoot?.querySelector<HTMLElement>('.header-heading');
+  if (!heading) throw new Error('.header-heading が見つかりません');
+  return heading;
 };
 
 const getToolbarSlot = (preview: CodePreview): HTMLSlotElement => {
@@ -109,7 +110,7 @@ const meta: Meta<CodePreview> = {
 - ビジュアル階層（Sunken Method）：プレビュー領域 Surface vs コード領域 Valley
 - Breakout パターンが \`ui-syntax-card\` / \`ui-code-block\` と同一であること
 - 子コンポーネントの breakout 無効化（CSS 変数伝播）
-- ヘッダー表示条件：\`label\` 非空 OR built-in controls 有効 OR \`toolbar\` スロットに有効ノードが存在
+- ヘッダー表示条件：\`heading\` 非空 OR built-in controls 有効 OR \`toolbar\` スロットに有効ノードが存在
 - built-in showcase controls（theme / surface / viewport）
 - \`preview-padding\` の3値（normal/compact/none）の余白制御
 - \`preview-align\` の3値（center/start/stretch）の配置制御
@@ -127,7 +128,7 @@ type Story = StoryObj<CodePreview>;
 
 /**
  * 基本構成。プレビュー（ボタン）と Code Block が縦積みで表示されます。
- * ラベル・ツールバーともに未設定のためヘッダーは非表示です。
+ * 見出し・ツールバーともに未設定のためヘッダーは非表示です。
  */
 export const BasicWithCodeBlock: Story = {
   render: () => html`
@@ -139,7 +140,7 @@ export const BasicWithCodeBlock: Story = {
         <div slot="preview">
           <ui-button>クリックしてください</ui-button>
         </div>
-        <ui-code-block filename="example.ts" lang="ts">
+        <ui-code-block layout="inline" filename="example.ts" lang="ts">
           <pre><code>import './button';
 // &lt;ui-button&gt;クリックしてください&lt;/ui-button&gt;</code></pre>
         </ui-code-block>
@@ -153,7 +154,7 @@ export const BasicWithCodeBlock: Story = {
 
     // ヘッダーは data-show-header がないため非表示
     if (preview.hasAttribute('data-show-header')) {
-      throw new Error('ラベル・ツールバー未設定時に data-show-header が付与されています');
+      throw new Error('見出し・ツールバー未設定時に data-show-header が付与されています');
     }
 
     // ルートに role="group" と aria-label が設定されている
@@ -204,10 +205,15 @@ export const BasicWithCodeGroup: Story = {
           <ui-button>Secondary</ui-button>
         </div>
         <ui-code-group aria-label="ボタンのコード例">
-          <ui-code-block label="Primary" filename="primary.ts" lang="ts">
+          <ui-code-block group-key="primary" tab-label="Primary" filename="primary.ts" lang="ts">
             <pre><code>// &lt;ui-button&gt;Primary&lt;/ui-button&gt;</code></pre>
           </ui-code-block>
-          <ui-code-block label="Secondary" filename="secondary.ts" lang="ts">
+          <ui-code-block
+            group-key="secondary"
+            tab-label="Secondary"
+            filename="secondary.ts"
+            lang="ts"
+          >
             <pre><code>// &lt;ui-button variant="secondary"&gt;Secondary&lt;/ui-button&gt;</code></pre>
           </ui-code-block>
         </ui-code-group>
@@ -231,36 +237,36 @@ export const BasicWithCodeGroup: Story = {
 };
 
 /**
- * `label` のみ設定。ヘッダー領域が表示されラベルテキストが描画されます。
+ * `heading` のみ設定。ヘッダー領域が表示され見出しテキストが描画されます。
  * ツールバーなしの場合のヘッダー表示境界を検証します。
  */
-export const HeaderWithLabelOnly: Story = {
+export const HeaderWithHeadingOnly: Story = {
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
-        id="label-only-preview"
-        label="ボタンの使用例"
+        id="heading-only-preview"
+        heading="ボタンの使用例"
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
         <div slot="preview">
           <ui-button>クリック</ui-button>
         </div>
-        <ui-code-block filename="button.ts" lang="ts">
+        <ui-code-block layout="inline" filename="button.ts" lang="ts">
           <pre><code>// &lt;ui-button&gt;クリック&lt;/ui-button&gt;</code></pre>
         </ui-code-block>
       </ui-code-preview>
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const preview = getPreview(canvasElement, 'label-only-preview');
+    const preview = getPreview(canvasElement, 'heading-only-preview');
     await preview.updateComplete;
     await waitFrame();
 
     if (!preview.hasAttribute('data-show-header')) {
-      throw new Error('label 設定時に data-show-header が付与されていません');
+      throw new Error('heading 設定時に data-show-header が付与されていません');
     }
-    if (!preview.hasAttribute('data-has-label')) {
-      throw new Error('label 設定時に data-has-label が付与されていません');
+    if (!preview.hasAttribute('data-has-heading')) {
+      throw new Error('heading 設定時に data-has-heading が付与されていません');
     }
 
     const header = getHeader(preview);
@@ -269,23 +275,23 @@ export const HeaderWithLabelOnly: Story = {
       throw new Error('ヘッダーが表示されていません（display: none）');
     }
 
-    const labelEl = getHeaderLabel(preview);
-    if (labelEl.textContent.trim() !== 'ボタンの使用例') {
-      throw new Error(`ヘッダーラベルのテキストが不正です: "${labelEl.textContent.trim()}"`);
+    const headingEl = getHeaderHeading(preview);
+    if (headingEl.textContent.trim() !== 'ボタンの使用例') {
+      throw new Error(`ヘッダー見出しのテキストが不正です: "${headingEl.textContent.trim()}"`);
     }
 
-    // aria-label はラベル値を使用
+    // aria-label は見出し値を使用
     const root = getRoot(preview);
     if (root.getAttribute('aria-label') !== 'ボタンの使用例') {
       throw new Error(
-        `label 設定時の aria-label が不正です: "${root.getAttribute('aria-label') ?? ''}"`,
+        `heading 設定時の aria-label が不正です: "${root.getAttribute('aria-label') ?? ''}"`,
       );
     }
   },
 };
 
 /**
- * `toolbar` スロットのみ設定。ラベルなしでもヘッダーが表示されます。
+ * `toolbar` スロットのみ設定。見出しなしでもヘッダーが表示されます。
  * toolbar スロット検出による動的ヘッダー表示境界を検証します。
  */
 export const HeaderWithToolbarOnly: Story = {
@@ -301,7 +307,7 @@ export const HeaderWithToolbarOnly: Story = {
         <div slot="preview">
           <ui-button>クリック</ui-button>
         </div>
-        <ui-code-block filename="button.ts" lang="ts">
+        <ui-code-block layout="inline" filename="button.ts" lang="ts">
           <pre><code>// &lt;ui-button&gt;クリック&lt;/ui-button&gt;</code></pre>
         </ui-code-block>
       </ui-code-preview>
@@ -317,16 +323,16 @@ export const HeaderWithToolbarOnly: Story = {
       throw new Error('toolbar スロット設定時に data-show-header が付与されていません');
     }
 
-    // ラベルはないため data-has-label は付与されない
-    if (preview.hasAttribute('data-has-label')) {
-      throw new Error('label 未設定時に data-has-label が付与されています');
+    // 見出しはないため data-has-heading は付与されない
+    if (preview.hasAttribute('data-has-heading')) {
+      throw new Error('heading 未設定時に data-has-heading が付与されています');
     }
 
-    // ヘッダーラベル要素は非表示のはず
-    const labelEl = getHeaderLabel(preview);
-    const labelStyle = getComputedStyle(labelEl);
-    if (labelStyle.display !== 'none') {
-      throw new Error('label 未設定時にラベル要素が表示されています');
+    // ヘッダー見出し要素は非表示のはず
+    const headingEl = getHeaderHeading(preview);
+    const headingStyle = getComputedStyle(headingEl);
+    if (headingStyle.display !== 'none') {
+      throw new Error('heading 未設定時に見出し要素が表示されています');
     }
 
     // ツールバーは CSS 契約として右寄せ指定されている
@@ -363,15 +369,15 @@ export const HeaderWithToolbarOnly: Story = {
 };
 
 /**
- * `label` と `toolbar` の両方を設定。
- * ラベルが左、ツールバーが右に配置されます。
+ * `heading` と `toolbar` の両方を設定。
+ * 見出しが左、ツールバーが右に配置されます。
  */
-export const HeaderWithLabelAndToolbar: Story = {
+export const HeaderWithHeadingAndToolbar: Story = {
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
         id="full-header-preview"
-        label="インタラクティブな例"
+        heading="インタラクティブな例"
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
         <ui-button slot="toolbar" variant="ghost" size="sm" icon-only aria-label="ダークモード切替">
@@ -380,7 +386,7 @@ export const HeaderWithLabelAndToolbar: Story = {
         <div slot="preview">
           <ui-button>クリック</ui-button>
         </div>
-        <ui-code-block filename="button.ts" lang="ts">
+        <ui-code-block layout="inline" filename="button.ts" lang="ts">
           <pre><code>// &lt;ui-button&gt;クリック&lt;/ui-button&gt;</code></pre>
         </ui-code-block>
       </ui-code-preview>
@@ -394,13 +400,13 @@ export const HeaderWithLabelAndToolbar: Story = {
     if (!preview.hasAttribute('data-show-header')) {
       throw new Error('data-show-header が付与されていません');
     }
-    if (!preview.hasAttribute('data-has-label')) {
-      throw new Error('data-has-label が付与されていません');
+    if (!preview.hasAttribute('data-has-heading')) {
+      throw new Error('data-has-heading が付与されていません');
     }
 
-    const labelEl = getHeaderLabel(preview);
-    if (labelEl.textContent.trim() !== 'インタラクティブな例') {
-      throw new Error('ラベルテキストが不正です');
+    const headingEl = getHeaderHeading(preview);
+    if (headingEl.textContent.trim() !== 'インタラクティブな例') {
+      throw new Error('見出しテキストが不正です');
     }
 
     // toolbar スロットに要素がある
@@ -413,7 +419,7 @@ export const HeaderWithLabelAndToolbar: Story = {
 };
 
 /**
- * built-in controls のみ設定。ラベルなしでもヘッダーが表示されます。
+ * built-in controls のみ設定。見出しなしでもヘッダーが表示されます。
  * Markdown 公開文法向けの opt-in controls 境界を検証します。
  */
 export const HeaderWithBuiltInControlsOnly: Story = {
@@ -427,7 +433,7 @@ export const HeaderWithBuiltInControlsOnly: Story = {
         <div slot="preview">
           <ui-button>クリック</ui-button>
         </div>
-        <ui-code-block filename="button.ts" lang="ts">
+        <ui-code-block layout="inline" filename="button.ts" lang="ts">
           <pre><code>// &lt;ui-button&gt;クリック&lt;/ui-button&gt;</code></pre>
         </ui-code-block>
       </ui-code-preview>
@@ -441,8 +447,8 @@ export const HeaderWithBuiltInControlsOnly: Story = {
     if (!preview.hasAttribute('data-show-header')) {
       throw new Error('built-in controls 設定時に data-show-header が付与されていません');
     }
-    if (preview.hasAttribute('data-has-label')) {
-      throw new Error('label 未設定時に data-has-label が付与されています');
+    if (preview.hasAttribute('data-has-heading')) {
+      throw new Error('heading 未設定時に data-has-heading が付与されています');
     }
 
     getBuiltInDropdown(preview, 'theme');
@@ -469,13 +475,13 @@ export const BuiltInShowcaseControlsContract: Story = {
         preview-theme="page"
         preview-surface="surface"
         preview-viewport="full"
-        label="Showcase Controls"
+        heading="Showcase Controls"
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
         <div id="showcase-preview-host" slot="preview" style="padding: 1rem; border-radius: 8px;">
           <ui-button>Preview Button</ui-button>
         </div>
-        <ui-code-block id="showcase-code-block" filename="button.ts" lang="ts">
+        <ui-code-block id="showcase-code-block" layout="inline" filename="button.ts" lang="ts">
           <pre><code>// &lt;ui-button&gt;Preview Button&lt;/ui-button&gt;</code></pre>
         </ui-code-block>
       </ui-code-preview>
@@ -491,6 +497,11 @@ export const BuiltInShowcaseControlsContract: Story = {
 
     await preview.updateComplete;
     await waitFrame();
+
+    const stateChangeEvents: CodePreviewStateChangeDetail[] = [];
+    preview.addEventListener('ui-code-preview-state-change', (event) => {
+      stateChangeEvents.push((event as CustomEvent<CodePreviewStateChangeDetail>).detail);
+    });
 
     const previewArea = getPreviewArea(preview);
     const previewFrame = getPreviewFrame(preview);
@@ -509,6 +520,13 @@ export const BuiltInShowcaseControlsContract: Story = {
 
     if (preview.getAttribute('preview-theme') !== 'dark') {
       throw new Error('theme control の選択が preview-theme 属性へ反映されていません');
+    }
+    const themeEvent = stateChangeEvents.shift();
+    if (!themeEvent) {
+      throw new Error('theme control 変更時に state-change が送出されていません');
+    }
+    if (themeEvent.userInitiated !== true || themeEvent.keys[0] !== 'previewTheme') {
+      throw new Error('theme control の state-change detail が不正です');
     }
 
     const darkPreviewToken = getComputedStyle(previewHost).getPropertyValue('--bg-default').trim();
@@ -529,6 +547,13 @@ export const BuiltInShowcaseControlsContract: Story = {
     if (preview.getAttribute('preview-surface') !== 'muted') {
       throw new Error('surface control の選択が preview-surface 属性へ反映されていません');
     }
+    const surfaceEvent = stateChangeEvents.shift();
+    if (!surfaceEvent) {
+      throw new Error('surface control 変更時に state-change が送出されていません');
+    }
+    if (surfaceEvent.userInitiated !== true || surfaceEvent.keys[0] !== 'previewSurface') {
+      throw new Error('surface control の state-change detail が不正です');
+    }
 
     const mutedPreviewAreaBg = getComputedStyle(previewArea).backgroundColor;
     const mutedPreviewToken = getComputedStyle(previewHost).getPropertyValue('--bg-default').trim();
@@ -548,6 +573,13 @@ export const BuiltInShowcaseControlsContract: Story = {
     if (preview.getAttribute('preview-viewport') !== 'mobile') {
       throw new Error('viewport control の選択が preview-viewport 属性へ反映されていません');
     }
+    const viewportEvent = stateChangeEvents.shift();
+    if (!viewportEvent) {
+      throw new Error('viewport control 変更時に state-change が送出されていません');
+    }
+    if (viewportEvent.userInitiated !== true || viewportEvent.keys[0] !== 'previewViewport') {
+      throw new Error('viewport control の state-change detail が不正です');
+    }
 
     const resolvedFrameWidth = getComputedStyle(preview)
       .getPropertyValue('--_ui-code-preview-frame-width')
@@ -562,6 +594,18 @@ export const BuiltInShowcaseControlsContract: Story = {
         `mobile viewport の preview-frame 幅が縮小していません: ${String(mobileWidth)}px`,
       );
     }
+
+    preview.previewTheme = 'light';
+    await preview.updateComplete;
+    await waitFrame();
+
+    const externalThemeEvent = stateChangeEvents.shift();
+    if (!externalThemeEvent) {
+      throw new Error('外部 property 更新時に state-change が送出されていません');
+    }
+    if (externalThemeEvent.userInitiated !== false) {
+      throw new Error('外部 property 更新の state-change が userInitiated=true になっています');
+    }
   },
 };
 
@@ -575,7 +619,7 @@ export const BuiltInControlsWithToolbarSlot: Story = {
       <ui-code-preview
         id="controls-with-toolbar-preview"
         controls="theme surface"
-        label="Toolbar Coexist"
+        heading="Toolbar Coexist"
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
         <ui-button slot="toolbar" variant="ghost" size="sm" icon-only aria-label="外部アクション">
@@ -584,7 +628,7 @@ export const BuiltInControlsWithToolbarSlot: Story = {
         <div slot="preview">
           <ui-button>プレビュー</ui-button>
         </div>
-        <ui-code-block filename="button.ts" lang="ts">
+        <ui-code-block layout="inline" filename="button.ts" lang="ts">
           <pre><code>// toolbar coexist</code></pre>
         </ui-code-block>
       </ui-code-preview>
@@ -621,7 +665,7 @@ export const BuiltInControlsWithToolbarSlot: Story = {
 
 /**
  * ヘッダー非表示の境界。
- * label が空かつ toolbar スロットが空の場合、ヘッダーが描画されないことを検証します。
+ * heading が空かつ toolbar スロットが空の場合、ヘッダーが描画されないことを検証します。
  */
 export const HeaderHiddenBoundary: Story = {
   render: () => html`
@@ -633,7 +677,7 @@ export const HeaderHiddenBoundary: Story = {
         <div slot="preview">
           <ui-button>コンテンツ</ui-button>
         </div>
-        <ui-code-block filename="example.ts" lang="ts">
+        <ui-code-block layout="inline" filename="example.ts" lang="ts">
           <pre><code>const value = 1;</code></pre>
         </ui-code-block>
       </ui-code-preview>
@@ -646,10 +690,10 @@ export const HeaderHiddenBoundary: Story = {
 
     // data-show-header が付与されていない
     if (preview.hasAttribute('data-show-header')) {
-      throw new Error('label・toolbar ともに空の場合に data-show-header が付与されています');
+      throw new Error('heading・toolbar ともに空の場合に data-show-header が付与されています');
     }
-    if (preview.hasAttribute('data-has-label')) {
-      throw new Error('label が空の場合に data-has-label が付与されています');
+    if (preview.hasAttribute('data-has-heading')) {
+      throw new Error('heading が空の場合に data-has-heading が付与されています');
     }
 
     // ヘッダー要素は DOM に存在するが display: none で非表示
@@ -679,12 +723,12 @@ export const PreviewPaddingVariants: Story = {
         <p style="font-size: 12px; margin-bottom: 8px;">normal（既定値）</p>
         <ui-code-preview
           id="padding-normal"
-          label="padding: normal"
+          heading="padding: normal"
           preview-padding="normal"
           style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
         >
           <div slot="preview"><ui-button>ボタン</ui-button></div>
-          <ui-code-block lang="ts">
+          <ui-code-block layout="inline" lang="ts">
             <pre><code>const a = 1;</code></pre>
           </ui-code-block>
         </ui-code-preview>
@@ -694,12 +738,12 @@ export const PreviewPaddingVariants: Story = {
         <p style="font-size: 12px; margin-bottom: 8px;">compact</p>
         <ui-code-preview
           id="padding-compact"
-          label="padding: compact"
+          heading="padding: compact"
           preview-padding="compact"
           style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
         >
           <div slot="preview"><ui-button>ボタン</ui-button></div>
-          <ui-code-block lang="ts">
+          <ui-code-block layout="inline" lang="ts">
             <pre><code>const a = 1;</code></pre>
           </ui-code-block>
         </ui-code-preview>
@@ -709,14 +753,14 @@ export const PreviewPaddingVariants: Story = {
         <p style="font-size: 12px; margin-bottom: 8px;">none（エッジツーエッジ）</p>
         <ui-code-preview
           id="padding-none"
-          label="padding: none"
+          heading="padding: none"
           preview-padding="none"
           style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
         >
           <div slot="preview" style="width: 100%; background: oklch(90% 0.03 250); padding: 1rem;">
             エッジツーエッジのコンテンツ
           </div>
-          <ui-code-block lang="ts">
+          <ui-code-block layout="inline" lang="ts">
             <pre><code>const a = 1;</code></pre>
           </ui-code-block>
         </ui-code-preview>
@@ -781,12 +825,12 @@ export const InvalidPaddingFallback: Story = {
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
         id="invalid-padding-preview"
-        label="不正値フォールバック"
+        heading="不正値フォールバック"
         preview-padding="invalid-value"
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
         <div slot="preview"><ui-button>ボタン</ui-button></div>
-        <ui-code-block lang="ts">
+        <ui-code-block layout="inline" lang="ts">
           <pre><code>const a = 1;</code></pre>
         </ui-code-block>
       </ui-code-preview>
@@ -815,12 +859,12 @@ export const InvalidAlignFallback: Story = {
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
         id="invalid-align-preview"
-        label="不正 align 値フォールバック"
+        heading="不正 align 値フォールバック"
         preview-align="invalid-value"
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
         <div slot="preview"><ui-button>ボタン</ui-button></div>
-        <ui-code-block lang="ts">
+        <ui-code-block layout="inline" lang="ts">
           <pre><code>const a = 1;</code></pre>
         </ui-code-block>
       </ui-code-preview>
@@ -848,14 +892,14 @@ export const ToolbarTargetSizeContract: Story = {
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
         id="toolbar-target-size-preview"
-        label="Toolbar Target Size 検証"
+        heading="Toolbar Target Size 検証"
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
         <ui-button slot="toolbar" variant="ghost" size="sm" icon-only aria-label="テーマ切替">
           <iconify-icon icon="lucide:sun-moon"></iconify-icon>
         </ui-button>
         <div slot="preview"><ui-button>ボタン</ui-button></div>
-        <ui-code-block lang="ts">
+        <ui-code-block layout="inline" lang="ts">
           <pre><code>const a = 1;</code></pre>
         </ui-code-block>
       </ui-code-preview>
@@ -897,12 +941,12 @@ export const PreviewAlignVariants: Story = {
         <p style="font-size: 12px; margin-bottom: 8px;">center（既定値）</p>
         <ui-code-preview
           id="align-center"
-          label="align: center"
+          heading="align: center"
           preview-align="center"
           style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
         >
           <ui-button slot="preview">中央揃え</ui-button>
-          <ui-code-block lang="ts">
+          <ui-code-block layout="inline" lang="ts">
             <pre><code>const a = 1;</code></pre>
           </ui-code-block>
         </ui-code-preview>
@@ -912,12 +956,12 @@ export const PreviewAlignVariants: Story = {
         <p style="font-size: 12px; margin-bottom: 8px;">start</p>
         <ui-code-preview
           id="align-start"
-          label="align: start"
+          heading="align: start"
           preview-align="start"
           style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
         >
           <ui-button slot="preview">左上揃え</ui-button>
-          <ui-code-block lang="ts">
+          <ui-code-block layout="inline" lang="ts">
             <pre><code>const a = 1;</code></pre>
           </ui-code-block>
         </ui-code-preview>
@@ -927,7 +971,7 @@ export const PreviewAlignVariants: Story = {
         <p style="font-size: 12px; margin-bottom: 8px;">stretch</p>
         <ui-code-preview
           id="align-stretch"
-          label="align: stretch"
+          heading="align: stretch"
           preview-align="stretch"
           preview-padding="none"
           style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
@@ -939,7 +983,7 @@ export const PreviewAlignVariants: Story = {
           >
             stretch コンテンツ
           </div>
-          <ui-code-block lang="ts">
+          <ui-code-block layout="inline" lang="ts">
             <pre><code>const a = 1;</code></pre>
           </ui-code-block>
         </ui-code-preview>
@@ -1021,11 +1065,11 @@ export const ChildBreakoutNeutralization: Story = {
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
         id="breakout-neutralize-preview"
-        label="breakout 無効化検証"
+        heading="breakout 無効化検証"
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
         <div slot="preview"><ui-button>ボタン</ui-button></div>
-        <ui-code-block id="neutralize-block" filename="test.ts" lang="ts">
+        <ui-code-block id="neutralize-block" layout="inline" filename="test.ts" lang="ts">
           <pre><code>const x = 1;</code></pre>
         </ui-code-block>
       </ui-code-preview>
@@ -1039,19 +1083,19 @@ export const ChildBreakoutNeutralization: Story = {
     // ui-code-preview の host に CSS 変数が設定されていることを確認
     const previewStyle = getComputedStyle(preview);
 
-    const blockWidth = previewStyle.getPropertyValue('--ui-code-block-breakout-width').trim();
+    const blockWidth = previewStyle.getPropertyValue('--ui-code-surface-breakout-width').trim();
     if (blockWidth !== '100%') {
-      throw new Error(`--ui-code-block-breakout-width が 100% ではありません: "${blockWidth}"`);
+      throw new Error(`--ui-code-surface-breakout-width が 100% ではありません: "${blockWidth}"`);
     }
 
-    const blockMargin = previewStyle.getPropertyValue('--ui-code-block-breakout-margin').trim();
+    const blockMargin = previewStyle.getPropertyValue('--ui-code-surface-breakout-margin').trim();
     if (blockMargin !== '0') {
-      throw new Error(`--ui-code-block-breakout-margin が 0 ではありません: "${blockMargin}"`);
+      throw new Error(`--ui-code-surface-breakout-margin が 0 ではありません: "${blockMargin}"`);
     }
 
-    const blockRadiusTop = previewStyle.getPropertyValue('--ui-code-block-radius-top').trim();
+    const blockRadiusTop = previewStyle.getPropertyValue('--ui-code-surface-radius-top').trim();
     if (blockRadiusTop !== '0') {
-      throw new Error(`--ui-code-block-radius-top が 0 ではありません: "${blockRadiusTop}"`);
+      throw new Error(`--ui-code-surface-radius-top が 0 ではありません: "${blockRadiusTop}"`);
     }
 
     const groupWidth = previewStyle.getPropertyValue('--ui-code-group-width').trim();
@@ -1070,11 +1114,11 @@ export const ChildBreakoutNeutralization: Story = {
 
     const blockComputedStyle = getComputedStyle(codeBlock);
     const inheritedWidth = blockComputedStyle
-      .getPropertyValue('--ui-code-block-breakout-width')
+      .getPropertyValue('--ui-code-surface-breakout-width')
       .trim();
     if (inheritedWidth !== '100%') {
       throw new Error(
-        `子 ui-code-block が --ui-code-block-breakout-width: 100% を継承していません: "${inheritedWidth}"`,
+        `子 ui-code-block が --ui-code-surface-breakout-width: 100% を継承していません: "${inheritedWidth}"`,
       );
     }
   },
@@ -1083,120 +1127,120 @@ export const ChildBreakoutNeutralization: Story = {
 /**
  * A11y グループロール契約。
  * `role="group"` + `aria-label` が正しく設定されていることを検証します。
- * `label` が非空の場合はその値が、空の場合は "コード プレビュー" が使用されます。
+ * `heading` が非空の場合はその値が、空の場合は "コード プレビュー" が使用されます。
  */
 export const A11yGroupRoleContract: Story = {
   render: () => html`
     <div style="padding: 2rem; display: flex; flex-direction: column; gap: 2rem; max-width: 720px;">
       <ui-code-preview
-        id="a11y-with-label"
-        label="ボタンコンポーネント"
+        id="a11y-with-heading"
+        heading="ボタンコンポーネント"
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
         <div slot="preview"><ui-button>ボタン</ui-button></div>
-        <ui-code-block lang="ts">
+        <ui-code-block layout="inline" lang="ts">
           <pre><code>const a = 1;</code></pre>
         </ui-code-block>
       </ui-code-preview>
 
       <ui-code-preview
-        id="a11y-without-label"
+        id="a11y-without-heading"
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
         <div slot="preview"><ui-button>ボタン</ui-button></div>
-        <ui-code-block lang="ts">
+        <ui-code-block layout="inline" lang="ts">
           <pre><code>const b = 2;</code></pre>
         </ui-code-block>
       </ui-code-preview>
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const withLabel = getPreview(canvasElement, 'a11y-with-label');
-    const withoutLabel = getPreview(canvasElement, 'a11y-without-label');
-    await Promise.all([withLabel.updateComplete, withoutLabel.updateComplete]);
+    const withHeading = getPreview(canvasElement, 'a11y-with-heading');
+    const withoutHeading = getPreview(canvasElement, 'a11y-without-heading');
+    await Promise.all([withHeading.updateComplete, withoutHeading.updateComplete]);
     await waitFrame();
 
-    // label あり: aria-label にラベル値が使用される
-    const rootWithLabel = getRoot(withLabel);
-    if (rootWithLabel.getAttribute('role') !== 'group') {
-      throw new Error('role="group" が設定されていません（label あり）');
+    // heading あり: aria-label に見出し値が使用される
+    const rootWithHeading = getRoot(withHeading);
+    if (rootWithHeading.getAttribute('role') !== 'group') {
+      throw new Error('role="group" が設定されていません（heading あり）');
     }
-    if (rootWithLabel.getAttribute('aria-label') !== 'ボタンコンポーネント') {
+    if (rootWithHeading.getAttribute('aria-label') !== 'ボタンコンポーネント') {
       throw new Error(
-        `label あり時の aria-label が不正です: "${rootWithLabel.getAttribute('aria-label') ?? ''}"`,
+        `heading あり時の aria-label が不正です: "${rootWithHeading.getAttribute('aria-label') ?? ''}"`,
       );
     }
 
-    // label なし: フォールバック "コード プレビュー" が使用される
-    const rootWithoutLabel = getRoot(withoutLabel);
-    if (rootWithoutLabel.getAttribute('role') !== 'group') {
-      throw new Error('role="group" が設定されていません（label なし）');
+    // heading なし: フォールバック "コード プレビュー" が使用される
+    const rootWithoutHeading = getRoot(withoutHeading);
+    if (rootWithoutHeading.getAttribute('role') !== 'group') {
+      throw new Error('role="group" が設定されていません（heading なし）');
     }
-    if (rootWithoutLabel.getAttribute('aria-label') !== 'コード プレビュー') {
+    if (rootWithoutHeading.getAttribute('aria-label') !== 'コード プレビュー') {
       throw new Error(
-        `label なし時の aria-label フォールバックが不正です: "${rootWithoutLabel.getAttribute('aria-label') ?? ''}"`,
+        `heading なし時の aria-label フォールバックが不正です: "${rootWithoutHeading.getAttribute('aria-label') ?? ''}"`,
       );
     }
   },
 };
 
 /**
- * label 属性の動的変更。
+ * heading 属性の動的変更。
  * 変更後に aria-label とヘッダー表示が追従することを検証します。
  */
-export const LabelDynamicUpdate: Story = {
+export const HeadingDynamicUpdate: Story = {
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
-        id="dynamic-label-preview"
+        id="dynamic-heading-preview"
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
         <div slot="preview"><ui-button>ボタン</ui-button></div>
-        <ui-code-block lang="ts">
+        <ui-code-block layout="inline" lang="ts">
           <pre><code>const a = 1;</code></pre>
         </ui-code-block>
       </ui-code-preview>
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const preview = getPreview(canvasElement, 'dynamic-label-preview');
+    const preview = getPreview(canvasElement, 'dynamic-heading-preview');
     await preview.updateComplete;
     await waitFrame();
 
-    // 初期状態: label なし
+    // 初期状態: heading なし
     if (preview.hasAttribute('data-show-header')) {
-      throw new Error('初期状態（label なし）で data-show-header が付与されています');
+      throw new Error('初期状態（heading なし）で data-show-header が付与されています');
     }
 
-    // label を動的に設定
-    preview.label = '動的に追加されたラベル';
+    // heading を動的に設定
+    preview.heading = '動的に追加された見出し';
     await preview.updateComplete;
     await waitFrame();
 
     if (!preview.hasAttribute('data-show-header')) {
-      throw new Error('label 設定後に data-show-header が付与されていません');
+      throw new Error('heading 設定後に data-show-header が付与されていません');
     }
-    if (!preview.hasAttribute('data-has-label')) {
-      throw new Error('label 設定後に data-has-label が付与されていません');
+    if (!preview.hasAttribute('data-has-heading')) {
+      throw new Error('heading 設定後に data-has-heading が付与されていません');
     }
 
     const root = getRoot(preview);
-    if (root.getAttribute('aria-label') !== '動的に追加されたラベル') {
+    if (root.getAttribute('aria-label') !== '動的に追加された見出し') {
       throw new Error(
         `動的設定後の aria-label が不正です: "${root.getAttribute('aria-label') ?? ''}"`,
       );
     }
 
-    // label を空文字に戻す
-    preview.label = '';
+    // heading を空文字に戻す
+    preview.heading = '';
     await preview.updateComplete;
     await waitFrame();
 
     if (preview.hasAttribute('data-show-header')) {
-      throw new Error('label 削除後に data-show-header が残存しています');
+      throw new Error('heading 削除後に data-show-header が残存しています');
     }
     if (root.getAttribute('aria-label') !== 'コード プレビュー') {
-      throw new Error('label 削除後にフォールバック aria-label が復帰していません');
+      throw new Error('heading 削除後にフォールバック aria-label が復帰していません');
     }
   },
 };
@@ -1210,11 +1254,11 @@ export const ForcedColorsContract: Story = {
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
         id="forced-colors-preview"
-        label="Forced Colors 検証"
+        heading="Forced Colors 検証"
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
         <div slot="preview"><ui-button>ボタン</ui-button></div>
-        <ui-code-block lang="ts">
+        <ui-code-block layout="inline" lang="ts">
           <pre><code>const a = 1;</code></pre>
         </ui-code-block>
       </ui-code-preview>
@@ -1251,11 +1295,11 @@ export const PrintStyleContract: Story = {
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
         id="print-style-preview"
-        label="印刷スタイル検証"
+        heading="印刷スタイル検証"
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
         <div slot="preview"><ui-button>ボタン</ui-button></div>
-        <ui-code-block lang="ts">
+        <ui-code-block layout="inline" lang="ts">
           <pre><code>const a = 1;</code></pre>
         </ui-code-block>
       </ui-code-preview>
@@ -1297,11 +1341,11 @@ export const BreakoutPatternContract: Story = {
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
         id="breakout-pattern-preview"
-        label="Breakout パターン検証"
+        heading="Breakout パターン検証"
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
         <div slot="preview"><ui-button>ボタン</ui-button></div>
-        <ui-code-block lang="ts">
+        <ui-code-block layout="inline" lang="ts">
           <pre><code>const a = 1;</code></pre>
         </ui-code-block>
       </ui-code-preview>
@@ -1336,6 +1380,9 @@ export const BreakoutPatternContract: Story = {
 
     // 子コンポーネント無効化変数
     const neutralizeTokens = [
+      '--ui-code-surface-breakout-width: 100%',
+      '--ui-code-surface-breakout-margin: 0',
+      '--ui-code-surface-radius-top: 0',
       '--ui-code-block-breakout-width: 100%',
       '--ui-code-block-breakout-margin: 0',
       '--ui-code-block-radius-top: 0',
@@ -1359,11 +1406,11 @@ export const VisualHierarchyContract: Story = {
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
         id="hierarchy-preview"
-        label="Visual Hierarchy 検証"
+        heading="Visual Hierarchy 検証"
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
         <div slot="preview"><ui-button>ボタン</ui-button></div>
-        <ui-code-block lang="ts">
+        <ui-code-block layout="inline" lang="ts">
           <pre><code>const a = 1;</code></pre>
         </ui-code-block>
       </ui-code-preview>
@@ -1395,7 +1442,7 @@ export const VisualHierarchyContract: Story = {
     }
 
     // ヘッダー（Surface = 白）とルート（Muted = 薄グレー）の階層差を検証
-    // ヘッダーは data-show-header 時のみ表示されるため、label を持つこのストーリーで確認
+    // ヘッダーは data-show-header 時のみ表示されるため、heading を持つこのストーリーで確認
     const header = getHeader(preview);
     const root = preview.shadowRoot?.querySelector<HTMLElement>('.root');
     if (!root) throw new Error('.root が見つかりません');
@@ -1422,7 +1469,7 @@ export const DarkThemePreviewBackground: Story = {
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
         id="dark-preview-bg"
-        label="Dark Preview Background"
+        heading="Dark Preview Background"
         style="
           --ui-code-preview-breakout-width: 100%;
           --ui-code-preview-breakout-margin: 0;
@@ -1431,7 +1478,7 @@ export const DarkThemePreviewBackground: Story = {
         "
       >
         <div slot="preview" style="color: rgb(242 244 248);">ダーク背景上のプレビュー</div>
-        <ui-code-block lang="ts">
+        <ui-code-block layout="inline" lang="ts">
           <pre><code>const a = 1;</code></pre>
         </ui-code-block>
       </ui-code-preview>
@@ -1463,7 +1510,7 @@ export const ToolbarDynamicSlotDetection: Story = {
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
         <div slot="preview"><ui-button>ボタン</ui-button></div>
-        <ui-code-block lang="ts">
+        <ui-code-block layout="inline" lang="ts">
           <pre><code>const a = 1;</code></pre>
         </ui-code-block>
       </ui-code-preview>
@@ -1524,26 +1571,26 @@ export const CopyFunctionalityPreservation: Story = {
     <div style="padding: 2rem; display: flex; flex-direction: column; gap: 2rem; max-width: 720px;">
       <ui-code-preview
         id="copy-preserve-block-preview"
-        label="Copy Block"
+        heading="Copy Block"
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
         <div slot="preview">Code Block Copy</div>
-        <ui-code-block id="copy-preserve-block" lang="ts">
+        <ui-code-block id="copy-preserve-block" layout="inline" lang="ts">
           <pre><code>const blockValue = 1;</code></pre>
         </ui-code-block>
       </ui-code-preview>
 
       <ui-code-preview
         id="copy-preserve-group-preview"
-        label="Copy Group"
+        heading="Copy Group"
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
         <div slot="preview">Code Group Copy</div>
         <ui-code-group id="copy-preserve-group" aria-label="copy group">
-          <ui-code-block label="A" lang="ts">
+          <ui-code-block group-key="a" tab-label="A" lang="ts">
             <pre><code>const groupValueA = 1;</code></pre>
           </ui-code-block>
-          <ui-code-block label="B" lang="ts">
+          <ui-code-block group-key="b" tab-label="B" lang="ts">
             <pre><code>const groupValueB = 2;</code></pre>
           </ui-code-block>
         </ui-code-group>
@@ -1608,7 +1655,7 @@ export const NoJsContentIntegrity: Story = {
         <div slot="preview" id="nojs-preview-content">
           <ui-button>プレビューコンテンツ</ui-button>
         </div>
-        <ui-code-block id="nojs-code-content" lang="ts">
+        <ui-code-block id="nojs-code-content" layout="inline" lang="ts">
           <pre><code>const a = 1;</code></pre>
         </ui-code-block>
       </ui-code-preview>

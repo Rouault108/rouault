@@ -11,6 +11,19 @@ type PreviewTheme = 'page' | 'light' | 'dark';
 type PreviewSurface = 'surface' | 'canvas' | 'muted';
 type PreviewViewport = 'full' | 'tablet' | 'mobile';
 type PreviewControl = 'theme' | 'surface' | 'viewport';
+type PreviewStateKey = 'previewTheme' | 'previewSurface' | 'previewViewport';
+
+export interface CodePreviewState {
+  readonly previewTheme: PreviewTheme;
+  readonly previewSurface: PreviewSurface;
+  readonly previewViewport: PreviewViewport;
+}
+
+export interface CodePreviewStateChangeDetail {
+  readonly keys: PreviewStateKey[];
+  readonly state: CodePreviewState;
+  readonly userInitiated: boolean;
+}
 
 interface PreviewControlOption<T extends string> {
   readonly value: T;
@@ -87,6 +100,9 @@ export class CodePreview extends LitElement {
       --_ui-code-preview-breakout-margin-default: 0;
 
       /* ─── 子コンポーネントの breakout を無効化（本コンポーネントが担当） ─── */
+      --ui-code-surface-breakout-width: 100%;
+      --ui-code-surface-breakout-margin: 0;
+      --ui-code-surface-radius-top: 0;
       --ui-code-block-breakout-width: 100%;
       --ui-code-block-breakout-margin: 0;
       --ui-code-block-radius-top: 0;
@@ -309,7 +325,7 @@ export class CodePreview extends LitElement {
       display: flex;
     }
 
-    .header-label {
+    .header-heading {
       display: none;
       min-width: 0;
       overflow: hidden;
@@ -321,7 +337,7 @@ export class CodePreview extends LitElement {
       letter-spacing: var(--tracking-wide, 0.025em);
     }
 
-    :host([data-has-label]) .header-label {
+    :host([data-has-heading]) .header-heading {
       display: block;
     }
 
@@ -500,6 +516,7 @@ export class CodePreview extends LitElement {
       width: 100% !important;
       margin-inline: 0 !important;
       --border-style-subtle: none;
+      --ui-code-surface-radius-bottom: var(--ui-code-preview-radius, var(--radius-md, 6px));
       --ui-code-block-radius-bottom: var(--ui-code-preview-radius, var(--radius-md, 6px));
       border-radius: 0 0 var(--ui-code-preview-radius, var(--radius-md, 6px))
         var(--ui-code-preview-radius, var(--radius-md, 6px)) !important;
@@ -569,9 +586,9 @@ export class CodePreview extends LitElement {
     }
   `;
 
-  /** オプションのヘッダーラベル。非空の場合、toolbar が空でもヘッダー領域を表示します。 */
+  /** オプションの見出し。非空の場合、toolbar が空でもヘッダー領域を表示します。 */
   @property({ type: String, reflect: true })
-  label = '';
+  heading = '';
 
   /** built-in controls を空白区切りで指定します。 */
   @property({ type: String, reflect: true })
@@ -606,15 +623,13 @@ export class CodePreview extends LitElement {
   @state()
   private _hasToolbarContent = false;
 
+  private readonly _pendingUserInitiatedKeys = new Set<PreviewStateKey>();
+
   @query('slot[name="toolbar"]')
   private _toolbarSlot?: HTMLSlotElement;
 
-  @query('slot:not([name])')
-  private _codeSlot?: HTMLSlotElement;
-
   override firstUpdated(): void {
     this._onToolbarSlotChange();
-    this._onCodeSlotChange();
   }
 
   override willUpdate(changedProperties: PropertyValues<this>): void {
@@ -650,10 +665,36 @@ export class CodePreview extends LitElement {
     this._syncHostAttributes();
   }
 
+  override updated(changedProperties: PropertyValues<this>): void {
+    super.updated(changedProperties);
+
+    const changedStateKeys = this._getChangedStateKeys(changedProperties);
+    if (changedStateKeys.length === 0) {
+      return;
+    }
+
+    const userInitiated = changedStateKeys.some((key) => this._pendingUserInitiatedKeys.has(key));
+    for (const key of changedStateKeys) {
+      this._pendingUserInitiatedKeys.delete(key);
+    }
+
+    this.dispatchEvent(
+      new CustomEvent<CodePreviewStateChangeDetail>('ui-code-preview-state-change', {
+        bubbles: true,
+        composed: true,
+        detail: {
+          keys: changedStateKeys,
+          state: this._previewState,
+          userInitiated,
+        },
+      }),
+    );
+  }
+
   private _syncHostAttributes(): void {
-    const hasLabel = this.label.trim() !== '';
-    const showHeader = hasLabel || this._hasToolbarContent || this._activeControls.length > 0;
-    this.toggleAttribute('data-has-label', hasLabel);
+    const hasHeading = this.heading.trim() !== '';
+    const showHeader = hasHeading || this._hasToolbarContent || this._activeControls.length > 0;
+    this.toggleAttribute('data-has-heading', hasHeading);
     this.toggleAttribute('data-show-header', showHeader);
   }
 
@@ -670,20 +711,35 @@ export class CodePreview extends LitElement {
     this._hasToolbarContent = hasMeaningful;
   };
 
-  private _onCodeSlotChange = (): void => {
-    const slot = this._codeSlot;
-    if (!slot) return;
-
-    for (const element of slot.assignedElements({ flatten: true })) {
-      const tag = element.tagName.toLowerCase();
-      if (tag !== 'ui-code-block' && tag !== 'ui-code-group') continue;
-      element.setAttribute('embedded', '');
-    }
-  };
-
   private get _groupAriaLabel(): string {
-    const label = this.label.trim();
-    return label !== '' ? label : 'コード プレビュー';
+    const heading = this.heading.trim();
+    return heading !== '' ? heading : 'コード プレビュー';
+  }
+
+  private get _previewState(): CodePreviewState {
+    return {
+      previewTheme: this.previewTheme,
+      previewSurface: this.previewSurface,
+      previewViewport: this.previewViewport,
+    };
+  }
+
+  private _getChangedStateKeys(changedProperties: PropertyValues<this>): PreviewStateKey[] {
+    const changedKeys: PreviewStateKey[] = [];
+
+    if (changedProperties.has('previewTheme')) {
+      changedKeys.push('previewTheme');
+    }
+
+    if (changedProperties.has('previewSurface')) {
+      changedKeys.push('previewSurface');
+    }
+
+    if (changedProperties.has('previewViewport')) {
+      changedKeys.push('previewViewport');
+    }
+
+    return changedKeys;
   }
 
   private get _activeControls(): PreviewControl[] {
@@ -708,32 +764,38 @@ export class CodePreview extends LitElement {
   }
 
   private _handleThemeSelect = (event: CustomEvent<{ value: string; label: string }>): void => {
-    if (!VALID_THEMES.has(event.detail.value as PreviewTheme)) {
+    const nextTheme = event.detail.value as PreviewTheme;
+    if (!VALID_THEMES.has(nextTheme) || nextTheme === this.previewTheme) {
       return;
     }
-    this.previewTheme = event.detail.value as PreviewTheme;
+    this._pendingUserInitiatedKeys.add('previewTheme');
+    this.previewTheme = nextTheme;
   };
 
   private _handleSurfaceSelect = (event: CustomEvent<{ value: string; label: string }>): void => {
-    if (!VALID_SURFACES.has(event.detail.value as PreviewSurface)) {
+    const nextSurface = event.detail.value as PreviewSurface;
+    if (!VALID_SURFACES.has(nextSurface) || nextSurface === this.previewSurface) {
       return;
     }
-    this.previewSurface = event.detail.value as PreviewSurface;
+    this._pendingUserInitiatedKeys.add('previewSurface');
+    this.previewSurface = nextSurface;
   };
 
   private _handleViewportSelect = (event: CustomEvent<{ value: string; label: string }>): void => {
-    if (!VALID_VIEWPORTS.has(event.detail.value as PreviewViewport)) {
+    const nextViewport = event.detail.value as PreviewViewport;
+    if (!VALID_VIEWPORTS.has(nextViewport) || nextViewport === this.previewViewport) {
       return;
     }
-    this.previewViewport = event.detail.value as PreviewViewport;
+    this._pendingUserInitiatedKeys.add('previewViewport');
+    this.previewViewport = nextViewport;
   };
 
   private _renderControlButton<T extends string>(
-    controlName: string,
+    _controlName: string,
     option: PreviewControlOption<T>,
   ) {
     return html`
-      <ui-button slot="trigger" variant="ghost" size="sm" aria-label="${`${controlName} を変更`}">
+      <ui-button slot="trigger" variant="ghost" size="sm">
         <iconify-icon icon="${option.icon}" aria-hidden="true"></iconify-icon>
         <span>${option.shortLabel}</span>
       </ui-button>
@@ -819,7 +881,7 @@ export class CodePreview extends LitElement {
     return html`
       <div class="root" role="group" aria-label="${this._groupAriaLabel}">
         <div class="header">
-          <span class="header-label">${this.label.trim()}</span>
+          <span class="header-heading">${this.heading.trim()}</span>
           <div class="header-tools">
             ${this._renderBuiltInControls()}
             <div class="header-toolbar">
@@ -835,7 +897,7 @@ export class CodePreview extends LitElement {
         </div>
 
         <div class="code-area">
-          <slot @slotchange="${this._onCodeSlotChange}"></slot>
+          <slot></slot>
         </div>
       </div>
     `;
