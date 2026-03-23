@@ -17,7 +17,7 @@ let detailsUidCounter = 0;
  * @slot summary - リッチな見出し領域。指定時は `summary` プロパティより優先。
  * @slot - 折りたたみコンテンツ本体
  *
- * @property {string} ariaLabel - トリガーのアクセシブルネーム（必須）
+ * @property {string} ariaLabel - icon-only 利用時のトリガー名
  * @property {string} summary - 見出しテキスト（summary slot 未指定時のフォールバック）
  * @property {boolean} open - 開閉状態
  * @property {'default' | 'bordered'} variant - 外枠バリアント
@@ -185,11 +185,20 @@ export class Details extends LitElement {
   private readonly _uid = ++detailsUidCounter;
   private readonly _contentId = `ui-details-content-${String(this._uid)}`;
   private readonly _summaryId = `ui-details-summary-${String(this._uid)}`;
+  private readonly _isDevelopment: boolean;
 
   private _isReady = false;
+  private _hasSummarySlotContent = false;
+  private _didWarnUnsupportedAriaLabelUsage = false;
+
+  constructor() {
+    super();
+    this._isDevelopment =
+      (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV ?? true;
+  }
 
   /**
-   * トリガーのアクセシブルネーム（必須）
+   * icon-only 利用時のトリガーのアクセシブルネーム
    */
   @property({ type: String, attribute: 'aria-label' })
   override ariaLabel = '';
@@ -220,13 +229,14 @@ export class Details extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    this._syncSummarySlotContent();
     this._validateAccessibleName();
   }
 
   override updated(changedProperties: PropertyValues<this>): void {
     super.updated(changedProperties);
 
-    if (changedProperties.has('ariaLabel')) {
+    if (changedProperties.has('ariaLabel') || changedProperties.has('summary')) {
       this._validateAccessibleName();
     }
 
@@ -239,9 +249,57 @@ export class Details extends LitElement {
     }
   }
 
+  private _syncSummarySlotContent(): boolean {
+    const children =
+      'children' in this
+        ? Array.from((this as typeof this & { children?: ArrayLike<Element> }).children ?? [])
+        : [];
+    const hasSummarySlotContent = children.some(
+      (child) => child.getAttribute('slot') === 'summary',
+    );
+    const hasChanged = this._hasSummarySlotContent !== hasSummarySlotContent;
+    this._hasSummarySlotContent = hasSummarySlotContent;
+    return hasChanged;
+  }
+
+  private _hasVisibleSummary(): boolean {
+    return this._hasSummarySlotContent || this.summary.trim().length > 0;
+  }
+
+  private _warnUnsupportedAriaLabelUsage(): void {
+    if (!this._isDevelopment || this._didWarnUnsupportedAriaLabelUsage) {
+      return;
+    }
+
+    console.warn(
+      '[ui-details] 可視 summary が存在する場合、aria-label は icon-only 利用時にのみサポートします。aria-label は内部 button に反映しません。',
+      this,
+    );
+    this._didWarnUnsupportedAriaLabelUsage = true;
+  }
+
   private _validateAccessibleName(): void {
-    if (this.ariaLabel.trim().length > 0) return;
-    throw new Error('[ui-details] `aria-label` は必須です。空文字または未指定は許可されません。');
+    const hasVisibleSummary = this._hasVisibleSummary();
+    const hasAriaLabel = this.ariaLabel.trim().length > 0;
+
+    if (hasVisibleSummary) {
+      if (hasAriaLabel) {
+        this._warnUnsupportedAriaLabelUsage();
+      } else {
+        this._didWarnUnsupportedAriaLabelUsage = false;
+      }
+      return;
+    }
+
+    this._didWarnUnsupportedAriaLabelUsage = false;
+
+    if (hasAriaLabel) {
+      return;
+    }
+
+    throw new Error(
+      '[ui-details] 可視 summary がない icon-only 利用では `aria-label` が必須です。`summary` または `slot="summary"` を与える場合は `aria-label` を併用しないでください。',
+    );
   }
 
   private _dispatchToggleEvent(): void {
@@ -258,8 +316,18 @@ export class Details extends LitElement {
     this.open = !this.open;
   };
 
+  private _onSummarySlotChange = (): void => {
+    if (!this._syncSummarySlotContent()) {
+      return;
+    }
+
+    this._validateAccessibleName();
+    this.requestUpdate();
+  };
+
   override render() {
     const normalizedAriaLabel = this.ariaLabel.trim();
+    const hasVisibleSummary = this._hasVisibleSummary();
     const hasAriaLabel = normalizedAriaLabel.length > 0;
 
     return html`
@@ -271,14 +339,14 @@ export class Details extends LitElement {
           id="${this._summaryId}"
           aria-expanded="${String(this.open)}"
           aria-controls="${this._contentId}"
-          aria-label="${ifDefined(hasAriaLabel ? normalizedAriaLabel : undefined)}"
+          aria-label="${ifDefined(!hasVisibleSummary && hasAriaLabel ? normalizedAriaLabel : undefined)}"
           @click="${this._onTriggerClick}"
         >
           <span class="icon" aria-hidden="true">
             <iconify-icon icon="lucide:chevron-right"></iconify-icon>
           </span>
           <span class="summary" part="summary">
-            <slot name="summary">${this.summary}</slot>
+            <slot name="summary" @slotchange="${this._onSummarySlotChange}">${this.summary}</slot>
           </span>
         </button>
 

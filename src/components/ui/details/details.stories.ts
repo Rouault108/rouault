@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { CSSResult, html } from 'lit';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import './details';
 import { Details, type DetailsVariant } from './details';
 
@@ -50,7 +51,8 @@ Native <details> ではなく、\`button + grid-template-rows + opacity + inert\
 開閉アニメーションと閉状態のコンテンツ隔離を両立します。
 
 ## 重要仕様
-- \`aria-label\` は必須（空文字不可）
+- 通常利用では \`summary\` または \`summary\` slot が必須
+- \`aria-label\` は icon-only 利用時にのみ必須
 - \`summary\` slot がある場合は \`summary\` 属性より優先
 - \`open\` と \`aria-expanded\` は常に同期
 - 状態変化時に \`toggle\` イベントを1回発火
@@ -61,7 +63,7 @@ Native <details> ではなく、\`button + grid-template-rows + opacity + inert\
   argTypes: {
     ariaLabel: {
       control: 'text',
-      description: 'トリガーのアクセシブルネーム（必須）',
+      description: 'icon-only 利用時のトリガーのアクセシブルネーム',
       table: {
         type: { summary: 'string' },
         defaultValue: { summary: "''" },
@@ -112,7 +114,6 @@ type Story = StoryObj<Details>;
  */
 export const Default: Story = {
   args: {
-    ariaLabel: '関連情報を開閉',
     summary: '関連情報',
     open: false,
     variant: 'default',
@@ -120,7 +121,7 @@ export const Default: Story = {
   render: (args) => html`
     <ui-details
       id="details-default"
-      aria-label="${args.ariaLabel}"
+      aria-label="${ifDefined(args.ariaLabel?.trim() ? args.ariaLabel : undefined)}"
       summary="${args.summary}"
       ?open="${args.open}"
       variant="${args.variant}"
@@ -141,6 +142,9 @@ export const Default: Story = {
     }
     if (trigger.getAttribute('aria-expanded') !== 'false') {
       throw new Error('初期状態の aria-expanded は "false" である必要があります');
+    }
+    if (trigger.hasAttribute('aria-label')) {
+      throw new Error('通常利用では trigger に aria-label を出力してはいけません');
     }
     if (!content.hasAttribute('inert')) {
       throw new Error('閉状態では content に inert が必要です');
@@ -180,7 +184,6 @@ export const VariantStateMatrix: Story = {
             <div class="matrix-label">${item.summary}</div>
             <ui-details
               id="${item.id}"
-              aria-label="${item.summary} 詳細"
               summary="${item.summary}"
               variant="${item.variant}"
               ?open="${item.open}"
@@ -214,6 +217,9 @@ export const VariantStateMatrix: Story = {
       if (trigger.getAttribute('aria-expanded') !== String(testCase.open)) {
         throw new Error(`#${testCase.id}: aria-expanded が open と同期していません`);
       }
+      if (trigger.hasAttribute('aria-label')) {
+        throw new Error(`#${testCase.id}: 可視 summary があるため aria-label は内部へ反映してはいけません`);
+      }
       if (content.getAttribute('aria-hidden') !== String(!testCase.open)) {
         throw new Error(`#${testCase.id}: aria-hidden が open と同期していません`);
       }
@@ -240,7 +246,7 @@ export const VariantStateMatrix: Story = {
  */
 export const ToggleEventAndStateSync: Story = {
   render: () => html`
-    <ui-details id="toggle-sync" aria-label="詳細情報を開閉" summary="状態同期テスト">
+    <ui-details id="toggle-sync" summary="状態同期テスト">
       <div>
         <p style="margin: 0 0 0.5rem;">開閉とイベント同期を検証します。</p>
         <button id="inner-action" type="button">内部アクション</button>
@@ -318,7 +324,7 @@ export const ToggleEventAndStateSync: Story = {
  */
 export const KeyboardInteraction: Story = {
   render: () => html`
-    <ui-details id="keyboard-toggle" aria-label="キーボード開閉" summary="Keyboard Interaction">
+    <ui-details id="keyboard-toggle" summary="Keyboard Interaction">
       <p style="margin: 0;">Enter と Space で開閉できることを検証します。</p>
     </ui-details>
   `,
@@ -355,12 +361,7 @@ export const KeyboardInteraction: Story = {
  */
 export const SummarySlotPriority: Story = {
   render: () => html`
-    <ui-details
-      id="slot-priority"
-      aria-label="スロット優先サマリー"
-      summary="属性サマリー（表示されない想定）"
-      open
-    >
+    <ui-details id="slot-priority" summary="属性サマリー（表示されない想定）" open>
       <span slot="summary">
         <strong>スロットで上書きされた見出し</strong>
       </span>
@@ -386,6 +387,38 @@ export const SummarySlotPriority: Story = {
     if (assignedText !== 'スロットで上書きされた見出し') {
       throw new Error('summary slot に期待した見出しが割り当てられていません');
     }
+
+    const trigger = getTrigger(details);
+    if (trigger.hasAttribute('aria-label')) {
+      throw new Error('summary slot がある通常利用では aria-label を内部へ反映してはいけません');
+    }
+  },
+};
+
+/**
+ * A11y 契約: 通常利用では可視 summary がアクセシブルネームの主ソースになること。
+ */
+export const AccessibleNameContract: Story = {
+  render: () => html`
+    <ui-details id="a11y-contract" summary="可視サマリー契約">
+      <p style="margin: 0;">通常利用では可視 summary をアクセシブルネームとして扱います。</p>
+    </ui-details>
+  `,
+  play: async ({ canvasElement }) => {
+    const details = canvasElement.querySelector<Details>('#a11y-contract');
+    if (!details) throw new Error('#a11y-contract が見つかりません');
+    await details.updateComplete;
+
+    const trigger = getTrigger(details);
+    const summary = details.shadowRoot?.querySelector<HTMLElement>('.summary');
+    if (!summary) throw new Error('.summary が見つかりません');
+
+    if (trigger.hasAttribute('aria-label')) {
+      throw new Error('通常利用では trigger に aria-label を出力してはいけません');
+    }
+    if (summary.textContent?.trim() !== '可視サマリー契約') {
+      throw new Error('可視 summary が期待どおりに描画されていません');
+    }
   },
 };
 
@@ -393,7 +426,7 @@ export const SummarySlotPriority: Story = {
  * 境界条件: icon-only trigger。
  * summary 未指定でも `aria-label` だけで操作可能であることを確認します。
  */
-export const IconOnlyTrigger: Story = {
+export const IconOnlyBoundary: Story = {
   render: () => html`
     <ui-details id="icon-only" aria-label="通知の詳細を開閉">
       <p style="margin: 0;">
@@ -436,34 +469,39 @@ export const IconOnlyTrigger: Story = {
 };
 
 /**
- * 境界条件: `aria-label` 必須制約。
- * 空文字に変更した時、開発時エラー通知が発生することを確認します。
+ * 境界条件: 可視 summary と aria-label の併用は正規利用として扱わないこと。
  */
-export const AccessibleNameRequiredBoundary: Story = {
+export const AccessibleNameMismatchBoundary: Story = {
   render: () => html`
-    <ui-details id="a11y-boundary" aria-label="一時ラベル" summary="aria-label 必須境界">
-      <p style="margin: 0;">aria-label の必須チェックを検証します。</p>
+    <ui-details id="a11y-mismatch" summary="可視サマリー">
+      <p style="margin: 0;">可視 summary と aria-label の併用を開発時警告として検知します。</p>
     </ui-details>
   `,
   play: async ({ canvasElement }) => {
-    const details = canvasElement.querySelector<Details>('#a11y-boundary');
-    if (!details) throw new Error('#a11y-boundary が見つかりません');
+    const details = canvasElement.querySelector<Details>('#a11y-mismatch');
+    if (!details) throw new Error('#a11y-mismatch が見つかりません');
     await details.updateComplete;
 
-    let threw = false;
+    const trigger = getTrigger(details);
+    const warnMessages: string[] = [];
+    const originalWarn = console.warn;
+
     try {
-      details.ariaLabel = ' ';
+      console.warn = (...args: unknown[]) => {
+        warnMessages.push(args.map((arg) => String(arg)).join(' '));
+      };
+
+      details.ariaLabel = '別名ラベル';
       await details.updateComplete;
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      if (!message.includes('[ui-details]')) {
-        throw new Error('ui-details 由来のエラーメッセージが検出できませんでした');
-      }
-      threw = true;
+    } finally {
+      console.warn = originalWarn;
     }
 
-    if (!threw) {
-      throw new Error('aria-label 空文字時は例外を送出する必要があります');
+    if (!warnMessages.some((message) => message.includes('[ui-details]'))) {
+      throw new Error('可視 summary と aria-label の併用時は開発時警告が必要です');
+    }
+    if (trigger.hasAttribute('aria-label')) {
+      throw new Error('可視 summary がある場合は aria-label を内部 button に反映してはいけません');
     }
   },
 };
@@ -473,7 +511,7 @@ export const AccessibleNameRequiredBoundary: Story = {
  */
 export const RegionLandmark: Story = {
   render: () => html`
-    <ui-details id="region-case" aria-label="FAQ の回答を開閉" summary="よくある質問" region>
+    <ui-details id="region-case" summary="よくある質問" region>
       <p style="margin: 0;">独立したセクションとして扱う内容です。</p>
     </ui-details>
   `,
@@ -498,11 +536,7 @@ export const RegionLandmark: Story = {
  */
 export const ReducedMotionContract: Story = {
   render: () => html`
-    <ui-details
-      id="reduced-motion-contract"
-      aria-label="Reduced Motion 契約"
-      summary="Reduced Motion"
-    >
+    <ui-details id="reduced-motion-contract" summary="Reduced Motion">
       <p style="margin: 0;">モーション抑制契約の退行検知用ストーリーです。</p>
     </ui-details>
   `,
@@ -530,7 +564,7 @@ export const ReducedMotionContract: Story = {
  */
 export const ForcedColorsContract: Story = {
   render: () => html`
-    <ui-details id="forced-colors-contract" aria-label="Forced Colors 契約" summary="Forced Colors">
+    <ui-details id="forced-colors-contract" summary="Forced Colors">
       <p style="margin: 0;">forced-colors 契約の退行検知用ストーリーです。</p>
     </ui-details>
   `,
@@ -561,7 +595,6 @@ export const DarkModeTokenContract: Story = {
     <div style="padding: 1rem; background: #11151b; border-radius: 8px;">
       <ui-details
         id="dark-mode-contract"
-        aria-label="Dark Mode 契約"
         summary="Dark Surface Contract"
         open
       >
