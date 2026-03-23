@@ -1,25 +1,20 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import './callout';
-import { Callout, type CalloutVariant } from './callout';
+import { Callout, type CalloutKind } from './callout';
 
-const VARIANTS = [
-  'note',
-  'tip',
-  'success',
-  'warning',
-  'danger',
-] as const satisfies CalloutVariant[];
+const KINDS = ['note', 'tip', 'success', 'warning', 'danger'] as const satisfies CalloutKind[];
 
-const FALLBACK_LABELS: Record<CalloutVariant, string> = {
+const FALLBACK_LABELS: Record<CalloutKind, string> = {
   note: '補足',
   tip: 'ヒント',
   success: '成功',
   warning: '警告',
-  danger: '注意',
+  danger: '危険',
 };
 
-const DEFAULT_ICONS: Record<CalloutVariant, string> = {
+const DEFAULT_ICONS: Record<CalloutKind, string> = {
   note: 'lucide:info',
   tip: 'lucide:lightbulb',
   success: 'lucide:check-circle',
@@ -39,6 +34,15 @@ const getIcon = (callout: Callout): HTMLElement => {
   return icon;
 };
 
+const getHeading = (callout: Callout): HTMLElement | null =>
+  callout.shadowRoot?.querySelector<HTMLElement>('.heading') ?? null;
+
+const getBody = (callout: Callout): HTMLElement => {
+  const body = callout.shadowRoot?.querySelector<HTMLElement>('.body');
+  if (!body) throw new Error('.body が見つかりません');
+  return body;
+};
+
 const meta: Meta<Callout> = {
   title: 'Components/Callout',
   component: 'ui-callout',
@@ -47,30 +51,35 @@ const meta: Meta<Callout> = {
     docs: {
       description: {
         component: `
-文脈外の補足情報を静かに強調するコールアウトです。
-バリアントごとの意味色・アイコン・アクセシブルラベルを持ち、\`title\` がある場合のみ見出しセマンティクスを付与します。
+本文から一段引いた非対話の補助情報ブロックです。
+\`kind\` で意味種別、\`heading\` で可視見出し、\`label\` で見出しなし時のアクセシブル名を分離して扱います。
         `,
       },
     },
   },
   argTypes: {
-    variant: {
+    kind: {
       control: 'select',
-      options: VARIANTS,
-      description: '意味的種別',
+      options: KINDS,
+      description: '補助情報の意味種別',
       table: {
         type: { summary: "'note' | 'tip' | 'success' | 'warning' | 'danger'" },
         defaultValue: { summary: "'note'" },
       },
     },
-    title: {
+    heading: {
       control: 'text',
-      description: '見出しテキスト（任意）',
+      description: '可視見出し（任意）',
+      table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
+    },
+    label: {
+      control: 'text',
+      description: '見出しなし時のアクセシブル名（任意）',
       table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
     },
     icon: {
       control: 'text',
-      description: 'デフォルトアイコン上書き',
+      description: '既定アイコンの上書き',
       table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
     },
     headingLevel: {
@@ -85,22 +94,26 @@ export default meta;
 type Story = StoryObj<Callout>;
 
 /**
- * 基本ケース: `title` + `heading-level` の組み合わせ。
- * ルートの `aria-labelledby` と `div.title` の見出しセマンティクスを検証します。
+ * 基本ケース: `heading` + `heading-level` の組み合わせ。
+ * ルートの `aria-labelledby` と見出しセマンティクスを検証します。
  */
 export const Default: Story = {
   args: {
-    variant: 'tip',
-    title: '読書のヒント',
+    kind: 'tip',
+    heading: '読書のヒント',
+    label: '',
     headingLevel: 3,
     icon: '',
   },
   render: (args) => html`
     <ui-callout
       id="default-callout"
-      variant="${args.variant}"
-      title="${args.title}"
-      heading-level="${String(args.headingLevel)}"
+      kind="${args.kind}"
+      heading="${args.heading}"
+      label="${args.label}"
+      heading-level="${ifDefined(
+        typeof args.headingLevel === 'number' ? String(args.headingLevel) : undefined,
+      )}"
       icon="${args.icon}"
     >
       長文ノートは、まず結論を冒頭に1文で書いてから詳細を追記すると再読効率が上がります。
@@ -112,30 +125,42 @@ export const Default: Story = {
     await callout.updateComplete;
 
     const root = getRoot(callout);
-    const title = callout.shadowRoot?.querySelector<HTMLElement>('.title');
-    if (!title) throw new Error('.title が見つかりません');
+    const heading = getHeading(callout);
+    const icon = getIcon(callout);
+    const body = getBody(callout);
+    if (!heading) throw new Error('.heading が見つかりません');
 
-    if (title.getAttribute('role') !== 'heading') {
-      throw new Error(`Expected role="heading", got "${title.getAttribute('role') ?? 'null'}"`);
+    if (heading.getAttribute('role') !== 'heading') {
+      throw new Error(`Expected role="heading", got "${heading.getAttribute('role') ?? 'null'}"`);
     }
-    if (title.getAttribute('aria-level') !== '3') {
+    if (heading.getAttribute('aria-level') !== '3') {
       throw new Error(
-        `Expected aria-level="3", got "${title.getAttribute('aria-level') ?? 'null'}"`,
+        `Expected aria-level="3", got "${heading.getAttribute('aria-level') ?? 'null'}"`,
       );
     }
-
-    const labelledby = root.getAttribute('aria-labelledby');
-    if (!labelledby || labelledby !== title.id) {
-      throw new Error('aria-labelledby が title の id を参照していません');
+    if (root.getAttribute('aria-labelledby') !== heading.id) {
+      throw new Error('aria-labelledby が heading の id を参照していません');
     }
-
     if (root.hasAttribute('aria-label')) {
       throw new Error(
-        'title がある場合は aria-label ではなく aria-labelledby を使う必要があります',
+        'heading がある場合は aria-label ではなく aria-labelledby を使う必要があります',
       );
     }
-
-    const icon = getIcon(callout);
+    if (root.getAttribute('data-kind') !== 'tip') {
+      throw new Error('data-kind が kind と一致していません');
+    }
+    if (root.getAttribute('part') !== 'container') {
+      throw new Error('container part が公開されていません');
+    }
+    if (heading.getAttribute('part') !== 'heading') {
+      throw new Error('heading part が公開されていません');
+    }
+    if (body.getAttribute('part') !== 'body') {
+      throw new Error('body part が公開されていません');
+    }
+    if (icon.getAttribute('part') !== 'icon') {
+      throw new Error('icon part が公開されていません');
+    }
     if (icon.getAttribute('icon') !== DEFAULT_ICONS.tip) {
       throw new Error(`Expected icon="${DEFAULT_ICONS.tip}"`);
     }
@@ -146,11 +171,11 @@ export const Default: Story = {
 };
 
 /**
- * 意味のある組み合わせ: `variant × title有無`。
- * - with title: 見出し参照（aria-labelledby）
- * - without title: バリアント別フォールバックラベル（aria-label）
+ * 意味のある組み合わせ: `kind × heading有無`。
+ * - with heading: 見出し参照（aria-labelledby）
+ * - without heading: kind 別フォールバックラベル（aria-label）
  */
-export const VariantStateMatrix: Story = {
+export const KindStateMatrix: Story = {
   render: () => html`
     <style>
       .matrix {
@@ -170,27 +195,27 @@ export const VariantStateMatrix: Story = {
     </style>
     <div class="matrix">
       <div class="matrix-section">
-        <div class="matrix-label">With Title</div>
-        ${VARIANTS.map(
-          (variant) => html`
+        <div class="matrix-label">With Heading</div>
+        ${KINDS.map(
+          (kind) => html`
             <ui-callout
-              id="${variant}-with-title"
-              variant="${variant}"
-              title="${variant} タイトル"
+              id="${kind}-with-heading"
+              kind="${kind}"
+              heading="${kind} 見出し"
               heading-level="2"
             >
-              variant="${variant}" の見出し付き状態
+              kind="${kind}" の見出し付き状態
             </ui-callout>
           `,
         )}
       </div>
 
       <div class="matrix-section">
-        <div class="matrix-label">Without Title</div>
-        ${VARIANTS.map(
-          (variant) => html`
-            <ui-callout id="${variant}-without-title" variant="${variant}">
-              variant="${variant}" のタイトルなし状態
+        <div class="matrix-label">Without Heading</div>
+        ${KINDS.map(
+          (kind) => html`
+            <ui-callout id="${kind}-without-heading" kind="${kind}">
+              kind="${kind}" の見出しなし状態
             </ui-callout>
           `,
         )}
@@ -204,47 +229,54 @@ export const VariantStateMatrix: Story = {
     }
     await Promise.all([...callouts].map((item) => item.updateComplete));
 
-    for (const variant of VARIANTS) {
-      const withTitle = canvasElement.querySelector<Callout>(`#${variant}-with-title`);
-      if (!withTitle) throw new Error(`#${variant}-with-title が見つかりません`);
+    for (const kind of KINDS) {
+      const withHeading = canvasElement.querySelector<Callout>(`#${kind}-with-heading`);
+      if (!withHeading) throw new Error(`#${kind}-with-heading が見つかりません`);
 
-      const withTitleRoot = getRoot(withTitle);
-      const withTitleTitle = withTitle.shadowRoot?.querySelector<HTMLElement>('.title');
-      if (!withTitleTitle) throw new Error(`#${variant}-with-title の .title が見つかりません`);
-      if (withTitleRoot.getAttribute('aria-labelledby') !== withTitleTitle.id) {
-        throw new Error(`#${variant}-with-title の aria-labelledby が不正です`);
+      const withHeadingRoot = getRoot(withHeading);
+      const withHeadingHeading = getHeading(withHeading);
+      if (!withHeadingHeading)
+        throw new Error(`#${kind}-with-heading の .heading が見つかりません`);
+      if (withHeadingRoot.getAttribute('aria-labelledby') !== withHeadingHeading.id) {
+        throw new Error(`#${kind}-with-heading の aria-labelledby が不正です`);
       }
-      if (withTitleTitle.getAttribute('role') !== 'heading') {
-        throw new Error(`#${variant}-with-title は role="heading" である必要があります`);
+      if (withHeadingHeading.getAttribute('role') !== 'heading') {
+        throw new Error(`#${kind}-with-heading は role="heading" である必要があります`);
       }
-      if (withTitleTitle.getAttribute('aria-level') !== '2') {
-        throw new Error(`#${variant}-with-title は aria-level="2" である必要があります`);
+      if (withHeadingHeading.getAttribute('aria-level') !== '2') {
+        throw new Error(`#${kind}-with-heading は aria-level="2" である必要があります`);
       }
-      if (getIcon(withTitle).getAttribute('icon') !== DEFAULT_ICONS[variant]) {
-        throw new Error(`#${variant}-with-title のデフォルトアイコンが不正です`);
+      if (withHeadingRoot.getAttribute('data-kind') !== kind) {
+        throw new Error(`#${kind}-with-heading の data-kind が不正です`);
       }
-      if (getIcon(withTitle).getAttribute('aria-hidden') !== 'true') {
+      if (getIcon(withHeading).getAttribute('icon') !== DEFAULT_ICONS[kind]) {
+        throw new Error(`#${kind}-with-heading の既定アイコンが不正です`);
+      }
+      if (getIcon(withHeading).getAttribute('aria-hidden') !== 'true') {
         throw new Error(
-          `#${variant}-with-title のアイコンは aria-hidden="true" である必要があります`,
+          `#${kind}-with-heading のアイコンは aria-hidden="true" である必要があります`,
         );
       }
 
-      const withoutTitle = canvasElement.querySelector<Callout>(`#${variant}-without-title`);
-      if (!withoutTitle) throw new Error(`#${variant}-without-title が見つかりません`);
+      const withoutHeading = canvasElement.querySelector<Callout>(`#${kind}-without-heading`);
+      if (!withoutHeading) throw new Error(`#${kind}-without-heading が見つかりません`);
 
-      const withoutTitleRoot = getRoot(withoutTitle);
-      if (withoutTitleRoot.hasAttribute('aria-labelledby')) {
-        throw new Error(`#${variant}-without-title は aria-labelledby を持つべきではありません`);
+      const withoutHeadingRoot = getRoot(withoutHeading);
+      if (withoutHeadingRoot.hasAttribute('aria-labelledby')) {
+        throw new Error(`#${kind}-without-heading は aria-labelledby を持つべきではありません`);
       }
-      if (withoutTitleRoot.getAttribute('aria-label') !== FALLBACK_LABELS[variant]) {
-        throw new Error(`#${variant}-without-title の aria-label が不正です`);
+      if (withoutHeadingRoot.getAttribute('aria-label') !== FALLBACK_LABELS[kind]) {
+        throw new Error(`#${kind}-without-heading の aria-label が不正です`);
       }
-      if (getIcon(withoutTitle).getAttribute('icon') !== DEFAULT_ICONS[variant]) {
-        throw new Error(`#${variant}-without-title のデフォルトアイコンが不正です`);
+      if (withoutHeadingRoot.getAttribute('data-kind') !== kind) {
+        throw new Error(`#${kind}-without-heading の data-kind が不正です`);
       }
-      if (getIcon(withoutTitle).getAttribute('aria-hidden') !== 'true') {
+      if (getIcon(withoutHeading).getAttribute('icon') !== DEFAULT_ICONS[kind]) {
+        throw new Error(`#${kind}-without-heading の既定アイコンが不正です`);
+      }
+      if (getIcon(withoutHeading).getAttribute('aria-hidden') !== 'true') {
         throw new Error(
-          `#${variant}-without-title のアイコンは aria-hidden="true" である必要があります`,
+          `#${kind}-without-heading のアイコンは aria-hidden="true" である必要があります`,
         );
       }
     }
@@ -258,20 +290,20 @@ export const VariantStateMatrix: Story = {
 export const HeadingLevelBoundaries: Story = {
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
-      <ui-callout id="heading-valid" variant="note" title="有効レベル" heading-level="1">
+      <ui-callout id="heading-valid" kind="note" heading="有効レベル" heading-level="1">
         heading-level=1
       </ui-callout>
-      <ui-callout id="heading-zero" variant="note" title="無効レベル0" heading-level="0">
+      <ui-callout id="heading-zero" kind="note" heading="無効レベル0" heading-level="0">
         heading-level=0
       </ui-callout>
-      <ui-callout id="heading-seven" variant="note" title="無効レベル7" heading-level="7">
+      <ui-callout id="heading-seven" kind="note" heading="無効レベル7" heading-level="7">
         heading-level=7
       </ui-callout>
-      <ui-callout id="heading-decimal" variant="note" title="無効レベル2.5" heading-level="2.5">
+      <ui-callout id="heading-decimal" kind="note" heading="無効レベル2.5" heading-level="2.5">
         heading-level=2.5
       </ui-callout>
-      <ui-callout id="heading-no-title" variant="note" heading-level="4">
-        title 未指定 + heading-level=4
+      <ui-callout id="heading-none" kind="note" heading-level="4">
+        heading 未指定 + heading-level=4
       </ui-callout>
     </div>
   `,
@@ -280,8 +312,8 @@ export const HeadingLevelBoundaries: Story = {
     const zero = canvasElement.querySelector<Callout>('#heading-zero');
     const seven = canvasElement.querySelector<Callout>('#heading-seven');
     const decimal = canvasElement.querySelector<Callout>('#heading-decimal');
-    const noTitle = canvasElement.querySelector<Callout>('#heading-no-title');
-    if (!valid || !zero || !seven || !decimal || !noTitle) {
+    const none = canvasElement.querySelector<Callout>('#heading-none');
+    if (!valid || !zero || !seven || !decimal || !none) {
       throw new Error('境界条件テスト用 callout が見つかりません');
     }
 
@@ -290,180 +322,191 @@ export const HeadingLevelBoundaries: Story = {
       zero.updateComplete,
       seven.updateComplete,
       decimal.updateComplete,
-      noTitle.updateComplete,
+      none.updateComplete,
     ]);
 
-    const validTitle = valid.shadowRoot?.querySelector<HTMLElement>('.title');
-    if (!validTitle) throw new Error('#heading-valid の .title が見つかりません');
-    if (validTitle.getAttribute('role') !== 'heading') {
+    const validHeading = getHeading(valid);
+    if (!validHeading) throw new Error('#heading-valid の .heading が見つかりません');
+    if (validHeading.getAttribute('role') !== 'heading') {
       throw new Error('#heading-valid は role="heading" である必要があります');
     }
-    if (validTitle.getAttribute('aria-level') !== '1') {
+    if (validHeading.getAttribute('aria-level') !== '1') {
       throw new Error('#heading-valid は aria-level="1" である必要があります');
     }
 
-    const zeroTitle = zero.shadowRoot?.querySelector<HTMLElement>('.title');
-    if (!zeroTitle) throw new Error('#heading-zero の .title が見つかりません');
-    if (zeroTitle.hasAttribute('role') || zeroTitle.hasAttribute('aria-level')) {
+    const zeroHeading = getHeading(zero);
+    if (!zeroHeading) throw new Error('#heading-zero の .heading が見つかりません');
+    if (zeroHeading.hasAttribute('role') || zeroHeading.hasAttribute('aria-level')) {
       throw new Error('#heading-zero は無効値のため role/aria-level を出力しない必要があります');
     }
 
-    const sevenTitle = seven.shadowRoot?.querySelector<HTMLElement>('.title');
-    if (!sevenTitle) throw new Error('#heading-seven の .title が見つかりません');
-    if (sevenTitle.hasAttribute('role') || sevenTitle.hasAttribute('aria-level')) {
+    const sevenHeading = getHeading(seven);
+    if (!sevenHeading) throw new Error('#heading-seven の .heading が見つかりません');
+    if (sevenHeading.hasAttribute('role') || sevenHeading.hasAttribute('aria-level')) {
       throw new Error('#heading-seven は無効値のため role/aria-level を出力しない必要があります');
     }
 
-    const decimalTitle = decimal.shadowRoot?.querySelector<HTMLElement>('.title');
-    if (!decimalTitle) throw new Error('#heading-decimal の .title が見つかりません');
-    if (decimalTitle.hasAttribute('role') || decimalTitle.hasAttribute('aria-level')) {
+    const decimalHeading = getHeading(decimal);
+    if (!decimalHeading) throw new Error('#heading-decimal の .heading が見つかりません');
+    if (decimalHeading.hasAttribute('role') || decimalHeading.hasAttribute('aria-level')) {
       throw new Error('#heading-decimal は無効値のため role/aria-level を出力しない必要があります');
     }
 
-    const noTitleRoot = getRoot(noTitle);
-    if (noTitle.shadowRoot?.querySelector('.title')) {
-      throw new Error('#heading-no-title は title 未指定のため .title を出力しない必要があります');
+    const noneRoot = getRoot(none);
+    if (getHeading(none)) {
+      throw new Error('#heading-none は heading 未指定のため .heading を出力しない必要があります');
     }
-    if (noTitleRoot.hasAttribute('aria-labelledby')) {
-      throw new Error('#heading-no-title は aria-labelledby を持つべきではありません');
+    if (noneRoot.hasAttribute('aria-labelledby')) {
+      throw new Error('#heading-none は aria-labelledby を持つべきではありません');
     }
-    if (noTitleRoot.getAttribute('aria-label') !== FALLBACK_LABELS.note) {
-      throw new Error('#heading-no-title は note のフォールバックラベルを持つ必要があります');
+    if (noneRoot.getAttribute('aria-label') !== FALLBACK_LABELS.note) {
+      throw new Error('#heading-none は note のフォールバックラベルを持つ必要があります');
     }
   },
 };
 
 /**
- * 境界条件: アイコン上書き + 空白タイトル。
- * 空白のみの `title` は「タイトルなし」として扱い、`aria-label` フォールバックに戻します。
+ * 境界条件: アイコン上書き + 空白 heading。
+ * 空白のみの `heading` は「見出しなし」として扱い、`aria-label` フォールバックに戻します。
  */
-export const IconOverrideAndBlankTitle: Story = {
+export const IconOverrideAndBlankHeading: Story = {
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-callout
         id="icon-override"
-        variant="danger"
-        title="セキュリティ注意"
+        kind="danger"
+        heading="セキュリティ注意"
         icon="lucide:shield-alert"
       >
         2段階認証を有効化してください。
       </ui-callout>
-      <ui-callout id="blank-title" variant="success" title="   " heading-level="4">
-        空白タイトルは未指定として扱います。
+      <ui-callout id="blank-heading" kind="success" heading="   " heading-level="4">
+        空白 heading は未指定として扱います。
       </ui-callout>
     </div>
   `,
   play: async ({ canvasElement }) => {
     const iconOverride = canvasElement.querySelector<Callout>('#icon-override');
-    const blankTitle = canvasElement.querySelector<Callout>('#blank-title');
-    if (!iconOverride || !blankTitle) throw new Error('テスト対象 callout が見つかりません');
-    await Promise.all([iconOverride.updateComplete, blankTitle.updateComplete]);
+    const blankHeading = canvasElement.querySelector<Callout>('#blank-heading');
+    if (!iconOverride || !blankHeading) throw new Error('テスト対象 callout が見つかりません');
+    await Promise.all([iconOverride.updateComplete, blankHeading.updateComplete]);
 
     if (getIcon(iconOverride).getAttribute('icon') !== 'lucide:shield-alert') {
       throw new Error('icon 上書きが反映されていません');
     }
 
-    const blankTitleRoot = getRoot(blankTitle);
-    if (blankTitle.shadowRoot?.querySelector('.title')) {
-      throw new Error('空白タイトルは .title を出力しない必要があります');
+    const blankHeadingRoot = getRoot(blankHeading);
+    if (getHeading(blankHeading)) {
+      throw new Error('空白 heading は .heading を出力しない必要があります');
     }
-    if (blankTitleRoot.getAttribute('aria-label') !== FALLBACK_LABELS.success) {
-      throw new Error('空白タイトル時の aria-label フォールバックが不正です');
+    if (blankHeadingRoot.getAttribute('aria-label') !== FALLBACK_LABELS.success) {
+      throw new Error('空白 heading 時の aria-label フォールバックが不正です');
     }
-    if (blankTitleRoot.hasAttribute('aria-labelledby')) {
-      throw new Error('空白タイトル時は aria-labelledby を持つべきではありません');
+    if (blankHeadingRoot.hasAttribute('aria-labelledby')) {
+      throw new Error('空白 heading 時は aria-labelledby を持つべきではありません');
     }
   },
 };
 
 /**
- * 境界条件: aria-label 明示値の優先と空文字時フォールバック。
+ * 境界条件: `label` の優先と、`heading` がある場合の無視。
  */
-export const AriaLabelOverrides: Story = {
+export const LabelPriority: Story = {
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
-      <ui-callout id="label-explicit" variant="warning" aria-label="重要な警告">
+      <ui-callout id="label-explicit" kind="warning" label="重要な警告">
         明示ラベルを優先して利用
       </ui-callout>
-      <ui-callout id="label-empty" variant="tip" aria-label="   ">
+      <ui-callout id="label-empty" kind="tip" label="   ">
         空白ラベルはフォールバックへ戻す
       </ui-callout>
       <ui-callout
-        id="label-with-title"
-        variant="danger"
-        title="タイトルあり"
-        aria-label="無視されるラベル"
+        id="label-with-heading"
+        kind="danger"
+        heading="見出しあり"
+        label="無視されるラベル"
       >
-        title がある場合は aria-labelledby を使う
+        heading がある場合は aria-labelledby を使う
       </ui-callout>
     </div>
   `,
   play: async ({ canvasElement }) => {
     const explicit = canvasElement.querySelector<Callout>('#label-explicit');
     const empty = canvasElement.querySelector<Callout>('#label-empty');
-    const withTitle = canvasElement.querySelector<Callout>('#label-with-title');
-    if (!explicit || !empty || !withTitle)
-      throw new Error('aria-label テスト対象 callout が見つかりません');
-    await Promise.all([explicit.updateComplete, empty.updateComplete, withTitle.updateComplete]);
+    const withHeading = canvasElement.querySelector<Callout>('#label-with-heading');
+    if (!explicit || !empty || !withHeading)
+      throw new Error('label テスト対象 callout が見つかりません');
+    await Promise.all([explicit.updateComplete, empty.updateComplete, withHeading.updateComplete]);
 
     const explicitRoot = getRoot(explicit);
     const emptyRoot = getRoot(empty);
-    const withTitleRoot = getRoot(withTitle);
-    const withTitleTitle = withTitle.shadowRoot?.querySelector<HTMLElement>('.title');
-    if (!withTitleTitle) throw new Error('#label-with-title の .title が見つかりません');
+    const withHeadingRoot = getRoot(withHeading);
+    const withHeadingHeading = getHeading(withHeading);
+    if (!withHeadingHeading) throw new Error('#label-with-heading の .heading が見つかりません');
 
     if (explicitRoot.getAttribute('aria-label') !== '重要な警告') {
-      throw new Error('aria-label 明示値が優先されていません');
+      throw new Error('label 明示値が優先されていません');
     }
     if (emptyRoot.getAttribute('aria-label') !== FALLBACK_LABELS.tip) {
-      throw new Error('空白 aria-label 時のフォールバックが不正です');
+      throw new Error('空白 label 時のフォールバックが不正です');
     }
-    if (withTitleRoot.hasAttribute('aria-label')) {
-      throw new Error('title がある場合は aria-label を出力しない必要があります');
+    if (withHeadingRoot.hasAttribute('aria-label')) {
+      throw new Error('heading がある場合は aria-label を出力しない必要があります');
     }
-    if (withTitleRoot.getAttribute('aria-labelledby') !== withTitleTitle.id) {
-      throw new Error('title がある場合は aria-labelledby が title id を参照する必要があります');
+    if (withHeadingRoot.getAttribute('aria-labelledby') !== withHeadingHeading.id) {
+      throw new Error(
+        'heading がある場合は aria-labelledby が heading id を参照する必要があります',
+      );
+    }
+    if (FALLBACK_LABELS.danger !== '危険') {
+      throw new Error('danger の既定ラベルは 危険 である必要があります');
     }
   },
 };
 
 /**
- * 境界条件: 不正バリアント値。
- * 属性が不正でも内部描画は `note` と同等にフォールバックします。
+ * 境界条件: 不正 kind 値。
+ * 属性が不正でも内部描画とホスト反映は `note` へ正規化されます。
  */
-export const InvalidVariantFallback: Story = {
+export const InvalidKindFallback: Story = {
   render: () => html`
-    <ui-callout id="invalid-variant" variant="unknown">
-      未知の variant 値を与えた場合のフォールバック確認
+    <ui-callout id="invalid-kind" kind="unknown">
+      未知の kind 値を与えた場合のフォールバック確認
     </ui-callout>
   `,
   play: async ({ canvasElement }) => {
-    const callout = canvasElement.querySelector<Callout>('#invalid-variant');
-    if (!callout) throw new Error('#invalid-variant が見つかりません');
+    const callout = canvasElement.querySelector<Callout>('#invalid-kind');
+    if (!callout) throw new Error('#invalid-kind が見つかりません');
     await callout.updateComplete;
 
     const root = getRoot(callout);
-    if (root.getAttribute('data-variant') !== 'note') {
+    if (root.getAttribute('data-kind') !== 'note') {
       throw new Error(
-        `Expected data-variant="note", got "${root.getAttribute('data-variant') ?? 'null'}"`,
+        `Expected data-kind="note", got "${root.getAttribute('data-kind') ?? 'null'}"`,
       );
     }
+    if (callout.kind !== 'note') {
+      throw new Error(`Expected callout.kind="note", got "${callout.kind}"`);
+    }
+    if (callout.getAttribute('kind') !== 'note') {
+      throw new Error(`Expected host kind="note", got "${callout.getAttribute('kind') ?? 'null'}"`);
+    }
     if (root.getAttribute('aria-label') !== FALLBACK_LABELS.note) {
-      throw new Error('不正 variant 時の aria-label フォールバックが不正です');
+      throw new Error('不正 kind 時の aria-label フォールバックが不正です');
     }
     if (getIcon(callout).getAttribute('icon') !== DEFAULT_ICONS.note) {
-      throw new Error('不正 variant 時のデフォルトアイコンフォールバックが不正です');
+      throw new Error('不正 kind 時の既定アイコンフォールバックが不正です');
     }
   },
 };
 
 /**
  * スタイル契約:
- * 受け入れ基準で要求されるトークン参照と forced-colors フォールバックが維持されていること。
+ * 受け入れ基準で要求されるトークン参照、part 公開、forced-colors フォールバックが維持されていること。
  */
 export const StyleContracts: Story = {
   render: () => html`
-    <ui-callout id="style-contracts" variant="warning" title="Style Contracts" heading-level="2">
+    <ui-callout id="style-contracts" kind="warning" heading="Style Contracts" heading-level="2">
       style contract checks
     </ui-callout>
   `,
@@ -472,7 +515,13 @@ export const StyleContracts: Story = {
     if (!callout) throw new Error('#style-contracts が見つかりません');
     await callout.updateComplete;
 
+    const root = getRoot(callout);
+    const heading = getHeading(callout);
+    const body = getBody(callout);
+    const icon = getIcon(callout);
     const styles = String(Callout.styles);
+    if (!heading) throw new Error('#style-contracts の .heading が見つかりません');
+
     if (!styles.includes('@media (forced-colors: active)')) {
       throw new Error('forced-colors スタイルが定義されていません');
     }
@@ -483,14 +532,14 @@ export const StyleContracts: Story = {
       throw new Error('forced-colors 全周ボーダーのトークンが使用されていません');
     }
     if (!styles.includes('var(--bg-note-subtle)') || !styles.includes('var(--bg-tip-subtle)')) {
-      throw new Error('variant 背景トークンが不足しています');
+      throw new Error('kind 背景トークンが不足しています');
     }
     if (
       !styles.includes('var(--bg-success-subtle)') ||
       !styles.includes('var(--bg-warning-subtle)') ||
       !styles.includes('var(--bg-danger-subtle)')
     ) {
-      throw new Error('variant 背景トークンが不足しています');
+      throw new Error('kind 背景トークンが不足しています');
     }
     if (!styles.includes('var(--fg-muted)') || !styles.includes('var(--fg-info)')) {
       throw new Error('アクセント色トークンが不足しています');
@@ -505,6 +554,18 @@ export const StyleContracts: Story = {
     if (!styles.includes('stroke-width: 1.5')) {
       throw new Error('アイコン stroke-width 1.5 の契約が不足しています');
     }
+    if (root.getAttribute('part') !== 'container') {
+      throw new Error('container part が公開されていません');
+    }
+    if (icon.getAttribute('part') !== 'icon') {
+      throw new Error('icon part が公開されていません');
+    }
+    if (heading.getAttribute('part') !== 'heading') {
+      throw new Error('heading part が公開されていません');
+    }
+    if (body.getAttribute('part') !== 'body') {
+      throw new Error('body part が公開されていません');
+    }
   },
 };
 
@@ -516,8 +577,8 @@ export const DarkModeTokenContract: Story = {
   render: () => html`
     <ui-callout
       id="dark-mode-contract"
-      variant="success"
-      title="Dark Mode Contract"
+      kind="success"
+      heading="Dark Mode Contract"
       heading-level="2"
     >
       semantic token contract checks

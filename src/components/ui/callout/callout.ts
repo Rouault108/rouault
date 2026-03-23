@@ -3,14 +3,14 @@ import { customElement, property } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import '../../../lib/icons';
 
-export type CalloutVariant = 'note' | 'tip' | 'success' | 'warning' | 'danger';
+export type CalloutKind = 'note' | 'tip' | 'success' | 'warning' | 'danger';
 
-interface CalloutVariantConfig {
+interface CalloutKindConfig {
   readonly icon: string;
   readonly fallbackLabel: string;
 }
 
-const VARIANT_CONFIG: Record<CalloutVariant, CalloutVariantConfig> = {
+const KIND_CONFIG: Record<CalloutKind, CalloutKindConfig> = {
   note: {
     icon: 'lucide:info',
     fallbackLabel: '補足',
@@ -29,13 +29,26 @@ const VARIANT_CONFIG: Record<CalloutVariant, CalloutVariantConfig> = {
   },
   danger: {
     icon: 'lucide:alert-octagon',
-    fallbackLabel: '注意',
+    fallbackLabel: '危険',
   },
 };
 
-const VALID_VARIANTS = new Set<CalloutVariant>(['note', 'tip', 'success', 'warning', 'danger']);
+const VALID_KINDS = new Set<CalloutKind>(['note', 'tip', 'success', 'warning', 'danger']);
 
-let calloutTitleId = 0;
+const normalizeString = (value: unknown): string => {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  return value.trim();
+};
+
+const normalizeCalloutKind = (value: unknown): CalloutKind => {
+  const normalized = normalizeString(value).toLowerCase();
+  return VALID_KINDS.has(normalized as CalloutKind) ? (normalized as CalloutKind) : 'note';
+};
+
+let calloutHeadingId = 0;
 
 @customElement('ui-callout')
 export class Callout extends LitElement {
@@ -55,31 +68,31 @@ export class Callout extends LitElement {
       color: var(--fg-default);
     }
 
-    .callout[data-variant='note'] {
+    .callout[data-kind='note'] {
       background: var(--bg-note-subtle);
       border-inline-start-color: var(--fg-muted);
       --ui-callout-accent-color: var(--fg-muted);
     }
 
-    .callout[data-variant='tip'] {
+    .callout[data-kind='tip'] {
       background: var(--bg-tip-subtle);
       border-inline-start-color: var(--fg-info);
       --ui-callout-accent-color: var(--fg-info);
     }
 
-    .callout[data-variant='success'] {
+    .callout[data-kind='success'] {
       background: var(--bg-success-subtle);
       border-inline-start-color: var(--fg-success);
       --ui-callout-accent-color: var(--fg-success);
     }
 
-    .callout[data-variant='warning'] {
+    .callout[data-kind='warning'] {
       background: var(--bg-warning-subtle);
       border-inline-start-color: var(--fg-warning);
       --ui-callout-accent-color: var(--fg-warning);
     }
 
-    .callout[data-variant='danger'] {
+    .callout[data-kind='danger'] {
       background: var(--bg-danger-subtle);
       border-inline-start-color: var(--fg-danger);
       --ui-callout-accent-color: var(--fg-danger);
@@ -102,7 +115,7 @@ export class Callout extends LitElement {
       color: var(--fg-default);
     }
 
-    .title {
+    .heading {
       margin: 0 0 var(--space-2, 8px) 0;
       font-weight: var(--font-semibold, 600);
       line-height: var(--line-height-relaxed, 1.75);
@@ -119,40 +132,91 @@ export class Callout extends LitElement {
         border-inline-start: var(--border-width-thick, 2px) solid var(--primary);
       }
 
-      .callout[data-variant='danger'] {
+      .callout[data-kind='danger'] {
         border-inline-start-color: var(--danger);
       }
     }
   `;
 
   @property({ type: String, reflect: true })
-  variant: CalloutVariant = 'note';
+  get kind(): CalloutKind {
+    return this._kind;
+  }
+
+  set kind(value: CalloutKind) {
+    const normalized = normalizeCalloutKind(value);
+    const oldValue = this._kind;
+    if (oldValue === normalized) {
+      return;
+    }
+
+    this._kind = normalized;
+    this.requestUpdate('kind', oldValue);
+  }
 
   @property({ type: String, reflect: true })
-  override title = '';
+  get heading(): string {
+    return this._heading;
+  }
+
+  set heading(value: string) {
+    const normalized = normalizeString(value);
+    const oldValue = this._heading;
+    if (oldValue === normalized) {
+      return;
+    }
+
+    this._heading = normalized;
+    this.requestUpdate('heading', oldValue);
+  }
 
   @property({ type: String, reflect: true })
-  icon = '';
+  get label(): string {
+    return this._label;
+  }
+
+  set label(value: string) {
+    const normalized = normalizeString(value);
+    const oldValue = this._label;
+    if (oldValue === normalized) {
+      return;
+    }
+
+    this._label = normalized;
+    this.requestUpdate('label', oldValue);
+  }
+
+  @property({ type: String, reflect: true })
+  get icon(): string {
+    return this._icon;
+  }
+
+  set icon(value: string) {
+    const normalized = normalizeString(value);
+    const oldValue = this._icon;
+    if (oldValue === normalized) {
+      return;
+    }
+
+    this._icon = normalized;
+    this.requestUpdate('icon', oldValue);
+  }
 
   @property({ type: Number, attribute: 'heading-level', reflect: true })
   headingLevel: number | undefined = undefined;
 
-  private readonly _titleId = `ui-callout-title-${String(++calloutTitleId)}`;
+  private _kind: CalloutKind = 'note';
 
-  private get _resolvedVariant(): CalloutVariant {
-    if (VALID_VARIANTS.has(this.variant)) {
-      return this.variant;
-    }
+  private _heading = '';
 
-    return 'note';
-  }
+  private _label = '';
 
-  private get _resolvedTitle(): string {
-    return this.title.trim();
-  }
+  private _icon = '';
+
+  private readonly _headingId = `ui-callout-heading-${String(++calloutHeadingId)}`;
 
   private get _resolvedHeadingLevel(): number | null {
-    if (this._resolvedTitle.length === 0) return null;
+    if (this.heading.length === 0) return null;
     if (typeof this.headingLevel !== 'number' || !Number.isFinite(this.headingLevel)) return null;
     if (!Number.isInteger(this.headingLevel)) return null;
 
@@ -162,48 +226,56 @@ export class Callout extends LitElement {
   }
 
   private get _resolvedIcon(): string {
-    const icon = this.icon.trim();
-    if (icon !== '') return icon;
+    if (this.icon !== '') return this.icon;
 
-    return VARIANT_CONFIG[this._resolvedVariant].icon;
+    return KIND_CONFIG[this.kind].icon;
+  }
+
+  private get _resolvedLabel(): string {
+    if (this.label !== '') {
+      return this.label;
+    }
+
+    return KIND_CONFIG[this.kind].fallbackLabel;
   }
 
   override render() {
-    const title = this._resolvedTitle;
-    const hasTitle = title.length > 0;
+    const hasHeading = this.heading.length > 0;
     const headingLevel = this._resolvedHeadingLevel;
-    const explicitLabel = this.getAttribute('aria-label')?.trim();
-    const labelFallback =
-      explicitLabel && explicitLabel.length > 0
-        ? explicitLabel
-        : VARIANT_CONFIG[this._resolvedVariant].fallbackLabel;
 
     return html`
       <aside
         class="callout"
-        data-variant="${this._resolvedVariant}"
-        aria-labelledby="${ifDefined(hasTitle ? this._titleId : undefined)}"
-        aria-label="${ifDefined(hasTitle ? undefined : labelFallback)}"
+        part="container"
+        data-kind="${this.kind}"
+        aria-labelledby="${ifDefined(hasHeading ? this._headingId : undefined)}"
+        aria-label="${ifDefined(hasHeading ? undefined : this._resolvedLabel)}"
       >
-        <iconify-icon class="icon" icon="${this._resolvedIcon}" aria-hidden="true"></iconify-icon>
+        <iconify-icon
+          class="icon"
+          part="icon"
+          icon="${this._resolvedIcon}"
+          aria-hidden="true"
+        ></iconify-icon>
 
         <div class="content">
-          ${hasTitle
+          ${hasHeading
             ? html`
                 <div
-                  id="${this._titleId}"
-                  class="title"
+                  id="${this._headingId}"
+                  class="heading"
+                  part="heading"
                   role="${headingLevel !== null ? 'heading' : nothing}"
                   aria-level="${ifDefined(
                     headingLevel !== null ? String(headingLevel) : undefined,
                   )}"
                 >
-                  ${title}
+                  ${this.heading}
                 </div>
               `
             : nothing}
 
-          <div class="body">
+          <div class="body" part="body">
             <slot></slot>
           </div>
         </div>
