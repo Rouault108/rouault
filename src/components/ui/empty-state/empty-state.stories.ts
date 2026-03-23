@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
-import { EmptyState, type EmptyStateVariant } from './empty-state';
+import { EmptyState, type EmptyStateAnnounce, type EmptyStateVariant } from './empty-state';
 import './empty-state';
 
 const VARIANTS = ['default', 'search', 'error'] as const satisfies EmptyStateVariant[];
+const ANNOUNCE_VALUES = ['off', 'polite'] as const satisfies EmptyStateAnnounce[];
 
 const waitFrame = async (): Promise<void> =>
   new Promise((resolve) => {
@@ -14,43 +15,60 @@ const waitFrame = async (): Promise<void> =>
 
 const getHost = (canvasElement: Element, id: string): EmptyState => {
   const host = canvasElement.querySelector<EmptyState>(`#${id}`);
-  if (!host) throw new Error(`#${id} が見つかりません`);
+  if (!host) {
+    throw new Error(`#${id} が見つかりません`);
+  }
   return host;
 };
 
 const getContainer = (host: EmptyState): HTMLElement => {
   const container = host.shadowRoot?.querySelector<HTMLElement>('.container');
-  if (!container) throw new Error('.container が見つかりません');
+  if (!container) {
+    throw new Error('.container が見つかりません');
+  }
   return container;
 };
 
-const getActions = (host: EmptyState): HTMLElement => {
-  const actions = host.shadowRoot?.querySelector<HTMLElement>('.actions');
-  if (!actions) throw new Error('.actions が見つかりません');
-  return actions;
-};
-
-const getDescription = (host: EmptyState): HTMLElement => {
-  const description = host.shadowRoot?.querySelector<HTMLElement>('.description');
-  if (!description) throw new Error('.description が見つかりません');
-  return description;
+const getMessage = (host: EmptyState): HTMLElement => {
+  const message = host.shadowRoot?.querySelector<HTMLElement>('.message');
+  if (!message) {
+    throw new Error('.message が見つかりません');
+  }
+  return message;
 };
 
 const getHeading = (host: EmptyState): HTMLElement => {
   const heading = host.shadowRoot?.querySelector<HTMLElement>('.heading');
-  if (!heading) throw new Error('.heading が見つかりません');
+  if (!heading) {
+    throw new Error('.heading が見つかりません');
+  }
   return heading;
 };
 
+const getDescription = (host: EmptyState): HTMLElement => {
+  const description = host.shadowRoot?.querySelector<HTMLElement>('.description');
+  if (!description) {
+    throw new Error('.description が見つかりません');
+  }
+  return description;
+};
+
+const getActions = (host: EmptyState): HTMLElement | null =>
+  host.shadowRoot?.querySelector<HTMLElement>('.actions') ?? null;
+
 const getIcon = (host: EmptyState): HTMLElement => {
   const icon = host.shadowRoot?.querySelector<HTMLElement>('.icon');
-  if (!icon) throw new Error('.icon が見つかりません');
+  if (!icon) {
+    throw new Error('.icon が見つかりません');
+  }
   return icon;
 };
 
 const getIllustration = (host: EmptyState): HTMLElement => {
   const illustration = host.shadowRoot?.querySelector<HTMLElement>('.illustration');
-  if (!illustration) throw new Error('.illustration が見つかりません');
+  if (!illustration) {
+    throw new Error('.illustration が見つかりません');
+  }
   return illustration;
 };
 
@@ -60,15 +78,21 @@ const isDisplayNone = (element: HTMLElement): boolean =>
 const parseRgb = (value: string): [number, number, number] => {
   const normalized = value.trim();
   const match = /^rgba?\((.*)\)$/.exec(normalized);
-  if (!match) throw new Error(`サポートされていないカラーフォーマットです: "${value}"`);
+  if (!match) {
+    throw new Error(`サポートされていないカラーフォーマットです: "${value}"`);
+  }
 
   const rawBody = match[1] ?? '';
   const body = rawBody.split('/')[0]?.trim() ?? '';
   const channels = body.includes(',') ? body.split(',') : body.split(/\s+/);
-  if (channels.length < 3) throw new Error(`無効な RGB チャネルです: "${value}"`);
+  if (channels.length < 3) {
+    throw new Error(`無効な RGB チャネルです: "${value}"`);
+  }
 
   const rgb = channels.slice(0, 3).map((ch) => Number.parseFloat(ch.trim()));
-  if (rgb.some((n) => Number.isNaN(n))) throw new Error(`無効な RGB 値です: "${value}"`);
+  if (rgb.some((n) => Number.isNaN(n))) {
+    throw new Error(`無効な RGB 値です: "${value}"`);
+  }
   return [rgb[0] ?? 0, rgb[1] ?? 0, rgb[2] ?? 0];
 };
 
@@ -100,12 +124,13 @@ const meta: Meta<EmptyState> = {
     docs: {
       description: {
         component: `
-Minimal empty-state component for content areas.
-- Host semantics: \`role="status"\` + \`aria-atomic="true"\`
-- Slots: \`heading\` (required), \`description\`, \`action\`, \`icon\`, \`illustration\`
-- Variants: \`default | search | error\`
-- No auto \`aria-label\`; readout comes from visible heading/description text
-- Illustration has higher priority than icon
+仕様書準拠の state presenter です。
+- 公開入力は \`variant\` と \`announce\`
+- スロットは \`heading\`（必須）, \`description\`, \`action\`, \`icon\`, \`illustration\`
+- live announcement は \`announce="polite"\` のときだけ \`.message\` に限定して有効化
+- \`illustration\` は \`icon\` より優先
+- \`icon\` / \`illustration\` 未指定でも text-first 構成を正規入力として扱う
+- 内部派生状態は公開 API に含めない
         `,
       },
     },
@@ -114,10 +139,19 @@ Minimal empty-state component for content areas.
     variant: {
       control: 'inline-radio',
       options: VARIANTS,
-      description: 'Visual variant',
+      description: '状態種別',
       table: {
         type: { summary: "'default' | 'search' | 'error'" },
         defaultValue: { summary: "'default'" },
+      },
+    },
+    announce: {
+      control: 'inline-radio',
+      options: ANNOUNCE_VALUES,
+      description: '通知モード',
+      table: {
+        type: { summary: "'off' | 'polite'" },
+        defaultValue: { summary: "'off'" },
       },
     },
   },
@@ -139,62 +173,70 @@ export const Default: Story = {
     await host.updateComplete;
 
     const container = getContainer(host);
-    if (container.getAttribute('data-variant') !== 'default') {
-      throw new Error(
-        `data-variant="default" を期待していましたが、実際には "${container.getAttribute('data-variant') ?? 'null'}" でした`,
-      );
-    }
+    const message = getMessage(host);
 
-    if (host.getAttribute('role') !== 'status') {
-      throw new Error(
-        `role="status" を期待していましたが、実際には "${host.getAttribute('role') ?? 'null'}" でした`,
-      );
+    if (host.variant !== 'default' || host.getAttribute('variant') !== 'default') {
+      throw new Error('既定 variant は default である必要があります');
     }
-    if (host.getAttribute('aria-atomic') !== 'true') {
-      throw new Error(
-        `aria-atomic="true" を期待していましたが、実際には "${host.getAttribute('aria-atomic') ?? 'null'}" でした`,
-      );
+    if (host.announce !== 'off' || host.getAttribute('announce') !== 'off') {
+      throw new Error('既定 announce は off である必要があります');
+    }
+    if (container.getAttribute('data-variant') !== 'default') {
+      throw new Error('描画結果の variant は default である必要があります');
+    }
+    if (message.getAttribute('data-announce') !== 'off') {
+      throw new Error('メッセージ領域の data-announce は off である必要があります');
+    }
+    if (message.hasAttribute('role') || message.hasAttribute('aria-live')) {
+      throw new Error('announce=off では自動ライブリージョン化してはいけません');
+    }
+    if (host.hasAttribute('role') || host.hasAttribute('aria-live') || host.hasAttribute('aria-atomic')) {
+      throw new Error('ホストにライブリージョン属性を持たせてはいけません');
     }
     if (host.hasAttribute('aria-label')) {
-      throw new Error('aria-label は自動生成されてはいけません');
+      throw new Error('aria-label は自動生成してはいけません');
     }
-
-    const fallbackIcon = host.shadowRoot?.querySelector<HTMLElement>('iconify-icon.fallback-icon');
-    if (!fallbackIcon) throw new Error('フォールバックアイコンがレンダリングされていません');
-    if (fallbackIcon.getAttribute('icon') !== 'lucide:inbox') {
-      throw new Error(
-        `icon="lucide:inbox" を期待していましたが、実際には "${fallbackIcon.getAttribute('icon') ?? 'null'}" でした`,
-      );
-    }
-
-    if (!host.hasAttribute('has-description')) {
-      throw new Error('説明スロットが指定されている場合、has-description 属性が必要です');
-    }
-    if (!host.hasAttribute('has-action')) {
-      throw new Error('アクションスロットが指定されている場合、has-action 属性が必要です');
-    }
-
     if (isDisplayNone(getDescription(host))) {
-      throw new Error('説明文が表示されている必要があります');
-    }
-    if (isDisplayNone(getActions(host))) {
-      throw new Error('アクションが表示されている必要があります');
+      throw new Error('description は表示されている必要があります');
     }
 
-    const actionButton = host.querySelector<HTMLButtonElement>('button[slot="action"]');
-    if (!(actionButton instanceof HTMLButtonElement)) {
-      throw new Error('アクションボタンが見つかりません');
+    const actions = getActions(host);
+    if (!(actions instanceof HTMLElement)) {
+      throw new Error('action がある場合、actions ラッパーが必要です');
     }
-    if (actionButton.disabled) {
-      throw new Error('アクションボタンが有効である必要があります');
+    if (actions.getAttribute('aria-labelledby') !== getHeading(host).id) {
+      throw new Error('actions は heading を参照している必要があります');
     }
-    if (actionButton.tabIndex !== 0) {
-      throw new Error('アクションボタンはキーボードでフォーカス可能である必要があります');
+    if (!isDisplayNone(getIcon(host))) {
+      throw new Error('icon 未指定時は text-first 構成として icon を表示してはいけません');
     }
+  },
+};
 
-    actionButton.focus();
-    if (document.activeElement !== actionButton) {
-      throw new Error('アクションボタンがフォーカス可能である必要があります');
+export const PoliteAnnouncement: Story = {
+  render: () => html`
+    <ui-empty-state id="polite-announcement" announce="polite" variant="error">
+      <h2 slot="heading">Failed to load notes</h2>
+      <p slot="description">Check your network and try again.</p>
+      <button slot="action" type="button">Retry</button>
+    </ui-empty-state>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'polite-announcement');
+    await host.updateComplete;
+
+    const message = getMessage(host);
+    if (message.getAttribute('role') !== 'status') {
+      throw new Error('announce=polite では message に role="status" が必要です');
+    }
+    if (message.getAttribute('aria-live') !== 'polite') {
+      throw new Error('announce=polite では message に aria-live="polite" が必要です');
+    }
+    if (message.getAttribute('aria-atomic') !== 'true') {
+      throw new Error('announce=polite では message に aria-atomic="true" が必要です');
+    }
+    if (host.hasAttribute('role') || host.hasAttribute('aria-live')) {
+      throw new Error('ライブリージョン属性はホストではなく message にだけ存在すべきです');
     }
   },
 };
@@ -222,16 +264,15 @@ export const VariantStateMatrix: Story = {
 
     <div class="matrix">
       <div class="cell">
-        <p class="label">default x first content</p>
+        <p class="label">default</p>
         <ui-empty-state id="matrix-default" variant="default">
           <h2 slot="heading">No notes yet</h2>
           <p slot="description">Start by creating a new note.</p>
-          <button slot="action" type="button">Create note</button>
         </ui-empty-state>
       </div>
 
       <div class="cell">
-        <p class="label">search x no results</p>
+        <p class="label">search</p>
         <ui-empty-state id="matrix-search" variant="search">
           <iconify-icon slot="icon" icon="lucide:search-x" aria-hidden="true"></iconify-icon>
           <h2 slot="heading">No matches for "design token"</h2>
@@ -240,7 +281,7 @@ export const VariantStateMatrix: Story = {
       </div>
 
       <div class="cell">
-        <p class="label">error x retry</p>
+        <p class="label">error</p>
         <ui-empty-state id="matrix-error" variant="error">
           <iconify-icon slot="icon" icon="lucide:triangle-alert" aria-hidden="true"></iconify-icon>
           <h2 slot="heading">Failed to load notes</h2>
@@ -261,31 +302,62 @@ export const VariantStateMatrix: Story = {
     ]);
 
     if (getContainer(defaultHost).getAttribute('data-variant') !== 'default') {
-      throw new Error('matrix-default は "default" である必要があります');
+      throw new Error('default の意味差が失われています');
     }
     if (getContainer(searchHost).getAttribute('data-variant') !== 'search') {
-      throw new Error('matrix-search は "search" である必要があります');
+      throw new Error('search の意味差が失われています');
     }
     if (getContainer(errorHost).getAttribute('data-variant') !== 'error') {
-      throw new Error('matrix-error は "error" である必要があります');
+      throw new Error('error の意味差が失われています');
     }
+  },
+};
 
-    if (
-      defaultHost.hasAttribute('aria-label') ||
-      searchHost.hasAttribute('aria-label') ||
-      errorHost.hasAttribute('aria-label')
-    ) {
-      throw new Error('どのバリアントでも aria-label は自動生成されてはいけません');
-    }
+export const InvalidVariantCanonicalization: Story = {
+  render: () => html`
+    <ui-empty-state id="invalid-variant" variant="unknown">
+      <h2 slot="heading">Unknown variant fallback</h2>
+    </ui-empty-state>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'invalid-variant');
+    await host.updateComplete;
 
-    if (isDisplayNone(getActions(defaultHost))) {
-      throw new Error('matrix-default はアクションスロットが表示されている必要があります');
+    if (host.variant !== 'default') {
+      throw new Error('無効な variant は property 上で default に正規化される必要があります');
     }
-    if (!isDisplayNone(getActions(searchHost))) {
-      throw new Error('matrix-search は空のアクションスロットを非表示にする必要があります');
+    if (host.getAttribute('variant') !== 'default') {
+      throw new Error('無効な variant は attribute 上でも default に正規化される必要があります');
     }
-    if (isDisplayNone(getActions(errorHost))) {
-      throw new Error('matrix-error はリトライアクションが表示されている必要があります');
+    if (getContainer(host).getAttribute('data-variant') !== 'default') {
+      throw new Error('描画結果の variant も default に正規化される必要があります');
+    }
+  },
+};
+
+export const InvalidAnnounceCanonicalization: Story = {
+  render: () => html`
+    <ui-empty-state id="invalid-announce" announce="assertive">
+      <h2 slot="heading">Announcement fallback</h2>
+      <p slot="description">Invalid announce values must normalize to off.</p>
+    </ui-empty-state>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'invalid-announce');
+    await host.updateComplete;
+
+    const message = getMessage(host);
+    if (host.announce !== 'off') {
+      throw new Error('無効な announce は property 上で off に正規化される必要があります');
+    }
+    if (host.getAttribute('announce') !== 'off') {
+      throw new Error('無効な announce は attribute 上でも off に正規化される必要があります');
+    }
+    if (message.getAttribute('data-announce') !== 'off') {
+      throw new Error('描画結果の announce も off に正規化される必要があります');
+    }
+    if (message.hasAttribute('role') || message.hasAttribute('aria-live')) {
+      throw new Error('announce=off に正規化された場合、ライブリージョン属性は除去される必要があります');
     }
   },
 };
@@ -309,24 +381,31 @@ export const IllustrationPriority: Story = {
     await host.updateComplete;
     await waitFrame();
 
-    if (!host.hasAttribute('has-illustration')) {
-      throw new Error('host に has-illustration 属性が設定されている必要があります');
+    if (isDisplayNone(getIllustration(host))) {
+      throw new Error('illustration は表示されている必要があります');
     }
-
-    const illustration = getIllustration(host);
-    if (isDisplayNone(illustration)) {
-      throw new Error(
-        'イラストレーションが割り当てられている場合、ラッパーが表示されている必要があります',
-      );
+    if (!isDisplayNone(getIcon(host))) {
+      throw new Error('illustration がある場合、icon は非表示である必要があります');
     }
+  },
+};
 
-    const icon = getIcon(host);
-    if (!isDisplayNone(icon)) {
-      throw new Error('イラストレーションが存在する場合、アイコンは非表示である必要があります');
+export const TextOnlyState: Story = {
+  render: () => html`
+    <ui-empty-state id="text-only-state">
+      <h2 slot="heading">Nothing to show here yet</h2>
+      <p slot="description">Meaning must stand on text alone when no symbolic element is provided.</p>
+    </ui-empty-state>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'text-only-state');
+    await host.updateComplete;
+
+    if (!isDisplayNone(getIcon(host))) {
+      throw new Error('text-only 構成では icon が表示されてはいけません');
     }
-
-    if (host.hasAttribute('aria-label')) {
-      throw new Error('aria-label は自動生成されてはいけません');
+    if (!isDisplayNone(getIllustration(host))) {
+      throw new Error('text-only 構成では illustration が表示されてはいけません');
     }
   },
 };
@@ -354,26 +433,14 @@ export const HeadingLevelFreedom: Story = {
     const h2 = h2Host.querySelector<HTMLHeadingElement>('h2[slot="heading"]');
     const h3 = h3Host.querySelector<HTMLHeadingElement>('h3[slot="heading"]');
     const h4 = h4Host.querySelector<HTMLHeadingElement>('h4[slot="heading"]');
-    if (!(h2 instanceof HTMLHeadingElement)) throw new Error('h2 見出しが見つかりません');
-    if (!(h3 instanceof HTMLHeadingElement)) throw new Error('h3 見出しが見つかりません');
-    if (!(h4 instanceof HTMLHeadingElement)) throw new Error('h4 見出しが見つかりません');
-
-    if (getHeading(h2Host).getBoundingClientRect().height <= 0) {
-      throw new Error('h2 のレイアウトが安定している必要があります');
+    if (!(h2 instanceof HTMLHeadingElement)) {
+      throw new Error('h2 見出しが見つかりません');
     }
-    if (getHeading(h3Host).getBoundingClientRect().height <= 0) {
-      throw new Error('h3 のレイアウトが安定している必要があります');
+    if (!(h3 instanceof HTMLHeadingElement)) {
+      throw new Error('h3 見出しが見つかりません');
     }
-    if (getHeading(h4Host).getBoundingClientRect().height <= 0) {
-      throw new Error('h4 のレイアウトが安定している必要があります');
-    }
-
-    if (
-      h2Host.hasAttribute('aria-label') ||
-      h3Host.hasAttribute('aria-label') ||
-      h4Host.hasAttribute('aria-label')
-    ) {
-      throw new Error('どの見出しレベルでも aria-label は自動生成されてはいけません');
+    if (!(h4 instanceof HTMLHeadingElement)) {
+      throw new Error('h4 見出しが見つかりません');
     }
   },
 };
@@ -390,20 +457,17 @@ export const DynamicSlotStateSync: Story = {
     const host = getHost(canvasElement, 'dynamic-slot-sync');
     await host.updateComplete;
 
-    if (!host.hasAttribute('has-description')) {
-      throw new Error('初期状態で has-description が設定されている必要があります');
+    if (isDisplayNone(getDescription(host))) {
+      throw new Error('初期状態では description が表示されている必要があります');
     }
-    if (!host.hasAttribute('has-action')) {
-      throw new Error('初期状態で has-action が設定されている必要があります');
-    }
-    if (host.hasAttribute('has-illustration')) {
-      throw new Error('初期状態で has-illustration が設定されていない必要があります');
+    if (!(getActions(host) instanceof HTMLElement)) {
+      throw new Error('初期状態では actions が存在する必要があります');
     }
 
     const descriptionNode = host.querySelector<HTMLElement>('[slot="description"]');
     const actionNode = host.querySelector<HTMLElement>('[slot="action"]');
     if (!descriptionNode || !actionNode) {
-      throw new Error('初期のスロットノードが見つかりません');
+      throw new Error('初期スロットノードが見つかりません');
     }
 
     descriptionNode.remove();
@@ -411,17 +475,11 @@ export const DynamicSlotStateSync: Story = {
     await host.updateComplete;
     await waitFrame();
 
-    if (host.hasAttribute('has-description')) {
-      throw new Error('説明文の削除後、has-description 属性が削除されている必要があります');
-    }
-    if (host.hasAttribute('has-action')) {
-      throw new Error('アクションの削除後、has-action 属性が削除されている必要があります');
-    }
     if (!isDisplayNone(getDescription(host))) {
-      throw new Error('コンテンツがない場合、説明文ラッパーは非表示である必要があります');
+      throw new Error('description 削除後は説明領域が折り畳まれる必要があります');
     }
-    if (!isDisplayNone(getActions(host))) {
-      throw new Error('コンテンツがない場合、アクションラッパーは非表示である必要があります');
+    if (getActions(host) !== null) {
+      throw new Error('action 削除後は actions ラッパーが消える必要があります');
     }
 
     const illustration = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -439,25 +497,161 @@ export const DynamicSlotStateSync: Story = {
     await host.updateComplete;
     await waitFrame();
 
-    if (!host.hasAttribute('has-illustration')) {
-      throw new Error(
-        'イラストレーションが存在する場合、has-illustration 属性が追加されている必要があります',
-      );
+    if (isDisplayNone(getIllustration(host))) {
+      throw new Error('illustration 追加後は表示される必要があります');
     }
-    if (!isDisplayNone(getIcon(host))) {
-      throw new Error(
-        'イラストレーションが存在する場合、アイコンラッパーは非表示である必要があります',
-      );
-    }
+  },
+};
 
-    illustration.remove();
+export const ActionOrderContract: Story = {
+  render: () => html`
+    <ui-empty-state id="action-order-contract" style="max-inline-size: 220px;">
+      <h2 slot="heading">Choose the first recovery path</h2>
+      <button slot="action" type="button">Retry</button>
+      <button slot="action" type="button">Open settings</button>
+    </ui-empty-state>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'action-order-contract');
     await host.updateComplete;
-    await waitFrame();
 
-    if (host.hasAttribute('has-illustration')) {
-      throw new Error(
-        'イラストレーションが削除された場合、has-illustration 属性も削除されている必要があります',
-      );
+    const buttons = host.querySelectorAll<HTMLButtonElement>('button[slot="action"]');
+    if (buttons.length !== 2) {
+      throw new Error('2 個の action が必要です');
+    }
+    if (buttons[0].textContent.trim() !== 'Retry') {
+      throw new Error('先頭 action が第一候補として扱われる必要があります');
+    }
+
+    const actions = getActions(host);
+    if (!(actions instanceof HTMLElement)) {
+      throw new Error('actions ラッパーが見つかりません');
+    }
+    if (getComputedStyle(actions).flexWrap !== 'wrap') {
+      throw new Error('複数 action は折り返し可能である必要があります');
+    }
+  },
+};
+
+export const DescriptionLinkGuidance: Story = {
+  render: () => html`
+    <ui-empty-state id="description-link-guidance">
+      <h2 slot="heading">No synced sources are connected</h2>
+      <p slot="description">
+        Read the <a href="/help/sources">setup guide</a> for supported providers.
+      </p>
+      <button slot="action" type="button">Connect source</button>
+    </ui-empty-state>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'description-link-guidance');
+    await host.updateComplete;
+
+    const link = host.querySelector<HTMLAnchorElement>('p[slot="description"] a');
+    const action = host.querySelector<HTMLButtonElement>('button[slot="action"]');
+    if (!(link instanceof HTMLAnchorElement)) {
+      throw new Error('description 内リンクが見つかりません');
+    }
+    if (!(action instanceof HTMLButtonElement)) {
+      throw new Error('主要導線は action に配置されている必要があります');
+    }
+  },
+};
+
+export const NoPublicDerivedState: Story = {
+  render: () => html`
+    <ui-empty-state id="no-public-derived-state">
+      <iconify-icon slot="icon" icon="lucide:search-x" aria-hidden="true"></iconify-icon>
+      <h2 slot="heading">No matches</h2>
+      <p slot="description">Derived slot state must stay internal.</p>
+      <button slot="action" type="button">Reset filters</button>
+    </ui-empty-state>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'no-public-derived-state');
+    await host.updateComplete;
+
+    const forbiddenAttributes = ['has-description', 'has-action', 'has-illustration', 'has-icon'];
+    for (const attribute of forbiddenAttributes) {
+      if (host.hasAttribute(attribute)) {
+        throw new Error(`内部派生状態 ${attribute} をホスト属性として公開してはいけません`);
+      }
+    }
+  },
+};
+
+export const VisualDensityContract: Story = {
+  render: () => html`
+    <ui-empty-state id="visual-density-contract">
+      <iconify-icon slot="icon" icon="lucide:inbox" aria-hidden="true"></iconify-icon>
+      <h2 slot="heading">Keep the message compact</h2>
+      <p slot="description">The message block should stay narrow enough to preserve reading rhythm.</p>
+      <button slot="action" type="button">Create note</button>
+    </ui-empty-state>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'visual-density-contract');
+    await host.updateComplete;
+
+    const message = getMessage(host);
+    const description = getDescription(host);
+    const actions = getActions(host);
+    if (!(actions instanceof HTMLElement)) {
+      throw new Error('actions が見つかりません');
+    }
+
+    const messageWidth = message.getBoundingClientRect().width;
+    const headingBottom = getHeading(host).getBoundingClientRect().bottom;
+    const descriptionTop = description.getBoundingClientRect().top;
+    const messageBottom = message.getBoundingClientRect().bottom;
+    const actionsTop = actions.getBoundingClientRect().top;
+    const iconWidth = getIcon(host).getBoundingClientRect().width;
+
+    if (messageWidth > 500) {
+      throw new Error(`message 幅が広すぎます: ${String(messageWidth)}`);
+    }
+    if (descriptionTop - headingBottom < 8) {
+      throw new Error('heading と description の間隔は --space-2 以上である必要があります');
+    }
+    if (actionsTop - messageBottom < 16) {
+      throw new Error('message と actions の間隔は --space-4 以上である必要があります');
+    }
+    if (iconWidth > 32) {
+      throw new Error('icon の最大寸法は --icon-xl 以下である必要があります');
+    }
+  },
+};
+
+export const PrintContract: Story = {
+  render: () => html`
+    <ui-empty-state id="print-contract">
+      <svg slot="illustration" viewBox="0 0 120 80" aria-hidden="true">
+        <rect x="0" y="0" width="120" height="80" fill="currentColor" opacity="0.12"></rect>
+      </svg>
+      <h2 slot="heading">The heading must remain meaningful on paper</h2>
+      <p slot="description">Supplementary context should remain even when decorative elements disappear.</p>
+      <a slot="action" href="/docs/guide">Read guide</a>
+      <button slot="action" type="button">Retry</button>
+    </ui-empty-state>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'print-contract');
+    await host.updateComplete;
+
+    const stylesText = String(EmptyState.styles);
+    if (!stylesText.includes('@media print')) {
+      throw new Error('print 契約がスタイルに定義されている必要があります');
+    }
+    if (!stylesText.includes('.icon') || !stylesText.includes('.illustration')) {
+      throw new Error('print では象徴要素を落とせる定義が必要です');
+    }
+    if (!stylesText.includes("::slotted(ui-button)") || !stylesText.includes("::slotted(button)")) {
+      throw new Error('print では画面内操作を落とす定義が必要です');
+    }
+
+    const actionLink = host.querySelector<HTMLAnchorElement>('a[slot="action"]');
+    if (!(actionLink instanceof HTMLAnchorElement)) {
+      throw new Error('print でも残せるリンク導線の例が必要です');
     }
   },
 };
@@ -514,20 +708,12 @@ export const DarkModeContract: Story = {
         `説明文のコントラスト比が WCAG AA を満たしていません: ${String(descriptionContrast)}`,
       );
     }
-
-    if (host.hasAttribute('aria-label')) {
-      throw new Error('ダークモードでも aria-label は自動生成されてはいけません');
-    }
   },
 };
 
 export const BoundaryConditions: Story = {
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
-      <ui-empty-state id="boundary-invalid-variant" variant="unknown">
-        <h2 slot="heading">Unknown variant fallback</h2>
-      </ui-empty-state>
-
       <ui-empty-state id="boundary-empty-description">
         <h2 slot="heading">Whitespace description should collapse</h2>
         <p slot="description"></p>
@@ -537,42 +723,21 @@ export const BoundaryConditions: Story = {
         <h2 slot="heading">Temporary heading</h2>
         <p slot="description">The heading will be removed during play test.</p>
       </ui-empty-state>
-
-      <ui-empty-state id="boundary-multi-action" style="max-inline-size: 220px;">
-        <h2 slot="heading">Multiple actions should wrap</h2>
-        <button slot="action" type="button">Create</button>
-        <button slot="action" type="button">Import</button>
-        <button slot="action" type="button">Template</button>
-      </ui-empty-state>
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const invalidVariant = getHost(canvasElement, 'boundary-invalid-variant');
     const emptyDescription = getHost(canvasElement, 'boundary-empty-description');
     const headingRemoval = getHost(canvasElement, 'boundary-heading-removal');
-    const multiAction = getHost(canvasElement, 'boundary-multi-action');
-    await Promise.all([
-      invalidVariant.updateComplete,
-      emptyDescription.updateComplete,
-      headingRemoval.updateComplete,
-      multiAction.updateComplete,
-    ]);
+    await Promise.all([emptyDescription.updateComplete, headingRemoval.updateComplete]);
 
-    const invalidContainer = getContainer(invalidVariant);
-    if (invalidContainer.getAttribute('data-variant') !== 'default') {
-      throw new Error('無効なバリアントは default にフォールバックする必要があります');
-    }
-
-    const description = getDescription(emptyDescription);
-    if (!isDisplayNone(description)) {
-      throw new Error('空白文字のみの説明文は空として扱われる必要があります');
-    }
-    if (emptyDescription.hasAttribute('has-description')) {
-      throw new Error('空白文字のみのコンテンツに対して has-description が存在してはいけません');
+    if (!isDisplayNone(getDescription(emptyDescription))) {
+      throw new Error('空白文字のみの description は折り畳まれる必要があります');
     }
 
     const removableHeading = headingRemoval.querySelector<HTMLElement>('[slot="heading"]');
-    if (!removableHeading) throw new Error('削除可能な見出しが見つかりません');
+    if (!removableHeading) {
+      throw new Error('削除可能な heading が見つかりません');
+    }
 
     const originalWarn = console.warn;
     const warnCalls: unknown[][] = [];
@@ -589,7 +754,7 @@ export const BoundaryConditions: Story = {
     }
 
     if (warnCalls.length === 0) {
-      throw new Error('見出しがない場合、少なくとも一度は警告が発生する必要があります');
+      throw new Error('heading 欠落時は少なくとも一度警告される必要があります');
     }
 
     const warnedWithHeadingKey = warnCalls.some((args) =>
@@ -599,32 +764,21 @@ export const BoundaryConditions: Story = {
       throw new Error('警告メッセージには slot="heading" が含まれている必要があります');
     }
 
-    const actions = getActions(multiAction);
-    if (isDisplayNone(actions)) {
-      throw new Error('複数のボタンがある場合もアクションが表示されている必要があります');
-    }
-    if (getComputedStyle(actions).flexWrap !== 'wrap') {
-      throw new Error('アクションコンテナに flex-wrap: wrap が設定されている必要があります');
-    }
-
     const stylesText = String(EmptyState.styles);
     if (!stylesText.includes('@media (prefers-reduced-motion: reduce)')) {
-      throw new Error('Reduced motion の定義が見つかりません');
+      throw new Error('reduced motion の定義が見つかりません');
     }
     if (!stylesText.includes('animation-duration: 0.01ms')) {
-      throw new Error('Reduced motion の所要時間定義が見つかりません');
+      throw new Error('reduced motion の所要時間定義が見つかりません');
     }
     if (!stylesText.includes('@media (forced-colors: active)')) {
-      throw new Error('Forced colors の定義が見つかりません');
+      throw new Error('forced colors の定義が見つかりません');
     }
     if (!stylesText.includes('CanvasText')) {
-      throw new Error('Forced colors のエラーマッピングには CanvasText を使用する必要があります');
-    }
-    if (!stylesText.includes('@media print')) {
-      throw new Error('Print 用の定義が見つかりません');
+      throw new Error('forced colors の error マッピングには CanvasText を使用する必要があります');
     }
     if (!stylesText.includes('translateY(var(--space-2, 8px))')) {
-      throw new Error('登場アニメーションのトークン定義が見つかりません');
+      throw new Error('登場アニメーションの定義が見つかりません');
     }
   },
 };
