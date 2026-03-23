@@ -8,26 +8,35 @@
 
 ## 概要
 
-`router` は、Rouault における SPA ナビゲーションを司る **Rouault 専用 router** です。内部リンクの横取り、履歴同期、URL 正規化、文書取得、`<main>` 差し替え、`document.title` / `meta[name="description"]` / `layout-header` 同期、再初期化フック、フォーカス移動、スクロール復帰、読み上げ通知までを一連の遷移処理として扱います。
+`router` は、Rouault における SPA ナビゲーションを司る **Rouault 専用 router core** です。責務は、内部リンクの横取り、履歴同期、URL 正規化、文書取得、`DocumentSnapshot` の決定、`<main>` 本文・`document.title`・`meta[name="description"]`・履歴 state の確定反映、および遷移結果通知に限定します。
 
-本 router は、汎用ルーティング基盤ではありません。Rouault 固有の URL 形、shell 同期、`app-router` 連携、アクセシビリティ後処理を前提とした **アプリケーション・ナビゲーション層** です。
+本 router は、汎用ルーティング基盤ではありません。ただし同時に、**特定 shell コンポーネントの属性形式、描画後 DOM 後処理、読み上げ通知、個別 UI 状態最適化を router core の必須責務に含めません**。それらは必要に応じて adapter / controller に委譲します。
+
+この仕様書が定義する中心概念は次の 3 点です。
+
+1. route 経路と fetch 経路を `DocumentSnapshot` へ正規化して同一に扱うこと
+2. durable commit point を **本文・文書メタデータ・履歴 state が整合して確定した時点** として明示すること
+3. shell 統合や描画後後処理の失敗を、router core の commit 失敗と機械的に同一視しないこと
 
 ## 目的
 
 - **MPA 的な URL / 履歴 / 文書メタデータ整合** を保ちつつ、本文更新を SPA として行うこと
-- **Rouault 固有の shell 同期** を router の既定責務として扱うこと
-- **アクセシビリティ後処理** を遷移契約に含めること
-- ``** 連携時と単体利用時の責務境界** を明確にすること
-- **遷移結果を outcome として観測可能** にし、高頻度遷移時の意味論を安定化すること
+- route 経路と fetch 経路の差を loader 内部へ閉じ込め、公開契約では `DocumentSnapshot` と `NavigationResult` に統一すること
+- router core の責務を **URL・文書・履歴・結果通知** に絞り、shell 同期や描画後後処理との時間的・構造的結合を下げること
+- 遷移結果を `outcome` と `renderedKind` で分離して観測可能にし、`not-found` / `error` 表示時の意味論を明確化すること
+- 高頻度遷移、latest-wins、補助統合失敗を含む場合でも、利用側が安定して分岐できる結果モデルを提供すること
 
 ## 対象外
 
 - 汎用的な動的ルートパラメータ DSL
 - ネストルーター
-- 汎用 redirect / guard DSL
-- データフェッチキャッシュ戦略
+- 汎用 redirect DSL
 - 汎用 head 管理基盤
+- データフェッチキャッシュ戦略
 - SSR 本体の生成責務
+- 特定 shell コンポーネントの内部属性形式の標準化
+- 特定 query parameter 名に固定された state-only 最適化規則
+- フォーカス移動、スクロール復帰、読み上げ通知の唯一の実装方式
 
 ## 設計原則
 
@@ -87,22 +96,27 @@ router が反映対象として扱う統一文書表現です。route 経路で�
 
 ## 全体構成
 
-| 要素                    | 主責務                                                         |
-| --------------------- | ----------------------------------------------------------- |
-| `Router`              | 公開 API、ライフサイクル、依存関係の組み立て                                    |
-| Link Interceptor      | `document click` / `popstate` 監視と内部遷移化                      |
-| Location Adapter      | URL 正規化、履歴 state 生成、navigation URL と fetch target URL の差分吸収 |
-| Navigation Queue      | latest-wins の直列化制御                                          |
-| Navigation Runner     | 1 回の遷移実行、outcome 確定、イベント通知                                  |
-| Before Navigate Hooks | 遷移前フック登録・実行                                                 |
-| Route Registry        | document route 登録とマッチング                                     |
-| Content Loader        | fetch / route 実行と `DocumentSnapshot` 生成                     |
-| Content Committer     | snapshot の head / shell / content 反映                        |
-| Head Manager          | `document.title` と `meta[name="description"]` の更新           |
-| Shell Synchronizer    | `layout-header` への同期                                        |
-| Reinitialize Hooks    | 遷移後再初期化フック登録・実行                                             |
-| Focus Manager         | 遷移後フォーカス移動                                                  |
-| Router Announcer      | `aria-live` リージョンと読み上げ通知                                    |
+| 要素                     | 主責務                                                                 |
+| ---------------------- | -------------------------------------------------------------------- |
+| `Router`               | 公開 API、ライフサイクル、依存関係の組み立て                                              |
+| Link Interceptor       | `document click` / `popstate` 監視と内部遷移化                                |
+| Location Adapter       | URL 正規化、履歴 state 生成、navigation URL と fetch target URL の差分吸収           |
+| Navigation Queue       | latest-wins の直列化制御                                                    |
+| Navigation Runner      | 1 回の遷移実行、outcome 確定、イベント通知                                            |
+| Before Navigate Hooks  | 遷移前フック登録・実行                                                           |
+| Route Registry         | document route 登録とマッチング                                               |
+| Content Loader         | fetch / route 実行と `DocumentSnapshot` 生成                               |
+| Content Committer      | title / meta description / content / history の durable commit を担当する |
+| Shell Adapter          | shell snapshot の抽出・適用を担う任意統合                                          |
+| URL State Policy       | state-only navigation 判定を担う任意統合                                        |
+| Post Commit Controller | 描画後後処理を担う任意統合                                                        |
+
+### 構成原則
+
+- `Router` は shell 具体実装へ直接依存してはなりません。
+- `Router` は描画後 DOM 後処理の具体手順を内蔵必須責務としては持ちません。
+- `Shell Adapter`、`URL State Policy`、`Post Commit Controller` は **任意統合** です。
+- durable commit の成立条件は `Content Committer` が担当する範囲で定義し、任意統合の成功はそこへ含めません。
 
 ## 公開 API
 
@@ -122,7 +136,7 @@ router が反映対象として扱う統一文書表現です。route 経路で�
 ```ts
 interface ContentUpdatePayload {
   html: string;
-  snapshotKind: 'page' | 'not-found' | 'error';
+  renderedKind: 'page' | 'not-found' | 'error';
   navigationUrl: string;
 }
 
@@ -135,20 +149,62 @@ interface ContentUpdateAdapter {
   prepare(update: ContentUpdatePayload): PreparedContentUpdate | Promise<PreparedContentUpdate>;
 }
 
+interface ShellAdapter {
+  extract?(
+    document: Document,
+  ): DocumentShellSnapshot | null | Promise<DocumentShellSnapshot | null>;
+
+  apply?(
+    shell: DocumentShellSnapshot | null,
+    context: { navigationUrl: string },
+  ): void | Promise<void>;
+}
+
+type UrlStateNavigationDecision =
+  | { kind: 'full' }
+  | {
+      kind: 'state-only';
+      scrollToHash?: boolean;
+    };
+
+interface UrlStateNavigationPolicy {
+  evaluate(context: {
+    currentUrl: string;
+    requestedUrl: string;
+    normalizedUrl: string;
+    historyMode: HistoryMode;
+  }): UrlStateNavigationDecision | Promise<UrlStateNavigationDecision>;
+}
+
+interface PostCommitController {
+  run(context: {
+    outlet: HTMLElement;
+    previousUrl: string | null;
+    url: string;
+    isInitial: boolean;
+    stateOnly: boolean;
+    renderedKind: 'page' | 'not-found' | 'error' | null;
+  }): void | Promise<void>;
+}
+
 interface RouterOptions {
   contentAdapter?: ContentUpdateAdapter;
+  shellAdapter?: ShellAdapter;
+  urlStateNavigationPolicy?: UrlStateNavigationPolicy;
+  postCommitController?: PostCommitController;
   skipInitialNavigation?: boolean;
-  skipAriaLiveRegion?: boolean;
   navigationTimeoutMs?: number | null;
 }
 ```
 
-| 項目                      | 既定          | 意味                                                                              |
-| ----------------------- | ----------- | ------------------------------------------------------------------------------- |
-| `contentAdapter`        | `undefined` | 本文描画を外側へ委譲する 2 相 adapter です。未指定時、router は outlet を直接更新します。                      |
-| `skipInitialNavigation` | `false`     | `start()` 時の初回 `historyMode: 'none'` 遷移を抑止します。SSR 初期本文を保持する `app-router` で用います。 |
-| `skipAriaLiveRegion`    | `false`     | router 自身が `document.body` に `aria-live` リージョンを追加しないようにします。                     |
-| `navigationTimeoutMs`   | `null`      | 1 件の navigation の上限時間です。`null` は timeout 無効を意味します。                              |
+| 項目                         | 既定          | 意味                                                                       |
+| -------------------------- | ----------- | ------------------------------------------------------------------------ |
+| `contentAdapter`           | `undefined` | 本文描画を外側へ委譲する 2 相 adapter です。未指定時、router は outlet を直接更新します。               |
+| `shellAdapter`             | `undefined` | shell snapshot の抽出・適用を行う任意 adapter です。未指定時、router core は shell 同期を行いません。 |
+| `urlStateNavigationPolicy` | `undefined` | state-only navigation 判定を行う任意 policy です。未指定時、すべて full navigation とします。   |
+| `postCommitController`     | `undefined` | 描画後後処理を行う任意 controller です。未指定時、router core は後処理を行いません。                   |
+| `skipInitialNavigation`    | `false`     | `start()` 時の初回 `historyMode: 'none'` 遷移を抑止します。SSR 初期本文を保持する統合構成で用います。    |
+| `navigationTimeoutMs`      | `null`      | 1 件の navigation の上限時間です。`null` は timeout 無効を意味します。                       |
 
 ## ライフサイクル API
 
@@ -221,6 +277,11 @@ type NavigationErrorReason =
   | 'destroyed'
   | 'not-started';
 
+interface NavigationIssue {
+  code: 'shell-sync-failed' | 'post-commit-failed';
+  error?: Error;
+}
+
 interface NavigateRequest {
   url: string;
   historyMode?: HistoryMode;
@@ -234,8 +295,10 @@ interface NavigationResult {
   historyMode: HistoryMode;
   stateOnly: boolean;
   committed: boolean;
+  degraded: boolean;
+  issues: NavigationIssue[];
   source: 'document-route' | 'fetch' | 'state-only' | 'none';
-  snapshotKind: 'page' | 'not-found' | 'error' | null;
+  renderedKind: 'page' | 'not-found' | 'error' | null;
   error?: Error;
   errorReason?: NavigationErrorReason;
 }
@@ -246,40 +309,51 @@ interface NavigationResult {
 - `navigate()` は **当該要求自身の結果** を返します。
 - `navigate()` は started 状態でのみ通常動作します。
 - `start()` 前の `navigate()` は、同期例外を送出してはなりません。
-- `start()` 前の `navigate()` は、`outcome = 'failed'`、`committed = false`、`source = 'none'`、`snapshotKind = null` の結果を返し、`error` に `RouterNotStartedError`、`errorReason` に `'not-started'` を設定しなければなりません。
-- `completed` は、当該要求が実行され、必要な反映と後処理まで完了したことを意味します。
+- `start()` 前の `navigate()` は、`outcome = 'failed'`、`committed = false`、`degraded = false`、`issues = []`、`source = 'none'`、`renderedKind = null` の結果を返し、`error` に `RouterNotStartedError`、`errorReason` に `'not-started'` を設定しなければなりません。
+- `completed` は、**durable commit point に到達したこと** を意味します。これは「正常文書であったこと」を意味しません。
 - `cancelled` は、`BeforeNavigateHook` により中止されたことを意味します。
 - `superseded` は、latest-wins により後続要求へ上書きされたことを意味します。
-- `failed` は、遷移要求の実行自体が失敗したことを意味します。
-- 異常系に対して `error` snapshot または `not-found` snapshot を正常反映できた場合、`outcome` は `completed` です。
+- `failed` は、durable commit point に到達しなかったことを意味します。
+- `not-found` または `error` 表示を正常に commit できた場合、`outcome` は `completed` です。
+- `renderedKind` は、その要求が最終的に commit した表示種別を表します。
+- `degraded` は、durable commit 自体は成立したが、補助統合の一部に失敗があったことを表します。
+- `issues` は、`degraded = true` の原因となった補助統合失敗を列挙します。
 
 ### `NavigationResult.committed` の定義
 
-`committed` は、この要求が **router 管理状態に対する勝者として確定反映されたか** を表します。
+`committed` は、この要求が **router core の durable commit point に到達したか** を表します。
 
 - `committed = true` となるのは次の場合のみです。
-  - full navigation で head / shell / content の commit が完了した場合
+
+  - full navigation で title / meta description / content / history の commit が完了した場合
   - state-only navigation で URL state 更新が確定した場合
 - `committed = false` となるのは次の場合です。
+
   - `cancelled`
   - `superseded`
-  - commit 前に終了した `failed`
+  - durable commit 前に終了した `failed`
 
-### `snapshotKind` / `error` / `errorReason` の関係
+### `renderedKind` / `error` / `errorReason` の関係
 
-- `snapshotKind = 'page'` かつ正常遷移であれば `error` / `errorReason` は設定しません。
-- `snapshotKind = 'not-found'` で `completed` の場合、`error` / `errorReason` は通常設定しません。
-- `snapshotKind = 'error'` で `completed` の場合、`errorReason` は必須です。`error` は原因となった基底例外を可能な限り設定します。
-- `snapshotKind = null` の場合、いかなる snapshot も commit されていません。`failed` であるなら `errorReason` は必須です。
+- `renderedKind = 'page'` かつ正常遷移であれば `error` / `errorReason` は設定しません。
+- `renderedKind = 'not-found'` で `completed` の場合、`error` / `errorReason` は通常設定しません。
+- `renderedKind = 'error'` で `completed` の場合、`errorReason` は必須です。`error` は原因となった基底例外を可能な限り設定します。
+- `renderedKind = null` の場合、いかなる表示も commit されていません。`failed` であるなら `errorReason` は必須です。
 
 ### `outcome` と `committed` の対応
 
-| outcome      | committed | 意味                  |
-| ------------ | --------- | ------------------- |
-| `completed`  | `true`    | この要求が最終的に反映された      |
-| `cancelled`  | `false`   | hook により中止された       |
-| `superseded` | `false`   | 後続要求に上書きされ、反映されなかった |
-| `failed`     | `false`   | 反映に到達しなかった          |
+| outcome      | committed | 意味                                 |
+| ------------ | --------- | ---------------------------------- |
+| `completed`  | `true`    | durable commit が成立した               |
+| `cancelled`  | `false`   | hook により中止された                      |
+| `superseded` | `false`   | 後続要求に上書きされ、durable commit に到達しなかった |
+| `failed`     | `false`   | durable commit に到達しなかった            |
+
+### `degraded` の定義
+
+- `degraded = true` となるのは、`completed` のうち、shell 同期または post-commit 後処理に失敗した場合のみです。
+- `degraded = false` となるのは、補助統合失敗が存在しない場合です。
+- `failed` / `cancelled` / `superseded` では `degraded = false` とします。
 
 ### `source` と `committed` の整合
 
@@ -381,7 +455,7 @@ type DocumentSnapshot =
       html: string;
       title: string;
       metaDescription: string | null;
-      shell: DocumentShellSnapshot;
+      shell?: DocumentShellSnapshot | null;
       announcedTitle?: string | null;
     }
   | {
@@ -389,7 +463,7 @@ type DocumentSnapshot =
       html: string;
       title: string;
       metaDescription: string;
-      shell: DocumentShellSnapshot;
+      shell?: DocumentShellSnapshot | null;
       announcedTitle?: string | null;
     }
   | {
@@ -399,7 +473,7 @@ type DocumentSnapshot =
       html: string;
       title: string;
       metaDescription: string;
-      shell: DocumentShellSnapshot;
+      shell?: DocumentShellSnapshot | null;
       announcedTitle?: string | null;
     };
 
@@ -409,14 +483,14 @@ type DocumentRouteHandler =
 
 #### 契約
 
-- `handler` は `DocumentSnapshot` を返します。
-- `handler` は `url` / `normalizedUrl` / `pathname` / `searchParams` / `hash` / `signal` を受け取ります。
-- route 経路でも fetch 経路と同一の commit 規則を適用します。
-- `handler` へ渡す `searchParams` は **防御的コピー** です。mutation は router 内部状態へ影響しません。
-- `handler` は `shell` を必ず返します。変更不要時でも明示値を返します。
-- `handler` は `AbortSignal` を尊重すべきです。
-- `shell` は **閉じた意味モデル** とし、任意の属性 bag や `Record<string, unknown>` として拡張してはなりません。
-- `shell` の拡張は、`header` 直下または将来追加される明示的なサブ snapshot に **加算的に** 行います。既存フィールドの意味変更や型変更は認めません。
+* `handler` は `DocumentSnapshot` を返します。
+* `handler` は `url` / `normalizedUrl` / `pathname` / `searchParams` / `hash` / `signal` を受け取ります。
+* route 経路でも fetch 経路と同一の durable commit 規則を適用します。
+* `handler` へ渡す `searchParams` は **防御的コピー** です。mutation は router 内部状態へ影響しません。
+* `handler` は `AbortSignal` を尊重すべきです。
+* `shell` は **任意** とします。router core は `shell` の不在を失敗理由として扱ってはなりません。
+* `shell` を返す場合、`DocumentShellSnapshot` は **閉じた意味モデル** とし、任意属性 bag や `Record<string, unknown>` として拡張してはなりません。
+* `shell` の拡張は、将来必要になったときに明示的なサブ snapshot 追加として行います。既存フィールドの意味変更や型変更は認めません。
 
 ### `addDocumentRoute()` の呼び出し時期
 
@@ -469,30 +543,36 @@ interface BeforeNavigateContext {
 }
 
 type BeforeNavigateHook =
-  (context: BeforeNavigateContext) => void | true | false;
+  (
+    context: BeforeNavigateContext,
+  ) => void | true | false | Promise<void | true | false>;
 
-on<K extends keyof RouterEventMap>(event: K, callback: (payload: RouterEventMap[K]) => void): void
-off<K extends keyof RouterEventMap>(event: K, callback: (payload: RouterEventMap[K]) => void): void
+on<K extends keyof RouterEventMap>(
+  event: K,
+  callback: (payload: RouterEventMap[K]) => void,
+): void
+
+off<K extends keyof RouterEventMap>(
+  event: K,
+  callback: (payload: RouterEventMap[K]) => void,
+): void
+
 isNavigating(): boolean
 addBeforeNavigateHook(hook: BeforeNavigateHook): void
 removeBeforeNavigateHook(hook: BeforeNavigateHook): void
-addReinitializeHook(hook: () => void): void
-removeReinitializeHook(hook: () => void): void
-runReinitializeHooks(): void
 getSearchParams(): URLSearchParams
 getCurrentPath(): string
-getHistory(): string[]
 ```
 
 ### `BeforeNavigateHook` の契約
 
 - `BeforeNavigateHook` は **制御フック** であり、観測イベントではありません。
-- hook は同期関数でなければなりません。`Promise` を返してはなりません。
-- hook は登録順に実行します。
+- hook は同期・非同期のどちらでも構いません。
+- hook は登録順に逐次実行します。
 - いずれかの hook が `false` を返した場合、その遷移は `cancelled` です。
 - hook が `true` または `void` を返した場合、その hook は遷移を継続させます。
-- hook 実行中に例外が発生した場合、その遷移は `cancelled` とし、`error` を発火します。
-- hook 実行は short-circuit です。`false` または例外が発生した時点で後続 hook は実行しません。
+- hook 実行中に例外が発生した場合、または `Promise` が reject した場合、その遷移は `failed` とし、`error` を発火しなければなりません。
+- hook 実行は short-circuit です。`false`、例外、reject のいずれかが発生した時点で後続 hook は実行しません。
 - hook は副作用を持てますが、router の内部状態を書き換える目的で利用してはなりません。
 
 ### query parameter モデル
@@ -561,17 +641,21 @@ router は `history.state` に次を保存します。
 
 ## コンテンツロード
 
-## fetch 経路
+### fetch 経路
 
 fetch 成功時は HTML を解析し、少なくとも次を snapshot へ格納します。
 
 - `html`: `<main>` の `innerHTML`
 - `title`: 遷移先文書の `title`
 - `metaDescription`: `meta[name="description"]` の `content` または `null`
-- `shell.header.breadcrumbs`: 遷移先 `layout-header` の `breadcrumbs-json` を parse した配列
-- `shell.header.noteLayout`: 遷移先 `layout-header` の `note-layout` 属性有無を boolean 化した値
 
-## HTTP ステータスと例外
+router core は、fetch 経路において **特定 shell コンポーネントの属性形式を固定契約として抽出してはなりません**。
+
+- shell 情報が必要であり、かつ `shellAdapter.extract()` が提供される場合に限り、取得文書から shell snapshot を導出してよいものとします。
+- `shellAdapter.extract()` が未提供である場合、fetch 経路の `shell` は `null` として扱います。
+- shell 導出の不在は、それ自体を fetch failure や commit failure として扱ってはなりません。
+
+### HTTP ステータスと例外
 
 | 事象                            | kind        | reason                | 変換先                |
 | ----------------------------- | ----------- | --------------------- | ------------------ |
@@ -588,46 +672,49 @@ fetch 成功時は HTML を解析し、少なくとも次を snapshot へ格納�
 
 - 表示可能な `error` snapshot または `not-found` snapshot を組み立てられた場合、遷移 `outcome` は `completed` とします。
 - このとき、異常原因が存在するなら `NavigationResult.error` と `NavigationResult.errorReason` を設定すべきです。
-- snapshot 自体の生成や commit ができなかった場合のみ `failed` とします。
+- snapshot 自体の生成、あるいは durable commit ができなかった場合のみ `failed` とします。
 
 ## コミット仕様
 
-`ContentCommitter` は `DocumentSnapshot` を受け取り、次を一貫して実行します。
+router における **durable commit point** は、次が整合した状態として確定した時点です。
 
-1. `document.title` を更新する
-2. `meta[name="description"]` を更新する
-3. `layout-header` を同期する
-4. 本文を更新する
-5. 履歴 state を確定する
+1. `document.title`
+2. `meta[name="description"]`
+3. 本文 content
+4. 履歴 state
 
-### shell 同期対象
+shell 同期および描画後後処理は、durable commit point の成立条件に含めません。
 
-`shell-synchronizer` は `DocumentShellSnapshot.header` を `layout-header` の公開契約へ写像します。
+### commit の段階
 
-- `header.breadcrumbs` → `breadcrumbs-json`
-- `header.noteLayout` → `note-layout`
+1. `DocumentSnapshot` を確定する
+2. 必要であれば `contentAdapter.prepare()` を行う
+3. title / meta description / content / history を durable commit する
+4. 必要であれば `shellAdapter.apply()` を行う
+5. 必要であれば `postCommitController.run()` を行う
 
-それ以外の shell 状態は router の責務外です。
+### durable commit 失敗の扱い
 
-### shell モデルの拡張原則
+- durable commit 開始前に `prepare()` が失敗した場合、その遷移は `failed` です。
+- durable commit 中に失敗した場合、その遷移は `failed` です。
+- durable commit 開始前または durable commit 中に失敗し、かつ `PreparedContentUpdate` が存在する場合、router は `rollback()` を呼び出さなければなりません。
+- `rollback()` 自体が失敗した場合、その遷移は引き続き `failed` とし、`errorReason = 'unexpected'` を設定しなければなりません。
 
-- `DocumentShellSnapshot` は router が同期責務を持つ **最小の意味モデル** です。
-- `layout-header` の内部実装詳細や一時的属性を snapshot へ露出してはなりません。
-- 新しい shell 状態が必要になった場合は、まずそれが **文書遷移に伴って決まる安定状態か** を判定します。
-- 安定状態である場合のみ、`header` 直下の明示フィールド、または `sidebar` / `toolbar` のような新しいサブ snapshot を追加します。
-- 単なる描画都合、アニメーション状態、hover / open 状態、計測値は shell snapshot に含めません。
+### 補助統合失敗の扱い
+
+- `shellAdapter.apply()` が失敗した場合、durable commit が成立済みであるなら、その遷移は `completed` のままとします。
+- この場合、`degraded = true` とし、`issues` に `code = 'shell-sync-failed'` を追加し、`error` イベントを発火しなければなりません。
+- `postCommitController.run()` が失敗した場合、durable commit が成立済みであるなら、その遷移は `completed` のままとします。
+- この場合、`degraded = true` とし、`issues` に `code = 'post-commit-failed'` を追加し、`error` イベントを発火しなければなりません。
+- これらの補助統合失敗に対して、router は **durable commit 済み文書を巻き戻してはなりません**。
 
 ### `contentAdapter` 指定時
 
 - router は `outlet.innerHTML` を直接変更しません。
 - router は `contentAdapter.prepare()` を呼び出し、`PreparedContentUpdate` を取得します。
 - `prepare()` は **外部可視状態を publish してはなりません**。staging のみを行います。
-- router は `prepare()` 成功後にのみ、router 管理下の commit へ進みます。
-- router 管理下の commit と `PreparedContentUpdate.commit()` は **同一 commit 単位** として扱います。
-- router 管理下の commit または `PreparedContentUpdate.commit()` のいずれかが失敗した場合、router は自らの pre-commit 状態へ rollback し、`PreparedContentUpdate.rollback()` を呼び出さなければなりません。
-- `prepare()` が throw または reject した場合、その遷移は `failed` です。`committed = false` とし、router 管理下の head / shell / content / 履歴に当該 snapshot を反映してはなりません。
-- `commit()` または `rollback()` が失敗した場合、その遷移は `failed` です。可能な限り `error` と `errorReason = 'unexpected'` を設定しなければなりません。
-- `content:load` は commit 完了後にのみ発火します。
+- `PreparedContentUpdate.commit()` は durable content commit の一部として扱います。
+- `content:load` は durable commit 完了後にのみ発火します。
 
 ### `contentAdapter` を採用する理由
 
@@ -668,32 +755,13 @@ Link Interceptor は `document click` を監視し、次を満たすリンクの
 
 ### 判定責務
 
-state-only navigation の判定主体は `NavigationRunner` です。`NavigationRunner` は `PrimaryTabNavigationPolicy` へ判定を委譲し、その結果が真である場合にのみ state-only navigation として扱います。
+state-only navigation の判定主体は `NavigationRunner` です。`NavigationRunner` は、`urlStateNavigationPolicy` が提供されている場合に限り、その判定結果を用います。
 
-`LocationAdapter` は URL 正規化と履歴書き込みを担当しますが、state-only / full navigation の判定責務は持ちません。
+router core は、特定 query parameter 名や特定 UI 機能に固定された state-only 規則を公開契約として持ちません。
 
-### 判定条件
-
-次のすべてを満たす場合に限り、state-only navigation とします。
-
-- 正規化後 URL の `pathname` が一致する
-- `tab` を除く query parameter multiset が順序非依存で一致する
-- primary tab 値だけが変化している
-
-ここでの primary tab 値は query parameter `tab` により表現します。空文字列は未指定と同値に扱います。
-
-### 判定しない条件
-
-次のいずれかに該当する場合は full navigation とします。
-
-- `pathname` が異なる
-- `tab` 以外の query parameter が 1 つでも異なる
-- primary tab 値が同一である
-- primary tab 値の差分だけでは説明できない URL 差分がある
-
-### hash の扱い
-
-hash 差分は state-only navigation を妨げません。`pathname` と `tab` / 非 `tab` query の条件を満たす限り、hash が同時に変化していても state-only navigation とします。
+- `urlStateNavigationPolicy` 未指定時、すべての遷移は full navigation とします。
+- `urlStateNavigationPolicy` 指定時、その戻り値が `kind: 'state-only'` の場合にのみ state-only navigation とします。
+- ある URL 差分を state-only とみなす具体規則は、router 仕様ではなく policy 実装の責務です。
 
 ### 実行内容
 
@@ -701,12 +769,16 @@ state-only navigation と判定された場合、full navigation を行わず次
 
 - 必要に応じて `pushState` / `replaceState`
 - `ui-url-state-change` を dispatch する
-- hash がある場合、2 回の `requestAnimationFrame` 後に該当要素へスクロールする
-- fetch / head 更新 / shell 同期 / 本文差し替え / `content:load` は行わない
+- `scrollToHash = true` かつ hash がある場合、2 回の `requestAnimationFrame` 後に該当要素へスクロールする
+- fetch / title 更新 / meta description 更新 / shell 同期 / 本文差し替え / `content:load` は行わない
 - `after:navigate` は発火する
 - `NavigationResult.stateOnly = true` とする
 - `NavigationResult.source = 'state-only'` とする
-- `NavigationResult.snapshotKind = null` とする
+- `NavigationResult.renderedKind = null` とする
+
+### app 固有最適化の記述場所
+
+Rouault 固有の primary tab 最適化など、特定 URL 差分を state-only とみなす具体規則は、本仕様書ではなく **`urlStateNavigationPolicy` の実装仕様** に記述しなければなりません。
 
 ## 直列化・中断・latest-wins
 
@@ -743,47 +815,45 @@ interface RouterEventMap {
     previousUrl: string;
     url: string;
   };
-  error: { error: Error };
+  error: {
+    error: Error;
+    stage:
+      | 'before-navigate'
+      | 'load'
+      | 'commit'
+      | 'shell'
+      | 'post-commit';
+  };
 }
 ```
 
 ### 発火規則
 
-| イベント名                    | 発火タイミング                   | payload                           |
-| ------------------------ | ------------------------- | --------------------------------- |
-| `navigation:busy-change` | `isNavigating()` の値が変化した時 | `{ isNavigating }`                |
-| `content:load`           | 本文更新完了後                   | `{ previousUrl, url, isInitial }` |
-| `after:navigate`         | 要求単位の結果確定後                | `NavigationResult`                |
-| `ui-url-state-change`    | state-only navigation 確定時 | `{ previousUrl, url }`            |
-| `error`                  | hook 例外、commit 失敗など       | `{ error }`                       |
+| イベント名                    | 発火タイミング                                         | payload                           |
+| ------------------------ | ----------------------------------------------- | --------------------------------- |
+| `navigation:busy-change` | `isNavigating()` の値が変化した時                       | `{ isNavigating }`                |
+| `content:load`           | durable commit 完了後                              | `{ previousUrl, url, isInitial }` |
+| `after:navigate`         | 要求単位の結果確定後                                      | `NavigationResult`                |
+| `ui-url-state-change`    | state-only navigation 確定時                       | `{ previousUrl, url }`            |
+| `error`                  | hook / load / commit / shell / post-commit の失敗時 | `{ error, stage }`                |
 
-### `navigation:busy-change` を採用し、`loading:start` / `loading:end` を公開しない理由
+### 順序保証
 
-- `loading:start` / `loading:end` は、router 内部の実行相を外部へ露出するイベントです。
-- latest-wins、abort、待機要求の上書きが入ると、開始・終了の回数と利用側が知りたい「今忙しいか」が一致しない場面が生じます。
-- 公開契約として重要なのは、開始回数や終了回数ではなく **現在 full navigation 中かどうか** です。
-- そのため公開面では `isNavigating()` と同じ意味を持つ `navigation:busy-change` だけを提供します。
+router は、**同一要求の内部順序** についてのみ次を保証します。
 
-### `after:navigate` を残し、`navigate()` の戻り値へ一本化しない理由
+- `after:navigate` は、当該要求の最終 `NavigationResult` が確定した後に 1 回だけ発火します。
+- `content:load` が発火する場合、それは同一要求の `after:navigate` より前です。
+- `ui-url-state-change` は state-only navigation でのみ発火し、同一要求の `after:navigate` より前です。
+- `navigation:busy-change` は `isNavigating()` の値変化と 1 対 1 に対応します。
 
-- router は imperative call だけでなく、リンク横取りと `popstate` による遷移も処理します。
-- これらの遷移では、外部の購読者が `navigate()` の Promise を保持しているとは限りません。
-- したがって、router 外部の観測者には **要求単位の結果通知** が別途必要です。
-- `after:navigate` はそのための broadcast であり、呼び出し元に結果を返す `navigate()` とは役割が異なります。
+router は、**異なる要求どうしの完全な全順序** を公開契約として保証しません。利用側は、複数要求にまたがる厳密なイベント順序へ依存してはなりません。
 
-### `content:load` を唯一の本文完了イベントとする理由
+### `navigation:busy-change` の発火規則
 
-- `route:change` と `content:load` を別イベントとして併設すると、両者の差が「初回を含むかどうか」に縮退し、契約が二重化します。
-- URL 変化の最終結果は `after:navigate` と `NavigationResult` で観測できます。
-- state-only navigation は本文更新を伴わないため、`route:change` という名称は意味論を濁します。
-- 本文更新完了という UI 上の重要点は `content:load` だけで十分に表現できます。
-
-### 遷移前キャンセル
-
-- `BeforeNavigateHook` のいずれかが `false` を返した場合、その遷移は `cancelled` です。
-- hook 実行中に例外が発生した場合、その遷移は `cancelled` とし、`error` を発火します。
-- `cancelled` では `navigation:busy-change` / `content:load` / `ui-url-state-change` は発火しません。
-- `cancelled` では結果通知として `after:navigate` のみを発火します。
+- `navigation:busy-change` は `isNavigating()` の返値が変化したときだけ発火します。
+- full navigation 開始時、`false → true` の遷移が起きた場合にだけ `{ isNavigating: true }` を発火します。
+- full navigation 終了時、保留中・実行中の full navigation が 0 件になった場合にだけ `{ isNavigating: false }` を発火します。
+- state-only navigation では発火しません。
 
 ### `after:navigate` の発火規則
 
@@ -792,75 +862,48 @@ interface RouterEventMap {
 - `completed` / `cancelled` / `superseded` / `failed` のいずれでも発火します。
 - `after:navigate` は **要求単位の結果通知** であり、本文反映イベントでも busy 状態イベントでもありません。
 
-### イベント順序
-
-full navigation 成功時の標準順序は次のとおりです。
-
-```text
-BeforeNavigateHook 実行
-navigation:busy-change(true)
-content:load
-navigation:busy-change(false)   （isNavigating() が false へ遷移する場合のみ）
-after:navigate
-```
-
-state-only navigation 成功時の標準順序は次のとおりです。
-
-```text
-BeforeNavigateHook 実行
-ui-url-state-change
-after:navigate
-```
-
-full navigation が完了しても、後続 full navigation が連続して busy 状態を維持する場合は `navigation:busy-change(false)` を発火しません。この場合でも `after:navigate` は発火します。
-
-### `navigation:busy-change` の発火規則
-
-- `navigation:busy-change` は ``** の返値が変化したときだけ** 発火します。
-- full navigation 開始時、`false → true` の遷移が起きた場合にだけ `{ isNavigating: true }` を発火します。
-- full navigation 終了時、保留中・実行中の full navigation が 0 件になった場合にだけ `{ isNavigating: false }` を発火します。
-- state-only navigation では発火しません。
-- `cancelled` / `superseded` が busy 状態を変化させない場合、追加発火しません。
-
 ## 後処理
 
-## 単体 `Router` 利用時
+router core の公開契約において、**後処理は durable commit の成立条件に含めません**。
 
-`contentAdapter` 未指定時は、本文反映後に次を実行します。
+フォーカス移動、スクロール復帰、再初期化、読み上げ通知は `postCommitController` の責務とします。
+
+### 基本原則
+
+- router core は、描画後 DOM に依存する具体手順を必須責務として内蔵しません。
+- `postCommitController` が存在する場合、durable commit 完了後にそれを呼び出します。
+- `postCommitController` の失敗は `completed + degraded` として扱い、durable commit 済み文書を巻き戻してはなりません。
+
+### 単体 `Router` 利用時の推奨既定実装
+
+単体利用時には、`postCommitController` の既定実装として次を採用してよいものとします。
 
 1. 再初期化フックを実行する
 2. `window.scrollTo({ top: 0, left: 0, behavior: 'instant' })` を行う
 3. outlet 内の `h1, h2` へフォーカスし、なければ outlet 自身へフォーカスする
-4. `aria-live="polite"` で読み上げ通知を行う
+4. `aria-live="polite"` 相当の読み上げ通知を行う
+
+ただし、これは **推奨既定実装** であって router core の durable commit 契約ではありません。
 
 ### フォーカス規則
 
-- 見出し要素へ移動する際、`tabindex` がなければ `-1` を付与する
+推奨既定実装で見出し要素へ移動する場合は、次を適用してよいものとします。
+
+- `tabindex` がなければ `-1` を付与する
 - `focus({ preventScroll: true })` を使用する
 - 見出しがなければ outlet へフォーカスする
 
-## `app-router` 統合時
-
-`contentAdapter` を利用する `app-router` では、router は本文反映後 DOM に依存する後処理を自ら実行しません。外側コントローラ群が担当します。
-
-- Content Adapter: SSR 初期本文を吸い上げ、以降の本文更新を staging / commit / rollback する
-- Post Render Controller: Lit 更新完了後に再初期化フック、先頭スクロール、フォーカス移動を実行する
-- Announcement Controller: `content:load` を受けて外部 `aria-live` を更新する
-
-この分離により、Lit の描画完了前に DOM 後処理を走らせないことを保証します。
-
 ## 履歴と観測
-
-### `getHistory()`
-
-- router 内部が **commit 完了した full navigation** と **確定した state-only navigation** を積んだ navigation URL 配列を返します。
-- `skipInitialNavigation: true` の場合、初期 navigation URL を 1 件目として記録します。
-- `superseded` / `cancelled` / `failed` の要求は履歴へ積みません。
 
 ### `isNavigating()`
 
 - 少なくとも 1 件の full navigation が実行中である間 `true` を返します。
 - state-only navigation のみでは `true` にしません。
+
+### 公開しない観測情報
+
+- `getHistory()` は公開 API に含めません。
+- commit 完了した遷移列を利用側で保持したい場合は、`after:navigate` を購読し、`result.outcome === 'completed'` のものだけを外側で記録しなければなりません。
 
 ## 不変条件
 
@@ -868,8 +911,7 @@ full navigation が完了しても、後続 full navigation が連続して busy
 - navigation URL と fetch target URL を混同しない
 - fetch target URL は hash を含まない
 - `navigation:busy-change` は `isNavigating()` の値変化と 1 対 1 に対応する
-- `content:load` は full navigation における本文反映完了後にのみ 1 回発火する
-- `route:change` という別名イベントは定義しない
+- `content:load` は durable commit 完了後にのみ 1 回発火する
 - `loading:start` / `loading:end` は公開イベントとして定義しない
 - `before:navigate` は公開イベントとして定義しない
 - 遷移前キャンセルは `BeforeNavigateHook` によってのみ行う
@@ -881,18 +923,21 @@ full navigation が完了しても、後続 full navigation が連続して busy
 - `destroy()` 後の `navigate()` は `RouterDestroyedError` を含む失敗結果を返し、副作用を起こさない
 - `start()` 前の `navigate()` は `RouterNotStartedError` を含む失敗結果を返し、副作用を起こさない
 - `skipInitialNavigation: true` のとき、`start()` は初回 fetch を行わない
-- `contentAdapter` 未指定時、router は outlet を直接書き換える
-- `contentAdapter` 指定時、prepare は外部可視状態を publish しない
-- `contentAdapter` 経路では prepare / commit / rollback により 2 相統合を行う
 - route 経路と fetch 経路は commit 直前に同一 `DocumentSnapshot` へ正規化される
-- state-only / full navigation の判定は `NavigationRunner` から `PrimaryTabNavigationPolicy` への委譲によってのみ行う
+- `BeforeNavigateHook` は同期・非同期のどちらでもよい
+- `BeforeNavigateHook` の `false` は `cancelled`、例外または reject は `failed` を意味する
+- `DocumentSnapshot.kind` は `page` / `not-found` / `error` のいずれか 1 つに一意に分類される
+- `NavigationResult.renderedKind` は commit された表示種別を表し、`outcome` と同義ではない
+- `completed` と `committed = true` は常に同時に成立する
+- `cancelled` / `superseded` / `failed` では `committed = false` である
+- `degraded = true` は、durable commit 後の補助統合失敗を表す
+- `shellAdapter` は任意統合であり、未指定であっても router core は動作しなければならない
+- router core は特定 shell コンポーネントの属性形式へ直接依存してはならない
+- `postCommitController` は任意統合であり、その失敗は durable commit を巻き戻してはならない
+- state-only / full navigation の判定は `urlStateNavigationPolicy` によってのみ最適化される
 - query parameter の公開表現は `URLSearchParams` であり、重複 parameter を失ってはならない
 - `getSearchParams()` と `DocumentRouteContext.searchParams` は防御的コピーである
 - `string` route pattern は正規化後 `pathname` に対する完全一致としてのみ扱う
-- `DocumentShellSnapshot` は閉じた意味モデルであり、任意属性 bag として拡張しない
-- `completed` と `committed = true` は常に同時に成立する
-- `cancelled` / `superseded` / `failed` では `committed = false` である
-- `DocumentSnapshot.kind` は `page` / `not-found` / `error` のいずれか 1 つに一意に分類され、同一 snapshot が複数 kind の意味を兼ねてはならない
 - `after:navigate` は各遷移要求につき 1 回だけ発火する要求単位イベントである
 - imperative call の完了判定には `after:navigate` ではなく `navigate()` の戻り値を用いる
 

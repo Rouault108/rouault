@@ -1,4 +1,4 @@
-# 検索機能新仕様書
+# 検索機能仕様書
 
 ## 0. 要約
 
@@ -254,21 +254,68 @@ Pagefind または補助検索カタログのように、検索候補や一致�
 
 責務:
 
-- クエリ前処理の呼び出し
-- 検索ソース呼び出し
-- 候補の URL 正規化
-- 候補統合
-- 特徴量算出
-- スコア算出
-- 並び順適用
-- タグ件数算出
-- 縮退状態の診断情報生成
+- 検索要求を受け取り、7.1.1 から 7.1.6 の処理段階を順にオーケストレーションする
+- 各段階間の中間表現を受け渡す
+- `navigate` / `explore` のモード差異を、段階ごとの設定値またはプロファイル選択として注入する
+- 段階失敗時に `failures` と `diagnostics` を集約する
+- 最終 `SearchResponse` を構成して返す
 
 非責務:
 
 - DOM 操作
 - History API 操作
 - クリック遷移
+- 個別ソース API 形式の解釈
+- 個別 tokenizer 実装の詳細
+- 特徴量算出の個別アルゴリズム
+- タグ件数算出の個別アルゴリズム
+- 診断 issue の個別生成規則
+
+追加規則:
+
+- `search-core` は、ランキング、件数算出、診断生成の詳細実装を 1 モジュールへ抱え込んではなりません
+- 各段階は、入力型・出力型・失敗境界が明示された独立モジュールとして分離しなければなりません
+- 各段階は、副作用を持つ場合でも境界が明示されていなければなりません
+- 後段は前段の公開出力だけに依存し、前段の内部状態へ直接依存してはなりません
+
+#### 7.1.1 query preparation
+
+- クエリ正規化
+- tokenizer policy 選択
+- トークン化
+- 検索語派生の生成
+
+#### 7.1.2 source federation
+
+- 検索ソース実行
+- `SearchSourceBatch` への正規化
+- source 単位 failure の確定
+
+#### 7.1.3 candidate validation
+
+- URL 検証
+- canonical URL 導出
+- source ごとの候補妥当性確認
+
+#### 7.1.4 candidate merge
+
+- `canonicalUrl` 単位の統合
+- 採用 `url` の決定
+- 重複吸収
+
+#### 7.1.5 ranking and sorting
+
+- 特徴量算出
+- 総合スコア算出
+- モード別ソート
+- 安定化ソート
+
+#### 7.1.6 counts and diagnostics
+
+- `explore` 用件数算出
+- `issues` 集約
+- `activeSources` 導出
+- `degraded` 導出
 
 ### 7.2 `query-pipeline`
 
@@ -276,9 +323,24 @@ Pagefind または補助検索カタログのように、検索候補や一致�
 
 - クエリ正規化
 - Unicode 正規化
-- 日本語トークン化
+- tokenizer policy 選択
+- クエリトークン化
 - トークン重複除去
-- 検索用語の派生生成
+- 検索ソース入力用 `segmentedQuery` の生成
+- query 側派生語の生成
+
+非責務:
+
+- 個別検索ソースの呼び出し
+- ランキングスコア算出
+- 候補統合
+- UI 状態更新
+
+追加規則:
+
+- `query-pipeline` は日本語固定実装としてはなりません
+- tokenizer の選択は policy として扱い、追加ポリシー導入に耐えなければなりません
+- field 側 tokenization は必要に応じて別モジュールへ分離してよいものとします
 
 ### 7.3 `pagefind-source`
 
@@ -392,7 +454,7 @@ type SearchCountMap = Record<string, number>;
 規則:
 
 - `SearchDiagnosticStage` の**定義順そのもの**を正規の順序としなければなりません
-- stage の順序は ``** → **``** → **``** → **``** → **``** → **``** → **`` とし、8.9 の issue 並び順および診断集約の基準に使います
+- stage の順序は `fetch → normalize → validate → merge → rank → filter → navigate` とし、8.9 の issue 並び順および診断集約の基準に使います
 - 実装はこの順序を別定義で上書きしてはなりません
 
 ### 8.2 特徴量
@@ -505,19 +567,74 @@ Pagefind 由来のタグ / facet 件数について、`count map が型契約を
 3. value が有限な安全整数でない
 4. 同一タグへ正規化される key 衝突が解消されていない
 
-### 8.6 検索レスポンス
+#### 8.6.2 ベースレスポンス
 
 ```ts
-interface SearchResponse {
+interface SearchResponseBase {
   items: SearchResultItem[];
   total: number;
-  tagCounts: SearchCountMap;
-  allTagCounts: SearchCountMap;
-  togglePreviewTagCounts: SearchCountMap;
   rankingProfileId: SearchRankingProfileId;
-  diagnostics: SearchDiagnostics;
 }
 ```
+
+規則:
+
+- すべての検索応答は少なくとも `SearchResponseBase` を満たさなければなりません
+- `items` と `total` は、最終後段フィルター適用後の結果集合を表さなければなりません
+- `rankingProfileId` は、当該レスポンスの順位付けに実際に使用したプロファイル ID を表さなければなりません
+
+#### 8.6.3 `explore` 拡張
+
+```ts
+interface SearchExploreCounts {
+  tagCounts: SearchCountMap;
+  allTagCounts: SearchCountMap;
+}
+
+interface ExploreSearchResponse extends SearchResponseBase, SearchExploreCounts {
+  mode: 'explore';
+}
+```
+
+規則:
+
+- `SearchExploreCounts` は `explore` モード専用の拡張契約です
+- `navigate` モードのレスポンスに `tagCounts` および `allTagCounts` を含めてはなりません
+- `tagCounts` および `allTagCounts` の定義は 14.5 に従わなければなりません
+- **次状態プレビュー件数**は検索応答の基本契約に含めてはなりません
+- UI が特定タグに対する次状態プレビュー件数を必要とする場合、その計算は**表示対象の少数タグに限定した遅延計算**または**明示的な次状態検索**として行わなければなりません
+- 検索コアの基本レスポンスは、全タグに対する次状態プレビュー件数の完全列挙を義務としません
+
+#### 8.6.4 `navigate` レスポンス
+
+```ts
+interface NavigateSearchResponse extends SearchResponseBase {
+  mode: 'navigate';
+}
+```
+
+規則:
+
+- `navigate` モードは高速候補提示を目的とするため、facet / count 情報を契約に含めません
+- `navigate` モードの結果件数上限はモード設定で制御し、レスポンス形状で代替してはなりません
+
+#### 8.6.5 diagnostics 拡張
+
+```ts
+interface SearchDiagnosticsEnvelope {
+  diagnostics: SearchDiagnostics;
+}
+
+type SearchResponse =
+  | (NavigateSearchResponse & SearchDiagnosticsEnvelope)
+  | (ExploreSearchResponse & SearchDiagnosticsEnvelope);
+```
+
+規則:
+
+- `diagnostics` は検索品質と縮退状態を表す共通拡張です
+- count 系情報と diagnostics は別責務であり、相互を暗黙依存させてはなりません
+- UI は `mode` を見て必要な拡張だけを参照しなければなりません
 
 ### 8.7 検索結果項目
 
@@ -554,6 +671,40 @@ interface SearchReason {
 ```
 
 ### 8.9 診断情報
+
+```ts
+interface SearchDiagnosticIssue {
+  code: SearchDiagnosticIssueCode;
+  severity: SearchDiagnosticSeverity;
+  stage: SearchDiagnosticStage;
+  source?: SearchSourceKind;
+  candidateRef?: string;
+  count: number;
+}
+
+interface SearchDiagnostics {
+  degraded: boolean;
+  activeSources: SearchSourceKind[];
+  failures: SearchFailureKind[];
+  issues: SearchDiagnosticIssue[];
+}
+```
+
+規則:
+
+- `failures` は**ソース単位の粗い失敗分類**のみを保持し、UI の一般向け縮退表示とテスト判定に使います
+- `issues` は**開発時診断向けの詳細粒度**を保持し、候補破棄・検証失敗・縮退理由の追跡に使います
+- `issues` の 1 要素は 1 つの**集約済み異常事象**に対応しなければなりません
+- `candidateRef` は開発向けの**不透明な安定識別子**とし、raw URL、origin、本文断片を含めてはなりません
+- `count` は同一 issue key に集約された発生回数を表し、`1` 以上の整数でなければなりません
+- `issues` の最大保持件数は **100 件**としなければなりません
+- `issues` は `(code, stage, source, candidateRef)` が同一の事象を**重複記録してはなりません**
+- 同一キーの事象が複数回発生した場合、`issues` には 1 件のみ保持し、その `count` を加算しなければなりません
+- `issues` の並び順は決定的でなければなりません。並び順は **severity 降順（`error → warn → info`）→ stage 定義順 → code 昇順 → source 昇順（`undefined` は末尾）→ candidateRef 昇順（`undefined` は末尾）** とします
+- `severity` の順序は `error → warn → info` で固定しなければなりません
+- `issues` が最大保持件数に達した後は、追加事象を無制限に蓄積してはなりません。保持優先順位は上記並び順の高いものを優先し、下位事象を抑止しなければなりません
+- 一般ユーザー向け UI は `issues` を逐一表示してはなりません
+- `activeSources` と `degraded` は保存値ではなく、8.9.4 および 8.9.5 に従って各レスポンスごとに再導出しなければなりません
 
 #### 8.9.1 severity 割当基準
 
@@ -602,7 +753,7 @@ issue code ごとの既定 severity は以下のとおりとします。
 
 #### 8.9.3 `source-degraded` 発火条件
 
-`source-degraded` は、**source が activeSources に残っている場合に限って**発火してよいものとします。
+`source-degraded` は、**8.9.4 により `activeSources` へ含まれる source に限って**発火してよいものとします。
 
 `source-degraded` は、1 レスポンスあたり source ごとに高々 1 件だけ記録しなければなりません。
 
@@ -610,8 +761,8 @@ issue code ごとの既定 severity は以下のとおりとします。
 
 1. **catalog 項目破棄率条件**
    - `catalog-source` が取得した総項目数を `catalogFetchedCount` とします
-   - `catalogFetchedCount` は、fetch 成功・JSON パース成功・トップレベル配列確認成功の後に得られた**配列要素数そのもの**としなければなりません
-   - `catalogDroppedCount` は、次の理由で**候補化前に項目全体を破棄した件数**のみを数えなければなりません
+   - `catalogFetchedCount` は、fetch 成功・JSON パース成功・トップレベル配列確認成功の後に得られた配列要素数そのものとしなければなりません
+   - `catalogDroppedCount` は、次の理由で候補化前に項目全体を破棄した件数のみを数えなければなりません
      1. required field `title` / `url` / `path` の欠落
      2. required field `title` / `url` / `path` が正規化後に空文字となる
      3. `path` がルート相対 path 契約を満たさない、または `normalizeDocumentCanonicalUrl(path) = null`
@@ -623,63 +774,59 @@ issue code ごとの既定 severity は以下のとおりとします。
      2. `description`、`keywords`、`tags` の一部正規化や空要素除去により項目は採用可能な場合
      3. keyword / tag の重複除去
      4. 候補統合段階での重複吸収
-
-- 次の事象は `catalogFetchedCount` の**分母から除外**しなければなりません
-  1. fetch 失敗により取得できなかった項目
-  2. JSON パース失敗により列挙不能な項目
-  3. トップレベルが配列契約を満たさず、配列要素として列挙できない入力
-- 逆に、トップレベル配列に列挙された要素は、後続で不正と判定されても `catalogFetchedCount` の分母に**含めなければなりません**
-  - `catalogFetchedCount >= 20` かつ `catalogDroppedCount >= max(5, ceil(catalogFetchedCount * 0.05))` の場合、`source='catalog'` の `source-degraded` を発火しなければなりません
+   - `catalogFetchedCount >= 20` かつ `catalogDroppedCount >= max(5, ceil(catalogFetchedCount * 0.05))` の場合、`source='catalog'` の `source-degraded` を発火しなければなりません
 
 2. **Pagefind フィルター件数欠落条件**
    - `pagefind-source` は、`explore` モードにおいて候補取得成功後、`SearchResponse` を確定する前にタグ / facet 件数取得を試行しなければなりません
-   - 件数取得失敗の**確定点**は、候補取得が成功し、かつ件数取得試行が次のいずれかで終了した時点とします
+   - 件数取得失敗の確定点は、候補取得が成功し、かつ件数取得試行が次のいずれかで終了した時点とします
      1. 例外送出または promise rejection
-     2. count map が `null` / `undefined`
-     3. count map が型契約を満たさない
-   - 候補 0 件で count map が空である場合は、件数取得失敗とみなしてはなりません
+     2. `countMap` が `null` / `undefined`
+     3. `countMap` が 8.6.1 の型契約を満たさない
+   - 候補 0 件で `countMap = {}` の場合は、件数取得失敗とみなしてはなりません
    - 上記の確定点に達し、かつ結果候補が 1 件以上ある場合、`source='pagefind'` の `source-degraded` を発火しなければなりません
 
 追加規則:
 
 - `source-degraded` は source 全体停止ではないため、`failures` のみで代用してはなりません
 - `catalogFetchedCount < 20` の場合、catalog の軽微な個別項目破棄だけで `source-degraded` を発火してはなりません
-- `invalid-catalog-item` の複数発生は、そのまま `source-degraded` の代用ではありません。上記の定量条件を満たした場合にのみ source 単位の縮退として記録しなければなりません
+- `invalid-catalog-item` の複数発生は、そのまま `source-degraded` の代用ではありません
+- `status='failed'` の source に対して `source-degraded` を記録してはなりません
 
-### 8.9 診断情報
+#### 8.9.4 `activeSources` の導出規則
 
-```ts
-interface SearchDiagnosticIssue {
-  code: SearchDiagnosticIssueCode;
-  severity: SearchDiagnosticSeverity;
-  stage: SearchDiagnosticStage;
-  source?: SearchSourceKind;
-  candidateRef?: string;
-  count: number;
-}
+`activeSources` は、各 configured source の実行結果から機械的に導出しなければなりません。
 
-interface SearchDiagnostics {
-  degraded: boolean;
-  activeSources: SearchSourceKind[];
-  failures: SearchFailureKind[];
-  issues: SearchDiagnosticIssue[];
-}
-```
+導出規則:
 
-規則:
+- source が `SearchSourceBatch` を返し、かつ `status='active'` の場合、その source は active とみなします
+- source が `SearchSourceBatch` を返し、かつ `status='failed'` の場合、その source は active とみなしてはなりません
+- 候補件数 `0` は inactive 条件ではありません
+- `pagefind-source` は、候補取得成功後に件数取得だけが失敗した場合でも、`status='active'` のままとしなければなりません
+- `catalog-source` は、トップレベル配列の取得と列挙に成功している限り、候補化後に全件破棄となっても `status='active'` のままとしなければなりません
+- source が active であるかどうかは `issues` の有無ではなく、`SearchSourceBatch.status` によってのみ判定しなければなりません
+- `activeSources` は重複を含んではなりません
+- `activeSources` の並び順は `SearchSourceKind` の定義順としなければなりません
 
-- `failures` は**ソース単位の粗い失敗分類**のみを保持し、UI の一般向け縮退表示とテスト判定に使います
-- `issues` は**開発時診断向けの詳細粒度**を保持し、候補破棄・検証失敗・縮退理由の追跡に使います
-- `issues` の 1 要素は 1 つの**集約済み異常事象**に対応しなければなりません
-- `candidateRef` は開発向けの**不透明な安定識別子**とし、raw URL、origin、本文断片を含めてはなりません
-- `count` は同一 issue key に集約された発生回数を表し、`1` 以上の整数でなければなりません
-- `issues` の最大保持件数は **100 件**としなければなりません
-- `issues` は `(code, stage, source, candidateRef)` が同一の事象を**重複記録してはなりません**
-- 同一キーの事象が複数回発生した場合、`issues` には 1 件のみ保持し、その `count` を加算しなければなりません
-- `issues` の並び順は決定的でなければなりません。並び順は **severity 降順（**``** → **``** → **``**）→ stage 定義順 → code 昇順 → source 昇順（**``** は末尾）→ candidateRef 昇順（**``** は末尾）** とします
-- `severity` の順序は ``** → **``** → **`` で固定しなければなりません
-- `issues` が最大保持件数に達した後は、追加事象を無制限に蓄積してはなりません。保持優先順位は上記並び順の高いものを優先し、下位事象を抑止しなければなりません
-- 一般ユーザー向け UI は `issues` を逐一表示してはなりません
+例:
+
+- Pagefind 候補取得成功、件数取得失敗、catalog 正常: `activeSources = ['pagefind', 'catalog']`
+- Pagefind ロード失敗、catalog 正常: `activeSources = ['catalog']`
+- catalog fetch 失敗、Pagefind 正常: `activeSources = ['pagefind']`
+- 全 source 失敗: `activeSources = []`
+
+#### 8.9.5 `degraded` の導出規則
+
+`SearchDiagnostics.degraded` は、レスポンスが**完全品質ではない**ことを表す派生真偽値とします。
+
+導出規則:
+
+- 次のいずれかを満たす場合、`degraded = true` としなければなりません
+  1. `failures.length > 0`
+  2. `issues` に、`code='source-degraded'` かつ `source` が `activeSources` に含まれる要素が 1 件以上存在する
+- 上記のいずれも満たさない場合、`degraded = false` としなければなりません
+- `invalid-catalog-item`、`invalid-result-url`、`catalog-path-url-mismatch` などの候補単位 issue は、それ単独では `degraded = true` の十分条件ではありません
+- `all-sources-failed` を含む場合、`degraded = true` としなければなりません
+- `degraded` の値を UI 実装側で再解釈してはなりません
 
 ---
 
@@ -697,7 +844,9 @@ URL は次の 2 種類に厳密に分離します。
 ### 9.2 適用範囲
 
 - `SearchCandidate.canonicalUrl` と `SearchResultItem.canonicalUrl` は **DocumentCanonicalUrl のみ**を許可します
-- `/search?...` および `/tags/...` は **SearchStateUrl またはその別入口 URL**であり、検索結果項目の `canonicalUrl` に使ってはなりません
+- `/search?...` は **SearchStateUrl** であり、検索結果ページの汎用状態を表します
+- `/tags/<tag>/` は **タグページ URL** であり、`SearchStateUrl` とは別の URL 種別として扱わなければなりません
+- `/search?...` および `/tags/<tag>/` は、いずれも検索結果項目の `canonicalUrl` に使ってはなりません
 - 検索結果集合の重複統合は `DocumentCanonicalUrl` のみで行わなければなりません
 
 ### 9.3 DocumentCanonicalUrl の目的
@@ -761,8 +910,11 @@ URL は次の 2 種類に厳密に分離します。
 
 ### 9.9 pathLabel の追加規則
 
-- `pathLabel` は表示専用であり、ソートや重複判定に使ってはなりません
+- `pathLabel` は表示専用であり、重複判定に使ってはなりません
 - `pathLabel` は `title` の代替表示ではなく、補助情報として扱わなければなりません
+- `pathLabel` はランキング特徴量の算出根拠に使ってはなりません
+- `pathLabel` は安定化ソートの比較キーに使ってはなりません
+- 安定化ソートが必要な場合は `DocumentCanonicalUrl` またはそれと同値な内部識別キーを使わなければなりません
 - 同一 `DocumentCanonicalUrl` に対して、常に同じ `pathLabel` が導出されなければなりません
 
 ### 9.10 SearchStateUrl の目的
@@ -782,7 +934,7 @@ interface SearchState {
 
 ### 9.12 SearchStateUrl の生成規則
 
-`buildSearchStateUrl(state)` は、canonical な状態 URL として**常に **`` を返さなければなりません。
+`buildSearchStateUrl(state)` は、汎用検索結果ページの canonical な状態 URL として、常に `/search?...` 形式を返さなければなりません。
 
 規則:
 
@@ -791,23 +943,32 @@ interface SearchState {
 3. `tags` は正規化後、**タグ名の昇順**で安定ソートしなければなりません
 4. `tagMode='or'` の場合、タグの選択順は意味論に含めてはなりません
 5. `tagMode='and'` の場合も、タグの選択順は意味論に含めてはなりません
-6. `tag` は 3 の順序で複数回出力してよい
-7. 既定値は省略してよい
-8. 返却値の型は `SearchStateUrl` とする
+6. `tag` は 3 の順序で複数回出力してよいものとします
+7. 既定値は省略してよいものとします
+8. 返却値の型は `SearchStateUrl` とします
+9. この関数は `/tags/<tag>/` を生成してはなりません
 
 ### 9.13 SearchStateUrl の正規化規則
 
-`normalizeSearchStateUrl(url)` は以下を適用します。
+`normalizeSearchStateUrl(url)` は、`/search?...` を対象とする正規化関数です。`/tags/<tag>/` は本関数の対象外とします。
 
-1. `/tags/<tag>/` を受け取った場合、等価な `SearchState` を構成する
-2. 得られた `SearchState` を `buildSearchStateUrl(state)` へ通し、canonical な `/search?...` 形式へ変換する
-3. `/search?...` を受け取った場合も、15 章の正規化規則を適用後に再構築する
-4. hash は除去する
-5. origin は除去する
+1. `/search?...` を受け取った場合、15 章の正規化規則を適用後に再構築する
+2. hash は除去する
+3. origin は除去する
+4. `/tags/<tag>/` を受け取った場合、この関数で `/search?...` へ正規化してはなりません
 
 ### 9.14 タグページの位置づけ
 
-`/tags/<tag>/` は UI 入口専用 URL です。検索状態の canonical 表現は常に `SearchStateUrl`、すなわち `/search?...` 形式でなければなりません。
+`/tags/<tag>/` は、タグ自体を主語とする**独立した情報ページ**です。
+
+規則:
+
+- `/tags/<tag>/` は、単一タグ既定ビューの canonical URL とします
+- 単一タグ既定ビューとは、`q=''`、`tags=[tag]`、`tagMode='or'`、`sort='relevance'` の状態を指します
+- タグページは内部実装として `explore` モードの検索実行を利用してよいものとします
+- ただし、`/tags/<tag>/` を `/search?tag=<tag>` の canonical とみなしてはなりません
+- 逆に、`/search?tag=<tag>` を常に `/tags/<tag>/` へ正規化してもなりません
+- 状態が単一タグ既定ビューを外れた場合、UI は対応する `/search?...` へ遷移しなければなりません
 
 ---
 
@@ -824,29 +985,58 @@ interface SearchState {
 - 全角英数字は半角へ正規化する
 - 空文字は空クエリとして扱う
 
-### 10.2 トークン化
+### 10.2 トークン化ポリシー
 
-`Intl.Segmenter('ja', { granularity: 'word' })` が利用可能な場合、語単位で分割します。
+クエリトークン化は、固定実装ではなくポリシー選択として扱います。
+
+```ts
+type SearchTokenizerPolicyId = 'ja-word-v1' | 'generic-whitespace-v1';
+```
 
 規則:
 
-- `isWordLike === false` のセグメントは除外する
-- 空トークンは除外する
+- 実装は、入力文字列と実行環境に基づいて `SearchTokenizerPolicyId` を 1 つ選択しなければなりません
+- ポリシー選択は検索クエリごとに決定的でなければなりません
+- query のトークン化と field のトークン化は、同一関数の共有を要求しません
+- ただし、13.3 の共通正規化規則には整合しなければなりません
+- 新しいトークン化ポリシーを追加する場合、既存ポリシー ID の意味を変更してはなりません
+
+### 10.3 既定ポリシーとフォールバック
+
+既定ポリシーは次のとおりとします。
+
+- `ja-word-v1`: `Intl.Segmenter` が利用可能であり、日本語主体入力または日本語混在入力として扱う場合に用いる
+- `generic-whitespace-v1`: 上記以外、または `Intl.Segmenter` を利用できない場合に用いる
+
+`ja-word-v1` の規則:
+
+- `Intl.Segmenter(localeHint, { granularity: 'word' })` を用いて語単位分割してよい
+- `localeHint` は少なくとも `'ja'` を許可しなければなりません
+- `isWordLike === false` のセグメントは除外しなければなりません
+- 空トークンは除外しなければなりません
+
+`generic-whitespace-v1` の規則:
+
+- 正規化済み文字列を空白分割してトークン化しなければなりません
+- 空トークンは除外しなければなりません
+
+共通規則:
+
 - 正規化後トークンで重複除去する
-- ユーザー入力文字列 `inputQuery` と、正規化済み検索語 `normalizedQuery` と、検索ソース入力用 `segmentedQuery` を分離する
-
-### 10.3 フォールバック
-
-`Intl.Segmenter` が利用できない場合は、正規化済み文字列を空白分割してトークン化します。
+- トークン列の順序は初出順を維持する
+- 英数字主体入力、slug、path 由来語、記号混在語を不必要に破壊してはなりません
 
 ### 10.4 生成物
 
 ```ts
+type SearchTokenizerPolicyId = 'ja-word-v1' | 'generic-whitespace-v1';
+
 interface PreparedSearchQuery {
   inputQuery: string;
   normalizedQuery: string;
   segmentedQuery: string;
   tokens: string[];
+  tokenizerPolicyId: SearchTokenizerPolicyId;
 }
 ```
 
@@ -855,13 +1045,14 @@ interface PreparedSearchQuery {
 - `inputQuery` はユーザーが入力した文字列そのものを保持し、正規化してはなりません
 - `normalizedQuery` は 10.1 の正規化規則を適用した canonical な検索語とします
 - `segmentedQuery` は `tokens` を単一半角空白で連結した検索ソース入力用文字列とします
+- `tokenizerPolicyId` は実際に使用したトークン化ポリシーを表し、観測および回帰テストに利用できなければなりません
 - URL 状態 `q` には `normalizedQuery` を使わなければなりません
 - 内部ランキング計算は `tokens` を基準とし、`inputQuery` を直接参照してはなりません
-- `inputQuery` は **UI 入力中の一時状態**であり、`SearchStateUrl`、`SearchState`、検索結果項目、検索ソース入力の永続契約に含めてはなりません
+- `inputQuery` は UI 入力中の一時状態であり、`SearchStateUrl`、`SearchState`、検索結果項目、検索ソース入力の永続契約に含めてはなりません
 - ページ再読込、直接アクセス、`popstate`、共有 URL 復元時には、入力欄表示値を `normalizedQuery` から復元しなければなりません
 - `inputQuery` をセッションをまたいで復元してはなりません
 
-### 10.5 派生語
+### 10.5 派生語とフィールド別トークン化
 
 検索コアは必要に応じて以下を派生してもよいものとします。
 
@@ -869,45 +1060,112 @@ interface PreparedSearchQuery {
 - slug 分割語
 - title token
 - description token
+- keyword token
 
-ただし、派生語の生成責務は `query-pipeline` または `catalog-source` に閉じ込め、UI 層へ漏らしてはなりません。
+追加規則:
+
+- query 用トークン化と field 用トークン化は責務を分離してよいものとします
+- `title`、`body`、`path`、`keyword` の各フィールドは、同一ポリシーで一律処理することを要求しません
+- ただし、13.3 の共通正規化規則に照らして比較可能な形へ正規化されていなければなりません
+- 派生語の生成責務は `query-pipeline`、`sources/*`、または専用 tokenization モジュールに閉じ込め、UI 層へ漏らしてはなりません
+- トークン化品質改善のために field 別ポリシーや追加ポリシーを導入する場合、既存の `SearchTokenizerPolicyId` の意味を破壊的に変更してはなりません
 
 ---
 
 ## 11. 検索ソース仕様
 
-### 11.1 Pagefind ソース
+### 11.1 検索ソース共通出力契約
+
+検索コアは、個別ソース API へ直接依存してはなりません。  
+`pagefind-source`、`catalog-source` を含むすべての検索ソースは、少なくとも次の共通出力契約へ正規化して `search-core` へ渡さなければなりません。
+
+```ts
+interface SearchSourceCapabilities {
+  providesBodyEvidence: boolean;
+  providesCountMap: boolean;
+  supportsTagPrefilter: boolean;
+  supportsNativeAndSemantics: boolean;
+  supportsNativeDateDescSort: boolean;
+}
+
+interface SearchSourceBatch {
+  source: SearchSourceKind;
+  status: 'active' | 'failed';
+  failure?: SearchFailureKind;
+  capabilities: SearchSourceCapabilities;
+  candidates: SearchCandidate[];
+  countMap?: SearchCountMap | null;
+}
+```
+
+規則:
+
+`search-core` は、検索ソースの意味論を `SearchSourceBatch` と `SearchSourceCapabilities` のみから判断しなければなりません
+`status='active'` は、当該 source が解釈可能な出力を `search-core` へ返せたことを意味します。候補件数 `0` は `active` を妨げません
+`status='failed'` は、当該 source が解釈可能な出力を返せなかったことを意味します。このとき `failure` を必須とし、`candidates` は空配列でなければなりません
+`capabilities` は source の能力宣言であり、`search-core` は `false` の能力を仮定で補ってはなりません
+`countMap` は `capabilities.providesCountMap = true` の source にのみ意味を持ちます
+`countMap` が `undefined` または `null` であることは、source 全体失敗と同義ではありません。source 全体失敗かどうかは `status` でのみ判定しなければなりません
+source ごとの前段絞り込み可否、`and` ネイティブ対応可否、`date-desc` ネイティブ対応可否は `capabilities` によってのみ表現しなければなりません
+
+### 11.2 Pagefind ソース
 
 役割:
 
 - 本文、タイトル、説明文、日付、タグの主検索源
+- 本文一致根拠の主要供給源
+- `explore` モードにおける件数取得源
+
+能力宣言:
+
+```ts
+const pagefindCapabilities: SearchSourceCapabilities = {
+  providesBodyEvidence: true,
+  providesCountMap: true,
+  supportsTagPrefilter: true,
+  supportsNativeAndSemantics: false,
+  supportsNativeDateDescSort: false,
+};
+```
 
 入力:
 
 - `segmentedQuery`
-- Pagefind がネイティブに表現できる範囲の前段フィルター
+- Pagefind が表現可能な範囲の前段フィルター
 
 出力:
 
-- 候補集合
-- タグ件数
-- 一致根拠に変換可能な断片情報
+- `SearchSourceBatch`
 
 規則:
 
-- 本文一致は高い `matchEvidenceScore` を持つ
-- タグ / facet 件数の取得失敗は検索全体失敗と同一視しない
-- `explore` モードでは、候補取得成功後にタグ / facet 件数取得を試行し、その可否を `pagefind-source` が曖昧さなく区別して `search-core` へ渡さなければなりません
-- 候補 0 件で count map が空である場合と、件数取得失敗により count map を返せない場合を同一視してはなりません
-- Pagefind ソースは最終 `and` 意味論を保証しない
-- Pagefind ソースは最終 `date-desc` ソートを保証しない
+- `pagefind-source` は、Pagefind 固有レスポンスを直接 `search-core` へ渡してはなりません
+- `pagefind-source` は、候補集合・本文一致根拠・タグ / facet 件数・source 状態を `SearchSourceBatch` へ正規化してから返さなければなりません
+- 本文一致根拠は `SearchCandidate.featureScores.bodyScore` または `SearchReason` を算出可能な情報へ変換しなければなりません
+- `explore` モードでは、候補取得成功後にタグ / facet 件数取得を試行し、その結果を `countMap` として返さなければなりません
+- 件数取得に失敗したが候補集合は返せる場合、`status='active'` のままとし、8.9.3 の規則に従って `source-degraded` 判定対象にしなければなりません
+- 候補 `0` 件で `countMap = {}` の場合、それを件数取得失敗と同一視してはなりません
+- `pagefind-source` は最終 `and` 意味論を保証してはなりません
+- `pagefind-source` は最終 `date-desc` ソートを保証してはなりません
 
-### 11.2 補助検索カタログ
+### 11.3 補助検索カタログ
 
 役割:
 
 - path、slug、補助キーワード、Pagefind 非搭載情報の補完
 - 主検索源障害時の縮退運転経路
+
+能力宣言:
+
+```ts
+const catalogCapabilities: SearchSourceCapabilities = {
+  providesBodyEvidence: false,
+  providesCountMap: false,
+  supportsTagPrefilter: false,
+  supportsNativeAndSemantics: false,
+  supportsNativeDateDescSort: false,
+};
+```
 
 項目契約:
 
@@ -928,9 +1186,15 @@ interface SearchCatalogItem {
 - `path`: 文書識別および索引のための**内部ルート相対 path**。`DocumentCanonicalUrl` の導出元として使います
 - `url`: UI が実際に遷移に使う**遷移先 URL**。文書識別子として使ってはなりません
 
+出力:
+
+- `SearchSourceBatch`
+
 規則:
 
-- `title`、`url`、`path` は必須
+- `catalog-source` は、catalog 項目群を直接 `search-core` へ渡してはなりません
+- `catalog-source` は、各項目を `SearchCandidate` へ正規化し、source 状態とともに `SearchSourceBatch` へ包んで返さなければなりません
+- `title`、`url`、`path` は必須です
 - `path` は `/` から始まるルート相対 path でなければなりません
 - `path` は `normalizeDocumentCanonicalUrl(path)` により `DocumentCanonicalUrl` へ変換可能でなければなりません
 - `url` は遷移前検証の対象であり、`DocumentCanonicalUrl` 導出元として使ってはなりません
@@ -938,23 +1202,22 @@ interface SearchCatalogItem {
 - `url` は `http:` または `https:` の絶対 URL、もしくは `/` から始まるルート相対 URL のみを許可します
 - `javascript:`, `data:`, `file:`, `blob:`, `mailto:`, `tel:` などの許可されないスキームを持つ `url` は不正とみなし破棄しなければなりません
 - userinfo を含む `url` は不正とみなし破棄しなければなりません
-- `url` から `normalizeDocumentCanonicalUrl(url)` が `null` を返す場合、その catalog 項目は不正とみなし破棄しなければなりません
-- `normalizeDocumentCanonicalUrl(url)` が成功した場合、その値は `normalizeDocumentCanonicalUrl(path)` と**必ず一致**しなければなりません
-- `url` と `path` の正規化結果が一致しない場合、その catalog 項目は破棄し、`diagnostics.issues` に `catalog-path-url-mismatch` を記録しなければなりません
+- `normalizeDocumentCanonicalUrl(url)` が `null` を返す場合、その項目は不正とみなし破棄しなければなりません
+- `normalizeDocumentCanonicalUrl(url)` が成功した場合、その値は `normalizeDocumentCanonicalUrl(path)` と必ず一致しなければなりません
+- `url` と `path` の正規化結果が一致しない場合、その項目は破棄し、`catalog-path-url-mismatch` を記録しなければなりません
 - `date` を持つ場合、その形式は `YYYY-MM-DD` または UTC の ISO 8601 としなければなりません
-- `date` のパースに失敗した場合、`epochMs = null` として扱い、検索処理を失敗させてはなりません
-- 空文字は除去する
-- `url` と `path` はそれぞれの契約に従って正規化または検証する
-- `keywords`、`tags` は空要素除去と重複除去を行う
+- `date` のパース失敗は項目全体失敗ではなく、`epochMs = null` へのフォールバックとして扱わなければなりません
+- `keywords`、`tags` は空要素除去と重複除去を行わなければなりません
+- `catalog-source` は `countMap` を返してはなりません。`countMap` が必要な場合の責務は常に `search-core` にあります
 
-### 11.3 ソース優先順位
+### 11.4 ソース優先順位
 
 - 主検索源: Pagefind
 - 補完検索源: 補助検索カタログ
 
 補助検索カタログは**補完用**であり、本文一致と同等の重みを与えてはなりません。
 
-### 11.4 ソース信頼度
+### 11.5 ソース信頼度
 
 `sourceReliabilityScore` は次の既定値を取ります。
 
@@ -983,17 +1246,25 @@ interface SearchCatalogItem {
 
 同一 `canonicalUrl` の候補は以下で統合します。
 
-- `title`: 正規化済み非空値を採用
-- `description`: 主検索源由来を優先し、同一優先度なら可視文字数が長いものを採用
+- `canonicalUrl`: 統合キーそのものを維持する
+- `url`: 次の決定規則で 1 つに確定しなければなりません
+  1. 候補 `url` のうち、22.2 の URL 検証を通過し、かつ `normalizeDocumentCanonicalUrl(url) === canonicalUrl` を満たすものだけを**採用候補**とする
+  2. 採用候補が 0 件の場合、統合後候補は不正とし破棄しなければなりません
+  3. 採用候補が複数ある場合、`matchedSources` の優先順位 `pagefind > catalog` を先に適用する
+  4. 同一 source 優先度内では、query / hash を持たない `url` を優先する
+  5. さらに同順位なら、絶対 URL よりルート相対 URL を優先する
+  6. さらに同順位なら、origin 除去後の文字列の辞書順昇順で最小のものを採用する
+- `title`: 正規化済み非空値を採用する
+- `description`: 主検索源由来を優先し、同一優先度なら可視文字数が長いものを採用する
 - `date`: `epochMs` が大きいものを優先する
-- `tags`: 和集合
-- `matchedSources`: 和集合
-- `matchedFields`: 和集合
-- `matchedTokens`: 和集合
-- `featureScores.sourceReliabilityScore`: 最大値を採用
-- `featureScores.matchEvidenceScore`: 最大値を採用
-- `featureScores` のうち上記 2 項目以外は、統合後候補に対して `search-core` が**再計算**しなければなりません
-- `snippet`: 主検索源由来を優先し、同一優先度なら一致区間数が多いものを採用
+- `tags`: 和集合を採用する
+- `matchedSources`: 和集合を採用する
+- `matchedFields`: 和集合を採用する
+- `matchedTokens`: 和集合を採用する
+- `featureScores.sourceReliabilityScore`: 最大値を採用する
+- `featureScores.matchEvidenceScore`: 最大値を採用する
+- `featureScores` のうち上記 2 項目以外は、統合後候補に対して `search-core` が再計算しなければなりません
+- `snippet`: 主検索源由来を優先し、同一優先度なら一致区間数が多いものを採用する
 
 ### 12.4 不正候補
 
@@ -1004,8 +1275,13 @@ interface SearchCatalogItem {
 - `title` が空
 - `normalizeDocumentCanonicalUrl(...)` が `null` を返す
 - `catalog-source` において `normalizeDocumentCanonicalUrl(path) !== normalizeDocumentCanonicalUrl(url)` となる
+- 同一 `canonicalUrl` の統合後に、12.3 の `url` 決定規則を満たす採用候補が 1 件も残らない
 
-`normalizeDocumentCanonicalUrl(...)` が `null` を返した場合、または `catalog-source` で `path` と `url` の正規化結果が一致しない場合、候補は破棄し、開発時に観測可能な形で `diagnostics` へ記録しなければなりません
+規則:
+
+- `normalizeDocumentCanonicalUrl(...)` が `null` を返した場合、候補は破棄し、対応する issue を記録しなければなりません
+- `catalog-source` で `path` と `url` の正規化結果が一致しない場合、候補は破棄し、`catalog-path-url-mismatch` を記録しなければなりません
+- 統合後に採用可能な `url` が存在しない場合、統合後候補は破棄し、`invalid-result-url` を記録しなければなりません
 
 ---
 
@@ -1126,7 +1402,12 @@ score =
 2. `sourceReliabilityScore` 降順
 3. `date.epochMs` 降順（`null` は最下位）
 4. `title` 昇順
-5. `pathLabel` 昇順
+5. `canonicalUrl` 昇順
+
+追加規則:
+
+- 安定化ソートは表示専用値ではなく、内部的に安定な比較キーに対して適用しなければなりません
+- `pathLabel` を安定化ソートに使ってはなりません
 
 ### 13.10 並び順モード
 
@@ -1140,7 +1421,7 @@ score =
 1. `date.epochMs` 降順（`null` は最下位）
 2. `matchEvidenceScore` 降順
 3. `title` 昇順
-4. `pathLabel` 昇順
+4. `canonicalUrl` 昇順
 
 ---
 
@@ -1183,27 +1464,29 @@ score =
 - `currentTags`: 現在選択中のタグ集合
 - `currentMode`: 現在の `tagMode`
 
-補助関数 `toggle(currentTags, tag)` は、`tag` が未選択なら追加し、選択済みなら除去した新しいタグ集合を返します。
-
 件数は以下で定義します。
 
-- `allTagCounts`: `Q` におけるタグ出現件数
-- `tagCounts`: `S(currentTags, currentMode)` におけるタグ出現件数
-- `togglePreviewTagCounts[tag]`: `S(toggle(currentTags, tag), currentMode)` の件数
+- `allTagCounts[tag]`: `Q` においてタグ `tag` を持つ文書数
+- `tagCounts[tag]`: `S(currentTags, currentMode)` においてタグ `tag` を持つ文書数
 
 追加規則:
 
-- `currentTags` が空集合のとき、`S(currentTags, currentMode) = Q` とする
-- `togglePreviewTagCounts` は**未選択タグへの追加時件数**と**選択済みタグの除去時件数**の両方を表しなければなりません
-- `togglePreviewTagCounts` の定義域は `allTagCounts` に現れる全タグと `currentTags` の和集合とする
+- `currentTags` が空集合のとき、`S(currentTags, currentMode) = Q` とします
+- `allTagCounts` と `tagCounts` は、ともに 8.6.1 の `SearchCountMap` 型契約を満たさなければなりません
+- key 不在は件数 `0` と同義とします
+- 検索応答は、**タグ切替後の結果件数**を全タグについて事前計算して返すことを義務としません
+- UI が次状態の結果件数を提示したい場合、その値は基本契約ではなく**補助的な表示情報**として扱わなければなりません
 
 ### 14.6 フィルターパネル表示規則
 
-- 選択中タグは常に表示する
-- 未選択タグは `togglePreviewTagCounts` 降順、同件数時タグ名昇順で並べる
-- 未選択かつ `togglePreviewTagCounts = 0` のタグは無効表示とする
-- 選択済みタグは件数 0 でも表示を維持する
-- 選択済みタグについては、必要に応じて `togglePreviewTagCounts[tag]` を除去後件数として表示してよい
+- 選択中タグは常に表示しなければなりません
+- 未選択タグの基本表示集合は、少なくとも `tagCounts` に現れるタグ集合とします
+- UI は必要に応じて `allTagCounts` に現れるタグを追加表示してよいものとします
+- 未選択タグの既定並び順は `tagCounts[tag]` 降順、同件数時タグ名昇順とします
+- 未選択かつ `tagCounts[tag] = 0` のタグは、非表示または無効表示としてよいものとします
+- 選択済みタグは件数 `0` でも表示を維持しなければなりません
+- フィルターパネルに表示する件数は、特記がない限り **現在結果集合における件数**、すなわち `tagCounts[tag]` を用いなければなりません
+- UI が次状態プレビュー件数を補助表示する場合、それは `SearchResponse` の基本契約値ではないことを前提に、表示対象を限定した遅延計算または別クエリで求めなければなりません
 
 ---
 
@@ -1241,12 +1524,13 @@ score =
 
 ### 15.4 タグページ
 
-`/tags/<tag>/` はタグ 1 件を初期投入した `explore` モードの別入口です。
+`/tags/<tag>/` は、単一タグ既定ビューの canonical URL です。
 
 規則:
 
-- 内部状態は `/search?tag=<tag>` と等価でなければなりません
-- canonical な検索状態 URL は常に `SearchStateUrl`、すなわち `/search?...` 側へ寄せなければなりません
+- この URL が表す状態は、`q=''`、`tags=[tag]`、`tagMode='or'`、`sort='relevance'` とします
+- `/tags/<tag>/` はタグ自体を主語とする独立ページであり、単なる `/search?tag=<tag>` の別入口としてのみ扱ってはなりません
+- `q` が非空になった場合、またはタグが複数になった場合、または `tagMode != 'or'` となった場合、または `sort != 'relevance'` となった場合、UI は対応する `/search?...` へ遷移しなければなりません
 - `/tags/<tag>/` は検索結果項目の `canonicalUrl` と混同してはなりません
 
 ### 15.5 履歴操作
@@ -1551,18 +1835,35 @@ score =
 src/lib/search/
   search-core.ts
   search-types.ts
-  query-pipeline.ts
+  search-contracts.ts
   search-url.ts
   navigation.ts
   normalize-search-result-url.ts
+
+  pipeline/
+    prepare-query.ts
+    collect-source-batches.ts
+    validate-candidates.ts
+    merge-candidates.ts
+    rank-candidates.ts
+    build-explore-counts.ts
+    build-diagnostics.ts
+
+  tokenization/
+    tokenizer-policy.ts
+    ja-word-tokenizer.ts
+    generic-whitespace-tokenizer.ts
+    field-tokenizers.ts
+
   sources/
     pagefind-source.ts
     catalog-source.ts
+
   ranking/
-    search-features.ts
-    search-scoring.ts
-    search-merge.ts
-    search-tag-filter.ts
+    ranking-profiles.ts
+    feature-extractors.ts
+    scoring.ts
+    stable-sort.ts
 
 src/components/search/
   search-page.ts
@@ -1575,9 +1876,12 @@ src/components/ui/search-dialog/
 
 原則:
 
+- `search-core` はパイプラインのオーケストレーションだけを担い、個別段階の詳細実装を内包してはなりません
+- pipeline 各段階は、入力型・出力型・失敗境界が独立にテスト可能でなければなりません
+- tokenization は source / ranking / UI から直接実装詳細へ依存させず、policy module 越しに参照しなければなりません
+- ranking は feature 抽出、score 計算、安定化ソートを分離しなければなりません
 - UI から直接 Pagefind を呼ばない
 - UI から直接カタログ検索をしない
-- ランキング処理は分離モジュール化する
 
 ---
 
@@ -1589,24 +1893,54 @@ src/components/ui/search-dialog/
 
 - URL 正規化
 - クエリ正規化
-- トークン化
+- tokenizer policy 選択
+- tokenizer 各実装
 - URL 状態 parse / build
-- 候補統合
+- candidate validation
+- candidate merge
+- feature extraction
+- score calculation
+- stable sort
 - タグ意味論
-- タグ件数算出
-- スコア算出
-- 縮退判定
+- `explore` 件数算出
+- diagnostics 集約
+- `degraded` 導出
 
-### 24.2 結合テスト
+### 24.2 プロパティベーステスト
+
+対象:
+
+- `normalizeDocumentCanonicalUrl(url)` の冪等性
+- `buildSearchStateUrl(parseSearchStateUrl(url))` の正規化不変性
+- タグ集合の順序が意味論へ影響しないこと
+- `issues` 集約が入力順に依存しないこと
+
+### 24.3 ランキング回帰テスト
+
+対象:
+
+- 固定 fixture に対する上位 N 件の順序
+- `navigate` と `explore` のモード別差異
+- `rankingProfileId` ごとの期待順位
+- `tokenizerPolicyId` 差分が既知 fixture で意図どおりに現れること
+
+規則:
+
+- ランキング回帰テストはゴールデン fixture により管理しなければなりません
+- 重みや特徴量定義を変更する場合は、fixture 更新理由を明示しなければなりません
+
+### 24.4 結合テスト
 
 対象:
 
 - 検索コア + Pagefind ソース
 - 検索コア + catalog ソース
+- 両 source 同時統合
 - `tagMode=and` / `tagMode=or`
 - `relevance` / `date-desc`
+- `navigate` / `explore`
 
-### 24.3 UI テスト
+### 24.5 UI テスト
 
 対象:
 
@@ -1617,8 +1951,10 @@ src/components/ui/search-dialog/
 - フィルターパネル操作
 - 空状態 / エラー表示
 - `popstate` 復元
+- `navigate` レスポンスで count 系情報を参照しないこと
+- `explore` レスポンスで count 系情報を表示できること
 
-### 24.4 E2E テスト
+### 24.6 E2E テスト
 
 対象:
 
@@ -1627,74 +1963,77 @@ src/components/ui/search-dialog/
 - SPA 遷移優先
 - フルページ遷移フォールバック
 - 縮退運転時の最小動作保証
+- source 片系停止時の継続動作
+- diagnostics に応じた縮退表示
+
+### 24.7 性能回帰テスト
+
+対象:
+
+- 大量候補時の応答時間
+- 大量タグ時の count 算出時間
+- `navigate` モードの上位候補提示時間
+- 旧リクエスト破棄時の競合制御
+
+規則:
+
+- 性能テストは中央値だけでなく p95 を記録しなければなりません
+- `navigate` と `explore` を同一閾値で評価してはなりません
+
+### 24.8 決定性テスト
+
+対象:
+
+- 同一入力に対する並び順の決定性
+- `issues` の並び順と上限抑止の決定性
+- `activeSources` と `degraded` の導出決定性
+
+規則:
+
+- 同一 fixture に対して、入力配列順や source 応答順の違いが最終結果へ影響してはなりません
 
 ---
 
-## 25. 受け入れ基準
+## 25. 規範源と非規範記述
 
-1. 検索ダイアログと検索結果ページが同一検索コアを利用していること。
-2. 検索ダイアログが `navigate` モード、検索結果ページが `explore` モードを利用すること。
-3. 検索結果の重複判定が `canonicalUrl` で行われること。
-4. `DocumentCanonicalUrl` 正規化が 9 章の規則どおりであること。
-5. `SearchStateUrl` 正規化が 9 章の規則どおりであること。
-6. 検索結果項目の `canonicalUrl` に `/search?...` または `/tags/...` が混入しないこと。
-7. `pathLabel` が 9.8 および 9.9 の規則どおりに導出されること。
-8. スニペットが構造化表現であり、生 HTML を UI に直接渡していないこと。
-9. URL が `q`、`tag`、`tagMode`、`sort` を表現できること。
-10. `/tags/<tag>/` の canonical な検索状態 URL が `/search?...` へ寄ること。
-11. 複数タグの `or` / `and` が仕様どおりに動作すること。
-12. `togglePreviewTagCounts` が、未選択タグでは追加後件数、選択済みタグでは除去後件数を表すこと。
-13. `popstate` で状態が正しく復元されること。
-14. `date-desc` で日付欠損項目が最下位になること。
-15. Pagefind 障害時に catalog のみで縮退検索できること。
-16. catalog 障害時に Pagefind のみで検索継続できること。
-17. 全ソース失敗時のみエラー表示となること。
-18. ダイアログ最大表示件数が固定されていること。
-19. ダイアログのショートカットが入力中に誤発火しないこと。
-20. 通常左クリックで SPA 遷移を優先し、修飾キー付きクリックでは通常リンク動作を維持すること。
-21. 開発時に `diagnostics` から縮退状態を観測できること。 21a. `SearchDiagnostics.failures` がソース単位の失敗のみを保持し、候補単位の異常を含まないこと。 21b. `SearchDiagnostics.issues` が候補破棄や URL 検証失敗を `code` / `severity` / `stage` 付きで保持すること。 21c. `SearchDiagnostics.issues` が `(code, stage, source, candidateRef)` 単位で重複抑止されること。 21d. `SearchDiagnostics.issues` の保持件数が 100 件を超えず、上限到達時に上位優先順位の issue が保持されること。 21e. `SearchDiagnostics.issues` の同一 issue key 反復発生時に、新規要素を増やさず `count` が加算されること。 21f. `SearchDiagnostics.issues` の並び順が、severity 降順 → stage 定義順 → code 昇順 → source 昇順 → candidateRef 昇順で決定的であること。 21g. `SearchDiagnosticStage` の順序が `fetch` → `normalize` → `validate` → `merge` → `rank` → `filter` → `navigate` として固定されていること。 21h. `SearchDiagnosticSeverity` の割当が 8.9.1 の code 別既定値および割当基準に従うこと。 21i. `invalid-catalog-item` が catalog 項目単位の `warn` に限定され、より具体的な issue code の代用に使われないこと。 21j. `catalog-source` において、`catalogFetchedCount` が成功 fetch・成功 parse・成功したトップレベル配列確認後の配列要素数として数えられ、`catalogDroppedCount` が 8.9.3 で列挙した drop reason のみを数え、`catalogFetchedCount >= 20` かつ `catalogDroppedCount >= max(5, ceil(catalogFetchedCount * 0.05))` のときに `source='catalog'` の `source-degraded` が発火すること. 21k. `pagefind-source` において、`explore` モードで候補取得成功後かつ `SearchResponse` 確定前にタグ / facet 件数取得を試行し、例外送出、promise rejection、`null` / `undefined` count map、または 8.6.1 の型契約を満たさない count map のいずれかで失敗が確定し、結果候補が 1 件以上あるときに `source='pagefind'` の `source-degraded` が発火すること. 21l. 候補 0 件で count map が空である場合、`pagefind-source` はタグ / facet 件数取得失敗として扱わないこと.
-22. `matchEvidenceScore` が総合スコアに直接加算されていないこと。
-23. 返却される `rankingProfileId` が `rouault-search-v1` であること。
-24. `titleTokenCoverageScore`、`bodyScore`、`pathScore`、`keywordScore` が 13.4 および 13.5 の一致関数と算出式に従うこと。
-25. `normalizeDocumentCanonicalUrl(...)` が、不正入力に対して `null` を返し、候補が破棄されること。
-26. `SearchStateUrl` の canonical 化においてタグ順序がタグ名昇順へ正規化されること。
-27. 表示用 `snippet` が `bodyScore` 計算に使われないこと。
-28. `SearchCatalogItem.path` が文書識別用、`SearchCatalogItem.url` が遷移用として扱われること。
-29. URL 状態 `q` が `PreparedSearchQuery.normalizedQuery` と等価であること。
-30. `catalog-source` において `normalizeDocumentCanonicalUrl(path) === normalizeDocumentCanonicalUrl(url)` が成立すること。 30a. 許可される結果 `url` が、ルート相対 URL、または同一 origin の `http:` / `https:` 絶対 URLに限定されること。 30b. 許可されないスキームや userinfo を含む `url` が候補として採用されず、`diagnostics.issues` に記録されること。 30c. `candidateRef` が raw URL や本文断片を露出せず、決定的ハッシュ方式で安定生成されること。
-31. 検索結果ページの履歴復元時、入力欄表示値が `normalizedQuery` から復元され、`inputQuery` は永続化されないこと。
-32. 検索ダイアログを閉じた後、`inputQuery` が自動復元されないこと。
+### 25.1 規範源の優先順位
 
----
+本仕様書における規範源の優先順位は以下のとおりとします。
 
-## 26. 実装判断メモ
+1. 用語の定義は 5 章を正本とする
+2. データ型とデータ契約は 8 章を正本とする
+3. URL の意味論と正規化契約は 9 章を正本とする
+4. クエリ前処理契約は 10 章を正本とする
+5. 検索ソース契約は 11 章を正本とする
+6. 候補統合契約は 12 章を正本とする
+7. ランキング契約は 13 章を正本とする
+8. タグ意味論は 14 章を正本とする
+9. URL 状態表現は 15 章を正本とする
 
-本仕様は、現行の段階的移行案を踏まえつつ、以下を**新仕様として前倒しで固定**しています。
+同一概念に関して他章の説明と正本章が衝突する場合は、正本章を優先しなければなりません。
 
-- 検索コアの導入
-- URL / path / canonical の分離
-- `DocumentCanonicalUrl` と `SearchStateUrl` の概念分離
-- `SearchCatalogItem.path` と `url` の責務分離
-- `path` / `url` の同一文書性検証の導入
-- `pathLabel` の導出規則の明文化
-- `canonicalUrl` 正規化規則の明文化
-- `inputQuery` と `normalizedQuery` の保持境界の明文化
-- `sourceConfidence` の分割による意味の明確化
-- `matchEvidenceScore` の派生指標化による二重計上の排除
-- バージョン付きランキングプロファイルの導入
-- タグ意味論の明示化
-- トグル後件数を含むタグ件数定義の 3 層化
-- スニペットの安全な構造化
-- 診断情報の正式データモデル化
-- `failures` と `issues` の二層診断粒度の明文化
-- `issues` の最大保持件数、重複抑止規則、並び順の明文化
-- `SearchDiagnosticStage` の定義順と `SearchDiagnosticSeverity` の割当基準の明文化
-- `invalid-catalog-item` の適用境界、`catalogDroppedCount` の算入理由集合、`source-degraded` の定量発火条件の明文化
-- Pagefind のタグ / facet 件数取得失敗の確定点と count map 型契約の明文化
-- `catalogFetchedCount` の分母へ算入する対象と除外対象の明文化
-- `issues.count` の正式データモデル化
-- `candidateRef` の決定的生成方式の明文化
-- 許可 URL スキームと URL 検証失敗時の扱いの明文化
+### 25.2 再掲の規則
 
-これは互換性よりも、今後の改修コストの低減、仕様説明の明確さ、検索品質改善のしやすさを優先したためです。
+- 同一契約を複数章へ重ねて規範記述してはなりません
+- 他章で再言及が必要な場合は、原則として節番号参照に留めなければなりません
+- 再掲する場合でも、正本章と意味論差分を生じさせてはなりません
+- 例、図、説明文は規範本文を上書きしてはなりません
+
+### 25.3 非規範記述
+
+以下は理解補助のための記述であり、単独では規範ではありません。
+
+- 0 章の要約
+- 図表
+- 例示
+- 推奨ファイル構成
+- 実装上の設計理由説明
+
+これらが正本章と衝突する場合は、正本章を優先しなければなりません。
+
+### 25.4 改訂規則
+
+- 意味論変更は仕様改訂として扱わなければなりません
+- 実装都合による調整を、非規範記述の更新だけで既成事実化してはなりません
+- 既存契約を変更する場合は、変更対象となる正本章を直接改訂しなければなりません
 
