@@ -1,302 +1,343 @@
-import { css, html, LitElement } from 'lit';
+import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
+
+type BadgeVariant = 'solid' | 'subtle' | 'dot';
+type BadgeColor = 'danger' | 'primary' | 'neutral' | 'success' | 'warning';
+type BadgeAnnounceMode = 'auto' | 'off';
+type BadgeRenderState = 'dot' | 'count' | 'slot' | 'empty';
+
+const DEFAULT_MAX = 99;
+
+const VALID_VARIANTS = new Set<BadgeVariant>(['solid', 'subtle', 'dot']);
+const VALID_COLORS = new Set<BadgeColor>(['danger', 'primary', 'neutral', 'success', 'warning']);
+
+const numberAttributeConverter = {
+  fromAttribute(value: string | null): number | null {
+    if (value === null) return null;
+
+    const normalized = value.trim();
+    if (normalized.length === 0) return null;
+
+    return Number(normalized);
+  },
+  toAttribute(value: number | null | undefined): string | null {
+    if (value === null || value === undefined) return null;
+    return String(value);
+  },
+};
 
 /**
  * バッジ (Badge) コンポーネント `<ui-badge>`
  *
- * UIの一部として、数値（件数）やステータス（New, Draft）などのシステム的な「状態」を通知します。
- * カプセル型（Pill Shape）を採用し、ユーザー定義の分類である「タグ（矩形）」と形状レベルで区別します。
+ * `ui-badge` は、件数、状態、更新有無などの小さなシステム状態を提示します。
+ * 形状は pill を基本とし、`variant="dot"` の場合に限って最小の視覚インジケーターとして正円を採用します。
  *
- * ## コンテンツ優先ロジック
+ * ## 公開契約
  *
- * - `count` が `number` の場合: スロット内容は無視され、数値のみが表示されます。
- * - `count` が `null` / `undefined` かつ `variant !== "dot"`: スロット内容が表示されます。
- * - `variant === "dot"`: `count` およびスロット内容は物理的にレンダリングされません。
+ * - 表示優先順位は `dot > count > slot`
+ * - `variant="dot"` は `aria-label` がある場合に限って成立
+ * - 数値状態は既定で静的表示、`announce="auto"` の場合のみ `role="status"` を付与
+ * - `countAriaLabel` がある場合は数値状態のアクセシブルネームを明示値で上書き
+ * - `count` / `max` は契約どおりに正規化し、不正値は `count` では不在、`max` では既定値へ収束
  *
- * ## 値の正規化ルール
+ * @property {'solid' | 'subtle' | 'dot'} variant - 視覚バリアント。未知値は既定値 `solid` として扱う
+ * @property {number | null | undefined} count - 件数。数値として解釈できない場合は不在として扱う
+ * @property {number | null | undefined} max - 表示上限。不正値は既定値 `99` として扱う
+ * @property {'danger' | 'primary' | 'neutral' | 'success' | 'warning'} color - 意味色。未知値は `primary` として扱う
+ * @property {string | null} ariaLabelText - `aria-label` 属性に対応する dot 用代替テキスト
+ * @property {string | null} countAriaLabel - 数値状態のアクセシブルネーム上書き
+ * @property {'auto' | 'off'} announce - 数値状態の通知モード
  *
- * - `count` が `NaN` / `Infinity` / `-Infinity`: `0` として扱います。
- * - `count` が負数: `0` として扱います。
- * - `count` は `Math.floor()` で整数化します。
- * - `max` は `Math.floor()` で整数化し、`1` 未満は `1` に補正します。
- * - 表示値: `count > max ? \`${max}+\` : \`${count}\``
- * - `aria-label` は正規化後の実数値を使用します（例: 表示 `99+`、読み上げ `128 件`）。
- *
- * ## 非インタラクティブ設計
- *
- * バッジは情報表示専用コンポーネントです。`disabled`・`error` 状態は存在せず、
- * カスタムイベントも発行しません。フォーカス不可（`tabindex` なし）。
- *
- * @property {'solid' | 'subtle' | 'dot'} variant - 視覚スタイル
- * @property {number | null | undefined} count - 表示する数値。`null` / `undefined` の場合はスロットを表示
- * @property {number} max - 数値の最大表示リミット（デフォルト: 99）
- * @property {'danger' | 'primary' | 'neutral' | 'success' | 'warning'} color - 意味的カラー
- * @property {string | null} ariaLabelText - Dotバリアント用ラベル（`aria-label`属性）
- *
- * @slot - バッジのテキスト内容（`count` が `null` / `undefined` かつ `variant !== "dot"` の場合に表示）
- *
- * @cssprop --primary         - Primary 背景色（Semantic Token）
- * @cssprop --on-primary      - Primary 文字色（Semantic Token）
- * @cssprop --success         - Success 背景色（Semantic Token）
- * @cssprop --on-success      - Success 文字色（Semantic Token）
- * @cssprop --danger          - Danger 背景色（Semantic Token）
- * @cssprop --on-danger       - Danger 文字色（Semantic Token）
- * @cssprop --warning         - Warning 背景色（Semantic Token）
- * @cssprop --on-warning      - Warning 文字色（Semantic Token）
- * @cssprop --fg-default      - Neutral 背景色（Semantic Token）
- * @cssprop --bg-default      - Neutral 文字色（Semantic Token）
- * @cssprop --text-2xs        - フォントサイズ (11px)
- * @cssprop --font-bold       - フォントウェイト (700)
- * @cssprop --tracking-wider  - 文字間隔 (0.05em)
- * @cssprop --control-height-2xs - バッジ高さ (16px)
- * @cssprop --radius-full     - 角丸（全てのバッジは正円または楕円）
- * @cssprop --space-1         - padding-inline (solid: 4px)
- * @cssprop --space-2         - padding-inline (subtle: 8px)
- * @cssprop --border-width    - ボーダー幅
- *
- * @example
- * ```html
- * <!-- 数値バッジ（未読数） -->
- * <ui-badge count="5"></ui-badge>
- * <ui-badge count="128" max="99"></ui-badge>
- *
- * <!-- テキストバッジ -->
- * <ui-badge variant="subtle">New</ui-badge>
- * <ui-badge variant="subtle" color="success">Beta</ui-badge>
- *
- * <!-- Dot バッジ（更新有無） -->
- * <ui-badge variant="dot" color="danger" aria-label="未読の更新があります"></ui-badge>
- *
- * <!-- カラー指定 -->
- * <ui-badge color="danger" count="3"></ui-badge>
- * <ui-badge color="warning" variant="subtle">Draft</ui-badge>
- * ```
+ * @slot - `count` が不在かつ `variant="dot"` が不成立のときに表示する短いラベル
  */
 @customElement('ui-badge')
 export class Badge extends LitElement {
   static override styles = css`
-    /* ──────────────────────────────────────────────
-       CSS カスタムプロパティ: カラーシステム
-    ────────────────────────────────────────────── */
     :host {
-      /* Solid の参照元（Semantic Token） */
       --badge-bg: var(--primary);
       --badge-fg: var(--on-primary);
-      /* Dot は Solid と同じ色を利用 */
       --badge-dot: var(--badge-bg);
 
-      /* Subtle 派生用 Delta。warning のみ上書き */
-      --badge-subtle-bg-delta: 41%;
-      --badge-subtle-fg-delta: -45%;
-      --badge-subtle-border-delta: 36%;
-
-      /* Layout */
       display: inline-flex;
       align-items: center;
       justify-content: center;
       vertical-align: middle;
+      max-width: 100%;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 100%;
 
-      /* Typography */
       font-size: var(--text-2xs, 11px);
       font-weight: var(--font-bold, 700);
       letter-spacing: var(--tracking-wider, 0.05em);
       line-height: 1;
 
-      /* Shape */
       height: var(--control-height-2xs, 16px);
       border-radius: var(--radius-full, 9999px);
     }
 
-    /* ── Color Mapping (Semantic Token Only) ── */
-    :host([color='neutral']) {
+    :host([data-render-state='empty']) {
+      display: none;
+    }
+
+    :host([data-color='neutral']) {
       --badge-bg: var(--fg-default);
       --badge-fg: var(--bg-default);
     }
 
-    :host([color='primary']) {
+    :host([data-color='primary']) {
       --badge-bg: var(--primary);
       --badge-fg: var(--on-primary);
     }
 
-    :host([color='success']) {
+    :host([data-color='success']) {
       --badge-bg: var(--success);
       --badge-fg: var(--on-success);
     }
 
-    :host([color='danger']) {
+    :host([data-color='danger']) {
       --badge-bg: var(--danger);
       --badge-fg: var(--on-danger);
     }
 
-    :host([color='warning']) {
+    :host([data-color='warning']) {
       --badge-bg: var(--warning);
       --badge-fg: var(--on-warning);
-      --badge-subtle-bg-delta: 16%;
-      --badge-subtle-fg-delta: -45%;
-      --badge-subtle-border-delta: 10%;
     }
 
-    /* ── Variant: Solid ── */
-    :host([variant='solid']),
-    :host(:not([variant])) {
+    :host([data-variant='solid']) {
       min-width: var(--control-height-2xs, 16px);
-      padding: 0 var(--space-1, 4px);
       max-width: 12ch;
+      padding: 0 var(--space-1, 4px);
       background: var(--badge-bg);
       color: var(--badge-fg);
     }
 
-    /* ── Variant: Subtle ── */
-    :host([variant='subtle']) {
+    :host([data-variant='subtle']) {
       padding: 0 var(--space-2, 8px);
       background: var(--bg-surface-2, var(--bg-default));
       color: var(--badge-bg);
       border: var(--border-width, 1px) solid var(--badge-bg);
     }
 
-    /* ── Variant: Dot ── */
-    :host([variant='dot']) {
+    :host([data-variant='dot']) {
       width: var(--space-2, 8px);
-      height: var(--space-2, 8px);
       min-width: 8px;
+      height: var(--space-2, 8px);
       min-height: 8px;
       padding: 0;
       background: var(--badge-dot);
     }
 
-    /* フォントメトリクスによる視覚的下寄りを補正 */
     span {
       transform: translateY(-0.05em);
     }
 
-    /* ── Forced Colors Mode ── */
     @media (forced-colors: active) {
       :host {
         border: var(--border-width, 1px) solid ButtonText;
       }
 
-      :host([variant='solid']),
-      :host(:not([variant])) {
+      :host([data-variant='solid']) {
         background-color: ButtonText;
         color: ButtonFace;
         border: var(--border-width, 1px) solid ButtonText;
       }
 
-      :host([variant='dot']) {
-        background-color: ButtonText;
+      :host([data-variant='subtle']) {
+        background-color: ButtonFace;
+        color: ButtonText;
         border: var(--border-width, 1px) solid ButtonText;
+      }
+
+      :host([data-variant='dot']) {
         width: 10px;
         height: 10px;
+        background-color: ButtonText;
+        border: var(--border-width, 1px) solid ButtonText;
       }
     }
   `;
 
-  /**
-   * 視覚スタイル
-   * @default 'solid'
-   */
-  @property({ type: String, reflect: true })
-  variant: 'solid' | 'subtle' | 'dot' = 'solid';
+  private readonly _slotContentObserver =
+    typeof MutationObserver === 'undefined'
+      ? null
+      : new MutationObserver(() => {
+          this.requestUpdate();
+        });
 
-  /**
-   * 表示する数値。`null` / `undefined` の場合はスロットを表示。
-   * `number` の場合は正規化ルールを適用。
-   * @default null
-   */
-  @property({ type: Number, reflect: true })
+  @property({ type: String, reflect: true })
+  variant: BadgeVariant = 'solid';
+
+  @property({ reflect: true, converter: numberAttributeConverter })
   count: number | null | undefined = null;
 
-  /**
-   * 数値の最大表示リミット。表示は `{max}+`。
-   * `Math.floor()` で整数化し、`1` 未満は `1` に補正。
-   * @default 99
-   */
-  @property({ type: Number, reflect: true })
-  max = 99;
+  @property({ reflect: true, converter: numberAttributeConverter })
+  max: number | null | undefined = DEFAULT_MAX;
 
-  /**
-   * 意味的カラー
-   * @default 'primary'
-   */
   @property({ type: String, reflect: true })
-  color: 'danger' | 'primary' | 'neutral' | 'success' | 'warning' = 'primary';
+  color: BadgeColor = 'primary';
 
-  /**
-   * Dotバリアント用の代替テキスト。
-   * Dotはテキストを持たないため、`aria-label` の付与が必須。
-   * @default null
-   */
   @property({ attribute: 'aria-label', type: String })
   ariaLabelText: string | null = null;
 
-  /**
-   * `count` の正規化処理。
-   * - `null` / `undefined` → `null`（スロット表示）
-   * - `NaN` / `Infinity` / `-Infinity` → `0`
-   * - 負数 → `0`
-   * - `Math.floor()` で整数化
-   */
+  @property({ attribute: 'count-aria-label', type: String })
+  countAriaLabel: string | null = null;
+
+  @property({ type: String, reflect: true })
+  announce: BadgeAnnounceMode = 'off';
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+
+    this._slotContentObserver?.observe(this, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    });
+  }
+
+  override disconnectedCallback(): void {
+    this._slotContentObserver?.disconnect();
+    super.disconnectedCallback();
+  }
+
+  protected override willUpdate(): void {
+    const renderState = this._renderState;
+    const renderVariant = this._renderVariant;
+
+    this.setAttribute('data-render-state', renderState);
+    this.setAttribute('data-variant', renderVariant);
+    this.setAttribute('data-color', this._normalizedColor);
+  }
+
+  private _parseFiniteNumber(value: unknown): number | null {
+    if (value === null || value === undefined) return null;
+
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? value : null;
+    }
+
+    if (typeof value === 'string') {
+      const normalized = value.trim();
+      if (normalized.length === 0) return null;
+
+      const parsed = Number(normalized);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    return null;
+  }
+
+  private _normalizeNonEmptyString(value: unknown): string | null {
+    if (typeof value !== 'string') return null;
+
+    const normalized = value.trim();
+    return normalized.length > 0 ? normalized : null;
+  }
+
+  private get _normalizedVariant(): BadgeVariant {
+    return VALID_VARIANTS.has(this.variant) ? this.variant : 'solid';
+  }
+
+  private get _normalizedColor(): BadgeColor {
+    return VALID_COLORS.has(this.color) ? this.color : 'primary';
+  }
+
+  private get _normalizedAnnounce(): BadgeAnnounceMode {
+    return this.announce === 'auto' ? 'auto' : 'off';
+  }
+
   private get _normalizedCount(): number | null {
-    if (this.count === null || this.count === undefined) return null;
-    const n = this.count;
-    if (!isFinite(n) || isNaN(n)) return 0;
-    return Math.max(0, Math.floor(n));
+    const parsed = this._parseFiniteNumber(this.count);
+    if (parsed === null) return null;
+    return Math.max(0, Math.floor(parsed));
   }
 
-  /**
-   * `max` の正規化処理。
-   * - `Math.floor()` で整数化
-   * - `1` 未満は `1` に補正
-   */
   private get _normalizedMax(): number {
-    const m = this.max;
-    if (!isFinite(m) || isNaN(m)) return 1;
-    return Math.max(1, Math.floor(m));
+    const parsed = this._parseFiniteNumber(this.max);
+    if (parsed === null) return DEFAULT_MAX;
+    return Math.max(1, Math.floor(parsed));
   }
 
-  /**
-   * 表示文字列を返す。
-   * `count > max ? \`${max}+\` : \`${count}\``
-   */
+  private get _normalizedDotLabel(): string | null {
+    return this._normalizeNonEmptyString(this.ariaLabelText);
+  }
+
+  private get _normalizedCountAriaLabel(): string | null {
+    return this._normalizeNonEmptyString(this.countAriaLabel);
+  }
+
+  private get _hasVisibleSlotContent(): boolean {
+    return [...this.childNodes].some((node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return (node.textContent?.trim().length ?? 0) > 0;
+      }
+
+      return node.nodeType === Node.ELEMENT_NODE;
+    });
+  }
+
+  private get _renderState(): BadgeRenderState {
+    if (this._normalizedVariant === 'dot' && this._normalizedDotLabel !== null) {
+      return 'dot';
+    }
+
+    if (this._normalizedCount !== null) {
+      return 'count';
+    }
+
+    if (this._hasVisibleSlotContent) {
+      return 'slot';
+    }
+
+    return 'empty';
+  }
+
+  private get _renderVariant(): BadgeVariant {
+    if (this._renderState === 'dot') return 'dot';
+    return this._normalizedVariant === 'subtle' ? 'subtle' : 'solid';
+  }
+
   private get _displayText(): string | null {
     const count = this._normalizedCount;
     if (count === null) return null;
+
     const max = this._normalizedMax;
     return count > max ? `${String(max)}+` : String(count);
   }
 
-  /**
-   * `aria-label` 用の実数値文字列を返す。
-   * 表示が `99+` でも実際の件数（例: 128）を使用する。
-   */
-  private get _ariaLabel(): string | null {
+  private get _generatedCountAriaLabel(): string | null {
     const count = this._normalizedCount;
     if (count === null) return null;
     return `${String(count)} 件`;
   }
 
+  private get _countAccessibleName(): string | null {
+    return this._normalizedCountAriaLabel ?? this._generatedCountAriaLabel;
+  }
+
   override render() {
-    // Dot バリアント: コンテンツを物理的にレンダリングしない
-    if (this.variant === 'dot') {
+    if (this._renderState === 'empty') {
+      return nothing;
+    }
+
+    if (this._renderState === 'dot') {
       return html`<span
         role="img"
-        aria-label=${ifDefined(this.ariaLabelText ?? undefined)}
+        aria-label=${ifDefined(this._normalizedDotLabel ?? undefined)}
       ></span>`;
     }
 
-    const displayText = this._displayText;
-
-    // count が number の場合: Live Notification として role="status" でレンダリング
-    if (displayText !== null) {
-      return html`<span role="status" aria-label="${this._ariaLabel ?? ''}">${displayText}</span>`;
+    if (this._renderState === 'count') {
+      return html`<span
+        role=${ifDefined(this._normalizedAnnounce === 'auto' ? 'status' : undefined)}
+        aria-label=${ifDefined(this._countAccessibleName ?? undefined)}
+        >${this._displayText}</span
+      >`;
     }
 
-    // count が null / undefined の場合: スロットをレンダリング（Static Label）
     return html`<span><slot></slot></span>`;
   }
 }
