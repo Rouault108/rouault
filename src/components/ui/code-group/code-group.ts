@@ -1,25 +1,53 @@
 import { css, html, LitElement, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import '../../../lib/icons';
 import '../codeblock/codeblock';
 import '../copy-button/copy-button';
 
-type TabLabelSource = 'label' | 'filename' | 'lang' | 'fallback';
-
-interface TabDescriptor {
-  readonly label: string;
-  readonly source: TabLabelSource;
-}
+type ActivationMode = 'auto' | 'manual';
+type TabLabelSource = 'tab-label' | 'filename' | 'lang';
 
 interface CodeBlockHost extends HTMLElement {
+  copyable?: boolean;
+  copyLabel?: string;
+  filename?: string;
   getCodeContent?: () => string;
+  groupKey?: string;
+  lang: string;
+  tabLabel?: string;
 }
 
 interface CopyButtonHost extends HTMLElement {
+  disabled?: boolean;
+  label?: string;
   resetState?: () => void;
+  value?: string;
 }
 
-const DEFAULT_TAB_LABEL = 'コード';
+interface GroupItem {
+  readonly block: CodeBlockHost;
+  readonly copyContextLabel: string;
+  readonly copyDisabled: boolean;
+  readonly panelId: string;
+  readonly tabId: string;
+  readonly tabLabel: string;
+  readonly tabLabelSource: TabLabelSource;
+  readonly value: string;
+}
+
+interface CompositionResult {
+  readonly blocks: CodeBlockHost[];
+  readonly items: GroupItem[];
+  readonly majorViolation: boolean;
+}
+
+const DEFAULT_COPY_CONTEXT = 'コード';
+const DEFAULT_GROUP_LABEL = 'コードグループ';
+const DEFAULT_COPY_BUTTON_LABEL = 'コードをコピー';
+const FALSE_BOOLEAN_ATTRIBUTE_VALUES = new Set(['false', '0', 'off', 'no']);
+const VALID_ACTIVATION_MODES = new Set<ActivationMode>(['auto', 'manual']);
+
 let codeGroupId = 0;
 
 @customElement('ui-code-group')
@@ -27,12 +55,20 @@ export class CodeGroup extends LitElement {
   static override styles = css`
     :host {
       --header-tools-width: 48px;
-
-      /* グループ内の Code Block は常に親コンテナ幅に収める */
+      --ui-code-surface-breakout-width: 100%;
+      --ui-code-surface-breakout-margin: 0;
+      --ui-code-surface-padding: var(--space-2, 8px);
+      --ui-code-header-display: none;
+      --ui-code-surface-radius-top: 0;
+      --ui-code-surface-radius-bottom: 0;
       --ui-code-block-breakout-width: 100%;
       --ui-code-block-breakout-margin: 0;
       --ui-code-block-padding: var(--space-2, 8px);
-      --ui-code-block-header-display: block;
+      --ui-code-block-header-display: none;
+      --ui-code-block-border: none;
+      --ui-code-block-background: transparent;
+      --ui-code-block-radius-top: 0;
+      --ui-code-block-radius-bottom: 0;
 
       display: block;
       container-type: inline-size;
@@ -47,15 +83,6 @@ export class CodeGroup extends LitElement {
       break-inside: avoid;
     }
 
-    :host([data-ready]) {
-      --ui-code-block-header-display: none;
-    }
-
-    :host([embedded]) {
-      border: none;
-      border-radius: 0;
-    }
-
     .root {
       position: relative;
     }
@@ -65,7 +92,6 @@ export class CodeGroup extends LitElement {
       position: relative;
       align-items: stretch;
       isolation: isolate;
-      // background: var(--bg-default, oklch(1 0 0));
     }
 
     :host([data-ready]) .code-group-header {
@@ -80,19 +106,16 @@ export class CodeGroup extends LitElement {
       background: var(--bg-default, oklch(1 0 0));
       overflow-x: auto;
       overflow-y: clip;
-      /* 選択タブの margin-bottom: -1px によるオーバーフロー（1px）と
-         フォーカスリング（outline-offset + outline-width = デフォルト 4px）を
-         クリップ境界外にレンダリングできるよう余白を確保する */
-      overflow-clip-margin: calc(var(--focus-ring-offset, 2px) + var(--focus-ring-width, 2px) + 2px);
+      overflow-clip-margin: calc(
+        var(--focus-ring-offset, 2px) + var(--focus-ring-width, 2px) + 2px
+      );
       min-height: 36px;
-      /* フォーカスリングがスクロールコンテナ内部に収まるよう余白を確保。
-         padding によってリングが .tab-list の padding-box 内に描画されるため、
-         祖先の overflow: hidden によるクリップを回避できる */
       padding-block: 2px;
       padding-inline-start: calc(var(--focus-ring-offset, 2px) + var(--focus-ring-width, 2px));
       padding-inline-end: calc(var(--header-tools-width, 48px) + var(--space-1, 4px));
-      /* フォーカス時のスクロール位置にフォーカスリング分の余白を確保 */
-      scroll-padding-inline-start: calc(var(--focus-ring-offset, 2px) + var(--focus-ring-width, 2px));
+      scroll-padding-inline-start: calc(
+        var(--focus-ring-offset, 2px) + var(--focus-ring-width, 2px)
+      );
       scroll-padding-inline-end: calc(var(--header-tools-width, 48px) + var(--space-1, 4px));
       scrollbar-width: none;
       -ms-overflow-style: none;
@@ -130,10 +153,8 @@ export class CodeGroup extends LitElement {
       position: relative;
       border-bottom: 2px solid transparent;
       transition:
-        color var(--duration-fast, 70ms)
-          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        border-color var(--duration-fast, 70ms)
-          var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+        color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     ::slotted([slot='tab']:hover) {
@@ -141,8 +162,7 @@ export class CodeGroup extends LitElement {
     }
 
     ::slotted([slot='tab']:focus-visible) {
-      outline: var(--focus-ring-width, 2px) solid
-        var(--focus-ring-color, oklch(60% 0.15 250));
+      outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
       outline-offset: var(--focus-ring-offset, 2px);
       animation: var(--animation-focus);
       border-radius: var(--radius-sm, 4px);
@@ -161,7 +181,7 @@ export class CodeGroup extends LitElement {
       display: inline-flex;
       align-items: center;
       gap: 0;
-      padding-inline: var(--ui-code-block-padding, var(--space-2, 8px));
+      padding-inline: var(--ui-code-surface-padding, var(--ui-code-block-padding, var(--space-2, 8px)));
       background: var(--bg-default, oklch(1 0 0));
     }
 
@@ -183,6 +203,7 @@ export class CodeGroup extends LitElement {
       transition-duration: var(--duration-instant, 0ms);
     }
 
+    @media (hover: none) and (pointer: coarse) {
       ::slotted([slot='tab']) {
         min-height: var(--control-min-touch, 24px);
       }
@@ -196,8 +217,8 @@ export class CodeGroup extends LitElement {
     .body {
       display: none;
       background: var(--bg-default, oklch(1 0 0));
-      padding-block: var(--ui-code-group-body-padding-block, 0);
-      padding-inline: var(--ui-code-group-body-padding-inline, 0);
+      padding-block: var(--ui-code-panel-padding, var(--ui-code-group-body-padding-block, 0));
+      padding-inline: var(--ui-code-panel-padding, var(--ui-code-group-body-padding-inline, 0));
     }
 
     :host([data-ready]) .body {
@@ -221,8 +242,9 @@ export class CodeGroup extends LitElement {
       display: none !important;
     }
 
-    @container (max-width: 639.98px) {
-      :host([data-ready]) {
+      @container (max-width: 639.98px) {
+      :host {
+        --ui-code-header-display: block;
         --ui-code-block-header-display: block;
       }
     }
@@ -238,11 +260,6 @@ export class CodeGroup extends LitElement {
       .header-tools,
       .body {
         background: Canvas;
-      }
-
-      .code-group-header,
-      .body {
-        border-color: CanvasText;
       }
 
       ::slotted([slot='tab']) {
@@ -294,65 +311,102 @@ export class CodeGroup extends LitElement {
   @query('ui-copy-button')
   private _copyButtonEl?: CopyButtonHost;
 
-  @property({ type: Boolean, reflect: true })
-  embedded = false;
+  @property({ type: String, attribute: 'selected-value', reflect: true })
+  selectedValue = '';
+
+  @property({ type: String, attribute: 'default-selected-value' })
+  defaultSelectedValue = '';
+
+  @property({ type: String, reflect: true })
+  activation: ActivationMode = 'auto';
 
   @state()
-  private _blocks: CodeBlockHost[] = [];
+  private _copyDisabled = false;
 
   @state()
-  private _activeIndex = 0;
+  private _copyLabel = DEFAULT_COPY_BUTTON_LABEL;
 
   @state()
   private _copyValue = '';
 
   @state()
-  private _copyLabel = 'コードをコピー';
+  private _items: GroupItem[] = [];
+
+  @state()
+  private _focusedValue = '';
+
+  @state()
+  private _selectedResolvedValue = '';
 
   private readonly _uid = ++codeGroupId;
 
-  private readonly _tabButtons: HTMLButtonElement[] = [];
+  private _composeScheduled = false;
 
-  private readonly _tabClickHandlers = new Map<HTMLButtonElement, EventListener>();
-
-  private _mutationObserver?: MutationObserver;
+  private _hasComposedOnce = false;
 
   private _headerToolsResizeObserver?: ResizeObserver;
 
   private _isComposing = false;
 
-  private _composeScheduled = false;
+  private _mutationObserver?: MutationObserver;
+
+  private _selectedInitialized = false;
+
+  private readonly _tabButtons: HTMLButtonElement[] = [];
+
+  private readonly _tabClickHandlers = new Map<HTMLButtonElement, EventListener>();
 
   override connectedCallback(): void {
     super.connectedCallback();
 
+    this.addEventListener('ui-code-block-change', this._onCodeBlockChange as EventListener);
+
     this._mutationObserver = new MutationObserver((records) => {
-      if (this._isComposing) return;
-      if (!this._shouldRecompose(records)) return;
-      this._scheduleComposeFromLightDom();
+      if (this._isComposing) {
+        return;
+      }
+      if (!this._shouldRecompose(records)) {
+        return;
+      }
+      this._scheduleCompose();
     });
 
     this._mutationObserver.observe(this, {
+      attributes: true,
+      attributeFilter: [
+        'group-key',
+        'tab-label',
+        'copy-label',
+        'copyable',
+        'filename',
+        'lang',
+        'id',
+      ],
       childList: true,
       subtree: true,
-      attributes: true,
-      attributeFilter: ['label', 'filename', 'lang'],
     });
 
     this._headerToolsResizeObserver = new ResizeObserver(() => {
       this._syncHeaderToolsWidth();
     });
+
+    this._composeFromLightDom();
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
+    this.removeEventListener('ui-code-block-change', this._onCodeBlockChange as EventListener);
     this._mutationObserver?.disconnect();
     this._headerToolsResizeObserver?.disconnect();
     this._cleanupTabButtons();
   }
 
-  override firstUpdated(): void {
-    this._composeFromLightDom();
+  override willUpdate(changedProperties: PropertyValues<this>): void {
+    super.willUpdate(changedProperties);
+
+    if (changedProperties.has('activation') && !VALID_ACTIVATION_MODES.has(this.activation)) {
+      this.activation = 'auto';
+    }
   }
 
   override updated(changedProperties: PropertyValues<this>): void {
@@ -363,121 +417,199 @@ export class CodeGroup extends LitElement {
       this._syncHeaderToolsWidth();
     }
 
-    if (changedProperties.has('embedded')) {
-      this._applyEmbeddedMode();
+    const selectionInputsChanged =
+      changedProperties.has('selectedValue') ||
+      changedProperties.has('defaultSelectedValue') ||
+      changedProperties.has('activation');
+
+    if (this._hasComposedOnce && selectionInputsChanged) {
+      this._scheduleCompose();
     }
   }
 
+  focusSelectedTab(): void {
+    const button = this._findButtonByValue(this._selectedResolvedValue);
+    button?.focus();
+  }
+
+  refresh(): void {
+    this._composeFromLightDom();
+  }
+
   private _composeFromLightDom(): void {
-    if (this._isComposing) return;
+    if (this._isComposing) {
+      return;
+    }
+
     this._isComposing = true;
 
     try {
-      const blocks = this._collectCodeBlocks();
-      this._cleanupTabButtons();
-      this._blocks = blocks;
+      const previousValue = this._selectedResolvedValue;
+      const composition = this._collectComposition();
 
-      if (blocks.length === 0) {
-        this.removeAttribute('data-ready');
-        this._activeIndex = 0;
+      this._cleanupTabButtons();
+      this._resetPanels(composition.blocks);
+
+      if (composition.majorViolation || composition.items.length < 2) {
+        this._items = [];
+        this._selectedResolvedValue = '';
+        this._focusedValue = '';
         this._copyValue = '';
-        this._copyLabel = 'コードをコピー';
+        this._copyLabel = DEFAULT_COPY_BUTTON_LABEL;
+        this._copyDisabled = false;
+        this.removeAttribute('data-ready');
+        this._hasComposedOnce = true;
         return;
       }
 
-      this._createTabButtons(blocks);
-      this._configurePanels(blocks);
+      const items = composition.items;
+      this._items = items;
 
-      const safeIndex = this._clampIndex(this._activeIndex, blocks.length);
-      this._activeIndex = safeIndex;
+      const nextSelectedValue = this._resolveSelectedValue(items, previousValue);
+      const nextFocusedValue = this._resolveFocusedValue(items, nextSelectedValue);
 
+      this._selectedResolvedValue = nextSelectedValue;
+      this._focusedValue = nextFocusedValue;
+
+      this._createTabButtons(items);
+      this._configurePanels(items);
       this.setAttribute('data-ready', '');
-      this._applySelection(safeIndex, false);
+      this._applyUiState(false);
       this._syncHeaderToolsWidth();
+
+      if (this._hasComposedOnce && previousValue !== nextSelectedValue) {
+        this._dispatchGroupChange(nextSelectedValue, previousValue, false);
+      }
+
+      this._hasComposedOnce = true;
     } finally {
       this._isComposing = false;
     }
   }
 
-  private _scheduleComposeFromLightDom(): void {
-    if (this._composeScheduled) return;
-    this._composeScheduled = true;
+  private _scheduleCompose(): void {
+    if (this._composeScheduled) {
+      return;
+    }
 
+    this._composeScheduled = true;
     queueMicrotask(() => {
       this._composeScheduled = false;
-      if (!this.isConnected) return;
-      if (this._isComposing) return;
+      if (!this.isConnected || this._isComposing) {
+        return;
+      }
       this._composeFromLightDom();
     });
   }
 
-  private _shouldRecompose(records: readonly MutationRecord[]): boolean {
-    for (const record of records) {
-      if (record.type === 'attributes') {
-        if (this._isDirectCodeBlock(record.target)) {
-          return true;
-        }
+  private _collectComposition(): CompositionResult {
+    const blocks: CodeBlockHost[] = [];
+    const foreignElements: HTMLElement[] = [];
+    const children =
+      'children' in this
+        ? Array.from((this as typeof this & { children?: ArrayLike<Element> }).children ?? [])
+        : [];
+
+    for (const child of children) {
+      if (this._isGeneratedTabButton(child)) {
         continue;
       }
 
-      if (record.type === 'childList') {
-        const changedNodes = [...Array.from(record.addedNodes), ...Array.from(record.removedNodes)];
-        if (record.target === this && changedNodes.some((node) => this._isCodeBlockElement(node))) {
-          return true;
-        }
+      if (child.tagName.toLowerCase() === 'ui-code-block') {
+        blocks.push(child as CodeBlockHost);
+        continue;
+      }
+
+      if (child instanceof HTMLElement) {
+        foreignElements.push(child);
       }
     }
-    return false;
-  }
 
-  private _isCodeBlockElement(node: Node): node is HTMLElement {
-    return node instanceof HTMLElement && node.tagName.toLowerCase() === 'ui-code-block';
-  }
-
-  private _isDirectCodeBlock(node: Node): node is HTMLElement {
-    return this._isCodeBlockElement(node) && node.parentElement === this;
-  }
-
-  private _collectCodeBlocks(): CodeBlockHost[] {
-    const blocks: CodeBlockHost[] = [];
-    for (const child of Array.from(this.children)) {
-      if (child.tagName.toLowerCase() !== 'ui-code-block') continue;
-      blocks.push(child as CodeBlockHost);
+    if (foreignElements.length > 0) {
+      return { blocks, items: [], majorViolation: true };
     }
-    return blocks;
+
+    const duplicateKeys = new Set<string>();
+    const seenKeys = new Set<string>();
+
+    for (const block of blocks) {
+      const value = this._readGroupKey(block);
+      if (value === '') {
+        continue;
+      }
+
+      if (seenKeys.has(value)) {
+        duplicateKeys.add(value);
+        continue;
+      }
+
+      seenKeys.add(value);
+    }
+
+    if (duplicateKeys.size > 0) {
+      return { blocks, items: [], majorViolation: true };
+    }
+
+    const items: GroupItem[] = [];
+    blocks.forEach((block) => {
+      const value = this._readGroupKey(block);
+      if (value === '') {
+        return;
+      }
+
+      const tabDescriptor = this._resolveTabLabel(block);
+      if (!tabDescriptor) {
+        return;
+      }
+
+      items.push({
+        block,
+        copyContextLabel: this._resolveCopyContextLabel(block, tabDescriptor.label),
+        copyDisabled: this._isCopyDisabled(block),
+        panelId: this._resolvePanelId(block, value),
+        tabId: this._tabId(value),
+        tabLabel: tabDescriptor.label,
+        tabLabelSource: tabDescriptor.source,
+        value,
+      });
+    });
+
+    return { blocks, items, majorViolation: false };
   }
 
   private _cleanupTabButtons(): void {
     for (const [button, handler] of this._tabClickHandlers) {
       button.removeEventListener('click', handler);
     }
+
     this._tabClickHandlers.clear();
 
     for (const button of this._tabButtons) {
-      if (button.parentElement === this) {
-        button.remove();
-      }
+      button.remove();
     }
+
     this._tabButtons.length = 0;
   }
 
-  private _createTabButtons(blocks: readonly CodeBlockHost[]): void {
-    const anchor = blocks[0] ?? null;
+  private _createTabButtons(items: readonly GroupItem[]): void {
+    const anchor = items[0]?.block ?? null;
+    if (!anchor) {
+      return;
+    }
 
-    blocks.forEach((block, index) => {
-      const descriptor = this._resolveTabDescriptor(block);
-      const panelId = this._resolvePanelId(block, index);
-
+    items.forEach((item) => {
       const button = document.createElement('button');
       button.type = 'button';
-      button.textContent = descriptor.label;
+      button.textContent = item.tabLabel;
       button.setAttribute('slot', 'tab');
       button.setAttribute('role', 'tab');
-      button.setAttribute('id', this._tabId(index));
-      button.setAttribute('aria-controls', panelId);
+      button.setAttribute('id', item.tabId);
+      button.setAttribute('aria-controls', item.panelId);
+      button.setAttribute('data-ui-generated-tab', '');
+      button.dataset['uiCodeGroupTab'] = item.value;
 
       const onClick: EventListener = () => {
-        this._selectTab(index, true);
+        this._requestSelection(item.value, true);
       };
 
       button.addEventListener('click', onClick);
@@ -487,18 +619,13 @@ export class CodeGroup extends LitElement {
     });
   }
 
-  private _configurePanels(blocks: readonly CodeBlockHost[]): void {
-    blocks.forEach((block, index) => {
-      const panelId = this._resolvePanelId(block, index);
-
-      block.id = panelId;
+  private _configurePanels(items: readonly GroupItem[]): void {
+    items.forEach((item, index) => {
+      const { block } = item;
+      block.id = item.panelId;
       block.setAttribute('slot', 'panel');
       block.setAttribute('role', 'tabpanel');
-      block.setAttribute('aria-labelledby', this._tabId(index));
-      block.removeAttribute('aria-roledescription');
-      block.setAttribute('headless', '');
-      this._syncPanelEmbedded(block);
-
+      block.setAttribute('aria-labelledby', item.tabId);
       if (index === 0) {
         block.removeAttribute('data-panel-after-first');
       } else {
@@ -507,97 +634,272 @@ export class CodeGroup extends LitElement {
     });
   }
 
-  private _applyEmbeddedMode(): void {
-    for (const block of this._blocks) {
-      this._syncPanelEmbedded(block);
-    }
+  private _resetPanels(blocks: readonly CodeBlockHost[]): void {
+    blocks.forEach((block) => {
+      block.removeAttribute('slot');
+      block.removeAttribute('role');
+      block.removeAttribute('aria-hidden');
+      block.removeAttribute('aria-labelledby');
+      block.removeAttribute('data-panel-active');
+      block.removeAttribute('data-panel-after-first');
+      block.removeAttribute('hidden');
+    });
   }
 
-  private _syncPanelEmbedded(block: CodeBlockHost): void {
-    if (this.embedded) {
-      block.setAttribute('embedded', '');
+  private _requestSelection(value: string, userInitiated: boolean): void {
+    const item = this._items.find((candidate) => candidate.value === value);
+    if (!item) {
       return;
     }
-    block.removeAttribute('embedded');
-  }
 
-  private _selectTab(index: number, emitEvent: boolean): void {
-    if (index < 0 || index >= this._blocks.length) return;
-
-    const previousIndex = this._activeIndex;
-    this._activeIndex = index;
-    this._applySelection(index, true);
-
-    if (previousIndex !== index) {
-      this._copyButtonEl?.resetState?.();
+    const previousValue = this._selectedResolvedValue;
+    if (this.activation === 'manual') {
+      this._focusedValue = value;
     }
 
-    if (!emitEvent || previousIndex === index) return;
+    if (this._isControlled()) {
+      this._applyUiState(true);
+      if (previousValue !== value) {
+        this._dispatchGroupChange(value, previousValue, userInitiated);
+      }
+      return;
+    }
+
+    if (previousValue === value) {
+      this._applyUiState(true);
+      return;
+    }
+
+    this._selectedInitialized = true;
+    this._selectedResolvedValue = value;
+    this._focusedValue = value;
+    this._applyUiState(true);
+    this._copyButtonEl?.resetState?.();
+    this._dispatchGroupChange(value, previousValue, userInitiated);
+  }
+
+  private _applyUiState(shouldScroll: boolean): void {
+    const activeItem = this._items.find((item) => item.value === this._selectedResolvedValue);
+    if (!activeItem) {
+      return;
+    }
+
+    const focusValue =
+      this.activation === 'manual' ? this._focusedValue || activeItem.value : activeItem.value;
+
+    this._tabButtons.forEach((button, index) => {
+      const item = this._items[index];
+      if (!item) {
+        return;
+      }
+
+      const selected = item.value === activeItem.value;
+      const focusable = item.value === focusValue;
+      button.setAttribute('aria-selected', selected ? 'true' : 'false');
+      button.tabIndex = focusable ? 0 : -1;
+
+      if ((selected || focusable) && shouldScroll) {
+        this._scrollTabIntoView(button);
+      }
+    });
+
+    this._items.forEach((item, index) => {
+      const isActive = item.value === activeItem.value;
+      item.block.toggleAttribute('data-panel-active', isActive);
+      if (isActive) {
+        item.block.removeAttribute('hidden');
+        item.block.removeAttribute('aria-hidden');
+      } else {
+        item.block.setAttribute('hidden', '');
+        item.block.setAttribute('aria-hidden', 'true');
+      }
+
+      if (index === 0) {
+        item.block.removeAttribute('data-panel-after-first');
+      } else {
+        item.block.setAttribute('data-panel-after-first', '');
+      }
+    });
+
+    this._copyValue =
+      typeof activeItem.block.getCodeContent === 'function'
+        ? activeItem.block.getCodeContent()
+        : '';
+    this._copyLabel =
+      activeItem.copyContextLabel === DEFAULT_COPY_CONTEXT
+        ? DEFAULT_COPY_BUTTON_LABEL
+        : `${activeItem.copyContextLabel} のコードをコピー`;
+    this._copyDisabled = activeItem.copyDisabled;
+  }
+
+  private _resolveSelectedValue(items: readonly GroupItem[], previousValue: string): string {
+    const controlledValue = this.selectedValue.trim();
+    if (this._isControlled()) {
+      const controlledMatch = items.find((item) => item.value === controlledValue);
+      return controlledMatch?.value ?? items[0]?.value ?? '';
+    }
+
+    const previousMatch = items.find((item) => item.value === previousValue);
+    if (previousMatch) {
+      return previousMatch.value;
+    }
+
+    if (!this._selectedInitialized) {
+      const defaultValue = this.defaultSelectedValue.trim();
+      const defaultMatch = items.find((item) => item.value === defaultValue);
+      this._selectedInitialized = true;
+      if (defaultMatch) {
+        return defaultMatch.value;
+      }
+    }
+
+    return items[0]?.value ?? '';
+  }
+
+  private _resolveFocusedValue(items: readonly GroupItem[], selectedValue: string): string {
+    if (this.activation === 'auto') {
+      return selectedValue;
+    }
+
+    const focusedMatch = items.find((item) => item.value === this._focusedValue);
+    if (focusedMatch) {
+      return focusedMatch.value;
+    }
+
+    return selectedValue;
+  }
+
+  private _resolveTabLabel(block: CodeBlockHost): { label: string; source: TabLabelSource } | null {
+    const tabLabel = this._readStringValue(block, 'tabLabel', 'tab-label');
+    if (tabLabel !== '') {
+      return { label: tabLabel, source: 'tab-label' };
+    }
+
+    const filename = this._readStringValue(block, 'filename', 'filename');
+    if (filename !== '') {
+      return { label: filename, source: 'filename' };
+    }
+
+    const lang = this._readStringValue(block, 'lang', 'lang');
+    if (lang !== '') {
+      return { label: lang, source: 'lang' };
+    }
+
+    return null;
+  }
+
+  private _resolveCopyContextLabel(block: CodeBlockHost, tabLabel: string): string {
+    const copyLabel = this._readStringValue(block, 'copyLabel', 'copy-label');
+    if (copyLabel !== '') {
+      return copyLabel;
+    }
+
+    const filename = this._readStringValue(block, 'filename', 'filename');
+    if (filename !== '') {
+      return filename;
+    }
+
+    const lang = this._readStringValue(block, 'lang', 'lang');
+    if (lang !== '') {
+      return lang;
+    }
+
+    if (tabLabel !== '') {
+      return tabLabel;
+    }
+
+    return DEFAULT_COPY_CONTEXT;
+  }
+
+  private _readGroupKey(block: CodeBlockHost): string {
+    return this._readStringValue(block, 'groupKey', 'group-key');
+  }
+
+  private _readStringValue(
+    block: CodeBlockHost,
+    propertyName: 'copyLabel' | 'filename' | 'groupKey' | 'lang' | 'tabLabel',
+    attributeName: string,
+  ): string {
+    const propertyValue = block[propertyName];
+    if (typeof propertyValue === 'string' && propertyValue.trim() !== '') {
+      return propertyValue.trim();
+    }
+
+    return block.getAttribute(attributeName)?.trim() ?? '';
+  }
+
+  private _isCopyDisabled(block: CodeBlockHost): boolean {
+    if (typeof block.getCodeContent !== 'function') {
+      return true;
+    }
+
+    const propertyValue = block.copyable;
+    if (typeof propertyValue === 'boolean') {
+      return propertyValue === false;
+    }
+
+    const attributeValue = block.getAttribute('copyable');
+    if (attributeValue === null) {
+      return false;
+    }
+
+    return FALSE_BOOLEAN_ATTRIBUTE_VALUES.has(attributeValue.trim().toLowerCase());
+  }
+
+  private _resolvePanelId(block: CodeBlockHost, value: string): string {
+    const existingId = block.id.trim();
+    if (existingId !== '') {
+      return existingId;
+    }
+
+    return `ui-code-group-${String(this._uid)}-panel-${this._slugify(value)}`;
+  }
+
+  private _tabId(value: string): string {
+    return `ui-code-group-${String(this._uid)}-tab-${this._slugify(value)}`;
+  }
+
+  private _slugify(value: string): string {
+    const normalized = value
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, '-');
+    const trimmed = normalized.replace(/^-+|-+$/g, '');
+    return trimmed === '' ? 'item' : trimmed;
+  }
+
+  private _isControlled(): boolean {
+    return this.hasAttribute('selected-value');
+  }
+
+  private _findItemIndex(value: string, items: readonly GroupItem[]): number {
+    return items.findIndex((item) => item.value === value);
+  }
+
+  private _dispatchGroupChange(value: string, prevValue: string, userInitiated: boolean): void {
+    const index = this._findItemIndex(value, this._items);
+    const prevIndex = this._findItemIndex(prevValue, this._items);
 
     this.dispatchEvent(
       new CustomEvent('ui-code-group-change', {
-        detail: { index, prevIndex: previousIndex },
+        detail: {
+          index,
+          prevIndex,
+          prevValue,
+          userInitiated,
+          value,
+        },
         bubbles: true,
         composed: true,
       }),
     );
   }
 
-  private _applySelection(index: number, shouldScroll: boolean): void {
-    const activeBlock = this._blocks[index];
-    if (!activeBlock) return;
-
-    this._tabButtons.forEach((button, buttonIndex) => {
-      const selected = buttonIndex === index;
-      button.setAttribute('aria-selected', selected ? 'true' : 'false');
-      button.setAttribute('tabindex', selected ? '0' : '-1');
-      if (selected && shouldScroll) {
-        this._scrollTabIntoView(button);
-      }
-    });
-
-    this._blocks.forEach((block, blockIndex) => {
-      const isActive = blockIndex === index;
-
-      block.toggleAttribute('data-panel-active', isActive);
-      if (isActive) {
-        block.removeAttribute('hidden');
-        block.removeAttribute('aria-hidden');
-      } else if (this.hasAttribute('data-ready')) {
-        block.setAttribute('hidden', '');
-        block.setAttribute('aria-hidden', 'true');
-      }
-    });
-
-    this._syncCopyPayload(activeBlock);
-  }
-
-  private _syncCopyPayload(activeBlock: CodeBlockHost): void {
-    const contextName = this._resolveCopyContextName(activeBlock);
-    this._copyLabel =
-      contextName === DEFAULT_TAB_LABEL ? 'コードをコピー' : `${contextName} のコードをコピー`;
-
-    if (typeof activeBlock.getCodeContent === 'function') {
-      this._copyValue = activeBlock.getCodeContent();
-      return;
-    }
-
-    this._copyValue = '';
-  }
-
-  private _resolveCopyContextName(block: CodeBlockHost): string {
-    const filename = this._readFilename(block);
-    if (filename !== '') return filename;
-
-    const lang = this._readLang(block);
-    if (lang !== '') return lang;
-
-    return DEFAULT_TAB_LABEL;
-  }
-
   private _scrollTabIntoView(tab: HTMLElement): void {
     const tabList = this._tabListEl;
-    if (!tabList) return;
+    if (!tabList) {
+      return;
+    }
 
     tab.scrollIntoView({
       behavior: 'instant' as ScrollBehavior,
@@ -606,7 +908,9 @@ export class CodeGroup extends LitElement {
     });
 
     const headerToolsWidth = this._readHeaderToolsWidth();
-    if (headerToolsWidth <= 0) return;
+    if (headerToolsWidth <= 0) {
+      return;
+    }
 
     const tabListRect = tabList.getBoundingClientRect();
     const tabRect = tab.getBoundingClientRect();
@@ -623,9 +927,15 @@ export class CodeGroup extends LitElement {
   }
 
   private _syncHeaderToolsWidth(): void {
-    if (!this._headerToolsEl) return;
+    if (!this._headerToolsEl) {
+      return;
+    }
+
     const width = Math.ceil(this._headerToolsEl.getBoundingClientRect().width);
-    if (width <= 0) return;
+    if (width <= 0) {
+      return;
+    }
+
     this.style.setProperty('--header-tools-width', `${String(width)}px`);
   }
 
@@ -633,106 +943,183 @@ export class CodeGroup extends LitElement {
     const fromStyle = Number.parseFloat(
       getComputedStyle(this).getPropertyValue('--header-tools-width').trim(),
     );
-    if (Number.isFinite(fromStyle) && fromStyle > 0) return fromStyle;
+    if (Number.isFinite(fromStyle) && fromStyle > 0) {
+      return fromStyle;
+    }
 
-    if (!this._headerToolsEl) return 0;
+    if (!this._headerToolsEl) {
+      return 0;
+    }
+
     const measured = this._headerToolsEl.getBoundingClientRect().width;
     return Number.isFinite(measured) ? measured : 0;
   }
 
-  private _resolvePanelId(block: HTMLElement, index: number): string {
-    const existing = block.id.trim();
-    if (existing !== '') return existing;
-    return `ui-code-group-${String(this._uid)}-panel-${String(index)}`;
+  private _findButtonByValue(value: string): HTMLButtonElement | undefined {
+    return this._tabButtons.find((button) => button.dataset['uiCodeGroupTab'] === value);
   }
 
-  private _tabId(index: number): string {
-    return `ui-code-group-${String(this._uid)}-tab-${String(index)}`;
+  private _moveFocus(delta: number): void {
+    if (this._items.length === 0) {
+      return;
+    }
+
+    const currentValue =
+      this.activation === 'manual'
+        ? this._focusedValue || this._selectedResolvedValue
+        : this._selectedResolvedValue;
+    const currentIndex = Math.max(0, this._findItemIndex(currentValue, this._items));
+    const nextIndex = (currentIndex + delta + this._items.length) % this._items.length;
+    const nextItem = this._items[nextIndex];
+    const nextButton = nextItem ? this._findButtonByValue(nextItem.value) : undefined;
+    if (!nextItem || !nextButton) {
+      return;
+    }
+
+    if (this.activation === 'manual') {
+      this._focusedValue = nextItem.value;
+      this._applyUiState(true);
+      nextButton.focus();
+      return;
+    }
+
+    nextButton.focus();
+    this._requestSelection(nextItem.value, true);
   }
 
-  private _clampIndex(index: number, length: number): number {
-    if (length <= 0) return 0;
-    if (index < 0) return 0;
-    if (index >= length) return length - 1;
-    return index;
+  private _focusBoundaryTab(index: number): void {
+    const target = this._items[index];
+    const button = target ? this._findButtonByValue(target.value) : undefined;
+    if (!target || !button) {
+      return;
+    }
+
+    if (this.activation === 'manual') {
+      this._focusedValue = target.value;
+      this._applyUiState(true);
+      button.focus();
+      return;
+    }
+
+    button.focus();
+    this._requestSelection(target.value, true);
   }
 
-  private _resolveTabDescriptor(block: CodeBlockHost): TabDescriptor {
-    const label = this._readLabel(block);
-    if (label !== '') return { label, source: 'label' };
+  private _shouldRecompose(records: readonly MutationRecord[]): boolean {
+    for (const record of records) {
+      if (record.type === 'attributes') {
+        if (this._isDirectCodeBlock(record.target)) {
+          return true;
+        }
+        continue;
+      }
 
-    const filename = this._readFilename(block);
-    if (filename !== '') return { label: filename, source: 'filename' };
+      if (record.type !== 'childList' || record.target !== this) {
+        continue;
+      }
 
-    const lang = this._readLang(block);
-    if (lang !== '') return { label: lang, source: 'lang' };
+      const changedNodes = [...Array.from(record.addedNodes), ...Array.from(record.removedNodes)];
+      if (changedNodes.some((node) => this._isRelevantDirectChild(node))) {
+        return true;
+      }
+    }
 
-    return { label: DEFAULT_TAB_LABEL, source: 'fallback' };
+    return false;
   }
 
-  private _readLabel(block: HTMLElement): string {
-    return block.getAttribute('label')?.trim() ?? '';
+  private _isRelevantDirectChild(node: Node): boolean {
+    if (!(node instanceof HTMLElement)) {
+      return false;
+    }
+
+    if (this._isGeneratedTabButton(node)) {
+      return false;
+    }
+
+    return node.parentElement === this;
   }
 
-  private _readFilename(block: HTMLElement): string {
-    return block.getAttribute('filename')?.trim() ?? '';
+  private _isDirectCodeBlock(node: Node): node is CodeBlockHost {
+    return (
+      node instanceof HTMLElement &&
+      node.parentElement === this &&
+      node.tagName.toLowerCase() === 'ui-code-block'
+    );
   }
 
-  private _readLang(block: HTMLElement): string {
-    return block.getAttribute('lang')?.trim() ?? '';
+  private _isGeneratedTabButton(node: Element): boolean {
+    return (
+      node.tagName.toLowerCase() === 'button' &&
+      node.getAttribute('slot') === 'tab' &&
+      node.hasAttribute('data-ui-generated-tab')
+    );
   }
+
+  private _onCodeBlockChange = (event: Event): void => {
+    const target = event.target;
+    if (!this._isDirectCodeBlock(target as Node)) {
+      return;
+    }
+
+    this._scheduleCompose();
+  };
 
   private _onTabListKeyDown = (event: KeyboardEvent): void => {
     const target = event.composedPath()[0];
-    if (!(target instanceof HTMLElement)) return;
+    if (!(target instanceof HTMLButtonElement)) {
+      return;
+    }
 
-    const currentIndex = this._tabButtons.indexOf(target as HTMLButtonElement);
-    if (currentIndex === -1) return;
-
-    const tabCount = this._tabButtons.length;
-    if (tabCount === 0) return;
+    const currentIndex = this._tabButtons.indexOf(target);
+    if (currentIndex === -1 || this._items.length === 0) {
+      return;
+    }
 
     switch (event.key) {
       case 'ArrowLeft':
         event.preventDefault();
-        this._focusAndSelect((currentIndex - 1 + tabCount) % tabCount);
+        this._moveFocus(-1);
         break;
       case 'ArrowRight':
         event.preventDefault();
-        this._focusAndSelect((currentIndex + 1) % tabCount);
+        this._moveFocus(1);
         break;
       case 'Home':
         event.preventDefault();
-        this._focusAndSelect(0);
+        this._focusBoundaryTab(0);
         break;
       case 'End':
         event.preventDefault();
-        this._focusAndSelect(tabCount - 1);
+        this._focusBoundaryTab(this._items.length - 1);
         break;
       case 'Enter':
       case ' ':
         event.preventDefault();
-        this._selectTab(currentIndex, true);
+        this._requestSelection(this._items[currentIndex]?.value ?? '', true);
         break;
       default:
         break;
     }
   };
 
-  private _focusAndSelect(index: number): void {
-    const tab = this._tabButtons[index];
-    if (!tab) return;
-    tab.focus();
-    this._selectTab(index, true);
-  }
-
   private get _tabListAriaLabel(): string {
+    const labelledBy = this.getAttribute('aria-labelledby')?.trim();
+    if (labelledBy) {
+      return '';
+    }
+
     const explicit = this.getAttribute('aria-label')?.trim();
-    if (explicit && explicit !== '') return explicit;
-    return 'コードグループ';
+    if (explicit) {
+      return explicit;
+    }
+
+    return DEFAULT_GROUP_LABEL;
   }
 
   override render() {
+    const labelledBy = this.getAttribute('aria-labelledby')?.trim() || undefined;
+    const ariaLabel = labelledBy ? undefined : this._tabListAriaLabel || undefined;
+
     return html`
       <div class="root">
         <div class="code-group-header">
@@ -740,7 +1127,8 @@ export class CodeGroup extends LitElement {
             class="tab-list"
             role="tablist"
             aria-orientation="horizontal"
-            aria-label="${this._tabListAriaLabel}"
+            aria-labelledby="${ifDefined(labelledBy)}"
+            aria-label="${ifDefined(ariaLabel)}"
             @keydown="${this._onTabListKeyDown}"
           >
             <slot name="tab"></slot>
@@ -752,6 +1140,7 @@ export class CodeGroup extends LitElement {
               size="sm"
               value="${this._copyValue}"
               label="${this._copyLabel}"
+              ?disabled="${this._copyDisabled}"
             ></ui-copy-button>
           </div>
         </div>
