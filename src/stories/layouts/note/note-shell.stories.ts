@@ -16,13 +16,23 @@ import {
 
 const sidebarSource = [
   {
+    kind: 'branch',
     id: 'notes',
     label: 'Notes',
-    expanded: true,
     children: [
-      { id: 'intro-reading', label: 'Serene Reading', href: '/notes/serene-reading' },
-      { id: 'story-shell', label: 'Storybook Shell', href: '/notes/story-shell', selected: true },
-      { id: 'router-notes', label: 'Router Notes', href: '/notes/router-notes' },
+      {
+        kind: 'leaf',
+        id: 'intro-reading',
+        label: 'Serene Reading',
+        href: '/notes/serene-reading',
+      },
+      {
+        kind: 'leaf',
+        id: 'story-shell',
+        label: 'Storybook Shell',
+        href: '/notes/story-shell',
+      },
+      { kind: 'leaf', id: 'router-notes', label: 'Router Notes', href: '/notes/router-notes' },
     ],
   },
 ];
@@ -71,7 +81,7 @@ export const Default: Story = {
                       <layout-sidebar
                         id="story-note-sidebar"
                         source-id="story-note-sidebar-source"
-                        active-id="story-shell"
+                        selected-id="story-shell"
                         heading="ナビゲーション"
                         fixed-breakpoint="768"
                       ></layout-sidebar>

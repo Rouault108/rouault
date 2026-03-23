@@ -198,7 +198,7 @@ export class NoteLayout {
   render(data: NoteLayoutData) {
     const note = data.note;
     const slug = typeof note?.slug === 'string' ? note.slug : '';
-    const sidebarActiveId = note?.noteKind === 'directory-index' ? `${slug}/__index__` : slug;
+    const sidebarSelectedId = note?.noteKind === 'directory-index' ? `${slug}/__index__` : slug;
     const heading = escapeAttr(note?.title ?? '');
     const published = note?.date ? ` published="${escapeAttr(note.date)}"` : '';
     const updated = note?.updated ? ` updated="${escapeAttr(note.updated)}"` : '';
@@ -237,7 +237,7 @@ export class NoteLayout {
         <aside class="layout-sidebar-col" aria-label="ナビゲーション">
           <layout-sidebar
             source-id="${escapeAttr(sidebarSourceId)}"
-            active-id="${escapeAttr(sidebarActiveId)}"
+            selected-id="${escapeAttr(sidebarSelectedId)}"
             items-json="${sidebarItemsJson}"
             heading="ナビゲーション"
             fixed-breakpoint="768"

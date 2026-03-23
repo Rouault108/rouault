@@ -74,29 +74,46 @@ export const writeLayoutSidebarTreeState = (
   }
 };
 
-/**
- * 現在地の展開状態を壊さずに、保存済み expandedIds をマージする。
- */
-export const mergeLayoutSidebarTreeState = (
-  nodes: TreeNode[],
-  expandedIds: readonly string[],
-): TreeNode[] => {
-  const expandedSet = new Set(expandedIds);
+const collectSelectedAncestors = (
+  nodes: readonly TreeNode[],
+  selectedId: string | null,
+  path: string[] = [],
+): string[] | null => {
+  if (selectedId === null) {
+    return null;
+  }
 
-  const mergeNode = (node: TreeNode): TreeNode => {
-    const { children } = node;
-    const hasChildren = Array.isArray(children) && children.length > 0;
-
-    if (!hasChildren) {
-      return { ...node };
+  for (const node of nodes) {
+    if (node.id === selectedId) {
+      return path;
     }
 
-    return {
-      ...node,
-      expanded: Boolean(node.expanded) || expandedSet.has(node.id),
-      children: children.map((child) => mergeNode(child)),
-    };
-  };
+    if (node.kind === 'branch') {
+      const nextPath = [...path, node.id];
+      const result = collectSelectedAncestors(node.children, selectedId, nextPath);
+      if (result !== null) {
+        return result;
+      }
+    }
+  }
 
-  return nodes.map((node) => mergeNode(node));
+  return null;
+};
+
+/**
+ * 保存済み expandedIds と現在地の祖先 branch 群を結合する。
+ */
+export const mergeLayoutSidebarTreeState = (
+  nodes: readonly TreeNode[],
+  expandedIds: readonly string[],
+  selectedId: string | null,
+): string[] => {
+  const merged = new Set(expandedIds);
+  const selectedAncestors = collectSelectedAncestors(nodes, selectedId) ?? [];
+
+  for (const id of selectedAncestors) {
+    merged.add(id);
+  }
+
+  return [...merged];
 };

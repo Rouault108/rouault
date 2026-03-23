@@ -11,8 +11,12 @@ export interface SidebarSourceNote {
   sidebarDirectoryIcons?: Record<string, string>;
 }
 
-interface SidebarMutableNode extends TreeNode {
-  children?: SidebarMutableNode[];
+interface SidebarBranchNode {
+  kind: 'branch';
+  id: string;
+  label: string;
+  icon?: string;
+  children: TreeNode[];
 }
 
 const normalizeSegmentLabel = (segment: string): string =>
@@ -23,98 +27,101 @@ const normalizeSegmentLabel = (segment: string): string =>
 
 const getDirectoryIndexNodeId = (directoryPath: string): string => `${directoryPath}/__index__`;
 
-const resolveSelectedNodeId = (notes: SidebarSourceNote[], selectedSlug: string): string => {
-  const normalized = selectedSlug.trim();
-  if (normalized.length === 0) {
-    return '';
-  }
-
-  const selectedNote = notes.find(
-    (note) => typeof note.slug === 'string' && note.slug.trim() === normalized,
-  );
-
-  if (selectedNote?.noteKind === 'directory-index') {
-    const directoryPath =
-      typeof selectedNote.directoryPath === 'string' && selectedNote.directoryPath.trim().length > 0
-        ? selectedNote.directoryPath.trim()
-        : normalized;
-
-    return getDirectoryIndexNodeId(directoryPath);
-  }
-
-  return normalized;
-};
-
-const findNodeById = (nodes: SidebarMutableNode[], id: string): SidebarMutableNode | null => {
+const findBranchNodeById = (
+  nodes: TreeNode[],
+  id: string,
+): SidebarBranchNode | null => {
   for (const node of nodes) {
-    if (node.id === id) {
-      return node;
+    if (node.id === id && node.kind === 'branch') {
+      return node as SidebarBranchNode;
     }
-    if (Array.isArray(node.children)) {
-      const found = findNodeById(node.children, id);
-      if (found) {
+
+    if (node.kind === 'branch') {
+      const found = findBranchNodeById(node.children as TreeNode[], id);
+      if (found !== null) {
         return found;
       }
     }
   }
+
   return null;
 };
 
-const markExpandedPath = (nodes: SidebarMutableNode[], selectedId: string): boolean => {
+const findNodeById = (nodes: TreeNode[], id: string): TreeNode | null => {
   for (const node of nodes) {
-    if (node.id === selectedId) {
-      return true;
+    if (node.id === id) {
+      return node;
     }
-    if (Array.isArray(node.children) && node.children.length > 0) {
-      const containsSelected = markExpandedPath(node.children, selectedId);
-      if (containsSelected) {
-        node.expanded = true;
-        return true;
+
+    if (node.kind === 'branch') {
+      const found = findNodeById(node.children as TreeNode[], id);
+      if (found !== null) {
+        return found;
       }
     }
   }
-  return false;
+
+  return null;
 };
 
 const ensureDirectoryNode = (
-  nodes: SidebarMutableNode[],
+  nodes: TreeNode[],
   id: string,
   label: string,
   icon?: string,
-): SidebarMutableNode => {
-  const existing = findNodeById(nodes, id);
+): SidebarBranchNode => {
+  const existing = findBranchNodeById(nodes, id);
   if (existing !== null) {
     existing.label = label;
     if (typeof icon === 'string' && typeof existing.icon !== 'string') {
       existing.icon = icon;
     }
-    existing.children = existing.children ?? [];
-
-    delete existing.href;
-    existing.selected = false;
-
     return existing;
   }
 
-  const created: SidebarMutableNode = {
+  const created: SidebarBranchNode = {
+    kind: 'branch',
     id,
     label,
     ...(typeof icon === 'string' ? { icon } : {}),
-    selected: false,
-    expanded: false,
     children: [],
   };
   nodes.push(created);
   return created;
 };
 
+const upsertLeafNode = (
+  nodes: TreeNode[],
+  id: string,
+  label: string,
+  href: string,
+  icon?: string,
+): void => {
+  const existing = findNodeById(nodes, id);
+  if (existing !== null && existing.kind === 'leaf') {
+    existing.label = label;
+    existing.href = href;
+    if (typeof icon === 'string') {
+      existing.icon = icon;
+    }
+    return;
+  }
+
+  nodes.push({
+    kind: 'leaf',
+    id,
+    label,
+    href,
+    ...(typeof icon === 'string' ? { icon } : {}),
+  });
+};
+
 export const buildSidebarTree = (
   notes: SidebarSourceNote[],
-  selectedSlug = '',
+  _selectedSlug = '',
   rootSlug = '',
 ): TreeNode[] => {
-  const roots: SidebarMutableNode[] = [];
-  const selectedNodeId = resolveSelectedNodeId(notes, selectedSlug);
+  const roots: TreeNode[] = [];
 
   for (const note of notes) {
     if (typeof note.slug !== 'string' || note.slug.trim().length === 0) {
@@ -135,7 +142,6 @@ export const buildSidebarTree = (
         typeof note.directoryPath === 'string' && note.directoryPath.trim().length > 0
           ? note.directoryPath.trim()
           : slug;
-
       const segments = directoryPath.split('/').filter((segment) => segment.length > 0);
       if (segments.length === 0) {
         continue;
@@ -145,10 +151,6 @@ export const buildSidebarTree = (
       let parentPath = '';
 
       for (const segment of segments) {
-        if (!segment) {
-          continue;
-        }
-
         const currentPath = parentPath.length > 0 ? `${parentPath}/${segment}` : segment;
         const directoryIcon = note.sidebarDirectoryIcons?.[currentPath];
         const node = ensureDirectoryNode(
@@ -158,40 +160,22 @@ export const buildSidebarTree = (
           directoryIcon,
         );
 
-        currentChildren = node.children ?? [];
-        node.children = currentChildren;
+        currentChildren = node.children;
         parentPath = currentPath;
       }
 
       const lastSegment = segments[segments.length - 1];
-      if (lastSegment === undefined) {
-        throw new Error('segments must not be empty');
+      if (!lastSegment) {
+        continue;
       }
 
-      const indexNodeId = getDirectoryIndexNodeId(directoryPath);
-
-      let indexNode = findNodeById(currentChildren, indexNodeId);
-      if (indexNode === null) {
-        indexNode = {
-          id: indexNodeId,
-          label: normalizeSegmentLabel(lastSegment),
-          ...(typeof note.sidebarResolvedIcon === 'string'
-            ? { icon: note.sidebarResolvedIcon }
-            : {}),
-          href: note.permalink.trim(),
-          selected: indexNodeId === selectedNodeId,
-          expanded: false,
-        };
-        currentChildren.push(indexNode);
-      } else {
-        indexNode.label = normalizeSegmentLabel(lastSegment);
-        indexNode.href = note.permalink.trim();
-        indexNode.selected = indexNodeId === selectedNodeId;
-        if (typeof note.sidebarResolvedIcon === 'string') {
-          indexNode.icon = note.sidebarResolvedIcon;
-        }
-      }
-
+      upsertLeafNode(
+        currentChildren,
+        getDirectoryIndexNodeId(directoryPath),
+        normalizeSegmentLabel(lastSegment),
+        note.permalink.trim(),
+        note.sidebarResolvedIcon,
+      );
       continue;
     }
 
@@ -211,7 +195,6 @@ export const buildSidebarTree = (
 
       const currentPath = parentPath.length > 0 ? `${parentPath}/${segment}` : segment;
       const isLeaf = index === segments.length - 1;
-
       if (!isLeaf) {
         const directoryIcon = note.sidebarDirectoryIcons?.[currentPath];
         const node = ensureDirectoryNode(
@@ -220,69 +203,41 @@ export const buildSidebarTree = (
           normalizeSegmentLabel(segment),
           directoryIcon,
         );
-        currentChildren = node.children ?? [];
-        node.children = currentChildren;
+        currentChildren = node.children;
         parentPath = currentPath;
         continue;
       }
 
-      let node = findNodeById(currentChildren, slug);
-      if (node === null) {
-        node = {
-          id: slug,
-          label: candidateTitle,
-          ...(typeof note.sidebarResolvedIcon === 'string'
-            ? { icon: note.sidebarResolvedIcon }
-            : {}),
-          href: note.permalink.trim(),
-          selected: slug === selectedNodeId,
-          expanded: false,
-        };
-        currentChildren.push(node);
-      } else {
-        node.label = candidateTitle;
-        node.href = note.permalink.trim();
-        node.selected = slug === selectedNodeId;
-        if (typeof note.sidebarResolvedIcon === 'string') {
-          node.icon = note.sidebarResolvedIcon;
-        }
-      }
-
-      parentPath = currentPath;
+      upsertLeafNode(
+        currentChildren,
+        slug,
+        candidateTitle,
+        note.permalink.trim(),
+        note.sidebarResolvedIcon,
+      );
     }
   }
 
-  if (selectedNodeId.length > 0) {
-    const selectedNode = findNodeById(roots, selectedNodeId);
-    if (selectedNode) {
-      selectedNode.selected = true;
-      if (Array.isArray(selectedNode.children) && selectedNode.children.length > 0) {
-        selectedNode.expanded = true;
-      }
-      markExpandedPath(roots, selectedNodeId);
-    }
-  }
+  const isDirectoryIndexNode = (node: TreeNode): boolean =>
+    node.kind === 'leaf' && node.id.endsWith('/__index__');
 
-  const isDirectoryIndexNode = (node: SidebarMutableNode): boolean =>
-    node.id.endsWith('/__index__');
-
-  const sortNodes = (nodes: SidebarMutableNode[]): void => {
+  const sortNodes = (nodes: TreeNode[]): void => {
     nodes.sort((first, second) => {
       const firstIsIndex = isDirectoryIndexNode(first);
       const secondIsIndex = isDirectoryIndexNode(second);
       if (firstIsIndex && !secondIsIndex) return -1;
       if (!firstIsIndex && secondIsIndex) return 1;
 
-      const firstHasChildren = Array.isArray(first.children) && first.children.length > 0;
-      const secondHasChildren = Array.isArray(second.children) && second.children.length > 0;
-      if (firstHasChildren && !secondHasChildren) return -1;
-      if (!firstHasChildren && secondHasChildren) return 1;
+      const firstIsBranch = first.kind === 'branch';
+      const secondIsBranch = second.kind === 'branch';
+      if (firstIsBranch && !secondIsBranch) return -1;
+      if (!firstIsBranch && secondIsBranch) return 1;
       return 0;
     });
 
     for (const node of nodes) {
-      if (Array.isArray(node.children) && node.children.length > 0) {
-        sortNodes(node.children);
+      if (node.kind === 'branch') {
+        sortNodes(node.children as TreeNode[]);
       }
     }
   };
@@ -291,7 +246,7 @@ export const buildSidebarTree = (
 
   if (rootSlug.length > 0) {
     const rootNode = findNodeById(roots, rootSlug);
-    return rootNode ? [rootNode] : [];
+    return rootNode && rootNode.kind === 'branch' ? [rootNode] : [];
   }
 
   return roots;

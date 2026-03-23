@@ -3,7 +3,7 @@ import { customElement, property, query, state } from 'lit/decorators.js';
 import '../../lib/icons';
 import '../ui/sidebar/sidebar';
 import type { TreeNode } from '../ui/file-tree/file-tree';
-import type { UiSidebar, UiSidebarExpandDetail } from '../ui/sidebar/sidebar';
+import type { UiSidebar, UiSidebarToggleDetail } from '../ui/sidebar/sidebar';
 import type { UiSidebarStateChangeDetail } from '../ui/sidebar-shell/sidebar-shell';
 import { attachStickyFooterBoundary } from '../../lib/layout/sticky-footer-boundary.js';
 import {
@@ -23,13 +23,6 @@ const toOptionalString = (value: unknown): string | undefined => {
   return normalized.length > 0 ? normalized : undefined;
 };
 
-const toOptionalBoolean = (value: unknown): boolean | undefined => {
-  if (typeof value === 'boolean') {
-    return value;
-  }
-  return undefined;
-};
-
 const toTreeNode = (value: unknown): TreeNode | null => {
   if (!isRecord(value)) {
     return null;
@@ -46,22 +39,35 @@ const toTreeNode = (value: unknown): TreeNode | null => {
     ? childrenValue
         .map((item) => toTreeNode(item))
         .filter((item): item is TreeNode => item !== null)
-    : undefined;
+    : [];
   const icon = toOptionalString(value['icon']);
   const href = toOptionalString(value['href']);
-  const selected = toOptionalBoolean(value['selected']);
-  const expanded = toOptionalBoolean(value['expanded']);
 
-  const node: TreeNode = {
+  if (children.length > 0 && href) {
+    return null;
+  }
+
+  if (children.length > 0) {
+    return {
+      kind: 'branch',
+      id,
+      label,
+      ...(icon ? { icon } : {}),
+      children,
+    };
+  }
+
+  if (!href) {
+    return null;
+  }
+
+  return {
+    kind: 'leaf',
     id,
     label,
     ...(icon ? { icon } : {}),
-    ...(href ? { href } : {}),
-    ...(selected !== undefined ? { selected } : {}),
-    ...(expanded !== undefined ? { expanded } : {}),
-    ...(children && children.length > 0 ? { children } : {}),
+    href,
   };
-  return node;
 };
 
 @customElement('layout-sidebar')
@@ -125,8 +131,8 @@ export class LayoutSidebar extends LitElement {
   @property({ type: String, attribute: 'source-id' })
   sourceId = '';
 
-  @property({ type: String, attribute: 'active-id' })
-  activeId = '';
+  @property({ type: String, attribute: 'selected-id' })
+  selectedId: string | null = null;
 
   @property({ type: String, attribute: 'items-json' })
   itemsJson = '';
@@ -193,7 +199,7 @@ export class LayoutSidebar extends LitElement {
 
     const inlineItems = this._parseItemsJson(this.itemsJson);
     if (inlineItems !== null) {
-      this._items = mergeLayoutSidebarTreeState(inlineItems, [...this._persistedExpandedIds]);
+      this._items = inlineItems;
       return;
     }
 
@@ -217,7 +223,7 @@ export class LayoutSidebar extends LitElement {
       const items = parsed
         .map((item) => toTreeNode(item))
         .filter((item): item is TreeNode => item !== null);
-      this._items = mergeLayoutSidebarTreeState(items, [...this._persistedExpandedIds]);
+      this._items = items;
     } catch {
       this._items = [];
     }
@@ -274,7 +280,7 @@ export class LayoutSidebar extends LitElement {
     this._state = event.detail.state;
   };
 
-  private _onSidebarExpand = (event: CustomEvent<UiSidebarExpandDetail>): void => {
+  private _onSidebarToggle = (event: CustomEvent<UiSidebarToggleDetail>): void => {
     const { id, expanded } = event.detail;
     if (expanded) {
       this._persistedExpandedIds.add(id);
@@ -295,16 +301,22 @@ export class LayoutSidebar extends LitElement {
 
   override render() {
     const isExpanded = this._state === 'expanded';
+    const mergedExpandedIds = mergeLayoutSidebarTreeState(
+      this._items,
+      [...this._persistedExpandedIds],
+      this.selectedId,
+    );
 
     return html`
       <ui-sidebar
         id="layout-sidebar-panel"
         .items=${this._items}
-        .activeId=${this.activeId}
+        .selectedId=${this.selectedId}
+        .expandedIds=${new Set(mergedExpandedIds)}
         .heading=${this.heading}
         .fixedBreakpoint=${this.fixedBreakpoint}
         @ui-sidebar-state-change=${this._onSidebarStateChange}
-        @ui-sidebar-expand=${this._onSidebarExpand}
+        @ui-sidebar-toggle=${this._onSidebarToggle}
         @ui-sidebar-select=${this._onSidebarSelect}
       ></ui-sidebar>
 

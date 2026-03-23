@@ -2,7 +2,11 @@ import { css, html, LitElement, type PropertyValues } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import '../file-tree/file-tree';
-import type { FileTreeVariant, TreeItemDensity, TreeNode } from '../file-tree/file-tree';
+import type {
+  FileTreeVariant,
+  TreeItemDensity,
+  TreeNode,
+} from '../file-tree/file-tree';
 import '../sidebar-shell/sidebar-shell';
 import type {
   SidebarMode,
@@ -13,15 +17,14 @@ import type {
 
 export interface UiSidebarSelectDetail {
   id: string;
-  node: TreeNode;
 }
 
-export interface UiSidebarExpandDetail {
+export interface UiSidebarToggleDetail {
   id: string;
   expanded: boolean;
 }
 
-export interface UiSidebarFocusChangeDetail {
+export interface UiSidebarActiveChangeDetail {
   id: string;
 }
 
@@ -95,8 +98,11 @@ export class UiSidebar extends LitElement {
   @property({ type: Boolean, reflect: true })
   loading = false;
 
-  @property({ type: String, attribute: 'active-id' })
-  activeId = '';
+  @property({ type: String, attribute: 'selected-id' })
+  selectedId: string | null = null;
+
+  @property({ attribute: false })
+  expandedIds: ReadonlySet<string> = new Set();
 
   @property({ type: String, reflect: true })
   density: TreeItemDensity = 'normal';
@@ -257,8 +263,6 @@ export class UiSidebar extends LitElement {
 
   private _onTreeSelect = (event: CustomEvent<UiSidebarSelectDetail>): void => {
     const detail = event.detail;
-    this.activeId = detail.id;
-
     this.dispatchEvent(
       new CustomEvent<UiSidebarSelectDetail>('ui-sidebar-select', {
         bubbles: true,
@@ -268,9 +272,9 @@ export class UiSidebar extends LitElement {
     );
   };
 
-  private _onTreeExpand = (event: CustomEvent<UiSidebarExpandDetail>): void => {
+  private _onTreeToggle = (event: CustomEvent<UiSidebarToggleDetail>): void => {
     this.dispatchEvent(
-      new CustomEvent<UiSidebarExpandDetail>('ui-sidebar-expand', {
+      new CustomEvent<UiSidebarToggleDetail>('ui-sidebar-toggle', {
         bubbles: true,
         composed: true,
         detail: event.detail,
@@ -278,11 +282,9 @@ export class UiSidebar extends LitElement {
     );
   };
 
-  private _onTreeFocusChange = (event: CustomEvent<UiSidebarFocusChangeDetail>): void => {
-    this.activeId = event.detail.id;
-
+  private _onTreeActiveChange = (event: CustomEvent<UiSidebarActiveChangeDetail>): void => {
     this.dispatchEvent(
-      new CustomEvent<UiSidebarFocusChangeDetail>('ui-sidebar-focus-change', {
+      new CustomEvent<UiSidebarActiveChangeDetail>('ui-sidebar-active-change', {
         bubbles: true,
         composed: true,
         detail: event.detail,
@@ -307,12 +309,13 @@ export class UiSidebar extends LitElement {
           <ui-file-tree
             .items=${this.items}
             .loading=${this.loading}
-            .activeId=${this.activeId}
+            .selectedId=${this.selectedId}
+            .expandedIds=${this.expandedIds}
             .density=${this.density}
             .variant=${this.variant}
             @ui-tree-select=${this._onTreeSelect}
-            @ui-tree-expand=${this._onTreeExpand}
-            @ui-tree-focus-change=${this._onTreeFocusChange}
+            @ui-tree-toggle=${this._onTreeToggle}
+            @ui-tree-active-change=${this._onTreeActiveChange}
           ></ui-file-tree>
         </div>
       </ui-sidebar-shell>

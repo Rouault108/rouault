@@ -109,17 +109,15 @@ describe('NoteLayout', () => {
     });
 
     expect(rendered).toContain('"id":"music","label":"Music","icon":"lucide:library"');
-    expect(rendered).toContain(
-      '"id":"music/classical","label":"Classical","icon":"lucide:folder-kanban"',
-    );
-    expect(rendered).toContain(
-      '"id":"music/classical/mozart","label":"モーツァルト","icon":"lucide:music-4"',
-    );
+    expect(rendered).toContain('"id":"music/classical","label":"Classical","icon":"lucide:folder-kanban"');
+    expect(rendered).toContain('"id":"music/classical/mozart","label":"モーツァルト"');
+    expect(rendered).toContain('"icon":"lucide:music-4"');
+    expect(rendered).toContain('"id":"music/jazz","label":"Jazz"');
     expect(rendered).not.toContain('"id":"music/jazz","label":"Jazz","icon":');
     expect(rendered).not.toContain('"id":"music/jazz/kind-of-blue","label":"Kind of Blue","icon":');
   });
 
-  it('directory-index のページでは sidebar active-id に __index__ を使うこと', () => {
+  it('directory-index のページでは sidebar selected-id に __index__ を使うこと', () => {
     const layout = new NoteLayout();
     const rendered = layout.render({
       content: '<p>本文</p>',
@@ -144,7 +142,7 @@ describe('NoteLayout', () => {
       ],
     });
 
-    expect(rendered).toContain('active-id="music/__index__"');
+    expect(rendered).toContain('selected-id="music/__index__"');
     expect(rendered).toContain('"id":"music/__index__"');
   });
 
@@ -172,7 +170,7 @@ describe('NoteLayout', () => {
 
     expect(rendered).toContain('"id":"music/__index__"');
     expect(rendered).toContain('"href":"/notes/music"');
-    expect(rendered).toContain('active-id="music/__index__"');
+    expect(rendered).toContain('selected-id="music/__index__"');
   });
 
   it('本文ルートIDを付与し layout-toc に content-root-id を渡すこと', () => {

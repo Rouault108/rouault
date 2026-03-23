@@ -70,36 +70,38 @@ describe('layout-sidebar-tree-state', () => {
     });
   });
 
-  it('現在地で展開済みのノードを維持しつつ保存済み expandedIds をマージすること', () => {
-    const nodes: TreeNode[] = [
+  it('保存済み expandedIds と現在位置の祖先 branch をマージすること', () => {
+    const nodes: readonly TreeNode[] = [
       {
+        kind: 'branch',
         id: 'music',
         label: 'Music',
-        expanded: true,
         children: [
           {
+            kind: 'branch',
             id: 'music/classical',
             label: 'Classical',
-            expanded: true,
             children: [
               {
+                kind: 'branch',
                 id: 'music/classical/beethoven',
                 label: 'Beethoven',
-                expanded: true,
                 children: [
                   {
+                    kind: 'leaf',
                     id: 'music/classical/beethoven/symphony-9',
                     label: '交響曲第9番 ニ短調',
-                    selected: true,
                     href: '/notes/music/classical/beethoven/symphony-9',
                   },
                 ],
               },
               {
+                kind: 'branch',
                 id: 'music/classical/tchaikovsky',
                 label: 'Tchaikovsky',
                 children: [
                   {
+                    kind: 'leaf',
                     id: 'music/classical/tchaikovsky/the-nutcracker',
                     label: 'くるみ割り人形',
                     href: '/notes/music/classical/tchaikovsky/the-nutcracker',
@@ -112,20 +114,15 @@ describe('layout-sidebar-tree-state', () => {
       },
     ];
 
-    const merged = mergeLayoutSidebarTreeState(nodes, ['music/classical/tchaikovsky']);
+    const merged = mergeLayoutSidebarTreeState(
+      nodes,
+      ['music/classical/tchaikovsky'],
+      'music/classical/beethoven/symphony-9',
+    );
 
-    const music = merged[0];
-    const classical = music?.children?.[0];
-    const beethoven = classical?.children?.[0];
-    const tchaikovsky = classical?.children?.[1];
-
-    expect(music?.expanded).to.equal(true);
-    expect(classical?.expanded).to.equal(true);
-    expect(beethoven?.expanded).to.equal(true);
-    expect(tchaikovsky?.expanded).to.equal(true);
-
-    // 元データを破壊しないことも合わせて検証する。
-    const originalTchaikovsky = nodes[0]?.children?.[0]?.children?.[1];
-    expect(originalTchaikovsky?.expanded).to.equal(undefined);
+    expect(merged).to.include('music');
+    expect(merged).to.include('music/classical');
+    expect(merged).to.include('music/classical/beethoven');
+    expect(merged).to.include('music/classical/tchaikovsky');
   });
 });
