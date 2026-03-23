@@ -15,8 +15,8 @@ import { customElement, property } from 'lit/decorators.js';
  * @property {boolean} disabled - 無効化
  * @property {boolean} required - 必須入力
  *
- * @fires change - ユーザー操作によって選択状態が変化した後に発火
- * @fires input  - change と同タイミングで発火（リアルタイム監視用）
+ * @fires input  - ユーザー操作によって選択状態が変化した直後に発火
+ * @fires change - input の後に発火
  *
  * @cssprop --primary          - チェック時の背景・ボーダー色
  * @cssprop --on-primary       - チェック時のアイコン色
@@ -36,7 +36,7 @@ import { customElement, property } from 'lit/decorators.js';
  * @cssprop --focus-ring-color  - フォーカスリング色
  * @cssprop --focus-ring-offset - フォーカスリングオフセット
  * @cssprop --animation-focus  - Adaptive Focus アニメーション
- * @cssprop --control-min-touch - 最低タッチターゲットサイズ (24px)
+ * @cssprop --control-min-touch - 最低タッチターゲットサイズ (44px)
  * @cssprop --text-base        - 標準フォントサイズ (14px)
  * @cssprop --text-sm          - 小フォントサイズ (13px)
  * @cssprop --space-2          - スペーシング (8px)
@@ -113,8 +113,8 @@ export class Checkbox extends LitElement {
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      min-width: var(--control-min-touch, 24px);
-      min-height: var(--control-min-touch, 24px);
+      min-width: var(--control-min-touch, 44px);
+      min-height: var(--control-min-touch, 44px);
       pointer-events: none;
     }
 
@@ -129,14 +129,14 @@ export class Checkbox extends LitElement {
     }
 
     /* Checked / Indeterminate */
-    :host([checked]) .control,
-    :host([indeterminate]) .control {
+    .control[data-state='checked'],
+    .control[data-state='mixed'] {
       background: var(--primary, oklch(60% 0.15 250));
       border-color: var(--primary, oklch(60% 0.15 250));
     }
 
-    /* Error State */
-    :host([invalid]) .control {
+    /* Error State: visible error 時のみ境界線を強調 */
+    .control.control-error {
       border-color: var(--border-danger, oklch(55% 0.2 28));
     }
 
@@ -150,11 +150,11 @@ export class Checkbox extends LitElement {
       flex-shrink: 0;
     }
 
-    :host([checked]) .icon-check {
+    .control[data-state='checked'] .icon-check {
       display: block;
     }
 
-    :host([indeterminate]) .icon-minus {
+    .control[data-state='mixed'] .icon-minus {
       display: block;
     }
 
@@ -165,7 +165,7 @@ export class Checkbox extends LitElement {
       animation: var(--animation-focus);
     }
 
-    :host([invalid]) .control:focus-visible {
+    .control.control-error:focus-visible {
       outline-color: var(--border-danger, oklch(55% 0.2 28));
     }
 
@@ -197,8 +197,8 @@ export class Checkbox extends LitElement {
         background: Canvas;
       }
 
-      :host([checked]) .control,
-      :host([indeterminate]) .control {
+      .control[data-state='checked'],
+      .control[data-state='mixed'] {
         background: Highlight;
         border-color: CanvasText;
       }
@@ -280,6 +280,24 @@ export class Checkbox extends LitElement {
   errorMessage = '';
 
   private _internals: ElementInternals;
+  private _defaultChecked = false;
+  private _hasInitializedDefaults = false;
+  private readonly _ariaAttributeObserver =
+    typeof MutationObserver === 'function'
+      ? new MutationObserver((records) => {
+          const hasRelevantChange = records.some(
+            (record) =>
+              record.type === 'attributes' &&
+              (record.attributeName === 'aria-label' ||
+                record.attributeName === 'aria-labelledby' ||
+                record.attributeName === 'aria-describedby'),
+          );
+
+          if (hasRelevantChange) {
+            this.requestUpdate();
+          }
+        })
+      : null;
 
   // 一意な ID（レンダリング毎の再生成を防止）
   private readonly _controlId = `checkbox-${Math.random().toString(36).substring(2, 11)}`;
@@ -293,21 +311,35 @@ export class Checkbox extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    if (!this._hasInitializedDefaults) {
+      this._defaultChecked = this.checked;
+      this._hasInitializedDefaults = true;
+    }
+
     // indeterminate は属性から受け付けないため、初期化時に外部属性を除去
     this.removeAttribute('indeterminate');
     this._syncIndeterminateAttribute();
     this._syncFormValue();
     this._syncValidity();
+    this._ariaAttributeObserver?.observe(this, {
+      attributes: true,
+      attributeFilter: ['aria-label', 'aria-labelledby', 'aria-describedby'],
+    });
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this._ariaAttributeObserver?.disconnect();
   }
 
   override willUpdate(changedProperties: PropertyValues<this>): void {
     super.willUpdate(changedProperties);
 
-    // indeterminate は属性経由での設定を無視し、プロパティのみ受け付ける。
-    // ただし Lit の reflect: true を使っているため、属性が付与された場合は
-    // プロパティ値として true になるが、仕様上は問題ない（プログラム的設定と同義）。
-    // checked と indeterminate の排他制御: checked が true になったら indeterminate を解除
-    if (changedProperties.has('checked') && this.checked) {
+    // checked と indeterminate の矛盾状態は保持しません。
+    if (
+      (changedProperties.has('checked') || changedProperties.has('indeterminate')) &&
+      this.checked
+    ) {
       this.indeterminate = false;
     }
   }
@@ -334,50 +366,6 @@ export class Checkbox extends LitElement {
     ) {
       this._syncValidity();
     }
-
-    // ARIA 属性を Control 要素に反映
-    const control = this.shadowRoot?.querySelector<HTMLElement>('.control');
-    if (control) {
-      control.setAttribute('aria-checked', this.indeterminate ? 'mixed' : String(this.checked));
-      if (this.disabled) {
-        control.setAttribute('aria-disabled', 'true');
-      } else {
-        control.removeAttribute('aria-disabled');
-      }
-      const externalLabel = this.getAttribute('aria-label');
-      const externalLabelledBy = this.getAttribute('aria-labelledby');
-      const externalDescribedBy = this.getAttribute('aria-describedby');
-      const describedByIds: string[] = [];
-      if (externalDescribedBy) describedByIds.push(externalDescribedBy);
-      if (this.invalid && this.errorMessage) describedByIds.push(this._errorId);
-      const describedBy = describedByIds.join(' ');
-
-      if (this.label) {
-        control.setAttribute('aria-labelledby', this._labelId);
-      } else if (externalLabelledBy) {
-        control.setAttribute('aria-labelledby', externalLabelledBy);
-      } else {
-        control.removeAttribute('aria-labelledby');
-      }
-
-      if (externalLabel) {
-        control.setAttribute('aria-label', externalLabel);
-      } else {
-        control.removeAttribute('aria-label');
-      }
-
-      if (this.invalid && this.errorMessage) {
-        control.setAttribute('aria-invalid', 'true');
-      } else {
-        control.removeAttribute('aria-invalid');
-      }
-
-      if (describedBy.length > 0) {
-        control.setAttribute('aria-describedby', describedBy);
-      } else {
-        control.removeAttribute('aria-describedby');
-      }
-    }
   }
 
   /** indeterminate 状態をスタイル用に属性へ反映 */
@@ -391,17 +379,21 @@ export class Checkbox extends LitElement {
 
   /** フォーム値を ElementInternals に同期 */
   private _syncFormValue(): void {
-    if (this.checked && !this.disabled && this.name) {
-      this._internals.setFormValue(this.value);
-    } else {
-      this._internals.setFormValue(null);
-    }
+    const formValue = this.checked && !this.disabled && this.name ? this.value : null;
+    const formState = this.checked ? 'checked' : 'unchecked';
+    this._internals.setFormValue(formValue, formState);
   }
 
   /** バリデーション状態を ElementInternals に同期 */
   private _syncValidity(): void {
-    if (this.invalid && this.errorMessage) {
-      this._internals.setValidity({ customError: true }, this.errorMessage);
+    if (this.disabled) {
+      this._internals.setValidity({});
+      return;
+    }
+
+    if (this.invalid) {
+      const message = this.errorMessage || '入力内容を確認してください。';
+      this._internals.setValidity({ customError: true }, message);
       return;
     }
 
@@ -428,8 +420,8 @@ export class Checkbox extends LitElement {
     this._syncFormValue();
     this._syncValidity();
 
-    this.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
     this.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+    this.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
   };
 
   /** キーボード操作: Space でトグル */
@@ -447,18 +439,19 @@ export class Checkbox extends LitElement {
     this._handleToggle();
   };
 
-  /** ラベルのキーボード操作: Enter でトグル（ESLint: click-events-have-key-events 対応） */
-  private _handleLabelKeyDown = (e: KeyboardEvent): void => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      this._handleToggle();
-    }
+  /**
+   * label は通常フォーカスを受けないため、キーボード操作主体にはしません。
+   * lit-a11y の契約を満たすために no-op で受け取ります。
+   */
+  private _handleLabelKeyDown = (event: KeyboardEvent): void => {
+    void event;
   };
 
   /**
    * バリデーション状態をチェック
    */
   checkValidity(): boolean {
+    this._syncValidity();
     return this._internals.checkValidity();
   }
 
@@ -466,6 +459,7 @@ export class Checkbox extends LitElement {
    * バリデーション状態をレポート
    */
   reportValidity(): boolean {
+    this._syncValidity();
     return this._internals.reportValidity();
   }
 
@@ -473,6 +467,7 @@ export class Checkbox extends LitElement {
    * コントロールにフォーカスを当てる
    */
   override focus(options?: FocusOptions): void {
+    if (this.disabled) return;
     this.shadowRoot?.querySelector<HTMLElement>('.control')?.focus(options);
   }
 
@@ -483,9 +478,56 @@ export class Checkbox extends LitElement {
     this.shadowRoot?.querySelector<HTMLElement>('.control')?.blur();
   }
 
+  /**
+   * ラベルはクリック領域としてのみ扱い、キーボード操作主体にはしません。
+   */
+  private _renderLabel() {
+    if (!this.label) {
+      return nothing;
+    }
+
+    return html`<label
+      id="${this._labelId}"
+      class="label"
+      part="label"
+      @click="${this._handleLabelClick}"
+      @keydown="${this._handleLabelKeyDown}"
+      >${this.label}</label
+    >`;
+  }
+
+  /**
+   * フォームリセット時は初期 checked に戻し、indeterminate は常に解除します。
+   */
+  formResetCallback(): void {
+    this.checked = this._defaultChecked;
+    this.indeterminate = false;
+    this._syncIndeterminateAttribute();
+    this._syncFormValue();
+    this._syncValidity();
+  }
+
+  /**
+   * ブラウザ復元時は checked を復元し、indeterminate は復元対象に含めません。
+   */
+  formStateRestoreCallback(state: string | File | FormData | null): void {
+    if (typeof state === 'string') {
+      this.checked = state === 'checked';
+    } else if (state === null) {
+      this.checked = false;
+    }
+
+    this.indeterminate = false;
+    this._syncIndeterminateAttribute();
+    this._syncFormValue();
+    this._syncValidity();
+  }
+
   override render() {
     const ariaChecked = this.indeterminate ? 'mixed' : String(this.checked);
-    const showError = this.invalid && !!this.errorMessage;
+    const controlState = this.indeterminate ? 'mixed' : this.checked ? 'checked' : 'unchecked';
+    const showError = this.invalid && this.errorMessage.length > 0;
+    const isInvalid = this.invalid || (this.required && !this.checked && !this.disabled);
     const externalLabel = this.getAttribute('aria-label');
     const externalLabelledBy = this.getAttribute('aria-labelledby');
     const externalDescribedBy = this.getAttribute('aria-describedby');
@@ -494,21 +536,24 @@ export class Checkbox extends LitElement {
     if (showError) ariaDescribedByIds.push(this._errorId);
     const ariaDescribedBy = ariaDescribedByIds.join(' ');
     const ariaLabelledBy = this.label ? this._labelId : externalLabelledBy;
+    const ariaLabel = this.label || externalLabelledBy ? nothing : (externalLabel ?? nothing);
+    const controlClass = showError ? 'control control-error' : 'control';
 
     return html`
       <div class="wrapper" aria-disabled="${this.disabled ? 'true' : nothing}">
         <!-- Control: キーボードフォーカスを受け取る。クリック・Space でトグル -->
         <span
           id="${this._controlId}"
-          class="control"
+          class="${controlClass}"
           part="control"
           role="checkbox"
+          data-state="${controlState}"
           aria-checked="${ariaChecked}"
           aria-disabled="${this.disabled ? 'true' : nothing}"
           aria-required="${this.required ? 'true' : nothing}"
-          aria-invalid="${showError ? 'true' : nothing}"
+          aria-invalid="${isInvalid ? 'true' : nothing}"
           aria-describedby="${ariaDescribedBy || nothing}"
-          aria-label="${externalLabel ?? nothing}"
+          aria-label="${ariaLabel}"
           aria-labelledby="${ariaLabelledBy ?? nothing}"
           tabindex="${this.disabled ? '-1' : '0'}"
           @click="${this._handleToggle}"
@@ -543,16 +588,7 @@ export class Checkbox extends LitElement {
         </span>
 
         <!-- ラベル: クリックでコントロールにフォーカスを移してトグル -->
-        ${this.label
-          ? html`<label
-              id="${this._labelId}"
-              class="label"
-              part="label"
-              @click="${this._handleLabelClick}"
-              @keydown="${this._handleLabelKeyDown}"
-              >${this.label}</label
-            >`
-          : nothing}
+        ${this._renderLabel()}
       </div>
 
       <!-- エラーメッセージ -->

@@ -26,8 +26,10 @@ import type { Checkbox } from './checkbox';
  *
  * - **`indeterminate` はプログラム的にのみ設定可能**（属性での設定は仕様外）
  * - **`checked` が true になると `indeterminate` は自動解除**
+ * - **`invalid` と `errorMessage` は別入力**。`invalid=true` 単独でも意味上のエラー状態になります
  * - **フォーム送信**: `name` が空でない、`disabled` でない、`checked === true` の場合のみ値を送信
- * - **必須バリデーション**: `required` 属性でチェックが必須であることを示します
+ * - **可視エラー表示**: `invalid=true` かつ `errorMessage` 非空の場合のみ表示します
+ * - **必須バリデーション**: `required` は内部妥当性制約であり、可視エラー表示とは分離されます
  */
 const meta: Meta<Checkbox> = {
   title: 'Components/Checkbox',
@@ -63,8 +65,10 @@ Form-Associated Custom Element として、標準フォームとシームレス�
 
 - **\`indeterminate\` はプログラム的にのみ設定可能**。属性での設定は仕様外です。
 - **\`checked\` が true になると \`indeterminate\` は自動解除**されます。
+- **\`invalid\` と \`errorMessage\` は別入力**です。visible error は \`errorMessage\` 非空時のみ表示されます。
 - **フォーム送信**: \`name\` が空でない、\`disabled\` でない、\`checked === true\` の場合のみ値を送信します。
-- **必須バリデーション**: \`required\` 属性でチェックが必須であることを示します。
+- **アクセシブル名**: \`label\` がない場合は外部 \`aria-labelledby\` または \`aria-label\` を与えてください。
+- **必須バリデーション**: \`required\` は内部妥当性制約であり、可視エラー表示は外部制御です。
         `,
       },
     },
@@ -79,8 +83,8 @@ Form-Associated Custom Element として、標準フォームとシームレス�
       },
     },
     indeterminate: {
-      control: 'boolean',
-      description: '中間状態（プログラム的にのみ設定可能）',
+      control: false,
+      description: '中間状態（property 専用。Storybook controls からは操作しません）',
       table: {
         type: { summary: 'boolean' },
         defaultValue: { summary: 'false' },
@@ -128,7 +132,7 @@ Form-Associated Custom Element として、標準フォームとシームレス�
     },
     invalid: {
       control: 'boolean',
-      description: 'バリデーションエラー状態',
+      description: '外部制御の意味上のエラー状態',
       table: {
         type: { summary: 'boolean' },
         defaultValue: { summary: 'false' },
@@ -136,7 +140,7 @@ Form-Associated Custom Element として、標準フォームとシームレス�
     },
     errorMessage: {
       control: 'text',
-      description: 'エラーメッセージ',
+      description: '可視エラー文言。非空時のみ内部エラー表示に利用されます',
       table: {
         type: { summary: 'string' },
         defaultValue: { summary: '' },
@@ -568,6 +572,54 @@ export const CheckedInvalid: Story = {
   },
 };
 
+/**
+ * エラー状態 × 文言なし。
+ *
+ * `invalid=true` 単独でも意味上のエラー状態と妥当性が成立しますが、
+ * visible error は表示しません。
+ */
+export const InvalidWithoutMessage: Story = {
+  render: () => html`
+    <ui-checkbox
+      id="invalid-without-message"
+      label="外部エラーのみ"
+      name="invalid-without-message"
+      invalid
+    ></ui-checkbox>
+  `,
+  play: async ({ canvasElement }) => {
+    const checkbox = canvasElement.querySelector<Checkbox>('#invalid-without-message');
+    if (!checkbox) throw new Error('ui-checkbox が見つかりません');
+    await checkbox.updateComplete;
+
+    const control = checkbox.shadowRoot?.querySelector('.control');
+    if (!control) throw new Error('コントロールが見つかりません');
+
+    if (!checkbox.invalid)
+      throw new Error('invalid が true であることを期待していましたが false でした');
+    if (checkbox.checkValidity()) {
+      throw new Error('invalid=true 単独でも内部妥当性は invalid である必要があります');
+    }
+
+    if (control.getAttribute('aria-invalid') !== 'true') {
+      throw new Error(
+        `aria-invalid="true" を期待していましたが、実際には "${control.getAttribute('aria-invalid') ?? 'null'}" でした`,
+      );
+    }
+
+    const errorMsg = checkbox.shadowRoot?.querySelector('.error-message');
+    if (errorMsg) {
+      throw new Error('errorMessage が空のとき、可視エラーメッセージは表示されてはいけません');
+    }
+
+    if (control.hasAttribute('aria-describedby')) {
+      throw new Error(
+        'errorMessage が空のとき、内部 error ID は aria-describedby に連結されません',
+      );
+    }
+  },
+};
+
 // ──────────────────────────────────────────────
 // 全状態一覧（ビジュアル確認用）
 // ──────────────────────────────────────────────
@@ -652,7 +704,11 @@ export const AllStates: Story = {
 
       <div class="state-group">
         <div class="state-label">No Label</div>
-        <ui-checkbox id="all-no-label" name="s9"></ui-checkbox>
+        <ui-checkbox
+          id="all-no-label"
+          name="s9"
+          aria-label="ラベルなし状態のサンプル"
+        ></ui-checkbox>
       </div>
     </div>
   `,
@@ -671,6 +727,16 @@ export const AllStates: Story = {
     indetDisabled.indeterminate = true;
     await indetDisabled.updateComplete;
 
+    const noLabel = canvasElement.querySelector<Checkbox>('#all-no-label');
+    if (!noLabel) throw new Error('ラベルなしのチェックボックスが見つかりません');
+    await noLabel.updateComplete;
+
+    const noLabelControl = noLabel.shadowRoot?.querySelector('.control');
+    if (!noLabelControl) throw new Error('ラベルなしのコントロールが見つかりません');
+    if (noLabelControl.getAttribute('aria-label') !== 'ラベルなし状態のサンプル') {
+      throw new Error('label がない一覧項目には外部 aria-label が転送される必要があります');
+    }
+
     // テスト: 全チェックボックスが存在する
     const checkboxes = canvasElement.querySelectorAll('ui-checkbox');
     if (checkboxes.length !== 9) {
@@ -688,7 +754,7 @@ export const AllStates: Story = {
 /**
  * クリックによるトグル。
  *
- * クリックで checked 状態がトグルし、`change` / `input` イベントが発火します。
+ * クリックで checked 状態がトグルし、`input`、ついで `change` が発火します。
  */
 export const ClickToggle: Story = {
   render: () => html`
@@ -731,20 +797,22 @@ export const ClickToggle: Story = {
     if (checkbox.checked)
       throw new Error('初期状態が未選択であることを期待していましたが選択状態でした');
 
-    // change/input イベントを Promise で受け取る
-    const changePromise = new Promise<boolean>((resolve) => {
+    const eventOrder: string[] = [];
+    const inputPromise = new Promise<boolean>((resolve) => {
       checkbox.addEventListener(
-        'change',
+        'input',
         (e) => {
+          eventOrder.push('input');
           resolve((e.target as Checkbox).checked);
         },
         { once: true },
       );
     });
-    const inputPromise = new Promise<boolean>((resolve) => {
+    const changePromise = new Promise<boolean>((resolve) => {
       checkbox.addEventListener(
-        'input',
+        'change',
         (e) => {
+          eventOrder.push('change');
           resolve((e.target as Checkbox).checked);
         },
         { once: true },
@@ -781,6 +849,11 @@ export const ClickToggle: Story = {
       throw new Error(
         'クリック後に input イベントの checked が true になることを期待していましたが false でした',
       );
+    if (eventOrder.join(' -> ') !== 'input -> change') {
+      throw new Error(
+        `イベント順序は "input -> change" である必要がありますが、実際には "${eventOrder.join(' -> ')}" でした`,
+      );
+    }
 
     // テスト: 2回目のクリックで未選択に戻る
     const changePromise2 = new Promise<boolean>((resolve) => {
@@ -1127,6 +1200,11 @@ export const DisabledClickBlocked: Story = {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (changeEventFired)
       throw new Error('無効状態のチェックボックスは change イベントを発火してはいけません');
+
+    checkbox.focus();
+    if (checkbox.shadowRoot?.activeElement === control) {
+      throw new Error('disabled 状態での公開 focus() は no-op である必要があります');
+    }
   },
 };
 
@@ -1134,27 +1212,28 @@ export const DisabledClickBlocked: Story = {
  * ⚠️ 境界条件: ラベルなし（label 属性未設定）。
  *
  * `label` 属性が未設定の場合、コントロールのみが表示されます。
- * この場合、外部から `aria-label` または `aria-labelledby` を提供してください。
+ * この場合、外部から `aria-labelledby` または `aria-label` を提供してください。
  */
 export const NoLabel: Story = {
   parameters: {
     docs: {
       description: {
         story:
-          '⚠️ **境界条件**: `label` 属性が未設定の場合。コントロールのみが表示されます。外部から `aria-label` を提供してください。',
+          '⚠️ **境界条件**: `label` 属性が未設定の場合。コントロールのみが表示されます。外部から `aria-labelledby` または `aria-label` を提供してください。',
       },
     },
   },
   render: () => html`
     <div style="display: flex; align-items: center; gap: 0.5rem;">
+      <span id="no-label-description" style="font-size: 14px; color: oklch(20% 0.01 250);"
+        >外部ラベル（aria-labelledby 優先）</span
+      >
       <ui-checkbox
         id="no-label-checkbox"
         name="no-label"
-        aria-label="ラベルなしチェックボックス"
+        aria-label="aria-label は aria-labelledby より後順位です"
+        aria-labelledby="no-label-description"
       ></ui-checkbox>
-      <span style="font-size: 14px; color: oklch(20% 0.01 250);"
-        >外部ラベル（aria-label で紐付け）</span
-      >
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -1169,8 +1248,11 @@ export const NoLabel: Story = {
     // テスト: コントロールは存在する
     const control = checkbox.shadowRoot?.querySelector('.control');
     if (!control) throw new Error('ラベルがなくてもコントロールは存在する必要があります');
-    if (control.getAttribute('aria-label') !== 'ラベルなしチェックボックス') {
-      throw new Error('aria-label がコントロールに転送されることを期待していましたが false でした');
+    if (control.getAttribute('aria-labelledby') !== 'no-label-description') {
+      throw new Error('label がない場合、aria-labelledby が優先される必要があります');
+    }
+    if (control.hasAttribute('aria-label')) {
+      throw new Error('aria-labelledby がある場合、aria-label はコントロールへ併記しません');
     }
   },
 };
@@ -1253,6 +1335,57 @@ export const ForcedColorsSimulation: Story = {
       throw new Error(
         '強制カラーのシミュレーションにおいて選択状態であることを期待していましたが未選択状態でした',
       );
+    }
+  },
+};
+
+/**
+ * Reduced Motion 契約の確認。
+ *
+ * OS 設定そのものは Story 内で切り替えず、コンポーネント CSS に
+ * reduced motion 用の規則が定義されていることを確認します。
+ */
+export const ReducedMotionContract: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Reduced Motion 環境では `.control` の transition duration を極小化する CSS 契約が含まれていることを確認します。',
+      },
+    },
+  },
+  render: () => html`
+    <ui-checkbox
+      id="reduced-motion-checkbox"
+      label="Reduced Motion 契約確認"
+      name="reduced-motion-checkbox"
+    ></ui-checkbox>
+  `,
+  play: async ({ canvasElement }) => {
+    const checkbox = canvasElement.querySelector<Checkbox>('#reduced-motion-checkbox');
+    if (!checkbox) throw new Error('Reduced Motion 用のチェックボックスが見つかりません');
+    await checkbox.updateComplete;
+
+    const stylesheet = checkbox.shadowRoot?.adoptedStyleSheets[0];
+    if (!stylesheet) {
+      throw new Error('Reduced Motion 契約を確認するための stylesheet が見つかりません');
+    }
+
+    const reducedMotionRule = [...stylesheet.cssRules].find(
+      (rule): rule is CSSMediaRule =>
+        rule instanceof CSSMediaRule && rule.conditionText === '(prefers-reduced-motion: reduce)',
+    );
+
+    if (!reducedMotionRule) {
+      throw new Error('Reduced Motion 用の media query が定義されている必要があります');
+    }
+
+    const hasReducedDurationRule = [...reducedMotionRule.cssRules].some((rule) =>
+      rule.cssText.includes('transition-duration: 0.01ms'),
+    );
+
+    if (!hasReducedDurationRule) {
+      throw new Error('Reduced Motion 契約では transition-duration を極小化する必要があります');
     }
   },
 };
@@ -1464,6 +1597,8 @@ export const RequiredValidation: Story = {
     const checkbox = canvasElement.querySelector<Checkbox>('#required-cb');
     if (!checkbox) throw new Error('必須チェックボックスが見つかりません');
     await checkbox.updateComplete;
+    const control = checkbox.shadowRoot?.querySelector('.control');
+    if (!control) throw new Error('コントロールが見つかりません');
 
     // テスト: required プロパティが true
     if (!checkbox.required)
@@ -1473,6 +1608,14 @@ export const RequiredValidation: Story = {
     if (checkbox.checkValidity()) {
       throw new Error('未選択の必須チェックボックスは invalid である必要があります');
     }
+    if (control.getAttribute('aria-invalid') !== 'true') {
+      throw new Error('required 違反時は aria-invalid="true" が設定される必要があります');
+    }
+
+    const errorMessage = checkbox.shadowRoot?.querySelector('.error-message');
+    if (errorMessage) {
+      throw new Error('required 違反だけでは可視エラーを自動表示してはいけません');
+    }
 
     // テスト: チェックすると checkValidity() が true
     checkbox.checked = true;
@@ -1480,6 +1623,9 @@ export const RequiredValidation: Story = {
 
     if (!checkbox.checkValidity()) {
       throw new Error('選択済みの必須チェックボックスは valid である必要があります');
+    }
+    if (control.hasAttribute('aria-invalid')) {
+      throw new Error('required 違反が解消された後は aria-invalid が解除される必要があります');
     }
 
     // 元に戻す
