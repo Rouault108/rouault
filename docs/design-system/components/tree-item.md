@@ -14,15 +14,17 @@
 - 左右キー、クリック、Enter、Space に対する**低レベル要求の通知**
 - `role="treeitem"` 単位の DOM / Accessibility 契約
 
-一方で、次は `ui-file-tree` または上位責務です。
+一方で、次は `ui-file-tree` または上位アプリケーションの責務です。
 
 - 選択状態の所有
 - 展開状態の所有
 - roving tabindex と `activeId` の所有
 - Enter / Space / 左右キーの**最終意味決定**
-- `ui-tree-request-select` / `ui-tree-select` / `ui-tree-request-toggle` / `ui-tree-toggle` の発火
+- `ui-tree-request-select` / `ui-tree-select` / `ui-tree-request-toggle` / `ui-tree-toggle` / `ui-tree-active-change` の発火
 - 現在位置ノードの可視化と ancestor 自動展開
-- ルーティングや履歴更新
+- 選択確定後のルーティング、履歴更新、プリフェッチ、スクロール復元
+
+このうち、tree としての意味決定、公開イベント、現在位置の可視化は `ui-file-tree` が担います。ルーティング、履歴更新、プリフェッチ、スクロール復元は上位アプリケーションの責務です。
 
 この整理により、`ui-tree-item` は「意味を持つが、状態所有者ではない行要素」として安定化します。
 
@@ -143,7 +145,9 @@
 | `tree-item-focus-first-child-request` | 展開済みブランチで `ArrowRight` 押下時            | なし                                      | `true` / `true`    | 最初の子へのフォーカス移動要求を通知します                             |
 | `tree-item-focus-parent-request`      | 収縮済みブランチまたはリーフで `ArrowLeft` 押下時 | なし                                      | `true` / `true`    | 親へのフォーカス移動要求を通知します                                   |
 
-これらは `ui-file-tree` が受け取るための integration event です。アプリケーションが直接監視すべき root 公開イベントは、`ui-file-tree` 側の `ui-tree-request-select` / `ui-tree-select` / `ui-tree-request-toggle` / `ui-tree-toggle` / `ui-tree-active-change` です。`ui-file-tree` は request / commit の二段階イベントを root で公開する契約を持ちます。
+これらは `ui-file-tree` が受け取るための integration event です。これらの event の発火元識別子は `detail` に含めません。`ui-file-tree` は、event target となった `ui-tree-item` host から発火元行を特定し、対応する node の `id` を解決しなければなりません（MUST）。
+
+アプリケーションが直接監視すべき root 公開イベントは、`ui-file-tree` 側の `ui-tree-request-select` / `ui-tree-select` / `ui-tree-request-toggle` / `ui-tree-toggle` / `ui-tree-active-change` です。`ui-file-tree` は request / commit の二段階イベントを root で公開する契約を持ちます。
 
 #### イベント順序と意味
 
@@ -182,7 +186,8 @@
 
 - `label=""` は不正入力です。
 - `description=""` は未指定と同等に扱います。
-- `density` の列挙外値は未定義です。
+- `density` の列挙外値を受け取った場合、`normal` へフォールバックしなければなりません（MUST）。
+- `density` の列挙外値を受け取った事実は、開発時に警告しても構いません（MAY）。
 - リーフに対する `expanded=true` は受理しても `false` へ正規化します。
 - `href` と `children` の同時指定は不正入力です。
 - `matchRanges` に範囲外値、逆順、重複、未ソート区間が含まれる場合、強調表示の整合は保証しません。
@@ -365,7 +370,7 @@
 | roving tabindex                             | 属性受理のみ   | `activeId` を所有し担当                         |
 | 現在位置ノードの可視化                      | しない         | 担当                                            |
 | ancestor 自動展開                           | しない         | 担当                                            |
-| ルーティング確定                            | しない         | 担当                                            |
+| ルーティング確定                            | しない         | 上位アプリケーションが担当                      |
 
 ### `ui-file-tree` から `ui-tree-item` へのマッピング契約
 

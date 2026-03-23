@@ -533,15 +533,18 @@ Rouault は日本語ノートを主要対象とするため、実装は少なく
 - `ui-file-tree` は階層意味論、可視ノード列、フォーカス移動、選択 / 展開の判断を担います。
 - `ui-tree-item` は単一行の表示と、ユーザー操作の通知を担います。
 - 左右キー、Enter、Space の最終意味決定は `ui-file-tree` 側が担います。
-  `ui-tree-item` は、`ui-file-tree` の compound child として扱います。`ui-file-tree` が tree 全体の意味論と状態を所有し、`ui-tree-item` は単一行の表示と low-level な操作通知を担います。
+- `ui-file-tree` は、branch の子ノード列を `ui-tree-item` の `children` スロットに対する `slot="children"` 付きの**直接の `ui-tree-item` 子要素**として構成しなければなりません（MUST）。
+- ラッパー要素の挿入、任意要素の混在、複数階層をまたぐラッピングは公開契約に含めません。
+- `ui-tree-item` は、`ui-file-tree` の compound child として扱います。`ui-file-tree` が tree 全体の意味論と状態を所有し、`ui-tree-item` は単一行の表示と low-level な操作通知を担います。
 
 #### `integration event` から root 公開イベントへの橋渡し契約
 
+- `ui-file-tree` は、`ui-tree-item` から受け取った integration event の発火元を event target となった `ui-tree-item` host から特定し、対応する node の `id` を解決しなければなりません（MUST）。
 - `ui-tree-item` が `tree-item-primary-action-request` を通知した場合、`ui-file-tree` はノード種別に応じて意味を決定します。
 - `leaf` に対する `tree-item-primary-action-request` は、`ui-tree-request-select` を経て、キャンセルされなければ `ui-tree-select` へ橋渡しします。
 - `branch` に対する `tree-item-primary-action-request` は、`ui-tree-request-toggle` を経て、キャンセルされなければ `ui-tree-toggle` へ橋渡しします。
-- `ui-tree-item` が `tree-item-expanded-request` を通知した場合、`ui-file-tree` は `ui-tree-request-toggle` / `ui-tree-toggle` へ橋渡しします。
-- `ui-tree-item` が `tree-item-focus-first-child-request` または `tree-item-focus-parent-request` を通知した場合、`ui-file-tree` は `activeId` を更新し、必要に応じて `ui-tree-active-change` を発火します。
+- `ui-tree-item` が `tree-item-expanded-request` を通知した場合、`ui-file-tree` は発火元 branch の `id` を解決したうえで、`ui-tree-request-toggle` / `ui-tree-toggle` へ橋渡しします。
+- `ui-tree-item` が `tree-item-focus-first-child-request` または `tree-item-focus-parent-request` を通知した場合、`ui-file-tree` は発火元行を基点に移動先 `id` を解決し、`activeId` を更新し、必要に応じて `ui-tree-active-change` を発火します。
 
 ---
 
