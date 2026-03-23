@@ -6,6 +6,24 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';
 type ButtonType = 'button' | 'submit' | 'reset';
+type ButtonPressedState = boolean | undefined;
+
+const pressedAttributeConverter = {
+  fromAttribute(value: string | null): ButtonPressedState {
+    if (value === null) {
+      return undefined;
+    }
+
+    return value !== 'false';
+  },
+  toAttribute(value: ButtonPressedState): string | null {
+    if (value === undefined) {
+      return null;
+    }
+
+    return value ? '' : 'false';
+  },
+};
 
 /** @deprecated size="lg" は非推奨です。デザインレビュー承認済みケースでのみ使用してください。 */
 export const BUTTON_SIZE_LG_DEPRECATED = 'lg' as const;
@@ -37,10 +55,16 @@ export const defineButtonA11yContract = <T extends ButtonA11yContract>(contract:
  * @property {string} variant - 視覚的強度を決定するバリアント
  * @property {string} size - ボタンのサイズ
  * @property {boolean} iconOnly - アイコンのみのボタン（aria-label必須）
+ * @property {string} ariaLabel - iconOnly=true の場合に使用するアクセシブル名
+ * @property {boolean | undefined} pressed - 外部制御のトグル押下状態（undefined / true / false）
  * @property {boolean} loading - 処理中状態
  * @property {boolean} disabled - 不活性状態
  * @property {string} type - フォーム内での挙動制御
  * @property {string} form - フォームオーナーの明示
+ * @property {string} ariaExpanded - trigger 用の開閉状態
+ * @property {string} ariaControls - trigger 用の関連要素 ID
+ * @property {string} ariaHasPopup - trigger 用の popup 種別
+ * @property {string} ariaDescribedBy - trigger 用の説明要素 ID
  *
  * @fires click - ボタンがクリックされた時
  *
@@ -101,6 +125,16 @@ export const defineButtonA11yContract = <T extends ButtonA11yContract>(contract:
  *
  * <!-- ローディング状態 -->
  * <ui-button loading>保存中...</ui-button>
+ *
+ * <!-- trigger として使用 -->
+ * <ui-button
+ *   variant="ghost"
+ *   aria-expanded="false"
+ *   aria-controls="menu-panel"
+ *   aria-haspopup="menu"
+ * >
+ *   操作
+ * </ui-button>
  * ```
  */
 @customElement('ui-button')
@@ -278,6 +312,39 @@ export class Button extends LitElement {
       color: var(--on-danger);
     }
 
+    /* --- Pressed State --- */
+
+    button[aria-pressed='true'].variant-secondary {
+      background: var(--bg-fill-muted);
+      border-color: var(--fg-muted);
+      box-shadow:
+        inset 0 1px 0 0 oklch(0% 0 0 / 0.08),
+        var(--elevation-sm);
+    }
+
+    button[aria-pressed='true'].variant-outline {
+      background: var(--bg-hover);
+      border-color: var(--fg-muted);
+      color: var(--fg-default);
+    }
+
+    button[aria-pressed='true'].variant-ghost {
+      background: oklch(from var(--bg-hover) l c h / 0.95);
+      color: var(--fg-default);
+      box-shadow: inset 0 0 0 1px oklch(from var(--border-default) l c h / 0.7);
+    }
+
+    button[aria-pressed='true'].variant-primary {
+      box-shadow:
+        inset 0 0 0 1px oklch(0% 0 0 / 0.12),
+        inset 0 1px 0 0 oklch(100% 0 0 / 0.15),
+        var(--elevation-md);
+    }
+
+    button[aria-pressed='true'].variant-danger {
+      box-shadow: inset 0 0 0 1px oklch(0% 0 0 / 0.12);
+    }
+
     /* --- Loading State --- */
 
     /* ラベルを非表示にしつつ幅を維持 */
@@ -377,10 +444,17 @@ export class Button extends LitElement {
         box-shadow: none;
       }
 
-      button[aria-selected='true'],
-      button.active {
+      button[aria-pressed='true'] {
+        background: CanvasText;
+        color: Canvas;
+        border-color: CanvasText;
         outline: 2px solid CanvasText;
         outline-offset: -2px;
+      }
+
+      button[aria-pressed='true'].variant-primary,
+      button[aria-pressed='true'].variant-danger {
+        outline-width: 1px;
       }
     }
 
@@ -441,8 +515,8 @@ export class Button extends LitElement {
    * @type {boolean | undefined}
    * @default undefined
    */
-  @property({ type: Boolean, reflect: true })
-  pressed?: boolean;
+  @property({ reflect: true, converter: pressedAttributeConverter })
+  pressed: ButtonPressedState = undefined;
 
   /**
    * 処理中状態
@@ -476,6 +550,34 @@ export class Button extends LitElement {
   @property({ type: String, reflect: true })
   form?: string;
 
+  /**
+   * trigger 用の開閉状態
+   * @type {'true' | 'false' | null}
+   */
+  @property({ type: String, attribute: 'aria-expanded', reflect: true })
+  override ariaExpanded: string | null = null;
+
+  /**
+   * trigger 用の関連要素 ID
+   * @type {string | null}
+   */
+  @property({ type: String, attribute: 'aria-controls', reflect: true })
+  ariaControls: string | null = null;
+
+  /**
+   * trigger 用の popup 種別
+   * @type {string | null}
+   */
+  @property({ type: String, attribute: 'aria-haspopup', reflect: true })
+  override ariaHasPopup: string | null = null;
+
+  /**
+   * trigger 用の説明要素 ID
+   * @type {string | null}
+   */
+  @property({ type: String, attribute: 'aria-describedby', reflect: true })
+  ariaDescribedBy: string | null = null;
+
   private _internals: ElementInternals;
   private readonly _isDevelopment: boolean;
   private _spaceKeyPressed = false;
@@ -490,12 +592,14 @@ export class Button extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this._validateAccessibilityContract();
+    this._warnUnsupportedAriaLabelUsage();
     this._warnDeprecatedSizeUsage();
   }
 
   override willUpdate(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has('iconOnly') || changedProperties.has('ariaLabel')) {
       this._validateAccessibilityContract();
+      this._warnUnsupportedAriaLabelUsage();
     }
     if (changedProperties.has('size')) {
       this._warnDeprecatedSizeUsage();
@@ -577,6 +681,22 @@ export class Button extends LitElement {
   }
 
   /**
+   * 可視ラベルを持つ button での aria-label 併用を開発時に警告
+   */
+  private _warnUnsupportedAriaLabelUsage(): void {
+    if (!this._isDevelopment) {
+      return;
+    }
+
+    if (!this.iconOnly && this.ariaLabel !== null) {
+      console.warn(
+        '[ui-button]: aria-label は icon-only="true" の場合にのみサポートします。可視ラベルを持つ button では aria-label を内部 button に反映しません。',
+        this,
+      );
+    }
+  }
+
+  /**
    * 非推奨サイズの使用を開発時に警告
    */
   private _warnDeprecatedSizeUsage(): void {
@@ -607,7 +727,11 @@ export class Button extends LitElement {
         ?disabled="${this.disabled || this.loading}"
         aria-busy="${ifDefined(this.loading ? 'true' : undefined)}"
         aria-pressed="${ifDefined(this.pressed !== undefined ? String(this.pressed) : undefined)}"
-        aria-label="${ifDefined(this.ariaLabel ?? undefined)}"
+        aria-label="${ifDefined(this.iconOnly ? (this.ariaLabel ?? undefined) : undefined)}"
+        aria-expanded="${ifDefined(this.ariaExpanded ?? undefined)}"
+        aria-controls="${ifDefined(this.ariaControls ?? undefined)}"
+        aria-haspopup="${ifDefined(this.ariaHasPopup ?? undefined)}"
+        aria-describedby="${ifDefined(this.ariaDescribedBy ?? undefined)}"
         class="${classMap(classes)}"
         @click="${this._handleClick}"
         @keydown="${this._handleKeyDown}"

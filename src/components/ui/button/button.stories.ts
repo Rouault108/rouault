@@ -59,6 +59,16 @@ const meta: Meta<Button> = {
 
 <!-- ローディング状態 -->
 <ui-button loading>保存中...</ui-button>
+
+<!-- trigger として使用 -->
+<ui-button
+  variant="ghost"
+  aria-expanded="false"
+  aria-controls="menu-panel"
+  aria-haspopup="menu"
+>
+  操作
+</ui-button>
 \`\`\`
 
 ## バリアント選択のDecision Tree
@@ -82,7 +92,10 @@ const meta: Meta<Button> = {
 ## 注意事項
 
 - **フォーム送信**: ネイティブ \`<button>\` と異なり、デフォルトは \`type="button"\` です。フォーム送信に使用する場合は \`type="submit"\` を明示してください。
-- **アイコンのみ**: \`icon-only\` を使用する場合は、\`aria-label\` による代替テキスト提供が必須です。
+- **アイコンのみ**: \`icon-only\` を使用する場合は、\`aria-label\` による代替テキスト提供が必須です。可視ラベルを持つ通常 button では \`aria-label\` 上書き運用をサポートしません。
+- **トグル状態**: \`pressed\` は外部制御専用です。クリックに応じて自動反転しません。
+- **trigger 属性**: \`aria-expanded\` / \`aria-controls\` / \`aria-haspopup\` / \`aria-describedby\` は内部 button にそのまま反映されます。
+- **spinner slot**: \`loading\` 時のみ \`slot="spinner"\` が描画に参加します。
 - **大サイズは非推奨**: \`lg\` サイズはデザインレビューなしでの使用を禁止します。強調が必要な場合は \`md\` サイズに \`variant="primary"\` を組み合わせてください。
         `,
       },
@@ -149,7 +162,45 @@ const meta: Meta<Button> = {
     },
     ariaLabel: {
       control: 'text',
-      description: 'アクセシブル名（icon-only の場合必須）',
+      description: 'アクセシブル名（icon-only の場合のみ使用）',
+      table: {
+        type: { summary: 'string' },
+      },
+    },
+    pressed: {
+      control: 'select',
+      options: [undefined, true, false],
+      description: '外部制御のトグル押下状態（未設定 / true / false）',
+      table: {
+        type: { summary: 'boolean | undefined' },
+        defaultValue: { summary: 'undefined' },
+      },
+    },
+    ariaExpanded: {
+      control: 'select',
+      options: [undefined, 'true', 'false'],
+      description: 'trigger 用の開閉状態',
+      table: {
+        type: { summary: "'true' | 'false'" },
+      },
+    },
+    ariaControls: {
+      control: 'text',
+      description: 'trigger 用の関連要素 ID',
+      table: {
+        type: { summary: 'string' },
+      },
+    },
+    ariaHasPopup: {
+      control: 'text',
+      description: 'trigger 用の popup 種別',
+      table: {
+        type: { summary: 'string' },
+      },
+    },
+    ariaDescribedBy: {
+      control: 'text',
+      description: 'trigger 用の説明要素 ID',
       table: {
         type: { summary: 'string' },
       },
@@ -1053,6 +1104,250 @@ export const DeprecatedLargeSize: Story = {
 };
 
 /**
+ * 押下状態の確認。
+ *
+ * `pressed` は外部制御専用で、内部 button には `aria-pressed` として反映されます。
+ * 視覚差分は `secondary` / `outline` / `ghost` を中心に静かな強度で表現します。
+ */
+export const PressedState: Story = {
+  render: () => html`
+    <style>
+      .pressed-demo {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .pressed-info {
+        padding: 1rem;
+        background: var(--bg-surface-2, #f5f5f5);
+        border-radius: var(--radius-md, 6px);
+        font-size: var(--text-sm, 13px);
+      }
+
+      .pressed-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+
+      .pressed-label {
+        min-width: 110px;
+        font-weight: var(--font-medium, 500);
+        font-size: var(--text-sm, 13px);
+        color: var(--fg-muted, #666);
+      }
+    </style>
+
+    <div class="pressed-demo">
+      <div class="pressed-info">
+        <strong>確認</strong>: <code>pressed</code> は外部制御状態です。未設定時は通常 button
+        として扱い、<code>true</code> / <code>false</code> を与えたときだけ内部 button に
+        <code>aria-pressed</code> を出力します。
+      </div>
+
+      <div class="pressed-row">
+        <span class="pressed-label">Secondary</span>
+        <ui-button id="pressed-secondary-undefined" variant="secondary">未設定</ui-button>
+        <ui-button id="pressed-secondary-false" variant="secondary" pressed="false">
+          false
+        </ui-button>
+        <ui-button id="pressed-secondary-true" variant="secondary" pressed> true </ui-button>
+      </div>
+
+      <div class="pressed-row">
+        <span class="pressed-label">Outline</span>
+        <ui-button id="pressed-outline-undefined" variant="outline">未設定</ui-button>
+        <ui-button id="pressed-outline-true" variant="outline" pressed>押下済み</ui-button>
+      </div>
+
+      <div class="pressed-row">
+        <span class="pressed-label">Ghost</span>
+        <ui-button id="pressed-ghost-undefined" variant="ghost">未設定</ui-button>
+        <ui-button id="pressed-ghost-true" variant="ghost" pressed>押下済み</ui-button>
+      </div>
+
+      <div class="pressed-row">
+        <span class="pressed-label">Minimal Diff</span>
+        <ui-button variant="primary" pressed>Primary</ui-button>
+        <ui-button variant="danger" pressed>Danger</ui-button>
+      </div>
+    </div>
+  `,
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`pressed` は toggle button の意味状態です。自動反転は行わず、視覚差分は `aria-pressed` と一致している必要があります。',
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const secondaryUndefined = canvasElement.querySelector<Button>('#pressed-secondary-undefined');
+    const secondaryFalse = canvasElement.querySelector<Button>('#pressed-secondary-false');
+    const secondaryTrue = canvasElement.querySelector<Button>('#pressed-secondary-true');
+    const outlineUndefined = canvasElement.querySelector<Button>('#pressed-outline-undefined');
+    const outlineTrue = canvasElement.querySelector<Button>('#pressed-outline-true');
+    const ghostUndefined = canvasElement.querySelector<Button>('#pressed-ghost-undefined');
+    const ghostTrue = canvasElement.querySelector<Button>('#pressed-ghost-true');
+
+    if (
+      !secondaryUndefined ||
+      !secondaryFalse ||
+      !secondaryTrue ||
+      !outlineUndefined ||
+      !outlineTrue ||
+      !ghostUndefined ||
+      !ghostTrue
+    ) {
+      throw new Error('PressedState の検証対象ボタンが不足しています');
+    }
+
+    await Promise.all([
+      secondaryUndefined.updateComplete,
+      secondaryFalse.updateComplete,
+      secondaryTrue.updateComplete,
+      outlineUndefined.updateComplete,
+      outlineTrue.updateComplete,
+      ghostUndefined.updateComplete,
+      ghostTrue.updateComplete,
+    ]);
+
+    const getInternalButton = (button: Button): HTMLButtonElement => {
+      const internalButton = button.shadowRoot?.querySelector<HTMLButtonElement>('button');
+      if (!internalButton) {
+        throw new Error('Shadow Root 内に button 要素が見つかりません');
+      }
+
+      return internalButton;
+    };
+
+    const assertVisualDiff = (base: HTMLButtonElement, pressed: HTMLButtonElement, label: string): void => {
+      const baseStyle = getComputedStyle(base);
+      const pressedStyle = getComputedStyle(pressed);
+      const differs =
+        baseStyle.backgroundColor !== pressedStyle.backgroundColor ||
+        baseStyle.borderTopColor !== pressedStyle.borderTopColor ||
+        baseStyle.boxShadow !== pressedStyle.boxShadow ||
+        baseStyle.color !== pressedStyle.color;
+
+      if (!differs) {
+        throw new Error(`${label} の pressed 視覚差分が確認できません`);
+      }
+    };
+
+    const secondaryUndefinedButton = getInternalButton(secondaryUndefined);
+    const secondaryFalseButton = getInternalButton(secondaryFalse);
+    const secondaryTrueButton = getInternalButton(secondaryTrue);
+    const outlineUndefinedButton = getInternalButton(outlineUndefined);
+    const outlineTrueButton = getInternalButton(outlineTrue);
+    const ghostUndefinedButton = getInternalButton(ghostUndefined);
+    const ghostTrueButton = getInternalButton(ghostTrue);
+
+    if (secondaryUndefinedButton.getAttribute('aria-pressed') !== null) {
+      throw new Error('pressed 未設定時は aria-pressed を出力しない必要があります');
+    }
+
+    if (secondaryFalseButton.getAttribute('aria-pressed') !== 'false') {
+      throw new Error(
+        `pressed="false" のとき aria-pressed="false" を期待していましたが、実際には "${secondaryFalseButton.getAttribute('aria-pressed') ?? 'null'}" でした`,
+      );
+    }
+
+    if (secondaryTrueButton.getAttribute('aria-pressed') !== 'true') {
+      throw new Error(
+        `pressed=true のとき aria-pressed="true" を期待していましたが、実際には "${secondaryTrueButton.getAttribute('aria-pressed') ?? 'null'}" でした`,
+      );
+    }
+
+    assertVisualDiff(secondaryUndefinedButton, secondaryTrueButton, 'Secondary');
+    assertVisualDiff(outlineUndefinedButton, outlineTrueButton, 'Outline');
+    assertVisualDiff(ghostUndefinedButton, ghostTrueButton, 'Ghost');
+  },
+};
+
+/**
+ * trigger 用 ARIA 属性の確認。
+ *
+ * 関係属性は host から内部 button へそのまま委譲されます。
+ */
+export const AriaExpandedTrigger: Story = {
+  render: () => html`
+    <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
+      <p id="button-trigger-description" style="margin: 0; color: var(--fg-muted, #666);">
+        これはメニュー trigger の関係属性を確認するためのストーリーです。
+      </p>
+      <ui-button
+        id="button-trigger"
+        variant="ghost"
+        aria-expanded="false"
+        aria-controls="button-trigger-panel"
+        aria-haspopup="menu"
+        aria-describedby="button-trigger-description"
+      >
+        操作メニュー
+      </ui-button>
+      <div
+        id="button-trigger-panel"
+        style="
+          padding: 0.75rem 1rem;
+          background: var(--bg-surface-2, #f5f5f5);
+          border-radius: var(--radius-md, 6px);
+        "
+      >
+        関連パネル
+      </div>
+    </div>
+  `,
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`aria-expanded` / `aria-controls` / `aria-haspopup` / `aria-describedby` は trigger 用の関係属性として内部 button に pass-through されます。',
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const button = canvasElement.querySelector<Button>('#button-trigger');
+    if (!button) {
+      throw new Error('ui-button が見つかりません');
+    }
+
+    await button.updateComplete;
+
+    const internalButton = button.shadowRoot?.querySelector<HTMLButtonElement>('button');
+    if (!internalButton) {
+      throw new Error('Shadow Root 内に button 要素が見つかりません');
+    }
+
+    if (internalButton.getAttribute('aria-expanded') !== 'false') {
+      throw new Error(
+        `aria-expanded="false" を期待していましたが、実際には "${internalButton.getAttribute('aria-expanded') ?? 'null'}" でした`,
+      );
+    }
+
+    if (internalButton.getAttribute('aria-controls') !== 'button-trigger-panel') {
+      throw new Error(
+        `aria-controls="button-trigger-panel" を期待していましたが、実際には "${internalButton.getAttribute('aria-controls') ?? 'null'}" でした`,
+      );
+    }
+
+    if (internalButton.getAttribute('aria-haspopup') !== 'menu') {
+      throw new Error(
+        `aria-haspopup="menu" を期待していましたが、実際には "${internalButton.getAttribute('aria-haspopup') ?? 'null'}" でした`,
+      );
+    }
+
+    if (internalButton.getAttribute('aria-describedby') !== 'button-trigger-description') {
+      throw new Error(
+        `aria-describedby="button-trigger-description" を期待していましたが、実際には "${internalButton.getAttribute('aria-describedby') ?? 'null'}" でした`,
+      );
+    }
+  },
+};
+
+/**
  * Forced Colors Mode での表示確認。
  *
  * Windows の高コントラストモードなど、強制カラーモード環境での表示を確認します。
@@ -1105,6 +1400,7 @@ export const ForcedColorsMode: Story = {
       <div class="forced-colors-group">
         <ui-button variant="primary">Primary</ui-button>
         <ui-button variant="secondary">Secondary</ui-button>
+        <ui-button variant="secondary" pressed>Pressed</ui-button>
         <ui-button variant="outline">Outline</ui-button>
         <ui-button variant="ghost">Ghost</ui-button>
         <ui-button variant="danger">Danger</ui-button>
@@ -1120,7 +1416,7 @@ export const ForcedColorsMode: Story = {
     docs: {
       description: {
         story:
-          'Forced Colors Mode（高コントラストモード）での表示を確認します。境界線とシステムカラーにより構造が明確化されます。',
+          'Forced Colors Mode（高コントラストモード）での表示を確認します。`aria-pressed` を含む状態差分もシステムカラーで読み分けられる必要があります。',
       },
     },
   },
