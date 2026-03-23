@@ -40,22 +40,22 @@ remark 層では「著者入力の制約付けと独自構文の展開」を行�
 
 [`lib/remark/rouault-directives.ts`](/Users/ruo/Desktop/Programing/Rouault/lib/remark/rouault-directives.ts#L1142) は、段落テキストとして書かれた `::directive{...}` 記法を解析し、`data.hName` / `data.hProperties` を持つノードへ変換する。
 
-| 入力                | 出力                 | 許可属性 / 補足                                                                                                                                     |
-| ------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `::callout`         | `ui-callout`         | `kind` / `heading` / `label` / `icon` / `heading-level`                                                                                             |
+| 入力                | 出力                 | 許可属性 / 補足                                                                                                                                             |
+| ------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `::callout`         | `ui-callout`         | `kind` / `heading` / `label` / `icon` / `heading-level`                                                                                                     |
 | `::code-group`      | `ui-code-group`      | `aria-label`。内包 `code` のメタは `filename` / `group-key` / `tab-label` / `copy-label` / `copyable` / `copy-mode` / `wrap` / `highlight-lines` / `layout` |
-| `::code-preview`    | `ui-code-preview`    | `heading` / `controls` / `preview-padding` / `preview-align` / `preview-theme` / `preview-surface` / `preview-viewport`                              |
-| `::preview-sandbox` | `ui-preview-sandbox` | `title` / `allow-js` / `height`。`code-preview` 直下専用、内部は `preview-html/css/js` fenced code のみ。`allow-js` は author script 許可のみを表す |
-| `::details`         | `ui-details`         | `summary` または `aria-label` 必須。両立不可。`open` / `variant` / `region`                                                                        |
-| `::info-box`        | `ui-info-box`        | `heading` / `icon` / `heading-level` / `landmark` / `variant`                                                                                       |
-| `::link-card`       | `ui-card`            | leaf directive。`url` 必須、`title` / `description` / `image`。終端 `::` は不要                                                                     |
-| `::score`           | `ui-score`           | `src` / `caption` / `label` / `description` / `aspect-ratio` / `loading` / `primary`                                                                |
-| `::tabs`            | `ui-tabs`            | `selected-value` / `default-selected-value` / `orientation` / `automatic-activation` / `url-sync`                                                   |
-| `::translation`     | `ui-translation`     | `original` / `translated` / `lang` / `target-lang` / `render-mode` / `open`                                                                         |
-| `::preview`         | `div[slot=preview]`  | 属性なし                                                                                                                                            |
-| `::toolbar`         | `div[slot=toolbar]`  | 内部 / 互換用。著者向け公開文法では非推奨                                                                                                           |
-| `::tab`             | `div[slot=tab]`      | `value`                                                                                                                                             |
-| `::panel`           | `div[slot=panel]`    | 属性なし                                                                                                                                            |
+| `::code-preview`    | `ui-code-preview`    | `heading` / `controls` / `preview-padding` / `preview-align` / `preview-theme` / `preview-surface` / `preview-viewport`                                     |
+| `::preview-sandbox` | `ui-preview-sandbox` | `title` / `allow-js` / `height`。`code-preview` 直下専用、内部は `preview-html/css/js` fenced code のみ。`allow-js` は author script 許可のみを表す         |
+| `::details`         | `ui-details`         | `summary` または `aria-label` 必須。両立不可。`open` / `variant` / `region`                                                                                 |
+| `::info-box`        | `ui-info-box`        | `heading` / `icon` / `heading-level` / `landmark` / `variant`                                                                                               |
+| `::link-card`       | `ui-card`            | leaf directive。`url` 必須、`title` / `description` / `image`。終端 `::` は不要                                                                             |
+| `::score`           | `ui-score`           | `src` / `caption` / `label` / `description` / `aspect-ratio` / `loading` / `primary`                                                                        |
+| `::tabs`            | `ui-tabs`            | `selected-value` / `default-selected-value` / `orientation` / `automatic-activation` / `url-sync`                                                           |
+| `::translation`     | `ui-translation`     | `original` / `translated` / `lang` / `target-lang` / `render-mode` / `open`                                                                                 |
+| `::preview`         | `div[slot=preview]`  | 属性なし                                                                                                                                                    |
+| `::toolbar`         | `div[slot=toolbar]`  | 内部 / 互換用。著者向け公開文法では非推奨                                                                                                                   |
+| `::tab`             | `div[slot=tab]`      | `value`                                                                                                                                                     |
+| `::panel`           | `div[slot=panel]`    | 属性なし                                                                                                                                                    |
 
 補足:
 
@@ -139,17 +139,17 @@ remark 段階では次を即時エラーにする。
 
 [`lib/rehype/rouault-components.ts`](/Users/ruo/Desktop/Programing/Rouault/lib/rehype/rouault-components.ts#L699) が担当する。
 
-| 入力 HAST                     | 出力                                         | 補足                                                                                                                              |
-| ----------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `pre > code`                  | `ui-code-block`                              | `language-*` から `lang` を推論。`filename` / `group-key` / `tab-label` / `copy-label` / `copyable` / `intent` / `copy-mode` / `wrap` / `highlight-lines` / `layout` はホスト属性へ昇格 |
-| `blockquote`                  | `ui-blockquote`                              | 子要素は維持                                                                                                                      |
-| `table`                       | `ui-table > table`                           | `caption` があればホストに `aria-label` を補完                                                                                    |
-| `hr`                          | `ui-divider > hr`                            | 見た目と意味論を分離                                                                                                              |
-| `li` + `input[type=checkbox]` | `ui-checkbox`                                | task list のラベルを抽出し、後続のネストリストは維持                                                                              |
-| `mark`                        | `ui-highlight`                               | `origin` / `data-origin`、`current` / `data-current` / `aria-current` を吸収                                                      |
-| `img`                         | `ui-image`                                   | `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化                                                    |
-| `figure(img + figcaption)`    | `ui-image`                                   | `figcaption` を `caption` に統合                                                                                                  |
-| footnote 参照 / 定義          | `ui-footnote` + `section[role=doc-endnotes]` | 参照回数、backref、`user-content-` 接頭辞を正規化                                                                                 |
+| 入力 HAST                     | 出力                                              | 補足                                                                                                                                                                                    |
+| ----------------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pre > code`                  | `ui-code-block`                                   | `language-*` から `lang` を推論。`filename` / `group-key` / `tab-label` / `copy-label` / `copyable` / `intent` / `copy-mode` / `wrap` / `highlight-lines` / `layout` はホスト属性へ昇格 |
+| `blockquote`                  | `ui-blockquote`                                   | 子要素は維持                                                                                                                                                                            |
+| `table`                       | `ui-table > table`                                | `caption` があればホストに `aria-label` を補完                                                                                                                                          |
+| `hr`                          | `ui-divider > hr[data-divider-variant="section"]` | Markdown 由来の区切りは本文文脈として `section` 扱いに正規化し、見た目と意味論を分離                                                                                                    |
+| `li` + `input[type=checkbox]` | `ui-checkbox`                                     | task list のラベルを抽出し、後続のネストリストは維持                                                                                                                                    |
+| `mark`                        | `ui-highlight`                                    | `origin` / `data-origin`、`current` / `data-current` / `aria-current` を吸収                                                                                                            |
+| `img`                         | `ui-image`                                        | `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化                                                                                                          |
+| `figure(img + figcaption)`    | `ui-image`                                        | `figcaption` を `caption` に統合                                                                                                                                                        |
+| footnote 参照 / 定義          | `ui-footnote` + `section[role=doc-endnotes]`      | 参照回数、backref、`user-content-` 接頭辞を正規化                                                                                                                                       |
 
 脚注については、最初の参照だけが本文ノードを内包し、2 回目以降の参照は `shared` と `ref-instance` だけを持つ軽量ノードになる。
 

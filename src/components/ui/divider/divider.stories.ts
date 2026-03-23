@@ -2,9 +2,11 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './divider';
 import {
+  DEFAULT_DIVIDER_VARIANT,
   DIVIDER_SCOPE_SELECTOR,
   DOCUMENT_STYLE_ID,
   ensureDividerDocumentStyles,
+  resolveDividerVariant,
   type Divider,
   type DividerVariant,
 } from './divider';
@@ -43,6 +45,12 @@ const toPx = (value: string): number => {
 const isNearlyEqual = (actual: number, expected: number, tolerance = 0.75): boolean =>
   Math.abs(actual - expected) <= tolerance;
 
+function assert(condition: unknown, message: string): asserts condition {
+  if (!condition) {
+    throw new Error(message);
+  }
+}
+
 const getInjectedStyleTag = (): HTMLStyleElement => {
   const styleTag = document.getElementById(DOCUMENT_STYLE_ID);
   if (!(styleTag instanceof HTMLStyleElement)) {
@@ -62,9 +70,10 @@ const meta: Meta<Divider> = {
 区切り線コンポーネントです。
 
 - ネイティブ \`hr\` を最終DOMとして出力
+- \`variant\` は \`section\` / \`layout\` の意味分類で、既定値は \`section\`
 - 追加ロールを付与せず、ネイティブセマンティクスを維持
 - 適用スコープは \`.prose hr\` / \`ui-divider > hr\` / \`hr[data-divider-variant="layout"]\` に限定
-- トークン: \`--border-ghost\` / \`--space-12\`
+- トークン: \`--border-style-subtle\` / \`--border-default\` / \`--border-ghost\` / \`--space-12\`
         `,
       },
     },
@@ -94,29 +103,39 @@ export const Default: Story = {
     await host.updateComplete;
 
     const hr = getInnerHr(host);
-    if (hr.tagName !== 'HR') {
-      throw new Error('ui-divider は hr 要素を出力する必要があります');
-    }
-
-    if (hr.getAttribute('data-divider-variant') !== 'section') {
-      throw new Error('default の data-divider-variant は "section" である必要があります');
-    }
-
-    if (hr.hasAttribute('role') || hr.hasAttribute('tabindex')) {
-      throw new Error('hr に追加のインタラクション属性を付与してはいけません');
-    }
+    assert(hr.tagName === 'HR', 'ui-divider は hr 要素を出力する必要があります');
+    assert(host.shadowRoot === null, 'ui-divider は Shadow DOM を使用してはいけません');
+    assert(host.children.length === 1, 'ui-divider 直下には hr のみを描画する必要があります');
+    assert(
+      host.getAttribute('variant') === DEFAULT_DIVIDER_VARIANT,
+      'default の host variant 属性は "section" を反映する必要があります',
+    );
+    assert(
+      hr.getAttribute('data-divider-variant') === DEFAULT_DIVIDER_VARIANT,
+      'default の data-divider-variant は "section" である必要があります',
+    );
+    assert(
+      !hr.hasAttribute('role') && !hr.hasAttribute('tabindex'),
+      'hr に追加のインタラクション属性を付与してはいけません',
+    );
 
     const style = getComputedStyle(hr);
-    if (style.borderTopStyle !== 'solid') {
-      throw new Error('border-top は solid である必要があります');
-    }
+    assert(style.borderTopStyle === 'solid', 'border-top は solid である必要があります');
+    assert(
+      isNearlyEqual(toPx(style.borderTopWidth), 1),
+      'border-top-width は 1px である必要があります',
+    );
+    assert(
+      isNearlyEqual(toPx(style.width), toPx(getComputedStyle(host).width)),
+      'divider は利用可能幅いっぱいに描画される必要があります',
+    );
   },
 };
 
 /**
  * バリアント × 状態:
  * - variant: section / layout
- * - state: host に aria-label あり / なし（内側 hr へは転送しない）
+ * - state: host に aria-label / tabindex あり・なし（内側 hr へは転送しない）
  */
 export const VariantStateMatrix: Story = {
   render: () => html`
@@ -165,14 +184,51 @@ export const VariantStateMatrix: Story = {
           aria-label="レイアウト境界"
         ></ui-divider>
       </div>
+
+      <div class="cell">
+        <div class="label">section x host-tabindex</div>
+        <ui-divider id="matrix-section-tabindex" variant="section" tabindex="0"></ui-divider>
+      </div>
+
+      <div class="cell">
+        <div class="label">layout x host-tabindex</div>
+        <ui-divider id="matrix-layout-tabindex" variant="layout" tabindex="0"></ui-divider>
+      </div>
     </div>
   `,
   play: async ({ canvasElement }) => {
     const matrix = [
-      { id: 'matrix-section-unlabeled', variant: 'section', hostLabel: undefined },
-      { id: 'matrix-section-labeled', variant: 'section', hostLabel: '章区切り' },
-      { id: 'matrix-layout-unlabeled', variant: 'layout', hostLabel: undefined },
-      { id: 'matrix-layout-labeled', variant: 'layout', hostLabel: 'レイアウト境界' },
+      {
+        id: 'matrix-section-unlabeled',
+        variant: 'section',
+        hostLabel: undefined,
+        hostTabIndex: null,
+      },
+      {
+        id: 'matrix-section-labeled',
+        variant: 'section',
+        hostLabel: '章区切り',
+        hostTabIndex: null,
+      },
+      {
+        id: 'matrix-layout-unlabeled',
+        variant: 'layout',
+        hostLabel: undefined,
+        hostTabIndex: null,
+      },
+      {
+        id: 'matrix-layout-labeled',
+        variant: 'layout',
+        hostLabel: 'レイアウト境界',
+        hostTabIndex: null,
+      },
+      {
+        id: 'matrix-section-tabindex',
+        variant: 'section',
+        hostLabel: undefined,
+        hostTabIndex: '0',
+      },
+      { id: 'matrix-layout-tabindex', variant: 'layout', hostLabel: undefined, hostTabIndex: '0' },
     ] as const;
 
     const hosts = matrix.map(({ id }) => getHost(canvasElement, id));
@@ -189,10 +245,17 @@ export const VariantStateMatrix: Story = {
       if (hr.hasAttribute('aria-label')) {
         throw new Error(`${item.id} の hr に aria-label を転送してはいけません`);
       }
+      if (hr.hasAttribute('tabindex')) {
+        throw new Error(`${item.id} の hr に tabindex を転送してはいけません`);
+      }
 
       const actualHostLabel = host.getAttribute('aria-label') ?? undefined;
       if (actualHostLabel !== item.hostLabel) {
         throw new Error(`${item.id} の host aria-label が不正です`);
+      }
+
+      if (host.getAttribute('tabindex') !== item.hostTabIndex) {
+        throw new Error(`${item.id} の host tabindex が不正です`);
       }
 
       if (hr.hasAttribute('role')) {
@@ -206,6 +269,7 @@ export const VariantStateMatrix: Story = {
  * 事故が多い境界条件:
  * - 不正 variant のフォールバック
  * - host aria-label 非転送
+ * - host tabindex 非転送
  * - スタイルスコープ漏れ防止
  */
 export const BoundaryConditions: Story = {
@@ -219,6 +283,7 @@ export const BoundaryConditions: Story = {
       <ui-divider id="boundary-invalid-variant" variant="unknown"></ui-divider>
       <ui-divider id="boundary-host-label" aria-label="章区切り"></ui-divider>
       <ui-divider id="boundary-host-role" role="separator"></ui-divider>
+      <ui-divider id="boundary-host-tabindex" tabindex="0"></ui-divider>
 
       <div class="prose">
         <hr id="boundary-prose-hr" />
@@ -231,15 +296,23 @@ export const BoundaryConditions: Story = {
     const invalidVariant = getHost(canvasElement, 'boundary-invalid-variant');
     const hostLabel = getHost(canvasElement, 'boundary-host-label');
     const hostRole = getHost(canvasElement, 'boundary-host-role');
+    const hostTabIndex = getHost(canvasElement, 'boundary-host-tabindex');
     await Promise.all([
       invalidVariant.updateComplete,
       hostLabel.updateComplete,
       hostRole.updateComplete,
+      hostTabIndex.updateComplete,
     ]);
 
     const invalidHr = getInnerHr(invalidVariant);
-    if (invalidHr.getAttribute('data-divider-variant') !== 'section') {
+    if (
+      invalidHr.getAttribute('data-divider-variant') !== DEFAULT_DIVIDER_VARIANT ||
+      invalidVariant.getAttribute('variant') !== 'unknown'
+    ) {
       throw new Error('不正 variant は "section" にフォールバックする必要があります');
+    }
+    if (resolveDividerVariant(invalidVariant.getAttribute('variant')) !== DEFAULT_DIVIDER_VARIANT) {
+      throw new Error('列挙外 variant の解決規則が仕様どおりではありません');
     }
 
     const hostLabelHr = getInnerHr(hostLabel);
@@ -250,6 +323,11 @@ export const BoundaryConditions: Story = {
     const hostRoleHr = getInnerHr(hostRole);
     if (hostRoleHr.hasAttribute('role')) {
       throw new Error('host の role 属性を内側 hr にコピーしてはいけません');
+    }
+
+    const hostTabIndexHr = getInnerHr(hostTabIndex);
+    if (hostTabIndexHr.hasAttribute('tabindex')) {
+      throw new Error('host の tabindex 属性を内側 hr にコピーしてはいけません');
     }
 
     const scopeRoot = canvasElement.querySelector<HTMLElement>('#boundary-scope');
@@ -399,6 +477,14 @@ export const MediaAndTokenContracts: Story = {
     if (cssText.includes('CanvasText')) {
       throw new Error('Divider 固有の CanvasText ハードコードは許可されません');
     }
+
+    hostA.remove();
+    hostB.remove();
+
+    const retainedStyleTag = document.querySelectorAll<HTMLStyleElement>(`#${DOCUMENT_STYLE_ID}`);
+    if (retainedStyleTag.length !== 1) {
+      throw new Error('スタイルタグはインスタンス破棄後も document 単位で保持される必要があります');
+    }
   },
 };
 
@@ -445,6 +531,51 @@ export const DarkModeTokenContract: Story = {
       throw new Error(
         'Divider は prefers-color-scheme 分岐ではなくトークンでモード追従する必要があります',
       );
+    }
+  },
+};
+
+/**
+ * Selector Specificity 契約:
+ * - divider スタイルは低特異性で提供される
+ * - ページ層の妥当な上書きを阻害しない
+ */
+export const SelectorSpecificityContract: Story = {
+  render: () => html`
+    <style>
+      #specificity-scope .override-target {
+        border-top-style: dashed;
+        border-top-width: 3px;
+        margin-top: 19px;
+      }
+    </style>
+    <div id="specificity-scope">
+      <div class="prose">
+        <hr id="specificity-prose-hr" class="override-target" />
+      </div>
+      <hr id="specificity-layout-hr" class="override-target" data-divider-variant="layout" />
+    </div>
+  `,
+  play: ({ canvasElement }) => {
+    const cssText = getInjectedStyleTag().textContent;
+    if (!cssText.includes(':where(')) {
+      throw new Error('低特異性契約のため :where() を維持する必要があります');
+    }
+
+    const proseHr = getHrById(canvasElement, 'specificity-prose-hr');
+    const layoutHr = getHrById(canvasElement, 'specificity-layout-hr');
+
+    for (const hr of [proseHr, layoutHr]) {
+      const style = getComputedStyle(hr);
+      if (style.borderTopStyle !== 'dashed') {
+        throw new Error('ページ層の border-top-style 上書きを阻害してはいけません');
+      }
+      if (!isNearlyEqual(toPx(style.borderTopWidth), 3)) {
+        throw new Error('ページ層の border-top-width 上書きを阻害してはいけません');
+      }
+      if (!isNearlyEqual(toPx(style.marginTop), 19)) {
+        throw new Error('ページ層の margin 上書きを阻害してはいけません');
+      }
     }
   },
 };
