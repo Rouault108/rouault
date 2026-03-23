@@ -1,9 +1,18 @@
 import { expect } from '@open-wc/testing';
 
-import { prepareSearchQuery, tokenizeSearchText } from '../../src/lib/search/query-preprocessor.js';
+import {
+  normalizeSearchQuery,
+  prepareSearchQuery,
+  tokenizeSearchText,
+} from '../../src/lib/search/query-preprocessor.js';
 
 describe('search-query-preprocessor', () => {
-  it('任意文字列を token 化して索引用文字列も返すこと', () => {
+  it('検索文字列を正規化すること', () => {
+    expect(normalizeSearchQuery('  Rouault   Search  ')).to.equal('rouault search');
+    expect(normalizeSearchQuery('ＡＢＣ　１２３')).to.equal('abc 123');
+  });
+
+  it('任意文字列を token 化して policy id を返すこと', () => {
     const tokenized = tokenizeSearchText('ジャズ理論の基礎', () => ({
       segment() {
         return [
@@ -16,46 +25,34 @@ describe('search-query-preprocessor', () => {
     }));
 
     expect(tokenized).to.deep.equal({
-      rawText: 'ジャズ理論の基礎',
+      normalizedText: 'ジャズ理論の基礎',
       segmentedText: 'ジャズ 理論 の 基礎',
       tokens: ['ジャズ', '理論', 'の', '基礎'],
+      tokenizerPolicyId: 'ja-word-v1',
     });
   });
 
-  it('Intl.Segmenter の分かち書き結果を検索クエリへ反映すること', () => {
-    const prepared = prepareSearchQuery('検索仕様', () => ({
-      segment() {
-        return [
-          { segment: '検索', isWordLike: true },
-          { segment: '仕様', isWordLike: true },
-        ];
-      },
-    }));
+  it('PreparedSearchQuery を仕様形で返すこと', () => {
+    const prepared = prepareSearchQuery('Rouault Search');
 
     expect(prepared).to.deep.equal({
-      rawQuery: '検索仕様',
-      segmentedQuery: '検索 仕様',
-      tokens: ['検索', '仕様'],
+      inputQuery: 'Rouault Search',
+      normalizedQuery: 'rouault search',
+      segmentedQuery: 'rouault search',
+      tokens: ['rouault', 'search'],
+      tokenizerPolicyId: 'generic-whitespace-v1',
     });
   });
 
-  it('token 化 fallback 時は空白ベースで処理すること', () => {
-    const tokenized = tokenizeSearchText('  空白  なし  ', () => null);
-
-    expect(tokenized).to.deep.equal({
-      rawText: '空白 なし',
-      segmentedText: '空白 なし',
-      tokens: ['空白', 'なし'],
-    });
-  });
-
-  it('Intl.Segmenter が使えない時は無変換でフォールバックすること', () => {
+  it('Intl.Segmenter が使えない時は whitespace policy にフォールバックすること', () => {
     const prepared = prepareSearchQuery('  空白  なし  ', () => null);
 
     expect(prepared).to.deep.equal({
-      rawQuery: '空白 なし',
+      inputQuery: '  空白  なし  ',
+      normalizedQuery: '空白 なし',
       segmentedQuery: '空白 なし',
       tokens: ['空白', 'なし'],
+      tokenizerPolicyId: 'generic-whitespace-v1',
     });
   });
 });

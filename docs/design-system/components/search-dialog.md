@@ -16,6 +16,12 @@
 
 現行実装が未追従の項目は末尾で切り分けますが、本書の本文は原則として**今後固定したい契約**を優先します。
 
+## 実装注記（2026-03）
+
+- 検索意味論、URL 状態、ランキング、diagnostics の正本は [`docs/search-specification.md`](../../search-specification.md) とし、実装は shared `search-core` を介して `ui-search-dialog` と `search-page` の両方で共有します。
+- `ui-search-dialog` は検索意味論を持たず、現行の安定 runtime API は `opened`、`query`、`loading`、`items`、`searcher` を中心とした UI shell です。
+- 本書は dialog の公開 UI 契約を扱い、query 正規化、tag 意味論、`DocumentCanonicalUrl`、`SearchStateUrl` などの検索仕様を上書きしません。
+
 ---
 
 ## 適用範囲

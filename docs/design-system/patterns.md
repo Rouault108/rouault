@@ -541,6 +541,8 @@ hash または既存 `?tab=` から active tab が確定したあとは、`norma
 
 `search-page` は、URL を source of truth として利用します。
 
+また、検索実行そのものは dialog と共通の `search-core` を用います。したがって、ここで扱うのは URL 同期と履歴操作の契約であり、検索意味論そのものは [`docs/search-specification.md`](../search-specification.md) を正本とします。
+
 #### 読み込み
 
 - `connectedCallback()` で `window.location.href` から状態復元

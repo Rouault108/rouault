@@ -16,7 +16,7 @@ export interface SearchCatalogItem {
   description: string;
   date: string;
   keywords: string[];
-  genres: string[];
+  tags: string[];
 }
 
 function normalizeString(value: unknown): string {
@@ -35,21 +35,21 @@ function normalizeStringArray(value: unknown): string[] {
 }
 
 function dedupeStrings(values: readonly string[]): string[] {
-  const seen = new Set<string>();
-  const result: string[] = [];
+  const deduped = new Map<string, string>();
 
   for (const value of values) {
     const normalized = value.trim();
-    const normalizedKey = normalized.toLocaleLowerCase('ja');
-    if (normalized.length === 0 || seen.has(normalizedKey)) {
+    if (normalized.length === 0) {
       continue;
     }
 
-    seen.add(normalizedKey);
-    result.push(normalized);
+    const key = normalized.toLocaleLowerCase('ja');
+    if (!deduped.has(key)) {
+      deduped.set(key, normalized);
+    }
   }
 
-  return result;
+  return [...deduped.values()];
 }
 
 function buildSlugKeywords(slug: string): string[] {
@@ -78,11 +78,11 @@ export function buildSearchCatalog(notes: readonly SearchCatalogSourceNote[]): S
     }
 
     const slug = normalizeString(note.slug);
-    const genres = normalizeStringArray(note.genre);
+    const tags = normalizeStringArray(note.genre);
     const description = normalizeString(note.description);
     const keywords = dedupeStrings([
       ...buildSlugKeywords(slug),
-      ...genres,
+      ...tags,
       ...buildTokenKeywords(title),
       ...buildTokenKeywords(description),
     ]);
@@ -95,7 +95,7 @@ export function buildSearchCatalog(notes: readonly SearchCatalogSourceNote[]): S
         description,
         date: normalizeString(note.updated) || normalizeString(note.date),
         keywords,
-        genres,
+        tags,
       } satisfies SearchCatalogItem,
     ];
   });

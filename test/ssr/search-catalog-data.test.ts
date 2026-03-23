@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { buildSearchCatalog, serializeSearchCatalog } from '../../src/data/searchCatalog.js';
 
 describe('buildSearchCatalog', () => {
-  it('公開ノートから検索ダイアログ用カタログを構築すること', () => {
+  it('公開ノートから検索カタログを構築すること', () => {
     const catalog = buildSearchCatalog([
       {
         title: 'ソートアルゴリズム比較',
@@ -43,7 +43,7 @@ describe('buildSearchCatalog', () => {
           'する',
           'メモ',
         ],
-        genres: ['computer-science', 'algorithms'],
+        tags: ['computer-science', 'algorithms'],
       },
     ]);
   });
@@ -76,12 +76,12 @@ describe('buildSearchCatalog', () => {
         description: '',
         date: '',
         keywords: ['public', '公開', 'ノート'],
-        genres: [],
+        tags: [],
       },
     ]);
   });
 
-  it('検索カタログJSONを安定した形式でシリアライズできること', () => {
+  it('検索カタログ JSON を安定した形式でシリアライズできること', () => {
     const json = serializeSearchCatalog([
       {
         title: '公開ノート',
@@ -92,7 +92,7 @@ describe('buildSearchCatalog', () => {
     ]);
 
     expect(json).toBe(
-      '[{"title":"公開ノート","url":"/notes/public/","path":"/notes/public/","description":"説明","date":"","keywords":["public","公開","ノート","説明"],"genres":[]}]',
+      '[{"title":"公開ノート","url":"/notes/public/","path":"/notes/public/","description":"説明","date":"","keywords":["public","公開","ノート","説明"],"tags":[]}]',
     );
   });
 });

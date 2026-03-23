@@ -108,7 +108,10 @@ function buildTokenizedPagefindText(value: string | undefined): string {
   }
 
   const tokenized = tokenizeSearchText(normalized);
-  if (tokenized.segmentedText.length === 0 || tokenized.segmentedText === tokenized.rawText) {
+  if (
+    tokenized.segmentedText.length === 0 ||
+    tokenized.segmentedText === tokenized.normalizedText
+  ) {
     return '';
   }
 

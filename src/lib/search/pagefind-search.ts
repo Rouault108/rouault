@@ -9,7 +9,6 @@ import {
 } from './search-core.js';
 import type { SearchCatalogItem } from './search-catalog.js';
 import { getSearchCatalog } from './search-catalog.js';
-import { normalizeSearchTags } from './search-url.js';
 import type {
   ExploreSearchResponse,
   SearchResultItem as CoreSearchResultItem,
@@ -40,7 +39,7 @@ export interface SearchResponse extends ExploreSearchResponse {}
 export interface SearchAdapter {
   search(
     query: string,
-    selectedGenres: readonly string[],
+    selectedTags: readonly string[],
     sortMode: SearchSortMode,
     tagMode?: SearchTagMode,
   ): Promise<SearchResponse>;
@@ -80,14 +79,14 @@ export function createPagefindSearchAdapter(
   return {
     async search(
       query: string,
-      selectedGenres: readonly string[],
+      selectedTags: readonly string[],
       sortMode: SearchSortMode,
       tagMode: SearchTagMode = 'or',
     ): Promise<SearchResponse> {
       const response = await core.search({
         mode: 'explore',
         q: query,
-        tags: [...selectedGenres],
+        tags: [...selectedTags],
         tagMode,
         sort: sortMode,
       });
@@ -102,38 +101,20 @@ export function createPagefindSearchAdapter(
       };
     },
     async getAvailableGenres(): Promise<Record<string, number>> {
-      const pagefindCounts = await (async () => {
-        if (!resolvedLoadPagefind) {
-          return {};
-        }
-
-        try {
-          const pagefind = await resolvedLoadPagefind();
-          return pagefind.filters().then((filters) => filters['genre'] ?? {});
-        } catch {
-          return {};
-        }
-      })();
-      const catalogCounts = new Map<string, number>();
+      const counts = new Map<string, number>();
 
       try {
         for (const item of await loadSearchCatalog()) {
-          for (const tag of normalizeSearchTags(item.genres ?? [])) {
-            catalogCounts.set(tag, (catalogCounts.get(tag) ?? 0) + 1);
+          for (const tag of item.tags ?? []) {
+            counts.set(tag, (counts.get(tag) ?? 0) + 1);
           }
         }
       } catch {
-        // 検索カタログが利用できない場合でも Pagefind 側の facet 情報で継続する。
-      }
-
-      for (const [tag, count] of Object.entries(pagefindCounts)) {
-        if (Number.isSafeInteger(count) && count >= 0) {
-          catalogCounts.set(tag, Math.max(catalogCounts.get(tag) ?? 0, count));
-        }
+        // カタログ取得不可でも explore 検索本体は別経路で縮退する。
       }
 
       return Object.fromEntries(
-        [...catalogCounts.entries()].sort((left, right) => left[0].localeCompare(right[0], 'ja')),
+        [...counts.entries()].sort((left, right) => left[0].localeCompare(right[0], 'ja')),
       );
     },
   };
@@ -144,11 +125,11 @@ const defaultAdapter = createPagefindSearchAdapter();
 export const pagefindSearchAdapter = {
   search(
     query: string,
-    selectedGenres: readonly string[],
+    selectedTags: readonly string[],
     sortMode: SearchSortMode,
     tagMode: SearchTagMode = 'or',
   ) {
-    return defaultAdapter.search(query, selectedGenres, sortMode, tagMode);
+    return defaultAdapter.search(query, selectedTags, sortMode, tagMode);
   },
   getAvailableGenres() {
     return defaultAdapter.getAvailableGenres();

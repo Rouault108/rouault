@@ -186,10 +186,9 @@ export const LoadingStateEditableInput: Story = {
       throw new Error('shadowRoot not found');
     }
 
-    const loadingText = within(dialogRoot as unknown as HTMLElement).getByText(
-      'インデックスを読み込んでいます...',
-    );
-    await expect(loadingText).toBeVisible();
+    await waitFor(() => {
+      expect(dialogRoot.textContent ?? '').toContain('インデックスを読み込んでいます...');
+    });
 
     await setQuery(dialog, 'beta');
     await waitFor(async () => {

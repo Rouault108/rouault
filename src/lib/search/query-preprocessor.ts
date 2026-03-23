@@ -1,15 +1,18 @@
-import { normalizeSearchQuery } from './search-url.js';
+import type { SearchTokenizerPolicyId } from './search-types.js';
 
 export interface PreparedSearchQuery {
-  rawQuery: string;
+  inputQuery: string;
+  normalizedQuery: string;
   segmentedQuery: string;
   tokens: string[];
+  tokenizerPolicyId: SearchTokenizerPolicyId;
 }
 
 export interface TokenizedSearchText {
-  rawText: string;
+  normalizedText: string;
   segmentedText: string;
   tokens: string[];
+  tokenizerPolicyId: SearchTokenizerPolicyId;
 }
 
 interface SegmentLike {
@@ -21,93 +24,113 @@ interface SegmenterLike {
   segment(input: string): Iterable<SegmentLike>;
 }
 
-type SegmenterFactory = () => SegmenterLike | null;
+type SegmenterFactory = (locale: string) => SegmenterLike | null;
 
-function createDefaultSegmenter(): SegmenterLike | null {
+const ASCII_UPPERCASE_PATTERN = /[A-Z]/g;
+const JAPANESE_TEXT_PATTERN = /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u;
+
+function lowerAscii(value: string): string {
+  return value.replace(ASCII_UPPERCASE_PATTERN, (character) => character.toLowerCase());
+}
+
+export function normalizeSearchQuery(value: string): string {
+  return lowerAscii(value.normalize('NFKC')).replace(/\s+/g, ' ').trim();
+}
+
+function createDefaultSegmenter(locale: string): SegmenterLike | null {
   if (typeof Intl === 'undefined' || typeof Intl.Segmenter !== 'function') {
     return null;
   }
 
-  return new Intl.Segmenter('ja', { granularity: 'word' });
+  return new Intl.Segmenter(locale, { granularity: 'word' });
+}
+
+function detectTokenizerPolicy(
+  normalizedText: string,
+  createSegmenter: SegmenterFactory,
+): SearchTokenizerPolicyId {
+  if (normalizedText.length === 0) {
+    return 'generic-whitespace-v1';
+  }
+
+  if (!JAPANESE_TEXT_PATTERN.test(normalizedText)) {
+    return 'generic-whitespace-v1';
+  }
+
+  return createSegmenter('ja') ? 'ja-word-v1' : 'generic-whitespace-v1';
 }
 
 function dedupeTokens(values: readonly string[]): string[] {
-  const result: string[] = [];
+  const deduped: string[] = [];
   const seen = new Set<string>();
 
   for (const value of values) {
-    const token = normalizeSearchQuery(value);
-    if (token.length === 0) {
+    const normalized = normalizeSearchQuery(value);
+    if (normalized.length === 0) {
       continue;
     }
 
-    const normalizedKey = token.toLocaleLowerCase('ja');
-    if (seen.has(normalizedKey)) {
+    if (seen.has(normalized)) {
       continue;
     }
 
-    seen.add(normalizedKey);
-    result.push(token);
+    seen.add(normalized);
+    deduped.push(normalized);
   }
 
-  return result;
+  return deduped;
 }
 
-function fallbackTokens(rawQuery: string): string[] {
-  return dedupeTokens(rawQuery.split(' '));
+function tokenizeWithWhitespace(normalizedText: string): string[] {
+  if (normalizedText.length === 0) {
+    return [];
+  }
+
+  return dedupeTokens(normalizedText.split(' '));
+}
+
+function tokenizeWithJapaneseSegmenter(
+  normalizedText: string,
+  createSegmenter: SegmenterFactory,
+): string[] {
+  const segmenter = createSegmenter('ja');
+  if (!segmenter) {
+    return tokenizeWithWhitespace(normalizedText);
+  }
+
+  const tokens = Array.from(segmenter.segment(normalizedText)).flatMap((segment) => {
+    const normalized = normalizeSearchQuery(segment.segment);
+    if (normalized.length === 0) {
+      return [];
+    }
+
+    if (segment.isWordLike === false) {
+      return [];
+    }
+
+    return [normalized];
+  });
+
+  const deduped = dedupeTokens(tokens);
+  return deduped.length > 0 ? deduped : tokenizeWithWhitespace(normalizedText);
 }
 
 export function tokenizeSearchText(
   value: string,
   createSegmenter: SegmenterFactory = createDefaultSegmenter,
 ): TokenizedSearchText {
-  const rawText = normalizeSearchQuery(value);
-  if (rawText.length === 0) {
-    return {
-      rawText: '',
-      segmentedText: '',
-      tokens: [],
-    };
-  }
-
-  const segmenter = createSegmenter();
-  if (!segmenter) {
-    const tokens = fallbackTokens(rawText);
-    return {
-      rawText,
-      segmentedText: rawText,
-      tokens,
-    };
-  }
-
-  const tokens = dedupeTokens(
-    Array.from(segmenter.segment(rawText)).flatMap((segment) => {
-      const normalized = normalizeSearchQuery(segment.segment);
-      if (normalized.length === 0) {
-        return [];
-      }
-
-      if (segment.isWordLike === false) {
-        return [];
-      }
-
-      return [normalized];
-    }),
-  );
-
-  if (tokens.length === 0) {
-    const fallback = fallbackTokens(rawText);
-    return {
-      rawText,
-      segmentedText: rawText,
-      tokens: fallback,
-    };
-  }
+  const normalizedText = normalizeSearchQuery(value);
+  const tokenizerPolicyId = detectTokenizerPolicy(normalizedText, createSegmenter);
+  const tokens =
+    tokenizerPolicyId === 'ja-word-v1'
+      ? tokenizeWithJapaneseSegmenter(normalizedText, createSegmenter)
+      : tokenizeWithWhitespace(normalizedText);
 
   return {
-    rawText,
+    normalizedText,
     segmentedText: tokens.join(' '),
     tokens,
+    tokenizerPolicyId,
   };
 }
 
@@ -116,9 +139,12 @@ export function prepareSearchQuery(
   createSegmenter: SegmenterFactory = createDefaultSegmenter,
 ): PreparedSearchQuery {
   const tokenized = tokenizeSearchText(query, createSegmenter);
+
   return {
-    rawQuery: tokenized.rawText,
+    inputQuery: query,
+    normalizedQuery: tokenized.normalizedText,
     segmentedQuery: tokenized.segmentedText,
     tokens: tokenized.tokens,
+    tokenizerPolicyId: tokenized.tokenizerPolicyId,
   };
 }

@@ -1,11 +1,17 @@
-import type { SearchSortMode, SearchState, SearchTagMode } from './search-types.js';
+import { normalizeSearchQuery as normalizePreparedSearchQuery } from './query-preprocessor.js';
+import type { SearchSortMode, SearchState, SearchStateUrl, SearchTagMode } from './search-types.js';
+
 export type { SearchSortMode, SearchState, SearchTagMode } from './search-types.js';
 
 export const DEFAULT_SEARCH_SORT_MODE: SearchSortMode = 'relevance';
 export const DEFAULT_SEARCH_TAG_MODE: SearchTagMode = 'or';
 
+function parseUrl(input: string | URL): URL {
+  return input instanceof URL ? new URL(input.toString()) : new URL(input, 'https://rouault.invalid');
+}
+
 export function normalizeSearchQuery(value: string): string {
-  return value.normalize('NFKC').replace(/\s+/g, ' ').trim();
+  return normalizePreparedSearchQuery(value);
 }
 
 export function normalizeSearchSort(value: string): SearchSortMode {
@@ -20,6 +26,10 @@ export function normalizeSearchTags(values: readonly string[]): string[] {
   const normalized = new Map<string, string>();
 
   for (const value of values) {
+    if (typeof value !== 'string') {
+      continue;
+    }
+
     const tag = value.trim();
     if (tag.length === 0) {
       continue;
@@ -54,23 +64,24 @@ function parseTagFromPathname(pathname: string): string[] {
 
 export function parseSearchStateFromUrl(url: URL): SearchState {
   const pathname = url.pathname;
-  const fromTagPath = parseTagFromPathname(pathname);
-  const q = normalizeSearchQuery(url.searchParams.get('q') ?? '');
-  const tags =
-    fromTagPath.length > 0 ? fromTagPath : normalizeSearchTags(url.searchParams.getAll('tag'));
-  const tagMode =
-    fromTagPath.length > 0
-      ? DEFAULT_SEARCH_TAG_MODE
-      : normalizeSearchTagMode(url.searchParams.get('tagMode') ?? '');
-  const sort =
-    fromTagPath.length > 0
-      ? DEFAULT_SEARCH_SORT_MODE
-      : normalizeSearchSort(url.searchParams.get('sort') ?? '');
+  const tagPageTags = parseTagFromPathname(pathname);
 
-  return { q, tags, tagMode, sort };
+  return {
+    q: normalizeSearchQuery(url.searchParams.get('q') ?? ''),
+    tags:
+      tagPageTags.length > 0 ? tagPageTags : normalizeSearchTags(url.searchParams.getAll('tag')),
+    tagMode:
+      tagPageTags.length > 0
+        ? DEFAULT_SEARCH_TAG_MODE
+        : normalizeSearchTagMode(url.searchParams.get('tagMode') ?? ''),
+    sort:
+      tagPageTags.length > 0
+        ? DEFAULT_SEARCH_SORT_MODE
+        : normalizeSearchSort(url.searchParams.get('sort') ?? ''),
+  };
 }
 
-export function buildSearchStateUrl(state: SearchState): string {
+export function buildSearchStateUrl(state: SearchState): SearchStateUrl {
   const q = normalizeSearchQuery(state.q);
   const tags = normalizeSearchTags(state.tags);
   const tagMode = normalizeSearchTagMode(state.tagMode);
@@ -97,11 +108,17 @@ export function buildSearchStateUrl(state: SearchState): string {
   return search.length > 0 ? `/search?${search}` : '/search';
 }
 
+export function buildTagPageUrl(tag: string): string {
+  return `/tags/${encodeURIComponent(tag.trim())}/`;
+}
+
+export const buildTagHref = buildTagPageUrl;
+
 export function buildSearchHref(state: {
   query: string;
   tags: string[];
   sort: SearchSortMode;
-}): string {
+}): SearchStateUrl {
   return buildSearchStateUrl({
     q: state.query,
     tags: state.tags,
@@ -110,16 +127,14 @@ export function buildSearchHref(state: {
   });
 }
 
-export function buildTagHref(tag: string): string {
-  return `/tags/${encodeURIComponent(tag.trim())}/`;
-}
-
 export function isSingleTagDefaultState(state: SearchState): boolean {
+  const normalizedTags = normalizeSearchTags(state.tags);
+
   return (
     normalizeSearchQuery(state.q).length === 0 &&
-    normalizeSearchSort(state.sort) === DEFAULT_SEARCH_SORT_MODE &&
+    normalizedTags.length === 1 &&
     normalizeSearchTagMode(state.tagMode) === DEFAULT_SEARCH_TAG_MODE &&
-    normalizeSearchTags(state.tags).length === 1
+    normalizeSearchSort(state.sort) === DEFAULT_SEARCH_SORT_MODE
   );
 }
 
@@ -133,19 +148,20 @@ export function buildUrlForSearchState(state: SearchState): string {
 
   if (isSingleTagDefaultState(normalizedState)) {
     const [tag] = normalizedState.tags;
-    return tag ? buildTagHref(tag) : '/search';
+    return tag ? buildTagPageUrl(tag) : '/search';
   }
 
   return buildSearchStateUrl(normalizedState);
 }
 
-export function normalizeSearchStateUrl(input: string | URL): string {
-  const url = input instanceof URL ? new URL(input.toString()) : new URL(input, 'https://rouault.invalid');
-  const state = parseSearchStateFromUrl(url);
+export function normalizeSearchStateUrl(input: string | URL): SearchStateUrl {
+  const url = parseUrl(input);
 
   if (url.pathname.startsWith('/tags/')) {
-    return buildTagHref(state.tags[0] ?? '');
+    const tags = parseTagFromPathname(url.pathname);
+    return tags.length > 0 ? buildTagPageUrl(tags[0] ?? '') : '/search';
   }
 
+  const state = parseSearchStateFromUrl(url);
   return buildSearchStateUrl(state);
 }

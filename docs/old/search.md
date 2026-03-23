@@ -1,5 +1,8 @@
 # 現在の検索機能まとめ
 
+> [!WARNING]
+> 本文書は旧実装ベースの整理であり、現行の正本ではありません。検索仕様の正本は [`docs/search-specification.md`](../search-specification.md) を参照してください。shared `search-core` 導入後は、本書の説明より仕様書と実装を優先します。
+
 ## 概要
 
 現在の検索機能は、**Pagefind を使った全文検索**を中心に構成されています。UI は次の 2 系統です。

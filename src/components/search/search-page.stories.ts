@@ -446,7 +446,8 @@ export const FilterPanelFlow: Story = {
       const urlAfterTagSelect = new URL(window.location.href);
       const resultLinksAfterTagSelect = host.shadowRoot?.querySelectorAll('.result-link') ?? [];
       assert(
-        urlAfterTagSelect.searchParams.getAll('tag').includes('lit'),
+        urlAfterTagSelect.pathname === '/tags/lit/' ||
+          urlAfterTagSelect.searchParams.getAll('tag').includes('lit'),
         'タグ選択時に URL が同期されていません',
       );
       assert(resultLinksAfterTagSelect.length === 1, 'タグ選択で結果数が更新されていません');

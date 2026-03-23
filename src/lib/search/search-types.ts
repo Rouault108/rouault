@@ -2,6 +2,14 @@ export type SearchMode = 'navigate' | 'explore';
 
 export type SearchSourceKind = 'pagefind' | 'catalog';
 
+export type SearchFieldKind =
+  | 'title'
+  | 'description'
+  | 'body'
+  | 'path'
+  | 'keyword'
+  | 'tag';
+
 export type SearchTagMode = 'or' | 'and';
 
 export type SearchSortMode = 'relevance' | 'date-desc';
@@ -35,6 +43,16 @@ export type SearchDiagnosticIssueCode =
   | 'invalid-catalog-item'
   | 'source-degraded'
   | 'source-failed';
+
+export type DocumentCanonicalUrl = string;
+
+export type SearchStateUrl = string;
+
+export type SearchRankingProfileId = 'rouault-search-v1';
+
+export type SearchTokenizerPolicyId = 'ja-word-v1' | 'generic-whitespace-v1';
+
+export type SearchCountMap = Record<string, number>;
 
 export interface SearchState {
   q: string;
@@ -71,6 +89,58 @@ export interface SearchReason {
   source?: SearchSourceKind;
 }
 
+export interface SearchFeatureScores {
+  titleExactScore: number;
+  titlePrefixScore: number;
+  titleTokenCoverageScore: number;
+  bodyScore: number;
+  pathScore: number;
+  keywordScore: number;
+  freshnessScore: number;
+  sourceReliabilityScore: number;
+  matchEvidenceScore: number;
+}
+
+export interface SearchFieldTokens {
+  titleTokens: string[];
+  bodyTokens: string[];
+  pathTokens: string[];
+  keywordTokens: string[];
+}
+
+export interface SearchCandidate {
+  canonicalUrl: DocumentCanonicalUrl;
+  url: string;
+  pathLabel: string;
+  title: string;
+  description: string;
+  date: SearchDateValue;
+  tags: string[];
+  snippet: SearchSnippet | null;
+  matchedSources: SearchSourceKind[];
+  matchedFields: SearchFieldKind[];
+  matchedTokens: string[];
+  featureScores: SearchFeatureScores;
+  fieldTokens: SearchFieldTokens;
+}
+
+export interface SearchSourceCapabilities {
+  providesBodyEvidence: boolean;
+  providesCountMap: boolean;
+  supportsTagPrefilter: boolean;
+  supportsNativeAndSemantics: boolean;
+  supportsNativeDateDescSort: boolean;
+}
+
+export interface SearchSourceBatch {
+  source: SearchSourceKind;
+  status: 'active' | 'failed';
+  failure?: SearchFailureKind;
+  capabilities: SearchSourceCapabilities;
+  candidates: SearchCandidate[];
+  countMap?: SearchCountMap | null;
+}
+
 export interface SearchDiagnosticIssue {
   code: SearchDiagnosticIssueCode;
   severity: SearchDiagnosticSeverity;
@@ -88,7 +158,7 @@ export interface SearchDiagnostics {
 }
 
 export interface SearchResultItem {
-  canonicalUrl: string;
+  canonicalUrl: DocumentCanonicalUrl;
   url: string;
   pathLabel: string;
   title: string;
@@ -102,14 +172,14 @@ export interface SearchResultItem {
 export interface SearchResponseBase {
   items: SearchResultItem[];
   total: number;
-  rankingProfileId: 'rouault-search-v1';
+  rankingProfileId: SearchRankingProfileId;
   diagnostics: SearchDiagnostics;
 }
 
 export interface ExploreSearchResponse extends SearchResponseBase {
   mode: 'explore';
-  tagCounts: Record<string, number>;
-  allTagCounts: Record<string, number>;
+  tagCounts: SearchCountMap;
+  allTagCounts: SearchCountMap;
 }
 
 export interface NavigateSearchResponse extends SearchResponseBase {

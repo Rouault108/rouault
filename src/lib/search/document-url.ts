@@ -6,8 +6,10 @@ function tryParseUrl(value: string): URL | null {
   }
 }
 
-function encodePathSegments(pathname: string): string {
-  const segments = pathname
+function normalizeEncodedPathname(pathname: string): string {
+  const collapsed = pathname.replace(/\/+/g, '/');
+  const withoutIndex = collapsed.replace(/\/index\.html$/u, '/');
+  const segments = withoutIndex
     .split('/')
     .filter((segment) => segment.length > 0)
     .map((segment) => {
@@ -18,46 +20,15 @@ function encodePathSegments(pathname: string): string {
       }
     });
 
-  return `/${segments.join('/')}`;
-}
-
-function normalizePathname(pathname: string): string {
-  const collapsed = pathname.replace(/\/+/g, '/');
-  const withoutIndex = collapsed.replace(/\/index\.html$/u, '/');
-  const encoded = encodePathSegments(withoutIndex);
-
-  if (encoded === '/') {
+  if (segments.length === 0) {
     return '/';
   }
 
-  return encoded.endsWith('/') ? encoded : `${encoded}/`;
+  return `/${segments.join('/')}/`;
 }
 
-function isSearchStatePath(pathname: string): boolean {
-  return pathname === '/search' || pathname === '/search/' || pathname.startsWith('/tags/');
-}
-
-export function normalizeDocumentCanonicalUrl(value: string): string | null {
-  const normalized = value.trim();
-  if (normalized.length === 0) {
-    return null;
-  }
-
-  const parsed = tryParseUrl(normalized);
-  if (parsed === null) {
-    return null;
-  }
-
-  if (parsed.username.length > 0 || parsed.password.length > 0) {
-    return null;
-  }
-
-  const pathname = normalizePathname(parsed.pathname || '/');
-  if (isSearchStatePath(pathname)) {
-    return null;
-  }
-
-  return pathname;
+function isDocumentUrlPath(pathname: string): boolean {
+  return !(pathname === '/search/' || pathname === '/search' || pathname.startsWith('/tags/'));
 }
 
 function truncateSegment(segment: string, maxLength: number): string {
@@ -72,13 +43,45 @@ function truncateSegment(segment: string, maxLength: number): string {
   return `${segment.slice(0, maxLength - 1)}…`;
 }
 
+function joinPathLabelSegments(segments: readonly string[]): string {
+  return segments.join(' / ');
+}
+
+export function normalizeDocumentCanonicalUrl(value: string): string | null {
+  const normalized = value.trim();
+  if (normalized.length === 0) {
+    return null;
+  }
+
+  const parsed = tryParseUrl(normalized);
+  if (parsed === null) {
+    return null;
+  }
+
+  const protocol = parsed.protocol;
+  if (
+    protocol !== 'http:' &&
+    protocol !== 'https:' &&
+    !(normalized.startsWith('/') || normalized.startsWith('./') || normalized.startsWith('../'))
+  ) {
+    return null;
+  }
+
+  if (parsed.username.length > 0 || parsed.password.length > 0) {
+    return null;
+  }
+
+  const pathname = normalizeEncodedPathname(parsed.pathname || '/');
+  return isDocumentUrlPath(pathname) ? pathname : null;
+}
+
 export function derivePathLabel(documentCanonicalUrl: string): string {
-  const trimmed = documentCanonicalUrl.trim();
-  if (trimmed === '/') {
+  const canonicalUrl = normalizeDocumentCanonicalUrl(documentCanonicalUrl);
+  if (canonicalUrl === null || canonicalUrl === '/') {
     return '/';
   }
 
-  const segments = trimmed
+  const segments = canonicalUrl
     .replace(/^\/+|\/+$/g, '')
     .split('/')
     .flatMap((segment) => {
@@ -98,30 +101,36 @@ export function derivePathLabel(documentCanonicalUrl: string): string {
     return '/';
   }
 
-  const joinSegments = (items: readonly string[]): string => items.join(' / ');
-  const full = joinSegments(segments);
+  const full = joinPathLabelSegments(segments);
   if (full.length <= 80) {
     return full;
   }
 
-  const abbreviated = joinSegments([...segments.slice(0, 2), '…', ...segments.slice(-2)]);
+  const abbreviated = joinPathLabelSegments([...segments.slice(0, 2), '…', ...segments.slice(-2)]);
   if (abbreviated.length <= 80) {
     return abbreviated;
   }
 
   const shortened = segments.map((segment) => truncateSegment(segment, 12));
-  const shortenedJoined = joinSegments([
+  const shortenedLabel = joinPathLabelSegments([
     ...shortened.slice(0, 2),
     '…',
     ...shortened.slice(-2),
   ]);
 
-  return shortenedJoined.length <= 80 ? shortenedJoined : truncateSegment(shortenedJoined, 80);
+  return shortenedLabel.length <= 80 ? shortenedLabel : truncateSegment(shortenedLabel, 80);
 }
 
 export type ValidatedResultUrl =
   | { ok: true; url: string }
-  | { ok: false; code: 'invalid-result-url' | 'unsupported-url-scheme' | 'cross-origin-url' | 'url-with-credentials' };
+  | {
+      ok: false;
+      code:
+        | 'invalid-result-url'
+        | 'unsupported-url-scheme'
+        | 'cross-origin-url'
+        | 'url-with-credentials';
+    };
 
 export function validateResultUrl(value: string): ValidatedResultUrl {
   const normalized = value.trim();
@@ -149,11 +158,9 @@ export function validateResultUrl(value: string): ValidatedResultUrl {
     return { ok: false, code: 'cross-origin-url' };
   }
 
-  const path = parsed.pathname.replace(/\/+/g, '/');
-  const search = parsed.search;
-  const hash = parsed.hash;
+  const pathname = parsed.pathname.replace(/\/+/g, '/');
   return {
     ok: true,
-    url: `${path}${search}${hash}`,
+    url: `${pathname}${parsed.search}${parsed.hash}`,
   };
 }
