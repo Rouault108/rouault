@@ -47,7 +47,7 @@ remark 層では「著者入力の制約付けと独自構文の展開」を行�
 | `::code-preview`    | `ui-code-preview`    | `heading` / `controls` / `preview-padding` / `preview-align` / `preview-theme` / `preview-surface` / `preview-viewport`                                     |
 | `::preview-sandbox` | `ui-preview-sandbox` | `title` / `allow-js` / `height`。`code-preview` 直下専用、内部は `preview-html/css/js` fenced code のみ。`allow-js` は author script 許可のみを表す         |
 | `::details`         | `ui-details`         | `summary` または `aria-label` 必須。両立不可。`open` / `variant` / `region`                                                                                 |
-| `::info-box`        | `ui-info-box`        | `heading` / `icon` / `heading-level` / `landmark` / `variant`                                                                                               |
+| `::info-box`        | `ui-info-box`        | `heading` / `icon` / `heading-level` / `landmark` / `variant` / `density`                                                                                   |
 | `::link-card`       | `ui-card`            | leaf directive。`url` 必須、`title` / `description` / `image`。終端 `::` は不要                                                                             |
 | `::score`           | `ui-score`           | `src` / `caption` / `label` / `description` / `aspect-ratio` / `loading` / `primary`                                                                        |
 | `::tabs`            | `ui-tabs`            | `selected-value` / `default-selected-value` / `orientation` / `automatic-activation` / `url-sync`                                                           |
@@ -63,6 +63,7 @@ remark 層では「著者入力の制約付けと独自構文の展開」を行�
 - `code-group` 内 `intent` は `neutral|valid|invalid`
 - `details.variant` は `default|bordered`
 - `info-box.variant` は `default|filled`
+- `info-box.density` は `comfortable|compact`
 - `score.loading` は `lazy|eager`
 - `tabs.orientation` は `horizontal|vertical`
 - `code-preview.preview-padding` は `normal|compact|none`

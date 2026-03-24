@@ -366,7 +366,7 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 独立した情報ブロック。
 
 ```markdown
-::info-box{heading="作品情報" icon="book" heading-level="3" landmark="true" variant="filled"}
+::info-box{heading="作品情報" icon="book" heading-level="3" landmark="true" variant="filled" density="compact"}
 ここに説明を書く
 ::
 ```
@@ -378,6 +378,7 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 | `heading-level` | 見出しレベル             | `1` から `6`        |
 | `landmark`      | 独立 landmark として扱う | 真偽値              |
 | `variant`       | 外観                     | `default`, `filled` |
+| `density`       | 視覚密度                 | `comfortable`, `compact` |
 
 ### Link Card
 

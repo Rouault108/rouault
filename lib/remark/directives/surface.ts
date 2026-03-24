@@ -1,9 +1,15 @@
 import type { DirectiveHandler, MdastNode, VFileLike } from './types';
-import { CALLOUT_VARIANTS, DETAILS_VARIANTS, INFO_BOX_VARIANTS } from './shared/constants';
+import {
+  CALLOUT_VARIANTS,
+  DETAILS_VARIANTS,
+  INFO_BOX_VARIANTS,
+} from './shared/constants';
 import { assertAllowedAttributes, pickOptional } from './shared/attributes';
 import { parseBooleanAttribute, parseIntegerInRange } from './shared/attribute-parsers';
 import { normalizeCodeBlockMeta } from './shared/code-meta';
 import { toError } from './shared/errors';
+
+const INFO_BOX_DENSITIES = ['comfortable', 'compact'] as const;
 
 export const applyCalloutAttributes = (
   attrs: Record<string, string>,
@@ -128,7 +134,14 @@ export const applyInfoBoxAttributes = (
   file?: VFileLike,
 ): Record<string, unknown> => {
   const result: Record<string, unknown> = {};
-  const allowedKeys = new Set(['heading', 'icon', 'heading-level', 'landmark', 'variant']);
+  const allowedKeys = new Set([
+    'heading',
+    'icon',
+    'heading-level',
+    'landmark',
+    'variant',
+    'density',
+  ]);
   assertAllowedAttributes(attrs, allowedKeys, node, file, 'info-box');
 
   const heading = pickOptional(attrs['heading']);
@@ -165,6 +178,14 @@ export const applyInfoBoxAttributes = (
       throw toError(file, node, 'info-box の variant は default/filled のみ指定可能です');
     }
     result['variant'] = variant;
+  }
+
+  const density = pickOptional(attrs['density'])?.toLowerCase();
+  if (density) {
+    if (!INFO_BOX_DENSITIES.includes(density)) {
+      throw toError(file, node, 'info-box の density は comfortable/compact のみ指定可能です');
+    }
+    result['density'] = density;
   }
 
   return result;

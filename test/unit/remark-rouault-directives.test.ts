@@ -391,7 +391,7 @@ describe('remarkRouaultDirectives', () => {
             {
               type: 'text',
               value:
-                '::info-box{heading="作品情報" icon="music" heading-level="3" landmark="true" variant="filled"}',
+                '::info-box{heading="作品情報" icon="music" heading-level="3" landmark="true" variant="filled" density="compact"}',
             },
           ],
         },
@@ -415,6 +415,7 @@ describe('remarkRouaultDirectives', () => {
     expect(infoBox?.data?.hProperties?.['heading-level']).to.equal('3');
     expect(infoBox?.data?.hProperties?.['landmark']).to.equal(true);
     expect(infoBox?.data?.hProperties?.['variant']).to.equal('filled');
+    expect(infoBox?.data?.hProperties?.['density']).to.equal('compact');
   });
 
   it('link-card ディレクティブを終端なしの ui-card ノードへ変換すること', () => {

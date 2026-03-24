@@ -4,8 +4,10 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import '../../../lib/icons';
 
 export type InfoBoxVariant = 'default' | 'filled';
+export type InfoBoxDensity = 'comfortable' | 'compact';
 
 const VALID_VARIANTS = new Set<InfoBoxVariant>(['default', 'filled']);
+const VALID_DENSITIES = new Set<InfoBoxDensity>(['comfortable', 'compact']);
 
 let infoBoxHeadingUid = 0;
 
@@ -13,8 +15,8 @@ let infoBoxHeadingUid = 0;
  * インフォボックス (Info Box) コンポーネント。
  *
  * 価値中立な参照情報を構造化して提示するための静的コンテナです。
- * `landmark=true` かつ `heading` がある場合のみ `role="region"` とし、
- * それ以外は `role="note"` へフォールバックします。
+ * `landmark=true`、`heading` あり、`headingLevel` 有効、本文が非空のときのみ
+ * `role="region"` を公開し、それ以外は追加の意味ロールを公開しません。
  */
 @customElement('ui-info-box')
 export class InfoBox extends LitElement {
@@ -75,6 +77,14 @@ export class InfoBox extends LitElement {
       min-width: 0;
     }
 
+    :host([density='compact']) .header {
+      padding: var(--space-2, 8px) var(--space-3, 12px);
+    }
+
+    :host([density='compact']) .body {
+      padding: var(--space-3, 12px);
+    }
+
     @media (forced-colors: active) {
       .info-box {
         border-color: CanvasText;
@@ -89,6 +99,13 @@ export class InfoBox extends LitElement {
         color: CanvasText;
       }
     }
+
+    @media print {
+      .info-box,
+      .info-box[data-variant='filled'] {
+        background: transparent;
+      }
+    }
   `;
 
   /**
@@ -98,7 +115,7 @@ export class InfoBox extends LitElement {
   heading = '';
 
   /**
-   * ヘッダー左側のアイコン名（`lucide:*`）。
+   * ヘッダー左側のアイコン名（プレフィックスなしの Lucide 名）。
    */
   @property({ type: String, reflect: true })
   icon = '';
@@ -121,12 +138,17 @@ export class InfoBox extends LitElement {
   @property({ type: String, reflect: true })
   variant: InfoBoxVariant = 'default';
 
+  /**
+   * 視覚密度。
+   */
+  @property({ type: String, reflect: true })
+  density: InfoBoxDensity = 'comfortable';
+
   private _headingId: string | null = null;
   private _contentObserver: MutationObserver | null = null;
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this._adoptExistingHeadingId();
     this._observeLightDomContent();
     this._syncHostSemantics();
   }
@@ -140,7 +162,11 @@ export class InfoBox extends LitElement {
   protected override updated(changedProperties: PropertyValues<this>): void {
     super.updated(changedProperties);
 
-    if (changedProperties.has('heading') || changedProperties.has('landmark')) {
+    if (
+      changedProperties.has('heading') ||
+      changedProperties.has('headingLevel') ||
+      changedProperties.has('landmark')
+    ) {
       this._syncHostSemantics();
     }
   }
@@ -171,20 +197,9 @@ export class InfoBox extends LitElement {
     return this.icon.trim();
   }
 
-  private _adoptExistingHeadingId(): void {
-    if (this._headingId) return;
-
-    const fromAriaLabelledby = this.getAttribute('aria-labelledby')?.trim();
-    if (fromAriaLabelledby) {
-      this._headingId = fromAriaLabelledby;
-      return;
-    }
-
-    const existingHeading = this.shadowRoot?.querySelector<HTMLElement>('.heading[id]');
-    const fromRenderedHeading = existingHeading?.id.trim();
-    if (fromRenderedHeading) {
-      this._headingId = fromRenderedHeading;
-    }
+  private get _resolvedDensity(): InfoBoxDensity {
+    if (VALID_DENSITIES.has(this.density)) return this.density;
+    return 'comfortable';
   }
 
   private _observeLightDomContent(): void {
@@ -229,14 +244,20 @@ export class InfoBox extends LitElement {
    * ホスト要素のセマンティクスを受け入れ基準に沿って同期します。
    */
   private _syncHostSemantics(): void {
-    if (this.landmark && this._hasHeading) {
+    if (!this._hasMeaningfulSlotContent()) {
+      this.removeAttribute('role');
+      this.removeAttribute('aria-labelledby');
+      return;
+    }
+
+    if (this.landmark && this._hasHeading && this._resolvedHeadingLevel !== null) {
       const headingId = this._ensureHeadingId();
       this.setAttribute('role', 'region');
       this.setAttribute('aria-labelledby', headingId);
       return;
     }
 
-    this.setAttribute('role', 'note');
+    this.removeAttribute('role');
     this.removeAttribute('aria-labelledby');
   }
 
@@ -250,7 +271,11 @@ export class InfoBox extends LitElement {
     const headingId = hasHeading ? this._ensureHeadingId() : '';
 
     return html`
-      <section class="info-box" data-variant="${this._resolvedVariant}">
+      <section
+        class="info-box"
+        data-variant="${this._resolvedVariant}"
+        data-density="${this._resolvedDensity}"
+      >
         ${hasHeading
           ? html`
               <div class="header">

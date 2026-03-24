@@ -3,7 +3,7 @@ import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import '../article-header/article-header';
 import './info-box';
-import { InfoBox, type InfoBoxVariant } from './info-box';
+import { InfoBox, type InfoBoxDensity, type InfoBoxVariant } from './info-box';
 import {
   renderFoundationFrame,
   renderFoundationSection,
@@ -14,8 +14,9 @@ interface VariantMatrixCase {
   readonly variant: InfoBoxVariant;
   readonly heading: string;
   readonly icon: string;
+  readonly headingLevel?: number;
   readonly landmark: boolean;
-  readonly expectedRole: 'region' | 'note';
+  readonly expectedRole: 'region' | null;
   readonly expectsHeader: boolean;
 }
 
@@ -25,6 +26,7 @@ const VARIANT_MATRIX_CASES: readonly VariantMatrixCase[] = [
     variant: 'default',
     heading: '作品情報',
     icon: 'music',
+    headingLevel: 3,
     landmark: true,
     expectedRole: 'region',
     expectsHeader: true,
@@ -34,8 +36,9 @@ const VARIANT_MATRIX_CASES: readonly VariantMatrixCase[] = [
     variant: 'default',
     heading: '補足情報',
     icon: 'book-open',
+    headingLevel: 3,
     landmark: false,
-    expectedRole: 'note',
+    expectedRole: null,
     expectsHeader: true,
   },
   {
@@ -43,8 +46,9 @@ const VARIANT_MATRIX_CASES: readonly VariantMatrixCase[] = [
     variant: 'filled',
     heading: 'この章のポイント',
     icon: 'clipboard-list',
+    headingLevel: 3,
     landmark: false,
-    expectedRole: 'note',
+    expectedRole: null,
     expectsHeader: true,
   },
   {
@@ -52,6 +56,7 @@ const VARIANT_MATRIX_CASES: readonly VariantMatrixCase[] = [
     variant: 'filled',
     heading: 'filled region',
     icon: 'shield',
+    headingLevel: 4,
     landmark: true,
     expectedRole: 'region',
     expectsHeader: true,
@@ -62,8 +67,17 @@ const VARIANT_MATRIX_CASES: readonly VariantMatrixCase[] = [
     heading: '   ',
     icon: 'shield',
     landmark: true,
-    expectedRole: 'note',
+    expectedRole: null,
     expectsHeader: false,
+  },
+  {
+    id: 'matrix-landmark-invalid-level',
+    variant: 'default',
+    heading: '見出しレベル未指定',
+    icon: 'book-marked',
+    landmark: true,
+    expectedRole: null,
+    expectsHeader: true,
   },
 ];
 
@@ -84,6 +98,12 @@ const getContainer = (infoBox: InfoBox): HTMLElement => {
 const getHeader = (infoBox: InfoBox): HTMLElement | null =>
   infoBox.shadowRoot?.querySelector<HTMLElement>('.header') ?? null;
 
+const getBody = (infoBox: InfoBox): HTMLElement => {
+  const body = infoBox.shadowRoot?.querySelector<HTMLElement>('.body');
+  if (!body) throw new Error('.body が見つかりません');
+  return body;
+};
+
 const getHeading = (infoBox: InfoBox): HTMLElement => {
   const heading = infoBox.shadowRoot?.querySelector<HTMLElement>('.heading');
   if (!heading) throw new Error('.heading が見つかりません');
@@ -103,9 +123,10 @@ const meta: Meta<InfoBox> = {
         component: `
 価値中立な参照情報を構造化する静的コンテナです。
 - \`heading\` があるときだけヘッダーを描画
-- \`landmark=true\` かつ \`heading\` ありのときだけ \`role="region"\`
-- それ以外は \`role="note"\` にフォールバック
+- \`landmark=true\` かつ \`heading\` / \`headingLevel\` / 非空本文ありのときだけ \`role="region"\`
+- それ以外は追加の意味ロールを公開しない
 - \`variant="filled"\` は \`--bg-fill-muted\` を使用
+- \`density\` は余白とヘッダー密度のみを切り替える
         `,
       },
     },
@@ -142,6 +163,15 @@ const meta: Meta<InfoBox> = {
         defaultValue: { summary: 'false' },
       },
     },
+    density: {
+      control: 'inline-radio',
+      options: ['comfortable', 'compact'],
+      description: '視覚密度。余白とヘッダー密度のみを切り替える',
+      table: {
+        type: { summary: "'comfortable' | 'compact'" },
+        defaultValue: { summary: "'comfortable'" },
+      },
+    },
     variant: {
       control: 'inline-radio',
       options: ['default', 'filled'],
@@ -168,6 +198,7 @@ export const Default: Story = {
     headingLevel: 3,
     landmark: true,
     variant: 'default',
+    density: 'comfortable',
   },
   render: (args) => html`
     <ui-info-box
@@ -179,6 +210,7 @@ export const Default: Story = {
       )}"
       ?landmark="${args.landmark}"
       variant="${args.variant}"
+      density="${args.density}"
     >
       <dl style="display: grid; gap: 0.5rem; margin: 0;">
         <dt>作曲</dt>
@@ -219,6 +251,9 @@ export const Default: Story = {
     }
     if (icon.getAttribute('aria-hidden') !== 'true') {
       throw new Error('装飾アイコンは aria-hidden="true" である必要があります');
+    }
+    if (container.getAttribute('data-density') !== 'comfortable') {
+      throw new Error('density の既定値は comfortable である必要があります');
     }
   },
 };
@@ -516,8 +551,8 @@ export const ReadingPrerequisitePlacements: Story = {
       throw new Error('導入内配置では最初の説明文の直後に前提 info-box を置く必要があります');
     }
 
-    if (inlineBox.getAttribute('role') !== 'note') {
-      throw new Error('導入内の短い前提は note として扱う必要があります');
+    if (inlineBox.hasAttribute('role')) {
+      throw new Error('導入内の短い前提は追加の意味ロールを公開しません');
     }
 
     const sectionProse = canvasElement.querySelector<HTMLElement>(
@@ -570,6 +605,9 @@ export const VariantStateMatrix: Story = {
               variant="${item.variant}"
               heading="${item.heading}"
               icon="${item.icon}"
+              heading-level="${ifDefined(
+                item.headingLevel !== undefined ? String(item.headingLevel) : undefined,
+              )}"
               ?landmark="${item.landmark}"
               style="
                 --bg-fill-muted: rgb(230, 231, 232);
@@ -595,8 +633,12 @@ export const VariantStateMatrix: Story = {
       if (container.getAttribute('data-variant') !== testCase.variant) {
         throw new Error(`${testCase.id}: data-variant が一致しません`);
       }
-      if (infoBox.getAttribute('role') !== testCase.expectedRole) {
-        throw new Error(`${testCase.id}: role が期待値と一致しません`);
+      if (testCase.expectedRole === 'region') {
+        if (infoBox.getAttribute('role') !== 'region') {
+          throw new Error(`${testCase.id}: role="region" が必要です`);
+        }
+      } else if (infoBox.hasAttribute('role')) {
+        throw new Error(`${testCase.id}: region 不成立時は追加の意味ロールを出力しません`);
       }
 
       if (testCase.expectsHeader) {
@@ -609,7 +651,7 @@ export const VariantStateMatrix: Story = {
             );
           }
         } else if (infoBox.hasAttribute('aria-labelledby')) {
-          throw new Error(`${testCase.id}: note では aria-labelledby を出力しません`);
+          throw new Error(`${testCase.id}: region 不成立時は aria-labelledby を出力しません`);
         }
 
         const expectedHeaderColor =
@@ -702,15 +744,15 @@ export const HeadingLevelBoundaries: Story = {
     if (getHeader(noTitle)) {
       throw new Error('heading なしではヘッダーは描画されません');
     }
-    if (noTitle.getAttribute('role') !== 'note') {
-      throw new Error('heading なしのフォールバック role は note です');
+    if (noTitle.hasAttribute('role')) {
+      throw new Error('heading なしでは追加の意味ロールを公開しません');
     }
   },
 };
 
 /**
  * 境界条件:
- * landmark=true でも heading が空なら note へフォールバックする。
+ * landmark=true でも heading が空なら region を公開しない。
  */
 export const LandmarkRequiresHeadingBoundary: Story = {
   render: () => html`
@@ -722,14 +764,81 @@ export const LandmarkRequiresHeadingBoundary: Story = {
     const infoBox = getHost(canvasElement, 'landmark-without-heading');
     await infoBox.updateComplete;
 
-    if (infoBox.getAttribute('role') !== 'note') {
-      throw new Error('heading が空の場合は role="note" へフォールバックする必要があります');
+    if (infoBox.hasAttribute('role')) {
+      throw new Error('heading が空の場合は追加の意味ロールを公開しません');
     }
     if (infoBox.hasAttribute('aria-labelledby')) {
       throw new Error('heading が空の場合は aria-labelledby を出力しません');
     }
     if (getHeader(infoBox)) {
       throw new Error('heading が空の場合は header を描画しません');
+    }
+  },
+};
+
+/**
+ * 密度契約:
+ * comfortable / compact は余白のみを切り替え、セマンティクスは変えない。
+ */
+export const DensityStateMatrix: Story = {
+  render: () => html`
+    <div style="display: grid; gap: 0.75rem;">
+      <ui-info-box
+        id="density-comfortable"
+        heading="Comfortable"
+        heading-level="2"
+        density="comfortable"
+        landmark
+      >
+        comfortable density
+      </ui-info-box>
+      <ui-info-box
+        id="density-compact"
+        heading="Compact"
+        heading-level="2"
+        density="compact"
+        landmark
+      >
+        compact density
+      </ui-info-box>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const comfortable = getHost(canvasElement, 'density-comfortable');
+    const compact = getHost(canvasElement, 'density-compact');
+    await Promise.all([comfortable.updateComplete, compact.updateComplete]);
+
+    const comfortableContainer = getContainer(comfortable);
+    const compactContainer = getContainer(compact);
+    const comfortableHeader = getHeader(comfortable);
+    const compactHeader = getHeader(compact);
+    const comfortableBody = getBody(comfortable);
+    const compactBody = getBody(compact);
+
+    if (!comfortableHeader || !compactHeader) {
+      throw new Error('density 比較に必要な header が見つかりません');
+    }
+
+    if (comfortableContainer.getAttribute('data-density') !== 'comfortable') {
+      throw new Error('comfortable は data-density="comfortable" を持つ必要があります');
+    }
+    if (compactContainer.getAttribute('data-density') !== 'compact') {
+      throw new Error('compact は data-density="compact" を持つ必要があります');
+    }
+    if (comfortable.getAttribute('role') !== 'region' || compact.getAttribute('role') !== 'region') {
+      throw new Error('density は landmark 条件を変えてはいけません');
+    }
+
+    const comfortableHeaderPadding = getComputedStyle(comfortableHeader).padding;
+    const compactHeaderPadding = getComputedStyle(compactHeader).padding;
+    const comfortableBodyPadding = getComputedStyle(comfortableBody).padding;
+    const compactBodyPadding = getComputedStyle(compactBody).padding;
+
+    if (comfortableHeaderPadding === compactHeaderPadding) {
+      throw new Error('density に応じて header padding が変化する必要があります');
+    }
+    if (comfortableBodyPadding === compactBodyPadding) {
+      throw new Error('density に応じて body padding が変化する必要があります');
     }
   },
 };
@@ -792,6 +901,27 @@ export const InvalidVariantFallback: Story = {
 
 /**
  * 境界条件:
+ * 不正 density は comfortable にフォールバックする。
+ */
+export const InvalidDensityFallback: Story = {
+  render: () => html`
+    <ui-info-box id="invalid-density" density="unknown" heading="不正 density">
+      invalid density fallback
+    </ui-info-box>
+  `,
+  play: async ({ canvasElement }) => {
+    const infoBox = getHost(canvasElement, 'invalid-density');
+    await infoBox.updateComplete;
+
+    const container = getContainer(infoBox);
+    if (container.getAttribute('data-density') !== 'comfortable') {
+      throw new Error('不正 density は comfortable へフォールバックする必要があります');
+    }
+  },
+};
+
+/**
+ * 境界条件:
  * 有効な要素/テキストノードがない場合は描画しない。
  */
 export const EmptySlotDoesNotRender: Story = {
@@ -811,6 +941,12 @@ export const EmptySlotDoesNotRender: Story = {
     }
     if (whitespaceOnly.shadowRoot?.querySelector('.info-box')) {
       throw new Error('空白のみのスロットでは .info-box を描画してはいけません');
+    }
+    if (empty.hasAttribute('role') || whitespaceOnly.hasAttribute('role')) {
+      throw new Error('空内容ではホスト要素も意味ロールを公開してはいけません');
+    }
+    if (empty.hasAttribute('aria-labelledby') || whitespaceOnly.hasAttribute('aria-labelledby')) {
+      throw new Error('空内容では関連属性も公開してはいけません');
     }
   },
 };
@@ -856,6 +992,12 @@ export const StyleContracts: Story = {
     if (!styles.includes('var(--border-style-subtle')) {
       throw new Error('境界線トークン --border-style-subtle が使用されていません');
     }
+    if (!styles.includes(":host([density='compact']) .header")) {
+      throw new Error('compact density のヘッダー契約が不足しています');
+    }
+    if (!styles.includes(":host([density='compact']) .body")) {
+      throw new Error('compact density の本文契約が不足しています');
+    }
   },
 };
 
@@ -891,6 +1033,62 @@ export const DarkModeTokenContract: Story = {
     }
     if (!styles.includes('var(--fg-muted,') || !styles.includes('var(--fg-default,')) {
       throw new Error('ヘッダー配色のトークン参照が不足しています');
+    }
+  },
+};
+
+/**
+ * Print 契約:
+ * 印刷時も背景に依存せず情報塊として識別できること。
+ */
+export const PrintContract: Story = {
+  args: {
+    heading: 'Print Contract',
+    icon: 'printer',
+    headingLevel: 2,
+    landmark: true,
+    variant: 'filled',
+    density: 'comfortable',
+  } satisfies {
+    heading: string;
+    icon: string;
+    headingLevel: number;
+    landmark: boolean;
+    variant: InfoBoxVariant;
+    density: InfoBoxDensity;
+  },
+  render: (args) => html`
+    <ui-info-box
+      id="print-contract"
+      heading="${args.heading}"
+      icon="${args.icon}"
+      heading-level="${String(args.headingLevel)}"
+      ?landmark="${args.landmark}"
+      variant="${args.variant}"
+      density="${args.density}"
+    >
+      print contract checks
+    </ui-info-box>
+  `,
+  play: async ({ canvasElement }) => {
+    const infoBox = getHost(canvasElement, 'print-contract');
+    await infoBox.updateComplete;
+
+    const styles = String(InfoBox.styles);
+    if (!styles.includes('@media print')) {
+      throw new Error('print 用スタイルが定義されていません');
+    }
+    if (!styles.includes("background: transparent")) {
+      throw new Error('print 時は背景に依存しない必要があります');
+    }
+    if (!styles.includes('border: var(--border-style-subtle')) {
+      throw new Error('print 時も境界線契約を維持する必要があります');
+    }
+    if (!getHeader(infoBox)) {
+      throw new Error('print 契約の検証には header が必要です');
+    }
+    if (!getBody(infoBox)) {
+      throw new Error('print 契約の検証には body が必要です');
     }
   },
 };
