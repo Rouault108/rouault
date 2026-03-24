@@ -6,12 +6,65 @@ import { ParseError, renderToString } from 'katex';
 import '../../../lib/icons';
 
 type MathScrollState = 'none' | 'start' | 'middle' | 'end';
+type MathSpeechMode = 'mathml' | 'label';
+type MathErrorKind =
+  | 'build-failed'
+  | 'data-missing'
+  | 'runtime-failed'
+  | 'upstream-invalid'
+  | 'unspecified';
+type MathErrorTone = 'danger' | 'muted';
+
+type ErrorPresentation = {
+  description: string;
+  title: string;
+  tone: MathErrorTone;
+};
 
 const PRIMARY_REGION_LABEL = '数式（横スクロール可能）';
 const LATEX_DELIMITER_ERROR_MESSAGE =
   'LaTeX構文エラー: latex プロパティに $$ は含めないでください。';
 const LATEX_PARSE_ERROR_PREFIX = 'LaTeX構文エラー: ';
 const ERROR_DETAILS_SUMMARY = '数式ソースを表示';
+const AUTHOR_INVALID_TITLE = 'LaTeX構文エラー';
+const AUTHOR_INVALID_DESCRIPTION =
+  '入力された LaTeX が契約違反または構文不正のため、数式を表示できません。';
+const DEFAULT_EXTERNAL_ERROR_KIND: MathErrorKind = 'unspecified';
+const VALID_SPEECH_MODES: ReadonlySet<MathSpeechMode> = new Set(['mathml', 'label']);
+const VALID_ERROR_KINDS: ReadonlySet<MathErrorKind> = new Set([
+  'build-failed',
+  'data-missing',
+  'runtime-failed',
+  'upstream-invalid',
+  'unspecified',
+]);
+const EXTERNAL_ERROR_PRESENTATIONS: Record<MathErrorKind, ErrorPresentation> = {
+  'build-failed': {
+    title: '生成失敗',
+    description: 'ビルドまたは事前生成で描画不能になったため、数式を表示できません。',
+    tone: 'danger',
+  },
+  'data-missing': {
+    title: '欠落',
+    description: '数式ソースまたは参照先が見つからないため、数式を表示できません。',
+    tone: 'muted',
+  },
+  'runtime-failed': {
+    title: '実行時失敗',
+    description: '実行時条件が満たされないため、数式を表示できません。',
+    tone: 'danger',
+  },
+  'upstream-invalid': {
+    title: '上流契約違反',
+    description: '上流で整形された入力が契約違反のため、数式を表示できません。',
+    tone: 'danger',
+  },
+  unspecified: {
+    title: '外部エラー',
+    description: '外部要因により数式を表示できません。',
+    tone: 'muted',
+  },
+};
 
 @customElement('ui-math')
 export class UiMath extends LitElement {
@@ -164,6 +217,12 @@ export class UiMath extends LitElement {
       line-height: var(--line-height-relaxed, 1.75);
     }
 
+    .math-error[data-tone='muted'] {
+      border-color: var(--border-subtle, oklch(85% 0 0));
+      background: var(--bg-fill-muted, oklch(95% 0 0));
+      color: var(--fg-default, oklch(20% 0 0));
+    }
+
     .math-error-header {
       display: flex;
       align-items: flex-start;
@@ -175,9 +234,27 @@ export class UiMath extends LitElement {
       flex-shrink: 0;
     }
 
+    .math-error-header-text {
+      display: grid;
+      gap: var(--space-1, 4px);
+    }
+
+    .math-error-title {
+      margin: 0;
+      font-size: var(--text-sm, 13px);
+      font-weight: var(--font-weight-semibold, 600);
+    }
+
     .math-error-message {
       margin: 0;
       font-size: var(--text-sm, 13px);
+    }
+
+    .math-error-code {
+      margin: 0;
+      font-family: var(--font-family-mono, 'JetBrains Mono', monospace);
+      font-size: var(--text-xs, 12px);
+      color: inherit;
     }
 
     .math-error-details {
@@ -243,11 +320,23 @@ export class UiMath extends LitElement {
   @property({ type: Boolean, reflect: true })
   primary = false;
 
+  @property({ type: String, attribute: 'speech-mode' })
+  speechMode = '';
+
   @property({ type: String, attribute: 'aria-label' })
   accessibleLabel = '';
 
   @property({ type: String, attribute: 'error-message' })
   errorMessage = '';
+
+  @property({ type: String, attribute: 'error-kind' })
+  errorKind = DEFAULT_EXTERNAL_ERROR_KIND;
+
+  @property({ type: String, attribute: 'error-code' })
+  errorCode = '';
+
+  @property({ type: Boolean, attribute: 'show-error-source' })
+  showErrorSource = false;
 
   @state()
   private _hasSlottedContent = false;
@@ -278,6 +367,7 @@ export class UiMath extends LitElement {
 
   private _resizeObserver: ResizeObserver | null = null;
   private _measurementQueued = false;
+  private _settledEventToken = 0;
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
@@ -319,6 +409,8 @@ export class UiMath extends LitElement {
     if (changedProperties.has('accessibleLabel') || internalChanges.has('_runtimeRenderedHtml')) {
       this._syncRuntimeMathMlVisibility();
     }
+
+    this._queueSettledEvent();
   }
 
   private get _resolvedAccessibleLabel(): string {
@@ -327,6 +419,22 @@ export class UiMath extends LitElement {
 
   private get _hasAccessibleLabel(): boolean {
     return this._resolvedAccessibleLabel !== '';
+  }
+
+  private get _resolvedSpeechMode(): MathSpeechMode {
+    const rawSpeechMode = this.speechMode.trim();
+    if (VALID_SPEECH_MODES.has(rawSpeechMode as MathSpeechMode)) {
+      if (rawSpeechMode === 'label' && !this._hasAccessibleLabel) {
+        return 'mathml';
+      }
+      return rawSpeechMode as MathSpeechMode;
+    }
+
+    if (rawSpeechMode === '' && this._hasAccessibleLabel) {
+      return 'label';
+    }
+
+    return 'mathml';
   }
 
   private get _resolvedLatex(): string {
@@ -343,9 +451,37 @@ export class UiMath extends LitElement {
     return this._runtimeLatex !== '';
   }
 
+  private get _hasLightDomContent(): boolean {
+    return Array.from(this.childNodes).some((node) => this._isMeaningfulNode(node));
+  }
+
+  private get _hasSlotContent(): boolean {
+    return this._hasSlottedContent || this._hasLightDomContent;
+  }
+
+  private get _hasVisiblePayload(): boolean {
+    return this._hasSlotContent || this._hasRuntimeMath;
+  }
+
   private get _isDynamicError(): boolean {
     if (this.errorMessage.trim() !== '') return false;
     return this._runtimeErrorMessage !== '' && this._runtimeErrorIsDynamic;
+  }
+
+  private get _resolvedExternalErrorKind(): MathErrorKind {
+    const rawErrorKind = this.errorKind.trim();
+    if (VALID_ERROR_KINDS.has(rawErrorKind as MathErrorKind)) {
+      return rawErrorKind as MathErrorKind;
+    }
+    return DEFAULT_EXTERNAL_ERROR_KIND;
+  }
+
+  private get _resolvedErrorCode(): string {
+    return this.errorCode.trim();
+  }
+
+  private get _shouldShowErrorSource(): boolean {
+    return this.showErrorSource;
   }
 
   private _onSlotChange = (): void => {
@@ -377,7 +513,7 @@ export class UiMath extends LitElement {
   }
 
   private _syncRuntimeState(): void {
-    if (this._hasSlottedContent) {
+    if (this._hasSlotContent) {
       this._setRuntimeState('', '', '', false);
       return;
     }
@@ -518,7 +654,7 @@ export class UiMath extends LitElement {
   // ランタイム描画時のみ MathML の公開状態を切り替える。
   private _syncRuntimeMathMlVisibility(): void {
     const runtimeMathElements = this.renderRoot.querySelectorAll('.runtime-katex math');
-    const shouldHideMathMl = this._hasAccessibleLabel;
+    const shouldHideMathMl = this._resolvedSpeechMode === 'label';
     for (const mathElement of runtimeMathElements) {
       if (shouldHideMathMl) {
         mathElement.setAttribute('aria-hidden', 'true');
@@ -528,6 +664,27 @@ export class UiMath extends LitElement {
     }
   }
 
+  private _queueSettledEvent(): void {
+    const token = ++this._settledEventToken;
+
+    requestAnimationFrame(() => {
+      void this.updateComplete.then(() => {
+        requestAnimationFrame(() => {
+          if (token !== this._settledEventToken) {
+            return;
+          }
+
+          this.dispatchEvent(
+            new CustomEvent('math-settled', {
+              bubbles: true,
+              composed: true,
+            }),
+          );
+        });
+      });
+    });
+  }
+
   private _renderRuntimeMath(): TemplateResult {
     return html` <span class="runtime-katex"> ${unsafeHTML(this._runtimeRenderedHtml)} </span> `;
   }
@@ -535,20 +692,38 @@ export class UiMath extends LitElement {
   private _renderMathPayload(): TemplateResult {
     return html`
       <slot @slotchange="${this._onSlotChange}"></slot>
-      ${this._hasSlottedContent || !this._hasRuntimeMath ? nothing : this._renderRuntimeMath()}
+      ${this._hasSlotContent || !this._hasRuntimeMath ? nothing : this._renderRuntimeMath()}
     `;
   }
 
   private _renderErrorUi(): TemplateResult {
     const message = this._resolvedErrorMessage;
     const source = this._resolvedLatex;
+    const errorCode = this._resolvedErrorCode;
+    const isExternalError = this.errorMessage.trim() !== '';
+    const presentation = isExternalError
+      ? EXTERNAL_ERROR_PRESENTATIONS[this._resolvedExternalErrorKind]
+      : {
+          title: AUTHOR_INVALID_TITLE,
+          description: AUTHOR_INVALID_DESCRIPTION,
+          tone: 'danger',
+        };
     const errorBody = html`
-      <div class="math-error" role="${ifDefined(this._isDynamicError ? 'alert' : undefined)}">
+      <div
+        class="math-error"
+        data-tone="${presentation.tone}"
+        role="${ifDefined(this._isDynamicError ? 'alert' : undefined)}"
+      >
         <div class="math-error-header">
           <iconify-icon icon="lucide:triangle-alert" aria-hidden="true"></iconify-icon>
-          <p class="math-error-message">${message}</p>
+          <div class="math-error-header-text">
+            <p class="math-error-title">${presentation.title}</p>
+            <p class="math-error-message">${presentation.description}</p>
+            <p class="math-error-message">${message}</p>
+            ${errorCode === '' ? nothing : html`<p class="math-error-code">code: ${errorCode}</p>`}
+          </div>
         </div>
-        ${source === ''
+        ${!this._shouldShowErrorSource || source === ''
           ? nothing
           : html`
               <details class="math-error-details">
@@ -562,11 +737,7 @@ export class UiMath extends LitElement {
     if (!this.block) return errorBody;
 
     return html`
-      <div
-        class="math-display"
-        id="${ifDefined(this.id !== '' ? this.id : undefined)}"
-        data-scroll="none"
-      >
+      <div class="math-display" data-scroll="none">
         ${errorBody}
       </div>
     `;
@@ -577,7 +748,9 @@ export class UiMath extends LitElement {
       <span
         class="math-inline"
         role="math"
-        aria-label="${ifDefined(this._resolvedAccessibleLabel || undefined)}"
+        aria-label="${ifDefined(
+          this._resolvedSpeechMode === 'label' ? this._resolvedAccessibleLabel : undefined,
+        )}"
       >
         ${this._renderMathPayload()}
       </span>
@@ -588,7 +761,6 @@ export class UiMath extends LitElement {
     return html`
       <div
         class="math-display"
-        id="${ifDefined(this.id !== '' ? this.id : undefined)}"
         data-scroll="${this._scrollState}"
         tabindex="${ifDefined(this._isScrollable ? '0' : undefined)}"
         role="${ifDefined(this.primary ? 'region' : undefined)}"
@@ -598,7 +770,9 @@ export class UiMath extends LitElement {
         <div
           class="math-content"
           role="math"
-          aria-label="${ifDefined(this._resolvedAccessibleLabel || undefined)}"
+          aria-label="${ifDefined(
+            this._resolvedSpeechMode === 'label' ? this._resolvedAccessibleLabel : undefined,
+          )}"
         >
           ${this._renderMathPayload()}
         </div>
@@ -606,9 +780,13 @@ export class UiMath extends LitElement {
     `;
   }
 
-  override render(): TemplateResult {
+  override render(): TemplateResult | typeof nothing {
     if (this._resolvedErrorMessage !== '') {
       return this._renderErrorUi();
+    }
+
+    if (!this._hasVisiblePayload) {
+      return nothing;
     }
 
     if (this.block) {
