@@ -1,9 +1,9 @@
 import { css, html, LitElement, type TemplateResult } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import 'iconify-icon';
 
-/** ページ範囲アイテムの型 */
-export type RangeItem = number | 'ellipsis';
+type PaginationMode = 'regular' | 'compact';
+type RangeItem = number | 'ellipsis';
 
 /** 数値を有限な整数へ正規化します。 */
 function toFiniteInt(value: number, fallback: number): number {
@@ -11,7 +11,7 @@ function toFiniteInt(value: number, fallback: number): number {
   return Math.trunc(value);
 }
 
-/** ページネーション入力を安全な表示値へ正規化します。 */
+/** 契約外入力でも描画不能にならないよう防御的に補正します。 */
 function normalizePagination(current: number, total: number): { current: number; total: number } {
   const normalizedTotal = Math.max(1, toFiniteInt(total, 1));
   const normalizedCurrent = Math.min(normalizedTotal, Math.max(1, toFiniteInt(current, 1)));
@@ -23,12 +23,13 @@ function normalizePagination(current: number, total: number): { current: number;
  *
  * - total <= 7: 全ページを返す
  * - total >= 8: 1 と total を常時表示し、current±1 を近傍として表示。
+ *              先頭・末尾では代表例に合わせて 3 ページぶんの塊を維持する。
  *              欠落が 2 ページ以上の場合は 'ellipsis'、1 ページのみの場合は実ページ番号を挿入。
  *
  * @param current - 現在のページ (1始まり)
  * @param total   - 総ページ数
  */
-export function computeRange(current: number, total: number): RangeItem[] {
+function computeRegularRange(current: number, total: number): RangeItem[] {
   const safeTotal = Math.max(0, toFiniteInt(total, 0));
   if (safeTotal <= 0) return [];
   if (safeTotal === 1) return [1];
@@ -45,6 +46,12 @@ export function computeRange(current: number, total: number): RangeItem[] {
   visible.add(safeTotal);
   for (let p = Math.max(1, safeCurrent - 1); p <= Math.min(safeTotal, safeCurrent + 1); p++) {
     visible.add(p);
+  }
+  if (safeCurrent === 1 && safeTotal >= 3) {
+    visible.add(3);
+  }
+  if (safeCurrent === safeTotal && safeTotal >= 3) {
+    visible.add(safeTotal - 2);
   }
 
   // ページ番号を昇順に並べ、ギャップを分析して省略記号を挿入
@@ -82,7 +89,7 @@ export function computeRange(current: number, total: number): RangeItem[] {
  * @param current - 現在のページ (1始まり)
  * @param total   - 総ページ数
  */
-export function computeCompactRange(current: number, total: number): RangeItem[] {
+function computeCompactRange(current: number, total: number): RangeItem[] {
   const safeTotal = Math.max(0, toFiniteInt(total, 0));
   if (safeTotal <= 0) return [];
   const safeCurrent = Math.min(safeTotal, Math.max(1, toFiniteInt(current, 1)));
@@ -114,6 +121,7 @@ export function computeCompactRange(current: number, total: number): RangeItem[]
  * @property {number} current - 現在のページ（1始まり）
  * @property {number} total   - 総ページ数
  * @property {(page: number) => string} getHref - ページ番号から URL を生成する関数
+ * @property {'regular' | 'compact'} mode - 表示モード
  *
  * @cssprop --bg-surface-active   - 現在ページの背景色
  * @cssprop --bg-hover            - ホバー時の背景色
@@ -387,41 +395,21 @@ export class Pagination extends LitElement {
   getHref: (page: number) => string = (p) => `?page=${String(p)}`;
 
   /**
-   * コンパクト表示モード。
-   * `@media (hover: none) and (pointer: coarse)` で自動的に切り替わる。
+   * 表示モード。
+   * どの状況で compact を選ぶかは上位レイヤの責務です。
    */
-  @state()
-  private _isCompact = false;
-
-  private _mql: MediaQueryList | null = null;
-
-  private readonly _onMediaChange = (e: MediaQueryListEvent): void => {
-    this._isCompact = e.matches;
-  };
-
-  override connectedCallback(): void {
-    super.connectedCallback();
-    if (typeof window !== 'undefined') {
-      this._mql = window.matchMedia('(hover: none) and (pointer: coarse)');
-      this._isCompact = this._mql.matches;
-      this._mql.addEventListener('change', this._onMediaChange);
-    }
-  }
-
-  override disconnectedCallback(): void {
-    super.disconnectedCallback();
-    this._mql?.removeEventListener('change', this._onMediaChange);
-  }
+  @property({ reflect: true })
+  mode: PaginationMode = 'regular';
 
   override render(): TemplateResult {
     const { getHref } = this;
     const { current, total } = normalizePagination(this.current, this.total);
     const isFirst = current <= 1;
     const isLast = current >= total;
-
-    const range = this._isCompact
-      ? computeCompactRange(current, total)
-      : computeRange(current, total);
+    const range =
+      this.mode === 'compact'
+        ? computeCompactRange(current, total)
+        : computeRegularRange(current, total);
 
     return html`
       <nav aria-label="ページナビゲーション" part="nav">
