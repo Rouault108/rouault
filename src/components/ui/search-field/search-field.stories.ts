@@ -35,6 +35,15 @@ const getInput = (host: SearchField): HTMLInputElement => {
   return input;
 };
 
+const getLabel = (host: SearchField): HTMLLabelElement => {
+  const label = host.shadowRoot?.querySelector<HTMLLabelElement>('label');
+  if (!label) {
+    throw new Error('label が見つかりません');
+  }
+
+  return label;
+};
+
 const getClearButton = (host: SearchField): HTMLButtonElement => {
   const button = host.shadowRoot?.querySelector<HTMLButtonElement>('.clear-button');
   if (!button) {
@@ -65,7 +74,7 @@ const meta: Meta<SearchField> = {
   label="検索"
   hide-label
   placeholder="メモを検索"
-  value="router"
+  enterkeyhint="search"
 ></ui-search-field>
 \`\`\`
         `,
@@ -94,13 +103,16 @@ export const Default: Story = {
     await flush(host);
 
     const input = getInput(host);
+    const label = getLabel(host);
     const clearButton = getClearButton(host);
     const icon = host.shadowRoot?.querySelector('.icon');
     const inputStyle = getComputedStyle(input);
     assert(!!icon, '検索アイコンが表示されていません');
     assert(input.type === 'search', '内部 input が type="search" ではありません');
     assert(clearButton.hidden, '初期状態では clear button が非表示である必要があります');
-    assert(input.getAttribute('aria-label') === '検索', 'aria-label が設定されていません');
+    assert(label.textContent?.trim() === '検索', 'label の文言が正しくありません');
+    assert(label.htmlFor === input.id, 'label と内部 input の関連付けが切れています');
+    assert(input.getAttribute('aria-label') === null, 'アクセシブル名源を aria-label にしてはいけません');
     assert(
       inputStyle.paddingTop === '0px',
       '入力テキストの縦位置合わせのため padding-block-start は 0px である必要があります',
@@ -218,6 +230,74 @@ export const ComboboxAriaAndImperativeApi: Story = {
   },
 };
 
+export const DescriptionAssociation: Story = {
+  render: () => html`
+    <div style="display: grid; gap: 0.5rem; max-width: 32rem;">
+      <ui-search-field
+        id="search-field-description"
+        label="検索"
+        hide-label
+        placeholder="メモを検索"
+        .inputAriaDescribedby=${'search-field-help search-field-shortcut'}
+      ></ui-search-field>
+      <p id="search-field-help">タグ・本文・タイトルを横断検索します。</p>
+      <p id="search-field-shortcut">ショートカット: /</p>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    await customElements.whenDefined('ui-search-field');
+    const host = getHost(canvasElement, 'search-field-description');
+    await flush(host);
+
+    const input = getInput(host);
+    assert(
+      input.getAttribute('aria-describedby') === 'search-field-help search-field-shortcut',
+      'inputAriaDescribedby が内部 input に反映されていません',
+    );
+  },
+};
+
+export const NativeInputHints: Story = {
+  render: () => html`
+    <div style="max-width: 32rem;">
+      <ui-search-field
+        id="search-field-native-hints"
+        label="検索"
+        hide-label
+        placeholder="メモを検索"
+        enterkeyhint="search"
+        inputmode="search"
+        spellcheck="false"
+        autocapitalize="off"
+      ></ui-search-field>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    await customElements.whenDefined('ui-search-field');
+    const host = getHost(canvasElement, 'search-field-native-hints');
+    await flush(host);
+
+    const input = getInput(host);
+    assert(
+      input.getAttribute('enterkeyhint') === 'search',
+      'enterKeyHint が内部 input に反映されていません',
+    );
+    assert(
+      input.getAttribute('inputmode') === 'search',
+      'inputMode が内部 input に反映されていません',
+    );
+    assert(
+      input.getAttribute('spellcheck') === 'false',
+      'spellcheck=false は属性値 false として反映される必要があります',
+    );
+    assert(
+      ['off', 'none'].includes(input.getAttribute('autocapitalize') ?? '') ||
+        ['off', 'none'].includes(input.autocapitalize),
+      'autocapitalize が内部 input に反映されていません',
+    );
+  },
+};
+
 export const DisabledAndReadonlyBoundary: Story = {
   render: () => html`
     <div style="display: grid; gap: 1rem; max-width: 32rem;">
@@ -244,6 +324,8 @@ export const DisabledAndReadonlyBoundary: Story = {
     await flush(readonlyHost);
     await flush(disabledHost);
 
+    const readonlyInput = getInput(readonlyHost);
+    const disabledInput = getInput(disabledHost);
     const readonlyClearButton = getClearButton(readonlyHost);
     const disabledClearButton = getClearButton(disabledHost);
     assert(
@@ -256,6 +338,16 @@ export const DisabledAndReadonlyBoundary: Story = {
       'disabled 状態では clearButtonVisible=false である必要があります',
     );
     assert(disabledClearButton.hidden, 'disabled 状態では clear button を表示してはいけません');
+
+    readonlyHost.clear();
+    disabledHost.clear();
+    await flush(readonlyHost);
+    await flush(disabledHost);
+
+    assert(readonlyHost.value === 'router', 'readonly 状態で clear() は no-op である必要があります');
+    assert(readonlyInput.value === 'router', 'readonly 状態で内部 input 値を変更してはいけません');
+    assert(disabledHost.value === 'router', 'disabled 状態で clear() は no-op である必要があります');
+    assert(disabledInput.value === 'router', 'disabled 状態で内部 input 値を変更してはいけません');
   },
 };
 

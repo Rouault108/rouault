@@ -11,6 +11,23 @@ type AriaExpandedValue = 'true' | 'false' | '';
 type AriaAutocompleteValue = 'list' | 'both' | 'inline' | 'none' | '';
 type SelectionDirectionValue = 'forward' | 'backward' | 'none';
 
+const spellcheckConverter = {
+  fromAttribute(value: string | null): boolean | undefined {
+    if (value === null) {
+      return undefined;
+    }
+
+    return value !== 'false';
+  },
+  toAttribute(value: boolean | undefined): string | null {
+    if (value === undefined) {
+      return null;
+    }
+
+    return value ? 'true' : 'false';
+  },
+};
+
 /**
  * 検索入力フィールド (Search Field) コンポーネント
  *
@@ -285,6 +302,21 @@ export class SearchField extends LitElement {
   @property({ type: String, attribute: false })
   inputAriaBusy: AriaExpandedValue = '';
 
+  @property({ type: String, attribute: false })
+  inputAriaDescribedby = '';
+
+  @property({ type: String, attribute: 'enterkeyhint' })
+  override enterKeyHint = '';
+
+  @property({ type: String, attribute: 'inputmode' })
+  override inputMode = '';
+
+  @property({ attribute: 'spellcheck', converter: spellcheckConverter })
+  override spellcheck = false;
+
+  @property({ type: String })
+  override autocapitalize = '';
+
   @query('input')
   private _input!: HTMLInputElement;
 
@@ -293,6 +325,7 @@ export class SearchField extends LitElement {
 
   private readonly _instanceId = `ui-search-field-${(++searchFieldInstanceCounter).toString()}`;
   private readonly _inputId = `${this._instanceId}-input`;
+  private _hasExplicitSpellcheck = false;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -302,6 +335,14 @@ export class SearchField extends LitElement {
         '[ui-search-field]: label は必須です。アクセシビリティのためにラベルを提供してください。',
         this,
       );
+    }
+  }
+
+  override willUpdate(changedProperties: Map<string, unknown>): void {
+    super.willUpdate(changedProperties);
+
+    if (changedProperties.has('spellcheck') || this.hasAttribute('spellcheck')) {
+      this._hasExplicitSpellcheck = true;
     }
   }
 
@@ -399,13 +440,17 @@ export class SearchField extends LitElement {
           autocomplete=${this.autocomplete}
           ?disabled=${this.disabled}
           ?readonly=${this.readonly}
-          aria-label=${this.label}
           role=${ifDefined(this.inputRole || undefined)}
           aria-controls=${ifDefined(this.inputAriaControls || undefined)}
           aria-expanded=${ifDefined(this.inputAriaExpanded || undefined)}
           aria-autocomplete=${ifDefined(this.inputAriaAutocomplete || undefined)}
           aria-activedescendant=${ifDefined(this.inputAriaActivedescendant || undefined)}
           aria-busy=${ifDefined(this.inputAriaBusy || undefined)}
+          aria-describedby=${ifDefined(this.inputAriaDescribedby || undefined)}
+          enterkeyhint=${ifDefined(this.enterKeyHint || undefined)}
+          inputmode=${ifDefined(this.inputMode || undefined)}
+          spellcheck=${ifDefined(this._hasExplicitSpellcheck ? String(this.spellcheck) : undefined)}
+          autocapitalize=${ifDefined(this.autocapitalize || undefined)}
           @input=${this._handleInput}
           @change=${this._handleChange}
           @focus=${this._handleFocus}
