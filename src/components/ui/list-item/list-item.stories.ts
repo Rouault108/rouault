@@ -14,7 +14,7 @@ interface SingleItemModel {
 }
 
 const columns = [
-  { id: 'title', label: 'タイトル', width: '1fr', primary: true },
+  { id: 'title', label: 'タイトル', width: '1fr', lead: true },
   { id: 'date', label: '日付', width: '120px', hideOnMobile: true },
   { id: 'tags', label: 'タグ', width: '140px', hideOnMobile: true },
 ];
@@ -28,20 +28,22 @@ const item: SingleItemModel = {
 };
 
 interface InListOptions {
-  activeRow?: string | null;
-  activeCellIndex?: number;
+  currentRowId?: string | null;
+  currentColumnId?: string | null;
   includeTagsSlot?: boolean;
+  showActions?: boolean;
+  includeUnknownSlot?: boolean;
 }
 
 const renderInList = (options: InListOptions = {}): TemplateResult => {
   return html`
     <ui-list
       .columns="${columns}"
-      .items="${[item]}"
-      .activeRow="${options.activeRow ?? null}"
-      .activeCellIndex="${options.activeCellIndex ?? 0}"
+      .showActions="${options.showActions ?? true}"
+      .currentRowId="${options.currentRowId ?? null}"
+      .currentColumnId="${options.currentColumnId ?? null}"
     >
-      <ui-list-item item-id="${item.id}" href="${item.href}">
+      <ui-list-item row-id="${item.id}">
         <a slot="title" href="${item.href}">${item.title}</a>
         <time slot="date" datetime="${item.date}">${item.date}</time>
         ${options.includeTagsSlot === false ? null : html`<span slot="tags">${item.tags}</span>`}
@@ -49,6 +51,7 @@ const renderInList = (options: InListOptions = {}): TemplateResult => {
         <button slot="actions" type="button" aria-label="操作">
           <iconify-icon icon="lucide:more-horizontal" aria-hidden="true"></iconify-icon>
         </button>
+        ${options.includeUnknownSlot ? html`<span slot="unknown">ignored</span>` : null}
       </ui-list-item>
     </ui-list>
   `;
@@ -64,7 +67,7 @@ export default meta;
 type Story = StoryObj<ListItem>;
 
 export const DefaultInList: Story = {
-  render: () => renderInList({ activeRow: item.id }),
+  render: () => renderInList({ currentRowId: item.id, currentColumnId: 'title' }),
   play: async ({ canvasElement }) => {
     const list = canvasElement.querySelector<List>('ui-list');
     const row = canvasElement.querySelector<ListItem>('ui-list-item');
@@ -73,25 +76,33 @@ export const DefaultInList: Story = {
     await row.updateComplete;
 
     if (row.getAttribute('role') !== 'row') throw new Error('row role が設定されていません');
-    if (row.getAttribute('aria-selected') !== 'true') throw new Error('aria-selected が不正です');
-    if (row.getAttribute('data-item-id') !== item.id)
-      throw new Error('data-item-id 同期が不正です');
+    if (row.getAttribute('aria-selected') !== null) throw new Error('aria-selected は不要です');
+    if (row.getAttribute('row-id') !== item.id) throw new Error('row-id が同期されていません');
 
     const cells = row.shadowRoot?.querySelectorAll('[role="gridcell"]');
     if (cells?.length !== 4) throw new Error(`セル数が不正です: ${String(cells?.length)}`);
 
-    const primaryLink = row.querySelector<HTMLAnchorElement>('a[slot="title"]');
-    if (!primaryLink) throw new Error('primary link が見つかりません');
+    const primaryCell = row.shadowRoot?.querySelector<HTMLElement>('[data-column-id="title"]');
+    if (!primaryCell) throw new Error('lead 列セルが見つかりません');
+  },
+};
 
-    const primaryLinkStyle = getComputedStyle(primaryLink);
-    if (primaryLinkStyle.textDecorationLine.includes('underline')) {
-      throw new Error('primary link に下線が残っています');
+export const CurrentColumnProjection: Story = {
+  render: () => renderInList({ currentRowId: item.id, currentColumnId: 'date' }),
+  play: async ({ canvasElement }) => {
+    const row = canvasElement.querySelector<ListItem>('ui-list-item');
+    if (!row) throw new Error('ui-list-item が見つかりません');
+    await row.updateComplete;
+
+    const currentCell = row.shadowRoot?.querySelector<HTMLElement>('.cell--current');
+    if (currentCell?.dataset['columnId'] !== 'date') {
+      throw new Error('currentColumnId に一致する data cell へ current が投影されていません');
     }
   },
 };
 
-export const ActiveCellIndexFocus: Story = {
-  render: () => renderInList({ activeRow: item.id, activeCellIndex: 1 }),
+export const EmitsCurrentChangeOnArrow: Story = {
+  render: () => renderInList({ currentRowId: item.id, currentColumnId: 'title' }),
   play: async ({ canvasElement }) => {
     const list = canvasElement.querySelector<List>('ui-list');
     const row = canvasElement.querySelector<ListItem>('ui-list-item');
@@ -99,44 +110,32 @@ export const ActiveCellIndexFocus: Story = {
     await list.updateComplete;
     await row.updateComplete;
 
-    const focused = row.shadowRoot?.activeElement as HTMLElement | null;
-    if (focused?.dataset['colIndex'] !== '1') {
-      throw new Error('active-cell-index で対象セルにフォーカスしていません');
-    }
-  },
-};
-
-export const EmitsActiveChangeOnArrow: Story = {
-  render: () => renderInList({ activeRow: item.id, activeCellIndex: 0 }),
-  play: async ({ canvasElement }) => {
-    const list = canvasElement.querySelector<List>('ui-list');
-    const row = canvasElement.querySelector<ListItem>('ui-list-item');
-    if (!list || !row) throw new Error('検証対象が見つかりません');
-    await list.updateComplete;
-    await row.updateComplete;
-
-    const events: { rowId: string; colIndex: number }[] = [];
-    list.addEventListener('ui-active-change', (event) => {
-      events.push((event as CustomEvent<{ rowId: string; colIndex: number }>).detail);
+    const events: { rowId: string; columnId: string }[] = [];
+    list.addEventListener('ui-current-change', (event) => {
+      const detail = (event as CustomEvent<{ rowId: string; columnId: string }>).detail;
+      events.push(detail);
+      list.currentRowId = detail.rowId;
+      list.currentColumnId = detail.columnId;
     });
 
-    const firstCell = row.shadowRoot?.querySelector<HTMLElement>('.cell[data-col-index="0"]');
+    const firstCell = row.shadowRoot?.querySelector<HTMLElement>('[data-column-id="title"]');
     if (!firstCell) throw new Error('初期セルが見つかりません');
 
     firstCell.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, composed: true }),
     );
     await list.updateComplete;
+    await row.updateComplete;
 
     const last = events[events.length - 1];
-    if (last?.rowId !== item.id || last.colIndex !== 1) {
-      throw new Error('ArrowRight の ui-active-change detail が不正です');
+    if (last?.rowId !== item.id || last.columnId !== 'date') {
+      throw new Error('ArrowRight の ui-current-change detail が不正です');
     }
   },
 };
 
-export const EdgeBoundaryStops: Story = {
-  render: () => renderInList({ activeRow: item.id, activeCellIndex: 3 }),
+export const EdgeBoundaryStopsByColumnId: Story = {
+  render: () => renderInList({ currentRowId: item.id, currentColumnId: 'tags' }),
   play: async ({ canvasElement }) => {
     const list = canvasElement.querySelector<List>('ui-list');
     const row = canvasElement.querySelector<ListItem>('ui-list-item');
@@ -145,24 +144,24 @@ export const EdgeBoundaryStops: Story = {
     await row.updateComplete;
 
     let eventCount = 0;
-    list.addEventListener('ui-active-change', () => {
+    list.addEventListener('ui-current-change', () => {
       eventCount += 1;
     });
 
-    const actionCell = row.shadowRoot?.querySelector<HTMLElement>('.cell[data-col-index="3"]');
-    if (!actionCell) throw new Error('右端セルが見つかりません');
+    const lastDataCell = row.shadowRoot?.querySelector<HTMLElement>('[data-column-id="tags"]');
+    if (!lastDataCell) throw new Error('右端 data cell が見つかりません');
 
-    actionCell.dispatchEvent(
+    lastDataCell.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, composed: true }),
     );
-    await list.updateComplete;
+    await row.updateComplete;
 
-    if (eventCount !== 0) throw new Error('右端セルでの ArrowRight は停止すべきです');
+    if (eventCount !== 0) throw new Error('右端 data cell での ArrowRight は停止すべきです');
   },
 };
 
 export const MissingSlotBoundary: Story = {
-  render: () => renderInList({ activeRow: item.id, includeTagsSlot: false }),
+  render: () => renderInList({ currentRowId: item.id, currentColumnId: 'title', includeTagsSlot: false }),
   play: async ({ canvasElement }) => {
     const row = canvasElement.querySelector<ListItem>('ui-list-item');
     if (!row) throw new Error('ui-list-item が見つかりません');
@@ -171,16 +170,92 @@ export const MissingSlotBoundary: Story = {
     const cells = row.shadowRoot?.querySelectorAll<HTMLElement>('[role="gridcell"]');
     if (cells?.length !== 4) throw new Error('欠落スロット時のセル構造が崩れています');
 
-    const tagsCell = row.shadowRoot?.querySelector<HTMLElement>('.cell[data-col-index="2"]');
-    if (!tagsCell) throw new Error('tags列セルが見つかりません');
+    const tagsCell = row.shadowRoot?.querySelector<HTMLElement>('[data-column-id="tags"]');
+    if (!tagsCell) throw new Error('tags 列セルが見つかりません');
     if ((tagsCell.textContent || '').trim().length !== 0) {
       throw new Error('未提供スロットは空セルであるべきです');
     }
   },
 };
 
+export const HiddenCurrentColumnBoundary: Story = {
+  render: () => renderInList({ currentRowId: item.id, currentColumnId: 'date' }),
+  parameters: {
+    viewport: { defaultViewport: 'mobile1' },
+  },
+  play: async ({ canvasElement }) => {
+    const list = canvasElement.querySelector<List>('ui-list');
+    const row = canvasElement.querySelector<ListItem>('ui-list-item');
+    if (!list || !row) throw new Error('検証対象が見つかりません');
+    await list.updateComplete;
+
+    const mobileList = list as unknown as { _isMobile: boolean; requestUpdate: () => void };
+    mobileList._isMobile = true;
+    mobileList.requestUpdate();
+    await list.updateComplete;
+    await row.updateComplete;
+
+    const currentCell = row.shadowRoot?.querySelector('.cell--current');
+    if (currentCell) {
+      throw new Error('非表示列が currentColumnId のとき、子は勝手に別列へ current を移してはいけません');
+    }
+  },
+};
+
+export const ActionRegionExcludedFromCurrent: Story = {
+  render: () => renderInList({ currentRowId: item.id, currentColumnId: 'title' }),
+  play: async ({ canvasElement }) => {
+    const list = canvasElement.querySelector<List>('ui-list');
+    const row = canvasElement.querySelector<ListItem>('ui-list-item');
+    if (!list || !row) throw new Error('検証対象が見つかりません');
+    await list.updateComplete;
+    await row.updateComplete;
+
+    let eventCount = 0;
+    list.addEventListener('ui-current-change', () => {
+      eventCount += 1;
+    });
+
+    const actionButton = row.querySelector<HTMLButtonElement>('button[slot="actions"]');
+    if (!actionButton) throw new Error('actions button が見つかりません');
+
+    actionButton.click();
+    await row.updateComplete;
+
+    if (eventCount !== 0) throw new Error('actions 領域は current 列モデルに参加しません');
+  },
+};
+
+export const UnknownSlotIgnoredWithWarning: Story = {
+  render: () => renderInList({ currentRowId: item.id, currentColumnId: 'title', includeUnknownSlot: true }),
+  play: async ({ canvasElement }) => {
+    const list = canvasElement.querySelector<List>('ui-list');
+    const row = canvasElement.querySelector<ListItem>('ui-list-item');
+    if (!list || !row) throw new Error('ui-list-item が見つかりません');
+
+    const warnings: string[] = [];
+    const originalWarn = console.warn;
+    console.warn = (message?: unknown) => {
+      warnings.push(String(message));
+    };
+
+    try {
+      list.columns = [...columns];
+      await list.updateComplete;
+      row.requestListContext();
+      await row.updateComplete;
+    } finally {
+      console.warn = originalWarn;
+    }
+
+    if (!warnings.some((message) => message.includes('未知の slot'))) {
+      throw new Error('未知 slot の警告が出ていません');
+    }
+  },
+};
+
 export const MobileSupplement: Story = {
-  render: () => renderInList({ activeRow: item.id }),
+  render: () => renderInList({ currentRowId: item.id, currentColumnId: 'title' }),
   parameters: {
     viewport: { defaultViewport: 'mobile1' },
   },
@@ -204,14 +279,14 @@ export const MobileSupplement: Story = {
     );
     const assigned = supplementSlot?.assignedElements({ flatten: true }) ?? [];
     if (assigned.length === 0) {
-      throw new Error('mobile-supplement が統合表示されていません');
+      throw new Error('mobile-supplement が lead 領域へ再掲されていません');
     }
   },
 };
 
 export const StandaloneFallback: Story = {
   render: () => html`
-    <ui-list-item item-id="fallback" active active-cell-index="0">
+    <ui-list-item row-id="fallback" current current-column-id="__default__">
       <span>コンテキスト未接続時のフォールバック</span>
       <button slot="actions" type="button" aria-label="操作">...</button>
     </ui-list-item>
@@ -224,9 +299,8 @@ export const StandaloneFallback: Story = {
     const cells = row.shadowRoot?.querySelectorAll('[role="gridcell"]');
     if (cells?.length !== 2) throw new Error('フォールバック構造が不正です');
 
-    const firstCell = row.shadowRoot?.querySelector<HTMLElement>('.cell[data-col-index="0"]');
-    const actionCell = row.shadowRoot?.querySelector<HTMLElement>('.cell[data-col-index="1"]');
-    if (!firstCell || !actionCell) throw new Error('フォールバックセルのインデックスが不正です');
+    const firstCell = row.shadowRoot?.querySelector<HTMLElement>('[data-column-id="__default__"]');
+    if (!firstCell) throw new Error('フォールバック data cell が見つかりません');
   },
 };
 
@@ -237,6 +311,7 @@ export const DarkMode: Story = {
         --bg-default: #0f1115;
         --bg-surface-active: rgba(120, 160, 255, 0.2);
         --bg-hover: rgba(255, 255, 255, 0.08);
+        --bg-subtle: rgba(255, 255, 255, 0.05);
         --fg-default: #e7ebf3;
         --fg-muted: #b8c0d4;
         --border-default: #2a3140;
@@ -246,7 +321,7 @@ export const DarkMode: Story = {
         color: #e7ebf3;
       "
     >
-      ${renderInList({ activeRow: item.id })}
+      ${renderInList({ currentRowId: item.id, currentColumnId: 'title' })}
     </div>
   `,
 };

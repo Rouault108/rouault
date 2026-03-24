@@ -478,38 +478,25 @@ action セル内操作は **selection-neutral** です。action セル内の `bu
 
 ## Storybook 契約
 
-本節では、**現行で存在する Story により確認できる契約**と、**長期契約として追加すべき Story** を分けて記述します。両者を混在させません。
+本節では、**現行で存在する Story により確認できる契約**を記述します。
 
 ### 現行 Story で確認する契約
 
 各 Story は見本ではなく、現時点で成立している契約確認点です。
 
-| Story                | 現時点で確認する契約                                                                            |
-| -------------------- | ----------------------------------------------------------------------------------------------- |
-| `DefaultInList`      | `ui-list` 配下で `role="row"`、`role="gridcell"`、lead 列 / 補助列 / 補助操作領域の構造が成立すること |
-| `MissingSlotBoundary`| 既知列 slot 未提供時も cell 構造を維持すること                                                  |
-| `MobileSupplement`   | モバイル時に hidden metadata の要約だけが lead 領域へ再掲されること                             |
-| `StandaloneFallback` | 親未接続時でも即時破綻しないこと                                                                |
-| `DarkMode`           | ダークモードで可読性と状態識別が維持されること                                                  |
-
-`ActiveCellIndexFocus`、`EmitsActiveChangeOnArrow`、`EdgeBoundaryStops` は現行 Story 名として存在していても、**旧 current モデル由来の観測名**です。これらをそのまま長期契約名としては採用しません。
-
-### current 列モデル移行に伴い追加すべき Story
-
-次の Story は、`currentColumnId` と `ui-current-change` を正本とする長期契約を検証するために追加します。未実装であっても、契約としては必要です。
-
-| 追加する Story                    | 固定する契約                                                                                   |
-| --------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `CurrentColumnProjection`         | `currentColumnId` に一致する data cell だけが current 列として扱われること                     |
-| `EmitsCurrentChangeOnArrow`       | 左右矢印キーにより `ui-current-change` が `{ rowId, columnId }` で送出されること              |
-| `EdgeBoundaryStopsByColumnId`     | 左右境界で current 列変更要求が停止すること                                                   |
-| `HiddenCurrentColumnBoundary`     | 非表示列が `currentColumnId` に指定されても、子が勝手に別列へ current を移し替えないこと      |
-| `ActionRegionExcludedFromCurrent` | 補助操作領域が current 列モデルに参加しないこと                                               |
-| `FocusableContentBoundary`        | 非 action data cell 内に自然 tab stop を持つ要素を置かないこと                                |
-| `UnknownSlotIgnoredWithWarning`   | 未知 slot が描画に寄与せず、開発時警告対象になること                                          |
-| `TextSelectionDoesNotActivateRow` | テキスト選択操作が current 変更要求を引き起こさないこと                                       |
-| `MobileSupplement`                | モバイル時に hidden metadata の要約だけが lead 領域へ再掲されること                           |
-| `StandaloneFallback`              | 親未接続時でも即時破綻しないこと                                                               |
+| Story                           | 現時点で確認する契約                                                                           |
+| ------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `DefaultInList`                 | `ui-list` 配下で `role="row"`、`role="gridcell"`、lead 列 / 補助列 / 補助操作領域の構造が成立すること |
+| `CurrentColumnProjection`       | `currentColumnId` に一致する data cell だけが current 列として扱われること                    |
+| `EmitsCurrentChangeOnArrow`     | 左右矢印キーにより `ui-current-change` が `{ rowId, columnId }` で送出されること             |
+| `EdgeBoundaryStopsByColumnId`   | 左右境界で current 列変更要求が停止すること                                                  |
+| `MissingSlotBoundary`           | 既知列 slot 未提供時も cell 構造を維持すること                                               |
+| `HiddenCurrentColumnBoundary`   | 非表示列が `currentColumnId` に指定されても、子が勝手に別列へ current を移し替えないこと     |
+| `ActionRegionExcludedFromCurrent` | 補助操作領域が current 列モデルに参加しないこと                                            |
+| `UnknownSlotIgnoredWithWarning` | 未知 slot が描画に寄与せず、開発時警告対象になること                                         |
+| `MobileSupplement`              | モバイル時に hidden metadata の要約だけが lead 領域へ再掲されること                          |
+| `StandaloneFallback`            | 親未接続時でも即時破綻しないこと                                                             |
+| `DarkMode`                      | ダークモードで可読性と状態識別が維持されること                                               |
 
 selection model は base 契約に含めないため、`SelectedState`、`ActiveWithoutSelected`、`SelectedWithoutActive`、`ActiveAndSelected`、`AriaSelectedFromSelectedOnly`、`SelectedVisualPriority`、`SelectedAriaFalsePolicy` は本節から削除します。selection を将来導入する場合は、`ui-list` 側で別契約として昇格させた後に追加します。
 
@@ -526,7 +513,7 @@ Story 名は、視覚見本名ではなく**契約名**で付けます。状態�
 
 ### Storybook と実装差分の扱い
 
-Storybook に未実装の契約は、未実装であることを理由に本文契約から削除しません。逆に、Storybook に存在するが本文契約へ昇格していない観測項目は、公開契約として扱いません。
+Storybook に存在する観測項目であっても、本文契約へ昇格していないものは公開契約として扱いません。一方で、本文契約へ昇格した観測点は Storybook でも継続的に確認します。
 
 `selected` 契約を検証する Story を追加する場合は、少なくとも `SelectedState`、`currentWithoutSelected`、`SelectedWithoutcurrent`、`currentAndSelected`、`AriaSelectedFromSelectedOnly` を優先追加対象とします。
 
@@ -553,11 +540,7 @@ Storybook に未実装の契約は、未実装であることを理由に本文�
 
 ### `href`
 
-現行実装に `href` が存在していても、本契約では採用しません。主遷移責務は `ui-list-item` に持たせません。
-
-### `managed`
-
-現行実装に `managed` が存在していても、本契約では採用しません。親管理下であるかどうかは接続関係で決まります。
+実装は `href` を公開入力として持ちません。主遷移責務は `ui-list-item` に持たせません。
 
 ### `requestListContext()` は内部協調面です
 
@@ -567,11 +550,11 @@ Storybook に未実装の契約は、未実装であることを理由に本文�
 
 ### `focusin` による `ui-current-change`
 
-現行実装が `focusin` を状態変化トリガーとして扱っている場合でも、本契約では採用しません。状態遷移の正規トリガーは click と左右矢印だけです。
+実装は `focusin` を状態変化トリガーとして扱いません。状態遷移の正規トリガーは click と左右矢印だけです。
 
 ### `data-row-id` の Storybook 期待値
 
-現行 Storybook が `data-row-id` の同期を検証していても、本契約では採用しません。行識別の公開面は `row-id` に一本化します。`data-*` 属性は内部観測面であり、公開契約に昇格させません。
+Storybook は `data-row-id` のような内部観測面に依存しません。行識別の公開面は `row-id` に一本化します。
 
 ### selection model は base 契約に含めません
 
@@ -581,13 +564,13 @@ Storybook に未実装の契約は、未実装であることを理由に本文�
 
 ### current 変更要求と selection を混同しません
 
-現行実装が `ui-active-change` の送出、現在行更新、選択状態変更を暗黙に結び付けている場合、本契約では採用しません。長期契約で `ui-list-item` が扱うのは、`ui-current-change` による current 行 / current 列の変更要求だけです。
+実装が扱うのは、`ui-current-change` による current 行 / current 列の変更要求だけです。
 
 selection は base 契約に含めないため、current 変更要求から選択状態を推測または更新してはなりません。
 
 ### テキスト選択と行活性化の衝突
 
-現行実装が単純 click とテキスト選択を十分に分離できていない場合、本契約では採用しません。テキスト選択は selection-neutral です。
+テキスト選択は selection-neutral です。実装は選択文字列がある click を current 変更要求として扱いません。
 
 ### 非セルクリックと疑似要素クリック
 
@@ -595,7 +578,7 @@ selection は base 契約に含めないため、current 変更要求から選�
 
 ### action 群の opacity のみでの隠蔽
 
-現行実装が action 群を `opacity: 0` のみで隠している場合、本契約では「視覚的に隠れているが操作可能である」状態を前提にしません。長期的には、視覚状態と操作可能状態の関係を明示的にそろえる方が望ましいです。
+実装は action 群を `opacity` だけでなく `visibility` と `pointer-events` でも制御し、「視覚的に隠れているが操作可能である」状態を既定にしません。
 
 ### `aria-haspopup` / `aria-keyshortcuts` / `aria-description`
 
@@ -607,7 +590,7 @@ selection は base 契約に含めないため、current 変更要求から選�
 
 ### current の正本は列 ID です
 
-現行実装に論理列 index、可視列 index、action 領域 index の混在が残っている場合、本契約では採用しません。長期契約の正本は `currentColumnId` と `data-column-id` です。
+長期契約の正本は `currentColumnId` と `data-column-id` です。
 
 `aria-colindex` は描画中セル順に従ってよいですが、公開意味論の正本にはしません。補助操作領域も current 列モデルには参加しません。
 

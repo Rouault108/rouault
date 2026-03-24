@@ -7,29 +7,27 @@ interface ListColumnContext {
   width: string;
   sortable?: boolean;
   hideOnMobile?: boolean;
-  primary?: boolean;
+  lead?: boolean;
 }
 
 interface ListContextPayload {
   columns: ListColumnContext[];
   isMobile: boolean;
+  showActions: boolean;
 }
 
 interface ListContextRequestDetail {
   callback: (payload: ListContextPayload) => void;
 }
 
-interface UiActiveChangeDetail {
+interface UiCurrentChangeDetail {
   rowId: string;
-  colIndex: number;
+  columnId: string;
 }
 
-/**
- * リストアイテム行コンポーネント。
- *
- * `<ui-list>` から列定義コンテキストを受け取り、
- * `columns[].id` に対応する named slot を `role="gridcell"` でラップして描画します。
- */
+const ACTIONS_SLOT_NAME = 'actions';
+const MOBILE_SUPPLEMENT_SLOT_NAME = 'mobile-supplement';
+
 @customElement('ui-list-item')
 export class ListItem extends LitElement {
   static override styles = css`
@@ -38,22 +36,15 @@ export class ListItem extends LitElement {
       grid-column: 1 / -1;
       align-items: center;
       min-height: var(--control-height-md, 32px);
-      cursor: pointer;
       position: relative;
-
       border-left: var(--border-width-thick, 2px) solid transparent;
       background-color: transparent;
       transition:
         background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
         border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
-
       content-visibility: auto;
       contain-intrinsic-height: var(--control-height-md, 32px);
       user-select: text;
-    }
-
-    :host {
-      /* スロット越しにsubgridチェーンが解決できないため、親の --_gtc を継承して使用する */
       grid-template-columns: var(--_gtc, 1fr);
     }
 
@@ -62,27 +53,16 @@ export class ListItem extends LitElement {
       background-color: var(--bg-hover, oklch(0% 0 0 / 0.05));
     }
 
-    :host([active]) {
+    :host([current]) {
       background-color: var(--bg-surface-active, oklch(0% 0 0 / 0.08));
       border-left-color: var(--primary, oklch(60% 0.15 250));
-    }
-
-    :host::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 0;
-      right: 0;
-      transform: translateY(-50%);
-      min-height: var(--control-min-touch, 24px);
-      pointer-events: auto;
-      z-index: 0;
     }
 
     .cell {
       display: flex;
       align-items: center;
       min-height: var(--control-height-md, 32px);
+      min-width: 0;
       padding: 0 var(--space-4, 16px);
       overflow: hidden;
       position: relative;
@@ -90,10 +70,18 @@ export class ListItem extends LitElement {
       outline: none;
     }
 
-    .cell:focus-visible {
+    .cell--data {
+      cursor: pointer;
+    }
+
+    .cell--data:focus-visible {
       outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
-      outline-offset: -2px; // var(--focus-ring-offset, 2px) だとフォーカスリングがはみ出るので、はみ出さないようにする
+      outline-offset: -2px;
       border-radius: var(--focus-ring-radius, 2px);
+    }
+
+    .cell--current {
+      background-color: var(--bg-subtle, oklch(0% 0 0 / 0.045));
     }
 
     .cell-content {
@@ -104,23 +92,42 @@ export class ListItem extends LitElement {
       overflow: hidden;
     }
 
-    .cell--primary {
+    .cell--lead {
       font-size: var(--text-base, 14px);
       font-weight: var(--font-normal, 400);
       color: var(--fg-default, oklch(20% 0 0));
     }
 
-    .cell--primary ::slotted(a.primary-link) {
-      color: inherit;
-      text-decoration: none;
-      white-space: nowrap;
+    .lead-stack {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      width: 100%;
+      gap: var(--space-2, 8px);
+    }
+
+    .lead-text {
+      display: -webkit-box;
+      min-width: 0;
       overflow: hidden;
-      text-overflow: ellipsis;
-      display: block;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 1;
+      line-clamp: 1;
       width: 100%;
     }
 
-    .cell--primary ::slotted(a.primary-link:hover) {
+    :host([lead-line-clamp='2']) .lead-text {
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+    }
+
+    .cell--lead ::slotted(a) {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+    }
+
+    .cell--lead ::slotted(a:hover) {
       text-decoration: underline;
     }
 
@@ -134,7 +141,7 @@ export class ListItem extends LitElement {
 
     .mobile-supplement {
       display: none;
-      margin-left: var(--space-2, 8px);
+      min-width: 0;
       font-size: var(--text-sm, 13px);
       color: var(--fg-muted, oklch(48% 0 0));
       white-space: nowrap;
@@ -142,7 +149,7 @@ export class ListItem extends LitElement {
       text-overflow: ellipsis;
     }
 
-    .cell--action {
+    .cell--actions {
       justify-content: flex-end;
     }
 
@@ -151,14 +158,19 @@ export class ListItem extends LitElement {
       align-items: center;
       gap: var(--space-1, 4px);
       opacity: 0;
-      transition: opacity var(--duration-fast, 70ms)
-        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      visibility: hidden;
+      pointer-events: none;
+      transition:
+        opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+        visibility var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
     :host(:hover) .actions,
     :host(:focus-within) .actions,
-    :host([active]) .actions {
+    :host([current]) .actions {
       opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
     }
 
     @media (max-width: 768px) {
@@ -175,13 +187,17 @@ export class ListItem extends LitElement {
     }
 
     @media (forced-colors: active) {
-      :host([active]) {
+      :host([current]) {
         border-left-color: Highlight;
       }
 
-      :host(:focus-within) {
-        outline: 2px solid CanvasText;
-        outline-offset: -2px;
+      .cell--data:focus-visible {
+        outline-color: CanvasText;
+      }
+
+      .cell--current {
+        background-color: Highlight;
+        color: HighlightText;
       }
     }
 
@@ -197,29 +213,20 @@ export class ListItem extends LitElement {
     }
   `;
 
-  /** この行のID */
-  @property({ type: String, attribute: 'item-id', reflect: true })
-  itemId = '';
+  @property({ type: String, attribute: 'row-id', reflect: true })
+  rowId = '';
 
-  /** 行のメイン遷移先 */
-  @property({ type: String, reflect: true })
-  href: string | null = null;
-
-  /** この行がアクティブ状態か */
   @property({ type: Boolean, reflect: true })
-  active = false;
+  current = false;
 
-  /** 行内フォーカスセル（0始まり） */
-  @property({ type: Number, attribute: 'active-cell-index', reflect: true })
-  activeCellIndex = 0;
+  @property({ type: String, attribute: 'current-column-id', reflect: true })
+  currentColumnId: string | null = null;
 
-  /** 全体の中での行番号（ヘッダー込み論理位置） */
   @property({ type: Number, attribute: 'row-index', reflect: true })
   rowIndex: number | null = null;
 
-  /** 親 `<ui-list>` 管理下か */
-  @property({ type: Boolean, reflect: true })
-  managed = false;
+  @property({ type: Number, attribute: 'lead-line-clamp', reflect: true })
+  leadLineClamp = 1;
 
   @state()
   private _columns: ListColumnContext[] = [];
@@ -227,20 +234,22 @@ export class ListItem extends LitElement {
   @state()
   private _isMobile = false;
 
-  private _warnedPrimaryMobile = false;
+  @state()
+  private _showActions = false;
+
+  private readonly _warnedUnknownSlots = new Set<string>();
+  private _warnedLeadMobile = false;
 
   override connectedCallback(): void {
     super.connectedCallback();
     this.requestListContext();
     this.addEventListener('keydown', this._handleHostKeyDown);
     this.addEventListener('click', this._handleHostClick);
-    this.addEventListener('focusin', this._handleHostFocusIn);
   }
 
   override disconnectedCallback(): void {
     this.removeEventListener('keydown', this._handleHostKeyDown);
     this.removeEventListener('click', this._handleHostClick);
-    this.removeEventListener('focusin', this._handleHostFocusIn);
     super.disconnectedCallback();
   }
 
@@ -248,30 +257,36 @@ export class ListItem extends LitElement {
     const changedKeys = changed as Map<PropertyKey, unknown>;
     this._syncHostA11y();
 
-    if (changedKeys.has('_columns') || changedKeys.has('_isMobile')) {
-      this._syncPrimaryLinkClasses();
+    if (changed.has('leadLineClamp')) {
+      this._normalizeLeadLineClamp();
     }
 
     if (
-      changed.has('active') ||
-      changed.has('activeCellIndex') ||
+      changed.has('current') ||
+      changed.has('currentColumnId') ||
       changedKeys.has('_columns') ||
-      changedKeys.has('_isMobile')
+      changedKeys.has('_isMobile') ||
+      changedKeys.has('_showActions')
     ) {
-      this._focusActiveCell();
+      this._syncLeadLinkTabIndex();
+    }
+
+    if (changed.has('current') || changed.has('currentColumnId') || changedKeys.has('_columns')) {
+      this._focusCurrentCell();
+    }
+
+    if (changedKeys.has('_columns')) {
+      this._warnUnknownSlots();
     }
   }
 
-  /**
-   * 親 `<ui-list>` へ列定義コンテキストを要求します。
-   * Lit Context 相当のイベントベース供給を利用します。
-   */
   requestListContext(): void {
     const event = new CustomEvent<ListContextRequestDetail>('ui-list-context-request', {
       detail: {
         callback: (payload) => {
           this._columns = payload.columns;
           this._isMobile = payload.isMobile;
+          this._showActions = payload.showActions;
         },
       },
       bubbles: true,
@@ -280,60 +295,57 @@ export class ListItem extends LitElement {
     this.dispatchEvent(event);
   }
 
-  private get _primaryColumnId(): string | null {
-    const primary = this._columns.find((col) => col.primary === true);
-    if (primary) return primary.id;
-    return this._columns[0]?.id ?? null;
+  private get _leadColumn(): ListColumnContext | null {
+    const explicitLead = this._columns.find((column) => column.lead === true);
+    if (explicitLead) {
+      return explicitLead;
+    }
+
+    return this._columns[0] ?? null;
   }
 
-  private get _effectiveVisibleColumns(): ListColumnContext[] {
+  private get _visibleColumns(): ListColumnContext[] {
     if (this._columns.length === 0) {
       return [
         {
           id: '__default__',
           label: '',
           width: '1fr',
-          primary: true,
+          lead: true,
         },
       ];
     }
 
-    return this._columns.filter((col) => {
-      if (col.primary === true && col.hideOnMobile === true && !this._warnedPrimaryMobile) {
-        this._warnedPrimaryMobile = true;
-        // 仕様違反の列定義は警告しつつ常時表示にフォールバックする
-        console.warn(
-          '[ui-list-item] primary 列に hideOnMobile=true は指定できません。常時表示します。',
-        );
+    const leadColumnId = this._leadColumn?.id ?? null;
+    return this._columns.filter((column) => {
+      if (column.id === leadColumnId && column.hideOnMobile === true && !this._warnedLeadMobile) {
+        this._warnedLeadMobile = true;
+        this._warn('[ui-list-item] lead 列に hideOnMobile=true は指定できません。常時表示します。');
       }
 
-      if (col.primary === true) return true;
+      if (column.id === leadColumnId) return true;
       if (!this._isMobile) return true;
-      return col.hideOnMobile !== true;
+      return column.hideOnMobile !== true;
     });
   }
 
-  private _getLogicalColIndex(visibleIndex: number): number {
-    if (this._columns.length === 0) return 1;
+  private get _renderActionsCell(): boolean {
+    if (this._columns.length === 0) {
+      return this._hasAssignedElements(ACTIONS_SLOT_NAME);
+    }
 
-    const visible = this._effectiveVisibleColumns;
-    const target = visible[visibleIndex];
-    if (!target) return visibleIndex + 1;
-
-    return this._columns.findIndex((col) => col.id === target.id) + 1;
+    return this._showActions;
   }
 
-  private _normalizeCellIndex(index: number): number {
-    const maxIndex = this._effectiveVisibleColumns.length;
-    return Math.max(0, Math.min(index, maxIndex));
+  private _normalizeLeadLineClamp(): void {
+    const normalized = this.leadLineClamp === 2 ? 2 : 1;
+    if (normalized !== this.leadLineClamp) {
+      this.leadLineClamp = normalized;
+    }
   }
 
   private _syncHostA11y(): void {
     this.setAttribute('role', 'row');
-    this.setAttribute('aria-selected', String(this.active));
-    this.setAttribute('aria-haspopup', 'dialog');
-    this.setAttribute('aria-keyshortcuts', 'Space Shift+Space');
-    this.setAttribute('aria-description', 'Spaceキーでスクロール');
 
     if (this.rowIndex !== null) {
       this.setAttribute('aria-rowindex', String(this.rowIndex));
@@ -342,71 +354,105 @@ export class ListItem extends LitElement {
     }
   }
 
-  private _syncPrimaryLinkClasses(): void {
-    const primaryId = this._primaryColumnId;
-    if (!primaryId) return;
+  private _focusCurrentCell(): void {
+    if (!this.current || this.currentColumnId === null) return;
 
-    const primarySlot = this.shadowRoot?.querySelector<HTMLSlotElement>(
-      `slot[name="${CSS.escape(primaryId)}"]`,
+    const target = this.shadowRoot?.querySelector<HTMLElement>(
+      `.cell--data[data-column-id="${CSS.escape(this.currentColumnId)}"]`,
     );
-    if (!primarySlot) return;
+    target?.focus({ preventScroll: true });
+  }
 
-    const assigned = primarySlot.assignedElements({ flatten: true });
+  private _syncLeadLinkTabIndex(): void {
+    const leadColumn = this._leadColumn;
+    if (!leadColumn) return;
+
+    const leadSlot = this.shadowRoot?.querySelector<HTMLSlotElement>(
+      `slot[name="${CSS.escape(leadColumn.id)}"]`,
+    );
+    if (!leadSlot) return;
+
+    const assigned = leadSlot.assignedElements({ flatten: true });
     for (const node of assigned) {
       if (node instanceof HTMLAnchorElement) {
-        node.classList.add('primary-link');
         node.tabIndex = -1;
         continue;
       }
 
       const anchors = node.querySelectorAll<HTMLAnchorElement>('a[href]');
       anchors.forEach((anchor) => {
-        anchor.classList.add('primary-link');
         anchor.tabIndex = -1;
       });
     }
   }
 
-  private _focusActiveCell(): void {
-    if (!this.active) return;
-
-    const targetIndex = this._normalizeCellIndex(this.activeCellIndex);
-    const cells = this.shadowRoot?.querySelectorAll<HTMLElement>('.cell[role="gridcell"]');
-    if (!cells || cells.length === 0) return;
-
-    const target = cells[targetIndex];
-    if (!target) return;
-    target.focus({ preventScroll: true });
+  private _isDevelopment(): boolean {
+    return globalThis.location?.hostname === 'localhost';
   }
 
-  private _getCellFromEvent(event: Event): HTMLElement | null {
-    const path = event.composedPath();
-    for (const node of path) {
-      if (node instanceof HTMLElement && node.classList.contains('cell')) {
-        return node;
-      }
+  private _warn(message: string): void {
+    if (!this._isDevelopment()) return;
+    console.warn(message);
+  }
+
+  private _warnUnknownSlots(): void {
+    if (!this._isDevelopment()) return;
+
+    const knownSlots = new Set<string>([
+      ...this._columns.map((column) => column.id),
+      ACTIONS_SLOT_NAME,
+      MOBILE_SUPPLEMENT_SLOT_NAME,
+      '',
+    ]);
+
+    for (const child of Array.from(this.children)) {
+      if (!(child instanceof HTMLElement)) continue;
+      const slotName = child.getAttribute('slot') ?? '';
+      if (knownSlots.has(slotName)) continue;
+      if (this._warnedUnknownSlots.has(slotName)) continue;
+
+      this._warnedUnknownSlots.add(slotName);
+      this._warn(`[ui-list-item] 未知の slot を無視しました: ${slotName}`);
+    }
+
+    if (this.currentColumnId === null) return;
+    const exists = this._columns.some((column) => column.id === this.currentColumnId);
+    if (!exists) {
+      this._warn(`[ui-list-item] currentColumnId が columns.id に存在しません: ${this.currentColumnId}`);
+    }
+  }
+
+  private _hasAssignedElements(slotName: string): boolean {
+    const slot = this.shadowRoot?.querySelector<HTMLSlotElement>(
+      `slot[name="${CSS.escape(slotName)}"]`,
+    );
+    if (!slot) return false;
+    return slot.assignedElements({ flatten: true }).length > 0;
+  }
+
+  private _getDataCellFromEvent(event: Event): HTMLElement | null {
+    for (const node of event.composedPath()) {
+      if (!(node instanceof HTMLElement)) continue;
+      if (!node.classList.contains('cell')) continue;
+      if (!node.classList.contains('cell--data')) return null;
+      return node;
     }
     return null;
   }
 
-  private _getCellIndex(cell: HTMLElement | null): number {
-    if (!cell) return this._normalizeCellIndex(this.activeCellIndex);
-
-    const value = cell.dataset['colIndex'];
-    if (!value) return this._normalizeCellIndex(this.activeCellIndex);
-
-    const parsed = Number.parseInt(value, 10);
-    if (Number.isNaN(parsed)) return this._normalizeCellIndex(this.activeCellIndex);
-    return this._normalizeCellIndex(parsed);
+  private _getVisibleColumnIds(): string[] {
+    return this._visibleColumns.map((column) => column.id);
   }
 
-  private _dispatchActiveChange(colIndex: number): void {
-    const rowId = this.itemId;
-    if (rowId.length === 0) return;
+  private _dispatchCurrentChange(columnId: string): void {
+    if (this.rowId.length === 0) return;
 
     this.dispatchEvent(
-      new CustomEvent<UiActiveChangeDetail>('ui-active-change', {
-        detail: { rowId, colIndex },
+      new CustomEvent<UiCurrentChangeDetail>('ui-current-change', {
+        detail: {
+          rowId: this.rowId,
+          columnId,
+        },
         bubbles: true,
         composed: true,
       }),
@@ -414,130 +460,129 @@ export class ListItem extends LitElement {
   }
 
   private readonly _handleHostClick = (event: Event): void => {
-    const cell = this._getCellFromEvent(event);
-    const colIndex = this._getCellIndex(cell);
-    this._dispatchActiveChange(colIndex);
-  };
+    if (!(event instanceof MouseEvent)) return;
+    if (event.button !== 0) return;
+    if (event.defaultPrevented) return;
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    if ((window.getSelection()?.toString().length ?? 0) > 0) return;
 
-  private readonly _handleHostFocusIn = (event: FocusEvent): void => {
-    if (!this.active) return;
+    const cell = this._getDataCellFromEvent(event);
+    if (!cell) return;
 
-    const cell = this._getCellFromEvent(event);
-    const colIndex = this._getCellIndex(cell);
-    if (colIndex === this._normalizeCellIndex(this.activeCellIndex)) return;
-    this._dispatchActiveChange(colIndex);
+    const columnId = cell.dataset['columnId'];
+    if (!columnId) return;
+    this._dispatchCurrentChange(columnId);
   };
 
   private readonly _handleHostKeyDown = (event: KeyboardEvent): void => {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
 
-    const currentCell = this._getCellFromEvent(event);
-    const currentIndex = this._getCellIndex(currentCell);
-    const maxIndex = this._effectiveVisibleColumns.length;
+    const cell = this._getDataCellFromEvent(event);
+    const visibleColumnIds = this._getVisibleColumnIds();
+    if (visibleColumnIds.length === 0) return;
+
+    const basisColumnId = cell?.dataset['columnId'] ?? this.currentColumnId;
+    if (!basisColumnId) return;
+
+    const currentIndex = visibleColumnIds.indexOf(basisColumnId);
+    if (currentIndex === -1) return;
 
     if (event.key === 'ArrowLeft') {
+      if (currentIndex === 0) return;
       event.preventDefault();
-      const nextIndex = Math.max(currentIndex - 1, 0);
-      if (nextIndex === currentIndex) return;
-      this._dispatchActiveChange(nextIndex);
+      this._dispatchCurrentChange(visibleColumnIds[currentIndex - 1] ?? basisColumnId);
       return;
     }
 
+    if (currentIndex === visibleColumnIds.length - 1) return;
     event.preventDefault();
-    const nextIndex = Math.min(currentIndex + 1, maxIndex);
-    if (nextIndex === currentIndex) return;
-    this._dispatchActiveChange(nextIndex);
+    this._dispatchCurrentChange(visibleColumnIds[currentIndex + 1] ?? basisColumnId);
   };
 
-  private _renderFallbackCells(): TemplateResult {
-    const normalized = this._normalizeCellIndex(this.activeCellIndex);
-    const mainTabIndex = this.active ? (normalized === 0 ? '0' : '-1') : '-1';
-    const actionTabIndex = this.active ? (normalized === 1 ? '0' : '-1') : '-1';
+  private _renderFallback(): TemplateResult {
+    return html`
+      <div
+        role="gridcell"
+        class="cell cell--data cell--lead ${this.current ? 'cell--current' : ''}"
+        data-column-id="__default__"
+        tabindex="${this.current ? '0' : '-1'}"
+      >
+        <div class="lead-stack">
+          <div class="lead-text">
+            <slot></slot>
+          </div>
+        </div>
+      </div>
+
+      ${this._renderActionsCell
+        ? html`
+            <div role="gridcell" class="cell cell--actions">
+              <div class="actions">
+                <slot name="${ACTIONS_SLOT_NAME}"></slot>
+              </div>
+            </div>
+          `
+        : nothing}
+    `;
+  }
+
+  private _renderDataCell(column: ListColumnContext, ariaColIndex: number): TemplateResult {
+    const leadColumnId = this._leadColumn?.id ?? null;
+    const isLead = column.id === leadColumnId;
+    const isCurrentColumn = this.current && this.currentColumnId === column.id;
+    const tabIndex = isCurrentColumn ? '0' : '-1';
 
     return html`
       <div
         role="gridcell"
-        class="cell cell--primary"
-        aria-colindex="1"
-        data-col-index="0"
-        tabindex="${mainTabIndex}"
+        class="cell cell--data ${isLead ? 'cell--lead' : 'cell--meta'} ${isCurrentColumn
+          ? 'cell--current'
+          : ''}"
+        aria-colindex="${String(ariaColIndex)}"
+        data-column-id="${column.id}"
+        tabindex="${tabIndex}"
       >
-        <div class="cell-content">
-          <slot></slot>
-        </div>
-      </div>
-
-      <div
-        role="gridcell"
-        class="cell cell--action"
-        aria-colindex="2"
-        data-col-index="1"
-        tabindex="${actionTabIndex}"
-      >
-        <div class="actions">
-          <slot name="actions"></slot>
-        </div>
+        ${isLead
+          ? html`
+              <div class="lead-stack">
+                <div class="lead-text">
+                  <slot name="${column.id}"></slot>
+                </div>
+                ${this._isMobile
+                  ? html`
+                      <span class="mobile-supplement">
+                        <slot name="${MOBILE_SUPPLEMENT_SLOT_NAME}"></slot>
+                      </span>
+                    `
+                  : nothing}
+              </div>
+            `
+          : html`
+              <div class="cell-content">
+                <slot name="${column.id}"></slot>
+              </div>
+            `}
       </div>
     `;
   }
 
   override render(): TemplateResult {
-    const visibleColumns = this._effectiveVisibleColumns;
-    const hasContextColumns = this._columns.length > 0;
-
-    if (!hasContextColumns) {
-      return this._renderFallbackCells();
+    if (this._columns.length === 0) {
+      return this._renderFallback();
     }
 
-    const normalized = this._normalizeCellIndex(this.activeCellIndex);
-    const primaryId = this._primaryColumnId;
-
+    const visibleColumns = this._visibleColumns;
     return html`
-      ${visibleColumns.map((column, visibleIndex) => {
-        const isPrimary = column.primary === true || column.id === primaryId;
-        const logicalColIndex = this._getLogicalColIndex(visibleIndex);
-        const colIndex = logicalColIndex - 1;
-        const tabIndex = this.active && normalized === colIndex ? '0' : '-1';
-
-        return html`
-          <div
-            role="gridcell"
-            class="cell ${isPrimary ? 'cell--primary' : 'cell--meta'}"
-            aria-colindex="${logicalColIndex}"
-            data-col-index="${String(colIndex)}"
-            tabindex="${tabIndex}"
-          >
-            <div class="cell-content">
-              <slot name="${column.id}"></slot>
-              ${isPrimary && this._isMobile
-                ? html`
-                    <span class="mobile-supplement">
-                      <slot name="mobile-supplement"></slot>
-                    </span>
-                  `
-                : nothing}
+      ${visibleColumns.map((column, index) => this._renderDataCell(column, index + 1))}
+      ${this._renderActionsCell
+        ? html`
+            <div role="gridcell" class="cell cell--actions" aria-colindex="${String(visibleColumns.length + 1)}">
+              <div class="actions">
+                <slot name="${ACTIONS_SLOT_NAME}"></slot>
+              </div>
             </div>
-          </div>
-        `;
-      })}
-      ${(() => {
-        const actionIndex = this._columns.length;
-        const actionTabIndex = this.active && normalized === actionIndex ? '0' : '-1';
-
-        return html`
-          <div
-            role="gridcell"
-            class="cell cell--action"
-            aria-colindex="${String(this._columns.length + 1)}"
-            data-col-index="${String(actionIndex)}"
-            tabindex="${actionTabIndex}"
-          >
-            <div class="actions">
-              <slot name="actions"></slot>
-            </div>
-          </div>
-        `;
-      })()}
+          `
+        : nothing}
     `;
   }
 }
@@ -545,5 +590,9 @@ export class ListItem extends LitElement {
 declare global {
   interface HTMLElementTagNameMap {
     'ui-list-item': ListItem;
+  }
+
+  interface GlobalEventHandlersEventMap {
+    'ui-current-change': CustomEvent<UiCurrentChangeDetail>;
   }
 }

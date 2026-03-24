@@ -6,38 +6,34 @@ import { map } from 'lit/directives/map.js';
 import '../list-item/list-item';
 import '../pagination/pagination';
 
-/**
- * リストアイテムのメタデータ型。
- * `id` は一意である必要があります。
- */
 export interface ListItemData {
   id: string;
   href?: string;
   [key: string]: unknown;
 }
 
-/**
- * 列定義。
- */
 export interface ColumnDef {
   id: string;
   label: string;
   width: string;
   sortable?: boolean;
+  sortKey?: string;
   hideOnMobile?: boolean;
-  primary?: boolean;
+  lead?: boolean;
+  defaultAction?: boolean;
 }
 
 type SortDirection = 'asc' | 'desc' | null;
 
-interface UiActiveChangeDetail {
+interface UiCurrentChangeDetail {
   rowId: string;
-  colIndex: number;
+  columnId: string;
 }
 
 interface ListContextPayload {
   columns: ColumnDef[];
   isMobile: boolean;
+  showActions: boolean;
 }
 
 interface ListContextRequestDetail {
@@ -45,20 +41,13 @@ interface ListContextRequestDetail {
 }
 
 interface UiListItemLike extends HTMLElement {
-  itemId?: string;
-  managed?: boolean;
-  active?: boolean;
-  activeCellIndex?: number;
+  rowId?: string;
+  current?: boolean;
+  currentColumnId?: string | null;
   rowIndex?: number | null;
   requestListContext?: () => void;
 }
 
-/**
- * リストビューコンポーネント `<ui-list>`。
- *
- * 行DOMは外部で宣言された `<ui-list-item>` を slot で受け取り、
- * `<ui-list>` はヘッダー生成とイベント委譲・フォーカス管理のみを担当します。
- */
 @customElement('ui-list')
 export class List extends LitElement {
   static override styles = css`
@@ -164,41 +153,38 @@ export class List extends LitElement {
     }
   `;
 
-  /** ソート・フィルタ用メタデータ */
   @property({ type: Array })
   items: ListItemData[] = [];
 
-  /** 列定義 */
   @property({ type: Array })
   columns: ColumnDef[] = [];
 
-  /** 現在アクティブな行ID */
-  @property({ type: String, attribute: 'active-row', reflect: true })
-  activeRow: string | null = null;
+  @property({ type: String, attribute: 'current-row-id', reflect: true })
+  currentRowId: string | null = null;
 
-  /** 現在アクティブなセルのインデックス（0始まり） */
-  @property({ type: Number, attribute: 'active-cell-index', reflect: true })
-  activeCellIndex = 0;
+  @property({ type: String, attribute: 'current-column-id', reflect: true })
+  currentColumnId: string | null = null;
 
-  /** 現在のソートキー */
   @property({ type: String, attribute: 'sort-key', reflect: true })
   sortKey: string | null = null;
 
-  /** 現在のソート方向 */
   @property({ type: String, attribute: 'sort-direction', reflect: true })
   sortDirection: SortDirection = null;
 
-  /** ページネーション時の総行数 */
   @property({ type: Number, attribute: 'total-row-count' })
   totalRowCount: number | null = null;
 
-  /** 行インデックス開始オフセット（0始まり） */
   @property({ type: Number, attribute: 'row-index-offset' })
   rowIndexOffset = 0;
 
-  /** ページ番号からURLを生成する関数 */
   @property({ attribute: false })
   getPageHref: ((page: number) => string) | null = null;
+
+  @property({ type: Boolean, attribute: 'show-actions', reflect: true })
+  showActions = false;
+
+  @property({ type: String, attribute: 'aria-label' })
+  override ariaLabel: string | null = null;
 
   @state()
   private _isMobile = false;
@@ -207,7 +193,7 @@ export class List extends LitElement {
   private _rowElements: UiListItemLike[] = [];
 
   private _mql: MediaQueryList | null = null;
-  private _warnedPrimaryMobile = false;
+  private _warnedLeadMobile = false;
 
   private readonly _mqlHandler = (event: MediaQueryListEvent): void => {
     this._isMobile = event.matches;
@@ -241,48 +227,87 @@ export class List extends LitElement {
 
   override updated(changed: PropertyValues<this>): void {
     const changedKeys = changed as Map<PropertyKey, unknown>;
-
-    if (changed.has('columns')) {
+    if (changed.has('columns') || changed.has('currentColumnId')) {
       this._validateColumns();
     }
 
-    if (changed.has('columns') || changedKeys.has('_isMobile')) {
+    if (changed.has('columns') || changed.has('showActions') || changedKeys.has('_isMobile')) {
       this.style.setProperty('--_gtc', this._gridTemplateColumns);
     }
 
     if (
       changedKeys.has('_rowElements') ||
-      changed.has('activeRow') ||
-      changed.has('activeCellIndex') ||
+      changed.has('currentRowId') ||
+      changed.has('currentColumnId') ||
       changed.has('rowIndexOffset') ||
       changed.has('columns') ||
-      changedKeys.has('_isMobile')
+      changedKeys.has('_isMobile') ||
+      changed.has('showActions')
     ) {
       this._syncRowsFromState();
     }
   }
 
+  private _isDevelopment(): boolean {
+    return globalThis.location?.hostname === 'localhost';
+  }
+
+  private _warn(message: string): void {
+    if (!this._isDevelopment()) return;
+    console.warn(message);
+  }
+
   private _validateColumns(): void {
     const ids = new Set<string>();
+    let leadCount = 0;
+
     for (const column of this.columns) {
       if (ids.has(column.id)) {
-        console.warn(`[ui-list] columns.id が重複しています: ${column.id}`);
+        this._warn(`[ui-list] columns.id が重複しています: ${column.id}`);
       }
       ids.add(column.id);
 
-      if (column.primary === true && column.hideOnMobile === true && !this._warnedPrimaryMobile) {
-        this._warnedPrimaryMobile = true;
-        console.warn(
-          '[ui-list] primary 列に hideOnMobile=true は指定できません。primary を優先します。',
-        );
+      if (column.lead === true) {
+        leadCount += 1;
       }
+
+      if (column.lead === true && column.hideOnMobile === true && !this._warnedLeadMobile) {
+        this._warnedLeadMobile = true;
+        this._warn('[ui-list] lead 列に hideOnMobile=true は指定できません。lead を優先します。');
+      }
+    }
+
+    if (leadCount > 1) {
+      this._warn('[ui-list] lead 列は 1 つまでです。');
+    }
+
+    if (
+      this.currentColumnId !== null &&
+      !this.columns.some((column) => column.id === this.currentColumnId)
+    ) {
+      this._warn(`[ui-list] currentColumnId が columns.id に存在しません: ${this.currentColumnId}`);
+    }
+
+    const currentPairCount =
+      Number(this.currentRowId !== null && this.currentRowId.length > 0) +
+      Number(this.currentColumnId !== null && this.currentColumnId.length > 0);
+    if (currentPairCount === 1) {
+      this._warn('[ui-list] currentRowId と currentColumnId は組で指定してください。');
     }
   }
 
+  private get _leadColumnId(): string | null {
+    const explicitLead = this.columns.find((column) => column.lead === true);
+    if (explicitLead) return explicitLead.id;
+    return this.columns[0]?.id ?? null;
+  }
+
   private get _visibleColumns(): ColumnDef[] {
+    const leadColumnId = this._leadColumnId;
     if (!this._isMobile) return this.columns;
+
     return this.columns.filter((column) => {
-      if (column.primary === true) return true;
+      if (column.id === leadColumnId) return true;
       return column.hideOnMobile !== true;
     });
   }
@@ -295,76 +320,61 @@ export class List extends LitElement {
       }
       return column.width;
     });
-    return [...widths, '40px'].join(' ');
-  }
 
-  private _getLogicalColIndex(visibleIndex: number): number {
-    if (!this._isMobile) return visibleIndex + 1;
+    if (this.showActions) {
+      widths.push('40px');
+    }
 
-    const visible = this._visibleColumns;
-    const target = visible[visibleIndex];
-    if (!target) return visibleIndex + 1;
-    return this.columns.findIndex((column) => column.id === target.id) + 1;
-  }
-
-  private _normalizeCellIndex(index: number): number {
-    const max = Math.max(0, this.columns.length);
-    return Math.max(0, Math.min(index, max));
+    return widths.join(' ');
   }
 
   private _collectRowElements(): void {
     const slot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot[data-list-rows]');
     if (!slot) return;
 
-    const assigned = slot.assignedElements({ flatten: true });
-    const rows = assigned.filter((element): element is UiListItemLike => {
+    const rows = slot.assignedElements({ flatten: true }).filter((element): element is UiListItemLike => {
       return element instanceof HTMLElement && element.tagName.toLowerCase() === 'ui-list-item';
     });
     this._rowElements = rows;
   }
 
-  private _getRowId(row: UiListItemLike, index: number): string | null {
-    const attrId = row.getAttribute('item-id');
+  private _getRowId(row: UiListItemLike): string | null {
+    const attrId = row.getAttribute('row-id');
     if (attrId && attrId.length > 0) return attrId;
 
-    if (typeof row.itemId === 'string' && row.itemId.length > 0) {
-      row.setAttribute('item-id', row.itemId);
-      return row.itemId;
-    }
-
-    const fallback = this.items[index]?.id;
-    if (typeof fallback === 'string' && fallback.length > 0) {
-      row.setAttribute('item-id', fallback);
-      return fallback;
+    if (typeof row.rowId === 'string' && row.rowId.length > 0) {
+      row.setAttribute('row-id', row.rowId);
+      return row.rowId;
     }
 
     return null;
   }
 
+  private _hasCurrentPair(): boolean {
+    return (
+      this.currentRowId !== null &&
+      this.currentRowId.length > 0 &&
+      this.currentColumnId !== null &&
+      this.currentColumnId.length > 0
+    );
+  }
+
   private _syncRowsFromState(): void {
-    const normalizedCellIndex = this._normalizeCellIndex(this.activeCellIndex);
+    const hasCurrentPair = this._hasCurrentPair();
 
     this._rowElements.forEach((row, index) => {
-      const rowId = this._getRowId(row, index);
-      const isActive = rowId !== null && rowId === this.activeRow;
+      const rowId = this._getRowId(row);
+      const isCurrent = hasCurrentPair && rowId !== null && rowId === this.currentRowId;
 
-      row.managed = true;
-      row.active = isActive;
-      row.activeCellIndex = normalizedCellIndex;
+      row.current = isCurrent;
+      row.currentColumnId = isCurrent ? this.currentColumnId : null;
       row.rowIndex = this.rowIndexOffset + index + 2;
       row.requestListContext?.();
-
-      if (rowId) {
-        row.setAttribute('data-item-id', rowId);
-      } else {
-        row.removeAttribute('data-item-id');
-      }
     });
   }
 
   private _getRowFromEvent(event: Event): UiListItemLike | null {
-    const path = event.composedPath();
-    for (const node of path) {
+    for (const node of event.composedPath()) {
       if (node instanceof HTMLElement && node.tagName.toLowerCase() === 'ui-list-item') {
         return node as UiListItemLike;
       }
@@ -372,25 +382,18 @@ export class List extends LitElement {
     return null;
   }
 
-  private _getColIndexFromEvent(event: Event): number {
-    const path = event.composedPath();
-    for (const node of path) {
-      if (node instanceof HTMLElement) {
-        const value = node.dataset['colIndex'];
-        if (!value) continue;
-
-        const parsed = Number.parseInt(value, 10);
-        if (!Number.isNaN(parsed)) {
-          return this._normalizeCellIndex(parsed);
-        }
-      }
+  private _getColumnIdFromEvent(event: Event): string | null {
+    for (const node of event.composedPath()) {
+      if (!(node instanceof HTMLElement)) continue;
+      const columnId = node.dataset['columnId'];
+      if (columnId) return columnId;
     }
-    return this._normalizeCellIndex(this.activeCellIndex);
+
+    return this.currentColumnId;
   }
 
   private _isInteractiveTarget(event: Event): boolean {
-    const path = event.composedPath();
-    for (const node of path) {
+    for (const node of event.composedPath()) {
       if (!(node instanceof HTMLElement)) continue;
       if (
         node.matches(
@@ -403,67 +406,48 @@ export class List extends LitElement {
     return false;
   }
 
-  private _getPrimaryLink(row: UiListItemLike): HTMLAnchorElement | null {
-    const primaryColumn = this.columns.find((column) => column.primary === true) ?? this.columns[0];
-    if (!primaryColumn) return null;
+  private _getDefaultActionLink(row: UiListItemLike): HTMLAnchorElement | null {
+    const defaultActionColumn =
+      this.columns.find((column) => column.defaultAction === true) ??
+      this.columns.find((column) => column.id === this._leadColumnId) ??
+      this.columns[0];
+    if (!defaultActionColumn) return null;
 
-    const selector = `[slot="${CSS.escape(primaryColumn.id)}"]`;
+    const selector = `[slot="${CSS.escape(defaultActionColumn.id)}"]`;
     const primaryNode = row.querySelector(selector);
-    if (primaryNode instanceof HTMLAnchorElement && primaryNode.hasAttribute('href'))
+    if (primaryNode instanceof HTMLAnchorElement && primaryNode.hasAttribute('href')) {
       return primaryNode;
+    }
 
     const nested = primaryNode?.querySelector<HTMLAnchorElement>('a[href]');
     if (nested) return nested;
 
-    const fallback = row.querySelector<HTMLAnchorElement>('a[href]:not([slot="actions"])');
-    return fallback;
+    return null;
   }
 
-  private _dispatchActiveChange(rowId: string, colIndex: number): void {
+  private _requestCurrentChange(rowId: string, columnId: string): void {
     this.dispatchEvent(
-      new CustomEvent<UiActiveChangeDetail>('ui-active-change', {
-        detail: { rowId, colIndex },
+      new CustomEvent<UiCurrentChangeDetail>('ui-current-change', {
+        detail: { rowId, columnId },
         bubbles: true,
         composed: true,
+        cancelable: true,
       }),
     );
   }
 
-  private async _activateRow(rowId: string, colIndex: number, focusCell: boolean): Promise<void> {
-    const normalizedColIndex = this._normalizeCellIndex(colIndex);
-    if (rowId === this.activeRow && normalizedColIndex === this.activeCellIndex) return;
-
-    this.activeRow = rowId;
-    this.activeCellIndex = normalizedColIndex;
-    this._dispatchActiveChange(rowId, normalizedColIndex);
-
-    if (!focusCell) return;
-
-    await this.updateComplete;
-    const row = this._rowElements.find(
-      (candidate, index) => this._getRowId(candidate, index) === rowId,
-    );
-    if (!row) return;
-
-    const target = row.shadowRoot?.querySelector<HTMLElement>(
-      `.cell[data-col-index="${String(normalizedColIndex)}"]`,
-    );
-    target?.focus({ preventScroll: true });
+  private _requestCurrentChangeForRow(row: UiListItemLike, columnId: string | null): void {
+    const rowId = this._getRowId(row);
+    if (!rowId || !columnId) return;
+    this._requestCurrentChange(rowId, columnId);
   }
 
-  private async _activateRowByIndex(index: number, colIndex: number): Promise<void> {
-    const row = this._rowElements[index];
-    if (!row) return;
-    const rowId = this._getRowId(row, index);
-    if (!rowId) return;
-    await this._activateRow(rowId, colIndex, true);
-  }
-
-  private _handleSortClick(columnId: string): void {
-    let nextKey: string | null = columnId;
+  private _handleSortClick(column: ColumnDef): void {
+    const sortKey = column.sortKey ?? column.id;
+    let nextKey: string | null = sortKey;
     let nextDirection: SortDirection;
 
-    if (this.sortKey !== columnId) {
+    if (this.sortKey !== sortKey) {
       nextDirection = 'asc';
     } else if (this.sortDirection === 'asc') {
       nextDirection = 'desc';
@@ -483,10 +467,10 @@ export class List extends LitElement {
     );
   }
 
-  private _handleHeaderKeyDown(event: KeyboardEvent, columnId: string): void {
+  private _handleHeaderKeyDown(event: KeyboardEvent, column: ColumnDef): void {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      this._handleSortClick(columnId);
+      this._handleSortClick(column);
     }
   }
 
@@ -497,57 +481,54 @@ export class List extends LitElement {
     const currentIndex = this._rowElements.indexOf(row);
     if (currentIndex === -1) return;
 
-    const currentColIndex = this._getColIndexFromEvent(event);
-    const rowId = this._getRowId(row, currentIndex);
-    if (!rowId) return;
+    const columnId = this._getColumnIdFromEvent(event);
+    if (!columnId) return;
 
     switch (event.key) {
       case 'ArrowDown': {
+        if (currentIndex === this._rowElements.length - 1) return;
         event.preventDefault();
-        const nextIndex = Math.min(currentIndex + 1, this._rowElements.length - 1);
-        void this._activateRowByIndex(nextIndex, currentColIndex);
+        this._requestCurrentChangeForRow(this._rowElements[currentIndex + 1] ?? row, columnId);
         break;
       }
       case 'ArrowUp': {
+        if (currentIndex === 0) return;
         event.preventDefault();
-        const prevIndex = Math.max(currentIndex - 1, 0);
-        void this._activateRowByIndex(prevIndex, currentColIndex);
+        this._requestCurrentChangeForRow(this._rowElements[currentIndex - 1] ?? row, columnId);
         break;
       }
       case 'Home': {
         event.preventDefault();
-        void this._activateRowByIndex(0, currentColIndex);
+        this._requestCurrentChangeForRow(this._rowElements[0] ?? row, columnId);
         break;
       }
       case 'End': {
         event.preventDefault();
-        void this._activateRowByIndex(this._rowElements.length - 1, currentColIndex);
+        this._requestCurrentChangeForRow(this._rowElements[this._rowElements.length - 1] ?? row, columnId);
         break;
       }
       case 'PageDown': {
         event.preventDefault();
         const nextIndex = Math.min(currentIndex + 10, this._rowElements.length - 1);
-        void this._activateRowByIndex(nextIndex, currentColIndex);
+        this._requestCurrentChangeForRow(this._rowElements[nextIndex] ?? row, columnId);
         break;
       }
       case 'PageUp': {
         event.preventDefault();
         const prevIndex = Math.max(currentIndex - 10, 0);
-        void this._activateRowByIndex(prevIndex, currentColIndex);
+        this._requestCurrentChangeForRow(this._rowElements[prevIndex] ?? row, columnId);
         break;
       }
       case 'Enter': {
         if (this._isInteractiveTarget(event)) return;
         event.preventDefault();
-        const primaryLink = this._getPrimaryLink(row);
-        primaryLink?.click();
+        this._getDefaultActionLink(row)?.click();
         break;
       }
       case ' ': {
-        if (!event.shiftKey) {
-          // Space 単体はスクロール用途のためブラウザ既定動作を維持
-          return;
-        }
+        if (!event.shiftKey) return;
+        const rowId = this._getRowId(row);
+        if (!rowId) return;
         event.preventDefault();
         this.dispatchEvent(
           new CustomEvent('ui-preview-request', {
@@ -560,6 +541,8 @@ export class List extends LitElement {
       }
       case 'F10': {
         if (!event.shiftKey) return;
+        const rowId = this._getRowId(row);
+        if (!rowId) return;
         event.preventDefault();
         const rect = row.getBoundingClientRect();
         this.dispatchEvent(
@@ -576,45 +559,14 @@ export class List extends LitElement {
     }
   };
 
-  private readonly _handleGridClick = (event: MouseEvent): void => {
-    if (event.button !== 0) return;
-
-    const row = this._getRowFromEvent(event);
-    if (!row) return;
-
-    const rowIndex = this._rowElements.indexOf(row);
-    if (rowIndex === -1) return;
-
-    const rowId = this._getRowId(row, rowIndex);
-    if (!rowId) return;
-
-    if ((window.getSelection()?.toString().length ?? 0) > 0) return;
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    if (this._isInteractiveTarget(event)) return;
-
-    const colIndex = this._getColIndexFromEvent(event);
-    const primaryLink = this._getPrimaryLink(row);
-    if (primaryLink) {
-      event.preventDefault();
-      primaryLink.click();
-    }
-
-    void this._activateRow(rowId, colIndex, true);
-  };
-
   private readonly _handleGridContextMenu = (event: MouseEvent): void => {
     const row = this._getRowFromEvent(event);
     if (!row) return;
 
-    const rowIndex = this._rowElements.indexOf(row);
-    if (rowIndex === -1) return;
-
-    const rowId = this._getRowId(row, rowIndex);
+    const rowId = this._getRowId(row);
     if (!rowId) return;
 
     event.preventDefault();
-    void this._activateRow(rowId, this._getColIndexFromEvent(event), true);
-
     this.dispatchEvent(
       new CustomEvent('ui-context-request', {
         detail: { rowId, anchor: { x: event.clientX, y: event.clientY } },
@@ -628,17 +580,6 @@ export class List extends LitElement {
     this._collectRowElements();
   };
 
-  private readonly _handleItemActiveChange = (event: Event): void => {
-    const source = event.target;
-    if (!(source instanceof HTMLElement) || source.tagName.toLowerCase() !== 'ui-list-item') return;
-
-    const detail = (event as CustomEvent<UiActiveChangeDetail>).detail;
-    if (typeof detail.rowId !== 'string' || typeof detail.colIndex !== 'number') return;
-
-    event.stopPropagation();
-    void this._activateRow(detail.rowId, detail.colIndex, true);
-  };
-
   private readonly _handleListContextRequest = (event: Event): void => {
     const source = event.target;
     if (!(source instanceof HTMLElement) || source.tagName.toLowerCase() !== 'ui-list-item') return;
@@ -647,20 +588,23 @@ export class List extends LitElement {
     customEvent.detail.callback({
       columns: this.columns,
       isMobile: this._isMobile,
+      showActions: this.showActions,
     });
     event.stopPropagation();
   };
 
   private _getAriaSort(column: ColumnDef): string | typeof nothing {
     if (!column.sortable) return nothing;
-    if (this.sortKey !== column.id) return 'none';
+    const sortKey = column.sortKey ?? column.id;
+    if (this.sortKey !== sortKey) return 'none';
     return this.sortDirection === 'asc' ? 'ascending' : 'descending';
   }
 
   private _renderSortIcon(column: ColumnDef): TemplateResult | typeof nothing {
     if (!column.sortable) return nothing;
 
-    if (this.sortKey === column.id) {
+    const sortKey = column.sortKey ?? column.id;
+    if (this.sortKey === sortKey) {
       const icon = this.sortDirection === 'asc' ? 'lucide:chevron-up' : 'lucide:chevron-down';
       return html`<iconify-icon
         icon="${icon}"
@@ -681,7 +625,7 @@ export class List extends LitElement {
     const renderedRowCount = this._rowElements.length;
     const effectiveRowCount = this.totalRowCount ?? renderedRowCount;
     const hasRows = renderedRowCount > 0;
-    const logicalColCount = this.columns.length + 1;
+    const logicalColCount = this.columns.length + (this.showActions ? 1 : 0);
 
     const pageSize = Math.max(1, renderedRowCount);
     const currentPage = Math.floor(this.rowIndexOffset / pageSize) + 1;
@@ -690,44 +634,43 @@ export class List extends LitElement {
       this.totalRowCount !== null && hasRows && effectiveRowCount > renderedRowCount;
 
     return html`
-      <section aria-label="リスト">
+      <section aria-label="${ifDefined(this.ariaLabel ?? undefined)}">
         <div
           role="grid"
           class="grid"
-          style="grid-template-columns: ${this._gridTemplateColumns}; --_gtc: ${this
-            ._gridTemplateColumns};"
+          style="grid-template-columns: ${this._gridTemplateColumns}; --_gtc: ${this._gridTemplateColumns};"
           aria-colcount="${String(logicalColCount)}"
-          aria-rowcount="${ifDefined(
-            effectiveRowCount > 0 ? String(effectiveRowCount) : undefined,
-          )}"
+          aria-rowcount="${ifDefined(effectiveRowCount > 0 ? String(effectiveRowCount) : undefined)}"
+          aria-label="${ifDefined(this.ariaLabel ?? undefined)}"
           @keydown="${this._handleGridKeyDown}"
-          @click="${this._handleGridClick}"
           @contextmenu="${this._handleGridContextMenu}"
-          @ui-active-change="${this._handleItemActiveChange}"
         >
           <div role="rowgroup" class="header-rowgroup">
             <div role="row" class="header-row">
               ${map(visibleColumns, (column, visibleIndex) => {
                 const ariaSort = this._getAriaSort(column);
+                const logicalColIndex = this.columns.findIndex((candidate) => candidate.id === column.id) + 1;
+
                 return html`
                   <div
                     role="columnheader"
                     class="${classMap({
                       'header-cell': true,
                       'header-cell--sortable': Boolean(column.sortable),
-                      'header-cell--sorted': Boolean(column.sortable) && this.sortKey === column.id,
+                      'header-cell--sorted': Boolean(column.sortable) &&
+                        this.sortKey === (column.sortKey ?? column.id),
                     })}"
-                    aria-colindex="${String(this._getLogicalColIndex(visibleIndex))}"
+                    aria-colindex="${String(logicalColIndex || visibleIndex + 1)}"
                     aria-sort="${ifDefined(typeof ariaSort === 'string' ? ariaSort : undefined)}"
                     tabindex="${column.sortable ? '0' : nothing}"
                     @click="${column.sortable
                       ? () => {
-                          this._handleSortClick(column.id);
+                          this._handleSortClick(column);
                         }
                       : nothing}"
                     @keydown="${column.sortable
                       ? (event: KeyboardEvent) => {
-                          this._handleHeaderKeyDown(event, column.id);
+                          this._handleHeaderKeyDown(event, column);
                         }
                       : nothing}"
                   >
@@ -737,12 +680,16 @@ export class List extends LitElement {
                 `;
               })}
 
-              <div
-                role="columnheader"
-                class="header-cell"
-                aria-label="操作"
-                aria-colindex="${String(this.columns.length + 1)}"
-              ></div>
+              ${this.showActions
+                ? html`
+                    <div
+                      role="columnheader"
+                      class="header-cell"
+                      aria-label="操作"
+                      aria-colindex="${String(this.columns.length + 1)}"
+                    ></div>
+                  `
+                : nothing}
             </div>
           </div>
 
@@ -760,9 +707,7 @@ export class List extends LitElement {
           : nothing}
         ${shouldShowPagination
           ? html`
-              <div
-                style="margin-top: var(--space-3, 12px); display: flex; justify-content: center;"
-              >
+              <div style="margin-top: var(--space-3, 12px); display: flex; justify-content: center;">
                 <ui-pagination
                   .current="${currentPage}"
                   .total="${totalPages}"
@@ -780,5 +725,9 @@ export class List extends LitElement {
 declare global {
   interface HTMLElementTagNameMap {
     'ui-list': List;
+  }
+
+  interface GlobalEventHandlersEventMap {
+    'ui-current-change': CustomEvent<UiCurrentChangeDetail>;
   }
 }

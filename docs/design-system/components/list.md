@@ -765,47 +765,45 @@ Enter または click による行起動時、既定起動先が見つからな�
 
 現行実装は `sortKey` と `sortDirection` を独立 property として持っています。長期契約で定義した `sort` オブジェクト入力、および列ごとの `sortKey` 上書き契約は未反映です。
 
-### `ariaLabel` が公開入力化されていません
+### `ariaLabel`
 
-現行実装は `<section aria-label="リスト">` を固定出力しており、長期契約で定義した `ariaLabel` 入力は未反映です。
+実装は `ariaLabel` を公開入力として受け取り、`grid` と外側 `section` の名称へ反映します。
 
-### current が index ベースです
+### current は列 ID ベースです
 
-現行実装は `activeRow` と `activeCellIndex` を使います。長期契約では `currentRowId` と `currentColumnId` を正本とします。`activeCellIndex` は可視列切替や actions 列との整合が悪いため、段階的に廃止します。
+実装は `currentRowId` と `currentColumnId` を正本とします。`activeRow` と `activeCellIndex` は使いません。
 
-### `primary` が複数の意味を背負っています
+### `lead` / `defaultAction`
 
-現行実装の `primary` は、モバイル保持と既定起動先探索の両方に関与しています。長期契約では `lead` と `defaultAction` に分離します。
+実装は `lead` をモバイル保持の基準列、`defaultAction` を Enter 時の既定起動先探索に用います。
 
-### current が semi-controlled です
+### current は controlled です
 
-現行実装はソートを外部制御としつつ、active state は内部更新も行います。長期契約では current も原則 controlled とします。
+実装の current 更新は `ui-current-change` 要求イベントを通じて行います。利用側が `currentRowId` と `currentColumnId` を戻すことで一覧状態が確定します。
 
 ### pagination が描画行数依存です
 
 現行実装は `totalRowCount` と `rowIndexOffset` を持ち、`pageSize` を描画行数から導出します。長期契約では `pagination.offset`、`pagination.limit`、`pagination.total` を明示入力とします。
 
-### actions 列が常に暗黙追加されます
+### actions 列は `showActions` に従います
 
-現行実装は末尾へ `40px` の操作列を自動追加します。長期契約では `showActions=true` の場合にのみ補助操作領域を表示します。
+実装は `showActions=true` の場合にのみ補助操作領域を表示し、`aria-colcount` にもそのときだけ加算します。
 
-また、現行実装は `aria-colcount` を常に `columns.length + 1` とし、`activeCellIndex` の正規化上限も `columns.length` です。長期契約で定義した「補助操作領域は current の正本対象ではない」という分離は未反映です。
+### 行 ID は `row-id` です
 
-### 行 ID フォールバックがあります
+実装は `row-id` を正本とし、親が `items[index].id` から行 ID を推測しません。
 
-現行実装は `item-id` 属性、`itemId` property、`items[index].id` の順で行 ID を解決します。長期契約では `row-id` を必須とし、親が推測しない設計に寄せます。
+### イベント名は `current` ベースです
 
-### イベント名が `active` ベースです
+実装は `ui-current-change` を正本イベントとして使います。
 
-現行実装は `ui-active-change` を使います。長期契約では意味を明示するため `ui-current-change` を正本とします。
+### 要求イベントの `cancelable` と detail 形状
 
-### 要求イベントの `cancelable` と detail 形状が未反映です
+`ui-current-change` は `cancelable` な要求イベントとして実装されています。一方で、`ui-context-request` の detail はまだ `origin`、`anchorPoint`、`anchorRect` へ分離していません。
 
-現行実装の公開イベントは `bubbles` / `composed` ですが、`cancelable` ではありません。また、`ui-context-request` の detail は `origin`、`anchorPoint`、`anchorRect` へ分離されておらず、単一の `anchor` 座標だけを返します。長期契約で定義した要求イベントモデルは未反映です。
+### `ui-list-item` 協調インターフェース
 
-### `ui-list-item` 協調インターフェースが旧命名のままです
-
-現行実装は `item-id`、`itemId`、`active`、`activeCellIndex`、`data-col-index`、`ui-list-context-request` を前提にしています。長期契約で定義した `row-id`、`current`、`currentColumnId`、`data-column-id` への移行は未反映です。
+親子協調は `row-id`、`current`、`currentColumnId`、`data-column-id` を前提にします。`ui-list-context-request` は内部協調面として維持します。
 
 ---
 
@@ -817,50 +815,22 @@ Enter または click による行起動時、既定起動先が見つからな�
 
 `ui-list-item` の公開面は `ui-list` に強く依存していますが、独立した契約書としてはまだ固定されていません。
 
-### 2. 列 ID ベース current への移行
-
-`currentColumnId` と `data-column-id` を正本とする設計は、現時点では実装に反映されていません。
-
-### 3. `sort` オブジェクト入力と列ごとの `sortKey`
+### 2. `sort` オブジェクト入力と列ごとの `sortKey`
 
 `sortKey` / `sortDirection` を 1 つの `sort` 入力へ束ねる設計、および `column.sortKey` による論理ソートキー分離は未対応です。
 
-### 4. `lead` / `defaultAction` への分離
-
-`primary` を分割した列契約は未対応です。
-
-### 5. controlled current
-
-current を要求イベント経由でのみ確定する契約は未対応です。
-
-### 6. `ariaLabel` の公開入力化
-
-grid 名称を上位から与える `ariaLabel` 入力は未対応です。現行実装は `aria-label="リスト"` を固定出力します。
-
-### 7. `pagination` オブジェクト入力
+### 3. `pagination` オブジェクト入力
 
 `offset` / `limit` / `total` を持つページ契約は未対応です。
 
-### 8. `showActions` 明示化
+### 4. 要求イベントの統一
 
-actions 領域の明示入力化は未対応です。
+`ui-current-change` は `cancelable` 化済みですが、`ui-sort-change`、`ui-preview-request`、`ui-context-request` まで含めた要求イベント統一と detail 精密化は未完です。
 
-### 9. 補助操作領域の current 非対象化
-
-actions 領域を `aria-colcount` や current モデルから条件付きで分離する設計は未対応です。現行実装では補助操作領域が常に列数へ算入されます。
-
-### 10. 要求イベントの `cancelable` 化と detail 精密化
-
-`ui-current-change`、`ui-sort-change`、`ui-preview-request`、`ui-context-request` を `cancelable` な要求イベントとして統一する設計は未対応です。加えて `ui-context-request` の `origin` / `anchorPoint` / `anchorRect` への detail 分離も未対応です。
-
-### 11. `ui-list-item` 命名移行
-
-`row-id`、`current`、`currentColumnId`、`data-column-id` を正本とする row host 契約は未対応です。現行実装は `item-id`、`active`、`activeCellIndex`、`data-col-index` に依存しています。
-
-### 12. 違反入力の強制検証
+### 5. 違反入力の強制検証
 
 重複列 ID、`row-id` 欠落、`lead` / `hideOnMobile` 競合などを dev で強制検出する仕組みは未完成です。
 
-### 13. 本節の扱い
+### 6. 本節の扱い
 
 本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用または厳密化する場合は、実装、Storybook、関連契約書の 3 点を同時に更新し、未対応状態を残したまま公開契約へ昇格させません。
