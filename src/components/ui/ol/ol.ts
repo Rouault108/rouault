@@ -5,37 +5,30 @@ import { customElement } from 'lit/decorators.js';
 const DOCUMENT_STYLE_ID = 'ui-ol-document-styles';
 
 /**
- * Shadow DOM の `::slotted()` 制約を回避し、ネストした `li` まで確実に制御するため、
- * リスト本体スタイルはドキュメントへ注入する。
- *
- * 適用スコープは `.prose ol` と `ui-ol > ol` のみに限定し、
- * グローバル `ol` への副作用を防ぐ。
+ * Shadow DOM の `::slotted()` 制約を回避しつつ、`ui-ol` 配下の ordered list のみを
+ * 安定して整形するため、スタイルはドキュメントへ注入する。
  */
 const DOCUMENT_CSS = `
-:where(.prose ol, ui-ol > ol) {
-  --ol-marker-column: 3ch;
+ui-ol ol {
+  --ui-ol-marker-column: 3ch;
   list-style: none;
   counter-reset: list-item var(--ui-ol-counter-reset, 0);
   margin: 0;
   padding: 0;
 }
 
-:where(.prose ol[data-marker-digits="3"], ui-ol > ol[data-marker-digits="3"]) {
-  --ol-marker-column: 4ch;
-}
-
-:where(.prose ol li, ui-ol li) + :where(.prose ol li, ui-ol li) {
+ui-ol ol > li + li {
   margin-block-start: var(--space-2);
 }
 
-:where(.prose ol li, ui-ol li) {
+ui-ol ol > li {
   display: grid;
-  grid-template-columns: var(--ol-marker-column) 1fr;
+  grid-template-columns: var(--ui-ol-marker-column) 1fr;
   gap: var(--space-2);
   align-items: baseline;
 }
 
-:where(.prose ol li, ui-ol li)::before {
+ui-ol ol > li::before {
   counter-increment: list-item var(--ui-ol-counter-step, 1);
   content: counter(list-item) ".";
   font-family: var(--font-mono);
@@ -46,24 +39,24 @@ const DOCUMENT_CSS = `
   justify-self: end;
 }
 
-:where(.prose ol li[data-ol-has-value], ui-ol li[data-ol-has-value]) {
+ui-ol ol > li[data-ol-has-value] {
   counter-set: list-item var(--ui-ol-counter-set, 0);
 }
 
-:where(.prose ol[variant="steps"] li, ui-ol[variant="steps"] li, ui-ol > ol[variant="steps"] li)::before {
+ui-ol[variant="steps"] ol > li::before {
   color: var(--primary);
 }
 
-:where(.prose ol li ol, ui-ol li ol) {
+ui-ol ol > li > ol {
   margin-block-start: var(--space-2);
 }
 
-:where(.prose ol li, ui-ol li) :is(a, button, [role="button"]) {
+ui-ol ol > li :is(a, button, [role="button"]) {
   position: relative;
   min-height: max(var(--control-height-sm, 32px), 24px);
 }
 
-:where(.prose ol li, ui-ol li) :is(a, button, [role="button"])::after {
+ui-ol ol > li :is(a, button, [role="button"])::after {
   content: "";
   position: absolute;
   top: 50%;
@@ -75,7 +68,7 @@ const DOCUMENT_CSS = `
 }
 
 @media (forced-colors: active) {
-  :where(.prose ol li, ui-ol li)::before {
+  ui-ol ol > li::before {
     color: CanvasText;
     forced-color-adjust: auto;
   }
@@ -85,12 +78,12 @@ const DOCUMENT_CSS = `
 const parseInteger = (value: string | null): number | null => {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
-  if (trimmed === '') return null;
+  if (!/^[-+]?\d+$/.test(trimmed)) return null;
   const parsed = Number.parseInt(trimmed, 10);
   return Number.isNaN(parsed) ? null : parsed;
 };
 
-const digits = (value: number): number => Math.abs(value).toString().length;
+const markerLength = (value: number): number => `${String(value)}.`.length;
 
 @customElement('ui-ol')
 export class Ol extends LitElement {
@@ -140,30 +133,6 @@ export class Ol extends LitElement {
     document.head.appendChild(style);
   }
 
-  /**
-   * `<ui-ol><li>...</li></ui-ol>` の入力も受け入れるため、
-   * 直下 `li` のみが存在する場合は `ol` を自動補完する。
-   */
-  private _ensureRootList(): void {
-    const children =
-      'children' in this
-        ? Array.from((this as typeof this & { children?: ArrayLike<Element> }).children ?? [])
-        : [];
-    const directItems = children.filter(
-      (child): child is HTMLLIElement => child instanceof HTMLLIElement,
-    );
-    if (directItems.length === 0) return;
-
-    const firstItem = directItems[0];
-    if (!firstItem) return;
-
-    const list = document.createElement('ol');
-    this.insertBefore(list, firstItem);
-    for (const item of directItems) {
-      list.appendChild(item);
-    }
-  }
-
   private _getDirectItems(list: HTMLOListElement): HTMLLIElement[] {
     return [...list.children].filter(
       (child): child is HTMLLIElement => child instanceof HTMLLIElement,
@@ -171,33 +140,29 @@ export class Ol extends LitElement {
   }
 
   /**
-   * `start` / `reversed` / `li[value]` / 直下 `li` 件数から、
-   * 3桁以上の番号が出る可能性を判定して属性を付与する。
+   * 表示される marker 文字列長に応じて、本文開始位置が崩れない列幅を与える。
    */
-  private _syncMarkerDigits(list: HTMLOListElement): void {
+  private _syncMarkerColumn(list: HTMLOListElement): void {
     const directItems = this._getDirectItems(list);
     const itemCount = directItems.length;
     const hasReversed = list.hasAttribute('reversed');
     const explicitStart = parseInteger(list.getAttribute('start'));
     const start = explicitStart ?? (hasReversed ? itemCount : 1);
     const step = hasReversed ? -1 : 1;
-    const end = itemCount > 0 ? start + step * (itemCount - 1) : start;
 
-    const explicitValues = directItems
-      .map((item) => parseInteger(item.getAttribute('value')))
-      .filter((value): value is number => value !== null);
+    let current = start;
+    let maxColumn = Math.max(3, markerLength(start));
 
-    const maxDigits = Math.max(
-      digits(start),
-      digits(end),
-      ...explicitValues.map((value) => digits(value)),
-    );
-
-    if (maxDigits >= 3) {
-      list.setAttribute('data-marker-digits', '3');
-      return;
+    for (const item of directItems) {
+      const explicitValue = parseInteger(item.getAttribute('value'));
+      if (explicitValue !== null) {
+        current = explicitValue;
+      }
+      maxColumn = Math.max(maxColumn, markerLength(current));
+      current += step;
     }
-    list.removeAttribute('data-marker-digits');
+
+    list.style.setProperty('--ui-ol-marker-column', `${String(maxColumn)}ch`);
   }
 
   /**
@@ -230,8 +195,6 @@ export class Ol extends LitElement {
   }
 
   private _syncOrderedLists(): void {
-    this._ensureRootList();
-
     const children =
       'children' in this
         ? Array.from((this as typeof this & { children?: ArrayLike<Element> }).children ?? [])
@@ -243,18 +206,8 @@ export class Ol extends LitElement {
     for (const rootList of rootLists) {
       const allLists = [rootList, ...rootList.querySelectorAll('ol')];
       for (const list of allLists) {
-        if (!list.hasAttribute('role')) {
-          list.setAttribute('role', 'list');
-        }
-        this._syncMarkerDigits(list);
+        this._syncMarkerColumn(list);
         this._syncCounterSettings(list);
-      }
-
-      const allItems = rootList.querySelectorAll('li');
-      for (const item of allItems) {
-        if (!item.hasAttribute('role')) {
-          item.setAttribute('role', 'listitem');
-        }
       }
     }
   }
