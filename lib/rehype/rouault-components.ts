@@ -7,6 +7,7 @@ interface FootnoteDefinition {
   readonly refId: string;
   readonly index: number;
   readonly contentNodes: HastNode[];
+  readonly itemNode: HastNode;
 }
 
 const isElement = (node: HastNode, tagName?: string): boolean => {
@@ -570,7 +571,7 @@ const isFootnoteBackrefAnchor = (node: HastNode): boolean => {
   }
 
   const target = stripUserContentPrefix(stripHash(href));
-  return target.startsWith('fnref-');
+  return /-ref-\d+$/.test(target);
 };
 
 const cloneWithoutFootnoteBackrefs = (node: HastNode): HastNode | null => {
@@ -613,17 +614,38 @@ const cloneWithoutFootnoteBackrefs = (node: HastNode): HastNode | null => {
   return clonedNode;
 };
 
-const rewriteFootnoteBackrefs = (node: HastNode, index: number): void => {
-  if (isFootnoteBackrefAnchor(node)) {
-    node.properties ??= {};
-    node.properties['href'] = `#fnref-${String(index)}-1`;
-  }
+const createFootnoteBackrefAnchor = (refId: string, refInstance: number): HastNode => ({
+  type: 'element',
+  tagName: 'a',
+  properties: {
+    href: `#${refId}-ref-${String(refInstance)}`,
+    role: 'doc-backlink',
+    'data-footnote-backref': true,
+    'aria-label': `脚注参照 ${String(refInstance)} に戻る`,
+  },
+  children: [
+    {
+      type: 'text',
+      value: refInstance === 1 ? '↩︎' : `↩︎${String(refInstance)}`,
+    },
+  ],
+});
 
-  if (!Array.isArray(node.children)) {
-    return;
-  }
-  for (const child of node.children) {
-    rewriteFootnoteBackrefs(child, index);
+const synchronizeFootnoteBackrefs = (
+  definitions: Map<string, FootnoteDefinition>,
+  refCounters: Map<string, number>,
+): void => {
+  for (const definition of definitions.values()) {
+    const refCount = refCounters.get(definition.refId) ?? 1;
+    definition.itemNode.children = definition.contentNodes.map((contentNode) => cloneNode(contentNode));
+
+    for (let refInstance = 1; refInstance <= refCount; refInstance += 1) {
+      definition.itemNode.children.push({
+        type: 'text',
+        value: ' ',
+      });
+      definition.itemNode.children.push(createFootnoteBackrefAnchor(definition.refId, refInstance));
+    }
   }
 };
 
@@ -668,8 +690,6 @@ const collectFootnoteDefinitions = (
         const resolvedIndex = parseFootnoteIndexFromId(refId) ?? listIndex;
         item.properties['id'] = refId;
 
-        rewriteFootnoteBackrefs(item, resolvedIndex);
-
         if (!definitions.has(refId)) {
           const contentNodes = (item.children ?? [])
             .map((child) => cloneWithoutFootnoteBackrefs(child))
@@ -679,6 +699,7 @@ const collectFootnoteDefinitions = (
             refId,
             index: resolvedIndex,
             contentNodes,
+            itemNode: item,
           });
         }
       }
@@ -822,5 +843,6 @@ export function rehypeRouaultComponents() {
     };
 
     visit(tree);
+    synchronizeFootnoteBackrefs(footnoteDefinitions, footnoteRefCounters);
   };
 }

@@ -1,9 +1,31 @@
-import { html, LitElement, nothing, type TemplateResult } from 'lit';
+import { html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { UiPopover } from '../popover/popover';
 import '../popover/popover';
 
-const DOCUMENT_STYLE_ID = 'ui-footnote-document-styles';
+interface ImportMetaEnvLike {
+  DEV?: boolean;
+}
+
+type FootnoteScope = Document | HTMLElement;
+
+export const DOCUMENT_STYLE_ID = 'ui-footnote-document-styles';
+
+const IS_DEVELOPMENT =
+  (import.meta as ImportMeta & { env?: ImportMetaEnvLike }).env?.DEV ?? true;
+
+const SCOPE_SELECTOR = '[data-footnote-scope], article, [role="article"], [data-note-root], main';
+
+const INTERACTIVE_ANCESTOR_SELECTOR = [
+  'a',
+  'button',
+  'input',
+  'select',
+  'textarea',
+  'summary',
+  '[role="button"]',
+  '[role="link"]',
+].join(', ');
 
 const DOCUMENT_CSS = `
 ui-footnote {
@@ -124,13 +146,13 @@ section.footnotes li:target {
   border-radius: var(--radius-sm, 4px);
 }
 
-section.footnotes a[href^='#fnref-'] {
+section.footnotes a[data-footnote-backref] {
   color: var(--fg-muted, oklch(48% 0 0));
   text-decoration: none;
 }
 
-section.footnotes a[href^='#fnref-']:hover,
-section.footnotes a[href^='#fnref-']:focus-visible {
+section.footnotes a[data-footnote-backref]:hover,
+section.footnotes a[data-footnote-backref]:focus-visible {
   color: var(--primary, oklch(56% 0.16 252));
 }
 
@@ -158,6 +180,15 @@ section.footnotes a[href^='#fnref-']:focus-visible {
 }
 `;
 
+const escapeCssIdentifier = (value: string): string => {
+  if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
+    return CSS.escape(value);
+  }
+  return value.replace(/[^a-zA-Z0-9_-]/g, '\\$&');
+};
+
+const isPositiveInteger = (value: number): boolean => Number.isInteger(value) && value > 0;
+
 @customElement('ui-footnote')
 export class Footnote extends LitElement {
   @property({ type: String, attribute: 'ref-id' })
@@ -172,54 +203,101 @@ export class Footnote extends LitElement {
   @property({ type: Boolean, reflect: true })
   shared = false;
 
-  private _contentNodes: Node[] = [];
+  private readonly _contentNodes: Node[] = [];
+  private readonly _reportedDiagnostics = new Set<string>();
+  private readonly _fallbackBaseId = `ui-footnote-invalid-${Math.random().toString(36).slice(2, 11)}`;
+
   private _didCaptureContent = false;
 
   override connectedCallback(): void {
-    this._captureInitialContentNodes();
     super.connectedCallback();
     this._injectDocumentStyles();
+    queueMicrotask(() => {
+      this._runDiagnostics();
+    });
   }
 
   protected override createRenderRoot(): HTMLElement {
     return this;
   }
 
+  protected override willUpdate(changedProperties: PropertyValues<this>): void {
+    super.willUpdate(changedProperties);
+    if (!this._didCaptureContent) {
+      this._captureInitialContentNodes();
+    }
+  }
+
+  protected override updated(changedProperties: PropertyValues<this>): void {
+    super.updated(changedProperties);
+    if (
+      changedProperties.has('refId') ||
+      changedProperties.has('index') ||
+      changedProperties.has('refInstance') ||
+      changedProperties.has('shared')
+    ) {
+      this._runDiagnostics();
+    }
+  }
+
   private get _resolvedIndex(): number {
     const normalized = Math.trunc(this.index);
-    return Number.isFinite(normalized) && normalized > 0 ? normalized : 1;
+    return isPositiveInteger(normalized) ? normalized : 1;
   }
 
   private get _resolvedRefInstance(): number {
     const normalized = Math.trunc(this.refInstance);
-    return Number.isFinite(normalized) && normalized > 0 ? normalized : 1;
+    return isPositiveInteger(normalized) ? normalized : 1;
   }
 
   private get _resolvedRefId(): string {
-    const explicit = this.refId.trim();
-    const fallback = `fn-${String(this._resolvedIndex)}`;
-    return (explicit === '' ? fallback : explicit).replace(/\s+/g, '-');
+    return this.refId.trim();
+  }
+
+  private get _resolvedBaseId(): string {
+    return this._resolvedRefId === '' ? this._fallbackBaseId : this._resolvedRefId;
   }
 
   private get _resolvedTriggerId(): string {
-    return `fnref-${String(this._resolvedIndex)}-${String(this._resolvedRefInstance)}`;
+    return `${this._resolvedBaseId}-ref-${String(this._resolvedRefInstance)}`;
   }
 
   private get _resolvedPopoverId(): string {
-    return `${this._resolvedRefId}-popover`;
+    return `${this._resolvedBaseId}-popover`;
   }
 
   private get _resolvedPopoverHostId(): string {
-    return `${this._resolvedRefId}-popover-host`;
+    return `${this._resolvedBaseId}-popover-host`;
   }
 
   private get _resolvedLabelId(): string {
-    return `${this._resolvedRefId}-label`;
+    return `${this._resolvedBaseId}-label`;
+  }
+
+  private get _resolvedHref(): string {
+    return this._resolvedRefId === '' ? '#' : `#${this._resolvedRefId}`;
   }
 
   private get _supportsPopoverApi(): boolean {
     if (typeof HTMLElement === 'undefined') return false;
     return 'showPopover' in HTMLElement.prototype && 'hidePopover' in HTMLElement.prototype;
+  }
+
+  private _resolveScope(): FootnoteScope {
+    return this.closest<HTMLElement>(SCOPE_SELECTOR) ?? document;
+  }
+
+  private _getScopeRoot(): ParentNode {
+    const scope = this._resolveScope();
+    return scope instanceof Document ? scope : scope;
+  }
+
+  private _getScopeFootnotes(refId: string): Footnote[] {
+    if (refId === '') return [];
+    const root = this._getScopeRoot();
+    return Array.from(root.querySelectorAll<Footnote>('ui-footnote')).filter(
+      (footnote) => footnote.refId.trim() === refId,
+    );
   }
 
   private _captureInitialContentNodes(): void {
@@ -232,10 +310,9 @@ export class Footnote extends LitElement {
       : Array.from(this.childNodes);
 
     const renderableNodes = sourceNodes.filter((node) => this._isRenderableContentNode(node));
-    this._contentNodes = renderableNodes.map((node) => node.cloneNode(true));
+    this._contentNodes.push(...renderableNodes.map((node) => node.cloneNode(true)));
 
-    // CSR: キャプチャ済みの元ノードを除去し、Lit の Light DOM 描画との重複を防ぐ。
-    // SSR の場合は existingContent（[data-part="content"]）が存在するため除去しない。
+    // CSR では初期子ノードを退避後に除去し、再描画時の二重化を防ぐ。
     if (!existingContent) {
       for (const node of renderableNodes) {
         node.remove();
@@ -272,8 +349,139 @@ export class Footnote extends LitElement {
     document.head.append(style);
   }
 
+  private _warnDiagnostic(key: string, message: string): void {
+    if (!IS_DEVELOPMENT) return;
+    if (this._reportedDiagnostics.has(key)) return;
+    this._reportedDiagnostics.add(key);
+    console.warn(`[ui-footnote] ${message}`, this);
+  }
+
+  private _getScopeEndnotes(): HTMLElement | null {
+    return this._getScopeRoot().querySelector<HTMLElement>('section.footnotes[role="doc-endnotes"]');
+  }
+
+  private _getScopeEndnoteItem(refId: string): HTMLElement | null {
+    if (refId === '') return null;
+    const endnotes = this._getScopeEndnotes();
+    if (!endnotes) return null;
+    return endnotes.querySelector<HTMLElement>(`#${escapeCssIdentifier(refId)}`);
+  }
+
+  private _runDiagnostics(): void {
+    const refId = this._resolvedRefId;
+    const sameRefFootnotes = this._getScopeFootnotes(refId);
+    const owners = sameRefFootnotes.filter((footnote) => !footnote.shared);
+    const sameInstanceFootnotes = sameRefFootnotes.filter(
+      (footnote) => footnote._resolvedRefInstance === this._resolvedRefInstance,
+    );
+
+    if (refId === '') {
+      this._warnDiagnostic('missing-ref-id', 'refId は必須です。index からの黙示補完には依存しません。');
+    }
+
+    if (this.refId !== this.refId.trim()) {
+      this._warnDiagnostic(
+        'trimmed-ref-id',
+        'refId の前後空白は安定識別子として不適切です。明示的に正規化してください。',
+      );
+    }
+
+    if (/\s/.test(refId)) {
+      this._warnDiagnostic(
+        'whitespace-ref-id',
+        'refId に空白を含めないでください。安定識別子として扱えません。',
+      );
+    }
+
+    if (!isPositiveInteger(this.index)) {
+      this._warnDiagnostic(
+        'invalid-index',
+        'index は正の整数で指定してください。現在は縮退表示として 1 を使用しています。',
+      );
+    }
+
+    if (!isPositiveInteger(this.refInstance)) {
+      this._warnDiagnostic(
+        'invalid-ref-instance',
+        'refInstance は正の整数で指定してください。現在は縮退表示として 1 を使用しています。',
+      );
+    }
+
+    if (this.shared && this._contentNodes.length > 0) {
+      this._warnDiagnostic(
+        'shared-has-content',
+        'secondary reference は本文入力を持てません。本文は primary reference だけに与えてください。',
+      );
+    }
+
+    const interactiveAncestor = this.parentElement?.closest(INTERACTIVE_ANCESTOR_SELECTOR) ?? null;
+    if (interactiveAncestor) {
+      this._warnDiagnostic(
+        'interactive-ancestor',
+        'ui-footnote を interactive ancestor の内側で使用しないでください。',
+      );
+    }
+
+    if (refId !== '' && owners.length > 1) {
+      this._warnDiagnostic(
+        'multiple-primary',
+        `refId="${refId}" に対する primary reference は 1 つだけにしてください。`,
+      );
+    }
+
+    if (refId !== '' && sameInstanceFootnotes.length > 1) {
+      this._warnDiagnostic(
+        'duplicate-ref-instance',
+        `refId="${refId}" 配下で refInstance="${String(this._resolvedRefInstance)}" が重複しています。`,
+      );
+    }
+
+    if (this.shared && refId !== '' && owners.length === 0) {
+      this._warnDiagnostic(
+        'missing-primary',
+        `secondary reference refId="${refId}" に対応する primary reference が scope 内に見つかりません。`,
+      );
+    }
+
+    const endnotes = this._getScopeEndnotes();
+    if (!endnotes) {
+      this._warnDiagnostic(
+        'missing-endnotes',
+        '同一 scope 内に section.footnotes[role="doc-endnotes"] が必要です。',
+      );
+      return;
+    }
+
+    const endnoteItem = this._getScopeEndnoteItem(refId);
+    if (refId !== '' && !endnoteItem) {
+      this._warnDiagnostic(
+        'missing-endnote-item',
+        `endnotes 内に id="${refId}" の脚注項目が見つかりません。`,
+      );
+      return;
+    }
+
+    if (refId !== '' && endnoteItem) {
+      const backlinkSelector = `a[data-footnote-backref][href="#${escapeCssIdentifier(this._resolvedTriggerId)}"]`;
+      if (!endnoteItem.querySelector(backlinkSelector)) {
+        this._warnDiagnostic(
+          'missing-backlink',
+          `endnote item "${refId}" に "${this._resolvedTriggerId}" への backlink がありません。`,
+        );
+      }
+    }
+  }
+
   private _getSharedPopoverHost(): UiPopover | null {
-    const host = document.getElementById(this._resolvedPopoverHostId);
+    const refId = this._resolvedRefId;
+    if (refId === '') return null;
+
+    const root = this._getScopeRoot();
+    const ownerSelector = `ui-footnote[ref-id="${escapeCssIdentifier(refId)}"]:not([shared])`;
+    const host = root.querySelector<HTMLElement>(
+      `${ownerSelector} ui-popover[data-part="popover-host"]`,
+    );
+
     if (!(host instanceof HTMLElement)) return null;
     if (host.tagName.toLowerCase() !== 'ui-popover') return null;
     return host as UiPopover;
@@ -337,21 +545,18 @@ export class Footnote extends LitElement {
   }
 
   private _renderTriggerTemplate(sharedTrigger: boolean): TemplateResult {
-    const refId = this._resolvedRefId;
     const index = this._resolvedIndex;
-    const triggerId = this._resolvedTriggerId;
-    const popoverId = this._resolvedPopoverId;
 
     if (sharedTrigger) {
       return html`
         <a
-          id="${triggerId}"
+          id="${this._resolvedTriggerId}"
           data-part="trigger"
-          href="#${refId}"
+          href="${this._resolvedHref}"
           role="doc-noteref"
-          aria-controls="${popoverId}"
+          aria-controls="${this._resolvedPopoverId}"
           aria-expanded="false"
-          aria-details="${popoverId}"
+          aria-details="${this._resolvedPopoverId}"
           @click="${this._onSharedTriggerClick}"
         >
           <sup>[${String(index)}]</sup>
@@ -361,14 +566,14 @@ export class Footnote extends LitElement {
 
     return html`
       <a
-        id="${triggerId}"
+        id="${this._resolvedTriggerId}"
         data-part="trigger"
         slot="trigger"
-        href="#${refId}"
+        href="${this._resolvedHref}"
         role="doc-noteref"
-        aria-controls="${popoverId}"
+        aria-controls="${this._resolvedPopoverId}"
         aria-expanded="false"
-        aria-details="${popoverId}"
+        aria-details="${this._resolvedPopoverId}"
       >
         <sup>[${String(index)}]</sup>
       </a>
@@ -376,10 +581,7 @@ export class Footnote extends LitElement {
   }
 
   override render(): TemplateResult {
-    const refId = this._resolvedRefId;
     const index = this._resolvedIndex;
-    const popoverId = this._resolvedPopoverId;
-    const labelId = this._resolvedLabelId;
 
     if (this.shared) {
       return this._renderTriggerTemplate(true);
@@ -395,17 +597,17 @@ export class Footnote extends LitElement {
       >
         ${this._renderTriggerTemplate(false)}
         <div
-          id="${popoverId}"
+          id="${this._resolvedPopoverId}"
           data-part="content"
           slot="content"
           role="note"
-          aria-labelledby="${labelId}"
+          aria-labelledby="${this._resolvedLabelId}"
         >
-          <span id="${labelId}" class="sr-only">脚注 ${String(index)}</span>
+          <span id="${this._resolvedLabelId}" class="sr-only">脚注 ${String(index)}</span>
           <div class="footnote-body">${this._renderBodyContent()}</div>
           <footer class="footnote-popover-footer">
             <a
-              href="#${refId}"
+              href="${this._resolvedHref}"
               class="footnote-list-link"
               @click="${this._onFooterLinkClick}"
               @keydown="${this._onFooterLinkKeyDown}"

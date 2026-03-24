@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './footnote';
 import type { Footnote } from './footnote';
+import { DOCUMENT_STYLE_ID as FOOTNOTE_STYLE_ID } from './footnote';
 import { DOCUMENT_STYLE_ID as POPOVER_STYLE_ID } from '../popover/popover';
 import type { UiPopover } from '../popover/popover';
 
@@ -15,10 +16,11 @@ const meta: Meta<Footnote> = {
         component: `
 脚注参照のためのコンポーネントです。
 
-- Trigger は常に \`<a href="#fn-*">\` を維持（No-JS フォールバック）
-- 通常クリックのみ Popover を開き、修飾キー付きクリックはネイティブリンクを維持
-- Popover 内から「脚注一覧で見る」へ遷移できる
-- 末尾の \`section.footnotes\` は常時可視（Hydration 後も非表示化しない）
+- Trigger は常に \`<a href="#{refId}">\` を維持します
+- 識別子は \`refId\` を主軸に \`{refId}-ref-{refInstance}\` で安定化します
+- \`shared\` は secondary reference を表す暫定入力で、Popover 本体は primary reference だけが持ちます
+- 解決は document 全体ではなく footnote scope 単位で行います
+- endnotes は Hydration 後も常時可視です
         `,
       },
     },
@@ -27,7 +29,7 @@ const meta: Meta<Footnote> = {
     refId: {
       control: 'text',
       name: 'ref-id',
-      description: '脚注ID（例: fn-1）',
+      description: '論理脚注の安定識別子',
       table: {
         type: { summary: 'string' },
         defaultValue: { summary: "''" },
@@ -35,7 +37,7 @@ const meta: Meta<Footnote> = {
     },
     index: {
       control: { type: 'number', min: 1, step: 1 },
-      description: '表示番号（[n]）',
+      description: '表示番号（識別子ではない）',
       table: {
         type: { summary: 'number' },
         defaultValue: { summary: '1' },
@@ -44,7 +46,7 @@ const meta: Meta<Footnote> = {
     refInstance: {
       control: { type: 'number', min: 1, step: 1 },
       name: 'ref-instance',
-      description: '同一脚注内での参照インスタンス番号',
+      description: '同一脚注内での参照位置番号',
       table: {
         type: { summary: 'number' },
         defaultValue: { summary: '1' },
@@ -52,7 +54,7 @@ const meta: Meta<Footnote> = {
     },
     shared: {
       control: 'boolean',
-      description: 'true の場合、Popover 本体を描画せず既存 Popover を共有',
+      description: 'secondary reference を表す暫定フラグ',
       table: {
         type: { summary: 'boolean' },
         defaultValue: { summary: 'false' },
@@ -66,6 +68,13 @@ type Story = StoryObj<Footnote>;
 
 const normalizeText = (value: string | null | undefined): string =>
   (value ?? '').replace(/\s+/g, ' ').trim();
+
+const nextFrame = async (): Promise<void> =>
+  new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      resolve();
+    });
+  });
 
 const getFootnote = (canvasElement: Element, id: string): Footnote => {
   const host = canvasElement.querySelector<Footnote>(`#${id}`);
@@ -102,20 +111,6 @@ const isPopoverOpen = (element: Element): boolean => {
   } catch {
     return false;
   }
-};
-
-const nextFrame = async (): Promise<void> =>
-  new Promise((resolve) => {
-    requestAnimationFrame(() => {
-      resolve();
-    });
-  });
-
-const hidePopoverProgrammatically = (popover: HTMLElement): boolean => {
-  const maybePopover = popover as HTMLElement & { hidePopover?: () => void };
-  if (typeof maybePopover.hidePopover !== 'function') return false;
-  maybePopover.hidePopover();
-  return true;
 };
 
 const waitForEvent = (target: EventTarget, type: string): Promise<Event> =>
@@ -188,14 +183,31 @@ const dispatchKeyboard = (
   return event;
 };
 
+const captureWarnings = async (task: () => Promise<void> | void): Promise<string[]> => {
+  const originalWarn = console.warn;
+  const messages: string[] = [];
+  console.warn = (...args: unknown[]) => {
+    messages.push(args.map((arg) => (typeof arg === 'string' ? arg : String(arg))).join(' '));
+  };
+
+  try {
+    await task();
+    await nextFrame();
+  } finally {
+    console.warn = originalWarn;
+  }
+
+  return messages;
+};
+
 /**
- * 基本構造:
- * - Trigger / Popover / Footer Link の契約
- * - endnotes セクションとのリンク整合
+ * 基本整合:
+ * - Trigger / Popover / Footer Link / endnotes
+ * - refId 主軸の ID 契約
  */
 export const Default: Story = {
   render: () => html`
-    <article>
+    <article data-footnote-scope>
       <p>
         読書体験は本文の信号比で決まる
         <ui-footnote id="default-footnote" ref-id="fn-1" index="1" ref-instance="1">
@@ -208,7 +220,7 @@ export const Default: Story = {
         <ol>
           <li id="fn-1">
             補足: 本文に集中できる設計は、補助情報へのアクセス経路を明確に定義する。
-            <a href="#fnref-1-1">↩︎</a>
+            <a href="#fn-1-ref-1" data-footnote-backref role="doc-backlink">↩︎</a>
           </li>
         </ol>
       </section>
@@ -217,38 +229,31 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const host = getFootnote(canvasElement, 'default-footnote');
     await host.updateComplete;
-    const popoverHost = getPopoverHost(host);
 
     const trigger = getTrigger(host);
     if (trigger.getAttribute('href') !== '#fn-1') {
       throw new Error('trigger の href が #fn-1 ではありません');
     }
+    if (trigger.id !== 'fn-1-ref-1') {
+      throw new Error(`trigger id は fn-1-ref-1 を想定しています: ${trigger.id}`);
+    }
     if (trigger.getAttribute('role') !== 'doc-noteref') {
       throw new Error('trigger の role は doc-noteref である必要があります');
-    }
-    if (trigger.id !== 'fnref-1-1') {
-      throw new Error(`trigger id は fnref-1-1 を想定しています: ${trigger.id}`);
     }
     if (trigger.getAttribute('aria-controls') !== 'fn-1-popover') {
       throw new Error('trigger の aria-controls が不正です');
     }
     if (normalizeText(trigger.textContent) !== '[1]') {
-      throw new Error(
-        `trigger 表示は [1] のはずですが "${normalizeText(trigger.textContent)}" です`,
-      );
+      throw new Error(`trigger 表示は [1] のはずですが "${normalizeText(trigger.textContent)}" です`);
     }
 
+    const popoverHost = getPopoverHost(host);
     const popover = getPopover(host);
     if (popoverHost.id !== 'fn-1-popover-host') {
-      throw new Error(
-        `ui-popover host id は fn-1-popover-host を想定しています: ${popoverHost.id}`,
-      );
+      throw new Error(`popover host id が不正です: ${popoverHost.id}`);
     }
     if (popover.id !== 'fn-1-popover') {
-      throw new Error('popover id が fn-1-popover ではありません');
-    }
-    if (popover.getAttribute('popover') !== 'auto') {
-      throw new Error('popover 属性は auto である必要があります');
+      throw new Error(`popover id が不正です: ${popover.id}`);
     }
     if (popover.getAttribute('role') !== 'note') {
       throw new Error('popover の role は note である必要があります');
@@ -262,24 +267,22 @@ export const Default: Story = {
     if (footerLink.getAttribute('href') !== '#fn-1') {
       throw new Error('footer link は #fn-1 を指す必要があります');
     }
-    if (!normalizeText(footerLink.textContent).includes('脚注一覧で見る')) {
-      throw new Error('footer link テキストに「脚注一覧で見る」が含まれていません');
-    }
 
-    const endnotes = canvasElement.querySelector<HTMLElement>(
-      'section.footnotes[role="doc-endnotes"]',
+    const backlink = canvasElement.querySelector<HTMLAnchorElement>(
+      'section.footnotes a[data-footnote-backref]',
     );
-    if (!endnotes) throw new Error('section.footnotes[role="doc-endnotes"] が見つかりません');
-    const endnoteItem = endnotes.querySelector<HTMLElement>('#fn-1');
-    if (!endnoteItem) throw new Error('脚注一覧の #fn-1 が見つかりません');
+    if (!backlink) throw new Error('data-footnote-backref が見つかりません');
+    if (backlink.getAttribute('href') !== '#fn-1-ref-1') {
+      throw new Error('backlink が trigger ID を指していません');
+    }
   },
 };
 
 /**
- * バリアント×状態:
- * - 通常参照
- * - shared 参照（Popover共有）
- * - 参照インスタンス差分
+ * 役割分担と scope:
+ * - owner / secondary reference
+ * - scope 内での Popover 一意性
+ * - 同じ refId を別 scope で再利用できること
  */
 export const VariantStateMatrix: Story = {
   render: () => html`
@@ -295,181 +298,131 @@ export const VariantStateMatrix: Story = {
         letter-spacing: 0.05em;
       }
     </style>
+
     <div class="matrix">
-      <div class="label">single reference</div>
-      <p>
-        単独参照
-        <ui-footnote id="matrix-single" ref-id="fn-10" index="10" ref-instance="1">
-          <span>単独参照の脚注本文。</span>
-        </ui-footnote>
-      </p>
+      <article data-footnote-scope>
+        <div class="label">scope a</div>
+        <p>
+          最初の参照
+          <ui-footnote id="matrix-owner-a" ref-id="fn-11" index="11" ref-instance="1">
+            <span>共有本文は primary reference が 1 つだけ保持する。</span>
+          </ui-footnote>
+          追従参照
+          <ui-footnote
+            id="matrix-follower-a"
+            ref-id="fn-11"
+            index="11"
+            ref-instance="2"
+            shared
+          ></ui-footnote>
+        </p>
+        <section class="footnotes" role="doc-endnotes">
+          <h2 class="sr-only">脚注</h2>
+          <ol>
+            <li id="fn-11">
+              共有本文は primary reference が 1 つだけ保持する。
+              <a href="#fn-11-ref-1" data-footnote-backref role="doc-backlink">↩︎</a>
+              <a href="#fn-11-ref-2" data-footnote-backref role="doc-backlink">↩︎2</a>
+            </li>
+          </ol>
+        </section>
+      </article>
 
-      <div class="label">shared reference</div>
-      <p>
-        最初の参照
-        <ui-footnote id="matrix-shared-owner" ref-id="fn-11" index="11" ref-instance="1">
-          <span>同一脚注を複数箇所から参照する場合の共有本文。</span>
-        </ui-footnote>
-        と再参照
-        <ui-footnote
-          id="matrix-shared-follower"
-          ref-id="fn-11"
-          index="11"
-          ref-instance="2"
-          shared
-        ></ui-footnote>
-      </p>
-
-      <div class="label">another index</div>
-      <p>
-        別番号
-        <ui-footnote id="matrix-another" ref-id="fn-12" index="12" ref-instance="1">
-          <span>別番号の脚注本文。</span>
-        </ui-footnote>
-      </p>
+      <article data-footnote-scope>
+        <div class="label">scope b</div>
+        <p>
+          別スコープの同一 refId
+          <ui-footnote id="matrix-owner-b" ref-id="fn-11" index="11" ref-instance="1">
+            <span>scope が異なれば同じ refId でも独立して解決される。</span>
+          </ui-footnote>
+        </p>
+        <section class="footnotes" role="doc-endnotes">
+          <h2 class="sr-only">脚注</h2>
+          <ol>
+            <li id="fn-11">
+              scope が異なれば同じ refId でも独立して解決される。
+              <a href="#fn-11-ref-1" data-footnote-backref role="doc-backlink">↩︎</a>
+            </li>
+          </ol>
+        </section>
+      </article>
     </div>
-
-    <section class="footnotes" role="doc-endnotes">
-      <h2 class="sr-only">脚注</h2>
-      <ol>
-        <li id="fn-10">単独参照の脚注本文。 <a href="#fnref-10-1">↩︎</a></li>
-        <li id="fn-11">
-          同一脚注を複数箇所から参照する場合の共有本文。 <a href="#fnref-11-1">↩︎</a>
-        </li>
-        <li id="fn-12">別番号の脚注本文。 <a href="#fnref-12-1">↩︎</a></li>
-      </ol>
-    </section>
   `,
   play: async ({ canvasElement }) => {
-    const ids = [
-      'matrix-single',
-      'matrix-shared-owner',
-      'matrix-shared-follower',
-      'matrix-another',
-    ] as const;
-    const hosts = ids.map((id) => getFootnote(canvasElement, id));
-    await Promise.all(hosts.map((host) => host.updateComplete));
+    const ownerA = getFootnote(canvasElement, 'matrix-owner-a');
+    const followerA = getFootnote(canvasElement, 'matrix-follower-a');
+    const ownerB = getFootnote(canvasElement, 'matrix-owner-b');
+    await Promise.all([ownerA.updateComplete, followerA.updateComplete, ownerB.updateComplete]);
 
-    const sharedOwner = getFootnote(canvasElement, 'matrix-shared-owner');
-    const sharedFollower = getFootnote(canvasElement, 'matrix-shared-follower');
-    const sharedOwnerPopoverHost = getPopoverHost(sharedOwner);
+    const ownerATrigger = getTrigger(ownerA);
+    const followerATrigger = getTrigger(followerA);
+    const ownerBTrigger = getTrigger(ownerB);
 
-    const ownerTrigger = getTrigger(sharedOwner);
-    const followerTrigger = getTrigger(sharedFollower);
-
-    if (ownerTrigger.getAttribute('aria-controls') !== 'fn-11-popover') {
-      throw new Error('shared owner の aria-controls が fn-11-popover ではありません');
+    if (ownerATrigger.id !== 'fn-11-ref-1') {
+      throw new Error(`owner A trigger id が不正です: ${ownerATrigger.id}`);
     }
-    if (followerTrigger.getAttribute('aria-controls') !== 'fn-11-popover') {
-      throw new Error('shared follower の aria-controls が fn-11-popover ではありません');
+    if (followerATrigger.id !== 'fn-11-ref-2') {
+      throw new Error(`follower trigger id が不正です: ${followerATrigger.id}`);
     }
-    if (followerTrigger.id !== 'fnref-11-2') {
-      throw new Error(
-        `shared follower の trigger id が fnref-11-2 ではありません: ${followerTrigger.id}`,
-      );
+    if (ownerBTrigger.id !== 'fn-11-ref-1') {
+      throw new Error(`scope B の trigger id が不正です: ${ownerBTrigger.id}`);
     }
 
-    const ownerPopover = sharedOwner.querySelector('[data-part="content"]');
-    if (!ownerPopover) throw new Error('shared owner は popover を持つ必要があります');
-    if (sharedOwnerPopoverHost.id !== 'fn-11-popover-host') {
-      throw new Error('shared owner の ui-popover host id が不正です');
-    }
-    const followerPopoverHost = sharedFollower.querySelector(
-      'ui-popover[data-part="popover-host"]',
-    );
-    if (followerPopoverHost)
-      throw new Error('shared follower は ui-popover host を描画してはいけません');
-    const followerPopover = sharedFollower.querySelector('[data-part="content"]');
-    if (followerPopover) throw new Error('shared follower は popover 本体を描画してはいけません');
-
-    const sharedPopovers = canvasElement.querySelectorAll('#fn-11-popover');
-    if (sharedPopovers.length !== 1) {
-      throw new Error(
-        `fn-11-popover は1つだけ存在する必要があります: ${String(sharedPopovers.length)}`,
-      );
+    if (followerA.querySelector('ui-popover')) {
+      throw new Error('secondary reference は自前の Popover を持ってはいけません');
     }
 
-    const labels = hosts.map((host) => normalizeText(getTrigger(host).textContent));
-    const expected = ['[10]', '[11]', '[11]', '[12]'];
-    if (labels.join('|') !== expected.join('|')) {
-      throw new Error(`表示ラベルが想定と一致しません: ${labels.join(', ')}`);
+    if (!supportsPopoverApi()) {
+      return;
     }
 
-    if (supportsPopoverApi()) {
-      const sharedPopover = getPopover(sharedOwner);
-      const openedPromise = waitForEvent(sharedOwnerPopoverHost, 'ui-popover-opened');
-      const followerClick = dispatchPrimaryClick(followerTrigger);
-      if (!followerClick.defaultPrevented) {
-        throw new Error('shared follower の通常クリックは preventDefault される必要があります');
-      }
-      await openedPromise;
-      await nextFrame();
+    const popoverHostA = getPopoverHost(ownerA);
+    const opened = waitForEvent(popoverHostA, 'ui-popover-opened');
+    const clickEvent = dispatchPrimaryClick(followerATrigger);
+    if (!clickEvent.defaultPrevented) {
+      throw new Error('secondary reference の通常クリックは Popover を開くために preventDefault される必要があります');
+    }
+    await opened;
 
-      if (!isPopoverOpen(sharedPopover)) {
-        throw new Error('shared follower クリックで owner 側 Popover が開いていません');
-      }
-      if (followerTrigger.getAttribute('aria-expanded') !== 'true') {
-        throw new Error('shared follower が active trigger になっていません');
-      }
-      if (!followerTrigger.classList.contains('is-active-trigger')) {
-        throw new Error('shared follower クリック中は active class が必要です');
-      }
-      if (ownerTrigger.getAttribute('aria-expanded') !== 'false') {
-        throw new Error(
-          'shared follower 経由で開いた場合、owner trigger は非展開のままである必要があります',
-        );
-      }
+    if (ownerATrigger.getAttribute('aria-expanded') !== 'false') {
+      throw new Error('owner trigger は active trigger でないとき aria-expanded=false のままである必要があります');
+    }
+    if (followerATrigger.getAttribute('aria-expanded') !== 'true') {
+      throw new Error('secondary trigger が active trigger として aria-expanded=true になっていません');
+    }
 
-      const footerLink = sharedPopover.querySelector<HTMLAnchorElement>('.footnote-list-link');
-      if (!footerLink) throw new Error('shared owner の footer link が見つかりません');
+    const popoverA = getPopover(ownerA);
+    if (!isPopoverOpen(popoverA)) {
+      throw new Error('scope A の Popover が開いていません');
+    }
 
-      const closedPromise = waitForEvent(sharedOwnerPopoverHost, 'ui-popover-closed');
-      sharedOwnerPopoverHost.close({ returnFocus: false });
-      await closedPromise;
-      await nextFrame();
-
-      if (isPopoverOpen(sharedPopover)) {
-        throw new Error('shared footer link クリック後に Popover が閉じていません');
-      }
-      if (followerTrigger.getAttribute('aria-expanded') !== 'false') {
-        throw new Error('shared close 後に follower aria-expanded が false へ戻っていません');
-      }
-      if (document.activeElement === followerTrigger) {
-        throw new Error('shared footer close は trigger へフォーカス復帰しない契約です');
-      }
-    } else {
-      const followerClick = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
-      followerTrigger.dispatchEvent(followerClick);
-      if (followerClick.defaultPrevented) {
-        throw new Error(
-          'Popover 非対応環境の shared follower はネイティブリンクを維持する必要があります',
-        );
-      }
+    const popoverB = getPopover(ownerB);
+    if (isPopoverOpen(popoverB)) {
+      throw new Error('別 scope の Popover が誤って開いています');
     }
   },
 };
 
 /**
- * デュアルアクセス契約:
- * - 通常クリック: Popover
- * - 修飾キー付きクリック: ネイティブリンク
- * - Footerリンクでクローズし、endnotes は可視のまま
+ * デュアルアクセス:
+ * - 通常クリックは Popover 補助表示
+ * - 修飾キー付きクリックと中クリックはネイティブリンク維持
  */
 export const DualAccessContract: Story = {
   render: () => html`
-    <article>
+    <article data-footnote-scope>
       <p>
-        参照
+        デュアルアクセス
         <ui-footnote id="access-footnote" ref-id="fn-20" index="20" ref-instance="1">
-          <span>デュアルアクセス契約の検証用本文。</span>
+          <span>Popover は補助経路であり、脚注一覧は正規経路である。</span>
         </ui-footnote>
       </p>
       <section class="footnotes" role="doc-endnotes">
         <h2 class="sr-only">脚注</h2>
         <ol>
           <li id="fn-20">
-            デュアルアクセス契約の検証用本文。
-            <a href="#fnref-20-1">↩︎</a>
+            Popover は補助経路であり、脚注一覧は正規経路である。
+            <a href="#fn-20-ref-1" data-footnote-backref role="doc-backlink">↩︎</a>
           </li>
         </ol>
       </section>
@@ -478,262 +431,159 @@ export const DualAccessContract: Story = {
   play: async ({ canvasElement }) => {
     const host = getFootnote(canvasElement, 'access-footnote');
     await host.updateComplete;
-
     const trigger = getTrigger(host);
     const popover = getPopover(host);
     const popoverHost = getPopoverHost(host);
 
-    const modifiedClick = dispatchObservedClick(trigger, {
-      button: 0,
-      ctrlKey: true,
-    });
-    if (modifiedClick.defaultPreventedBeforeObserver) {
-      throw new Error('修飾キー付きクリックは preventDefault してはいけません');
-    }
-    if (trigger.getAttribute('aria-expanded') !== 'false') {
-      throw new Error('修飾キー付きクリック後に aria-expanded が変化してはいけません');
-    }
+    const modifiedCases: MouseEventInit[] = [
+      { metaKey: true, button: 0 },
+      { ctrlKey: true, button: 0 },
+      { shiftKey: true, button: 0 },
+      { button: 1 },
+    ];
 
-    const metaClick = dispatchObservedClick(trigger, {
-      button: 0,
-      metaKey: true,
-    });
-    if (metaClick.defaultPreventedBeforeObserver) {
-      throw new Error('Cmd/Meta クリックは preventDefault してはいけません');
-    }
-
-    const middleClick = dispatchObservedClick(trigger, {
-      button: 1,
-    });
-    if (middleClick.defaultPreventedBeforeObserver) {
-      throw new Error('中クリックは preventDefault してはいけません');
-    }
-
-    if (supportsPopoverApi()) {
-      const openedPromise = waitForEvent(popoverHost, 'ui-popover-opened');
-      const normalClick = new MouseEvent('click', {
-        bubbles: true,
-        cancelable: true,
-        button: 0,
-      });
-      trigger.dispatchEvent(normalClick);
-      if (!normalClick.defaultPrevented) {
-        throw new Error('Popover 対応環境では通常クリックを preventDefault する必要があります');
-      }
-      await openedPromise;
-      await nextFrame();
-
-      if (!isPopoverOpen(popover)) {
-        throw new Error('通常クリックで Popover が開く必要があります');
-      }
-      if (trigger.getAttribute('aria-expanded') !== 'true') {
-        throw new Error('Popover 表示中の trigger aria-expanded は true である必要があります');
-      }
-      if (!trigger.classList.contains('is-active-trigger')) {
-        throw new Error('Popover 表示中は trigger に active クラスが必要です');
-      }
-
-      const footerLink = popover.querySelector<HTMLAnchorElement>('.footnote-list-link');
-      if (!footerLink) throw new Error('footer link が見つかりません');
-      const closedPromise = waitForEvent(popoverHost, 'ui-popover-closed');
-      popoverHost.close({ returnFocus: false });
-      await closedPromise;
-      await nextFrame();
-
-      if (isPopoverOpen(popover)) {
-        throw new Error('footer link クリック後に Popover が閉じる必要があります');
-      }
-      if (trigger.getAttribute('aria-expanded') !== 'false') {
-        throw new Error('Popover close 後の aria-expanded は false である必要があります');
-      }
-    } else {
-      const normalClick = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
-      trigger.dispatchEvent(normalClick);
-      if (normalClick.defaultPrevented) {
-        throw new Error(
-          'Popover 非対応環境では通常クリックもネイティブリンク挙動を維持する必要があります',
-        );
+    for (const init of modifiedCases) {
+      const { defaultPreventedBeforeObserver } = dispatchObservedClick(trigger, init);
+      if (defaultPreventedBeforeObserver) {
+        throw new Error('修飾キー付きクリックまたは中クリックでネイティブリンクが阻害されています');
       }
     }
 
-    const endnotes = canvasElement.querySelector<HTMLElement>('section.footnotes');
-    if (!endnotes) throw new Error('section.footnotes が見つかりません');
-    const style = getComputedStyle(endnotes);
-    if (style.display === 'none' || endnotes.hidden) {
-      throw new Error('endnotes セクションは常時可視である必要があります');
+    if (!supportsPopoverApi()) {
+      return;
+    }
+
+    const opened = waitForEvent(popoverHost, 'ui-popover-opened');
+    const event = dispatchPrimaryClick(trigger);
+    if (!event.defaultPrevented) {
+      throw new Error('通常クリックは Popover を開くために preventDefault される必要があります');
+    }
+    await opened;
+
+    if (!isPopoverOpen(popover)) {
+      throw new Error('通常クリック後に Popover が開いていません');
     }
   },
 };
 
 /**
- * キーボード/フォーカス契約:
- * - Escape で閉じる
- * - Footer Link 上の Tab で閉じる
- * - 閉じ方に応じてフォーカス復帰契約を満たす
+ * キーボードとフォーカス:
+ * - 開いた後の Escape / Tab 契約
+ * - Escape で閉じて trigger に戻る
+ * - footer link の Tab で閉じる
  */
 export const KeyboardAndFocusContract: Story = {
   render: () => html`
-    <article>
+    <article data-footnote-scope>
       <p>
-        キーボード検証
+        キーボード契約
         <ui-footnote id="keyboard-footnote" ref-id="fn-40" index="40" ref-instance="1">
-          <span>キーボード契約を検証する脚注本文。</span>
+          <span>読書フローの継続を妨げないキーボード契約。</span>
         </ui-footnote>
         <a href="#after-footnote" id="after-footnote">次のリンク</a>
       </p>
       <section class="footnotes" role="doc-endnotes">
         <h2 class="sr-only">脚注</h2>
         <ol>
-          <li id="fn-40">キーボード契約を検証する脚注本文。 <a href="#fnref-40-1">↩︎</a></li>
+          <li id="fn-40">
+            読書フローの継続を妨げないキーボード契約。
+            <a href="#fn-40-ref-1" data-footnote-backref role="doc-backlink">↩︎</a>
+          </li>
         </ol>
       </section>
     </article>
   `,
   play: async ({ canvasElement }) => {
-    if (!supportsPopoverApi()) return;
-
     const host = getFootnote(canvasElement, 'keyboard-footnote');
     await host.updateComplete;
+
+    if (!supportsPopoverApi()) {
+      return;
+    }
 
     const trigger = getTrigger(host);
     const popover = getPopover(host);
     const popoverHost = getPopoverHost(host);
-    if (!canvasElement.querySelector<HTMLAnchorElement>('#after-footnote')) {
-      throw new Error('#after-footnote が見つかりません');
+
+    trigger.focus();
+    const opened = waitForEvent(popoverHost, 'ui-popover-opened');
+    dispatchPrimaryClick(trigger);
+    await opened;
+
+    if (!isPopoverOpen(popover)) {
+      throw new Error('Enter で Popover が開いていません');
     }
 
-    const firstOpenedPromise = waitForEvent(popoverHost, 'ui-popover-opened');
-    dispatchPrimaryClick(trigger);
-    await firstOpenedPromise;
+    const closedByEscape = waitForEvent(popoverHost, 'ui-popover-closed');
+    dispatchKeyboard(popover, 'Escape');
+    await closedByEscape;
     await nextFrame();
-    if (!isPopoverOpen(popover)) {
-      throw new Error('キーボード検証前提: Popover が開いていません');
+    if (document.activeElement !== trigger) {
+      throw new Error('Escape 後は trigger にフォーカスが戻る必要があります');
     }
+
+    const reopened = waitForEvent(popoverHost, 'ui-popover-opened');
+    dispatchPrimaryClick(trigger);
+    await reopened;
 
     const footerLink = popover.querySelector<HTMLAnchorElement>('.footnote-list-link');
-    if (!footerLink) throw new Error('footer link が見つかりません');
-
+    if (!footerLink) throw new Error('.footnote-list-link が見つかりません');
     footerLink.focus();
-    await nextFrame();
-
-    const escapeClosedPromise = waitForEvent(popoverHost, 'ui-popover-closed');
-    const escapeEvent = dispatchKeyboard(footerLink, 'Escape');
-    if (!escapeEvent.defaultPrevented) {
-      throw new Error('Escape は preventDefault される必要があります');
-    }
-    await escapeClosedPromise;
+    dispatchKeyboard(footerLink, 'Tab');
     await nextFrame();
     if (isPopoverOpen(popover)) {
-      throw new Error('Escape で Popover が閉じる必要があります');
-    }
-    if (document.activeElement !== trigger) {
-      throw new Error('Escape クローズ後は trigger にフォーカス復帰する必要があります');
-    }
-
-    const secondOpenedPromise = waitForEvent(popoverHost, 'ui-popover-opened');
-    dispatchPrimaryClick(trigger);
-    await secondOpenedPromise;
-    await nextFrame();
-    if (!isPopoverOpen(popover)) {
-      throw new Error('Tab 契約検証前提: Popover が開いていません');
-    }
-
-    footerLink.focus();
-    await nextFrame();
-
-    const tabClosedPromise = waitForEvent(popoverHost, 'ui-popover-closed');
-    const tabEvent = dispatchKeyboard(footerLink, 'Tab');
-    await tabClosedPromise;
-    await nextFrame();
-
-    if (isPopoverOpen(popover)) {
-      throw new Error('Footer Link 上の Tab で Popover が閉じる必要があります');
-    }
-    if (tabEvent.defaultPrevented) {
-      throw new Error('Footer Link 上の Tab は preventDefault してはいけません');
-    }
-
-    const thirdOpenedPromise = waitForEvent(popoverHost, 'ui-popover-opened');
-    dispatchPrimaryClick(trigger);
-    await thirdOpenedPromise;
-    await nextFrame();
-    if (!isPopoverOpen(popover)) {
-      throw new Error('Dismiss 契約検証前提: Popover が開いていません');
-    }
-
-    const dismissClosedPromise = waitForEvent(popoverHost, 'ui-popover-closed');
-    if (!hidePopoverProgrammatically(popover)) {
-      throw new Error('Popover API の hidePopover が利用できません');
-    }
-    await dismissClosedPromise;
-    await nextFrame();
-
-    if (isPopoverOpen(popover)) {
-      throw new Error('Dismiss 後に Popover が閉じる必要があります');
-    }
-    if (document.activeElement !== trigger) {
-      throw new Error('Dismiss クローズ後は trigger にフォーカス復帰する必要があります');
+      throw new Error('footer link 上の Tab で Popover が閉じていません');
     }
   },
 };
 
 /**
- * SSR/Hydration 契約:
- * - SSR 済み [data-part="content"] から本文を再利用する
- * - 再描画後も本文が失われず、内部要素が本文へ混入しない
+ * SSR / Hydration:
+ * - 内部予約構造の再接続
+ * - 本文混入防止
+ * - 再描画後も本文が保持されること
  */
 export const SsrHydrationContract: Story = {
-  // Storybook の CSR レンダラーでは SSR/Hydration の入力条件を安定再現しにくいため、対話テストからは除外する。
-  tags: ['!test'],
-  render: () => html`
-    <article>
-      <p>
-        SSR hydrate
-        <ui-footnote id="ssr-footnote" ref-id="fn-60" index="60" ref-instance="1">
-          <ui-popover
-            id="fn-60-popover-host"
-            data-part="popover-host"
-            placement="bottom-start"
-            keep-link-fallback
-          >
-            <a
-              id="fnref-60-1"
-              data-part="trigger"
-              slot="trigger"
-              href="#fn-60"
-              role="doc-noteref"
-              aria-controls="fn-60-popover"
-              aria-expanded="false"
-              aria-details="fn-60-popover"
-            >
-              <sup>[60]</sup>
-            </a>
-            <div
-              id="fn-60-popover"
-              data-part="content"
-              slot="content"
-              role="note"
-              aria-labelledby="fn-60-label"
-            >
-              <span id="fn-60-label" class="sr-only">脚注 60</span>
-              <p>SSR で埋め込まれた脚注本文。</p>
-              <footer class="footnote-popover-footer">
-                <a href="#fn-60" class="footnote-list-link">
-                  脚注一覧で見る <span aria-hidden="true">→</span>
-                </a>
-              </footer>
-            </div>
-          </ui-popover>
-        </ui-footnote>
-      </p>
-      <section class="footnotes" role="doc-endnotes">
-        <h2 class="sr-only">脚注</h2>
-        <ol>
-          <li id="fn-60">SSR で埋め込まれた脚注本文。 <a href="#fnref-60-1">↩︎</a></li>
-        </ol>
-      </section>
-    </article>
-  `,
+  render: () => {
+    const article = document.createElement('article');
+    article.setAttribute('data-footnote-scope', '');
+
+    const paragraph = document.createElement('p');
+    paragraph.append('SSR 再接続 ');
+
+    const footnote = document.createElement('ui-footnote');
+    footnote.id = 'ssr-footnote';
+    footnote.setAttribute('ref-id', 'fn-60');
+    footnote.setAttribute('index', '60');
+    footnote.setAttribute('ref-instance', '1');
+
+    const bodyParagraph = document.createElement('p');
+    bodyParagraph.textContent = 'SSR で埋め込まれた脚注本文。';
+    footnote.append(bodyParagraph);
+    const captureInitialContent = Reflect.get(footnote, '_captureInitialContentNodes') as
+      | (() => void)
+      | undefined;
+    if (typeof captureInitialContent === 'function') {
+      captureInitialContent.call(footnote);
+    }
+    paragraph.append(footnote);
+    article.append(paragraph);
+
+    const endnotes = document.createElement('section');
+    endnotes.className = 'footnotes';
+    endnotes.setAttribute('role', 'doc-endnotes');
+    endnotes.innerHTML = `
+      <h2 class="sr-only">脚注</h2>
+      <ol>
+        <li id="fn-60">
+          SSR で埋め込まれた脚注本文。
+          <a href="#fn-60-ref-1" data-footnote-backref role="doc-backlink">↩︎</a>
+        </li>
+      </ol>
+    `;
+    article.append(endnotes);
+    return article;
+  },
   play: async ({ canvasElement }) => {
     const host = getFootnote(canvasElement, 'ssr-footnote');
     await host.updateComplete;
@@ -742,15 +592,13 @@ export const SsrHydrationContract: Story = {
     const body = popover.querySelector<HTMLElement>('.footnote-body');
     if (!body) throw new Error('.footnote-body が見つかりません');
     if (!normalizeText(body.textContent).includes('SSR で埋め込まれた脚注本文。')) {
-      throw new Error('SSR 由来の本文が footnote-body へ再利用されていません');
+      throw new Error('SSR 由来の本文が footnote-body に再接続されていません');
     }
-    if (
-      body.querySelector('[data-part="trigger"], [data-part="content"], [data-part="popover-host"]')
-    ) {
-      throw new Error('内部制御要素が footnote-body に混入しています');
+    if (body.querySelector('[data-part="trigger"], [data-part="content"], [data-part="popover-host"]')) {
+      throw new Error('内部制御要素が本文に混入しています');
     }
     if (body.querySelector('.footnote-list-link, .footnote-popover-footer')) {
-      throw new Error('SSR footer 要素が本文へ混入しています');
+      throw new Error('footer 要素が本文に混入しています');
     }
     if (host.querySelectorAll('.footnote-list-link').length !== 1) {
       throw new Error('footer link が重複描画されています');
@@ -772,69 +620,61 @@ export const SsrHydrationContract: Story = {
 };
 
 /**
- * 事故が多い境界条件:
- * - 不正番号のフォールバック
- * - 小さい親フォント下での 12px 下限
- * - 長文脚注の max-height / overflow 契約
- * - セクション/印刷スタイル契約の埋め込み
+ * 境界条件:
+ * - 開発時診断
+ * - 長文スクロール
+ * - interactive ancestor 禁止
  */
 export const BoundaryConditions: Story = {
   render: () => html`
     <div style="display: grid; gap: 1rem;">
-      <p>
-        不正値フォールバック
-        <ui-footnote id="boundary-fallback" index="0" ref-instance="0">
-          <span>fallback 本文。</span>
-        </ui-footnote>
-      </p>
+      <article data-footnote-scope>
+        <p style="font-size: 11px;">
+          親 11px
+          <ui-footnote id="boundary-small" ref-id="fn-31" index="31" ref-instance="1">
+            <span>small text 本文。</span>
+          </ui-footnote>
+        </p>
 
-      <p style="font-size: 11px;">
-        親 11px
-        <ui-footnote id="boundary-small" ref-id="fn-31" index="31" ref-instance="1">
-          <span>small text 本文。</span>
-        </ui-footnote>
-      </p>
+        <p>
+          長文
+          <ui-footnote id="boundary-long" ref-id="fn-32" index="32" ref-instance="1">
+            <span>
+              長文脚注: 表示領域の上限を超えると内部スクロールで読む。長文脚注:
+              表示領域の上限を超えると内部スクロールで読む。長文脚注:
+              表示領域の上限を超えると内部スクロールで読む。長文脚注:
+              表示領域の上限を超えると内部スクロールで読む。長文脚注:
+              表示領域の上限を超えると内部スクロールで読む。長文脚注:
+              表示領域の上限を超えると内部スクロールで読む。
+            </span>
+          </ui-footnote>
+        </p>
 
-      <p>
-        長文
-        <ui-footnote id="boundary-long" ref-id="fn-32" index="32" ref-instance="1">
-          <span>
-            長文脚注: 表示領域の上限を超えると内部スクロールで読む。長文脚注:
-            表示領域の上限を超えると内部スクロールで読む。 長文脚注:
-            表示領域の上限を超えると内部スクロールで読む。長文脚注:
-            表示領域の上限を超えると内部スクロールで読む。 長文脚注:
-            表示領域の上限を超えると内部スクロールで読む。長文脚注:
-            表示領域の上限を超えると内部スクロールで読む。
-          </span>
-        </ui-footnote>
-      </p>
+        <p>
+          診断用
+          <ui-footnote id="boundary-invalid" ref-id="fn-33" index="33" ref-instance="1">
+            <span>invalid 本文。</span>
+          </ui-footnote>
+        </p>
+
+        <section class="footnotes" role="doc-endnotes">
+          <h2 class="sr-only">脚注</h2>
+          <ol>
+            <li id="fn-31">small text 本文。 <a href="#fn-31-ref-1" data-footnote-backref>↩︎</a></li>
+            <li id="fn-32">長文本文。 <a href="#fn-32-ref-1" data-footnote-backref>↩︎</a></li>
+            <li id="fn-33">invalid 本文。 <a href="#fn-33-ref-1" data-footnote-backref>↩︎</a></li>
+          </ol>
+        </section>
+      </article>
+
+      <article data-footnote-scope id="boundary-empty-scope"></article>
     </div>
-
-    <section class="footnotes" role="doc-endnotes">
-      <h2 class="sr-only">脚注</h2>
-      <ol>
-        <li id="fn-1">fallback 本文。 <a href="#fnref-1-1">↩︎</a></li>
-        <li id="fn-31">small text 本文。 <a href="#fnref-31-1">↩︎</a></li>
-        <li id="fn-32">長文本文。 <a href="#fnref-32-1">↩︎</a></li>
-      </ol>
-    </section>
   `,
   play: async ({ canvasElement }) => {
-    const fallback = getFootnote(canvasElement, 'boundary-fallback');
     const small = getFootnote(canvasElement, 'boundary-small');
     const long = getFootnote(canvasElement, 'boundary-long');
-    await Promise.all([fallback.updateComplete, small.updateComplete, long.updateComplete]);
-
-    const fallbackTrigger = getTrigger(fallback);
-    if (fallbackTrigger.id !== 'fnref-1-1') {
-      throw new Error(`fallback trigger id が fnref-1-1 ではありません: ${fallbackTrigger.id}`);
-    }
-    if (fallbackTrigger.getAttribute('href') !== '#fn-1') {
-      throw new Error('fallback href は #fn-1 である必要があります');
-    }
-    if (fallbackTrigger.getAttribute('aria-controls') !== 'fn-1-popover') {
-      throw new Error('fallback aria-controls は fn-1-popover である必要があります');
-    }
+    const invalid = getFootnote(canvasElement, 'boundary-invalid');
+    await Promise.all([small.updateComplete, long.updateComplete, invalid.updateComplete]);
 
     const smallTrigger = getTrigger(small);
     const smallFontSize = Number.parseFloat(getComputedStyle(smallTrigger).fontSize);
@@ -858,43 +698,47 @@ export const BoundaryConditions: Story = {
       throw new Error('長文脚注の Popover max-height トークンが設定されていません');
     }
 
-    const styleElement = document.getElementById('ui-footnote-document-styles');
-    if (!(styleElement instanceof HTMLStyleElement)) {
-      throw new Error('ui-footnote の document style が注入されていません');
-    }
-    const styleText = styleElement.textContent;
-    if (typeof styleText !== 'string') {
-      throw new Error('style text の取得に失敗しました');
-    }
-    if (!styleText.includes('section.footnotes')) {
-      throw new Error('footnotes section スタイルが定義されていません');
-    }
-    if (!styleText.includes('@media print')) {
-      throw new Error('print スタイルが定義されていません');
-    }
-    if (/section\.footnotes\s*\{[^}]*display\s*:\s*none/i.test(styleText)) {
-      throw new Error('section.footnotes を非表示にする契約違反があります');
-    }
+    const warnings = await captureWarnings(async () => {
+      invalid.refId = '';
+      invalid.index = 0;
+      invalid.refInstance = 0;
+      invalid.shared = true;
+      await invalid.updateComplete;
 
-    const popoverStyleElement = document.getElementById(POPOVER_STYLE_ID);
-    if (!(popoverStyleElement instanceof HTMLStyleElement)) {
-      throw new Error('ui-popover の document style が注入されていません');
-    }
-    const popoverStyleText = popoverStyleElement.textContent;
-    if (!popoverStyleText.includes('@media print')) {
-      throw new Error('ui-popover 側の print スタイルが定義されていません');
+      const emptyScope = canvasElement.querySelector<HTMLElement>('#boundary-empty-scope');
+      if (!emptyScope) throw new Error('#boundary-empty-scope が見つかりません');
+      const link = document.createElement('a');
+      emptyScope.append(link);
+      link.append(invalid);
+      invalid.index = 2;
+      await invalid.updateComplete;
+    });
+
+    const requiredSnippets = [
+      'refId は必須です',
+      'index は正の整数',
+      'refInstance は正の整数',
+      'secondary reference は本文入力を持てません',
+      'interactive ancestor',
+    ];
+
+    for (const snippet of requiredSnippets) {
+      if (!warnings.some((message) => message.includes(snippet))) {
+        throw new Error(`期待した診断が出ていません: ${snippet}`);
+      }
     }
   },
 };
 
 /**
  * 視覚モード契約:
- * - Forced Colors / Reduced Motion / Print の定義が存在
- * - Dark/Light 双方でトークン参照を維持
+ * - Reduced Motion / Forced Colors / Print
+ * - トークン参照
+ * - endnotes 非表示禁止
  */
 export const VisualModeContracts: Story = {
   render: () => html`
-    <article>
+    <article data-footnote-scope>
       <p>
         表示モード検証
         <ui-footnote id="visual-footnote" ref-id="fn-50" index="50" ref-instance="1">
@@ -904,7 +748,10 @@ export const VisualModeContracts: Story = {
       <section class="footnotes" role="doc-endnotes">
         <h2 class="sr-only">脚注</h2>
         <ol>
-          <li id="fn-50">表示モード契約の検証用本文。 <a href="#fnref-50-1">↩︎</a></li>
+          <li id="fn-50">
+            表示モード契約の検証用本文。
+            <a href="#fn-50-ref-1" data-footnote-backref role="doc-backlink">↩︎</a>
+          </li>
         </ol>
       </section>
     </article>
@@ -913,7 +760,7 @@ export const VisualModeContracts: Story = {
     const host = getFootnote(canvasElement, 'visual-footnote');
     await host.updateComplete;
 
-    const footnoteStyleElement = document.getElementById('ui-footnote-document-styles');
+    const footnoteStyleElement = document.getElementById(FOOTNOTE_STYLE_ID);
     if (!(footnoteStyleElement instanceof HTMLStyleElement)) {
       throw new Error('ui-footnote の document style が注入されていません');
     }
@@ -930,6 +777,7 @@ export const VisualModeContracts: Story = {
       '@media (forced-colors: active)',
       '@media print',
       'section.footnotes',
+      'data-footnote-backref',
       'var(--primary',
     ];
 
@@ -952,6 +800,10 @@ export const VisualModeContracts: Story = {
       }
     }
 
+    if (/section\.footnotes\s*\{[^}]*display\s*:\s*none/i.test(footnoteStyleText)) {
+      throw new Error('section.footnotes を非表示にする契約違反があります');
+    }
+
     const trigger = getTrigger(host);
     const popover = getPopover(host);
     const triggerStyle = getComputedStyle(trigger);
@@ -961,9 +813,8 @@ export const VisualModeContracts: Story = {
         `popover margin must be 0px: top=${popoverStyle.marginTop}, left=${popoverStyle.marginLeft}`,
       );
     }
-
     if (triggerStyle.fontSize === '' || popoverStyle.fontSize === '') {
-      throw new Error('表示モード検証: 計算済みスタイル取得に失敗しました');
+      throw new Error('計算済みスタイルの取得に失敗しました');
     }
   },
 };

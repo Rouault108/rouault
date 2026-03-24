@@ -149,9 +149,9 @@ remark 段階では次を即時エラーにする。
 | `mark`                        | `ui-highlight`                                    | `origin` / `data-origin`、`current` / `data-current` / `aria-current` を吸収                                                                                                            |
 | `img`                         | `ui-image`                                        | `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化                                                                                                          |
 | `figure(img + figcaption)`    | `ui-image`                                        | `figcaption` を `caption` に統合                                                                                                                                                        |
-| footnote 参照 / 定義          | `ui-footnote` + `section[role=doc-endnotes]`      | 参照回数、backref、`user-content-` 接頭辞を正規化                                                                                                                                       |
+| footnote 参照 / 定義          | `ui-footnote` + `section[role=doc-endnotes]`      | 参照回数、backref、`user-content-` 接頭辞を正規化し、trigger/backlink を `{refId}-ref-{refInstance}` で接続                                                                        |
 
-脚注については、最初の参照だけが本文ノードを内包し、2 回目以降の参照は `shared` と `ref-instance` だけを持つ軽量ノードになる。
+脚注については、最初の参照だけが本文ノードを内包する primary reference となり、2 回目以降の参照は `shared` と `ref-instance` だけを持つ secondary reference になる。endnotes 側の backlink 群は各 `refInstance` に対応する `#${refId}-ref-${refInstance}` を出力する。
 
 ### 2.5. preview-sandbox source を inert payload へ展開する
 

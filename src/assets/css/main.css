@@ -1566,13 +1566,13 @@ section.footnotes li:target {
   border-radius: var(--radius-sm, 4px);
 }
 
-section.footnotes a[href^='#fnref-'] {
+section.footnotes a[data-footnote-backref] {
   color: var(--fg-muted, oklch(48% 0 0));
   text-decoration: none;
 }
 
-section.footnotes a[href^='#fnref-']:hover,
-section.footnotes a[href^='#fnref-']:focus-visible {
+section.footnotes a[data-footnote-backref]:hover,
+section.footnotes a[data-footnote-backref]:focus-visible {
   color: var(--primary, oklch(56% 0.16 252));
 }
 
