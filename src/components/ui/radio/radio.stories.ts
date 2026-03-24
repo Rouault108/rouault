@@ -27,6 +27,7 @@ import type { RadioGroup as RadioGroupElement } from './radio-group';
  *
  * - **フォーム送信**: `name` が空でない、`disabled` でない、`checked === true` の場合のみ値を送信
  * - **グループ排他制御**: 同一 `name` のラジオを選択すると他は自動的に未選択になります
+ * - **`ui-radio-group`**: `name` や選択値は持たず、`required` 検証と `radiogroup` の意味付けを担います
  */
 const meta: Meta<Radio> = {
   title: 'Components/Radio',
@@ -43,9 +44,11 @@ Form-Associated Custom Element として、標準フォームとシームレス�
 
 \`\`\`html
 <!-- 基本的なグループ -->
-<ui-radio name="color" value="red"   label="赤"></ui-radio>
-<ui-radio name="color" value="green" label="緑" checked></ui-radio>
-<ui-radio name="color" value="blue"  label="青"></ui-radio>
+<ui-radio-group label="色">
+  <ui-radio name="color" value="red" label="赤"></ui-radio>
+  <ui-radio name="color" value="green" label="緑" checked></ui-radio>
+  <ui-radio name="color" value="blue" label="青"></ui-radio>
+</ui-radio-group>
 
 <!-- 無効 -->
 <ui-radio name="size" value="xl" label="XL（在庫なし）" disabled></ui-radio>
@@ -54,6 +57,7 @@ Form-Associated Custom Element として、標準フォームとシームレス�
 ## 注意事項
 
 - **グループ排他制御**: 同一 \`name\` のラジオを選択すると他は自動的に未選択になります。
+- **グループ境界**: 排他制御の真実源は常に各 \`ui-radio.name\` であり、\`ui-radio-group\` は上書きしません。
 - **フォーム送信**: \`name\` が空でない、\`disabled\` でない、\`checked === true\` の場合のみ値を送信します。
 - **Roving Tabindex**: 選択中のラジオのみ \`tabindex="0"\`、他は \`tabindex="-1"\` です。
         `,
@@ -101,6 +105,10 @@ Form-Associated Custom Element として、標準フォームとシームレス�
 
 export default meta;
 type Story = StoryObj<Radio>;
+
+const waitForRadios = async (...radios: Radio[]): Promise<void> => {
+  await Promise.all(radios.map((radio) => radio.updateComplete));
+};
 
 // ──────────────────────────────────────────────
 // デフォルト
@@ -389,11 +397,7 @@ export const CheckedInvalid: Story = {
  */
 export const RadioGroup: Story = {
   render: () => html`
-    <div
-      role="radiogroup"
-      aria-label="配送方法"
-      style="display: flex; flex-direction: column; gap: 0.5rem;"
-    >
+    <ui-radio-group label="配送方法">
       <ui-radio id="group-a" name="shipping" value="standard" label="通常配送（3〜5日）"></ui-radio>
       <ui-radio
         id="group-b"
@@ -403,16 +407,18 @@ export const RadioGroup: Story = {
         checked
       ></ui-radio>
       <ui-radio id="group-c" name="shipping" value="same-day" label="当日配送"></ui-radio>
-    </div>
+    </ui-radio-group>
   `,
   play: async ({ canvasElement }) => {
+    const group = canvasElement.querySelector<RadioGroupElement>('ui-radio-group');
     const radios = canvasElement.querySelectorAll<Radio>('ui-radio[name="shipping"]');
+    if (!group) throw new Error('ui-radio-group が見つかりません');
     if (radios.length !== 3)
       throw new Error(
         `3つのラジオボタンを期待していましたが、実際には ${String(radios.length)} つでした`,
       );
 
-    await Promise.all([...radios].map((r) => r.updateComplete));
+    await Promise.all([group.updateComplete, ...[...radios].map((r) => r.updateComplete)]);
 
     const [a, b, c] = [...radios] as [Radio, Radio, Radio];
 
@@ -443,16 +449,12 @@ export const RadioGroup: Story = {
  */
 export const GroupWithDisabled: Story = {
   render: () => html`
-    <div
-      role="radiogroup"
-      aria-label="サイズ選択"
-      style="display: flex; flex-direction: column; gap: 0.5rem;"
-    >
+    <ui-radio-group label="サイズ選択">
       <ui-radio id="size-s" name="size" value="s" label="S"></ui-radio>
       <ui-radio id="size-m" name="size" value="m" label="M" checked></ui-radio>
       <ui-radio id="size-l" name="size" value="l" label="L（在庫なし）" disabled></ui-radio>
       <ui-radio id="size-xl" name="size" value="xl" label="XL"></ui-radio>
-    </div>
+    </ui-radio-group>
   `,
   play: async ({ canvasElement }) => {
     await Promise.all(
@@ -1214,12 +1216,7 @@ export const NoLabel: Story = {
 export const RequiredGroupValidation: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 420px;">
-      <ui-radio-group
-        id="shipping-group"
-        label="配送方法（必須）"
-        required
-        error-message="いずれかを選択してください"
-      >
+      <ui-radio-group id="shipping-group" label="配送方法（必須）" required>
         <ui-radio
           id="req-standard"
           name="req-shipping"
@@ -1228,38 +1225,297 @@ export const RequiredGroupValidation: Story = {
         ></ui-radio>
         <ui-radio id="req-express" name="req-shipping" value="express" label="速達"></ui-radio>
       </ui-radio-group>
-      <span id="shipping-error" aria-live="polite" style="font-size:13px; color: oklch(55% 0.2 28);"
-        >未選択</span
-      >
     </div>
   `,
   play: async ({ canvasElement }) => {
     const group = canvasElement.querySelector<RadioGroupElement>('#shipping-group');
     const standard = canvasElement.querySelector<Radio>('#req-standard');
     const express = canvasElement.querySelector<Radio>('#req-express');
-    const error = canvasElement.querySelector<HTMLElement>('#shipping-error');
-    if (!group || !standard || !express || !error)
-      throw new Error('必須グループの要素が見つかりません');
-    await Promise.all([standard.updateComplete, express.updateComplete]);
+    if (!group || !standard || !express) throw new Error('必須グループの要素が見つかりません');
+    await waitForRadios(standard, express);
 
     if (group.checkValidity()) throw new Error('初期状態ではグループが無効である必要があります');
     if (group.reportValidity())
       throw new Error('初期状態ではグループの reportValidity が false である必要があります');
+    await group.updateComplete;
+
+    if (group.errorMessage !== 'いずれか1つを選択してください。') {
+      throw new Error('既定のエラーメッセージが自動補完される必要があります');
+    }
+
+    const groupControl = group.shadowRoot?.querySelector<HTMLElement>('.group');
+    const groupError = group.shadowRoot?.querySelector<HTMLElement>('.error-message');
+    if (!groupControl || !groupError) {
+      throw new Error('グループエラーメッセージが表示されている必要があります');
+    }
+    if (groupControl.getAttribute('aria-describedby') !== groupError.id) {
+      throw new Error('グループエラーは radiogroup の aria-describedby に接続される必要があります');
+    }
 
     const expressControl = express.shadowRoot?.querySelector<HTMLElement>('.control');
     if (!expressControl) throw new Error('Express のコントロールが見つかりません');
     expressControl.click();
-    await express.updateComplete;
+    await Promise.all([group.updateComplete, express.updateComplete]);
 
     if (!group.checkValidity())
       throw new Error('1つのオプションを選択した後はグループが有効である必要があります');
     if (!group.reportValidity())
       throw new Error('選択後はグループの reportValidity が true である必要があります');
-    error.textContent = '選択済み';
-    if (error.textContent !== '選択済み')
-      throw new Error(
-        'バリデーションメッセージが更新されることを期待していましたが更新されていません',
-      );
+    await group.updateComplete;
+
+    const remainingGroupError = group.shadowRoot?.querySelector('.error-message');
+    if (remainingGroupError) {
+      throw new Error('既定文言によるエラーは妥当化後に自動解除される必要があります');
+    }
+  },
+};
+
+/**
+ * 初期競合時の無イベント正規化。
+ *
+ * 同一解決グループで複数 `checked` が与えられても、最後の要素だけが勝者になります。
+ */
+export const InitialCheckedConflictNormalization: Story = {
+  render: () => html`
+    <ui-radio-group label="初期競合">
+      <ui-radio id="init-conflict-a" name="init-conflict" value="a" label="A" checked></ui-radio>
+      <ui-radio id="init-conflict-b" name="init-conflict" value="b" label="B" checked></ui-radio>
+      <ui-radio id="init-conflict-c" name="init-conflict" value="c" label="C" checked></ui-radio>
+    </ui-radio-group>
+  `,
+  play: async ({ canvasElement }) => {
+    const radios = [
+      canvasElement.querySelector<Radio>('#init-conflict-a'),
+      canvasElement.querySelector<Radio>('#init-conflict-b'),
+      canvasElement.querySelector<Radio>('#init-conflict-c'),
+    ];
+
+    if (radios.some((radio) => !radio)) {
+      throw new Error('初期競合ストーリーのラジオが見つかりません');
+    }
+
+    const [radioA, radioB, radioC] = radios as [Radio, Radio, Radio];
+    let changeCount = 0;
+    [radioA, radioB, radioC].forEach((radio) => {
+      radio.addEventListener('change', () => {
+        changeCount += 1;
+      });
+    });
+
+    await waitForRadios(radioA, radioB, radioC);
+
+    if (radioA.checked || radioB.checked || !radioC.checked) {
+      throw new Error('初期競合では tree order の最後の checked 要素だけが残る必要があります');
+    }
+    if (changeCount !== 0) {
+      throw new Error('初期競合の正規化では change イベントを発火してはいけません');
+    }
+  },
+};
+
+/**
+ * programmatic な `checked=true` でも排他制御は維持されます。
+ */
+export const ProgrammaticCheckedNormalization: Story = {
+  render: () => html`
+    <ui-radio-group label="programmatic 正規化">
+      <ui-radio id="prog-a" name="prog-group" value="a" label="A" checked></ui-radio>
+      <ui-radio id="prog-b" name="prog-group" value="b" label="B"></ui-radio>
+      <ui-radio id="prog-c" name="prog-group" value="c" label="C"></ui-radio>
+    </ui-radio-group>
+  `,
+  play: async ({ canvasElement }) => {
+    const radioA = canvasElement.querySelector<Radio>('#prog-a');
+    const radioB = canvasElement.querySelector<Radio>('#prog-b');
+    const radioC = canvasElement.querySelector<Radio>('#prog-c');
+    if (!radioA || !radioB || !radioC) {
+      throw new Error('programmatic 正規化ストーリーのラジオが見つかりません');
+    }
+
+    let changeCount = 0;
+    let inputCount = 0;
+    [radioA, radioB, radioC].forEach((radio) => {
+      radio.addEventListener('change', () => {
+        changeCount += 1;
+      });
+      radio.addEventListener('input', () => {
+        inputCount += 1;
+      });
+    });
+
+    await waitForRadios(radioA, radioB, radioC);
+    radioB.checked = true;
+    await waitForRadios(radioA, radioB, radioC);
+
+    const checkedValues = [radioA, radioB, radioC].filter((radio) => radio.checked).map((radio) => radio.value);
+    if (checkedValues.length !== 1 || checkedValues[0] !== 'b') {
+      throw new Error('programmatic な checked=true でも単一選択へ正規化される必要があります');
+    }
+    if (changeCount !== 0 || inputCount !== 0) {
+      throw new Error('programmatic な正規化では change / input を発火してはいけません');
+    }
+  },
+};
+
+/**
+ * `ui-radio-group` 配下の `name` 不一致は開発時診断として警告されます。
+ */
+export const GroupNameMismatchDiagnostic: Story = {
+  render: () => html`<div id="name-mismatch-root"></div>`,
+  play: async ({ canvasElement }) => {
+    const originalWarn = console.warn;
+    const warnings: string[] = [];
+    console.warn = (message?: unknown, ...args: unknown[]): void => {
+      warnings.push([message, ...args].map((entry) => String(entry)).join(' '));
+    };
+
+    try {
+      const root = canvasElement.querySelector<HTMLElement>('#name-mismatch-root');
+      if (!root) throw new Error('name 不一致診断の描画先が見つかりません');
+
+      const group = document.createElement('ui-radio-group');
+      group.id = 'name-mismatch-group';
+      group.label = 'name 不一致診断';
+
+      const radioA = document.createElement('ui-radio');
+      radioA.id = 'name-mismatch-a';
+      radioA.name = 'shared-name';
+      radioA.value = 'a';
+      radioA.label = 'Alpha';
+
+      const radioB = document.createElement('ui-radio');
+      radioB.id = 'name-mismatch-b';
+      radioB.name = 'beta';
+      radioB.value = 'b';
+      radioB.label = 'Beta';
+
+      group.append(radioA, radioB);
+      root.append(group);
+
+      await Promise.all([group.updateComplete, radioA.updateComplete, radioB.updateComplete]);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      if (!warnings.some((message) => message.includes('name') && message.includes('一致していません'))) {
+        throw new Error('name 不一致は console.warn で通知される必要があります');
+      }
+    } finally {
+      console.warn = originalWarn;
+    }
+  },
+};
+
+/**
+ * 別 group に跨る同名 radio も診断対象です。
+ */
+export const CrossGroupSameNameBoundary: Story = {
+  render: () => html`<div id="cross-group-root" style="display: grid; gap: 1rem;"></div>`,
+  play: async ({ canvasElement }) => {
+    const originalWarn = console.warn;
+    const warnings: string[] = [];
+    console.warn = (message?: unknown, ...args: unknown[]): void => {
+      warnings.push([message, ...args].map((entry) => String(entry)).join(' '));
+    };
+
+    try {
+      const root = canvasElement.querySelector<HTMLElement>('#cross-group-root');
+      if (!root) throw new Error('跨ぎ診断の描画先が見つかりません');
+
+      const groupA = document.createElement('ui-radio-group');
+      groupA.id = 'cross-group-a';
+      groupA.label = 'グループ A';
+
+      const groupB = document.createElement('ui-radio-group');
+      groupB.id = 'cross-group-b';
+      groupB.label = 'グループ B';
+
+      const radioA = document.createElement('ui-radio');
+      radioA.id = 'cross-a-1';
+      radioA.name = 'cross-name';
+      radioA.value = 'a1';
+      radioA.label = 'A-1';
+
+      const radioB = document.createElement('ui-radio');
+      radioB.id = 'cross-b-1';
+      radioB.name = 'cross-name';
+      radioB.value = 'b1';
+      radioB.label = 'B-1';
+
+      groupA.append(radioA);
+      groupB.append(radioB);
+      root.append(groupA, groupB);
+
+      await Promise.all([groupA.updateComplete, groupB.updateComplete, radioA.updateComplete, radioB.updateComplete]);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      if (!warnings.some((message) => message.includes('境界を跨いでいます'))) {
+        throw new Error('別 group に跨る同名 radio は警告対象である必要があります');
+      }
+    } finally {
+      console.warn = originalWarn;
+    }
+  },
+};
+
+/**
+ * child 構造が変化しても required 妥当性は再評価されます。
+ */
+export const GroupValidityAfterSlotMutation: Story = {
+  render: () => html`
+    <div style="display: grid; gap: 1rem;">
+      <ui-radio-group id="slot-mutation-group" label="動的構造変更" required>
+        <div id="slot-wrapper">
+          <ui-radio
+            id="slot-initial"
+            name="slot-mutation"
+            value="initial"
+            label="初期選択"
+            checked
+          ></ui-radio>
+        </div>
+      </ui-radio-group>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const group = canvasElement.querySelector<RadioGroupElement>('#slot-mutation-group');
+    const wrapper = canvasElement.querySelector<HTMLElement>('#slot-wrapper');
+    const initial = canvasElement.querySelector<Radio>('#slot-initial');
+    if (!group || !wrapper || !initial) {
+      throw new Error('slot mutation ストーリーの要素が見つかりません');
+    }
+
+    await waitForRadios(initial);
+
+    if (!group.checkValidity()) {
+      throw new Error('初期選択がある間は group が有効である必要があります');
+    }
+
+    initial.remove();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await group.updateComplete;
+
+    if (group.checkValidity()) {
+      throw new Error('選択済み radio を削除した後は group が無効になる必要があります');
+    }
+
+    const replacement = document.createElement('ui-radio');
+    replacement.id = 'slot-replacement';
+    replacement.name = 'slot-mutation';
+    replacement.value = 'replacement';
+    replacement.label = '差し替え項目';
+    wrapper.append(replacement);
+    await replacement.updateComplete;
+    await group.updateComplete;
+
+    if (group.checkValidity()) {
+      throw new Error('未選択の差し替え後は group は引き続き無効である必要があります');
+    }
+
+    replacement.checked = true;
+    await Promise.all([replacement.updateComplete, group.updateComplete]);
+
+    if (!group.checkValidity()) {
+      throw new Error('programmatic に checked=true を与えた後は group が再度有効になる必要があります');
+    }
   },
 };
 
@@ -1423,7 +1679,6 @@ export const FormIntegration: Story = {
           value="same-day"
           label="当日配送（準備中）"
           disabled
-          checked
         ></ui-radio>
       </div>
 

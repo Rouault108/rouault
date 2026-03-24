@@ -622,60 +622,12 @@ roving tabindex はグループ単位で次のように決まります。
 
 ## 固定済みだが現行実装または検証へ未反映の事項
 
-本節は、公開契約としてはすでに固定したが、現行実装または Storybook / テストがまだ完全には追随していない事項だけを記録するものです。未確定論点や将来機能案は含めません。
+本更新で、少なくとも次の差分は実装と Storybook へ反映済みです。
 
-### 1. 初期状態での複数 `checked` 競合解決
+- 初期競合、再接続、`name` / `checked` 変更時の単一勝者への無イベント正規化
+- `ui-radio-group` 配下の `name` 不一致、空 `name`、別 group に跨る同名 radio の開発時診断
+- `.control::before` の 24px タッチターゲット契約へのコメント整合
+- `slotchange`、child の `checked` / `disabled` / `name` 変化、DOM 追加削除に追随する group 妥当性再評価
+- `InitialCheckedConflictNormalization`、`ProgrammaticCheckedNormalization`、`GroupNameMismatchDiagnostic`、`CrossGroupSameNameBoundary`、`GroupValidityAfterSlotMutation` を含む Storybook 契約
 
-契約は固定済みです。**同一解決グループでは、初期化完了後に **``** は高々 1 要素でなければなりません。**
-
-ただし現行実装は、初期マークアップで同一グループ内に複数の `checked` が存在する場合の無イベント正規化をまだ実装していません。実装反映時は、次を満たします。
-
-- 初期マークアップ、upgrade、再接続、`name` 変更、`checked` 変更による競合を無イベントで正規化すること。
-- 明示的な操作履歴を持たない競合では、tree order で最後に現れる `checked` 要素を勝者とすること。
-- 勝者以外の要素を `checked=false` へ同期しても `change` / `input` を発火しないこと。
-- roving tabindex とフォーム値同期が正規化後の単一勝者に追随すること。
-
-### 2. `ui-radio-group` と `name` の整合診断
-
-契約は固定済みです。`** 配下で単一選択肢として提示される **`** 群は、単一の非空 **``** を共有しなければなりません（MUST）。**
-
-ただし現行実装は、この不整合を開発時の non-fatal diagnostic として検出する処理をまだ持ちません。実装反映時は、次を満たします。
-
-- `name` 不一致または空 `name` の混在を作者入力エラーとして検出すること。
-- 通知方式を開発時警告・本番非例外・利用者向け非表示に保つこと。
-- 子要素の `name` を自動補完・自動修正しないこと。
-- 同名 radio が別 `ui-radio-group` に跨る構成も構造違反として診断対象に含めること。
-
-### 3. タッチターゲット寸法コメントの整合
-
-契約は固定済みです。**本コンポーネント単体が保証する最小操作領域は 24px であり、44×44 px の単体保証は行いません。**
-
-ただし現行実装には、`.control::before` に関するコメントとして 44×44 px を示唆する記述が残っています。実装反映時は、コメントと契約を一致させ、24px 契約と上位レイアウト責務の分担が読めるようにします。
-
-### 4. 動的構造変更時の group 妥当性再評価
-
-契約上、`ui-radio-group` の `required` 妥当性は **現在配下に存在する有効 **``** 群** に追随する方が自然です。しかし現行実装は、`change`イベント時にのみ`reportValidity()` を行い、`slotchange`時は`requestUpdate()` のみを行います。したがって、次のような変化では group 妥当性が自動再計算されません。
-
-- 選択済み `ui-radio` の削除
-- 選択済み `ui-radio` の `disabled=true` 化
-- 未選択から選択済みへの programmatic 変更後の再評価不足
-- child 構造の差し替え
-
-実装反映時は、少なくとも `slotchange`、child の `checked` / `disabled` / `name` 変化、再接続で group 妥当性を再評価し、`required` 契約と実状態が乖離しないようにします。
-
-### 5. Storybook の境界検証
-
-契約は固定済みですが、検証 Story がまだ不足しています。少なくとも次の契約確認 Story を追加します。
-
-- `InitialCheckedConflictNormalization`
-- `ProgrammaticCheckedNormalization`
-- `GroupNameMismatchDiagnostic`
-- `CrossGroupSameNameBoundary`
-- `TouchTargetContract`
-- `LabelKeyboardNonContract`
-- `ReducedMotion`
-- `GroupValidityAfterSlotMutation`
-
-### 6. 本節の扱い
-
-本節は、契約が未定である事項を列挙するものではありません。**契約は既に固定済みであり、現行実装または Storybook がまだ追随していない差分だけ** を記録します。これらを反映する場合は、実装、Storybook、契約書の 3 点を同時に更新し、再び未固定状態へ戻しません。
+したがって、現時点で本節に列挙すべき未反映事項はありません。今後差分が再発した場合に限り、**契約は固定済みだが実装または検証が未追随である事項だけ** をここへ再掲します。
