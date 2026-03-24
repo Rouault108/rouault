@@ -6,12 +6,6 @@ import { map } from 'lit/directives/map.js';
 import '../list-item/list-item';
 import '../pagination/pagination';
 
-export interface ListItemData {
-  id: string;
-  href?: string;
-  [key: string]: unknown;
-}
-
 export interface ColumnDef {
   id: string;
   label: string;
@@ -23,11 +17,54 @@ export interface ColumnDef {
   defaultAction?: boolean;
 }
 
-type SortDirection = 'asc' | 'desc' | null;
+export type SortDirection = 'asc' | 'desc' | null;
+
+export interface SortState {
+  key: string | null;
+  direction: SortDirection;
+}
+
+export interface PaginationState {
+  offset: number;
+  limit: number;
+  total: number;
+}
+
+export interface AnchorPoint {
+  x: number;
+  y: number;
+}
+
+export interface DOMRectLike {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
 
 interface UiCurrentChangeDetail {
   rowId: string;
   columnId: string;
+}
+
+export interface UiSortChangeDetail {
+  key: string | null;
+  direction: SortDirection;
+}
+
+export interface UiPreviewRequestDetail {
+  rowId: string;
+}
+
+export interface UiContextRequestDetail {
+  rowId: string;
+  origin: 'keyboard' | 'pointer';
+  anchorPoint?: AnchorPoint;
+  anchorRect?: DOMRectLike;
 }
 
 interface ListContextPayload {
@@ -47,6 +84,15 @@ interface UiListItemLike extends HTMLElement {
   rowIndex?: number | null;
   requestListContext?: () => void;
 }
+
+const DEFAULT_SORT_STATE: SortState = {
+  key: null,
+  direction: null,
+};
+
+const DEFAULT_LOADING_LABEL = '読み込み中です';
+const EMPTY_STATE_LABEL = '表示するアイテムがありません';
+const PAGE_STEP = 10;
 
 @customElement('ui-list')
 export class List extends LitElement {
@@ -143,7 +189,7 @@ export class List extends LitElement {
       box-shadow: inset 0 1px 0 0 var(--border-default, oklch(90% 0 0));
     }
 
-    .empty-state {
+    .status {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -154,9 +200,6 @@ export class List extends LitElement {
   `;
 
   @property({ type: Array })
-  items: ListItemData[] = [];
-
-  @property({ type: Array })
   columns: ColumnDef[] = [];
 
   @property({ type: String, attribute: 'current-row-id', reflect: true })
@@ -165,25 +208,28 @@ export class List extends LitElement {
   @property({ type: String, attribute: 'current-column-id', reflect: true })
   currentColumnId: string | null = null;
 
-  @property({ type: String, attribute: 'sort-key', reflect: true })
-  sortKey: string | null = null;
+  @property({ attribute: false })
+  sort: SortState | null = null;
 
-  @property({ type: String, attribute: 'sort-direction', reflect: true })
-  sortDirection: SortDirection = null;
-
-  @property({ type: Number, attribute: 'total-row-count' })
-  totalRowCount: number | null = null;
-
-  @property({ type: Number, attribute: 'row-index-offset' })
-  rowIndexOffset = 0;
+  @property({ attribute: false })
+  pagination: PaginationState | null = null;
 
   @property({ attribute: false })
   getPageHref: ((page: number) => string) | null = null;
 
+  @property({ type: Boolean, reflect: true })
+  loading = false;
+
+  @property({ type: String, attribute: 'loading-label' })
+  loadingLabel: string | null = null;
+
+  @property({ type: Boolean, attribute: 'auto-reveal-current', reflect: true })
+  autoRevealCurrent = false;
+
   @property({ type: Boolean, attribute: 'show-actions', reflect: true })
   showActions = false;
 
-  @property({ type: String, attribute: 'aria-label' })
+  @property({ type: String, attribute: 'aria-label', reflect: true })
   override ariaLabel: string | null = null;
 
   @state()
@@ -227,8 +273,14 @@ export class List extends LitElement {
 
   override updated(changed: PropertyValues<this>): void {
     const changedKeys = changed as Map<PropertyKey, unknown>;
-    if (changed.has('columns') || changed.has('currentColumnId')) {
-      this._validateColumns();
+    if (
+      changed.has('columns') ||
+      changed.has('currentColumnId') ||
+      changed.has('currentRowId') ||
+      changed.has('sort') ||
+      changed.has('pagination')
+    ) {
+      this._validateConfiguration();
     }
 
     if (changed.has('columns') || changed.has('showActions') || changedKeys.has('_isMobile')) {
@@ -239,17 +291,37 @@ export class List extends LitElement {
       changedKeys.has('_rowElements') ||
       changed.has('currentRowId') ||
       changed.has('currentColumnId') ||
-      changed.has('rowIndexOffset') ||
+      changed.has('pagination') ||
       changed.has('columns') ||
       changedKeys.has('_isMobile') ||
       changed.has('showActions')
     ) {
       this._syncRowsFromState();
     }
+
+    if (
+      this.autoRevealCurrent &&
+      !this.loading &&
+      (changedKeys.has('_rowElements') ||
+        changed.has('currentRowId') ||
+        changed.has('currentColumnId') ||
+        changed.has('autoRevealCurrent'))
+    ) {
+      this.revealCurrent();
+    }
+  }
+
+  revealCurrent(): void {
+    const row = this._getCurrentRowElement();
+    row?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+
+  scrollCurrentIntoView(): void {
+    this.revealCurrent();
   }
 
   private _isDevelopment(): boolean {
-    return globalThis.location?.hostname === 'localhost';
+    return globalThis.location.hostname === 'localhost';
   }
 
   private _warn(message: string): void {
@@ -257,7 +329,7 @@ export class List extends LitElement {
     console.warn(message);
   }
 
-  private _validateColumns(): void {
+  private _validateConfiguration(): void {
     const ids = new Set<string>();
     let leadCount = 0;
 
@@ -294,6 +366,25 @@ export class List extends LitElement {
     if (currentPairCount === 1) {
       this._warn('[ui-list] currentRowId と currentColumnId は組で指定してください。');
     }
+
+    const runtimeDirection = (this.sort as { direction?: unknown } | null)?.direction;
+    if (
+      runtimeDirection !== undefined &&
+      runtimeDirection !== null &&
+      runtimeDirection !== 'asc' &&
+      runtimeDirection !== 'desc'
+    ) {
+      this._warn('[ui-list] sort.direction は asc / desc / null のみ指定できます。');
+    }
+
+    if (this.pagination !== null && this.pagination.limit < 1) {
+      this._warn('[ui-list] pagination.limit は 1 以上でなければなりません。');
+    }
+
+    for (const row of this._rowElements) {
+      if (this._getRowId(row) !== null) continue;
+      this._warn('[ui-list] row-id を持たない ui-list-item を検出しました。');
+    }
   }
 
   private get _leadColumnId(): string | null {
@@ -328,6 +419,10 @@ export class List extends LitElement {
     return widths.join(' ');
   }
 
+  private get _resolvedSort(): SortState {
+    return this.sort ?? DEFAULT_SORT_STATE;
+  }
+
   private _collectRowElements(): void {
     const slot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot[data-list-rows]');
     if (!slot) return;
@@ -336,6 +431,11 @@ export class List extends LitElement {
       return element instanceof HTMLElement && element.tagName.toLowerCase() === 'ui-list-item';
     });
     this._rowElements = rows;
+  }
+
+  private _getCurrentRowElement(): UiListItemLike | null {
+    if (!this._hasCurrentPair()) return null;
+    return this._rowElements.find((row) => this._getRowId(row) === this.currentRowId) ?? null;
   }
 
   private _getRowId(row: UiListItemLike): string | null {
@@ -361,6 +461,7 @@ export class List extends LitElement {
 
   private _syncRowsFromState(): void {
     const hasCurrentPair = this._hasCurrentPair();
+    const rowIndexOffset = this.pagination?.offset ?? 0;
 
     this._rowElements.forEach((row, index) => {
       const rowId = this._getRowId(row);
@@ -368,7 +469,7 @@ export class List extends LitElement {
 
       row.current = isCurrent;
       row.currentColumnId = isCurrent ? this.currentColumnId : null;
-      row.rowIndex = this.rowIndexOffset + index + 2;
+      row.rowIndex = rowIndexOffset + index + 2;
       row.requestListContext?.();
     });
   }
@@ -411,18 +512,19 @@ export class List extends LitElement {
       this.columns.find((column) => column.defaultAction === true) ??
       this.columns.find((column) => column.id === this._leadColumnId) ??
       this.columns[0];
-    if (!defaultActionColumn) return null;
 
-    const selector = `[slot="${CSS.escape(defaultActionColumn.id)}"]`;
-    const primaryNode = row.querySelector(selector);
-    if (primaryNode instanceof HTMLAnchorElement && primaryNode.hasAttribute('href')) {
-      return primaryNode;
+    if (defaultActionColumn) {
+      const selector = `[slot="${CSS.escape(defaultActionColumn.id)}"]`;
+      const primaryNode = row.querySelector(selector);
+      if (primaryNode instanceof HTMLAnchorElement && primaryNode.hasAttribute('href')) {
+        return primaryNode;
+      }
+
+      const nested = primaryNode?.querySelector<HTMLAnchorElement>('a[href]');
+      if (nested) return nested;
     }
 
-    const nested = primaryNode?.querySelector<HTMLAnchorElement>('a[href]');
-    if (nested) return nested;
-
-    return null;
+    return row.querySelector<HTMLAnchorElement>(':scope a[href]:not([slot="actions"])');
   }
 
   private _requestCurrentChange(rowId: string, columnId: string): void {
@@ -442,16 +544,52 @@ export class List extends LitElement {
     this._requestCurrentChange(rowId, columnId);
   }
 
+  private _dispatchPreviewRequest(rowId: string): void {
+    this.dispatchEvent(
+      new CustomEvent<UiPreviewRequestDetail>('ui-preview-request', {
+        detail: { rowId },
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+      }),
+    );
+  }
+
+  private _toDOMRectLike(rect: DOMRect): DOMRectLike {
+    return {
+      x: rect.x,
+      y: rect.y,
+      width: rect.width,
+      height: rect.height,
+      top: rect.top,
+      right: rect.right,
+      bottom: rect.bottom,
+      left: rect.left,
+    };
+  }
+
+  private _dispatchContextRequest(detail: UiContextRequestDetail): void {
+    this.dispatchEvent(
+      new CustomEvent<UiContextRequestDetail>('ui-context-request', {
+        detail,
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+      }),
+    );
+  }
+
   private _handleSortClick(column: ColumnDef): void {
     const sortKey = column.sortKey ?? column.id;
+    const currentSort = this._resolvedSort;
     let nextKey: string | null = sortKey;
     let nextDirection: SortDirection;
 
-    if (this.sortKey !== sortKey) {
+    if (currentSort.key !== sortKey) {
       nextDirection = 'asc';
-    } else if (this.sortDirection === 'asc') {
+    } else if (currentSort.direction === 'asc') {
       nextDirection = 'desc';
-    } else if (this.sortDirection === 'desc') {
+    } else if (currentSort.direction === 'desc') {
       nextKey = null;
       nextDirection = null;
     } else {
@@ -459,10 +597,11 @@ export class List extends LitElement {
     }
 
     this.dispatchEvent(
-      new CustomEvent('ui-sort-change', {
+      new CustomEvent<UiSortChangeDetail>('ui-sort-change', {
         detail: { key: nextKey, direction: nextDirection },
         bubbles: true,
         composed: true,
+        cancelable: true,
       }),
     );
   }
@@ -482,7 +621,8 @@ export class List extends LitElement {
     if (currentIndex === -1) return;
 
     const columnId = this._getColumnIdFromEvent(event);
-    if (!columnId) return;
+    const rowId = this._getRowId(row);
+    if (!columnId || !rowId) return;
 
     switch (event.key) {
       case 'ArrowDown': {
@@ -509,49 +649,40 @@ export class List extends LitElement {
       }
       case 'PageDown': {
         event.preventDefault();
-        const nextIndex = Math.min(currentIndex + 10, this._rowElements.length - 1);
+        const nextIndex = Math.min(currentIndex + PAGE_STEP, this._rowElements.length - 1);
         this._requestCurrentChangeForRow(this._rowElements[nextIndex] ?? row, columnId);
         break;
       }
       case 'PageUp': {
         event.preventDefault();
-        const prevIndex = Math.max(currentIndex - 10, 0);
+        const prevIndex = Math.max(currentIndex - PAGE_STEP, 0);
         this._requestCurrentChangeForRow(this._rowElements[prevIndex] ?? row, columnId);
         break;
       }
       case 'Enter': {
         if (this._isInteractiveTarget(event)) return;
         event.preventDefault();
+        this._requestCurrentChange(rowId, columnId);
         this._getDefaultActionLink(row)?.click();
         break;
       }
       case ' ': {
         if (!event.shiftKey) return;
-        const rowId = this._getRowId(row);
-        if (!rowId) return;
         event.preventDefault();
-        this.dispatchEvent(
-          new CustomEvent('ui-preview-request', {
-            detail: { rowId },
-            bubbles: true,
-            composed: true,
-          }),
-        );
+        this._requestCurrentChange(rowId, columnId);
+        this._dispatchPreviewRequest(rowId);
         break;
       }
       case 'F10': {
         if (!event.shiftKey) return;
-        const rowId = this._getRowId(row);
-        if (!rowId) return;
         event.preventDefault();
         const rect = row.getBoundingClientRect();
-        this.dispatchEvent(
-          new CustomEvent('ui-context-request', {
-            detail: { rowId, anchor: { x: rect.left, y: rect.bottom } },
-            bubbles: true,
-            composed: true,
-          }),
-        );
+        this._requestCurrentChange(rowId, columnId);
+        this._dispatchContextRequest({
+          rowId,
+          origin: 'keyboard',
+          anchorRect: this._toDOMRectLike(rect),
+        });
         break;
       }
       default:
@@ -564,16 +695,17 @@ export class List extends LitElement {
     if (!row) return;
 
     const rowId = this._getRowId(row);
-    if (!rowId) return;
+    const columnId = this._getColumnIdFromEvent(event);
+    if (!rowId || !columnId) return;
 
     event.preventDefault();
-    this.dispatchEvent(
-      new CustomEvent('ui-context-request', {
-        detail: { rowId, anchor: { x: event.clientX, y: event.clientY } },
-        bubbles: true,
-        composed: true,
-      }),
-    );
+    this._requestCurrentChange(rowId, columnId);
+    this._dispatchContextRequest({
+      rowId,
+      origin: 'pointer',
+      anchorPoint: { x: event.clientX, y: event.clientY },
+      anchorRect: this._toDOMRectLike(row.getBoundingClientRect()),
+    });
   };
 
   private readonly _handleRowsSlotChange = (): void => {
@@ -596,16 +728,18 @@ export class List extends LitElement {
   private _getAriaSort(column: ColumnDef): string | typeof nothing {
     if (!column.sortable) return nothing;
     const sortKey = column.sortKey ?? column.id;
-    if (this.sortKey !== sortKey) return 'none';
-    return this.sortDirection === 'asc' ? 'ascending' : 'descending';
+    const currentSort = this._resolvedSort;
+    if (currentSort.key !== sortKey) return 'none';
+    return currentSort.direction === 'asc' ? 'ascending' : 'descending';
   }
 
   private _renderSortIcon(column: ColumnDef): TemplateResult | typeof nothing {
     if (!column.sortable) return nothing;
 
     const sortKey = column.sortKey ?? column.id;
-    if (this.sortKey === sortKey) {
-      const icon = this.sortDirection === 'asc' ? 'lucide:chevron-up' : 'lucide:chevron-down';
+    const currentSort = this._resolvedSort;
+    if (currentSort.key === sortKey) {
+      const icon = currentSort.direction === 'asc' ? 'lucide:chevron-up' : 'lucide:chevron-down';
       return html`<iconify-icon
         icon="${icon}"
         style="font-size: var(--icon-sm, 14px);"
@@ -623,15 +757,18 @@ export class List extends LitElement {
   override render(): TemplateResult {
     const visibleColumns = this._visibleColumns;
     const renderedRowCount = this._rowElements.length;
-    const effectiveRowCount = this.totalRowCount ?? renderedRowCount;
     const hasRows = renderedRowCount > 0;
     const logicalColCount = this.columns.length + (this.showActions ? 1 : 0);
+    const pagination = this.pagination;
+    const currentSort = this._resolvedSort;
 
-    const pageSize = Math.max(1, renderedRowCount);
-    const currentPage = Math.floor(this.rowIndexOffset / pageSize) + 1;
-    const totalPages = Math.max(1, Math.ceil(effectiveRowCount / pageSize));
-    const shouldShowPagination =
-      this.totalRowCount !== null && hasRows && effectiveRowCount > renderedRowCount;
+    const shouldShowLoading = this.loading;
+    const shouldShowEmpty = !this.loading && !hasRows;
+    const shouldShowPagination = pagination !== null && hasRows;
+    const currentPage =
+      pagination === null ? 1 : Math.floor(pagination.offset / Math.max(1, pagination.limit)) + 1;
+    const totalPages =
+      pagination === null ? 1 : Math.max(1, Math.ceil(pagination.total / Math.max(1, pagination.limit)));
 
     return html`
       <section aria-label="${ifDefined(this.ariaLabel ?? undefined)}">
@@ -640,7 +777,7 @@ export class List extends LitElement {
           class="grid"
           style="grid-template-columns: ${this._gridTemplateColumns}; --_gtc: ${this._gridTemplateColumns};"
           aria-colcount="${String(logicalColCount)}"
-          aria-rowcount="${ifDefined(effectiveRowCount > 0 ? String(effectiveRowCount) : undefined)}"
+          aria-rowcount="${ifDefined(pagination !== null ? String(pagination.total) : undefined)}"
           aria-label="${ifDefined(this.ariaLabel ?? undefined)}"
           @keydown="${this._handleGridKeyDown}"
           @contextmenu="${this._handleGridContextMenu}"
@@ -658,7 +795,7 @@ export class List extends LitElement {
                       'header-cell': true,
                       'header-cell--sortable': Boolean(column.sortable),
                       'header-cell--sorted': Boolean(column.sortable) &&
-                        this.sortKey === (column.sortKey ?? column.id),
+                        currentSort.key === (column.sortKey ?? column.id),
                     })}"
                     aria-colindex="${String(logicalColIndex || visibleIndex + 1)}"
                     aria-sort="${ifDefined(typeof ariaSort === 'string' ? ariaSort : undefined)}"
@@ -698,10 +835,17 @@ export class List extends LitElement {
           </div>
         </div>
 
-        ${!hasRows
+        ${shouldShowLoading
           ? html`
-              <div role="status" aria-live="polite" class="empty-state">
-                <span>表示するアイテムがありません</span>
+              <div role="status" aria-live="polite" class="status">
+                <span>${this.loadingLabel ?? DEFAULT_LOADING_LABEL}</span>
+              </div>
+            `
+          : nothing}
+        ${shouldShowEmpty
+          ? html`
+              <div role="status" aria-live="polite" class="status">
+                <span>${EMPTY_STATE_LABEL}</span>
               </div>
             `
           : nothing}
@@ -729,5 +873,8 @@ declare global {
 
   interface GlobalEventHandlersEventMap {
     'ui-current-change': CustomEvent<UiCurrentChangeDetail>;
+    'ui-sort-change': CustomEvent<UiSortChangeDetail>;
+    'ui-preview-request': CustomEvent<UiPreviewRequestDetail>;
+    'ui-context-request': CustomEvent<UiContextRequestDetail>;
   }
 }

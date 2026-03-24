@@ -757,13 +757,9 @@ Enter または click による行起動時、既定起動先が見つからな�
 
 本節は、現行の `list.ts` および `list.stories.ts` に対して、本書が正本とする長期契約との差分を整理するものです。
 
-### `items` がまだ存在します
+### 公開入力は property 正本へ揃いました
 
-現行実装は `items` を property として持ち、行 ID フォールバックにも使っています。長期契約では `items` を正本入力としません。将来的には削除または補助入力へ縮退します。
-
-### `sort` が分離 property のままです
-
-現行実装は `sortKey` と `sortDirection` を独立 property として持っています。長期契約で定義した `sort` オブジェクト入力、および列ごとの `sortKey` 上書き契約は未反映です。
+現行実装は `items` を持たず、`columns`、`currentRowId`、`currentColumnId`、`sort`、`pagination`、`getPageHref`、`loading`、`loadingLabel`、`autoRevealCurrent` を正本入力として扱います。行実体は既定スロットの `ui-list-item` に限定します。
 
 ### `ariaLabel`
 
@@ -781,9 +777,17 @@ Enter または click による行起動時、既定起動先が見つからな�
 
 実装の current 更新は `ui-current-change` 要求イベントを通じて行います。利用側が `currentRowId` と `currentColumnId` を戻すことで一覧状態が確定します。
 
-### pagination が描画行数依存です
+### pagination は明示入力です
 
-現行実装は `totalRowCount` と `rowIndexOffset` を持ち、`pageSize` を描画行数から導出します。長期契約では `pagination.offset`、`pagination.limit`、`pagination.total` を明示入力とします。
+実装は `pagination.offset`、`pagination.limit`、`pagination.total` を正本としてページ番号と `aria-rowcount` を導出します。表示行数から `limit` を逆算しません。
+
+### loading と空状態を分離しています
+
+実装は `loading=true` の間、空状態を表示せず、`loadingLabel` または既定文言で状態説明を出します。
+
+### current 行の可視範囲復帰を備えます
+
+実装は `revealCurrent()` と `scrollCurrentIntoView()` を持ち、`autoRevealCurrent=true` の場合は current 解決後に opt-in で可視範囲復帰を行います。
 
 ### actions 列は `showActions` に従います
 
@@ -799,7 +803,7 @@ Enter または click による行起動時、既定起動先が見つからな�
 
 ### 要求イベントの `cancelable` と detail 形状
 
-`ui-current-change` は `cancelable` な要求イベントとして実装されています。一方で、`ui-context-request` の detail はまだ `origin`、`anchorPoint`、`anchorRect` へ分離していません。
+`ui-current-change`、`ui-sort-change`、`ui-preview-request`、`ui-context-request` はいずれも `cancelable` な要求イベントとして実装されています。`ui-context-request` の detail も `origin`、`anchorPoint`、`anchorRect` を持つ形へ揃えています。
 
 ### `ui-list-item` 協調インターフェース
 
@@ -811,26 +815,10 @@ Enter または click による行起動時、既定起動先が見つからな�
 
 本節は、契約書内で長期設計として固定したが、現時点では未実装、未強制、または `ui-list` 単体では保証されない事項を整理するものです。
 
-### 1. `ui-list-item` 契約の独立文書化
+### 1. 違反入力の強制レベル
 
-`ui-list-item` の公開面は `ui-list` に強く依存していますが、独立した契約書としてはまだ固定されていません。
+重複列 ID、`row-id` 欠落、`lead` / `hideOnMobile` 競合、片側だけの current などは dev で警告できますが、仕様書にある「例外または検証失敗」まではまだ固定していません。現状は検出可能性を優先し、警告ベースで運用しています。
 
-### 2. `sort` オブジェクト入力と列ごとの `sortKey`
-
-`sortKey` / `sortDirection` を 1 つの `sort` 入力へ束ねる設計、および `column.sortKey` による論理ソートキー分離は未対応です。
-
-### 3. `pagination` オブジェクト入力
-
-`offset` / `limit` / `total` を持つページ契約は未対応です。
-
-### 4. 要求イベントの統一
-
-`ui-current-change` は `cancelable` 化済みですが、`ui-sort-change`、`ui-preview-request`、`ui-context-request` まで含めた要求イベント統一と detail 精密化は未完です。
-
-### 5. 違反入力の強制検証
-
-重複列 ID、`row-id` 欠落、`lead` / `hideOnMobile` 競合などを dev で強制検出する仕組みは未完成です。
-
-### 6. 本節の扱い
+### 2. 本節の扱い
 
 本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用または厳密化する場合は、実装、Storybook、関連契約書の 3 点を同時に更新し、未対応状態を残したまま公開契約へ昇格させません。

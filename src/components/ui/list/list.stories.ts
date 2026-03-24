@@ -2,11 +2,18 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 import { html, type TemplateResult } from 'lit';
 import '../list-item/list-item';
 import './list';
-import type { ColumnDef, List, ListItemData } from './list';
+import type {
+  ColumnDef,
+  List,
+  PaginationState,
+  SortState,
+  UiContextRequestDetail,
+  UiSortChangeDetail,
+} from './list';
 
-type SortDirection = 'asc' | 'desc' | null;
-
-interface StoryItem extends ListItemData {
+interface StoryItem {
+  id: string;
+  href?: string;
   title: string;
   date: string;
   tags: string;
@@ -17,10 +24,11 @@ interface ListStoryArgs {
   items: StoryItem[];
   currentRowId: string | null;
   currentColumnId: string | null;
-  sortKey: string | null;
-  sortDirection: SortDirection;
-  totalRowCount: number | null;
-  rowIndexOffset: number;
+  sort: SortState | null;
+  pagination: PaginationState | null;
+  loading: boolean;
+  loadingLabel: string | null;
+  autoRevealCurrent: boolean;
   showActions: boolean;
 }
 
@@ -66,13 +74,13 @@ const renderList = (args: Partial<ListStoryArgs> = {}): TemplateResult => {
   return html`
     <ui-list
       .columns="${resolvedColumns}"
-      .items="${resolvedItems}"
       .currentRowId="${args.currentRowId ?? null}"
       .currentColumnId="${args.currentColumnId ?? null}"
-      .sortKey="${args.sortKey ?? null}"
-      .sortDirection="${args.sortDirection ?? null}"
-      .totalRowCount="${args.totalRowCount ?? null}"
-      .rowIndexOffset="${args.rowIndexOffset ?? 0}"
+      .sort="${args.sort ?? null}"
+      .pagination="${args.pagination ?? null}"
+      .loading="${args.loading ?? false}"
+      .loadingLabel="${args.loadingLabel ?? null}"
+      .autoRevealCurrent="${args.autoRevealCurrent ?? false}"
       .showActions="${args.showActions ?? true}"
     >
       ${buildRows(resolvedItems)}
@@ -140,12 +148,11 @@ export const SortCycle: Story = {
     if (!list) throw new Error('ui-list が見つかりません');
     await list.updateComplete;
 
-    const sortEvents: { key: string | null; direction: SortDirection }[] = [];
+    const sortEvents: UiSortChangeDetail[] = [];
     list.addEventListener('ui-sort-change', (event) => {
-      const detail = (event as CustomEvent<{ key: string | null; direction: SortDirection }>).detail;
+      const detail = event.detail;
       sortEvents.push(detail);
-      list.sortKey = detail.key;
-      list.sortDirection = detail.direction;
+      list.sort = { ...detail };
     });
 
     const dateHeader = list.shadowRoot?.querySelectorAll<HTMLElement>('[role="columnheader"]')[1];
@@ -204,7 +211,7 @@ export const KeyboardRowNavigation: Story = {
   },
 };
 
-export const CurrentColumnNavigation: Story = {
+export const CellHorizontalNavigation: Story = {
   render: () => renderList({ currentRowId: 'n-1', currentColumnId: 'title' }),
   play: async ({ canvasElement }) => {
     const list = canvasElement.querySelector<List>('ui-list');
@@ -250,14 +257,18 @@ export const PreviewAndContextRequests: Story = {
     if (!list) throw new Error('ui-list が見つかりません');
     await list.updateComplete;
 
-    let previewRowId: string | null = null;
-    const contextRowIds: string[] = [];
+    const previewRowIds: string[] = [];
+    const contextRequests: UiContextRequestDetail[] = [];
+    const currentRequests: { rowId: string; columnId: string }[] = [];
 
     list.addEventListener('ui-preview-request', (event) => {
-      previewRowId = (event as CustomEvent<{ rowId: string }>).detail.rowId;
+      previewRowIds.push(event.detail.rowId);
+    });
+    list.addEventListener('ui-current-change', (event) => {
+      currentRequests.push(event.detail);
     });
     list.addEventListener('ui-context-request', (event) => {
-      contextRowIds.push((event as CustomEvent<{ rowId: string }>).detail.rowId);
+      contextRequests.push(event.detail);
     });
 
     const row = list.querySelectorAll('ui-list-item')[1];
@@ -273,14 +284,24 @@ export const PreviewAndContextRequests: Story = {
     cell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, composed: true, button: 2 }));
     await list.updateComplete;
 
-    if (previewRowId !== 'n-2') throw new Error('Shift+Space の preview 要求が不正です');
-    if (contextRowIds.length !== 2 || contextRowIds[0] !== 'n-2' || contextRowIds[1] !== 'n-2') {
-      throw new Error('コンテキストメニュー要求が不正です');
+    if (previewRowIds[0] !== 'n-2') throw new Error('Shift+Space の preview 要求が不正です');
+    if (contextRequests.length !== 2) throw new Error('コンテキストメニュー要求回数が不正です');
+
+    const [keyboardContext, pointerContext] = contextRequests;
+    if (keyboardContext?.origin !== 'keyboard' || !keyboardContext.anchorRect) {
+      throw new Error('Shift+F10 の detail が不正です');
+    }
+    if (pointerContext?.origin !== 'pointer' || !pointerContext.anchorPoint) {
+      throw new Error('contextmenu の detail が不正です');
+    }
+
+    if (currentRequests.length < 3) {
+      throw new Error('preview/context 前に current 要求が発火していません');
     }
   },
 };
 
-export const PaginationAria: Story = {
+export const PaginationContract: Story = {
   render: () => {
     const pagedItems: StoryItem[] = Array.from({ length: 10 }, (_, index) => {
       const id = `p-${String(index + 21)}`;
@@ -295,8 +316,7 @@ export const PaginationAria: Story = {
 
     return renderList({
       items: pagedItems,
-      totalRowCount: 500,
-      rowIndexOffset: 20,
+      pagination: { offset: 20, limit: 10, total: 500 },
     });
   },
   play: async ({ canvasElement }) => {
@@ -376,6 +396,127 @@ export const SingleRowBoundary: Story = {
     await list.updateComplete;
 
     if (currentChangeCount !== 0) throw new Error('単一行で ArrowDown による遷移は発生しません');
+  },
+};
+
+export const ControlledCurrent: Story = {
+  render: () => renderList({ currentRowId: 'n-1', currentColumnId: 'title' }),
+  play: async ({ canvasElement }) => {
+    const list = canvasElement.querySelector<List>('ui-list');
+    if (!list) throw new Error('ui-list が見つかりません');
+    await list.updateComplete;
+
+    let requestCount = 0;
+    list.addEventListener('ui-current-change', () => {
+      requestCount += 1;
+    });
+
+    const row = list.querySelectorAll('ui-list-item')[1];
+    const cell = row?.shadowRoot?.querySelector<HTMLElement>('[data-column-id="title"]');
+    if (!cell) throw new Error('検証対象セルが見つかりません');
+
+    cell.click();
+    await list.updateComplete;
+
+    if (requestCount !== 1) throw new Error('current 要求イベントが発火していません');
+    if (list.currentRowId !== 'n-1' || list.currentColumnId !== 'title') {
+      throw new Error('外部が state を戻さない限り current は確定してはいけません');
+    }
+  },
+};
+
+export const LoadingState: Story = {
+  render: () => renderList({ items: [], loading: true, loadingLabel: '検索結果を読み込んでいます' }),
+  play: async ({ canvasElement }) => {
+    const list = canvasElement.querySelector<List>('ui-list');
+    if (!list) throw new Error('ui-list が見つかりません');
+    await list.updateComplete;
+
+    const status = list.shadowRoot?.querySelector('[role="status"]');
+    if (!status) throw new Error('loading 状態メッセージが見つかりません');
+    if (!status.textContent.includes('検索結果を読み込んでいます')) {
+      throw new Error('loadingLabel が表示されていません');
+    }
+    if (status.textContent.includes('表示するアイテムがありません')) {
+      throw new Error('loading 中に空状態と混同しています');
+    }
+  },
+};
+
+export const RevealCurrent: Story = {
+  render: () => renderList({ currentRowId: 'n-3', currentColumnId: 'title' }),
+  play: async ({ canvasElement }) => {
+    const list = canvasElement.querySelector<List>('ui-list');
+    if (!list) throw new Error('ui-list が見つかりません');
+    await list.updateComplete;
+
+    let scrollCount = 0;
+    const row = list.querySelectorAll('ui-list-item')[2];
+    if (!row) throw new Error('current 行が見つかりません');
+
+    const original = row.scrollIntoView.bind(row);
+    row.scrollIntoView = ((...args: unknown[]) => {
+      scrollCount += 1;
+      original(...(args as []));
+    }) as typeof row.scrollIntoView;
+
+    list.autoRevealCurrent = true;
+    list.currentRowId = 'n-2';
+    list.currentColumnId = 'title';
+    await list.updateComplete;
+
+    list.currentRowId = 'n-3';
+    list.currentColumnId = 'title';
+    await list.updateComplete;
+    if (scrollCount === 0) {
+      throw new Error('autoRevealCurrent による可視範囲復帰が実行されていません');
+    }
+
+    scrollCount = 0;
+    list.revealCurrent();
+    if (scrollCount === 0) {
+      throw new Error('revealCurrent() が current 行を可視範囲へ復帰していません');
+    }
+  },
+};
+
+export const ValidationFailures: Story = {
+  render: () =>
+    html`
+      <ui-list
+        .columns="${[
+          { id: 'title', label: 'タイトル', width: '1fr', lead: true, hideOnMobile: true },
+          { id: 'title', label: '重複列', width: '120px' },
+        ] satisfies ColumnDef[]}"
+        current-row-id="broken-row"
+        show-actions
+      >
+        <ui-list-item>
+          <span slot="title">invalid row</span>
+        </ui-list-item>
+      </ui-list>
+    `,
+  play: async ({ canvasElement }) => {
+    const list = canvasElement.querySelector<List>('ui-list');
+    if (!list) throw new Error('ui-list が見つかりません');
+
+    const warns: string[] = [];
+    const originalWarn = console.warn;
+    console.warn = (message?: unknown, ...args: unknown[]) => {
+      warns.push(String(message));
+      originalWarn(message, ...args);
+    };
+
+    try {
+      list.columns = [...list.columns];
+      await list.updateComplete;
+    } finally {
+      console.warn = originalWarn;
+    }
+
+    if (warns.length === 0) {
+      throw new Error('構造違反が開発時に検出されていません');
+    }
   },
 };
 
