@@ -7,16 +7,24 @@ export type ImageLoading = 'lazy' | 'eager';
 
 const VALID_LOADING = new Set<ImageLoading>(['lazy', 'eager']);
 const FALSE_BOOLEAN_ATTRIBUTE_VALUES = new Set(['false', '0', 'off', 'no']);
+const FOCUSABLE_SELECTOR = [
+  'button:not([disabled])',
+  '[href]',
+  'input:not([disabled]):not([type="hidden"])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(', ');
 
 const zoomableAttributeConverter = {
   fromAttribute: (value: string | null): boolean => {
     if (value === null) {
-      return true;
+      return false;
     }
 
     return !FALSE_BOOLEAN_ATTRIBUTE_VALUES.has(value.trim().toLowerCase());
   },
-  toAttribute: (value: boolean): string | null => (value ? '' : 'false'),
+  toAttribute: (value: boolean): string | null => (value ? '' : null),
 };
 
 let imageUid = 0;
@@ -165,9 +173,11 @@ export class UiImage extends LitElement {
     }
 
     .lightbox-dialog {
+      position: relative;
+      display: grid;
+      gap: var(--space-3, 12px);
       margin: 0;
       outline: none;
-      cursor: zoom-out;
       transform: scale(var(--scale-enter, 0.97));
       transition: transform var(--duration-slower, 300ms)
         var(--ease-in, cubic-bezier(0.55, 0, 1, 0.45));
@@ -187,7 +197,33 @@ export class UiImage extends LitElement {
       border: var(--border-width, 1px) solid var(--border-ghost, oklch(20% 0 0 / 0.04));
       border-radius: var(--radius-md, 6px);
       object-fit: contain;
-      cursor: zoom-out;
+    }
+
+    .close-button {
+      position: absolute;
+      inset-block-start: var(--space-2, 8px);
+      inset-inline-end: var(--space-2, 8px);
+      display: inline-grid;
+      place-items: center;
+      width: calc(var(--space-8, 2rem) + var(--space-2, 8px));
+      height: calc(var(--space-8, 2rem) + var(--space-2, 8px));
+      padding: 0;
+      border: var(--border-width, 1px) solid var(--border-ghost, oklch(20% 0 0 / 0.08));
+      border-radius: 999px;
+      background: oklch(100% 0 0 / 0.78);
+      color: var(--fg-muted, oklch(48% 0 0));
+      cursor: pointer;
+      backdrop-filter: blur(var(--blur-md, 12px));
+      -webkit-backdrop-filter: blur(var(--blur-md, 12px));
+    }
+
+    .close-button iconify-icon {
+      font-size: var(--icon-lg, 20px);
+    }
+
+    .close-button:focus-visible {
+      outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
+      outline-offset: var(--focus-ring-offset, 2px);
     }
 
     @media (prefers-color-scheme: dark) {
@@ -198,6 +234,7 @@ export class UiImage extends LitElement {
       .trigger:hover:not(:disabled) .thumbnail-image,
       .trigger:focus-visible .thumbnail-image,
       .static-frame:hover .thumbnail-image,
+      .close-button,
       .lightbox-image {
         filter: brightness(1);
       }
@@ -278,6 +315,9 @@ export class UiImage extends LitElement {
   @query('.lightbox-dialog')
   private _dialogElement?: HTMLElement;
 
+  @query('.close-button')
+  private _closeButtonElement?: HTMLButtonElement;
+
   private readonly _uid = ++imageUid;
   private readonly _captionId = `image-caption-${String(this._uid)}`;
   private readonly _dialogId = `ui-image-dialog-${String(this._uid)}`;
@@ -325,14 +365,14 @@ export class UiImage extends LitElement {
   override updated(changedProperties: PropertyValues<this>): void {
     super.updated(changedProperties);
 
-    if (changedProperties.has('src')) {
-      this._syncImageStateFromDom();
-    }
-
     if ((changedProperties as Map<string, unknown>).has('_expanded')) {
       if (this._expanded) {
         this._lockScroll();
         requestAnimationFrame(() => {
+          if (this._closeButtonElement) {
+            this._closeButtonElement.focus();
+            return;
+          }
           this._dialogElement?.focus();
         });
       } else {
@@ -360,6 +400,10 @@ export class UiImage extends LitElement {
     return this.caption.trim();
   }
 
+  private get _resolvedAlt(): string {
+    return this.alt.trim();
+  }
+
   private get _resolvedLoading(): ImageLoading {
     return VALID_LOADING.has(this.loading) ? this.loading : 'lazy';
   }
@@ -376,8 +420,12 @@ export class UiImage extends LitElement {
     return this._resolvedWidth !== null && this._resolvedHeight !== null;
   }
 
+  private get _isEmptyState(): boolean {
+    return this._resolvedSrc === '';
+  }
+
   private get _isErrorState(): boolean {
-    return this._hasError || this._resolvedSrc === '';
+    return this._hasError;
   }
 
   private get _isBusy(): boolean {
@@ -385,16 +433,16 @@ export class UiImage extends LitElement {
   }
 
   private get _canOpenLightbox(): boolean {
-    return this.zoomable && !this._isBusy && !this._isErrorState;
+    return this.zoomable && this._resolvedSrc !== '' && this._isLoaded && !this._hasError;
   }
 
   private get _triggerLabel(): string {
-    const alt = this.alt.trim();
+    const alt = this._resolvedAlt;
     return alt === '' ? '画像を拡大' : `${alt}を拡大`;
   }
 
   private get _dialogLabel(): string {
-    const alt = this.alt.trim();
+    const alt = this._resolvedAlt;
     return alt === '' ? '画像' : alt;
   }
 
@@ -407,7 +455,7 @@ export class UiImage extends LitElement {
       return `aspect-ratio: ${String(this._resolvedWidth)} / ${String(this._resolvedHeight)};`;
     }
 
-    if (this._isBusy || this._isErrorState) {
+    if (this._isBusy || this._isErrorState || this._isEmptyState) {
       return 'min-height: calc(var(--space-20, 5rem) * 2);';
     }
 
@@ -434,7 +482,10 @@ export class UiImage extends LitElement {
   private _syncImageStateFromDom(): void {
     const image = this._thumbnailImage;
     if (!image) return;
-    if (this._resolvedSrc === '') return;
+    if (this._resolvedSrc === '') {
+      this._setImageState(false, false);
+      return;
+    }
     if (!image.complete) return;
 
     if (image.naturalWidth > 0) {
@@ -447,11 +498,20 @@ export class UiImage extends LitElement {
 
   private _restoreTriggerFocus(): void {
     const trigger = this._triggerElement;
-    if (!trigger) return;
+    if (!trigger || trigger.disabled || !this.isConnected) return;
 
     requestAnimationFrame(() => {
       trigger.focus();
     });
+  }
+
+  private _getFocusableElements(): HTMLElement[] {
+    const dialog = this._dialogElement;
+    if (!dialog) return [];
+
+    return Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+      (element) => !element.hasAttribute('disabled') && !element.hasAttribute('inert'),
+    );
   }
 
   private _lockScroll(): void {
@@ -496,7 +556,12 @@ export class UiImage extends LitElement {
     }
   };
 
-  private _onLightboxClick = (): void => {
+  private _onLightboxClick = (event: MouseEvent): void => {
+    if (event.target !== event.currentTarget) return;
+    this.closeLightbox();
+  };
+
+  private _onCloseButtonClick = (): void => {
     this.closeLightbox();
   };
 
@@ -508,9 +573,26 @@ export class UiImage extends LitElement {
     }
 
     if (event.key === 'Tab') {
-      // Lightbox 内のフォーカス可能要素がダイアログ自身のみのため循環させる。
       event.preventDefault();
-      this._dialogElement?.focus();
+
+      const focusables = this._getFocusableElements();
+      if (focusables.length === 0) {
+        this._dialogElement?.focus();
+        return;
+      }
+
+      const activeElement = this.shadowRoot?.activeElement;
+      const currentIndex = activeElement instanceof HTMLElement ? focusables.indexOf(activeElement) : -1;
+
+      if (currentIndex === -1) {
+        const fallbackTarget = event.shiftKey ? focusables.at(-1) : focusables[0];
+        fallbackTarget?.focus();
+        return;
+      }
+
+      const nextIndex =
+        (currentIndex + (event.shiftKey ? -1 : 1) + focusables.length) % focusables.length;
+      focusables[nextIndex]?.focus();
     }
   };
 
@@ -533,33 +615,46 @@ export class UiImage extends LitElement {
     `;
   }
 
-  private _renderErrorFallback(): TemplateResult {
-    const errorText = this.alt.trim() === '' ? '画像を読み込めませんでした' : this.alt.trim();
+  private _renderEmptyFallback(): TemplateResult {
     return html`
       <div class="error-fallback" role="status" aria-live="polite">
-        <iconify-icon icon="lucide:image-off" aria-hidden="true"></iconify-icon>
-        <span class="error-text">${errorText}</span>
+        <iconify-icon icon="lucide:image" aria-hidden="true"></iconify-icon>
+        <span class="error-text">画像が指定されていません</span>
       </div>
     `;
   }
 
-  private _renderMediaSurface(): TemplateResult {
+  private _renderErrorFallback(): TemplateResult {
+    return html`
+      <div class="error-fallback" role="status" aria-live="polite">
+        <iconify-icon icon="lucide:image-off" aria-hidden="true"></iconify-icon>
+        <span class="error-text">画像を読み込めませんでした</span>
+      </div>
+    `;
+  }
+
+  private _renderMediaSurface(describedBy: string | undefined): TemplateResult {
     return html`
       <div class="media-shell" style="${ifDefined(this._surfaceStyle)}">
         ${this._isBusy ? html`<div class="placeholder" aria-hidden="true"></div>` : nothing}
-        ${this._isErrorState ? this._renderErrorFallback() : this._renderThumbnailImage(undefined)}
+        ${this._isEmptyState
+          ? this._renderEmptyFallback()
+          : this._isErrorState
+            ? this._renderErrorFallback()
+            : this._renderThumbnailImage(describedBy)}
       </div>
     `;
   }
 
   private _renderLightbox(): TemplateResult | typeof nothing {
-    if (!this.zoomable || this._isErrorState || this._resolvedSrc === '') return nothing;
+    if (!this.zoomable) return nothing;
 
     const isOpen = this._expanded && this._canOpenLightbox;
     return html`
       <div
         class="lightbox ${isOpen ? 'is-open' : ''}"
         aria-hidden="${String(!isOpen)}"
+        ?inert="${!isOpen}"
         @click="${this._onLightboxClick}"
         @keydown="${this._onLightboxKeyDown}"
       >
@@ -572,13 +667,25 @@ export class UiImage extends LitElement {
           aria-describedby="${ifDefined(this._captionRef)}"
           tabindex="-1"
         >
-          <img
-            class="lightbox-image"
-            src="${this._resolvedSrc}"
-            alt="${this.alt}"
-            loading="eager"
-            decoding="sync"
-          />
+          <button
+            type="button"
+            class="close-button"
+            aria-label="閉じる"
+            @click="${this._onCloseButtonClick}"
+          >
+            <iconify-icon icon="lucide:x" aria-hidden="true"></iconify-icon>
+          </button>
+          ${this._resolvedSrc !== '' && !this._isErrorState
+            ? html`
+                <img
+                  class="lightbox-image"
+                  src="${this._resolvedSrc}"
+                  alt="${this.alt}"
+                  loading="eager"
+                  decoding="sync"
+                />
+              `
+            : nothing}
         </div>
       </div>
     `;
@@ -598,23 +705,15 @@ export class UiImage extends LitElement {
                 aria-expanded="${String(this._expanded && this._canOpenLightbox)}"
                 aria-haspopup="dialog"
                 aria-controls="${this._dialogId}"
-                aria-describedby="${ifDefined(this._captionRef)}"
                 ?disabled="${!this._canOpenLightbox}"
                 @click="${this._onTriggerClick}"
               >
-                ${this._renderMediaSurface()}
+                ${this._renderMediaSurface(undefined)}
               </button>
             `
           : html`
               <div class="static-frame">
-                <div class="media-shell" style="${ifDefined(this._surfaceStyle)}">
-                  ${this._isBusy
-                    ? html`<div class="placeholder" aria-hidden="true"></div>`
-                    : nothing}
-                  ${this._isErrorState
-                    ? this._renderErrorFallback()
-                    : this._renderThumbnailImage(this._captionRef)}
-                </div>
+                ${this._renderMediaSurface(this._captionRef)}
               </div>
             `}
         ${caption === ''

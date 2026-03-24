@@ -52,6 +52,12 @@ const getDialog = (image: UiImage): HTMLElement => {
   return dialog;
 };
 
+const getCloseButton = (image: UiImage): HTMLButtonElement => {
+  const closeButton = image.shadowRoot?.querySelector<HTMLButtonElement>('button.close-button');
+  if (!closeButton) throw new Error('button.close-button が見つかりません');
+  return closeButton;
+};
+
 const getMediaShell = (image: UiImage): HTMLElement => {
   const shell = image.shadowRoot?.querySelector<HTMLElement>('.media-shell');
   if (!shell) throw new Error('.media-shell が見つかりません');
@@ -116,10 +122,10 @@ const meta: Meta<UiImage> = {
         component: `
 画像・図版のためのコンポーネントです。
 
-- \`zoomable\` 時は \`button + role="dialog"\` のLightboxを提供
-- \`aria-expanded\` / \`aria-controls\` / \`aria-haspopup\` とフォーカス復帰を保証
-- ローディング時は Skeleton、エラー時は \`lucide:image-off\` フォールバック
-- \`width/height\` でアスペクト比を固定し、未指定時は最小高さでCLSを緩和
+- \`empty / loading / loaded / error\` を分離し、\`zoomable\` 時のみ Lightbox を持つ
+- trigger は \`aria-expanded\` / \`aria-controls\` / \`aria-haspopup\` を公開し、caption を名称へ混入しない
+- Lightbox は close button / backdrop / Escape で閉じ、close 後は trigger へフォーカス復帰する
+- \`width/height\` は intrinsic size hint として扱い、読み込み前は aspect-ratio または最小高さで面積を予約する
         `,
       },
     },
@@ -142,17 +148,17 @@ const meta: Meta<UiImage> = {
     },
     zoomable: {
       control: 'boolean',
-      description: '拡大表示の可否',
+      description: '拡大モードの採用可否',
       table: { type: { summary: 'boolean' }, defaultValue: { summary: 'true' } },
     },
     width: {
       control: { type: 'number', min: 1, step: 1 },
-      description: '画像幅（CLS防止）',
+      description: 'intrinsic 幅ヒント',
       table: { type: { summary: 'number | undefined' } },
     },
     height: {
       control: { type: 'number', min: 1, step: 1 },
-      description: '画像高さ（CLS防止）',
+      description: 'intrinsic 高さヒント',
       table: { type: { summary: 'number | undefined' } },
     },
     loading: {
@@ -213,6 +219,14 @@ export const Default: Story = {
     if (!trigger.getAttribute('aria-controls')) {
       throw new Error('trigger には aria-controls が必要です');
     }
+    if (trigger.hasAttribute('aria-describedby')) {
+      throw new Error('trigger は caption を aria-describedby で参照してはいけません');
+    }
+
+    const dialogId = trigger.getAttribute('aria-controls');
+    if (!dialogId || !image.shadowRoot?.getElementById(dialogId)) {
+      throw new Error('aria-controls の参照先 dialog は常に実在する必要があります');
+    }
 
     trigger.click();
     await image.updateComplete;
@@ -237,9 +251,25 @@ export const Default: Story = {
       throw new Error('Lightbox dialog は figcaption を aria-describedby で参照する必要があります');
     }
 
+    const closeButton = getCloseButton(image);
+    if (closeButton.getAttribute('aria-label') !== '閉じる') {
+      throw new Error('Lightbox には accessible name 付きの close button が必要です');
+    }
+    if (image.shadowRoot?.activeElement !== closeButton) {
+      throw new Error('Lightbox open 直後は close button へフォーカスを移動する必要があります');
+    }
+
     const zoomedImage = image.shadowRoot?.querySelector<HTMLImageElement>('.lightbox-image');
     if (!zoomedImage) throw new Error('.lightbox-image が見つかりません');
     zoomedImage.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+    await image.updateComplete;
+    await waitFrame();
+
+    if (trigger.getAttribute('aria-expanded') !== 'true') {
+      throw new Error('dialog 内容面のクリックは close 契機に含めてはいけません');
+    }
+
+    closeButton.click();
     await image.updateComplete;
     await waitFrame();
 
@@ -334,10 +364,8 @@ export const VariantStateMatrix: Story = {
     const zoomCaptionCaption =
       zoomCaption.shadowRoot?.querySelector<HTMLElement>('figcaption.caption');
     if (!zoomCaptionCaption) throw new Error('zoom+caption で figcaption が必要です');
-    if (zoomCaptionTrigger.getAttribute('aria-describedby') !== zoomCaptionCaption.id) {
-      throw new Error(
-        'zoom+caption は trigger と figcaption を aria-describedby で関連付ける必要があります',
-      );
+    if (zoomCaptionTrigger.hasAttribute('aria-describedby')) {
+      throw new Error('zoom+caption でも trigger は figcaption を参照してはいけません');
     }
 
     const zoomNoCaption = getImage(canvasElement, 'matrix-zoom-no-caption');
@@ -374,13 +402,16 @@ export const VariantStateMatrix: Story = {
     if (getThumbnail(staticNoCaption).hasAttribute('aria-describedby')) {
       throw new Error('static/no-caption で aria-describedby は不要です');
     }
+    if (staticNoCaption.shadowRoot?.querySelector('.lightbox')) {
+      throw new Error('zoomable=false では Lightbox 自体を描画してはいけません');
+    }
   },
 };
 
 /**
- * 状態遷移:
- * - Loading Skeleton
- * - Error Fallback（zoomable 無効化）
+ * リソース状態:
+ * - loading / error / empty の分離
+ * - error / empty では open 不可
  */
 export const LoadingAndErrorStates: Story = {
   render: () => html`
@@ -402,14 +433,18 @@ export const LoadingAndErrorStates: Story = {
         width="1600"
         height="900"
       ></ui-image>
+
+      <ui-image id="state-empty" alt="" caption="empty state"></ui-image>
     </div>
   `,
   play: async ({ canvasElement }) => {
     const loading = getImage(canvasElement, 'state-loading');
     const error = getImage(canvasElement, 'state-error');
-    await Promise.all([loading.updateComplete, error.updateComplete]);
+    const empty = getImage(canvasElement, 'state-empty');
+    await Promise.all([loading.updateComplete, error.updateComplete, empty.updateComplete]);
     const loadingRootNode = getShadowRoot(loading);
     const errorRootNode = getShadowRoot(error);
+    const emptyRootNode = getShadowRoot(empty);
 
     const loadingRoot = getRootFigure(loading);
     getThumbnail(loading).dispatchEvent(new Event('load'));
@@ -431,6 +466,9 @@ export const LoadingAndErrorStates: Story = {
     if (errorIcon?.getAttribute('icon') !== 'lucide:image-off') {
       throw new Error('error 時のアイコンは lucide:image-off である必要があります');
     }
+    if (!errorFallback.textContent?.includes('画像を読み込めませんでした')) {
+      throw new Error('error 文言は alt ではなく失敗状態そのものを示す必要があります');
+    }
 
     const errorTrigger = getTrigger(error);
     if (!errorTrigger.disabled) {
@@ -445,12 +483,24 @@ export const LoadingAndErrorStates: Story = {
     if (errorRootNode.querySelector('.lightbox.is-open')) {
       throw new Error('error 時に Lightbox が開いてはいけません');
     }
+
+    const emptyFallback = emptyRootNode.querySelector<HTMLElement>('.error-fallback');
+    if (!emptyFallback) throw new Error('empty 時はフォールバック面を表示する必要があります');
+    if (!emptyFallback.textContent?.includes('画像が指定されていません')) {
+      throw new Error('empty 文言は error 文言と分離されている必要があります');
+    }
+    if (getRootFigure(empty).getAttribute('aria-busy') !== 'false') {
+      throw new Error('empty 時は aria-busy="false" である必要があります');
+    }
+    if (!getTrigger(empty).disabled) {
+      throw new Error('empty 時は trigger を無効化する必要があります');
+    }
   },
 };
 
 /**
  * 操作境界:
- * - Dialog 初期フォーカス
+ * - close button への初期フォーカス
  * - Tab/Shift+Tab フォーカストラップ
  * - Escape close + trigger へフォーカス復帰
  */
@@ -480,28 +530,28 @@ export const LightboxKeyboardAndFocusReturn: Story = {
     await image.updateComplete;
     await waitFrame();
 
-    const dialog = getDialog(image);
-    if (rootNode.activeElement !== dialog) {
-      throw new Error('展開時は dialog へフォーカスを移動する必要があります');
+    const closeButton = getCloseButton(image);
+    if (rootNode.activeElement !== closeButton) {
+      throw new Error('展開時は close button へフォーカスを移動する必要があります');
     }
 
-    dialog.dispatchEvent(
+    closeButton.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }),
     );
     await image.updateComplete;
-    if (rootNode.activeElement !== dialog) {
-      throw new Error('Tab は dialog 内で循環する必要があります');
+    if (rootNode.activeElement !== closeButton) {
+      throw new Error('Tab は dialog 内の focusable 要素間で循環する必要があります');
     }
 
-    dialog.dispatchEvent(
+    closeButton.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true }),
     );
     await image.updateComplete;
-    if (rootNode.activeElement !== dialog) {
-      throw new Error('Shift+Tab も dialog 内で循環する必要があります');
+    if (rootNode.activeElement !== closeButton) {
+      throw new Error('Shift+Tab も dialog 内の focusable 要素間で循環する必要があります');
     }
 
-    dialog.dispatchEvent(
+    closeButton.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
     );
     await image.updateComplete;
@@ -576,7 +626,7 @@ export const BackdropCloseAndScrollLock: Story = {
 /**
  * 環境・レイアウト契約:
  * - dark/reduced-motion/forced-colors のスタイル契約
- * - prose breakout と mobile caption padding
+ * - inline prose と mobile caption padding
  * - print 時の Lightbox 非表示
  */
 export const EnvironmentAndProseContracts: Story = {
@@ -605,11 +655,6 @@ export const EnvironmentAndProseContracts: Story = {
       'transition-duration: 0.01ms !important;',
       '@media (forced-colors: active)',
       'border-color: canvastext;',
-      'width: calc(100% + var(--space-8, 2rem));',
-      'margin-inline: var(--space-n4, -1rem);',
-      '@media (min-width: 768px)',
-      'width: calc(100% + var(--space-16, 4rem));',
-      'margin-inline: var(--space-n8, -2rem);',
       '@media (max-width: 767px)',
       ':host-context(.prose) .caption {',
       'padding-inline: var(--space-4, 1rem);',
@@ -623,6 +668,19 @@ export const EnvironmentAndProseContracts: Story = {
         throw new Error(`スタイル契約に必要な定義が不足しています: ${snippet}`);
       }
     }
+
+    const forbiddenSnippets = [
+      'width: calc(100% + var(--space-8, 2rem));',
+      'margin-inline: var(--space-n4, -1rem);',
+      'width: calc(100% + var(--space-16, 4rem));',
+      'margin-inline: var(--space-n8, -2rem);',
+    ] as const;
+
+    for (const snippet of forbiddenSnippets) {
+      if (normalizedStyleText.includes(snippet.replace(/\s+/g, '').toLowerCase())) {
+        throw new Error(`inline 既定表示を壊す breakout スタイルが残っています: ${snippet}`);
+      }
+    }
   },
 };
 
@@ -630,7 +688,7 @@ export const EnvironmentAndProseContracts: Story = {
  * 事故が多い境界条件:
  * - 不正 loading 値の fallback
  * - alt="" 時の aria-label fallback
- * - src 未指定の error fallback
+ * - src 未指定の empty fallback
  * - width/height 未指定時の最小高さプレースホルダー
  */
 export const BoundaryConditions: Story = {
@@ -689,8 +747,14 @@ export const BoundaryConditions: Story = {
     if (!missingTrigger.getAttribute('aria-controls')) {
       throw new Error('src 未指定時でも aria-controls を維持する必要があります');
     }
+    if (missingTrigger.hasAttribute('aria-describedby')) {
+      throw new Error('src 未指定時でも trigger は caption を参照してはいけません');
+    }
     if (!missingSrc.shadowRoot?.querySelector('.error-fallback')) {
-      throw new Error('src 未指定時は error fallback を表示する必要があります');
+      throw new Error('src 未指定時は empty fallback を表示する必要があります');
+    }
+    if (!missingSrc.shadowRoot?.textContent?.includes('画像が指定されていません')) {
+      throw new Error('src 未指定時は empty 文言を表示する必要があります');
     }
 
     const noSizeThumb = getThumbnail(noSize);

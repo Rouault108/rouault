@@ -103,7 +103,7 @@ remark 層では「著者入力の制約付けと独自構文の展開」を行�
 
 内蔵 shortcodes は `smile`, `grin`, `joy`, `thinking`, `sparkles`, `warning`, `fire`, `heart`, `check`, `x`, `memo`, `book`, `music`, `bulb`。
 
-また、標準画像記法の直後に置かれた属性ブロック `![alt](src "caption"){...}` を検出し、対応する `img` の `data.hProperties` に転写する。現在サポートするのは `loading` / `width` / `height` / `zoomable` であり、キャプションは標準 Markdown の title 文字列を使う。
+また、標準画像記法の直後に置かれた属性ブロック `![alt](src "caption"){...}` を検出し、対応する `img` の `data.hProperties` に転写する。現在サポートするのは `loading` / `width` / `height` / `zoomable` であり、キャプションは標準 Markdown の title 文字列を使う。`zoomable` は authoring 層では `true` / `false` 文字列で受け取り、`ui-image` の拡大モード入力へ正規化する。
 
 ### 4. バリデーション方針
 
@@ -147,7 +147,7 @@ remark 段階では次を即時エラーにする。
 | `hr`                          | `ui-divider > hr[data-divider-variant="section"]` | Markdown 由来の区切りは本文文脈として `section` 扱いに正規化し、見た目と意味論を分離                                                                                                    |
 | `li` + `input[type=checkbox]` | `ui-checkbox`                                     | task list のラベルを抽出し、後続のネストリストは維持                                                                                                                                    |
 | `mark`                        | `ui-highlight`                                    | `current-match` / `data-current-match` を正規入力として扱い、旧 `current` / `data-current` / `aria-current` は互換入力として吸収                                                     |
-| `img`                         | `ui-image`                                        | `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化                                                                                                          |
+| `img`                         | `ui-image`                                        | `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化。`zoomable=false` は静的モードとして引き継ぐ                                                            |
 | `figure(img + figcaption)`    | `ui-image`                                        | `figcaption` を `caption` に統合                                                                                                                                                        |
 | footnote 参照 / 定義          | `ui-footnote` + `section[role=doc-endnotes]`      | 参照回数、backref、`user-content-` 接頭辞を正規化し、trigger/backlink を `{refId}-ref-{refInstance}` で接続                                                                        |
 

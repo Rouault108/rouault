@@ -156,7 +156,8 @@ https://example.com/article
 - `loading` は `lazy` または `eager`
 - `width` / `height` は 1 以上の整数
 - `zoomable` の既定値は `true`
-- 真偽値は `true` / `false` で書く
+- Markdown の属性ブロックでは `zoomable="true"` / `zoomable="false"` と書く
+- `zoomable="false"` を指定した場合、出力される `ui-image` は静的モードになり、Lightbox を持たない
 - 自動リンクカード化の対象は「単独段落の外部 URL 1 件だけ」
 - 本文中の通常リンクや複数リンク段落はそのまま残る
 - `::link-card` の `url` は必須、`title` / `description` / `image` は任意
