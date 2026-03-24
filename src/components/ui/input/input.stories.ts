@@ -1,79 +1,202 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { html, nothing } from 'lit';
-import { Input } from './input';
+import { html } from 'lit';
+import './input';
+import type { Input } from './input';
 import '../button/button';
 
+type InputStoryArgs = {
+  label: string;
+  hideLabel: boolean;
+  variant: 'filled' | 'outline';
+  type: 'text' | 'email' | 'password' | 'tel' | 'url';
+  name: string;
+  placeholder: string;
+  value: string;
+  defaultValue: string;
+  helpText: string;
+  errorMessage: string;
+  error: boolean;
+  disabled: boolean;
+  readonly: boolean;
+  required: boolean;
+  requiredIndicator: 'text' | 'asterisk' | 'none';
+  pattern: string;
+  minlength: number | undefined;
+  maxlength: number | undefined;
+  autocomplete: string;
+  inputmode: string;
+  enterkeyhint: string;
+  autocapitalize: string;
+  spellcheck: boolean | undefined;
+  describedBy: string;
+};
+
+const baseArgs: InputStoryArgs = {
+  label: 'メールアドレス',
+  hideLabel: false,
+  variant: 'filled',
+  type: 'email',
+  name: 'email',
+  placeholder: 'example@example.com',
+  value: '',
+  defaultValue: '',
+  helpText: '',
+  errorMessage: '',
+  error: false,
+  disabled: false,
+  readonly: false,
+  required: false,
+  requiredIndicator: 'text',
+  pattern: '',
+  minlength: undefined,
+  maxlength: undefined,
+  autocomplete: 'email',
+  inputmode: '',
+  enterkeyhint: '',
+  autocapitalize: '',
+  spellcheck: undefined,
+  describedBy: '',
+};
+
+const renderInput = (args: Partial<InputStoryArgs>) => {
+  const merged = { ...baseArgs, ...args };
+
+  if (merged.spellcheck === undefined) {
+    return html`
+      <ui-input
+        .label=${merged.label}
+        .hideLabel=${merged.hideLabel}
+        .variant=${merged.variant}
+        .type=${merged.type}
+        .name=${merged.name}
+        .placeholder=${merged.placeholder}
+        .value=${merged.value}
+        .defaultValue=${merged.defaultValue}
+        .helpText=${merged.helpText}
+        .errorMessage=${merged.errorMessage}
+        .error=${merged.error}
+        .disabled=${merged.disabled}
+        .readonly=${merged.readonly}
+        .required=${merged.required}
+        .requiredIndicator=${merged.requiredIndicator}
+        .pattern=${merged.pattern}
+        .minlength=${merged.minlength}
+        .maxlength=${merged.maxlength}
+        .autocomplete=${merged.autocomplete}
+        .inputmode=${merged.inputmode}
+        .enterkeyhint=${merged.enterkeyhint}
+        .autocapitalize=${merged.autocapitalize}
+        .describedBy=${merged.describedBy}
+      ></ui-input>
+    `;
+  }
+
+  return html`
+    <ui-input
+      .label=${merged.label}
+      .hideLabel=${merged.hideLabel}
+      .variant=${merged.variant}
+      .type=${merged.type}
+      .name=${merged.name}
+      .placeholder=${merged.placeholder}
+      .value=${merged.value}
+      .defaultValue=${merged.defaultValue}
+      .helpText=${merged.helpText}
+      .errorMessage=${merged.errorMessage}
+      .error=${merged.error}
+      .disabled=${merged.disabled}
+      .readonly=${merged.readonly}
+      .required=${merged.required}
+      .requiredIndicator=${merged.requiredIndicator}
+      .pattern=${merged.pattern}
+      .minlength=${merged.minlength}
+      .maxlength=${merged.maxlength}
+      .autocomplete=${merged.autocomplete}
+      .inputmode=${merged.inputmode}
+      .enterkeyhint=${merged.enterkeyhint}
+      .autocapitalize=${merged.autocapitalize}
+      .spellcheck=${merged.spellcheck}
+      .describedBy=${merged.describedBy}
+    ></ui-input>
+  `;
+};
+
+const getHost = (canvasElement: Element, selector = 'ui-input'): Input => {
+  const host = canvasElement.querySelector<Input>(selector);
+  if (!host) {
+    throw new Error(`"${selector}" が見つかりません`);
+  }
+
+  return host;
+};
+
+const getInternalInput = (host: Input): HTMLInputElement => {
+  const input = host.shadowRoot?.querySelector<HTMLInputElement>('input');
+  if (!input) {
+    throw new Error('Shadow Root 内に input 要素が見つかりません');
+  }
+
+  return input;
+};
+
+const getLabel = (host: Input): HTMLLabelElement => {
+  const label = host.shadowRoot?.querySelector<HTMLLabelElement>('label');
+  if (!label) {
+    throw new Error('Shadow Root 内に label 要素が見つかりません');
+  }
+
+  return label;
+};
+
 /**
- * ## 入力フィールド (Input)
+ * ## Input `<ui-input>`
  *
- * 思考を妨げない「透明な」入力インターフェースを提供します。
- * Universal Clarity（入力領域の明示）とContextual Feedback（近接したエラー表示）を実現します。
- *
- * ### デザイン哲学
- *
- * - **役割**: 思考を妨げない「透明な」入力インターフェース
- * - **Universal Clarity**: 入力待機時には `--bg-fill-muted` によって領域を静かに明示し、「どこに入力できるか」を迷わせません
- * - **Variant**: `filled` は面で、`outline` は線で入力領域を明示します
- * - **Contextual Feedback**: バリデーションエラーやヘルプテキストは、視線の移動を最小限に抑えるため、入力フィールドに近接して表示
- * - **Clear Canvas**: フォーカス時は「紙」のような白地に戻し、執筆に集中させます
- *
- * ### 状態遷移
- *
- * 1. **Default**: 背景色で領域を明示（Discoverability）
- * 2. **Hover**: ボーダーを表示し、入力可能領域のエッジをフィードバック（Tactility）
- * 3. **Focus**: 白地に戻し、執筆に集中（Clear Canvas）。フォーカスリングで明確化（Adaptive Focus）
- * 4. **Error**: ボーダー+背景色の変化で色覚多様性に配慮
- *
- * ### 使用上の注意
- *
- * - **ラベルは必須**: アクセシビリティのため、`label` 属性は必ず設定してください
- * - **Help TextとError Messageは排他的**: エラー状態の場合、Help Textは非表示になります
- * - **未サポートのtype**: `date`, `time`, `file`, `checkbox`, `radio` 等は専用コンポーネントで対応します
+ * text-like な単一行入力に責務を絞った、Form Associated Custom Element です。
+ * `label` をアクセシブル名の正準ソースとし、`defaultValue`、`helpText`、
+ * `errorMessage`、`describedBy`、ElementInternals への妥当性同期を公開契約として扱います。
  */
-const meta: Meta<Input> = {
+const meta: Meta<InputStoryArgs> = {
   title: 'Components/Input',
   component: 'ui-input',
   tags: ['autodocs'],
+  args: baseArgs,
   parameters: {
     docs: {
       description: {
         component: `
-入力フィールドコンポーネントは、思考を妨げない「透明な」入力インターフェースを提供します。
+\`ui-input\` は text-like な単一行入力のみを対象にします。\`label\` は必須、\`helpText\` と \`errorMessage\` は相互排他、\`defaultValue\` は reset 復元元、\`describedBy\` は外部説明連携専用 API です。
 
 ## 使用方法
 
 \`\`\`html
-<!-- 基本的な使用 -->
-<ui-input label="メールアドレス" type="email" name="email"></ui-input>
-
-<!-- ヘルプテキスト付き -->
-<ui-input 
-  label="パスワード" 
-  type="password" 
-  help-text="8文字以上で入力してください"
+<ui-input
+  label="メールアドレス"
+  type="email"
+  name="email"
+  autocomplete="email"
 ></ui-input>
 
-<!-- エラー状態 -->
-<ui-input 
-  label="ユーザー名" 
-  error 
-  error-message="このユーザー名は既に使用されています"
+<ui-input
+  label="ユーザー名"
+  required
+  required-indicator="asterisk"
+  help-text="3文字以上で入力してください"
 ></ui-input>
 
-<!-- ラベルを視覚的に非表示 -->
-<ui-input 
-  label="ユーザーID" 
-  hide-label 
-  type="text" 
-  placeholder="ユーザーIDを入力"
+<ui-input
+  label="パスワード"
+  type="password"
+  error
+  error-message="8文字以上で入力してください"
 ></ui-input>
 \`\`\`
 
 ## 注意事項
 
-- **ラベルは必須**: アクセシビリティのため、\`label\` 属性は必ず設定してください。視覚的に非表示にする場合は \`hide-label\` を使用します。
-- **Help TextとError Messageは排他的**: エラー状態（\`error=true\`）の場合、Help Textは非表示となり、Error Messageのみが表示されます。
-- **未サポートのtype**: \`date\`, \`time\`, \`file\`, \`checkbox\`, \`radio\`, \`search\` 等は専用コンポーネントで対応します。検索用途には \`<ui-search-field>\` を使用してください。未定義のtypeが渡された場合は \`text\` にフォールバックし、開発時にコンソール警告を出力します。
+- \`label\` は必須です。視覚的に隠す場合も \`hide-label\` を使用し、label 要素は維持します。
+- \`type\` は \`text\` / \`email\` / \`password\` / \`tel\` / \`url\` のみをサポートします。
+- \`error=true\` の場合、\`error-message\` は空にできません。空文字列は契約違反として警告し、強制エラーには入りません。
+- \`described-by\` は外部説明要素 ID を前置し、内部 help / error の ID は後ろへ連結されます。
         `,
       },
     },
@@ -82,1738 +205,556 @@ const meta: Meta<Input> = {
     label: {
       control: 'text',
       description: '入力項目のラベル（必須）',
-      table: {
-        type: { summary: 'string' },
-        defaultValue: { summary: '' },
-      },
+      table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
     },
     hideLabel: {
       control: 'boolean',
-      description: 'ラベルを視覚的に非表示（スクリーンリーダーには残る）',
-      table: {
-        type: { summary: 'boolean' },
-        defaultValue: { summary: 'false' },
-      },
-    },
-    type: {
-      control: 'select',
-      options: ['text', 'email', 'password', 'number', 'tel', 'url'],
-      description: '入力フィールドのタイプ',
-      table: {
-        type: { summary: 'string' },
-        defaultValue: { summary: 'text' },
-      },
+      description: 'ラベルを視覚的に非表示',
+      table: { type: { summary: 'boolean' }, defaultValue: { summary: 'false' } },
     },
     variant: {
       control: 'select',
       options: ['filled', 'outline'],
-      description: '外観バリアント',
+      description: '入力領域の視覚バリアント',
+      table: { type: { summary: "'filled' | 'outline'" }, defaultValue: { summary: "'filled'" } },
+    },
+    type: {
+      control: 'select',
+      options: ['text', 'email', 'password', 'tel', 'url'],
+      description: 'text-like な input type',
       table: {
-        type: { summary: "'filled' | 'outline'" },
-        defaultValue: { summary: 'filled' },
+        type: { summary: "'text' | 'email' | 'password' | 'tel' | 'url'" },
+        defaultValue: { summary: "'text'" },
       },
     },
     name: {
       control: 'text',
-      description: 'フォーム送信時のフィールド名',
-      table: {
-        type: { summary: 'string' },
-        defaultValue: { summary: '' },
-      },
+      description: 'FormData のキー',
+      table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
     },
     placeholder: {
       control: 'text',
-      description: 'ヒントテキスト',
-      table: {
-        type: { summary: 'string' },
-        defaultValue: { summary: '' },
-      },
+      description: '補助ヒント',
+      table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
     },
     value: {
       control: 'text',
-      description: '入力値',
-      table: {
-        type: { summary: 'string' },
-        defaultValue: { summary: '' },
-      },
+      description: '現在値',
+      table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
+    },
+    defaultValue: {
+      control: 'text',
+      description: '初期値および reset 復元値',
+      table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
     },
     helpText: {
       control: 'text',
-      description: '補助テキスト',
-      table: {
-        type: { summary: 'string' },
-        defaultValue: { summary: '' },
-      },
+      description: '非エラー時のみ表示する補助文言',
+      table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
     },
     errorMessage: {
       control: 'text',
-      description: 'エラーメッセージ',
-      table: {
-        type: { summary: 'string' },
-        defaultValue: { summary: '' },
-      },
+      description: '外部強制エラー文言',
+      table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
     },
     error: {
       control: 'boolean',
-      description: 'エラー状態の強制',
-      table: {
-        type: { summary: 'boolean' },
-        defaultValue: { summary: 'false' },
-      },
+      description: '外部強制エラー状態',
+      table: { type: { summary: 'boolean' }, defaultValue: { summary: 'false' } },
     },
     disabled: {
       control: 'boolean',
-      description: '操作無効化',
-      table: {
-        type: { summary: 'boolean' },
-        defaultValue: { summary: 'false' },
-      },
+      description: '操作不能かつ FormData 非参加',
+      table: { type: { summary: 'boolean' }, defaultValue: { summary: 'false' } },
     },
     readonly: {
       control: 'boolean',
-      description: '読み取り専用モード',
-      table: {
-        type: { summary: 'boolean' },
-        defaultValue: { summary: 'false' },
-      },
+      description: '編集不能だがフォーカスと FormData 参加は維持',
+      table: { type: { summary: 'boolean' }, defaultValue: { summary: 'false' } },
     },
     required: {
       control: 'boolean',
-      description: '必須フィールド',
+      description: '必須の意味状態',
+      table: { type: { summary: 'boolean' }, defaultValue: { summary: 'false' } },
+    },
+    requiredIndicator: {
+      control: 'select',
+      options: ['text', 'asterisk', 'none'],
+      description: '必須表示の視覚形式',
       table: {
-        type: { summary: 'boolean' },
-        defaultValue: { summary: 'false' },
+        type: { summary: "'text' | 'asterisk' | 'none'" },
+        defaultValue: { summary: "'text'" },
       },
     },
     pattern: {
       control: 'text',
-      description: 'バリデーションパターン（正規表現）',
-      table: {
-        type: { summary: 'string' },
-        defaultValue: { summary: '' },
-      },
+      description: 'ネイティブ input に委譲する pattern',
+      table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
     },
     minlength: {
       control: 'number',
       description: '最小文字数',
-      table: {
-        type: { summary: 'number' },
-      },
+      table: { type: { summary: 'number | undefined' } },
     },
     maxlength: {
       control: 'number',
       description: '最大文字数',
-      table: {
-        type: { summary: 'number' },
-      },
+      table: { type: { summary: 'number | undefined' } },
     },
     autocomplete: {
       control: 'text',
-      description: 'オートコンプリート設定',
-      table: {
-        type: { summary: 'string' },
-        defaultValue: { summary: '' },
-      },
+      description: 'ネイティブ input に委譲する autocomplete',
+      table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
+    },
+    inputmode: {
+      control: 'text',
+      description: 'モバイル入力ヒント',
+      table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
+    },
+    enterkeyhint: {
+      control: 'text',
+      description: 'Enter キーラベルのヒント',
+      table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
+    },
+    autocapitalize: {
+      control: 'text',
+      description: '自動大文字化ヒント',
+      table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
+    },
+    spellcheck: {
+      control: 'boolean',
+      description: 'スペルチェック委譲。未指定も許容',
+      table: { type: { summary: 'boolean | undefined' } },
+    },
+    describedBy: {
+      control: 'text',
+      description: '外部説明要素の ID 群',
+      table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
     },
   },
 };
 
 export default meta;
-type Story = StoryObj<Input>;
+type Story = StoryObj<InputStoryArgs>;
 
-/**
- * デフォルトの入力フィールド。
- *
- * 基本的な使用例です。ラベルとプレースホルダーを設定します。
- */
 export const Default: Story = {
   args: {
     label: 'メールアドレス',
     type: 'email',
     name: 'email',
     placeholder: 'example@example.com',
+    autocomplete: 'email',
   },
-  render: (args) => html`
-    <ui-input
-      label="${args.label}"
-      ?hide-label="${args.hideLabel}"
-      type="${args.type}"
-      name="${args.name}"
-      placeholder="${args.placeholder}"
-      value="${args.value}"
-      help-text="${args.helpText}"
-      error-message="${args.errorMessage}"
-      ?disabled="${args.disabled}"
-      ?readonly="${args.readonly}"
-      ?required="${args.required}"
-      ?error="${args.error}"
-      pattern="${args.pattern}"
-      minlength="${args.minlength ?? nothing}"
-      maxlength="${args.maxlength ?? nothing}"
-      autocomplete="${args.autocomplete}"
-    ></ui-input>
-  `,
+  render: renderInput,
   play: async ({ canvasElement }) => {
-    const input = canvasElement.querySelector('ui-input');
-    if (!input) {
-      throw new Error('ui-input が見つかりません');
+    const host = getHost(canvasElement);
+    await host.updateComplete;
+
+    const input = getInternalInput(host);
+    const label = getLabel(host);
+
+    if (label.textContent?.trim() !== 'メールアドレス') {
+      throw new Error('label 要素がアクセシブル名の正準ソースとして存在する必要があります');
     }
 
-    await input.updateComplete;
-
-    const inputElement = input.shadowRoot?.querySelector('input');
-    if (!inputElement) {
-      throw new Error('Shadow Root 内に input 要素が見つかりません');
+    if (input.type !== 'email') {
+      throw new Error(`type="email" を期待していましたが、実際には "${input.type}" でした`);
     }
 
-    // テスト: デフォルトのtype属性が設定されていること
-    if (inputElement.getAttribute('type') !== 'email') {
-      throw new Error(
-        `type="email" を期待していましたが、実際には "${inputElement.getAttribute('type') ?? 'null'}" でした`,
-      );
-    }
-
-    // テスト: aria-label が設定されていること
-    if (!inputElement.getAttribute('aria-label')) {
-      throw new Error('aria-label が設定されている必要があります');
+    if (input.hasAttribute('aria-label')) {
+      throw new Error('通常構成では aria-label に依存しません');
     }
   },
 };
 
-/**
- * ヘルプテキスト付きの入力フィールド。
- *
- * 補助的な説明を入力フィールドの下に表示します。
- */
 export const WithHelpText: Story = {
   args: {
     label: 'パスワード',
     type: 'password',
-    name: 'password',
     helpText: '8文字以上で入力してください',
   },
-  render: (args) => html`
-    <ui-input
-      label="${args.label}"
-      type="${args.type}"
-      name="${args.name}"
-      help-text="${args.helpText}"
-    ></ui-input>
-  `,
+  render: renderInput,
   play: async ({ canvasElement }) => {
-    const input = canvasElement.querySelector('ui-input');
-    if (!input) {
-      throw new Error('ui-input が見つかりません');
+    const host = getHost(canvasElement);
+    await host.updateComplete;
+
+    const input = getInternalInput(host);
+    const help = host.shadowRoot?.querySelector<HTMLElement>('.help-text');
+    if (!help) {
+      throw new Error('helpText がある場合、補助文言が表示される必要があります');
     }
 
-    await input.updateComplete;
-
-    // テスト: ヘルプテキストが表示されていること
-    const helpText = input.shadowRoot?.querySelector('.help-text');
-    if (!helpText) {
-      throw new Error('ヘルプテキストが表示されている必要があります');
-    }
-
-    const inputElement = input.shadowRoot?.querySelector('input');
-    if (!inputElement) {
-      throw new Error('Shadow Root 内に input 要素が見つかりません');
-    }
-
-    if (!inputElement.getAttribute('aria-describedby')) {
-      throw new Error(
-        'help-text が存在する場合、aria-describedby はヘルプテキストを参照している必要があります',
-      );
+    if (input.getAttribute('aria-describedby') !== help.id) {
+      throw new Error('非エラー時の aria-describedby は help 要素を参照する必要があります');
     }
   },
 };
 
-/**
- * エラー状態の入力フィールド。
- *
- * バリデーションエラーを表示します。
- * エラー状態の場合、Help Textは非表示となり、Error Messageのみが表示されます。
- */
-export const ErrorState: Story = {
+export const ExternalErrorState: Story = {
   args: {
     label: 'ユーザー名',
-    type: 'text',
-    name: 'username',
     value: 'ab',
     error: true,
     errorMessage: 'ユーザー名は3文字以上で入力してください',
-    helpText: 'このヘルプテキストはエラー時に非表示になります',
+    helpText: 'この補助文言はエラー時に非表示になります',
   },
-  render: (args) => html`
-    <ui-input
-      label="${args.label}"
-      type="${args.type}"
-      name="${args.name}"
-      value="${args.value}"
-      ?error="${args.error}"
-      error-message="${args.errorMessage}"
-      help-text="${args.helpText}"
-    ></ui-input>
-  `,
+  render: renderInput,
   play: async ({ canvasElement }) => {
-    const input = canvasElement.querySelector('ui-input');
-    if (!input) {
-      throw new Error('ui-input が見つかりません');
+    const host = getHost(canvasElement);
+    await host.updateComplete;
+
+    const input = getInternalInput(host);
+    const error = host.shadowRoot?.querySelector<HTMLElement>('.error-message');
+    const help = host.shadowRoot?.querySelector('.help-text');
+
+    if (input.getAttribute('aria-invalid') !== 'true') {
+      throw new Error('外部強制エラー時は aria-invalid="true" である必要があります');
     }
 
-    await input.updateComplete;
-
-    const inputElement = input.shadowRoot?.querySelector('input');
-    if (!inputElement) {
-      throw new Error('Shadow Root 内に input 要素が見つかりません');
+    if (!error || error.textContent?.trim() !== 'ユーザー名は3文字以上で入力してください') {
+      throw new Error('外部強制エラー文言が表示されていません');
     }
 
-    // テスト: aria-invalid="true" が設定されていること
-    if (inputElement.getAttribute('aria-invalid') !== 'true') {
-      throw new Error(
-        `aria-invalid="true" を期待していましたが、実際には "${inputElement.getAttribute('aria-invalid') ?? 'null'}" でした`,
-      );
+    if (help) {
+      throw new Error('エラー時は helpText を同時表示しません');
     }
 
-    // テスト: エラーメッセージが表示されていること
-    const errorMessage = input.shadowRoot?.querySelector('.error-message--visible');
-    if (!errorMessage) {
-      throw new Error('エラーメッセージが表示されている必要があります');
-    }
-
-    const describedBy = inputElement.getAttribute('aria-describedby');
-    if (!describedBy) {
-      throw new Error(
-        'エラー状態では aria-describedby がエラーメッセージを参照している必要があります',
-      );
-    }
-
-    // テスト: ヘルプテキストが非表示であること
-    const helpText = input.shadowRoot?.querySelector('.help-text');
-    if (helpText && getComputedStyle(helpText).display !== 'none') {
-      throw new Error('エラー発生時はヘルプテキストが非表示である必要があります');
+    if (input.getAttribute('aria-describedby') !== error.id) {
+      throw new Error('エラー時の aria-describedby は error 要素を参照する必要があります');
     }
   },
 };
 
-/**
- * ラベルを視覚的に非表示にした入力フィールド。
- *
- * フィールドの文脈からラベルが明らかな場合に使用します。
- * スクリーンリーダーには常にラベルが提供されます。
- */
+export const NativeValidationState: Story = {
+  args: {
+    label: 'メールアドレス',
+    type: 'email',
+    value: 'invalid-address',
+  },
+  render: renderInput,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement);
+    await host.updateComplete;
+
+    if (host.checkValidity()) {
+      throw new Error('不正な email 値は invalid である必要があります');
+    }
+
+    await host.updateComplete;
+
+    const input = getInternalInput(host);
+    if (input.getAttribute('aria-invalid') !== 'true') {
+      throw new Error('ネイティブ妥当性エラー時も aria-invalid="true" を期待します');
+    }
+
+    const error = host.shadowRoot?.querySelector<HTMLElement>('.error-message');
+    if (!error || !error.textContent?.trim()) {
+      throw new Error('ネイティブ妥当性エラー文言が表示される必要があります');
+    }
+  },
+};
+
 export const HiddenLabel: Story = {
   args: {
     label: 'ユーザーID',
     hideLabel: true,
-    type: 'text',
-    name: 'userId',
-    placeholder: 'ユーザーIDを入力',
+    placeholder: 'user-id',
   },
-  render: (args) => html`
-    <ui-input
-      label="${args.label}"
-      ?hide-label="${args.hideLabel}"
-      type="${args.type}"
-      name="${args.name}"
-      placeholder="${args.placeholder}"
-    ></ui-input>
-  `,
+  render: renderInput,
   play: async ({ canvasElement }) => {
-    const input = canvasElement.querySelector('ui-input');
-    if (!input) {
-      throw new Error('ui-input が見つかりません');
+    const host = getHost(canvasElement);
+    await host.updateComplete;
+
+    const label = getLabel(host);
+    const input = getInternalInput(host);
+
+    if (!label.classList.contains('label--hidden')) {
+      throw new Error('hideLabel=true の場合も label 要素は残しつつ視覚的に隠す必要があります');
     }
 
-    await input.updateComplete;
-
-    const label = input.shadowRoot?.querySelector('.label--hidden');
-    if (!label) {
-      throw new Error('ラベルに label--hidden クラスが設定されている必要があります');
-    }
-
-    // テスト: aria-label は設定されていること
-    const inputElement = input.shadowRoot?.querySelector('input');
-    if (!inputElement?.getAttribute('aria-label')) {
-      throw new Error('ラベルが非表示の場合でも aria-label が設定されている必要があります');
+    if (input.hasAttribute('aria-label')) {
+      throw new Error('hideLabel=true でも aria-label への切り替えは行いません');
     }
   },
 };
 
-/**
- * 無効状態の入力フィールド。
- *
- * 操作不可能な状態を示します。
- */
+export const RequiredIndicatorModes: Story = {
+  render: () => html`
+    <div style="display: grid; gap: 16px; max-width: 420px;">
+      ${renderInput({
+        label: '必須テキスト',
+        required: true,
+        requiredIndicator: 'text',
+      })}
+      ${renderInput({
+        label: '必須アスタリスク',
+        required: true,
+        requiredIndicator: 'asterisk',
+      })}
+      ${renderInput({
+        label: '必須非表示',
+        required: true,
+        requiredIndicator: 'none',
+      })}
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const hosts = Array.from(canvasElement.querySelectorAll<Input>('ui-input'));
+    if (hosts.length !== 3) {
+      throw new Error('requiredIndicator 検証用に 3 つの input が必要です');
+    }
+
+    await Promise.all(hosts.map((host) => host.updateComplete));
+
+    const [textHost, asteriskHost, noneHost] = hosts;
+    if (!textHost || !asteriskHost || !noneHost) {
+      throw new Error('requiredIndicator 検証用の host 解決に失敗しました');
+    }
+
+    const textLabel = getLabel(textHost);
+    const asteriskLabel = getLabel(asteriskHost);
+    const noneLabel = getLabel(noneHost);
+
+    if (!textLabel.textContent?.includes('（必須）')) {
+      throw new Error('requiredIndicator="text" は文言で必須を示す必要があります');
+    }
+
+    if (!asteriskLabel.textContent?.includes('*')) {
+      throw new Error('requiredIndicator="asterisk" は記号で必須を示す必要があります');
+    }
+
+    if (noneLabel.querySelector('.required-indicator')) {
+      throw new Error('requiredIndicator="none" は追加表示を行いません');
+    }
+  },
+};
+
+export const ExternalDescriptions: Story = {
+  render: () => html`
+    <div style="display: grid; gap: 8px; max-width: 420px;">
+      <p id="email-desc">確認メールを送信します。</p>
+      ${renderInput({
+        label: 'メールアドレス',
+        helpText: '社内共有は行いません',
+        describedBy: 'email-desc',
+      })}
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement);
+    await host.updateComplete;
+
+    const input = getInternalInput(host);
+    const help = host.shadowRoot?.querySelector<HTMLElement>('.help-text');
+    if (!help) {
+      throw new Error('内部 helpText が表示されている必要があります');
+    }
+
+    if (input.getAttribute('aria-describedby') !== `email-desc ${help.id}`) {
+      throw new Error('aria-describedby は「外部説明 ID → 内部 help ID」の順で連結される必要があります');
+    }
+  },
+};
+
+export const DefaultValueReset: Story = {
+  render: () => html`
+    <form id="reset-form">
+      ${renderInput({
+        label: '表示名',
+        name: 'displayName',
+        value: '現在値',
+        defaultValue: '初期値',
+      })}
+      <button type="reset">reset</button>
+    </form>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement);
+    const form = canvasElement.querySelector<HTMLFormElement>('#reset-form');
+    if (!form) {
+      throw new Error('reset 検証用の form が見つかりません');
+    }
+
+    await host.updateComplete;
+    form.reset();
+    await host.updateComplete;
+
+    if (host.value !== '初期値') {
+      throw new Error(`reset 後は defaultValue に戻る必要があります: ${host.value}`);
+    }
+  },
+};
+
 export const Disabled: Story = {
   args: {
     label: 'メールアドレス',
-    type: 'email',
-    name: 'email',
     value: 'disabled@example.com',
     disabled: true,
   },
-  render: (args) => html`
-    <ui-input
-      label="${args.label}"
-      type="${args.type}"
-      name="${args.name}"
-      value="${args.value}"
-      ?disabled="${args.disabled}"
-    ></ui-input>
-  `,
+  render: renderInput,
   play: async ({ canvasElement }) => {
-    const input = canvasElement.querySelector('ui-input');
-    if (!input) {
-      throw new Error('ui-input が見つかりません');
+    const host = getHost(canvasElement);
+    await host.updateComplete;
+
+    const input = getInternalInput(host);
+    if (!input.disabled) {
+      throw new Error('disabled=true は内部 input に委譲される必要があります');
     }
 
-    await input.updateComplete;
-
-    const inputElement = input.shadowRoot?.querySelector('input');
-    if (!inputElement) {
-      throw new Error('Shadow Root 内に input 要素が見つかりません');
-    }
-
-    // テスト: disabled属性が設定されていること
-    if (!inputElement.disabled) {
-      throw new Error('input は disabled 状態である必要があります');
+    if (host.checkValidity() !== true) {
+      throw new Error('disabled 状態は妥当性評価の対象外として扱います');
     }
   },
 };
 
-/**
- * 読み取り専用の入力フィールド。
- *
- * フォーカス可能だがコピーのみ許可します。
- */
 export const Readonly: Story = {
   args: {
     label: 'ユーザーID',
-    type: 'text',
-    name: 'userId',
     value: 'user-12345',
     readonly: true,
   },
-  render: (args) => html`
-    <ui-input
-      label="${args.label}"
-      type="${args.type}"
-      name="${args.name}"
-      value="${args.value}"
-      ?readonly="${args.readonly}"
-    ></ui-input>
-  `,
+  render: renderInput,
   play: async ({ canvasElement }) => {
-    const input = canvasElement.querySelector('ui-input');
-    if (!input) {
-      throw new Error('ui-input が見つかりません');
-    }
+    const host = getHost(canvasElement);
+    await host.updateComplete;
 
-    await input.updateComplete;
-
-    const inputElement = input.shadowRoot?.querySelector('input');
-    if (!inputElement) {
-      throw new Error('Shadow Root 内に input 要素が見つかりません');
-    }
-
-    // テスト: readonly属性が設定されていること
-    if (!inputElement.readOnly) {
-      throw new Error('input は readonly 状態である必要があります');
+    const input = getInternalInput(host);
+    if (!input.readOnly) {
+      throw new Error('readonly=true は内部 input に委譲される必要があります');
     }
   },
 };
 
-/**
- * 必須フィールドのバリデーション。
- *
- * required 属性を使用したバリデーションの例です。
- *
- * **検証方法**:
- * 1. 入力フィールドを**空欄のまま**「送信」ボタンをクリック → エラー状態が表示されます
- * 2. 何か入力してから「送信」ボタンをクリック → 成功メッセージが表示されます
- */
-export const Required: Story = {
-  args: {
-    label: '氏名',
-    type: 'text',
-    name: 'name',
-    required: true,
-    helpText: '必須項目です',
-  },
-  render: (args) => html`
-    <style>
-      .required-demo {
-        max-width: 400px;
-      }
-
-      .required-info {
-        margin-bottom: 1rem;
-        padding: 0.75rem;
-        background: var(--bg-info-subtle, #e0f2fe);
-        border-radius: var(--radius-sm, 4px);
-        font-size: var(--text-sm, 13px);
-      }
-
-      .required-info strong {
-        display: block;
-        margin-bottom: 0.25rem;
-      }
-    </style>
-
-    <div class="required-demo">
-      <div class="required-info">
-        <strong>💡 検証方法</strong>
-        空欄のまま「送信」ボタンを押すと、エラー状態が表示されます。
-      </div>
-
-      <form
-        id="required-form"
-        novalidate
-        @submit="${(e: Event) => {
-          e.preventDefault();
-          const form = e.target as HTMLFormElement;
-          const input = form.querySelector('ui-input');
-          if (!input) return;
-
-          // ブラウザのバリデーションチェック
-          if (!input.checkValidity()) {
-            // バリデーションエラー: ui-inputのerror状態を設定
-            input.error = true;
-            input.errorMessage = 'この項目は必須です';
-          } else {
-            // バリデーション成功: エラー状態をクリア
-            input.error = false;
-            input.errorMessage = '';
-            alert('フォームが送信されました！');
-          }
-        }}"
-      >
-        <ui-input
-          id="required-input"
-          label="${args.label}"
-          type="${args.type}"
-          name="${args.name}"
-          ?required="${args.required}"
-          help-text="${args.helpText}"
-          @input="${(e: Event) => {
-            // 入力時にエラー状態をクリア
-            const input = e.target as Input;
-            if (input.error) {
-              input.error = false;
-              input.errorMessage = '';
-            }
-          }}"
-        ></ui-input>
-
-        <ui-button type="submit" variant="primary" style="margin-top: 1rem;"> 送信 </ui-button>
-      </form>
-    </div>
-  `,
+export const InvalidTypeFallback: Story = {
+  render: () => html`<ui-input label="数値のつもり" type="number"></ui-input>`,
   play: async ({ canvasElement }) => {
-    const input = canvasElement.querySelector<Input>('#required-input');
-    const form = canvasElement.querySelector<HTMLFormElement>('#required-form');
+    const host = getHost(canvasElement);
+    await host.updateComplete;
 
-    if (!input || !form) {
-      throw new Error('input または form が見つかりません');
-    }
-
-    await input.updateComplete;
-
-    // テスト: required属性が設定されていること
-    const inputElement = input.shadowRoot?.querySelector('input');
-    if (!inputElement?.required) {
-      throw new Error('input に required 属性が設定されている必要があります');
-    }
-
-    const labelElement = input.shadowRoot?.querySelector('label');
-    if (labelElement?.textContent.trim() !== '氏名（必須）') {
-      throw new Error('required の場合、ラベルに「（必須）」が表示される必要があります');
-    }
-
-    // テスト: 空欄の状態でcheckValidity()がfalseを返すこと
-    if (input.checkValidity()) {
-      throw new Error('未入力の必須項目は無効である必要があります');
-    }
-
-    // テスト: 値を入力するとcheckValidity()がtrueを返すこと
-    input.value = 'テスト';
-    await input.updateComplete;
-
-    if (!input.checkValidity()) {
-      throw new Error('値が入力された必須項目は有効である必要があります');
+    const input = getInternalInput(host);
+    if (host.getAttribute('type') !== 'text' || input.type !== 'text') {
+      throw new Error('非対応 type は text に正規化される必要があります');
     }
   },
 };
 
-/**
- * 全タイプの一覧。
- *
- * サポートされている全てのタイプを比較できます。
- */
-export const AllTypes: Story = {
-  render: () => html`
-    <style>
-      .types-showcase {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-        max-width: 400px;
-      }
-    </style>
-
-    <div class="types-showcase">
-      <ui-input label="テキスト" type="text" placeholder="テキストを入力"></ui-input>
-      <ui-input label="メール" type="email" placeholder="example@example.com"></ui-input>
-      <ui-input label="パスワード" type="password" placeholder="********"></ui-input>
-      <ui-input label="数値" type="number" placeholder="123"></ui-input>
-      <ui-input label="電話番号" type="tel" placeholder="03-1234-5678"></ui-input>
-      <ui-input label="URL" type="url" placeholder="https://example.com"></ui-input>
-    </div>
-  `,
-  play: ({ canvasElement }) => {
-    const inputs = Array.from(canvasElement.querySelectorAll<Input>('ui-input'));
-    if (inputs.length !== 6) {
-      throw new Error(
-        `6つの入力バリアントを期待していましたが、実際には ${inputs.length.toString()} つでした`,
-      );
-    }
-
-    const actualTypes = inputs
-      .map((input) => input.shadowRoot?.querySelector('input')?.type ?? '')
-      .join(',');
-    const expectedTypes = 'text,email,password,number,tel,url';
-    if (actualTypes !== expectedTypes) {
-      throw new Error(
-        `タイプの順序が一致しません。期待値: "${expectedTypes}"、実際の値: "${actualTypes}"`,
-      );
-    }
-  },
-};
-
-/**
- * フォーカス状態のデモ。
- *
- * Adaptive Focus により、移動中のノイズを低減し、停止時に明確化します。
- */
-export const FocusState: Story = {
-  args: {
-    label: 'フォーカステスト',
-    type: 'text',
-    name: 'focusTest',
-  },
-  render: (args) => html`
-    <style>
-      .focus-demo {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        max-width: 400px;
-      }
-
-      .focus-info {
-        padding: 1rem;
-        background: var(--bg-surface-2, #f5f5f5);
-        border-radius: var(--radius-md, 6px);
-        font-size: var(--text-sm, 13px);
-      }
-    </style>
-
-    <div class="focus-demo">
-      <div class="focus-info">
-        <strong>操作方法</strong>: Tab キーを押して入力フィールドにフォーカスを当ててください。
-        Adaptive Focus により、フォーカスリングが適切に表示されます。
-      </div>
-
-      <ui-input
-        label="${args.label}"
-        type="${args.type}"
-        name="${args.name}"
-        id="focus-input"
-      ></ui-input>
-    </div>
-  `,
-  play: async ({ canvasElement }) => {
-    const input = canvasElement.querySelector<Input>('#focus-input');
-    if (!input) {
-      throw new Error('ui-input が見つかりません');
-    }
-
-    await input.updateComplete;
-
-    // フォーカスを当てる
-    input.focus();
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    const inputElement = input.shadowRoot?.querySelector('input');
-    if (!inputElement) {
-      throw new Error('Shadow Root 内に input 要素が見つかりません');
-    }
-
-    // テスト: フォーカスが当たっていること
-    if (input.shadowRoot?.activeElement !== inputElement) {
-      throw new Error('input にフォーカスが当たっている必要があります');
-    }
-  },
-};
-
-/**
- * フォーム統合の例。
- *
- * 複数の入力フィールドをフォームで使用する例です。
- */
-export const FormIntegration: Story = {
-  render: () => html`
-    <style>
-      .form-demo {
-        max-width: 400px;
-        padding: 1.5rem;
-        background: var(--bg-surface-2, #f5f5f5);
-        border-radius: var(--radius-md, 6px);
-      }
-
-      .form-demo h3 {
-        margin: 0 0 1rem 0;
-      }
-
-      .form-fields {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-      }
-
-      .form-actions {
-        display: flex;
-        gap: 0.75rem;
-        justify-content: flex-end;
-      }
-    </style>
-
-    <form
-      class="form-demo"
-      @submit="${(e: Event) => {
-        e.preventDefault();
-        alert('フォームが送信されました！');
-      }}"
-    >
-      <h3>ユーザー登録</h3>
-
-      <div class="form-fields">
-        <ui-input label="氏名" type="text" name="name" required></ui-input>
-
-        <ui-input
-          label="メールアドレス"
-          type="email"
-          name="email"
-          required
-          help-text="確認メールを送信します"
-        ></ui-input>
-
-        <ui-input
-          label="パスワード"
-          type="password"
-          name="password"
-          required
-          help-text="8文字以上で入力してください"
-        ></ui-input>
-
-        <ui-input label="電話番号" type="tel" name="phone" placeholder="03-1234-5678"></ui-input>
-      </div>
-
-      <div class="form-actions">
-        <ui-button type="button" variant="secondary">キャンセル</ui-button>
-        <ui-button type="submit" variant="primary">登録</ui-button>
-      </div>
-    </form>
-  `,
-  play: ({ canvasElement }) => {
-    const form = canvasElement.querySelector<HTMLFormElement>('form');
-    if (!form) {
-      throw new Error('フォーム要素が見つかりません');
-    }
-
-    const fields = Array.from(form.querySelectorAll<Input>('ui-input'));
-    if (fields.length !== 4) {
-      throw new Error(
-        `フォームに4つのフィールドがあることを期待していましたが、${fields.length.toString()} 個見つかりました`,
-      );
-    }
-
-    const formData = new FormData(form);
-    const names = ['name', 'email', 'password', 'phone'];
-    for (const name of names) {
-      if (!formData.has(name)) {
-        throw new Error(`FormData に "${name}" が含まれている必要があります`);
-      }
-    }
-  },
-};
-
-/**
- * バリデーション例。
- *
- * pattern属性を使用したバリデーションの例です。
- */
-export const WithValidation: Story = {
-  render: () => html`
-    <style>
-      .validation-demo {
-        max-width: 400px;
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-      }
-    </style>
-
-    <div class="validation-demo">
-      <ui-input
-        label="郵便番号"
-        type="text"
-        name="zipcode"
-        pattern="[0-9]{3}-[0-9]{4}"
-        placeholder="123-4567"
-        help-text="ハイフン付きで入力してください（例: 123-4567）"
-      ></ui-input>
-
-      <ui-input
-        label="ユーザー名"
-        type="text"
-        name="username"
-        pattern="[a-zA-Z0-9_]{3,16}"
-        minlength="3"
-        maxlength="16"
-        help-text="3-16文字の英数字とアンダースコアのみ使用可能"
-      ></ui-input>
-    </div>
-  `,
-  play: async ({ canvasElement }) => {
-    const inputs = Array.from(canvasElement.querySelectorAll<Input>('ui-input'));
-    if (inputs.length !== 2) {
-      throw new Error(
-        `バリデーション用の入力フィールドが2つあることを期待していましたが、${inputs.length.toString()} 個見つかりました`,
-      );
-    }
-
-    const zipcode = inputs[0];
-    const username = inputs[1];
-    if (!zipcode || !username) {
-      throw new Error('バリデーション用の入力フィールドが見つかりません');
-    }
-    await zipcode.updateComplete;
-    await username.updateComplete;
-
-    zipcode.value = '1234';
-    await zipcode.updateComplete;
-    if (zipcode.checkValidity()) {
-      throw new Error('郵便番号 "1234" は無効である必要があります');
-    }
-
-    zipcode.value = '123-4567';
-    await zipcode.updateComplete;
-    if (!zipcode.checkValidity()) {
-      throw new Error('郵便番号 "123-4567" は有効である必要があります');
-    }
-
-    username.value = 'ab';
-    await username.updateComplete;
-    if (username.checkValidity()) {
-      throw new Error('ユーザー名 "ab" は無効である必要があります');
-    }
-
-    username.value = 'user_01';
-    await username.updateComplete;
-    if (!username.checkValidity()) {
-      throw new Error('ユーザー名 "user_01" は有効である必要があります');
-    }
-  },
-};
-
-/**
- * ❌ ラベルなしのエラー例。
- *
- * label が設定されていない場合、開発モードでエラーが出力されます。
- * このストーリーは意図的にアクセシビリティ違反を示すためのものです。
- */
-export const WithoutLabel: Story = {
-  render: () => html`
-    <style>
-      .error-demo {
-        padding: 1rem;
-        background: var(--bg-danger-subtle, #fee);
-        border: 1px solid var(--border-danger, #fcc);
-        border-radius: var(--radius-md, 6px);
-        max-width: 400px;
-      }
-
-      .error-message {
-        margin-bottom: 1rem;
-        color: var(--fg-danger, #c00);
-        font-size: var(--text-sm, 13px);
-      }
-    </style>
-
-    <div class="error-demo">
-      <div class="error-message">
-        ⚠️ アクセシビリティエラー: label が設定されていません。 コンソールを確認してください。
-      </div>
-      <ui-input type="text" placeholder="ラベルがありません"></ui-input>
-    </div>
-  `,
-  play: async ({ canvasElement }) => {
-    const input = canvasElement.querySelector<Input>('ui-input');
-    if (!input) {
-      throw new Error('ui-input が見つかりません');
-    }
-    await input.updateComplete;
-
-    const inputElement = input.shadowRoot?.querySelector('input');
-    if (!inputElement) {
-      throw new Error('Shadow Root 内に input 要素が見つかりません');
-    }
-
-    if (inputElement.getAttribute('aria-label') !== '') {
-      throw new Error('aria-label が空である必要があります');
-    }
-  },
-};
-
-/**
- * ❌ サポート外の type を指定した例。
- *
- * date, time, file, checkbox, radio 等は専用コンポーネントで対応します。
- * 未定義のtypeが渡された場合は text にフォールバックし、開発時にコンソール警告を出力します。
- */
-export const UnsupportedType: Story = {
-  render: () => html`
-    <style>
-      .warning-demo {
-        padding: 1rem;
-        background: var(--bg-warning-subtle, #fffbea);
-        border: 1px solid var(--border-warning, #ffd666);
-        border-radius: var(--radius-md, 6px);
-        max-width: 400px;
-      }
-
-      .warning-message {
-        margin-bottom: 1rem;
-        color: var(--fg-warning, #d97706);
-        font-size: var(--text-sm, 13px);
-      }
-    </style>
-
-    <div class="warning-demo">
-      <div class="warning-message">
-        ⚠️ サポート外の type="date" が指定されています。 コンソールを確認してください（text
-        にフォールバックされます）。
-      </div>
-      <ui-input label="日付" type="date" name="date"></ui-input>
-    </div>
-  `,
-  play: async ({ canvasElement }) => {
-    const input = canvasElement.querySelector('ui-input');
-    if (!input) {
-      throw new Error('ui-input が見つかりません');
-    }
-
-    await input.updateComplete;
-
-    const inputElement = input.shadowRoot?.querySelector('input');
-    if (!inputElement) {
-      throw new Error('Shadow Root 内に input 要素が見つかりません');
-    }
-
-    // テスト: type が text にフォールバックされていること
-    if (inputElement.getAttribute('type') !== 'text') {
-      throw new Error(
-        `text にフォールバックされることを期待していましたが、実際には '${inputElement.getAttribute('type') ?? 'null'}' でした`,
-      );
-    }
-  },
-};
-
-/**
- * 強制カラーモードのプレビュー。
- *
- * Windows High Contrast Mode などでの表示を確認できます。
- * ボーダーとスペーシングにより構造を明示し、意味を維持します。
- */
-export const ForcedColorsMode: Story = {
-  render: () => html`
-    <style>
-      .forced-colors-demo {
-        max-width: 400px;
-        padding: 1.5rem;
-        background: var(--bg-surface-2, #f5f5f5);
-        border-radius: var(--radius-md, 6px);
-      }
-
-      .forced-colors-demo h3 {
-        margin: 0 0 1rem 0;
-      }
-
-      .forced-colors-info {
-        margin-bottom: 1rem;
-        padding: 0.75rem;
-        background: var(--bg-info-subtle, #e0f2fe);
-        border-radius: var(--radius-sm, 4px);
-        font-size: var(--text-sm, 13px);
-      }
-
-      .demo-fields {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-      }
-
-      /* Forced Colors Mode のシミュレーション */
-      @media (forced-colors: active) {
-        .forced-colors-demo {
-          background: Canvas;
-          border: 1px solid CanvasText;
-        }
-      }
-    </style>
-
-    <div class="forced-colors-demo">
-      <h3>Forced Colors Mode</h3>
-
-      <div class="forced-colors-info">
-        💡 Windows の設定で「ハイコントラスト」を有効にすると、 このモードでの表示を確認できます。
-      </div>
-
-      <div class="demo-fields">
-        <ui-input
-          label="通常状態"
-          type="text"
-          name="normal"
-          placeholder="入力してください"
-        ></ui-input>
-
-        <ui-input
-          label="エラー状態"
-          type="text"
-          name="error"
-          error
-          error-message="エラーメッセージ"
-        ></ui-input>
-
-        <ui-input
-          label="無効状態"
-          type="text"
-          name="disabled"
-          value="無効な入力"
-          disabled
-        ></ui-input>
-      </div>
-    </div>
-  `,
-  play: async ({ canvasElement }) => {
-    const inputs = Array.from(canvasElement.querySelectorAll<Input>('ui-input'));
-    if (inputs.length !== 3) {
-      throw new Error(
-        `強制カラーモードのデモに3つの入力フィールドがあることを期待していましたが、${inputs.length.toString()} 個見つかりました`,
-      );
-    }
-
-    await Promise.all(inputs.map((input) => input.updateComplete));
-
-    const errorInput = inputs[1];
-    const disabledInput = inputs[2];
-    if (!errorInput || !disabledInput) {
-      throw new Error('エラー状態/無効状態の入力フィールドが見つかりません');
-    }
-    if (!errorInput.hasAttribute('error')) {
-      throw new Error('2番目の入力フィールドがエラー状態である必要があります');
-    }
-
-    const disabledNative = disabledInput.shadowRoot?.querySelector('input');
-    if (!disabledNative?.disabled) {
-      throw new Error('3番目の入力フィールドが無効である必要があります');
-    }
-  },
-};
-
-/**
- * モーション低減モードのデモ。
- *
- * prefers-reduced-motion 環境下では、全てのトランジションが 0.01ms に短縮されます。
- * 背景色・ボーダー色の変化は視覚的に即座に適用されます。
- */
-export const MotionReduction: Story = {
-  render: () => html`
-    <style>
-      .motion-demo {
-        max-width: 400px;
-        padding: 1.5rem;
-        background: var(--bg-surface-2, #f5f5f5);
-        border-radius: var(--radius-md, 6px);
-      }
-
-      .motion-demo h3 {
-        margin: 0 0 1rem 0;
-      }
-
-      .motion-info {
-        margin-bottom: 1rem;
-        padding: 0.75rem;
-        background: var(--bg-info-subtle, #e0f2fe);
-        border-radius: var(--radius-sm, 4px);
-        font-size: var(--text-sm, 13px);
-      }
-
-      /* Motion Reduction のシミュレーション */
-      @media (prefers-reduced-motion: reduce) {
-        .motion-demo {
-          /* グローバル定義により自動的に適用されます */
-        }
-      }
-    </style>
-
-    <div class="motion-demo">
-      <h3>Motion Reduction</h3>
-
-      <div class="motion-info">
-        💡 OS の設定で「アニメーションを減らす」を有効にすると、
-        トランジションが即座に適用されます。
-      </div>
-
-      <ui-input
-        label="フォーカステスト"
-        type="text"
-        name="motionTest"
-        help-text="フォーカスを当てて、トランジションの挙動を確認してください"
-      ></ui-input>
-    </div>
-  `,
-  play: async ({ canvasElement }) => {
-    const input = canvasElement.querySelector<Input>('ui-input');
-    if (!input) {
-      throw new Error('ui-input が見つかりません');
-    }
-    await input.updateComplete;
-
-    const hasReduceRule = Input.styles
-      .toString()
-      .includes('@media (prefers-reduced-motion: reduce)');
-    if (!hasReduceRule) {
-      throw new Error(
-        'Input styles に prefers-reduced-motion メディアクエリが含まれている必要があります',
-      );
-    }
-  },
-};
-
-/**
- * エラー状態の遷移テスト。
- *
- * エラー解消時に Help Text が再表示されることを確認します。
- */
-export const ErrorStateTransition: Story = {
-  render: () => html`
-    <style>
-      .transition-demo {
-        max-width: 400px;
-        padding: 1.5rem;
-        background: var(--bg-surface-2, #f5f5f5);
-        border-radius: var(--radius-md, 6px);
-      }
-
-      .transition-demo h3 {
-        margin: 0 0 1rem 0;
-      }
-
-      .controls {
-        display: flex;
-        gap: 0.5rem;
-        margin-top: 1rem;
-      }
-    </style>
-
-    <div class="transition-demo">
-      <h3>エラー状態の遷移</h3>
-
-      <ui-input
-        id="transition-input"
-        label="ユーザー名"
-        type="text"
-        name="username"
-        help-text="3文字以上で入力してください"
-      ></ui-input>
-
-      <div class="controls">
-        <ui-button
-          variant="danger"
-          @click="${(e: Event) => {
-            const trigger = e.currentTarget as HTMLElement | null;
-            const container = trigger?.closest('.transition-demo');
-            const input = container?.querySelector<Input>('#transition-input') ?? null;
-            if (input) {
-              input.error = true;
-              input.errorMessage = 'ユーザー名は3文字以上で入力してください';
-            }
-          }}"
-        >
-          エラーを表示
-        </ui-button>
-
-        <ui-button
-          variant="secondary"
-          @click="${(e: Event) => {
-            const trigger = e.currentTarget as HTMLElement | null;
-            const container = trigger?.closest('.transition-demo');
-            const input = container?.querySelector<Input>('#transition-input') ?? null;
-            if (input) {
-              input.error = false;
-              input.errorMessage = '';
-            }
-          }}"
-        >
-          エラーを解消
-        </ui-button>
-      </div>
-    </div>
-  `,
-  play: async ({ canvasElement }) => {
-    const input = canvasElement.querySelector<Input>('#transition-input');
-    if (!input) {
-      throw new Error('ui-input が見つかりません');
-    }
-    await input.updateComplete;
-
-    // 初期状態: Help Text が表示されていること
-    let helpText = input.shadowRoot?.querySelector('.help-text');
-    if (!helpText || getComputedStyle(helpText).display === 'none') {
-      throw new Error('Help text が初期状態で表示されている必要があります');
-    }
-
-    // エラー状態に遷移
-    input.error = true;
-    input.errorMessage = 'テストエラー';
-    await input.updateComplete;
-
-    // エラー時: Error Message が表示され、Help Text が非表示
-    const errorMessage = input.shadowRoot?.querySelector('.error-message--visible');
-    if (!errorMessage) {
-      throw new Error('Error message が error=true の時に表示される必要があります');
-    }
-
-    helpText = input.shadowRoot?.querySelector('.help-text');
-    if (helpText && getComputedStyle(helpText).display !== 'none') {
-      throw new Error('Help text が error=true の時に非表示になる必要があります');
-    }
-
-    // エラー解消
-    input.error = false;
-    input.errorMessage = '';
-    await input.updateComplete;
-
-    // エラー解消後: Help Text が再表示されること
-    helpText = input.shadowRoot?.querySelector('.help-text');
-    if (!helpText || getComputedStyle(helpText).display === 'none') {
-      throw new Error('Help text がエラー解消後に再表示される必要があります');
-    }
-  },
-};
-
-/**
- * イベント重複発火の境界条件テスト。
- *
- * `input` と `change` が二重発火しないことを確認します。
- */
-export const EventDispatchSingle: Story = {
-  render: () => html`
-    <ui-input
-      id="event-single-input"
-      label="イベント検証"
-      name="eventCheck"
-      placeholder="入力してください"
-    ></ui-input>
-  `,
-  play: async ({ canvasElement }) => {
-    const input = canvasElement.querySelector<Input>('#event-single-input');
-    if (!input) {
-      throw new Error('ui-input が見つかりません');
-    }
-    await input.updateComplete;
-
-    const inputElement = input.shadowRoot?.querySelector('input');
-    if (!inputElement) {
-      throw new Error('Shadow root 内に input 要素が見つかりません');
-    }
-
-    let inputCount = 0;
-    let changeCount = 0;
-    input.addEventListener('input', () => {
-      inputCount += 1;
-    });
-    input.addEventListener('change', () => {
-      changeCount += 1;
-    });
-
-    inputElement.value = 'abc';
-    inputElement.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-    inputElement.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
-    await input.updateComplete;
-
-    if (inputCount !== 1) {
-      throw new Error(
-        `input イベントが1回発火することを期待していましたが、${inputCount.toString()} 回発火しました`,
-      );
-    }
-    if (changeCount !== 1) {
-      throw new Error(
-        `change イベントが1回発火することを期待していましたが、${changeCount.toString()} 回発火しました`,
-      );
-    }
-  },
-};
-
-/**
- * FormData 参加の境界条件テスト。
- *
- * ElementInternals によりフォーム送信データへ値が反映されることを確認します。
- */
-export const FormDataParticipation: Story = {
-  render: () => html`
-    <form id="formdata-participation">
-      <ui-input
-        id="formdata-input"
-        label="メールアドレス"
-        type="email"
-        name="email"
-        value="user@example.com"
-      ></ui-input>
-    </form>
-  `,
-  play: async ({ canvasElement }) => {
-    const form = canvasElement.querySelector<HTMLFormElement>('#formdata-participation');
-    const input = canvasElement.querySelector<Input>('#formdata-input');
-    if (!form || !input) {
-      throw new Error('フォームまたは入力フィールドが見つかりません');
-    }
-    await input.updateComplete;
-
-    const formData = new FormData(form);
-    const email = formData.get('email') as string | null;
-    if (email !== 'user@example.com') {
-      throw new Error(
-        `FormData の email が "user@example.com" であることを期待していましたが、実際には ${email ?? 'null'} でした`,
-      );
-    }
-  },
-};
-
-/**
- * type の動的変更時フォールバック検証。
- *
- * 接続後にサポート外 type を指定しても `text` へフォールバックすることを確認します。
- */
-export const DynamicTypeFallback: Story = {
-  render: () => html`
-    <ui-input id="dynamic-type-input" label="動的type" type="text" name="dynamicType"></ui-input>
-  `,
-  play: async ({ canvasElement }) => {
-    const input = canvasElement.querySelector<Input>('#dynamic-type-input');
-    if (!input) {
-      throw new Error('ui-input が見つかりません');
-    }
-    await input.updateComplete;
-
-    input.type = 'date';
-    await input.updateComplete;
-
-    const inputElement = input.shadowRoot?.querySelector('input');
-    if (!inputElement) {
-      throw new Error('Shadow root 内に input 要素が見つかりません');
-    }
-
-    if (inputElement.type !== 'text') {
-      throw new Error(
-        `text にフォールバックされることを期待していましたが、実際には "${inputElement.type}" でした`,
-      );
-    }
-  },
-};
-
-/**
- * 強制エラー（メッセージなし）の境界条件。
- *
- * `aria-invalid` は true になり、`aria-describedby` は空のままになることを確認します。
- */
-export const ErrorWithoutMessage: Story = {
-  render: () => html`
-    <ui-input
-      id="error-no-message-input"
-      label="エラーテスト"
-      name="errorNoMessage"
-      error
-      help-text="通常時のヘルプテキスト"
-    ></ui-input>
-  `,
-  play: async ({ canvasElement }) => {
-    const input = canvasElement.querySelector<Input>('#error-no-message-input');
-    if (!input) {
-      throw new Error('ui-input が見つかりません');
-    }
-    await input.updateComplete;
-
-    const inputElement = input.shadowRoot?.querySelector('input');
-    if (!inputElement) {
-      throw new Error('Shadow root 内に input 要素が見つかりません');
-    }
-
-    if (inputElement.getAttribute('aria-invalid') !== 'true') {
-      throw new Error(
-        `aria-invalid が true であることを期待していましたが、実際には ${String(inputElement.getAttribute('aria-invalid'))} でした`,
-      );
-    }
-
-    if (inputElement.hasAttribute('aria-describedby')) {
-      throw new Error(
-        'aria-describedby が存在することを期待していましたが、実際には存在しませんでした',
-      );
-    }
-  },
-};
-
-/**
- * 文字数バリデーション境界条件テスト。
- *
- * minlength / maxlength の下限・上限で妥当性が切り替わることを確認します。
- */
-export const MinMaxLengthBoundary: Story = {
-  render: () => html`
-    <ui-input
-      id="minmax-boundary-input"
-      label="ユーザー名"
-      name="username"
-      minlength="3"
-      maxlength="5"
-      required
-    ></ui-input>
-  `,
-  play: async ({ canvasElement }) => {
-    const input = canvasElement.querySelector<Input>('#minmax-boundary-input');
-    if (!input) {
-      throw new Error('ui-input が見つかりません');
-    }
-    await input.updateComplete;
-
-    input.value = 'ab';
-    await input.updateComplete;
-    if (input.checkValidity()) {
-      throw new Error('2文字の入力は無効である必要があります（短すぎます）');
-    }
-
-    input.value = 'abc';
-    await input.updateComplete;
-    if (!input.checkValidity()) {
-      throw new Error('3文字の入力は有効である必要があります');
-    }
-
-    input.value = 'abcdef';
-    await input.updateComplete;
-    if (input.checkValidity()) {
-      throw new Error('6文字の入力は無効である必要があります（長すぎます）');
-    }
-  },
-};
-
-/**
- * 状態組み合わせマトリクス。
- *
- * 実運用で衝突しやすい状態の組み合わせを一覧で確認します。
- */
-export const VariantStateMatrix: Story = {
-  render: () => html`
-    <style>
-      .state-matrix {
-        display: grid;
-        gap: 1rem;
-        max-width: 480px;
-      }
-    </style>
-    <div class="state-matrix">
-      <ui-input id="matrix-default" label="Default" name="default"></ui-input>
-      <ui-input
-        id="matrix-required"
-        label="Required"
-        name="required"
-        required
-        help-text="Required field"
-      ></ui-input>
-      <ui-input
-        id="matrix-error"
-        label="Error"
-        name="error"
-        error
-        error-message="Invalid value"
-      ></ui-input>
-      <ui-input
-        id="matrix-readonly"
-        label="Readonly"
-        name="readonly"
-        value="Fixed value"
-        readonly
-      ></ui-input>
-      <ui-input
-        id="matrix-disabled"
-        label="Disabled"
-        name="disabled"
-        value="Disabled value"
-        disabled
-      ></ui-input>
-      <ui-input
-        id="matrix-hidden-label"
-        label="User ID"
-        name="userId"
-        type="text"
-        hide-label
-        placeholder="User ID"
-      ></ui-input>
-    </div>
-  `,
-  play: async ({ canvasElement }) => {
-    const ids = [
-      '#matrix-default',
-      '#matrix-required',
-      '#matrix-error',
-      '#matrix-readonly',
-      '#matrix-disabled',
-      '#matrix-hidden-label',
-    ] as const;
-    const components = ids
-      .map((id) => canvasElement.querySelector<Input>(id))
-      .filter((item): item is Input => item !== null);
-    if (components.length !== ids.length) {
-      throw new Error(
-        '状態組み合わせマトリクスで全てのバリアント/状態の組み合わせが描画されていません',
-      );
-    }
-
-    await Promise.all(components.map((component) => component.updateComplete));
-
-    const errorInput = canvasElement.querySelector<Input>('#matrix-error');
-    const errorNative = errorInput?.shadowRoot?.querySelector('input');
-    if (errorNative?.getAttribute('aria-invalid') !== 'true') {
-      throw new Error('エラー状態の aria-invalid が true に設定されていません');
-    }
-
-    const disabledInput = canvasElement.querySelector<Input>('#matrix-disabled');
-    const disabledNative = disabledInput?.shadowRoot?.querySelector('input');
-    if (!disabledNative?.disabled) {
-      throw new Error('ネイティブの input 要素が無効状態になっていません');
-    }
-  },
-};
-
-/**
- * ダークモード確認。
- *
- * ダーク背景上で入力欄の視認性が維持されることを確認します。
- */
-export const DarkMode: Story = {
-  render: () => html`
-    <style>
-      .dark-surface {
-        max-width: 480px;
-        display: grid;
-        gap: 1rem;
-        padding: 1rem;
-        border-radius: 10px;
-        background: #111827;
-        color: #f3f4f6;
-        --bg-fill-muted: #1f2937;
-        --bg-default: #111827;
-        --fg-default: #f3f4f6;
-        --fg-muted: #9ca3af;
-        --fg-subtle: #9ca3af;
-        --border-default: #374151;
-        --bg-danger-subtle: #3f1d1d;
-        --border-danger: #f87171;
-        --fg-danger: #f87171;
-      }
-    </style>
-    <div class="dark-surface">
-      <ui-input
-        id="dark-default"
-        label="Email"
-        type="email"
-        placeholder="dark@example.com"
-      ></ui-input>
-      <ui-input id="dark-error" label="Username" error error-message="Invalid username"></ui-input>
-      <ui-input
-        id="dark-disabled"
-        label="Disabled"
-        value="disabled@example.com"
-        disabled
-      ></ui-input>
-    </div>
-  `,
-  play: async ({ canvasElement }) => {
-    const defaults = canvasElement.querySelector<Input>('#dark-default');
-    const error = canvasElement.querySelector<Input>('#dark-error');
-    const disabled = canvasElement.querySelector<Input>('#dark-disabled');
-    if (!defaults || !error || !disabled) {
-      throw new Error('ダークモードの story に input 要素が見つかりません');
-    }
-
-    await Promise.all([defaults.updateComplete, error.updateComplete, disabled.updateComplete]);
-
-    const defaultNative = defaults.shadowRoot?.querySelector('input');
-    const errorNative = error.shadowRoot?.querySelector('input');
-    const disabledNative = disabled.shadowRoot?.querySelector('input');
-    if (!defaultNative || !errorNative || !disabledNative) {
-      throw new Error('ダークモードの story にネイティブの input 要素が見つかりません');
-    }
-
-    if (getComputedStyle(defaultNative).backgroundColor === 'rgba(0, 0, 0, 0)') {
-      throw new Error('デフォルトの input 要素がダークモードで可視な背景を持っていません');
-    }
-    if (errorNative.getAttribute('aria-invalid') !== 'true') {
-      throw new Error('エラー状態の input 要素が aria-invalid を true に設定していません');
-    }
-    if (!disabledNative.disabled) {
-      throw new Error('Disabled input should remain disabled in dark mode');
-    }
-  },
-};
-
-/**
- * ラベルクリック時のフォーカス移譲。
- */
-export const LabelClickFocusTransfer: Story = {
-  render: () => html`
-    <ui-input
-      id="label-focus-transfer-input"
-      label="Display Name"
-      name="displayName"
-      placeholder="Click label to focus"
-    ></ui-input>
-  `,
-  play: async ({ canvasElement }) => {
-    const input = canvasElement.querySelector<Input>('#label-focus-transfer-input');
-    if (!input) {
-      throw new Error('ui-input が見つかりません');
-    }
-    await input.updateComplete;
-
-    const label = input.shadowRoot?.querySelector('label');
-    const inputElement = input.shadowRoot?.querySelector('input');
-    if (!label || !inputElement) {
-      throw new Error('ラベルまたは input 要素が shadow root に見つかりません');
-    }
-
-    label.click();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    if (input.shadowRoot?.activeElement !== inputElement) {
-      throw new Error('ラベルをクリックでネイティブの input 要素にフォーカスが移動していません');
-    }
-  },
-};
-
-/**
- * Enterキーのフォーム送信連携。
- */
 export const EnterSubmitFromInput: Story = {
   render: () => html`
     <form
-      id="enter-submit-form"
-      data-submit-count="0"
-      @submit="${(e: Event) => {
-        e.preventDefault();
-        const form = e.currentTarget as HTMLFormElement;
-        const current = Number(form.dataset['submitCount'] ?? '0');
-        form.dataset['submitCount'] = (current + 1).toString();
-      }}"
+      id="submit-form"
+      @submit=${(event: Event) => {
+        event.preventDefault();
+        const output = (event.currentTarget as ParentNode).querySelector<HTMLElement>('#submit-count');
+        if (!output) {
+          return;
+        }
+
+        const count = Number(output.dataset['count'] ?? '0') + 1;
+        output.dataset['count'] = String(count);
+        output.textContent = String(count);
+      }}
     >
-      <ui-input id="enter-submit-input" label="Keyword" name="keyword" value="Rouault"></ui-input>
-      <button type="submit">Submit</button>
+      ${renderInput({
+        label: '検索語',
+        name: 'query',
+        enterkeyhint: 'search',
+      })}
+      <ui-button type="submit">送信</ui-button>
+      <output id="submit-count" data-count="0">0</output>
     </form>
   `,
   play: async ({ canvasElement }) => {
-    const form = canvasElement.querySelector<HTMLFormElement>('#enter-submit-form');
-    const input = canvasElement.querySelector<Input>('#enter-submit-input');
-    if (!form || !input) {
-      throw new Error('フォームまたは input 要素が見つかりません');
-    }
-    await input.updateComplete;
-
-    const inputElement = input.shadowRoot?.querySelector('input');
-    if (!inputElement) {
-      throw new Error('Shadow Root 内に input 要素が見つかりません');
+    const host = getHost(canvasElement);
+    const output = canvasElement.querySelector<HTMLOutputElement>('#submit-count');
+    if (!output) {
+      throw new Error('送信回数出力が見つかりません');
     }
 
-    inputElement.dispatchEvent(
-      new KeyboardEvent('keydown', {
-        key: 'Enter',
-        bubbles: true,
-        composed: true,
-      }),
-    );
-    await input.updateComplete;
+    await host.updateComplete;
 
-    if (form.dataset['submitCount'] !== '1') {
-      throw new Error(
-        `Enter でフォーム送信が1回発火することを期待していましたが、実際には ${form.dataset['submitCount'] ?? '0'} 回発火しました`,
-      );
+    const input = getInternalInput(host);
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true }));
+    await host.updateComplete;
+
+    if (output.textContent !== '1') {
+      throw new Error(`Enter で関連フォーム送信へ橋渡しできませんでした: ${output.textContent}`);
     }
   },
 };
 
-/**
- * FormData参加の境界条件（disabled/readonly）。
- */
 export const FormDataDisabledReadonlyBoundary: Story = {
   render: () => html`
-    <form id="formdata-boundary-form">
-      <ui-input id="fd-enabled" label="Enabled" name="enabled" value="enabled-value"></ui-input>
-      <ui-input
-        id="fd-disabled"
-        label="Disabled"
-        name="disabled"
-        value="disabled-value"
-        disabled
-      ></ui-input>
-      <ui-input
-        id="fd-readonly"
-        label="Readonly"
-        name="readonly"
-        value="readonly-value"
-        readonly
-      ></ui-input>
+    <form id="boundary-form">
+      ${renderInput({
+        label: '通常入力',
+        name: 'active',
+        value: 'active-value',
+      })}
+      ${renderInput({
+        label: '無効入力',
+        name: 'disabledField',
+        value: 'disabled-value',
+        disabled: true,
+      })}
+      ${renderInput({
+        label: '読み取り専用',
+        name: 'readonlyField',
+        value: 'readonly-value',
+        readonly: true,
+      })}
     </form>
   `,
   play: async ({ canvasElement }) => {
-    const form = canvasElement.querySelector<HTMLFormElement>('#formdata-boundary-form');
-    const enabled = canvasElement.querySelector<Input>('#fd-enabled');
-    const disabled = canvasElement.querySelector<Input>('#fd-disabled');
-    const readonly = canvasElement.querySelector<Input>('#fd-readonly');
-    if (!form || !enabled || !disabled || !readonly) {
-      throw new Error('境界条件の story 要素が見つかりません');
+    const form = canvasElement.querySelector<HTMLFormElement>('#boundary-form');
+    if (!form) {
+      throw new Error('boundary 検証用の form が見つかりません');
     }
-
-    await Promise.all([enabled.updateComplete, disabled.updateComplete, readonly.updateComplete]);
 
     const formData = new FormData(form);
-    const enabledData = formData.get('enabled') as string | null;
-    if (enabledData !== 'enabled-value') {
-      throw new Error(
-        `フォームの enabled が "enabled-value" であることを期待していましたが、実際には ${enabledData ?? 'null'} でした`,
-      );
+    if (formData.get('active') !== 'active-value') {
+      throw new Error('通常入力は FormData に参加する必要があります');
     }
-    const disabledData = formData.get('disabled') as string | null;
-    if (formData.has('disabled')) {
-      throw new Error(
-        `フォームに disabled が含まれないことを期待していましたが、実際には ${disabledData ?? 'null'} として含まれていました`,
-      );
+
+    if (formData.has('disabledField')) {
+      throw new Error('disabled な input は FormData に参加してはいけません');
     }
-    const readonlyData = formData.get('readonly') as string | null;
-    if (readonlyData !== 'readonly-value') {
-      throw new Error(
-        `フォームの readonly が "readonly-value" であることを期待していましたが、実際には ${readonlyData ?? 'null'} でした`,
-      );
+
+    if (formData.get('readonlyField') !== 'readonly-value') {
+      throw new Error('readonly な input は FormData に参加する必要があります');
     }
   },
+};
+
+export const PassThroughHints: Story = {
+  args: {
+    label: '電話番号',
+    type: 'tel',
+    inputmode: 'tel',
+    enterkeyhint: 'next',
+    autocapitalize: 'off',
+    spellcheck: false,
+  },
+  render: renderInput,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement);
+    await host.updateComplete;
+
+    const input = getInternalInput(host);
+    if (input.getAttribute('inputmode') !== 'tel') {
+      throw new Error('inputmode は内部 input へ委譲される必要があります');
+    }
+
+    if (input.getAttribute('enterkeyhint') !== 'next') {
+      throw new Error('enterkeyhint は内部 input へ委譲される必要があります');
+    }
+
+    if (input.getAttribute('spellcheck') !== 'false') {
+      throw new Error('spellcheck=false は属性値 false として委譲される必要があります');
+    }
+  },
+};
+
+export const Playground: Story = {
+  args: baseArgs,
+  render: renderInput,
 };
