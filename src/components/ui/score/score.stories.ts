@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './score';
-import type { ScoreLoading, UiScore } from './score';
+import { type ScoreLoading, UiScore } from './score';
 
 const INLINE_SCORE_TEMPLATE = html`
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 220">
@@ -153,6 +153,9 @@ const getErrorRegion = (score: UiScore): HTMLElement => {
 const getCaption = (score: UiScore): HTMLElement | null =>
   score.shadowRoot?.querySelector<HTMLElement>('figcaption.caption') ?? null;
 
+const getDescription = (score: UiScore): HTMLElement | null =>
+  score.shadowRoot?.querySelector<HTMLElement>('.sr-only') ?? null;
+
 const getSkeleton = (score: UiScore): HTMLElement | null =>
   score.shadowRoot?.querySelector<HTMLElement>('.skeleton') ?? null;
 
@@ -185,8 +188,16 @@ const meta: Meta<UiScore> = {
 
 - build-inline（slot内 SVG）を優先し、未提供時は \`src\` を fetch
 - \`loading="lazy|eager"\` でネットワーク開始タイミングを制御
+- \`label\` は完全なアクセシブル名として扱い、\`caption\` とは分離
+- \`src\` は \`http:\` / \`https:\` / \`data:\` に解決できる入力のみ受理
 - \`aria-label\` / \`aria-describedby\` / \`aria-busy\` を同期
 - 失敗時は \`aria-live="polite"\` でエラーメッセージを通知
+
+描画正規化の追跡対象:
+
+- 受理要素カテゴリ: 基本図形、グループ、テキスト、パス
+- 危険要素: \`script\` / \`foreignObject\`
+- 危険属性: \`on*\` / \`javascript:\` を含む \`href\` 系属性
         `,
       },
     },
@@ -204,7 +215,7 @@ const meta: Meta<UiScore> = {
     },
     label: {
       control: 'text',
-      description: 'スクリーンリーダー向けラベル（推奨: 文脈付き）',
+      description: '完全なアクセシブル名。空文字時は「楽譜」にフォールバック',
       table: { type: { summary: 'string' }, defaultValue: { summary: "''" } },
     },
     description: {
@@ -254,7 +265,9 @@ export const Default: Story = {
     await score.updateComplete;
 
     const scroll = getScrollContainer(score);
-    if (scroll.getAttribute('aria-label') !== '楽譜: ベートーヴェン 悲愴ソナタ 第1楽章 第1主題') {
+    if (
+      scroll.getAttribute('aria-label') !== 'ベートーヴェン 悲愴ソナタ 第1楽章 第1主題'
+    ) {
       throw new Error('aria-label が仕様どおりに設定されていません');
     }
     if (scroll.getAttribute('role') !== 'region') {
@@ -277,6 +290,17 @@ export const Default: Story = {
     if (!root.getElementById(describedBy)) {
       throw new Error('aria-describedby の参照先が見つかりません');
     }
+    const description = getDescription(score);
+    if (description?.id !== describedBy) {
+      throw new Error('description の参照先が意図した sr-only 要素と一致していません');
+    }
+    if (description.textContent.trim() !== 'ト長調の主題。冒頭は四分音符主体で、主旋律が反復される。') {
+      throw new Error('description の文言が意図した内容と一致していません');
+    }
+    const captionText = getCaption(score)?.textContent.trim();
+    if (captionText === scroll.getAttribute('aria-label')) {
+      throw new Error('caption をアクセシブル名の構成要素として扱ってはいけません');
+    }
 
     const svg = getRuntimeSvg(score);
     if (!svg) throw new Error('描画後の SVG が見つかりません');
@@ -293,6 +317,13 @@ export const Default: Story = {
     if (!getCaption(score)) {
       throw new Error('caption 指定時は figcaption が必要です');
     }
+
+    score.focus();
+    await waitFrame();
+    if (getShadowRoot(score).activeElement !== scroll) {
+      throw new Error('focus() は内部スクロール領域へ委譲される必要があります');
+    }
+    score.blur();
   },
 };
 
@@ -434,8 +465,9 @@ export const VariantStateMatrix: Story = {
 /**
  * 状態系:
  * - loading(skeleton) から loaded への遷移
+ * - invalid-src と idle の分離
  * - fetch失敗時の polite エラー通知
- * - src未指定時の即時フォールバック
+ * - abort が失敗表示と混同されないこと
  */
 export const LoadingAndErrorStates: Story = {
   render: () => html`
@@ -461,19 +493,36 @@ export const LoadingAndErrorStates: Story = {
         loading="eager"
       ></ui-score>
 
+      <ui-score
+        id="state-invalid-src"
+        src="javascript:alert(1)"
+        label="不正なソース"
+        loading="eager"
+      ></ui-score>
+
       <ui-score id="state-missing-src" label="ソース未設定サンプル"></ui-score>
+
+      <ui-score
+        id="state-abort"
+        label="中断サンプル"
+        loading="eager"
+      ></ui-score>
     </div>
   `,
   play: async ({ canvasElement }) => {
     const loading = getScore(canvasElement, 'state-loading');
     const loadingLazy = getScore(canvasElement, 'state-loading-lazy');
     const error = getScore(canvasElement, 'state-error');
+    const invalidSrc = getScore(canvasElement, 'state-invalid-src');
     const missingSrc = getScore(canvasElement, 'state-missing-src');
+    const abortCase = getScore(canvasElement, 'state-abort');
     await Promise.all([
       loading.updateComplete,
       loadingLazy.updateComplete,
       error.updateComplete,
+      invalidSrc.updateComplete,
       missingSrc.updateComplete,
+      abortCase.updateComplete,
     ]);
 
     const originalFetch = globalThis.fetch;
@@ -483,6 +532,7 @@ export const LoadingAndErrorStates: Story = {
     const delayedFetchPromise = new Promise<Response>((resolve) => {
       resolveDelayedFetch = resolve;
     });
+    let abortFetchCount = 0;
 
     try {
       globalThis.fetch = (async (
@@ -491,14 +541,20 @@ export const LoadingAndErrorStates: Story = {
       ): Promise<Response> => {
         const requestUrl =
           typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-        if (requestUrl === '/__score-delayed.svg') {
+        if (requestUrl.endsWith('/__score-delayed.svg')) {
+          return delayedFetchPromise;
+        }
+        if (requestUrl.endsWith('/__score-delayed-abort.svg')) {
+          abortFetchCount += 1;
           return delayedFetchPromise;
         }
         return originalFetch(input, init);
       }) as typeof fetch;
 
       loading.src = '/__score-delayed.svg';
+      abortCase.src = '/__score-delayed-abort.svg';
       await loading.updateComplete;
+      await abortCase.updateComplete;
 
       await waitFor(
         () => getFigure(loading).getAttribute('aria-busy') === 'true',
@@ -526,6 +582,17 @@ export const LoadingAndErrorStates: Story = {
       if (!getScoreContent(loading).classList.contains('is-visible')) {
         throw new Error('SVG 描画後は score-content が可視状態である必要があります');
       }
+
+      await waitFor(
+        () => abortFetchCount > 0,
+        '中断テストの初回 fetch が開始されませんでした',
+      );
+      abortCase.innerHTML = SECOND_RUNTIME_SCORE_SVG;
+      await abortCase.updateComplete;
+      await waitFor(
+        () => getInlineSvg(abortCase).getAttribute('aria-hidden') === 'true',
+        '中断後の inline SVG 準備が完了しませんでした',
+      );
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -553,11 +620,28 @@ export const LoadingAndErrorStates: Story = {
       throw new Error('error 時は aria-busy="false" である必要があります');
     }
 
-    if (getErrorRegion(missingSrc).textContent.trim() !== '楽譜ソースが未設定です') {
-      throw new Error('src 未設定時のメッセージが不正です');
+    if (getErrorRegion(invalidSrc).textContent.trim() !== '不正な楽譜ソースです') {
+      throw new Error('invalid-src 時の専用メッセージが表示されていません');
+    }
+    if (getFigure(invalidSrc).getAttribute('aria-busy') !== 'false') {
+      throw new Error('invalid-src 時は aria-busy="false" である必要があります');
+    }
+    if (getSkeleton(invalidSrc)?.classList.contains('is-visible')) {
+      throw new Error('invalid-src では skeleton を表示してはいけません');
+    }
+
+    if (getErrorRegion(missingSrc).textContent.trim() !== '') {
+      throw new Error('src 未設定時は error ではなく idle として扱う必要があります');
     }
     if (getFigure(missingSrc).getAttribute('aria-busy') !== 'false') {
       throw new Error('src 未設定時は aria-busy="false" である必要があります');
+    }
+    if (getSkeleton(missingSrc)?.classList.contains('is-visible')) {
+      throw new Error('src 未設定時は skeleton を表示してはいけません');
+    }
+
+    if (getErrorRegion(abortCase).textContent.trim() !== '') {
+      throw new Error('fetch 中断は error 表示と混同してはいけません');
     }
   },
 };
@@ -566,6 +650,8 @@ export const LoadingAndErrorStates: Story = {
  * 事故が多い境界条件:
  * - 不正 loading 値の fallback
  * - 不正 aspect-ratio の fallback
+ * - `label` 空文字時の既定名
+ * - slot 再評価後の runtime 再入
  * - runtime SVG サニタイズ（script・onイベント属性・javascript: の除去）
  */
 export const BoundaryConditions: Story = {
@@ -585,12 +671,28 @@ export const BoundaryConditions: Story = {
         label="サニタイズ確認"
         loading="eager"
       ></ui-score>
+
+      <ui-score
+        id="boundary-empty-label"
+        src="${SECOND_RUNTIME_SCORE_SRC}"
+        label=""
+        loading="eager"
+      ></ui-score>
+
+      <ui-score id="boundary-slot-reentry" src="${RUNTIME_SCORE_SRC}" loading="eager"></ui-score>
     </div>
   `,
   play: async ({ canvasElement }) => {
     const invalidInput = getScore(canvasElement, 'boundary-invalid-input');
     const sanitizeCase = getScore(canvasElement, 'boundary-sanitize');
-    await Promise.all([invalidInput.updateComplete, sanitizeCase.updateComplete]);
+    const emptyLabelCase = getScore(canvasElement, 'boundary-empty-label');
+    const slotReentry = getScore(canvasElement, 'boundary-slot-reentry');
+    await Promise.all([
+      invalidInput.updateComplete,
+      sanitizeCase.updateComplete,
+      emptyLabelCase.updateComplete,
+      slotReentry.updateComplete,
+    ]);
 
     if (invalidInput.loading !== 'lazy') {
       throw new Error('不正 loading 値は lazy にフォールバックされる必要があります');
@@ -634,6 +736,31 @@ export const BoundaryConditions: Story = {
     if (rect.getAttribute('stroke') !== 'currentColor') {
       throw new Error('stroke="#000000" は currentColor へ置換される必要があります');
     }
+
+    await waitFor(
+      () => getRuntimeSvg(emptyLabelCase) !== null,
+      'label 空文字ケースの SVG が描画されませんでした',
+    );
+    if (getScrollContainer(emptyLabelCase).getAttribute('aria-label') !== '楽譜') {
+      throw new Error('label 空文字時は aria-label を「楽譜」にフォールバックする必要があります');
+    }
+
+    await waitFor(
+      () => getRuntimeSvg(slotReentry) !== null,
+      'slot 再入テストの初回 runtime SVG が描画されませんでした',
+    );
+    slotReentry.innerHTML = SECOND_RUNTIME_SCORE_SVG;
+    await slotReentry.updateComplete;
+    await waitFor(
+      () => getInlineSvg(slotReentry).getAttribute('aria-hidden') === 'true',
+      'slot 再入テストの inline SVG が準備されませんでした',
+    );
+    slotReentry.innerHTML = '';
+    await slotReentry.updateComplete;
+    await waitFor(
+      () => getRuntimeSvg(slotReentry) !== null,
+      'inline SVG 除去後に runtime fetch へ再入しませんでした',
+    );
   },
 };
 
@@ -669,6 +796,7 @@ export const VisualModesAndInkContrast: Story = {
           src="${SECOND_RUNTIME_SCORE_SRC}"
           label="ダーク背景確認"
           loading="eager"
+          style="--score-ink: rgb(124 58 237);"
         ></ui-score>
       </div>
     </div>
@@ -685,12 +813,13 @@ export const VisualModesAndInkContrast: Story = {
     const darkColor = getComputedStyle(getScrollContainer(dark)).color;
     const isBlackColor = (value: string): boolean => {
       const normalized = value.replace(/\s+/g, '').toLowerCase();
-      return normalized === 'rgb(0,0,0)' || normalized === 'oklch(000)';
+      return normalized === 'rgb(0,0,0)' || (normalized.startsWith('oklch(') && !/[1-9]/.test(normalized));
     };
-    if (!isBlackColor(lightColor) || !isBlackColor(darkColor)) {
-      throw new Error(
-        `譜面インク色は常に黒である必要があります: light=${lightColor}, dark=${darkColor}`,
-      );
+    if (!isBlackColor(lightColor)) {
+      throw new Error(`既定トークンでは譜面インク色が黒相当である必要があります: ${lightColor}`);
+    }
+    if (darkColor.replace(/\s+/g, '').toLowerCase() !== 'rgb(124,58,237)') {
+      throw new Error(`公開トークンで譜面インク色を変更できる必要があります: ${darkColor}`);
     }
   },
 };
@@ -753,28 +882,25 @@ export const AccessibilityMediaContracts: Story = {
       'A11yメディア契約ケースの SVG が描画されませんでした',
     );
 
-    const styleTag = score.shadowRoot?.querySelector('style');
-    const styleFromTag = styleTag?.textContent ?? '';
-    const styleFromSheets = (score.shadowRoot?.adoptedStyleSheets ?? [])
-      .map((sheet) => {
-        try {
-          return Array.from(sheet.cssRules)
-            .map((rule) => rule.cssText)
-            .join('\n');
-        } catch {
-          return '';
-        }
-      })
-      .join('\n');
-    const styleText = `${styleFromTag}\n${styleFromSheets}`;
+    const styleText = String(UiScore.styles);
+    const compactStyleText = styleText.replace(/\s+/g, '');
     if (!styleText.includes('@media (prefers-reduced-motion: reduce)')) {
       throw new Error('reduced-motion 向けメディアクエリが定義されていません');
     }
     if (!styleText.includes('@media (forced-colors: active)')) {
       throw new Error('forced-colors 向けメディアクエリが定義されていません');
     }
+    if (!styleText.includes('@media print')) {
+      throw new Error('print 向けメディアクエリが定義されていません');
+    }
     if (!styleText.includes('mask-image: none')) {
       throw new Error('forced-colors 時の mask-image 無効化ルールが見つかりません');
+    }
+    if (!compactStyleText.includes('overflow:visible')) {
+      throw new Error('print 時のスクロール解除ルールが見つかりません');
+    }
+    if (!compactStyleText.includes('width:100%!important')) {
+      throw new Error('print 時の prose 文脈拡張解除ルールが見つかりません');
     }
   },
 };

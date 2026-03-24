@@ -406,13 +406,19 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 
 | 属性           | 内容               | 値              |
 | -------------- | ------------------ | --------------- |
-| `src`          | 譜例データ参照先   | パスまたは URL  |
+| `src`          | 譜例データ参照先   | `http:` / `https:` / `data:` に解決できるパスまたは URL |
 | `caption`      | キャプション       | 任意の文字列    |
-| `label`        | 補助ラベル         | 任意の文字列    |
+| `label`        | 完全なアクセシブル名 | 任意の文字列 |
 | `description`  | 補助説明           | 任意の文字列    |
 | `aspect-ratio` | アスペクト比ヒント | 任意の文字列    |
 | `loading`      | 読み込み方針       | `lazy`, `eager` |
 | `primary`      | 主要譜例フラグ     | 真偽値          |
+
+補足:
+
+- `label` を省略または空文字にした場合、アクセシブル名は `楽譜` になります
+- `caption` は視覚キャプション専用で、アクセシブル名には自動連結されません
+- `src` 未指定は error ではなく idle 扱いです
 
 ### Tabs
 

@@ -6,10 +6,11 @@ import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
 export type ScoreLoading = 'lazy' | 'eager';
 
 const VALID_LOADING = new Set<ScoreLoading>(['lazy', 'eager']);
+const VALID_SRC_PROTOCOLS = new Set(['http:', 'https:', 'data:']);
 const DEFAULT_ASPECT_RATIO = '3 / 1';
 const LAZY_ROOT_MARGIN = '200px 0px';
 const LOAD_ERROR_MESSAGE = '楽譜を読み込めませんでした';
-const MISSING_SRC_ERROR_MESSAGE = '楽譜ソースが未設定です';
+const INVALID_SRC_ERROR_MESSAGE = '不正な楽譜ソースです';
 
 let scoreUid = 0;
 
@@ -413,6 +414,19 @@ export class UiScore extends LitElement {
     return this._normalizeAspectRatio(this.aspectRatio);
   }
 
+  private get _hasValidRuntimeSource(): boolean {
+    const resolvedSrc = this._resolvedSrc;
+    if (resolvedSrc === '') return false;
+
+    try {
+      const baseUrl = typeof window === 'undefined' ? 'http://localhost/' : window.location.href;
+      const url = new URL(resolvedSrc, baseUrl);
+      return VALID_SRC_PROTOCOLS.has(url.protocol);
+    } catch {
+      return false;
+    }
+  }
+
   private get _isRuntimeMode(): boolean {
     return !this._hasInlineSvg;
   }
@@ -423,7 +437,7 @@ export class UiScore extends LitElement {
   }
 
   private get _ariaLabel(): string {
-    return `楽譜: ${this._resolvedLabel}`;
+    return this._resolvedLabel;
   }
 
   private get _effectiveErrorMessage(): string {
@@ -434,12 +448,14 @@ export class UiScore extends LitElement {
   private get _isBusy(): boolean {
     if (!this._isRuntimeMode) return false;
     if (this._effectiveErrorMessage !== '') return false;
-    return this._resolvedSrc !== '' && (this._isLoading || this._svgMarkup === '');
+    if (!this._hasValidRuntimeSource) return false;
+    return this._isLoading || this._svgMarkup === '';
   }
 
   private get _showSkeleton(): boolean {
     if (!this._isRuntimeMode) return false;
     if (this._effectiveErrorMessage !== '') return false;
+    if (!this._hasValidRuntimeSource) return false;
     return this._isBusy || this._svgMarkup === '';
   }
 
@@ -516,51 +532,71 @@ export class UiScore extends LitElement {
     this._queueOverflowMeasurement();
   };
 
+  public override focus(options?: FocusOptions): void {
+    this._scrollContainer?.focus(options);
+  }
+
+  public override blur(): void {
+    this._scrollContainer?.blur();
+  }
+
   private _syncInlineSvgState(): void {
     const slot = this._defaultSlot;
-    const assignedElements = slot?.assignedElements({ flatten: true }) ?? [];
-    const inlineSvgs: SVGSVGElement[] = [];
+    const assignedNodes = slot?.assignedNodes({ flatten: true }) ?? [];
+    let inlineSvg: SVGSVGElement | null = null;
 
-    for (const element of assignedElements) {
-      if (element instanceof SVGSVGElement) {
-        inlineSvgs.push(element);
+    for (const node of assignedNodes) {
+      if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim() === '') {
         continue;
       }
 
-      const nestedSvg = element.querySelector('svg');
-      if (nestedSvg instanceof SVGSVGElement) {
-        inlineSvgs.push(nestedSvg);
+      if (node instanceof SVGSVGElement && inlineSvg === null) {
+        inlineSvg = node;
+        continue;
       }
+
+      inlineSvg = null;
+      break;
     }
 
-    const hasInlineSvg = inlineSvgs.length > 0;
+    const hasInlineSvg = inlineSvg !== null;
+    const hadInlineSvg = this._hasInlineSvg;
+
     if (this._hasInlineSvg !== hasInlineSvg) {
       this._hasInlineSvg = hasInlineSvg;
     }
 
-    if (hasInlineSvg) {
-      for (const svg of inlineSvgs) {
-        this._applySvgAccessibilityAttributes(svg);
-      }
-
+    if (inlineSvg) {
+      this._applySvgAccessibilityAttributes(inlineSvg);
       this._teardownIntersectionObserver();
       this._cancelFetch();
       this._svgMarkup = '';
       this._errorMessage = '';
+      this._hasRequested = false;
       return;
     }
 
-    if (this._resolvedSrc === '') {
-      this._errorMessage = MISSING_SRC_ERROR_MESSAGE;
+    if (hadInlineSvg) {
+      this._svgMarkup = '';
+      this._errorMessage = '';
+      this._hasRequested = false;
     }
   }
 
   private _scheduleLoad(): void {
     if (this._hasInlineSvg) return;
 
+    this._teardownIntersectionObserver();
+
     if (this._resolvedSrc === '') {
-      this._teardownIntersectionObserver();
-      this._errorMessage = MISSING_SRC_ERROR_MESSAGE;
+      this._errorMessage = '';
+      this._hasRequested = false;
+      return;
+    }
+
+    if (!this._hasValidRuntimeSource) {
+      this._errorMessage = INVALID_SRC_ERROR_MESSAGE;
+      this._hasRequested = false;
       return;
     }
 
@@ -623,7 +659,7 @@ export class UiScore extends LitElement {
   }
 
   private async _loadSvg(): Promise<void> {
-    if (this._resolvedSrc === '' || this._hasInlineSvg) return;
+    if (this._resolvedSrc === '' || this._hasInlineSvg || !this._hasValidRuntimeSource) return;
     if (this._isLoading || this._svgMarkup !== '') return;
 
     this._cancelFetch();
