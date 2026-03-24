@@ -126,19 +126,32 @@ export const applyPreviewSandboxAttributes = (
 ): Record<string, unknown> => {
   const result: Record<string, unknown> = { slot: 'preview' };
   const allowedKeys = new Set([
-    'title',
+    'iframe-title',
+    'base-url',
     'allow-js',
+    'activation-policy',
+    'height-mode',
     'allow-forms',
     'allow-downloads',
     'allow-pointer-lock',
     'allow-popups',
     'height',
+    'max-height',
   ]);
   assertAllowedAttributes(attrs, allowedKeys, node, file, 'preview-sandbox');
 
-  const title = pickOptional(attrs['title']);
-  if (title) {
-    result['title'] = title;
+  const iframeTitle = pickOptional(attrs['iframe-title']);
+  if (iframeTitle) {
+    result['iframe-title'] = iframeTitle;
+  }
+
+  const baseUrl = pickOptional(attrs['base-url']);
+  if (baseUrl) {
+    try {
+      result['base-url'] = new URL(baseUrl).href;
+    } catch {
+      throw toError(file, node, 'preview-sandbox の base-url は絶対 URL で指定してください');
+    }
   }
 
   const booleanKeys = [
@@ -156,13 +169,46 @@ export const applyPreviewSandboxAttributes = (
     }
   }
 
+  const activationPolicy = pickOptional(attrs['activation-policy']);
+  if (activationPolicy) {
+    if (!['eager', 'visible', 'manual'].includes(activationPolicy)) {
+      throw toError(
+        file,
+        node,
+        'preview-sandbox の activation-policy は eager/visible/manual で指定してください',
+      );
+    }
+    result['activation-policy'] = activationPolicy;
+  }
+
+  const heightMode = pickOptional(attrs['height-mode']);
+  if (heightMode) {
+    if (!['fixed', 'auto', 'bounded-auto'].includes(heightMode)) {
+      throw toError(
+        file,
+        node,
+        'preview-sandbox の height-mode は fixed/auto/bounded-auto で指定してください',
+      );
+    }
+    result['height-mode'] = heightMode;
+  }
+
   const height = pickOptional(attrs['height']);
   if (height) {
     const parsedHeight = Number.parseInt(height, 10);
-    if (!Number.isFinite(parsedHeight) || parsedHeight <= 0) {
+    if (!/^\d+$/.test(height) || !Number.isFinite(parsedHeight) || parsedHeight <= 0) {
       throw toError(file, node, 'preview-sandbox の height は正の整数のみ指定可能です');
     }
     result['height'] = String(parsedHeight);
+  }
+
+  const maxHeight = pickOptional(attrs['max-height']);
+  if (maxHeight) {
+    const parsedMaxHeight = Number.parseInt(maxHeight, 10);
+    if (!/^\d+$/.test(maxHeight) || !Number.isFinite(parsedMaxHeight) || parsedMaxHeight <= 0) {
+      throw toError(file, node, 'preview-sandbox の max-height は正の整数のみ指定可能です');
+    }
+    result['max-height'] = String(parsedMaxHeight);
   }
 
   return result;

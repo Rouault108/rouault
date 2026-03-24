@@ -50,13 +50,17 @@ describe('rehypePreviewSandbox', () => {
               tagName: 'ui-preview-sandbox',
               properties: {
                 slot: 'preview',
-                title: 'ボタンの sandbox',
+                'iframe-title': 'ボタンの sandbox',
                 'allow-js': true,
+                'activation-policy': 'visible',
+                'height-mode': 'bounded-auto',
                 'allow-forms': true,
                 'allow-downloads': true,
                 'allow-pointer-lock': true,
                 'allow-popups': true,
                 height: '160',
+                'max-height': '320',
+                'base-url': 'https://example.com/demo/',
               },
               children: [
                 createCodeBlock('preview-html', '<button class="demo">押す</button>', {
@@ -120,7 +124,7 @@ describe('rehypePreviewSandbox', () => {
             {
               type: 'element',
               tagName: 'ui-preview-sandbox',
-              properties: { slot: 'preview', title: 'HTML only' },
+              properties: { slot: 'preview', 'iframe-title': 'HTML only' },
               children: [createCodeBlock('preview-html', '<button>例</button>')],
             },
           ],
@@ -149,7 +153,7 @@ describe('rehypePreviewSandbox', () => {
             {
               type: 'element',
               tagName: 'ui-preview-sandbox',
-              properties: { slot: 'preview', title: 'CSS only' },
+              properties: { slot: 'preview', 'iframe-title': 'CSS only' },
               children: [
                 createCodeBlock('preview-html', '<button>例</button>'),
                 createCodeBlock('preview-css', '.demo {}', {

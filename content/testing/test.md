@@ -99,7 +99,7 @@ const value = '1';
 ::
 
 ::code-preview{label="ボタン例" controls="viewport"}
-::preview-sandbox{title="ボタンの sandbox" allow-js="true" height="160"}
+::preview-sandbox{iframe-title="ボタンの sandbox" allow-js="true" height="160"}
 
 ```preview-html filename="button.html"
 <button class="demo-button">押す</button>

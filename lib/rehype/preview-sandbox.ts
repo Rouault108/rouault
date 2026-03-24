@@ -160,7 +160,7 @@ const resolveCodeGroupLabel = (previewNode: HastNode, sandboxNode: HastNode): st
     return `${previewHeading} のコード例`;
   }
 
-  const sandboxTitle = pickOptionalString(sandboxNode.properties?.['title']);
+  const sandboxTitle = pickOptionalString(sandboxNode.properties?.['iframe-title']);
   if (sandboxTitle) {
     return `${sandboxTitle} のコード例`;
   }

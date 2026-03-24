@@ -738,7 +738,8 @@ describe('remarkRouaultDirectives', () => {
           children: [
             {
               type: 'text',
-              value: '::preview-sandbox{title="ボタンの sandbox" allow-js="true" height="160"}',
+              value:
+                '::preview-sandbox{iframe-title="ボタンの sandbox" allow-js="true" activation-policy="visible" height-mode="bounded-auto" height="160" max-height="320" base-url="https://example.com/demo/"}',
             },
           ],
         },
@@ -780,9 +781,13 @@ describe('remarkRouaultDirectives', () => {
     const sandbox = preview?.children?.[0];
     expect(sandbox?.data?.hName).to.equal('ui-preview-sandbox');
     expect(sandbox?.data?.hProperties?.['slot']).to.equal('preview');
-    expect(sandbox?.data?.hProperties?.['title']).to.equal('ボタンの sandbox');
+    expect(sandbox?.data?.hProperties?.['iframe-title']).to.equal('ボタンの sandbox');
     expect(sandbox?.data?.hProperties?.['allow-js']).to.equal(true);
+    expect(sandbox?.data?.hProperties?.['activation-policy']).to.equal('visible');
+    expect(sandbox?.data?.hProperties?.['height-mode']).to.equal('bounded-auto');
     expect(sandbox?.data?.hProperties?.['height']).to.equal('160');
+    expect(sandbox?.data?.hProperties?.['max-height']).to.equal('320');
+    expect(sandbox?.data?.hProperties?.['base-url']).to.equal('https://example.com/demo/');
     expect(sandbox?.children).to.have.length(3);
   });
 
@@ -800,7 +805,7 @@ describe('remarkRouaultDirectives', () => {
             {
               type: 'text',
               value:
-                '::preview-sandbox{title="capability sandbox" allow-js="true" allow-forms="true" allow-downloads="true" allow-pointer-lock="true" allow-popups="true" height="160"}',
+                '::preview-sandbox{iframe-title="capability sandbox" allow-js="true" allow-forms="true" allow-downloads="true" allow-pointer-lock="true" allow-popups="true" height="160"}',
             },
           ],
         },
@@ -842,7 +847,7 @@ describe('remarkRouaultDirectives', () => {
     const sandbox = preview?.children?.[0];
     expect(sandbox?.data?.hName).to.equal('ui-preview-sandbox');
     expect(sandbox?.data?.hProperties?.['slot']).to.equal('preview');
-    expect(sandbox?.data?.hProperties?.['title']).to.equal('capability sandbox');
+    expect(sandbox?.data?.hProperties?.['iframe-title']).to.equal('capability sandbox');
     expect(sandbox?.data?.hProperties?.['allow-js']).to.equal(true);
     expect(sandbox?.data?.hProperties?.['allow-forms']).to.equal(true);
     expect(sandbox?.data?.hProperties?.['allow-downloads']).to.equal(true);
@@ -1479,7 +1484,7 @@ describe('remarkRouaultDirectives', () => {
       children: [
         {
           type: 'paragraph',
-          children: [{ type: 'text', value: '::preview-sandbox{title="invalid"}' }],
+          children: [{ type: 'text', value: '::preview-sandbox{iframe-title="invalid"}' }],
         },
         {
           type: 'code',
@@ -1510,7 +1515,7 @@ describe('remarkRouaultDirectives', () => {
         },
         {
           type: 'paragraph',
-          children: [{ type: 'text', value: '::preview-sandbox{title="invalid"}' }],
+          children: [{ type: 'text', value: '::preview-sandbox{iframe-title="invalid"}' }],
         },
         {
           type: 'code',
@@ -1545,7 +1550,7 @@ describe('remarkRouaultDirectives', () => {
         },
         {
           type: 'paragraph',
-          children: [{ type: 'text', value: '::preview-sandbox{title="invalid"}' }],
+          children: [{ type: 'text', value: '::preview-sandbox{iframe-title="invalid"}' }],
         },
         {
           type: 'code',
@@ -1585,7 +1590,7 @@ describe('remarkRouaultDirectives', () => {
         },
         {
           type: 'paragraph',
-          children: [{ type: 'text', value: '::preview-sandbox{title="invalid"}' }],
+          children: [{ type: 'text', value: '::preview-sandbox{iframe-title="invalid"}' }],
         },
         {
           type: 'code',
@@ -1630,7 +1635,7 @@ describe('remarkRouaultDirectives', () => {
           children: [
             {
               type: 'text',
-              value: '::preview-sandbox{title="invalid" allow-popups="maybe"}',
+              value: '::preview-sandbox{iframe-title="invalid" allow-popups="maybe"}',
             },
           ],
         },
@@ -1681,7 +1686,7 @@ describe('remarkRouaultDirectives', () => {
         },
         {
           type: 'paragraph',
-          children: [{ type: 'text', value: '::preview-sandbox{title="invalid"}' }],
+          children: [{ type: 'text', value: '::preview-sandbox{iframe-title="invalid"}' }],
         },
         {
           type: 'code',
@@ -1716,7 +1721,7 @@ describe('remarkRouaultDirectives', () => {
         },
         {
           type: 'paragraph',
-          children: [{ type: 'text', value: '::preview-sandbox{title="invalid"}' }],
+          children: [{ type: 'text', value: '::preview-sandbox{iframe-title="invalid"}' }],
         },
         {
           type: 'code',

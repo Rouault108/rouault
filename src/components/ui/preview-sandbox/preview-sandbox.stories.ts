@@ -18,6 +18,17 @@ const waitFrame = async (): Promise<void> =>
     });
   });
 
+const waitFor = async (predicate: () => boolean, timeoutMs = 1200): Promise<void> => {
+  const startedAt = performance.now();
+  while (performance.now() - startedAt < timeoutMs) {
+    if (predicate()) {
+      return;
+    }
+    await wait(40);
+  }
+  throw new Error('待機条件が timeout しました');
+};
+
 const getSandbox = (canvasElement: Element, id: string): PreviewSandbox => {
   const sandbox = canvasElement.querySelector<PreviewSandbox>(`#${id}`);
   if (!sandbox) {
@@ -50,6 +61,32 @@ const getPreviewFrame = (preview: CodePreview): HTMLElement => {
   return frame;
 };
 
+const getSandboxTokenSet = (iframe: HTMLIFrameElement): Set<string> =>
+  new Set(
+    (iframe.getAttribute('sandbox') ?? '')
+      .split(/\s+/)
+      .map((token) => token.trim())
+      .filter((token) => token.length > 0),
+  );
+
+const expectSandboxTokens = (iframe: HTMLIFrameElement, expectedTokens: string[]): void => {
+  const actualTokens = getSandboxTokenSet(iframe);
+  const expectedSet = new Set(expectedTokens);
+
+  if (actualTokens.size !== expectedSet.size) {
+    throw new Error(`sandbox token 数が一致しません: ${[...actualTokens].join(', ')}`);
+  }
+
+  for (const token of expectedSet) {
+    if (!actualTokens.has(token)) {
+      throw new Error(`sandbox token ${token} が不足しています`);
+    }
+  }
+};
+
+const getIframeHeight = (sandbox: PreviewSandbox): number =>
+  Math.round(getIframe(sandbox).getBoundingClientRect().height);
+
 const meta: Meta<PreviewSandbox> = {
   title: 'Components/Preview Sandbox',
   component: 'ui-preview-sandbox',
@@ -58,15 +95,14 @@ const meta: Meta<PreviewSandbox> = {
     docs: {
       description: {
         component: `
-HTML/CSS/JS を isolated iframe で描画する preview 用コンポーネントです。
+HTML/CSS/JS を \`srcdoc\` の sandboxed iframe へ閉じ込めて描画する preview 用コンポーネントです。
 
-- payload は \`template[data-preview-kind]\` から受け取ります
-- sandbox iframe は常に \`allow-scripts\` を含みます
-- \`allow-js\` は author supplied JS の注入可否だけを表します
-- \`allow-js="false"\` でも高さ同期 helper script のため \`allow-scripts\` は維持されます
-- 追加 capability は \`allow-forms\` / \`allow-downloads\` / \`allow-pointer-lock\` / \`allow-popups\` で opt-in します
-- \`allow-modals\` / \`allow-same-origin\` / \`allow-top-navigation*\` は公開しません
-- \`ui-code-preview\` と組み合わせると isolated preview を構成できます
+- payload は直下子の \`template[data-preview-kind]\` からだけ受け取ります
+- iframe の baseline capability は常に \`allow-scripts\` です
+- \`allow-js\` は author JS の注入可否だけを制御します
+- \`iframe-title\` / \`base-url\` / \`activation-policy\` / \`height-mode\` / \`max-height\` を公開入力として扱います
+- opt-in capability は \`allow-forms\` / \`allow-downloads\` / \`allow-pointer-lock\` / \`allow-popups\` だけを公開します
+- 上位 UI の状態変更では \`srcdoc\` を不用意に再生成しません
         `,
       },
     },
@@ -79,7 +115,12 @@ type Story = StoryObj<PreviewSandbox>;
 export const HtmlOnly: Story = {
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
-      <ui-preview-sandbox id="html-only-sandbox" title="HTML only sandbox" height="160">
+      <ui-preview-sandbox
+        id="html-only-sandbox"
+        iframe-title="HTML only sandbox"
+        height="160"
+        base-url="https://example.com/examples/"
+      >
         <template data-preview-kind="html"><button class="demo">押す</button></template>
       </ui-preview-sandbox>
     </div>
@@ -90,19 +131,21 @@ export const HtmlOnly: Story = {
     await waitFrame();
 
     const iframe = getIframe(sandbox);
-    if (iframe.getAttribute('sandbox') !== 'allow-scripts') {
-      throw new Error('iframe の sandbox は allow-scripts のみである必要があります');
-    }
+    expectSandboxTokens(iframe, ['allow-scripts']);
+
     if (iframe.getAttribute('title') !== 'HTML only sandbox') {
-      throw new Error('iframe title が反映されていません');
+      throw new Error('iframe-title が iframe title へ反映されていません');
     }
 
     const srcdoc = iframe.srcdoc;
     if (!srcdoc.includes('<button class="demo">押す</button>')) {
       throw new Error('HTML payload が srcdoc に反映されていません');
     }
+    if (!srcdoc.includes('<base href="https://example.com/examples/">')) {
+      throw new Error('base-url が preview 文書へ反映されていません');
+    }
     if (!srcdoc.includes("'ui-preview-sandbox'")) {
-      throw new Error('高さ同期 bootstrap script が srcdoc に含まれていません');
+      throw new Error('helper script が srcdoc に含まれていません');
     }
   },
 };
@@ -110,18 +153,23 @@ export const HtmlOnly: Story = {
 export const AuthorJsOptIn: Story = {
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
-      <ui-preview-sandbox id="js-enabled-sandbox" title="JS enabled sandbox" height="160" allow-js>
+      <ui-preview-sandbox
+        id="js-enabled-sandbox"
+        iframe-title="JS enabled sandbox"
+        height="160"
+        allow-js
+      >
         <template data-preview-kind="html"><button class="demo">押す</button></template>
         <template data-preview-kind="js"
-          >parent.postMessage({ source: 'preview-sandbox-author-js', caseId: 'enabled' },
-          '*');</template
+          >setTimeout(() => { parent.postMessage({ source: 'preview-sandbox-author-js', caseId:
+          'enabled' }, '*'); }, 150);</template
         >
       </ui-preview-sandbox>
-      <ui-preview-sandbox id="js-disabled-sandbox" title="JS disabled sandbox" height="160">
+      <ui-preview-sandbox id="js-disabled-sandbox" iframe-title="JS disabled sandbox" height="160">
         <template data-preview-kind="html"><button class="demo">押す</button></template>
         <template data-preview-kind="js"
-          >parent.postMessage({ source: 'preview-sandbox-author-js', caseId: 'disabled' },
-          '*');</template
+          >setTimeout(() => { parent.postMessage({ source: 'preview-sandbox-author-js', caseId:
+          'disabled' }, '*'); }, 150);</template
         >
       </ui-preview-sandbox>
     </div>
@@ -130,23 +178,19 @@ export const AuthorJsOptIn: Story = {
     const enabledSandbox = getSandbox(canvasElement, 'js-enabled-sandbox');
     const disabledSandbox = getSandbox(canvasElement, 'js-disabled-sandbox');
     await Promise.all([enabledSandbox.updateComplete, disabledSandbox.updateComplete]);
+    await waitFrame();
 
     const enabledIframe = getIframe(enabledSandbox);
     const disabledIframe = getIframe(disabledSandbox);
 
-    if (enabledIframe.getAttribute('sandbox') !== 'allow-scripts') {
-      throw new Error('allow-js ありでも sandbox token は allow-scripts のみである必要があります');
-    }
-    if (disabledIframe.getAttribute('sandbox') !== 'allow-scripts') {
-      throw new Error(
-        'allow-js なしでも helper script 用に allow-scripts を維持する必要があります',
-      );
-    }
+    expectSandboxTokens(enabledIframe, ['allow-scripts']);
+    expectSandboxTokens(disabledIframe, ['allow-scripts']);
+
     if (!disabledIframe.srcdoc.includes("'ui-preview-sandbox'")) {
       throw new Error('allow-js なしでも helper script が srcdoc に含まれている必要があります');
     }
     if (disabledIframe.srcdoc.includes("caseId: 'disabled'")) {
-      throw new Error('allow-js なしの sandbox に author JS が srcdoc 注入されています');
+      throw new Error('allow-js なしの sandbox に author JS が注入されています');
     }
 
     const messages: string[] = [];
@@ -162,7 +206,7 @@ export const AuthorJsOptIn: Story = {
     };
 
     window.addEventListener('message', handleMessage);
-    await wait(400);
+    await wait(500);
     window.removeEventListener('message', handleMessage);
 
     if (!messages.includes('enabled')) {
@@ -177,13 +221,13 @@ export const AuthorJsOptIn: Story = {
 export const SandboxCapabilityTokens: Story = {
   render: () => html`
     <div style="padding: 2rem; max-width: 720px; display: grid; gap: 1.5rem;">
-      <ui-preview-sandbox id="sandbox-default" title="default sandbox" height="120">
+      <ui-preview-sandbox id="sandbox-default" iframe-title="default sandbox" height="120">
         <template data-preview-kind="html"><button>default</button></template>
       </ui-preview-sandbox>
 
       <ui-preview-sandbox
         id="sandbox-forms-downloads"
-        title="forms and downloads sandbox"
+        iframe-title="forms and downloads sandbox"
         height="120"
         allow-forms
         allow-downloads
@@ -193,7 +237,7 @@ export const SandboxCapabilityTokens: Story = {
 
       <ui-preview-sandbox
         id="sandbox-pointer-popups"
-        title="pointer lock and popups sandbox"
+        iframe-title="pointer lock and popups sandbox"
         height="120"
         allow-pointer-lock
         allow-popups
@@ -201,7 +245,7 @@ export const SandboxCapabilityTokens: Story = {
         <template data-preview-kind="html"><button>pointer-popups</button></template>
       </ui-preview-sandbox>
 
-      <ui-preview-sandbox id="sandbox-js-only" title="js only sandbox" height="120" allow-js>
+      <ui-preview-sandbox id="sandbox-js-only" iframe-title="js only sandbox" height="120" allow-js>
         <template data-preview-kind="html"><button>js-only</button></template>
         <template data-preview-kind="js">window.__previewSandboxJsOnly = true;</template>
       </ui-preview-sandbox>
@@ -226,32 +270,14 @@ export const SandboxCapabilityTokens: Story = {
     const pointerPopupsIframe = getIframe(pointerPopupsSandbox);
     const jsOnlyIframe = getIframe(jsOnlySandbox);
 
-    if (defaultIframe.getAttribute('sandbox') !== 'allow-scripts') {
-      throw new Error('デフォルト sandbox は allow-scripts のみである必要があります');
-    }
-
-    if (
-      formsDownloadsIframe.getAttribute('sandbox') !== 'allow-scripts allow-forms allow-downloads'
-    ) {
-      throw new Error(
-        'allow-forms / allow-downloads 指定時の sandbox token が期待値と一致しません',
-      );
-    }
-
-    if (
-      pointerPopupsIframe.getAttribute('sandbox') !==
-      'allow-scripts allow-pointer-lock allow-popups'
-    ) {
-      throw new Error(
-        'allow-pointer-lock / allow-popups 指定時の sandbox token が期待値と一致しません',
-      );
-    }
-
-    if (jsOnlyIframe.getAttribute('sandbox') !== 'allow-scripts') {
-      throw new Error(
-        'allow-js は author supplied JS 注入フラグであり、sandbox token を増やしてはいけません',
-      );
-    }
+    expectSandboxTokens(defaultIframe, ['allow-scripts']);
+    expectSandboxTokens(formsDownloadsIframe, ['allow-scripts', 'allow-forms', 'allow-downloads']);
+    expectSandboxTokens(pointerPopupsIframe, [
+      'allow-scripts',
+      'allow-pointer-lock',
+      'allow-popups',
+    ]);
+    expectSandboxTokens(jsOnlyIframe, ['allow-scripts']);
 
     const jsOnlySrcdoc = jsOnlyIframe.srcdoc;
     if (!jsOnlySrcdoc.includes('window.__previewSandboxJsOnly = true;')) {
@@ -268,13 +294,15 @@ export const SandboxCapabilityTokens: Story = {
 export const SanitizationBoundary: Story = {
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
-      <ui-preview-sandbox id="sanitize-sandbox" title="sanitize sandbox" height="160">
-        <template data-preview-kind="html"
-          >&lt;script&gt;parent.postMessage({ source: 'bad' }, '*');&lt;/script&gt;&lt;a
-          href="javascript:alert(1)" onclick="alert(1)"&gt;危険&lt;/a&gt;&lt;iframe
-          src="/evil"&gt;&lt;/iframe&gt;&lt;button style="background:
-          red;"&gt;安全&lt;/button&gt;</template
-        >
+      <ui-preview-sandbox id="sanitize-sandbox" iframe-title="sanitize sandbox" height="160">
+        <template data-preview-kind="html">
+          <script>
+            parent.postMessage({ source: 'bad' }, '*');
+          </script>
+          <img src="javascript:alert(1)" alt="危険" onclick="alert(1)" />
+          <iframe src="/evil" title="dangerous iframe"></iframe>
+          <button style="background: red;">安全</button>
+        </template>
       </ui-preview-sandbox>
     </div>
   `,
@@ -303,6 +331,153 @@ export const SanitizationBoundary: Story = {
   },
 };
 
+export const HeightBehavior: Story = {
+  render: () => html`
+    <div style="padding: 2rem; max-width: 720px; display: grid; gap: 1.5rem;">
+      <ui-preview-sandbox
+        id="height-fixed"
+        iframe-title="fixed height sandbox"
+        height="120"
+        height-mode="fixed"
+        allow-js
+      >
+        <template data-preview-kind="html"><div class="box">fixed</div></template>
+        <template data-preview-kind="css"
+          >body { padding: 8px; } .box { height: 48px; background: rgb(238 242 255); }</template
+        >
+        <template data-preview-kind="js"
+          >setTimeout(() => { const box = document.querySelector('.box'); if (box instanceof
+          HTMLElement) { box.style.height = '260px'; } }, 80);</template
+        >
+      </ui-preview-sandbox>
+
+      <ui-preview-sandbox
+        id="height-auto"
+        iframe-title="auto height sandbox"
+        height="120"
+        height-mode="auto"
+        allow-js
+      >
+        <template data-preview-kind="html"><div class="box">auto</div></template>
+        <template data-preview-kind="css"
+          >body { padding: 8px; } .box { height: 48px; background: rgb(236 253 245); }</template
+        >
+        <template data-preview-kind="js"
+          >setTimeout(() => { const box = document.querySelector('.box'); if (box instanceof
+          HTMLElement) { box.style.height = '260px'; } }, 80);</template
+        >
+      </ui-preview-sandbox>
+
+      <ui-preview-sandbox
+        id="height-bounded"
+        iframe-title="bounded height sandbox"
+        height="120"
+        height-mode="bounded-auto"
+        max-height="180"
+        allow-js
+      >
+        <template data-preview-kind="html"><div class="box">bounded</div></template>
+        <template data-preview-kind="css"
+          >body { padding: 8px; } .box { height: 48px; background: rgb(254 249 195); }</template
+        >
+        <template data-preview-kind="js"
+          >setTimeout(() => { const box = document.querySelector('.box'); if (box instanceof
+          HTMLElement) { box.style.height = '260px'; } }, 80);</template
+        >
+      </ui-preview-sandbox>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const fixedSandbox = getSandbox(canvasElement, 'height-fixed');
+    const autoSandbox = getSandbox(canvasElement, 'height-auto');
+    const boundedSandbox = getSandbox(canvasElement, 'height-bounded');
+    await Promise.all([
+      fixedSandbox.updateComplete,
+      autoSandbox.updateComplete,
+      boundedSandbox.updateComplete,
+    ]);
+
+    await waitFor(() => getIframeHeight(autoSandbox) >= 180);
+    await waitFrame();
+
+    const fixedHeight = getIframeHeight(fixedSandbox);
+    const autoHeight = getIframeHeight(autoSandbox);
+    const boundedHeight = getIframeHeight(boundedSandbox);
+
+    if (fixedHeight !== 120) {
+      throw new Error(`fixed 高さは 120px のままである必要があります: ${String(fixedHeight)}`);
+    }
+    if (autoHeight < 180) {
+      throw new Error(`auto 高さが内容高へ追従していません: ${String(autoHeight)}`);
+    }
+    if (boundedHeight !== 180) {
+      throw new Error(`bounded-auto 高さが max-height へ収束していません: ${String(boundedHeight)}`);
+    }
+  },
+};
+
+export const NonDestructiveUpdates: Story = {
+  render: () => html`
+    <div style="padding: 2rem; max-width: 720px;">
+      <ui-preview-sandbox
+        id="nondestructive-sandbox"
+        iframe-title="before update"
+        height="120"
+        height-mode="auto"
+        allow-js
+      >
+        <template data-preview-kind="html"><div>non-destructive</div></template>
+        <template data-preview-kind="js"
+          >setTimeout(() => { parent.postMessage({ source: 'preview-sandbox-nondestructive',
+          phase: 'boot' }, '*'); }, 150);</template
+        >
+      </ui-preview-sandbox>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const sandbox = getSandbox(canvasElement, 'nondestructive-sandbox');
+    await sandbox.updateComplete;
+    await waitFrame();
+
+    const iframe = getIframe(sandbox);
+    const initialSrcdoc = iframe.srcdoc;
+    const phases: string[] = [];
+    const handleMessage = (event: MessageEvent<unknown>) => {
+      const data = event.data;
+      if (!data || typeof data !== 'object') {
+        return;
+      }
+      const payload = data as { source?: string; phase?: string };
+      if (
+        payload.source === 'preview-sandbox-nondestructive' &&
+        typeof payload.phase === 'string'
+      ) {
+        phases.push(payload.phase);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    await waitFor(() => phases.filter((phase) => phase === 'boot').length === 1, 1000);
+
+    sandbox.iframeTitle = 'after update';
+    sandbox.height = 200;
+    sandbox.heightMode = 'fixed';
+    await sandbox.updateComplete;
+    await wait(300);
+    window.removeEventListener('message', handleMessage);
+
+    if (phases.filter((phase) => phase === 'boot').length !== 1) {
+      throw new Error('iframeTitle / 高さ変更が author JS の再実行を起こしています');
+    }
+    if (iframe.srcdoc !== initialSrcdoc) {
+      throw new Error('iframeTitle / 高さ更新で srcdoc が再生成されています');
+    }
+    if (getIframeHeight(sandbox) !== 200) {
+      throw new Error('非破壊更新後の表示高さが反映されていません');
+    }
+  },
+};
+
 export const CodePreviewIntegration: Story = {
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
@@ -315,7 +490,7 @@ export const CodePreviewIntegration: Story = {
         <ui-preview-sandbox
           id="integrated-sandbox"
           slot="preview"
-          title="integrated sandbox"
+          iframe-title="integrated sandbox"
           height="160"
         >
           <template data-preview-kind="html"><button class="demo">押す</button></template>
@@ -347,7 +522,7 @@ export const CodePreviewIntegration: Story = {
       throw new Error('viewport 切替後も preview frame 幅が縮んでいません');
     }
     if (iframe.srcdoc !== beforeSrcdoc) {
-      throw new Error('ui-code-preview の token 切替で sandbox 内 srcdoc が変化してはいけません');
+      throw new Error('ui-code-preview の state 変更で sandbox 内 srcdoc が変化してはいけません');
     }
   },
 };
