@@ -112,6 +112,22 @@ export class UiHeader extends LitElement {
       pointer-events: auto;
     }
 
+    .zone-compact-center {
+      position: absolute;
+      inset-inline-start: var(--ui-header-center-start-inset);
+      inset-inline-end: var(--ui-header-center-end-inset);
+      block-size: 100%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      min-inline-size: 0;
+    }
+
+    slot[name='compact-center']::slotted(*) {
+      pointer-events: auto;
+    }
+
     .zone-end {
       display: flex;
       align-items: center;
@@ -126,6 +142,10 @@ export class UiHeader extends LitElement {
     @media (max-width: 640px) {
       .zone-center {
         display: none;
+      }
+
+      .zone-compact-center {
+        display: flex;
       }
     }
 
@@ -197,6 +217,11 @@ export class UiHeader extends LitElement {
           <!-- Context Zone (Center) -->
           <div class="zone-center">
             <slot name="center"></slot>
+          </div>
+
+          <!-- Compact Context Zone (Compact Center) -->
+          <div class="zone-compact-center">
+            <slot name="compact-center"></slot>
           </div>
 
           <!-- Action Zone (End) -->

@@ -226,8 +226,20 @@ export class LayoutHeader extends LitElement {
     }
   }
 
+  private get _compactContextLabel(): string {
+    const breadcrumbs = this._breadcrumbItems;
+    const lastItem = breadcrumbs.at(-1);
+
+    if (lastItem?.label.trim()) {
+      return lastItem.label.trim();
+    }
+
+    return 'Notes';
+  }
+
   override render() {
     const breadcrumbs = this._breadcrumbItems;
+    const compactContextLabel = this._compactContextLabel;
     const sidebarToggleLabel = this._sidebarExpanded ? 'サイドバーを閉じる' : 'サイドバーを開く';
     const currentThemeOption = THEME_OPTIONS[this._themePreference];
 
@@ -269,6 +281,7 @@ export class LayoutHeader extends LitElement {
               ></ui-breadcrumbs>
             `
           : html`<span slot="center" class="context">Personal Notes</span>`}
+        <span slot="compact-center" class="context">${compactContextLabel}</span>
         <div slot="end" class="slot-group">
           <ui-search-trigger></ui-search-trigger>
           <ui-dropdown align="end" @menu-item-select=${this._handleThemeSelect}>

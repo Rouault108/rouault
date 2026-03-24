@@ -80,12 +80,12 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 
 ### スロット契約
 
-| スロット名        | 内容                                                                 | 契約                                                                                                                                     |
-| ----------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `start`           | ナビゲーション開始点、軽い文脈切替、サイドバートリガー               | 左寄せで表示します。主要ナビゲーションの開始点として扱います                                                                             |
-| `center`          | 通常幅での文脈表示                                                   | 視覚的中央に固定されます。低密度な文脈表示専用であり、狭幅では非表示になり得ます                                                        |
-| `compact-center`  | 狭幅時専用の簡略文脈表示                                             | 狭幅時にのみ `center` の代替として表示されます。`center` と同時表示してはなりません（MUST NOT）。主操作を置いてはなりません（MUST NOT） |
-| `end`             | 補助操作群                                                           | 右寄せで表示します。検索トリガー、テーマ切替、補助アクションなどを置く領域です                                                          |
+| スロット名       | 内容                                                   | 契約                                                                                                                                    |
+| ---------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `start`          | ナビゲーション開始点、軽い文脈切替、サイドバートリガー | 左寄せで表示します。主要ナビゲーションの開始点として扱います                                                                            |
+| `center`         | 通常幅での文脈表示                                     | 視覚的中央に固定されます。低密度な文脈表示専用であり、狭幅では非表示になり得ます                                                        |
+| `compact-center` | 狭幅時専用の簡略文脈表示                               | 狭幅時にのみ `center` の代替として表示されます。`center` と同時表示してはなりません（MUST NOT）。主操作を置いてはなりません（MUST NOT） |
+| `end`            | 補助操作群                                             | 右寄せで表示します。検索トリガー、テーマ切替、補助アクションなどを置く領域です                                                          |
 
 ### `sidebarExpanded` の意味
 
@@ -155,8 +155,8 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 
 ### 公開イベント
 
-| 名前                       | 型                                   | 発火条件                                              | 契約                                                                                               |
-| -------------------------- | ------------------------------------ | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| 名前                       | 型                                   | 発火条件                                              | 契約                                                                                       |
+| -------------------------- | ------------------------------------ | ----------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | `ui-header-sidebar-toggle` | `CustomEvent<{ expanded: boolean }>` | 初回レンダリング後に `sidebarExpanded` が変化したとき | `detail.expanded` に反映後の状態を含む局所通知です。`bubbles=false`、`composed=false` です |
 
 `ui-header-sidebar-toggle` という名称は互換のため維持しますが、公開契約上の意味は **toggle 要求**ではなく **反映済み状態の局所通知**です。利用者はこのイベントを、「開閉ボタンが押された通知」「header 自身がトグル操作を起点に発火するイベント」「状態更新の要求イベント」として扱ってはなりません（MUST NOT）。
@@ -207,19 +207,19 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 
 `ui-header` は、公開トークンとは別に、app-shell または foundation 側のトークンへ依存します。これらは **header 固有の長期安定 API** ではなく、外部方針に従属する dependency token です。
 
-| 用途           | 依存トークン                         |
-| -------------- | ------------------------------------ |
-| ヘッダー高さ   | `--header-height`                    |
-| z-index        | `--z-fixed`                          |
-| 背景           | `--glass-panel` / `--bg-default`     |
-| 境界線         | `--border-width` / `--border-default`|
-| 文字色         | `--fg-default`                       |
-| フォントサイズ | `--text-base`                        |
-| blur 強度      | `--blur-md`                          |
-| 最大幅         | `--bp-xl`                            |
-| 左右余白       | `--space-4`                          |
-| zone ギャップ  | `--space-2`                          |
-| サイドバー幅   | `--sidebar-width`                    |
+| 用途           | 依存トークン                          |
+| -------------- | ------------------------------------- |
+| ヘッダー高さ   | `--header-height`                     |
+| z-index        | `--z-fixed`                           |
+| 背景           | `--glass-panel` / `--bg-default`      |
+| 境界線         | `--border-width` / `--border-default` |
+| 文字色         | `--fg-default`                        |
+| フォントサイズ | `--text-base`                         |
+| blur 強度      | `--blur-md`                           |
+| 最大幅         | `--bp-xl`                             |
+| 左右余白       | `--space-4`                           |
+| zone ギャップ  | `--space-2`                           |
+| サイドバー幅   | `--sidebar-width`                     |
 
 利用者は、これらの dependency token を header 固有の public token と誤読してはなりません（MUST NOT）。header 側が長期安定を保証するのは `--ui-header-*` 系の public token であり、上表は app-shell または foundation 側の契約に従属する依存面です。
 
@@ -433,19 +433,19 @@ Rouault における header は、本文を主役とする読書体験を妨げ�
 
 本コンポーネントは、header 固有の公開トークンとは別に、app-shell または foundation 側のトークンへ依存します。これらは header 自身が長期安定を約束する API ではなく、外部方針に従属する依存面です。
 
-| 用途           | 依存トークン                         |
-| -------------- | ------------------------------------ |
-| ヘッダー高さ   | `--header-height`                    |
-| z-index        | `--z-fixed`                          |
-| 背景           | `--glass-panel` / `--bg-default`     |
-| 境界線         | `--border-width` / `--border-default`|
-| 文字色         | `--fg-default`                       |
-| フォントサイズ | `--text-base`                        |
-| blur 強度      | `--blur-md`                          |
-| 最大幅         | `--bp-xl`                            |
-| 左右余白       | `--space-4`                          |
-| zone ギャップ  | `--space-2`                          |
-| サイドバー幅   | `--sidebar-width`                    |
+| 用途           | 依存トークン                          |
+| -------------- | ------------------------------------- |
+| ヘッダー高さ   | `--header-height`                     |
+| z-index        | `--z-fixed`                           |
+| 背景           | `--glass-panel` / `--bg-default`      |
+| 境界線         | `--border-width` / `--border-default` |
+| 文字色         | `--fg-default`                        |
+| フォントサイズ | `--text-base`                         |
+| blur 強度      | `--blur-md`                           |
+| 最大幅         | `--bp-xl`                             |
+| 左右余白       | `--space-4`                           |
+| zone ギャップ  | `--space-2`                           |
+| サイドバー幅   | `--sidebar-width`                     |
 
 `center` の狭幅時非表示は responsive policy に従属します。現行実装の閾値は `640px` ですが、将来的な breakpoint 再編は app-shell 側 policy によって行うべきであり、header 単独で私有 breakpoint を増やすべきではありません。
 
@@ -598,39 +598,26 @@ header は固定高さであり、自動伸長しません。`start`、`center`�
 
 本節では、Storybook 上の Story のうち、**公開契約として将来変更時にも維持しなければならないもの**だけを列挙します。ここに含める Story は、見本や雰囲気確認ではなく、property、attribute、slot、event、状態遷移などの契約面を確認するものに限定します。
 
-ただし、本書の公開契約は現行 Storybook より先に進んでいる場合があります。とくに `compact-center` は、公開契約としては採用済みですが、現行実装・現行 Story にはまだ反映されていません。したがって、本節では Story を **現行実装に対応済みの契約試験** と **実装反映時に追加すべき契約試験** に分けて記述します。
+本節に列挙する Story は、単なる参考表示ではなく **契約試験**として扱います。CI または同等の自動検証系に載せる前提で維持しなければなりません（MUST）。
 
-本節に列挙する Story は、単なる参考表示ではなく **契約試験**として扱います。現行実装に対応済みの Story は、CI または同等の自動検証系に載せる前提で維持しなければなりません（MUST）。一方、未実装の公開面に対応する Story は、実装反映と同時に追加しなければなりません（MUST）。
+### 公開契約試験
 
-### 現行実装に対応済みの契約試験
+| Story                                | 固定する契約                                                                                                  |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `DefaultExpanded`                    | 4 zone、4 slot、sticky header、`sidebarExpanded=true` の基本構造が成立すること                                |
+| `ZenModeCollapsed`                   | `sidebarExpanded=false` で start ゾーン幅が縮退すること                                                       |
+| `SidebarToggleEvent`                 | `ui-header-sidebar-toggle` が `detail.expanded` を含み、`bubbles=false`、`composed=false` であること          |
+| `EmptySlots`                         | `center` と `compact-center` が空でもレイアウト構造が維持されること                                           |
+| `AttributeDrivenToggle`              | property / attribute 双方向反映が成立すること                                                                 |
+| `RapidToggleReentrancy`              | 同一値設定で冗長イベントが発火せず、高速変更で有効変化分だけ発火すること                                      |
+| `DynamicSlotContent`                 | `center` / `compact-center` を含む公開スロットに対して、動的差し替え後も slot 割り当てが維持されること        |
+| `CompactCenterResponsiveReplacement` | 通常幅では `center` が表示され、狭幅では `center` が非表示となり、`compact-center` が代替文脈表示面になること |
+| `CompactCenterNotSimultaneous`       | `center` と `compact-center` が同時表示されないこと                                                           |
+| `CompactCenterEmptyFallback`         | 狭幅時に `compact-center` が空であれば、文脈表示面が存在しないこと                                            |
+| `CompactCenterAccessibilityContract` | `compact-center` に配置した内容が slot host 契約および Accessibility 契約を満たすこと                         |
+| `CompactCenterDynamicSlotContent`    | `compact-center` 内容の動的差し替え後も slot 割り当てと表示切替が維持されること                               |
 
-| Story                   | 固定する契約                                                                                               |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `DefaultExpanded`       | **現行実装では** 3 zone、3 slot、sticky header、`sidebarExpanded=true` の基本構造が成立すること           |
-| `ZenModeCollapsed`      | `sidebarExpanded=false` で start ゾーン幅が縮退すること                                                    |
-| `SidebarToggleEvent`    | `ui-header-sidebar-toggle` が `detail.expanded` を含み、`bubbles=false`、`composed=false` であること       |
-| `EmptySlots`            | **現行実装では** `center` が空でもレイアウト構造が維持されること                                           |
-| `AttributeDrivenToggle` | property / attribute 双方向反映が成立すること                                                              |
-| `RapidToggleReentrancy` | 同一値設定で冗長イベントが発火せず、高速変更で有効変化分だけ発火すること                                   |
-| `DynamicSlotContent`    | **現行実装で提供しているスロットに対して**、動的差し替え後も slot 割り当てが維持されること                |
-
-ここに含める Story は、現行実装が追従している公開面に対する契約試験です。削除または意味変更を行う場合は、対応する公開契約または実装の変更を先に明示しなければなりません（MUST）。
-
-### 実装反映時に追加すべき契約試験
-
-`compact-center` は公開契約として採用済みですが、現時点の Storybook には対応する契約試験がありません。実装が追従した時点で、少なくとも次の Story を追加しなければなりません（MUST）。
-
-| 追加すべき Story 名（案）               | 固定する契約                                                                                                  |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `CompactCenterResponsiveReplacement`    | 通常幅では `center` が表示され、狭幅では `center` が非表示となり、`compact-center` が代替文脈表示面になること |
-| `CompactCenterNotSimultaneous`          | `center` と `compact-center` が同時表示されないこと                                                           |
-| `CompactCenterEmptyFallback`            | 狭幅時に `compact-center` が空であれば、文脈表示面が存在しないこと                                            |
-| `CompactCenterAccessibilityContract`    | `compact-center` に配置した内容が slot host 契約および Accessibility 契約を満たすこと                        |
-| `CompactCenterDynamicSlotContent`       | `compact-center` 内容の動的差し替え後も slot 割り当てと表示切替が維持されること                              |
-
-この表は参考案ではなく、**公開契約として採用済みだが Story 未整備の項目に対する追加義務**です。`compact-center` を実装へ反映する場合は、実装、Storybook、本文契約を同時に更新しなければなりません（MUST）。
-
-また、現行 Story 群がなお 3 zone / 3 slot 前提であることは、公開契約の縮退を意味しません。これは **Storybook の未追従状態**を意味するだけです。利用者および保守者は、現行 Story の存在を理由に 4 スロット契約を 3 スロット契約へ読み戻してはなりません（MUST NOT）。
+これらの Story は、現行実装が追従している公開面に対する契約試験です。削除または意味変更を行う場合は、対応する公開契約または実装の変更を先に明示しなければなりません（MUST）。
 
 ## 視覚回帰確認
 
@@ -638,14 +625,14 @@ header は固定高さであり、自動伸長しません。`start`、`center`�
 
 本節に列挙する Story は、視覚破綻、環境差分、token 差し替え影響の検知を目的とする **回帰確認用 Story** です。公開契約試験の代替にはなりません。レビュー強度は高く保つべきですが、本文契約を直接成立させる根拠としては扱ってはなりません（MUST NOT）。
 
-| Story                        | 確認目的                                                          |
-| ---------------------------- | ----------------------------------------------------------------- |
-| `ResponsiveVisualComparison` | 異なる幅での start / center / end の見え方を比較すること          |
-| `ForcedColorsMode`           | 強制カラー環境で header 構造と境界線が視認可能であること          |
-| `ReducedMotion`              | reduced motion 環境で過度なモーションに依存せず描画が成立すること |
-| `PrintStyles`                | 印刷時に非表示となること                                          |
-| `DarkModeGlassmorphism`      | ダークモードで背景表現と境界の見え方が破綻しないこと              |
-| `CustomBackdropSaturate`     | `--ui-header-backdrop-saturate` 上書き時の見え方を比較できること  |
+| Story                        | 確認目的                                                                  |
+| ---------------------------- | ------------------------------------------------------------------------- |
+| `ResponsiveVisualComparison` | 異なる幅での start / center / compact-center / end の見え方を比較すること |
+| `ForcedColorsMode`           | 強制カラー環境で header 構造と境界線が視認可能であること                  |
+| `ReducedMotion`              | reduced motion 環境で過度なモーションに依存せず描画が成立すること         |
+| `PrintStyles`                | 印刷時に非表示となること                                                  |
+| `DarkModeGlassmorphism`      | ダークモードで背景表現と境界の見え方が破綻しないこと                      |
+| `CustomBackdropSaturate`     | `--ui-header-backdrop-saturate` 上書き時の見え方を比較できること          |
 
 これらの Story は、視覚回帰や環境対応確認のために維持します。ただし、個々の見え方は foundation token や app-shell policy の変更に伴って更新され得ます。
 
@@ -664,26 +651,7 @@ header は固定高さであり、自動伸長しません。`start`、`center`�
 本節は、**本文で採用済みの公開契約のうち、現行実装にまだ反映されていないものだけ**を整理するものです。  
 適用文脈、運用前提、非目標、component が自動保証しない利用規範はここに含めません。それらは各本文節の契約として扱います。
 
-### 1. 狭幅専用の文脈表示スロット
-
-`compact-center` スロットは、現時点の `header.ts` および `header.stories.ts` には存在しません。現行実装では `start` / `center` / `end` の 3 スロットのみを持ち、狭幅では `center` を単純に非表示にするのみです。
-
-したがって、本文で採用した次の契約は未実装です。
-
-- `compact-center` を 4 番目の公開スロットとして提供すること
-- 通常幅では `center` を表示し、`compact-center` は表示しないこと
-- 狭幅では `center` を非表示にし、`compact-center` を代替文脈表示面として用い得ること
-- `center` と `compact-center` を同時表示しないこと
-- `compact-center` を Accessibility 契約、状態モデル、Visual Contract、関連契約、Storybook 契約試験へ反映すること
-
-この項目を採用済み契約として維持するためには、少なくとも次を同時に更新しなければなりません（MUST）。
-
-- `header.ts` の DOM 構造
-- `header.ts` の CSS
-- `header.stories.ts` の契約試験 Story
-- 本文中の 3 zone / 3 slot 前提の残存記述
-
-本節に記載した事項は、現時点では実装未対応です。反映時は、実装、Storybook、契約書を同時に更新します。
+現時点では、`compact-center` を含む公開契約、状態モデル、Visual Contract、Storybook 契約試験は `header.ts` および `header.stories.ts` に反映済みです。したがって、本節に列挙すべき未対応項目はありません。
 
 ## 補足
 
