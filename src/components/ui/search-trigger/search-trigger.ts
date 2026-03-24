@@ -1,132 +1,64 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import '../kbd/kbd';
+import { ifDefined } from 'lit/directives/if-defined.js';
+
+export type SearchTriggerDensity = 'auto' | 'default' | 'compact' | 'icon-only';
+
+const DEFAULT_PLACEHOLDER = '検索...';
+const DEFAULT_ARIA_LABEL = '検索ダイアログを開く';
+const DENSITY_VALUES: readonly SearchTriggerDensity[] = ['auto', 'default', 'compact', 'icon-only'];
+
+const densityConverter = {
+  fromAttribute(value: string | null): SearchTriggerDensity {
+    if (value === null) {
+      return 'auto';
+    }
+
+    return isSearchTriggerDensity(value) ? value : 'auto';
+  },
+  toAttribute(value: SearchTriggerDensity): string {
+    return value;
+  },
+};
+
+function isSearchTriggerDensity(value: string): value is SearchTriggerDensity {
+  return DENSITY_VALUES.includes(value as SearchTriggerDensity);
+}
 
 /**
- * 検索トリガー (Search Trigger) コンポーネント
+ * 検索トリガーコンポーネント。
  *
- * ヘッダー等に配置され、検索ダイアログ (`<ui-search-dialog>`) を起動するためだけのボタンです。
- *
- * ## デザイン哲学
- *
- * - **Dummy Input (Mental Model)**: 外見は検索ボックス（Input）そのものですが、
- *   実際には文字入力を行わず、アクティブ化（クリック・Enter・Space）によって
- *   即座にモーダルを展開します。
- * - **Cursor: default**: 文字入力カーソル（I-beam）による偽の期待を与えず、
- *   かつ通常のボタン（Pointer）ほど主張しない「ツール」としての感触を提供します
- *   （Linear/Spotlight 準拠）。
- *
- * ## レスポンシブ挙動
- *
- * - **デスクトップ**: 検索アイコン + プレースホルダーテキスト + ショートカットバッジ
- * - **モバイル (`≤640px`)**: 検索アイコンのみ（正方形 32×32px）
- *   - `::after` 擬似要素で 44×44px のタッチターゲットを確保
- *
- * ## イベント
- *
- * アクティベーション時に `open-search-dialog` カスタムイベントを発火します。
- * 親コンポーネントまたはアプリケーションレベルでこのイベントをリスンし、
- * `<ui-search-dialog>` の表示処理を実装してください。
- *
- * @property {string} placeholder - プレースホルダーテキスト（デフォルト: "検索..."）
- * @property {boolean} disabled   - 無効状態
- *
- * @fires open-search-dialog - クリック・Enter・Space でアクティベートされた時に発火
- *
- * @cssprop --bg-fill-muted        - デフォルト・ホバー時の背景色
- * @cssprop --bg-default           - フォーカス・アクティブ時の背景色
- * @cssprop --border-width         - ボーダー幅
- * @cssprop --border-default       - ホバー・フォーカス・アクティブ時のボーダー色
- * @cssprop --control-height-md    - 高さ (32px)
- * @cssprop --radius-md            - 角丸 (6px)
- * @cssprop --space-2              - モバイルパディング (8px)
- * @cssprop --space-3              - デスクトップパディング (12px)
- * @cssprop --icon-base            - アイコンサイズ (16px)
- * @cssprop --fg-muted             - アイコン色
- * @cssprop --fg-subtle            - プレースホルダー色
- * @cssprop --text-base            - プレースホルダーフォントサイズ (14px)
- * @cssprop --font-normal          - プレースホルダーフォントウェイト (400)
- * @cssprop --scale-pressed        - 押下時のスケール (0.96)
- * @cssprop --duration-fast        - トランジション時間 (70ms)
- * @cssprop --ease-out             - イージング関数
- * @cssprop --focus-ring-width     - フォーカスリング幅
- * @cssprop --focus-ring-color     - フォーカスリング色
- * @cssprop --focus-ring-offset    - フォーカスリングオフセット
- * @cssprop --animation-focus      - Adaptive Focus アニメーション
- * @cssprop --opacity-disabled     - 無効時の不透明度 (0.5)
- * @cssprop --control-min-touch    - 最低タッチターゲットサイズ (24px)
- *
- * @csspart button      - 内部の button 要素
- * @csspart icon        - 検索アイコンのラッパー
- * @csspart placeholder - プレースホルダーテキスト
- * @csspart badge       - ショートカットバッジのラッパー
- *
- * @example
- * ```html
- * <!-- 基本的な使用 -->
- * <ui-search-trigger></ui-search-trigger>
- *
- * <!-- カスタムプレースホルダー -->
- * <ui-search-trigger placeholder="ドキュメントを検索..."></ui-search-trigger>
- *
- * <!-- 無効状態 -->
- * <ui-search-trigger disabled></ui-search-trigger>
- *
- * <!-- イベントリスン -->
- * <ui-search-trigger id="trigger"></ui-search-trigger>
- * <script>
- *   document.getElementById('trigger').addEventListener('open-search-dialog', () => {
- *     // 検索ダイアログを開く処理
- *   });
- * </script>
- * ```
+ * 検索入力欄に近い外形を取りつつ、実体は検索ダイアログの起動要求を通知する
+ * stateless launcher として振る舞います。
  */
 @customElement('ui-search-trigger')
 export class SearchTrigger extends LitElement {
+  static override shadowRootOptions = { ...LitElement.shadowRootOptions, delegatesFocus: true };
+
   static override styles = css`
-    /* ── ホスト: インラインブロック ── */
     :host {
       display: inline-flex;
+      inline-size: fit-content;
     }
 
-    /* ── ボタン本体 ── */
     button {
-      /* Layout */
       display: inline-flex;
       align-items: center;
-      gap: var(--space-2, 8px);
       position: relative;
+      gap: var(--space-2, 8px);
       box-sizing: border-box;
-
-      /* Size */
-      height: var(--control-height-md, 32px);
-      min-width: 120px;
-      max-width: 120px;
-      padding: 0 var(--space-3, 12px);
-
-      /* Border & Radius */
+      min-block-size: var(--control-height-md, 32px);
+      min-inline-size: 0;
+      max-inline-size: min(100%, 20rem);
+      padding-inline: var(--search-trigger-padding-inline, var(--space-3, 12px));
       border: var(--border-width, 1px) solid transparent;
       border-radius: var(--radius-md, 6px);
-
-      /* Background */
       background: var(--bg-fill-muted, oklch(95% 0 0));
-
-      /* Typography */
-      font-family: inherit;
-      font-size: var(--text-base, 14px);
-      font-weight: var(--font-normal, 400);
+      color: inherit;
+      font: inherit;
       line-height: 1;
-
-      /* Interaction */
-      /*
-       * cursor: default — 文字入力カーソル（I-beam）による偽の期待を与えず、
-       * かつ通常のボタン（Pointer）ほど主張しない「ツール」としての感触を提供します。
-       * Linear/Spotlight 準拠。
-       */
-      cursor: default;
+      cursor: pointer;
       user-select: none;
-
-      /* Transition: 明示的なプロパティリストを使用（transition: all 禁止） */
       transition:
         background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
         border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
@@ -134,12 +66,10 @@ export class SearchTrigger extends LitElement {
         outline-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
-    /* Hover: 明確なボーダーでインタラクティブ要素のエッジをフィードバック */
     button:hover:not(:disabled) {
       border-color: var(--border-default, oklch(85% 0 0));
     }
 
-    /* Focus: 入力準備状態として白地（デフォルト背景）に切り替え */
     button:focus-visible {
       border-color: var(--border-default, oklch(85% 0 0));
       background: var(--bg-default, oklch(100% 0 0));
@@ -148,92 +78,85 @@ export class SearchTrigger extends LitElement {
       animation: var(--animation-focus, none);
     }
 
-    /* Active (Pressed): タクタイルシグナル */
     button:active:not(:disabled) {
       border-color: var(--border-default, oklch(85% 0 0));
       background: var(--bg-default, oklch(100% 0 0));
       transform: scale(var(--scale-pressed, 0.96));
     }
 
-    /* Disabled */
     button:disabled {
       opacity: var(--opacity-disabled, 0.5);
       cursor: not-allowed;
       pointer-events: none;
     }
 
-    /* ── 検索アイコン ── */
     .icon {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
-      width: var(--icon-base, 16px);
-      height: var(--icon-base, 16px);
+      flex: none;
+      inline-size: var(--icon-base, 16px);
+      block-size: var(--icon-base, 16px);
       color: var(--fg-muted, oklch(48% 0 0));
     }
 
     .icon iconify-icon {
-      display: flex;
-      width: 100%;
-      height: 100%;
+      display: block;
+      inline-size: 100%;
+      block-size: 100%;
     }
 
-    /* ── プレースホルダーテキスト ── */
     .placeholder {
-      flex: 1;
-      text-align: start;
+      min-inline-size: 0;
       color: var(--fg-subtle, oklch(65% 0 0));
-      font-size: var(--text-base, 14px);
-      font-weight: var(--font-normal, 400);
-      user-select: none;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    /* ── モバイル: アイコンのみ表示 (@media --bp-sm = 640px) ── */
-    @media (max-width: 640px) {
-      button {
-        /* 正方形に縮小 */
-        min-width: unset;
-        max-width: unset;
-        width: var(--control-height-md, 32px);
-        padding: 0 var(--space-2, 8px);
-        justify-content: center;
-      }
+    button[data-density='compact'] {
+      gap: var(--space-1, 4px);
+      padding-inline: var(--space-2, 8px);
+    }
 
-      /* プレースホルダーとバッジを非表示 */
-      .placeholder,
-      .badge {
-        display: none;
-      }
+    button[data-density='icon-only'] {
+      justify-content: center;
+      inline-size: max(
+        var(--control-height-md, 32px),
+        var(--control-min-touch, var(--control-height-md, 32px))
+      );
+      padding-inline: 0;
+    }
 
-      /*
-       * タッチターゲット: 視覚的サイズは 32px だが、
-       * ::after 擬似要素で --control-min-touch (24px) のヒットエリアを確保
-       */
-      button::after {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        min-width: var(--control-min-touch, 24px);
-        min-height: var(--control-min-touch, 24px);
-        pointer-events: none;
+    button[data-density='icon-only'] .placeholder {
+      display: none;
+    }
+
+    @media (max-width: 960px) {
+      button[data-density='auto'] {
+        gap: var(--space-1, 4px);
+        padding-inline: var(--space-2, 8px);
       }
     }
 
-    /* ── Forced Colors Mode ── */
-    /*
-     * このコンポーネントは「Input に見せかけた Button」という視覚的欺瞞を行うため、
-     * forced-colors モードで背景色が消失すると、ボタンなのか入力欄なのか判別不能になります。
-     * 境界線強制は必須実装です。
-     */
+    @media (max-width: 640px) {
+      button[data-density='auto'] {
+        justify-content: center;
+        inline-size: max(
+          var(--control-height-md, 32px),
+          var(--control-min-touch, var(--control-height-md, 32px))
+        );
+        padding-inline: 0;
+      }
+
+      button[data-density='auto'] .placeholder {
+        display: none;
+      }
+    }
+
     @media (forced-colors: active) {
       button {
-        border: var(--border-width, 1px) solid CanvasText;
+        border-color: CanvasText;
         background: Canvas;
       }
 
@@ -242,51 +165,72 @@ export class SearchTrigger extends LitElement {
       }
 
       button:focus-visible {
-        /* box-shadow は消失するため、実線のアウトラインを強制 */
         outline: 3px solid CanvasText;
-        box-shadow: none;
       }
 
       button:active:not(:disabled) {
-        /* アクティブ状態もボーダーで明示（scale は維持） */
         border-color: CanvasText;
         background: ButtonFace;
       }
 
-      /* 内部アイコン・テキストの色もシステムカラーに追従 */
       .icon,
       .placeholder {
         color: CanvasText;
       }
     }
+
+    @media (prefers-reduced-motion: reduce) {
+      button {
+        animation: none;
+        transition:
+          background-color 0s,
+          border-color 0s,
+          transform 0s,
+          outline-color 0s;
+      }
+
+      button:active:not(:disabled) {
+        transform: none;
+      }
+    }
   `;
 
-  /**
-   * プレースホルダーテキスト
-   * @default "検索..."
-   */
   @property({ type: String, reflect: true })
-  placeholder = '検索...';
+  placeholder = DEFAULT_PLACEHOLDER;
 
-  /**
-   * 無効状態
-   * @default false
-   */
   @property({ type: Boolean, reflect: true })
   disabled = false;
 
-  // ──────────────────────────────────────────────
-  // Event Handlers
-  // ──────────────────────────────────────────────
+  @property({ reflect: true, converter: densityConverter })
+  density: SearchTriggerDensity = 'auto';
 
-  /**
-   * アクティベーション時のハンドラ。
-   * クリック・Enter・Space によって検索ダイアログを起動します。
-   *
-   * **Explicit Activation Only**: フォーカス取得（:focus）だけではモーダルを開きません。
-   */
+  @property({ attribute: 'aria-label', reflect: true })
+  ariaLabel: string | null = null;
+
+  @property({ attribute: 'aria-controls', reflect: true })
+  ariaControls: string | null = null;
+
+  @property({ attribute: 'aria-expanded', reflect: true })
+  ariaExpanded: string | null = null;
+
+  private get _button(): HTMLButtonElement | null {
+    return this.shadowRoot?.querySelector<HTMLButtonElement>('button') ?? null;
+  }
+
+  private get _normalizedPlaceholder(): string {
+    return this.placeholder.replace(/\r?\n+/g, ' ');
+  }
+
+  private get _resolvedAriaLabel(): string {
+    const label = this.ariaLabel?.trim();
+
+    return label === undefined || label === '' ? DEFAULT_ARIA_LABEL : label;
+  }
+
   private _handleActivate = (): void => {
-    if (this.disabled) return;
+    if (this.disabled) {
+      return;
+    }
 
     this.dispatchEvent(
       new CustomEvent('open-search-dialog', {
@@ -296,51 +240,35 @@ export class SearchTrigger extends LitElement {
     );
   };
 
-  // ──────────────────────────────────────────────
-  // Public API
-  // ──────────────────────────────────────────────
-
-  /**
-   * 内部 button 要素にフォーカスを当てます。
-   */
   override focus(options?: FocusOptions): void {
-    this.shadowRoot?.querySelector<HTMLButtonElement>('button')?.focus(options);
+    this._button?.focus(options);
   }
 
-  /**
-   * 内部 button 要素からフォーカスを外します。
-   */
   override blur(): void {
-    this.shadowRoot?.querySelector<HTMLButtonElement>('button')?.blur();
+    this._button?.blur();
   }
 
-  /**
-   * プログラム的にアクティベートします（検索ダイアログを開く）。
-   */
   override click(): void {
-    this.shadowRoot?.querySelector<HTMLButtonElement>('button')?.click();
+    this._button?.click();
   }
-
-  // ──────────────────────────────────────────────
-  // Render
-  // ──────────────────────────────────────────────
 
   override render() {
     return html`
       <button
         part="button"
         type="button"
-        ?disabled="${this.disabled}"
-        aria-label="検索ダイアログを開く"
+        data-density="${this.density}"
+        ?disabled=${this.disabled}
+        aria-label=${this._resolvedAriaLabel}
         aria-haspopup="dialog"
-        aria-keyshortcuts="Control+K Meta+K"
-        @click="${this._handleActivate}"
+        aria-controls=${ifDefined(this.ariaControls ?? undefined)}
+        aria-expanded=${ifDefined(this.ariaExpanded ?? undefined)}
+        @click=${this._handleActivate}
       >
         <span class="icon" part="icon" aria-hidden="true">
           <iconify-icon icon="lucide:search" aria-hidden="true"></iconify-icon>
         </span>
-
-        <span class="placeholder" part="placeholder" aria-hidden="true"> ${this.placeholder} </span>
+        <span class="placeholder" part="placeholder" aria-hidden="true">${this._normalizedPlaceholder}</span>
       </button>
     `;
   }
