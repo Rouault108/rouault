@@ -4,7 +4,8 @@
 
 本書は、`ui-search-field` の公開契約、状態モデル、アクセシビリティ、視覚契約、および関連する境界条件を整理するものです。
 
-`ui-search-field` は、**検索専用の自己管理型 input primitive** です。単に `type="search"` の入力欄を描画するのではなく、**検索アイコンを含む入力面の構成**、**clear 操作を許可する条件**、**限定的な Combobox 用 ARIA 受け皿の範囲**、**公開状態・公開イベント・公開メソッドの安定面**を公開契約として固定します。
+`ui-search-field` は、primitive 単体としては**検索専用の自己管理型 input primitive** です。
+ただし、`ui-search-dialog` など上位コンポーネントが controlled な query を所有する場合、本コンポーネントはその**表示面および操作面**として接続してよいものとします。
 
 また、高さ、余白、フォーカス表示、モーション抑制、高コントラスト対応は、場当たり的な画面ごとの差し込みではなく、**トークン契約と状態契約**によって成立させます。
 
@@ -338,6 +339,8 @@ input と clear button のフォーカスリングは `outline` と `outline-off
 - `disabled=true` または `readonly=true` の場合、`clear()` は no-op です。
 
 利用者は Enter 押下による検索開始や debounce を、本コンポーネント外で制御します。
+
+クエリ正規化、空判定、tokenization、検索実行タイミングの意味論は本コンポーネントの責務ではなく、上位レイヤまたは shared `search-core` に従います。
 
 ### clear 操作契約
 

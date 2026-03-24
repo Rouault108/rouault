@@ -98,7 +98,7 @@
 | 名前          | 種別                 | 必須     | 内容             | 契約                                                                       |
 | ------------- | -------------------- | -------- | ---------------- | -------------------------------------------------------------------------- |
 | `opened`      | property / attribute | はい     | 開閉状態         | `true` で開き、`false` で閉じます。唯一の開閉真実源です                    |
-| `query`       | property / attribute | はい     | 入力文字列       | 表示値であり、検索キーでもあります。検索評価時は `trim()` 後の値を使います |
+| `query` | property / attribute | はい | 入力文字列 | 表示値であり検索入力の原値です。検索評価に用いる正規化、空判定、tokenization は `search-specification.md` の query 仕様および shared `search-core` に従います。`ui-search-dialog` 自身は `trim()` のみを独自意味論として固定しません |
 | `items`       | property             | 条件付き | ローカル検索対象 | `searcher` を使わない場合の検索対象です                                    |
 | `searcher`    | property             | 条件付き | 外部検索関数     | `items` の代わりに検索を完全外部化するための入力です                       |
 | `messages`    | property             | いいえ   | 文言セット       | ラベル、loading、empty、error などの文言です                               |
@@ -131,6 +131,19 @@ interface UiSearchDialogItem {
 | `keywords` | いいえ | 補助一致対象 | 既定一致対象面に含みます                        |
 
 `path` は**表示専用ラベル**として扱います。`url` の正規化表示と同一視しません。`path` の自動導出を行う場合でも、それは convenience であり、公開契約の中心ではありません。
+
+### shared `search-core` 統合規約
+
+Rouault アプリ本体で `ui-search-dialog` を用いる場合、検索意味論の正本は `search-specification.md` とします。
+アプリ本体での検索実行は、shared `search-core` の `navigate` モードを `searcher` 経由で接続しなければなりません。
+`items` は Storybook、固定データ例示、単体利用のための入力であり、アプリ本体における検索意味論の正本を置き換えません。
+
+shared `search-core` 統合時の対応は次のとおりです。
+
+- `id` は `SearchResultItem.canonicalUrl` を用います
+- `title` は `SearchResultItem.title` を用います
+- `url` は `SearchResultItem.url` を用います
+- `path` は `SearchResultItem.pathLabel` を用います
 
 ### 検索関数契約
 
@@ -191,6 +204,10 @@ type CloseReason = 'selection' | 'escape' | 'backdrop' | 'close-button' | 'progr
 要求イベントは、**状態更新要求**を外部へ伝えるためのイベントです。`opened` と `query` を controlled に保つため、内部操作はこのイベント経由で上位へ通知します。
 
 `ui-search-dialog-open-requested` の `detail.trigger` は、起動元要素を外部へ引き渡すための補助情報です。主用途は、close 後の focus 復帰先の決定です。起動元が存在しない場合は `null` とします。
+
+`ui-search-dialog-open-requested` は、`ui-search-dialog` 自身が開状態更新を外部へ要求する component-local request event です。
+`ui-search-trigger` が発火する `open-search-dialog` とは責務が異なります。
+前者は dialog から上位状態へ向かう要求、後者は launcher から上位統合層へ向かう起動要求です。
 
 #### ライフサイクルイベント
 

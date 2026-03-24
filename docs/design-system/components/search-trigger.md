@@ -411,6 +411,10 @@
 
 ただし、これらは関係属性の外部制御であり、trigger 自身が状態保持主体へ拡張されることを意味しません。`ui-search-trigger` は最後まで stateless launcher のままです。
 
+`open-search-dialog` は launcher から上位統合層へ送る外部起動要求です。
+`ui-search-dialog-open-requested` は dialog 自身から上位状態へ送る component-local request event です。
+両者は同義ではなく、統合層は両者を区別して扱わなければなりません。
+
 ### グローバルショートカット統合契約
 
 ショートカットの登録、OS 別表示、文脈別有効化は上位レイヤの責務です。`ui-search-trigger` 自身はショートカットの真実源泉になりません。
@@ -418,6 +422,9 @@
 上位レイヤが実際に `Ctrl+K` / `Cmd+K` などを有効化している場合は、その文脈と整合する範囲で visual hint や `aria-keyshortcuts` を付与できます。逆に、実際のショートカットが存在しない環境では、通知だけを固定契約に含めません。
 
 ショートカットハンドラから起動する場合、利用者は `ui-search-trigger.click()` を使用して既存の起動契約へ合流します。
+
+グローバルショートカットから起動する場合も、上位統合層は `open-search-dialog` と同等の起動要求として扱い、最終的な `opened` 更新と focus return の責務を一元管理しなければなりません。
+shortcut 起動時に物理的な trigger 要素が存在しない場合、起動元参照は `null` でよいものとします。
 
 ### フォーカス移譲契約
 

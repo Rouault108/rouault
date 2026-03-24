@@ -1616,8 +1616,16 @@ score =
 
 ### 17.2 起動
 
-- `open-search-dialog` カスタムイベント
-- `Cmd+K` / `Ctrl+K`
+検索ダイアログの起動要求は、上位統合層が受け取る外部起動要求またはグローバルショートカットから開始します。
+
+- 外部起動要求: `open-search-dialog`
+- グローバルショートカット: `Cmd+K` / `Ctrl+K`
+
+`open-search-dialog` は、`ui-search-trigger` または同等の launcher から上位統合層へ通知される request event です。
+一方、`ui-search-dialog-open-requested` は、`ui-search-dialog` 自身が開状態更新を外部へ要求する component-local request event です。
+両者は同義ではなく、責務境界が異なります。
+
+上位統合層は、必要に応じて起動元要素を保持し、`opened` の更新、重複表示抑止、close 後の focus return に利用しなければなりません。
 
 ### 17.3 起動抑止
 
@@ -1644,8 +1652,11 @@ score =
 
 ### 17.6 選択時動作
 
-- Enter またはクリックで選択した候補へ遷移する
-- 選択イベントには `url` と `canonicalUrl` を含めてもよい
+- Enter またはクリックで active 候補を選択しなければなりません
+- 選択時、検索ダイアログは選択通知を外部へ送出しなければなりません
+- 検索ダイアログ自身は遷移を内蔵してはなりません
+- 上位統合層は、選択通知を受けた後、必要に応じて `navigation-adapter` を通じて遷移しなければなりません
+- 選択 detail には少なくとも `url` を含め、shared `search-core` を用いる実装では `canonicalUrl` を含めてよいものとします
 
 ### 17.7 結果ランキング
 
