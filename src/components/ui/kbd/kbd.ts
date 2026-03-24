@@ -2,8 +2,6 @@ import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 
-type KbdVariant = 'auto' | 'key' | 'combo';
-
 const KEY_READING_MAP: Readonly<Record<string, string>> = {
   ctrl: 'コントロール',
   control: 'コントロール',
@@ -15,17 +13,46 @@ const KEY_READING_MAP: Readonly<Record<string, string>> = {
   tab: 'タブ',
   space: 'スペース',
   spacebar: 'スペース',
+  alt: 'オルト',
+  option: 'オプション',
+  backspace: 'バックスペース',
+  delete: 'デリート',
+  del: 'デリート',
+  up: '上矢印',
+  arrowup: '上矢印',
+  down: '下矢印',
+  arrowdown: '下矢印',
+  left: '左矢印',
+  arrowleft: '左矢印',
+  right: '右矢印',
+  arrowright: '右矢印',
   cmd: 'コマンド',
   command: 'コマンド',
   meta: 'コマンド',
   '⌘': 'コマンド',
+  fn: 'ファンクション',
 };
+
+type ResolvedInput =
+  | {
+      source: 'tokens' | 'keys' | 'text';
+      tokens: string[];
+    }
+  | {
+      source: 'slot';
+      tokens: [];
+    }
+  | {
+      source: 'none';
+      tokens: [];
+    };
 
 /**
  * キーボード入力 (Keyboard Input) コンポーネント `<ui-kbd>`
  *
- * - Native `<kbd>` を必ず出力します。
- * - `variant="combo"` または `keys` に `+` が含まれる場合、複合キーとして描画します。
+ * - 正準入力は `tokens` です。
+ * - 単体キー / 複合キーの意味論は正規化後トークン数で決まります。
+ * - 複合キー外枠は中立要素を使い、各キー片だけに Native `<kbd>` を使います。
  * - `⌘` は読み上げ一貫性のために SR 専用テキストを同梱します。
  */
 @customElement('ui-kbd')
@@ -73,7 +100,6 @@ export class Kbd extends LitElement {
     .kbd-combo {
       display: inline-flex;
       align-items: center;
-      column-gap: var(--space-2, 8px);
       white-space: nowrap;
       font: inherit;
       color: inherit;
@@ -83,6 +109,14 @@ export class Kbd extends LitElement {
       border-radius: 0;
       padding: 0;
       margin: 0;
+    }
+
+    .kbd-separator {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding-inline: var(--space-2, 8px);
+      line-height: var(--line-height-none, 1);
     }
 
     .sr-only {
@@ -136,41 +170,79 @@ export class Kbd extends LitElement {
   `;
 
   /**
-   * 表示するキー文字列。
+   * 表示する正準トークン列。
+   * 例: `['Esc']`, `['Ctrl', 'K']`, `['⌘', 'K']`
+   */
+  @property({ attribute: false })
+  tokens: string[] | undefined = undefined;
+
+  /**
+   * 表示する互換文字列入力。
    * 例: `Esc`, `Ctrl + K`, `⌘ + K`
    */
   @property({ type: String })
   keys = '';
 
-  /**
-   * 描画モード。
-   * - auto: `keys` のトークン数で自動判定
-   * - key: 単体キーとして描画
-   * - combo: 複合キーとして描画
-   */
-  @property({ type: String, reflect: true })
-  variant: KbdVariant = 'auto';
+  private _normalizeToken(token: string | null | undefined): string | undefined {
+    const normalized = token?.trim();
+    if (!normalized) {
+      return undefined;
+    }
+    return normalized;
+  }
+
+  private _normalizeTokens(tokens: readonly string[]): string[] {
+    return tokens
+      .map((token) => this._normalizeToken(token))
+      .filter((token): token is string => token !== undefined);
+  }
 
   private _tokenizeKeys(raw: string): string[] {
     return raw
+      .trim()
       .split('+')
-      .map((token) => token.trim())
-      .filter((token) => token.length > 0);
+      .map((token) => this._normalizeToken(token))
+      .filter((token): token is string => token !== undefined);
   }
 
-  private _resolveVariant(tokenCount: number): Exclude<KbdVariant, 'auto'> {
-    if (this.variant === 'key' || this.variant === 'combo') return this.variant;
-    return tokenCount > 1 ? 'combo' : 'key';
-  }
-
-  private _getSourceText(): string {
-    const fromProperty = this.keys.trim();
-    if (fromProperty !== '') return fromProperty;
-
-    // スロットに明示的な要素がある場合は、テキスト解析せずにスロットを優先します。
-    if (this.childElementCount > 0) return '';
-
+  private _getHostText(): string {
     return this.textContent.replace(/\s+/g, ' ').trim();
+  }
+
+  private _resolveInput(): ResolvedInput {
+    if (Array.isArray(this.tokens)) {
+      return {
+        source: 'tokens',
+        tokens: this._normalizeTokens(this.tokens),
+      };
+    }
+
+    if (this.keys.trim() !== '') {
+      return {
+        source: 'keys',
+        tokens: this._tokenizeKeys(this.keys),
+      };
+    }
+
+    if (this.childElementCount > 0) {
+      return {
+        source: 'slot',
+        tokens: [],
+      };
+    }
+
+    const hostText = this._getHostText();
+    if (hostText !== '') {
+      return {
+        source: 'text',
+        tokens: this._tokenizeKeys(hostText),
+      };
+    }
+
+    return {
+      source: 'none',
+      tokens: [],
+    };
   }
 
   private _getReading(token: string): string | undefined {
@@ -194,44 +266,40 @@ export class Kbd extends LitElement {
       `;
     }
 
-    return html`
-      <kbd class="kbd-key" part="key" aria-label=${ifDefined(reading)}> ${token} </kbd>
-    `;
+    return html` <kbd class="kbd-key" part="key" aria-label=${ifDefined(reading)}>${token}</kbd> `;
+  }
+
+  private _renderSeparator(): TemplateResult {
+    return html`<span class="kbd-separator" part="separator" aria-hidden="true">+</span>`;
   }
 
   override render(): TemplateResult | typeof nothing {
-    const source = this._getSourceText();
-    const tokens = source === '' ? [] : this._tokenizeKeys(source);
-    const mode = this._resolveVariant(tokens.length);
+    const resolved = this._resolveInput();
 
-    // 空入力時は空のキートップを描画せず、出力を省略する。
-    if (source === '' && this.childElementCount === 0) {
+    if (resolved.source === 'none') {
       return nothing;
     }
 
-    if (source === '' && this.childElementCount > 0) {
-      if (mode === 'combo') {
-        return html`<kbd class="kbd-combo" part="combo"><slot></slot></kbd>`;
-      }
+    if (resolved.source === 'slot') {
       return this._renderKeyToken('', true);
     }
 
-    if (mode === 'combo') {
+    if (resolved.tokens.length === 0) {
+      return nothing;
+    }
+
+    if (resolved.tokens.length > 1) {
       return html`
-        <kbd class="kbd-combo" part="combo">
-          ${tokens.map(
-            (token, index) => html` ${index > 0 ? ' + ' : nothing}${this._renderKeyToken(token)} `,
+        <span class="kbd-combo" part="combo">
+          ${resolved.tokens.map(
+            (token, index) =>
+              html`${index > 0 ? this._renderSeparator() : nothing}${this._renderKeyToken(token)}`,
           )}
-        </kbd>
+        </span>
       `;
     }
 
-    const firstToken = tokens[0];
-    if (firstToken === undefined || firstToken === '') {
-      return this._renderKeyToken('', true);
-    }
-
-    return this._renderKeyToken(firstToken);
+    return this._renderKeyToken(resolved.tokens[0] ?? '');
   }
 }
 
@@ -240,5 +308,3 @@ declare global {
     'ui-kbd': Kbd;
   }
 }
-
-export type { KbdVariant };

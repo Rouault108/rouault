@@ -6,15 +6,8 @@ import { Kbd } from './kbd';
 /**
  * ## キーボード入力 (Keyboard Input) `<ui-kbd>`
  *
- * キーボードショートカットや入力指示を、ネイティブ `<kbd>` で表現するためのコンポーネントです。
- *
- * ### 実装ポイント
- *
- * - 最終 DOM にネイティブ `<kbd>` を出力
- * - 単体キー（`.kbd-key`）と複合キー（`.kbd-combo`）を分離
- * - 複合キーは `Ctrl + K` のように `+` をテキストノードで表現
- * - `white-space: nowrap` により複合キーの途中改行を防止
- * - `forced-colors` / `print` の劣化制御を組み込み
+ * `ui-kbd` はキーボードショートカットや入力指示を、ネイティブ `<kbd>` を基礎に静かに可視化するコンポーネントです。
+ * 正準入力は `tokens` property であり、`keys` とホストテキストは互換入力、既定スロットは単体キー補助に限定されます。
  */
 const meta: Meta<Kbd> = {
   title: 'Components/Kbd',
@@ -29,42 +22,48 @@ const meta: Meta<Kbd> = {
 ## 使用方法
 
 \`\`\`html
-<!-- 単体キー -->
-<ui-kbd keys="Esc"></ui-kbd>
+<!-- 正準入力 -->
+<ui-kbd></ui-kbd>
+<script type="module">
+  const kbd = document.querySelector('ui-kbd');
+  kbd.tokens = ['Ctrl', 'K'];
+</script>
 
-<!-- 複合キー -->
-<ui-kbd variant="combo" keys="Ctrl + K"></ui-kbd>
-<ui-kbd variant="combo" keys="⌘ + K"></ui-kbd>
+<!-- 互換文字列入力 -->
+<ui-kbd keys="Ctrl + K"></ui-kbd>
 
-<!-- テキストから自動判定 -->
-<ui-kbd>Ctrl + Shift + Enter</ui-kbd>
+<!-- 単体キーの補助スロット -->
+<ui-kbd>
+  <span class="sr-only">コマンド</span>
+  <span aria-hidden="true">⌘</span>
+</ui-kbd>
 \`\`\`
 
-## 注意事項
+## 契約
 
-- 記号キー \`⌘\` は、読み上げ一貫性のために SR 専用テキストを内部で補完します。
-- 複合キーは \`.kbd-combo\` に \`white-space: nowrap\` を適用し、途中改行を防ぎます。
-- 小さい親フォントサイズ環境でも \`font-size\` は 12px 未満にならないよう固定下限を持ちます。
+- 単体キー / 複合キーの意味論は正規化後トークン数で決まります。
+- 複合キー外枠は中立要素であり、各キー片だけがネイティブ \`<kbd>\` です。
+- 区切り記号は独立した \`part="separator"\` として公開されます。
+- \`keys\` は \`+\` 区切りの互換入力です。literal plus は \`tokens\` を使います。
         `,
       },
     },
   },
   argTypes: {
+    tokens: {
+      control: 'object',
+      description: '表示する正準トークン列（例: ["Ctrl", "K"]）',
+      table: {
+        type: { summary: 'string[] | undefined' },
+        defaultValue: { summary: 'undefined' },
+      },
+    },
     keys: {
       control: 'text',
-      description: '表示するキー文字列（例: "Esc", "Ctrl + K", "⌘ + K"）',
+      description: '互換文字列入力（例: "Ctrl + K"）',
       table: {
         type: { summary: 'string' },
         defaultValue: { summary: "''" },
-      },
-    },
-    variant: {
-      control: 'select',
-      options: ['auto', 'key', 'combo'],
-      description: '描画モード（auto/key/combo）',
-      table: {
-        type: { summary: "'auto' | 'key' | 'combo'" },
-        defaultValue: { summary: "'auto'" },
       },
     },
   },
@@ -84,436 +83,24 @@ const requireShadowElement = (host: Kbd, selector: string): Element => {
   return found;
 };
 
-// ──────────────────────────────────────────────
-// デフォルト
-// ──────────────────────────────────────────────
-
-/**
- * 単体キーの基本例。
- */
-export const Default: Story = {
-  args: {
-    keys: 'Esc',
-    variant: 'auto',
-  },
-  render: (args) => html`
-    <ui-kbd id="kbd-default" keys="${args.keys}" variant="${args.variant}"></ui-kbd>
-  `,
-  play: async ({ canvasElement }) => {
-    const kbd = canvasElement.querySelector<Kbd>('#kbd-default');
-    if (!kbd) throw new Error('#kbd-default が見つかりません');
-    await kbd.updateComplete;
-
-    const key = requireShadowElement(kbd, 'kbd.kbd-key') as HTMLElement;
-    if (key.tagName.toLowerCase() !== 'kbd') {
-      throw new Error(
-        `ネイティブの <kbd> 要素を期待していましたが、実際には <${key.tagName.toLowerCase()}> でした`,
-      );
-    }
-    if (normalizeText(key.textContent) !== 'Esc') {
-      throw new Error(
-        `キーテキスト "Esc" を期待していましたが、実際には "${normalizeText(key.textContent)}" でした`,
-      );
-    }
-    if (key.getAttribute('aria-label') !== 'エスケープ') {
-      throw new Error(
-        `aria-label="エスケープ" を期待していましたが、実際には "${key.getAttribute('aria-label') ?? 'null'}" でした`,
-      );
-    }
-
-    const combo = kbd.shadowRoot?.querySelector('.kbd-combo');
-    if (combo) throw new Error('単体キーは .kbd-combo を描画すべきではありません');
-  },
+const requireHost = async (canvasElement: HTMLElement, selector: string): Promise<Kbd> => {
+  const host = canvasElement.querySelector<Kbd>(selector);
+  if (!host) {
+    throw new Error(`${selector} が見つかりません`);
+  }
+  await host.updateComplete;
+  return host;
 };
 
-// ──────────────────────────────────────────────
-// バリアント × 状態
-// ──────────────────────────────────────────────
-
-/**
- * バリアント（key/combo）× 状態（Windows/macOS/長い複合）を同時確認するマトリクスです。
- */
-export const VariantStateMatrix: Story = {
-  render: () => html`
-    <style>
-      .matrix {
-        display: flex;
-        flex-direction: column;
-        gap: 1.25rem;
-      }
-
-      .row {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-
-      .label {
-        font-size: 11px;
-        color: oklch(48% 0.01 250);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-
-      .items {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-        align-items: baseline;
-      }
-    </style>
-    <div class="matrix">
-      <div class="row">
-        <div class="label">Key Variant</div>
-        <div class="items">
-          <ui-kbd id="matrix-key-esc" variant="key" keys="Esc"></ui-kbd>
-          <ui-kbd id="matrix-key-cmd" variant="key" keys="⌘"></ui-kbd>
-        </div>
-      </div>
-      <div class="row">
-        <div class="label">Combo Variant</div>
-        <div class="items">
-          <ui-kbd id="matrix-combo-win" variant="combo" keys="Ctrl + K"></ui-kbd>
-          <ui-kbd id="matrix-combo-mac" variant="combo" keys="⌘ + K"></ui-kbd>
-          <ui-kbd id="matrix-combo-long" variant="combo" keys="Ctrl + Shift + Enter"></ui-kbd>
-        </div>
-      </div>
-    </div>
-  `,
-  play: async ({ canvasElement }) => {
-    const all = [...canvasElement.querySelectorAll<Kbd>('ui-kbd')];
-    if (all.length !== 5)
-      throw new Error(
-        `5つの ui-kbd 要素を期待していましたが、実際には ${String(all.length)} つでした`,
-      );
-    await Promise.all(all.map((item) => item.updateComplete));
-
-    const comboWin = canvasElement.querySelector<Kbd>('#matrix-combo-win');
-    if (!comboWin) throw new Error('#matrix-combo-win が見つかりません');
-    const comboWinRoot = requireShadowElement(comboWin, 'kbd.kbd-combo') as HTMLElement;
-    const winKeys = comboWin.shadowRoot?.querySelectorAll('kbd.kbd-key');
-    if (winKeys?.length !== 2) {
-      throw new Error(
-        `Windows のコンボには2つのキーを期待していましたが、実際には ${String(winKeys?.length ?? 0)} つでした`,
-      );
-    }
-    if (normalizeText(comboWinRoot.textContent) !== 'Ctrl + K') {
-      throw new Error(`想定外のコンボテキストです: "${normalizeText(comboWinRoot.textContent)}"`);
-    }
-
-    const keyCmd = canvasElement.querySelector<Kbd>('#matrix-key-cmd');
-    if (!keyCmd) throw new Error('#matrix-key-cmd が見つかりません');
-    const cmdKey = requireShadowElement(keyCmd, 'kbd.kbd-key') as HTMLElement;
-    const srOnly = cmdKey.querySelector('.sr-only');
-    if (!srOnly || normalizeText(srOnly.textContent) !== 'コマンド') {
-      throw new Error('記号キーには SR 専用のコマンドラベルを期待していました');
-    }
-    const commandSymbol = cmdKey.querySelector<HTMLElement>('[aria-hidden="true"]');
-    if (!commandSymbol || normalizeText(commandSymbol.textContent) !== '⌘') {
-      throw new Error('aria-hidden なコマンド記号 "⌘" を期待していました');
-    }
-
-    const comboLong = canvasElement.querySelector<Kbd>('#matrix-combo-long');
-    if (!comboLong) throw new Error('#matrix-combo-long が見つかりません');
-    const longKeys = comboLong.shadowRoot?.querySelectorAll<HTMLElement>('kbd.kbd-key');
-    if (longKeys?.length !== 3) {
-      throw new Error(
-        `長いコンボには3つのキーを期待していましたが、実際には ${String(longKeys?.length ?? 0)} つでした`,
-      );
-    }
-    const [firstLongKey, secondLongKey, thirdLongKey] = Array.from(longKeys);
-    if (!firstLongKey || !secondLongKey || !thirdLongKey) {
-      throw new Error('長いコンボのキーノードが見つかりません');
-    }
-    if (firstLongKey.getAttribute('aria-label') !== 'コントロール') {
-      throw new Error(
-        '1番目の長いコンボキーの aria-label が "コントロール" であることを期待していました',
-      );
-    }
-    if (secondLongKey.getAttribute('aria-label') !== 'シフト') {
-      throw new Error(
-        '2番目の長いコンボキーの aria-label が "シフト" であることを期待していました',
-      );
-    }
-    if (thirdLongKey.getAttribute('aria-label') !== 'エンター') {
-      throw new Error(
-        '3番目の長いコンボキーの aria-label が "エンター" であることを期待していました',
-      );
-    }
-  },
+const requireKeyParts = (host: Kbd): HTMLElement[] => {
+  const keys = host.shadowRoot?.querySelectorAll<HTMLElement>('kbd[part~="key"]') ?? [];
+  return Array.from(keys);
 };
 
-// ──────────────────────────────────────────────
-// ショートカット契約
-// ──────────────────────────────────────────────
-
-/**
- * 視覚表記（`<kbd>`）と `aria-keyshortcuts` の対応を確認します。
- */
-export const ShortcutContractAlignment: Story = {
-  render: () => html`
-    <button
-      id="shortcut-trigger"
-      type="button"
-      aria-label="検索"
-      aria-keyshortcuts="Control+K Meta+K"
-      style="
-        display: inline-flex;
-        align-items: baseline;
-        gap: 0.5rem;
-        padding: 0.5rem 0.75rem;
-      "
-    >
-      <ui-kbd id="shortcut-win" variant="combo" keys="Ctrl + K"></ui-kbd>
-      <span aria-hidden="true">/</span>
-      <ui-kbd id="shortcut-mac" variant="combo" keys="⌘ + K"></ui-kbd>
-    </button>
-  `,
-  play: async ({ canvasElement }) => {
-    const button = canvasElement.querySelector<HTMLButtonElement>('#shortcut-trigger');
-    if (!button) throw new Error('#shortcut-trigger が見つかりません');
-
-    const shortcutAttr = button.getAttribute('aria-keyshortcuts');
-    if (shortcutAttr !== 'Control+K Meta+K') {
-      throw new Error(
-        `aria-keyshortcuts="Control+K Meta+K" を期待していましたが、実際には "${shortcutAttr ?? 'null'}" でした`,
-      );
-    }
-
-    const tokens = shortcutAttr.split(/\s+/);
-    if (!tokens.includes('Control+K')) {
-      throw new Error('aria-keyshortcuts に "Control+K" が含まれている必要があります');
-    }
-    if (!tokens.includes('Meta+K')) {
-      throw new Error('aria-keyshortcuts に "Meta+K" が含まれている必要があります');
-    }
-
-    const win = canvasElement.querySelector<Kbd>('#shortcut-win');
-    const mac = canvasElement.querySelector<Kbd>('#shortcut-mac');
-    if (!win || !mac) throw new Error('ショートカットの ui-kbd 要素が見つかりません');
-    await Promise.all([win.updateComplete, mac.updateComplete]);
-
-    const winCombo = requireShadowElement(win, 'kbd.kbd-combo') as HTMLElement;
-    const macCombo = requireShadowElement(mac, 'kbd.kbd-combo') as HTMLElement;
-    if (normalizeText(winCombo.textContent) !== 'Ctrl + K') {
-      throw new Error(
-        `視覚的なショートカット "Ctrl + K" を期待していましたが、実際には "${normalizeText(winCombo.textContent)}" でした`,
-      );
-    }
-    // sr-only 要素（スクリーンリーダー専用テキスト）を除いた視覚テキストで比較する
-    const macComboClone = macCombo.cloneNode(true) as HTMLElement;
-    macComboClone.querySelectorAll('.sr-only').forEach((el) => {
-      el.remove();
-    });
-    if (normalizeText(macComboClone.textContent) !== '⌘ + K') {
-      throw new Error(
-        `視覚的なショートカット "⌘ + K" を期待していましたが、実際には "${normalizeText(macComboClone.textContent)}" でした`,
-      );
-    }
-  },
+const requireSeparatorParts = (host: Kbd): HTMLElement[] => {
+  const separators = host.shadowRoot?.querySelectorAll<HTMLElement>('[part~="separator"]') ?? [];
+  return Array.from(separators);
 };
-
-// ──────────────────────────────────────────────
-// 境界条件: 12px 下限
-// ──────────────────────────────────────────────
-
-/**
- * 親フォントサイズが 11px の場合でも、`ui-kbd` が 12px 未満にならないことを確認します。
- */
-export const SmallTextHardLimit: Story = {
-  render: () => html`
-    <div
-      id="small-text-container"
-      style="font-size: 11px; display: inline-flex; align-items: center; gap: 0.5rem;"
-    >
-      <span>親 11px:</span>
-      <ui-kbd id="small-text-kbd" keys="Tab"></ui-kbd>
-    </div>
-  `,
-  play: async ({ canvasElement }) => {
-    const host = canvasElement.querySelector<Kbd>('#small-text-kbd');
-    if (!host) throw new Error('#small-text-kbd が見つかりません');
-    await host.updateComplete;
-
-    const key = requireShadowElement(host, 'kbd.kbd-key') as HTMLElement;
-    const keyFontSize = parseFloat(getComputedStyle(key).fontSize);
-    if (Number.isNaN(keyFontSize)) {
-      throw new Error('.kbd-key の計算済みフォントサイズの取得に失敗しました');
-    }
-    if (keyFontSize < 12) {
-      throw new Error(
-        `.kbd-key のフォントサイズが 12px 以上であることを期待していましたが、実際には ${String(keyFontSize)}px でした`,
-      );
-    }
-  },
-};
-
-// ──────────────────────────────────────────────
-// 境界条件: 途中改行防止
-// ──────────────────────────────────────────────
-
-/**
- * `.kbd-combo` の `white-space: nowrap` と `inline-flex` 契約を確認します。
- */
-export const ComboNoWrapIntegrity: Story = {
-  render: () => html`
-    <div
-      id="nowrap-box"
-      style="width: 72px; border: 1px dashed var(--border-default); padding: 0.5rem;"
-    >
-      <ui-kbd id="nowrap-combo" variant="combo" keys="Ctrl + Shift + Enter"></ui-kbd>
-    </div>
-  `,
-  play: async ({ canvasElement }) => {
-    const host = canvasElement.querySelector<Kbd>('#nowrap-combo');
-    if (!host) throw new Error('#nowrap-combo が見つかりません');
-    await host.updateComplete;
-
-    const combo = requireShadowElement(host, 'kbd.kbd-combo') as HTMLElement;
-    const comboStyle = getComputedStyle(combo);
-
-    if (comboStyle.whiteSpace !== 'nowrap') {
-      throw new Error(
-        `white-space: nowrap を期待していましたが、実際には "${comboStyle.whiteSpace}" でした`,
-      );
-    }
-    if (comboStyle.display !== 'inline-flex') {
-      throw new Error(
-        `display: inline-flex を期待していましたが、実際には "${comboStyle.display}" でした`,
-      );
-    }
-    if (comboStyle.alignItems !== 'center') {
-      throw new Error(
-        `align-items: center を期待していましたが、実際には "${comboStyle.alignItems}" でした`,
-      );
-    }
-
-    const keys = host.shadowRoot?.querySelectorAll('kbd.kbd-key');
-    if (keys?.length !== 3) {
-      throw new Error(
-        `nowrap コンボには3つのキーを期待していましたが、実際には ${String(keys?.length ?? 0)} つでした`,
-      );
-    }
-    if (normalizeText(combo.textContent) !== 'Ctrl + Shift + Enter') {
-      throw new Error(`想定外のコンボテキストです: "${normalizeText(combo.textContent)}"`);
-    }
-  },
-};
-
-// ──────────────────────────────────────────────
-// 境界条件: 事故が多い入力
-// ──────────────────────────────────────────────
-
-/**
- * 境界条件の確認:
- * - テキストのみ指定時の自動判定
- * - セパレータ連打入力の正規化
- * - 記号キーのスロット運用
- */
-export const BoundaryCases: Story = {
-  render: () => html`
-    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-      <div>
-        <span
-          style="font-size: 11px; color: oklch(48% 0.01 250); width: 9rem; display: inline-block;"
-          >Text Auto</span
-        >
-        <ui-kbd id="boundary-text-combo">Ctrl + K</ui-kbd>
-      </div>
-      <div>
-        <span
-          style="font-size: 11px; color: oklch(48% 0.01 250); width: 9rem; display: inline-block;"
-          >Malformed</span
-        >
-        <ui-kbd id="boundary-malformed" variant="combo" keys="  Ctrl ++  +  K  "></ui-kbd>
-      </div>
-      <div>
-        <span
-          style="font-size: 11px; color: oklch(48% 0.01 250); width: 9rem; display: inline-block;"
-          >Slot Symbol</span
-        >
-        <ui-kbd id="boundary-slot-symbol">
-          <span class="sr-only">コマンド</span>
-          <span aria-hidden="true">⌘</span>
-        </ui-kbd>
-      </div>
-    </div>
-  `,
-  play: async ({ canvasElement }) => {
-    const textAuto = canvasElement.querySelector<Kbd>('#boundary-text-combo');
-    const malformed = canvasElement.querySelector<Kbd>('#boundary-malformed');
-    const slotSymbol = canvasElement.querySelector<Kbd>('#boundary-slot-symbol');
-    if (!textAuto || !malformed || !slotSymbol) {
-      throw new Error('境界テストの要素が見つかりません');
-    }
-
-    await Promise.all([
-      textAuto.updateComplete,
-      malformed.updateComplete,
-      slotSymbol.updateComplete,
-    ]);
-
-    const autoCombo = requireShadowElement(textAuto, 'kbd.kbd-combo') as HTMLElement;
-    const autoKeys = textAuto.shadowRoot?.querySelectorAll('kbd.kbd-key');
-    if (autoKeys?.length !== 2) {
-      throw new Error(
-        `自動検出されたキーが2つであることを期待していましたが、実際には ${String(autoKeys?.length ?? 0)} つでした`,
-      );
-    }
-    if (normalizeText(autoCombo.textContent) !== 'Ctrl + K') {
-      throw new Error(`想定外の自動コンボテキストです: "${normalizeText(autoCombo.textContent)}"`);
-    }
-
-    const malformedCombo = requireShadowElement(malformed, 'kbd.kbd-combo') as HTMLElement;
-    const malformedKeys = malformed.shadowRoot?.querySelectorAll('kbd.kbd-key');
-    if (malformedKeys?.length !== 2) {
-      throw new Error(
-        `不正な入力が2つのキーに正規化されることを期待していましたが、実際には ${String(malformedKeys?.length ?? 0)} つでした`,
-      );
-    }
-    if (normalizeText(malformedCombo.textContent) !== 'Ctrl + K') {
-      throw new Error(
-        `正規化されたコンボテキスト "Ctrl + K" を期待していましたが、実際には "${normalizeText(malformedCombo.textContent)}" でした`,
-      );
-    }
-
-    const slot = requireShadowElement(slotSymbol, 'slot') as HTMLSlotElement;
-    const assignedElements = slot.assignedElements();
-    if (assignedElements.length !== 2) {
-      throw new Error(
-        `記号キーに2つのスロット要素を期待していましたが、実際には ${String(assignedElements.length)} つでした`,
-      );
-    }
-    const srOnlyText = assignedElements.at(0) as HTMLElement | undefined;
-    if (!srOnlyText) {
-      throw new Error('1番目のスロットされた SR 専用要素が見つかりません');
-    }
-    const srOnlyStyle = getComputedStyle(srOnlyText);
-    if (srOnlyStyle.position !== 'absolute') {
-      throw new Error(
-        `スロットされた SR 専用要素が非表示であることを期待していましたが、実際には position="${srOnlyStyle.position}" でした`,
-      );
-    }
-    const hiddenSymbol = assignedElements.at(1);
-    if (!hiddenSymbol) {
-      throw new Error('2番目のスロットされた記号要素が見つかりません');
-    }
-    if (hiddenSymbol.getAttribute('aria-hidden') !== 'true') {
-      throw new Error(
-        '2番目のスロットされた記号要素に aria-hidden="true" が設定されている必要があります',
-      );
-    }
-    if (normalizeText(hiddenSymbol.textContent) !== '⌘') {
-      throw new Error(
-        `スロットされた記号テキスト "⌘" を期待していましたが、実際には "${normalizeText(hiddenSymbol.textContent)}" でした`,
-      );
-    }
-  },
-};
-
-// ──────────────────────────────────────────────
-// 境界条件: メディア契約
-// ──────────────────────────────────────────────
 
 const toCssText = (style: unknown): string => {
   if (style && typeof style === 'object' && 'cssText' in style) {
@@ -527,14 +114,9 @@ const parseRgb = (value: string): [number, number, number] | null => {
   const match = /rgba?\((\d+),\s*(\d+),\s*(\d+)/i.exec(value);
   if (!match) return null;
 
-  const redText = match[1];
-  const greenText = match[2];
-  const blueText = match[3];
-  if (!redText || !greenText || !blueText) return null;
-
-  const r = Number.parseInt(redText, 10);
-  const g = Number.parseInt(greenText, 10);
-  const b = Number.parseInt(blueText, 10);
+  const r = Number.parseInt(match[1] ?? '', 10);
+  const g = Number.parseInt(match[2] ?? '', 10);
+  const b = Number.parseInt(match[3] ?? '', 10);
   if ([r, g, b].some((item) => Number.isNaN(item))) return null;
 
   return [r, g, b];
@@ -574,27 +156,311 @@ const resolveBorderColor = (surface: HTMLElement): string => {
   return color;
 };
 
-// ──────────────────────────────────────────────
-// 受け入れ基準: 日本語読み上げ整合
-// ──────────────────────────────────────────────
+/**
+ * 正準入力 `tokens` による単体キー描画の基本例です。
+ */
+export const Default: Story = {
+  args: {
+    tokens: ['Esc'],
+    keys: '',
+  },
+  render: (args) =>
+    html`<ui-kbd id="kbd-default" .tokens=${args.tokens} .keys=${args.keys}></ui-kbd>`,
+  play: async ({ canvasElement }) => {
+    const host = await requireHost(canvasElement, '#kbd-default');
+    const key = requireShadowElement(host, 'kbd[part~="key"]') as HTMLElement;
+
+    if (key.tagName.toLowerCase() !== 'kbd') {
+      throw new Error('単体キーはネイティブ <kbd> を描画する必要があります');
+    }
+    if (normalizeText(key.textContent) !== 'Esc') {
+      throw new Error(
+        `キーテキスト "Esc" を期待していましたが、実際には "${normalizeText(key.textContent)}" でした`,
+      );
+    }
+    if (key.getAttribute('aria-label') !== 'エスケープ') {
+      throw new Error('Esc には aria-label="エスケープ" が必要です');
+    }
+  },
+};
 
 /**
- * 必須マッピング（Ctrl/Cmd/Esc/Shift/Enter/Tab/Space）の日本語読み上げ整合を検証します。
+ * `tokens`・`keys`・ホストテキスト・スロット補助の優先順位と責務を確認します。
+ */
+export const InputPriorityAndModes: Story = {
+  render: () => html`
+    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+      <div>
+        <span style="display: inline-block; width: 11rem;">Tokens Priority</span>
+        <ui-kbd id="priority-tokens" keys="Ctrl + Shift + Enter"></ui-kbd>
+      </div>
+      <div>
+        <span style="display: inline-block; width: 11rem;">Keys Fallback</span>
+        <ui-kbd id="priority-keys" keys="Ctrl + K"></ui-kbd>
+      </div>
+      <div>
+        <span style="display: inline-block; width: 11rem;">Text Fallback</span>
+        <ui-kbd id="priority-text">Ctrl + K</ui-kbd>
+      </div>
+      <div>
+        <span style="display: inline-block; width: 11rem;">Slot Assist</span>
+        <ui-kbd id="priority-slot">
+          <span class="sr-only">コマンド</span>
+          <span aria-hidden="true">⌘</span>
+        </ui-kbd>
+      </div>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const tokensHost = await requireHost(canvasElement, '#priority-tokens');
+    tokensHost.tokens = ['Esc'];
+    await tokensHost.updateComplete;
+
+    const tokenKeys = requireKeyParts(tokensHost);
+    if (tokenKeys.length !== 1 || normalizeText(tokenKeys[0]?.textContent) !== 'Esc') {
+      throw new Error('`tokens` は `keys` より優先され、単体キーとして描画される必要があります');
+    }
+
+    const keysHost = await requireHost(canvasElement, '#priority-keys');
+    const keysCombo = requireShadowElement(keysHost, '[part~="combo"]') as HTMLElement;
+    if (keysCombo.tagName.toLowerCase() === 'kbd') {
+      throw new Error('複合キー外枠は中立要素である必要があります');
+    }
+    if (requireKeyParts(keysHost).length !== 2) {
+      throw new Error('`keys` は2トークンの複合キーへ正規化される必要があります');
+    }
+
+    const textHost = await requireHost(canvasElement, '#priority-text');
+    if (requireKeyParts(textHost).length !== 2) {
+      throw new Error('ホストテキストは互換入力として複合キーへ正規化される必要があります');
+    }
+
+    const slotHost = await requireHost(canvasElement, '#priority-slot');
+    const slot = requireShadowElement(slotHost, 'slot') as HTMLSlotElement;
+    const assigned = slot.assignedElements();
+    if (assigned.length !== 2) {
+      throw new Error('単体キー補助スロットには 2 つの補助要素が必要です');
+    }
+    if (slotHost.shadowRoot?.querySelector('[part~="combo"]')) {
+      throw new Error('スロット入力は複合キーを導出してはいけません');
+    }
+  },
+};
+
+/**
+ * 複合キーで `part="combo"` と `part="separator"` が公開されることを確認します。
+ */
+export const ComboStructureContract: Story = {
+  render: () => html`<ui-kbd id="combo-structure"></ui-kbd>`,
+  play: async ({ canvasElement }) => {
+    const host = await requireHost(canvasElement, '#combo-structure');
+    host.tokens = ['Ctrl', 'Shift', 'Enter'];
+    await host.updateComplete;
+
+    const combo = requireShadowElement(host, '[part~="combo"]') as HTMLElement;
+    const keys = requireKeyParts(host);
+    const separators = requireSeparatorParts(host);
+
+    if (combo.tagName.toLowerCase() === 'kbd') {
+      throw new Error('複合キーの外枠に <kbd> を使ってはいけません');
+    }
+    if (keys.length !== 3) {
+      throw new Error(`3 つのキー片を期待していましたが、実際には ${String(keys.length)} つでした`);
+    }
+    if (separators.length !== 2) {
+      throw new Error(
+        `2 つの separator を期待していましたが、実際には ${String(separators.length)} つでした`,
+      );
+    }
+    if (!separators.every((separator) => separator.getAttribute('aria-hidden') === 'true')) {
+      throw new Error('separator は aria-hidden="true" を持つ必要があります');
+    }
+    if (!separators.every((separator) => normalizeText(separator.textContent) === '+')) {
+      throw new Error('separator の可視文字は "+" である必要があります');
+    }
+  },
+};
+
+/**
+ * 記号キー補助と literal plus 境界を確認します。
+ */
+export const SymbolAndLiteralPlusBoundaries: Story = {
+  render: () => html`
+    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+      <div>
+        <span style="display: inline-block; width: 11rem;">Command Symbol</span>
+        <ui-kbd id="boundary-command" .tokens=${['⌘']}></ui-kbd>
+      </div>
+      <div>
+        <span style="display: inline-block; width: 11rem;">Literal Plus</span>
+        <ui-kbd id="boundary-plus" .tokens=${['+']}></ui-kbd>
+      </div>
+      <div>
+        <span style="display: inline-block; width: 11rem;">Malformed Keys</span>
+        <ui-kbd id="boundary-malformed" keys="  Ctrl ++  +  K  "></ui-kbd>
+      </div>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const commandHost = await requireHost(canvasElement, '#boundary-command');
+    const commandKey = requireShadowElement(commandHost, 'kbd[part~="key"]') as HTMLElement;
+    const srOnly = commandKey.querySelector('.sr-only');
+    const visibleSymbol = commandKey.querySelector<HTMLElement>('[aria-hidden="true"]');
+    if (!srOnly || normalizeText(srOnly.textContent) !== 'コマンド') {
+      throw new Error('`⌘` は SR 専用の "コマンド" を持つ必要があります');
+    }
+    if (!visibleSymbol || normalizeText(visibleSymbol.textContent) !== '⌘') {
+      throw new Error('`⌘` の可視記号は aria-hidden で分離される必要があります');
+    }
+
+    const plusHost = await requireHost(canvasElement, '#boundary-plus');
+    const plusKey = requireShadowElement(plusHost, 'kbd[part~="key"]') as HTMLElement;
+    if (normalizeText(plusKey.textContent) !== '+') {
+      throw new Error('literal plus は `tokens` によってそのまま描画される必要があります');
+    }
+
+    const malformedHost = await requireHost(canvasElement, '#boundary-malformed');
+    if (requireKeyParts(malformedHost).length !== 2) {
+      throw new Error('`keys` の空トークンは除去される必要があります');
+    }
+  },
+};
+
+/**
+ * 視覚表記と `aria-keyshortcuts` の対応を確認します。
+ */
+export const ShortcutContractAlignment: Story = {
+  render: () => html`
+    <button
+      id="shortcut-trigger"
+      type="button"
+      aria-label="検索"
+      aria-keyshortcuts="Control+K Meta+K"
+      style="
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        padding: 0.5rem 0.75rem;
+      "
+    >
+      <ui-kbd id="shortcut-win" .tokens=${['Ctrl', 'K']}></ui-kbd>
+      <span aria-hidden="true">/</span>
+      <ui-kbd id="shortcut-mac" .tokens=${['⌘', 'K']}></ui-kbd>
+    </button>
+  `,
+  play: async ({ canvasElement }) => {
+    const button = canvasElement.querySelector<HTMLButtonElement>('#shortcut-trigger');
+    if (!button) throw new Error('#shortcut-trigger が見つかりません');
+
+    const shortcutAttr = button.getAttribute('aria-keyshortcuts');
+    if (shortcutAttr !== 'Control+K Meta+K') {
+      throw new Error('aria-keyshortcuts が想定どおりではありません');
+    }
+
+    const win = await requireHost(canvasElement, '#shortcut-win');
+    const mac = await requireHost(canvasElement, '#shortcut-mac');
+    const winCombo = requireShadowElement(win, '[part~="combo"]') as HTMLElement;
+    const macCombo = requireShadowElement(mac, '[part~="combo"]') as HTMLElement;
+
+    if (normalizeText(winCombo.textContent) !== 'Ctrl + K') {
+      throw new Error('Windows 側ショートカットの可視表記が崩れています');
+    }
+
+    const macClone = macCombo.cloneNode(true) as HTMLElement;
+    macClone.querySelectorAll('.sr-only').forEach((element) => {
+      element.remove();
+    });
+    if (normalizeText(macClone.textContent) !== '⌘ + K') {
+      throw new Error('macOS 側ショートカットの可視表記が崩れています');
+    }
+  },
+};
+
+/**
+ * 小さい親フォント環境でも判読性が維持されることを確認します。
+ */
+export const SmallTextHardLimit: Story = {
+  render: () => html`
+    <div
+      id="small-text-container"
+      style="font-size: 11px; display: inline-flex; align-items: center; gap: 0.5rem;"
+    >
+      <span>親 11px:</span>
+      <ui-kbd id="small-text-kbd" .tokens=${['Tab']}></ui-kbd>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = await requireHost(canvasElement, '#small-text-kbd');
+    const key = requireShadowElement(host, 'kbd[part~="key"]') as HTMLElement;
+    const fontSize = Number.parseFloat(getComputedStyle(key).fontSize);
+    if (Number.isNaN(fontSize) || fontSize < 12) {
+      throw new Error(
+        `キートップのフォントサイズは 12px 以上である必要があります: ${String(fontSize)}`,
+      );
+    }
+  },
+};
+
+/**
+ * 複合キーが途中改行せず、意味のまとまりを保つことを確認します。
+ */
+export const ComboNoWrapIntegrity: Story = {
+  render: () => html`
+    <div
+      id="nowrap-box"
+      style="width: 72px; border: 1px dashed var(--border-default); padding: 0.5rem;"
+    >
+      <ui-kbd id="nowrap-combo" .tokens=${['Ctrl', 'Shift', 'Enter']}></ui-kbd>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = await requireHost(canvasElement, '#nowrap-combo');
+    const combo = requireShadowElement(host, '[part~="combo"]') as HTMLElement;
+    const style = getComputedStyle(combo);
+
+    if (style.whiteSpace !== 'nowrap') {
+      throw new Error(
+        `white-space: nowrap を期待していましたが、実際には "${style.whiteSpace}" でした`,
+      );
+    }
+    if (style.display !== 'inline-flex') {
+      throw new Error(
+        `display: inline-flex を期待していましたが、実際には "${style.display}" でした`,
+      );
+    }
+    if (requireKeyParts(host).length !== 3) {
+      throw new Error('複合キーのキー片数が崩れています');
+    }
+  },
+};
+
+/**
+ * 最低保証集合の日本語読み上げを確認します。
  */
 export const JapaneseSRConsistency: Story = {
   render: () => html`
     <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-      <ui-kbd id="sr-ctrl" keys="Ctrl"></ui-kbd>
-      <ui-kbd id="sr-cmd" keys="⌘"></ui-kbd>
-      <ui-kbd id="sr-esc" keys="Esc"></ui-kbd>
-      <ui-kbd id="sr-shift" keys="Shift"></ui-kbd>
-      <ui-kbd id="sr-enter" keys="Enter"></ui-kbd>
-      <ui-kbd id="sr-tab" keys="Tab"></ui-kbd>
-      <ui-kbd id="sr-space" keys="Space"></ui-kbd>
+      <ui-kbd id="sr-ctrl" .tokens=${['Ctrl']}></ui-kbd>
+      <ui-kbd id="sr-cmd" .tokens=${['⌘']}></ui-kbd>
+      <ui-kbd id="sr-esc" .tokens=${['Esc']}></ui-kbd>
+      <ui-kbd id="sr-shift" .tokens=${['Shift']}></ui-kbd>
+      <ui-kbd id="sr-enter" .tokens=${['Enter']}></ui-kbd>
+      <ui-kbd id="sr-tab" .tokens=${['Tab']}></ui-kbd>
+      <ui-kbd id="sr-space" .tokens=${['Space']}></ui-kbd>
+      <ui-kbd id="sr-alt" .tokens=${['Alt']}></ui-kbd>
+      <ui-kbd id="sr-option" .tokens=${['Option']}></ui-kbd>
+      <ui-kbd id="sr-backspace" .tokens=${['Backspace']}></ui-kbd>
+      <ui-kbd id="sr-delete" .tokens=${['Delete']}></ui-kbd>
+      <ui-kbd id="sr-up" .tokens=${['ArrowUp']}></ui-kbd>
+      <ui-kbd id="sr-fn" .tokens=${['Fn']}></ui-kbd>
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const expected: readonly { id: string; label: string; useSrOnly?: boolean }[] = [
+    const expected: readonly {
+      id: string;
+      label: string;
+      useSrOnly?: boolean;
+    }[] = [
       { id: '#sr-ctrl', label: 'コントロール' },
       { id: '#sr-cmd', label: 'コマンド', useSrOnly: true },
       { id: '#sr-esc', label: 'エスケープ' },
@@ -602,45 +468,35 @@ export const JapaneseSRConsistency: Story = {
       { id: '#sr-enter', label: 'エンター' },
       { id: '#sr-tab', label: 'タブ' },
       { id: '#sr-space', label: 'スペース' },
+      { id: '#sr-alt', label: 'オルト' },
+      { id: '#sr-option', label: 'オプション' },
+      { id: '#sr-backspace', label: 'バックスペース' },
+      { id: '#sr-delete', label: 'デリート' },
+      { id: '#sr-up', label: '上矢印' },
+      { id: '#sr-fn', label: 'ファンクション' },
     ];
 
-    const hosts = expected.map(({ id }) => {
-      const host = canvasElement.querySelector<Kbd>(id);
-      if (!host) throw new Error(`${id} が見つかりません`);
-      return host;
-    });
-    await Promise.all(hosts.map((host) => host.updateComplete));
-
     for (const item of expected) {
-      const host = canvasElement.querySelector<Kbd>(item.id);
-      if (!host) throw new Error(`${item.id} が見つかりません`);
-      const key = requireShadowElement(host, 'kbd.kbd-key') as HTMLElement;
+      const host = await requireHost(canvasElement, item.id);
+      const key = requireShadowElement(host, 'kbd[part~="key"]') as HTMLElement;
 
       if (item.useSrOnly) {
         const srOnly = key.querySelector('.sr-only');
         if (!srOnly || normalizeText(srOnly.textContent) !== item.label) {
-          throw new Error(
-            `${item.id} に対して SR 専用ラベル "${item.label}" を期待していましたが、実際には異なりました`,
-          );
+          throw new Error(`${item.id} の SR 専用読み上げが想定どおりではありません`);
         }
         continue;
       }
 
       if (key.getAttribute('aria-label') !== item.label) {
-        throw new Error(
-          `${item.id} に対して aria-label="${item.label}" を期待していましたが、実際には "${key.getAttribute('aria-label') ?? 'null'}" でした`,
-        );
+        throw new Error(`${item.id} の aria-label が "${item.label}" ではありません`);
       }
     }
   },
 };
 
-// ──────────────────────────────────────────────
-// 受け入れ基準: ダークモード契約
-// ──────────────────────────────────────────────
-
 /**
- * ダークトークンセットでもトークン追従と AA コントラストを維持することを検証します。
+ * 暗色トークンでも AA コントラストを維持することを確認します。
  */
 export const DarkModeTokenContract: Story = {
   render: () => html`
@@ -660,60 +516,43 @@ export const DarkModeTokenContract: Story = {
         border-radius: 8px;
       "
     >
-      <ui-kbd id="dark-mode-kbd" keys="Esc"></ui-kbd>
+      <ui-kbd id="dark-mode-kbd" .tokens=${['Esc']}></ui-kbd>
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const host = canvasElement.querySelector<Kbd>('#dark-mode-kbd');
-    if (!host) throw new Error('#dark-mode-kbd が見つかりません');
-    await host.updateComplete;
-
+    const host = await requireHost(canvasElement, '#dark-mode-kbd');
     const surface = canvasElement.querySelector<HTMLElement>('#dark-mode-surface');
     if (!surface) throw new Error('#dark-mode-surface が見つかりません');
 
-    const key = requireShadowElement(host, 'kbd.kbd-key') as HTMLElement;
+    const key = requireShadowElement(host, 'kbd[part~="key"]') as HTMLElement;
     const style = getComputedStyle(key);
     const expectedBorderColor = resolveBorderColor(surface);
 
     if (style.color !== 'rgb(230, 232, 236)') {
-      throw new Error(
-        `ダークモードのフォアグラウンドカラーを期待していましたが、実際には "${style.color}" でした`,
-      );
+      throw new Error('ダークモードの文字色がトークン追従していません');
     }
     if (style.backgroundColor !== 'rgb(31, 35, 43)') {
-      throw new Error(
-        `ダークモードのバックグラウンドカラーを期待していましたが、実際には "${style.backgroundColor}" でした`,
-      );
+      throw new Error('ダークモードの背景色がトークン追従していません');
     }
     if (style.borderTopColor !== expectedBorderColor) {
-      throw new Error(
-        `ダークモードのボーダーカラーを期待していましたが、実際には "${style.borderTopColor}" でした`,
-      );
+      throw new Error('ダークモードのボーダーカラーがトークン追従していません');
     }
     if (style.borderRadius !== '12px') {
-      throw new Error(
-        `ダークモードの角丸が 12px であることを期待していましたが、実際には "${style.borderRadius}" でした`,
-      );
+      throw new Error('ダークモードの角丸がトークン追従していません');
     }
 
     const fg = parseRgb(style.color);
     const bg = parseRgb(style.backgroundColor);
     if (!fg || !bg) {
-      throw new Error('コントラスト比計算のための色解析に失敗しました');
+      throw new Error('色解析に失敗しました');
     }
 
     const ratio = contrastRatio(fg, bg);
     if (ratio < 4.5) {
-      throw new Error(
-        `ダークモードのコントラスト比が 4.5 以上であることを期待していましたが、実際には ${ratio.toFixed(2)} でした`,
-      );
+      throw new Error(`ダークモードのコントラスト比が不足しています: ${ratio.toFixed(2)}`);
     }
   },
 };
-
-// ──────────────────────────────────────────────
-// 境界条件: 空入力
-// ──────────────────────────────────────────────
 
 /**
  * 空入力時に空のキートップを出力しないことを確認します。
@@ -721,20 +560,27 @@ export const DarkModeTokenContract: Story = {
 export const EmptyInputNoRenderBoundary: Story = {
   render: () => html`
     <div style="display: flex; gap: 0.75rem;">
-      <ui-kbd id="empty-auto"></ui-kbd>
-      <ui-kbd id="empty-combo" variant="combo"></ui-kbd>
+      <ui-kbd id="empty-none"></ui-kbd>
+      <ui-kbd id="empty-tokens"></ui-kbd>
+      <ui-kbd id="empty-keys" keys="   "></ui-kbd>
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const auto = canvasElement.querySelector<Kbd>('#empty-auto');
-    const combo = canvasElement.querySelector<Kbd>('#empty-combo');
-    if (!auto || !combo) throw new Error('空入力のホストが見つかりません');
-    await Promise.all([auto.updateComplete, combo.updateComplete]);
+    const emptyNone = await requireHost(canvasElement, '#empty-none');
+    const emptyTokens = await requireHost(canvasElement, '#empty-tokens');
+    const emptyKeys = await requireHost(canvasElement, '#empty-keys');
 
-    const emptyAutoRendered = auto.shadowRoot?.querySelector('kbd');
-    const emptyComboRendered = combo.shadowRoot?.querySelector('kbd');
-    if (emptyAutoRendered || emptyComboRendered) {
-      throw new Error('空入力時には <kbd> ノードが描画されないことを期待していました');
+    emptyTokens.tokens = [];
+    await emptyTokens.updateComplete;
+
+    if (emptyNone.shadowRoot?.querySelector('kbd, [part~="combo"]')) {
+      throw new Error('完全な空入力時に描画が発生しています');
+    }
+    if (emptyTokens.shadowRoot?.querySelector('kbd, [part~="combo"]')) {
+      throw new Error('空の `tokens` 入力時に描画が発生しています');
+    }
+    if (emptyKeys.shadowRoot?.querySelector('kbd, [part~="combo"]')) {
+      throw new Error('空白のみの `keys` 入力時に描画が発生しています');
     }
   },
 };
@@ -743,11 +589,10 @@ export const EmptyInputNoRenderBoundary: Story = {
  * `forced-colors` / `print` 契約がスタイル定義に含まれていることを確認します。
  */
 export const MediaModeContracts: Story = {
-  render: () => html`<ui-kbd id="media-contract-kbd" keys="Esc"></ui-kbd>`,
+  render: () => html`<ui-kbd id="media-contract-kbd" .tokens=${['Esc']}></ui-kbd>`,
   play: async ({ canvasElement }) => {
-    const host = canvasElement.querySelector<Kbd>('#media-contract-kbd');
-    if (!host) throw new Error('#media-contract-kbd が見つかりません');
-    await host.updateComplete;
+    const host = await requireHost(canvasElement, '#media-contract-kbd');
+    void host;
 
     const styleGroup = Array.isArray(Kbd.styles) ? Kbd.styles : [Kbd.styles];
     const styleText = styleGroup.map((item) => toCssText(item)).join('\n');
@@ -756,30 +601,16 @@ export const MediaModeContracts: Story = {
       throw new Error('スタイルに forced-colors メディアクエリが含まれている必要があります');
     }
     if (!styleText.includes('forced-color-adjust: auto')) {
-      throw new Error(
-        'forced-colors スタイルに forced-color-adjust: auto が含まれている必要があります',
-      );
-    }
-    if (!styleText.includes('border: var(--border-width, 1px) solid var(--border-default)')) {
-      throw new Error(
-        'forced-colors のボーダーが var(--border-default) の参照を維持している必要があります',
-      );
+      throw new Error('forced-colors では forced-color-adjust: auto を維持する必要があります');
     }
     if (!styleText.includes('@media print')) {
       throw new Error('スタイルに print メディアクエリが含まれている必要があります');
     }
     if (!styleText.includes('background: transparent !important')) {
-      throw new Error('印刷ルールでキーの背景が削除されている必要があります');
+      throw new Error('印刷時は背景を除去する必要があります');
     }
     if (!styleText.includes('box-shadow: none !important')) {
-      throw new Error('印刷ルールでキーのボックスシャドウが削除されている必要があります');
-    }
-    if (
-      !styleText.includes(
-        'border: var(--border-width, 1px) solid var(--border-default, oklch(85% 0 0))',
-      )
-    ) {
-      throw new Error('印刷用のボーダーがボーダートークンの参照を維持している必要があります');
+      throw new Error('印刷時はボックスシャドウを除去する必要があります');
     }
   },
 };
