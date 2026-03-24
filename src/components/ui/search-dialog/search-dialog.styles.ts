@@ -149,6 +149,19 @@ export const searchDialogStyles = css`
     color: inherit;
   }
 
+  .status-copy {
+    display: grid;
+    gap: var(--space-2, 8px);
+  }
+
+  .status-heading {
+    margin: 0;
+    font-size: var(--text-lg, 16px);
+    font-weight: var(--font-semibold, 600);
+    color: var(--fg-default);
+    line-height: var(--line-height-tight, 1.25);
+  }
+
   .empty-state {
     --ui-search-dialog-empty-state-padding-inline: clamp(
       var(--space-5, 20px),
@@ -168,6 +181,17 @@ export const searchDialogStyles = css`
     padding-inline: var(--ui-search-dialog-empty-state-padding-inline);
     padding-block-start: var(--ui-search-dialog-empty-state-padding-block-start);
     padding-block-end: calc(var(--ui-search-dialog-empty-state-padding-block-start) * 0.7);
+    text-align: center;
+  }
+
+  .error-state {
+    flex: 1 1 auto;
+    min-block-size: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-inline: var(--space-6, 24px);
+    padding-block: var(--space-6, 24px);
     text-align: center;
   }
 

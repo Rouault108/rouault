@@ -2,6 +2,7 @@ import type {
   SearchWorkerRequest,
   SearchWorkerResponse,
   UiSearchDialogItem,
+  UiSearchDialogMatchField,
 } from '../search-dialog.types';
 
 export class SearchDialogSearchWorker {
@@ -13,6 +14,7 @@ export class SearchDialogSearchWorker {
     query: string,
     token: number,
     items: readonly UiSearchDialogItem[],
+    matchFields: readonly UiSearchDialogMatchField[],
   ): Promise<readonly UiSearchDialogItem[] | null> {
     if (this._workerUnsupported) return null;
 
@@ -23,6 +25,7 @@ export class SearchDialogSearchWorker {
       token,
       query,
       items,
+      matchFields,
     };
 
     return new Promise<readonly UiSearchDialogItem[] | null>((resolve, reject) => {
@@ -81,25 +84,36 @@ export class SearchDialogSearchWorker {
     }
 
     const workerSource = `
-      const normalize = (value) => typeof value === 'string' ? value.trim() : '';
+      const normalize = (value) =>
+        typeof value === 'string' ? value.trim().normalize('NFKC').toLocaleLowerCase('ja') : '';
       self.addEventListener('message', (event) => {
         const payload = event.data ?? {};
-        const query = normalize(payload.query).toLowerCase();
+        const query = normalize(payload.query);
         const token = Number(payload.token ?? -1);
         const sourceItems = Array.isArray(payload.items) ? payload.items : [];
+        const matchFields = Array.isArray(payload.matchFields) ? payload.matchFields : [];
         if (query === '') {
           self.postMessage({ token, results: [] });
           return;
         }
         const results = sourceItems.filter((item) => {
           if (!item || typeof item !== 'object') return false;
-          const title = normalize(item.title).toLowerCase();
-          const url = normalize(item.url).toLowerCase();
-          const path = normalize(item.path).toLowerCase();
-          const keywords = Array.isArray(item.keywords)
-            ? item.keywords.map((keyword) => normalize(keyword).toLowerCase()).join(' ')
-            : '';
-          return title.includes(query) || url.includes(query) || path.includes(query) || keywords.includes(query);
+          return matchFields.some((field) => {
+            switch (field) {
+              case 'title':
+                return normalize(item.title).includes(query);
+              case 'path':
+                return normalize(item.path).includes(query);
+              case 'keywords':
+                return Array.isArray(item.keywords)
+                  ? item.keywords.some((keyword) => normalize(keyword).includes(query))
+                  : false;
+              case 'url':
+                return normalize(item.url).includes(query);
+              default:
+                return false;
+            }
+          });
         });
         self.postMessage({ token, results });
       });

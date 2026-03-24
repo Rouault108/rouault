@@ -14,12 +14,34 @@ import { SearchDialogSearchSession } from './internals/search-dialog-search-sess
 import { SearchDialogSelectionModel } from './internals/search-dialog-selection-model';
 import { SearchDialogVirtualizer } from './internals/search-dialog-virtualizer';
 import type {
+  UiSearchDialogCloseReason,
+  UiSearchDialogClosedDetail,
+  UiSearchDialogCloseRequestedDetail,
   UiSearchDialogItem,
+  UiSearchDialogMatchField,
+  UiSearchDialogMessages,
   UiSearchDialogOpenedDetail,
+  UiSearchDialogOpenRequestedDetail,
+  UiSearchDialogQueryChangedDetail,
+  UiSearchDialogSearchError,
   UiSearchDialogSearcher,
   UiSearchDialogSelectedDetail,
 } from './search-dialog.types';
 import { renderSearchDialog } from './views/render-search-dialog';
+
+const DEFAULT_MATCH_FIELDS: readonly UiSearchDialogMatchField[] = ['title', 'path', 'keywords'];
+const DEFAULT_MESSAGES: UiSearchDialogMessages = {
+  dialogLabel: '検索',
+  closeLabel: '閉じる',
+  clearLabel: '検索をクリア',
+  loadingHeading: '検索インデックスを読み込んでいます',
+  loadingDescription: 'インデックスを読み込んでいます...',
+  emptyHeading: '結果が見つかりません',
+  emptyDescription: '別のキーワードで検索してください',
+  errorHeading: '検索結果を取得できませんでした',
+  errorDescription: '時間をおいて再度お試しください',
+  keyboardHint: '↑ ↓ で移動 / Enter で選択',
+};
 
 @customElement('ui-search-dialog')
 export class UiSearchDialog extends LitElement {
@@ -40,17 +62,26 @@ export class UiSearchDialog extends LitElement {
   @property({ attribute: false })
   searcher: UiSearchDialogSearcher | null = null;
 
+  @property({ attribute: false })
+  messages: Partial<UiSearchDialogMessages> = {};
+
+  @property({ attribute: false })
+  matchFields: readonly UiSearchDialogMatchField[] = DEFAULT_MATCH_FIELDS;
+
   @state()
   private _results: UiSearchDialogItem[] = [];
 
   @state()
-  private _activeIndex = -1;
+  private _activeId: string | null = null;
 
   @state()
   private _liveMessage = '';
 
   @state()
   private _hasCompletedSearch = false;
+
+  @state()
+  private _error: UiSearchDialogSearchError | null = null;
 
   @query('dialog')
   private _dialogElement?: HTMLDialogElement;
@@ -62,6 +93,7 @@ export class UiSearchDialog extends LitElement {
   private _resultListElement?: HTMLUListElement;
 
   private _virtualScrollTop = 0;
+  private _lastCloseReason: UiSearchDialogCloseReason = 'programmatic';
 
   private readonly _virtualizer: SearchDialogVirtualizer;
   private readonly _controller: SearchDialogController;
@@ -80,24 +112,32 @@ export class UiSearchDialog extends LitElement {
       getQuery: () => this.query,
       isLoading: () => this.loading,
       isOpened: () => this.opened,
-      setOpened: (value) => {
-        this.opened = value;
-      },
       cancelScheduledSearch: () => {
         this._searchSession.clearScheduled();
       },
       scheduleSearchIfNeeded: () => {
         this._searchSession.requestSearchNow();
       },
+      requestClose: (reason) => {
+        this.requestClose(reason);
+      },
       dispatchOpened: (detail: UiSearchDialogOpenedDetail) => {
         this.dispatchEvent(
           new CustomEvent<UiSearchDialogOpenedDetail>('ui-search-dialog-opened', {
             detail,
+            bubbles: true,
+            composed: true,
           }),
         );
       },
-      dispatchClosed: () => {
-        this.dispatchEvent(new CustomEvent('ui-search-dialog-closed'));
+      dispatchClosed: (detail: UiSearchDialogClosedDetail) => {
+        this.dispatchEvent(
+          new CustomEvent<UiSearchDialogClosedDetail>('ui-search-dialog-closed', {
+            detail,
+            bubbles: true,
+            composed: true,
+          }),
+        );
       },
     });
 
@@ -106,14 +146,19 @@ export class UiSearchDialog extends LitElement {
       isLoading: () => this.loading,
       getItems: () => this.items,
       getSearcher: () => this.searcher,
+      getMatchFields: () => this.matchFields,
       setResults: (results) => {
         this._results = results;
       },
-      setActiveIndex: (index) => {
-        this._activeIndex = index;
+      getActiveId: () => this._activeId,
+      setActiveId: (id) => {
+        this._activeId = id;
       },
       setHasCompletedSearch: (value) => {
         this._hasCompletedSearch = value;
+      },
+      setError: (error) => {
+        this._error = error;
       },
       setLiveMessage: (message) => {
         this._setLiveMessage(message);
@@ -127,10 +172,11 @@ export class UiSearchDialog extends LitElement {
       {
         isLoading: () => this.loading,
         getResults: () => this._results,
-        getActiveIndex: () => this._activeIndex,
-        setActiveIndex: (index) => {
-          this._activeIndex = index;
+        getActiveId: () => this._activeId,
+        setActiveId: (id) => {
+          this._activeId = id;
         },
+        getQuery: () => this.query,
         getSearchFieldElement: () => this._searchFieldElement,
         getCloseButtonElement: () =>
           this.shadowRoot?.querySelector<HTMLButtonElement>('.close-button') ?? null,
@@ -140,13 +186,15 @@ export class UiSearchDialog extends LitElement {
         setVirtualScrollTop: (value) => {
           this._virtualScrollTop = value;
         },
-        close: () => {
-          this.close();
+        requestClose: (reason) => {
+          this.requestClose(reason);
         },
         dispatchSelected: (detail: UiSearchDialogSelectedDetail) => {
           this.dispatchEvent(
             new CustomEvent<UiSearchDialogSelectedDetail>('ui-search-dialog-selected', {
               detail,
+              bubbles: true,
+              composed: true,
             }),
           );
         },
@@ -174,19 +222,47 @@ export class UiSearchDialog extends LitElement {
 
   protected override updated(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has('opened')) {
+      if (this.opened === false) {
+        this._controller.setPendingCloseReason(this._lastCloseReason);
+      }
       this._controller.syncOpened(this.opened);
     }
   }
 
-  open(trigger?: HTMLElement): void {
+  requestOpen(trigger?: HTMLElement): void {
     this._controller.captureTrigger(trigger);
-    if (this.opened) return;
-    this.opened = true;
+    this.dispatchEvent(
+      new CustomEvent<UiSearchDialogOpenRequestedDetail>('ui-search-dialog-open-requested', {
+        detail: {
+          trigger: trigger ?? null,
+        },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
-  close(): void {
-    if (!this.opened && !this._dialogElement?.open) return;
-    this.opened = false;
+  requestClose(reason: UiSearchDialogCloseReason = 'programmatic'): void {
+    this._lastCloseReason = reason;
+    this._controller.setPendingCloseReason(reason);
+    this.dispatchEvent(
+      new CustomEvent<UiSearchDialogCloseRequestedDetail>('ui-search-dialog-close-requested', {
+        detail: {
+          reason,
+        },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  focusInput(): void {
+    this._searchFieldElement?.focus({ preventScroll: true });
+  }
+
+  focusClearButton(): void {
+    if (!this._searchFieldElement?.clearButtonVisible) return;
+    this._searchFieldElement.focusClearButton();
   }
 
   private _setLiveMessage(message: string): void {
@@ -201,7 +277,15 @@ export class UiSearchDialog extends LitElement {
     const { value } = input as EventTarget & { value: unknown };
     if (typeof value !== 'string') return;
 
-    this.query = value;
+    this.dispatchEvent(
+      new CustomEvent<UiSearchDialogQueryChangedDetail>('ui-search-dialog-query-changed', {
+        detail: {
+          query: value,
+        },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   };
 
   private readonly _onSearchFieldKeydown = (event: KeyboardEvent): void => {
@@ -226,17 +310,20 @@ export class UiSearchDialog extends LitElement {
       this._results.length,
       this._virtualScrollTop,
       this._resultListElement?.clientHeight ?? 320,
+      this._selectionModel.getActiveIndex(),
     );
 
     return renderSearchDialog({
       query: this.query,
       loading: this.loading,
       results: this._results,
-      activeIndex: this._activeIndex,
+      activeId: this._activeId,
       liveMessage: this._liveMessage,
       hasCompletedSearch: this._hasCompletedSearch,
+      error: this._error,
       visibleRange,
-      getOptionId: (index) => this._selectionModel.getOptionId(index),
+      messages: this._getMessages(),
+      getOptionId: (itemId) => this._selectionModel.getOptionId(itemId),
       renderHighlightedText: (value) => renderSearchDialogHighlightedText(value, this.query),
       resolvePath: (item) => resolveSearchDialogItemPath(item, window.location.href),
       onInput: this._onInput,
@@ -248,8 +335,18 @@ export class UiSearchDialog extends LitElement {
       onDialogClose: this._controller.handleNativeClose,
       onResultListScroll: this._onResultListScroll,
       onResultClick: this._selectionModel.handleResultClick,
-      onResultKeydown: this._selectionModel.handleResultKeydown,
     });
+  }
+
+  private _getMessages(): UiSearchDialogMessages {
+    return {
+      ...DEFAULT_MESSAGES,
+      ...Object.fromEntries(
+        Object.entries(this.messages).filter(
+          ([, value]) => typeof value === 'string' && value.trim() !== '',
+        ),
+      ),
+    } as UiSearchDialogMessages;
   }
 }
 

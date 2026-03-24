@@ -7,7 +7,11 @@ import {
 } from '../../dialog/dialog-helpers';
 import type { SearchField } from '../../search-field/search-field';
 import { BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE } from '../search-dialog.constants';
-import type { UiSearchDialogOpenedDetail } from '../search-dialog.types';
+import type {
+  UiSearchDialogCloseReason,
+  UiSearchDialogClosedDetail,
+  UiSearchDialogOpenedDetail,
+} from '../search-dialog.types';
 
 const searchDialogBodyScrollLock = createBodyScrollLock(BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE);
 
@@ -18,11 +22,11 @@ export interface SearchDialogControllerHost {
   getQuery(): string;
   isLoading(): boolean;
   isOpened(): boolean;
-  setOpened(value: boolean): void;
   cancelScheduledSearch(): void;
   scheduleSearchIfNeeded(): void;
+  requestClose(reason: UiSearchDialogCloseReason): void;
   dispatchOpened(detail: UiSearchDialogOpenedDetail): void;
-  dispatchClosed(): void;
+  dispatchClosed(detail: UiSearchDialogClosedDetail): void;
 }
 
 export class SearchDialogController {
@@ -30,6 +34,7 @@ export class SearchDialogController {
   private _isClosing = false;
   private _operation: Promise<void> = Promise.resolve();
   private _hasBodyScrollLock = false;
+  private _closeReason: UiSearchDialogCloseReason = 'programmatic';
 
   constructor(private readonly _host: SearchDialogControllerHost) {}
 
@@ -53,7 +58,7 @@ export class SearchDialogController {
   }
 
   readonly handleCloseClick = (): void => {
-    this._host.setOpened(false);
+    this._host.requestClose('close-button');
   };
 
   readonly handleDialogMouseDown = (event: MouseEvent): void => {
@@ -70,25 +75,29 @@ export class SearchDialogController {
       event.clientY <= rect.bottom;
 
     if (isInsideDialogBounds) return;
-    this._host.setOpened(false);
+    this._host.requestClose('backdrop');
   };
 
   readonly handleDialogCancel = (event: Event): void => {
     event.preventDefault();
-    this._host.setOpened(false);
+    this._host.requestClose('escape');
   };
 
   readonly handleNativeClose = (): void => {
     const wasClosing = this._isClosing;
+    const closeReason = this._closeReason;
     this._isClosing = false;
 
     if (!wasClosing) {
-      this._host.setOpened(false);
+      this._closeReason = 'programmatic';
+      this._host.requestClose('programmatic');
+      return;
     }
 
     this._unlockBodyScroll();
     this._restoreTriggerFocus();
-    this._host.dispatchClosed();
+    this._host.dispatchClosed({ reason: closeReason });
+    this._closeReason = 'programmatic';
   };
 
   private _enqueue(task: () => Promise<void>): void {
@@ -110,7 +119,7 @@ export class SearchDialogController {
     this._triggerElement ??= captureTrigger(this._host.getOwnerDocument());
 
     if (!showNativeDialog(dialog, true)) {
-      this._host.setOpened(false);
+      this._host.requestClose('programmatic');
       return;
     }
 
@@ -140,6 +149,7 @@ export class SearchDialogController {
 
     this._host.cancelScheduledSearch();
     this._isClosing = true;
+    this._closeReason = this._host.isOpened() ? this._closeReason : 'programmatic';
 
     dialog.setAttribute('data-closing', '');
     await waitForDialogAnimations(dialog);
@@ -155,6 +165,10 @@ export class SearchDialogController {
       searchField?.focus({ preventScroll: true });
       searchField?.setSelectionRange(query.length, query.length);
     });
+  }
+
+  setPendingCloseReason(reason: UiSearchDialogCloseReason): void {
+    this._closeReason = reason;
   }
 
   private _restoreTriggerFocus(): void {

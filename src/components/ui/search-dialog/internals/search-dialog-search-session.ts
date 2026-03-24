@@ -1,10 +1,16 @@
 import {
   EMPTY_HEADING,
+  ERROR_HEADING,
   LOADING_MESSAGE,
   SEARCH_DEBOUNCE_MS,
   SEARCH_WORKER_THRESHOLD,
 } from '../search-dialog.constants';
-import type { UiSearchDialogItem, UiSearchDialogSearcher } from '../search-dialog.types';
+import type {
+  UiSearchDialogItem,
+  UiSearchDialogMatchField,
+  UiSearchDialogSearchError,
+  UiSearchDialogSearcher,
+} from '../search-dialog.types';
 import { SearchDialogSearchWorker } from './search-dialog-search-worker';
 
 export interface SearchDialogSearchSessionHost {
@@ -12,9 +18,12 @@ export interface SearchDialogSearchSessionHost {
   isLoading(): boolean;
   getItems(): readonly UiSearchDialogItem[];
   getSearcher(): UiSearchDialogSearcher | null;
+  getMatchFields(): readonly UiSearchDialogMatchField[];
   setResults(results: UiSearchDialogItem[]): void;
-  setActiveIndex(index: number): void;
+  getActiveId(): string | null;
+  setActiveId(id: string | null): void;
   setHasCompletedSearch(value: boolean): void;
+  setError(error: UiSearchDialogSearchError | null): void;
   setLiveMessage(message: string): void;
   scrollActiveOptionIntoView(): void;
 }
@@ -22,6 +31,7 @@ export interface SearchDialogSearchSessionHost {
 export class SearchDialogSearchSession {
   private _searchTimerId: number | undefined;
   private _searchToken = 0;
+  private _abortController: AbortController | null = null;
 
   constructor(
     private readonly _host: SearchDialogSearchSessionHost,
@@ -30,6 +40,7 @@ export class SearchDialogSearchSession {
 
   destroy(): void {
     this.clearScheduled();
+    this._abortController?.abort();
     this._worker.destroy();
   }
 
@@ -68,20 +79,25 @@ export class SearchDialogSearchSession {
 
     const trimmedQuery = this._host.getQuery().trim();
     if (trimmedQuery === '') {
+      this._abortController?.abort();
+      this._abortController = null;
       this._host.setResults([]);
-      this._host.setActiveIndex(-1);
+      this._host.setActiveId(null);
       this._host.setHasCompletedSearch(false);
+      this._host.setError(null);
       this._host.setLiveMessage('');
       return;
     }
 
     if (this._host.isLoading()) {
       this._host.setHasCompletedSearch(false);
+      this._host.setError(null);
       this._host.setLiveMessage(LOADING_MESSAGE);
       return;
     }
 
     this._host.setHasCompletedSearch(false);
+    this._host.setError(null);
     const currentToken = this._searchToken;
 
     this._searchTimerId = window.setTimeout(() => {
@@ -95,14 +111,21 @@ export class SearchDialogSearchSession {
     try {
       rawResults = await this._runSearch(query, token);
     } catch (error: unknown) {
+      if (SearchDialogSearchSession._isAbortError(error)) {
+        return;
+      }
+
       console.error('[ui-search-dialog] search failed', error);
 
       if (token !== this._searchToken) return;
 
       this._host.setResults([]);
-      this._host.setActiveIndex(-1);
+      this._host.setActiveId(null);
       this._host.setHasCompletedSearch(true);
-      this._host.setLiveMessage(EMPTY_HEADING);
+      this._host.setError(
+        error instanceof SearchDialogStructuredError ? error.searchError : { code: 'search-failed' },
+      );
+      this._host.setLiveMessage(ERROR_HEADING);
       return;
     }
 
@@ -111,8 +134,9 @@ export class SearchDialogSearchSession {
 
     const normalizedResults = this._normalizeResults(rawResults);
     this._host.setResults(normalizedResults);
-    this._host.setActiveIndex(normalizedResults.length > 0 ? 0 : -1);
     this._host.setHasCompletedSearch(true);
+    this._host.setError(null);
+    this._syncActiveId(normalizedResults);
 
     if (normalizedResults.length === 0) {
       this._host.setLiveMessage(EMPTY_HEADING);
@@ -125,14 +149,38 @@ export class SearchDialogSearchSession {
 
   private async _runSearch(query: string, token: number): Promise<readonly UiSearchDialogItem[]> {
     const searcher = this._host.getSearcher();
-    if (typeof searcher === 'function') {
-      return searcher(query);
+    const items = this._host.getItems();
+
+    if (searcher && items.length > 0) {
+      throw new Error('ui-search-dialog: items と searcher は同時に指定できません');
     }
 
-    const items = this._host.getItems();
-    if (items.length > SEARCH_WORKER_THRESHOLD) {
+    if (!searcher && items.length === 0) {
+      throw new Error('ui-search-dialog: items か searcher のいずれかが必要です');
+    }
+
+    this._abortController?.abort();
+    this._abortController = new AbortController();
+
+    if (typeof searcher === 'function') {
+      const result = await searcher({
+        query,
+        signal: this._abortController.signal,
+      });
+
+      if (result.error) {
+        throw new SearchDialogStructuredError(result.error);
+      }
+
+      return result.items;
+    }
+
+    if (
+      items.length > SEARCH_WORKER_THRESHOLD &&
+      SearchDialogSearchSession._canUseWorker(this._host.getMatchFields())
+    ) {
       try {
-        const workerResults = await this._worker.run(query, token, items);
+        const workerResults = await this._worker.run(query, token, items, this._host.getMatchFields());
         if (workerResults !== null) {
           return workerResults;
         }
@@ -145,19 +193,24 @@ export class SearchDialogSearchSession {
   }
 
   private _filterItems(query: string): UiSearchDialogItem[] {
-    const normalizedQuery = query.trim().toLowerCase();
+    const normalizedQuery = SearchDialogSearchSession._normalizeText(query);
     if (normalizedQuery === '') return [];
 
     return this._host.getItems().filter((item) => {
-      const title = item.title.toLowerCase();
-      const path = (item.path ?? '').toLowerCase();
-      const keywords = (item.keywords ?? []).map((keyword) => keyword.toLowerCase()).join(' ');
-
-      return (
-        title.includes(normalizedQuery) ||
-        path.includes(normalizedQuery) ||
-        keywords.includes(normalizedQuery)
-      );
+      return this._host.getMatchFields().some((field) => {
+        switch (field) {
+          case 'title':
+            return SearchDialogSearchSession._normalizeText(item.title).includes(normalizedQuery);
+          case 'path':
+            return SearchDialogSearchSession._normalizeText(item.path ?? '').includes(normalizedQuery);
+          case 'keywords':
+            return (item.keywords ?? []).some((keyword) =>
+              SearchDialogSearchSession._normalizeText(keyword).includes(normalizedQuery),
+            );
+          case 'url':
+            return SearchDialogSearchSession._normalizeText(item.url).includes(normalizedQuery);
+        }
+      });
     });
   }
 
@@ -166,16 +219,17 @@ export class SearchDialogSearchSession {
     const seen = new Set<string>();
 
     for (const item of results) {
+      const id = item.id.trim();
       const title = item.title.trim();
       const url = item.url.trim();
-      if (title === '' || url === '') continue;
+      if (id === '' || title === '' || url === '') continue;
 
       const path = typeof item.path === 'string' && item.path.trim() !== '' ? item.path.trim() : '';
-      const key = `${url}::${title}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
+      if (seen.has(id)) continue;
+      seen.add(id);
 
       const normalizedItem: UiSearchDialogItem = {
+        id,
         title,
         url,
       };
@@ -185,12 +239,54 @@ export class SearchDialogSearchSession {
       }
 
       if (Array.isArray(item.keywords) && item.keywords.length > 0) {
-        normalizedItem.keywords = item.keywords;
+        normalizedItem.keywords = item.keywords
+          .map((keyword) => keyword.trim())
+          .filter((keyword) => keyword !== '');
+      }
+
+      if (item.canonicalUrl) {
+        normalizedItem.canonicalUrl = item.canonicalUrl;
       }
 
       normalized.push(normalizedItem);
     }
 
     return normalized;
+  }
+
+  private _syncActiveId(results: readonly UiSearchDialogItem[]): void {
+    const currentActiveId = this._host.getActiveId();
+    if (results.length === 0) {
+      this._host.setActiveId(null);
+      return;
+    }
+
+    if (currentActiveId !== null && results.some((item) => item.id === currentActiveId)) {
+      this._host.setActiveId(currentActiveId);
+      this._host.scrollActiveOptionIntoView();
+      return;
+    }
+
+    this._host.setActiveId(results[0]?.id ?? null);
+    this._host.scrollActiveOptionIntoView();
+  }
+
+  private static _normalizeText(value: string): string {
+    return value.trim().normalize('NFKC').toLocaleLowerCase('ja');
+  }
+
+  private static _canUseWorker(matchFields: readonly UiSearchDialogMatchField[]): boolean {
+    return matchFields.every((field) => field === 'title' || field === 'path' || field === 'keywords');
+  }
+
+  private static _isAbortError(error: unknown): boolean {
+    return error instanceof DOMException && error.name === 'AbortError';
+  }
+}
+
+class SearchDialogStructuredError extends Error {
+  constructor(readonly searchError: UiSearchDialogSearchError) {
+    super(searchError.message ?? searchError.code);
+    this.name = 'SearchDialogStructuredError';
   }
 }

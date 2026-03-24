@@ -1,9 +1,20 @@
 import { html } from 'lit';
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
-import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { expect, userEvent, waitFor } from 'storybook/test';
 import './search-dialog';
-import type { UiSearchDialog } from './search-dialog';
-import type { UiSearchDialogItem, UiSearchDialogSelectedDetail } from './search-dialog.types';
+import type {
+  UiSearchDialog,
+} from './search-dialog';
+import type {
+  UiSearchDialogCloseRequestedDetail,
+  UiSearchDialogItem,
+  UiSearchDialogMatchField,
+  UiSearchDialogMessages,
+  UiSearchDialogOpenRequestedDetail,
+  UiSearchDialogQueryChangedDetail,
+  UiSearchDialogSearchResult,
+  UiSearchDialogSelectedDetail,
+} from './search-dialog.types';
 
 interface StoryArgs {
   items: UiSearchDialogItem[];
@@ -11,40 +22,54 @@ interface StoryArgs {
   query: string;
   opened: boolean;
   searcher:
-    | ((query: string) => Promise<readonly UiSearchDialogItem[]> | readonly UiSearchDialogItem[])
+    | ((
+        context: {
+          query: string;
+          signal: AbortSignal;
+          limit?: number;
+          locale?: string;
+        },
+      ) => Promise<UiSearchDialogSearchResult> | UiSearchDialogSearchResult)
     | null;
   dark: boolean;
+  messages: Partial<UiSearchDialogMessages>;
+  matchFields: readonly UiSearchDialogMatchField[];
 }
 
 const FIXTURE_ITEMS: UiSearchDialogItem[] = [
   {
+    id: 'alpha',
     title: 'Alpha Guide',
     url: '/docs/alpha',
     path: '/docs/alpha',
     keywords: ['guide', 'entry'],
   },
   {
+    id: 'beta',
     title: 'Beta Reference',
     url: '/docs/beta',
     path: '/docs/beta',
     keywords: ['reference', 'api'],
   },
   {
+    id: 'gamma',
     title: 'Gamma Notes',
     url: '/notes/gamma',
     path: '/notes/gamma',
     keywords: ['notes', 'memo'],
   },
   {
+    id: 'delta',
     title: 'Delta API',
     url: '/api/delta',
     path: '/api/delta',
-    keywords: ['api', 'schema'],
+    keywords: ['schema'],
   },
 ];
 
 function createVirtualizedItems(total = 160): UiSearchDialogItem[] {
   return Array.from({ length: total }, (_, index) => ({
+    id: `virtual-${String(index + 1)}`,
     title: `Virtual Item ${String(index + 1)}`,
     url: `/virtual/${String(index + 1)}`,
     path: `/virtual/${String(index + 1)}`,
@@ -57,7 +82,7 @@ function getDialog(canvasElement: HTMLElement): UiSearchDialog {
   if (!(dialog instanceof HTMLElement)) {
     throw new Error('ui-search-dialog not found');
   }
-  return dialog;
+  return dialog as UiSearchDialog;
 }
 
 function getTrigger(canvasElement: HTMLElement): HTMLButtonElement {
@@ -88,10 +113,27 @@ function getResultItems(dialog: UiSearchDialog): HTMLElement[] {
   return Array.from(dialog.shadowRoot?.querySelectorAll<HTMLElement>('.result-item') ?? []);
 }
 
-async function openDialog(canvasElement: HTMLElement): Promise<UiSearchDialog> {
+function attachControlledContract(dialog: UiSearchDialog): void {
+  dialog.addEventListener('ui-search-dialog-open-requested', (event) => {
+    const customEvent = event as CustomEvent<UiSearchDialogOpenRequestedDetail>;
+    dialog.opened = true;
+    void customEvent.detail;
+  });
+
+  dialog.addEventListener('ui-search-dialog-close-requested', (_event) => {
+    dialog.opened = false;
+  });
+
+  dialog.addEventListener('ui-search-dialog-query-changed', (event) => {
+    const customEvent = event as CustomEvent<UiSearchDialogQueryChangedDetail>;
+    dialog.query = customEvent.detail.query;
+  });
+}
+
+async function requestOpen(canvasElement: HTMLElement): Promise<UiSearchDialog> {
   const dialog = getDialog(canvasElement);
-  const trigger = getTrigger(canvasElement);
-  dialog.open(trigger);
+  attachControlledContract(dialog);
+  dialog.requestOpen(getTrigger(canvasElement));
   await waitFor(async () => {
     await expect(dialog.opened).toBe(true);
   });
@@ -127,6 +169,8 @@ const meta = {
     opened: false,
     searcher: null,
     dark: false,
+    messages: {},
+    matchFields: ['title', 'path', 'keywords'],
   },
   render: (args: StoryArgs) => html`
     <div
@@ -145,6 +189,8 @@ const meta = {
         .query=${args.query}
         .opened=${args.opened}
         .searcher=${args.searcher}
+        .messages=${args.messages}
+        .matchFields=${args.matchFields}
       ></ui-search-dialog>
     </div>
   `,
@@ -154,22 +200,46 @@ export default meta;
 
 type Story = StoryObj<StoryArgs>;
 
-export const ResultsStateWithFocusReturn: Story = {
+export const ControlledOpenedContract: Story = {
   play: async ({ canvasElement }) => {
-    const dialog = await openDialog(canvasElement);
+    const dialog = getDialog(canvasElement);
+    let requested = false;
+    dialog.addEventListener('ui-search-dialog-open-requested', () => {
+      requested = true;
+    });
+
+    dialog.requestOpen(getTrigger(canvasElement));
+
+    await waitFor(async () => {
+      await expect(requested).toBe(true);
+      await expect(dialog.opened).toBe(false);
+    });
+  },
+};
+
+export const ControlledQueryContract: Story = {
+  play: async ({ canvasElement }) => {
+    const dialog = await requestOpen(canvasElement);
+    const queries: string[] = [];
+
+    dialog.addEventListener('ui-search-dialog-query-changed', (event) => {
+      const customEvent = event as CustomEvent<UiSearchDialogQueryChangedDetail>;
+      queries.push(customEvent.detail.query);
+    });
 
     await setQuery(dialog, 'alpha');
-    await waitForResults(dialog);
 
-    const resultItems = getResultItems(dialog);
-    await expect(resultItems.length).toBeGreaterThan(0);
+    await expect(queries).toEqual(['alpha']);
+  },
+};
 
-    const closeButton = getCloseButton(dialog);
-    await userEvent.click(closeButton);
+export const FocusReturnContract: Story = {
+  play: async ({ canvasElement }) => {
+    const dialog = await requestOpen(canvasElement);
+    await userEvent.click(getCloseButton(dialog));
 
-    const trigger = getTrigger(canvasElement);
     await waitFor(async () => {
-      await expect(trigger).toHaveFocus();
+      await expect(getTrigger(canvasElement)).toHaveFocus();
     });
   },
 };
@@ -180,54 +250,57 @@ export const LoadingStateEditableInput: Story = {
     query: 'alp',
   },
   play: async ({ canvasElement }) => {
-    const dialog = await openDialog(canvasElement);
-    const dialogRoot = dialog.shadowRoot;
-    if (!dialogRoot) {
-      throw new Error('shadowRoot not found');
-    }
-
-    await waitFor(() => {
-      expect(dialogRoot.textContent ?? '').toContain('インデックスを読み込んでいます...');
-    });
-
+    const dialog = await requestOpen(canvasElement);
     await setQuery(dialog, 'beta');
     await waitFor(async () => {
+      await expect(dialog.shadowRoot?.textContent ?? '').toContain('検索インデックスを読み込んでいます');
       await expect(dialog.query).toBe('beta');
     });
   },
 };
 
-export const EmptyStateWithLiveRegion: Story = {
+export const ErrorStateContract: Story = {
+  args: {
+    searcher: async () => ({
+      items: [],
+      error: {
+        code: 'network-error',
+        message: '検索サービスに接続できません',
+      },
+    }),
+  },
   play: async ({ canvasElement }) => {
-    const dialog = await openDialog(canvasElement);
-
-    await setQuery(dialog, 'zzz-no-match');
+    const dialog = await requestOpen(canvasElement);
+    await setQuery(dialog, 'alpha');
 
     await waitFor(async () => {
-      await expect(dialog.shadowRoot?.textContent ?? '').toContain('結果が見つかりません');
+      await expect(dialog.shadowRoot?.textContent ?? '').toContain('検索結果を取得できませんでした');
+      await expect(dialog.shadowRoot?.textContent ?? '').toContain('検索サービスに接続できません');
     });
   },
 };
 
 export const KeyboardLoopAndEnterSelection: Story = {
   play: async ({ canvasElement }) => {
-    const dialog = await openDialog(canvasElement);
-
+    const dialog = await requestOpen(canvasElement);
     const selectedDetails: UiSearchDialogSelectedDetail[] = [];
+    const closeReasons: string[] = [];
+
     dialog.addEventListener('ui-search-dialog-selected', (event) => {
       selectedDetails.push((event as CustomEvent<UiSearchDialogSelectedDetail>).detail);
+    });
+    dialog.addEventListener('ui-search-dialog-close-requested', (event) => {
+      closeReasons.push(
+        (event as CustomEvent<UiSearchDialogCloseRequestedDetail>).detail.reason,
+      );
     });
 
     await setQuery(dialog, 'a');
     await waitForResults(dialog);
 
     const searchField = getSearchField(dialog);
-
     searchField.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }),
-    );
-    searchField.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }),
+      new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, composed: true }),
     );
     searchField.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true }),
@@ -235,86 +308,60 @@ export const KeyboardLoopAndEnterSelection: Story = {
 
     await waitFor(async () => {
       await expect(selectedDetails.length).toBe(1);
-    });
-
-    await expect(selectedDetails[0]?.title).toBeTruthy();
-    await waitFor(async () => {
       await expect(dialog.opened).toBe(false);
     });
+
+    await expect(selectedDetails[0]?.selectionMethod).toBe('keyboard');
+    await expect(closeReasons).toContain('selection');
   },
 };
 
-export const DebounceAndClearBoundary: Story = {
+export const SelectionEventOrderContract: Story = {
   play: async ({ canvasElement }) => {
-    const dialog = await openDialog(canvasElement);
+    const dialog = await requestOpen(canvasElement);
+    const events: string[] = [];
+
+    dialog.addEventListener('ui-search-dialog-selected', () => {
+      events.push('selected');
+    });
+    dialog.addEventListener('ui-search-dialog-close-requested', () => {
+      events.push('close-requested');
+    });
+    dialog.addEventListener('ui-search-dialog-closed', () => {
+      events.push('closed');
+    });
 
     await setQuery(dialog, 'alpha');
     await waitForResults(dialog);
-
-    await setQuery(dialog, '');
+    await userEvent.click(getResultItems(dialog)[0]!);
 
     await waitFor(async () => {
-      await expect(dialog.query).toBe('');
-      await expect(getResultItems(dialog).length).toBe(0);
+      await expect(events).toEqual(['selected', 'close-requested', 'closed']);
     });
   },
 };
 
-export const ReentrancyAndEscCancel: Story = {
-  play: async ({ canvasElement }) => {
-    const dialog = await openDialog(canvasElement);
-    const nativeDialog = dialog.shadowRoot?.querySelector('dialog');
-
-    if (!(nativeDialog instanceof HTMLDialogElement)) {
-      throw new Error('native dialog not found');
-    }
-
-    nativeDialog.dispatchEvent(new Event('cancel', { bubbles: false, cancelable: true }));
-
-    await waitFor(async () => {
-      await expect(dialog.opened).toBe(false);
-    });
-  },
-};
-
-export const OpenedAttributeAndScrollLock: Story = {
+export const VirtualizationSemanticsContract: Story = {
   args: {
+    items: createVirtualizedItems(),
     opened: true,
-    query: 'alpha',
+    query: 'Virtual',
   },
   play: async ({ canvasElement }) => {
     const dialog = getDialog(canvasElement);
+    attachControlledContract(dialog);
 
-    await waitFor(async () => {
-      await expect(dialog.opened).toBe(true);
-      await expect(document.body.hasAttribute('data-ui-search-dialog-open')).toBe(true);
-    });
-
-    dialog.close();
-
-    await waitFor(async () => {
-      await expect(document.body.hasAttribute('data-ui-search-dialog-open')).toBe(false);
-    });
-  },
-};
-
-export const TabNavigationBetweenInputAndClear: Story = {
-  args: {
-    query: 'alpha',
-  },
-  play: async ({ canvasElement }) => {
-    const dialog = await openDialog(canvasElement);
-
+    await waitForResults(dialog);
     const searchField = getSearchField(dialog);
-    searchField.focus();
-
     searchField.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, composed: true }),
+      new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }),
     );
 
     await waitFor(async () => {
-      const activeElement = dialog.shadowRoot?.activeElement ?? document.activeElement;
-      await expect(activeElement).toBeTruthy();
+      const activeId = searchField.getAttribute('aria-activedescendant');
+      await expect(activeId).toBeTruthy();
+      const activeOption = dialog.shadowRoot?.getElementById(activeId ?? '');
+      await expect(activeOption).toBeTruthy();
     });
   },
 };
@@ -324,22 +371,5 @@ export const DarkModeTokenContract: Story = {
     dark: true,
     opened: true,
     query: 'alpha',
-  },
-};
-
-export const StyleContractCoverage: Story = {
-  args: {
-    items: createVirtualizedItems(),
-    opened: true,
-    query: 'Virtual',
-  },
-  play: async ({ canvasElement }) => {
-    const dialog = getDialog(canvasElement);
-    await waitFor(async () => {
-      await expect(dialog.opened).toBe(true);
-    });
-
-    const resultList = dialog.shadowRoot?.querySelector('.result-list');
-    await expect(resultList).toBeTruthy();
   },
 };

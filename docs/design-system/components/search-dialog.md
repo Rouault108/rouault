@@ -691,66 +691,22 @@ trim 後 query が空なら検索は行わず、状態は `idle` です。empty 
 
 ---
 
-## 現行実装で未対応の事項
+## 実装整合メモ（2026-03-24）
 
-本節は、現行実装がまだ上記目標契約へ追従していない点を整理するものです。本節の内容は、現行公開契約として依存してよいことを意味しません。
+2026-03-24 時点で、`ui-search-dialog` は以下の点で本文契約へ追従しています。
 
-### 1. controlled state と request model への未追従
+- `opened` / `query` を controlled state として扱い、`ui-search-dialog-open-requested` / `ui-search-dialog-close-requested` / `ui-search-dialog-query-changed` を送出します。
+- 公開メソッドは `requestOpen()` / `requestClose()` / `focusInput()` / `focusClearButton()` を中心とし、強制開閉 API から離れています。
+- `UiSearchDialogItem` は `id` を必須とし、重複除去・active option・選択 detail を ID 基準で扱います。
+- `searcher` は `AbortSignal` を含む context を受け取り、構造化 `SearchResult` と `error` を扱います。
+- `empty` と `error` を分離し、`ui-search-dialog-selected` / `ui-search-dialog-closed` の detail も仕様書に沿って拡張しています。
+- Storybook と unit test は controlled 契約、close reason、error state、選択順序、仮想化意味論を固定対象に含めます。
 
-現行実装は `opened` / `query` を内部でも直接変更します。`open()` / `close()` も `opened` を直接変更し、入力イベントでは `this.query = value` を行います。request event を介して外部へ状態変更要求を返す controlled 契約には未追従です。fileciteturn21file0
+現時点で残る主な注意点は次のとおりです。
 
-### 2. imperative API の残存
+- `searcher` へ渡す `limit` / `locale` は型としては確保していますが、現行実装では未供給です。
+- `ui-search-field` 依存境界はなお primitive の公開面に寄せていますが、抽象操作専用の adapter 層は導入していません。
+- `path` 未指定時の表示補助は引き続き `url` から導出します。これは convenience であり、`path` の意味論そのものを置き換えるものではありません。
 
-目標契約では `requestOpen()` / `requestClose()`、`focusInput()`、`focusActiveResult()` のような request / utility API を想定していますが、現行公開メソッドは `open(trigger?)` と `close()` です。強制状態変更メソッド中心の API からはまだ移行していません。Storybook も `dialog.open(trigger)` と `dialog.close()` を直接呼んでいます。fileciteturn21file0 fileciteturn22file9
+以後も仕様を更新する場合は、実装、Storybook、test を同時に更新し、契約書と実装契約のずれを長期放置しません。
 
-### 3. 検索結果項目の安定 ID と activeId モデルの未導入
-
-現行 `UiSearchDialogItem` は `id` を持たず、`UiSearchDialogSelectedDetail` も `{ url, title }` に限られます。選択モデルと描画は `activeIndex` と `data-index` を前提にしており、option 識別も index 基準です。ID を主キーにした重複除去、active 維持、選択 detail、`aria-activedescendant` には未追従です。fileciteturn22file0 fileciteturn20file6 fileciteturn21file0
-
-### 4. `searcher` 契約の単純形
-
-現行 `searcher` は `query: string => results` の最小形です。`AbortSignal`、`limit`、`locale`、構造化された `SearchResult`、`error` / `total` / `isPartial` には未追従です。内部では stale response を破棄しますが、検索器自体の中断契約や構造化結果契約はありません。fileciteturn22file0 fileciteturn22file7
-
-### 5. 検索ソース設定バリデーションの未対応
-
-目標契約では `items` と `searcher` を排他的に扱い、両方同時指定を設定エラーとみなします。現行実装ではこの検証はなく、`searcher` が関数なら `items` を暗黙に無視します。また、両方未指定でも設定エラーにはならず、結果 0 件として扱われます。fileciteturn22file7
-
-### 6. `messages` / `matchFields` の未対応
-
-目標契約で導入した `messages` と `matchFields` は、現行実装には存在しません。文言は定数固定であり、一致対象面も公開入力では変更できません。fileciteturn20file5 fileciteturn22file18
-
-### 7. error state / retry 導線の未分離
-
-現行実装は検索失敗を empty 相当に吸収し得ます。`render-search-dialog.ts` に error state 表示分岐はなく、文言定数も loading / empty までしか持ちません。retry 導線もありません。`idle` / `empty` / `error` の 3 分離には未追従です。fileciteturn22file7 fileciteturn22file18 fileciteturn20file5
-
-### 8. request event / close reason / detail 拡張の不足
-
-目標契約の `ui-search-dialog-open-requested`、`ui-search-dialog-close-requested`、`ui-search-dialog-query-changed` は未実装です。`ui-search-dialog-closed` には reason がなく、`ui-search-dialog-selected` にも `id`、`query`、`index`、`item`、`selectionMethod` は含まれません。opened / closed / selected の detail は現状でも最小限です。fileciteturn21file0 fileciteturn22file0
-
-### 9. bubbling / composed 前提のイベント送出未対応
-
-現行 `CustomEvent` は detail のみを与えて生成しており、`bubbles` / `composed` は既定値のままです。したがって、目標契約で想定した委譲購読しやすいイベント送出特性には未追従です。fileciteturn21file0
-
-### 10. 一致対象面と正規化規則の未整合
-
-目標契約では検索評価とハイライト評価を同一正規化規則に寄せ、既定一致対象面を `title` / `path` / `keywords` に固定します。現行実装では、ローカル検索は `title` / `path` / `keywords` のみですが、Worker 検索は `url` も一致対象に含みます。さらに、検索とハイライトの正規化は `trim() + toLowerCase()` にとどまり、Unicode 正規化には未追従です。fileciteturn22file7 fileciteturn21file2 fileciteturn21file1
-
-### 11. `path` 解決と表示補助の整理不足
-
-現行実装は `path` 未指定時に `url` から `pathname + search + hash` を導出して表示します。これは convenience としては妥当ですが、`path` を表示専用ラベルとして明確に切り分けた目標契約とはまだ整理し切れていません。`path` 自動導出は実装上存在しますが、公開型や入力契約でその意味を十分に固定してはいません。fileciteturn21file1
-
-### 12. `ui-search-field` 依存境界の抽象化未了
-
-目標契約では `focusInput()`、`hasClearControl()`、`focusClearControl()` のような抽象操作に寄せる方針を採っています。現行選択モデルは `SearchField` 具象型、`clearButtonVisible`、`focusClearButton()` に依存しており、依存境界の抽象化には未追従です。fileciteturn20file6
-
-### 13. Storybook / test が目標契約へ未追従
-
-現行 Storybook と test は、現在の imperative API と最小 detail を前提にしています。`open()` / `close()` を直接呼び、query 内部更新を前提とし、error state、request event、close reason、stable identity、`messages`、`matchFields`、構造化 `searcher` 契約を固定していません。目標契約に対応する Story / test はまだ不足しています。fileciteturn22file9 fileciteturn22file17 fileciteturn18file16 fileciteturn18file11
-
-### 14. 内部調整値と意味論の分離の未整理
-
-virtualization threshold、row height、overscan、debounce は定数として実装されていますが、どこまでが内部調整値で、どこからが公開意味論かの境界は Storybook / test まで含めてまだ十分には固定されていません。とくに virtualization は index 基準の option 識別と結び付いています。fileciteturn20file5 fileciteturn20file17
-
-### 15. 本節の扱い
-
-これらを採用する場合は、実装、Storybook、test、契約書を同時に更新し、目標契約と実装契約のずれを長期放置しません。

@@ -1,16 +1,21 @@
 import { expect } from '@open-wc/testing';
 import type { SearchField } from '../../search-field/search-field';
-import type { UiSearchDialogItem, UiSearchDialogSelectedDetail } from '../search-dialog.types';
+import type {
+  UiSearchDialogCloseReason,
+  UiSearchDialogItem,
+  UiSearchDialogSelectedDetail,
+} from '../search-dialog.types';
 import { SearchDialogSelectionModel } from './search-dialog-selection-model';
 import { SearchDialogVirtualizer } from './search-dialog-virtualizer';
 
 interface SelectionState {
   loading: boolean;
   results: readonly UiSearchDialogItem[];
-  activeIndex: number;
+  activeId: string | null;
+  query: string;
   virtualScrollTop: number;
   selected: UiSearchDialogSelectedDetail[];
-  closed: boolean;
+  closeReason: string | null;
 }
 
 function createSearchFieldStub(clearButtonVisible = false): SearchField {
@@ -34,10 +39,11 @@ function createSelectionHost(state: SelectionState, searchField?: SearchField) {
     host: {
       isLoading: () => state.loading,
       getResults: () => state.results,
-      getActiveIndex: () => state.activeIndex,
-      setActiveIndex: (index: number) => {
-        state.activeIndex = index;
+      getActiveId: () => state.activeId,
+      setActiveId: (id: string | null) => {
+        state.activeId = id;
       },
+      getQuery: () => state.query,
       getSearchFieldElement: () => searchField,
       getCloseButtonElement: () => closeButton,
       getShadowRootRef: () => shadowRoot,
@@ -46,8 +52,8 @@ function createSelectionHost(state: SelectionState, searchField?: SearchField) {
       setVirtualScrollTop: (value: number) => {
         state.virtualScrollTop = value;
       },
-      close: () => {
-        state.closed = true;
+      requestClose: (reason: UiSearchDialogCloseReason) => {
+        state.closeReason = reason;
       },
       dispatchSelected: (detail: UiSearchDialogSelectedDetail) => {
         state.selected.push(detail);
@@ -89,13 +95,14 @@ describe('SearchDialogSelectionModel', () => {
     const state: SelectionState = {
       loading: false,
       results: [
-        { title: 'Alpha', url: '/alpha' },
-        { title: 'Beta', url: '/beta' },
+        { id: 'alpha', title: 'Alpha', url: '/alpha' },
+        { id: 'beta', title: 'Beta', url: '/beta' },
       ],
-      activeIndex: -1,
+      activeId: null,
+      query: 'a',
       virtualScrollTop: 0,
       selected: [],
-      closed: false,
+      closeReason: null,
     };
 
     const searchField = createSearchFieldStub(false);
@@ -104,20 +111,21 @@ describe('SearchDialogSelectionModel', () => {
 
     model.handleSearchFieldKeydown(createKeyboardEventLike('ArrowDown'));
 
-    expect(state.activeIndex).to.equal(0);
+    expect(state.activeId).to.equal('alpha');
   });
 
   it('ArrowUp で末尾へループする', () => {
     const state: SelectionState = {
       loading: false,
       results: [
-        { title: 'Alpha', url: '/alpha' },
-        { title: 'Beta', url: '/beta' },
+        { id: 'alpha', title: 'Alpha', url: '/alpha' },
+        { id: 'beta', title: 'Beta', url: '/beta' },
       ],
-      activeIndex: -1,
+      activeId: null,
+      query: 'a',
       virtualScrollTop: 0,
       selected: [],
-      closed: false,
+      closeReason: null,
     };
 
     const { host } = createSelectionHost(state, createSearchFieldStub(false));
@@ -125,20 +133,21 @@ describe('SearchDialogSelectionModel', () => {
 
     model.handleSearchFieldKeydown(createKeyboardEventLike('ArrowUp'));
 
-    expect(state.activeIndex).to.equal(1);
+    expect(state.activeId).to.equal('beta');
   });
 
-  it('Enter で active item を選択し close する', () => {
+  it('Enter で active item を選択し close request を通知する', () => {
     const state: SelectionState = {
       loading: false,
       results: [
-        { title: 'Alpha', url: '/alpha' },
-        { title: 'Beta', url: '/beta' },
+        { id: 'alpha', title: 'Alpha', url: '/alpha' },
+        { id: 'beta', title: 'Beta', url: '/beta' },
       ],
-      activeIndex: 1,
+      activeId: 'beta',
+      query: 'beta',
       virtualScrollTop: 0,
       selected: [],
-      closed: false,
+      closeReason: null,
     };
 
     const { host } = createSelectionHost(state, createSearchFieldStub(false));
@@ -146,21 +155,32 @@ describe('SearchDialogSelectionModel', () => {
 
     model.handleSearchFieldKeydown(createKeyboardEventLike('Enter'));
 
-    expect(state.selected).to.deep.equal([{ title: 'Beta', url: '/beta' }]);
-    expect(state.closed).to.equal(true);
+    expect(state.selected).to.deep.equal([
+      {
+        id: 'beta',
+        title: 'Beta',
+        url: '/beta',
+        query: 'beta',
+        index: 1,
+        item: { id: 'beta', title: 'Beta', url: '/beta' },
+        selectionMethod: 'keyboard',
+      },
+    ]);
+    expect(state.closeReason).to.equal('selection');
   });
 
   it('click で該当 index を選択する', () => {
     const state: SelectionState = {
       loading: false,
       results: [
-        { title: 'Alpha', url: '/alpha' },
-        { title: 'Beta', url: '/beta' },
+        { id: 'alpha', title: 'Alpha', url: '/alpha' },
+        { id: 'beta', title: 'Beta', url: '/beta' },
       ],
-      activeIndex: -1,
+      activeId: null,
+      query: 'alpha',
       virtualScrollTop: 0,
       selected: [],
-      closed: false,
+      closeReason: null,
     };
 
     const { host } = createSelectionHost(state, createSearchFieldStub(false));
@@ -173,18 +193,19 @@ describe('SearchDialogSelectionModel', () => {
       currentTarget: target,
     } as unknown as Event);
 
-    expect(state.selected).to.deep.equal([{ title: 'Alpha', url: '/alpha' }]);
-    expect(state.closed).to.equal(true);
+    expect(state.selected[0]?.selectionMethod).to.equal('pointer');
+    expect(state.closeReason).to.equal('selection');
   });
 
   it('Tab で input から close button へ移動する', () => {
     const state: SelectionState = {
       loading: false,
       results: [],
-      activeIndex: -1,
+      activeId: null,
+      query: '',
       virtualScrollTop: 0,
       selected: [],
-      closed: false,
+      closeReason: null,
     };
 
     const searchField = createSearchFieldStub(false);

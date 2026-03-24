@@ -40,6 +40,7 @@ describe('search-catalog', () => {
     const merged = mergeSearchDialogItems(
       [
         {
+          id: '/notes/program/sample-javascript/',
           title: 'JavaScriptの配列',
           url: '/notes/program/sample-javascript/',
           canonicalUrl: '/notes/program/sample-javascript/',
@@ -48,6 +49,7 @@ describe('search-catalog', () => {
       ],
       [
         {
+          id: '/notes/program/sample-javascript/',
           title: 'JavaScriptの配列',
           url: '/notes/program/sample-javascript',
           canonicalUrl: '/notes/program/sample-javascript/',
@@ -59,6 +61,7 @@ describe('search-catalog', () => {
 
     expect(merged).to.deep.equal([
       {
+        id: '/notes/program/sample-javascript/',
         title: 'JavaScriptの配列',
         url: '/notes/program/sample-javascript/',
         canonicalUrl: '/notes/program/sample-javascript/',

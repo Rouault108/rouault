@@ -1,19 +1,24 @@
 import type { SearchField } from '../../search-field/search-field';
-import type { UiSearchDialogItem, UiSearchDialogSelectedDetail } from '../search-dialog.types';
+import type {
+  UiSearchDialogCloseReason,
+  UiSearchDialogItem,
+  UiSearchDialogSelectedDetail,
+} from '../search-dialog.types';
 import { SearchDialogVirtualizer } from './search-dialog-virtualizer';
 
 export interface SearchDialogSelectionHost {
   isLoading(): boolean;
   getResults(): readonly UiSearchDialogItem[];
-  getActiveIndex(): number;
-  setActiveIndex(index: number): void;
+  getActiveId(): string | null;
+  setActiveId(id: string | null): void;
+  getQuery(): string;
   getSearchFieldElement(): SearchField | undefined;
   getCloseButtonElement(): HTMLButtonElement | null;
   getShadowRootRef(): ShadowRoot | null;
   getResultListElement(): HTMLUListElement | undefined;
   getVirtualScrollTop(): number;
   setVirtualScrollTop(value: number): void;
-  close(): void;
+  requestClose(reason: UiSearchDialogCloseReason): void;
   dispatchSelected(detail: UiSearchDialogSelectedDetail): void;
 }
 
@@ -87,33 +92,16 @@ export class SearchDialogSelectionModel {
 
     if (!Number.isInteger(index) || index < 0 || index >= results.length) return;
 
-    this._host.setActiveIndex(index);
-    this._selectActiveResult();
+    this._host.setActiveId(results[index]?.id ?? null);
+    this._selectActiveResult('pointer');
   };
 
-  readonly handleResultKeydown = (event: KeyboardEvent): void => {
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-
-    const target = event.currentTarget;
-    if (!(target instanceof HTMLElement)) return;
-
-    event.preventDefault();
-
-    const index = Number(target.dataset['index'] ?? '-1');
-    const results = this._host.getResults();
-
-    if (!Number.isInteger(index) || index < 0 || index >= results.length) return;
-
-    this._host.setActiveIndex(index);
-    this._selectActiveResult();
-  };
-
-  getOptionId(index: number): string {
-    return `search-option-${index.toString()}`;
+  getOptionId(itemId: string): string {
+    return `search-option-${itemId}`;
   }
 
   scrollActiveOptionIntoView(): void {
-    const activeIndex = this._host.getActiveIndex();
+    const activeIndex = this.getActiveIndex();
     if (activeIndex < 0) return;
 
     const results = this._host.getResults();
@@ -125,7 +113,10 @@ export class SearchDialogSelectionModel {
     const shadowRoot = this._host.getShadowRootRef();
     if (!shadowRoot) return;
 
-    const activeOption = shadowRoot.getElementById(this.getOptionId(activeIndex));
+    const activeItem = results[activeIndex];
+    if (!activeItem) return;
+
+    const activeOption = shadowRoot.getElementById(this.getOptionId(activeItem.id));
     activeOption?.scrollIntoView({ block: 'nearest' });
   }
 
@@ -148,9 +139,10 @@ export class SearchDialogSelectionModel {
         break;
 
       case 'Enter':
+        if (event.isComposing) return;
         if (results.length === 0) return;
         event.preventDefault();
-        this._selectActiveResult();
+        this._selectActiveResult('keyboard');
         break;
 
       case 'Tab':
@@ -175,11 +167,11 @@ export class SearchDialogSelectionModel {
     const total = results.length;
     if (total === 0) return;
 
-    const activeIndex = this._host.getActiveIndex();
+    const activeIndex = this.getActiveIndex();
     const nextIndex =
       activeIndex < 0 ? (delta === 1 ? 0 : total - 1) : (activeIndex + delta + total) % total;
 
-    this._host.setActiveIndex(nextIndex);
+    this._host.setActiveId(results[nextIndex]?.id ?? null);
     this.scrollActiveOptionIntoView();
   }
 
@@ -195,19 +187,29 @@ export class SearchDialogSelectionModel {
     this._host.setVirtualScrollTop(nextScrollTop);
   }
 
-  private _selectActiveResult(): void {
+  getActiveIndex(): number {
+    const activeId = this._host.getActiveId();
+    if (activeId === null) return -1;
+    return this._host.getResults().findIndex((item) => item.id === activeId);
+  }
+
+  private _selectActiveResult(selectionMethod: 'keyboard' | 'pointer'): void {
     const results = this._host.getResults();
-    const activeIndex = this._host.getActiveIndex();
+    const activeIndex = this.getActiveIndex();
     const index = activeIndex >= 0 ? activeIndex : 0;
     const item = results[index];
 
     if (!item) return;
 
     this._host.dispatchSelected({
+      id: item.id,
       url: item.url,
       title: item.title,
-      ...(item.canonicalUrl ? { canonicalUrl: item.canonicalUrl } : {}),
+      query: this._host.getQuery(),
+      index,
+      item,
+      selectionMethod,
     });
-    this._host.close();
+    this._host.requestClose('selection');
   }
 }

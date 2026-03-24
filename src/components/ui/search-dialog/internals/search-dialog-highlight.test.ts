@@ -9,6 +9,7 @@ describe('search-dialog-highlight', () => {
   it('path が明示されている場合はそれを優先する', () => {
     const resolved = resolveSearchDialogItemPath(
       {
+        id: 'alpha',
         title: 'Alpha',
         url: 'https://example.com/docs/alpha',
         path: '/custom/alpha',
@@ -22,6 +23,7 @@ describe('search-dialog-highlight', () => {
   it('path がない場合は url から pathname/search/hash を解決する', () => {
     const resolved = resolveSearchDialogItemPath(
       {
+        id: 'alpha',
         title: 'Alpha',
         url: 'https://example.com/docs/alpha?q=1#top',
       },

@@ -169,14 +169,18 @@ export function searchSearchCatalog(
         terms.some((term) => term.includes(token.toLocaleLowerCase('ja'))),
       );
     })
-    .map((item) => ({
-      title: item.title,
-      url: item.url,
-      path: item.path,
-      description: item.description,
-      date: item.date,
-      keywords: item.keywords,
-    }));
+    .map((item) => {
+      const id = normalizeDocumentCanonicalUrl(item.path || item.url) ?? item.url;
+      return {
+        id,
+        title: item.title,
+        url: item.url,
+        ...(item.path ? { path: item.path } : {}),
+        ...(item.description ? { description: item.description } : {}),
+        ...(item.date ? { date: item.date } : {}),
+        ...(item.keywords && item.keywords.length > 0 ? { keywords: item.keywords } : {}),
+      };
+    });
 }
 
 export function mergeSearchDialogItems(
@@ -203,6 +207,7 @@ export function mergeSearchDialogItems(
 
     if (!existing) {
       merged.set(canonicalUrl, {
+        id: canonicalUrl,
         title,
         url,
         canonicalUrl,
@@ -220,6 +225,7 @@ export function mergeSearchDialogItems(
     const nextKeywords = normalizeStringArray(item.keywords);
 
     merged.set(canonicalUrl, {
+      id: canonicalUrl,
       title: existing.title,
       url: existing.url,
       canonicalUrl,
@@ -233,11 +239,19 @@ export function mergeSearchDialogItems(
 
   return [...merged.values()]
     .sort((left, right) => left.title.localeCompare(right.title, 'ja'))
-    .map((item) => ({
-      title: item.title,
-      url: item.url,
-      canonicalUrl: item.canonicalUrl,
-      ...(item.path ? { path: item.path } : {}),
-      ...(item.keywords && item.keywords.length > 0 ? { keywords: item.keywords } : {}),
-    }));
+    .map((item) => {
+      const canonicalUrl =
+        typeof item.canonicalUrl === 'string' && item.canonicalUrl.length > 0
+          ? item.canonicalUrl
+          : undefined;
+
+      return {
+        id: item.id,
+        title: item.title,
+        url: item.url,
+        ...(canonicalUrl ? { canonicalUrl } : {}),
+        ...(item.path ? { path: item.path } : {}),
+        ...(item.keywords && item.keywords.length > 0 ? { keywords: item.keywords } : {}),
+      };
+    });
 }
