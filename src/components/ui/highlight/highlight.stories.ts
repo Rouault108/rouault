@@ -1,10 +1,8 @@
-﻿import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './highlight';
-import type { Highlight, HighlightOrigin } from './highlight';
-import { DOCUMENT_STYLE_ID, HIGHLIGHT_SCOPE_SELECTOR } from './highlight';
-
-const ORIGINS = ['search', 'user'] as const satisfies HighlightOrigin[];
+import type { Highlight } from './highlight';
+import { HIGHLIGHT_RULE_TEMPLATE } from './highlight';
 
 const getHost = (canvasElement: Element, id: string): Highlight => {
   const host = canvasElement.querySelector<Highlight>(`#${id}`);
@@ -14,32 +12,21 @@ const getHost = (canvasElement: Element, id: string): Highlight => {
   return host;
 };
 
-const getInnerMark = (host: Highlight): HTMLElement => {
-  const mark = host.querySelector<HTMLElement>(':scope > mark');
+const getMark = (host: Highlight): HTMLElement | null =>
+  host.querySelector<HTMLElement>(':scope > mark');
+
+const requireMark = (host: Highlight): HTMLElement => {
+  const mark = getMark(host);
   if (!mark) {
     throw new Error(`ui-highlight#${host.id} 直下の mark が見つかりません`);
   }
   return mark;
 };
 
-const getMarkById = (canvasElement: Element, id: string): HTMLElement => {
-  const mark = canvasElement.querySelector<HTMLElement>(`#${id}`);
-  if (!mark) {
-    throw new Error(`#${id} が見つかりません`);
-  }
-  return mark;
-};
-
-const normalizeText = (value: string | null | undefined): string =>
-  (value ?? '').replace(/\s+/g, ' ').trim();
-
 const toPx = (value: string): number => {
   const parsed = Number.parseFloat(value);
   return Number.isFinite(parsed) ? parsed : 0;
 };
-
-const isNearlyEqual = (actual: number, expected: number, tolerance = 0.75): boolean =>
-  Math.abs(actual - expected) <= tolerance;
 
 const parseRgbChannels = (value: string): [number, number, number] => {
   const canvas = document.createElement('canvas');
@@ -50,7 +37,6 @@ const parseRgbChannels = (value: string): [number, number, number] => {
     throw new Error('Canvas 2D コンテキストを取得できません');
   }
 
-  context.clearRect(0, 0, 1, 1);
   context.fillStyle = value;
   context.fillRect(0, 0, 1, 1);
   const pixel = context.getImageData(0, 0, 1, 1).data;
@@ -67,10 +53,7 @@ const srgbToLinear = (channel: number): number => {
 
 const relativeLuminance = (color: string): number => {
   const [r, g, b] = parseRgbChannels(color);
-  const lr = srgbToLinear(r);
-  const lg = srgbToLinear(g);
-  const lb = srgbToLinear(b);
-  return 0.2126 * lr + 0.7152 * lg + 0.0722 * lb;
+  return 0.2126 * srgbToLinear(r) + 0.7152 * srgbToLinear(g) + 0.0722 * srgbToLinear(b);
 };
 
 const getContrastRatio = (foreground: string, background: string): number => {
@@ -81,13 +64,8 @@ const getContrastRatio = (foreground: string, background: string): number => {
   return (lighter + 0.05) / (darker + 0.05);
 };
 
-const getInjectedStyleTag = (): HTMLStyleElement => {
-  const styleTag = document.getElementById(DOCUMENT_STYLE_ID);
-  if (!(styleTag instanceof HTMLStyleElement)) {
-    throw new Error(`#${DOCUMENT_STYLE_ID} が見つかりません`);
-  }
-  return styleTag;
-};
+const nextFrame = async (): Promise<void> =>
+  new Promise((resolve) => requestAnimationFrame(() => resolve()));
 
 const meta: Meta<Highlight> = {
   title: 'Components/Highlight',
@@ -97,42 +75,34 @@ const meta: Meta<Highlight> = {
     docs: {
       description: {
         component: `
-ハイライトコンポーネントです。
+検索ハイライト専用の inline semantic component です。
 
-- 最終DOMはネイティブ \`mark\`
-- 適用スコープは \`.prose mark\` と \`ui-highlight > mark\` / \`ui-search-highlight > mark\`
-- 通常モードは塗りつぶしではなく、線状のハイライトを \`box-shadow\` で描画
-- \`origin\` は \`search\` / \`user\` を受け取り、\`data-origin\` へ反映
-- \`forced-colors\` / \`print\` では背景依存を避け、下線で非色シグナルを維持
+- 公開タグは \`ui-highlight\` のみ
+- 公開入力は \`current-match\` と \`text\`
+- 最終DOMはホスト直下のネイティブ \`mark\`
+- \`text === null\` のときだけ初期子テキスト fallback を評価
+- 解決後文字列が空なら \`mark\` を形成しない
         `,
       },
     },
   },
   argTypes: {
-    origin: {
-      control: 'inline-radio',
-      options: ORIGINS,
-      table: {
-        type: { summary: "'search' | 'user'" },
-        defaultValue: { summary: "'search'" },
-      },
-      description: 'ハイライトの発生源',
-    },
-    current: {
+    currentMatch: {
+      name: 'current-match',
       control: 'boolean',
       table: {
         type: { summary: 'boolean' },
         defaultValue: { summary: 'false' },
       },
-      description: '現在フォーカス中の検索ヒットかどうか',
+      description: '検索ヒット列の現在位置かどうか',
     },
     text: {
       control: 'text',
       table: {
-        type: { summary: 'string' },
-        defaultValue: { summary: "''" },
+        type: { summary: 'string | null' },
+        defaultValue: { summary: 'null' },
       },
-      description: 'スロット未指定時の表示テキスト',
+      description: '子テキストを与えにくい場合の明示入力',
     },
   },
 };
@@ -140,319 +110,276 @@ const meta: Meta<Highlight> = {
 export default meta;
 type Story = StoryObj<Highlight>;
 
-/**
- * 基本契約:
- * - `ui-highlight` は `mark` を出力する
- * - セマンティクスを壊す属性（role/tabindex）を付けない
- */
 export const Default: Story = {
   args: {
-    origin: 'search',
-    current: false,
+    currentMatch: false,
     text: '検索キーワード',
   },
   render: (args) => html`
     <ui-highlight
       id="default-highlight"
-      origin="${args.origin}"
-      ?current="${args.current}"
-      text="${args.text}"
+      ?current-match=${args.currentMatch}
+      .text=${args.text ?? null}
     ></ui-highlight>
   `,
   play: async ({ canvasElement }) => {
     const host = getHost(canvasElement, 'default-highlight');
     await host.updateComplete;
 
-    const mark = getInnerMark(host);
+    const mark = requireMark(host);
     if (mark.tagName !== 'MARK') {
       throw new Error('ui-highlight はネイティブ mark を出力する必要があります');
     }
-
     if (mark.textContent !== '検索キーワード') {
-      throw new Error('mark のテキストに前後の不要な空白を含めてはいけません');
+      throw new Error('mark の表示文字列が不正です');
     }
+    if (mark.getAttribute('data-current-match') !== 'false') {
+      throw new Error('既定状態の data-current-match は false である必要があります');
+    }
+    if (
+      mark.hasAttribute('aria-current') ||
+      mark.hasAttribute('role') ||
+      mark.hasAttribute('tabindex')
+    ) {
+      throw new Error('mark に不要な対話属性や ARIA 属性を付与してはいけません');
+    }
+  },
+};
 
-    if (normalizeText(mark.textContent) !== '検索キーワード') {
-      throw new Error('mark のテキストが想定どおりではありません');
-    }
+export const CurrentMatchMatrix: Story = {
+  render: () => html`
+    <div style="display: grid; gap: 0.75rem;">
+      <ui-highlight id="passive-highlight" text="通常ヒット"></ui-highlight>
+      <ui-highlight id="current-highlight" current-match text="現在ヒット"></ui-highlight>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const passiveHost = getHost(canvasElement, 'passive-highlight');
+    const currentHost = getHost(canvasElement, 'current-highlight');
+    await Promise.all([passiveHost.updateComplete, currentHost.updateComplete]);
 
-    if (mark.getAttribute('data-origin') !== 'search') {
-      throw new Error('default の data-origin は "search" である必要があります');
-    }
+    const passiveMark = requireMark(passiveHost);
+    const currentMark = requireMark(currentHost);
 
-    if (mark.getAttribute('data-current') !== 'false') {
-      throw new Error('default の data-current は "false" である必要があります');
+    if (passiveHost.hasAttribute('current-match')) {
+      throw new Error('非 current host は current-match 属性を持ってはいけません');
     }
+    if (!currentHost.hasAttribute('current-match')) {
+      throw new Error('current host は current-match 属性を反映する必要があります');
+    }
+    if (passiveMark.getAttribute('data-current-match') !== 'false') {
+      throw new Error('非 current mark の data-current-match が不正です');
+    }
+    if (currentMark.getAttribute('data-current-match') !== 'true') {
+      throw new Error('current mark の data-current-match が不正です');
+    }
+  },
+};
 
-    if (mark.hasAttribute('aria-current')) {
-      throw new Error('current=false のとき aria-current を付与してはいけません');
-    }
+export const CurrentMatchVisualContract: Story = {
+  render: () => html`
+    <div style="display: grid; gap: 0.75rem;">
+      <ui-highlight id="visual-passive" text="通常ヒット"></ui-highlight>
+      <ui-highlight id="visual-current" current-match text="現在ヒット"></ui-highlight>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const passiveMark = requireMark(getHost(canvasElement, 'visual-passive'));
+    const currentMark = requireMark(getHost(canvasElement, 'visual-current'));
 
-    if (mark.hasAttribute('role') || mark.hasAttribute('tabindex')) {
-      throw new Error('mark に不要なインタラクション属性を付与してはいけません');
-    }
-
-    const markStyle = getComputedStyle(mark);
-    const borderRadius = toPx(markStyle.borderRadius);
-    if (!(borderRadius > 0)) {
-      throw new Error('mark に角丸トークンが適用されていません');
-    }
+    const passiveStyle = getComputedStyle(passiveMark);
+    const currentStyle = getComputedStyle(currentMark);
 
     if (
-      !isNearlyEqual(toPx(markStyle.paddingLeft), 0) ||
-      !isNearlyEqual(toPx(markStyle.paddingRight), 0)
+      passiveStyle.backgroundColor !== 'rgba(0, 0, 0, 0)' ||
+      currentStyle.backgroundColor !== 'rgba(0, 0, 0, 0)'
     ) {
-      throw new Error('mark に左右 padding を入れてはいけません');
+      throw new Error('通常モードで背景塗りつぶしを持ってはいけません');
     }
-
-    if (markStyle.backgroundColor !== 'rgba(0, 0, 0, 0)') {
-      throw new Error('通常モードで塗りつぶし背景を持ってはいけません');
+    if (passiveStyle.color !== currentStyle.color) {
+      throw new Error('current-match の有無で本文色を変えてはいけません');
     }
-
-    if (markStyle.boxShadow === 'none') {
-      throw new Error('通常モードで線状ハイライトが消失しています');
+    if (passiveStyle.boxShadow === 'none' || currentStyle.boxShadow === 'none') {
+      throw new Error('線状ハイライトが消失しています');
     }
-
-    if (markStyle.textDecorationLine.includes('underline')) {
-      throw new Error('通常モードでは常時下線を表示してはいけません');
+    if (passiveStyle.boxShadow === currentStyle.boxShadow) {
+      throw new Error('current-match=true は最小限の視覚差分を持つ必要があります');
+    }
+    if (toPx(passiveStyle.paddingLeft) !== 0 || toPx(currentStyle.paddingLeft) !== 0) {
+      throw new Error('mark に padding を入れてはいけません');
     }
   },
 };
 
-/**
- * Markdown 由来の子テキスト:
- * - `<ui-highlight>text</ui-highlight>` をそのまま描画できる
- */
-export const SlottedTextFromMarkdown: Story = {
+export const ExplicitTextContract: Story = {
   render: () => html`
-    <ui-highlight id="markdown-highlight" origin="user">Markdown ハイライト</ui-highlight>
+    <ui-highlight id="explicit-text" text="明示入力">fallback 値</ui-highlight>
   `,
   play: async ({ canvasElement }) => {
-    const host = getHost(canvasElement, 'markdown-highlight');
+    const host = getHost(canvasElement, 'explicit-text');
     await host.updateComplete;
 
-    const mark = getInnerMark(host);
-    const directMarks = host.querySelectorAll(':scope > mark');
-    const directTextNodes = Array.from(host.childNodes).filter(
-      (node) => node.nodeType === Node.TEXT_NODE,
-    );
+    const mark = requireMark(host);
+    if (mark.textContent !== '明示入力') {
+      throw new Error('text を明示した場合はその値を最優先しなければなりません');
+    }
+  },
+};
 
-    if (directMarks.length !== 1) {
+export const FallbackTextContract: Story = {
+  render: () => html`
+    <div style="display: grid; gap: 0.75rem;">
+      <ui-highlight id="fallback-text">  初期子テキスト  </ui-highlight>
+      <ui-highlight id="empty-explicit" text="">  初期子テキスト  </ui-highlight>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const fallbackHost = getHost(canvasElement, 'fallback-text');
+    const emptyExplicitHost = getHost(canvasElement, 'empty-explicit');
+    await Promise.all([fallbackHost.updateComplete, emptyExplicitHost.updateComplete]);
+
+    const fallbackMark = requireMark(fallbackHost);
+    if (fallbackMark.textContent !== '初期子テキスト') {
+      throw new Error('text===null のときだけ初期子テキスト fallback を使う必要があります');
+    }
+    if (getMark(emptyExplicitHost) !== null) {
+      throw new Error('text が空文字なら fallback せず no-op である必要があります');
+    }
+  },
+};
+
+export const WhitespaceNormalizationContract: Story = {
+  render: () => html`
+    <ui-highlight id="whitespace-highlight">
+        前後は削る
+  中間改行は残す
+    </ui-highlight>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'whitespace-highlight');
+    await host.updateComplete;
+
+    const mark = requireMark(host);
+    if (mark.textContent !== '前後は削る\n  中間改行は残す') {
       throw new Error(
-        `mark は 1 つだけ描画される必要があります: actual=${String(directMarks.length)}`,
+        '初期子テキストは前後 trim のみ行い、中間空白や改行を保持する必要があります',
       );
     }
-
-    if (directTextNodes.length !== 0) {
-      throw new Error('初期の生テキストノードがホスト直下に残ってはいけません');
-    }
-
-    if (normalizeText(mark.textContent) !== 'Markdown ハイライト') {
-      throw new Error('Markdown 由来の子テキストを mark へ引き継げていません');
-    }
-
-    if (mark.getAttribute('data-origin') !== 'user') {
-      throw new Error('Markdown 由来の highlight でも origin を保持する必要があります');
-    }
-
-    if (mark.getAttribute('data-current') !== 'false') {
-      throw new Error('current 未指定時の data-current は false である必要があります');
-    }
   },
 };
 
-/**
- * バリアント × 状態:
- * - origin: search / user
- * - state: current true / false
- */
-export const VariantStateMatrix: Story = {
+export const EmptyResolvedTextContract: Story = {
   render: () => html`
-    <style>
-      .matrix {
-        display: grid;
-        gap: 0.75rem;
-      }
-
-      .cell {
-        padding: 0.75rem;
-        border: 1px dashed var(--border-default, #d7d7d7);
-        border-radius: var(--radius-sm, 4px);
-      }
-
-      .label {
-        margin-block-end: 0.35rem;
-        font-size: 11px;
-        color: var(--fg-muted, #666);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-    </style>
-
-    <div class="matrix">
-      <div class="cell">
-        <div class="label">search x passive</div>
-        <ui-highlight id="matrix-search-passive" origin="search" text="検索ヒット"></ui-highlight>
-      </div>
-
-      <div class="cell">
-        <div class="label">search x current</div>
-        <ui-highlight
-          id="matrix-search-current"
-          origin="search"
-          current
-          text="現在の検索ヒット"
-        ></ui-highlight>
-      </div>
-
-      <div class="cell">
-        <div class="label">user x passive</div>
-        <ui-highlight id="matrix-user-passive" origin="user" text="手動ハイライト"></ui-highlight>
-      </div>
-
-      <div class="cell">
-        <div class="label">user x current</div>
-        <ui-highlight
-          id="matrix-user-current"
-          origin="user"
-          current
-          text="現在の手動ハイライト"
-        ></ui-highlight>
-      </div>
+    <div style="display: grid; gap: 0.75rem;">
+      <ui-highlight id="empty-text-attr" text=""></ui-highlight>
+      <ui-highlight id="empty-fallback">   </ui-highlight>
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const matrix = [
-      { id: 'matrix-search-passive', origin: 'search', current: false },
-      { id: 'matrix-search-current', origin: 'search', current: true },
-      { id: 'matrix-user-passive', origin: 'user', current: false },
-      { id: 'matrix-user-current', origin: 'user', current: true },
-    ] as const;
+    const emptyTextAttr = getHost(canvasElement, 'empty-text-attr');
+    const emptyFallback = getHost(canvasElement, 'empty-fallback');
+    await Promise.all([emptyTextAttr.updateComplete, emptyFallback.updateComplete]);
 
-    const hosts = matrix.map(({ id }) => getHost(canvasElement, id));
-    await Promise.all(hosts.map((host) => host.updateComplete));
-
-    for (const item of matrix) {
-      const host = getHost(canvasElement, item.id);
-      const mark = getInnerMark(host);
-
-      if (mark.getAttribute('data-origin') !== item.origin) {
-        throw new Error(`${item.id} の data-origin が不正です`);
-      }
-
-      if (mark.getAttribute('data-current') !== String(item.current)) {
-        throw new Error(`${item.id} の data-current が不正です`);
-      }
-
-      if (item.current) {
-        if (mark.getAttribute('aria-current') !== 'true') {
-          throw new Error(`${item.id} は current=true のため aria-current="true" が必要です`);
-        }
-      } else if (mark.hasAttribute('aria-current')) {
-        throw new Error(`${item.id} は current=false のため aria-current を持ってはいけません`);
-      }
+    if (getMark(emptyTextAttr) !== null || getMark(emptyFallback) !== null) {
+      throw new Error('解決後文字列が空なら成功状態の mark を形成してはいけません');
     }
   },
 };
 
-/**
- * 事故が多い境界条件:
- * - 不正 origin のフォールバック
- * - text 未指定時の空文字安全性
- * - スコープ外 mark へのスタイル漏れ防止
- */
+export const UpdateLifecycleContract: Story = {
+  render: () => html`
+    <ui-highlight id="lifecycle-highlight">初期テキスト</ui-highlight>
+  `,
+  play: async ({ canvasElement }) => {
+    const host = getHost(canvasElement, 'lifecycle-highlight');
+    await host.updateComplete;
+
+    const initialMark = requireMark(host);
+    if (initialMark.textContent !== '初期テキスト') {
+      throw new Error('初期 fallback の解決に失敗しています');
+    }
+
+    host.textContent = '接続後に書き換えた子ノード';
+    await nextFrame();
+
+    const afterDomMutation = requireMark(host);
+    if (afterDomMutation.textContent !== '初期テキスト') {
+      throw new Error('接続後の Light DOM 変更に自動追従してはいけません');
+    }
+
+    host.text = '明示更新';
+    await host.updateComplete;
+
+    const explicitMark = requireMark(host);
+    if (explicitMark.textContent !== '明示更新') {
+      throw new Error('接続後の更新は text 変更でのみ行う必要があります');
+    }
+
+    host.text = null;
+    await host.updateComplete;
+
+    const fallbackAgain = requireMark(host);
+    if (fallbackAgain.textContent !== '初期テキスト') {
+      throw new Error('text を null に戻した場合は初回接続時の fallback に戻る必要があります');
+    }
+  },
+};
+
 export const BoundaryConditions: Story = {
   render: () => html`
-    <style>
-      #boundary-scope {
-        --radius-sm: 12px;
-      }
-    </style>
-
-    <div id="boundary-scope">
-      <ui-highlight id="boundary-invalid-origin" origin="invalid" text="不正origin"></ui-highlight>
-
-      <ui-highlight id="boundary-empty-text"></ui-highlight>
-
-      <div class="prose">
-        <p>prose scope: <mark id="boundary-prose-mark">本文ハイライト</mark></p>
+    <div style="display: grid; gap: 0.75rem;">
+      <ui-highlight id="element-child"><span>要素子</span></ui-highlight>
+      <ui-highlight id="direct-mark-child"><mark>直下 mark</mark></ui-highlight>
+      <ui-highlight id="nested-highlight-child"><ui-highlight text="nested"></ui-highlight></ui-highlight>
+      <div>
+        <ui-highlight id="adjacent-a" text="A"></ui-highlight>
+        <ui-highlight id="adjacent-b" current-match text="B"></ui-highlight>
       </div>
-
-      <p>scope outside: <mark id="boundary-plain-mark">通常mark</mark></p>
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const invalidOrigin = getHost(canvasElement, 'boundary-invalid-origin');
-    const emptyText = getHost(canvasElement, 'boundary-empty-text');
-    await Promise.all([invalidOrigin.updateComplete, emptyText.updateComplete]);
+    const ids = [
+      'element-child',
+      'direct-mark-child',
+      'nested-highlight-child',
+      'adjacent-a',
+      'adjacent-b',
+    ] as const;
+    const hosts = ids.map((id) => getHost(canvasElement, id));
+    await Promise.all(hosts.map((host) => host.updateComplete));
 
-    const invalidMark = getInnerMark(invalidOrigin);
-    if (invalidMark.getAttribute('data-origin') !== 'search') {
-      throw new Error('不正 origin は "search" へフォールバックする必要があります');
+    if (getMark(getHost(canvasElement, 'element-child')) !== null) {
+      throw new Error('要素子は fallback 入力文法に含めてはいけません');
     }
-
-    const emptyMark = getInnerMark(emptyText);
-    if (normalizeText(emptyMark.textContent) !== '') {
-      throw new Error('text 未指定時は空文字である必要があります');
+    if (getMark(getHost(canvasElement, 'direct-mark-child')) !== null) {
+      throw new Error('直下 mark は fallback 入力文法に含めてはいけません');
     }
-
-    const scopeRoot = canvasElement.querySelector<HTMLElement>('#boundary-scope');
-    if (!scopeRoot) {
-      throw new Error('#boundary-scope が見つかりません');
+    if (getMark(getHost(canvasElement, 'nested-highlight-child')) !== null) {
+      throw new Error('ネストされた highlight は入力文法として扱ってはいけません');
     }
-
-    const expectedRadius = toPx(getComputedStyle(scopeRoot).getPropertyValue('--radius-sm'));
-
-    const proseMark = getMarkById(canvasElement, 'boundary-prose-mark');
-    const plainMark = getMarkById(canvasElement, 'boundary-plain-mark');
-
-    const proseStyle = getComputedStyle(proseMark);
-    const emptyStyle = getComputedStyle(emptyMark);
-    const plainStyle = getComputedStyle(plainMark);
-
-    if (!isNearlyEqual(toPx(proseStyle.borderRadius), expectedRadius)) {
-      throw new Error('.prose mark にトークン由来の border-radius が適用されていません');
-    }
-
-    if (!isNearlyEqual(toPx(emptyStyle.borderRadius), expectedRadius)) {
-      throw new Error('ui-highlight 内 mark にトークン由来の border-radius が適用されていません');
-    }
-
-    const plainRadiusMatches = isNearlyEqual(toPx(plainStyle.borderRadius), expectedRadius);
-    const plainShadowMatches = plainStyle.boxShadow === proseStyle.boxShadow;
-    if (plainRadiusMatches && plainShadowMatches) {
-      throw new Error('スコープ外 mark に highlight スタイルが漏れています');
+    if (
+      !requireMark(getHost(canvasElement, 'adjacent-a')).textContent ||
+      !requireMark(getHost(canvasElement, 'adjacent-b')).textContent
+    ) {
+      throw new Error('隣接 highlight は独立要素として成立する必要があります');
     }
   },
 };
 
-/**
- * メディア/トークン契約:
- * - スタイル注入は1回のみ
- * - forced-colors / print / token 参照を保持
- */
 export const MediaAndTokenContracts: Story = {
   render: () => html`
-    <div style="display: grid; gap: 0.5rem;">
-      <ui-highlight id="contract-a" origin="search" text="A"></ui-highlight>
-      <ui-highlight id="contract-b" origin="user" current text="B"></ui-highlight>
-    </div>
+    <ui-highlight id="media-highlight" current-match text="検索ヒット"></ui-highlight>
   `,
   play: async ({ canvasElement }) => {
-    const hostA = getHost(canvasElement, 'contract-a');
-    const hostB = getHost(canvasElement, 'contract-b');
-    await Promise.all([hostA.updateComplete, hostB.updateComplete]);
+    const host = getHost(canvasElement, 'media-highlight');
+    await host.updateComplete;
 
-    const styleTags = document.querySelectorAll<HTMLStyleElement>(`#${DOCUMENT_STYLE_ID}`);
-    if (styleTags.length !== 1) {
-      throw new Error(`スタイル注入は1回であるべきですが ${String(styleTags.length)} 回です`);
-    }
+    const mark = requireMark(host);
+    const style = getComputedStyle(mark);
+    const cssText = HIGHLIGHT_RULE_TEMPLATE('ui-highlight > mark');
 
-    const styleTag = getInjectedStyleTag();
-    const cssText = styleTag.textContent;
-
-    if (!cssText.includes(HIGHLIGHT_SCOPE_SELECTOR)) {
-      throw new Error('Scope Contract のセレクタが不足しています');
+    if (style.boxShadow === 'none') {
+      throw new Error('通常モードで線状ハイライトを維持する必要があります');
     }
     if (!cssText.includes('@media (forced-colors: active)')) {
       throw new Error('forced-colors 契約が不足しています');
@@ -463,40 +390,18 @@ export const MediaAndTokenContracts: Story = {
     if (!cssText.includes('var(--bg-highlight-subtle)')) {
       throw new Error('背景トークン参照が不足しています');
     }
-    if (!cssText.includes('var(--radius-sm)')) {
-      throw new Error('角丸トークン参照が不足しています');
+    if (!cssText.includes('--bg-highlight-current')) {
+      throw new Error('current-match 用トークン hook が不足しています');
     }
-    if (!cssText.includes('box-shadow: inset 0 -0.5em 0')) {
-      throw new Error('線状ハイライトの box-shadow 契約が不足しています');
-    }
-    if (!cssText.includes('text-decoration: none')) {
-      throw new Error('通常モードで下線を抑制する契約が不足しています');
+    if (!cssText.includes("data-current-match='true'")) {
+      throw new Error('current-match の styling hook が不足しています');
     }
     if (!cssText.includes('text-decoration-line: underline')) {
-      throw new Error('forced-colors/print 向けの非色シグナル契約が不足しています');
-    }
-    if (!cssText.includes('color: currentColor')) {
-      throw new Error('print 時に currentColor を使う可読性契約が不足しています');
-    }
-    if (cssText.includes('CanvasText') || cssText.includes('Highlight')) {
-      throw new Error('Highlight 固有の強制カラーハードコードは禁止です');
-    }
-
-    const markA = getInnerMark(hostA);
-    const markB = getInnerMark(hostB);
-    const styleA = getComputedStyle(markA);
-    const styleB = getComputedStyle(markB);
-    if (styleA.boxShadow !== styleB.boxShadow) {
-      throw new Error('origin/state の違いで線状ハイライトの見た目が変化してはいけません');
+      throw new Error('forced-colors / print の非色シグナル契約が不足しています');
     }
   },
 };
 
-/**
- * Dark Mode + Contrast 契約:
- * - セマンティックトークン参照で Light/Dark 両方に追従する
- * - `--fg-default` on `--bg-highlight-subtle` が 4.5:1 以上
- */
 export const DarkModeTokenAndContrastContract: Story = {
   render: () => html`
     <style>
@@ -504,132 +409,72 @@ export const DarkModeTokenAndContrastContract: Story = {
         display: grid;
         gap: 0.5rem;
         padding: 0.75rem;
-        border-radius: var(--radius-sm, 4px);
-      }
-
-      .theme + .theme {
-        margin-top: 0.75rem;
-      }
-
-      .theme-title {
-        font-size: 12px;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        color: var(--fg-muted, #666);
-      }
-
-      #highlight-theme-light {
-        --bg-highlight-subtle: oklch(96% 0.04 65);
-        --fg-default: oklch(20% 0.03 250);
-        background: oklch(98% 0.01 250);
-        color: var(--fg-default);
-      }
-
-      #highlight-theme-dark {
-        --bg-highlight-subtle: oklch(25% 0.05 65);
-        --fg-default: oklch(90% 0.01 250);
-        background: oklch(12% 0.02 250);
-        color: var(--fg-default);
+        border-radius: 12px;
       }
 
       .probe {
-        display: none;
+        inline-size: 1px;
+        block-size: 1px;
+      }
+
+      .light {
+        --fg-default: oklch(22% 0.03 250);
+        --bg-highlight-subtle: oklch(96% 0.04 65);
+        --bg-highlight-current: oklch(91% 0.07 72);
+        background: white;
+        color: var(--fg-default);
+      }
+
+      .dark {
+        --fg-default: oklch(95% 0.01 250);
+        --bg-highlight-subtle: oklch(34% 0.05 65);
+        --bg-highlight-current: oklch(42% 0.08 72);
+        background: oklch(22% 0.02 250);
+        color: var(--fg-default);
       }
     </style>
 
-    <div id="highlight-theme-light" class="theme">
-      <div class="theme-title">Light Token Set</div>
-      <div id="probe-light-fg" class="probe" style="color: var(--fg-default);"></div>
-      <div id="probe-light-bg" class="probe" style="background: var(--bg-highlight-subtle);"></div>
-      <div class="prose">
-        <p><mark id="dark-contract-light-prose">Light prose mark</mark></p>
-      </div>
-      <ui-highlight
-        id="dark-contract-light-component"
-        origin="search"
-        text="Light component mark"
-      ></ui-highlight>
+    <div id="light-theme" class="theme light">
+      <div id="light-fg" class="probe" style="background: var(--fg-default);"></div>
+      <div id="light-bg" class="probe" style="background: var(--bg-highlight-subtle);"></div>
+      <ui-highlight id="light-highlight" current-match text="Light"></ui-highlight>
     </div>
 
-    <div id="highlight-theme-dark" class="theme">
-      <div class="theme-title">Dark Token Set</div>
-      <div id="probe-dark-fg" class="probe" style="color: var(--fg-default);"></div>
-      <div id="probe-dark-bg" class="probe" style="background: var(--bg-highlight-subtle);"></div>
-      <div class="prose">
-        <p><mark id="dark-contract-dark-prose">Dark prose mark</mark></p>
-      </div>
-      <ui-highlight
-        id="dark-contract-dark-component"
-        origin="user"
-        current
-        text="Dark component mark"
-      ></ui-highlight>
+    <div id="dark-theme" class="theme dark">
+      <div id="dark-fg" class="probe" style="background: var(--fg-default);"></div>
+      <div id="dark-bg" class="probe" style="background: var(--bg-highlight-subtle);"></div>
+      <ui-highlight id="dark-highlight" current-match text="Dark"></ui-highlight>
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const lightComponent = getHost(canvasElement, 'dark-contract-light-component');
-    const darkComponent = getHost(canvasElement, 'dark-contract-dark-component');
-    await Promise.all([lightComponent.updateComplete, darkComponent.updateComplete]);
-
     const scenarios = [
-      {
-        proseMarkId: 'dark-contract-light-prose',
-        component: lightComponent,
-        fgProbeId: 'probe-light-fg',
-        bgProbeId: 'probe-light-bg',
-        label: 'light',
-      },
-      {
-        proseMarkId: 'dark-contract-dark-prose',
-        component: darkComponent,
-        fgProbeId: 'probe-dark-fg',
-        bgProbeId: 'probe-dark-bg',
-        label: 'dark',
-      },
+      { fgId: 'light-fg', bgId: 'light-bg', highlightId: 'light-highlight', label: 'light' },
+      { fgId: 'dark-fg', bgId: 'dark-bg', highlightId: 'dark-highlight', label: 'dark' },
     ] as const;
 
-    const shadowValues: string[] = [];
-
     for (const scenario of scenarios) {
-      const proseMark = getMarkById(canvasElement, scenario.proseMarkId);
-      const componentMark = getInnerMark(scenario.component);
-      const fgProbe = getMarkById(canvasElement, scenario.fgProbeId);
-      const bgProbe = getMarkById(canvasElement, scenario.bgProbeId);
-
-      const proseStyle = getComputedStyle(proseMark);
-      const componentStyle = getComputedStyle(componentMark);
-      const fgProbeColor = getComputedStyle(fgProbe).color;
-      const bgProbeColor = getComputedStyle(bgProbe).backgroundColor;
-
-      if (proseStyle.color !== fgProbeColor || componentStyle.color !== fgProbeColor) {
-        throw new Error(`${scenario.label}: mark の文字色が --fg-default を追従していません`);
+      const fgProbe = canvasElement.querySelector<HTMLElement>(`#${scenario.fgId}`);
+      const bgProbe = canvasElement.querySelector<HTMLElement>(`#${scenario.bgId}`);
+      if (!fgProbe || !bgProbe) {
+        throw new Error(`${scenario.label} テーマの probe が見つかりません`);
       }
 
-      if (
-        proseStyle.backgroundColor !== 'rgba(0, 0, 0, 0)' ||
-        componentStyle.backgroundColor !== 'rgba(0, 0, 0, 0)'
-      ) {
-        throw new Error(`${scenario.label}: mark は塗りつぶし背景を持たない必要があります`);
-      }
-
-      if (proseStyle.boxShadow === 'none' || componentStyle.boxShadow === 'none') {
-        throw new Error(`${scenario.label}: 線状ハイライトが描画されていません`);
-      }
-
-      shadowValues.push(proseStyle.boxShadow, componentStyle.boxShadow);
-
-      const contrast = getContrastRatio(fgProbeColor, bgProbeColor);
+      const contrast = getContrastRatio(
+        getComputedStyle(fgProbe).backgroundColor,
+        getComputedStyle(bgProbe).backgroundColor,
+      );
       if (contrast < 4.5) {
         throw new Error(
-          `${scenario.label}: --fg-default と --bg-highlight-subtle のコントラスト比が不足しています (${contrast.toFixed(2)}:1, fg=${fgProbeColor}, bg=${bgProbeColor})`,
+          `${scenario.label} テーマで --fg-default と --bg-highlight-subtle のコントラストが不足しています`,
         );
       }
-    }
 
-    if (shadowValues[0] === shadowValues[2] && shadowValues[1] === shadowValues[3]) {
-      throw new Error(
-        'Light/Dark で線状ハイライトが同一になっており、テーマトークン差分を反映できていません',
-      );
+      const host = getHost(canvasElement, scenario.highlightId);
+      await host.updateComplete;
+      const mark = requireMark(host);
+      if (getComputedStyle(mark).boxShadow === 'none') {
+        throw new Error(`${scenario.label} テーマで highlight の視覚契約が失われています`);
+      }
     }
   },
 };

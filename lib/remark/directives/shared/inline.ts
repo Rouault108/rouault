@@ -1,7 +1,6 @@
 import type { MdastNode, VFileLike } from '../types';
 import {
   EMOJI_SHORTCODE_MAP,
-  HIGHLIGHT_ORIGINS,
   INLINE_DIRECTIVE_PATTERN,
   INLINE_EMOJI_SHORTCODE_PATTERN,
   INLINE_HIGHLIGHT_PATTERN,
@@ -11,7 +10,6 @@ import {
 import { appendText, createInlineNode } from './ast';
 import { assertAllowedAttributes, parseAttributes, pickOptional } from './attributes';
 import { parseBooleanAttribute } from './attribute-parsers';
-import { toError } from './errors';
 
 export const applyEmojiInlineAttributes = (
   attrs: Record<string, string>,
@@ -37,20 +35,18 @@ export const applyHighlightInlineAttributes = (
   file?: VFileLike,
 ): Record<string, unknown> => {
   const result: Record<string, unknown> = {};
-  const allowedKeys = new Set(['origin', 'current']);
+  const allowedKeys = new Set(['current-match']);
   assertAllowedAttributes(attrs, allowedKeys, node, file, 'highlight');
 
-  const origin = pickOptional(attrs['origin'])?.toLowerCase();
-  if (origin) {
-    if (!HIGHLIGHT_ORIGINS.has(origin)) {
-      throw toError(file, node, 'highlight の origin は search/user のみ指定可能です');
-    }
-    result['origin'] = origin;
-  }
-
-  const current = parseBooleanAttribute(attrs['current'], node, file, 'highlight', 'current');
+  const current = parseBooleanAttribute(
+    pickOptional(attrs['current-match']),
+    node,
+    file,
+    'highlight',
+    'current-match',
+  );
   if (current === true) {
-    result['current'] = true;
+    result['current-match'] = true;
   }
 
   return result;
@@ -118,9 +114,7 @@ export const parseInlineText = (source: string, node: MdastNode, file?: VFileLik
     const highlightMatch = INLINE_HIGHLIGHT_PATTERN.exec(rest);
     if (highlightMatch) {
       const text = highlightMatch[1] ?? '';
-      result.push(
-        createInlineNode('ui-highlight', text, { origin: 'user' }, 'rouaultInlineHighlight'),
-      );
+      result.push(createInlineNode('ui-highlight', text, undefined, 'rouaultInlineHighlight'));
       cursor += highlightMatch[0].length;
       continue;
     }

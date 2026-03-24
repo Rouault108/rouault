@@ -526,17 +526,16 @@ Je pense, donc je suis.
 
 ```markdown
 ==重要==
-:highlight[検索ヒット]{origin="search" current="true"}
+:highlight[検索ヒット]{current-match="true"}
 ```
 
-| 属性      | 内容                 | 値               |
-| --------- | -------------------- | ---------------- |
-| `origin`  | ハイライトの由来     | `search`, `user` |
-| `current` | 現在選択中のヒットか | 真偽値           |
+| 属性            | 内容                     | 値     |
+| --------------- | ------------------------ | ------ |
+| `current-match` | 現在選択中の検索ヒットか | 真偽値 |
 
 補足:
 
-- `==text==` は常に `origin="user"`
+- `==text==` は `ui-highlight` へ変換されます
 
 ### Emoji
 

@@ -92,14 +92,14 @@ remark 層では「著者入力の制約付けと独自構文の展開」を行�
 
 同ファイルは通常テキスト中の簡易記法も処理する。
 
-| 入力                                | 出力           | 補足                                                 |
-| ----------------------------------- | -------------- | ---------------------------------------------------- | ----------------------- |
-| `:emoji[text]{aria-label="..."}`    | `span`         | `label` か `aria-label` があれば `role="img"` を付与 |
-| `:subscript[text]` / `~text~`       | `sub`          | 属性なし                                             |
-| `:superscript[text]` / `^text^`     | `sup`          | 属性なし                                             |
-| `:highlight[text]{origin="search"}` | `ui-highlight` | `origin` は `search                                  | user`、`current` を許可 |
-| `==text==`                          | `ui-highlight` | 常に `origin="user"`                                 |
-| `:sparkles:` など                   | 絵文字文字列   | 内蔵 shortcodes のみ置換                             |
+| 入力                                      | 出力           | 補足                                                 |
+| ----------------------------------------- | -------------- | ---------------------------------------------------- |
+| `:emoji[text]{aria-label="..."}`          | `span`         | `label` か `aria-label` があれば `role="img"` を付与 |
+| `:subscript[text]` / `~text~`             | `sub`          | 属性なし                                             |
+| `:superscript[text]` / `^text^`           | `sup`          | 属性なし                                             |
+| `:highlight[text]{current-match="true"}` | `ui-highlight` | `current-match` のみ許可 |
+| `==text==`                               | `ui-highlight` | 追加属性なし                  |
+| `:sparkles:` など                         | 絵文字文字列   | 内蔵 shortcodes のみ置換                             |
 
 内蔵 shortcodes は `smile`, `grin`, `joy`, `thinking`, `sparkles`, `warning`, `fire`, `heart`, `check`, `x`, `memo`, `book`, `music`, `bulb`。
 
@@ -146,7 +146,7 @@ remark 段階では次を即時エラーにする。
 | `table`                       | `ui-table > table`                                | `caption` があればホストに `aria-label` を補完                                                                                                                                          |
 | `hr`                          | `ui-divider > hr[data-divider-variant="section"]` | Markdown 由来の区切りは本文文脈として `section` 扱いに正規化し、見た目と意味論を分離                                                                                                    |
 | `li` + `input[type=checkbox]` | `ui-checkbox`                                     | task list のラベルを抽出し、後続のネストリストは維持                                                                                                                                    |
-| `mark`                        | `ui-highlight`                                    | `origin` / `data-origin`、`current` / `data-current` / `aria-current` を吸収                                                                                                            |
+| `mark`                        | `ui-highlight`                                    | `current-match` / `data-current-match` を正規入力として扱い、旧 `current` / `data-current` / `aria-current` は互換入力として吸収                                                     |
 | `img`                         | `ui-image`                                        | `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化                                                                                                          |
 | `figure(img + figcaption)`    | `ui-image`                                        | `figcaption` を `caption` に統合                                                                                                                                                        |
 | footnote 参照 / 定義          | `ui-footnote` + `section[role=doc-endnotes]`      | 参照回数、backref、`user-content-` 接頭辞を正規化し、trigger/backlink を `{refId}-ref-{refInstance}` で接続                                                                        |

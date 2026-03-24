@@ -1059,7 +1059,7 @@ describe('remarkRouaultDirectives', () => {
     expect(sub?.children?.[0]?.value).to.equal('2');
     expect(sup?.children?.[0]?.value).to.equal('2');
     expect(highlight?.children?.[0]?.value).to.equal('重要');
-    expect(highlight?.data?.hProperties?.['origin']).to.equal('user');
+    expect(highlight?.data?.hProperties).to.equal(undefined);
     expect(emoji?.children?.[0]?.value).to.equal('😀');
     expect(emoji?.data?.hProperties?.['aria-label']).to.equal('笑顔');
     expect(lastText?.value).to.contain('✨');

@@ -427,215 +427,28 @@ highlight は**検索 UI そのものではなく、本文内の意味マーク�
 
 ---
 
-## 現行実装で未対応の事項
+## 実装反映状況
 
-本節は、現行の `highlight.ts` および `highlight.stories.ts` を基準として、**本書が定義する長期契約に対して未実装、未強制、または未整合である事項**を整理するものです。
+2026-03-24 時点の `highlight.ts`、`highlight.stories.ts`、関連変換処理は、本書の長期契約に合わせて次の点を反映済みです。
 
-### 1. 公開タグの一本化
+- 公開タグは `ui-highlight` のみです。
+- 公開入力は `current-match` と `text` のみです。
+- 最終 DOM はホスト直下のネイティブ `<mark>` です。
+- `aria-current` の自動付与は行いません。
+- `text === null` のときだけ初期子テキスト fallback を評価します。
+- 直下 `<mark>` や任意要素子は fallback 入力文法として扱いません。
+- 解決後文字列が空なら成功状態の `<mark>` を形成しません。
+- `current-match` は host 属性と内部 `data-current-match` の両方で同じ真偽値を表します。
+- Storybook は `current-match` / `text` / fallback / no-op / 境界条件 / メディア契約を検証対象として再編されています。
 
-現行実装は `ui-highlight` と `ui-search-highlight` の 2 タグを公開しています。長期契約が求める `ui-highlight` への一本化は未対応です。
-
-### 2. `origin` / `current` から `current-match` 中心設計への再設計
-
-現行実装は `origin` と `current` を公開入力としています。本書が求める長期契約では、意味分類入力を持たず、検索文脈に限定した `current-match` と `text` を中心に公開面を構成します。したがって、`origin` の撤廃と `current` から `current-match` への状態名整理は未対応です。
-
-### 3. `aria-current` の自動付与
-
-現行実装は `current=true` のとき内部 `<mark>` へ `aria-current="true"` を自動付与します。本書が求める「ARIA policy は上位レイヤ責務」という分離は未対応です。
-
-### 4. `text` の未指定と空文字の分離
-
-現行実装では `text === ''` が fallback 解決トリガとしても機能します。したがって、値と制御信号の分離は未対応です。
-
-### 5. 子ノード入力文法の狭義化
-
-現行実装は、直下 text node、直下 `<mark>`、さらに `textContent` fallback により、要素子を広く吸収し得ます。本書が求める「プレーンテキスト中心の狭い文法」は未対応です。
-
-### 6. 空文字 highlight の扱い
-
-現行実装は空文字を許容し、空の `<mark>` を描画し得ます。本書が求める「空文字は no-op または warning 対象」という方針は未対応です。
-
-### 7. グローバル style 注入の分離
-
-現行実装はコンポーネント自身が文書へ style を注入します。本書が求める「component contract と document styling policy の分離」は未対応です。
-
-### 8. `.prose mark` の責務分離
-
-現行実装の style スコープには `.prose mark` が含まれます。本書が求める「本文組版契約との分離」は未対応です。
-
-### 9. 正規化後状態の一貫性
-
-現行実装では、host 側属性と内部 `data-*` の解決済み状態が一致しないケースを許し得ます。本書が求める「外から見える状態と内部状態の一致」は未対応です。
-
-### 10. Storybook 契約の再編
-
-現行 Storybook は `origin` / `current` / `aria-current` / style 注入 ID など現行実装前提の確認を含みます。本書が求める `current-match` / `text` と fallback の分離 / style policy 分離を前提とした Storybook 契約への再編は未対応です。
-
-### 11. 複数 document 境界への非対応
-
-現行実装の style 注入はグローバル `document` を直接参照しており、`ownerDocument` 単位での注入一意性を持ちません。したがって、iframe や別 window を含む複数 document 環境に対して、本書が前提とする責務分離や document 境界の明確化は未対応です。
-
-### 12. 初回接続時の直下ノード強制除去
-
-現行実装は初回接続時に `replaceChildren()` を無条件で実行し、Light DOM 直下の既存ノードを一括で除去します。これは重複表示防止としては合理的ですが、長期契約が求める「狭い互換入力だけを許可し、それ以外は契約外として扱う」方針に対して、**移行方針や警告方針が未整備**です。
-
-とくに、コメントノード、装飾用 wrapper、直下 `<mark>`、任意 inline 要素子をどのように非推奨化・排除していくかは未対応です。
-
-### 13. 内部 style helper / 定数 export の縮小
-
-現行実装は `DOCUMENT_CSS`、`DOCUMENT_STYLE_ID`、`HIGHLIGHT_SCOPE_SELECTOR`、`HIGHLIGHT_RULE_TEMPLATE` を export しています。これは Storybook から参照しやすい反面、**本来は内部実装に属する style policy や生成詳細が公開面へ漏れている**状態です。
-
-本書が求める「安定公開面の最小化」に対して、これらの内部 export をどこまで内部化し、どこまでテスト専用の補助面として残すかは未対応です。
-
-### 14. Storybook と Visual Contract の角丸 / トークン不整合
-
-現行実装の通常モード CSS は `border-radius: 0` を与えていますが、現行 Storybook は `--radius-sm` 由来の角丸が適用されることや CSS 文字列に `var(--radius-sm)` が含まれることを要求しています。したがって、**実装、Storybook、契約書の 3 点で角丸ポリシーとトークン依存が一致していません**。
-
-これは単なる Story の書き漏れではなく、Visual Contract の基礎要素が未整合であることを意味します。
-
-### 15. 本節の扱い
-
-本節に記載した事項は、現行公開契約として利用者が依存してよいものではありません。これらを採用する場合は、実装、Storybook、契約書の 3 点を同時に更新し、未対応状態を残したまま公開契約へ昇格させません。
+一方で、実装上は `ui-highlight > mark` の見た目を自己完結させるため、コンポーネントが document ごとに style を注入します。これは公開契約ではなく実装詳細です。将来的に foundation layer や bootstrap 側へ移管できるなら、その方が責務分離の観点では望ましいです。
 
 ---
 
-## 実装修正優先順位
+## 今後の保守メモ
 
-本節は、長期契約に照らして**現行実装で優先的に修正すべき事項**を、設計上の重要度と依存関係に基づいて並べるものです。単に実装量の多少ではなく、**契約の歪みをどれだけ先に減らせるか**を基準に優先順位を付けます。
+現時点で公開 API と Storybook 契約の主要なズレは解消されています。今後の保守で優先すべき論点は次の 3 点です。
 
-### 最優先
-
-#### 1. 公開 API の一本化
-
-最優先で着手すべきなのは、公開 API の意味源を 1 つへ揃えることです。
-
-具体的には次を含みます。
-
-- `ui-search-highlight` を正規公開タグから外し、`ui-highlight` に一本化すること
-- `origin` を公開入力から外すこと
-- `current` を廃止し、`current-match` へ置き換えること
-
-この修正が最優先である理由は、現行設計の最大の歪みが**タグ名と属性の二重意味源**にあるためです。ここを残したまま他の修正を進めると、後段の契約整理が再び崩れます。
-
-#### 2. `aria-current` の自動付与廃止
-
-次に着手すべきなのは、highlight 本体から `aria-current` の自動付与を外すことです。
-
-この修正は、**本文内意味マークアップ**と**検索 UI のアクセシビリティ policy** を切り分けるために必要です。highlight は `data-current-match` までを担い、ARIA の current state は上位レイヤが判断して付与する構造へ寄せます。
-
-#### 3. `text` の値と fallback 制御の分離
-
-`text === ''` を fallback 解決トリガとしても使っている設計は、早い段階で解消すべきです。
-
-したがって、次を優先して実装します。
-
-- `text` が未指定または `null` のときだけ fallback を許可すること
-- `text === ''` は明示的空文字として扱うこと
-- 値そのものと制御信号を別の意味として扱うこと
-
-この修正により、表示値の意図が API 上で明瞭になります。
-
-### 高優先
-
-#### 4. グローバル style 注入の分離
-
-公開 API の一本化が済んだ後は、component contract と document styling policy の分離へ進みます。
-
-具体的には次を対象とします。
-
-- コンポーネント自身が `document.head` へ style を注入する責務を外すこと
-- 必要な style を foundation layer、bootstrap、または専用 registrar 側へ移すこと
-- highlight 本体は `<mark>` の意味出力と最小限の styling hook の提供に集中すること
-
-この修正は、責務分離の観点で非常に重要です。
-
-#### 5. `.prose mark` 契約の分離
-
-`.prose mark` を含む本文組版の見た目契約は、本コンポーネント契約から分離します。
-
-これにより、次を明確化できます。
-
-- `ui-highlight > mark` は component contract
-- `.prose mark` は prose / typography / foundations contract
-
-見た目が似ていても、責務層は同一ではありません。
-
-#### 6. 子ノード入力文法の狭義化
-
-次に、fallback 入力をプレーンテキスト中心の狭い文法へ寄せます。
-
-具体的には次を行います。
-
-- 直下プレーンテキストのみを互換入力として残すこと
-- 直下 `<mark>` fallback を廃止または互換扱いへ降格すること
-- 任意要素子の `textContent` 吸収をやめること
-
-これにより、何が正式入力で何が偶然動いているだけの入力かを切り分けられます。
-
-#### 7. host 属性と内部状態の一致
-
-列挙外値や正規化後の状態は、host 側属性と内部 `data-*` で一致させるべきです。したがって、setter / converter 段階で値を正規化し、外から見える状態と内部状態の二重化を解消します。
-
-### 中優先
-
-#### 8. 空文字 highlight の no-op 化または warning 化
-
-空文字 highlight は安全に扱えても、意味のある成功状態としては昇格させない方がよいです。したがって、長期的には次のいずれかへ寄せます。
-
-- no-op として描画しないこと
-- 少なくとも開発時 warning を出すこと
-
-#### 9. Storybook 契約の全面再編
-
-現行 Storybook は `origin` / `current` / `aria-current` / style 注入 ID など現行実装に強く結び付いています。したがって、新契約に沿って Storybook を再編します。
-
-再編後は、少なくとも次を固定対象とします。
-
-- `current-match`
-- `text` と fallback の分離
-- 狭い入力文法
-- component contract と prose contract の分離
-- `forced-colors` / `print` / token contract
-
-#### 10. Visual Contract の細部調整
-
-角丸、current-match の視覚差分有無、annotation と search の差分有無など、見た目の細部は最後に詰めます。これらは重要ではありますが、API と責務境界が固まる前に触ると再調整が発生しやすいためです。
-
-### 実行順
-
-実行順は次の 3 段階を推奨します。
-
-#### 第 1 段階
-
-- 公開 API の一本化
-- `aria-current` の分離
-- `text` と fallback 制御の分離
-
-この段階で、契約の中心にある歪みを取り除きます。
-
-#### 第 2 段階
-
-- グローバル style 注入の分離
-- `.prose mark` 契約の分離
-- 子ノード入力文法の狭義化
-- host 属性と内部状態の一致
-
-この段階で、責務境界と入力境界を整理します。
-
-#### 第 3 段階
-
-- 空文字 highlight の no-op 化または warning 化
-- Storybook 契約の全面再編
-- Visual Contract の細部調整
-
-この段階で、運用と検証の面を新契約に合わせて仕上げます。
-
-### 最初に着手すべき 3 点
-
-着手順としては、次の 3 点を最初の修正対象とします。
-
-1. `origin` を公開入力から外し、`current` を `current-match` に置き換えること
-2. `aria-current` を component から外すこと
-3. `text === ''` fallback をやめること
-
-この 3 点で、highlight 契約の中心にある歪みの大半を解消できます。
+1. style 注入責務を foundation layer へ移し、component contract と document styling policy をさらに分離すること。
+2. `mark` から `ui-highlight` への正規化で受けている旧 `current` / `data-current` / `aria-current` 互換入力を、移行完了後に段階的に縮小すること。
+3. `.prose mark` など本文組版側の見た目契約を、highlight 本体と混線しないよう別文書で固定すること。

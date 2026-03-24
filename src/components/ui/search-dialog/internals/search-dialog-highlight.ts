@@ -65,8 +65,6 @@ export function renderSearchDialogHighlightedText(
   }
 
   return parts.map((part) =>
-    part.matched
-      ? html`<ui-search-highlight origin="search" .text=${part.text}></ui-search-highlight>`
-      : part.text || nothing,
+    part.matched ? html`<ui-highlight .text=${part.text}></ui-highlight>` : part.text || nothing,
   );
 }

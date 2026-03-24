@@ -1,7 +1,6 @@
 import { type HastNode } from './hast-utils.js';
 
 const CODE_BLOCK_INTENTS = new Set(['neutral', 'valid', 'invalid']);
-const HIGHLIGHT_ORIGINS = new Set(['search', 'user']);
 
 interface FootnoteDefinition {
   readonly refId: string;
@@ -352,19 +351,14 @@ const toUiHighlight = (node: HastNode): void => {
 
   const originalProperties = node.properties ?? {};
   const hostProperties: Record<string, unknown> = {};
-  const origin = pickOptionalString(
-    originalProperties['origin'] ?? originalProperties['data-origin'],
-  )?.toLowerCase();
-  if (origin && HIGHLIGHT_ORIGINS.has(origin)) {
-    hostProperties['origin'] = origin;
-  }
-
   const current =
+    toBooleanAttribute(originalProperties['current-match']) ||
+    toBooleanAttribute(originalProperties['data-current-match']) ||
     toBooleanAttribute(originalProperties['current']) ||
     toBooleanAttribute(originalProperties['data-current']) ||
     toBooleanAttribute(originalProperties['aria-current']);
   if (current) {
-    hostProperties['current'] = true;
+    hostProperties['current-match'] = true;
   }
 
   node.tagName = 'ui-highlight';

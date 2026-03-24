@@ -223,7 +223,7 @@ describe('rehypeRouaultComponents', () => {
         {
           type: 'element',
           tagName: 'mark',
-          properties: { 'data-origin': 'user', 'data-current': true },
+          properties: { 'data-current-match': true },
           children: [{ type: 'text', value: 'hit' }],
         },
       ],
@@ -233,8 +233,7 @@ describe('rehypeRouaultComponents', () => {
 
     const highlight = tree.children?.[0];
     expect(highlight?.tagName).to.equal('ui-highlight');
-    expect(highlight?.properties?.['origin']).to.equal('user');
-    expect(highlight?.properties?.['current']).to.equal(true);
+    expect(highlight?.properties?.['current-match']).to.equal(true);
     expect(highlight?.children?.[0]?.value).to.equal('hit');
   });
 

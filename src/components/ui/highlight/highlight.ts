@@ -1,24 +1,7 @@
-import { html, LitElement } from 'lit';
+import { html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { ifDefined } from 'lit/directives/if-defined.js';
 
-export type HighlightOrigin = 'search' | 'user';
-
-const VALID_ORIGINS = new Set<HighlightOrigin>(['search', 'user']);
-
-/** ドキュメントに注入するスタイルタグのID（重複注入防止） */
-const DOCUMENT_STYLE_ID = 'ui-highlight-document-styles';
-
-/**
- * ハイライトスタイルの適用スコープ。
- * - `.prose mark`
- * - `<ui-highlight>` 内部の `mark`
- * - `<ui-search-highlight>` 内部の `mark`
- */
-const HIGHLIGHT_SCOPE_SELECTOR =
-  ':where(.prose mark, ui-highlight > mark, ui-search-highlight > mark)';
-
-const HIGHLIGHT_RULE_TEMPLATE = (scopeSelector: string): string => `
+export const HIGHLIGHT_RULE_TEMPLATE = (scopeSelector: string): string => `
 ${scopeSelector} {
   background: transparent;
   color: inherit;
@@ -28,6 +11,12 @@ ${scopeSelector} {
   box-shadow: inset 0 -0.5em 0 color-mix(in oklch, var(--bg-highlight-subtle) 88%, transparent);
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
+}
+
+${scopeSelector}[data-current-match='true'] {
+  box-shadow:
+    inset 0 -0.68em 0 color-mix(in oklch, var(--bg-highlight-current, var(--bg-highlight-subtle)) 72%, transparent),
+    inset 0 -0.32em 0 color-mix(in oklch, var(--bg-highlight-subtle) 92%, transparent);
 }
 
 @media (forced-colors: active) {
@@ -56,109 +45,93 @@ ${scopeSelector} {
 }
 `;
 
-const DOCUMENT_CSS = HIGHLIGHT_RULE_TEMPLATE(HIGHLIGHT_SCOPE_SELECTOR);
+const HIGHLIGHT_MARK_SELECTOR = 'ui-highlight > mark';
+export const DOCUMENT_STYLE_ID = 'ui-highlight-styles';
+export const DOCUMENT_CSS = HIGHLIGHT_RULE_TEMPLATE(HIGHLIGHT_MARK_SELECTOR);
 
 /**
- * 本文中のハイライトを表現する基底コンポーネント。
- * 最終DOMはネイティブ `<mark>` を使用する。
+ * 本文中の検索ハイライトを表現するコンポーネント。
+ * 最終DOMはホスト直下のネイティブ `<mark>` を使用する。
  */
-class HighlightBase extends LitElement {
-  @property({ type: String, reflect: true })
-  origin: HighlightOrigin = 'search';
+@customElement('ui-highlight')
+export class Highlight extends LitElement {
+  @property({ attribute: 'current-match', type: Boolean, reflect: true })
+  currentMatch = false;
 
-  @property({ type: Boolean, reflect: true })
-  current = false;
+  @property({ attribute: 'text' })
+  text: string | null = null;
 
-  @property({ type: String })
-  text = '';
-
-  private _fallbackText = '';
-  private _didAdoptInitialContent = false;
+  private initialText: string | null = null;
+  private didAdoptInitialContent = false;
 
   override createRenderRoot(): this {
     return this;
   }
 
   override connectedCallback(): void {
-    if (!this._didAdoptInitialContent) {
-      if (this.text === '') {
-        // Markdown/SSR 由来の初期子ノードから表示テキストだけを吸収する。
-        this._fallbackText = this._extractInitialText();
-      }
-
-      // Light DOM 既存ノードを残すと、初回 render() 後に重複表示される。
+    if (!this.didAdoptInitialContent) {
+      this.initialText = this.extractInitialText();
       this.replaceChildren();
-      this._didAdoptInitialContent = true;
+      this.didAdoptInitialContent = true;
     }
 
     super.connectedCallback();
-    this._injectDocumentStyles();
+    this.injectDocumentStyles();
   }
 
-  private _extractInitialText(): string {
-    const childNodes = Array.from(this.childNodes);
+  private extractInitialText(): string | null {
+    if (this.text !== null) {
+      return null;
+    }
 
-    const directText = childNodes
-      .filter((node) => node.nodeType === Node.TEXT_NODE)
+    const hasElementChild = Array.from(this.childNodes).some(
+      (node) => node.nodeType === Node.ELEMENT_NODE,
+    );
+    if (hasElementChild) {
+      return null;
+    }
+
+    const directText = Array.from(this.childNodes)
+      .filter((node): node is Text => node.nodeType === Node.TEXT_NODE)
       .map((node) => node.textContent ?? '')
       .join('')
       .trim();
-    if (directText !== '') {
-      return directText;
-    }
 
-    const directMarkText = childNodes
-      .filter((node): node is HTMLElement => node instanceof HTMLElement && node.tagName === 'MARK')
-      .map((node) => node.textContent)
-      .join('')
-      .trim();
-    if (directMarkText !== '') {
-      return directMarkText;
-    }
-
-    return this.textContent.trim();
+    return directText === '' ? null : directText;
   }
 
-  private _injectDocumentStyles(): void {
-    if (typeof document === 'undefined') return;
-    if (document.getElementById(DOCUMENT_STYLE_ID)) return;
+  private injectDocumentStyles(): void {
+    const ownerDocument = this.ownerDocument;
+    if (!ownerDocument) {
+      return;
+    }
+    if (ownerDocument.getElementById(DOCUMENT_STYLE_ID)) {
+      return;
+    }
 
-    const style = document.createElement('style');
+    const style = ownerDocument.createElement('style');
     style.id = DOCUMENT_STYLE_ID;
     style.textContent = DOCUMENT_CSS;
-    document.head.appendChild(style);
+    ownerDocument.head.append(style);
   }
 
-  private get _resolvedOrigin(): HighlightOrigin {
-    return VALID_ORIGINS.has(this.origin) ? this.origin : 'search';
-  }
-
-  private get _resolvedText(): string | undefined {
-    const source = this.text === '' ? this._fallbackText : this.text;
-    return source === '' ? undefined : source;
+  private get resolvedText(): string | null {
+    const source = this.text !== null ? this.text : this.initialText;
+    return source === null || source === '' ? null : source;
   }
 
   override render() {
-    return html`<mark
-      data-origin="${this._resolvedOrigin}"
-      data-current="${String(this.current)}"
-      aria-current="${ifDefined(this.current ? 'true' : undefined)}"
-      >${this._resolvedText}</mark
-    >`;
+    const resolvedText = this.resolvedText;
+    if (resolvedText === null) {
+      return nothing;
+    }
+
+    return html`<mark data-current-match="${String(this.currentMatch)}">${resolvedText}</mark>`;
   }
 }
-
-@customElement('ui-highlight')
-export class Highlight extends HighlightBase {}
-
-@customElement('ui-search-highlight')
-export class SearchHighlight extends HighlightBase {}
 
 declare global {
   interface HTMLElementTagNameMap {
     'ui-highlight': Highlight;
-    'ui-search-highlight': SearchHighlight;
   }
 }
-
-export { DOCUMENT_CSS, DOCUMENT_STYLE_ID, HIGHLIGHT_SCOPE_SELECTOR, HIGHLIGHT_RULE_TEMPLATE };

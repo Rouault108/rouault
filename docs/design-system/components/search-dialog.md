@@ -47,7 +47,7 @@
 - ルーター、履歴、URL 同期の実装詳細
 - 検索 API やバックエンドの責務
 - 権限判定や非公開コンテンツ制御
-- `ui-search-field`、`ui-spinner`、`ui-search-highlight` の内部実装詳細
+- `ui-search-field`、`ui-spinner`、`ui-highlight` の内部実装詳細
 - 検索ランキングアルゴリズムの高度化全般
 - 最近見た項目、お気に入り、個人化の設計
 - 将来機能の列挙そのもの

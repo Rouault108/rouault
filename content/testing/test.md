@@ -166,7 +166,7 @@ Je pense, donc je suis.
 ::
 
 ==重要==  
-:highlight[検索ヒット]{origin="search" current="true"}
+:highlight[検索ヒット]{current-match="true"}
 
 :emoji[😀]{aria-label="笑顔"}
 :smile:

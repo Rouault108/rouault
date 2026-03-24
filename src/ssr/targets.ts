@@ -24,7 +24,6 @@ export const SSR_SHADOW_TARGET_TAGS = [
   'ui-image',
   'ui-info-box',
   'ui-score',
-  'ui-search-highlight',
   'ui-tabs',
   'ui-translation',
 ] as const;
@@ -56,7 +55,6 @@ export const SSR_NOTE_TARGET_TAGS = [
   'ui-image',
   'ui-info-box',
   'ui-score',
-  'ui-search-highlight',
   'ui-tabs',
   'ui-translation',
 ] as const satisfies readonly SsrTargetTag[];

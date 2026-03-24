@@ -101,10 +101,6 @@ const DOCUMENT_STYLE_DEFINITIONS: Partial<Record<SsrTargetTag, SsrDocumentStyleD
     id: HIGHLIGHT_DOCUMENT_STYLE_ID,
     cssText: HIGHLIGHT_DOCUMENT_CSS,
   },
-  'ui-search-highlight': {
-    id: HIGHLIGHT_DOCUMENT_STYLE_ID,
-    cssText: HIGHLIGHT_DOCUMENT_CSS,
-  },
 };
 
 const getAttributeValue = (attributes: readonly SsrAttribute[], name: string): string | undefined =>
