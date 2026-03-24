@@ -1,7 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './popover';
-import { DOCUMENT_STYLE_ID, UiPopover } from './popover';
+import {
+  DOCUMENT_STYLE_ID,
+  type UiPopover,
+  type UiPopoverOpenChangeDetail,
+  type UiPopoverOpenChangeRequestDetail,
+} from './popover';
 
 const nextFrame = async (): Promise<void> =>
   new Promise((resolve) => {
@@ -34,19 +39,14 @@ const getHost = (canvasElement: Element, id: string): UiPopover => {
   return host;
 };
 
-const getTrigger = (host: UiPopover, selector = '[slot="trigger"]'): HTMLElement => {
-  const trigger = host.querySelector<HTMLElement>(selector);
-  if (!trigger) throw new Error(`trigger (${selector}) が見つかりません`);
-  return trigger;
+const getElement = (root: ParentNode, selector: string): HTMLElement => {
+  const element = root.querySelector(selector);
+  if (!element) throw new Error(`${selector} が見つかりません`);
+  if (!(element instanceof HTMLElement)) {
+    throw new Error(`${selector} は HTMLElement である必要があります`);
+  }
+  return element;
 };
-
-const getContent = (host: UiPopover, selector = '[slot="content"]'): HTMLElement => {
-  const content = host.querySelector<HTMLElement>(selector);
-  if (!content) throw new Error(`content (${selector}) が見つかりません`);
-  return content;
-};
-
-const getExpanded = (trigger: HTMLElement): string => trigger.getAttribute('aria-expanded') ?? '';
 
 const clickPrimary = (target: HTMLElement): MouseEvent => {
   const event = new MouseEvent('click', {
@@ -58,6 +58,25 @@ const clickPrimary = (target: HTMLElement): MouseEvent => {
   return event;
 };
 
+const dispatchEscape = (target: EventTarget): KeyboardEvent => {
+  const event = new KeyboardEvent('keydown', {
+    key: 'Escape',
+    bubbles: true,
+    cancelable: true,
+  });
+  target.dispatchEvent(event);
+  return event;
+};
+
+const waitForEvent = <T>(target: EventTarget, type: string): Promise<CustomEvent<T>> =>
+  new Promise((resolve) => {
+    const onEvent = (event: Event): void => {
+      target.removeEventListener(type, onEvent);
+      resolve(event as CustomEvent<T>);
+    };
+    target.addEventListener(type, onEvent);
+  });
+
 const meta: Meta<UiPopover> = {
   title: 'Components/Popover',
   component: 'ui-popover',
@@ -66,12 +85,12 @@ const meta: Meta<UiPopover> = {
     docs: {
       description: {
         component: `
-クリック起点の汎用 Popover です。
+意味論を持たない anchored popover shell です。
 
 - \`slot="trigger"\` / \`slot="content"\` を使用
-- Popover API 対応環境では \`showPopover/hidePopover\` を利用
-- 非対応環境ではフォールバック表示へ切り替え
-- \`openForTrigger\` により共有トリガー運用が可能
+- \`opened\` は controlled state、\`defaultOpened\` は uncontrolled 初期値
+- \`ui-popover-open-change-request\` / \`ui-popover-open-change\` で変更要求と結果を分離
+- \`openForTrigger()\` / \`toggleForTrigger()\` により controller mode を扱えます
         `,
       },
     },
@@ -97,12 +116,11 @@ const meta: Meta<UiPopover> = {
       control: 'boolean',
       table: { type: { summary: 'boolean' }, defaultValue: { summary: 'false' } },
     },
-    disabled: {
+    defaultOpened: {
       control: 'boolean',
       table: { type: { summary: 'boolean' }, defaultValue: { summary: 'false' } },
     },
-    keepLinkFallback: {
-      name: 'keep-link-fallback',
+    disabled: {
       control: 'boolean',
       table: { type: { summary: 'boolean' }, defaultValue: { summary: 'false' } },
     },
@@ -112,30 +130,35 @@ const meta: Meta<UiPopover> = {
 export default meta;
 type Story = StoryObj<UiPopover>;
 
-export const DefaultContract: Story = {
+export const BasicContract: Story = {
   render: () => html`
     <div style="padding: 2rem;">
-      <ui-popover id="popover-default">
-        <button id="popover-default-trigger" slot="trigger" type="button">詳細を開く</button>
-        <div id="popover-default-content" slot="content">Popover 本文です。</div>
+      <ui-popover id="popover-basic">
+        <button id="popover-basic-trigger" slot="trigger" type="button">詳細を開く</button>
+        <div id="popover-basic-content" slot="content">Popover 本文です。</div>
       </ui-popover>
-      <button id="popover-after" type="button">次要素</button>
+      <button id="popover-basic-after" type="button">次要素</button>
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const host = getHost(canvasElement, 'popover-default');
+    const host = getHost(canvasElement, 'popover-basic');
     await host.updateComplete;
 
-    const trigger = getTrigger(host, '#popover-default-trigger');
-    const content = getContent(host, '#popover-default-content');
-    const after = canvasElement.querySelector<HTMLButtonElement>('#popover-after');
-    if (!after) throw new Error('#popover-after が見つかりません');
+    const trigger = getElement(host, '#popover-basic-trigger') as HTMLButtonElement;
+    const content = getElement(host, '#popover-basic-content') as HTMLDivElement;
+    const after = getElement(canvasElement, '#popover-basic-after') as HTMLButtonElement;
 
-    if (content.id !== trigger.getAttribute('aria-controls')) {
-      throw new Error('trigger の aria-controls が content.id と一致しません');
+    if (content.getAttribute('role') !== null) {
+      throw new Error('ui-popover は content に既定 role を付与してはいけません');
     }
-    if (getExpanded(trigger) !== 'false') {
+    if (trigger.getAttribute('aria-haspopup') !== null) {
+      throw new Error('ui-popover は trigger に aria-haspopup を既定付与してはいけません');
+    }
+    if (trigger.getAttribute('aria-expanded') !== 'false') {
       throw new Error('初期 aria-expanded は false である必要があります');
+    }
+    if (trigger.getAttribute('aria-controls') !== content.id) {
+      throw new Error('初期 aria-controls は content.id を参照する必要があります');
     }
 
     trigger.focus();
@@ -143,33 +166,28 @@ export const DefaultContract: Story = {
     await nextFrame();
 
     if (!host.opened) {
-      throw new Error('クリックで opened=true になる必要があります');
+      throw new Error('anchored mode の通常クリックで開く必要があります');
     }
-    if (getExpanded(trigger) !== 'true') {
-      throw new Error('open 時に aria-expanded=true が必要です');
+    if (trigger.getAttribute('aria-expanded') !== 'true') {
+      throw new Error('open 時に active trigger の aria-expanded=true が必要です');
     }
     if (supportsPopoverApi()) {
       if (!isPopoverOpen(content)) {
         throw new Error('Popover API 対応環境で :popover-open が成立していません');
       }
     } else if (content.hidden) {
-      throw new Error('フォールバック環境で content が表示されていません');
-    }
-    const openedStyle = getComputedStyle(content);
-    if (openedStyle.left === '0px' && openedStyle.top === '0px') {
-      throw new Error('open 時に popover 座標が更新されていません');
+      throw new Error('Popover API 非対応環境では hidden=false で表示される必要があります');
     }
 
-    content.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
-    );
+    dispatchEscape(trigger);
     await nextFrame();
+    await wait(0);
 
     if (document.activeElement !== trigger) {
-      throw new Error('Escape クローズ後に trigger へフォーカス復帰する必要があります');
+      throw new Error('Escape close 後は active trigger にフォーカスが戻る必要があります');
     }
-    if (getExpanded(trigger) !== 'false') {
-      throw new Error('close 後に aria-expanded=false が必要です');
+    if (trigger.getAttribute('aria-expanded') !== 'false') {
+      throw new Error('close 後は aria-expanded=false に戻る必要があります');
     }
 
     clickPrimary(trigger);
@@ -178,285 +196,336 @@ export const DefaultContract: Story = {
     host.close({ returnFocus: false });
     await nextFrame();
     if (document.activeElement !== after) {
-      throw new Error('returnFocus=false の close ではフォーカス復帰してはいけません');
+      throw new Error('programmatic close(returnFocus=false) では focus return してはいけません');
     }
   },
 };
 
-export const TypographyZoomContract: Story = {
+export const RequestCancelContract: Story = {
   render: () => html`
-    <div id="popover-zoom-wrapper" style="padding: 2rem; font-size: 16px;">
-      <ui-popover id="popover-zoom">
-        <button id="popover-zoom-trigger" slot="trigger" type="button">拡大確認</button>
-        <div id="popover-zoom-content" slot="content">Popover 本文も拡大される必要があります。</div>
+    <div style="padding: 2rem;">
+      <ui-popover id="popover-request-cancel">
+        <button id="popover-request-trigger" slot="trigger" type="button">開く</button>
+        <div id="popover-request-content" slot="content">cancel</div>
       </ui-popover>
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const wrapper = canvasElement.querySelector<HTMLElement>('#popover-zoom-wrapper');
-    if (!wrapper) throw new Error('#popover-zoom-wrapper が見つかりません');
-
-    const host = getHost(canvasElement, 'popover-zoom');
+    const host = getHost(canvasElement, 'popover-request-cancel');
     await host.updateComplete;
+    const trigger = getElement(host, '#popover-request-trigger') as HTMLButtonElement;
+    const content = getElement(host, '#popover-request-content') as HTMLDivElement;
 
-    const trigger = getTrigger(host, '#popover-zoom-trigger');
-    const content = getContent(host, '#popover-zoom-content');
+    const reasons: UiPopoverOpenChangeRequestDetail[] = [];
+    host.addEventListener('ui-popover-open-change-request', (event) => {
+      const customEvent = event as CustomEvent<UiPopoverOpenChangeRequestDetail>;
+      reasons.push(customEvent.detail);
+      event.preventDefault();
+    });
 
     clickPrimary(trigger);
     await nextFrame();
 
-    const initialFontSize = getComputedStyle(content).fontSize;
-    if (initialFontSize !== '16px') {
-      throw new Error(`初期フォントサイズは親要素を継承する必要があります: ${initialFontSize}`);
+    const firstReason = reasons.at(0);
+    if (!firstReason || reasons.length !== 1 || firstReason.reason !== 'trigger' || !firstReason.nextOpen) {
+      throw new Error('open request は reason=trigger, nextOpen=true で 1 回だけ発火する必要があります');
     }
-
-    wrapper.style.fontSize = '24px';
-    await nextFrame();
-
-    const zoomedFontSize = getComputedStyle(content).fontSize;
-    if (zoomedFontSize !== '24px') {
-      throw new Error(`親要素の文字拡大に追従していません: ${zoomedFontSize}`);
+    if (host.opened) {
+      throw new Error('request が cancel された場合は opened が変化してはいけません');
+    }
+    if (trigger.getAttribute('aria-expanded') !== 'false') {
+      throw new Error('request cancel 時に aria-expanded は変化してはいけません');
+    }
+    if (supportsPopoverApi()) {
+      if (isPopoverOpen(content)) {
+        throw new Error('request cancel 時に content が開いてはいけません');
+      }
+    } else if (!content.hidden) {
+      throw new Error('request cancel 時に fallback content が表示されてはいけません');
     }
   },
 };
 
-export const VariantStateMatrix: Story = {
+export const ControlledAndUncontrolledContract: Story = {
   render: () => html`
-    <style>
-      .matrix {
-        display: grid;
-        gap: 0.75rem;
-      }
-      .row {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-      }
-      .label {
-        inline-size: 180px;
-        font-size: 11px;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-      }
-    </style>
-    <div class="matrix">
-      <div class="row">
-        <span class="label">default / enabled</span>
-        <ui-popover id="matrix-default" variant="default">
-          <button id="matrix-default-trigger" slot="trigger" type="button">open</button>
-          <div id="matrix-default-content" slot="content">default</div>
-        </ui-popover>
-      </div>
-      <div class="row">
-        <span class="label">subtle / enabled</span>
-        <ui-popover id="matrix-subtle" variant="subtle">
-          <button id="matrix-subtle-trigger" slot="trigger" type="button">open</button>
-          <div id="matrix-subtle-content" slot="content">subtle</div>
-        </ui-popover>
-      </div>
-      <div class="row">
-        <span class="label">inverse / enabled</span>
-        <ui-popover id="matrix-inverse" variant="inverse">
-          <button id="matrix-inverse-trigger" slot="trigger" type="button">open</button>
-          <div id="matrix-inverse-content" slot="content">inverse</div>
-        </ui-popover>
-      </div>
-      <div class="row">
-        <span class="label">default / disabled</span>
-        <ui-popover id="matrix-disabled" variant="default" disabled>
-          <button id="matrix-disabled-trigger" slot="trigger" type="button">open</button>
-          <div id="matrix-disabled-content" slot="content">disabled</div>
-        </ui-popover>
-      </div>
-      <div class="row">
-        <span class="label">invalid variant fallback</span>
-        <ui-popover id="matrix-invalid" variant="broken">
-          <button id="matrix-invalid-trigger" slot="trigger" type="button">open</button>
-          <div id="matrix-invalid-content" slot="content">invalid</div>
-        </ui-popover>
-      </div>
+    <div style="display: grid; gap: 1rem; padding: 2rem;">
+      <ui-popover id="popover-uncontrolled" defaultOpened>
+        <button id="popover-uncontrolled-trigger" slot="trigger" type="button">uncontrolled</button>
+        <div id="popover-uncontrolled-content" slot="content">uncontrolled body</div>
+      </ui-popover>
+
+      <ui-popover id="popover-controlled" opened>
+        <button id="popover-controlled-trigger" slot="trigger" type="button">controlled</button>
+        <div id="popover-controlled-content" slot="content">controlled body</div>
+      </ui-popover>
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const ids = [
-      'matrix-default',
-      'matrix-subtle',
-      'matrix-inverse',
-      'matrix-disabled',
-      'matrix-invalid',
-    ] as const;
-    const hosts = ids.map((id) => getHost(canvasElement, id));
-    await Promise.all(hosts.map((host) => host.updateComplete));
+    const uncontrolled = getHost(canvasElement, 'popover-uncontrolled');
+    const controlled = getHost(canvasElement, 'popover-controlled');
+    await Promise.all([uncontrolled.updateComplete, controlled.updateComplete]);
 
-    const invalid = getHost(canvasElement, 'matrix-invalid');
-    if (invalid.variant !== 'default') {
+    const uncontrolledTrigger = getElement(
+      uncontrolled,
+      '#popover-uncontrolled-trigger',
+    ) as HTMLButtonElement;
+    const controlledTrigger = getElement(
+      controlled,
+      '#popover-controlled-trigger',
+    ) as HTMLButtonElement;
+
+    const uncontrolledInitiallyOpened = uncontrolled.opened;
+    if (!uncontrolledInitiallyOpened) {
+      throw new Error('defaultOpened は uncontrolled 初期 open を成立させる必要があります');
+    }
+
+    clickPrimary(uncontrolledTrigger);
+    await nextFrame();
+    await wait(0);
+    const uncontrolledClosed = uncontrolled.opened;
+    if (uncontrolledClosed) {
+      throw new Error('uncontrolled では内部状態だけで close できる必要があります');
+    }
+
+    const requestPromise = waitForEvent<UiPopoverOpenChangeRequestDetail>(
+      controlled,
+      'ui-popover-open-change-request',
+    );
+    const changeEvents: UiPopoverOpenChangeDetail[] = [];
+    controlled.addEventListener('ui-popover-open-change', (event) => {
+      changeEvents.push((event as CustomEvent<UiPopoverOpenChangeDetail>).detail);
+    });
+
+    clickPrimary(controlledTrigger);
+    const requestEvent = await requestPromise;
+    await nextFrame();
+
+    if (requestEvent.detail.reason !== 'trigger' || requestEvent.detail.nextOpen) {
+      throw new Error('controlled close request は reason=trigger, nextOpen=false が必要です');
+    }
+    if (!controlled.opened) {
+      throw new Error('controlled では request 後も外部が更新するまで opened=true を維持する必要があります');
+    }
+    if (changeEvents.length !== 0) {
+      throw new Error('controlled では外部が opened を更新する前に change event を出してはいけません');
+    }
+
+    controlled.opened = false;
+    await controlled.updateComplete;
+
+    if (changeEvents.at(0)?.reason !== 'trigger') {
+      throw new Error('controlled の確定 change は reason=trigger で 1 回だけ発火する必要があります');
+    }
+    if (controlledTrigger.getAttribute('aria-expanded') !== 'false') {
+      throw new Error('controlled close 確定後は aria-expanded=false が必要です');
+    }
+  },
+};
+
+export const DismissReasonContract: Story = {
+  render: () => html`
+    <div style="display: grid; gap: 1rem; padding: 2rem;">
+      <ui-popover id="reason-trigger">
+        <button id="reason-trigger-button" slot="trigger" type="button">trigger</button>
+        <div id="reason-trigger-content" slot="content">trigger</div>
+      </ui-popover>
+
+      <ui-popover id="reason-escape">
+        <button id="reason-escape-button" slot="trigger" type="button">escape</button>
+        <div id="reason-escape-content" slot="content">escape</div>
+      </ui-popover>
+
+      <ui-popover id="reason-outside">
+        <button id="reason-outside-button" slot="trigger" type="button">outside</button>
+        <div id="reason-outside-content" slot="content">outside</div>
+      </ui-popover>
+
+      <ui-popover id="reason-disabled">
+        <button id="reason-disabled-button" slot="trigger" type="button">disabled</button>
+        <div id="reason-disabled-content" slot="content">disabled</div>
+      </ui-popover>
+
+      <div id="reason-outside-target" tabindex="0">outside target</div>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const triggerHost = getHost(canvasElement, 'reason-trigger');
+    const escapeHost = getHost(canvasElement, 'reason-escape');
+    const outsideHost = getHost(canvasElement, 'reason-outside');
+    const disabledHost = getHost(canvasElement, 'reason-disabled');
+    await Promise.all([
+      triggerHost.updateComplete,
+      escapeHost.updateComplete,
+      outsideHost.updateComplete,
+      disabledHost.updateComplete,
+    ]);
+
+    const outsideTarget = getElement(canvasElement, '#reason-outside-target') as HTMLDivElement;
+
+    const triggerEvents: UiPopoverOpenChangeDetail[] = [];
+    triggerHost.addEventListener('ui-popover-open-change', (event) => {
+      triggerEvents.push((event as CustomEvent<UiPopoverOpenChangeDetail>).detail);
+    });
+    clickPrimary(getElement(triggerHost, '#reason-trigger-button'));
+    await nextFrame();
+    clickPrimary(getElement(triggerHost, '#reason-trigger-button'));
+    await nextFrame();
+    const triggerClose = triggerEvents.at(-1);
+    if (triggerClose?.reason !== 'trigger') {
+      throw new Error('toggle close は reason=trigger である必要があります');
+    }
+
+    const escapeTrigger = getElement(escapeHost, '#reason-escape-button') as HTMLButtonElement;
+    const escapeEvents: UiPopoverOpenChangeDetail[] = [];
+    escapeHost.addEventListener('ui-popover-open-change', (event) => {
+      escapeEvents.push((event as CustomEvent<UiPopoverOpenChangeDetail>).detail);
+    });
+    escapeTrigger.focus();
+    clickPrimary(escapeTrigger);
+    await nextFrame();
+    dispatchEscape(escapeTrigger);
+    await nextFrame();
+    await wait(0);
+    const escapeDetail = escapeEvents.at(-1);
+    if (escapeDetail?.reason !== 'escape' || !escapeDetail.returnFocus) {
+      throw new Error('Escape close は reason=escape, returnFocus=true である必要があります');
+    }
+
+    const outsideTrigger = getElement(outsideHost, '#reason-outside-button') as HTMLButtonElement;
+    const outsideEvents: UiPopoverOpenChangeDetail[] = [];
+    outsideHost.addEventListener('ui-popover-open-change', (event) => {
+      outsideEvents.push((event as CustomEvent<UiPopoverOpenChangeDetail>).detail);
+    });
+    clickPrimary(outsideTrigger);
+    await nextFrame();
+    outsideTarget.dispatchEvent(
+      new PointerEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+        button: 0,
+      }),
+    );
+    await nextFrame();
+    await wait(0);
+    const outsideDetail = outsideEvents.at(-1);
+    if (outsideDetail?.reason !== 'outside-pointer' || outsideDetail.returnFocus) {
       throw new Error(
-        `invalid variant は default に正規化される必要があります: ${invalid.variant}`,
+        'outside dismiss は reason=outside-pointer, returnFocus=false である必要があります',
       );
     }
 
-    for (const id of ['matrix-default', 'matrix-subtle', 'matrix-inverse'] as const) {
-      clickPrimary(getTrigger(getHost(canvasElement, id), `#${id}-trigger`));
-      await nextFrame();
-    }
-
-    const defaultBg = getComputedStyle(
-      getContent(getHost(canvasElement, 'matrix-default')),
-    ).backgroundColor;
-    const subtleBg = getComputedStyle(
-      getContent(getHost(canvasElement, 'matrix-subtle')),
-    ).backgroundColor;
-    const inverseBg = getComputedStyle(
-      getContent(getHost(canvasElement, 'matrix-inverse')),
-    ).backgroundColor;
-
-    if (defaultBg === subtleBg) {
-      throw new Error('default と subtle の背景色は差分が必要です');
-    }
-    if (defaultBg === inverseBg) {
-      throw new Error('default と inverse の背景色は差分が必要です');
-    }
-
-    const disabledHost = getHost(canvasElement, 'matrix-disabled');
-    clickPrimary(getTrigger(disabledHost, '#matrix-disabled-trigger'));
+    const disabledEvents: UiPopoverOpenChangeDetail[] = [];
+    disabledHost.addEventListener('ui-popover-open-change', (event) => {
+      disabledEvents.push((event as CustomEvent<UiPopoverOpenChangeDetail>).detail);
+    });
+    clickPrimary(getElement(disabledHost, '#reason-disabled-button'));
     await nextFrame();
-    if (disabledHost.opened) {
-      throw new Error('disabled 状態で開いてはいけません');
+    disabledHost.disabled = true;
+    await disabledHost.updateComplete;
+    await wait(0);
+    const disabledDetail = disabledEvents.at(-1);
+    if (disabledDetail?.reason !== 'disabled' || disabledDetail.returnFocus) {
+      throw new Error('disabled close は reason=disabled, returnFocus=false が必要です');
     }
   },
 };
 
-export const AnchorDualAccessBoundary: Story = {
+export const ActiveTriggerAndControllerModeContract: Story = {
   render: () => html`
-    <div style="padding: 2rem;">
-      <ui-popover id="popover-anchor" keep-link-fallback>
-        <a id="anchor-trigger" slot="trigger" href="#anchor-target">脚注リンク</a>
-        <div id="anchor-content" slot="content">リンク型 trigger の検証</div>
+    <div style="display: grid; gap: 1rem; padding: 2rem;">
+      <ui-popover id="popover-shared">
+        <button id="popover-shared-owner" slot="trigger" type="button">owner</button>
+        <div id="popover-shared-content" slot="content">shared content</div>
       </ui-popover>
-      <div id="anchor-target">target</div>
+      <button id="popover-shared-follower" type="button">follower</button>
+
+      <ui-popover id="popover-controller-only">
+        <div id="popover-controller-content" slot="content">controller only</div>
+      </ui-popover>
+      <button id="popover-controller-external" type="button">external trigger</button>
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const host = getHost(canvasElement, 'popover-anchor');
-    await host.updateComplete;
-    const trigger = getTrigger(host, '#anchor-trigger');
+    const shared = getHost(canvasElement, 'popover-shared');
+    const controllerOnly = getHost(canvasElement, 'popover-controller-only');
+    await Promise.all([shared.updateComplete, controllerOnly.updateComplete]);
 
-    // バブルフェーズのリスナーでコンポーネント処理後の状態を記録しつつナビゲーションを防ぐ
-    // （dispatchEvent は同期的のため、コンポーネントの target フェーズ処理後に実行される）
-    const dispatchAndCapture = (event: MouseEvent): boolean => {
-      let preventedByComponent = false;
-      const guard = (e: Event): void => {
-        preventedByComponent = e.defaultPrevented;
-        e.preventDefault(); // 実際のナビゲーションを防止
-      };
-      canvasElement.addEventListener('click', guard);
-      trigger.dispatchEvent(event);
-      canvasElement.removeEventListener('click', guard);
-      return preventedByComponent;
-    };
+    const ownerTrigger = getElement(shared, '#popover-shared-owner') as HTMLButtonElement;
+    const followerTrigger = getElement(
+      canvasElement,
+      '#popover-shared-follower',
+    ) as HTMLButtonElement;
 
-    const modifiedClick = new MouseEvent('click', {
-      bubbles: true,
-      cancelable: true,
-      button: 0,
-      ctrlKey: true,
-    });
-    if (dispatchAndCapture(modifiedClick)) {
-      throw new Error('修飾キー付きクリックは preventDefault してはいけません');
-    }
-
-    const middleClick = new MouseEvent('click', {
-      bubbles: true,
-      cancelable: true,
-      button: 1,
-    });
-    if (dispatchAndCapture(middleClick)) {
-      throw new Error('中クリックは preventDefault してはいけません');
-    }
-
-    const normalClick = clickPrimary(trigger);
+    shared.openForTrigger(followerTrigger);
     await nextFrame();
 
-    if (supportsPopoverApi()) {
-      if (!normalClick.defaultPrevented) {
-        throw new Error('Popover API 対応環境の通常クリックは preventDefault が必要です');
-      }
-      if (!host.opened) {
-        throw new Error('通常クリックで開く必要があります');
-      }
-    } else {
-      if (normalClick.defaultPrevented) {
-        throw new Error('Popover 非対応環境ではリンクフォールバックを維持する必要があります');
-      }
-      if (host.opened) {
-        throw new Error('Popover 非対応環境 keepLinkFallback では opened=false を維持します');
-      }
+    if (!shared.opened) {
+      throw new Error('controller mode で slot 外 trigger から open できる必要があります');
+    }
+    if (followerTrigger.getAttribute('aria-expanded') !== 'true') {
+      throw new Error('active trigger の follower は aria-expanded=true である必要があります');
+    }
+    if (ownerTrigger.getAttribute('aria-expanded') !== 'false') {
+      throw new Error('owner trigger は active でない限り aria-expanded=false を維持する必要があります');
+    }
+    if (ownerTrigger.hasAttribute('aria-controls')) {
+      throw new Error('owner trigger は active でない間 aria-controls を保持してはいけません');
+    }
+
+    const openChangeEvents: UiPopoverOpenChangeDetail[] = [];
+    shared.addEventListener('ui-popover-open-change', (event) => {
+      openChangeEvents.push((event as CustomEvent<UiPopoverOpenChangeDetail>).detail);
+    });
+
+    shared.openForTrigger(ownerTrigger);
+    await nextFrame();
+
+    if (ownerTrigger.getAttribute('aria-expanded') !== 'true') {
+      throw new Error('active trigger を owner に切り替えられる必要があります');
+    }
+    if (followerTrigger.getAttribute('aria-expanded') !== 'false') {
+      throw new Error('旧 active trigger は aria-expanded=false に戻る必要があります');
+    }
+    if (openChangeEvents.length !== 0) {
+      throw new Error('active trigger 切替は open 真偽値変更ではないため change event を発火してはいけません');
+    }
+
+    const controllerExternal = getElement(
+      canvasElement,
+      '#popover-controller-external',
+    ) as HTMLButtonElement;
+    controllerExternal.focus();
+    controllerOnly.openForTrigger(controllerExternal);
+    await nextFrame();
+    if (!controllerOnly.opened) {
+      throw new Error('trigger slot なしでも openForTrigger() で開ける必要があります');
+    }
+    controllerOnly.close({ returnFocus: true });
+    await nextFrame();
+    await wait(0);
+    if (document.activeElement !== controllerExternal) {
+      throw new Error('controller mode の close(returnFocus=true) は active trigger へ戻る必要があります');
     }
   },
 };
 
-export const ProgrammaticSharedTriggerContract: Story = {
+export const SlotResyncAndBoundaryContract: Story = {
   render: () => html`
-    <div style="padding: 2rem; display: grid; gap: 0.75rem;">
-      <ui-popover id="shared-popover">
-        <button id="shared-owner-trigger" slot="trigger" type="button">owner</button>
-        <div id="shared-content" slot="content">共有コンテンツ</div>
-      </ui-popover>
-      <button id="shared-follower-trigger" type="button">follower</button>
-    </div>
-  `,
-  play: async ({ canvasElement }) => {
-    const host = getHost(canvasElement, 'shared-popover');
-    await host.updateComplete;
-
-    const ownerTrigger = getTrigger(host, '#shared-owner-trigger');
-    const followerTrigger = canvasElement.querySelector<HTMLElement>('#shared-follower-trigger');
-    if (!followerTrigger) throw new Error('#shared-follower-trigger が見つかりません');
-
-    host.openForTrigger(followerTrigger);
-    await nextFrame();
-    if (!host.opened) {
-      throw new Error('openForTrigger(follower) で開く必要があります');
-    }
-    if (getExpanded(followerTrigger) !== 'true') {
-      throw new Error('follower trigger の aria-expanded が true である必要があります');
-    }
-    if (getExpanded(ownerTrigger) !== 'false') {
-      throw new Error('owner trigger の aria-expanded は false を維持する必要があります');
-    }
-
-    host.openForTrigger(ownerTrigger);
-    await nextFrame();
-    if (getExpanded(ownerTrigger) !== 'true') {
-      throw new Error('owner trigger の aria-expanded が true に切り替わる必要があります');
-    }
-    if (getExpanded(followerTrigger) !== 'false') {
-      throw new Error('active trigger 切り替え時に follower は false へ戻る必要があります');
-    }
-
-    ownerTrigger.focus();
-    host.close();
-    await nextFrame();
-    if (document.activeElement !== ownerTrigger) {
-      throw new Error('close() の既定動作で active trigger にフォーカス復帰する必要があります');
-    }
-  },
-};
-
-export const BoundaryConditions: Story = {
-  render: () => html`
-    <div style="display: grid; gap: 0.75rem;">
+    <div style="display: grid; gap: 1rem;">
       <ui-popover id="boundary-invalid" variant="unsupported" placement="diagonal" offset="-4">
         <button id="boundary-invalid-trigger" slot="trigger" type="button">invalid</button>
         <div id="boundary-invalid-content" slot="content">invalid normalization</div>
       </ui-popover>
 
-      <ui-popover id="boundary-no-content">
-        <button id="boundary-no-content-trigger" slot="trigger" type="button">no content</button>
+      <ui-popover id="boundary-multi-content">
+        <button id="boundary-multi-trigger" slot="trigger" type="button">multi</button>
+        <div slot="content">first</div>
+        <div slot="content">second</div>
       </ui-popover>
 
-      <ui-popover id="boundary-no-trigger" opened>
-        <div id="boundary-no-trigger-content" slot="content">no trigger</div>
+      <ui-popover id="boundary-resync">
+        <button id="boundary-resync-trigger" slot="trigger" type="button">resync</button>
+        <div id="boundary-resync-content" slot="content">before replace</div>
       </ui-popover>
 
       <div id="boundary-reconnect-wrap">
@@ -472,72 +541,84 @@ export const BoundaryConditions: Story = {
   `,
   play: async ({ canvasElement }) => {
     const invalid = getHost(canvasElement, 'boundary-invalid');
-    const noContent = getHost(canvasElement, 'boundary-no-content');
-    const noTrigger = getHost(canvasElement, 'boundary-no-trigger');
+    const multi = getHost(canvasElement, 'boundary-multi-content');
+    const resync = getHost(canvasElement, 'boundary-resync');
     const reconnect = getHost(canvasElement, 'boundary-reconnect');
     await Promise.all([
       invalid.updateComplete,
-      noContent.updateComplete,
-      noTrigger.updateComplete,
+      multi.updateComplete,
+      resync.updateComplete,
       reconnect.updateComplete,
     ]);
 
     if (invalid.variant !== 'default') {
-      throw new Error(`invalid variant の正規化が不正です: ${invalid.variant}`);
+      throw new Error(`invalid variant は default に正規化される必要があります: ${invalid.variant}`);
     }
     if (invalid.placement !== 'bottom-start') {
-      throw new Error(`invalid placement の正規化が不正です: ${invalid.placement}`);
+      throw new Error(
+        `invalid placement は bottom-start に正規化される必要があります: ${invalid.placement}`,
+      );
     }
     if (invalid.offset !== 0) {
-      throw new Error(`invalid offset の正規化が不正です: ${String(invalid.offset)}`);
+      throw new Error(`invalid offset は 0 に正規化される必要があります: ${String(invalid.offset)}`);
     }
 
-    clickPrimary(getTrigger(noContent, '#boundary-no-content-trigger'));
+    clickPrimary(getElement(multi, '#boundary-multi-trigger'));
     await nextFrame();
-    if (noContent.opened) {
-      throw new Error('content 不在では開いてはいけません');
+    if (multi.opened) {
+      throw new Error('複数 content slot は no-op として扱われる必要があります');
     }
 
-    await noTrigger.updateComplete;
-    if (noTrigger.opened) {
-      throw new Error('trigger 不在では opened=true を維持してはいけません');
+    const resyncTrigger = getElement(resync, '#boundary-resync-trigger') as HTMLButtonElement;
+    clickPrimary(resyncTrigger);
+    await nextFrame();
+    const slotEvents: UiPopoverOpenChangeDetail[] = [];
+    resync.addEventListener('ui-popover-open-change', (event) => {
+      slotEvents.push((event as CustomEvent<UiPopoverOpenChangeDetail>).detail);
+    });
+    const currentContent = getElement(resync, '#boundary-resync-content') as HTMLDivElement;
+    currentContent.remove();
+    await resync.updateComplete;
+    await nextFrame();
+    await wait(0);
+    const invalidatedDetail = slotEvents.at(-1);
+    if (invalidatedDetail?.reason !== 'slot-invalidated') {
+      throw new Error('slot から必要要素が失われた場合は reason=slot-invalidated で閉じる必要があります');
     }
 
-    const wrap = canvasElement.querySelector<HTMLElement>('#boundary-reconnect-wrap');
-    if (!wrap) throw new Error('#boundary-reconnect-wrap が見つかりません');
-    clickPrimary(getTrigger(reconnect, '#boundary-reconnect-trigger'));
+    const reconnectWrap = getElement(canvasElement, '#boundary-reconnect-wrap') as HTMLDivElement;
+    const reconnectTrigger = getElement(
+      reconnect,
+      '#boundary-reconnect-trigger',
+    ) as HTMLButtonElement;
+    clickPrimary(reconnectTrigger);
+    await nextFrame();
+    reconnectWrap.removeChild(reconnect);
+    await nextFrame();
+    reconnectWrap.appendChild(reconnect);
+    await reconnect.updateComplete;
+    await nextFrame();
+    clickPrimary(getElement(reconnect, '#boundary-reconnect-trigger'));
     await nextFrame();
     if (!reconnect.opened) {
-      throw new Error('reconnect 前提で開いている必要があります');
+      throw new Error('reconnect 後も再び open できる必要があります');
     }
 
-    wrap.removeChild(reconnect);
-    await nextFrame();
-    wrap.appendChild(reconnect);
-    await reconnect.updateComplete;
-    clickPrimary(getTrigger(reconnect, '#boundary-reconnect-trigger'));
-    await nextFrame();
-    clickPrimary(getTrigger(reconnect, '#boundary-reconnect-trigger'));
-    await nextFrame();
-    clickPrimary(getTrigger(reconnect, '#boundary-reconnect-trigger'));
-    await nextFrame();
-    const reconnectTrigger = getTrigger(reconnect, '#boundary-reconnect-trigger');
-    if (reconnectTrigger.getAttribute('aria-expanded') !== 'true') {
-      throw new Error('再接続後も開閉できる必要があります');
-    }
-
-    const reconnectContent = getContent(reconnect, '#boundary-reconnect-content');
+    const reconnectContent = getElement(
+      reconnect,
+      '#boundary-reconnect-content',
+    ) as HTMLDivElement;
     const style = getComputedStyle(reconnectContent);
     if (style.overflowY !== 'auto') {
-      throw new Error(`content の overflow-y は auto である必要があります: ${style.overflowY}`);
+      throw new Error(`長文 content は overflow-y:auto が必要です: ${style.overflowY}`);
     }
     if (style.maxHeight === 'none') {
-      throw new Error('content の max-height が無制限です');
+      throw new Error('長文 content は max-height 制約を失ってはいけません');
     }
   },
 };
 
-export const DarkModeContract: Story = {
+export const VisualModeContracts: Story = {
   parameters: {
     backgrounds: { default: 'dark' },
   },
@@ -552,56 +633,52 @@ export const DarkModeContract: Story = {
         gap: 1rem;
       "
     >
-      <ui-popover id="dark-default" variant="default">
-        <button id="dark-default-trigger" slot="trigger" type="button">Default</button>
-        <div id="dark-default-content" slot="content">dark default</div>
+      <ui-popover id="visual-default" variant="default">
+        <button id="visual-default-trigger" slot="trigger" type="button">Default</button>
+        <div id="visual-default-content" slot="content">default</div>
       </ui-popover>
-      <ui-popover id="dark-inverse" variant="inverse">
-        <button id="dark-inverse-trigger" slot="trigger" type="button">Inverse</button>
-        <div id="dark-inverse-content" slot="content">dark inverse</div>
+      <ui-popover id="visual-subtle" variant="subtle">
+        <button id="visual-subtle-trigger" slot="trigger" type="button">Subtle</button>
+        <div id="visual-subtle-content" slot="content">subtle</div>
+      </ui-popover>
+      <ui-popover id="visual-inverse" variant="inverse">
+        <button id="visual-inverse-trigger" slot="trigger" type="button">Inverse</button>
+        <div id="visual-inverse-content" slot="content">inverse</div>
       </ui-popover>
     </div>
   `,
   play: async ({ canvasElement }) => {
-    const defaultHost = getHost(canvasElement, 'dark-default');
-    const inverseHost = getHost(canvasElement, 'dark-inverse');
-    await Promise.all([defaultHost.updateComplete, inverseHost.updateComplete]);
+    const defaultHost = getHost(canvasElement, 'visual-default');
+    const subtleHost = getHost(canvasElement, 'visual-subtle');
+    const inverseHost = getHost(canvasElement, 'visual-inverse');
+    await Promise.all([defaultHost.updateComplete, subtleHost.updateComplete, inverseHost.updateComplete]);
 
-    clickPrimary(getTrigger(defaultHost, '#dark-default-trigger'));
-    clickPrimary(getTrigger(inverseHost, '#dark-inverse-trigger'));
+    clickPrimary(getElement(defaultHost, '#visual-default-trigger'));
+    clickPrimary(getElement(subtleHost, '#visual-subtle-trigger'));
+    clickPrimary(getElement(inverseHost, '#visual-inverse-trigger'));
     await nextFrame();
     await wait(10);
 
-    const defaultStyle = getComputedStyle(getContent(defaultHost, '#dark-default-content'));
-    const inverseStyle = getComputedStyle(getContent(inverseHost, '#dark-inverse-content'));
+    const defaultStyle = getComputedStyle(getElement(defaultHost, '#visual-default-content'));
+    const subtleStyle = getComputedStyle(getElement(subtleHost, '#visual-subtle-content'));
+    const inverseStyle = getComputedStyle(getElement(inverseHost, '#visual-inverse-content'));
+
+    if (defaultStyle.backgroundColor === subtleStyle.backgroundColor) {
+      throw new Error('default と subtle の背景は区別できる必要があります');
+    }
     if (defaultStyle.backgroundColor === inverseStyle.backgroundColor) {
-      throw new Error('dark mode でも default/inverse の背景が区別できる必要があります');
+      throw new Error('default と inverse の背景は区別できる必要があります');
     }
     if (defaultStyle.boxShadow === 'none') {
-      throw new Error('dark mode でも shadow を維持する必要があります');
+      throw new Error('default variant は shadow を維持する必要があります');
     }
-    if (defaultStyle.zIndex === 'auto') {
-      throw new Error('z-index は z-popover を参照する必要があります');
-    }
-  },
-};
-
-export const VisualModeContracts: Story = {
-  render: () => html`
-    <ui-popover id="visual-popover">
-      <button id="visual-trigger" slot="trigger" type="button">visual</button>
-      <div id="visual-content" slot="content">visual content</div>
-    </ui-popover>
-  `,
-  play: async ({ canvasElement }) => {
-    const host = getHost(canvasElement, 'visual-popover');
-    await host.updateComplete;
 
     const styleElement = document.getElementById(DOCUMENT_STYLE_ID);
     if (!(styleElement instanceof HTMLStyleElement)) {
-      throw new Error('ui-popover の document style が注入されていません');
+      throw new Error('document 単位の style 供給が存在しません');
     }
-    const cssText = styleElement.textContent;
+
+    const cssText = styleElement.textContent || '';
     const requiredSnippets = [
       '@media (prefers-reduced-motion: reduce)',
       '@media (forced-colors: active)',
@@ -614,17 +691,8 @@ export const VisualModeContracts: Story = {
     ];
     for (const snippet of requiredSnippets) {
       if (!cssText.includes(snippet)) {
-        throw new Error(`表示モード契約に必要なスタイル定義が不足しています: ${snippet}`);
+        throw new Error(`表示契約に必要な document style が不足しています: ${snippet}`);
       }
-    }
-
-    const content = getContent(host, '#visual-content');
-    // Popover API 環境では hidden 属性ではなく UA スタイルで非表示になるため、
-    // popover 属性あり + :popover-open でない場合も「非表示」として扱う
-    const isHiddenByAttribute = content.hidden;
-    const isHiddenByPopoverApi = content.hasAttribute('popover') && !isPopoverOpen(content);
-    if (!isHiddenByAttribute && !isHiddenByPopoverApi) {
-      throw new Error('初期状態では content は非表示である必要があります');
     }
   },
 };

@@ -9,11 +9,38 @@ import {
 import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
 
+interface ImportMetaEnvLike {
+  DEV?: boolean;
+}
+
 export type UiPopoverVariant = 'default' | 'subtle' | 'inverse';
 export type UiPopoverPlacement = Placement;
+export type UiPopoverOpenChangeReason =
+  | 'trigger'
+  | 'escape'
+  | 'outside-pointer'
+  | 'disabled'
+  | 'slot-invalidated'
+  | 'disconnected'
+  | 'programmatic';
 
 export interface UiPopoverOpenOptions {
   returnFocus?: boolean;
+}
+
+export interface UiPopoverOpenChangeRequestDetail {
+  nextOpen: boolean;
+  reason: UiPopoverOpenChangeReason;
+  trigger: HTMLElement | null;
+  content: HTMLElement | null;
+}
+
+export interface UiPopoverOpenChangeDetail {
+  open: boolean;
+  reason: UiPopoverOpenChangeReason;
+  trigger: HTMLElement | null;
+  content: HTMLElement | null;
+  returnFocus: boolean;
 }
 
 export interface UiPopoverToggleDetail {
@@ -37,6 +64,7 @@ export const DOCUMENT_STYLE_ID = 'ui-popover-document-styles';
 
 const DEFAULT_OFFSET = 8;
 const EDGE_PADDING = 8;
+const FALLBACK_POPUP_ID_PREFIX = 'ui-popover-content-';
 
 const VALID_VARIANTS = new Set<UiPopoverVariant>(['default', 'subtle', 'inverse']);
 const VALID_PLACEMENTS = new Set<UiPopoverPlacement>([
@@ -147,10 +175,6 @@ ui-popover [data-ui-popover-trigger].is-active-trigger {
     border: 2px solid CanvasText;
     box-shadow: none;
   }
-
-  ui-popover [data-ui-popover-trigger] {
-    color: LinkText;
-  }
 }
 
 @media print {
@@ -166,11 +190,36 @@ type PopoverElement = HTMLElement & {
   hidePopover?: () => void;
   showPopover?: () => void;
 };
+type PopoverControlMode = 'uncontrolled' | 'controlled';
+
+interface PendingOpenChange {
+  nextOpen: boolean;
+  reason: UiPopoverOpenChangeReason;
+  trigger: HTMLElement | null;
+  returnFocus: boolean;
+}
+
+const IS_DEVELOPMENT =
+  (import.meta as ImportMeta & { env?: ImportMetaEnvLike }).env?.DEV ?? true;
 
 const toNonNegativeFiniteNumber = (value: number, fallback: number): number => {
   if (!Number.isFinite(value)) return fallback;
   if (value < 0) return 0;
   return value;
+};
+
+const isFormControl = (element: HTMLElement): boolean =>
+  element instanceof HTMLButtonElement ||
+  element instanceof HTMLInputElement ||
+  element instanceof HTMLSelectElement ||
+  element instanceof HTMLTextAreaElement;
+
+const isInteractiveElement = (element: HTMLElement): boolean => {
+  if (!element.isConnected) return false;
+  if (element instanceof HTMLButtonElement) return !element.disabled;
+  if (element instanceof HTMLAnchorElement) return element.hasAttribute('href');
+  if (isFormControl(element)) return !element.hasAttribute('disabled');
+  return element.tabIndex >= 0;
 };
 
 @customElement('ui-popover')
@@ -193,9 +242,13 @@ export class UiPopover extends LitElement {
   @property({ type: Boolean, reflect: true })
   opened = false;
 
+  @property({ type: Boolean })
+  defaultOpened = false;
+
   @property({ type: Boolean, reflect: true })
   disabled = false;
 
+  // 互換維持用。公開契約には含めない。
   @property({ type: Boolean, attribute: 'keep-link-fallback', reflect: true })
   keepLinkFallback = false;
 
@@ -205,55 +258,61 @@ export class UiPopover extends LitElement {
   @query('slot[name="content"]')
   private _contentSlot?: HTMLSlotElement;
 
-  private readonly _fallbackPopoverId = `ui-popover-content-${Math.random().toString(36).slice(2, 11)}`;
+  private readonly _fallbackPopoverId = `${FALLBACK_POPUP_ID_PREFIX}${Math.random().toString(36).slice(2, 11)}`;
 
-  private _triggerElement: HTMLElement | null = null;
+  private _ownerTrigger: HTMLElement | null = null;
   private _contentElement: PopoverElement | null = null;
   private _activeTrigger: HTMLElement | null = null;
   private _openState = false;
-  private _ignoreOpenedChange = false;
-  private _returnFocusOnClose = true;
-
+  private _controlMode: PopoverControlMode = 'uncontrolled';
+  private _didInitializeControlMode = false;
+  private _isReflectingOpened = false;
+  private _pendingOpenChange: PendingOpenChange | null = null;
+  private _dismissReasonHint: UiPopoverOpenChangeReason | null = null;
   private _cleanupAutoUpdate: (() => void) | null = null;
-  private _fallbackOutsideCleanup: (() => void) | null = null;
+  private _cleanupOutsidePointerListeners: (() => void) | null = null;
+  private _cleanupDocumentKeydownListener: (() => void) | null = null;
+  private _contentObserver: MutationObserver | null = null;
 
   override connectedCallback(): void {
     super.connectedCallback();
     this._injectDocumentStyles();
-    // 再接続時はスロット要素とリスナーを再同期する（slotchange が発火しないブラウザに対応）
     void this.updateComplete.then(() => {
       this._syncElementsFromSlots();
     });
   }
 
   override disconnectedCallback(): void {
-    this._cleanupAutoUpdate?.();
-    this._cleanupAutoUpdate = null;
-    this._cleanupFallbackOutsideListeners();
-
-    this._detachTriggerListeners(this._triggerElement);
+    this._requestStateChange(false, 'disconnected', this._activeTrigger, { returnFocus: false });
+    this._teardownFloating();
+    this._cleanupGlobalDismissListeners();
+    this._detachTriggerListeners(this._ownerTrigger);
     this._detachContentListeners(this._contentElement);
-    this._setTriggerState(this._activeTrigger, false);
-    this._setTriggerState(this._triggerElement, false);
-
-    // 参照をリセット：再接続時に _syncElementsFromSlots が「変化なし」と判断して
-    // リスナー再アタッチをスキップしないようにする
-    this._triggerElement = null;
+    this._observeContentId(null);
+    this._ownerTrigger = null;
     this._contentElement = null;
-    this._activeTrigger = null;
-
-    // DOM から切り離されたタイミングでブラウザがポップオーバーを自動的に閉じるため
-    // 内部状態もリセットして再接続後の不整合を防ぐ
-    this._openState = false;
-    this._ignoreOpenedChange = true;
-    this.opened = false;
-    this._ignoreOpenedChange = false;
-
     super.disconnectedCallback();
   }
 
   protected override firstUpdated(): void {
+    this._initializeControlMode();
     this._syncElementsFromSlots();
+
+    if (this._controlMode === 'uncontrolled' && this.defaultOpened) {
+      const initialTrigger = this._ownerTrigger ?? this._activeTrigger;
+      if (initialTrigger) {
+        this.openForTrigger(initialTrigger);
+      } else {
+        this._warn('defaultOpened は trigger 解決後にのみ利用できます。');
+      }
+    } else if (this._controlMode === 'controlled' && this.opened) {
+      const initialTrigger = this._activeTrigger ?? this._ownerTrigger;
+      if (initialTrigger) {
+        this._applyOpenChange(true, 'programmatic', initialTrigger, false);
+      } else {
+        this._syncOpenedProperty(false);
+      }
+    }
   }
 
   protected override willUpdate(changedProperties: PropertyValues<this>): void {
@@ -268,11 +327,19 @@ export class UiPopover extends LitElement {
     if (changedProperties.has('offset')) {
       this.offset = toNonNegativeFiniteNumber(this.offset, DEFAULT_OFFSET);
     }
+
+    if (
+      this._didInitializeControlMode &&
+      changedProperties.has('opened') &&
+      !this._isReflectingOpened
+    ) {
+      this._controlMode = 'controlled';
+    }
   }
 
   protected override updated(changedProperties: PropertyValues<this>): void {
-    if (changedProperties.has('disabled') && this.disabled) {
-      this.close({ returnFocus: false });
+    if (changedProperties.has('disabled') && this.disabled && this._openState) {
+      this._requestStateChange(false, 'disabled', this._activeTrigger, { returnFocus: false });
     }
 
     if (changedProperties.has('variant')) {
@@ -285,94 +352,75 @@ export class UiPopover extends LitElement {
       }
     }
 
-    if (changedProperties.has('opened') && !this._ignoreOpenedChange) {
-      if (this.opened && !this._openState) {
-        const nextTrigger = this._activeTrigger ?? this._triggerElement;
-        if (nextTrigger) {
-          this.openForTrigger(nextTrigger);
-        } else {
-          this._setOpenedProperty(false);
-        }
-      }
+    if (changedProperties.has('opened') && this._isReflectingOpened) {
+      this._isReflectingOpened = false;
+    }
 
-      if (!this.opened && this._openState) {
-        this.close();
-      }
+    if (
+      this._didInitializeControlMode &&
+      this._controlMode === 'controlled' &&
+      changedProperties.has('opened') &&
+      !this._isReflectingOpened
+    ) {
+      this._syncControlledOpenState();
     }
   }
 
-  openForTrigger(trigger: HTMLElement, options?: UiPopoverOpenOptions): void {
+  openForTrigger(trigger: HTMLElement, _options?: UiPopoverOpenOptions): void {
     if (this.disabled) return;
+
     const content = this._contentElement;
-    if (!content) return;
-
-    this._returnFocusOnClose = options?.returnFocus ?? true;
-    this._setActiveTrigger(trigger);
-
-    if (this._supportsPopoverApi) {
-      if (this._isPopoverOpen(content)) {
-        this._startFloating();
-        this._commitOpenState(true);
-        return;
-      }
-
-      if (typeof content.showPopover === 'function') {
-        try {
-          content.showPopover();
-          // toggle イベントが非同期の場合に備え、同期的に状態をコミットする
-          this._startFloating();
-          this._commitOpenState(true);
-          return;
-        } catch {
-          return;
-        }
-      }
-    }
-
-    content.hidden = false;
-    content.dataset['open'] = 'true';
-    this._setupFallbackOutsideListeners();
-    this._startFloating();
-    this._commitOpenState(true);
-  }
-
-  close(options?: UiPopoverOpenOptions): void {
-    const content = this._contentElement;
-    if (!content) return;
-
-    this._returnFocusOnClose = options?.returnFocus ?? true;
-
-    if (this._supportsPopoverApi && this._isPopoverOpen(content)) {
-      if (typeof content.hidePopover === 'function') {
-        try {
-          content.hidePopover();
-          // Popover API では閉状態の反映を toggle に委ねる。
-          // ここで先に data-open='false' を付与すると、top-layer 解除前に
-          // 閉アニメーション用スタイルだけが先行適用され、ちらつきの原因になる。
-          this._teardownFloating();
-          return;
-        } catch {
-          // hidePopover に失敗した場合はフォールバックで状態を同期する
-        }
-      }
-    }
-
-    content.hidden = true;
-    content.dataset['open'] = 'false';
-    this._cleanupFallbackOutsideListeners();
-    this._teardownFloating();
-    this._commitOpenState(false);
-  }
-
-  toggleForTrigger(trigger?: HTMLElement): void {
-    if (this._openState) {
-      this.close();
+    if (!content) {
+      this._warn('content slot が解決できないため openForTrigger() は no-op になります。');
       return;
     }
 
-    const nextTrigger = trigger ?? this._activeTrigger ?? this._triggerElement;
-    if (!nextTrigger) return;
-    this.openForTrigger(nextTrigger);
+    if (!this._validateTrigger(trigger, 'openForTrigger()')) return;
+
+    if (this._openState) {
+      if (trigger === this._activeTrigger) {
+        this._startFloating();
+        return;
+      }
+
+      this._setActiveTrigger(trigger);
+      this._syncTriggerRelationships();
+      this._startFloating();
+      return;
+    }
+
+    this._requestStateChange(true, 'trigger', trigger, { returnFocus: false });
+  }
+
+  close(options?: UiPopoverOpenOptions): void {
+    if (!this._openState) return;
+    this._requestStateChange(false, 'programmatic', this._activeTrigger, {
+      returnFocus: options?.returnFocus ?? false,
+    });
+  }
+
+  toggleForTrigger(trigger?: HTMLElement): void {
+    const resolvedTrigger = trigger ?? (this._openState ? this._activeTrigger : this._ownerTrigger);
+    if (!resolvedTrigger) {
+      this._warn('toggleForTrigger() は trigger を解決できないため no-op になります。');
+      return;
+    }
+
+    if (!this._validateTrigger(resolvedTrigger, 'toggleForTrigger()')) return;
+
+    if (!this._openState) {
+      this.openForTrigger(resolvedTrigger);
+      return;
+    }
+
+    if (resolvedTrigger === this._activeTrigger) {
+      this._requestStateChange(false, 'trigger', resolvedTrigger, { returnFocus: true });
+      return;
+    }
+
+    this._setActiveTrigger(resolvedTrigger);
+    this._syncTriggerRelationships();
+    this._startFloating();
   }
 
   private get _supportsPopoverApi(): boolean {
@@ -388,52 +436,103 @@ export class UiPopover extends LitElement {
     return toNonNegativeFiniteNumber(this.offset, DEFAULT_OFFSET);
   }
 
-  private _injectDocumentStyles(): void {
-    if (typeof document === 'undefined') return;
-    if (document.getElementById(DOCUMENT_STYLE_ID)) return;
+  private _initializeControlMode(): void {
+    if (this._didInitializeControlMode) return;
 
-    const style = document.createElement('style');
-    style.id = DOCUMENT_STYLE_ID;
-    style.textContent = DOCUMENT_CSS;
-    document.head.append(style);
+    this._controlMode = this.hasAttribute('opened') || this.opened ? 'controlled' : 'uncontrolled';
+    this._didInitializeControlMode = true;
+
+    if (this._controlMode === 'controlled' && this.defaultOpened) {
+      this._warn('opened と defaultOpened の同時指定は契約違反です。opened を優先します。');
+    }
+
+    if (this.keepLinkFallback) {
+      this._warn(
+        'keep-link-fallback は互換維持用です。link fallback は semantic wrapper 側へ移行してください。',
+      );
+    }
   }
 
-  private _getAssignedElement(slot: HTMLSlotElement | undefined): HTMLElement | null {
-    if (!slot) return null;
-    const assigned = slot.assignedElements({ flatten: true })[0];
-    return assigned instanceof HTMLElement ? assigned : null;
+  private _warn(message: string): void {
+    if (!IS_DEVELOPMENT) return;
+    console.warn(`[ui-popover] ${message}`);
+  }
+
+  private _injectDocumentStyles(): void {
+    const ownerDocument = this.ownerDocument;
+    if (ownerDocument.getElementById(DOCUMENT_STYLE_ID)) return;
+
+    const style = ownerDocument.createElement('style');
+    style.id = DOCUMENT_STYLE_ID;
+    style.textContent = DOCUMENT_CSS;
+    ownerDocument.head.append(style);
+  }
+
+  private _getAssignedElements(slot: HTMLSlotElement | undefined): HTMLElement[] {
+    if (!slot) return [];
+    return slot.assignedElements({ flatten: true }).filter(
+      (element): element is HTMLElement => element instanceof HTMLElement,
+    );
+  }
+
+  private _resolveSingleAssignedElement(
+    slot: HTMLSlotElement | undefined,
+    slotName: 'trigger' | 'content',
+  ): HTMLElement | null {
+    const assigned = this._getAssignedElements(slot);
+    if (assigned.length === 1) return assigned.at(0) ?? null;
+    if (assigned.length > 1) {
+      this._warn(`${slotName} slot には単一の HTMLElement だけを与えてください。`);
+    }
+    return null;
   }
 
   private _syncElementsFromSlots(): void {
-    const nextTrigger = this._getAssignedElement(this._triggerSlot);
-    const nextContent = this._getAssignedElement(this._contentSlot);
-    const nextPopover = nextContent as PopoverElement | null;
+    const previousOwnerTrigger = this._ownerTrigger;
+    const previousContent = this._contentElement;
+    const nextOwnerTrigger = this._resolveSingleAssignedElement(this._triggerSlot, 'trigger');
+    const nextContent = this._resolveSingleAssignedElement(this._contentSlot, 'content') as
+      | PopoverElement
+      | null;
 
-    if (nextTrigger !== this._triggerElement) {
-      this._detachTriggerListeners(this._triggerElement);
-      this._triggerElement = nextTrigger;
-      this._attachTriggerListeners(this._triggerElement);
+    if (!nextContent && previousContent && this._openState) {
+      this._requestStateChange(false, 'slot-invalidated', this._activeTrigger, {
+        returnFocus: false,
+      });
     }
 
-    if (nextPopover !== this._contentElement) {
+    if (nextOwnerTrigger !== previousOwnerTrigger) {
+      this._detachTriggerListeners(previousOwnerTrigger);
+      this._ownerTrigger = nextOwnerTrigger;
+      this._attachTriggerListeners(this._ownerTrigger);
+    }
+
+    if (nextContent !== this._contentElement) {
       this._detachContentListeners(this._contentElement);
-      this._contentElement = nextPopover;
+      this._observeContentId(null);
+      this._contentElement = nextContent;
       this._attachContentListeners(this._contentElement);
+      this._observeContentId(this._contentElement);
     }
 
-    this._applyTriggerSemantics(this._triggerElement);
-    this._applyContentSemantics(this._contentElement);
-    this._syncAriaExpanded();
+    if (this._activeTrigger === previousOwnerTrigger) {
+      this._activeTrigger = this._ownerTrigger;
+    }
 
-    if (!this._triggerElement || !this._contentElement) {
-      this._teardownFloating();
-      this._cleanupFallbackOutsideListeners();
-      this._commitOpenState(false);
+    this._applyContentSemantics(this._contentElement);
+    this._syncTriggerRelationships();
+
+    if (!this._contentElement) {
+      if (this._openState) {
+        this._requestStateChange(false, 'slot-invalidated', this._activeTrigger, {
+          returnFocus: false,
+        });
+      }
       return;
     }
 
-    if (this.opened && !this._openState) {
-      this.openForTrigger(this._triggerElement);
+    if (this._openState && !this._activeTrigger) {
+      this._requestStateChange(false, 'slot-invalidated', null, { returnFocus: false });
       return;
     }
 
@@ -442,21 +541,10 @@ export class UiPopover extends LitElement {
     }
   }
 
-  private _applyTriggerSemantics(trigger: HTMLElement | null): void {
-    if (!trigger) return;
-
-    trigger.setAttribute('data-ui-popover-trigger', '');
-    trigger.setAttribute('aria-expanded', this._openState ? 'true' : 'false');
-    if (trigger.getAttribute('aria-haspopup') === null) {
-      trigger.setAttribute('aria-haspopup', 'dialog');
-    }
-
-    const content = this._contentElement;
-    if (!content) return;
-    if (content.id === '') {
-      content.id = this._fallbackPopoverId;
-    }
-    trigger.setAttribute('aria-controls', content.id);
+  private _validateTrigger(trigger: HTMLElement, context: string): boolean {
+    if (isInteractiveElement(trigger)) return true;
+    this._warn(`${context} に無効な trigger が渡されました。interactive element が必要です。`);
+    return false;
   }
 
   private _applyContentSemantics(content: PopoverElement | null): void {
@@ -471,87 +559,95 @@ export class UiPopover extends LitElement {
     }
 
     if (this._supportsPopoverApi) {
-      if (
-        content.getAttribute('popover') !== 'auto' &&
-        content.getAttribute('popover') !== 'manual'
-      ) {
-        content.setAttribute('popover', 'auto');
-      }
+      content.setAttribute('popover', 'auto');
     } else {
       content.removeAttribute('popover');
       content.hidden = !this._openState;
     }
-
-    if (content.getAttribute('role') === null) {
-      content.setAttribute('role', 'dialog');
-      content.setAttribute('aria-modal', 'false');
-    }
-  }
-
-  private _setOpenedProperty(nextOpen: boolean): void {
-    if (this.opened === nextOpen) return;
-    this._ignoreOpenedChange = true;
-    this.opened = nextOpen;
-    this._ignoreOpenedChange = false;
   }
 
   private _setActiveTrigger(trigger: HTMLElement | null): void {
-    if (trigger === this._activeTrigger) return;
-    this._setTriggerState(this._activeTrigger, false);
+    if (this._activeTrigger && this._activeTrigger !== trigger) {
+      this._clearTriggerRelationship(this._activeTrigger);
+    }
     this._activeTrigger = trigger;
-
-    if (this._activeTrigger) {
-      this._applyTriggerSemantics(this._activeTrigger);
-    }
   }
 
-  private _setTriggerState(trigger: HTMLElement | null, expanded: boolean): void {
+  private _clearTriggerRelationship(trigger: HTMLElement | null): void {
     if (!trigger) return;
-    trigger.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-    trigger.classList.toggle('is-active-trigger', expanded);
+    trigger.removeAttribute('data-ui-popover-trigger');
+    trigger.classList.remove('is-active-trigger');
+    trigger.setAttribute('aria-expanded', 'false');
+    trigger.removeAttribute('aria-controls');
   }
 
-  private _syncAriaExpanded(): void {
-    this._setTriggerState(
-      this._triggerElement,
-      this._openState && this._activeTrigger === this._triggerElement,
-    );
-    if (this._activeTrigger && this._activeTrigger !== this._triggerElement) {
-      this._setTriggerState(this._activeTrigger, this._openState);
+  private _syncTriggerRelationships(): void {
+    const content = this._contentElement;
+    const ownerTrigger = this._ownerTrigger;
+    const activeTrigger = this._openState ? this._activeTrigger : this._ownerTrigger;
+
+    this._clearTriggerRelationship(ownerTrigger);
+    if (this._activeTrigger && this._activeTrigger !== ownerTrigger) {
+      this._clearTriggerRelationship(this._activeTrigger);
     }
+
+    if (ownerTrigger) {
+      ownerTrigger.setAttribute('data-ui-popover-trigger', '');
+      ownerTrigger.setAttribute('aria-expanded', 'false');
+      if (!this._openState && content) {
+        ownerTrigger.setAttribute('aria-controls', content.id);
+      }
+    }
+
+    if (!activeTrigger || !content) return;
+
+    activeTrigger.setAttribute('data-ui-popover-trigger', '');
+    activeTrigger.setAttribute('aria-expanded', this._openState ? 'true' : 'false');
+    activeTrigger.setAttribute('aria-controls', content.id);
+    activeTrigger.classList.toggle('is-active-trigger', this._openState);
   }
 
-  private _dispatchToggleEvent(open: boolean): void {
-    this.dispatchEvent(
-      new CustomEvent<UiPopoverToggleDetail>('ui-popover-toggle', {
+  private _syncOpenedProperty(nextOpen: boolean): void {
+    if (this.opened === nextOpen) return;
+    this._isReflectingOpened = true;
+    this.opened = nextOpen;
+  }
+
+  private _dispatchOpenChangeRequest(
+    nextOpen: boolean,
+    reason: UiPopoverOpenChangeReason,
+    trigger: HTMLElement | null,
+  ): boolean {
+    const event = new CustomEvent<UiPopoverOpenChangeRequestDetail>(
+      'ui-popover-open-change-request',
+      {
         detail: {
-          open,
-          trigger: this._activeTrigger,
+          nextOpen,
+          reason,
+          trigger,
           content: this._contentElement,
         },
         bubbles: true,
         composed: true,
-      }),
+        cancelable: true,
+      },
     );
+
+    return this.dispatchEvent(event);
   }
 
-  private _dispatchOpenedEvent(): void {
-    const content = this._contentElement;
-    if (!content) return;
+  private _dispatchOpenChange(
+    open: boolean,
+    reason: UiPopoverOpenChangeReason,
+    trigger: HTMLElement | null,
+    returnFocus: boolean,
+  ): void {
     this.dispatchEvent(
-      new CustomEvent<UiPopoverOpenedDetail>('ui-popover-opened', {
-        detail: { trigger: this._activeTrigger, content },
-        bubbles: true,
-        composed: true,
-      }),
-    );
-  }
-
-  private _dispatchClosedEvent(returnFocus: boolean): void {
-    this.dispatchEvent(
-      new CustomEvent<UiPopoverClosedDetail>('ui-popover-closed', {
+      new CustomEvent<UiPopoverOpenChangeDetail>('ui-popover-open-change', {
         detail: {
-          trigger: this._activeTrigger,
+          open,
+          reason,
+          trigger,
           content: this._contentElement,
           returnFocus,
         },
@@ -561,14 +657,182 @@ export class UiPopover extends LitElement {
     );
   }
 
-  private _commitOpenState(nextOpen: boolean): void {
-    if (this._openState === nextOpen) {
-      this._syncAriaExpanded();
+  private _dispatchLegacyEvents(
+    open: boolean,
+    trigger: HTMLElement | null,
+    returnFocus: boolean,
+  ): void {
+    this.dispatchEvent(
+      new CustomEvent<UiPopoverToggleDetail>('ui-popover-toggle', {
+        detail: {
+          open,
+          trigger,
+          content: this._contentElement,
+        },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+
+    if (open && this._contentElement) {
+      this.dispatchEvent(
+        new CustomEvent<UiPopoverOpenedDetail>('ui-popover-opened', {
+          detail: { trigger, content: this._contentElement },
+          bubbles: true,
+          composed: true,
+        }),
+      );
       return;
     }
 
-    this._openState = nextOpen;
-    this._setOpenedProperty(nextOpen);
+    this.dispatchEvent(
+      new CustomEvent<UiPopoverClosedDetail>('ui-popover-closed', {
+        detail: {
+          trigger,
+          content: this._contentElement,
+          returnFocus,
+        },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  private _getDefaultReturnFocus(
+    reason: UiPopoverOpenChangeReason,
+    override: boolean | undefined,
+  ): boolean {
+    if (override !== undefined) return override;
+
+    switch (reason) {
+      case 'trigger':
+      case 'escape':
+        return true;
+      case 'outside-pointer':
+      case 'disabled':
+      case 'slot-invalidated':
+      case 'disconnected':
+        return false;
+      case 'programmatic':
+        return false;
+      default:
+        return false;
+    }
+  }
+
+  private _requestStateChange(
+    nextOpen: boolean,
+    reason: UiPopoverOpenChangeReason,
+    trigger: HTMLElement | null,
+    options?: UiPopoverOpenOptions,
+  ): void {
+    if (nextOpen === this._openState) return;
+
+    const returnFocus = this._getDefaultReturnFocus(reason, options?.returnFocus);
+    if (!this._dispatchOpenChangeRequest(nextOpen, reason, trigger)) {
+      this._pendingOpenChange = null;
+      return;
+    }
+
+    this._pendingOpenChange = {
+      nextOpen,
+      reason,
+      trigger,
+      returnFocus,
+    };
+
+    if (this._controlMode === 'controlled') return;
+
+    this._applyOpenChange(nextOpen, reason, trigger, returnFocus);
+  }
+
+  private _syncControlledOpenState(): void {
+    const pending = this._pendingOpenChange;
+    const reason = pending?.reason ?? 'programmatic';
+    const returnFocus = pending?.returnFocus ?? this._getDefaultReturnFocus(reason, undefined);
+    const trigger = pending?.trigger ?? this._activeTrigger ?? this._ownerTrigger;
+
+    if (this.opened === this._openState) {
+      this._pendingOpenChange = null;
+      return;
+    }
+
+    this._applyOpenChange(this.opened, reason, trigger, returnFocus);
+  }
+
+  private _applyOpenChange(
+    nextOpen: boolean,
+    reason: UiPopoverOpenChangeReason,
+    trigger: HTMLElement | null,
+    returnFocus: boolean,
+  ): void {
+    const content = this._contentElement;
+    if (!content) {
+      if (!nextOpen && this._openState) {
+        this._commitOpenState(false, reason, returnFocus, trigger);
+        return;
+      }
+
+      this._pendingOpenChange = null;
+      this._syncOpenedProperty(false);
+      return;
+    }
+
+    if (nextOpen) {
+      if (!trigger || !this._validateTrigger(trigger, 'open')) {
+        this._pendingOpenChange = null;
+        this._syncOpenedProperty(false);
+        return;
+      }
+
+      this._dismissReasonHint = null;
+      this._setActiveTrigger(trigger);
+
+      if (this._supportsPopoverApi && typeof content.showPopover === 'function') {
+        if (!this._isPopoverOpen(content)) {
+          try {
+            content.showPopover();
+          } catch {
+            this._pendingOpenChange = null;
+            return;
+          }
+        }
+      } else {
+        content.hidden = false;
+      }
+
+      this._commitOpenState(true, reason, returnFocus);
+      return;
+    }
+
+    const closingTrigger = trigger ?? this._activeTrigger;
+
+    if (this._supportsPopoverApi && typeof content.hidePopover === 'function') {
+      if (this._isPopoverOpen(content)) {
+        try {
+          content.hidePopover();
+        } catch {
+          // Popover API の失敗時は fallback と同じ同期経路へ倒す。
+        }
+      }
+    } else {
+      content.hidden = true;
+    }
+
+    this._commitOpenState(false, reason, returnFocus, closingTrigger);
+  }
+
+  private _commitOpenState(
+    nextOpen: boolean,
+    reason: UiPopoverOpenChangeReason,
+    returnFocus: boolean,
+    closingTrigger?: HTMLElement | null,
+  ): void {
+    if (this._openState === nextOpen) {
+      this._pendingOpenChange = null;
+      this._syncTriggerRelationships();
+      return;
+    }
 
     const content = this._contentElement;
     if (content) {
@@ -578,23 +842,36 @@ export class UiPopover extends LitElement {
       }
     }
 
+    this._openState = nextOpen;
+
     if (nextOpen) {
-      this._syncAriaExpanded();
-      this._dispatchToggleEvent(true);
-      this._dispatchOpenedEvent();
+      this._syncOpenedProperty(true);
+      this._syncTriggerRelationships();
+      this._startFloating();
+      this._setupGlobalDismissListeners();
+      const activeTrigger = this._activeTrigger;
+      this._dispatchOpenChange(true, reason, activeTrigger, returnFocus);
+      this._dispatchLegacyEvents(true, activeTrigger, returnFocus);
+      this._pendingOpenChange = null;
       return;
     }
 
+    const activeTrigger = closingTrigger ?? this._activeTrigger;
     this._teardownFloating();
-    this._cleanupFallbackOutsideListeners();
+    this._cleanupGlobalDismissListeners();
+    this._syncOpenedProperty(false);
+    this._openState = false;
+    this._clearTriggerRelationship(this._activeTrigger);
+    this._activeTrigger = null;
+    this._syncTriggerRelationships();
+    this._dispatchOpenChange(false, reason, activeTrigger, returnFocus);
+    this._dispatchLegacyEvents(false, activeTrigger, returnFocus);
+    this._pendingOpenChange = null;
 
-    const activeTrigger = this._activeTrigger;
-    this._syncAriaExpanded();
-    this._dispatchToggleEvent(false);
-    this._dispatchClosedEvent(this._returnFocusOnClose);
-
-    if (this._returnFocusOnClose) {
-      activeTrigger?.focus();
+    if (returnFocus) {
+      requestAnimationFrame(() => {
+        activeTrigger?.focus();
+      });
     }
   }
 
@@ -617,23 +894,42 @@ export class UiPopover extends LitElement {
   private _attachTriggerListeners(trigger: HTMLElement | null): void {
     if (!trigger) return;
     trigger.addEventListener('click', this._onTriggerClick);
+    trigger.addEventListener('keydown', this._onTriggerKeyDown);
   }
 
   private _detachTriggerListeners(trigger: HTMLElement | null): void {
     if (!trigger) return;
     trigger.removeEventListener('click', this._onTriggerClick);
+    trigger.removeEventListener('keydown', this._onTriggerKeyDown);
   }
 
   private _attachContentListeners(content: PopoverElement | null): void {
     if (!content) return;
-    content.addEventListener('keydown', this._onContentKeyDown);
     content.addEventListener('toggle', this._onContentToggle as EventListener);
   }
 
   private _detachContentListeners(content: PopoverElement | null): void {
     if (!content) return;
-    content.removeEventListener('keydown', this._onContentKeyDown);
     content.removeEventListener('toggle', this._onContentToggle as EventListener);
+  }
+
+  private _observeContentId(content: PopoverElement | null): void {
+    this._contentObserver?.disconnect();
+    this._contentObserver = null;
+
+    if (!content) return;
+
+    this._contentObserver = new MutationObserver(() => {
+      if (content.id === '') {
+        content.id = this._fallbackPopoverId;
+      }
+      this._syncTriggerRelationships();
+    });
+
+    this._contentObserver.observe(content, {
+      attributes: true,
+      attributeFilter: ['id'],
+    });
   }
 
   private _onTriggerSlotChange = (): void => {
@@ -661,6 +957,7 @@ export class UiPopover extends LitElement {
 
     const trigger = event.currentTarget;
     if (!(trigger instanceof HTMLElement)) return;
+    if (!this._validateTrigger(trigger, 'trigger click')) return;
 
     if (
       this.keepLinkFallback &&
@@ -674,13 +971,39 @@ export class UiPopover extends LitElement {
     this.toggleForTrigger(trigger);
   };
 
-  private _onContentKeyDown = (event: KeyboardEvent): void => {
+  private _onTriggerKeyDown = (event: KeyboardEvent): void => {
     if (!this._openState) return;
     if (event.key !== 'Escape') return;
+    if (event.defaultPrevented) return;
 
+    this._dismissReasonHint = 'escape';
     event.preventDefault();
-    event.stopPropagation();
-    this.close({ returnFocus: true });
+    this._requestStateChange(false, 'escape', this._activeTrigger, { returnFocus: true });
+  };
+
+  private _onDocumentKeyDown = (event: KeyboardEvent): void => {
+    if (!this._openState) return;
+    if (event.key !== 'Escape') return;
+    if (event.defaultPrevented) return;
+
+    this._dismissReasonHint = 'escape';
+    event.preventDefault();
+    this._requestStateChange(false, 'escape', this._activeTrigger, { returnFocus: true });
+  };
+
+  private _onDocumentPointerDown = (event: PointerEvent): void => {
+    if (!this._openState) return;
+    if (event.defaultPrevented) return;
+    if (typeof event.button === 'number' && event.button !== 0) return;
+
+    const content = this._contentElement;
+    const activeTrigger = this._activeTrigger;
+    const path = event.composedPath();
+    if (content && path.includes(content)) return;
+    if (activeTrigger && path.includes(activeTrigger)) return;
+
+    this._dismissReasonHint = 'outside-pointer';
+    this._requestStateChange(false, 'outside-pointer', activeTrigger, { returnFocus: false });
   };
 
   private _onContentToggle = (event: Event): void => {
@@ -690,42 +1013,49 @@ export class UiPopover extends LitElement {
 
     const state = this._resolveToggleState(event, content as PopoverElement);
     if (state === 'open') {
-      if (!this._activeTrigger) {
-        this._setActiveTrigger(this._triggerElement);
+      if (!this._openState) {
+        const pending = this._pendingOpenChange;
+        const nextTrigger = pending?.trigger ?? this._activeTrigger ?? this._ownerTrigger;
+        if (!nextTrigger) return;
+        this._setActiveTrigger(nextTrigger);
+        this._commitOpenState(true, pending?.reason ?? 'programmatic', pending?.returnFocus ?? false);
       }
-      this._startFloating();
-      this._commitOpenState(true);
       return;
     }
 
-    this._commitOpenState(false);
+    if (this._openState) {
+      const pending = this._pendingOpenChange;
+      const reason = pending?.reason ?? this._dismissReasonHint ?? 'outside-pointer';
+      const returnFocus = pending?.returnFocus ?? this._getDefaultReturnFocus(reason, undefined);
+      const trigger = pending?.trigger ?? this._activeTrigger;
+      this._commitOpenState(false, reason, returnFocus, trigger);
+    }
+
+    this._dismissReasonHint = null;
   };
 
-  private _setupFallbackOutsideListeners(): void {
-    if (this._supportsPopoverApi) return;
-    if (this._fallbackOutsideCleanup) return;
+  private _setupGlobalDismissListeners(): void {
+    if (this._cleanupOutsidePointerListeners || this._cleanupDocumentKeydownListener) return;
 
-    const onPointerDown = (event: PointerEvent): void => {
-      if (!this._openState) return;
+    const ownerDocument = this.ownerDocument;
 
-      const content = this._contentElement;
-      const activeTrigger = this._activeTrigger;
-      const path = event.composedPath();
-      if (content && path.includes(content)) return;
-      if (activeTrigger && path.includes(activeTrigger)) return;
+    ownerDocument.addEventListener('pointerdown', this._onDocumentPointerDown, true);
+    ownerDocument.addEventListener('keydown', this._onDocumentKeyDown);
 
-      this.close({ returnFocus: false });
+    this._cleanupOutsidePointerListeners = (): void => {
+      ownerDocument.removeEventListener('pointerdown', this._onDocumentPointerDown, true);
+      this._cleanupOutsidePointerListeners = null;
     };
 
-    document.addEventListener('pointerdown', onPointerDown, true);
-    this._fallbackOutsideCleanup = (): void => {
-      document.removeEventListener('pointerdown', onPointerDown, true);
-      this._fallbackOutsideCleanup = null;
+    this._cleanupDocumentKeydownListener = (): void => {
+      ownerDocument.removeEventListener('keydown', this._onDocumentKeyDown);
+      this._cleanupDocumentKeydownListener = null;
     };
   }
 
-  private _cleanupFallbackOutsideListeners(): void {
-    this._fallbackOutsideCleanup?.();
+  private _cleanupGlobalDismissListeners(): void {
+    this._cleanupOutsidePointerListeners?.();
+    this._cleanupDocumentKeydownListener?.();
   }
 
   private _teardownFloating(): void {
@@ -734,9 +1064,9 @@ export class UiPopover extends LitElement {
   }
 
   private _startFloating(): void {
-    const trigger = this._activeTrigger ?? this._triggerElement;
+    const trigger = this._activeTrigger ?? this._ownerTrigger;
     const content = this._contentElement;
-    if (!trigger || !content) return;
+    if (!trigger || !content || !this._openState) return;
 
     const updatePosition = (): void => {
       void this._updateFloatingPosition(trigger, content);

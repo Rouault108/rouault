@@ -593,199 +593,40 @@ content は `overflow-y: auto` と `max-height` により、viewport を超え�
 
 ---
 
-## 現行実装との差分と移行方針
+## 現行実装の整合状況と残課題
 
-本節は、設計のきれいさと保守性を優先して本書で確定した契約と、現行の `popover.ts` / `popover.stories.ts` との主要差分を整理するものです。
+本節は、現行の `popover.ts` / `popover.stories.ts` が本書とどう整合しているか、および互換維持のために残している項目を整理するものです。
 
-### 移行の判断基準
+### 現在整合している項目
 
-差分を実装へ反映する際は、次の基準で優先順位を決めます。
+現行実装では、少なくとも次を本書どおりに扱います。
 
-- **契約の基準面を先に固定すること**
-- **外部 API を分岐させる変更を先に行うこと**
-- **意味論と状態管理の混線を先にほどくこと**
-- **見た目だけの差分より、責務境界の差分を優先すること**
-- **後続変更の前提になるものを先に行うこと**
+- `ui-popover` を既定 `role` なしの shell として扱うこと
+- `opened` と `defaultOpened` を分離し、controlled / uncontrolled を読み分けること
+- `ui-popover-open-change-request` と `ui-popover-open-change` を中心契約とすること
+- `reason` を `trigger` / `escape` / `outside-pointer` / `disabled` / `slot-invalidated` / `disconnected` / `programmatic` として区別すること
+- owner trigger / active trigger を分離し、`aria-expanded` と `aria-controls` を active trigger へ移管すること
+- 複数 slot 子要素や無効 trigger を開発時 warning + no-op として扱うこと
+- `Escape`、outside primary pointer、`disabled=true`、slot 再同期による dismiss を区別すること
+- Storybook を契約確認点として維持し、request cancel、controlled / uncontrolled、controller mode、slot 再同期、visual contract を検証すること
 
-この基準に従うと、移行は単純な番号順ではなく、**基盤整理 → API 整理 → 派生切り出し**の順で進めるのが最も整います。
+### 互換維持のために残している項目
 
-### 優先順位
+次の項目は長期契約には含めませんが、関連コンポーネント移行のため一時的に残しています。
 
-#### 優先度 A: 先に固定しなければならない差分
+- `ui-popover-toggle` / `ui-popover-opened` / `ui-popover-closed`
+  - 既存利用側の移行猶予として発火を継続します。
+  - 新規利用は `ui-popover-open-change-request` / `ui-popover-open-change` を使用しなければなりません（MUST）。
+- `keep-link-fallback`
+  - 脚注系 wrapper の移行が完了するまでの互換レイヤです。
+  - `ui-popover` の公開契約には含めず、開発時 warning 対象とします。
 
-これらは他の差分の前提であり、後回しにすると API、Storybook、実装の全てで二重管理が発生します。
+### 今後の残課題
 
-1. **制御モデルの分離**
-   - `opened` と `defaultOpened` の役割を分離します。
-   - controlled 時に内部から `opened` を書き換えないようにします。
-   - request event を導入し、状態確定の責務を外部へ返します。
+本書との整合をさらに高める上で、残る課題は次です。
 
-2. **イベントモデルの再定義**
-   - request / result の二段イベントへ整理します。
-   - `reason` を安定 detail に昇格します。
-   - 既存の `ui-popover-toggle` / `ui-popover-opened` / `ui-popover-closed` は互換レイヤとして一時維持する場合でも、中心契約から外します。
+1. `keep-link-fallback` 依存を脚注・注釈用 wrapper 側へ完全移管すること。
+2. 旧イベント群への依存を段階的に削除し、新イベントへ集約すること。
+3. document 単位 style 供給を overlay foundation または stylesheet provider へ切り出すこと。
 
-3. **shell 既定意味論の除去**
-   - content への既定 `role="dialog"` と `aria-modal="false"` を廃止します。
-   - trigger への既定 `aria-haspopup="dialog"` も廃止します。
-   - `ui-popover` を意味論なし shell として固定します。
-
-この 3 点は同一変更群として扱うとして扱います。理由は、**状態変更 API、イベント、意味論**が同時に更新されないと、利用者から見たコンポーネント像が中途半端になるためです。
-
-#### 優先度 B: A の直後に追随させる差分
-
-これらは A の方針が固まれば自然に整理でき、放置すると内部実装だけが旧設計を引きずります。
-
-4. **単一要素制約の強制**
-   - 複数 slot 子要素を warning または例外で顕在化します。
-   - 静かな先頭採用を縮退させます。
-
-5. **trigger モデルの明示化**
-   - anchored mode / controller mode を実装上も読み分けられるようにします。
-   - owner trigger / active trigger の責務境界をコード上でも明確化します。
-   - 現在は任意の `HTMLElement` に click listener を付与できるため、trigger 入力を interactive element へ厳格化します。
-   - slot 再同期や再接続後に controller mode の active trigger が owner trigger へ暗黙に巻き戻らないようにします。
-
-6. **outside dismiss の保証範囲の固定**
-   - fallback 実装は最小保証に絞ります。
-   - 環境間完全等価を目指すコードを shell 側へ持ち込み過ぎないようにします。
-
-この変更群は、A のあとに着手することで、**状態管理と責務境界に整合した挙動整理**として実装できます。
-
-#### 優先度 C: 別コンポーネントまたは基盤へ切り出す差分
-
-これらは shell 単体で抱え続けるより、別責務へ分離した方が長期保守に有利です。
-
-7. **link fallback の切り出し**
-   - `keepLinkFallback` は非推奨化し、脚注・注釈・恒久リンク用ラッパーへ移します。
-   - `ui-popover` 本体はリンク遷移契約を持たないようにします。
-
-8. **document スタイル供給の基盤化**
-   - document 単位 style 注入を overlay foundation または stylesheet provider へ移します。
-   - `ui-popover` 本体は「style 供給が必要」という事実だけを契約に残します。
-
-この変更群は重要ですが、A と B を先に整理してからの方が、切り出し先の責務が明瞭になります。
-
-### 推奨実装順序
-
-実装順序は次の 4 段階に整理するとよいです。
-
-#### 第1段階: API の骨格を更新する
-
-- controlled / uncontrolled の分離
-- request / result event の導入
-- `reason` の導入
-- 既定 `role` の除去
-
-#### 第2段階: 入力と状態遷移を厳格化する
-
-- 単一要素制約の強制
-- anchored mode / controller mode の明示化
-- owner trigger / active trigger の整理
-- `returnFocus` の既定値を reason ごとに固定
-
-#### 第3段階: shell から余分な責務を外す
-
-- `keepLinkFallback` の非推奨化
-- link fallback 用 wrapper の準備
-- outside dismiss の最小保証化
-
-#### 第4段階: 基盤へ寄せる
-
-- document スタイル供給の切り出し
-- overlay foundation との責務境界の固定
-
-### 一括で変更するべき単位
-
-差分は個別にばらばらに反映するより、次の単位でまとめて変更するとして扱います。
-
-| 変更単位     | 含める項目                                        |
-| ------------ | ------------------------------------------------- |
-| API 再設計   | 制御モデル、イベントモデル、reason、既定意味論    |
-| 入力厳格化   | 単一要素制約、trigger モード、active trigger 契約 |
-| 責務切り出し | link fallback、outside dismiss の保証範囲         |
-| 基盤分離     | document スタイル供給、overlay foundation 連携    |
-
-とくに **API 再設計** と **入力厳格化** は同一マイルストーンで扱う方が望ましいです。これらを分離すると、Storybook と利用側コードが一時的に二重仕様になります。
-
-### 今すぐやらない方がよい変更
-
-次の変更は、見た目の改善余地があっても優先しません。
-
-- arrow / origin 表現の追加
-- 複雑な shared trigger ヘルパー API の追加
-- role ごとのキーボードモデルの本体内実装
-- overlay 間の高度なスタック調停
-
-これらは shell 契約を安定化した後でなければ、責務を再び混線させます。
-
-### 受け入れ条件
-
-各段階の変更は、少なくとも次を満たしたときに完了とみなします。
-
-- 契約書の該当章が更新されていること
-- Storybook が新契約の確認点に置き換わっていること
-- 旧契約に依存する API が明示的に非推奨化または削除されていること
-- 実装が新契約と矛盾しないこと
-
-この受け入れ条件を満たさない変更は、部分修正であっても移行完了とはみなしません。
-
-### 個別差分と移行方針
-
-#### shell 既定意味論
-
-本書では、`ui-popover` を意味論を持たない shell として定義しました。したがって、content への既定 `role="dialog"` と `aria-modal="false"`、および trigger への既定 `aria-haspopup="dialog"` は長期契約に含めません。
-
-**移行方針**：既定 role / `aria-modal` / `aria-haspopup` の付与は削除し、必要な意味論は semantic wrapper へ移します。
-
-#### 制御モデル
-
-本書では、controlled と uncontrolled を分離し、`opened` と `defaultOpened` を両立させない方針にしました。
-
-**移行方針**：内部から `opened` を直接書き換える設計をやめ、controlled 時は request event を経由させます。
-
-#### イベントモデル
-
-本書では、変更要求イベントと変更結果イベントを分離しました。
-
-**移行方針**：既存の `ui-popover-toggle` / `ui-popover-opened` / `ui-popover-closed` は互換期間を設けて段階的に縮退し、`ui-popover-open-change-request` / `ui-popover-open-change` へ寄せます。現行 detail には `reason` が含まれないため、監視系の利用側は reason 非依存へいったん寄せた上で、新 detail へ移行します。
-
-#### link fallback
-
-本書では、link fallback を shell 本体の責務から外しました。
-
-**移行方針**：`keepLinkFallback` は非推奨とし、脚注・注釈・恒久リンク用ラッパーへ切り出します。
-
-#### 単一要素制約
-
-本書では、同一スロットへの複数要素入力を契約違反として明示しました。
-
-**移行方針**：静かな先頭採用をやめ、開発時 warning または例外を追加します。あわせて、trigger は任意 `HTMLElement` ではなく interactive element を正規入力として扱う方向へ寄せます。
-
-#### document スタイル供給
-
-本書では、document 単位スタイル供給の必要性は公開契約に残しつつ、具体的注入方式は long-term contract から外しました。
-
-**移行方針**：段階的に overlay foundation または stylesheet provider へ責務を移します。現行実装はグローバル `document.head` へ singleton style を直接注入しており、`ownerDocument` 単位の分離、cleanup、ref-count は持ちません。これらは基盤側へ寄せて明確化します。
-
-#### outside dismiss の保証範囲
-
-本書では、環境間の完全等価ではなく、outside primary pointer 相当までを最小保証としました。
-
-**移行方針**：fallback 実装はこの最小保証を満たすことを優先し、それ以上の厳密等価は overlay 基盤側で扱います。
-
-#### `popover` 属性所有権
-
-本書では、`popover` を表示制御系のコンポーネント専有属性として扱いました。
-
-**移行方針**：現行実装は利用者が事前に与えた `popover="manual"` / `popover="auto"` を温存しますが、長期的には ownership を整理し、shell 本体が管理する属性として明確化します。必要であれば manual 運用は別 wrapper または別モードへ分離します。
-
-#### controller mode 再接続時の active trigger 維持
-
-本書では、controller mode を anchored mode とは独立した正規モードとして定義しました。
-
-**移行方針**：現行実装は slot 再同期時に `opened=true` かつ `_openState=false` の場合、owner trigger を基準に reopen するため、controller mode の外部 active trigger を保持しません。長期的には、controller mode の active trigger を暗黙に owner trigger へ巻き戻さないように整理します。
-
-### 本節の扱い
-
-本節の差分は、単なる TODO ではありません。`ui-popover` を長期的に **意味論を持たない shell** として保つための移行境界です。実装、Storybook、契約書は、この方針に沿って同時に更新しなければなりません（MUST）。
+これらは本体 shell の責務を増やすためではなく、**公開契約をさらに明確化し、互換レイヤを縮退させるための整理**として扱います。

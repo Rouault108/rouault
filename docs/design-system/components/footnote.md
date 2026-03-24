@@ -705,7 +705,7 @@ DOM 子要素を書き換えることによる本文更新には依存しませ�
 
 #### 14. owner 側デュアルアクセス契約の自立性
 
-reference 側の通常クリック制御は `ui-footnote` 自身が持ちますが、owner 側の通常クリックとリンク fallback の成立は `ui-popover` の trigger スロット処理と `keep-link-fallback` に依存します。本契約では `ui-footnote` を意味主体としていますが、owner 側デュアルアクセス契約を `ui-footnote` 単独で自立的に保証する構造には未到達です。
+reference 側の通常クリック制御は `ui-footnote` 自身が持ちますが、owner 側の通常クリックとリンク fallback は依然として `ui-popover` の互換レイヤに一部依存しています。`ui-popover` の公開契約は link fallback を含まないため、長期的には owner 側デュアルアクセス契約も `ui-footnote` または専用 wrapper 側へ完全移管しなければなりません（MUST）。
 
 #### 15. document style のライフサイクル整理
 
