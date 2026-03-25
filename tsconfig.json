@@ -19,7 +19,7 @@
     "src/**/*",
     "lib/**/*",
     ".storybook/**/*.ts",
-    "eleventy.config.ts",
+    "eleventy.config.mjs",
     "types/**/*",
     "test/**/*"
   ]
