@@ -1,6 +1,8 @@
 import path from 'node:path';
 import { copyFile } from 'node:fs/promises';
+import type { UserConfig } from '@11ty/eleventy';
 import EleventyVitePlugin from '@11ty/eleventy-plugin-vite';
+import type { Connect, ViteDevServer } from 'vite';
 import { build } from 'velite';
 
 import { loadNotesData } from './src/data/notes.js';
@@ -9,8 +11,8 @@ import { createStaticDirectoryMiddleware } from './src/lib/dev-static-directory.
 import { resolveTrailingSlashRewrite } from './src/lib/trailing-slash-rewrite.js';
 import { buildPagefindIndex } from './scripts/build-pagefind.js';
 
-const registerTrailingSlashRewrite = (server) => {
-  const middleware = (req, _res, next) => {
+const registerTrailingSlashRewrite = (server: ViteDevServer): void => {
+  const middleware: Connect.NextHandleFunction = (req, _res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       next();
       return;
@@ -29,14 +31,14 @@ const registerTrailingSlashRewrite = (server) => {
   server.middlewares.use(middleware);
 };
 
-const registerDevelopmentStaticDirectories = (server) => {
+const registerDevelopmentStaticDirectories = (server: ViteDevServer): void => {
   // 開発サーバーでは dist/pagefind を明示的に配信しないと dynamic import が 404 になる。
   server.middlewares.use(
     createStaticDirectoryMiddleware('/pagefind/', path.resolve(process.cwd(), 'dist', 'pagefind')),
   );
 };
 
-const registerSearchCatalogMiddleware = (server) => {
+const registerSearchCatalogMiddleware = (server: ViteDevServer): void => {
   server.middlewares.use((req, res, next) => {
     if (req.url !== '/search-catalog.json') {
       next();
@@ -52,7 +54,7 @@ const registerSearchCatalogMiddleware = (server) => {
 /**
  * Velite と Vite を組み合わせた 11ty の設定。
  */
-export default function configureEleventy(eleventyConfig) {
+export default function configureEleventy(eleventyConfig: UserConfig) {
   const isServing = process.argv.includes('--serve');
 
   // 11ty.ts を 11ty.js エンジンで処理するようにマッピングする。
@@ -81,7 +83,7 @@ export default function configureEleventy(eleventyConfig) {
         clean: !isServing,
         watch: isServing,
       });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('❌ Velite build failed:', error);
 
       // 本番ビルド時は失敗させる。
@@ -115,12 +117,12 @@ export default function configureEleventy(eleventyConfig) {
       plugins: [
         {
           name: 'rouault-trailing-slash-rewrite',
-          configureServer(server) {
+          configureServer(server: ViteDevServer) {
             registerDevelopmentStaticDirectories(server);
             registerSearchCatalogMiddleware(server);
             registerTrailingSlashRewrite(server);
           },
-          configurePreviewServer(server) {
+          configurePreviewServer(server: ViteDevServer) {
             return () => {
               registerDevelopmentStaticDirectories(server);
               registerSearchCatalogMiddleware(server);

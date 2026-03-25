@@ -1,7 +1,8 @@
+import type { TestRunnerConfig } from '@web/test-runner';
 import { esbuildPlugin } from '@web/dev-server-esbuild';
 import { playwrightLauncher } from '@web/test-runner-playwright';
 
-const config = {
+const config: TestRunnerConfig = {
   files: ['src/**/*.test.ts', 'test/unit/**/*.test.ts'],
   nodeResolve: {
     exportConditions: ['browser', 'development'],
