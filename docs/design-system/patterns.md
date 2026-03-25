@@ -543,11 +543,17 @@ hash または既存 `?tab=` から active tab が確定したあとは、`norma
 
 また、検索実行そのものは dialog と共通の `search-core` を用います。したがって、ここで扱うのは URL 同期と履歴操作の契約であり、検索意味論そのものは [`docs/search-specification.md`](../search-specification.md) を正本とします。
 
+#### 所有権
+
+検索結果ページにおける `q`、`tag`、`tagMode`、`sort` は、**search-page が所有する feature-local URL state** とします。
+
+この状態の復元、URL 反映、履歴更新、`popstate` 再同期は search-page の責務です。router は検索結果ページそのものへの到達・離脱を扱ってよいものとしますが、検索条件変更を full navigation や generic な state-only navigation として再解釈してはなりません。
+
 #### 読み込み
 
-- `connectedCallback()` で `window.location.href` から状態復元
+- `connectedCallback()` で `window.location.href` から状態復元する
 - `/search?...` と `/tags/<tag>/` の両入口を受理する
-- `popstate` で再同期
+- `popstate` を受けた場合、URL から状態を再構築して再検索する
 
 #### 書き込み
 
@@ -560,7 +566,18 @@ hash または既存 `?tab=` から active tab が確定したあとは、`norma
 
 この差は妥当です。検索入力は文字ごとの中間状態なので戻る履歴を汚しやすく、タグ切替・タグ演算子変更・ソート変更はユーザー意図が明確だからです。
 
-また、`/tags/<tag>/` は **単一タグ既定ビュー専用 URL** です。`q !== ''`、複数タグ、`tagMode !== 'or'`、`sort !== 'relevance'` のいずれかになった時点で、UI は対応する `/search?...` へ遷移します。
+また、`/tags/<tag>/` は **単一タグ既定ビュー専用 URL** です。`q !== ''`、複数タグ、`tagMode !== 'or'`、`sort !== 'relevance'` のいずれかになった時点で、search-page は対応する `/search?...` へ遷移します。
+
+#### 実装指針
+
+History API の直接操作、URL からの状態復元、状態からの URL 再構築は feature ごとに散在させず、検索結果ページ用の薄い URL state helper へ集約するのが望ましいです。
+
+この helper は少なくとも次を担当します。
+
+- URL から `SearchState` を復元する
+- `SearchState` から `/search?...` または `/tags/<tag>/` を構築する
+- 操作種別に応じて `pushState` / `replaceState` を選択する
+- `popstate` 時に search-page へ再同期する
 
 ### 4.5 検索結果 URL の正規化
 
@@ -576,14 +593,18 @@ hash または既存 `?tab=` から active tab が確定したあとは、`norma
 
 `location-adapter.ts` の役割は、次のとおりです。
 
-| 関数                  | 役割                                               |
-| --------------------- | -------------------------------------------------- |
-| `normalizeUrl()`      | 比較・履歴更新向け canonical URL を作る            |
-| `normalizePathname()` | `/search` を正規化し、`/tags/<tag>/` は保持する    |
-| `resolveContentUrl()` | 取得直前のみ trailing slash を補う                 |
-| `stripHash()`         | path + search 単位で比較する                       |
+| 関数                  | 役割                                                      |
+| --------------------- | --------------------------------------------------------- |
+| `normalizeUrl()`      | 比較・履歴更新向け **navigation URL** を作る              |
+| `normalizePathname()` | `/search` を正規化し、`/tags/<tag>/` は保持する           |
+| `resolveContentUrl()` | 取得直前のみ **fetch target URL** として trailing slash を補う |
+| `stripHash()`         | path + search 単位で比較する                              |
+
+ここでいう `navigation URL` と `fetch target URL` は、`router-specification.md` の用語定義に従います。
 
 このため Rouault の URL は、**表示・比較では `/search` を slash なし、`/tags/<tag>/` を slash あり、それ以外は通常 slash なし**、取得直前だけ必要に応じて slash 補完ありという二層構造です。
+
+ただし、この節でいう URL 正規化は router が所有する **文書遷移用 URL** の話です。検索結果ページにおける `q`、`tag`、`tagMode`、`sort` の意味論はここに含めず、`search-page` と `search-specification.md` 側の責務とします。
 
 ### 4.7 Router が介入しないリンク
 
@@ -640,6 +661,15 @@ Rouault における URL の役割分担は、次のとおりです。
 - **Permanent URL**: 「この内容そのものを再参照したい」を示す
 
 つまり Rouault では、**移動先としての URL** と **引用先としての URL** を意図的に分離します。
+
+#### 用語注記
+
+本書でいう **Canonical URL** は、最新版ノートの通常導線を指します。
+
+これは `search-specification.md` における **`DocumentCanonicalUrl`** とは別概念です。  
+`DocumentCanonicalUrl` は検索結果項目の重複統合と同一文書判定のための内部識別契約であり、Rouault 全体の通常導線を指す語として使ってはなりません。
+
+また、router 文脈では `canonical URL` ではなく、`router-specification.md` の定義に従って **`navigation URL`** と **`fetch target URL`** を用います。
 
 ### 5.3 URL同期との違い
 
@@ -703,14 +733,16 @@ README の UI要件では、次の3点が明示されています。
 
 ### 5.7 Router との関係
 
-Canonical URL は通常のルーティング対象ですが、Permanent URL は性質上、**最新版ルートとは別系統のアーカイブ導線**として扱うのが自然です。
+`Canonical URL` と `Permanent URL` の意味論は `patterns.md` 側で定義しますが、router における正規化・履歴・取得規則の正本は `router-specification.md` に置きます。
 
-Patterns の観点では、次の分離が重要です。
+Rouault において `/archives/{hash}` は、**固定版参照のための通常文書ルート**です。したがって router はこれを full navigation の対象として扱わなければなりません。
 
-- `/{slug}`: 現在のノートへ到達するための通常導線
-- `/archives/{hash}`: 固定版を取得するための参照導線
+追加規則:
 
-この分離により、Router が扱う「遷移」と、Permanent URL が保証する「固定参照」が混線しにくくなります。
+- `/archives/{hash}` を `/{slug}` へ自動正規化してはなりません
+- `/archives/{hash}` から対応する最新版 URL が導出可能であっても、router が自動 redirect してはなりません
+- `/archives/{hash}` 上で「最新版はこちら」を案内する責務は UI または上位統合に属し、router core の必須責務ではありません
+- `Permanent URL` は URL 同期の一種ではなく、版保証のための参照契約として扱います
 
 ### 5.8 実務ルール
 
@@ -752,10 +784,12 @@ Rouault の Overlay 実装はどれも、次の問いに先に答えています
 
 - Tabs: URL と `selected-value` の競合を解決順序で制御する
 - Search: URL を起点に state を復元する
-- Router: canonical URL と取得 URL を分離する
+- Router: `navigation URL` と `fetch target URL` を分離する
 
-したがって、同一状態について次の三者が競合する設計は避けるべきです。
+加えて、同じ URL 状態を複数の主体が同時に所有してはなりません。
 
-- コンポーネント内部 state
-- URL
-- localStorage
+- 文書遷移用 URL は router が所有する
+- 検索結果ページの `q`、`tag`、`tagMode`、`sort` は search-page が所有する
+- 主タブ切替のような app 固有 state-only 遷移は、router core ではなく policy 実装が所有する
+
+つまり Rouault では、**URL を使うこと**と**router が所有すること**を同一視してはなりません。

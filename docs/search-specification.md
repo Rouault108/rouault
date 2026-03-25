@@ -841,6 +841,14 @@ URL は次の 2 種類に厳密に分離します。
 
 両者は役割が異なるため、同一型名・同一契約として扱ってはなりません。
 
+#### 用語注記
+
+本仕様で `SearchCandidate.canonicalUrl` および `SearchResultItem.canonicalUrl` に格納される値は、常に **`DocumentCanonicalUrl`** を意味します。  
+これは `patterns.md` における最新版導線としての **Canonical URL** とは別概念です。
+
+また、router 文脈で用いる `navigation URL` / `fetch target URL` とも別概念です。  
+本仕様では曖昧さを避けるため、型・規則・説明では `canonicalUrl` という略称だけで呼ばず、原則として **`DocumentCanonicalUrl`** と表記します。
+
 ### 9.2 適用範囲
 
 - `SearchCandidate.canonicalUrl` と `SearchResultItem.canonicalUrl` は **DocumentCanonicalUrl のみ**を許可します
@@ -1501,6 +1509,13 @@ score =
 - `tagMode`: `or | and`
 - `sort`: `relevance | date-desc`
 
+### 15.1.1 所有権
+
+検索結果ページの URL 状態は **feature-local URL state** とします。  
+これは文書遷移そのものではなく、検索結果ページという単一文書内で復元・共有される UI 状態です。
+
+したがって、検索結果ページの URL 状態は router core の一般責務へ取り込まず、search-page とその補助モジュールが単一に所有しなければなりません。
+
 ### 15.2 正規化規則
 
 - `q` は `PreparedSearchQuery.normalizedQuery` と等価であり、10 章の正規化規則に従う
@@ -1543,8 +1558,10 @@ score =
 
 追加規則:
 
-- 履歴復元時の入力欄表示値は `SearchState.q`、すなわち `normalizedQuery` と等価でなければなりません
-- `inputQuery` は履歴状態に保存してはなりません
+- 検索結果ページの URL 状態は、表示中の search-page が **単一の所有者** でなければなりません
+- `q`、`tag`、`tagMode`、`sort` の解釈、URL 反映、`popstate` 再同期は search-page の責務とします
+- router その他の横断機構は、検索結果ページが所有する URL 状態を独自に再解釈して履歴操作してはなりません
+- History API の生操作、URL 解析、URL 再構築は search-page へ分散させず、検索結果ページ用の薄い URL state helper へ集約するのが望ましいです
 
 ---
 

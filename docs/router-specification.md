@@ -82,6 +82,12 @@ router 外部へ本文描画を委譲する場合は、単発 callback ではな
 
 本文取得を伴わず URL state だけを更新する遷移です。Rouault では、これは **primary tab の切替に限定された特殊遷移** を指します。
 
+### feature-local URL state
+
+特定機能が所有する URL 状態です。Rouault では、検索結果ページにおける `q`、`tag`、`tagMode`、`sort` のように、**文書遷移そのものではないが URL に反映される状態**を指します。
+
+feature-local URL state の意味論、復元、履歴更新、`popstate` 再同期は、その機能の仕様書と実装が単一に所有しなければなりません。router core はこれを汎用的に解釈してはなりません。
+
 ### DocumentSnapshot
 
 router が反映対象として扱う統一文書表現です。route 経路でも fetch 経路でも最終的にこの形へ正規化します。
@@ -600,12 +606,25 @@ getCurrentPath(): string
 
 ### 例
 
-| 入力                                   | navigation URL       | fetch target URL  |
-| ------------------------------------ | -------------------- | ----------------- |
-| `/docs/example/`                     | `/docs/example`      | `/docs/example/`  |
-| `/search/?q=test&wtr-session-id=abc` | `/search?q=test`     | `/search/?q=test` |
-| `/tags/music/`                       | `/tags/music/`       | `/tags/music/`    |
-| `/notes/a#section-1`                 | `/notes/a#section-1` | `/notes/a/`       |
+| 入力                                   | navigation URL            | fetch target URL            |
+| -------------------------------------- | ------------------------- | --------------------------- |
+| `/docs/example/`                       | `/docs/example`           | `/docs/example/`            |
+| `/search/?q=test&wtr-session-id=abc`   | `/search?q=test`          | `/search/?q=test`           |
+| `/tags/music/`                         | `/tags/music/`            | `/tags/music/`              |
+| `/archives/1a2b3c4d5e6f/`              | `/archives/1a2b3c4d5e6f`  | `/archives/1a2b3c4d5e6f/`   |
+| `/notes/a#section-1`                   | `/notes/a#section-1`      | `/notes/a/`                 |
+
+### archives ルートの扱い
+
+`/archives/{hash}` は、Rouault における **固定版参照のための通常文書ルート** とします。  
+この URL は `patterns.md` における Permanent URL に対応し、router はこれを full navigation の対象として扱わなければなりません。
+
+追加規則:
+
+- `/archives/{hash}` を `/{slug}` へ自動正規化してはなりません
+- `/archives/{hash}` から対応する最新版 URL が導出可能であっても、router が自動 redirect してはなりません
+- `/archives/{hash}` 上で「最新版はこちら」を案内する責務は UI または上位統合に属し、router core の必須責務ではありません
+- `/archives/{hash}` は state-only navigation の対象にしてはなりません
 
 ### state-only 判定における query 比較
 
@@ -762,9 +781,9 @@ state-only navigation の判定主体は `NavigationRunner` です。`Navigation
 
 router core は、特定 query parameter 名や特定 UI 機能に固定された state-only 規則を公開契約として持ちません。
 
-- `urlStateNavigationPolicy` 未指定時、すべての遷移は full navigation とします。
-- `urlStateNavigationPolicy` 指定時、その戻り値が `kind: 'state-only'` の場合にのみ state-only navigation とします。
-- ある URL 差分を state-only とみなす具体規則は、router 仕様ではなく policy 実装の責務です。
+- `urlStateNavigationPolicy` 未指定時、すべての遷移は full navigation とします
+- `urlStateNavigationPolicy` 指定時、その戻り値が `kind: 'state-only'` の場合にのみ state-only navigation とします
+- ある URL 差分を state-only とみなす具体規則は、router 仕様ではなく policy 実装の責務です
 
 ### 実行内容
 
@@ -779,25 +798,17 @@ state-only navigation と判定された場合、full navigation を行わず次
 - `NavigationResult.source = 'state-only'` とする
 - `NavigationResult.renderedKind = null` とする
 
+### feature-local URL state との境界
+
+router core は、文書遷移としての URL を扱います。  
+一方、検索結果ページにおける `q`、`tag`、`tagMode`、`sort` のような **feature-local URL state** の生成・解釈・履歴更新は、router core の責務に含めてはなりません。
+
+Rouault において `/search?...` および `/tags/<tag>/` 上での検索条件変更は、同一文書内状態の更新として **検索 UI 側が単独で所有**します。  
+router は、検索結果ページそのものへの到達と離脱は扱ってよいものとしますが、検索 UI が所有する状態更新を独自に再解釈して full navigation または state-only navigation へ昇格させてはなりません。
+
 ### app 固有最適化の記述場所
 
 Rouault 固有の primary tab 最適化など、特定 URL 差分を state-only とみなす具体規則は、本仕様書ではなく **`urlStateNavigationPolicy` の実装仕様** に記述しなければなりません。
-
-## 直列化・中断・latest-wins
-
-### 基本規則
-
-- router は同時に 1 件だけ full navigation を実行する
-- 待機中は **最新 1 件のみ保持** する
-- 後続要求が来た場合、古い待機要求は `superseded` とする
-- 実行中要求についても、可能であれば in-flight fetch を `AbortController` で中断し、latest-wins を適用する
-- `navigationTimeoutMs` が非 `null` の場合、timeout は route handler / fetch / snapshot 正規化 / content prepare / content commit を含む 1 件の navigation 実行全体へ適用します
-
-### `superseded` の意味
-
-- 当該要求は commit に到達していない
-- 当該要求の呼び出し側は、その結果を UI 完了通知として扱ってはならない
-- `navigate()` は `outcome: 'superseded'` を返す
 
 ## イベント契約
 
