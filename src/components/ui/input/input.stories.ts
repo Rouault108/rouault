@@ -4,7 +4,7 @@ import './input';
 import type { Input } from './input';
 import '../button/button';
 
-type InputStoryArgs = {
+interface InputStoryArgs {
   label: string;
   hideLabel: boolean;
   variant: 'filled' | 'outline';
@@ -29,7 +29,7 @@ type InputStoryArgs = {
   autocapitalize: string;
   spellcheck: boolean | undefined;
   describedBy: string;
-};
+}
 
 const baseArgs: InputStoryArgs = {
   label: 'メールアドレス',
@@ -353,7 +353,7 @@ export const Default: Story = {
     const input = getInternalInput(host);
     const label = getLabel(host);
 
-    if (label.textContent?.trim() !== 'メールアドレス') {
+    if (label.textContent.trim() !== 'メールアドレス') {
       throw new Error('label 要素がアクセシブル名の正準ソースとして存在する必要があります');
     }
 
@@ -411,7 +411,7 @@ export const ExternalErrorState: Story = {
       throw new Error('外部強制エラー時は aria-invalid="true" である必要があります');
     }
 
-    if (!error || error.textContent?.trim() !== 'ユーザー名は3文字以上で入力してください') {
+    if (error?.textContent.trim() !== 'ユーザー名は3文字以上で入力してください') {
       throw new Error('外部強制エラー文言が表示されていません');
     }
 
@@ -448,7 +448,7 @@ export const NativeValidationState: Story = {
     }
 
     const error = host.shadowRoot?.querySelector<HTMLElement>('.error-message');
-    if (!error || !error.textContent?.trim()) {
+    if (!error?.textContent.trim()) {
       throw new Error('ネイティブ妥当性エラー文言が表示される必要があります');
     }
   },
@@ -515,11 +515,11 @@ export const RequiredIndicatorModes: Story = {
     const asteriskLabel = getLabel(asteriskHost);
     const noneLabel = getLabel(noneHost);
 
-    if (!textLabel.textContent?.includes('（必須）')) {
+    if (!textLabel.textContent.includes('（必須）')) {
       throw new Error('requiredIndicator="text" は文言で必須を示す必要があります');
     }
 
-    if (!asteriskLabel.textContent?.includes('*')) {
+    if (!asteriskLabel.textContent.includes('*')) {
       throw new Error('requiredIndicator="asterisk" は記号で必須を示す必要があります');
     }
 
@@ -601,7 +601,7 @@ export const Disabled: Story = {
       throw new Error('disabled=true は内部 input に委譲される必要があります');
     }
 
-    if (host.checkValidity() !== true) {
+    if (!host.checkValidity()) {
       throw new Error('disabled 状態は妥当性評価の対象外として扱います');
     }
   },
@@ -704,7 +704,7 @@ export const FormDataDisabledReadonlyBoundary: Story = {
       })}
     </form>
   `,
-  play: async ({ canvasElement }) => {
+  play: ({ canvasElement }) => {
     const form = canvasElement.querySelector<HTMLFormElement>('#boundary-form');
     if (!form) {
       throw new Error('boundary 検証用の form が見つかりません');

@@ -139,10 +139,10 @@ export const UncontrolledComparison: Story = {
       throw new Error('比較ストーリーの必須要素が不足しています');
     }
 
-    if (reactTab.textContent?.trim() !== 'React') {
+    if (reactTab.textContent.trim() !== 'React') {
       throw new Error('1つ目のタブラベルが tab-label から解決されていません');
     }
-    if (litTab.textContent?.trim() !== 'Lit') {
+    if (litTab.textContent.trim() !== 'Lit') {
       throw new Error('2つ目のタブラベルが tab-label から解決されていません');
     }
     if (reactTab.getAttribute('aria-selected') !== 'true') {
@@ -153,7 +153,7 @@ export const UncontrolledComparison: Story = {
     }
 
     const copyButton = getCopyButton(group);
-    if (`${copyButton.label}` !== 'React 実装 のコードをコピー') {
+    if (copyButton.label !== 'React 実装 のコードをコピー') {
       throw new Error(`copy-label がコピー文脈に反映されていません: "${copyButton.label}"`);
     }
 
@@ -164,8 +164,10 @@ export const UncontrolledComparison: Story = {
     if (litTab.getAttribute('aria-selected') !== 'true') {
       throw new Error('uncontrolled mode で選択状態が更新されていません');
     }
-    if (`${copyButton.label}` !== 'Lit 実装 のコードをコピー') {
-      throw new Error(`タブ切り替え後のコピー文脈が不正です: "${copyButton.label}"`);
+    
+    const updatedCopyButton = getCopyButton(group);
+    if (updatedCopyButton.label !== 'Lit 実装 のコードをコピー') {
+      throw new Error(`タブ切り替え後のコピー文脈が不正です: "${updatedCopyButton.label}"`);
     }
   },
 };
@@ -195,7 +197,7 @@ export const ControlledSelection: Story = {
       throw new Error('selected-value の初期反映が不正です');
     }
 
-    const events: Array<Record<string, unknown>> = [];
+    const events: Record<string, unknown>[] = [];
     group.addEventListener('ui-code-group-change', ((event: Event) => {
       const customEvent = event as CustomEvent<Record<string, unknown>>;
       events.push(customEvent.detail);
@@ -297,7 +299,7 @@ export const FallbackAndCopyContract: Story = {
     const tabs = getTabs(group);
     const expected = ['alpha.ts', 'css', 'Preview'];
     expected.forEach((label, index) => {
-      const actual = tabs[index]?.textContent?.trim() ?? '';
+      const actual = tabs[index]?.textContent.trim() ?? '';
       if (actual !== label) {
         throw new Error(`タブラベルの解決順が不正です: index=${String(index)} actual="${actual}"`);
       }
@@ -401,7 +403,7 @@ export const GroupKeyPersistence: Story = {
     const reorderedTabs = getTabs(group);
     const firstAfterReorder = reorderedTabs[0];
     if (!firstAfterReorder) throw new Error('再配置後タブが見つかりません');
-    if (firstAfterReorder.textContent?.trim() !== 'Two') {
+    if (firstAfterReorder.textContent.trim() !== 'Two') {
       throw new Error('groupKey ベースで再解決されていません');
     }
     if (firstAfterReorder.getAttribute('aria-selected') !== 'true') {
@@ -607,7 +609,7 @@ export const PrintStyleContract: Story = {
       </ui-code-block>
     </ui-code-group>
   `,
-  play: async () => {
+  play: () => {
     const cssText = readCssText(CodeGroup.styles);
     const requiredTokens = [
       '@media print',
@@ -639,7 +641,7 @@ export const ForcedColorsContract: Story = {
       </ui-code-block>
     </ui-code-group>
   `,
-  play: async () => {
+  play: () => {
     const cssText = readCssText(CodeGroup.styles);
     const requiredTokens = [
       '@media (forced-colors: active)',

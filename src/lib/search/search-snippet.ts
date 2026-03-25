@@ -16,7 +16,7 @@ function mergeSegments(segments: SearchSnippetSegment[]): SearchSnippetSegment[]
     }
 
     const previous = merged.at(-1);
-    if (previous && previous.matched === segment.matched) {
+    if (previous?.matched === segment.matched) {
       previous.text += segment.text;
       continue;
     }

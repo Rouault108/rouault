@@ -245,7 +245,7 @@ export const Default: Story = {
     if (dialog.getAttribute('role') !== 'dialog' || dialog.getAttribute('aria-modal') !== 'true') {
       throw new Error('Lightbox ダイアログには role="dialog" と aria-modal="true" が必要です');
     }
-    const caption = image.shadowRoot?.querySelector<HTMLElement>('figcaption.caption');
+    const caption = image.shadowRoot.querySelector<HTMLElement>('figcaption.caption');
     if (!caption) throw new Error('figcaption.caption が見つかりません');
     if (dialog.getAttribute('aria-describedby') !== caption.id) {
       throw new Error('Lightbox dialog は figcaption を aria-describedby で参照する必要があります');
@@ -255,11 +255,11 @@ export const Default: Story = {
     if (closeButton.getAttribute('aria-label') !== '閉じる') {
       throw new Error('Lightbox には accessible name 付きの close button が必要です');
     }
-    if (image.shadowRoot?.activeElement !== closeButton) {
+    if (image.shadowRoot.activeElement !== closeButton) {
       throw new Error('Lightbox open 直後は close button へフォーカスを移動する必要があります');
     }
 
-    const zoomedImage = image.shadowRoot?.querySelector<HTMLImageElement>('.lightbox-image');
+    const zoomedImage = image.shadowRoot.querySelector<HTMLImageElement>('.lightbox-image');
     if (!zoomedImage) throw new Error('.lightbox-image が見つかりません');
     zoomedImage.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
     await image.updateComplete;
@@ -276,7 +276,7 @@ export const Default: Story = {
     if (trigger.getAttribute('aria-expanded') !== 'false') {
       throw new Error('Lightbox close 後は aria-expanded="false" が必要です');
     }
-    if (image.shadowRoot?.activeElement !== trigger) {
+    if (image.shadowRoot.activeElement !== trigger) {
       throw new Error('Lightbox close 後は trigger へフォーカスを戻す必要があります');
     }
   },
@@ -466,7 +466,7 @@ export const LoadingAndErrorStates: Story = {
     if (errorIcon?.getAttribute('icon') !== 'lucide:image-off') {
       throw new Error('error 時のアイコンは lucide:image-off である必要があります');
     }
-    if (!errorFallback.textContent?.includes('画像を読み込めませんでした')) {
+    if (!errorFallback.textContent.includes('画像を読み込めませんでした')) {
       throw new Error('error 文言は alt ではなく失敗状態そのものを示す必要があります');
     }
 
@@ -486,7 +486,7 @@ export const LoadingAndErrorStates: Story = {
 
     const emptyFallback = emptyRootNode.querySelector<HTMLElement>('.error-fallback');
     if (!emptyFallback) throw new Error('empty 時はフォールバック面を表示する必要があります');
-    if (!emptyFallback.textContent?.includes('画像が指定されていません')) {
+    if (!emptyFallback.textContent.includes('画像が指定されていません')) {
       throw new Error('empty 文言は error 文言と分離されている必要があります');
     }
     if (getRootFigure(empty).getAttribute('aria-busy') !== 'false') {
@@ -753,7 +753,7 @@ export const BoundaryConditions: Story = {
     if (!missingSrc.shadowRoot?.querySelector('.error-fallback')) {
       throw new Error('src 未指定時は empty fallback を表示する必要があります');
     }
-    if (!missingSrc.shadowRoot?.textContent?.includes('画像が指定されていません')) {
+    if (!missingSrc.shadowRoot.textContent.includes('画像が指定されていません')) {
       throw new Error('src 未指定時は empty 文言を表示する必要があります');
     }
 

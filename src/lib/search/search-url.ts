@@ -45,7 +45,7 @@ export function normalizeSearchTags(values: readonly string[]): string[] {
 }
 
 function parseTagFromPathname(pathname: string): string[] {
-  const match = pathname.match(/^\/tags\/([^/]+)\/$/u);
+  const match = /^\/tags\/([^/]+)\/$/u.exec(pathname);
   if (!match) {
     return [];
   }

@@ -222,7 +222,7 @@ export class UiSearchDialog extends LitElement {
 
   protected override updated(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has('opened')) {
-      if (this.opened === false) {
+      if (!this.opened) {
         this._controller.setPendingCloseReason(this._lastCloseReason);
       }
       this._controller.syncOpened(this.opened);
@@ -335,6 +335,7 @@ export class UiSearchDialog extends LitElement {
       onDialogClose: this._controller.handleNativeClose,
       onResultListScroll: this._onResultListScroll,
       onResultClick: this._selectionModel.handleResultClick,
+      onResultKeydown: this._selectionModel.handleResultKeydown,
     });
   }
 

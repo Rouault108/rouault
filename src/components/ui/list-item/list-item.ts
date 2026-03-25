@@ -387,6 +387,7 @@ export class ListItem extends LitElement {
   }
 
   private _isDevelopment(): boolean {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- SSR 環境では globalThis.location が undefined になり得る
     return globalThis.location?.hostname === 'localhost';
   }
 
@@ -464,7 +465,7 @@ export class ListItem extends LitElement {
     if (event.button !== 0) return;
     if (event.defaultPrevented) return;
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
-    if ((window.getSelection()?.toString().length ?? 0) > 0) return;
+    if ((window.getSelection()?.toString().length ?? 0) > 0) return; // getSelection() は null を返し得るため ?. を維持
 
     const cell = this._getDataCellFromEvent(event);
     if (!cell) return;

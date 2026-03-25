@@ -355,7 +355,7 @@ export class Banner extends LitElement {
   private _syncActionStateFromLightDom(): void {
     const children =
       'children' in this
-        ? Array.from((this as typeof this & { children?: ArrayLike<Element> }).children ?? [])
+        ? Array.from((this as typeof this & { children?: ArrayLike<Element> }).children)
         : [];
 
     this._hasActions = children.some(

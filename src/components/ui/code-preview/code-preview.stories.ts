@@ -525,7 +525,7 @@ export const BuiltInShowcaseControlsContract: Story = {
     if (!themeEvent) {
       throw new Error('theme control 変更時に state-change が送出されていません');
     }
-    if (themeEvent.userInitiated !== true || themeEvent.keys[0] !== 'previewTheme') {
+    if (!themeEvent.userInitiated || themeEvent.keys[0] !== 'previewTheme') {
       throw new Error('theme control の state-change detail が不正です');
     }
 
@@ -551,7 +551,7 @@ export const BuiltInShowcaseControlsContract: Story = {
     if (!surfaceEvent) {
       throw new Error('surface control 変更時に state-change が送出されていません');
     }
-    if (surfaceEvent.userInitiated !== true || surfaceEvent.keys[0] !== 'previewSurface') {
+    if (!surfaceEvent.userInitiated || surfaceEvent.keys[0] !== 'previewSurface') {
       throw new Error('surface control の state-change detail が不正です');
     }
 
@@ -577,7 +577,7 @@ export const BuiltInShowcaseControlsContract: Story = {
     if (!viewportEvent) {
       throw new Error('viewport control 変更時に state-change が送出されていません');
     }
-    if (viewportEvent.userInitiated !== true || viewportEvent.keys[0] !== 'previewViewport') {
+    if (!viewportEvent.userInitiated || viewportEvent.keys[0] !== 'previewViewport') {
       throw new Error('viewport control の state-change detail が不正です');
     }
 
@@ -603,7 +603,7 @@ export const BuiltInShowcaseControlsContract: Story = {
     if (!externalThemeEvent) {
       throw new Error('外部 property 更新時に state-change が送出されていません');
     }
-    if (externalThemeEvent.userInitiated !== false) {
+    if (externalThemeEvent.userInitiated) {
       throw new Error('外部 property 更新の state-change が userInitiated=true になっています');
     }
   },

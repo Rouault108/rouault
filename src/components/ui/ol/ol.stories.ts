@@ -32,8 +32,8 @@ const getItem = (root: ParentNode, selector: string): HTMLLIElement => {
   return item;
 };
 
-const getElement = <T extends Element>(root: ParentNode, selector: string): T => {
-  const element = root.querySelector<T>(selector);
+const getElement = (root: ParentNode, selector: string): HTMLElement => {
+  const element = root.querySelector<HTMLElement>(selector);
   if (!element) {
     throw new Error(`${selector} が見つかりません`);
   }
@@ -154,9 +154,9 @@ export const Default: Story = {
     expectMarkerSequence(list, [1, 2, 3]);
 
     const anchors = [
-      getElement<HTMLElement>(list, '[data-testid="anchor-1"]'),
-      getElement<HTMLElement>(list, '[data-testid="anchor-2"]'),
-      getElement<HTMLElement>(list, '[data-testid="anchor-3"]'),
+      getElement(list, '[data-testid="anchor-1"]'),
+      getElement(list, '[data-testid="anchor-2"]'),
+      getElement(list, '[data-testid="anchor-3"]'),
     ];
     expectAlignment(anchors);
 
@@ -201,12 +201,12 @@ export const StartZeroAndNegative: Story = {
     expectMarkerSequence(negativeList, [-1, 0]);
 
     expectAlignment([
-      getElement<HTMLElement>(zeroList, '[data-testid="zero-1"]'),
-      getElement<HTMLElement>(zeroList, '[data-testid="zero-2"]'),
+      getElement(zeroList, '[data-testid="zero-1"]'),
+      getElement(zeroList, '[data-testid="zero-2"]'),
     ]);
     expectAlignment([
-      getElement<HTMLElement>(negativeList, '[data-testid="negative-1"]'),
-      getElement<HTMLElement>(negativeList, '[data-testid="negative-2"]'),
+      getElement(negativeList, '[data-testid="negative-1"]'),
+      getElement(negativeList, '[data-testid="negative-2"]'),
     ]);
   },
 };
@@ -232,12 +232,12 @@ export const StartAndValueJump: Story = {
     expectMarkerSequence(list, [9, 10, 99, 100, -3, -2]);
 
     expectAlignment([
-      getElement<HTMLElement>(list, '[data-testid="jump-9"]'),
-      getElement<HTMLElement>(list, '[data-testid="jump-10"]'),
-      getElement<HTMLElement>(list, '[data-testid="jump-99"]'),
-      getElement<HTMLElement>(list, '[data-testid="jump-100"]'),
-      getElement<HTMLElement>(list, '[data-testid="jump-neg3"]'),
-      getElement<HTMLElement>(list, '[data-testid="jump-neg2"]'),
+      getElement(list, '[data-testid="jump-9"]'),
+      getElement(list, '[data-testid="jump-10"]'),
+      getElement(list, '[data-testid="jump-99"]'),
+      getElement(list, '[data-testid="jump-100"]'),
+      getElement(list, '[data-testid="jump-neg3"]'),
+      getElement(list, '[data-testid="jump-neg2"]'),
     ]);
   },
 };
@@ -260,9 +260,9 @@ export const Reversed: Story = {
     expectMarkerSequence(list, [3, 2, 1]);
 
     expectAlignment([
-      getElement<HTMLElement>(list, '[data-testid="reversed-3"]'),
-      getElement<HTMLElement>(list, '[data-testid="reversed-2"]'),
-      getElement<HTMLElement>(list, '[data-testid="reversed-1"]'),
+      getElement(list, '[data-testid="reversed-3"]'),
+      getElement(list, '[data-testid="reversed-2"]'),
+      getElement(list, '[data-testid="reversed-1"]'),
     ]);
   },
 };
@@ -285,9 +285,9 @@ export const ReversedWithStartAndValue: Story = {
     expectMarkerSequence(list, [5, 2, 1]);
 
     expectAlignment([
-      getElement<HTMLElement>(list, '[data-testid="reversed-start-5"]'),
-      getElement<HTMLElement>(list, '[data-testid="reversed-value-2"]'),
-      getElement<HTMLElement>(list, '[data-testid="reversed-value-1"]'),
+      getElement(list, '[data-testid="reversed-start-5"]'),
+      getElement(list, '[data-testid="reversed-value-2"]'),
+      getElement(list, '[data-testid="reversed-value-1"]'),
     ]);
   },
 };
@@ -348,7 +348,7 @@ export const MarkerAlignment: Story = {
       const items = getDirectItems(list);
       expectMarkerSequence(list, [...testCase.markers]);
 
-      expectAlignment(testCase.anchors.map((selector) => getElement<HTMLElement>(list, selector)));
+      expectAlignment(testCase.anchors.map((selector) => getElement(list, selector)));
 
       const columns = items.map((item) => getComputedStyle(item).gridTemplateColumns);
       const [first, ...rest] = columns;
@@ -400,14 +400,14 @@ export const VariantSteps: Story = {
     const stepsHost = getHost(canvasElement, 'variant-steps');
     await Promise.all([defaultHost.updateComplete, stepsHost.updateComplete]);
 
-    const mutedProbe = getElement<HTMLElement>(canvasElement, '#token-muted-probe');
-    const primaryProbe = getElement<HTMLElement>(canvasElement, '#token-primary-probe');
+    const mutedProbe = getElement(canvasElement, '#token-muted-probe');
+    const primaryProbe = getElement(canvasElement, '#token-primary-probe');
     const defaultList = getDirectList(defaultHost);
     const stepsList = getDirectList(stepsHost);
     const defaultItem = getItem(defaultList, 'li:first-child');
     const stepsItem = getItem(stepsList, 'li:first-child');
-    const defaultAnchor = getElement<HTMLElement>(defaultList, '[data-testid="variant-default-anchor"]');
-    const stepsAnchor = getElement<HTMLElement>(stepsList, '[data-testid="variant-steps-anchor"]');
+    const defaultAnchor = getElement(defaultList, '[data-testid="variant-default-anchor"]');
+    const stepsAnchor = getElement(stepsList, '[data-testid="variant-steps-anchor"]');
 
     const defaultMarkerColor = getComputedStyle(defaultItem, '::before').color;
     const stepsMarkerColor = getComputedStyle(stepsItem, '::before').color;
@@ -451,17 +451,17 @@ export const NestedOrderedList: Story = {
     await host.updateComplete;
 
     const rootList = getDirectList(host);
-    const nestedList = getElement<HTMLOListElement>(rootList, 'li ol');
+    const nestedList = getElement(rootList, 'li ol') as HTMLOListElement;
     expectMarkerSequence(rootList, [1, 2]);
     expectMarkerSequence(nestedList, [9, 10]);
 
     expectAlignment([
-      getElement<HTMLElement>(rootList, '[data-testid="parent-1"]'),
-      getElement<HTMLElement>(rootList, '[data-testid="parent-2"]'),
+      getElement(rootList, '[data-testid="parent-1"]'),
+      getElement(rootList, '[data-testid="parent-2"]'),
     ]);
     expectAlignment([
-      getElement<HTMLElement>(nestedList, '[data-testid="child-9"]'),
-      getElement<HTMLElement>(nestedList, '[data-testid="child-10"]'),
+      getElement(nestedList, '[data-testid="child-9"]'),
+      getElement(nestedList, '[data-testid="child-10"]'),
     ]);
   },
 };
@@ -485,8 +485,8 @@ export const NestedUnorderedListIsolation: Story = {
 
     const list = getDirectList(host);
     const orderedItem = getItem(list, 'li');
-    const nestedUl = getElement<HTMLUListElement>(list, '[data-testid="nested-ul"]');
-    const unorderedItem = getElement<HTMLLIElement>(nestedUl, '[data-testid="unordered-item"]');
+    const nestedUl = getElement(list, '[data-testid="nested-ul"]') as HTMLUListElement;
+    const unorderedItem = getElement(nestedUl, '[data-testid="unordered-item"]') as HTMLLIElement;
 
     if (getComputedStyle(orderedItem).display !== 'grid') {
       throw new Error('ordered list の項目が grid 整列になっていません');
@@ -542,7 +542,7 @@ export const StructureViolation: Story = {
     }
 
     const invalidList = getDirectList(invalidChildHost);
-    const invalidChild = getElement<HTMLDivElement>(invalidList, '[data-testid="structure-invalid-non-li"]');
+    const invalidChild = getElement(invalidList, '[data-testid="structure-invalid-non-li"]') as HTMLDivElement;
     if (!(invalidChild.parentElement instanceof HTMLOListElement)) {
       throw new Error('非正規な non-li 子要素が移動しています');
     }
@@ -599,12 +599,12 @@ export const EnvironmentContracts: Story = {
     const stepsList = getDirectList(stepsHost);
     const defaultItem = getItem(defaultList, 'li:first-child');
     const stepsItem = getItem(stepsList, 'li:first-child');
-    const defaultAnchor = getElement<HTMLElement>(defaultList, '[data-testid="env-default-anchor"]');
-    const stepsAnchor = getElement<HTMLElement>(stepsList, '[data-testid="env-steps-anchor"]');
-    const mutedProbe = getElement<HTMLElement>(canvasElement, '#env-muted-probe');
-    const primaryProbe = getElement<HTMLElement>(canvasElement, '#env-primary-probe');
-    const link = getElement<HTMLAnchorElement>(defaultList, '.touch-link');
-    const button = getElement<HTMLButtonElement>(stepsList, '.touch-button');
+    const defaultAnchor = getElement(defaultList, '[data-testid="env-default-anchor"]');
+    const stepsAnchor = getElement(stepsList, '[data-testid="env-steps-anchor"]');
+    const mutedProbe = getElement(canvasElement, '#env-muted-probe');
+    const primaryProbe = getElement(canvasElement, '#env-primary-probe');
+    const link = getElement(defaultList, '.touch-link') as HTMLAnchorElement;
+    const button = getElement(stepsList, '.touch-button') as HTMLButtonElement;
 
     const defaultMarkerColor = getComputedStyle(defaultItem, '::before').color;
     const stepsMarkerColor = getComputedStyle(stepsItem, '::before').color;

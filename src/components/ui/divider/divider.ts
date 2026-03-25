@@ -54,7 +54,7 @@ ${DIVIDER_SCOPE_SELECTOR} {
  * `variant` は意味分類であり、未知の値を拡張点として扱わない。
  */
 export const resolveDividerVariant = (
-  variant: DividerVariant | string | null | undefined,
+  variant: string | null | undefined,
 ): DividerVariant => {
   if (variant && VALID_VARIANTS.has(variant as DividerVariant)) {
     return variant as DividerVariant;

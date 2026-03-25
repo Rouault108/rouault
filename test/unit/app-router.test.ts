@@ -124,10 +124,6 @@ describe('app-router', () => {
     );
 
     const appHost = host;
-    if (!appHost) {
-      throw new Error('host が作成されていません。');
-    }
-
     await appHost.updateComplete;
 
     expect(fetchCalled).to.equal(false);
@@ -159,9 +155,6 @@ describe('app-router', () => {
       >`,
     );
     const appHost = host;
-    if (!appHost) {
-      throw new Error('host が作成されていません。');
-    }
 
     await appHost.updateComplete;
 
@@ -218,9 +211,6 @@ describe('app-router', () => {
       >`,
     );
     const appHost = host;
-    if (!appHost) {
-      throw new Error('host が作成されていません。');
-    }
 
     await appHost.updateComplete;
 
@@ -252,10 +242,6 @@ describe('app-router', () => {
       >`,
     );
     const appHost = host;
-    if (!appHost) {
-      throw new Error('host が作成されていません。');
-    }
-
     await appHost.updateComplete;
 
     const navigationPromise = appHost.navigate('/slow-page');
@@ -319,10 +305,6 @@ describe('app-router', () => {
       >`,
     );
     const appHost = host;
-    if (!appHost) {
-      throw new Error('host が作成されていません。');
-    }
-
     await appHost.updateComplete;
 
     await appHost.navigate('/notes/new-note');

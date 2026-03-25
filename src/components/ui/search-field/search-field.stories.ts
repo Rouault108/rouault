@@ -110,7 +110,7 @@ export const Default: Story = {
     assert(!!icon, '検索アイコンが表示されていません');
     assert(input.type === 'search', '内部 input が type="search" ではありません');
     assert(clearButton.hidden, '初期状態では clear button が非表示である必要があります');
-    assert(label.textContent?.trim() === '検索', 'label の文言が正しくありません');
+    assert(label.textContent.trim() === '検索', 'label の文言が正しくありません');
     assert(label.htmlFor === input.id, 'label と内部 input の関連付けが切れています');
     assert(input.getAttribute('aria-label') === null, 'アクセシブル名源を aria-label にしてはいけません');
     assert(
@@ -292,7 +292,7 @@ export const NativeInputHints: Story = {
     );
     assert(
       ['off', 'none'].includes(input.getAttribute('autocapitalize') ?? '') ||
-        ['off', 'none'].includes(input.autocapitalize),
+      ['off', 'none'].includes(input.autocapitalize),
       'autocapitalize が内部 input に反映されていません',
     );
   },

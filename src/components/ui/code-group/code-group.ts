@@ -507,7 +507,7 @@ export class CodeGroup extends LitElement {
     const foreignElements: HTMLElement[] = [];
     const children =
       'children' in this
-        ? Array.from((this as typeof this & { children?: ArrayLike<Element> }).children ?? [])
+        ? Array.from((this as typeof this & { children?: ArrayLike<Element> }).children)
         : [];
 
     for (const child of children) {
@@ -835,7 +835,7 @@ export class CodeGroup extends LitElement {
 
     const propertyValue = block.copyable;
     if (typeof propertyValue === 'boolean') {
-      return propertyValue === false;
+      return !propertyValue;
     }
 
     const attributeValue = block.getAttribute('copyable');
@@ -1117,7 +1117,7 @@ export class CodeGroup extends LitElement {
   }
 
   override render() {
-    const labelledBy = this.getAttribute('aria-labelledby')?.trim() || undefined;
+    const labelledBy = this.getAttribute('aria-labelledby')?.trim();
     const ariaLabel = labelledBy ? undefined : this._tabListAriaLabel || undefined;
 
     return html`

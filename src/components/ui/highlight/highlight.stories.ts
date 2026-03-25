@@ -65,7 +65,7 @@ const getContrastRatio = (foreground: string, background: string): number => {
 };
 
 const nextFrame = async (): Promise<void> =>
-  new Promise((resolve) => requestAnimationFrame(() => resolve()));
+  new Promise((resolve) => requestAnimationFrame(() => { resolve(); }));
 
 const meta: Meta<Highlight> = {
   title: 'Components/Highlight',
@@ -183,7 +183,7 @@ export const CurrentMatchVisualContract: Story = {
       <ui-highlight id="visual-current" current-match text="現在ヒット"></ui-highlight>
     </div>
   `,
-  play: async ({ canvasElement }) => {
+  play: ({ canvasElement }) => {
     const passiveMark = requireMark(getHost(canvasElement, 'visual-passive'));
     const currentMark = requireMark(getHost(canvasElement, 'visual-current'));
 

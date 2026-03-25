@@ -219,7 +219,7 @@ function createSearchResponse(
 }
 
 function installSearchMock(): void {
-  pagefindSearchAdapter.search = (query, selectedGenres, sortMode, tagMode = 'or') =>
+  pagefindSearchAdapter.search = (query, selectedGenres, sortMode, tagMode) =>
     Promise.resolve(createSearchResponse(query, selectedGenres, sortMode, tagMode));
 
   pagefindSearchAdapter.getAvailableGenres = () => Promise.resolve(ALL_GENRE_COUNTS);

@@ -714,7 +714,7 @@ export class FileTree extends LitElement {
     );
   }
 
-  private _handleArrowRight(event: CustomEvent): void {
+  private _handleArrowRight = (event: CustomEvent): void => {
     event.stopPropagation();
     if (this._activeId === null) {
       return;
@@ -737,7 +737,7 @@ export class FileTree extends LitElement {
     this._moveFocusByIndex(currentIndex + 1);
   }
 
-  private _handleArrowLeft(event: CustomEvent): void {
+  private _handleArrowLeft = (event: CustomEvent): void => {
     event.stopPropagation();
     if (this._activeId === null) {
       return;

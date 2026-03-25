@@ -51,7 +51,7 @@ const getShadowStylesText = (shadowRoot: ShadowRoot | null): string => {
   if (!shadowRoot) return '';
 
   const inlineStyles = Array.from(shadowRoot.querySelectorAll('style'))
-    .map((style) => style.textContent ?? '')
+    .map((style) => style.textContent)
     .join('\n');
 
   const adoptedStyles = shadowRoot.adoptedStyleSheets
@@ -616,7 +616,7 @@ export const MediaStyleContracts: Story = {
       throw new Error('print 時の copy-button 非表示ルールが不足しています');
     }
 
-    const documentStyle = getDocumentCodeBlockStyle().textContent ?? '';
+    const documentStyle = getDocumentCodeBlockStyle().textContent;
     if (!documentStyle.includes('@media (forced-colors: active)')) {
       throw new Error('document CSS に forced-colors ルールが定義されていません');
     }

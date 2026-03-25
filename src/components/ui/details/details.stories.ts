@@ -121,7 +121,7 @@ export const Default: Story = {
   render: (args) => html`
     <ui-details
       id="details-default"
-      aria-label="${ifDefined(args.ariaLabel?.trim() ? args.ariaLabel : undefined)}"
+      aria-label="${ifDefined(args.ariaLabel.trim() ? args.ariaLabel : undefined)}"
       summary="${args.summary}"
       ?open="${args.open}"
       variant="${args.variant}"
@@ -179,7 +179,7 @@ export const VariantStateMatrix: Story = {
     </style>
     <div class="matrix">
       ${MATRIX_CASES.map(
-        (item) => html`
+    (item) => html`
           <div class="matrix-row">
             <div class="matrix-label">${item.summary}</div>
             <ui-details
@@ -194,7 +194,7 @@ export const VariantStateMatrix: Story = {
             </ui-details>
           </div>
         `,
-      )}
+  )}
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -416,7 +416,7 @@ export const AccessibleNameContract: Story = {
     if (trigger.hasAttribute('aria-label')) {
       throw new Error('通常利用では trigger に aria-label を出力してはいけません');
     }
-    if (summary.textContent?.trim() !== '可視サマリー契約') {
+    if (summary.textContent.trim() !== '可視サマリー契約') {
       throw new Error('可視 summary が期待どおりに描画されていません');
     }
   },

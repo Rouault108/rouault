@@ -96,6 +96,13 @@ export class SearchDialogSelectionModel {
     this._selectActiveResult('pointer');
   };
 
+  readonly handleResultKeydown = (event: KeyboardEvent): void => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.handleResultClick(event);
+    }
+  };
+
   getOptionId(itemId: string): string {
     return `search-option-${itemId}`;
   }

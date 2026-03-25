@@ -12,7 +12,7 @@ interface MetadataEntry {
 interface HtmlNode {
   nodeName?: string;
   tagName?: string;
-  attrs?: Array<{ name: string; value: string }>;
+  attrs?: { name: string; value: string }[];
   childNodes?: HtmlNode[];
 }
 
@@ -216,7 +216,7 @@ const fetchTextWithTimeout = async (
   timeoutMs: number,
 ): Promise<{ text: string; finalUrl: string }> => {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const timer = setTimeout(() => { controller.abort(); }, timeoutMs);
 
   try {
     const response = await fetch(url, {
@@ -229,7 +229,7 @@ const fetchTextWithTimeout = async (
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      throw new Error(`HTTP ${String(response.status)}`);
     }
 
     return {
@@ -243,7 +243,7 @@ const fetchTextWithTimeout = async (
 
 const fetchJsonWithTimeout = async (url: string, timeoutMs: number): Promise<unknown> => {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const timer = setTimeout(() => { controller.abort(); }, timeoutMs);
 
   try {
     const response = await fetch(url, {
@@ -256,7 +256,7 @@ const fetchJsonWithTimeout = async (url: string, timeoutMs: number): Promise<unk
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      throw new Error(`HTTP ${String(response.status)}`);
     }
 
     return await response.json();
@@ -300,14 +300,14 @@ const fetchMetadata = async (
       ? { description: htmlPayload.ogDescription ?? htmlPayload.twitterDescription }
       : {}),
     ...(htmlPayload.ogImage ??
-    htmlPayload.twitterImage ??
-    resolveSafeHttpUrl(oembed?.thumbnail_url, finalUrl)
+      htmlPayload.twitterImage ??
+      resolveSafeHttpUrl(oembed?.thumbnail_url, finalUrl)
       ? {
-          image:
-            htmlPayload.ogImage ??
-            htmlPayload.twitterImage ??
-            resolveSafeHttpUrl(oembed?.thumbnail_url, finalUrl),
-        }
+        image:
+          htmlPayload.ogImage ??
+          htmlPayload.twitterImage ??
+          resolveSafeHttpUrl(oembed?.thumbnail_url, finalUrl),
+      }
       : {}),
     ...(htmlPayload.ogSiteName ?? oembed?.provider_name
       ? { siteName: htmlPayload.ogSiteName ?? oembed?.provider_name }
@@ -385,7 +385,7 @@ const main = async (): Promise<void> => {
   process.stdout.write(`wrote ${OUTPUT_FILE}\n`);
 };
 
-void main().catch((error) => {
+void main().catch((error: unknown) => {
   console.error(error);
   process.exit(1);
 });

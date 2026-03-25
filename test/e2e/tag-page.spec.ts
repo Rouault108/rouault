@@ -127,14 +127,14 @@ const clickSearchResultLink = async (page: Page, title: string): Promise<void> =
     return (
       host instanceof HTMLElement &&
       host.matches(':defined') &&
-      [...links].some((link) => link.textContent?.includes(expectedTitle))
+      [...links].some((link) => link.textContent.includes(expectedTitle))
     );
   }, title);
 
   await page.evaluate((expectedTitle) => {
     const host = document.querySelector('#main-content search-page');
     const links = host?.shadowRoot?.querySelectorAll<HTMLAnchorElement>('a.result-link') ?? [];
-    const link = [...links].find((candidate) => candidate.textContent?.includes(expectedTitle));
+    const link = [...links].find((candidate) => candidate.textContent.includes(expectedTitle));
 
     if (!(link instanceof HTMLAnchorElement)) {
       throw new Error(`検索結果リンク ${expectedTitle} が見つかりません`);

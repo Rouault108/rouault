@@ -197,7 +197,7 @@ export class Ol extends LitElement {
   private _syncOrderedLists(): void {
     const children =
       'children' in this
-        ? Array.from((this as typeof this & { children?: ArrayLike<Element> }).children ?? [])
+        ? Array.from((this as typeof this & { children?: ArrayLike<Element> }).children)
         : [];
     const rootLists = children.filter(
       (child): child is HTMLOListElement => child instanceof HTMLOListElement,

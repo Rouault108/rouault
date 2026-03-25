@@ -1087,8 +1087,6 @@ export const PrintContract: Story = {
     if (!getHeader(infoBox)) {
       throw new Error('print 契約の検証には header が必要です');
     }
-    if (!getBody(infoBox)) {
-      throw new Error('print 契約の検証には body が必要です');
-    }
+    getBody(infoBox); // body が存在しない場合は getBody 内部で throw する
   },
 };

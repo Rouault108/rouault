@@ -68,7 +68,7 @@ const parseHighlightLines = (value: string): Set<number> => {
     .filter((token) => token !== '');
 
   for (const token of tokens) {
-    const rangeMatch = token.match(/^(\d+)-(\d+)$/);
+    const rangeMatch = /^(\d+)-(\d+)$/.exec(token);
     if (rangeMatch) {
       const start = Number.parseInt(rangeMatch[1] ?? '', 10);
       const end = Number.parseInt(rangeMatch[2] ?? '', 10);
@@ -566,7 +566,7 @@ export class CodeBlock extends LitElement {
       changedProperties.has('highlightLines');
 
     if (metadataChanged || affectsCopyValue) {
-      const kinds: Array<'content' | 'metadata'> = [];
+      const kinds: ('content' | 'metadata')[] = [];
       if (metadataChanged) {
         kinds.push('metadata');
       }
@@ -800,7 +800,7 @@ export class CodeBlock extends LitElement {
       return;
     }
 
-    const sourceText = normalizeLineEndings(container.textContent ?? '');
+    const sourceText = normalizeLineEndings(container.textContent);
     const lines = sourceText.split('\n');
 
     container.textContent = '';
@@ -852,7 +852,7 @@ export class CodeBlock extends LitElement {
         element.remove();
       });
 
-    return normalizeLineEndings(root.textContent ?? '');
+    return normalizeLineEndings(root.textContent);
   }
 
   private _hasLegacyWrap(pre?: HTMLPreElement | null): boolean {
@@ -899,7 +899,7 @@ export class CodeBlock extends LitElement {
     pre.removeAttribute('aria-label');
   }
 
-  private _dispatchChange(kinds: Array<'content' | 'metadata'>, affectsCopyValue: boolean): void {
+  private _dispatchChange(kinds: ('content' | 'metadata')[], affectsCopyValue: boolean): void {
     if (kinds.length === 0) {
       return;
     }
@@ -941,7 +941,7 @@ export class CodeBlock extends LitElement {
         data-layout="${this._resolvedLayout}"
       >
         ${this._shouldRenderCaption
-          ? html`
+        ? html`
               <figcaption class="caption">
                 <div class="caption-layout">
                   <span class="caption-main">
@@ -949,19 +949,19 @@ export class CodeBlock extends LitElement {
                       ${this._resolvedFilename}
                     </span>
                     ${intentMeta
-                      ? html`
+            ? html`
                           <span class="intent" data-intent="${this._resolvedIntent}">
                             <iconify-icon icon="${intentMeta.icon}" aria-hidden="true"></iconify-icon>
                             <span>${intentMeta.label}</span>
                           </span>
                         `
-                      : nothing}
+            : nothing}
                   </span>
                   ${this._renderCopyButton()}
                 </div>
               </figcaption>
             `
-          : nothing}
+        : nothing}
 
         <slot @slotchange="${this._onSlotChange}"></slot>
       </figure>

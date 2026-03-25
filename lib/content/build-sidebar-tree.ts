@@ -118,7 +118,6 @@ const upsertLeafNode = (
 
 export const buildSidebarTree = (
   notes: SidebarSourceNote[],
-  _selectedSlug = '',
   rootSlug = '',
 ): TreeNode[] => {
   const roots: TreeNode[] = [];

@@ -229,10 +229,13 @@ export function mergeSearchDialogItems(
       title: existing.title,
       url: existing.url,
       canonicalUrl,
-      path: existing.path || normalizeString(item.path),
+      path: existing.path && existing.path.length > 0 ? existing.path : normalizeString(item.path),
       description:
         existingDescription.length >= nextDescription.length ? existingDescription : nextDescription,
-      date: normalizeString(existing.date) || normalizeString(item.date),
+      date:
+        normalizeString(existing.date).length > 0
+          ? normalizeString(existing.date)
+          : normalizeString(item.date),
       keywords: [...new Set([...existingKeywords, ...nextKeywords])],
     });
   }

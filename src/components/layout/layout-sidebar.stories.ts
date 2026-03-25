@@ -52,7 +52,7 @@ type Story = StoryObj<LayoutSidebar>;
 
 const waitFrame = async (): Promise<void> =>
   new Promise((resolve) => {
-    requestAnimationFrame(() => resolve());
+    requestAnimationFrame(() => { resolve(); });
   });
 
 const flush = async (host: LayoutSidebar): Promise<void> => {

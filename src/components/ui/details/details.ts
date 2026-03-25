@@ -252,7 +252,7 @@ export class Details extends LitElement {
   private _syncSummarySlotContent(): boolean {
     const children =
       'children' in this
-        ? Array.from((this as typeof this & { children?: ArrayLike<Element> }).children ?? [])
+        ? Array.from((this as typeof this & { children?: ArrayLike<Element> }).children)
         : [];
     const hasSummarySlotContent = children.some(
       (child) => child.getAttribute('slot') === 'summary',

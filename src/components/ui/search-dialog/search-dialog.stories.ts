@@ -22,15 +22,15 @@ interface StoryArgs {
   query: string;
   opened: boolean;
   searcher:
-    | ((
-        context: {
-          query: string;
-          signal: AbortSignal;
-          limit?: number;
-          locale?: string;
-        },
-      ) => Promise<UiSearchDialogSearchResult> | UiSearchDialogSearchResult)
-    | null;
+  | ((
+    context: {
+      query: string;
+      signal: AbortSignal;
+      limit?: number;
+      locale?: string;
+    },
+  ) => Promise<UiSearchDialogSearchResult> | UiSearchDialogSearchResult)
+  | null;
   dark: boolean;
   messages: Partial<UiSearchDialogMessages>;
   matchFields: readonly UiSearchDialogMatchField[];
@@ -82,7 +82,7 @@ function getDialog(canvasElement: HTMLElement): UiSearchDialog {
   if (!(dialog instanceof HTMLElement)) {
     throw new Error('ui-search-dialog not found');
   }
-  return dialog as UiSearchDialog;
+  return dialog;
 }
 
 function getTrigger(canvasElement: HTMLElement): HTMLButtonElement {
@@ -261,7 +261,7 @@ export const LoadingStateEditableInput: Story = {
 
 export const ErrorStateContract: Story = {
   args: {
-    searcher: async () => ({
+    searcher: () => ({
       items: [],
       error: {
         code: 'network-error',
@@ -333,7 +333,11 @@ export const SelectionEventOrderContract: Story = {
 
     await setQuery(dialog, 'alpha');
     await waitForResults(dialog);
-    await userEvent.click(getResultItems(dialog)[0]!);
+    const firstItem = getResultItems(dialog)[0];
+    if (!firstItem) {
+      throw new Error('No result item found');
+    }
+    await userEvent.click(firstItem);
 
     await waitFor(async () => {
       await expect(events).toEqual(['selected', 'close-requested', 'closed']);

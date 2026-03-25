@@ -45,7 +45,7 @@ const cloneTree = (nodes: readonly TreeNode[]): TreeNode[] =>
 
 const waitFrame = async (): Promise<void> =>
   new Promise((resolve) => {
-    requestAnimationFrame(() => resolve());
+    requestAnimationFrame(() => { resolve(); });
   });
 
 const flush = async (host: UiSidebar): Promise<void> => {
@@ -164,11 +164,11 @@ export const EventBridge: Story = {
           .expandedIds=${new Set(['notes'])}
           selected-id="notes/reading"
           @ui-sidebar-select=${(event: CustomEvent<{ id: string }>) =>
-            updateLog('select', event.detail)}
+            { updateLog('select', event.detail); }}
           @ui-sidebar-toggle=${(event: CustomEvent<{ id: string; expanded: boolean }>) =>
-            updateLog('toggle', event.detail)}
+            { updateLog('toggle', event.detail); }}
           @ui-sidebar-active-change=${(event: CustomEvent<{ id: string }>) =>
-            updateLog('active-change', event.detail)}
+            { updateLog('active-change', event.detail); }}
         ></ui-sidebar>
       </div>
     `;

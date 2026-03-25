@@ -127,7 +127,7 @@ export class Ul extends LitElement {
   private _ensureRootList(): void {
     const children =
       'children' in this
-        ? Array.from((this as typeof this & { children?: ArrayLike<Element> }).children ?? [])
+        ? Array.from((this as typeof this & { children?: ArrayLike<Element> }).children)
         : [];
     const directItems = children.filter(
       (child): child is HTMLLIElement => child instanceof HTMLLIElement,
@@ -149,7 +149,7 @@ export class Ul extends LitElement {
 
     const children =
       'children' in this
-        ? Array.from((this as typeof this & { children?: ArrayLike<Element> }).children ?? [])
+        ? Array.from((this as typeof this & { children?: ArrayLike<Element> }).children)
         : [];
     const rootLists = children.filter(
       (child): child is HTMLUListElement => child instanceof HTMLUListElement,

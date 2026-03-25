@@ -34,7 +34,7 @@ export interface SearchResultItem {
   reasons: CoreSearchResultItem['reasons'];
 }
 
-export interface SearchResponse extends ExploreSearchResponse {}
+export type SearchResponse = ExploreSearchResponse;
 
 export interface SearchAdapter {
   search(

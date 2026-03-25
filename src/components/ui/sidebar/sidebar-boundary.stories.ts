@@ -35,7 +35,7 @@ const cloneTree = (nodes: readonly TreeNode[]): TreeNode[] =>
 
 const waitFrame = async (): Promise<void> =>
   new Promise((resolve) => {
-    requestAnimationFrame(() => resolve());
+    requestAnimationFrame(() => { resolve(); });
   });
 
 const flush = async (host: UiSidebar): Promise<void> => {

@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html, nothing } from 'lit';
+import { expect } from '@open-wc/testing';
 import './dropdown';
 import { type Dropdown } from './dropdown';
 
@@ -163,11 +164,11 @@ export const Default: Story = {
 
     dropdown.open();
     await dropdown.updateComplete;
-    if (!dropdown.opened) throw new Error('open() 後に opened=true になる必要があります');
+    expect(dropdown.opened).to.equal(true);
 
     dropdown.close();
     await dropdown.updateComplete;
-    if (dropdown.opened) throw new Error('close() 後に opened=false になる必要があります');
+    expect(dropdown.opened).to.equal(false);
   },
 };
 
@@ -505,15 +506,15 @@ export const ProgrammaticControl: Story = {
     await dropdown.updateComplete;
     dropdown.open();
     await dropdown.updateComplete;
-    if (!dropdown.opened) throw new Error('open() は冪等に開状態を保つ必要があります');
+    expect(dropdown.opened).to.equal(true);
 
     dropdown.toggle();
     await dropdown.updateComplete;
-    if (dropdown.opened) throw new Error('toggle() は閉状態へ遷移できる必要があります');
+    expect(dropdown.opened).to.equal(false);
 
     dropdown.close();
     await dropdown.updateComplete;
-    if (dropdown.opened) throw new Error('close() は冪等に閉状態を保つ必要があります');
+    expect(dropdown.opened).to.equal(false);
   },
 };
 

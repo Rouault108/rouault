@@ -238,10 +238,11 @@ export class SearchDialogSearchSession {
         normalizedItem.path = path;
       }
 
-      if (Array.isArray(item.keywords) && item.keywords.length > 0) {
-        normalizedItem.keywords = item.keywords
-          .map((keyword) => keyword.trim())
-          .filter((keyword) => keyword !== '');
+      const keywords = item.keywords;
+      if (Array.isArray(keywords) && keywords.length > 0) {
+        normalizedItem.keywords = keywords
+          .map((keyword: string) => keyword.trim())
+          .filter((keyword: string) => keyword !== '');
       }
 
       if (item.canonicalUrl) {

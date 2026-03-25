@@ -93,7 +93,7 @@ export class Highlight extends LitElement {
 
     const directText = Array.from(this.childNodes)
       .filter((node): node is Text => node.nodeType === Node.TEXT_NODE)
-      .map((node) => node.textContent ?? '')
+      .map((node) => node.textContent)
       .join('')
       .trim();
 
@@ -102,9 +102,6 @@ export class Highlight extends LitElement {
 
   private injectDocumentStyles(): void {
     const ownerDocument = this.ownerDocument;
-    if (!ownerDocument) {
-      return;
-    }
     if (ownerDocument.getElementById(DOCUMENT_STYLE_ID)) {
       return;
     }
@@ -116,7 +113,7 @@ export class Highlight extends LitElement {
   }
 
   private get resolvedText(): string | null {
-    const source = this.text !== null ? this.text : this.initialText;
+    const source = this.text ?? this.initialText;
     return source === null || source === '' ? null : source;
   }
 

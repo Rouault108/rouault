@@ -7,11 +7,11 @@ const PRIMARY_REGION_LABEL = '数式（横スクロール可能）';
 const ERROR_DETAILS_SUMMARY = '数式ソースを表示';
 const LONG_MATH_LATEX = String.raw`x + y + z + w + v + u + t + s + r + q + p + o + n + m + l + k + j + i + h + g`;
 
-type ExternalErrorExpectation = {
+interface ExternalErrorExpectation {
   id: string;
   title: string;
   tone: 'danger' | 'muted';
-};
+}
 
 const waitFrame = async (): Promise<void> =>
   new Promise((resolve) => {
@@ -81,10 +81,10 @@ const getErrorBlock = (host: UiMath): HTMLElement | null =>
   host.shadowRoot?.querySelector<HTMLElement>('.math-error') ?? null;
 
 const getErrorTitle = (host: UiMath): string =>
-  getErrorBlock(host)?.querySelector('.math-error-title')?.textContent?.trim() ?? '';
+  getErrorBlock(host)?.querySelector('.math-error-title')?.textContent.trim() ?? '';
 
 const getErrorCode = (host: UiMath): string =>
-  getErrorBlock(host)?.querySelector('.math-error-code')?.textContent?.trim() ?? '';
+  getErrorBlock(host)?.querySelector('.math-error-code')?.textContent.trim() ?? '';
 
 const meta: Meta<UiMath> = {
   title: 'Components/Math',
@@ -358,7 +358,7 @@ export const VariantStateMatrix: Story = {
       throw new Error('speech-mode="label" の block で手動ラベルが反映されていません');
     }
     const labelRuntimeMath = getRuntimeMathMl(blockLabel);
-    if (!labelRuntimeMath || labelRuntimeMath.getAttribute('aria-hidden') !== 'true') {
+    if (labelRuntimeMath?.getAttribute('aria-hidden') !== 'true') {
       throw new Error('speech-mode="label" では runtime MathML を aria-hidden にする必要があります');
     }
   },
@@ -421,7 +421,7 @@ export const ErrorStates: Story = {
     if (!details || !summary) {
       throw new Error('show-error-source=true の author-invalid エラーでは details/summary が必要です');
     }
-    if (summary.textContent?.trim() !== ERROR_DETAILS_SUMMARY) {
+    if (summary.textContent.trim() !== ERROR_DETAILS_SUMMARY) {
       throw new Error('エラー詳細 summary 文言が仕様どおりではありません');
     }
     const sourceCode = runtimeError.querySelector('pre code');

@@ -15,11 +15,11 @@ type MathErrorKind =
   | 'unspecified';
 type MathErrorTone = 'danger' | 'muted';
 
-type ErrorPresentation = {
+interface ErrorPresentation {
   description: string;
   title: string;
   tone: MathErrorTone;
-};
+}
 
 const PRIMARY_REGION_LABEL = '数式（横スクロール可能）';
 const LATEX_DELIMITER_ERROR_MESSAGE =

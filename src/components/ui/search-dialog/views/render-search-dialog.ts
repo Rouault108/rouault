@@ -46,6 +46,7 @@ export interface RenderSearchDialogHost {
   onDialogClose: () => void;
   onResultListScroll: (event: Event) => void;
   onResultClick: (event: Event) => void;
+  onResultKeydown: (event: KeyboardEvent) => void;
 }
 
 export function renderSearchDialog(host: RenderSearchDialogHost): TemplateResult {
@@ -172,6 +173,7 @@ export function renderSearchDialog(host: RenderSearchDialogHost): TemplateResult
                 tabindex="-1"
                 data-index=${index.toString()}
                 @click=${host.onResultClick}
+                @keydown=${host.onResultKeydown}
               >
                 <span class="item-title">${host.renderHighlightedText(item.title)}</span>
                 <span class="item-path">

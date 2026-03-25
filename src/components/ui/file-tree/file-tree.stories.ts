@@ -233,15 +233,15 @@ export const EventContract: Story = {
           .items=${cloneTree(sampleTree)}
           .defaultExpandedIds=${new Set(['notes'])}
           @ui-tree-request-select=${(event: CustomEvent<{ id: string }>) =>
-            logEvent('request-select', event.detail)}
+            { logEvent('request-select', event.detail); }}
           @ui-tree-select=${(event: CustomEvent<{ id: string }>) =>
-            logEvent('select', event.detail)}
+            { logEvent('select', event.detail); }}
           @ui-tree-request-toggle=${(event: CustomEvent<{ id: string; expanded: boolean }>) =>
-            logEvent('request-toggle', event.detail)}
+            { logEvent('request-toggle', event.detail); }}
           @ui-tree-toggle=${(event: CustomEvent<{ id: string; expanded: boolean }>) =>
-            logEvent('toggle', event.detail)}
+            { logEvent('toggle', event.detail); }}
           @ui-tree-active-change=${(event: CustomEvent<{ id: string }>) =>
-            logEvent('active-change', event.detail)}
+            { logEvent('active-change', event.detail); }}
         ></ui-file-tree>
       </div>
     `;
