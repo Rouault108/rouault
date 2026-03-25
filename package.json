@@ -20,9 +20,9 @@
     "format": "prettier --write .",
     "storybook": "pnpm exec cem analyze --config cem.config.mjs && pnpm exec storybook dev",
     "storybook:build": "pnpm exec cem analyze --config cem.config.mjs && pnpm exec storybook build",
-    "dev": "pnpm exec eleventy --config=eleventy.config.mjs --serve",
-    "build": "pnpm exec eleventy --config=eleventy.config.mjs && tsx scripts/apply-lit-ssr.ts && tsx scripts/build-pagefind.ts",
-    "start": "pnpm exec eleventy --config=eleventy.config.mjs --serve",
+    "dev": "tsx ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts --serve",
+    "build": "tsx ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts && tsx scripts/apply-lit-ssr.ts && tsx scripts/build-pagefind.ts",
+    "start": "tsx ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts --serve",
     "typecheck:node": "pnpm exec tsc -p tsconfig.node.json --noEmit"
   },
   "keywords": [],
