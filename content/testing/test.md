@@ -87,7 +87,7 @@ const value = '1';
 
 ::
 
-::code-preview{label="ボタン例" controls="theme surface viewport" preview-theme="light" preview-surface="surface" preview-viewport="tablet" preview-padding="compact" preview-align="center"}
+::code-preview{heading="ボタン例" controls="theme surface viewport" preview-theme="light" preview-surface="surface" preview-viewport="tablet" preview-padding="compact" preview-align="center"}
 ::preview
 ここにプレビュー内容を書く
 ::
@@ -98,7 +98,7 @@ const value = '1';
 
 ::
 
-::code-preview{label="ボタン例" controls="viewport"}
+::code-preview{heading="ボタン例" controls="viewport"}
 ::preview-sandbox{iframe-title="ボタンの sandbox" allow-js="true" height="160"}
 
 ```preview-html filename="button.html"
