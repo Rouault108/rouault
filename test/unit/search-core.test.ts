@@ -112,6 +112,9 @@ describe('search-core', () => {
     });
 
     expect(response.mode).to.equal('explore');
+    if (response.mode !== 'explore') {
+      throw new Error('mode is not explore');
+    }
     expect(response.items.map((item) => item.title)).to.deep.equal([
       '交響曲第9番 ニ短調',
       'ジャズ理論の基礎',

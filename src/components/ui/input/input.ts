@@ -265,7 +265,7 @@ export class Input extends LitElement {
   enterkeyhint = '';
 
   @property({ type: String, reflect: true })
-  autocapitalize = '';
+  override autocapitalize = '';
 
   @property({ attribute: 'spellcheck', reflect: true, converter: spellcheckConverter })
   override spellcheck = false;
@@ -376,9 +376,9 @@ export class Input extends LitElement {
       <label
         for="${this._inputId}"
         class="${classMap({
-          label: true,
-          'label--hidden': this.hideLabel,
-        })}"
+      label: true,
+      'label--hidden': this.hideLabel,
+    })}"
       >
         <span>${this.label}</span>
         ${this._renderRequiredIndicator()}

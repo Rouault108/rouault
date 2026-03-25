@@ -182,7 +182,7 @@ export const applyInfoBoxAttributes = (
 
   const density = pickOptional(attrs['density'])?.toLowerCase();
   if (density) {
-    if (!INFO_BOX_DENSITIES.includes(density)) {
+    if (!INFO_BOX_DENSITIES.includes(density as "comfortable" | "compact")) {
       throw toError(file, node, 'info-box の density は comfortable/compact のみ指定可能です');
     }
     result['density'] = density;

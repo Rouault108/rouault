@@ -57,9 +57,7 @@ interface MergedCandidateUrlEntry {
   url: string;
 }
 
-interface RankedCandidate {
-  candidate: SearchCandidate;
-}
+
 
 const NAVIGATE_LIMIT = 20;
 
@@ -258,7 +256,7 @@ function mergeCandidates(
       addIssue(diagnostics, {
         code: 'invalid-result-url',
         stage: 'merge',
-        source: candidate.matchedSources[0],
+        ...(candidate.matchedSources[0] ? { source: candidate.matchedSources[0] } : {}),
       });
       return [];
     }

@@ -153,7 +153,7 @@ function normalizeCountMap(value: unknown): SearchCountMap | null {
   const countMap = new Map<string, number>();
 
   for (const [rawTag, rawCount] of Object.entries(value as Record<string, unknown>)) {
-    if (typeof rawTag !== 'string' || !Number.isSafeInteger(rawCount) || rawCount < 0) {
+    if (typeof rawTag !== 'string' || typeof rawCount !== 'number' || !Number.isSafeInteger(rawCount) || rawCount < 0) {
       return null;
     }
 

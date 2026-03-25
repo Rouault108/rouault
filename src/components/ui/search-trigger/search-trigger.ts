@@ -205,13 +205,13 @@ export class SearchTrigger extends LitElement {
   density: SearchTriggerDensity = 'auto';
 
   @property({ attribute: 'aria-label', reflect: true })
-  ariaLabel: string | null = null;
+  override ariaLabel: string | null = null;
 
   @property({ attribute: 'aria-controls', reflect: true })
   ariaControls: string | null = null;
 
   @property({ attribute: 'aria-expanded', reflect: true })
-  ariaExpanded: string | null = null;
+  override ariaExpanded: string | null = null;
 
   private get _button(): HTMLButtonElement | null {
     return this.shadowRoot?.querySelector<HTMLButtonElement>('button') ?? null;

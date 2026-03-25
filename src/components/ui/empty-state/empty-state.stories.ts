@@ -519,7 +519,7 @@ export const ActionOrderContract: Story = {
     if (buttons.length !== 2) {
       throw new Error('2 個の action が必要です');
     }
-    if (buttons[0].textContent.trim() !== 'Retry') {
+    if (buttons[0]?.textContent.trim() !== 'Retry') {
       throw new Error('先頭 action が第一候補として扱われる必要があります');
     }
 

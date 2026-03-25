@@ -231,19 +231,21 @@ export const Default: Story = {
     );
 
     const navLinks = getNavLinks(shadowRoot);
-    if (navLinks.length !== 2) {
+    const link0 = navLinks[0];
+    const link1 = navLinks[1];
+    if (!link0 || !link1 || navLinks.length !== 2) {
       throw new Error(`[${storyName}] Prev / Next のリンク数が不正です`);
     }
-    if (navLinks[0].getAttribute('href') !== '?page=4') {
+    if (link0.getAttribute('href') !== '?page=4') {
       throw new Error(`[${storyName}] Prev の href が不正です`);
     }
-    if (navLinks[1].getAttribute('href') !== '?page=6') {
+    if (link1.getAttribute('href') !== '?page=6') {
       throw new Error(`[${storyName}] Next の href が不正です`);
     }
-    if (navLinks[0].getAttribute('aria-label') !== '前のページへ移動') {
+    if (link0.getAttribute('aria-label') !== '前のページへ移動') {
       throw new Error(`[${storyName}] Prev の aria-label が不正です`);
     }
-    if (navLinks[1].getAttribute('aria-label') !== '次のページへ移動') {
+    if (link1.getAttribute('aria-label') !== '次のページへ移動') {
       throw new Error(`[${storyName}] Next の aria-label が不正です`);
     }
 

@@ -195,7 +195,7 @@ export async function loadCatalogSourceBatch(input: {
         date: normalizeDateValue(normalizeString(item.date)),
         tags,
         snippet: snippetFromDescription(description),
-        matchedSources: ['catalog'],
+        matchedSources: ['catalog' as const],
         matchedFields: [],
         matchedTokens: [],
         featureScores: { ...emptyFeatureScores() },

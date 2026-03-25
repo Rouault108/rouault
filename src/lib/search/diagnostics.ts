@@ -118,8 +118,8 @@ export function addIssue(diagnostics: MutableDiagnostics, issue: SearchIssueInpu
     code: issue.code,
     severity: issueSeverity(issue.code),
     stage: issue.stage,
-    source: issue.source,
-    candidateRef: issue.candidateRef,
+    ...(issue.source !== undefined ? { source: issue.source } : {}),
+    ...(issue.candidateRef !== undefined ? { candidateRef: issue.candidateRef } : {}),
     count: 1,
   });
 
@@ -136,7 +136,7 @@ export function finalizeDiagnostics(
   const issues = [...diagnostics.issues].sort(compareIssues).slice(0, 100);
   const degraded =
     diagnostics.failures.length > 0 ||
-    issues.some((issue) => issue.code === 'source-degraded' && activeSources.includes(issue.source!));
+    issues.some((issue) => issue.code === 'source-degraded' && issue.source !== undefined && activeSources.includes(issue.source));
 
   return {
     degraded,

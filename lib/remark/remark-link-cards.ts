@@ -297,16 +297,17 @@ const getDirectiveLinkCardSource = (node: MdastNode): LinkCardSource | null => {
     return null;
   }
 
+  const title = pickOptionalString(props['title']);
+  const description = pickOptionalString(props['description']);
+  const image = pickOptionalString(props['image']);
+  const siteName = pickOptionalString(props['site-name']);
+
   return {
     url,
-    ...(pickOptionalString(props['title']) ? { title: pickOptionalString(props['title']) } : {}),
-    ...(pickOptionalString(props['description'])
-      ? { description: pickOptionalString(props['description']) }
-      : {}),
-    ...(pickOptionalString(props['image']) ? { image: pickOptionalString(props['image']) } : {}),
-    ...(pickOptionalString(props['site-name'])
-      ? { siteName: pickOptionalString(props['site-name']) }
-      : {}),
+    ...(title ? { title } : {}),
+    ...(description ? { description } : {}),
+    ...(image ? { image } : {}),
+    ...(siteName ? { siteName } : {}),
   };
 };
 

@@ -197,15 +197,17 @@ export function computeReasons(
   const reasons: SearchReason[] = [];
   const { featureScores } = candidate;
 
+  const source = candidate.matchedSources[0];
+
   if (featureScores.titleExactScore > 0) {
-    reasons.push({ kind: 'title-exact', tokens: [...queryTokens], source: candidate.matchedSources[0] });
+    reasons.push({ kind: 'title-exact', tokens: [...queryTokens], ...(source ? { source } : {}) });
   } else if (featureScores.titlePrefixScore > 0) {
-    reasons.push({ kind: 'title-prefix', tokens: [...queryTokens], source: candidate.matchedSources[0] });
+    reasons.push({ kind: 'title-prefix', tokens: [...queryTokens], ...(source ? { source } : {}) });
   } else if (featureScores.titleTokenCoverageScore > 0) {
     reasons.push({
       kind: 'title-token-coverage',
       tokens: [...computeMatchedTokens(candidate, queryTokens)],
-      source: candidate.matchedSources[0],
+      ...(source ? { source } : {}),
     });
   }
 
@@ -213,7 +215,7 @@ export function computeReasons(
     reasons.push({
       kind: 'body-match',
       tokens: [...computeMatchedTokens(candidate, queryTokens)],
-      source: candidate.matchedSources[0],
+      ...(source ? { source } : {}),
     });
   }
 
@@ -221,7 +223,7 @@ export function computeReasons(
     reasons.push({
       kind: 'path-match',
       tokens: [...computeMatchedTokens(candidate, queryTokens)],
-      source: candidate.matchedSources[0],
+      ...(source ? { source } : {}),
     });
   }
 
@@ -229,7 +231,7 @@ export function computeReasons(
     reasons.push({
       kind: 'keyword-match',
       tokens: [...computeMatchedTokens(candidate, queryTokens)],
-      source: candidate.matchedSources[0],
+      ...(source ? { source } : {}),
     });
   }
 

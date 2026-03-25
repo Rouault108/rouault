@@ -159,8 +159,8 @@ export class UiProgress extends LitElement {
     this._warnContractViolations();
   }
 
-  override updated(): void {
-    super.updated();
+  override updated(changedProperties: PropertyValues<this>): void {
+    super.updated(changedProperties);
     this._syncHostA11y();
   }
 

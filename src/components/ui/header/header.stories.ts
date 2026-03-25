@@ -107,10 +107,10 @@ const fullSlotContent = html`
   <ui-breadcrumbs
     slot="center"
     .items=${[
-      { label: 'ホーム', href: '/' },
-      { label: 'プロジェクト', href: '/projects' },
-      { label: '設定' },
-    ]}
+    { label: 'ホーム', href: '/' },
+    { label: 'プロジェクト', href: '/projects' },
+    { label: '設定' },
+  ]}
   ></ui-breadcrumbs>
 
   <span slot="compact-center" style="font-size: 12px; color: var(--fg-muted); white-space: nowrap;">
@@ -444,7 +444,7 @@ export const RapidToggleReentrancy: Story = {
     host.sidebarExpanded = false;
     await flush(host);
 
-    assert(eventCount === 3, `高速トグルで ${String(eventCount)} 回発火しました（期待: 3 回）`);
+    assert(eventCount as number === 3, `高速トグルで ${String(eventCount)} 回発火しました（期待: 3 回）`);
 
     host.removeEventListener('ui-header-sidebar-toggle', listener);
   },
@@ -598,7 +598,7 @@ export const CompactCenterEmptyFallback: Story = {
       'compact-center が空ではありません',
     );
     assert(
-      getZone(host, '.zone-compact-center').textContent?.trim() === '',
+      getZone(host, '.zone-compact-center').textContent.trim() === '',
       'compact-center が空のはずなのに表示内容が残っています',
     );
   },
@@ -806,8 +806,8 @@ export const DarkModeGlassmorphism: Story = {
       <ui-header id="header-dark" sidebar-expanded> ${fullSlotContent} </ui-header>
       <main style="padding: 2rem;">
         ${Array.from(
-          { length: 20 },
-          (_, i) => html`
+    { length: 20 },
+    (_, i) => html`
             <p
               style="margin-bottom: 1rem; padding: 1rem; border-radius: 6px; background: oklch(17% 0.02 250);"
             >
@@ -816,7 +816,7 @@ export const DarkModeGlassmorphism: Story = {
               <span style="color: oklch(65% 0.15 250);">カラーテキスト</span>も透過で確認。
             </p>
           `,
-        )}
+  )}
       </main>
     </div>
   `,
