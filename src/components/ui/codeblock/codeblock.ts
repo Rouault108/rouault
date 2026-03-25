@@ -91,6 +91,14 @@ const parseHighlightLines = (value: string): Set<number> => {
   return lines;
 };
 
+const isWhitespaceOnlyTextNode = (node: ChildNode): node is Text =>
+  node.nodeType === Node.TEXT_NODE && /^[\t\r\n ]*$/.test(node.textContent ?? '');
+
+const isDirectLineContainer = (element: Element): boolean => {
+  const children = Array.from(element.children);
+  return children.length > 0 && children.every((child) => child.classList.contains('line'));
+};
+
 export const DOCUMENT_STYLE_ID = 'ui-code-block-document-styles';
 export const DOCUMENT_CSS = `/* ============================================================
    <ui-code-block> document styles
@@ -104,12 +112,17 @@ ui-code-block pre {
   color: var(--fg-default, oklch(20% 0 0));
   font-family: var(--font-mono, monospace);
   font-size: var(--text-sm, 0.8125rem);
-  line-height: var(--line-height-none, 1);
+  line-height: var(--line-height-code, 1.45);
   padding: var(--ui-code-surface-padding, var(--ui-code-block-padding, var(--space-3, 12px)));
   overflow-x: auto;
   overflow-y: hidden;
   white-space: pre;
   scrollbar-gutter: stable;
+}
+
+ui-code-block pre.shiki > .line,
+ui-code-block pre.shiki code > .line {
+  display: block;
 }
 
 ui-code-block pre code {
@@ -316,9 +329,8 @@ export class CodeBlock extends LitElement {
         var(--ui-code-surface-padding, var(--ui-code-block-padding, var(--space-3, 12px))) -
           (
             var(--control-height-sm, 24px) -
-              (var(--text-sm, 0.8125rem) * var(--line-height-none, 1))
-          ) /
-          2
+              (var(--text-sm, 0.8125rem) * var(--line-height-code, 1.45))
+          ) / 2
       );
       inset-inline-end: 0;
       z-index: 1;
@@ -745,6 +757,7 @@ export class CodeBlock extends LitElement {
     try {
       this._applyPreAttributes(pre);
       this._ensureLineWrappers(pre);
+      this._normalizeLineMarkup(pre);
       this._applyHighlightLines(pre);
       this._updateAccessibleMetadata(pre);
       this._updateScrollableState(pre);
@@ -760,6 +773,20 @@ export class CodeBlock extends LitElement {
       attributes: true,
       attributeFilter: ['data-wrap'],
     });
+  }
+
+  private _normalizeLineMarkup(pre: HTMLPreElement): void {
+    const container = (pre.querySelector('code') ?? pre);
+
+    if (!isDirectLineContainer(container)) {
+      return;
+    }
+
+    for (const node of Array.from(container.childNodes)) {
+      if (isWhitespaceOnlyTextNode(node)) {
+        node.remove();
+      }
+    }
   }
 
   private _findPreElement(): HTMLPreElement | null {
@@ -794,7 +821,10 @@ export class CodeBlock extends LitElement {
 
     const code = pre.querySelector('code');
     const container = code ?? pre;
-    if (container.querySelector('.line')) return;
+
+    if (isDirectLineContainer(container)) {
+      return;
+    }
 
     if (container.childElementCount > 0) {
       return;
@@ -803,23 +833,21 @@ export class CodeBlock extends LitElement {
     const sourceText = normalizeLineEndings(container.textContent);
     const lines = sourceText.split('\n');
 
-    container.textContent = '';
-
-    lines.forEach((line, index) => {
+    const fragments = lines.map((line) => {
       const lineElement = document.createElement('span');
       lineElement.className = 'line';
       lineElement.setAttribute('data-ui-code-line', '');
       lineElement.textContent = line;
-      container.append(lineElement);
-
-      if (index < lines.length - 1) {
-        container.append(document.createTextNode('\n'));
-      }
+      return lineElement;
     });
+
+    container.replaceChildren(...fragments);
   }
 
   private _applyHighlightLines(pre: HTMLPreElement): void {
-    const lines = Array.from(pre.querySelectorAll<HTMLElement>('.line'));
+    const container = (pre.querySelector('code') ?? pre);
+    const lines = Array.from(container.querySelectorAll<HTMLElement>(':scope > .line'));
+
     lines.forEach((line) => {
       line.classList.remove('ui-explicit-highlight');
       line.removeAttribute('data-ui-highlight-line');
@@ -846,11 +874,17 @@ export class CodeBlock extends LitElement {
 
   private _readSlottedCodeText(pre: HTMLPreElement): string {
     const root = (pre.querySelector('code') ?? pre).cloneNode(true) as HTMLElement;
+
     root
       .querySelectorAll('.line-number,[data-line-number],.ui-code-block-line-number')
       .forEach((element) => {
         element.remove();
       });
+
+    if (isDirectLineContainer(root)) {
+      const lines = Array.from(root.children).map((line) => (line as HTMLElement).textContent);
+      return normalizeLineEndings(lines.join('\n'));
+    }
 
     return normalizeLineEndings(root.textContent);
   }

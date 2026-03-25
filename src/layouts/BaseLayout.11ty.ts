@@ -1,3 +1,4 @@
+import type { ClientBundleData } from '../data/clientBundle.js';
 import {
   buildBreadcrumbs,
   type BreadcrumbSourceNote,
@@ -14,6 +15,7 @@ export interface BaseLayoutData {
   content: string;
   note?: BreadcrumbSourceNote;
   notes?: BreadcrumbSourceNote[];
+  clientBundle?: ClientBundleData;
 }
 
 function escapeAttribute(value: string): string {
@@ -35,11 +37,14 @@ export class BaseLayout {
     const title = data.title ? `${data.title} - Rouault` : 'Rouault';
     const description = data.description ?? 'Personal Note Viewer';
     const noteLayoutAttribute = data.note ? ' note-layout' : '';
+    const clientScriptSrc = data.clientBundle?.scriptSrc ?? '/src/client.ts';
+
     const breadcrumbsJson = JSON.stringify(buildBreadcrumbs(data.note, data.notes ?? []))
       .replace(/&/g, '&amp;')
       .replace(/"/g, '&quot;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
+
     const themeBootstrapScript = `
 (() => {
   const root = document.documentElement;
@@ -77,7 +82,7 @@ export class BaseLayout {
   <meta name="description" content="${escapeAttribute(description)}">
   <script>${themeBootstrapScript}</script>
   <link rel="stylesheet" href="/assets/css/main.css">
-  <script type="module" src="/src/client.ts"></script>
+  <script type="module" src="${escapeAttribute(clientScriptSrc)}"></script>
 </head>
 <body>
   <ui-skip-link href="#main-content" label="メインコンテンツへ移動"></ui-skip-link>
