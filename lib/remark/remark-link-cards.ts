@@ -1,3 +1,6 @@
+import path from 'node:path';
+import { readFileSync, statSync } from 'node:fs';
+
 interface MdastNodeData {
   hName?: string;
   hProperties?: Record<string, unknown>;
@@ -37,6 +40,7 @@ interface LinkCardSource {
   readonly title?: string;
   readonly description?: string;
   readonly image?: string;
+  readonly siteName?: string;
 }
 
 interface LinkCardMetadata {
@@ -46,38 +50,22 @@ interface LinkCardMetadata {
   readonly siteName?: string;
 }
 
-interface OEmbedPayload {
-  readonly title?: string;
-  readonly thumbnail_url?: string;
-  readonly provider_name?: string;
-  readonly author_name?: string;
-}
-
-interface HtmlMetadataPayload {
-  readonly finalUrl: string;
-  readonly ogTitle?: string;
-  readonly ogDescription?: string;
-  readonly ogImage?: string;
-  readonly ogSiteName?: string;
-  readonly twitterTitle?: string;
-  readonly twitterDescription?: string;
-  readonly twitterImage?: string;
-  readonly oembedUrl?: string;
+interface LinkCardMetadataCacheFile {
+  readonly version?: number;
+  readonly generatedAt?: string;
+  readonly entries?: Record<string, unknown>;
 }
 
 interface RemarkLinkCardsOptions {
-  fetch?: typeof fetch;
-  timeoutMs?: number;
+  metadataFile?: string;
 }
 
 const HTTP_PROTOCOLS = new Set(['http:', 'https:']);
-const HTML_ENTITY_MAP: Record<string, string> = {
-  amp: '&',
-  apos: "'",
-  gt: '>',
-  lt: '<',
-  quot: '"',
-};
+const DEFAULT_METADATA_FILE = 'content/_generated/link-card-metadata.json';
+
+let cachedMetadataFilePath: string | null = null;
+let cachedMetadataMtimeMs = -1;
+let cachedMetadataMap = new Map<string, LinkCardMetadata>();
 
 const pickOptionalString = (value: unknown): string | undefined => {
   if (typeof value !== 'string') {
@@ -87,8 +75,6 @@ const pickOptionalString = (value: unknown): string | undefined => {
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : undefined;
 };
-
-const normalizeWhitespace = (value: string): string => value.replace(/\s+/g, ' ').trim();
 
 const getNodeLocation = (node: MdastNode): string => {
   const line = node.position?.start?.line;
@@ -104,45 +90,11 @@ const toError = (file: VFileLike | undefined, node: MdastNode, message: string):
   return new Error(`[markdown] ${message}: ${sourcePath}${getNodeLocation(node)}`);
 };
 
-const toWarningMessage = (
-  file: VFileLike | undefined,
-  node: MdastNode,
-  message: string,
-): string => {
-  const sourcePath = file?.path ?? 'unknown file';
-  return `[markdown] ${message}: ${sourcePath}${getNodeLocation(node)}`;
-};
-
-const addWarning = (file: VFileLike | undefined, node: MdastNode, message: string): void => {
-  const formatted = toWarningMessage(file, node, message);
-  if (typeof file?.message === 'function') {
-    file.message(formatted);
-    return;
-  }
-
-  if (Array.isArray(file?.messages)) {
-    file.messages.push({
-      reason: formatted,
-      message: formatted,
-      fatal: false,
-    });
-  }
-};
-
 const isWhitespaceText = (node: MdastNode): boolean =>
   node.type === 'text' && (typeof node.value !== 'string' || node.value.trim().length === 0);
 
 const getMeaningfulChildren = (node: MdastNode): MdastNode[] =>
   Array.isArray(node.children) ? node.children.filter((child) => !isWhitespaceText(child)) : [];
-
-const isExternalHttpUrl = (value: string): boolean => {
-  try {
-    const url = new URL(value);
-    return HTTP_PROTOCOLS.has(url.protocol);
-  } catch {
-    return false;
-  }
-};
 
 const normalizeHttpUrl = (value: string, node: MdastNode, file?: VFileLike): string => {
   try {
@@ -156,109 +108,47 @@ const normalizeHttpUrl = (value: string, node: MdastNode, file?: VFileLike): str
   }
 };
 
-const decodeHtmlEntities = (value: string): string =>
-  value.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (full, entity: string) => {
-    const normalized = entity.toLowerCase();
-    if (normalized.startsWith('#x')) {
-      const parsed = Number.parseInt(normalized.slice(2), 16);
-      return Number.isFinite(parsed) ? String.fromCodePoint(parsed) : full;
-    }
-
-    if (normalized.startsWith('#')) {
-      const parsed = Number.parseInt(normalized.slice(1), 10);
-      return Number.isFinite(parsed) ? String.fromCodePoint(parsed) : full;
-    }
-
-    return HTML_ENTITY_MAP[normalized] ?? full;
-  });
-
-const parseTagAttributes = (source: string): Record<string, string> => {
-  const attrs: Record<string, string> = {};
-  const pattern = /([^\s"'<>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g;
-
-  for (const matched of source.matchAll(pattern)) {
-    const key = (matched[1] ?? '').toLowerCase();
-    if (key.length === 0) {
-      continue;
-    }
-
-    const rawValue = matched[2] ?? matched[3] ?? matched[4] ?? '';
-    attrs[key] = decodeHtmlEntities(rawValue);
-  }
-
-  return attrs;
-};
-
-const parseHtmlMetadata = (html: string, pageUrl: string): HtmlMetadataPayload => {
-  const metaMap = new Map<string, string>();
-  const linkTags: Record<string, string>[] = [];
-
-  for (const matched of html.matchAll(/<(meta|link)\b([^>]*?)>/gi)) {
-    const tagName = (matched[1] ?? '').toLowerCase();
-    const attrsSource = matched[2] ?? '';
-    const attrs = parseTagAttributes(attrsSource);
-
-    if (tagName === 'meta') {
-      const key =
-        pickOptionalString(attrs['property'])?.toLowerCase() ??
-        pickOptionalString(attrs['name'])?.toLowerCase();
-      const content = pickOptionalString(attrs['content']);
-      if (key && content && !metaMap.has(key)) {
-        metaMap.set(key, normalizeWhitespace(content));
-      }
-      continue;
-    }
-
-    linkTags.push(attrs);
-  }
-
-  let oembedUrl: string | undefined;
-  for (const attrs of linkTags) {
-    const rel = pickOptionalString(attrs['rel'])?.toLowerCase() ?? '';
-    const type = pickOptionalString(attrs['type'])?.toLowerCase() ?? '';
-    const href = pickOptionalString(attrs['href']);
-    if (!href) {
-      continue;
-    }
-
-    if (rel.split(/\s+/).includes('alternate') && type === 'application/json+oembed') {
-      oembedUrl = resolveSafeHttpUrl(href, pageUrl);
-      if (oembedUrl) {
-        break;
-      }
-    }
-  }
-
-  return {
-    finalUrl: pageUrl,
-    ...(metaMap.get('og:title') ? { ogTitle: metaMap.get('og:title') } : {}),
-    ...(metaMap.get('og:description') ? { ogDescription: metaMap.get('og:description') } : {}),
-    ...(resolveSafeHttpUrl(metaMap.get('og:image'), pageUrl)
-      ? { ogImage: resolveSafeHttpUrl(metaMap.get('og:image'), pageUrl) }
-      : {}),
-    ...(metaMap.get('og:site_name') ? { ogSiteName: metaMap.get('og:site_name') } : {}),
-    ...(metaMap.get('twitter:title') ? { twitterTitle: metaMap.get('twitter:title') } : {}),
-    ...(metaMap.get('twitter:description')
-      ? { twitterDescription: metaMap.get('twitter:description') }
-      : {}),
-    ...(resolveSafeHttpUrl(metaMap.get('twitter:image'), pageUrl)
-      ? { twitterImage: resolveSafeHttpUrl(metaMap.get('twitter:image'), pageUrl) }
-      : {}),
-    ...(oembedUrl ? { oembedUrl } : {}),
-  };
-};
-
-const resolveSafeHttpUrl = (value: string | undefined, baseUrl: string): string | undefined => {
-  const trimmed = pickOptionalString(value);
-  if (!trimmed) {
-    return undefined;
-  }
-
+const normalizeLookupKey = (value: string): string | undefined => {
   try {
-    const resolved = new URL(trimmed, baseUrl);
-    return HTTP_PROTOCOLS.has(resolved.protocol) ? resolved.toString() : undefined;
+    const url = new URL(value);
+    if (!HTTP_PROTOCOLS.has(url.protocol)) {
+      return undefined;
+    }
+    url.hash = '';
+    return url.toString();
   } catch {
     return undefined;
+  }
+};
+
+const buildLookupCandidates = (href: string): string[] => {
+  const normalized = normalizeLookupKey(href);
+  if (!normalized) {
+    return [];
+  }
+
+  const candidates = new Set<string>([normalized]);
+  const url = new URL(normalized);
+
+  if (url.pathname !== '/' && url.pathname.endsWith('/')) {
+    const alt = new URL(normalized);
+    alt.pathname = alt.pathname.slice(0, -1);
+    candidates.add(alt.toString());
+  } else if (!url.pathname.endsWith('/')) {
+    const alt = new URL(normalized);
+    alt.pathname = `${alt.pathname}/`;
+    candidates.add(alt.toString());
+  }
+
+  return [...candidates];
+};
+
+const isExternalHttpUrl = (value: string): boolean => {
+  try {
+    const url = new URL(value);
+    return HTTP_PROTOCOLS.has(url.protocol);
+  } catch {
+    return false;
   }
 };
 
@@ -269,6 +159,111 @@ const buildFallbackTitle = (href: string): string => {
   } catch {
     return href;
   }
+};
+
+const normalizeCardImage = (value: string | undefined): string | undefined => {
+  const trimmed = pickOptionalString(value);
+  if (!trimmed) {
+    return undefined;
+  }
+
+  if (trimmed.startsWith('/')) {
+    return trimmed;
+  }
+
+  try {
+    const resolved = new URL(trimmed);
+    return HTTP_PROTOCOLS.has(resolved.protocol) ? resolved.toString() : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+const normalizeMetadataEntry = (value: unknown): LinkCardMetadata => {
+  if (!value || typeof value !== 'object') {
+    return {};
+  }
+
+  const raw = value as Record<string, unknown>;
+  const title = pickOptionalString(raw['title']);
+  const description = pickOptionalString(raw['description']);
+  const image = normalizeCardImage(pickOptionalString(raw['image']));
+  const siteName = pickOptionalString(raw['siteName']);
+
+  return {
+    ...(title ? { title } : {}),
+    ...(description ? { description } : {}),
+    ...(image ? { image } : {}),
+    ...(siteName ? { siteName } : {}),
+  };
+};
+
+const loadMetadataMap = (metadataFile: string): Map<string, LinkCardMetadata> => {
+  const resolvedPath = path.resolve(process.cwd(), metadataFile);
+
+  let stat;
+  try {
+    stat = statSync(resolvedPath);
+  } catch (error) {
+    const candidate = error as NodeJS.ErrnoException;
+    if (candidate.code === 'ENOENT') {
+      return new Map();
+    }
+    throw error;
+  }
+
+  if (
+    cachedMetadataFilePath === resolvedPath &&
+    cachedMetadataMtimeMs === stat.mtimeMs
+  ) {
+    return cachedMetadataMap;
+  }
+
+  const raw = readFileSync(resolvedPath, 'utf8');
+  let parsed: LinkCardMetadataCacheFile;
+  try {
+    parsed = JSON.parse(raw) as LinkCardMetadataCacheFile;
+  } catch {
+    throw new Error(`[markdown] link-card metadata cache JSON が不正です: ${resolvedPath}`);
+  }
+
+  const entries =
+    parsed && typeof parsed === 'object' && parsed.entries && typeof parsed.entries === 'object'
+      ? parsed.entries
+      : {};
+
+  const map = new Map<string, LinkCardMetadata>();
+
+  for (const [key, value] of Object.entries(entries)) {
+    const normalizedKey = normalizeLookupKey(key);
+    if (!normalizedKey) {
+      continue;
+    }
+
+    const metadata = normalizeMetadataEntry(value);
+    if (metadata.title || metadata.description || metadata.image || metadata.siteName) {
+      map.set(normalizedKey, metadata);
+    }
+  }
+
+  cachedMetadataFilePath = resolvedPath;
+  cachedMetadataMtimeMs = stat.mtimeMs;
+  cachedMetadataMap = map;
+
+  return map;
+};
+
+const findCachedMetadata = (
+  href: string,
+  metadataMap: Map<string, LinkCardMetadata>,
+): LinkCardMetadata => {
+  for (const candidate of buildLookupCandidates(href)) {
+    const metadata = metadataMap.get(candidate);
+    if (metadata) {
+      return metadata;
+    }
+  }
+  return {};
 };
 
 const isAutoLinkCardParagraph = (
@@ -309,164 +304,21 @@ const getDirectiveLinkCardSource = (node: MdastNode): LinkCardSource | null => {
       ? { description: pickOptionalString(props['description']) }
       : {}),
     ...(pickOptionalString(props['image']) ? { image: pickOptionalString(props['image']) } : {}),
+    ...(pickOptionalString(props['site-name'])
+      ? { siteName: pickOptionalString(props['site-name']) }
+      : {}),
   };
 };
-
-const fetchTextWithTimeout = async (
-  fetcher: typeof fetch,
-  url: string,
-  timeoutMs: number,
-): Promise<{ text: string; finalUrl: string }> => {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetcher(url, {
-      redirect: 'follow',
-      signal: controller.signal,
-    });
-    if (!response.ok) {
-      throw new Error(`HTTP ${String(response.status)}`);
-    }
-
-    return {
-      text: await response.text(),
-      finalUrl: response.url || url,
-    };
-  } finally {
-    clearTimeout(timer);
-  }
-};
-
-const fetchJsonWithTimeout = async (
-  fetcher: typeof fetch,
-  url: string,
-  timeoutMs: number,
-): Promise<unknown> => {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetcher(url, {
-      redirect: 'follow',
-      signal: controller.signal,
-    });
-    if (!response.ok) {
-      throw new Error(`HTTP ${String(response.status)}`);
-    }
-
-    return await response.json();
-  } finally {
-    clearTimeout(timer);
-  }
-};
-
-class LinkCardMetadataResolver {
-  private readonly cache = new Map<string, Promise<LinkCardMetadata>>();
-
-  constructor(
-    private readonly fetcher: typeof fetch,
-    private readonly timeoutMs: number,
-  ) {}
-
-  async resolve(url: string, node: MdastNode, file?: VFileLike): Promise<LinkCardMetadata> {
-    const cached = this.cache.get(url);
-    if (cached) {
-      return cached;
-    }
-
-    const promise = this.fetchMetadata(url, node, file);
-    this.cache.set(url, promise);
-    return promise;
-  }
-
-  private async fetchMetadata(
-    url: string,
-    node: MdastNode,
-    file?: VFileLike,
-  ): Promise<LinkCardMetadata> {
-    let htmlPayload: HtmlMetadataPayload;
-
-    try {
-      const { text, finalUrl } = await fetchTextWithTimeout(this.fetcher, url, this.timeoutMs);
-      htmlPayload = parseHtmlMetadata(text, finalUrl);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'unknown error';
-      addWarning(file, node, `link-card のメタデータ取得に失敗しました (${url}): ${message}`);
-      return {};
-    }
-
-    let oembed: OEmbedPayload | null = null;
-    if (htmlPayload.oembedUrl) {
-      try {
-        const payload = await fetchJsonWithTimeout(
-          this.fetcher,
-          htmlPayload.oembedUrl,
-          this.timeoutMs,
-        );
-        if (payload && typeof payload === 'object') {
-          const candidate = payload as Record<string, unknown>;
-          oembed = {
-            ...(pickOptionalString(candidate['title'])
-              ? { title: pickOptionalString(candidate['title']) }
-              : {}),
-            ...(pickOptionalString(candidate['thumbnail_url'])
-              ? { thumbnail_url: pickOptionalString(candidate['thumbnail_url']) }
-              : {}),
-            ...(pickOptionalString(candidate['provider_name'])
-              ? { provider_name: pickOptionalString(candidate['provider_name']) }
-              : {}),
-            ...(pickOptionalString(candidate['author_name'])
-              ? { author_name: pickOptionalString(candidate['author_name']) }
-              : {}),
-          };
-        }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'unknown error';
-        addWarning(
-          file,
-          node,
-          `link-card の oEmbed 取得に失敗しました (${htmlPayload.oembedUrl}): ${message}`,
-        );
-      }
-    }
-
-    const title = htmlPayload.ogTitle ?? htmlPayload.twitterTitle ?? oembed?.title;
-    const description = htmlPayload.ogDescription ?? htmlPayload.twitterDescription;
-    const image =
-      htmlPayload.ogImage ??
-      htmlPayload.twitterImage ??
-      resolveSafeHttpUrl(oembed?.thumbnail_url, htmlPayload.finalUrl);
-    const siteName = htmlPayload.ogSiteName ?? oembed?.provider_name;
-
-    return {
-      ...(title ? { title } : {}),
-      ...(description ? { description } : {}),
-      ...(image ? { image } : {}),
-      ...(siteName ? { siteName } : {}),
-    };
-  }
-}
 
 const buildResolvedLinkCardProps = (
   href: string,
   metadata: LinkCardMetadata,
   source: LinkCardSource,
-  node: MdastNode,
-  file?: VFileLike,
 ): Record<string, unknown> => {
   const title = source.title ?? metadata.title ?? buildFallbackTitle(href);
   const description = source.description ?? metadata.description;
-  const explicitImage = source.image ? resolveSafeHttpUrl(source.image, href) : undefined;
-  if (source.image && !explicitImage) {
-    addWarning(
-      file,
-      node,
-      `link-card の image を解決できなかったため無視しました (${source.image})`,
-    );
-  }
-  const imageSrc = explicitImage ?? metadata.image;
-  const siteName = metadata.siteName ?? buildFallbackTitle(href);
+  const imageSrc = normalizeCardImage(source.image) ?? metadata.image;
+  const siteName = source.siteName ?? metadata.siteName ?? buildFallbackTitle(href);
 
   return {
     'card-kind': 'link',
@@ -492,11 +344,11 @@ const toResolvedLinkCardNode = (
   ...(sourceNode.position ? { position: sourceNode.position } : {}),
 });
 
-const transformNodes = async (
+const transformNodes = (
   nodes: MdastNode[],
-  resolver: LinkCardMetadataResolver,
+  metadataMap: Map<string, LinkCardMetadata>,
   file?: VFileLike,
-): Promise<void> => {
+): void => {
   for (let index = 0; index < nodes.length; index += 1) {
     const current = nodes[index];
     if (!current) {
@@ -506,10 +358,11 @@ const transformNodes = async (
     const directiveSource = getDirectiveLinkCardSource(current);
     if (directiveSource) {
       const href = normalizeHttpUrl(directiveSource.url, current, file);
-      const metadata = await resolver.resolve(href, current, file);
+      const metadata = findCachedMetadata(href, metadataMap);
+
       nodes[index] = toResolvedLinkCardNode(
         current,
-        buildResolvedLinkCardProps(href, metadata, directiveSource, current, file),
+        buildResolvedLinkCardProps(href, metadata, directiveSource),
         'rouaultResolvedLinkCard',
       );
       continue;
@@ -518,23 +371,24 @@ const transformNodes = async (
     if (isAutoLinkCardParagraph(current)) {
       const linkNode = getMeaningfulChildren(current)[0];
       const href = normalizeHttpUrl(linkNode?.url ?? '', current, file);
-      const metadata = await resolver.resolve(href, current, file);
+      const metadata = findCachedMetadata(href, metadataMap);
+
       nodes[index] = toResolvedLinkCardNode(
         current,
-        buildResolvedLinkCardProps(href, metadata, { url: href }, current, file),
+        buildResolvedLinkCardProps(href, metadata, { url: href }),
         'rouaultAutoLinkCard',
       );
       continue;
     }
 
     if (Array.isArray(current.children) && current.children.length > 0) {
-      await transformNodes(current.children, resolver, file);
+      transformNodes(current.children, metadataMap, file);
     }
   }
 };
 
 export function remarkLinkCards(options: RemarkLinkCardsOptions = {}) {
-  return async (tree: unknown, file?: VFileLike) => {
+  return (tree: unknown, file?: VFileLike) => {
     if (!tree || typeof tree !== 'object') {
       return;
     }
@@ -544,12 +398,7 @@ export function remarkLinkCards(options: RemarkLinkCardsOptions = {}) {
       return;
     }
 
-    const fetcher = options.fetch ?? globalThis.fetch?.bind(globalThis);
-    if (!fetcher) {
-      throw new Error('[markdown] link-card の fetch 実装が見つかりません');
-    }
-
-    const resolver = new LinkCardMetadataResolver(fetcher, options.timeoutMs ?? 5000);
-    await transformNodes(root.children, resolver, file);
+    const metadataMap = loadMetadataMap(options.metadataFile ?? DEFAULT_METADATA_FILE);
+    transformNodes(root.children, metadataMap, file);
   };
 }

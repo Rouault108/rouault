@@ -1,4 +1,4 @@
-# Markdown 変換戦略（実装ベース / 2026-03-15）
+# Markdown 変換戦略
 
 ## 目的
 
@@ -48,7 +48,7 @@ remark 層では「著者入力の制約付けと独自構文の展開」を行�
 | `::preview-sandbox` | `ui-preview-sandbox` | `title` / `allow-js` / `height`。`code-preview` 直下専用、内部は `preview-html/css/js` fenced code のみ。`allow-js` は author script 許可のみを表す         |
 | `::details`         | `ui-details`         | `summary` または `aria-label` 必須。両立不可。`open` / `variant` / `region`                                                                                 |
 | `::info-box`        | `ui-info-box`        | `heading` / `icon` / `heading-level` / `landmark` / `variant` / `density`                                                                                   |
-| `::link-card`       | `ui-card`            | leaf directive。`url` 必須、`title` / `description` / `image`。終端 `::` は不要                                                                             |
+| `::link-card`       | `ui-card`            | leaf directive。`url` 必須、`title` / `description` / `image` / `site-name`。終端 `::` は不要 |
 | `::score`           | `ui-score`           | `src` / `caption` / `label` / `description` / `aspect-ratio` / `loading` / `primary`                                                                        |
 | `::tabs`            | `ui-tabs`            | `selected-value` / `default-selected-value` / `orientation` / `automatic-activation` / `url-sync`                                                           |
 | `::translation`     | `ui-translation`     | `original` / `translated` / `lang` / `target-lang` / `render-mode` / `open`                                                                                 |
@@ -77,15 +77,26 @@ remark 層では「著者入力の制約付けと独自構文の展開」を行�
 - `preview-sandbox` 内の `code.lang` は `preview-html|preview-css|preview-js`
 - `translation.render-mode` は `popover|drawer|interlinear`
 - `link-card.url` は後段で `http/https` 絶対 URL として検証する
+- `link-card.image` は `/` から始まるルート相対 URL または `http/https` 絶対 URL のみ許可する
 
-### 2.5. リンクカードを build-time で解決する
+### 2.5. リンクカードを metadata cache で解決する
 
 [`lib/remark/remark-link-cards.ts`](/Users/ruo/Desktop/Programing/Rouault/lib/remark/remark-link-cards.ts) は次を担当する。
 
 1. `::link-card{...}` を最終的な `ui-card[card-kind="link"]` に解決する
 2. 「単独段落の外部リンク 1 件だけ」を自動リンクカード化する
-3. 取得メタデータを `著者指定 > OGP > Twitter Card > oEmbed > URL フォールバック` の順でマージする
-4. 取得失敗時は warning を残しつつ画像なしカードへフォールバックする
+3. 生成済み metadata cache を参照して `title` / `description` / `image` / `site-name` を補完する
+4. metadata cache に値が無い場合は URL の host 名でフォールバックする
+5. remark 段階では外部ネットワーク取得を行わない
+
+metadata の解決順序は次のとおり。
+
+- `title`: `著者指定 > metadata cache > URL host`
+- `description`: `著者指定 > metadata cache`
+- `image`: `著者指定 > metadata cache`
+- `site-name`: `著者指定 > metadata cache > URL host`
+
+metadata cache の既定位置は `content/_generated/link-card-metadata.json` とする。cache は別スクリプトで更新し、`pnpm dev` / `pnpm build` のクリティカルパスには含めない。
 
 最終出力の主要属性は `href` / `card-kind="link"` / `card-title` / `description` / `image-src` / `site-name` である。`clickable` は generic カード専用入力のため、link-card 解決結果には含めない。
 

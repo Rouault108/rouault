@@ -23,7 +23,8 @@
     "dev": "tsx ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts --serve",
     "build": "tsx ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts && tsx scripts/apply-lit-ssr.ts && tsx scripts/build-pagefind.ts",
     "start": "tsx ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts --serve",
-    "typecheck:node": "pnpm exec tsc -p tsconfig.node.json --noEmit"
+    "typecheck:node": "pnpm exec tsc -p tsconfig.node.json --noEmit",
+    "sync:link-cards": "tsx scripts/sync-link-card-metadata.ts"
   },
   "keywords": [],
   "author": "",

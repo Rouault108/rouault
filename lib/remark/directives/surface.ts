@@ -197,7 +197,7 @@ export const applyLinkCardAttributes = (
   file?: VFileLike,
 ): Record<string, unknown> => {
   const result: Record<string, unknown> = {};
-  const allowedKeys = new Set(['url', 'title', 'description', 'image']);
+  const allowedKeys = new Set(['url', 'title', 'description', 'image', 'site-name']);
   assertAllowedAttributes(attrs, allowedKeys, node, file, 'link-card');
 
   const url = pickOptional(attrs['url']);
@@ -219,6 +219,11 @@ export const applyLinkCardAttributes = (
   const image = pickOptional(attrs['image']);
   if (image) {
     result['image'] = image;
+  }
+
+  const siteName = pickOptional(attrs['site-name']);
+  if (siteName) {
+    result['site-name'] = siteName;
   }
 
   return result;

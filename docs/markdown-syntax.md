@@ -132,11 +132,21 @@ _イタリック_
 https://example.com/article
 ```
 
-タイトル・説明・画像を著者が明示したい場合は `::link-card` を使う。
+タイトル・説明・画像・出典名を著者が明示したい場合は `::link-card` を使う。
 
 ```markdown
-::link-card{url="https://example.com/article" title="任意タイトル" description="任意説明" image="https://cdn.example.com/card.png"}
+::link-card{url="https://example.com/article" title="任意タイトル" description="任意説明" image="/assets/link-cards/example.png" site-name="Example"}
 ```
+
+`::link-card` の各属性は任意に上書きできる。省略した項目は、事前生成された link-card metadata cache から補完される。cache に値が無い場合は、`title` と `site-name` に URL の host 名が使われる。
+
+例:
+
+```markdown
+::link-card{url="https://example.com/article"}
+```
+
+この場合、`title` / `description` / `image` / `site-name` は cache にある値が使われ、無ければ `title` と `site-name` は `example.com` にフォールバックする。
 
 画像の拡大を無効化したい場合は、画像記法の直後に属性ブロックを書く。
 
@@ -160,9 +170,14 @@ https://example.com/article
 - `zoomable="false"` を指定した場合、出力される `ui-image` は静的モードになり、Lightbox を持たない
 - 自動リンクカード化の対象は「単独段落の外部 URL 1 件だけ」
 - 本文中の通常リンクや複数リンク段落はそのまま残る
-- `::link-card` の `url` は必須、`title` / `description` / `image` は任意
-- 解決順序は `著者指定 > OGP > Twitter Card > oEmbed > URL フォールバック`
-- 取得失敗時はビルド継続のまま画像なしカードになる
+- `::link-card` の `url` は必須、`title` / `description` / `image` / `site-name` は任意
+- `title` は `著者指定 > metadata cache > URL host` の順で解決される
+- `description` は `著者指定 > metadata cache` の順で解決される
+- `image` は `著者指定 > metadata cache` の順で解決される
+- `site-name` は `著者指定 > metadata cache > URL host` の順で解決される
+- `image` は `/` から始まるルート相対 URL または外部 `http/https` URL を使う
+- metadata cache に値が無くてもビルドは継続し、最低限のカードへフォールバックする
+- metadata cache の更新は別スクリプトで行い、通常の `pnpm dev` / `pnpm build` では外部サイトへアクセスしない
 
 ### リスト
 
@@ -385,15 +400,30 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 リンクカードを明示的に埋め込む。
 
 ```markdown
-::link-card{url="https://example.com/article" title="任意タイトル" description="任意説明" image="https://cdn.example.com/card.png"}
+::link-card{url="https://example.com/article" title="任意タイトル" description="任意説明" image="/assets/link-cards/example.png" site-name="Example"}
 ```
 
-| 属性          | 内容     | 値                    |
-| ------------- | -------- | --------------------- |
-| `url`         | 遷移先   | 外部 `http/https` URL |
-| `title`       | 見出し   | 任意の文字列          |
-| `description` | 補足説明 | 任意の文字列          |
-| `image`       | 右側画像 | 任意の URL            |
+最小の書き方:
+
+```markdown
+::link-card{url="https://example.com/article"}
+```
+
+| 属性            | 内容    | 値                                         |
+| ------------- | ----- | ----------------------------------------- |
+| `url`         | 遷移先   | 外部 `http/https` URL                       |
+| `title`       | 見出し   | 任意の文字列                                    |
+| `description` | 補足説明  | 任意の文字列                                    |
+| `image`       | 右側画像  | `/` から始まるルート相対 URL または外部 `http/https` URL |
+| `site-name`   | 出典表示名 | 任意の文字列                                    |
+
+補足:
+
+* `url` は必須
+* `title` / `description` / `image` / `site-name` は省略できる
+* 省略した項目は link-card metadata cache から補完される
+* cache に値が無い場合、`title` と `site-name` は URL の host 名にフォールバックする
+* `::link-card` 自体は build 中に外部サイトへアクセスしない
 
 ### Score
 

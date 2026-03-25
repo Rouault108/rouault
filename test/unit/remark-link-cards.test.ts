@@ -1,4 +1,6 @@
 import { expect } from '@open-wc/testing';
+import path from 'node:path';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { remarkLinkCards } from '../../lib/remark/remark-link-cards.js';
 
 interface MdastNode {
@@ -10,28 +12,49 @@ interface MdastNode {
     hName?: string;
     hProperties?: Record<string, unknown>;
   };
-}
-
-interface TestVFile {
-  path: string;
-  messages: { reason: string }[];
-  message: (reason: string) => void;
-}
-
-const createFile = (): TestVFile => {
-  const messages: { reason: string }[] = [];
-  return {
-    path: 'content/notes/sample.md',
-    messages,
-    message: (reason: string) => {
-      messages.push({ reason });
-    },
+  position?: {
+    start?: {
+      line?: number;
+      column?: number;
+    };
   };
+}
+
+const FIXTURE_DIR = path.resolve(process.cwd(), 'content/_generated');
+const FIXTURE_FILE = path.resolve(FIXTURE_DIR, 'link-card-metadata.json');
+
+const createFile = () => ({
+  path: 'content/notes/sample.md',
+  messages: [] as { reason: string }[],
+  message(reason: string) {
+    this.messages.push({ reason });
+  },
+});
+
+const writeCache = (entries: Record<string, unknown>) => {
+  mkdirSync(FIXTURE_DIR, { recursive: true });
+  writeFileSync(
+    FIXTURE_FILE,
+    `${JSON.stringify({ version: 1, generatedAt: '2026-03-25T00:00:00.000Z', entries }, null, 2)}\n`,
+    'utf8',
+  );
 };
 
 describe('remarkLinkCards', () => {
-  it('著者指定 > OGP > Twitter Card > oEmbed の優先順位で link-card を解決すること', async () => {
-    const calls: string[] = [];
+  afterEach(() => {
+    rmSync(FIXTURE_FILE, { force: true });
+  });
+
+  it('明示 link-card で cache title を使って解決すること', () => {
+    writeCache({
+      'https://example.com/post': {
+        title: 'Cache Title',
+        description: 'Cache Description',
+        image: 'https://cdn.example.com/card.png',
+        siteName: 'Example',
+      },
+    });
+
     const tree: MdastNode = {
       type: 'root',
       children: [
@@ -41,7 +64,6 @@ describe('remarkLinkCards', () => {
             hName: 'ui-card',
             hProperties: {
               url: 'https://example.com/post',
-              title: '著者指定タイトル',
             },
           },
           children: [],
@@ -49,64 +71,24 @@ describe('remarkLinkCards', () => {
       ],
     };
 
-    const plugin = remarkLinkCards({
-      fetch: ((input: string | URL | Request) => {
-        const url =
-          typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
-        calls.push(url);
-
-        if (url === 'https://example.com/post') {
-          return new Response(
-            `
-              <html>
-                <head>
-                  <meta property="og:description" content="OGP の説明" />
-                  <meta name="twitter:title" content="Twitter タイトル" />
-                  <meta name="twitter:image" content="/twitter-image.png" />
-                  <link rel="alternate" type="application/json+oembed" href="https://example.com/oembed" />
-                </head>
-              </html>
-            `,
-            { status: 200 },
-          );
-        }
-
-        if (url === 'https://example.com/oembed') {
-          return new Response(
-            JSON.stringify({
-              title: 'oEmbed タイトル',
-              thumbnail_url: 'https://cdn.example.com/oembed.png',
-              provider_name: 'Example Provider',
-              author_name: 'Example Author',
-            }),
-            {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' },
-            },
-          );
-        }
-
-        throw new Error(`unexpected fetch: ${url}`);
-      }) as typeof fetch,
-    });
-
-    await plugin(tree, createFile());
+    remarkLinkCards()(tree, createFile());
 
     const card = tree.children?.[0];
-    expect(card?.data?.hName).to.equal('ui-card');
-    expect(card?.data?.hProperties?.['card-kind']).to.equal('link');
-    expect(card?.data?.hProperties?.['href']).to.equal('https://example.com/post');
-    expect(card?.data?.hProperties?.['card-title']).to.equal('著者指定タイトル');
-    expect(card?.data?.hProperties?.['description']).to.equal('OGP の説明');
-    expect(card?.data?.hProperties?.['image-src']).to.equal(
-      'https://example.com/twitter-image.png',
-    );
-    expect(card?.data?.hProperties?.['site-name']).to.equal('Example Provider');
-    expect(card?.data?.hProperties?.['clickable']).to.equal(undefined);
-    expect(calls).to.deep.equal(['https://example.com/post', 'https://example.com/oembed']);
+    expect(card?.type).to.equal('rouaultResolvedLinkCard');
+    expect(card?.data?.hProperties?.['card-title']).to.equal('Cache Title');
+    expect(card?.data?.hProperties?.['description']).to.equal('Cache Description');
+    expect(card?.data?.hProperties?.['image-src']).to.equal('https://cdn.example.com/card.png');
+    expect(card?.data?.hProperties?.['site-name']).to.equal('Example');
   });
 
-  it('単独段落の外部リンクだけを自動でリンクカード化すること', async () => {
+  it('単独 URL 段落を auto link-card に変換すること', () => {
+    writeCache({
+      'https://example.com/auto': {
+        title: 'Auto Title',
+        siteName: 'Example',
+      },
+    });
+
     const tree: MdastNode = {
       type: 'root',
       children: [
@@ -120,80 +102,49 @@ describe('remarkLinkCards', () => {
             },
           ],
         },
+      ],
+    };
+
+    remarkLinkCards()(tree, createFile());
+
+    const card = tree.children?.[0];
+    expect(card?.type).to.equal('rouaultAutoLinkCard');
+    expect(card?.data?.hProperties?.['card-title']).to.equal('Auto Title');
+    expect(card?.data?.hProperties?.['site-name']).to.equal('Example');
+  });
+
+  it('cache 不在時は hostname を title/site-name に使うこと', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
         {
           type: 'paragraph',
           children: [
-            { type: 'text', value: '本文中の ' },
             {
               type: 'link',
-              url: 'https://example.com/inline',
-              children: [{ type: 'text', value: 'リンク' }],
+              url: 'https://example.com/fallback',
+              children: [{ type: 'text', value: 'https://example.com/fallback' }],
             },
-            { type: 'text', value: ' は通常のままです。' },
           ],
         },
       ],
     };
 
-    const plugin = remarkLinkCards({
-      fetch: (() =>
-        new Response(
-          `
-            <html>
-              <head>
-                <meta property="og:title" content="自動カード" />
-                <meta property="og:site_name" content="Example" />
-              </head>
-            </html>
-          `,
-          { status: 200 },
-        )) as typeof fetch,
-    });
-
-    await plugin(tree, createFile());
-
-    const autoCard = tree.children?.[0];
-    const inlineParagraph = tree.children?.[1];
-    expect(autoCard?.data?.hName).to.equal('ui-card');
-    expect(autoCard?.data?.hProperties?.['card-title']).to.equal('自動カード');
-    expect(inlineParagraph?.type).to.equal('paragraph');
-  });
-
-  it('メタデータ取得失敗時は警告しつつ画像なしカードへフォールバックすること', async () => {
-    const tree: MdastNode = {
-      type: 'root',
-      children: [
-        {
-          type: 'rouaultDirectiveLinkCard',
-          data: {
-            hName: 'ui-card',
-            hProperties: {
-              url: 'https://failure.example.com/article',
-            },
-          },
-          children: [],
-        },
-      ],
-    };
-
-    const file = createFile();
-    const plugin = remarkLinkCards({
-      fetch: (() => {
-        throw new Error('network down');
-      }) as typeof fetch,
-    });
-
-    await plugin(tree, file);
+    remarkLinkCards()(tree, createFile());
 
     const card = tree.children?.[0];
-    expect(card?.data?.hProperties?.['card-title']).to.equal('failure.example.com');
-    expect(card?.data?.hProperties?.['image-src']).to.equal(undefined);
-    expect(file.messages).to.have.length(1);
-    expect(file.messages[0]?.reason).to.contain('link-card のメタデータ取得に失敗しました');
+    expect(card?.data?.hProperties?.['card-title']).to.equal('example.com');
+    expect(card?.data?.hProperties?.['site-name']).to.equal('example.com');
   });
 
-  it('同一 URL の取得は 1 回だけに重複排除すること', async () => {
-    const calls: string[] = [];
+  it('明示 title は cache title より優先されること', () => {
+    writeCache({
+      'https://example.com/post': {
+        title: 'Cache Title',
+        siteName: 'Example',
+      },
+    });
+
     const tree: MdastNode = {
       type: 'root',
       children: [
@@ -202,17 +153,8 @@ describe('remarkLinkCards', () => {
           data: {
             hName: 'ui-card',
             hProperties: {
-              url: 'https://example.com/dedupe',
-            },
-          },
-          children: [],
-        },
-        {
-          type: 'rouaultDirectiveLinkCard',
-          data: {
-            hName: 'ui-card',
-            hProperties: {
-              url: 'https://example.com/dedupe',
+              url: 'https://example.com/post',
+              title: 'Author Title',
             },
           },
           children: [],
@@ -220,26 +162,9 @@ describe('remarkLinkCards', () => {
       ],
     };
 
-    const plugin = remarkLinkCards({
-      fetch: (() => {
-        calls.push('https://example.com/dedupe');
-        return new Response(
-          `
-            <html>
-              <head>
-                <meta property="og:title" content="Dedupe" />
-              </head>
-            </html>
-          `,
-          { status: 200 },
-        );
-      }) as typeof fetch,
-    });
+    remarkLinkCards()(tree, createFile());
 
-    await plugin(tree, createFile());
-
-    expect(calls).to.have.length(1);
-    expect(tree.children?.[0]?.data?.hProperties?.['card-title']).to.equal('Dedupe');
-    expect(tree.children?.[1]?.data?.hProperties?.['card-title']).to.equal('Dedupe');
+    const card = tree.children?.[0];
+    expect(card?.data?.hProperties?.['card-title']).to.equal('Author Title');
   });
 });
