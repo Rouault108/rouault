@@ -419,20 +419,20 @@ export const AutomaticActivation: Story = {
 /**
  * アイコン + テキストのタブ。
  *
- * `<iconify-icon>` を使用したリッチなタブラベルです。
+ * `<ui-icon>` を使用したリッチなタブラベルです。
  * 通常のテキストラベルに比べて視覚的な識別性が向上します。
  */
 export const WithIcons: Story = {
   render: () => html`
     <style>
-      iconify-icon {
+      ui-icon {
         font-size: var(--icon-base, 16px);
       }
     </style>
 
     <ui-tabs>
       <button slot="tab" value="notes">
-        <iconify-icon icon="lucide:file-text"></iconify-icon>
+        <ui-icon name="file-text"></ui-icon>
         ノート
       </button>
       <div slot="panel" style="padding: 1rem;">
@@ -440,7 +440,7 @@ export const WithIcons: Story = {
       </div>
 
       <button slot="tab" value="tags">
-        <iconify-icon icon="lucide:tag"></iconify-icon>
+        <ui-icon name="tag"></ui-icon>
         タグ
       </button>
       <div slot="panel" style="padding: 1rem;">
@@ -448,7 +448,7 @@ export const WithIcons: Story = {
       </div>
 
       <button slot="tab" value="search">
-        <iconify-icon icon="lucide:search"></iconify-icon>
+        <ui-icon name="search"></ui-icon>
         検索
       </button>
       <div slot="panel" style="padding: 1rem;">

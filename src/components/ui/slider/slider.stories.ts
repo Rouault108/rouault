@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './slider';
 import { Slider } from './slider';
-import '../../../lib/icons';
+import '../icon/icon.js';
 
 /**
  * ## スライダー (Slider) `<ui-slider>`
@@ -54,8 +54,8 @@ Input-on-Top Overlay パターンにより、操作の「空振り」を物理�
 
 <!-- prefix/suffix スロット -->
 <ui-slider label="明るさ" min="0" max="100" value="70">
-  <iconify-icon slot="prefix" icon="lucide:moon" aria-hidden="true"></iconify-icon>
-  <iconify-icon slot="suffix" icon="lucide:sun" aria-hidden="true"></iconify-icon>
+  <ui-icon slot="prefix" name="moon" aria-hidden="true"></ui-icon>
+  <ui-icon slot="suffix" name="sun" aria-hidden="true"></ui-icon>
 </ui-slider>
 
 <!-- 小数ステップ -->
@@ -365,12 +365,12 @@ export const WithSlots: Story = {
         if (suffix) suffix.textContent = String(slider.value);
       }}"
     >
-      <iconify-icon
+      <ui-icon
         slot="prefix"
-        icon="lucide:volume-x"
+        name="volume-x"
         aria-hidden="true"
         style="font-size: 1.2em;"
-      ></iconify-icon>
+      ></ui-icon>
       <span
         data-role="value"
         slot="suffix"
@@ -404,18 +404,18 @@ export const BrightnessControl: Story = {
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 400px;">
       <div style="font-size: 13px; color: oklch(48% 0.01 250);">明るさ調整</div>
       <ui-slider id="brightness" label="明るさ" min="0" max="100" value="70">
-        <iconify-icon
+        <ui-icon
           slot="prefix"
-          icon="lucide:moon-star"
+          name="moon-star"
           aria-hidden="true"
           style="font-size: 1.1em; opacity: 0.7;"
-        ></iconify-icon>
-        <iconify-icon
+        ></ui-icon>
+        <ui-icon
           slot="suffix"
-          icon="lucide:sun"
+          name="sun"
           aria-hidden="true"
           style="font-size: 1.1em;"
-        ></iconify-icon>
+        ></ui-icon>
       </ui-slider>
     </div>
   `,
@@ -510,8 +510,8 @@ export const AllStates: Story = {
       <div class="state-group">
         <div class="state-label">With Slots</div>
         <ui-slider id="all-slots" label="スロット付き" value="65">
-          <iconify-icon slot="prefix" icon="lucide:volume-x" aria-hidden="true"></iconify-icon>
-          <iconify-icon slot="suffix" icon="lucide:volume-2" aria-hidden="true"></iconify-icon>
+          <ui-icon slot="prefix" name="volume-x" aria-hidden="true"></ui-icon>
+          <ui-icon slot="suffix" name="volume-2" aria-hidden="true"></ui-icon>
         </ui-slider>
       </div>
     </div>
@@ -1308,8 +1308,8 @@ export const DarkMode: Story = {
           --elevation-md: 0 0 0 1px oklch(82% 0.03 250 / 0.35), 0 6px 20px oklch(0% 0 0 / 0.45);
         "
       >
-        <iconify-icon slot="prefix" icon="lucide:moon-star" aria-hidden="true"></iconify-icon>
-        <iconify-icon slot="suffix" icon="lucide:sun" aria-hidden="true"></iconify-icon>
+        <ui-icon slot="prefix" name="moon-star" aria-hidden="true"></ui-icon>
+        <ui-icon slot="suffix" name="sun" aria-hidden="true"></ui-icon>
       </ui-slider>
     </div>
   `,

@@ -107,7 +107,7 @@ export class Details extends LitElement {
       transform: rotate(90deg);
     }
 
-    .icon iconify-icon {
+    .icon ui-icon {
       display: block;
       font-size: var(--icon-base, 16px);
       stroke-width: 1.5;
@@ -343,7 +343,7 @@ export class Details extends LitElement {
           @click="${this._onTriggerClick}"
         >
           <span class="icon" aria-hidden="true">
-            <iconify-icon icon="lucide:chevron-right"></iconify-icon>
+            <ui-icon name="chevron-right"></ui-icon>
           </span>
           <span class="summary" part="summary">
             <slot name="summary" @slotchange="${this._onSummarySlotChange}">${this.summary}</slot>

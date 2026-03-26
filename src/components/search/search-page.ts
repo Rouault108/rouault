@@ -2,7 +2,7 @@ import { css, html, LitElement, nothing, unsafeCSS, type PropertyValues } from '
 import { customElement, property, state } from 'lit/decorators.js';
 import { live } from 'lit/directives/live.js';
 import { repeat } from 'lit/directives/repeat.js';
-import '../../lib/icons';
+import '../ui/icon/icon';
 import '../../components/ui/card/card.js';
 import '../../components/ui/checkbox/checkbox.js';
 import '../../components/ui/details/details.js';

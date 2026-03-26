@@ -1,4 +1,5 @@
 import type { TreeNode } from '../../src/components/ui/file-tree/file-tree.js';
+import type { IconName } from '../../src/icons/catalog.js';
 
 export interface SidebarSourceNote {
   rawSlug?: string;
@@ -7,15 +8,15 @@ export interface SidebarSourceNote {
   permalink?: string;
   noteKind?: 'leaf' | 'directory-index';
   directoryPath?: string;
-  sidebarResolvedIcon?: string;
-  sidebarDirectoryIcons?: Record<string, string>;
+  sidebarResolvedIcon?: IconName;
+  sidebarDirectoryIcons?: Record<string, IconName>;
 }
 
 interface SidebarBranchNode {
   kind: 'branch';
   id: string;
   label: string;
-  icon?: string;
+  icon?: IconName;
   children: TreeNode[];
 }
 
@@ -68,7 +69,7 @@ const ensureDirectoryNode = (
   nodes: TreeNode[],
   id: string,
   label: string,
-  icon?: string,
+  icon?: IconName,
 ): SidebarBranchNode => {
   const existing = findBranchNodeById(nodes, id);
   if (existing !== null) {
@@ -95,7 +96,7 @@ const upsertLeafNode = (
   id: string,
   label: string,
   href: string,
-  icon?: string,
+  icon?: IconName,
 ): void => {
   const existing = findNodeById(nodes, id);
   if (existing !== null && existing.kind === 'leaf') {

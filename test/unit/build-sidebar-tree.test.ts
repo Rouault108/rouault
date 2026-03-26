@@ -138,20 +138,20 @@ describe('buildSidebarTree', () => {
         slug: 'music/classical/mozart',
         title: 'モーツァルト',
         permalink: '/notes/music/classical/mozart',
-        sidebarResolvedIcon: 'lucide:music-4',
+        sidebarResolvedIcon: 'music-4',
         sidebarDirectoryIcons: {
-          music: 'lucide:folder-root',
-          'music/classical': 'lucide:folder-kanban',
+          music: 'folder-root',
+          'music/classical': 'folder-kanban',
         },
       },
       {
         slug: 'music/classical/beethoven',
         title: 'ベートーヴェン',
         permalink: '/notes/music/classical/beethoven',
-        sidebarResolvedIcon: 'lucide:folder-kanban',
+        sidebarResolvedIcon: 'folder-kanban',
         sidebarDirectoryIcons: {
-          music: 'lucide:folder-root',
-          'music/classical': 'lucide:folder-kanban',
+          music: 'folder-root',
+          'music/classical': 'folder-kanban',
         },
       },
       {
@@ -161,15 +161,15 @@ describe('buildSidebarTree', () => {
       },
     ]);
 
-    expect(findNode(tree as SidebarTreeNode[], 'music')?.icon).to.equal('lucide:folder-root');
+    expect(findNode(tree as SidebarTreeNode[], 'music')?.icon).to.equal('folder-root');
     expect(findNode(tree as SidebarTreeNode[], 'music/classical')?.icon).to.equal(
-      'lucide:folder-kanban',
+      'folder-kanban',
     );
     expect(findNode(tree as SidebarTreeNode[], 'music/classical/mozart')?.icon).to.equal(
-      'lucide:music-4',
+      'music-4',
     );
     expect(findNode(tree as SidebarTreeNode[], 'music/classical/beethoven')?.icon).to.equal(
-      'lucide:folder-kanban',
+      'folder-kanban',
     );
     expect(findNode(tree as SidebarTreeNode[], 'music/jazz')?.icon).to.equal(undefined);
     expect(findNode(tree as SidebarTreeNode[], 'music/jazz/kind-of-blue')?.icon).to.equal(

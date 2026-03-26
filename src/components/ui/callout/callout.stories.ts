@@ -15,11 +15,11 @@ const FALLBACK_LABELS: Record<CalloutKind, string> = {
 };
 
 const DEFAULT_ICONS: Record<CalloutKind, string> = {
-  note: 'lucide:info',
-  tip: 'lucide:lightbulb',
-  success: 'lucide:check-circle',
-  warning: 'lucide:alert-triangle',
-  danger: 'lucide:alert-octagon',
+  note: 'info',
+  tip: 'lightbulb',
+  success: 'check-circle',
+  warning: 'alert-triangle',
+  danger: 'alert-octagon',
 };
 
 const getRoot = (callout: Callout): HTMLElement => {
@@ -29,8 +29,8 @@ const getRoot = (callout: Callout): HTMLElement => {
 };
 
 const getIcon = (callout: Callout): HTMLElement => {
-  const icon = callout.shadowRoot?.querySelector<HTMLElement>('iconify-icon.icon');
-  if (!icon) throw new Error('iconify-icon.icon が見つかりません');
+  const icon = callout.shadowRoot?.querySelector<HTMLElement>('ui-icon.icon');
+  if (!icon) throw new Error('ui-icon.icon が見つかりません');
   return icon;
 };
 
@@ -376,7 +376,7 @@ export const IconOverrideAndBlankHeading: Story = {
         id="icon-override"
         kind="danger"
         heading="セキュリティ注意"
-        icon="lucide:shield-alert"
+        icon="shield-alert"
       >
         2段階認証を有効化してください。
       </ui-callout>
@@ -391,7 +391,7 @@ export const IconOverrideAndBlankHeading: Story = {
     if (!iconOverride || !blankHeading) throw new Error('テスト対象 callout が見つかりません');
     await Promise.all([iconOverride.updateComplete, blankHeading.updateComplete]);
 
-    if (getIcon(iconOverride).getAttribute('icon') !== 'lucide:shield-alert') {
+    if (getIcon(iconOverride).getAttribute('icon') !== 'shield-alert') {
       throw new Error('icon 上書きが反映されていません');
     }
 

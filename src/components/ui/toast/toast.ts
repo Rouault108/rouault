@@ -1,6 +1,6 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import '../../../lib/icons';
+import '../icon/icon.js';
 
 export type ToastVariant = 'success' | 'warning' | 'danger' | 'info';
 type LegacyToastVariant = 'error';
@@ -29,10 +29,10 @@ const TOAST_ROLE_BY_VARIANT: Record<ToastVariant, ToastRole> = {
 };
 
 const TOAST_ICON_BY_VARIANT: Record<ToastVariant, string> = {
-  info: 'lucide:info',
-  success: 'lucide:check-circle',
-  warning: 'lucide:alert-triangle',
-  danger: 'lucide:alert-octagon',
+  info: 'info',
+  success: 'check-circle',
+  warning: 'alert-triangle',
+  danger: 'alert-octagon',
 };
 
 interface ImportMetaEnvLike {
@@ -484,7 +484,7 @@ export class UiToast extends LitElement {
       animation: var(--animation-focus, none);
     }
 
-    .toast-close iconify-icon {
+    .toast-close ui-icon {
       font-size: var(--icon-sm, 14px);
     }
 
@@ -718,11 +718,11 @@ export class UiToast extends LitElement {
               @focusout="${this._onToastFocusOut}"
             >
               <div class="toast-content">
-                <iconify-icon
+                <ui-icon
                   class="toast-icon"
-                  icon="${TOAST_ICON_BY_VARIANT[toast.variant]}"
+                  name="${TOAST_ICON_BY_VARIANT[toast.variant]}"
                   aria-hidden="true"
-                ></iconify-icon>
+                ></ui-icon>
                 <span class="toast-message">${toast.message}</span>
               </div>
 
@@ -735,7 +735,7 @@ export class UiToast extends LitElement {
                       data-toast-id="${toast.id}"
                       @click="${this._onDismissClick}"
                     >
-                      <iconify-icon icon="lucide:x" aria-hidden="true"></iconify-icon>
+                      <ui-icon name="x" aria-hidden="true"></ui-icon>
                     </button>
                   `
                 : nothing}

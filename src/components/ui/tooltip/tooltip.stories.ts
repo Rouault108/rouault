@@ -161,7 +161,7 @@ export const DefaultInfoIcon: Story = {
         aria-label="補足情報"
         style="inline-size: 24px; block-size: 24px;"
       >
-        <iconify-icon icon="lucide:circle-help" aria-hidden="true"></iconify-icon>
+        <ui-icon name="circle-help" aria-hidden="true"></ui-icon>
       </button>
     </ui-tooltip>
   `,
@@ -617,9 +617,9 @@ export const TreeItemIntegrationContract: Story = {
       <ui-tree-item
         id="tree-long"
         label="これは非常に長いファイル名でコンテナ幅を超える可能性があります.tsx"
-        icon="lucide:file-code"
+        icon="file-code"
       ></ui-tree-item>
-      <ui-tree-item id="tree-short" label="a.ts" icon="lucide:file-code"></ui-tree-item>
+      <ui-tree-item id="tree-short" label="a.ts" icon="file-code"></ui-tree-item>
     </div>
   `,
   play: async ({ canvasElement }) => {

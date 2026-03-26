@@ -3,7 +3,7 @@ import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { ParseError, renderToString } from 'katex';
-import '../../../lib/icons';
+import '../icon/icon.js';
 
 type MathScrollState = 'none' | 'start' | 'middle' | 'end';
 type MathSpeechMode = 'mathml' | 'label';
@@ -229,7 +229,7 @@ export class UiMath extends LitElement {
       gap: var(--space-2, 8px);
     }
 
-    .math-error-header iconify-icon {
+    .math-error-header ui-icon {
       margin-top: 0.15em;
       flex-shrink: 0;
     }
@@ -715,7 +715,7 @@ export class UiMath extends LitElement {
         role="${ifDefined(this._isDynamicError ? 'alert' : undefined)}"
       >
         <div class="math-error-header">
-          <iconify-icon icon="lucide:triangle-alert" aria-hidden="true"></iconify-icon>
+          <ui-icon name="triangle-alert" aria-hidden="true"></ui-icon>
           <div class="math-error-header-text">
             <p class="math-error-title">${presentation.title}</p>
             <p class="math-error-message">${presentation.description}</p>

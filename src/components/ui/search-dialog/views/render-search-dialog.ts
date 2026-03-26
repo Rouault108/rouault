@@ -108,7 +108,7 @@ export function renderSearchDialog(host: RenderSearchDialogHost): TemplateResult
           @click=${host.onCloseClick}
           @keydown=${host.onCloseButtonKeydown}
         >
-          <iconify-icon icon="lucide:x" aria-hidden="true"></iconify-icon>
+          <ui-icon name="x" aria-hidden="true"></ui-icon>
         </button>
       </div>
 
@@ -124,7 +124,7 @@ export function renderSearchDialog(host: RenderSearchDialogHost): TemplateResult
         <section class="empty-state" role="status" aria-atomic="true" ?hidden=${!showEmpty}>
           <div class="empty-state-content">
             <div class="empty-state-icon" aria-hidden="true">
-              <iconify-icon icon="lucide:search"></iconify-icon>
+              <ui-icon name="search"></ui-icon>
             </div>
             <h2 class="empty-state-heading">${emptyHeading}</h2>
             <p class="empty-state-description">${emptyDescription}</p>
@@ -134,7 +134,7 @@ export function renderSearchDialog(host: RenderSearchDialogHost): TemplateResult
         <section class="error-state" role="status" aria-atomic="true" ?hidden=${!showError}>
           <div class="empty-state-content">
             <div class="empty-state-icon" aria-hidden="true">
-              <iconify-icon icon="lucide:alert-circle"></iconify-icon>
+              <ui-icon name="alert-circle"></ui-icon>
             </div>
             <h2 class="empty-state-heading">${errorHeading}</h2>
             <p class="empty-state-description">

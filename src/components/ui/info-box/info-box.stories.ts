@@ -8,12 +8,13 @@ import {
   renderFoundationFrame,
   renderFoundationSection,
 } from '../../../stories/shared/foundation-story-helpers';
+import { IconName } from '@/icons/catalog';
 
 interface VariantMatrixCase {
   readonly id: string;
   readonly variant: InfoBoxVariant;
   readonly heading: string;
-  readonly icon: string;
+  readonly icon: IconName;
   readonly headingLevel?: number;
   readonly landmark: boolean;
   readonly expectedRole: 'region' | null;
@@ -111,7 +112,7 @@ const getHeading = (infoBox: InfoBox): HTMLElement => {
 };
 
 const getIcon = (infoBox: InfoBox): HTMLElement | null =>
-  infoBox.shadowRoot?.querySelector<HTMLElement>('iconify-icon.icon') ?? null;
+  infoBox.shadowRoot?.querySelector<HTMLElement>('ui-icon.icon') ?? null;
 
 const meta: Meta<InfoBox> = {
   title: 'Components/InfoBox',
@@ -246,7 +247,7 @@ export const Default: Story = {
     if (!icon) {
       throw new Error('icon が描画されていません');
     }
-    if (icon.getAttribute('icon') !== 'lucide:music') {
+    if (icon.getAttribute('icon') !== 'music') {
       throw new Error('icon 名が期待値と一致しません');
     }
     if (icon.getAttribute('aria-hidden') !== 'true') {
@@ -865,7 +866,7 @@ export const IconRenderingBoundary: Story = {
 
     const icon = getIcon(withHeading);
     if (!icon) throw new Error('heading ありで icon が描画されていません');
-    if (icon.getAttribute('icon') !== 'lucide:music') {
+    if (icon.getAttribute('icon') !== 'music') {
       throw new Error('icon 名が一致しません');
     }
     if (icon.getAttribute('aria-hidden') !== 'true') {
@@ -1051,7 +1052,7 @@ export const PrintContract: Story = {
     density: 'comfortable',
   } satisfies {
     heading: string;
-    icon: string;
+    icon: IconName;
     headingLevel: number;
     landmark: boolean;
     variant: InfoBoxVariant;

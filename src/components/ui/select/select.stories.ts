@@ -218,13 +218,13 @@ export const Default: Story = {
       throw new Error('Label should be associated with trigger input');
     }
 
-    const chevronIcon = select.shadowRoot?.querySelector<HTMLElement>('iconify-icon.icon-chevron');
+    const chevronIcon = select.shadowRoot?.querySelector<HTMLElement>('ui-icon.icon-chevron');
     if (!chevronIcon) {
-      throw new Error('トリガーのアイコンは iconify-icon で描画されるべきです');
+      throw new Error('トリガーのアイコンは ui-icon で描画されるべきです');
     }
-    if (chevronIcon.getAttribute('icon') !== 'lucide:chevron-down') {
+    if (chevronIcon.getAttribute('icon') !== 'chevron-down') {
       throw new Error(
-        `icon="lucide:chevron-down" を期待しましたが、実際には "${chevronIcon.getAttribute('icon') ?? 'null'}" でした`,
+        `icon="chevron-down" を期待しましたが、実際には "${chevronIcon.getAttribute('icon') ?? 'null'}" でした`,
       );
     }
 

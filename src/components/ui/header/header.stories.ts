@@ -87,16 +87,16 @@ const getSlot = (host: UiHeader, name: string): HTMLSlotElement => {
 const fullSlotContent = html`
   <div slot="start" style="display: flex; align-items: center; gap: 8px;">
     <ui-button variant="ghost" icon-only aria-label="サイドバーを閉じる">
-      <iconify-icon icon="lucide:panel-left" aria-hidden="true"></iconify-icon>
+      <ui-icon name="panel-left" aria-hidden="true"></ui-icon>
     </ui-button>
     <ui-dropdown>
       <ui-button slot="trigger" variant="ghost">
         音楽
-        <iconify-icon
-          icon="lucide:chevron-down"
+        <ui-icon
+          name="chevron-down"
           aria-hidden="true"
           style="width: 14px; height: 14px;"
-        ></iconify-icon>
+        ></ui-icon>
       </ui-button>
       <ui-menu-item value="music">音楽</ui-menu-item>
       <ui-menu-item value="notes">ノート</ui-menu-item>
@@ -120,7 +120,7 @@ const fullSlotContent = html`
   <div slot="end" style="display: flex; align-items: center; gap: 8px;">
     <ui-search-trigger></ui-search-trigger>
     <ui-button variant="ghost" icon-only aria-label="テーマを変更">
-      <iconify-icon icon="lucide:sun" aria-hidden="true"></iconify-icon>
+      <ui-icon name="sun" aria-hidden="true"></ui-icon>
     </ui-button>
   </div>
 `;
@@ -128,7 +128,7 @@ const fullSlotContent = html`
 const mobileSlotContent = html`
   <div slot="start">
     <ui-button variant="ghost" icon-only aria-label="メニューを開く">
-      <iconify-icon icon="lucide:menu" aria-hidden="true"></iconify-icon>
+      <ui-icon name="menu" aria-hidden="true"></ui-icon>
     </ui-button>
   </div>
 
@@ -138,7 +138,7 @@ const mobileSlotContent = html`
 
   <div slot="end">
     <ui-button variant="ghost" icon-only aria-label="テーマを変更">
-      <iconify-icon icon="lucide:sun" aria-hidden="true"></iconify-icon>
+      <ui-icon name="sun" aria-hidden="true"></ui-icon>
     </ui-button>
   </div>
 `;
@@ -348,7 +348,7 @@ export const EmptySlots: Story = {
           aria-label="サイドバーを閉じる"
           style="all: unset; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; cursor: pointer;"
         >
-          <iconify-icon icon="lucide:panel-left" aria-hidden="true"></iconify-icon>
+          <ui-icon name="panel-left" aria-hidden="true"></ui-icon>
         </button>
       </div>
       <div slot="end">
@@ -357,7 +357,7 @@ export const EmptySlots: Story = {
           aria-label="検索"
           style="all: unset; display: inline-flex; width: 32px; height: 32px; cursor: pointer; align-items: center; justify-content: center;"
         >
-          <iconify-icon icon="lucide:search" aria-hidden="true"></iconify-icon>
+          <ui-icon name="search" aria-hidden="true"></ui-icon>
         </button>
       </div>
     </ui-header>
@@ -568,13 +568,13 @@ export const CompactCenterEmptyFallback: Story = {
     <ui-header id="header-compact-empty" sidebar-expanded>
       <div slot="start">
         <ui-button variant="ghost" icon-only aria-label="メニューを開く">
-          <iconify-icon icon="lucide:menu" aria-hidden="true"></iconify-icon>
+          <ui-icon name="menu" aria-hidden="true"></ui-icon>
         </ui-button>
       </div>
       <span slot="center">通常幅用の文脈</span>
       <div slot="end">
         <ui-button variant="ghost" icon-only aria-label="検索">
-          <iconify-icon icon="lucide:search" aria-hidden="true"></iconify-icon>
+          <ui-icon name="search" aria-hidden="true"></ui-icon>
         </ui-button>
       </div>
     </ui-header>
@@ -612,7 +612,7 @@ export const CompactCenterAccessibilityContract: Story = {
     <ui-header id="header-compact-a11y" sidebar-expanded>
       <div slot="start">
         <ui-button variant="ghost" icon-only aria-label="戻る">
-          <iconify-icon icon="lucide:arrow-left" aria-hidden="true"></iconify-icon>
+          <ui-icon name="arrow-left" aria-hidden="true"></ui-icon>
         </ui-button>
       </div>
       <button
@@ -625,7 +625,7 @@ export const CompactCenterAccessibilityContract: Story = {
       </button>
       <div slot="end">
         <ui-button variant="ghost" icon-only aria-label="メニュー">
-          <iconify-icon icon="lucide:ellipsis" aria-hidden="true"></iconify-icon>
+          <ui-icon name="ellipsis" aria-hidden="true"></ui-icon>
         </ui-button>
       </div>
     </ui-header>

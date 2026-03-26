@@ -118,7 +118,7 @@ export const Default: Story = {
 
     const button = requireButton(trigger);
     const placeholder = trigger.shadowRoot?.querySelector<HTMLElement>('.placeholder');
-    const icon = trigger.shadowRoot?.querySelector<HTMLElement>('.icon iconify-icon');
+    const icon = trigger.shadowRoot?.querySelector<HTMLElement>('.icon ui-icon');
 
     if (!placeholder || !icon) {
       throw new Error('プレースホルダーまたはアイコンが見つかりません');
@@ -148,7 +148,7 @@ export const Default: Story = {
       throw new Error('既定 placeholder が反映されていません');
     }
 
-    if (icon.getAttribute('icon') !== 'lucide:search') {
+    if (icon.getAttribute('icon') !== 'search') {
       throw new Error('検索アイコンが必要です');
     }
   },

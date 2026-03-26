@@ -7,24 +7,49 @@
   "main": "index.js",
   "scripts": {
     "analyze": "pnpm exec cem analyze --litelement --config cem.config.mjs",
+    "preanalyze": "pnpm run generate:icons",
+
     "test": "pnpm test:unit && pnpm test:ssr && pnpm test:storybook",
+    "pretest:unit": "pnpm run generate:icons",
+    "pretest:ssr": "pnpm run generate:icons",
+    "pretest:storybook": "pnpm run generate:icons",
+    "pretest:e2e": "pnpm run generate:icons",
+
     "test:unit": "pnpm exec web-test-runner --config web-test-runner.config.mjs",
     "test:ssr": "vitest --project ssr",
     "test:storybook": "vitest --project storybook",
     "test:storybook:watch": "vitest --project storybook --watch",
     "test:storybook:ui": "vitest --project storybook --ui",
     "test:e2e": "playwright test",
-    "test:all": "pnpm test:unit && pnpm test:ssr && pnpm test:storybook && pnpm test:e2e",
+
     "lint": "pnpm exec eslint .",
+    "prelint": "pnpm run generate:icons",
     "lint:fix": "pnpm exec eslint . --fix && prettier --write .",
+    "prelint:fix": "pnpm run generate:icons",
+
     "format": "prettier --write .",
+
     "storybook": "pnpm exec cem analyze --config cem.config.mjs && pnpm exec storybook dev",
+    "prestorybook": "pnpm run generate:icons",
     "storybook:build": "pnpm exec cem analyze --config cem.config.mjs && pnpm exec storybook build",
+    "prestorybook:build": "pnpm run generate:icons",
+
     "build:client": "pnpm exec vite build --config vite.client.config.ts",
+    "prebuild:client": "pnpm run generate:icons",
+
+    "generate:icons": "tsx scripts/generate-icon-subset.ts",
+
     "dev": "tsx ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts --serve",
+    "predev": "pnpm run generate:icons",
+
     "build": "pnpm run build:client && tsx ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts && tsx scripts/apply-lit-ssr.ts && tsx scripts/build-pagefind.ts",
+
     "start": "tsx ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts --serve",
+    "prestart": "pnpm run generate:icons",
+
     "typecheck:node": "pnpm exec tsc -p tsconfig.node.json --noEmit",
+    "pretypecheck:node": "pnpm run generate:icons",
+
     "sync:link-cards": "tsx scripts/sync-link-card-metadata.ts"
   },
   "keywords": [],

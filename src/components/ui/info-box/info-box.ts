@@ -1,7 +1,7 @@
 import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
-import '../../../lib/icons';
+import '../icon/icon.js';
 
 export type InfoBoxVariant = 'default' | 'filled';
 export type InfoBoxDensity = 'comfortable' | 'compact';
@@ -280,11 +280,11 @@ export class InfoBox extends LitElement {
           ? html`
               <div class="header">
                 ${icon.length > 0
-                  ? html`<iconify-icon
+                  ? html`<ui-icon
                       class="icon"
-                      icon="lucide:${icon}"
+                      name="${icon}"
                       aria-hidden="true"
-                    ></iconify-icon>`
+                    ></ui-icon>`
                   : nothing}
                 <div
                   id="${headingId}"

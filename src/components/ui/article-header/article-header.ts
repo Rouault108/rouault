@@ -4,6 +4,7 @@ import '../tag/tag';
 import { linkTextStyles } from '../../../styles/contracts/link-styles';
 import type { ArticleStatus } from '../../../types/article-status.js';
 import { formatArticleDate } from './format-article-date.js';
+import type { IconName } from '../../../icons/catalog.js';
 
 export type { ArticleStatus } from '../../../types/article-status.js';
 
@@ -14,7 +15,7 @@ export interface TagClickDetail {
 
 interface StatusPresentation {
   label: string;
-  icon: string;
+  icon: IconName;
   toneClass: string;
 }
 
@@ -288,13 +289,13 @@ export class ArticleHeader extends LitElement {
   private get _statusPresentation(): StatusPresentation | null {
     switch (this.status) {
       case 'draft':
-        return { label: '下書き', icon: 'lucide:file-dashed', toneClass: 'status-draft' };
+        return { label: '下書き', icon: 'file-pen', toneClass: 'status-draft' };
       case 'archived':
-        return { label: 'アーカイブ', icon: 'lucide:archive', toneClass: 'status-archived' };
+        return { label: 'アーカイブ', icon: 'archive', toneClass: 'status-archived' };
       case 'wip':
-        return { label: '作業中', icon: 'lucide:construction', toneClass: 'status-wip' };
+        return { label: '作業中', icon: 'construction', toneClass: 'status-wip' };
       case 'deprecated':
-        return { label: '非推奨', icon: 'lucide:alert-triangle', toneClass: 'status-deprecated' };
+        return { label: '非推奨', icon: 'alert-triangle', toneClass: 'status-deprecated' };
       default:
         return null;
     }
@@ -360,7 +361,7 @@ export class ArticleHeader extends LitElement {
 
     return html`
       <li class="metadata-item metadata-date">
-        <iconify-icon class="meta-icon" icon="lucide:history" aria-hidden="true"></iconify-icon>
+        <ui-icon class="meta-icon" name="history" aria-hidden="true"></ui-icon>
         <time datetime="${displayDateTime}" aria-label="${ariaLabel}">${displayDate}</time>
       </li>
     `;
@@ -402,7 +403,7 @@ export class ArticleHeader extends LitElement {
 
     return html`
       <li class="metadata-item metadata-reading-time">
-        <iconify-icon class="meta-icon" icon="lucide:clock-3" aria-hidden="true"></iconify-icon>
+        <ui-icon class="meta-icon" name="clock-3" aria-hidden="true"></ui-icon>
         <span class="reading-time" aria-label="読了目安 ${readingTime}分"
           >読了目安 ${readingTime}分</span
         >
@@ -416,7 +417,7 @@ export class ArticleHeader extends LitElement {
 
     return html`
       <li class="metadata-item metadata-source">
-        <iconify-icon class="meta-icon" icon="lucide:link" aria-hidden="true"></iconify-icon>
+        <ui-icon class="meta-icon" name="link" aria-hidden="true"></ui-icon>
         <a
           class="link-text source-link"
           href="${sourceHref}"
@@ -436,7 +437,7 @@ export class ArticleHeader extends LitElement {
 
     return html`
       <li class="metadata-item metadata-license">
-        <iconify-icon class="meta-icon" icon="lucide:scale" aria-hidden="true"></iconify-icon>
+        <ui-icon class="meta-icon" name="scale" aria-hidden="true"></ui-icon>
         <span>${license}</span>
       </li>
     `;
@@ -450,7 +451,7 @@ export class ArticleHeader extends LitElement {
     // `.status` クラスは既存の play() テストとの互換性のため保持。
     return html`
       <div class="status status-badge ${status.toneClass}" aria-label="ステータス: ${status.label}">
-        <iconify-icon class="meta-icon" icon="${status.icon}" aria-hidden="true"></iconify-icon>
+        <ui-icon class="meta-icon" name="${status.icon}" aria-hidden="true"></ui-icon>
         <span>${status.label}</span>
       </div>
     `;

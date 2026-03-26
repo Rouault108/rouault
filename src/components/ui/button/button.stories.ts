@@ -54,7 +54,7 @@ const meta: Meta<Button> = {
 
 <!-- アイコンのみ -->
 <ui-button icon-only aria-label="設定を開く">
-  <iconify-icon icon="lucide:settings"></iconify-icon>
+  <ui-icon name="settings"></ui-icon>
 </ui-button>
 
 <!-- ローディング状態 -->
@@ -519,13 +519,13 @@ export const WithIcon: Story = {
   },
   render: (args) => html`
     <style>
-      iconify-icon {
+      ui-icon {
         font-size: var(--icon-base, 16px);
       }
     </style>
 
     <ui-button variant="${args.variant}" size="${args.size}">
-      <iconify-icon icon="lucide:save"></iconify-icon>
+      <ui-icon name="save"></ui-icon>
       保存
     </ui-button>
   `,
@@ -558,7 +558,7 @@ export const IconOnly: Story = {
           ?icon-only="${a11yContract.iconOnly}"
           aria-label="${a11yContract.ariaLabel}"
         >
-          <iconify-icon icon="lucide:settings"></iconify-icon>
+          <ui-icon name="settings"></ui-icon>
         </ui-button>
       `;
     })()}
@@ -837,23 +837,23 @@ export const ToolbarExample: Story = {
         width: fit-content;
       }
 
-      iconify-icon {
+      ui-icon {
         font-size: var(--icon-base, 16px);
       }
     </style>
 
     <div class="toolbar-demo">
       <ui-button variant="ghost" icon-only aria-label="太字">
-        <iconify-icon icon="lucide:bold"></iconify-icon>
+        <ui-icon name="bold"></ui-icon>
       </ui-button>
       <ui-button variant="ghost" icon-only aria-label="イタリック">
-        <iconify-icon icon="lucide:italic"></iconify-icon>
+        <ui-icon name="italic"></ui-icon>
       </ui-button>
       <ui-button variant="ghost" icon-only aria-label="下線">
-        <iconify-icon icon="lucide:underline"></iconify-icon>
+        <ui-icon name="underline"></ui-icon>
       </ui-button>
       <ui-button variant="ghost" icon-only aria-label="リンク">
-        <iconify-icon icon="lucide:link"></iconify-icon>
+        <ui-icon name="link"></ui-icon>
       </ui-button>
     </div>
   `,
@@ -997,7 +997,7 @@ export const IconOnlyWithoutAriaLabel: Story = {
         color: var(--danger, #c00);
       }
 
-      iconify-icon {
+      ui-icon {
         font-size: var(--icon-base, 16px);
       }
     </style>
@@ -1008,7 +1008,7 @@ export const IconOnlyWithoutAriaLabel: Story = {
     </div>
 
     <ui-button variant="${args.variant}" size="${args.size}" ?icon-only="${args.iconOnly}">
-      <iconify-icon icon="lucide:settings"></iconify-icon>
+      <ui-icon name="settings"></ui-icon>
     </ui-button>
   `,
   parameters: {
@@ -1507,7 +1507,7 @@ export const DarkMode: Story = {
           <ui-button variant="primary" loading>Loading</ui-button>
           <ui-button variant="secondary" disabled>Disabled</ui-button>
           <ui-button variant="ghost" icon-only aria-label="設定">
-            <iconify-icon icon="lucide:settings"></iconify-icon>
+            <ui-icon name="settings"></ui-icon>
           </ui-button>
         </div>
       </div>

@@ -120,7 +120,7 @@ export class AboutPage extends LitElement {
                       href=${`#${section.id}`}
                       aria-label=${`「${section.heading}」への固定リンク`}
                     >
-                      <iconify-icon icon="lucide:link" aria-hidden="true"></iconify-icon>
+                      <ui-icon name="link" aria-hidden="true"></ui-icon>
                     </a>
                   </h2>
                 `,

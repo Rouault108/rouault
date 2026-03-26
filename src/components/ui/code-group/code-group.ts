@@ -1,7 +1,7 @@
 import { css, html, LitElement, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
-import '../../../lib/icons';
+import '../icon/icon.js';
 import '../codeblock/codeblock';
 import '../copy-button/copy-button';
 

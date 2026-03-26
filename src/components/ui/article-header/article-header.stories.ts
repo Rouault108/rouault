@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './article-header';
 import type { ArticleHeader, TagClickDetail } from './article-header';
+import { IconName } from '@/icons/catalog';
 
 const meta: Meta<ArticleHeader> = {
   title: 'Components/Article Header',
@@ -307,26 +308,26 @@ export const StatusStateMatrix: Story = {
     const checks: {
       id: string;
       toneClass: string;
-      icon: string;
+      icon: IconName;
       label: string;
     }[] = [
       {
         id: '#status-draft',
         toneClass: 'status-draft',
-        icon: 'lucide:file-dashed',
+        icon: 'file-pen',
         label: '下書き',
       },
       {
         id: '#status-archived',
         toneClass: 'status-archived',
-        icon: 'lucide:archive',
+        icon: 'archive',
         label: 'アーカイブ',
       },
-      { id: '#status-wip', toneClass: 'status-wip', icon: 'lucide:construction', label: '作業中' },
+      { id: '#status-wip', toneClass: 'status-wip', icon: 'construction', label: '作業中' },
       {
         id: '#status-deprecated',
         toneClass: 'status-deprecated',
-        icon: 'lucide:alert-triangle',
+        icon: 'alert-triangle',
         label: '非推奨',
       },
     ];
@@ -350,8 +351,8 @@ export const StatusStateMatrix: Story = {
         );
       }
 
-      const icon = status.querySelector('iconify-icon');
-      if (!icon) throw new Error(`${check.id} の iconify-icon が見つかりません`);
+      const icon = status.querySelector('ui-icon');
+      if (!icon) throw new Error(`${check.id} の ui-icon が見つかりません`);
       if (icon.getAttribute('icon') !== check.icon) {
         throw new Error(
           `${check.id} の icon 属性に "${check.icon}" を期待していましたが、実際には "${icon.getAttribute('icon') ?? 'null'}" でした`,

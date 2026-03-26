@@ -113,7 +113,7 @@ export class Breadcrumbs extends LitElement {
       flex-shrink: 0;
     }
 
-    .breadcrumb-ellipsis-button iconify-icon {
+    .breadcrumb-ellipsis-button ui-icon {
       width: var(--icon-base, 16px);
       height: var(--icon-base, 16px);
     }
@@ -298,7 +298,7 @@ export class Breadcrumbs extends LitElement {
   private _renderSeparator() {
     return html`
       <span class="breadcrumb-separator" aria-hidden="true">
-        <iconify-icon icon="lucide:chevron-right"></iconify-icon>
+        <ui-icon name="chevron-right"></ui-icon>
       </span>
     `;
   }
@@ -329,7 +329,7 @@ export class Breadcrumbs extends LitElement {
           class="breadcrumb-ellipsis-button"
           aria-label="中間ページを表示"
         >
-          <iconify-icon icon="lucide:more-horizontal" aria-hidden="true"></iconify-icon>
+          <ui-icon name="more-horizontal" aria-hidden="true"></ui-icon>
         </ui-button>
         ${map(
           hiddenItems,

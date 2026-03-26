@@ -7,7 +7,7 @@ import {
   findHeadingElement,
   revealHeadingInTabs,
 } from '../../lib/toc/filter-visible-headings.js';
-import '../../lib/icons';
+import '../ui/icon/icon.js';
 import '../ui/toc/toc';
 import type { Heading, UiTocActiveChangeDetail } from '../ui/toc/toc';
 
@@ -608,7 +608,7 @@ export class LayoutToc extends LitElement {
         ? html`
             <div class="mobile-bar">
               <a class="home-link" href=${this.homeHref} aria-label="ホームへ移動">
-                <iconify-icon icon="lucide:house"></iconify-icon>
+                <ui-icon name="house"></ui-icon>
               </a>
               <button
                 class="mobile-summary"
@@ -636,7 +636,7 @@ export class LayoutToc extends LitElement {
       <div class="mobile-panel" data-open=${String(this._panelOpen)}>
         <div class="mobile-panel-header">
           <button class="close-button" type="button" @click=${this._closeMobilePanel}>
-            <iconify-icon icon="lucide:x"></iconify-icon>
+            <ui-icon name="x"></ui-icon>
           </button>
         </div>
         <ui-toc

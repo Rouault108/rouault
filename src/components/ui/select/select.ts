@@ -11,7 +11,7 @@ import {
   size,
   type ComputePositionReturn,
 } from '@floating-ui/dom';
-import '../../../lib/icons';
+import '../icon/icon.js';
 
 // ============================================================
 // 型定義
@@ -575,11 +575,11 @@ export class Select extends LitElement {
           @blur="${this._handleBlur}"
         />
 
-        <iconify-icon
+        <ui-icon
           class="${classMap(chevronClasses)}"
-          icon="lucide:chevron-down"
+          name="chevron-down"
           aria-hidden="true"
-        ></iconify-icon>
+        ></ui-icon>
       </div>
 
       ${this.helpText && !hasError
@@ -825,8 +825,8 @@ export class Select extends LitElement {
     // チェックアイコン（選択済み項目）
     if (opt.value === this.modelValue) {
       const checkIcon = document.createElement('span');
-      const checkGlyph = document.createElement('iconify-icon');
-      checkGlyph.setAttribute('icon', 'lucide:check');
+      const checkGlyph = document.createElement('ui-icon');
+      checkGlyph.setAttribute('icon', 'check');
       checkGlyph.setAttribute('aria-hidden', 'true');
       checkIcon.setAttribute('aria-hidden', 'true');
       checkIcon.style.cssText = `

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
+import { COMPONENT_DEFINITIONS } from '../../src/client/component-manifest.js';
 import {
   SSR_NOTE_TARGET_TAGS,
-  SSR_SEARCH_TARGET_TAGS,
+  SSR_PAGE_TARGET_TAGS,
   SSR_TARGET_TAGS,
 } from '../../src/ssr/targets.js';
 
@@ -26,21 +27,28 @@ const REQUIRED_NOTE_CONTENT_TAGS = [
   'ui-translation',
 ] as const;
 
-describe('ssr targets', () => {
+describe('component manifest / ssr targets', () => {
+  it('component manifest の tag が重複しないこと', () => {
+    const tags = COMPONENT_DEFINITIONS.map((definition) => definition.tag);
+    expect(tags).toEqual([...new Set(tags)]);
+  });
+
   it('ノート本文由来の UI タグを note target に含めること', () => {
     for (const tagName of REQUIRED_NOTE_CONTENT_TAGS) {
       expect(SSR_NOTE_TARGET_TAGS).toContain(tagName);
     }
   });
 
-  it('note target の UI タグを SSR target 全体にも含めること', () => {
+  it('SSR target 全体に note target を含めること', () => {
     for (const tagName of REQUIRED_NOTE_CONTENT_TAGS) {
       expect(SSR_TARGET_TAGS).toContain(tagName);
     }
   });
 
-  it('独立ページ系 UI タグを search target に含めること', () => {
-    expect(SSR_SEARCH_TARGET_TAGS).toContain('not-found-page');
-    expect(SSR_TARGET_TAGS).toContain('not-found-page');
+  it('独立ページ系 UI タグを page target に含めること', () => {
+    expect(SSR_PAGE_TARGET_TAGS).toContain('about-page');
+    expect(SSR_PAGE_TARGET_TAGS).toContain('search-page');
+    expect(SSR_PAGE_TARGET_TAGS).toContain('tag-page');
+    expect(SSR_PAGE_TARGET_TAGS).toContain('not-found-page');
   });
 });

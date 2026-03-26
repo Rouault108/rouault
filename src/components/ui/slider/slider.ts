@@ -61,8 +61,8 @@ import { customElement, property, state } from 'lit/decorators.js';
  *
  * <!-- prefix/suffix スロット -->
  * <ui-slider label="明るさ" min="0" max="100" value="70">
- *   <iconify-icon slot="prefix" icon="lucide:moon" aria-hidden="true"></iconify-icon>
- *   <iconify-icon slot="suffix" icon="lucide:sun" aria-hidden="true"></iconify-icon>
+ *   <ui-icon slot="prefix" name="moon" aria-hidden="true"></ui-icon>
+ *   <ui-icon slot="suffix" name="sun" aria-hidden="true"></ui-icon>
  * </ui-slider>
  *
  * <!-- 無効 -->

@@ -100,7 +100,7 @@ export class SearchTrigger extends LitElement {
       color: var(--fg-muted, oklch(48% 0 0));
     }
 
-    .icon iconify-icon {
+    .icon ui-icon {
       display: block;
       inline-size: 100%;
       block-size: 100%;
@@ -266,7 +266,7 @@ export class SearchTrigger extends LitElement {
         @click=${this._handleActivate}
       >
         <span class="icon" part="icon" aria-hidden="true">
-          <iconify-icon icon="lucide:search" aria-hidden="true"></iconify-icon>
+          <ui-icon name="search" aria-hidden="true"></ui-icon>
         </span>
         <span class="placeholder" part="placeholder" aria-hidden="true">${this._normalizedPlaceholder}</span>
       </button>

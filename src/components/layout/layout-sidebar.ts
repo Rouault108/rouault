@@ -1,6 +1,6 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
-import '../../lib/icons';
+import '../ui/icon/icon';
 import '../ui/sidebar/sidebar';
 import type { TreeNode } from '../ui/file-tree/file-tree';
 import type { UiSidebar, UiSidebarToggleDetail } from '../ui/sidebar/sidebar';
@@ -23,6 +23,15 @@ const toOptionalString = (value: unknown): string | undefined => {
   return normalized.length > 0 ? normalized : undefined;
 };
 
+type BranchTreeNode = Extract<TreeNode, { kind: 'branch' }>;
+type LeafTreeNode = Extract<TreeNode, { kind: 'leaf' }>;
+type TreeIcon = NonNullable<TreeNode['icon']>;
+
+const toOptionalTreeIcon = (value: unknown): TreeIcon | undefined => {
+  const normalized = toOptionalString(value);
+  return normalized === undefined ? undefined : (normalized as TreeIcon);
+};
+
 const toTreeNode = (value: unknown): TreeNode | null => {
   if (!isRecord(value)) {
     return null;
@@ -40,7 +49,7 @@ const toTreeNode = (value: unknown): TreeNode | null => {
         .map((item) => toTreeNode(item))
         .filter((item): item is TreeNode => item !== null)
     : [];
-  const icon = toOptionalString(value['icon']);
+  const icon = toOptionalTreeIcon(value['icon']);
   const href = toOptionalString(value['href']);
 
   if (children.length > 0 && href) {
@@ -48,26 +57,32 @@ const toTreeNode = (value: unknown): TreeNode | null => {
   }
 
   if (children.length > 0) {
-    return {
+    const node: BranchTreeNode = {
       kind: 'branch',
       id,
       label,
-      ...(icon ? { icon } : {}),
       children,
     };
+    if (icon !== undefined) {
+      node.icon = icon;
+    }
+    return node;
   }
 
   if (!href) {
     return null;
   }
 
-  return {
+  const node: LeafTreeNode = {
     kind: 'leaf',
     id,
     label,
-    ...(icon ? { icon } : {}),
     href,
   };
+  if (icon !== undefined) {
+    node.icon = icon;
+  }
+  return node;
 };
 
 @customElement('layout-sidebar')
@@ -103,7 +118,7 @@ export class LayoutSidebar extends LitElement {
       cursor: pointer;
     }
 
-    .floating-toggle iconify-icon {
+    .floating-toggle ui-icon {
       font-size: 18px;
     }
 
@@ -328,7 +343,7 @@ export class LayoutSidebar extends LitElement {
         aria-label="サイドバーを開閉"
         @click=${this._onToggleButtonClick}
       >
-        <iconify-icon icon="lucide:panel-left"></iconify-icon>
+        <ui-icon name="panel-left"></ui-icon>
       </button>
     `;
   }

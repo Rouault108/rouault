@@ -93,7 +93,7 @@ export class CopyButton extends LitElement {
       height: var(--_copy-button-icon-size);
     }
 
-    iconify-icon {
+    ui-icon {
       font-size: var(--_copy-button-icon-size);
       transition:
         color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
@@ -101,20 +101,20 @@ export class CopyButton extends LitElement {
     }
 
     /* Icon Color States */
-    :host([state='idle']) iconify-icon {
+    :host([state='idle']) ui-icon {
       color: var(--fg-muted, oklch(48% 0 0));
     }
 
-    :host([state='success']) iconify-icon {
+    :host([state='success']) ui-icon {
       color: var(--fg-success, var(--success, oklch(60% 0.15 160)));
     }
 
-    :host([state='error']) iconify-icon {
+    :host([state='error']) ui-icon {
       color: var(--fg-danger, var(--danger, oklch(55% 0.2 28)));
     }
 
     /* Icon Swap with Snappy Scale */
-    ui-button:active iconify-icon {
+    ui-button:active ui-icon {
       transform: scale(var(--_copy-button-scale-pressed));
     }
 
@@ -165,7 +165,7 @@ export class CopyButton extends LitElement {
 
     /* Motion Reduction: アニメーションを即時完了 */
     @media (prefers-reduced-motion: reduce) {
-      iconify-icon {
+      ui-icon {
         transition-duration: 0.01ms;
       }
 
@@ -181,7 +181,7 @@ export class CopyButton extends LitElement {
         border: var(--border-width, 1px) solid CanvasText;
       }
 
-      :host([state='success']) iconify-icon {
+      :host([state='success']) ui-icon {
         color: Highlight;
       }
 
@@ -190,7 +190,7 @@ export class CopyButton extends LitElement {
         outline-offset: -2px;
       }
 
-      :host([state='error']) iconify-icon {
+      :host([state='error']) ui-icon {
         color: CanvasText;
       }
     }
@@ -402,16 +402,16 @@ export class CopyButton extends LitElement {
    */
   private get _icon(): string {
     if (this._isCopyingVisible) {
-      return 'lucide:loader-circle';
+      return 'loader-circle';
     }
 
     switch (this._internalState) {
       case 'success':
-        return 'lucide:check';
+        return 'check';
       case 'error':
-        return 'lucide:alert-triangle';
+        return 'alert-triangle';
       default:
-        return 'lucide:copy';
+        return 'copy';
     }
   }
 
@@ -539,7 +539,7 @@ export class CopyButton extends LitElement {
         @click="${this._handleCopy}"
       >
         <span class="copy-button-icon-container">
-          <iconify-icon icon="${this._icon}" aria-hidden="true"></iconify-icon>
+          <ui-icon name="${this._icon}" aria-hidden="true"></ui-icon>
         </span>
       </ui-button>
 

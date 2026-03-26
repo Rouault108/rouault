@@ -42,11 +42,11 @@ const meta: Meta<TreeItem> = {
 
 \`\`\`html
 <!-- 単独アイテム -->
-<ui-tree-item label="ファイル.txt" icon="lucide:file"></ui-tree-item>
+<ui-tree-item label="ファイル.txt" icon="file"></ui-tree-item>
 
 <!-- ネスト構造 -->
-<ui-tree-item label="フォルダ" icon="lucide:folder" expanded>
-  <ui-tree-item slot="children" label="サブファイル.txt" icon="lucide:file"></ui-tree-item>
+<ui-tree-item label="フォルダ" icon="folder" expanded>
+  <ui-tree-item slot="children" label="サブファイル.txt" icon="file"></ui-tree-item>
 </ui-tree-item>
 
 <!-- Compact密度 -->
@@ -94,7 +94,7 @@ const meta: Meta<TreeItem> = {
     },
     icon: {
       control: 'text',
-      description: 'コンテンツアイコン（例: "lucide:folder", "lucide:file"）',
+      description: 'コンテンツアイコン（例: "folder", "file"）',
       table: {
         type: { summary: 'string' },
       },
@@ -141,7 +141,7 @@ const getTooltipPanel = (host: HTMLElement): HTMLElement => {
 export const Default: Story = {
   args: {
     label: 'ファイル.txt',
-    icon: 'lucide:file',
+    icon: 'file',
     density: 'normal',
     selected: false,
     expanded: false,
@@ -231,12 +231,12 @@ export const AllDensities: Story = {
     <div class="density-showcase">
       <div class="density-group">
         <span class="density-label">Normal (32px) - 標準サイズ</span>
-        <ui-tree-item label="ドキュメント" icon="lucide:file-text" density="normal"></ui-tree-item>
+        <ui-tree-item label="ドキュメント" icon="file-text" density="normal"></ui-tree-item>
       </div>
 
       <div class="density-group">
         <span class="density-label">Compact (24px) - 高密度表示</span>
-        <ui-tree-item label="ドキュメント" icon="lucide:file-text" density="compact"></ui-tree-item>
+        <ui-tree-item label="ドキュメント" icon="file-text" density="compact"></ui-tree-item>
       </div>
     </div>
   `,
@@ -287,7 +287,7 @@ export const AllDensities: Story = {
 export const Selected: Story = {
   args: {
     label: 'README.md',
-    icon: 'lucide:file-text',
+    icon: 'file-text',
     selected: true,
   },
   render: (args) => html`
@@ -325,10 +325,10 @@ export const Selected: Story = {
  */
 export const WithChildren: Story = {
   render: () => html`
-    <ui-tree-item label="src" icon="lucide:folder" expanded>
-      <ui-tree-item slot="children" label="components" icon="lucide:folder"></ui-tree-item>
-      <ui-tree-item slot="children" label="utils" icon="lucide:folder"></ui-tree-item>
-      <ui-tree-item slot="children" label="index.ts" icon="lucide:file-code"></ui-tree-item>
+    <ui-tree-item label="src" icon="folder" expanded>
+      <ui-tree-item slot="children" label="components" icon="folder"></ui-tree-item>
+      <ui-tree-item slot="children" label="utils" icon="folder"></ui-tree-item>
+      <ui-tree-item slot="children" label="index.ts" icon="file-code"></ui-tree-item>
     </ui-tree-item>
   `,
   play: async ({ canvasElement }) => {
@@ -365,17 +365,17 @@ export const WithChildren: Story = {
  */
 export const DeepNesting: Story = {
   render: () => html`
-    <ui-tree-item label="プロジェクト" icon="lucide:folder" expanded>
-      <ui-tree-item slot="children" label="src" icon="lucide:folder" expanded>
-        <ui-tree-item slot="children" label="components" icon="lucide:folder" expanded>
-          <ui-tree-item slot="children" label="button.ts" icon="lucide:file-code"></ui-tree-item>
-          <ui-tree-item slot="children" label="input.ts" icon="lucide:file-code"></ui-tree-item>
+    <ui-tree-item label="プロジェクト" icon="folder" expanded>
+      <ui-tree-item slot="children" label="src" icon="folder" expanded>
+        <ui-tree-item slot="children" label="components" icon="folder" expanded>
+          <ui-tree-item slot="children" label="button.ts" icon="file-code"></ui-tree-item>
+          <ui-tree-item slot="children" label="input.ts" icon="file-code"></ui-tree-item>
         </ui-tree-item>
-        <ui-tree-item slot="children" label="utils" icon="lucide:folder">
-          <ui-tree-item slot="children" label="helpers.ts" icon="lucide:file-code"></ui-tree-item>
+        <ui-tree-item slot="children" label="utils" icon="folder">
+          <ui-tree-item slot="children" label="helpers.ts" icon="file-code"></ui-tree-item>
         </ui-tree-item>
       </ui-tree-item>
-      <ui-tree-item slot="children" label="README.md" icon="lucide:file-text"></ui-tree-item>
+      <ui-tree-item slot="children" label="README.md" icon="file-text"></ui-tree-item>
     </ui-tree-item>
   `,
   play: async ({ canvasElement }) => {
@@ -425,9 +425,9 @@ export const DeepNesting: Story = {
  */
 export const Collapsed: Story = {
   render: () => html`
-    <ui-tree-item label="node_modules" icon="lucide:folder" ?expanded="${false}">
-      <ui-tree-item slot="children" label="react" icon="lucide:folder"></ui-tree-item>
-      <ui-tree-item slot="children" label="vue" icon="lucide:folder"></ui-tree-item>
+    <ui-tree-item label="node_modules" icon="folder" ?expanded="${false}">
+      <ui-tree-item slot="children" label="react" icon="folder"></ui-tree-item>
+      <ui-tree-item slot="children" label="vue" icon="folder"></ui-tree-item>
     </ui-tree-item>
   `,
   play: async ({ canvasElement }) => {
@@ -467,10 +467,10 @@ export const Collapsed: Story = {
  */
 export const SelectedAndExpanded: Story = {
   render: () => html`
-    <ui-tree-item label="components" icon="lucide:folder" selected expanded>
-      <ui-tree-item slot="children" label="button.ts" icon="lucide:file-code"></ui-tree-item>
-      <ui-tree-item slot="children" label="input.ts" icon="lucide:file-code"></ui-tree-item>
-      <ui-tree-item slot="children" label="tree-item.ts" icon="lucide:file-code"></ui-tree-item>
+    <ui-tree-item label="components" icon="folder" selected expanded>
+      <ui-tree-item slot="children" label="button.ts" icon="file-code"></ui-tree-item>
+      <ui-tree-item slot="children" label="input.ts" icon="file-code"></ui-tree-item>
+      <ui-tree-item slot="children" label="tree-item.ts" icon="file-code"></ui-tree-item>
     </ui-tree-item>
   `,
   play: async ({ canvasElement }) => {
@@ -505,17 +505,17 @@ export const SelectedAndExpanded: Story = {
  */
 export const CompactSelectedExpanded: Story = {
   render: () => html`
-    <ui-tree-item label="components" icon="lucide:folder" density="compact" selected expanded>
+    <ui-tree-item label="components" icon="folder" density="compact" selected expanded>
       <ui-tree-item
         slot="children"
         label="button.ts"
-        icon="lucide:file-code"
+        icon="file-code"
         density="compact"
       ></ui-tree-item>
       <ui-tree-item
         slot="children"
         label="input.ts"
-        icon="lucide:file-code"
+        icon="file-code"
         density="compact"
       ></ui-tree-item>
     </ui-tree-item>
@@ -563,7 +563,7 @@ export const LongLabel: Story = {
     <div class="container">
       <ui-tree-item
         label="これは非常に長いファイル名でコンテナの幅を超える可能性があります.tsx"
-        icon="lucide:file-code"
+        icon="file-code"
       ></ui-tree-item>
     </div>
   `,
@@ -641,7 +641,7 @@ export const NoIcon: Story = {
 export const CustomIconSlot: Story = {
   render: () => html`
     <ui-tree-item label="カスタムアイコン">
-      <iconify-icon slot="icon" icon="lucide:star" style="color: gold;"></iconify-icon>
+      <ui-icon slot="icon" name="star" style="color: gold;"></ui-icon>
     </ui-tree-item>
   `,
 };
@@ -652,7 +652,7 @@ export const CustomIconSlot: Story = {
  * 子要素がない場合、展開アイコンは非表示になります（スペースは維持）。
  */
 export const LeafNode: Story = {
-  render: () => html` <ui-tree-item label="index.ts" icon="lucide:file-code"></ui-tree-item> `,
+  render: () => html` <ui-tree-item label="index.ts" icon="file-code"></ui-tree-item> `,
   play: async ({ canvasElement }) => {
     const treeItem = canvasElement.querySelector('ui-tree-item');
     if (!treeItem) {
@@ -706,9 +706,9 @@ export const KeyboardInteraction: Story = {
       </p>
     </div>
 
-    <ui-tree-item id="keyboard-test-item" label="components" icon="lucide:folder">
-      <ui-tree-item slot="children" label="button.ts" icon="lucide:file-code"></ui-tree-item>
-      <ui-tree-item slot="children" label="input.ts" icon="lucide:file-code"></ui-tree-item>
+    <ui-tree-item id="keyboard-test-item" label="components" icon="folder">
+      <ui-tree-item slot="children" label="button.ts" icon="file-code"></ui-tree-item>
+      <ui-tree-item slot="children" label="input.ts" icon="file-code"></ui-tree-item>
     </ui-tree-item>
   `,
   play: async ({ canvasElement }) => {
@@ -852,8 +852,8 @@ export const ClickInteraction: Story = {
       </ul>
     </div>
 
-    <ui-tree-item id="click-test-item" label="src" icon="lucide:folder">
-      <ui-tree-item slot="children" label="index.ts" icon="lucide:file-code"></ui-tree-item>
+    <ui-tree-item id="click-test-item" label="src" icon="folder">
+      <ui-tree-item slot="children" label="index.ts" icon="file-code"></ui-tree-item>
     </ui-tree-item>
   `,
   play: async ({ canvasElement }) => {
@@ -951,7 +951,7 @@ export const FocusState: Story = {
       <ui-tree-item
         id="focus-test-item"
         label="README.md"
-        icon="lucide:file-text"
+        icon="file-text"
         selected
       ></ui-tree-item>
     </div>
@@ -1017,9 +1017,9 @@ export const CompactDensityTouchTarget: Story = {
     </div>
 
     <div class="touch-showcase">
-      <ui-tree-item label="アイテム 1" icon="lucide:file" density="compact"></ui-tree-item>
-      <ui-tree-item label="アイテム 2" icon="lucide:file" density="compact"></ui-tree-item>
-      <ui-tree-item label="アイテム 3" icon="lucide:file" density="compact"></ui-tree-item>
+      <ui-tree-item label="アイテム 1" icon="file" density="compact"></ui-tree-item>
+      <ui-tree-item label="アイテム 2" icon="file" density="compact"></ui-tree-item>
+      <ui-tree-item label="アイテム 3" icon="file" density="compact"></ui-tree-item>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -1091,12 +1091,12 @@ export const ForcedColorsMode: Story = {
       </p>
     </div>
 
-    <ui-tree-item label="src" icon="lucide:folder" expanded>
-      <ui-tree-item slot="children" label="components" icon="lucide:folder" selected>
-        <ui-tree-item slot="children" label="button.ts" icon="lucide:file-code"></ui-tree-item>
+    <ui-tree-item label="src" icon="folder" expanded>
+      <ui-tree-item slot="children" label="components" icon="folder" selected>
+        <ui-tree-item slot="children" label="button.ts" icon="file-code"></ui-tree-item>
       </ui-tree-item>
-      <ui-tree-item slot="children" label="utils" icon="lucide:folder">
-        <ui-tree-item slot="children" label="helpers.ts" icon="lucide:file-code"></ui-tree-item>
+      <ui-tree-item slot="children" label="utils" icon="folder">
+        <ui-tree-item slot="children" label="helpers.ts" icon="file-code"></ui-tree-item>
       </ui-tree-item>
     </ui-tree-item>
   `,
@@ -1174,9 +1174,9 @@ export const ReducedMotion: Story = {
     </div>
 
     <div class="reduced-motion-showcase">
-      <ui-tree-item label="アニメーションテスト" icon="lucide:folder">
-        <ui-tree-item slot="children" label="ファイル1.ts" icon="lucide:file-code"></ui-tree-item>
-        <ui-tree-item slot="children" label="ファイル2.ts" icon="lucide:file-code"></ui-tree-item>
+      <ui-tree-item label="アニメーションテスト" icon="folder">
+        <ui-tree-item slot="children" label="ファイル1.ts" icon="file-code"></ui-tree-item>
+        <ui-tree-item slot="children" label="ファイル2.ts" icon="file-code"></ui-tree-item>
       </ui-tree-item>
     </div>
   `,
@@ -1241,14 +1241,14 @@ export const DarkSurfaceContrast: Story = {
       }
     </style>
     <div class="dark-surface">
-      <ui-tree-item label="src" icon="lucide:folder" expanded>
+      <ui-tree-item label="src" icon="folder" expanded>
         <ui-tree-item
           slot="children"
           label="components"
-          icon="lucide:folder"
+          icon="folder"
           selected
         ></ui-tree-item>
-        <ui-tree-item slot="children" label="README.md" icon="lucide:file-text"></ui-tree-item>
+        <ui-tree-item slot="children" label="README.md" icon="file-text"></ui-tree-item>
       </ui-tree-item>
     </div>
   `,
@@ -1284,41 +1284,41 @@ export const RealWorldFileTree: Story = {
     </style>
 
     <div class="file-tree-demo">
-      <ui-tree-item label="my-project" icon="lucide:folder" expanded>
-        <ui-tree-item slot="children" label="src" icon="lucide:folder" expanded>
-          <ui-tree-item slot="children" label="components" icon="lucide:folder" expanded>
-            <ui-tree-item slot="children" label="ui" icon="lucide:folder">
+      <ui-tree-item label="my-project" icon="folder" expanded>
+        <ui-tree-item slot="children" label="src" icon="folder" expanded>
+          <ui-tree-item slot="children" label="components" icon="folder" expanded>
+            <ui-tree-item slot="children" label="ui" icon="folder">
               <ui-tree-item
                 slot="children"
                 label="button.ts"
-                icon="lucide:file-code"
+                icon="file-code"
               ></ui-tree-item>
-              <ui-tree-item slot="children" label="input.ts" icon="lucide:file-code"></ui-tree-item>
+              <ui-tree-item slot="children" label="input.ts" icon="file-code"></ui-tree-item>
               <ui-tree-item
                 slot="children"
                 label="tree-item.ts"
-                icon="lucide:file-code"
+                icon="file-code"
                 selected
               ></ui-tree-item>
             </ui-tree-item>
           </ui-tree-item>
-          <ui-tree-item slot="children" label="utils" icon="lucide:folder">
-            <ui-tree-item slot="children" label="helpers.ts" icon="lucide:file-code"></ui-tree-item>
+          <ui-tree-item slot="children" label="utils" icon="folder">
+            <ui-tree-item slot="children" label="helpers.ts" icon="file-code"></ui-tree-item>
             <ui-tree-item
               slot="children"
               label="validators.ts"
-              icon="lucide:file-code"
+              icon="file-code"
             ></ui-tree-item>
           </ui-tree-item>
-          <ui-tree-item slot="children" label="index.ts" icon="lucide:file-code"></ui-tree-item>
+          <ui-tree-item slot="children" label="index.ts" icon="file-code"></ui-tree-item>
         </ui-tree-item>
-        <ui-tree-item slot="children" label="public" icon="lucide:folder">
-          <ui-tree-item slot="children" label="favicon.ico" icon="lucide:file-image"></ui-tree-item>
-          <ui-tree-item slot="children" label="index.html" icon="lucide:file-code"></ui-tree-item>
+        <ui-tree-item slot="children" label="public" icon="folder">
+          <ui-tree-item slot="children" label="favicon.ico" icon="file-image"></ui-tree-item>
+          <ui-tree-item slot="children" label="index.html" icon="file-code"></ui-tree-item>
         </ui-tree-item>
-        <ui-tree-item slot="children" label="package.json" icon="lucide:file-code"></ui-tree-item>
-        <ui-tree-item slot="children" label="README.md" icon="lucide:file-text"></ui-tree-item>
-        <ui-tree-item slot="children" label="tsconfig.json" icon="lucide:file-code"></ui-tree-item>
+        <ui-tree-item slot="children" label="package.json" icon="file-code"></ui-tree-item>
+        <ui-tree-item slot="children" label="README.md" icon="file-text"></ui-tree-item>
+        <ui-tree-item slot="children" label="tsconfig.json" icon="file-code"></ui-tree-item>
       </ui-tree-item>
     </div>
   `,
@@ -1336,7 +1336,7 @@ export const NavigableRowActivation: Story = {
   render: () => html`
     <ui-tree-item
       label="ソートアルゴリズム比較"
-      icon="lucide:file-text"
+      icon="file-text"
       href="/notes/computer-science/algorithms/sorting"
     ></ui-tree-item>
   `,

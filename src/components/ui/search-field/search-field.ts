@@ -3,7 +3,7 @@ import { customElement, property, query } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { live } from 'lit/directives/live.js';
-import '../../../lib/icons';
+import '../icon/icon.js';
 
 let searchFieldInstanceCounter = 0;
 
@@ -113,7 +113,7 @@ export class SearchField extends LitElement {
       pointer-events: none;
     }
 
-    .icon iconify-icon {
+    .icon ui-icon {
       inline-size: var(--icon-md, 18px);
       block-size: var(--icon-md, 18px);
       font-size: var(--icon-md, 18px);
@@ -224,7 +224,7 @@ export class SearchField extends LitElement {
       animation: var(--animation-focus, none);
     }
 
-    .clear-button iconify-icon {
+    .clear-button ui-icon {
       inline-size: var(--icon-sm, 14px);
       block-size: var(--icon-sm, 14px);
       font-size: var(--icon-sm, 14px);
@@ -428,7 +428,7 @@ export class SearchField extends LitElement {
 
       <div class="field">
         <span class="icon" aria-hidden="true">
-          <iconify-icon icon="lucide:search"></iconify-icon>
+          <ui-icon name="search"></ui-icon>
         </span>
 
         <input
@@ -464,7 +464,7 @@ export class SearchField extends LitElement {
           ?hidden=${!this.clearButtonVisible}
           @click=${this._handleClearClick}
         >
-          <iconify-icon icon="lucide:circle-x" aria-hidden="true"></iconify-icon>
+          <ui-icon name="circle-x" aria-hidden="true"></ui-icon>
         </button>
       </div>
     `;

@@ -120,7 +120,7 @@ export const defineButtonA11yContract = <T extends ButtonA11yContract>(contract:
  *
  * <!-- アイコンのみ -->
  * <ui-button icon-only aria-label="設定を開く">
- *   <iconify-icon icon="lucide:settings"></iconify-icon>
+ *   <ui-icon name="settings"></ui-icon>
  * </ui-button>
  *
  * <!-- ローディング状態 -->
@@ -354,7 +354,7 @@ export class Button extends LitElement {
       gap: inherit;
     }
 
-    .content-slot::slotted(iconify-icon),
+    .content-slot::slotted(ui-icon),
     .content-slot::slotted(svg) {
       inline-size: var(--button-icon-size);
       block-size: var(--button-icon-size);

@@ -395,7 +395,7 @@ ui-article-header + .prose {
     color var(--duration-fast) var(--ease-out);
 }
 
-:is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id] > .heading-anchor > iconify-icon {
+:is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id] > .heading-anchor > ui-icon {
   display: block;
   inline-size: 1em;
   block-size: 1em;

@@ -739,19 +739,19 @@ export class List extends LitElement {
     const sortKey = column.sortKey ?? column.id;
     const currentSort = this._resolvedSort;
     if (currentSort.key === sortKey) {
-      const icon = currentSort.direction === 'asc' ? 'lucide:chevron-up' : 'lucide:chevron-down';
-      return html`<iconify-icon
-        icon="${icon}"
+      const icon = currentSort.direction === 'asc' ? 'chevron-up' : 'chevron-down';
+      return html`<ui-icon
+        name="${icon}"
         style="font-size: var(--icon-sm, 14px);"
         aria-hidden="true"
-      ></iconify-icon>`;
+      ></ui-icon>`;
     }
 
-    return html`<iconify-icon
-      icon="lucide:chevrons-up-down"
+    return html`<ui-icon
+      name="chevrons-up-down"
       style="font-size: var(--icon-sm, 14px); opacity: 0.4;"
       aria-hidden="true"
-    ></iconify-icon>`;
+    ></ui-icon>`;
   }
 
   override render(): TemplateResult {

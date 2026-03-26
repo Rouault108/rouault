@@ -1,6 +1,6 @@
 import { css, html, LitElement, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import 'iconify-icon';
+import 'ui-icon';
 
 type PaginationMode = 'regular' | 'compact';
 type RangeItem = number | 'ellipsis';
@@ -293,7 +293,7 @@ export class Pagination extends LitElement {
 
     /* ====== アイコン ====== */
 
-    iconify-icon {
+    ui-icon {
       font-size: var(--icon-base, 16px);
       width: var(--icon-base, 16px);
       height: var(--icon-base, 16px);
@@ -433,7 +433,7 @@ export class Pagination extends LitElement {
       return html`
         <li class="item">
           <span class="nav-btn" aria-disabled="true" aria-label="前のページへ移動">
-            <iconify-icon icon="lucide:chevron-left" aria-hidden="true"></iconify-icon>
+            <ui-icon name="chevron-left" aria-hidden="true"></ui-icon>
           </span>
         </li>
       `;
@@ -441,7 +441,7 @@ export class Pagination extends LitElement {
     return html`
       <li class="item">
         <a class="nav-btn" href="${getHref(current - 1)}" aria-label="前のページへ移動">
-          <iconify-icon icon="lucide:chevron-left" aria-hidden="true"></iconify-icon>
+          <ui-icon name="chevron-left" aria-hidden="true"></ui-icon>
         </a>
       </li>
     `;
@@ -458,7 +458,7 @@ export class Pagination extends LitElement {
       return html`
         <li class="item">
           <span class="nav-btn" aria-disabled="true" aria-label="次のページへ移動">
-            <iconify-icon icon="lucide:chevron-right" aria-hidden="true"></iconify-icon>
+            <ui-icon name="chevron-right" aria-hidden="true"></ui-icon>
           </span>
         </li>
       `;
@@ -466,7 +466,7 @@ export class Pagination extends LitElement {
     return html`
       <li class="item">
         <a class="nav-btn" href="${getHref(current + 1)}" aria-label="次のページへ移動">
-          <iconify-icon icon="lucide:chevron-right" aria-hidden="true"></iconify-icon>
+          <ui-icon name="chevron-right" aria-hidden="true"></ui-icon>
         </a>
       </li>
     `;

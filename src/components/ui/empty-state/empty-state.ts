@@ -1,7 +1,7 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
-import '../../../lib/icons';
+import '../icon/icon.js';
 
 export type EmptyStateVariant = 'default' | 'search' | 'error';
 export type EmptyStateAnnounce = 'off' | 'polite';

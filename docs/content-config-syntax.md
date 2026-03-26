@@ -20,7 +20,7 @@
   "order": ["classical", "jazz"],
   "sidebar": {
     "scope": "self",
-    "icon": "lucide:folder"
+    "icon": "folder"
   }
 }
 ```
@@ -72,7 +72,7 @@
 {
   "sidebar": {
     "scope": "self",
-    "icon": "lucide:folder-open"
+    "icon": "folder-open"
   }
 }
 ```
@@ -110,7 +110,7 @@
 ```json
 {
   "sidebar": {
-    "icon": "lucide:music"
+    "icon": "music"
   }
 }
 ```
@@ -119,15 +119,15 @@
 
 | 値                                  | 内容                                              |
 | ----------------------------------- | ------------------------------------------------- |
-| `lucide:music` など任意のアイコン名 | その名前のアイコンを使う                          |
-| `folder`                            | ディレクトリ用既定アイコン `lucide:folder` を使う |
+| `music` など任意のアイコン名 | その名前のアイコンを使う                          |
+| `folder`                            | ディレクトリ用既定アイコン `folder` を使う |
 | `none`                              | ディレクトリ既定アイコンを消す                    |
 
 補足:
 
 - ノート個別の frontmatter に `sidebarIcon` がある場合は、そちらが優先される
 - ノート個別で `sidebarIcon` を省略した場合は `none` 扱いとなり、ディレクトリ側のアイコンは引き継がれない
-- ノート側では `sidebarIcon: file` を使うと `lucide:file-text` になる
+- ノート側では `sidebarIcon: file` を使うと `file-text` になる
 - ディレクトリ側の `icon` で `file` は特別扱いされない
 
 ## 実例

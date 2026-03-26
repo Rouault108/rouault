@@ -213,10 +213,10 @@ status は現行契約では単一の読者向け注意状態として扱いま�
 
 | `status` 値  | 表示ラベル | アイコン                | トーンクラス        |
 | ------------ | ---------- | ----------------------- | ------------------- |
-| `draft`      | 下書き     | `lucide:file-dashed`    | `status-draft`      |
-| `archived`   | アーカイブ | `lucide:archive`        | `status-archived`   |
-| `wip`        | 作業中     | `lucide:construction`   | `status-wip`        |
-| `deprecated` | 非推奨     | `lucide:alert-triangle` | `status-deprecated` |
+| `draft`      | 下書き     | `file-pen`    | `status-draft`      |
+| `archived`   | アーカイブ | `archive`        | `status-archived`   |
+| `wip`        | 作業中     | `construction`   | `status-wip`        |
+| `deprecated` | 非推奨     | `alert-triangle` | `status-deprecated` |
 
 未知の値は描画しません。
 

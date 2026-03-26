@@ -10,7 +10,7 @@ const createLeaf = (id: string, label: string, href: string): TreeNode => ({
   id,
   label,
   href,
-  icon: 'lucide:file-text',
+  icon: 'file-text',
 });
 
 const sampleItems: readonly TreeNode[] = [
@@ -18,7 +18,7 @@ const sampleItems: readonly TreeNode[] = [
     kind: 'branch',
     id: 'notes',
     label: 'Notes',
-    icon: 'lucide:folder',
+    icon: 'folder',
     children: [
       createLeaf('notes/reading', '読書メモ.md', '/notes/reading'),
       createLeaf('notes/ideas', 'アイデア.md', '/notes/ideas'),
@@ -28,7 +28,7 @@ const sampleItems: readonly TreeNode[] = [
     kind: 'branch',
     id: 'daily',
     label: 'Daily',
-    icon: 'lucide:folder',
+    icon: 'folder',
     children: [createLeaf('daily/2026-03-24', '2026-03-24.md', '/daily/2026-03-24')],
   },
 ];

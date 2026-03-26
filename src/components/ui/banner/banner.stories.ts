@@ -13,10 +13,10 @@ const ROLE_BY_VARIANT: Record<BannerVariant, 'status' | 'alert'> = {
 };
 
 const ICON_BY_VARIANT: Record<BannerVariant, string> = {
-  info: 'lucide:info',
-  warning: 'lucide:triangle-alert',
-  error: 'lucide:circle-x',
-  success: 'lucide:circle-check',
+  info: 'info',
+  warning: 'triangle-alert',
+  error: 'circle-x',
+  success: 'circle-check',
 };
 
 const waitFrame = async (): Promise<void> =>
@@ -83,8 +83,8 @@ const getIconSlot = (host: Banner): HTMLSlotElement => {
 };
 
 const getFallbackIcon = (host: Banner): HTMLElement => {
-  const fallback = host.shadowRoot?.querySelector<HTMLElement>('iconify-icon.fallback-icon');
-  if (!fallback) throw new Error('iconify-icon.fallback-icon が見つかりません');
+  const fallback = host.shadowRoot?.querySelector<HTMLElement>('ui-icon.fallback-icon');
+  if (!fallback) throw new Error('ui-icon.fallback-icon が見つかりません');
   return fallback;
 };
 
@@ -371,7 +371,7 @@ export const SlotBoundaryConditions: Story = {
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-banner id="slot-custom-icon" variant="info">
-        <iconify-icon slot="icon" icon="lucide:calendar-clock" aria-hidden="true"></iconify-icon>
+        <ui-icon name="icon" icon="calendar-clock" aria-hidden="true"></ui-icon>
         計画メンテナンスは明日0時に開始します。
       </ui-banner>
 
@@ -400,7 +400,7 @@ export const SlotBoundaryConditions: Story = {
     if (!(customIconElement instanceof HTMLElement)) {
       throw new Error('カスタムアイコンが HTMLElement ではありません');
     }
-    if (customIconElement.getAttribute('icon') !== 'lucide:calendar-clock') {
+    if (customIconElement.getAttribute('icon') !== 'calendar-clock') {
       throw new Error('カスタムアイコンの icon 属性が不正です');
     }
 

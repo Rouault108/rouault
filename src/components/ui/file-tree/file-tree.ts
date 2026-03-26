@@ -1,11 +1,13 @@
 import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import '../tree-item/tree-item';
+import type { IconName } from '../../../icons/catalog.js';
+
+export type TreeIcon = IconName;
 
 export type TreeItemDensity = 'normal' | 'compact';
 export type FileTreeVariant = 'default' | 'card';
 export type FileTreeLoadingStrategy = 'retain' | 'replace';
-export type TreeIcon = string;
 
 interface TreeNodeBase {
   id: string;

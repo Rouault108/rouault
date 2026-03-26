@@ -1,7 +1,7 @@
 import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
-import '../../../lib/icons';
+import '../icon/icon.js';
 
 export type ImageLoading = 'lazy' | 'eager';
 
@@ -120,7 +120,7 @@ export class UiImage extends LitElement {
       text-align: center;
     }
 
-    .error-fallback iconify-icon {
+    .error-fallback ui-icon {
       font-size: var(--icon-xl, 32px);
     }
 
@@ -217,7 +217,7 @@ export class UiImage extends LitElement {
       -webkit-backdrop-filter: blur(var(--blur-md, 12px));
     }
 
-    .close-button iconify-icon {
+    .close-button ui-icon {
       font-size: var(--icon-lg, 20px);
     }
 
@@ -618,7 +618,7 @@ export class UiImage extends LitElement {
   private _renderEmptyFallback(): TemplateResult {
     return html`
       <div class="error-fallback" role="status" aria-live="polite">
-        <iconify-icon icon="lucide:image" aria-hidden="true"></iconify-icon>
+        <ui-icon name="image" aria-hidden="true"></ui-icon>
         <span class="error-text">画像が指定されていません</span>
       </div>
     `;
@@ -627,7 +627,7 @@ export class UiImage extends LitElement {
   private _renderErrorFallback(): TemplateResult {
     return html`
       <div class="error-fallback" role="status" aria-live="polite">
-        <iconify-icon icon="lucide:image-off" aria-hidden="true"></iconify-icon>
+        <ui-icon name="image-off" aria-hidden="true"></ui-icon>
         <span class="error-text">画像を読み込めませんでした</span>
       </div>
     `;
@@ -673,7 +673,7 @@ export class UiImage extends LitElement {
             aria-label="閉じる"
             @click="${this._onCloseButtonClick}"
           >
-            <iconify-icon icon="lucide:x" aria-hidden="true"></iconify-icon>
+            <ui-icon name="x" aria-hidden="true"></ui-icon>
           </button>
           ${this._resolvedSrc !== '' && !this._isErrorState
             ? html`

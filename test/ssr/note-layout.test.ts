@@ -94,10 +94,10 @@ describe('NoteLayout', () => {
           slug: 'music/classical/mozart',
           title: 'モーツァルト',
           permalink: '/notes/music/classical/mozart',
-          sidebarResolvedIcon: 'lucide:music-4',
+          sidebarResolvedIcon: 'music-4',
           sidebarDirectoryIcons: {
-            music: 'lucide:library',
-            'music/classical': 'lucide:folder-kanban',
+            music: 'library',
+            'music/classical': 'folder-kanban',
           },
         },
         {
@@ -108,10 +108,10 @@ describe('NoteLayout', () => {
       ],
     });
 
-    expect(rendered).toContain('"id":"music","label":"Music","icon":"lucide:library"');
-    expect(rendered).toContain('"id":"music/classical","label":"Classical","icon":"lucide:folder-kanban"');
+    expect(rendered).toContain('"id":"music","label":"Music","icon":"library"');
+    expect(rendered).toContain('"id":"music/classical","label":"Classical","icon":"folder-kanban"');
     expect(rendered).toContain('"id":"music/classical/mozart","label":"モーツァルト"');
-    expect(rendered).toContain('"icon":"lucide:music-4"');
+    expect(rendered).toContain('"icon":"music-4"');
     expect(rendered).toContain('"id":"music/jazz","label":"Jazz"');
     expect(rendered).not.toContain('"id":"music/jazz","label":"Jazz","icon":');
     expect(rendered).not.toContain('"id":"music/jazz/kind-of-blue","label":"Kind of Blue","icon":');

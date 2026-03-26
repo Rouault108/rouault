@@ -118,7 +118,7 @@ export const searchDialogStyles = css`
     animation: var(--animation-focus, none);
   }
 
-  .close-button iconify-icon {
+  .close-button ui-icon {
     inline-size: var(--icon-base, 16px);
     block-size: var(--icon-base, 16px);
     font-size: var(--icon-base, 16px);
@@ -211,7 +211,7 @@ export const searchDialogStyles = css`
     color: var(--fg-subtle);
   }
 
-  .empty-state-icon iconify-icon {
+  .empty-state-icon ui-icon {
     inline-size: 40px;
     block-size: 40px;
     font-size: 40px;

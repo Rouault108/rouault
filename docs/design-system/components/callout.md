@@ -75,11 +75,11 @@
 
 | `kind`    | 既定アイコン            | 既定ラベル |
 | --------- | ----------------------- | ---------- |
-| `note`    | `lucide:info`           | `補足`     |
-| `tip`     | `lucide:lightbulb`      | `ヒント`   |
-| `success` | `lucide:check-circle`   | `成功`     |
-| `warning` | `lucide:alert-triangle` | `警告`     |
-| `danger`  | `lucide:alert-octagon`  | `危険`     |
+| `note`    | `info`           | `補足`     |
+| `tip`     | `lightbulb`      | `ヒント`   |
+| `success` | `check-circle`   | `成功`     |
+| `warning` | `alert-triangle` | `警告`     |
+| `danger`  | `alert-octagon`  | `危険`     |
 
 既定ラベルはアクセシブル名の最終フォールバックです。より具体的な読み上げを必要とする場合は、`heading` または `label` を明示指定します。
 
@@ -247,7 +247,7 @@
 <ui-callout>
   #shadow-root
     <aside part="container" data-kind="...">
-      <iconify-icon part="icon" aria-hidden="true"></iconify-icon>
+      <ui-icon part="icon" aria-hidden="true"></ui-icon>
       <div class="content">
         [div part="heading"]
         <div part="body">

@@ -3,6 +3,8 @@ import type { PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import '../tooltip/tooltip';
+import type { IconName } from '../../../icons/catalog.js';
+import '../icon/icon.js';
 
 type TreeItemDensity = 'normal' | 'compact';
 
@@ -19,7 +21,7 @@ type TreeItemDensity = 'normal' | 'compact';
  * @property {boolean} expanded - 子要素の展開状態
  * @property {boolean} selected - 現在選択されているか（カレント）
  * @property {string} label - 表示ラベル
- * @property {string} icon - コンテンツアイコン（例: "lucide:folder", "lucide:file"）
+ * @property {string} icon - コンテンツアイコン（例: "folder", "file"）
  * @property {string} density - 行の高さ密度（normal: 32px, compact: 24px）
  *
  * @fires expanded-change - 展開状態が変化した時
@@ -50,11 +52,11 @@ type TreeItemDensity = 'normal' | 'compact';
  * @example
  * ```html
  * <!-- 単独アイテム -->
- * <ui-tree-item label="ファイル.txt" icon="lucide:file"></ui-tree-item>
+ * <ui-tree-item label="ファイル.txt" icon="file"></ui-tree-item>
  *
  * <!-- ネスト構造 -->
- * <ui-tree-item label="フォルダ" icon="lucide:folder" expanded>
- *   <ui-tree-item slot="children" label="サブファイル.txt" icon="lucide:file"></ui-tree-item>
+ * <ui-tree-item label="フォルダ" icon="folder" expanded>
+ *   <ui-tree-item slot="children" label="サブファイル.txt" icon="file"></ui-tree-item>
  * </ui-tree-item>
  *
  * <!-- Compact密度 -->
@@ -165,7 +167,7 @@ export class TreeItem extends LitElement {
       height: 0;
     }
 
-    .expand-icon iconify-icon {
+    .expand-icon ui-icon {
       font-size: 16px;
       display: block;
     }
@@ -181,7 +183,7 @@ export class TreeItem extends LitElement {
       transform: translateY(0.5px);
     }
 
-    .content-icon iconify-icon,
+    .content-icon ui-icon,
     .content-icon::slotted(*) {
       font-size: 16px;
       display: block;
@@ -340,10 +342,10 @@ export class TreeItem extends LitElement {
 
   /**
    * コンテンツアイコン（lucide アイコン名）
-   * 例: "lucide:folder", "lucide:file"
+   * 例: "folder", "file"
    */
   @property({ type: String, reflect: true })
-  icon?: string;
+  icon?: IconName;
 
   /**
    * リンク先URL
@@ -733,13 +735,13 @@ export class TreeItem extends LitElement {
               @click="${this._handleExpandIconClick}"
               aria-hidden="true"
             >
-              <iconify-icon icon="lucide:chevron-right"></iconify-icon>
+              <ui-icon name="chevron-right"></ui-icon>
             </span>
 
             ${this.icon
               ? html`
                   <span class="content-icon" aria-hidden="true">
-                    <iconify-icon icon="${this.icon}"></iconify-icon>
+                    <ui-icon name="${this.icon}"></ui-icon>
                   </span>
                 `
               : this.hasCustomIcon

@@ -1,34 +1,35 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
-import '../../../lib/icons';
+import '../icon/icon.js';
+import type { IconName } from '../../../icons/catalog.js';
 
 export type CalloutKind = 'note' | 'tip' | 'success' | 'warning' | 'danger';
 
 interface CalloutKindConfig {
-  readonly icon: string;
+  readonly icon: IconName;
   readonly fallbackLabel: string;
 }
 
 const KIND_CONFIG: Record<CalloutKind, CalloutKindConfig> = {
   note: {
-    icon: 'lucide:info',
+    icon: 'info',
     fallbackLabel: '補足',
   },
   tip: {
-    icon: 'lucide:lightbulb',
+    icon: 'lightbulb',
     fallbackLabel: 'ヒント',
   },
   success: {
-    icon: 'lucide:check-circle',
+    icon: 'check-circle',
     fallbackLabel: '成功',
   },
   warning: {
-    icon: 'lucide:alert-triangle',
+    icon: 'alert-triangle',
     fallbackLabel: '警告',
   },
   danger: {
-    icon: 'lucide:alert-octagon',
+    icon: 'alert-octagon',
     fallbackLabel: '危険',
   },
 };
@@ -251,12 +252,12 @@ export class Callout extends LitElement {
         aria-labelledby="${ifDefined(hasHeading ? this._headingId : undefined)}"
         aria-label="${ifDefined(hasHeading ? undefined : this._resolvedLabel)}"
       >
-        <iconify-icon
+        <ui-icon
           class="icon"
           part="icon"
-          icon="${this._resolvedIcon}"
+          name="${this._resolvedIcon}"
           aria-hidden="true"
-        ></iconify-icon>
+        ></ui-icon>
 
         <div class="content">
           ${hasHeading

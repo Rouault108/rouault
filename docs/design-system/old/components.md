@@ -7657,7 +7657,7 @@ No-JS 環境および印刷用に、記事末尾の脚注セクションのス�
 
 - **エラー状態 (Error)**:
   - `<img>` の `error` イベントを捕捉し、フォールバックを表示します。
-  - **Fallback UI**: 壊れた画像アイコン（`lucide:image-off`、`--icon-xl` サイズ）と `alt` テキストを中央揃えで表示します。背景は `var(--bg-fill-neutral)`、テキストカラーは `var(--fg-muted)`。
+  - **Fallback UI**: 壊れた画像アイコン（`image-off`、`--icon-xl` サイズ）と `alt` テキストを中央揃えで表示します。背景は `var(--bg-fill-neutral)`、テキストカラーは `var(--fg-muted)`。
   - `border-radius: var(--radius-md)` と `1px solid var(--border-ghost)` はエラー時も維持し、レイアウトの安定性（CLS防止）を保ちます。
   - `zoomable` 機能はエラー時には無効化します（`<button>` を非インタラクティブにする）。
 
@@ -9671,7 +9671,7 @@ private _syncSlotState() {
 ```html
 <!-- デフォルト（メモなし）: slot="heading" は必須 -->
 <ui-empty-state>
-  <iconify-icon slot="icon" icon="lucide:inbox" aria-hidden="true"></iconify-icon>
+  <ui-icon slot="icon" name="inbox" aria-hidden="true"></ui-icon>
   <h2 slot="heading">まだメモがありません</h2>
   <p slot="description">新しいメモを作成して、アイデアを書き留めましょう。</p>
   <ui-button slot="action" variant="primary">新規作成</ui-button>
@@ -9679,14 +9679,14 @@ private _syncSlotState() {
 
 <!-- Search バリアント: CTAなし -->
 <ui-empty-state variant="search">
-  <iconify-icon slot="icon" icon="lucide:search-x" aria-hidden="true"></iconify-icon>
+  <ui-icon slot="icon" name="search-x" aria-hidden="true"></ui-icon>
   <h2 slot="heading">「キーワード」に一致する結果が見つかりませんでした</h2>
   <p slot="description">別のキーワードで検索するか、フィルタを調整してください。</p>
 </ui-empty-state>
 
 <!-- Error バリアント -->
 <ui-empty-state variant="error">
-  <iconify-icon slot="icon" icon="lucide:triangle-alert" aria-hidden="true"></iconify-icon>
+  <ui-icon slot="icon" name="triangle-alert" aria-hidden="true"></ui-icon>
   <h2 slot="heading">データを読み込めませんでした</h2>
   <p slot="description">しばらく経ってから再度お試しください。</p>
   <ui-button slot="action" variant="ghost">再試行</ui-button>
@@ -9696,7 +9696,7 @@ private _syncSlotState() {
 <section>
   <h2>最近のメモ</h2>
   <ui-empty-state>
-    <iconify-icon slot="icon" icon="lucide:clock" aria-hidden="true"></iconify-icon>
+    <ui-icon slot="icon" name="clock" aria-hidden="true"></ui-icon>
     <h3 slot="heading">最近のメモはありません</h3>
     <p slot="description">過去7日間に編集されたメモが表示されます。</p>
   </ui-empty-state>
@@ -9704,7 +9704,7 @@ private _syncSlotState() {
 
 <!-- 複数アクション -->
 <ui-empty-state>
-  <iconify-icon slot="icon" icon="lucide:folder-open" aria-hidden="true"></iconify-icon>
+  <ui-icon slot="icon" name="folder-open" aria-hidden="true"></ui-icon>
   <h2 slot="heading">タグを作成しましょう</h2>
   <p slot="description">タグを使ってメモを整理できます。</p>
   <ui-button slot="action" variant="primary">タグを追加</ui-button>
@@ -9765,7 +9765,7 @@ private _syncSlotState() {
 | スロット        | 必須     | デフォルト      | 説明                                                                                                                                                                                             |
 | :-------------- | :------- | :-------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | (default)       | **はい** | -               | メッセージ本文。`<span>` または `<p>` を推奨。スクリーンリーダーはこのコンテンツをホスト要素の `role` に従って読み上げます。                                                                     |
-| `slot="icon"`   | いいえ   | variant毎に自動 | 状態を表すアイコン。未指定時は `variant` に対応するデフォルトアイコン（`info: lucide:info`, `warning: lucide:triangle-alert`, `error: lucide:circle-x`, `success: lucide:circle-check`）を表示。 |
+| `slot="icon"`   | いいえ   | variant毎に自動 | 状態を表すアイコン。未指定時は `variant` に対応するデフォルトアイコン（`info: info`, `warning: triangle-alert`, `error: circle-x`, `success: circle-check`）を表示。 |
 | `slot="action"` | いいえ   | -               | バナー内のCTAリンクやボタン（例:「詳細を見る」「再試行」）。メッセージの右側に配置。                                                                                                             |
 
 **プロパティ (Properties)**
@@ -9989,7 +9989,7 @@ override attributeChangedCallback(name: string, old: string | null, value: strin
 
 ```html
 <button class="dismiss" aria-label="通知を閉じる" type="button">
-  <iconify-icon icon="lucide:x" aria-hidden="true"></iconify-icon>
+  <ui-icon name="x" aria-hidden="true"></ui-icon>
 </button>
 ```
 
@@ -10227,7 +10227,7 @@ private _dismiss() {
 
 <!-- Info + カスタムアイコン + アクション -->
 <ui-banner variant="info">
-  <iconify-icon slot="icon" icon="lucide:calendar-clock" aria-hidden="true"></iconify-icon>
+  <ui-icon slot="icon" name="calendar-clock" aria-hidden="true"></ui-icon>
   メンテナンスのため、2月15日 深夜0時から2時間程度サービスを停止します。
   <a slot="action" href="/maintenance">詳細を見る</a>
 </ui-banner>

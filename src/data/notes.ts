@@ -2,10 +2,11 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { extractTocFromHtml, type TocHeading } from '../../lib/content/extract-toc-from-html.js';
+import { isIconName, type IconName } from '../icons/catalog.js';
 import type { NoteStatus } from '../types/article-status.js';
 
 type SidebarScope = 'global' | 'self';
-type SidebarIconSetting = string;
+type SidebarIconSetting = IconName | 'none';
 
 type NoteKind = 'leaf' | 'directory-index';
 
@@ -32,7 +33,7 @@ export interface SourceNote {
   content?: string;
   status?: NoteStatus;
   genre?: string[];
-  sidebarIcon?: string;
+  sidebarIcon?: SidebarIconSetting;
   [key: string]: unknown;
 }
 
@@ -45,8 +46,8 @@ export interface NoteCollectionItem extends SourceNote {
   sortIndex: number;
   tocHeadings: TocHeading[];
   sidebarRoot?: string;
-  sidebarResolvedIcon?: string;
-  sidebarDirectoryIcons?: Record<string, string>;
+  sidebarResolvedIcon?: IconName;
+  sidebarDirectoryIcons?: Record<string, IconName>;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -74,13 +75,27 @@ const toOptionalSidebarScope = (value: unknown): SidebarScope | undefined => {
   return undefined;
 };
 
-const toOptionalTrimmedString = (value: unknown): string | undefined => {
+const toOptionalSidebarIconSetting = (value: unknown): SidebarIconSetting | undefined => {
   if (typeof value !== 'string') {
     return undefined;
   }
 
   const normalized = value.trim();
-  return normalized.length > 0 ? normalized : undefined;
+  if (normalized.length === 0) {
+    return undefined;
+  }
+
+  if (normalized === 'none') {
+    return 'none';
+  }
+
+  if (isIconName(normalized)) {
+    return normalized;
+  }
+
+  throw new Error(
+    `Invalid sidebar icon "${normalized}". Use an IconName from src/icons/catalog.ts or "none".`,
+  );
 };
 
 const toDirectoryConfig = (value: unknown): NoteDirectoryConfig | undefined => {
@@ -94,7 +109,7 @@ const toDirectoryConfig = (value: unknown): NoteDirectoryConfig | undefined => {
     ? toOptionalSidebarScope(sidebarValue['scope'])
     : undefined;
   const sidebarIcon = isRecord(sidebarValue)
-    ? toOptionalTrimmedString(sidebarValue['icon'])
+    ? toOptionalSidebarIconSetting(sidebarValue['icon'])
     : undefined;
 
   return {
@@ -215,26 +230,20 @@ const resolveSidebarRoot = (slug: string, contentRoot: string): string | undefin
   return sidebarRoot;
 };
 
-const resolveDirectorySidebarIcon = (value: string | undefined): string | undefined => {
-  if (value === undefined) {
+const resolveDirectorySidebarIcon = (
+  value: SidebarIconSetting | undefined,
+): IconName | undefined => {
+  if (value === undefined || value === 'none') {
     return undefined;
-  }
-
-  if (value === 'none') {
-    return undefined;
-  }
-
-  if (value === 'folder') {
-    return 'lucide:folder';
   }
 
   return value;
 };
 
 const resolveNoteSidebarIcon = (
-  value: string | undefined,
-  fallback: string | undefined,
-): string | undefined => {
+  value: SidebarIconSetting | undefined,
+  fallback: IconName | undefined,
+): IconName | undefined => {
   if (value === undefined) {
     return fallback;
   }
@@ -243,21 +252,17 @@ const resolveNoteSidebarIcon = (
     return undefined;
   }
 
-  if (value === 'file') {
-    return 'lucide:file-text';
-  }
-
   return value;
 };
 
 const resolveSidebarIconContext = (
   slug: string,
   contentRoot: string,
-): { directoryIcons: Record<string, string> } => {
+): { directoryIcons: Record<string, IconName> } => {
   const parts = slug.split('/');
   const dirParts = parts.slice(0, -1);
-  const directoryIcons: Record<string, string> = {};
-  let inheritedSetting = readConfig(contentRoot)?.sidebar?.icon;
+  const directoryIcons: Record<string, IconName> = {};
+  let inheritedSetting: SidebarIconSetting | undefined = readConfig(contentRoot)?.sidebar?.icon;
 
   for (let depth = 0; depth < dirParts.length; depth += 1) {
     const currentDirParts = dirParts.slice(0, depth + 1);
@@ -275,9 +280,7 @@ const resolveSidebarIconContext = (
     }
   }
 
-  return {
-    directoryIcons,
-  };
+  return { directoryIcons };
 };
 
 export const buildNotesCollection = (
@@ -288,15 +291,24 @@ export const buildNotesCollection = (
     .filter((note): note is SourceNote & { slug: string } => {
       return typeof note.slug === 'string' && note.slug.trim().length > 0;
     })
-    .map((note) => {
+    .map((note): NoteCollectionItem => {
       const inputSlug = note.slug.trim();
       const pathInfo = normalizeNotePath(inputSlug, contentRoot);
       const sourceSlug = pathInfo.rawSlug;
 
       const sidebarRoot = resolveSidebarRoot(sourceSlug, contentRoot);
-      const sidebarIconSetting = toOptionalTrimmedString(note.sidebarIcon);
+      const sidebarIconSetting = note.sidebarIcon;
       const sidebarIconContext = resolveSidebarIconContext(sourceSlug, contentRoot);
-      const sidebarResolvedIcon = resolveNoteSidebarIcon(sidebarIconSetting, undefined);
+
+      const inheritedDirectoryIcon = (() => {
+        const values = Object.values(sidebarIconContext.directoryIcons);
+        return values.length > 0 ? values[values.length - 1] : undefined;
+      })();
+
+      const sidebarResolvedIcon = resolveNoteSidebarIcon(
+        sidebarIconSetting,
+        inheritedDirectoryIcon,
+      );
 
       return {
         ...note,

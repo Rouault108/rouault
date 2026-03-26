@@ -1,6 +1,6 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import '../../lib/icons';
+import '../ui/icon/icon';
 import '../ui/header/header';
 import '../ui/search-trigger/search-trigger';
 import '../ui/breadcrumbs/breadcrumbs';
@@ -14,21 +14,28 @@ import {
   type ThemeChangeDetail,
   type ThemePreference,
 } from '../../lib/theme/theme-manager.js';
+import type { IconName } from '../../icons/catalog.js';
 
-const THEME_OPTIONS = {
+const THEME_OPTIONS: Record<
+  ThemePreference,
+  {
+    icon: IconName;
+    label: string;
+  }
+> = {
   light: {
-    icon: 'lucide:sun',
+    icon: 'sun',
     label: 'ライト',
   },
   dark: {
-    icon: 'lucide:moon',
+    icon: 'moon',
     label: 'ダーク',
   },
   system: {
-    icon: 'lucide:monitor',
+    icon: 'monitor',
     label: 'OSテーマ',
   },
-} as const;
+};
 
 @customElement('layout-header')
 export class LayoutHeader extends LitElement {
@@ -254,18 +261,18 @@ export class LayoutHeader extends LitElement {
                   aria-label="${sidebarToggleLabel}"
                   @click=${this._handleSidebarToggleClick}
                 >
-                  <iconify-icon icon="lucide:panel-left" aria-hidden="true"></iconify-icon>
+                  <ui-icon name="panel-left" aria-hidden="true"></ui-icon>
                 </ui-button>
               `
             : null}
           <ui-dropdown @menu-item-select=${this._handleGenreSelect}>
             <ui-button slot="trigger" variant="ghost">
               ジャンル
-              <iconify-icon
-                icon="lucide:chevron-down"
+              <ui-icon
+                name="chevron-down"
                 aria-hidden="true"
                 style="width:14px;height:14px;"
-              ></iconify-icon>
+              ></ui-icon>
             </ui-button>
             <ui-menu-item value="/tags/content/">コンテンツ</ui-menu-item>
             <ui-menu-item value="/tags/internal/">内部</ui-menu-item>
@@ -287,18 +294,18 @@ export class LayoutHeader extends LitElement {
           <ui-dropdown align="end" @menu-item-select=${this._handleThemeSelect}>
             <ui-button slot="trigger" variant="ghost">
               <span class="theme-trigger-label">
-                <iconify-icon
+                <ui-icon
                   class="theme-trigger-icon"
-                  icon=${currentThemeOption.icon}
+                  name=${currentThemeOption.icon}
                   aria-hidden="true"
-                ></iconify-icon>
+                ></ui-icon>
                 <span>テーマ</span>
               </span>
-              <iconify-icon
+              <ui-icon
                 class="theme-chevron"
-                icon="lucide:chevron-down"
+                name="chevron-down"
                 aria-hidden="true"
-              ></iconify-icon>
+              ></ui-icon>
             </ui-button>
             ${(
               Object.entries(THEME_OPTIONS) as [
@@ -309,11 +316,11 @@ export class LayoutHeader extends LitElement {
               ([value, option]) => html`
                 <ui-menu-item value=${value}>
                   <span class="theme-menu-label">
-                    <iconify-icon
+                    <ui-icon
                       class="theme-menu-icon"
-                      icon=${option.icon}
+                      name=${option.icon}
                       aria-hidden="true"
-                    ></iconify-icon>
+                    ></ui-icon>
                     <span>${option.label}</span>
                   </span>
                 </ui-menu-item>

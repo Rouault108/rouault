@@ -1,13 +1,14 @@
 import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import '../../../lib/icons';
+import '../icon/icon.js';
 import '../button/button';
+import type { IconName } from '../../../icons/catalog.js';
 
 export type BannerVariant = 'info' | 'warning' | 'error' | 'success';
 type BannerRole = 'status' | 'alert';
 
 interface BannerVariantConfig {
-  readonly icon: string;
+  readonly icon: IconName;
   readonly role: BannerRole;
 }
 
@@ -20,19 +21,19 @@ const FOCUSABLE_SELECTOR =
 
 const VARIANT_CONFIG: Record<BannerVariant, BannerVariantConfig> = {
   info: {
-    icon: 'lucide:info',
+    icon: 'info',
     role: 'status',
   },
   warning: {
-    icon: 'lucide:triangle-alert',
+    icon: 'triangle-alert',
     role: 'alert',
   },
   error: {
-    icon: 'lucide:circle-x',
+    icon: 'circle-x',
     role: 'alert',
   },
   success: {
-    icon: 'lucide:circle-check',
+    icon: 'circle-check',
     role: 'status',
   },
 };
@@ -450,11 +451,11 @@ export class Banner extends LitElement {
     return html`
       <span class="icon" aria-hidden="true">
         <slot name="icon">
-          <iconify-icon
+          <ui-icon
             class="fallback-icon"
-            icon="${VARIANT_CONFIG[resolvedVariant].icon}"
+            name="${VARIANT_CONFIG[resolvedVariant].icon}"
             aria-hidden="true"
-          ></iconify-icon>
+          ></ui-icon>
         </slot>
       </span>
 
@@ -477,7 +478,7 @@ export class Banner extends LitElement {
               aria-label="${DISMISS_LABEL}"
               @click="${this._onDismissClick}"
             >
-              <iconify-icon class="dismiss-icon" icon="lucide:x" aria-hidden="true"></iconify-icon>
+              <ui-icon class="dismiss-icon" name="x" aria-hidden="true"></ui-icon>
             </ui-button>
           `
         : nothing}

@@ -41,7 +41,7 @@ genre:
   - architecture
   - lit
 status: wip
-sidebarIcon: lucide:file-text
+sidebarIcon: file-text
 ---
 
 ## メモのタイトル
@@ -101,7 +101,7 @@ genre:
   分類用の配列です。空文字は入れません。
 
 - `sidebarIcon`
-  たとえば `lucide:file-text` のように書きます。必要なければ省略します。
+  たとえば `file-text` のように書きます。必要なければ省略します。
 
 - `status`
   状態が明確な場合だけ書きます。迷う場合は省略しても構いません。

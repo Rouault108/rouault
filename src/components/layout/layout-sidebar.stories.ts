@@ -10,27 +10,27 @@ const sampleItems: readonly TreeNode[] = [
     kind: 'branch',
     id: 'music',
     label: 'Music',
-    icon: 'lucide:folder',
+    icon: 'folder',
     children: [
       {
         kind: 'branch',
         id: 'music/classical',
         label: 'Classical',
-        icon: 'lucide:folder',
+        icon: 'folder',
         children: [
           {
             kind: 'leaf',
             id: 'music/classical/beethoven/symphony-9',
             label: '交響曲第9番 ニ短調',
             href: '/notes/music/classical/beethoven/symphony-9',
-            icon: 'lucide:file-text',
+            icon: 'file-text',
           },
           {
             kind: 'leaf',
             id: 'music/classical/tchaikovsky/the-nutcracker',
             label: 'くるみ割り人形',
             href: '/notes/music/classical/tchaikovsky/the-nutcracker',
-            icon: 'lucide:file-text',
+            icon: 'file-text',
           },
         ],
       },

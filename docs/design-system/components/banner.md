@@ -404,7 +404,7 @@ forced colors と print の契約は、内部セレクタの存在ではなく�
 
 | 項目                   | 契約                                                                                                                                       |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| フォールバックアイコン | `iconify-icon` を用い、`variant` ごとに `lucide:info` / `lucide:triangle-alert` / `lucide:circle-x` / `lucide:circle-check` を使い分けます |
+| フォールバックアイコン | `iconify-icon` を用い、`variant` ごとに `info` / `triangle-alert` / `circle-x` / `circle-check` を使い分けます |
 | 閉じる操作             | `ui-button` を用います。`variant="ghost"`、`size="sm"`、`icon-only`、`aria-label="通知を閉じる"` を前提とします                            |
 | action リンク          | `slot="action"` の素の `<a href>` は常時下線、hover 強調、`focus-visible` リングを持ちます                                                 |
 | カスタムアイコン       | `slot="icon"` によりフォールバックを上書きします                                                                                           |

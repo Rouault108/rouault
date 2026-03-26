@@ -60,7 +60,7 @@ const buildRows = (rows: StoryItem[]): TemplateResult[] => {
         <span slot="tags">${item.tags}</span>
         <span slot="mobile-supplement">・ ${item.date}</span>
         <button slot="actions" type="button" aria-label="操作">
-          <iconify-icon icon="lucide:more-horizontal" aria-hidden="true"></iconify-icon>
+          <ui-icon name="more-horizontal" aria-hidden="true"></ui-icon>
         </button>
       </ui-list-item>
     `,

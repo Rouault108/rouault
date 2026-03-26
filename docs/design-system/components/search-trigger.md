@@ -249,7 +249,7 @@
   #shadow-root
     <button part="button" type="button">
       <span class="icon" part="icon" aria-hidden="true">
-        <iconify-icon icon="lucide:search" aria-hidden="true"></iconify-icon>
+        <ui-icon name="search" aria-hidden="true"></ui-icon>
       </span>
       <span class="placeholder" part="placeholder" aria-hidden="true">
         検索...

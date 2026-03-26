@@ -83,7 +83,7 @@ export const Default: Story = {
       throw new Error('aria-label は "パンくずリスト" である必要があります');
     }
 
-    const separators = host.shadowRoot?.querySelectorAll('.breadcrumb-separator iconify-icon');
+    const separators = host.shadowRoot?.querySelectorAll('.breadcrumb-separator ui-icon');
     if (separators?.length !== 2) {
       throw new Error(
         `2つのセパレーター（chevron）を期待していましたが、実際には ${String(separators?.length ?? 0)}個でした`,
@@ -93,7 +93,7 @@ export const Default: Story = {
     const firstItem = host.shadowRoot?.querySelector<HTMLElement>('.breadcrumb-item');
     const firstLabel = firstItem?.querySelector<HTMLElement>('.breadcrumb-link');
     const firstSeparator = firstItem?.querySelector<HTMLElement>(
-      '.breadcrumb-separator iconify-icon',
+      '.breadcrumb-separator ui-icon',
     );
     if (!firstLabel || !firstSeparator) {
       throw new Error('中心線チェックに必要なラベルまたはセパレーターが見つかりません');

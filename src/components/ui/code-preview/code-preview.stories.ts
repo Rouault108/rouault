@@ -302,7 +302,7 @@ export const HeaderWithToolbarOnly: Story = {
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
         <ui-button slot="toolbar" variant="ghost" size="sm" icon-only aria-label="テーマ切替">
-          <iconify-icon icon="lucide:sun-moon"></iconify-icon>
+          <ui-icon name="sun-moon"></ui-icon>
         </ui-button>
         <div slot="preview">
           <ui-button>クリック</ui-button>
@@ -381,7 +381,7 @@ export const HeaderWithHeadingAndToolbar: Story = {
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
         <ui-button slot="toolbar" variant="ghost" size="sm" icon-only aria-label="ダークモード切替">
-          <iconify-icon icon="lucide:sun-moon"></iconify-icon>
+          <ui-icon name="sun-moon"></ui-icon>
         </ui-button>
         <div slot="preview">
           <ui-button>クリック</ui-button>
@@ -623,7 +623,7 @@ export const BuiltInControlsWithToolbarSlot: Story = {
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
         <ui-button slot="toolbar" variant="ghost" size="sm" icon-only aria-label="外部アクション">
-          <iconify-icon icon="lucide:settings-2"></iconify-icon>
+          <ui-icon name="settings-2"></ui-icon>
         </ui-button>
         <div slot="preview">
           <ui-button>プレビュー</ui-button>
@@ -896,7 +896,7 @@ export const ToolbarTargetSizeContract: Story = {
         style="--ui-code-preview-breakout-width: 100%; --ui-code-preview-breakout-margin: 0; margin-block: 0;"
       >
         <ui-button slot="toolbar" variant="ghost" size="sm" icon-only aria-label="テーマ切替">
-          <iconify-icon icon="lucide:sun-moon"></iconify-icon>
+          <ui-icon name="sun-moon"></ui-icon>
         </ui-button>
         <div slot="preview"><ui-button>ボタン</ui-button></div>
         <ui-code-block layout="inline" lang="ts">

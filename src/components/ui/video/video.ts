@@ -1,7 +1,7 @@
 import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
-import '../../../lib/icons';
+import '../icon/icon.js';
 import '../button/button';
 
 export type VideoState =
@@ -140,7 +140,7 @@ export class UiVideo extends LitElement {
         opacity var(--duration-normal, 150ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
-    .play-button iconify-icon {
+    .play-button ui-icon {
       font-size: var(--icon-xl, 32px);
       line-height: 1;
     }
@@ -196,7 +196,7 @@ export class UiVideo extends LitElement {
         transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
     }
 
-    .skip-button iconify-icon {
+    .skip-button ui-icon {
       font-size: var(--icon-md, 18px);
       line-height: 1;
     }
@@ -302,8 +302,8 @@ export class UiVideo extends LitElement {
       -webkit-backdrop-filter: blur(var(--blur-sm, 8px));
     }
 
-    .empty-panel iconify-icon,
-    .error-panel iconify-icon {
+    .empty-panel ui-icon,
+    .error-panel ui-icon {
       font-size: var(--icon-xl, 32px);
       line-height: 1;
     }
@@ -968,9 +968,9 @@ export class UiVideo extends LitElement {
   }
 
   private get _playButtonIcon(): string {
-    if (this._isPlayingLike) return 'lucide:pause';
-    if (this._status === 'ENDED') return 'lucide:rotate-ccw';
-    return 'lucide:play';
+    if (this._isPlayingLike) return 'pause';
+    if (this._status === 'ENDED') return 'rotate-ccw';
+    return 'play';
   }
 
   private get _seekMax(): number {
@@ -1008,9 +1008,9 @@ export class UiVideo extends LitElement {
   }
 
   private get _muteButtonIcon(): string {
-    if (this.muted || this._volume === 0) return 'lucide:volume-x';
-    if (this._volume < 0.5) return 'lucide:volume-1';
-    return 'lucide:volume-2';
+    if (this.muted || this._volume === 0) return 'volume-x';
+    if (this._volume < 0.5) return 'volume-1';
+    return 'volume-2';
   }
 
   private get _fullscreenButtonLabel(): string {
@@ -1018,7 +1018,7 @@ export class UiVideo extends LitElement {
   }
 
   private get _fullscreenButtonIcon(): string {
-    return this._isFullscreen ? 'lucide:minimize' : 'lucide:maximize';
+    return this._isFullscreen ? 'minimize' : 'maximize';
   }
 
   private get _hasTracks(): boolean {
@@ -1042,7 +1042,7 @@ export class UiVideo extends LitElement {
   }
 
   private get _captionToggleIcon(): string {
-    return this._captionsActive ? 'lucide:captions' : 'lucide:captions-off';
+    return this._captionsActive ? 'captions' : 'captions-off';
   }
 
   private get _controlDisabled(): boolean {
@@ -1833,7 +1833,7 @@ export class UiVideo extends LitElement {
             ?disabled="${this._controlDisabled}"
             @click="${this._onSkipBack}"
           >
-            <iconify-icon icon="lucide:rotate-ccw" aria-hidden="true"></iconify-icon>
+            <ui-icon name="rotate-ccw" aria-hidden="true"></ui-icon>
           </button>
 
           <button
@@ -1845,7 +1845,7 @@ export class UiVideo extends LitElement {
             ?disabled="${this._controlDisabled}"
             @click="${this._togglePlayback}"
           >
-            <iconify-icon icon="${this._playButtonIcon}" aria-hidden="true"></iconify-icon>
+            <ui-icon name="${this._playButtonIcon}" aria-hidden="true"></ui-icon>
           </button>
 
           <button
@@ -1856,7 +1856,7 @@ export class UiVideo extends LitElement {
             ?disabled="${this._controlDisabled}"
             @click="${this._onSkipForward}"
           >
-            <iconify-icon icon="lucide:rotate-cw" aria-hidden="true"></iconify-icon>
+            <ui-icon name="rotate-cw" aria-hidden="true"></ui-icon>
           </button>
         </div>
       </div>
@@ -1868,7 +1868,7 @@ export class UiVideo extends LitElement {
       return html`
         <div class="state-layer">
           <div class="empty-panel" role="status" aria-live="polite">
-            <iconify-icon icon="lucide:film" aria-hidden="true"></iconify-icon>
+            <ui-icon name="film" aria-hidden="true"></ui-icon>
             <span class="state-text">動画ソースが設定されていません</span>
           </div>
         </div>
@@ -1894,7 +1894,7 @@ export class UiVideo extends LitElement {
             aria-live="${this._statusLive}"
             aria-atomic="true"
           >
-            <iconify-icon icon="lucide:triangle-alert" aria-hidden="true"></iconify-icon>
+            <ui-icon name="triangle-alert" aria-hidden="true"></ui-icon>
             <span class="state-text">${this._statusMessage}</span>
             <button type="button" class="retry-button" @click="${this._onRetryClick}">
               再試行
@@ -2032,7 +2032,7 @@ export class UiVideo extends LitElement {
                   ?disabled="${this._controlDisabled}"
                   @click="${this._onFloatingBarPlay}"
                 >
-                  <iconify-icon icon="${this._playButtonIcon}" aria-hidden="true"></iconify-icon>
+                  <ui-icon name="${this._playButtonIcon}" aria-hidden="true"></ui-icon>
                 </ui-button>
 
                 <ui-button
@@ -2043,7 +2043,7 @@ export class UiVideo extends LitElement {
                   ?disabled="${this._controlDisabled}"
                   @click="${this._onFloatingBarSkipBack}"
                 >
-                  <iconify-icon icon="lucide:rewind" aria-hidden="true"></iconify-icon>
+                  <ui-icon name="rewind" aria-hidden="true"></ui-icon>
                 </ui-button>
 
                 <ui-button
@@ -2054,7 +2054,7 @@ export class UiVideo extends LitElement {
                   ?disabled="${this._controlDisabled}"
                   @click="${this._onFloatingBarSkipForward}"
                 >
-                  <iconify-icon icon="lucide:fast-forward" aria-hidden="true"></iconify-icon>
+                  <ui-icon name="fast-forward" aria-hidden="true"></ui-icon>
                 </ui-button>
 
                 <ui-button
@@ -2065,7 +2065,7 @@ export class UiVideo extends LitElement {
                   ?disabled="${this._controlDisabled}"
                   @click="${this._toggleMuted}"
                 >
-                  <iconify-icon icon="${this._muteButtonIcon}" aria-hidden="true"></iconify-icon>
+                  <ui-icon name="${this._muteButtonIcon}" aria-hidden="true"></ui-icon>
                 </ui-button>
 
                 <input
@@ -2099,10 +2099,10 @@ export class UiVideo extends LitElement {
                         ?disabled="${this._controlDisabled}"
                         @click="${this._toggleCaptions}"
                       >
-                        <iconify-icon
-                          icon="${this._captionToggleIcon}"
+                        <ui-icon
+                          name="${this._captionToggleIcon}"
                           aria-hidden="true"
-                        ></iconify-icon>
+                        ></ui-icon>
                       </ui-button>
                     `
                   : nothing}
@@ -2116,10 +2116,10 @@ export class UiVideo extends LitElement {
                   ?disabled="${this._controlDisabled}"
                   @click="${this._toggleFullscreen}"
                 >
-                  <iconify-icon
-                    icon="${this._fullscreenButtonIcon}"
+                  <ui-icon
+                    name="${this._fullscreenButtonIcon}"
                     aria-hidden="true"
-                  ></iconify-icon>
+                  ></ui-icon>
                 </ui-button>
               </div>
             </div>

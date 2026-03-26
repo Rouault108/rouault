@@ -743,7 +743,7 @@ export class MenuItem extends LitElement {
       animation: var(--animation-focus);
     }
 
-    ::slotted(iconify-icon),
+    ::slotted(ui-icon),
     ::slotted(svg) {
       width: var(--icon-base, 16px);
       height: var(--icon-base, 16px);

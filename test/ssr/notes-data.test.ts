@@ -119,7 +119,7 @@ describe('buildNotesCollection', () => {
       path.join(contentRoot, '_config.json'),
       JSON.stringify({
         order: ['category'],
-        sidebar: { icon: 'lucide:library' },
+        sidebar: { icon: 'library' },
       }),
       'utf8',
     );
@@ -135,7 +135,7 @@ describe('buildNotesCollection', () => {
       path.join(contentRoot, 'category', 'section-a', '_config.json'),
       JSON.stringify({
         order: ['item-alpha', 'item-beta.md'],
-        sidebar: { icon: 'lucide:music-2' },
+        sidebar: { icon: 'music-2' },
       }),
       'utf8',
     );
@@ -158,7 +158,7 @@ describe('buildNotesCollection', () => {
       {
         slug: 'category/section-a/item-alpha/page-three',
         content: '',
-        sidebarIcon: 'lucide:music-3',
+        sidebarIcon: 'music-3',
       },
       {
         slug: 'category/section-b/page-four',
@@ -177,21 +177,21 @@ describe('buildNotesCollection', () => {
     );
     const pageFour = collection.find((note) => note.slug === 'category/section-b/page-four');
 
-    expect(itemBeta?.sidebarResolvedIcon).toBe('lucide:file-text');
+    expect(itemBeta?.sidebarResolvedIcon).toBe('file-text');
     expect(itemBeta?.sidebarDirectoryIcons).toEqual({
-      category: 'lucide:folder',
-      'category/section-a': 'lucide:music-2',
+      category: 'folder',
+      'category/section-a': 'music-2',
     });
     expect(pageTwo?.sidebarResolvedIcon).toBeUndefined();
     expect(pageTwo?.sidebarDirectoryIcons).toEqual({
-      category: 'lucide:folder',
-      'category/section-a': 'lucide:music-2',
+      category: 'folder',
+      'category/section-a': 'music-2',
     });
-    expect(pageThree?.sidebarResolvedIcon).toBe('lucide:music-3');
+    expect(pageThree?.sidebarResolvedIcon).toBe('music-3');
     expect(pageFour?.sidebarResolvedIcon).toBeUndefined();
     expect(pageFour?.sidebarDirectoryIcons).toEqual({
-      category: 'lucide:folder',
-      'category/section-b': 'lucide:folder',
+      category: 'folder',
+      'category/section-b': 'folder',
     });
   });
 

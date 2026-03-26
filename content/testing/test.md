@@ -6,7 +6,7 @@ updated: 2026-03-15
 genre:
   - testing
   - test
-sidebarIcon: 'lucide:test-tube-diagonal'
+sidebarIcon: 'test-tube-diagonal'
 cover: 'https://images.unsplash.com/photo-1772289934600-cb4ddd71dbd8?q=80&w=2232&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
 license: 'https://example.com/original'
 licenseNote: 'ライセンス'

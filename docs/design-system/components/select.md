@@ -300,7 +300,7 @@ Rouault における select は、フォーム入力要素であると同時に�
       aria-controls="listbox-id"
     >
       <span id="trigger-text-id">…</span>
-      <iconify-icon />
+      <ui-icon />
     </button>
     [div.help-text]
     [div.error-message]

@@ -1,7 +1,8 @@
 import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
-import '../../../lib/icons';
+import '../icon/icon.js';
 import '../copy-button/copy-button';
+import type { IconName } from '../../../icons/catalog.js';
 
 type CodeBlockIntent = 'neutral' | 'valid' | 'invalid';
 type CodeBlockCopyMode = 'auto' | 'always' | 'hidden';
@@ -9,7 +10,7 @@ type CodeBlockLayout = 'standalone' | 'inline';
 
 interface IntentMeta {
   readonly label: string;
-  readonly icon: string;
+  readonly icon: IconName;
   readonly ariaSuffix: string;
 }
 
@@ -21,12 +22,12 @@ const FALSE_BOOLEAN_ATTRIBUTE_VALUES = new Set(['false', '0', 'off', 'no']);
 const INTENT_META: Record<Exclude<CodeBlockIntent, 'neutral'>, IntentMeta> = {
   valid: {
     label: '正しい例',
-    icon: 'lucide:check-circle',
+    icon: 'check-circle',
     ariaSuffix: '正しいコード例',
   },
   invalid: {
     label: '誤り例',
-    icon: 'lucide:alert-triangle',
+    icon: 'alert-triangle',
     ariaSuffix: '誤りコード例',
   },
 };
@@ -355,7 +356,7 @@ export class CodeBlock extends LitElement {
       color: var(--fg-muted, oklch(45% 0 0));
     }
 
-    .intent iconify-icon {
+    .intent ui-icon {
       font-size: var(--icon-sm, 14px);
       flex-shrink: 0;
     }
@@ -985,7 +986,7 @@ export class CodeBlock extends LitElement {
                     ${intentMeta
             ? html`
                           <span class="intent" data-intent="${this._resolvedIntent}">
-                            <iconify-icon icon="${intentMeta.icon}" aria-hidden="true"></iconify-icon>
+                            <ui-icon name="${intentMeta.icon}" aria-hidden="true"></ui-icon>
                             <span>${intentMeta.label}</span>
                           </span>
                         `

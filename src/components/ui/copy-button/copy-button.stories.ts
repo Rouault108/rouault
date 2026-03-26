@@ -793,13 +793,13 @@ export const TestSuccessState: Story = {
       );
     }
 
-    const icon = button.shadowRoot?.querySelector('iconify-icon');
+    const icon = button.shadowRoot?.querySelector('ui-icon');
     if (!icon) {
       throw new Error('アイコンが見つかりません');
     }
-    if (icon.getAttribute('icon') !== 'lucide:check') {
+    if (icon.getAttribute('icon') !== 'check') {
       throw new Error(
-        `アイコンが "lucide:check" であることを期待していましたが、実際には "${icon.getAttribute('icon') ?? 'null'}" でした`,
+        `アイコンが "check" であることを期待していましたが、実際には "${icon.getAttribute('icon') ?? 'null'}" でした`,
       );
     }
 
@@ -1012,14 +1012,14 @@ export const TestErrorState: Story = {
       );
     }
 
-    const icon = button.shadowRoot?.querySelector('iconify-icon');
+    const icon = button.shadowRoot?.querySelector('ui-icon');
     if (!icon) {
       throw new Error('アイコンが見つかりません');
     }
 
-    if (icon.getAttribute('icon') !== 'lucide:alert-triangle') {
+    if (icon.getAttribute('icon') !== 'alert-triangle') {
       throw new Error(
-        `アイコンが "lucide:alert-triangle" であることを期待していましたが、実際には "${icon.getAttribute('icon') ?? 'null'}" でした`,
+        `アイコンが "alert-triangle" であることを期待していましたが、実際には "${icon.getAttribute('icon') ?? 'null'}" でした`,
       );
     }
 
@@ -1219,8 +1219,8 @@ export const TestLoadingIndicatorThreshold: Story = {
         await userEvent.click(uiButton);
         await sleep(25);
 
-        const loadingIcon = button.shadowRoot?.querySelector('iconify-icon');
-        if (loadingIcon?.getAttribute('icon') !== 'lucide:loader-circle') {
+        const loadingIcon = button.shadowRoot?.querySelector('ui-icon');
+        if (loadingIcon?.getAttribute('icon') !== 'loader-circle') {
           throw new Error(
             `遅延コピー中にローディングアイコンが表示されることを期待していましたが、実際には "${loadingIcon?.getAttribute('icon') ?? 'null'}" でした`,
           );

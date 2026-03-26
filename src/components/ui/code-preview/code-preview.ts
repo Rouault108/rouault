@@ -1,9 +1,10 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import type { PropertyValues } from 'lit';
-import '../../../lib/icons';
+import '../icon/icon.js';
 import '../button/button';
 import '../dropdown/dropdown';
+import type { IconName } from '../../../icons/catalog.js';
 
 type PreviewPadding = 'normal' | 'none' | 'compact';
 type PreviewAlign = 'center' | 'start' | 'stretch';
@@ -29,7 +30,7 @@ interface PreviewControlOption<T extends string> {
   readonly value: T;
   readonly label: string;
   readonly shortLabel: string;
-  readonly icon: string;
+  readonly icon: IconName;
 }
 
 const VALID_PADDING = new Set<PreviewPadding>(['normal', 'none', 'compact']);
@@ -41,21 +42,21 @@ const VALID_CONTROLS = new Set<PreviewControl>(['theme', 'surface', 'viewport'])
 const CONTROL_ORDER: PreviewControl[] = ['theme', 'surface', 'viewport'];
 
 const THEME_OPTIONS: PreviewControlOption<PreviewTheme>[] = [
-  { value: 'page', label: 'Page', shortLabel: 'Page', icon: 'lucide:monitor' },
-  { value: 'light', label: 'Light', shortLabel: 'Light', icon: 'lucide:sun' },
-  { value: 'dark', label: 'Dark', shortLabel: 'Dark', icon: 'lucide:moon' },
+  { value: 'page', label: 'Page', shortLabel: 'Page', icon: 'monitor' },
+  { value: 'light', label: 'Light', shortLabel: 'Light', icon: 'sun' },
+  { value: 'dark', label: 'Dark', shortLabel: 'Dark', icon: 'moon' },
 ];
 
 const SURFACE_OPTIONS: PreviewControlOption<PreviewSurface>[] = [
-  { value: 'surface', label: 'Surface', shortLabel: 'Surface', icon: 'lucide:layers-3' },
-  { value: 'canvas', label: 'Canvas', shortLabel: 'Canvas', icon: 'lucide:square' },
-  { value: 'muted', label: 'Muted', shortLabel: 'Muted', icon: 'lucide:blend' },
+  { value: 'surface', label: 'Surface', shortLabel: 'Surface', icon: 'layers-3' },
+  { value: 'canvas', label: 'Canvas', shortLabel: 'Canvas', icon: 'square' },
+  { value: 'muted', label: 'Muted', shortLabel: 'Muted', icon: 'blend' },
 ];
 
 const VIEWPORT_OPTIONS: PreviewControlOption<PreviewViewport>[] = [
-  { value: 'full', label: 'Full', shortLabel: 'Full', icon: 'lucide:monitor' },
-  { value: 'tablet', label: 'Tablet', shortLabel: 'Tablet', icon: 'lucide:tablet' },
-  { value: 'mobile', label: 'Mobile', shortLabel: 'Mobile', icon: 'lucide:smartphone' },
+  { value: 'full', label: 'Full', shortLabel: 'Full', icon: 'monitor' },
+  { value: 'tablet', label: 'Tablet', shortLabel: 'Tablet', icon: 'tablet' },
+  { value: 'mobile', label: 'Mobile', shortLabel: 'Mobile', icon: 'smartphone' },
 ];
 
 const normalizeControls = (value: string): string => {
@@ -362,7 +363,7 @@ export class CodePreview extends LitElement {
       --bg-hover: var(--_ui-preview-bg-hover);
     }
 
-    .header-control ui-button iconify-icon {
+    .header-control ui-button ui-icon {
       flex-shrink: 0;
     }
 
@@ -796,7 +797,7 @@ export class CodePreview extends LitElement {
   ) {
     return html`
       <ui-button slot="trigger" variant="ghost" size="sm">
-        <iconify-icon icon="${option.icon}" aria-hidden="true"></iconify-icon>
+        <ui-icon name="${option.icon}" aria-hidden="true"></ui-icon>
         <span>${option.shortLabel}</span>
       </ui-button>
     `;
@@ -814,7 +815,7 @@ export class CodePreview extends LitElement {
         ${THEME_OPTIONS.map(
           (option) => html`
             <ui-menu-item value="${option.value}">
-              <iconify-icon icon="${option.icon}" aria-hidden="true"></iconify-icon>
+              <ui-icon name="${option.icon}" aria-hidden="true"></ui-icon>
               <span>${option.label}</span>
             </ui-menu-item>
           `,
@@ -835,7 +836,7 @@ export class CodePreview extends LitElement {
         ${SURFACE_OPTIONS.map(
           (option) => html`
             <ui-menu-item value="${option.value}">
-              <iconify-icon icon="${option.icon}" aria-hidden="true"></iconify-icon>
+              <ui-icon name="${option.icon}" aria-hidden="true"></ui-icon>
               <span>${option.label}</span>
             </ui-menu-item>
           `,
@@ -856,7 +857,7 @@ export class CodePreview extends LitElement {
         ${VIEWPORT_OPTIONS.map(
           (option) => html`
             <ui-menu-item value="${option.value}">
-              <iconify-icon icon="${option.icon}" aria-hidden="true"></iconify-icon>
+              <ui-icon name="${option.icon}" aria-hidden="true"></ui-icon>
               <span>${option.label}</span>
             </ui-menu-item>
           `,

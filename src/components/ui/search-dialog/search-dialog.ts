@@ -1,6 +1,6 @@
 import { LitElement, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
-import '../../../lib/icons';
+import '../icon/icon.js';
 import '../search-field/search-field';
 import '../spinner/spinner';
 import type { SearchField } from '../search-field/search-field';

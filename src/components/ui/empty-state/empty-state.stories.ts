@@ -274,7 +274,7 @@ export const VariantStateMatrix: Story = {
       <div class="cell">
         <p class="label">search</p>
         <ui-empty-state id="matrix-search" variant="search">
-          <iconify-icon slot="icon" icon="lucide:search-x" aria-hidden="true"></iconify-icon>
+          <ui-icon slot="icon" name="search-x" aria-hidden="true"></ui-icon>
           <h2 slot="heading">No matches for "design token"</h2>
           <p slot="description">Try fewer words or remove quotes.</p>
         </ui-empty-state>
@@ -283,7 +283,7 @@ export const VariantStateMatrix: Story = {
       <div class="cell">
         <p class="label">error</p>
         <ui-empty-state id="matrix-error" variant="error">
-          <iconify-icon slot="icon" icon="lucide:triangle-alert" aria-hidden="true"></iconify-icon>
+          <ui-icon slot="icon" name="triangle-alert" aria-hidden="true"></ui-icon>
           <h2 slot="heading">Failed to load notes</h2>
           <p slot="description">Check your network and try again.</p>
           <button slot="action" type="button">Retry</button>
@@ -371,7 +371,7 @@ export const IllustrationPriority: Story = {
         <circle cx="102" cy="60" r="22" fill="currentColor" opacity="0.18"></circle>
         <circle cx="156" cy="60" r="22" fill="currentColor" opacity="0.12"></circle>
       </svg>
-      <iconify-icon slot="icon" icon="lucide:inbox" aria-hidden="true"></iconify-icon>
+      <ui-icon slot="icon" name="inbox" aria-hidden="true"></ui-icon>
       <h2 slot="heading">Use illustration when context needs it</h2>
       <p slot="description">If illustration is provided, icon is suppressed.</p>
     </ui-empty-state>
@@ -561,7 +561,7 @@ export const DescriptionLinkGuidance: Story = {
 export const NoPublicDerivedState: Story = {
   render: () => html`
     <ui-empty-state id="no-public-derived-state">
-      <iconify-icon slot="icon" icon="lucide:search-x" aria-hidden="true"></iconify-icon>
+      <ui-icon slot="icon" name="search-x" aria-hidden="true"></ui-icon>
       <h2 slot="heading">No matches</h2>
       <p slot="description">Derived slot state must stay internal.</p>
       <button slot="action" type="button">Reset filters</button>
@@ -583,7 +583,7 @@ export const NoPublicDerivedState: Story = {
 export const VisualDensityContract: Story = {
   render: () => html`
     <ui-empty-state id="visual-density-contract">
-      <iconify-icon slot="icon" icon="lucide:inbox" aria-hidden="true"></iconify-icon>
+      <ui-icon slot="icon" name="inbox" aria-hidden="true"></ui-icon>
       <h2 slot="heading">Keep the message compact</h2>
       <p slot="description">The message block should stay narrow enough to preserve reading rhythm.</p>
       <button slot="action" type="button">Create note</button>
@@ -675,7 +675,7 @@ export const DarkModeContract: Story = {
 
     <div id="dark-surface" class="dark-surface">
       <ui-empty-state id="dark-mode-error" variant="error">
-        <iconify-icon slot="icon" icon="lucide:triangle-alert" aria-hidden="true"></iconify-icon>
+        <ui-icon slot="icon" name="triangle-alert" aria-hidden="true"></ui-icon>
         <h2 slot="heading">Could not load recent notes</h2>
         <p slot="description">Try again in a moment, or refresh this page.</p>
         <button slot="action" type="button">Retry</button>

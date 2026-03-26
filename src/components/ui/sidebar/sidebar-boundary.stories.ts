@@ -10,14 +10,14 @@ const sampleItems: readonly TreeNode[] = [
     kind: 'branch',
     id: 'root',
     label: 'root',
-    icon: 'lucide:folder',
+    icon: 'folder',
     children: [
       {
         kind: 'leaf',
         id: 'root/readme',
         label: 'README.md',
         href: '/notes/readme',
-        icon: 'lucide:file-text',
+        icon: 'file-text',
       },
     ],
   },

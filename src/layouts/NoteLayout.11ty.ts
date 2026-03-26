@@ -8,6 +8,7 @@
 import { buildSidebarTree } from '../../lib/content/build-sidebar-tree.js';
 import { tokenizeSearchText } from '../lib/search/query-preprocessor.js';
 import type { NoteStatus } from '../types/article-status.js';
+import type { IconName } from '../icons/catalog.js';
 
 interface TocHeading {
   id?: string;
@@ -21,8 +22,8 @@ interface SidebarNoteLike {
   permalink?: string;
   noteKind?: 'leaf' | 'directory-index';
   directoryPath?: string;
-  sidebarResolvedIcon?: string;
-  sidebarDirectoryIcons?: Record<string, string>;
+  sidebarResolvedIcon?: IconName;
+  sidebarDirectoryIcons?: Record<string, IconName>;
 }
 
 interface NoteData extends SidebarNoteLike {
@@ -211,7 +212,7 @@ export class NoteLayout {
     const headings = normalizeHeadings(note?.tocHeadings);
     const sidebarRoot = typeof note?.sidebarRoot === 'string' ? note.sidebarRoot : '';
     const sidebarNotes = mergeCurrentNoteIntoSidebarNotes(note, data.notes);
-    const sidebarTree = buildSidebarTree(sidebarNotes, slug, sidebarRoot);
+    const sidebarTree = buildSidebarTree(sidebarNotes, sidebarRoot);
 
     const dataIdBase = toSafeDataId(slug.length > 0 ? slug : 'note');
     const sidebarSourceId = `sidebar-source-${dataIdBase}`;

@@ -462,9 +462,9 @@ export const LoadingAndErrorStates: Story = {
 
     const errorFallback = errorRootNode.querySelector<HTMLElement>('.error-fallback');
     if (!errorFallback) throw new Error('error 時は .error-fallback を表示する必要があります');
-    const errorIcon = errorFallback.querySelector<HTMLElement>('iconify-icon');
-    if (errorIcon?.getAttribute('icon') !== 'lucide:image-off') {
-      throw new Error('error 時のアイコンは lucide:image-off である必要があります');
+    const errorIcon = errorFallback.querySelector<HTMLElement>('ui-icon');
+    if (errorIcon?.getAttribute('icon') !== 'image-off') {
+      throw new Error('error 時のアイコンは image-off である必要があります');
     }
     if (!errorFallback.textContent.includes('画像を読み込めませんでした')) {
       throw new Error('error 文言は alt ではなく失敗状態そのものを示す必要があります');

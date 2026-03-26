@@ -7,7 +7,7 @@ const createLeaf = (
   id: string,
   label: string,
   href: string,
-  icon = 'lucide:file-text',
+  icon = 'file-text',
 ): TreeNode => ({
   kind: 'leaf',
   id,
@@ -20,7 +20,7 @@ const createBranch = (
   id: string,
   label: string,
   children: readonly TreeNode[],
-  icon = 'lucide:folder',
+  icon = 'folder',
 ): TreeNode => ({
   kind: 'branch',
   id,

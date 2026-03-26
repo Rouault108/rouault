@@ -20,11 +20,11 @@ const triggerStyle = `
 const createTrigger = (label: string, id?: string) => html`
   <button id="${id ?? nothing}" slot="trigger" style="${triggerStyle}">
     ${label}
-    <iconify-icon
-      icon="lucide:chevron-down"
+    <ui-icon
+      icon="chevron-down"
       aria-hidden="true"
       style="width: 14px; height: 14px;"
-    ></iconify-icon>
+    ></ui-icon>
   </button>
 `;
 
@@ -283,16 +283,16 @@ export const WithIcons: Story = {
       <ui-dropdown opened>
         ${createTrigger('ファイル')}
         <ui-menu-item value="new" text-value="新規作成">
-          <iconify-icon icon="lucide:file-plus"></iconify-icon>
+          <ui-icon name="file-plus"></ui-icon>
           新規作成
         </ui-menu-item>
         <ui-menu-item value="open" text-value="開く">
-          <iconify-icon icon="lucide:folder-open"></iconify-icon>
+          <ui-icon name="folder-open"></ui-icon>
           開く
         </ui-menu-item>
         <ui-menu-separator></ui-menu-separator>
         <ui-menu-item value="delete" variant="danger" text-value="削除">
-          <iconify-icon icon="lucide:trash-2"></iconify-icon>
+          <ui-icon name="trash-2"></ui-icon>
           削除
         </ui-menu-item>
       </ui-dropdown>
