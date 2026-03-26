@@ -23,10 +23,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(process.cwd(), 'src'),
-      '@lit-labs/ssr-client': path.resolve(
-        process.cwd(),
-        'node_modules/.pnpm/node_modules/@lit-labs/ssr-client',
-      ),
     },
   },
   build: {
