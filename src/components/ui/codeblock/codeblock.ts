@@ -111,7 +111,7 @@ ui-code-block pre {
   background: transparent !important;
   color: var(--fg-default, oklch(20% 0 0));
   font-family: var(--font-mono, monospace);
-  font-size: var(--text-sm, 0.8125rem);
+  font-size: var(--text-lg, 1rem);
   line-height: var(--line-height-code, 1.45);
   padding: var(--ui-code-surface-padding, var(--ui-code-block-padding, var(--space-3, 12px)));
   overflow-x: auto;
