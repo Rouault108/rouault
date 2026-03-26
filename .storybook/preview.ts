@@ -14,7 +14,7 @@ import '@fontsource/jetbrains-mono/700.css';
 
 import '../src/assets/css/tokens.css';
 import '../src/assets/css/main.css';
-import '../src/components/ui/icon/icon.js';
+import '../src/components/ui/icon/icon';
 
 setCustomElementsManifest(customElements);
 

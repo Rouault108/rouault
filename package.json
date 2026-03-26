@@ -6,7 +6,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "analyze": "pnpm exec cem analyze --litelement --config cem.config.mjs",
+    "analyze": "node scripts/generate-custom-elements-manifest.mjs",
     "preanalyze": "pnpm run generate:icons",
 
     "test": "pnpm test:unit && pnpm test:ssr && pnpm test:storybook",
@@ -29,9 +29,9 @@
 
     "format": "prettier --write .",
 
-    "storybook": "pnpm exec cem analyze --config cem.config.mjs && pnpm exec storybook dev",
+    "storybook": "pnpm run analyze && pnpm exec storybook dev",
     "prestorybook": "pnpm run generate:icons",
-    "storybook:build": "pnpm exec cem analyze --config cem.config.mjs && pnpm exec storybook build",
+    "storybook:build": "pnpm run analyze && pnpm exec storybook build",
     "prestorybook:build": "pnpm run generate:icons",
 
     "build:client": "pnpm exec vite build --config vite.client.config.ts",
@@ -61,9 +61,12 @@
     "@fontsource-variable/noto-sans-jp": "5.2.10",
     "@fontsource/jetbrains-mono": "5.2.8",
     "@lit-labs/ssr": "~4.0.0",
+    "@lit-labs/ssr-client": "~1.1.8",
+    "@lit/reactive-element": "~2.1.2",
     "@shikijs/transformers": "3.21.0",
     "iconify-icon": "3.0.2",
     "lit": "~3.3.2",
+    "lit-html": "~3.3.2",
     "shiki": "3.21.0"
   },
   "devDependencies": {

@@ -1,28 +1,39 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { StorybookConfig } from '@storybook/web-components-vite';
+import { mergeConfig, type UserConfig } from 'vite';
+
+const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const config: StorybookConfig = {
-  // 1. Storyファイルの検索パターン
   stories: ['../src/**/*.stories.@(js|ts)'],
 
-  // 2. アドオンの登録
   addons: [
-    // '@storybook/addon-essentials',   // すべての基本アドオン (v10では個別導入推奨のため削除)
-    '@storybook/addon-a11y', // アクセシビリティ検証
-    '@storybook/addon-themes', // テーマ切り替え
-    '@storybook/addon-vitest', // Vitest統合
+    '@storybook/addon-a11y',
+    '@storybook/addon-themes',
+    '@storybook/addon-vitest',
   ],
 
-  // 3. フレームワークの設定
   framework: {
     name: '@storybook/web-components-vite',
     options: {},
   },
 
-  // 4. Vite固有のカスタマイズ
   viteFinal(config) {
-    return {
-      ...config,
-    };
+    return mergeConfig(
+      config,
+      {
+        resolve: {
+          alias: {
+            '@': path.resolve(projectRoot, 'src'),
+          },
+          dedupe: ['lit', 'lit-html', '@lit/reactive-element'],
+        },
+        optimizeDeps: {
+          include: ['lit', 'lit-html', '@lit/reactive-element'],
+        },
+      } satisfies UserConfig,
+    );
   },
 };
 

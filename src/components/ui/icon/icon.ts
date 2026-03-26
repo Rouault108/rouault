@@ -7,7 +7,7 @@ const ARIA_LABEL_ATTRIBUTE = 'aria-label';
 export class UiIcon extends HTMLElement {
   static readonly observedAttributes = [NAME_ATTRIBUTE, ARIA_LABEL_ATTRIBUTE];
 
-  private readonly glyph = document.createElement('ui-icon');
+  private readonly glyph = document.createElement('iconify-icon');
 
   constructor() {
     super();
@@ -16,6 +16,7 @@ export class UiIcon extends HTMLElement {
     this.glyph.style.inlineSize = '1em';
     this.glyph.style.blockSize = '1em';
     this.glyph.style.display = 'inline-block';
+    this.glyph.style.flexShrink = '0';
   }
 
   get name(): IconName | null {
@@ -71,7 +72,7 @@ export class UiIcon extends HTMLElement {
       this.replaceChildren(this.glyph);
     }
 
-    this.glyph.setAttribute('icon', name);
+    this.glyph.setAttribute('icon', `lucide:${name}`);
 
     const ariaLabel = this.getAttribute(ARIA_LABEL_ATTRIBUTE)?.trim();
     if (ariaLabel && ariaLabel.length > 0) {

@@ -1,5 +1,6 @@
 import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import '../tree-item/tree-item';
 import type { IconName } from '../../../icons/catalog.js';
 
@@ -864,7 +865,12 @@ export class FileTree extends LitElement {
     }
   }
 
-  private _renderTreeItems(nodes: readonly TreeNode[]): TemplateResult[] {
+  private _renderTreeItems(
+    nodes: readonly TreeNode[],
+    options: { slotName?: string } = {},
+  ): TemplateResult[] {
+    const { slotName } = options;
+
     return nodes.map((node) => {
       const isExpanded = isBranchNode(node) ? this._effectiveExpandedIds.has(node.id) : false;
       const isSelected = this._selectedLeafId === node.id;
@@ -872,13 +878,14 @@ export class FileTree extends LitElement {
 
       return html`
         <ui-tree-item
+          slot=${ifDefined(slotName)}
           data-id=${node.id}
           .label=${node.label}
           .icon=${node.icon ?? ''}
           .href=${isLeafNode(node) ? node.href : ''}
-          ?expanded=${isExpanded}
-          ?selected=${isSelected}
-          ?print-mode=${this.printable && this._printExpanding}
+          .expanded=${isExpanded}
+          .selected=${isSelected}
+          .printMode=${this.printable && this._printExpanding}
           .tabIndex=${tabindex}
           .density=${this.density}
           @selected-change=${(event: CustomEvent) => {
@@ -895,7 +902,7 @@ export class FileTree extends LitElement {
           @tree-item-arrow-left=${this._handleArrowLeft}
         >
           ${isBranchNode(node)
-            ? html`<div slot="children">${this._renderTreeItems(node.children)}</div>`
+            ? this._renderTreeItems(node.children, { slotName: 'children' })
             : nothing}
         </ui-tree-item>
       `;

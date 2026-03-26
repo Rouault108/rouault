@@ -31,7 +31,9 @@ const escapePlainText = (value: string): string =>
   value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 const resolveDefaultBuildLabel = (): string | undefined => {
-  const gitHash = normalizeOptionalText(__GIT_HASH__);
+  const gitHash =
+    typeof __GIT_HASH__ === 'string' ? normalizeOptionalText(__GIT_HASH__) : undefined;
+
   return gitHash ? `build ${gitHash}` : undefined;
 };
 
