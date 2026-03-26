@@ -9327,7 +9327,7 @@ class SaveButton extends LitElement {
 
   render() {
     return html`
-      <button @click="${this.handleSave}" ?disabled="${this.saving}">
+      <button @click="${this.handleSave}" ?disabled=${this.saving}>
         ${this.saving
           ? html`<ui-spinner size="default" aria-label="保存中"></ui-spinner> 保存中...`
           : '保存'}
