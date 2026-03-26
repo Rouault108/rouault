@@ -481,6 +481,8 @@ export class CodeBlock extends LitElement {
 
   private _resizeObserver?: ResizeObserver;
 
+  private _preResyncScheduled = false;
+
   override connectedCallback(): void {
     super.connectedCallback();
     this._injectDocumentStyles();
@@ -528,6 +530,20 @@ export class CodeBlock extends LitElement {
         this.setAttribute('data-lang', normalizedLang);
       }
     }
+
+    if (changedProperties.has('initialCode')) {
+      const pre = this._findPreElement();
+      if (pre === null) {
+        this._setCopyValue(this.initialCode);
+      }
+    }
+  }
+
+  override firstUpdated(_changedProperties: PropertyValues<this>): void {
+    super.firstUpdated(_changedProperties);
+    this._syncSlottedPre();
+    this._applyLayoutSurfaceVars();
+    this._hasCompletedFirstUpdate = true;
   }
 
   override updated(changedProperties: PropertyValues<this>): void {
@@ -541,23 +557,16 @@ export class CodeBlock extends LitElement {
       changedProperties.has('showLineNumbers') ||
       changedProperties.has('highlightLines') ||
       changedProperties.has('wrap') ||
-      changedProperties.has('layout');
-
-    if (
+      changedProperties.has('layout') ||
       changedProperties.has('filename') ||
       changedProperties.has('lang') ||
-      changedProperties.has('intent') ||
-      requiresPreResync
-    ) {
-      this._syncSlottedPre();
-    }
+      changedProperties.has('intent');
 
-    if (changedProperties.has('initialCode') && this._findPreElement() === null) {
-      this._copyValue = normalizeLineEndings(this.initialCode);
+    if (requiresPreResync) {
+      this._schedulePreResync();
     }
 
     if (!this._hasCompletedFirstUpdate) {
-      this._hasCompletedFirstUpdate = true;
       return;
     }
 
@@ -573,10 +582,7 @@ export class CodeBlock extends LitElement {
       changedProperties.has('layout') ||
       changedProperties.has('label');
 
-    const affectsCopyValue =
-      changedProperties.has('initialCode') ||
-      changedProperties.has('showLineNumbers') ||
-      changedProperties.has('highlightLines');
+    const affectsCopyValue = changedProperties.has('initialCode');
 
     if (metadataChanged || affectsCopyValue) {
       const kinds: ('content' | 'metadata')[] = [];
@@ -588,6 +594,24 @@ export class CodeBlock extends LitElement {
       }
       this._dispatchChange(kinds, affectsCopyValue);
     }
+  }
+
+  private _schedulePreResync(): void {
+    if (this._preResyncScheduled) {
+      return;
+    }
+
+    this._preResyncScheduled = true;
+
+    queueMicrotask(() => {
+      this._preResyncScheduled = false;
+
+      if (!this.isConnected) {
+        return;
+      }
+
+      this._syncSlottedPre();
+    });
   }
 
   /**
@@ -748,7 +772,7 @@ export class CodeBlock extends LitElement {
     this._contentObserver?.disconnect();
 
     if (!pre) {
-      this._copyValue = normalizeLineEndings(this.initialCode);
+      this._setCopyValue(this.initialCode);
       return;
     }
 
@@ -762,7 +786,7 @@ export class CodeBlock extends LitElement {
       this._applyHighlightLines(pre);
       this._updateAccessibleMetadata(pre);
       this._updateScrollableState(pre);
-      this._copyValue = this._readSlottedCodeText(pre);
+      this._setCopyValue(this._readSlottedCodeText(pre));
     } finally {
       this._isSyncingPre = false;
     }
@@ -959,10 +983,19 @@ export class CodeBlock extends LitElement {
           size="sm"
           value="${this._copyValue}"
           label="${this._copyButtonLabel}"
-          ?disabled="${this._copyDisabled}"
+          ?disabled=${this._copyDisabled}
         ></ui-copy-button>
       </span>
     `;
+  }
+
+  private _setCopyValue(nextValue: string): void {
+    const normalized = normalizeLineEndings(nextValue);
+    if (this._copyValue === normalized) {
+      return;
+    }
+
+    this._copyValue = normalized;
   }
 
   override render() {

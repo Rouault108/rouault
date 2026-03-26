@@ -724,7 +724,7 @@ export class Button extends LitElement {
         part="button"
         type="${this.type}"
         form="${ifDefined(this.form)}"
-        ?disabled="${this.disabled || this.loading}"
+        ?disabled=${this.disabled || this.loading}
         aria-busy="${ifDefined(this.loading ? 'true' : undefined)}"
         aria-pressed="${ifDefined(this.pressed !== undefined ? String(this.pressed) : undefined)}"
         aria-label="${ifDefined(this.iconOnly ? (this.ariaLabel ?? undefined) : undefined)}"

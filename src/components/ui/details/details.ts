@@ -357,7 +357,7 @@ export class Details extends LitElement {
           role="${ifDefined(this.region ? 'region' : undefined)}"
           aria-labelledby="${ifDefined(this.region ? this._summaryId : undefined)}"
           aria-hidden="${String(!this.open)}"
-          ?inert="${!this.open}"
+          ?inert=${!this.open}
         >
           <div class="content-inner">
             <div class="content-body" part="content">

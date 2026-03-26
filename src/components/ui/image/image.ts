@@ -654,7 +654,7 @@ export class UiImage extends LitElement {
       <div
         class="lightbox ${isOpen ? 'is-open' : ''}"
         aria-hidden="${String(!isOpen)}"
-        ?inert="${!isOpen}"
+        ?inert=${!isOpen}
         @click="${this._onLightboxClick}"
         @keydown="${this._onLightboxKeyDown}"
       >
@@ -705,7 +705,7 @@ export class UiImage extends LitElement {
                 aria-expanded="${String(this._expanded && this._canOpenLightbox)}"
                 aria-haspopup="dialog"
                 aria-controls="${this._dialogId}"
-                ?disabled="${!this._canOpenLightbox}"
+                ?disabled=${!this._canOpenLightbox}
                 @click="${this._onTriggerClick}"
               >
                 ${this._renderMediaSurface(undefined)}

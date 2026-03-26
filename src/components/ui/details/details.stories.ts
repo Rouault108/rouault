@@ -123,7 +123,7 @@ export const Default: Story = {
       id="details-default"
       aria-label="${ifDefined(args.ariaLabel.trim() ? args.ariaLabel : undefined)}"
       summary="${args.summary}"
-      ?open="${args.open}"
+      ?open=${args.open}
       variant="${args.variant}"
     >
       <p style="margin: 0;">このセクションは、必要な時だけ読む補足情報です。</p>
@@ -186,7 +186,7 @@ export const VariantStateMatrix: Story = {
               id="${item.id}"
               summary="${item.summary}"
               variant="${item.variant}"
-              ?open="${item.open}"
+              ?open=${item.open}
             >
               <p style="margin: 0;">
                 variant="${item.variant}" / open="${String(item.open)}" の検証コンテンツです。

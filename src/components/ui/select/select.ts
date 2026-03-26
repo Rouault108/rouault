@@ -565,7 +565,7 @@ export class Select extends LitElement {
           aria-activedescendant="${ifDefined(activeDescendant)}"
           aria-disabled="${this.disabled ? 'true' : 'false'}"
           aria-readonly="${this.readonly ? 'true' : 'false'}"
-          ?disabled="${this.disabled}"
+          ?disabled=${this.disabled}
           tabindex="${this.disabled ? '-1' : '0'}"
           .value="${isPlaceholder ? '' : displayText}"
           placeholder="${isPlaceholder ? this.placeholder : ''}"

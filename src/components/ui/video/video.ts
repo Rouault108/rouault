@@ -1810,7 +1810,7 @@ export class UiVideo extends LitElement {
             srclang="${track.srclang}"
             label="${track.label}"
             kind="${track.kind}"
-            ?default="${track.default ?? false}"
+            ?default=${track.default ?? false}
           />
         `,
       )}
@@ -1830,7 +1830,7 @@ export class UiVideo extends LitElement {
             class="skip-button ${this._skipButtonsVisible ? 'is-visible' : ''}"
             tabindex="-1"
             aria-label="10秒戻る"
-            ?disabled="${this._controlDisabled}"
+            ?disabled=${this._controlDisabled}
             @click="${this._onSkipBack}"
           >
             <ui-icon name="rotate-ccw" aria-hidden="true"></ui-icon>
@@ -1842,7 +1842,7 @@ export class UiVideo extends LitElement {
             tabindex="-1"
             aria-label="${this._playButtonLabel}"
             aria-pressed="${String(isPressed)}"
-            ?disabled="${this._controlDisabled}"
+            ?disabled=${this._controlDisabled}
             @click="${this._togglePlayback}"
           >
             <ui-icon name="${this._playButtonIcon}" aria-hidden="true"></ui-icon>
@@ -1853,7 +1853,7 @@ export class UiVideo extends LitElement {
             class="skip-button ${this._skipButtonsVisible ? 'is-visible' : ''}"
             tabindex="-1"
             aria-label="10秒進む"
-            ?disabled="${this._controlDisabled}"
+            ?disabled=${this._controlDisabled}
             @click="${this._onSkipForward}"
           >
             <ui-icon name="rotate-cw" aria-hidden="true"></ui-icon>
@@ -1942,10 +1942,10 @@ export class UiVideo extends LitElement {
             src="${ifDefined(this._hasMediaSource ? this._resolvedSrc : undefined)}"
             poster="${ifDefined(this._resolvedPoster === '' ? undefined : this._resolvedPoster)}"
             preload="metadata"
-            ?autoplay="${this.autoplay}"
-            ?loop="${this.loop}"
-            ?muted="${this.muted}"
-            ?playsinline="${this.playsinline}"
+            ?autoplay=${this.autoplay}
+            ?loop=${this.loop}
+            ?muted=${this.muted}
+            ?playsinline=${this.playsinline}
             aria-describedby="${ifDefined(this._captionRef)}"
             @loadedmetadata="${this._onLoadedMetadata}"
             @canplay="${this._onCanPlay}"
@@ -2015,7 +2015,7 @@ export class UiVideo extends LitElement {
                 aria-valuemax="${String(this._seekMax)}"
                 aria-valuenow="${String(this._seekNow)}"
                 aria-valuetext="${this._seekValueText}"
-                ?disabled="${this._controlDisabled || this._seekMax <= 0}"
+                ?disabled=${this._controlDisabled || this._seekMax <= 0}
                 @input="${this._onSeekInput}"
               />
               <span class="time-label">${this._seekValueText}</span>
@@ -2028,8 +2028,8 @@ export class UiVideo extends LitElement {
                   size="sm"
                   icon-only
                   aria-label="${this._playButtonLabel}"
-                  ?pressed="${this._isPlayingLike}"
-                  ?disabled="${this._controlDisabled}"
+                  ?pressed=${this._isPlayingLike}
+                  ?disabled=${this._controlDisabled}
                   @click="${this._onFloatingBarPlay}"
                 >
                   <ui-icon name="${this._playButtonIcon}" aria-hidden="true"></ui-icon>
@@ -2040,7 +2040,7 @@ export class UiVideo extends LitElement {
                   size="sm"
                   icon-only
                   aria-label="10秒戻る"
-                  ?disabled="${this._controlDisabled}"
+                  ?disabled=${this._controlDisabled}
                   @click="${this._onFloatingBarSkipBack}"
                 >
                   <ui-icon name="rewind" aria-hidden="true"></ui-icon>
@@ -2051,7 +2051,7 @@ export class UiVideo extends LitElement {
                   size="sm"
                   icon-only
                   aria-label="10秒進む"
-                  ?disabled="${this._controlDisabled}"
+                  ?disabled=${this._controlDisabled}
                   @click="${this._onFloatingBarSkipForward}"
                 >
                   <ui-icon name="fast-forward" aria-hidden="true"></ui-icon>
@@ -2062,7 +2062,7 @@ export class UiVideo extends LitElement {
                   size="sm"
                   icon-only
                   aria-label="${this._muteButtonLabel}"
-                  ?disabled="${this._controlDisabled}"
+                  ?disabled=${this._controlDisabled}
                   @click="${this._toggleMuted}"
                 >
                   <ui-icon name="${this._muteButtonIcon}" aria-hidden="true"></ui-icon>
@@ -2081,7 +2081,7 @@ export class UiVideo extends LitElement {
                   aria-valuemax="1"
                   aria-valuenow="${String(this._volume)}"
                   aria-valuetext="${`${String(Math.round(this._volume * 100))}%`}"
-                  ?disabled="${this._controlDisabled}"
+                  ?disabled=${this._controlDisabled}
                   @input="${this._onVolumeInput}"
                 />
               </div>
@@ -2096,7 +2096,7 @@ export class UiVideo extends LitElement {
                         aria-label="${this._captionToggleLabel}"
                         aria-pressed="${String(this._captionsActive)}"
                         .pressed="${this._captionsActive}"
-                        ?disabled="${this._controlDisabled}"
+                        ?disabled=${this._controlDisabled}
                         @click="${this._toggleCaptions}"
                       >
                         <ui-icon
@@ -2113,7 +2113,7 @@ export class UiVideo extends LitElement {
                   icon-only
                   class="fullscreen-button"
                   aria-label="${this._fullscreenButtonLabel}"
-                  ?disabled="${this._controlDisabled}"
+                  ?disabled=${this._controlDisabled}
                   @click="${this._toggleFullscreen}"
                 >
                   <ui-icon

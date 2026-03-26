@@ -533,7 +533,7 @@ export class Slider extends LitElement {
           min="${this._normalizedMin}"
           max="${this._normalizedMax}"
           step="${this._normalizedStep}"
-          ?disabled="${this.disabled}"
+          ?disabled=${this.disabled}
           aria-label="${this._getAriaLabel()}"
           aria-valuemin="${this._normalizedMin}"
           aria-valuemax="${this._normalizedMax}"

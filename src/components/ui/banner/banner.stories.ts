@@ -183,7 +183,7 @@ export const Default: Story = {
     dismissible: false,
   },
   render: (args) => html`
-    <ui-banner id="banner-default" variant="${args.variant}" ?dismissible="${args.dismissible}">
+    <ui-banner id="banner-default" variant="${args.variant}" ?dismissible=${args.dismissible}>
       お使いのセッションは30分後に期限切れになります。
       <a slot="action" href="/session">セッションを延長</a>
     </ui-banner>

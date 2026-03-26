@@ -137,7 +137,7 @@ export const Default: Story = {
       max="${args.max}"
       step="${args.step}"
       value="${args.value}"
-      ?disabled="${args.disabled}"
+      ?disabled=${args.disabled}
     ></ui-slider>
   `,
   play: async ({ canvasElement }) => {

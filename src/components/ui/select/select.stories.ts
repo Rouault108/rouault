@@ -367,7 +367,7 @@ export const ErrorState: Story = {
       label="都道府県"
       name="prefecture"
       placeholder="選択してください"
-      ?error="${true}"
+      ?error=${true}
       error-message="都道府県を選択してください"
       help-text="このヘルプテキストはエラー時に非表示になります"
       .options="${PREFECTURE_OPTIONS}"
@@ -422,7 +422,7 @@ export const Disabled: Story = {
       label="都道府県"
       name="prefecture"
       model-value="tokyo"
-      ?disabled="${true}"
+      ?disabled=${true}
       .options="${PREFECTURE_OPTIONS}"
     ></ui-select>
   `,
@@ -463,7 +463,7 @@ export const Readonly: Story = {
       label="ステータス"
       name="status"
       model-value="active1"
-      ?readonly="${true}"
+      ?readonly=${true}
       .options="${OPTIONS_WITH_DISABLED}"
     ></ui-select>
   `,
@@ -504,7 +504,7 @@ export const HiddenLabel: Story = {
     <ui-select
       id="hidden-label-select"
       label="フルーツ"
-      ?hide-label="${true}"
+      ?hide-label=${true}
       name="fruit"
       placeholder="フルーツを選択"
       .options="${FRUIT_OPTIONS}"
@@ -681,7 +681,7 @@ export const AllStatesShowcase: Story = {
           label="都道府県"
           name="s4"
           placeholder="選択してください"
-          ?error="${true}"
+          ?error=${true}
           error-message="都道府県を選択してください"
           .options="${PREFECTURE_OPTIONS}"
         ></ui-select>
@@ -692,7 +692,7 @@ export const AllStatesShowcase: Story = {
           label="都道府県"
           name="s5"
           model-value="osaka"
-          ?disabled="${true}"
+          ?disabled=${true}
           .options="${PREFECTURE_OPTIONS}"
         ></ui-select>
       </div>
@@ -702,7 +702,7 @@ export const AllStatesShowcase: Story = {
           label="都道府県"
           name="s6"
           model-value="kyoto"
-          ?readonly="${true}"
+          ?readonly=${true}
           .options="${PREFECTURE_OPTIONS}"
         ></ui-select>
       </div>
@@ -1288,7 +1288,7 @@ export const ErrorWithoutMessage: Story = {
       label="都道府県"
       name="prefecture"
       placeholder="選択してください"
-      ?error="${true}"
+      ?error=${true}
       help-text="通常時のヘルプテキスト"
       .options="${PREFECTURE_OPTIONS}"
     ></ui-select>

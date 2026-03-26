@@ -225,8 +225,8 @@ export const Default: Story = {
     <ui-button
       variant="${args.variant}"
       size="${args.size}"
-      ?disabled="${args.disabled}"
-      ?loading="${args.loading}"
+      ?disabled=${args.disabled}
+      ?loading=${args.loading}
     >
       保存
     </ui-button>
@@ -433,7 +433,7 @@ export const Loading: Story = {
     loading: true,
   },
   render: (args) => html`
-    <ui-button variant="${args.variant}" size="${args.size}" ?loading="${args.loading}">
+    <ui-button variant="${args.variant}" size="${args.size}" ?loading=${args.loading}>
       保存中...
     </ui-button>
   `,
@@ -483,7 +483,7 @@ export const Disabled: Story = {
     disabled: true,
   },
   render: (args) => html`
-    <ui-button variant="${args.variant}" size="${args.size}" ?disabled="${args.disabled}">
+    <ui-button variant="${args.variant}" size="${args.size}" ?disabled=${args.disabled}>
       無効なボタン
     </ui-button>
   `,
@@ -555,7 +555,7 @@ export const IconOnly: Story = {
         <ui-button
           variant="${args.variant}"
           size="${args.size}"
-          ?icon-only="${a11yContract.iconOnly}"
+          ?icon-only=${a11yContract.iconOnly}
           aria-label="${a11yContract.ariaLabel}"
         >
           <ui-icon name="settings"></ui-icon>
@@ -1007,7 +1007,7 @@ export const IconOnlyWithoutAriaLabel: Story = {
       がないため、コンソールにエラーが出力されます。 開発者ツールのコンソールを確認してください。
     </div>
 
-    <ui-button variant="${args.variant}" size="${args.size}" ?icon-only="${args.iconOnly}">
+    <ui-button variant="${args.variant}" size="${args.size}" ?icon-only=${args.iconOnly}>
       <ui-icon name="settings"></ui-icon>
     </ui-button>
   `,

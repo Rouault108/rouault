@@ -723,7 +723,7 @@ export class UiTranslation extends LitElement {
         role="${isLookupMode ? 'dialog' : 'note'}"
         aria-modal="${ifDefined(isLookupMode ? 'false' : undefined)}"
         lang="${this._resolvedTargetLang}"
-        ?hidden="${!isOpen}"
+        ?hidden=${!isOpen}
         @pointerdown="${this._onContentPointerDown}"
         @pointermove="${this._onContentPointerMove}"
         @pointerup="${this._onContentPointerUp}"
@@ -770,7 +770,7 @@ export class UiTranslation extends LitElement {
           aria-expanded="${String(isExpanded)}"
           aria-controls="${ifDefined(hasTranslation ? this._contentId : undefined)}"
           aria-details="${ifDefined(hasTranslation ? this._contentId : undefined)}"
-          ?disabled="${!hasTranslation}"
+          ?disabled=${!hasTranslation}
           @click="${this._onTriggerClick}"
         >
           ${this._resolvedOriginal}

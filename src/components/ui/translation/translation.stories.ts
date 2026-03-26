@@ -298,7 +298,7 @@ export const VariantStateMatrix: Story = {
               lang="fr"
               target-lang="ja"
               render-mode="${item.mode}"
-              ?open="${item.open}"
+              ?open=${item.open}
             ></ui-translation>
           </div>
         `,

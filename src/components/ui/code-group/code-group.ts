@@ -1140,7 +1140,7 @@ export class CodeGroup extends LitElement {
               size="sm"
               value="${this._copyValue}"
               label="${this._copyLabel}"
-              ?disabled="${this._copyDisabled}"
+              ?disabled=${this._copyDisabled}
             ></ui-copy-button>
           </div>
         </div>

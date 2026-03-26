@@ -145,8 +145,8 @@ export const Default: Story = {
       variant="${args.variant}"
       size="${args.size}"
       color="${args.color}"
-      ?removable="${args.removable}"
-      ?disabled="${args.disabled}"
+      ?removable=${args.removable}
+      ?disabled=${args.disabled}
       >JavaScript</ui-tag
     >
   `,

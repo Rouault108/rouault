@@ -722,7 +722,7 @@ export class TreeItem extends LitElement {
           text="${this.label}"
           variant="subtle"
           placement="bottom-start"
-          ?disabled="${!this.isLabelTruncated}"
+          ?disabled=${!this.isLabelTruncated}
         >
           <div
             class="item"
@@ -772,7 +772,7 @@ export class TreeItem extends LitElement {
                 class="children"
                 role="group"
                 aria-hidden="${String(!this.expanded)}"
-                ?inert="${!this.expanded}"
+                ?inert=${!this.expanded}
               >
                 <slot name="children" @slotchange="${this._slotChangeHandler}"></slot>
               </div>

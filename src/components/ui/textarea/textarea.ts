@@ -793,9 +793,9 @@ export class Textarea extends LitElement {
         name="${this.name}"
         .value="${live(this.value)}"
         placeholder="${this.placeholder}"
-        ?disabled="${this.disabled}"
-        ?readonly="${this.readonly}"
-        ?required="${this.required}"
+        ?disabled=${this.disabled}
+        ?readonly=${this.readonly}
+        ?required=${this.required}
         rows="${this.rows}"
         aria-label="${this.label}"
         aria-invalid="${hasError}"

@@ -662,7 +662,7 @@ export class Tag extends LitElement {
         class="tag-remove-button"
         type="button"
         aria-label="${this._removeLabel}"
-        ?disabled="${this.disabled}"
+        ?disabled=${this.disabled}
         @click="${this._handleRemove}"
       >
         <!-- × アイコン (12×12px) -->

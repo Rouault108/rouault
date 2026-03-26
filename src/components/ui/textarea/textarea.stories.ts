@@ -169,7 +169,7 @@ export const Default: Story = {
       name="${args.name}"
       placeholder="${args.placeholder}"
       rows="${args.rows}"
-      ?auto-grow="${args.autoGrow}"
+      ?auto-grow=${args.autoGrow}
       variant="${args.variant}"
     ></ui-textarea>
   `,

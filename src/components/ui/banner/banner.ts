@@ -463,7 +463,7 @@ export class Banner extends LitElement {
         <slot></slot>
       </div>
 
-      <div class="actions" ?hidden="${!this._hasActions}">
+      <div class="actions" ?hidden=${!this._hasActions}>
         <slot name="action" @slotchange="${this._onActionSlotChange}"></slot>
       </div>
 

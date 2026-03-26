@@ -174,9 +174,9 @@ export const Default: Story = {
       label="${args.label}"
       name="${args.name}"
       value="${args.value}"
-      ?checked="${args.checked}"
-      ?disabled="${args.disabled}"
-      ?required="${args.required}"
+      ?checked=${args.checked}
+      ?disabled=${args.disabled}
+      ?required=${args.required}
     ></ui-checkbox>
   `,
   play: async ({ canvasElement }) => {

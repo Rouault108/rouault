@@ -132,8 +132,8 @@ export const Default: Story = {
       label="${args.label}"
       name="${args.name}"
       value="${args.value}"
-      ?checked="${args.checked}"
-      ?disabled="${args.disabled}"
+      ?checked=${args.checked}
+      ?disabled=${args.disabled}
     ></ui-radio>
   `,
   play: async ({ canvasElement }) => {

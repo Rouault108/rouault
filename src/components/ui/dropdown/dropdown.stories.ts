@@ -141,10 +141,10 @@ export const Default: Story = {
     <div style="padding: 2rem;">
       <ui-dropdown
         id="default-dropdown"
-        ?opened="${args.opened}"
+        ?opened=${args.opened}
         side="${args.side}"
         align="${args.align}"
-        ?disabled="${args.disabled}"
+        ?disabled=${args.disabled}
       >
         ${createTrigger('メニュー')}
         <ui-menu-item value="edit">編集</ui-menu-item>

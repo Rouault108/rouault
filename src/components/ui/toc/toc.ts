@@ -772,7 +772,7 @@ export class Toc extends LitElement {
                   variant="subtle"
                   placement="right-start"
                   data-heading-id="${heading.id}"
-                  ?disabled="${isActive || !this._truncatedHeadingIds.has(heading.id)}"
+                  ?disabled=${isActive || !this._truncatedHeadingIds.has(heading.id)}
                 >
                   <a
                     class="${classMap({

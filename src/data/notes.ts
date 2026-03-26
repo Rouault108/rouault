@@ -89,12 +89,18 @@ const toOptionalSidebarIconSetting = (value: unknown): SidebarIconSetting | unde
     return 'none';
   }
 
+  if (normalized.startsWith('lucide:')) {
+    throw new Error(
+      `Invalid sidebar icon "${normalized}". Do not use the "lucide:" prefix. Use a bare IconName such as "file-text".`,
+    );
+  }
+
   if (isIconName(normalized)) {
     return normalized;
   }
 
   throw new Error(
-    `Invalid sidebar icon "${normalized}". Use an IconName from src/icons/catalog.ts or "none".`,
+    `Invalid sidebar icon "${normalized}". Use a bare IconName from src/icons/catalog.ts or "none".`,
   );
 };
 

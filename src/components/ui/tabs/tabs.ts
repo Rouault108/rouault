@@ -56,6 +56,7 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
   private readonly panelHideFallbackTimers = new Map<HTMLElement, number>();
 
   private initialized = false;
+  private _selectionResyncScheduled = false;
 
   private readonly urlController = new TabsUrlSyncController(this);
   private readonly indicatorController = new TabsIndicatorController(this);
@@ -92,10 +93,16 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
   }
 
   onUrlStateChanged(): void {
-    this.resolveAndCommit({
-      emitEvent: true,
-      historyMode: 'none',
-      normalizeUrl: true,
+    if (this.snapshot.interactiveCount === 0) {
+      return;
+    }
+  
+    this.urlController.withSuppressedWrite(() => {
+      this.resolveAndCommit({
+        emitEvent: true,
+        historyMode: 'none',
+        normalizeUrl: true,
+      });
     });
   }
 
@@ -162,32 +169,62 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
   override updated(changedProperties: PropertyValues<this>): void {
     super.updated(changedProperties);
 
+    if (changedProperties.has('orientation')) {
+      this.indicatorController.scheduleReposition();
+    }
+
     if (
       changedProperties.has('selectedValue') ||
       changedProperties.has('defaultSelectedValue') ||
       changedProperties.has('urlSync')
     ) {
-      if (this.snapshot.interactiveCount > 0) {
-        if (this.urlSync) {
-          this.urlController.withSuppressedWrite(() => {
-            this.resolveAndCommit({
-              emitEvent: false,
-              historyMode: 'none',
-              normalizeUrl: true,
-            });
-          });
-        } else {
+      this._scheduleSelectionResync();
+    }
+  }
+
+  private _scheduleSelectionResync(): void {
+    if (this._selectionResyncScheduled) {
+      return;
+    }
+
+    this._selectionResyncScheduled = true;
+
+    queueMicrotask(() => {
+      this._selectionResyncScheduled = false;
+
+      if (!this.isConnected) {
+        return;
+      }
+
+      if (this.snapshot.interactiveCount === 0) {
+        return;
+      }
+
+      if (this.urlSync) {
+        this.urlController.withSuppressedWrite(() => {
           this.resolveAndCommit({
             emitEvent: false,
             historyMode: 'none',
-            normalizeUrl: false,
+            normalizeUrl: true,
           });
-        }
+        });
+      } else {
+        this.resolveAndCommit({
+          emitEvent: false,
+          historyMode: 'none',
+          normalizeUrl: false,
+        });
       }
-    }
+    });
+  }
+
+  override willUpdate(changedProperties: PropertyValues<this>): void {
+    super.willUpdate(changedProperties);
 
     if (changedProperties.has('orientation')) {
-      this.indicatorController.scheduleReposition();
+      if (this.orientation !== 'horizontal') {
+        this.orientation = 'horizontal';
+      }
     }
   }
 
@@ -302,13 +339,23 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
     }
 
     const prevIndex = this.activeIndex;
+    const newValue = this.getTabValueAt(index);
+
+    const stateChanged =
+      this.activeIndex !== index || this.focusedIndex !== index || this.selectedValue !== newValue;
+
+    if (!stateChanged) {
+      if (this.urlSync) {
+        this.urlController.writeSelectedValue(newValue, historyMode);
+      }
+      return;
+    }
 
     this.activeIndex = index;
     this.focusedIndex = index;
 
     this.applyDomState(prevIndex);
 
-    const newValue = this.getTabValueAt(index);
     if (this.selectedValue !== newValue) {
       this.selectedValue = newValue;
     }

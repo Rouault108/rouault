@@ -390,9 +390,9 @@ export class Input extends LitElement {
         name="${this.name}"
         .value="${live(this.value)}"
         placeholder="${this.placeholder}"
-        ?disabled="${this._isDisabled}"
-        ?readonly="${this.readonly}"
-        ?required="${this.required}"
+        ?disabled=${this._isDisabled}
+        ?readonly=${this.readonly}
+        ?required=${this.required}
         pattern="${ifDefined(this.pattern || undefined)}"
         minlength="${ifDefined(this.minlength?.toString())}"
         maxlength="${ifDefined(this.maxlength?.toString())}"

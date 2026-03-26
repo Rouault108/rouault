@@ -209,7 +209,7 @@ export const Default: Story = {
       heading-level="${ifDefined(
         args.headingLevel !== undefined ? String(args.headingLevel) : undefined,
       )}"
-      ?landmark="${args.landmark}"
+      ?landmark=${args.landmark}
       variant="${args.variant}"
       density="${args.density}"
     >
@@ -609,7 +609,7 @@ export const VariantStateMatrix: Story = {
               heading-level="${ifDefined(
                 item.headingLevel !== undefined ? String(item.headingLevel) : undefined,
               )}"
-              ?landmark="${item.landmark}"
+              ?landmark=${item.landmark}
               style="
                 --bg-fill-muted: rgb(230, 231, 232);
                 --fg-muted: rgb(70, 71, 72);
@@ -1064,7 +1064,7 @@ export const PrintContract: Story = {
       heading="${args.heading}"
       icon="${args.icon}"
       heading-level="${String(args.headingLevel)}"
-      ?landmark="${args.landmark}"
+      ?landmark=${args.landmark}
       variant="${args.variant}"
       density="${args.density}"
     >

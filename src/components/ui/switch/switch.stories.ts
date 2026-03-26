@@ -98,8 +98,8 @@ export const Default: Story = {
     <ui-switch
       id="default-switch"
       label="${args.label}"
-      ?checked="${args.checked}"
-      ?disabled="${args.disabled}"
+      ?checked=${args.checked}
+      ?disabled=${args.disabled}
     ></ui-switch>
   `,
   play: async ({ canvasElement }) => {

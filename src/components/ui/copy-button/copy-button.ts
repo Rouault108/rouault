@@ -534,7 +534,7 @@ export class CopyButton extends LitElement {
         variant="ghost"
         size="${this.size}"
         icon-only
-        ?disabled="${this.disabled}"
+        ?disabled=${this.disabled}
         aria-label="${this._ariaLabel}"
         @click="${this._handleCopy}"
       >

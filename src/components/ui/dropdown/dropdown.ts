@@ -649,7 +649,7 @@ export class Dropdown extends LitElement {
         id="${this._menuId}"
         aria-labelledby="${this._resolvedTriggerId}"
         aria-hidden="${this.opened ? 'false' : 'true'}"
-        ?inert="${!this.opened}"
+        ?inert=${!this.opened}
         @keydown="${this._handleMenuKeyDown}"
       >
         <slot class="menu-slot"></slot>
@@ -813,7 +813,7 @@ export class MenuItem extends LitElement {
       <button
         role="menuitem"
         tabindex="-1"
-        ?disabled="${this.disabled}"
+        ?disabled=${this.disabled}
         aria-disabled="${this.disabled ? 'true' : nothing}"
         @click="${this._handleClick}"
       >
