@@ -1,6 +1,6 @@
 import { css, html, LitElement, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import 'ui-icon';
+import '../icon/icon.js';
 
 type PaginationMode = 'regular' | 'compact';
 type RangeItem = number | 'ellipsis';
