@@ -52,7 +52,9 @@ type Story = StoryObj<LayoutSidebar>;
 
 const waitFrame = async (): Promise<void> =>
   new Promise((resolve) => {
-    requestAnimationFrame(() => { resolve(); });
+    requestAnimationFrame(() => {
+      resolve();
+    });
   });
 
 const flush = async (host: LayoutSidebar): Promise<void> => {
@@ -86,7 +88,12 @@ export const PersistsExpandedIds: Story = {
     const host = getHost(canvasElement, 'layout-sidebar-persist');
     await flush(host);
 
-    host.dispatchEvent(
+    const sidebar = host.shadowRoot?.querySelector<HTMLElement>('ui-sidebar');
+    if (!sidebar) {
+      throw new Error('ui-sidebar が見つかりません');
+    }
+
+    sidebar.dispatchEvent(
       new CustomEvent<{ id: string; expanded: boolean }>('ui-sidebar-toggle', {
         bubbles: true,
         composed: true,

@@ -157,7 +157,8 @@ const getPlacementSide = (placement: Placement): 'top' | 'right' | 'bottom' | 'l
 export class UiTooltip extends LitElement {
   static override styles = css`
     :host {
-      display: inline-flex;
+      min-inline-size: 0;
+      max-inline-size: 100%;
       vertical-align: middle;
     }
   `;
@@ -603,7 +604,7 @@ export class UiTooltip extends LitElement {
   }
 
   override render(): TemplateResult {
-    return html` <slot @slotchange="${this._onSlotChange}"></slot> `;
+    return html` <slot @slotchange=${this._onSlotChange}></slot> `;
   }
 }
 

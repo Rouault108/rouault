@@ -5,6 +5,8 @@ import '../ui/sidebar/sidebar';
 import type { TreeNode } from '../ui/file-tree/file-tree';
 import type { UiSidebar, UiSidebarToggleDetail } from '../ui/sidebar/sidebar';
 import type { UiSidebarStateChangeDetail } from '../ui/sidebar-shell/sidebar-shell';
+import type { IconName } from '../../icons/catalog.js';
+import { isIconName } from '../../icons/catalog.js';
 import { attachStickyFooterBoundary } from '../../lib/layout/sticky-footer-boundary.js';
 import {
   mergeLayoutSidebarTreeState,
@@ -25,11 +27,27 @@ const toOptionalString = (value: unknown): string | undefined => {
 
 type BranchTreeNode = Extract<TreeNode, { kind: 'branch' }>;
 type LeafTreeNode = Extract<TreeNode, { kind: 'leaf' }>;
-type TreeIcon = NonNullable<TreeNode['icon']>;
+type TreeIcon = IconName;
 
 const toOptionalTreeIcon = (value: unknown): TreeIcon | undefined => {
   const normalized = toOptionalString(value);
-  return normalized === undefined ? undefined : (normalized as TreeIcon);
+  if (normalized === undefined) {
+    return undefined;
+  }
+
+  if (normalized.startsWith('lucide:')) {
+    console.warn(
+      `[layout-sidebar] Invalid icon name "${normalized}". Do not use the "lucide:" prefix. Use a bare icon name.`,
+    );
+    return undefined;
+  }
+
+  if (!isIconName(normalized)) {
+    console.warn(`[layout-sidebar] Unknown icon name: ${normalized}`);
+    return undefined;
+  }
+
+  return normalized;
 };
 
 const toTreeNode = (value: unknown): TreeNode | null => {
@@ -44,13 +62,13 @@ const toTreeNode = (value: unknown): TreeNode | null => {
   }
 
   const childrenValue = value['children'];
-  const children = Array.isArray(childrenValue)
+  const children: TreeNode[] = Array.isArray(childrenValue)
     ? childrenValue
-        .map((item) => toTreeNode(item))
+        .map((item: unknown) => toTreeNode(item))
         .filter((item): item is TreeNode => item !== null)
     : [];
-  const icon = toOptionalTreeIcon(value['icon']);
-  const href = toOptionalString(value['href']);
+    const icon = toOptionalTreeIcon(value['icon']);
+    const href = toOptionalString(value['href']);
 
   if (children.length > 0 && href) {
     return null;
@@ -176,6 +194,7 @@ export class LayoutSidebar extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this._storage = this._resolveStorage();
+    this._state = this._resolveInitialState();
     this._loadItemsFromSource();
     window.addEventListener(
       'layout-sidebar-toggle-request',
@@ -196,6 +215,10 @@ export class LayoutSidebar extends LitElement {
   }
 
   protected override willUpdate(changedProperties: Map<string, unknown>): void {
+    if (!this.hasUpdated || changedProperties.has('fixedBreakpoint')) {
+      this._state = this._resolveInitialState();
+    }
+
     if (
       !this.hasUpdated ||
       changedProperties.has('sourceId') ||
@@ -203,10 +226,6 @@ export class LayoutSidebar extends LitElement {
     ) {
       this._loadItemsFromSource();
     }
-  }
-
-  protected override firstUpdated(): void {
-    this._state = this._sidebarElement?.state ?? this._state;
   }
 
   private _loadItemsFromSource(): void {
@@ -274,6 +293,16 @@ export class LayoutSidebar extends LitElement {
     } catch {
       return null;
     }
+  }
+
+  private _resolveInitialState(): 'expanded' | 'collapsed' {
+    if (typeof window === 'undefined') {
+      return this._state;
+    }
+
+    const mediaQuery = `(min-width: ${String(this.fixedBreakpoint)}px)`;
+
+    return window.matchMedia(mediaQuery).matches ? 'expanded' : 'collapsed';
   }
 
   private _onToggleButtonClick = (event: Event): void => {

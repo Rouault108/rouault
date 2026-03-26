@@ -151,8 +151,8 @@ export const Default: Story = {
       label="${args.label}"
       icon="${args.icon}"
       density="${args.density}"
-      ?selected=${args.selected}
-      ?expanded=${args.expanded}
+      .selected=${args.selected}
+      .expanded=${args.expanded}
     ></ui-tree-item>
   `,
   play: async ({ canvasElement }) => {
@@ -294,7 +294,7 @@ export const Selected: Story = {
     <ui-tree-item
       label="${args.label}"
       icon="${args.icon}"
-      ?selected=${args.selected}
+      .selected=${args.selected}
     ></ui-tree-item>
   `,
   play: async ({ canvasElement }) => {
@@ -425,7 +425,7 @@ export const DeepNesting: Story = {
  */
 export const Collapsed: Story = {
   render: () => html`
-    <ui-tree-item label="node_modules" icon="folder" ?expanded=${false}>
+    <ui-tree-item label="node_modules" icon="folder" .expanded=${false}>
       <ui-tree-item slot="children" label="react" icon="folder"></ui-tree-item>
       <ui-tree-item slot="children" label="vue" icon="folder"></ui-tree-item>
     </ui-tree-item>
@@ -674,6 +674,7 @@ export const LeafNode: Story = {
     if (!expandIcon?.classList.contains('hidden')) {
       throw new Error('リーフノードでは展開アイコンが "hidden" クラスを持つべきです');
     }
+
   },
 };
 
