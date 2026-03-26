@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html, nothing } from 'lit';
-import { expect } from '@open-wc/testing';
+import { expect } from 'storybook/test';
 import './dropdown';
 import { type Dropdown } from './dropdown';
 
@@ -163,12 +163,10 @@ export const Default: Story = {
     if (dropdown.side !== 'bottom') throw new Error('既定 side は bottom である必要があります');
 
     dropdown.open();
-    await dropdown.updateComplete;
-    expect(dropdown.opened).to.equal(true);
+    await expect(dropdown.opened).toBe(true);
 
     dropdown.close();
-    await dropdown.updateComplete;
-    expect(dropdown.opened).to.equal(false);
+    await expect(dropdown.opened).toBe(false);
   },
 };
 
@@ -505,16 +503,13 @@ export const ProgrammaticControl: Story = {
     dropdown.open();
     await dropdown.updateComplete;
     dropdown.open();
-    await dropdown.updateComplete;
-    expect(dropdown.opened).to.equal(true);
+    await expect(dropdown.opened).toBe(true);
 
     dropdown.toggle();
-    await dropdown.updateComplete;
-    expect(dropdown.opened).to.equal(false);
+    await expect(dropdown.opened).toBe(false);
 
     dropdown.close();
-    await dropdown.updateComplete;
-    expect(dropdown.opened).to.equal(false);
+    await expect(dropdown.opened).toBe(false);
   },
 };
 
