@@ -1,0 +1,307 @@
+# Markdown Output Contract
+
+## 概要
+
+本書は、Rouault の Markdown 変換後に成立しなければならない出力 DOM 契約の正本です。
+
+本書は、rehype 以降の HAST 正規化、Web Components への収束、最終 DOM 不変条件、および preview-sandbox の出力契約を定義します。authoring grammar は本書の対象外です。
+
+---
+
+## 1. 文書の目的
+
+本書の目的は、Markdown 変換後の出力について次を固定することです。
+
+- 見出し ID の補完規則
+- 標準 HTML から Rouault コンポーネントへの正規化規則
+- footnote の出力契約
+- preview-sandbox の出力契約
+- インラインコードと順序付きリストに対する補助契約
+- 最終 HAST に対する不変条件
+
+---
+
+## 2. 適用範囲
+
+本書は、rehype 層以降の出力表現に適用します。
+
+対象:
+
+- 見出し要素
+- `pre > code`
+- `blockquote`
+- `table`
+- `hr`
+- task list
+- `mark`
+- `img` / `figure`
+- footnote
+- `ui-code-preview > ui-preview-sandbox`
+- inline code
+- `ol` / `li`
+
+非対象:
+
+- 著者入力としてどの構文を書くか
+- raw HTML の authoring 禁止規則
+- metadata cache の更新戦略
+- 安全規約の詳細な禁止一覧そのもの
+
+---
+
+## 3. 基本原則
+
+### 3.1 標準 HTML から契約済み DOM へ正規化する
+
+Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouault の契約済み DOM へ正規化します。
+
+### 3.2 意味論を優先する
+
+見た目だけを理由に標準要素の意味論を失ってはなりません。正規化は見た目の置換ではなく、意味を保持した収束でなければなりません。
+
+### 3.3 build-time で DOM 契約を確定する
+
+表示時の推測や実行時補修に依存せず、build-time で DOM 契約を確定します。
+
+### 3.4 component 境界を明示する
+
+どの HTML がどの Rouault コンポーネントへ収束するかを固定し、曖昧な二重解釈を許しません。
+
+---
+
+## 4. 見出し ID 契約
+
+### 4.1 ID 補完
+
+`h1` から `h6` に `id` が無い場合、見出しテキストから slug を生成し `id` を補完しなければなりません。
+
+### 4.2 重複時の規則
+
+重複する slug が生じる場合、`-2`、`-3` のような suffix を付与して一意化しなければなりません。
+
+### 4.3 空 slug
+
+見出しテキストから有効な slug が生成できない場合、`section` にフォールバックしなければなりません。
+
+### 4.4 不変条件
+
+- 補完された `id` は文書内で一意でなければなりません。
+- 出力 DOM 上の見出しは、リンク可能な安定 ID を持つことが望まれます。
+- 同一文書からの再ビルドで不要に ID を揺らしてはなりません。
+
+---
+
+## 5. 標準 HTML 要素の正規化契約
+
+### 5.1 一覧
+
+| 入力 HAST | 出力 | 契約 |
+| --- | --- | --- |
+| `pre > code` | `ui-code-block` | `language-*` から `lang` を推論し、対象メタ属性をホスト属性へ昇格する |
+| `blockquote` | `ui-blockquote` | 子要素は維持する |
+| `table` | `ui-table > table` | `caption` があればホストに `aria-label` を補完する |
+| `hr` | `ui-divider > hr[data-divider-variant="section"]` | Markdown 由来の区切りを本文文脈の `section` として正規化する |
+| `li` + `input[type=checkbox]` | `ui-checkbox` | task list ラベルを抽出し、後続ネストリストを維持する |
+| `mark` | `ui-highlight` | `current-match` / `data-current-match` を正規入力とし、旧属性を互換吸収する |
+| `img` | `ui-image` | `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化する |
+| `figure(img + figcaption)` | `ui-image` | `figcaption` を `caption` に統合する |
+| footnote 参照 / 定義 | `ui-footnote` + `section[role=doc-endnotes]` | 参照 ID、backref、接頭辞、backlink を正規化する |
+
+### 5.2 `pre > code` → `ui-code-block`
+
+規則:
+
+- `language-*` から `lang` を推論しなければなりません。
+- 次の属性はホスト属性へ昇格してよいものとします。
+  - `filename`
+  - `group-key`
+  - `tab-label`
+  - `copy-label`
+  - `copyable`
+  - `intent`
+  - `copy-mode`
+  - `wrap`
+  - `highlight-lines`
+  - `layout`
+- コード本体の意味を失わないことを優先します。
+
+### 5.3 `blockquote` → `ui-blockquote`
+
+規則:
+
+- 子要素を維持しなければなりません。
+- 引用の文書構造を破壊してはなりません。
+
+### 5.4 `table` → `ui-table > table`
+
+規則:
+
+- `table` は `ui-table` ホスト内へ保持しなければなりません。
+- `caption` が存在する場合、ホストへ `aria-label` を補完してよいものとします。
+- 行列構造や `thead` / `tbody` / `tfoot` の意味を失ってはなりません。
+
+### 5.5 `hr` → `ui-divider > hr[data-divider-variant="section"]`
+
+規則:
+
+- Markdown 由来の区切りは本文文脈として `section` 扱いへ正規化します。
+- 見た目と意味論を混同してはなりません。
+
+### 5.6 task list → `ui-checkbox`
+
+規則:
+
+- `li` と `input[type=checkbox]` の組は `ui-checkbox` へ正規化します。
+- ラベルテキストを抽出しなければなりません。
+- 後続ネストリストは維持しなければなりません。
+
+### 5.7 `mark` → `ui-highlight`
+
+規則:
+
+- 正規入力は `current-match` および `data-current-match` とします。
+- 旧 `current` / `data-current` / `aria-current` は互換入力として吸収してよいものとします。
+- 最終 HAST に静的 `<mark>` を残してはなりません。
+
+### 5.8 `img` / `figure` → `ui-image`
+
+規則:
+
+- `img` は `ui-image` に正規化しなければなりません。
+- `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化しなければなりません。
+- `zoomable=false` は静的モードとして引き継がなければなりません。
+- `figure(img + figcaption)` は `figcaption` を `caption` に統合して `ui-image` へ収束させなければなりません。
+
+---
+
+## 6. footnote 契約
+
+### 6.1 構成
+
+footnote は、本文側の `ui-footnote` と endnotes 側の `section[role=doc-endnotes]` に正規化します。
+
+### 6.2 ID 正規化
+
+規則:
+
+- 参照回数を正規化しなければなりません。
+- backref を正規化しなければなりません。
+- `user-content-` 接頭辞は正規化対象とします。
+- trigger / backlink は `{refId}-ref-{refInstance}` で接続しなければなりません。
+
+### 6.3 primary / secondary reference
+
+規則:
+
+- 最初の参照だけが本文ノードを内包する primary reference とします。
+- 2 回目以降の参照は `shared` と `ref-instance` だけを持つ secondary reference とします。
+- endnotes 側の backlink 群は各 `refInstance` に対応する `#${refId}-ref-${refInstance}` を出力しなければなりません。
+
+---
+
+## 7. preview-sandbox 出力契約
+
+### 7.1 対象
+
+本節は `ui-code-preview > ui-preview-sandbox` を対象とします。
+
+### 7.2 変換内容
+
+`preview-sandbox` は内部の `preview-html` / `preview-css` / `preview-js` fenced code から次を生成しなければなりません。
+
+1. `template[data-preview-kind]` の inert payload
+2. 高さ同期用 helper script を含む iframe `srcdoc`
+3. 表示用 code area
+   - 1 件なら単体 code block
+   - 複数なら `ui-code-group`
+
+### 7.3 実行順序
+
+この変換は `rehypeShikiCodeBlocks` より前に実行しなければなりません。後続の Shiki と `rehypeRouaultComponents` には通常の code block として流さなければなりません。
+
+### 7.4 trust boundary
+
+規則:
+
+- author input としての `srcdoc` を許可してはなりません。
+- compiler-generated output としての iframe `srcdoc` は、本節の契約に従う場合に限り許可されます。
+- `preview-sandbox` は authoring から直接任意 iframe 属性を持ち込む経路であってはなりません。
+- helper script は platform helper であり、author supplied JavaScript と同一に扱ってはなりません。
+
+### 7.5 code area 自動生成
+
+規則:
+
+- `preview-sandbox` を利用する場合、code area はコンパイラが自動生成しなければなりません。
+- author 手書きの preview/code 領域と競合する構成を許可してはなりません。
+
+---
+
+## 8. インラインコード契約
+
+`pre > code` 以外の `code` には `translate="no"` を付与しなければなりません。
+
+規則:
+
+- inline code は機械可読文字列であることが多く、自動翻訳対象にしてはなりません。
+- code block と inline code の扱いを混同してはなりません。
+
+---
+
+## 9. 順序付きリスト契約
+
+`ol` / `li` に対して、build-time で次を付与しなければなりません。
+
+1. `data-marker-digits` の自動判定
+2. `start` / `reversed` / `li[value]` の CSS カウンター変数への転写
+3. `role="list"` / `role="listitem"` の補強
+4. `data-ol-has-value` の付与
+
+### 9.1 許可 style
+
+順序付きリスト契約で許可される style は次に限定します。
+
+- `--ui-ol-counter-reset`
+- `--ui-ol-counter-step`
+- `--ui-ol-counter-set`
+
+規則:
+
+- 上記以外の `style` をこの契約の一部として導入してはなりません。
+- この許可一覧は safety policy と整合していなければなりません。
+
+---
+
+## 10. 最終 HAST 不変条件
+
+### 10.1 静的 `<mark>` を残さない
+
+最終 HAST に静的 `<mark>` を残してはなりません。
+
+### 10.2 component 化の収束
+
+契約対象の HTML は、規定の Rouault コンポーネントまたは契約済み DOM へ収束していなければなりません。
+
+### 10.3 出力由来属性の正規名
+
+互換入力を吸収した場合でも、最終出力では正規属性名へ収束していなければなりません。
+
+### 10.4 preview-sandbox の生成物
+
+`preview-sandbox` の生成物は、author input と compiler-generated output の境界を破ってはなりません。
+
+---
+
+## 11. 他文書との関係
+
+- authoring grammar は `docs/markdown-authoring-specification.md` を参照します。
+- safety policy と trust boundary の詳細は `docs/markdown-safety-and-test-policy.md` を参照します。
+- アクセシビリティ要求は `docs/accessibility.md` を参照します。
+
+---
+
+## 12. 改訂規則
+
+- HTML 正規化先の変更は本書を直接改訂しなければなりません。
+- component 名、出力属性名、footnote 接続規則、preview-sandbox 出力形の変更は本書の意味論変更として扱います。
+- safety policy の変更だけで output contract を暗黙変更してはなりません。
