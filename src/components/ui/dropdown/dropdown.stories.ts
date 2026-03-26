@@ -21,7 +21,7 @@ const createTrigger = (label: string, id?: string) => html`
   <button id="${id ?? nothing}" slot="trigger" style="${triggerStyle}">
     ${label}
     <ui-icon
-      icon="chevron-down"
+      name="chevron-down"
       aria-hidden="true"
       style="width: 14px; height: 14px;"
     ></ui-icon>
