@@ -277,7 +277,7 @@ describe('app-router', () => {
     const header = await fixture<HTMLElement>(
       html`<layout-header
         breadcrumbs-json='[{"label":"Old","href":"/old"}]'
-        corpora-json='[{"key":"all","label":"すべてのノート","href":"/"}]'
+        corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"}]'
         current-corpus-key="all"
       ></layout-header>`,
     );
@@ -293,7 +293,7 @@ describe('app-router', () => {
                 <layout-header
                   note-layout
                   breadcrumbs-json='[{"label":"New Note","href":"/notes/new-note"}]'
-                  corpora-json='[{"key":"all","label":"すべてのノート","href":"/"},{"key":"music","label":"音楽","href":"/corpora/music/"}]'
+                  corpora-json='[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"music","label":"音楽","href":"/corpora/music/"}]'
                   current-corpus-key="music"
                 ></layout-header>
                 <main><h1>Header Synced</h1></main>
@@ -323,7 +323,7 @@ describe('app-router', () => {
 
     expect(header.hasAttribute('note-layout')).to.equal(true);
     expect(header.getAttribute('corpora-json')).to.equal(
-      '[{"key":"all","label":"すべてのノート","href":"/"},{"key":"music","label":"音楽","href":"/corpora/music/"}]',
+      '[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"music","label":"音楽","href":"/corpora/music/"}]'
     );
     expect(header.getAttribute('current-corpus-key')).to.equal('music');
   });

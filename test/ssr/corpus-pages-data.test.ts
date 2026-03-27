@@ -101,7 +101,7 @@ describe('buildCorpusNavigation', () => {
       {
         key: 'all',
         label: 'すべてのノート',
-        href: '/',
+        href: '/corpora/',
       },
       {
         key: 'music',

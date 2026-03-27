@@ -23,6 +23,14 @@ interface CorpusNavigationItem {
   href: string;
 }
 
+const DEFAULT_CORPUS_ITEMS: readonly CorpusNavigationItem[] = [
+  {
+    key: 'all',
+    label: 'すべてのノート',
+    href: '/corpora/',
+  },
+];
+
 const THEME_OPTIONS: Record<
   ThemePreference,
   {
@@ -280,19 +288,13 @@ export class LayoutHeader extends LitElement {
   private get _corpusItems(): CorpusNavigationItem[] {
     const normalized = this.corporaJson.trim();
     if (normalized.length === 0) {
-      return [
-        {
-          key: 'all',
-          label: 'すべてのノート',
-          href: '/',
-        },
-      ];
+      return [...DEFAULT_CORPUS_ITEMS];
     }
 
     try {
       const parsed = JSON.parse(normalized) as unknown;
       if (!Array.isArray(parsed)) {
-        return [];
+        return [...DEFAULT_CORPUS_ITEMS];
       }
 
       const items = parsed.filter((item): item is CorpusNavigationItem => {
@@ -308,23 +310,9 @@ export class LayoutHeader extends LitElement {
         );
       });
 
-      return items.length > 0
-        ? items
-        : [
-            {
-              key: 'all',
-              label: 'すべてのノート',
-              href: '/',
-            },
-          ];
+      return items.length > 0 ? items : [...DEFAULT_CORPUS_ITEMS];
     } catch {
-      return [
-        {
-          key: 'all',
-          label: 'すべてのノート',
-          href: '/',
-        },
-      ];
+      return [...DEFAULT_CORPUS_ITEMS];
     }
   }
 

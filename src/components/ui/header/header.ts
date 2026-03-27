@@ -209,22 +209,18 @@ export class UiHeader extends LitElement {
     return html`
       <header>
         <div class="inner">
-          <!-- Navigation Zone (Start) -->
           <div class="zone-start">
             <slot name="start"></slot>
           </div>
 
-          <!-- Context Zone (Center) -->
           <div class="zone-center">
             <slot name="center"></slot>
           </div>
 
-          <!-- Compact Context Zone (Compact Center) -->
           <div class="zone-compact-center">
             <slot name="compact-center"></slot>
           </div>
 
-          <!-- Action Zone (End) -->
           <div class="zone-end">
             <slot name="end"></slot>
           </div>

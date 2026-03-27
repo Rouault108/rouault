@@ -79,6 +79,12 @@ export const COMPONENT_DEFINITIONS = [
     profiles: ['page'],
   },
   {
+    tag: 'corpora-overview-page',
+    loader: () => import('../components/corpus/corpora-overview-page.js'),
+    ssr: 'shadow',
+    profiles: ['page'],
+  },
+  {
     tag: 'not-found-page',
     loader: () => import('../components/not-found/not-found-page.js'),
     ssr: 'shadow',

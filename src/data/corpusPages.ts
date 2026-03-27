@@ -182,7 +182,7 @@ export function buildCorpusNavigation(
     {
       key: 'all',
       label: 'すべてのノート',
-      href: '/',
+      href: '/corpora/',
     },
     ...corpusPages.map((entry) => ({
       key: entry.key,
