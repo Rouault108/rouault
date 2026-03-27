@@ -190,6 +190,30 @@ test.describe('Router Navigation', () => {
     await expect.poll(() => page.evaluate(() => window.location.hash)).toBe(href);
   });
 
+  test('本文見出しの hover は見出し実体の範囲に限定されること', async ({ page }) => {
+    await page.goto(testNotePath);
+
+    const prose = page.locator('#main-content .prose').first();
+    const heading = prose.locator('h2').first();
+    const headingText = heading.locator('.heading-text');
+    const headingPermalink = heading.locator('.heading-anchor');
+
+    const proseBox = await prose.boundingBox();
+    const headingBox = await heading.boundingBox();
+    if (!proseBox || !headingBox) {
+      throw new Error('本文見出しの位置情報を取得できませんでした');
+    }
+
+    const hoveredOpacity = async (): Promise<string> =>
+      headingPermalink.evaluate((element) => getComputedStyle(element).opacity);
+
+    await page.mouse.move(proseBox.x + proseBox.width - 4, headingBox.y + headingBox.height / 2);
+    await expect.poll(hoveredOpacity).toBe('0');
+
+    await headingText.hover();
+    await expect.poll(hoveredOpacity).toBe('1');
+  });
+
   test('未知のURLへ SPA 遷移したとき 404 ページへ切り替わること', async ({ page }) => {
     await page.goto(beethovenEntryPath);
 
