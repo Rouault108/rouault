@@ -102,7 +102,7 @@ const meta: Meta<TreeItem> = {
     density: {
       control: 'select',
       options: ['normal', 'compact'],
-      description: '行の高さ密度（normal: 32px, compact: 24px）',
+      description: '行の高さ密度（normal: 36px, compact: 24px）',
       table: {
         type: { summary: 'string' },
         defaultValue: { summary: 'normal' },
@@ -124,7 +124,7 @@ const nextFrame = async (): Promise<void> =>
 /**
  * デフォルトのツリーアイテム（Normal密度）。
  *
- * 閲覧・操作に適した標準サイズ（32px）です。Linear Docs準拠。
+ * 閲覧・操作に適した標準サイズ（36px）です。Linear Docs準拠。
  */
 export const Default: Story = {
   args: {
@@ -190,7 +190,7 @@ export const Default: Story = {
 /**
  * 全密度の一覧。
  *
- * Normal（32px）とCompact（24px）の2つの密度を比較できます。
+ * Normal（36px）とCompact（24px）の2つの密度を比較できます。
  * Compact密度では、視覚サイズは24pxですが、物理タッチターゲットは44pxに拡張されています。
  */
 export const AllDensities: Story = {
@@ -218,7 +218,7 @@ export const AllDensities: Story = {
 
     <div class="density-showcase">
       <div class="density-group">
-        <span class="density-label">Normal (32px) - 標準サイズ</span>
+        <span class="density-label">Normal (36px) - 標準サイズ</span>
         <ui-tree-item label="ドキュメント" icon="file-text" density="normal"></ui-tree-item>
       </div>
 
@@ -254,9 +254,9 @@ export const AllDensities: Story = {
     const normalHeight = Math.round(normalRow.getBoundingClientRect().height);
     const compactHeight = Math.round(compactRow.getBoundingClientRect().height);
 
-    if (normalHeight < 30 || normalHeight > 34) {
+    if (normalHeight < 34 || normalHeight > 38) {
       throw new Error(
-        `Normal 密度の高さは約 32px であるべきですが、実際には ${String(normalHeight)}px でした`,
+        `Normal 密度の高さは約 36px であるべきですが、実際には ${String(normalHeight)}px でした`,
       );
     }
     if (compactHeight < 22 || compactHeight > 26) {
@@ -270,7 +270,7 @@ export const AllDensities: Story = {
 /**
  * 選択状態（Selected）。
  *
- * 現在選択されているアイテムを示します。背景色が変化し、テキスト色がプライマリカラーになります。
+ * 現在選択されているアイテムを示します。淡い背景と左インジケータで、現在位置を静かに示します。
  */
 export const Selected: Story = {
   args: {
@@ -732,12 +732,11 @@ export const LeafNode: Story = {
       );
     }
 
-    // テスト: 展開アイコンがhiddenクラスを持つこと
-    const expandIcon = treeItem.shadowRoot?.querySelector('.expand-icon');
-    if (!expandIcon?.classList.contains('hidden')) {
-      throw new Error('リーフノードでは展開アイコンが "hidden" クラスを持つべきです');
+    // テスト: リーフノードでは展開アイコン自体を描画しないこと
+    const expandIcon = treeItem.shadowRoot?.querySelector<HTMLElement>('.expand-icon');
+    if (expandIcon !== null) {
+      throw new Error('リーフノードでは展開アイコンを描画しないでください');
     }
-
   },
 };
 
@@ -894,7 +893,7 @@ export const KeyboardInteraction: Story = {
 /**
  * インタラクティブテスト: クリック操作。
  *
- * アイテムクリックによる選択、展開アイコンクリックによる展開/収縮を確認します。
+ * 展開可能な行は行全体で展開/収縮し、葉ノードは選択と遷移のまま動作します。
  */
 export const ClickInteraction: Story = {
   render: () => html`
@@ -911,8 +910,8 @@ export const ClickInteraction: Story = {
     <div class="click-info">
       <strong>操作方法</strong>:
       <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
-        <li>アイテム行をクリック: 選択状態にする</li>
-        <li>展開アイコン（ChevronRight）をクリック: 展開/収縮を切り替える（選択はしない）</li>
+        <li>展開可能なアイテム行をクリック: 行全体で展開/収縮を切り替える</li>
+        <li>葉ノードをクリック: 選択して、href があれば遷移する</li>
       </ul>
     </div>
 
@@ -935,52 +934,69 @@ export const ClickInteraction: Story = {
       throw new Error('必要な要素が見つかりませんでした');
     }
 
-    // テスト: 展開アイコンクリックで展開すること（選択はされない）
-    let expandedEventFired = false;
+    // テスト: 行クリックで展開すること（選択はされない）
+    let expandedEventCount = 0;
+    let selectedEventCount = 0;
     treeItem.addEventListener('expanded-change', () => {
-      expandedEventFired = true;
+      expandedEventCount += 1;
     });
-
-    expandIcon.click();
-    await treeItem.updateComplete;
-
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!expandedEventFired) {
-      throw new Error(
-        '展開アイコンのクリック時に expanded-change イベントが発火することを期待していましたが、発火しませんでした',
-      );
-    }
-
-    if (!treeItem.expanded) {
-      throw new Error('展開アイコンのクリック後に expanded=true になりませんでした');
-    }
-
-    if (treeItem.selected) {
-      throw new Error(
-        '展開アイコンのクリック後も selected=false を維持することを期待していましたが、維持されませんでした',
-      );
-    }
-
-    // テスト: アイテムクリックで選択されること
-    let selectedEventFired = false;
     treeItem.addEventListener('selected-change', () => {
-      selectedEventFired = true;
+      selectedEventCount += 1;
     });
+
+    const assertCount = (actual: number, expected: number, message: string): void => {
+      if (actual !== expected) {
+        throw new Error(message);
+      }
+    };
+
+    const assertBoolean = (actual: boolean, expected: boolean, message: string): void => {
+      if (actual !== expected) {
+        throw new Error(message);
+      }
+    };
 
     itemElement.click();
     await treeItem.updateComplete;
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!selectedEventFired) {
-      throw new Error(
-        'アイテムのクリック時に selected-change イベントが発火することを期待していましたが、発火しませんでした',
-      );
-    }
+    assertCount(
+      expandedEventCount,
+      1,
+      `行クリック時に expanded-change イベントが 1 回発火することを期待していましたが、実際には ${String(expandedEventCount)} 回でした`,
+    );
+    assertBoolean(treeItem.expanded, true, '行クリックの後に expanded=true になりませんでした');
+    assertBoolean(
+      treeItem.selected,
+      false,
+      '展開可能な行のクリック後も selected=false を維持することを期待していましたが、維持されませんでした',
+    );
+    assertCount(
+      selectedEventCount,
+      0,
+      `展開可能な行のクリックで selected-change が発火しないことを期待していましたが、実際には ${String(selectedEventCount)} 回でした`,
+    );
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!treeItem.selected) {
-      throw new Error('アイテムのクリック後に selected=true になりませんでした');
-    }
+    // テスト: 再クリックで収縮すること
+    itemElement.click();
+    await treeItem.updateComplete;
+
+    assertCount(
+      expandedEventCount,
+      2,
+      `再クリック時に expanded-change イベントが 2 回目として発火することを期待していましたが、実際には ${String(expandedEventCount)} 回でした`,
+    );
+    assertBoolean(treeItem.expanded, false, '再クリックの後に expanded=false になりませんでした');
+
+    // テスト: 展開アイコンクリックでも同じ動作になること
+    expandIcon.click();
+    await treeItem.updateComplete;
+
+    assertCount(
+      expandedEventCount,
+      3,
+      `展開アイコンクリック時に expanded-change イベントが 3 回目として発火することを期待していましたが、実際には ${String(expandedEventCount)} 回でした`,
+    );
+    assertBoolean(treeItem.expanded, true, '展開アイコンのクリック後に expanded=true になりませんでした');
   },
 };
 

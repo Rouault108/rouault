@@ -473,6 +473,10 @@ export class FileTree extends LitElement {
     return indexedNode.node.id;
   }
 
+  private get _selectedAncestorBranchIds(): ReadonlySet<string> {
+    return collectAncestorBranchIds(this._selectedLeafId, this._nodeIndex);
+  }
+
   private get _baseExpandedIds(): ReadonlySet<string> {
     if (this._isControlledExpanded) {
       return toBranchIds(this.expandedIds ?? new Set(), this._nodeIndex);
@@ -867,9 +871,9 @@ export class FileTree extends LitElement {
 
   private _renderTreeItems(
     nodes: readonly TreeNode[],
-    options: { slotName?: string } = {},
+    options: { depth?: number; slotName?: string } = {},
   ): TemplateResult[] {
-    const { slotName } = options;
+    const { depth = 1, slotName } = options;
 
     return nodes.map((node) => {
       const isExpanded = isBranchNode(node) ? this._effectiveExpandedIds.has(node.id) : false;
@@ -877,17 +881,19 @@ export class FileTree extends LitElement {
       const tabindex = this._activeId === node.id ? 0 : -1;
 
       return html`
-        <ui-tree-item
-          slot=${ifDefined(slotName)}
-          data-id=${node.id}
-          .label=${node.label}
-          .icon=${node.icon ?? ''}
-          .href=${isLeafNode(node) ? node.href : ''}
-          .expanded=${isExpanded}
-          .selected=${isSelected}
-          .printMode=${this.printable && this._printExpanding}
-          .tabIndex=${tabindex}
-          .density=${this.density}
+          <ui-tree-item
+            slot=${ifDefined(slotName)}
+            data-id=${node.id}
+            .label=${node.label}
+            .icon=${node.icon ?? ''}
+            .href=${isLeafNode(node) ? node.href : ''}
+            .expanded=${isExpanded}
+            .selected=${isSelected}
+            .ancestorSelected=${isBranchNode(node) && this._selectedAncestorBranchIds.has(node.id)}
+            .depth=${depth}
+            .printMode=${this.printable && this._printExpanding}
+            .tabIndex=${tabindex}
+            .density=${this.density}
           @selected-change=${(event: CustomEvent) => {
             if (isLeafNode(node)) {
               this._handleLeafSelect(event, node);
@@ -902,7 +908,7 @@ export class FileTree extends LitElement {
           @tree-item-arrow-left=${this._handleArrowLeft}
         >
           ${isBranchNode(node)
-            ? this._renderTreeItems(node.children, { slotName: 'children' })
+            ? this._renderTreeItems(node.children, { depth: depth + 1, slotName: 'children' })
             : nothing}
         </ui-tree-item>
       `;

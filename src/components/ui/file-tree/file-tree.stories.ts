@@ -158,6 +158,55 @@ export const ControlledSelectionAndExpansion: Story = {
     if (!expandedBranch?.hasAttribute('expanded')) {
       throw new Error('controlled expandedIds が branch へ伝播していません');
     }
+
+    const selectedTreeItem = fileTree.shadowRoot?.querySelector<HTMLElement>(
+      'ui-tree-item[data-id="notes/design/file-tree"]',
+    );
+    if (!selectedTreeItem) {
+      throw new Error('選択された leaf が見つかりません');
+    }
+
+    const selectedButton = selectedTreeItem.shadowRoot?.querySelector<HTMLElement>('.item');
+    if (!selectedButton) {
+      throw new Error('選択された leaf の操作要素が見つかりません');
+    }
+
+    const selectedButtonStyle = window.getComputedStyle(selectedButton);
+    if (selectedButtonStyle.backgroundColor !== 'rgba(0, 0, 0, 0)') {
+      throw new Error('選択背景は .item 本体に直接塗られてはいけません');
+    }
+
+    const selectedFillStyle = window.getComputedStyle(selectedButton, '::before');
+    if (selectedFillStyle.backgroundColor === 'rgba(0, 0, 0, 0)') {
+      throw new Error('選択背景が本文列に描画されていません');
+    }
+
+    const selectedIndicatorStyle = window.getComputedStyle(selectedButton, '::after');
+    if (selectedIndicatorStyle.width !== '2px') {
+      throw new Error(`current indicator の幅が 2px ではありません: ${selectedIndicatorStyle.width}`);
+    }
+    if (selectedIndicatorStyle.backgroundColor === 'rgba(0, 0, 0, 0)') {
+      throw new Error('current indicator が表示されていません');
+    }
+
+    const ancestorBranch = fileTree.shadowRoot?.querySelector<HTMLElement>(
+      'ui-tree-item[data-id="notes/design"]',
+    );
+    if (!ancestorBranch?.hasAttribute('ancestor-selected')) {
+      throw new Error('祖先枝に ancestor-selected が伝播していません');
+    }
+
+    const ancestorGuideLine = ancestorBranch.shadowRoot?.querySelector<HTMLElement>('.guide-line');
+    if (!ancestorGuideLine) {
+      throw new Error('祖先枝の guide-line が見つかりません');
+    }
+
+    const ancestorGuideLineStyle = window.getComputedStyle(ancestorGuideLine);
+    if (ancestorGuideLineStyle.opacity !== '0.72') {
+      throw new Error(
+        `祖先経路の guide-line の opacity が 0.72 ではありません: ${ancestorGuideLineStyle.opacity}`,
+      );
+    }
   },
 };
 
