@@ -2,12 +2,13 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './file-tree';
 import type { FileTree, TreeNode } from './file-tree';
+import type { IconName } from '../../../icons/catalog.js';
 
 const createLeaf = (
   id: string,
   label: string,
   href: string,
-  icon = 'file-text',
+  icon: IconName = 'file-text',
 ): TreeNode => ({
   kind: 'leaf',
   id,
@@ -20,7 +21,7 @@ const createBranch = (
   id: string,
   label: string,
   children: readonly TreeNode[],
-  icon = 'folder',
+  icon: IconName = 'folder',
 ): TreeNode => ({
   kind: 'branch',
   id,

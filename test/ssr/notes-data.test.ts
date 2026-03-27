@@ -119,7 +119,7 @@ describe('buildNotesCollection', () => {
       path.join(contentRoot, '_config.json'),
       JSON.stringify({
         order: ['category'],
-        sidebar: { icon: 'library' },
+        sidebar: { icon: 'book-open' },
       }),
       'utf8',
     );
@@ -135,7 +135,7 @@ describe('buildNotesCollection', () => {
       path.join(contentRoot, 'category', 'section-a', '_config.json'),
       JSON.stringify({
         order: ['item-alpha', 'item-beta.md'],
-        sidebar: { icon: 'music-2' },
+        sidebar: { icon: 'music' },
       }),
       'utf8',
     );
@@ -158,7 +158,7 @@ describe('buildNotesCollection', () => {
       {
         slug: 'category/section-a/item-alpha/page-three',
         content: '',
-        sidebarIcon: 'music-3',
+        sidebarIcon: 'music',
       },
       {
         slug: 'category/section-b/page-four',
@@ -177,17 +177,17 @@ describe('buildNotesCollection', () => {
     );
     const pageFour = collection.find((note) => note.slug === 'category/section-b/page-four');
 
-    expect(itemBeta?.sidebarResolvedIcon).toBe('file-text');
+    expect(itemBeta?.sidebarResolvedIcon).toBe('file');
     expect(itemBeta?.sidebarDirectoryIcons).toEqual({
       category: 'folder',
-      'category/section-a': 'music-2',
+      'category/section-a': 'music',
     });
-    expect(pageTwo?.sidebarResolvedIcon).toBeUndefined();
+    expect(pageTwo?.sidebarResolvedIcon).toBe('music');
     expect(pageTwo?.sidebarDirectoryIcons).toEqual({
       category: 'folder',
-      'category/section-a': 'music-2',
+      'category/section-a': 'music',
     });
-    expect(pageThree?.sidebarResolvedIcon).toBe('music-3');
+    expect(pageThree?.sidebarResolvedIcon).toBe('music');
     expect(pageFour?.sidebarResolvedIcon).toBeUndefined();
     expect(pageFour?.sidebarDirectoryIcons).toEqual({
       category: 'folder',
@@ -197,6 +197,8 @@ describe('buildNotesCollection', () => {
 
   it('index.md を directory-index として正規化する', async () => {
     const contentRoot = await createContentRoot();
+    await mkdir(path.join(contentRoot, 'fixture', 'index'), { recursive: true });
+    await writeFile(path.join(contentRoot, 'fixture', 'index', 'index.md'), '# fixture', 'utf8');
 
     const collection = buildNotesCollection(
       [
@@ -210,26 +212,28 @@ describe('buildNotesCollection', () => {
     );
 
     expect(collection[0]).toMatchObject({
-      rawSlug: 'fixture/index',
-      slug: 'fixture',
-      permalink: '/notes/fixture',
+      rawSlug: 'fixture/index/index',
+      slug: 'fixture/index',
+      permalink: '/notes/fixture/index',
       noteKind: 'directory-index',
-      directoryPath: 'fixture',
+      directoryPath: 'fixture/index',
     });
   });
 
   it('leaf と directory-index が同じルートへ解決される場合はエラーにする', async () => {
     const contentRoot = await createContentRoot();
+    await mkdir(path.join(contentRoot, 'fixture', 'index'), { recursive: true });
+    await writeFile(path.join(contentRoot, 'fixture', 'index.md'), '# leaf', 'utf8');
+    await writeFile(path.join(contentRoot, 'fixture', 'index', 'index.md'), '# dir', 'utf8');
 
     expect(() =>
       buildNotesCollection(
         [
-          { slug: 'fixture', title: 'fixture.md', content: '' },
           { slug: 'fixture/index', title: 'fixture/index.md', content: '' },
         ],
         contentRoot,
       ),
-    ).toThrow(/Route collision detected/);
+    ).toThrow(/Ambiguous note source/);
   });
 });
 
