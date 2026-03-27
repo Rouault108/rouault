@@ -16,8 +16,10 @@ export interface FooterLinkItem {
 }
 
 export interface FooterMetaContent {
+  eyebrow?: string;
   siteName: string;
   siteUrl?: string;
+  description?: string;
   copyrightText: string;
   buildLabel?: string;
 }
@@ -40,8 +42,10 @@ export interface NormalizedFooterLinkItem {
 }
 
 export interface NormalizedFooterMetaContent {
+  eyebrow?: string;
   siteName: string;
   siteUrl?: string;
+  description?: string;
   copyrightText: string;
   buildLabel?: string;
 }
@@ -53,67 +57,141 @@ ${FOOTER_SCOPE_SELECTOR} {
   --_footer-fg-muted: var(--footer-fg-muted, var(--fg-subtle, var(--fg-muted)));
   --_footer-border: var(--footer-border, var(--border-ghost));
   --_footer-border-width: var(--footer-border-width, var(--border-width));
-  --_footer-max-inline-size: var(--footer-max-inline-size, var(--bp-xl));
-  --_footer-padding-block: var(--footer-padding-block, var(--space-5));
-  --_footer-padding-inline: var(--footer-padding-inline, max(var(--space-4), min(var(--space-8), 4vi)));
-  --_footer-gap: var(--footer-gap, var(--space-4));
-  --_footer-build-opacity: var(--footer-build-opacity, 0.72);
-  --_footer-link-underline-offset: var(--footer-link-underline-offset, 0.2em);
+  --_footer-max-inline-size: var(--footer-max-inline-size, var(--bp-lg, 72rem));
+  --_footer-padding-block: var(--footer-padding-block, clamp(var(--space-5), 2.8vw, var(--space-7)));
+  --_footer-padding-inline: var(--footer-padding-inline, max(var(--space-4), min(var(--space-7), 4vi)));
+  --_footer-gap: var(--footer-gap, clamp(var(--space-3), 1.4vw, var(--space-4)));
+  --_footer-column-gap: var(--footer-column-gap, clamp(var(--space-4), 2vw, var(--space-5)));
+  --_footer-primary-max-inline-size: var(--footer-primary-max-inline-size, 40rem);
+  --_footer-nav-inline-size: var(--footer-nav-inline-size, 12rem);
+  --_footer-build-opacity: var(--footer-build-opacity, 0.58);
+  --_footer-link-underline-offset: var(--footer-link-underline-offset, 0.16em);
+  --_footer-kicker-fg: var(--footer-kicker-fg, var(--fg-subtle, var(--fg-muted)));
+  --_footer-description-fg: var(--footer-description-fg, var(--fg-muted));
+  --_footer-legal-gap: var(--footer-legal-gap, var(--space-2));
   inline-size: 100%;
-  min-block-size: calc(var(--_footer-padding-block) * 2 + 1lh);
   background: var(--_footer-bg);
   border-top: var(--_footer-border-width) solid var(--_footer-border);
   color: var(--_footer-fg);
+  padding-block: var(--_footer-padding-block);
 }
 
 ${FOOTER_SCOPE_SELECTOR} .ui-footer__inner {
   box-sizing: border-box;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
   gap: var(--_footer-gap);
   inline-size: 100%;
   max-inline-size: var(--_footer-max-inline-size);
+  margin-block: var(--space-3, 12px);
   margin-inline: auto;
-  padding-block: var(--_footer-padding-block);
   padding-inline: var(--_footer-padding-inline);
 }
 
 ${FOOTER_SCOPE_SELECTOR} .ui-footer__meta {
   display: grid;
-  gap: calc(var(--_footer-gap) * 0.5);
-  min-inline-size: min(100%, 18rem);
+  gap: var(--space-1);
+  min-inline-size: 0;
+  max-inline-size: none;
+  margin-top: 0;
 }
 
+${FOOTER_SCOPE_SELECTOR} .ui-footer__brand {
+  display: grid;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+${FOOTER_SCOPE_SELECTOR} .ui-footer__subline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0;
+  min-inline-size: 0;
+}
+
+${FOOTER_SCOPE_SELECTOR} .ui-footer__eyebrow,
 ${FOOTER_SCOPE_SELECTOR} .ui-footer__site,
+${FOOTER_SCOPE_SELECTOR} .ui-footer__description,
 ${FOOTER_SCOPE_SELECTOR} .ui-footer__copyright,
 ${FOOTER_SCOPE_SELECTOR} .ui-footer__build {
   margin: 0;
   overflow-wrap: anywhere;
 }
 
+${FOOTER_SCOPE_SELECTOR} .ui-footer__eyebrow {
+  color: var(--_footer-kicker-fg);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wide);
+  line-height: var(--line-height-tight);
+  text-transform: uppercase;
+}
+
 ${FOOTER_SCOPE_SELECTOR} .ui-footer__site {
-  color: var(--footer-fg, var(--fg-default));
+  color: var(--_footer-fg);
   font-weight: var(--font-medium);
+  font-size: clamp(var(--text-base, 1rem), 1vw, var(--text-xl, 1.25rem));
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.2;
+}
+
+${FOOTER_SCOPE_SELECTOR} .ui-footer__description {
+  color: var(--_footer-description-fg);
+  max-inline-size: 34ch;
+  font-size: var(--text-sm);
+  line-height: var(--line-height-relaxed);
+}
+
+${FOOTER_SCOPE_SELECTOR} .ui-footer__legal {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  min-inline-size: 0;
 }
 
 ${FOOTER_SCOPE_SELECTOR} .ui-footer__copyright {
   color: var(--_footer-fg);
+  font-size: var(--text-sm);
+  line-height: var(--line-height-relaxed);
 }
 
 ${FOOTER_SCOPE_SELECTOR} .ui-footer__build {
   color: var(--_footer-fg-muted);
   opacity: var(--_footer-build-opacity);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wide);
+  line-height: var(--line-height-tight);
+  text-transform: uppercase;
+}
+
+${FOOTER_SCOPE_SELECTOR} .ui-footer__build::before,
+${FOOTER_SCOPE_SELECTOR} .ui-footer__nav::before,
+${FOOTER_SCOPE_SELECTOR} .ui-footer__nav-item + .ui-footer__nav-item::before {
+  content: '·';
+  color: var(--_footer-fg-muted);
+  opacity: var(--_footer-build-opacity);
+  margin-inline: var(--space-2);
 }
 
 ${FOOTER_SCOPE_SELECTOR} .ui-footer__nav {
-  display: flex;
+  min-inline-size: 0;
+  display: inline-flex;
   flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-start;
-  gap: calc(var(--_footer-gap) * 0.5) var(--_footer-gap);
-  min-inline-size: min(100%, 16rem);
+  align-items: baseline;
+  padding-top: 0;
+}
+
+${FOOTER_SCOPE_SELECTOR} .ui-footer__nav-list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+${FOOTER_SCOPE_SELECTOR} .ui-footer__nav-item {
+  display: inline-flex;
+  align-items: baseline;
 }
 
 ${FOOTER_SCOPE_SELECTOR} a {
@@ -123,9 +201,35 @@ ${FOOTER_SCOPE_SELECTOR} a {
   text-underline-offset: var(--_footer-link-underline-offset);
 }
 
+${FOOTER_SCOPE_SELECTOR} .ui-footer__site a {
+  text-decoration: none;
+}
+
+${FOOTER_SCOPE_SELECTOR} .ui-footer__site a:hover,
+${FOOTER_SCOPE_SELECTOR} .ui-footer__site a:focus-visible {
+  color: inherit;
+}
+
+${FOOTER_SCOPE_SELECTOR} .ui-footer__site a:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, currentColor);
+  outline-offset: 3px;
+}
+
+${FOOTER_SCOPE_SELECTOR} .ui-footer__nav a {
+  color: var(--_footer-fg);
+  font-size: var(--text-sm);
+  line-height: var(--line-height-relaxed);
+}
+
 ${FOOTER_SCOPE_SELECTOR} a:hover,
 ${FOOTER_SCOPE_SELECTOR} a:focus-visible {
   text-decoration-color: currentColor;
+}
+
+@media (min-width: 64rem) {
+  ${FOOTER_SCOPE_SELECTOR} .ui-footer__inner {
+    gap: var(--space-3);
+  }
 }
 
 @media (forced-colors: active) {
@@ -136,6 +240,10 @@ ${FOOTER_SCOPE_SELECTOR} a:focus-visible {
 
   ${FOOTER_SCOPE_SELECTOR} a {
     text-decoration-color: currentColor;
+  }
+
+  ${FOOTER_SCOPE_SELECTOR} .ui-footer__site a:focus-visible {
+    outline-color: CanvasText;
   }
 }
 
@@ -162,6 +270,16 @@ const normalizeRequiredText = (value: string, fieldName: string): string => {
   }
   return normalized;
 };
+
+const hasControlCharacter = (value: string): boolean =>
+  Array.from(value).some((character) => {
+    const codePoint = character.codePointAt(0);
+    if (codePoint === undefined) {
+      return false;
+    }
+
+    return (codePoint >= 0 && codePoint <= 31) || (codePoint >= 127 && codePoint <= 159);
+  });
 
 export const isFooterHrefAllowed = (value: string | undefined): value is string => {
   if (typeof value !== 'string') {
@@ -218,10 +336,14 @@ export const normalizeFooterMeta = (meta: FooterMetaContent): NormalizedFooterMe
   const copyrightText = normalizeRequiredText(meta.copyrightText, 'meta.copyrightText');
   const siteUrl = isFooterHrefAllowed(meta.siteUrl) ? meta.siteUrl.trim() : undefined;
   const buildLabel = normalizeOptionalText(meta.buildLabel);
+  const eyebrow = normalizeOptionalText(meta.eyebrow);
+  const description = normalizeOptionalText(meta.description);
 
   return {
+    ...(eyebrow ? { eyebrow } : {}),
     siteName,
     ...(siteUrl ? { siteUrl } : {}),
+    ...(description ? { description } : {}),
     copyrightText,
     ...(buildLabel ? { buildLabel } : {}),
   };
@@ -248,12 +370,14 @@ const renderSiteName = (meta: NormalizedFooterMetaContent): TemplateResult =>
   meta.siteUrl ? html`<a href=${meta.siteUrl}>${meta.siteName}</a>` : html`${meta.siteName}`;
 
 const renderFooterLink = (link: NormalizedFooterLinkItem): TemplateResult => html`
-  <a
-    href=${link.href}
-    rel=${ifDefined(link.external ? 'noreferrer' : undefined)}
-    data-external=${ifDefined(link.external ? 'true' : undefined)}
-    >${link.label}</a
-  >
+  <span class="ui-footer__nav-item">
+    <a
+      href=${link.href}
+      rel=${ifDefined(link.external ? 'noreferrer' : undefined)}
+      data-external=${ifDefined(link.external ? 'true' : undefined)}
+      >${link.label}</a
+    >
+  </span>
 `;
 
 export const renderFooter = (options: FooterRenderOptions): TemplateResult => {
@@ -266,27 +390,32 @@ export const renderFooter = (options: FooterRenderOptions): TemplateResult => {
     <footer id=${ifDefined(footerId)} class="ui-footer">
       <div class="ui-footer__inner">
         <div class="ui-footer__meta">
-          <p class="ui-footer__site">${renderSiteName(meta)}</p>
-          <p class="ui-footer__copyright">${meta.copyrightText}</p>
-          ${meta.buildLabel ? html`<p class="ui-footer__build">${meta.buildLabel}</p>` : nothing}
+          <div class="ui-footer__brand">
+            ${meta.eyebrow ? html`<p class="ui-footer__eyebrow">${meta.eyebrow}</p>` : nothing}
+            <p class="ui-footer__site">${renderSiteName(meta)}</p>
+            ${meta.description
+              ? html`<p class="ui-footer__description">${meta.description}</p>`
+              : nothing}
+          </div>
+
+          <div class="ui-footer__subline">
+            <div class="ui-footer__legal">
+              <p class="ui-footer__copyright">${meta.copyrightText}</p>
+              ${meta.buildLabel ? html`<p class="ui-footer__build">${meta.buildLabel}</p>` : nothing}
+            </div>
+
+            ${links.length > 0
+              ? html`
+                  <nav class="ui-footer__nav" aria-label=${navLabel}>
+                    <div class="ui-footer__nav-list">
+                      ${links.map((link) => renderFooterLink(link))}
+                    </div>
+                  </nav>
+                `
+              : nothing}
+          </div>
         </div>
-        ${links.length > 0
-          ? html`
-              <nav class="ui-footer__nav" aria-label=${navLabel}>
-                ${links.map((link) => renderFooterLink(link))}
-              </nav>
-            `
-          : nothing}
       </div>
     </footer>
   `;
 };
-const hasControlCharacter = (value: string): boolean =>
-  Array.from(value).some((character) => {
-    const codePoint = character.codePointAt(0);
-    if (codePoint === undefined) {
-      return false;
-    }
-
-    return (codePoint >= 0 && codePoint <= 31) || (codePoint >= 127 && codePoint <= 159);
-  });

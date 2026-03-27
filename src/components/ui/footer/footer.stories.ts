@@ -24,8 +24,8 @@ const DEFAULT_OPTIONS: FooterRenderOptions = {
     buildLabel: 'build 4a2b9f1',
   },
   links: [
-    { href: '/about', label: 'このサイトについて' },
-    { href: '/contact', label: 'お問い合わせ' },
+    { href: '/search', label: '検索' },
+    { href: '/about/', label: 'このサイトについて' },
   ],
 };
 
@@ -61,6 +61,22 @@ const getInner = (footer: HTMLElement): HTMLElement => {
   return inner;
 };
 
+const getMeta = (footer: HTMLElement): HTMLElement => {
+  const metaElement = footer.querySelector<HTMLElement>('.ui-footer__meta');
+  if (!(metaElement instanceof HTMLElement)) {
+    throw new Error('.ui-footer__meta が見つかりません');
+  }
+  return metaElement;
+};
+
+const getSubline = (footer: HTMLElement): HTMLElement => {
+  const subline = footer.querySelector<HTMLElement>('.ui-footer__subline');
+  if (!(subline instanceof HTMLElement)) {
+    throw new Error('.ui-footer__subline が見つかりません');
+  }
+  return subline;
+};
+
 const meta: Meta = {
   title: 'Components/Footer',
   component: 'footer',
@@ -77,6 +93,7 @@ const meta: Meta = {
 - 最小状態では build 領域と nav を描画しません
 - 文書スタイル注入は \`ensureFooterDocumentStyles()\` に分離されています
 - 公開トークン: \`--footer-bg\` / \`--footer-fg\` / \`--footer-border\` など
+- 完全状態では brand の下に \`subline\` を置き、その中に legal と nav を並べます
         `,
       },
     },
@@ -91,12 +108,17 @@ export const DefaultContract: Story = {
   play: ({ canvasElement }) => {
     const footer = getFooter(canvasElement, 'footer-default');
     const inner = getInner(footer);
-    const metaElement = footer.querySelector<HTMLElement>('.ui-footer__meta');
+    const metaElement = getMeta(footer);
+    const subline = getSubline(footer);
     const nav = footer.querySelector<HTMLElement>('nav');
+    const legal = footer.querySelector<HTMLElement>('.ui-footer__legal');
     const site = footer.querySelector<HTMLElement>('.ui-footer__site');
     const siteLink = footer.querySelector<HTMLAnchorElement>('.ui-footer__site a');
+    const description = footer.querySelector('.ui-footer__description');
     const copyright = footer.querySelector<HTMLElement>('.ui-footer__copyright');
     const build = footer.querySelector<HTMLElement>('.ui-footer__build');
+    const navList = footer.querySelector<HTMLElement>('.ui-footer__nav-list');
+    const navItems = footer.querySelectorAll<HTMLElement>('.ui-footer__nav-item');
     const links = footer.querySelectorAll<HTMLAnchorElement>('nav a');
 
     assert(
@@ -105,13 +127,21 @@ export const DefaultContract: Story = {
     );
     assert(footer.getAttribute('role') === null, 'role 属性は手動付与しません');
     assert(footer.classList.contains('ui-footer'), '.ui-footer クラスが必要です');
-    assert(inner.children.length === 2, '完全状態では meta と nav の 2 領域が必要です');
+    assert(inner.children.length === 1, '完全状態でも .ui-footer__inner 直下は meta の 1 領域です');
+    assert(inner.firstElementChild === metaElement, 'inner 直下は meta のみである必要があります');
     assert(metaElement instanceof HTMLElement, '主要メタ領域が必要です');
+    assert(subline instanceof HTMLElement, '完全状態では subline 領域が必要です');
+    assert(legal instanceof HTMLElement, 'subline 内に legal 領域が必要です');
     assert(nav instanceof HTMLElement, 'links がある場合は nav が必要です');
+    assert(subline.firstElementChild === legal, 'subline の先頭は legal である必要があります');
+    assert(subline.lastElementChild === nav, 'subline の末尾は nav である必要があります');
     assert(site instanceof HTMLElement, 'siteName 領域が必要です');
     assert(siteLink instanceof HTMLAnchorElement, 'siteUrl がある場合は siteName をリンク化します');
+    assert(description === null, '既定状態では description を描画しません');
     assert(copyright instanceof HTMLElement, 'copyright 領域が必要です');
     assert(build instanceof HTMLElement, 'build 領域が必要です');
+    assert(navList instanceof HTMLElement, 'nav-list 領域が必要です');
+    assert(navItems.length === 2, '各リンクは nav-item ラッパーに包まれる必要があります');
     assert(siteLink.getAttribute('href') === '/', 'siteName の href が不正です');
     assert(
       copyright.textContent.trim() === DEFAULT_OPTIONS.meta.copyrightText,
@@ -141,12 +171,14 @@ export const MinimalState: Story = {
     })}`,
   play: ({ canvasElement }) => {
     const footer = getFooter(canvasElement, 'footer-minimal');
-    const metaElement = footer.querySelector<HTMLElement>('.ui-footer__meta');
+    const metaElement = getMeta(footer);
+    const subline = footer.querySelector('.ui-footer__subline');
     const nav = footer.querySelector('nav');
     const siteLink = footer.querySelector('.ui-footer__site a');
     const build = footer.querySelector('.ui-footer__build');
 
     assert(metaElement instanceof HTMLElement, '最小状態でも主要メタ領域は必要です');
+    assert(subline === null, 'links と buildLabel が無い場合は subline を描画しません');
     assert(nav === null, 'links が無い場合は nav を描画しません');
     assert(siteLink === null, 'siteUrl が無い場合は siteName をリンク化しません');
     assert(build === null, 'buildLabel が無い場合は build 領域を描画しません');
@@ -201,15 +233,18 @@ export const LinkAndBuildVariants: Story = {
     const minimal = getFooter(canvasElement, 'footer-variant-minimal');
     const fullLinks = full.querySelectorAll<HTMLAnchorElement>('nav a');
     const fullNav = full.querySelector<HTMLElement>('nav');
+    const fullSubline = full.querySelector<HTMLElement>('.ui-footer__subline');
     const fullSiteLink = full.querySelector<HTMLAnchorElement>('.ui-footer__site a');
     const fullBuild = full.querySelector<HTMLElement>('.ui-footer__build');
     const minimalSiteLink = minimal.querySelector('.ui-footer__site a');
+    const minimalSubline = minimal.querySelector('.ui-footer__subline');
 
     assert(
       fullSiteLink instanceof HTMLAnchorElement,
       '有効な siteUrl はリンク化される必要があります',
     );
     assert(fullSiteLink.href.includes('https://rouault.example/'), 'siteUrl の href が不正です');
+    assert(fullSubline instanceof HTMLElement, '完全状態では subline が必要です');
     assert(fullBuild instanceof HTMLElement, 'buildLabel が描画されていません');
     assert(
       fullBuild.textContent.trim() === 'release 2026.03.24',
@@ -223,6 +258,7 @@ export const LinkAndBuildVariants: Story = {
     assert(fullLinks[1]?.dataset['external'] === 'true', 'external ヒントが反映されていません');
     assert(minimalSiteLink === null, '無効な siteUrl ではリンク化しません');
     assert(minimal.querySelector('nav') === null, 'links が 0 件なら nav を描画しません');
+    assert(minimalSubline === null, 'links と buildLabel が無ければ subline を描画しません');
     assert(
       minimal.querySelector('.ui-footer__build') === null,
       'buildLabel が無ければ build 領域を描画しません',
@@ -250,7 +286,9 @@ export const AccessibilityContract: Story = {
   play: ({ canvasElement }) => {
     const footer = getFooter(canvasElement, 'footer-accessibility');
     const inner = getInner(footer);
-    const metaElement = footer.querySelector<HTMLElement>('.ui-footer__meta');
+    const metaElement = getMeta(footer);
+    const subline = getSubline(footer);
+    const legal = footer.querySelector<HTMLElement>('.ui-footer__legal');
     const nav = footer.querySelector<HTMLElement>('nav');
 
     assert(nav instanceof HTMLElement, 'nav が必要です');
@@ -260,7 +298,11 @@ export const AccessibilityContract: Story = {
     );
     assert(metaElement instanceof HTMLElement, '主要メタ領域が必要です');
     assert(inner.firstElementChild === metaElement, 'DOM 順序は meta が先である必要があります');
-    assert(inner.lastElementChild === nav, 'DOM 順序は nav が後である必要があります');
+    assert(inner.childElementCount === 1, 'inner 直下は meta のみである必要があります');
+    assert(subline instanceof HTMLElement, '完全状態では subline が必要です');
+    assert(legal instanceof HTMLElement, 'subline 内に legal 領域が必要です');
+    assert(subline.firstElementChild === legal, 'subline では legal が先である必要があります');
+    assert(subline.lastElementChild === nav, 'subline では nav が後である必要があります');
     assert(
       footer.querySelector('[aria-hidden="true"]') === null,
       '現行契約では装飾要素を持ち込みません',
@@ -328,6 +370,8 @@ export const TokenContract: Story = {
 
     assert(!cssText.includes('prefers-color-scheme'), 'ダークモード分岐はトークン解決へ委譲します');
     assert(FOOTER_DOCUMENT_CSS.includes('.ui-footer__build'), 'build 領域のトークン契約が必要です');
+    assert(FOOTER_DOCUMENT_CSS.includes('.ui-footer__subline'), 'subline 領域の契約が必要です');
+    assert(FOOTER_DOCUMENT_CSS.includes('.ui-footer__nav-item'), 'nav-item 領域の契約が必要です');
 
     const footer = getFooter(canvasElement, 'footer-token-contract');
     const build = footer.querySelector<HTMLElement>('.ui-footer__build');

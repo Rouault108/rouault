@@ -14,7 +14,7 @@ const DEFAULT_SITE_URL = '/';
 const DEFAULT_NAV_LABEL = '補助ナビゲーション';
 
 const DEFAULT_LINKS: readonly FooterLinkItem[] = [
-  { href: '/search/?sort=date-desc', label: '新着一覧' },
+  { href: '/search', label: '検索' },
   { href: '/about/', label: 'このサイトについて' },
 ];
 
@@ -79,16 +79,20 @@ const parseFooterLinksJson = (value: string | undefined): readonly FooterLinkIte
 
 export const buildLayoutFooterOptions = ({
   footerId,
+  siteEyebrow,
   siteName,
   siteUrl,
+  siteDescription,
   copyrightText,
   buildLabel,
   navLabel,
   linksJson,
 }: {
   footerId: string | undefined;
+  siteEyebrow: string | undefined;
   siteName: string | undefined;
   siteUrl: string | undefined;
+  siteDescription: string | undefined;
   copyrightText: string | undefined;
   buildLabel: string | undefined;
   navLabel: string | undefined;
@@ -97,11 +101,15 @@ export const buildLayoutFooterOptions = ({
   const normalizedFooterId = normalizeOptionalText(footerId);
   const normalizedSiteUrl = normalizeOptionalText(siteUrl) ?? DEFAULT_SITE_URL;
   const resolvedBuildLabel = normalizeOptionalText(buildLabel) ?? resolveDefaultBuildLabel();
+  const resolvedDescription = normalizeOptionalText(siteDescription);
+  const resolvedEyebrow = normalizeOptionalText(siteEyebrow);
 
   const meta: FooterRenderOptions['meta'] = {
+    ...(resolvedEyebrow ? { eyebrow: resolvedEyebrow } : {}),
     siteName: normalizeOptionalText(siteName) ?? DEFAULT_SITE_NAME,
-    copyrightText: normalizeOptionalText(copyrightText) ?? resolveDefaultCopyrightText(),
     ...(normalizedSiteUrl ? { siteUrl: normalizedSiteUrl } : {}),
+    ...(resolvedDescription ? { description: resolvedDescription } : {}),
+    copyrightText: normalizeOptionalText(copyrightText) ?? resolveDefaultCopyrightText(),
     ...(resolvedBuildLabel ? { buildLabel: resolvedBuildLabel } : {}),
   };
 
@@ -122,11 +130,17 @@ export class LayoutFooter extends LitElement {
   @property({ type: String, attribute: 'footer-id' })
   footerId?: string;
 
+  @property({ type: String, attribute: 'site-eyebrow' })
+  siteEyebrow?: string;
+
   @property({ type: String, attribute: 'site-name' })
   siteName?: string;
 
   @property({ type: String, attribute: 'site-url' })
   siteUrl?: string;
+
+  @property({ type: String, attribute: 'site-description' })
+  siteDescription?: string;
 
   @property({ type: String, attribute: 'copyright-text' })
   copyrightText?: string;
@@ -148,7 +162,6 @@ export class LayoutFooter extends LitElement {
     ensureFooterDocumentStyles();
 
     if (!this._didInitializeFromSsr) {
-      // 初回接続時のみ SSR のライトDOMを除去して、Lit の再描画と重複させない。
       this.replaceChildren();
       this._didInitializeFromSsr = true;
     }
@@ -160,8 +173,10 @@ export class LayoutFooter extends LitElement {
     return renderFooter(
       buildLayoutFooterOptions({
         footerId: this.footerId,
+        siteEyebrow: this.siteEyebrow,
         siteName: this.siteName,
         siteUrl: this.siteUrl,
+        siteDescription: this.siteDescription,
         copyrightText: this.copyrightText,
         buildLabel: this.buildLabel,
         navLabel: this.navLabel,
