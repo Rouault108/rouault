@@ -14,6 +14,7 @@ import '../components/ui/card/card.js';
 import { type ImageLoading } from '../components/ui/image/image.js';
 import '../components/search/search-page.js';
 import '../components/tag/tag-page.js';
+import '../components/corpus/corpus-page.js';
 import '../components/ui/article-header/article-header.js';
 import {
   ARTICLE_HEADER_TAGS_DATA_ATTRIBUTE,

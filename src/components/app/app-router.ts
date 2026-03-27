@@ -1,7 +1,11 @@
 import { html, LitElement, nothing, type PropertyValues } from 'lit';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { PrimaryTabNavigationPolicy } from '../../lib/tabs/primary-tab-navigation-policy.js';
-import { RouterNotStartedError, type NavigationResult, type ShellAdapter } from '../../lib/router.js';
+import {
+  RouterNotStartedError,
+  type NavigationResult,
+  type ShellAdapter,
+} from '../../lib/router.js';
 import { RouterController } from '../../lib/controllers/router-controller.js';
 import { AppRouterContentController } from './controllers/app-router-content-controller.js';
 import { AppRouterPostRenderController } from './controllers/app-router-post-render-controller.js';
@@ -9,6 +13,12 @@ import { AppRouterPostRenderController } from './controllers/app-router-post-ren
 interface BreadcrumbShellItem {
   label: string;
   href?: string;
+}
+
+interface CorpusShellItem {
+  key: string;
+  label: string;
+  href: string;
 }
 
 const parseBreadcrumbs = (value: string | null): BreadcrumbShellItem[] => {
@@ -43,6 +53,39 @@ const parseBreadcrumbs = (value: string | null): BreadcrumbShellItem[] => {
   }
 };
 
+const parseCorpora = (value: string | null): CorpusShellItem[] => {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    return [];
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .map((item) => {
+        if (typeof item !== 'object' || item === null) {
+          return null;
+        }
+
+        const record = item as Record<string, unknown>;
+        const key = typeof record['key'] === 'string' ? record['key'].trim() : '';
+        const label = typeof record['label'] === 'string' ? record['label'].trim() : '';
+        const href = typeof record['href'] === 'string' ? record['href'].trim() : '';
+        if (key.length === 0 || label.length === 0 || href.length === 0) {
+          return null;
+        }
+
+        return { key, label, href };
+      })
+      .filter((item): item is CorpusShellItem => item !== null);
+  } catch {
+    return [];
+  }
+};
+
 const createLayoutHeaderShellAdapter = (): ShellAdapter => ({
   extract(documentSnapshot: Document) {
     const nextHeader = documentSnapshot.querySelector('layout-header');
@@ -50,6 +93,8 @@ const createLayoutHeaderShellAdapter = (): ShellAdapter => ({
     return {
       header: {
         breadcrumbs: parseBreadcrumbs(nextHeader?.getAttribute('breadcrumbs-json') ?? null),
+        corpora: parseCorpora(nextHeader?.getAttribute('corpora-json') ?? null),
+        currentCorpusKey: nextHeader?.getAttribute('current-corpus-key')?.trim() || 'all',
         noteLayout: nextHeader?.hasAttribute('note-layout') ?? false,
       },
     };
@@ -61,7 +106,10 @@ const createLayoutHeaderShellAdapter = (): ShellAdapter => ({
     }
 
     const breadcrumbsJson = JSON.stringify(shell?.header.breadcrumbs ?? []);
+    const corporaJson = JSON.stringify(shell?.header.corpora ?? []);
     currentHeader.setAttribute('breadcrumbs-json', breadcrumbsJson);
+    currentHeader.setAttribute('corpora-json', corporaJson);
+    currentHeader.setAttribute('current-corpus-key', shell?.header.currentCorpusKey ?? 'all');
     currentHeader.toggleAttribute('note-layout', shell?.header.noteLayout ?? false);
   },
 });

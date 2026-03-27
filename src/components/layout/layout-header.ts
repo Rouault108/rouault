@@ -7,6 +7,7 @@ import '../ui/breadcrumbs/breadcrumbs';
 import '../ui/button/button';
 import '../ui/dropdown/dropdown';
 import type { BreadcrumbItem } from '../ui/breadcrumbs/breadcrumbs';
+import { navigateToUrl } from '../../lib/search/navigation.js';
 import {
   THEME_CHANGE_EVENT,
   applyThemePreference,
@@ -15,6 +16,12 @@ import {
   type ThemePreference,
 } from '../../lib/theme/theme-manager.js';
 import type { IconName } from '../../icons/catalog.js';
+
+interface CorpusNavigationItem {
+  key: string;
+  label: string;
+  href: string;
+}
 
 const THEME_OPTIONS: Record<
   ThemePreference,
@@ -95,17 +102,31 @@ export class LayoutHeader extends LitElement {
     }
 
     .theme-trigger-label,
-    .theme-menu-label {
+    .theme-menu-label,
+    .corpus-trigger-label {
       display: inline-flex;
       align-items: center;
       gap: var(--space-2, 8px);
       min-inline-size: 0;
     }
 
+    .corpus-trigger-label {
+      color: var(--fg-default);
+    }
+
+    .corpus-trigger-text {
+      display: inline-block;
+      max-inline-size: min(13rem, 28vw);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .theme-trigger-label {
       color: var(--fg-subtle, var(--fg-muted));
     }
 
+    .corpus-chevron,
     .theme-menu-icon,
     .theme-trigger-icon,
     .theme-chevron {
@@ -118,6 +139,7 @@ export class LayoutHeader extends LitElement {
     }
 
     .theme-trigger-icon,
+    .corpus-chevron,
     .theme-chevron {
       opacity: 0.78;
     }
@@ -132,6 +154,12 @@ export class LayoutHeader extends LitElement {
 
   @property({ type: String, attribute: 'breadcrumbs-json' })
   breadcrumbsJson = '';
+
+  @property({ type: String, attribute: 'corpora-json' })
+  corporaJson = '';
+
+  @property({ type: String, attribute: 'current-corpus-key' })
+  currentCorpusKey = 'all';
 
   @property({ type: Boolean, reflect: true, attribute: 'note-layout' })
   noteLayout = false;
@@ -187,13 +215,13 @@ export class LayoutHeader extends LitElement {
     );
   };
 
-  private _handleGenreSelect = (event: CustomEvent<{ value: string }>): void => {
+  private _handleCorpusSelect = (event: CustomEvent<{ value: string }>): void => {
     const href = event.detail.value.trim();
     if (href.length === 0 || typeof window === 'undefined') {
       return;
     }
 
-    window.location.assign(href);
+    void navigateToUrl(href);
   };
 
   private _handleThemeChange = (event: CustomEvent<ThemeChangeDetail>): void => {
@@ -249,10 +277,68 @@ export class LayoutHeader extends LitElement {
     return this.noteLayout ? 'ノート' : 'ホーム';
   }
 
+  private get _corpusItems(): CorpusNavigationItem[] {
+    const normalized = this.corporaJson.trim();
+    if (normalized.length === 0) {
+      return [
+        {
+          key: 'all',
+          label: 'すべてのノート',
+          href: '/',
+        },
+      ];
+    }
+
+    try {
+      const parsed = JSON.parse(normalized) as unknown;
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+
+      const items = parsed.filter((item): item is CorpusNavigationItem => {
+        if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+          return false;
+        }
+
+        const candidate = item as Record<string, unknown>;
+        return (
+          typeof candidate['key'] === 'string' &&
+          typeof candidate['label'] === 'string' &&
+          typeof candidate['href'] === 'string'
+        );
+      });
+
+      return items.length > 0
+        ? items
+        : [
+            {
+              key: 'all',
+              label: 'すべてのノート',
+              href: '/',
+            },
+          ];
+    } catch {
+      return [
+        {
+          key: 'all',
+          label: 'すべてのノート',
+          href: '/',
+        },
+      ];
+    }
+  }
+
+  private get _currentCorpusItem(): CorpusNavigationItem | null {
+    const currentKey = this.currentCorpusKey.trim() || 'all';
+    return this._corpusItems.find((item) => item.key === currentKey) ?? null;
+  }
+
   override render() {
     const breadcrumbs = this._breadcrumbItems;
     const sidebarToggleLabel = this._sidebarExpanded ? 'サイドバーを閉じる' : 'サイドバーを開く';
     const currentThemeOption = THEME_OPTIONS[this._themePreference];
+    const corpusItems = this._corpusItems;
+    const currentCorpusLabel = this._currentCorpusItem?.label ?? 'すべてのノート';
     const hasBreadcrumbs = breadcrumbs.length > 0;
 
     return html`
@@ -270,17 +356,21 @@ export class LayoutHeader extends LitElement {
                 </ui-button>
               `
             : null}
-          <ui-dropdown @menu-item-select=${this._handleGenreSelect}>
+          <ui-dropdown @menu-item-select=${this._handleCorpusSelect}>
             <ui-button slot="trigger" variant="ghost">
-              ジャンル
+              <span class="corpus-trigger-label">
+                <span class="corpus-trigger-text">${currentCorpusLabel}</span>
+              </span>
               <ui-icon
+                class="corpus-chevron"
                 name="chevron-down"
                 aria-hidden="true"
                 style="width:14px;height:14px;"
               ></ui-icon>
             </ui-button>
-            <ui-menu-item value="/tags/content/">コンテンツ</ui-menu-item>
-            <ui-menu-item value="/tags/internal/">内部</ui-menu-item>
+            ${corpusItems.map(
+              (item) => html`<ui-menu-item value=${item.href}>${item.label}</ui-menu-item>`,
+            )}
           </ui-dropdown>
         </div>
         ${hasBreadcrumbs
@@ -308,11 +398,7 @@ export class LayoutHeader extends LitElement {
                 ></ui-icon>
                 <span>テーマ</span>
               </span>
-              <ui-icon
-                class="theme-chevron"
-                name="chevron-down"
-                aria-hidden="true"
-              ></ui-icon>
+              <ui-icon class="theme-chevron" name="chevron-down" aria-hidden="true"></ui-icon>
             </ui-button>
             ${(
               Object.entries(THEME_OPTIONS) as [

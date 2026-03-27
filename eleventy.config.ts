@@ -72,6 +72,11 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
     return tagPagesModule.loadTagPagesData();
   });
 
+  eleventyConfig.addGlobalData('corpusPages', async () => {
+    const corpusPagesModule = await import('./src/data/corpusPages.js');
+    return corpusPagesModule.loadCorpusPagesData();
+  });
+
   eleventyConfig.addPassthroughCopy({ 'src/assets': 'assets' });
 
   if (!isServing) {

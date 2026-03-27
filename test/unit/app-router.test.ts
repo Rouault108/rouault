@@ -164,13 +164,10 @@ describe('app-router', () => {
 
     const result = await appHost.navigate('/client-page');
 
-    await waitUntil(
-      () => {
-        const text = appHost.querySelector('#main-content')?.textContent ?? '';
-        return text.includes('Client Page');
-      },
-      'ページコンテンツが差し替わること',
-    );
+    await waitUntil(() => {
+      const text = appHost.querySelector('#main-content')?.textContent ?? '';
+      return text.includes('Client Page');
+    }, 'ページコンテンツが差し替わること');
 
     expect(result.outcome).to.equal('completed');
     expect(result.renderedKind).to.equal('page');
@@ -218,7 +215,9 @@ describe('app-router', () => {
 
     await waitUntil(
       () =>
-        (appHost.querySelector('[aria-live="polite"]')?.textContent.includes('ページが読み込まれました') ??
+        (appHost
+          .querySelector('[aria-live="polite"]')
+          ?.textContent.includes('ページが読み込まれました') ??
           false) &&
         focusedTagName === 'H1',
       'aria-live と focus が更新されること',
@@ -276,7 +275,11 @@ describe('app-router', () => {
 
   it('shell adapter 経由で layout-header を同期すること', async () => {
     const header = await fixture<HTMLElement>(
-      html`<layout-header breadcrumbs-json='[{"label":"Old","href":"/old"}]'></layout-header>`,
+      html`<layout-header
+        breadcrumbs-json='[{"label":"Old","href":"/old"}]'
+        corpora-json='[{"key":"all","label":"すべてのノート","href":"/"}]'
+        current-corpus-key="all"
+      ></layout-header>`,
     );
 
     globalThis.fetch = () =>
@@ -290,6 +293,8 @@ describe('app-router', () => {
                 <layout-header
                   note-layout
                   breadcrumbs-json='[{"label":"New Note","href":"/notes/new-note"}]'
+                  corpora-json='[{"key":"all","label":"すべてのノート","href":"/"},{"key":"music","label":"音楽","href":"/corpora/music/"}]'
+                  current-corpus-key="music"
                 ></layout-header>
                 <main><h1>Header Synced</h1></main>
               </body>
@@ -317,5 +322,9 @@ describe('app-router', () => {
     );
 
     expect(header.hasAttribute('note-layout')).to.equal(true);
+    expect(header.getAttribute('corpora-json')).to.equal(
+      '[{"key":"all","label":"すべてのノート","href":"/"},{"key":"music","label":"音楽","href":"/corpora/music/"}]',
+    );
+    expect(header.getAttribute('current-corpus-key')).to.equal('music');
   });
 });

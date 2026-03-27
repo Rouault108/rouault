@@ -1,5 +1,10 @@
 import type { ClientBundleData } from '../data/clientBundle.js';
 import {
+  buildCorpusNavigation,
+  resolveCurrentCorpusKey,
+  type CorpusPageEntry,
+} from '../data/corpusPages.js';
+import {
   buildBreadcrumbs,
   type BreadcrumbSourceNote,
 } from '../../lib/content/build-breadcrumbs.js';
@@ -15,6 +20,8 @@ export interface BaseLayoutData {
   content: string;
   note?: BreadcrumbSourceNote;
   notes?: BreadcrumbSourceNote[];
+  corpusPages?: readonly CorpusPageEntry[];
+  currentCorpusKey?: string;
   clientBundle?: ClientBundleData;
 }
 
@@ -38,6 +45,12 @@ export class BaseLayout {
     const description = data.description ?? '個人ノートを静かに読むためのWebアプリケーション';
     const noteLayoutAttribute = data.note ? ' note-layout' : '';
     const clientScriptSrc = data.clientBundle?.scriptSrc ?? '/src/client.ts';
+    const currentCorpusKey = resolveCurrentCorpusKey(data);
+    const corporaJson = JSON.stringify(buildCorpusNavigation(data.corpusPages ?? []))
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
 
     const breadcrumbsJson = JSON.stringify(buildBreadcrumbs(data.note, data.notes ?? []))
       .replace(/&/g, '&amp;')
@@ -87,7 +100,7 @@ export class BaseLayout {
 <body>
   <ui-skip-link href="#main-content" label="メインコンテンツへ移動"></ui-skip-link>
   <div id="app" class="app-root">
-    <layout-header${noteLayoutAttribute} breadcrumbs-json="${breadcrumbsJson}"></layout-header>
+    <layout-header${noteLayoutAttribute} breadcrumbs-json="${breadcrumbsJson}" corpora-json="${corporaJson}" current-corpus-key="${escapeAttribute(currentCorpusKey)}"></layout-header>
     <app-router>
       <main id="main-content" tabindex="-1">
         ${data.content}

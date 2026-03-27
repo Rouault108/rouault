@@ -59,6 +59,12 @@ export interface HeaderShellSnapshot {
     label: string;
     href?: string;
   }[];
+  corpora: {
+    key: string;
+    label: string;
+    href: string;
+  }[];
+  currentCorpusKey: string;
   noteLayout: boolean;
 }
 

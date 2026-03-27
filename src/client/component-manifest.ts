@@ -73,6 +73,12 @@ export const COMPONENT_DEFINITIONS = [
     profiles: ['page'],
   },
   {
+    tag: 'corpus-page',
+    loader: () => import('../components/corpus/corpus-page.js'),
+    ssr: 'shadow',
+    profiles: ['page'],
+  },
+  {
     tag: 'not-found-page',
     loader: () => import('../components/not-found/not-found-page.js'),
     ssr: 'shadow',
@@ -212,8 +218,7 @@ export type RegisteredComponentDefinition = ComponentDefinition & {
  * 「tag は ComponentTag を維持しつつ、その他は ComponentDefinition として扱える形」
  * に寄せる。
  */
-const COMPONENT_DEFINITIONS_WIDE: readonly RegisteredComponentDefinition[] =
-  COMPONENT_DEFINITIONS;
+const COMPONENT_DEFINITIONS_WIDE: readonly RegisteredComponentDefinition[] = COMPONENT_DEFINITIONS;
 
 export const COMPONENT_TAGS = COMPONENT_DEFINITIONS_WIDE.map(
   (definition) => definition.tag,
@@ -233,6 +238,4 @@ export const isComponentTag = (value: string): value is ComponentTag =>
 export const getComponentDefinitionsForProfile = (
   profile: ComponentProfile,
 ): readonly RegisteredComponentDefinition[] =>
-  COMPONENT_DEFINITIONS_WIDE.filter((definition) =>
-    definition.profiles.includes(profile),
-  );
+  COMPONENT_DEFINITIONS_WIDE.filter((definition) => definition.profiles.includes(profile));
