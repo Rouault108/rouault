@@ -178,14 +178,13 @@ draft: false # true でドラフトアイコン表示（デフォルト: false�
 
 ## 🎭 アイコン
 
-| 用途                                       | ライブラリ / 手法                                            |
+| 用途                                       | 現行の実装                                                   |
 | ------------------------------------------ | ------------------------------------------------------------ |
-| 一般アイコン（コンテンツ・ナビゲーション） | [Iconify - Lucide](https://icon-sets.iconify.design/lucide/) |
-| UI内部装飾（コンポーネント内蔵）           | **インライン SVG** (Lucide準拠パス)                          |
-| 技術ロゴ（優先）                           | [Devicon](https://devicon.dev/)                              |
-| 技術ロゴ（フォールバック）                 | [Simple Icons](https://simpleicons.org/)                     |
+| 一般アイコン（コンテンツ・ナビゲーション） | `ui-icon` + [Iconify - Lucide](https://icon-sets.iconify.design/lucide/) |
+| UI内部装飾（コンポーネント内蔵）           | **インライン SVG**                                           |
+| 技術ロゴ                                   | 現行コードでは未接続                                         |
 
-> **Note**: コンポーネントの自己完結性と描画パフォーマンス（FOUC防止）を優先するため、`ui-dropdown` の矢印や `ui-checkbox` のチェックマークなど、UIに組み込まれる固定的なアイコンには **インラインSVG** を使用します。パスデータは Lucide アイコンのものを使用し、デザインの一貫性を保ちます。
+> **Note**: `ui-icon` は `src/icons/catalog.ts` にある Lucide 名だけを受け取り、内部で `iconify-icon` に委譲します。`ui-checkbox` のような固定 glyph は、自己完結性を優先して inline SVG を使います。Devicon / Simple Icons の記述は現時点の runtime には接続していません。
 
 ## UI
 
