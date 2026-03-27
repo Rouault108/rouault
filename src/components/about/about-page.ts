@@ -1,6 +1,5 @@
 import { html, LitElement, type TemplateResult } from 'lit';
 import { customElement } from 'lit/decorators.js';
-import '../layout/layout-toc.js';
 
 interface AboutSection {
   id: string;

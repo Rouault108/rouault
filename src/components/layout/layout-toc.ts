@@ -7,7 +7,6 @@ import {
   findHeadingElement,
   revealHeadingInTabs,
 } from '../../lib/toc/filter-visible-headings.js';
-import '../ui/icon/icon.js';
 import '../ui/toc/toc';
 import type { Heading, UiTocActiveChangeDetail } from '../ui/toc/toc';
 

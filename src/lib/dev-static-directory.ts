@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import path from 'node:path';
 import type { Connect } from 'vite';
@@ -99,7 +99,7 @@ export function createStaticDirectoryMiddleware(
     }
 
     try {
-      const fileBuffer = await readFile(filePath);
+      const fileBuffer = readFileSync(filePath);
       response.statusCode = 200;
       response.setHeader('Content-Type', getContentType(filePath));
       response.setHeader('Cache-Control', 'no-store');

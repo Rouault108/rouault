@@ -5,7 +5,7 @@ import { collectDocumentStylesForTags, renderCustomElement } from '../../src/ssr
 describe('server-entry', () => {
   it('ui-highlight の document style を収集できること', () => {
     const styles = collectDocumentStylesForTags(['ui-highlight']);
-    const highlightStyle = styles.find((style) => style.id === 'ui-highlight-document-styles');
+    const highlightStyle = styles.find((style) => style.id === 'ui-highlight-styles');
 
     expect(highlightStyle).toBeDefined();
     expect(highlightStyle?.cssText).toContain('ui-highlight > mark');
@@ -37,7 +37,7 @@ describe('server-entry', () => {
     );
 
     expect(rendered).toContain('shadowrootmode="open"');
-    expect(rendered).toContain('ページが見つかりません');
+    expect(rendered).toContain('このページは見つかりませんでした');
     expect(rendered).toContain('/notes/does-not-exist');
   });
 

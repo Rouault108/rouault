@@ -4,8 +4,9 @@ import type { IconName } from '../../../icons/catalog.js';
 const NAME_ATTRIBUTE = 'name';
 const ICON_ATTRIBUTE = 'icon';
 const ARIA_LABEL_ATTRIBUTE = 'aria-label';
+const BaseElement = typeof HTMLElement === 'undefined' ? class {} : HTMLElement;
 
-export class UiIcon extends HTMLElement {
+export class UiIcon extends BaseElement {
   static readonly observedAttributes = [NAME_ATTRIBUTE, ICON_ATTRIBUTE, ARIA_LABEL_ATTRIBUTE];
 
   private readonly glyph = document.createElement('iconify-icon');
@@ -137,7 +138,7 @@ export class UiIcon extends HTMLElement {
   }
 }
 
-if (!customElements.get('ui-icon')) {
+if (typeof customElements !== 'undefined' && !customElements.get('ui-icon')) {
   customElements.define('ui-icon', UiIcon);
 }
 

@@ -94,7 +94,10 @@ const createLayoutHeaderShellAdapter = (): ShellAdapter => ({
       header: {
         breadcrumbs: parseBreadcrumbs(nextHeader?.getAttribute('breadcrumbs-json') ?? null),
         corpora: parseCorpora(nextHeader?.getAttribute('corpora-json') ?? null),
-        currentCorpusKey: nextHeader?.getAttribute('current-corpus-key')?.trim() || 'all',
+        currentCorpusKey: (() => {
+          const currentCorpusKey = nextHeader?.getAttribute('current-corpus-key')?.trim();
+          return currentCorpusKey === '' ? 'all' : currentCorpusKey ?? 'all';
+        })(),
         noteLayout: nextHeader?.hasAttribute('note-layout') ?? false,
       },
     };

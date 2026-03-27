@@ -825,9 +825,6 @@ export class Select extends LitElement {
     // チェックアイコン（選択済み項目）
     if (opt.value === this.modelValue) {
       const checkIcon = document.createElement('span');
-      const checkGlyph = document.createElement('ui-icon');
-      checkGlyph.setAttribute('icon', 'check');
-      checkGlyph.setAttribute('aria-hidden', 'true');
       checkIcon.setAttribute('aria-hidden', 'true');
       checkIcon.style.cssText = `
         position: absolute;
@@ -841,11 +838,14 @@ export class Select extends LitElement {
         justify-content: center;
         color: var(--primary, oklch(60% 0.15 250));
       `;
-      Object.assign(checkGlyph.style, {
-        width: '14px',
-        height: '14px',
-      });
-      checkIcon.appendChild(checkGlyph);
+      checkIcon.innerHTML = '<ui-icon icon="check" aria-hidden="true"></ui-icon>';
+      const checkGlyph = checkIcon.querySelector<HTMLElement>('ui-icon');
+      if (checkGlyph) {
+        Object.assign(checkGlyph.style, {
+          width: '14px',
+          height: '14px',
+        });
+      }
       item.appendChild(checkIcon);
     }
 
