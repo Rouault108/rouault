@@ -3,7 +3,7 @@ import { html } from 'lit';
 import './layout-sidebar';
 import type { LayoutSidebar } from './layout-sidebar';
 import type { TreeNode } from '../ui/file-tree/file-tree';
-import { LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY } from './layout-sidebar-tree-state.js';
+import { getLayoutSidebarTreeStateStorageKey } from './layout-sidebar-tree-state.js';
 
 const sampleItems: readonly TreeNode[] = [
   {
@@ -83,7 +83,8 @@ export const PersistsExpandedIds: Story = {
     </div>
   `,
   play: async ({ canvasElement }) => {
-    localStorage.removeItem(LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY);
+    const storageKey = getLayoutSidebarTreeStateStorageKey('music/classical/beethoven/symphony-9');
+    localStorage.removeItem(storageKey);
 
     const host = getHost(canvasElement, 'layout-sidebar-persist');
     await flush(host);
@@ -105,7 +106,7 @@ export const PersistsExpandedIds: Story = {
     );
     await flush(host);
 
-    const storedRaw = localStorage.getItem(LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY);
+    const storedRaw = localStorage.getItem(storageKey);
     if (storedRaw === null) {
       throw new Error('expandedIds が保存されていません');
     }
@@ -115,7 +116,7 @@ export const PersistsExpandedIds: Story = {
       throw new Error('toggle した branch id が保存されていません');
     }
 
-    localStorage.removeItem(LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY);
+    localStorage.removeItem(storageKey);
   },
 };
 

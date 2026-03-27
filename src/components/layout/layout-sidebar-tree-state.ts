@@ -6,6 +6,15 @@ export interface LayoutSidebarTreeState {
   expandedIds: string[];
 }
 
+export const getLayoutSidebarTreeStateStorageKey = (scopeId: string | null = null): string => {
+  const normalized = typeof scopeId === 'string' ? scopeId.trim() : '';
+  if (normalized.length === 0) {
+    return LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY;
+  }
+
+  return `${LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY}:${normalized}`;
+};
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
@@ -36,13 +45,16 @@ export const normalizeLayoutSidebarTreeState = (value: unknown): LayoutSidebarTr
 /**
  * Storage から展開状態を読み出す。
  */
-export const readLayoutSidebarTreeState = (storage: Storage | null): LayoutSidebarTreeState => {
+export const readLayoutSidebarTreeState = (
+  storage: Storage | null,
+  scopeId: string | null = null,
+): LayoutSidebarTreeState => {
   if (storage === null) {
     return { expandedIds: [] };
   }
 
   try {
-    const raw = storage.getItem(LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY);
+    const raw = storage.getItem(getLayoutSidebarTreeStateStorageKey(scopeId));
     if (typeof raw !== 'string' || raw.length === 0) {
       return { expandedIds: [] };
     }
@@ -60,6 +72,7 @@ export const readLayoutSidebarTreeState = (storage: Storage | null): LayoutSideb
 export const writeLayoutSidebarTreeState = (
   storage: Storage | null,
   state: LayoutSidebarTreeState,
+  scopeId: string | null = null,
 ): void => {
   if (storage === null) {
     return;
@@ -68,7 +81,7 @@ export const writeLayoutSidebarTreeState = (
   const normalized = normalizeLayoutSidebarTreeState(state);
 
   try {
-    storage.setItem(LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY, JSON.stringify(normalized));
+    storage.setItem(getLayoutSidebarTreeStateStorageKey(scopeId), JSON.stringify(normalized));
   } catch {
     /* localStorage へ書き込めない環境では黙って無視する */
   }

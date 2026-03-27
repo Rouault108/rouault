@@ -40,7 +40,7 @@ export class TreeItem extends LitElement {
     .item {
       position: relative;
       display: grid;
-      grid-template-columns: 16px 16px minmax(0, 1fr) auto;
+      grid-template-columns: 16px minmax(0, 1fr) auto;
       align-items: center;
       column-gap: var(--space-2, 8px);
       inline-size: 100%;
@@ -127,6 +127,10 @@ export class TreeItem extends LitElement {
       grid-column: 1;
     }
 
+    .item.has-content-icon {
+      grid-template-columns: 16px 16px minmax(0, 1fr) auto;
+    }
+
     .content-icon {
       grid-column: 2;
     }
@@ -135,6 +139,10 @@ export class TreeItem extends LitElement {
     .content-icon.hidden {
       visibility: hidden;
       pointer-events: none;
+    }
+
+    .content-icon.hidden {
+      display: none;
     }
 
     .expand-glyph {
@@ -180,12 +188,16 @@ export class TreeItem extends LitElement {
     }
 
     .label-cell {
-      grid-column: 3;
+      grid-column: 2;
       display: flex;
       align-items: center;
       inline-size: 100%;
       min-inline-size: 0;
       justify-self: stretch;
+    }
+
+    .item.has-content-icon .label-cell {
+      grid-column: 3;
     }
 
     .label-tooltip {
@@ -220,10 +232,14 @@ export class TreeItem extends LitElement {
     }
 
     .end-cell {
-      grid-column: 4;
+      grid-column: 3;
       display: flex;
       align-items: center;
       justify-content: center;
+    }
+
+    .item.has-content-icon .end-cell {
+      grid-column: 4;
     }
 
     .item > ui-icon {
@@ -610,6 +626,12 @@ export class TreeItem extends LitElement {
     }
 
     if (this.expanded) {
+      const targetHeight = container.scrollHeight;
+      if (targetHeight === 0) {
+        container.style.height = 'auto';
+        return;
+      }
+
       this._animateChildrenExpand(container);
       return;
     }
@@ -621,6 +643,11 @@ export class TreeItem extends LitElement {
     container.style.height = '0px';
 
     const targetHeight = container.scrollHeight;
+    if (targetHeight === 0) {
+      container.style.height = 'auto';
+      return;
+    }
+
     this._childrenAnimationFrame = requestAnimationFrame(() => {
       container.style.height = `${targetHeight.toString()}px`;
     });
@@ -658,16 +685,19 @@ export class TreeItem extends LitElement {
   }
 
   override render() {
+    const showContentIcon = Boolean(this.icon) || this.hasCustomIcon;
     const classes = {
       [`density-${this.density}`]: true,
     };
     const childrenHidden = !this.hasChildren;
-    const showContentIcon = Boolean(this.icon) || this.hasCustomIcon;
 
     return html`
       <div class=${classMap(classes)}>
         <div
-          class="item"
+          class=${classMap({
+            item: true,
+            'has-content-icon': showContentIcon,
+          })}
           tabindex=${this.getAttribute('tabindex') ?? '0'}
           @click=${this._handleClick}
           @keydown=${this._handleKeyDown}

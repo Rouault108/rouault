@@ -2,6 +2,7 @@ import { expect } from '@open-wc/testing';
 import type { TreeNode } from '../../src/components/ui/file-tree/file-tree.js';
 import {
   LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY,
+  getLayoutSidebarTreeStateStorageKey,
   mergeLayoutSidebarTreeState,
   normalizeLayoutSidebarTreeState,
   readLayoutSidebarTreeState,
@@ -55,6 +56,15 @@ describe('layout-sidebar-tree-state', () => {
       JSON.stringify({
         expandedIds: ['music', 'music/classical'],
       }),
+    );
+  });
+
+  it('scopeId ごとに保存キーを分離できること', () => {
+    expect(getLayoutSidebarTreeStateStorageKey()).to.equal(
+      LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY,
+    );
+    expect(getLayoutSidebarTreeStateStorageKey('notes/program')).to.equal(
+      `${LAYOUT_SIDEBAR_TREE_STATE_STORAGE_KEY}:notes/program`,
     );
   });
 

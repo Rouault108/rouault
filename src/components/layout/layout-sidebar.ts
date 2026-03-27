@@ -222,14 +222,17 @@ export class LayoutSidebar extends LitElement {
     if (
       !this.hasUpdated ||
       changedProperties.has('sourceId') ||
-      changedProperties.has('itemsJson')
+      changedProperties.has('itemsJson') ||
+      changedProperties.has('selectedId')
     ) {
       this._loadItemsFromSource();
     }
   }
 
   private _loadItemsFromSource(): void {
-    this._persistedExpandedIds = new Set(readLayoutSidebarTreeState(this._storage).expandedIds);
+    this._persistedExpandedIds = new Set(
+      readLayoutSidebarTreeState(this._storage, this.selectedId).expandedIds,
+    );
 
     const inlineItems = this._parseItemsJson(this.itemsJson);
     if (inlineItems !== null) {
@@ -334,7 +337,7 @@ export class LayoutSidebar extends LitElement {
 
     writeLayoutSidebarTreeState(this._storage, {
       expandedIds: [...this._persistedExpandedIds],
-    });
+    }, this.selectedId);
   };
 
   private _onSidebarSelect = (): void => {

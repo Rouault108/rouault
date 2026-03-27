@@ -121,18 +121,6 @@ const nextFrame = async (): Promise<void> =>
     });
   });
 
-const getTooltipPanel = (host: HTMLElement): HTMLElement => {
-  const tooltipId = host.dataset['tooltipId'];
-  if (!tooltipId) {
-    throw new Error('tooltip id が見つかりません');
-  }
-  const panel = host.ownerDocument.getElementById(tooltipId);
-  if (!panel) {
-    throw new Error('tooltip panel が見つかりません');
-  }
-  return panel;
-};
-
 /**
  * デフォルトのツリーアイテム（Normal密度）。
  *
@@ -456,6 +444,24 @@ export const Collapsed: Story = {
     if (childrenContainer.getAttribute('aria-hidden') !== 'true') {
       throw new Error('収縮状態の子要素は aria-hidden="true" を持つべきです');
     }
+
+    const expandIcon = treeItem.shadowRoot?.querySelector<HTMLElement>('.expand-icon');
+    const expandGlyph = treeItem.shadowRoot?.querySelector<HTMLElement>('.expand-glyph');
+    if (!expandIcon || !expandGlyph) {
+      throw new Error('展開アイコンが見つかりませんでした');
+    }
+
+    treeItem.expanded = true;
+    await treeItem.updateComplete;
+    await nextFrame();
+
+    if (treeItem.getAttribute('aria-expanded') !== 'true') {
+      throw new Error('展開後の aria-expanded が true ではありません');
+    }
+
+    if (expandIcon.classList.contains('hidden')) {
+      throw new Error('展開可能なノードで expand-icon が hidden になってはいけません');
+    }
   },
 };
 
@@ -495,6 +501,18 @@ export const SelectedAndExpanded: Story = {
     }
     if (treeItem.getAttribute('aria-expanded') !== 'true') {
       throw new Error('aria-expanded="true" ではなく false でした');
+    }
+
+    await nextFrame();
+
+    const childrenContainer = treeItem.shadowRoot?.querySelector<HTMLElement>('.children');
+    if (!childrenContainer) {
+      throw new Error('展開済みの子要素コンテナが見つかりませんでした');
+    }
+
+    const height = Math.round(childrenContainer.getBoundingClientRect().height);
+    if (height <= 0) {
+      throw new Error('展開済みの子要素コンテナが表示されていません');
     }
   },
 };
@@ -589,25 +607,39 @@ export const LongLabel: Story = {
     }
 
     const tooltipHost = treeItem.shadowRoot?.querySelector<HTMLElement & { disabled?: boolean }>(
-      'ui-tooltip.item-tooltip',
+      'ui-tooltip.label-tooltip',
     );
     if (!tooltipHost) {
-      throw new Error('ui-tooltip.item-tooltip が見つかりません');
+      throw new Error('ui-tooltip.label-tooltip が見つかりません');
     }
     if (tooltipHost.disabled === true) {
       throw new Error('長いラベルでは tooltip が無効化されてはいけません');
     }
 
-    const trigger = treeItem.shadowRoot?.querySelector<HTMLElement>('.item');
+    const trigger = treeItem.shadowRoot?.querySelector<HTMLElement>('.label');
     if (!trigger) {
-      throw new Error('.item trigger が見つかりません');
+      throw new Error('.label trigger が見つかりません');
     }
-
-    const panel = getTooltipPanel(tooltipHost);
 
     trigger.dispatchEvent(new MouseEvent('mouseenter'));
     await nextFrame();
     await nextFrame();
+
+    let panel: HTMLElement | null = null;
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      const tooltipId = tooltipHost.dataset['tooltipId'];
+      if (tooltipId) {
+        panel = treeItem.ownerDocument.getElementById(tooltipId);
+      }
+      if (panel) {
+        break;
+      }
+      await nextFrame();
+    }
+
+    if (!panel) {
+      throw new Error('tooltip panel が見つかりません');
+    }
 
     if (panel.getAttribute('aria-hidden') !== 'false') {
       throw new Error('hover 時に tooltip が表示される必要があります');
@@ -631,6 +663,37 @@ export const LongLabel: Story = {
  */
 export const NoIcon: Story = {
   render: () => html` <ui-tree-item label="テキストのみのアイテム"></ui-tree-item> `,
+  play: async ({ canvasElement }) => {
+    const treeItem = canvasElement.querySelector<TreeItem>('ui-tree-item');
+    if (!treeItem) {
+      throw new Error('TreeItem コンポーネントが見つかりません');
+    }
+
+    await treeItem.updateComplete;
+
+    const contentIcon = treeItem.shadowRoot?.querySelector<HTMLElement>('.content-icon');
+    const labelCell = treeItem.shadowRoot?.querySelector<HTMLElement>('.label-cell');
+    if (!contentIcon || !labelCell) {
+      throw new Error('content-icon または label-cell が見つかりませんでした');
+    }
+
+    if (!contentIcon.classList.contains('hidden')) {
+      throw new Error('アイコンがない場合は content-icon に hidden クラスが必要です');
+    }
+
+    const computedStyle = window.getComputedStyle(contentIcon);
+    if (computedStyle.display !== 'none') {
+      throw new Error('hidden な content-icon は display:none である必要があります');
+    }
+
+    if (Math.round(contentIcon.getBoundingClientRect().width) !== 0) {
+      throw new Error('hidden な content-icon は幅を持つべきではありません');
+    }
+
+    if (labelCell.getBoundingClientRect().left <= 0) {
+      throw new Error('label-cell の位置が取得できませんでした');
+    }
+  },
 };
 
 /**
