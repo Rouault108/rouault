@@ -1,6 +1,7 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
+import '../icon/icon.js';
 
 export type SearchTriggerDensity = 'auto' | 'default' | 'compact' | 'icon-only';
 
@@ -258,7 +259,7 @@ export class SearchTrigger extends LitElement {
         part="button"
         type="button"
         data-density="${this.density}"
-        ?disabled=${this.disabled}
+        .disabled=${this.disabled}
         aria-label=${this._resolvedAriaLabel}
         aria-haspopup="dialog"
         aria-controls=${ifDefined(this.ariaControls ?? undefined)}

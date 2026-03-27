@@ -9,16 +9,19 @@ export class UiIcon extends HTMLElement {
   static readonly observedAttributes = [NAME_ATTRIBUTE, ICON_ATTRIBUTE, ARIA_LABEL_ATTRIBUTE];
 
   private readonly glyph = document.createElement('iconify-icon');
+  private readonly glyphRoot: ShadowRoot;
   private collapsedDisplayBackup: string | null = null;
 
   constructor() {
     super();
 
+    this.glyphRoot = this.attachShadow({ mode: 'open' });
     this.glyph.setAttribute('part', 'glyph');
     this.glyph.style.inlineSize = '1em';
     this.glyph.style.blockSize = '1em';
     this.glyph.style.display = 'inline-block';
     this.glyph.style.flexShrink = '0';
+    this.glyphRoot.append(this.glyph);
   }
 
   get name(): IconName | null {
@@ -94,7 +97,6 @@ export class UiIcon extends HTMLElement {
     this.collapsedDisplayBackup ??= this.style.display;
 
     this.style.display = 'none';
-    this.replaceChildren();
     this.removeAttribute('role');
     this.glyph.removeAttribute('icon');
     this.glyph.setAttribute('aria-hidden', 'true');
@@ -119,10 +121,6 @@ export class UiIcon extends HTMLElement {
     }
 
     this.#expandHost();
-
-    if (this.glyph.parentElement !== this) {
-      this.replaceChildren(this.glyph);
-    }
 
     this.glyph.setAttribute('icon', `lucide:${name}`);
 

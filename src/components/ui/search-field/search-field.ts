@@ -438,8 +438,8 @@ export class SearchField extends LitElement {
           .value=${live(this.value)}
           placeholder=${this.placeholder}
           autocomplete=${this.autocomplete}
-          ?disabled=${this.disabled}
-          ?readonly=${this.readonly}
+          .disabled=${this.disabled}
+          .readOnly=${this.readonly}
           role=${ifDefined(this.inputRole || undefined)}
           aria-controls=${ifDefined(this.inputAriaControls || undefined)}
           aria-expanded=${ifDefined(this.inputAriaExpanded || undefined)}
@@ -461,7 +461,7 @@ export class SearchField extends LitElement {
           class="clear-button"
           type="button"
           aria-label=${this.clearButtonLabel}
-          ?hidden=${!this.clearButtonVisible}
+          .hidden=${!this.clearButtonVisible}
           @click=${this._handleClearClick}
         >
           <ui-icon name="circle-x" aria-hidden="true"></ui-icon>

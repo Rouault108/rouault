@@ -113,7 +113,7 @@ export function renderSearchDialog(host: RenderSearchDialogHost): TemplateResult
       </div>
 
       <div class="body">
-        <div class="loading-state" ?hidden=${!showLoading}>
+        <div class="loading-state" .hidden=${!showLoading}>
           <ui-spinner size="lg"></ui-spinner>
           <div class="status-copy" role="status" aria-atomic="true">
             <h2 class="status-heading">${loadingHeading}</h2>
@@ -121,7 +121,7 @@ export function renderSearchDialog(host: RenderSearchDialogHost): TemplateResult
           </div>
         </div>
 
-        <section class="empty-state" role="status" aria-atomic="true" ?hidden=${!showEmpty}>
+        <section class="empty-state" role="status" aria-atomic="true" .hidden=${!showEmpty}>
           <div class="empty-state-content">
             <div class="empty-state-icon" aria-hidden="true">
               <ui-icon name="search"></ui-icon>
@@ -131,7 +131,7 @@ export function renderSearchDialog(host: RenderSearchDialogHost): TemplateResult
           </div>
         </section>
 
-        <section class="error-state" role="status" aria-atomic="true" ?hidden=${!showError}>
+        <section class="error-state" role="status" aria-atomic="true" .hidden=${!showError}>
           <div class="empty-state-content">
             <div class="empty-state-icon" aria-hidden="true">
               <ui-icon name="alert-circle"></ui-icon>
@@ -150,7 +150,7 @@ export function renderSearchDialog(host: RenderSearchDialogHost): TemplateResult
           class="result-list"
           role="listbox"
           aria-label=${SEARCH_RESULTS_ARIA_LABEL}
-          ?hidden=${!showResults}
+          .hidden=${!showResults}
           @scroll=${host.onResultListScroll}
         >
           <li
