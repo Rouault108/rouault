@@ -14,8 +14,8 @@ const DEFAULT_SITE_URL = '/';
 const DEFAULT_NAV_LABEL = '補助ナビゲーション';
 
 const DEFAULT_LINKS: readonly FooterLinkItem[] = [
-  { href: '/about', label: 'このサイトについて' },
-  { href: '/contact', label: 'お問い合わせ' },
+  { href: '/search/?sort=date-desc', label: '新着一覧' },
+  { href: '/about/', label: 'このサイトについて' },
 ];
 
 const normalizeOptionalText = (value: string | undefined): string | undefined => {

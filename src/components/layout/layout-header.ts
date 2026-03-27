@@ -241,7 +241,7 @@ export class LayoutHeader extends LitElement {
       return lastItem.label.trim();
     }
 
-    return 'Notes';
+    return this.noteLayout ? 'ノート' : 'ホーム';
   }
 
   override render() {
@@ -287,7 +287,7 @@ export class LayoutHeader extends LitElement {
                 aria-label="現在の階層"
               ></ui-breadcrumbs>
             `
-          : html`<span slot="center" class="context">Personal Notes</span>`}
+          : html`<span slot="center" class="context">ホーム</span>`}
         <span slot="compact-center" class="context">${compactContextLabel}</span>
         <div slot="end" class="slot-group">
           <ui-search-trigger></ui-search-trigger>

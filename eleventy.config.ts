@@ -6,6 +6,7 @@ import type { Connect, ViteDevServer } from 'vite';
 import { build } from 'velite';
 
 import { loadNotesData } from './src/data/notes.js';
+import { loadHomeData } from './src/data/home.js';
 import { serializeSearchCatalog } from './src/data/searchCatalog.js';
 import { loadClientBundleData } from './src/data/clientBundle.js';
 import { createStaticDirectoryMiddleware } from './src/lib/dev-static-directory.js';
@@ -63,6 +64,7 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
   });
 
   eleventyConfig.addGlobalData('notes', () => loadNotesData());
+  eleventyConfig.addGlobalData('home', () => loadHomeData());
   eleventyConfig.addGlobalData('clientBundle', () => loadClientBundleData());
 
   eleventyConfig.addGlobalData('tagPages', async () => {

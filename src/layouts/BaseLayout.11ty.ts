@@ -35,7 +35,7 @@ export class BaseLayout {
 
   render(data: BaseLayoutData) {
     const title = data.title ? `${data.title} - Rouault` : 'Rouault';
-    const description = data.description ?? 'Personal Note Viewer';
+    const description = data.description ?? '個人ノートを静かに読むためのWebアプリケーション';
     const noteLayoutAttribute = data.note ? ' note-layout' : '';
     const clientScriptSrc = data.clientBundle?.scriptSrc ?? '/src/client.ts';
 
