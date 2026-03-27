@@ -83,8 +83,6 @@ export interface SsrDocumentStyleDefinition {
   cssText: string;
 }
 
-const LIGHT_TARGET_TAGS = new Set<SsrLightTargetTag>(['app-router', 'about-page', 'layout-footer']);
-
 const DOCUMENT_STYLE_DEFINITIONS: Partial<Record<SsrTargetTag, SsrDocumentStyleDefinition>> = {
   'layout-footer': {
     id: FOOTER_DOCUMENT_STYLE_ID,
@@ -288,8 +286,8 @@ export const renderCustomElement = async (
   attributes: readonly SsrAttribute[],
   innerHtml: string,
 ): Promise<string> => {
-  if (LIGHT_TARGET_TAGS.has(tagName as SsrLightTargetTag)) {
-    return renderLightElement(tagName as SsrLightTargetTag, attributes, innerHtml);
+  if (tagName === 'app-router' || tagName === 'about-page' || tagName === 'layout-footer') {
+    return renderLightElement(tagName, attributes, innerHtml);
   }
 
   if (tagName === 'ui-image') {
