@@ -599,10 +599,8 @@ export const ReducedMotionAndPrintContract: Story = {
       cssText.includes('prefers-reduced-motion'),
       'CSS に prefers-reduced-motion メディアクエリが含まれること',
     );
-    assert(
-      cssText.includes('0.01ms'),
-      'Reduced Motion 時に transition-duration: 0.01ms が指定されること',
-    );
+    assert(cssText.includes('transition: none'), 'Reduced Motion 時に transition が無効化されること');
+    assert(cssText.includes('animation: none'), 'Reduced Motion 時に animation が無効化されること');
 
     /* --- Print --- */
     assert(cssText.includes('@media print'), 'CSS に @media print が含まれること');

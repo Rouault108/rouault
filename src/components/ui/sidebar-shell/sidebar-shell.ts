@@ -45,6 +45,9 @@ export class UiSidebarShell extends LitElement {
       border-right: var(--border-width, 1px) solid var(--border-ghost, oklch(20% 0 0 / 0.04));
       display: flex;
       flex-direction: column;
+      opacity: 1;
+      transition: opacity var(--duration-normal, 150ms)
+        var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
     }
 
     /* ── Fixed Mode: 基本レイアウト ── */
@@ -55,35 +58,26 @@ export class UiSidebarShell extends LitElement {
       max-block-size: var(--layout-sticky-max-block-size, calc(100vh - var(--header-height)));
     }
 
-    /* ── Fixed Mode: コンテンツ先行フェードアウト ── */
-    :host([mode='fixed'][data-state='collapsed']) .sidebar-content,
-    :host([mode='fixed'][data-state='collapsed']) .sidebar-header {
-      opacity: 0;
-      transition: opacity var(--duration-normal, 150ms)
-        var(--ease-in, cubic-bezier(0.32, 0, 0.67, 1));
-    }
-
-    :host([mode='fixed'][data-state='expanded']) .sidebar-content,
-    :host([mode='fixed'][data-state='expanded']) .sidebar-header {
+    .sidebar-header,
+    .sidebar-content {
       opacity: 1;
       transition: opacity var(--duration-normal, 150ms)
         var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
     }
 
-    /* ── Overlay Mode: オフキャンバスドロワー ── */
+    :host([data-state='collapsed']) nav,
+    :host([data-state='collapsed']) .sidebar-header,
+    :host([data-state='collapsed']) .sidebar-content {
+      opacity: 0;
+    }
+
+    /* ── Overlay Mode: 前景補助面 ── */
     :host([mode='overlay']) nav {
       position: fixed;
       inset-block: 0;
       inset-inline-start: 0;
       inline-size: var(--sidebar-width, 240px);
       z-index: var(--z-modal, 300);
-      transform: translateX(-100%);
-      transition: transform var(--duration-slower, 300ms)
-        var(--ease-spring, cubic-bezier(0.33, 1, 0.68, 1));
-    }
-
-    :host([mode='overlay'][data-state='expanded']) nav {
-      transform: translateX(0);
     }
 
     /* ── Header スロット: Fixed では非表示 ── */
@@ -119,7 +113,7 @@ export class UiSidebarShell extends LitElement {
       background: oklch(0% 0 0 / var(--ui-sidebar-scrim-opacity));
       opacity: 0;
       pointer-events: none;
-      transition: opacity var(--duration-slower, 300ms)
+      transition: opacity var(--duration-normal, 150ms)
         var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1));
       z-index: var(--z-backdrop, 200);
     }
@@ -160,7 +154,8 @@ export class UiSidebarShell extends LitElement {
       .sidebar-content,
       .sidebar-header,
       .scrim {
-        transition-duration: 0.01ms !important;
+        animation: none !important;
+        transition: none !important;
       }
     }
 
@@ -389,6 +384,10 @@ export class UiSidebarShell extends LitElement {
 
   /** 要素上のアニメーション（CSS transition / animation）完了を待機 */
   private async _waitForAnimations(element: Element): Promise<void> {
+    if (this._prefersReducedMotion()) {
+      return;
+    }
+
     /* ブラウザに transition 開始の機会を与える */
     await new Promise<void>((resolve) => {
       requestAnimationFrame(() => {
@@ -419,27 +418,18 @@ export class UiSidebarShell extends LitElement {
 
   /** サイドバー内の最初のフォーカス可能要素にフォーカスを移動する */
   private _focusFirstElement(): void {
-    requestAnimationFrame(() => {
-      /* header スロットの slotted 要素を優先的に探索 */
-      const headerSlot = this.shadowRoot?.querySelector<HTMLSlotElement>(
-        '.sidebar-header slot[name="header"]',
-      );
-      const headerElements = headerSlot?.assignedElements({ flatten: true }) ?? [];
-      const headerFocusable = this._findFirstFocusable(headerElements);
-      if (headerFocusable) {
-        headerFocusable.focus({ preventScroll: true });
-        return;
-      }
+    const target = this._resolveInitialFocusTarget();
+    if (!target) {
+      return;
+    }
 
-      /* デフォルトスロットの slotted 要素を探索 */
-      const defaultSlot = this.shadowRoot?.querySelector<HTMLSlotElement>(
-        '.sidebar-content slot:not([name])',
-      );
-      const defaultElements = defaultSlot?.assignedElements({ flatten: true }) ?? [];
-      const defaultFocusable = this._findFirstFocusable(defaultElements);
-      if (defaultFocusable) {
-        defaultFocusable.focus({ preventScroll: true });
-      }
+    if (this._prefersReducedMotion()) {
+      target.focus({ preventScroll: true });
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      target.focus({ preventScroll: true });
     });
   }
 
@@ -460,6 +450,35 @@ export class UiSidebarShell extends LitElement {
       if (nested) return nested;
     }
     return null;
+  }
+
+  /** 初期フォーカス候補を解決する */
+  private _resolveInitialFocusTarget(): HTMLElement | null {
+    /* header スロットの slotted 要素を優先的に探索 */
+    const headerSlot = this.shadowRoot?.querySelector<HTMLSlotElement>(
+      '.sidebar-header slot[name="header"]',
+    );
+    const headerElements = headerSlot?.assignedElements({ flatten: true }) ?? [];
+    const headerFocusable = this._findFirstFocusable(headerElements);
+    if (headerFocusable) {
+      return headerFocusable;
+    }
+
+    /* デフォルトスロットの slotted 要素を探索 */
+    const defaultSlot = this.shadowRoot?.querySelector<HTMLSlotElement>(
+      '.sidebar-content slot:not([name])',
+    );
+    const defaultElements = defaultSlot?.assignedElements({ flatten: true }) ?? [];
+    return this._findFirstFocusable(defaultElements);
+  }
+
+  /** reduced motion が有効かを判定する */
+  private _prefersReducedMotion(): boolean {
+    return (
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    );
   }
 
   /* ===================================================================

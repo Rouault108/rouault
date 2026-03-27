@@ -124,10 +124,11 @@ const meta: Meta<UiSidebarShell> = {
 アプリケーションの左翼を担うナビゲーションコンテナです。
 
 - \`mode="fixed"\`: デスクトップで Grid Item として配置。Zen Mode（格納時）は Grid Track \`0px\` で完全消失。
-- \`mode="overlay"\`: モバイル/タブレットで \`position: fixed\` のドロワー。スクリム付き。
+- \`mode="overlay"\`: モバイル/タブレットで \`position: fixed\` の前景補助面。スクリム付き。
 - \`data-state\`: \`expanded\` / \`collapsed\` で開閉状態を管理。
 - \`ui-sidebar-state-change\` イベント: \`{ state, mode }\` を含み、バブリングしない。
 - \`inert\` 属性戦略によるフォーカス管理。Overlay 展開時は先頭要素へフォーカス移動。
+- 開閉の視覚遷移は 150ms 前後の短いフェードで、reduced motion では即時反映します。
         `,
       },
     },
@@ -305,13 +306,8 @@ export const OverlayExpanded: Story = {
     /* --- position: fixed --- */
     assert(navStyle.position === 'fixed', 'Overlay モードで nav は position: fixed であること');
 
-    /* --- transform (expanded = translateX(0)) --- */
-    const transform = navStyle.transform;
-    /* translateX(0) は matrix(1, 0, 0, 1, 0, 0) または "none" */
-    assert(
-      transform === 'none' || transform === 'matrix(1, 0, 0, 1, 0, 0)',
-      `expanded 時の transform が translateX(0) 相当であること (実際: ${transform})`,
-    );
+    /* --- opacity --- */
+    assert(navStyle.opacity === '1', 'expanded 時に nav の opacity が 1 であること');
 
     /* --- z-index --- */
     assert(
@@ -340,7 +336,7 @@ export const OverlayExpanded: Story = {
 };
 
 /**
- * Overlay × Collapsed — オフスクリーン退避、スクリム非表示、inert
+ * Overlay × Collapsed — 非表示、スクリム非表示、inert
  */
 export const OverlayCollapsed: Story = {
   render: () => html`
@@ -351,7 +347,7 @@ export const OverlayCollapsed: Story = {
         </div>
       </ui-sidebar-shell>
       <main style="padding: 2rem;">
-        <p>Overlay Collapsed: サイドバーは画面外</p>
+        <p>Overlay Collapsed: サイドバーは非表示</p>
       </main>
     </div>
   `,
@@ -364,17 +360,8 @@ export const OverlayCollapsed: Story = {
     const navStyle = getComputedStyle(nav);
     const scrimStyle = getComputedStyle(scrim);
 
-    /* --- transform (collapsed = translateX(-100%)) --- */
-    const transform = navStyle.transform;
-    /*
-     * translateX(-100%) は matrix(1, 0, 0, 1, -240, 0) 相当。
-     * 幅は 240px (--sidebar-width) なので -240 が期待値。
-     * ブラウザにより表現が異なるため、matrix 形式で X 成分が負であることを検証。
-     */
-    assert(
-      transform !== 'none' && transform !== 'matrix(1, 0, 0, 1, 0, 0)',
-      `collapsed 時の transform が translateX(-100%) 相当であること (実際: ${transform})`,
-    );
+    /* --- opacity --- */
+    assert(navStyle.opacity === '0', 'collapsed 時に nav の opacity が 0 であること');
 
     /* --- スクリム非表示 --- */
     assert(scrimStyle.opacity === '0', 'collapsed 時にスクリムの opacity が 0 であること');

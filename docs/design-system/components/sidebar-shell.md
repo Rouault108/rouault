@@ -446,7 +446,7 @@ Overlay 格納時のフォーカス復帰は `restoreFocusPolicy` に従いま�
 
 #### Normative
 
-格納状態では、ナビゲーション面を `inert` とし、加えて視覚的にも非表示状態へ遷移させなければなりません（MUST）。
+格納状態では、ナビゲーション面を `inert` とし、加えて視覚的にも非表示状態へ短い遷移で移行させなければなりません（MUST）。
 
 #### Normative
 
@@ -481,7 +481,7 @@ Visual Contract の目的は、sidebar shell を**本文の補助面として静
 Fixed と Overlay の視覚意味は、次のとおりです。
 
 - **Fixed**: 常設補助面。本文の横に静かに存在する
-- **Overlay**: 一時前景化面。必要時だけ手前に出る
+- **Overlay**: 一時前景化面。必要時だけ手前に出る。大きなスライドではなく、短いフェードで静かに現れる
 
 #### Normative
 
@@ -593,7 +593,7 @@ z-index は数値そのものではなく、次の**相対順序**を満たさ�
 
 #### Normative
 
-`prefers-reduced-motion: reduce` では主遷移時間を極小化します。ただし、state semantics は変えません。
+`prefers-reduced-motion: reduce` では主遷移を即時反映します。ただし、state semantics は変えません。
 
 #### Normative
 
