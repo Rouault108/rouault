@@ -1,6 +1,6 @@
-import { expect } from '@open-wc/testing';
 import path from 'node:path';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { afterEach, describe, expect, it } from 'vitest';
 import { remarkLinkCards } from '../../lib/remark/remark-link-cards.js';
 
 interface MdastNode {

@@ -381,7 +381,7 @@ describe('rehypeRouaultComponents', () => {
     const secondRef = tree.children?.[1]?.children?.[0];
     const section = tree.children?.[2];
     const listItem = section?.children?.[0]?.children?.[0];
-    const backref = listItem?.children?.[0]?.children?.[1];
+    const backref = listItem?.children?.[2];
 
     expect(firstRef?.tagName).to.equal('ui-footnote');
     expect(firstRef?.properties?.['ref-id']).to.equal('fn-1');
@@ -397,6 +397,6 @@ describe('rehypeRouaultComponents', () => {
 
     expect(section?.properties?.['role']).to.equal('doc-endnotes');
     expect(listItem?.properties?.['id']).to.equal('fn-1');
-    expect(backref?.properties?.['href']).to.equal('#fnref-1-1');
+    expect(backref?.properties?.['href']).to.equal('#fn-1-ref-1');
   });
 });
