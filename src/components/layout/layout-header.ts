@@ -1,4 +1,4 @@
-import { css, html, LitElement } from 'lit';
+import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import '../ui/icon/icon';
 import '../ui/header/header';
@@ -103,7 +103,7 @@ export class LayoutHeader extends LitElement {
     }
 
     .theme-trigger-label {
-      color: var(--fg-muted);
+      color: var(--fg-subtle, var(--fg-muted));
     }
 
     .theme-menu-icon,
@@ -115,6 +115,11 @@ export class LayoutHeader extends LitElement {
       width: var(--icon-base, 16px);
       height: var(--icon-base, 16px);
       flex-shrink: 0;
+    }
+
+    .theme-trigger-icon,
+    .theme-chevron {
+      opacity: 0.78;
     }
 
     @media (min-width: 768px) {
@@ -246,9 +251,9 @@ export class LayoutHeader extends LitElement {
 
   override render() {
     const breadcrumbs = this._breadcrumbItems;
-    const compactContextLabel = this._compactContextLabel;
     const sidebarToggleLabel = this._sidebarExpanded ? 'サイドバーを閉じる' : 'サイドバーを開く';
     const currentThemeOption = THEME_OPTIONS[this._themePreference];
+    const hasBreadcrumbs = breadcrumbs.length > 0;
 
     return html`
       <ui-header .sidebarExpanded=${this._sidebarExpanded}>
@@ -278,7 +283,7 @@ export class LayoutHeader extends LitElement {
             <ui-menu-item value="/tags/internal/">内部</ui-menu-item>
           </ui-dropdown>
         </div>
-        ${breadcrumbs.length > 0
+        ${hasBreadcrumbs
           ? html`
               <ui-breadcrumbs
                 slot="center"
@@ -287,10 +292,12 @@ export class LayoutHeader extends LitElement {
                 aria-label="現在の階層"
               ></ui-breadcrumbs>
             `
-          : html`<span slot="center" class="context">ホーム</span>`}
-        <span slot="compact-center" class="context">${compactContextLabel}</span>
+          : nothing}
+        ${hasBreadcrumbs
+          ? html`<span slot="compact-center" class="context">${this._compactContextLabel}</span>`
+          : nothing}
         <div slot="end" class="slot-group">
-          <ui-search-trigger></ui-search-trigger>
+          <ui-search-trigger density=${this.noteLayout ? 'auto' : 'compact'}></ui-search-trigger>
           <ui-dropdown align="end" @menu-item-select=${this._handleThemeSelect}>
             <ui-button slot="trigger" variant="ghost">
               <span class="theme-trigger-label">

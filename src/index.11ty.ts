@@ -20,7 +20,7 @@ const renderHomeEntry = (entry: HomePageData['notes'][number]): string => `
       <div class="home-entry__body">
         <p class="home-entry__path">${escapeHtml(entry.pathLabel)}</p>
         <h3 class="home-entry__title">${escapeHtml(entry.title)}</h3>
-        <p class="home-entry__summary">${escapeHtml(entry.summary || '—')}</p>
+        ${entry.summary.length > 0 ? `<p class="home-entry__summary">${escapeHtml(entry.summary)}</p>` : ''}
         <p class="home-entry__genre">${renderGenres(entry.genres)}</p>
       </div>
     </a>
@@ -47,23 +47,14 @@ export class HomePageTemplate {
           <header class="home-hero">
             <p class="home-eyebrow">Rouault</p>
             <h1 class="home-title">静かに入り、静かに読み進める。</h1>
-            <p class="home-lead">
-              公開している個人ノートを、余白と細い罫線だけで整えた導入部にまとめています。
-              入口は静かに、一覧は新しい順で、必要なものだけを辿れる構成です。
+            <p class="home-lead">公開している個人ノートの入口です。新しいものから辿れます。</p>
+            <p class="home-meta" aria-label="公開ノートの概要">
+              <span class="home-meta-item">${escapeHtml(noteCount)}件</span>
+              <span class="home-meta-separator" aria-hidden="true">・</span>
+              <span class="home-meta-item">最新更新 ${latestUpdatedDate}</span>
+              <span class="home-meta-separator" aria-hidden="true">・</span>
+              <a class="home-meta-link" href="/about/">このサイトについて</a>
             </p>
-            <dl class="home-meta" aria-label="公開ノートの概要">
-              <div class="home-meta-item">
-                <dt class="home-meta-label">公開ノート件数</dt>
-                <dd class="home-meta-value">${escapeHtml(noteCount)}件</dd>
-              </div>
-              <div class="home-meta-item">
-                <dt class="home-meta-label">最新更新日</dt>
-                <dd class="home-meta-value">${latestUpdatedDate}</dd>
-              </div>
-            </dl>
-            <nav class="home-actions" aria-label="ホームの導線">
-              <a class="home-action" href="/about/">このサイトについて</a>
-            </nav>
           </header>
 
           <section class="home-feed-section" aria-labelledby="home-feed-heading">

@@ -81,6 +81,20 @@ test.describe('SSR Rendering', () => {
     expect(hasCardShadowRoot).toBe(true);
   });
 
+  test('ホームページではヘッダー中央ラベルを出さず、検索導線を少しコンパクトにすること', async ({
+    page,
+  }) => {
+    await page.goto('/');
+
+    await expect(page.locator('#main-content h1').first()).toHaveText('静かに入り、静かに読み進める。');
+    await expect(page.locator('#main-content')).toContainText(
+      '公開している個人ノートの入口です。新しいものから辿れます。',
+    );
+
+    const headerText = await page.locator('layout-header').evaluate((element) => element.shadowRoot?.textContent ?? '');
+    expect(headerText).not.toContain('ホーム');
+  });
+
   test('ヘッダーとサイドバーがスクロールしても固定されること', async ({ page }) => {
     await page.goto(beethovenEntryPath);
 
