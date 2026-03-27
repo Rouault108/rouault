@@ -8,10 +8,18 @@ export const pageShellStyles = css`
 
   .page-shell {
     box-sizing: border-box;
-    width: min(100%, 72rem);
-    margin: 0 auto;
-    padding: clamp(var(--space-6, 24px), 4vw, var(--space-10, 40px)) var(--space-4, 16px)
-      var(--space-12, 48px);
+    width: min(100%, var(--page-shell-max-width, 72rem));
+    margin-inline: auto;
+    padding:
+      var(
+        --page-shell-padding-block-start,
+        clamp(var(--space-6, 24px), 4vw, var(--space-10, 40px))
+      )
+      var(
+        --page-shell-padding-inline,
+        clamp(var(--space-4, 16px), 2vw, var(--space-6, 24px))
+      )
+      var(--page-shell-padding-block-end, var(--space-12, 48px));
   }
 
   .hero {
@@ -102,10 +110,6 @@ export const pageShellStyles = css`
   }
 
   @media (max-width: 768px) {
-    .page-shell {
-      padding-inline: var(--space-3, 12px);
-    }
-
     .result-title {
       font-size: var(--text-base, 14px);
     }

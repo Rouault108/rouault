@@ -387,6 +387,16 @@
   --sidebar-width: 272px;
   --aside-width: 240px;
 
+  /* 単一カラムのトップレベルページで共有する外枠 */
+  --page-shell-max-width: 72rem;
+  --page-shell-padding-inline: clamp(var(--space-4), 2vw, var(--space-6));
+  --page-shell-padding-block-start: clamp(var(--space-6), 4vw, var(--space-10));
+  --page-shell-padding-block-end: var(--space-12);
+
+  /* ホームは左右外枠だけ共通化し、縦方向の呼吸だけ個別に持つ */
+  --home-shell-padding-block-start: clamp(var(--space-4), 2.5vw, var(--space-8));
+  --home-shell-padding-block-end: var(--space-12);
+
   /* =========================================================================
    * Breakpoints
    * ========================================================================= */

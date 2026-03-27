@@ -1185,11 +1185,19 @@ app-router {
 
 .home-shell {
   box-sizing: border-box;
-  width: min(100%, var(--bp-xl));
+  width: min(100%, var(--page-shell-max-width, 72rem));
   margin-inline: auto;
   min-height: calc(100vh - var(--header-height));
-  padding: clamp(var(--space-4, 16px), 2.5vw, var(--space-8, 32px)) var(--space-4, 16px)
-    var(--space-12, 48px);
+  padding:
+    var(
+      --home-shell-padding-block-start,
+      clamp(var(--space-4, 16px), 2.5vw, var(--space-8, 32px))
+    )
+    var(
+      --page-shell-padding-inline,
+      clamp(var(--space-4, 16px), 2vw, var(--space-6, 24px))
+    )
+    var(--home-shell-padding-block-end, var(--space-12, 48px));
 }
 
 .home-content {

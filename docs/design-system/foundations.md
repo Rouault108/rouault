@@ -529,9 +529,17 @@ Rouault の Accessibility は、後付けの調整ではなく foundation 層に
 
 | トークン | 具体値 | 役割 | 利用範囲 |
 | --- | --- | --- | --- |
-| `--header-height` | `...` | app header の基準高さ | shell layout に限定 |
-| `--sidebar-width` | `...` | sidebar 展開幅 | shell / navigation に限定 |
-| `--aside-width` | `...` | aside 領域幅 | article + aside layout に限定 |
+| `--header-height` | `48px` | app header の基準高さ | shell layout に限定 |
+| `--sidebar-width` | `272px` | sidebar 展開幅 | shell / navigation に限定 |
+| `--aside-width` | `240px` | aside 領域幅 | article + aside layout に限定 |
+| `--page-shell-max-width` | `72rem` | 単一カラムのトップレベルページにおける本文外枠の最大幅 | top-level page shell に限定 |
+| `--page-shell-padding-inline` | `clamp(var(--space-4), 2vw, var(--space-6))` | 単一カラムのトップレベルページにおける左右ガター | top-level page shell に限定 |
+| `--page-shell-padding-block-start` | `clamp(var(--space-6), 4vw, var(--space-10))` | 単一カラムのトップレベルページにおける上余白 | top-level page shell に限定 |
+| `--page-shell-padding-block-end` | `var(--space-12)` | 単一カラムのトップレベルページにおける下余白 | top-level page shell に限定 |
+| `--home-shell-padding-block-start` | `clamp(var(--space-4), 2.5vw, var(--space-8))` | home 専用の上余白 | home shell に限定 |
+| `--home-shell-padding-block-end` | `var(--space-12)` | home 専用の下余白 | home shell に限定 |
+
+`--page-shell-*` は、about・search・corpus 一覧などの単一カラムなトップレベルページで共有する外枠規律を表します。`--home-shell-*` はその共通外枠を前提としつつ、home の縦方向の呼吸のみを局所的に調整するための token です。これらは reading typography や article body width を直接置き換えるものではありません。
 
 ### 7.2 Breakpoints
 
