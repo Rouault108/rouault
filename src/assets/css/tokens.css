@@ -186,7 +186,7 @@
 
   --toc-item-padding-block: var(--nav-item-padding-block);
   --toc-item-rail-offset-inline: var(--space-2);
-  --toc-item-rail-gap: var(--space-2);
+  --toc-item-rail-gap: 6px;
   --toc-item-padding-inline-end: var(--space-2);
   --toc-item-indent-step: var(--space-2);
   --toc-item-min-block-size: var(--control-height-sm);
