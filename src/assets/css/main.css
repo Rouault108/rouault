@@ -1217,9 +1217,10 @@ app-router {
   align-self: start;
   block-size: var(--layout-sticky-max-block-size, calc(100vh - var(--header-height)));
   max-block-size: var(--layout-sticky-max-block-size, calc(100vh - var(--header-height)));
-  border-left: var(--border-width) solid var(--border-ghost);
+  border-left: var(--border-width) solid color-mix(in oklab, var(--border-ghost) 62%, transparent);
   overflow: hidden;
   padding-block: var(--space-6);
+  padding-inline-start: var(--space-4);
   transform: translateY(calc(var(--layout-sticky-footer-offset, 0px) * -1));
 }
 

@@ -7,18 +7,17 @@ import type { TreeItem } from './tree-item';
  * ## ツリーアイテム (Tree Item)
  *
  * 階層化された情報を探索するためのナビゲーション・コンポーネントです。
- * ネスト構造（Recursive Nesting）により、DOM構造と視覚階層を一致させ、
+ * ネスト構造（Recursive Nesting）により、DOM 構造と視覚階層を一致させ、
  * 堅牢なアクセシビリティを担保します。
  *
  * ### デザイン哲学
  *
  * - **Structural Visibility**: 階層構造は「無意識のオリエンテーション」の基盤です。
- *   インデントガイド（ツリー線）は、視覚的ノイズにならない極限の低コントラスト（Subtle）で常時表示し、
- *   ユーザーが能動的に探すことなく構造を把握できるようにします。
+ *   インデントガイドは低コントラストで常時表示し、構造理解を支えます。
+ * - **Shared Navigation Grammar**: TOC と current/hover/focus の語彙を共有します。
+ *   ただし tree-item は構造ナビゲーションなので、TOC より 1 段強い active 面を持ちます。
  * - **Smooth Expansion**: 展開/収縮のアニメーションは `--duration-slow` (200ms) で行い、
- *   視覚的なレイアウトシフトに対する認知負荷（驚き）を最小化します。
- * - **Recursive Nesting**: DOM構造と視覚階層を一致させることで、`aria-level` やグループ化の
- *   セマンティクスをブラウザ標準の挙動に委ね、堅牢なアクセシビリティを担保します。
+ *   視覚的なレイアウトシフトに対する認知負荷を抑えます。
  *
  * ### 使用上の注意
  *
@@ -26,7 +25,7 @@ import type { TreeItem } from './tree-item';
  *   `Up` / `Down` / `Home` / `End` / `Esc` / Type-ahead などのキーボード操作は、
  *   ルートコンテナ側の Event Delegation で管理されます。
  * - **シングルセレクト**: マルチセレクトは採用せず、閲覧体験に特化しています。
- * - **密度の選択**: Compact密度は視覚サイズ24px、物理タッチターゲット44pxを確保します。
+ * - **密度の選択**: Compact 密度は視覚サイズ 24px を維持しつつ、高密度な一覧表示を可能にします。
  */
 const meta: Meta<TreeItem> = {
   title: 'Components/Tree Item',
@@ -37,6 +36,9 @@ const meta: Meta<TreeItem> = {
       description: {
         component: `
 階層化された情報を探索するためのナビゲーション・コンポーネントです。
+
+TOC と current / hover / focus の語彙を共有しますが、
+tree-item は構造ナビゲーションなので、TOC より少し強い active 面を持ちます。
 
 ## 使用方法
 
@@ -270,7 +272,14 @@ export const AllDensities: Story = {
 /**
  * 選択状態（Selected）。
  *
- * 現在選択されているアイテムを示します。淡い背景と左インジケータで、現在位置を静かに示します。
+ * 現在選択されているアイテムを示します。
+ * tree-item は TOC と同じ shared navigation grammar を使いますが、
+ * 構造ナビゲーションであるため、TOC より少し強い active 面を持ちます。
+ *
+ * 現在地は次の 3 要素で示されます。
+ * - 淡い active 面
+ * - current rail
+ * - 文字ウェイトの上昇
  */
 export const Selected: Story = {
   args: {
@@ -1314,10 +1323,17 @@ export const DarkSurfaceContrast: Story = {
       .dark-surface ui-tree-item {
         --fg-muted: oklch(84% 0.01 250);
         --fg-default: oklch(96% 0.01 250);
-        --bg-hover: oklch(100% 0 0 / 0.08);
-        --bg-surface-active: oklch(70% 0.14 250 / 0.22);
         --primary: oklch(78% 0.13 250);
-        --border-ghost: oklch(100% 0 0 / 0.12);
+
+        --nav-item-fg: var(--fg-muted);
+        --nav-item-fg-hover: var(--fg-default);
+        --nav-item-fg-active: var(--fg-default);
+        --nav-item-hover-bg: oklch(100% 0 0 / 0.08);
+        --nav-item-active-bg: oklch(78% 0.13 250 / 0.20);
+        --nav-item-indicator-color: var(--primary);
+
+        --tree-item-branch-hover-bg: oklch(100% 0 0 / 0.05);
+        --tree-item-guide-color: oklch(100% 0 0 / 0.12);
       }
     </style>
     <div class="dark-surface">
@@ -1342,6 +1358,26 @@ export const DarkSurfaceContrast: Story = {
 
     if (selectedItem.getAttribute('aria-selected') !== 'true') {
       throw new Error('選択されたアイテムが aria-selected="true" を持っていません');
+    }
+
+    const item = selectedItem.shadowRoot?.querySelector<HTMLElement>('.item');
+    if (!item) {
+      throw new Error('.item が見つかりませんでした');
+    }
+
+    const itemBefore = getComputedStyle(item, '::before');
+    if (itemBefore.backgroundColor === 'rgba(0, 0, 0, 0)') {
+      throw new Error('暗色面でも selected 面が可視である必要があります');
+    }
+
+    const indicator = selectedItem.shadowRoot?.querySelector<HTMLElement>('.current-slot-indicator');
+    if (!indicator) {
+      throw new Error('current-slot-indicator が見つかりませんでした');
+    }
+
+    const indicatorStyle = getComputedStyle(indicator);
+    if (indicatorStyle.opacity === '0') {
+      throw new Error('暗色面でも current rail が表示される必要があります');
     }
   },
 };

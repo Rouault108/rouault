@@ -36,13 +36,52 @@ export class TreeItem extends LitElement {
       position: relative;
       min-inline-size: 0;
       --tree-item-content-gap: 4px;
-      --tree-item-selected-bg: var(--bg-surface-active);
-      --tree-item-selected-indicator-color: var(--primary, oklch(55% 0.2 250));
-      --tree-item-selected-indicator-width: var(--border-width-thick, 2px);
+
+      --tree-item-row-inline-padding: var(--sidebar-item-row-inline-padding, var(--space-4, 16px));
+      --tree-item-row-column-gap: var(--sidebar-item-row-column-gap, var(--space-2, 8px));
+
+      --tree-item-selected-bg: var(
+        --sidebar-item-active-bg,
+        oklch(from var(--primary) l c h / 0.05)
+      );
+      --tree-item-selected-indicator-color: var(
+        --nav-item-indicator-color,
+        var(--primary, oklch(55% 0.2 250))
+      );
+      --tree-item-selected-indicator-width: var(
+        --nav-item-indicator-width,
+        var(--border-width-thick, 2px)
+      );
+      --tree-item-selected-indicator-radius: var(
+        --nav-item-indicator-radius,
+        var(--radius-full, 9999px)
+      );
+
       --tree-item-selection-start-gap: 2px;
       --tree-item-selection-start: calc(
         var(--tree-item-depth, 1) * var(--tree-indent-step, 16px)
       );
+
+      --tree-item-active-surface-inset-block: var(
+        --sidebar-item-active-surface-inset-block,
+        var(--space-1, 4px)
+      );
+      --tree-item-current-indicator-inset-block: var(
+        --sidebar-item-current-indicator-inset-block,
+        5px
+      );
+
+      --tree-item-guide-color: var(--sidebar-item-guide-color, var(--border-muted));
+      --tree-item-guide-opacity: var(--sidebar-item-guide-opacity, 0.42);
+      --tree-item-current-slot-gap-half: var(--sidebar-item-current-slot-gap-half, 10px);
+    }
+
+    :host([ancestor-selected]) {
+      --tree-item-guide-color: var(
+        --sidebar-item-guide-color-active-context,
+        var(--border-default)
+      );
+      --tree-item-guide-opacity: var(--sidebar-item-guide-opacity-active-context, 0.56);
     }
 
     .item-row {
@@ -50,29 +89,26 @@ export class TreeItem extends LitElement {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       align-items: stretch;
-      column-gap: var(--space-2, 8px);
+      column-gap: var(--tree-item-row-column-gap);
       inline-size: 100%;
       min-inline-size: 0;
       box-sizing: border-box;
-      padding-inline: var(--space-4, 16px);
+      padding-inline: var(--tree-item-row-inline-padding);
       cursor: default;
       user-select: none;
     }
 
-    .density-normal .item-row {
-      min-block-size: 36px;
-    }
-
-    .density-compact .item-row {
-      min-block-size: var(--control-height-sm, 24px);
-    }
-
+    .density-normal .item-row,
     .density-normal .item {
-      min-block-size: 36px;
+      min-block-size: var(--sidebar-item-row-min-block-size-normal, 36px);
     }
 
+    .density-compact .item-row,
     .density-compact .item {
-      min-block-size: var(--control-height-sm, 24px);
+      min-block-size: var(
+        --sidebar-item-row-min-block-size-compact,
+        var(--control-height-sm, 24px)
+      );
     }
 
     .item {
@@ -89,15 +125,19 @@ export class TreeItem extends LitElement {
       border: 0;
       background: transparent;
       cursor: pointer;
-      color: var(--fg-default, oklch(20% 0 0));
+      color: var(--sidebar-item-fg-branch, var(--fg-muted, oklch(45% 0 0)));
       font: inherit;
-      font-size: 15px;
-      font-weight: var(--font-normal, 400);
+      font-size: var(--sidebar-item-font-size, var(--text-base, 14px));
+      font-weight: var(--sidebar-item-font-weight, 400);
+      line-height: var(--sidebar-item-line-height, 1.5);
       text-align: start;
       text-decoration: none;
       appearance: none;
       -webkit-appearance: none;
-      transition: color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      transition:
+        color
+          var(--nav-item-transition-duration, var(--duration-fast, 70ms))
+          var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)));
     }
 
     .item::before {
@@ -107,24 +147,14 @@ export class TreeItem extends LitElement {
       inset-inline-start: var(--tree-item-selection-start);
       inset-inline-end: 0;
       background: transparent;
-      transition: background-color var(--duration-fast, 70ms)
-        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      transition:
+        background-color
+          var(--nav-item-transition-duration, var(--duration-fast, 70ms))
+          var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)));
     }
 
     .item::after {
       content: none;
-    }
-
-    .item:hover::before {
-      background: var(--bg-hover, oklch(from var(--fg-default) l c h / 0.05));
-    }
-
-    .item.is-branch:hover::before {
-      background: oklch(from var(--fg-default) l c h / 0.03);
-    }
-
-    .item.is-page:hover::before {
-      background: var(--bg-hover, oklch(from var(--fg-default) l c h / 0.05));
     }
 
     .item.has-content-icon {
@@ -132,13 +162,24 @@ export class TreeItem extends LitElement {
     }
 
     .item.is-branch {
-      color: var(--fg-muted, oklch(45% 0 0));
-      font-weight: var(--font-normal, 400);
+      color: var(--sidebar-item-fg-branch, var(--fg-muted, oklch(45% 0 0)));
+      font-weight: var(--sidebar-item-font-weight, 400);
+    }
+
+    .item.is-branch:hover {
+      color: var(--sidebar-item-fg-hover, var(--fg-default, oklch(20% 0 0)));
+    }
+
+    .item.is-branch:hover::before {
+      background: var(
+        --sidebar-item-branch-hover-bg,
+        oklch(from var(--fg-default) l c h / 0.022)
+      );
     }
 
     .item.is-page {
-      color: var(--fg-default, oklch(20% 0 0));
-      font-weight: var(--font-normal, 400);
+      color: var(--sidebar-item-fg-page, var(--fg-muted, oklch(45% 0 0)));
+      font-weight: var(--sidebar-item-font-weight, 400);
       --tree-item-selection-start: calc(
         (var(--tree-item-active-slot-index, 0) * var(--tree-indent-step, 16px))
         + (var(--tree-indent-step, 16px) / 2)
@@ -148,33 +189,27 @@ export class TreeItem extends LitElement {
     }
 
     .item.is-page:hover {
-      color: var(--fg-default, oklch(20% 0 0));
+      color: var(--sidebar-item-fg-hover, var(--fg-default, oklch(20% 0 0)));
+    }
+
+    .item.is-page:hover::before {
+      background: var(--sidebar-item-hover-bg, var(--bg-hover, oklch(from var(--fg-default) l c h / 0.05)));
     }
 
     :host([selected]) .item {
-      color: var(--fg-default, oklch(20% 0 0));
-      font-weight: var(--font-medium, 500);
+      color: var(--sidebar-item-fg-active, var(--fg-default, oklch(20% 0 0)));
+      font-weight: var(--sidebar-item-font-weight-active, var(--font-medium, 500));
     }
 
-    :host([selected]) .item::before {
-      inset-block: var(--space-1, 4px);
-      background: var(--tree-item-selected-bg, var(--bg-fill-muted, oklch(20% 0 0 / 0.045)));
-      border-radius: var(--radius-sm, 4px);
-    }
-
+    :host([selected]) .item::before,
     :host([selected]) .item:hover::before {
-      inset-block: var(--space-1, 4px);
-      background: var(--tree-item-selected-bg, var(--bg-fill-muted, oklch(20% 0 0 / 0.045)));
-      border-radius: var(--radius-sm, 4px);
+      inset-block: var(--tree-item-active-surface-inset-block);
+      background: var(--tree-item-selected-bg);
+      border-radius: var(--sidebar-item-active-radius, var(--radius-sm, 4px));
     }
 
     :host([selected]) .leading-slot.is-indicator-host .current-slot-indicator {
       opacity: 1;
-    }
-
-    :host([ancestor-selected]) {
-      --tree-item-guide-color: var(--border-muted, oklch(20% 0 0 / 0.08));
-      --tree-item-guide-opacity: 0.56;
     }
 
     .leading {
@@ -214,7 +249,7 @@ export class TreeItem extends LitElement {
     }
 
     .leading-slot.is-current {
-      color: var(--fg-muted, oklch(45% 0 0));
+      color: var(--sidebar-item-fg-branch, var(--fg-muted, oklch(45% 0 0)));
     }
 
     .guide-line {
@@ -258,10 +293,10 @@ export class TreeItem extends LitElement {
 
     .current-slot-indicator {
       position: absolute;
-      inset-block: var(--space-1, 4px);
+      inset-block: var(--tree-item-current-indicator-inset-block);
       inset-inline-start: 50%;
       inline-size: var(--tree-item-selected-indicator-width, 2px);
-      border-radius: var(--radius-full, 9999px);
+      border-radius: var(--tree-item-selected-indicator-radius, var(--radius-full, 9999px));
       background: var(
         --tree-item-selected-indicator-color,
         var(--primary, oklch(55% 0.2 250))
@@ -269,17 +304,17 @@ export class TreeItem extends LitElement {
       transform: translateX(-50%);
       opacity: 0;
       transition:
-        background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-        opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+        background-color
+          var(--nav-item-transition-duration, var(--duration-fast, 70ms))
+          var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9))),
+        opacity
+          var(--nav-item-transition-duration, var(--duration-fast, 70ms))
+          var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)));
     }
 
     :host([selected]) .leading-slot.is-current {
-      color: var(--fg-default, oklch(20% 0 0));
-      font-weight: var(--font-medium, 500);
-    }
-
-    :host([ancestor-selected]) .item.is-branch .leading-slot.is-current {
-      color: var(--fg-default, oklch(20% 0 0));
+      color: var(--sidebar-item-fg-active, var(--fg-default, oklch(20% 0 0)));
+      font-weight: var(--sidebar-item-font-weight-active, var(--font-medium, 500));
     }
 
     .expand-icon,

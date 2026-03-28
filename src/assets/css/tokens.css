@@ -148,6 +148,86 @@
   --focus-ring-color: var(--primary);
 
   /* =========================================================================
+   * Shared Navigation Grammar
+   * current / hover / focus の共通語彙だけを置く
+   * ========================================================================= */
+  --nav-item-radius: var(--radius-sm);
+  --nav-item-indicator-color: var(--primary);
+  --nav-item-indicator-width: 2px;
+  --nav-item-indicator-radius: var(--radius-full);
+
+  --nav-item-padding-block: var(--space-1);
+
+  --nav-item-transition-duration: var(--duration-fast);
+  --nav-item-transition-easing: var(--ease-out);
+
+  /* =========================================================================
+   * TOC Recipe
+   * rail を主、active 面を従にする
+   * ========================================================================= */
+  --toc-item-fg: var(--fg-muted);
+  --toc-item-fg-hover: var(--fg-default);
+  --toc-item-fg-active: var(--fg-default);
+
+  --toc-item-font-size: var(--text-sm);
+  --toc-item-font-weight: var(--font-normal);
+  --toc-item-font-weight-active: var(--font-normal);
+  --toc-item-line-height: var(--line-height-normal);
+
+  --toc-item-hover-bg: oklch(from var(--fg-default) l c h / 0.018);
+  --toc-item-active-bg: oklch(from var(--primary) l c h / 0.028);
+  --toc-item-active-radius: var(--radius-sm);
+  --toc-item-active-inset-block: 2px;
+
+  --toc-item-indicator-color: var(--nav-item-indicator-color);
+  --toc-item-indicator-width: var(--nav-item-indicator-width);
+  --toc-item-indicator-block-size: 0.9em;
+  --toc-item-indicator-radius: var(--nav-item-indicator-radius);
+
+  --toc-item-padding-block: var(--nav-item-padding-block);
+  --toc-item-rail-offset-inline: var(--space-2);
+  --toc-item-rail-gap: var(--space-2);
+  --toc-item-padding-inline-end: var(--space-2);
+  --toc-item-indent-step: var(--space-2);
+  --toc-item-min-block-size: var(--control-height-sm);
+
+  /* =========================================================================
+   * Sidebar Recipe
+   * 構造ナビゲーション。TOC より 1 段強い
+   * ========================================================================= */
+  --sidebar-item-fg-branch: var(--fg-muted);
+  --sidebar-item-fg-page: color-mix(in oklab, var(--fg-default) 62%, var(--fg-muted) 38%);
+  --sidebar-item-fg-hover: var(--fg-default);
+  --sidebar-item-fg-active: var(--fg-default);
+
+  --sidebar-item-font-size: var(--text-base);
+  --sidebar-item-font-weight: var(--font-normal);
+  --sidebar-item-font-weight-active: var(--font-medium);
+  --sidebar-item-line-height: var(--line-height-normal);
+
+  --sidebar-item-hover-bg: oklch(from var(--fg-default) l c h / 0.035);
+  --sidebar-item-branch-hover-bg: oklch(from var(--fg-default) l c h / 0.022);
+  --sidebar-item-active-bg: oklch(from var(--primary) l c h / 0.05);
+  --sidebar-item-active-radius: var(--radius-sm);
+
+  --sidebar-item-row-min-block-size-normal: 36px;
+  --sidebar-item-row-min-block-size-compact: var(--control-height-sm);
+  --sidebar-item-row-inline-padding: var(--space-4);
+  --sidebar-item-row-column-gap: var(--space-2);
+
+  --sidebar-item-active-surface-inset-block: var(--space-1);
+  --sidebar-item-current-indicator-inset-block: 6px;
+  --sidebar-item-guide-color: var(--border-muted);
+  --sidebar-item-guide-opacity: 0.42;
+  --sidebar-item-guide-color-active-context: color-mix(
+    in oklab,
+    var(--border-default) 72%,
+    var(--border-muted) 28%
+  );
+  --sidebar-item-guide-opacity-active-context: 0.56;
+  --sidebar-item-current-slot-gap-half: 10px;
+
+  /* =========================================================================
    * Primitive Tokens - Shadows (Light Mode)
    * ========================================================================= */
   --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.05);

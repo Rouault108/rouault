@@ -61,7 +61,10 @@ export interface UiTocActiveChangeDetail {
  *
  * @cssprop --fg-muted            - 通常テキスト色（WCAG AA: 4.8:1 vs --bg-default）
  * @cssprop --fg-default          - ホバー時テキスト色
- * @cssprop --primary             - アクティブ項目テキスト色・インジケーター色（WCAG AA: 7.1:1）
+ * @cssprop --primary             - アクティブインジケーター色
+ * @cssprop --toc-item-fg-active  - アクティブ項目テキスト色
+ * @cssprop --toc-item-hover-bg   - ホバー時のごく薄い面色
+ * @cssprop --toc-item-active-bg  - 現在地のごく薄い面色
  * @cssprop --text-sm             - フォントサイズ (13px)
  * @cssprop --space-1             - 垂直パディング (4px)
  * @cssprop --space-2             - インデント単位 (8px)
@@ -93,9 +96,6 @@ export interface UiTocActiveChangeDetail {
 @customElement('ui-toc')
 export class Toc extends LitElement {
   static override styles = css`
-    /* ──────────────────────────────────────────────
-		   レイアウト & ベーススタイル
-		────────────────────────────────────────────── */
     :host {
       display: block;
       min-inline-size: 0;
@@ -111,53 +111,85 @@ export class Toc extends LitElement {
       padding: 0;
     }
 
+    li {
+      min-inline-size: 0;
+    }
+
     .toc-tooltip {
       display: block;
       inline-size: 100%;
       min-inline-size: 0;
     }
 
-    /* ──────────────────────────────────────────────
-		   目次リンク
-		────────────────────────────────────────────── */
     .toc-link {
-      --_toc-indicator-width: var(--border-width-thick, 2px);
-      --_toc-indicator-gap: var(--space-2, 8px);
+      --_toc-indicator-width: var(
+        --toc-item-indicator-width,
+        var(--nav-item-indicator-width, var(--border-width-thick, 2px))
+      );
+      --_toc-indicator-radius: var(
+        --toc-item-indicator-radius,
+        var(--nav-item-indicator-radius, var(--radius-full, 9999px))
+      );
+      --_toc-rail-offset-inline: var(--toc-item-rail-offset-inline, var(--space-2, 8px));
+      --_toc-rail-gap: var(--toc-item-rail-gap, var(--space-2, 8px));
+      --_toc-indent-step: var(--toc-item-indent-step, var(--space-2, 8px));
+      --_toc-level-offset: calc(var(--level, 0) * var(--_toc-indent-step));
+      --_toc-padding-inline-end: var(--toc-item-padding-inline-end, var(--space-2, 8px));
+      --_toc-active-inset-block: var(--toc-item-active-inset-block, 2px);
 
       position: relative;
+      isolation: isolate;
       display: flex;
       align-items: center;
-      column-gap: var(--_toc-indicator-gap);
-      min-height: 24px;
-      padding-block: var(--space-1, 4px);
-      /*
-			 * インジケーター列は常にトップレベル見出しと同じ基準線に固定する。
-			 * 階層によるインデントはラベル側で表現し、active 時も indicator の X 座標を変えない。
-			 */
+      min-block-size: var(--toc-item-min-block-size, var(--control-height-sm, 24px));
+      padding-block: var(--toc-item-padding-block, var(--nav-item-padding-block, var(--space-1, 4px)));
       padding-inline-start: calc(
-        var(--space-3, 12px) - var(--_toc-indicator-width) - var(--_toc-indicator-gap)
+        var(--_toc-rail-offset-inline)
+        + var(--_toc-level-offset)
+        + var(--_toc-indicator-width)
+        + var(--_toc-rail-gap)
       );
-      padding-inline-end: var(--space-2, 8px);
-      /*
-			 * Typography: --text-sm (13px), Weight 400
-			 * "Small Text Rule" (12px以下補正) を回避するため --text-sm を採用。
-			 * Weight 400 を保ったまま --fg-muted を使用し、視覚的静謐さを維持。
-			 */
-      font-size: var(--text-base, 14px);
-      font-weight: 400;
-      line-height: 1.5;
-      color: var(--fg-muted, oklch(48% 0 0));
-      /* 例外許可: TOCは構造型リンク。現在地インジケータとフォーカスリングで非色シグナルを担保する。 */
+      padding-inline-end: var(--_toc-padding-inline-end);
+      font-size: var(--toc-item-font-size, var(--text-sm, 13px));
+      font-weight: var(--toc-item-font-weight, 400);
+      line-height: var(--toc-item-line-height, 1.5);
+      color: var(--toc-item-fg, var(--fg-muted, oklch(48% 0 0)));
       text-decoration: none;
-      border-radius: var(--radius-sm, 4px);
-      transition: color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      background-color: transparent;
+      transition:
+        color
+          var(--nav-item-transition-duration, var(--duration-fast, 70ms))
+          var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)));
+    }
+
+    .toc-link::after {
+      content: '';
+      position: absolute;
+      z-index: 0;
+      inset-block: var(--_toc-active-inset-block);
+      inset-inline-start: calc(
+        var(--_toc-rail-offset-inline)
+        + var(--_toc-level-offset)
+        + var(--_toc-indicator-width)
+        + var(--_toc-rail-gap)
+        - 2px
+      );
+      inset-inline-end: 0;
+      border-radius: var(--toc-item-active-radius, var(--radius-sm, 4px));
+      background-color: transparent;
+      pointer-events: none;
+      transition:
+        background-color
+          var(--nav-item-transition-duration, var(--duration-fast, 70ms))
+          var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)));
     }
 
     .toc-link-label {
+      position: relative;
+      z-index: 1;
       display: block;
       flex: 1 1 auto;
       min-inline-size: 0;
-      padding-inline-start: calc(var(--level, 0) * var(--space-2, 8px));
       overflow: hidden;
       overflow-wrap: anywhere;
       word-break: break-word;
@@ -189,12 +221,14 @@ export class Toc extends LitElement {
       text-overflow: clip;
     }
 
-    /* ── ホバー: 文字色のみ変更 ── */
     .toc-link:hover {
-      color: var(--fg-default, oklch(20% 0 0));
+      color: var(--toc-item-fg-hover, var(--fg-default, oklch(20% 0 0)));
     }
 
-    /* ── フォーカス: Adaptive Focus ── */
+    .toc-link:hover::after {
+      background-color: var(--toc-item-hover-bg, transparent);
+    }
+
     .toc-link:focus-visible {
       outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
       outline-offset: var(--focus-ring-offset, 2px);
@@ -202,43 +236,41 @@ export class Toc extends LitElement {
       animation: var(--animation-focus, none);
     }
 
-    /* ── アクティブ状態: テキスト色を --primary に変更 ── */
     .toc-link.is-active {
-      color: var(--primary, oklch(55% 0.2 250));
+      color: var(--toc-item-fg-active, var(--fg-default, oklch(20% 0 0)));
+      font-weight: var(--toc-item-font-weight-active, var(--toc-item-font-weight, 400));
     }
 
-    /* ──────────────────────────────────────────────
-		   アクティブインジケーター (::before 疑似要素)
-		   - flex item として通常フローに参加しつつ中央揃え
-		   - Shape: border-radius: --radius-full (単なる線ではなくオブジェクトとして扱う)
-		   - 常時表示ではなくアクティブ時のみ出現
-		────────────────────────────────────────────── */
+    .toc-link.is-active::after {
+      background-color: var(--toc-item-active-bg, transparent);
+    }
+
     .toc-link::before {
       content: '';
-      display: block;
-      flex: 0 0 var(--_toc-indicator-width);
+      position: absolute;
+      z-index: 1;
+      inset-inline-start: calc(var(--_toc-rail-offset-inline) + var(--_toc-level-offset));
+      inset-block-start: 50%;
       inline-size: var(--_toc-indicator-width);
-      block-size: 1.25em;
-      align-self: center;
-      border-radius: var(--radius-full, 9999px);
-      background-color: var(--primary, oklch(55% 0.2 250));
+      block-size: var(--toc-item-indicator-block-size, 0.9em);
+      transform: translateY(-50%);
+      border-radius: var(--_toc-indicator-radius);
+      background-color: var(
+        --toc-item-indicator-color,
+        var(--nav-item-indicator-color, var(--primary, oklch(55% 0.2 250)))
+      );
       opacity: 0;
-      transform: translateY(1px);
+      pointer-events: none;
+      transition:
+        opacity
+          var(--nav-item-transition-duration, var(--duration-fast, 70ms))
+          var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)));
     }
 
-    /*
-		 * スクロール起因のアクティブ切り替え:
-		 * アニメーション時間ゼロで即座に反映（「計器としての正確性」）
-		 * 遅れてくるアニメーションは情報の同期ズレ（Lag）になるため禁止。
-		 */
     .toc-link.is-active.is-scroll::before {
       opacity: 1;
     }
 
-    /*
-		 * クリック起因のアクティブ切り替え:
-		 * opacity フェードイン（--duration-fast）で「着地した」という物理的確信を与える。
-		 */
     .toc-link.is-active.is-click::before {
       animation: toc-indicator-fade-in var(--duration-fast, 70ms)
         var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)) both;
@@ -253,46 +285,23 @@ export class Toc extends LitElement {
       }
     }
 
-    /* ──────────────────────────────────────────────
-			   タッチ環境: 粗いポインタでの誤タップ耐性
-			────────────────────────────────────────────── */
     @media (hover: none) and (pointer: coarse) {
-      /*
-				 * viewport 幅ではなく入力方式で判定する。
-				 * 項目間に最小限の余白を追加して隣接ターゲットの干渉を抑える。
-				 */
       li + li {
         margin-block-start: 2px;
       }
     }
 
-    /* ──────────────────────────────────────────────
-		   Reduced Motion
-		────────────────────────────────────────────── */
     @media (prefers-reduced-motion: reduce) {
       .toc-link {
-        /*
-				 * ホバートランジションを実質瞬時化（状態認知は維持）
-				 */
         transition-duration: 0.01ms;
       }
 
       .toc-link.is-active.is-click::before {
-        /*
-				 * クリック起因のフェードインも実質瞬時化
-				 */
         animation-duration: 0.01ms;
       }
     }
 
-    /* ──────────────────────────────────────────────
-		   Forced Colors Mode (高コントラストモード)
-		────────────────────────────────────────────── */
     @media (forced-colors: active) {
-      /*
-			 * システムカラーへのマッピング:
-			 * --fg-muted → GrayText, --fg-default → CanvasText, --primary → Highlight
-			 */
       .toc-link {
         color: GrayText;
       }
@@ -305,10 +314,6 @@ export class Toc extends LitElement {
         color: Highlight;
       }
 
-      /*
-			 * Forced Colors では background-color が消失するため、
-			 * インジケーター (::before) を border で可視化する（現在地の物理的可視化）。
-			 */
       .toc-link.is-active::before {
         background-color: transparent;
         border: var(--border-width-thick, 2px) solid Highlight;

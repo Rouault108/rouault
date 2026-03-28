@@ -72,24 +72,25 @@ const getTooltipPanel = (host: HTMLElement): HTMLElement => {
  * ## 目次 (Table of Contents) `<ui-toc>`
  *
  * 記事内の見出し構造を可視化する「周辺視野の計器」コンポーネントです。
- * 読者が現在地を把握しながらコンテンツをナビゲートするための静謐な UI を提供します。
+ * 読者が現在地を把握しながらコンテンツをナビゲートするための静かな UI を提供します。
  *
  * ### 設計思想
  *
- * - **Visual Silence**: 低密度・控えめなデザインで「静謐」を実現します。
- * - **周辺視野の計器**: 操作パネルではなく、現在地を無意識に感じさせるインジケーター。
- * - **Context Awareness**: アクティブセクションのみハイライト、他は控えめに配置。
+ * - **Visual Silence**: 低密度・低彩度・薄い面で「静謐」を維持します。
+ * - **Shared Navigation Grammar**: tree-item と同系統のナビゲーション語彙を使い、
+ *   現在地は rail とごく薄い active 面で示します。
+ * - **Context Awareness**: 現在位置のみを明確化し、非アクティブ項目は muted に保ちます。
  *
  * ### アクセシビリティ
  *
  * - `<nav aria-label="Table of Contents">` で意味論的なナビゲーションを提供します。
  * - アクティブなリンクに `aria-current="location"` を設定します。
  * - キーボードの Tab キーによる標準的なナビゲーションをサポートします。
- * - タッチターゲット: モバイルは 44px、デスクトップは最低 24px を保証します。
+ * - タッチターゲットは **最低 24px を保証**し、44px は推奨値として扱います。
  *
  * ### インタラクション戦略
  *
- * - **スクロール起因**: インジケーター即座（ゼロ遅延）で現在地を反映（計器の正確性）。
+ * - **スクロール起因**: インジケーター即時反映で現在地を同期します。
  * - **クリック起因**: インジケーターが opacity フェードインし「着地確信」を与えます。
  * - **Conflict Resolution**: クリック移動中は IntersectionObserver を一時停止し、
  *   インジケーターの明滅（Flickering）を防止します。
@@ -104,6 +105,9 @@ const meta: Meta<Toc> = {
         component: `
 目次コンポーネントは、記事内の見出し構造を可視化し、
 読者が現在地を把握しながらコンテンツをナビゲートするための「周辺視野の計器」です。
+
+tree-item と同じナビゲーション語彙を共有しますが、TOC はそれより 1 段静かに設計されます。
+現在地は **文字色の強い変化ではなく、rail とごく薄い active 面**で示します。
 
 ## 使用方法
 
@@ -120,11 +124,12 @@ const meta: Meta<Toc> = {
 
 ## 注意事項
 
-- **\`headers\` プロパティ**: Velite 等が生成したメタデータをそのまま渡します。クライアントDOM解析は行いません。
+- **\`headers\` プロパティ**: Velite 等が生成したメタデータをそのまま渡します。クライアント DOM 解析は行いません。
 - **\`active-id\` 属性**: IntersectionObserver により自動更新されますが、外部からも設定可能です。
-- **レベル正規化**: 最小レベルを基準に相対階層を算出します（H2のみなら全て 0）。
+- **レベル正規化**: 最小レベルを基準に相対階層を算出します（H2 のみなら全て 0）。
 - **空の配列**: \`headers\` が空の場合、何も表示されません。
-				`,
+- **ターゲットサイズ**: 実装保証は 24px 最低保証です。44px は推奨値であり、この Story の pass 条件には含めません。
+        `,
       },
     },
   },
@@ -282,9 +287,12 @@ export const Default: Story = {
 /**
  * 中間のアイテムがアクティブ（クリック起因）。
  *
- * `active-id` を設定するとそのリンクがハイライトされ、
- * 左端のインジケーター（2px 幅の Pill）が表示されます。
- * 外部からの設定はクリック起因として扱われ、フェードインします。
+ * `active-id` を設定すると該当リンクが現在地として扱われ、
+ * 左端の rail（2px 幅）とごく薄い active 面が表示されます。
+ * テキストは tree-item 系の shared navigation grammar に合わせ、
+ * 強い accent text ではなく中立寄りの active text として扱います。
+ *
+ * 外部からの設定はクリック起因として扱われ、indicator はフェードインします。
  */
 export const WithActiveItem: Story = {
   render: () => html`
@@ -305,7 +313,9 @@ export const WithActiveItem: Story = {
     }
 
     // テスト: 該当リンクに aria-current="location" がある
-    const activeLink = toc.shadowRoot?.querySelector('[aria-current="location"]');
+    const activeLink = toc.shadowRoot?.querySelector<HTMLAnchorElement>(
+      'a.toc-link[aria-current="location"]',
+    );
     if (!activeLink) throw new Error('aria-current="location" を持つリンクが見つかりません');
     if (activeLink.getAttribute('href') !== '#implementation') {
       throw new Error(
@@ -333,6 +343,18 @@ export const WithActiveItem: Story = {
         throw new Error('非アクティブリンクは aria-current を持つべきではありません');
       }
     });
+
+    // テスト: current rail が可視である
+    const indicatorStyle = getComputedStyle(activeLink, '::before');
+    if (indicatorStyle.opacity === '0') {
+      throw new Error('アクティブリンクの current rail が表示される必要があります');
+    }
+
+    // テスト: active 面が ::after に存在する
+    const activeSurfaceStyle = getComputedStyle(activeLink, '::after');
+    if (activeSurfaceStyle.backgroundColor === 'rgba(0, 0, 0, 0)') {
+      throw new Error('アクティブリンクにごく薄い active 面が必要です');
+    }
   },
 };
 
@@ -472,8 +494,10 @@ export const DeepNesting: Story = {
       }
     }
 
-    // テスト: H4 アクティブアイテムのインジケーターが表示されている
-    const activeLink = toc.shadowRoot?.querySelector('[aria-current="location"]');
+    // テスト: H4 アクティブアイテムが正しく current として扱われる
+    const activeLink = toc.shadowRoot?.querySelector<HTMLAnchorElement>(
+      'a.toc-link[aria-current="location"]',
+    );
     if (!activeLink) throw new Error('アクティブリンクが見つかりません');
     if (activeLink.getAttribute('href') !== '#frontend') {
       throw new Error(
@@ -489,9 +513,38 @@ export const DeepNesting: Story = {
 
     const h2PaddingStart = Number.parseFloat(getComputedStyle(h2Link).paddingInlineStart);
     const h4PaddingStart = Number.parseFloat(getComputedStyle(activeH4Link).paddingInlineStart);
-    if (Math.abs(h2PaddingStart - h4PaddingStart) > 0.1) {
+    if (!Number.isFinite(h2PaddingStart) || !Number.isFinite(h4PaddingStart)) {
       throw new Error(
-        `H4 active の indicator 位置は H2 基準と一致するべきですが、実際には H2=${String(h2PaddingStart)}px, H4=${String(h4PaddingStart)}px でした`,
+        `padding-inline-start の計測に失敗しました: H2=${String(h2PaddingStart)}px, H4=${String(h4PaddingStart)}px`,
+      );
+    }
+    if (h4PaddingStart <= h2PaddingStart) {
+      throw new Error(
+        `深い階層のリンクは浅い階層よりも右へインデントされる必要がありますが、実際には H2=${String(h2PaddingStart)}px, H4=${String(h4PaddingStart)}px でした`,
+      );
+    }
+
+    const h2IndicatorStyle = getComputedStyle(h2Link, '::before');
+    const h4IndicatorStyle = getComputedStyle(activeH4Link, '::before');
+
+    const h2IndicatorLeft = Number.parseFloat(h2IndicatorStyle.insetInlineStart);
+    const h4IndicatorLeft = Number.parseFloat(h4IndicatorStyle.insetInlineStart);
+    if (!Number.isFinite(h2IndicatorLeft) || !Number.isFinite(h4IndicatorLeft)) {
+      throw new Error(
+        `indicator の inset-inline-start 計測に失敗しました: H2=${String(h2IndicatorLeft)}px, H4=${String(h4IndicatorLeft)}px`,
+      );
+    }
+    if (h4IndicatorLeft <= h2IndicatorLeft) {
+      throw new Error(
+        `深い階層の rail は浅い階層よりも右へ移動する必要がありますが、実際には H2=${String(h2IndicatorLeft)}px, H4=${String(h4IndicatorLeft)}px でした`,
+      );
+    }
+
+    const paddingDelta = h4PaddingStart - h2PaddingStart;
+    const indicatorDelta = h4IndicatorLeft - h2IndicatorLeft;
+    if (Math.abs(paddingDelta - indicatorDelta) > 1) {
+      throw new Error(
+        `rail と本文スロットは同じ階層オフセットで移動する必要がありますが、実際には paddingDelta=${String(paddingDelta)}px, indicatorDelta=${String(indicatorDelta)}px でした`,
       );
     }
   },
@@ -1289,9 +1342,16 @@ export const AccessibilityStructure: Story = {
       );
     }
     const indicatorStyle = getComputedStyle(firstLink, '::before');
-    if (indicatorStyle.position !== 'static') {
+    if (indicatorStyle.position !== 'absolute') {
       throw new Error(
-        `toc-link の現在地インジケータは通常フロー配置である必要がありますが、実際には position="${indicatorStyle.position}" でした`,
+        `toc-link の現在地インジケータは専用ガター内の absolute 配置である必要がありますが、実際には position="${indicatorStyle.position}" でした`,
+      );
+    }
+
+    const paddingStart = Number.parseFloat(firstLinkStyle.paddingInlineStart);
+    if (!Number.isFinite(paddingStart) || paddingStart < 12) {
+      throw new Error(
+        `toc-link には rail 用の左ガターが必要です。padding-inline-start が小さすぎます: ${String(paddingStart)}px`,
       );
     }
 
@@ -1343,7 +1403,7 @@ export const KeyboardAndTouchTarget: Story = {
       }
     });
 
-    // テスト: 最小タッチターゲット寸法
+    // テスト: 最低保証のターゲットサイズは 24px
     const firstLink = links[0];
     if (!firstLink) throw new Error('最初のリンクが見つかりません');
     const minHeight = Number.parseFloat(getComputedStyle(firstLink).minHeight);
@@ -1353,10 +1413,11 @@ export const KeyboardAndTouchTarget: Story = {
       );
     }
 
-    // モバイル幅での要件（環境依存のため条件付き）
-    if (window.matchMedia('(max-width: 1023px)').matches && minHeight < 44) {
+    // テスト: 実際のレイアウト高も 24px 以上
+    const renderedHeight = firstLink.getBoundingClientRect().height;
+    if (renderedHeight < 24) {
       throw new Error(
-        `モバイル時の min-height >= 44px を期待していましたが、実際には ${String(minHeight)}px でした`,
+        `描画後の高さが 24px 以上であることを期待していましたが、実際には ${String(renderedHeight)}px でした`,
       );
     }
   },
@@ -1374,7 +1435,32 @@ export const KeyboardAndTouchTarget: Story = {
  */
 export const DarkMode: Story = {
   render: () => html`
-    <div style="width: 220px;">
+    <style>
+      .dark-surface {
+        background: #111417;
+        color: #e6edf3;
+        border-radius: 8px;
+        padding: 12px;
+        max-width: 240px;
+      }
+
+      .dark-surface ui-toc {
+        --fg-muted: oklch(84% 0.01 250);
+        --fg-default: oklch(96% 0.01 250);
+        --primary: oklch(78% 0.13 250);
+
+        --nav-item-fg: var(--fg-muted);
+        --nav-item-fg-hover: var(--fg-default);
+        --nav-item-fg-active: var(--fg-default);
+
+        --toc-item-hover-bg: oklch(100% 0 0 / 0.03);
+        --toc-item-active-bg: oklch(78% 0.13 250 / 0.08);
+        --toc-item-indicator-color: var(--primary);
+        --toc-item-active-radius: 2px;
+      }
+    </style>
+
+    <div class="dark-surface">
       <ui-toc id="dark-toc" .headers="${flatH2Headers}" active-id="implementation"></ui-toc>
     </div>
   `,
@@ -1388,19 +1474,26 @@ export const DarkMode: Story = {
       'a.toc-link:not(.is-active)',
     );
     if (!activeLink || !inactiveLink) {
-      throw new Error('アクティブリンクと非アクティブリンクの両方が存在することを期待していました');
+      throw new Error('アクティブリンクと非アクティブリンクの両方が必要です');
     }
 
+    // テスト: active / inactive の文字色差
     const activeColor = getComputedStyle(activeLink).color;
     const inactiveColor = getComputedStyle(inactiveLink).color;
     if (activeColor === inactiveColor) {
-      throw new Error('アクティブと非アクティブでテキストの色が異なるべきです');
+      throw new Error('暗色面でも active / inactive の文字色差が必要です');
     }
 
-    if (!window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      console.warn(
-        'DarkMode story: prefers-color-scheme: dark を有効化して暗色環境の最終色を確認してください',
-      );
+    // テスト: active 面は ::after に存在する
+    const activeSurfaceStyle = getComputedStyle(activeLink, '::after');
+    if (activeSurfaceStyle.backgroundColor === 'rgba(0, 0, 0, 0)') {
+      throw new Error('暗色面でも active link にごく薄い面が必要です');
+    }
+
+    // テスト: current rail は ::before に存在する
+    const indicatorStyle = getComputedStyle(activeLink, '::before');
+    if (indicatorStyle.backgroundColor === 'rgba(0, 0, 0, 0)' && indicatorStyle.opacity === '0') {
+      throw new Error('暗色面でも current rail が表示される必要があります');
     }
   },
 };
