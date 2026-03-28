@@ -87,16 +87,11 @@ export class SearchPage extends LitElement {
         align-items: center;
         justify-content: space-between;
         gap: var(--space-4, 16px);
-        margin: 0 0 0 var(--space-2, 8px);
+        margin: 0;
       }
 
-      .sort-field {
-        display: grid;
-        grid-template-columns: auto minmax(10rem, auto);
-        align-items: center;
-        gap: var(--space-2, 8px);
+      .sort-label {
         color: var(--fg-muted);
-        font-size: var(--text-sm, 13px);
       }
 
       .sort-label {
@@ -317,7 +312,7 @@ export class SearchPage extends LitElement {
 
       @media (max-width: 768px) {
         .toolbar-row {
-          margin-left: 0;
+          margin: 0;
         }
 
         .sort-field {

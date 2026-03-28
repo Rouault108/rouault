@@ -106,7 +106,7 @@ export const pageShellStyles = css`
     margin: 0;
     color: var(--fg-default);
     font-size: var(--text-sm, 13px);
-    line-height: var(--line-height-relaxed, 1.7);
+    line-height: 1.8;
   }
 
   @media (max-width: 768px) {
