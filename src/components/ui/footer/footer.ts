@@ -59,7 +59,11 @@ ${FOOTER_SCOPE_SELECTOR} {
   --_footer-border-width: var(--footer-border-width, var(--border-width));
   --_footer-max-inline-size: var(--footer-max-inline-size, var(--bp-lg, 72rem));
   --_footer-padding-block: var(--footer-padding-block, clamp(var(--space-5), 2.8vw, var(--space-7)));
-  --_footer-padding-inline: var(--footer-padding-inline, max(var(--space-4), min(var(--space-7), 4vi)));
+
+  --_footer-outer-gutter: var(--footer-outer-gutter, var(--space-4));
+
+  --_footer-inner-padding-inline: var(--footer-inner-padding-inline, 0px);
+
   --_footer-gap: var(--footer-gap, clamp(var(--space-3), 1.4vw, var(--space-4)));
   --_footer-column-gap: var(--footer-column-gap, clamp(var(--space-4), 2vw, var(--space-5)));
   --_footer-primary-max-inline-size: var(--footer-primary-max-inline-size, 40rem);
@@ -69,11 +73,15 @@ ${FOOTER_SCOPE_SELECTOR} {
   --_footer-kicker-fg: var(--footer-kicker-fg, var(--fg-subtle, var(--fg-muted)));
   --_footer-description-fg: var(--footer-description-fg, var(--fg-muted));
   --_footer-legal-gap: var(--footer-legal-gap, var(--space-2));
+
+  box-sizing: border-box;
   inline-size: 100%;
   background: var(--_footer-bg);
   border-top: var(--_footer-border-width) solid var(--_footer-border);
   color: var(--_footer-fg);
+
   padding-block: var(--_footer-padding-block);
+  padding-inline: var(--_footer-outer-gutter);
 }
 
 ${FOOTER_SCOPE_SELECTOR} .ui-footer__inner {
@@ -82,11 +90,15 @@ ${FOOTER_SCOPE_SELECTOR} .ui-footer__inner {
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: var(--_footer-gap);
+
+  /* 親 footer の内側で最大幅だけを効かせる */
   inline-size: 100%;
   max-inline-size: var(--_footer-max-inline-size);
   margin-block: var(--space-3, 12px);
   margin-inline: auto;
-  padding-inline: var(--_footer-padding-inline);
+
+  /* 必要なら内側の微調整だけここで行う */
+  padding-inline: var(--_footer-inner-padding-inline);
 }
 
 ${FOOTER_SCOPE_SELECTOR} .ui-footer__meta {
