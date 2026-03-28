@@ -58,4 +58,15 @@ describe('server-entry', () => {
     expect(rendered).toContain('classical');
     expect(rendered).toContain('data-tags="[');
   });
+
+  it('app-router に SSR 本文を渡して描画できること', async () => {
+    const rendered = await renderCustomElement(
+      'app-router',
+      [],
+      '<main><h1>SSR App Router</h1><p>Body</p></main>',
+    );
+
+    expect(rendered).toContain('SSR App Router');
+    expect(rendered).toContain('main-content');
+  });
 });

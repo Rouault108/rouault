@@ -738,6 +738,38 @@ shell 同期および描画後後処理は、durable commit point の成立条�
 - `PreparedContentUpdate.commit()` は durable content commit の一部として扱います。
 - `content:load` は durable commit 完了後にのみ発火します。
 
+### 本文 HTML の trust boundary
+
+`contentAdapter` は、router における **本文反映の唯一の統合点** とします。
+
+規則:
+
+- router core は、本文を `ContentUpdatePayload.html` として受け渡してよいものとします。
+- ただし、runtime で HTML 文字列を DOM へ流し込む sink は、**アプリケーション統合側で単一箇所に限定**しなければなりません。
+- router core は、その sink の具体実装方式を規定してはなりません。
+- `contentAdapter` またはそれと同等のアプリケーション統合層は、router から受け取った本文を **「DOM へ反映してよい本文」** として受理・commit する唯一の境界でなければなりません。
+- 上記境界の外側で、任意の HTML 文字列を ad hoc に DOM へ流し込んではなりません。
+
+入力境界に関する追加規則:
+
+- 上記 sink に流してよい本文は、author input であってはなりません。
+- 上記 sink に流してよい本文は、少なくとも次のいずれかに限らなければなりません。
+  1. build-time で正規化・検証済みの compiler-generated document content
+  2. route handler または fetch loader により取得された後、Rouault の文書契約に照らして妥当と判断された validated document content
+- Markdown authoring input、raw HTML、または未検証の外部 HTML を、この境界へ直接流してはなりません。
+
+責務分離:
+
+- author input / compiler-generated output / runtime helper の trust boundary 定義は `docs/markdown-safety-and-test-policy.md` が所有します。
+- router 本仕様は、その trust boundary を前提として **本文 commit 境界にどう接続するか** だけを定義します。
+- したがって、本節は Markdown safety policy を再定義してはなりません。
+
+実装上の含意:
+
+- `contentAdapter.prepare()` は、必要であればアプリケーション統合側の branded type、wrapper、または同等の境界表現へ本文を変換してよいものとします。
+- ただし、その表現は router core の公開契約へ持ち込んではなりません。
+- `ContentUpdatePayload.html` は引き続き router core の汎用 payload とし、app 固有の trust boundary 表現は adapter 境界の内側に閉じ込めなければなりません。
+
 ### `contentAdapter` を採用する理由
 
 - 単発 callback は「外側 state は変わったが router 側は未 commit」という分裂状態を招きやすいです。

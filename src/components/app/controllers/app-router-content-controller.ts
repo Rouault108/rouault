@@ -1,13 +1,17 @@
 import type { ReactiveController, ReactiveControllerHost } from 'lit';
 import type { ContentUpdateAdapter } from '../../../lib/router.js';
+import {
+  createRouterContentHtml,
+  type RouterContentHtml,
+} from '../../../lib/router/router-content-html.js';
 
 export class AppRouterContentController implements ReactiveController {
   private didInitializeFromSsr = false;
-  private currentContent = '';
+  private currentContent: RouterContentHtml = createRouterContentHtml('');
 
   constructor(
     host: ReactiveControllerHost,
-    private setPageContent: (html: string) => void,
+    private setPageContent: (html: RouterContentHtml) => void,
   ) {
     host.addController(this);
   }
@@ -22,7 +26,7 @@ export class AppRouterContentController implements ReactiveController {
     }
 
     const existingMain = hostElement.querySelector('main');
-    this.currentContent = existingMain?.innerHTML ?? '';
+    this.currentContent = createRouterContentHtml(existingMain?.innerHTML ?? '');
     this.setPageContent(this.currentContent);
     hostElement.replaceChildren();
     this.didInitializeFromSsr = true;
@@ -32,11 +36,12 @@ export class AppRouterContentController implements ReactiveController {
     return {
       prepare: ({ html }) => {
         const previousContent = this.currentContent;
+        const nextContent = createRouterContentHtml(html);
 
         return {
           commit: async () => {
-            this.currentContent = html;
-            this.setPageContent(html);
+            this.currentContent = nextContent;
+            this.setPageContent(nextContent);
             await waitForUpdate();
           },
           rollback: async () => {

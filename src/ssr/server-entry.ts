@@ -59,6 +59,7 @@ import {
   type SsrTargetTag,
 } from './targets.js';
 import '../components/not-found/not-found-page.js';
+import { createRouterContentHtml } from '../lib/router/router-content-html.js';
 
 export { SSR_TARGET_TAGS };
 
@@ -241,7 +242,7 @@ const renderLightElement = async (
 
   if (tagName === 'app-router') {
     const router = new AppRouter();
-    router.serverContent = extractMainContent(innerHtml);
+    router.serverContent = createRouterContentHtml(extractMainContent(innerHtml));
     const rendered = await collectResult(renderThunked(router.render()));
     return `<app-router${serializedAttributes}>${rendered}</app-router>`;
   }

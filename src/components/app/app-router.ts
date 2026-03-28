@@ -7,6 +7,10 @@ import {
   type ShellAdapter,
 } from '../../lib/router.js';
 import { RouterController } from '../../lib/controllers/router-controller.js';
+import {
+  type RouterContentHtml,
+  unwrapRouterContentHtml,
+} from '../../lib/router/router-content-html.js';
 import { AppRouterContentController } from './controllers/app-router-content-controller.js';
 import { AppRouterPostRenderController } from './controllers/app-router-post-render-controller.js';
 
@@ -138,7 +142,7 @@ export class AppRouter extends LitElement {
     _ariaAnnouncement: { state: true },
   };
 
-  declare private _pageContent: string;
+  declare private _pageContent: RouterContentHtml | null;
   declare private _ariaAnnouncement: string;
 
   override createRenderRoot(): this {
@@ -155,11 +159,11 @@ export class AppRouter extends LitElement {
 
   constructor() {
     super();
-    this._pageContent = '';
+    this._pageContent = null;
     this._ariaAnnouncement = '';
   }
 
-  serverContent = '';
+  serverContent: RouterContentHtml | null = null;
 
   override connectedCallback(): void {
     this._contentController.captureInitialContent(this);
@@ -206,7 +210,7 @@ export class AppRouter extends LitElement {
   }
 
   override render() {
-    const pageContent = this._pageContent || this.serverContent;
+    const pageContent = this._pageContent ?? this.serverContent;
 
     return html`
       <div aria-live="polite" aria-atomic="true" class="sr-only">${this._ariaAnnouncement}</div>
@@ -216,7 +220,7 @@ export class AppRouter extends LitElement {
         tabindex="-1"
         aria-busy=${this._routerController.isNavigating ? 'true' : nothing}
       >
-        ${unsafeHTML(pageContent)}
+        ${pageContent ? unsafeHTML(unwrapRouterContentHtml(pageContent)) : nothing}
       </main>
     `;
   }

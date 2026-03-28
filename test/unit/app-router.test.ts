@@ -1,6 +1,7 @@
 import { expect, fixture, html, waitUntil } from '@open-wc/testing';
 import '../../src/components/app/app-router.js';
 import type { NavigationResult } from '../../src/lib/router.js';
+import { createRouterContentHtml } from '../../src/lib/router/router-content-html.js';
 
 type AppRouterElement = HTMLElement & {
   updateComplete: Promise<unknown>;
@@ -326,5 +327,15 @@ describe('app-router', () => {
       '[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"music","label":"音楽","href":"/corpora/music/"}]'
     );
     expect(header.getAttribute('current-corpus-key')).to.equal('music');
+  });
+
+  it('serverContent に branded 本文を与えた場合も描画できること', async () => {
+    host = await fixture<AppRouterElement>(html`<app-router></app-router>`);
+    const appHost = host as AppRouterElement & { serverContent: unknown };
+
+    appHost.serverContent = createRouterContentHtml('<h1>SSR Branded</h1><p>Body</p>');
+    await appHost.updateComplete;
+
+    expect(appHost.querySelector('#main-content')?.innerHTML).to.contain('SSR Branded');
   });
 });
