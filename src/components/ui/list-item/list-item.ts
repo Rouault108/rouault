@@ -121,14 +121,13 @@ export class ListItem extends LitElement {
       line-clamp: 2;
     }
 
-    .cell--lead ::slotted(a) {
-      color: inherit;
-      text-decoration: none;
+    .cell--lead ::slotted(a[href]) {
       display: block;
+      color: inherit;
     }
 
-    .cell--lead ::slotted(a:hover) {
-      text-decoration: underline;
+    .cell--meta ::slotted(a[href]) {
+      color: inherit;
     }
 
     .cell--meta {

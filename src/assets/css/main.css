@@ -860,16 +860,45 @@ a:focus-visible {
   color: var(--fg-muted);
 }
 
-/* list-item の主リンクは light DOM 側にいるため、グローバル側で下線契約を上書きする */
-ui-list-item a.primary-link[href] {
+/* ui-list-item 内のリンクは、本文リンクや touch 強調リンクとは分離し、
+   索引・一覧向けの静かな下線として扱う */
+ui-list-item > a[slot][href]:not([slot='actions']),
+ui-list-item > [slot]:not([slot='actions']) a[href] {
   color: inherit;
   font-weight: inherit;
-  text-decoration: none;
+  text-decoration-line: underline;
+  text-underline-offset: 0.15em;
+  text-decoration-thickness: var(--border-width);
+  text-decoration-color: var(--link-decoration-color-subtle);
+  transition:
+    text-decoration-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
 
-ui-list-item a.primary-link[href]:hover {
-  text-decoration: underline;
+ui-list-item > a[slot][href]:not([slot='actions']):hover,
+ui-list-item > [slot]:not([slot='actions']) a[href]:hover {
+  color: inherit;
   text-decoration-color: currentColor;
+}
+
+ui-list-item > a[slot][href]:not([slot='actions']):focus-visible,
+ui-list-item > [slot]:not([slot='actions']) a[href]:focus-visible {
+  outline-style: solid;
+  outline-width: var(--focus-ring-width);
+  outline-offset: var(--focus-ring-offset);
+  outline-color: var(--focus-ring-color);
+  border-radius: var(--focus-ring-radius);
+  animation: var(--animation-focus);
+  color: inherit;
+  text-decoration-color: currentColor;
+}
+
+ui-list-item > a[slot][href]:not([slot='actions']):visited,
+ui-list-item > [slot]:not([slot='actions']) a[href]:visited {
+  color: inherit;
+  text-decoration-color: var(--link-decoration-color-subtle);
 }
 
 /* ---------------------------------------------------------------------------

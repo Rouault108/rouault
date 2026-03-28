@@ -120,6 +120,9 @@
   /* =========================================================================
    * Semantic Tokens - Link Decoration Colors (Light Mode)
    * ========================================================================= */
+  --link-decoration-color-subtle: oklch(
+    from var(--primary) l c h / var(--opacity-link-subtle)
+  );
   --link-decoration-color: oklch(from var(--primary) l c h / var(--opacity-link));
   --link-decoration-color-touch: oklch(from var(--primary) l c h / var(--opacity-link-touch));
 
