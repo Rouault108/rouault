@@ -308,26 +308,26 @@ export const StatusStateMatrix: Story = {
     const checks: {
       id: string;
       toneClass: string;
-      icon: IconName;
+      name: IconName;
       label: string;
     }[] = [
       {
         id: '#status-draft',
         toneClass: 'status-draft',
-        icon: 'file-pen',
+        name: 'file-pen',
         label: '下書き',
       },
       {
         id: '#status-archived',
         toneClass: 'status-archived',
-        icon: 'archive',
+        name: 'archive',
         label: 'アーカイブ',
       },
-      { id: '#status-wip', toneClass: 'status-wip', icon: 'construction', label: '作業中' },
+      { id: '#status-wip', toneClass: 'status-wip', name: 'construction', label: '作業中' },
       {
         id: '#status-deprecated',
         toneClass: 'status-deprecated',
-        icon: 'alert-triangle',
+        name: 'alert-triangle',
         label: '非推奨',
       },
     ];
@@ -353,9 +353,9 @@ export const StatusStateMatrix: Story = {
 
       const icon = status.querySelector('ui-icon');
       if (!icon) throw new Error(`${check.id} の ui-icon が見つかりません`);
-      if (icon.getAttribute('icon') !== check.icon) {
+      if (icon.getAttribute('name') !== check.name) {
         throw new Error(
-          `${check.id} の icon 属性に "${check.icon}" を期待していましたが、実際には "${icon.getAttribute('icon') ?? 'null'}" でした`,
+          `${check.id} の icon 属性に "${check.name}" を期待していましたが、実際には "${icon.getAttribute('name') ?? 'null'}" でした`,
         );
       }
     }
