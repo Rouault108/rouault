@@ -36,9 +36,7 @@ export class TreeItem extends LitElement {
       position: relative;
       min-inline-size: 0;
       --tree-item-content-gap: 4px;
-      --tree-item-selected-bg: oklch(
-        from var(--bg-fill-muted, oklch(0.95 0.01 250)) l c h / 0.5
-      );
+      --tree-item-selected-bg: var(--bg-surface-active);
       --tree-item-selected-indicator-color: var(--primary, oklch(55% 0.2 250));
       --tree-item-selected-indicator-width: var(--border-width-thick, 2px);
       --tree-item-selection-start-gap: 2px;
@@ -135,7 +133,7 @@ export class TreeItem extends LitElement {
 
     .item.is-branch {
       color: var(--fg-muted, oklch(45% 0 0));
-      font-weight: var(--font-medium, 500);
+      font-weight: var(--font-normal, 400);
     }
 
     .item.is-page {
@@ -175,8 +173,8 @@ export class TreeItem extends LitElement {
     }
 
     :host([ancestor-selected]) {
-      --tree-item-guide-color: var(--border-default, oklch(20% 0 0 / 0.12));
-      --tree-item-guide-opacity: 0.72;
+      --tree-item-guide-color: var(--border-muted, oklch(20% 0 0 / 0.08));
+      --tree-item-guide-opacity: 0.56;
     }
 
     .leading {
