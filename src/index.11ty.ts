@@ -49,8 +49,6 @@ export class HomePageTemplate {
             <h1 class="home-title">静かに入り、静かに読み進める。</h1>
             <p class="home-lead">公開している個人ノートの入口です。新しいものから辿れます。</p>
             <p class="home-meta" aria-label="公開ノートの概要">
-              <span class="home-meta-item">${escapeHtml(noteCount)}件</span>
-              <span class="home-meta-separator" aria-hidden="true">・</span>
               <span class="home-meta-item">最新更新 ${latestUpdatedDate}</span>
               <span class="home-meta-separator" aria-hidden="true">・</span>
               <a class="home-meta-link" href="/about/">このサイトについて</a>
@@ -60,6 +58,7 @@ export class HomePageTemplate {
           <section class="home-feed-section" aria-labelledby="home-feed-heading">
             <div class="home-feed-header">
               <h2 id="home-feed-heading" class="home-feed-title">新着一覧</h2>
+              <p class="home-feed-meta">${escapeHtml(noteCount)}件</p>
             </div>
             ${home.notes.length > 0
               ? `
