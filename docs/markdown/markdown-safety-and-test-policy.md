@@ -335,6 +335,16 @@ raw HTML 禁止は設計原則であり、暫定制約ではありません。
 - `tabs` が個数整合を検証しない現状
 - `tabs.url-sync` が単一系統想定である現状
 
+### 10.6 media manifest / eager policy
+
+少なくとも次を固定すべきです。
+
+- image manifest の schema/version 不一致で build-time error になること
+- required variant 欠落で build-time error になること
+- production では manifest 欠損を fail-closed にすること
+- local dev では `content/_assets` への fail-open を許可すること
+- 本文画像の `loading="eager"` が 1 枚を超えると error になること
+
 ---
 
 ## 11. 仕様変更時の運用規則

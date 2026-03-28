@@ -6,11 +6,16 @@ import type { Connect } from 'vite';
 const CONTENT_TYPES = new Map<string, string>([
   ['.css', 'text/css; charset=utf-8'],
   ['.html', 'text/html; charset=utf-8'],
+  ['.jpg', 'image/jpeg'],
+  ['.jpeg', 'image/jpeg'],
   ['.js', 'text/javascript; charset=utf-8'],
   ['.json', 'application/json; charset=utf-8'],
   ['.mjs', 'text/javascript; charset=utf-8'],
+  ['.png', 'image/png'],
   ['.txt', 'text/plain; charset=utf-8'],
+  ['.avif', 'image/avif'],
   ['.wasm', 'application/wasm'],
+  ['.webp', 'image/webp'],
 ]);
 
 function normalizeRoutePrefix(routePrefix: string): string {

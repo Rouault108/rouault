@@ -22,6 +22,7 @@ interface MdastNode {
 
 const FIXTURE_DIR = path.resolve(process.cwd(), 'content/_generated');
 const FIXTURE_FILE = path.resolve(FIXTURE_DIR, 'link-card-metadata.json');
+const THUMBNAIL_FIXTURE_FILE = path.resolve(FIXTURE_DIR, 'link-card-thumbnails.json');
 
 const createFile = () => ({
   path: 'content/notes/sample.md',
@@ -40,9 +41,19 @@ const writeCache = (entries: Record<string, unknown>) => {
   );
 };
 
+const writeThumbnailCache = (entries: Record<string, unknown>) => {
+  mkdirSync(FIXTURE_DIR, { recursive: true });
+  writeFileSync(
+    THUMBNAIL_FIXTURE_FILE,
+    `${JSON.stringify({ version: 1, generatedAt: '2026-03-25T00:00:00.000Z', entries }, null, 2)}\n`,
+    'utf8',
+  );
+};
+
 describe('remarkLinkCards', () => {
   afterEach(() => {
     rmSync(FIXTURE_FILE, { force: true });
+    rmSync(THUMBNAIL_FIXTURE_FILE, { force: true });
   });
 
   it('明示 link-card で cache title を使って解決すること', () => {
@@ -52,6 +63,11 @@ describe('remarkLinkCards', () => {
         description: 'Cache Description',
         image: 'https://cdn.example.com/card.png',
         siteName: 'Example',
+      },
+    });
+    writeThumbnailCache({
+      'https://cdn.example.com/card.png': {
+        sourcePath: 'content/_assets/testing/test-card.jpg',
       },
     });
 
@@ -77,7 +93,7 @@ describe('remarkLinkCards', () => {
     expect(card?.type).to.equal('rouaultResolvedLinkCard');
     expect(card?.data?.hProperties?.['card-title']).to.equal('Cache Title');
     expect(card?.data?.hProperties?.['description']).to.equal('Cache Description');
-    expect(card?.data?.hProperties?.['image-src']).to.equal('https://cdn.example.com/card.png');
+    expect(card?.data?.hProperties?.['image-src']).to.equal('/content-assets/testing/test-card.jpg');
     expect(card?.data?.hProperties?.['site-name']).to.equal('Example');
   });
 

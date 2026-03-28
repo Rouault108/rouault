@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { readFileSync, statSync } from 'node:fs';
+import { isLocalContentAssetPath, resolveLinkCardImage } from '../media/image-resolver.js';
 
 interface MdastNodeData {
   hName?: string;
@@ -167,7 +168,7 @@ const normalizeCardImage = (value: string | undefined): string | undefined => {
     return undefined;
   }
 
-  if (trimmed.startsWith('/')) {
+  if (isLocalContentAssetPath(trimmed)) {
     return trimmed;
   }
 
@@ -318,7 +319,7 @@ const buildResolvedLinkCardProps = (
 ): Record<string, unknown> => {
   const title = source.title ?? metadata.title ?? buildFallbackTitle(href);
   const description = source.description ?? metadata.description;
-  const imageSrc = normalizeCardImage(source.image) ?? metadata.image;
+  const imageSrc = resolveLinkCardImage(normalizeCardImage(source.image) ?? metadata.image);
   const siteName = source.siteName ?? metadata.siteName ?? buildFallbackTitle(href);
 
   return {

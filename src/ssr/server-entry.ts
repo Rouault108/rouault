@@ -4,6 +4,10 @@ import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { html, unsafeStatic } from 'lit/static-html.js';
 import type { TemplateResult } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
+import {
+  parseMediaSourcesAttribute,
+  type MediaSourceDescriptor,
+} from '../../lib/media/image-resolver.js';
 import { AppRouter } from '../components/app/app-router.js';
 import { AboutPage } from '../components/about/about-page.js';
 import '../components/ui/skip-link/skip-link.js';
@@ -134,11 +138,18 @@ const parsePositiveIntegerAttribute = (value: string | undefined): number | unde
 const parseImageLoadingAttribute = (value: string | undefined): ImageLoading =>
   value === 'eager' ? 'eager' : 'lazy';
 
+const parseMediaSourcesAttributeValue = (value: string | undefined): MediaSourceDescriptor[] =>
+  parseMediaSourcesAttribute(value ?? null);
+
 const renderImageShadowElement = async (
   attributes: readonly SsrAttribute[],
   innerHtml: string,
 ): Promise<string> => {
   const src = getAttributeValue(attributes, 'src') ?? '';
+  const srcset = getAttributeValue(attributes, 'srcset');
+  const sizes = getAttributeValue(attributes, 'sizes');
+  const placeholder = getAttributeValue(attributes, 'placeholder');
+  const sources = parseMediaSourcesAttributeValue(getAttributeValue(attributes, 'sources'));
   const alt = getAttributeValue(attributes, 'alt') ?? '';
   const caption = getAttributeValue(attributes, 'caption');
   const loading = parseImageLoadingAttribute(getAttributeValue(attributes, 'loading'));
@@ -146,11 +157,21 @@ const renderImageShadowElement = async (
   const zoomable = parseBooleanLikeAttribute(getAttributeValue(attributes, 'zoomable'), true);
   const width = parsePositiveIntegerAttribute(getAttributeValue(attributes, 'width'));
   const height = parsePositiveIntegerAttribute(getAttributeValue(attributes, 'height'));
+  const lightboxSrc = getAttributeValue(attributes, 'lightbox-src');
+  const lightboxSrcset = getAttributeValue(attributes, 'lightbox-srcset');
+  const lightboxSizes = getAttributeValue(attributes, 'lightbox-sizes');
+  const lightboxSources = parseMediaSourcesAttributeValue(
+    getAttributeValue(attributes, 'lightbox-sources'),
+  );
 
   return await collectResult(
     renderThunked(html`
       <ui-image
         src=${src}
+        srcset=${ifDefined(srcset)}
+        sizes=${ifDefined(sizes)}
+        placeholder=${ifDefined(placeholder)}
+        .sources=${sources}
         alt=${alt}
         caption=${ifDefined(caption)}
         loading=${loading}
@@ -160,6 +181,10 @@ const renderImageShadowElement = async (
         .width=${width}
         height=${ifDefined(height !== undefined ? String(height) : undefined)}
         .height=${height}
+        lightbox-src=${ifDefined(lightboxSrc)}
+        lightbox-srcset=${ifDefined(lightboxSrcset)}
+        lightbox-sizes=${ifDefined(lightboxSizes)}
+        .lightboxSources=${lightboxSources}
         >${unsafeHTML(innerHtml)}</ui-image
       >
     `),

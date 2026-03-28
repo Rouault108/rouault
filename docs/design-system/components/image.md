@@ -77,11 +77,13 @@
 
 ### 公開入力
 
-`ui-image` は、`src`、`alt`、`caption`、`zoomable`、`width`、`height`、`loading` を公開入力として扱います。
+`ui-image` は、`src`、`srcset`、`sizes`、`sources`、`lightbox-src`、`lightbox-sources`、`alt`、`caption`、`zoomable`、`width`、`height`、`loading`、`placeholder` を公開入力として扱います。
 
 ただし、長期的な契約上の意味は次のように解釈します。
 
 - `src` は画像リソース参照です
+- `srcset` / `sizes` / `sources` は inline 側の picture source 群です
+- `lightbox-src` / `lightbox-sources` は expanded 側の picture source 群です
 - `alt` は画像内容の代替テキストです
 - `caption` は補助説明です
 - `zoomable` は**拡大モードを採るかどうか**です
@@ -93,12 +95,18 @@
 | 名前       | 種別                 | 必須   | 内容                     | 契約                                                                                          |
 | ---------- | -------------------- | ------ | ------------------------ | --------------------------------------------------------------------------------------------- |
 | `src`      | property / attribute | いいえ | 画像 URL                 | 空文字または空白のみは未指定として扱います                                                    |
+| `srcset`   | property / attribute | いいえ | fallback `img` の source set | 空文字は未指定として扱います                                                              |
+| `sizes`    | property / attribute | いいえ | fallback `img` の sizes      | 空文字は未指定として扱います                                                              |
+| `sources`  | property / attribute | いいえ | format 別 `<source>` 群       | JSON 文字列または property 配列で与え、`<picture>` 出力へ変換します                         |
+| `lightbox-src` | property / attribute | いいえ | expanded fallback `img` | 未指定時は `src` を再利用します                                                             |
+| `lightbox-sources` | property / attribute | いいえ | expanded `<source>` 群 | 未指定時は `sources` を再利用します                                                         |
 | `alt`      | property / attribute | いいえ | 代替テキスト             | 意味のある画像では必須です。装飾画像のみ空文字を許可します                                    |
 | `caption`  | property / attribute | いいえ | 補助説明                 | 空文字または空白のみの場合は `figcaption` を描画しません                                      |
 | `zoomable` | property / attribute | いいえ | 拡大モード採用可否       | `true` は拡大モード、`false` は静的モードです。開閉可能性そのものは表しません                 |
 | `width`    | property / attribute | いいえ | intrinsic 幅ヒント       | `height` と組で有効な場合のみアスペクト比固定に使います。表示ピクセル寸法の強制ではありません |
 | `height`   | property / attribute | いいえ | intrinsic 高さヒント     | `width` と組で有効な場合のみアスペクト比固定に使います。表示ピクセル寸法の強制ではありません  |
 | `loading`  | property / attribute | いいえ | サムネイル読み込み優先度 | `lazy` / `eager`。列挙外値は `lazy` にフォールバックします                                    |
+| `placeholder` | property / attribute | いいえ | 読み込み前プレースホルダー | 現行は dominant color 文字列を受け取ります                                                   |
 
 ### `zoomable` 契約
 

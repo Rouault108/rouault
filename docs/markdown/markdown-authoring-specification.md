@@ -499,8 +499,11 @@ link-card 解決後の主要属性は少なくとも次を持つものとしま�
 
 ### 8.2 規則
 
+- 本文画像の `src` は `content/_assets/...` のローカル source path のみ許可します。
+- frontmatter `cover` も `content/_assets/...` のローカル source path のみ許可します。
 - キャプションは標準 Markdown の title 文字列を使います。
 - `zoomable` は authoring 層では `true` / `false` 文字列で受け取り、後段で `ui-image` の入力へ正規化します。
+- `loading` の既定値は `lazy` とし、`eager` は本文先頭の LCP 候補 1 枚に限定します。
 - 未対応属性はエラーとします。
 
 ---

@@ -1,4 +1,4 @@
-import { expect } from '@open-wc/testing';
+import { describe, expect, it } from 'vitest';
 import { rehypeRouaultComponents } from '../../lib/rehype/rouault-components.js';
 
 interface HastNode {
@@ -245,7 +245,7 @@ describe('rehypeRouaultComponents', () => {
           type: 'element',
           tagName: 'img',
           properties: {
-            src: '/assets/images/sample.jpg',
+            src: 'content/_assets/testing/test-hero.jpg',
             alt: 'sample',
             title: 'タイトル',
             loading: 'eager',
@@ -262,7 +262,7 @@ describe('rehypeRouaultComponents', () => {
             {
               type: 'element',
               tagName: 'img',
-              properties: { src: '/assets/images/figure.jpg', alt: 'figure' },
+              properties: { src: 'content/_assets/testing/test-card.jpg', alt: 'figure' },
               children: [],
             },
             {
@@ -282,11 +282,44 @@ describe('rehypeRouaultComponents', () => {
     expect(first?.tagName).to.equal('ui-image');
     expect(first?.properties?.['caption']).to.equal('タイトル');
     expect(first?.properties?.['zoomable']).to.equal('false');
-    expect(first?.properties?.['width']).to.equal(800);
-    expect(first?.properties?.['height']).to.equal(600);
+    expect(first?.properties?.['src']).to.equal('/content-assets/testing/test-hero.jpg');
+    expect(first?.properties?.['lightbox-src']).to.equal('/content-assets/testing/test-hero.jpg');
+    expect(first?.properties?.['sources']).to.equal(undefined);
     expect(second?.tagName).to.equal('ui-image');
-    expect(second?.properties?.['src']).to.equal('/assets/images/figure.jpg');
+    expect(second?.properties?.['src']).to.equal('/content-assets/testing/test-card.jpg');
     expect(second?.properties?.['caption']).to.equal('図の説明');
+  });
+
+  it('2枚目以降の eager 本文画像はエラーにすること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'img',
+          properties: {
+            src: 'content/_assets/testing/test-hero.jpg',
+            alt: 'one',
+            loading: 'eager',
+          },
+          children: [],
+        },
+        {
+          type: 'element',
+          tagName: 'img',
+          properties: {
+            src: 'content/_assets/testing/test-card.jpg',
+            alt: 'two',
+            loading: 'eager',
+          },
+          children: [],
+        },
+      ],
+    };
+
+    const run = () => rehypeRouaultComponents()(tree, { path: 'content/testing/test.md' });
+
+    expect(run).to.throw('[markdown] content/testing/test.md: 本文画像で loading="eager" を許可できるのは LCP 候補 1 枚だけです');
   });
 
   it('GFM脚注を ui-footnote へ変換し、backref を正規化すること', () => {

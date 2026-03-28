@@ -171,8 +171,10 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 規則:
 
 - `img` は `ui-image` に正規化しなければなりません。
-- `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化しなければなりません。
+- source path は manifest resolver を経由し、reader-facing HTML には remote 原本 URL を残してはなりません。
+- `src` / `srcset` / `sizes` / `sources` / `lightbox-src` / `lightbox-sources` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` / `placeholder` を正規化しなければなりません。
 - `zoomable=false` は静的モードとして引き継がなければなりません。
+- 最終出力は `<picture>` 相当の意味論へ収束しなければなりません。
 - `figure(img + figcaption)` は `figcaption` を `caption` に統合して `ui-image` へ収束させなければなりません。
 
 ### 5.9 本文リンク → 注釈付き `a`

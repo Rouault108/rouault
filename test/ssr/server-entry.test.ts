@@ -29,6 +29,30 @@ describe('server-entry', () => {
     expect(rendered).toContain('https://example.com/article');
   });
 
+  it('ui-image を picture 契約で SSR 描画できること', async () => {
+    const rendered = await renderCustomElement(
+      'ui-image',
+      [
+        { name: 'src', value: '/media/hash/reading.jpg' },
+        { name: 'sources', value: '[{"type":"image/avif","srcset":"/media/hash/reading.avif"}]' },
+        { name: 'lightbox-src', value: '/media/hash/full.jpg' },
+        {
+          name: 'lightbox-sources',
+          value: '[{"type":"image/avif","srcset":"/media/hash/full.avif"}]',
+        },
+        { name: 'alt', value: 'SSR Image' },
+        { name: 'caption', value: 'caption' },
+      ],
+      '',
+    );
+
+    expect(rendered).toContain('shadowrootmode="open"');
+    expect(rendered).toContain('<picture>');
+    expect(rendered).toContain('/media/hash/reading.avif');
+    expect(rendered).toContain('/media/hash/full.avif');
+    expect(rendered).toContain('SSR Image');
+  });
+
   it('not-found-page を SSR 描画できること', async () => {
     const rendered = await renderCustomElement(
       'not-found-page',

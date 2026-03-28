@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { extractTocFromHtml, type TocHeading } from '../../lib/content/extract-toc-from-html.js';
+import { resolveCoverAsset, type ResolvedImageAsset } from '../../lib/media/image-resolver.js';
 import { isIconName, type IconName } from '../icons/catalog.js';
 import type { NoteStatus } from '../types/article-status.js';
 
@@ -48,6 +49,7 @@ export interface NoteCollectionItem extends SourceNote {
   sidebarRoot?: string;
   sidebarResolvedIcon?: IconName;
   sidebarDirectoryIcons?: Record<string, IconName>;
+  resolvedCover?: ResolvedImageAsset;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -329,6 +331,9 @@ export const buildNotesCollection = (
         ...(sidebarResolvedIcon !== undefined ? { sidebarResolvedIcon } : {}),
         ...(Object.keys(sidebarIconContext.directoryIcons).length > 0
           ? { sidebarDirectoryIcons: sidebarIconContext.directoryIcons }
+          : {}),
+        ...(typeof note['cover'] === 'string' && note['cover'].trim().length > 0
+          ? { resolvedCover: resolveCoverAsset(note['cover']) }
           : {}),
       };
     });

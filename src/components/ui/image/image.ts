@@ -1,6 +1,11 @@
 import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
+import {
+  parseMediaSourcesAttribute,
+  serializeMediaSources,
+  type MediaSourceDescriptor,
+} from '../../../../lib/media/image-resolver.js';
 import '../icon/icon.js';
 
 export type ImageLoading = 'lazy' | 'eager';
@@ -25,6 +30,12 @@ const zoomableAttributeConverter = {
     return !FALSE_BOOLEAN_ATTRIBUTE_VALUES.has(value.trim().toLowerCase());
   },
   toAttribute: (value: boolean): string | null => (value ? '' : null),
+};
+
+const mediaSourcesAttributeConverter = {
+  fromAttribute: (value: string | null): MediaSourceDescriptor[] => parseMediaSourcesAttribute(value),
+  toAttribute: (value: MediaSourceDescriptor[]): string | null =>
+    value.length > 0 ? serializeMediaSources(value) : null,
 };
 
 let imageUid = 0;
@@ -81,6 +92,12 @@ export class UiImage extends LitElement {
 
     .media-shell > * {
       grid-area: 1 / 1;
+    }
+
+    picture {
+      display: block;
+      width: 100%;
+      height: 100%;
     }
 
     .placeholder {
@@ -280,6 +297,18 @@ export class UiImage extends LitElement {
   src = '';
 
   @property({ type: String })
+  srcset = '';
+
+  @property({ type: String })
+  sizes = '';
+
+  @property({ type: String })
+  placeholder = '';
+
+  @property({ attribute: 'sources', converter: mediaSourcesAttributeConverter })
+  sources: MediaSourceDescriptor[] = [];
+
+  @property({ type: String })
   alt = '';
 
   @property({ type: String })
@@ -296,6 +325,18 @@ export class UiImage extends LitElement {
 
   @property({ type: String, reflect: true })
   loading: ImageLoading = 'lazy';
+
+  @property({ type: String, attribute: 'lightbox-src' })
+  lightboxSrc = '';
+
+  @property({ type: String, attribute: 'lightbox-srcset' })
+  lightboxSrcset = '';
+
+  @property({ type: String, attribute: 'lightbox-sizes' })
+  lightboxSizes = '';
+
+  @property({ attribute: 'lightbox-sources', converter: mediaSourcesAttributeConverter })
+  lightboxSources: MediaSourceDescriptor[] = [];
 
   @state()
   private _isLoaded = false;
@@ -396,6 +437,22 @@ export class UiImage extends LitElement {
     return this.src.trim();
   }
 
+  private get _resolvedSrcset(): string {
+    return this.srcset.trim();
+  }
+
+  private get _resolvedSizes(): string {
+    return this.sizes.trim();
+  }
+
+  private get _resolvedPlaceholder(): string {
+    return this.placeholder.trim();
+  }
+
+  private get _resolvedSources(): MediaSourceDescriptor[] {
+    return this.sources.filter((entry) => entry.type.trim().length > 0 && entry.srcset.trim().length > 0);
+  }
+
   private get _resolvedCaption(): string {
     return this.caption.trim();
   }
@@ -406,6 +463,27 @@ export class UiImage extends LitElement {
 
   private get _resolvedLoading(): ImageLoading {
     return VALID_LOADING.has(this.loading) ? this.loading : 'lazy';
+  }
+
+  private get _resolvedLightboxSrc(): string {
+    return this.lightboxSrc.trim() || this._resolvedSrc;
+  }
+
+  private get _resolvedLightboxSrcset(): string {
+    return this.lightboxSrcset.trim();
+  }
+
+  private get _resolvedLightboxSizes(): string {
+    return this.lightboxSizes.trim();
+  }
+
+  private get _resolvedLightboxSources(): MediaSourceDescriptor[] {
+    if (this.lightboxSources.length > 0) {
+      return this.lightboxSources.filter(
+        (entry) => entry.type.trim().length > 0 && entry.srcset.trim().length > 0,
+      );
+    }
+    return this._resolvedSources;
   }
 
   private get _resolvedWidth(): number | null {
@@ -451,15 +529,21 @@ export class UiImage extends LitElement {
   }
 
   private get _surfaceStyle(): string | undefined {
+    const declarations: string[] = [];
+
     if (this._hasAspectRatio) {
-      return `aspect-ratio: ${String(this._resolvedWidth)} / ${String(this._resolvedHeight)};`;
+      declarations.push(`aspect-ratio: ${String(this._resolvedWidth)} / ${String(this._resolvedHeight)};`);
     }
 
     if (this._isBusy || this._isErrorState || this._isEmptyState) {
-      return 'min-height: calc(var(--space-20, 5rem) * 2);';
+      declarations.push('min-height: calc(var(--space-20, 5rem) * 2);');
     }
 
-    return undefined;
+    if (this._resolvedPlaceholder !== '') {
+      declarations.push(`background: ${this._resolvedPlaceholder};`);
+    }
+
+    return declarations.length > 0 ? declarations.join(' ') : undefined;
   }
 
   private _normalizeDimension(value: number | undefined): number | null {
@@ -596,23 +680,62 @@ export class UiImage extends LitElement {
     }
   };
 
-  private _renderThumbnailImage(describedBy: string | undefined): TemplateResult {
+  private _renderPicture(
+    imageClassName: string,
+    src: string,
+    alt: string,
+    describedBy: string | undefined,
+    loading: ImageLoading,
+    srcset: string,
+    sizes: string,
+    sources: readonly MediaSourceDescriptor[],
+    onLoad?: () => void,
+    onError?: () => void,
+  ): TemplateResult {
     return html`
-      <img
-        class="thumbnail-image ${this._isLoaded ? 'is-loaded' : ''}"
-        src="${this._resolvedSrc}"
-        alt="${this.alt}"
-        aria-describedby="${ifDefined(describedBy)}"
-        loading="${this._resolvedLoading}"
-        decoding="async"
-        width="${ifDefined(this._resolvedWidth !== null ? String(this._resolvedWidth) : undefined)}"
-        height="${ifDefined(
-          this._resolvedHeight !== null ? String(this._resolvedHeight) : undefined,
-        )}"
-        @load="${this._onThumbnailLoad}"
-        @error="${this._onThumbnailError}"
-      />
+      <picture>
+        ${sources.map(
+          (source) => html`
+            <source
+              type="${source.type}"
+              srcset="${source.srcset}"
+              sizes="${ifDefined(source.sizes)}"
+            />
+          `,
+        )}
+        <img
+          class="${imageClassName}"
+          src="${src}"
+          srcset="${ifDefined(srcset !== '' ? srcset : undefined)}"
+          sizes="${ifDefined(sizes !== '' ? sizes : undefined)}"
+          alt="${alt}"
+          aria-describedby="${ifDefined(describedBy)}"
+          loading="${loading}"
+          decoding="async"
+          width="${ifDefined(this._resolvedWidth !== null ? String(this._resolvedWidth) : undefined)}"
+          height="${ifDefined(
+            this._resolvedHeight !== null ? String(this._resolvedHeight) : undefined,
+          )}"
+          @load="${onLoad}"
+          @error="${onError}"
+        />
+      </picture>
     `;
+  }
+
+  private _renderThumbnailImage(describedBy: string | undefined): TemplateResult {
+    return this._renderPicture(
+      `thumbnail-image ${this._isLoaded ? 'is-loaded' : ''}`,
+      this._resolvedSrc,
+      this.alt,
+      describedBy,
+      this._resolvedLoading,
+      this._resolvedSrcset,
+      this._resolvedSizes,
+      this._resolvedSources,
+      this._onThumbnailLoad,
+      this._onThumbnailError,
+    );
   }
 
   private _renderEmptyFallback(): TemplateResult {
@@ -676,15 +799,18 @@ export class UiImage extends LitElement {
             <ui-icon name="x" aria-hidden="true"></ui-icon>
           </button>
           ${this._resolvedSrc !== '' && !this._isErrorState
-            ? html`
-                <img
-                  class="lightbox-image"
-                  src="${this._resolvedSrc}"
-                  alt="${this.alt}"
-                  loading="eager"
-                  decoding="sync"
-                />
-              `
+            ? this._renderPicture(
+                'lightbox-image',
+                this._resolvedLightboxSrc,
+                this.alt,
+                this._captionRef,
+                'eager',
+                this._resolvedLightboxSrcset,
+                this._resolvedLightboxSizes,
+                this._resolvedLightboxSources,
+                undefined,
+                undefined,
+              )
             : nothing}
         </div>
       </div>

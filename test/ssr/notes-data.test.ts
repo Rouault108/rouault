@@ -64,6 +64,27 @@ describe('buildNotesCollection', () => {
     expect(collection[1]?.tocHeadings).toEqual([{ id: 'heading-a', text: '見出しA', level: 2 }]);
   });
 
+  it('cover を resolver 済み metadata として保持する', async () => {
+    const contentRoot = await createContentRoot();
+    await mkdir(path.join(contentRoot, '_assets', 'testing'), { recursive: true });
+    await writeFile(path.join(contentRoot, '_assets', 'testing', 'cover.jpg'), 'fixture', 'utf8');
+
+    const collection = buildNotesCollection(
+      [
+        {
+          slug: 'category/section-a/item-alpha',
+          title: '項目アルファ',
+          cover: 'content/_assets/testing/cover.jpg',
+          content: '<h2 id="heading-b">見出しB</h2>',
+        },
+      ],
+      contentRoot,
+    );
+
+    expect(collection[0]?.resolvedCover?.sourcePath).toBe('content/_assets/testing/cover.jpg');
+    expect(collection[0]?.resolvedCover?.inline.src).toBe('/content-assets/testing/cover.jpg');
+  });
+
   it('sidebar.scope を最も近い祖先から解決する', async () => {
     const contentRoot = await createContentRoot();
     await mkdir(path.join(contentRoot, 'category', 'section-a', 'item-alpha'), { recursive: true });

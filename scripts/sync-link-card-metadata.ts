@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { parse } from 'parse5';
@@ -34,12 +35,19 @@ interface OEmbedPayload {
   readonly provider_name?: string;
 }
 
+interface ThumbnailCacheEntry {
+  readonly sourcePath: string;
+}
+
 const CONTENT_ROOT = path.resolve(process.cwd(), 'content');
 const OUTPUT_FILE = path.resolve(CONTENT_ROOT, '_generated', 'link-card-metadata.json');
+const THUMBNAIL_OUTPUT_FILE = path.resolve(CONTENT_ROOT, '_generated', 'link-card-thumbnails.json');
+const THUMBNAIL_ASSET_ROOT = path.resolve(CONTENT_ROOT, '_assets', 'link-card', 'remote');
 const HTTP_PROTOCOLS = new Set(['http:', 'https:']);
 const USER_AGENT = 'RouaultLinkCardSync/1.0';
 const REQUEST_TIMEOUT_MS = 8000;
 const CONCURRENCY = 4;
+const IMAGE_ACCEPT_HEADER = 'image/avif,image/webp,image/jpeg,image/png,image/*;q=0.8,*/*;q=0.5';
 
 const normalizeWhitespace = (value: string): string => value.replace(/\s+/g, ' ').trim();
 
@@ -265,6 +273,50 @@ const fetchJsonWithTimeout = async (url: string, timeoutMs: number): Promise<unk
   }
 };
 
+const extensionFromContentType = (contentType: string | null): string => {
+  const normalized = (contentType ?? '').toLowerCase();
+  if (normalized.includes('image/avif')) return 'avif';
+  if (normalized.includes('image/webp')) return 'webp';
+  if (normalized.includes('image/png')) return 'png';
+  if (normalized.includes('image/gif')) return 'gif';
+  return 'jpg';
+};
+
+const downloadThumbnailSource = async (url: string): Promise<ThumbnailCacheEntry> => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, {
+      redirect: 'follow',
+      signal: controller.signal,
+      headers: {
+        'user-agent': USER_AGENT,
+        accept: IMAGE_ACCEPT_HEADER,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`thumbnail HTTP ${String(response.status)}`);
+    }
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    const hash = createHash('sha256').update(buffer).digest('hex').slice(0, 12);
+    const extension = extensionFromContentType(response.headers.get('content-type'));
+    const sourcePath = path.posix.join('content/_assets/link-card/remote', `${hash}.${extension}`);
+    const outputPath = path.join(THUMBNAIL_ASSET_ROOT, `${hash}.${extension}`);
+
+    await mkdir(THUMBNAIL_ASSET_ROOT, { recursive: true });
+    await writeFile(outputPath, buffer);
+
+    return { sourcePath };
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
 const fetchMetadata = async (
   url: string,
 ): Promise<{ finalUrl: string; metadata: MetadataEntry }> => {
@@ -348,6 +400,7 @@ const main = async (): Promise<void> => {
   }
 
   const entries: Record<string, MetadataEntry> = {};
+  const thumbnailEntries: Record<string, ThumbnailCacheEntry> = {};
   const sortedUrls = [...urls].sort((a, b) => a.localeCompare(b));
 
   await runPool(sortedUrls, CONCURRENCY, async (url) => {
@@ -365,6 +418,16 @@ const main = async (): Promise<void> => {
       if (finalKey && finalKey !== url) {
         entries[finalKey] = metadata;
       }
+
+      if (metadata.image) {
+        try {
+          thumbnailEntries[metadata.image] = await downloadThumbnailSource(metadata.image);
+        } catch (thumbnailError) {
+          const thumbnailMessage =
+            thumbnailError instanceof Error ? thumbnailError.message : 'unknown error';
+          process.stderr.write(`warn: thumbnail ${metadata.image}: ${thumbnailMessage}\n`);
+        }
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'unknown error';
       process.stderr.write(`warn: ${url}: ${message}\n`);
@@ -381,8 +444,24 @@ const main = async (): Promise<void> => {
 
   await mkdir(path.dirname(OUTPUT_FILE), { recursive: true });
   await writeFile(OUTPUT_FILE, `${JSON.stringify(output, null, 2)}\n`, 'utf8');
+  await writeFile(
+    THUMBNAIL_OUTPUT_FILE,
+    `${JSON.stringify(
+      {
+        version: 1,
+        generatedAt: new Date().toISOString(),
+        entries: Object.fromEntries(
+          Object.entries(thumbnailEntries).sort(([left], [right]) => left.localeCompare(right)),
+        ),
+      },
+      null,
+      2,
+    )}\n`,
+    'utf8',
+  );
 
   process.stdout.write(`wrote ${OUTPUT_FILE}\n`);
+  process.stdout.write(`wrote ${THUMBNAIL_OUTPUT_FILE}\n`);
 };
 
 void main().catch((error: unknown) => {

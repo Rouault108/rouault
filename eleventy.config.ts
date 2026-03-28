@@ -38,6 +38,12 @@ const registerDevelopmentStaticDirectories = (server: ViteDevServer): void => {
   server.middlewares.use(
     createStaticDirectoryMiddleware('/pagefind/', path.resolve(process.cwd(), 'dist', 'pagefind')),
   );
+  server.middlewares.use(
+    createStaticDirectoryMiddleware('/media/', path.resolve(process.cwd(), '.generated', 'media', 'assets')),
+  );
+  server.middlewares.use(
+    createStaticDirectoryMiddleware('/content-assets/', path.resolve(process.cwd(), 'content', '_assets')),
+  );
 };
 
 const registerSearchCatalogMiddleware = (server: ViteDevServer): void => {
@@ -78,6 +84,7 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
   });
 
   eleventyConfig.addPassthroughCopy({ 'src/assets': 'assets' });
+  eleventyConfig.addPassthroughCopy({ '.generated/media/assets': 'media' });
 
   if (!isServing) {
     eleventyConfig.addPassthroughCopy({ '.generated/client/assets': 'assets' });

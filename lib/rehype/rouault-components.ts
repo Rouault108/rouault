@@ -1,3 +1,8 @@
+import {
+  resolveImageAsset,
+  serializeMediaSources,
+  type ResolvedImageAsset,
+} from '../media/image-resolver.js';
 import { type HastNode } from './hast-utils.js';
 
 const CODE_BLOCK_INTENTS = new Set(['neutral', 'valid', 'invalid']);
@@ -7,6 +12,14 @@ interface FootnoteDefinition {
   readonly index: number;
   readonly contentNodes: HastNode[];
   readonly itemNode: HastNode;
+}
+
+interface VFileLike {
+  path?: string;
+}
+
+interface ImageNormalizationContext {
+  eagerImageCount: number;
 }
 
 const isElement = (node: HastNode, tagName?: string): boolean => {
@@ -365,16 +378,63 @@ const toUiHighlight = (node: HastNode): void => {
   node.properties = hostProperties;
 };
 
-const toUiImage = (node: HastNode): void => {
+const applyResolvedImageProperties = (
+  hostProperties: Record<string, unknown>,
+  resolvedAsset: ResolvedImageAsset,
+): void => {
+  hostProperties['src'] = resolvedAsset.inline.src;
+  if (resolvedAsset.inline.srcset) {
+    hostProperties['srcset'] = resolvedAsset.inline.srcset;
+  }
+  if (resolvedAsset.inline.sizes) {
+    hostProperties['sizes'] = resolvedAsset.inline.sizes;
+  }
+  if (resolvedAsset.inline.sources.length > 0) {
+    hostProperties['sources'] = serializeMediaSources(resolvedAsset.inline.sources);
+  }
+
+  hostProperties['lightbox-src'] = resolvedAsset.lightbox.src;
+  if (resolvedAsset.lightbox.srcset) {
+    hostProperties['lightbox-srcset'] = resolvedAsset.lightbox.srcset;
+  }
+  if (resolvedAsset.lightbox.sizes) {
+    hostProperties['lightbox-sizes'] = resolvedAsset.lightbox.sizes;
+  }
+  if (resolvedAsset.lightbox.sources.length > 0) {
+    hostProperties['lightbox-sources'] = serializeMediaSources(resolvedAsset.lightbox.sources);
+  }
+
+  if (typeof resolvedAsset.width === 'number') {
+    hostProperties['width'] = resolvedAsset.width;
+  }
+  if (typeof resolvedAsset.height === 'number') {
+    hostProperties['height'] = resolvedAsset.height;
+  }
+  if (resolvedAsset.placeholder) {
+    hostProperties['placeholder'] = resolvedAsset.placeholder;
+  }
+};
+
+const toUiImage = (
+  node: HastNode,
+  context: ImageNormalizationContext,
+  file?: VFileLike,
+): void => {
   if (!isElement(node, 'img')) {
     return;
   }
 
   const originalProperties = node.properties ?? {};
   const hostProperties: Record<string, unknown> = {};
-  const src = pickOptionalString(originalProperties['src']);
-  if (src) {
-    hostProperties['src'] = src;
+  const sourcePath = pickOptionalString(originalProperties['src']);
+  if (sourcePath) {
+    const resolvedAsset = resolveImageAsset(sourcePath, {
+      inlineVariant: 'reading',
+      lightboxVariant: 'full',
+      inlineSizes: '(min-width: 768px) min(100vw - 4rem, 1200px), 100vw',
+      lightboxSizes: '100vw',
+    });
+    applyResolvedImageProperties(hostProperties, resolvedAsset);
   }
 
   if (typeof originalProperties['alt'] === 'string') {
@@ -390,6 +450,15 @@ const toUiImage = (node: HastNode): void => {
 
   const loading = pickOptionalString(originalProperties['loading'])?.toLowerCase();
   if (loading === 'lazy' || loading === 'eager') {
+    if (loading === 'eager') {
+      if (context.eagerImageCount >= 1) {
+        const sourceLabel = file?.path ? `${file.path}: ` : '';
+        throw new Error(
+          `[markdown] ${sourceLabel}本文画像で loading="eager" を許可できるのは LCP 候補 1 枚だけです`,
+        );
+      }
+      context.eagerImageCount += 1;
+    }
     hostProperties['loading'] = loading;
   }
 
@@ -399,21 +468,16 @@ const toUiImage = (node: HastNode): void => {
       : 'false';
   }
 
-  const width = toPositiveInteger(originalProperties['width']);
-  if (width !== null) {
-    hostProperties['width'] = width;
-  }
-  const height = toPositiveInteger(originalProperties['height']);
-  if (height !== null) {
-    hostProperties['height'] = height;
-  }
-
   node.tagName = 'ui-image';
   node.properties = hostProperties;
   node.children = [];
 };
 
-const toUiFigureImage = (node: HastNode): void => {
+const toUiFigureImage = (
+  node: HastNode,
+  context: ImageNormalizationContext,
+  file?: VFileLike,
+): void => {
   if (!isElement(node, 'figure') || !Array.isArray(node.children)) {
     return;
   }
@@ -444,7 +508,7 @@ const toUiFigureImage = (node: HastNode): void => {
   }
 
   if (isElement(imageNode, 'img')) {
-    toUiImage(imageNode);
+    toUiImage(imageNode, context, file);
   }
   if (!isElement(imageNode, 'ui-image')) {
     return;
@@ -769,12 +833,13 @@ const toUiFootnoteReference = (
  * CommonMark由来の標準要素を Rouault の Web Components へ正規化する。
  */
 export function rehypeRouaultComponents() {
-  return (tree: unknown) => {
+  return (tree: unknown, file?: VFileLike) => {
     const footnoteDefinitions = new Map<string, FootnoteDefinition>();
     if (tree && typeof tree === 'object') {
       collectFootnoteDefinitions(tree as HastNode, footnoteDefinitions);
     }
     const footnoteRefCounters = new Map<string, number>();
+    const imageContext: ImageNormalizationContext = { eagerImageCount: 0 };
 
     const visit = (node: unknown): void => {
       if (!node || typeof node !== 'object') {
@@ -807,12 +872,12 @@ export function rehypeRouaultComponents() {
       }
 
       if (current.tagName === 'figure') {
-        toUiFigureImage(current);
+        toUiFigureImage(current, imageContext, file);
         return;
       }
 
       if (current.tagName === 'img') {
-        toUiImage(current);
+        toUiImage(current, imageContext, file);
         return;
       }
 

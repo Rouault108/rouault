@@ -1006,7 +1006,7 @@ describe('remarkRouaultDirectives', () => {
           children: [
             {
               type: 'image',
-              url: '/assets/images/sample.jpg',
+              url: 'content/_assets/testing/test-hero.jpg',
               alt: 'sample',
               title: 'キャプション',
             },
@@ -1186,7 +1186,7 @@ describe('remarkRouaultDirectives', () => {
           children: [
             {
               type: 'image',
-              url: '/assets/images/sample.jpg',
+              url: 'content/_assets/testing/test-hero.jpg',
               alt: 'sample',
             },
             {
@@ -1255,7 +1255,7 @@ describe('remarkRouaultDirectives', () => {
           children: [
             {
               type: 'image',
-              url: '/assets/images/sample.jpg',
+              url: 'content/_assets/testing/test-hero.jpg',
               alt: 'sample',
             },
             {
@@ -1283,7 +1283,7 @@ describe('remarkRouaultDirectives', () => {
           children: [
             {
               type: 'image',
-              url: '/assets/images/sample.jpg',
+              url: 'content/_assets/testing/test-hero.jpg',
               alt: 'sample',
               title: '標準キャプション',
             },
