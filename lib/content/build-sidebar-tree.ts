@@ -1,5 +1,10 @@
 import type { TreeNode } from '../../src/components/ui/file-tree/file-tree.js';
 import type { IconName } from '../../src/icons/catalog.js';
+import {
+  buildDirectoryLabelMap,
+  resolveDirectoryLabel,
+  resolveNoteLabel,
+} from './navigation-labels.js';
 
 export interface SidebarSourceNote {
   rawSlug?: string;
@@ -19,12 +24,6 @@ interface SidebarBranchNode {
   icon?: IconName;
   children: TreeNode[];
 }
-
-const normalizeSegmentLabel = (segment: string): string =>
-  segment
-    .replace(/[-_]+/g, ' ')
-    .trim()
-    .replace(/\b\p{Letter}/gu, (value) => value.toUpperCase());
 
 const getDirectoryIndexNodeId = (directoryPath: string): string => `${directoryPath}/__index__`;
 
@@ -122,6 +121,7 @@ export const buildSidebarTree = (
   rootSlug = '',
 ): TreeNode[] => {
   const roots: TreeNode[] = [];
+  const directoryLabelMap = buildDirectoryLabelMap(notes);
 
   for (const note of notes) {
     if (typeof note.slug !== 'string' || note.slug.trim().length === 0) {
@@ -132,10 +132,7 @@ export const buildSidebarTree = (
     }
 
     const slug = note.slug.trim();
-    const candidateTitle =
-      typeof note.title === 'string' && note.title.trim().length > 0
-        ? note.title.trim()
-        : normalizeSegmentLabel(slug.split('/').pop() ?? slug);
+    const candidateTitle = resolveNoteLabel(note, directoryLabelMap);
 
     if (note.noteKind === 'directory-index') {
       const directoryPath =
@@ -156,7 +153,7 @@ export const buildSidebarTree = (
         const node = ensureDirectoryNode(
           currentChildren,
           currentPath,
-          normalizeSegmentLabel(segment),
+          resolveDirectoryLabel(currentPath, directoryLabelMap),
           directoryIcon,
         );
 
@@ -164,15 +161,10 @@ export const buildSidebarTree = (
         parentPath = currentPath;
       }
 
-      const lastSegment = segments[segments.length - 1];
-      if (!lastSegment) {
-        continue;
-      }
-
       upsertLeafNode(
         currentChildren,
         getDirectoryIndexNodeId(directoryPath),
-        normalizeSegmentLabel(lastSegment),
+        resolveDirectoryLabel(directoryPath, directoryLabelMap),
         note.permalink.trim(),
         note.sidebarResolvedIcon,
       );
@@ -200,7 +192,7 @@ export const buildSidebarTree = (
         const node = ensureDirectoryNode(
           currentChildren,
           currentPath,
-          normalizeSegmentLabel(segment),
+          resolveDirectoryLabel(currentPath, directoryLabelMap),
           directoryIcon,
         );
         currentChildren = node.children;

@@ -1,3 +1,9 @@
+import {
+  buildDirectoryLabelMap,
+  normalizeSegmentLabel,
+  resolveDirectoryLabel,
+} from './navigation-labels.js';
+
 export interface BreadcrumbSourceNote {
   slug?: string;
   title?: string;
@@ -10,25 +16,6 @@ export interface BreadcrumbItem {
   label: string;
   href?: string;
 }
-
-const normalizeSegmentLabel = (segment: string): string =>
-  segment
-    .replace(/[-_]+/g, ' ')
-    .trim()
-    .replace(/\b\p{Letter}/gu, (value) => value.toUpperCase());
-
-const getDirectoryLabel = (directoryPath: string): string => {
-  const segment = directoryPath.split('/').pop() ?? directoryPath;
-  return normalizeSegmentLabel(segment);
-};
-
-const resolveDirectoryLabel = (entry: BreadcrumbSourceNote, directoryPath: string): string => {
-  if (typeof entry.title === 'string' && entry.title.trim().length > 0) {
-    return entry.title.trim();
-  }
-
-  return getDirectoryLabel(directoryPath);
-};
 
 export const buildBreadcrumbs = (
   note: BreadcrumbSourceNote | null | undefined,
@@ -43,6 +30,10 @@ export const buildBreadcrumbs = (
   if (segments.length === 0) {
     return [];
   }
+
+  const directoryLabelMap = buildDirectoryLabelMap(
+    note.noteKind === 'directory-index' ? [...notes, note] : notes,
+  );
 
   const directoryIndexMap = new Map<string, { label: string; href?: string }>();
 
@@ -68,7 +59,7 @@ export const buildBreadcrumbs = (
         : undefined;
 
     directoryIndexMap.set(directoryPath, {
-      label: resolveDirectoryLabel(entry, directoryPath),
+      label: resolveDirectoryLabel(directoryPath, directoryLabelMap),
       ...(href !== undefined ? { href } : {}),
     });
   }
@@ -85,14 +76,19 @@ export const buildBreadcrumbs = (
     const isLast = index === segments.length - 1;
 
     if (isLast) {
-      const label =
-        note.noteKind === 'directory-index'
-          ? getDirectoryLabel(currentPath)
-          : typeof note.title === 'string' && note.title.trim().length > 0
-            ? note.title.trim()
-            : (directoryIndexMap.get(currentPath)?.label ?? normalizeSegmentLabel(segment));
+      if (note.noteKind === 'directory-index') {
+        breadcrumbs.push({
+          label: resolveDirectoryLabel(currentPath, directoryLabelMap),
+        });
+        continue;
+      }
 
-      breadcrumbs.push({ label });
+      const title =
+        typeof note.title === 'string' && note.title.trim().length > 0
+          ? note.title.trim()
+          : normalizeSegmentLabel(segment);
+
+      breadcrumbs.push({ label: title });
       continue;
     }
 

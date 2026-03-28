@@ -1,5 +1,6 @@
 import { expect } from '@open-wc/testing';
 import { buildSidebarTree } from '../../lib/content/build-sidebar-tree.js';
+import { buildBreadcrumbs } from 'lib/content/build-breadcrumbs.js';
 
 interface SidebarTreeNode {
   id: string;
@@ -172,11 +173,11 @@ describe('buildSidebarTree', () => {
     const indexNode = findNode(tree as SidebarTreeNode[], 'music/__index__');
 
     expect(root).to.not.equal(null);
-    expect(root?.label).to.equal('Music');
+    expect(root?.label).to.equal('音楽');
     expect(root?.href).to.equal(undefined);
 
     expect(indexNode).to.not.equal(null);
-    expect(indexNode?.label).to.equal('Music');
+    expect(indexNode?.label).to.equal('音楽');
     expect(indexNode?.href).to.equal('/notes/music');
 
     expect(findNode(tree as SidebarTreeNode[], 'music/classical/mozart')).to.not.equal(null);
@@ -203,5 +204,22 @@ describe('buildSidebarTree', () => {
     expect(tree).to.have.length(1);
     expect(tree[0]?.id).to.equal('music');
     expect(findNode(tree as SidebarTreeNode[], 'music/__index__')).to.not.equal(null);
+  });
+  it('current note が directory-index の場合も breadcrumb 最終 crumb は note.title を使うこと', () => {
+    const breadcrumbs = buildBreadcrumbs(
+      {
+        slug: 'music',
+        title: '音楽',
+        permalink: '/notes/music',
+        noteKind: 'directory-index',
+        directoryPath: 'music',
+      },
+      [],
+    );
+
+    expect(breadcrumbs).to.deep.equal([
+      { label: 'Notes', href: '/' },
+      { label: '音楽' },
+    ]);
   });
 });
