@@ -14,6 +14,7 @@
 
 - 見出し ID の補完規則
 - 標準 HTML から Rouault コンポーネントへの正規化規則
+- 本文リンクの出力属性注釈契約
 - footnote の出力契約
 - preview-sandbox の出力契約
 - インラインコードと順序付きリストに対する補助契約
@@ -28,6 +29,7 @@
 対象:
 
 - 見出し要素
+- 本文リンク (`a[href]` ただし `.heading-anchor` を除く)
 - `pre > code`
 - `blockquote`
 - `table`
@@ -105,6 +107,7 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 | `mark` | `ui-highlight` | `current-match` / `data-current-match` を正規入力とし、旧属性を互換吸収する |
 | `img` | `ui-image` | `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化する |
 | `figure(img + figcaption)` | `ui-image` | `figcaption` を `caption` に統合する |
+| `a[href]`（本文リンク） | `a[data-link-kind][data-link-surface="prose"]` | `href` から種別注釈を付与し、外部系では `data-external="true"` を付与する。`.heading-anchor` は対象外とする |
 | footnote 参照 / 定義 | `ui-footnote` + `section[role=doc-endnotes]` | 参照 ID、backref、接頭辞、backlink を正規化する |
 
 ### 5.2 `pre > code` → `ui-code-block`
@@ -171,6 +174,35 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 - `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化しなければなりません。
 - `zoomable=false` は静的モードとして引き継がなければなりません。
 - `figure(img + figcaption)` は `figcaption` を `caption` に統合して `ui-image` へ収束させなければなりません。
+
+### 5.9 本文リンク → 注釈付き `a`
+
+規則:
+
+- 対象は本文リンク `a[href]` とし、`.heading-anchor` は本契約の対象外とします。
+- build-time で `href` を分類し、`data-link-kind` を付与しなければなりません。
+- build-time で `data-link-surface="prose"` を付与しなければなりません。
+- `data-link-kind` が `external-web` または `external-action` の場合、`data-external="true"` を付与しなければなりません。
+- `data-link-kind` の分類値は次に限定します。
+  - `internal-document`
+  - `internal-fragment`
+  - `external-web`
+  - `external-action`
+  - `unsafe`
+
+分類規則:
+
+- `#...` のみから成る参照は `internal-fragment` としなければなりません。
+- scheme を持たない相対 URL またはルート相対 URL は `internal-document` としなければなりません。
+- `http:` または `https:` を持つ URL は `external-web` としなければなりません。
+- `mailto:` または `tel:` を持つ URL は `external-action` としなければなりません。
+- 危険な scheme は `unsafe` として扱わなければなりません。
+
+補足規則:
+
+- 本契約は Markdown 出力 DOM に対する注釈契約であり、router による内部遷移判定そのものを再定義してはなりません。
+- 同一 origin の絶対 URL を内部遷移として扱うかどうかは `docs/router-specification.md` が所有します。
+- `unsafe` は最終許容出力ではありません。安全規約に従い、build-time で拒否または除去されなければなりません。
 
 ---
 
@@ -290,6 +322,12 @@ footnote は、本文側の `ui-footnote` と endnotes 側の `section[role=doc-
 
 `preview-sandbox` の生成物は、author input と compiler-generated output の境界を破ってはなりません。
 
+### 10.5 本文リンクの正規注釈
+
+- 本文リンクは、`.heading-anchor` を除き、`data-link-kind` と `data-link-surface="prose"` を持たなければなりません。
+- `external-web` および `external-action` と分類された本文リンクは、`data-external="true"` を持たなければなりません。
+- 危険な scheme を持つ本文リンクを、最終 HAST に許容形として残してはなりません。
+
 ---
 
 ## 11. 他文書との関係
@@ -297,11 +335,12 @@ footnote は、本文側の `ui-footnote` と endnotes 側の `section[role=doc-
 - authoring grammar は `docs/markdown-authoring-specification.md` を参照します。
 - safety policy と trust boundary の詳細は `docs/markdown-safety-and-test-policy.md` を参照します。
 - アクセシビリティ要求は `docs/accessibility.md` を参照します。
+- 内部/外部遷移の意味論、同一 origin 判定、router による click interception は `docs/router-specification.md` を参照します。
 
 ---
 
 ## 12. 改訂規則
 
 - HTML 正規化先の変更は本書を直接改訂しなければなりません。
-- component 名、出力属性名、footnote 接続規則、preview-sandbox 出力形の変更は本書の意味論変更として扱います。
+- component 名、出力属性名、本文リンク分類値、footnote 接続規則、preview-sandbox 出力形の変更は本書の意味論変更として扱います。
 - safety policy の変更だけで output contract を暗黙変更してはなりません。

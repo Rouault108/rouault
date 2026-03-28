@@ -93,15 +93,17 @@ Rouault の Markdown 変換系は、大きく次の 2 層で構成します。
 8. `rehypePreviewSandbox`
 9. `rehypeShikiCodeBlocks`
 10. `rehypeRouaultComponents`
-11. `rehypeInlineCodeTranslateNo`
-12. `rehypeOrderedListContracts`
-13. `rehypeDisallowDangerousProps`
-14. `rehypeDisallowStaticMark`
+11. `rehypeAnnotateLinkKinds`
+12. `rehypeInlineCodeTranslateNo`
+13. `rehypeOrderedListContracts`
+14. `rehypeDisallowDangerousProps`
+15. `rehypeDisallowStaticMark`
 
 規則:
 
 - authoring grammar に関わる意味論変更は、remark 層の正本と実装順序の双方を整合させなければなりません。
 - 出力 DOM に関わる意味論変更は、rehype 層の正本と実装順序の双方を整合させなければなりません。
+- 本文リンクの種別注釈は rehype 層で確定し、その詳細な出力属性契約は `docs/markdown-output-contract.md` を参照しなければなりません。
 - 安全規約は後段検査へ押し込むだけでなく、可能なものは前段で早期拒否してよいものとします。
 - 実装順序の変更は意味論変更を伴いうるため、単なるリファクタリングとして扱ってはなりません。
 
