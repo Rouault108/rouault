@@ -221,6 +221,17 @@ ${FOOTER_SCOPE_SELECTOR} .ui-footer__nav a {
   line-height: var(--line-height-relaxed);
 }
 
+${FOOTER_SCOPE_SELECTOR} .ui-footer__nav a[data-external='true']::after {
+  content: '↗';
+  display: inline-block;
+  margin-inline-start: 0.28em;
+  color: var(--_footer-fg-muted);
+  font-size: 0.78em;
+  line-height: 1;
+  text-decoration: none;
+  vertical-align: 0.08em;
+}
+
 ${FOOTER_SCOPE_SELECTOR} a:hover,
 ${FOOTER_SCOPE_SELECTOR} a:focus-visible {
   text-decoration-color: currentColor;
@@ -375,6 +386,9 @@ const renderFooterLink = (link: NormalizedFooterLinkItem): TemplateResult => htm
       href=${link.href}
       rel=${ifDefined(link.external ? 'noreferrer' : undefined)}
       data-external=${ifDefined(link.external ? 'true' : undefined)}
+      data-link-kind=${link.external ? 'external-web' : 'internal-document'}
+      data-link-surface="ui"
+      aria-label=${ifDefined(link.external ? `${link.label}（外部サイト）` : undefined)}
       >${link.label}</a
     >
   </span>

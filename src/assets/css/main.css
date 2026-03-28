@@ -524,9 +524,10 @@ a:focus-visible {
  * テキストリンク契約:
  * - 色以外のシグナル（常時下線）を必須にする
  * - link-text は Shadow DOM/Light DOM 共通の明示クラス
+ * - 読書面は .prose と .about-prose の両方を対象にする
  */
 .link-text[href],
-.prose a[href]:not(.heading-anchor) {
+:is(.prose, .about-prose) a[href]:not(.heading-anchor) {
   cursor: pointer;
   color: var(--fg-default); /* 本文色を維持し、読むリズムを優先 */
   text-decoration: underline;
@@ -549,44 +550,99 @@ a:focus-visible {
 /* Progressive Enhancement: Relative Color Syntax 対応環境 */
 @supports (color: oklch(from white l c h)) {
   .link-text[href],
-  .prose a[href]:not(.heading-anchor) {
+  :is(.prose, .about-prose) a[href]:not(.heading-anchor) {
     text-decoration-color: var(--link-decoration-color);
   }
 }
 
 /* Hover状態 - テキストと下線の両方を色付け */
 .link-text[href]:hover,
-.prose a[href]:not(.heading-anchor):hover {
+:is(.prose, .about-prose) a[href]:not(.heading-anchor):hover {
   color: var(--primary-hover);
   text-decoration-color: var(--primary-hover);
 }
 
 /* Focus-Visible状態 - テキスト色は変更せず、フォーカスリングのみで状態を示す */
 .link-text[href]:focus-visible,
-.prose a[href]:not(.heading-anchor):focus-visible {
+:is(.prose, .about-prose) a[href]:not(.heading-anchor):focus-visible {
   outline-style: solid;
   outline-width: var(--focus-ring-width);
   outline-offset: var(--focus-ring-offset);
   outline-color: var(--focus-ring-color);
-  border-radius: var(--focus-ring-radius); /* line-heightに対して適切な角丸 */
+  border-radius: var(--focus-ring-radius);
   animation: var(--animation-focus);
 
-  /* テキスト色はデフォルトのまま */
   color: var(--fg-default);
   text-decoration-color: var(--primary);
 }
 
 /* Visited状態 - 個人メモでは既読管理より読むリズムを優先 */
 .link-text[href]:visited,
-.prose a[href]:not(.heading-anchor):visited {
+:is(.prose, .about-prose) a[href]:not(.heading-anchor):visited {
   color: var(--fg-default);
   text-decoration-color: var(--primary);
+}
+
+/* 外部リンク:
+ * 1. data-link-kind がある場合はそれを正本として使う
+ * 2. hand-authored な about ページ等のために href scheme でも保守的 fallback を持つ
+ */
+:is(.prose, .about-prose)
+  a[href]:not(.heading-anchor):is(
+    [data-link-kind='external-web'],
+    [data-link-kind='external-action'],
+    [href^='http://'],
+    [href^='https://'],
+    [href^='mailto:'],
+    [href^='tel:']
+  ) {
+  text-decoration-style: dotted;
+}
+
+:is(.prose, .about-prose)
+  a[href]:not(.heading-anchor):is(
+    [data-link-kind='external-web'],
+    [data-link-kind='external-action'],
+    [href^='http://'],
+    [href^='https://'],
+    [href^='mailto:'],
+    [href^='tel:']
+  )::after {
+  content: '↗';
+  display: inline-block;
+  margin-inline-start: 0.28em;
+  color: var(--fg-muted);
+  font-size: 0.78em;
+  line-height: 1;
+  text-decoration: none;
+  vertical-align: 0.08em;
+}
+
+:is(.prose, .about-prose)
+  a[href]:not(.heading-anchor):is(
+    [data-link-kind='external-web'],
+    [data-link-kind='external-action'],
+    [href^='http://'],
+    [href^='https://'],
+    [href^='mailto:'],
+    [href^='tel:']
+  ):hover::after,
+:is(.prose, .about-prose)
+  a[href]:not(.heading-anchor):is(
+    [data-link-kind='external-web'],
+    [data-link-kind='external-action'],
+    [href^='http://'],
+    [href^='https://'],
+    [href^='mailto:'],
+    [href^='tel:']
+  ):focus-visible::after {
+  color: currentColor;
 }
 
 /* Progressive Enhancement: Relative Color Syntax 対応環境 */
 @supports (color: oklch(from white l c h)) {
   .link-text[href]:visited,
-  .prose a[href]:not(.heading-anchor):visited {
+  :is(.prose, .about-prose) a[href]:not(.heading-anchor):visited {
     text-decoration-color: var(--link-decoration-color);
   }
 }
@@ -594,7 +650,7 @@ a:focus-visible {
 /* Touch (No Hover) 判定 - タッチデバイスでは発見可能性を優先 */
 @media (hover: none) and (pointer: coarse) {
   .link-text[href],
-  .prose a[href]:not(.heading-anchor) {
+  :is(.prose, .about-prose) a[href]:not(.heading-anchor) {
     color: var(--primary);
     text-decoration-color: var(--link-decoration-color-touch);
   }
@@ -656,6 +712,27 @@ a:focus-visible {
 .ui-link[href]:visited,
 .link-control[href]:visited {
   color: var(--fg-default);
+}
+
+.ui-link[data-link-kind='external-web']::after,
+.ui-link[data-link-kind='external-action']::after,
+.link-control[data-link-kind='external-web']::after,
+.link-control[data-link-kind='external-action']::after {
+  content: '↗';
+  display: inline-block;
+  margin-inline-start: 0.28em;
+  color: var(--fg-muted);
+  font-size: 0.78em;
+  line-height: 1;
+  text-decoration: none;
+  vertical-align: 0.08em;
+}
+
+.ui-link[data-link-kind='external-web']:hover::after,
+.ui-link[data-link-kind='external-action']:hover::after,
+.link-control[data-link-kind='external-web']:hover::after,
+.link-control[data-link-kind='external-action']:hover::after {
+  color: currentColor;
 }
 
 /* Sidebar Nav: 階層構造を示すため muted を基準色とする */
@@ -871,7 +948,7 @@ ui-list-item a.primary-link[href]:hover {
 
 @media print {
   /* 外部リンク（http/https）のURLを表示 */
-  .prose a[href^='http']::after {
+  :is(.prose, .about-prose) a[href^='http']::after {
     content: ' (' attr(href) ')';
     font-size: 0.875em;
     color: var(--fg-muted);
@@ -879,13 +956,13 @@ ui-list-item a.primary-link[href]:hover {
   }
 
   /* 内部リンク（相対パス、アンカー）はURL展開しない */
-  .prose a[href^='#']::after,
-  .prose a[href^='/']::after {
+  :is(.prose, .about-prose) a[href^='#']::after,
+  :is(.prose, .about-prose) a[href^='/']::after {
     content: none;
   }
 
   /* 下線は常に表示し、リンクであることを明示 */
-  .prose a:not(.heading-anchor) {
+  :is(.prose, .about-prose) a:not(.heading-anchor) {
     text-decoration: underline;
     text-decoration-color: currentColor;
   }

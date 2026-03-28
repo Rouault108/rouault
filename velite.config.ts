@@ -2,6 +2,7 @@ import rehypeKatex from 'rehype-katex';
 import remarkMath from 'remark-math';
 import { defineCollection, defineConfig, s } from 'velite';
 
+import { rehypeAnnotateLinkKinds } from './lib/rehype/annotate-link-kinds.js';
 import { rehypeDisallowDangerousProps } from './lib/rehype/disallow-dangerous-props.js';
 import { rehypeDisallowStaticMark } from './lib/rehype/disallow-static-mark.js';
 import { rehypeHeadingIds } from './lib/rehype/rehype-heading-ids.js';
@@ -57,6 +58,7 @@ export default defineConfig({
       rehypePreviewSandbox,
       rehypeShikiCodeBlocks,
       rehypeRouaultComponents,
+      rehypeAnnotateLinkKinds(),
       rehypeInlineCodeTranslateNo,
       rehypeOrderedListContracts,
       rehypeDisallowDangerousProps,

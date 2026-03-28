@@ -2,6 +2,7 @@ import type { CorpusPageEntry } from './data/corpusPages.js';
 
 interface CorpusPagesPaginationData {
   corpusPages?: CorpusPageEntry[];
+  corpusPage?: CorpusPageEntry;
 }
 
 interface CorpusPageTemplateData {

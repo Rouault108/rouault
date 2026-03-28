@@ -1,3 +1,4 @@
+import { classifyLinkHref, isRoutableLinkKind } from '../../../lib/shared/link-kind.js';
 import { LocationAdapter } from './location-adapter.js';
 import type { NavigationResult } from './router-types.js';
 
@@ -48,7 +49,7 @@ export class BrowserLinkInterceptor {
     const relValue = anchor.getAttribute('rel');
     const isExternalRel =
       anchor.relList.contains('external') ||
-      (typeof relValue === 'string' && relValue.split(/\s+/).includes('external'));
+      (typeof relValue === 'string' && relValue.split(/\s+/u).includes('external'));
 
     if (
       anchor.target ||
@@ -62,18 +63,19 @@ export class BrowserLinkInterceptor {
     const href = anchor.getAttribute('href');
     if (!href) return;
 
+    const linkKind = classifyLinkHref(href, {
+      siteOrigin: window.location.origin,
+      currentUrl: window.location.href,
+    });
+
+    if (!isRoutableLinkKind(linkKind)) {
+      return;
+    }
+
     let targetUrl: URL;
     try {
       targetUrl = new URL(href, window.location.href);
     } catch {
-      return;
-    }
-
-    if (targetUrl.protocol !== 'http:' && targetUrl.protocol !== 'https:') {
-      return;
-    }
-
-    if (targetUrl.origin !== window.location.origin) {
       return;
     }
 
