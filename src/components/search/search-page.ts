@@ -238,12 +238,6 @@ export class SearchPage extends LitElement {
       }
 
       .filter-option {
-        --search-filter-option-selected-accent: oklch(
-          55% var(--chroma-high, 0.2) var(--hue-blue, 230)
-        );
-        /* 無彩色との mix で Hue が赤側へ回り込むのを避けるため、選択色は明示的に青系で固定する */
-        --search-filter-option-selected-border: oklch(84% 0.07 var(--hue-blue, 230));
-        --search-filter-option-selected-bg: oklch(97% 0.018 var(--hue-blue, 230));
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
@@ -255,7 +249,18 @@ export class SearchPage extends LitElement {
         transition:
           border-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
           background-color var(--duration-fast, 70ms)
+            var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
+          color var(--duration-fast, 70ms)
             var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
+      }
+
+      .filter-option[data-selected='true'] {
+        border-color: var(--border-info-subtle);
+        background: var(--bg-info-subtle);
+      }
+
+      .filter-option[data-selected='true'] .filter-option-count {
+        color: var(--fg-info);
       }
 
       @media (prefers-color-scheme: dark) {

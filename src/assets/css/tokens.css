@@ -101,6 +101,9 @@
   --bg-tip-subtle: oklch(96% 0.04 var(--hue-primary));
   --bg-note-subtle: oklch(96% 0 0);
   --bg-table-ruler: oklch(from var(--fg-default) l c h / 0.08);
+  --bg-info-subtle: oklch(97% 0.018 var(--hue-primary));
+  --border-info-subtle: oklch(84% 0.07 var(--hue-primary));
+
   /* =========================================================================
    * Semantic Tokens - Foreground (Light Mode)
    * ========================================================================= */
@@ -497,6 +500,9 @@
     --bg-tip-subtle: oklch(25% 0.05 var(--hue-primary));
     --bg-note-subtle: oklch(20% 0 0);
     --bg-table-ruler: oklch(from var(--fg-default) l c h / 0.08);
+    --bg-info-subtle: oklch(25% 0.03 var(--hue-primary));
+    --border-info-subtle: oklch(45% 0.07 var(--hue-primary));
+
     /* =========================================================================
      * Semantic Tokens - Foreground (Dark Mode)
      * ========================================================================= */
