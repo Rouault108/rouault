@@ -22,6 +22,11 @@ interface ImageNormalizationContext {
   eagerImageCount: number;
 }
 
+interface HydrationDirective {
+  readonly capability: 'progressive' | 'interactive' | 'sandboxed';
+  readonly trigger: 'initial' | 'post-commit' | 'visible' | 'interaction';
+}
+
 const isElement = (node: HastNode, tagName?: string): boolean => {
   if (node.type !== 'element' || typeof node.tagName !== 'string') {
     return false;
@@ -98,6 +103,61 @@ const toPositiveInteger = (value: unknown): number | null => {
     return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   }
   return null;
+};
+
+const setHydrationDirective = (node: HastNode, directive: HydrationDirective): void => {
+  const properties = node.properties ?? {};
+  if (properties['data-hydration-capability'] === undefined) {
+    properties['data-hydration-capability'] = directive.capability;
+  }
+  if (properties['data-hydration-trigger'] === undefined) {
+    properties['data-hydration-trigger'] = directive.trigger;
+  }
+  node.properties = properties;
+};
+
+const hasToolbarSlot = (node: HastNode): boolean =>
+  Array.isArray(node.children) &&
+  node.children.some(
+    (child) =>
+      isElement(child) &&
+      typeof child.properties?.['slot'] === 'string' &&
+      child.properties['slot'] === 'toolbar',
+  );
+
+const resolveHydrationDirective = (node: HastNode): HydrationDirective | null => {
+  switch (node.tagName) {
+    case 'layout-sidebar':
+    case 'layout-toc':
+      return { capability: 'interactive', trigger: 'initial' };
+    case 'ui-code-block':
+      return { capability: 'progressive', trigger: 'post-commit' };
+    case 'ui-code-group':
+      return { capability: 'interactive', trigger: 'visible' };
+    case 'ui-code-preview': {
+      const controls = pickOptionalString(node.properties?.['controls']);
+      if (controls || hasToolbarSlot(node)) {
+        return { capability: 'interactive', trigger: 'visible' };
+      }
+      return null;
+    }
+    case 'ui-tabs':
+    case 'ui-translation':
+      return { capability: 'interactive', trigger: 'visible' };
+    case 'ui-preview-sandbox':
+      return { capability: 'sandboxed', trigger: 'interaction' };
+    case 'ui-score':
+      return { capability: 'progressive', trigger: 'visible' };
+    case 'ui-image': {
+      const zoomable = node.properties?.['zoomable'];
+      if (zoomable === 'false' || zoomable === false) {
+        return null;
+      }
+      return { capability: 'progressive', trigger: 'visible' };
+    }
+    default:
+      return null;
+  }
 };
 
 const cloneNode = (node: HastNode): HastNode => {
@@ -859,45 +919,27 @@ export function rehypeRouaultComponents() {
 
       if (isCodeBlockPre(current)) {
         toUiCodeBlock(current);
-        return;
-      }
-
-      if (isElement(current, 'li')) {
+      } else if (isElement(current, 'li')) {
         toUiTaskListItem(current);
+      } else if (toUiFootnoteReference(current, footnoteDefinitions, footnoteRefCounters)) {
         return;
-      }
-
-      if (toUiFootnoteReference(current, footnoteDefinitions, footnoteRefCounters)) {
-        return;
-      }
-
-      if (current.tagName === 'figure') {
+      } else if (current.tagName === 'figure') {
         toUiFigureImage(current, imageContext, file);
-        return;
-      }
-
-      if (current.tagName === 'img') {
+      } else if (current.tagName === 'img') {
         toUiImage(current, imageContext, file);
-        return;
-      }
-
-      if (current.tagName === 'mark') {
+      } else if (current.tagName === 'mark') {
         toUiHighlight(current);
-        return;
-      }
-
-      if (current.tagName === 'table') {
+      } else if (current.tagName === 'table') {
         toUiTable(current);
-        return;
-      }
-
-      if (current.tagName === 'blockquote') {
+      } else if (current.tagName === 'blockquote') {
         current.tagName = 'ui-blockquote';
-        return;
+      } else if (current.tagName === 'hr') {
+        toUiDivider(current);
       }
 
-      if (current.tagName === 'hr') {
-        toUiDivider(current);
+      const hydrationDirective = resolveHydrationDirective(current);
+      if (hydrationDirective) {
+        setHydrationDirective(current, hydrationDirective);
       }
     };
 

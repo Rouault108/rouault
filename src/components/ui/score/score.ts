@@ -334,6 +334,18 @@ export class UiScore extends LitElement {
   private _intersectionObserver: IntersectionObserver | null = null;
   private _resizeObserver: ResizeObserver | null = null;
   private _fetchAbortController: AbortController | null = null;
+  private _hydrationActivated = false;
+
+  activateHydration(): void {
+    if (this._hydrationActivated) {
+      return;
+    }
+
+    this._hydrationActivated = true;
+    this._setupResizeObserver();
+    this._scheduleLoad();
+    this._queueOverflowMeasurement();
+  }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
@@ -361,9 +373,9 @@ export class UiScore extends LitElement {
 
   override firstUpdated(): void {
     this._syncInlineSvgState();
-    this._setupResizeObserver();
-    this._scheduleLoad();
-    this._queueOverflowMeasurement();
+    if (!this.hasAttribute('data-hydration-trigger')) {
+      this.activateHydration();
+    }
   }
 
   override updated(changedProperties: PropertyValues<this>): void {
@@ -371,18 +383,24 @@ export class UiScore extends LitElement {
     const internalChanges = changedProperties as Map<string, unknown>;
 
     if (
-      changedProperties.has('src') ||
-      changedProperties.has('loading') ||
-      internalChanges.has('_hasInlineSvg')
+      this._hydrationActivated &&
+      (
+        changedProperties.has('src') ||
+        changedProperties.has('loading') ||
+        internalChanges.has('_hasInlineSvg')
+      )
     ) {
       this._scheduleLoad();
     }
 
     if (
-      internalChanges.has('_svgMarkup') ||
-      internalChanges.has('_isLoading') ||
-      internalChanges.has('_errorMessage') ||
-      internalChanges.has('_hasInlineSvg')
+      this._hydrationActivated &&
+      (
+        internalChanges.has('_svgMarkup') ||
+        internalChanges.has('_isLoading') ||
+        internalChanges.has('_errorMessage') ||
+        internalChanges.has('_hasInlineSvg')
+      )
     ) {
       this._applyRuntimeSvgAccessibilityAttributes();
       this._queueOverflowMeasurement();

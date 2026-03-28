@@ -187,4 +187,38 @@ describe('NoteLayout', () => {
     expect(rendered).toContain('id="note-content-testing-tabs-test" class="prose"');
     expect(rendered).toContain('content-root-id="note-content-testing-tabs-test"');
   });
+
+  it('note ページの hydration scope を出力すること', () => {
+    const layout = new NoteLayout();
+    const rendered = layout.render({
+      content: '<p>本文</p>',
+      note: {
+        slug: 'testing/hydration',
+        title: 'Hydration',
+      },
+      notes: [],
+    });
+
+    expect(rendered).toContain('data-hydration-scope="note-shell"');
+    expect(rendered).toContain('data-hydration-scope="note-sidebar"');
+    expect(rendered).toContain('data-hydration-scope="note-content"');
+    expect(rendered).toContain('data-hydration-scope="note-toc"');
+  });
+
+  it('genre を持つ記事ヘッダーに post-commit directive を出力すること', () => {
+    const layout = new NoteLayout();
+    const rendered = layout.render({
+      content: '<p>本文</p>',
+      note: {
+        slug: 'testing/hydration',
+        title: 'Hydration',
+        genre: ['testing'],
+      },
+      notes: [],
+    });
+
+    expect(rendered).toContain('<ui-article-header');
+    expect(rendered).toContain('data-hydration-capability="progressive"');
+    expect(rendered).toContain('data-hydration-trigger="post-commit"');
+  });
 });

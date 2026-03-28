@@ -234,14 +234,20 @@ export class NoteLayout {
       .join('');
 
     return `
-      <section class="note-shell">
-        <aside class="layout-sidebar-col" aria-label="ナビゲーション">
+      <section class="note-shell" data-hydration-scope="note-shell">
+        <aside
+          class="layout-sidebar-col"
+          aria-label="ナビゲーション"
+          data-hydration-scope="note-sidebar"
+        >
           <layout-sidebar
             source-id="${escapeAttr(sidebarSourceId)}"
             selected-id="${escapeAttr(sidebarSelectedId)}"
             items-json="${sidebarItemsJson}"
             heading="ナビゲーション"
             fixed-breakpoint="768"
+            data-hydration-capability="interactive"
+            data-hydration-trigger="initial"
           ></layout-sidebar>
         </aside>
 
@@ -249,6 +255,7 @@ export class NoteLayout {
           class="layout-main-col container-reading"
           data-pagefind-body
           data-pagefind-sort="date:${pagefindSortDate}"
+          data-hydration-scope="note-content"
         >
           <div class="sr-only" aria-hidden="true" data-pagefind-ignore>
             <span data-pagefind-meta="title">${pagefindTitle}</span>
@@ -264,18 +271,25 @@ export class NoteLayout {
           </div>
           <ui-article-header
             heading="${heading}"${published}${updated}${status}${source}${license}${articleHeaderTags}
+            ${genres.length > 0 ? 'data-hydration-capability="progressive" data-hydration-trigger="post-commit"' : ''}
           ></ui-article-header>
           <div id="${escapeAttr(contentRootId)}" class="prose">
             ${data.content}
           </div>
         </article>
 
-        <aside class="layout-toc-col" aria-label="目次">
+        <aside
+          class="layout-toc-col"
+          aria-label="目次"
+          data-hydration-scope="note-toc"
+        >
           <layout-toc
             source-id="${escapeAttr(tocSourceId)}"
             headings-json="${tocHeadingsJson}"
             content-root-id="${escapeAttr(contentRootId)}"
             home-href="/"
+            data-hydration-capability="interactive"
+            data-hydration-trigger="initial"
           ></layout-toc>
         </aside>
       </section>

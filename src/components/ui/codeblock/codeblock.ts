@@ -483,8 +483,14 @@ export class CodeBlock extends LitElement {
 
   private _preResyncScheduled = false;
 
-  override connectedCallback(): void {
-    super.connectedCallback();
+  private _hydrationActivated = false;
+
+  activateHydration(): void {
+    if (this._hydrationActivated) {
+      return;
+    }
+
+    this._hydrationActivated = true;
     this._injectDocumentStyles();
     this._resizeObserver = new ResizeObserver(() => {
       this._updateScrollableState();
@@ -499,6 +505,14 @@ export class CodeBlock extends LitElement {
         this._dispatchChange(['content'], true);
       }
     });
+    this._syncSlottedPre();
+  }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    if (!this.hasAttribute('data-hydration-trigger')) {
+      this.activateHydration();
+    }
   }
 
   override disconnectedCallback(): void {

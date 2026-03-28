@@ -1,11 +1,12 @@
-import { COMPONENT_DEFINITIONS, type ComponentTag } from '../client/component-manifest.js';
+import { SSR_COMPONENT_DEFINITIONS, type SsrComponentTag } from './target-definitions.js';
 
-type ComponentDefinition = (typeof COMPONENT_DEFINITIONS)[number];
+type ComponentDefinition = (typeof SSR_COMPONENT_DEFINITIONS)[number];
 type ComponentProfile = ComponentDefinition['profiles'][number];
 
 const pickTags = (
   predicate: (definition: ComponentDefinition) => boolean,
-): readonly ComponentTag[] => COMPONENT_DEFINITIONS.filter(predicate).map((definition) => definition.tag);
+): readonly SsrComponentTag[] =>
+  SSR_COMPONENT_DEFINITIONS.filter(predicate).map((definition) => definition.tag);
 
 const hasProfile = (definition: ComponentDefinition, profile: ComponentProfile): boolean =>
   (definition.profiles as readonly ComponentProfile[]).includes(profile);

@@ -1,0 +1,52 @@
+import { expect, fixture, html } from '@open-wc/testing';
+import { planHydration } from '../../src/client/hydration/planner.js';
+
+describe('planHydration', () => {
+  it('入れ子の scope で directive を重複収集しないこと', async () => {
+    const root = await fixture<HTMLElement>(html`
+      <main>
+        <section data-hydration-scope="note-shell">
+          <aside data-hydration-scope="note-sidebar">
+            <layout-sidebar
+              data-hydration-capability="interactive"
+              data-hydration-trigger="initial"
+            ></layout-sidebar>
+          </aside>
+          <article data-hydration-scope="note-content">
+            <ui-code-block
+              data-hydration-capability="progressive"
+              data-hydration-trigger="post-commit"
+            ></ui-code-block>
+          </article>
+        </section>
+      </main>
+    `);
+
+    const plans = planHydration(root, '');
+
+    expect(plans.map((plan) => plan.scope)).to.deep.equal([
+      'note-shell',
+      'note-sidebar',
+      'note-content',
+    ]);
+    expect(plans[0]?.items).to.have.length(0);
+    expect(plans[1]?.items.map((item) => item.tag)).to.deep.equal(['layout-sidebar']);
+    expect(plans[2]?.items.map((item) => item.tag)).to.deep.equal(['ui-code-block']);
+  });
+
+  it('scope がない root では fallback scan を root 限定で使うこと', async () => {
+    const root = await fixture<HTMLElement>(html`
+      <main>
+        <about-page></about-page>
+      </main>
+    `);
+
+    const plans = planHydration(root, 'about-page', { allowFallback: true });
+
+    expect(plans).to.have.length(1);
+    expect(plans[0]?.scope).to.equal('fallback-root');
+    expect(plans[0]?.items).to.have.length(1);
+    expect(plans[0]?.items[0]?.tag).to.equal('about-page');
+    expect(plans[0]?.items[0]?.fallback).to.equal(true);
+  });
+});

@@ -224,9 +224,14 @@ export class LayoutToc extends LitElement {
 
   private _didWarnMissingContentRootId = false;
 
-  override connectedCallback(): void {
-    super.connectedCallback();
-    this._loadHeadingsFromSource();
+  private _hydrationActivated = false;
+
+  activateHydration(): void {
+    if (this._hydrationActivated) {
+      return;
+    }
+
+    this._hydrationActivated = true;
 
     const stickyTarget = this.parentElement instanceof HTMLElement ? this.parentElement : this;
     this._detachStickyFooterBoundary = attachStickyFooterBoundary(stickyTarget);
@@ -243,6 +248,14 @@ export class LayoutToc extends LitElement {
 
     this._syncMobileBarVisibility();
     this._scheduleVisibleHeadingsRefresh();
+  }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this._loadHeadingsFromSource();
+    if (!this.hasAttribute('data-hydration-trigger')) {
+      this.activateHydration();
+    }
   }
 
   override disconnectedCallback(): void {
@@ -327,7 +340,11 @@ export class LayoutToc extends LitElement {
 
     this._allHeadings = nextHeadings;
 
-    if (typeof window === 'undefined' || this.contentRootId.trim().length === 0) {
+    if (
+      typeof window === 'undefined' ||
+      this.contentRootId.trim().length === 0 ||
+      !this._hydrationActivated
+    ) {
       this._warnMissingContentRootIdInDev();
       this._applyVisibleHeadings(nextHeadings);
       return;

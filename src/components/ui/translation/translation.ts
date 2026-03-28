@@ -279,6 +279,7 @@ export class UiTranslation extends LitElement {
   private _sheetDeltaY = 0;
   private _sheetStartScrollTop = 0;
   private _positionRaf: number | null = null;
+  private _hydrationActivated = false;
 
   override createRenderRoot(): this {
     return this;
@@ -292,12 +293,8 @@ export class UiTranslation extends LitElement {
     this._warnMissingTargetLangIfNeeded();
     this.dataset['sheetDragging'] = 'false';
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener('resize', this._onWindowViewportChange, { passive: true });
-      window.addEventListener('scroll', this._onWindowViewportChange, {
-        passive: true,
-        capture: true,
-      });
+    if (!this.hasAttribute('data-hydration-trigger')) {
+      this.activateHydration();
     }
   }
 
@@ -314,6 +311,19 @@ export class UiTranslation extends LitElement {
 
     this._resetBottomSheetGesture();
     super.disconnectedCallback();
+  }
+
+  activateHydration(): void {
+    if (this._hydrationActivated || typeof window === 'undefined') {
+      return;
+    }
+
+    this._hydrationActivated = true;
+    window.addEventListener('resize', this._onWindowViewportChange, { passive: true });
+    window.addEventListener('scroll', this._onWindowViewportChange, {
+      passive: true,
+      capture: true,
+    });
   }
 
   override willUpdate(changedProperties: Map<PropertyKey, unknown>): void {

@@ -215,6 +215,22 @@ export class PreviewSandbox extends LitElement {
       inline-size: 100%;
     }
 
+    .placeholder {
+      display: grid;
+      place-items: center;
+      inline-size: 100%;
+      min-block-size: var(--_ui-preview-sandbox-min-height, 160px);
+      block-size: var(--_ui-preview-sandbox-resolved-height, 160px);
+      border: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12));
+      background: var(--ui-preview-sandbox-bg, rgb(255 255 255));
+      color: var(--fg-muted, oklch(48% 0 0));
+      font: inherit;
+    }
+
+    .placeholder[role='button'] {
+      cursor: pointer;
+    }
+
     iframe {
       display: block;
       inline-size: 100%;
@@ -276,9 +292,14 @@ export class PreviewSandbox extends LitElement {
   private readonly _templateObservers = new Map<HTMLTemplateElement, MutationObserver>();
   private _lastWarningSignature = '';
   private _lastBuildSignature = '';
+  private _hydrationActivated = false;
 
-  override connectedCallback(): void {
-    super.connectedCallback();
+  activateHydration(): void {
+    if (this._hydrationActivated) {
+      return;
+    }
+
+    this._hydrationActivated = true;
 
     if (typeof window !== 'undefined') {
       window.addEventListener('message', this._handleWindowMessage);
@@ -296,9 +317,22 @@ export class PreviewSandbox extends LitElement {
     }
 
     this._syncTemplateObservers();
-    this._syncActivationPolicy();
     this._reportContractWarnings();
+
+    if (this.hasAttribute('data-hydration-trigger')) {
+      this._activatePreview();
+      return;
+    }
+
+    this._syncActivationPolicy();
     this._refreshSandboxDocument();
+  }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    if (!this.hasAttribute('data-hydration-trigger')) {
+      this.activateHydration();
+    }
   }
 
   override disconnectedCallback(): void {
@@ -332,17 +366,20 @@ export class PreviewSandbox extends LitElement {
       this._measuredHeight = this._normalizedHeight;
     }
 
-    if (changedProperties.has('activationPolicy')) {
+    if (changedProperties.has('activationPolicy') && this._hydrationActivated) {
       this._syncActivationPolicy();
     }
 
     if (
-      changedProperties.has('baseUrl') ||
-      changedProperties.has('allowJs') ||
-      changedProperties.has('allowForms') ||
-      changedProperties.has('allowDownloads') ||
-      changedProperties.has('allowPointerLock') ||
-      changedProperties.has('allowPopups')
+      this._hydrationActivated &&
+      (
+        changedProperties.has('baseUrl') ||
+        changedProperties.has('allowJs') ||
+        changedProperties.has('allowForms') ||
+        changedProperties.has('allowDownloads') ||
+        changedProperties.has('allowPointerLock') ||
+        changedProperties.has('allowPopups')
+      )
     ) {
       this._refreshSandboxDocument();
     }
@@ -785,13 +822,32 @@ export class PreviewSandbox extends LitElement {
             this._normalizedHeight,
           )}px; --_ui-preview-sandbox-resolved-height: ${String(this._resolvedHeight)}px;`}
       >
-        <iframe
-          title=${this._iframeAccessibleTitle}
-          sandbox=${this._sandboxValue}
-          .srcdoc=${this._srcdoc}
-          @pointerdown=${this._handleManualActivationRequest}
-          @focus=${this._handleManualActivationRequest}
-        ></iframe>
+        ${this._isActivated
+          ? html`
+              <iframe
+                title=${this._iframeAccessibleTitle}
+                sandbox=${this._sandboxValue}
+                .srcdoc=${this._srcdoc}
+              ></iframe>
+            `
+          : html`
+              <div
+                class="placeholder"
+                role=${this._normalizedActivationPolicy === 'manual' ? 'button' : 'status'}
+                tabindex=${this._normalizedActivationPolicy === 'manual' ? '0' : '-1'}
+                aria-label=${this._iframeAccessibleTitle}
+                @pointerdown=${this._handleManualActivationRequest}
+                @keydown=${(event: KeyboardEvent) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    this._handleManualActivationRequest();
+                  }
+                }}
+                @focus=${this._handleManualActivationRequest}
+              >
+                プレビューを準備しています
+              </div>
+            `}
       </div>
     `;
   }

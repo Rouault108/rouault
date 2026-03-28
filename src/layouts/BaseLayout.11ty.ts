@@ -98,17 +98,38 @@ export class BaseLayout {
   <script type="module" src="${escapeAttribute(clientScriptSrc)}"></script>
 </head>
 <body>
-  <ui-skip-link href="#main-content" label="メインコンテンツへ移動"></ui-skip-link>
-  <div id="app" class="app-root">
-    <layout-header${noteLayoutAttribute} breadcrumbs-json="${breadcrumbsJson}" corpora-json="${corporaJson}" current-corpus-key="${escapeAttribute(currentCorpusKey)}"></layout-header>
-    <app-router>
+  <ui-skip-link
+    href="#main-content"
+    label="メインコンテンツへ移動"
+    data-hydration-scope="skip-link"
+    data-hydration-capability="interactive"
+    data-hydration-trigger="initial"
+  ></ui-skip-link>
+  <div id="app" class="app-root" data-hydration-scope="app-shell">
+    <layout-header
+      ${noteLayoutAttribute}
+      breadcrumbs-json="${breadcrumbsJson}"
+      corpora-json="${corporaJson}"
+      current-corpus-key="${escapeAttribute(currentCorpusKey)}"
+      data-hydration-capability="interactive"
+      data-hydration-trigger="initial"
+    ></layout-header>
+    <app-router
+      data-hydration-capability="interactive"
+      data-hydration-trigger="initial"
+    >
       <main id="main-content" tabindex="-1">
         ${data.content}
       </main>
     </app-router>
     <layout-footer></layout-footer>
   </div>
-  <ui-search-dialog id="global-search-dialog"></ui-search-dialog>
+  <ui-search-dialog
+    id="global-search-dialog"
+    data-hydration-scope="global-search"
+    data-hydration-capability="interactive"
+    data-hydration-trigger="initial"
+  ></ui-search-dialog>
 </body>
 </html>
     `.trim();

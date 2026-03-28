@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { COMPONENT_DEFINITIONS } from '../../src/client/component-manifest.js';
+import { SSR_COMPONENT_DEFINITIONS } from '../../src/ssr/target-definitions.js';
 import {
   SSR_NOTE_TARGET_TAGS,
   SSR_PAGE_TARGET_TAGS,
@@ -29,7 +29,7 @@ const REQUIRED_NOTE_CONTENT_TAGS = [
 
 describe('component manifest / ssr targets', () => {
   it('component manifest の tag が重複しないこと', () => {
-    const tags = COMPONENT_DEFINITIONS.map((definition) => definition.tag);
+    const tags = SSR_COMPONENT_DEFINITIONS.map((definition) => definition.tag);
     expect(tags).toEqual([...new Set(tags)]);
   });
 

@@ -356,10 +356,14 @@ export class CodeGroup extends LitElement {
 
   private readonly _tabClickHandlers = new Map<HTMLButtonElement, EventListener>();
 
-  override connectedCallback(): void {
-    super.connectedCallback();
+  private _hydrationActivated = false;
 
-    this.addEventListener('ui-code-block-change', this._onCodeBlockChange as EventListener);
+  activateHydration(): void {
+    if (this._hydrationActivated) {
+      return;
+    }
+
+    this._hydrationActivated = true;
 
     this._mutationObserver = new MutationObserver((records) => {
       if (this._isComposing) {
@@ -390,7 +394,20 @@ export class CodeGroup extends LitElement {
       this._syncHeaderToolsWidth();
     });
 
+    if (this._headerToolsEl) {
+      this._headerToolsResizeObserver.observe(this._headerToolsEl);
+      this._syncHeaderToolsWidth();
+    }
+  }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+
+    this.addEventListener('ui-code-block-change', this._onCodeBlockChange as EventListener);
     this._composeFromLightDom();
+    if (!this.hasAttribute('data-hydration-trigger')) {
+      this.activateHydration();
+    }
   }
 
   override disconnectedCallback(): void {
@@ -412,7 +429,7 @@ export class CodeGroup extends LitElement {
   override updated(changedProperties: PropertyValues<this>): void {
     super.updated(changedProperties);
 
-    if (this._headerToolsEl) {
+    if (this._hydrationActivated && this._headerToolsEl) {
       this._headerToolsResizeObserver?.observe(this._headerToolsEl);
       this._syncHeaderToolsWidth();
     }

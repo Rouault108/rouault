@@ -35,6 +35,8 @@ describe('rehypeRouaultComponents', () => {
     const first = tree.children?.[0];
     expect(first?.tagName).to.equal('ui-code-block');
     expect(first?.properties?.['lang']).to.equal('ts');
+    expect(first?.properties?.['data-hydration-capability']).to.equal('progressive');
+    expect(first?.properties?.['data-hydration-trigger']).to.equal('post-commit');
     expect(first?.children?.[0]?.tagName).to.equal('pre');
     expect(first?.children?.[0]?.children?.[0]?.tagName).to.equal('code');
   });
@@ -285,9 +287,13 @@ describe('rehypeRouaultComponents', () => {
     expect(first?.properties?.['src']).to.equal('/content-assets/testing/test-hero.jpg');
     expect(first?.properties?.['lightbox-src']).to.equal('/content-assets/testing/test-hero.jpg');
     expect(first?.properties?.['sources']).to.equal(undefined);
+    expect(first?.properties?.['data-hydration-capability']).to.equal(undefined);
+    expect(first?.properties?.['data-hydration-trigger']).to.equal(undefined);
     expect(second?.tagName).to.equal('ui-image');
     expect(second?.properties?.['src']).to.equal('/content-assets/testing/test-card.jpg');
     expect(second?.properties?.['caption']).to.equal('図の説明');
+    expect(second?.properties?.['data-hydration-capability']).to.equal('progressive');
+    expect(second?.properties?.['data-hydration-trigger']).to.equal('visible');
   });
 
   it('2枚目以降の eager 本文画像はエラーにすること', () => {
