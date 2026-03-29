@@ -39,7 +39,7 @@
 
     "build:images": "tsx scripts/build-images.ts",
 
-    "generate:icons": "tsx scripts/generate-icon-subset.ts",
+    "generate:icons": "node --import tsx scripts/generate-icon-subset.ts",
 
     "dev": "tsx ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts --serve",
     "predev": "pnpm run generate:icons",
