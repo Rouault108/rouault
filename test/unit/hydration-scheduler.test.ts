@@ -10,6 +10,57 @@ const defineTestElement = (tag: string): void => {
 };
 
 describe('HydrationScheduler', () => {
+  it('plain DOM enhancer を data-hydration-key 経由で起動できること', async () => {
+    const steps: string[] = [];
+
+    const registry = new Map<string, HydrationRegistryEntry>([
+      [
+        'code-group-enhancer',
+        {
+          tag: 'code-group-enhancer',
+          kind: 'enhancer',
+          loader: async () => {
+            steps.push('load:enhancer');
+          },
+          activate: () => {
+            steps.push('activate:enhancer');
+          },
+        },
+      ],
+    ]);
+
+    const root = await fixture<HTMLElement>(html`<main></main>`);
+    root.innerHTML = `
+      <section data-hydration-scope="note-content">
+        <section
+          data-code-group
+          data-hydration-key="code-group-enhancer"
+          data-hydration-capability="interactive"
+          data-hydration-trigger="initial"
+        ></section>
+      </section>
+    `;
+
+    let diagnostics: HydrationDiagnostics | null = null;
+    root.addEventListener('app-router:hydration-diagnostics', (event: Event) => {
+      diagnostics = (event as CustomEvent<HydrationDiagnostics>).detail;
+    });
+
+    const scheduler = new HydrationScheduler(registry);
+    await scheduler.hydrateContent(root, { allowFallback: false, dispatchTarget: root });
+
+    await waitUntil(() => diagnostics !== null, 'enhancer diagnostics が発火すること');
+
+    if (!diagnostics) {
+      throw new Error('enhancer diagnostics が取得できませんでした');
+    }
+
+    expect(steps).to.deep.equal(['load:enhancer', 'activate:enhancer']);
+    expect(diagnostics.plannedCount).to.equal(1);
+    expect(diagnostics.upgradedCount).to.equal(0);
+    expect(diagnostics.activatedCount).to.equal(1);
+  });
+
   it('initial の後に post-commit を実行し、visible は focusin で起動すること', async () => {
     const steps: string[] = [];
     const initialTag = 'x-hydration-initial';

@@ -13,10 +13,11 @@ describe('planHydration', () => {
             ></layout-sidebar>
           </aside>
           <article data-hydration-scope="note-content">
-            <ui-code-block
+            <pre
+              data-hydration-key="code-block-enhancer"
               data-hydration-capability="progressive"
               data-hydration-trigger="post-commit"
-            ></ui-code-block>
+            ></pre>
           </article>
         </section>
       </main>
@@ -31,7 +32,7 @@ describe('planHydration', () => {
     ]);
     expect(plans[0]?.items).to.have.length(0);
     expect(plans[1]?.items.map((item) => item.tag)).to.deep.equal(['layout-sidebar']);
-    expect(plans[2]?.items.map((item) => item.tag)).to.deep.equal(['ui-code-block']);
+    expect(plans[2]?.items.map((item) => item.tag)).to.deep.equal(['code-block-enhancer']);
   });
 
   it('scope がない root では fallback scan を root 限定で使うこと', async () => {

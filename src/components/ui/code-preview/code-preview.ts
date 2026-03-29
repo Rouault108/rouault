@@ -92,7 +92,7 @@ const findOption = <T extends string>(
  * 「See it, then understand it」の読み順を実現します。
  *
  * @slot preview - レンダリング結果を含む任意のHTML
- * @slot         - コードエリア（ui-code-block または ui-code-group を配置）
+ * @slot         - コードエリア（pre[data-code-block] または section[data-code-group] を配置）
  * @slot toolbar - ヘッダー右側に配置するオプションのアクション領域
  */
 @customElement('ui-code-preview')
@@ -514,22 +514,15 @@ export class CodePreview extends LitElement {
 
     /* ─── Code Area ─── */
 
-    /* 子 Code Block の外枠・breakout を除去し、親の外枠に統合 */
-    ::slotted(ui-code-block) {
+    ::slotted(pre[data-code-block]) {
       width: 100% !important;
-      margin-inline: 0 !important;
-      --border-style-subtle: none;
-      --ui-code-surface-radius-bottom: var(--ui-code-preview-radius, var(--radius-md, 6px));
-      --ui-code-block-radius-bottom: var(--ui-code-preview-radius, var(--radius-md, 6px));
-      border-radius: 0 0 var(--ui-code-preview-radius, var(--radius-md, 6px))
-        var(--ui-code-preview-radius, var(--radius-md, 6px)) !important;
+      margin: 0 !important;
+      border-top-left-radius: 0 !important;
+      border-top-right-radius: 0 !important;
     }
 
-    /* 子 Code Group の外枠・角丸を除去し、親の外枠に統合 */
-    ::slotted(ui-code-group) {
-      border: none !important;
-      border-radius: 0 0 var(--ui-code-preview-radius, var(--radius-md, 6px))
-        var(--ui-code-preview-radius, var(--radius-md, 6px)) !important;
+    ::slotted(section[data-code-group]) {
+      margin: 0 !important;
     }
 
     /* ─── Forced Colors ─── */

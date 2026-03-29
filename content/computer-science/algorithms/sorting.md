@@ -32,6 +32,32 @@ function quickSort(arr: number[]): number[] {
 }
 ```
 
+::code-group{aria-label="クイックソート比較"}
+
+```typescript group-key="typescript" tab-label="TypeScript" filename="quick-sort.ts"
+function quickSort(arr: number[]): number[] {
+  if (arr.length <= 1) return arr;
+  const pivot = arr[Math.floor(arr.length / 2)];
+  const left = arr.filter((x) => x < pivot);
+  const middle = arr.filter((x) => x === pivot);
+  const right = arr.filter((x) => x > pivot);
+  return [...quickSort(left), ...middle, ...quickSort(right)];
+}
+```
+
+```javascript group-key="javascript" tab-label="JavaScript" filename="quick-sort.js"
+function quickSort(arr) {
+  if (arr.length <= 1) return arr;
+  const pivot = arr[Math.floor(arr.length / 2)];
+  const left = arr.filter((x) => x < pivot);
+  const middle = arr.filter((x) => x === pivot);
+  const right = arr.filter((x) => x > pivot);
+  return [...quickSort(left), ...middle, ...quickSort(right)];
+}
+```
+
+::
+
 ### マージソートの特徴
 
 - **安定ソート**: 同じ値の要素の順序が保持される

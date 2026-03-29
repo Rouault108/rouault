@@ -30,7 +30,7 @@
 
 - 見出し要素
 - 本文リンク (`a[href]` ただし `.heading-anchor` を除く)
-- `pre > code`
+- `pre[data-code-block] > code[data-lang]`
 - `blockquote`
 - `table`
 - `hr`
@@ -99,7 +99,7 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 
 | 入力 HAST | 出力 | 契約 |
 | --- | --- | --- |
-| `pre > code` | `ui-code-block` | `language-*` から `lang` を推論し、対象メタ属性をホスト属性へ昇格する |
+| `pre > code` | `pre[data-code-block] > code[data-lang]` | `language-*` から `data-lang` を推論し、対象メタ属性を `data-code-*` 属性へ正規化する |
 | `blockquote` | `ui-blockquote` | 子要素は維持する |
 | `table` | `ui-table > table` | `caption` があればホストに `aria-label` を補完する |
 | `hr` | `ui-divider > hr[data-divider-variant="section"]` | Markdown 由来の区切りを本文文脈の `section` として正規化する |
@@ -110,12 +110,13 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 | `a[href]`（本文リンク） | `a[data-link-kind][data-link-surface="prose"]` | `href` から種別注釈を付与し、外部系では `data-external="true"` を付与する。`.heading-anchor` は対象外とする |
 | footnote 参照 / 定義 | `ui-footnote` + `section[role=doc-endnotes]` | 参照 ID、backref、接頭辞、backlink を正規化する |
 
-### 5.2 `pre > code` → `ui-code-block`
+### 5.2 `pre > code` → `pre[data-code-block] > code[data-lang]`
 
 規則:
 
 - `language-*` から `lang` を推論しなければなりません。
-- 次の属性はホスト属性へ昇格してよいものとします。
+- `code` 要素には `data-lang` を出力しなければなりません。
+- 次の属性は `pre[data-code-block]` の `data-code-*` 属性へ正規化してよいものとします。
   - `filename`
   - `group-key`
   - `tab-label`
@@ -127,6 +128,7 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
   - `highlight-lines`
   - `layout`
 - コード本体の意味を失わないことを優先します。
+- `ui-code-block` を 読者向け Markdown 出力の正規形として残してはなりません。
 
 ### 5.3 `blockquote` → `ui-blockquote`
 
@@ -171,7 +173,7 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 規則:
 
 - `img` は `ui-image` に正規化しなければなりません。
-- source path は manifest resolver を経由し、reader-facing HTML には remote 原本 URL を残してはなりません。
+- source path は manifest resolver を経由し、読者向け HTML には remote 原本 URL を残してはなりません。
 - `src` / `srcset` / `sizes` / `sources` / `lightbox-src` / `lightbox-sources` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` / `placeholder` を正規化しなければなりません。
 - `zoomable=false` は静的モードとして引き継がなければなりません。
 - 最終出力は `<picture>` 相当の意味論へ収束しなければなりません。
@@ -246,8 +248,8 @@ footnote は、本文側の `ui-footnote` と endnotes 側の `section[role=doc-
 1. `template[data-preview-kind]` の inert payload
 2. 高さ同期用 helper script を含む iframe `srcdoc`
 3. 表示用 code area
-   - 1 件なら単体 code block
-   - 複数なら `ui-code-group`
+   - 1 件なら単体 `pre[data-code-block]`
+   - 複数なら `section[data-code-group]`
 
 ### 7.3 実行順序
 

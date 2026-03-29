@@ -11,6 +11,7 @@ import { rehypeOrderedListContracts } from './lib/rehype/ordered-list-contracts.
 import { rehypePreviewSandbox } from './lib/rehype/preview-sandbox.js';
 import { rehypeRouaultComponents } from './lib/rehype/rouault-components.js';
 import { rehypeShikiCodeBlocks } from './lib/rehype/shiki-code-blocks.js';
+import { rehypeStaticCodeGroups } from './lib/rehype/static-code-groups.js';
 import { validateNoteContentContracts } from './lib/content/note-content-contracts.js';
 import { remarkDisallowRawHtml } from './lib/remark/disallow-raw-html.js';
 import { remarkLinkCards } from './lib/remark/remark-link-cards.js';
@@ -69,6 +70,7 @@ export default defineConfig({
       rehypeHeadingIds,
       rehypePreviewSandbox,
       rehypeShikiCodeBlocks,
+      rehypeStaticCodeGroups,
       rehypeRouaultComponents,
       rehypeAnnotateLinkKinds(),
       rehypeInlineCodeTranslateNo,

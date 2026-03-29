@@ -26,12 +26,20 @@ describe('velite config', () => {
     expect(source).toContain(
       "import { rehypeAnnotateLinkKinds } from './lib/rehype/annotate-link-kinds.js';",
     );
+    expect(source).toContain(
+      "import { rehypeStaticCodeGroups } from './lib/rehype/static-code-groups.js';",
+    );
 
+    const shikiCodeBlocksIndex = source.indexOf('rehypeShikiCodeBlocks,');
+    const staticCodeGroupsIndex = source.indexOf('rehypeStaticCodeGroups,');
     const rouaultComponentsIndex = source.indexOf('rehypeRouaultComponents,');
     const annotateLinkKindsIndex = source.indexOf('rehypeAnnotateLinkKinds(),');
     const inlineCodeTranslateNoIndex = source.indexOf('rehypeInlineCodeTranslateNo,');
 
+    expect(shikiCodeBlocksIndex).toBeGreaterThan(-1);
+    expect(staticCodeGroupsIndex).toBeGreaterThan(shikiCodeBlocksIndex);
     expect(rouaultComponentsIndex).toBeGreaterThan(-1);
+    expect(rouaultComponentsIndex).toBeGreaterThan(staticCodeGroupsIndex);
     expect(annotateLinkKindsIndex).toBeGreaterThan(rouaultComponentsIndex);
     expect(inlineCodeTranslateNoIndex).toBeGreaterThan(annotateLinkKindsIndex);
   });

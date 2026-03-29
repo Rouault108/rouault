@@ -10,11 +10,9 @@ import {
 const REQUIRED_NOTE_CONTENT_TAGS = [
   'ui-callout',
   'ui-checkbox',
-  'ui-code-group',
   'ui-code-preview',
   'ui-preview-sandbox',
   'ui-table',
-  'ui-code-block',
   'ui-blockquote',
   'ui-details',
   'ui-divider',

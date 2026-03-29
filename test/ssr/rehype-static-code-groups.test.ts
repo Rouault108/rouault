@@ -1,0 +1,103 @@
+import { describe, expect, it } from 'vitest';
+
+import { rehypeStaticCodeGroups } from '../../lib/rehype/static-code-groups.js';
+
+interface HastNode {
+  type: string;
+  tagName?: string;
+  value?: string;
+  properties?: Record<string, unknown>;
+  children?: HastNode[];
+}
+
+const createStaticCodeBlock = (
+  key: string,
+  label: string,
+  language: string,
+  filename?: string,
+): HastNode => ({
+  type: 'element',
+  tagName: 'pre',
+  properties: {
+    'data-code-block': true,
+    'data-code-group-key': key,
+    'data-code-tab-label': label,
+    'data-code-language': language,
+    ...(filename ? { 'data-code-filename': filename } : {}),
+  },
+  children: [
+    {
+      type: 'element',
+      tagName: 'code',
+      properties: {
+        'data-lang': language,
+      },
+      children: [{ type: 'text', value: `const ${key} = true;` }],
+    },
+  ],
+});
+
+describe('rehypeStaticCodeGroups', () => {
+  it('ui-code-group を native tab structure へ変換すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'ui-code-group',
+          properties: { 'aria-label': '実装比較' },
+          children: [
+            createStaticCodeBlock('valid', '正しい例', 'ts', 'valid.ts'),
+            createStaticCodeBlock('invalid', '誤り例', 'ts', 'invalid.ts'),
+          ],
+        },
+      ],
+    };
+
+    rehypeStaticCodeGroups()(tree);
+
+    const group = tree.children?.[0];
+    expect(group?.tagName).toBe('section');
+    expect(group?.properties?.['data-code-group']).toBe(true);
+    expect(group?.properties?.['aria-label']).toBe('実装比較');
+    expect(group?.properties?.['data-hydration-key']).toBe('code-group-enhancer');
+    expect(group?.properties?.['data-hydration-capability']).toBe('interactive');
+    expect(group?.properties?.['data-hydration-trigger']).toBe('visible');
+
+    const tabList = group?.children?.[0];
+    expect(tabList?.tagName).toBe('div');
+    expect(tabList?.properties?.['role']).toBe('tablist');
+
+    const firstTab = tabList?.children?.[0];
+    expect(firstTab?.tagName).toBe('button');
+    expect(firstTab?.properties?.['role']).toBe('tab');
+    expect(firstTab?.properties?.['aria-selected']).toBe('true');
+
+    const firstPanel = group?.children?.[1];
+    const secondPanel = group?.children?.[2];
+    expect(firstPanel?.tagName).toBe('section');
+    expect(firstPanel?.properties?.['role']).toBe('tabpanel');
+    expect(firstPanel?.children?.[0]?.tagName).toBe('pre');
+    expect(secondPanel?.properties?.['data-code-group-panel']).toBe('invalid');
+  });
+
+  it('child が 1 件だけなら code block をそのまま残すこと', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'ui-code-group',
+          properties: { 'aria-label': '単一' },
+          children: [createStaticCodeBlock('only', 'Only', 'ts')],
+        },
+      ],
+    };
+
+    rehypeStaticCodeGroups()(tree);
+
+    const first = tree.children?.[0];
+    expect(first?.tagName).toBe('pre');
+    expect(first?.properties?.['data-code-block']).toBe(true);
+  });
+});

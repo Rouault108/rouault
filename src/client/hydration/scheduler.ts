@@ -283,18 +283,20 @@ export class HydrationScheduler {
       return;
     }
 
-    try {
-      await customElements.whenDefined(item.tag);
-      diagnostics.upgradedCount += 1;
-    } catch {
-      diagnostics.failedCount += 1;
-      addHydrationIssue(diagnostics, {
-        code: 'upgrade-failed',
-        capability: item.capability,
-        trigger: item.trigger,
-      });
-      processed.add(item.element);
-      return;
+    if (entry.kind !== 'enhancer') {
+      try {
+        await customElements.whenDefined(item.tag);
+        diagnostics.upgradedCount += 1;
+      } catch {
+        diagnostics.failedCount += 1;
+        addHydrationIssue(diagnostics, {
+          code: 'upgrade-failed',
+          capability: item.capability,
+          trigger: item.trigger,
+        });
+        processed.add(item.element);
+        return;
+      }
     }
 
     try {

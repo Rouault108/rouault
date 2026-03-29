@@ -647,8 +647,8 @@ pnpm lint:fix
 | コンポーネント  | 説明                                                     | 状態 |
 | --------------- | -------------------------------------------------------- | ---- |
 | `ui-code`       | インラインコード (`<code>`)                              |      |
-| `ui-code-block` | コードブロック（シンタックスハイライト付き）             |      |
-| `ui-code-group` | コードグループ（コードブロックを束ねる）                 |      |
+| `pre[data-code-block]` | 静的コードブロック（シンタックスハイライト付き）   |      |
+| `section[data-code-group]` | 静的コードグループ（native tab structure） |      |
 | `ui-preview`    | コードブロックのプレビュー表示（code-groupの上位）       |      |
 | `ui-file-tree`  | ディレクトリ構造のツリー表示（YAML形式で記述すると出力） |      |
 | `ui-blockquote` | 引用ブロック                                             |      |

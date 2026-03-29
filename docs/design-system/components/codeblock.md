@@ -2,9 +2,11 @@
 
 ## 概要
 
-本書は、`ui-code-block` の基底契約を定義します。
+本書は、コード表示の基底契約を定義します。
 
-`ui-code-block` は、単一の論理コード片を表示・参照・複写するための基礎コンポーネントです。責務は、単に `pre/code` を囲って装飾することではありません。**コード本文の提示、文脈メタデータ、copy 値の取得、横スクロール時のアクセシビリティ、印刷や高コントラスト時の成立性**を、一貫した公開契約として扱います。
+読者向けの正規出力は `pre[data-code-block] > code[data-lang]` です。`ui-code-block` は Storybook や実験用 preview で使ってよい dev/demo adapter として残しますが、production Markdown 出力と note 本文の正規経路では前提にしません。
+
+本書では、単一の論理コード片を表示・参照・複写するための基底契約を、**静的 DOM 契約を正本**として定義します。責務は、単に `pre/code` を囲って装飾することではありません。**コード本文の提示、文脈メタデータ、copy 値の取得、横スクロール時のアクセシビリティ、印刷や高コントラスト時の成立性**を、一貫した公開契約として扱います。
 
 本書では、`ui-code-block` の契約を次の 3 層に分けて定義します。
 
@@ -19,7 +21,7 @@
 
 ## 1. 適用範囲
 
-本書は、`ui-code-block` の次の事項を対象とします。
+本書は、静的 code block 契約と `ui-code-block` adapter の次の事項を対象とします。
 
 - 基底公開契約
 - group item 契約
@@ -43,7 +45,7 @@
 - code group の選択制御
 - code preview の preview 面制御
 - URL 同期、永続化、分析イベント送信
-- Markdown 変換層がどのように `ui-code-block` を出力するかという上位規則
+- Markdown 変換層が `pre[data-code-block] > code[data-lang]` をどう生成するかという詳細実装
 
 これらは上位レイヤまたは別文書の責務です。
 
@@ -53,7 +55,7 @@
 
 ### 2.1 コード本文の正本は slotted `pre` / `code` です
 
-本コンポーネントの一次情報は、既定スロットへ与えられる `pre` または `pre > code` です。  
+一次情報の正本は `pre[data-code-block] > code[data-lang]` です。`ui-code-block` を使う場合も、この静的 code root を既定スロットへ与える adapter として扱います。  
 copy 値、行番号、行強調、スクロール補助は、この入力を基準に解決します。
 
 ### 2.2 単体契約と比較契約を混同しません
@@ -63,7 +65,7 @@ copy 値、行番号、行強調、スクロール補助は、この入力を基
 
 ### 2.3 親が子の意味状態を所有しません
 
-`ui-code-preview` などの親コンポーネントは、`ui-code-block` の意味状態を表す公開属性を所有しません。  
+`ui-code-preview` などの親コンポーネントは、code block の意味状態を表す公開属性を所有しません。  
 複合表示の視覚統合は、公開属性の付与ではなく CSS Custom Properties による合成で扱います。
 
 ### 2.4 同じ語を複数意味で使いません
@@ -87,7 +89,7 @@ copy button を見せるかどうかと、実際に copy 可能かどうかは�
 
 ## 3.1 基底契約
 
-`ui-code-block` の主要公開入力は次のとおりです。
+読者向けの正規入力は `pre[data-code-block]` 上の `data-code-*` 属性です。`ui-code-block` を使う場合は、次の入力を static 契約へ写像できなければなりません。
 
 | property | attribute | 必須 | 既定値 | 内容 |
 | --- | --- | --- | --- | --- |
@@ -114,7 +116,7 @@ copy button を見せるかどうかと、実際に copy 可能かどうかは�
 
 ## 3.2 group item 契約
 
-次の入力は、`ui-code-group` 配下で比較対象として使われるときにのみ意味を持ちます。
+次の入力は、`section[data-code-group]` 配下で比較対象として使われるときにのみ意味を持ちます。`ui-code-block` adapter を使う場合も、最終的には同じ metadata として静的 DOM へ落ちなければなりません。
 
 | property | attribute | 必須 | 既定値 | 内容 |
 | --- | --- | --- | --- | --- |
@@ -124,7 +126,7 @@ copy button を見せるかどうかと、実際に copy 可能かどうかは�
 
 ### 契約
 
-- `groupKey` は、`ui-code-group` 配下にある場合に限り必須です。
+- `groupKey` は、code group の比較対象として扱われる場合に限り必須です。
 - `groupKey` は可視ラベルや copy 文言の自動フォールバックには用いません。
 - `tabLabel` と `copyLabel` は別概念です。意味が異なる場合は両方を明示します。
 - `ui-code-block` 単体では、これらの値を表示のために解釈しません。
@@ -186,7 +188,7 @@ copy 用の文字列を返します。
 
 ### `ui-code-block-change`
 
-`ui-code-group` などの上位コンポーネントが再評価すべき状態変化を通知します。
+`ui-code-block` adapter を使う場合に、`ui-code-group` などの上位コンポーネントが再評価すべき状態変化を通知します。読者向けの静的本文では runtime event を前提にしません。
 
 | 項目 | 内容 |
 | --- | --- |
@@ -207,7 +209,7 @@ copy 用の文字列を返します。
 
 ## 6. 状態モデル
 
-`ui-code-block` は、attribute-driven な宣言的コンポーネントとして扱います。
+読者向けの code block は attribute-driven な静的 DOM として扱います。`ui-code-block` はその契約を模倣する adapter として扱います。
 
 ### 状態分類
 
@@ -271,7 +273,7 @@ copy 用の文字列を返します。
 
 ## 8.2 合成用 CSS Custom Properties
 
-`ui-code-block` は、`code-composition.md` に定義される共通トークンを受け入れてよいです。  
+`pre[data-code-block]` および `ui-code-block` adapter は、`code-composition.md` に定義される共通トークンを受け入れてよいです。  
 代表例は次のとおりです。
 
 - `--ui-code-surface-radius-top`
@@ -314,8 +316,8 @@ copy 用の文字列を返します。
 
 ## 9.4 No-JS
 
-- light DOM に本文が残るため、最低限の情報は失われません。
-- JavaScript 未実行時の完全な装飾成立は保証対象外です。
+- `pre[data-code-block] > code[data-lang]` 自体が完成形なので、JavaScript 未実行時でも本文読書は成立しなければなりません。
+- copy button や overflow 補助のような enhancer 由来 UI は省略されてよいです。
 
 ---
 
@@ -323,15 +325,15 @@ copy 用の文字列を返します。
 
 ## 10.1 `ui-code-group` との契約
 
-`ui-code-group` は、`ui-code-block` の **group item 契約**のみに依存します。  
+読者向けの code group は、code block の **group item 契約**を `data-code-*` metadata として参照します。`ui-code-group` adapter を使う場合も依存面は同じです。  
 すなわち、`groupKey`、`tabLabel`、`copyLabel`、`copyable`、`getCodeContent()`、`ui-code-block-change` が group 側の参照面です。
 
 `ui-code-group` は、`ui-code-block` の互換入力や単体表示専用契約に依存してはなりません。
 
 ## 10.2 `ui-code-preview` との契約
 
-`ui-code-preview` は、`ui-code-block` の公開属性を付与・除去して合成を成立させません。  
-視覚統合は `layout="inline"` と CSS Custom Properties により扱います。
+`ui-code-preview` は、静的 code root または `ui-code-block` adapter の公開属性を付与・除去して合成を成立させません。  
+視覚統合は `data-code-layout="inline"` 相当の出力と CSS Custom Properties により扱います。
 
 ---
 
@@ -339,7 +341,7 @@ copy 用の文字列を返します。
 
 | 条件 | 扱い |
 | --- | --- |
-| 既定スロットが空 | 正規契約不成立です。描画できても保証対象外です。 |
+| code root が空 | 正規契約不成立です。描画できても保証対象外です。 |
 | `pre` が複数ある | 正規契約不成立です。最初の 1 件だけを採っても公開保証しません。 |
 | `pre` なしで `code` のみ | 正規契約不成立です。 |
 | `copyable=false` | `getCodeContent()` が値を返しても公開上は copy 不可です。 |
@@ -378,10 +380,10 @@ copy 用の文字列を返します。
 
 本設計の要点は次の 5 点です。
 
-1. コード本文の正本を slotted `pre` / `code` に固定すること
-2. `ui-code-group` が依存する比較契約を block 文書内で正式化すること
+1. コード本文の正本を `pre[data-code-block] > code[data-lang]` に固定すること
+2. code group が依存する比較契約を block 文書内で正式化すること
 3. `embedded` や `label` を主要 API から外すこと
 4. 親子合成を公開属性の付与ではなく `layout` と CSS Custom Properties で扱うこと
 5. 意味の安定と内部 DOM 形状の安定を明確に分離すること
 
-この 5 点を崩さない限り、`ui-code-block` は単体・比較・プレビュー合成のいずれにおいても責務境界を保ったまま保守できます。
+この 5 点を崩さない限り、静的 code block 契約と `ui-code-block` adapter は単体・比較・プレビュー合成のいずれにおいても責務境界を保ったまま保守できます。

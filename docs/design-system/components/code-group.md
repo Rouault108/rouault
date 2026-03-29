@@ -2,18 +2,20 @@
 
 ## 概要
 
-本書は、`ui-code-group` の合成契約を定義します。
+本書は、code group の合成契約を定義します。
 
-`ui-code-group` は、複数の `ui-code-block` を比較可能な単一提示面へ束ねるコンポーネントです。責務は、単に block をタブ化することではありません。**比較対象の識別、選択状態の安定化、copy 文脈の同期、比較 UI の成立条件、入力違反時の退行規則**を、一貫した公開契約として提供することにあります。
+読者向けの正規出力は `section[data-code-group]` を root とする native tab structure です。`ui-code-group` は Storybook や実験用 preview で使ってよい dev/demo adapter として残しますが、production Markdown 出力と note 本文の正規経路では前提にしません。
 
-本設計では、`ui-code-group` は `ui-code-block` 本体契約全体には依存しません。  
-依存するのは、`ui-code-block` 文書に定義された **group item 契約**だけです。
+code group は、複数の code block を比較可能な単一提示面へ束ねる契約です。責務は、単に block をタブ化することではありません。**比較対象の識別、選択状態の安定化、copy 文脈の同期、比較 UI の成立条件、入力違反時の退行規則**を、一貫した公開契約として提供することにあります。
+
+本設計では、読者向けの `section[data-code-group]` も `ui-code-group` adapter も、code block 本体契約全体には依存しません。  
+依存するのは、code block 文書に定義された **group item 契約**だけです。
 
 ---
 
 ## 1. 適用範囲
 
-本書は、`ui-code-group` の次の事項を対象とします。
+本書は、静的 code group 契約と `ui-code-group` adapter の次の事項を対象とします。
 
 - 公開契約
 - 入力文法
@@ -46,9 +48,9 @@
 
 選択状態、イベント、動的更新後の再解決は、並び順 index ではなく `groupKey` を主識別子として扱います。
 
-### 2.2 依存先は `ui-code-block` の group item 契約に限定します
+### 2.2 依存先は code block の group item 契約に限定します
 
-`ui-code-group` が子に要求してよいのは、`groupKey`、`tabLabel`、`copyLabel`、`copyable`、`getCodeContent()`、`ui-code-block-change` だけです。  
+code group が比較対象へ要求してよいのは、`groupKey`、`tabLabel`、`copyLabel`、`copyable`、`getCodeContent()`、`ui-code-block-change` だけです。  
 block 側の互換入力や単体表示専用入力には依存しません。
 
 ### 2.3 可視ラベルと copy 文脈ラベルを分離します
@@ -76,8 +78,9 @@ block 側の互換入力や単体表示専用入力には依存しません。
 
 ## 3.1 正規入力
 
-`ui-code-group` の正規入力は、**host 直下の `ui-code-block` 要素列**です。  
-これらの child は、`ui-code-block` 文書に定義された **group item 契約**を満たしていなければなりません。
+読者向けの正規入力は、build-time で確定した `section[data-code-group]` 配下の `section[role="tabpanel"]` と、その内部にある `pre[data-code-block]` 要素列です。`ui-code-group` adapter を使う場合は、これと等価な child 集合へ正規化できなければなりません。
+
+各 panel 内の code block は、code block 文書に定義された **group item 契約**を満たしていなければなりません。
 
 ### child に要求する契約
 
@@ -94,10 +97,11 @@ block 側の互換入力や単体表示専用入力には依存しません。
 
 ## 3.2 受理対象の子要素
 
-- 比較対象として収集するのは、**host 直下の `ui-code-block` 要素ノードのみ**です。
+- 読者向けでは、比較対象として収集するのは `section[role="tabpanel"]` ごとに 1 件の `pre[data-code-block]` です。
+- `ui-code-group` adapter を使う場合は、host 直下の `ui-code-block` 要素列を受け取って同じ比較対象集合へ正規化してよいです。
 - テキストノード、コメントノードは比較対象判定に影響しません。
-- wrapper 要素配下の `ui-code-block` は比較対象に含めません。
-- `ui-code-block` 以外の直下要素が混在する場合、その構成は比較 UI の正規入力に含みません。
+- wrapper 要素越しに比較対象を探索することは公開契約に含めません。
+- 無関係要素が混在する場合、その構成は比較 UI の正規入力に含みません。
 
 ### 補足
 
@@ -235,7 +239,7 @@ child list と child metadata を再評価し、選択状態・copy 状態・ラ
 
 ## 5.1 タブ UI
 
-比較 UI が有効な場合、`ui-code-group` は tablist / tab / tabpanel パターンを形成します。
+比較 UI が有効な場合、読者向けの code group は `section[data-code-group]` の内部で tablist / tab / tabpanel パターンを形成します。
 
 ### 契約
 
@@ -246,8 +250,7 @@ child list と child metadata を再評価し、選択状態・copy 状態・ラ
 
 ## 5.2 比較 UI が無効な場合
 
-比較対象が 1 件以下、または入力違反により比較 UI を有効化できない場合、tablist / tab / tabpanel を形成しません。  
-単純表示へ退行します。
+比較対象が 1 件以下、または入力違反により比較 UI を有効化できない場合、では単一の `pre[data-code-block]` へ退行するか、各 panel を単純表示します。
 
 ## 5.3 copy button
 
@@ -304,8 +307,8 @@ group が copy button を内包する場合、active item に応じて次を同�
 
 ## 7.3 No-JS
 
-- light DOM に child block が残るため、最低限のコード本文は失われません。
-- タブ UI の完全成立は保証対象外です。
+- `section[data-code-group]` 配下の各 panel は light DOM に静的に残るため、JavaScript 未実行時でも全パネル縦積みで読めなければなりません。
+- tablist は enhancer 起動後にのみ表示されます。JavaScript 未実行時のタブ操作 UI は保証対象外です。
 
 ---
 
@@ -313,11 +316,11 @@ group が copy button を内包する場合、active item に応じて次を同�
 
 ## 8.1 `ui-code-block` との契約
 
-`ui-code-group` は、`ui-code-block` の group item 契約のみに依存します。
+読者向けの code group と `ui-code-group` adapter は、ともに code block の group item 契約のみに依存します。
 
 ## 8.2 `ui-code-preview` との契約
 
-`ui-code-preview` は `ui-code-group` の選択状態を所有しません。  
+`ui-code-preview` は `section[data-code-group]` または `ui-code-group` adapter の選択状態を所有しません。  
 必要な外部同期は `ui-code-group-change` を通じて上位オーケストレーション層が担います。
 
 ## 8.3 `code-composition.md` との関係
@@ -336,7 +339,7 @@ URL 同期、永続化、分析イベント、authoring lint、違反の重大�
 | `groupKey` 欠落 | その child は有効比較対象に含めません。 |
 | `groupKey` 重複 | 重複集合は有効比較対象に含めません。 |
 | タブラベル未解決 | その child は有効比較対象に含めません。 |
-| `ui-code-block` 以外の直下要素混在 | 正規契約不成立です。比較 UI を無効化してよいです。 |
+| 比較対象以外の要素混在 | 正規契約不成立です。比較 UI を無効化してよいです。 |
 | wrapper 越し child | 正規契約不成立です。比較対象に含めません。 |
 
 ---
@@ -348,7 +351,7 @@ URL 同期、永続化、分析イベント、authoring lint、違反の重大�
 次は **重大違反** として扱います。
 
 - `groupKey` 重複
-- `ui-code-block` 以外の直下要素混在により比較対象集合が不明瞭になる場合
+- 比較対象以外の要素混在により比較対象集合が不明瞭になる場合
 - wrapper 越し child に依存しないと比較対象を確定できない場合
 
 #### 契約
@@ -393,8 +396,8 @@ URL 同期、永続化、分析イベント、authoring lint、違反の重大�
 本設計の要点は次の 4 点です。
 
 1. 比較対象の主識別子を `groupKey` に固定すること
-2. `ui-code-block` への依存面を group item 契約に限定すること
+2. code block への依存面を group item 契約に限定すること
 3. 比較 UI 成立条件を「有効比較対象 2 件以上」に固定すること
 4. 重大違反と軽微違反を区別し、静かな劣化を減らすこと
 
-これにより、`ui-code-group` は block 実装の内部都合に引きずられず、長期保守しやすい比較コンポーネントとして成立します。
+これにより、静的 code group 契約と `ui-code-group` adapter は block 実装の内部都合に引きずられず、長期保守しやすい比較コンポーネントとして成立します。

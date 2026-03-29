@@ -50,18 +50,21 @@ test.describe('SSR Rendering', () => {
     await expect(page.locator('text=クイックソートの実装例').first()).toBeVisible();
     await expect(page.locator('code').first()).toContainText('function quickSort');
     await expect(page.locator('table').first()).toContainText('アルゴリズム');
-
-    const hasCodeBlockShadowRoot = await page
-      .locator('ui-code-block')
-      .first()
-      .evaluate((element) => element.shadowRoot !== null);
     const hasTableShadowRoot = await page
       .locator('ui-table')
       .first()
       .evaluate((element) => element.shadowRoot !== null);
 
-    expect(hasCodeBlockShadowRoot).toBe(true);
+    await expect(page.locator('pre[data-code-block]').first()).toBeVisible();
     expect(hasTableShadowRoot).toBe(true);
+  });
+
+  test('code group が JavaScript 無効時に全パネル縦積みで読めること', async ({ page }) => {
+    await page.goto(sortingEntryPath);
+
+    await expect(page.locator('section[data-code-group] pre[data-code-block]')).toHaveCount(2);
+    await expect(page.locator('section[data-code-group]')).toContainText('TypeScript');
+    await expect(page.locator('section[data-code-group]')).toContainText('JavaScript');
   });
 
   test('タグページが JavaScript 無効時も search-page として初期表示されること', async ({ page }) => {

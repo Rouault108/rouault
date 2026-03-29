@@ -10,19 +10,25 @@ interface HastNode {
 }
 
 describe('rehypeRouaultComponents', () => {
-  it('pre>code を ui-code-block に変換し、lang を推論すること', () => {
+  it('静的 code block はそのまま維持すること', () => {
     const tree: HastNode = {
       type: 'root',
       children: [
         {
           type: 'element',
           tagName: 'pre',
-          properties: {},
+          properties: {
+            'data-code-block': true,
+            'data-code-language': 'ts',
+          },
           children: [
             {
               type: 'element',
               tagName: 'code',
-              properties: { className: ['language-ts'] },
+              properties: {
+                className: ['language-ts'],
+                'data-lang': 'ts',
+              },
               children: [{ type: 'text', value: 'const n = 1;' }],
             },
           ],
@@ -33,74 +39,12 @@ describe('rehypeRouaultComponents', () => {
     rehypeRouaultComponents()(tree);
 
     const first = tree.children?.[0];
-    expect(first?.tagName).to.equal('ui-code-block');
-    expect(first?.properties?.['lang']).to.equal('ts');
-    expect(first?.properties?.['data-hydration-capability']).to.equal('progressive');
-    expect(first?.properties?.['data-hydration-trigger']).to.equal('post-commit');
-    expect(first?.children?.[0]?.tagName).to.equal('pre');
-    expect(first?.children?.[0]?.children?.[0]?.tagName).to.equal('code');
-  });
-
-  it('code のメタ属性を ui-code-block ホストへ昇格すること', () => {
-    const tree: HastNode = {
-      type: 'root',
-      children: [
-        {
-          type: 'element',
-          tagName: 'pre',
-          properties: {},
-          children: [
-            {
-              type: 'element',
-              tagName: 'code',
-              properties: {
-                className: ['language-ts'],
-                filename: 'sample.ts',
-                'group-key': 'sample',
-                'tab-label': '正解例',
-                'copy-label': '正解コード',
-                copyable: 'false',
-                intent: 'valid',
-                'show-line-numbers': true,
-                'copy-mode': 'always',
-                wrap: true,
-                'highlight-lines': '1,3-4',
-                layout: 'inline',
-              },
-              children: [{ type: 'text', value: 'const sample = 1;' }],
-            },
-          ],
-        },
-      ],
-    };
-
-    rehypeRouaultComponents()(tree);
-
-    const block = tree.children?.[0];
-    const code = block?.children?.[0]?.children?.[0];
-    expect(block?.tagName).to.equal('ui-code-block');
-    expect(block?.properties?.['filename']).to.equal('sample.ts');
-    expect(block?.properties?.['group-key']).to.equal('sample');
-    expect(block?.properties?.['tab-label']).to.equal('正解例');
-    expect(block?.properties?.['copy-label']).to.equal('正解コード');
-    expect(block?.properties?.['copyable']).to.equal('false');
-    expect(block?.properties?.['intent']).to.equal('valid');
-    expect(block?.properties?.['show-line-numbers']).to.equal(true);
-    expect(block?.properties?.['copy-mode']).to.equal('always');
-    expect(block?.properties?.['wrap']).to.equal(true);
-    expect(block?.properties?.['highlight-lines']).to.equal('1,3-4');
-    expect(block?.properties?.['layout']).to.equal('inline');
-    expect(code?.properties?.['filename']).to.equal(undefined);
-    expect(code?.properties?.['group-key']).to.equal(undefined);
-    expect(code?.properties?.['tab-label']).to.equal(undefined);
-    expect(code?.properties?.['copy-label']).to.equal(undefined);
-    expect(code?.properties?.['copyable']).to.equal(undefined);
-    expect(code?.properties?.['intent']).to.equal(undefined);
-    expect(code?.properties?.['show-line-numbers']).to.equal(undefined);
-    expect(code?.properties?.['copy-mode']).to.equal(undefined);
-    expect(code?.properties?.['wrap']).to.equal(undefined);
-    expect(code?.properties?.['highlight-lines']).to.equal(undefined);
-    expect(code?.properties?.['layout']).to.equal(undefined);
+    expect(first?.tagName).to.equal('pre');
+    expect(first?.properties?.['data-code-block']).to.equal(true);
+    expect(first?.properties?.['data-code-language']).to.equal('ts');
+    expect(first?.properties?.['data-hydration-capability']).to.equal(undefined);
+    expect(first?.properties?.['data-hydration-trigger']).to.equal(undefined);
+    expect(first?.children?.[0]?.tagName).to.equal('code');
   });
 
   it('table を ui-table にラップし、caption から aria-label を補完すること', () => {

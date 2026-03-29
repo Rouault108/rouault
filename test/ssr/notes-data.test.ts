@@ -296,7 +296,7 @@ describe('filterPublicNotes', () => {
     ]);
   });
 
-  it('reader-facing フィルタでは testing と demo を除外する', () => {
+  it('読者向け フィルタでは testing と demo を除外する', () => {
     const notes: SourceNote[] = [
       { slug: 'note-reader', kind: 'reader' },
       { slug: 'note-testing', kind: 'testing' },

@@ -239,7 +239,7 @@ describe('NoteLayout', () => {
     expect(rendered).toContain('data-pagefind-body');
   });
 
-  it('testing note では reader-facing Pagefind 属性を出力しないこと', () => {
+  it('testing note では 読者向け Pagefind 属性を出力しないこと', () => {
     const layout = new NoteLayout();
     const rendered = layout.render({
       content: '<ui-code-preview heading="例"></ui-code-preview>',

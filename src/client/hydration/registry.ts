@@ -8,6 +8,7 @@ export interface HydrationActivationContext {
 
 export interface HydrationRegistryEntry {
   readonly tag: string;
+  readonly kind?: 'custom-element' | 'enhancer';
   readonly loader: () => Promise<unknown>;
   readonly activate?: (context: HydrationActivationContext) => void | Promise<void>;
 }
@@ -26,6 +27,29 @@ const activateArticleHeaderTags = ({ root, element }: HydrationActivationContext
   }
 
   hydrateArticleHeaderTags(root);
+};
+
+let codeBlockEnhancerModule:
+  | typeof import('../post-hydrate/code-block-enhancer.js')
+  | null = null;
+let codeGroupEnhancerModule:
+  | typeof import('../post-hydrate/code-group-enhancer.js')
+  | null = null;
+
+const loadCodeBlockEnhancer = async (): Promise<void> => {
+  codeBlockEnhancerModule ??= await import('../post-hydrate/code-block-enhancer.js');
+};
+
+const loadCodeGroupEnhancer = async (): Promise<void> => {
+  codeGroupEnhancerModule ??= await import('../post-hydrate/code-group-enhancer.js');
+};
+
+const activateCodeBlockEnhancer = ({ element }: HydrationActivationContext): void => {
+  codeBlockEnhancerModule?.activateCodeBlockEnhancer(element);
+};
+
+const activateCodeGroupEnhancer = ({ element }: HydrationActivationContext): void => {
+  codeGroupEnhancerModule?.activateCodeGroupEnhancer(element);
 };
 
 export const HYDRATION_REGISTRY = [
@@ -118,11 +142,6 @@ export const HYDRATION_REGISTRY = [
     loader: () => import('../../components/ui/table/table.js'),
   },
   {
-    tag: 'ui-code-block',
-    loader: () => import('../../components/ui/codeblock/codeblock.js'),
-    activate: activateElementMethod,
-  },
-  {
     tag: 'ui-blockquote',
     loader: () => import('../../components/ui/blockquote/blockquote.js'),
   },
@@ -163,6 +182,18 @@ export const HYDRATION_REGISTRY = [
     tag: 'ui-translation',
     loader: () => import('../../components/ui/translation/translation.js'),
     activate: activateElementMethod,
+  },
+  {
+    tag: 'code-block-enhancer',
+    kind: 'enhancer',
+    loader: loadCodeBlockEnhancer,
+    activate: activateCodeBlockEnhancer,
+  },
+  {
+    tag: 'code-group-enhancer',
+    kind: 'enhancer',
+    loader: loadCodeGroupEnhancer,
+    activate: activateCodeGroupEnhancer,
   },
 ] as const satisfies readonly HydrationRegistryEntry[];
 

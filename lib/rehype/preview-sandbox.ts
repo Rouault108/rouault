@@ -19,6 +19,16 @@ const PREVIEW_KIND_TO_FILENAME: Record<PreviewKind, string> = {
   css: 'preview.css',
   js: 'preview.js',
 };
+const PREVIEW_KIND_TO_GROUP_KEY: Record<PreviewKind, string> = {
+  html: 'html',
+  css: 'css',
+  js: 'js',
+};
+const PREVIEW_KIND_TO_TAB_LABEL: Record<PreviewKind, string> = {
+  html: 'HTML',
+  css: 'CSS',
+  js: 'JavaScript',
+};
 
 const isElement = (node: HastNode, tagName?: string): boolean => {
   if (node.type !== 'element' || typeof node.tagName !== 'string') {
@@ -119,6 +129,12 @@ const createGeneratedCodeNode = (snippet: PreviewSnippet): HastNode => {
   codeProperties['className'] = [`language-${PREVIEW_KIND_TO_LANGUAGE[snippet.kind]}`];
   codeProperties['filename'] =
     pickOptionalString(codeProperties['filename']) ?? PREVIEW_KIND_TO_FILENAME[snippet.kind];
+  codeProperties['group-key'] =
+    pickOptionalString(codeProperties['group-key']) ?? PREVIEW_KIND_TO_GROUP_KEY[snippet.kind];
+  codeProperties['tab-label'] =
+    pickOptionalString(codeProperties['tab-label']) ?? PREVIEW_KIND_TO_TAB_LABEL[snippet.kind];
+  codeProperties['copy-label'] =
+    pickOptionalString(codeProperties['copy-label']) ?? PREVIEW_KIND_TO_TAB_LABEL[snippet.kind];
 
   return {
     type: 'element',

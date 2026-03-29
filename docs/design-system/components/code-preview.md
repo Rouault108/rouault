@@ -29,7 +29,7 @@
 
 - preview スロット内で描画する個別 UI の業務ロジック
 - code 面のコード文字列生成規則
-- `ui-code-block` / `ui-code-group` 自体の copy や tab 契約
+- static code root や dev/demo adapter 自体の copy や tab 契約
 - URL 同期、永続化、分析イベント送信の最終方針
 - 実行系 preview や sandbox の責務
 - authoring lint / CI の最終判定基準
@@ -48,11 +48,11 @@
 ### 2.2 見出しと code metadata を混同しません
 
 preview ヘッダー左側の見出しは `heading` で表します。  
-これは `ui-code-block` の `filename` や `ui-code-group` の `tabLabel` とは別概念です。
+これは code block の `filename` や code group の `tabLabel` とは別概念です。
 
 ### 2.3 親が子の公開属性を所有しません
 
-`ui-code-preview` は `ui-code-block` / `ui-code-group` へ `embedded` のような属性を付与・除去しません。  
+`ui-code-preview` は静的 code root や dev/demo adapter へ `embedded` のような属性を付与・除去しません。  
 子の意味状態は子自身の契約に属し、preview はそれを上書きしません。
 
 ### 2.4 視覚統合はスタイル合成で扱います
@@ -98,7 +98,7 @@ preview ヘッダー左側の見出しは `heading` で表します。
 | 名前 | 種別 | 必須 | 個数 | 内容 |
 | --- | --- | --- | --- | --- |
 | `preview` | named slot | 正規構成では必須 | ちょうど 1 | preview 面の root を受け取ります。 |
-| 既定スロット | slot | 正規構成では必須 | ちょうど 1 | `ui-code-block` または `ui-code-group` を直接受け取ります。 |
+| 既定スロット | slot | 正規構成では必須 | ちょうど 1 | `pre[data-code-block]` または `section[data-code-group]` を直接受け取ります。 |
 | `toolbar` | named slot | いいえ | 0 個以上 | ヘッダー右側の補助操作を受け取ります。 |
 
 ## 3.3 正規構成
@@ -107,7 +107,7 @@ preview ヘッダー左側の見出しは `heading` で表します。
 
 1. `preview` スロットに preview root が 1 つあること
 2. 既定スロットに code root が 1 つあること
-3. code root は `ui-code-block` または `ui-code-group` であること
+3. code root は `pre[data-code-block]` または `section[data-code-group]` であること
 4. code root は `ui-code-preview` の直接子要素であること
 5. `toolbar` は補助操作のみを受け持つこと
 
@@ -124,8 +124,8 @@ preview ヘッダー左側の見出しは `heading` で表します。
 `ui-code-preview` は code root の公開属性を設定・除去しません。  
 ただし、次の構成を推奨します。
 
-- code root が `ui-code-block` の場合は `layout="inline"` を用いる
-- code root が `ui-code-group` の場合は group 側の標準外装を用いる
+- code root が単体 block の場合は `data-code-layout="inline"` を build-time で反映する
+- code root が group の場合は `section[data-code-group]` の標準外装をそのまま用いる
 
 ### 契約
 
@@ -283,23 +283,23 @@ built-in controls または公開 property 更新により preview の公開状�
 
 ## 7.4 No-JS
 
-- slot ベースの構造のため、preview 内容と code 内容は light DOM に残ります。
-- JavaScript 未実行時でも、少なくとも情報そのものは失われません。
+- slot ベースの構造のため、preview 内容と static code root は light DOM に残ります。
+- JavaScript 未実行時でも、少なくとも preview と code の本文情報は失われません。
 
 ---
 
 ## 8. 関連契約
 
-## 8.1 `ui-code-block` との契約
+## 8.1 単体 code block との契約
 
 - preview は block の公開属性を設定・除去しません。
-- block を code root として用いる場合、author は `layout="inline"` を選ぶべきです。
+- block を code root として用いる場合、authoring / build-time は `data-code-layout="inline"` 相当へ正規化すべきです。
 - 視覚統合は CSS Custom Properties で補助し得ます。
 
-## 8.2 `ui-code-group` との契約
+## 8.2 code group との契約
 
 - preview は group の選択状態や公開属性を所有しません。
-- group を code root としてそのまま組み込みます。
+- group を static code root としてそのまま組み込みます。
 - 必要な外部同期は `ui-code-group-change` を上位層が受けて行います。
 
 ## 8.3 `code-composition.md` との関係
@@ -355,8 +355,8 @@ built-in controls または公開 property 更新により preview の公開状�
 
 少なくとも次を検証対象に含めます。
 
-- `ui-code-block` を code root とする正規構成
-- `ui-code-group` を code root とする正規構成
+- `pre[data-code-block]` を code root とする正規構成
+- `section[data-code-group]` を code root とする正規構成
 - `heading` あり / なし
 - `controls` の各組み合わせ
 - `ui-code-preview-state-change` の送出

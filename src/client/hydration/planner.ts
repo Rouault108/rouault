@@ -12,6 +12,7 @@ export interface HydrationPlannerOptions {
 const SCOPE_ATTRIBUTE = 'data-hydration-scope';
 const CAPABILITY_ATTRIBUTE = 'data-hydration-capability';
 const TRIGGER_ATTRIBUTE = 'data-hydration-trigger';
+const KEY_ATTRIBUTE = 'data-hydration-key';
 
 const VALID_CAPABILITIES = new Set<HydrationCapability>([
   'static',
@@ -61,7 +62,7 @@ const readPlanItem = (
   }
 
   return {
-    tag: element.localName,
+    tag: element.getAttribute(KEY_ATTRIBUTE)?.trim() || element.localName,
     element: element as HTMLElement,
     scope: scopeId,
     trigger,
@@ -107,7 +108,7 @@ const buildFallbackPlan = (root: ParentNode, scopeId: string, selector: string):
 
   if (isElement(root) && root.matches(selector)) {
     items.push({
-      tag: root.localName,
+      tag: root.getAttribute(KEY_ATTRIBUTE)?.trim() || root.localName,
       element: root as HTMLElement,
       scope: scopeId,
       trigger: 'initial',
@@ -118,7 +119,7 @@ const buildFallbackPlan = (root: ParentNode, scopeId: string, selector: string):
 
   for (const element of root.querySelectorAll(selector)) {
     items.push({
-      tag: element.localName,
+      tag: element.getAttribute(KEY_ATTRIBUTE)?.trim() || element.localName,
       element: element as HTMLElement,
       scope: scopeId,
       trigger: 'initial',

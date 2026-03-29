@@ -5,8 +5,6 @@ import {
 } from '../media/image-resolver.js';
 import { type HastNode } from './hast-utils.js';
 
-const CODE_BLOCK_INTENTS = new Set(['neutral', 'valid', 'invalid']);
-
 interface FootnoteDefinition {
   readonly refId: string;
   readonly index: number;
@@ -55,11 +53,18 @@ const pickOptionalString = (value: unknown): string | undefined => {
   return trimmed.length > 0 ? trimmed : undefined;
 };
 
-const findCodeChild = (preNode: HastNode): HastNode | null => {
-  if (!Array.isArray(preNode.children)) {
-    return null;
+const toBooleanAttribute = (value: unknown): boolean => {
+  if (typeof value === 'boolean') {
+    return value;
   }
-  return preNode.children.find((child) => isElement(child, 'code')) ?? null;
+  if (typeof value === 'number') {
+    return value !== 0;
+  }
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    return normalized === '' || normalized === 'true' || normalized === '1' || normalized === 'on';
+  }
+  return false;
 };
 
 const getTextContent = (node: HastNode): string => {
@@ -78,32 +83,6 @@ const isWhitespaceText = (node: HastNode): boolean =>
   node.type === 'text' && (typeof node.value !== 'string' || node.value.trim().length === 0);
 
 const normalizeWhitespace = (value: string): string => value.replace(/\s+/g, ' ').trim();
-
-const toBooleanAttribute = (value: unknown): boolean => {
-  if (typeof value === 'boolean') {
-    return value;
-  }
-  if (typeof value === 'number') {
-    return value !== 0;
-  }
-  if (typeof value === 'string') {
-    const normalized = value.trim().toLowerCase();
-    return normalized === '' || normalized === 'true' || normalized === '1' || normalized === 'on';
-  }
-  return false;
-};
-
-const toPositiveInteger = (value: unknown): number | null => {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    const normalized = Math.trunc(value);
-    return normalized > 0 ? normalized : null;
-  }
-  if (typeof value === 'string' && value.trim() !== '') {
-    const parsed = Number.parseInt(value, 10);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-  }
-  return null;
-};
 
 const setHydrationDirective = (node: HastNode, directive: HydrationDirective): void => {
   const properties = node.properties ?? {};
@@ -130,10 +109,6 @@ const resolveHydrationDirective = (node: HastNode): HydrationDirective | null =>
     case 'layout-sidebar':
     case 'layout-toc':
       return { capability: 'interactive', trigger: 'initial' };
-    case 'ui-code-block':
-      return { capability: 'progressive', trigger: 'post-commit' };
-    case 'ui-code-group':
-      return { capability: 'interactive', trigger: 'visible' };
     case 'ui-code-preview': {
       const controls = pickOptionalString(node.properties?.['controls']);
       if (controls || hasToolbarSlot(node)) {
@@ -178,141 +153,6 @@ const cloneNode = (node: HastNode): HastNode => {
     clonedNode.children = node.children.map((child) => cloneNode(child));
   }
   return clonedNode;
-};
-
-const extractCodeLanguage = (preNode: HastNode): string | null => {
-  const codeNode = findCodeChild(preNode);
-  if (!codeNode) {
-    return null;
-  }
-
-  const classList = getClassList(codeNode.properties?.['className']);
-  for (const className of classList) {
-    if (!className.startsWith('language-')) {
-      continue;
-    }
-
-    const language = className.slice('language-'.length).trim().toLowerCase();
-    if (language.length > 0) {
-      return language;
-    }
-  }
-
-  return null;
-};
-
-const isCodeBlockPre = (node: HastNode): boolean => {
-  if (!isElement(node, 'pre') || !Array.isArray(node.children)) {
-    return false;
-  }
-
-  return node.children.some((child) => isElement(child, 'code'));
-};
-
-const moveCodeMetaToHost = (preNode: HastNode, hostProperties: Record<string, unknown>): void => {
-  const codeNode = findCodeChild(preNode);
-  if (!codeNode?.properties) {
-    return;
-  }
-
-  const codeProperties = codeNode.properties;
-  const filename = pickOptionalString(codeProperties['filename']);
-  if (filename) {
-    hostProperties['filename'] = filename;
-  }
-
-  const label = pickOptionalString(codeProperties['label']);
-  if (label) {
-    hostProperties['label'] = label;
-  }
-
-  const groupKey = pickOptionalString(codeProperties['group-key']);
-  if (groupKey) {
-    hostProperties['group-key'] = groupKey;
-  }
-
-  const tabLabel = pickOptionalString(codeProperties['tab-label']);
-  if (tabLabel) {
-    hostProperties['tab-label'] = tabLabel;
-  }
-
-  const copyLabel = pickOptionalString(codeProperties['copy-label']);
-  if (copyLabel) {
-    hostProperties['copy-label'] = copyLabel;
-  }
-
-  const intent = pickOptionalString(codeProperties['intent'])?.toLowerCase();
-  if (intent && CODE_BLOCK_INTENTS.has(intent)) {
-    hostProperties['intent'] = intent;
-  }
-
-  if (toBooleanAttribute(codeProperties['show-line-numbers'])) {
-    hostProperties['show-line-numbers'] = true;
-  }
-
-  const copyMode = pickOptionalString(codeProperties['copy-mode'])?.toLowerCase();
-  if (copyMode) {
-    hostProperties['copy-mode'] = copyMode;
-  }
-
-  if (typeof codeProperties['copyable'] === 'string') {
-    hostProperties['copyable'] = codeProperties['copyable'];
-  }
-
-  if (toBooleanAttribute(codeProperties['wrap'])) {
-    hostProperties['wrap'] = true;
-  }
-
-  const highlightLines = pickOptionalString(codeProperties['highlight-lines']);
-  if (highlightLines) {
-    hostProperties['highlight-lines'] = highlightLines;
-  }
-
-  const layout = pickOptionalString(codeProperties['layout'])?.toLowerCase();
-  if (layout) {
-    hostProperties['layout'] = layout;
-  }
-
-  delete codeProperties['filename'];
-  delete codeProperties['label'];
-  delete codeProperties['group-key'];
-  delete codeProperties['tab-label'];
-  delete codeProperties['copy-label'];
-  delete codeProperties['intent'];
-  delete codeProperties['show-line-numbers'];
-  delete codeProperties['copy-mode'];
-  delete codeProperties['copyable'];
-  delete codeProperties['wrap'];
-  delete codeProperties['highlight-lines'];
-  delete codeProperties['layout'];
-};
-
-const toUiCodeBlock = (node: HastNode): void => {
-  const originalProperties = node.properties ?? {};
-  const originalChildren = Array.isArray(node.children) ? node.children : [];
-  const detectedLanguage = extractCodeLanguage(node);
-
-  const hostProperties: Record<string, unknown> = {};
-  if (
-    typeof originalProperties['lang'] === 'string' &&
-    originalProperties['lang'].trim().length > 0
-  ) {
-    hostProperties['lang'] = originalProperties['lang'].trim().toLowerCase();
-  } else if (detectedLanguage !== null) {
-    hostProperties['lang'] = detectedLanguage;
-  }
-  moveCodeMetaToHost(node, hostProperties);
-
-  node.tagName = 'ui-code-block';
-  node.properties = hostProperties;
-  node.children = [
-    {
-      type: 'element',
-      tagName: 'pre',
-      properties: originalProperties,
-      children: originalChildren,
-    },
-  ];
 };
 
 const toUiTable = (node: HastNode): void => {
@@ -917,9 +757,7 @@ export function rehypeRouaultComponents() {
         return;
       }
 
-      if (isCodeBlockPre(current)) {
-        toUiCodeBlock(current);
-      } else if (isElement(current, 'li')) {
+      if (isElement(current, 'li')) {
         toUiTaskListItem(current);
       } else if (toUiFootnoteReference(current, footnoteDefinitions, footnoteRefCounters)) {
         return;

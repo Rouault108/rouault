@@ -31,7 +31,7 @@ const getLineElements = (codeNode: HastNode | undefined): HastNode[] =>
   );
 
 describe('rehypeShikiCodeBlocks', () => {
-  it('fenced code を Shiki の classic 構造へ変換し、meta を保持する', async () => {
+  it('fenced code を静的 code block 構造へ変換し、meta を data 属性へ保持する', async () => {
     const tree: HastNode = {
       type: 'root',
       children: [
@@ -70,25 +70,35 @@ describe('rehypeShikiCodeBlocks', () => {
     const pre = tree.children?.[0];
     expect(pre?.tagName).toBe('pre');
     expect(readNodeClassList(pre)).toContain('shiki');
-    expect(pre?.properties?.['lang']).toBe('ts');
-    expect(pre?.properties?.['data-raw']).toBe(
+    expect(pre?.properties?.['data-code-block']).toBe(true);
+    expect(pre?.properties?.['data-code-language']).toBe('ts');
+    expect(pre?.properties?.['data-code-raw']).toBe(
       'const highlighted = 1; // [!code highlight]\nconst added = 2; // [!code ++]',
     );
+    expect(pre?.properties?.['data-code-filename']).toBe('sample.ts');
+    expect(pre?.properties?.['data-code-label']).toBe('例');
+    expect(pre?.properties?.['data-code-intent']).toBe('invalid');
+    expect(pre?.properties?.['data-code-line-numbers']).toBe('true');
+    expect(pre?.properties?.['data-code-copy-mode']).toBe('always');
+    expect(pre?.properties?.['data-code-wrap']).toBe('true');
+    expect(pre?.properties?.['data-code-highlight-lines']).toBe('1,3-4');
+    expect(pre?.properties?.['data-code-layout']).toBe('inline');
 
     const code = pre?.children?.find((child) => child.tagName === 'code');
-    expect(code?.properties?.['filename']).toBe('sample.ts');
-    expect(code?.properties?.['label']).toBe('例');
-    expect(code?.properties?.['intent']).toBe('invalid');
-    expect(code?.properties?.['show-line-numbers']).toBe(true);
-    expect(code?.properties?.['copy-mode']).toBe('always');
-    expect(code?.properties?.['wrap']).toBe(true);
-    expect(code?.properties?.['highlight-lines']).toBe('1,3-4');
-    expect(code?.properties?.['layout']).toBe('inline');
+    expect(code?.properties?.['data-lang']).toBe('ts');
+    expect(code?.properties?.['filename']).toBeUndefined();
+    expect(code?.properties?.['label']).toBeUndefined();
+    expect(code?.properties?.['intent']).toBeUndefined();
+    expect(code?.properties?.['show-line-numbers']).toBeUndefined();
+    expect(code?.properties?.['copy-mode']).toBeUndefined();
+    expect(code?.properties?.['wrap']).toBeUndefined();
+    expect(code?.properties?.['highlight-lines']).toBeUndefined();
+    expect(code?.properties?.['layout']).toBeUndefined();
     expect(code?.properties?.['data-shiki-meta']).toBeUndefined();
 
     const lines = getLineElements(code);
     expect(lines).toHaveLength(2);
-    expect(readNodeClassList(lines[0])).toContain('highlighted');
+    expect(readNodeClassList(lines[0])).toContain('ui-explicit-highlight');
     expect(readNodeClassList(lines[1])).toContain('diff');
     expect(readNodeClassList(lines[1])).toContain('add');
   });
@@ -120,7 +130,7 @@ describe('rehypeShikiCodeBlocks', () => {
     const pre = tree.children?.[0];
     expect(pre?.tagName).toBe('pre');
     expect(readNodeClassList(pre)).toContain('shiki');
-    expect(pre?.properties?.['lang']).toBe('text');
-    expect(pre?.properties?.['data-raw']).toBe('plain text block');
+    expect(pre?.properties?.['data-code-language']).toBe('text');
+    expect(pre?.properties?.['data-code-raw']).toBe('plain text block');
   });
 });

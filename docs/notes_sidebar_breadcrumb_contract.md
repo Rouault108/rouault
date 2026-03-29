@@ -305,7 +305,7 @@ sidebar UI の内部状態管理に用いる stable ID。
 4. コンテンツ作者は、path segment、slug、ディレクトリ名、または note 名において `__index__` と意味的に衝突しうる命名をしてはならない。
 5. `slug`、`directoryPath`、`permalink`、`TreeNode.id` の識別子契約と、`note.title` および path segment 由来ラベルの表示契約は分離して扱わなければならない。
 6. `note.title`、breadcrumb 表示ラベル、sidebar 表示ラベルは表示用であり、公開識別子または内部状態識別子の代替として扱ってはならない。
-7. note / directory / breadcrumb の表示ラベル解決規則は `7.5 Navigation label resolution 契約` が所有し、author-facing な詳細な命名ガイドラインは別文書で所有してよい。
+7. note / directory / breadcrumb の表示ラベル解決規則は `7.5 Navigation label resolution 契約` が所有し、著者向けな詳細な命名ガイドラインは別文書で所有してよい。
 
 ### 10.2 ナビゲーション制約
 

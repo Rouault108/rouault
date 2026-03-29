@@ -52,6 +52,11 @@ const findCodeChild = (preNode: HastNode): HastNode | null => {
   return preNode.children.find((child) => isElement(child, 'code')) ?? null;
 };
 
+const getElementChildren = (node: HastNode): HastNode[] =>
+  Array.isArray(node.children)
+    ? node.children.filter((child) => child.type === 'element')
+    : [];
+
 const getTextContent = (node: HastNode): string => {
   if (node.type === 'text') {
     return typeof node.value === 'string' ? node.value : '';
@@ -71,6 +76,79 @@ const pickOptionalString = (value: unknown): string | undefined => {
 
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : undefined;
+};
+
+const setOptionalProperty = (
+  properties: Record<string, unknown>,
+  key: string,
+  value: string | undefined,
+): void => {
+  if (value !== undefined) {
+    properties[key] = value;
+  }
+};
+
+const parseHighlightLines = (value: string | undefined): Set<number> => {
+  if (!value) {
+    return new Set<number>();
+  }
+
+  const lines = new Set<number>();
+  const tokens = value
+    .split(',')
+    .map((token) => token.trim())
+    .filter((token) => token.length > 0);
+
+  for (const token of tokens) {
+    const rangeMatch = /^(\d+)-(\d+)$/.exec(token);
+    if (rangeMatch) {
+      const start = Number.parseInt(rangeMatch[1] ?? '', 10);
+      const end = Number.parseInt(rangeMatch[2] ?? '', 10);
+      if (!Number.isFinite(start) || !Number.isFinite(end) || start <= 0 || end < start) {
+        continue;
+      }
+
+      for (let index = start; index <= end; index += 1) {
+        lines.add(index);
+      }
+      continue;
+    }
+
+    const single = Number.parseInt(token, 10);
+    if (Number.isFinite(single) && single > 0) {
+      lines.add(single);
+    }
+  }
+
+  return lines;
+};
+
+const addLineClass = (lineNode: HastNode, className: string): void => {
+  const existing = getClassList(lineNode.properties?.['className']);
+  if (existing.includes(className)) {
+    return;
+  }
+
+  lineNode.properties = {
+    ...(lineNode.properties ?? {}),
+    className: [...existing, className],
+  };
+};
+
+const annotateExplicitHighlights = (codeNode: HastNode, highlightLines: string | undefined): void => {
+  const explicitLines = parseHighlightLines(highlightLines);
+  if (explicitLines.size === 0) {
+    return;
+  }
+
+  const lineNodes = getElementChildren(codeNode).filter((child) => child.tagName === 'span');
+  lineNodes.forEach((lineNode, index) => {
+    if (!explicitLines.has(index + 1)) {
+      return;
+    }
+
+    addLineClass(lineNode, 'ui-explicit-highlight');
+  });
 };
 
 const resolveLanguage = (language: string | undefined): string => {
@@ -178,21 +256,70 @@ const highlightCodeBlock = async (node: HastNode): Promise<void> => {
 
   const highlightedCode = findCodeChild(highlightedPre);
   if (highlightedCode) {
-    highlightedCode.properties = {
+    const mergedProperties = {
       ...(highlightedCode.properties ?? {}),
       ...codeNode.properties,
     };
+    const filename = pickOptionalString(mergedProperties['filename']);
+    const label = pickOptionalString(mergedProperties['label']);
+    const groupKey = pickOptionalString(mergedProperties['group-key']);
+    const tabLabel = pickOptionalString(mergedProperties['tab-label']);
+    const copyLabel = pickOptionalString(mergedProperties['copy-label']);
+    const intent = pickOptionalString(mergedProperties['intent'])?.toLowerCase();
+    const copyMode = pickOptionalString(mergedProperties['copy-mode'])?.toLowerCase();
+    const wrap = mergedProperties['wrap'] === true ? 'true' : undefined;
+    const highlightLines = pickOptionalString(mergedProperties['highlight-lines']);
+    const layout = pickOptionalString(mergedProperties['layout'])?.toLowerCase();
+    const copyable =
+      typeof mergedProperties['copyable'] === 'string' &&
+      mergedProperties['copyable'].trim().toLowerCase() === 'false'
+        ? 'false'
+        : undefined;
+    const lineNumbers = mergedProperties['show-line-numbers'] === true ? 'true' : undefined;
+
+    highlightedCode.properties = {
+      ...mergedProperties,
+      'data-lang': language,
+    };
+
     delete highlightedCode.properties['data-shiki-meta'];
+    delete highlightedCode.properties['filename'];
+    delete highlightedCode.properties['label'];
+    delete highlightedCode.properties['group-key'];
+    delete highlightedCode.properties['tab-label'];
+    delete highlightedCode.properties['copy-label'];
+    delete highlightedCode.properties['intent'];
+    delete highlightedCode.properties['show-line-numbers'];
+    delete highlightedCode.properties['copy-mode'];
+    delete highlightedCode.properties['copyable'];
+    delete highlightedCode.properties['wrap'];
+    delete highlightedCode.properties['highlight-lines'];
+    delete highlightedCode.properties['layout'];
+
+    annotateExplicitHighlights(highlightedCode, highlightLines);
+
+    highlightedPre.properties = {
+      ...(highlightedPre.properties ?? {}),
+      'data-code-block': true,
+      'data-code-language': language,
+      'data-code-raw': source,
+      ...(intent ? { 'data-code-intent': intent } : {}),
+      ...(lineNumbers ? { 'data-code-line-numbers': lineNumbers } : {}),
+      ...(copyMode ? { 'data-code-copy-mode': copyMode } : {}),
+      ...(wrap ? { 'data-code-wrap': wrap } : {}),
+      ...(highlightLines ? { 'data-code-highlight-lines': highlightLines } : {}),
+      ...(layout ? { 'data-code-layout': layout } : {}),
+      ...(copyable ? { 'data-code-copyable': copyable } : {}),
+    };
+    setOptionalProperty(highlightedPre.properties, 'data-code-filename', filename);
+    setOptionalProperty(highlightedPre.properties, 'data-code-label', label);
+    setOptionalProperty(highlightedPre.properties, 'data-code-group-key', groupKey);
+    setOptionalProperty(highlightedPre.properties, 'data-code-tab-label', tabLabel);
+    setOptionalProperty(highlightedPre.properties, 'data-code-copy-label', copyLabel);
   }
 
-  highlightedPre.properties = {
-    ...(highlightedPre.properties ?? {}),
-    'data-raw': source,
-    lang: language,
-  };
-
   node.tagName = 'pre';
-  node.properties = highlightedPre.properties;
+  node.properties = highlightedPre.properties ?? {};
   node.children = highlightedPre.children ?? [];
 };
 
