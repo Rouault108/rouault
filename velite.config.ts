@@ -1,4 +1,5 @@
 import rehypeKatex from 'rehype-katex';
+import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import { defineCollection, defineConfig, s } from 'velite';
 
@@ -74,6 +75,7 @@ export default defineConfig({
     copyLinkedFiles: false,
     remarkPlugins: [
       remarkMath,
+      [remarkGfm, { singleTilde: false }],
       remarkExpandExampleIncludes,
       remarkDisallowRawHtml,
       remarkRouaultDirectives,
