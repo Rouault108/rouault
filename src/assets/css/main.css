@@ -396,7 +396,7 @@ ui-article-header + .prose {
 }
 
 :is(.prose, .about-prose) :is(h2, h3, h4, h5, h6)[id] {
-  display: inline-block;
+  display: block;
   max-inline-size: 100%;
   padding-inline: var(--space-1, 4px);
   margin-inline: calc(var(--space-1, 4px) * -1);
@@ -1351,13 +1351,8 @@ app-router {
 }
 
 .note-shell {
-  --note-sidebar-track: var(--sidebar-width);
   --note-toc-track: var(--aside-width);
   display: grid;
-  grid-template-columns:
-    var(--note-sidebar-track)
-    minmax(0, 1fr)
-    var(--note-toc-track);
   align-items: start;
   min-height: calc(100vh - var(--header-height));
   max-width: var(--bp-xl);
@@ -1365,9 +1360,17 @@ app-router {
   width: 100%;
 }
 
-.note-shell[data-note-kind='testing'],
-.note-shell[data-note-kind='demo'] {
-  --note-sidebar-track: 0px;
+.note-shell[data-sidebar-presence='present'] {
+  grid-template-columns:
+    var(--sidebar-width)
+    minmax(0, 1fr)
+    var(--note-toc-track);
+}
+
+.note-shell[data-sidebar-presence='absent'] {
+  grid-template-columns:
+    minmax(0, 1fr)
+    var(--note-toc-track);
 }
 
 .about-shell {
@@ -1386,6 +1389,26 @@ app-router {
 .layout-toc-col {
   box-sizing: border-box;
   min-inline-size: 0;
+}
+
+.note-shell[data-sidebar-presence='present'] .layout-sidebar-col {
+  grid-column: 1;
+}
+
+.note-shell[data-sidebar-presence='present'] .layout-main-col {
+  grid-column: 2;
+}
+
+.note-shell[data-sidebar-presence='present'] .layout-toc-col {
+  grid-column: 3;
+}
+
+.note-shell[data-sidebar-presence='absent'] .layout-main-col {
+  grid-column: 1;
+}
+
+.note-shell[data-sidebar-presence='absent'] .layout-toc-col {
+  grid-column: 2;
 }
 
 .layout-sidebar-col {
@@ -1679,9 +1702,17 @@ app-router {
 
 /* Tablet: 2カラム（本文 + TOC） */
 @media (max-width: 767px) {
-  .note-shell {
-    --note-sidebar-track: 0px;
-    --note-toc-track: minmax(200px, 34vw);
+  .note-shell[data-sidebar-presence='present'] {
+    grid-template-columns:
+      0px
+      minmax(0, 1fr)
+      minmax(200px, 34vw);
+  }
+
+  .note-shell[data-sidebar-presence='absent'] {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(200px, 34vw);
   }
 
   .about-shell {
@@ -1704,9 +1735,17 @@ app-router {
 
 /* Mobile: 1カラム（本文のみ） */
 @media (max-width: 639px) {
-  .note-shell {
-    --note-sidebar-track: 0px;
-    --note-toc-track: 0px;
+  .note-shell[data-sidebar-presence='present'] {
+    grid-template-columns:
+      0px
+      minmax(0, 1fr)
+      0px;
+  }
+
+  .note-shell[data-sidebar-presence='absent'] {
+    grid-template-columns:
+      minmax(0, 1fr)
+      0px;
   }
 
   .about-shell {
