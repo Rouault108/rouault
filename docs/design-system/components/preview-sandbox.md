@@ -187,8 +187,10 @@
 - `activationPolicy="eager"` の場合、preview は接続後に初回構築します
 - `activationPolicy="visible"` の場合、preview は viewport 近傍に達した時点で初回構築します
 - `activationPolicy="manual"` の場合、preview は利用者または上位 UI からの明示的な活性化までは初回構築しません
+- note ページでは build-time の hydration directive により、`ui-preview-sandbox` 自体の活性化がさらに遅延されてよいものとします。この場合 `activationPolicy` は component が hydrate された後の初回構築条件として評価します
 - activation は **初回構築の開始条件**であり、構築後の挙動、capability、network、sanitization の意味を変更しません
 - 未活性状態では preview 文書は未構築であってよく、その間の高さは `height` を用います
+- 未活性状態の host は placeholder のみを描画してよく、iframe を先に生成してはなりません
 - 一度構築した preview は、以後 `activationPolicy` の違いによって自動破棄しません
 
 ### Height Policy

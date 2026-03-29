@@ -103,7 +103,7 @@
 | `::callout` | `ui-callout` | `kind` / `heading` / `label` / `icon` / `heading-level` |
 | `::code-group` | `ui-code-group` | `aria-label`。内包 `code` メタは `filename` / `group-key` / `tab-label` / `copy-label` / `copyable` / `copy-mode` / `wrap` / `highlight-lines` / `layout` |
 | `::code-preview` | `ui-code-preview` | `heading` / `controls` / `preview-padding` / `preview-align` / `preview-theme` / `preview-surface` / `preview-viewport` |
-| `::preview-sandbox` | `ui-preview-sandbox` | `title` / `allow-js` / `height`。`code-preview` 直下専用。内部は `preview-html` / `preview-css` / `preview-js` fenced code のみ |
+| `::preview-sandbox` | `ui-preview-sandbox` | `iframe-title` / `base-url` / `allow-js` / `activation-policy` / `height-mode` / `allow-forms` / `allow-downloads` / `allow-pointer-lock` / `allow-popups` / `height` / `max-height`。`code-preview` 直下専用。内部は `preview-html` / `preview-css` / `preview-js` fenced code のみ |
 | `::details` | `ui-details` | `summary` または `aria-label` 必須。両立不可。`open` / `variant` / `region` |
 | `::info-box` | `ui-info-box` | `heading` / `icon` / `heading-level` / `landmark` / `variant` / `density` |
 | `::link-card` | `ui-card` | leaf directive。`url` 必須。`title` / `description` / `image` / `site-name`。終端 `::` は不要 |
@@ -201,9 +201,17 @@
 
 許可属性:
 
-- `title`
+- `iframe-title`
+- `base-url`
 - `allow-js`
+- `activation-policy`
+- `height-mode`
+- `allow-forms`
+- `allow-downloads`
+- `allow-pointer-lock`
+- `allow-popups`
 - `height`
+- `max-height`
 
 内部許可コード言語:
 
@@ -215,7 +223,11 @@
 
 - `preview-sandbox` は `code-preview` 直下でのみ許可します。
 - `preview-sandbox` の内部には上記 3 種の fenced code だけを置けます。
+- `base-url` を指定する場合は絶対 URL でなければなりません。
+- `activation-policy` は `eager | visible | manual` のみを受理します。
+- `height-mode` は `fixed | auto | bounded-auto` のみを受理します。
 - `height` は正の整数でなければなりません。
+- `max-height` を指定する場合も正の整数でなければなりません。
 - `allow-js` は author supplied JavaScript の注入許可のみを表します。
 - `allow-js=false` は platform helper script の抑止を意味しません。
 - `code-preview` で `preview-sandbox` を使う場合、手書き `::preview` と手書き code area を併用してはなりません。

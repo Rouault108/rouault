@@ -4,7 +4,7 @@
 
 本書は、コード表示の基底契約を定義します。
 
-読者向けの正規出力は `pre[data-code-block] > code[data-lang]` です。`ui-code-block` は Storybook や実験用 preview で使ってよい dev/demo adapter として残しますが、production Markdown 出力と note 本文の正規経路では前提にしません。
+将来の読者向け正規出力の目標は `pre[data-code-block] > code[data-lang]` です。ただし、**現行の note 本文経路では `ui-code-block` を production 出力として維持しており、build-time の hydration directive で制御します**。現行実装の正本は `docs/markdown/markdown-output-contract.md` を優先し、本書は static 契約への移行先設計を含む文書として読みます。
 
 本書では、単一の論理コード片を表示・参照・複写するための基底契約を、**静的 DOM 契約を正本**として定義します。責務は、単に `pre/code` を囲って装飾することではありません。**コード本文の提示、文脈メタデータ、copy 値の取得、横スクロール時のアクセシビリティ、印刷や高コントラスト時の成立性**を、一貫した公開契約として扱います。
 

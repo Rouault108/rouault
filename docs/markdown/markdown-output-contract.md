@@ -14,6 +14,7 @@
 
 - 見出し ID の補完規則
 - 標準 HTML から Rouault コンポーネントへの正規化規則
+- note ページにおける hydration directive の build-time 注釈規則
 - 本文リンクの出力属性注釈契約
 - footnote の出力契約
 - preview-sandbox の出力契約
@@ -30,13 +31,14 @@
 
 - 見出し要素
 - 本文リンク (`a[href]` ただし `.heading-anchor` を除く)
-- `pre[data-code-block] > code[data-lang]`
+- `ui-code-block > pre > code`
 - `blockquote`
 - `table`
 - `hr`
 - task list
 - `mark`
 - `img` / `figure`
+- note ページにおける `data-hydration-*` 注釈
 - footnote
 - `ui-code-preview > ui-preview-sandbox`
 - inline code
@@ -99,24 +101,24 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 
 | 入力 HAST | 出力 | 契約 |
 | --- | --- | --- |
-| `pre > code` | `pre[data-code-block] > code[data-lang]` | `language-*` から `data-lang` を推論し、対象メタ属性を `data-code-*` 属性へ正規化する |
+| `pre > code` | `ui-code-block > pre > code` | `language-*` から `lang` を推論し、対象メタ属性を `ui-code-block` ホスト属性へ正規化する。note 本文では `data-hydration-capability="progressive"` / `data-hydration-trigger="post-commit"` を付与する |
 | `blockquote` | `ui-blockquote` | 子要素は維持する |
 | `table` | `ui-table > table` | `caption` があればホストに `aria-label` を補完する |
 | `hr` | `ui-divider > hr[data-divider-variant="section"]` | Markdown 由来の区切りを本文文脈の `section` として正規化する |
 | `li` + `input[type=checkbox]` | `ui-checkbox` | task list ラベルを抽出し、後続ネストリストを維持する |
 | `mark` | `ui-highlight` | `current-match` / `data-current-match` を正規入力とし、旧属性を互換吸収する |
-| `img` | `ui-image` | `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化する |
-| `figure(img + figcaption)` | `ui-image` | `figcaption` を `caption` に統合する |
+| `img` | `ui-image` | `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化する。`zoomable!="false"` の note 本文では `data-hydration-capability="progressive"` / `data-hydration-trigger="visible"` を付与する |
+| `figure(img + figcaption)` | `ui-image` | `figcaption` を `caption` に統合する。`zoomable!="false"` の note 本文では `data-hydration-capability="progressive"` / `data-hydration-trigger="visible"` を付与する |
 | `a[href]`（本文リンク） | `a[data-link-kind][data-link-surface="prose"]` | `href` から種別注釈を付与し、外部系では `data-external="true"` を付与する。`.heading-anchor` は対象外とする |
 | footnote 参照 / 定義 | `ui-footnote` + `section[role=doc-endnotes]` | 参照 ID、backref、接頭辞、backlink を正規化する |
 
-### 5.2 `pre > code` → `pre[data-code-block] > code[data-lang]`
+### 5.2 `pre > code` → `ui-code-block > pre > code`
 
 規則:
 
 - `language-*` から `lang` を推論しなければなりません。
-- `code` 要素には `data-lang` を出力しなければなりません。
-- 次の属性は `pre[data-code-block]` の `data-code-*` 属性へ正規化してよいものとします。
+- `lang` は `ui-code-block` ホスト属性へ出力しなければなりません。
+- 次の属性は `ui-code-block` ホスト属性へ正規化してよいものとします。
   - `filename`
   - `group-key`
   - `tab-label`
@@ -128,7 +130,8 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
   - `highlight-lines`
   - `layout`
 - コード本体の意味を失わないことを優先します。
-- `ui-code-block` を 読者向け Markdown 出力の正規形として残してはなりません。
+- note 本文の `ui-code-block` には `data-hydration-capability="progressive"` と `data-hydration-trigger="post-commit"` を付与しなければなりません。
+- `ui-code-block` 配下の `pre > code` は保持しなければなりません。
 
 ### 5.3 `blockquote` → `ui-blockquote`
 
@@ -173,9 +176,11 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 規則:
 
 - `img` は `ui-image` に正規化しなければなりません。
-- source path は manifest resolver を経由し、読者向け HTML には remote 原本 URL を残してはなりません。
+- source path は manifest resolver を経由し、読者向け最終 HTML には remote 原本 URL を残してはなりません。
 - `src` / `srcset` / `sizes` / `sources` / `lightbox-src` / `lightbox-sources` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` / `placeholder` を正規化しなければなりません。
 - `zoomable=false` は静的モードとして引き継がなければなりません。
+- `zoomable=false` の `ui-image` に hydration directive を付与してはなりません。
+- `zoomable!=false` の note 本文画像には `data-hydration-capability="progressive"` と `data-hydration-trigger="visible"` を付与しなければなりません。
 - 最終出力は `<picture>` 相当の意味論へ収束しなければなりません。
 - `figure(img + figcaption)` は `figcaption` を `caption` に統合して `ui-image` へ収束させなければなりません。
 
@@ -207,6 +212,40 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 - 本契約は Markdown 出力 DOM に対する注釈契約であり、router による内部遷移判定そのものを再定義してはなりません。
 - 同一 origin の絶対 URL を内部遷移として扱うかどうかは `docs/router-specification.md` が所有します。
 - `unsafe` は最終許容出力ではありません。安全規約に従い、build-time で拒否または除去されなければなりません。
+
+### 5.10 note ページの hydration directive 契約
+
+`NoteLayout` と Markdown 変換経路は、note ページに限り hydration の source of truth を build-time 注釈で確定しなければなりません。client 側はこの注釈を優先して queue を構築し、DOM 全体の推測走査を正規経路にしてはなりません。
+
+note ページの scope は次の 4 つです。
+
+- `data-hydration-scope="note-shell"`
+- `data-hydration-scope="note-sidebar"`
+- `data-hydration-scope="note-content"`
+- `data-hydration-scope="note-toc"`
+
+note 本文の標準マッピングは次のとおりです。
+
+| ノード | capability | trigger |
+| --- | --- | --- |
+| `layout-sidebar` | `interactive` | `initial` |
+| `layout-toc` | `interactive` | `initial` |
+| `ui-article-header[data-tags]` | `progressive` | `post-commit` |
+| `ui-image[zoomable!="false"]` | `progressive` | `visible` |
+| `ui-code-block` | `progressive` | `post-commit` |
+| `ui-code-group` | `interactive` | `visible` |
+| `ui-code-preview[controls あり]` | `interactive` | `visible` |
+| `ui-code-preview[slot="toolbar" を持つ]` | `interactive` | `visible` |
+| `ui-tabs` | `interactive` | `visible` |
+| `ui-translation` | `interactive` | `visible` |
+| `ui-preview-sandbox` | `sandboxed` | `interaction` |
+| `ui-score` | `progressive` | `visible` |
+
+補足規則:
+
+- `ui-image[zoomable="false"]` には directive を付与してはなりません。
+- `ui-code-preview` は `controls` も `toolbar` もない場合、directive を付与してはなりません。
+- build-time で directive を持たない静的 note UI を hydration 対象として拡張してはなりません。
 
 ---
 
