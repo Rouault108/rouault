@@ -121,6 +121,7 @@ const waitForRadios = async (...radios: Radio[]): Promise<void> => {
  * 背景色 `--bg-fill-muted` でコントロール領域を明示します。
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     label: '選択肢 A',
     name: 'default-group',
@@ -173,6 +174,7 @@ export const Default: Story = {
  * 最も基本的な状態。コントロールは `--bg-fill-muted` で静かに存在します。
  */
 export const UncheckedNormal: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-radio
       id="unchecked-normal"
@@ -203,6 +205,7 @@ export const UncheckedNormal: Story = {
  * 中心に `--bg-default` の穴が残り、コントラストを確保します。
  */
 export const CheckedNormal: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-radio
       id="checked-normal"
@@ -237,6 +240,7 @@ export const CheckedNormal: Story = {
  * フォーカス不可、フォーム送信除外。
  */
 export const UncheckedDisabled: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-radio
       id="unchecked-disabled"
@@ -271,6 +275,7 @@ export const UncheckedDisabled: Story = {
  * フォーム送信も除外されます（disabled のため）。
  */
 export const CheckedDisabled: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-radio
       id="checked-disabled"
@@ -308,6 +313,7 @@ export const CheckedDisabled: Story = {
  * エラーメッセージが `aria-live="polite"` で表示されます。
  */
 export const UncheckedInvalid: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-radio
       id="unchecked-invalid"
@@ -352,6 +358,7 @@ export const UncheckedInvalid: Story = {
  * カスタムバリデーションロジックでの使用を想定します。
  */
 export const CheckedInvalid: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-radio
       id="checked-invalid"
@@ -396,6 +403,7 @@ export const CheckedInvalid: Story = {
  * 選択中のラジオのみ `tabindex="0"`（Roving Tabindex）。
  */
 export const RadioGroup: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-radio-group label="配送方法">
       <ui-radio id="group-a" name="shipping" value="standard" label="通常配送（3〜5日）"></ui-radio>
@@ -448,6 +456,7 @@ export const RadioGroup: Story = {
  * 無効なラジオはキーボードナビゲーションでスキップされます。
  */
 export const GroupWithDisabled: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-radio-group label="サイズ選択">
       <ui-radio id="size-s" name="size" value="s" label="S"></ui-radio>
@@ -497,6 +506,7 @@ export const GroupWithDisabled: Story = {
  * デザインレビューやビジュアルリグレッションテストに使用します。
  */
 export const AllStates: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .states-grid {
@@ -587,6 +597,7 @@ export const AllStates: Story = {
  * `change` / `input` イベントが発火します。
  */
 export const ClickSelect: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <div
@@ -721,6 +732,7 @@ export const ClickSelect: Story = {
  * ラベル領域をクリックしてもラジオが選択されることを確認します。
  */
 export const LabelClickSelect: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-radio
       id="label-click-radio"
@@ -753,6 +765,7 @@ export const LabelClickSelect: Story = {
  * `Space` キーでも現在フォーカスのラジオを選択できます。
  */
 export const ArrowKeyNavigation: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <div
@@ -839,6 +852,7 @@ export const ArrowKeyNavigation: Story = {
  */
 export const CircularNavigation: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story: '⚠️ **境界条件**: 最後の選択肢で ArrowDown を押すと最初の選択肢に循環します。',
@@ -924,6 +938,7 @@ export const CircularNavigation: Story = {
  * 最初の選択肢で ArrowUp を押すと最後の選択肢に循環します。
  */
 export const ReverseCircularNavigation: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div
       role="radiogroup"
@@ -969,6 +984,7 @@ export const ReverseCircularNavigation: Story = {
  */
 export const DisabledClickBlocked: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1030,6 +1046,7 @@ export const DisabledClickBlocked: Story = {
  */
 export const AlreadyCheckedNoEvent: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1097,6 +1114,7 @@ export const AlreadyCheckedNoEvent: Story = {
  */
 export const RovingTabindexNoSelection: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1168,6 +1186,7 @@ export const RovingTabindexNoSelection: Story = {
  */
 export const NoLabel: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1214,6 +1233,7 @@ export const NoLabel: Story = {
  * radiogroup単位で最低1つ選択されていることを検証します。
  */
 export const RequiredGroupValidation: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 420px;">
       <ui-radio-group id="shipping-group" label="配送方法（必須）" required>
@@ -1276,6 +1296,7 @@ export const RequiredGroupValidation: Story = {
  * 同一解決グループで複数 `checked` が与えられても、最後の要素だけが勝者になります。
  */
 export const InitialCheckedConflictNormalization: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-radio-group label="初期競合">
       <ui-radio id="init-conflict-a" name="init-conflict" value="a" label="A" checked></ui-radio>
@@ -1317,6 +1338,7 @@ export const InitialCheckedConflictNormalization: Story = {
  * programmatic な `checked=true` でも排他制御は維持されます。
  */
 export const ProgrammaticCheckedNormalization: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-radio-group label="programmatic 正規化">
       <ui-radio id="prog-a" name="prog-group" value="a" label="A" checked></ui-radio>
@@ -1347,7 +1369,9 @@ export const ProgrammaticCheckedNormalization: Story = {
     radioB.checked = true;
     await waitForRadios(radioA, radioB, radioC);
 
-    const checkedValues = [radioA, radioB, radioC].filter((radio) => radio.checked).map((radio) => radio.value);
+    const checkedValues = [radioA, radioB, radioC]
+      .filter((radio) => radio.checked)
+      .map((radio) => radio.value);
     if (checkedValues.length !== 1 || checkedValues[0] !== 'b') {
       throw new Error('programmatic な checked=true でも単一選択へ正規化される必要があります');
     }
@@ -1361,6 +1385,7 @@ export const ProgrammaticCheckedNormalization: Story = {
  * `ui-radio-group` 配下の `name` 不一致は開発時診断として警告されます。
  */
 export const GroupNameMismatchDiagnostic: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`<div id="name-mismatch-root"></div>`,
   play: async ({ canvasElement }) => {
     const originalWarn = console.warn;
@@ -1395,7 +1420,11 @@ export const GroupNameMismatchDiagnostic: Story = {
       await Promise.all([group.updateComplete, radioA.updateComplete, radioB.updateComplete]);
       await new Promise((resolve) => setTimeout(resolve, 0));
 
-      if (!warnings.some((message) => message.includes('name') && message.includes('一致していません'))) {
+      if (
+        !warnings.some(
+          (message) => message.includes('name') && message.includes('一致していません'),
+        )
+      ) {
         throw new Error('name 不一致は console.warn で通知される必要があります');
       }
     } finally {
@@ -1408,6 +1437,7 @@ export const GroupNameMismatchDiagnostic: Story = {
  * 別 group に跨る同名 radio も診断対象です。
  */
 export const CrossGroupSameNameBoundary: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`<div id="cross-group-root" style="display: grid; gap: 1rem;"></div>`,
   play: async ({ canvasElement }) => {
     const originalWarn = console.warn;
@@ -1444,7 +1474,12 @@ export const CrossGroupSameNameBoundary: Story = {
       groupB.append(radioB);
       root.append(groupA, groupB);
 
-      await Promise.all([groupA.updateComplete, groupB.updateComplete, radioA.updateComplete, radioB.updateComplete]);
+      await Promise.all([
+        groupA.updateComplete,
+        groupB.updateComplete,
+        radioA.updateComplete,
+        radioB.updateComplete,
+      ]);
       await new Promise((resolve) => setTimeout(resolve, 0));
 
       if (!warnings.some((message) => message.includes('境界を跨いでいます'))) {
@@ -1460,6 +1495,7 @@ export const CrossGroupSameNameBoundary: Story = {
  * child 構造が変化しても required 妥当性は再評価されます。
  */
 export const GroupValidityAfterSlotMutation: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-radio-group id="slot-mutation-group" label="動的構造変更" required>
@@ -1514,7 +1550,9 @@ export const GroupValidityAfterSlotMutation: Story = {
     await Promise.all([replacement.updateComplete, group.updateComplete]);
 
     if (!group.checkValidity()) {
-      throw new Error('programmatic に checked=true を与えた後は group が再度有効になる必要があります');
+      throw new Error(
+        'programmatic に checked=true を与えた後は group が再度有効になる必要があります',
+      );
     }
   },
 };
@@ -1523,6 +1561,7 @@ export const GroupValidityAfterSlotMutation: Story = {
  * ダークテーマでの表示確認。
  */
 export const DarkThemeStates: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div
       style="
@@ -1565,6 +1604,7 @@ export const DarkThemeStates: Story = {
  * Forced Colors想定スタイルの確認。
  */
 export const ForcedColorsSimulation: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div
       style="
@@ -1614,6 +1654,7 @@ export const ForcedColorsSimulation: Story = {
  * 2. disabled なラジオは checked でも送信されません
  */
 export const FormIntegration: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .form-demo {

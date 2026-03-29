@@ -129,6 +129,7 @@ const nextFrame = async (): Promise<void> =>
  * 閲覧・操作に適した標準サイズ（36px）です。Linear Docs準拠。
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     label: 'ファイル.txt',
     icon: 'file',
@@ -196,6 +197,7 @@ export const Default: Story = {
  * Compact密度では、視覚サイズは24pxですが、物理タッチターゲットは44pxに拡張されています。
  */
 export const AllDensities: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .density-showcase {
@@ -282,6 +284,7 @@ export const AllDensities: Story = {
  * - 文字ウェイトの上昇
  */
 export const Selected: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     label: 'README.md',
     icon: 'file-text',
@@ -321,6 +324,7 @@ export const Selected: Story = {
  * 展開アイコン（ChevronRight）は左端に配置され、展開時に90度回転します。
  */
 export const WithChildren: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-tree-item label="src" icon="folder" expanded>
       <ui-tree-item slot="children" label="components" icon="folder"></ui-tree-item>
@@ -361,6 +365,7 @@ export const WithChildren: Story = {
  * インデントガイド（ツリー線）により、構造が一目で把握できます。
  */
 export const DeepNesting: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-tree-item label="プロジェクト" icon="folder" expanded>
       <ui-tree-item slot="children" label="src" icon="folder" expanded>
@@ -421,6 +426,7 @@ export const DeepNesting: Story = {
  * 展開アイコンは右向き（0度）を維持します。
  */
 export const Collapsed: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-tree-item label="node_modules" icon="folder" .expanded=${false}>
       <ui-tree-item slot="children" label="react" icon="folder"></ui-tree-item>
@@ -481,6 +487,7 @@ export const Collapsed: Story = {
  * インデントガイドの色が強化され、Active Context を視覚化します。
  */
 export const SelectedAndExpanded: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-tree-item label="components" icon="folder" selected expanded>
       <ui-tree-item slot="children" label="button.ts" icon="file-code"></ui-tree-item>
@@ -531,6 +538,7 @@ export const SelectedAndExpanded: Story = {
  * 密度変更時でも選択状態・展開状態・ARIA属性が一貫することを確認します。
  */
 export const CompactSelectedExpanded: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-tree-item label="components" icon="folder" density="compact" selected expanded>
       <ui-tree-item
@@ -577,6 +585,7 @@ export const CompactSelectedExpanded: Story = {
  * ラベルが長い場合、text-overflow: ellipsis により省略されます。
  */
 export const LongLabel: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .container {
@@ -671,6 +680,7 @@ export const LongLabel: Story = {
  * スロットにも何も提供しない場合、アイコン領域は空になります。
  */
 export const NoIcon: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html` <ui-tree-item label="テキストのみのアイテム"></ui-tree-item> `,
   play: async ({ canvasElement }) => {
     const treeItem = canvasElement.querySelector<TreeItem>('ui-tree-item');
@@ -711,6 +721,7 @@ export const NoIcon: Story = {
  * icon プロパティの代わりに、slot="icon" でカスタムアイコンを提供できます。
  */
 export const CustomIconSlot: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   render: () => html`
     <ui-tree-item label="カスタムアイコン">
       <ui-icon slot="icon" name="star" style="color: gold;"></ui-icon>
@@ -724,6 +735,7 @@ export const CustomIconSlot: Story = {
  * 子要素がない場合、展開アイコンは非表示になります（スペースは維持）。
  */
 export const LeafNode: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html` <ui-tree-item label="index.ts" icon="file-code"></ui-tree-item> `,
   play: async ({ canvasElement }) => {
     const treeItem = canvasElement.querySelector('ui-tree-item');
@@ -755,6 +767,7 @@ export const LeafNode: Story = {
  * Enter / Space キーによる選択、Arrow キーによる展開/収縮を確認します。
  */
 export const KeyboardInteraction: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .keyboard-info {
@@ -905,6 +918,7 @@ export const KeyboardInteraction: Story = {
  * 展開可能な行は行全体で展開/収縮し、葉ノードは選択と遷移のまま動作します。
  */
 export const ClickInteraction: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .click-info {
@@ -1005,7 +1019,11 @@ export const ClickInteraction: Story = {
       3,
       `展開アイコンクリック時に expanded-change イベントが 3 回目として発火することを期待していましたが、実際には ${String(expandedEventCount)} 回でした`,
     );
-    assertBoolean(treeItem.expanded, true, '展開アイコンのクリック後に expanded=true になりませんでした');
+    assertBoolean(
+      treeItem.expanded,
+      true,
+      '展開アイコンのクリック後に expanded=true になりませんでした',
+    );
   },
 };
 
@@ -1015,6 +1033,7 @@ export const ClickInteraction: Story = {
  * Adaptive Focus により、移動中のノイズを低減し、停止時に明確化します。
  */
 export const FocusState: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .focus-demo {
@@ -1037,12 +1056,7 @@ export const FocusState: Story = {
         により、フォーカスリングが適切に表示されます。
       </div>
 
-      <ui-tree-item
-        id="focus-test-item"
-        label="README.md"
-        icon="file-text"
-        selected
-      ></ui-tree-item>
+      <ui-tree-item id="focus-test-item" label="README.md" icon="file-text" selected></ui-tree-item>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -1076,6 +1090,7 @@ export const FocusState: Story = {
  * ::after 疑似要素により、WCAG 2.5.5（Target Size: Enhanced）に準拠します。
  */
 export const CompactDensityTouchTarget: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .touch-info {
@@ -1211,6 +1226,7 @@ export const ForcedColorsMode: Story = {
     }
   },
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story:
@@ -1296,6 +1312,7 @@ export const ReducedMotion: Story = {
     }
   },
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story:
@@ -1310,6 +1327,7 @@ export const ReducedMotion: Story = {
  * 実際のダークモードトークン適用時の読みやすさを確認するための境界条件ストーリーです。
  */
 export const DarkSurfaceContrast: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <style>
       .dark-surface {
@@ -1329,7 +1347,7 @@ export const DarkSurfaceContrast: Story = {
         --nav-item-fg-hover: var(--fg-default);
         --nav-item-fg-active: var(--fg-default);
         --nav-item-hover-bg: oklch(100% 0 0 / 0.08);
-        --nav-item-active-bg: oklch(78% 0.13 250 / 0.20);
+        --nav-item-active-bg: oklch(78% 0.13 250 / 0.2);
         --nav-item-indicator-color: var(--primary);
 
         --tree-item-branch-hover-bg: oklch(100% 0 0 / 0.05);
@@ -1338,12 +1356,7 @@ export const DarkSurfaceContrast: Story = {
     </style>
     <div class="dark-surface">
       <ui-tree-item label="src" icon="folder" expanded>
-        <ui-tree-item
-          slot="children"
-          label="components"
-          icon="folder"
-          selected
-        ></ui-tree-item>
+        <ui-tree-item slot="children" label="components" icon="folder" selected></ui-tree-item>
         <ui-tree-item slot="children" label="README.md" icon="file-text"></ui-tree-item>
       </ui-tree-item>
     </div>
@@ -1370,7 +1383,8 @@ export const DarkSurfaceContrast: Story = {
       throw new Error('暗色面でも selected 面が可視である必要があります');
     }
 
-    const indicator = selectedItem.shadowRoot?.querySelector<HTMLElement>('.current-slot-indicator');
+    const indicator =
+      selectedItem.shadowRoot?.querySelector<HTMLElement>('.current-slot-indicator');
     if (!indicator) {
       throw new Error('current-slot-indicator が見つかりませんでした');
     }
@@ -1404,11 +1418,7 @@ export const RealWorldFileTree: Story = {
         <ui-tree-item slot="children" label="src" icon="folder" expanded>
           <ui-tree-item slot="children" label="components" icon="folder" expanded>
             <ui-tree-item slot="children" label="ui" icon="folder">
-              <ui-tree-item
-                slot="children"
-                label="button.ts"
-                icon="file-code"
-              ></ui-tree-item>
+              <ui-tree-item slot="children" label="button.ts" icon="file-code"></ui-tree-item>
               <ui-tree-item slot="children" label="input.ts" icon="file-code"></ui-tree-item>
               <ui-tree-item
                 slot="children"
@@ -1420,11 +1430,7 @@ export const RealWorldFileTree: Story = {
           </ui-tree-item>
           <ui-tree-item slot="children" label="utils" icon="folder">
             <ui-tree-item slot="children" label="helpers.ts" icon="file-code"></ui-tree-item>
-            <ui-tree-item
-              slot="children"
-              label="validators.ts"
-              icon="file-code"
-            ></ui-tree-item>
+            <ui-tree-item slot="children" label="validators.ts" icon="file-code"></ui-tree-item>
           </ui-tree-item>
           <ui-tree-item slot="children" label="index.ts" icon="file-code"></ui-tree-item>
         </ui-tree-item>
@@ -1439,6 +1445,7 @@ export const RealWorldFileTree: Story = {
     </div>
   `,
   parameters: {
+    rouaultContractKind: 'visual',
     docs: {
       description: {
         story:
@@ -1449,6 +1456,7 @@ export const RealWorldFileTree: Story = {
 };
 
 export const NavigableRowActivation: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-tree-item
       label="ソートアルゴリズム比較"

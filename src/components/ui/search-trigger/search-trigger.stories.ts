@@ -96,6 +96,7 @@ export default meta;
 type Story = StoryObj<SearchTrigger>;
 
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     placeholder: '検索...',
     disabled: false,
@@ -155,6 +156,7 @@ export const Default: Story = {
 };
 
 export const DensityModes: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem; max-width: 28rem;">
       <ui-search-trigger id="density-auto" density="auto"></ui-search-trigger>
@@ -212,6 +214,7 @@ export const DensityModes: Story = {
 };
 
 export const AriaDelegation: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-search-trigger
       id="aria-trigger"
@@ -240,9 +243,8 @@ export const AriaDelegation: Story = {
 };
 
 export const EventContract: Story = {
-  render: () => html`
-    <ui-search-trigger id="event-trigger"></ui-search-trigger>
-  `,
+  parameters: { rouaultContractKind: 'interaction-contract' },
+  render: () => html` <ui-search-trigger id="event-trigger"></ui-search-trigger> `,
   play: async ({ canvasElement }) => {
     const trigger = requireTrigger(canvasElement, 'event-trigger');
     await trigger.updateComplete;
@@ -288,6 +290,7 @@ export const EventContract: Story = {
 };
 
 export const DisabledAndFormSafety: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <form
       id="search-trigger-form"
@@ -334,6 +337,7 @@ export const DisabledAndFormSafety: Story = {
 };
 
 export const BoundaryConditions: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem; max-width: 22rem;">
       <ui-search-trigger id="empty-placeholder" placeholder=""></ui-search-trigger>
@@ -377,6 +381,7 @@ export const BoundaryConditions: Story = {
 
 export const MobileAutoDensity: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     viewport: { defaultViewport: 'mobile1' },
   },
   render: () => html`
@@ -403,9 +408,8 @@ export const MobileAutoDensity: Story = {
 };
 
 export const ForcedColors: Story = {
-  render: () => html`
-    <ui-search-trigger id="forced-colors-trigger"></ui-search-trigger>
-  `,
+  parameters: { rouaultContractKind: 'boundary-contract' },
+  render: () => html` <ui-search-trigger id="forced-colors-trigger"></ui-search-trigger> `,
   play: async ({ canvasElement }) => {
     const trigger = requireTrigger(canvasElement, 'forced-colors-trigger');
     await trigger.updateComplete;

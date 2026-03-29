@@ -67,6 +67,7 @@ export default meta;
 type Story = StoryObj<UiTranslation>;
 
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: (args) => html`
     <p>
       <ui-translation
@@ -131,6 +132,7 @@ export const Default: Story = {
 };
 
 export const Drawer: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <p>
       <ui-translation
@@ -159,6 +161,7 @@ export const Drawer: Story = {
 };
 
 export const SingleOpenOrchestration: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 12px;">
       <ui-translation

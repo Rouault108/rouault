@@ -1,18 +1,14 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+import { playwright } from '@vitest/browser-playwright';
 import { defineConfig } from 'vitest/config';
 
-/**
- * Vitest Configuration for Storybook Testing
- *
- * このプロジェクトでは2つのテスト戦略を採用:
- * 1. WTR (Web Test Runner): ロジックテスト (router, error-handler 等)
- * 2. Vitest + Storybook: コンポーネントの BDD テスト (*.stories.ts)
- *
- * この環境では Storybook の browser mode を使えないため、
- * storybook プロジェクトは空のまま成功終了させる。
- */
+const dirname =
+  typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+
 export default defineConfig({
   test: {
-    passWithNoTests: true,
     projects: [
       {
         test: {
@@ -22,10 +18,29 @@ export default defineConfig({
         },
       },
       {
+        plugins: await storybookTest({
+          configDir: path.join(dirname, '.storybook'),
+          disableAddonDocs: true,
+        }),
+        optimizeDeps: {
+          include: ['@storybook/web-components', '@storybook/web-components-vite'],
+        },
         test: {
-          name: 'storybook',
-          include: ['.storybook/no-tests/**/*.test.ts'],
-          passWithNoTests: true,
+          name: 'storybook-runtime',
+          setupFiles: ['.storybook/vitest.setup.ts'],
+          browser: {
+            enabled: true,
+            headless: true,
+            provider: playwright({}),
+            instances: [{ browser: 'chromium' }],
+          },
+        },
+      },
+      {
+        test: {
+          name: 'storybook-meta',
+          environment: 'node',
+          include: ['test/storybook/**/*.test.ts'],
         },
       },
     ],

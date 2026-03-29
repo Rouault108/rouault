@@ -67,6 +67,7 @@ export default meta;
 type Story = StoryObj<ListItem>;
 
 export const DefaultInList: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => renderInList({ currentRowId: item.id, currentColumnId: 'title' }),
   play: async ({ canvasElement }) => {
     const list = canvasElement.querySelector<List>('ui-list');
@@ -88,6 +89,7 @@ export const DefaultInList: Story = {
 };
 
 export const CurrentColumnProjection: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => renderInList({ currentRowId: item.id, currentColumnId: 'date' }),
   play: async ({ canvasElement }) => {
     const row = canvasElement.querySelector<ListItem>('ui-list-item');
@@ -102,6 +104,7 @@ export const CurrentColumnProjection: Story = {
 };
 
 export const EmitsCurrentChangeOnArrow: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => renderInList({ currentRowId: item.id, currentColumnId: 'title' }),
   play: async ({ canvasElement }) => {
     const list = canvasElement.querySelector<List>('ui-list');
@@ -135,6 +138,7 @@ export const EmitsCurrentChangeOnArrow: Story = {
 };
 
 export const EdgeBoundaryStopsByColumnId: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => renderInList({ currentRowId: item.id, currentColumnId: 'tags' }),
   play: async ({ canvasElement }) => {
     const list = canvasElement.querySelector<List>('ui-list');
@@ -161,7 +165,9 @@ export const EdgeBoundaryStopsByColumnId: Story = {
 };
 
 export const MissingSlotBoundary: Story = {
-  render: () => renderInList({ currentRowId: item.id, currentColumnId: 'title', includeTagsSlot: false }),
+  parameters: { rouaultContractKind: 'boundary-contract' },
+  render: () =>
+    renderInList({ currentRowId: item.id, currentColumnId: 'title', includeTagsSlot: false }),
   play: async ({ canvasElement }) => {
     const row = canvasElement.querySelector<ListItem>('ui-list-item');
     if (!row) throw new Error('ui-list-item が見つかりません');
@@ -181,6 +187,7 @@ export const MissingSlotBoundary: Story = {
 export const HiddenCurrentColumnBoundary: Story = {
   render: () => renderInList({ currentRowId: item.id, currentColumnId: 'date' }),
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     viewport: { defaultViewport: 'mobile1' },
   },
   play: async ({ canvasElement }) => {
@@ -197,12 +204,15 @@ export const HiddenCurrentColumnBoundary: Story = {
 
     const currentCell = row.shadowRoot?.querySelector('.cell--current');
     if (currentCell) {
-      throw new Error('非表示列が currentColumnId のとき、子は勝手に別列へ current を移してはいけません');
+      throw new Error(
+        '非表示列が currentColumnId のとき、子は勝手に別列へ current を移してはいけません',
+      );
     }
   },
 };
 
 export const ActionRegionExcludedFromCurrent: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => renderInList({ currentRowId: item.id, currentColumnId: 'title' }),
   play: async ({ canvasElement }) => {
     const list = canvasElement.querySelector<List>('ui-list');
@@ -227,7 +237,9 @@ export const ActionRegionExcludedFromCurrent: Story = {
 };
 
 export const UnknownSlotIgnoredWithWarning: Story = {
-  render: () => renderInList({ currentRowId: item.id, currentColumnId: 'title', includeUnknownSlot: true }),
+  parameters: { rouaultContractKind: 'interaction-contract' },
+  render: () =>
+    renderInList({ currentRowId: item.id, currentColumnId: 'title', includeUnknownSlot: true }),
   play: async ({ canvasElement }) => {
     const list = canvasElement.querySelector<List>('ui-list');
     const row = canvasElement.querySelector<ListItem>('ui-list-item');
@@ -257,6 +269,7 @@ export const UnknownSlotIgnoredWithWarning: Story = {
 export const MobileSupplement: Story = {
   render: () => renderInList({ currentRowId: item.id, currentColumnId: 'title' }),
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     viewport: { defaultViewport: 'mobile1' },
   },
   play: async ({ canvasElement }) => {
@@ -285,6 +298,7 @@ export const MobileSupplement: Story = {
 };
 
 export const StandaloneFallback: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-list-item row-id="fallback" current current-column-id="__default__">
       <span>コンテキスト未接続時のフォールバック</span>
@@ -305,6 +319,7 @@ export const StandaloneFallback: Story = {
 };
 
 export const DarkMode: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div
       style="

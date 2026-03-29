@@ -70,6 +70,7 @@ export default meta;
 type Story = StoryObj<StoryArgs>;
 
 export const DefaultContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   play: async ({ canvasElement }) => {
     const element = getComponent(canvasElement);
     const root = getShadowRoot(element);
@@ -95,6 +96,7 @@ export const DefaultContract: Story = {
 };
 
 export const RequestedPathContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     requestedPath: '/notes/missing-entry?tab=outline#section-2',
   },
@@ -111,6 +113,7 @@ export const RequestedPathContract: Story = {
 };
 
 export const NativeActionSemantics: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   play: async ({ canvasElement }) => {
     const element = getComponent(canvasElement);
     const root = getShadowRoot(element);
@@ -128,6 +131,7 @@ export const NativeActionSemantics: Story = {
 };
 
 export const AccessibilityMediaContracts: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   play: async ({ canvasElement }) => {
     const element = getComponent(canvasElement);
     const root = getShadowRoot(element);

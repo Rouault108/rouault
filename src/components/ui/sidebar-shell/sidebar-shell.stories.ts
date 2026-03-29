@@ -147,6 +147,7 @@ type Story = StoryObj<UiSidebarShell>;
  * Fixed × Expanded — DOM 構造・ARIA・スロット・属性の包括検証
  */
 export const FixedExpanded: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div
       style="display: grid; grid-template-columns: var(--sidebar-width, 240px) 1fr; min-height: 400px;"
@@ -222,6 +223,7 @@ export const FixedExpanded: Story = {
  * Fixed × Collapsed — Zen Mode（Grid Track 0px での完全消失）
  */
 export const FixedCollapsedZenMode: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div id="shell-zen" style="display: grid; grid-template-columns: 0px 1fr; min-height: 400px;">
       <ui-sidebar-shell id="sidebar-fixed-collapsed" data-state="collapsed" mode="fixed">
@@ -268,6 +270,7 @@ export const FixedCollapsedZenMode: Story = {
  * Overlay × Expanded — position: fixed、z-index、スクリム表示、header スロット表示
  */
 export const OverlayExpanded: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="min-height: 400px; position: relative;">
       <ui-sidebar-shell id="sidebar-overlay-expanded" data-state="expanded" mode="overlay">
@@ -339,6 +342,7 @@ export const OverlayExpanded: Story = {
  * Overlay × Collapsed — 非表示、スクリム非表示、inert
  */
 export const OverlayCollapsed: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="min-height: 400px; position: relative;">
       <ui-sidebar-shell id="sidebar-overlay-collapsed" data-state="collapsed" mode="overlay">
@@ -392,6 +396,7 @@ export const OverlayCollapsed: Story = {
  * - Fixed ではフォーカス移動なし
  */
 export const FixedToggleStateTransition: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div
       style="display: grid; grid-template-columns: var(--sidebar-width, 240px) 1fr; min-height: 400px;"
@@ -476,6 +481,7 @@ export const FixedToggleStateTransition: Story = {
  * - collapse → トリガーへ返却
  */
 export const OverlayOpenCloseFocusManagement: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="min-height: 400px; position: relative;">
       <button id="overlay-trigger" type="button">サイドバーを開く</button>
@@ -551,6 +557,7 @@ export const OverlayOpenCloseFocusManagement: Story = {
  * Overlay モードでスクリムクリックによる格納
  */
 export const OverlayScrimClickClose: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="min-height: 400px; position: relative;">
       <button id="scrim-trigger" type="button">サイドバーを開く</button>
@@ -601,6 +608,7 @@ export const OverlayScrimClickClose: Story = {
  * - Fixed では Esc で閉じない
  */
 export const OverlayEscapeKeyClose: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="min-height: 400px; position: relative;">
       <button id="esc-trigger" type="button">サイドバーを開く</button>
@@ -666,6 +674,7 @@ export const OverlayEscapeKeyClose: Story = {
  * イベント detail の正確性とバブリング抑制
  */
 export const EventDetailAndNoBubbling: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div id="event-parent" style="min-height: 200px;">
       <ui-sidebar-shell id="sidebar-event" data-state="expanded" mode="fixed">
@@ -716,6 +725,7 @@ export const EventDetailAndNoBubbling: Story = {
  * Overlay 展開中に Tab でサイドバー外へ移動可能（Focus Trap なし）
  */
 export const NoFocusTrapInOverlay: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="min-height: 400px; position: relative;">
       <button id="trap-trigger" type="button">サイドバーを開く</button>

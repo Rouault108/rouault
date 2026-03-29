@@ -178,6 +178,7 @@ type Story = StoryObj<Banner>;
  * warning + action の構成。
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     variant: 'warning',
     dismissible: false,
@@ -213,6 +214,7 @@ export const Default: Story = {
  * variant × state（action / dismissible）を検証。
  */
 export const VariantStateCombinations: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .matrix {
@@ -323,6 +325,7 @@ export const VariantStateCombinations: Story = {
  * role 明示指定の上書き保持と、契約外 role の自動復帰。
  */
 export const RoleOverridePersistence: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-banner id="role-override" variant="warning" role="alert">
       セキュリティ設定に問題が見つかりました。
@@ -368,6 +371,7 @@ export const RoleOverridePersistence: Story = {
  * icon/action slot のフォールバックと複数 action。
  */
 export const SlotBoundaryConditions: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-banner id="slot-custom-icon" variant="info">
@@ -435,6 +439,7 @@ export const SlotBoundaryConditions: Story = {
  * dismiss 後に DOM から削除され、次フォーカス可能要素へ移動。
  */
 export const DismissFocusManagement: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-banner id="dismiss-focus" variant="error" dismissible>
@@ -478,6 +483,7 @@ export const DismissFocusManagement: Story = {
  * 不正 variant 値のフォールバック。
  */
 export const InvalidVariantFallback: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-banner id="invalid-variant" variant="unknown">
       不正な variant 値を与えた場合のフォールバック確認
@@ -501,6 +507,7 @@ export const InvalidVariantFallback: Story = {
  * aria-atomic 明示指定(false)が保持されること。
  */
 export const AtomicOverridePersistence: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-banner id="atomic-override" variant="info" aria-atomic="false"> 残り時間 29:59 </ui-banner>
   `,
@@ -523,6 +530,7 @@ export const AtomicOverridePersistence: Story = {
  * prefers-reduced-motion では dismiss が即時完了すること。
  */
 export const ReducedMotionDismissImmediate: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-banner id="dismiss-reduced" variant="warning" dismissible>
@@ -565,6 +573,7 @@ export const ReducedMotionDismissImmediate: Story = {
  */
 export const DarkModeVisualOutcome: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     backgrounds: { default: 'dark' },
   },
   render: () => html`
@@ -599,6 +608,7 @@ export const DarkModeVisualOutcome: Story = {
  * forced-colors 環境で主要導線が視認可能であることを確認。
  */
 export const ForcedColorsVisualOutcome: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-banner id="forced-colors-banner" variant="error" dismissible>
       接続エラーが発生しました。状況を確認してから再試行してください。
@@ -638,6 +648,7 @@ export const ForcedColorsVisualOutcome: Story = {
  * print で本文以外を落とすルールが定義されていることを確認。
  */
 export const PrintVisualOutcome: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-banner id="print-banner" variant="success" dismissible>
       バックアップが完了しました。

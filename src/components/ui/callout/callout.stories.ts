@@ -98,6 +98,7 @@ type Story = StoryObj<Callout>;
  * ルートの `aria-labelledby` と見出しセマンティクスを検証します。
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     kind: 'tip',
     heading: '読書のヒント',
@@ -176,6 +177,7 @@ export const Default: Story = {
  * - without heading: kind 別フォールバックラベル（aria-label）
  */
 export const KindStateMatrix: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .matrix {
@@ -288,6 +290,7 @@ export const KindStateMatrix: Story = {
  * 無効値は `aria-level` を出力せず、見出しロールも付与しません。
  */
 export const HeadingLevelBoundaries: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-callout id="heading-valid" kind="note" heading="有効レベル" heading-level="1">
@@ -370,14 +373,10 @@ export const HeadingLevelBoundaries: Story = {
  * 空白のみの `heading` は「見出しなし」として扱い、`aria-label` フォールバックに戻します。
  */
 export const IconOverrideAndBlankHeading: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
-      <ui-callout
-        id="icon-override"
-        kind="danger"
-        heading="セキュリティ注意"
-        icon="shield-alert"
-      >
+      <ui-callout id="icon-override" kind="danger" heading="セキュリティ注意" icon="shield-alert">
         2段階認証を有効化してください。
       </ui-callout>
       <ui-callout id="blank-heading" kind="success" heading="   " heading-level="4">
@@ -412,6 +411,7 @@ export const IconOverrideAndBlankHeading: Story = {
  * 境界条件: `label` の優先と、`heading` がある場合の無視。
  */
 export const LabelPriority: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-callout id="label-explicit" kind="warning" label="重要な警告">
@@ -469,6 +469,7 @@ export const LabelPriority: Story = {
  * 属性が不正でも内部描画とホスト反映は `note` へ正規化されます。
  */
 export const InvalidKindFallback: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-callout id="invalid-kind" kind="unknown">
       未知の kind 値を与えた場合のフォールバック確認
@@ -505,6 +506,7 @@ export const InvalidKindFallback: Story = {
  * 受け入れ基準で要求されるトークン参照、part 公開、forced-colors フォールバックが維持されていること。
  */
 export const StyleContracts: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-callout id="style-contracts" kind="warning" heading="Style Contracts" heading-level="2">
       style contract checks
@@ -574,6 +576,7 @@ export const StyleContracts: Story = {
  * コンポーネント側で prefers-color-scheme 分岐を書かず、セマンティックトークン参照でモード切替に追従する。
  */
 export const DarkModeTokenContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-callout
       id="dark-mode-contract"

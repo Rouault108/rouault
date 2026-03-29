@@ -65,7 +65,11 @@ const getContrastRatio = (foreground: string, background: string): number => {
 };
 
 const nextFrame = async (): Promise<void> =>
-  new Promise((resolve) => requestAnimationFrame(() => { resolve(); }));
+  new Promise((resolve) =>
+    requestAnimationFrame(() => {
+      resolve();
+    }),
+  );
 
 const meta: Meta<Highlight> = {
   title: 'Components/Highlight',
@@ -111,6 +115,7 @@ export default meta;
 type Story = StoryObj<Highlight>;
 
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     currentMatch: false,
     text: '検索キーワード',
@@ -147,6 +152,7 @@ export const Default: Story = {
 };
 
 export const CurrentMatchMatrix: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-highlight id="passive-highlight" text="通常ヒット"></ui-highlight>
@@ -177,6 +183,7 @@ export const CurrentMatchMatrix: Story = {
 };
 
 export const CurrentMatchVisualContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-highlight id="visual-passive" text="通常ヒット"></ui-highlight>
@@ -212,9 +219,8 @@ export const CurrentMatchVisualContract: Story = {
 };
 
 export const ExplicitTextContract: Story = {
-  render: () => html`
-    <ui-highlight id="explicit-text" text="明示入力">fallback 値</ui-highlight>
-  `,
+  parameters: { rouaultContractKind: 'interaction-contract' },
+  render: () => html` <ui-highlight id="explicit-text" text="明示入力">fallback 値</ui-highlight> `,
   play: async ({ canvasElement }) => {
     const host = getHost(canvasElement, 'explicit-text');
     await host.updateComplete;
@@ -227,10 +233,11 @@ export const ExplicitTextContract: Story = {
 };
 
 export const FallbackTextContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
-      <ui-highlight id="fallback-text">  初期子テキスト  </ui-highlight>
-      <ui-highlight id="empty-explicit" text="">  初期子テキスト  </ui-highlight>
+      <ui-highlight id="fallback-text"> 初期子テキスト </ui-highlight>
+      <ui-highlight id="empty-explicit" text=""> 初期子テキスト </ui-highlight>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -249,11 +256,9 @@ export const FallbackTextContract: Story = {
 };
 
 export const WhitespaceNormalizationContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
-    <ui-highlight id="whitespace-highlight">
-        前後は削る
-  中間改行は残す
-    </ui-highlight>
+    <ui-highlight id="whitespace-highlight"> 前後は削る 中間改行は残す </ui-highlight>
   `,
   play: async ({ canvasElement }) => {
     const host = getHost(canvasElement, 'whitespace-highlight');
@@ -261,18 +266,17 @@ export const WhitespaceNormalizationContract: Story = {
 
     const mark = requireMark(host);
     if (mark.textContent !== '前後は削る\n  中間改行は残す') {
-      throw new Error(
-        '初期子テキストは前後 trim のみ行い、中間空白や改行を保持する必要があります',
-      );
+      throw new Error('初期子テキストは前後 trim のみ行い、中間空白や改行を保持する必要があります');
     }
   },
 };
 
 export const EmptyResolvedTextContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-highlight id="empty-text-attr" text=""></ui-highlight>
-      <ui-highlight id="empty-fallback">   </ui-highlight>
+      <ui-highlight id="empty-fallback"> </ui-highlight>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -287,9 +291,8 @@ export const EmptyResolvedTextContract: Story = {
 };
 
 export const UpdateLifecycleContract: Story = {
-  render: () => html`
-    <ui-highlight id="lifecycle-highlight">初期テキスト</ui-highlight>
-  `,
+  parameters: { rouaultContractKind: 'interaction-contract' },
+  render: () => html` <ui-highlight id="lifecycle-highlight">初期テキスト</ui-highlight> `,
   play: async ({ canvasElement }) => {
     const host = getHost(canvasElement, 'lifecycle-highlight');
     await host.updateComplete;
@@ -326,11 +329,14 @@ export const UpdateLifecycleContract: Story = {
 };
 
 export const BoundaryConditions: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-highlight id="element-child"><span>要素子</span></ui-highlight>
       <ui-highlight id="direct-mark-child"><mark>直下 mark</mark></ui-highlight>
-      <ui-highlight id="nested-highlight-child"><ui-highlight text="nested"></ui-highlight></ui-highlight>
+      <ui-highlight id="nested-highlight-child"
+        ><ui-highlight text="nested"></ui-highlight
+      ></ui-highlight>
       <div>
         <ui-highlight id="adjacent-a" text="A"></ui-highlight>
         <ui-highlight id="adjacent-b" current-match text="B"></ui-highlight>
@@ -367,6 +373,7 @@ export const BoundaryConditions: Story = {
 };
 
 export const MediaAndTokenContracts: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-highlight id="media-highlight" current-match text="検索ヒット"></ui-highlight>
   `,
@@ -403,6 +410,7 @@ export const MediaAndTokenContracts: Story = {
 };
 
 export const DarkModeTokenAndContrastContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <style>
       .theme {

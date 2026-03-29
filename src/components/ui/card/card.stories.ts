@@ -124,6 +124,7 @@ type Story = StoryObj<Card>;
  * - `clickable` 属性が存在しないこと
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     variant: 'outlined',
   },
@@ -195,6 +196,7 @@ export const Default: Story = {
  * - Shadow が `--elevation-md` であること
  */
 export const ElevatedVariant: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     variant: 'elevated',
   },
@@ -242,6 +244,7 @@ export const ElevatedVariant: Story = {
  * `--bg-surface-2` は `elevated`（影あり）コンテキスト専用です。
  */
 export const FlatVariant: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     variant: 'flat',
   },
@@ -278,6 +281,7 @@ export const FlatVariant: Story = {
  * 背景は透明で、コンテンツに最大限フォーカスを当てます。
  */
 export const GhostVariant: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     variant: 'ghost',
   },
@@ -312,6 +316,7 @@ export const GhostVariant: Story = {
  * デザインレビューや Dark/Light モード切替の視覚確認に使用します。
  */
 export const AllVariants: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 480px;">
       ${(['outlined', 'elevated', 'flat', 'ghost'] as const).map(
@@ -355,6 +360,7 @@ export const AllVariants: Story = {
  * - `header` は上部、デフォルトは中央、`footer` は下部に表示されること
  */
 export const WithAllSlots: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-card style="max-width: 360px;">
       <div slot="header" style="padding-bottom: var(--space-3); margin-bottom: var(--space-3);">
@@ -418,6 +424,7 @@ export const WithAllSlots: Story = {
  * タイトル・説明・サイト名を左、画像を右に配置します。
  */
 export const LinkCardWithImage: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-card
       id="link-card-with-image"
@@ -488,6 +495,7 @@ export const LinkCardWithImage: Story = {
  * 画像が無い場合はテキスト領域だけで収まることを確認します。
  */
 export const LinkCardWithoutImage: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-card
       id="link-card-without-image"
@@ -514,7 +522,9 @@ export const LinkCardWithoutImage: Story = {
       shadowRoot.querySelector('.link-card__description')?.textContent ?? ''
     ).trim();
     const descriptionStyle = window.getComputedStyle(
-      shadowRoot.querySelector<HTMLElement>('.link-card__description') ?? shadowLink ?? document.body,
+      shadowRoot.querySelector<HTMLElement>('.link-card__description') ??
+        shadowLink ??
+        document.body,
     );
 
     if (!shadowLink) throw new Error('画像なし link mode の主リンクが見つかりません');
@@ -543,6 +553,7 @@ export const LinkCardWithoutImage: Story = {
  * 有効モードは generic に縮退します。
  */
 export const LinkCardRequiresHrefAndTitle: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem; max-width: 520px;">
       <ui-card
@@ -612,6 +623,7 @@ export const LinkCardRequiresHrefAndTitle: Story = {
  * - `cursor: pointer` が適用されること（視覚確認）
  */
 export const Clickable: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div
       id="click-log"
@@ -698,6 +710,7 @@ export const Clickable: Story = {
  * 7. `<a>` への直接クリック → 委譲しない（自身のリンクで処理）
  */
 export const ClickDelegationGuards: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-card id="guard-card" clickable style="max-width: 400px;">
       <h3 style="margin: 0 0 0.75rem; font-size: var(--text-base);">
@@ -816,6 +829,7 @@ export const ClickDelegationGuards: Story = {
  * カード外部の選択は、このカードのクリック委譲を止める理由にしません。
  */
 export const TextSelectionGuard: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem; max-width: 400px;">
       <p id="outside-selectable-text" style="margin: 0; font-size: var(--text-sm);">
@@ -899,6 +913,7 @@ export const TextSelectionGuard: Story = {
  * 開発中に `clickable` を設定してリンクを追加し忘れるケースへの防御です。
  */
 export const ClickableNoLink: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-card id="no-link-card" clickable style="max-width: 360px;">
       <h3 style="margin: 0 0 0.5rem; font-size: var(--text-base);">
@@ -943,6 +958,7 @@ export const ClickableNoLink: Story = {
  * カード背景クリックは最初の `<a href>`（主要リンク）へ委譲されることを確認します。
  */
 export const MultipleLinksPrimaryFirst: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-card id="multiple-links-card" clickable style="max-width: 400px;">
       <h3 style="margin: 0 0 0.5rem; font-size: var(--text-base);">
@@ -1007,6 +1023,7 @@ export const MultipleLinksPrimaryFirst: Story = {
  * `[role="button"]` / `[role="link"]` / `[tabindex]`
  */
 export const InteractiveElementsGuard: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-card id="interactive-guard-card" clickable style="max-width: 440px;">
       <h3 style="margin: 0 0 0.5rem; font-size: var(--text-base);">
@@ -1094,6 +1111,7 @@ export const InteractiveElementsGuard: Story = {
  * - フォーカス時にカード全体にアウトラインが表示されること（視覚確認）
  */
 export const FocusWithin: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="font-size: var(--text-sm); color: var(--fg-muted); margin-bottom: 1rem;">
       Tab
@@ -1152,6 +1170,7 @@ export const FocusWithin: Story = {
  * 機能するため、`article` がデフォルトとして最適です。
  */
 export const DefaultRoleAutoSet: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-card id="default-role-card">
       <p style="margin: 0; font-size: var(--text-sm);">
@@ -1188,6 +1207,7 @@ export const DefaultRoleAutoSet: Story = {
  * - コンポーネントは外部指定の role を尊重すること
  */
 export const ExplicitRoleOverride: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 400px;">
       <div>
@@ -1257,6 +1277,7 @@ export const ExplicitRoleOverride: Story = {
  * - **flat / ghost**: 専用 hover 差分は持たず、カーソルとフォーカスリングが主シグナル
  */
 export const ClickableVariants: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 480px;">
       ${(['outlined', 'elevated', 'flat', 'ghost'] as const).map(
@@ -1332,6 +1353,7 @@ export const ClickableVariants: Story = {
  * Elevated の Edge Highlight を含む、暗色環境での階層表現を確認できます。
  */
 export const DarkMode: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div
       style="
@@ -1397,6 +1419,7 @@ export const DarkMode: Story = {
  * - `clickable` カードの hover/focus-within に `Highlight` 色のアウトラインが付与される
  */
 export const ForcedColorsMode: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div
       style="
@@ -1465,6 +1488,7 @@ export const ForcedColorsMode: Story = {
  * Chrome DevTools → Rendering → `prefers-reduced-motion: reduce` を設定してください。
  */
 export const ReducedMotion: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div
       style="

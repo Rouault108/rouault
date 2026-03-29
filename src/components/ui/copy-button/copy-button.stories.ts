@@ -150,6 +150,7 @@ const withMockedClipboardWrite = async (
  * コードブロック内などで使用する標準的なコピーボタンです。
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     value: 'コピーされるテキスト',
     label: 'コードをコピー',
@@ -188,6 +189,7 @@ export const Default: Story = {
  * 実際のコードブロックと組み合わせた使用例です。
  */
 export const WithCodeBlock: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   render: () => html`
     <style>
       .code-block-demo {
@@ -245,6 +247,7 @@ console.log(greeting);</code></pre>
  * URL を共有するためのコピーボタンの使用例です。
  */
 export const URLCopy: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   args: {
     value: 'https://example.com/article/design-system',
     label: 'URLをコピー',
@@ -290,6 +293,7 @@ export const URLCopy: Story = {
  * アイコンが Check に変わり、緑色の背景フラッシュが表示されます。
  */
 export const SuccessState: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   args: {
     value: 'コピー成功のテスト',
     label: 'コピー',
@@ -342,6 +346,7 @@ export const SuccessState: Story = {
  * エラー状態を確認するには、ブラウザの開発者ツールでクリップボード API をブロックしてください。
  */
 export const ErrorState: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   args: {
     value: 'エラーテスト',
     label: 'コピー',
@@ -395,6 +400,7 @@ export const ErrorState: Story = {
  * 同じページに複数のコピーボタンを配置した場合の動作を確認できます。
  */
 export const MultipleButtons: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   render: () => html`
     <style>
       .multiple-demo {
@@ -514,6 +520,7 @@ export const DarkMode: Story = {
     }
   },
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     backgrounds: { disable: true },
   },
 };
@@ -608,6 +615,7 @@ export const ForcedColorsMode: Story = {
     }
   },
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     backgrounds: { disable: true },
   },
 };
@@ -619,6 +627,7 @@ export const ForcedColorsMode: Story = {
  * このストーリーは意図的にアクセシビリティ違反を示すためのものです。
  */
 export const MissingLabel: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   tags: ['!autodocs'],
   render: () => html`
     <style>
@@ -671,6 +680,7 @@ export const MissingLabel: Story = {
  * copy と copy-error イベントをキャッチして、カスタムフィードバックを実装する例です。
  */
 export const WithEventHandlers: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     value: 'イベントハンドリングテスト',
     label: 'コピー',
@@ -710,6 +720,7 @@ export const WithEventHandlers: Story = {
 
     <div class="event-demo">
       <ui-copy-button
+        id="copy-button-with-event-handlers"
         value="${args.value}"
         label="${args.label}"
         size="${args.size}"
@@ -742,6 +753,27 @@ export const WithEventHandlers: Story = {
       </div>
     </div>
   `,
+  play: async ({ canvasElement }) => {
+    const button = getCopyButton(canvasElement, '#copy-button-with-event-handlers');
+    const uiButton = getInnerUiButton(button);
+    const log = canvasElement.querySelector<HTMLElement>('#event-log');
+
+    if (!log) {
+      throw new Error('event log が見つかりません');
+    }
+
+    await withMockedClipboardWrite(
+      async () => Promise.resolve(),
+      async () => {
+        await userEvent.click(uiButton);
+        await sleep(100);
+      },
+    );
+
+    if (!log.textContent?.includes('Copy success')) {
+      throw new Error('copy イベントのログが追記されていません');
+    }
+  },
 };
 
 /**
@@ -753,6 +785,7 @@ export const WithEventHandlers: Story = {
  * @internal このストーリーは自動テスト専用です。通常のドキュメントには表示されません。
  */
 export const TestSuccessState: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     value: 'テスト用テキスト',
     label: 'コピー',
@@ -843,6 +876,7 @@ export const TestSuccessState: Story = {
  * sm / md の使い分けとヒットエリアの一貫性を確認できます。
  */
 export const SizeVariants: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   render: () => html`
     <style>
       .size-variants-demo {
@@ -867,6 +901,7 @@ export const SizeVariants: Story = {
  * sm / md の両サイズで Success / Error の状態遷移を同時に確認します。
  */
 export const SizeStateMatrix: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .size-state-matrix {
@@ -972,6 +1007,7 @@ export const SizeStateMatrix: Story = {
  * Clipboard API 失敗時の state / icon / live region 切り替えを検証します。
  */
 export const TestErrorState: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     value: 'テスト用テキスト',
     label: 'コピー',
@@ -1066,6 +1102,7 @@ export const TestErrorState: Story = {
  * Success 2000ms / Error 3000ms 後に Idle へ復帰する境界条件を検証します。
  */
 export const TestStateTimerReset: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   tags: ['!autodocs'],
   render: () => html`
     <div style="display: flex; gap: 1rem;">
@@ -1132,6 +1169,7 @@ export const TestStateTimerReset: Story = {
  * 同一状態への連続遷移でも aria-label と state が更新されることを確認します。
  */
 export const TestRapidClicksReplay: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   tags: ['!autodocs'],
   args: {
     value: '連打テスト',
@@ -1192,6 +1230,7 @@ export const TestRapidClicksReplay: Story = {
  * 非同期処理が --timeout-async-threshold を超えた場合のみ「コピー中」を表示する仕様を検証します。
  */
 export const TestLoadingIndicatorThreshold: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   tags: ['!autodocs'],
   args: {
     value: 'loading-threshold',

@@ -70,7 +70,9 @@ function getPageLinks(shadowRoot: ShadowRoot): HTMLAnchorElement[] {
 }
 
 function getCurrentPageLink(shadowRoot: ShadowRoot): HTMLAnchorElement {
-  const currentLink = shadowRoot.querySelector<HTMLAnchorElement>('a.page-btn[aria-current="page"]');
+  const currentLink = shadowRoot.querySelector<HTMLAnchorElement>(
+    'a.page-btn[aria-current="page"]',
+  );
   if (!currentLink) {
     throw new Error('現在ページリンクが見つかりません');
   }
@@ -82,7 +84,9 @@ function getNavLinks(shadowRoot: ShadowRoot): HTMLAnchorElement[] {
 }
 
 function getDisabledNavButtons(shadowRoot: ShadowRoot): HTMLSpanElement[] {
-  return Array.from(shadowRoot.querySelectorAll<HTMLSpanElement>('span.nav-btn[aria-disabled="true"]'));
+  return Array.from(
+    shadowRoot.querySelectorAll<HTMLSpanElement>('span.nav-btn[aria-disabled="true"]'),
+  );
 }
 
 function getEllipses(shadowRoot: ShadowRoot): HTMLSpanElement[] {
@@ -216,6 +220,7 @@ export default meta;
 type Story = StoryObj<StoryArgs>;
 
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   play: async ({ canvasElement, args }) => {
     const storyName = 'Default';
     const pagination = getPagination(canvasElement);
@@ -257,6 +262,7 @@ export const Default: Story = {
 };
 
 export const SinglePage: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     current: 1,
     total: 1,
@@ -282,6 +288,7 @@ export const SinglePage: Story = {
 };
 
 export const RegularRepresentativeExamples: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 16px;">
       ${renderPagination({ current: 1, total: 8, mode: 'regular' }, 'example-8-1')}
@@ -310,6 +317,7 @@ export const RegularRepresentativeExamples: Story = {
 };
 
 export const ThresholdAndGapRules: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 16px;">
       ${renderPagination({ current: 4, total: 7, mode: 'regular' }, 'threshold-7')}
@@ -355,6 +363,7 @@ export const ThresholdAndGapRules: Story = {
 };
 
 export const NearStartAndNearEnd: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 16px;">
       ${renderPagination({ current: 2, total: 10, mode: 'regular' }, 'near-start-2')}
@@ -381,6 +390,7 @@ export const NearStartAndNearEnd: Story = {
 };
 
 export const CompactMode: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     current: 5,
     total: 10,
@@ -408,6 +418,7 @@ export const CompactMode: Story = {
 };
 
 export const CompactEdges: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 16px;">
       ${renderPagination({ current: 1, total: 10, mode: 'compact' }, 'compact-first')}
@@ -435,6 +446,7 @@ export const CompactEdges: Story = {
 };
 
 export const StyleContracts: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   play: async ({ canvasElement }) => {
     const storyName = 'StyleContracts';
     const pagination = getPagination(canvasElement);

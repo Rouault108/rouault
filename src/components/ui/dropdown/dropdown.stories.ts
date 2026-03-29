@@ -20,11 +20,7 @@ const triggerStyle = `
 const createTrigger = (label: string, id?: string) => html`
   <button id="${id ?? nothing}" slot="trigger" style="${triggerStyle}">
     ${label}
-    <ui-icon
-      name="chevron-down"
-      aria-hidden="true"
-      style="width: 14px; height: 14px;"
-    ></ui-icon>
+    <ui-icon name="chevron-down" aria-hidden="true" style="width: 14px; height: 14px;"></ui-icon>
   </button>
 `;
 
@@ -131,6 +127,7 @@ export default meta;
 type Story = StoryObj<Dropdown>;
 
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     opened: false,
     side: 'bottom',
@@ -171,6 +168,7 @@ export const Default: Story = {
 };
 
 export const DefaultVariantNormal: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown id="default-variant-dropdown" opened>
@@ -193,6 +191,7 @@ export const DefaultVariantNormal: Story = {
 };
 
 export const DangerVariantNormal: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown opened>
@@ -210,6 +209,7 @@ export const DangerVariantNormal: Story = {
 };
 
 export const DefaultVariantDisabledItem: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown opened>
@@ -235,6 +235,7 @@ export const DefaultVariantDisabledItem: Story = {
 };
 
 export const DangerVariantDisabledItem: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown opened>
@@ -257,6 +258,7 @@ export const DangerVariantDisabledItem: Story = {
 };
 
 export const DropdownDisabled: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown id="dropdown-disabled" disabled>
@@ -276,6 +278,7 @@ export const DropdownDisabled: Story = {
 };
 
 export const WithIcons: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown opened>
@@ -299,6 +302,7 @@ export const WithIcons: Story = {
 };
 
 export const WithSeparators: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown opened>
@@ -323,6 +327,7 @@ export const WithSeparators: Story = {
 };
 
 export const EventHandling: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; display: flex; flex-direction: column; gap: 1rem;">
       <ui-dropdown id="event-dropdown">
@@ -365,6 +370,7 @@ export const EventHandling: Story = {
 };
 
 export const KeyboardNavigation: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown id="keyboard-dropdown">
@@ -405,6 +411,7 @@ export const KeyboardNavigation: Story = {
 };
 
 export const AllItemsDisabled: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown opened>
@@ -422,6 +429,7 @@ export const AllItemsDisabled: Story = {
 };
 
 export const SingleItem: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown opened>
@@ -438,6 +446,7 @@ export const SingleItem: Story = {
 };
 
 export const ManyItems: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown id="many-items-dropdown" opened>
@@ -463,6 +472,7 @@ export const ManyItems: Story = {
 };
 
 export const LongLabels: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown id="long-labels-dropdown" opened>
@@ -486,6 +496,7 @@ export const LongLabels: Story = {
 };
 
 export const ProgrammaticControl: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown id="programmatic-dropdown">
@@ -514,6 +525,7 @@ export const ProgrammaticControl: Story = {
 };
 
 export const AriaAttributes: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown id="aria-dropdown">
@@ -547,6 +559,7 @@ export const AriaAttributes: Story = {
 };
 
 export const SideTop: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: { side: 'top', align: 'start' },
   render: (args) => html`
     <div style="padding: 2rem; padding-top: 8rem;">
@@ -566,6 +579,7 @@ export const SideTop: Story = {
 };
 
 export const ContextMenuExample: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   render: () => html`
     <div style="padding: 2rem; display: grid; gap: 0.5rem; max-width: 420px;">
       ${['原稿', '断章', '索引'].map(
@@ -596,6 +610,7 @@ export const ContextMenuExample: Story = {
 };
 
 export const ForcedColorsMode: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown opened>
@@ -610,6 +625,7 @@ export const ForcedColorsMode: Story = {
 };
 
 export const ReducedMotion: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown id="reduced-motion-dropdown">
@@ -631,6 +647,7 @@ export const ReducedMotion: Story = {
 };
 
 export const ClickOutsideClose: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; display: flex; gap: 1rem;">
       <ui-dropdown id="outside-close-dropdown" opened>
@@ -653,6 +670,7 @@ export const ClickOutsideClose: Story = {
 };
 
 export const ScrollClose: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown id="scroll-close-dropdown" opened>
@@ -672,6 +690,7 @@ export const ScrollClose: Story = {
 };
 
 export const TypeaheadNavigation: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown id="typeahead-dropdown">
@@ -703,6 +722,7 @@ export const TypeaheadNavigation: Story = {
 };
 
 export const NonButtonTriggerAria: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown disabled>
@@ -730,6 +750,7 @@ export const NonButtonTriggerAria: Story = {
 };
 
 export const DarkModeSurface: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="padding: 2rem; background: oklch(20% 0.01 250); border-radius: 8px;">
       <ui-dropdown opened>
@@ -742,6 +763,7 @@ export const DarkModeSurface: Story = {
 };
 
 export const EmptyMenu: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="padding: 2rem;">
       <ui-dropdown id="empty-menu-dropdown" opened> ${createTrigger('空メニュー')} </ui-dropdown>

@@ -107,10 +107,10 @@ const fullSlotContent = html`
   <ui-breadcrumbs
     slot="center"
     .items=${[
-    { label: 'ホーム', href: '/' },
-    { label: 'プロジェクト', href: '/projects' },
-    { label: '設定' },
-  ]}
+      { label: 'ホーム', href: '/' },
+      { label: 'プロジェクト', href: '/projects' },
+      { label: '設定' },
+    ]}
   ></ui-breadcrumbs>
 
   <span slot="compact-center" style="font-size: 12px; color: var(--fg-muted); white-space: nowrap;">
@@ -179,6 +179,7 @@ export default meta;
 type Story = StoryObj<UiHeader>;
 
 export const DefaultExpanded: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="height: 200vh;">
       <ui-header id="header-default" sidebar-expanded> ${fullSlotContent} </ui-header>
@@ -239,6 +240,7 @@ export const DefaultExpanded: Story = {
 };
 
 export const ZenModeCollapsed: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-header id="header-zen" sidebar-expanded> ${fullSlotContent} </ui-header>
   `,
@@ -268,6 +270,7 @@ export const ZenModeCollapsed: Story = {
 };
 
 export const SidebarToggleEvent: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-header id="header-event" sidebar-expanded> ${fullSlotContent} </ui-header>
   `,
@@ -304,6 +307,7 @@ export const SidebarToggleEvent: Story = {
 };
 
 export const ResponsiveVisualComparison: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   render: () => html`
     <div style="display: grid; gap: 2rem; padding: 1rem;">
       <p style="font-size: 0.875rem; color: var(--fg-muted);">
@@ -341,6 +345,7 @@ export const ResponsiveVisualComparison: Story = {
 };
 
 export const EmptySlots: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-header id="header-empty" sidebar-expanded>
       <div slot="start">
@@ -383,6 +388,7 @@ export const EmptySlots: Story = {
 };
 
 export const AttributeDrivenToggle: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-header id="header-attr" sidebar-expanded> ${fullSlotContent} </ui-header>
   `,
@@ -418,6 +424,7 @@ export const AttributeDrivenToggle: Story = {
 };
 
 export const RapidToggleReentrancy: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-header id="header-rapid" sidebar-expanded> ${fullSlotContent} </ui-header>
   `,
@@ -444,13 +451,17 @@ export const RapidToggleReentrancy: Story = {
     host.sidebarExpanded = false;
     await flush(host);
 
-    assert(eventCount as number === 3, `高速トグルで ${String(eventCount)} 回発火しました（期待: 3 回）`);
+    assert(
+      (eventCount as number) === 3,
+      `高速トグルで ${String(eventCount)} 回発火しました（期待: 3 回）`,
+    );
 
     host.removeEventListener('ui-header-sidebar-toggle', listener);
   },
 };
 
 export const DynamicSlotContent: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-header id="header-dynamic" sidebar-expanded>
       <div slot="center" id="dynamic-center">初期コンテンツ</div>
@@ -509,6 +520,7 @@ export const DynamicSlotContent: Story = {
 
 export const CompactCenterResponsiveReplacement: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     viewport: { defaultViewport: 'mobile1' },
   },
   render: () => html`
@@ -544,6 +556,7 @@ export const CompactCenterResponsiveReplacement: Story = {
 };
 
 export const CompactCenterNotSimultaneous: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-header id="header-not-simultaneous" sidebar-expanded> ${fullSlotContent} </ui-header>
   `,
@@ -562,6 +575,7 @@ export const CompactCenterNotSimultaneous: Story = {
 
 export const CompactCenterEmptyFallback: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     viewport: { defaultViewport: 'mobile1' },
   },
   render: () => html`
@@ -606,6 +620,7 @@ export const CompactCenterEmptyFallback: Story = {
 
 export const CompactCenterAccessibilityContract: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     viewport: { defaultViewport: 'mobile1' },
   },
   render: () => html`
@@ -678,6 +693,7 @@ export const CompactCenterAccessibilityContract: Story = {
 
 export const CompactCenterDynamicSlotContent: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     viewport: { defaultViewport: 'mobile1' },
   },
   render: () => html`
@@ -724,6 +740,7 @@ export const CompactCenterDynamicSlotContent: Story = {
 };
 
 export const ForcedColorsMode: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div
       style="padding: 1rem; background: var(--bg-surface-2); border-radius: var(--radius-md);
@@ -752,6 +769,7 @@ export const ForcedColorsMode: Story = {
 };
 
 export const ReducedMotion: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div
       style="padding: 1rem; background: var(--bg-surface-2); border-radius: var(--radius-md);
@@ -773,6 +791,7 @@ export const ReducedMotion: Story = {
 };
 
 export const PrintStyles: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div>
       <ui-header id="header-print" sidebar-expanded> ${fullSlotContent} </ui-header>
@@ -798,6 +817,7 @@ export const PrintStyles: Story = {
 };
 
 export const DarkModeGlassmorphism: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div
       style="color-scheme: dark; background: oklch(12% 0.02 250); color: oklch(90% 0.01 250);
@@ -806,8 +826,8 @@ export const DarkModeGlassmorphism: Story = {
       <ui-header id="header-dark" sidebar-expanded> ${fullSlotContent} </ui-header>
       <main style="padding: 2rem;">
         ${Array.from(
-    { length: 20 },
-    (_, i) => html`
+          { length: 20 },
+          (_, i) => html`
             <p
               style="margin-bottom: 1rem; padding: 1rem; border-radius: 6px; background: oklch(17% 0.02 250);"
             >
@@ -816,7 +836,7 @@ export const DarkModeGlassmorphism: Story = {
               <span style="color: oklch(65% 0.15 250);">カラーテキスト</span>も透過で確認。
             </p>
           `,
-  )}
+        )}
       </main>
     </div>
   `,
@@ -831,6 +851,7 @@ export const DarkModeGlassmorphism: Story = {
 };
 
 export const CustomBackdropSaturate: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .high-saturation {

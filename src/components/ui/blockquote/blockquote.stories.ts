@@ -96,6 +96,7 @@ type Story = StoryObj<Blockquote>;
  * - キーボード非インタラクティブ契約（tabindex/role を持たない）
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-blockquote id="default-quote">
       <p>読書体験は、UIを消すことではなく、本文の信号を最大化することで成立する。</p>
@@ -126,6 +127,7 @@ export const Default: Story = {
  * - source: あり / なし
  */
 export const VariantStateMatrix: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .matrix {
@@ -217,6 +219,7 @@ export const VariantStateMatrix: Story = {
  * - 無効な source slot は source へフォールバックする
  */
 export const SourceContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-blockquote
@@ -360,6 +363,7 @@ export const SourceContract: Story = {
  * - 出典リンクのみがフォーカス対象になる
  */
 export const FocusContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-blockquote id="focus-contract">
       <p>本文はフォーカス対象ではなく、出典リンクのみを到達可能とする。</p>
@@ -395,6 +399,7 @@ export const FocusContract: Story = {
  * - 空白 cite の無効化
  */
 export const BoundaryConditions: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-blockquote id="boundary-invalid-variant" variant="unknown" source="   ">
@@ -467,6 +472,7 @@ export const BoundaryConditions: Story = {
  * - prefers-color-scheme の直接分岐を持たない
  */
 export const DarkModeTokenContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <div style="padding: 1rem; background: var(--bg-default); color: var(--fg-default);">
@@ -516,6 +522,7 @@ export const DarkModeTokenContract: Story = {
  * - 色指定がトークン参照を維持する
  */
 export const ForcedColorsContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-blockquote id="forced-colors-contract" source="出典: トークン契約">
       <p>forced-colors でも左構造線が失われないこと。</p>
@@ -549,6 +556,7 @@ export const ForcedColorsContract: Story = {
  * - 構造線の印刷色固定が定義されている
  */
 export const PrintStyleContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-blockquote id="print-contract" source="出典: 印刷設計">
       <p>print 時の構造保持を確認する。</p>

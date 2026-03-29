@@ -193,6 +193,7 @@ type Story = StoryObj<InfoBox>;
  * heading + icon + heading-level + landmark の組み合わせ。
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     heading: '作品情報',
     icon: 'music',
@@ -265,6 +266,7 @@ export const Default: Story = {
  */
 export const ReadingPrerequisitePlacements: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     layout: 'fullscreen',
     docs: {
       description: {
@@ -578,6 +580,7 @@ export const ReadingPrerequisitePlacements: Story = {
  * variant × heading 有無 × landmark の主要な分岐を検証。
  */
 export const VariantStateMatrix: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .matrix {
@@ -686,6 +689,7 @@ export const VariantStateMatrix: Story = {
  * heading-level の許容値（1-6）と無効値の扱い。
  */
 export const HeadingLevelBoundaries: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-info-box id="heading-valid" heading="有効レベル" heading-level="1"
@@ -756,6 +760,7 @@ export const HeadingLevelBoundaries: Story = {
  * landmark=true でも heading が空なら region を公開しない。
  */
 export const LandmarkRequiresHeadingBoundary: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-info-box id="landmark-without-heading" heading="   " icon="music" landmark>
       heading 空文字時は landmark を無効化します。
@@ -782,6 +787,7 @@ export const LandmarkRequiresHeadingBoundary: Story = {
  * comfortable / compact は余白のみを切り替え、セマンティクスは変えない。
  */
 export const DensityStateMatrix: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-info-box
@@ -826,7 +832,10 @@ export const DensityStateMatrix: Story = {
     if (compactContainer.getAttribute('data-density') !== 'compact') {
       throw new Error('compact は data-density="compact" を持つ必要があります');
     }
-    if (comfortable.getAttribute('role') !== 'region' || compact.getAttribute('role') !== 'region') {
+    if (
+      comfortable.getAttribute('role') !== 'region' ||
+      compact.getAttribute('role') !== 'region'
+    ) {
       throw new Error('density は landmark 条件を変えてはいけません');
     }
 
@@ -849,6 +858,7 @@ export const DensityStateMatrix: Story = {
  * icon は heading があるときのみ描画し、装飾扱いで aria-hidden を持つ。
  */
 export const IconRenderingBoundary: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-info-box id="icon-with-heading" heading="アイコン付き" icon="music"
@@ -884,6 +894,7 @@ export const IconRenderingBoundary: Story = {
  * 不正 variant は default にフォールバックする。
  */
 export const InvalidVariantFallback: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-info-box id="invalid-variant" variant="unknown" heading="不正バリアント">
       invalid variant fallback
@@ -905,6 +916,7 @@ export const InvalidVariantFallback: Story = {
  * 不正 density は comfortable にフォールバックする。
  */
 export const InvalidDensityFallback: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-info-box id="invalid-density" density="unknown" heading="不正 density">
       invalid density fallback
@@ -926,6 +938,7 @@ export const InvalidDensityFallback: Story = {
  * 有効な要素/テキストノードがない場合は描画しない。
  */
 export const EmptySlotDoesNotRender: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-info-box id="empty-slot"></ui-info-box>
@@ -957,6 +970,7 @@ export const EmptySlotDoesNotRender: Story = {
  * 受け入れ基準にあるトークンと forced-colors ブロックを保持していることを検証。
  */
 export const StyleContracts: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-info-box
       id="style-contracts"
@@ -1007,6 +1021,7 @@ export const StyleContracts: Story = {
  * prefers-color-scheme 分岐を持たず、セマンティックトークンで Light/Dark を追従する。
  */
 export const DarkModeTokenContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-info-box
       id="dark-mode-contract"
@@ -1043,6 +1058,7 @@ export const DarkModeTokenContract: Story = {
  * 印刷時も背景に依存せず情報塊として識別できること。
  */
 export const PrintContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   args: {
     heading: 'Print Contract',
     icon: 'printer',
@@ -1079,7 +1095,7 @@ export const PrintContract: Story = {
     if (!styles.includes('@media print')) {
       throw new Error('print 用スタイルが定義されていません');
     }
-    if (!styles.includes("background: transparent")) {
+    if (!styles.includes('background: transparent')) {
       throw new Error('print 時は背景に依存しない必要があります');
     }
     if (!styles.includes('border: var(--border-style-subtle')) {

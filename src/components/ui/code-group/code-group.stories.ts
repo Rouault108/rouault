@@ -92,6 +92,7 @@ export default meta;
 type Story = StoryObj<CodeGroup>;
 
 export const UncontrolledComparison: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-code-group id="uncontrolled-group" aria-label="実装比較" default-selected-value="react">
       <ui-code-block
@@ -164,7 +165,7 @@ export const UncontrolledComparison: Story = {
     if (litTab.getAttribute('aria-selected') !== 'true') {
       throw new Error('uncontrolled mode で選択状態が更新されていません');
     }
-    
+
     const updatedCopyButton = getCopyButton(group);
     if (updatedCopyButton.label !== 'Lit 実装 のコードをコピー') {
       throw new Error(`タブ切り替え後のコピー文脈が不正です: "${updatedCopyButton.label}"`);
@@ -173,6 +174,7 @@ export const UncontrolledComparison: Story = {
 };
 
 export const ControlledSelection: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-code-group id="controlled-group" aria-label="制御モード検証" selected-value="lit">
       <ui-code-block group-key="react" tab-label="React" filename="react.tsx" lang="tsx">
@@ -232,6 +234,7 @@ export const ControlledSelection: Story = {
 };
 
 export const ManualActivationContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-code-group id="manual-group" aria-label="手動アクティベーション検証" activation="manual">
       <ui-code-block group-key="alpha" tab-label="Alpha" filename="alpha.ts">
@@ -278,6 +281,7 @@ export const ManualActivationContract: Story = {
 };
 
 export const FallbackAndCopyContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-code-group id="fallback-group" aria-label="フォールバック検証">
       <ui-code-block group-key="filename" filename="alpha.ts">
@@ -330,6 +334,7 @@ export const FallbackAndCopyContract: Story = {
 };
 
 export const CopyDisabledBoundary: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-code-group id="copy-disabled-group" aria-label="copyable 検証">
       <ui-code-block group-key="enabled" tab-label="Enabled" filename="enabled.ts">
@@ -366,6 +371,7 @@ export const CopyDisabledBoundary: Story = {
 };
 
 export const GroupKeyPersistence: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-code-group id="persistence-group" aria-label="groupKey 再解決">
       <ui-code-block group-key="one" tab-label="One" filename="one.ts">
@@ -413,6 +419,7 @@ export const GroupKeyPersistence: Story = {
 };
 
 export const DuplicateKeyBoundary: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-code-group id="duplicate-group" aria-label="duplicate key 検証">
       <ui-code-block group-key="same" tab-label="Alpha" filename="alpha.ts">
@@ -438,6 +445,7 @@ export const DuplicateKeyBoundary: Story = {
 };
 
 export const SingleItemFallback: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-code-group id="single-group" aria-label="single item fallback">
       <ui-code-block group-key="single" tab-label="Only" filename="only.ts">
@@ -465,6 +473,7 @@ export const SingleItemFallback: Story = {
 };
 
 export const MixedChildrenBoundary: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-code-group id="mixed-group" aria-label="mixed children boundary">
       <ui-code-block group-key="one" tab-label="One" filename="one.ts">
@@ -493,6 +502,7 @@ export const MixedChildrenBoundary: Story = {
 };
 
 export const KeyboardContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-code-group id="keyboard-group" aria-label="keyboard contract">
       <ui-code-block group-key="one" tab-label="One" filename="one.ts">
@@ -543,6 +553,7 @@ export const KeyboardContract: Story = {
 };
 
 export const ScrollCompensationContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="width: 320px;">
       <ui-code-group id="overflow-group" style="--header-tools-width: 120px;">
@@ -599,6 +610,7 @@ export const ScrollCompensationContract: Story = {
 };
 
 export const PrintStyleContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-code-group id="print-group">
       <ui-code-block group-key="a" tab-label="A" filename="a.ts">
@@ -631,6 +643,7 @@ export const PrintStyleContract: Story = {
 };
 
 export const ForcedColorsContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-code-group id="forced-colors-group">
       <ui-code-block group-key="one" tab-label="One" filename="one.ts">

@@ -98,6 +98,7 @@ export default meta;
 type Story = StoryObj<List>;
 
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => renderList(),
   play: async ({ canvasElement }) => {
     const list = canvasElement.querySelector<List>('ui-list');
@@ -118,12 +119,15 @@ export const Default: Story = {
       throw new Error('先頭行の row-id が同期されていません');
     }
 
-    const firstCell = rowHosts[0].shadowRoot?.querySelector('[role="gridcell"][data-column-id="title"]');
+    const firstCell = rowHosts[0].shadowRoot?.querySelector(
+      '[role="gridcell"][data-column-id="title"]',
+    );
     if (!firstCell) throw new Error('先頭セルが描画されていません');
   },
 };
 
 export const Empty: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => renderList({ items: [] }),
   play: async ({ canvasElement }) => {
     const list = canvasElement.querySelector<List>('ui-list');
@@ -142,6 +146,7 @@ export const Empty: Story = {
 };
 
 export const SortCycle: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => renderList(),
   play: async ({ canvasElement }) => {
     const list = canvasElement.querySelector<List>('ui-list');
@@ -176,6 +181,7 @@ export const SortCycle: Story = {
 };
 
 export const KeyboardRowNavigation: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => renderList({ currentRowId: 'n-1', currentColumnId: 'date' }),
   play: async ({ canvasElement }) => {
     const list = canvasElement.querySelector<List>('ui-list');
@@ -191,7 +197,8 @@ export const KeyboardRowNavigation: Story = {
     });
 
     const firstRow = list.querySelectorAll('ui-list-item')[0];
-    const firstMetaCell = firstRow?.shadowRoot?.querySelector<HTMLElement>('[data-column-id="date"]');
+    const firstMetaCell =
+      firstRow?.shadowRoot?.querySelector<HTMLElement>('[data-column-id="date"]');
     if (!firstMetaCell) throw new Error('初期セルが見つかりません');
 
     firstMetaCell.focus();
@@ -212,6 +219,7 @@ export const KeyboardRowNavigation: Story = {
 };
 
 export const CellHorizontalNavigation: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => renderList({ currentRowId: 'n-1', currentColumnId: 'title' }),
   play: async ({ canvasElement }) => {
     const list = canvasElement.querySelector<List>('ui-list');
@@ -237,7 +245,8 @@ export const CellHorizontalNavigation: Story = {
     );
     await list.updateComplete;
 
-    if (list.currentColumnId !== 'date') throw new Error('ArrowRight で current 列が移動していません');
+    if (list.currentColumnId !== 'date')
+      throw new Error('ArrowRight で current 列が移動していません');
 
     cell2.focus();
     const before = changes.length;
@@ -251,6 +260,7 @@ export const CellHorizontalNavigation: Story = {
 };
 
 export const PreviewAndContextRequests: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => renderList({ currentRowId: 'n-2', currentColumnId: 'title' }),
   play: async ({ canvasElement }) => {
     const list = canvasElement.querySelector<List>('ui-list');
@@ -302,6 +312,7 @@ export const PreviewAndContextRequests: Story = {
 };
 
 export const PaginationContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => {
     const pagedItems: StoryItem[] = Array.from({ length: 10 }, (_, index) => {
       const id = `p-${String(index + 21)}`;
@@ -342,6 +353,7 @@ export const PaginationContract: Story = {
 export const MobileColumnsAndSupplement: Story = {
   render: () => renderList({ currentRowId: 'n-1', currentColumnId: 'title' }),
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     viewport: { defaultViewport: 'mobile1' },
   },
   play: async ({ canvasElement }) => {
@@ -375,6 +387,7 @@ export const MobileColumnsAndSupplement: Story = {
 };
 
 export const SingleRowBoundary: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => renderList({ items: [firstItem], currentRowId: 'n-1', currentColumnId: 'title' }),
   play: async ({ canvasElement }) => {
     const list = canvasElement.querySelector<List>('ui-list');
@@ -400,6 +413,7 @@ export const SingleRowBoundary: Story = {
 };
 
 export const ControlledCurrent: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => renderList({ currentRowId: 'n-1', currentColumnId: 'title' }),
   play: async ({ canvasElement }) => {
     const list = canvasElement.querySelector<List>('ui-list');
@@ -426,7 +440,9 @@ export const ControlledCurrent: Story = {
 };
 
 export const LoadingState: Story = {
-  render: () => renderList({ items: [], loading: true, loadingLabel: '検索結果を読み込んでいます' }),
+  parameters: { rouaultContractKind: 'interaction-contract' },
+  render: () =>
+    renderList({ items: [], loading: true, loadingLabel: '検索結果を読み込んでいます' }),
   play: async ({ canvasElement }) => {
     const list = canvasElement.querySelector<List>('ui-list');
     if (!list) throw new Error('ui-list が見つかりません');
@@ -444,6 +460,7 @@ export const LoadingState: Story = {
 };
 
 export const RevealCurrent: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => renderList({ currentRowId: 'n-3', currentColumnId: 'title' }),
   play: async ({ canvasElement }) => {
     const list = canvasElement.querySelector<List>('ui-list');
@@ -481,21 +498,21 @@ export const RevealCurrent: Story = {
 };
 
 export const ValidationFailures: Story = {
-  render: () =>
-    html`
-      <ui-list
-        .columns="${[
-          { id: 'title', label: 'タイトル', width: '1fr', lead: true, hideOnMobile: true },
-          { id: 'title', label: '重複列', width: '120px' },
-        ] satisfies ColumnDef[]}"
-        current-row-id="broken-row"
-        show-actions
-      >
-        <ui-list-item>
-          <span slot="title">invalid row</span>
-        </ui-list-item>
-      </ui-list>
-    `,
+  parameters: { rouaultContractKind: 'interaction-contract' },
+  render: () => html`
+    <ui-list
+      .columns="${[
+        { id: 'title', label: 'タイトル', width: '1fr', lead: true, hideOnMobile: true },
+        { id: 'title', label: '重複列', width: '120px' },
+      ] satisfies ColumnDef[]}"
+      current-row-id="broken-row"
+      show-actions
+    >
+      <ui-list-item>
+        <span slot="title">invalid row</span>
+      </ui-list-item>
+    </ui-list>
+  `,
   play: async ({ canvasElement }) => {
     const list = canvasElement.querySelector<List>('ui-list');
     if (!list) throw new Error('ui-list が見つかりません');
@@ -521,6 +538,7 @@ export const ValidationFailures: Story = {
 };
 
 export const DarkMode: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div
       style="

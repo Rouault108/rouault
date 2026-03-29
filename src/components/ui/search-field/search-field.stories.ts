@@ -87,6 +87,7 @@ export default meta;
 type Story = StoryObj<SearchField>;
 
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 32rem;">
       <ui-search-field
@@ -112,7 +113,10 @@ export const Default: Story = {
     assert(clearButton.hidden, '初期状態では clear button が非表示である必要があります');
     assert(label.textContent.trim() === '検索', 'label の文言が正しくありません');
     assert(label.htmlFor === input.id, 'label と内部 input の関連付けが切れています');
-    assert(input.getAttribute('aria-label') === null, 'アクセシブル名源を aria-label にしてはいけません');
+    assert(
+      input.getAttribute('aria-label') === null,
+      'アクセシブル名源を aria-label にしてはいけません',
+    );
     assert(
       inputStyle.paddingTop === '0px',
       '入力テキストの縦位置合わせのため padding-block-start は 0px である必要があります',
@@ -137,6 +141,7 @@ export const Default: Story = {
 };
 
 export const ClearableState: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 32rem;">
       <ui-search-field
@@ -175,6 +180,7 @@ export const ClearableState: Story = {
 };
 
 export const ComboboxAriaAndImperativeApi: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 32rem;">
       <ui-search-field
@@ -231,6 +237,7 @@ export const ComboboxAriaAndImperativeApi: Story = {
 };
 
 export const DescriptionAssociation: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 0.5rem; max-width: 32rem;">
       <ui-search-field
@@ -258,6 +265,7 @@ export const DescriptionAssociation: Story = {
 };
 
 export const NativeInputHints: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 32rem;">
       <ui-search-field
@@ -292,13 +300,14 @@ export const NativeInputHints: Story = {
     );
     assert(
       ['off', 'none'].includes(input.getAttribute('autocapitalize') ?? '') ||
-      ['off', 'none'].includes(input.autocapitalize),
+        ['off', 'none'].includes(input.autocapitalize),
       'autocapitalize が内部 input に反映されていません',
     );
   },
 };
 
 export const DisabledAndReadonlyBoundary: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem; max-width: 32rem;">
       <ui-search-field
@@ -344,14 +353,21 @@ export const DisabledAndReadonlyBoundary: Story = {
     await flush(readonlyHost);
     await flush(disabledHost);
 
-    assert(readonlyHost.value === 'router', 'readonly 状態で clear() は no-op である必要があります');
+    assert(
+      readonlyHost.value === 'router',
+      'readonly 状態で clear() は no-op である必要があります',
+    );
     assert(readonlyInput.value === 'router', 'readonly 状態で内部 input 値を変更してはいけません');
-    assert(disabledHost.value === 'router', 'disabled 状態で clear() は no-op である必要があります');
+    assert(
+      disabledHost.value === 'router',
+      'disabled 状態で clear() は no-op である必要があります',
+    );
     assert(disabledInput.value === 'router', 'disabled 状態で内部 input 値を変更してはいけません');
   },
 };
 
 export const SurfaceBorderCustomization: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 32rem;">
       <ui-search-field

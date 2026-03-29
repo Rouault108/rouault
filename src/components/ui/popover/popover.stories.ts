@@ -131,6 +131,7 @@ export default meta;
 type Story = StoryObj<UiPopover>;
 
 export const BasicContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem;">
       <ui-popover id="popover-basic">
@@ -202,6 +203,7 @@ export const BasicContract: Story = {
 };
 
 export const RequestCancelContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem;">
       <ui-popover id="popover-request-cancel">
@@ -227,8 +229,15 @@ export const RequestCancelContract: Story = {
     await nextFrame();
 
     const firstReason = reasons.at(0);
-    if (!firstReason || reasons.length !== 1 || firstReason.reason !== 'trigger' || !firstReason.nextOpen) {
-      throw new Error('open request は reason=trigger, nextOpen=true で 1 回だけ発火する必要があります');
+    if (
+      !firstReason ||
+      reasons.length !== 1 ||
+      firstReason.reason !== 'trigger' ||
+      !firstReason.nextOpen
+    ) {
+      throw new Error(
+        'open request は reason=trigger, nextOpen=true で 1 回だけ発火する必要があります',
+      );
     }
     if (host.opened) {
       throw new Error('request が cancel された場合は opened が変化してはいけません');
@@ -247,6 +256,7 @@ export const RequestCancelContract: Story = {
 };
 
 export const ControlledAndUncontrolledContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem; padding: 2rem;">
       <ui-popover id="popover-uncontrolled" defaultOpened>
@@ -304,17 +314,23 @@ export const ControlledAndUncontrolledContract: Story = {
       throw new Error('controlled close request は reason=trigger, nextOpen=false が必要です');
     }
     if (!controlled.opened) {
-      throw new Error('controlled では request 後も外部が更新するまで opened=true を維持する必要があります');
+      throw new Error(
+        'controlled では request 後も外部が更新するまで opened=true を維持する必要があります',
+      );
     }
     if (changeEvents.length !== 0) {
-      throw new Error('controlled では外部が opened を更新する前に change event を出してはいけません');
+      throw new Error(
+        'controlled では外部が opened を更新する前に change event を出してはいけません',
+      );
     }
 
     controlled.opened = false;
     await controlled.updateComplete;
 
     if (changeEvents.at(0)?.reason !== 'trigger') {
-      throw new Error('controlled の確定 change は reason=trigger で 1 回だけ発火する必要があります');
+      throw new Error(
+        'controlled の確定 change は reason=trigger で 1 回だけ発火する必要があります',
+      );
     }
     if (controlledTrigger.getAttribute('aria-expanded') !== 'false') {
       throw new Error('controlled close 確定後は aria-expanded=false が必要です');
@@ -323,6 +339,7 @@ export const ControlledAndUncontrolledContract: Story = {
 };
 
 export const DismissReasonContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem; padding: 2rem;">
       <ui-popover id="reason-trigger">
@@ -431,6 +448,7 @@ export const DismissReasonContract: Story = {
 };
 
 export const ActiveTriggerAndControllerModeContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem; padding: 2rem;">
       <ui-popover id="popover-shared">
@@ -466,7 +484,9 @@ export const ActiveTriggerAndControllerModeContract: Story = {
       throw new Error('active trigger の follower は aria-expanded=true である必要があります');
     }
     if (ownerTrigger.getAttribute('aria-expanded') !== 'false') {
-      throw new Error('owner trigger は active でない限り aria-expanded=false を維持する必要があります');
+      throw new Error(
+        'owner trigger は active でない限り aria-expanded=false を維持する必要があります',
+      );
     }
     if (ownerTrigger.hasAttribute('aria-controls')) {
       throw new Error('owner trigger は active でない間 aria-controls を保持してはいけません');
@@ -487,7 +507,9 @@ export const ActiveTriggerAndControllerModeContract: Story = {
       throw new Error('旧 active trigger は aria-expanded=false に戻る必要があります');
     }
     if (openChangeEvents.length !== 0) {
-      throw new Error('active trigger 切替は open 真偽値変更ではないため change event を発火してはいけません');
+      throw new Error(
+        'active trigger 切替は open 真偽値変更ではないため change event を発火してはいけません',
+      );
     }
 
     const controllerExternal = getElement(
@@ -504,12 +526,15 @@ export const ActiveTriggerAndControllerModeContract: Story = {
     await nextFrame();
     await wait(0);
     if (document.activeElement !== controllerExternal) {
-      throw new Error('controller mode の close(returnFocus=true) は active trigger へ戻る必要があります');
+      throw new Error(
+        'controller mode の close(returnFocus=true) は active trigger へ戻る必要があります',
+      );
     }
   },
 };
 
 export const SlotResyncAndBoundaryContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-popover id="boundary-invalid" variant="unsupported" placement="diagonal" offset="-4">
@@ -552,7 +577,9 @@ export const SlotResyncAndBoundaryContract: Story = {
     ]);
 
     if (invalid.variant !== 'default') {
-      throw new Error(`invalid variant は default に正規化される必要があります: ${invalid.variant}`);
+      throw new Error(
+        `invalid variant は default に正規化される必要があります: ${invalid.variant}`,
+      );
     }
     if (invalid.placement !== 'bottom-start') {
       throw new Error(
@@ -560,7 +587,9 @@ export const SlotResyncAndBoundaryContract: Story = {
       );
     }
     if (invalid.offset !== 0) {
-      throw new Error(`invalid offset は 0 に正規化される必要があります: ${String(invalid.offset)}`);
+      throw new Error(
+        `invalid offset は 0 に正規化される必要があります: ${String(invalid.offset)}`,
+      );
     }
 
     clickPrimary(getElement(multi, '#boundary-multi-trigger'));
@@ -583,7 +612,9 @@ export const SlotResyncAndBoundaryContract: Story = {
     await wait(0);
     const invalidatedDetail = slotEvents.at(-1);
     if (invalidatedDetail?.reason !== 'slot-invalidated') {
-      throw new Error('slot から必要要素が失われた場合は reason=slot-invalidated で閉じる必要があります');
+      throw new Error(
+        'slot から必要要素が失われた場合は reason=slot-invalidated で閉じる必要があります',
+      );
     }
 
     const reconnectWrap = getElement(canvasElement, '#boundary-reconnect-wrap') as HTMLDivElement;
@@ -604,10 +635,7 @@ export const SlotResyncAndBoundaryContract: Story = {
       throw new Error('reconnect 後も再び open できる必要があります');
     }
 
-    const reconnectContent = getElement(
-      reconnect,
-      '#boundary-reconnect-content',
-    ) as HTMLDivElement;
+    const reconnectContent = getElement(reconnect, '#boundary-reconnect-content') as HTMLDivElement;
     const style = getComputedStyle(reconnectContent);
     if (style.overflowY !== 'auto') {
       throw new Error(`長文 content は overflow-y:auto が必要です: ${style.overflowY}`);
@@ -620,6 +648,7 @@ export const SlotResyncAndBoundaryContract: Story = {
 
 export const VisualModeContracts: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     backgrounds: { default: 'dark' },
   },
   render: () => html`
@@ -651,7 +680,11 @@ export const VisualModeContracts: Story = {
     const defaultHost = getHost(canvasElement, 'visual-default');
     const subtleHost = getHost(canvasElement, 'visual-subtle');
     const inverseHost = getHost(canvasElement, 'visual-inverse');
-    await Promise.all([defaultHost.updateComplete, subtleHost.updateComplete, inverseHost.updateComplete]);
+    await Promise.all([
+      defaultHost.updateComplete,
+      subtleHost.updateComplete,
+      inverseHost.updateComplete,
+    ]);
 
     clickPrimary(getElement(defaultHost, '#visual-default-trigger'));
     clickPrimary(getElement(subtleHost, '#visual-subtle-trigger'));

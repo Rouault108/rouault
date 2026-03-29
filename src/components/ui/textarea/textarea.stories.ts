@@ -154,6 +154,7 @@ type Story = StoryObj<Textarea>;
  * 入力に応じて高さが即時拡張します（Auto Grow）。
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     label: 'メモ',
     name: 'memo',
@@ -217,6 +218,7 @@ export const Default: Story = {
  * UI コンポーネント間の密度を優先します。
  */
 export const VariantDefault: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 480px;">
       <div
@@ -261,6 +263,7 @@ export const VariantDefault: Story = {
  * 読む体験（`.prose`）との完全な一致を提供します。
  */
 export const VariantProse: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 480px;">
       <div
@@ -307,6 +310,7 @@ export const VariantProse: Story = {
  * `aria-invalid="true"` が設定され、エラーメッセージが `aria-describedby` で紐付けられます。
  */
 export const ErrorState: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 480px;">
       <ui-textarea
@@ -361,6 +365,7 @@ export const ErrorState: Story = {
  * Prose バリアントでもエラー表示は同様に機能します。
  */
 export const ErrorStateProse: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 480px;">
       <ui-textarea
@@ -398,6 +403,7 @@ export const ErrorStateProse: Story = {
  * `opacity: --opacity-disabled` で薄く表示されます。
  */
 export const StateDisabled: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 480px;">
       <ui-textarea
@@ -444,6 +450,7 @@ export const StateDisabled: Story = {
  * フォーカス可能だがコピーのみ許可。resize も無効化されます。
  */
 export const StateReadonly: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 480px;">
       <ui-textarea
@@ -489,6 +496,7 @@ export const StateReadonly: Story = {
  * エラー状態になると Help Text は非表示になり、Error Message のみ表示されます。
  */
 export const WithHelpText: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 480px;">
       <ui-textarea
@@ -540,6 +548,7 @@ export const WithHelpText: Story = {
  * スクリーンリーダーには `aria-label` として常に提供されます。
  */
 export const HiddenLabel: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 480px;">
       <ui-textarea
@@ -579,6 +588,7 @@ export const HiddenLabel: Story = {
  * `rows=3` が最小高さとして機能します。
  */
 export const AutoGrow: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 480px;">
       <div
@@ -638,6 +648,7 @@ export const AutoGrow: Story = {
  * それ以下では通常の Auto Grow が機能します。
  */
 export const MaxRows: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 480px;">
       <div
@@ -695,6 +706,7 @@ export const MaxRows: Story = {
  * `auto-grow="false"` + `resize="vertical"` で手動リサイズを許容します。
  */
 export const AutoGrowDisabled: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 480px;">
       <div
@@ -742,6 +754,7 @@ export const AutoGrowDisabled: Story = {
  * デザインレビューやビジュアルリグレッションテストに使用します。
  */
 export const AllVariantsAndStates: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .showcase {
@@ -908,6 +921,7 @@ export const AllVariantsAndStates: Story = {
  * 入力時に `input` イベント、フォーカスを外した時に `change` イベントが発火します。
  */
 export const EventFiring: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
       <ui-textarea
@@ -987,6 +1001,7 @@ export const EventFiring: Story = {
  * フォーカス / ブラー イベントの確認。
  */
 export const FocusBlurEvents: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
       <ui-textarea
@@ -1070,6 +1085,7 @@ export const FocusBlurEvents: Story = {
  */
 export const BoundaryRows1: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story:
@@ -1128,6 +1144,7 @@ export const BoundaryRows1: Story = {
  */
 export const BoundaryEmptyLabel: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story:
@@ -1190,6 +1207,7 @@ export const BoundaryEmptyLabel: Story = {
  */
 export const BoundaryErrorWithoutMessage: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story:
@@ -1256,6 +1274,7 @@ export const BoundaryErrorWithoutMessage: Story = {
  */
 export const BoundaryDisabledAndError: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story:
@@ -1314,6 +1333,7 @@ export const BoundaryDisabledAndError: Story = {
  */
 export const BoundaryRequired: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story:
@@ -1372,6 +1392,7 @@ export const BoundaryRequired: Story = {
  */
 export const BoundaryProgrammaticValue: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story: '⚠️ **境界条件**: プログラムによる `value` 変更時も Auto Grow が正しく動作します。',
@@ -1434,6 +1455,7 @@ export const BoundaryProgrammaticValue: Story = {
  */
 export const BoundaryRowsMaxRowsInversion: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story:
@@ -1472,6 +1494,7 @@ export const BoundaryRowsMaxRowsInversion: Story = {
  */
 export const DarkModePreview: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story: 'ダークモード相当のトークン上書き環境で表示崩れがないことを確認します。',
@@ -1519,6 +1542,7 @@ export const DarkModePreview: Story = {
  */
 export const ForcedColorsPreview: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story:
@@ -1565,6 +1589,7 @@ export const ForcedColorsPreview: Story = {
  */
 export const ReducedMotionPreview: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story:
@@ -1605,6 +1630,7 @@ export const ReducedMotionPreview: Story = {
  */
 export const PrintPreview: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story: '印刷プレビュー時の可読性確認用。背景除去・ボーダー維持・値の可読性を確認します。',

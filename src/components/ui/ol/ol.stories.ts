@@ -14,7 +14,9 @@ const getHost = (canvasElement: Element, id: string): Ol => {
 };
 
 const getDirectLists = (host: Ol): HTMLOListElement[] =>
-  [...host.children].filter((child): child is HTMLOListElement => child instanceof HTMLOListElement);
+  [...host.children].filter(
+    (child): child is HTMLOListElement => child instanceof HTMLOListElement,
+  );
 
 const getDirectList = (host: Ol): HTMLOListElement => {
   const [list] = getDirectLists(host);
@@ -66,12 +68,16 @@ const computeNativeMarkerSequence = (list: HTMLOListElement): number[] => {
 const expectMarkerSequence = (list: HTMLOListElement, expected: number[]): void => {
   const actual = computeNativeMarkerSequence(list);
   if (actual.length !== expected.length) {
-    throw new Error(`項目数が一致しません: expected=${String(expected.length)}, actual=${String(actual.length)}`);
+    throw new Error(
+      `項目数が一致しません: expected=${String(expected.length)}, actual=${String(actual.length)}`,
+    );
   }
 
   actual.forEach((value, index) => {
     if (value !== expected[index]) {
-      throw new Error(`番号進行が一致しません: expected=${expected.join(', ')}, actual=${actual.join(', ')}`);
+      throw new Error(
+        `番号進行が一致しません: expected=${expected.join(', ')}, actual=${actual.join(', ')}`,
+      );
     }
   });
 };
@@ -123,6 +129,7 @@ export default meta;
 type Story = StoryObj<Ol>;
 
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-ol id="default-ol" style="--space-2: 8px;">
       <ol>
@@ -173,6 +180,7 @@ export const Default: Story = {
 };
 
 export const StartZeroAndNegative: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-ol id="start-zero" style="--space-2: 8px;">
@@ -212,6 +220,7 @@ export const StartZeroAndNegative: Story = {
 };
 
 export const StartAndValueJump: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-ol id="start-value-jump" style="--space-2: 8px;">
       <ol start="9">
@@ -243,6 +252,7 @@ export const StartAndValueJump: Story = {
 };
 
 export const Reversed: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-ol id="reversed-only" style="--space-2: 8px;">
       <ol reversed>
@@ -268,6 +278,7 @@ export const Reversed: Story = {
 };
 
 export const ReversedWithStartAndValue: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-ol id="reversed-composite" style="--space-2: 8px;">
       <ol reversed start="5">
@@ -293,6 +304,7 @@ export const ReversedWithStartAndValue: Story = {
 };
 
 export const MarkerAlignment: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-ol id="align-9-10">
@@ -333,11 +345,31 @@ export const MarkerAlignment: Story = {
   `,
   play: async ({ canvasElement }) => {
     const cases = [
-      { hostId: 'align-9-10', markers: [9, 10], anchors: ['[data-testid="a-9"]', '[data-testid="a-10"]'] },
-      { hostId: 'align-99-100', markers: [99, 100], anchors: ['[data-testid="a-99"]', '[data-testid="a-100"]'] },
-      { hostId: 'align-999-1000', markers: [999, 1000], anchors: ['[data-testid="a-999"]', '[data-testid="a-1000"]'] },
-      { hostId: 'align-neg1-0', markers: [-1, 0], anchors: ['[data-testid="a-neg1"]', '[data-testid="a-0"]'] },
-      { hostId: 'align-0-1', markers: [0, 1], anchors: ['[data-testid="a-0b"]', '[data-testid="a-1"]'] },
+      {
+        hostId: 'align-9-10',
+        markers: [9, 10],
+        anchors: ['[data-testid="a-9"]', '[data-testid="a-10"]'],
+      },
+      {
+        hostId: 'align-99-100',
+        markers: [99, 100],
+        anchors: ['[data-testid="a-99"]', '[data-testid="a-100"]'],
+      },
+      {
+        hostId: 'align-999-1000',
+        markers: [999, 1000],
+        anchors: ['[data-testid="a-999"]', '[data-testid="a-1000"]'],
+      },
+      {
+        hostId: 'align-neg1-0',
+        markers: [-1, 0],
+        anchors: ['[data-testid="a-neg1"]', '[data-testid="a-0"]'],
+      },
+      {
+        hostId: 'align-0-1',
+        markers: [0, 1],
+        anchors: ['[data-testid="a-0b"]', '[data-testid="a-1"]'],
+      },
     ] as const;
 
     for (const testCase of cases) {
@@ -365,6 +397,7 @@ export const MarkerAlignment: Story = {
 };
 
 export const VariantSteps: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .matrix {
@@ -415,7 +448,9 @@ export const VariantSteps: Story = {
     const expectedPrimary = getComputedStyle(primaryProbe).color;
 
     if (defaultMarkerColor !== expectedMuted) {
-      throw new Error(`default のマーカー色が --fg-muted を追従していません: ${defaultMarkerColor}`);
+      throw new Error(
+        `default のマーカー色が --fg-muted を追従していません: ${defaultMarkerColor}`,
+      );
     }
     if (stepsMarkerColor !== expectedPrimary) {
       throw new Error(`steps のマーカー色が --primary を追従していません: ${stepsMarkerColor}`);
@@ -426,12 +461,15 @@ export const VariantSteps: Story = {
     const leftDefault = defaultAnchor.getBoundingClientRect().left;
     const leftSteps = stepsAnchor.getBoundingClientRect().left;
     if (Math.abs(leftDefault - leftSteps) > ALLOWED_ALIGNMENT_DELTA) {
-      throw new Error(`steps で本文開始位置が変化しています: ${String(leftDefault)} vs ${String(leftSteps)}`);
+      throw new Error(
+        `steps で本文開始位置が変化しています: ${String(leftDefault)} vs ${String(leftSteps)}`,
+      );
     }
   },
 };
 
 export const NestedOrderedList: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-ol id="nested-ordered" style="--space-2: 8px;">
       <ol>
@@ -467,6 +505,7 @@ export const NestedOrderedList: Story = {
 };
 
 export const NestedUnorderedListIsolation: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-ol id="nested-unordered">
       <ol>
@@ -501,6 +540,7 @@ export const NestedUnorderedListIsolation: Story = {
 };
 
 export const StructureViolation: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-ol id="structure-no-root">
@@ -508,8 +548,12 @@ export const StructureViolation: Story = {
       </ui-ol>
 
       <ui-ol id="structure-multi-root">
-        <ol><li>root 1</li></ol>
-        <ol><li>root 2</li></ol>
+        <ol>
+          <li>root 1</li>
+        </ol>
+        <ol>
+          <li>root 2</li>
+        </ol>
       </ui-ol>
 
       <ui-ol id="structure-invalid-child">
@@ -542,7 +586,10 @@ export const StructureViolation: Story = {
     }
 
     const invalidList = getDirectList(invalidChildHost);
-    const invalidChild = getElement(invalidList, '[data-testid="structure-invalid-non-li"]') as HTMLDivElement;
+    const invalidChild = getElement(
+      invalidList,
+      '[data-testid="structure-invalid-non-li"]',
+    ) as HTMLDivElement;
     if (!(invalidChild.parentElement instanceof HTMLOListElement)) {
       throw new Error('非正規な non-li 子要素が移動しています');
     }
@@ -550,6 +597,7 @@ export const StructureViolation: Story = {
 };
 
 export const EnvironmentContracts: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .surface {
@@ -620,7 +668,9 @@ export const EnvironmentContracts: Story = {
     const defaultLeft = defaultAnchor.getBoundingClientRect().left;
     const stepsLeft = stepsAnchor.getBoundingClientRect().left;
     if (Math.abs(defaultLeft - stepsLeft) > ALLOWED_ALIGNMENT_DELTA) {
-      throw new Error(`環境差し替えで本文開始位置が崩れています: ${String(defaultLeft)} vs ${String(stepsLeft)}`);
+      throw new Error(
+        `環境差し替えで本文開始位置が崩れています: ${String(defaultLeft)} vs ${String(stepsLeft)}`,
+      );
     }
 
     const linkAfterWidth = Number.parseFloat(getComputedStyle(link, '::after').width);

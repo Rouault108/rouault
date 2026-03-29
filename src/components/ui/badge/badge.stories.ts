@@ -223,6 +223,7 @@ export default meta;
 type Story = StoryObj<Badge>;
 
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     variant: 'solid',
     color: 'primary',
@@ -261,6 +262,7 @@ export const Default: Story = {
 };
 
 export const VariantColorMatrix: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => {
     const variants = ['solid', 'subtle', 'dot'] as const;
     const colors = ['primary', 'danger', 'success', 'warning', 'neutral'] as const;
@@ -347,6 +349,7 @@ export const VariantColorMatrix: Story = {
 };
 
 export const CountBadge: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
       <ui-badge id="count-1" count="1"></ui-badge>
@@ -380,6 +383,7 @@ export const CountBadge: Story = {
 };
 
 export const TextBadge: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
@@ -401,6 +405,7 @@ export const TextBadge: Story = {
 };
 
 export const CountAriaLabelOverride: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
       <ui-badge id="count-override" count="128" count-aria-label="未読 128 件"></ui-badge>
@@ -420,6 +425,7 @@ export const CountAriaLabelOverride: Story = {
 };
 
 export const AnnounceModes: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
@@ -463,6 +469,7 @@ export const AnnounceModes: Story = {
 };
 
 export const CountMaxCombinations: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
       <ui-badge id="cm-0" count="0" max="99"></ui-badge>
@@ -492,6 +499,7 @@ export const CountMaxCombinations: Story = {
 
 export const ContentPriorityLogic: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -552,6 +560,7 @@ export const ContentPriorityLogic: Story = {
 
 export const CountNormalization: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -604,6 +613,7 @@ export const CountNormalization: Story = {
 
 export const MaxNormalization: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -643,6 +653,7 @@ export const MaxNormalization: Story = {
 };
 
 export const CountZero: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
       <ui-badge id="zero-count" count="0">無視される slot</ui-badge>
@@ -663,6 +674,7 @@ export const CountZero: Story = {
 };
 
 export const CountUndefined: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
       <ui-badge id="undefined-count">New</ui-badge>
@@ -685,6 +697,7 @@ export const CountUndefined: Story = {
 };
 
 export const DotIgnoresCount: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
       <ui-badge
@@ -713,6 +726,7 @@ export const DotIgnoresCount: Story = {
 };
 
 export const NonInteractive: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
       <ui-badge id="non-interactive-solid" count="5"></ui-badge>
@@ -750,6 +764,7 @@ export const NonInteractive: Story = {
 };
 
 export const ThemeContrastAudit: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => {
     const colors = ['primary', 'danger', 'success', 'warning', 'neutral'] as const;
 
@@ -990,6 +1005,7 @@ export const ThemeContrastAudit: Story = {
 };
 
 export const ForcedColorsContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: flex; gap: 0.75rem; align-items: center;">
       <ui-badge id="forced-solid">New</ui-badge>
@@ -1021,6 +1037,7 @@ export const ForcedColorsContract: Story = {
 };
 
 export const AllStates: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .states {

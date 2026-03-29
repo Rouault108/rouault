@@ -122,6 +122,7 @@ type Story = StoryObj<UiToast>;
  * - 閉じるボタンのアクセシブル名
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`<ui-toast id="toast-default"></ui-toast>`,
   play: async ({ canvasElement }) => {
     ToastManager.clear();
@@ -161,6 +162,7 @@ export const Default: Story = {
  * - warning / danger（要対処, assertive）
  */
 export const VariantStateCombinations: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`<ui-toast id="toast-combinations"></ui-toast>`,
   play: async ({ canvasElement }) => {
     ToastManager.clear();
@@ -228,6 +230,7 @@ export const VariantStateCombinations: Story = {
  * - 新着がDOM先頭（視覚上最上部）に入る
  */
 export const OverflowAndOrderIntegrity: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`<ui-toast id="toast-overflow"></ui-toast>`,
   play: async ({ canvasElement }) => {
     ToastManager.clear();
@@ -278,6 +281,7 @@ export const OverflowAndOrderIntegrity: Story = {
  * - 再通知で duration をリセット
  */
 export const DuplicateMergeAndDurationReset: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`<ui-toast id="toast-duplicate"></ui-toast>`,
   play: async ({ canvasElement }) => {
     ToastManager.clear();
@@ -325,6 +329,7 @@ export const DuplicateMergeAndDurationReset: Story = {
  * - hover 解除でタイマー再開
  */
 export const HoverPauseAndResumeTimer: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`<ui-toast id="toast-hover-pause"></ui-toast>`,
   play: async ({ canvasElement }) => {
     ToastManager.clear();
@@ -367,6 +372,7 @@ export const HoverPauseAndResumeTimer: Story = {
  * - focusout でタイマー再開
  */
 export const FocusPauseAndResumeTimer: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`<ui-toast id="toast-focus-pause"></ui-toast>`,
   play: async ({ canvasElement }) => {
     ToastManager.clear();
@@ -410,6 +416,7 @@ export const FocusPauseAndResumeTimer: Story = {
  * - visible 復帰後にタイマー再開
  */
 export const VisibilityPauseAndResumeTimer: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`<ui-toast id="toast-visibility-pause"></ui-toast>`,
   play: async ({ canvasElement }) => {
     ToastManager.clear();
@@ -452,6 +459,7 @@ export const VisibilityPauseAndResumeTimer: Story = {
  * - 同一 message でも variant が違えば統合しない
  */
 export const DuplicateKeyRespectsVariant: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`<ui-toast id="toast-variant-duplicate"></ui-toast>`,
   play: async ({ canvasElement }) => {
     ToastManager.clear();
@@ -488,6 +496,7 @@ export const DuplicateKeyRespectsVariant: Story = {
  */
 export const DarkModeAndStyleContracts: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     backgrounds: { default: 'dark' },
   },
   render: () => html`
@@ -543,6 +552,7 @@ export const DarkModeAndStyleContracts: Story = {
  * - 後方互換 variant="error" は danger へ内部マッピング
  */
 export const LegacyErrorVariantMapping: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`<ui-toast id="toast-legacy-error"></ui-toast>`,
   play: async ({ canvasElement }) => {
     ToastManager.clear();

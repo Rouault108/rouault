@@ -163,6 +163,7 @@ type Story = StoryObj<Checkbox>;
  * 背景色 `--bg-fill-muted` でコントロール領域を明示します。
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     label: '利用規約に同意する',
     name: 'agree',
@@ -227,6 +228,7 @@ export const Default: Story = {
  * 最も基本的な状態。コントロールは `--bg-fill-muted` で静かに存在します。
  */
 export const UncheckedNormal: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-checkbox id="unchecked-normal" label="未選択（通常）" name="unchecked-normal"></ui-checkbox>
   `,
@@ -254,6 +256,7 @@ export const UncheckedNormal: Story = {
  * 選択時は `--primary` 色でコントロールが塗りつぶされ、チェックアイコンが表示されます。
  */
 export const CheckedNormal: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-checkbox
       id="checked-normal"
@@ -305,6 +308,7 @@ export const CheckedNormal: Story = {
  * **プログラム的にのみ設定可能**（属性での設定は仕様外）。
  */
 export const IndeterminateNormal: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 0.75rem;">
       <ui-checkbox
@@ -360,6 +364,7 @@ export const IndeterminateNormal: Story = {
  * フォーカス不可、フォーム送信除外。
  */
 export const UncheckedDisabled: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-checkbox
       id="unchecked-disabled"
@@ -403,6 +408,7 @@ export const UncheckedDisabled: Story = {
  * フォーム送信も除外されます（disabled のため）。
  */
 export const CheckedDisabled: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-checkbox
       id="checked-disabled"
@@ -446,6 +452,7 @@ export const CheckedDisabled: Story = {
  * 中間状態かつ無効。Minus アイコンは表示されますが操作不可です。
  */
 export const IndeterminateDisabled: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-checkbox
       id="indeterminate-disabled"
@@ -486,6 +493,7 @@ export const IndeterminateDisabled: Story = {
  * エラーメッセージが `aria-live="polite"` で表示されます。
  */
 export const UncheckedInvalid: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-checkbox
       id="unchecked-invalid"
@@ -534,6 +542,7 @@ export const UncheckedInvalid: Story = {
  * カスタムバリデーションロジックでの使用を想定します。
  */
 export const CheckedInvalid: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-checkbox
       id="checked-invalid"
@@ -579,6 +588,7 @@ export const CheckedInvalid: Story = {
  * visible error は表示しません。
  */
 export const InvalidWithoutMessage: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-checkbox
       id="invalid-without-message"
@@ -631,6 +641,7 @@ export const InvalidWithoutMessage: Story = {
  * デザインレビューやビジュアルリグレッションテストに使用します。
  */
 export const AllStates: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .states-grid {
@@ -757,6 +768,7 @@ export const AllStates: Story = {
  * クリックで checked 状態がトグルし、`input`、ついで `change` が発火します。
  */
 export const ClickToggle: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <ui-checkbox
@@ -890,6 +902,7 @@ export const ClickToggle: Story = {
  * ラベル領域のクリックでも状態が切り替わることを確認します。
  */
 export const LabelClickToggle: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-checkbox
       id="label-click-checkbox"
@@ -922,6 +935,7 @@ export const LabelClickToggle: Story = {
  * `Tab` でフォーカスを当て、`Space` で操作できます。
  */
 export const KeyboardToggle: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <div
@@ -993,6 +1007,7 @@ export const KeyboardToggle: Story = {
  */
 export const IndeterminateToUnchecked: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1083,6 +1098,7 @@ export const IndeterminateToUnchecked: Story = {
  */
 export const CheckedClearsIndeterminate: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1152,6 +1168,7 @@ export const CheckedClearsIndeterminate: Story = {
  */
 export const DisabledClickBlocked: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1216,6 +1233,7 @@ export const DisabledClickBlocked: Story = {
  */
 export const NoLabel: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1263,6 +1281,7 @@ export const NoLabel: Story = {
  * トークンを切り替えた高コントラスト背景で、状態が視認できることを確認します。
  */
 export const DarkThemeStates: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div
       style="
@@ -1304,6 +1323,7 @@ export const DarkThemeStates: Story = {
  * 実ブラウザのforced-colorsとは別に、システムカラー値で見た目崩れがないことを確認します。
  */
 export const ForcedColorsSimulation: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div
       style="
@@ -1347,6 +1367,7 @@ export const ForcedColorsSimulation: Story = {
  */
 export const ReducedMotionContract: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story:
@@ -1405,6 +1426,7 @@ export const ReducedMotionContract: Story = {
  * 2. チェックなしで「送信」をクリック → FormData に値は含まれません
  */
 export const FormIntegration: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .form-demo {
@@ -1527,6 +1549,7 @@ export const FormIntegration: Story = {
  * 未チェックのまま送信すると `checkValidity()` が false を返します。
  */
 export const RequiredValidation: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .required-demo {
@@ -1645,6 +1668,7 @@ export const RequiredValidation: Story = {
  * 一部選択時は `indeterminate` 状態になります。
  */
 export const SelectAllPattern: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .select-all-demo {

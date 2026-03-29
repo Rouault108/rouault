@@ -105,6 +105,7 @@ export default meta;
 type Story = StoryObj;
 
 export const DefaultContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   play: ({ canvasElement }) => {
     const footer = getFooter(canvasElement, 'footer-default');
     const inner = getInner(footer);
@@ -161,6 +162,7 @@ export const DefaultContract: Story = {
 };
 
 export const MinimalState: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () =>
     html`${renderStoryFooter({
       id: 'footer-minimal',
@@ -186,6 +188,7 @@ export const MinimalState: Story = {
 };
 
 export const LinkAndBuildVariants: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: var(--space-6);">
       <section>
@@ -267,6 +270,7 @@ export const LinkAndBuildVariants: Story = {
 };
 
 export const AccessibilityContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () =>
     html`${renderStoryFooter({
       id: 'footer-accessibility',
@@ -311,6 +315,7 @@ export const AccessibilityContract: Story = {
 };
 
 export const TokenContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="--footer-build-opacity: 0.55;">
       ${renderStoryFooter({
@@ -385,6 +390,7 @@ export const TokenContract: Story = {
 };
 
 export const ForcedColorsContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () =>
     html`${renderStoryFooter({
       id: 'footer-forced-colors',
@@ -418,6 +424,7 @@ export const ForcedColorsContract: Story = {
 };
 
 export const PrintPolicyContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () =>
     html`${renderStoryFooter({
       id: 'footer-print-policy',

@@ -153,6 +153,7 @@ export default meta;
 type Story = StoryObj<UiTooltip>;
 
 export const DefaultInfoIcon: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-tooltip id="tooltip-default" text="この項目の補足情報を表示します" placement="top">
       <button
@@ -223,6 +224,7 @@ export const DefaultInfoIcon: Story = {
 };
 
 export const VariantStateMatrix: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .matrix {
@@ -348,6 +350,7 @@ export const VariantStateMatrix: Story = {
 };
 
 export const TransformZoomContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       #tooltip-zoom-scale {
@@ -399,6 +402,7 @@ export const TransformZoomContract: Story = {
 };
 
 export const BoundaryConditions: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <style>
       .boundary {
@@ -510,6 +514,7 @@ export const BoundaryConditions: Story = {
 
 export const DarkModeContract: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     backgrounds: { default: 'dark' },
   },
   render: () => html`
@@ -561,6 +566,7 @@ export const DarkModeContract: Story = {
 };
 
 export const VisualModeContracts: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-tooltip id="visual-mode" text="visual contract">
       <button id="visual-mode-trigger" type="button">visual</button>
@@ -601,6 +607,7 @@ export const VisualModeContracts: Story = {
 };
 
 export const TreeItemIntegrationContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .tree-wrap {

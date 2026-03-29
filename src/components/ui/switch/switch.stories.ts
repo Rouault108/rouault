@@ -91,6 +91,7 @@ type Story = StoryObj<Switch>;
  * Thumb は左端 (`--switch-thumb-pos-off`: 4px) に位置します。
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     label: 'ダークモード',
   },
@@ -149,6 +150,7 @@ export const Default: Story = {
  * Thumb は左端に位置し、`aria-checked="false"` が設定されます。
  */
 export const OffNormal: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html` <ui-switch id="off-normal" label="OFF（通常）"></ui-switch> `,
   play: async ({ canvasElement }) => {
     const sw = canvasElement.querySelector<Switch>('#off-normal');
@@ -172,6 +174,7 @@ export const OffNormal: Story = {
  * `aria-checked="true"` が設定されます。
  */
 export const OnNormal: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html` <ui-switch id="on-normal" label="ON（通常）" checked></ui-switch> `,
   play: async ({ canvasElement }) => {
     const sw = canvasElement.querySelector<Switch>('#on-normal');
@@ -197,6 +200,7 @@ export const OnNormal: Story = {
  * `pointer-events: none` により操作不可。`aria-disabled="true"` が設定されます。
  */
 export const OffDisabled: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html` <ui-switch id="off-disabled" label="OFF（無効）" disabled></ui-switch> `,
   play: async ({ canvasElement }) => {
     const sw = canvasElement.querySelector<Switch>('#off-disabled');
@@ -246,6 +250,7 @@ export const OffDisabled: Story = {
  * Thumb は右端位置を維持します。
  */
 export const OnDisabled: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-switch id="on-disabled" label="ON（無効）" checked disabled></ui-switch>
   `,
@@ -280,6 +285,7 @@ export const OnDisabled: Story = {
  * デザインレビューやビジュアルリグレッションテストに使用します。
  */
 export const AllStates: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .states-grid {
@@ -376,6 +382,7 @@ export const AllStates: Story = {
  * ラベルをクリックしてもトグルします。
  */
 export const ClickToggle: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <ui-switch
@@ -479,6 +486,7 @@ export const ClickToggle: Story = {
  * WCAG 2.5.5 のタッチターゲット要件を満たすため、ラベル全体がクリック可能領域です。
  */
 export const LabelClickToggle: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-switch id="label-click-switch" label="ラベルをクリックしてもトグルします"></ui-switch>
   `,
@@ -530,6 +538,7 @@ export const LabelClickToggle: Story = {
  * `Tab` でフォーカスを当て、`Space` で操作できます。
  */
 export const KeyboardSpaceToggle: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <div
@@ -590,6 +599,7 @@ export const KeyboardSpaceToggle: Story = {
  */
 export const KeyboardEnterToggle: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -700,6 +710,7 @@ export const KeyboardEnterToggle: Story = {
  */
 export const DisabledClickBlocked: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -762,6 +773,7 @@ export const DisabledClickBlocked: Story = {
  */
 export const OnDisabledClickBlocked: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -826,6 +838,7 @@ export const OnDisabledClickBlocked: Story = {
  */
 export const NoLabel: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -875,6 +888,7 @@ export const NoLabel: Story = {
  */
 export const EnterKeyInFormNoSubmit: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1003,6 +1017,7 @@ export const EnterKeyInFormNoSubmit: Story = {
  */
 export const AriaLabelledBy: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1050,6 +1065,7 @@ export const AriaLabelledBy: Story = {
  */
 export const InputEventFired: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story: '⚠️ **境界条件**: `change` と同タイミングで `input` イベントも発火します。',
@@ -1115,6 +1131,7 @@ export const InputEventFired: Story = {
  * 各スイッチは独立して即時反映されます。
  */
 export const SettingsPanel: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .settings-panel {
@@ -1227,6 +1244,7 @@ export const SettingsPanel: Story = {
  * ダークトークン環境での表示確認。
  */
 export const DarkTokens: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <style>
       .dark-surface {
@@ -1274,6 +1292,7 @@ export const DarkTokens: Story = {
  */
 export const ReducedMotion: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story: 'OSでreduceが有効な場合のみ、transition時間が最小化されることを検証します。',
@@ -1306,6 +1325,7 @@ export const ReducedMotion: Story = {
  */
 export const MotionProfile: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1346,6 +1366,7 @@ export const MotionProfile: Story = {
  */
 export const ForcedColors: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story: 'OSでforced-colorsが有効な場合のみ、境界線が視認できることを検証します。',

@@ -218,6 +218,7 @@ const renderModalCriticalDecision = () => html`
 `;
 
 export const ModalCriticalDecision: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   render: renderModalCriticalDecision,
 };
 
@@ -227,6 +228,7 @@ export const ModalCriticalDecision: Story = {
  * - モーダル時の aria/focus/scroll lock
  */
 export const ModalCriticalDecisionOpenClose: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: renderModalCriticalDecision,
   play: async ({ canvasElement }) => {
     const host = getHost(canvasElement, 'dialog-modal');
@@ -303,6 +305,7 @@ export const ModalCriticalDecisionOpenClose: Story = {
  * - actions ありでも右上の close ボタン実経路で閉じられる
  */
 export const ModalCriticalDecisionCloseButton: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: renderModalCriticalDecision,
   play: async ({ canvasElement }) => {
     const host = getHost(canvasElement, 'dialog-modal');
@@ -341,6 +344,7 @@ export const ModalCriticalDecisionCloseButton: Story = {
  * - close 後に ui-dialog-closed が続く
  */
 export const ModalEscCancelSequence: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; min-height: 18rem;">
       <button id="modal-esc-trigger" type="button">Escテストを開く</button>
@@ -402,6 +406,7 @@ export const ModalEscCancelSequence: Story = {
  * - 背景クリックでは閉じない
  */
 export const NonModalLightweightInfo: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; min-height: 18rem;">
       <button id="non-modal-trigger" type="button">非モーダルを開く</button>
@@ -477,6 +482,7 @@ export const NonModalLightweightInfo: Story = {
  * - actions 未提供時は close ボタンへ初期フォーカス
  */
 export const NoActionsInitialFocusFallback: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="padding: 2rem; min-height: 18rem;">
       <button id="no-actions-trigger" type="button">actionsなしで開く</button>
@@ -530,6 +536,7 @@ export const NoActionsInitialFocusFallback: Story = {
  * - close を open で打ち消した場合は closed を発火せず opened を再通知する
  */
 export const TriggerFallbackAndReentrancySafety: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="padding: 2rem; min-height: 18rem;">
       <button id="fallback-trigger" type="button">自動トリガーで開く</button>
@@ -672,6 +679,7 @@ export const TriggerFallbackAndReentrancySafety: Story = {
  * - aria-labelledby 未使用時に aria-label でアクセシブルネームを提供
  */
 export const AriaLabelFallback: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="padding: 2rem; min-height: 18rem;">
       <button id="aria-label-trigger" type="button">aria-label で開く</button>
@@ -718,6 +726,7 @@ export const AriaLabelFallback: Story = {
  * - 複数ダイアログ同時オープン時の scroll lock 参照カウント
  */
 export const MultiDialogScrollLockReferenceCount: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; min-height: 18rem; display: flex; gap: 12px;">
       <button id="multi-trigger-a" type="button">Aを開く</button>
@@ -762,7 +771,10 @@ export const MultiDialogScrollLockReferenceCount: Story = {
       '2件目のダイアログオープン後に body 要素のロック属性が失われています',
     );
 
-    const closeAPromise = waitForEvent<CustomEvent<UiDialogClosedDetail>>(hostA, 'ui-dialog-closed');
+    const closeAPromise = waitForEvent<CustomEvent<UiDialogClosedDetail>>(
+      hostA,
+      'ui-dialog-closed',
+    );
     hostA.close();
     const closedAEvent = await closeAPromise;
     await flush(hostA);
@@ -775,7 +787,10 @@ export const MultiDialogScrollLockReferenceCount: Story = {
       `A の closed reason は "programmatic" である必要がありますが、実際には "${closedAEvent.detail.reason}" でした`,
     );
 
-    const closeBPromise = waitForEvent<CustomEvent<UiDialogClosedDetail>>(hostB, 'ui-dialog-closed');
+    const closeBPromise = waitForEvent<CustomEvent<UiDialogClosedDetail>>(
+      hostB,
+      'ui-dialog-closed',
+    );
     hostB.close();
     const closedBEvent = await closeBPromise;
     await flush(hostB);
@@ -796,6 +811,7 @@ export const MultiDialogScrollLockReferenceCount: Story = {
  * - open/close 両イベントが属性駆動でも発火
  */
 export const AttributeDrivenOpenState: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; min-height: 18rem;">
       <ui-dialog
@@ -845,6 +861,7 @@ export const AttributeDrivenOpenState: Story = {
  * - modal=true -> false 切り替え後はダイアログ外フォーカスから Esc で閉じられる
  */
 export const LiveModalModeSwitching: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; min-height: 18rem;">
       <button id="modal-switch-trigger" type="button">切り替えトリガー</button>
@@ -908,7 +925,8 @@ export const LiveModalModeSwitching: Story = {
       'modal=false へ切り替え後は aria-modal 属性を除去する必要があります',
     );
     assert(
-      modeChangedEvent.detail.previous === 'modal' && modeChangedEvent.detail.current === 'non-modal',
+      modeChangedEvent.detail.previous === 'modal' &&
+        modeChangedEvent.detail.current === 'non-modal',
       `mode-changed detail が不正です: ${modeChangedEvent.detail.previous} -> ${modeChangedEvent.detail.current}`,
     );
     assert(
@@ -947,6 +965,7 @@ export const LiveModalModeSwitching: Story = {
  * - ダークモード相当トークン
  */
 export const VisualDarkMode: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div
       style="
@@ -982,6 +1001,7 @@ export const VisualDarkMode: Story = {
  * - Forced Colors 相当トークン
  */
 export const VisualForcedColors: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div
       style="
@@ -1012,6 +1032,7 @@ export const VisualForcedColors: Story = {
  * - Reduced Motion 相当（短時間化）
  */
 export const VisualReducedMotion: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="padding: 2rem; --duration-slower: 0.01ms; --duration-fast: 0.01ms;">
       <button id="reduced-motion-trigger" type="button">開く</button>

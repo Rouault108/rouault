@@ -124,6 +124,7 @@ const meta: Meta<Tabs> = {
 };
 
 export const TocScopeEventDetail: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-tabs id="toc-scope-tabs" data-toc-scope="toc-scope-story" default-selected-value="overview">
       <button slot="tab" value="overview">概要</button>
@@ -202,6 +203,7 @@ const replaceStoryUrl = (url: string): (() => void) => {
  * aria-labelledby の正確な付与を検証します。
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     orientation: 'horizontal',
     automaticActivation: false,
@@ -299,6 +301,7 @@ export const Default: Story = {
 };
 
 export const DefaultSelectedValue: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-tabs default-selected-value="details">
       <button slot="tab" value="overview">概要</button>
@@ -357,6 +360,7 @@ export const DefaultSelectedValue: Story = {
  * Arrow Up/Down でナビゲーションします。
  */
 export const Vertical: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-tabs orientation="vertical" style="min-height: 200px;">
       <button slot="tab" value="profile">プロフィール</button>
@@ -412,6 +416,7 @@ export const Vertical: Story = {
  * - **Automatic**: 矢印キーでフォーカス移動と同時に選択
  */
 export const AutomaticActivation: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .auto-info {
@@ -474,6 +479,7 @@ export const AutomaticActivation: Story = {
  * 通常のテキストラベルに比べて視覚的な識別性が向上します。
  */
 export const WithIcons: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   render: () => html`
     <style>
       ui-icon {
@@ -520,6 +526,7 @@ export const WithIcons: Story = {
  * キーボード操作でのタブ移動時、アクティブなタブが自動的にスクロールされます。
  */
 export const ManyTabs: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div
       style="max-width: 400px; border: 1px dashed var(--border-default, #e0e0e0); padding: 0.5rem;"
@@ -567,6 +574,7 @@ export const ManyTabs: Story = {
  * タブの `value` 属性と `selected-value` 属性を一致させることで選択されます。
  */
 export const SelectedByValue: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-tabs selected-value="settings">
       <button slot="tab" value="overview">概要</button>
@@ -611,6 +619,7 @@ export const SelectedByValue: Story = {
 };
 
 export const UrlSyncFromQuery: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-tabs url-sync>
       ${SHARED_TABS_URL_SYNC_EXAMPLE.panels.map(
@@ -643,6 +652,7 @@ export const UrlSyncFromQuery: Story = {
 };
 
 export const UrlSyncPushOnClick: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-tabs url-sync>
       ${SHARED_TABS_STATIC_EXAMPLE.panels.map(
@@ -677,6 +687,7 @@ export const UrlSyncPushOnClick: Story = {
 };
 
 export const UrlSyncHashOverridesQuery: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-tabs url-sync>
       ${SHARED_TABS_URL_SYNC_EXAMPLE.panels.map(
@@ -725,6 +736,7 @@ export const UrlSyncHashOverridesQuery: Story = {
  * - 循環: 末尾 → 先頭、先頭 → 末尾
  */
 export const KeyboardNavigation: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .keyboard-info {
@@ -838,6 +850,7 @@ export const KeyboardNavigation: Story = {
  * Arrow Left/Right は無視されます。
  */
 export const KeyboardNavigationVertical: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-tabs id="keyboard-vertical-tabs" orientation="vertical" style="min-height: 200px;">
       <button slot="tab" value="item-a">項目 A</button>
@@ -902,6 +915,7 @@ export const KeyboardNavigationVertical: Story = {
  * `detail` に `{ index, value, prevIndex }` が含まれることを確認します。
  */
 export const TabChangeEvent: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .event-log {
@@ -1043,6 +1057,7 @@ export const EdgeCase_InvalidDefaultSelectedValue: Story = {
     }
   },
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story: '⚠️ 無効値はフォールバック（先頭タブ）と `console.warn` で安全に処理されます。',
@@ -1107,6 +1122,7 @@ export const EdgeCase_SelectedValueOverridesDefault: Story = {
     }
   },
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1123,6 +1139,7 @@ export const EdgeCase_SelectedValueOverridesDefault: Story = {
  * エラーにならずに動作することを確認します。
  */
 export const EdgeCase_SingleTab: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .info-banner {
@@ -1180,6 +1197,7 @@ export const EdgeCase_SingleTab: Story = {
  * `default-selected-value` を同時に置いても 回復先にはしません。
  */
 export const EdgeCase_UnmatchedSelectedValue: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .warning-banner {
@@ -1231,6 +1249,7 @@ export const EdgeCase_UnmatchedSelectedValue: Story = {
  * 余剰パネルは非表示、余剰タブは選択不可です。
  */
 export const EdgeCase_MismatchedSlots: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-tabs id="mismatched-tabs">
       <button slot="tab" value="a">A</button>
@@ -1313,6 +1332,7 @@ export const ReducedMotion: Story = {
     </div>
   `,
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story:
@@ -1388,6 +1408,7 @@ export const ForcedColorsMode: Story = {
     </div>
   `,
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story:
@@ -1420,6 +1441,7 @@ export const ForcedColorsMode: Story = {
  * タブの可読性とアクティブ状態の識別性が維持されることを確認します。
  */
 export const DarkMode: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <style>
       .dark-surface {
@@ -1479,6 +1501,7 @@ export const DarkMode: Story = {
  * 実際の非同期制御はアプリケーション層で行います。
  */
 export const AsyncPanel: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .skeleton {
@@ -1599,6 +1622,7 @@ export const AsyncPanel: Story = {
  * ノートアプリのコンテキストで、タブコンポーネントがどのように機能するかを示します。
  */
 export const IntegrationExample: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   render: () => html`
     <style>
       .page-demo {

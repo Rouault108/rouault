@@ -62,6 +62,7 @@ const createMatchMediaMock = (matches: boolean) => {
 };
 
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-breadcrumbs
       id="default-breadcrumb"
@@ -92,9 +93,7 @@ export const Default: Story = {
 
     const firstItem = host.shadowRoot?.querySelector<HTMLElement>('.breadcrumb-item');
     const firstLabel = firstItem?.querySelector<HTMLElement>('.breadcrumb-link');
-    const firstSeparator = firstItem?.querySelector<HTMLElement>(
-      '.breadcrumb-separator ui-icon',
-    );
+    const firstSeparator = firstItem?.querySelector<HTMLElement>('.breadcrumb-separator ui-icon');
     if (!firstLabel || !firstSeparator) {
       throw new Error('中心線チェックに必要なラベルまたはセパレーターが見つかりません');
     }
@@ -117,6 +116,7 @@ export const Default: Story = {
 };
 
 export const CollapsedWithDropdown: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-breadcrumbs id="collapsed-dropdown" max-items="4" .items=${BASE_ITEMS}></ui-breadcrumbs>
   `,
@@ -161,6 +161,7 @@ export const CollapsedWithDropdown: Story = {
 };
 
 export const OmitRootDesktop: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-breadcrumbs id="omit-root" omit-root max-items="5" .items=${BASE_ITEMS}></ui-breadcrumbs>
   `,
@@ -178,6 +179,7 @@ export const OmitRootDesktop: Story = {
 };
 
 export const MobileAutoCollapse: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`<div id="mobile-host"></div>`,
   play: async ({ canvasElement }) => {
     const mount = canvasElement.querySelector<HTMLDivElement>('#mobile-host');
@@ -210,6 +212,7 @@ export const MobileAutoCollapse: Story = {
 };
 
 export const MaxItemsEdgeCases: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-breadcrumbs id="max-1" max-items="1" .items=${BASE_ITEMS}></ui-breadcrumbs>
@@ -239,6 +242,7 @@ export const MaxItemsEdgeCases: Story = {
 };
 
 export const EmptyItems: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`<ui-breadcrumbs id="empty-items" .items=${[]}></ui-breadcrumbs>`,
   play: async ({ canvasElement }) => {
     const host = canvasElement.querySelector<Breadcrumbs>('#empty-items');
@@ -253,6 +257,7 @@ export const EmptyItems: Story = {
 };
 
 export const SingleLineEllipsis: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="width: 420px; border: 1px solid var(--border-default); padding-inline: 12px;">
       <ui-breadcrumbs
@@ -289,6 +294,7 @@ export const SingleLineEllipsis: Story = {
 };
 
 export const SpecialCharacters: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-breadcrumbs
       id="special-chars"
@@ -330,6 +336,7 @@ export const SpecialCharacters: Story = {
 };
 
 export const ForcedColorsMode: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-breadcrumbs id="forced-colors" max-items="3" .items=${BASE_ITEMS}></ui-breadcrumbs>
   `,
@@ -352,6 +359,7 @@ export const ForcedColorsMode: Story = {
 };
 
 export const ReducedMotion: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-breadcrumbs
       id="reduced-motion"
@@ -377,6 +385,7 @@ export const ReducedMotion: Story = {
 };
 
 export const DarkMode: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div
       style="color-scheme: dark; background: oklch(18% 0.02 250); color: oklch(95% 0.01 250); padding: 1rem; border-radius: 8px;"
@@ -405,6 +414,7 @@ export const DarkMode: Story = {
 };
 
 export const AllStates: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-breadcrumbs

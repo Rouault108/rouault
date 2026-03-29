@@ -217,6 +217,7 @@ type Story = StoryObj<Button>;
  * 標準的なアクションに使用します。背景色と境界線で構造を明示します。
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     variant: 'secondary',
     size: 'md',
@@ -266,6 +267,7 @@ export const Default: Story = {
  * Primary、Secondary、Outline、Ghost、Danger の5つのバリアントを比較できます。
  */
 export const AllVariants: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   render: () => html`
     <style>
       .variant-showcase {
@@ -325,6 +327,7 @@ export const AllVariants: Story = {
  * **注意**: Large サイズは非推奨です。
  */
 export const AllSizes: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   render: () => html`
     <style>
       .size-showcase {
@@ -349,6 +352,7 @@ export const AllSizes: Story = {
  * **画面内に1つのみ配置することを原則**とします。
  */
 export const Primary: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   args: {
     variant: 'primary',
     size: 'md',
@@ -366,6 +370,7 @@ export const Primary: Story = {
  * **迷った場合**: Secondary と Outline で迷う場合は、Secondary を優先してください。
  */
 export const Outline: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   args: {
     variant: 'outline',
     size: 'md',
@@ -381,6 +386,7 @@ export const Outline: Story = {
  * 最小限の主張。アイコンボタンやツールバーなど、高密度なUIで使用します。
  */
 export const Ghost: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   args: {
     variant: 'ghost',
     size: 'md',
@@ -397,6 +403,7 @@ export const Ghost: Story = {
  * ホバー時に背景が赤く反転し、無意識に警告します。
  */
 export const Danger: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     variant: 'danger',
     size: 'md',
@@ -427,6 +434,7 @@ export const Danger: Story = {
  * ユーザーが「何を実行したか」を見失わないよう配慮しています。
  */
 export const Loading: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     variant: 'primary',
     size: 'md',
@@ -477,6 +485,7 @@ export const Loading: Story = {
  * スタイルは薄くなり、ポインターイベントが除去されます。
  */
 export const Disabled: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     variant: 'primary',
     size: 'md',
@@ -513,6 +522,7 @@ export const Disabled: Story = {
  * テキストとアイコンを組み合わせたボタンです。
  */
 export const WithIcon: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   args: {
     variant: 'primary',
     size: 'md',
@@ -538,6 +548,7 @@ export const WithIcon: Story = {
  * 正方形（1:1）を強制し、Universal Clarity を担保します。
  */
 export const IconOnly: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     variant: 'ghost',
     size: 'md',
@@ -593,6 +604,7 @@ export const IconOnly: Story = {
  * **重要**: ネイティブ <button> と異なり、デフォルトは type="button" です。
  */
 export const FormSubmit: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     variant: 'primary',
     size: 'md',
@@ -685,6 +697,7 @@ export const FormSubmit: Story = {
  * type="reset" を明示することで、フォーム入力値を初期値へ戻します。
  */
 export const FormReset: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     variant: 'secondary',
     size: 'md',
@@ -731,6 +744,7 @@ export const FormReset: Story = {
  * ボタンがフォーム外でも form 属性でフォームオーナーを指定できます。
  */
 export const ExternalFormOwnerSubmit: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     variant: 'primary',
     size: 'md',
@@ -785,6 +799,7 @@ export const ExternalFormOwnerSubmit: Story = {
  * Primary は1つのみ、その他は Secondary を使用する原則を示します。
  */
 export const DialogExample: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   render: () => html`
     <style>
       .dialog-demo {
@@ -825,6 +840,7 @@ export const DialogExample: Story = {
  * Ghost バリアントを使用して高密度なUIを実現します。
  */
 export const ToolbarExample: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   render: () => html`
     <style>
       .toolbar-demo {
@@ -865,6 +881,7 @@ export const ToolbarExample: Story = {
  * Outline バリアントを使用して視覚的ノイズを抑制します。
  */
 export const CardExample: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   render: () => html`
     <style>
       .card-demo {
@@ -913,6 +930,7 @@ export const CardExample: Story = {
  * Adaptive Focus により、移動中のノイズを低減し、停止時に明確化します。
  */
 export const FocusState: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     variant: 'primary',
     size: 'md',
@@ -1012,6 +1030,7 @@ export const IconOnlyWithoutAriaLabel: Story = {
     </ui-button>
   `,
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1081,6 +1100,7 @@ export const DeprecatedLargeSize: Story = {
     <ui-button variant="${args.variant}" size="${args.size}"> Large サイズ（非推奨） </ui-button>
   `,
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1176,6 +1196,7 @@ export const PressedState: Story = {
     </div>
   `,
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1223,7 +1244,11 @@ export const PressedState: Story = {
       return internalButton;
     };
 
-    const assertVisualDiff = (base: HTMLButtonElement, pressed: HTMLButtonElement, label: string): void => {
+    const assertVisualDiff = (
+      base: HTMLButtonElement,
+      pressed: HTMLButtonElement,
+      label: string,
+    ): void => {
       const baseStyle = getComputedStyle(base);
       const pressedStyle = getComputedStyle(pressed);
       const differs =
@@ -1301,6 +1326,7 @@ export const AriaExpandedTrigger: Story = {
     </div>
   `,
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1413,6 +1439,7 @@ export const ForcedColorsMode: Story = {
     </div>
   `,
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story:
@@ -1429,6 +1456,7 @@ export const ForcedColorsMode: Story = {
  */
 export const DarkMode: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     backgrounds: {
       default: 'dark',
     },
@@ -1593,6 +1621,7 @@ export const ReducedMotion: Story = {
     </div>
   `,
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story:
@@ -1719,6 +1748,7 @@ export const PrintStyles: Story = {
     </div>
   `,
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story:

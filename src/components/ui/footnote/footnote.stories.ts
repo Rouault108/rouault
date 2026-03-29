@@ -206,6 +206,7 @@ const captureWarnings = async (task: () => Promise<void> | void): Promise<string
  * - refId 主軸の ID 契約
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <article data-footnote-scope>
       <p>
@@ -244,7 +245,9 @@ export const Default: Story = {
       throw new Error('trigger の aria-controls が不正です');
     }
     if (normalizeText(trigger.textContent) !== '[1]') {
-      throw new Error(`trigger 表示は [1] のはずですが "${normalizeText(trigger.textContent)}" です`);
+      throw new Error(
+        `trigger 表示は [1] のはずですが "${normalizeText(trigger.textContent)}" です`,
+      );
     }
 
     const popoverHost = getPopoverHost(host);
@@ -285,6 +288,7 @@ export const Default: Story = {
  * - 同じ refId を別 scope で再利用できること
  */
 export const VariantStateMatrix: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .matrix {
@@ -380,15 +384,21 @@ export const VariantStateMatrix: Story = {
     const opened = waitForEvent(popoverHostA, 'ui-popover-opened');
     const clickEvent = dispatchPrimaryClick(followerATrigger);
     if (!clickEvent.defaultPrevented) {
-      throw new Error('secondary reference の通常クリックは Popover を開くために preventDefault される必要があります');
+      throw new Error(
+        'secondary reference の通常クリックは Popover を開くために preventDefault される必要があります',
+      );
     }
     await opened;
 
     if (ownerATrigger.getAttribute('aria-expanded') !== 'false') {
-      throw new Error('owner trigger は active trigger でないとき aria-expanded=false のままである必要があります');
+      throw new Error(
+        'owner trigger は active trigger でないとき aria-expanded=false のままである必要があります',
+      );
     }
     if (followerATrigger.getAttribute('aria-expanded') !== 'true') {
-      throw new Error('secondary trigger が active trigger として aria-expanded=true になっていません');
+      throw new Error(
+        'secondary trigger が active trigger として aria-expanded=true になっていません',
+      );
     }
 
     const popoverA = getPopover(ownerA);
@@ -409,6 +419,7 @@ export const VariantStateMatrix: Story = {
  * - 修飾キー付きクリックと中クリックはネイティブリンク維持
  */
 export const DualAccessContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <article data-footnote-scope>
       <p>
@@ -473,6 +484,7 @@ export const DualAccessContract: Story = {
  * - footer link の Tab で閉じる
  */
 export const KeyboardAndFocusContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <article data-footnote-scope>
       <p>
@@ -544,6 +556,7 @@ export const KeyboardAndFocusContract: Story = {
  * - 再描画後も本文が保持されること
  */
 export const SsrHydrationContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => {
     const article = document.createElement('article');
     article.setAttribute('data-footnote-scope', '');
@@ -594,7 +607,9 @@ export const SsrHydrationContract: Story = {
     if (!normalizeText(body.textContent).includes('SSR で埋め込まれた脚注本文。')) {
       throw new Error('SSR 由来の本文が footnote-body に再接続されていません');
     }
-    if (body.querySelector('[data-part="trigger"], [data-part="content"], [data-part="popover-host"]')) {
+    if (
+      body.querySelector('[data-part="trigger"], [data-part="content"], [data-part="popover-host"]')
+    ) {
       throw new Error('内部制御要素が本文に混入しています');
     }
     if (body.querySelector('.footnote-list-link, .footnote-popover-footer')) {
@@ -626,6 +641,7 @@ export const SsrHydrationContract: Story = {
  * - interactive ancestor 禁止
  */
 export const BoundaryConditions: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <article data-footnote-scope>
@@ -737,6 +753,7 @@ export const BoundaryConditions: Story = {
  * - endnotes 非表示禁止
  */
 export const VisualModeContracts: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <article data-footnote-scope>
       <p>

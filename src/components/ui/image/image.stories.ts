@@ -179,6 +179,7 @@ type Story = StoryObj<UiImage>;
  * - Lightbox の ARIA と開閉同期
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 760px;">
       <ui-image
@@ -288,6 +289,7 @@ export const Default: Story = {
  * - static(zoomable=false) × caption 有無
  */
 export const VariantStateMatrix: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .matrix {
@@ -414,6 +416,7 @@ export const VariantStateMatrix: Story = {
  * - error / empty では open 不可
  */
 export const LoadingAndErrorStates: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-image
@@ -505,6 +508,7 @@ export const LoadingAndErrorStates: Story = {
  * - Escape close + trigger へフォーカス復帰
  */
 export const LightboxKeyboardAndFocusReturn: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 760px;">
       <ui-image
@@ -573,6 +577,7 @@ export const LightboxKeyboardAndFocusReturn: Story = {
  * - close 時にスクロールロック解除
  */
 export const BackdropCloseAndScrollLock: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 760px;">
       <ui-image
@@ -630,6 +635,7 @@ export const BackdropCloseAndScrollLock: Story = {
  * - print 時の Lightbox 非表示
  */
 export const EnvironmentAndProseContracts: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div class="prose" style="max-width: 760px;">
       <ui-image
@@ -692,6 +698,7 @@ export const EnvironmentAndProseContracts: Story = {
  * - width/height 未指定時の最小高さプレースホルダー
  */
 export const BoundaryConditions: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-image

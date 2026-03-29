@@ -338,6 +338,7 @@ export default meta;
 type Story = StoryObj<InputStoryArgs>;
 
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     label: 'メールアドレス',
     type: 'email',
@@ -368,6 +369,7 @@ export const Default: Story = {
 };
 
 export const WithHelpText: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     label: 'パスワード',
     type: 'password',
@@ -391,6 +393,7 @@ export const WithHelpText: Story = {
 };
 
 export const ExternalErrorState: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     label: 'ユーザー名',
     value: 'ab',
@@ -426,6 +429,7 @@ export const ExternalErrorState: Story = {
 };
 
 export const NativeValidationState: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     label: 'メールアドレス',
     type: 'email',
@@ -455,6 +459,7 @@ export const NativeValidationState: Story = {
 };
 
 export const HiddenLabel: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     label: 'ユーザーID',
     hideLabel: true,
@@ -479,6 +484,7 @@ export const HiddenLabel: Story = {
 };
 
 export const RequiredIndicatorModes: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 16px; max-width: 420px;">
       ${renderInput({
@@ -530,6 +536,7 @@ export const RequiredIndicatorModes: Story = {
 };
 
 export const ExternalDescriptions: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 8px; max-width: 420px;">
       <p id="email-desc">確認メールを送信します。</p>
@@ -551,12 +558,15 @@ export const ExternalDescriptions: Story = {
     }
 
     if (input.getAttribute('aria-describedby') !== `email-desc ${help.id}`) {
-      throw new Error('aria-describedby は「外部説明 ID → 内部 help ID」の順で連結される必要があります');
+      throw new Error(
+        'aria-describedby は「外部説明 ID → 内部 help ID」の順で連結される必要があります',
+      );
     }
   },
 };
 
 export const DefaultValueReset: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <form id="reset-form">
       ${renderInput({
@@ -586,6 +596,7 @@ export const DefaultValueReset: Story = {
 };
 
 export const Disabled: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     label: 'メールアドレス',
     value: 'disabled@example.com',
@@ -608,6 +619,7 @@ export const Disabled: Story = {
 };
 
 export const Readonly: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     label: 'ユーザーID',
     value: 'user-12345',
@@ -626,6 +638,7 @@ export const Readonly: Story = {
 };
 
 export const InvalidTypeFallback: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`<ui-input label="数値のつもり" type="number"></ui-input>`,
   play: async ({ canvasElement }) => {
     const host = getHost(canvasElement);
@@ -639,12 +652,15 @@ export const InvalidTypeFallback: Story = {
 };
 
 export const EnterSubmitFromInput: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <form
       id="submit-form"
       @submit=${(event: Event) => {
         event.preventDefault();
-        const output = (event.currentTarget as ParentNode).querySelector<HTMLElement>('#submit-count');
+        const output = (event.currentTarget as ParentNode).querySelector<HTMLElement>(
+          '#submit-count',
+        );
         if (!output) {
           return;
         }
@@ -673,7 +689,9 @@ export const EnterSubmitFromInput: Story = {
     await host.updateComplete;
 
     const input = getInternalInput(host);
-    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true }));
+    input.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, composed: true }),
+    );
     await host.updateComplete;
 
     if (output.textContent !== '1') {
@@ -683,6 +701,7 @@ export const EnterSubmitFromInput: Story = {
 };
 
 export const FormDataDisabledReadonlyBoundary: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <form id="boundary-form">
       ${renderInput({
@@ -726,6 +745,7 @@ export const FormDataDisabledReadonlyBoundary: Story = {
 };
 
 export const PassThroughHints: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     label: '電話番号',
     type: 'tel',
@@ -755,6 +775,7 @@ export const PassThroughHints: Story = {
 };
 
 export const Playground: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   args: baseArgs,
   render: renderInput,
 };

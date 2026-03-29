@@ -302,6 +302,7 @@ export default meta;
 type Story = StoryObj<UiVideo>;
 
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 800px;">
       <ui-video
@@ -381,6 +382,7 @@ export const Default: Story = {
 };
 
 export const VariantStateMatrix: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .matrix {
@@ -482,6 +484,7 @@ export const VariantStateMatrix: Story = {
 };
 
 export const StateMachineAndKeyboard: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 760px;">
       <ui-video
@@ -630,6 +633,7 @@ export const StateMachineAndKeyboard: Story = {
 };
 
 export const BoundaryConditions: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-video
@@ -734,6 +738,7 @@ export const BoundaryConditions: Story = {
 };
 
 export const A11yEnvironmentGuards: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 800px;">
       <ui-video
@@ -763,6 +768,7 @@ export const A11yEnvironmentGuards: Story = {
 };
 
 export const DarkModeSurface: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div
       style="
@@ -796,6 +802,7 @@ export const DarkModeSurface: Story = {
 };
 
 export const CaptionToggle: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 800px; display: grid; gap: 1rem;">
       <div>
@@ -901,6 +908,7 @@ export const CaptionToggle: Story = {
 };
 
 export const SkipButtons: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 800px;">
       <ui-video
@@ -967,6 +975,7 @@ export const SkipButtons: Story = {
 };
 
 export const LongPress2x: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 800px;">
       <ui-video
@@ -1035,6 +1044,7 @@ export const LongPress2x: Story = {
 };
 
 export const FullscreenTitle: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 800px;">
       <ui-video
@@ -1100,6 +1110,7 @@ export const FullscreenTitle: Story = {
 };
 
 export const VolumeMuteSync: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 800px;">
       <ui-video
@@ -1171,6 +1182,7 @@ export const VolumeMuteSync: Story = {
 };
 
 export const AutoHideCenterPlay: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 800px;">
       <ui-video
@@ -1248,6 +1260,7 @@ export const AutoHideCenterPlay: Story = {
 };
 
 export const CaptionWithWebVtt: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 800px;">
       <div
@@ -1293,6 +1306,7 @@ export const CaptionWithWebVtt: Story = {
 };
 
 export const PrePlayState: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 800px;">
       <ui-video
@@ -1373,6 +1387,7 @@ export const PrePlayState: Story = {
 };
 
 export const KeyboardShortcutsJKL: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 800px;">
       <ui-video
@@ -1474,6 +1489,7 @@ export const KeyboardShortcutsJKL: Story = {
 };
 
 export const FloatingBarAutoHide: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 800px;">
       <ui-video
@@ -1570,6 +1586,7 @@ export const FloatingBarAutoHide: Story = {
 };
 
 export const DoubleTapSkip: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 800px;">
       <ui-video
@@ -1709,6 +1726,7 @@ export const DoubleTapSkip: Story = {
 };
 
 export const DoubleTapFullscreen: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 800px;">
       <ui-video

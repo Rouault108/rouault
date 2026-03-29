@@ -35,7 +35,9 @@ const cloneTree = (nodes: readonly TreeNode[]): TreeNode[] =>
 
 const waitFrame = async (): Promise<void> =>
   new Promise((resolve) => {
-    requestAnimationFrame(() => { resolve(); });
+    requestAnimationFrame(() => {
+      resolve();
+    });
   });
 
 const flush = async (host: UiSidebar): Promise<void> => {
@@ -70,6 +72,7 @@ export default meta;
 type Story = StoryObj<UiSidebar>;
 
 export const StateReflection: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-sidebar
       id="sidebar-state-reflection"
@@ -94,6 +97,7 @@ export const StateReflection: Story = {
 };
 
 export const ShellSync: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-sidebar
       id="sidebar-shell-sync"

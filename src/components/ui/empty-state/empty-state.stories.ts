@@ -161,6 +161,7 @@ export default meta;
 type Story = StoryObj<EmptyState>;
 
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-empty-state id="default-empty-state">
       <h2 slot="heading">No notes yet</h2>
@@ -190,7 +191,11 @@ export const Default: Story = {
     if (message.hasAttribute('role') || message.hasAttribute('aria-live')) {
       throw new Error('announce=off では自動ライブリージョン化してはいけません');
     }
-    if (host.hasAttribute('role') || host.hasAttribute('aria-live') || host.hasAttribute('aria-atomic')) {
+    if (
+      host.hasAttribute('role') ||
+      host.hasAttribute('aria-live') ||
+      host.hasAttribute('aria-atomic')
+    ) {
       throw new Error('ホストにライブリージョン属性を持たせてはいけません');
     }
     if (host.hasAttribute('aria-label')) {
@@ -214,6 +219,7 @@ export const Default: Story = {
 };
 
 export const PoliteAnnouncement: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-empty-state id="polite-announcement" announce="polite" variant="error">
       <h2 slot="heading">Failed to load notes</h2>
@@ -242,6 +248,7 @@ export const PoliteAnnouncement: Story = {
 };
 
 export const VariantStateMatrix: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .matrix {
@@ -314,6 +321,7 @@ export const VariantStateMatrix: Story = {
 };
 
 export const InvalidVariantCanonicalization: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-empty-state id="invalid-variant" variant="unknown">
       <h2 slot="heading">Unknown variant fallback</h2>
@@ -336,6 +344,7 @@ export const InvalidVariantCanonicalization: Story = {
 };
 
 export const InvalidAnnounceCanonicalization: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-empty-state id="invalid-announce" announce="assertive">
       <h2 slot="heading">Announcement fallback</h2>
@@ -357,12 +366,15 @@ export const InvalidAnnounceCanonicalization: Story = {
       throw new Error('描画結果の announce も off に正規化される必要があります');
     }
     if (message.hasAttribute('role') || message.hasAttribute('aria-live')) {
-      throw new Error('announce=off に正規化された場合、ライブリージョン属性は除去される必要があります');
+      throw new Error(
+        'announce=off に正規化された場合、ライブリージョン属性は除去される必要があります',
+      );
     }
   },
 };
 
 export const IllustrationPriority: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-empty-state id="illustration-priority">
       <svg slot="illustration" viewBox="0 0 200 120" aria-hidden="true">
@@ -391,10 +403,13 @@ export const IllustrationPriority: Story = {
 };
 
 export const TextOnlyState: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-empty-state id="text-only-state">
       <h2 slot="heading">Nothing to show here yet</h2>
-      <p slot="description">Meaning must stand on text alone when no symbolic element is provided.</p>
+      <p slot="description">
+        Meaning must stand on text alone when no symbolic element is provided.
+      </p>
     </ui-empty-state>
   `,
   play: async ({ canvasElement }) => {
@@ -411,6 +426,7 @@ export const TextOnlyState: Story = {
 };
 
 export const HeadingLevelFreedom: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-empty-state id="heading-level-h2">
@@ -446,6 +462,7 @@ export const HeadingLevelFreedom: Story = {
 };
 
 export const DynamicSlotStateSync: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-empty-state id="dynamic-slot-sync">
       <h2 slot="heading">Slot sync check</h2>
@@ -504,6 +521,7 @@ export const DynamicSlotStateSync: Story = {
 };
 
 export const ActionOrderContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-empty-state id="action-order-contract" style="max-inline-size: 220px;">
       <h2 slot="heading">Choose the first recovery path</h2>
@@ -534,6 +552,7 @@ export const ActionOrderContract: Story = {
 };
 
 export const DescriptionLinkGuidance: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-empty-state id="description-link-guidance">
       <h2 slot="heading">No synced sources are connected</h2>
@@ -559,6 +578,7 @@ export const DescriptionLinkGuidance: Story = {
 };
 
 export const NoPublicDerivedState: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-empty-state id="no-public-derived-state">
       <ui-icon slot="icon" name="search-x" aria-hidden="true"></ui-icon>
@@ -581,11 +601,14 @@ export const NoPublicDerivedState: Story = {
 };
 
 export const VisualDensityContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-empty-state id="visual-density-contract">
       <ui-icon slot="icon" name="inbox" aria-hidden="true"></ui-icon>
       <h2 slot="heading">Keep the message compact</h2>
-      <p slot="description">The message block should stay narrow enough to preserve reading rhythm.</p>
+      <p slot="description">
+        The message block should stay narrow enough to preserve reading rhythm.
+      </p>
       <button slot="action" type="button">Create note</button>
     </ui-empty-state>
   `,
@@ -623,13 +646,16 @@ export const VisualDensityContract: Story = {
 };
 
 export const PrintContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-empty-state id="print-contract">
       <svg slot="illustration" viewBox="0 0 120 80" aria-hidden="true">
         <rect x="0" y="0" width="120" height="80" fill="currentColor" opacity="0.12"></rect>
       </svg>
       <h2 slot="heading">The heading must remain meaningful on paper</h2>
-      <p slot="description">Supplementary context should remain even when decorative elements disappear.</p>
+      <p slot="description">
+        Supplementary context should remain even when decorative elements disappear.
+      </p>
       <a slot="action" href="/docs/guide">Read guide</a>
       <button slot="action" type="button">Retry</button>
     </ui-empty-state>
@@ -645,7 +671,7 @@ export const PrintContract: Story = {
     if (!stylesText.includes('.icon') || !stylesText.includes('.illustration')) {
       throw new Error('print では象徴要素を落とせる定義が必要です');
     }
-    if (!stylesText.includes("::slotted(ui-button)") || !stylesText.includes("::slotted(button)")) {
+    if (!stylesText.includes('::slotted(ui-button)') || !stylesText.includes('::slotted(button)')) {
       throw new Error('print では画面内操作を落とす定義が必要です');
     }
 
@@ -657,6 +683,7 @@ export const PrintContract: Story = {
 };
 
 export const DarkModeContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <style>
       .dark-surface {
@@ -712,6 +739,7 @@ export const DarkModeContract: Story = {
 };
 
 export const BoundaryConditions: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <ui-empty-state id="boundary-empty-description">

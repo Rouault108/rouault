@@ -178,6 +178,7 @@ type Story = StoryObj<Select>;
  * 未選択状態でプレースホルダーを表示します。
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-select
       id="default-select"
@@ -249,6 +250,7 @@ export const Default: Story = {
  * 白背景でも境界が消えないことを確認します。
  */
 export const OutlineVariant: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-select
       id="outline-select"
@@ -286,6 +288,7 @@ export const OutlineVariant: Story = {
  * modelValue が設定されている場合、対応するラベルが表示されます。
  */
 export const WithValue: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-select
       id="with-value-select"
@@ -327,6 +330,7 @@ export const WithValue: Story = {
  * エラー状態でない場合、ヘルプテキストが表示されます。
  */
 export const WithHelpText: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-select
       id="help-text-select"
@@ -361,6 +365,7 @@ export const WithHelpText: Story = {
  * error=true のとき、エラーメッセージが表示され、ヘルプテキストは非表示になります。
  */
 export const ErrorState: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-select
       id="error-select"
@@ -416,6 +421,7 @@ export const ErrorState: Story = {
  * disabled=true のとき、クリックもキーボード操作も受け付けません。
  */
 export const Disabled: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-select
       id="disabled-select"
@@ -457,6 +463,7 @@ export const Disabled: Story = {
  * readonly=true のとき、フォーカスは可能ですがリストボックスは開きません。
  */
 export const Readonly: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-select
       id="readonly-select"
@@ -500,6 +507,7 @@ export const Readonly: Story = {
  * スクリーンリーダーには常にラベルが提供されます。
  */
 export const HiddenLabel: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-select
       id="hidden-label-select"
@@ -536,6 +544,7 @@ export const HiddenLabel: Story = {
  * disabled な選択肢はキーボード移動でスキップされます。
  */
 export const WithDisabledOptions: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-select
       id="disabled-options-select"
@@ -588,6 +597,7 @@ export const WithDisabledOptions: Story = {
  * トリガーはテキストオーバーフローを省略記号で処理します。
  */
 export const LongLabels: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 200px;">
       <ui-select
@@ -629,6 +639,7 @@ export const LongLabels: Story = {
  * デフォルト・選択済み・エラー・無効・読み取り専用を並べて比較できます。
  */
 export const AllStatesShowcase: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   render: () => html`
     <style>
       .states-grid {
@@ -719,6 +730,7 @@ export const AllStatesShowcase: Story = {
  * ElementInternals により FormData に値が反映されます。
  */
 export const FormIntegration: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .form-demo {
@@ -818,6 +830,7 @@ export const FormIntegration: Story = {
  * ArrowDown/Up で項目移動、Enter で選択、Escape で閉じます。
  */
 export const KeyboardNavigation: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 400px;">
       <p style="font-size: 13px; color: var(--fg-muted, #888); margin-bottom: 1rem;">
@@ -922,6 +935,7 @@ export const KeyboardNavigation: Story = {
  * 内部スクロールや Arrow キー移動でポップアップが閉じないことを確認します。
  */
 export const LongScrollableOptions: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 400px;">
       <ui-select
@@ -997,6 +1011,7 @@ export const LongScrollableOptions: Story = {
  * 選択値が変わったときのみ change イベントが発火します。
  */
 export const ChangeEvent: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 400px;">
       <ui-select
@@ -1064,6 +1079,7 @@ export const ChangeEvent: Story = {
  * エラー解消時に Help Text が再表示されることを確認します。
  */
 export const ErrorStateTransition: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 400px;">
       <ui-select
@@ -1145,6 +1161,7 @@ export const ErrorStateTransition: Story = {
  * options=[] のとき、クリックしてもリストボックスが開きますが項目は表示されません。
  */
 export const EmptyOptions: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-select
       id="empty-options-select"
@@ -1186,6 +1203,7 @@ export const EmptyOptions: Story = {
  * ArrowDown/Up の循環移動が正しく動作することを確認します。
  */
 export const SingleOption: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-select
       id="single-option-select"
@@ -1236,6 +1254,7 @@ export const SingleOption: Story = {
  * キーボード移動でクラッシュしないことを確認します。
  */
 export const AllDisabledOptions: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => {
     const allDisabled: SelectOption[] = [
       { value: 'a', label: '選択肢 A', disabled: true },
@@ -1282,6 +1301,7 @@ export const AllDisabledOptions: Story = {
  * aria-invalid="true" は設定されるが、aria-describedby は空のままになります。
  */
 export const ErrorWithoutMessage: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-select
       id="error-no-msg-select"
@@ -1322,6 +1342,7 @@ export const ErrorWithoutMessage: Story = {
  * change イベントは発火しないことを確認します。
  */
 export const SameValueReselect: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-select
       id="same-value-select"
@@ -1382,6 +1403,7 @@ export const SameValueReselect: Story = {
  * フォーカス後に文字を入力すると、マッチする項目にジャンプします。
  */
 export const TypeaheadSearch: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 400px;">
       <p style="font-size: 13px; color: var(--fg-muted, #888); margin-bottom: 1rem;">
@@ -1459,6 +1481,7 @@ export const TypeaheadSearch: Story = {
  * Overlay のハイライトとトリガー状態を確認します。
  */
 export const DarkMode: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="padding: 16px; background: oklch(18% 0.01 250); color: oklch(96% 0.01 250);">
       <ui-select
@@ -1481,6 +1504,7 @@ export const DarkMode: Story = {
  * 実際の検証はブラウザ/OS の forced-colors を有効化して実施します。
  */
 export const ForcedColorsReference: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-select
       id="forced-colors-select"
@@ -1501,6 +1525,7 @@ export const ForcedColorsReference: Story = {
  * 実際の検証はブラウザ/OS の reduced-motion を有効化して実施します。
  */
 export const ReducedMotionReference: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-select
       id="reduced-motion-select"

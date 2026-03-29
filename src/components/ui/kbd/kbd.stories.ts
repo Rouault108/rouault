@@ -160,6 +160,7 @@ const resolveBorderColor = (surface: HTMLElement): string => {
  * 正準入力 `tokens` による単体キー描画の基本例です。
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     tokens: ['Esc'],
     keys: '',
@@ -188,6 +189,7 @@ export const Default: Story = {
  * `tokens`・`keys`・ホストテキスト・スロット補助の優先順位と責務を確認します。
  */
 export const InputPriorityAndModes: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 0.75rem;">
       <div>
@@ -251,6 +253,7 @@ export const InputPriorityAndModes: Story = {
  * 複合キーで `part="combo"` と `part="separator"` が公開されることを確認します。
  */
 export const ComboStructureContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`<ui-kbd id="combo-structure"></ui-kbd>`,
   play: async ({ canvasElement }) => {
     const host = await requireHost(canvasElement, '#combo-structure');
@@ -285,6 +288,7 @@ export const ComboStructureContract: Story = {
  * 記号キー補助と literal plus 境界を確認します。
  */
 export const SymbolAndLiteralPlusBoundaries: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 0.75rem;">
       <div>
@@ -330,6 +334,7 @@ export const SymbolAndLiteralPlusBoundaries: Story = {
  * 視覚表記と `aria-keyshortcuts` の対応を確認します。
  */
 export const ShortcutContractAlignment: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <button
       id="shortcut-trigger"
@@ -380,6 +385,7 @@ export const ShortcutContractAlignment: Story = {
  * 小さい親フォント環境でも判読性が維持されることを確認します。
  */
 export const SmallTextHardLimit: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div
       id="small-text-container"
@@ -405,6 +411,7 @@ export const SmallTextHardLimit: Story = {
  * 複合キーが途中改行せず、意味のまとまりを保つことを確認します。
  */
 export const ComboNoWrapIntegrity: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div
       id="nowrap-box"
@@ -438,6 +445,7 @@ export const ComboNoWrapIntegrity: Story = {
  * 最低保証集合の日本語読み上げを確認します。
  */
 export const JapaneseSRConsistency: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
       <ui-kbd id="sr-ctrl" .tokens=${['Ctrl']}></ui-kbd>
@@ -499,6 +507,7 @@ export const JapaneseSRConsistency: Story = {
  * 暗色トークンでも AA コントラストを維持することを確認します。
  */
 export const DarkModeTokenContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div
       id="dark-mode-surface"
@@ -558,6 +567,7 @@ export const DarkModeTokenContract: Story = {
  * 空入力時に空のキートップを出力しないことを確認します。
  */
 export const EmptyInputNoRenderBoundary: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: flex; gap: 0.75rem;">
       <ui-kbd id="empty-none"></ui-kbd>
@@ -589,6 +599,7 @@ export const EmptyInputNoRenderBoundary: Story = {
  * `forced-colors` / `print` 契約がスタイル定義に含まれていることを確認します。
  */
 export const MediaModeContracts: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`<ui-kbd id="media-contract-kbd" .tokens=${['Esc']}></ui-kbd>`,
   play: async ({ canvasElement }) => {
     const host = await requireHost(canvasElement, '#media-contract-kbd');

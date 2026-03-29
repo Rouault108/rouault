@@ -79,6 +79,7 @@ function getShadowStylesText(shadowRoot: ShadowRoot | null): string {
  * フル状態（更新日優先 + タグ + 読了時間 + 出典/ライセンス + ステータス）
  */
 export const CompleteState: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     heading: 'バッハ《マタイ受難曲》の構造美',
     updatedDate: '2026-02-12',
@@ -208,6 +209,7 @@ export const CompleteState: Story = {
  * 更新日なし（公開日フォールバック）
  */
 export const PublishedFallback: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   args: {
     heading: '公開日のみで表示するケース',
     published: '2026-01-10',
@@ -270,6 +272,7 @@ export const PublishedFallback: Story = {
  * ステータス状態の意味ある組み合わせ
  */
 export const StatusStateMatrix: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .matrix {
@@ -366,6 +369,7 @@ export const StatusStateMatrix: Story = {
  * 事故が多い契約: tagsのproperty-only + tag-clickイベント契約
  */
 export const TagEventContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-article-header
       id="tag-contract"
@@ -446,6 +450,7 @@ export const TagEventContract: Story = {
  * 境界条件: メタデータゼロ（見出しのみ）
  */
 export const HeadingOnlyBoundary: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-article-header id="heading-only" heading="見出しのみの最小構成"></ui-article-header>
   `,
@@ -474,6 +479,7 @@ export const HeadingOnlyBoundary: Story = {
  * 事故が多い境界条件: 値の正規化（tags/readTime/source）
  */
 export const NormalizationBoundary: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-article-header
       id="normalization-boundary"
@@ -536,6 +542,7 @@ export const NormalizationBoundary: Story = {
  * 境界条件: 日付は strict YYYY-MM-DD のみ表示し、空白ライセンスは補助行を作らない
  */
 export const StrictDateBoundary: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-article-header
       id="strict-date-boundary"
@@ -572,6 +579,7 @@ export const StrictDateBoundary: Story = {
  * 境界条件: unsafe source のみ指定時はメタデータ行ごと非表示
  */
 export const UnsafeSourceOnlyBoundary: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-article-header
       id="unsafe-source-only"
@@ -595,6 +603,7 @@ export const UnsafeSourceOnlyBoundary: Story = {
  * 受け入れ基準: touch/reduced-motion/forced-colors の契約定義が存在すること
  */
 export const AccessibilityMediaContracts: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-article-header
       id="a11y-media-contracts"
@@ -639,6 +648,7 @@ export const AccessibilityMediaContracts: Story = {
  * Dark Mode契約: コンポーネント側はセマンティックトークン参照でモード分岐不要
  */
 export const DarkModeTokenContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-article-header
       id="dark-mode-token-contract"

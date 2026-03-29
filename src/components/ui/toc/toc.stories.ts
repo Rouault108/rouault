@@ -48,6 +48,7 @@ export default meta;
 type Story = StoryObj<Toc>;
 
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () =>
     html`<ui-toc id="toc-default" .headers=${flatHeaders} active-id="implementation"></ui-toc>`,
   play: async ({ canvasElement }) => {
@@ -64,10 +65,12 @@ export const Default: Story = {
 };
 
 export const NestedLevels: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   render: () => html`<ui-toc id="toc-nested" .headers=${nestedHeaders} active-id="setup"></ui-toc>`,
 };
 
 export const Empty: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`<ui-toc id="toc-empty" .headers=${[]}></ui-toc>`,
   play: async ({ canvasElement }) => {
     const toc = getToc(canvasElement, 'toc-empty');

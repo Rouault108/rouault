@@ -132,6 +132,7 @@ const parsePx = (value: string): number => Number.parseFloat(value) || 0;
  * 最も控えめな Subtle Style。行内やカード内に自然に溶け込みます。
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     variant: 'default',
     size: 'xs',
@@ -191,6 +192,7 @@ export const Default: Story = {
  * WCAG AA 準拠のコントラスト比を目視で確認できます。
  */
 export const VariantColorMatrix: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => {
     const variants = ['default', 'outline', 'solid'] as const;
     const colors = ['neutral', 'red', 'blue', 'violet', 'pink', 'gold'] as const;
@@ -286,6 +288,7 @@ export const VariantColorMatrix: Story = {
  * - `sm` (24px): 強調時のみ使用。
  */
 export const Sizes: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -330,6 +333,7 @@ export const Sizes: Story = {
  * リンク・削除ボタンは無効化されます。
  */
 export const DisabledVariants: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <div
@@ -414,6 +418,7 @@ export const DisabledVariants: Story = {
  * クリックすると `ui-tag-remove` イベントが発火します。
  */
 export const Removable: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
@@ -491,6 +496,7 @@ export const Removable: Story = {
  * フィルタリングやページ遷移のトリガーとして機能します。
  */
 export const WithLink: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
       <ui-tag id="link-blue" href="/tags/cs" color="blue">Computer Science</ui-tag>
@@ -537,6 +543,7 @@ export const WithLink: Story = {
  * `role="group"` により、スクリーンリーダーが論理的な関連を把握できます。
  */
 export const LinkAndRemovable: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
@@ -629,6 +636,7 @@ export const LinkAndRemovable: Story = {
  * アイコンは自動的に 12px に調整されます。
  */
 export const WithIcon: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
       <ui-tag id="icon-blue" color="blue">
@@ -703,6 +711,7 @@ export const WithIcon: Story = {
  * デザインレビューやビジュアルリグレッションテストに使用します。
  */
 export const AllStates: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .states-list {
@@ -831,6 +840,7 @@ export const AllStates: Story = {
  * `detail.value` にはタグのテキスト内容が含まれます。
  */
 export const EventFiring: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
@@ -901,6 +911,7 @@ export const EventFiring: Story = {
  * disabled 状態では `ui-tag-remove` イベントが発火しない。
  */
 export const DisabledNoEvent: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <div
@@ -970,6 +981,7 @@ export const DisabledNoEvent: Story = {
  */
 export const LinkRemovableNesting: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1016,6 +1028,7 @@ export const LinkRemovableNesting: Story = {
  */
 export const LongTextTruncation: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1068,6 +1081,7 @@ export const LongTextTruncation: Story = {
  */
 export const DisabledLinkPreventsNavigation: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1130,6 +1144,7 @@ export const DisabledLinkPreventsNavigation: Story = {
  */
 export const TouchTargetSize: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1203,6 +1218,7 @@ export const TouchTargetSize: Story = {
  */
 export const GoldColorVisibility: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1270,6 +1286,7 @@ export const GoldColorVisibility: Story = {
  */
 export const DarkModeReference: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story:
@@ -1310,6 +1327,7 @@ export const DarkModeReference: Story = {
  * `href + removable` 構造で、リンクと削除ボタンの双方がフォーカス可能であることを確認します。
  */
 export const FocusAndKeyboard: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <div

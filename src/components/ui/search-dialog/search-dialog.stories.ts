@@ -2,9 +2,7 @@ import { html } from 'lit';
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { expect, userEvent, waitFor } from 'storybook/test';
 import './search-dialog';
-import type {
-  UiSearchDialog,
-} from './search-dialog';
+import type { UiSearchDialog } from './search-dialog';
 import type {
   UiSearchDialogCloseRequestedDetail,
   UiSearchDialogItem,
@@ -22,15 +20,13 @@ interface StoryArgs {
   query: string;
   opened: boolean;
   searcher:
-  | ((
-    context: {
-      query: string;
-      signal: AbortSignal;
-      limit?: number;
-      locale?: string;
-    },
-  ) => Promise<UiSearchDialogSearchResult> | UiSearchDialogSearchResult)
-  | null;
+    | ((context: {
+        query: string;
+        signal: AbortSignal;
+        limit?: number;
+        locale?: string;
+      }) => Promise<UiSearchDialogSearchResult> | UiSearchDialogSearchResult)
+    | null;
   dark: boolean;
   messages: Partial<UiSearchDialogMessages>;
   matchFields: readonly UiSearchDialogMatchField[];
@@ -201,6 +197,7 @@ export default meta;
 type Story = StoryObj<StoryArgs>;
 
 export const ControlledOpenedContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   play: async ({ canvasElement }) => {
     const dialog = getDialog(canvasElement);
     let requested = false;
@@ -218,6 +215,7 @@ export const ControlledOpenedContract: Story = {
 };
 
 export const ControlledQueryContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   play: async ({ canvasElement }) => {
     const dialog = await requestOpen(canvasElement);
     const queries: string[] = [];
@@ -234,6 +232,7 @@ export const ControlledQueryContract: Story = {
 };
 
 export const FocusReturnContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   play: async ({ canvasElement }) => {
     const dialog = await requestOpen(canvasElement);
     await userEvent.click(getCloseButton(dialog));
@@ -245,6 +244,7 @@ export const FocusReturnContract: Story = {
 };
 
 export const LoadingStateEditableInput: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     loading: true,
     query: 'alp',
@@ -253,13 +253,16 @@ export const LoadingStateEditableInput: Story = {
     const dialog = await requestOpen(canvasElement);
     await setQuery(dialog, 'beta');
     await waitFor(async () => {
-      await expect(dialog.shadowRoot?.textContent ?? '').toContain('検索インデックスを読み込んでいます');
+      await expect(dialog.shadowRoot?.textContent ?? '').toContain(
+        '検索インデックスを読み込んでいます',
+      );
       await expect(dialog.query).toBe('beta');
     });
   },
 };
 
 export const ErrorStateContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     searcher: () => ({
       items: [],
@@ -274,13 +277,16 @@ export const ErrorStateContract: Story = {
     await setQuery(dialog, 'alpha');
 
     await waitFor(async () => {
-      await expect(dialog.shadowRoot?.textContent ?? '').toContain('検索結果を取得できませんでした');
+      await expect(dialog.shadowRoot?.textContent ?? '').toContain(
+        '検索結果を取得できませんでした',
+      );
       await expect(dialog.shadowRoot?.textContent ?? '').toContain('検索サービスに接続できません');
     });
   },
 };
 
 export const KeyboardLoopAndEnterSelection: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   play: async ({ canvasElement }) => {
     const dialog = await requestOpen(canvasElement);
     const selectedDetails: UiSearchDialogSelectedDetail[] = [];
@@ -290,9 +296,7 @@ export const KeyboardLoopAndEnterSelection: Story = {
       selectedDetails.push((event as CustomEvent<UiSearchDialogSelectedDetail>).detail);
     });
     dialog.addEventListener('ui-search-dialog-close-requested', (event) => {
-      closeReasons.push(
-        (event as CustomEvent<UiSearchDialogCloseRequestedDetail>).detail.reason,
-      );
+      closeReasons.push((event as CustomEvent<UiSearchDialogCloseRequestedDetail>).detail.reason);
     });
 
     await setQuery(dialog, 'a');
@@ -317,6 +321,7 @@ export const KeyboardLoopAndEnterSelection: Story = {
 };
 
 export const SelectionEventOrderContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   play: async ({ canvasElement }) => {
     const dialog = await requestOpen(canvasElement);
     const events: string[] = [];
@@ -346,6 +351,7 @@ export const SelectionEventOrderContract: Story = {
 };
 
 export const VirtualizationSemanticsContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     items: createVirtualizedItems(),
     opened: true,
@@ -371,6 +377,7 @@ export const VirtualizationSemanticsContract: Story = {
 };
 
 export const DarkModeTokenContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   args: {
     dark: true,
     opened: true,

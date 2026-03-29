@@ -143,7 +143,13 @@ const meta: Meta<UiMath> = {
     errorKind: {
       name: 'error-kind',
       control: 'select',
-      options: ['build-failed', 'data-missing', 'runtime-failed', 'upstream-invalid', 'unspecified'],
+      options: [
+        'build-failed',
+        'data-missing',
+        'runtime-failed',
+        'upstream-invalid',
+        'unspecified',
+      ],
       table: {
         type: {
           summary:
@@ -172,6 +178,7 @@ export default meta;
 type Story = StoryObj<UiMath>;
 
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 320px;">
       <ui-math id="default-math" block primary .latex=${String.raw`x + y = z`}></ui-math>
@@ -233,6 +240,7 @@ export const Default: Story = {
 };
 
 export const VariantStateMatrix: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .matrix {
@@ -330,7 +338,9 @@ export const VariantStateMatrix: Story = {
       throw new Error('aria-label 後方互換入力で label モードへ遷移していません');
     }
     if (getSlottedMathMl(inlineLabeled)?.getAttribute('aria-hidden') !== 'true') {
-      throw new Error('label モードの slotted MathML は SSR 側で aria-hidden="true" である必要があります');
+      throw new Error(
+        'label モードの slotted MathML は SSR 側で aria-hidden="true" である必要があります',
+      );
     }
 
     const mathmlDisplay = getDisplayContainer(blockMathml);
@@ -339,7 +349,9 @@ export const VariantStateMatrix: Story = {
       throw new Error('primary=false の block では role="region" を付与してはいけません');
     }
     if (mathmlContent.hasAttribute('aria-label')) {
-      throw new Error('speech-mode="mathml" 明示時は aria-label を主要ラベルとして使ってはいけません');
+      throw new Error(
+        'speech-mode="mathml" 明示時は aria-label を主要ラベルとして使ってはいけません',
+      );
     }
     const mathmlRuntimeMath = getRuntimeMathMl(blockMathml);
     if (!mathmlRuntimeMath || mathmlRuntimeMath.hasAttribute('aria-hidden')) {
@@ -359,12 +371,15 @@ export const VariantStateMatrix: Story = {
     }
     const labelRuntimeMath = getRuntimeMathMl(blockLabel);
     if (labelRuntimeMath?.getAttribute('aria-hidden') !== 'true') {
-      throw new Error('speech-mode="label" では runtime MathML を aria-hidden にする必要があります');
+      throw new Error(
+        'speech-mode="label" では runtime MathML を aria-hidden にする必要があります',
+      );
     }
   },
 };
 
 export const ErrorStates: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-math
@@ -375,11 +390,7 @@ export const ErrorStates: Story = {
         error-code="BUILD_KATEX_PARSE"
       ></ui-math>
 
-      <ui-math
-        id="error-runtime"
-        show-error-source
-        .latex=${String.raw`\frac{1}{2`}
-      ></ui-math>
+      <ui-math id="error-runtime" show-error-source .latex=${String.raw`\frac{1}{2`}></ui-math>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -405,7 +416,9 @@ export const ErrorStates: Story = {
       throw new Error('external エラーの error-code が表示されていません');
     }
     if (staticError.querySelector('details')) {
-      throw new Error('show-error-source=false の external エラーで details を表示してはいけません');
+      throw new Error(
+        'show-error-source=false の external エラーで details を表示してはいけません',
+      );
     }
 
     const runtimeError = getErrorBlock(runtimeErrorHost);
@@ -419,7 +432,9 @@ export const ErrorStates: Story = {
     const details = runtimeError.querySelector('details');
     const summary = runtimeError.querySelector('summary');
     if (!details || !summary) {
-      throw new Error('show-error-source=true の author-invalid エラーでは details/summary が必要です');
+      throw new Error(
+        'show-error-source=true の author-invalid エラーでは details/summary が必要です',
+      );
     }
     if (summary.textContent.trim() !== ERROR_DETAILS_SUMMARY) {
       throw new Error('エラー詳細 summary 文言が仕様どおりではありません');
@@ -435,6 +450,7 @@ export const ErrorStates: Story = {
 };
 
 export const ErrorKindMatrix: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-math
@@ -497,6 +513,7 @@ export const ErrorKindMatrix: Story = {
 };
 
 export const BoundaryConditions: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-math
@@ -593,7 +610,9 @@ export const BoundaryConditions: Story = {
 
     const invalidSpeechInline = getInlineContainer(invalidSpeechMode);
     if (invalidSpeechInline.hasAttribute('aria-label')) {
-      throw new Error('列挙外 speech-mode は mathml へフォールバックし、手動ラベルを主要経路にしてはいけません');
+      throw new Error(
+        '列挙外 speech-mode は mathml へフォールバックし、手動ラベルを主要経路にしてはいけません',
+      );
     }
     const invalidSpeechMath = getRuntimeMathMl(invalidSpeechMode);
     if (!invalidSpeechMath || invalidSpeechMath.hasAttribute('aria-hidden')) {
@@ -615,6 +634,7 @@ export const BoundaryConditions: Story = {
 };
 
 export const KeyboardInteraction: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 300px;">
       <ui-math id="keyboard-scrollable" block primary .latex=${LONG_MATH_LATEX}></ui-math>
@@ -647,6 +667,7 @@ export const KeyboardInteraction: Story = {
 };
 
 export const SettledEventContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`<ui-math id="settled-event-contract"></ui-math>`,
   play: async ({ canvasElement }) => {
     const host = getMathHost(canvasElement, 'settled-event-contract');
@@ -664,6 +685,7 @@ export const SettledEventContract: Story = {
 };
 
 export const IdAnchorContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-math id="eq-pythagorean" block .latex=${String.raw`a^2 + b^2 = c^2`}></ui-math>
   `,
@@ -684,6 +706,7 @@ export const IdAnchorContract: Story = {
 
 export const DarkModeTokenContract: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     backgrounds: { default: 'dark' },
   },
   render: () => html`
@@ -711,6 +734,7 @@ export const DarkModeTokenContract: Story = {
 };
 
 export const ForcedColorsContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () =>
     html`<ui-math id="forced-colors-contract" .latex=${String.raw`x + y = z`}></ui-math>`,
   play: async ({ canvasElement }) => {

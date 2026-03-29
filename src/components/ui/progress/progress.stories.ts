@@ -125,7 +125,8 @@ const assertHostProgressbarA11y = (
     throw new Error(`ui-progress#${progress.id} の aria-valuemax が不正です`);
   }
 
-  const expectedValueText = expected.valueText ?? `${String(Math.round((expected.valueNow / expected.valueMax) * 100))}%`;
+  const expectedValueText =
+    expected.valueText ?? `${String(Math.round((expected.valueNow / expected.valueMax) * 100))}%`;
   if (progress.getAttribute('aria-valuetext') !== expectedValueText) {
     throw new Error(`ui-progress#${progress.id} の aria-valuetext が不正です`);
   }
@@ -135,19 +136,25 @@ const assertHostProgressbarA11y = (
       throw new Error(`ui-progress#${progress.id} の aria-labelledby が不正です`);
     }
     if (progress.hasAttribute('aria-label')) {
-      throw new Error(`ui-progress#${progress.id} は labelRef 指定時に aria-label を出力してはいけません`);
+      throw new Error(
+        `ui-progress#${progress.id} は labelRef 指定時に aria-label を出力してはいけません`,
+      );
     }
   } else if (expected.label !== undefined) {
     if (progress.getAttribute('aria-label') !== expected.label) {
       throw new Error(`ui-progress#${progress.id} の aria-label が不正です`);
     }
     if (progress.hasAttribute('aria-labelledby')) {
-      throw new Error(`ui-progress#${progress.id} は label 指定時に aria-labelledby を出力してはいけません`);
+      throw new Error(
+        `ui-progress#${progress.id} は label 指定時に aria-labelledby を出力してはいけません`,
+      );
     }
   }
 
   if (progress.hasAttribute('aria-live')) {
-    throw new Error(`ui-progress#${progress.id} の progressbar に aria-live を直接付与してはいけません`);
+    throw new Error(
+      `ui-progress#${progress.id} の progressbar に aria-live を直接付与してはいけません`,
+    );
   }
 };
 
@@ -224,6 +231,7 @@ export default meta;
 type Story = StoryObj<UiProgress>;
 
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="width: min(420px, 100%);">
       <ui-progress
@@ -255,6 +263,7 @@ export const Default: Story = {
 };
 
 export const NamingContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .grid {
@@ -343,6 +352,7 @@ export const NamingContract: Story = {
 };
 
 export const ContractViolations: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div
       id="contract-violations-root"
@@ -358,7 +368,9 @@ export const ContractViolations: Story = {
     const originalWarn = console.warn;
     const capturedWarnings: string[] = [];
     console.warn = (...args: unknown[]) => {
-      capturedWarnings.push(args.map((arg) => (typeof arg === 'string' ? arg : String(arg))).join(' '));
+      capturedWarnings.push(
+        args.map((arg) => (typeof arg === 'string' ? arg : String(arg))).join(' '),
+      );
     };
 
     try {
@@ -421,7 +433,9 @@ export const ContractViolations: Story = {
     if (!capturedWarnings.some((message) => message.includes('value は max 以下'))) {
       throw new Error('value > max 契約違反の警告が必要です');
     }
-    if (!capturedWarnings.some((message) => message.includes('labelRef の参照先が見つかりません'))) {
+    if (
+      !capturedWarnings.some((message) => message.includes('labelRef の参照先が見つかりません'))
+    ) {
       throw new Error('無効 labelRef の警告が必要です');
     }
     if (!capturedWarnings.some((message) => message.includes('アクセシブル名が必要'))) {
@@ -463,6 +477,7 @@ export const ContractViolations: Story = {
 };
 
 export const TokenSurface: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .custom {
@@ -528,7 +543,10 @@ export const TokenSurface: Story = {
     if (!styles.includes('--ui-progress-easing')) {
       throw new Error('公開トークン --ui-progress-easing が必要です');
     }
-    if (styles.includes('--ui-progress-track-height') || styles.includes('--ui-progress-bar-background')) {
+    if (
+      styles.includes('--ui-progress-track-height') ||
+      styles.includes('--ui-progress-bar-background')
+    ) {
       throw new Error('旧公開トークン名を残してはいけません');
     }
     if (!styles.includes('@media (prefers-reduced-motion: reduce)')) {
@@ -556,6 +574,7 @@ export const TokenSurface: Story = {
 
 export const DarkMode: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     backgrounds: { default: 'dark' },
   },
   render: () => html`
@@ -600,7 +619,9 @@ export const DarkMode: Story = {
 
     const customTrackHeight = toPx(getComputedStyle(getTrack(darkCustom)).height);
     if (!isNearlyEqual(customTrackHeight, 6)) {
-      throw new Error(`ダークモード時の track 高さトークン反映が不正です: ${String(customTrackHeight)}px`);
+      throw new Error(
+        `ダークモード時の track 高さトークン反映が不正です: ${String(customTrackHeight)}px`,
+      );
     }
   },
 };

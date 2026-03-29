@@ -122,6 +122,7 @@ type Story = StoryObj<Slider>;
  * フィルが左半分を `--primary` 色で塗りつぶします。
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     label: '音量',
     min: 0,
@@ -197,6 +198,7 @@ export const Default: Story = {
  * Thumb が左端に位置し、フィルの幅は 0% です。
  */
 export const AtMinValue: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-slider id="at-min" label="最小値" min="0" max="100" value="0"></ui-slider>
   `,
@@ -223,6 +225,7 @@ export const AtMinValue: Story = {
  * Thumb が右端に位置し、フィルの幅は 100% です。
  */
 export const AtMaxValue: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-slider id="at-max" label="最大値" min="0" max="100" value="100"></ui-slider>
   `,
@@ -249,6 +252,7 @@ export const AtMaxValue: Story = {
  * input に `disabled` 属性が付与され、`aria-disabled="true"` が設定されます。
  */
 export const DisabledNormal: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-slider
       id="disabled-normal"
@@ -290,6 +294,7 @@ export const DisabledNormal: Story = {
  * 無効かつ最小値の組み合わせ。フィルが 0% でも無効スタイルが適用されます。
  */
 export const DisabledAtMin: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-slider
       id="disabled-at-min"
@@ -318,6 +323,7 @@ export const DisabledAtMin: Story = {
  * 無効かつ最大値の組み合わせ。フィルが 100% でも無効スタイルが適用されます。
  */
 export const DisabledAtMax: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-slider
       id="disabled-at-max"
@@ -352,6 +358,7 @@ export const DisabledAtMax: Story = {
  * 数字の幅が等幅になりレイアウト振動（Jitter）を防ぎます。
  */
 export const WithSlots: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-slider
       id="with-slots"
@@ -365,12 +372,7 @@ export const WithSlots: Story = {
         if (suffix) suffix.textContent = String(slider.value);
       }}"
     >
-      <ui-icon
-        slot="prefix"
-        name="volume-x"
-        aria-hidden="true"
-        style="font-size: 1.2em;"
-      ></ui-icon>
+      <ui-icon slot="prefix" name="volume-x" aria-hidden="true" style="font-size: 1.2em;"></ui-icon>
       <span
         data-role="value"
         slot="suffix"
@@ -400,6 +402,7 @@ export const WithSlots: Story = {
  * prefix に暗いアイコン、suffix に明るいアイコンを配置します。
  */
 export const BrightnessControl: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 400px;">
       <div style="font-size: 13px; color: oklch(48% 0.01 250);">明るさ調整</div>
@@ -410,12 +413,7 @@ export const BrightnessControl: Story = {
           aria-hidden="true"
           style="font-size: 1.1em; opacity: 0.7;"
         ></ui-icon>
-        <ui-icon
-          slot="suffix"
-          name="sun"
-          aria-hidden="true"
-          style="font-size: 1.1em;"
-        ></ui-icon>
+        <ui-icon slot="suffix" name="sun" aria-hidden="true" style="font-size: 1.1em;"></ui-icon>
       </ui-slider>
     </div>
   `,
@@ -440,6 +438,7 @@ export const BrightnessControl: Story = {
  * デザインレビューやビジュアルリグレッションテストに使用します。
  */
 export const AllStates: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .states-list {
@@ -556,6 +555,7 @@ export const AllStates: Story = {
  * - `change` イベント: 値の変更が確定した時点で発火
  */
 export const EventFiring: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div
       data-story-root="event-firing"
@@ -647,6 +647,7 @@ export const EventFiring: Story = {
  * - **Page Up / Page Down**: `step * 10` で増減
  */
 export const KeyboardNavigation: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 480px;">
       <div
@@ -751,6 +752,7 @@ export const KeyboardNavigation: Story = {
  */
 export const MinGreaterThanMax: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story: '⚠️ **境界条件**: `min > max` の場合、自動的に入れ替えて正規化します。',
@@ -810,6 +812,7 @@ export const MinGreaterThanMax: Story = {
  */
 export const InvalidStepFallback: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story: '⚠️ **境界条件**: `step <= 0` は `step=1` にフォールバックします。',
@@ -860,6 +863,7 @@ export const InvalidStepFallback: Story = {
  */
 export const ValueOutOfRange: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story: '⚠️ **境界条件**: `value` が `max` を超える場合、`max` にクランプされます。',
@@ -911,6 +915,7 @@ export const ValueOutOfRange: Story = {
  */
 export const ValueBelowMin: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story: '⚠️ **境界条件**: `value` が `min` を下回る場合、`min` にクランプされます。',
@@ -954,6 +959,7 @@ export const ValueBelowMin: Story = {
  */
 export const DecimalStepPrecision: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story: '⚠️ **境界条件**: `step="0.1"` での浮動小数点誤差を精度丸めで回避します。',
@@ -1018,6 +1024,7 @@ export const DecimalStepPrecision: Story = {
  */
 export const ValueUnspecified: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story: '⚠️ **境界条件**: `value` 未指定時は `min` が初期値として採用されます。',
@@ -1063,6 +1070,7 @@ export const ValueUnspecified: Story = {
  */
 export const ValueSnapToStep: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1110,6 +1118,7 @@ export const ValueSnapToStep: Story = {
  */
 export const DisabledClickBlocked: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1182,6 +1191,7 @@ export const DisabledClickBlocked: Story = {
  */
 export const MinEqualsMax: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story: '⚠️ **境界条件**: `min === max` の場合、スライダーは操作不能になります。',
@@ -1229,6 +1239,7 @@ export const MinEqualsMax: Story = {
  */
 export const NegativeRange: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -1275,6 +1286,7 @@ export const NegativeRange: Story = {
  */
 export const DarkMode: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     backgrounds: { default: 'dark' },
     docs: {
       description: {
@@ -1338,6 +1350,7 @@ export const DarkMode: Story = {
  */
 export const HighContrastFallback: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story:
@@ -1375,6 +1388,7 @@ export const HighContrastFallback: Story = {
  */
 export const MissingLabelFallback: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story: '`label` 未指定時に内部 input のアクセシブル名が空にならないことを確認します。',

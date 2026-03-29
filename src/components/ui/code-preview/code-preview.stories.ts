@@ -131,6 +131,7 @@ type Story = StoryObj<CodePreview>;
  * 見出し・ツールバーともに未設定のためヘッダーは非表示です。
  */
 export const BasicWithCodeBlock: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
@@ -194,6 +195,7 @@ export const BasicWithCodeBlock: Story = {
  * 複数タブの比較コードをプレビューと一体化して表示します。
  */
 export const BasicWithCodeGroup: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
@@ -241,6 +243,7 @@ export const BasicWithCodeGroup: Story = {
  * ツールバーなしの場合のヘッダー表示境界を検証します。
  */
 export const HeaderWithHeadingOnly: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
@@ -295,6 +298,7 @@ export const HeaderWithHeadingOnly: Story = {
  * toolbar スロット検出による動的ヘッダー表示境界を検証します。
  */
 export const HeaderWithToolbarOnly: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
@@ -373,6 +377,7 @@ export const HeaderWithToolbarOnly: Story = {
  * 見出しが左、ツールバーが右に配置されます。
  */
 export const HeaderWithHeadingAndToolbar: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
@@ -423,6 +428,7 @@ export const HeaderWithHeadingAndToolbar: Story = {
  * Markdown 公開文法向けの opt-in controls 境界を検証します。
  */
 export const HeaderWithBuiltInControlsOnly: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 900px;">
       <ui-code-preview
@@ -467,6 +473,7 @@ export const HeaderWithBuiltInControlsOnly: Story = {
  * theme / surface / viewport の切替が preview 側だけに反映されることを検証します。
  */
 export const BuiltInShowcaseControlsContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 960px;">
       <ui-code-preview
@@ -614,6 +621,7 @@ export const BuiltInShowcaseControlsContract: Story = {
  * built-in controls を先、slot 内容を後に表示できることを検証します。
  */
 export const BuiltInControlsWithToolbarSlot: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 900px;">
       <ui-code-preview
@@ -668,6 +676,7 @@ export const BuiltInControlsWithToolbarSlot: Story = {
  * heading が空かつ toolbar スロットが空の場合、ヘッダーが描画されないことを検証します。
  */
 export const HeaderHiddenBoundary: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
@@ -717,6 +726,7 @@ export const HeaderHiddenBoundary: Story = {
  * normal / compact / none それぞれの余白が正しく適用されることを検証します。
  */
 export const PreviewPaddingVariants: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; display: flex; flex-direction: column; gap: 2rem; max-width: 720px;">
       <div>
@@ -821,6 +831,7 @@ export const PreviewPaddingVariants: Story = {
  * バリデーション境界を検証します。
  */
 export const InvalidPaddingFallback: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
@@ -855,6 +866,7 @@ export const InvalidPaddingFallback: Story = {
  * バリデーション境界を検証します。
  */
 export const InvalidAlignFallback: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
@@ -888,6 +900,7 @@ export const InvalidAlignFallback: Story = {
  * 最低 24x24px、coarse pointer では 44x44px 指定が CSS に定義されていることを検証します。
  */
 export const ToolbarTargetSizeContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
@@ -935,6 +948,7 @@ export const ToolbarTargetSizeContract: Story = {
  * center / start / stretch それぞれの配置が正しく適用されることを検証します。
  */
 export const PreviewAlignVariants: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; display: flex; flex-direction: column; gap: 2rem; max-width: 720px;">
       <div>
@@ -1061,6 +1075,7 @@ export const PreviewAlignVariants: Story = {
  * CSS Custom Property 経由で子の breakout が 100%/0 に強制リセットされることを検証します。
  */
 export const ChildBreakoutNeutralization: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
@@ -1130,6 +1145,7 @@ export const ChildBreakoutNeutralization: Story = {
  * `heading` が非空の場合はその値が、空の場合は "コード プレビュー" が使用されます。
  */
 export const A11yGroupRoleContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; display: flex; flex-direction: column; gap: 2rem; max-width: 720px;">
       <ui-code-preview
@@ -1189,6 +1205,7 @@ export const A11yGroupRoleContract: Story = {
  * 変更後に aria-label とヘッダー表示が追従することを検証します。
  */
 export const HeadingDynamicUpdate: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
@@ -1250,6 +1267,7 @@ export const HeadingDynamicUpdate: Story = {
  * フォールバック定義が CSS に存在することを検証します。
  */
 export const ForcedColorsContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
@@ -1291,6 +1309,7 @@ export const ForcedColorsContract: Story = {
  * `@media print` での基本ルールが CSS に定義されていることを検証します。
  */
 export const PrintStyleContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
@@ -1337,6 +1356,7 @@ export const PrintStyleContract: Story = {
  * CSS に mobile/desktop 両方の breakout デフォルト値が定義されていることを検証します。
  */
 export const BreakoutPatternContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
@@ -1402,6 +1422,7 @@ export const BreakoutPatternContract: Story = {
  * プレビュー領域が --bg-surface-2、ルートが --bg-fill-muted を参照していることを CSS 定義で検証します。
  */
 export const VisualHierarchyContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
@@ -1465,6 +1486,7 @@ export const VisualHierarchyContract: Story = {
  * このトークンは `.header` に適用されます。
  */
 export const DarkThemePreviewBackground: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
@@ -1503,6 +1525,7 @@ export const DarkThemePreviewBackground: Story = {
  * toolbar スロットへの後付き追加でヘッダーが表示されることを検証します。
  */
 export const ToolbarDynamicSlotDetection: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview
@@ -1567,6 +1590,7 @@ export const ToolbarDynamicSlotDetection: Story = {
  * スロットされた ui-code-block / ui-code-group の copy 値が保持されることを検証します。
  */
 export const CopyFunctionalityPreservation: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; display: flex; flex-direction: column; gap: 2rem; max-width: 720px;">
       <ui-code-preview
@@ -1646,6 +1670,7 @@ export const CopyFunctionalityPreservation: Story = {
  * ライトDOM にコンテンツが配置されているという構造的事実を参照ストーリーとして保持します。
  */
 export const NoJsContentIntegrity: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview

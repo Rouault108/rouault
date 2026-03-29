@@ -38,7 +38,9 @@ const sampleTree: readonly TreeNode[] = [
       createLeaf('notes/design/tree-item', 'Tree Item.md', '/notes/design/tree-item'),
     ]),
   ]),
-  createBranch('daily', 'Daily', [createLeaf('daily/2026-03-24', '2026-03-24.md', '/daily/2026-03-24')]),
+  createBranch('daily', 'Daily', [
+    createLeaf('daily/2026-03-24', '2026-03-24.md', '/daily/2026-03-24'),
+  ]),
 ];
 
 const cloneTree = (nodes: readonly TreeNode[]): TreeNode[] =>
@@ -89,6 +91,7 @@ export default meta;
 type Story = StoryObj<FileTree>;
 
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     variant: 'default',
     density: 'normal',
@@ -130,6 +133,7 @@ export const Default: Story = {
 };
 
 export const ControlledSelectionAndExpansion: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-file-tree
       .items=${cloneTree(sampleTree)}
@@ -184,7 +188,9 @@ export const ControlledSelectionAndExpansion: Story = {
 
     const selectedIndicatorStyle = window.getComputedStyle(selectedButton, '::after');
     if (selectedIndicatorStyle.width !== '2px') {
-      throw new Error(`current indicator の幅が 2px ではありません: ${selectedIndicatorStyle.width}`);
+      throw new Error(
+        `current indicator の幅が 2px ではありません: ${selectedIndicatorStyle.width}`,
+      );
     }
     if (selectedIndicatorStyle.backgroundColor === 'rgba(0, 0, 0, 0)') {
       throw new Error('current indicator が表示されていません');
@@ -212,6 +218,7 @@ export const ControlledSelectionAndExpansion: Story = {
 };
 
 export const LoadingRetain: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-file-tree
       .items=${cloneTree(sampleTree)}
@@ -240,6 +247,7 @@ export const LoadingRetain: Story = {
 };
 
 export const LoadingReplace: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-file-tree
       .items=${cloneTree(sampleTree)}
@@ -263,6 +271,7 @@ export const LoadingReplace: Story = {
 };
 
 export const EventContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => {
     const logEvent = (label: string, detail: object): void => {
       const target = document.querySelector<HTMLElement>('#file-tree-event-log');
@@ -282,23 +291,50 @@ export const EventContract: Story = {
         <ui-file-tree
           .items=${cloneTree(sampleTree)}
           .defaultExpandedIds=${new Set(['notes'])}
-          @ui-tree-request-select=${(event: CustomEvent<{ id: string }>) =>
-            { logEvent('request-select', event.detail); }}
-          @ui-tree-select=${(event: CustomEvent<{ id: string }>) =>
-            { logEvent('select', event.detail); }}
-          @ui-tree-request-toggle=${(event: CustomEvent<{ id: string; expanded: boolean }>) =>
-            { logEvent('request-toggle', event.detail); }}
-          @ui-tree-toggle=${(event: CustomEvent<{ id: string; expanded: boolean }>) =>
-            { logEvent('toggle', event.detail); }}
-          @ui-tree-active-change=${(event: CustomEvent<{ id: string }>) =>
-            { logEvent('active-change', event.detail); }}
+          @ui-tree-request-select=${(event: CustomEvent<{ id: string }>) => {
+            logEvent('request-select', event.detail);
+          }}
+          @ui-tree-select=${(event: CustomEvent<{ id: string }>) => {
+            logEvent('select', event.detail);
+          }}
+          @ui-tree-request-toggle=${(event: CustomEvent<{ id: string; expanded: boolean }>) => {
+            logEvent('request-toggle', event.detail);
+          }}
+          @ui-tree-toggle=${(event: CustomEvent<{ id: string; expanded: boolean }>) => {
+            logEvent('toggle', event.detail);
+          }}
+          @ui-tree-active-change=${(event: CustomEvent<{ id: string }>) => {
+            logEvent('active-change', event.detail);
+          }}
         ></ui-file-tree>
       </div>
     `;
   },
+  play: async ({ canvasElement }) => {
+    const fileTree = canvasElement.querySelector<FileTree>('ui-file-tree');
+    const log = canvasElement.querySelector<HTMLElement>('#file-tree-event-log');
+    if (!fileTree || !log) {
+      throw new Error('event contract の検証に必要な要素が見つかりません');
+    }
+
+    await fileTree.updateComplete;
+
+    fileTree.dispatchEvent(
+      new CustomEvent<{ id: string }>('ui-tree-select', {
+        bubbles: true,
+        composed: true,
+        detail: { id: 'notes/index' },
+      }),
+    );
+
+    if (!log.textContent?.includes('select')) {
+      throw new Error('ui-tree-select の bridge が log へ反映されていません');
+    }
+  },
 };
 
 export const KeyboardNavigation: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div>
       <button id="tree-trigger" type="button">Tree Trigger</button>
@@ -359,6 +395,7 @@ export const KeyboardNavigation: Story = {
 };
 
 export const PrintableCard: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-file-tree
       .items=${cloneTree(sampleTree)}

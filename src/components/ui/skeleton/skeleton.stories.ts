@@ -96,6 +96,7 @@ export default meta;
 type Story = StoryObj<UiSkeleton>;
 
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`<ui-skeleton id="default-skeleton" variant="text" width="72%"></ui-skeleton>`,
   play: async ({ canvasElement }) => {
     const skeleton = getSkeleton(canvasElement, 'default-skeleton');
@@ -122,6 +123,7 @@ export const Default: Story = {
 };
 
 export const VariantStateMatrix: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .matrix {
@@ -244,6 +246,7 @@ export const VariantStateMatrix: Story = {
 };
 
 export const BoundaryConditions: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 0.75rem; width: 240px;">
       <ui-skeleton
@@ -331,6 +334,7 @@ export const BoundaryConditions: Story = {
 };
 
 export const BusyStateTransitions: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div id="loading-region" aria-busy="true" aria-live="polite" aria-label="読み込み中">
       <ui-skeleton id="transition-skeleton" variant="text" width="80%"></ui-skeleton>
@@ -361,6 +365,7 @@ export const BusyStateTransitions: Story = {
 
 export const DarkMode: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     backgrounds: { default: 'dark' },
   },
   render: () => html`

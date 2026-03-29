@@ -246,6 +246,7 @@ export default meta;
 type Story = StoryObj<UiScore>;
 
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="max-width: 840px;">
       <ui-score
@@ -265,9 +266,7 @@ export const Default: Story = {
     await score.updateComplete;
 
     const scroll = getScrollContainer(score);
-    if (
-      scroll.getAttribute('aria-label') !== 'ベートーヴェン 悲愴ソナタ 第1楽章 第1主題'
-    ) {
+    if (scroll.getAttribute('aria-label') !== 'ベートーヴェン 悲愴ソナタ 第1楽章 第1主題') {
       throw new Error('aria-label が仕様どおりに設定されていません');
     }
     if (scroll.getAttribute('role') !== 'region') {
@@ -294,7 +293,9 @@ export const Default: Story = {
     if (description?.id !== describedBy) {
       throw new Error('description の参照先が意図した sr-only 要素と一致していません');
     }
-    if (description.textContent.trim() !== 'ト長調の主題。冒頭は四分音符主体で、主旋律が反復される。') {
+    if (
+      description.textContent.trim() !== 'ト長調の主題。冒頭は四分音符主体で、主旋律が反復される。'
+    ) {
       throw new Error('description の文言が意図した内容と一致していません');
     }
     const captionText = getCaption(score)?.textContent.trim();
@@ -335,6 +336,7 @@ export const Default: Story = {
  * - runtime-fetch x lazy x caption
  */
 export const VariantStateMatrix: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .matrix {
@@ -470,6 +472,7 @@ export const VariantStateMatrix: Story = {
  * - abort が失敗表示と混同されないこと
  */
 export const LoadingAndErrorStates: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-score
@@ -502,11 +505,7 @@ export const LoadingAndErrorStates: Story = {
 
       <ui-score id="state-missing-src" label="ソース未設定サンプル"></ui-score>
 
-      <ui-score
-        id="state-abort"
-        label="中断サンプル"
-        loading="eager"
-      ></ui-score>
+      <ui-score id="state-abort" label="中断サンプル" loading="eager"></ui-score>
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -583,10 +582,7 @@ export const LoadingAndErrorStates: Story = {
         throw new Error('SVG 描画後は score-content が可視状態である必要があります');
       }
 
-      await waitFor(
-        () => abortFetchCount > 0,
-        '中断テストの初回 fetch が開始されませんでした',
-      );
+      await waitFor(() => abortFetchCount > 0, '中断テストの初回 fetch が開始されませんでした');
       abortCase.innerHTML = SECOND_RUNTIME_SCORE_SVG;
       await abortCase.updateComplete;
       await waitFor(
@@ -655,6 +651,7 @@ export const LoadingAndErrorStates: Story = {
  * - runtime SVG サニタイズ（script・onイベント属性・javascript: の除去）
  */
 export const BoundaryConditions: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-score
@@ -765,6 +762,7 @@ export const BoundaryConditions: Story = {
 };
 
 export const VisualModesAndInkContrast: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .mode-grid {
@@ -813,7 +811,10 @@ export const VisualModesAndInkContrast: Story = {
     const darkColor = getComputedStyle(getScrollContainer(dark)).color;
     const isBlackColor = (value: string): boolean => {
       const normalized = value.replace(/\s+/g, '').toLowerCase();
-      return normalized === 'rgb(0,0,0)' || (normalized.startsWith('oklch(') && !/[1-9]/.test(normalized));
+      return (
+        normalized === 'rgb(0,0,0)' ||
+        (normalized.startsWith('oklch(') && !/[1-9]/.test(normalized))
+      );
     };
     if (!isBlackColor(lightColor)) {
       throw new Error(`既定トークンでは譜面インク色が黒相当である必要があります: ${lightColor}`);
@@ -825,6 +826,7 @@ export const VisualModesAndInkContrast: Story = {
 };
 
 export const OverflowAndFadeHints: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="max-width: 360px;">
       <ui-score id="overflow-fade-score" label="横スクロールヒント確認"
@@ -866,6 +868,7 @@ export const OverflowAndFadeHints: Story = {
 };
 
 export const AccessibilityMediaContracts: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-score
       id="a11y-media-score"

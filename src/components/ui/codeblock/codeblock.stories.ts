@@ -163,6 +163,7 @@ type Story = StoryObj<CodeBlock>;
  * standalone の外装、copy label、data-lang、light DOM 正本を確認します。
  */
 export const DefaultStandalone: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-code-block
       id="default-block"
@@ -215,6 +216,7 @@ console.log(greeting);</code></pre>
  * inline は合成前提の外装に寄せるが、copy 契約は変えないことを確認します。
  */
 export const LayoutModes: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-code-block
@@ -271,6 +273,7 @@ export const LayoutModes: Story = {
  * auto/always/hidden の差分を確認します。
  */
 export const CopyModeMatrix: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-code-block
@@ -331,6 +334,7 @@ export const CopyModeMatrix: Story = {
  * 値は返せても公開上は copy 不可として扱うことを確認します。
  */
 export const CopyDisabled: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-code-block
       id="copy-disabled"
@@ -366,6 +370,7 @@ export const CopyDisabled: Story = {
  * 解釈不能断片を無視し、解釈できる範囲だけ反映することを確認します。
  */
 export const HighlightLines: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-code-block
       id="highlight-lines-block"
@@ -404,6 +409,7 @@ const fourth = 4;</code></pre>
  * 横スクロールが必要な場合のみ focusable region になることを確認します。
  */
 export const OverflowScrollableArea: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="width: 280px;">
       <ui-code-block
@@ -439,6 +445,7 @@ export const OverflowScrollableArea: Story = {
  * wrap=true では pre-wrap を適用し、余計な tab stop を作らないことを確認します。
  */
 export const WrapMode: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="width: 320px;">
       <ui-code-block
@@ -477,6 +484,7 @@ export const WrapMode: Story = {
  * group 用メタデータを持っても単体表示ではラベル解釈に使わないことを確認します。
  */
 export const GroupItemMetadataContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-code-block
       id="group-item-block"
@@ -501,7 +509,9 @@ export const GroupItemMetadataContract: Story = {
 
     const copyButton = getCopyButton(block);
     if (copyButton.label !== 'single.ts のコードをコピー') {
-      throw new Error(`単体 copy label が filename 優先で解決されていません: "${copyButton.label}"`);
+      throw new Error(
+        `単体 copy label が filename 優先で解決されていません: "${copyButton.label}"`,
+      );
     }
   },
 };
@@ -511,6 +521,7 @@ export const GroupItemMetadataContract: Story = {
  * embedded / initial-code / data-wrap / data-raw を受理しつつ、slotted 本文を正本にすることを確認します。
  */
 export const CompatibilityFallbacks: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-code-block
@@ -591,6 +602,7 @@ export const CompatibilityFallbacks: Story = {
  * forced-colors / print で必要なルールが定義されていることを確認します。
  */
 export const MediaStyleContracts: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-code-block
       id="media-contract-block"

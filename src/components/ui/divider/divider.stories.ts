@@ -97,6 +97,7 @@ type Story = StoryObj<Divider>;
  * - 追加ロールを付与しない
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`<ui-divider id="default-divider"></ui-divider>`,
   play: async ({ canvasElement }) => {
     const host = getHost(canvasElement, 'default-divider');
@@ -138,6 +139,7 @@ export const Default: Story = {
  * - state: host に aria-label / tabindex あり・なし（内側 hr へは転送しない）
  */
 export const VariantStateMatrix: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .matrix {
@@ -273,6 +275,7 @@ export const VariantStateMatrix: Story = {
  * - スタイルスコープ漏れ防止
  */
 export const BoundaryConditions: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <style>
       #boundary-scope {
@@ -375,6 +378,7 @@ export const BoundaryConditions: Story = {
  * - `<ui-divider>` が存在しなくても `.prose hr` / `hr[data-divider-variant="layout"]` にスタイルが適用される
  */
 export const ScopeWithoutComponentInstance: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       #scope-only-contract {
@@ -440,6 +444,7 @@ export const ScopeWithoutComponentInstance: Story = {
  * - forced-colors / print / token 参照を保持
  */
 export const MediaAndTokenContracts: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 0.5rem;">
       <ui-divider id="contract-divider-a"></ui-divider>
@@ -493,6 +498,7 @@ export const MediaAndTokenContracts: Story = {
  * - prefers-color-scheme 分岐を書かず、セマンティックトークン参照でモード追従する
  */
 export const DarkModeTokenContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 0.75rem;">
       <div
@@ -541,6 +547,7 @@ export const DarkModeTokenContract: Story = {
  * - ページ層の妥当な上書きを阻害しない
  */
 export const SelectorSpecificityContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       #specificity-scope .override-target {

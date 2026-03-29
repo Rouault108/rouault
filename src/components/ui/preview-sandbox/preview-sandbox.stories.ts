@@ -1,8 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
-import {
-  SHARED_SANDBOX_BUTTON_EXAMPLE,
-} from '../../../../examples/manifests/testing-examples.js';
+import { SHARED_SANDBOX_BUTTON_EXAMPLE } from '../../../../examples/manifests/testing-examples.js';
 import buttonCss from '../../../../examples/snippets/sandbox/button.css?raw';
 import buttonHtml from '../../../../examples/snippets/sandbox/button.html?raw';
 import buttonJs from '../../../../examples/snippets/sandbox/button.js?raw';
@@ -119,6 +117,7 @@ export default meta;
 type Story = StoryObj<PreviewSandbox>;
 
 export const HtmlOnly: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-preview-sandbox
@@ -157,6 +156,7 @@ export const HtmlOnly: Story = {
 };
 
 export const AuthorJsOptIn: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-preview-sandbox
@@ -219,6 +219,7 @@ export const AuthorJsOptIn: Story = {
 };
 
 export const SandboxCapabilityTokens: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px; display: grid; gap: 1.5rem;">
       <ui-preview-sandbox id="sandbox-default" iframe-title="default sandbox" height="120">
@@ -292,6 +293,7 @@ export const SandboxCapabilityTokens: Story = {
 };
 
 export const SanitizationBoundary: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-preview-sandbox id="sanitize-sandbox" iframe-title="sanitize sandbox" height="160">
@@ -332,6 +334,7 @@ export const SanitizationBoundary: Story = {
 };
 
 export const HeightBehavior: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px; display: grid; gap: 1.5rem;">
       <ui-preview-sandbox
@@ -411,12 +414,15 @@ export const HeightBehavior: Story = {
       throw new Error(`auto 高さが内容高へ追従していません: ${String(autoHeight)}`);
     }
     if (boundedHeight !== 180) {
-      throw new Error(`bounded-auto 高さが max-height へ収束していません: ${String(boundedHeight)}`);
+      throw new Error(
+        `bounded-auto 高さが max-height へ収束していません: ${String(boundedHeight)}`,
+      );
     }
   },
 };
 
 export const NonDestructiveUpdates: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-preview-sandbox
@@ -428,8 +434,8 @@ export const NonDestructiveUpdates: Story = {
       >
         <template data-preview-kind="html"><div>non-destructive</div></template>
         <template data-preview-kind="js"
-          >setTimeout(() => { parent.postMessage({ source: 'preview-sandbox-nondestructive',
-          phase: 'boot' }, '*'); }, 150);</template
+          >setTimeout(() => { parent.postMessage({ source: 'preview-sandbox-nondestructive', phase:
+          'boot' }, '*'); }, 150);</template
         >
       </ui-preview-sandbox>
     </div>
@@ -479,6 +485,7 @@ export const NonDestructiveUpdates: Story = {
 };
 
 export const CodePreviewIntegration: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="padding: 2rem; max-width: 720px;">
       <ui-code-preview

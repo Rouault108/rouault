@@ -102,6 +102,7 @@ type Story = StoryObj<Table>;
  * ヘッダーセルと本文セルのコントラスト差で構造を表現します。
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-table id="default-table" aria-label="メンバー一覧">
       <table>
@@ -202,6 +203,7 @@ export const Default: Story = {
  * 多行表示や比較用途など、より多くの情報を一覧したい場合に使用します。
  */
 export const Compact: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-table id="compact-table" density="compact" aria-label="コンパクトテーブル">
       <table>
@@ -275,6 +277,7 @@ export const Compact: Story = {
  * `caption-side: top` で左寄せ配置されます。
  */
 export const WithCaption: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-table id="caption-table" aria-label="四半期売上データ">
       <table>
@@ -356,6 +359,7 @@ export const WithCaption: Story = {
  * 合計行として視覚的に区別されます。
  */
 export const WithTfoot: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-table id="tfoot-table" aria-label="経費レポート">
       <table>
@@ -440,6 +444,7 @@ export const WithTfoot: Story = {
  * スクリーンリーダーの読み上げとビジュアルの「Chunking」を両立します。
  */
 export const MultipleTbody: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-table id="multi-tbody-table" aria-label="プロジェクト管理タスク">
       <table>
@@ -534,6 +539,7 @@ export const MultipleTbody: Story = {
  * Long Table Strategy を推奨します。
  */
 export const ColspanRowspan: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-table id="colspan-table" aria-label="週次スケジュール">
       <table>
@@ -615,6 +621,7 @@ export const ColspanRowspan: Story = {
  * 適用されます。クラス指定なしで縦方向の数値の位置揃えが実現します。
  */
 export const NumericData: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-table id="numeric-table" aria-label="財務データ">
       <table>
@@ -690,6 +697,7 @@ export const NumericData: Story = {
  * 使用を推奨します。
  */
 export const AlignmentSupport: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-table id="alignment-table" aria-label="アライメントデモ">
       <table>
@@ -747,6 +755,7 @@ export const AlignmentSupport: Story = {
  */
 export const HorizontalScroll: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story:
@@ -855,6 +864,7 @@ export const HorizontalScroll: Story = {
  */
 export const BoundaryNoAriaLabel: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story:
@@ -930,6 +940,7 @@ export const BoundaryNoAriaLabel: Story = {
  */
 export const BoundarySingleRow: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story:
@@ -990,6 +1001,7 @@ export const BoundarySingleRow: Story = {
  */
 export const BoundaryHeaderOnly: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story:
@@ -1059,6 +1071,7 @@ export const BoundaryHeaderOnly: Story = {
  * JS フレームワークや Storybook Controls で density を変更してご確認ください。
  */
 export const DensityToggle: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     density: 'normal',
   },
@@ -1153,6 +1166,7 @@ export const DensityToggle: Story = {
  * - `<thead>` / `<tbody>` / `<tfoot>`: セマンティックな構造
  */
 export const AccessibilityStructure: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-table id="a11y-table" aria-label="アクセシビリティ検証テーブル">
       <table>
@@ -1257,6 +1271,7 @@ export const AccessibilityStructure: Story = {
  * デザインレビューやビジュアルリグレッションテストに使用します。
  */
 export const AllStates: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .states-grid {
@@ -1457,6 +1472,7 @@ export const AllStates: Story = {
  * `.prose` 統合時のブレークアウト確認ストーリー
  */
 export const ProseIntegration: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .prose {
@@ -1529,6 +1545,7 @@ export const ProseIntegration: Story = {
  */
 export const DarkMode: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     backgrounds: { default: 'dark' },
   },
   render: () => html`
@@ -1599,6 +1616,7 @@ export const DarkMode: Story = {
  */
 export const VisualAccessibility: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story: `

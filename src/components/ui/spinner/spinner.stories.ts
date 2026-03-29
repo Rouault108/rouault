@@ -97,6 +97,7 @@ export default meta;
 type Story = StoryObj<UiSpinner>;
 
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`<ui-spinner id="default-spinner"></ui-spinner>`,
   play: async ({ canvasElement }) => {
     const spinner = getSpinner(canvasElement, 'default-spinner');
@@ -125,6 +126,7 @@ export const Default: Story = {
 };
 
 export const VariantStateMatrix: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .matrix {
@@ -219,6 +221,7 @@ export const VariantStateMatrix: Story = {
 };
 
 export const BoundaryConditions: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 0.75rem; font-size: 18px;">
       <ui-spinner id="boundary-invalid-size" size="unknown"></ui-spinner>
@@ -262,6 +265,7 @@ export const BoundaryConditions: Story = {
 };
 
 export const RuntimeA11yGuard: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`<ui-spinner id="runtime-guard" aria-label="同期中"></ui-spinner>`,
   play: async ({ canvasElement }) => {
     const spinner = getSpinner(canvasElement, 'runtime-guard');
@@ -278,6 +282,7 @@ export const RuntimeA11yGuard: Story = {
 
 export const DarkMode: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     backgrounds: { default: 'dark' },
   },
   render: () => html`

@@ -45,6 +45,7 @@ export default meta;
 type Story = StoryObj;
 
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'visual' },
   render: () =>
     renderFoundationFrame(
       {

@@ -118,6 +118,7 @@ type Story = StoryObj<SyntaxField>;
  * 表示順序と A11y 契約を検証します。
  */
 export const RequiredWithTypeAndDefault: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <dl class="syntax-fields">
       <ui-syntax-field id="required-field" name="props" type="object" required default="{}">
@@ -184,6 +185,7 @@ export const RequiredWithTypeAndDefault: Story = {
  * 任意項目が不要な場合に余計なメタ情報を表示しないことを検証します。
  */
 export const OptionalMinimalField: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <dl class="syntax-fields">
       <ui-syntax-field id="optional-field" name="bio">
@@ -220,6 +222,7 @@ export const OptionalMinimalField: Story = {
  * 属性入力事故（空白文字だけが渡される）で UI が汚れないことを検証します。
  */
 export const WhitespaceBoundary: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <dl class="syntax-fields">
       <ui-syntax-field id="whitespace-field" name="  user_id  " type="    " default="   " required>
@@ -261,6 +264,7 @@ export const WhitespaceBoundary: Story = {
  * dl 内の複数要素で構造が崩れないことを検証します。
  */
 export const MixedVariantsInDescriptionList: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <dl id="mixed-list" class="syntax-fields">
       <ui-syntax-field id="mixed-required" name="id" type="number" required>
@@ -323,6 +327,7 @@ export const MixedVariantsInDescriptionList: Story = {
  * 複数インスタンスでも document style は1回だけ注入されることを検証します。
  */
 export const LightDomAndStyleInjectionContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <dl class="syntax-fields">
       <ui-syntax-field id="contract-a" name="first" type="string">最初の項目。</ui-syntax-field>
@@ -371,6 +376,7 @@ export const LightDomAndStyleInjectionContract: Story = {
  * 768px境界、forced-colors、print、reduced-motion の必須ルールを保持していること。
  */
 export const ResponsiveAndMediaContracts: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <dl class="syntax-fields">
       <ui-syntax-field id="media-contract" name="age" type="number" default="0">
@@ -416,6 +422,7 @@ export const ResponsiveAndMediaContracts: Story = {
  * 色指定がセマンティックトークン参照で定義され、モード分岐を局所実装しないこと。
  */
 export const DarkModeTokenContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <dl class="syntax-fields">
       <ui-syntax-field id="dark-contract" name="theme" type="string" default="system">
@@ -450,6 +457,7 @@ export const DarkModeTokenContract: Story = {
  * 初回レンダリング後に説明文ノードが追加されても dd に追従表示されること。
  */
 export const DynamicDescriptionUpdate: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <dl class="syntax-fields">
       <ui-syntax-field id="dynamic-description" name="profile"> 初期説明文。 </ui-syntax-field>

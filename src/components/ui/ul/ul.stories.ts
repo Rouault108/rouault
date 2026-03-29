@@ -71,6 +71,7 @@ type Story = StoryObj<Ul>;
  * - Level 1 マーカーが `•`
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-ul id="default-ul" style="--space-2: 8px; --space-4: 16px;">
       <ul>
@@ -129,6 +130,7 @@ export const Default: Story = {
  * - インタラクティブ要素を含む状態
  */
 export const VariantStateMatrix: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .matrix {
@@ -260,6 +262,7 @@ export const VariantStateMatrix: Story = {
  * - MutationObserver による後追加ノードの role 補強
  */
 export const BoundaryConditions: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-ul id="boundary-autowrap">
@@ -355,6 +358,7 @@ export const BoundaryConditions: Story = {
  * - それ以外の通常 `ul` には適用しない
  */
 export const ScopeIsolation: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .group {
@@ -422,6 +426,7 @@ export const ScopeIsolation: Story = {
  * - トークン参照でハードコードを持ち込まない
  */
 export const MediaAndTokenContracts: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-ul id="contract-ul">
       <ul>
@@ -473,6 +478,7 @@ export const MediaAndTokenContracts: Story = {
  * - マーカー色は `--fg-muted` を追従する
  */
 export const DarkModeTokenContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <style>
       .dark-surface {

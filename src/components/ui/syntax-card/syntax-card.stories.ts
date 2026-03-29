@@ -133,6 +133,7 @@ type Story = StoryObj<SyntaxCard>;
  * コンポーネントの標準的な情報密度を確認します。
  */
 export const MethodWithMembersAndReturns: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-syntax-card
       id="method-card"
@@ -224,6 +225,7 @@ export const MethodWithMembersAndReturns: Story = {
  * Returns-only Integrity を検証します。
  */
 export const SingleSectionOnly: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-syntax-card
       id="single-section-card"
@@ -272,6 +274,7 @@ WHERE deleted_at IS NULL;</code></pre>
  * Content Empty Contract を検証します。
  */
 export const EmptyContentContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-syntax-card
       id="empty-content-card"
@@ -322,6 +325,7 @@ export const EmptyContentContract: Story = {
  * Heading Fallback Safety を検証します。
  */
 export const HeadingLevelFallback: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-syntax-card
@@ -376,6 +380,7 @@ export const HeadingLevelFallback: Story = {
  * カードレベルの lang 管理を検証します。
  */
 export const LangAttribute: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-syntax-card
@@ -429,6 +434,7 @@ export const LangAttribute: Story = {
  * signature 内 pre が 0件 / 複数件 / 空文字のケースを検証します。
  */
 export const CopyFailureIsolation: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="display: grid; gap: 1rem;">
       <ui-syntax-card
@@ -487,6 +493,7 @@ export const CopyFailureIsolation: Story = {
  * Parameters-only 構成での表示整合を検証します。
  */
 export const DefaultOnlyMembers: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-syntax-card
       id="default-only-card"
@@ -536,6 +543,7 @@ export const DefaultOnlyMembers: Story = {
  * 契約: forced-colors の境界フォールバックが定義されていること。
  */
 export const ForcedColorsContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-syntax-card
       id="forced-colors-contract"
@@ -578,6 +586,7 @@ export const ForcedColorsContract: Story = {
  * 契約: print 時の baseline ルールが定義されていること。
  */
 export const PrintContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-syntax-card
       id="print-contract"
@@ -610,6 +619,7 @@ export const PrintContract: Story = {
  * 境界: copy 無効時に実操作できないこと。
  */
 export const CopyDisabledInteractionContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-syntax-card
       id="copy-disabled-interaction"

@@ -113,6 +113,7 @@ type Story = StoryObj<Details>;
  * 初期閉状態で ARIA・inert 同期を確認します。
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     summary: '関連情報',
     open: false,
@@ -160,6 +161,7 @@ export const Default: Story = {
  * 表示差分と状態同期（aria-expanded / inert / aria-hidden）を一括検証します。
  */
 export const VariantStateMatrix: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .matrix {
@@ -179,7 +181,7 @@ export const VariantStateMatrix: Story = {
     </style>
     <div class="matrix">
       ${MATRIX_CASES.map(
-    (item) => html`
+        (item) => html`
           <div class="matrix-row">
             <div class="matrix-label">${item.summary}</div>
             <ui-details
@@ -194,7 +196,7 @@ export const VariantStateMatrix: Story = {
             </ui-details>
           </div>
         `,
-  )}
+      )}
     </div>
   `,
   play: async ({ canvasElement }) => {
@@ -218,7 +220,9 @@ export const VariantStateMatrix: Story = {
         throw new Error(`#${testCase.id}: aria-expanded が open と同期していません`);
       }
       if (trigger.hasAttribute('aria-label')) {
-        throw new Error(`#${testCase.id}: 可視 summary があるため aria-label は内部へ反映してはいけません`);
+        throw new Error(
+          `#${testCase.id}: 可視 summary があるため aria-label は内部へ反映してはいけません`,
+        );
       }
       if (content.getAttribute('aria-hidden') !== String(!testCase.open)) {
         throw new Error(`#${testCase.id}: aria-hidden が open と同期していません`);
@@ -245,6 +249,7 @@ export const VariantStateMatrix: Story = {
  * `toggle` が「状態変化1回につき1回」発火し、重複発火しないことを確認します。
  */
 export const ToggleEventAndStateSync: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-details id="toggle-sync" summary="状態同期テスト">
       <div>
@@ -323,6 +328,7 @@ export const ToggleEventAndStateSync: Story = {
  * トリガーが native button であり、ブラウザ標準の Enter/Space 操作を利用できることを担保します。
  */
 export const KeyboardInteraction: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-details id="keyboard-toggle" summary="Keyboard Interaction">
       <p style="margin: 0;">Enter と Space で開閉できることを検証します。</p>
@@ -360,6 +366,7 @@ export const KeyboardInteraction: Story = {
  * 境界条件: `summary` slot が `summary` 属性より優先されること。
  */
 export const SummarySlotPriority: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-details id="slot-priority" summary="属性サマリー（表示されない想定）" open>
       <span slot="summary">
@@ -399,6 +406,7 @@ export const SummarySlotPriority: Story = {
  * A11y 契約: 通常利用では可視 summary がアクセシブルネームの主ソースになること。
  */
 export const AccessibleNameContract: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-details id="a11y-contract" summary="可視サマリー契約">
       <p style="margin: 0;">通常利用では可視 summary をアクセシブルネームとして扱います。</p>
@@ -427,6 +435,7 @@ export const AccessibleNameContract: Story = {
  * summary 未指定でも `aria-label` だけで操作可能であることを確認します。
  */
 export const IconOnlyBoundary: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-details id="icon-only" aria-label="通知の詳細を開閉">
       <p style="margin: 0;">
@@ -472,6 +481,7 @@ export const IconOnlyBoundary: Story = {
  * 境界条件: 可視 summary と aria-label の併用は正規利用として扱わないこと。
  */
 export const AccessibleNameMismatchBoundary: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-details id="a11y-mismatch" summary="可視サマリー">
       <p style="margin: 0;">可視 summary と aria-label の併用を開発時警告として検知します。</p>
@@ -510,6 +520,7 @@ export const AccessibleNameMismatchBoundary: Story = {
  * A11y: region モードで role と aria-labelledby が正しく付与されること。
  */
 export const RegionLandmark: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <ui-details id="region-case" summary="よくある質問" region>
       <p style="margin: 0;">独立したセクションとして扱う内容です。</p>
@@ -535,6 +546,7 @@ export const RegionLandmark: Story = {
  * Reduced Motion 契約: 0.01ms 短縮と遅延除去を維持すること。
  */
 export const ReducedMotionContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-details id="reduced-motion-contract" summary="Reduced Motion">
       <p style="margin: 0;">モーション抑制契約の退行検知用ストーリーです。</p>
@@ -563,6 +575,7 @@ export const ReducedMotionContract: Story = {
  * Forced Colors 契約: システムカラー追従の退行検知。
  */
 export const ForcedColorsContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-details id="forced-colors-contract" summary="Forced Colors">
       <p style="margin: 0;">forced-colors 契約の退行検知用ストーリーです。</p>
@@ -589,15 +602,12 @@ export const ForcedColorsContract: Story = {
  */
 export const DarkModeTokenContract: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     backgrounds: { default: 'dark' },
   },
   render: () => html`
     <div style="padding: 1rem; background: #11151b; border-radius: 8px;">
-      <ui-details
-        id="dark-mode-contract"
-        summary="Dark Surface Contract"
-        open
-      >
+      <ui-details id="dark-mode-contract" summary="Dark Surface Contract" open>
         <p style="margin: 0;">暗色面でもセマンティックトークン参照が崩れないことを確認します。</p>
       </ui-details>
     </div>

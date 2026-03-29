@@ -133,6 +133,7 @@ type Story = StoryObj<UiSidebarShell>;
  * 高速トグルでイベントが重複しないこと、同値設定で発火しないこと
  */
 export const RapidToggleReentrancySafety: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="min-height: 200px;">
       <ui-sidebar-shell id="sidebar-rapid" data-state="expanded" mode="fixed">
@@ -186,6 +187,7 @@ export const RapidToggleReentrancySafety: Story = {
  * setAttribute / プロパティの双方向同期
  */
 export const AttributeDrivenStateChange: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="min-height: 200px;">
       <ui-sidebar-shell id="sidebar-attr" data-state="expanded" mode="fixed">
@@ -227,6 +229,7 @@ export const AttributeDrivenStateChange: Story = {
  * LocalStorage への状態永続化
  */
 export const LocalStoragePersistence: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="min-height: 200px;">
       <ui-sidebar-shell id="sidebar-storage" data-state="expanded" mode="fixed">
@@ -278,6 +281,7 @@ export const LocalStoragePersistence: Story = {
  * ビューポートリサイズに追従する挙動の検証は E2E テストで行う。
  */
 export const ModeAutoDetection: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="min-height: 200px;">
       <ui-sidebar-shell id="sidebar-auto-mode">
@@ -311,6 +315,7 @@ export const ModeAutoDetection: Story = {
  * - Overlay: 表示
  */
 export const HeaderSlotVisibilityByMode: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div style="min-height: 300px;">
       <ui-sidebar-shell id="sidebar-header-vis" data-state="expanded" mode="fixed">
@@ -366,6 +371,7 @@ export const HeaderSlotVisibilityByMode: Story = {
  * - expand: visibility:visible + inert解除 → animation
  */
 export const InertStrategyTiming: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <div
       style="display: grid; grid-template-columns: var(--sidebar-width, 240px) 1fr; min-height: 300px;"
@@ -432,6 +438,7 @@ export const InertStrategyTiming: Story = {
  */
 export const DarkModeSurface: Story = {
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story:
@@ -547,6 +554,7 @@ export const DarkModeSurface: Story = {
  * - part 属性セレクタが使用されていないこと
  */
 export const ForcedColorsContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-sidebar-shell id="sidebar-forced" data-state="expanded" mode="fixed">
       <div role="tree" aria-label="ナビゲーション">
@@ -581,6 +589,7 @@ export const ForcedColorsContract: Story = {
  * Reduced Motion + Print の CSS 契約テスト
  */
 export const ReducedMotionAndPrintContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <ui-sidebar-shell id="sidebar-motion" data-state="expanded" mode="fixed">
       <div role="tree" aria-label="ナビゲーション">
@@ -599,7 +608,10 @@ export const ReducedMotionAndPrintContract: Story = {
       cssText.includes('prefers-reduced-motion'),
       'CSS に prefers-reduced-motion メディアクエリが含まれること',
     );
-    assert(cssText.includes('transition: none'), 'Reduced Motion 時に transition が無効化されること');
+    assert(
+      cssText.includes('transition: none'),
+      'Reduced Motion 時に transition が無効化されること',
+    );
     assert(cssText.includes('animation: none'), 'Reduced Motion 時に animation が無効化されること');
 
     /* --- Print --- */
@@ -616,6 +628,7 @@ export const ReducedMotionAndPrintContract: Story = {
  * --ui-sidebar-scrim-opacity パブリックトークンのオーバーライド検証
  */
 export const ScrimOpacityPublicToken: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
   render: () => html`
     <style>
       .custom-scrim-sidebar {

@@ -45,7 +45,9 @@ const cloneTree = (nodes: readonly TreeNode[]): TreeNode[] =>
 
 const waitFrame = async (): Promise<void> =>
   new Promise((resolve) => {
-    requestAnimationFrame(() => { resolve(); });
+    requestAnimationFrame(() => {
+      resolve();
+    });
   });
 
 const flush = async (host: UiSidebar): Promise<void> => {
@@ -83,6 +85,7 @@ export default meta;
 type Story = StoryObj<UiSidebar>;
 
 export const FixedExpandedDefault: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div
       style="display: grid; grid-template-columns: var(--sidebar-width, 240px) 1fr; min-height: 420px;"
@@ -117,6 +120,7 @@ export const FixedExpandedDefault: Story = {
 };
 
 export const OverlayExpandedCard: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="min-height: 420px; position: relative;">
       <ui-sidebar
@@ -143,6 +147,7 @@ export const OverlayExpandedCard: Story = {
 };
 
 export const EventBridge: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => {
     const updateLog = (label: string, detail: object): void => {
       const log = document.querySelector<HTMLElement>('#sidebar-event-log');
@@ -163,14 +168,37 @@ export const EventBridge: Story = {
           .items=${cloneTree(sampleItems)}
           .expandedIds=${new Set(['notes'])}
           selected-id="notes/reading"
-          @ui-sidebar-select=${(event: CustomEvent<{ id: string }>) =>
-            { updateLog('select', event.detail); }}
-          @ui-sidebar-toggle=${(event: CustomEvent<{ id: string; expanded: boolean }>) =>
-            { updateLog('toggle', event.detail); }}
-          @ui-sidebar-active-change=${(event: CustomEvent<{ id: string }>) =>
-            { updateLog('active-change', event.detail); }}
+          @ui-sidebar-select=${(event: CustomEvent<{ id: string }>) => {
+            updateLog('select', event.detail);
+          }}
+          @ui-sidebar-toggle=${(event: CustomEvent<{ id: string; expanded: boolean }>) => {
+            updateLog('toggle', event.detail);
+          }}
+          @ui-sidebar-active-change=${(event: CustomEvent<{ id: string }>) => {
+            updateLog('active-change', event.detail);
+          }}
         ></ui-sidebar>
       </div>
     `;
+  },
+  play: async ({ canvasElement }) => {
+    const host = canvasElement.querySelector<UiSidebar>('ui-sidebar');
+    const log = canvasElement.querySelector<HTMLElement>('#sidebar-event-log');
+    if (!host || !log) {
+      throw new Error('event bridge の検証に必要な要素が見つかりません');
+    }
+
+    await flush(host);
+    host.dispatchEvent(
+      new CustomEvent<{ id: string }>('ui-sidebar-select', {
+        bubbles: true,
+        composed: true,
+        detail: { id: 'notes/reading' },
+      }),
+    );
+
+    if (!log.textContent?.includes('select')) {
+      throw new Error('ui-sidebar-select の bridge が log へ反映されていません');
+    }
   },
 };

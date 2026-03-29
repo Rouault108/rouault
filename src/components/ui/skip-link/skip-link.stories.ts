@@ -109,6 +109,7 @@ const focusByKeyboard = (element: HTMLElement): void => {
  * 中央上部に即座に表示されます。
  */
 export const Default: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     href: '#main-content',
     label: 'メインコンテンツへスキップ',
@@ -237,6 +238,7 @@ export const Default: Story = {
  */
 export const HiddenByDefault: Story = {
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     a11y: {
       config: {
         rules: [
@@ -293,6 +295,7 @@ export const HiddenByDefault: Story = {
  * 異なるIDセレクタとラベルテキストを指定できます。
  */
 export const CustomTarget: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     href: '#custom-content',
     label: 'カスタムコンテンツへスキップ',
@@ -382,6 +385,7 @@ export const CustomTarget: Story = {
  * これにより、フォーカス時のスタイルを確認できます。
  */
 export const Focused: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     href: '#main-content',
     label: 'メインコンテンツへスキップ',
@@ -484,6 +488,7 @@ export const Focused: Story = {
  * これはアクセシビリティの核心機能です。
  */
 export const SkipNavigationFlow: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   args: {
     href: '#main-content',
     label: 'メインコンテンツへスキップ',
@@ -630,6 +635,7 @@ export const DarkMode: Story = {
     label: 'メインコンテンツへスキップ',
   },
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     backgrounds: {
       default: 'dark',
     },
@@ -760,6 +766,7 @@ export const ForcedColorsMode: Story = {
     label: 'メインコンテンツへスキップ',
   },
   parameters: {
+    rouaultContractKind: 'boundary-contract',
     docs: {
       description: {
         story: `
@@ -875,6 +882,7 @@ export const ForcedColorsMode: Story = {
  * 極端に短い/長い文言でも表示崩れやテキスト欠落が起きないことを確認します。
  */
 export const LabelBoundaries: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <style>
       .demo-container {
@@ -975,6 +983,7 @@ export const MissingTargetWarning: Story = {
     label: '存在しないターゲットへスキップ',
   },
   parameters: {
+    rouaultContractKind: 'interaction-contract',
     docs: {
       description: {
         story: `

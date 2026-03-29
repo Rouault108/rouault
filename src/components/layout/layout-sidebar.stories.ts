@@ -72,6 +72,7 @@ const getHost = (canvasElement: Element, id: string): LayoutSidebar => {
 };
 
 export const PersistsExpandedIds: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="min-height: 420px;">
       <layout-sidebar
@@ -121,6 +122,7 @@ export const PersistsExpandedIds: Story = {
 };
 
 export const OverlaySelectionCollapses: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
     <div style="min-height: 420px;">
       <layout-sidebar

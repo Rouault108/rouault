@@ -1,78 +1,21 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
-import { searchCore } from '../../lib/search/search-core.js';
-import type { ExploreSearchResponse, SearchRequest } from '../../lib/search/search-types.js';
 import './search-page.js';
 import type { Checkbox } from '../ui/checkbox/checkbox.js';
 import type { Details } from '../ui/details/details.js';
 import type { SearchField } from '../ui/search-field/search-field.js';
 import type { SearchPage } from './search-page.js';
-
-const ORIGINAL_SEARCH = searchCore.search.bind(searchCore);
-
-interface MockSearchItem {
-  canonicalUrl: string;
-  title: string;
-  url: string;
-  pathLabel: string;
-  snippet: string;
-  description: string;
-  date: string;
-  tags: readonly string[];
-}
+import {
+  SEARCH_PAGE_STORY_WAIT_MS,
+  installSearchPageStorySearchMock,
+  restoreSearchPageStorySearchMock,
+} from '../../testing/storybook/search-page-story-search-adapter.js';
 
 interface FilterOptionState {
   label: string;
   checked: boolean;
   selected: boolean;
 }
-
-const MOCK_ITEMS: readonly MockSearchItem[] = [
-  {
-    canonicalUrl: '/notes/router-design/',
-    title: 'Router 設計メモ',
-    url: '/notes/router-design',
-    pathLabel: 'notes / router-design',
-    snippet: 'Router の設計と遷移制御をまとめたメモです。',
-    description: 'Router の設計ノート',
-    date: '2026-03-01',
-    tags: ['router', 'architecture'],
-  },
-  {
-    canonicalUrl: '/notes/lit-performance/',
-    title: 'Lit レンダリング最適化',
-    url: '/notes/lit-performance',
-    pathLabel: 'notes / lit-performance',
-    snippet: 'Lit の描画最適化と差分更新をまとめています。',
-    description: 'Lit の描画最適化メモ',
-    date: '2026-02-12',
-    tags: ['lit', 'performance'],
-  },
-  {
-    canonicalUrl: '/notes/a11y-log/',
-    title: 'アクセシビリティ実装ログ',
-    url: '/notes/a11y-log',
-    pathLabel: 'notes / a11y-log',
-    snippet: 'フォーム操作とラベル設計を検証したメモです。',
-    description: 'A11y 実装の記録',
-    date: '2026-01-22',
-    tags: ['a11y', 'architecture'],
-  },
-  {
-    canonicalUrl: '/notes/router-event-boundary/',
-    title: 'Router イベント境界の設計',
-    url: '/notes/router-event-boundary',
-    pathLabel: 'notes / router-event-boundary',
-    snippet: 'Router のイベント境界と購読戦略を整理しています。',
-    description: 'Router のイベント境界設計メモ',
-    date: '2026-01-11',
-    tags: ['architecture', 'eventing'],
-  },
-];
-
-const ALL_GENRE_COUNTS = buildGenreCounts(MOCK_ITEMS);
-
-const SEARCH_WAIT_MS = 210;
 
 const wait = async (ms: number): Promise<void> =>
   new Promise((resolve) => {
@@ -93,7 +36,7 @@ const flush = async (host: SearchPage): Promise<void> => {
 };
 
 const settleSearch = async (host: SearchPage): Promise<void> => {
-  await wait(SEARCH_WAIT_MS);
+  await wait(SEARCH_PAGE_STORY_WAIT_MS);
   await flush(host);
 };
 
@@ -110,122 +53,6 @@ function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
     throw new Error(message);
   }
-}
-
-function buildGenreCounts(
-  items: readonly MockSearchItem[],
-  options: {
-    includeAllKnownTags?: boolean;
-  } = {},
-): Record<string, number> {
-  const counts = new Map<string, number>();
-
-  if (options.includeAllKnownTags === true) {
-    for (const tag of Object.keys(ALL_GENRE_COUNTS)) {
-      counts.set(tag, 0);
-    }
-  }
-
-  for (const item of items) {
-    for (const tag of item.tags) {
-      counts.set(tag, (counts.get(tag) ?? 0) + 1);
-    }
-  }
-
-  return Object.fromEntries(
-    [...counts.entries()].sort((left, right) => left[0].localeCompare(right[0], 'ja')),
-  );
-}
-
-function createSearchResponse(
-  query: string,
-  selectedGenres: readonly string[],
-  sortMode: string,
-  tagMode: 'or' | 'and' = 'or',
-): ExploreSearchResponse {
-  const normalizedQuery = query.trim().toLowerCase();
-  if (normalizedQuery.length === 0 && selectedGenres.length === 0) {
-    return {
-      mode: 'explore',
-      rankingProfileId: 'rouault-search-v1',
-      total: 0,
-      items: [],
-      tagCounts: {},
-      allTagCounts: ALL_GENRE_COUNTS,
-      diagnostics: {
-        degraded: false,
-        activeSources: ['catalog'],
-        failures: [],
-        issues: [],
-      },
-    } satisfies ExploreSearchResponse;
-  }
-
-  const queryMatchedItems = MOCK_ITEMS.filter((item) => {
-    if (normalizedQuery.length === 0) {
-      return true;
-    }
-
-    const haystacks = [item.title, item.description, ...item.tags].map((value) =>
-      value.toLowerCase(),
-    );
-    return haystacks.some((value) => value.includes(normalizedQuery));
-  });
-
-  const filteredItems =
-    selectedGenres.length > 0
-      ? queryMatchedItems.filter((item) =>
-          tagMode === 'and'
-            ? selectedGenres.every((tag) => item.tags.includes(tag))
-            : selectedGenres.some((tag) => item.tags.includes(tag)),
-        )
-      : queryMatchedItems;
-
-  const sortedItems =
-    sortMode === 'date-desc'
-      ? [...filteredItems].sort((left, right) => right.date.localeCompare(left.date, 'ja'))
-      : filteredItems;
-
-  return {
-    mode: 'explore',
-    rankingProfileId: 'rouault-search-v1',
-    total: sortedItems.length,
-    items: sortedItems.map((item) => ({
-      canonicalUrl: item.canonicalUrl,
-      title: item.title,
-      url: item.url,
-      pathLabel: item.pathLabel,
-      description: item.description,
-      date: {
-        epochMs: Date.parse(item.date),
-        original: item.date,
-      },
-      tags: [...item.tags],
-      snippet: {
-        segments: [{ text: item.snippet, matched: false }],
-      },
-      reasons: [{ kind: 'title-prefix', tokens: [query] }],
-    })),
-    tagCounts: buildGenreCounts(sortedItems),
-    allTagCounts: buildGenreCounts(queryMatchedItems, { includeAllKnownTags: true }),
-    diagnostics: {
-      degraded: false,
-      activeSources: ['catalog'],
-      failures: [],
-      issues: [],
-    },
-  } satisfies ExploreSearchResponse;
-}
-
-function installSearchMock(): void {
-  searchCore.search = (request: SearchRequest) =>
-    Promise.resolve(
-      createSearchResponse(request.q, request.tags, request.sort, request.tagMode),
-    );
-}
-
-function restoreSearchMock(): void {
-  searchCore.search = ORIGINAL_SEARCH;
 }
 
 const getSearchInput = (field: SearchField | null | undefined): HTMLInputElement => {
@@ -321,8 +148,9 @@ export default meta;
 type Story = StoryObj<SearchPage>;
 
 export const QueryAndClearFlow: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => {
-    installSearchMock();
+    installSearchPageStorySearchMock();
     return html`<search-page id="search-page-regression"></search-page>`;
   },
   play: async ({ canvasElement }) => {
@@ -369,14 +197,15 @@ export const QueryAndClearFlow: Story = {
       assert(metaRowText.includes('0 件の結果'), 'clear 後の件数表示が更新されていません');
     } finally {
       history.replaceState(history.state, '', originalUrl);
-      restoreSearchMock();
+      restoreSearchPageStorySearchMock();
     }
   },
 };
 
 export const FilterPanelFlow: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => {
-    installSearchMock();
+    installSearchPageStorySearchMock();
     return html`
       <div style="max-inline-size: 22.5rem;">
         <search-page id="search-page-filters"></search-page>
@@ -498,14 +327,15 @@ export const FilterPanelFlow: Story = {
       );
     } finally {
       history.replaceState(history.state, '', originalUrl);
-      restoreSearchMock();
+      restoreSearchPageStorySearchMock();
     }
   },
 };
 
 export const FilterPanelReorderRegression: Story = {
+  parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => {
-    installSearchMock();
+    installSearchPageStorySearchMock();
     return html`
       <div style="max-inline-size: 22.5rem;">
         <search-page id="search-page-filter-regression"></search-page>
@@ -572,7 +402,7 @@ export const FilterPanelReorderRegression: Story = {
       assertFilterSelectionConsistency(host, 'architecture 解除後');
     } finally {
       history.replaceState(history.state, '', originalUrl);
-      restoreSearchMock();
+      restoreSearchPageStorySearchMock();
     }
   },
 };

@@ -166,23 +166,23 @@ draft: false # true でドラフトアイコン表示（デフォルト: false�
 
 ## 🔍 検索機能
 
-| 項目           | 仕様                                                            |
-| -------------- | --------------------------------------------------------------- |
-| **エンジン**   | [Pagefind](https://pagefind.app/)                               |
-| **日本語対応** | `Intl.Segmenter` による分かち書き                               |
-| **UI**         | ヘッダー右側に検索ボックス（モバイルではアイコンのみ）          |
-| **URL**        | 汎用検索は `/search?...`、単一タグ既定ビューは `/tags/<tag>/`                  |
+| 項目           | 仕様                                                                                     |
+| -------------- | ---------------------------------------------------------------------------------------- |
+| **エンジン**   | [Pagefind](https://pagefind.app/)                                                        |
+| **日本語対応** | `Intl.Segmenter` による分かち書き                                                        |
+| **UI**         | ヘッダー右側に検索ボックス（モバイルではアイコンのみ）                                   |
+| **URL**        | 汎用検索は `/search?...`、単一タグ既定ビューは `/tags/<tag>/`                            |
 | **タグ連携**   | `genre` をタグとして扱い、複数タグは既定で **OR**、`tagMode=and` で **AND** に切り替える |
 
 ---
 
 ## 🎭 アイコン
 
-| 用途                                       | 現行の実装                                                   |
-| ------------------------------------------ | ------------------------------------------------------------ |
+| 用途                                       | 現行の実装                                                               |
+| ------------------------------------------ | ------------------------------------------------------------------------ |
 | 一般アイコン（コンテンツ・ナビゲーション） | `ui-icon` + [Iconify - Lucide](https://icon-sets.iconify.design/lucide/) |
-| UI内部装飾（コンポーネント内蔵）           | **インライン SVG**                                           |
-| 技術ロゴ                                   | 現行コードでは未接続                                         |
+| UI内部装飾（コンポーネント内蔵）           | **インライン SVG**                                                       |
+| 技術ロゴ                                   | 現行コードでは未接続                                                     |
 
 > **Note**: `ui-icon` は `src/icons/catalog.ts` にある Lucide 名だけを受け取り、内部で `iconify-icon` に委譲します。`ui-checkbox` のような固定 glyph は、自己完結性を優先して inline SVG を使います。Devicon / Simple Icons の記述は現時点の runtime には接続していません。
 
@@ -202,9 +202,9 @@ draft: false # true でドラフトアイコン表示（デフォルト: false�
 
 ### フィルター
 
-| 項目               | 仕様                                |
-| ------------------ | ----------------------------------- |
-| **タグフィルター** | タグをクリックして絞り込み                 |
+| 項目               | 仕様                                                          |
+| ------------------ | ------------------------------------------------------------- |
+| **タグフィルター** | タグをクリックして絞り込み                                    |
 | **複合条件**       | 検索語 + タグ絞り込み。複数タグは **OR / AND** を切り替え可能 |
 
 ### TOC（目次）
@@ -531,8 +531,9 @@ pnpm dev
 pnpm build
 
 # テスト
-pnpm test             # test:unit + test:storybook
+pnpm test             # test:unit + test:ssr + test:storybook
 pnpm test:unit        # ロジック寄りの単体テスト
+pnpm test:ssr         # SSR / build-time 契約テスト
 pnpm test:storybook   # Lit コンポーネント / UI テスト
 pnpm test:e2e         # E2Eテスト
 
@@ -547,8 +548,9 @@ pnpm lint:fix
 ### テスト戦略
 
 - `pnpm test:unit` は Web Test Runner を使い、`router`、`remark/rehype`、controller などのロジック寄りテストを担当します。
+- `pnpm test:ssr` は SSR、serialization、Markdown / build-time 変換、static artifact shape を担当します。
 - Lit の `@property` / `@state` / `@customElement` などのデコレータを使うコンポーネントは、現状の Web Test Runner 経路では安定して扱いません。
-- Lit コンポーネントの状態・描画・interaction・a11y は `pnpm test:storybook` 側で検証します。
+- Lit コンポーネントの状態・描画・interaction・a11y と browser-observable contract は `pnpm test:storybook` 側で検証します。
 - 新しい Lit コンポーネントテストを追加する場合は、まず Storybook/Vitest 側に置くことを原則とします。
 
 ---
