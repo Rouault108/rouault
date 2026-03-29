@@ -8,50 +8,37 @@
   "scripts": {
     "analyze": "node scripts/generate-custom-elements-manifest.mjs",
     "preanalyze": "pnpm run generate:icons",
-
     "test": "pnpm test:unit && pnpm test:ssr && pnpm test:storybook",
     "pretest:unit": "pnpm run generate:icons",
     "pretest:ssr": "pnpm run generate:icons",
     "pretest:storybook": "pnpm run generate:icons",
     "pretest:e2e": "pnpm run generate:icons",
-
     "test:unit": "pnpm exec web-test-runner --config web-test-runner.config.mjs",
     "test:ssr": "vitest --project ssr",
     "test:storybook": "vitest --project storybook",
     "test:storybook:watch": "vitest --project storybook --watch",
     "test:storybook:ui": "vitest --project storybook --ui",
     "test:e2e": "playwright test",
-
     "lint": "pnpm exec eslint .",
     "prelint": "pnpm run generate:icons",
     "lint:fix": "pnpm exec eslint . --fix && prettier --write .",
     "prelint:fix": "pnpm run generate:icons",
-
     "format": "prettier --write .",
-
     "storybook": "pnpm run analyze && pnpm exec storybook dev",
     "prestorybook": "pnpm run generate:icons",
     "storybook:build": "pnpm run analyze && pnpm exec storybook build",
     "prestorybook:build": "pnpm run generate:icons",
-
     "build:client": "pnpm exec vite build --config vite.client.config.ts",
     "prebuild:client": "pnpm run generate:icons",
-
     "build:images": "tsx scripts/build-images.ts",
-
     "generate:icons": "node --import tsx scripts/generate-icon-subset.ts",
-
     "dev": "tsx ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts --serve",
     "predev": "pnpm run generate:icons",
-
     "build": "pnpm run build:client && pnpm run build:images && tsx ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts && tsx scripts/apply-lit-ssr.ts && tsx scripts/build-pagefind.ts",
-
     "start": "tsx ./node_modules/@11ty/eleventy/cmd.cjs --config=eleventy.config.ts --serve",
     "prestart": "pnpm run generate:icons",
-
     "typecheck:node": "pnpm exec tsc -p tsconfig.node.json --noEmit",
     "pretypecheck:node": "pnpm run generate:icons",
-
     "sync:link-cards": "tsx scripts/sync-link-card-metadata.ts"
   },
   "keywords": [],
@@ -101,15 +88,17 @@
     "eslint-plugin-wc": "3.0.2",
     "globals": "~17.0.0",
     "pagefind": "1.4.0",
-    "playwright": "1.57.0",
     "parse5": "7.3.0",
+    "playwright": "1.57.0",
     "prettier": "~3.8.0",
     "rehype-katex": "~7.0.1",
     "remark-math": "~6.0.0",
+    "remark-parse": "11.0.0",
     "storybook": "10.1.11",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
     "typescript-eslint": "~8.53.0",
+    "unified": "11.0.5",
     "velite": "0.3.1",
     "vite": "7.3.1",
     "vitest": "4.0.17"
