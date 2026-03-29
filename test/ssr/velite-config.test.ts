@@ -43,4 +43,11 @@ describe('velite config', () => {
     expect(annotateLinkKindsIndex).toBeGreaterThan(rouaultComponentsIndex);
     expect(inlineCodeTranslateNoIndex).toBeGreaterThan(annotateLinkKindsIndex);
   });
+
+  it('Velite の linked files 自動コピーを無効化して Rouault 側の画像解決に委ねること', () => {
+    const configPath = new URL('../../velite.config.ts', import.meta.url);
+    const source = readFileSync(configPath, 'utf8');
+
+    expect(source).toContain('copyLinkedFiles: false,');
+  });
 });

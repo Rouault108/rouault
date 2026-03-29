@@ -64,6 +64,7 @@ export default defineConfig({
   },
   collections: { notes },
   markdown: {
+    copyLinkedFiles: false,
     remarkPlugins: [remarkMath, remarkDisallowRawHtml, remarkRouaultDirectives, remarkLinkCards],
     rehypePlugins: [
       rehypeKatex,
