@@ -93,6 +93,16 @@ preview ヘッダー左側の見出しは `heading` で表します。
 - 不正トークンは無視します。
 - `preview-*` の列挙外値はそれぞれ既定値へフォールバックします。
 
+### 3.1.1 非公開 profile 注入
+
+`ui-code-preview` には、build / layout 側が内部的に `preview-profile` を注入してよいものとします。これは author 向け公開 API ではありません。
+
+- `preview-profile` は `reader` / `demo` を内部値として扱います。
+- authoring 記法や markdown directive から直接指定することは想定しません。
+- `reader` profile は静的読書用です。
+- `demo` profile は controls と toolbar を伴う demo 用です。
+- profile の選択責務は note kind を知っている build / layout 側にあります。
+
 ## 3.2 スロット契約
 
 | 名前 | 種別 | 必須 | 個数 | 内容 |
@@ -231,6 +241,7 @@ built-in controls または公開 property 更新により preview の公開状�
 
 - preview / code の主内容を `toolbar` へ置きません。
 - icon-only 要素を置く場合はアクセシブル名を与えなければなりません。
+- `reader` profile では `toolbar` が与えられていても描画対象に含めません。
 
 ## 5.4 preview 面と code 面
 
@@ -285,6 +296,13 @@ built-in controls または公開 property 更新により preview の公開状�
 
 - slot ベースの構造のため、preview 内容と static code root は light DOM に残ります。
 - JavaScript 未実行時でも、少なくとも preview と code の本文情報は失われません。
+
+## 7.5 Note Kind 統合
+
+- `kind: reader` の note では、build-time に `controls` と `slot="toolbar"` を禁止してよいものとします。
+- `kind: testing` や `demo` 相当の配信面では、build / layout 側が `preview-profile="demo"` を注入して controls を有効化してよいです。
+- `kind: reader` では、build / layout 側が `preview-profile="reader"` を注入し、hydration を伴わない静的表示経路へ固定してよいです。
+- これらは note 配信面との統合契約であり、`ui-code-preview` 単体の author-facing API ではありません。
 
 ---
 

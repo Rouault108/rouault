@@ -70,7 +70,7 @@
 | `maxHeight`        | property / attribute (`max-height`)         | 未指定               | preview の上限高さ             | `heightMode="bounded-auto"` の場合だけ意味を持ちます。有限正数でなければ未指定として扱います                                         |
 | `baseUrl`          | property / attribute (`base-url`)           | 埋め込み元文書の URL | 相対 URL の解決基準            | 絶対 URL でなければなりません。無効値は埋め込み元文書の URL に正規化します                                                            |
 | `allowJs`          | property / attribute (`allow-js`)           | `false`              | author JS の注入可否           | `true` の場合のみ `js` payload を有効入力として扱います                                                                               |
-| `activationPolicy` | property / attribute (`activation-policy`)  | `eager`              | 初回構築タイミング             | `eager` / `visible` / `manual` だけを受け付けます。無効値は `eager` に正規化します                                                   |
+| `activationPolicy` | property / attribute (`activation-policy`)  | `visible`            | 初回構築タイミング             | `eager` / `visible` / `manual` だけを受け付けます。無効値は `visible` に正規化します                                                 |
 | `heightMode`       | property / attribute (`height-mode`)        | `auto`               | 高さ解決方式                   | `fixed` / `auto` / `bounded-auto` だけを受け付けます。無効値は `auto` に正規化します                                                 |
 | `allowForms`       | property / attribute (`allow-forms`)        | `false`              | form capability                | sandbox token に `allow-forms` を追加します                                                                                           |
 | `allowDownloads`   | property / attribute (`allow-downloads`)    | `false`              | download capability            | sandbox token に `allow-downloads` を追加します                                                                                       |
@@ -90,7 +90,7 @@
 - `baseUrl` は absolute URL 文字列または `URL` 相当値を受け付けます
 - 無効な `baseUrl` 入力は埋め込み元文書の URL に正規化します
 - `activationPolicy` は `eager` / `visible` / `manual` だけを受け付けます
-- 無効な `activationPolicy` 入力は `eager` に正規化します
+- 無効な `activationPolicy` 入力は `visible` に正規化します
 - `heightMode` は `fixed` / `auto` / `bounded-auto` だけを受け付けます
 - 無効な `heightMode` 入力は `auto` に正規化します
 - boolean 公開属性は、属性が存在すれば `true`、存在しなければ `false` として扱います
@@ -119,6 +119,8 @@
 - 内部 instance 識別子
 
 公開しない内部詳細には依存しません。
+
+また、note 種別ごとの掲載可否は本コンポーネント自身の公開 API ではありません。`kind: reader` の note で本コンポーネントを禁止するかどうかは、build / layout 側の統合契約で扱います。
 
 ---
 
@@ -695,60 +697,11 @@ Storybook と自動テストでは、次の不整合を **失敗として扱い�
 
 本節は、**現行実装を踏まえたときに、契約または追加検討機能として未だ対応していない事項**を列挙するものです。以下には、契約書に既に記載しているが現行実装が未対応のものと、照合の結果として補足が必要になったものを含みます。
 
-### 公開 API / 入力契約の未対応事項
+### 残課題
 
-- `title` を `iframeTitle` に改め、ホスト要素のグローバル `title` 属性の意味と分離します
-- `baseUrl` を正式公開入力として導入します
-- `baseUrl` を URL sanitization の基準と preview 文書内の相対 URL 解決へ反映します
-- `activationPolicy` を正式公開入力として導入します
-- `heightMode` を正式公開入力として導入します
-- `maxHeight` を正式公開入力として導入します
-- `height` の意味を「最小初期高さ兼 fallback 高さ」だけでなく、高さ mode に応じた基準高さとして再定義します
-- `height` の丸め規則を切り捨てと切り上げの混在から、切り上げへ統一します
-- `height` attribute の数値文字列制約を実装し、CSS length を無効入力として扱います
-- `maxHeight` attribute の数値文字列制約を実装し、CSS length を無効入力として扱います
-- 無効な `baseUrl` 入力を埋め込み元文書の URL へ正規化します
-- 無効な `activationPolicy` 入力を `eager` に正規化します
-- 無効な `heightMode` 入力を `auto` に正規化します
-- 無効な `maxHeight` 入力を未指定として扱います
-
-### sandbox / capability 契約の未対応事項
-
-- `allow-scripts` を `allowJs` から分離し、baseline token に移行します
-- `allowJs=false` の既定状態でも helper script を実行可能にします
 - Storybook の sandbox 検証を文字列比較から token 集合比較へ変更します
-
-### payload / 入力モデル / 診断の未対応事項
-
-- payload 探索を descendant 探索から直下子探索へ変更します
-- `template[data-preview-kind]` 以外の直下子要素を契約違反として検出します
-- 空白テキストノードとコメントノードを入力対象から除外します
-- 同一 kind の複数定義を契約違反として検出します
-- `html` payload の heuristic な `innerHTML` / `textContent` 分岐を廃止します
-- `allowJs=false` のときの `js` payload 変更を再構築対象から除外します
-- payload に無関係な descendant 変更を再構築対象から除外します
-- 構文違反と意味違反の開発時診断を実装します
-- `html` payload に `head` / `meta` / `base` / `script` を含める入力に対する警告を実装します
-- `allowJs=false` なのに `js` payload が存在する入力に対する警告を実装します
-- portability を期待できない custom elements 依存入力に対する警告を実装します
-
-### 再構築 / 高さ / 更新契約の未対応事項
-
-- `activationPolicy` に応じた初回構築タイミングを実装します
-- 未活性状態では `resolvedHeight = height` を用いる規則を実装します
-- `heightMode="fixed"` の固定高さ挙動を実装します
-- `heightMode="auto"` の `resolvedHeight = max(height, measuredHeight)` を実装します
-- `heightMode="bounded-auto"` と `maxHeight` による上限付き自動追従を実装します
-- `heightMode="bounded-auto"` かつ `maxHeight` 無効時の `auto` への縮退規則を実装します
-- `iframeTitle` 変更、`height` / `maxHeight` / `heightMode` の変更、高さ更新を非破壊更新へ寄せます
-- `allowJs=false` のときに無効な `js` payload 変更で `_srcdoc` を再生成しないようにします
-- payload 変更、`allowJs` 変更、capability 変更だけを破壊的再構築対象に限定します
-
-### Storybook / 契約確認点の未対応事項
-
-- baseline helper、高さ追従、非破壊更新を Storybook 契約へ追加します
 - `baseUrl` 導入後の相対 URL 解決契約を Storybook または自動テストで確認します
-- 開発時診断の検出対象を Storybook または自動テストで確認します
+- 開発時診断の検出粒度を整理し、構文違反・意味違反・移植性警告を分けて確認できるようにします
 
 ---
 
