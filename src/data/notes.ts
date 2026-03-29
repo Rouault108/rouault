@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { extractTocFromHtml, type TocHeading } from '../../lib/content/extract-toc-from-html.js';
+import { prepareTocHtml, type TocHeading } from '../../lib/content/extract-toc-from-html.js';
 import { resolveCoverAsset, type ResolvedImageAsset } from '../../lib/media/image-resolver.js';
 import { isIconName, type IconName } from '../icons/catalog.js';
 import type { NoteStatus } from '../types/article-status.js';
@@ -52,12 +52,28 @@ export interface NoteCollectionItem extends SourceNote {
   directoryPath?: string;
   sortIndex: number;
   tocHeadings: TocHeading[];
+  tocCapabilities: {
+    activeTracking: boolean;
+    dynamicScopes: boolean;
+    mobileSummary: boolean;
+  };
   sidebarRoot?: string;
   sidebarResolvedIcon?: IconName;
   sidebarDirectoryIcons?: Record<string, IconName>;
   resolvedCover?: ResolvedImageAsset;
   kind: NoteContentKind;
 }
+
+const inferTocCapabilities = (
+  headings: readonly TocHeading[],
+  kind: NoteContentKind,
+): NoteCollectionItem['tocCapabilities'] => ({
+  activeTracking: headings.length > 0,
+  dynamicScopes: headings.some(
+    (heading) => Array.isArray(heading.scopeSelections) && heading.scopeSelections.length > 0,
+  ),
+  mobileSummary: kind === 'reader' && headings.length > 0,
+});
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -310,6 +326,8 @@ export const buildNotesCollection = (
       const inputSlug = note.slug.trim();
       const pathInfo = normalizeNotePath(inputSlug, contentRoot);
       const sourceSlug = pathInfo.rawSlug;
+      const kind = normalizeNoteContentKind(note.kind);
+      const preparedToc = prepareTocHtml(typeof note.content === 'string' ? note.content : '');
 
       const sidebarRoot = resolveSidebarRoot(sourceSlug, contentRoot);
       const sidebarIconSetting = note.sidebarIcon;
@@ -327,14 +345,16 @@ export const buildNotesCollection = (
 
       return {
         ...note,
-        kind: normalizeNoteContentKind(note.kind),
+        ...(typeof note.content === 'string' ? { content: preparedToc.html } : {}),
+        kind,
         rawSlug: sourceSlug,
         slug: pathInfo.slug,
         permalink: pathInfo.permalink,
         noteKind: pathInfo.kind,
         ...(pathInfo.directoryPath !== undefined ? { directoryPath: pathInfo.directoryPath } : {}),
         sortIndex: calculateSortIndex(sourceSlug, contentRoot),
-        tocHeadings: extractTocFromHtml(typeof note.content === 'string' ? note.content : ''),
+        tocHeadings: preparedToc.headings,
+        tocCapabilities: inferTocCapabilities(preparedToc.headings, kind),
         ...(sidebarRoot !== undefined ? { sidebarRoot } : {}),
         ...(sidebarResolvedIcon !== undefined ? { sidebarResolvedIcon } : {}),
         ...(Object.keys(sidebarIconContext.directoryIcons).length > 0

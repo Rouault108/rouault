@@ -1,6 +1,8 @@
 import type { Heading } from '../../components/ui/toc/toc.js';
+import { readPrimaryTabValue } from '../tabs/url-state.js';
 
 type TabsLike = HTMLElement & {
+  selectedValue?: string | null;
   select?: (
     value: string,
     options?: {
@@ -9,6 +11,14 @@ type TabsLike = HTMLElement & {
     },
   ) => void;
 };
+
+export interface TocCapabilities {
+  activeTracking: boolean;
+  dynamicScopes: boolean;
+  mobileSummary: boolean;
+}
+
+export type TocScopeSelection = NonNullable<Heading['scopeSelections']>[number];
 
 const isTabPanel = (value: Element | null): value is HTMLElement =>
   value instanceof HTMLElement && value.getAttribute('role') === 'tabpanel';
@@ -124,5 +134,78 @@ export const revealHeadingInTabs = (contentRoot: HTMLElement, target: HTMLElemen
     }
 
     tabsHost.select(value, { historyMode: 'replace' });
+  }
+};
+
+const readSelectedValueFromTabsHost = (tabsHost: TabsLike): string | null => {
+  const selectedValue =
+    typeof tabsHost.selectedValue === 'string' && tabsHost.selectedValue.trim().length > 0
+      ? tabsHost.selectedValue.trim()
+      : null;
+  if (selectedValue) {
+    return selectedValue;
+  }
+
+  const attributeValue = tabsHost.getAttribute('selected-value')?.trim() ?? '';
+  if (attributeValue.length > 0) {
+    return attributeValue;
+  }
+
+  if (tabsHost.hasAttribute('url-sync') && typeof window !== 'undefined') {
+    const queryValue = readPrimaryTabValue(window.location.href);
+    if (queryValue) {
+      return queryValue;
+    }
+  }
+
+  const defaultValue = tabsHost.getAttribute('default-selected-value')?.trim() ?? '';
+  return defaultValue.length > 0 ? defaultValue : null;
+};
+
+export const readTocScopeSelectionMap = (contentRoot: HTMLElement): Map<string, string> => {
+  const result = new Map<string, string>();
+  const tabsHosts = contentRoot.querySelectorAll<TabsLike>('ui-tabs[data-toc-scope]');
+
+  for (const tabsHost of tabsHosts) {
+    const scopeId = tabsHost.getAttribute('data-toc-scope')?.trim() ?? '';
+    if (scopeId.length === 0) {
+      continue;
+    }
+
+    const selectedValue = readSelectedValueFromTabsHost(tabsHost);
+    if (selectedValue) {
+      result.set(scopeId, selectedValue);
+    }
+  }
+
+  return result;
+};
+
+export const filterHeadingsByScopeSelections = (
+  headings: readonly Heading[],
+  selections: ReadonlyMap<string, string>,
+): Heading[] =>
+  headings.filter((heading) => {
+    const scopeSelections = heading.scopeSelections ?? [];
+    if (scopeSelections.length === 0) {
+      return true;
+    }
+
+    return scopeSelections.every((selection) => selections.get(selection.scopeId) === selection.value);
+  });
+
+export const applyTocScopeSelections = (
+  contentRoot: HTMLElement,
+  selections: readonly TocScopeSelection[],
+): void => {
+  for (const selection of selections) {
+    const tabsHost = contentRoot.querySelector<TabsLike>(
+      `ui-tabs[data-toc-scope="${selection.scopeId}"]`,
+    );
+    if (!(tabsHost instanceof HTMLElement) || typeof tabsHost.select !== 'function') {
+      continue;
+    }
+
+    tabsHost.select(selection.value, { historyMode: 'replace' });
   }
 };

@@ -79,6 +79,12 @@ export const directiveMetadata: Record<DirectiveName, DirectiveMetadata> = {
     allowsChildren: true,
   },
 
+  'translation-overlay': {
+    kind: 'container',
+    nodeType: 'rouaultDirectiveTranslationOverlay',
+    allowsChildren: true,
+  },
+
   preview: {
     kind: 'container',
     nodeType: 'rouaultDirectivePreviewSlot',

@@ -57,6 +57,7 @@ export interface UiTabChangeDetail {
   index: number;
   value: string | null;
   prevIndex: number;
+  scopeId: string | null;
 }
 
 export interface ResolveAndCommitOptions {

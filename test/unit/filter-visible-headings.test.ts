@@ -1,7 +1,9 @@
 import { expect } from '@open-wc/testing';
 import type { Heading } from '../../src/components/ui/toc/toc.js';
 import {
+  filterHeadingsByScopeSelections,
   filterVisibleHeadings,
+  readTocScopeSelectionMap,
   resolveTabValueForDescendant,
   revealHeadingInTabs,
 } from '../../src/lib/toc/filter-visible-headings.js';
@@ -165,5 +167,50 @@ describe('filterVisibleHeadings', () => {
     if (!(tabs instanceof HTMLElement) || !(target instanceof HTMLElement)) return;
 
     expect(resolveTabValueForDescendant(tabs, target)).to.equal('outer-a');
+  });
+
+  it('data-toc-scope ごとの選択状態を読み取り、scopeSelections で見出しを絞り込めること', () => {
+    document.body.innerHTML = `
+      <article id="content-root">
+        <ui-tabs data-toc-scope="toc-scope-1" selected-value="details">
+          <div slot="tab" value="overview">概要</div>
+          <div slot="panel" role="tabpanel" aria-hidden="true" hidden></div>
+          <div slot="tab" value="details">詳細</div>
+          <div slot="panel" role="tabpanel" aria-hidden="false"></div>
+        </ui-tabs>
+      </article>
+    `;
+
+    const contentRoot = document.getElementById('content-root');
+    if (!(contentRoot instanceof HTMLElement)) return;
+
+    const selections = readTocScopeSelectionMap(contentRoot);
+    expect(Array.from(selections.entries())).to.deep.equal([['toc-scope-1', 'details']]);
+
+    const headings: Heading[] = [
+      {
+        id: 'overview-heading',
+        text: 'Overview',
+        level: 2,
+        scopeSelections: [{ scopeId: 'toc-scope-1', value: 'overview' }],
+      },
+      {
+        id: 'details-heading',
+        text: 'Details',
+        level: 2,
+        scopeSelections: [{ scopeId: 'toc-scope-1', value: 'details' }],
+      },
+      { id: 'shared-heading', text: 'Shared', level: 2 },
+    ];
+
+    expect(filterHeadingsByScopeSelections(headings, selections)).to.deep.equal([
+      {
+        id: 'details-heading',
+        text: 'Details',
+        level: 2,
+        scopeSelections: [{ scopeId: 'toc-scope-1', value: 'details' }],
+      },
+      { id: 'shared-heading', text: 'Shared', level: 2 },
+    ]);
   });
 });

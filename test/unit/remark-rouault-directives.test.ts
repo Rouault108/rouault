@@ -216,8 +216,7 @@ describe('remarkRouaultDirectives', () => {
         {
           type: 'code',
           lang: 'ts',
-          meta:
-            '{1} filename="sample.ts" group-key="sample" tab-label="例" copy-label="例コード" copyable="false" intent="invalid" show-line-numbers="true" copy-mode="always" wrap="true" highlight-lines="1,3-4" layout="inline"',
+          meta: '{1} filename="sample.ts" group-key="sample" tab-label="例" copy-label="例コード" copyable="false" intent="invalid" show-line-numbers="true" copy-mode="always" wrap="true" highlight-lines="1,3-4" layout="inline"',
           value: 'const sample = 1;',
         },
       ],
@@ -335,7 +334,9 @@ describe('remarkRouaultDirectives', () => {
       children: [
         {
           type: 'paragraph',
-          children: [{ type: 'text', value: '::details{summary="補足情報" aria-label="補足を開閉"}' }],
+          children: [
+            { type: 'text', value: '::details{summary="補足情報" aria-label="補足を開閉"}' },
+          ],
         },
         {
           type: 'paragraph',
@@ -378,7 +379,9 @@ describe('remarkRouaultDirectives', () => {
       remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
     };
 
-    expect(run).to.throw('[markdown] details の icon-only 利用では aria-label に空文字を指定できません');
+    expect(run).to.throw(
+      '[markdown] details の icon-only 利用では aria-label に空文字を指定できません',
+    );
   });
 
   it('info-box ディレクティブを ui-info-box ノードへ変換すること', () => {
@@ -857,7 +860,7 @@ describe('remarkRouaultDirectives', () => {
     expect(sandbox?.children).to.have.length(3);
   });
 
-  it('translation ディレクティブを ui-translation ノードへ変換すること', () => {
+  it('translation ディレクティブを静的本文ノードへ変換すること', () => {
     const tree: MdastNode = {
       type: 'root',
       children: [
@@ -867,7 +870,46 @@ describe('remarkRouaultDirectives', () => {
             {
               type: 'text',
               value:
-                '::translation{lang="fr" target-lang="ja" render-mode="drawer" open="true" original="Je pense, donc je suis." translated="我思う、ゆえに我あり。"}',
+                '::translation{lang="fr" target-lang="ja" original="Je pense, donc je suis." translated="我思う、ゆえに我あり。"}',
+            },
+          ],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    const translation = tree.children?.[0];
+    expect(translation?.data?.hName).to.equal('div');
+    expect(translation?.data?.hProperties?.['data-translation-kind']).to.equal('static');
+    expect(translation?.children).to.have.length(2);
+    expect(translation?.children?.[0]?.data?.hProperties?.['className']).to.deep.equal([
+      'translation-original',
+    ]);
+    expect(translation?.children?.[0]?.data?.hProperties?.['lang']).to.equal('fr');
+    expect(translation?.children?.[0]?.children?.[0]?.value).to.equal('Je pense, donc je suis.');
+    expect(translation?.children?.[1]?.data?.hProperties?.['className']).to.deep.equal([
+      'translation-translated',
+    ]);
+    expect(translation?.children?.[1]?.data?.hProperties?.['lang']).to.equal('ja');
+    expect(translation?.children?.[1]?.children?.[0]?.value).to.equal('我思う、ゆえに我あり。');
+  });
+
+  it('translation-overlay ディレクティブを ui-translation ノードへ変換すること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'text',
+              value:
+                '::translation-overlay{lang="fr" target-lang="ja" surface="drawer" original="Je pense, donc je suis." translated="我思う、ゆえに我あり。"}',
             },
           ],
         },
@@ -884,10 +926,35 @@ describe('remarkRouaultDirectives', () => {
     expect(translation?.data?.hName).to.equal('ui-translation');
     expect(translation?.data?.hProperties?.['lang']).to.equal('fr');
     expect(translation?.data?.hProperties?.['target-lang']).to.equal('ja');
-    expect(translation?.data?.hProperties?.['render-mode']).to.equal('drawer');
-    expect(translation?.data?.hProperties?.['open']).to.equal(true);
+    expect(translation?.data?.hProperties?.['surface']).to.equal('drawer');
     expect(translation?.data?.hProperties?.['original']).to.equal('Je pense, donc je suis.');
     expect(translation?.data?.hProperties?.['translated']).to.equal('我思う、ゆえに我あり。');
+  });
+
+  it('旧 translation の render-mode は未対応エラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'text',
+              value:
+                '::translation{lang="fr" target-lang="ja" render-mode="drawer" original="Je pense, donc je suis." translated="我思う、ゆえに我あり。"}',
+            },
+          ],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    expect(() => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    }).to.throw('[markdown] translation 属性 "render-mode" は未対応です');
   });
 
   it('空行なしで畳まれた code-preview の slot ディレクティブも変換すること', () => {
@@ -968,7 +1035,7 @@ describe('remarkRouaultDirectives', () => {
     expect(tabs?.children?.[3]?.data?.hProperties?.['slot']).to.equal('panel');
   });
 
-  it('空行なしで畳まれた translation ディレクティブも変換すること', () => {
+  it('空行なしで畳まれた translation ディレクティブも静的本文へ変換すること', () => {
     const tree: MdastNode = {
       type: 'root',
       children: [
@@ -992,9 +1059,9 @@ describe('remarkRouaultDirectives', () => {
 
     expect(tree.children).to.have.length(1);
     const translation = tree.children?.[0];
-    expect(translation?.data?.hName).to.equal('ui-translation');
-    expect(translation?.data?.hProperties?.['original']).to.equal('Je pense, donc je suis.');
-    expect(translation?.data?.hProperties?.['translated']).to.equal('我思う、ゆえに我あり。');
+    expect(translation?.data?.hName).to.equal('div');
+    expect(translation?.children?.[0]?.children?.[0]?.value).to.equal('Je pense, donc je suis.');
+    expect(translation?.children?.[1]?.children?.[0]?.value).to.equal('我思う、ゆえに我あり。');
   });
 
   it('画像直後の属性ブロックから image オプションを HTML 属性として保持すること', () => {

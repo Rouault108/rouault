@@ -16,6 +16,16 @@ interface TocHeading {
   id?: string;
   text?: string;
   level?: number;
+  scopeSelections?: {
+    scopeId?: string;
+    value?: string;
+  }[];
+}
+
+interface TocCapabilities {
+  activeTracking?: boolean;
+  dynamicScopes?: boolean;
+  mobileSummary?: boolean;
 }
 
 interface SidebarNoteLike {
@@ -40,6 +50,7 @@ interface NoteData extends SidebarNoteLike {
   sidebarRoot?: string;
   status?: NoteStatus;
   tocHeadings?: TocHeading[];
+  tocCapabilities?: TocCapabilities;
   kind?: NoteContentKind;
 }
 
@@ -76,7 +87,12 @@ function escapeJsonForScript(value: unknown): string {
 
 function normalizeHeadings(
   value: TocHeading[] | undefined,
-): { id: string; text: string; level: number }[] {
+): {
+  id: string;
+  text: string;
+  level: number;
+  scopeSelections?: { scopeId: string; value: string }[];
+}[] {
   if (!Array.isArray(value)) {
     return [];
   }
@@ -92,9 +108,49 @@ function normalizeHeadings(
       if (level < 2 || level > 6) {
         return null;
       }
-      return { id, text, level };
+      const scopeSelections = Array.isArray(item.scopeSelections)
+        ? item.scopeSelections
+            .map((selection) => {
+              const scopeId =
+                typeof selection.scopeId === 'string' ? selection.scopeId.trim() : '';
+              const value = typeof selection.value === 'string' ? selection.value.trim() : '';
+              if (scopeId.length === 0 || value.length === 0) {
+                return null;
+              }
+              return { scopeId, value };
+            })
+            .filter((selection): selection is { scopeId: string; value: string } => selection !== null)
+        : [];
+
+      return {
+        id,
+        text,
+        level,
+        ...(scopeSelections.length > 0 ? { scopeSelections } : {}),
+      };
     })
-    .filter((item): item is { id: string; text: string; level: number } => item !== null);
+    .filter(
+      (
+        item,
+      ): item is {
+        id: string;
+        text: string;
+        level: number;
+        scopeSelections?: { scopeId: string; value: string }[];
+      } => item !== null,
+    );
+}
+
+function normalizeTocCapabilities(value: TocCapabilities | undefined): {
+  activeTracking: boolean;
+  dynamicScopes: boolean;
+  mobileSummary: boolean;
+} {
+  return {
+    activeTracking: value?.activeTracking === true,
+    dynamicScopes: value?.dynamicScopes === true,
+    mobileSummary: value?.mobileSummary === true,
+  };
 }
 
 function toSafeDataId(slug: string): string {
@@ -216,6 +272,7 @@ export class NoteLayout {
       ? note.genre.map((item) => item.trim()).filter((item) => item.length > 0)
       : [];
     const headings = normalizeHeadings(note?.tocHeadings);
+    const tocCapabilities = normalizeTocCapabilities(note?.tocCapabilities);
     const sidebarRoot = typeof note?.sidebarRoot === 'string' ? note.sidebarRoot : '';
     const sidebarNotes = mergeCurrentNoteIntoSidebarNotes(
       note,
@@ -234,6 +291,9 @@ export class NoteLayout {
       genres.length > 0 ? ` data-tags="${escapeAttr(JSON.stringify(genres))}"` : '';
     const sidebarItemsJson = escapeAttr(JSON.stringify(sidebarTree));
     const tocHeadingsJson = escapeAttr(JSON.stringify(headings));
+    const tocCapabilitiesJson = escapeAttr(JSON.stringify(tocCapabilities));
+    const shouldHydrateToc =
+      tocCapabilities.activeTracking || tocCapabilities.dynamicScopes || tocCapabilities.mobileSummary;
     const pagefindTitle = note?.title ? escapeHtml(note.title) : '';
     const pagefindDescription = note?.description ? escapeHtml(note.description) : '';
     const pagefindTokenizedTitle = buildTokenizedPagefindText(note?.title);
@@ -306,10 +366,12 @@ export class NoteLayout {
           <layout-toc
             source-id="${escapeAttr(tocSourceId)}"
             headings-json="${tocHeadingsJson}"
+            capabilities-json="${tocCapabilitiesJson}"
             content-root-id="${escapeAttr(contentRootId)}"
             home-href="/"
-            data-hydration-capability="interactive"
-            data-hydration-trigger="initial"
+            ${shouldHydrateToc
+              ? 'data-hydration-capability="interactive" data-hydration-trigger="initial"'
+              : ''}
           ></layout-toc>
         </aside>
       </section>

@@ -99,18 +99,18 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 
 ### 5.1 一覧
 
-| 入力 HAST | 出力 | 契約 |
-| --- | --- | --- |
-| `pre > code` | `ui-code-block > pre > code` | `language-*` から `lang` を推論し、対象メタ属性を `ui-code-block` ホスト属性へ正規化する。note 本文では `data-hydration-capability="progressive"` / `data-hydration-trigger="post-commit"` を付与する |
-| `blockquote` | `ui-blockquote` | 子要素は維持する |
-| `table` | `ui-table > table` | `caption` があればホストに `aria-label` を補完する |
-| `hr` | `ui-divider > hr[data-divider-variant="section"]` | Markdown 由来の区切りを本文文脈の `section` として正規化する |
-| `li` + `input[type=checkbox]` | `ui-checkbox` | task list ラベルを抽出し、後続ネストリストを維持する |
-| `mark` | `ui-highlight` | `current-match` / `data-current-match` を正規入力とし、旧属性を互換吸収する |
-| `img` | `ui-image` | `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化する。`zoomable!="false"` の note 本文では `data-hydration-capability="progressive"` / `data-hydration-trigger="visible"` を付与する |
-| `figure(img + figcaption)` | `ui-image` | `figcaption` を `caption` に統合する。`zoomable!="false"` の note 本文では `data-hydration-capability="progressive"` / `data-hydration-trigger="visible"` を付与する |
-| `a[href]`（本文リンク） | `a[data-link-kind][data-link-surface="prose"]` | `href` から種別注釈を付与し、外部系では `data-external="true"` を付与する。`.heading-anchor` は対象外とする |
-| footnote 参照 / 定義 | `ui-footnote` + `section[role=doc-endnotes]` | 参照 ID、backref、接頭辞、backlink を正規化する |
+| 入力 HAST                     | 出力                                              | 契約                                                                                                                                                                                                               |
+| ----------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pre > code`                  | `ui-code-block > pre > code`                      | `language-*` から `lang` を推論し、対象メタ属性を `ui-code-block` ホスト属性へ正規化する。note 本文では `data-hydration-capability="progressive"` / `data-hydration-trigger="post-commit"` を付与する              |
+| `blockquote`                  | `ui-blockquote`                                   | 子要素は維持する                                                                                                                                                                                                   |
+| `table`                       | `ui-table > table`                                | `caption` があればホストに `aria-label` を補完する                                                                                                                                                                 |
+| `hr`                          | `ui-divider > hr[data-divider-variant="section"]` | Markdown 由来の区切りを本文文脈の `section` として正規化する                                                                                                                                                       |
+| `li` + `input[type=checkbox]` | `ui-checkbox`                                     | task list ラベルを抽出し、後続ネストリストを維持する                                                                                                                                                               |
+| `mark`                        | `ui-highlight`                                    | `current-match` / `data-current-match` を正規入力とし、旧属性を互換吸収する                                                                                                                                        |
+| `img`                         | `ui-image`                                        | `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化する。`zoomable!="false"` の note 本文では `data-hydration-capability="progressive"` / `data-hydration-trigger="visible"` を付与する |
+| `figure(img + figcaption)`    | `ui-image`                                        | `figcaption` を `caption` に統合する。`zoomable!="false"` の note 本文では `data-hydration-capability="progressive"` / `data-hydration-trigger="visible"` を付与する                                               |
+| `a[href]`（本文リンク）       | `a[data-link-kind][data-link-surface="prose"]`    | `href` から種別注釈を付与し、外部系では `data-external="true"` を付与する。`.heading-anchor` は対象外とする                                                                                                        |
+| footnote 参照 / 定義          | `ui-footnote` + `section[role=doc-endnotes]`      | 参照 ID、backref、接頭辞、backlink を正規化する                                                                                                                                                                    |
 
 ### 5.2 `pre > code` → `ui-code-block > pre > code`
 
@@ -226,25 +226,28 @@ note ページの scope は次の 4 つです。
 
 note 本文の標準マッピングは次のとおりです。
 
-| ノード | capability | trigger |
-| --- | --- | --- |
-| `layout-sidebar` | `interactive` | `initial` |
-| `layout-toc` | `interactive` | `initial` |
-| `ui-article-header[data-tags]` | `progressive` | `post-commit` |
-| `ui-image[zoomable!="false"]` | `progressive` | `visible` |
-| `ui-code-block` | `progressive` | `post-commit` |
-| `ui-code-group` | `interactive` | `visible` |
-| `ui-code-preview[controls あり]` | `interactive` | `visible` |
-| `ui-code-preview[slot="toolbar" を持つ]` | `interactive` | `visible` |
-| `ui-tabs` | `interactive` | `visible` |
-| `ui-translation` | `interactive` | `visible` |
-| `ui-preview-sandbox` | `sandboxed` | `interaction` |
-| `ui-score` | `progressive` | `visible` |
+| ノード                                   | capability    | trigger       |
+| ---------------------------------------- | ------------- | ------------- |
+| `layout-sidebar`                         | `interactive` | `initial`     |
+| `layout-toc[runtime capability あり]`    | `interactive` | `initial`     |
+| `ui-article-header[data-tags]`           | `progressive` | `post-commit` |
+| `ui-image[zoomable!="false"]`            | `progressive` | `visible`     |
+| `ui-code-block`                          | `progressive` | `post-commit` |
+| `ui-code-group`                          | `interactive` | `visible`     |
+| `ui-code-preview[controls あり]`         | `interactive` | `visible`     |
+| `ui-code-preview[slot="toolbar" を持つ]` | `interactive` | `visible`     |
+| `ui-tabs`                                | `interactive` | `visible`     |
+| `ui-translation`                         | `interactive` | `visible`     |
+| `ui-preview-sandbox`                     | `sandboxed`   | `interaction` |
+| `ui-score`                               | `progressive` | `visible`     |
 
 補足規則:
 
+- `layout-toc` は `capabilities-json` に `activeTracking` / `dynamicScopes` / `mobileSummary` のいずれかがある場合にだけ directive を持ちます。
 - `ui-image[zoomable="false"]` には directive を付与してはなりません。
 - `ui-code-preview` は `controls` も `toolbar` もない場合、directive を付与してはなりません。
+- static translation は `div.translation-static[data-translation-kind="static"]` として出力し、hydration directive を付与してはなりません。
+- overlay translation は `ui-translation[surface]` として出力し、`data-hydration-capability="interactive"` / `data-hydration-trigger="visible"` を付与しなければなりません。
 - build-time で directive を持たない静的 note UI を hydration 対象として拡張してはなりません。
 
 ---

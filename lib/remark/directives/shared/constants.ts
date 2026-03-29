@@ -21,7 +21,7 @@ export const PREVIEW_SURFACES = new Set(['surface', 'canvas', 'muted']);
 export const PREVIEW_VIEWPORTS = new Set(['full', 'tablet', 'mobile']);
 export const PREVIEW_CONTROL_VALUES = new Set(['theme', 'surface', 'viewport']);
 export const PREVIEW_SANDBOX_LANGUAGES = new Set(['preview-html', 'preview-css', 'preview-js']);
-export const TRANSLATION_RENDER_MODES = new Set(['popover', 'drawer', 'interlinear']);
+export const TRANSLATION_OVERLAY_SURFACES = new Set(['popover', 'drawer']);
 export const CODE_BLOCK_INTENTS = new Set(['neutral', 'valid', 'invalid']);
 
 export const EMOJI_SHORTCODE_MAP: Record<string, string> = {

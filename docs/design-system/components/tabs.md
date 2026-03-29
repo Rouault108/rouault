@@ -115,22 +115,22 @@ Rouault における tabs は、複数の情報面を高密度に並置するた
 
 `ui-tabs` は、プログラムから選択状態またはフォーカス状態を変更するため、次の公開メソッドを持ちます。
 
-| 名前                      | 種別   | 契約                                                                                                                                  |
-| ------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| 名前                      | 種別   | 契約                                                                                                                          |
+| ------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------- |
 | `select(value, options?)` | method | 一致する `value` を持つタブを選択します。一致しない場合は開発時警告のみを出し、選択状態・フォーカス状態・URL を変更しません。 |
 | `focus(value)`            | method | 一致する `value` を持つタブへ roving focus を移します。一致しない場合は開発時警告のみを出し、選択状態・URL を変更しません。   |
-| `focusNext()`             | method | 現在の roving focus から次タブへフォーカスを移します。末尾では先頭へ循環します。選択状態は変更しません。                       |
-| `focusPrevious()`         | method | 現在の roving focus から前タブへフォーカスを移します。先頭では末尾へ循環します。選択状態は変更しません。                       |
-| `focusFirst()`            | method | 先頭タブへフォーカスを移します。選択状態は変更しません。                                                                             |
-| `focusLast()`             | method | 末尾タブへフォーカスを移します。選択状態は変更しません。                                                                             |
+| `focusNext()`             | method | 現在の roving focus から次タブへフォーカスを移します。末尾では先頭へ循環します。選択状態は変更しません。                      |
+| `focusPrevious()`         | method | 現在の roving focus から前タブへフォーカスを移します。先頭では末尾へ循環します。選択状態は変更しません。                      |
+| `focusFirst()`            | method | 先頭タブへフォーカスを移します。選択状態は変更しません。                                                                      |
+| `focusLast()`             | method | 末尾タブへフォーカスを移します。選択状態は変更しません。                                                                      |
 
 `select(value, options?)` の引数契約は次のとおりです。
 
-| 名前                  | 型                            | 必須   | 既定値   | 契約                                                               |
-| --------------------- | ----------------------------- | ------ | -------- | ------------------------------------------------------------------ |
-| `value`               | `string`                      | はい   | なし     | 選択対象の論理識別子です。`slot="tab"` の `value` と一致させます。 |
-| `options.historyMode` | `'auto' | 'push' | 'replace'` | いいえ | `'auto'` | `urlSync=true` の場合の履歴更新方法です。                          |
-| `options.emitEvent`   | `boolean`                     | いいえ | `true`   | `ui-tab-request-change` / `ui-tab-change` を発火させるかを表します。 |
+| 名前                  | 型        | 必須   | 既定値     | 契約                                                                 |
+| --------------------- | --------- | ------ | ---------- | -------------------------------------------------------------------- | -------- | ----------------------------------------- |
+| `value`               | `string`  | はい   | なし       | 選択対象の論理識別子です。`slot="tab"` の `value` と一致させます。   |
+| `options.historyMode` | `'auto'   | 'push' | 'replace'` | いいえ                                                               | `'auto'` | `urlSync=true` の場合の履歴更新方法です。 |
+| `options.emitEvent`   | `boolean` | いいえ | `true`     | `ui-tab-request-change` / `ui-tab-change` を発火させるかを表します。 |
 
 `options.historyMode='auto'` の場合、`select(value)` は API 起点の変更として扱い、既定では `replace` を用います。`urlSync=false` の場合、`historyMode` は無視されます。
 
@@ -142,16 +142,17 @@ Rouault における tabs は、複数の情報面を高密度に並置するた
 
 `ui-tabs` は、選択変更について**事前要求**と**事後通知**を分離します。
 
-| 名前                    | 種別        | detail                                | 契約                                                                                                       |
-| ----------------------- | ----------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `ui-tab-request-change` | CustomEvent | `{ index, value, prevIndex, source }` | 選択確定前に発火します。`cancelable=true` であり、利用者は `preventDefault()` により選択変更を拒否できます |
-| `ui-tab-change`         | CustomEvent | `{ index, value, prevIndex, source }` | 選択が実際に変化した場合にのみ、確定後に発火します。同じタブの再選択では発火しません                       |
+| 名前                    | 種別        | detail                                         | 契約                                                                                                       |
+| ----------------------- | ----------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `ui-tab-request-change` | CustomEvent | `{ index, value, prevIndex, source, scopeId }` | 選択確定前に発火します。`cancelable=true` であり、利用者は `preventDefault()` により選択変更を拒否できます |
+| `ui-tab-change`         | CustomEvent | `{ index, value, prevIndex, source, scopeId }` | 選択が実際に変化した場合にのみ、確定後に発火します。同じタブの再選択では発火しません                       |
 
 `source` は少なくとも `click`、`keyboard`、`api`、`url`、`reconcile` を識別できなければなりません（MUST）。
+`scopeId` は `data-toc-scope` を持つ `ui-tabs` でのみ意味を持ち、TOC 側が tab scope を識別するための補助情報です。未設定時は `null` を許容します。
 
 `ui-tab-request-change` は `bubbles: true`、`composed: true`、`cancelable: true` で発火します。`ui-tab-change` は `bubbles: true`、`composed: true`、`cancelable: false` で発火します。
 
-`ui-tab-change` は、**内部状態更新、DOM 反映、`selected-value` 属性更新**、および必要な URL 同期の後**に発火します。したがって、イベントハンドラ内で観測される `selectedValue`、ARIA 状態、パネル可視状態、URL は、原則として新しい選択状態です。
+`ui-tab-change` は、**内部状態更新、DOM 反映、`selected-value` 属性更新**、および必要な URL 同期の後\*\*に発火します。したがって、イベントハンドラ内で観測される `selectedValue`、ARIA 状態、パネル可視状態、URL は、原則として新しい選択状態です。
 
 ### 属性反映契約
 
@@ -554,29 +555,29 @@ Forced Colors 環境では JS 制御インジケーターを非表示とし、�
 
 各 Story は見本ではなく、**現行実装に対する契約確認点**として扱います。本節では、現行 Storybook の export 一覧と一致する Story のみを列挙します。未実装または未検証の契約は、本節ではなく「現行実装で未対応の事項」で管理します。
 
-| Story                             | 固定する契約                                                                                  |
-| --------------------------------- | --------------------------------------------------------------------------------------------- |
-| `VisualAccessibility`             | 基本的な role / aria / フォーカス可視性が破綻しないこと                                       |
-| `Default`                         | 先頭タブ自動選択、role / aria / Roving Tabindex が成立すること                                |
-| `InitialIndex`                    | 初期選択入力により先頭以外から開始できること                                                  |
-| `Vertical`                        | `orientation="vertical"` で `aria-orientation="vertical"` になること                          |
-| `AutomaticActivation`             | 矢印移動だけで選択が更新されること                                                            |
-| `WithIcons`                       | アイコンとラベルの組み合わせを受け入れられること                                              |
-| `ManyTabs`                        | オーバーフロー時にスクロールし、選択タブを可視範囲へ追従できること                            |
-| `SelectedByValue`                 | 選択値指定により任意タブを選択できること                                                      |
-| `KeyboardNavigation`              | Manual Activation における矢印移動、`Enter` / `Space`、`Home` / `End`、循環移動が成立すること |
-| `KeyboardNavigationVertical`      | 垂直時に `ArrowUp` / `ArrowDown` が有効であること                                             |
-| `TabChangeEvent`                  | `ui-tab-change` の detail と、同値再選択時の非発火が成立すること                              |
-| `EdgeCase_InvalidIndex`           | 無効な初期 index 指定が回復的に処理されること                                                 |
-| `EdgeCase_ValueOverridesIndex`    | value 系の選択入力が index 系入力より優先されること                                           |
-| `EdgeCase_SingleTab`              | 1 タブ構成でも循環ナビゲーションが破綻しないこと                                              |
-| `EdgeCase_UnmatchedValue`         | 無効な選択値指定が回復的に処理されること                                                      |
-| `EdgeCase_MismatchedSlots`        | 不一致時に余剰タブまたは余剰パネルが正規対応関係を持たないこと                                |
-| `ReducedMotion`                   | reduced motion 時に遷移時間が極小化されること                                                 |
-| `ForcedColorsMode`                | forced-colors 時にインジケーター非表示と境界線回帰が成立すること                              |
-| `DarkMode`                        | 暗色面でも選択状態の可読性を保てること                                                        |
-| `AsyncPanel`                      | パネル側 `aria-busy` 運用パターンと loading UI 共存が成立すること                             |
-| `IntegrationExample`              | ノート UI 文脈で自然に使用できること                                                          |
+| Story                          | 固定する契約                                                                                  |
+| ------------------------------ | --------------------------------------------------------------------------------------------- |
+| `VisualAccessibility`          | 基本的な role / aria / フォーカス可視性が破綻しないこと                                       |
+| `Default`                      | 先頭タブ自動選択、role / aria / Roving Tabindex が成立すること                                |
+| `InitialIndex`                 | 初期選択入力により先頭以外から開始できること                                                  |
+| `Vertical`                     | `orientation="vertical"` で `aria-orientation="vertical"` になること                          |
+| `AutomaticActivation`          | 矢印移動だけで選択が更新されること                                                            |
+| `WithIcons`                    | アイコンとラベルの組み合わせを受け入れられること                                              |
+| `ManyTabs`                     | オーバーフロー時にスクロールし、選択タブを可視範囲へ追従できること                            |
+| `SelectedByValue`              | 選択値指定により任意タブを選択できること                                                      |
+| `KeyboardNavigation`           | Manual Activation における矢印移動、`Enter` / `Space`、`Home` / `End`、循環移動が成立すること |
+| `KeyboardNavigationVertical`   | 垂直時に `ArrowUp` / `ArrowDown` が有効であること                                             |
+| `TabChangeEvent`               | `ui-tab-change` の detail と、同値再選択時の非発火が成立すること                              |
+| `EdgeCase_InvalidIndex`        | 無効な初期 index 指定が回復的に処理されること                                                 |
+| `EdgeCase_ValueOverridesIndex` | value 系の選択入力が index 系入力より優先されること                                           |
+| `EdgeCase_SingleTab`           | 1 タブ構成でも循環ナビゲーションが破綻しないこと                                              |
+| `EdgeCase_UnmatchedValue`      | 無効な選択値指定が回復的に処理されること                                                      |
+| `EdgeCase_MismatchedSlots`     | 不一致時に余剰タブまたは余剰パネルが正規対応関係を持たないこと                                |
+| `ReducedMotion`                | reduced motion 時に遷移時間が極小化されること                                                 |
+| `ForcedColorsMode`             | forced-colors 時にインジケーター非表示と境界線回帰が成立すること                              |
+| `DarkMode`                     | 暗色面でも選択状態の可読性を保てること                                                        |
+| `AsyncPanel`                   | パネル側 `aria-busy` 運用パターンと loading UI 共存が成立すること                             |
+| `IntegrationExample`           | ノート UI 文脈で自然に使用できること                                                          |
 
 `ui-tab-request-change`、RTL 論理方向、accessible name、URL クエリからの初期選択、ハッシュ優先、初期化時非発火、再初期化時非発火など、現行 Story と一致しない契約確認点は、本節には列挙しません。これらは Story が実在するようになった時点で本節へ昇格させます。
 
@@ -620,6 +621,10 @@ Forced Colors 環境では JS 制御インジケーターを非表示とし、�
 
 本書ではイベント detail が少なくとも `source` を持ち、`click`、`keyboard`、`api`、`url`、`reconcile` を識別できる契約を固定しました。しかし現行実装の `UiTabChangeDetail` は `index`、`value`、`prevIndex` のみであり、`source` を保持しません。したがって、**事後通知イベントの由来識別面も未実装**です。
 
+### 6. `ui-tab-change.detail.scopeId`
+
+現行実装では、TOC 連動のために `UiTabChangeDetail.scopeId` を追加しています。`data-toc-scope` を持つ `ui-tabs` は、その値を event detail に転写します。これは tab host の内部 DOM 構造を TOC 側へ漏らさずに scope を識別するための契約です。
+
 ### 6. URL クエリ名の名前空間化
 
 現行 `urlSync` は固定で `?tab=` を使用します。複数独立タブ系統を URL で並立管理する契約は未対応です。
@@ -638,7 +643,7 @@ Forced Colors 環境では JS 制御インジケーターを非表示とし、�
 
 ### 10. `orientation` の値検証と正規化
 
-本書では `orientation` を `horizontal` / `vertical` のみからなる入力として扱います。しかし現行実装は `String` property として受け取り、値検証や既定値への正規化を行いません。`resolveKeyNavigation()` も `horizontal` 以外を事実上 `vertical` として扱います。したがって、**不正な `orientation` 値**に対する入力検証・正規化は未実装**です。
+本書では `orientation` を `horizontal` / `vertical` のみからなる入力として扱います。しかし現行実装は `String` property として受け取り、値検証や既定値への正規化を行いません。`resolveKeyNavigation()` も `horizontal` 以外を事実上 `vertical` として扱います。したがって、**不正な `orientation` 値**に対する入力検証・正規化は未実装\*\*です。
 
 ### 11. RTL 論理方向ナビゲーション
 

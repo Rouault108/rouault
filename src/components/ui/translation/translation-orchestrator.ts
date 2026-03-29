@@ -1,307 +1,217 @@
-import type { TranslationRenderMode, UiTranslation } from './translation';
+import type { TranslationOverlaySurface, UiTranslation } from './translation.js';
 
-export type TranslationIntentMode = 'lookup' | 'parallel';
-
-export interface TranslationModeChangeDetail {
-  intentMode: TranslationIntentMode;
-  renderMode: TranslationRenderMode;
-}
-
-export interface ResolveRenderModeOptions {
-  intentMode: TranslationIntentMode;
-  isMobile: boolean;
-  studyMode: boolean;
-}
-
-export interface TranslationOrchestratorOptions {
+export interface TranslationOverlayOrchestratorOptions {
   root?: Document | Element | DocumentFragment;
-  keyTarget?: Document | Element;
-  storage?: Pick<Storage, 'getItem' | 'setItem'> | null;
-  storageKey?: string;
-  studyMode?: boolean;
-  mobileBreakpoint?: number;
-  isMobileViewport?: () => boolean;
 }
 
-export const TRANSLATION_MODE_STORAGE_KEY = 'rouault:translation-mode';
-export const DEFAULT_TRANSLATION_MOBILE_BREAKPOINT = 1280;
-
-const VALID_INTENT_MODES = new Set<TranslationIntentMode>(['lookup', 'parallel']);
+const POPOVER_EDGE_PADDING = 16;
+const POPOVER_TRIGGER_GAP = 8;
 
 const isTranslationElement = (value: EventTarget | null): value is UiTranslation =>
   value instanceof HTMLElement && value.tagName === 'UI-TRANSLATION';
 
-const isEditableTarget = (value: EventTarget | null): boolean => {
-  if (!(value instanceof HTMLElement)) return false;
-  if (value.isContentEditable) return true;
-
-  const tagName = value.tagName;
-  return tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT';
-};
-
-const normalizeIntentMode = (value: string | null | undefined): TranslationIntentMode =>
-  VALID_INTENT_MODES.has(value as TranslationIntentMode)
-    ? (value as TranslationIntentMode)
-    : 'lookup';
-
-const createDefaultViewportResolver = (mobileBreakpoint: number): (() => boolean) => {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-    return () => false;
-  }
-
-  const maxWidth = Math.max(0, Math.trunc(mobileBreakpoint) - 1);
-  const mediaQuery = `(max-width: ${String(maxWidth)}px)`;
-  return () => window.matchMedia(mediaQuery).matches;
-};
-
-export const resolveTranslationRenderMode = ({
-  intentMode,
-  isMobile,
-  studyMode,
-}: ResolveRenderModeOptions): TranslationRenderMode => {
-  if (!isMobile) {
-    return intentMode === 'parallel' ? 'drawer' : 'popover';
-  }
-
-  if (intentMode === 'parallel' && studyMode) {
-    return 'interlinear';
-  }
-
-  return 'popover';
-};
-
-export class TranslationOrchestrator {
+export class TranslationOverlayOrchestrator {
   private readonly _root: Document | Element | DocumentFragment;
-  private readonly _keyTarget: EventTarget;
-  private readonly _storage: Pick<Storage, 'getItem' | 'setItem'> | null;
-  private readonly _storageKey: string;
-  private readonly _isMobileViewport: () => boolean;
-  private _intentMode: TranslationIntentMode;
-  private _studyMode: boolean;
-  private _observer: MutationObserver | null = null;
+  private readonly _openTranslations = new Set<UiTranslation>();
   private _started = false;
+  private _positionRaf: number | null = null;
+  private _listeningViewport = false;
 
-  constructor(options: TranslationOrchestratorOptions = {}) {
+  constructor(options: TranslationOverlayOrchestratorOptions = {}) {
     const resolvedRoot = options.root ?? (typeof document !== 'undefined' ? document : null);
     if (!resolvedRoot) {
-      throw new Error('[TranslationOrchestrator] root が必要です。');
+      throw new Error('[TranslationOverlayOrchestrator] root が必要です。');
     }
 
     this._root = resolvedRoot;
-    this._keyTarget =
-      options.keyTarget ?? (typeof document !== 'undefined' ? document : resolvedRoot);
-    this._storage = options.storage ?? (typeof window !== 'undefined' ? window.localStorage : null);
-    this._storageKey = options.storageKey ?? TRANSLATION_MODE_STORAGE_KEY;
-    this._studyMode = options.studyMode ?? false;
-
-    const mobileBreakpoint = options.mobileBreakpoint ?? DEFAULT_TRANSLATION_MOBILE_BREAKPOINT;
-    this._isMobileViewport =
-      options.isMobileViewport ?? createDefaultViewportResolver(mobileBreakpoint);
-    this._intentMode = this._readIntentMode();
-  }
-
-  get intentMode(): TranslationIntentMode {
-    return this._intentMode;
-  }
-
-  get studyMode(): boolean {
-    return this._studyMode;
   }
 
   start(): void {
-    if (this._started) return;
-    this._started = true;
-
-    this._root.addEventListener('translation-request-mode-toggle', this._onModeToggleRequest);
-    this._keyTarget.addEventListener('keydown', this._onGlobalKeyDown);
-
-    if (typeof window !== 'undefined') {
-      window.addEventListener('resize', this._onViewportChange, { passive: true });
+    if (this._started) {
+      return;
     }
 
-    this._observer = this._createObserver();
-    this._applyResolvedRenderMode();
+    this._started = true;
+    this._root.addEventListener('translation-toggle', this._onTranslationToggle as EventListener);
+    this._syncOpenTranslationsFromDom();
   }
 
   destroy(): void {
-    if (!this._started) return;
+    if (!this._started) {
+      return;
+    }
+
     this._started = false;
+    this._root.removeEventListener('translation-toggle', this._onTranslationToggle as EventListener);
+    this._detachViewportListeners();
+    this._openTranslations.clear();
 
-    this._root.removeEventListener('translation-request-mode-toggle', this._onModeToggleRequest);
-    this._keyTarget.removeEventListener('keydown', this._onGlobalKeyDown);
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('resize', this._onViewportChange);
+    if (this._positionRaf !== null && typeof window !== 'undefined') {
+      window.cancelAnimationFrame(this._positionRaf);
+      this._positionRaf = null;
     }
-
-    this._observer?.disconnect();
-    this._observer = null;
-  }
-
-  setIntentMode(mode: TranslationIntentMode, options: { persist?: boolean } = {}): void {
-    const nextMode = normalizeIntentMode(mode);
-    if (this._intentMode === nextMode) return;
-
-    this._intentMode = nextMode;
-    if (options.persist !== false) {
-      this._writeIntentMode(nextMode);
-    }
-
-    this._applyResolvedRenderMode();
-    this._emitModeChange();
-  }
-
-  toggleIntentMode(): void {
-    this.setIntentMode(this._intentMode === 'lookup' ? 'parallel' : 'lookup');
-  }
-
-  setStudyMode(studyMode: boolean): void {
-    if (this._studyMode === studyMode) return;
-    this._studyMode = studyMode;
-    this._applyResolvedRenderMode();
-    this._emitModeChange();
   }
 
   refresh(): void {
-    this._applyResolvedRenderMode();
+    this._syncOpenTranslationsFromDom();
   }
 
   private _queryTranslations(): UiTranslation[] {
     return Array.from(this._root.querySelectorAll<UiTranslation>('ui-translation'));
   }
 
-  private _resolveRenderMode(): TranslationRenderMode {
-    return resolveTranslationRenderMode({
-      intentMode: this._intentMode,
-      isMobile: this._isMobileViewport(),
-      studyMode: this._studyMode,
-    });
-  }
+  private _syncOpenTranslationsFromDom(): void {
+    this._openTranslations.clear();
 
-  private _applyResolvedRenderMode(): void {
-    const resolvedRenderMode = this._resolveRenderMode();
-    const targets = this._queryTranslations();
-
-    for (const target of targets) {
-      if (target.renderMode === resolvedRenderMode) continue;
-      target.renderMode = resolvedRenderMode;
-    }
-  }
-
-  private _readIntentMode(): TranslationIntentMode {
-    if (!this._storage) return 'lookup';
-
-    try {
-      return normalizeIntentMode(this._storage.getItem(this._storageKey));
-    } catch {
-      return 'lookup';
-    }
-  }
-
-  private _writeIntentMode(mode: TranslationIntentMode): void {
-    if (!this._storage) return;
-
-    try {
-      this._storage.setItem(this._storageKey, mode);
-    } catch {
-      // ストレージ利用不可環境では永続化をスキップする
-    }
-  }
-
-  private _emitModeChange(): void {
-    const event = new CustomEvent<TranslationModeChangeDetail>('translation-mode-change', {
-      detail: {
-        intentMode: this._intentMode,
-        renderMode: this._resolveRenderMode(),
-      },
-      bubbles: true,
-      composed: true,
-    });
-
-    this._root.dispatchEvent(event);
-  }
-
-  private _createObserver(): MutationObserver | null {
-    if (typeof MutationObserver === 'undefined') return null;
-
-    const observerTarget = this._root instanceof Document ? this._root.documentElement : this._root;
-
-    const observer = new MutationObserver(() => {
-      this._applyResolvedRenderMode();
-    });
-    observer.observe(observerTarget, {
-      childList: true,
-      subtree: true,
-    });
-
-    return observer;
-  }
-
-  private _findTranslationFromEvent(event: KeyboardEvent): UiTranslation | null {
-    if (typeof event.composedPath === 'function') {
-      const path = event.composedPath();
-      for (const candidate of path) {
-        if (!isTranslationElement(candidate)) continue;
-        if (this._root.contains(candidate)) {
-          return candidate;
-        }
+    for (const translation of this._queryTranslations()) {
+      if (translation.open) {
+        this._openTranslations.add(translation);
       }
     }
 
-    if (!(event.target instanceof Element)) return null;
-    const fallback = event.target.closest<UiTranslation>('ui-translation');
-    if (!fallback) return null;
-    return this._root.contains(fallback) ? fallback : null;
+    this._syncViewportListeners();
+    this._schedulePositioning();
   }
 
-  private _onViewportChange = (): void => {
-    this._applyResolvedRenderMode();
-  };
+  private _syncViewportListeners(): void {
+    const needsViewportListeners =
+      this._openTranslations.size > 0 &&
+      Array.from(this._openTranslations).some((item) => item.surface === 'popover');
 
-  private _onModeToggleRequest = (event: Event): void => {
-    if (!(event instanceof CustomEvent)) return;
-    if (!event.bubbles) return;
-    this.toggleIntentMode();
-  };
-
-  private _onGlobalKeyDown = (event: Event): void => {
-    if (!(event instanceof KeyboardEvent)) return;
-    if (event.defaultPrevented || event.repeat) return;
-    if (isEditableTarget(event.target)) return;
-
-    const normalizedKey = event.key.toLowerCase();
-    const wantsGlobalToggle =
-      normalizedKey === 'l' && event.shiftKey && !event.altKey && (event.ctrlKey || event.metaKey);
-
-    if (wantsGlobalToggle) {
-      event.preventDefault();
-      this.toggleIntentMode();
+    if (needsViewportListeners === this._listeningViewport || typeof window === 'undefined') {
       return;
     }
 
-    const wantsInlineToggle =
-      normalizedKey === 'p' && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey;
+    this._listeningViewport = needsViewportListeners;
 
-    if (!wantsInlineToggle) return;
+    if (needsViewportListeners) {
+      window.addEventListener('resize', this._onViewportChange, { passive: true });
+      window.addEventListener('scroll', this._onViewportChange, {
+        passive: true,
+        capture: true,
+      });
+      return;
+    }
 
-    const activeTranslation = this._findTranslationFromEvent(event);
-    if (!activeTranslation?.open) return;
-    if (activeTranslation.renderMode === 'interlinear') return;
+    this._detachViewportListeners();
+  }
 
-    event.preventDefault();
-    this.toggleIntentMode();
+  private _detachViewportListeners(): void {
+    if (!this._listeningViewport || typeof window === 'undefined') {
+      return;
+    }
+
+    this._listeningViewport = false;
+    window.removeEventListener('resize', this._onViewportChange);
+    window.removeEventListener('scroll', this._onViewportChange, true);
+  }
+
+  private _onViewportChange = (): void => {
+    this._schedulePositioning();
+  };
+
+  private _schedulePositioning(): void {
+    if (this._positionRaf !== null || typeof window === 'undefined') {
+      return;
+    }
+
+    this._positionRaf = window.requestAnimationFrame(() => {
+      this._positionRaf = null;
+      this._updateOpenPopovers();
+    });
+  }
+
+  private _updateOpenPopovers(): void {
+    for (const translation of this._openTranslations) {
+      if (!translation.open || translation.surface !== 'popover') {
+        continue;
+      }
+      this._positionPopover(translation);
+    }
+  }
+
+  private _positionPopover(translation: UiTranslation): void {
+    const trigger = translation.getTriggerElement();
+    const content = translation.getContentElement();
+    if (!trigger || !content || content.hidden) {
+      return;
+    }
+
+    const triggerRect = trigger.getBoundingClientRect();
+    const contentRect = content.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    const maxLeft = Math.max(
+      POPOVER_EDGE_PADDING,
+      viewportWidth - contentRect.width - POPOVER_EDGE_PADDING,
+    );
+    const left = Math.min(Math.max(triggerRect.left, POPOVER_EDGE_PADDING), maxLeft);
+
+    const preferredBelowTop = triggerRect.bottom + POPOVER_TRIGGER_GAP;
+    const preferredAboveTop = triggerRect.top - contentRect.height - POPOVER_TRIGGER_GAP;
+    const canPlaceBelow =
+      preferredBelowTop + contentRect.height + POPOVER_EDGE_PADDING <= viewportHeight;
+    const topCandidate = canPlaceBelow ? preferredBelowTop : preferredAboveTop;
+    const maxTop = Math.max(
+      POPOVER_EDGE_PADDING,
+      viewportHeight - contentRect.height - POPOVER_EDGE_PADDING,
+    );
+    const top = Math.min(Math.max(topCandidate, POPOVER_EDGE_PADDING), maxTop);
+
+    translation.style.setProperty('--ui-translation-popover-left', `${String(Math.round(left))}px`);
+    translation.style.setProperty('--ui-translation-popover-top', `${String(Math.round(top))}px`);
+  }
+
+  private _closeOtherLookups(activeTranslation: UiTranslation): void {
+    for (const translation of this._queryTranslations()) {
+      if (translation === activeTranslation) {
+        continue;
+      }
+      if (!translation.open) {
+        continue;
+      }
+      translation.closeTranslation();
+    }
+  }
+
+  private _onTranslationToggle = (event: Event): void => {
+    if (!(event instanceof CustomEvent)) {
+      return;
+    }
+
+    const translation = event.target;
+    if (!isTranslationElement(translation)) {
+      return;
+    }
+
+    const detail = event.detail as { open?: boolean; surface?: TranslationOverlaySurface } | null;
+    if (detail?.open) {
+      this._closeOtherLookups(translation);
+      this._openTranslations.add(translation);
+    } else {
+      this._openTranslations.delete(translation);
+    }
+
+    this._syncViewportListeners();
+    this._schedulePositioning();
   };
 }
 
-let defaultTranslationOrchestrator: TranslationOrchestrator | null = null;
+let defaultTranslationOverlayOrchestrator: TranslationOverlayOrchestrator | null = null;
 
-export const initTranslationOrchestrator = (): TranslationOrchestrator | null => {
-  if (defaultTranslationOrchestrator) return defaultTranslationOrchestrator;
-  if (typeof document === 'undefined') return null;
+export const initTranslationOverlayOrchestrator = (): TranslationOverlayOrchestrator | null => {
+  if (defaultTranslationOverlayOrchestrator) {
+    return defaultTranslationOverlayOrchestrator;
+  }
+  if (typeof document === 'undefined') {
+    return null;
+  }
 
-  defaultTranslationOrchestrator = new TranslationOrchestrator({ root: document });
-  defaultTranslationOrchestrator.start();
-  return defaultTranslationOrchestrator;
+  defaultTranslationOverlayOrchestrator = new TranslationOverlayOrchestrator({ root: document });
+  defaultTranslationOverlayOrchestrator.start();
+  return defaultTranslationOverlayOrchestrator;
 };
 
-export const getTranslationOrchestrator = (): TranslationOrchestrator | null =>
-  defaultTranslationOrchestrator;
+export const getTranslationOverlayOrchestrator = (): TranslationOverlayOrchestrator | null =>
+  defaultTranslationOverlayOrchestrator;

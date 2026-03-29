@@ -1,76 +1,195 @@
+import * as parse5 from 'parse5';
+import type { DefaultTreeAdapterMap } from 'parse5';
+
+export interface TocScopeSelection {
+  scopeId: string;
+  value: string;
+}
+
 export interface TocHeading {
   id: string;
   text: string;
   level: number;
+  scopeSelections?: TocScopeSelection[];
 }
 
-const HEADING_PATTERN = /<h([2-6])\b([^>]*)>([\s\S]*?)<\/h\1>/gi;
-const TAG_PATTERN = /<[^>]+>/g;
+export interface PreparedTocHtml {
+  html: string;
+  headings: TocHeading[];
+}
+
+type Parse5DocumentFragment = DefaultTreeAdapterMap['documentFragment'];
+type Parse5Element = DefaultTreeAdapterMap['element'];
+type Parse5Node = DefaultTreeAdapterMap['node'];
+type Parse5Attribute = Parse5Element['attrs'][number];
+
 const WHITESPACE_PATTERN = /\s+/g;
+const HEADING_TAG_PATTERN = /^h([2-6])$/;
 
-const decodeHtmlEntities = (value: string): string => {
-  return value
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) =>
-      String.fromCodePoint(Number.parseInt(hex, 16)),
-    )
-    .replace(/&#([0-9]+);/g, (_, decimal: string) =>
-      String.fromCodePoint(Number.parseInt(decimal, 10)),
-    );
+const isElementNode = (node: Parse5Node): node is Parse5Element =>
+  'tagName' in node && typeof node.tagName === 'string' && Array.isArray(node.attrs);
+
+const getAttributeValue = (node: Parse5Element, name: string): string | undefined => {
+  const matched = node.attrs.find((attribute) => attribute.name === name);
+  return matched?.value;
 };
 
-const stripTags = (value: string): string => value.replace(TAG_PATTERN, '');
-
-const normalizeText = (value: string): string =>
-  decodeHtmlEntities(stripTags(value)).replace(WHITESPACE_PATTERN, ' ').trim();
-
-const extractId = (attributes: string): string | null => {
-  const idMatch = /\sid=(?:"([^"]+)"|'([^']+)'|([^\s>]+))/i.exec(attributes);
-  if (!idMatch) {
-    return null;
+const setAttributeValue = (node: Parse5Element, name: string, value: string): void => {
+  const matched = node.attrs.find((attribute) => attribute.name === name);
+  if (matched) {
+    matched.value = value;
+    return;
   }
-  const id = (idMatch[1] ?? idMatch[2] ?? idMatch[3] ?? '').trim();
-  return id.length > 0 ? decodeHtmlEntities(id) : null;
+
+  node.attrs.push({ name, value } as Parse5Attribute);
 };
 
-export const extractTocFromHtml = (html: string): TocHeading[] => {
-  const source = typeof html === 'string' ? html : '';
-  if (source.length === 0) {
+const getElementChildren = (node: Parse5Node): Parse5Element[] => {
+  if (!('childNodes' in node) || !Array.isArray(node.childNodes)) {
     return [];
   }
 
-  const headings: TocHeading[] = [];
-  const matches = source.matchAll(HEADING_PATTERN);
+  return node.childNodes.filter((child): child is Parse5Element => isElementNode(child));
+};
 
-  for (const match of matches) {
-    const rawLevel = match[1];
-    const rawAttributes = match[2] ?? '';
-    const rawInner = match[3] ?? '';
-    const id = extractId(rawAttributes);
-    if (!id) {
-      continue;
-    }
+const isHeadingElement = (node: Parse5Node): node is Parse5Element =>
+  isElementNode(node) && HEADING_TAG_PATTERN.test(node.tagName);
 
-    const text = normalizeText(rawInner);
-    if (text.length === 0) {
-      continue;
-    }
-
-    const level = Number.parseInt(rawLevel ?? '', 10);
-    if (!Number.isFinite(level) || level < 2 || level > 6) {
-      continue;
-    }
-
-    headings.push({
-      id,
-      text,
-      level,
-    });
+const shouldIgnoreHeadingTextNode = (node: Parse5Element): boolean => {
+  const className = getAttributeValue(node, 'class') ?? '';
+  if (className.split(/\s+/).includes('heading-anchor')) {
+    return true;
   }
 
-  return headings;
+  return getAttributeValue(node, 'data-heading-permalink') === 'true';
 };
+
+const getTextContent = (node: Parse5Node): string => {
+  if ('value' in node && typeof node.value === 'string') {
+    return node.value;
+  }
+
+  if (!isElementNode(node)) {
+    if ('childNodes' in node && Array.isArray(node.childNodes)) {
+      return node.childNodes.map((child) => getTextContent(child)).join('');
+    }
+    return '';
+  }
+
+  if (shouldIgnoreHeadingTextNode(node)) {
+    return '';
+  }
+
+  if (!('childNodes' in node) || !Array.isArray(node.childNodes)) {
+    return '';
+  }
+
+  return node.childNodes.map((child) => getTextContent(child)).join('');
+};
+
+const normalizeText = (value: string): string => value.replace(WHITESPACE_PATTERN, ' ').trim();
+
+const getPanelSelectionMap = (tabsHost: Parse5Element): Map<Parse5Element, string> => {
+  const children = getElementChildren(tabsHost);
+  const tabs = children.filter((child) => getAttributeValue(child, 'slot') === 'tab');
+  const panels = children.filter((child) => getAttributeValue(child, 'slot') === 'panel');
+
+  const panelSelections = new Map<Parse5Element, string>();
+  panels.forEach((panel, index) => {
+    const value = getAttributeValue(tabs[index] as Parse5Element, 'value')?.trim() ?? '';
+    if (value.length > 0) {
+      panelSelections.set(panel, value);
+    }
+  });
+
+  return panelSelections;
+};
+
+const visitNode = (
+  node: Parse5Node,
+  scopeSelections: TocScopeSelection[],
+  headings: TocHeading[],
+  counters: { scope: number },
+): void => {
+  if (isHeadingElement(node)) {
+    const id = getAttributeValue(node, 'id')?.trim() ?? '';
+    const text = normalizeText(getTextContent(node));
+    const level = Number.parseInt(node.tagName.slice(1), 10);
+
+    if (id.length > 0 && text.length > 0 && Number.isFinite(level)) {
+      headings.push({
+        id,
+        text,
+        level,
+        ...(scopeSelections.length > 0
+          ? {
+              scopeSelections: scopeSelections.map((selection) => ({ ...selection })),
+            }
+          : {}),
+      });
+    }
+  }
+
+  if (!isElementNode(node)) {
+    if ('childNodes' in node && Array.isArray(node.childNodes)) {
+      for (const child of node.childNodes) {
+        visitNode(child, scopeSelections, headings, counters);
+      }
+    }
+    return;
+  }
+
+  if (node.tagName === 'ui-tabs') {
+    counters.scope += 1;
+    const scopeId = getAttributeValue(node, 'data-toc-scope')?.trim() || `toc-scope-${String(counters.scope)}`;
+    setAttributeValue(node, 'data-toc-scope', scopeId);
+
+    const panelSelections = getPanelSelectionMap(node);
+    if ('childNodes' in node && Array.isArray(node.childNodes)) {
+      for (const child of node.childNodes) {
+        if (isElementNode(child) && panelSelections.has(child)) {
+          visitNode(
+            child,
+            [...scopeSelections, { scopeId, value: panelSelections.get(child) as string }],
+            headings,
+            counters,
+          );
+          continue;
+        }
+
+        visitNode(child, scopeSelections, headings, counters);
+      }
+    }
+    return;
+  }
+
+  if ('childNodes' in node && Array.isArray(node.childNodes)) {
+    for (const child of node.childNodes) {
+      visitNode(child, scopeSelections, headings, counters);
+    }
+  }
+};
+
+const serializeFragment = (fragment: Parse5DocumentFragment): string => parse5.serialize(fragment);
+
+export const prepareTocHtml = (html: string): PreparedTocHtml => {
+  const source = typeof html === 'string' ? html : '';
+  if (source.length === 0) {
+    return { html: '', headings: [] };
+  }
+
+  const fragment = parse5.parseFragment(source);
+  const headings: TocHeading[] = [];
+  const counters = { scope: 0 };
+
+  for (const child of fragment.childNodes) {
+    visitNode(child, [], headings, counters);
+  }
+
+  return {
+    html: serializeFragment(fragment),
+    headings,
+  };
+};
+
+export const extractTocFromHtml = (html: string): TocHeading[] => prepareTocHtml(html).headings;

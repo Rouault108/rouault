@@ -14,7 +14,7 @@ import {
 } from './preview';
 import { tabsHandler, tabSlotHandler, panelSlotHandler } from './tabs';
 import { scoreHandler } from './media';
-import { translationHandler } from './translation';
+import { translationHandler, translationOverlayHandler } from './translation';
 
 export const directiveHandlers: Record<DirectiveName, DirectiveHandler> = {
   callout: calloutHandler,
@@ -27,6 +27,7 @@ export const directiveHandlers: Record<DirectiveName, DirectiveHandler> = {
   score: scoreHandler,
   tabs: tabsHandler,
   translation: translationHandler,
+  'translation-overlay': translationOverlayHandler,
   preview: previewSlotHandler,
   toolbar: toolbarSlotHandler,
   tab: tabSlotHandler,

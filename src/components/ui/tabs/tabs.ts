@@ -96,7 +96,7 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
     if (this.snapshot.interactiveCount === 0) {
       return;
     }
-  
+
     this.urlController.withSuppressedWrite(() => {
       this.resolveAndCommit({
         emitEvent: true,
@@ -374,6 +374,7 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
         index,
         value: newValue,
         prevIndex,
+        scopeId: this.getAttribute('data-toc-scope')?.trim() ?? null,
       };
 
       this.dispatchEvent(

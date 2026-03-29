@@ -113,12 +113,13 @@ Rouault の Markdown 変換系は、大きく次の 2 層で構成します。
 
 Markdown 変換系に関する文書群の ownership は次のとおりとします。
 
-| 文書 | 役割 |
-| --- | --- |
-| `docs/markdown-overview.md` | 全体方針、責務分担、SoT、規範文書の所在を定義する overview |
-| `docs/markdown-authoring-specification.md` | authoring grammar の正本 |
-| `docs/markdown-output-contract.md` | 出力 DOM 契約の正本 |
-| `docs/markdown-safety-and-test-policy.md` | safety policy、trust boundary、既知制約分類、test policy の正本 |
+| 文書                                                      | 役割                                                            |
+| --------------------------------------------------------- | --------------------------------------------------------------- |
+| `docs/markdown-overview.md`                               | 全体方針、責務分担、SoT、規範文書の所在を定義する overview      |
+| `docs/markdown-authoring-specification.md`                | authoring grammar の正本                                        |
+| `docs/markdown-output-contract.md`                        | 出力 DOM 契約の正本                                             |
+| `docs/markdown-safety-and-test-policy.md`                 | safety policy、trust boundary、既知制約分類、test policy の正本 |
+| `docs/markdown/translation-toc-static-first-migration.md` | breaking change の移行メモ。正本ではなく補助文書                |
 
 規則:
 
@@ -133,12 +134,12 @@ Markdown 変換系に関する文書群の ownership は次のとおりとしま
 
 Markdown 文書群は、Rouault の他仕様書と次の関係を持ちます。
 
-| 文書 | 関係 |
-| --- | --- |
-| `docs/foundations.md` | 見た目やトークンの基礎契約を所有し、Markdown 文書は表示コンポーネントの存在を前提とする |
-| `docs/accessibility.md` | アクセシビリティ要求の正本を所有し、Markdown 出力コンポーネントはこれに従う |
-| `docs/router-specification.md` | ルーティングと URL の意味論を所有し、Markdown 文書はそれを再定義しない |
-| `docs/search-specification.md` | 検索スニペットや `<mark>` の意味論を所有し、必要に応じて参照する |
+| 文書                           | 関係                                                                                    |
+| ------------------------------ | --------------------------------------------------------------------------------------- |
+| `docs/foundations.md`          | 見た目やトークンの基礎契約を所有し、Markdown 文書は表示コンポーネントの存在を前提とする |
+| `docs/accessibility.md`        | アクセシビリティ要求の正本を所有し、Markdown 出力コンポーネントはこれに従う             |
+| `docs/router-specification.md` | ルーティングと URL の意味論を所有し、Markdown 文書はそれを再定義しない                  |
+| `docs/search-specification.md` | 検索スニペットや `<mark>` の意味論を所有し、必要に応じて参照する                        |
 
 規則:
 

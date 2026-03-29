@@ -18,12 +18,12 @@
 
 ## 1. まず押さえる方針
 
-1. ふだんの本文は標準的な Markdown で書く  
-2. 補足 UI が必要なときだけ `::directive` を使う  
-3. 生 HTML は書かない  
-4. frontmatter には必要なメタデータだけを書く  
-5. 迷ったら簡潔な書き方を選ぶ  
-6. 属性の完全一覧や厳密な受理規則は `docs/markdown-authoring-specification.md` を参照する  
+1. ふだんの本文は標準的な Markdown で書く
+2. 補足 UI が必要なときだけ `::directive` を使う
+3. 生 HTML は書かない
+4. frontmatter には必要なメタデータだけを書く
+5. 迷ったら簡潔な書き方を選ぶ
+6. 属性の完全一覧や厳密な受理規則は `docs/markdown-authoring-specification.md` を参照する
 
 ---
 
@@ -70,18 +70,18 @@ genre:
 
 ### 3.2 よく使う項目
 
-| 項目            | 目安 | 内容                  |
-| ------------- | -- | ------------------- |
-| `title`       | 必須 | ノートタイトル             |
-| `description` | 推奨 | 一覧、検索、OG などで使う短い説明  |
-| `date`        | 推奨 | 作成日。`YYYY-MM-DD` 形式 |
-| `updated`     | 任意 | 更新日。`YYYY-MM-DD` 形式 |
-| `genre`       | 任意 | 分類用の文字列配列           |
-| `sidebarIcon` | 任意 | サイドバーで使うアイコン名       |
-| `cover`       | 任意 | カバー画像のパスまたは URL     |
-| `license`     | 任意 | ライセンス名              |
-| `licenseNote` | 任意 | ライセンスに関する補足         |
-| `status`      | 任意 | 公開状態                |
+| 項目          | 目安 | 内容                              |
+| ------------- | ---- | --------------------------------- |
+| `title`       | 必須 | ノートタイトル                    |
+| `description` | 推奨 | 一覧、検索、OG などで使う短い説明 |
+| `date`        | 推奨 | 作成日。`YYYY-MM-DD` 形式         |
+| `updated`     | 任意 | 更新日。`YYYY-MM-DD` 形式         |
+| `genre`       | 任意 | 分類用の文字列配列                |
+| `sidebarIcon` | 任意 | サイドバーで使うアイコン名        |
+| `cover`       | 任意 | カバー画像のパスまたは URL        |
+| `license`     | 任意 | ライセンス名                      |
+| `licenseNote` | 任意 | ライセンスに関する補足            |
+| `status`      | 任意 | 公開状態                          |
 
 ### 3.3 各項目の書き方
 
@@ -466,14 +466,21 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 
 原文と訳文を対で示します。
 
-属性で完結させる書き方:
+静的に本文へ出す書き方:
 
 ```markdown
-::translation{lang="fr" target-lang="ja" render-mode="drawer" original="Je pense, donc je suis." translated="我思う、ゆえに我あり。"}
+::translation{lang="fr" target-lang="ja" original="Je pense, donc je suis." translated="我思う、ゆえに我あり。"}
 ::
 ```
 
-本文から拾わせる書き方:
+overlay で参照させる書き方:
+
+```markdown
+::translation-overlay{lang="fr" target-lang="ja" surface="drawer" original="Je pense, donc je suis." translated="我思う、ゆえに我あり。"}
+::
+```
+
+本文 2 段落から拾わせる静的書き方:
 
 ```markdown
 ::translation{lang="fr" target-lang="ja"}
@@ -485,10 +492,12 @@ Je pense, donc je suis.
 
 使い分けの目安:
 
-- 短文で済む
-  → 属性で完結
+- 常に原文と訳文を読ませたい
+  → `translation`
+- クリック時だけ開きたい
+  → `translation-overlay`
 - 文章として見せたい
-  → 本文 2 段落で書く
+  → `translation` の本文 2 段落
 
 ---
 

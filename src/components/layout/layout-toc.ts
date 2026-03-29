@@ -1,12 +1,9 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { attachStickyFooterBoundary } from '../../lib/layout/sticky-footer-boundary.js';
-import {
-  filterVisibleHeadings,
-  findContentRoot,
-  findHeadingElement,
-  revealHeadingInTabs,
-} from '../../lib/toc/filter-visible-headings.js';
+import { type TocCapabilities } from '../../lib/toc/filter-visible-headings.js';
+import { TocActiveTracker } from '../../lib/toc/toc-active-tracker.js';
+import { TocMobileSummaryController } from '../../lib/toc/toc-mobile-summary-controller.js';
 import '../ui/toc/toc';
 import type { Heading, UiTocActiveChangeDetail } from '../ui/toc/toc';
 
@@ -17,6 +14,7 @@ const toHeading = (value: unknown): Heading | null => {
   if (!isRecord(value)) {
     return null;
   }
+
   const id = typeof value['id'] === 'string' ? value['id'].trim() : '';
   const text = typeof value['text'] === 'string' ? value['text'].trim() : '';
   const level = typeof value['level'] === 'number' ? Math.trunc(value['level']) : Number.NaN;
@@ -26,7 +24,74 @@ const toHeading = (value: unknown): Heading | null => {
   if (!Number.isFinite(level) || level < 2 || level > 6) {
     return null;
   }
-  return { id, text, level };
+
+  const scopeSelections = Array.isArray(value['scopeSelections'])
+    ? value['scopeSelections']
+        .map((selection) => {
+          if (!isRecord(selection)) {
+            return null;
+          }
+          const scopeId =
+            typeof selection['scopeId'] === 'string' ? selection['scopeId'].trim() : '';
+          const selectedValue =
+            typeof selection['value'] === 'string' ? selection['value'].trim() : '';
+          if (scopeId.length === 0 || selectedValue.length === 0) {
+            return null;
+          }
+          return { scopeId, value: selectedValue };
+        })
+        .filter((selection): selection is { scopeId: string; value: string } => selection !== null)
+    : [];
+
+  return {
+    id,
+    text,
+    level,
+    ...(scopeSelections.length > 0 ? { scopeSelections } : {}),
+  };
+};
+
+const parseJsonArray = (value: string): unknown[] | null => {
+  const normalized = value.trim();
+  if (normalized.length === 0) {
+    return null;
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(normalized);
+    return Array.isArray(parsed) ? (parsed as unknown[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+const parseJsonValue = (value: string): unknown => {
+  const normalized = value.trim();
+  if (normalized.length === 0) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(normalized) as unknown;
+  } catch {
+    return null;
+  }
+};
+
+const normalizeCapabilities = (value: unknown): TocCapabilities => {
+  if (!isRecord(value)) {
+    return {
+      activeTracking: false,
+      dynamicScopes: false,
+      mobileSummary: false,
+    };
+  }
+
+  return {
+    activeTracking: value['activeTracking'] === true,
+    dynamicScopes: value['dynamicScopes'] === true,
+    mobileSummary: value['mobileSummary'] === true,
+  };
 };
 
 @customElement('layout-toc')
@@ -185,70 +250,30 @@ export class LayoutToc extends LitElement {
   @property({ type: String, attribute: 'headings-json' })
   headingsJson = '';
 
+  @property({ type: String, attribute: 'capabilities-json' })
+  capabilitiesJson = '';
+
   @property({ type: String, attribute: 'content-root-id' })
   contentRootId = '';
 
-  @state()
-  private _allHeadings: Heading[] = [];
-
-  @state()
-  private _visibleHeadings: Heading[] = [];
-
-  @state()
-  private _tocReady = true;
-
-  @state()
-  private _activeId = '';
-
-  @state()
-  private _activeIndex = -1;
-
-  @state()
-  private _activeTotal = 0;
-
-  @state()
-  private _showMobileBar = false;
-
-  @state()
-  private _panelOpen = false;
-
-  private _mobileMediaQuery: MediaQueryList | null = null;
+  @state() private _allHeadings: Heading[] = [];
+  @state() private _visibleHeadings: Heading[] = [];
+  @state() private _capabilities: TocCapabilities = {
+    activeTracking: false,
+    dynamicScopes: false,
+    mobileSummary: false,
+  };
+  @state() private _activeId = '';
+  @state() private _activeIndex = -1;
+  @state() private _activeTotal = 0;
+  @state() private _showMobileBar = false;
+  @state() private _panelOpen = false;
+  @state() private _tocReady = true;
 
   private _detachStickyFooterBoundary: (() => void) | null = null;
-
-  private _contentRoot: HTMLElement | null = null;
-
-  private _panelStateObserver: MutationObserver | null = null;
-
-  private _refreshVisibleHeadingsFrame: number | null = null;
-
-  private _didWarnMissingContentRootId = false;
-
+  private _tracker: TocActiveTracker | null = null;
+  private _mobileController: TocMobileSummaryController | null = null;
   private _hydrationActivated = false;
-
-  activateHydration(): void {
-    if (this._hydrationActivated) {
-      return;
-    }
-
-    this._hydrationActivated = true;
-
-    const stickyTarget = this.parentElement instanceof HTMLElement ? this.parentElement : this;
-    this._detachStickyFooterBoundary = attachStickyFooterBoundary(stickyTarget);
-
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    this._mobileMediaQuery = window.matchMedia('(max-width: 639px)');
-    this._mobileMediaQuery.addEventListener('change', this._onMediaQueryChange);
-    window.addEventListener('scroll', this._onWindowScroll, { passive: true });
-    window.addEventListener('hashchange', this._onHashChange);
-    document.addEventListener('ui-tab-change', this._onTabChange as EventListener);
-
-    this._syncMobileBarVisibility();
-    this._scheduleVisibleHeadingsRefresh();
-  }
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -259,24 +284,9 @@ export class LayoutToc extends LitElement {
   }
 
   override disconnectedCallback(): void {
-    this._mobileMediaQuery?.removeEventListener('change', this._onMediaQueryChange);
-    this._mobileMediaQuery = null;
-
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('scroll', this._onWindowScroll);
-      window.removeEventListener('hashchange', this._onHashChange);
-      document.removeEventListener('ui-tab-change', this._onTabChange as EventListener);
-
-      if (this._refreshVisibleHeadingsFrame !== null) {
-        window.cancelAnimationFrame(this._refreshVisibleHeadingsFrame);
-        this._refreshVisibleHeadingsFrame = null;
-      }
-    }
-
-    this._detachPanelStateObserver();
+    this._disconnectControllers();
     this._detachStickyFooterBoundary?.();
     this._detachStickyFooterBoundary = null;
-
     super.disconnectedCallback();
   }
 
@@ -285,43 +295,31 @@ export class LayoutToc extends LitElement {
       !this.hasUpdated ||
       changedProperties.has('sourceId') ||
       changedProperties.has('headingsJson') ||
-      changedProperties.has('contentRootId')
+      changedProperties.has('capabilitiesJson')
     ) {
       this._loadHeadingsFromSource();
     }
   }
 
-  private _warnMissingContentRootIdInDev(): void {
-    if (this._didWarnMissingContentRootId) {
+  activateHydration(): void {
+    if (this._hydrationActivated) {
       return;
     }
 
-    if (this.contentRootId.trim().length > 0) {
-      return;
-    }
-
-    const isDevelopment =
-      typeof location !== 'undefined' &&
-      (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
-
-    if (!isDevelopment) {
-      return;
-    }
-
-    this._didWarnMissingContentRootId = true;
-    console.warn(
-      '[layout-toc] content-root-id が未指定です。静的ページでは任意ですが、タブや折りたたみなど可視範囲が動的に変わるページでは指定してください。',
-      this,
-    );
+    this._hydrationActivated = true;
+    const stickyTarget = this.parentElement instanceof HTMLElement ? this.parentElement : this;
+    this._detachStickyFooterBoundary = attachStickyFooterBoundary(stickyTarget);
+    this._connectControllers();
   }
 
   private _loadHeadingsFromSource(): void {
-    const inlineHeadings = this._parseHeadingsJson(this.headingsJson);
+    const inlineHeadings = parseJsonArray(this.headingsJson);
 
     let nextHeadings: Heading[] = [];
-
     if (inlineHeadings !== null) {
-      nextHeadings = inlineHeadings;
+      nextHeadings = inlineHeadings
+        .map((item) => toHeading(item))
+        .filter((item): item is Heading => item !== null);
     } else if (this.sourceId.length > 0 && typeof document !== 'undefined') {
       const source = document.getElementById(this.sourceId);
       if (source instanceof HTMLScriptElement) {
@@ -340,64 +338,57 @@ export class LayoutToc extends LitElement {
 
     this._allHeadings = nextHeadings;
 
-    if (
-      typeof window === 'undefined' ||
-      this.contentRootId.trim().length === 0 ||
-      !this._hydrationActivated
-    ) {
-      this._warnMissingContentRootIdInDev();
+    this._capabilities = normalizeCapabilities(parseJsonValue(this.capabilitiesJson));
+
+    if (!this._hydrationActivated || typeof window === 'undefined') {
       this._applyVisibleHeadings(nextHeadings);
       return;
     }
 
-    this._tocReady = false;
-    this._scheduleVisibleHeadingsRefresh();
+    this._connectControllers();
   }
 
-  private _parseHeadingsJson(value: string): Heading[] | null {
-    const normalized = value.trim();
-    if (normalized.length === 0) {
-      return null;
-    }
-
-    try {
-      const parsed: unknown = JSON.parse(normalized);
-      if (!Array.isArray(parsed)) {
-        return [];
-      }
-
-      return parsed.map((item) => toHeading(item)).filter((item): item is Heading => item !== null);
-    } catch {
-      return [];
-    }
-  }
-
-  private _resolveInitialActiveId(headings: Heading[]): string {
-    if (headings.length === 0) {
-      return '';
-    }
+  private _connectControllers(): void {
+    this._disconnectControllers();
 
     if (typeof window === 'undefined') {
-      return headings[0]?.id ?? '';
+      this._applyVisibleHeadings(this._allHeadings);
+      return;
     }
 
-    const rawHash = window.location.hash.replace(/^#/, '').trim();
-    const hash = (() => {
-      if (rawHash.length === 0) {
-        return '';
-      }
-      try {
-        return decodeURIComponent(rawHash).trim();
-      } catch {
-        return rawHash;
-      }
-    })();
+    this._tocReady = false;
 
-    if (hash.length === 0) {
-      return headings[0]?.id ?? '';
-    }
+    this._tracker = new TocActiveTracker({
+      contentRootId: this.contentRootId,
+      headings: this._allHeadings,
+      capabilities: this._capabilities,
+      getActiveId: () => this._activeId,
+      onVisibleHeadingsChange: (headings) => {
+        this._applyVisibleHeadings(headings);
+      },
+      onActiveIdChange: (id) => {
+        this._applyActiveId(id);
+      },
+    });
+    this._tracker.start();
 
-    return headings.find((item) => item.id === hash)?.id ?? headings[0]?.id ?? '';
+    this._mobileController = new TocMobileSummaryController({
+      enabled: this._capabilities.mobileSummary,
+      onVisibilityChange: (visible) => {
+        this._showMobileBar = visible;
+        if (!visible) {
+          this._panelOpen = false;
+        }
+      },
+    });
+    this._mobileController.start();
+  }
+
+  private _disconnectControllers(): void {
+    this._tracker?.destroy();
+    this._tracker = null;
+    this._mobileController?.destroy();
+    this._mobileController = null;
   }
 
   private _readLocationHash(): string {
@@ -419,157 +410,27 @@ export class LayoutToc extends LitElement {
 
   private _applyVisibleHeadings(headings: Heading[]): void {
     this._visibleHeadings = headings;
+    this._activeTotal = headings.length;
 
     const hash = this._readLocationHash();
-    const activeId = (() => {
-      if (headings.length === 0) {
-        return '';
-      }
-      if (hash.length > 0 && headings.some((item) => item.id === hash)) {
-        return hash;
-      }
-      if (this._activeId.length > 0 && headings.some((item) => item.id === this._activeId)) {
-        return this._activeId;
-      }
-      return this._resolveInitialActiveId(headings);
-    })();
+    if (hash.length > 0 && headings.some((heading) => heading.id === hash)) {
+      this._applyActiveId(hash);
+    } else if (!headings.some((heading) => heading.id === this._activeId)) {
+      this._applyActiveId(headings[0]?.id ?? '');
+    } else {
+      this._activeIndex = headings.findIndex((heading) => heading.id === this._activeId);
+    }
 
-    this._activeId = activeId;
-    this._activeIndex = headings.findIndex((item) => item.id === activeId);
-    this._activeTotal = headings.length;
     this._tocReady = true;
   }
 
-  private _scheduleVisibleHeadingsRefresh(): void {
-    if (typeof window === 'undefined') {
-      this._applyVisibleHeadings(this._allHeadings);
-      return;
-    }
-
-    if (this._refreshVisibleHeadingsFrame !== null) {
-      window.cancelAnimationFrame(this._refreshVisibleHeadingsFrame);
-    }
-
-    this._refreshVisibleHeadingsFrame = window.requestAnimationFrame(() => {
-      this._refreshVisibleHeadingsFrame = null;
-      void this._refreshVisibleHeadings();
-    });
-  }
-
-  private async _refreshVisibleHeadings(): Promise<void> {
-    if (typeof window === 'undefined') {
-      this._applyVisibleHeadings(this._allHeadings);
-      return;
-    }
-
-    const contentRoot = findContentRoot(this.contentRootId);
-    this._contentRoot = contentRoot;
-
-    this._detachPanelStateObserver();
-
-    if (!(contentRoot instanceof HTMLElement)) {
-      this._applyVisibleHeadings(this._allHeadings);
-      return;
-    }
-
-    this._attachPanelStateObserver(contentRoot);
-
-    const hasTabs = contentRoot.querySelector('ui-tabs') !== null;
-    if (hasTabs) {
-      await customElements.whenDefined('ui-tabs');
-    }
-
-    await new Promise<void>((resolve) => {
-      window.requestAnimationFrame(() => {
-        resolve();
-      });
-    });
-
-    const hash = this._readLocationHash();
-    if (hash.length > 0) {
-      const target = findHeadingElement(contentRoot, hash);
-      if (target) {
-        revealHeadingInTabs(contentRoot, target);
-      }
-    }
-
-    const visibleHeadings = filterVisibleHeadings(contentRoot, this._allHeadings);
-    this._applyVisibleHeadings(visibleHeadings);
-  }
-
-  private _attachPanelStateObserver(contentRoot: HTMLElement): void {
-    this._panelStateObserver = new MutationObserver((records) => {
-      const shouldRefresh = records.some((record) => contentRoot.contains(record.target));
-      if (shouldRefresh) {
-        this._scheduleVisibleHeadingsRefresh();
-      }
-    });
-
-    this._panelStateObserver.observe(contentRoot, {
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['hidden', 'aria-hidden', 'data-panel-active'],
-    });
-  }
-
-  private _detachPanelStateObserver(): void {
-    this._panelStateObserver?.disconnect();
-    this._panelStateObserver = null;
-  }
-
-  private _isEventFromContentRoot(event: Event): boolean {
-    const contentRoot = this._contentRoot ?? findContentRoot(this.contentRootId);
-    if (!(contentRoot instanceof HTMLElement)) {
-      return false;
-    }
-
-    const target = event.target;
-    return target instanceof Node && contentRoot.contains(target);
-  }
-
-  private _onTabChange = (event: Event): void => {
-    if (this._isEventFromContentRoot(event)) {
-      this._scheduleVisibleHeadingsRefresh();
-    }
-  };
-
-  private _onHashChange = (): void => {
-    this._scheduleVisibleHeadingsRefresh();
-  };
-
-  private _onMediaQueryChange = (): void => {
-    this._syncMobileBarVisibility();
-    if (!(this._mobileMediaQuery?.matches ?? false)) {
-      this._panelOpen = false;
-    }
-  };
-
-  private _onWindowScroll = (): void => {
-    this._syncMobileBarVisibility();
-  };
-
-  private _syncMobileBarVisibility(): void {
-    const isMobile = this._mobileMediaQuery?.matches ?? false;
-    if (!isMobile) {
-      this._showMobileBar = false;
-      return;
-    }
-
-    const headerHeight = this._readHeaderHeight();
-    this._showMobileBar = window.scrollY > headerHeight;
-  }
-
-  private _readHeaderHeight(): number {
-    const raw = getComputedStyle(document.documentElement)
-      .getPropertyValue('--header-height')
-      .trim();
-    const parsed = Number.parseFloat(raw);
-    return Number.isFinite(parsed) ? parsed : 48;
+  private _applyActiveId(id: string): void {
+    this._activeId = id;
+    this._activeIndex = this._visibleHeadings.findIndex((heading) => heading.id === id);
   }
 
   private _onTocActiveChange = (event: CustomEvent<UiTocActiveChangeDetail>): void => {
-    this._activeId = event.detail.id;
-    this._activeIndex = event.detail.index;
+    this._applyActiveId(event.detail.id);
     this._activeTotal = event.detail.total;
 
     if (event.detail.source === 'click') {
@@ -591,6 +452,7 @@ export class LayoutToc extends LitElement {
     if (this._activeTotal <= 0 || this._activeIndex < 0) {
       return circumference;
     }
+
     const ratio = (this._activeIndex + 1) / this._activeTotal;
     return circumference * (1 - ratio);
   }
@@ -599,6 +461,7 @@ export class LayoutToc extends LitElement {
     if (this._activeIndex >= 0 && this._activeIndex < this._visibleHeadings.length) {
       return this._visibleHeadings[this._activeIndex]?.text ?? '';
     }
+
     return this._visibleHeadings[0]?.text ?? '';
   }
 

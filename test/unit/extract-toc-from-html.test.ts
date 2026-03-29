@@ -1,5 +1,5 @@
 import { expect } from '@open-wc/testing';
-import { extractTocFromHtml } from '../../lib/content/extract-toc-from-html.js';
+import { extractTocFromHtml, prepareTocHtml } from '../../lib/content/extract-toc-from-html.js';
 
 describe('extractTocFromHtml', () => {
   it('id付きのh2-h6見出しを抽出できること', () => {
@@ -35,5 +35,38 @@ describe('extractTocFromHtml', () => {
     const toc = extractTocFromHtml(html);
 
     expect(toc).to.deep.equal([{ id: 'intro', text: 'はじめに', level: 2 }]);
+  });
+
+  it('tabs 配下の見出しに scopeSelections を付与し、HTML に data-toc-scope を補完すること', () => {
+    const source = `
+      <ui-tabs>
+        <div slot="tab" value="overview">概要</div>
+        <div slot="panel">
+          <h2 id="overview-heading">Overview</h2>
+        </div>
+        <div slot="tab" value="details">詳細</div>
+        <div slot="panel">
+          <h2 id="details-heading">Details</h2>
+        </div>
+      </ui-tabs>
+    `;
+
+    const prepared = prepareTocHtml(source);
+
+    expect(prepared.html).to.contain('data-toc-scope="toc-scope-1"');
+    expect(prepared.headings).to.deep.equal([
+      {
+        id: 'overview-heading',
+        text: 'Overview',
+        level: 2,
+        scopeSelections: [{ scopeId: 'toc-scope-1', value: 'overview' }],
+      },
+      {
+        id: 'details-heading',
+        text: 'Details',
+        level: 2,
+        scopeSelections: [{ scopeId: 'toc-scope-1', value: 'details' }],
+      },
+    ]);
   });
 });

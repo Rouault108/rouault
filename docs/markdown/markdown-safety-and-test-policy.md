@@ -214,7 +214,7 @@ raw HTML 禁止は設計原則であり、暫定制約ではありません。
 
 #### 7.2.1 `translation`
 
-`translation` は block children を保持せず、1 段落目と 2 段落目のプレーンテキスト相当を `original` / `translated` へ昇格したあと `children: []` になります。
+`translation` / `translation-overlay` は block children を保持せず、1 段落目と 2 段落目のプレーンテキスト相当を `original` / `translated` 相当へ昇格したあと `children: []` になります。旧 `render-mode` / `open` は互換吸収せず、build-time で拒否します。
 
 #### 7.2.2 `tabs`
 
@@ -331,7 +331,8 @@ raw HTML 禁止は設計原則であり、暫定制約ではありません。
 
 少なくとも次を固定すべきです。
 
-- `translation` が children を保持しない現状
+- `translation` / `translation-overlay` が children を保持しない現状
+- 旧 `translation.render-mode` を reject すること
 - `tabs` が個数整合を検証しない現状
 - `tabs.url-sync` が単一系統想定である現状
 

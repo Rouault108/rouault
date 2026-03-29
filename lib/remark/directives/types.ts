@@ -43,6 +43,7 @@ export type DirectiveName =
   | 'score'
   | 'tabs'
   | 'translation'
+  | 'translation-overlay'
   | 'preview'
   | 'toolbar'
   | 'tab'

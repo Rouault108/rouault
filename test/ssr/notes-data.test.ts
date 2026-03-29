@@ -67,6 +67,58 @@ describe('buildNotesCollection', () => {
     ]);
     expect(collection[0]?.tocHeadings).toEqual([{ id: 'heading-b', text: '見出しB', level: 2 }]);
     expect(collection[1]?.tocHeadings).toEqual([{ id: 'heading-a', text: '見出しA', level: 2 }]);
+    expect(collection[0]?.tocCapabilities).toEqual({
+      activeTracking: true,
+      dynamicScopes: false,
+      mobileSummary: true,
+    });
+  });
+
+  it('tabs 配下の見出し scope と tocCapabilities を build-time で確定する', async () => {
+    const contentRoot = await createContentRoot();
+    const collection = buildNotesCollection(
+      [
+        {
+          slug: 'category/section-a/item-alpha',
+          title: '項目アルファ',
+          kind: 'reader',
+          content: `
+            <ui-tabs>
+              <div slot="tab" value="overview">概要</div>
+              <div slot="panel">
+                <h2 id="overview-heading">Overview</h2>
+              </div>
+              <div slot="tab" value="details">詳細</div>
+              <div slot="panel">
+                <h2 id="details-heading">Details</h2>
+              </div>
+            </ui-tabs>
+          `,
+        },
+      ],
+      contentRoot,
+    );
+
+    expect(collection[0]?.content).toContain('data-toc-scope="toc-scope-1"');
+    expect(collection[0]?.tocHeadings).toEqual([
+      {
+        id: 'overview-heading',
+        text: 'Overview',
+        level: 2,
+        scopeSelections: [{ scopeId: 'toc-scope-1', value: 'overview' }],
+      },
+      {
+        id: 'details-heading',
+        text: 'Details',
+        level: 2,
+        scopeSelections: [{ scopeId: 'toc-scope-1', value: 'details' }],
+      },
+    ]);
+    expect(collection[0]?.tocCapabilities).toEqual({
+      activeTracking: true,
+      dynamicScopes: true,
+      mobileSummary: true,
+    });
   });
 
   it('cover を resolver 済み metadata として保持する', async () => {
@@ -271,9 +323,7 @@ describe('buildNotesCollection', () => {
 
     expect(() =>
       buildNotesCollection(
-        [
-          { slug: 'fixture/index', title: 'fixture/index.md', content: '' },
-        ],
+        [{ slug: 'fixture/index', title: 'fixture/index.md', content: '' }],
         contentRoot,
       ),
     ).toThrow(/Ambiguous note source/);

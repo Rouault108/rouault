@@ -188,6 +188,58 @@ describe('NoteLayout', () => {
     expect(rendered).toContain('content-root-id="note-content-testing-tabs-test"');
   });
 
+  it('layout-toc に capabilities-json を渡し、runtime capability がある場合だけ hydrate すること', () => {
+    const layout = new NoteLayout();
+    const rendered = layout.render({
+      content: '<h2 id="intro">Intro</h2>',
+      note: {
+        slug: 'music/with-toc',
+        title: 'With TOC',
+        kind: 'reader',
+        tocHeadings: [{ id: 'intro', text: 'Intro', level: 2 }],
+        tocCapabilities: {
+          activeTracking: true,
+          dynamicScopes: false,
+          mobileSummary: true,
+        },
+      },
+      notes: [],
+    });
+
+    const layoutTocMarkup = /<layout-toc[\s\S]*?<\/layout-toc>/.exec(rendered)?.[0] ?? '';
+    expect(layoutTocMarkup).toContain(
+      'capabilities-json="{&quot;activeTracking&quot;:true,&quot;dynamicScopes&quot;:false,&quot;mobileSummary&quot;:true}"',
+    );
+    expect(layoutTocMarkup).toContain('data-hydration-capability="interactive"');
+    expect(layoutTocMarkup).toContain('data-hydration-trigger="initial"');
+  });
+
+  it('static-only TOC では layout-toc に hydration directive を付与しないこと', () => {
+    const layout = new NoteLayout();
+    const rendered = layout.render({
+      content: '<p>本文のみ</p>',
+      note: {
+        slug: 'testing/static-only',
+        title: 'Static Only',
+        kind: 'testing',
+        tocHeadings: [],
+        tocCapabilities: {
+          activeTracking: false,
+          dynamicScopes: false,
+          mobileSummary: false,
+        },
+      },
+      notes: [],
+    });
+
+    const layoutTocMarkup = /<layout-toc[\s\S]*?<\/layout-toc>/.exec(rendered)?.[0] ?? '';
+    expect(layoutTocMarkup).toContain(
+      'capabilities-json="{&quot;activeTracking&quot;:false,&quot;dynamicScopes&quot;:false,&quot;mobileSummary&quot;:false}"',
+    );
+    expect(layoutTocMarkup).not.toContain('data-hydration-capability=');
+    expect(layoutTocMarkup).not.toContain('data-hydration-trigger=');
+  });
+
   it('note ページの hydration scope を出力すること', () => {
     const layout = new NoteLayout();
     const rendered = layout.render({

@@ -130,7 +130,7 @@ document.querySelector('.demo-button').addEventListener('click', bgChange);
 
 https://note.com/info/n/nea1b96233fbf
 
-::link-card{url="https://note.com/info/n/nea1b96233fbf" title="任意タイトル" description="任意説明" image="content/_assets/testing/test-card.jpg"}
+::link-card{url="https://note.com/info/n/nea1b96233fbf" title="任意タイトル" description="任意説明" image="content/\_assets/testing/test-card.jpg"}
 
 ### その他独自記法
 
@@ -157,7 +157,7 @@ https://note.com/info/n/nea1b96233fbf
 ::
 ::
 
-::translation{lang="fr" target-lang="ja" render-mode="interlinear" original="Je pense, donc je suis." translated="我思う、ゆえに我あり。"}
+::translation-overlay{lang="fr" target-lang="ja" surface="drawer" original="Je pense, donc je suis." translated="我思う、ゆえに我あり。"}
 ::
 
 ::translation{lang="fr" target-lang="ja"}

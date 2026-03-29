@@ -1,4 +1,4 @@
-import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
+import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { map } from 'lit/directives/map.js';
@@ -6,16 +6,14 @@ import { styleMap } from 'lit/directives/style-map.js';
 import { updateHashInCurrentUrl } from '../../../lib/url-hash.js';
 import '../tooltip/tooltip';
 
-/**
- * 見出しデータの型定義
- */
 export interface Heading {
-  /** 一意の識別子。アンカーリンクおよびObserverのターゲットIDに使用。 */
   id: string;
-  /** 表示テキスト */
   text: string;
-  /** 見出しレベル (1–6)。H2なら2、H3なら3。 */
   level: number;
+  scopeSelections?: {
+    scopeId: string;
+    value: string;
+  }[];
 }
 
 export interface UiTocActiveChangeDetail {
@@ -25,74 +23,6 @@ export interface UiTocActiveChangeDetail {
   total: number;
 }
 
-/**
- * 目次 (Table of Contents) コンポーネント `<ui-toc>`
- *
- * 記事内の見出し構造を可視化し、読者が現在地を把握しながらコンテンツを
- * ナビゲートするための「周辺視野の計器（Peripheral Indicator）」として機能します。
- *
- * ## 設計思想
- *
- * - **Visual Silence**: 背景色・常時ボーダーを排除し、低密度な「静謐」を実現します。
- * - **周辺視野の計器**: 操作パネルではなく、現在地と残量を無意識に感じさせます。
- * - **Context Awareness**: アクティブセクションのみハイライト、他は控えめに配置します。
- *
- * ## データフロー
- *
- * - `headers` プロパティで見出しデータを受け取ります（クライアントDOM解析は行いません）。
- * - `IntersectionObserver` でビューポート内のヘッダー要素を監視し、`activeId` を動的に更新します。
- *
- * ## インタラクション
- *
- * - **Smooth Scroll**: 移動距離に応じた適応的アニメーション（最大 `--duration-slower` = 300ms）。
- * - **Conflict Resolution**: クリック移動中は Observer を一時停止し、完了後に再開します。
- *   これによりインジケーターの明滅（Flickering）を防止します。
- * - **Transition Strategy**:
- *   - スクロール起因: `--duration-instant`（ゼロ）で即座に反映（計器としての正確性）。
- *   - クリック起因: `opacity` のフェードイン（`--duration-fast`）で着地確信を与えます。
- *
- * ## レベル正規化
- *
- * 表示上の相対階層（0 start）を算出します。`headers` 内の最小レベルを基準にします。
- * 例: H2 のみなら全て 0。H2+H3 なら H2=0、H3=1。
- *
- * @property {Heading[]} headers   - 見出しデータの配列 `{ id, text, level }`
- * @property {string}   activeId  - 現在アクティブな見出しのID（Observerにより自動更新）
- *
- * @cssprop --fg-muted            - 通常テキスト色（WCAG AA: 4.8:1 vs --bg-default）
- * @cssprop --fg-default          - ホバー時テキスト色
- * @cssprop --primary             - アクティブインジケーター色
- * @cssprop --toc-item-fg-active  - アクティブ項目テキスト色
- * @cssprop --toc-item-hover-bg   - ホバー時のごく薄い面色
- * @cssprop --toc-item-active-bg  - 現在地のごく薄い面色
- * @cssprop --text-sm             - フォントサイズ (13px)
- * @cssprop --space-1             - 垂直パディング (4px)
- * @cssprop --space-2             - インデント単位 (8px)
- * @cssprop --space-3             - 左パディングベース (12px)
- * @cssprop --border-width-thick  - インジケーター幅 (2px)
- * @cssprop --radius-full         - インジケーター角丸 (9999px)
- * @cssprop --duration-fast       - クリック起因フェードイン時間 (70ms)
- * @cssprop --duration-slower     - スクロールアニメーション最大時間 (300ms)
- * @cssprop --ease-out            - イージング関数
- * @cssprop --focus-ring-width    - フォーカスリング幅
- * @cssprop --focus-ring-color    - フォーカスリング色
- * @cssprop --focus-ring-offset   - フォーカスリングオフセット
- * @cssprop --focus-ring-radius   - フォーカスリング角丸
- * @cssprop --animation-focus     - Adaptive Focusアニメーション
- * @cssprop --header-height       - ヘッダー高さ（スクロールオフセット補正に使用）
- *
- * @example
- * ```html
- * <ui-toc
- *   .headers="${[
- *     { id: 'intro', text: 'はじめに', level: 2 },
- *     { id: 'details', text: '詳細', level: 3 },
- *     { id: 'summary', text: 'まとめ', level: 2 },
- *   ]}"
- *   active-id="intro"
- * ></ui-toc>
- * ```
- */
 @customElement('ui-toc')
 export class Toc extends LitElement {
   static override styles = css`
@@ -267,37 +197,13 @@ export class Toc extends LitElement {
           var(--nav-item-transition-easing, var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)));
     }
 
-    .toc-link.is-active.is-scroll::before {
+    .toc-link.is-active::before {
       opacity: 1;
-    }
-
-    .toc-link.is-active.is-click::before {
-      animation: toc-indicator-fade-in var(--duration-fast, 70ms)
-        var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)) both;
-    }
-
-    @keyframes toc-indicator-fade-in {
-      from {
-        opacity: 0;
-      }
-      to {
-        opacity: 1;
-      }
-    }
-
-    @media (hover: none) and (pointer: coarse) {
-      li + li {
-        margin-block-start: 2px;
-      }
     }
 
     @media (prefers-reduced-motion: reduce) {
       .toc-link {
         transition-duration: 0.01ms;
-      }
-
-      .toc-link.is-active.is-click::before {
-        animation-duration: 0.01ms;
       }
     }
 
@@ -321,58 +227,19 @@ export class Toc extends LitElement {
     }
   `;
 
-  /**
-   * 見出しデータの配列。レンダリングの唯一のソース。
-   * Velite 等が生成したメタデータをそのまま渡す想定。
-   * @default []
-   */
   @property({ type: Array })
   headers: Heading[] = [];
 
-  /**
-   * 現在アクティブな見出しのID。
-   * IntersectionObserver により自動更新されるが、外部からも設定可能。
-   * @default ''
-   */
   @property({ type: String, attribute: 'active-id', reflect: true })
   activeId = '';
 
-  /** アクティブID更新の起源（インジケーターのトランジション戦略を決定） */
   @state() private _activeIdSource: 'scroll' | 'click' = 'scroll';
 
-  /** 省略表示中の見出しIDセット。tooltip の有効化判定に使用する。 */
   private _truncatedHeadingIds = new Set<string>();
-
-  /** IntersectionObserver インスタンス */
-  private _observer: IntersectionObserver | null = null;
-
-  /**
-   * Observer 一時停止フラグ。
-   * クリックによるスクロール中はインジケーターの明滅防止のため停止する。
-   */
-  private _observerPaused = false;
-
-  /** ビューポート内に存在する見出しIDのセット */
-  private _visibleIds = new Set<string>();
-
-  /** ラベル計測の同期用 ResizeObserver */
   private _labelResizeObserver: ResizeObserver | null = null;
-
-  /** 同一フレーム内の重複計測を防ぐ */
   private _truncationSyncFrame: number | null = null;
 
-  /**
-   * 内部からの activeId 更新フラグ。
-   * updated() で外部更新と内部更新を区別するために使用。
-   */
-  private _internalUpdate = false;
-
-  override connectedCallback() {
-    super.connectedCallback();
-    this._setupObserver();
-  }
-
-  override firstUpdated() {
+  override firstUpdated(): void {
     this._labelResizeObserver = new ResizeObserver(() => {
       this._scheduleTruncationSync();
     });
@@ -380,145 +247,90 @@ export class Toc extends LitElement {
     this._scheduleTruncationSync();
   }
 
-  override disconnectedCallback() {
+  override disconnectedCallback(): void {
     if (this._truncationSyncFrame !== null) {
       cancelAnimationFrame(this._truncationSyncFrame);
       this._truncationSyncFrame = null;
     }
+
     this._labelResizeObserver?.disconnect();
     this._labelResizeObserver = null;
     super.disconnectedCallback();
-    this._teardownObserver();
   }
 
-  protected override willUpdate(changedProperties: PropertyValues<this>) {
-    if (changedProperties.has('activeId') && !this._internalUpdate) {
-      // 外部からの activeId 変更は描画前に click 起因へ寄せる。
-      this._activeIdSource = 'click';
-    }
-  }
-
-  override updated(changedProperties: PropertyValues<this>) {
+  override updated(changedProperties: PropertyValues<this>): void {
     super.updated(changedProperties);
 
-    if (changedProperties.has('headers')) {
-      // headers 変更時: 監視対象が変わるため Observer を再設定
-      this._setupObserver();
-    }
-
-    if (changedProperties.has('activeId')) {
-      this._emitActiveChange();
-    }
-
     if (changedProperties.has('headers') || changedProperties.has('activeId')) {
+      this._observeLabels();
+      this._scheduleTruncationSync();
       this._syncActiveLinkVisibility();
     }
+  }
 
-    // 内部更新フラグをリセット
-    this._internalUpdate = false;
+  refresh(): void {
     this._observeLabels();
     this._scheduleTruncationSync();
+    this._syncActiveLinkVisibility();
   }
 
-  /**
-   * headers 内の最小レベルを返す（レベル正規化の基準値）
-   */
   private get _minLevel(): number {
-    if (this.headers.length === 0) return 1;
-    return Math.min(...this.headers.map((h) => h.level));
+    if (this.headers.length === 0) {
+      return 1;
+    }
+
+    return Math.min(...this.headers.map((heading) => heading.level));
   }
 
-  /**
-   * 表示上の相対階層（0 start）を返す。
-   * 例: H2=0, H3=1, H4=2（H2 が最小の場合）
-   */
   private _normalizedLevel(heading: Heading): number {
     return heading.level - this._minLevel;
   }
 
-  /**
-   * IntersectionObserver を設定し、ドキュメント内の見出し要素の監視を開始する。
-   * headers 変更時や connectedCallback 時に呼び出す。
-   */
-  private _setupObserver() {
-    this._teardownObserver();
-    this._visibleIds.clear();
+  private _observeLabels(): void {
+    const observer = this._labelResizeObserver;
+    if (!observer) {
+      return;
+    }
 
-    if (this.headers.length === 0) return;
+    observer.disconnect();
+    const labels = this.renderRoot.querySelectorAll<HTMLElement>('.toc-link-label');
+    for (const label of labels) {
+      observer.observe(label);
+    }
+  }
 
-    // ヘッダー高さと padding からスクロール停止位置を計算
-    const headerHeightRaw = getComputedStyle(document.documentElement)
-      .getPropertyValue('--header-height')
-      .trim();
-    const headerHeight = headerHeightRaw ? parseFloat(headerHeightRaw) : 0;
-    const EXTRA_PADDING = 32;
+  private _scheduleTruncationSync(): void {
+    if (this._truncationSyncFrame !== null) {
+      return;
+    }
 
-    // スクロール先のオフセットと観測領域の上端を同期する
-    // 要素が確実に IntersectionObserver の観測領域に入るよう、1px 余分にオフセットを調整する
-    const topMargin = headerHeight + EXTRA_PADDING - 1;
+    this._truncationSyncFrame = requestAnimationFrame(() => {
+      this._truncationSyncFrame = null;
+      this._syncTruncationState();
+    });
+  }
 
-    this._observer = new IntersectionObserver(
-      (entries) => {
-        // クリックスクロール中は無視（Flickering 防止）
-        if (this._observerPaused) return;
+  private _syncTruncationState(): void {
+    const nextTruncatedIds = new Set<string>();
+    const labels = this.renderRoot.querySelectorAll<HTMLElement>('.toc-link-label');
 
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            this._visibleIds.add(entry.target.id);
-          } else {
-            this._visibleIds.delete(entry.target.id);
-          }
-        });
+    for (const label of labels) {
+      const headingId = label.dataset['headingId'];
+      if (!headingId || headingId === this.activeId) {
+        continue;
+      }
 
-        // headers の順序で最初に可視状態の見出しをアクティブにする
-        const activeHeading = this.headers.find((h) => this._visibleIds.has(h.id));
-        if (activeHeading && activeHeading.id !== this.activeId) {
-          this._setActiveId(activeHeading.id, 'scroll');
-        }
-      },
-      {
-        /*
-         * rootMargin: 上部の除外領域をスクロール停止位置 (headerHeight + padding) と同期。
-         * 下部70%除外で、スクロール中にビューポート最上部近傍の見出しを捕捉する。
-         */
-        rootMargin: `-${String(topMargin)}px 0px -70% 0px`,
-        threshold: 0,
-      },
-    );
-
-    // ドキュメント内の各見出し要素を監視
-    for (const heading of this.headers) {
-      const el = document.getElementById(heading.id);
-      if (el) {
-        this._observer.observe(el);
+      const isTruncated =
+        label.scrollWidth - label.clientWidth > 1 || label.scrollHeight - label.clientHeight > 1;
+      if (isTruncated) {
+        nextTruncatedIds.add(headingId);
       }
     }
+
+    this._truncatedHeadingIds = nextTruncatedIds;
+    this.requestUpdate();
   }
 
-  /**
-   * IntersectionObserver を切断してリソースを解放する。
-   */
-  private _teardownObserver() {
-    if (this._observer) {
-      this._observer.disconnect();
-      this._observer = null;
-    }
-  }
-
-  /**
-   * activeId を内部から更新する。
-   * _internalUpdate フラグで外部更新と区別し、_activeIdSource を正しく設定する。
-   */
-  private _setActiveId(id: string, source: 'scroll' | 'click') {
-    this._internalUpdate = true;
-    this.activeId = id;
-    this._activeIdSource = source;
-  }
-
-  /**
-   * アクティブ項目が TOC の可視範囲から外れた場合のみ、
-   * 最小移動でフレーム内へ戻す。
-   */
   private _syncActiveLinkVisibility(): void {
     const activeLink = this.renderRoot.querySelector<HTMLAnchorElement>('a.toc-link.is-active');
     if (!activeLink || activeLink.getClientRects().length === 0) {
@@ -585,81 +397,15 @@ export class Toc extends LitElement {
     );
   }
 
-  private _observeLabels(): void {
-    const observer = this._labelResizeObserver;
-    if (!observer) return;
-
-    observer.disconnect();
-    const labels = this.renderRoot.querySelectorAll<HTMLElement>('.toc-link-label');
-    for (const label of labels) {
-      observer.observe(label);
-    }
-  }
-
-  private _scheduleTruncationSync(): void {
-    if (this._truncationSyncFrame !== null) return;
-
-    // ui-tooltip 配下の初回レイアウト確定後に計測する
-    this._truncationSyncFrame = requestAnimationFrame(() => {
-      this._truncationSyncFrame = null;
-      this._syncTruncationState();
-    });
-  }
-
-  private _syncTruncationState(): void {
-    const nextTruncatedIds = new Set<string>();
-    const labels = this.renderRoot.querySelectorAll<HTMLElement>('.toc-link-label');
-
-    for (const label of labels) {
-      const headingId = label.dataset['headingId'];
-      if (!headingId || headingId === this.activeId) continue;
-
-      const isTruncated =
-        label.scrollWidth - label.clientWidth > 1 || label.scrollHeight - label.clientHeight > 1;
-
-      if (isTruncated) {
-        nextTruncatedIds.add(headingId);
-      }
-    }
-
-    if (!this._setsEqual(this._truncatedHeadingIds, nextTruncatedIds)) {
-      this._truncatedHeadingIds = nextTruncatedIds;
-    }
-
-    this._syncTooltipDisabledState();
-  }
-
-  private _setsEqual(left: ReadonlySet<string>, right: ReadonlySet<string>): boolean {
-    if (left.size !== right.size) return false;
-    for (const value of left) {
-      if (!right.has(value)) return false;
-    }
-    return true;
-  }
-
-  private _syncTooltipDisabledState(): void {
-    const tooltips = this.renderRoot.querySelectorAll<
-      HTMLElement & { disabled: boolean; dataset: DOMStringMap }
-    >('ui-tooltip.toc-tooltip');
-
-    for (const tooltip of tooltips) {
-      const headingId = tooltip.dataset['headingId'];
-      if (!headingId) continue;
-
-      tooltip.disabled = headingId === this.activeId || !this._truncatedHeadingIds.has(headingId);
-    }
-  }
-
-  /** 現在のアクティブ見出し情報を外部へ通知する */
-  private _emitActiveChange(): void {
-    const index = this.headers.findIndex((heading) => heading.id === this.activeId);
+  private _emitActiveChange(source: 'scroll' | 'click', id: string): void {
+    const index = this.headers.findIndex((heading) => heading.id === id);
     this.dispatchEvent(
       new CustomEvent<UiTocActiveChangeDetail>('ui-toc-active-change', {
         bubbles: true,
         composed: true,
         detail: {
-          id: this.activeId,
-          source: this._activeIdSource,
+          id,
+          source,
           index,
           total: this.headers.length,
         },
@@ -667,97 +413,69 @@ export class Toc extends LitElement {
     );
   }
 
-  /**
-   * 目次リンクのクリックハンドラー。
-   * - デフォルトのアンカーナビゲーションをキャンセル
-   * - Observer を一時停止してインジケーターの明滅を防止
-   * - activeId を即座にクリック起因として更新（視覚的即応性の確保）
-   * - スムーズスクロール後に Observer を再開
-   */
-  private async _handleLinkClick(event: Event, headingId: string) {
+  private async _handleLinkClick(event: Event, headingId: string): Promise<void> {
     event.preventDefault();
 
-    // スクロール完了まで Observer を停止（Flickering 防止）
-    this._observerPaused = true;
-    try {
-      // activeId をクリック起因として即座に更新
-      this._setActiveId(headingId, 'click');
+    this._activeIdSource = 'click';
+    this.activeId = headingId;
+    this._emitActiveChange('click', headingId);
 
-      // ターゲット要素へスムーズスクロール
-      const target = document.getElementById(headingId);
-      if (target) {
-        updateHashInCurrentUrl(headingId, 'push');
-        await this._smoothScrollTo(target);
-      }
-    } finally {
-      // スクロール処理中に例外が起きても Observer を再開する
-      this._observerPaused = false;
+    const target = document.getElementById(headingId);
+    if (!target) {
+      return;
     }
+
+    updateHashInCurrentUrl(headingId, 'push');
+    await this._smoothScrollTo(target);
   }
 
-  /**
-   * スムーズスクロール実装。
-   *
-   * - 移動距離に応じた適応的アニメーション時間（最大 300ms）
-   * - 隣接セクションの小移動では短時間（例: 100ms）
-   * - prefers-reduced-motion: reduce 時は即座にジャンプ
-   * - --header-height + 32px (--space-8) のオフセット補正でヘッダー隠れを防止
-   */
   private _smoothScrollTo(target: HTMLElement): Promise<void> {
     return new Promise<void>((resolve) => {
-      // ヘッダー高さの取得（CSS カスタムプロパティから）
       const headerHeightRaw = getComputedStyle(document.documentElement)
         .getPropertyValue('--header-height')
         .trim();
       const headerHeight = headerHeightRaw ? parseFloat(headerHeightRaw) : 0;
-      // --space-8 (32px) 相当の余白を追加
-      const EXTRA_PADDING = 32;
-
+      const extraPadding = 32;
       const targetTop = target.getBoundingClientRect().top + window.scrollY;
-      const targetY = Math.max(0, targetTop - headerHeight - EXTRA_PADDING);
+      const targetY = Math.max(0, targetTop - headerHeight - extraPadding);
 
-      // Reduced Motion: アニメーション無効化・即座にジャンプ
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         window.scrollTo(0, targetY);
         resolve();
         return;
       }
+
       const startY = window.scrollY;
       const distance = Math.abs(targetY - startY);
-
-      // 距離がほぼゼロの場合は即座に完了
       if (distance < 1) {
         resolve();
         return;
       }
 
-      // 適応的アニメーション時間: 最大 300ms（--duration-slower）
-      const MAX_DURATION = 300;
-      const duration = Math.min(MAX_DURATION, distance * 0.5);
-
+      const maxDuration = 300;
+      const duration = Math.min(maxDuration, distance * 0.5);
       const startTime = performance.now();
 
-      const animate = (currentTime: number) => {
+      const animate = (currentTime: number): void => {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        // ease-out cubic イージング（滑らかな減速）
         const eased = 1 - Math.pow(1 - progress, 3);
 
         window.scrollTo(0, startY + (targetY - startY) * eased);
 
         if (progress < 1) {
           requestAnimationFrame(animate);
-        } else {
-          resolve();
+          return;
         }
+
+        resolve();
       };
 
       requestAnimationFrame(animate);
     });
   }
 
-  override render() {
-    // headers が空の場合は何も表示しない
+  override render(): TemplateResult {
     if (this.headers.length === 0) {
       return nothing;
     }
@@ -770,30 +488,28 @@ export class Toc extends LitElement {
             const normalizedLevel = this._normalizedLevel(heading);
 
             return html`
-              <li style="${styleMap({ '--level': String(normalizedLevel) })}">
+              <li style=${styleMap({ '--level': String(normalizedLevel) })}>
                 <ui-tooltip
                   class="toc-tooltip"
-                  text="${heading.text}"
+                  text=${heading.text}
                   variant="subtle"
                   placement="right-start"
-                  data-heading-id="${heading.id}"
+                  data-heading-id=${heading.id}
                   ?disabled=${isActive || !this._truncatedHeadingIds.has(heading.id)}
                 >
                   <a
-                    class="${classMap({
+                    class=${classMap({
                       'toc-link': true,
                       'is-active': isActive,
                       'is-scroll': isActive && this._activeIdSource === 'scroll',
                       'is-click': isActive && this._activeIdSource === 'click',
-                    })}"
-                    href="#${heading.id}"
-                    data-heading-level="${String(heading.level)}"
-                    aria-current="${isActive ? 'location' : nothing}"
-                    @click="${(e: Event) => this._handleLinkClick(e, heading.id)}"
+                    })}
+                    href=${`#${heading.id}`}
+                    data-heading-level=${String(heading.level)}
+                    aria-current=${isActive ? 'location' : nothing}
+                    @click=${(event: Event) => void this._handleLinkClick(event, heading.id)}
                   >
-                    <span class="toc-link-label" data-heading-id="${heading.id}">
-                      ${heading.text}
-                    </span>
+                    <span class="toc-link-label" data-heading-id=${heading.id}>${heading.text}</span>
                   </a>
                 </ui-tooltip>
               </li>

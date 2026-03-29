@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './tabs';
 import type { Tabs } from './tabs';
+import type { UiTabChangeDetail } from './tabs.types';
 
 /**
  * ## タブ (Tabs) `<ui-tabs>`
@@ -115,6 +116,52 @@ const meta: Meta<Tabs> = {
         defaultValue: { summary: 'false' },
       },
     },
+  },
+};
+
+export const TocScopeEventDetail: Story = {
+  render: () => html`
+    <ui-tabs id="toc-scope-tabs" data-toc-scope="toc-scope-story" default-selected-value="overview">
+      <button slot="tab" value="overview">概要</button>
+      <div slot="panel">概要パネル</div>
+      <button slot="tab" value="details">詳細</button>
+      <div slot="panel">詳細パネル</div>
+    </ui-tabs>
+  `,
+  play: async ({ canvasElement }) => {
+    const tabs = canvasElement.querySelector<Tabs>('#toc-scope-tabs');
+    if (!tabs) {
+      throw new Error('ui-tabs が見つかりません');
+    }
+    await tabs.updateComplete;
+
+    const observedPromise = new Promise<UiTabChangeDetail>((resolve) => {
+      tabs.addEventListener(
+        'ui-tab-change',
+        ((event: Event) => {
+          if (!(event instanceof CustomEvent)) {
+            return;
+          }
+          resolve(event.detail as UiTabChangeDetail);
+        }) as EventListener,
+        { once: true },
+      );
+    });
+
+    const detailTab = tabs.querySelector<HTMLElement>('[slot="tab"][value="details"]');
+    if (!detailTab) {
+      throw new Error('詳細タブが見つかりません');
+    }
+    detailTab.click();
+    await tabs.updateComplete;
+
+    const observed = await observedPromise;
+    if (observed.value !== 'details') {
+      throw new Error('ui-tab-change.detail.value が不正です');
+    }
+    if (observed.scopeId !== 'toc-scope-story') {
+      throw new Error('ui-tab-change.detail.scopeId が data-toc-scope と一致しません');
+    }
   },
 };
 

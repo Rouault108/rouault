@@ -98,22 +98,23 @@
 
 ### 5.1 一覧
 
-| 入力 | 出力ノード | 許可属性 / 補足 |
-| --- | --- | --- |
-| `::callout` | `ui-callout` | `kind` / `heading` / `label` / `icon` / `heading-level` |
-| `::code-group` | `ui-code-group` | `aria-label`。内包 `code` メタは `filename` / `group-key` / `tab-label` / `copy-label` / `copyable` / `copy-mode` / `wrap` / `highlight-lines` / `layout` |
-| `::code-preview` | `ui-code-preview` | `heading` / `controls` / `preview-padding` / `preview-align` / `preview-theme` / `preview-surface` / `preview-viewport` |
-| `::preview-sandbox` | `ui-preview-sandbox` | `iframe-title` / `base-url` / `allow-js` / `activation-policy` / `height-mode` / `allow-forms` / `allow-downloads` / `allow-pointer-lock` / `allow-popups` / `height` / `max-height`。`code-preview` 直下専用。内部は `preview-html` / `preview-css` / `preview-js` fenced code のみ |
-| `::details` | `ui-details` | `summary` または `aria-label` 必須。両立不可。`open` / `variant` / `region` |
-| `::info-box` | `ui-info-box` | `heading` / `icon` / `heading-level` / `landmark` / `variant` / `density` |
-| `::link-card` | `ui-card` | leaf directive。`url` 必須。`title` / `description` / `image` / `site-name`。終端 `::` は不要 |
-| `::score` | `ui-score` | `src` / `caption` / `label` / `description` / `aspect-ratio` / `loading` / `primary` |
-| `::tabs` | `ui-tabs` | `selected-value` / `default-selected-value` / `orientation` / `automatic-activation` / `url-sync` |
-| `::translation` | `ui-translation` | `original` / `translated` / `lang` / `target-lang` / `render-mode` / `open` |
-| `::preview` | `div[slot=preview]` | 属性なし |
-| `::toolbar` | `div[slot=toolbar]` | 内部 / 互換用。著者向け公開文法では非推奨 |
-| `::tab` | `div[slot=tab]` | `value` |
-| `::panel` | `div[slot=panel]` | 属性なし |
+| 入力                    | 出力ノード               | 許可属性 / 補足                                                                                                                                                                                                                                                                      |
+| ----------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `::callout`             | `ui-callout`             | `kind` / `heading` / `label` / `icon` / `heading-level`                                                                                                                                                                                                                              |
+| `::code-group`          | `ui-code-group`          | `aria-label`。内包 `code` メタは `filename` / `group-key` / `tab-label` / `copy-label` / `copyable` / `copy-mode` / `wrap` / `highlight-lines` / `layout`                                                                                                                            |
+| `::code-preview`        | `ui-code-preview`        | `heading` / `controls` / `preview-padding` / `preview-align` / `preview-theme` / `preview-surface` / `preview-viewport`                                                                                                                                                              |
+| `::preview-sandbox`     | `ui-preview-sandbox`     | `iframe-title` / `base-url` / `allow-js` / `activation-policy` / `height-mode` / `allow-forms` / `allow-downloads` / `allow-pointer-lock` / `allow-popups` / `height` / `max-height`。`code-preview` 直下専用。内部は `preview-html` / `preview-css` / `preview-js` fenced code のみ |
+| `::details`             | `ui-details`             | `summary` または `aria-label` 必須。両立不可。`open` / `variant` / `region`                                                                                                                                                                                                          |
+| `::info-box`            | `ui-info-box`            | `heading` / `icon` / `heading-level` / `landmark` / `variant` / `density`                                                                                                                                                                                                            |
+| `::link-card`           | `ui-card`                | leaf directive。`url` 必須。`title` / `description` / `image` / `site-name`。終端 `::` は不要                                                                                                                                                                                        |
+| `::score`               | `ui-score`               | `src` / `caption` / `label` / `description` / `aspect-ratio` / `loading` / `primary`                                                                                                                                                                                                 |
+| `::tabs`                | `ui-tabs`                | `selected-value` / `default-selected-value` / `orientation` / `automatic-activation` / `url-sync`                                                                                                                                                                                    |
+| `::translation`         | `div.translation-static` | `original` / `translated` / `lang` / `target-lang`                                                                                                                                                                                                                                   |
+| `::translation-overlay` | `ui-translation`         | `original` / `translated` / `lang` / `target-lang` / `surface`                                                                                                                                                                                                                       |
+| `::preview`             | `div[slot=preview]`      | 属性なし                                                                                                                                                                                                                                                                             |
+| `::toolbar`             | `div[slot=toolbar]`      | 内部 / 互換用。著者向け公開文法では非推奨                                                                                                                                                                                                                                            |
+| `::tab`                 | `div[slot=tab]`          | `value`                                                                                                                                                                                                                                                                              |
+| `::panel`               | `div[slot=panel]`        | 属性なし                                                                                                                                                                                                                                                                             |
 
 ### 5.2 共通規則
 
@@ -340,17 +341,33 @@
 - `translated`
 - `lang`
 - `target-lang`
-- `render-mode`
-- `open`
-
-値域:
-
-- `render-mode`: `popover | drawer | interlinear`
 
 規則:
 
+- `translation` は static translation の正規形です。
 - 子要素からのテキスト昇格は現行制約に従います。
+- `render-mode` と `open` は受理してはなりません。
 - `translation` の block children は最終的に保持しません。
+
+### 5.12.1 `::translation-overlay`
+
+許可属性:
+
+- `original`
+- `translated`
+- `lang`
+- `target-lang`
+- `surface`
+
+値域:
+
+- `surface`: `popover | drawer`
+
+規則:
+
+- `translation-overlay` は interactive overlay 専用です。
+- `render-mode` と `open` は受理してはなりません。
+- 最終出力は `ui-translation` に正規化されます。
 
 ### 5.13 `::preview`
 
@@ -439,14 +456,14 @@ link-card 解決後の主要属性は少なくとも次を持つものとしま�
 
 ### 7.1 一覧
 
-| 入力 | 出力 | 補足 |
-| --- | --- | --- |
-| `:emoji[text]{aria-label="..."}` | `span` | `label` または `aria-label` があれば `role="img"` を付与 |
-| `:subscript[text]` / `~text~` | `sub` | 属性なし |
-| `:superscript[text]` / `^text^` | `sup` | 属性なし |
-| `:highlight[text]{current-match="true"}` | `ui-highlight` | `current-match` のみ許可 |
-| `==text==` | `ui-highlight` | 追加属性なし |
-| `:sparkles:` など | 絵文字文字列 | 内蔵 shortcodes のみ置換 |
+| 入力                                     | 出力           | 補足                                                     |
+| ---------------------------------------- | -------------- | -------------------------------------------------------- |
+| `:emoji[text]{aria-label="..."}`         | `span`         | `label` または `aria-label` があれば `role="img"` を付与 |
+| `:subscript[text]` / `~text~`            | `sub`          | 属性なし                                                 |
+| `:superscript[text]` / `^text^`          | `sup`          | 属性なし                                                 |
+| `:highlight[text]{current-match="true"}` | `ui-highlight` | `current-match` のみ許可                                 |
+| `==text==`                               | `ui-highlight` | 追加属性なし                                             |
+| `:sparkles:` など                        | 絵文字文字列   | 内蔵 shortcodes のみ置換                                 |
 
 ### 7.2 emoji
 
@@ -550,8 +567,8 @@ remark 段階では次を即時エラーとします。
 
 規則:
 
-* 後者は folded paragraph 対応を意味します。
-* これは一般的な `remark-directive` AST 互換を保証するものではありません。
+- 後者は folded paragraph 対応を意味します。
+- これは一般的な `remark-directive` AST 互換を保証するものではありません。
 
 ---
 
@@ -559,7 +576,7 @@ remark 段階では次を即時エラーとします。
 
 ### 10.1 `translation`
 
-`translation` は block children を保持しません。子要素から拾うのは 1 段落目と 2 段落目のプレーンテキスト相当であり、最終的には `original` / `translated` 属性へ昇格したあと `children: []` になります。
+`translation` と `translation-overlay` は block children を保持しません。子要素から拾うのは 1 段落目と 2 段落目のプレーンテキスト相当であり、最終的には `original` / `translated` 相当へ昇格したあと `children: []` になります。旧 `render-mode` 契約は廃止され、build-time rejection の対象です。
 
 ### 10.2 `tabs`
 
@@ -601,15 +618,15 @@ build-time で契約違反となる入力を、「実行時にうまく表示さ
 
 ## 12. 他文書との関係
 
-* 出力 DOM 契約は `docs/markdown-output-contract.md` を参照します。
-* safety policy と trust boundary は `docs/markdown-safety-and-test-policy.md` を参照します。
-* アクセシビリティ要求は `docs/accessibility.md` を参照します。
-* 見た目やトークンの契約は `docs/foundations.md` を参照します。
+- 出力 DOM 契約は `docs/markdown-output-contract.md` を参照します。
+- safety policy と trust boundary は `docs/markdown-safety-and-test-policy.md` を参照します。
+- アクセシビリティ要求は `docs/accessibility.md` を参照します。
+- 見た目やトークンの契約は `docs/foundations.md` を参照します。
 
 ---
 
 ## 13. 改訂規則
 
-* 著者が記述できる構文の追加・削除・意味論変更は本書を直接改訂しなければなりません。
-* 実装メモやテスト名だけを更新して authoring grammar を既成事実化してはなりません。
-* 既知制約が設計上固定か暫定実装かを変える場合は、`docs/markdown-safety-and-test-policy.md` との整合も同時に更新しなければなりません。
+- 著者が記述できる構文の追加・削除・意味論変更は本書を直接改訂しなければなりません。
+- 実装メモやテスト名だけを更新して authoring grammar を既成事実化してはなりません。
+- 既知制約が設計上固定か暫定実装かを変える場合は、`docs/markdown-safety-and-test-policy.md` との整合も同時に更新しなければなりません。
