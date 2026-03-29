@@ -159,6 +159,25 @@ describe('buildNotesCollection', () => {
     expect(collection[0]?.kind).toBe('reader');
   });
 
+  it('navigation view model は data 層で返さないこと', async () => {
+    const contentRoot = await createContentRoot();
+
+    const collection = buildNotesCollection(
+      [
+        {
+          slug: 'category/section-a/item-alpha',
+          title: '項目アルファ',
+          content: '<p>本文</p>',
+        },
+      ],
+      contentRoot,
+    );
+
+    expect(collection[0]).not.toHaveProperty('sidebarTree');
+    expect(collection[0]).not.toHaveProperty('breadcrumbs');
+    expect(collection[0]).not.toHaveProperty('selectedId');
+  });
+
   it('sidebar.scope を最も近い祖先から解決する', async () => {
     const contentRoot = await createContentRoot();
     await mkdir(path.join(contentRoot, 'category', 'section-a', 'item-alpha'), { recursive: true });

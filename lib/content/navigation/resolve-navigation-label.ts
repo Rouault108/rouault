@@ -1,20 +1,10 @@
-export interface NavigationLabelSourceNote {
-  slug?: string;
-  title?: string;
-  noteKind?: 'leaf' | 'directory-index';
-  directoryPath?: string;
-}
+import type { NoteNavigationEntry } from './types.js';
 
-const toTrimmedString = (value: unknown): string => {
-  if (typeof value !== 'string') {
-    return '';
-  }
-  return value.trim();
-};
+const toTrimmedString = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
 
 export const normalizeSegmentLabel = (segment: string): string =>
   segment
-    .replace(/[-_]+/g, ' ')
+    .replace(/[-_]+/gu, ' ')
     .trim()
     .replace(/\b\p{Letter}/gu, (value) => value.toUpperCase());
 
@@ -23,21 +13,22 @@ const getLastSegment = (path: string): string => {
   return segments[segments.length - 1] ?? path;
 };
 
-const resolveDirectoryPath = (note: NavigationLabelSourceNote): string => {
+const resolveDirectoryPath = (
+  note: Pick<NoteNavigationEntry, 'slug' | 'directoryPath'>,
+): string => {
   const directoryPath = toTrimmedString(note.directoryPath);
   if (directoryPath.length > 0) {
     return directoryPath;
   }
 
-  const slug = toTrimmedString(note.slug);
-  return slug;
+  return toTrimmedString(note.slug);
 };
 
 export const fallbackDirectoryLabel = (directoryPath: string): string =>
   normalizeSegmentLabel(getLastSegment(directoryPath));
 
 export const buildDirectoryLabelMap = (
-  notes: readonly NavigationLabelSourceNote[],
+  notes: readonly Pick<NoteNavigationEntry, 'slug' | 'title' | 'noteKind' | 'directoryPath'>[],
 ): Map<string, string> => {
   const map = new Map<string, string>();
 
@@ -67,12 +58,11 @@ export const resolveDirectoryLabel = (
 ): string => directoryLabelMap.get(directoryPath) ?? fallbackDirectoryLabel(directoryPath);
 
 export const resolveNoteLabel = (
-  note: NavigationLabelSourceNote,
+  note: Pick<NoteNavigationEntry, 'slug' | 'title' | 'noteKind' | 'directoryPath'>,
   directoryLabelMap: ReadonlyMap<string, string>,
 ): string => {
   if (note.noteKind === 'directory-index') {
-    const directoryPath = resolveDirectoryPath(note);
-    return resolveDirectoryLabel(directoryPath, directoryLabelMap);
+    return resolveDirectoryLabel(resolveDirectoryPath(note), directoryLabelMap);
   }
 
   const title = toTrimmedString(note.title);

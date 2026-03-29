@@ -1,13 +1,13 @@
 import type { ClientBundleData } from '../data/clientBundle.js';
 import {
+  buildNoteNavigationModel,
+  type NoteNavigationEntry,
+} from '../../lib/content/navigation/index.js';
+import {
   buildCorpusNavigation,
   resolveCurrentCorpusKey,
   type CorpusPageEntry,
 } from '../data/corpusPages.js';
-import {
-  buildBreadcrumbs,
-  type BreadcrumbSourceNote,
-} from '../../lib/content/build-breadcrumbs.js';
 import {
   THEME_ATTRIBUTE,
   THEME_STORAGE_KEY,
@@ -19,8 +19,8 @@ export interface BaseLayoutData {
   title?: string;
   description?: string;
   content: string;
-  note?: BreadcrumbSourceNote;
-  notes?: BreadcrumbSourceNote[];
+  note?: NoteNavigationEntry;
+  notes?: NoteNavigationEntry[];
   corpusPages?: readonly CorpusPageEntry[];
   currentCorpusKey?: string;
   clientBundle?: ClientBundleData;
@@ -56,7 +56,12 @@ export class BaseLayout {
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
 
-    const breadcrumbsJson = JSON.stringify(buildBreadcrumbs(data.note, data.notes ?? []))
+    const breadcrumbsJson = JSON.stringify(
+      buildNoteNavigationModel({
+        currentNote: data.note,
+        notes: data.notes ?? [],
+      }).breadcrumbs,
+    )
       .replace(/&/g, '&amp;')
       .replace(/"/g, '&quot;')
       .replace(/</g, '&lt;')

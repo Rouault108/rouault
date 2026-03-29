@@ -1,6 +1,12 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import {
+  normalizeNotePath,
+  type SidebarScope,
+  type SidebarScopeRule,
+} from '../../lib/content/navigation/index.js';
+import { resolveSidebarRoot } from '../../lib/content/navigation/resolve-sidebar-root.js';
 import { prepareTocHtml, type TocHeading } from '../../lib/content/extract-toc-from-html.js';
 import { resolveCoverAsset, type ResolvedImageAsset } from '../../lib/media/image-resolver.js';
 import { isIconName, type IconName } from '../icons/catalog.js';
@@ -19,18 +25,7 @@ import {
   normalizeTestingArea,
 } from '../types/testing-area.js';
 
-type SidebarScope = 'global' | 'self';
 type SidebarIconSetting = IconName | 'none';
-
-type NoteKind = 'leaf' | 'directory-index';
-
-interface NormalizedNotePath {
-  rawSlug: string; // 例: "music/index"
-  slug: string; // 例: "music"
-  permalink: string; // 例: "/notes/music"
-  kind: NoteKind;
-  directoryPath?: string; // directory-index のとき "music"
-}
 
 interface NoteSidebarConfig {
   scope?: SidebarScope;
@@ -184,50 +179,6 @@ const readNotesFile = (filePath: string): SourceNote[] => {
   return Array.isArray(parsed) ? parsed.filter(isSourceNote) : [];
 };
 
-const normalizeNotePath = (inputSlug: string, contentRoot: string): NormalizedNotePath => {
-  const normalized = inputSlug.trim().replace(/^\/+|\/+$/g, '');
-
-  if (normalized.length === 0) {
-    throw new Error('Empty slug is not allowed.');
-  }
-
-  if (normalized === 'index') {
-    throw new Error(
-      'content/index.md は未対応です。必要ならルートノート用の別仕様を定義してください。',
-    );
-  }
-
-  const leafPath = join(contentRoot, `${normalized}.md`);
-  const directoryIndexPath = join(contentRoot, normalized, 'index.md');
-
-  const hasLeaf = existsSync(leafPath);
-  const hasDirectoryIndex = existsSync(directoryIndexPath);
-
-  if (hasLeaf && hasDirectoryIndex) {
-    throw new Error(
-      `Ambiguous note source for "${normalized}". ` +
-        `Both "${normalized}.md" and "${normalized}/index.md" exist.`,
-    );
-  }
-
-  if (hasDirectoryIndex) {
-    return {
-      rawSlug: `${normalized}/index`,
-      slug: normalized,
-      permalink: `/notes/${normalized}`,
-      kind: 'directory-index',
-      directoryPath: normalized,
-    };
-  }
-
-  return {
-    rawSlug: normalized,
-    slug: normalized,
-    permalink: `/notes/${normalized}`,
-    kind: 'leaf',
-  };
-};
-
 const calculateSortIndex = (slug: string, contentRoot: string): number => {
   const parts = slug.split('/');
   const fileName = `${parts[parts.length - 1] ?? ''}.md`;
@@ -248,27 +199,28 @@ const calculateSortIndex = (slug: string, contentRoot: string): number => {
   return sortIndex;
 };
 
-const resolveSidebarRoot = (slug: string, contentRoot: string): string | undefined => {
+const collectSidebarScopeRules = (
+  slug: string,
+  contentRoot: string,
+): SidebarScopeRule[] => {
   const parts = slug.split('/');
   const dirParts = parts.slice(0, -1);
-  let sidebarRoot: string | undefined;
+  const rules: SidebarScopeRule[] = [];
 
   for (let depth = 0; depth <= dirParts.length; depth += 1) {
     const currentDirParts = dirParts.slice(0, depth);
     const currentDir = join(contentRoot, ...currentDirParts);
     const scope = readConfig(currentDir)?.sidebar?.scope;
 
-    if (scope === 'global') {
-      sidebarRoot = undefined;
-      continue;
-    }
-
-    if (scope === 'self') {
-      sidebarRoot = currentDirParts.length > 0 ? currentDirParts.join('/') : undefined;
+    if (scope === 'global' || scope === 'self') {
+      rules.push({
+        directoryPath: currentDirParts.join('/'),
+        scope: scope as SidebarScope,
+      });
     }
   }
 
-  return sidebarRoot;
+  return rules;
 };
 
 const resolveDirectorySidebarIcon = (
@@ -334,13 +286,18 @@ export const buildNotesCollection = (
     })
     .map((note): NoteCollectionItem => {
       const inputSlug = note.slug.trim();
-      const pathInfo = normalizeNotePath(inputSlug, contentRoot);
+      const normalizedSlug = inputSlug.replace(/^\/+|\/+$/gu, '');
+      const pathInfo = normalizeNotePath({
+        requestedSlug: inputSlug,
+        hasLeaf: existsSync(join(contentRoot, `${normalizedSlug}.md`)),
+        hasDirectoryIndex: existsSync(join(contentRoot, normalizedSlug, 'index.md')),
+      });
       const sourceSlug = pathInfo.rawSlug;
       const kind = normalizeNoteContentKind(note.kind);
       const testingArea = normalizeTestingArea(note.testingArea);
       const preparedToc = prepareTocHtml(typeof note.content === 'string' ? note.content : '');
 
-      const sidebarRoot = resolveSidebarRoot(sourceSlug, contentRoot);
+      const sidebarRoot = resolveSidebarRoot(collectSidebarScopeRules(sourceSlug, contentRoot));
       const sidebarIconSetting = note.sidebarIcon;
       const sidebarIconContext = resolveSidebarIconContext(sourceSlug, contentRoot);
 

@@ -100,11 +100,84 @@ frontmatter metadata には次の制約を適用します。
 - `kind`: `reader | testing | demo`
 - `testingArea`: `index | markdown-basic | media | code | interactive | sandbox`
 
+#### 4.4.1 基本原則
+
+`kind` は note の表示モードではなく、当該 note がどの公開面に出現できるか、およびどの authoring 機能を許可できるかを決定する distribution kind です。  
+`kind` は content kind を無制限に増殖させるための拡張点ではありません。公開面 policy と許可機能 policy を build-time で固定するための最小列挙として扱わなければなりません。
+
+`testingArea` は `testing` note の検証主題を分類する補助ラベルです。  
+`testingArea` は `testing` をさらに別 content kind へ分割する代替手段として扱ってはなりません。
+
+#### 4.4.2 `kind` ごとの意味
+
+##### `reader`
+
+`reader` は読者向け正規 note です。
+
+規則:
+
+- 読者向け公開面に載ることを前提とします。
+- sidebar、breadcrumb、search、home、tags、corpora、pagefind の対象になってよいものとします。
+- 読書面の静的性と可読性を優先しなければなりません。
+- interactive demo、sandbox 実行、過剰な操作 UI を前提としてはなりません。
+
+##### `testing`
+
+`testing` は Markdown 契約、出力契約、UI 契約、検証用 fixture を確認するための note です。
+
+規則:
+
+- reader-facing corpus として扱ってはなりません。
+- breadcrumb には出現してよいものとします。
+- search、home、tags、corpora、pagefind の既定対象に含めてはなりません。
+- 検証主題を表す `testingArea` を必須とします。
+- `testingArea` は当該 note の検証責務を示す補助ラベルであり、公開分類名ではありません。
+
+##### `demo`
+
+`demo` は isolated component demo、playground、または reader note から分離して保持すべき展示用 note です。
+
+規則:
+
+- reader-facing corpus として扱ってはなりません。
+- sidebar、breadcrumb、search、home、tags、corpora、pagefind の既定対象に含めてはなりません。
+- `testing` note の代替として使ってはなりません。
+- Markdown 契約の検証責務を持つ note に `demo` を用いてはなりません。
+
+#### 4.4.3 `testingArea`
+
+`testingArea` は `testing` note の検証主題を表します。
+
+値域:
+
+- `index`
+- `markdown-basic`
+- `media`
+- `code`
+- `interactive`
+- `sandbox`
+
 規則:
 
 - `testingArea` は `kind: testing` のとき必須です。
-- `kind !== testing` のノートで `testingArea` を指定してはなりません。
-- `testingArea` は公開面 policy を分岐する補助ラベルであり、content kind を増やす代替手段として扱ってはなりません。
+- `kind !== testing` の note で `testingArea` を指定してはなりません。
+- `testingArea` により公開面 policy を追加分岐させてはなりません。
+- `testingArea` により content kind を増やしたものとして扱ってはなりません。
+
+#### 4.4.4 authoring 機能との関係
+
+`kind` は公開面だけでなく、許可される authoring 機能にも影響します。
+
+規則:
+
+- `reader` では読書面の静的性を壊す機能を許可してはなりません。
+- `testing` では検証目的に必要な機能のみを許可し、`testingArea` ごとの追加制約を別途適用してよいものとします。
+- `demo` では展示目的の機能を許可してよいものとしますが、読者向け公開面へ流入させてはなりません。
+
+注記:
+
+- `kind` ごとの具体的な surface policy および content validation policy は、本節を親契約として別文書または実装側契約で保持してよいものとします。
+- ただし、その下位契約は本節の意味論に反してはなりません。
 
 ---
 

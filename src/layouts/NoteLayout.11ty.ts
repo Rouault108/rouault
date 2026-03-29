@@ -5,13 +5,13 @@
  * サイドバー + 本文 + TOC の3カラム構成を提供する。
  */
 
-import { buildSidebarTree } from '../../lib/content/build-sidebar-tree.js';
+import { buildNoteNavigationModel } from '../../lib/content/navigation/index.js';
 import { injectNoteContentProfiles } from '../../lib/content/note-content-contracts.js';
 import { tokenizeSearchText } from '../lib/search/query-preprocessor.js';
 import type { NoteStatus } from '../types/article-status.js';
 import type { IconName } from '../icons/catalog.js';
 import { resolveNoteSurfacePolicy } from '../types/note-surface-policy.js';
-import { type NoteContentKind, isReaderFacingNoteContentKind } from '../types/note-kind.js';
+import type { NoteContentKind } from '../types/note-kind.js';
 import type { TestingArea } from '../types/testing-area.js';
 
 interface TocHeading {
@@ -183,76 +183,6 @@ function buildTokenizedPagefindText(value: string | undefined): string {
   return escapeHtml(tokenized.segmentedText);
 }
 
-function mergeCurrentNoteIntoSidebarNotes(
-  note: NoteData | undefined,
-  notes: SidebarNoteLike[] | undefined,
-): SidebarNoteLike[] {
-  const base: SidebarNoteLike[] = Array.isArray(notes) ? [...notes] : [];
-
-  if (!note || typeof note.slug !== 'string' || !isReaderFacingNoteContentKind(note.kind)) {
-    return base;
-  }
-
-  const slug = note.slug.trim();
-  if (slug.length === 0) {
-    return base;
-  }
-
-  const permalink =
-    typeof note.permalink === 'string' && note.permalink.trim().length > 0
-      ? note.permalink.trim()
-      : `/notes/${slug}`;
-
-  const currentNote: SidebarNoteLike = {
-    slug,
-    permalink,
-  };
-
-  if (typeof note.title === 'string' && note.title.trim().length > 0) {
-    currentNote.title = note.title.trim();
-  }
-
-  if (note.noteKind === 'leaf' || note.noteKind === 'directory-index') {
-    currentNote.noteKind = note.noteKind;
-  }
-
-  if (typeof note.sidebarResolvedIcon === 'string' && note.sidebarResolvedIcon.trim().length > 0) {
-    currentNote.sidebarResolvedIcon = note.sidebarResolvedIcon;
-  }
-
-  if (note.sidebarDirectoryIcons && typeof note.sidebarDirectoryIcons === 'object') {
-    currentNote.sidebarDirectoryIcons = note.sidebarDirectoryIcons;
-  }
-
-  if (typeof note.directoryPath === 'string' && note.directoryPath.trim().length > 0) {
-    currentNote.directoryPath = note.directoryPath.trim();
-  } else if (note.noteKind === 'directory-index') {
-    currentNote.directoryPath = slug;
-  }
-
-  const alreadyIncluded = base.some((item: SidebarNoteLike) => {
-    const itemSlug = typeof item.slug === 'string' ? item.slug.trim() : '';
-    const itemDirectoryPath =
-      typeof item.directoryPath === 'string' ? item.directoryPath.trim() : '';
-
-    if (currentNote.noteKind === 'directory-index') {
-      return (
-        item.noteKind === 'directory-index' &&
-        itemSlug === slug &&
-        itemDirectoryPath === (currentNote.directoryPath ?? slug)
-      );
-    }
-
-    return itemSlug === slug && item.noteKind !== 'directory-index';
-  });
-
-  if (!alreadyIncluded) {
-    base.push(currentNote);
-  }
-
-  return base;
-}
-
 export class NoteLayout {
   data() {
     return {
@@ -267,7 +197,6 @@ export class NoteLayout {
     const showSidebar = surfacePolicy.sidebar;
     const noteShellSidebarPresence = showSidebar ? 'present' : 'absent';
     const slug = typeof note?.slug === 'string' ? note.slug : '';
-    const sidebarSelectedId = note?.noteKind === 'directory-index' ? `${slug}/__index__` : slug;
     const heading = escapeAttr(note?.title ?? '');
     const published = note?.date ? ` published="${escapeAttr(note.date)}"` : '';
     const updated = note?.updated ? ` updated="${escapeAttr(note.updated)}"` : '';
@@ -279,16 +208,10 @@ export class NoteLayout {
       : [];
     const headings = normalizeHeadings(note?.tocHeadings);
     const tocCapabilities = normalizeTocCapabilities(note?.tocCapabilities);
-    const sidebarRoot = typeof note?.sidebarRoot === 'string' ? note.sidebarRoot : '';
-    const sidebarNotes = showSidebar
-      ? mergeCurrentNoteIntoSidebarNotes(
-          note,
-          Array.isArray(data.notes)
-            ? data.notes.filter((item) => resolveNoteSurfacePolicy(item.kind).sidebar)
-            : [],
-        )
-      : [];
-    const sidebarTree = buildSidebarTree(sidebarNotes, sidebarRoot);
+    const navigationModel = buildNoteNavigationModel({
+      currentNote: note,
+      notes: Array.isArray(data.notes) ? data.notes : [],
+    });
     const contentHtml = injectNoteContentProfiles(data.content, noteContentKind);
 
     const dataIdBase = toSafeDataId(slug.length > 0 ? slug : 'note');
@@ -297,7 +220,7 @@ export class NoteLayout {
     const contentRootId = `note-content-${dataIdBase}`;
     const articleHeaderTags =
       genres.length > 0 ? ` data-tags="${escapeAttr(JSON.stringify(genres))}"` : '';
-    const sidebarItemsJson = escapeAttr(JSON.stringify(sidebarTree));
+    const sidebarItemsJson = escapeAttr(JSON.stringify(navigationModel.sidebarTree));
     const tocHeadingsJson = escapeAttr(JSON.stringify(headings));
     const tocCapabilitiesJson = escapeAttr(JSON.stringify(tocCapabilities));
     const shouldHydrateToc =
@@ -330,7 +253,7 @@ export class NoteLayout {
             >
               <layout-sidebar
                 source-id="${escapeAttr(sidebarSourceId)}"
-                selected-id="${escapeAttr(sidebarSelectedId)}"
+                selected-id="${escapeAttr(navigationModel.selectedId ?? '')}"
                 items-json="${sidebarItemsJson}"
                 heading="ナビゲーション"
                 fixed-breakpoint="768"
@@ -391,7 +314,7 @@ export class NoteLayout {
       </section>
 
       <script type="application/json" id="${escapeAttr(sidebarSourceId)}">
-${escapeJsonForScript(sidebarTree)}
+${escapeJsonForScript(navigationModel.sidebarTree)}
       </script>
       <script type="application/json" id="${escapeAttr(tocSourceId)}">
 ${escapeJsonForScript(headings)}
