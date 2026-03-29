@@ -164,7 +164,7 @@ export class Button extends LitElement {
       font-size: inherit;
       font-feature-settings: 'palt';
       letter-spacing: 0.02em;
-      line-height: 1;
+      line-height: var(--line-height-tight);
 
       /* Interaction */
       cursor: pointer;
@@ -177,12 +177,6 @@ export class Button extends LitElement {
         box-shadow var(--duration-fast) var(--ease-out),
         border-color var(--duration-fast) var(--ease-out),
         transform var(--duration-fast) var(--ease-out);
-    }
-
-    /* Active State: 押し込みのタクタイルシグナル */
-    button:active:not(:disabled) {
-      transform: scale(var(--scale-pressed));
-      box-shadow: none;
     }
 
     /* Focus Indicator: Adaptive Focus */
@@ -352,6 +346,7 @@ export class Button extends LitElement {
       display: inline-flex;
       align-items: center;
       gap: inherit;
+      line-height: inherit;
     }
 
     .content-slot::slotted(ui-icon),
