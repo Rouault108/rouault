@@ -1,9 +1,9 @@
+import type { TabsUrlSyncStrategy } from '../../ui/tabs/tabs-url-sync-strategy.js';
+
 export const PRIMARY_TAB_QUERY_PARAM = 'tab';
-export const URL_STATE_CHANGE_EVENT = 'ui-url-state-change';
+export const PRIMARY_TAB_URL_STATE_CHANGE_EVENT = 'ui-url-state-change';
 
-export type UrlHistoryMode = 'none' | 'push' | 'replace';
-
-export interface UrlStateChangeDetail {
+export interface PrimaryTabUrlStateChangeDetail {
   previousUrl: string;
   url: string;
 }
@@ -63,21 +63,18 @@ export const isPrimaryTabOnlyNavigation = (currentUrl: string, nextUrl: string):
     return false;
   }
 
-  for (let i = 0; i < currentComparable.length; i += 1) {
-    if (currentComparable[i] !== nextComparable[i]) {
+  for (let index = 0; index < currentComparable.length; index += 1) {
+    if (currentComparable[index] !== nextComparable[index]) {
       return false;
     }
   }
 
-  const currentTab = readPrimaryTabValue(current);
-  const nextTab = readPrimaryTabValue(next);
-
-  return currentTab !== nextTab;
+  return readPrimaryTabValue(current) !== readPrimaryTabValue(next);
 };
 
-export const dispatchUrlStateChange = (previousUrl: string, url: string): void => {
+export const dispatchPrimaryTabUrlStateChange = (previousUrl: string, url: string): void => {
   window.dispatchEvent(
-    new CustomEvent<UrlStateChangeDetail>(URL_STATE_CHANGE_EVENT, {
+    new CustomEvent<PrimaryTabUrlStateChangeDetail>(PRIMARY_TAB_URL_STATE_CHANGE_EVENT, {
       detail: {
         previousUrl,
         url,
@@ -97,4 +94,14 @@ export const readDecodedHash = (input?: string | URL): string => {
   } catch {
     return raw;
   }
+};
+
+export const primaryTabTabsUrlSyncStrategy: TabsUrlSyncStrategy = {
+  changeEventName: PRIMARY_TAB_URL_STATE_CHANGE_EVENT,
+  readValue: (url) => readPrimaryTabValue(url),
+  writeValue: (url, value) => writePrimaryTabValue(url, value),
+  readHash: (url) => readDecodedHash(url),
+  dispatchChange: (previousUrl, nextUrl) => {
+    dispatchPrimaryTabUrlStateChange(previousUrl, nextUrl);
+  },
 };

@@ -1,6 +1,4 @@
-import type { UrlHistoryMode } from '../../../lib/tabs/url-state.js';
-
-export type { UrlHistoryMode };
+export type UrlHistoryMode = 'none' | 'push' | 'replace';
 
 export type TabsOrientation = 'horizontal' | 'vertical';
 export type TabsUrlSource = 'hash' | 'query' | null;

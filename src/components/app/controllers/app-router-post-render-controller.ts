@@ -1,6 +1,10 @@
 import type { ReactiveController, ReactiveControllerHost } from 'lit';
 import { FocusManager } from '../../../lib/router/focus-manager.js';
 import type { PostCommitController } from '../../../lib/router.js';
+import {
+  dispatchPrimaryTabUrlStateChange,
+  readDecodedHash,
+} from '../navigation/primary-tab-url-state.js';
 
 export class AppRouterPostRenderController implements ReactiveController {
   private focusManager = new FocusManager();
@@ -26,8 +30,13 @@ export class AppRouterPostRenderController implements ReactiveController {
 
   createPostCommitController(hostElement: HTMLElement): PostCommitController {
     return {
-      run: (context) => {
+      run: async (context) => {
         if (context.stateOnly) {
+          if (context.previousUrl !== null) {
+            dispatchPrimaryTabUrlStateChange(context.previousUrl, context.url);
+          }
+
+          await this.scrollToHash(context.url);
           return;
         }
 
@@ -48,5 +57,25 @@ export class AppRouterPostRenderController implements ReactiveController {
         }
       },
     };
+  }
+
+  private async scrollToHash(url: string): Promise<void> {
+    const hash = readDecodedHash(url);
+    if (hash.length === 0) {
+      return;
+    }
+
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          resolve();
+        });
+      });
+    });
+
+    const target = document.getElementById(hash);
+    if (target instanceof HTMLElement) {
+      target.scrollIntoView({ block: 'start', inline: 'nearest' });
+    }
   }
 }

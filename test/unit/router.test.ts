@@ -1,5 +1,4 @@
 import { expect, fixture, html, waitUntil } from '@open-wc/testing';
-import { PrimaryTabNavigationPolicy } from '../../src/lib/tabs/primary-tab-navigation-policy.js';
 import {
   Router,
   RouterDestroyedError,
@@ -7,7 +6,6 @@ import {
   RouterOwnershipError,
   type NavigationResult,
 } from '../../src/lib/router.js';
-import { URL_STATE_CHANGE_EVENT } from '../../src/lib/tabs/url-state.js';
 
 function simulateClick(element: HTMLElement, options: MouseEventInit = {}): void {
   let target = element;
@@ -50,9 +48,12 @@ describe('Router', () => {
     originalFetch = globalThis.fetch;
     globalThis.fetch = () =>
       Promise.resolve(
-        new Response('<html><head><title>Default</title></head><body><main>Default Mock</main></body></html>', {
-          status: 200,
-        }),
+        new Response(
+          '<html><head><title>Default</title></head><body><main>Default Mock</main></body></html>',
+          {
+            status: 200,
+          },
+        ),
       );
 
     originalPushState = history.pushState.bind(history);
@@ -128,9 +129,12 @@ describe('Router', () => {
     globalThis.fetch = () => {
       fetchCount += 1;
       return Promise.resolve(
-        new Response('<html><head><title>Init</title></head><body><main>Init</main></body></html>', {
-          status: 200,
-        }),
+        new Response(
+          '<html><head><title>Init</title></head><body><main>Init</main></body></html>',
+          {
+            status: 200,
+          },
+        ),
       );
     };
 
@@ -214,7 +218,9 @@ describe('Router', () => {
   it('live Router の二重生成では RouterOwnershipError を送出すること', () => {
     router = new Router(outlet, { skipInitialNavigation: true });
 
-    expect(() => new Router(outlet, { skipInitialNavigation: true })).to.throw(RouterOwnershipError);
+    expect(() => new Router(outlet, { skipInitialNavigation: true })).to.throw(
+      RouterOwnershipError,
+    );
   });
 
   it('addDocumentRoute() は exact pathname と defensive searchParams で評価すること', async () => {
@@ -322,7 +328,30 @@ describe('Router', () => {
     expect(errors).to.deep.equal(['shell', 'post-commit']);
   });
 
-  it('state-only navigation は policy 注入時のみ fetch せず結果イベントを返すこと', async () => {
+  it('postCommitController 未指定時は追加後処理なしで full navigation が完了すること', async () => {
+    let scrollCount = 0;
+    Object.defineProperty(window, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: () => {
+        scrollCount += 1;
+      },
+    });
+
+    router = new Router(outlet, { skipInitialNavigation: true });
+    await router.start();
+
+    const result = await router.navigate({
+      url: '/plain-navigation',
+      historyMode: 'push',
+    });
+
+    expect(result.outcome).to.equal('completed');
+    expect(result.degraded).to.equal(false);
+    expect(scrollCount).to.equal(0);
+  });
+
+  it('state-only navigation は policy 注入時のみ fetch せず結果イベントを返し post-commit に委譲すること', async () => {
     let fetchCalled = false;
     globalThis.fetch = () => {
       fetchCalled = true;
@@ -340,7 +369,18 @@ describe('Router', () => {
 
     router = new Router(outlet, {
       skipInitialNavigation: true,
-      urlStateNavigationPolicy: new PrimaryTabNavigationPolicy(),
+      urlStateNavigationPolicy: {
+        evaluate: ({ currentUrl, normalizedUrl }) =>
+          currentUrl === '/notes/testing?tab=overview' &&
+          normalizedUrl === '/notes/testing?tab=details'
+            ? { kind: 'state-only', scrollToHash: true }
+            : { kind: 'full' },
+      },
+      postCommitController: {
+        run: (context) => {
+          postCommitContext = context;
+        },
+      },
     });
     await router.start();
 
@@ -350,13 +390,17 @@ describe('Router', () => {
           url: string;
         }
       | undefined;
-    let windowEventDetail:
+    let afterNavigateResult: NavigationResult | undefined;
+    let postCommitContext:
       | {
-          previousUrl: string;
+          outlet: HTMLElement;
+          previousUrl: string | null;
           url: string;
+          isInitial: boolean;
+          stateOnly: boolean;
+          renderedKind: 'page' | 'not-found' | 'error' | null;
         }
       | undefined;
-    let afterNavigateResult: NavigationResult | undefined;
 
     router.on('ui-url-state-change', (detail) => {
       eventDetail = detail;
@@ -365,30 +409,26 @@ describe('Router', () => {
       afterNavigateResult = detail;
     });
 
-    const listener = (event: Event) => {
-      const customEvent = event as CustomEvent<{ previousUrl: string; url: string }>;
-      windowEventDetail = customEvent.detail;
-    };
-    window.addEventListener(URL_STATE_CHANGE_EVENT, listener);
+    const result = await router.navigate({
+      url: '/notes/testing?tab=details',
+      historyMode: 'push',
+    });
 
-    try {
-      const result = await router.navigate({
-        url: '/notes/testing?tab=details',
-        historyMode: 'push',
-      });
-
-      expect(fetchCalled).to.equal(false);
-      expect(result.stateOnly).to.equal(true);
-      expect(result.source).to.equal('state-only');
-      expect(eventDetail).to.deep.equal({
-        previousUrl: '/notes/testing?tab=overview',
-        url: '/notes/testing?tab=details',
-      });
-      expect(windowEventDetail).to.deep.equal(eventDetail);
-      expect(afterNavigateResult?.outcome).to.equal('completed');
-    } finally {
-      window.removeEventListener(URL_STATE_CHANGE_EVENT, listener);
-    }
+    expect(fetchCalled).to.equal(false);
+    expect(result.stateOnly).to.equal(true);
+    expect(result.source).to.equal('state-only');
+    expect(eventDetail).to.deep.equal({
+      previousUrl: '/notes/testing?tab=overview',
+      url: '/notes/testing?tab=details',
+    });
+    expect(afterNavigateResult?.outcome).to.equal('completed');
+    expect(postCommitContext).to.deep.include({
+      previousUrl: '/notes/testing?tab=overview',
+      url: '/notes/testing?tab=details',
+      stateOnly: true,
+      renderedKind: null,
+    });
+    expect(postCommitContext?.outlet).to.equal(outlet);
   });
 
   it('navigation:busy-change は full navigation の開始と終了でだけ発火すること', async () => {

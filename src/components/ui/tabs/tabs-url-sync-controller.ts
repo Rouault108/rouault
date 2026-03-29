@@ -4,13 +4,7 @@ import {
   revealHeadingInTabs,
   resolveTabValueForDescendant,
 } from '../../../lib/toc/filter-visible-headings.js';
-import {
-  URL_STATE_CHANGE_EVENT,
-  dispatchUrlStateChange,
-  readDecodedHash,
-  readPrimaryTabValue,
-  writePrimaryTabValue,
-} from '../../../lib/tabs/url-state.js';
+import { getTabsUrlSyncStrategy } from './tabs-url-sync-strategy.js';
 import type { TabsUrlSource, UrlHistoryMode } from './tabs.types.js';
 
 export interface TabsUrlSyncHost {
@@ -29,6 +23,7 @@ export interface UrlDrivenValueResolution {
 export class TabsUrlSyncController implements ReactiveController {
   private readonly host: ReactiveControllerHost & TabsUrlSyncHost;
   private suppressWrite = false;
+  private changeEventName: string | null = null;
 
   constructor(host: ReactiveControllerHost & TabsUrlSyncHost) {
     this.host = host;
@@ -40,9 +35,14 @@ export class TabsUrlSyncController implements ReactiveController {
       return;
     }
 
+    const strategy = getTabsUrlSyncStrategy();
+    this.changeEventName = strategy?.changeEventName ?? null;
+
     window.addEventListener('popstate', this.onLocationStateChange);
     window.addEventListener('hashchange', this.onLocationStateChange);
-    window.addEventListener(URL_STATE_CHANGE_EVENT, this.onLocationStateChange as EventListener);
+    if (this.changeEventName !== null) {
+      window.addEventListener(this.changeEventName, this.onLocationStateChange as EventListener);
+    }
   }
 
   hostDisconnected(): void {
@@ -52,7 +52,10 @@ export class TabsUrlSyncController implements ReactiveController {
 
     window.removeEventListener('popstate', this.onLocationStateChange);
     window.removeEventListener('hashchange', this.onLocationStateChange);
-    window.removeEventListener(URL_STATE_CHANGE_EVENT, this.onLocationStateChange as EventListener);
+    if (this.changeEventName !== null) {
+      window.removeEventListener(this.changeEventName, this.onLocationStateChange as EventListener);
+      this.changeEventName = null;
+    }
   }
 
   withSuppressedWrite<T>(fn: () => T): T {
@@ -80,7 +83,7 @@ export class TabsUrlSyncController implements ReactiveController {
       };
     }
 
-    const queryValue = readPrimaryTabValue(window.location.href);
+    const queryValue = getTabsUrlSyncStrategy()?.readValue(window.location.href) ?? null;
     if (queryValue !== null) {
       return {
         value: queryValue,
@@ -100,14 +103,19 @@ export class TabsUrlSyncController implements ReactiveController {
     }
 
     const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    const currentQueryValue = readPrimaryTabValue(currentUrl);
+    const strategy = getTabsUrlSyncStrategy();
+    if (!strategy) {
+      return;
+    }
+
+    const currentQueryValue = strategy.readValue(currentUrl);
 
     let nextUrl = currentUrl;
 
     if (source === 'hash') {
-      nextUrl = writePrimaryTabValue(currentUrl, activeValue);
+      nextUrl = strategy.writeValue(currentUrl, activeValue);
     } else if (currentQueryValue !== null) {
-      nextUrl = writePrimaryTabValue(currentUrl, activeValue);
+      nextUrl = strategy.writeValue(currentUrl, activeValue);
     }
 
     if (nextUrl !== currentUrl) {
@@ -126,7 +134,12 @@ export class TabsUrlSyncController implements ReactiveController {
     }
 
     const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    const nextUrl = writePrimaryTabValue(currentUrl, value);
+    const strategy = getTabsUrlSyncStrategy();
+    if (!strategy) {
+      return;
+    }
+
+    const nextUrl = strategy.writeValue(currentUrl, value);
 
     this.writeUrlStateInternal(nextUrl, historyMode);
   }
@@ -136,7 +149,7 @@ export class TabsUrlSyncController implements ReactiveController {
       return null;
     }
 
-    const hash = readDecodedHash(window.location.href);
+    const hash = getTabsUrlSyncStrategy()?.readHash(window.location.href) ?? '';
     if (hash.length === 0) {
       return null;
     }
@@ -163,6 +176,7 @@ export class TabsUrlSyncController implements ReactiveController {
     }
 
     const state = this.host.createHistoryStateForUrl(nextUrl);
+    const strategy = getTabsUrlSyncStrategy();
 
     if (historyMode === 'push') {
       window.history.pushState(state, '', nextUrl);
@@ -170,7 +184,7 @@ export class TabsUrlSyncController implements ReactiveController {
       window.history.replaceState(state, '', nextUrl);
     }
 
-    dispatchUrlStateChange(previousUrl, nextUrl);
+    strategy?.dispatchChange(previousUrl, nextUrl);
   }
 
   private readonly onLocationStateChange = (): void => {

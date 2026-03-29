@@ -1,5 +1,5 @@
 import type { Heading } from '../../components/ui/toc/toc.js';
-import { readPrimaryTabValue } from '../tabs/url-state.js';
+import { getTabsUrlSyncStrategy } from '../../components/ui/tabs/tabs-url-sync-strategy.js';
 
 type TabsLike = HTMLElement & {
   selectedValue?: string | null;
@@ -152,7 +152,7 @@ const readSelectedValueFromTabsHost = (tabsHost: TabsLike): string | null => {
   }
 
   if (tabsHost.hasAttribute('url-sync') && typeof window !== 'undefined') {
-    const queryValue = readPrimaryTabValue(window.location.href);
+    const queryValue = getTabsUrlSyncStrategy()?.readValue(window.location.href) ?? null;
     if (queryValue) {
       return queryValue;
     }
@@ -191,7 +191,9 @@ export const filterHeadingsByScopeSelections = (
       return true;
     }
 
-    return scopeSelections.every((selection) => selections.get(selection.scopeId) === selection.value);
+    return scopeSelections.every(
+      (selection) => selections.get(selection.scopeId) === selection.value,
+    );
   });
 
 export const applyTocScopeSelections = (

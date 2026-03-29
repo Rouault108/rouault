@@ -1,125 +1,17 @@
 import { html, LitElement, nothing, type PropertyValues } from 'lit';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import { PrimaryTabNavigationPolicy } from '../../lib/tabs/primary-tab-navigation-policy.js';
-import {
-  RouterNotStartedError,
-  type NavigationResult,
-  type ShellAdapter,
-} from '../../lib/router.js';
+import { RouterNotStartedError, type NavigationResult } from '../../lib/router.js';
 import { RouterController } from '../../lib/controllers/router-controller.js';
 import {
   type RouterContentHtml,
   unwrapRouterContentHtml,
 } from '../../lib/router/router-content-html.js';
+import { registerTabsUrlSyncStrategy } from '../ui/tabs/tabs-url-sync-strategy.js';
 import { AppRouterContentController } from './controllers/app-router-content-controller.js';
 import { AppRouterPostRenderController } from './controllers/app-router-post-render-controller.js';
-
-interface BreadcrumbShellItem {
-  label: string;
-  href?: string;
-}
-
-interface CorpusShellItem {
-  key: string;
-  label: string;
-  href: string;
-}
-
-const parseBreadcrumbs = (value: string | null): BreadcrumbShellItem[] => {
-  if (typeof value !== 'string' || value.trim().length === 0) {
-    return [];
-  }
-
-  try {
-    const parsed: unknown = JSON.parse(value);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed
-      .map((item) => {
-        if (typeof item !== 'object' || item === null) {
-          return null;
-        }
-
-        const record = item as Record<string, unknown>;
-        const label = typeof record['label'] === 'string' ? record['label'].trim() : '';
-        const href = typeof record['href'] === 'string' ? record['href'].trim() : '';
-        if (label.length === 0) {
-          return null;
-        }
-
-        return href.length > 0 ? { label, href } : { label };
-      })
-      .filter((item): item is BreadcrumbShellItem => item !== null);
-  } catch {
-    return [];
-  }
-};
-
-const parseCorpora = (value: string | null): CorpusShellItem[] => {
-  if (typeof value !== 'string' || value.trim().length === 0) {
-    return [];
-  }
-
-  try {
-    const parsed: unknown = JSON.parse(value);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed
-      .map((item) => {
-        if (typeof item !== 'object' || item === null) {
-          return null;
-        }
-
-        const record = item as Record<string, unknown>;
-        const key = typeof record['key'] === 'string' ? record['key'].trim() : '';
-        const label = typeof record['label'] === 'string' ? record['label'].trim() : '';
-        const href = typeof record['href'] === 'string' ? record['href'].trim() : '';
-        if (key.length === 0 || label.length === 0 || href.length === 0) {
-          return null;
-        }
-
-        return { key, label, href };
-      })
-      .filter((item): item is CorpusShellItem => item !== null);
-  } catch {
-    return [];
-  }
-};
-
-const createLayoutHeaderShellAdapter = (): ShellAdapter => ({
-  extract(documentSnapshot: Document) {
-    const nextHeader = documentSnapshot.querySelector('layout-header');
-
-    return {
-      header: {
-        breadcrumbs: parseBreadcrumbs(nextHeader?.getAttribute('breadcrumbs-json') ?? null),
-        corpora: parseCorpora(nextHeader?.getAttribute('corpora-json') ?? null),
-        currentCorpusKey: (() => {
-          const currentCorpusKey = nextHeader?.getAttribute('current-corpus-key')?.trim();
-          return currentCorpusKey === '' ? 'all' : currentCorpusKey ?? 'all';
-        })(),
-        noteLayout: nextHeader?.hasAttribute('note-layout') ?? false,
-      },
-    };
-  },
-  apply(shell) {
-    const currentHeader = document.querySelector('layout-header');
-    if (!(currentHeader instanceof HTMLElement)) {
-      return;
-    }
-
-    const breadcrumbsJson = JSON.stringify(shell?.header.breadcrumbs ?? []);
-    const corporaJson = JSON.stringify(shell?.header.corpora ?? []);
-    currentHeader.setAttribute('breadcrumbs-json', breadcrumbsJson);
-    currentHeader.setAttribute('corpora-json', corporaJson);
-    currentHeader.setAttribute('current-corpus-key', shell?.header.currentCorpusKey ?? 'all');
-    currentHeader.toggleAttribute('note-layout', shell?.header.noteLayout ?? false);
-  },
-});
+import { PrimaryTabNavigationPolicy } from './navigation/primary-tab-navigation-policy.js';
+import { primaryTabTabsUrlSyncStrategy } from './navigation/primary-tab-url-state.js';
+import { createLayoutHeaderShellAdapter } from './shell/layout-header-shell-adapter.js';
 
 const createNotStartedResult = (url: string): NavigationResult => ({
   outcome: 'failed',
@@ -136,6 +28,8 @@ const createNotStartedResult = (url: string): NavigationResult => ({
   errorReason: 'not-started',
 });
 
+registerTabsUrlSyncStrategy(primaryTabTabsUrlSyncStrategy);
+
 export class AppRouter extends LitElement {
   static override properties = {
     _pageContent: { state: true },
@@ -144,6 +38,7 @@ export class AppRouter extends LitElement {
 
   declare private _pageContent: RouterContentHtml | null;
   declare private _ariaAnnouncement: string;
+  declare private _serverContent: RouterContentHtml | null;
 
   override createRenderRoot(): this {
     return this;
@@ -161,9 +56,18 @@ export class AppRouter extends LitElement {
     super();
     this._pageContent = null;
     this._ariaAnnouncement = '';
+    this._serverContent = null;
   }
 
-  serverContent: RouterContentHtml | null = null;
+  get serverContent(): RouterContentHtml | null {
+    return this._serverContent;
+  }
+
+  set serverContent(value: RouterContentHtml | null) {
+    const previousValue = this._serverContent;
+    this._serverContent = value;
+    this.requestUpdate('serverContent', previousValue);
+  }
 
   override connectedCallback(): void {
     this._contentController.captureInitialContent(this);
@@ -210,7 +114,7 @@ export class AppRouter extends LitElement {
   }
 
   override render() {
-    const pageContent = this._pageContent ?? this.serverContent;
+    const pageContent = this._pageContent ?? this._serverContent;
 
     return html`
       <div aria-live="polite" aria-atomic="true" class="sr-only">${this._ariaAnnouncement}</div>

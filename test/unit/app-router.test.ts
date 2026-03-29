@@ -2,6 +2,7 @@ import { expect, fixture, html, waitUntil } from '@open-wc/testing';
 import '../../src/components/app/app-router.js';
 import type { NavigationResult } from '../../src/lib/router.js';
 import { createRouterContentHtml } from '../../src/lib/router/router-content-html.js';
+import { PRIMARY_TAB_URL_STATE_CHANGE_EVENT } from '../../src/components/app/navigation/primary-tab-url-state.js';
 
 type AppRouterElement = HTMLElement & {
   updateComplete: Promise<unknown>;
@@ -16,6 +17,7 @@ describe('app-router', () => {
   let originalReplaceState: typeof history.replaceState;
   let originalHistoryStateDescriptor: PropertyDescriptor | undefined;
   let originalScrollToDescriptor: PropertyDescriptor | undefined;
+  let originalScrollIntoViewDescriptor: PropertyDescriptor | undefined;
   let originalFocusDescriptor: PropertyDescriptor | undefined;
 
   let mockHistoryState: unknown;
@@ -33,6 +35,10 @@ describe('app-router', () => {
     originalReplaceState = history.replaceState.bind(history);
     originalHistoryStateDescriptor = Object.getOwnPropertyDescriptor(history, 'state');
     originalScrollToDescriptor = Object.getOwnPropertyDescriptor(window, 'scrollTo');
+    originalScrollIntoViewDescriptor = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'scrollIntoView',
+    );
     originalFocusDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'focus');
 
     mockHistoryState = history.state;
@@ -95,6 +101,16 @@ describe('app-router', () => {
       Object.defineProperty(window, 'scrollTo', originalScrollToDescriptor);
     } else {
       Reflect.deleteProperty(window, 'scrollTo');
+    }
+
+    if (originalScrollIntoViewDescriptor) {
+      Object.defineProperty(
+        HTMLElement.prototype,
+        'scrollIntoView',
+        originalScrollIntoViewDescriptor,
+      );
+    } else {
+      Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView');
     }
 
     if (originalFocusDescriptor) {
@@ -324,9 +340,66 @@ describe('app-router', () => {
 
     expect(header.hasAttribute('note-layout')).to.equal(true);
     expect(header.getAttribute('corpora-json')).to.equal(
-      '[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"music","label":"音楽","href":"/corpora/music/"}]'
+      '[{"key":"all","label":"すべてのノート","href":"/corpora/"},{"key":"music","label":"音楽","href":"/corpora/music/"}]',
     );
     expect(header.getAttribute('current-corpus-key')).to.equal('music');
+  });
+
+  it('primary tab の state-only navigation で URL state 通知と hash scroll を行うこと', async () => {
+    mockHistoryState = {
+      __routerUrl: '/notes/testing?tab=overview',
+      __routerPath: '/notes/testing',
+    };
+
+    let scrollTargetId = '';
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      writable: true,
+      value(this: HTMLElement) {
+        scrollTargetId = this.id;
+      },
+    });
+
+    const heading = await fixture<HTMLElement>(html`<h2 id="details-heading">Details</h2>`);
+
+    host = await fixture<AppRouterElement>(
+      html`<app-router
+        ><main><h1>SSR Title</h1></main></app-router
+      >`,
+    );
+    const appHost = host;
+    await appHost.updateComplete;
+
+    let eventDetail:
+      | {
+          previousUrl: string;
+          url: string;
+        }
+      | undefined;
+    const listener = (event: Event) => {
+      const customEvent = event as CustomEvent<{ previousUrl: string; url: string }>;
+      eventDetail = customEvent.detail;
+    };
+    window.addEventListener(PRIMARY_TAB_URL_STATE_CHANGE_EVENT, listener);
+
+    try {
+      const result = await appHost.navigate('/notes/testing?tab=details#details-heading');
+
+      await waitUntil(
+        () => scrollTargetId === 'details-heading',
+        'state-only 後に hash target へ scroll すること',
+      );
+
+      expect(result.stateOnly).to.equal(true);
+      expect(result.source).to.equal('state-only');
+      expect(eventDetail).to.deep.equal({
+        previousUrl: '/notes/testing?tab=overview',
+        url: '/notes/testing?tab=details#details-heading',
+      });
+    } finally {
+      window.removeEventListener(PRIMARY_TAB_URL_STATE_CHANGE_EVENT, listener);
+      heading.remove();
+    }
   });
 
   it('serverContent に branded 本文を与えた場合も描画できること', async () => {

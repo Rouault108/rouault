@@ -1,5 +1,5 @@
-import { isPrimaryTabOnlyNavigation } from './url-state.js';
-import type { UrlStateNavigationDecision, UrlStateNavigationPolicy } from '../router/router-types.js';
+import type { UrlStateNavigationDecision, UrlStateNavigationPolicy } from '../../../lib/router.js';
+import { isPrimaryTabOnlyNavigation } from './primary-tab-url-state.js';
 
 export class PrimaryTabNavigationPolicy implements UrlStateNavigationPolicy {
   evaluate(context: {
@@ -8,9 +8,7 @@ export class PrimaryTabNavigationPolicy implements UrlStateNavigationPolicy {
     normalizedUrl: string;
     historyMode: 'none' | 'push' | 'replace';
   }): UrlStateNavigationDecision {
-    const { currentUrl, normalizedUrl } = context;
-
-    if (!isPrimaryTabOnlyNavigation(currentUrl, normalizedUrl)) {
+    if (!isPrimaryTabOnlyNavigation(context.currentUrl, context.normalizedUrl)) {
       return { kind: 'full' };
     }
 

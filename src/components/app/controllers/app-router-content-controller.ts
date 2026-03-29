@@ -27,7 +27,9 @@ export class AppRouterContentController implements ReactiveController {
 
     const existingMain = hostElement.querySelector('main');
     this.currentContent = createRouterContentHtml(existingMain?.innerHTML ?? '');
-    this.setPageContent(this.currentContent);
+    if (existingMain instanceof HTMLElement) {
+      this.setPageContent(this.currentContent);
+    }
     hostElement.replaceChildren();
     this.didInitializeFromSsr = true;
   }

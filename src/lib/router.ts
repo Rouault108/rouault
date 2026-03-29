@@ -1,13 +1,9 @@
-import { PrimaryTabNavigationPolicy } from './tabs/primary-tab-navigation-policy.js';
-import { dispatchUrlStateChange, readDecodedHash } from './tabs/url-state.js';
 import { BrowserLinkInterceptor } from './router/browser-link-interceptor.js';
 import { ContentCommitter } from './router/content-committer.js';
 import { ContentLoader } from './router/content-loader.js';
-import { FocusManager } from './router/focus-manager.js';
 import { LocationAdapter } from './router/location-adapter.js';
 import { NavigationQueue, type QueuedNavigationRequest } from './router/navigation-queue.js';
 import { RouteRegistry } from './router/route-registry.js';
-import { RouterAnnouncer } from './router/router-announcer.js';
 import { RouterEventBus } from './router/router-event-bus.js';
 import type {
   BeforeNavigateContext,
@@ -60,36 +56,6 @@ export {
 
 const LIVE_ROUTER_OWNERS = new WeakMap<Document, Router>();
 
-class DefaultPostCommitController implements PostCommitController {
-  private focusManager = new FocusManager();
-  private announcer = new RouterAnnouncer(true);
-
-  attach(): void {
-    this.announcer.attach();
-  }
-
-  destroy(): void {
-    this.announcer.destroy();
-  }
-
-  run(context: {
-    outlet: HTMLElement;
-    previousUrl: string | null;
-    url: string;
-    isInitial: boolean;
-    stateOnly: boolean;
-    renderedKind: 'page' | 'not-found' | 'error' | null;
-  }): void {
-    if (context.stateOnly) {
-      return;
-    }
-
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    this.focusManager.focusMainContent(context.outlet);
-    this.announcer.announcePageChange();
-  }
-}
-
 type NormalizedNavigationRequest = QueuedNavigationRequest;
 
 const isAbortError = (error: unknown): boolean =>
@@ -104,7 +70,6 @@ export class Router {
   private beforeNavigateHooks = new Set<BeforeNavigateHook>();
   private linkInterceptor: BrowserLinkInterceptor;
   private queue: NavigationQueue;
-  private defaultPostCommitController: DefaultPostCommitController | null;
   private started = false;
   private destroyed = false;
   private isBusy = false;
@@ -125,10 +90,6 @@ export class Router {
     this.loader = new ContentLoader(this.routeRegistry, this.location);
     this.committer = new ContentCommitter(this.outlet, this.location, this.options.contentAdapter);
 
-    this.defaultPostCommitController = options.postCommitController
-      ? null
-      : new DefaultPostCommitController();
-
     this.linkInterceptor = new BrowserLinkInterceptor(
       this.location,
       () => this.currentUrl,
@@ -147,7 +108,6 @@ export class Router {
 
     this.started = true;
     this.linkInterceptor.attach();
-    this.defaultPostCommitController?.attach();
 
     if (this.options.skipInitialNavigation === true) {
       return null;
@@ -170,18 +130,23 @@ export class Router {
     this.beforeNavigateHooks.clear();
     this.eventBus.clear();
     this.queue.dispose();
-    this.defaultPostCommitController?.destroy();
 
     if (LIVE_ROUTER_OWNERS.get(document) === this) {
       LIVE_ROUTER_OWNERS.delete(document);
     }
   }
 
-  on<K extends keyof RouterEventMap>(event: K, callback: (payload: RouterEventMap[K]) => void): void {
+  on<K extends keyof RouterEventMap>(
+    event: K,
+    callback: (payload: RouterEventMap[K]) => void,
+  ): void {
     this.eventBus.on(event, callback);
   }
 
-  off<K extends keyof RouterEventMap>(event: K, callback: (payload: RouterEventMap[K]) => void): void {
+  off<K extends keyof RouterEventMap>(
+    event: K,
+    callback: (payload: RouterEventMap[K]) => void,
+  ): void {
     this.eventBus.off(event, callback);
   }
 
@@ -197,10 +162,7 @@ export class Router {
     this.beforeNavigateHooks.delete(hook);
   }
 
-  addDocumentRoute(
-    pattern: string | RegExp,
-    handler: Parameters<RouteRegistry['add']>[1],
-  ): void {
+  addDocumentRoute(pattern: string | RegExp, handler: Parameters<RouteRegistry['add']>[1]): void {
     if (this.destroyed) {
       throw new RouterDestroyedError('destroy() 後は route を追加できません。');
     }
@@ -270,7 +232,7 @@ export class Router {
       : { kind: 'full' as const };
 
     if (stateDecision.kind === 'state-only') {
-      const result = await this.runStateOnlyNavigation(request, currentUrl, stateDecision.scrollToHash);
+      const result = await this.runStateOnlyNavigation(request, currentUrl);
       this.eventBus.emit('after:navigate', result);
       return result;
     }
@@ -302,7 +264,11 @@ export class Router {
         return this.createSupersededResult(request);
       }
 
-      const durableCommitResult = await this.commitLoadedSnapshot(request, currentUrl, loadResult.snapshot);
+      const durableCommitResult = await this.commitLoadedSnapshot(
+        request,
+        currentUrl,
+        loadResult.snapshot,
+      );
       const finalResult = {
         ...durableCommitResult,
         source: loadResult.source,
@@ -415,7 +381,14 @@ export class Router {
     });
 
     await this.applyShell(snapshot, request.normalizedUrl, result);
-    await this.runPostCommit(previousUrl, request.normalizedUrl, isInitial, snapshot.kind, result);
+    await this.runPostCommit(
+      previousUrl,
+      request.normalizedUrl,
+      isInitial,
+      snapshot.kind,
+      false,
+      result,
+    );
 
     return result;
   }
@@ -452,9 +425,10 @@ export class Router {
     normalizedUrl: string,
     isInitial: boolean,
     renderedKind: NavigationResult['renderedKind'],
+    stateOnly: boolean,
     result: NavigationResult,
   ): Promise<void> {
-    const controller = this.options.postCommitController ?? this.defaultPostCommitController;
+    const controller = this.options.postCommitController;
     if (!controller) {
       return;
     }
@@ -465,7 +439,7 @@ export class Router {
         previousUrl,
         url: normalizedUrl,
         isInitial,
-        stateOnly: false,
+        stateOnly,
         renderedKind,
       });
     } catch (error) {
@@ -485,7 +459,6 @@ export class Router {
   private async runStateOnlyNavigation(
     request: NormalizedNavigationRequest,
     previousUrl: string,
-    scrollToHash: boolean | undefined,
   ): Promise<NavigationResult> {
     if (request.historyMode === 'push') {
       this.location.push(request.normalizedUrl, request.state);
@@ -494,18 +467,15 @@ export class Router {
     }
 
     this.currentUrl = request.normalizedUrl;
+    const isInitial = !this.hasCommittedNavigation;
+    this.hasCommittedNavigation = true;
     const detail = {
       previousUrl,
       url: request.normalizedUrl,
     };
     this.eventBus.emit('ui-url-state-change', detail);
-    dispatchUrlStateChange(previousUrl, request.normalizedUrl);
 
-    if (scrollToHash) {
-      await this.scrollToHash(request.normalizedUrl);
-    }
-
-    return {
+    const result: NavigationResult = {
       outcome: 'completed',
       requestedUrl: request.requestedUrl,
       normalizedUrl: request.normalizedUrl,
@@ -517,26 +487,10 @@ export class Router {
       source: 'state-only',
       renderedKind: null,
     };
-  }
 
-  private async scrollToHash(url: string): Promise<void> {
-    const hash = readDecodedHash(url);
-    if (hash.length === 0) {
-      return;
-    }
+    await this.runPostCommit(previousUrl, request.normalizedUrl, isInitial, null, true, result);
 
-    await new Promise<void>((resolve) => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          resolve();
-        });
-      });
-    });
-
-    const target = document.getElementById(hash);
-    if (target instanceof HTMLElement) {
-      target.scrollIntoView({ block: 'start', inline: 'nearest' });
-    }
+    return result;
   }
 
   private async runBeforeNavigateHooks(
@@ -639,6 +593,3 @@ export class Router {
     };
   }
 }
-
-export const rouaultDefaultTabNavigationPolicy: UrlStateNavigationPolicy =
-  new PrimaryTabNavigationPolicy();
