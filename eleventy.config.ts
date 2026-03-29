@@ -7,9 +7,12 @@ import { build } from 'velite';
 
 import { loadNotesData } from './src/data/notes.js';
 import { loadHomeData } from './src/data/home.js';
-import { serializeSearchCatalog } from './src/data/searchCatalog.js';
 import { loadClientBundleData } from './src/data/clientBundle.js';
 import { createStaticDirectoryMiddleware } from './src/lib/dev-static-directory.js';
+import {
+  emitSearchArtifacts,
+  renderSearchCatalogArtifact,
+} from './src/lib/search/build/emit-search-artifacts.js';
 import { resolveTrailingSlashRewrite } from './src/lib/trailing-slash-rewrite.js';
 import { buildPagefindIndex } from './scripts/build-pagefind.js';
 
@@ -58,7 +61,7 @@ const registerSearchCatalogMiddleware = (server: ViteDevServer): void => {
 
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.end(serializeSearchCatalog(loadNotesData()));
+    res.end(renderSearchCatalogArtifact(loadNotesData()));
   });
 };
 
@@ -120,6 +123,11 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
       path.resolve(process.cwd(), '_redirects'),
       path.resolve(process.cwd(), 'dist/_redirects'),
     );
+
+    await emitSearchArtifacts({
+      notes: loadNotesData(),
+      outputDir: path.resolve(process.cwd(), 'dist'),
+    });
 
     if (isServing) {
       await buildPagefindIndex();

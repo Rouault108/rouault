@@ -1,6 +1,6 @@
 import { normalizeDocumentCanonicalUrl } from '../document-url.js';
-import { tokenizeSearchText } from '../query-preprocessor.js';
 import type { SearchFieldTokens } from '../search-types.js';
+import { tokenizeSearchText } from './tokenize-text.js';
 
 function dedupe(values: readonly string[]): string[] {
   return [...new Set(values)];

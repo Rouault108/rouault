@@ -1,4 +1,4 @@
-import { createFieldTokens } from '../tokenization/field-tokenizers.js';
+import { createFieldTokens } from '../indexing/field-tokenizers.js';
 import { addFailure, addIssue, createCandidateRef, type MutableDiagnostics } from '../diagnostics.js';
 import {
   derivePathLabel,

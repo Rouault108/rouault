@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildSearchCatalog, serializeSearchCatalog } from '../../src/data/searchCatalog.js';
+import {
+  buildSearchCatalog,
+  serializeSearchCatalog,
+} from '../../src/lib/search/build/build-search-catalog.js';
 
 describe('buildSearchCatalog', () => {
   it('公開ノートから検索カタログを構築すること', () => {

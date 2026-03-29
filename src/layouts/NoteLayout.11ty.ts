@@ -7,7 +7,7 @@
 
 import { buildNoteNavigationModel } from '../../lib/content/navigation/index.js';
 import { injectNoteContentProfiles } from '../../lib/content/note-content-contracts.js';
-import { tokenizeSearchText } from '../lib/search/query-preprocessor.js';
+import { buildPagefindDocumentData } from '../lib/search/build/build-pagefind-document-data.js';
 import type { NoteStatus } from '../types/article-status.js';
 import type { IconName } from '../icons/catalog.js';
 import { resolveNoteSurfacePolicy } from '../types/note-surface-policy.js';
@@ -161,28 +161,6 @@ function toSafeDataId(slug: string): string {
   return slug.replace(/[^a-zA-Z0-9_-]/g, '-');
 }
 
-function normalizePagefindSortDate(value: string | undefined): string {
-  const normalized = typeof value === 'string' ? value.trim() : '';
-  return normalized.length > 0 ? normalized : '0000-00-00';
-}
-
-function buildTokenizedPagefindText(value: string | undefined): string {
-  const normalized = typeof value === 'string' ? value.trim() : '';
-  if (normalized.length === 0) {
-    return '';
-  }
-
-  const tokenized = tokenizeSearchText(normalized);
-  if (
-    tokenized.segmentedText.length === 0 ||
-    tokenized.segmentedText === tokenized.normalizedText
-  ) {
-    return '';
-  }
-
-  return escapeHtml(tokenized.segmentedText);
-}
-
 export class NoteLayout {
   data() {
     return {
@@ -225,14 +203,20 @@ export class NoteLayout {
     const tocCapabilitiesJson = escapeAttr(JSON.stringify(tocCapabilities));
     const shouldHydrateToc =
       tocCapabilities.activeTracking || tocCapabilities.dynamicScopes || tocCapabilities.mobileSummary;
-    const pagefindTitle = note?.title ? escapeHtml(note.title) : '';
-    const pagefindDescription = note?.description ? escapeHtml(note.description) : '';
-    const pagefindTokenizedTitle = buildTokenizedPagefindText(note?.title);
-    const pagefindTokenizedDescription = buildTokenizedPagefindText(note?.description);
-    const pagefindDateValue = note?.updated ?? note?.date ?? '';
-    const pagefindDate = pagefindDateValue ? escapeHtml(pagefindDateValue) : '';
-    const pagefindSortDate = escapeAttr(normalizePagefindSortDate(note?.updated ?? note?.date));
-    const pagefindGenreFilters = genres
+    const pagefindDocumentData = buildPagefindDocumentData({
+      title: note?.title,
+      description: note?.description,
+      date: note?.date,
+      updated: note?.updated,
+      tags: genres,
+    });
+    const pagefindTitle = escapeHtml(pagefindDocumentData.title);
+    const pagefindDescription = escapeHtml(pagefindDocumentData.description);
+    const pagefindTokenizedTitle = escapeHtml(pagefindDocumentData.tokenizedTitle);
+    const pagefindTokenizedDescription = escapeHtml(pagefindDocumentData.tokenizedDescription);
+    const pagefindDate = pagefindDocumentData.date ? escapeHtml(pagefindDocumentData.date) : '';
+    const pagefindSortDate = escapeAttr(pagefindDocumentData.sortDate);
+    const pagefindGenreFilters = pagefindDocumentData.tags
       .map((genre) => `<span data-pagefind-filter="genre:${escapeAttr(genre)}"></span>`)
       .join('');
 

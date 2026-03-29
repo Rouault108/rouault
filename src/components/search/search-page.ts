@@ -14,11 +14,7 @@ import '../../components/ui/tag/tag.js';
 import type { SelectOption } from '../../components/ui/select/select.js';
 import { HIGHLIGHT_RULE_TEMPLATE } from '../ui/highlight/highlight.js';
 import { pageShellStyles } from '../page/page-shell-styles.js';
-import {
-  pagefindSearchAdapter,
-  type SearchResponse,
-  type SearchResultItem,
-} from '../../lib/search/pagefind-search.js';
+import { searchCore } from '../../lib/search/search-core.js';
 import { navigateToUrl } from '../../lib/search/navigation.js';
 import {
   DEFAULT_SEARCH_SORT_MODE,
@@ -31,7 +27,7 @@ import {
   type SearchTagMode,
   type SearchSortMode,
 } from '../../lib/search/search-url.js';
-import type { SearchSnippet } from '../../lib/search/search-types.js';
+import type { ExploreSearchResponse, SearchResultItem, SearchSnippet } from '../../lib/search/search-types.js';
 
 const SEARCH_DEBOUNCE_MS = 150;
 const SEARCH_SORT_OPTIONS: SelectOption[] = [
@@ -375,7 +371,7 @@ export class SearchPage extends LitElement {
   private _tagCounts: Record<string, number> = {};
 
   @state()
-  private _allGenreCounts: Record<string, number> = {};
+  private _allTagCounts: Record<string, number> = {};
 
   @state()
   private _filterQuery = '';
@@ -405,7 +401,7 @@ export class SearchPage extends LitElement {
     if (initialResponse?.mode === 'explore') {
       this._results = initialResponse.items;
       this._tagCounts = initialResponse.tagCounts;
-      this._allGenreCounts = initialResponse.allTagCounts;
+      this._allTagCounts = initialResponse.allTagCounts;
       this._loaded = true;
     }
 
@@ -462,19 +458,24 @@ export class SearchPage extends LitElement {
     this._errorMessage = '';
 
     try {
-      const result = await pagefindSearchAdapter.search(
-        this._query,
-        this._selectedTags,
-        this._sortMode,
-        this._tagMode,
-      );
+      const result = await searchCore.search({
+        mode: 'explore',
+        q: this._query,
+        tags: this._selectedTags,
+        tagMode: this._tagMode,
+        sort: this._sortMode,
+      });
       if (currentToken !== this._requestToken) {
         return;
       }
 
+      if (result.mode !== 'explore') {
+        throw new Error('explore モードの検索応答が必要です。');
+      }
+
       this._results = result.items;
       this._tagCounts = result.tagCounts;
-      this._allGenreCounts = result.allTagCounts;
+      this._allTagCounts = result.allTagCounts;
       this._loaded = true;
       if (result.diagnostics.degraded) {
         console.warn('[search-page] 検索結果が縮退状態です', result.diagnostics);
@@ -637,7 +638,7 @@ export class SearchPage extends LitElement {
   };
 
   private _buildGenreFilterEntries(): GenreFilterEntry[] {
-    const map = new Map<string, number>(Object.entries(this._allGenreCounts));
+    const map = new Map<string, number>(Object.entries(this._allTagCounts));
 
     for (const [tag, count] of Object.entries(this._tagCounts)) {
       map.set(tag, count);
@@ -1006,14 +1007,14 @@ export class SearchPage extends LitElement {
     }
   }
 
-  private _parseInitialResponse(): SearchResponse | null {
+  private _parseInitialResponse(): ExploreSearchResponse | null {
     const normalized = this.initialSearchResponseJson.trim();
     if (normalized.length === 0) {
       return null;
     }
 
     try {
-      return JSON.parse(normalized) as SearchResponse;
+      return JSON.parse(normalized) as ExploreSearchResponse;
     } catch {
       return null;
     }

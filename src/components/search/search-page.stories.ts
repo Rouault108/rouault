@@ -1,15 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
-import { pagefindSearchAdapter, type SearchResponse } from '../../lib/search/pagefind-search.js';
+import { searchCore } from '../../lib/search/search-core.js';
+import type { ExploreSearchResponse, SearchRequest } from '../../lib/search/search-types.js';
 import './search-page.js';
 import type { Checkbox } from '../ui/checkbox/checkbox.js';
 import type { Details } from '../ui/details/details.js';
 import type { SearchField } from '../ui/search-field/search-field.js';
 import type { SearchPage } from './search-page.js';
 
-const ORIGINAL_SEARCH = pagefindSearchAdapter.search.bind(pagefindSearchAdapter);
-const ORIGINAL_GET_AVAILABLE_GENRES =
-  pagefindSearchAdapter.getAvailableGenres.bind(pagefindSearchAdapter);
+const ORIGINAL_SEARCH = searchCore.search.bind(searchCore);
 
 interface MockSearchItem {
   canonicalUrl: string;
@@ -143,7 +142,7 @@ function createSearchResponse(
   selectedGenres: readonly string[],
   sortMode: string,
   tagMode: 'or' | 'and' = 'or',
-): SearchResponse {
+): ExploreSearchResponse {
   const normalizedQuery = query.trim().toLowerCase();
   if (normalizedQuery.length === 0 && selectedGenres.length === 0) {
     return {
@@ -159,7 +158,7 @@ function createSearchResponse(
         failures: [],
         issues: [],
       },
-    } satisfies SearchResponse;
+    } satisfies ExploreSearchResponse;
   }
 
   const queryMatchedItems = MOCK_ITEMS.filter((item) => {
@@ -215,19 +214,18 @@ function createSearchResponse(
       failures: [],
       issues: [],
     },
-  } satisfies SearchResponse;
+  } satisfies ExploreSearchResponse;
 }
 
 function installSearchMock(): void {
-  pagefindSearchAdapter.search = (query, selectedGenres, sortMode, tagMode) =>
-    Promise.resolve(createSearchResponse(query, selectedGenres, sortMode, tagMode));
-
-  pagefindSearchAdapter.getAvailableGenres = () => Promise.resolve(ALL_GENRE_COUNTS);
+  searchCore.search = (request: SearchRequest) =>
+    Promise.resolve(
+      createSearchResponse(request.q, request.tags, request.sort, request.tagMode),
+    );
 }
 
 function restoreSearchMock(): void {
-  pagefindSearchAdapter.search = ORIGINAL_SEARCH;
-  pagefindSearchAdapter.getAvailableGenres = ORIGINAL_GET_AVAILABLE_GENRES;
+  searchCore.search = ORIGINAL_SEARCH;
 }
 
 const getSearchInput = (field: SearchField | null | undefined): HTMLInputElement => {
