@@ -12,9 +12,9 @@ describe('build-images', () => {
     await rm(GENERATED_MEDIA_ROOT, { recursive: true, force: true });
   });
 
-  it('content/_assets 原本から image manifest と variant assets を生成すること', async () => {
+  it('content/_assets と examples/media 原本から image manifest と variant assets を生成すること', async () => {
     const manifest = await buildImageManifest();
-    const hero = manifest.items['content/_assets/testing/test-hero.jpg'];
+    const hero = manifest.items['examples/media/testing/test-hero.jpg'];
 
     expect(hero).toBeDefined();
     expect(hero?.variants.reading?.outputs).toHaveLength(3);

@@ -1,5 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
+import {
+  SHARED_SANDBOX_BUTTON_EXAMPLE,
+} from '../../../../examples/manifests/testing-examples.js';
+import buttonCss from '../../../../examples/snippets/sandbox/button.css?raw';
+import buttonHtml from '../../../../examples/snippets/sandbox/button.html?raw';
+import buttonJs from '../../../../examples/snippets/sandbox/button.js?raw';
 import './preview-sandbox';
 import '../code-preview/code-preview';
 import '../codeblock/codeblock';
@@ -117,11 +123,11 @@ export const HtmlOnly: Story = {
     <div style="padding: 2rem; max-width: 720px;">
       <ui-preview-sandbox
         id="html-only-sandbox"
-        iframe-title="HTML only sandbox"
+        iframe-title="${SHARED_SANDBOX_BUTTON_EXAMPLE.iframeTitle}"
         height="160"
         base-url="https://example.com/examples/"
       >
-        <template data-preview-kind="html"><button class="demo">押す</button></template>
+        <template data-preview-kind="html">${buttonHtml}</template>
       </ui-preview-sandbox>
     </div>
   `,
@@ -138,7 +144,7 @@ export const HtmlOnly: Story = {
     }
 
     const srcdoc = iframe.srcdoc;
-    if (!srcdoc.includes('<button class="demo">押す</button>')) {
+    if (!srcdoc.includes(buttonHtml.trim())) {
       throw new Error('HTML payload が srcdoc に反映されていません');
     }
     if (!srcdoc.includes('<base href="https://example.com/examples/">')) {
@@ -155,22 +161,22 @@ export const AuthorJsOptIn: Story = {
     <div style="padding: 2rem; max-width: 720px;">
       <ui-preview-sandbox
         id="js-enabled-sandbox"
-        iframe-title="JS enabled sandbox"
+        iframe-title="${SHARED_SANDBOX_BUTTON_EXAMPLE.iframeTitle}"
         height="160"
         allow-js
       >
-        <template data-preview-kind="html"><button class="demo">押す</button></template>
-        <template data-preview-kind="js"
-          >setTimeout(() => { parent.postMessage({ source: 'preview-sandbox-author-js', caseId:
-          'enabled' }, '*'); }, 150);</template
-        >
+        <template data-preview-kind="html">${buttonHtml}</template>
+        <template data-preview-kind="css">${buttonCss}</template>
+        <template data-preview-kind="js">${buttonJs}</template>
       </ui-preview-sandbox>
-      <ui-preview-sandbox id="js-disabled-sandbox" iframe-title="JS disabled sandbox" height="160">
-        <template data-preview-kind="html"><button class="demo">押す</button></template>
-        <template data-preview-kind="js"
-          >setTimeout(() => { parent.postMessage({ source: 'preview-sandbox-author-js', caseId:
-          'disabled' }, '*'); }, 150);</template
-        >
+      <ui-preview-sandbox
+        id="js-disabled-sandbox"
+        iframe-title="${SHARED_SANDBOX_BUTTON_EXAMPLE.iframeTitle}"
+        height="160"
+      >
+        <template data-preview-kind="html">${buttonHtml}</template>
+        <template data-preview-kind="css">${buttonCss}</template>
+        <template data-preview-kind="js">${buttonJs}</template>
       </ui-preview-sandbox>
     </div>
   `,
@@ -189,30 +195,24 @@ export const AuthorJsOptIn: Story = {
     if (!disabledIframe.srcdoc.includes("'ui-preview-sandbox'")) {
       throw new Error('allow-js なしでも helper script が srcdoc に含まれている必要があります');
     }
-    if (disabledIframe.srcdoc.includes("caseId: 'disabled'")) {
+    if (disabledIframe.srcdoc.includes(buttonJs.trim())) {
       throw new Error('allow-js なしの sandbox に author JS が注入されています');
     }
 
-    const messages: string[] = [];
-    const handleMessage = (event: MessageEvent<unknown>) => {
-      const data = event.data;
-      if (!data || typeof data !== 'object') {
-        return;
-      }
-      const payload = data as { source?: string; caseId?: string };
-      if (payload.source === 'preview-sandbox-author-js' && typeof payload.caseId === 'string') {
-        messages.push(payload.caseId);
-      }
-    };
+    await wait(200);
 
-    window.addEventListener('message', handleMessage);
-    await wait(500);
-    window.removeEventListener('message', handleMessage);
+    const enabledDoc = enabledIframe.contentWindow?.document;
+    const disabledDoc = disabledIframe.contentWindow?.document;
+    const enabledButton = enabledDoc?.querySelector<HTMLButtonElement>('.demo-button');
+    const disabledButton = disabledDoc?.querySelector<HTMLButtonElement>('.demo-button');
+    enabledButton?.click();
+    disabledButton?.click();
+    await wait(100);
 
-    if (!messages.includes('enabled')) {
+    if (!enabledButton?.style.backgroundColor) {
       throw new Error('allow-js ありの author JS が実行されていません');
     }
-    if (messages.includes('disabled')) {
+    if (disabledButton?.style.backgroundColor) {
       throw new Error('allow-js なしでも author JS が実行されています');
     }
   },

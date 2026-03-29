@@ -39,9 +39,12 @@ export class TocActiveTracker {
   private _allHeadings: Heading[];
   private _contentRoot: HTMLElement | null = null;
   private _observer: IntersectionObserver | null = null;
+  private _mutationObserver: MutationObserver | null = null;
   private _visibleIds = new Set<string>();
   private _visibleHeadings: Heading[] = [];
   private _started = false;
+  private _refreshScheduled = false;
+  private _initialRefreshTimer: number | null = null;
 
   constructor(options: TocActiveTrackerOptions) {
     this._contentRootId = options.contentRootId;
@@ -70,6 +73,13 @@ export class TocActiveTracker {
     window.addEventListener('hashchange', this._onHashChange);
     document.addEventListener('ui-tab-change', this._onTabChange as EventListener);
     this.refresh();
+    this._initialRefreshTimer = window.setTimeout(() => {
+      this._initialRefreshTimer = null;
+      if (!this._started) {
+        return;
+      }
+      this.refresh();
+    }, 0);
   }
 
   destroy(): void {
@@ -80,11 +90,18 @@ export class TocActiveTracker {
     this._started = false;
     window.removeEventListener('hashchange', this._onHashChange);
     document.removeEventListener('ui-tab-change', this._onTabChange as EventListener);
+    this._teardownMutationObserver();
     this._teardownObserver();
+    this._refreshScheduled = false;
+    if (this._initialRefreshTimer !== null) {
+      clearTimeout(this._initialRefreshTimer);
+      this._initialRefreshTimer = null;
+    }
   }
 
   refresh(): void {
     this._contentRoot = findContentRoot(this._contentRootId);
+    this._setupMutationObserver();
     this._syncVisibleHeadings();
     this._syncActiveHeadingFromHash();
     this._setupObserver();
@@ -193,6 +210,67 @@ export class TocActiveTracker {
     this._observer?.disconnect();
     this._observer = null;
     this._visibleIds.clear();
+  }
+
+  private _setupMutationObserver(): void {
+    this._teardownMutationObserver();
+
+    if (!this._contentRoot) {
+      return;
+    }
+
+    this._mutationObserver = new MutationObserver((records) => {
+      if (!records.some((record) => this._shouldRefreshForMutation(record))) {
+        return;
+      }
+
+      this._scheduleRefresh();
+    });
+
+    this._mutationObserver.observe(this._contentRoot, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ['hidden', 'aria-hidden', 'selected-value', 'hydrated', 'data-panel-active'],
+    });
+  }
+
+  private _teardownMutationObserver(): void {
+    this._mutationObserver?.disconnect();
+    this._mutationObserver = null;
+  }
+
+  private _shouldRefreshForMutation(record: MutationRecord): boolean {
+    if (record.type === 'childList') {
+      return true;
+    }
+
+    if (record.type !== 'attributes' || !(record.target instanceof HTMLElement)) {
+      return false;
+    }
+
+    if (record.target.matches('ui-tabs')) {
+      return true;
+    }
+
+    return record.target.getAttribute('role') === 'tabpanel';
+  }
+
+  private _scheduleRefresh(): void {
+    if (!this._started || this._refreshScheduled) {
+      return;
+    }
+
+    this._refreshScheduled = true;
+    queueMicrotask(() => {
+      this._refreshScheduled = false;
+
+      if (!this._started) {
+        return;
+      }
+
+      this.refresh();
+    });
   }
 
   private _onHashChange = (): void => {

@@ -6,6 +6,7 @@ import {
   isReaderFacingNoteContentKind,
   normalizeNoteContentKind,
 } from '../../src/types/note-kind.js';
+import type { TestingArea } from '../../src/types/testing-area.js';
 
 type Parse5DocumentFragment = DefaultTreeAdapterMap['documentFragment'];
 type Parse5Element = DefaultTreeAdapterMap['element'];
@@ -36,8 +37,9 @@ export const validateNoteContentContracts = (
   kind: NoteContentKind,
   html: string | undefined,
   sourceLabel = 'unknown',
+  testingArea?: TestingArea,
 ): void => {
-  if (!isReaderFacingNoteContentKind(kind) || typeof html !== 'string' || html.trim().length === 0) {
+  if (typeof html !== 'string' || html.trim().length === 0) {
     return;
   }
 
@@ -54,13 +56,27 @@ export const validateNoteContentContracts = (
       return;
     }
 
-    if (node.tagName === 'ui-preview-sandbox') {
+    const allowJs = getAttributeValue(node, 'allow-js') === 'true';
+
+    if (isReaderFacingNoteContentKind(kind) && node.tagName === 'ui-preview-sandbox') {
       errors.push('reader note では preview-sandbox を使用できません');
+    }
+
+    if (isReaderFacingNoteContentKind(kind) && allowJs) {
+      errors.push('reader note では allow-js="true" を使用できません');
+    }
+
+    if (kind === 'testing' && testingArea !== 'sandbox' && node.tagName === 'ui-preview-sandbox') {
+      errors.push('testing/sandbox 以外では preview-sandbox を使用できません');
+    }
+
+    if (kind === 'testing' && testingArea !== 'sandbox' && allowJs) {
+      errors.push('testing/sandbox 以外では allow-js="true" を使用できません');
     }
 
     const nextInsideCodePreview = insideCodePreview || node.tagName === 'ui-code-preview';
 
-    if (node.tagName === 'ui-code-preview') {
+    if (isReaderFacingNoteContentKind(kind) && node.tagName === 'ui-code-preview') {
       const controls = getAttributeValue(node, 'controls')?.trim() ?? '';
       if (controls.length > 0) {
         errors.push('reader note の code-preview では controls を使用できません');
@@ -68,7 +84,7 @@ export const validateNoteContentContracts = (
     }
 
     const slot = getAttributeValue(node, 'slot')?.trim() ?? '';
-    if (nextInsideCodePreview && slot === 'toolbar') {
+    if (isReaderFacingNoteContentKind(kind) && nextInsideCodePreview && slot === 'toolbar') {
       errors.push('reader note の code-preview では toolbar slot を使用できません');
     }
 

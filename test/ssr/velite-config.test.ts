@@ -15,8 +15,13 @@ describe('velite config', () => {
     const source = readFileSync(configPath, 'utf8');
 
     expect(source).toContain('kind: s.enum(NOTE_CONTENT_KINDS).optional(),');
+    expect(source).toContain('testingArea: s.enum(TESTING_AREAS).optional(),');
     expect(source).toContain('const kind = normalizeNoteContentKind(data.kind);');
-    expect(source).toContain('validateNoteContentContracts(kind, data.content, data.slug);');
+    expect(source).toContain('const testingArea = normalizeTestingArea(data.testingArea);');
+    expect(source).toContain('validateNoteMetadataContracts(kind, testingArea, data.slug);');
+    expect(source).toContain(
+      'validateNoteContentContracts(kind, data.content, data.slug, testingArea);',
+    );
   });
 
   it('rehypeAnnotateLinkKinds が rehypeRouaultComponents の直後に挿入されていること', () => {

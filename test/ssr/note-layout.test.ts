@@ -178,14 +178,14 @@ describe('NoteLayout', () => {
     const rendered = layout.render({
       content: '<p>本文</p>',
       note: {
-        slug: 'testing/tabs-test',
-        title: 'タブテスト',
+        slug: 'testing/interactive',
+        title: 'Interactive',
       },
       notes: [],
     });
 
-    expect(rendered).toContain('id="note-content-testing-tabs-test" class="prose"');
-    expect(rendered).toContain('content-root-id="note-content-testing-tabs-test"');
+    expect(rendered).toContain('id="note-content-testing-interactive" class="prose"');
+    expect(rendered).toContain('content-root-id="note-content-testing-interactive"');
   });
 
   it('layout-toc に capabilities-json を渡し、runtime capability がある場合だけ hydrate すること', () => {
@@ -314,5 +314,20 @@ describe('NoteLayout', () => {
     expect(rendered).toContain('preview-profile="demo"');
     expect(rendered).not.toContain('data-pagefind-body');
     expect(rendered).not.toContain('data-pagefind-sort=');
+  });
+
+  it('testing note では reader sidebar を描画しないこと', () => {
+    const layout = new NoteLayout();
+    const rendered = layout.render({
+      content: '<p>本文</p>',
+      note: {
+        slug: 'testing/markdown-basic',
+        title: 'Markdown Basic',
+        kind: 'testing',
+      },
+      notes: [],
+    });
+
+    expect(rendered).not.toContain('<layout-sidebar');
   });
 });

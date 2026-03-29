@@ -82,6 +82,8 @@ genre:
 | `license`     | 任意 | ライセンス名                      |
 | `licenseNote` | 任意 | ライセンスに関する補足            |
 | `status`      | 任意 | 公開状態                          |
+| `kind`        | 任意 | ノートの公開面種別                |
+| `testingArea` | 条件付き | `kind: testing` の責務区分     |
 
 ### 3.3 各項目の書き方
 
@@ -103,8 +105,26 @@ genre:
 - `sidebarIcon`
   たとえば `file-text` のように書きます。必要なければ省略します。
 
+- `kind`
+  通常ノートでは省略して構いません。testing 用ノートだけ `testing` を明示します。
+
+- `testingArea`
+  `kind: testing` のときだけ必須です。`index | markdown-basic | media | code | interactive | sandbox` のいずれかを書きます。
+
 - `status`
   状態が明確な場合だけ書きます。迷う場合は省略しても構いません。
+
+testing 用ノートの最小例:
+
+```yaml
+---
+title: 'Interactive'
+description: 'tabs と translation の確認用ページ'
+date: 2026-03-29
+kind: 'testing'
+testingArea: 'interactive'
+---
+```
 
 ### 3.4 書かない項目
 
@@ -184,6 +204,22 @@ _イタリック_
 - `zoomable` は `true` / `false` で書く
 - `loading` は `lazy` または `eager`
 - `width` / `height` は整数で書く
+- 通常ノートでは `content/_assets/...` を使う
+- shared testing media を使うときだけ `examples/media/...` を使える
+
+### 4.3.1 Shared Example Include
+
+shared example source を本文へ展開したいときに使います。現状は主に `testing` ノートで使います。
+
+```markdown
+::example-include{ref="interactive/tabs-url-sync"}
+```
+
+覚えておくこと:
+
+- `ref` は登録済み logical id だけ使える
+- path を直接書かない
+- 未登録 `ref` や `..` を含む参照は build-time error になる
 
 ### 4.4 自動リンクカード
 
@@ -323,7 +359,7 @@ HTML / CSS / JavaScript から sandbox を自動生成したい場合に使い�
 
 ````markdown
 ::code-preview{heading="ボタン例" controls="viewport"}
-::preview-sandbox{title="ボタンの sandbox" allow-js="true" height="160"}
+::preview-sandbox{iframe-title="ボタンの sandbox" allow-js="true" height="160"}
 
 ```preview-html filename="button.html"
 <button class="demo-button">押す</button>
@@ -350,7 +386,7 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 - `preview-css` / `preview-js` は必要な場合だけ追加する
 - `preview-js` を使うときは `allow-js="true"` を付ける
 - `preview-sandbox` を使うときは、手書きの `::preview` や通常 code block を併用しない
-- 属性名は `iframe-title` ではなく `title` を使う
+- 属性名は `title` ではなく `iframe-title` を使う
 
 ### 5.5 Details
 
@@ -670,7 +706,7 @@ x^2^
 ### 9.6 `preview-sandbox` で古い属性名を書く
 
 ```markdown
-::preview-sandbox{iframe-title="古い書き方" allow-js="true" height="160"}
+::preview-sandbox{title="古い書き方" allow-js="true" height="160"}
 ```
 
 ---

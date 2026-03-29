@@ -134,6 +134,11 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
   // Lifecycle
   // ─────────────────────────────────────────────────
 
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this._initializeHydratedState();
+  }
+
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.cleanupTabListeners();
@@ -142,6 +147,13 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
 
   override firstUpdated(_changedProperties: PropertyValues<this>): void {
     super.firstUpdated(_changedProperties);
+    this._initializeHydratedState();
+  }
+
+  private _initializeHydratedState(): void {
+    if (this.hasAttribute('hydrated')) {
+      return;
+    }
 
     this.syncSnapshotFromSlots();
 

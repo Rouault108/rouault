@@ -1365,6 +1365,11 @@ app-router {
   width: 100%;
 }
 
+.note-shell[data-note-kind='testing'],
+.note-shell[data-note-kind='demo'] {
+  --note-sidebar-track: 0px;
+}
+
 .about-shell {
   --about-toc-track: var(--aside-width);
   display: grid;

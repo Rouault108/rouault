@@ -32,8 +32,20 @@ describe('validateNoteContentContracts', () => {
         'testing',
         '<ui-code-preview controls="viewport"><ui-preview-sandbox slot="preview"></ui-preview-sandbox></ui-code-preview>',
         'testing/test',
+        'sandbox',
       ),
     ).not.toThrow();
+  });
+
+  it('testing/sandbox 以外の preview-sandbox を build error にすること', () => {
+    expect(() =>
+      validateNoteContentContracts(
+        'testing',
+        '<ui-code-preview><ui-preview-sandbox slot="preview" allow-js="true"></ui-preview-sandbox></ui-code-preview>',
+        'testing/interactive',
+        'interactive',
+      ),
+    ).toThrow('[note-content:testing/interactive] testing/sandbox 以外では preview-sandbox を使用できません');
   });
 });
 

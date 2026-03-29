@@ -610,7 +610,7 @@ export class Tag extends LitElement {
     if (this.disabled) return;
 
     // タグのテキスト内容を取得
-    const textContent = this.textContent.trim();
+    const textContent = this._textLabel;
 
     this.dispatchEvent(
       new CustomEvent<{ value: string }>('ui-tag-remove', {
@@ -630,8 +630,13 @@ export class Tag extends LitElement {
 
   /** 削除ボタンのラベル */
   private get _removeLabel(): string {
-    const text = this.textContent.trim();
+    const text = this._textLabel;
     return text ? `${text}を削除` : '削除';
+  }
+
+  /** SSR でも安全に使えるタグ本文のラベル。 */
+  private get _textLabel(): string {
+    return (this.textContent ?? '').trim();
   }
 
   /** アイコンスロットのレンダリング */
@@ -692,7 +697,7 @@ export class Tag extends LitElement {
     // <a> と <button> を Flexbox で並列配置する
     if (hasHref && hasRemovable) {
       return html`
-        <div class="tag-group" role="group" aria-label="${this.textContent.trim()} タグ">
+        <div class="tag-group" role="group" aria-label="${this._textLabel} タグ">
           <a
             class="tag-link"
             href="${this.disabled ? nothing : this.href}"

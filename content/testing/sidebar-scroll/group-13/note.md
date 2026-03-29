@@ -3,6 +3,7 @@ title: 'Sidebar Scroll Item 13'
 description: 'サイドバーのスクロール検証用ノート 13'
 date: 2026-03-14
 kind: 'testing'
+testingArea: 'interactive'
 genre:
   - testing
   - e2e

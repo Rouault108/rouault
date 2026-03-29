@@ -1,4 +1,5 @@
 import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
+import './components/ui/tabs/tabs.js';
 import { HydrationScheduler } from './client/hydration/scheduler.js';
 import { initSearch } from './lib/search/bootstrap.js';
 import { initTheme } from './lib/theme/theme-manager.js';

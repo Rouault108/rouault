@@ -1,5 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
+import {
+  SHARED_TABS_STATIC_EXAMPLE,
+  SHARED_TABS_URL_SYNC_EXAMPLE,
+} from '../../../../examples/manifests/testing-examples.js';
 import './tabs';
 import type { Tabs } from './tabs';
 import type { UiTabChangeDetail } from './tabs.types';
@@ -609,18 +613,19 @@ export const SelectedByValue: Story = {
 export const UrlSyncFromQuery: Story = {
   render: () => html`
     <ui-tabs url-sync>
-      <button slot="tab" value="overview">概要</button>
-      <div slot="panel" style="padding: 1rem;">概要パネル</div>
-
-      <button slot="tab" value="details">詳細</button>
-      <div slot="panel" style="padding: 1rem;">
-        <h3 id="details-heading" style="margin: 0;">Details Heading</h3>
-        詳細パネル
-      </div>
+      ${SHARED_TABS_URL_SYNC_EXAMPLE.panels.map(
+        (panel) => html`
+          <button slot="tab" value="${panel.value}">${panel.label}</button>
+          <div slot="panel" style="padding: 1rem;">
+            <h3 id="${panel.value}-heading" style="margin: 0;">${panel.heading}</h3>
+            ${panel.body}
+          </div>
+        `,
+      )}
     </ui-tabs>
   `,
   play: async ({ canvasElement }) => {
-    const restore = replaceStoryUrl('?tab=details');
+    const restore = replaceStoryUrl('?tab=rust');
     try {
       const tabs = canvasElement.querySelector<Tabs>('ui-tabs');
       if (!tabs) throw new Error('[UrlSyncFromQuery] ui-tabs が見つかりません');
@@ -629,7 +634,7 @@ export const UrlSyncFromQuery: Story = {
 
       const tabEls = canvasElement.querySelectorAll<HTMLElement>('[slot="tab"]');
       if (tabEls[1]?.getAttribute('aria-selected') !== 'true') {
-        throw new Error('[UrlSyncFromQuery] ?tab=details が初期選択に反映されていません');
+        throw new Error('[UrlSyncFromQuery] ?tab=rust が初期選択に反映されていません');
       }
     } finally {
       restore();
@@ -640,11 +645,12 @@ export const UrlSyncFromQuery: Story = {
 export const UrlSyncPushOnClick: Story = {
   render: () => html`
     <ui-tabs url-sync>
-      <button slot="tab" value="overview">概要</button>
-      <div slot="panel" style="padding: 1rem;">概要パネル</div>
-
-      <button slot="tab" value="details">詳細</button>
-      <div slot="panel" style="padding: 1rem;">詳細パネル</div>
+      ${SHARED_TABS_STATIC_EXAMPLE.panels.map(
+        (panel) => html`
+          <button slot="tab" value="${panel.value}">${panel.label}</button>
+          <div slot="panel" style="padding: 1rem;">${panel.body}</div>
+        `,
+      )}
     </ui-tabs>
   `,
   play: async ({ canvasElement }) => {
@@ -673,18 +679,19 @@ export const UrlSyncPushOnClick: Story = {
 export const UrlSyncHashOverridesQuery: Story = {
   render: () => html`
     <ui-tabs url-sync>
-      <button slot="tab" value="overview">概要</button>
-      <div slot="panel" style="padding: 1rem;">概要パネル</div>
-
-      <button slot="tab" value="details">詳細</button>
-      <div slot="panel" style="padding: 1rem;">
-        <h3 id="details-heading" style="margin: 0;">Details Heading</h3>
-        詳細パネル
-      </div>
+      ${SHARED_TABS_URL_SYNC_EXAMPLE.panels.map(
+        (panel) => html`
+          <button slot="tab" value="${panel.value}">${panel.label}</button>
+          <div slot="panel" style="padding: 1rem;">
+            <h3 id="${panel.value}-heading" style="margin: 0;">${panel.heading}</h3>
+            ${panel.body}
+          </div>
+        `,
+      )}
     </ui-tabs>
   `,
   play: async ({ canvasElement }) => {
-    const restore = replaceStoryUrl('?tab=overview#details-heading');
+    const restore = replaceStoryUrl('?tab=javascript#rust-heading');
     try {
       const tabs = canvasElement.querySelector<Tabs>('ui-tabs');
       if (!tabs) throw new Error('[UrlSyncHashOverridesQuery] ui-tabs が見つかりません');
@@ -696,8 +703,8 @@ export const UrlSyncHashOverridesQuery: Story = {
         throw new Error('[UrlSyncHashOverridesQuery] hash が query より優先されていません');
       }
 
-      if (!window.location.search.includes('tab=details')) {
-        throw new Error('[UrlSyncHashOverridesQuery] URL が ?tab=details に正規化されていません');
+      if (!window.location.search.includes('tab=rust')) {
+        throw new Error('[UrlSyncHashOverridesQuery] URL が ?tab=rust に正規化されていません');
       }
     } finally {
       restore();

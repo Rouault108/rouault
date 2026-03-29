@@ -13,6 +13,7 @@ import {
   THEME_STORAGE_KEY,
   RESOLVED_THEME_ATTRIBUTE,
 } from '../lib/theme/theme-manager.js';
+import { resolveNoteSurfacePolicy } from '../types/note-surface-policy.js';
 
 export interface BaseLayoutData {
   title?: string;
@@ -46,6 +47,9 @@ export class BaseLayout {
     const noteLayoutAttribute = data.note ? ' note-layout' : '';
     const clientScriptSrc = data.clientBundle?.scriptSrc ?? '/src/client.ts';
     const currentCorpusKey = resolveCurrentCorpusKey(data);
+    const noteSurfacePolicy = resolveNoteSurfacePolicy(data.note?.['kind']);
+    const pagefindIgnoreAttribute =
+      data.note && !noteSurfacePolicy.pagefind ? ' data-pagefind-ignore' : '';
     const corporaJson = JSON.stringify(buildCorpusNavigation(data.corpusPages ?? []))
       .replace(/&/g, '&amp;')
       .replace(/"/g, '&quot;')
@@ -97,7 +101,7 @@ export class BaseLayout {
   <link rel="stylesheet" href="/assets/css/main.css">
   <script type="module" src="${escapeAttribute(clientScriptSrc)}"></script>
 </head>
-<body>
+<body${pagefindIgnoreAttribute}>
   <ui-skip-link
     href="#main-content"
     label="メインコンテンツへ移動"

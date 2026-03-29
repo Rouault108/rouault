@@ -76,6 +76,7 @@ const LINK_CARD_THUMBNAIL_CACHE_PATH = path.resolve(
   'content/_generated/link-card-thumbnails.json',
 );
 const LOCAL_CONTENT_ASSET_ROUTE = '/content-assets/';
+const EXAMPLE_MEDIA_ASSET_ROUTE = '/example-assets/';
 const GENERATED_MEDIA_ROUTE = '/media/';
 const EXPECTED_SCHEMA_VERSION = 1;
 const EXPECTED_VARIANT_SET_VERSION = 'reading-v1';
@@ -111,8 +112,14 @@ const buildError = (message: string): Error => new Error(`[markdown] ${message}`
 export const isStrictMediaMode = (): boolean =>
   process.env.ROUAULT_MEDIA_STRICT === '1' || process.env.npm_lifecycle_event === 'build';
 
-export const isLocalContentAssetPath = (value: string): boolean =>
+const isContentAssetPath = (value: string): boolean =>
   normalizeContentAssetPath(value).startsWith('content/_assets/');
+
+const isExampleMediaAssetPath = (value: string): boolean =>
+  normalizeContentAssetPath(value).startsWith('examples/media/');
+
+export const isLocalContentAssetPath = (value: string): boolean =>
+  isContentAssetPath(value) || isExampleMediaAssetPath(value);
 
 const assertManifestShape = (value: unknown): MediaManifest => {
   if (!isRecord(value)) {
@@ -188,7 +195,15 @@ const loadLinkCardThumbnailCache = (): LinkCardThumbnailCache | null => {
 
 const buildDevelopmentAssetRoute = (sourcePath: string): string => {
   const normalized = normalizeContentAssetPath(sourcePath);
-  return `${LOCAL_CONTENT_ASSET_ROUTE}${normalized.slice('content/_assets/'.length)}`;
+  if (normalized.startsWith('content/_assets/')) {
+    return `${LOCAL_CONTENT_ASSET_ROUTE}${normalized.slice('content/_assets/'.length)}`;
+  }
+
+  if (normalized.startsWith('examples/media/')) {
+    return `${EXAMPLE_MEDIA_ASSET_ROUTE}${normalized.slice('examples/media/'.length)}`;
+  }
+
+  throw buildError(`ローカル画像 path "${normalized}" は未対応です`);
 };
 
 const buildPictureSourceSet = (
@@ -272,8 +287,10 @@ const resolveDevelopmentFallbackAsset = (
 
 export const assertLocalMediaSourcePath = (value: string, label: string): string => {
   const normalized = normalizeContentAssetPath(value);
-  if (!normalized.startsWith('content/_assets/')) {
-    throw buildError(`${label} は content/_assets 配下のローカル path のみ指定できます`);
+  if (!isLocalContentAssetPath(normalized)) {
+    throw buildError(
+      `${label} は content/_assets または examples/media 配下のローカル path のみ指定できます`,
+    );
   }
   return normalized;
 };
@@ -287,6 +304,14 @@ export const resolveImageAsset = (
   const strict = options.strict ?? isStrictMediaMode();
 
   if (manifest) {
+    if (!manifest.items[normalizedSourcePath]) {
+      if (strict) {
+        throw buildError(`image manifest に "${normalizedSourcePath}" が存在しません`);
+      }
+
+      return resolveDevelopmentFallbackAsset(normalizedSourcePath, options);
+    }
+
     return resolveManifestBackedAsset(manifest, normalizedSourcePath, options);
   }
 

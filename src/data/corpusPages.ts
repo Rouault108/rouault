@@ -1,4 +1,4 @@
-import { filterReaderFacingNotes, type SourceNote } from './notes.js';
+import { filterNotesBySurface, type SourceNote } from './notes.js';
 
 export interface CorpusPageSourceNote extends SourceNote {
   title?: string;
@@ -138,7 +138,7 @@ function resolveCorpusLabels(notes: readonly CorpusPageSourceNote[]): Map<string
 }
 
 export function buildCorpusPagesData(notes: readonly CorpusPageSourceNote[]): CorpusPageEntry[] {
-  const visibleNotes = filterReaderFacingNotes(notes);
+  const visibleNotes = filterNotesBySurface(notes, 'corpora');
   const corpusLabels = resolveCorpusLabels(visibleNotes);
   const corpusMap = new Map<string, CorpusPageNoteSummary[]>();
 

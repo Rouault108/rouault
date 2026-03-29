@@ -10,6 +10,14 @@ import {
   isReaderFacingNoteContentKind,
   normalizeNoteContentKind,
 } from '../types/note-kind.js';
+import {
+  type NoteSurfacePolicy,
+  resolveNoteSurfacePolicy,
+} from '../types/note-surface-policy.js';
+import {
+  type TestingArea,
+  normalizeTestingArea,
+} from '../types/testing-area.js';
 
 type SidebarScope = 'global' | 'self';
 type SidebarIconSetting = IconName | 'none';
@@ -39,6 +47,7 @@ export interface SourceNote {
   content?: string;
   status?: NoteStatus;
   kind?: NoteContentKind;
+  testingArea?: TestingArea;
   genre?: string[];
   sidebarIcon?: SidebarIconSetting;
   [key: string]: unknown;
@@ -62,6 +71,7 @@ export interface NoteCollectionItem extends SourceNote {
   sidebarDirectoryIcons?: Record<string, IconName>;
   resolvedCover?: ResolvedImageAsset;
   kind: NoteContentKind;
+  testingArea?: TestingArea;
 }
 
 const inferTocCapabilities = (
@@ -327,6 +337,7 @@ export const buildNotesCollection = (
       const pathInfo = normalizeNotePath(inputSlug, contentRoot);
       const sourceSlug = pathInfo.rawSlug;
       const kind = normalizeNoteContentKind(note.kind);
+      const testingArea = normalizeTestingArea(note.testingArea);
       const preparedToc = prepareTocHtml(typeof note.content === 'string' ? note.content : '');
 
       const sidebarRoot = resolveSidebarRoot(sourceSlug, contentRoot);
@@ -347,6 +358,7 @@ export const buildNotesCollection = (
         ...note,
         ...(typeof note.content === 'string' ? { content: preparedToc.html } : {}),
         kind,
+        ...(testingArea !== undefined ? { testingArea } : {}),
         rawSlug: sourceSlug,
         slug: pathInfo.slug,
         permalink: pathInfo.permalink,
@@ -393,6 +405,16 @@ export const isReaderFacingNote = (note: SourceNote): boolean =>
 
 export const filterReaderFacingNotes = <T extends SourceNote>(notes: readonly T[]): T[] =>
   notes.filter((note) => isReaderFacingNote(note));
+
+export const isNoteVisibleInSurface = (
+  note: SourceNote,
+  surface: keyof NoteSurfacePolicy,
+): boolean => isPublicNote(note) && resolveNoteSurfacePolicy(note.kind)[surface];
+
+export const filterNotesBySurface = <T extends SourceNote>(
+  notes: readonly T[],
+  surface: keyof NoteSurfacePolicy,
+): T[] => notes.filter((note) => isNoteVisibleInSurface(note, surface));
 
 export const loadNotesData = (): NoteCollectionItem[] => {
   const velitePath = join(process.cwd(), '.velite', 'notes.json');

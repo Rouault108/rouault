@@ -44,6 +44,9 @@ const registerDevelopmentStaticDirectories = (server: ViteDevServer): void => {
   server.middlewares.use(
     createStaticDirectoryMiddleware('/content-assets/', path.resolve(process.cwd(), 'content', '_assets')),
   );
+  server.middlewares.use(
+    createStaticDirectoryMiddleware('/example-assets/', path.resolve(process.cwd(), 'examples', 'media')),
+  );
 };
 
 const registerSearchCatalogMiddleware = (server: ViteDevServer): void => {
@@ -85,6 +88,7 @@ export default function configureEleventy(eleventyConfig: UserConfig) {
 
   eleventyConfig.addPassthroughCopy({ 'src/assets': 'assets' });
   eleventyConfig.addPassthroughCopy({ '.generated/media/assets': 'media' });
+  eleventyConfig.addPassthroughCopy({ 'examples/media': 'example-assets' });
 
   if (!isServing) {
     eleventyConfig.addPassthroughCopy({ '.generated/client/assets': 'assets' });

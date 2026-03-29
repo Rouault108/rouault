@@ -6,6 +6,7 @@ import sharp from 'sharp';
 import type { MediaManifest, MediaManifestItem, MediaVariantOutput } from '../lib/media/image-resolver.js';
 
 const CONTENT_ROOT = path.resolve(process.cwd(), 'content');
+const EXAMPLES_ROOT = path.resolve(process.cwd(), 'examples');
 const GENERATED_ROOT = path.resolve(process.cwd(), '.generated', 'media');
 const GENERATED_ASSET_ROOT = path.join(GENERATED_ROOT, 'assets');
 const MANIFEST_PATH = path.join(GENERATED_ROOT, 'image-manifest.json');
@@ -68,7 +69,9 @@ const normalizeContentAssetPath = (value: string): string =>
   path.posix.normalize(value.trim().replace(/^\/+/, ''));
 
 const isLocalContentAssetPath = (value: string): boolean =>
-  normalizeContentAssetPath(value).startsWith('content/_assets/');
+  ['content/_assets/', 'examples/media/'].some((prefix) =>
+    normalizeContentAssetPath(value).startsWith(prefix),
+  );
 
 const collectMarkdownFiles = async (directory: string): Promise<string[]> => {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -90,7 +93,7 @@ const collectMarkdownFiles = async (directory: string): Promise<string[]> => {
       continue;
     }
 
-    if (entry.isFile() && resolvedPath.endsWith('.md')) {
+    if (entry.isFile() && (resolvedPath.endsWith('.md') || resolvedPath.endsWith('.mdx'))) {
       results.push(resolvedPath);
     }
   }
@@ -163,7 +166,10 @@ const loadLinkCardThumbnailSourcePaths = async (): Promise<string[]> => {
 };
 
 const collectReferencedSourcePaths = async (): Promise<string[]> => {
-  const markdownFiles = await collectMarkdownFiles(CONTENT_ROOT);
+  const markdownFiles = [
+    ...(await collectMarkdownFiles(CONTENT_ROOT)),
+    ...(await collectMarkdownFiles(EXAMPLES_ROOT)),
+  ];
   const references = new Set<string>();
 
   for (const markdownFile of markdownFiles) {

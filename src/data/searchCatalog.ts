@@ -1,4 +1,4 @@
-import { filterReaderFacingNotes, type SourceNote } from './notes.js';
+import { filterNotesBySurface, type SourceNote } from './notes.js';
 import { tokenizeSearchText } from '../lib/search/query-preprocessor.js';
 
 export interface SearchCatalogSourceNote extends SourceNote {
@@ -70,7 +70,7 @@ function buildTokenKeywords(value: string): string[] {
 }
 
 export function buildSearchCatalog(notes: readonly SearchCatalogSourceNote[]): SearchCatalogItem[] {
-  return filterReaderFacingNotes(notes).flatMap((note) => {
+  return filterNotesBySurface(notes, 'search').flatMap((note) => {
     const title = normalizeString(note.title);
     const permalink = normalizeString(note.permalink);
     if (title.length === 0 || permalink.length === 0) {

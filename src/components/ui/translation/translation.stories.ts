@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
+import { SHARED_TRANSLATION_EXAMPLE } from '../../../../examples/manifests/testing-examples.js';
 import './translation';
 import type { TranslationOverlaySurface, UiTranslation } from './translation';
 
@@ -46,10 +47,10 @@ overlay 専用の translation コンポーネントです。
     },
   },
   args: {
-    original: 'Je pense, donc je suis.',
-    translated: '我思う、ゆえに我あり。',
-    lang: 'fr',
-    targetLang: 'ja',
+    original: SHARED_TRANSLATION_EXAMPLE.original,
+    translated: SHARED_TRANSLATION_EXAMPLE.translated,
+    lang: SHARED_TRANSLATION_EXAMPLE.lang,
+    targetLang: SHARED_TRANSLATION_EXAMPLE.targetLang,
     surface: 'popover',
     open: false,
   },
@@ -134,11 +135,11 @@ export const Drawer: Story = {
     <p>
       <ui-translation
         id="translation-drawer"
-        original="Les extrêmes se touchent."
-        translated="両極端は相通ずる。"
-        lang="fr"
-        target-lang="ja"
-        surface="drawer"
+        original="${SHARED_TRANSLATION_EXAMPLE.original}"
+        translated="${SHARED_TRANSLATION_EXAMPLE.translated}"
+        lang="${SHARED_TRANSLATION_EXAMPLE.lang}"
+        target-lang="${SHARED_TRANSLATION_EXAMPLE.targetLang}"
+        surface="${SHARED_TRANSLATION_EXAMPLE.surface}"
         open
       ></ui-translation>
     </p>
@@ -162,17 +163,17 @@ export const SingleOpenOrchestration: Story = {
     <div style="display: grid; gap: 12px;">
       <ui-translation
         id="translation-first"
-        original="Bonjour"
-        translated="こんにちは"
-        lang="fr"
-        target-lang="ja"
+        original="${SHARED_TRANSLATION_EXAMPLE.original}"
+        translated="${SHARED_TRANSLATION_EXAMPLE.translated}"
+        lang="${SHARED_TRANSLATION_EXAMPLE.lang}"
+        target-lang="${SHARED_TRANSLATION_EXAMPLE.targetLang}"
       ></ui-translation>
       <ui-translation
         id="translation-second"
-        original="Bonsoir"
-        translated="こんばんは"
-        lang="fr"
-        target-lang="ja"
+        original="Les extrêmes se touchent."
+        translated="両極端は相通ずる。"
+        lang="${SHARED_TRANSLATION_EXAMPLE.lang}"
+        target-lang="${SHARED_TRANSLATION_EXAMPLE.targetLang}"
       ></ui-translation>
     </div>
   `,

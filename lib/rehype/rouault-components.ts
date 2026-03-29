@@ -117,6 +117,7 @@ const resolveHydrationDirective = (node: HastNode): HydrationDirective | null =>
       return null;
     }
     case 'ui-tabs':
+      return { capability: 'interactive', trigger: 'initial' };
     case 'ui-translation':
       return { capability: 'interactive', trigger: 'visible' };
     case 'ui-preview-sandbox':

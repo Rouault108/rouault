@@ -3,6 +3,8 @@ import {
   normalizeSegmentLabel,
   resolveDirectoryLabel,
 } from './navigation-labels.js';
+import type { NoteContentKind } from '../../src/types/note-kind.js';
+import { resolveNoteSurfacePolicy } from '../../src/types/note-surface-policy.js';
 
 export interface BreadcrumbSourceNote {
   slug?: string;
@@ -10,6 +12,7 @@ export interface BreadcrumbSourceNote {
   permalink?: string;
   noteKind?: 'leaf' | 'directory-index';
   directoryPath?: string;
+  kind?: NoteContentKind;
 }
 
 export interface BreadcrumbItem {
@@ -22,6 +25,10 @@ export const buildBreadcrumbs = (
   notes: readonly BreadcrumbSourceNote[] = [],
 ): BreadcrumbItem[] => {
   if (typeof note?.slug !== 'string' || note.slug.trim().length === 0) {
+    return [];
+  }
+
+  if (!resolveNoteSurfacePolicy(note.kind).breadcrumb) {
     return [];
   }
 

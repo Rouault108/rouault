@@ -28,6 +28,7 @@
 
 対象:
 
+- note frontmatter metadata
 - Markdown 本文
 - Rouault 独自ディレクティブ
 - インライン拡張記法
@@ -92,6 +93,19 @@
 - integer は意味論上有効な範囲に限定します。
 - 値の無い属性を truthy shorthand として勝手に解釈してはなりません。
 
+### 4.4 note metadata
+
+frontmatter metadata には次の制約を適用します。
+
+- `kind`: `reader | testing | demo`
+- `testingArea`: `index | markdown-basic | media | code | interactive | sandbox`
+
+規則:
+
+- `testingArea` は `kind: testing` のとき必須です。
+- `kind !== testing` のノートで `testingArea` を指定してはなりません。
+- `testingArea` は公開面 policy を分岐する補助ラベルであり、content kind を増やす代替手段として扱ってはなりません。
+
 ---
 
 ## 5. ブロックディレクティブ仕様
@@ -115,6 +129,7 @@
 | `::toolbar`             | `div[slot=toolbar]`      | 内部 / 互換用。著者向け公開文法では非推奨                                                                                                                                                                                                                                            |
 | `::tab`                 | `div[slot=tab]`          | `value`                                                                                                                                                                                                                                                                              |
 | `::panel`               | `div[slot=panel]`        | 属性なし                                                                                                                                                                                                                                                                             |
+| `::example-include`     | build-time 展開          | `ref`。登録済み shared example を本文へ展開                                                                                                                                                                                                                                          |
 
 ### 5.2 共通規則
 
@@ -402,6 +417,20 @@
 - `tabs` 配下のパネルスロットを表します。
 - 属性は持ちません。
 
+### 5.17 `::example-include`
+
+許可属性:
+
+- `ref`
+
+規則:
+
+- `ref` は登録済み shared example の logical id でなければなりません。
+- `::example-include` は directive validation より前に展開されます。
+- `ref` に絶対 path や `..` を含めてはなりません。
+- 未登録 `ref` と循環参照は build-time error とします。
+- 現状の shared example source は `examples/snippets/**` と `examples/manifests/testing-examples.ts` により管理します。
+
 ---
 
 ## 6. link-card metadata 解決規則
@@ -528,8 +557,8 @@ link-card 解決後の主要属性は少なくとも次を持つものとしま�
 
 ### 8.2 規則
 
-- 本文画像の `src` は `content/_assets/...` のローカル source path のみ許可します。
-- frontmatter `cover` も `content/_assets/...` のローカル source path のみ許可します。
+- 本文画像の `src` は `content/_assets/...` または `examples/media/...` のローカル source path のみ許可します。
+- frontmatter `cover` も `content/_assets/...` または `examples/media/...` のローカル source path のみ許可します。
 - キャプションは標準 Markdown の title 文字列を使います。
 - `zoomable` は authoring 層では `true` / `false` 文字列で受け取り、後段で `ui-image` の入力へ正規化します。
 - `loading` の既定値は `lazy` とし、`eager` は本文先頭の LCP 候補 1 枚に限定します。

@@ -1,4 +1,4 @@
-import { filterReaderFacingNotes, loadNotesData, type SourceNote } from './notes.js';
+import { filterNotesBySurface, loadNotesData, type SourceNote } from './notes.js';
 
 const VALID_DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/u;
 
@@ -128,7 +128,7 @@ const compareHomeNotes = (left: IndexedHomeNote, right: IndexedHomeNote): number
 };
 
 export const buildHomeData = (notes: readonly HomeSourceNote[]): HomePageData => {
-  const visibleNotes = filterReaderFacingNotes(notes);
+  const visibleNotes = filterNotesBySurface(notes, 'home');
 
   const indexedNotes = visibleNotes.flatMap((note, sourceIndex) => {
     const title = normalizeText(note.title);

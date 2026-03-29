@@ -13,11 +13,14 @@ import { rehypeRouaultComponents } from './lib/rehype/rouault-components.js';
 import { rehypeShikiCodeBlocks } from './lib/rehype/shiki-code-blocks.js';
 import { rehypeStaticCodeGroups } from './lib/rehype/static-code-groups.js';
 import { validateNoteContentContracts } from './lib/content/note-content-contracts.js';
+import { validateNoteMetadataContracts } from './lib/content/note-metadata-contracts.js';
+import { remarkExpandExampleIncludes } from './lib/remark/expand-example-includes.js';
 import { remarkDisallowRawHtml } from './lib/remark/disallow-raw-html.js';
 import { remarkLinkCards } from './lib/remark/remark-link-cards.js';
 import { remarkRouaultDirectives } from './lib/remark/rouault-directives.js';
 import { ARTICLE_STATUSES } from './src/types/article-status.js';
 import { NOTE_CONTENT_KINDS, normalizeNoteContentKind } from './src/types/note-kind.js';
+import { TESTING_AREAS, normalizeTestingArea } from './src/types/testing-area.js';
 
 const notes = defineCollection({
   name: 'Note',
@@ -37,17 +40,21 @@ const notes = defineCollection({
       licenseNote: s.string().optional(),
       status: s.enum(ARTICLE_STATUSES).optional(),
       kind: s.enum(NOTE_CONTENT_KINDS).optional(),
+      testingArea: s.enum(TESTING_AREAS).optional(),
       content: s.markdown(),
       excerpt: s.excerpt().optional(),
       toc: s.toc().optional(),
     })
     .transform((data) => {
       const kind = normalizeNoteContentKind(data.kind);
-      validateNoteContentContracts(kind, data.content, data.slug);
+      const testingArea = normalizeTestingArea(data.testingArea);
+      validateNoteMetadataContracts(kind, testingArea, data.slug);
+      validateNoteContentContracts(kind, data.content, data.slug, testingArea);
 
       return {
         ...data,
         kind,
+        ...(testingArea !== undefined ? { testingArea } : {}),
         status: data.status ?? '',
       };
     }),
@@ -65,7 +72,13 @@ export default defineConfig({
   collections: { notes },
   markdown: {
     copyLinkedFiles: false,
-    remarkPlugins: [remarkMath, remarkDisallowRawHtml, remarkRouaultDirectives, remarkLinkCards],
+    remarkPlugins: [
+      remarkMath,
+      remarkExpandExampleIncludes,
+      remarkDisallowRawHtml,
+      remarkRouaultDirectives,
+      remarkLinkCards,
+    ],
     rehypePlugins: [
       rehypeKatex,
       rehypeHeadingIds,

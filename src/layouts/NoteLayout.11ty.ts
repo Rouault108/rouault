@@ -10,7 +10,9 @@ import { injectNoteContentProfiles } from '../../lib/content/note-content-contra
 import { tokenizeSearchText } from '../lib/search/query-preprocessor.js';
 import type { NoteStatus } from '../types/article-status.js';
 import type { IconName } from '../icons/catalog.js';
+import { resolveNoteSurfacePolicy } from '../types/note-surface-policy.js';
 import { type NoteContentKind, isReaderFacingNoteContentKind } from '../types/note-kind.js';
+import type { TestingArea } from '../types/testing-area.js';
 
 interface TocHeading {
   id?: string;
@@ -37,6 +39,7 @@ interface SidebarNoteLike {
   sidebarResolvedIcon?: IconName;
   sidebarDirectoryIcons?: Record<string, IconName>;
   kind?: NoteContentKind;
+  testingArea?: TestingArea;
 }
 
 interface NoteData extends SidebarNoteLike {
@@ -52,6 +55,7 @@ interface NoteData extends SidebarNoteLike {
   tocHeadings?: TocHeading[];
   tocCapabilities?: TocCapabilities;
   kind?: NoteContentKind;
+  testingArea?: TestingArea;
 }
 
 interface NoteLayoutData {
@@ -259,7 +263,9 @@ export class NoteLayout {
   render(data: NoteLayoutData) {
     const note = data.note;
     const noteContentKind = note?.kind ?? 'reader';
+    const surfacePolicy = resolveNoteSurfacePolicy(noteContentKind);
     const isReaderFacingNote = isReaderFacingNoteContentKind(noteContentKind);
+    const showSidebar = surfacePolicy.sidebar;
     const slug = typeof note?.slug === 'string' ? note.slug : '';
     const sidebarSelectedId = note?.noteKind === 'directory-index' ? `${slug}/__index__` : slug;
     const heading = escapeAttr(note?.title ?? '');
@@ -274,12 +280,14 @@ export class NoteLayout {
     const headings = normalizeHeadings(note?.tocHeadings);
     const tocCapabilities = normalizeTocCapabilities(note?.tocCapabilities);
     const sidebarRoot = typeof note?.sidebarRoot === 'string' ? note.sidebarRoot : '';
-    const sidebarNotes = mergeCurrentNoteIntoSidebarNotes(
-      note,
-      Array.isArray(data.notes)
-        ? data.notes.filter((item) => isReaderFacingNoteContentKind(item.kind))
-        : [],
-    );
+    const sidebarNotes = showSidebar
+      ? mergeCurrentNoteIntoSidebarNotes(
+          note,
+          Array.isArray(data.notes)
+            ? data.notes.filter((item) => resolveNoteSurfacePolicy(item.kind).sidebar)
+            : [],
+        )
+      : [];
     const sidebarTree = buildSidebarTree(sidebarNotes, sidebarRoot);
     const contentHtml = injectNoteContentProfiles(data.content, noteContentKind);
 
@@ -310,30 +318,35 @@ export class NoteLayout {
         class="note-shell"
         data-hydration-scope="note-shell"
         data-note-kind="${escapeAttr(noteContentKind)}"
+        ${surfacePolicy.pagefind ? '' : 'data-pagefind-ignore'}
       >
-        <aside
-          class="layout-sidebar-col"
-          aria-label="ナビゲーション"
-          data-hydration-scope="note-sidebar"
-        >
-          <layout-sidebar
-            source-id="${escapeAttr(sidebarSourceId)}"
-            selected-id="${escapeAttr(sidebarSelectedId)}"
-            items-json="${sidebarItemsJson}"
-            heading="ナビゲーション"
-            fixed-breakpoint="768"
-            data-hydration-capability="interactive"
-            data-hydration-trigger="initial"
-          ></layout-sidebar>
-        </aside>
+        ${showSidebar
+          ? `
+            <aside
+              class="layout-sidebar-col"
+              aria-label="ナビゲーション"
+              data-hydration-scope="note-sidebar"
+            >
+              <layout-sidebar
+                source-id="${escapeAttr(sidebarSourceId)}"
+                selected-id="${escapeAttr(sidebarSelectedId)}"
+                items-json="${sidebarItemsJson}"
+                heading="ナビゲーション"
+                fixed-breakpoint="768"
+                data-hydration-capability="interactive"
+                data-hydration-trigger="initial"
+              ></layout-sidebar>
+            </aside>
+          `
+          : ''}
 
         <article
           class="layout-main-col container-reading"
-          ${isReaderFacingNote ? 'data-pagefind-body' : 'data-pagefind-ignore'}
-          ${isReaderFacingNote ? `data-pagefind-sort="date:${pagefindSortDate}"` : ''}
+          ${surfacePolicy.pagefind ? 'data-pagefind-body' : 'data-pagefind-ignore'}
+          ${surfacePolicy.pagefind ? `data-pagefind-sort="date:${pagefindSortDate}"` : ''}
           data-hydration-scope="note-content"
         >
-          ${isReaderFacingNote
+          ${surfacePolicy.pagefind
             ? `
               <div class="sr-only" aria-hidden="true" data-pagefind-ignore>
                 <span data-pagefind-meta="title">${pagefindTitle}</span>

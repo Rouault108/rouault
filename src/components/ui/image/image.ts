@@ -5,7 +5,7 @@ import {
   parseMediaSourcesAttribute,
   serializeMediaSources,
   type MediaSourceDescriptor,
-} from '../../../../lib/media/image-resolver.js';
+} from '../../../lib/media/media-source-attributes.js';
 import '../icon/icon.js';
 
 export type ImageLoading = 'lazy' | 'eager';
