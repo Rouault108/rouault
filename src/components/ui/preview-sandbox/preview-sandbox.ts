@@ -81,7 +81,9 @@ const normalizeOptionalPositiveNumber = (value: unknown): number | undefined => 
 };
 
 const normalizeActivationPolicy = (value: string): ActivationPolicy =>
-  VALID_ACTIVATION_POLICIES.has(value as ActivationPolicy) ? (value as ActivationPolicy) : 'eager';
+  VALID_ACTIVATION_POLICIES.has(value as ActivationPolicy)
+    ? (value as ActivationPolicy)
+    : 'visible';
 
 const normalizeHeightMode = (value: string): HeightMode =>
   VALID_HEIGHT_MODES.has(value as HeightMode) ? (value as HeightMode) : 'auto';
@@ -257,7 +259,7 @@ export class PreviewSandbox extends LitElement {
   allowJs = false;
 
   @property({ type: String, attribute: 'activation-policy', reflect: true })
-  activationPolicy = 'eager';
+  activationPolicy = 'visible';
 
   @property({ type: String, attribute: 'height-mode', reflect: true })
   heightMode = 'auto';

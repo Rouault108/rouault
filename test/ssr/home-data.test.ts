@@ -39,6 +39,14 @@ describe('buildHomeData', () => {
         genre: ['reference'],
         status: 'draft',
       },
+      {
+        title: 'Testing',
+        permalink: '/notes/testing/',
+        slug: 'testing/index',
+        description: 'testing note',
+        date: '2026-03-11',
+        kind: 'testing',
+      },
       ...Array.from({ length: 11 }, (_value, index) => {
         const noteNumber = index + 4;
         const date = new Date(Date.UTC(2026, 2, 9 - index)).toISOString().slice(0, 10);
@@ -84,6 +92,7 @@ describe('buildHomeData', () => {
       genres: ['analysis', 'essay'],
     });
     expect(home.notes.some((note) => note.title === 'Beta')).toBe(false);
+    expect(home.notes.some((note) => note.title === 'Testing')).toBe(false);
     expect(home.notes.some((note) => note.title === 'Note 14')).toBe(false);
   });
 });

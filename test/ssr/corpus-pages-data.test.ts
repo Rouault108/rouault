@@ -35,6 +35,12 @@ describe('buildCorpusPagesData', () => {
         slug: 'music/private',
         status: 'draft',
       },
+      {
+        title: 'テスト導線',
+        permalink: '/notes/testing/debug/',
+        slug: 'testing/debug',
+        kind: 'testing',
+      },
     ];
 
     expect(buildCorpusPagesData(notes)).toEqual([

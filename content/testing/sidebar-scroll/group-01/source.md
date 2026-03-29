@@ -2,6 +2,7 @@
 title: 'Sidebar Scroll Source'
 description: 'サイドバーのルート遷移スクロール検証用の遷移元ノート'
 date: 2026-03-14
+kind: 'testing'
 genre:
   - testing
   - e2e

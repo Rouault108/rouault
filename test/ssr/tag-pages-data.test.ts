@@ -30,6 +30,13 @@ describe('buildTagPagesData', () => {
         status: 'draft',
         genre: ['music'],
       },
+      {
+        title: 'テストノート',
+        permalink: '/notes/testing/debug/',
+        slug: 'testing/debug',
+        kind: 'testing',
+        genre: ['music', 'testing'],
+      },
     ];
 
     expect(buildTagPagesData(notes)).toEqual([

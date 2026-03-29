@@ -5,6 +5,11 @@ import { extractTocFromHtml, type TocHeading } from '../../lib/content/extract-t
 import { resolveCoverAsset, type ResolvedImageAsset } from '../../lib/media/image-resolver.js';
 import { isIconName, type IconName } from '../icons/catalog.js';
 import type { NoteStatus } from '../types/article-status.js';
+import {
+  type NoteContentKind,
+  isReaderFacingNoteContentKind,
+  normalizeNoteContentKind,
+} from '../types/note-kind.js';
 
 type SidebarScope = 'global' | 'self';
 type SidebarIconSetting = IconName | 'none';
@@ -33,6 +38,7 @@ export interface SourceNote {
   slug?: string;
   content?: string;
   status?: NoteStatus;
+  kind?: NoteContentKind;
   genre?: string[];
   sidebarIcon?: SidebarIconSetting;
   [key: string]: unknown;
@@ -50,6 +56,7 @@ export interface NoteCollectionItem extends SourceNote {
   sidebarResolvedIcon?: IconName;
   sidebarDirectoryIcons?: Record<string, IconName>;
   resolvedCover?: ResolvedImageAsset;
+  kind: NoteContentKind;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -320,6 +327,7 @@ export const buildNotesCollection = (
 
       return {
         ...note,
+        kind: normalizeNoteContentKind(note.kind),
         rawSlug: sourceSlug,
         slug: pathInfo.slug,
         permalink: pathInfo.permalink,
@@ -359,6 +367,12 @@ export const isPublicNote = (note: SourceNote): boolean => note.status !== 'draf
 
 export const filterPublicNotes = <T extends SourceNote>(notes: readonly T[]): T[] =>
   notes.filter((note) => isPublicNote(note));
+
+export const isReaderFacingNote = (note: SourceNote): boolean =>
+  isPublicNote(note) && isReaderFacingNoteContentKind(note.kind);
+
+export const filterReaderFacingNotes = <T extends SourceNote>(notes: readonly T[]): T[] =>
+  notes.filter((note) => isReaderFacingNote(note));
 
 export const loadNotesData = (): NoteCollectionItem[] => {
   const velitePath = join(process.cwd(), '.velite', 'notes.json');

@@ -1,4 +1,4 @@
-import { filterPublicNotes, loadNotesData, type SourceNote } from './notes.js';
+import { filterReaderFacingNotes, loadNotesData, type SourceNote } from './notes.js';
 
 export interface TagPageNoteSummary {
   title: string;
@@ -79,7 +79,7 @@ function compareNoteSummaries(left: TagPageNoteSummary, right: TagPageNoteSummar
 }
 
 export function buildTagPagesData(notes: readonly SourceNote[]): TagPageEntry[] {
-  const visibleNotes = filterPublicNotes(notes);
+  const visibleNotes = filterReaderFacingNotes(notes);
   const tags = new Map<string, TagPageNoteSummary[]>();
 
   for (const note of visibleNotes) {

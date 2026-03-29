@@ -3,7 +3,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { buildNotesCollection, filterPublicNotes, type SourceNote } from '../../src/data/notes.js';
+import {
+  buildNotesCollection,
+  filterPublicNotes,
+  filterReaderFacingNotes,
+  type SourceNote,
+} from '../../src/data/notes.js';
 
 const tempDirs: string[] = [];
 
@@ -83,6 +88,23 @@ describe('buildNotesCollection', () => {
 
     expect(collection[0]?.resolvedCover?.sourcePath).toBe('content/_assets/testing/cover.jpg');
     expect(collection[0]?.resolvedCover?.inline.src).toBe('/content-assets/testing/cover.jpg');
+  });
+
+  it('kind 未指定のノートは reader として保持する', async () => {
+    const contentRoot = await createContentRoot();
+
+    const collection = buildNotesCollection(
+      [
+        {
+          slug: 'category/section-a/item-alpha',
+          title: '項目アルファ',
+          content: '<p>本文</p>',
+        },
+      ],
+      contentRoot,
+    );
+
+    expect(collection[0]?.kind).toBe('reader');
   });
 
   it('sidebar.scope を最も近い祖先から解決する', async () => {
@@ -270,6 +292,21 @@ describe('filterPublicNotes', () => {
     expect(filterPublicNotes(notes).map((note) => note.slug)).toEqual([
       'note-archived',
       'note-public',
+      'note-default',
+    ]);
+  });
+
+  it('reader-facing フィルタでは testing と demo を除外する', () => {
+    const notes: SourceNote[] = [
+      { slug: 'note-reader', kind: 'reader' },
+      { slug: 'note-testing', kind: 'testing' },
+      { slug: 'note-demo', kind: 'demo' },
+      { slug: 'note-draft', kind: 'reader', status: 'draft' },
+      { slug: 'note-default' },
+    ];
+
+    expect(filterReaderFacingNotes(notes).map((note) => note.slug)).toEqual([
+      'note-reader',
       'note-default',
     ]);
   });

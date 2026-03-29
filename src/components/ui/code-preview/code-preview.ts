@@ -13,6 +13,7 @@ type PreviewSurface = 'surface' | 'canvas' | 'muted';
 type PreviewViewport = 'full' | 'tablet' | 'mobile';
 type PreviewControl = 'theme' | 'surface' | 'viewport';
 type PreviewStateKey = 'previewTheme' | 'previewSurface' | 'previewViewport';
+type PreviewProfile = 'demo' | 'reader';
 
 export interface CodePreviewState {
   readonly previewTheme: PreviewTheme;
@@ -39,6 +40,7 @@ const VALID_THEMES = new Set<PreviewTheme>(['page', 'light', 'dark']);
 const VALID_SURFACES = new Set<PreviewSurface>(['surface', 'canvas', 'muted']);
 const VALID_VIEWPORTS = new Set<PreviewViewport>(['full', 'tablet', 'mobile']);
 const VALID_CONTROLS = new Set<PreviewControl>(['theme', 'surface', 'viewport']);
+const VALID_PROFILES = new Set<PreviewProfile>(['demo', 'reader']);
 const CONTROL_ORDER: PreviewControl[] = ['theme', 'surface', 'viewport'];
 
 const THEME_OPTIONS: PreviewControlOption<PreviewTheme>[] = [
@@ -621,6 +623,10 @@ export class CodePreview extends LitElement {
   @property({ type: String, attribute: 'preview-viewport', reflect: true })
   previewViewport: PreviewViewport = 'full';
 
+  /** note 種別に応じた内部表示 profile です。 */
+  @property({ type: String, attribute: 'preview-profile', reflect: true })
+  previewProfile: PreviewProfile = 'demo';
+
   @state()
   private _hasToolbarContent = false;
 
@@ -663,6 +669,10 @@ export class CodePreview extends LitElement {
       this.previewViewport = 'full';
     }
 
+    if (changedProperties.has('previewProfile') && !VALID_PROFILES.has(this.previewProfile)) {
+      this.previewProfile = 'demo';
+    }
+
     this._syncHostAttributes();
   }
 
@@ -694,7 +704,9 @@ export class CodePreview extends LitElement {
 
   private _syncHostAttributes(): void {
     const hasHeading = this.heading.trim() !== '';
-    const showHeader = hasHeading || this._hasToolbarContent || this._activeControls.length > 0;
+    const showHeader =
+      hasHeading ||
+      (this._isDemoProfile && (this._hasToolbarContent || this._activeControls.length > 0));
     this.toggleAttribute('data-has-heading', hasHeading);
     this.toggleAttribute('data-show-header', showHeader);
   }
@@ -725,6 +737,10 @@ export class CodePreview extends LitElement {
     };
   }
 
+  private get _isDemoProfile(): boolean {
+    return this.previewProfile === 'demo';
+  }
+
   private _getChangedStateKeys(changedProperties: PropertyValues<this>): PreviewStateKey[] {
     const changedKeys: PreviewStateKey[] = [];
 
@@ -744,6 +760,10 @@ export class CodePreview extends LitElement {
   }
 
   private get _activeControls(): PreviewControl[] {
+    if (!this._isDemoProfile) {
+      return [];
+    }
+
     if (this.controls.trim() === '') {
       return [];
     }
@@ -883,12 +903,16 @@ export class CodePreview extends LitElement {
       <div class="root" role="group" aria-label="${this._groupAriaLabel}">
         <div class="header">
           <span class="header-heading">${this.heading.trim()}</span>
-          <div class="header-tools">
-            ${this._renderBuiltInControls()}
-            <div class="header-toolbar">
-              <slot name="toolbar" @slotchange="${this._onToolbarSlotChange}"></slot>
-            </div>
-          </div>
+          ${this._isDemoProfile
+            ? html`
+                <div class="header-tools">
+                  ${this._renderBuiltInControls()}
+                  <div class="header-toolbar">
+                    <slot name="toolbar" @slotchange="${this._onToolbarSlotChange}"></slot>
+                  </div>
+                </div>
+              `
+            : nothing}
         </div>
 
         <div class="preview-area">

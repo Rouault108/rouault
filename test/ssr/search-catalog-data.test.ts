@@ -66,6 +66,12 @@ describe('buildSearchCatalog', () => {
         permalink: '/notes/public/',
         slug: 'public',
       },
+      {
+        title: 'Testing',
+        permalink: '/notes/testing/',
+        slug: 'testing',
+        kind: 'testing',
+      },
     ]);
 
     expect(catalog).toEqual([

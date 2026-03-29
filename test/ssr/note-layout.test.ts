@@ -221,4 +221,46 @@ describe('NoteLayout', () => {
     expect(rendered).toContain('data-hydration-capability="progressive"');
     expect(rendered).toContain('data-hydration-trigger="post-commit"');
   });
+
+  it('reader note の code-preview に reader profile を注入すること', () => {
+    const layout = new NoteLayout();
+    const rendered = layout.render({
+      content: '<ui-code-preview heading="例"></ui-code-preview>',
+      note: {
+        slug: 'music/example',
+        title: 'Example',
+        kind: 'reader',
+      },
+      notes: [],
+    });
+
+    expect(rendered).toContain('data-note-kind="reader"');
+    expect(rendered).toContain('preview-profile="reader"');
+    expect(rendered).toContain('data-pagefind-body');
+  });
+
+  it('testing note では reader-facing Pagefind 属性を出力しないこと', () => {
+    const layout = new NoteLayout();
+    const rendered = layout.render({
+      content: '<ui-code-preview heading="例"></ui-code-preview>',
+      note: {
+        slug: 'testing/example',
+        title: 'Example',
+        kind: 'testing',
+      },
+      notes: [
+        {
+          slug: 'testing/example',
+          title: 'Example',
+          permalink: '/notes/testing/example',
+          kind: 'testing',
+        },
+      ],
+    });
+
+    expect(rendered).toContain('data-note-kind="testing"');
+    expect(rendered).toContain('preview-profile="demo"');
+    expect(rendered).not.toContain('data-pagefind-body');
+    expect(rendered).not.toContain('data-pagefind-sort=');
+  });
 });

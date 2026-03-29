@@ -11,10 +11,12 @@ import { rehypeOrderedListContracts } from './lib/rehype/ordered-list-contracts.
 import { rehypePreviewSandbox } from './lib/rehype/preview-sandbox.js';
 import { rehypeRouaultComponents } from './lib/rehype/rouault-components.js';
 import { rehypeShikiCodeBlocks } from './lib/rehype/shiki-code-blocks.js';
+import { validateNoteContentContracts } from './lib/content/note-content-contracts.js';
 import { remarkDisallowRawHtml } from './lib/remark/disallow-raw-html.js';
 import { remarkLinkCards } from './lib/remark/remark-link-cards.js';
 import { remarkRouaultDirectives } from './lib/remark/rouault-directives.js';
 import { ARTICLE_STATUSES } from './src/types/article-status.js';
+import { NOTE_CONTENT_KINDS, normalizeNoteContentKind } from './src/types/note-kind.js';
 
 const notes = defineCollection({
   name: 'Note',
@@ -33,11 +35,21 @@ const notes = defineCollection({
       license: s.string().optional(),
       licenseNote: s.string().optional(),
       status: s.enum(ARTICLE_STATUSES).optional(),
+      kind: s.enum(NOTE_CONTENT_KINDS).optional(),
       content: s.markdown(),
       excerpt: s.excerpt().optional(),
       toc: s.toc().optional(),
     })
-    .transform((data) => ({ ...data, status: data.status ?? '' })),
+    .transform((data) => {
+      const kind = normalizeNoteContentKind(data.kind);
+      validateNoteContentContracts(kind, data.content, data.slug);
+
+      return {
+        ...data,
+        kind,
+        status: data.status ?? '',
+      };
+    }),
 });
 
 export default defineConfig({

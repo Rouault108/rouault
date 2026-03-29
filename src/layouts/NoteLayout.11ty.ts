@@ -6,9 +6,11 @@
  */
 
 import { buildSidebarTree } from '../../lib/content/build-sidebar-tree.js';
+import { injectNoteContentProfiles } from '../../lib/content/note-content-contracts.js';
 import { tokenizeSearchText } from '../lib/search/query-preprocessor.js';
 import type { NoteStatus } from '../types/article-status.js';
 import type { IconName } from '../icons/catalog.js';
+import { type NoteContentKind, isReaderFacingNoteContentKind } from '../types/note-kind.js';
 
 interface TocHeading {
   id?: string;
@@ -24,6 +26,7 @@ interface SidebarNoteLike {
   directoryPath?: string;
   sidebarResolvedIcon?: IconName;
   sidebarDirectoryIcons?: Record<string, IconName>;
+  kind?: NoteContentKind;
 }
 
 interface NoteData extends SidebarNoteLike {
@@ -37,6 +40,7 @@ interface NoteData extends SidebarNoteLike {
   sidebarRoot?: string;
   status?: NoteStatus;
   tocHeadings?: TocHeading[];
+  kind?: NoteContentKind;
 }
 
 interface NoteLayoutData {
@@ -125,7 +129,7 @@ function mergeCurrentNoteIntoSidebarNotes(
 ): SidebarNoteLike[] {
   const base: SidebarNoteLike[] = Array.isArray(notes) ? [...notes] : [];
 
-  if (!note || typeof note.slug !== 'string') {
+  if (!note || typeof note.slug !== 'string' || !isReaderFacingNoteContentKind(note.kind)) {
     return base;
   }
 
@@ -198,6 +202,8 @@ export class NoteLayout {
 
   render(data: NoteLayoutData) {
     const note = data.note;
+    const noteContentKind = note?.kind ?? 'reader';
+    const isReaderFacingNote = isReaderFacingNoteContentKind(noteContentKind);
     const slug = typeof note?.slug === 'string' ? note.slug : '';
     const sidebarSelectedId = note?.noteKind === 'directory-index' ? `${slug}/__index__` : slug;
     const heading = escapeAttr(note?.title ?? '');
@@ -211,8 +217,14 @@ export class NoteLayout {
       : [];
     const headings = normalizeHeadings(note?.tocHeadings);
     const sidebarRoot = typeof note?.sidebarRoot === 'string' ? note.sidebarRoot : '';
-    const sidebarNotes = mergeCurrentNoteIntoSidebarNotes(note, data.notes);
+    const sidebarNotes = mergeCurrentNoteIntoSidebarNotes(
+      note,
+      Array.isArray(data.notes)
+        ? data.notes.filter((item) => isReaderFacingNoteContentKind(item.kind))
+        : [],
+    );
     const sidebarTree = buildSidebarTree(sidebarNotes, sidebarRoot);
+    const contentHtml = injectNoteContentProfiles(data.content, noteContentKind);
 
     const dataIdBase = toSafeDataId(slug.length > 0 ? slug : 'note');
     const sidebarSourceId = `sidebar-source-${dataIdBase}`;
@@ -234,7 +246,11 @@ export class NoteLayout {
       .join('');
 
     return `
-      <section class="note-shell" data-hydration-scope="note-shell">
+      <section
+        class="note-shell"
+        data-hydration-scope="note-shell"
+        data-note-kind="${escapeAttr(noteContentKind)}"
+      >
         <aside
           class="layout-sidebar-col"
           aria-label="ナビゲーション"
@@ -253,28 +269,32 @@ export class NoteLayout {
 
         <article
           class="layout-main-col container-reading"
-          data-pagefind-body
-          data-pagefind-sort="date:${pagefindSortDate}"
+          ${isReaderFacingNote ? 'data-pagefind-body' : 'data-pagefind-ignore'}
+          ${isReaderFacingNote ? `data-pagefind-sort="date:${pagefindSortDate}"` : ''}
           data-hydration-scope="note-content"
         >
-          <div class="sr-only" aria-hidden="true" data-pagefind-ignore>
-            <span data-pagefind-meta="title">${pagefindTitle}</span>
-            <span data-pagefind-meta="description">${pagefindDescription}</span>
-            <span data-pagefind-meta="date">${pagefindDate}</span>
-            ${pagefindGenreFilters}
-          </div>
-          <div class="sr-only" aria-hidden="true">
-            ${pagefindTitle.length > 0 ? `<span data-pagefind-weight="10">${pagefindTitle}</span>` : ''}
-            ${pagefindTokenizedTitle.length > 0 ? `<span data-pagefind-weight="8">${pagefindTokenizedTitle}</span>` : ''}
-            ${pagefindDescription.length > 0 ? `<span data-pagefind-weight="5">${pagefindDescription}</span>` : ''}
-            ${pagefindTokenizedDescription.length > 0 ? `<span data-pagefind-weight="3">${pagefindTokenizedDescription}</span>` : ''}
-          </div>
+          ${isReaderFacingNote
+            ? `
+              <div class="sr-only" aria-hidden="true" data-pagefind-ignore>
+                <span data-pagefind-meta="title">${pagefindTitle}</span>
+                <span data-pagefind-meta="description">${pagefindDescription}</span>
+                <span data-pagefind-meta="date">${pagefindDate}</span>
+                ${pagefindGenreFilters}
+              </div>
+              <div class="sr-only" aria-hidden="true">
+                ${pagefindTitle.length > 0 ? `<span data-pagefind-weight="10">${pagefindTitle}</span>` : ''}
+                ${pagefindTokenizedTitle.length > 0 ? `<span data-pagefind-weight="8">${pagefindTokenizedTitle}</span>` : ''}
+                ${pagefindDescription.length > 0 ? `<span data-pagefind-weight="5">${pagefindDescription}</span>` : ''}
+                ${pagefindTokenizedDescription.length > 0 ? `<span data-pagefind-weight="3">${pagefindTokenizedDescription}</span>` : ''}
+              </div>
+            `
+            : ''}
           <ui-article-header
             heading="${heading}"${published}${updated}${status}${source}${license}${articleHeaderTags}
             ${genres.length > 0 ? 'data-hydration-capability="progressive" data-hydration-trigger="post-commit"' : ''}
           ></ui-article-header>
           <div id="${escapeAttr(contentRootId)}" class="prose">
-            ${data.content}
+            ${contentHtml}
           </div>
         </article>
 

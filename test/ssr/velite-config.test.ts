@@ -10,6 +10,15 @@ describe('velite config', () => {
     expect(source).not.toContain('title: s.string().optional(),');
   });
 
+  it('ノートの frontmatter で kind を受け付け、既定を reader に正規化すること', () => {
+    const configPath = new URL('../../velite.config.ts', import.meta.url);
+    const source = readFileSync(configPath, 'utf8');
+
+    expect(source).toContain('kind: s.enum(NOTE_CONTENT_KINDS).optional(),');
+    expect(source).toContain('const kind = normalizeNoteContentKind(data.kind);');
+    expect(source).toContain('validateNoteContentContracts(kind, data.content, data.slug);');
+  });
+
   it('rehypeAnnotateLinkKinds が rehypeRouaultComponents の直後に挿入されていること', () => {
     const configPath = new URL('../../velite.config.ts', import.meta.url);
     const source = readFileSync(configPath, 'utf8');

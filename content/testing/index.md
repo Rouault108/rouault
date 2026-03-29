@@ -2,6 +2,7 @@
 title: 'テスト'
 description: 'これはテストファイルです。'
 date: 2026-03-16
+kind: 'testing'
 status: 'wip'
 ---
 
