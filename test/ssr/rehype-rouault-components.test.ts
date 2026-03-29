@@ -76,6 +76,8 @@ describe('rehypeRouaultComponents', () => {
     const first = tree.children?.[0];
     expect(first?.tagName).to.equal('ui-table');
     expect(first?.properties?.['aria-label']).to.equal('売上データ');
+    expect(first?.properties?.['data-hydration-capability']).to.equal('progressive');
+    expect(first?.properties?.['data-hydration-trigger']).to.equal('initial');
     expect(first?.children?.[0]?.tagName).to.equal('table');
   });
 
@@ -102,7 +104,12 @@ describe('rehypeRouaultComponents', () => {
     const divider = tree.children?.[1];
 
     expect(quote?.tagName).to.equal('ui-blockquote');
+    expect(quote?.properties?.['data-hydration-capability']).to.equal('progressive');
+    expect(quote?.properties?.['data-hydration-trigger']).to.equal('initial');
+
     expect(divider?.tagName).to.equal('ui-divider');
+    expect(divider?.properties?.['data-hydration-capability']).to.equal('progressive');
+    expect(divider?.properties?.['data-hydration-trigger']).to.equal('initial');
     expect(divider?.children?.[0]?.tagName).to.equal('hr');
   });
 
@@ -160,6 +167,8 @@ describe('rehypeRouaultComponents', () => {
     expect(checkbox?.properties?.['checked']).to.equal(true);
     expect(checkbox?.properties?.['disabled']).to.equal(true);
     expect(checkbox?.properties?.['label']).to.equal('タスクA');
+    expect(checkbox?.properties?.['data-hydration-capability']).to.equal('interactive');
+    expect(checkbox?.properties?.['data-hydration-trigger']).to.equal('initial');
   });
 
   it('mark を ui-highlight へ変換すること', () => {
@@ -180,6 +189,8 @@ describe('rehypeRouaultComponents', () => {
     const highlight = tree.children?.[0];
     expect(highlight?.tagName).to.equal('ui-highlight');
     expect(highlight?.properties?.['current-match']).to.equal(true);
+    expect(highlight?.properties?.['data-hydration-capability']).to.equal('progressive');
+    expect(highlight?.properties?.['data-hydration-trigger']).to.equal('initial');
     expect(highlight?.children?.[0]?.value).to.equal('hit');
   });
 
@@ -267,7 +278,7 @@ describe('rehypeRouaultComponents', () => {
       ],
     };
 
-    const run = () => rehypeRouaultComponents()(tree, { path: 'content/testing/test.md' });
+    const run = () => { rehypeRouaultComponents()(tree, { path: 'content/testing/test.md' }) };
 
     expect(run).to.throw('[markdown] content/testing/test.md: 本文画像で loading="eager" を許可できるのは LCP 候補 1 枚だけです');
   });
@@ -370,6 +381,8 @@ describe('rehypeRouaultComponents', () => {
     expect(firstRef?.properties?.['ref-id']).to.equal('fn-1');
     expect(firstRef?.properties?.['index']).to.equal('1');
     expect(firstRef?.properties?.['ref-instance']).to.equal('1');
+    expect(firstRef?.properties?.['data-hydration-capability']).to.equal('interactive');
+    expect(firstRef?.properties?.['data-hydration-trigger']).to.equal('initial');
     expect(firstRef?.children?.[0]?.tagName).to.equal('p');
     expect(firstRef?.children?.[0]?.children?.[0]?.value).to.equal('脚注本文 ');
 

@@ -108,7 +108,21 @@ const resolveHydrationDirective = (node: HastNode): HydrationDirective | null =>
   switch (node.tagName) {
     case 'layout-sidebar':
     case 'layout-toc':
+    case 'ui-checkbox':
+    case 'ui-details':
+    case 'ui-footnote':
+    case 'ui-tabs':
       return { capability: 'interactive', trigger: 'initial' };
+
+    case 'ui-blockquote':
+    case 'ui-callout':
+    case 'ui-card':
+    case 'ui-divider':
+    case 'ui-highlight':
+    case 'ui-info-box':
+    case 'ui-table':
+      return { capability: 'progressive', trigger: 'initial' };
+
     case 'ui-code-preview': {
       const controls = pickOptionalString(node.properties?.['controls']);
       if (controls || hasToolbarSlot(node)) {
@@ -116,14 +130,16 @@ const resolveHydrationDirective = (node: HastNode): HydrationDirective | null =>
       }
       return null;
     }
-    case 'ui-tabs':
-      return { capability: 'interactive', trigger: 'initial' };
+
     case 'ui-translation':
       return { capability: 'interactive', trigger: 'visible' };
+
     case 'ui-preview-sandbox':
       return { capability: 'sandboxed', trigger: 'interaction' };
+
     case 'ui-score':
       return { capability: 'progressive', trigger: 'visible' };
+
     case 'ui-image': {
       const zoomable = node.properties?.['zoomable'];
       if (zoomable === 'false' || zoomable === false) {
@@ -131,6 +147,7 @@ const resolveHydrationDirective = (node: HastNode): HydrationDirective | null =>
       }
       return { capability: 'progressive', trigger: 'visible' };
     }
+
     default:
       return null;
   }
@@ -760,20 +777,28 @@ export function rehypeRouaultComponents() {
 
       if (isElement(current, 'li')) {
         toUiTaskListItem(current);
-      } else if (toUiFootnoteReference(current, footnoteDefinitions, footnoteRefCounters)) {
-        return;
-      } else if (current.tagName === 'figure') {
-        toUiFigureImage(current, imageContext, file);
-      } else if (current.tagName === 'img') {
-        toUiImage(current, imageContext, file);
-      } else if (current.tagName === 'mark') {
-        toUiHighlight(current);
-      } else if (current.tagName === 'table') {
-        toUiTable(current);
-      } else if (current.tagName === 'blockquote') {
-        current.tagName = 'ui-blockquote';
-      } else if (current.tagName === 'hr') {
-        toUiDivider(current);
+      } else {
+        const footnoteTransformed = toUiFootnoteReference(
+          current,
+          footnoteDefinitions,
+          footnoteRefCounters,
+        );
+
+        if (!footnoteTransformed) {
+          if (current.tagName === 'figure') {
+            toUiFigureImage(current, imageContext, file);
+          } else if (current.tagName === 'img') {
+            toUiImage(current, imageContext, file);
+          } else if (current.tagName === 'mark') {
+            toUiHighlight(current);
+          } else if (current.tagName === 'table') {
+            toUiTable(current);
+          } else if (current.tagName === 'blockquote') {
+            current.tagName = 'ui-blockquote';
+          } else if (current.tagName === 'hr') {
+            toUiDivider(current);
+          }
+        }
       }
 
       const hydrationDirective = resolveHydrationDirective(current);

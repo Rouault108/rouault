@@ -82,14 +82,24 @@ const loadMarkdownParser = async (): Promise<{
     const remarkParseModule = await import(
       pathToFileURL(resolvePnpmPackageEntry('remark-parse')).href
     );
+    const remarkGfmModule = await import(
+      pathToFileURL(resolvePnpmPackageEntry('remark-gfm')).href
+    );
+
     const unified = unifiedModule.unified as () => {
-      use(plugin: unknown): { parse(markdown: string): unknown };
+      use(plugin: unknown, options?: unknown): { use(plugin: unknown, options?: unknown): { parse(markdown: string): unknown } };
     };
     const remarkParse = remarkParseModule.default as unknown;
+    const remarkGfm = remarkGfmModule.default as (
+      options?: { singleTilde?: boolean },
+    ) => unknown;
 
     return {
       parse(markdown: string): MdastNode[] {
-        const parsed = unified().use(remarkParse).parse(markdown) as MdastNode;
+        const parsed = unified()
+          .use(remarkParse)
+          .use(remarkGfm, { singleTilde: false })
+          .parse(markdown) as MdastNode;
         return Array.isArray(parsed.children) ? parsed.children : [];
       },
     };

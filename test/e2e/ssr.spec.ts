@@ -129,4 +129,26 @@ test.describe('SSR Rendering', () => {
     expect(Math.abs((sidebarAfter?.y ?? 0) - (headerBefore?.height ?? 0))).toBeLessThan(2);
     expect(Math.abs((tocAfter?.y ?? 0) - (headerBefore?.height ?? 0))).toBeLessThan(2);
   });
+
+  test('狭い画面では sidebar が折りたたまれて本文を覆わないこと', async ({ page }) => {
+    await page.setViewportSize({ width: 744, height: 900 });
+    await page.goto(beethovenEntryPath);
+
+    const sidebarState = await page.locator('layout-sidebar').evaluate((host) => {
+      const layoutSidebar = host as HTMLElement;
+      const uiSidebar = layoutSidebar.shadowRoot?.querySelector('ui-sidebar');
+      const shell = uiSidebar?.shadowRoot?.querySelector('ui-sidebar-shell');
+      const toggle = layoutSidebar.shadowRoot?.querySelector<HTMLElement>('.floating-toggle');
+
+      return {
+        sidebarState: uiSidebar?.getAttribute('data-state') ?? null,
+        shellState: shell?.getAttribute('data-state') ?? null,
+        toggleExpanded: toggle?.getAttribute('aria-expanded') ?? null,
+      };
+    });
+
+    expect(sidebarState.sidebarState).toBe('collapsed');
+    expect(sidebarState.shellState).toBe('collapsed');
+    expect(sidebarState.toggleExpanded).toBe('false');
+  });
 });

@@ -24,6 +24,31 @@ describe('velite config', () => {
     );
   });
 
+  it('remarkGfm を Markdown frontmatter pipeline に含めること', () => {
+    const configPath = new URL('../../velite.config.ts', import.meta.url);
+    const source = readFileSync(configPath, 'utf8');
+
+    expect(source).toContain("import remarkGfm from 'remark-gfm';");
+
+    const remarkMathIndex = source.indexOf('remarkMath,');
+    const remarkGfmIndex = source.indexOf('remarkGfm,');
+    const expandExamplesIndex = source.indexOf('remarkExpandExampleIncludes,');
+
+    expect(remarkMathIndex).toBeGreaterThan(-1);
+    expect(remarkGfmIndex).toBeGreaterThan(-1);
+    expect(expandExamplesIndex).toBeGreaterThan(-1);
+    expect(remarkGfmIndex).toBeGreaterThan(remarkMathIndex);
+    expect(expandExamplesIndex).toBeGreaterThan(remarkGfmIndex);
+  });
+
+  it('remarkGfm を singleTilde=false で登録すること', () => {
+    const configPath = new URL('../../velite.config.ts', import.meta.url);
+    const source = readFileSync(configPath, 'utf8');
+
+    expect(source).toContain("import remarkGfm from 'remark-gfm';");
+    expect(source).toContain('[remarkGfm, { singleTilde: false }]');
+  });
+
   it('rehypeAnnotateLinkKinds が rehypeRouaultComponents の直後に挿入されていること', () => {
     const configPath = new URL('../../velite.config.ts', import.meta.url);
     const source = readFileSync(configPath, 'utf8');

@@ -264,8 +264,8 @@ export class NoteLayout {
     const note = data.note;
     const noteContentKind = note?.kind ?? 'reader';
     const surfacePolicy = resolveNoteSurfacePolicy(noteContentKind);
-    const isReaderFacingNote = isReaderFacingNoteContentKind(noteContentKind);
     const showSidebar = surfacePolicy.sidebar;
+    const noteShellSidebarPresence = showSidebar ? 'present' : 'absent';
     const slug = typeof note?.slug === 'string' ? note.slug : '';
     const sidebarSelectedId = note?.noteKind === 'directory-index' ? `${slug}/__index__` : slug;
     const heading = escapeAttr(note?.title ?? '');
@@ -318,6 +318,7 @@ export class NoteLayout {
         class="note-shell"
         data-hydration-scope="note-shell"
         data-note-kind="${escapeAttr(noteContentKind)}"
+        data-sidebar-presence="${escapeAttr(noteShellSidebarPresence)}"
         ${surfacePolicy.pagefind ? '' : 'data-pagefind-ignore'}
       >
         ${showSidebar

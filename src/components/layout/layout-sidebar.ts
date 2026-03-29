@@ -357,6 +357,7 @@ export class LayoutSidebar extends LitElement {
     return html`
       <ui-sidebar
         id="layout-sidebar-panel"
+        .state=${this._state}
         .items=${this._items}
         .selectedId=${this.selectedId}
         .expandedIds=${new Set(mergedExpandedIds)}
