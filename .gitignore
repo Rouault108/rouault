@@ -1,6 +1,7 @@
 .vscode
 .agent
 .velite
+.generated/
 dist
 node_modules
 test-results
