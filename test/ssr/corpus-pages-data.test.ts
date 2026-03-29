@@ -1,49 +1,74 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildCorpusNavigation, buildCorpusPagesData } from '../../src/data/corpusPages.js';
-import type { CorpusPageSourceNote } from '../../src/data/corpusPages.js';
+import {
+  buildCorpusNavigation,
+  buildCorpusPageProjection,
+  type CorpusPageSourceNote,
+} from '../../src/data/projections/corpus-page-projection.js';
 
-describe('buildCorpusPagesData', () => {
+const createCorpusNote = (
+  overrides: Partial<CorpusPageSourceNote> & { slug: string },
+): CorpusPageSourceNote => {
+  const { slug, ...rest } = overrides;
+
+  return {
+    rawSlug: slug,
+    slug,
+    permalink: `/notes/${slug}/`,
+    noteKind: 'leaf',
+    sortIndex: 0,
+    tocHeadings: [],
+    tocCapabilities: {
+      activeTracking: false,
+      dynamicScopes: false,
+      mobileSummary: false,
+    },
+    kind: 'reader',
+    ...rest,
+  };
+};
+
+describe('buildCorpusPageProjection', () => {
   it('公開ノートをトップレベルのコーパス単位に束ねること', () => {
     const notes: CorpusPageSourceNote[] = [
-      {
+      createCorpusNote({
         title: '音楽',
         permalink: '/notes/music/',
         slug: 'music',
         noteKind: 'directory-index',
         directoryPath: 'music',
         date: '2026-03-01',
-      },
-      {
+      }),
+      createCorpusNote({
         title: '和声のメモ',
         permalink: '/notes/music/harmony/',
         slug: 'music/harmony',
         description: '機能和声の整理',
         updated: '2026-03-10',
         genre: ['music'],
-      },
-      {
+      }),
+      createCorpusNote({
         title: 'ソート比較',
         permalink: '/notes/computer-science/algorithms/',
         slug: 'computer-science/algorithms',
         date: '2026-03-08',
         genre: ['algorithms'],
-      },
-      {
+      }),
+      createCorpusNote({
         title: '非公開',
         permalink: '/notes/music/private/',
         slug: 'music/private',
         status: 'draft',
-      },
-      {
+      }),
+      createCorpusNote({
         title: 'テスト導線',
         permalink: '/notes/testing/debug/',
         slug: 'testing/debug',
         kind: 'testing',
-      },
+      }),
     ];
 
-    expect(buildCorpusPagesData(notes)).toEqual([
+    expect(buildCorpusPageProjection(notes)).toEqual([
       {
         key: 'computer-science',
         label: 'Computer Science',

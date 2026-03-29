@@ -1,37 +1,61 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildCorporaOverviewData } from '../../src/data/corporaOverview.js';
-import type { CorporaOverviewSourceNote } from '../../src/data/corporaOverview.js';
+import {
+  buildCorporaOverviewProjection,
+  type CorporaOverviewSourceNote,
+} from '../../src/data/projections/corpora-overview-projection.js';
 
-describe('buildCorporaOverviewData', () => {
+const createOverviewNote = (
+  overrides: Partial<CorporaOverviewSourceNote> & { slug: string },
+): CorporaOverviewSourceNote => {
+  const { slug, ...rest } = overrides;
+
+  return {
+    rawSlug: slug,
+    slug,
+    permalink: `/notes/${slug}/`,
+    noteKind: 'leaf',
+    sortIndex: 0,
+    tocHeadings: [],
+    tocCapabilities: {
+      activeTracking: false,
+      dynamicScopes: false,
+      mobileSummary: false,
+    },
+    kind: 'reader',
+    ...rest,
+  };
+};
+
+describe('buildCorporaOverviewProjection', () => {
   it('コーパス一覧と最近更新ノート一覧を同時に構築すること', () => {
     const notes: CorporaOverviewSourceNote[] = [
-      {
+      createOverviewNote({
         title: '音楽',
         permalink: '/notes/music/',
         slug: 'music',
         noteKind: 'directory-index',
         directoryPath: 'music',
         date: '2026-03-01',
-      },
-      {
+      }),
+      createOverviewNote({
         title: '和声のメモ',
         permalink: '/notes/music/harmony/',
         slug: 'music/harmony',
         description: '機能和声の整理',
         updated: '2026-03-10',
         genre: ['music'],
-      },
-      {
+      }),
+      createOverviewNote({
         title: 'ソート比較',
         permalink: '/notes/computer-science/algorithms/',
         slug: 'computer-science/algorithms',
         date: '2026-03-08',
         genre: ['algorithms'],
-      },
+      }),
     ];
 
-    expect(buildCorporaOverviewData(notes)).toEqual({
+    expect(buildCorporaOverviewProjection(notes)).toEqual({
       corpusCount: 2,
       noteCount: 3,
       latestUpdatedDate: '2026-03-10',

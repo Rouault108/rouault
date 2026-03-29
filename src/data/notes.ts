@@ -48,7 +48,7 @@ export interface SourceNote {
   [key: string]: unknown;
 }
 
-export interface NoteCollectionItem extends SourceNote {
+export interface IntrinsicNote extends SourceNote {
   rawSlug: string;
   slug: string; // 正規化済み slug
   permalink: string;
@@ -69,10 +69,12 @@ export interface NoteCollectionItem extends SourceNote {
   testingArea?: TestingArea;
 }
 
+export type IntrinsicNotesCollection = IntrinsicNote[];
+
 const inferTocCapabilities = (
   headings: readonly TocHeading[],
   kind: NoteContentKind,
-): NoteCollectionItem['tocCapabilities'] => ({
+): IntrinsicNote['tocCapabilities'] => ({
   activeTracking: headings.length > 0,
   dynamicScopes: headings.some(
     (heading) => Array.isArray(heading.scopeSelections) && heading.scopeSelections.length > 0,
@@ -279,12 +281,12 @@ const resolveSidebarIconContext = (
 export const buildNotesCollection = (
   notes: readonly SourceNote[],
   contentRoot: string,
-): NoteCollectionItem[] => {
+): IntrinsicNotesCollection => {
   const enriched = notes
     .filter((note): note is SourceNote & { slug: string } => {
       return typeof note.slug === 'string' && note.slug.trim().length > 0;
     })
-    .map((note): NoteCollectionItem => {
+    .map((note): IntrinsicNote => {
       const inputSlug = note.slug.trim();
       const normalizedSlug = inputSlug.replace(/^\/+|\/+$/gu, '');
       const pathInfo = normalizeNotePath({
@@ -373,7 +375,7 @@ export const filterNotesBySurface = <T extends SourceNote>(
   surface: keyof NoteSurfacePolicy,
 ): T[] => notes.filter((note) => isNoteVisibleInSurface(note, surface));
 
-export const loadNotesData = (): NoteCollectionItem[] => {
+export const loadNotesData = (): IntrinsicNotesCollection => {
   const velitePath = join(process.cwd(), '.velite', 'notes.json');
   if (!existsSync(velitePath)) {
     return [];

@@ -5,63 +5,10 @@
  * サイドバー + 本文 + TOC の3カラム構成を提供する。
  */
 
-import { buildNoteNavigationModel } from '../../lib/content/navigation/index.js';
-import { injectNoteContentProfiles } from '../../lib/content/note-content-contracts.js';
-import { buildPagefindDocumentData } from '../lib/search/build/build-pagefind-document-data.js';
-import type { NoteStatus } from '../types/article-status.js';
-import type { IconName } from '../icons/catalog.js';
-import { resolveNoteSurfacePolicy } from '../types/note-surface-policy.js';
-import type { NoteContentKind } from '../types/note-kind.js';
-import type { TestingArea } from '../types/testing-area.js';
-
-interface TocHeading {
-  id?: string;
-  text?: string;
-  level?: number;
-  scopeSelections?: {
-    scopeId?: string;
-    value?: string;
-  }[];
-}
-
-interface TocCapabilities {
-  activeTracking?: boolean;
-  dynamicScopes?: boolean;
-  mobileSummary?: boolean;
-}
-
-interface SidebarNoteLike {
-  slug?: string;
-  title?: string;
-  permalink?: string;
-  noteKind?: 'leaf' | 'directory-index';
-  directoryPath?: string;
-  sidebarResolvedIcon?: IconName;
-  sidebarDirectoryIcons?: Record<string, IconName>;
-  kind?: NoteContentKind;
-  testingArea?: TestingArea;
-}
-
-interface NoteData extends SidebarNoteLike {
-  description?: string;
-  date?: string;
-  updated?: string;
-  genre?: string[];
-  source?: string;
-  license?: string;
-  licenseNote?: string;
-  sidebarRoot?: string;
-  status?: NoteStatus;
-  tocHeadings?: TocHeading[];
-  tocCapabilities?: TocCapabilities;
-  kind?: NoteContentKind;
-  testingArea?: TestingArea;
-}
+import type { NotePageProjection } from '../data/projections/note-page-projection.js';
 
 interface NoteLayoutData {
-  content: string;
-  note?: NoteData;
-  notes?: SidebarNoteLike[];
+  notePage?: NotePageProjection;
 }
 
 /**
@@ -89,78 +36,6 @@ function escapeJsonForScript(value: unknown): string {
     .replace(/&/g, '\\u0026');
 }
 
-function normalizeHeadings(
-  value: TocHeading[] | undefined,
-): {
-  id: string;
-  text: string;
-  level: number;
-  scopeSelections?: { scopeId: string; value: string }[];
-}[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .map((item) => {
-      const id = typeof item.id === 'string' ? item.id.trim() : '';
-      const text = typeof item.text === 'string' ? item.text.trim() : '';
-      const level = typeof item.level === 'number' ? Math.trunc(item.level) : Number.NaN;
-      if (id.length === 0 || text.length === 0 || !Number.isFinite(level)) {
-        return null;
-      }
-      if (level < 2 || level > 6) {
-        return null;
-      }
-      const scopeSelections = Array.isArray(item.scopeSelections)
-        ? item.scopeSelections
-            .map((selection) => {
-              const scopeId =
-                typeof selection.scopeId === 'string' ? selection.scopeId.trim() : '';
-              const value = typeof selection.value === 'string' ? selection.value.trim() : '';
-              if (scopeId.length === 0 || value.length === 0) {
-                return null;
-              }
-              return { scopeId, value };
-            })
-            .filter((selection): selection is { scopeId: string; value: string } => selection !== null)
-        : [];
-
-      return {
-        id,
-        text,
-        level,
-        ...(scopeSelections.length > 0 ? { scopeSelections } : {}),
-      };
-    })
-    .filter(
-      (
-        item,
-      ): item is {
-        id: string;
-        text: string;
-        level: number;
-        scopeSelections?: { scopeId: string; value: string }[];
-      } => item !== null,
-    );
-}
-
-function normalizeTocCapabilities(value: TocCapabilities | undefined): {
-  activeTracking: boolean;
-  dynamicScopes: boolean;
-  mobileSummary: boolean;
-} {
-  return {
-    activeTracking: value?.activeTracking === true,
-    dynamicScopes: value?.dynamicScopes === true,
-    mobileSummary: value?.mobileSummary === true,
-  };
-}
-
-function toSafeDataId(slug: string): string {
-  return slug.replace(/[^a-zA-Z0-9_-]/g, '-');
-}
-
 export class NoteLayout {
   data() {
     return {
@@ -169,54 +44,39 @@ export class NoteLayout {
   }
 
   render(data: NoteLayoutData) {
-    const note = data.note;
-    const noteContentKind = note?.kind ?? 'reader';
-    const surfacePolicy = resolveNoteSurfacePolicy(noteContentKind);
-    const showSidebar = surfacePolicy.sidebar;
-    const noteShellSidebarPresence = showSidebar ? 'present' : 'absent';
-    const slug = typeof note?.slug === 'string' ? note.slug : '';
-    const heading = escapeAttr(note?.title ?? '');
-    const published = note?.date ? ` published="${escapeAttr(note.date)}"` : '';
-    const updated = note?.updated ? ` updated="${escapeAttr(note.updated)}"` : '';
-    const status = note?.status ? ` status="${escapeAttr(note.status)}"` : '';
-    const source = note?.source ? ` source="${escapeAttr(note.source)}"` : '';
-    const license = note?.license ? ` license="${escapeAttr(note.license)}"` : '';
-    const genres = Array.isArray(note?.genre)
-      ? note.genre.map((item) => item.trim()).filter((item) => item.length > 0)
-      : [];
-    const headings = normalizeHeadings(note?.tocHeadings);
-    const tocCapabilities = normalizeTocCapabilities(note?.tocCapabilities);
-    const navigationModel = buildNoteNavigationModel({
-      currentNote: note,
-      notes: Array.isArray(data.notes) ? data.notes : [],
-    });
-    const contentHtml = injectNoteContentProfiles(data.content, noteContentKind);
+    const notePage = data.notePage;
+    if (!notePage) {
+      return '';
+    }
 
-    const dataIdBase = toSafeDataId(slug.length > 0 ? slug : 'note');
-    const sidebarSourceId = `sidebar-source-${dataIdBase}`;
-    const tocSourceId = `toc-source-${dataIdBase}`;
-    const contentRootId = `note-content-${dataIdBase}`;
+    const articleHeader = notePage.articleHeader;
+    const sidebar = notePage.sidebar;
+    const toc = notePage.toc;
+    const pagefind = notePage.pagefind;
+    const heading = escapeAttr(articleHeader.heading);
+    const published = articleHeader.published
+      ? ` published="${escapeAttr(articleHeader.published)}"`
+      : '';
+    const updated = articleHeader.updated
+      ? ` updated="${escapeAttr(articleHeader.updated)}"`
+      : '';
+    const status = articleHeader.status ? ` status="${escapeAttr(articleHeader.status)}"` : '';
+    const source = articleHeader.source ? ` source="${escapeAttr(articleHeader.source)}"` : '';
+    const license = articleHeader.license ? ` license="${escapeAttr(articleHeader.license)}"` : '';
     const articleHeaderTags =
-      genres.length > 0 ? ` data-tags="${escapeAttr(JSON.stringify(genres))}"` : '';
-    const sidebarItemsJson = escapeAttr(JSON.stringify(navigationModel.sidebarTree));
-    const tocHeadingsJson = escapeAttr(JSON.stringify(headings));
-    const tocCapabilitiesJson = escapeAttr(JSON.stringify(tocCapabilities));
-    const shouldHydrateToc =
-      tocCapabilities.activeTracking || tocCapabilities.dynamicScopes || tocCapabilities.mobileSummary;
-    const pagefindDocumentData = buildPagefindDocumentData({
-      title: note?.title,
-      description: note?.description,
-      date: note?.date,
-      updated: note?.updated,
-      tags: genres,
-    });
-    const pagefindTitle = escapeHtml(pagefindDocumentData.title);
-    const pagefindDescription = escapeHtml(pagefindDocumentData.description);
-    const pagefindTokenizedTitle = escapeHtml(pagefindDocumentData.tokenizedTitle);
-    const pagefindTokenizedDescription = escapeHtml(pagefindDocumentData.tokenizedDescription);
-    const pagefindDate = pagefindDocumentData.date ? escapeHtml(pagefindDocumentData.date) : '';
-    const pagefindSortDate = escapeAttr(pagefindDocumentData.sortDate);
-    const pagefindGenreFilters = pagefindDocumentData.tags
+      articleHeader.genres.length > 0
+        ? ` data-tags="${escapeAttr(JSON.stringify(articleHeader.genres))}"`
+        : '';
+    const sidebarItemsJson = escapeAttr(JSON.stringify(sidebar?.items ?? []));
+    const tocHeadingsJson = escapeAttr(JSON.stringify(toc.headings));
+    const tocCapabilitiesJson = escapeAttr(JSON.stringify(toc.capabilities));
+    const pagefindTitle = escapeHtml(pagefind?.title ?? '');
+    const pagefindDescription = escapeHtml(pagefind?.description ?? '');
+    const pagefindTokenizedTitle = escapeHtml(pagefind?.tokenizedTitle ?? '');
+    const pagefindTokenizedDescription = escapeHtml(pagefind?.tokenizedDescription ?? '');
+    const pagefindDate = pagefind?.date ? escapeHtml(pagefind.date) : '';
+    const pagefindSortDate = escapeAttr(pagefind?.sortDate ?? '0000-00-00');
+    const pagefindGenreFilters = (pagefind?.tags ?? [])
       .map((genre) => `<span data-pagefind-filter="genre:${escapeAttr(genre)}"></span>`)
       .join('');
 
@@ -224,11 +84,11 @@ export class NoteLayout {
       <section
         class="note-shell"
         data-hydration-scope="note-shell"
-        data-note-kind="${escapeAttr(noteContentKind)}"
-        data-sidebar-presence="${escapeAttr(noteShellSidebarPresence)}"
-        ${surfacePolicy.pagefind ? '' : 'data-pagefind-ignore'}
+        data-note-kind="${escapeAttr(notePage.noteKind)}"
+        data-sidebar-presence="${escapeAttr(notePage.noteShellSidebarPresence)}"
+        ${pagefind ? '' : 'data-pagefind-ignore'}
       >
-        ${showSidebar
+        ${notePage.showSidebar && sidebar
           ? `
             <aside
               class="layout-sidebar-col"
@@ -236,11 +96,11 @@ export class NoteLayout {
               data-hydration-scope="note-sidebar"
             >
               <layout-sidebar
-                source-id="${escapeAttr(sidebarSourceId)}"
-                selected-id="${escapeAttr(navigationModel.selectedId ?? '')}"
+                source-id="${escapeAttr(sidebar.sourceId)}"
+                selected-id="${escapeAttr(sidebar.selectedId)}"
                 items-json="${sidebarItemsJson}"
-                heading="ナビゲーション"
-                fixed-breakpoint="768"
+                heading="${escapeAttr(sidebar.heading)}"
+                fixed-breakpoint="${escapeAttr(sidebar.fixedBreakpoint)}"
                 data-hydration-capability="interactive"
                 data-hydration-trigger="initial"
               ></layout-sidebar>
@@ -250,11 +110,11 @@ export class NoteLayout {
 
         <article
           class="layout-main-col container-reading"
-          ${surfacePolicy.pagefind ? 'data-pagefind-body' : 'data-pagefind-ignore'}
-          ${surfacePolicy.pagefind ? `data-pagefind-sort="date:${pagefindSortDate}"` : ''}
+          ${pagefind ? 'data-pagefind-body' : 'data-pagefind-ignore'}
+          ${pagefind ? `data-pagefind-sort="date:${pagefindSortDate}"` : ''}
           data-hydration-scope="note-content"
         >
-          ${surfacePolicy.pagefind
+          ${pagefind
             ? `
               <div class="sr-only" aria-hidden="true" data-pagefind-ignore>
                 <span data-pagefind-meta="title">${pagefindTitle}</span>
@@ -272,10 +132,10 @@ export class NoteLayout {
             : ''}
           <ui-article-header
             heading="${heading}"${published}${updated}${status}${source}${license}${articleHeaderTags}
-            ${genres.length > 0 ? 'data-hydration-capability="progressive" data-hydration-trigger="post-commit"' : ''}
+            ${articleHeader.shouldHydrateTags ? 'data-hydration-capability="progressive" data-hydration-trigger="post-commit"' : ''}
           ></ui-article-header>
-          <div id="${escapeAttr(contentRootId)}" class="prose">
-            ${contentHtml}
+          <div id="${escapeAttr(toc.contentRootId)}" class="prose">
+            ${notePage.contentHtml}
           </div>
         </article>
 
@@ -285,23 +145,27 @@ export class NoteLayout {
           data-hydration-scope="note-toc"
         >
           <layout-toc
-            source-id="${escapeAttr(tocSourceId)}"
+            source-id="${escapeAttr(toc.sourceId)}"
             headings-json="${tocHeadingsJson}"
             capabilities-json="${tocCapabilitiesJson}"
-            content-root-id="${escapeAttr(contentRootId)}"
-            home-href="/"
-            ${shouldHydrateToc
+            content-root-id="${escapeAttr(toc.contentRootId)}"
+            home-href="${escapeAttr(toc.homeHref)}"
+            ${toc.shouldHydrate
               ? 'data-hydration-capability="interactive" data-hydration-trigger="initial"'
               : ''}
           ></layout-toc>
         </aside>
       </section>
 
-      <script type="application/json" id="${escapeAttr(sidebarSourceId)}">
-${escapeJsonForScript(navigationModel.sidebarTree)}
+      ${sidebar
+        ? `
+      <script type="application/json" id="${escapeAttr(sidebar.sourceId)}">
+${escapeJsonForScript(sidebar.items)}
       </script>
-      <script type="application/json" id="${escapeAttr(tocSourceId)}">
-${escapeJsonForScript(headings)}
+      `
+        : ''}
+      <script type="application/json" id="${escapeAttr(toc.sourceId)}">
+${escapeJsonForScript(toc.headings)}
       </script>
     `.trim();
   }
