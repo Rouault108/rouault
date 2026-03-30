@@ -228,18 +228,18 @@ raw HTML 禁止は設計原則であり、暫定制約ではありません。
 
 現在はページ主タブ 1 系統のみを想定し、複数 query key は導入していません。
 
-### 7.3 将来置換候補の技術負債
+### 7.3 設計固定された parser 契約
 
 #### 7.3.1 custom directive parser
 
 ブロックディレクティブは paragraph テキストを自前解析しているため、micromark / `remark-directive` ベースの一般的な directive AST とは互換ではありません。
 
-これは単なる制約ではなく、将来の置換候補として扱います。
+これは単なる制約ではなく、Rouault の設計上固定された parser 契約です。将来の置換候補として扱ってはなりません。
 
 評価:
 
-- エコシステム互換性が弱い
-- editor support と parser 合流性が弱い
+- エコシステム互換性を優先しない
+- editor support と parser の責務境界を Rouault 側で所有する
 - authoring grammar の正当性検証を内製ロジックへ寄せすぎる
 
 ### 7.4 分類運用規則

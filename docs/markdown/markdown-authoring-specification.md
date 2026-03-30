@@ -697,7 +697,7 @@ remark 段階では次を即時エラーとします。
 
 ### 10.5 custom directive parser
 
-ブロックディレクティブは paragraph テキストを自前解析しているため、micromark / `remark-directive` ベースの一般的な directive AST とは互換ではありません。
+ブロックディレクティブは paragraph テキストを自前解析する Rouault 固有 parser を正本とします。micromark / `remark-directive` ベースの一般的な directive AST 互換は提供しません。これは将来変更前提の制約ではなく、Rouault の正式契約です。
 
 ### 10.6 `tabs.url-sync`
 

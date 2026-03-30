@@ -19,11 +19,12 @@
 ## 1. まず押さえる方針
 
 1. ふだんの本文は標準的な Markdown で書く
-2. 補足 UI が必要なときだけ `::directive` を使う
+2. 補足 UI が必要なときだけ Rouault 独自ディレクティブを使う
 3. 生 HTML は書かない
 4. frontmatter には必要なメタデータだけを書く
 5. 迷ったら簡潔な書き方を選ぶ
 6. 属性の完全一覧や厳密な受理規則は `docs/markdown-authoring-specification.md` を参照する
+7. Rouault のディレクティブは独自 parser を正本とし、`remark-directive` AST 互換は前提にしない
 
 ---
 
@@ -270,7 +271,9 @@ $$
 
 ## 5. Rouault 独自ブロックの使い方
 
-標準 Markdown だけでは足りないときに、Rouault 独自ディレクティブを使います。
+標準 Markdown だけでは足りないときに、Rouault 独自ディレクティブを使います。これは Rouault 固有 parser を正本とする契約です。
+
+`remark-directive` ベースの一般的な directive AST 互換は前提にしません。詳細な受理規則は `docs/markdown-authoring-specification.md` を参照してください。
 
 基本形:
 
@@ -288,6 +291,7 @@ $$
 - 未対応属性を書くとビルドエラーになります
 - 生 HTML の代わりとして使います
 - 属性の完全一覧は `docs/markdown-authoring-specification.md` を参照してください
+- このガイドの例は作法の説明であり、一般的な directive AST 互換の説明ではありません
 
 ### 5.1 Callout
 
