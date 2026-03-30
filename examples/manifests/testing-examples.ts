@@ -99,6 +99,36 @@ export const SHARED_TABS_URL_SYNC_EXAMPLE: TabsExampleDefinition = {
   ],
 };
 
+/**
+ * interactive canary 専用の tabs URL sync 例です。
+ *
+ * - interactive canary は interactive UI の hydration だけを監視対象とします。
+ * - code-block enhancer の post-commit hydration を混入させないため、
+ *   panel 内へ fenced code block を入れません。
+ * - code surface の検証は testing/code 側へ寄せます。
+ */
+export const SHARED_TABS_URL_SYNC_INTERACTIVE_CANARY_EXAMPLE: TabsExampleDefinition = {
+  defaultSelectedValue: 'javascript',
+  orientation: 'horizontal',
+  urlSync: true,
+  panels: [
+    {
+      value: 'javascript',
+      label: 'JavaScript',
+      heading: 'JavaScriptのHello, World!',
+      body:
+        'JavaScriptではこのように書きます。ここでは interactive canary を純化するため、コードブロックは含めません。',
+    },
+    {
+      value: 'rust',
+      label: 'Rust',
+      heading: 'RustのHello, World!',
+      body:
+        'Rustではこのように書きます。ここでは interactive canary を純化するため、コードブロックは含めません。',
+    },
+  ],
+};
+
 export const SHARED_TABS_STATIC_EXAMPLE: TabsExampleDefinition = {
   defaultSelectedValue: 'overview',
   orientation: 'horizontal',
@@ -166,7 +196,7 @@ export const TESTING_EXAMPLES = {
   'interactive/tabs-url-sync': {
     kind: 'tabs',
     testingArea: 'interactive',
-    definition: SHARED_TABS_URL_SYNC_EXAMPLE,
+    definition: SHARED_TABS_URL_SYNC_INTERACTIVE_CANARY_EXAMPLE,
   },
   'interactive/tabs-static': {
     kind: 'tabs',

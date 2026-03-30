@@ -355,6 +355,7 @@ raw HTML 禁止は設計原則であり、暫定制約ではありません。
 
 - `computer-science/algorithms/sorting` の full note page が `initial=3 / post-commit=1 / visible=1 / interaction=0 / total=5` であること
 - `testing/interactive` の full note page が `initial=6 / post-commit=0 / visible=1 / interaction=0 / total=7` であること
+- `testing/interactive` は interactive UI canary であり、code-block enhancer など code surface の post-commit hydration を含めないこと
 - `testing/sandbox` の full note page が `initial=0 / post-commit=0 / visible=2 / interaction=1 / total=3` であること
 - `buildNotePageProjection()` が note hydration budget の超過を build-time error にすること
 - `HydrationScheduler` の warning は観測用であり、budget gate の代替でないこと

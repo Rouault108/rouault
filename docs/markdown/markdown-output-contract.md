@@ -304,6 +304,7 @@ note ページの hydration budget は build-time の正本として固定し、
 
 - 上限を 1 つでも超えた note は build-time error にしなければなりません。
 - 代表 canary の counts は `test/ssr/note-hydration-budget.test.ts` で固定しなければなりません。
+- `testing/interactive` は interactive UI canary であり、code-block enhancer など code surface の post-commit hydration を workload へ含めてはなりません。
 - build / test / CI は同じ budget へ従わなければなりません。
 - 代表 canary が変わる場合は、本文の workload が実際に変わった根拠を伴って本節とテストを同時に改訂しなければなりません。
 
