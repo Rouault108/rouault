@@ -233,8 +233,13 @@ const renderSandboxMarkdown = (
   definition: SandboxExampleDefinition,
   readText: (filePath: string) => string,
 ): string => {
+  const controlsAttribute =
+    definition.controls.length > 0
+      ? ` controls="${definition.controls.join(' ')}"`
+      : '';
+
   const lines = [
-    `::code-preview{heading="${escapeAttribute(definition.heading)}" controls="${definition.controls.join(' ')}" preview-theme="${definition.previewTheme}" preview-surface="${definition.previewSurface}" preview-viewport="${definition.previewViewport}" preview-padding="${definition.previewPadding}" preview-align="${definition.previewAlign}"}`,
+    `::code-preview{heading="${escapeAttribute(definition.heading)}"${controlsAttribute} preview-theme="${definition.previewTheme}" preview-surface="${definition.previewSurface}" preview-viewport="${definition.previewViewport}" preview-padding="${definition.previewPadding}" preview-align="${definition.previewAlign}"}`,
     `::preview-sandbox{iframe-title="${escapeAttribute(definition.iframeTitle)}"${definition.allowJs ? ' allow-js="true"' : ''} height="${String(definition.height)}"}`,
     '',
     `\`\`\`preview-html filename="${definition.htmlPath.split('/').at(-1) ?? 'example.html'}"`,
