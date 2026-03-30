@@ -1,23 +1,5 @@
 export type HistoryUpdateMode = 'push' | 'replace';
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
-
-export const createHistoryStateWithUrl = (
-  state: unknown,
-  url: string,
-  origin: string = window.location.origin,
-): Record<string, unknown> => {
-  const currentState = isRecord(state) ? state : {};
-  const parsedUrl = new URL(url, origin);
-
-  return {
-    ...currentState,
-    __routerUrl: `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`,
-    __routerPath: parsedUrl.pathname,
-  };
-};
-
 export const buildUrlWithHash = (
   hash: string,
   currentUrl: string = window.location.href,
@@ -37,7 +19,7 @@ export const updateHashInCurrentUrl = (hash: string, mode: HistoryUpdateMode = '
     return nextUrl;
   }
 
-  const nextState = createHistoryStateWithUrl(history.state, nextUrl);
+  const nextState: unknown = history.state;
   if (mode === 'replace') {
     history.replaceState(nextState, '', nextUrl);
   } else {

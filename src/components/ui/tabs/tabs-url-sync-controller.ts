@@ -11,7 +11,6 @@ export interface TabsUrlSyncHost {
   getHostElement(): HTMLElement;
   isUrlSyncEnabled(): boolean;
   getActiveValue(): string | null;
-  createHistoryStateForUrl(url: string): Record<string, unknown>;
   onUrlStateChanged(): void;
 }
 
@@ -175,7 +174,7 @@ export class TabsUrlSyncController implements ReactiveController {
       return;
     }
 
-    const state = this.host.createHistoryStateForUrl(nextUrl);
+    const state: unknown = history.state;
     const strategy = getTabsUrlSyncStrategy();
 
     if (historyMode === 'push') {

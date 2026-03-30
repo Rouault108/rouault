@@ -276,6 +276,36 @@ test.describe('Router Navigation', () => {
     await expect(panels.nth(0)).toHaveAttribute('hidden', '');
   });
 
+  test('tabs の URL 同期は既存 history.state を再利用し router key を生成しないこと', async ({
+    page,
+  }) => {
+    await page.goto(tabsTestPath);
+    await waitForTabsHydration(page, 0);
+
+    await page.evaluate(() => {
+      history.replaceState(
+        {
+          customData: 'value',
+          nested: {
+            ok: true,
+          },
+        },
+        '',
+        window.location.pathname,
+      );
+    });
+
+    await page.locator('ui-tabs [slot="tab"][value="rust"]').click();
+
+    await expect(page).toHaveURL(`${tabsTestPath}?tab=rust`);
+
+    const state = await page.evaluate(() => history.state as Record<string, unknown>);
+    expect(state['customData']).toBe('value');
+    expect(state['nested']).toEqual({ ok: true });
+    expect(state['__routerUrl']).toBeUndefined();
+    expect(state['__routerPath']).toBeUndefined();
+  });
+
   test('タブクリックで URL が変わっても SPA 状態が維持されること', async ({ page }) => {
     await page.goto(tabsTestPath);
     await waitForTabsHydration(page, 0);

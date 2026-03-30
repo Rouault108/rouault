@@ -640,6 +640,8 @@ router は `history.state` に次を保存します。
 - `__routerUrl`: 正規化済み navigation URL
 - `__routerPath`: pathname
 
+この state shape は router core の所有物であり、feature-local な URL 同期ヘルパーは新しい router key を合成してはなりません。ヘルパーは既存の `history.state` を opaque に再利用するか、router 経由の API に委譲します。
+
 `readCurrentUrl()` は、まず `history.state` を参照し、なければ `window.location` から組み立てます。
 
 ## ルート解決

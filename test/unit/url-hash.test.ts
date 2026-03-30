@@ -1,27 +1,53 @@
 import { expect } from '@open-wc/testing';
 
-import { createHistoryStateWithUrl, updateHashInCurrentUrl } from '../../src/lib/url-hash.js';
+import { updateHashInCurrentUrl } from '../../src/lib/url-hash.js';
 
 describe('url-hash', () => {
-  it('router state を保ったまま __routerUrl と __routerPath を更新すること', () => {
-    const nextState = createHistoryStateWithUrl(
-      { customData: 'value', __routerUrl: '/old', __routerPath: '/old' },
-      '/notes/example?view=full#intro',
-      'https://example.com',
-    );
+  it('hash 更新時に既存の history.state をそのまま保持すること', () => {
+    const originalPushState = history.pushState.bind(history);
+    const originalReplaceState = history.replaceState.bind(history);
+    const originalStateDescriptor = Object.getOwnPropertyDescriptor(history, 'state');
 
-    expect(nextState).to.deep.equal({
-      customData: 'value',
-      __routerUrl: '/notes/example?view=full#intro',
-      __routerPath: '/notes/example',
+    const currentState = { customData: 'value', nested: { ok: true } };
+    let capturedState: unknown = null;
+
+    Object.defineProperty(history, 'state', {
+      configurable: true,
+      get: () => currentState,
     });
+
+    history.pushState = ((data: unknown, _unused: string, url?: string | URL | null) => {
+      capturedState = data;
+      void url;
+    }) as typeof history.pushState;
+
+    try {
+      const nextUrl = updateHashInCurrentUrl('intro', 'push');
+
+      expect(nextUrl).to.equal(`${window.location.pathname}${window.location.search}#intro`);
+      expect(capturedState).to.deep.equal(currentState);
+    } finally {
+      history.pushState = originalPushState;
+      history.replaceState = originalReplaceState;
+
+      if (originalStateDescriptor) {
+        Object.defineProperty(history, 'state', originalStateDescriptor);
+      } else {
+        Reflect.deleteProperty(history, 'state');
+      }
+    }
   });
 
-  it('現在URLに hash を追加する際も router state を同期すること', () => {
+  it('現在URLに hash を追加する際も既存 state を再利用すること', () => {
     const originalPushState = history.pushState.bind(history);
     const originalUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const originalStateDescriptor = Object.getOwnPropertyDescriptor(history, 'state');
+    const currentState = { customData: 'value' };
 
-    history.replaceState({}, '', '/notes/example?view=full');
+    Object.defineProperty(history, 'state', {
+      configurable: true,
+      get: () => currentState,
+    });
 
     let capturedUrl = '';
     let capturedState: unknown = null;
@@ -34,15 +60,18 @@ describe('url-hash', () => {
     try {
       const nextUrl = updateHashInCurrentUrl('intro', 'push');
 
-      expect(nextUrl).to.equal('/notes/example?view=full#intro');
-      expect(capturedUrl).to.equal('/notes/example?view=full#intro');
-      expect(capturedState).to.deep.equal({
-        __routerUrl: '/notes/example?view=full#intro',
-        __routerPath: '/notes/example',
-      });
+      expect(nextUrl).to.equal(`${window.location.pathname}${window.location.search}#intro`);
+      expect(capturedUrl).to.equal(`${window.location.pathname}${window.location.search}#intro`);
+      expect(capturedState).to.deep.equal(currentState);
     } finally {
       history.pushState = originalPushState;
       history.replaceState({}, '', originalUrl);
+
+      if (originalStateDescriptor) {
+        Object.defineProperty(history, 'state', originalStateDescriptor);
+      } else {
+        Reflect.deleteProperty(history, 'state');
+      }
     }
   });
 });

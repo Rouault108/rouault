@@ -77,21 +77,6 @@ export class Tabs extends LitElement implements TabsUrlSyncHost {
     return this.snapshot.tabs[this.activeIndex]?.getAttribute('value') ?? null;
   }
 
-  createHistoryStateForUrl(url: string): Record<string, unknown> {
-    const currentState =
-      typeof history.state === 'object' && history.state !== null
-        ? (history.state as Record<string, unknown>)
-        : {};
-
-    const parsed = new URL(url, window.location.origin);
-
-    return {
-      ...currentState,
-      __routerUrl: `${parsed.pathname}${parsed.search}${parsed.hash}`,
-      __routerPath: parsed.pathname,
-    };
-  }
-
   onUrlStateChanged(): void {
     if (this.snapshot.interactiveCount === 0) {
       return;
