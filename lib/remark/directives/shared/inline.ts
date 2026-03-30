@@ -1,4 +1,4 @@
-import type { MdastNode, VFileLike } from '../types';
+import type { MdastNode, VFileLike } from '../types.js';
 import {
   EMOJI_SHORTCODE_MAP,
   INLINE_DIRECTIVE_PATTERN,
@@ -6,10 +6,13 @@ import {
   INLINE_HIGHLIGHT_PATTERN,
   INLINE_SUBSCRIPT_PATTERN,
   INLINE_SUPERSCRIPT_PATTERN,
-} from './constants';
-import { appendText, createInlineNode } from './ast';
-import { assertAllowedAttributes, parseAttributes, pickOptional } from './attributes';
-import { parseBooleanAttribute } from './attribute-parsers';
+} from './constants.js';
+import { appendText, createInlineNode } from './ast.js';
+import { parseAttributes, pickOptional } from '../parser-core/parse-attributes.js';
+import {
+  assertAllowedAttributes,
+  parseBooleanAttribute,
+} from '../payload/normalize-helpers.js';
 
 export const applyEmojiInlineAttributes = (
   attrs: Record<string, string>,

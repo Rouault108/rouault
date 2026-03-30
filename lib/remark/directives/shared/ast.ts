@@ -1,4 +1,4 @@
-import type { MdastNode } from '../types';
+import type { MdastNode } from '../types.js';
 
 export const getNodeTextContent = (node: MdastNode): string => {
   if (node.type === 'text') {

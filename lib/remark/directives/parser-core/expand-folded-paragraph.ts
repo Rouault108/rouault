@@ -1,8 +1,8 @@
-import type { MdastNode, VFileLike } from '../types';
-import { END_PATTERN } from './constants';
-import { parseAttributes } from './attributes';
-import { getParagraphSingleText, parseStartLine } from './block-markers';
-import { directiveMetadata } from './directive-metadata';
+import type { MdastNode, VFileLike } from '../types.js';
+import { getDirectiveDescriptor } from '../grammar/directive-grammar.js';
+import { END_PATTERN } from '../shared/constants.js';
+import { parseAttributes } from './parse-attributes.js';
+import { getParagraphSingleText, parseStartLine } from './parse-directive-line.js';
 
 export const tryParseFoldedDirectiveParagraph = (
   node: MdastNode,
@@ -29,7 +29,7 @@ export const tryParseFoldedDirectiveParagraph = (
   if (!marker) {
     return null;
   }
-  if (directiveMetadata[marker.name].kind === 'leaf') {
+  if (getDirectiveDescriptor(marker.name).kind === 'leaf') {
     return null;
   }
 

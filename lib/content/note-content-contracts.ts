@@ -3,10 +3,15 @@ import type { DefaultTreeAdapterMap } from 'parse5';
 
 import {
   type NoteContentKind,
-  isReaderFacingNoteContentKind,
-  normalizeNoteContentKind,
 } from '../../src/types/note-kind.js';
 import type { TestingArea } from '../../src/types/testing-area.js';
+import { createNotePolicyContext } from '../remark/directives/policy/note-policy-context.js';
+import {
+  getCodePreviewControlsRestrictionMessage,
+  getCodePreviewToolbarRestrictionMessage,
+  getPreviewSandboxRestrictionMessage,
+} from '../remark/directives/policy/preview-policy.js';
+import { getSandboxJavaScriptRestrictionMessage } from '../remark/directives/policy/sandbox-policy.js';
 
 type Parse5DocumentFragment = DefaultTreeAdapterMap['documentFragment'];
 type Parse5Element = DefaultTreeAdapterMap['element'];
@@ -45,6 +50,7 @@ export const validateNoteContentContracts = (
 
   const fragment = parse5.parseFragment(html);
   const errors: string[] = [];
+  const policyContext = createNotePolicyContext(kind, testingArea);
 
   const visit = (node: Parse5Node, insideCodePreview: boolean): void => {
     if (!isElementNode(node)) {
@@ -58,34 +64,36 @@ export const validateNoteContentContracts = (
 
     const allowJs = getAttributeValue(node, 'allow-js') === 'true';
 
-    if (isReaderFacingNoteContentKind(kind) && node.tagName === 'ui-preview-sandbox') {
-      errors.push('reader note では preview-sandbox を使用できません');
+    if (node.tagName === 'ui-preview-sandbox') {
+      const previewSandboxRestriction = getPreviewSandboxRestrictionMessage(policyContext);
+      if (previewSandboxRestriction) {
+        errors.push(previewSandboxRestriction);
+      }
     }
 
-    if (isReaderFacingNoteContentKind(kind) && allowJs) {
-      errors.push('reader note では allow-js="true" を使用できません');
-    }
-
-    if (kind === 'testing' && testingArea !== 'sandbox' && node.tagName === 'ui-preview-sandbox') {
-      errors.push('testing/sandbox 以外では preview-sandbox を使用できません');
-    }
-
-    if (kind === 'testing' && testingArea !== 'sandbox' && allowJs) {
-      errors.push('testing/sandbox 以外では allow-js="true" を使用できません');
+    if (allowJs) {
+      const sandboxJavaScriptRestriction = getSandboxJavaScriptRestrictionMessage(policyContext);
+      if (sandboxJavaScriptRestriction) {
+        errors.push(sandboxJavaScriptRestriction);
+      }
     }
 
     const nextInsideCodePreview = insideCodePreview || node.tagName === 'ui-code-preview';
 
-    if (isReaderFacingNoteContentKind(kind) && node.tagName === 'ui-code-preview') {
+    if (node.tagName === 'ui-code-preview') {
       const controls = getAttributeValue(node, 'controls')?.trim() ?? '';
-      if (controls.length > 0) {
-        errors.push('reader note の code-preview では controls を使用できません');
+      if (controls.length > 0 && getCodePreviewControlsRestrictionMessage(policyContext)) {
+        errors.push(getCodePreviewControlsRestrictionMessage(policyContext) ?? '');
       }
     }
 
     const slot = getAttributeValue(node, 'slot')?.trim() ?? '';
-    if (isReaderFacingNoteContentKind(kind) && nextInsideCodePreview && slot === 'toolbar') {
-      errors.push('reader note の code-preview では toolbar slot を使用できません');
+    if (
+      nextInsideCodePreview &&
+      slot === 'toolbar' &&
+      getCodePreviewToolbarRestrictionMessage(policyContext)
+    ) {
+      errors.push(getCodePreviewToolbarRestrictionMessage(policyContext) ?? '');
     }
 
     if ('childNodes' in node && Array.isArray(node.childNodes)) {
@@ -115,7 +123,7 @@ export const injectNoteContentProfiles = (
     return '';
   }
 
-  const previewProfile = normalizeNoteContentKind(kind) === 'reader' ? 'reader' : 'demo';
+  const previewProfile = createNotePolicyContext(kind).kind === 'reader' ? 'reader' : 'demo';
   const fragment = parse5.parseFragment(html);
 
   const visit = (node: Parse5Node): void => {

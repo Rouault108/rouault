@@ -1,6 +1,8 @@
 import path from 'node:path';
 import { readFileSync, statSync } from 'node:fs';
 import { isLocalContentAssetPath, resolveLinkCardImage } from '../media/image-resolver.js';
+import type { LinkCardPayload } from './directives/payload/payload-types.js';
+import type { RouaultDirectiveState } from './directives/types.js';
 
 interface MdastNodeData {
   hName?: string;
@@ -21,6 +23,7 @@ interface MdastNode {
   children?: MdastNode[];
   data?: MdastNodeData;
   position?: MdastNodePosition;
+  rouaultDirective?: RouaultDirectiveState;
 }
 
 interface VFileMessageLike {
@@ -292,16 +295,22 @@ const getDirectiveLinkCardSource = (node: MdastNode): LinkCardSource | null => {
     return null;
   }
 
-  const props = node.data?.hProperties ?? {};
-  const url = pickOptionalString(props['url']);
+  const payload = node.rouaultDirective?.payload as LinkCardPayload | undefined;
+  const url = pickOptionalString(payload?.url) ?? pickOptionalString(node.data?.hProperties?.['url']);
   if (!url) {
     return null;
   }
 
-  const title = pickOptionalString(props['title']);
-  const description = pickOptionalString(props['description']);
-  const image = pickOptionalString(props['image']);
-  const siteName = pickOptionalString(props['site-name']);
+  const title =
+    pickOptionalString(payload?.title) ?? pickOptionalString(node.data?.hProperties?.['title']);
+  const description =
+    pickOptionalString(payload?.description) ??
+    pickOptionalString(node.data?.hProperties?.['description']);
+  const image =
+    pickOptionalString(payload?.image) ?? pickOptionalString(node.data?.hProperties?.['image']);
+  const siteName =
+    pickOptionalString(payload?.siteName) ??
+    pickOptionalString(node.data?.hProperties?.['site-name']);
 
   return {
     url,

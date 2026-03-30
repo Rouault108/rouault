@@ -1,7 +1,7 @@
-import type { DirectiveMarker, DirectiveName, MdastNode, VFileLike } from '../types';
-import { END_PATTERN, START_PATTERN } from './constants';
-import { SUPPORTED_DIRECTIVES } from './directive-metadata';
-import { toError } from './errors';
+import type { DirectiveMarker, DirectiveName, MdastNode, VFileLike } from '../types.js';
+import { supportedDirectives } from '../grammar/directive-grammar.js';
+import { END_PATTERN, START_PATTERN } from '../shared/constants.js';
+import { toError } from '../shared/errors.js';
 
 export const getDirectiveTextFromNode = (node: MdastNode): string | null => {
   if (node.type === 'text' && typeof node.value === 'string') {
@@ -25,8 +25,7 @@ export const getDirectiveTextFromNode = (node: MdastNode): string | null => {
     return null;
   }
 
-  const label = onlyChild.value.trim();
-  return label === node.url ? node.url : null;
+  return onlyChild.value.trim() === node.url ? node.url : null;
 };
 
 export const getParagraphSingleText = (node: MdastNode): string | null => {
@@ -57,7 +56,7 @@ export const parseStartLine = (
   }
 
   const rawName = matched[1] ?? '';
-  if (!SUPPORTED_DIRECTIVES.has(rawName as DirectiveName)) {
+  if (!supportedDirectives.has(rawName as DirectiveName)) {
     throw toError(file, node, `未対応のディレクティブ "${rawName}"`);
   }
 

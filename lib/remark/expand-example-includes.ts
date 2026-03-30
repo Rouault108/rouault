@@ -7,8 +7,8 @@ import {
   renderTestingExampleMarkdown,
   type TestingExampleRef,
 } from '../../examples/manifests/testing-examples.js';
-import { getParagraphSingleText } from './directives/shared/block-markers.js';
-import { parseAttributes } from './directives/shared/attributes.js';
+import { parseAttributes } from './directives/parser-core/parse-attributes.js';
+import { getParagraphSingleText } from './directives/parser-core/parse-directive-line.js';
 import { toError } from './directives/shared/errors.js';
 import type { MdastNode, VFileLike } from './directives/types.js';
 

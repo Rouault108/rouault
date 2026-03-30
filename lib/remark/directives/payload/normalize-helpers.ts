@@ -1,6 +1,21 @@
-import type { MdastNode, VFileLike } from '../types';
-import { toError } from './errors';
-import { pickOptional } from './attributes';
+import type { MdastNode, VFileLike } from '../types.js';
+import { toError } from '../shared/errors.js';
+import { pickOptional } from '../parser-core/parse-attributes.js';
+
+export const assertAllowedAttributes = (
+  attrs: Record<string, string>,
+  allowedKeys: readonly string[],
+  node: MdastNode,
+  file: VFileLike | undefined,
+  directiveName: string,
+): void => {
+  const allowed = new Set(allowedKeys);
+  for (const key of Object.keys(attrs)) {
+    if (!allowed.has(key)) {
+      throw toError(file, node, `${directiveName} 属性 "${key}" は未対応です`);
+    }
+  }
+};
 
 export const parseBooleanAttribute = (
   value: string | undefined,
@@ -76,38 +91,38 @@ export const parseIntegerMin = (
   return parsed;
 };
 
-export const parseEnumListAttribute = (
+export const parseEnumListAttribute = <T extends string>(
   value: string | undefined,
   node: MdastNode,
   file: VFileLike | undefined,
   directiveName: string,
   key: string,
-  allowedValues: ReadonlySet<string>,
-  orderedValues: readonly string[],
-): string | undefined => {
+  allowedValues: readonly T[],
+): readonly T[] | undefined => {
   const normalized = pickOptional(value)?.toLowerCase();
   if (!normalized) {
     return undefined;
   }
 
   const tokens = normalized.split(/\s+/);
-  const seen = new Set<string>();
+  const seen = new Set<T>();
+  const allowed = new Set(allowedValues);
 
   for (const token of tokens) {
-    if (!allowedValues.has(token)) {
+    if (!allowed.has(token as T)) {
       throw toError(
         file,
         node,
-        `${directiveName} の ${key} は ${orderedValues.join('/')} のみ指定可能です`,
+        `${directiveName} の ${key} は ${allowedValues.join('/')} のみ指定可能です`,
       );
     }
 
-    if (seen.has(token)) {
+    if (seen.has(token as T)) {
       throw toError(file, node, `${directiveName} の ${key} で "${token}" が重複しています`);
     }
 
-    seen.add(token);
+    seen.add(token as T);
   }
 
-  return orderedValues.filter((item) => seen.has(item)).join(' ');
+  return allowedValues.filter((item) => seen.has(item));
 };

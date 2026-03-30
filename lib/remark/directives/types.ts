@@ -3,6 +3,12 @@ export interface MdastNodeData {
   hProperties?: Record<string, unknown>;
 }
 
+export interface RouaultDirectiveState {
+  readonly name: DirectiveName;
+  readonly rawAttributes: Record<string, string>;
+  payload?: unknown;
+}
+
 export interface MdastNode {
   type?: string;
   value?: string;
@@ -13,6 +19,9 @@ export interface MdastNode {
   alt?: string | null;
   children?: MdastNode[];
   data?: MdastNodeData;
+  rouaultDirective?: RouaultDirectiveState;
+  rouaultCodeBlockPayload?: unknown;
+  rouaultImagePayload?: unknown;
   position?: {
     start?: {
       line?: number;
@@ -53,14 +62,4 @@ export interface DirectiveMarker {
   readonly name: DirectiveName;
   readonly attrsSource: string;
   readonly node: MdastNode;
-}
-
-export interface DirectiveHandler {
-  readonly name: DirectiveName;
-  toNode(
-    marker: DirectiveMarker,
-    children: MdastNode[],
-    attrs: Record<string, string>,
-    file?: VFileLike,
-  ): MdastNode;
 }

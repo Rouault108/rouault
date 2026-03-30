@@ -1,4 +1,4 @@
-import type { MdastNode, VFileLike } from '../types';
+import type { MdastNode, VFileLike } from '../types.js';
 
 export const getNodeLocation = (node: MdastNode): string => {
   const line = node.position?.start?.line;

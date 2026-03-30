@@ -218,7 +218,7 @@ raw HTML 禁止は設計原則であり、暫定制約ではありません。
 
 #### 7.2.2 `tabs`
 
-`tabs` は `tab` / `panel` の個数整合まで検証しません。
+`tabs` は `tab` / `panel` の個数整合、`tab.value` の一意性、および `selected-value` / `default-selected-value` の参照整合を build-time で検証します。
 
 #### 7.2.3 `code-preview` + `preview-sandbox`
 
@@ -333,7 +333,7 @@ raw HTML 禁止は設計原則であり、暫定制約ではありません。
 
 - `translation` / `translation-overlay` が children を保持しない現状
 - 旧 `translation.render-mode` を reject すること
-- `tabs` が個数整合を検証しない現状
+- `tabs` が個数整合と `tab.value` 参照整合を検証すること
 - `tabs.url-sync` が単一系統想定である現状
 
 ### 10.6 media manifest / eager policy

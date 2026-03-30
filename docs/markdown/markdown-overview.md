@@ -84,30 +84,31 @@ Rouault の Markdown 変換系は、大きく次の 2 層で構成します。
 実装上の SoT は、`velite.config.ts` におけるプラグイン順序です。
 
 1. `remarkMath`
-2. `remarkDisallowRawHtml`
-3. `remarkRouaultDirectives`
-4. `remarkLinkCards`
-5. `remark-rehype`
-6. `rehypeKatex`
-7. `rehypeHeadingIds`
-8. `rehypePreviewSandbox`
-9. `rehypeShikiCodeBlocks`
-10. `rehypeRouaultComponents`
-11. `rehypeAnnotateLinkKinds`
-12. `rehypeInlineCodeTranslateNo`
-13. `rehypeOrderedListContracts`
-14. `rehypeDisallowDangerousProps`
-15. `rehypeDisallowStaticMark`
+2. `remarkGfm`
+3. `remarkExpandExampleIncludes`
+4. `remarkDisallowRawHtml`
+5. `remarkRouaultDirectives`
+6. `remarkLinkCards`
+7. `remark-rehype`
+8. `rehypeKatex`
+9. `rehypeHeadingIds`
+10. `rehypePreviewSandbox`
+11. `rehypeShikiCodeBlocks`
+12. `rehypeStaticCodeGroups`
+13. `rehypeRouaultComponents`
+14. `rehypeAnnotateLinkKinds`
+15. `rehypeInlineCodeTranslateNo`
+16. `rehypeOrderedListContracts`
+17. `rehypeDisallowDangerousProps`
+18. `rehypeDisallowStaticMark`
 
 規則:
 
 - authoring grammar に関わる意味論変更は、remark 層の正本と実装順序の双方を整合させなければなりません。
 - 出力 DOM に関わる意味論変更は、rehype 層の正本と実装順序の双方を整合させなければなりません。
-- 本文リンクの種別注釈は rehype 層で確定し、その詳細な出力属性契約は `docs/markdown-output-contract.md` を参照しなければなりません。
+- 本文リンクの種別注釈は rehype 層で確定し、その詳細な出力属性契約は `docs/markdown/markdown-output-contract.md` を参照しなければなりません。
 - 安全規約は後段検査へ押し込むだけでなく、可能なものは前段で早期拒否してよいものとします。
 - 実装順序の変更は意味論変更を伴いうるため、単なるリファクタリングとして扱ってはなりません。
-
----
 
 ## 6. 文書群と ownership
 

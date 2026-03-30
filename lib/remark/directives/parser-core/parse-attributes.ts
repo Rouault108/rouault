@@ -1,5 +1,5 @@
-import type { MdastNode, VFileLike } from '../types';
-import { toError } from './errors';
+import type { MdastNode, VFileLike } from '../types.js';
+import { toError } from '../shared/errors.js';
 
 export const parseAttributes = (
   source: string,
@@ -54,9 +54,10 @@ export const extractLeadingAttributeBlock = (
     throw toError(file, node, `${contextName}属性の構文が不正です "${source}"`);
   }
 
-  const attrsSource = source.slice(offset + 1, closingIndex);
-  const rest = source.slice(closingIndex + 1);
-  return { attrsSource, rest };
+  return {
+    attrsSource: source.slice(offset + 1, closingIndex),
+    rest: source.slice(closingIndex + 1),
+  };
 };
 
 export const pickOptional = (value: string | undefined): string | undefined => {
@@ -66,18 +67,4 @@ export const pickOptional = (value: string | undefined): string | undefined => {
 
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : undefined;
-};
-
-export const assertAllowedAttributes = (
-  attrs: Record<string, string>,
-  allowedKeys: ReadonlySet<string>,
-  node: MdastNode,
-  file: VFileLike | undefined,
-  directiveName: string,
-): void => {
-  for (const key of Object.keys(attrs)) {
-    if (!allowedKeys.has(key)) {
-      throw toError(file, node, `${directiveName} 属性 "${key}" は未対応です`);
-    }
-  }
 };

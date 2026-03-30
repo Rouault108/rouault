@@ -1,1 +1,1 @@
-export { remarkRouaultDirectives } from './directives';
+export { remarkRouaultDirectives } from './directives/index.js';
