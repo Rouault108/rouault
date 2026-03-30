@@ -503,6 +503,7 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 - `tab` の `value` は重複させない
 - `selected-value` / `default-selected-value` は実在する `tab.value` を指す
 - `url-sync` は主タブにだけ使う
+- 同一文書内で `url-sync` を持つ `tabs` は 1 系統だけにする
 - 不整合は build-time で拒否される
 
 ### 5.10 Translation

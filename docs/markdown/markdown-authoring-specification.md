@@ -420,6 +420,7 @@ frontmatter metadata には次の制約を適用します。
 - `tab` と `panel` の個数整合、`tab.value` の一意性、`selected-value` / `default-selected-value` の参照整合は build-time で検証します。
 - 不一致構成を authoring の許容入力として扱ってはなりません。
 - `url-sync` は `?tab=` 同期を有効にします。
+- `url-sync` を持つ `tabs` は、1 文書につき 1 系統のみ許可します。2 系統目以降は build-time error とします。
 - 現行運用ではページ主タブ 1 系統のみを想定します。
 
 ### 5.12 `::translation`
@@ -711,7 +712,7 @@ remark 段階では次を即時エラーとします。
 
 ### 10.6 `tabs.url-sync`
 
-`tabs.url-sync` は `?tab=` 同期を有効にします。現在はページ主タブ 1 系統のみを想定し、複数 query key は導入していません。
+`tabs.url-sync` は `?tab=` 同期を有効にします。現在はページ主タブ 1 系統のみを想定し、同一文書内の 2 系統目以降は build-time error とします。複数 query key は導入していません。
 
 ---
 

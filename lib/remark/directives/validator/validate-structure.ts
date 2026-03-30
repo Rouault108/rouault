@@ -274,6 +274,39 @@ const validateTabsStructure = (node: MdastNode, payload: TabsPayload, file?: VFi
   }
 };
 
+export const validateTabsUrlSyncConstraint = (
+  nodes: MdastNode[],
+  file?: VFileLike,
+): void => {
+  let primaryTabsNode: MdastNode | null = null;
+
+  const visit = (node: MdastNode): void => {
+    const directiveName = getDirectiveNameFromNode(node);
+    if (directiveName === 'tabs') {
+      const payload = getDirectivePayload<TabsPayload>(node);
+      if (payload?.urlSync) {
+        if (primaryTabsNode !== null) {
+          throw toError(
+            file,
+            node,
+            'tabs の url-sync は 1 文書につき 1 系統までしか使用できません',
+          );
+        }
+
+        primaryTabsNode = node;
+      }
+    }
+
+    for (const child of node.children ?? []) {
+      visit(child);
+    }
+  };
+
+  for (const node of nodes) {
+    visit(node);
+  }
+};
+
 const validateTabStructure = (node: MdastNode, payload: TabPayload | undefined, file?: VFileLike): void => {
   if (!payload?.value?.trim()) {
     throw toError(file, node, 'tab には value 属性が必須です');

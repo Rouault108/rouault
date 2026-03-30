@@ -940,6 +940,84 @@ describe('remarkRouaultDirectives', () => {
     expect(tabs?.data?.hProperties?.['url-sync']).to.equal(undefined);
   });
 
+  it('tabs の url-sync が同一文書内に 2 系統ある場合はエラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::tabs{url-sync="true"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::tab{value="overview"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '概要' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::panel' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '概要パネル' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::tabs{url-sync="true"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::tab{value="details"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '詳細' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::panel' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '詳細パネル' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw('[markdown] tabs の url-sync は 1 文書につき 1 系統までしか使用できません');
+  });
+
   it('code-preview と preview/toolbar スロットディレクティブを変換すること', () => {
     const tree: MdastNode = {
       type: 'root',

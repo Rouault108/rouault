@@ -226,7 +226,7 @@ raw HTML 禁止は設計原則であり、暫定制約ではありません。
 
 #### 7.2.4 `tabs.url-sync` の単一系統想定
 
-現在はページ主タブ 1 系統のみを想定し、複数 query key は導入していません。
+現在はページ主タブ 1 系統のみを想定し、同一文書内の 2 系統目以降は build-time error とします。複数 query key は導入していません。
 
 ### 7.3 設計固定された parser 契約
 
@@ -336,7 +336,7 @@ raw HTML 禁止は設計原則であり、暫定制約ではありません。
 - 旧 `translation.render-mode` を reject すること
 - rich bilingual content は別 directive / 別 grammar の責務とすること
 - `tabs` が個数整合と `tab.value` 参照整合を検証すること
-- `tabs.url-sync` が単一系統想定である現状
+- `tabs.url-sync` が単一系統想定であり、2 系統目以降を build-time error にすること
 
 ### 10.6 media manifest / eager policy
 
