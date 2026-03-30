@@ -99,6 +99,8 @@ Rouault における tabs は、複数の情報面を高密度に並置するた
 
 `slot="tab"` と `slot="panel"` は**先頭から順序対応**します。関連付けは DOM 上の近接ではなく、各スロット内の順序で決定します。利用者は、タブ数とパネル数を一致させなければなりません（MUST）。
 
+この順序対応は、破損した DOM や動的再構成に対する防御的回復の説明であって、Markdown authoring における許容入力を意味しません。authoring 側の build-time validation では、タブ数とパネル数の不一致は拒否されます。
+
 `slot="tab"` の正規入力は、ネイティブの `<button>` 要素です。`slot="panel"` 要素は `HTMLElement` でなければなりません。
 
 `slot="tab"` 要素は `value` 属性を持つことを前提とします。`value` が欠落しても描画自体は継続し得ますが、`selectedValue`、`defaultSelectedValue`、`select(value)`、`urlSync` の契約が成立しません。したがって、**すべてのタブに安定した `value`** を与えなければなりません（MUST）。
@@ -251,7 +253,7 @@ URL 同期時の履歴更新は次のとおりです。
 
 `tab` 数と `panel` 数が一致しない場合、実効件数は `min(tab 数, panel 数)` です。先頭からこの件数のみを有効タブとして扱います。余剰タブは選択対象にならず、余剰パネルは有効な関連付けを持ちません。
 
-これは回復的挙動であり、正規入力ではありません。利用者は不一致構成に依存してはなりません（MUST NOT）。
+これは回復的挙動であり、正規入力ではありません。利用者は不一致構成に依存してはなりません（MUST NOT）。Markdown authoring では、この状態に到達する前に build-time で拒否されます。
 
 ### 8. 再初期化状態
 
@@ -651,7 +653,9 @@ Forced Colors 環境では JS 制御インジケーターを非表示とし、�
 
 ### 12. 開発時警告の本番保証
 
-不一致スロット、無効な `selectedValue`、無効な `defaultSelectedValue`、無効な `?tab=` は開発時警告にとどまります。描画停止や例外送出は行いません。したがって、**契約違反入力に対する実行時の強制力は未実装**です。
+不一致スロット、無効な `selectedValue`、無効な `defaultSelectedValue`、無効な `?tab=` は、主としてプログラム的操作や hydration drift に対する開発時警告として扱います。描画停止や例外送出は行いません。
+
+ただし、Markdown authoring 由来の不一致は別途 build-time で拒否されます。したがって、この節は **authoring 契約の緩和** ではなく、runtime の防御層について述べています。
 
 ### 13. Storybook による未確認領域
 

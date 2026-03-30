@@ -612,6 +612,283 @@ describe('remarkRouaultDirectives', () => {
     expect(firstPanel?.data?.hProperties?.['slot']).to.equal('panel');
   });
 
+  it('tabs で tab と panel の個数が一致しない場合はエラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::tabs{default-selected-value="overview"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::tab{value="overview"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '概要' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::tab{value="details"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '詳細' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::panel' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '概要パネル' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw('[markdown] tabs 直下の tab と panel の個数は一致している必要があります');
+  });
+
+  it('tabs で tab の value が重複した場合はエラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::tabs{default-selected-value="overview"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::tab{value="overview"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '概要' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::panel' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '概要パネル' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::tab{value="overview"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '詳細' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::panel' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '詳細パネル' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw('[markdown] tab の value "overview" が重複しています');
+  });
+
+  it('tabs の selected-value が存在しない tab.value を指す場合はエラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'text',
+              value: '::tabs{selected-value="missing" default-selected-value="overview"}',
+            },
+          ],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::tab{value="overview"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '概要' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::panel' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '概要パネル' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::tab{value="details"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '詳細' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::panel' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '詳細パネル' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw(
+      '[markdown] tabs の selected-value "missing" に対応する tab.value が存在しません',
+    );
+  });
+
+  it('tabs の default-selected-value が存在しない tab.value を指す場合はエラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::tabs{default-selected-value="missing"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::tab{value="overview"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '概要' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::panel' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '概要パネル' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::tab{value="details"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '詳細' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::panel' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '詳細パネル' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    const run = () => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    };
+
+    expect(run).to.throw(
+      '[markdown] tabs の default-selected-value "missing" に対応する tab.value が存在しません',
+    );
+  });
+
   it('tabs の url-sync="false" は出力しないこと', () => {
     const tree: MdastNode = {
       type: 'root',

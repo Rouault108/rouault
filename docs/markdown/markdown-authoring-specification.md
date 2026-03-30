@@ -417,7 +417,8 @@ frontmatter metadata には次の制約を適用します。
 
 規則:
 
-- `tab` と `panel` の対応は authoring 上重要ですが、現行実装では個数整合まで検証しません。
+- `tab` と `panel` の個数整合、`tab.value` の一意性、`selected-value` / `default-selected-value` の参照整合は build-time で検証します。
+- 不一致構成を authoring の許容入力として扱ってはなりません。
 - `url-sync` は `?tab=` 同期を有効にします。
 - 現行運用ではページ主タブ 1 系統のみを想定します。
 
@@ -682,7 +683,9 @@ remark 段階では次を即時エラーとします。
 
 ### 10.2 `tabs`
 
-`tabs` は slot 属性を付けるところまでを担い、`tab` / `panel` の個数整合までは検証しません。
+`tabs` は slot 属性を付けるだけでなく、`tab` / `panel` の個数整合、`tab.value` の一意性、および `selected-value` / `default-selected-value` の参照整合を build-time で検証します。
+
+この検証は authoring 契約の一部であり、component 側の回復的 runtime 挙動の代替として読んではなりません。
 
 ### 10.3 `preview-sandbox.allow-js`
 

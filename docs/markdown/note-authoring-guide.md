@@ -496,7 +496,10 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 注意:
 
 - `tab` と `panel` の対応を崩さない
+- `tab` の `value` は重複させない
+- `selected-value` / `default-selected-value` は実在する `tab.value` を指す
 - `url-sync` は主タブにだけ使う
+- 不整合は build-time で拒否される
 
 ### 5.10 Translation
 
