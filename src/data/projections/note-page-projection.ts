@@ -78,6 +78,25 @@ export interface NotePageProjection {
   pagefind: NotePagePagefindProjection | null;
 }
 
+interface NoteHydrationCounts {
+  initial: number;
+  postCommit: number;
+  visible: number;
+  interaction: number;
+}
+
+interface NoteHydrationBudget extends NoteHydrationCounts {
+  total: number;
+}
+
+const NOTE_HYDRATION_BUDGET: NoteHydrationBudget = {
+  initial: 6,
+  postCommit: 1,
+  visible: 2,
+  interaction: 1,
+  total: 7,
+};
+
 function normalizeHeadings(
   value: IntrinsicNote['tocHeadings'],
 ): NotePageTocHeading[] {
@@ -125,9 +144,9 @@ function normalizeHeadings(
 
 function normalizeTocCapabilities(value: IntrinsicNote['tocCapabilities']) {
   return {
-    activeTracking: value?.activeTracking === true,
-    dynamicScopes: value?.dynamicScopes === true,
-    mobileSummary: value?.mobileSummary === true,
+    activeTracking: value.activeTracking,
+    dynamicScopes: value.dynamicScopes,
+    mobileSummary: value.mobileSummary,
   };
 }
 
@@ -146,8 +165,86 @@ function normalizeGenres(value: unknown): string[] {
     .filter((item) => item.length > 0);
 }
 
+function countHydrationTriggers(value: string): NoteHydrationCounts {
+  const counts: NoteHydrationCounts = {
+    initial: 0,
+    postCommit: 0,
+    visible: 0,
+    interaction: 0,
+  };
+
+  for (const match of value.matchAll(/data-hydration-trigger="([^"]+)"/g)) {
+    const trigger = match[1];
+    if (trigger === 'initial') {
+      counts.initial += 1;
+    } else if (trigger === 'post-commit') {
+      counts.postCommit += 1;
+    } else if (trigger === 'visible') {
+      counts.visible += 1;
+    } else if (trigger === 'interaction') {
+      counts.interaction += 1;
+    }
+  }
+
+  return counts;
+}
+
+function validateNoteHydrationBudget(
+  note: IntrinsicNote,
+  projection: Pick<NotePageProjection, 'contentHtml' | 'showSidebar' | 'toc' | 'articleHeader'>,
+): void {
+  const contentCounts = countHydrationTriggers(projection.contentHtml);
+  const shellCounts: NoteHydrationCounts = {
+    initial: 0,
+    postCommit: 0,
+    visible: 0,
+    interaction: 0,
+  };
+
+  if (projection.showSidebar) {
+    shellCounts.initial += 1;
+  }
+
+  if (projection.toc.shouldHydrate) {
+    shellCounts.initial += 1;
+  }
+
+  if (projection.articleHeader.shouldHydrateTags) {
+    shellCounts.postCommit += 1;
+  }
+
+  const counts: NoteHydrationCounts = {
+    initial: contentCounts.initial + shellCounts.initial,
+    postCommit: contentCounts.postCommit + shellCounts.postCommit,
+    visible: contentCounts.visible + shellCounts.visible,
+    interaction: contentCounts.interaction + shellCounts.interaction,
+  };
+  const total = counts.initial + counts.postCommit + counts.visible + counts.interaction;
+
+  if (
+    counts.initial <= NOTE_HYDRATION_BUDGET.initial &&
+    counts.postCommit <= NOTE_HYDRATION_BUDGET.postCommit &&
+    counts.visible <= NOTE_HYDRATION_BUDGET.visible &&
+    counts.interaction <= NOTE_HYDRATION_BUDGET.interaction &&
+    total <= NOTE_HYDRATION_BUDGET.total
+  ) {
+    return;
+  }
+
+  throw new Error(
+    [
+      `[markdown] note hydration budget exceeded for "${note.slug}"`,
+      `initial=${String(counts.initial)}/${String(NOTE_HYDRATION_BUDGET.initial)}`,
+      `post-commit=${String(counts.postCommit)}/${String(NOTE_HYDRATION_BUDGET.postCommit)}`,
+      `visible=${String(counts.visible)}/${String(NOTE_HYDRATION_BUDGET.visible)}`,
+      `interaction=${String(counts.interaction)}/${String(NOTE_HYDRATION_BUDGET.interaction)}`,
+      `total=${String(total)}/${String(NOTE_HYDRATION_BUDGET.total)}`,
+    ].join(' '),
+  );
+}
+
 export function buildNotePageProjection(input: NotePageProjectionInput): NotePageProjection {
-  const noteKind = input.note.kind ?? 'reader';
+  const noteKind = input.note.kind;
   const surfacePolicy = resolveNoteSurfacePolicy(noteKind);
   const showSidebar = surfacePolicy.sidebar;
   const slug = typeof input.note.slug === 'string' ? input.note.slug : '';
@@ -162,15 +259,15 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
     tocCapabilities.dynamicScopes ||
     tocCapabilities.mobileSummary;
   const genres = normalizeGenres(input.note.genre);
-
-  return {
+  const contentHtml = injectNoteContentProfiles(
+    typeof input.note.content === 'string' ? input.note.content : '',
+    noteKind,
+  );
+  const projection: NotePageProjection = {
     noteKind,
     noteShellSidebarPresence: showSidebar ? 'present' : 'absent',
     showSidebar,
-    contentHtml: injectNoteContentProfiles(
-      typeof input.note.content === 'string' ? input.note.content : '',
-      noteKind,
-    ),
+    contentHtml,
     ...(showSidebar
       ? {
           sidebar: {
@@ -222,4 +319,8 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
         }
       : null,
   };
+
+  validateNoteHydrationBudget(input.note, projection);
+
+  return projection;
 }

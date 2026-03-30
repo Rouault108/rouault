@@ -255,6 +255,35 @@ note 本文の標準マッピングは次のとおりです。
 - `translation` family に由来する inline markup・脚注・リンク・ルビ等の構造は、出力契約として保持してはなりません。
 - build-time で directive を持たない静的 note UI を hydration 対象として拡張してはなりません。
 
+### 5.10.1 note hydration budget
+
+note ページの hydration budget は build-time の正本として固定し、`buildNotePageProjection()` が超過を拒否しなければなりません。`HydrationScheduler` の dev diagnostic は観測用であり、budget gate の代替ではありません。
+
+現行の全体上限は次のとおりです。
+
+| 項目           | 上限 |
+| -------------- | ---- |
+| `initial`      | 6    |
+| `post-commit`  | 1    |
+| `visible`      | 2    |
+| `interaction`  | 1    |
+| `total`        | 7    |
+
+現在の代表 canary は次の 3 つです。
+
+| canary note                          | initial | post-commit | visible | interaction | total |
+| ------------------------------------- | ------- | ----------- | ------- | ----------- | ----- |
+| `computer-science/algorithms/sorting` | 3       | 1           | 1       | 0           | 5     |
+| `testing/interactive`                | 6       | 0           | 1       | 0           | 7     |
+| `testing/sandbox`                    | 0       | 0           | 2       | 1           | 3     |
+
+規則:
+
+- 上限を 1 つでも超えた note は build-time error にしなければなりません。
+- 代表 canary の counts は `test/ssr/note-hydration-budget.test.ts` で固定しなければなりません。
+- build / test / CI は同じ budget へ従わなければなりません。
+- 代表 canary が変わる場合は、本文の workload が実際に変わった根拠を伴って本節とテストを同時に改訂しなければなりません。
+
 
 ---
 
