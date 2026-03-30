@@ -316,8 +316,10 @@ copy 用の文字列を返します。
 
 ## 9.4 No-JS
 
-- `pre[data-code-block] > code[data-lang]` 自体が完成形なので、JavaScript 未実行時でも本文読書は成立しなければなりません。
-- copy button や overflow 補助のような enhancer 由来 UI は省略されてよいです。
+- `ui-code-block` は JavaScript 無効時でも `ui-code-block > pre > code` の読解可能性を失ってはなりません。
+- no-JS で保証するのは内容読解可能性、折り返し指定、印刷、forced-colors 下での判読性です。
+- copy button の動作、動的 overflow 判定、`tabindex` / `role=region` / `aria-label` の動的付与、mutation 再同期は enhancement として省略されてよいです。
+- no-JS 成立に必要な `pre/code` descendant styling は、JavaScript 実行時の document style 注入だけに依存してはなりません。
 
 ---
 
@@ -325,10 +327,10 @@ copy 用の文字列を返します。
 
 ## 10.1 `ui-code-group` との契約
 
-読者向けの code group は、code block の **group item 契約**を `data-code-*` metadata として参照します。`ui-code-group` adapter を使う場合も依存面は同じです。  
+`ui-code-group` は、`ui-code-block` の **group item 契約**のみに依存します。  
 すなわち、`groupKey`、`tabLabel`、`copyLabel`、`copyable`、`getCodeContent()`、`ui-code-block-change` が group 側の参照面です。
 
-`ui-code-group` は、`ui-code-block` の互換入力や単体表示専用契約に依存してはなりません。
+`ui-code-group` は、`ui-code-block` の互換入力や単体表示専用契約、あるいは static 代替 DOM に依存してはなりません。
 
 ## 10.2 `ui-code-preview` との契約
 
@@ -373,6 +375,9 @@ copy 用の文字列を返します。
 - No-JS 相当構造保持
 - Shiki 由来の `.line` 要素列を受けた場合に、二重空行が発生しないこと
 - `.line` 要素列を受けた場合でも `getCodeContent()` が論理改行を保持すること
+- no-JS readable surface contract
+- static CSS contract
+- print / forced-colors の静的成立
 
 ---
 

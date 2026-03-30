@@ -133,6 +133,14 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 - note 本文の `ui-code-block` には `data-hydration-capability="progressive"` と `data-hydration-trigger="post-commit"` を付与しなければなりません。
 - `ui-code-block` 配下の `pre > code` は保持しなければなりません。
 
+#### 5.2.1 no-JS 契約
+
+- note 本文における code surface の最終 DOM は `ui-code-block` でなければなりません。
+- JavaScript 無効時でも、`ui-code-block > pre > code` の読解可能性を失ってはなりません。
+- no-JS で保証するのは内容読解可能性であり、copy button や動的 overflow 補助の完全再現ではありません。
+- `ui-code-block` の no-JS 成立に必要な descendant styling は、静的配信 CSS に含まれなければなりません。
+- client bundle 配送失敗は no-JS の許容退行ではなく、delivery 契約違反です。
+
 ### 5.3 `blockquote` → `ui-blockquote`
 
 規則:
@@ -213,6 +221,12 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 - 本契約は Markdown 出力 DOM に対する注釈契約であり、router による内部遷移判定そのものを再定義してはなりません。
 - 同一 origin の絶対 URL を内部遷移として扱うかどうかは `docs/router-specification.md` が所有します。
 - `unsafe` は最終許容出力ではありません。安全規約に従い、build-time で拒否または除去されなければなりません。
+
+### 5.9.1 code group の no-JS 契約
+
+- note 本文における code group の最終 DOM は `ui-code-group` でなければなりません。
+- JavaScript 無効時の `ui-code-group` は比較タブ UI を要求せず、default slot 側の stacked fallback で全 code block を読めなければなりません。
+- tab selection、keyboard navigation、active item に応じた copy context は hydration 後の enhancement とします。
 
 ### 5.10 note ページの hydration directive 契約
 

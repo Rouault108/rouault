@@ -78,9 +78,10 @@ block 側の互換入力や単体表示専用入力には依存しません。
 
 ## 3.1 正規入力
 
-読者向けの正規入力は、build-time で確定した `section[data-code-group]` 配下の `section[role="tabpanel"]` と、その内部にある `pre[data-code-block]` 要素列です。`ui-code-group` adapter を使う場合は、これと等価な child 集合へ正規化できなければなりません。
+読者向けの正規入力は、host 直下の `ui-code-block` 要素列です。  
+`ui-code-group` は、それらを stable key に基づいて比較表示する合成コンポーネントです。
 
-各 panel 内の code block は、code block 文書に定義された **group item 契約**を満たしていなければなりません。
+各 child は、code block 文書に定義された **group item 契約**を満たしていなければなりません。
 
 ### child に要求する契約
 
@@ -97,8 +98,7 @@ block 側の互換入力や単体表示専用入力には依存しません。
 
 ## 3.2 受理対象の子要素
 
-- 読者向けでは、比較対象として収集するのは `section[role="tabpanel"]` ごとに 1 件の `pre[data-code-block]` です。
-- `ui-code-group` adapter を使う場合は、host 直下の `ui-code-block` 要素列を受け取って同じ比較対象集合へ正規化してよいです。
+- 比較対象として収集するのは、host 直下の `ui-code-block` だけです。
 - テキストノード、コメントノードは比較対象判定に影響しません。
 - wrapper 要素越しに比較対象を探索することは公開契約に含めません。
 - 無関係要素が混在する場合、その構成は比較 UI の正規入力に含みません。
@@ -239,7 +239,7 @@ child list と child metadata を再評価し、選択状態・copy 状態・ラ
 
 ## 5.1 タブ UI
 
-比較 UI が有効な場合、読者向けの code group は `section[data-code-group]` の内部で tablist / tab / tabpanel パターンを形成します。
+比較 UI が有効な場合、`ui-code-group` は host 内で tablist / tab / tabpanel パターンを形成します。
 
 ### 契約
 
@@ -247,10 +247,17 @@ child list と child metadata を再評価し、選択状態・copy 状態・ラ
 - アクセシブル名の優先順は `aria-labelledby` → `aria-label` → 既定名 `コードグループ` です。
 - 選択状態は `aria-selected` に反映します。
 - tab と panel は一意な対応関係を持ちます。
+- `ui-code-group` は比較 UI が成立するまで tablist を必須表示としてはなりません。
 
 ## 5.2 比較 UI が無効な場合
 
-比較対象が 1 件以下、または入力違反により比較 UI を有効化できない場合、では単一の `pre[data-code-block]` へ退行するか、各 panel を単純表示します。
+比較対象が 1 件以下、または入力違反により比較 UI を有効化できない場合、`ui-code-group` は default slot 側の stacked fallback を維持しなければなりません。
+
+### 契約
+
+- 本文欠落を起こしてはなりません。
+- child 1 件では単一表示へ退行してよく、比較 UI を強制してはなりません。
+- 無関係要素混在や duplicate key の場合でも、可能な限り読書維持を優先します。
 
 ## 5.3 copy button
 
@@ -307,8 +314,9 @@ group が copy button を内包する場合、active item に応じて次を同�
 
 ## 7.3 No-JS
 
-- `section[data-code-group]` 配下の各 panel は light DOM に静的に残るため、JavaScript 未実行時でも全パネル縦積みで読めなければなりません。
-- tablist は enhancer 起動後にのみ表示されます。JavaScript 未実行時のタブ操作 UI は保証対象外です。
+- `ui-code-group` は JavaScript 無効時に比較タブ UI を要求しません。
+- JavaScript 無効時は default slot 側の stacked fallback により、全 `ui-code-block` を縦積みで読めなければなりません。
+- tablist、keyboard navigation、active item に応じた copy context、header-tools 幅補償は hydration 後の enhancement として省略されてよいです。
 
 ---
 
@@ -320,8 +328,10 @@ group が copy button を内包する場合、active item に応じて次を同�
 
 ## 8.2 `ui-code-preview` との契約
 
-`ui-code-preview` は `section[data-code-group]` または `ui-code-group` adapter の選択状態を所有しません。  
+`ui-code-preview` は `ui-code-group` の選択状態を所有しません。  
 必要な外部同期は `ui-code-group-change` を通じて上位オーケストレーション層が担います。
+
+また、`ui-code-preview` は `ui-code-group` の no-JS stacked fallback を破壊してはなりません。
 
 ## 8.3 `code-composition.md` との関係
 

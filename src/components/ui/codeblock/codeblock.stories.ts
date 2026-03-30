@@ -39,14 +39,6 @@ const nextFrame = async (): Promise<void> =>
     });
   });
 
-const getDocumentCodeBlockStyle = (): HTMLStyleElement => {
-  const style = document.getElementById('ui-code-block-document-styles');
-  if (!(style instanceof HTMLStyleElement)) {
-    throw new Error('ui-code-block-document-styles が見つかりません');
-  }
-  return style;
-};
-
 const getShadowStylesText = (shadowRoot: ShadowRoot | null): string => {
   if (!shadowRoot) return '';
 
@@ -67,6 +59,25 @@ const getShadowStylesText = (shadowRoot: ShadowRoot | null): string => {
     .join('\n');
 
   return `${inlineStyles}\n${adoptedStyles}`;
+};
+
+const getDocumentStylesText = (): string => {
+  const styleTexts: string[] = [];
+
+  for (const sheet of Array.from(document.styleSheets)) {
+    try {
+      const cssRules = Array.from(sheet.cssRules);
+      styleTexts.push(
+        cssRules
+          .map((rule) => rule.cssText)
+          .join('\n'),
+      );
+    } catch {
+      // cross-origin stylesheet は読めないことがあるため無視
+    }
+  }
+
+  return styleTexts.join('\n');
 };
 
 const meta: Meta<CodeBlock> = {
@@ -598,9 +609,93 @@ export const CompatibilityFallbacks: Story = {
 };
 
 /**
- * メディア関連 CSS 契約。
- * forced-colors / print で必要なルールが定義されていることを確認します。
+ * 静的配信 CSS 契約。
+ * no-JS baseline に必要な descendant styling が document stylesheet 側へ存在することを確認します。
  */
+export const StaticCssContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
+  render: () => html`
+    <div style="display: grid; gap: 1rem;">
+      <ui-code-block
+        id="static-css-wrap-block"
+        filename="static-css.log"
+        lang="text"
+        wrap
+        style="--ui-code-surface-breakout-width: 100%; --ui-code-surface-breakout-margin: 0; width: 320px;"
+      >
+        <pre><code>this is a very long line that should wrap via static css contract without relying on injected document styles.</code></pre>
+      </ui-code-block>
+
+      <ui-code-block
+        id="static-css-lines-block"
+        filename="static-css.ts"
+        lang="ts"
+        show-line-numbers
+        highlight-lines="2"
+        style="--ui-code-surface-breakout-width: 100%; --ui-code-surface-breakout-margin: 0;"
+      >
+        <pre><code>const alpha = 1;
+const beta = 2;
+const gamma = 3;</code></pre>
+      </ui-code-block>
+    </div>
+  `,
+  play: async ({ canvasElement }) => {
+    const wrapBlock = getCodeBlock(canvasElement, 'static-css-wrap-block');
+    const linesBlock = getCodeBlock(canvasElement, 'static-css-lines-block');
+    await Promise.all([wrapBlock.updateComplete, linesBlock.updateComplete]);
+    await nextFrame();
+
+    const documentStyles = getDocumentStylesText();
+
+    const requiredTokens = [
+      'ui-code-block pre',
+      'ui-code-block pre code',
+      'ui-code-block pre .line',
+      'ui-code-block[show-line-numbers] pre code',
+      'ui-code-block[show-line-numbers] pre .line::before',
+      "ui-code-block[wrap] pre",
+      '@media (forced-colors: active)',
+      '@media print',
+    ];
+
+    for (const token of requiredTokens) {
+      if (!documentStyles.includes(token)) {
+        throw new Error(`静的配信 CSS に必要な code surface 契約が不足しています: ${token}`);
+      }
+    }
+
+    const wrapPre = getPre(wrapBlock);
+    if (getComputedStyle(wrapPre).whiteSpace !== 'pre-wrap') {
+      throw new Error('wrap=true の no-JS baseline が static CSS で成立していません');
+    }
+
+    const lineElements = Array.from(linesBlock.querySelectorAll<HTMLElement>('code .line'));
+    if (lineElements.length !== 3) {
+      throw new Error(`Expected 3 line wrappers, got ${String(lineElements.length)}`);
+    }
+
+    const secondLine = lineElements[1];
+    if (!secondLine) {
+      throw new Error('2 行目の line 要素が見つかりません');
+    }
+
+    if (getComputedStyle(secondLine).display !== 'block') {
+      throw new Error('line 要素の block 表示が static CSS で成立していません');
+    }
+
+    const highlightedIndexes = lineElements
+      .map((line, index) => (line.classList.contains('ui-explicit-highlight') ? index + 1 : 0))
+      .filter((value) => value !== 0);
+
+    if (highlightedIndexes.join(',') !== '2') {
+      throw new Error(
+        `highlight-lines の explicit class 付与が不正です: "${highlightedIndexes.join(',')}"`,
+      );
+    }
+  },
+};
+
 export const MediaStyleContracts: Story = {
   parameters: { rouaultContractKind: 'interaction-contract' },
   render: () => html`
@@ -626,23 +721,6 @@ export const MediaStyleContracts: Story = {
       !shadowStyle.includes('display: none !important')
     ) {
       throw new Error('print 時の copy-button 非表示ルールが不足しています');
-    }
-
-    const documentStyle = getDocumentCodeBlockStyle().textContent;
-    if (!documentStyle.includes('@media (forced-colors: active)')) {
-      throw new Error('document CSS に forced-colors ルールが定義されていません');
-    }
-    if (
-      !documentStyle.includes('ui-code-block pre .comment') ||
-      !documentStyle.includes('font-style: italic')
-    ) {
-      throw new Error('forced-colors 時のコメント可視化ルールが不足しています');
-    }
-    if (
-      !documentStyle.includes('ui-code-block pre') ||
-      !documentStyle.includes('font-size: 9pt !important')
-    ) {
-      throw new Error('document CSS の print フォント調整ルールが不足しています');
     }
   },
 };

@@ -249,7 +249,10 @@ const deleteHostOnlyCodeProperties = (properties: Record<string, unknown>): void
   }
 };
 
-const highlightCodeBlock = async (node: HastNode): Promise<void> => {
+const highlightCodeBlock = async (
+  node: HastNode,
+  options: { assignHydrationRoot: boolean },
+): Promise<void> => {
   const codeNode = findCodeChild(node);
   if (!codeNode) {
     return;
@@ -270,59 +273,75 @@ const highlightCodeBlock = async (node: HastNode): Promise<void> => {
   }
 
   const highlightedCode = findCodeChild(highlightedPre);
-  if (highlightedCode) {
-    const mergedProperties = {
-      ...(highlightedCode.properties ?? {}),
-      ...(codeNode.properties ?? {}),
-    };
-    const filename = pickOptionalString(mergedProperties['filename']);
-    const label = pickOptionalString(mergedProperties['label']);
-    const groupKey = pickOptionalString(mergedProperties['group-key']);
-    const tabLabel = pickOptionalString(mergedProperties['tab-label']);
-    const copyLabel = pickOptionalString(mergedProperties['copy-label']);
-    const intent = pickOptionalString(mergedProperties['intent'])?.toLowerCase();
-    const copyMode = pickOptionalString(mergedProperties['copy-mode'])?.toLowerCase();
-    const wrap = mergedProperties['wrap'] === true;
-    const highlightLines = pickOptionalString(mergedProperties['highlight-lines']);
-    const layout = pickOptionalString(mergedProperties['layout'])?.toLowerCase();
-    const copyable =
-      typeof mergedProperties['copyable'] === 'string' &&
-      mergedProperties['copyable'].trim().toLowerCase() === 'false'
-        ? 'false'
-        : undefined;
-    const showLineNumbers = mergedProperties['show-line-numbers'] === true;
-
-    highlightedCode.properties = {
-      ...mergedProperties,
-      'data-lang': language,
-    };
-
-    deleteHostOnlyCodeProperties(highlightedCode.properties);
-    annotateExplicitHighlights(highlightedCode, highlightLines);
-
-    node.tagName = 'ui-code-block';
-    node.properties = {
-      lang: language,
-      ...(filename ? { filename } : {}),
-      ...(label ? { label } : {}),
-      ...(groupKey ? { 'group-key': groupKey } : {}),
-      ...(tabLabel ? { 'tab-label': tabLabel } : {}),
-      ...(copyLabel ? { 'copy-label': copyLabel } : {}),
-      ...(intent ? { intent } : {}),
-      ...(showLineNumbers ? { 'show-line-numbers': true } : {}),
-      ...(copyMode ? { 'copy-mode': copyMode } : {}),
-      ...(copyable ? { copyable } : {}),
-      ...(wrap ? { wrap: true } : {}),
-      ...(highlightLines ? { 'highlight-lines': highlightLines } : {}),
-      ...(layout ? { layout } : {}),
-    };
-    node.children = [highlightedPre];
+  if (!highlightedCode) {
     return;
   }
 
-  node.tagName = 'ui-code-block';
-  node.properties = { lang: language };
-  node.children = [highlightedPre];
+  const mergedProperties = {
+    ...(highlightedCode.properties ?? {}),
+    ...(codeNode.properties ?? {}),
+  };
+  const filename = pickOptionalString(mergedProperties['filename']);
+  const label = pickOptionalString(mergedProperties['label']);
+  const groupKey = pickOptionalString(mergedProperties['group-key']);
+  const tabLabel = pickOptionalString(mergedProperties['tab-label']);
+  const copyLabel = pickOptionalString(mergedProperties['copy-label']);
+  const intent = pickOptionalString(mergedProperties['intent'])?.toLowerCase();
+  const copyMode = pickOptionalString(mergedProperties['copy-mode'])?.toLowerCase();
+  const wrap = mergedProperties['wrap'] === true;
+  const highlightLines = pickOptionalString(mergedProperties['highlight-lines']);
+  const layout = pickOptionalString(mergedProperties['layout'])?.toLowerCase();
+  const copyable =
+    typeof mergedProperties['copyable'] === 'string' &&
+    mergedProperties['copyable'].trim().toLowerCase() === 'false'
+      ? 'false'
+      : undefined;
+  const showLineNumbers = mergedProperties['show-line-numbers'] === true;
+
+  highlightedCode.properties = {
+    ...mergedProperties,
+    'data-lang': language,
+  };
+
+  deleteHostOnlyCodeProperties(highlightedCode.properties);
+  annotateExplicitHighlights(highlightedCode, highlightLines);
+
+  const classList = getClassList(highlightedPre.properties?.['className']);
+  if (!classList.includes('shiki')) {
+    classList.push('shiki');
+  }
+
+  highlightedPre.tagName = 'pre';
+  highlightedPre.properties = {
+    ...(highlightedPre.properties ?? {}),
+    className: classList,
+    'data-code-block': true,
+    'data-code-language': language,
+    'data-code-raw': source,
+    ...(filename ? { 'data-code-filename': filename } : {}),
+    ...(label ? { 'data-code-label': label } : {}),
+    ...(groupKey ? { 'data-code-group-key': groupKey } : {}),
+    ...(tabLabel ? { 'data-code-tab-label': tabLabel } : {}),
+    ...(copyLabel ? { 'data-code-copy-label': copyLabel } : {}),
+    ...(intent ? { 'data-code-intent': intent } : {}),
+    ...(showLineNumbers ? { 'data-code-line-numbers': 'true' } : {}),
+    ...(copyMode ? { 'data-code-copy-mode': copyMode } : {}),
+    ...(copyable ? { 'data-code-copyable': copyable } : {}),
+    ...(wrap ? { 'data-code-wrap': 'true' } : {}),
+    ...(highlightLines ? { 'data-code-highlight-lines': highlightLines } : {}),
+    ...(layout ? { 'data-code-layout': layout } : {}),
+    ...(options.assignHydrationRoot
+      ? {
+          'data-hydration-key': 'code-block-enhancer',
+          'data-hydration-capability': 'progressive',
+          'data-hydration-trigger': 'post-commit',
+        }
+      : {}),
+  };
+
+  node.tagName = 'pre';
+  node.properties = highlightedPre.properties ?? {};
+  node.children = highlightedPre.children ?? [];
 };
 
 const isCodeBlockPre = (node: HastNode): boolean => {
@@ -333,10 +352,9 @@ const isCodeBlockPre = (node: HastNode): boolean => {
   return findCodeChild(node) !== null;
 };
 
-/**
- * fenced code block を Shiki の build-time 出力へ置換する。
- */
 export function rehypeShikiCodeBlocks() {
+  let hydrationRootAssigned = false;
+
   return async (tree: unknown) => {
     const visit = async (node: HastNode): Promise<void> => {
       if (Array.isArray(node.children)) {
@@ -346,7 +364,11 @@ export function rehypeShikiCodeBlocks() {
       }
 
       if (isCodeBlockPre(node)) {
-        await highlightCodeBlock(node);
+        const assignHydrationRoot = !hydrationRootAssigned;
+        await highlightCodeBlock(node, { assignHydrationRoot });
+        if (assignHydrationRoot) {
+          hydrationRootAssigned = true;
+        }
       }
     };
 

@@ -1,4 +1,6 @@
 import { hydrateArticleHeaderTags } from '../post-hydrate/article-header-tags.js';
+import { enhanceCodeBlocks } from '../post-hydrate/code-block-enhancer.js';
+import { enhanceCodeGroups } from '../post-hydrate/code-group-enhancer.js';
 
 export interface HydrationActivationContext {
   readonly element: HTMLElement;
@@ -27,6 +29,14 @@ const activateArticleHeaderTags = ({ root, element }: HydrationActivationContext
   }
 
   hydrateArticleHeaderTags(root);
+};
+
+const activateCodeBlocks = ({ root }: HydrationActivationContext): void => {
+  enhanceCodeBlocks(root);
+};
+
+const activateCodeGroups = ({ root }: HydrationActivationContext): void => {
+  enhanceCodeGroups(root);
 };
 
 export const HYDRATION_REGISTRY = [
@@ -91,6 +101,18 @@ export const HYDRATION_REGISTRY = [
     tag: 'layout-toc',
     loader: () => import('../../components/layout/layout-toc.js'),
     activate: activateElementMethod,
+  },
+  {
+    tag: 'code-block-enhancer',
+    kind: 'enhancer',
+    loader: async () => undefined,
+    activate: activateCodeBlocks,
+  },
+  {
+    tag: 'code-group-enhancer',
+    kind: 'enhancer',
+    loader: async () => undefined,
+    activate: activateCodeGroups,
   },
   {
     tag: 'ui-callout',

@@ -100,128 +100,6 @@ const isDirectLineContainer = (element: Element): boolean => {
   return children.length > 0 && children.every((child) => child.classList.contains('line'));
 };
 
-export const DOCUMENT_STYLE_ID = 'ui-code-block-document-styles';
-export const DOCUMENT_CSS = `/* ============================================================
-   <ui-code-block> document styles
-   Shadow DOM の ::slotted() 制約を回避して pre/code 配下を制御
-   ============================================================ */
-
-ui-code-block pre {
-  margin: 0;
-  border: none;
-  background: transparent !important;
-  color: var(--fg-default, oklch(20% 0 0));
-  font-family: var(--font-mono, monospace);
-  font-size: var(--text-lg, 1rem);
-  line-height: var(--line-height-code, 1.45);
-  padding: var(--ui-code-surface-padding, var(--ui-code-block-padding, var(--space-3, 12px)));
-  overflow-x: auto;
-  overflow-y: hidden;
-  white-space: pre;
-  scrollbar-gutter: stable;
-}
-
-ui-code-block pre.shiki > .line,
-ui-code-block pre.shiki code > .line {
-  display: block;
-}
-
-ui-code-block pre code {
-  display: block;
-  min-width: max-content;
-  background: transparent !important;
-}
-
-ui-code-block pre.shiki .line {
-  display: block;
-}
-
-ui-code-block pre .line.highlighted,
-ui-code-block pre .line.ui-explicit-highlight {
-  background: color-mix(in oklch, var(--bg-highlight-subtle, oklch(96% 0.04 65)) 78%, transparent);
-}
-
-ui-code-block pre .line.diff.add {
-  background: color-mix(in oklch, var(--success, oklch(60% 0.15 160)) 14%, transparent);
-}
-
-ui-code-block pre .line.diff.remove {
-  background: color-mix(in oklch, var(--danger, oklch(55% 0.2 28)) 12%, transparent);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) ui-code-block pre.shiki {
-    background-color: var(--shiki-dark-bg, transparent) !important;
-    color: var(--shiki-dark, inherit) !important;
-  }
-
-  :root:not([data-theme='light']) ui-code-block pre.shiki span {
-    color: var(--shiki-dark, inherit) !important;
-  }
-}
-
-:root[data-theme='dark'] ui-code-block pre.shiki {
-  background-color: var(--shiki-dark-bg, transparent) !important;
-  color: var(--shiki-dark, inherit) !important;
-}
-
-:root[data-theme='dark'] ui-code-block pre.shiki span {
-  color: var(--shiki-dark, inherit) !important;
-}
-
-ui-code-block pre:focus-visible {
-  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
-  outline-offset: var(--focus-ring-offset, 2px);
-  border-radius: var(--radius-sm, 4px);
-  animation: var(--animation-focus);
-}
-
-ui-code-block[show-line-numbers] pre code {
-  counter-reset: ui-code-block-line;
-}
-
-ui-code-block[show-line-numbers] pre .line {
-  display: block;
-  position: relative;
-  padding-inline-start: calc(var(--space-8, 2rem) + var(--space-2, 0.5rem));
-}
-
-ui-code-block[show-line-numbers] pre .line::before {
-  counter-increment: ui-code-block-line;
-  content: counter(ui-code-block-line);
-  position: absolute;
-  inset-inline-start: 0;
-  width: var(--space-8, 2rem);
-  text-align: end;
-  color: var(--fg-subtle, oklch(60% 0 0));
-  user-select: none;
-  pointer-events: none;
-  font-variant-numeric: tabular-nums;
-}
-
-ui-code-block[wrap] pre,
-ui-code-block[data-wrap='true'] pre,
-ui-code-block pre[data-wrap='true'] {
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
-
-@media (forced-colors: active) {
-  ui-code-block pre .comment,
-  ui-code-block pre .token.comment {
-    font-style: italic;
-  }
-}
-
-@media print {
-  ui-code-block pre {
-    white-space: pre-wrap !important;
-    word-wrap: break-word !important;
-    font-size: 9pt !important;
-    background: transparent !important;
-  }
-}`;
-
 @customElement('ui-code-block')
 export class CodeBlock extends LitElement {
   static override styles = css`
@@ -491,7 +369,6 @@ export class CodeBlock extends LitElement {
     }
 
     this._hydrationActivated = true;
-    this._injectDocumentStyles();
     this._resizeObserver = new ResizeObserver(() => {
       this._updateScrollableState();
     });
@@ -739,16 +616,6 @@ export class CodeBlock extends LitElement {
   private get _intentMeta(): IntentMeta | null {
     if (this._resolvedIntent === 'neutral') return null;
     return INTENT_META[this._resolvedIntent];
-  }
-
-  private _injectDocumentStyles(): void {
-    if (typeof document === 'undefined') return;
-    if (document.getElementById(DOCUMENT_STYLE_ID)) return;
-
-    const style = document.createElement('style');
-    style.id = DOCUMENT_STYLE_ID;
-    style.textContent = DOCUMENT_CSS;
-    document.head.append(style);
   }
 
   private _applyLayoutSurfaceVars(): void {

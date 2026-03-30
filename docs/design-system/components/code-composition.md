@@ -296,6 +296,19 @@
 - client bundle 配送失敗は runtime / build 契約違反であり、No-JS の許容退行として扱ってはなりません。
 - CI は、`dist/**/*.html` に `/src/` module URL が残存しないことを検証しなければなりません。
 
+## 6.6 No-JS / Progressive Enhancement 境界
+
+code surface は、no-JS で保証する契約と hydration 後にのみ保証する契約を分離しなければなりません。
+
+### 契約
+
+- `ui-code-block` は no-JS でも readable code surface として成立しなければなりません。
+- `ui-code-group` は no-JS では stacked collection へ退行してよく、tab UI の完全再現を要求してはなりません。
+- `ui-code-preview` は child code surface の no-JS 成立を破壊してはなりません。
+- copy button、tab selection、keyboard navigation、dynamic overflow 補助、mutation 再同期は enhancement として扱います。
+- no-JS 成立に必要な code surface の descendant styling は静的配信 CSS に含めなければなりません。
+- client bundle 配送失敗は no-JS の許容退行ではなく、build / delivery 契約違反です。
+
 ---
 
 ## 7. イベント接続契約
@@ -394,8 +407,8 @@ previewEl.addEventListener('ui-code-preview-state-change', (event) => {
 
 最低限、次の story 群を持ちます。
 
-- `ui-code-block`: standalone / inline / copy disabled / forced colors / print
-- `ui-code-group`: controlled / uncontrolled / duplicate key invalid / single item fallback
+- `ui-code-block`: standalone / inline / copy disabled / forced colors / print / no-JS readable surface / static CSS contract
+- `ui-code-group`: controlled / uncontrolled / duplicate key invalid / single item fallback / no-JS stacked fallback
 - `ui-code-preview`: block root / group root / controls combinations / partial render
 - 合成 story: preview + group + external URL sync mock
 
@@ -408,7 +421,9 @@ previewEl.addEventListener('ui-code-preview-state-change', (event) => {
 - `ui-code-group-change` からの URL 更新
 - URL からの初期状態注入
 - child 再順序付け後の選択維持
-- No-JS 時にコード本文が残ること
+- No-JS 時に `ui-code-block > pre > code` が残ること
+- No-JS 時に `ui-code-group` が stacked fallback で本文欠落しないこと
+- 静的配信 CSS に code surface の最低契約が含まれること
 - production build 後の HTML が `/src/-.ts` を参照しないこと
 - production build 後の HTML が build 生成済み client bundle を参照すること
 

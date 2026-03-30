@@ -1,0 +1,249 @@
+/* ============================================================
+   Static-first code surfaces
+   - SSR / no-JS baseline: pre[data-code-block] / section[data-code-group]
+   - Runtime enhancement: [data-code-block-root], [data-enhanced='true']
+   ============================================================ */
+
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) {
+  margin: 0;
+  border: none;
+  background: transparent !important;
+  color: var(--fg-default, oklch(20% 0 0));
+  font-family: var(--font-mono, monospace);
+  font-size: var(--text-lg, 1rem);
+  line-height: var(--line-height-code, 1.45);
+  padding: var(--ui-code-surface-padding, var(--ui-code-block-padding, var(--space-3, 12px)));
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: pre;
+  scrollbar-gutter: stable;
+}
+
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) code {
+  display: block;
+  min-width: max-content;
+  background: transparent !important;
+}
+
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]).shiki > .line,
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]).shiki code > .line,
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) .line {
+  display: block;
+}
+
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) .line.highlighted,
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) .line.ui-explicit-highlight {
+  background: color-mix(in oklch, var(--bg-highlight-subtle, oklch(96% 0.04 65)) 78%, transparent);
+}
+
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) .line.diff.add {
+  background: color-mix(in oklch, var(--success, oklch(60% 0.15 160)) 14%, transparent);
+}
+
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) .line.diff.remove {
+  background: color-mix(in oklch, var(--danger, oklch(55% 0.2 28)) 12%, transparent);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light'])
+    :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]).shiki {
+    background-color: var(--shiki-dark-bg, transparent) !important;
+    color: var(--shiki-dark, inherit) !important;
+  }
+
+  :root:not([data-theme='light'])
+    :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]).shiki
+    span {
+    color: var(--shiki-dark, inherit) !important;
+  }
+}
+
+:root[data-theme='dark'] :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]).shiki {
+  background-color: var(--shiki-dark-bg, transparent) !important;
+  color: var(--shiki-dark, inherit) !important;
+}
+
+:root[data-theme='dark']
+  :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]).shiki
+  span {
+  color: var(--shiki-dark, inherit) !important;
+}
+
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block]):focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 250));
+  outline-offset: var(--focus-ring-offset, 2px);
+  border-radius: var(--radius-sm, 4px);
+  animation: var(--animation-focus);
+}
+
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block])[data-code-line-numbers='true'] code {
+  counter-reset: ui-code-block-line;
+}
+
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block])[data-code-line-numbers='true'] .line {
+  display: block;
+  position: relative;
+  padding-inline-start: calc(var(--space-8, 2rem) + var(--space-2, 0.5rem));
+}
+
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block])[data-code-line-numbers='true'] .line::before {
+  counter-increment: ui-code-block-line;
+  content: counter(ui-code-block-line);
+  position: absolute;
+  inset-inline-start: 0;
+  width: var(--space-8, 2rem);
+  text-align: end;
+  color: var(--fg-subtle, oklch(60% 0 0));
+  user-select: none;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+
+:where(pre[data-code-block], [data-code-block-root] pre[data-code-block])[data-code-wrap='true'] {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+[data-code-block-root] {
+  overflow: hidden;
+  border: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12));
+  background: var(--bg-default, oklch(1 0 0));
+  border-radius: var(--radius-md, 6px);
+}
+
+[data-code-block-root] > .code-surface-caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2, 8px);
+  min-height: var(--control-height-sm, 24px);
+  padding: var(--space-2, 8px) var(--space-3, 12px) 0;
+  color: var(--fg-muted, oklch(45% 0 0));
+  font-size: var(--text-xs, 12px);
+  font-weight: var(--font-medium, 500);
+  letter-spacing: var(--tracking-wide, 0.025em);
+}
+
+.code-surface-caption-main {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+}
+
+.code-surface-filename {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.code-surface-intent {
+  white-space: nowrap;
+}
+
+.code-surface-copy-button,
+.code-group-copy-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--control-height-sm, 24px);
+  padding: 0 var(--space-2, 8px);
+  border: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12));
+  border-radius: var(--radius-sm, 4px);
+  background: var(--bg-surface-1, oklch(99% 0 0));
+  color: var(--fg-muted, oklch(45% 0 0));
+  font: inherit;
+  cursor: pointer;
+}
+
+.code-surface-copy-button:disabled,
+.code-group-copy-button:disabled {
+  cursor: default;
+  opacity: 0.56;
+}
+
+section[data-code-group] {
+  display: block;
+  border: var(--border-style-subtle, 1px solid oklch(20% 0 0 / 0.12));
+  background: var(--bg-default, oklch(1 0 0));
+  border-radius: var(--radius-md, 6px);
+  overflow: hidden;
+}
+
+.code-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3, 12px);
+  padding: var(--space-2, 8px) var(--space-2, 8px) 0;
+}
+
+.code-group-tablist {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1, 4px);
+}
+
+.code-group-tablist > button[role='tab'] {
+  appearance: none;
+  border: none;
+  border-radius: var(--radius-sm, 4px) var(--radius-sm, 4px) 0 0;
+  background: transparent;
+  color: var(--fg-muted, oklch(45% 0 0));
+  font: inherit;
+  padding: var(--space-1, 4px) var(--space-2, 8px);
+  cursor: pointer;
+}
+
+.code-group-tablist > button[role='tab'][aria-selected='true'] {
+  background: var(--bg-surface-1, oklch(99% 0 0));
+  color: var(--fg-default, oklch(20% 0 0));
+}
+
+section[data-code-group] > [data-code-group-panel] {
+  display: block;
+  padding: 0;
+}
+
+section[data-code-group][data-enhanced='true'] > [data-code-group-panel][hidden] {
+  display: none;
+}
+
+.code-group-stack-label {
+  margin: 0;
+  padding: var(--space-2, 8px) var(--space-3, 12px) 0;
+  color: var(--fg-muted, oklch(45% 0 0));
+  font-size: var(--text-xs, 12px);
+  font-weight: var(--font-medium, 500);
+  letter-spacing: var(--tracking-wide, 0.025em);
+}
+
+section[data-code-group][data-enhanced='true'] .code-group-stack-label {
+  display: none;
+}
+
+section[data-code-group] :where(pre[data-code-block]) {
+  padding-top: var(--space-2, 8px);
+}
+
+@media (forced-colors: active) {
+  :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) .comment,
+  :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) .token.comment {
+    font-style: italic;
+  }
+}
+
+@media print {
+  :where(pre[data-code-block], [data-code-block-root] pre[data-code-block]) {
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+    font-size: 9pt !important;
+    background: transparent !important;
+  }
+
+  .code-surface-copy-button,
+  .code-group-copy-button {
+    display: none;
+  }
+}

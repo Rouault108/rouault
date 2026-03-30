@@ -13,6 +13,8 @@
 
 @import './tokens.css';
 
+@import './code-surfaces.css';
+
 /* ===========================================================================
  * View Transitions API サポート
  * =========================================================================== */
@@ -257,6 +259,9 @@ ui-article-header + .prose {
     ui-card,
     ui-code-block,
     ui-code-group,
+    pre[data-code-block],
+    section[data-code-group],
+    [data-code-block-root],
     ui-details,
     ui-info-box,
     ui-image,
@@ -331,7 +336,7 @@ ui-article-header + .prose {
   text-align: start;
 }
 
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > :is(ui-code-block, ui-code-group) {
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > :is(ui-code-block, ui-code-group, pre[data-code-block], section[data-code-group], [data-code-block-root]) {
   width: 100%;
   margin-inline: 0;
 }
@@ -357,6 +362,9 @@ ui-article-header + .prose {
     ui-card,
     ui-code-block,
     ui-code-group,
+    pre[data-code-block],
+    section[data-code-group],
+    [data-code-block-root],
     ui-details,
     ui-info-box,
     ui-image,
@@ -465,8 +473,8 @@ ui-article-header + .prose {
   max-width: none;
 }
 
-/* 本文内のコードブロック・テーブルは breakout を無効化して読書幅に揃える */
-.prose > :is(ui-code-block, ui-code-group) {
+.prose > :is(ui-code-block, ui-code-group, pre[data-code-block], section[data-code-group], [data-code-block-root]),
+.about-prose > :is(ui-code-block, ui-code-group, pre[data-code-block], section[data-code-group], [data-code-block-root]) {
   width: 100%;
   margin-inline: 0;
 }

@@ -84,6 +84,7 @@ const meta: Meta<CodeGroup> = {
 - \`tab-label\` / \`copy-label\` / \`filename\` / \`lang\` の解決順序
 - duplicate key / 無関係要素混在 / child 1件時の退行
 - \`ui-code-group-change\` の detail 契約
+- no-JS stacked fallback / print 退行契約
         `,
       },
     },
@@ -470,6 +471,92 @@ export const SingleItemFallback: Story = {
     const block = group.querySelector('ui-code-block');
     if (!block || block.getAttribute('slot') === 'panel') {
       throw new Error('単一表示への退行で light DOM の表示が維持されていません');
+    }
+  },
+};
+
+/**
+ * no-JS stacked fallback 契約。
+ *
+ * 注意:
+ * Storybook 上では custom element 自体の JS がロード済みであるため、
+ * 「文字どおりの no-JS 実行」はできません。
+ * ここでは no-JS fallback を成立させる公開契約を固定します。
+ *
+ * - data-ready が付くまでは header/body を表示しない
+ * - stack-slot を fallback surface として持つ
+ * - child 1 件では比較 UI へ昇格しない
+ * - print 時は header を隠し、panel 全件表示へ退行する
+ */
+export const NoJsStackFallbackContract: Story = {
+  parameters: { rouaultContractKind: 'boundary-contract' },
+  render: () => html`
+    <ui-code-group id="no-js-group" aria-label="no-js stacked fallback">
+      <ui-code-block group-key="single" tab-label="Only" filename="only.ts">
+        <pre><code>const only = true;</code></pre>
+      </ui-code-block>
+    </ui-code-group>
+  `,
+  play: async ({ canvasElement }) => {
+    const group = getGroup(canvasElement, 'no-js-group');
+    await group.updateComplete;
+    await waitFrame();
+
+    // child 1 件では比較 UI へ昇格せず、stack fallback 側に留まること
+    if (group.hasAttribute('data-ready')) {
+      throw new Error('child 1 件で no-JS fallback ではなく比較 UI へ昇格しています');
+    }
+    if (getTabs(group).length !== 0) {
+      throw new Error('child 1 件でタブが生成されています');
+    }
+
+    const block = group.querySelector('ui-code-block');
+    if (!block) {
+      throw new Error('fallback 表示対象の ui-code-block が消失しています');
+    }
+    if (block.getAttribute('slot') === 'panel') {
+      throw new Error('fallback 表示対象が panel slot へ移されており、stack fallback を維持していません');
+    }
+
+    const requiredTokens = [
+      '.code-group-header',
+      'display: none',
+      ':host([data-ready]) .code-group-header',
+      'display: flex',
+      '.body',
+      'display: none',
+      ':host([data-ready]) .body',
+      'display: block',
+      '.stack-slot',
+      'display: block',
+      ':host([data-ready]) .stack-slot',
+      'display: none',
+      '@media print',
+      '.code-group-header',
+      'display: none !important',
+      "::slotted([slot='panel'][hidden])",
+      'display: block !important',
+    ];
+
+    for (const token of requiredTokens) {
+      if (!codeGroupCssText.includes(token)) {
+        throw new Error(`no-JS / print fallback 契約の CSS 定義が不足しています: ${token}`);
+      }
+    }
+
+    const shadowRoot = group.shadowRoot;
+    if (!shadowRoot) {
+      throw new Error('shadowRoot が見つかりません');
+    }
+
+    const stackSlot = shadowRoot.querySelector('.stack-slot');
+    if (!(stackSlot instanceof HTMLSlotElement)) {
+      throw new Error('stack fallback 用 slot が見つかりません');
+    }
+
+    const assigned = stackSlot.assignedElements({ flatten: true });
+    if (!assigned.includes(block)) {
+      throw new Error('stack fallback 用 slot に ui-code-block が割り当てられていません');
     }
   },
 };
