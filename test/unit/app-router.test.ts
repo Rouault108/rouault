@@ -192,7 +192,7 @@ describe('app-router', () => {
     expect(renderedCount).to.be.greaterThan(0);
   });
 
-  it('post-commit controller が aria-live と focus を担うこと', async () => {
+  it('post-commit controller が aria-live と main への focus を担うこと', async () => {
     let focusedTagName = '';
     let focusOptions: FocusOptions | undefined;
 
@@ -236,8 +236,8 @@ describe('app-router', () => {
           .querySelector('[aria-live="polite"]')
           ?.textContent.includes('ページが読み込まれました') ??
           false) &&
-        focusedTagName === 'H1',
-      'aria-live と focus が更新されること',
+        focusedTagName === 'MAIN',
+      'aria-live と main への focus が更新されること',
     );
 
     expect(appHost.querySelectorAll('[aria-live="polite"]').length).to.equal(1);
