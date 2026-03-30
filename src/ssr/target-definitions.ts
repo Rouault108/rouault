@@ -9,6 +9,7 @@ export interface SsrComponentDefinition {
 
 export const SSR_COMPONENT_DEFINITIONS = [
   { tag: 'ui-icon', ssr: 'none', profiles: ['shell', 'note', 'page'] },
+  { tag: 'ui-tag', ssr: 'shadow', profiles: ['shell', 'note', 'page'] },
   { tag: 'ui-skip-link', ssr: 'shadow', profiles: ['shell'] },
   { tag: 'layout-header', ssr: 'shadow', profiles: ['shell'] },
   { tag: 'app-router', ssr: 'light', profiles: ['shell'] },

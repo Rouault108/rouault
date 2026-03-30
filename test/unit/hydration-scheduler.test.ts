@@ -51,14 +51,15 @@ describe('HydrationScheduler', () => {
 
     await waitUntil(() => diagnostics !== null, 'enhancer diagnostics が発火すること');
 
-    if (!diagnostics) {
+    const currentDiagnostics = diagnostics as unknown as HydrationDiagnostics;
+    if (!currentDiagnostics) {
       throw new Error('enhancer diagnostics が取得できませんでした');
     }
 
     expect(steps).to.deep.equal(['load:enhancer', 'activate:enhancer']);
-    expect(diagnostics.plannedCount).to.equal(1);
-    expect(diagnostics.upgradedCount).to.equal(0);
-    expect(diagnostics.activatedCount).to.equal(1);
+    expect(currentDiagnostics.plannedCount).to.equal(1);
+    expect(currentDiagnostics.upgradedCount).to.equal(0);
+    expect(currentDiagnostics.activatedCount).to.equal(1);
   });
 
   it('initial の後に post-commit を実行し、visible は focusin で起動すること', async () => {
@@ -155,13 +156,14 @@ describe('HydrationScheduler', () => {
       'visible が focusin で起動し diagnostics が発火すること',
     );
 
-    if (!diagnostics) {
+    const currentDiagnostics = diagnostics as unknown as HydrationDiagnostics;
+    if (!currentDiagnostics) {
       throw new Error('hydration diagnostics が取得できませんでした');
     }
 
-    expect(diagnostics.plannedCount).to.equal(3);
-    expect(diagnostics.activatedCount).to.equal(3);
-    expect(diagnostics.failedCount).to.equal(0);
+    expect(currentDiagnostics.plannedCount).to.equal(3);
+    expect(currentDiagnostics.activatedCount).to.equal(3);
+    expect(currentDiagnostics.failedCount).to.equal(0);
   });
 
   it('新しい route が始まったら旧 session の diagnostics を commit しないこと', async () => {
@@ -229,13 +231,14 @@ describe('HydrationScheduler', () => {
       '後続 session の diagnostics が発火すること',
     );
 
-    if (!secondDiagnostics) {
+    const currentSecondDiagnostics = secondDiagnostics as unknown as HydrationDiagnostics;
+    if (!currentSecondDiagnostics) {
       throw new Error('後続 session の diagnostics が取得できませんでした');
     }
 
     expect(firstDiagnosticsCount).to.equal(0);
-    expect(secondDiagnostics.plannedCount).to.equal(1);
-    expect(secondDiagnostics.failedCount).to.equal(0);
+    expect(currentSecondDiagnostics.plannedCount).to.equal(1);
+    expect(currentSecondDiagnostics.failedCount).to.equal(0);
   });
 
   it('module load failure と activation failure を分離して記録すること', async () => {
@@ -293,12 +296,13 @@ describe('HydrationScheduler', () => {
       'failure diagnostics が発火すること',
     );
 
-    if (!diagnostics) {
+    const currentDiagnostics = diagnostics as unknown as HydrationDiagnostics;
+    if (!currentDiagnostics) {
       throw new Error('failure diagnostics が取得できませんでした');
     }
 
-    expect(diagnostics.failedCount).to.equal(2);
-    expect(diagnostics.issues).to.deep.equal([
+    expect(currentDiagnostics.failedCount).to.equal(2);
+    expect(currentDiagnostics.issues).to.deep.equal([
       {
         code: 'activation-failed',
         trigger: 'initial',

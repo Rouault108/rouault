@@ -122,10 +122,15 @@ export const Default: Story = {
     if (observed.length !== 2) {
       throw new Error('translation-toggle は open/close の 2 回発火する必要があります');
     }
-    if (!observed[0].open || observed[1].open) {
+    const firstObserved = observed[0];
+    const secondObserved = observed[1];
+    if (!firstObserved || !secondObserved) {
+      throw new Error('translation-toggle の観測結果が不足しています');
+    }
+    if (!firstObserved.open || secondObserved.open) {
       throw new Error('translation-toggle の open シーケンスが不正です');
     }
-    if (observed[0].surface !== 'popover') {
+    if (firstObserved.surface !== 'popover') {
       throw new Error('translation-toggle.detail.surface が反映されていません');
     }
   },

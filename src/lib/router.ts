@@ -11,10 +11,8 @@ import type {
   DocumentSnapshot,
   NavigateRequest,
   NavigationResult,
-  PostCommitController,
   RouterEventMap,
   RouterOptions,
-  UrlStateNavigationPolicy,
 } from './router/router-types.js';
 import {
   RouterDestroyedError,
@@ -39,15 +37,14 @@ export type {
   NavigationIssue,
   NavigationResult,
   NavigationOutcome,
-  PostCommitController,
   PreparedContentUpdate,
   RoutePattern,
   RouterEventMap,
   RouterOptions,
   ShellAdapter,
   UrlStateNavigationDecision,
-  UrlStateNavigationPolicy,
 } from './router/router-types.js';
+export type { PostCommitController, UrlStateNavigationPolicy } from './router/router-types.js';
 export {
   RouterDestroyedError,
   RouterNotStartedError,

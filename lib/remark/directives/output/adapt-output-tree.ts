@@ -9,19 +9,23 @@ const adaptNodes = (nodes: MdastNode[], file?: VFileLike): MdastNode[] =>
   nodes.map((node) => adaptOutputTree(node, file));
 
 export const adaptOutputTree = (node: MdastNode, file?: VFileLike): MdastNode => {
+  if (typeof node.type !== 'string') {
+    return node;
+  }
+
   const directivePayload = getDirectivePayload<DirectivePayload>(node);
   if (directivePayload) {
     const binding = adaptDirectiveOutput(directivePayload);
     const nextChildren = binding.children ?? adaptNodes(node.children ?? [], file);
     return {
       type: node.type,
-      rouaultDirective: node.rouaultDirective,
       ...(node.position ? { position: node.position } : {}),
       data: {
         hName: binding.hName,
         ...(binding.hProperties ? { hProperties: binding.hProperties } : {}),
       },
       ...(nextChildren ? { children: nextChildren } : {}),
+      ...(node.rouaultDirective ? { rouaultDirective: node.rouaultDirective } : {}),
     };
   }
 

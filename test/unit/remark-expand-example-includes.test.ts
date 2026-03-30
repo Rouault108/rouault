@@ -20,15 +20,19 @@ describe('remarkExpandExampleIncludes', () => {
   it('未登録 ref は build error にすること', async () => {
     const tree = unified().use(remarkParse).parse('::example-include{ref="missing/example"}');
 
-    const run = async () => {
+    const run = async (): Promise<void> => {
       await remarkExpandExampleIncludes()(tree, {
         path: 'content/testing/code.md',
       });
     };
 
-    await expect(run()).to.be.rejectedWith(
-      '[markdown] example-include の ref "missing/example" は未登録です',
-    );
+    try {
+      await run();
+      throw new Error('example-include が失敗しませんでした');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      expect(message).to.equal('[markdown] example-include の ref "missing/example" は未登録です');
+    }
   });
 
   it('included markdown を GFM table / footnote として再パースすること', async () => {

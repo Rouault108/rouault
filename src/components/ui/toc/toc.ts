@@ -1,4 +1,4 @@
-import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
+import { css, html, LitElement, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { map } from 'lit/directives/map.js';
@@ -477,7 +477,7 @@ export class Toc extends LitElement {
 
   override render(): TemplateResult {
     if (this.headers.length === 0) {
-      return nothing;
+      return html``;
     }
 
     return html`
@@ -506,7 +506,7 @@ export class Toc extends LitElement {
                     })}
                     href=${`#${heading.id}`}
                     data-heading-level=${String(heading.level)}
-                    aria-current=${isActive ? 'location' : nothing}
+                    aria-current=${isActive ? 'location' : undefined}
                     @click=${(event: Event) => void this._handleLinkClick(event, heading.id)}
                   >
                     <span class="toc-link-label" data-heading-id=${heading.id}>${heading.text}</span>

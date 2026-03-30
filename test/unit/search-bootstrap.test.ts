@@ -50,7 +50,7 @@ describe('search-bootstrap', () => {
       };
     };
 
-    const dialog = document.createElement('div') as TestSearchDialogElement;
+    const dialog = document.createElement('div') as unknown as TestSearchDialogElement;
     dialog.id = 'global-search-dialog';
     dialog.opened = false;
     dialog.query = '';

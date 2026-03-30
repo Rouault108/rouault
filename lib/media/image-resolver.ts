@@ -77,7 +77,6 @@ const LINK_CARD_THUMBNAIL_CACHE_PATH = path.resolve(
 );
 const LOCAL_CONTENT_ASSET_ROUTE = '/content-assets/';
 const EXAMPLE_MEDIA_ASSET_ROUTE = '/example-assets/';
-const GENERATED_MEDIA_ROUTE = '/media/';
 const EXPECTED_SCHEMA_VERSION = 1;
 const EXPECTED_VARIANT_SET_VERSION = 'reading-v1';
 
@@ -110,7 +109,7 @@ const isHttpUrl = (value: string): boolean => /^https?:\/\//i.test(value);
 const buildError = (message: string): Error => new Error(`[markdown] ${message}`);
 
 export const isStrictMediaMode = (): boolean =>
-  process.env.ROUAULT_MEDIA_STRICT === '1' || process.env.npm_lifecycle_event === 'build';
+  process.env['ROUAULT_MEDIA_STRICT'] === '1' || process.env['npm_lifecycle_event'] === 'build';
 
 const isContentAssetPath = (value: string): boolean =>
   normalizeContentAssetPath(value).startsWith('content/_assets/');
@@ -138,7 +137,7 @@ const assertManifestShape = (value: unknown): MediaManifest => {
     throw buildError('image manifest の items が不正です');
   }
 
-  return value as MediaManifest;
+  return value as unknown as MediaManifest;
 };
 
 const loadManifest = (): MediaManifest | null => {
@@ -187,7 +186,7 @@ const loadLinkCardThumbnailCache = (): LinkCardThumbnailCache | null => {
     throw buildError('link-card thumbnail cache JSON が不正です');
   }
 
-  const cache = parsed as LinkCardThumbnailCache;
+  const cache = parsed as unknown as LinkCardThumbnailCache;
   cachedThumbnailCache = cache;
   cachedThumbnailCacheMtimeMs = stat.mtimeMs;
   return cache;
@@ -329,9 +328,9 @@ export const resolveCoverAsset = (
   resolveImageAsset(sourcePath, {
     inlineVariant: 'reading',
     lightboxVariant: 'full',
-    inlineSizes: options.inlineSizes,
-    lightboxSizes: options.lightboxSizes,
-    strict: options.strict,
+    ...(options.inlineSizes !== undefined ? { inlineSizes: options.inlineSizes } : {}),
+    ...(options.lightboxSizes !== undefined ? { lightboxSizes: options.lightboxSizes } : {}),
+    ...(options.strict !== undefined ? { strict: options.strict } : {}),
   });
 
 export const resolveLinkCardImage = (imageValue: string | undefined): string | undefined => {

@@ -20,26 +20,26 @@ export type CodeBlockLayout = 'standalone' | 'inline';
 export interface CalloutPayload {
   readonly kind: 'callout';
   readonly calloutKind: CalloutKind;
-  readonly heading?: string;
-  readonly label?: string;
-  readonly icon?: string;
-  readonly headingLevel?: number;
+  readonly heading?: string | undefined;
+  readonly label?: string | undefined;
+  readonly icon?: string | undefined;
+  readonly headingLevel?: number | undefined;
 }
 
 export interface CodeGroupPayload {
   readonly kind: 'code-group';
-  readonly ariaLabel?: string;
+  readonly ariaLabel?: string | undefined;
 }
 
 export interface CodePreviewPayload {
   readonly kind: 'code-preview';
-  readonly heading?: string;
-  readonly controls?: readonly PreviewControl[];
-  readonly previewPadding?: PreviewPadding;
-  readonly previewAlign?: PreviewAlign;
-  readonly previewTheme?: PreviewTheme;
-  readonly previewSurface?: PreviewSurface;
-  readonly previewViewport?: PreviewViewport;
+  readonly heading?: string | undefined;
+  readonly controls?: readonly PreviewControl[] | undefined;
+  readonly previewPadding?: PreviewPadding | undefined;
+  readonly previewAlign?: PreviewAlign | undefined;
+  readonly previewTheme?: PreviewTheme | undefined;
+  readonly previewSurface?: PreviewSurface | undefined;
+  readonly previewViewport?: PreviewViewport | undefined;
 }
 
 export interface PreviewSlotPayload {
@@ -52,70 +52,70 @@ export interface ToolbarSlotPayload {
 
 export interface PreviewSandboxPayload {
   readonly kind: 'preview-sandbox';
-  readonly iframeTitle?: string;
-  readonly baseUrl?: string;
+  readonly iframeTitle?: string | undefined;
+  readonly baseUrl?: string | undefined;
   readonly allowJs: boolean;
-  readonly activationPolicy?: PreviewSandboxActivationPolicy;
-  readonly heightMode?: PreviewSandboxHeightMode;
+  readonly activationPolicy?: PreviewSandboxActivationPolicy | undefined;
+  readonly heightMode?: PreviewSandboxHeightMode | undefined;
   readonly allowForms: boolean;
   readonly allowDownloads: boolean;
   readonly allowPointerLock: boolean;
   readonly allowPopups: boolean;
-  readonly height?: number;
-  readonly maxHeight?: number;
+  readonly height?: number | undefined;
+  readonly maxHeight?: number | undefined;
 }
 
 export interface DetailsPayload {
   readonly kind: 'details';
-  readonly summary?: string;
-  readonly ariaLabel?: string;
+  readonly summary?: string | undefined;
+  readonly ariaLabel?: string | undefined;
   readonly open: boolean;
-  readonly variant?: DetailsVariant;
+  readonly variant?: DetailsVariant | undefined;
   readonly region: boolean;
 }
 
 export interface InfoBoxPayload {
   readonly kind: 'info-box';
-  readonly heading?: string;
-  readonly icon?: string;
-  readonly headingLevel?: number;
+  readonly heading?: string | undefined;
+  readonly icon?: string | undefined;
+  readonly headingLevel?: number | undefined;
   readonly landmark: boolean;
-  readonly variant?: InfoBoxVariant;
-  readonly density?: InfoBoxDensity;
+  readonly variant?: InfoBoxVariant | undefined;
+  readonly density?: InfoBoxDensity | undefined;
 }
 
 export interface LinkCardPayload {
   readonly kind: 'link-card';
-  readonly url?: string;
-  readonly title?: string;
-  readonly description?: string;
-  readonly image?: string;
-  readonly siteName?: string;
+  readonly url?: string | undefined;
+  readonly title?: string | undefined;
+  readonly description?: string | undefined;
+  readonly image?: string | undefined;
+  readonly siteName?: string | undefined;
 }
 
 export interface ScorePayload {
   readonly kind: 'score';
-  readonly src?: string;
-  readonly caption?: string;
-  readonly label?: string;
-  readonly description?: string;
-  readonly aspectRatio?: string;
-  readonly loading?: ScoreLoading;
+  readonly src?: string | undefined;
+  readonly caption?: string | undefined;
+  readonly label?: string | undefined;
+  readonly description?: string | undefined;
+  readonly aspectRatio?: string | undefined;
+  readonly loading?: ScoreLoading | undefined;
   readonly primary: boolean;
 }
 
 export interface TabsPayload {
   readonly kind: 'tabs';
-  readonly selectedValue?: string;
-  readonly defaultSelectedValue?: string;
-  readonly orientation?: TabsOrientation;
+  readonly selectedValue?: string | undefined;
+  readonly defaultSelectedValue?: string | undefined;
+  readonly orientation?: TabsOrientation | undefined;
   readonly automaticActivation: boolean;
   readonly urlSync: boolean;
 }
 
 export interface TabPayload {
   readonly kind: 'tab';
-  readonly value?: string;
+  readonly value?: string | undefined;
 }
 
 export interface PanelPayload {
@@ -124,16 +124,16 @@ export interface PanelPayload {
 
 export interface TranslationPayload {
   readonly kind: 'translation';
-  readonly lang?: string;
-  readonly targetLang?: string;
+  readonly lang?: string | undefined;
+  readonly targetLang?: string | undefined;
   readonly original: string;
   readonly translated: string;
 }
 
 export interface TranslationOverlayPayload {
   readonly kind: 'translation-overlay';
-  readonly lang?: string;
-  readonly targetLang?: string;
+  readonly lang?: string | undefined;
+  readonly targetLang?: string | undefined;
   readonly original: string;
   readonly translated: string;
   readonly surface: TranslationOverlaySurface;
@@ -157,24 +157,24 @@ export type DirectivePayload =
   | TranslationOverlayPayload;
 
 export interface CodeBlockPayload {
-  readonly filename?: string;
-  readonly label?: string;
-  readonly intent?: CodeBlockIntent;
+  readonly filename?: string | undefined;
+  readonly label?: string | undefined;
+  readonly intent?: CodeBlockIntent | undefined;
   readonly showLineNumbers: boolean;
-  readonly copyMode?: CodeBlockCopyMode;
-  readonly groupKey?: string;
-  readonly tabLabel?: string;
-  readonly copyLabel?: string;
+  readonly copyMode?: CodeBlockCopyMode | undefined;
+  readonly groupKey?: string | undefined;
+  readonly tabLabel?: string | undefined;
+  readonly copyLabel?: string | undefined;
   readonly copyable: boolean | undefined;
   readonly wrap: boolean;
-  readonly highlightLines?: string;
-  readonly layout?: CodeBlockLayout;
-  readonly rawMeta?: string;
+  readonly highlightLines?: string | undefined;
+  readonly layout?: CodeBlockLayout | undefined;
+  readonly rawMeta?: string | undefined;
 }
 
 export interface ImagePayload {
-  readonly loading?: 'lazy' | 'eager';
-  readonly width?: number;
-  readonly height?: number;
-  readonly zoomable?: boolean;
+  readonly loading?: 'lazy' | 'eager' | undefined;
+  readonly width?: number | undefined;
+  readonly height?: number | undefined;
+  readonly zoomable?: boolean | undefined;
 }

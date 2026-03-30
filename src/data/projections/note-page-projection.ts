@@ -72,7 +72,7 @@ export interface NotePageProjection {
   noteShellSidebarPresence: 'present' | 'absent';
   showSidebar: boolean;
   contentHtml: string;
-  sidebar?: NotePageSidebarProjection;
+  sidebar?: NotePageSidebarProjection | null;
   toc: NotePageTocProjection;
   articleHeader: NotePageArticleHeaderProjection;
   pagefind: NotePagePagefindProjection | null;

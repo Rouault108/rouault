@@ -10,6 +10,7 @@ import { runQueryPreparationStage } from '../../src/lib/search/core/stages/query
 import { runRankingAndSortingStage } from '../../src/lib/search/core/stages/ranking-and-sorting.js';
 import { runSourceFederationStage } from '../../src/lib/search/core/stages/source-federation.js';
 import type { SearchCandidate, SearchSourceBatch } from '../../src/lib/search/search-types.js';
+import type { SearchSortMode, SearchTagMode } from '../../src/lib/search/search-types.js';
 
 function createCandidate(
   overrides: Partial<SearchCandidate> & Pick<SearchCandidate, 'canonicalUrl' | 'url' | 'title'>,
@@ -55,8 +56,8 @@ describe('search-stages', () => {
         mode: 'explore',
         q: '  Rouault   Search  ',
         tags: ['music', 'music', ' jazz '],
-        tagMode: 'invalid',
-        sort: 'invalid',
+        tagMode: 'invalid' as unknown as SearchTagMode,
+        sort: 'invalid' as unknown as SearchSortMode,
       },
       nowUtcMs: 123,
     });

@@ -20,7 +20,7 @@ export const applyEmojiInlineAttributes = (
   file?: VFileLike,
 ): Record<string, unknown> => {
   const result: Record<string, unknown> = {};
-  const allowedKeys = new Set(['label', 'aria-label']);
+  const allowedKeys = ['label', 'aria-label'] as const;
   assertAllowedAttributes(attrs, allowedKeys, node, file, 'emoji');
 
   const ariaLabel = pickOptional(attrs['aria-label']) ?? pickOptional(attrs['label']);
@@ -38,7 +38,7 @@ export const applyHighlightInlineAttributes = (
   file?: VFileLike,
 ): Record<string, unknown> => {
   const result: Record<string, unknown> = {};
-  const allowedKeys = new Set(['current-match']);
+  const allowedKeys = ['current-match'] as const;
   assertAllowedAttributes(attrs, allowedKeys, node, file, 'highlight');
 
   const current = parseBooleanAttribute(
@@ -80,11 +80,11 @@ export const parseInlineText = (source: string, node: MdastNode, file?: VFileLik
           ),
         );
       } else if (name === 'subscript') {
-        const allowed = new Set<string>();
+        const allowed: readonly string[] = [];
         assertAllowedAttributes(attrs, allowed, node, file, 'subscript');
         result.push(createInlineNode('sub', text, undefined, 'rouaultInlineSubscript'));
       } else if (name === 'superscript') {
-        const allowed = new Set<string>();
+        const allowed: readonly string[] = [];
         assertAllowedAttributes(attrs, allowed, node, file, 'superscript');
         result.push(createInlineNode('sup', text, undefined, 'rouaultInlineSuperscript'));
       } else {

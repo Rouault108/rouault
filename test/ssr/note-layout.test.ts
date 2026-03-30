@@ -7,22 +7,20 @@ const createProjection = (
   overrides: Partial<NotePageProjection> & { sidebar?: NotePageProjection['sidebar'] | null } = {},
 ): NotePageProjection => {
   const { sidebar, ...rest } = overrides;
+  const defaultSidebar: NonNullable<NotePageProjection['sidebar']> = {
+    sourceId: 'sidebar-source-note',
+    selectedId: 'note',
+    items: [{ kind: 'leaf', id: 'note', label: 'Note', href: '/notes/note' }],
+    heading: 'ナビゲーション',
+    fixedBreakpoint: '768',
+  };
 
   return {
     noteKind: 'reader',
     noteShellSidebarPresence: 'present',
     showSidebar: true,
     contentHtml: '<p>本文</p>',
-    sidebar:
-      sidebar === null
-        ? undefined
-        : (sidebar ?? {
-            sourceId: 'sidebar-source-note',
-            selectedId: 'note',
-            items: [{ kind: 'leaf', id: 'note', label: 'Note', href: '/notes/note' }],
-            heading: 'ナビゲーション',
-            fixedBreakpoint: '768',
-          }),
+    ...(sidebar === undefined ? { sidebar: defaultSidebar } : { sidebar }),
     toc: {
       sourceId: 'toc-source-note',
       headings: [{ id: 'intro', text: 'Intro', level: 2 }],

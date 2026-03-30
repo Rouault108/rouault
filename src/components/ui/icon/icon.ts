@@ -16,7 +16,8 @@ export class UiIcon extends BaseElement {
   constructor() {
     super();
 
-    this.glyphRoot = this.attachShadow({ mode: 'open' });
+    const host = this as unknown as HTMLElement;
+    this.glyphRoot = host.attachShadow({ mode: 'open' });
     this.glyph.setAttribute('part', 'glyph');
     this.glyph.style.inlineSize = '1em';
     this.glyph.style.blockSize = '1em';
@@ -26,36 +27,40 @@ export class UiIcon extends BaseElement {
   }
 
   get name(): IconName | null {
-    const value = this.getAttribute(NAME_ATTRIBUTE)?.trim();
+    const host = this as unknown as HTMLElement;
+    const value = host.getAttribute(NAME_ATTRIBUTE)?.trim();
     if (value) {
       return value as IconName;
     }
 
-    const legacyValue = this.getAttribute(ICON_ATTRIBUTE)?.trim();
+    const legacyValue = host.getAttribute(ICON_ATTRIBUTE)?.trim();
     return legacyValue ? (legacyValue as IconName) : null;
   }
 
   set name(value: IconName | null) {
+    const host = this as unknown as HTMLElement;
     if (value === null) {
-      this.removeAttribute(NAME_ATTRIBUTE);
+      host.removeAttribute(NAME_ATTRIBUTE);
       return;
     }
 
-    this.setAttribute(NAME_ATTRIBUTE, value);
+    host.setAttribute(NAME_ATTRIBUTE, value);
   }
 
   get icon(): IconName | null {
-    const value = this.getAttribute(ICON_ATTRIBUTE)?.trim();
+    const host = this as unknown as HTMLElement;
+    const value = host.getAttribute(ICON_ATTRIBUTE)?.trim();
     return value ? (value as IconName) : null;
   }
 
   set icon(value: IconName | null) {
+    const host = this as unknown as HTMLElement;
     if (value === null) {
-      this.removeAttribute(ICON_ATTRIBUTE);
+      host.removeAttribute(ICON_ATTRIBUTE);
       return;
     }
 
-    this.setAttribute(ICON_ATTRIBUTE, value);
+    host.setAttribute(ICON_ATTRIBUTE, value);
   }
 
   connectedCallback(): void {
@@ -67,46 +72,50 @@ export class UiIcon extends BaseElement {
   }
 
   #ensureHostPresentation(): void {
-    if (this.style.display.length === 0) {
-      this.style.display = 'inline-flex';
+    const host = this as unknown as HTMLElement;
+    if (host.style.display.length === 0) {
+      host.style.display = 'inline-flex';
     }
 
-    if (this.style.alignItems.length === 0) {
-      this.style.alignItems = 'center';
+    if (host.style.alignItems.length === 0) {
+      host.style.alignItems = 'center';
     }
 
-    if (this.style.justifyContent.length === 0) {
-      this.style.justifyContent = 'center';
+    if (host.style.justifyContent.length === 0) {
+      host.style.justifyContent = 'center';
     }
 
-    if (this.style.lineHeight.length === 0) {
-      this.style.lineHeight = '1';
+    if (host.style.lineHeight.length === 0) {
+      host.style.lineHeight = '1';
     }
   }
 
   #getResolvedName(): IconName | null {
-    const canonicalName = this.getAttribute(NAME_ATTRIBUTE)?.trim();
+    const host = this as unknown as HTMLElement;
+    const canonicalName = host.getAttribute(NAME_ATTRIBUTE)?.trim();
     if (canonicalName) {
       return canonicalName as IconName;
     }
 
-    const legacyName = this.getAttribute(ICON_ATTRIBUTE)?.trim();
+    const legacyName = host.getAttribute(ICON_ATTRIBUTE)?.trim();
     return legacyName ? (legacyName as IconName) : null;
   }
 
   #collapseHost(): void {
-    this.collapsedDisplayBackup ??= this.style.display;
+    const host = this as unknown as HTMLElement;
+    this.collapsedDisplayBackup ??= host.style.display;
 
-    this.style.display = 'none';
-    this.removeAttribute('role');
+    host.style.display = 'none';
+    host.removeAttribute('role');
     this.glyph.removeAttribute('icon');
     this.glyph.setAttribute('aria-hidden', 'true');
     this.glyph.removeAttribute('aria-label');
   }
 
   #expandHost(): void {
+    const host = this as unknown as HTMLElement;
     if (this.collapsedDisplayBackup !== null) {
-      this.style.display = this.collapsedDisplayBackup;
+      host.style.display = this.collapsedDisplayBackup;
       this.collapsedDisplayBackup = null;
     }
 
@@ -114,6 +123,7 @@ export class UiIcon extends BaseElement {
   }
 
   #sync(): void {
+    const host = this as unknown as HTMLElement;
     const name = this.#getResolvedName();
 
     if (!name) {
@@ -125,13 +135,13 @@ export class UiIcon extends BaseElement {
 
     this.glyph.setAttribute('icon', `lucide:${name}`);
 
-    const ariaLabel = this.getAttribute(ARIA_LABEL_ATTRIBUTE)?.trim();
+    const ariaLabel = host.getAttribute(ARIA_LABEL_ATTRIBUTE)?.trim();
     if (ariaLabel && ariaLabel.length > 0) {
-      this.setAttribute('role', 'img');
+      host.setAttribute('role', 'img');
       this.glyph.setAttribute('aria-hidden', 'false');
       this.glyph.setAttribute('aria-label', ariaLabel);
     } else {
-      this.removeAttribute('role');
+      host.removeAttribute('role');
       this.glyph.setAttribute('aria-hidden', 'true');
       this.glyph.removeAttribute('aria-label');
     }
@@ -139,8 +149,10 @@ export class UiIcon extends BaseElement {
 }
 
 if (typeof customElements !== 'undefined' && !customElements.get('ui-icon')) {
-  customElements.define('ui-icon', UiIcon);
+  customElements.define('ui-icon', UiIcon as unknown as CustomElementConstructor);
 }
+
+export interface UiIcon extends HTMLElement {}
 
 declare global {
   interface HTMLElementTagNameMap {
