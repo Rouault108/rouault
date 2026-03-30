@@ -16,7 +16,7 @@ import type {
 } from '../payload/payload-types.js';
 import type { MdastNode } from '../types.js';
 
-const toOptionalProps = (entries: Array<[string, unknown]>): Record<string, unknown> =>
+const toOptionalProps = (entries: [string, unknown][]): Record<string, unknown> =>
   Object.fromEntries(entries.filter(([, value]) => value !== undefined));
 
 const createTranslationParagraph = (

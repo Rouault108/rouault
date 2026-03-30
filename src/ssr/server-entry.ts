@@ -98,8 +98,8 @@ const DOCUMENT_STYLE_DEFINITIONS: Partial<Record<SsrTargetTag, SsrDocumentStyleD
     cssText: TABLE_DOCUMENT_CSS,
   },
   'ui-code-block': {
-    id: CODE_BLOCK_DOCUMENT_STYLE_ID,
-    cssText: CODE_BLOCK_DOCUMENT_CSS,
+    id: String(CODE_BLOCK_DOCUMENT_STYLE_ID),
+    cssText: String(CODE_BLOCK_DOCUMENT_CSS),
   },
   'ui-highlight': {
     id: HIGHLIGHT_DOCUMENT_STYLE_ID,

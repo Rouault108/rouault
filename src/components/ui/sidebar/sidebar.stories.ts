@@ -197,7 +197,8 @@ export const EventBridge: Story = {
       }),
     );
 
-    if (!log.textContent?.includes('select')) {
+    const logText = log.textContent;
+    if (!logText.includes('select')) {
       throw new Error('ui-sidebar-select の bridge が log へ反映されていません');
     }
   },

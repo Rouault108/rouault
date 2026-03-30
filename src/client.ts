@@ -5,14 +5,11 @@ import { initTheme } from './lib/theme/theme-manager.js';
 
 const hydrationScheduler = new HydrationScheduler();
 
-const queryElement = <T extends Element>(selector: string): T | null =>
-  document.querySelector<T>(selector);
-
 const hydrateShellScopes = async (): Promise<void> => {
   const shellScopes = [
-    queryElement<HTMLElement>('[data-hydration-scope="skip-link"]'),
-    queryElement<HTMLElement>('[data-hydration-scope="app-shell"]'),
-    queryElement<HTMLElement>('[data-hydration-scope="global-search"]'),
+    document.querySelector<HTMLElement>('[data-hydration-scope="skip-link"]'),
+    document.querySelector<HTMLElement>('[data-hydration-scope="app-shell"]'),
+    document.querySelector<HTMLElement>('[data-hydration-scope="global-search"]'),
   ].filter((scope): scope is HTMLElement => scope !== null);
 
   for (const scope of shellScopes) {
@@ -21,8 +18,8 @@ const hydrateShellScopes = async (): Promise<void> => {
 };
 
 const hydrateCurrentContent = async (): Promise<void> => {
-  const appRouter = queryElement<HTMLElement>('app-router');
-  const mainContent = queryElement<HTMLElement>('#main-content');
+  const appRouter = document.querySelector<HTMLElement>('app-router');
+  const mainContent = document.querySelector<HTMLElement>('#main-content');
   if (!(mainContent instanceof HTMLElement)) {
     return;
   }

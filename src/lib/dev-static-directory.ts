@@ -82,11 +82,11 @@ export function createStaticDirectoryMiddleware(
   routePrefix: string,
   rootDirectory: string,
 ): Connect.NextHandleFunction {
-  const handleRequest = async (
+  const handleRequest = (
     request: IncomingMessage,
     response: ServerResponse,
     next: Connect.NextFunction,
-  ): Promise<void> => {
+  ): void => {
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       next();
       return;
@@ -125,6 +125,6 @@ export function createStaticDirectoryMiddleware(
   };
 
   return (request, response, next) => {
-    void handleRequest(request, response, next);
+    handleRequest(request, response, next);
   };
 }

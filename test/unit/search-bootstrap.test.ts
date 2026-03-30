@@ -19,9 +19,9 @@ describe('search-bootstrap', () => {
     const requests: unknown[] = [];
     let openedWith: HTMLElement | undefined;
 
-    searchCore.search = async (request) => {
+    searchCore.search = (request) => {
       requests.push(request);
-      return {
+      return Promise.resolve({
         mode: 'navigate',
         items: [
           {
@@ -47,7 +47,7 @@ describe('search-bootstrap', () => {
           failures: [],
           issues: [],
         },
-      };
+      });
     };
 
     const dialog = document.createElement('div') as unknown as TestSearchDialogElement;

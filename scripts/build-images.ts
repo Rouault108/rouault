@@ -3,7 +3,12 @@ import { mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path';
 import sharp from 'sharp';
 
-import type { MediaManifest, MediaManifestItem, MediaVariantOutput } from '../lib/media/image-resolver.js';
+import type {
+  MediaManifest,
+  MediaManifestItem,
+  MediaVariantEntry,
+  MediaVariantOutput,
+} from '../lib/media/image-resolver.js';
 
 const CONTENT_ROOT = path.resolve(process.cwd(), 'content');
 const EXAMPLES_ROOT = path.resolve(process.cwd(), 'examples');
@@ -247,7 +252,7 @@ const buildManifestItem = async (sourcePath: string): Promise<MediaManifestItem>
   const placeholder = await buildPlaceholder(absolutePath);
   const variants = await Promise.all(
     (Object.entries(VARIANT_DEFINITIONS) as [VariantName, VariantDefinition][]).map(
-      async ([variantName, definition]) => [
+      async ([variantName, definition]): Promise<[VariantName, MediaVariantEntry]> => [
         variantName,
         {
           outputs: await createVariantOutputs(absolutePath, hash, variantName, definition),
@@ -268,7 +273,7 @@ const buildManifestItem = async (sourcePath: string): Promise<MediaManifestItem>
           },
         }
       : {}),
-    variants: Object.fromEntries(variants),
+    variants: Object.fromEntries(variants) as Record<VariantName, MediaVariantEntry>,
   };
 };
 
@@ -280,9 +285,14 @@ export const buildImageManifest = async (): Promise<MediaManifest> => {
 
   const items = Object.fromEntries(
     await Promise.all(
-      referencedSourcePaths.map(async (sourcePath) => [sourcePath, await buildManifestItem(sourcePath)]),
+      referencedSourcePaths.map(
+        async (sourcePath): Promise<[string, MediaManifestItem]> => [
+          sourcePath,
+          await buildManifestItem(sourcePath),
+        ],
+      ),
     ),
-  );
+  ) as Record<string, MediaManifestItem>;
 
   const manifest: MediaManifest = {
     schemaVersion: 1,
@@ -302,6 +312,7 @@ const run = async (): Promise<void> => {
   );
 };
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+const entryPoint = process.argv[1];
+if (typeof entryPoint === 'string' && import.meta.url === `file://${entryPoint}`) {
   void run();
 }

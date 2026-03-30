@@ -636,7 +636,8 @@ export class Tag extends LitElement {
 
   /** SSR でも安全に使えるタグ本文のラベル。 */
   private get _textLabel(): string {
-    return (this.textContent ?? '').trim();
+    const textContent = typeof this.textContent === 'string' ? this.textContent : '';
+    return textContent.trim();
   }
 
   /** アイコンスロットのレンダリング */

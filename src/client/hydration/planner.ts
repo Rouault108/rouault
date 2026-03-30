@@ -43,15 +43,19 @@ const findScopes = (root: ParentNode): Element[] => {
   return scopes;
 };
 
-const createScopeId = (scope: Element, fallbackIndex: number): string =>
-  scope.getAttribute(SCOPE_ATTRIBUTE)?.trim() || `scope-${String(fallbackIndex)}`;
+const createScopeId = (scope: Element, fallbackIndex: number): string => {
+  const value = scope.getAttribute(SCOPE_ATTRIBUTE)?.trim();
+  return value && value.length > 0 ? value : `scope-${String(fallbackIndex)}`;
+};
 
 const readPlanItem = (
   element: Element,
   scopeId: string,
 ): HydrationPlanItem | null => {
-  const capability = element.getAttribute(CAPABILITY_ATTRIBUTE)?.trim() as HydrationCapability | null;
-  const trigger = element.getAttribute(TRIGGER_ATTRIBUTE)?.trim() as HydrationTrigger | null;
+  const capabilityValue = element.getAttribute(CAPABILITY_ATTRIBUTE)?.trim();
+  const triggerValue = element.getAttribute(TRIGGER_ATTRIBUTE)?.trim();
+  const capability = capabilityValue && capabilityValue.length > 0 ? (capabilityValue as HydrationCapability) : null;
+  const trigger = triggerValue && triggerValue.length > 0 ? (triggerValue as HydrationTrigger) : null;
 
   if (!capability || !trigger) {
     return null;
@@ -62,7 +66,10 @@ const readPlanItem = (
   }
 
   return {
-    tag: element.getAttribute(KEY_ATTRIBUTE)?.trim() || element.localName,
+    tag: (() => {
+      const value = element.getAttribute(KEY_ATTRIBUTE)?.trim();
+      return value && value.length > 0 ? value : element.localName;
+    })(),
     element: element as HTMLElement,
     scope: scopeId,
     trigger,
@@ -108,7 +115,10 @@ const buildFallbackPlan = (root: ParentNode, scopeId: string, selector: string):
 
   if (isElement(root) && root.matches(selector)) {
     items.push({
-      tag: root.getAttribute(KEY_ATTRIBUTE)?.trim() || root.localName,
+      tag: (() => {
+        const value = root.getAttribute(KEY_ATTRIBUTE)?.trim();
+        return value && value.length > 0 ? value : root.localName;
+      })(),
       element: root as HTMLElement,
       scope: scopeId,
       trigger: 'initial',
@@ -119,7 +129,10 @@ const buildFallbackPlan = (root: ParentNode, scopeId: string, selector: string):
 
   for (const element of root.querySelectorAll(selector)) {
     items.push({
-      tag: element.getAttribute(KEY_ATTRIBUTE)?.trim() || element.localName,
+      tag: (() => {
+        const value = element.getAttribute(KEY_ATTRIBUTE)?.trim();
+        return value && value.length > 0 ? value : element.localName;
+      })(),
       element: element as HTMLElement,
       scope: scopeId,
       trigger: 'initial',

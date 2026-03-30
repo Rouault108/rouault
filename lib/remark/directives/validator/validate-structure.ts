@@ -325,13 +325,23 @@ export const validateStructure = (
     validateFenceCodeLanguageRequirements(node, file);
 
     if (directiveName === 'preview-sandbox') {
-      validatePreviewSandboxStructure(node, getDirectivePayload<PreviewSandboxPayload>(node)!, file);
+      const payload = getDirectivePayload<PreviewSandboxPayload>(node);
+      if (!payload) {
+        throw toError(file, node, 'preview-sandbox の payload が見つかりません');
+      }
+
+      validatePreviewSandboxStructure(node, payload, file);
     }
     if (directiveName === 'code-preview') {
       validateCodePreviewStructure(node, file);
     }
     if (directiveName === 'tabs') {
-      validateTabsStructure(node, getDirectivePayload<TabsPayload>(node)!, file);
+      const payload = getDirectivePayload<TabsPayload>(node);
+      if (!payload) {
+        throw toError(file, node, 'tabs の payload が見つかりません');
+      }
+
+      validateTabsStructure(node, payload, file);
     }
     if (directiveName === 'tab') {
       validateTabStructure(node, getDirectivePayload<TabPayload>(node), file);

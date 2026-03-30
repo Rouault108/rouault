@@ -355,10 +355,12 @@ export const StatusStateMatrix: Story = {
       }
 
       const icon = status.querySelector('ui-icon');
-      if (!icon) throw new Error(`${check.id} の ui-icon が見つかりません`);
-      if (icon.getAttribute('name') !== check.name) {
+      if (!(icon instanceof HTMLElement)) throw new Error(`${check.id} の ui-icon が見つかりません`);
+      const actualName = icon.getAttribute('name') ?? 'null';
+      const expectedName = check.name;
+      if (actualName !== expectedName) {
         throw new Error(
-          `${check.id} の icon 属性に "${check.name}" を期待していましたが、実際には "${icon.getAttribute('name') ?? 'null'}" でした`,
+          `${check.id} の icon 属性に "${expectedName}" を期待していましたが、実際には "${actualName}" でした`,
         );
       }
     }

@@ -48,7 +48,7 @@ const isEventInsideElement = (event: Event, element: HTMLElement): boolean => {
 
 const delayTask = async (): Promise<void> => {
   await new Promise<void>((resolve) => {
-    window.setTimeout(() => resolve(), 0);
+    window.setTimeout(resolve, 0);
   });
 };
 
@@ -95,7 +95,8 @@ export class HydrationScheduler {
     const prepared = await this.#prepareSession(session, {
       allowFallback: options.allowFallback ?? true,
     });
-    if (this.activeContentSession?.id !== session.id || session.controller.signal.aborted) {
+    const activeContentSession = this.activeContentSession;
+    if (activeContentSession.id !== session.id || session.controller.signal.aborted) {
       return;
     }
 
@@ -108,7 +109,8 @@ export class HydrationScheduler {
         prepared.processed,
       ),
     ]).then(() => {
-      if (this.activeContentSession?.id !== session.id || session.controller.signal.aborted) {
+      const currentSession = this.activeContentSession;
+      if (currentSession.id !== session.id || session.controller.signal.aborted) {
         return;
       }
 
@@ -167,15 +169,6 @@ export class HydrationScheduler {
       diagnostics,
       processed,
     );
-    if (session.controller.signal.aborted) {
-      return {
-        diagnostics,
-        processed,
-        visibleItems: [],
-        interactionItems: [],
-      };
-    }
-
     const secondPass = this.#plan(session.root, diagnostics, options.allowFallback);
     const firstPassElements = new Set(firstPass.flatMap((scope) => scope.items.map((item) => item.element)));
     const secondPassItems = secondPass
@@ -187,12 +180,12 @@ export class HydrationScheduler {
       diagnostics,
       processed,
       visibleItems: [
-      ...matchPlanItems(firstPass, 'visible'),
-      ...secondPassItems.filter((item) => item.trigger === 'visible'),
+        ...matchPlanItems(firstPass, 'visible'),
+        ...secondPassItems.filter((item) => item.trigger === 'visible'),
       ],
       interactionItems: [
-      ...matchPlanItems(firstPass, 'interaction'),
-      ...secondPassItems.filter((item) => item.trigger === 'interaction'),
+        ...matchPlanItems(firstPass, 'interaction'),
+        ...secondPassItems.filter((item) => item.trigger === 'interaction'),
       ],
     };
   }
@@ -404,7 +397,9 @@ export class HydrationScheduler {
         resolve();
       };
 
-      const onAbort = (): void => cleanup();
+      const onAbort = (): void => {
+        cleanup();
+      };
 
       root.addEventListener('focusin', onFocusIn, true);
       session.controller.signal.addEventListener('abort', onAbort, { once: true });
@@ -418,7 +413,9 @@ export class HydrationScheduler {
           pending.map(async (item) => {
             await this.#executeItem(item, session, diagnostics, processed);
           }),
-        ).finally(() => cleanup());
+        ).finally(() => {
+          cleanup();
+        });
       }
     });
   }
@@ -456,7 +453,9 @@ export class HydrationScheduler {
         }
       };
 
-      const onClick = (event: Event): void => tryHydrate(event);
+      const onClick = (event: Event): void => {
+        tryHydrate(event);
+      };
       const onKeyDown = (event: Event): void => {
         if (!(event instanceof KeyboardEvent) || !isKeyboardActivation(event)) {
           return;
@@ -471,7 +470,9 @@ export class HydrationScheduler {
         resolve();
       };
 
-      const onAbort = (): void => cleanup();
+      const onAbort = (): void => {
+        cleanup();
+      };
 
       root.addEventListener('click', onClick, true);
       root.addEventListener('keydown', onKeyDown, true);

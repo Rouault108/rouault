@@ -53,23 +53,25 @@ const createCopyButton = (pre: HTMLElement): HTMLButtonElement => {
     return button;
   }
 
-  button.addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(copyValue);
-      button.dataset['state'] = 'copied';
-      button.textContent = 'コピー済み';
-      window.setTimeout(() => {
-        button.dataset['state'] = 'idle';
-        button.textContent = 'コピー';
-      }, COPY_RESET_DELAY_MS);
-    } catch {
-      button.dataset['state'] = 'failed';
-      button.textContent = '失敗';
-      window.setTimeout(() => {
-        button.dataset['state'] = 'idle';
-        button.textContent = 'コピー';
-      }, COPY_RESET_DELAY_MS);
-    }
+  button.addEventListener('click', () => {
+    void (async () => {
+      try {
+        await navigator.clipboard.writeText(copyValue);
+        button.dataset['state'] = 'copied';
+        button.textContent = 'コピー済み';
+        window.setTimeout(() => {
+          button.dataset['state'] = 'idle';
+          button.textContent = 'コピー';
+        }, COPY_RESET_DELAY_MS);
+      } catch {
+        button.dataset['state'] = 'failed';
+        button.textContent = '失敗';
+        window.setTimeout(() => {
+          button.dataset['state'] = 'idle';
+          button.textContent = 'コピー';
+        }, COPY_RESET_DELAY_MS);
+      }
+    })();
   });
 
   return button;

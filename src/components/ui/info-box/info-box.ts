@@ -233,10 +233,7 @@ export class InfoBox extends LitElement {
   }
 
   private _hasMeaningfulSlotContent(): boolean {
-    const childNodes = this.childNodes;
-    if (!childNodes) return false;
-
-    return Array.from(childNodes).some((node) => {
+    return Array.from(this.childNodes).some((node) => {
       if (node.nodeType === Node.ELEMENT_NODE) return true;
       if (node.nodeType !== Node.TEXT_NODE) return false;
       return (node.textContent ?? '').trim().length > 0;

@@ -126,11 +126,11 @@ export const supportedDirectiveNames = Object.keys(directiveGrammar) as Directiv
 export const supportedDirectives = new Set<DirectiveName>(supportedDirectiveNames);
 
 const directiveNameByNodeType: Partial<Record<string, DirectiveName>> = Object.fromEntries(
-  supportedDirectiveNames.map((name) => [directiveGrammar[name]!.nodeType, name]),
+  supportedDirectiveNames.map((name) => [directiveGrammar[name].nodeType, name]),
 ) as Partial<Record<string, DirectiveName>>;
 
 export const getDirectiveDescriptor = (name: DirectiveName): DirectiveGrammarDescriptor =>
-  directiveGrammar[name]!;
+  directiveGrammar[name];
 
 export const getDirectiveNameFromNode = (node: MdastNode): DirectiveName | null => {
   const type = node.type;

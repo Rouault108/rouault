@@ -770,7 +770,8 @@ export const WithEventHandlers: Story = {
       },
     );
 
-    if (!log.textContent?.includes('Copy success')) {
+    const logText = log.textContent;
+    if (!logText.includes('Copy success')) {
       throw new Error('copy イベントのログが追記されていません');
     }
   },
@@ -827,12 +828,13 @@ export const TestSuccessState: Story = {
     }
 
     const icon = button.shadowRoot?.querySelector('ui-icon');
-    if (!icon) {
+    if (!(icon instanceof HTMLElement)) {
       throw new Error('アイコンが見つかりません');
     }
-    if (icon.getAttribute('icon') !== 'check') {
+    const iconName = icon.getAttribute('icon') ?? 'null';
+    if (iconName !== 'check') {
       throw new Error(
-        `アイコンが "check" であることを期待していましたが、実際には "${icon.getAttribute('icon') ?? 'null'}" でした`,
+        `アイコンが "check" であることを期待していましたが、実際には "${iconName}" でした`,
       );
     }
 
@@ -1049,13 +1051,14 @@ export const TestErrorState: Story = {
     }
 
     const icon = button.shadowRoot?.querySelector('ui-icon');
-    if (!icon) {
+    if (!(icon instanceof HTMLElement)) {
       throw new Error('アイコンが見つかりません');
     }
 
-    if (icon.getAttribute('icon') !== 'alert-triangle') {
+    const iconName = icon.getAttribute('icon') ?? 'null';
+    if (iconName !== 'alert-triangle') {
       throw new Error(
-        `アイコンが "alert-triangle" であることを期待していましたが、実際には "${icon.getAttribute('icon') ?? 'null'}" でした`,
+        `アイコンが "alert-triangle" であることを期待していましたが、実際には "${iconName}" でした`,
       );
     }
 
@@ -1258,12 +1261,16 @@ export const TestLoadingIndicatorThreshold: Story = {
         await userEvent.click(uiButton);
         await sleep(25);
 
-        const loadingIcon = button.shadowRoot?.querySelector('ui-icon');
-        if (loadingIcon?.getAttribute('icon') !== 'loader-circle') {
-          throw new Error(
-            `遅延コピー中にローディングアイコンが表示されることを期待していましたが、実際には "${loadingIcon?.getAttribute('icon') ?? 'null'}" でした`,
-          );
-        }
+    const loadingIcon = button.shadowRoot?.querySelector('ui-icon');
+    if (!(loadingIcon instanceof HTMLElement)) {
+      throw new Error('ローディングアイコンが見つかりません');
+    }
+    const loadingIconName = loadingIcon.getAttribute('icon') ?? 'null';
+    if (loadingIconName !== 'loader-circle') {
+      throw new Error(
+        `遅延コピー中にローディングアイコンが表示されることを期待していましたが、実際には "${loadingIconName}" でした`,
+      );
+    }
 
         if (!uiButton.getAttribute('aria-label')?.includes('コピー中')) {
           throw new Error(

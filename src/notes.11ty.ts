@@ -49,10 +49,10 @@ export class NotePages {
           });
           const pagefindDocument = buildPagefindDocumentData({
             title: note.title,
-            description: typeof note['description'] === 'string' ? note['description'] : undefined,
-            date: typeof note['date'] === 'string' ? note['date'] : undefined,
-            updated: typeof note['updated'] === 'string' ? note['updated'] : undefined,
-            tags: Array.isArray(note['genre']) ? note['genre'] : undefined,
+            description: typeof note.description === 'string' ? note.description : undefined,
+            date: typeof note.date === 'string' ? note.date : undefined,
+            updated: typeof note.updated === 'string' ? note.updated : undefined,
+            tags: Array.isArray(note.genre) ? note.genre : undefined,
           });
 
           return buildNotePageProjection({

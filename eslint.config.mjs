@@ -19,6 +19,7 @@ export default defineConfig(
     ignores: [
       'dist/',
       '.velite/',
+      '.generated/',
       'node_modules/',
       'storybook-static/',
       '*.config.js',

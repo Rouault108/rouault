@@ -22,5 +22,5 @@ export function buildCorpusPagesData(notes: readonly CorpusPageSourceNote[]): Co
   return buildCorpusPageProjection(notes);
 }
 
-export const loadCorpusPagesData = async (): Promise<CorpusPageEntry[]> =>
+export const loadCorpusPagesData = (): CorpusPageEntry[] =>
   buildCorpusPageProjection(loadNotesData());

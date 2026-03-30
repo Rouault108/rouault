@@ -17,8 +17,12 @@ describe('build-images', () => {
     const hero = manifest.items['examples/media/testing/test-hero.jpg'];
 
     expect(hero).toBeDefined();
-    expect(hero?.variants.reading?.outputs).toHaveLength(3);
-    expect(hero?.variants.full?.outputs?.[0]?.url).toContain('/media/');
+    if (!hero) {
+      throw new Error('hero の image manifest が見つかりません');
+    }
+
+    expect(hero.variants.reading.outputs).toHaveLength(3);
+    expect(hero.variants.full.outputs[0].url).toContain('/media/');
     expect(existsSync(path.join(GENERATED_MEDIA_ROOT, 'image-manifest.json'))).toBe(true);
   }, 15000);
 });

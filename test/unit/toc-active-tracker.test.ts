@@ -52,7 +52,7 @@ describe('TocActiveTracker', () => {
       onVisibleHeadingsChange: (visibleHeadings) => {
         snapshots.push(visibleHeadings.map((heading) => heading.id));
       },
-      onActiveIdChange: () => {},
+      onActiveIdChange: () => undefined,
     });
 
     tracker.start();

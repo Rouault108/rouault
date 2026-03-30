@@ -34,7 +34,7 @@ function normalizeString(value: unknown): string {
 }
 
 function normalizeTagList(value: readonly string[] | undefined): string[] {
-  return normalizeSearchTags(Array.isArray(value) ? [...value] : []);
+  return normalizeSearchTags(value === undefined ? [] : Array.from(value));
 }
 
 function toEpochMs(value: string): number | null {
@@ -58,7 +58,7 @@ function buildCountMapFromTags(tagLists: readonly (readonly string[])[]): Record
 
   return Object.fromEntries(
     [...counts.entries()].sort((left, right) => left[0].localeCompare(right[0], 'ja')),
-  );
+  ) as Record<string, number>;
 }
 
 function buildDefaultDiagnostics(
@@ -85,8 +85,9 @@ export function buildStaticExploreResponse(
   input: StaticExploreResponseInput = {},
 ): ExploreSearchResponse {
   const state = buildStaticSearchState(input.state);
-  const notes = Array.isArray(input.notes) ? input.notes : [];
-  const items = notes.flatMap((note) => {
+  const notes = input.notes ?? [];
+  type ExploreItem = ExploreSearchResponse['items'][number];
+  const items = notes.flatMap((note): ExploreItem[] => {
     const canonicalUrl = normalizeDocumentCanonicalUrl(note.permalink);
     if (canonicalUrl === null) {
       return [];

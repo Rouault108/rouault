@@ -1,7 +1,4 @@
-import {
-  type NoteContentKind,
-  normalizeNoteContentKind,
-} from './note-kind.js';
+import { normalizeNoteContentKind } from './note-kind.js';
 
 export interface NoteSurfacePolicy {
   readonly sidebar: boolean;
@@ -55,7 +52,6 @@ export const resolveNoteSurfacePolicy = (kind: unknown): NoteSurfacePolicy => {
 };
 
 export const isSurfaceEnabledForNoteKind = (
-  kind: NoteContentKind | unknown,
+  kind: unknown,
   surface: keyof NoteSurfacePolicy,
 ): boolean => resolveNoteSurfacePolicy(kind)[surface];
-

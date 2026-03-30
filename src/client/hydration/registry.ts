@@ -105,13 +105,13 @@ export const HYDRATION_REGISTRY = [
   {
     tag: 'code-block-enhancer',
     kind: 'enhancer',
-    loader: async () => undefined,
+    loader: () => Promise.resolve(undefined),
     activate: activateCodeBlocks,
   },
   {
     tag: 'code-group-enhancer',
     kind: 'enhancer',
-    loader: async () => undefined,
+    loader: () => Promise.resolve(undefined),
     activate: activateCodeGroups,
   },
   {

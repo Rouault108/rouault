@@ -67,30 +67,33 @@ const attachCopyHandler = (state: GroupState): void => {
     return;
   }
 
-  state.copyButton.dataset['bound'] = 'true';
-  state.copyButton.addEventListener('click', async () => {
-    const selectedKey =
-      state.group.dataset['codeGroupSelected'] ?? state.panels[0]?.dataset['codeGroupPanel'] ?? '';
-    const activePanel =
-      state.panels.find((panel) => panel.dataset['codeGroupPanel'] === selectedKey) ?? null;
-    const copyValue = activePanel ? getCopyValue(activePanel) : null;
-    if (!copyValue) {
-      state.copyButton!.disabled = true;
-      return;
-    }
+  const copyButton = state.copyButton;
+  copyButton.dataset['bound'] = 'true';
+  copyButton.addEventListener('click', () => {
+    void (async () => {
+      const selectedKey =
+        state.group.dataset['codeGroupSelected'] ?? state.panels[0]?.dataset['codeGroupPanel'] ?? '';
+      const activePanel =
+        state.panels.find((panel) => panel.dataset['codeGroupPanel'] === selectedKey) ?? null;
+      const copyValue = activePanel ? getCopyValue(activePanel) : null;
+      if (!copyValue) {
+        copyButton.disabled = true;
+        return;
+      }
 
-    try {
-      await navigator.clipboard.writeText(copyValue);
-      state.copyButton!.textContent = 'コピー済み';
-      window.setTimeout(() => {
-        state.copyButton!.textContent = 'コピー';
-      }, COPY_RESET_DELAY_MS);
-    } catch {
-      state.copyButton!.textContent = '失敗';
-      window.setTimeout(() => {
-        state.copyButton!.textContent = 'コピー';
-      }, COPY_RESET_DELAY_MS);
-    }
+      try {
+        await navigator.clipboard.writeText(copyValue);
+        copyButton.textContent = 'コピー済み';
+        window.setTimeout(() => {
+          copyButton.textContent = 'コピー';
+        }, COPY_RESET_DELAY_MS);
+      } catch {
+        copyButton.textContent = '失敗';
+        window.setTimeout(() => {
+          copyButton.textContent = 'コピー';
+        }, COPY_RESET_DELAY_MS);
+      }
+    })();
   });
 };
 

@@ -47,7 +47,7 @@ export class BaseLayout {
     const noteLayoutAttribute = data.note ? ' note-layout' : '';
     const clientScriptSrc = data.clientBundle?.scriptSrc ?? '/src/client.ts';
     const currentCorpusKey = resolveCurrentCorpusKey(data);
-    const noteSurfacePolicy = resolveNoteSurfacePolicy(data.note?.['kind']);
+    const noteSurfacePolicy = resolveNoteSurfacePolicy(data.note?.kind);
     const pagefindIgnoreAttribute =
       data.note && !noteSurfacePolicy.pagefind ? ' data-pagefind-ignore' : '';
     const corporaJson = JSON.stringify(buildCorpusNavigation(data.corpusPages ?? []))

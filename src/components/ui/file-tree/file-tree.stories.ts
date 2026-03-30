@@ -327,7 +327,8 @@ export const EventContract: Story = {
       }),
     );
 
-    if (!log.textContent?.includes('select')) {
+    const logText = log.textContent;
+    if (!logText.includes('select')) {
       throw new Error('ui-tree-select の bridge が log へ反映されていません');
     }
   },

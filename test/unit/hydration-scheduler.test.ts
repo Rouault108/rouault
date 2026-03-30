@@ -19,8 +19,9 @@ describe('HydrationScheduler', () => {
         {
           tag: 'code-group-enhancer',
           kind: 'enhancer',
-          loader: async () => {
+          loader: () => {
             steps.push('load:enhancer');
+            return Promise.resolve();
           },
           activate: () => {
             steps.push('activate:enhancer');
@@ -51,10 +52,7 @@ describe('HydrationScheduler', () => {
 
     await waitUntil(() => diagnostics !== null, 'enhancer diagnostics が発火すること');
 
-    const currentDiagnostics = diagnostics as unknown as HydrationDiagnostics;
-    if (!currentDiagnostics) {
-      throw new Error('enhancer diagnostics が取得できませんでした');
-    }
+    const currentDiagnostics = diagnostics as HydrationDiagnostics;
 
     expect(steps).to.deep.equal(['load:enhancer', 'activate:enhancer']);
     expect(currentDiagnostics.plannedCount).to.equal(1);
@@ -77,8 +75,9 @@ describe('HydrationScheduler', () => {
         initialTag,
         {
           tag: initialTag,
-          loader: async () => {
+          loader: () => {
             steps.push('load:initial');
+            return Promise.resolve();
           },
           activate: () => {
             steps.push('activate:initial');
@@ -89,8 +88,9 @@ describe('HydrationScheduler', () => {
         postTag,
         {
           tag: postTag,
-          loader: async () => {
+          loader: () => {
             steps.push('load:post');
+            return Promise.resolve();
           },
           activate: () => {
             steps.push('activate:post');
@@ -101,8 +101,9 @@ describe('HydrationScheduler', () => {
         visibleTag,
         {
           tag: visibleTag,
-          loader: async () => {
+          loader: () => {
             steps.push('load:visible');
+            return Promise.resolve();
           },
           activate: () => {
             steps.push('activate:visible');
@@ -156,10 +157,7 @@ describe('HydrationScheduler', () => {
       'visible が focusin で起動し diagnostics が発火すること',
     );
 
-    const currentDiagnostics = diagnostics as unknown as HydrationDiagnostics;
-    if (!currentDiagnostics) {
-      throw new Error('hydration diagnostics が取得できませんでした');
-    }
+    const currentDiagnostics = diagnostics as HydrationDiagnostics;
 
     expect(currentDiagnostics.plannedCount).to.equal(3);
     expect(currentDiagnostics.activatedCount).to.equal(3);
@@ -178,7 +176,7 @@ describe('HydrationScheduler', () => {
         visibleTag,
         {
           tag: visibleTag,
-          loader: async () => undefined,
+          loader: () => Promise.resolve(),
           activate: () => undefined,
         },
       ],
@@ -186,7 +184,7 @@ describe('HydrationScheduler', () => {
         initialTag,
         {
           tag: initialTag,
-          loader: async () => undefined,
+          loader: () => Promise.resolve(),
           activate: () => undefined,
         },
       ],
@@ -231,10 +229,7 @@ describe('HydrationScheduler', () => {
       '後続 session の diagnostics が発火すること',
     );
 
-    const currentSecondDiagnostics = secondDiagnostics as unknown as HydrationDiagnostics;
-    if (!currentSecondDiagnostics) {
-      throw new Error('後続 session の diagnostics が取得できませんでした');
-    }
+    const currentSecondDiagnostics = secondDiagnostics as HydrationDiagnostics;
 
     expect(firstDiagnosticsCount).to.equal(0);
     expect(currentSecondDiagnostics.plannedCount).to.equal(1);
@@ -252,16 +247,14 @@ describe('HydrationScheduler', () => {
         loadFailTag,
         {
           tag: loadFailTag,
-          loader: async () => {
-            throw new Error('load failed');
-          },
+          loader: () => Promise.reject(new Error('load failed')),
         },
       ],
       [
         activateFailTag,
         {
           tag: activateFailTag,
-          loader: async () => undefined,
+          loader: () => Promise.resolve(),
           activate: () => {
             throw new Error('activate failed');
           },
@@ -296,10 +289,7 @@ describe('HydrationScheduler', () => {
       'failure diagnostics が発火すること',
     );
 
-    const currentDiagnostics = diagnostics as unknown as HydrationDiagnostics;
-    if (!currentDiagnostics) {
-      throw new Error('failure diagnostics が取得できませんでした');
-    }
+    const currentDiagnostics = diagnostics as HydrationDiagnostics;
 
     expect(currentDiagnostics.failedCount).to.equal(2);
     expect(currentDiagnostics.issues).to.deep.equal([

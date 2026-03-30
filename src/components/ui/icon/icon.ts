@@ -4,7 +4,14 @@ import type { IconName } from '../../../icons/catalog.js';
 const NAME_ATTRIBUTE = 'name';
 const ICON_ATTRIBUTE = 'icon';
 const ARIA_LABEL_ATTRIBUTE = 'aria-label';
-const BaseElement = typeof HTMLElement === 'undefined' ? class {} : HTMLElement;
+type UiIconBaseConstructor = new () => HTMLElement;
+
+const BaseElement: UiIconBaseConstructor =
+  typeof HTMLElement === 'undefined'
+    ? (class {
+        __rouaultBaseElement = 0;
+      } as unknown as UiIconBaseConstructor)
+    : HTMLElement;
 
 export class UiIcon extends BaseElement {
   static readonly observedAttributes = [NAME_ATTRIBUTE, ICON_ATTRIBUTE, ARIA_LABEL_ATTRIBUTE];
@@ -152,10 +159,10 @@ if (typeof customElements !== 'undefined' && !customElements.get('ui-icon')) {
   customElements.define('ui-icon', UiIcon as unknown as CustomElementConstructor);
 }
 
-export interface UiIcon extends HTMLElement {}
+export type UiIconElement = InstanceType<typeof UiIcon>;
 
 declare global {
   interface HTMLElementTagNameMap {
-    'ui-icon': UiIcon;
+    'ui-icon': UiIconElement;
   }
 }
