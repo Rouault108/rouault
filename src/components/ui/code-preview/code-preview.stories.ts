@@ -96,6 +96,8 @@ const readCssText = (styles: unknown): string => {
   return '';
 };
 
+const codePreviewCssText = readCssText(CodePreview.styles);
+
 const meta: Meta<CodePreview> = {
   title: 'Components/Code Preview',
   component: 'ui-code-preview',
@@ -342,8 +344,7 @@ export const HeaderWithToolbarOnly: Story = {
     // ツールバーは CSS 契約として右寄せ指定されている
     const headerToolbar = preview.shadowRoot?.querySelector<HTMLElement>('.header-toolbar');
     if (!headerToolbar) throw new Error('.header-toolbar が見つかりません');
-    const cssText = readCssText(CodePreview.styles);
-    if (!cssText.includes('margin-inline-start: auto')) {
+    if (!codePreviewCssText.includes('margin-inline-start: auto')) {
       throw new Error('toolbar-only 時の右寄せ契約が CSS に定義されていません');
     }
 
@@ -923,7 +924,6 @@ export const ToolbarTargetSizeContract: Story = {
     await preview.updateComplete;
     await waitFrame();
 
-    const cssText = readCssText(CodePreview.styles);
     const requiredTokens = [
       "::slotted(button[slot='toolbar'])",
       "::slotted(a[slot='toolbar'])",
@@ -936,7 +936,7 @@ export const ToolbarTargetSizeContract: Story = {
     ];
 
     for (const token of requiredTokens) {
-      if (!cssText.includes(token)) {
+      if (!codePreviewCssText.includes(token)) {
         throw new Error(`toolbar ターゲットサイズ契約の定義が不足しています: ${token}`);
       }
     }
@@ -1287,7 +1287,6 @@ export const ForcedColorsContract: Story = {
     await preview.updateComplete;
     await waitFrame();
 
-    const cssText = readCssText(CodePreview.styles);
     const requiredTokens = [
       '@media (forced-colors: active)',
       'border-color: CanvasText',
@@ -1297,7 +1296,7 @@ export const ForcedColorsContract: Story = {
     ];
 
     for (const token of requiredTokens) {
-      if (!cssText.includes(token)) {
+      if (!codePreviewCssText.includes(token)) {
         throw new Error(`forced-colors 契約の定義が不足しています: ${token}`);
       }
     }
@@ -1329,7 +1328,6 @@ export const PrintStyleContract: Story = {
     await preview.updateComplete;
     await waitFrame();
 
-    const cssText = readCssText(CodePreview.styles);
     const requiredTokens = [
       '@media print',
       'width: 100% !important',
@@ -1344,7 +1342,7 @@ export const PrintStyleContract: Story = {
     ];
 
     for (const token of requiredTokens) {
-      if (!cssText.includes(token)) {
+      if (!codePreviewCssText.includes(token)) {
         throw new Error(`印刷スタイル契約の定義が不足しています: ${token}`);
       }
     }
@@ -1376,12 +1374,10 @@ export const BreakoutPatternContract: Story = {
     await preview.updateComplete;
     await waitFrame();
 
-    const cssText = readCssText(CodePreview.styles);
-
     // mobile breakout（space-8 / space-n4）
     const mobileTokens = ['calc(100% + var(--space-8, 2rem))', 'var(--space-n4, -1rem)'];
     for (const token of mobileTokens) {
-      if (!cssText.includes(token)) {
+      if (!codePreviewCssText.includes(token)) {
         throw new Error(`Mobile breakout 定義が不足しています: ${token}`);
       }
     }
@@ -1393,7 +1389,7 @@ export const BreakoutPatternContract: Story = {
       '@media (min-width: 768px)',
     ];
     for (const token of desktopTokens) {
-      if (!cssText.includes(token)) {
+      if (!codePreviewCssText.includes(token)) {
         throw new Error(`Desktop breakout 定義が不足しています: ${token}`);
       }
     }
@@ -1410,7 +1406,7 @@ export const BreakoutPatternContract: Story = {
       '--ui-code-group-margin-inline: 0',
     ];
     for (const token of neutralizeTokens) {
-      if (!cssText.includes(token)) {
+      if (!codePreviewCssText.includes(token)) {
         throw new Error(`子コンポーネント breakout 無効化定義が不足しています: ${token}`);
       }
     }
@@ -1442,23 +1438,21 @@ export const VisualHierarchyContract: Story = {
     await preview.updateComplete;
     await waitFrame();
 
-    const cssText = readCssText(CodePreview.styles);
-
     // ヘッダー領域が preview-bg 拡張ポイントを経由して preview surface を参照
     if (
-      !cssText.includes('--_ui-code-preview-surface-bg') ||
-      !cssText.includes('--ui-code-preview-preview-bg')
+      !codePreviewCssText.includes('--_ui-code-preview-surface-bg') ||
+      !codePreviewCssText.includes('--ui-code-preview-preview-bg')
     ) {
       throw new Error('header が preview surface トークンを参照していません');
     }
 
     // ルートおよびプレビュー領域が --bg-fill-muted を使用
-    if (!cssText.includes('var(--bg-fill-muted')) {
+    if (!codePreviewCssText.includes('var(--bg-fill-muted')) {
       throw new Error('.root が --bg-fill-muted を参照していません');
     }
 
     // 外枠ボーダーが --border-style-subtle
-    if (!cssText.includes('var(--border-style-subtle')) {
+    if (!codePreviewCssText.includes('var(--border-style-subtle')) {
       throw new Error('外枠ボーダーが --border-style-subtle を参照していません');
     }
 

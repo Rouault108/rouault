@@ -46,6 +46,7 @@ const DEFAULT_COPY_CONTEXT = 'コード';
 const DEFAULT_GROUP_LABEL = 'コードグループ';
 const DEFAULT_COPY_BUTTON_LABEL = 'コードをコピー';
 const FALSE_BOOLEAN_ATTRIBUTE_VALUES = new Set(['false', '0', 'off', 'no']);
+const RECOMPOSE_TRIGGER_ATTRIBUTES = new Set(['group-key', 'tab-label', 'copy-label', 'copyable', 'filename', 'lang', 'id']);
 const VALID_ACTIVATION_MODES = new Set<ActivationMode>(['auto', 'manual']);
 
 let codeGroupId = 0;
@@ -352,11 +353,20 @@ export class CodeGroup extends LitElement {
 
   private _selectedInitialized = false;
 
+  private _hasCompletedInitialUpdate = false;
+
   private readonly _tabButtons: HTMLButtonElement[] = [];
 
   private readonly _tabClickHandlers = new Map<HTMLButtonElement, EventListener>();
 
   private _hydrationActivated = false;
+
+  private readonly _mutationObserverOptions = {
+    attributes: true,
+    attributeFilter: Array.from(RECOMPOSE_TRIGGER_ATTRIBUTES),
+    childList: true,
+    subtree: true,
+  } as const;
 
   activateHydration(): void {
     if (this._hydrationActivated) {
@@ -375,20 +385,7 @@ export class CodeGroup extends LitElement {
       this._scheduleCompose();
     });
 
-    this._mutationObserver.observe(this, {
-      attributes: true,
-      attributeFilter: [
-        'group-key',
-        'tab-label',
-        'copy-label',
-        'copyable',
-        'filename',
-        'lang',
-        'id',
-      ],
-      childList: true,
-      subtree: true,
-    });
+    this._observeMutations();
 
     this._headerToolsResizeObserver = new ResizeObserver(() => {
       this._syncHeaderToolsWidth();
@@ -404,10 +401,16 @@ export class CodeGroup extends LitElement {
     super.connectedCallback();
 
     this.addEventListener('ui-code-block-change', this._onCodeBlockChange as EventListener);
-    this._composeFromLightDom();
     if (!this.hasAttribute('data-hydration-trigger')) {
       this.activateHydration();
     }
+  }
+
+  override firstUpdated(): void {
+    this._composeFromLightDom();
+    queueMicrotask(() => {
+      this._hasCompletedInitialUpdate = true;
+    });
   }
 
   override disconnectedCallback(): void {
@@ -439,7 +442,7 @@ export class CodeGroup extends LitElement {
       changedProperties.has('defaultSelectedValue') ||
       changedProperties.has('activation');
 
-    if (this._hasComposedOnce && selectionInputsChanged) {
+    if (this._hasCompletedInitialUpdate && this._hasComposedOnce && selectionInputsChanged) {
       this._scheduleCompose();
     }
   }
@@ -459,6 +462,9 @@ export class CodeGroup extends LitElement {
     }
 
     this._isComposing = true;
+    const shouldReobserveMutations = this._hydrationActivated;
+
+    this._mutationObserver?.disconnect();
 
     try {
       const previousValue = this._selectedResolvedValue;
@@ -501,7 +507,14 @@ export class CodeGroup extends LitElement {
       this._hasComposedOnce = true;
     } finally {
       this._isComposing = false;
+      if (shouldReobserveMutations) {
+        this._observeMutations();
+      }
     }
+  }
+
+  private _observeMutations(): void {
+    this._mutationObserver?.observe(this, this._mutationObserverOptions);
   }
 
   private _scheduleCompose(): void {
@@ -886,7 +899,7 @@ export class CodeGroup extends LitElement {
   }
 
   private _isControlled(): boolean {
-    return this.hasAttribute('selected-value');
+    return this.getAttribute('selected-value')?.trim() !== '';
   }
 
   private _findItemIndex(value: string, items: readonly GroupItem[]): number {
@@ -1025,7 +1038,7 @@ export class CodeGroup extends LitElement {
   private _shouldRecompose(records: readonly MutationRecord[]): boolean {
     for (const record of records) {
       if (record.type === 'attributes') {
-        if (this._isDirectCodeBlock(record.target)) {
+        if (this._isDirectCodeBlock(record.target) && RECOMPOSE_TRIGGER_ATTRIBUTES.has(record.attributeName ?? '')) {
           return true;
         }
         continue;

@@ -54,6 +54,8 @@ const readCssText = (styles: unknown): string => {
   return '';
 };
 
+const codeGroupCssText = readCssText(CodeGroup.styles);
+
 const dispatchTabKey = (target: HTMLElement, key: string): KeyboardEvent => {
   const event = new KeyboardEvent('keydown', {
     key,
@@ -622,7 +624,6 @@ export const PrintStyleContract: Story = {
     </ui-code-group>
   `,
   play: () => {
-    const cssText = readCssText(CodeGroup.styles);
     const requiredTokens = [
       '@media print',
       'border-color: #000 !important',
@@ -635,7 +636,7 @@ export const PrintStyleContract: Story = {
     ];
 
     for (const token of requiredTokens) {
-      if (!cssText.includes(token)) {
+      if (!codeGroupCssText.includes(token)) {
         throw new Error(`印刷スタイル契約の定義が不足しています: ${token}`);
       }
     }
@@ -655,7 +656,6 @@ export const ForcedColorsContract: Story = {
     </ui-code-group>
   `,
   play: () => {
-    const cssText = readCssText(CodeGroup.styles);
     const requiredTokens = [
       '@media (forced-colors: active)',
       'border-color: CanvasText',
@@ -665,7 +665,7 @@ export const ForcedColorsContract: Story = {
     ];
 
     for (const token of requiredTokens) {
-      if (!cssText.includes(token)) {
+      if (!codeGroupCssText.includes(token)) {
         throw new Error(`forced-colors 契約の定義が不足しています: ${token}`);
       }
     }

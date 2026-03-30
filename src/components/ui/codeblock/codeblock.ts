@@ -505,7 +505,6 @@ export class CodeBlock extends LitElement {
         this._dispatchChange(['content'], true);
       }
     });
-    this._syncSlottedPre();
   }
 
   override connectedCallback(): void {
