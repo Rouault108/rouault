@@ -29,29 +29,6 @@ const activateArticleHeaderTags = ({ root, element }: HydrationActivationContext
   hydrateArticleHeaderTags(root);
 };
 
-let codeBlockEnhancerModule:
-  | typeof import('../post-hydrate/code-block-enhancer.js')
-  | null = null;
-let codeGroupEnhancerModule:
-  | typeof import('../post-hydrate/code-group-enhancer.js')
-  | null = null;
-
-const loadCodeBlockEnhancer = async (): Promise<void> => {
-  codeBlockEnhancerModule ??= await import('../post-hydrate/code-block-enhancer.js');
-};
-
-const loadCodeGroupEnhancer = async (): Promise<void> => {
-  codeGroupEnhancerModule ??= await import('../post-hydrate/code-group-enhancer.js');
-};
-
-const activateCodeBlockEnhancer = ({ element }: HydrationActivationContext): void => {
-  codeBlockEnhancerModule?.activateCodeBlockEnhancer(element);
-};
-
-const activateCodeGroupEnhancer = ({ element }: HydrationActivationContext): void => {
-  codeGroupEnhancerModule?.activateCodeGroupEnhancer(element);
-};
-
 export const HYDRATION_REGISTRY = [
   {
     tag: 'ui-skip-link',
@@ -124,6 +101,11 @@ export const HYDRATION_REGISTRY = [
     loader: () => import('../../components/ui/checkbox/checkbox.js'),
   },
   {
+    tag: 'ui-code-block',
+    loader: () => import('../../components/ui/codeblock/codeblock.js'),
+    activate: activateElementMethod,
+  },
+  {
     tag: 'ui-code-group',
     loader: () => import('../../components/ui/code-group/code-group.js'),
     activate: activateElementMethod,
@@ -182,18 +164,6 @@ export const HYDRATION_REGISTRY = [
     tag: 'ui-translation',
     loader: () => import('../../components/ui/translation/translation.js'),
     activate: activateElementMethod,
-  },
-  {
-    tag: 'code-block-enhancer',
-    kind: 'enhancer',
-    loader: loadCodeBlockEnhancer,
-    activate: activateCodeBlockEnhancer,
-  },
-  {
-    tag: 'code-group-enhancer',
-    kind: 'enhancer',
-    loader: loadCodeGroupEnhancer,
-    activate: activateCodeGroupEnhancer,
   },
 ] as const satisfies readonly HydrationRegistryEntry[];
 

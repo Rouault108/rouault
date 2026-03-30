@@ -253,8 +253,6 @@ ui-article-header + .prose {
     pre,
     table,
     figure,
-    section[data-code-group],
-    pre[data-code-block],
     ui-callout,
     ui-card,
     ui-code-block,
@@ -333,9 +331,7 @@ ui-article-header + .prose {
   text-align: start;
 }
 
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > ui-code-block,
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > pre[data-code-block],
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > section[data-code-group] {
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > :is(ui-code-block, ui-code-group) {
   width: 100%;
   margin-inline: 0;
 }
@@ -357,8 +353,6 @@ ui-article-header + .prose {
     pre,
     table,
     figure,
-    section[data-code-group],
-    pre[data-code-block],
     ui-callout,
     ui-card,
     ui-code-block,
@@ -472,9 +466,7 @@ ui-article-header + .prose {
 }
 
 /* 本文内のコードブロック・テーブルは breakout を無効化して読書幅に揃える */
-.prose > ui-code-block,
-.prose > pre[data-code-block],
-.prose > section[data-code-group] {
+.prose > :is(ui-code-block, ui-code-group) {
   width: 100%;
   margin-inline: 0;
 }
@@ -504,156 +496,6 @@ ui-article-header + .prose {
     width: calc(100% + var(--space-8));
     margin-inline: var(--space-n4);
   }
-}
-
-pre[data-code-block] {
-  position: relative;
-  margin: 0;
-  border: 1px solid oklch(20% 0 0 / 0.08);
-  border-radius: var(--radius-md);
-  background: var(--bg-fill-muted);
-  color: var(--fg-default);
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  line-height: var(--line-height-code, 1.45);
-  padding: var(--space-3);
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-gutter: stable;
-}
-
-pre[data-code-block] code {
-  display: block;
-  min-width: max-content;
-}
-
-pre[data-code-block][data-code-wrap='true'] {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-pre[data-code-block] .line {
-  display: block;
-}
-
-pre[data-code-block][data-code-line-numbers='true'] code {
-  counter-reset: static-code-line;
-}
-
-pre[data-code-block][data-code-line-numbers='true'] .line {
-  position: relative;
-  padding-inline-start: calc(var(--space-8) + var(--space-2));
-}
-
-pre[data-code-block][data-code-line-numbers='true'] .line::before {
-  counter-increment: static-code-line;
-  content: counter(static-code-line);
-  position: absolute;
-  inset-inline-start: 0;
-  width: var(--space-8);
-  color: var(--fg-subtle);
-  text-align: end;
-  user-select: none;
-}
-
-pre[data-code-block] .line.highlighted,
-pre[data-code-block] .line.ui-explicit-highlight {
-  background: color-mix(in oklch, var(--bg-highlight-subtle) 78%, transparent);
-}
-
-pre[data-code-block] .line.diff.add {
-  background: color-mix(in oklch, var(--success) 14%, transparent);
-}
-
-pre[data-code-block] .line.diff.remove {
-  background: color-mix(in oklch, var(--danger) 12%, transparent);
-}
-
-pre[data-code-block][data-code-intent='valid'] {
-  border-color: oklch(from var(--success) l c h / 0.28);
-}
-
-pre[data-code-block][data-code-intent='invalid'] {
-  border-color: oklch(from var(--danger) l c h / 0.28);
-}
-
-[data-code-block-toolbar] {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  margin-block-end: var(--space-2);
-  color: var(--fg-muted);
-  font-size: var(--text-xs);
-}
-
-[data-code-block-meta] {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-[data-code-block-actions] {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-[data-code-copy-button] {
-  border: 1px solid oklch(20% 0 0 / 0.08);
-  border-radius: var(--radius-sm);
-  background: var(--bg-default);
-  color: var(--fg-default);
-  font: inherit;
-  font-size: var(--text-xs);
-  padding: 0.2rem 0.5rem;
-  cursor: pointer;
-}
-
-[data-code-overflow-hint] {
-  color: var(--fg-subtle);
-  font-size: var(--text-xs);
-}
-
-section[data-code-group] {
-  display: block;
-}
-
-section[data-code-group] > [role='tablist'] {
-  display: none;
-  align-items: center;
-  gap: var(--space-1);
-  margin-block-end: var(--space-2);
-}
-
-section[data-code-group][data-code-group-enhanced] > [role='tablist'] {
-  display: flex;
-}
-
-section[data-code-group] > [role='tablist'] > [role='tab'] {
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--fg-muted);
-  font: inherit;
-  font-size: var(--text-xs);
-  padding: 0.3rem 0.6rem;
-  cursor: pointer;
-}
-
-section[data-code-group] > [role='tablist'] > [role='tab'][aria-selected='true'] {
-  border-color: oklch(20% 0 0 / 0.08);
-  background: var(--bg-fill-muted);
-  color: var(--fg-default);
-}
-
-section[data-code-group] > [role='tabpanel'] + [role='tabpanel'] {
-  margin-block-start: var(--space-3);
-}
-
-section[data-code-group][data-code-group-enhanced] > [role='tabpanel'] + [role='tabpanel'] {
-  margin-block-start: 0;
 }
 
 /* Desktop: さらに広く強調 */

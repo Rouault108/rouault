@@ -109,6 +109,7 @@ const resolveHydrationDirective = (node: HastNode): HydrationDirective | null =>
     case 'layout-sidebar':
     case 'layout-toc':
     case 'ui-checkbox':
+    case 'ui-code-group':
     case 'ui-details':
     case 'ui-footnote':
     case 'ui-tabs':
@@ -117,6 +118,7 @@ const resolveHydrationDirective = (node: HastNode): HydrationDirective | null =>
     case 'ui-blockquote':
     case 'ui-callout':
     case 'ui-card':
+    case 'ui-code-block':
     case 'ui-divider':
     case 'ui-highlight':
     case 'ui-info-box':

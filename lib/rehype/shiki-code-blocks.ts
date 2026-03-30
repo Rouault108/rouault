@@ -78,16 +78,6 @@ const pickOptionalString = (value: unknown): string | undefined => {
   return trimmed.length > 0 ? trimmed : undefined;
 };
 
-const setOptionalProperty = (
-  properties: Record<string, unknown>,
-  key: string,
-  value: string | undefined,
-): void => {
-  if (value !== undefined) {
-    properties[key] = value;
-  }
-};
-
 const parseHighlightLines = (value: string | undefined): Set<number> => {
   if (!value) {
     return new Set<number>();
@@ -234,6 +224,31 @@ const toShikiMeta = (codeNode: HastNode): Record<string, unknown> => {
 const normalizeLineEndings = (value: string): string =>
   value.replace(/\r\n?/g, '\n').replace(/\n$/, '');
 
+const deleteHostOnlyCodeProperties = (properties: Record<string, unknown>): void => {
+  const keysToRemove = new Set([
+    'data-shiki-meta',
+    'filename',
+    'label',
+    'group-key',
+    'tab-label',
+    'copy-label',
+    'intent',
+    'show-line-numbers',
+    'copy-mode',
+    'copyable',
+    'wrap',
+    'highlight-lines',
+    'layout',
+  ]);
+
+  for (const key of Object.keys(properties)) {
+    if (keysToRemove.has(key)) {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+      delete properties[key];
+    }
+  }
+};
+
 const highlightCodeBlock = async (node: HastNode): Promise<void> => {
   const codeNode = findCodeChild(node);
   if (!codeNode) {
@@ -258,7 +273,7 @@ const highlightCodeBlock = async (node: HastNode): Promise<void> => {
   if (highlightedCode) {
     const mergedProperties = {
       ...(highlightedCode.properties ?? {}),
-      ...codeNode.properties,
+      ...(codeNode.properties ?? {}),
     };
     const filename = pickOptionalString(mergedProperties['filename']);
     const label = pickOptionalString(mergedProperties['label']);
@@ -267,7 +282,7 @@ const highlightCodeBlock = async (node: HastNode): Promise<void> => {
     const copyLabel = pickOptionalString(mergedProperties['copy-label']);
     const intent = pickOptionalString(mergedProperties['intent'])?.toLowerCase();
     const copyMode = pickOptionalString(mergedProperties['copy-mode'])?.toLowerCase();
-    const wrap = mergedProperties['wrap'] === true ? 'true' : undefined;
+    const wrap = mergedProperties['wrap'] === true;
     const highlightLines = pickOptionalString(mergedProperties['highlight-lines']);
     const layout = pickOptionalString(mergedProperties['layout'])?.toLowerCase();
     const copyable =
@@ -275,52 +290,39 @@ const highlightCodeBlock = async (node: HastNode): Promise<void> => {
       mergedProperties['copyable'].trim().toLowerCase() === 'false'
         ? 'false'
         : undefined;
-    const lineNumbers = mergedProperties['show-line-numbers'] === true ? 'true' : undefined;
+    const showLineNumbers = mergedProperties['show-line-numbers'] === true;
 
     highlightedCode.properties = {
       ...mergedProperties,
       'data-lang': language,
     };
 
-    delete highlightedCode.properties['data-shiki-meta'];
-    delete highlightedCode.properties['filename'];
-    delete highlightedCode.properties['label'];
-    delete highlightedCode.properties['group-key'];
-    delete highlightedCode.properties['tab-label'];
-    delete highlightedCode.properties['copy-label'];
-    delete highlightedCode.properties['intent'];
-    delete highlightedCode.properties['show-line-numbers'];
-    delete highlightedCode.properties['copy-mode'];
-    delete highlightedCode.properties['copyable'];
-    delete highlightedCode.properties['wrap'];
-    delete highlightedCode.properties['highlight-lines'];
-    delete highlightedCode.properties['layout'];
-
+    deleteHostOnlyCodeProperties(highlightedCode.properties);
     annotateExplicitHighlights(highlightedCode, highlightLines);
 
-    highlightedPre.properties = {
-      ...(highlightedPre.properties ?? {}),
-      'data-code-block': true,
-      'data-code-language': language,
-      'data-code-raw': source,
-      ...(intent ? { 'data-code-intent': intent } : {}),
-      ...(lineNumbers ? { 'data-code-line-numbers': lineNumbers } : {}),
-      ...(copyMode ? { 'data-code-copy-mode': copyMode } : {}),
-      ...(wrap ? { 'data-code-wrap': wrap } : {}),
-      ...(highlightLines ? { 'data-code-highlight-lines': highlightLines } : {}),
-      ...(layout ? { 'data-code-layout': layout } : {}),
-      ...(copyable ? { 'data-code-copyable': copyable } : {}),
+    node.tagName = 'ui-code-block';
+    node.properties = {
+      lang: language,
+      ...(filename ? { filename } : {}),
+      ...(label ? { label } : {}),
+      ...(groupKey ? { 'group-key': groupKey } : {}),
+      ...(tabLabel ? { 'tab-label': tabLabel } : {}),
+      ...(copyLabel ? { 'copy-label': copyLabel } : {}),
+      ...(intent ? { intent } : {}),
+      ...(showLineNumbers ? { 'show-line-numbers': true } : {}),
+      ...(copyMode ? { 'copy-mode': copyMode } : {}),
+      ...(copyable ? { copyable } : {}),
+      ...(wrap ? { wrap: true } : {}),
+      ...(highlightLines ? { 'highlight-lines': highlightLines } : {}),
+      ...(layout ? { layout } : {}),
     };
-    setOptionalProperty(highlightedPre.properties, 'data-code-filename', filename);
-    setOptionalProperty(highlightedPre.properties, 'data-code-label', label);
-    setOptionalProperty(highlightedPre.properties, 'data-code-group-key', groupKey);
-    setOptionalProperty(highlightedPre.properties, 'data-code-tab-label', tabLabel);
-    setOptionalProperty(highlightedPre.properties, 'data-code-copy-label', copyLabel);
+    node.children = [highlightedPre];
+    return;
   }
 
-  node.tagName = 'pre';
-  node.properties = highlightedPre.properties ?? {};
-  node.children = highlightedPre.children ?? [];
+  node.tagName = 'ui-code-block';
+  node.properties = { lang: language };
+  node.children = [highlightedPre];
 };
 
 const isCodeBlockPre = (node: HastNode): boolean => {
