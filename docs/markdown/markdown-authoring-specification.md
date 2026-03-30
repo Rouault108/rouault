@@ -434,9 +434,13 @@ frontmatter metadata には次の制約を適用します。
 規則:
 
 - `translation` は static translation の正規形です。
-- 子要素からのテキスト昇格は現行制約に従います。
+- `translation` が保持する意味内容は、`original` と `translated` の **plain-text 2 片のみ**です。
+- 正規入力は属性 `original` / `translated` です。
+- 本文 2 段落入力は互換のための**縮退入力**としてのみ受理します。
+- 本文から取り出すのは 1 段落目と 2 段落目のプレーンテキスト相当であり、inline markup・脚注・リンク・ルビ等の構造は保持しません。
+- `translation` の block children は最終出力に保持しません。
 - `render-mode` と `open` は受理してはなりません。
-- `translation` の block children は最終的に保持しません。
+- rich bilingual content を表現したい場合は `translation` を拡張せず、別 directive または別 grammar を用います。
 
 ### 5.12.1 `::translation-overlay`
 
@@ -455,8 +459,14 @@ frontmatter metadata には次の制約を適用します。
 規則:
 
 - `translation-overlay` は interactive overlay 専用です。
+- `translation-overlay` が保持する意味内容は、`original` と `translated` の **plain-text 2 片のみ**です。
+- 正規入力は属性 `original` / `translated` です。
+- 本文 2 段落入力は互換のための**縮退入力**としてのみ受理します。
+- 本文から取り出すのは 1 段落目と 2 浧落目のプレーンテキスト相当であり、inline markup・脚注・リンク・ルビ等の構造は保持しません。
+- block children は最終出力に保持しません。
 - `render-mode` と `open` は受理してはなりません。
 - 最終出力は `ui-translation` に正規化されます。
+- rich bilingual content を表現したい場合は `translation-overlay` を拡張せず、別 directive または別 grammar を用います。
 
 ### 5.13 `::preview`
 
@@ -679,7 +689,7 @@ remark 段階では次を即時エラーとします。
 
 ### 10.1 `translation`
 
-`translation` と `translation-overlay` は block children を保持しません。子要素から拾うのは 1 段落目と 2 段落目のプレーンテキスト相当であり、最終的には `original` / `translated` 相当へ昇格したあと `children: []` になります。旧 `render-mode` 契約は廃止され、build-time rejection の対象です。
+`translation` と `translation-overlay` は、`original` / `translated` の **plain-text 2 片**だけを公開契約として扱います。本文入力を用いる場合も、子要素から取り出すのは 1 段落目と 2 段落目のプレーンテキスト相当だけであり、最終的には `original` / `translated` へ昇格したあと `children: []` になります。inline markup・脚注・リンク・ルビ・3 段落以上の対応関係は、この directive family の正規契約には含みません。旧 `render-mode` 契約は廃止され、build-time rejection の対象です。
 
 ### 10.2 `tabs`
 

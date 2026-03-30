@@ -39,6 +39,13 @@ Rouault の translation は static-first です。常時読める対訳は Markd
 | `surface`    | property / attribute                 | いいえ | `popover                                                                | drawer`。不正値は `popover` にフォールバック |
 | `open`       | property / attribute                 | いいえ | 開閉状態                                                                |
 
+### 3.1.1 入力意味論
+
+- `ui-translation` が受け取る `original` / `translated` は plain-text 文字列です。
+- `ui-translation` は Markdown AST・HTML fragment・structured bilingual content を受け取りません。
+- 強調・脚注・リンク・ルビ等を含む構造化対訳は、この component の責務ではありません。
+- そのような内容は `translation` family へ流し込まず、別 directive / 別出力契約で扱います。
+
 ### 3.2 公開メソッド
 
 - `openTranslation()`
@@ -128,7 +135,9 @@ Rouault の translation は static-first です。常時読める対訳は Markd
 
 - static translation は `::translation` から `div.translation-static[data-translation-kind="static"]` を出力する
 - interactive overlay は `::translation-overlay` から `ui-translation[surface]` を出力する
+- いずれも `original` / `translated` の plain-text 2 片のみを契約対象とする
 - note 本文では overlay だけが `data-hydration-trigger="visible"` を持つ
+- rich bilingual content は `ui-translation` の責務ではなく、別 directive / 別 grammar の責務とする
 
 ---
 

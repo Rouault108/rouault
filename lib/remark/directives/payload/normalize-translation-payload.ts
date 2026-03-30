@@ -10,11 +10,33 @@ const buildTextBlocks = (children: MdastNode[]): string[] =>
     .map((item) => getNodeTextContent(item).trim())
     .filter((item) => item.length > 0);
 
+const validateTextBlockCount = (
+  textBlocks: string[],
+  directiveName: 'translation' | 'translation-overlay',
+  node: MdastNode,
+  file?: VFileLike,
+): void => {
+  if (textBlocks.length <= 2) {
+    return;
+  }
+
+  throw toError(
+    file,
+    node,
+    `${directiveName} の本文は非空テキスト段落を 2 つまでしか持てません`,
+  );
+};
+
 const resolveTranslationContent = (
   attrs: Record<string, string>,
   children: MdastNode[],
+  directiveName: 'translation' | 'translation-overlay',
+  node: MdastNode,
+  file?: VFileLike,
 ): { original: string; translated: string } => {
   const textBlocks = buildTextBlocks(children);
+  validateTextBlockCount(textBlocks, directiveName, node, file);
+
   return {
     original: pickOptional(attrs['original']) ?? textBlocks[0] ?? '',
     translated: pickOptional(attrs['translated']) ?? textBlocks[1] ?? '',
@@ -27,7 +49,14 @@ export const normalizeTranslationPayload = (
   node: MdastNode,
   file?: VFileLike,
 ): TranslationPayload => {
-  const { original, translated } = resolveTranslationContent(attrs, children);
+  const { original, translated } = resolveTranslationContent(
+    attrs,
+    children,
+    'translation',
+    node,
+    file,
+  );
+
   if (original.length === 0 || translated.length === 0) {
     throw toError(file, node, 'translation には original と translated の両方が必要です');
   }
@@ -49,7 +78,14 @@ export const normalizeTranslationOverlayPayload = (
   node: MdastNode,
   file?: VFileLike,
 ): TranslationOverlayPayload => {
-  const { original, translated } = resolveTranslationContent(attrs, children);
+  const { original, translated } = resolveTranslationContent(
+    attrs,
+    children,
+    'translation-overlay',
+    node,
+    file,
+  );
+
   if (original.length === 0 || translated.length === 0) {
     throw toError(file, node, 'translation-overlay には original と translated の両方が必要です');
   }

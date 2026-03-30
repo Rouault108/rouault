@@ -248,7 +248,11 @@ note 本文の標準マッピングは次のとおりです。
 - `ui-code-preview` は `controls` も `toolbar` もない場合、directive を付与してはなりません。
 - static translation は `div.translation-static[data-translation-kind="static"]` として出力し、hydration directive を付与してはなりません。
 - overlay translation は `ui-translation[surface]` として出力し、`data-hydration-capability="interactive"` / `data-hydration-trigger="visible"` を付与しなければなりません。
+- static translation の子要素は `translation-original` / `translation-translated` の 2 paragraph に固定し、それぞれの本文は plain-text のみを含まなければなりません。
+- overlay translation は `ui-translation` の `original` / `translated` 属性へ plain-text を渡す契約であり、構造化 child content を出力してはなりません。
+- `translation` family に由来する inline markup・脚注・リンク・ルビ等の構造は、出力契約として保持してはなりません。
 - build-time で directive を持たない静的 note UI を hydration 対象として拡張してはなりません。
+
 
 ---
 

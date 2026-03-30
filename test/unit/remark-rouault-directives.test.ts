@@ -1176,6 +1176,49 @@ describe('remarkRouaultDirectives', () => {
     expect(translation?.children?.[1]?.children?.[0]?.value).to.equal('我思う、ゆえに我あり。');
   });
 
+  it('translation ディレクティブ本文の inline markup は plain text へ flatten されること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::translation{lang="fr" target-lang="ja"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [
+            { type: 'text', value: 'Je pense, ' },
+            { type: 'emphasis', children: [{ type: 'text', value: 'donc' }] },
+            { type: 'text', value: ' je suis.' },
+          ],
+        },
+        {
+          type: 'paragraph',
+          children: [
+            { type: 'text', value: '我思う、' },
+            {
+              type: 'link',
+              url: 'https://example.com/cogito',
+              children: [{ type: 'text', value: 'ゆえに' }],
+            },
+            { type: 'text', value: '我あり。' },
+          ],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    const translation = tree.children?.[0];
+    expect(translation?.data?.hName).to.equal('div');
+    expect(translation?.children?.[0]?.children?.[0]?.value).to.equal('Je pense, donc je suis.');
+    expect(translation?.children?.[1]?.children?.[0]?.value).to.equal('我思う、ゆえに我あり。');
+  });
+
   it('translation-overlay ディレクティブを ui-translation ノードへ変換すること', () => {
     const tree: MdastNode = {
       type: 'root',
@@ -1208,6 +1251,54 @@ describe('remarkRouaultDirectives', () => {
     expect(translation?.data?.hProperties?.['translated']).to.equal('我思う、ゆえに我あり。');
   });
 
+  it('translation-overlay ディレクティブ本文の inline markup も plain text へ flatten されること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'text',
+              value: '::translation-overlay{lang="fr" target-lang="ja" surface="popover"}',
+            },
+          ],
+        },
+        {
+          type: 'paragraph',
+          children: [
+            { type: 'text', value: 'Je pense, ' },
+            { type: 'strong', children: [{ type: 'text', value: 'donc' }] },
+            { type: 'text', value: ' je suis.' },
+          ],
+        },
+        {
+          type: 'paragraph',
+          children: [
+            { type: 'text', value: '我思う、' },
+            {
+              type: 'link',
+              url: 'https://example.com/cogito',
+              children: [{ type: 'text', value: 'ゆえに' }],
+            },
+            { type: 'text', value: '我あり。' },
+          ],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+
+    const translation = tree.children?.[0];
+    expect(translation?.data?.hName).to.equal('ui-translation');
+    expect(translation?.data?.hProperties?.['original']).to.equal('Je pense, donc je suis.');
+    expect(translation?.data?.hProperties?.['translated']).to.equal('我思う、ゆえに我あり。');
+  });
+
   it('旧 translation の render-mode は未対応エラーにすること', () => {
     const tree: MdastNode = {
       type: 'root',
@@ -1232,6 +1323,153 @@ describe('remarkRouaultDirectives', () => {
     expect(() => {
       remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
     }).to.throw('[markdown] translation 属性 "render-mode" は未対応です');
+  });
+
+  it('translation の open 属性は未対応エラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'text',
+              value:
+                '::translation{lang="fr" target-lang="ja" open="true" original="Je pense, donc je suis." translated="我思う、ゆえに我あり。"}',
+            },
+          ],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    expect(() => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    }).to.throw('[markdown] translation 属性 "open" は未対応です');
+  });
+
+  it('translation-overlay の render-mode 属性は未対応エラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'text',
+              value:
+                '::translation-overlay{lang="fr" target-lang="ja" render-mode="drawer" original="Je pense, donc je suis." translated="我思う、ゆえに我あり。"}',
+            },
+          ],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    expect(() => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    }).to.throw('[markdown] translation-overlay 属性 "render-mode" は未対応です');
+  });
+
+  it('translation-overlay の open 属性は未対応エラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'text',
+              value:
+                '::translation-overlay{lang="fr" target-lang="ja" open="true" original="Je pense, donc je suis." translated="我思う、ゆえに我あり。"}',
+            },
+          ],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    expect(() => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    }).to.throw('[markdown] translation-overlay 属性 "open" は未対応です');
+  });
+
+  it('translation の本文が 3 段落以上ある場合はエラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::translation{lang="fr" target-lang="ja"}' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: 'Je pense, donc je suis.' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '我思う、ゆえに我あり。' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '第三段落です。' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    expect(() => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    }).to.throw('[markdown] translation の本文は非空テキスト段落を 2 つまでしか持てません');
+  });
+
+  it('translation-overlay の本文が 3 段落以上ある場合はエラーにすること', () => {
+    const tree: MdastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [
+            {
+              type: 'text',
+              value: '::translation-overlay{lang="fr" target-lang="ja" surface="drawer"}',
+            },
+          ],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: 'Je pense, donc je suis.' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '我思う、ゆえに我あり。' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '第三段落です。' }],
+        },
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: '::' }],
+        },
+      ],
+    };
+
+    expect(() => {
+      remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
+    }).to.throw('[markdown] translation-overlay の本文は非空テキスト段落を 2 つまでしか持てません');
   });
 
   it('空行なしで畳まれた code-preview の slot ディレクティブも変換すること', () => {

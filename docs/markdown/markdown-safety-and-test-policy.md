@@ -214,7 +214,7 @@ raw HTML 禁止は設計原則であり、暫定制約ではありません。
 
 #### 7.2.1 `translation`
 
-`translation` / `translation-overlay` は block children を保持せず、1 段落目と 2 段落目のプレーンテキスト相当を `original` / `translated` 相当へ昇格したあと `children: []` になります。旧 `render-mode` / `open` は互換吸収せず、build-time で拒否します。
+`translation` / `translation-overlay` は、`original` / `translated` の **plain-text 2 片**のみを公開契約として扱います。本文入力は縮退入力として受理してよく、その場合は 1 段落目と 2 段落目のプレーンテキスト相当だけを抽出し、`children: []` へ正規化します。旧 `render-mode` / `open` は互換吸収せず、build-time で拒否します。rich content を translation family へ流し込むことは許可しません。
 
 #### 7.2.2 `tabs`
 
@@ -331,8 +331,10 @@ raw HTML 禁止は設計原則であり、暫定制約ではありません。
 
 少なくとも次を固定すべきです。
 
-- `translation` / `translation-overlay` が children を保持しない現状
+- `translation` / `translation-overlay` は plain-text 2 片のみを正規契約として扱うこと
+- 本文 2 段落入力は縮退入力であり、構造化 children を保持しないこと
 - 旧 `translation.render-mode` を reject すること
+- rich bilingual content は別 directive / 別 grammar の責務とすること
 - `tabs` が個数整合と `tab.value` 参照整合を検証すること
 - `tabs.url-sync` が単一系統想定である現状
 

@@ -507,23 +507,23 @@ document.querySelector('.demo-button')?.addEventListener('click', () => {
 
 ### 5.10 Translation
 
-原文と訳文を対で示します。
+原文と訳文を **plain-text の対**として示します。
 
-静的に本文へ出す書き方:
+正規の書き方:
 
 ```markdown
 ::translation{lang="fr" target-lang="ja" original="Je pense, donc je suis." translated="我思う、ゆえに我あり。"}
 ::
 ```
 
-overlay で参照させる書き方:
+overlay で参照させる正規の書き方:
 
 ```markdown
 ::translation-overlay{lang="fr" target-lang="ja" surface="drawer" original="Je pense, donc je suis." translated="我思う、ゆえに我あり。"}
 ::
 ```
 
-本文 2 段落から拾わせる静的書き方:
+本文 2 段落から拾わせる書き方（縮退入力）:
 
 ```markdown
 ::translation{lang="fr" target-lang="ja"}
@@ -533,13 +533,20 @@ Je pense, donc je suis.
 ::
 ```
 
+注意:
+
+* `translation` / `translation-overlay` が保持するのは plain-text 2 片だけです。
+* 本文入力を使う場合も、取り出されるのは 1 段落目と 2 段落目のプレーンテキスト相当だけです。
+* 強調、脚注、リンク、ルビなどの構造は保持されません。
+* rich な対訳本文を表現したい場合は、この directive family を使わず、別 directive を検討してください。
+
 使い分けの目安:
 
-- 常に原文と訳文を読ませたい
+* 常に原文と訳文を読ませたい
   → `translation`
-- クリック時だけ開きたい
+* クリック時だけ開きたい
   → `translation-overlay`
-- 文章として見せたい
+* 属性へ直接書きたくない plain-text 2 片を簡便入力したい
   → `translation` の本文 2 段落
 
 ---
