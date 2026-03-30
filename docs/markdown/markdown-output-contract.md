@@ -162,6 +162,7 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 - `li` と `input[type=checkbox]` の組は `ui-checkbox` へ正規化します。
 - ラベルテキストを抽出しなければなりません。
 - 後続ネストリストは維持しなければなりません。
+- note 本文の `ui-checkbox` には `data-hydration-capability="interactive"` と `data-hydration-trigger="initial"` を付与しなければなりません。
 
 ### 5.7 `mark` → `ui-highlight`
 
@@ -236,7 +237,7 @@ note 本文の標準マッピングは次のとおりです。
 | `ui-code-group`                          | `interactive` | `visible`     |
 | `ui-code-preview[controls あり]`         | `interactive` | `visible`     |
 | `ui-code-preview[slot="toolbar" を持つ]` | `interactive` | `visible`     |
-| `ui-tabs`                                | `interactive` | `visible`     |
+| `ui-tabs`                                | `interactive` | `initial`     |
 | `ui-translation`                         | `interactive` | `visible`     |
 | `ui-preview-sandbox`                     | `sandboxed`   | `interaction` |
 | `ui-score`                               | `progressive` | `visible`     |
@@ -246,6 +247,7 @@ note 本文の標準マッピングは次のとおりです。
 - `layout-toc` は `capabilities-json` に `activeTracking` / `dynamicScopes` / `mobileSummary` のいずれかがある場合にだけ directive を持ちます。
 - `ui-image[zoomable="false"]` には directive を付与してはなりません。
 - `ui-code-preview` は `controls` も `toolbar` もない場合、directive を付与してはなりません。
+- `ui-tabs` は note 本文では `data-hydration-capability="interactive"` / `data-hydration-trigger="initial"` を付与しなければなりません。
 - static translation は `div.translation-static[data-translation-kind="static"]` として出力し、hydration directive を付与してはなりません。
 - overlay translation は `ui-translation[surface]` として出力し、`data-hydration-capability="interactive"` / `data-hydration-trigger="visible"` を付与しなければなりません。
 - static translation の子要素は `translation-original` / `translation-translated` の 2 paragraph に固定し、それぞれの本文は plain-text のみを含まなければなりません。

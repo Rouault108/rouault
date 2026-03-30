@@ -194,6 +194,39 @@ describe('rehypeRouaultComponents', () => {
     expect(highlight?.children?.[0]?.value).to.equal('hit');
   });
 
+  it('ui-tabs を interactive + initial で注釈すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'ui-tabs',
+          children: [
+            {
+              type: 'element',
+              tagName: 'button',
+              properties: { slot: 'tab', value: 'overview' },
+              children: [{ type: 'text', value: '概要' }],
+            },
+            {
+              type: 'element',
+              tagName: 'div',
+              properties: { slot: 'panel' },
+              children: [{ type: 'text', value: '概要コンテンツ' }],
+            },
+          ],
+        },
+      ],
+    };
+
+    rehypeRouaultComponents()(tree);
+
+    const tabs = tree.children?.[0];
+    expect(tabs?.tagName).to.equal('ui-tabs');
+    expect(tabs?.properties?.['data-hydration-capability']).to.equal('interactive');
+    expect(tabs?.properties?.['data-hydration-trigger']).to.equal('initial');
+  });
+
   it('img と figure/figcaption を ui-image に正規化すること', () => {
     const tree: HastNode = {
       type: 'root',

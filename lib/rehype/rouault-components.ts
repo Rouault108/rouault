@@ -273,6 +273,11 @@ const toUiTaskListItem = (node: HastNode): void => {
     },
     ...tailChildren,
   ];
+
+  const checkboxHost = node.children[0];
+  if (checkboxHost && isElement(checkboxHost, 'ui-checkbox')) {
+    setHydrationDirective(checkboxHost, { capability: 'interactive', trigger: 'initial' });
+  }
 };
 
 const toUiHighlight = (node: HastNode): void => {

@@ -441,6 +441,12 @@ Forced Colors 環境では JS 制御インジケーターを非表示とし、�
 
 `urlSync` は URL を共有状態として扱う契約であるため、複数タブ系統や入れ子 tabs での同時利用には向きません。ページの主タブ 1 系統に限定して用います。
 
+### Hydration ownership
+
+note ページでの `ui-tabs` は hydration registry / planner / scheduler が所有します。build-time では `data-hydration-capability="interactive"` と `data-hydration-trigger="initial"` を正規契約とし、client bootstrap で direct import による eager registration は行いません。
+
+`visible` を正規契約にするのは、非 hydration 状態でも selected panel、ARIA、hidden の静的契約が成立する output contract を別途確立した後です。現行の tabs 契約では、その前提が未成立であるため採用しません。
+
 ### 履歴更新契約
 
 `urlSync=true` かつ選択が変化した場合、履歴更新は操作種別に応じて `push` または `replace` を使い分けます。利用者はこの違いを前提に、ブラウザ戻る操作が「ユーザーが明示選択したタブ遷移」を再現する設計を採るべきです。
