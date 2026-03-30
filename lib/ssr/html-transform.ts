@@ -85,39 +85,6 @@ const replaceNodeWithHtml = (
   parentNode.childNodes.splice(currentIndex, 1, ...nextFragment.childNodes);
 };
 
-const extractTextContent = (node: Parse5Node): string => {
-  if ('value' in node && typeof node.value === 'string') {
-    return node.value;
-  }
-
-  if ('childNodes' in node && Array.isArray(node.childNodes)) {
-    return node.childNodes.map((child) => extractTextContent(child)).join('');
-  }
-
-  return '';
-};
-
-const enrichAttributesForNode = (
-  tagName: string,
-  attributes: readonly SsrAttribute[],
-  node: Parse5Element,
-): readonly SsrAttribute[] => {
-  if (tagName !== 'ui-code-block') {
-    return attributes;
-  }
-
-  if (attributes.some((attribute) => attribute.name === 'initial-code')) {
-    return attributes;
-  }
-
-  const initialCode = extractTextContent(node).replace(/\r\n?/g, '\n').trimEnd();
-  if (initialCode.length === 0) {
-    return attributes;
-  }
-
-  return [...attributes, { name: 'initial-code', value: initialCode }];
-};
-
 const cloneAttributes = (attributes: readonly Parse5Attribute[]): SsrAttribute[] =>
   attributes.map((attribute) => ({
     name: attribute.name,
@@ -146,14 +113,9 @@ export const transformHtmlWithLitSsr = async (
         continue;
       }
 
-      const attributes = enrichAttributesForNode(
-        childNode.tagName,
-        cloneAttributes(childNode.attrs),
-        childNode,
-      );
       const renderedHtml = await renderCustomElement(
         childNode.tagName,
-        attributes,
+        cloneAttributes(childNode.attrs),
         serializeInnerHtml(childNode),
       );
 

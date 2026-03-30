@@ -30,38 +30,47 @@ const getLineElements = (codeNode: HastNode | undefined): HastNode[] =>
     (child) => child.type === 'element' && child.tagName === 'span',
   );
 
+const createCodeFence = (
+  languageClassName: string,
+  source: string,
+  properties: Record<string, unknown> = {},
+): HastNode => ({
+  type: 'element',
+  tagName: 'pre',
+  properties: {},
+  children: [
+    {
+      type: 'element',
+      tagName: 'code',
+      properties: {
+        className: [languageClassName],
+        ...properties,
+      },
+      children: [{ type: 'text', value: source }],
+    },
+  ],
+});
+
 describe('rehypeShikiCodeBlocks', () => {
   it('fenced code を静的 code block 構造へ変換し、meta を data 属性へ保持する', async () => {
     const tree: HastNode = {
       type: 'root',
       children: [
-        {
-          type: 'element',
-          tagName: 'pre',
-          properties: {},
-          children: [
-            {
-              type: 'element',
-              tagName: 'code',
-              properties: {
-                className: ['language-ts'],
-                filename: 'sample.ts',
-                label: '例',
-                intent: 'invalid',
-                'show-line-numbers': true,
-                'copy-mode': 'always',
-                wrap: true,
-                'highlight-lines': '1,3-4',
-                layout: 'inline',
-                'data-shiki-meta': '{1}',
-              },
-              children: [
-                { type: 'text', value: 'const highlighted = 1; // [!code highlight]\n' },
-                { type: 'text', value: 'const added = 2; // [!code ++]' },
-              ],
-            },
-          ],
-        },
+        createCodeFence(
+          'language-ts',
+          'const highlighted = 1; // [!code highlight]\nconst added = 2; // [!code ++]',
+          {
+            filename: 'sample.ts',
+            label: '例',
+            intent: 'invalid',
+            'show-line-numbers': true,
+            'copy-mode': 'always',
+            wrap: true,
+            'highlight-lines': '1,3-4',
+            layout: 'inline',
+            'data-shiki-meta': '{1}',
+          },
+        ),
       ],
     };
 
@@ -103,26 +112,33 @@ describe('rehypeShikiCodeBlocks', () => {
     expect(readNodeClassList(lines[1])).toContain('add');
   });
 
-  it('未知言語は text へフォールバックする', async () => {
+  it('ページ内最初の code block だけに enhancer 用 hydration root を付与すること', async () => {
     const tree: HastNode = {
       type: 'root',
       children: [
-        {
-          type: 'element',
-          tagName: 'pre',
-          properties: {},
-          children: [
-            {
-              type: 'element',
-              tagName: 'code',
-              properties: {
-                className: ['language-unknownlang'],
-              },
-              children: [{ type: 'text', value: 'plain text block' }],
-            },
-          ],
-        },
+        createCodeFence('language-ts', 'const a = 1;'),
+        createCodeFence('language-js', 'const b = 2;'),
       ],
+    };
+
+    await rehypeShikiCodeBlocks()(tree);
+
+    const first = tree.children?.[0];
+    const second = tree.children?.[1];
+
+    expect(first?.properties?.['data-hydration-key']).toBe('code-block-enhancer');
+    expect(first?.properties?.['data-hydration-capability']).toBe('progressive');
+    expect(first?.properties?.['data-hydration-trigger']).toBe('post-commit');
+
+    expect(second?.properties?.['data-hydration-key']).toBeUndefined();
+    expect(second?.properties?.['data-hydration-capability']).toBeUndefined();
+    expect(second?.properties?.['data-hydration-trigger']).toBeUndefined();
+  });
+
+  it('未知言語は text へフォールバックする', async () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [createCodeFence('language-unknownlang', 'plain text block')],
     };
 
     await rehypeShikiCodeBlocks()(tree);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { rehypeStaticCodeGroups } from '../../lib/rehype/static-code-groups.js';
+import { rehypeStaticCodeGroups } from '../../lib/rehype/static-code-groups';
 
 interface HastNode {
   type: string;
@@ -54,7 +54,9 @@ describe('rehypeStaticCodeGroups', () => {
       ],
     };
 
-    rehypeStaticCodeGroups()(tree);
+    const createTransform = rehypeStaticCodeGroups as () => (tree: HastNode) => void;
+    const transform = createTransform();
+    transform(tree);
 
     const group = tree.children?.[0];
     expect(group?.tagName).toBe('section');
@@ -64,21 +66,36 @@ describe('rehypeStaticCodeGroups', () => {
     expect(group?.properties?.['data-hydration-capability']).toBe('interactive');
     expect(group?.properties?.['data-hydration-trigger']).toBe('visible');
 
-    const tabList = group?.children?.[0];
+    const header = group?.children?.[0];
+    expect(header?.tagName).toBe('div');
+    expect(header?.properties?.['className']).toEqual(['code-group-header']);
+
+    const tabList = header?.children?.[0];
     expect(tabList?.tagName).toBe('div');
     expect(tabList?.properties?.['role']).toBe('tablist');
+    expect(tabList?.properties?.['aria-label']).toBe('実装比較');
 
     const firstTab = tabList?.children?.[0];
     expect(firstTab?.tagName).toBe('button');
     expect(firstTab?.properties?.['role']).toBe('tab');
     expect(firstTab?.properties?.['aria-selected']).toBe('true');
 
+    const copyButton = header?.children?.[1];
+    expect(copyButton?.tagName).toBe('button');
+    expect(copyButton?.properties?.['data-code-group-copy']).toBe(true);
+    expect(copyButton?.properties?.['disabled']).toBe(true);
+
     const firstPanel = group?.children?.[1];
     const secondPanel = group?.children?.[2];
     expect(firstPanel?.tagName).toBe('section');
     expect(firstPanel?.properties?.['role']).toBe('tabpanel');
-    expect(firstPanel?.children?.[0]?.tagName).toBe('pre');
+    expect(firstPanel?.properties?.['data-code-group-panel']).toBe('valid');
+    expect(firstPanel?.children?.[0]?.tagName).toBe('p');
+    expect(firstPanel?.children?.[1]?.tagName).toBe('pre');
+
+    expect(secondPanel?.tagName).toBe('section');
     expect(secondPanel?.properties?.['data-code-group-panel']).toBe('invalid');
+    expect(secondPanel?.properties?.['data-code-group-inactive']).toBe('true');
   });
 
   it('child が 1 件だけなら code block をそのまま残すこと', () => {
@@ -94,7 +111,9 @@ describe('rehypeStaticCodeGroups', () => {
       ],
     };
 
-    rehypeStaticCodeGroups()(tree);
+    const createTransform = rehypeStaticCodeGroups as () => (tree: HastNode) => void;
+    const transform = createTransform();
+    transform(tree);
 
     const first = tree.children?.[0];
     expect(first?.tagName).toBe('pre');

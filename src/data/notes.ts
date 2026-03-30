@@ -39,7 +39,13 @@ interface NoteDirectoryConfig {
 
 export interface SourceNote {
   slug?: string;
+  title?: string;
   content?: string;
+  description?: string;
+  date?: string;
+  updated?: string;
+  source?: string;
+  license?: string;
   status?: NoteStatus;
   kind?: NoteContentKind;
   testingArea?: TestingArea;

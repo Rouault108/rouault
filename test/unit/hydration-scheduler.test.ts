@@ -9,6 +9,17 @@ const defineTestElement = (tag: string): void => {
   }
 };
 
+const requireDiagnostics = (
+  diagnostics: HydrationDiagnostics | null,
+  message: string,
+): HydrationDiagnostics => {
+  if (diagnostics === null) {
+    throw new Error(message);
+  }
+
+  return diagnostics;
+};
+
 describe('HydrationScheduler', () => {
   it('plain DOM enhancer を data-hydration-key 経由で起動できること', async () => {
     const steps: string[] = [];
@@ -52,7 +63,7 @@ describe('HydrationScheduler', () => {
 
     await waitUntil(() => diagnostics !== null, 'enhancer diagnostics が発火すること');
 
-    const currentDiagnostics = diagnostics as HydrationDiagnostics;
+    const currentDiagnostics = requireDiagnostics(diagnostics, 'diagnostics が取得できませんでした');
 
     expect(steps).to.deep.equal(['load:enhancer', 'activate:enhancer']);
     expect(currentDiagnostics.plannedCount).to.equal(1);
@@ -157,7 +168,7 @@ describe('HydrationScheduler', () => {
       'visible が focusin で起動し diagnostics が発火すること',
     );
 
-    const currentDiagnostics = diagnostics as HydrationDiagnostics;
+    const currentDiagnostics = requireDiagnostics(diagnostics, 'diagnostics が取得できませんでした');
 
     expect(currentDiagnostics.plannedCount).to.equal(3);
     expect(currentDiagnostics.activatedCount).to.equal(3);
@@ -229,7 +240,10 @@ describe('HydrationScheduler', () => {
       '後続 session の diagnostics が発火すること',
     );
 
-    const currentSecondDiagnostics = secondDiagnostics as HydrationDiagnostics;
+    const currentSecondDiagnostics = requireDiagnostics(
+      secondDiagnostics,
+      'secondDiagnostics が取得できませんでした',
+    );
 
     expect(firstDiagnosticsCount).to.equal(0);
     expect(currentSecondDiagnostics.plannedCount).to.equal(1);
@@ -289,7 +303,7 @@ describe('HydrationScheduler', () => {
       'failure diagnostics が発火すること',
     );
 
-    const currentDiagnostics = diagnostics as HydrationDiagnostics;
+    const currentDiagnostics = requireDiagnostics(diagnostics, 'diagnostics が取得できませんでした');
 
     expect(currentDiagnostics.failedCount).to.equal(2);
     expect(currentDiagnostics.issues).to.deep.equal([

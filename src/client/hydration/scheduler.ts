@@ -110,7 +110,7 @@ export class HydrationScheduler {
       ),
     ]).then(() => {
       const currentSession = this.activeContentSession;
-      if (currentSession.id !== session.id || session.controller.signal.aborted) {
+      if (currentSession?.id !== session.id || session.controller.signal.aborted) {
         return;
       }
 

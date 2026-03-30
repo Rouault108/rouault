@@ -47,7 +47,7 @@ function normalizeGenres(value: unknown): string[] {
 }
 
 function toTagPageNoteSummary(note: TagPageSourceNote): TagPageNoteSummary | null {
-  const title = normalizeString(note['title']);
+  const title = normalizeString(note.title);
   const permalink = normalizeString(note.permalink);
   const slug = normalizeString(note.slug);
 
@@ -58,8 +58,8 @@ function toTagPageNoteSummary(note: TagPageSourceNote): TagPageNoteSummary | nul
   return {
     title,
     permalink,
-    description: normalizeString(note['description']),
-    date: normalizeString(note['updated']) || normalizeString(note['date']),
+    description: normalizeString(note.description),
+    date: normalizeString(note.updated) || normalizeString(note.date),
     slug,
     genres: normalizeGenres(note.genre),
   };

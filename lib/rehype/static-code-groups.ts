@@ -54,6 +54,7 @@ const readStaticCodeBlockMeta = (node: HastNode): StaticCodeBlockMeta | null => 
   const tabLabel =
     pickOptionalString(node.properties?.['data-code-tab-label']) ??
     pickOptionalString(node.properties?.['data-code-filename']) ??
+    pickOptionalString(node.properties?.['data-code-label']) ??
     pickOptionalString(node.properties?.['data-code-language']);
 
   if (!tabLabel) {
@@ -109,7 +110,7 @@ const createPanel = (groupId: string, item: StaticCodeBlockMeta, selected: boole
   ],
 });
 
-export function rehypeStaticCodeGroups() {
+export function rehypeStaticCodeGroups(): (tree: unknown) => void {
   return (tree: unknown) => {
     const visit = (node: HastNode): void => {
       if (Array.isArray(node.children)) {
@@ -174,18 +175,6 @@ export function rehypeStaticCodeGroups() {
               children: items.map((item, index) =>
                 createTabButton(groupId, item.key, item.tabLabel, index === 0),
               ),
-            },
-            {
-              type: 'element',
-              tagName: 'button',
-              properties: {
-                type: 'button',
-                className: ['code-group-copy-button'],
-                'data-code-group-copy': true,
-                'aria-label': 'コードをコピー',
-                disabled: true,
-              },
-              children: [{ type: 'text', value: 'コピー' }],
             },
           ],
         },

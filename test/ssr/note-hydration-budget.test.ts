@@ -165,4 +165,16 @@ describe('note hydration budget', () => {
       total: 3,
     });
   });
+
+  it('code testing canary を budget 内に収めること', () => {
+    const result = renderNotePage('testing/code');
+
+    expect(result.counts).to.deep.equal({
+      initial: 1,
+      postCommit: 1,
+      visible: 2,
+      interaction: 0,
+      total: 4,
+    });
+  });
 });

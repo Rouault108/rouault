@@ -7,7 +7,7 @@ import {
   SSR_TARGET_TAGS,
 } from '../../src/ssr/targets.js';
 
-const REQUIRED_NOTE_CONTENT_TAGS = [
+const REQUIRED_NOTE_CONTENT_TAGS: readonly string[] = [
   'ui-callout',
   'ui-checkbox',
   'ui-code-preview',
@@ -40,6 +40,19 @@ describe('component manifest / ssr targets', () => {
   it('SSR target 全体に note target を含めること', () => {
     for (const tagName of REQUIRED_NOTE_CONTENT_TAGS) {
       expect(SSR_TARGET_TAGS).toContain(tagName);
+    }
+  });
+
+  it('静的 code surface 化したため ui-code-block / ui-code-group を SSR target へ含めないこと', () => {
+    const removedTags: readonly string[] = ['ui-code-block', 'ui-code-group'];
+
+    expect(SSR_COMPONENT_DEFINITIONS.some((definition) => removedTags.includes(definition.tag))).toBe(
+      false,
+    );
+
+    for (const tagName of removedTags) {
+      expect(SSR_NOTE_TARGET_TAGS).not.toContain(tagName);
+      expect(SSR_TARGET_TAGS).not.toContain(tagName);
     }
   });
 

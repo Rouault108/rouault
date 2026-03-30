@@ -21,8 +21,19 @@ describe('build-images', () => {
       throw new Error('hero の image manifest が見つかりません');
     }
 
-    expect(hero.variants.reading.outputs).toHaveLength(3);
-    expect(hero.variants.full.outputs[0].url).toContain('/media/');
+    const reading = hero.variants.reading;
+    const full = hero.variants.full;
+    if (!reading || !full) {
+      throw new Error('hero の image variants が見つかりません');
+    }
+
+    expect(reading.outputs).toHaveLength(3);
+    const firstFullOutput = full.outputs[0];
+    if (!firstFullOutput) {
+      throw new Error('hero の full variant output が見つかりません');
+    }
+
+    expect(firstFullOutput.url).toContain('/media/');
     expect(existsSync(path.join(GENERATED_MEDIA_ROOT, 'image-manifest.json'))).toBe(true);
   }, 15000);
 });

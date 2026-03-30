@@ -31,7 +31,8 @@
 
 - 見出し要素
 - 本文リンク (`a[href]` ただし `.heading-anchor` を除く)
-- `ui-code-block > pre > code`
+- `pre[data-code-block] > code[data-lang]`
+- `section[data-code-group]`
 - `blockquote`
 - `table`
 - `hr`
@@ -101,7 +102,7 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 
 | 入力 HAST                     | 出力                                              | 契約                                                                                                                                                                                                               |
 | ----------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pre > code`                  | `ui-code-block > pre > code`                      | `language-*` から `lang` を推論し、対象メタ属性を `ui-code-block` ホスト属性へ正規化する。note 本文では `data-hydration-capability="progressive"` / `data-hydration-trigger="post-commit"` を付与する              |
+| `pre > code`                  | `pre[data-code-block] > code[data-lang]`          | `language-*` から `data-lang` / `data-code-language` を推論し、対象メタ属性を `pre[data-code-block]` の `data-code-*` 属性へ正規化する。note 本文では個々の code block を hydrate せず、必要な場合に限り `code-block-enhancer` 用の build-time 注釈を代表 root に付与する |
 | `blockquote`                  | `ui-blockquote`                                   | 子要素は維持する                                                                                                                                                                                                   |
 | `table`                       | `ui-table > table`                                | `caption` があればホストに `aria-label` を補完する                                                                                                                                                                 |
 | `hr`                          | `ui-divider > hr[data-divider-variant="section"]` | Markdown 由来の区切りを本文文脈の `section` として正規化する                                                                                                                                                       |
@@ -112,33 +113,38 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 | `a[href]`（本文リンク）       | `a[data-link-kind][data-link-surface="prose"]`    | `href` から種別注釈を付与し、外部系では `data-external="true"` を付与する。`.heading-anchor` は対象外とする                                                                                                        |
 | footnote 参照 / 定義          | `ui-footnote` + `section[role=doc-endnotes]`      | 参照 ID、backref、接頭辞、backlink を正規化する                                                                                                                                                                    |
 
-### 5.2 `pre > code` → `ui-code-block > pre > code`
+### 5.2 `pre > code` → `pre[data-code-block] > code[data-lang]`
 
 規則:
 
 - `language-*` から `lang` を推論しなければなりません。
-- `lang` は `ui-code-block` ホスト属性へ出力しなければなりません。
-- 次の属性は `ui-code-block` ホスト属性へ正規化してよいものとします。
-  - `filename`
-  - `group-key`
-  - `tab-label`
-  - `copy-label`
-  - `copyable`
-  - `intent`
-  - `copy-mode`
-  - `wrap`
-  - `highlight-lines`
-  - `layout`
+- `code` 要素には `data-lang` を出力しなければなりません。
+- `pre` 要素には `data-code-block` と `data-code-language` を出力しなければなりません。
+- 次の属性は `pre[data-code-block]` の `data-code-*` 属性へ正規化してよいものとします。
+  - `filename` → `data-code-filename`
+  - `group-key` → `data-code-group-key`
+  - `tab-label` → `data-code-tab-label`
+  - `copy-label` → `data-code-copy-label`
+  - `copyable` → `data-code-copyable`
+  - `intent` → `data-code-intent`
+  - `copy-mode` → `data-code-copy-mode`
+  - `wrap` → `data-code-wrap`
+  - `highlight-lines` → `data-code-highlight-lines`
+  - `layout` → `data-code-layout`
+  - `show-line-numbers` → `data-code-line-numbers`
 - コード本体の意味を失わないことを優先します。
-- note 本文の `ui-code-block` には `data-hydration-capability="progressive"` と `data-hydration-trigger="post-commit"` を付与しなければなりません。
-- `ui-code-block` 配下の `pre > code` は保持しなければなりません。
+- note 本文の最終 DOM は `pre[data-code-block] > code[data-lang]` を正本としなければなりません。
+- note 本文では code block ごとに個別 hydrate してはなりません。
+- standalone code block に対する runtime enhancement が必要な場合、build-time では代表 root にのみ `data-hydration-key="code-block-enhancer"`、`data-hydration-capability="progressive"`、`data-hydration-trigger="post-commit"` を付与してよいものとします。
+- `ui-code-block` は互換 adapter として残してよいですが、note 本文の最終 DOM 正本にしてはなりません。
 
 #### 5.2.1 no-JS 契約
 
-- note 本文における code surface の最終 DOM は `ui-code-block` でなければなりません。
-- JavaScript 無効時でも、`ui-code-block > pre > code` の読解可能性を失ってはなりません。
-- no-JS で保証するのは内容読解可能性であり、copy button や動的 overflow 補助の完全再現ではありません。
-- `ui-code-block` の no-JS 成立に必要な descendant styling は、静的配信 CSS に含まれなければなりません。
+- note 本文における code surface の最終 DOM は `pre[data-code-block]` でなければなりません。
+- JavaScript 無効時でも、`pre[data-code-block] > code[data-lang]` の読解可能性を失ってはなりません。
+- no-JS で保証するのは内容読解可能性、行番号表示、折り返し指定、印刷、forced-colors 下での判読性です。
+- copy button、動的 overflow 補助、copy 成功表示などは enhancement として省略されてよいです。
+- no-JS 成立に必要な descendant styling は、静的配信 CSS に含まれなければなりません。
 - client bundle 配送失敗は no-JS の許容退行ではなく、delivery 契約違反です。
 
 ### 5.3 `blockquote` → `ui-blockquote`
@@ -222,11 +228,13 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 - 同一 origin の絶対 URL を内部遷移として扱うかどうかは `docs/router-specification.md` が所有します。
 - `unsafe` は最終許容出力ではありません。安全規約に従い、build-time で拒否または除去されなければなりません。
 
-### 5.9.1 code group の no-JS 契約
+### 5.9.1 code group の no-JS / enhancement 契約
 
-- note 本文における code group の最終 DOM は `ui-code-group` でなければなりません。
-- JavaScript 無効時の `ui-code-group` は比較タブ UI を要求せず、default slot 側の stacked fallback で全 code block を読めなければなりません。
+- note 本文における code group の最終 DOM は `section[data-code-group]` でなければなりません。
+- `section[data-code-group]` は、少なくとも `data-code-group-selected` と panel 群を持ち、各 panel は 1 件の `pre[data-code-block]` を保持しなければなりません。
+- JavaScript 無効時は stacked fallback で全 code block を読めなければなりません。
 - tab selection、keyboard navigation、active item に応じた copy context は hydration 後の enhancement とします。
+- `ui-code-group` は互換 adapter として残してよいですが、note 本文の最終 DOM 正本にしてはなりません。
 
 ### 5.10 note ページの hydration directive 契約
 
@@ -247,8 +255,8 @@ note 本文の標準マッピングは次のとおりです。
 | `layout-toc[runtime capability あり]`    | `interactive` | `initial`     |
 | `ui-article-header[data-tags]`           | `progressive` | `post-commit` |
 | `ui-image[zoomable!="false"]`            | `progressive` | `visible`     |
-| `ui-code-block`                          | `progressive` | `post-commit` |
-| `ui-code-group`                          | `interactive` | `visible`     |
+| `pre[data-code-block][data-hydration-key="code-block-enhancer"]` | `progressive` | `post-commit` |
+| `section[data-code-group]`                                        | `interactive` | `visible`     |
 | `ui-code-preview[controls あり]`         | `interactive` | `visible`     |
 | `ui-code-preview[slot="toolbar" を持つ]` | `interactive` | `visible`     |
 | `ui-tabs`                                | `interactive` | `initial`     |
@@ -260,6 +268,7 @@ note 本文の標準マッピングは次のとおりです。
 
 - `layout-toc` は `capabilities-json` に `activeTracking` / `dynamicScopes` / `mobileSummary` のいずれかがある場合にだけ directive を持ちます。
 - `ui-image[zoomable="false"]` には directive を付与してはなりません。
+- standalone code block は要素単位で hydrate してはなりません。必要な場合に限り、scope 内の code surface を一括強化する代表 root にだけ `code-block-enhancer` 用 directive を付与しなければなりません。
 - `ui-code-preview` は `controls` も `toolbar` もない場合、directive を付与してはなりません。
 - `ui-tabs` は note 本文では `data-hydration-capability="interactive"` / `data-hydration-trigger="initial"` を付与しなければなりません。
 - static translation は `div.translation-static[data-translation-kind="static"]` として出力し、hydration directive を付与してはなりません。

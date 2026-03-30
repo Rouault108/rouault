@@ -123,16 +123,6 @@ export const HYDRATION_REGISTRY = [
     loader: () => import('../../components/ui/checkbox/checkbox.js'),
   },
   {
-    tag: 'ui-code-block',
-    loader: () => import('../../components/ui/codeblock/codeblock.js'),
-    activate: activateElementMethod,
-  },
-  {
-    tag: 'ui-code-group',
-    loader: () => import('../../components/ui/code-group/code-group.js'),
-    activate: activateElementMethod,
-  },
-  {
     tag: 'ui-code-preview',
     loader: () => import('../../components/ui/code-preview/code-preview.js'),
   },
@@ -189,7 +179,7 @@ export const HYDRATION_REGISTRY = [
   },
 ] as const satisfies readonly HydrationRegistryEntry[];
 
-export const HYDRATION_REGISTRY_BY_TAG = new Map(
+export const HYDRATION_REGISTRY_BY_TAG: ReadonlyMap<string, HydrationRegistryEntry> = new Map(
   HYDRATION_REGISTRY.map((entry) => [entry.tag, entry] as const),
 );
 

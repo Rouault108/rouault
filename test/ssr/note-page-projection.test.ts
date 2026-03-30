@@ -14,10 +14,10 @@ const buildProjection = (
     notes,
   });
   const pagefindDocument = buildPagefindDocumentData({
-    title: typeof note['title'] === 'string' ? note['title'] : undefined,
-    description: typeof note['description'] === 'string' ? note['description'] : undefined,
-    date: typeof note['date'] === 'string' ? note['date'] : undefined,
-    updated: typeof note['updated'] === 'string' ? note['updated'] : undefined,
+    title: typeof note.title === 'string' ? note.title : undefined,
+    description: typeof note.description === 'string' ? note.description : undefined,
+    date: typeof note.date === 'string' ? note.date : undefined,
+    updated: typeof note.updated === 'string' ? note.updated : undefined,
     tags: Array.isArray(note.genre) ? note.genre : undefined,
   });
 

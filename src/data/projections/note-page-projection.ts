@@ -288,21 +288,21 @@ export function buildNotePageProjection(input: NotePageProjectionInput): NotePag
       shouldHydrate: shouldHydrateToc,
     },
     articleHeader: {
-      heading: typeof input.note['title'] === 'string' ? input.note['title'] : '',
-      ...(typeof input.note['date'] === 'string' && input.note['date'].length > 0
-        ? { published: input.note['date'] }
+      heading: typeof input.note.title === 'string' ? input.note.title : '',
+      ...(typeof input.note.date === 'string' && input.note.date.length > 0
+        ? { published: input.note.date }
         : {}),
-      ...(typeof input.note['updated'] === 'string' && input.note['updated'].length > 0
-        ? { updated: input.note['updated'] }
+      ...(typeof input.note.updated === 'string' && input.note.updated.length > 0
+        ? { updated: input.note.updated }
         : {}),
       ...(typeof input.note.status === 'string' && input.note.status.length > 0
         ? { status: input.note.status }
         : {}),
-      ...(typeof input.note['source'] === 'string' && input.note['source'].length > 0
-        ? { source: input.note['source'] }
+      ...(typeof input.note.source === 'string' && input.note.source.length > 0
+        ? { source: input.note.source }
         : {}),
-      ...(typeof input.note['license'] === 'string' && input.note['license'].length > 0
-        ? { license: input.note['license'] }
+      ...(typeof input.note.license === 'string' && input.note.license.length > 0
+        ? { license: input.note.license }
         : {}),
       genres,
       shouldHydrateTags: genres.length > 0,

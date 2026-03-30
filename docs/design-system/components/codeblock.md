@@ -4,7 +4,7 @@
 
 本書は、コード表示の基底契約を定義します。
 
-将来の読者向け正規出力の目標は `pre[data-code-block] > code[data-lang]` です。ただし、**現行の note 本文経路では `ui-code-block` を production 出力として維持しており、build-time の hydration directive で制御します**。現行実装の正本は `docs/markdown/markdown-output-contract.md` を優先し、本書は static 契約への移行先設計を含む文書として読みます。
+読者向けの正規出力は `pre[data-code-block] > code[data-lang]` です。note 本文ではこの static DOM を正本とし、`ui-code-block` は Storybook・isolated rendering・旧実装互換のための adapter としてのみ扱います。最終 DOM 契約の正本は `docs/markdown/markdown-output-contract.md` です。
 
 本書では、単一の論理コード片を表示・参照・複写するための基底契約を、**静的 DOM 契約を正本**として定義します。責務は、単に `pre/code` を囲って装飾することではありません。**コード本文の提示、文脈メタデータ、copy 値の取得、横スクロール時のアクセシビリティ、印刷や高コントラスト時の成立性**を、一貫した公開契約として扱います。
 
@@ -316,10 +316,11 @@ copy 用の文字列を返します。
 
 ## 9.4 No-JS
 
-- `ui-code-block` は JavaScript 無効時でも `ui-code-block > pre > code` の読解可能性を失ってはなりません。
-- no-JS で保証するのは内容読解可能性、折り返し指定、印刷、forced-colors 下での判読性です。
-- copy button の動作、動的 overflow 判定、`tabindex` / `role=region` / `aria-label` の動的付与、mutation 再同期は enhancement として省略されてよいです。
+- `pre[data-code-block] > code[data-lang]` は JavaScript 無効時でも読解可能でなければなりません。
+- no-JS で保証するのは内容読解可能性、行番号表示、折り返し指定、印刷、forced-colors 下での判読性です。
+- copy button の動作、動的 overflow 判定、`tabindex` / `role=region` / `aria-label` の動的付与、copy 成功表示、mutation 再同期は enhancement として省略されてよいです。
 - no-JS 成立に必要な `pre/code` descendant styling は、JavaScript 実行時の document style 注入だけに依存してはなりません。
+- `ui-code-block` を使う場合も、no-JS 契約の正本は adapter 内部ではなく最終的に配信される static code root です。
 
 ---
 
@@ -330,7 +331,7 @@ copy 用の文字列を返します。
 `ui-code-group` は、`ui-code-block` の **group item 契約**のみに依存します。  
 すなわち、`groupKey`、`tabLabel`、`copyLabel`、`copyable`、`getCodeContent()`、`ui-code-block-change` が group 側の参照面です。
 
-`ui-code-group` は、`ui-code-block` の互換入力や単体表示専用契約、あるいは static 代替 DOM に依存してはなりません。
+`ui-code-group` は、`ui-code-block` adapter の内部実装や互換入力には依存してはなりません。依存してよいのは、最終的に `pre[data-code-block]` へ落ちる group item metadata 契約だけです。
 
 ## 10.2 `ui-code-preview` との契約
 

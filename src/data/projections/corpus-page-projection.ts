@@ -73,7 +73,7 @@ function getCorpusKeyFromSlug(slug: string): string {
 }
 
 function toCorpusPageNoteSummary(note: CorpusPageSourceNote): CorpusPageNoteSummary | null {
-  const title = normalizeString(note['title']);
+  const title = normalizeString(note.title);
   const permalink = normalizeString(note.permalink);
   const slug = normalizeString(note.slug);
 
@@ -84,8 +84,8 @@ function toCorpusPageNoteSummary(note: CorpusPageSourceNote): CorpusPageNoteSumm
   return {
     title,
     permalink,
-    description: normalizeString(note['description']),
-    date: normalizeString(note['updated']) || normalizeString(note['date']),
+    description: normalizeString(note.description),
+    date: normalizeString(note.updated) || normalizeString(note.date),
     slug,
     genres: normalizeGenres(note.genre),
   };
@@ -116,7 +116,7 @@ function resolveCorpusLabels(notes: readonly CorpusPageSourceNote[]): Map<string
 
     const directoryPath = normalizeString(note.directoryPath) || normalizeString(note.slug);
     const corpusKey = getCorpusKeyFromSlug(directoryPath);
-    const title = normalizeString(note['title']);
+    const title = normalizeString(note.title);
 
     if (corpusKey.length === 0 || title.length === 0 || labels.has(corpusKey)) {
       continue;

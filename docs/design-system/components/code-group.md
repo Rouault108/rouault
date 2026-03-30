@@ -4,12 +4,12 @@
 
 本書は、code group の合成契約を定義します。
 
-将来の読者向け正規出力の目標は `section[data-code-group]` を root とする native tab structure です。ただし、**現行の note 本文経路では `ui-code-group` を production 出力として維持しており、build-time の hydration directive で制御します**。現行実装の正本は `docs/markdown/markdown-output-contract.md` を優先し、本書は static 契約への移行先設計を含む文書として読みます。
+読者向けの正規出力は `section[data-code-group]` を root とする native tab structure です。note 本文ではこの static DOM を正本とし、`ui-code-group` は Storybook・isolated rendering・旧実装互換のための adapter としてのみ扱います。最終 DOM 契約の正本は `docs/markdown/markdown-output-contract.md` です。
 
-code group は、複数の code block を比較可能な単一提示面へ束ねる契約です。責務は、単に block をタブ化することではありません。**比較対象の識別、選択状態の安定化、copy 文脈の同期、比較 UI の成立条件、入力違反時の退行規則**を、一貫した公開契約として提供することにあります。
+code group は、複数の code block を比較可能な単一提示面へ束ねる契約です。責務は、単に block をタブ化することではありません。**比較対象の識別、選択状態の安定化、copy 文脈の同期、比較 UI の成立条件、no-JS stacked fallback、入力違反時の退行規則**を、一貫した公開契約として提供することにあります。
 
 本設計では、読者向けの `section[data-code-group]` も `ui-code-group` adapter も、code block 本体契約全体には依存しません。  
-依存するのは、code block 文書に定義された **group item 契約**だけです。
+依存するのは、code block 文書に定義された **group item metadata 契約**と、最終的に各 panel が 1 件の `pre[data-code-block]` を保持するという構造契約だけです。
 
 ---
 
@@ -76,38 +76,42 @@ block 側の互換入力や単体表示専用入力には依存しません。
 
 ## 3. 公開契約
 
-## 3.1 正規入力
+## 3.1 読者向け正規出力
 
-読者向けの正規入力は、host 直下の `ui-code-block` 要素列です。  
-`ui-code-group` は、それらを stable key に基づいて比較表示する合成コンポーネントです。
+読者向けの正規出力は `section[data-code-group]` です。root は、比較 UI に必要な metadata と panel 群を持たなければなりません。
 
-各 child は、code block 文書に定義された **group item 契約**を満たしていなければなりません。
-
-### child に要求する契約
+### root に要求する契約
 
 | 項目 | 必須 | 内容 |
 | --- | --- | --- |
-| `groupKey` / `group-key` | はい | group 内で一意な安定識別子です。 |
-| `getCodeContent()` | はい | copy 用文字列を返します。 |
-| `copyable` | いいえ | copy 可否を表します。既定は `true` とみなします。 |
-| `tabLabel` / `tab-label` | いいえ | タブラベルです。 |
-| `copyLabel` / `copy-label` | いいえ | copy 文脈ラベルです。 |
-| `filename` | いいえ | タブまたは copy 文脈の補助解決に使います。 |
-| `lang` | いいえ | タブまたは copy 文脈の補助解決に使います。 |
-| `ui-code-block-change` | いいえ | 子の再評価通知です。 |
+| `data-code-group` | はい | code group root であることを示します。 |
+| `data-code-group-id` | はい | tab と panel を対応付ける一意 ID です。 |
+| `data-code-group-selected` | はい | 現在選択中の `groupKey` を示します。 |
+| `role="tablist"` を持つ要素 | 条件付き必須 | 比較 UI が成立する場合に必要です。 |
+| `data-code-group-copy` を持つ button | いいえ | active panel に対する copy 操作です。 |
+| `data-code-group-panel` を持つ panel 群 | はい | 各比較対象を保持します。 |
 
-## 3.2 受理対象の子要素
+### panel に要求する契約
 
-- 比較対象として収集するのは、host 直下の `ui-code-block` だけです。
+| 項目 | 必須 | 内容 |
+| --- | --- | --- |
+| `data-code-group-panel` | はい | panel の stable key です。 |
+| `data-code-group-panel-label` | はい | panel の可視ラベルです。 |
+| `role="tabpanel"` | 条件付き必須 | 比較 UI が成立する場合に必要です。 |
+| `pre[data-code-block]` | はい | 各 panel は 1 件の code block を保持します。 |
+| `.code-group-stack-label` | いいえ | no-JS stacked fallback 用のラベルです。 |
+
+## 3.2 adapter 入力契約
+
+`ui-code-group` adapter を使う場合の公開入力は、host 直下の `ui-code-block` 要素列です。adapter は、それらを static 契約へ正規化できなければなりません。
+
+### 契約
+
+- adapter が比較対象として収集するのは、host 直下の `ui-code-block` だけです。
 - テキストノード、コメントノードは比較対象判定に影響しません。
 - wrapper 要素越しに比較対象を探索することは公開契約に含めません。
 - 無関係要素が混在する場合、その構成は比較 UI の正規入力に含みません。
-
-### 補足
-
-- 上記は runtime の公開契約です。
-- authoring 時に wrapper を許すかどうか、lint でどこまで禁止するかは `code-composition.md` に従います。
-- 本コンポーネントは wrapper を辿ることを長期保証しません。
+- adapter の存在は note 本文の最終 DOM 正本を変更しません。読者向けテストと文書は `section[data-code-group]` を基準にしなければなりません。
 
 ## 3.3 公開 property / attribute
 
@@ -251,12 +255,13 @@ child list と child metadata を再評価し、選択状態・copy 状態・ラ
 
 ## 5.2 比較 UI が無効な場合
 
-比較対象が 1 件以下、または入力違反により比較 UI を有効化できない場合、`ui-code-group` は default slot 側の stacked fallback を維持しなければなりません。
+比較対象が 1 件以下、または入力違反により比較 UI を有効化できない場合、読者向け出力は stacked fallback を維持しなければなりません。
 
 ### 契約
 
 - 本文欠落を起こしてはなりません。
-- child 1 件では単一表示へ退行してよく、比較 UI を強制してはなりません。
+- 1 件のみの場合、`section[data-code-group]` を生成せず単体 `pre[data-code-block]` へ退行してよいです。
+- `section[data-code-group]` を生成する場合でも、JavaScript 無効時に全 panel を読める stacked fallback を維持しなければなりません。
 - 無関係要素混在や duplicate key の場合でも、可能な限り読書維持を優先します。
 
 ## 5.3 copy button
@@ -314,9 +319,10 @@ group が copy button を内包する場合、active item に応じて次を同�
 
 ## 7.3 No-JS
 
-- `ui-code-group` は JavaScript 無効時に比較タブ UI を要求しません。
-- JavaScript 無効時は default slot 側の stacked fallback により、全 `ui-code-block` を縦積みで読めなければなりません。
-- tablist、keyboard navigation、active item に応じた copy context、header-tools 幅補償は hydration 後の enhancement として省略されてよいです。
+- `section[data-code-group]` は JavaScript 無効時に比較タブ UI の動作を要求しません。
+- JavaScript 無効時は stacked fallback により、全 `pre[data-code-block]` を縦積みで読めなければなりません。
+- tablist の選択同期、keyboard navigation、active item に応じた copy context、copy button の動作、header-tools 幅補償は hydration 後の enhancement として省略されてよいです。
+- `ui-code-group` adapter を使う場合も、no-JS 契約の正本は adapter 内部ではなく最終的に配信される `section[data-code-group]` です。
 
 ---
 
@@ -324,7 +330,7 @@ group が copy button を内包する場合、active item に応じて次を同�
 
 ## 8.1 `ui-code-block` との契約
 
-読者向けの code group と `ui-code-group` adapter は、ともに code block の group item 契約のみに依存します。
+読者向けの code group と `ui-code-group` adapter は、ともに code block の group item metadata 契約のみに依存します。読者向け正本は `pre[data-code-block]` を保持する panel 構造です。
 
 ## 8.2 `ui-code-preview` との契約
 

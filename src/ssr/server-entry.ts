@@ -28,7 +28,6 @@ import '../components/layout/layout-sidebar.js';
 import '../components/layout/layout-toc.js';
 import '../components/ui/callout/callout.js';
 import '../components/ui/checkbox/checkbox.js';
-import '../components/ui/code-group/code-group.js';
 import '../components/ui/code-preview/code-preview.js';
 import '../components/ui/preview-sandbox/preview-sandbox.js';
 import {
@@ -36,11 +35,6 @@ import {
   DOCUMENT_STYLE_ID as TABLE_DOCUMENT_STYLE_ID,
 } from '../components/ui/table/table.js';
 import '../components/ui/table/table.js';
-import {
-  DOCUMENT_CSS as CODE_BLOCK_DOCUMENT_CSS,
-  DOCUMENT_STYLE_ID as CODE_BLOCK_DOCUMENT_STYLE_ID,
-} from '../components/ui/codeblock/codeblock.js';
-import '../components/ui/codeblock/codeblock.js';
 import '../components/ui/blockquote/blockquote.js';
 import '../components/ui/details/details.js';
 import '../components/ui/divider/divider.js';
@@ -96,10 +90,6 @@ const DOCUMENT_STYLE_DEFINITIONS: Partial<Record<SsrTargetTag, SsrDocumentStyleD
   'ui-table': {
     id: TABLE_DOCUMENT_STYLE_ID,
     cssText: TABLE_DOCUMENT_CSS,
-  },
-  'ui-code-block': {
-    id: String(CODE_BLOCK_DOCUMENT_STYLE_ID),
-    cssText: String(CODE_BLOCK_DOCUMENT_CSS),
   },
   'ui-highlight': {
     id: HIGHLIGHT_DOCUMENT_STYLE_ID,

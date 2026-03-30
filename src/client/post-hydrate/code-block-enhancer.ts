@@ -1,6 +1,5 @@
 const CODE_BLOCK_SELECTOR = 'pre[data-code-block]';
 const CODE_BLOCK_ROOT_ATTRIBUTE = 'data-code-block-root';
-const GROUP_PANEL_SELECTOR = '[data-code-group-panel]';
 const COPY_RESET_DELAY_MS = 1200;
 
 const pickOptionalString = (value: string | null | undefined): string | null => {
@@ -41,11 +40,17 @@ const shouldShowCopyButton = (pre: HTMLElement): boolean => {
   return value !== null;
 };
 
+const getCopyButtonLabel = (pre: HTMLElement): string =>
+  pickOptionalString(pre.dataset['codeCopyLabel']) ?? 'コピー';
+
 const createCopyButton = (pre: HTMLElement): HTMLButtonElement => {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'code-surface-copy-button';
-  button.textContent = 'コピー';
+
+  const baseLabel = getCopyButtonLabel(pre);
+  button.textContent = baseLabel;
+  button.setAttribute('aria-label', baseLabel);
 
   const copyValue = pickOptionalString(pre.dataset['codeRaw']);
   if (!copyValue || pre.dataset['codeCopyable'] === 'false') {
@@ -61,14 +66,14 @@ const createCopyButton = (pre: HTMLElement): HTMLButtonElement => {
         button.textContent = 'コピー済み';
         window.setTimeout(() => {
           button.dataset['state'] = 'idle';
-          button.textContent = 'コピー';
+          button.textContent = baseLabel;
         }, COPY_RESET_DELAY_MS);
       } catch {
         button.dataset['state'] = 'failed';
         button.textContent = '失敗';
         window.setTimeout(() => {
           button.dataset['state'] = 'idle';
-          button.textContent = 'コピー';
+          button.textContent = baseLabel;
         }, COPY_RESET_DELAY_MS);
       }
     })();
@@ -77,11 +82,43 @@ const createCopyButton = (pre: HTMLElement): HTMLButtonElement => {
   return button;
 };
 
-const enhanceStandaloneCodeBlock = (pre: HTMLElement): void => {
-  if (pre.closest(GROUP_PANEL_SELECTOR)) {
+const appendChip = (parent: HTMLElement, className: string, value: string | null): void => {
+  if (!value) {
     return;
   }
 
+  const chip = document.createElement('span');
+  chip.className = className;
+  chip.textContent = value;
+  parent.append(chip);
+};
+
+const buildCaptionMain = (pre: HTMLElement): HTMLDivElement | null => {
+  const filename = pickOptionalString(pre.dataset['codeFilename']);
+  const label = pickOptionalString(pre.dataset['codeLabel']);
+  const intentLabel = getIntentLabel(pre.dataset['codeIntent'] ?? null);
+
+  if (!filename && !label && !intentLabel) {
+    return null;
+  }
+
+  const main = document.createElement('div');
+  main.className = 'code-surface-caption-main';
+
+  if (filename) {
+    const filenameNode = document.createElement('span');
+    filenameNode.className = 'code-surface-filename';
+    filenameNode.textContent = filename;
+    main.append(filenameNode);
+  }
+
+  appendChip(main, 'code-surface-label', label);
+  appendChip(main, 'code-surface-intent', intentLabel);
+
+  return main.childNodes.length > 0 ? main : null;
+};
+
+const enhanceCodeBlock = (pre: HTMLElement): void => {
   if (pre.parentElement?.hasAttribute(CODE_BLOCK_ROOT_ATTRIBUTE)) {
     return;
   }
@@ -98,38 +135,21 @@ const enhanceStandaloneCodeBlock = (pre: HTMLElement): void => {
   const header = document.createElement('div');
   header.className = 'code-surface-caption';
 
-  const headerMain = document.createElement('div');
-  headerMain.className = 'code-surface-caption-main';
+  const captionMain = buildCaptionMain(pre);
+  const copyButton = shouldShowCopyButton(pre) ? createCopyButton(pre) : null;
 
-  const filename = pickOptionalString(pre.dataset['codeFilename']);
-  if (filename) {
-    const filenameNode = document.createElement('span');
-    filenameNode.className = 'code-surface-filename';
-    filenameNode.textContent = filename;
-    headerMain.append(filenameNode);
-  }
-
-  const intentLabel = getIntentLabel(pre.dataset['codeIntent'] ?? null);
-  if (intentLabel) {
-    const intentNode = document.createElement('span');
-    intentNode.className = 'code-surface-intent';
-    intentNode.textContent = intentLabel;
-    headerMain.append(intentNode);
-  }
-
-  const shouldRenderHeader = headerMain.childNodes.length > 0 || shouldShowCopyButton(pre);
-  if (headerMain.childNodes.length > 0) {
-    header.append(headerMain);
-  }
-
-  if (shouldShowCopyButton(pre)) {
-    header.append(createCopyButton(pre));
-  }
+  const shouldRenderHeader = captionMain !== null || copyButton !== null;
 
   parent.insertBefore(wrapper, pre);
   wrapper.append(pre);
 
   if (shouldRenderHeader) {
+    if (captionMain) {
+      header.append(captionMain);
+    }
+    if (copyButton) {
+      header.append(copyButton);
+    }
     wrapper.insertBefore(header, pre);
   }
 
@@ -139,6 +159,6 @@ const enhanceStandaloneCodeBlock = (pre: HTMLElement): void => {
 export const enhanceCodeBlocks = (root: ParentNode): void => {
   const codeBlocks = root.querySelectorAll<HTMLElement>(CODE_BLOCK_SELECTOR);
   for (const codeBlock of codeBlocks) {
-    enhanceStandaloneCodeBlock(codeBlock);
+    enhanceCodeBlock(codeBlock);
   }
 };

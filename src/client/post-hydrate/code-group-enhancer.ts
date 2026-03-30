@@ -1,28 +1,12 @@
 const GROUP_SELECTOR = 'section[data-code-group]';
 const TAB_SELECTOR = '[data-code-group-tab]';
 const PANEL_SELECTOR = '[data-code-group-panel]';
-const COPY_BUTTON_SELECTOR = '[data-code-group-copy]';
-const COPY_RESET_DELAY_MS = 1200;
 
 interface GroupState {
   readonly group: HTMLElement;
   readonly tabs: HTMLButtonElement[];
   readonly panels: HTMLElement[];
-  readonly copyButton: HTMLButtonElement | null;
 }
-
-const getPanelCodeBlock = (panel: HTMLElement): HTMLElement | null =>
-  panel.querySelector<HTMLElement>('pre[data-code-block]');
-
-const getCopyValue = (panel: HTMLElement): string | null => {
-  const value = getPanelCodeBlock(panel)?.dataset['codeRaw'];
-  if (typeof value !== 'string') {
-    return null;
-  }
-
-  const trimmed = value.trimEnd();
-  return trimmed.length > 0 ? trimmed : null;
-};
 
 const syncSelection = (state: GroupState, nextKey: string): void => {
   state.group.dataset['codeGroupSelected'] = nextKey;
@@ -44,13 +28,6 @@ const syncSelection = (state: GroupState, nextKey: string): void => {
       panel.setAttribute('data-code-group-inactive', 'true');
     }
   }
-
-  const activePanel =
-    state.panels.find((panel) => panel.dataset['codeGroupPanel'] === nextKey) ?? null;
-  const copyValue = activePanel ? getCopyValue(activePanel) : null;
-  if (state.copyButton) {
-    state.copyButton.disabled = copyValue === null;
-  }
 };
 
 const focusNextTab = (tabs: HTMLButtonElement[], currentIndex: number, delta: number): void => {
@@ -60,41 +37,6 @@ const focusNextTab = (tabs: HTMLButtonElement[], currentIndex: number, delta: nu
 
   const nextIndex = (currentIndex + delta + tabs.length) % tabs.length;
   tabs[nextIndex]?.focus();
-};
-
-const attachCopyHandler = (state: GroupState): void => {
-  if (!state.copyButton || state.copyButton.dataset['bound'] === 'true') {
-    return;
-  }
-
-  const copyButton = state.copyButton;
-  copyButton.dataset['bound'] = 'true';
-  copyButton.addEventListener('click', () => {
-    void (async () => {
-      const selectedKey =
-        state.group.dataset['codeGroupSelected'] ?? state.panels[0]?.dataset['codeGroupPanel'] ?? '';
-      const activePanel =
-        state.panels.find((panel) => panel.dataset['codeGroupPanel'] === selectedKey) ?? null;
-      const copyValue = activePanel ? getCopyValue(activePanel) : null;
-      if (!copyValue) {
-        copyButton.disabled = true;
-        return;
-      }
-
-      try {
-        await navigator.clipboard.writeText(copyValue);
-        copyButton.textContent = 'コピー済み';
-        window.setTimeout(() => {
-          copyButton.textContent = 'コピー';
-        }, COPY_RESET_DELAY_MS);
-      } catch {
-        copyButton.textContent = '失敗';
-        window.setTimeout(() => {
-          copyButton.textContent = 'コピー';
-        }, COPY_RESET_DELAY_MS);
-      }
-    })();
-  });
 };
 
 const enhanceGroup = (group: HTMLElement): void => {
@@ -112,7 +54,6 @@ const enhanceGroup = (group: HTMLElement): void => {
     group,
     tabs,
     panels,
-    copyButton: group.querySelector<HTMLButtonElement>(COPY_BUTTON_SELECTOR),
   };
 
   const initialKey =
@@ -162,7 +103,6 @@ const enhanceGroup = (group: HTMLElement): void => {
     });
   }
 
-  attachCopyHandler(state);
   syncSelection(state, initialKey);
   group.dataset['codeGroupEnhanced'] = 'true';
 };

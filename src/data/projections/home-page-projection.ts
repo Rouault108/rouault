@@ -125,7 +125,7 @@ export const buildHomePageProjection = (
   const visibleNotes = filterNotesBySurface(notes, 'home');
 
   const indexedNotes = visibleNotes.flatMap((note, sourceIndex) => {
-    const title = normalizeText(note['title']);
+    const title = normalizeText(note.title);
     const permalink = normalizeText(note.permalink);
     const slug = normalizeText(note.slug);
 
@@ -134,14 +134,14 @@ export const buildHomePageProjection = (
     }
 
     const effectiveDate = normalizeDate(
-      normalizeText(note['updated']) || normalizeText(note['date']),
+      normalizeText(note.updated) || normalizeText(note.date),
     );
 
     return [
       {
         title,
         permalink,
-        summary: normalizeText(note['description']),
+        summary: normalizeText(note.description),
         date: effectiveDate,
         pathLabel: buildQuietPathLabel(slug),
         genres: normalizeStringArray(note.genre),

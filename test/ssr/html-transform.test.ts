@@ -13,7 +13,7 @@ const serializeAttributes = (attributes: readonly TestSsrAttribute[]): string =>
     .join('');
 
 describe('transformHtmlWithLitSsr', () => {
-  it('ノート相当のHTMLで対象要素をDSDに置換し、通常HTMLを保持する', async () => {
+  it('ノート相当のHTMLで対象要素を変換し、対象外の通常HTMLを保持する', async () => {
     const renderCalls: {
       tagName: string;
       attributes: readonly SsrAttribute[];
@@ -29,14 +29,14 @@ describe('transformHtmlWithLitSsr', () => {
         <body>
           <main id="main-content">
             <div class="prose">本文</div>
-            <ui-code-block language="ts"><pre><code>const value = 1;\nconsole.log(value);\n</code></pre></ui-code-block>
+            <ui-callout variant="info"><p>通知本文</p></ui-callout>
             <ui-table><table><tbody><tr><th>列</th><td>値</td></tr></tbody></table></ui-table>
           </main>
         </body>
       </html>`;
 
     const transformed = await transformHtmlWithLitSsr(html, {
-      targetTagNames: ['ui-code-block', 'ui-table'],
+      targetTagNames: ['ui-callout', 'ui-table'],
       renderCustomElement: (
         tagName: string,
         attributes: readonly SsrAttribute[],
@@ -51,10 +51,10 @@ describe('transformHtmlWithLitSsr', () => {
         const renderedTagNames = new Set(tagNames);
         const styles: DocumentStyleDefinition[] = [];
 
-        if (renderedTagNames.has('ui-code-block')) {
+        if (renderedTagNames.has('ui-callout')) {
           styles.push({
-            id: 'ui-code-block-document-styles',
-            cssText: '.code-block{display:block;}',
+            id: 'ui-callout-document-styles',
+            cssText: '.callout{display:block;}',
           });
         }
 
@@ -72,15 +72,16 @@ describe('transformHtmlWithLitSsr', () => {
     expect(transformed).toContain('class="prose">本文</div>');
     expect(transformed).toContain('type="application/json" id="sidebar-data"');
     expect(transformed).toContain('<template shadowrootmode="open">');
-    expect(transformed).toContain('id="ui-code-block-document-styles"');
+    expect(transformed).toContain('id="ui-callout-document-styles"');
     expect(transformed).toContain('id="ui-table-document-styles"');
 
     expect(renderCalls).toHaveLength(2);
-    expect(renderCalls[0]?.tagName).toBe('ui-code-block');
+    expect(renderCalls[0]?.tagName).toBe('ui-callout');
     expect(renderCalls[0]?.attributes).toContainEqual({
-      name: 'initial-code',
-      value: 'const value = 1;\nconsole.log(value);',
+      name: 'variant',
+      value: 'info',
     });
+    expect(renderCalls[0]?.attributes.find((attribute) => attribute.name === 'initial-code')).toBeUndefined();
   });
 
   it('タグ・検索・独立ページ相当のHTMLで対象外の構造を壊さずに変換する', async () => {
@@ -130,7 +131,8 @@ describe('transformHtmlWithLitSsr', () => {
         <body>
           <main>
             <ui-table><table><tbody><tr><td>A</td></tr></tbody></table></ui-table>
-            <ui-table><table><tbody><tr><td>B</td></tr></tbody></table></ui-table>
+            <ui-table><table><tbody><tr><td>B</td></tr></tbody></table>
+            </ui-table>
           </main>
         </body>
       </html>`;

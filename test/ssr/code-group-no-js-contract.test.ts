@@ -7,8 +7,8 @@ const readCodeGroupSource = (): string =>
     'utf8',
   );
 
-describe('ui-code-group no-js contract source', () => {
-  it('data-ready が付くまで header/body を表示せず、stack fallback を見せること', () => {
+describe('ui-code-group adapter source contract', () => {
+  it('adapter は data-ready が付くまで header/body を表示せず、stack fallback を見せること', () => {
     const source = readCodeGroupSource();
 
     expect(source).toContain('.code-group-header');
@@ -25,13 +25,13 @@ describe('ui-code-group no-js contract source', () => {
     expect(source).toContain('display: none;');
   });
 
-  it('no-JS fallback surface として default slot の stack-slot を持つこと', () => {
+  it('adapter は no-JS fallback surface として default slot の stack-slot を持つこと', () => {
     const source = readCodeGroupSource();
 
     expect(source).toContain('<slot class="stack-slot"></slot>');
   });
 
-  it('比較 UI を hydration 後に compose して data-ready を付与すること', () => {
+  it('adapter は比較 UI を hydration 後に compose して data-ready を付与すること', () => {
     const source = readCodeGroupSource();
 
     expect(source).toContain('private _composeFromLightDom(): void');
@@ -39,7 +39,7 @@ describe('ui-code-group no-js contract source', () => {
     expect(source).toContain("this.removeAttribute('data-ready');");
   });
 
-  it('比較不能時は panel slot へ強制せず、light DOM fallback を維持すること', () => {
+  it('adapter は比較不能時に panel slot へ強制せず、light DOM fallback を維持すること', () => {
     const source = readCodeGroupSource();
 
     expect(source).toContain('if (composition.majorViolation || composition.items.length < 2)');
@@ -48,7 +48,7 @@ describe('ui-code-group no-js contract source', () => {
     expect(source).toContain("block.removeAttribute('hidden');");
   });
 
-  it('print 時は header を隠し、hidden panel を含めて全件表示へ退行すること', () => {
+  it('adapter は print 時に header を隠し、hidden panel を含めて全件表示へ退行すること', () => {
     const source = readCodeGroupSource();
 
     expect(source).toContain('@media print');
@@ -58,7 +58,7 @@ describe('ui-code-group no-js contract source', () => {
     expect(source).toContain('display: block !important;');
   });
 
-  it('tablist / copy button は render されるが data-ready 以前は CSS で露出しないこと', () => {
+  it('adapter は tablist / copy button を render しても data-ready 以前は CSS で露出しないこと', () => {
     const source = readCodeGroupSource();
 
     expect(source).toContain('class="code-group-header"');
