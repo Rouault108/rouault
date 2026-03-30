@@ -1,2325 +1,525 @@
-# `content/testing/test.md` 表示負荷の調査レポートと再設計案
+# `content/testing/test.md` 再設計後に残る未解決問題一覧
 
-## 概要
+## 0. 本書の目的
 
-`pnpm dev` で `content/testing/test.md` を開いた際の重さを調査した結果、主因はサーバー応答ではなく、ブラウザ側で同時に起動される複数の重量級要素でした。
+本書は、`content/testing/test.md` 廃止後の Rouault において、**長期保守性の観点からまだ解消されていない問題だけ**をテーマ別に列挙するための文書です。
 
-このページは通常の読書ページではなく、画像、`code-preview`、`preview-sandbox`、`code-group`、`translation`、`tabs`、`toc` など、note 系コンポーネントの総合テストページとして振る舞っています。そのため、開発時の未バンドル ESM 配信と相まって、初回表示時の体感負荷が大きくなっています。
+本書は、再設計案そのものを提案する文書ではありません。採用済みの設計や実装済みの変更を再説明することも目的としません。扱うのは、次のいずれかに該当する事項だけです。
 
-本ドキュメントでは、調査方法、調査結果、原因整理、その原因を踏まえた再設計方針と実装計画をまとめます。
+1. 実装と仕様文書のあいだに不整合がある問題
+2. 仕様文書自身の正本境界が曖昧な問題
+3. 暫定実装のまま残っており、今後どこかで設計判断が必要な問題
+4. 採用済みアーキテクチャを実装が部分的に破っている問題
+5. 診断機構は存在するが、受け入れ基準や運用規約が未固定な問題
 
-## 実装状況メモ（2026-03-29）
+本書は「将来やるかもしれない改善案の候補集」ではありません。各問題について、**現在何が未解決で、何を決めれば完了とみなせるか**を曖昧さなく明示します。
 
-本再設計案に基づき、次は実装済みです。
+---
 
-- `content/testing/test.md` と `content/testing/tabs-test.md` を廃止し、`markdown-basic` / `media` / `code` / `interactive` / `sandbox` へ分割
-- `kind` + `testingArea` の metadata 契約を導入し、`testing` を breadcrumb only / search・home・tags・corpora・Pagefind 既定除外へ変更
-- `::example-include{ref="..."}` と `examples/snippets/**` / `examples/media/**` / `examples/manifests/testing-examples.ts` を導入
-- `testing/sandbox` だけが `preview-sandbox` / `allow-js="true"` を許可する build-time 契約を実装
-- Storybook 側も tabs / translation / preview-sandbox で shared example source を参照する構成へ更新
+## 1. この文書自身の扱い
 
-この文書の後半にある再設計方針と実装計画は、実装完了後の設計根拠として保持します。現行挙動の正本はコードと `docs/markdown/**` の仕様文書を優先します。
+### 1.1 本書は「再設計案」ではなく「未解決問題一覧」として扱う
 
-## 調査対象
+#### 現在の状態
 
-- 対象コンテンツ: `content/testing/test.md`
-- 対象環境: `pnpm dev`
-- 観点:
-  - HTML 応答自体が重いのか
-  - 外部リソースの転送が重いのか
-  - note ページ用の hydrate / dynamic import が重いのか
-  - 特定コンポーネントの初期化が重いのか
+- `content/testing/test.md` の分割、`kind + testingArea` 導入、`example-include`、`testing/sandbox` での `preview-sandbox` 許可、Storybook との shared example source は、すでに採用済みです。
+- 一方で、旧文書は「調査結果」「再設計の基本方針」「実装順序の提案」を同居させており、**採用済み事項、歴史的な検討経緯、未解決事項**が同じ文体で混在していました。
+- その構成では、読者が「何が現行の正本か」「何が過去の提案か」「何が未解決か」を一読で判断できません。
 
-## 調査方法
+#### 未解決の問題
 
-### 1. コンテンツ構造の確認
+この文書種別の役割が曖昧なままだと、将来の更新で次の混線が再発します。
 
-`content/testing/test.md` を確認し、どの記法・コンポーネントが含まれているかを洗い出した。
+- 実装済みの決定事項を、未採用の設計案として誤読する
+- 過去の計画を、現行契約として引用してしまう
+- 未解決事項の追跡が、背景説明の中へ埋没する
 
-特に確認した要素は以下。
+#### 本書で固定すること
 
-- リモート画像
-- `code-group`
-- `code-preview`
-- `preview-sandbox`
-- `translation`
-- `tabs`
-- `link-card`
-- `toc` に影響する見出し構造
+- 本書は、**未解決問題の一覧**だけを所有します。
+- 採用済みの公開契約は、本書ではなく各 SoT 文書またはコードを正とします。
+- 履歴説明や採用済み設計の背景説明は、本書の主目的にしません。
 
-### 2. note ページのクライアント起動経路の確認
+#### 完了条件
 
-以下の実装を追跡し、note ページ表示時にどのようにコンポーネントがロードされるかを確認した。
+次の 3 点を同時に満たした時点で、この問題は解消とみなします。
 
-- `src/client.ts`
-- `src/client/component-loader.ts`
-- `src/client/component-manifest.ts`
+1. 本書に採用済みアーキテクチャの長い再説明が残っていないこと
+2. 各未解決問題に対して、所有文書または所有実装が明示されていること
+3. 本書を読んだだけで「未解決事項だけ」が一覧できること
 
-確認ポイントは以下。
+#### 関連 SoT / 実装
 
-- 初回表示時に DOM 全体を走査しているか
-- 存在するカスタム要素をまとめて dynamic import しているか
-- note ページ特有のコンポーネントが何か
+- `docs/markdown/markdown-overview.md`
+- `docs/markdown/markdown-authoring-specification.md`
+- `docs/markdown/markdown-output-contract.md`
+- `docs/markdown/markdown-safety-and-test-policy.md`
 
-### 3. 開発サーバー実測
+---
 
-`pnpm dev` を起動し、対象ページに対して以下を計測した。
+## 2. 文書正本の整合性に関する未解決問題
 
-- HTML のレスポンスサイズ
-- HTML の TTFB / total time
-- 生成 HTML に含まれるカスタム要素数
-- dev サーバー経由で配信される主要モジュールのサイズ
+### 2.1 `tabs` の build-time 検証範囲と recoverable 挙動の位置づけが SoT 間で不整合のまま残っている
 
-### 4. 外部アセット実測
+#### 現在の状態
 
-`test.md` で使われている Unsplash 画像について、`curl` で以下を計測した。
+- `docs/markdown/markdown-safety-and-test-policy.md` は、`tabs` について次を build-time で検証すると記述しています。
+  - `tab` / `panel` の個数整合
+  - `tab.value` の一意性
+  - `selected-value` / `default-selected-value` の参照整合
+- `lib/remark/directives/validator/validate-structure.ts` の実装も、実際にこれらを検証しています。
+- しかし `docs/markdown/markdown-authoring-specification.md` の 10.2 には、`tabs` は slot 属性付与までを担い、**個数整合までは検証しない**という記述が残っています。
+- さらに `docs/design-system/components/tabs.md` には、`tab` 数と `panel` 数が不一致でも `min(tab 数, panel 数)` 件で**回復的に動作する runtime 契約**が記述されています。
+- `docs/markdown/note-authoring-guide.md` も `tabs` の運用上の注意を説明していますが、**build-time rejection の責務境界**までは authoritative に固定していません。
 
-- `content-length`
-- `time_starttransfer`
-- `time_total`
-- `size_download`
+#### 未解決の問題
 
-### 5. 重量級コンポーネントの内部挙動確認
+現在は、**同じ `tabs` 契約について、文書ごとに異なる責務境界が記述されている**状態です。
 
-以下のファイルを読み、接続時の observer / event listener / iframe 初期化の有無を確認した。
+曖昧なのは単に「どの文言を採るか」ではありません。曖昧なのは、次のどこを正本とみなすかです。
 
-- `src/components/ui/preview-sandbox/preview-sandbox.ts`
-- `src/components/ui/codeblock/codeblock.ts`
-- `src/components/ui/code-group/code-group.ts`
-- `src/components/layout/layout-toc.ts`
+1. 実装
+2. Markdown authoring / safety SoT
+3. component 契約
+4. author 向け guide
+
+この曖昧さは単なる文書表現の問題ではありません。`tabs` の構造違反を
+
+- authoring error として build-time で拒否するのか
+- component 側の recoverable runtime 挙動として扱うのか
+
+という**責務境界そのもの**に関わります。
+
+#### 本書で固定すること
+
+- この問題の本質は、`tabs` の仕様が未定なのではなく、**正本どうしが build-time rejection と recoverable runtime の位置づけを一致させていないこと**です。
+- したがって必要なのは説明追加ではなく、**authoring / safety / component contract / author guide の一本化**です。
+
+#### 完了条件
+
+次の 5 点を同時に満たした時点で、この問題は解消とみなします。
+
+1. `docs/markdown/markdown-authoring-specification.md` の `tabs` 記述が、実装と同じ build-time 検証範囲を記述していること
+2. `docs/markdown/markdown-safety-and-test-policy.md` と矛盾しないこと
+3. `docs/design-system/components/tabs.md` が recoverable runtime 挙動を**authoring 正規契約の代替**として読めないこと
+4. `docs/markdown/note-authoring-guide.md` が上記 3 文書と矛盾しない運用記述へ揃っていること
+5. 対応 fixture / unit test / Storybook 上の検証対象が文書に明示されていること
+
+#### 関連 SoT / 実装
+
+- `docs/markdown/markdown-authoring-specification.md`
+- `docs/markdown/markdown-safety-and-test-policy.md`
+- `docs/design-system/components/tabs.md`
+- `docs/markdown/note-authoring-guide.md`
+- `lib/remark/directives/validator/validate-structure.ts`
+- `test/unit/remark-rouault-directives.test.ts`
+
+---
+
+## 3. Markdown 基盤に関する設計固定事項
+
+### 3.1 custom directive parser は Rouault 固有 grammar の正本として恒久採用する
+
+#### 現在の状態
+
+- Rouault の block directive は、paragraph text を自前解析する独自 parser で受理しています。
+- 現行実装は、開始 marker / 終端 marker / folded paragraph 互換 / 属性解析 / ネスト終端探索を、Rouault 専用の parser core によって処理しています。
+- したがって現行の Markdown 基盤は、一般的な `micromark` / `remark-directive` ベースの directive AST を中核契約として採用していません。
+
+#### 本書で固定すること
+
+- Rouault は、custom directive parser を**将来置換候補ではなく設計固定**として採用します。
+- Rouault の directive grammar は、一般的な directive AST 互換よりも、**authoring 契約・build-time validation・静的出力契約との一体性**を優先します。
+- したがって、Rouault の directive は Markdown エコシステム一般との parser 互換を目的としません。
+- editor support・lint・fixture・test・authoring guide は、今後すべて **Rouault 固有 grammar** を正本として構成しなければなりません。
+
+#### 設計固定の意味
+
+この決定は、単に「今の実装を当面維持する」という意味ではありません。意味するのは次の 4 点です。
+
+1. block directive の受理規則は Rouault 独自 parser core が所有すること
+2. block directive が独立 paragraph として存在する場合と、単一 paragraph 内の改行列として畳まれる場合の両方を、Rouault grammar の正式互換として扱うこと
+3. `remark-directive` AST 互換を提供しないことを、制約ではなく設計選択として明示すること
+4. 周辺機能は「いつか標準 parser へ寄せる前提」ではなく、「独自 parser を正本とする前提」で整備すること
+
+#### 非目標
+
+次の事項は、この契約の非目標として明示します。
+
+- 一般的な `remark-directive` AST 互換の提供
+- 外部 Markdown tooling との parser レベルの透過的相互運用
+- directive grammar の意味論を汎用 Markdown 拡張へ還元すること
+- 標準系 parser へ将来移行することを前提にした互換維持
+
+#### 保守上の要求
+
+独自 parser を恒久採用する以上、次の責務を Rouault 側で負います。
+
+1. authoring grammar の authoritative source を SoT に明記すること
+2. parser core の受理規則と fixture 群を 1 対 1 で対応づけること
+3. editor support / lint / diagnostics を独自 grammar 前提で整備すること
+4. directive を追加するたびに、grammar・payload・validator・output adapter・fixture を同時に更新すること
+5. 外部エコシステム非互換を「既知制約」ではなく「設計固定」として説明すること
+
+#### 完了条件
+
+次の 5 点を同時に満たした時点で、この設計固定は完了とみなします。
+
+1. `docs/markdown/markdown-safety-and-test-policy.md` が custom directive parser を「将来置換候補」ではなく設計固定として記述していること
+2. `docs/markdown/markdown-authoring-specification.md` が `remark-directive` AST 非互換を制約ではなく正式契約として記述していること
+3. parser core が受理する folded paragraph 互換・終端規則・属性規則が SoT に反映されていること
+4. editor support・lint・fixture・unit test の前提が独自 parser 採用で統一されていること
+5. 新規 directive 追加時に従う更新単位（grammar / payload / validator / output adapter / test）が保守規約として明文化されていること
+
+#### 関連 SoT / 実装
+
+- `docs/markdown/markdown-authoring-specification.md`
+- `docs/markdown/markdown-safety-and-test-policy.md`
+- `lib/remark/directives/parser-core/parse-directive-nodes.ts`
+- `lib/remark/directives/parser-core/parse-directive-line.ts`
+- `lib/remark/directives/parser-core/expand-folded-paragraph.ts`
+- `lib/remark/directives/parser-core/scan-block-markers.ts`
+- `lib/remark/directives/index.ts`
+- `test/unit/remark-rouault-directives.test.ts`
+
+---
+
+## 4. authoring 意味論に関する未解決問題
+
+### 4.1 `translation` / `translation-overlay` の本文意味論が暫定仕様のまま残っている
+
+#### 現在の状態
+
+- 現行仕様では、`translation` / `translation-overlay` は block children を最終的に保持しません。
+- 子要素から取り出すのは 1 段落目と 2 段落目の**プレーンテキスト相当**であり、`original` / `translated` へ昇格したあと `children: []` になります。
+- この制約は `docs/markdown/markdown-safety-and-test-policy.md` で暫定実装として明示されています。
+- さらに現行 Rouault では translation は **static-first** であり、`translation` は `div.translation-static[data-translation-kind="static"]` へ、`translation-overlay` は `ui-translation[surface]` へ分岐します。
+- したがって、この問題は `ui-translation` 単体の問題ではなく、**remark payload 正規化・出力 adapter・static output contract・overlay component contract** にまたがる問題です。
+
+#### 未解決の問題
+
+未解決なのは、`translation` の UI 種別ではありません。未解決なのは、**translation が保持してよい本文意味論を最終的にどこまで許すか**です。
+
+現状のままだと、次の内容は正規契約として表現できません。
+
+- 原文側に inline markup を持つケース
+- 訳文側に脚注・強調・ルビ・リンクなどを含むケース
+- 2 段落を超える対応関係
+- AST レベルで保持したい対応関係
+
+つまり、今の `translation` は「plain text 2 片の対置」には使えますが、**構造化された bilingual content の正規契約にはなっていません。**
+
+加えて、現状の関連責務は次の 2 系統に分かれています。
+
+1. `translation` を static translation としてどう出力するか
+2. `translation-overlay` を overlay component としてどう運用するか
+
+この二系統を分けて扱わないと、問題が overlay 実装の都合に見えてしまい、**static translation 側の契約未確定**が見えなくなります。
+
+#### 本書で固定すること
+
+- この問題は performance 問題ではなく、**authoring 意味論と出力契約の未確定**として扱います。
+- `translation` を今のまま使い続ける場合でも、「何を意図的に捨てているのか」を永久に曖昧にしてはなりません。
+- とくに static translation の契約を overlay component の副作用として説明してはなりません。
+
+#### 完了条件
+
+次のどちらか一方を採用した時点で、この問題は解消とみなします。
+
+##### 完了条件 A: plain-text translation として固定する場合
+
+1. `translation` / `translation-overlay` は plain-text 2 片のみを扱うと SoT に明記すること
+2. block children 受理を互換経路ではなく縮退経路として扱い、将来廃止可否を判断すること
+3. static translation と overlay translation の両方で、plain-text 制約を同じ契約として明記すること
+4. rich content を扱う場合は別 directive または別 grammar が必要だと明示すること
+
+##### 完了条件 B: 構造化 translation へ拡張する場合
+
+1. `original` / `translated` を文字列属性ではなく構造化 child AST として保持する方針を採用すること
+2. static translation と overlay translation の両方で、どの構造を許すかを SoT へ明記すること
+3. remark payload / output adapter / output contract / component contract を同時に改訂すること
+4. a11y contract と test fixture を再定義すること
+
+#### 関連 SoT / 実装
+
+- `docs/markdown/markdown-authoring-specification.md`
+- `docs/markdown/markdown-safety-and-test-policy.md`
+- `docs/markdown/markdown-output-contract.md`
+- `docs/design-system/components/translation.md`
+- `lib/remark/directives/payload/normalize-translation-payload.ts`
+- `lib/remark/directives/output/adapt-directive-output.ts`
+- `test/unit/remark-rouault-directives.test.ts`
 - `src/components/ui/translation/translation.ts`
-- `src/components/ui/image/image.ts`
-- `src/components/ui/card/card.ts`
+- `src/components/ui/translation/translation-orchestrator.ts`
 
-## 調査結果
+### 4.2 `tabs.url-sync` の URL 状態モデルは単一主タブ制約を恒久採用する
 
-### 1. サーバー応答そのものは軽い
+#### 決定
 
-実測結果:
+Rouault における `tabs.url-sync` は、**1 文書につき 1 系統の主タブだけ**に許可する恒久制約として採用します。  
+複数 query key を用いた複数系統 URL 同期は採用しません。
 
-| 項目 | 値 |
-| --- | --- |
-| HTML サイズ | `42,907 bytes` |
-| TTFB | `約 35ms` |
-| total time | `約 35ms` |
+#### この決定を採る理由
 
-この結果から、重さの主因は HTML 生成やサーバー応答そのものではないと判断できる。
+Rouault の `tabs.url-sync` は、単なる UI 部品の補助機能ではありません。現行実装では次の責務と結合しています。
 
-### 2. `test.md` は通常の note より明らかに重い構成
+- `?tab=` を用いた主タブ状態の URL 同期
+- primary tab 差分のみを対象とする state-only navigation
+- `ui-tabs[url-sync]` を前提にした router policy
+- `data-toc-scope` と scopeSelections を用いた TOC 可視見出し制御
 
-このページには以下が同時に含まれている。
+この構成において複数系統 URL 同期を許可すると、次の責務境界が一斉に不安定になります。
 
-- `ui-image` x2
-- `ui-code-block` x10
-- `ui-code-group` x3
-- `ui-code-preview` x2
-- `ui-preview-sandbox` x1
-- `ui-translation` x2
-- `ui-card` x2
-- `ui-tabs` x1
-- `layout-toc` x1
-- `layout-sidebar` x1
-- `ui-highlight` x2
-- `ui-blockquote` x2
+- query key 命名規則
+- tabs scope と URL 状態の対応
+- same-document navigation 判定
+- deep link と tab state 復元順序
+- TOC 側の visible heading 解決規則
 
-つまりこのページは、読むための静かな note ではなく、複数の interactive / observer-heavy / import-heavy コンポーネントを一気に起動する「総合試験ページ」になっている。
+Rouault は没入して読むための note application であり、共有 URL が表す状態は最小限でなければなりません。  
+そのため URL に昇格させる状態は **ページ主タブ 1 系統のみ**とし、それ以外の tabs は文書内局所状態として扱います。
 
-### 3. 画像転送量が大きい
+#### 正式契約
 
-#### 本文画像
+- `url-sync` は、ページ主タブ 1 系統にのみ使用しなければなりません（MUST）。
+- 同一文書内で 2 系統目以降の `url-sync` を許可してはなりません（MUST NOT）。
+- `url-sync` が表す URL query parameter は `tab` に固定し、名前空間化や複数 key 導入は行いません。
+- URL 同期されない tabs は、`selected-value` / `default-selected-value` による局所状態として扱います。
+- TOC 連動が必要な場合は、URL 同期ではなく `data-toc-scope` と scopeSelections により扱います。
+- 入れ子 tabs や補助的 tabs は、URL 状態を所有してはなりません。
 
-本文内の同一 Unsplash 画像 URL を実測したところ、以下だった。
+#### build-time / authoring 規約
 
-| 項目 | 値 |
-| --- | --- |
-| `content-length` | `632,721 bytes` |
-| `time_starttransfer` | `0.595s` |
-| `time_total` | `0.769s` |
+- 同一文書内に `url-sync` を持つ `tabs` が複数存在する場合は build-time error とします。
+- build-time diagnostics は、「`url-sync` は主タブ 1 系統のみ許可される」ことを明示しなければなりません。
+- authoring guide は、主タブ以外で `url-sync` を使わないこと、代わりに `selected-value` / `default-selected-value` / `data-toc-scope` を使うことを明示しなければなりません。
 
-しかも 2 枚目の画像は `loading="eager"` 指定になっているため、初期表示時に強制的に読み込まれる。
+#### この決定によって明確になる責務境界
 
-#### link-card 用画像
+- URL に載る tabs 状態は `?tab=` の 1 系統のみ
+- router の state-only navigation 最適化対象は primary tab 差分のみ
+- TOC 可視見出し制御は `data-toc-scope` を用いた局所的 scope 解決として扱う
+- 複数独立 tabs の状態保存は URL 契約ではなく component 局所状態の責務とする
 
-`ui-card` に渡されている画像 URL はクエリなしの元画像 URL であり、実測値は以下だった。
+#### 完了条件
 
-| 項目 | 値 |
-| --- | --- |
-| `content-length` | `2,090,047 bytes` |
-| `time_starttransfer` | `0.091s` |
-| `time_total` | `1.539s` |
+次の 5 点を同時に満たした時点で、この決定は実装・文書の両面で完了とみなします。
 
-`loading="lazy"` ではあるが、レイアウトや viewport によっては早い段階でリクエストされ、本文画像よりさらに重い。
+1. `url-sync` は 1 文書につき 1 系統のみ許可することを SoT に明記していること
+2. 2 系統目以降の `url-sync` を build-time error にしていること
+3. TOC・router・authoring guide・component contract の全てが同じ単一主タブ制約を記述していること
+4. URL 同期されない tabs の正規経路として、`selected-value` / `default-selected-value` / `data-toc-scope` の使い分けが SoT に明記されていること
+5. fixture / unit test / Storybook が、単一主タブ制約と複数 `url-sync` 拒否を検証していること
 
-### 4. クライアント側が「ページに存在する全カスタム要素」を一括 hydrate している
+#### 関連 SoT / 実装
 
-`src/client.ts` は起動時に `ensureComponentsForRoot(document)` を呼び出す。
+- `docs/markdown/markdown-authoring-specification.md`
+- `docs/markdown/markdown-safety-and-test-policy.md`
+- `docs/design-system/components/tabs.md`
+- `docs/markdown/note-authoring-guide.md`
+- `docs/router-specification.md`
+- `docs/design-system/patterns.md`
+- `src/components/app/navigation/primary-tab-url-state.ts`
+- `src/components/app/navigation/primary-tab-navigation-policy.ts`
+- `src/components/app/app-router.ts`
+- `src/components/ui/tabs/tabs-url-sync-strategy.ts`
+- `src/lib/toc/filter-visible-headings.ts`
+- `test/unit/primary-tab-url-state.test.ts`
+- `test/unit/primary-tab-navigation-policy.test.ts`
+- `test/unit/app-router.test.ts`
+- `test/unit/filter-visible-headings.test.ts`
 
-`src/client/component-loader.ts` は DOM 全体を `querySelectorAll()` で走査し、見つかったカスタム要素すべてに対して dynamic import を実行する。
+### 4.3 `tabs.url-sync` の ownership boundary は component 境界までに限定し、router / history.state は router が所有する
 
-この方式自体は分かりやすいが、`test.md` のように種類の多いページでは以下の問題を起こす。
+#### 現在の状態
 
-- 初回表示で import 本数が増える
-- 開発時は Vite が未バンドル ESM を個別配信するため、本番より不利
-- 「今すぐ必要ない」要素まで初回表示でロードする
+- `docs/design-system/components/tabs.md` は、`urlSync` が所有するのは `?tab=` とホスト配下ハッシュ解決までであり、**フレームワーク固有の `history.state` 形式までは所有しない**と記述しています。
+- しかし現行実装では、`src/components/ui/tabs/tabs.ts` の `createHistoryStateForUrl()` が `history.state` に `__routerUrl` と `__routerPath` を書き込みます。
+- `src/lib/router/location-adapter.ts` および `src/lib/url-hash.ts` も同系統の state shape を前提としており、tabs の URL 同期と router 内部 state が事実上結合しています。
+- つまり現状は、component 契約では router 固有 state を所有しないとしながら、実装では `ui-tabs` が router 依存の state shape を部分的に生成している状態です。
 
-### 5. 主要モジュールの dev 配信サイズが大きい
+#### 未解決の問題
 
-dev サーバー経由で実測した主要 module のサイズは以下だった。
+未解決なのは、単一主タブか複数系統かという問題ではありません。未解決なのは、**`tabs.url-sync` の ownership boundary をどこまでに限定するかが、文書・実装・router 契約で一致していないこと**です。
 
-| モジュール | サイズ |
-| --- | ---: |
-| `ui-code-group` | `95,958 bytes` |
-| `ui-code-preview` | `92,821 bytes` |
-| `ui-code-block` | `88,137 bytes` |
-| `ui-translation` | `73,428 bytes` |
-| `ui-preview-sandbox` | `71,722 bytes` |
-| `ui-image` | `59,527 bytes` |
-| `layout-toc` | `56,762 bytes` |
-| `ui-tabs` | `55,578 bytes` |
-| `ui-article-header` | `41,870 bytes` |
-| `layout-sidebar` | `32,196 bytes` |
+このままだと、次の責務境界が曖昧なまま残ります。
 
-上記 10 本だけで `約 668KB`。さらに `ui-icon`、`ui-card`、`ui-highlight`、`ui-info-box`、`ui-details`、依存モジュール群が続く。
+- `ui-tabs` が所有する URL 同期
+- router が所有する location / history state 正規化
+- framework 依存 state shape の進化責任
+- tabs 単体利用時に前提としてよい環境条件
 
-これは本番バンドルではある程度緩和されるが、`pnpm dev` の体感には直接効く。
+とくに問題なのは、`ui-tabs` が router を直接所有していないにもかかわらず、router 固有の `history.state` shape を自前生成していることです。これは、component が application integration の内部表現へ立ち入っている状態であり、長期保守性の観点から境界が不適切です。
 
-### 6. 初期化コストの高いコンポーネントが多い
+#### 本書で固定すること
 
-#### `ui-preview-sandbox`
+- この問題は URL 状態モデル一般の話ではなく、**ownership boundary の逸脱**として扱います。
+- Rouault では、`tabs.url-sync` の ownership を **component 境界まで**に限定します。
+- `ui-tabs` は `?tab=` と hash 解決に関わる URL 同期要求までは所有してよいが、router 固有の `history.state` key / shape / versioning responsibility は所有しません。
+- `history.state` の生成・正規化・互換維持は router abstraction 側が所有し、tabs からは opaque に扱える API 越しにのみ利用できるものとします。
+- したがって、この問題の解消は router 結合契約の明文化ではなく、**component 境界の回復**によって達成します。
 
-- `connectedCallback()` で `MutationObserver` を張る
-- `window.message` listener を張る
-- 既定で `activation-policy="eager"`
-- `allow-js="true"` の場合、iframe 内 JS も即座に起動する
+#### 完了条件
 
-つまり「見えたら起動」ではなく、「接続された時点で起動」している。
+次の 5 点を同時に満たした時点で、この問題は解消とみなします。
 
-#### `ui-code-block`
+1. `ui-tabs` が router 固有の `history.state` shape を直接生成しないこと
+2. URL 正規化または state 付与が必要な場合、tabs からは opaque な router abstraction を介して行うこと
+3. `docs/design-system/components/tabs.md` が、`ui-tabs` の ownership を `?tab=` と hash 解決までに限定した component contract として記述していること
+4. `docs/router-specification.md` が、`history.state` の key / shape / 正規化責務を router 側の契約として記述していること
+5. router 側の state shape 変更が、tabs 実装変更を必須にしないことを test と実装境界の両方で確認できること
 
-- `ResizeObserver`
-- `MutationObserver`
-- document style injection
+#### 関連 SoT / 実装
 
-このページでは `ui-code-block` が 10 個あるため、接続時コストが蓄積する。
-
-#### `ui-code-group`
-
-- subtree を対象に `MutationObserver`
-- header tool width 用 `ResizeObserver`
-- light DOM を再構成する compose 処理
-
-このページでは 3 個存在する。
-
-#### `layout-toc`
-
-- `scroll` listener
-- `hashchange` listener
-- `ui-tab-change` listener
-- `MutationObserver`
-- `requestAnimationFrame()` 経由の可視見出し再計算
-
-見出し数自体は多くないが、tabs と組み合わさると処理経路が増える。
-
-#### `ui-translation`
-
-- `resize` listener
-- `scroll` listener
-- document-level style injection
-- popover positioning 用 `requestAnimationFrame()`
-
-2 個程度では致命傷ではないが、このページの「全部入り」構成では積み上がる。
-
-## 原因整理
-
-重さの原因は 1 つではなく、以下の複合である。
-
-### 原因 A: リモート画像の転送量が大きい
-
-- 本文画像が約 `633KB`
-- link-card 画像が約 `2.09MB`
-- しかも本文 2 枚目は `eager`
-
-### 原因 B: 読書ページなのに interactive コンポーネントが多すぎる
-
-- `code-preview`
-- `preview-sandbox`
-- `code-group`
-- `translation`
-- `tabs`
-
-これらは「読むだけ」のページに対しては重い部類であり、テストページに集約されすぎている。
-
-### 原因 C: hydration 戦略が一括すぎる
-
-- DOM に存在するカスタム要素を全部検出
-- 全部まとめて dynamic import
-- 優先度の概念がない
-
-### 原因 D: component 単位の初期化が eager すぎる
-
-- sandbox iframe が eager
-- observer の attach が接続直後
-- static rendering で済む要素まで JS を起動
-
-### 原因 E: `test.md` の役割定義が曖昧
-
-このページは次の性質を同時に持ってしまっている。
-
-- note の見た目確認
-- Markdown 記法の総合テスト
-- interactive component の実演
-- authoring / contract テスト
-
-本来は別の場に分離すべき責務が混在している。
-
-## 再設計の基本方針
-
-再設計では「重いものを速くする」だけではなく、「そもそも読書ページで起動させるべきものを減らす」ことを優先する。
-
-設計原則は以下。
-
-1. 読書ページの主役は本文であり、interactive demo は従属物にする。
-2. 初回表示で必要ない JS は起動しない。
-3. リモート大画像を 読書用ノート に直接置かない。
-4. 「テストページ」と「実際の note」を別の責務として設計する。
-5. note 用 UI は `critical`、`deferred`、`on-demand` に分けて読み込む。
-
-## 詳細な再設計方法
-
-## 1. メディア設計の再設計
-
-本章では、note 本文で扱う画像およびカード用画像について、読書性能、authoring 体験、配信運用、将来移行性を同時に満たすための再設計方針を定義する。
-
-ここで優先するのは、単に「画像を軽くすること」ではない。長期保守性の観点から、次を固定する。
-
-1. author が書く参照先と、reader に配信される URL を分離する  
-2. メディア原本の source of truth を単一化する  
-3. 配信基盤固有の都合を authoring 契約へ持ち込まない  
-4. build-time で画像方針を確定し、runtime の裁量を減らす  
-5. 画像変換・配信・HTML 解決の責務境界を明確にする  
-
-### 1-1. 本文画像をリモート直参照からローカル原本管理へ移行する
-
-現状の問題:
-
-- 外部 CDN の応答時間と可用性に依存する
-- サイズ制御が著者側の URL クエリ任せになっている
-- 同一画像でもノートごとに最適化方針が揺れる
-- 画像の配信都合が authoring へ漏れている
-
-再設計:
-
-- note 本文および frontmatter から参照する画像原本は、原則として `content/_assets` に統一する
-- `src/assets` はアプリケーション実装資産用とし、note 本文用原本の正規配置としては扱わない
-- author は常にローカル source path を記述し、配信用 URL を意識しない
-- build は source path を入力として、最適化済み派生画像と最終 HTML を生成する
-- 配信用 URL の解決は build の責務とし、Markdown / frontmatter の元テキスト自体は変更しない
-
-この方針を採る理由:
-
-- note 本文資産の ownership が content 側に固定される
-- authoring と app shell 実装資産が混在しない
-- build 系統や配信基盤を差し替えても source asset と本文を不変に保ちやすい
-- frontmatter の `cover` と本文画像を同一パイプラインへ統合しやすい
-
-推奨ディレクトリ構成:
-
-```text
-content/
-  _assets/
-    testing/
-      test-hero.jpg
-      test-card.jpg
-  testing/
-    test.md
-
-.generated/
-  media/
-    image-manifest.json
-
-scripts/
-  build-images.ts
-  upload-media-assets.ts
-```
-
-期待効果:
-
-- 初回表示の転送量削減
-- authoring 契約の明確化
-- 画像配信基盤の移行容易性向上
-- 画像方針の一貫化
-
-### 1-1-A. 配信基盤は抽象化し、本文設計へ埋め込まない
-
-本設計で固定するべきなのは、特定ベンダー名ではなく次の抽象構造である。
-
-1. ローカル原本を source of truth とする
-2. production build で派生画像を生成する
-3. 派生画像だけを object storage / CDN に配置する
-4. manifest resolver が final HTML に配信用 URL を解決する
-
-この章では object storage / CDN の存在を前提にしてよいが、R2、S3、Cloudflare Images などの具体実装は下位実装または運用文書が所有するものとする。
-
-理由:
-
-- ベンダー差し替えを仕様改訂ではなく実装差し替えとして扱いやすくなる
-- 本文設計と運用基盤の時間軸を分離できる
-- 将来の storage migration を resolver 境界へ閉じ込められる
-
-### 1-1-B. 画像 manifest を正規カタログとして契約化する
-
-manifest は単なる補助 JSON ではなく、画像原本と配信用派生画像の対応を表す正規カタログとする。
-
-manifest の責務:
-
-- source path と派生画像群の対応を保持する
-- HTML 解決に必要な metadata を保持する
-- build / upload / resolver 間の唯一の受け渡し形式になる
-- 配信基盤差し替え時の移行点になる
-
-manifest は少なくとも次を持たなければならない。
-
-- `schemaVersion`
-- `generatorVersion`
-- `variantSetVersion`
-- 原本相対パス
-- content hash
-- width / height
-- placeholder 情報
-- variant ごとの派生出力情報
-
-  - format
-  - media type
-  - byte size
-  - URL または object key
-
-例:
-
-```json
-{
-  "schemaVersion": 1,
-  "generatorVersion": "1.0.0",
-  "variantSetVersion": "reading-v1",
-  "items": {
-    "content/_assets/testing/test-hero.jpg": {
-      "hash": "a1b2c3d4",
-      "width": 2232,
-      "height": 1488,
-      "placeholder": {
-        "kind": "dominant-color",
-        "value": "oklch(0.82 0.03 95)"
-      },
-      "variants": {
-        "thumb": {
-          "outputs": [
-            {
-              "format": "avif",
-              "mediaType": "image/avif",
-              "byteSize": 14231,
-              "url": "https://media.example.com/images/a1b2c3d4/thumb.avif"
-            },
-            {
-              "format": "webp",
-              "mediaType": "image/webp",
-              "byteSize": 21884,
-              "url": "https://media.example.com/images/a1b2c3d4/thumb.webp"
-            },
-            {
-              "format": "jpeg",
-              "mediaType": "image/jpeg",
-              "byteSize": 40211,
-              "url": "https://media.example.com/images/a1b2c3d4/thumb.jpg"
-            }
-          ]
-        },
-        "reading": {
-          "outputs": [
-            {
-              "format": "avif",
-              "mediaType": "image/avif",
-              "byteSize": 52214,
-              "url": "https://media.example.com/images/a1b2c3d4/reading.avif"
-            },
-            {
-              "format": "webp",
-              "mediaType": "image/webp",
-              "byteSize": 78110,
-              "url": "https://media.example.com/images/a1b2c3d4/reading.webp"
-            },
-            {
-              "format": "jpeg",
-              "mediaType": "image/jpeg",
-              "byteSize": 131402,
-              "url": "https://media.example.com/images/a1b2c3d4/reading.jpg"
-            }
-          ]
-        },
-        "full": {
-          "outputs": [
-            {
-              "format": "avif",
-              "mediaType": "image/avif",
-              "byteSize": 118220,
-              "url": "https://media.example.com/images/a1b2c3d4/full.avif"
-            },
-            {
-              "format": "webp",
-              "mediaType": "image/webp",
-              "byteSize": 174321,
-              "url": "https://media.example.com/images/a1b2c3d4/full.webp"
-            },
-            {
-              "format": "jpeg",
-              "mediaType": "image/jpeg",
-              "byteSize": 301224,
-              "url": "https://media.example.com/images/a1b2c3d4/full.jpg"
-            }
-          ]
-        }
-      }
-    }
-  }
-}
-```
-
-追加規則:
-
-- manifest schema は versioned contract とする
-- resolver は schema version 不一致や必須 field 欠落を build-time error にしなければならない
-- manifest の欠損や不整合を runtime で best effort 補修してはならない
-- variant 名は寸法ではなく用途名で固定する
-- variant の内部寸法・品質を変更しても、variant 名の意味を壊してはならない
-
-### 1-1-C. variant 設計はデザイン意図で固定する
-
-variant はピクセル値ではなく用途で定義する。
-
-- `thumb`
-
-  - 一覧、カード、小さな埋め込み向け
-- `reading`
-
-  - 本文カラム幅向けの標準画像
-- `full`
-
-  - 拡大表示、高解像度表示向け
-
-この命名にする理由:
-
-- 表示幅や圧縮品質の見直しを authoring 契約から切り離せる
-- レイアウト変更やテーマ変更が起きても API の意味を維持しやすい
-- 将来の art direction 追加にも拡張しやすい
-
-### 1-1-D. URL 解決の責務を resolver に閉じ込める
-
-author は source path を書き、build は manifest resolver を通じて final HTML に配信用 URL を反映する。
-
-この責務分離を崩してはならない。
-
-- authoring 層
-
-  - source path を記述する
-- image build 層
-
-  - 原本から派生画像を生成する
-- manifest 層
-
-  - 原本と派生画像の対応を保持する
-- resolver 層
-
-  - source path から `src` / `srcset` / `sizes` / `width` / `height` を導出する
-- output 層
-
-  - 最終 DOM を確定する
-
-禁止事項:
-
-- 配信用 URL を author に直接書かせること
-- Markdown の生テキストを build 後 URL で上書きすること
-- resolver を通さず個別テンプレートで ad hoc に画像 URL を組み立てること
-
-### 1-1-E. `ui-image` は source 単位ではなく picture 契約へ寄せる
-
-長期的には `ui-image` の入力契約を単一 `src` 前提から脱却させ、`picture` 相当の構造を扱える形へ寄せる。
-
-必要な情報:
-
-- fallback `src`
-- `srcset`
-- `sizes`
-- `width`
-- `height`
-- placeholder
-- 形式別 source 群
-
-最終 HTML は少なくとも次の意味論へ収束できることが望ましい。
-
-```html
-<picture>
-  <source type="image/avif" srcset="..." sizes="..." />
-  <source type="image/webp" srcset="..." sizes="..." />
-  <img
-    src="..."
-    srcset="..."
-    sizes="..."
-    width="1200"
-    height="800"
-    loading="lazy"
-    decoding="async"
-    alt="..."
-  />
-</picture>
-```
-
-### 1-1-F. build / deploy / GC の責務を分離する
-
-長期保守性を考えると、画像処理の各段階は次のように分離する。
-
-- local dev
-
-  - 原本画像をそのまま使える
-  - object storage への接続を必須にしない
-- production build
-
-  - 派生画像生成
-  - manifest 生成
-  - final HTML 用の URL 解決
-- deploy pipeline
-
-  - 派生画像 upload
-  - HTML / Pages deploy
-- background GC
-
-  - 参照されなくなった旧 hash 資産の遅延削除
-
-追加規則:
-
-- hash ベース key を採用し、上書き更新を前提にしない
-- deploy と同時に旧資産を即削除してはならない
-- GC は manifest 非参照状態を複数 deploy 期間確認した後に行う
-
-### 1-1-G. 失敗時の縮退を build-time 契約として定義する
-
-配信資産の生成または upload に失敗したときの扱いを明示しなければならない。
-
-推奨方針:
-
-- production build では fail closed を基本とする
-- manifest 契約違反、variant 欠落、upload 未完了のまま final HTML を生成してはならない
-- local dev では fail open を許し、ローカル原本への縮退を認めてよい
-- ただし、この縮退は開発補助であり、本番契約ではない
-
-理由:
-
-- production での静かな画像欠落を防げる
-- build failure と deploy failure の切り分けがしやすい
-- local dev の機動性を保ちつつ、本番品質を厳格化できる
-
-### 1-1-H. 本章と他文書の ownership を明示する
-
-本章はメディアパイプラインの設計原則と責務分離を定義する。
-
-一方で、以下は別文書が正本を持つ。
-
-- author が本文でどの画像パス記法を書けるか
-
-  - Markdown authoring specification
-- 最終的な `ui-image` / `picture` / `img` 出力契約
-
-  - Markdown output contract
-- 危険 URL、許可属性、build-time rejection の詳細
-
-  - Markdown safety and test policy
-
-したがって、本章だけを更新して authoring や output の意味論変更を既成事実化してはならない。
-
-### 1-2. `loading="eager"` の利用ルールを厳格化する
-
-現状の問題:
-
-- author が簡単に eager を指定できる
-- 読書ページにおいて eager は LCP 候補以外ではほぼ不要
-- 本文画像の eager 指定が性能予算を壊しやすい
-
-再設計:
-
-- note 本文画像の既定は `loading="lazy"` とする
-- `eager` を許可するのは次に限定する
-
-  - ページ先頭の代表画像
-  - fold 内にある LCP 候補 1 枚
-- それ以外の `eager` 指定は build-time warning または error とする
-- `eager` の妥当性判定は author 裁量ではなく build policy が持つ
-
-期待効果:
-
-- 初期リクエスト数の制御
-- reader performance の一貫性向上
-- note ごとの勝手な eager 乱用防止
-
-### 1-3. link-card 画像は reader 向け派生資産として別管理する
-
-現状の問題:
-
-- カードに元画像 URL をそのまま渡すと過剰サイズになりやすい
-- 外部画像の可用性や応答時間に引きずられる
-- カード画像の責務が本文画像と混同されやすい
-
-再設計:
-
-- link-card metadata には card 用 thumbnail 情報を持たせる
-- 外部画像を利用する場合でも、可能な限り取得・正規化・縮小済み派生画像を使う
-- 本文画像パイプラインと同様に、card 用画像も build-time で reader 向けサイズへ落とす
-- remote image をそのまま 読者向け最終 HTML に露出する経路は最小化する
-
-追加規則:
-
-- card thumbnail は本文用 `reading` variant と同一視しない
-- link-card は `thumb` 相当の専用用途として扱う
-- metadata cache と card thumbnail cache は概念上分離してよい
-
-期待効果:
-
-- card 表示のコスト削減
-- 外部依存による表示揺れの抑制
-- card と本文の画像責務分離
-
-## 2. hydration 戦略の再設計
-
-### 2-1. 目的
-
-本章の目的は、note ページにおける hydration を「初回表示時に存在要素を一括 import する処理」から、責務分離された段階実行モデルへ置き換えることである。
-
-本再設計では、単に初回表示を軽くすることだけを目的としない。長期保守性の観点から、次を同時に満たすことを目的とする。
-
-1. hydration の責務境界を明確化する
-2. component 名ではなく capability と trigger に基づいて起動方針を決定できるようにする
-3. build-time で hydration 対象と起動契機を明示し、runtime の暗黙推論を減らす
-4. keyboard 操作、focus、viewport、明示操作といった起動契機を統一モデルで扱う
-5. 遅延 hydrate の成否を診断可能にする
-6. component 数と page 種類が増えても loader へ責務が集中しない構成にする
-
-### 2-2. 非目的
-
-本章は次を目的としない。
-
-1. すべての component を一律に遅延 hydrate すること
-2. `component-manifest` 1 箇所へ import 情報、優先度、起動契機、例外規則を集約すること
-3. `querySelectorAll()` ベースの全走査をより複雑な条件分岐で延命すること
-4. runtime の best effort 判定で accessibility 要件を補修すること
-5. 個別 component ごとの場当たり的な最適化を hydration 戦略そのものと混同すること
-
-### 2-3. 基本原則
-
-#### 2-3-1. static-first
-
-HTML と CSS だけで成立する表示は、可能な限りそのまま表示可能でなければならない。hydrate は「表示成立の前提」ではなく「追加機能の付与」として扱う。
-
-#### 2-3-2. policy と mechanism の分離
-
-`initial`、`visible`、`interaction` のような起動方針は policy であり、`requestIdleCallback`、`IntersectionObserver`、event listener は mechanism である。両者を同一設定項目へ混在させてはならない。
-
-#### 2-3-3. component 名ではなく capability を基準にする
-
-同一 component でも、属性、slot 構成、表示文脈によって必要な hydration は異なる。したがって、起動方針を component 名に固定してはならない。
-
-#### 2-3-4. build-time explicitness
-
-hydrate 対象、scope、trigger は build-time で明示し、runtime の DOM 全推論に依存してはならない。
-
-#### 2-3-5. accessibility first
-
-viewport 外であることは、keyboard や assistive technology から不要であることを意味しない。focus 到達可能な UI は、visible 判定だけで遅延してはならない。
-
-#### 2-3-6. degraded but observable
-
-遅延 hydrate に失敗しても page 全体を破綻させてはならない。一方で、失敗を無視してもならない。失敗は診断可能でなければならない。
-
-### 2-4. 用語
-
-#### 2-4-1. load
-
-module を取得し評価することを指す。custom element の define 前段階を含んでよい。
-
-#### 2-4-2. upgrade
-
-custom element の定義を有効化し、対象 DOM を custom element として upgrade 可能な状態にすることを指す。
-
-#### 2-4-3. activate
-
-observer、global listener、iframe 生成、測定、再配置など、重い副作用を伴う機能を開始することを指す。
-
-#### 2-4-4. hydration scope
-
-同一の起動方針で扱う DOM 範囲を指す。page 全体を単一 scope とみなしてはならない。
-
-#### 2-4-5. hydration capability
-
-対象 UI が要求する機能段階を表す分類である。component 名ではなく機能特性で定義する。
-
-#### 2-4-6. hydration trigger
-
-`load` / `upgrade` / `activate` をいつ行うかを決める契機である。
-
-### 2-5. capability 分類
-
-本再設計では、component を直接 `critical` / `deferred` / `on-demand` に分類しない。代わりに、対象 DOM を次の capability に分類する。
-
-| capability | 意味 | 典型例 |
-| --- | --- | --- |
-| `static` | hydrate なしでも読書・閲覧が成立する | 装飾のみの UI、静的画像、静的本文 |
-| `progressive` | hydrate により補助機能を付与するが、未起動でも閲覧は成立する | copy 機能付き code block、zoomable image、補助 tooltip |
-| `interactive` | 初回操作前までに upgrade が必要だが、activate は遅延できる | toc、sidebar、tabs、軽量 dialog trigger |
-| `sandboxed` | iframe、外部計測、重い observer、実行環境を伴う | preview-sandbox、heavy preview、JS 実行デモ |
-
-追加規則:
-
-1. capability は component 名ではなく「その instance の振る舞い」で決定しなければならない
-2. 同一 component が複数 capability を取りうることを前提とする
-3. capability は import path とは独立に定義しなければならない
-
-### 2-6. trigger 分類
-
-起動契機は次の 4 種に固定する。
-
-| trigger | 意味 | 用途 |
-| --- | --- | --- |
-| `initial` | router の commit 後ただちに必要 | shell、初回操作前に成立すべき軽量 UI |
-| `post-commit` | 初回 commit 後、主表示を阻害しない範囲で順次開始 | progressive enhancement 群 |
-| `visible` | viewport 進入、または focus 接近時に開始 | 下方 widget、zoomable media、後段 card 群 |
-| `interaction` | 明示操作時に開始 | sandbox、重い preview、開閉で初めて必要になる大型 UI |
-
-追加規則:
-
-1. `visible` は viewport だけでなく keyboard focus 到達可能性を考慮しなければならない
-2. `interaction` は click だけでなく keyboard activation を含まなければならない
-3. `post-commit` は `requestIdleCallback` そのものではなく抽象 trigger として定義する
-4. 実装は trigger を mechanism 名で公開してはならない
-
-### 2-7. 二軸モデル
-
-起動方針は、`capability` と `trigger` の組み合わせで定義する。
-
-例:
-
-- 静的本文画像  
-  - capability: `static`
-  - trigger: なし
-
-- `zoomable="false"` の `ui-image`  
-  - capability: `static`
-  - trigger: なし
-
-- ズーム可能な `ui-image`  
-  - capability: `progressive`
-  - trigger: `visible`
-
-- copy 機能を持つ `ui-code-block`  
-  - capability: `progressive`
-  - trigger: `post-commit`
-
-- shell 内の toc / sidebar  
-  - capability: `interactive`
-  - trigger: `initial`
-
-- `allow-js="true"` を含む `preview-sandbox`  
-  - capability: `sandboxed`
-  - trigger: `interaction`
-
-重要なのは、これらを component 名で固定しないことである。たとえば `ui-image` というタグ名自体に起動方針を埋め込んではならない。
-
-### 2-8. モジュール責務
-
-本再設計では hydration を単一 loader の責務として扱わず、次のモジュールへ分割する。
-
-#### 2-8-1. hydration directive emitter
-
-責務:
-
-- SSR または build-time で hydration 用属性を出力する
-- DOM 全体ではなく scope 単位の境界を明示する
-- instance ごとの capability / trigger を明示する
-
-非責務:
-
-- runtime の import 実行
-- observer attach
-- component 内 activate 処理
-
-#### 2-8-2. hydration registry
-
-責務:
-
-- tag 名または contract key と module import path の対応を保持する
-- capability ごとに activate adapter の有無を宣言する
-- scheduler が参照する正規 registry を提供する
-
-非責務:
-
-- DOM 走査
-- trigger 判定
-- performance 計測
-- page 種類ごとの例外ロジック
-
-追加規則:
-
-- import path の正規表は hydration registry が所有してよい
-- 起動契機や page 固有例外まで registry に抱え込んではならない
-
-#### 2-8-3. hydration planner
-
-責務:
-
-- 現在の root 内から hydration directive を読み取る
-- scope ごとの hydrate plan を構築する
-- `initial` / `post-commit` / `visible` / `interaction` の各 queue に振り分ける
-
-非責務:
-
-- import 実行そのもの
-- global observer の長期保持
-- component 個別 activate 実装
-
-#### 2-8-4. hydration scheduler
-
-責務:
-
-- queue ごとの実行順序を制御する
-- `initial` 完了後に `post-commit` を開始する
-- `visible` / `interaction` trigger の購読を管理する
-- abort と latest-wins を route 遷移と整合させる
-
-非責務:
-
-- capability 判定
-- component DOM の意味解釈
-- markup 生成
-
-#### 2-8-5. activation adapter
-
-責務:
-
-- upgrade 後に重い activate を分離して実行する
-- component 個別の observer attach、iframe 起動、global listener 開始などを制御する
-
-非責務:
-
-- module import
-- registry 管理
-- DOM 走査
-
-#### 2-8-6. diagnostics collector
-
-責務:
-
-- plan 件数
-- load 成功 / 失敗
-- upgrade 成功 / 失敗
-- activate 成功 / 失敗
-- skipped / aborted / superseded
-
-を集計する。
-
-非責務:
-
-- UI 表示
-- retry policy の個別判断
-
-### 2-9. build-time directive 契約
-
-SSR 出力には、少なくとも次の hydration 用属性を許可する。
-
-- `data-hydration-scope`
-- `data-hydration-capability`
-- `data-hydration-trigger`
-
-例:
-
-```html
-<section class="note-shell" data-hydration-scope="note-shell">
-  ...
-</section>
-
-<ui-code-block
-  data-hydration-capability="progressive"
-  data-hydration-trigger="post-commit"
-></ui-code-block>
-
-<ui-preview-sandbox
-  data-hydration-capability="sandboxed"
-  data-hydration-trigger="interaction"
-></ui-preview-sandbox>
-```
-
-追加規則:
-
-1. これらの属性は SSR / build-time 出力側が所有し、client loader が事後的に意味推定してはならない
-2. page root 単位だけでなく、section 単位で scope を切らなければならない
-3. directive を出力できない instance についてだけ、限定的な fallback 判定を許可してよい
-4. fallback 判定を正規経路としてはならない
-
-### 2-10. DOM 走査方針
-
-現行の `querySelectorAll(COMPONENT_SELECTOR)` によるページ全体走査は、正規経路として廃止する。
-
-再設計後の走査方針は次のとおりとする。
-
-1. planner は `data-hydration-scope` 境界ごとに対象を読む
-2. planner は `data-hydration-*` を持つ要素だけを対象とする
-3. fallback 走査が必要な場合でも、root 全体ではなく当該 scope に限定する
-4. 新規 page 種別追加時に selector 定数を膨張させる設計は採らない
-
-### 2-11. route 遷移との統合
-
-hydration は router の commit 後に開始しなければならない。
-
-規則:
-
-1. `initial` queue の開始点は、本文・文書メタデータ・履歴が commit された後とする
-2. 遷移中に旧 page の `visible` / `interaction` queue が残っている場合は abort しなければならない
-3. 後続遷移により superseded された queue は結果を commit してはならない
-4. hydration scheduler は route 遷移ライフサイクルの外で孤立してはならない
-
-### 2-12. accessibility 例外規則
-
-遅延 hydrate は accessibility 要件より優先してはならない。
-
-必須規則:
-
-1. keyboard focus により到達しうる interactive 要素は、focus 到達時点までに upgrade 可能でなければならない
-2. `visible` trigger は `IntersectionObserver` だけでなく focus 契機を持たなければならない
-3. hydrate 前でも role、name、静的本文、代替テキストは成立していなければならない
-4. 未 hydrate 状態を hover 前提 UI で隠してはならない
-5. failed 時は静的 fallback を残し、空要素や無反応 UI にしてはならない
-
-### 2-13. component 実装規則
-
-各 component は次のいずれかの実装形態を明示しなければならない。
-
-#### 2-13-1. static-only
-
-hydrate を必要としない。SSR HTML と CSS のみで完結する。
-
-#### 2-13-2. upgrade-light
-
-upgrade は軽量であり、activate を伴わないか、極小である。
-
-#### 2-13-3. upgrade-then-activate
-
-upgrade は軽量だが、observer や iframe などの重い処理は `activate()` 相当の後段へ分離する。
-
-#### 2-13-4. explicit-activation-only
-
-明示操作前に重い処理を開始してはならない。`preview-sandbox` はこれを基本形とする。
-
-追加規則:
-
-1. `connectedCallback()` 内で重い副作用を即時開始する設計は、新規採用してはならない
-2. global listener、`ResizeObserver`、`MutationObserver`、iframe 生成は activate 段階へ分離する
-3. static rendering で済む機能に hydrate 必須設計を採ってはならない
-
-### 2-14. 診断契約
-
-hydration は観測可能でなければならない。最低限、次の診断情報を持つ。
-
-```ts
-type HydrationTrigger = 'initial' | 'post-commit' | 'visible' | 'interaction';
-type HydrationCapability = 'static' | 'progressive' | 'interactive' | 'sandboxed';
-type HydrationStage = 'planned' | 'loaded' | 'upgraded' | 'activated' | 'skipped' | 'failed' | 'aborted';
-
-interface HydrationIssue {
-  code:
-    | 'module-load-failed'
-    | 'upgrade-failed'
-    | 'activation-failed'
-    | 'missing-directive'
-    | 'fallback-scan-used';
-  trigger: HydrationTrigger;
-  capability: HydrationCapability;
-  count: number;
-}
-
-interface HydrationDiagnostics {
-  degraded: boolean;
-  plannedCount: number;
-  loadedCount: number;
-  upgradedCount: number;
-  activatedCount: number;
-  skippedCount: number;
-  failedCount: number;
-  issues: HydrationIssue[];
-}
-```
-
-規則:
-
-1. `fallback-scan-used` は常用経路であってはならない
-2. `module-load-failed` と `activation-failed` を同一視してはならない
-3. component 単位の失敗を page 全体破綻と機械的に同一視してはならない
-4. 一方で失敗を握り潰してもならない
-
-### 2-15. 実装フェーズ
-
-#### フェーズ 1: 境界分離
-
-1. 現行 `component-loader` から planning と execution を分離する
-2. `component-manifest` を import registry と hydration policy から分離する
-3. router commit 後に hydration planner を起動する境界を確立する
-
-完了条件:
-
-* loader が DOM 全走査と `Promise.all` 一括実行の両責務を持たない
-* planner / scheduler / executor の 3 分離が成立する
-
-#### フェーズ 2: directive 導入
-
-1. SSR 出力へ `data-hydration-scope` を導入する
-2. instance 単位で `data-hydration-capability` / `data-hydration-trigger` を出力する
-3. fallback scan は一時互換としてのみ残す
-
-完了条件:
-
-* note page の正規経路で DOM 全体 selector に依存しない
-* scope 単位で hydrate plan を構築できる
-
-#### フェーズ 3: trigger 実装
-
-1. `initial` queue
-2. `post-commit` queue
-3. `visible` queue
-4. `interaction` queue
-
-を実装する。
-
-完了条件:
-
-* `preview-sandbox` を初回表示で activate しない
-* viewport 外 widget が初回に一括 import されない
-* focus 起点の hydrate が成立する
-
-#### フェーズ 4: component 側再設計
-
-1. `ui-code-block` を static-first へ寄せる
-2. `ui-code-group` の observer attach を activate へ分離する
-3. `ui-translation` の global listener を縮小する
-4. `layout-toc` を軽量 upgrade と遅延 activate に分ける
-5. `ui-preview-sandbox` を explicit activation 基本形へ変更する
-
-完了条件:
-
-* 重い observer と iframe 起動が `connectedCallback()` 即時開始で残らない
-
-#### フェーズ 5: 計測と受け入れ
-
-1. diagnostics を開発時に可視化する
-2. page 単位で hydrate plan と失敗数を比較できるようにする
-3. regression test を追加する
-
-### 2-16. 受け入れ基準
-
-再設計完了の受け入れ基準は次のとおりとする。
-
-1. note page の初回 hydrate 対象が `initial` queue に限定されていること
-2. `preview-sandbox` が初回表示で activate されないこと
-3. `zoomable="false"` の画像が hydrate 不要であること
-4. keyboard focus により到達する interactive 要素が未起動のまま操作不能にならないこと
-5. route 遷移時に旧 page の遅延 queue が commit されないこと
-6. fallback scan 使用時に diagnostics へ記録されること
-7. module load 失敗時でも静的本文と読書フローが維持されること
-
-### 2-17. 最終方針
-
-本再設計で優先するのは、「より賢い一括 loader」を作ることではない。優先するのは次の 4 点である。
-
-1. hydrate 判断の source of truth を build-time directive へ移すこと
-2. loader の責務を planner / scheduler / executor / diagnostics へ分解すること
-3. component 名ではなく capability と trigger で起動方針を扱うこと
-4. accessibility と route lifecycle を hydration 契約の中へ組み込むこと
-
-これにより、page 種別、widget、interactive demo が増えても、hydration 戦略を loader の肥大化なしに維持できる構成へ移行する。
-
-
-## 3. `preview-sandbox` / `code-preview` の再設計
-
-本章では、`preview-sandbox` と `code-preview` を「重いコンポーネント」として局所最適化するのではなく、**読書面・authoring 契約・実行デモ環境の責務を分離する**ための再設計方針を定義する。
-
-ここで優先するのは、単に iframe 起動を遅らせることではない。長期保守性の観点から、次を固定する。
-
-1. `allow-js` と起動タイミングを別契約として扱う  
-2. 著者向け記法を不必要に分裂させない  
-3. 読書ページと実行デモ環境の責務を分離する  
-4. `code-preview` の意味論と実装 profile を分けて設計する  
-5. preview 系 UI を static-first に寄せる  
-
-### 3-1. `preview-sandbox` の起動契約を `eager` 前提から外す
-
-現状の問題:
-
-- note に接続された瞬間に iframe が生成される
-- `allow-js="true"` の sandbox では author supplied JavaScript まで初回表示時に起動しうる
-- 接続時初期化と実行開始が同じ契約に押し込まれている
-
-再設計:
-
-- `preview-sandbox` の既定 `activation-policy` は `visible` とする
-- `manual` は opt-in の明示モードとして残す
-- `manual` の場合、「プレビューを開く」操作があるまで iframe `srcdoc` を生成しない
-- `allow-js` は JavaScript 注入可否だけを表し、起動タイミングの意味を持たせない
-- `allow-js=true` の sandbox に対して `manual` を推奨してよいが、意味論として従属させてはならない
-
-理由:
-
-- `allow-js` は trust boundary 側の契約であり、起動戦略の代理変数として使うべきではない
-- 実行可否と実行時機を分離することで、将来の最適化や安全性議論を独立に進められる
-- 接続時コストを減らしつつ、authoring 契約の意味を崩さずに済む
-
-期待効果:
-
-- 初回表示コストの削減
-- iframe / observer / message listener の起動数抑制
-- 安全契約と性能契約の混線防止
-
-### 3-2. 読書ページでは「静的プレビュー」、実行環境では「実行プレビュー」に分離する
-
-現状の問題:
-
-- note 本文で live preview を起動している
-- 読書ページが UI 実演ページを兼ねている
-- 読む責務と試す責務が同じページに混在している
-
-再設計:
-
-- 読書用ノート では静的 preview を既定とする
-- interactive demo は Storybook または専用 playground ページへ分離する
-- note 側では、必要に応じて次のいずれかを提供する
-  - 静的 snapshot
-  - 実行環境へのリンク
-  - 明示操作で開く軽量 preview
-- 「読書面で即 live preview を起動する」ことを標準経路にしない
-
-理由:
-
-- note の主目的は読書であり、実行デモは従属物として扱うべきである
-- 実行デモの責務を専用環境へ退避することで、note 側の bundle と hydration を抑えられる
-- 今後 control や sandbox 機能が増えても、読書面へ波及しにくくなる
-
-期待効果:
-
-- note 本文の責務明確化
-- interactive demo の隔離
-- 実演系 UI の肥大化が読者向けページへ伝播しにくくなる
-
-### 3-3. `code-preview` は「別コンポーネント」ではなく「別 profile」として分離する
-
-現状の問題:
-
-- 1 つの `code-preview` に toolbar、surface 切替、viewport 切替、preview、code area が集中している
-- 読書用の静的表示と demo 用の高機能表示が同一責務になっている
-- このままでは note 用の軽量化と demo 用の拡張性が衝突する
-
-再設計:
-
-- `code-preview` という authoring 上の意味論は 1 つに維持する
-- その上で、出力または実装 profile として少なくとも次を分離する
-  - `reader`
-    - 静的表示中心
-    - toolbar なし
-    - preview は inert または軽量 DOM に限定
-    - hydrate は `deferred` または `on-demand`
-  - `demo`
-    - Storybook / playground / docs 実演用
-    - toolbar、surface 切替、viewport 切替を許可
-    - 必要に応じて live preview / sandbox を許可
-- 著者向け記法として `reader-code-preview` / `interactive-code-preview` のような別名を新設しない
-- profile の差は authoring grammar ではなく、ページ種別または build-time / SSR 側の出力戦略で吸収する
-
-理由:
-
-- authoring 契約を二分すると、文法・出力 DOM・テスト・ガイド文書が同時に分裂する
-- `code-preview` の意味論を 1 つに保てば、著者体験と仕様体系の両方を安定させやすい
-- 分けるべきなのは「何を表すか」ではなく「どの文脈でどこまで機能を有効にするか」である
-
-期待効果:
-
-- note 用 bundle の削減
-- authoring 契約の維持
-- 出力 profile ごとの最適化容易性向上
-- 将来の toolbar / control 追加による読者向けページへの波及抑制
-
-### 3-4. preview 系の source of truth を単一化する
-
-現状の問題:
-
-- 静的 preview、コード表示、実行 demo を別々に管理すると内容が乖離しやすい
-- 読書用 snapshot と実行用 sandbox を手作業で二重管理すると保守負荷が高い
-
-再設計:
-
-- preview 系コンテンツは単一の example source から派生生成する
-- 少なくとも次を同一 source から導出できるようにする
-  1. note 用静的 preview
-  2. code area 表示内容
-  3. demo / sandbox 用実行素材
-- 画像 snapshot だけを手で差し替える運用を標準にしない
-
-理由:
-
-- source of truth を 1 つに保つ方が、読書面と実行面の表示差異を管理しやすい
-- 仕様変更やサンプル更新時の修正箇所を減らせる
-- 実装分離をしても内容分裂を起こさない設計にできる
-
-期待効果:
-
-- preview 内容の不整合防止
-- 文書更新コストの削減
-- demo と note の乖離抑制
-
-### 3-5. `preview-sandbox` は `on-demand` 扱いを標準とする
-
-現状の問題:
-
-- preview 系が読書ページ初回表示の負荷に直接乗っている
-- sandbox が「本文の一部」として扱われすぎている
-
-再設計:
-
-- hydration 戦略上、`preview-sandbox` は標準で `on-demand` コンポーネントとして扱う
-- `code-preview` の `reader` profile は static-first とし、必要最小限の enhancement のみ許可する
-- `demo` profile でも、viewport 外の heavy preview は `visible` または interaction 起点で起動する
-- 初回表示で sandbox を必ず起動する設計をやめる
-
-期待効果:
-
-- hydration 負荷の削減
-- import 本数の抑制
-- interactive preview が本文描画を阻害しにくくなる
-
-## 4. code 系コンポーネントの再設計
-
-本章では、コード表示まわりを **static-first / native-first / build-time-first** で再定義する。
-
-ここで優先するのは、既存コンポーネントを延命することではない。長期保守性の観点から、次を固定する。
-
-1. 読者向け code 表示の source of truth は build-time で確定した静的 DOM とする
-2. 読書に必要なコード表示は JavaScript 非依存で成立させる
-3. runtime は表示成立ではなく enhancement のみを担う
-4. interactive behavior は code 表示本体から分離する
-5. code group の構造決定は SSR / build-time 側で完結させる
-6. 開発用・デモ用・読書用の責務を同一コンポーネントへ混在させない
-
-### 4-1. 読者向け code block の正規形を `pre[data-code-block]` に再定義する
-
-現状の問題:
-
-- code block 表示のために custom element を必須化している
-- 表示成立と操作付与が同一要素に結合している
-- instance ごとの observer と接続時初期化が積み上がる
-- 読書面に必要な static 表示まで runtime 実装へ依存している
-
-再設計:
-
-- 読者向け code block の正規出力は `pre[data-code-block] > code` とする
-- syntax highlight 済み HTML は build-time で確定し、runtime で再構成しない
-- `lang`、`filename`、`intent`、`wrap`、`highlight-lines` などは `data-*` 属性または子要素として静的に出力する
-- 読書面の正規経路 では `ui-code-block` を正規形として採用しない
-- code 表示本体は Web Components ではなく、意味論を持つ標準 HTML を採用する
-
-具体方針:
-
-- `pre[data-code-block]`
-  - 読者向け code block のホスト
-- `code[data-lang]`
-  - 言語情報の保持
-- `figcaption` または専用 header 要素
-  - `filename` や補助ラベルの表示
-- line highlight
-  - build-time で class または data 属性として埋め込む
-
-追加規則:
-
-- code block の表示成立に custom element を要求してはならない
-- code block の意味論は HTML 標準要素で完結しなければならない
-- runtime による subtree 再解釈、再 compose、再 highlight を行ってはならない
-- 読書用ノート において、code block の見た目維持を JavaScript に依存させてはならない
-
-期待効果:
-
-- 表示責務が build-time に固定される
-- code block 単体のランタイム複雑性がほぼ消える
-- observer と custom element 接続コストを排除できる
-- DOM 契約が HTML 意味論に近づき、将来の保守と検証が容易になる
-
-### 4-2. `ui-code-block` は 読書面の正規経路 から外し、dev / demo 専用へ縮退する
-
-現状の問題:
-
-- 読書用ノート と dev/demo 用機能が同一コンポーネントに混在している
-- copy、overflow、toolbar、監視、再構成が 1 要素へ集中している
-
-再設計:
-
-- `ui-code-block` は 読書面の正規経路 の正規構成から外す
-- `ui-code-block` を残す場合でも、それは Storybook、authoring preview、実験 UI、または高度操作が必要な場面だけに限定する
-- note 本文では `ui-code-block` を前提にしてはならない
-
-追加規則:
-
-- 読者向け Markdown 出力契約に `ui-code-block` を含めてはならない
-- `ui-code-block` を使う場合は、それが dev / demo path であることを明示しなければならない
-- 同一の code 表示責務を `pre[data-code-block]` と `ui-code-block` の両方で正規所有してはならない
-
-期待効果:
-
-- note 本文の責務が明確になる
-- 読者向け 実装と demo 実装を独立に進化させられる
-- 片方の都合で他方が壊れる構造を避けられる
-
-### 4-3. copy と overflow は enhancement として独立させる
-
-現状の問題:
-
-- code 表示本体と操作系が密結合している
-- 操作系のために code block 全体が重くなっている
-
-再設計:
-
-- copy と overflow は code 表示本体の責務から分離する
-- 必要な場合に限り、静的 DOM に対して enhancer を attach する
-- enhancer は code 表示を「成立させる」のではなく、「すでに成立している表示へ操作を足す」だけとする
-
-責務分離:
-
-#### 4-3-A. `code-copy-enhancer`
-
-責務:
-
-- copy button の表示
-- copy 操作
-- 成功 / 失敗の一時フィードバック
-- a11y 上必要なラベルと通知
-
-非責務:
-
-- code 本体の生成
-- syntax highlight
-- overflow 判定
-- code group 統合
-
-#### 4-3-B. `code-overflow-enhancer`
-
-責務:
-
-- overflow 判定
-- 横スクロール補助 UI
-- 必要最小限の affordance 表示
-
-非責務:
-
-- code 本体の再構成
-- copy button 制御
-- code group 制御
-- 常時監視前提の高コスト初期化
-
-追加規則:
-
-- enhancer は opt-in でなければならない
-- enhancer 不在でも読書体験が成立しなければならない
-- enhancer は対象要素に局所的に attach し、document-wide な副作用を持ってはならない
-- enhancement のために display contract を変更してはならない
-
-期待効果:
-
-- code 表示本体が安定した静的資産になる
-- 操作系の不具合が本文表示に波及しにくくなる
-- 必要なページだけに最小限の JS を配布できる
-
-### 4-4. `ui-code-group` を廃止し、正規形を SSR 確定の native tab structure に再定義する
-
-現状の問題:
-
-- light DOM 再構成を runtime が担っている
-- subtree 監視と compose が 読書面の正規経路 に混入している
-- code group の意味構造と interactive behavior が分離されていない
-
-再設計:
-
-- code group の正規形は SSR / build-time で確定した native tab structure とする
-- runtime は selected state の切替と keyboard interaction のみを担当する
-- `ui-code-group` は 読書面の正規経路 の正規構成から外す
-- 読書面の正規経路 において、code block 群の収集・再 compose・内容変化監視を行ってはならない
-
-具体方針:
-
-- `section[data-code-group]`
-  - code group 全体のホスト
-- `div[role="tablist"]`
-  - タブ一覧
-- `button[role="tab"]`
-  - 各タブ
-- `section[role="tabpanel"]`
-  - 各パネル
-- 初期 selected state、対応 ID、aria 属性は build-time で埋め込む
-
-追加規則:
-
-- tab と panel の対応関係は SSR / build-time で確定しなければならない
-- runtime は対応関係を再推論してはならない
-- code group に対する subtree 監視を 読書面の正規経路 へ持ち込んではならない
-- code group は code 表示本体の ownership を持たず、切替状態だけを所有しなければならない
-
-期待効果:
-
-- compose コストと監視コストを排除できる
-- interactive 部分が state machine として単純化する
-- a11y 契約を DOM 構造に直接反映できる
-- build-time と runtime の責務境界が明確になる
-
-### 4-5. dev / authoring 用の live compose は別 adapter として隔離する
-
-現状の問題:
-
-- authoring preview の都合が production note runtime に流入している
-- dev 時に必要な監視と 読者向け runtime の責務が分離されていない
-
-再設計:
-
-- live compose、変更監視、不正構造の即時可視化は dev / authoring 専用 adapter が担う
-- production note runtime は compose 済み構造を前提とする
-- dev 専用 adapter は 読者向け bundle に常時含めない
-
-責務:
-
-- authoring preview 中の再 compose
-- Storybook 上の live editing 補助
-- 不正構造の警告
-- 開発用の観測性補助
-
-非責務:
-
-- production note の本文表示
-- 読者向け runtime の標準責務
-- 正規契約の代替
-
-追加規則:
-
-- dev behavior を単なる環境分岐として production 実装へ埋め込んではならない
-- dev / authoring の都合を 読者向け DOM 契約へ持ち込んではならない
-- production path は常に compose 済み・契約済み DOM を前提としなければならない
-
-期待効果:
-
-- production runtime の単純性を維持できる
-- authoring 体験と読書体験を独立に改善できる
-- 開発補助が本番実装を汚染しにくくなる
-
-### 4-6. code 系 UI のアクセシビリティ責務は native semantics を基盤に固定する
-
-code 系 UI は軽くするだけでは不十分であり、意味論と操作可能性を native semantics へ寄せて固定しなければならない。
-
-少なくとも次を満たさなければならない。
-
-1. code block 単体は `pre` / `code` の意味論で成立すること
-2. code group は `tablist` / `tab` / `tabpanel` の意味論で成立すること
-3. keyboard のみで code group の移動と選択が完結すること
-4. selected state を色のみに依存させないこと
-5. JavaScript 不在でも、少なくとも初期状態の閲覧が成立すること
-6. copy button 等の付加操作は本体の意味論を壊さないこと
-
-追加規則:
-
-- ARIA は native semantics の代替ではなく補強として使う
-- focus 表示は enhancement の有無にかかわらず明瞭でなければならない
-- forced colors と reduced motion を前提に破綻しないこと
-- a11y 契約は runtime 最適化を理由に省略してはならない
-
-### 4-7. code 系再設計の正本は「静的出力 + 局所 enhancement + dev 隔離」とする
-
-本章で固定する最終形は次である。
-
-1. 読者向け code block の正規形は `pre[data-code-block] > code`
-2. 読者向け code group の正規形は SSR 確定の native tab structure
-3. copy / overflow は独立 enhancer
-4. live compose と監視は dev / authoring 専用 adapter
-5. `ui-code-block` と `ui-code-group` は 読書面の正規経路 の正規構成から外す
-
-この構成を採る理由:
-
-- 表示責務を build-time に固定できる
-- runtime を局所的 enhancement に限定できる
-- HTML 意味論に近い構造を保てる
-- dev/demo の要求と 読者向け 要求を分離できる
-- component の延命ではなく、責務境界の明確化によって長期保守性を高められる
-
-## 5. `translation` と `toc` の再設計
-
-### 5-1. 本章の目的
-
-本章の目的は、`translation` および `toc` を、読書ページ上の付加機能として許容される範囲へ再定義し、初回表示時の常時監視・常時再計算・多責務コンポーネント化を解消することである。
-
-本章では、単に既存コンポーネントの内部最適化を行うことを目的としない。長期保守性の観点から、次を固定する。
-
-1. 読書ページにおける正規形を static-first に寄せる
-2. runtime の責務を局所的 enhancement に限定する
-3. component 内部分岐ではなく構造分離によって複雑性を下げる
-4. page ごとの差異は runtime 推論ではなく build-time capability で決定する
-5. accessibility 要件を最適化理由で後退させない
-
-### 5-2. 非目的
-
-本章は次を目的としない。
-
-1. 既存 `ui-translation` および `layout-toc` を温存したまま内部条件分岐だけを増やすこと
-2. instance 数や見出し数に応じた ad hoc な runtime ヒューリスティックを増やすこと
-3. observer や listener の attach 条件を複雑化して component の延命を図ること
-4. 読書面と interactive demo の責務を再び混在させること
-5. accessibility 上必要な機能を「軽量化」を理由に省略すること
+- `docs/design-system/components/tabs.md`
+- `docs/router-specification.md`
+- `src/components/ui/tabs/tabs.ts`
+- `src/components/ui/tabs/tabs-url-sync-controller.ts`
+- `src/lib/router/location-adapter.ts`
+- `src/lib/url-hash.ts`
 
 ---
 
-### 5-3. `translation` の再設計
+## 5. hydration / runtime に関する未解決問題
 
-#### 5-3-1. 現状の問題認識
+### 5.1 `ui-tabs` の hydration ownership と trigger 契約が SoT / build-time 注釈 / bootstrap 実装で不整合のまま残っている
 
-現状の `translation` は、複数 instance が個別に `scroll` / `resize` listener、style injection、popover positioning を持つため、instance 数に応じて線形に接続時コストが増加する。
+#### 現在の状態
 
-ただし、長期保守性の観点では、問題は listener 数だけではない。`translation` は静的読書補助と overlay UI という異質な責務を 1 コンポーネントへ混在させている。このため、内部最適化だけでは保守負債を十分に解消できない。
+- note ページの hydration は、`data-hydration-capability` / `data-hydration-trigger` と registry / planner / scheduler に基づく段階実行へ移行済みです。
+- `src/client/hydration/registry.ts` には `ui-tabs` の loader が定義されています。
+- しかし `src/client.ts` では、`./components/ui/tabs/tabs.js` をトップレベルで direct import しています。
+- さらに `docs/markdown/markdown-output-contract.md` では、`ui-tabs` は note 本文で `interactive` + `visible` として記述されています。
+- 一方で、実際の build-time 注釈を付与する `lib/rehype/rouault-components.ts` の `resolveHydrationDirective()` は、`ui-tabs` に対して `interactive` + `initial` を付与しています。
+- 加えて `docs/design-system/components/tabs.md` は、未 hydration 状態では選択タブの境界線を使った視覚フォールバックが成立すると記述していますが、現行の `ui-tabs` 契約は role / `aria-controls` / `aria-labelledby` / `aria-selected` / `tabindex` / `hidden` / `aria-hidden` / `data-panel-active` といった対話成立上重要な属性を component 側で所有しています。
+- したがって現状は、`ui-tabs` について **SoT 上は `visible`、build-time 注釈上は `initial`、bootstrap 実装上は eager import** という三重不整合が残っています。
 
-#### 5-3-2. 採用方針
+#### 未解決の問題
 
-`translation` は、単一コンポーネントの mode 分岐として維持しない。今後の正規構成は、次の 2 系統へ分離する。
+未解決なのは、単に `src/client.ts` に direct import が残っていることだけではありません。未解決なのは、**`ui-tabs` の hydration ownership と trigger 契約が 1 系統に統一されていないこと**です。
 
-1. 静的本文系 translation
-   - 原文と訳文の関係を、読書本文に埋め込まれる静的構造として表現するもの
-2. overlay 系 translation
-   - popover または drawer により補助表示を行う、対話的補助 UI として表現するもの
+現在のままだと、次の責務境界が曖昧なまま残ります。
 
-この分離により、`interlinear` を 読者向け の静的構成へ寄せ、`popover` / `drawer` を on-demand な interactive enhancement として局所化する。
+- `ui-tabs` の読み込みを hydration scheduler が所有するのか、client bootstrap が所有するのか
+- `ui-tabs` を note 本文で `visible` 起動対象として扱うのか、`initial` 起動対象として扱うのか
+- hydration diagnostics / budget が測っている対象に、`ui-tabs` の実コストが含まれているとみなしてよいのか
+- `ui-tabs` を note 本文 widget の一種として扱うのか、shell-critical な例外コンポーネントとして扱うのか
 
-#### 5-3-3. 正規構成
+とくに問題なのは、現行の `ui-tabs` が未 upgrade 状態で完全な tabs 契約を静的に成立させているわけではないにもかかわらず、文書上は `visible` 起動として読めることです。これでは、**未 hydration 時の静的フォールバック**と**hydration 後に成立する完全な対話契約**の境界が曖昧になります。
 
-##### A. 静的本文系 translation
+#### 本書で固定すること
 
-静的本文系 translation の正規形は、SSR 確定の静的 DOM とする。この系統では、表示成立に JavaScript を要求してはならない。
+- この問題は performance の局所論ではなく、**hydration ownership と trigger 契約の不整合**として扱います。
+- Rouault では、`ui-tabs` の loading ownership を **hydration registry / planner / scheduler の 1 系統**へ統一します。
+- ただし、現行の `ui-tabs` 契約を維持する限り、note 本文での `ui-tabs` は `visible` ではなく **`interactive` + `initial`** を正規契約とします。
+- つまり解消すべきなのは、「`ui-tabs` を scheduler 管理に寄せること」と、「SoT / build-time 注釈 / bootstrap 実装の trigger 記述を `initial` へ揃えること」です。
+- 将来 `ui-tabs` を本当に `visible` 起動へ移す場合は、先に **非 hydration 状態でも selected panel / hidden / ARIA 契約が静的に成立する output contract** を別問題として確立しなければなりません。
+- したがって、この問題の解消は `visible` 方針の維持ではなく、**scheduler ownership への一本化と `initial` 契約への正規化**によって達成します。
 
-要求事項:
+#### 完了条件
 
-1. 原文と訳文の関係は build-time で確定しなければならない
-2. DOM は本文構造として読めるものでなければならない
-3. 読書ページの初回表示で listener / observer / rAF を起動してはならない
-4. キーボード操作不能な hover 依存 UI にしてはならない
-5. JS 不在でも閲覧可能でなければならない
+次の 6 点を同時に満たした時点で、この問題は解消とみなします。
 
-##### B. overlay 系 translation
+1. `src/client.ts` から `./components/ui/tabs/tabs.js` の direct import を除去すること
+2. `ui-tabs` の loading ownership を hydration registry / planner / scheduler のみに統一すること
+3. `docs/markdown/markdown-output-contract.md` と `lib/rehype/rouault-components.ts` の `ui-tabs` hydration trigger 記述を一致させること
+4. 現行の tabs 契約を維持する限り、note 本文の `ui-tabs` を `interactive` + `initial` として SoT に明記すること
+5. scheduler 経由で hydrate された `ui-tabs` について、初期選択・ARIA・panel 可視状態・URL 同期が成立することを unit test / integration test で固定すること
+6. 将来 `visible` へ移行する場合に必要な前提を、「非 hydration 状態で成立すべき static tabs contract の導入が先である」と SoT に明記すること
 
-overlay 系 translation は、popover / drawer による補助表示を担う。この系統では、表示位置計算、開閉状態、フォーカス復帰、Esc による閉鎖など、overlay 固有の責務だけを持つ。
+#### 関連 SoT / 実装
 
-要求事項:
+- `docs/markdown/markdown-output-contract.md`
+- `docs/design-system/components/tabs.md`
+- `src/client.ts`
+- `src/client/hydration/registry.ts`
+- `src/client/hydration/scheduler.ts`
+- `lib/rehype/rouault-components.ts`
+- `src/components/ui/tabs/tabs.ts`
 
-1. overlay の open / close は明示操作でのみ起動しなければならない
-2. 位置決定や再配置は instance ごとではなく document 単位 orchestration に集約しなければならない
-3. instance は content semantics を持たず、登録対象として振る舞わなければならない
-4. scroll / resize の監視は document ごとに 1 つを上限とする
-5. フォーカス復帰、Esc、読み上げ可能な名前計算を保証しなければならない
+### 5.2 hydration diagnostics は存在するが、note ページの受け入れ基準が未固定である
 
-#### 5-3-4. 実装責務の分離
+#### 現在の状態
 
-##### `translation` compiler 層
+- `src/client/hydration/diagnostics.ts` と `src/client/hydration/scheduler.ts` は、`HydrationDiagnostics` を集計し、`app-router:hydration-diagnostics` を dispatch します。
+- degraded 時は localhost で warning も出ます。
+- しかし現行 repo には、note ページについて次を authoritative に定めた文書がありません。
+  - 初回 hydrate 対象件数の上限
+  - trigger ごとの件数予算
+  - initial / post-commit / visible / interaction の配分基準
+  - CI で落とすべき閾値
+  - regression 判定の正式手順
 
-責務:
+#### 未解決の問題
 
-- authoring input を解析する
-- 静的本文系か overlay 系かを確定する
-- 最終出力に必要な静的構造と capability 情報を付与する
+未解決なのは diagnostics の有無ではありません。未解決なのは、**どの状態を「劣化」とみなして開発上拒否するかが未固定であること**です。
 
-非責務:
+このままだと、diagnostics は観測情報として存在しても、保守上の拘束力を持ちません。つまり、
 
-- runtime での best effort 判定
-- viewport を見た出し分け
-- scroll / resize 監視
+- warning は出るが失敗にはならない
+- 数値は取れるが比較基準がない
+- 「以前より重い」を機械的に判定できない
 
-##### `translation` orchestrator 層
+という状態が続きます。
 
-責務:
+#### 本書で固定すること
 
-- overlay 系 translation の open instance 群を管理する
-- document 単位の scroll / resize を集約する
-- 必要時のみ再配置を実行する
-- router 遷移時の cleanup を一元管理する
+- note ページの hydration / performance は、観測できるだけでは不十分です。
+- **受け入れ基準と failure 条件**が別途必要です。
 
-非責務:
+#### 完了条件
 
-- 原文・訳文テキストの意味論保持
-- authoring 解釈
-- interlinear 表示
+次の 5 点を同時に満たした時点で、この問題は解消とみなします。
 
-##### `translation` view 層
+1. note ページ向けの performance / hydration budget を SoT に記述すること
+2. `degraded` のみではなく、閾値超過を build / test / CI の失敗条件へ接続すること
+3. どのメトリクスを commit gate に使うかを固定すること
+4. dev 診断と CI 診断の役割分担を明示すること
+5. representative な reader note / testing note に対する回帰検知経路を固定すること
 
-責務:
+#### 関連 SoT / 実装
 
-- compiler が生成した静的 DOM を表示する
-- overlay trigger として必要な最小状態だけを持つ
-
-非責務:
-
-- global listener の attach
-- runtime mode 判定
-- 他 instance の調停
-
-#### 5-3-5. 禁止事項
-
-1. `interlinear`、`popover`、`drawer` を 1 クラスの if 分岐で延命してはならない
-2. 各 instance が個別に `scroll` / `resize` を購読してはならない
-3. 静的本文系 translation に popover positioning の責務を持ち込んではならない
-4. 読書面の意味論を overlay 都合で変更してはならない
-5. accessibility 要件を「軽量化」の名目で後退させてはならない
-
-#### 5-3-6. 期待効果
-
-1. instance 数増加時の線形コストを抑制できる
-2. 読書面の正規形を static-first に固定できる
-3. overlay 由来の複雑性を局所 subsystem へ隔離できる
-4. router 遷移、cleanup、テスト設計の責務が明確になる
-5. authoring / output / runtime の境界が明瞭になる
+- `src/client/hydration/diagnostics.ts`
+- `src/client/hydration/scheduler.ts`
+- `test/unit/hydration-scheduler.test.ts`
+- `docs/router-specification.md`
 
 ---
 
-### 5-4. `toc` の再設計
+## 6. この文書に含めない事項
 
-#### 5-4-1. 現状の問題認識
+次の事項は、現時点では本書の未解決問題一覧には含めません。
 
-現状の `toc` は、`scroll`、`hashchange`、`ui-tab-change`、`MutationObserver`、`requestAnimationFrame()` を用いた可視見出し再計算を持ち、tabs を含むページでは処理経路が増加する。
+1. すでに実装済みで、SoT と実装の整合が取れている事項
+   - `content/testing` の分割
+   - `kind + testingArea`
+   - `example-include`
+   - `preview-sandbox` の `testing/sandbox` 制約
+   - code 系の static-first 化
+   - TOC / translation orchestrator の導入そのもの
 
-ただし、長期保守性の観点では、「見出し数が少ない」「tabs を含まない」「mobile bar が不要」などの runtime 条件判定を `toc` 自身へ積み増す構成は採らない。これらは component 内ヒューリスティックを増殖させ、将来の差分管理を困難にするためである。
+2. 将来拡張の候補ではあるが、現時点で repo 内に「問題として残っている」とまでは言えない事項
+   - 画像配信基盤の外部 object storage 化
+   - CDN ベンダー差し替え
+   - demo 環境の追加展開形態
 
-#### 5-4-2. 採用方針
-
-`toc` は単一コンポーネントの多責務構成として維持しない。今後の正規構成は、次の 3 層へ分離する。
-
-1. TOC Static View
-   - SSR で確定した見出し一覧を表示する静的ビュー
-2. TOC Active Tracker
-   - 現在位置に対応する見出し状態だけを更新する enhancer
-3. TOC Mobile Summary Controller
-   - mobile bar や condensed UI が必要な場合にのみ有効化される補助 controller
-
-この分離により、通常の読書ページでは TOC Static View のみで成立し、active tracking や mobile 補助 UI は capability が付与されたページだけで起動する。
-
-#### 5-4-3. build-time capability 契約
-
-`toc` の挙動は runtime の暗黙推論で決定してはならない。page compiler は各 note に対して、少なくとも次の capability を build-time で確定しなければならない。
-
-- 静的一覧のみでよいか
-- active heading tracking が必要か
-- tabs 等により見出し集合が動的に切り替わるか
-- mobile condensed UI が必要か
-
-TOC UI は、これら capability の明示入力だけを受け取り、DOM 全体を観測して mode を推測してはならない。
-
-#### 5-4-4. 正規構成
-
-##### A. TOC Static View
-
-要求事項:
-
-1. SSR された見出し一覧だけで閲覧可能でなければならない
-2. 初回表示に scroll listener を必須としてはならない
-3. hash 遷移だけで最低限の読書導線が成立しなければならない
-4. 見出し構造と DOM 順序を破壊してはならない
-
-##### B. TOC Active Tracker
-
-要求事項:
-
-1. active state 更新だけを責務とする
-2. 可視見出し再計算は capability が要求する場合に限り起動する
-3. tab 連動が必要な場合でも、tabs 実装の詳細を直接知ってはならない
-4. 更新契機は抽象化された page event または compiler が付与した scope 情報に限定する
-5. active state は色だけでなく、境界・インジケーター等を含めて判読可能でなければならない
-
-##### C. TOC Mobile Summary Controller
-
-要求事項:
-
-1. mobile 用 condensed UI が不要なページでは起動してはならない
-2. scroll 監視はこの controller に閉じ込めなければならない
-3. TOC Static View や Active Tracker と責務を混在させてはならない
-4. target size、focus visibility、Forced Colors を含む accessibility 要件を満たさなければならない
-
-#### 5-4-5. 実装責務の分離
-
-##### TOC compiler 層
-
-責務:
-
-- 見出し一覧を build-time で確定する
-- 各 page に必要な TOC capability を付与する
-- 静的 anchor 構造を出力する
-
-非責務:
-
-- scroll / resize / mutation の runtime 監視
-- active heading 判定
-- mobile summary の挙動決定
-
-##### TOC runtime tracker 層
-
-責務:
-
-- active heading の更新
-- capability に応じた最小限の再計算
-- page event への反応
-
-非責務:
-
-- 見出し一覧そのものの再生成
-- tabs 実装詳細の知識
-- mobile condensed UI の責務
-
-##### TOC mobile controller 層
-
-責務:
-
-- mobile condensed UI の表示制御
-- scroll に応じた summary state 変更
-
-非責務:
-
-- static TOC の構造生成
-- active heading アルゴリズムの中核管理
-
-#### 5-4-6. 禁止事項
-
-1. `toc` 単体へ見出し一覧生成、active tracking、mobile bar 制御を再集約してはならない
-2. 「見出し数が少ないから簡易モード」等の runtime ヒューリスティックを正規設計にしてはならない
-3. tabs の有無を `toc` 自身が DOM から推論してはならない
-4. mobile bar 要否を TOC 本体が判断してはならない
-5. active state を色のみに依存させてはならない
-
-#### 5-4-7. 期待効果
-
-1. 読書ページごとの runtime overhead を明確に抑制できる
-2. TOC の mode 分岐を component 内部条件分岐ではなく構造分離で管理できる
-3. tabs、mobile、active tracking の差異を capability 契約へ押し戻せる
-4. build-time explicitness を高め、runtime 推論を減らせる
-5. TOC の a11y 監査とテスト責務を分離しやすくなる
+3. 既存の設計方針として明確に reject 済みの事項
+   - raw HTML 許可
+   - build-time rejection の放棄
+   - `reader` での sandbox 実行常態化
 
 ---
 
-### 5-5. 実装順序
-
-#### フェーズ 1: 契約分離
-
-1. `translation` を静的本文系と overlay 系へ概念分離する
-2. `toc` を static view / active tracker / mobile controller へ概念分離する
-3. 現行 component の責務を棚卸しし、各責務の帰属先を固定する
-
-#### フェーズ 2: build-time capability 導入
-
-1. note ごとの TOC capability を build-time で確定する
-2. `translation` の出力に静的本文系 / overlay 系の区別を反映する
-3. runtime 側の mode 推論を削除する
-
-#### フェーズ 3: runtime orchestration 導入
-
-1. overlay 系 translation の document 単位 orchestrator を導入する
-2. TOC Active Tracker を static TOC から分離する
-3. mobile summary controller を独立させる
-
-#### フェーズ 4: 旧構成の撤去
-
-1. `translation` 内の多態 mode 分岐を縮退させる
-2. `toc` に残る多責務実装を撤去する
-3. 不要になった observer / listener / style injection を除去する
-
----
-
-### 5-6. 受け入れ基準
-
-#### `translation`
-
-1. 静的本文系 translation は JavaScript 不在でも閲覧できること
-2. overlay 系 translation は instance ごとの `scroll` / `resize` listener を持たないこと
-3. open instance の再配置は document 単位 orchestrator が一元管理すること
-4. Esc、フォーカス復帰、名前計算が保証されること
-5. 読書ページ初回表示で不要な overlay runtime が起動しないこと
-
-#### `toc`
-
-1. static TOC だけで基本閲覧が成立すること
-2. active heading tracking は必要ページでのみ有効化されること
-3. mobile condensed UI は必要ページでのみ有効化されること
-4. TOC 本体が tabs や page 構造を DOM 推論しないこと
-5. 選択状態およびフォーカス状態が Forced Colors を含めて判読可能であること
-
----
-
-### 5-7. 他文書への反映
-
-本章の実装を採用する場合、`translation` の意味論変更は authoring grammar の変更を含みうるため、関連文書を直接改訂しなければならない。overview のみを更新して意味論変更を既成事実化してはならない。
-
-とくに `translation` は現時点で `render-mode: popover | drawer | interlinear` を 1 directive で受理しているため、この再設計を採るなら authoring 契約の分離または再定義が必要である。
-
-## 6. コンテンツ責務の再設計
-
-### 6-1. 目的
-
-本章の目的は、`content/testing/test.md` に集中している複数の責務を分離し、Rouault におけるコンテンツ面の役割を長期的に保守可能な形へ再定義することである。
-
-本再設計では、単に 1 ページを軽量化することだけを目的としない。長期保守性の観点から、次を同時に満たすことを目的とする。
-
-1. 読書体験の評価面と、コンポーネント実験面を分離する
-2. Markdown 変換契約の確認面と、isolated component demo 面を分離する
-3. サンプルコンテンツの source of truth を単一化する
-4. 公開面と許可機能を build-time で固定し、運用裁量を減らす
-5. testing 用コンテンツが 読者向け な導線へ混入しないよう、公開面ごとの露出規則を固定する
-
-### 6-2. 非目的
-
-本章は次を目的としない。
-
-1. `test.md` を名前だけ変えて温存すること
-2. Storybook を Markdown 変換系の end-to-end 検証の代替にすること
-3. content kind を細分化し続けること
-4. 同一サンプルを複数箇所へ手書きで複製すること
-5. 「重いものを避ける」という運用ルールだけで将来の混在を防ぐこと
-
-### 6-3. 基本原則
-
-#### 6-3-1. 読者向け first
-
-Rouault の主たる成果物は読書ページである。したがって、読書用ノート は常に本文読解を主役とし、demo、sandbox、実験用操作 UI は従属物として扱わなければならない。
-
-#### 6-3-2. ownership first
-
-同じ「確認用コンテンツ」であっても、確認対象が異なるなら ownership を分離しなければならない。Markdown 変換契約、isolated component interaction、読者向け rendering は別責務である。
-
-#### 6-3-3. kind minimalism
-
-content kind の価値は種類数ではなく、公開面と許可機能を build-time で固定できることにある。したがって、kind は最小限に止めなければならない。
-
-#### 6-3-4. single source of truth
-
-コード例、プレビュー例、サンプル画像、サンプル文面は単一の source of truth から供給しなければならない。testing note と Storybook が同じ題材を扱う場合でも、例示内容を別々に手書きしてはならない。
-
-#### 6-3-5. build-time explicitness
-
-コンテンツ種別、許可ディレクティブ、公開面、検索含有、sidebar 含有、index 対象は build-time で確定しなければならない。runtime の推測や運用規約だけで補ってはならない。
-
-### 6-4. content kind 契約
-
-本再設計では、Rouault のコンテンツ種別を次の 3 つへ限定する。
-
-#### 6-4-1. `reader`
-
-目的:
-- 実際の読書体験を提供すること
-- 読者向け な見た目、可読性、静的 HTML、軽量 enhancement の成立を確認すること
-
-責務:
-- 本文読解を中心としたノートを提供する
-- note layout、breadcrumb、sidebar、検索結果、メタデータ、本文コンポーネントの 読者向け 契約を確認する
-- 本文に意味的に必要な UI のみを含む
-
-非責務:
-- 重い sandbox 実演
-- isolated component edge case の網羅試験
-- コンポーネント API の説明展示
-- 実験的 interactive demo の置き場
-
-#### 6-4-2. `testing`
-
-目的:
-- Markdown authoring から最終出力 DOM までの end-to-end 契約を確認すること
-- build-time 変換、rehype 正規化、読者向け 出力の崩れを検知すること
-
-責務:
-- authoring grammar と output contract の通し確認を行う
-- 各 Markdown 機能群を責務ごとに分割して確認する
-- 静的出力、意味論、最終 DOM、不変条件を確認する
-
-非責務:
-- isolated interaction の詳細確認
-- Storybook の代替
-- 読者向け 導線での公開
-
-#### 6-4-3. `demo`
-
-目的:
-- isolated component の interaction、state、edge case、a11y を確認すること
-
-正規配置:
-- Storybook
-- 必要に応じて専用 demo / playground ページ
-
-責務:
-- 1 component または小さな composition 単位で検証する
-- controls、states、edge cases、keyboard 操作、a11y を確認する
-- note 文脈を前提としない isolated contract を確認する
-
-非責務:
-- Markdown 変換系の通し確認
-- note path、sidebar、breadcrumb、検索統合の確認
-- 読書用ノート の静けさを担保すること
-
-### 6-5. kind ではなく profile として扱うもの
-
-次の概念は content kind にしてはならない。これらは別軸で扱う。
-
-#### 6-5-1. execution profile
-
-- static preview
-- visible activation
-- manual activation
-- sandbox execution
-- `allow-js=true`
-
-これらは preview 系 UI の実行プロファイルであり、content kind ではない。
-
-#### 6-5-2. visibility / indexing
-
-- public
-- hidden
-- indexed
-- excluded
-
-これらは公開面制御の属性であり、content kind ではない。
-
-#### 6-5-3. publication state
-
-- draft
-- published
-- archived
-
-これらは公開状態であり、content kind ではない。
-
-#### 6-5-4. purpose labels
-
-- benchmark
-- experiment
-- migration
-- temporary
-
-これらは運用ラベルまたは補助メタデータであり、content kind ではない。
-
-### 6-6. 配置規則
-
-コンテンツは次のように配置する。
-
-```text
-content/
-  notes/
-    ...
-  testing/
-    markdown-basic.md
-    media.md
-    code.md
-    interactive.md
-    sandbox.md
-
-stories/
-  ...
-examples/
-  markdown/
-  preview/
-  sandbox/
-  media/
-```
-
-規則:
-
-1. `content/notes/**` は `reader` 専用とする
-2. `content/testing/**` は `testing` 専用とする
-3. isolated component demo は `demo` とし、Storybook を正規配置とする
-4. サンプル資産は `examples/**` のような単一ディレクトリへ集約し、note と Storybook から共用する
-5. `content/testing/test.md` のような総合試験ページは新規に増やしてはならない
-
-### 6-7. testing note の分割方針
-
-testing note は機能群ごとに分離し、1 ページで過剰な種類数を持たせてはならない。
-
-最小構成は次を正規形とする。
-
-- `content/testing/markdown-basic.md`
-
-  - 見出し、段落、強調、リスト、blockquote、table、footnote、inline code
-- `content/testing/media.md`
-
-  - `ui-image`、figure、caption、link-card
-- `content/testing/code.md`
-
-  - `ui-code-block`、`ui-code-group`
-- `content/testing/interactive.md`
-
-  - `tabs`、`translation`、`details`
-- `content/testing/sandbox.md`
-
-  - `code-preview`、`preview-sandbox`
-
-追加規則:
-
-1. 1 testing note は 1 つの主題だけを持たなければならない
-2. sandbox 系と media 系を同一ページへ混在させてはならない
-3. `allow-js="true"` を含む例は `sandbox.md` または `demo` へ限定する
-4. testing note は「何が壊れたか」を切り分けやすい粒度で分割しなければならない
-
-### 6-8. 公開面規則
-
-各 kind の公開面は次のとおり固定する。
-
-| kind      | 直接 URL              | sidebar | breadcrumb | 検索      | ホーム / 新着 | 読者向け 推奨 |
-| --------- | ------------------- | ------- | ---------- | ------- | -------- | ---------------- |
-| `reader`  | 許可                  | 含む      | 含む         | 含む      | 含む       | はい               |
-| `testing` | 許可してよい              | 既定で含めない | 必要最小限      | 既定で含めない | 含めない     | いいえ              |
-| `demo`    | Storybook または限定 URL | 対象外     | 対象外        | 対象外     | 対象外      | いいえ              |
-
-追加規則:
-
-1. `testing` を 読者向け 導線へ含める場合は、明示的 opt-in を要求しなければならない
-2. opt-in がない `testing` は、sidebar、検索カタログ、ホーム、新着から除外しなければならない
-3. 「URL を持つこと」と「読者向け に露出すること」を実装上分離しなければならない
-4. 露出判定を path 文字列判定へ散在させてはならない。単一の content metadata と build pipeline が所有しなければならない
-
-### 6-9. directive 許可ポリシー
-
-許可ポリシーは kind ごとに固定する。ただし、`sandbox` は kind ではなく、特定 directive と execution profile の組み合わせとして扱う。
-
-#### 6-9-1. `reader` で許可するもの
-
-- 標準 Markdown
-- image / figure
-- blockquote
-- table
-- footnote
-- `callout`
-- `details`
-- `info-box`
-- `code-group`
-- `translation`
-- `tabs`
-- 意味的に必要な軽量コンポーネント
-
-#### 6-9-2. `reader` で既定禁止とするもの
-
-- `preview-sandbox`
-- `allow-js="true"` を伴う preview
-- sandbox iframe を前提とする demo
-- interactive controls を主目的とする component 実演
-
-#### 6-9-3. `testing` で許可するもの
-
-- 対象機能群の確認に必要な directive
-- output contract を確認するための最小構成
-- sandbox 系は `sandbox.md` に限定して許可する
-
-#### 6-9-4. `demo` で許可するもの
-
-- isolated state 切替
-- edge case
-- control panel
-- visual regression 用状態列挙
-- detailed a11y interaction
-- sandbox 実行
-- `allow-js="true"` を伴う preview
-
-追加規則:
-
-1. kind ごとの許可ポリシー違反は build-time error にしなければならない
-2. `reader` における `preview-sandbox` は warning ではなく error とする
-3. `allow-js` は trust boundary の契約であり、kind の代理変数として使ってはならない
-4. 起動タイミングは kind ではなく execution profile が所有しなければならない
-
-### 6-10. サンプル source of truth の再設計
-
-例示コンテンツは、次の単位で単一 source から供給する。
-
-- Markdown 断片
-- コード断片
-- preview HTML / CSS / JS
-- サンプル画像
-- link-card metadata
-
-推奨構成:
-
-```text
-examples/
-  snippets/
-    code/
-    markdown/
-    sandbox/
-  media/
-    ...
-  manifests/
-    examples.json
-```
-
-規則:
-
-1. `testing` と `demo` は、同じ例を別々に手書きしてはならない
-2. 例の本文、コード、画像、説明文は、可能な限り shared example source から生成または注入する
-3. 「同じコンポーネントの例」が note 側と Storybook 側で意味論的にズレることを禁止する
-4. サンプル更新時に複数箇所の手修正を要求する構成を採ってはならない
-
-### 6-11. build-time enforcement
-
-本再設計は運用ルールではなく build-time 契約として実装する。
-
-最低限必要な enforcement は次のとおりとする。
-
-1. content kind の明示
-
-   - `reader`
-   - `testing`
-   - `demo`
-
-2. kind ごとの許可 directive 検証
-
-   - 禁止 directive の出現を build error にする
-
-3. 公開面制御
-
-   - sidebar 生成
-   - breadcrumb 補助生成
-   - search catalog 生成
-   - home / new entries 生成
-   - Pagefind 含有判定
-
-4. 実行プロファイル制御
-
-   - `preview-sandbox` の可否
-   - `allow-js="true"` の可否
-   - activation policy の許可範囲
-
-5. 重いコンテンツの拒否
-
-   - `reader` での sandbox 実行を禁止する
-   - `reader` での `allow-js="true"` を禁止する
-   - 重い remote asset を `reader` note へ直接持ち込む経路を縮小する
-
-6. テスト対象分割の強制
-
-   - 1 `testing` note に定義された component 種類数上限を設けてよい
-   - 上限超過時は warning ではなく error とする
-
-### 6-12. 実装順序
-
-#### フェーズ 1: 責務分離の先行実装
-
-1. `content/testing/test.md` を廃止する
-2. `markdown-basic.md`、`media.md`、`code.md`、`interactive.md`、`sandbox.md` を新設する
-3. `testing` を sidebar、検索、ホーム、新着から既定除外する
-4. `demo` の正規配置を Storybook と明文化する
-
-#### フェーズ 2: content kind 導入
-
-1. content metadata に `kind` を導入する
-2. build pipeline で `kind` ごとの surface policy を適用する
-3. Pagefind / search catalog / sidebar tree 生成側に除外規則を実装する
-
-#### フェーズ 3: directive policy / execution profile 導入
-
-1. `kind` ごとの許可 directive 行列を定義する
-2. `reader` における sandbox 系 directive を build-time error に　する
-3. `allow-js="true"` の出現箇所を `testing` の sandbox ページと `demo` に限定する
-4. activation policy を kind とは別契約として定義する
-
-#### フェーズ 4: example source 統合
-
-1. 共有 examples ディレクトリを導入する
-2. `testing` と Storybook の例示内容を共通 source へ移す
-3. 重複記述を削除する
-4. 例示更新手順を単一路線へ統一する
-
-### 6-13. 完了条件
-
-本章の再設計は、次を満たした時点で完了とみなす。
-
-1. `content/testing/test.md` が存在しない
-2. `testing` note が主題ごとに分割されている
-3. `reader` note に sandbox 実行が混在していない
-4. `testing` が既定で sidebar / search / home / 新着へ露出しない
-5. `demo` が isolated component demo の正規配置として機能している
-6. shared example source が導入され、重複した手書き例が排除されている
-7. content kind と directive policy の build-time validation が実装されている
-8. execution profile が content kind と分離されている
-
-### 6-14. 期待効果
-
-本再設計により、次の効果を期待する。
-
-1. 単一ページへの過剰集約を防止できる
-2. 問題発生時の切り分け単位が明確になる
-3. 読書用ノート の静けさを維持できる
-4. testing 用コンテンツの混入により検索、sidebar、一覧が汚染されることを防げる
-5. Storybook と testing note の責務競合を防げる
-6. サンプル更新時の重複修正コストを削減できる
-7. 今後 component 種類が増えても、content kind を増殖させずに運用できる
-
-## 実装順序の提案
-
-### フェーズ 1: 即効性の高い施策
-
-1. `test.md` の本文画像から `loading="eager"` を除去する
-2. link-card 画像 URL をサムネイル向けに縮小する
-3. `preview-sandbox` の既定 activation を `visible` に変える
-4. `allow-js="true"` sandbox を `manual` に変更する
-5. `test.md` を複数ページへ分割する
-
-### フェーズ 2: hydration 戦略の改善
-
-1. component manifest に priority を導入する
-2. `ensureComponentsForRoot()` を wave-based にする
-3. viewport / interaction ベースの遅延 hydrate を導入する
-
-### フェーズ 3: コンポーネント内部の軽量化
-
-1. `ui-code-block` を static-first へ寄せる
-2. `ui-code-group` の compose / observer を縮小する
-3. `ui-translation` の global orchestrator 化
-4. `layout-toc` のモード分岐
-
-### フェーズ 4: アセットパイプラインの整備
-
-1. 画像ローカル管理
-2. 派生サイズ生成
-3. link-card thumbnail キャッシュ
-4. authoring guideline の明文化
-
-## 検証方法
-
-再設計後は以下の指標で比較する。
-
-### 計測指標
-
-- HTML response size
-- initial JS module count
-- initial JS transfer size
-- image transfer size
-- first contentful paint
-- largest contentful paint
-- hydration 完了までの時間
-- main thread long task の有無
-
-### 最低限の目標値
-
-- `test.md` 相当ページの初回表示で `2MB` 級画像を読まない
-- `preview-sandbox` を初回表示で起動しない
-- note ページの初回 hydrate 対象を critical component のみに絞る
-- testing note 1 ページあたりの component 種類数を大幅に減らす
-
-## 最終結論
-
-今回の重さは、単純に「1 つのコンポーネントが遅い」のではなく、以下の設計が重なって起きている。
-
-- リモート画像が大きい
-- test note に heavy widget が集中している
-- hydration が一括で行われる
-- interactive demo が読書ページに混ざっている
-
-したがって、最も重要なのは局所最適化ではなく、以下の順で再設計すること。
-
-1. コンテンツ責務の分離
-2. 画像方針の見直し
-3. hydrate 優先度設計
-4. sandbox / code 系 UI の static-first 化
-
-この順序で進めれば、`pnpm dev` 上の体感だけでなく、Rouault が目指す「読むための静謐な空間」という設計目標にも整合する。
+## 7. 優先順位
+
+長期保守性の観点からの優先順位は、次の順で固定します。
+
+1. **custom directive parser の置換方針決定**
+2. **SoT 文書間の不整合解消（とくに `tabs` の build-time rejection と recoverable runtime の位置づけ）**
+3. **`translation` の本文意味論の最終決定**
+4. **`tabs.url-sync` の単一系統制約を恒久化するか、複数系統へ拡張するかの決定**
+5. **`tabs.url-sync` の ownership boundary を component / router / history.state のどこまでに限定するかの決定**
+6. **`ui-tabs` の hydration ownership 一本化**
+7. **hydration / performance budget の SoT 化と CI 接続**
+
+この順序を崩して周辺改善だけを先行すると、基盤と契約の曖昧さを温存したまま局所最適化だけが進むため、長期保守性は改善しません。
