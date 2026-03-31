@@ -1,1 +1,4 @@
-export { loadClientBundleData } from '../../build/data/clientBundle'
+export {
+  loadClientBundleData,
+  type ClientBundleData,
+} from '../../build/data/clientBundle.js';

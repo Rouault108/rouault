@@ -1,1 +1,6 @@
-export { loadTagPagesData, buildTagPagesData } from '../../build/data/tagPages'
+export {
+  buildTagPagesData,
+  loadTagPagesData,
+  type TagPageEntry,
+  type TagPageNoteSummary,
+} from '../../build/data/tagPages.js';

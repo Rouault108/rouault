@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './article-header';
 import type { ArticleHeader, TagClickDetail } from './article-header';
-import { IconName } from '@/icons/catalog';
+import type { IconName } from '../../../../shared/icons/icons-catalog.js';
 
 const meta: Meta<ArticleHeader> = {
   title: 'Components/Article Header',

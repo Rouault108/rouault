@@ -1,1 +1,7 @@
-export { loadNotesData } from '../../build/data/notes'
+export {
+  filterNotesBySurface,
+  loadNotesData,
+  type IntrinsicNote,
+  type IntrinsicNotesCollection,
+  type SourceNote,
+} from '../../build/data/notes.js';

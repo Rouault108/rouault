@@ -1,4 +1,4 @@
-import type { UiSearchDialogItem } from '../../components/ui/search-dialog/search-dialog.types.js';
+import type { UiSearchDialogItem } from '../components/ui/search-dialog/search-dialog.types.js';
 import { navigateToUrl } from './navigation.js';
 import { searchCore } from './search-core.js';
 

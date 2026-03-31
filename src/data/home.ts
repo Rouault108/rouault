@@ -1,1 +1,5 @@
-export { loadHomeData } from '../../build/data/home'
+export {
+  loadHomeData,
+  type HomeNoteItem,
+  type HomePageData,
+} from '../../build/data/home.js';

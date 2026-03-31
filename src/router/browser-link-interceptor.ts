@@ -1,4 +1,4 @@
-import { classifyLinkHref, isRoutableLinkKind } from '../../../shared/link/link-kind.js';
+import { classifyLinkHref, isRoutableLinkKind } from '../../shared/link/link-kind.js';
 import { LocationAdapter } from './location-adapter.js';
 import type { NavigationResult } from './router-types.js';
 

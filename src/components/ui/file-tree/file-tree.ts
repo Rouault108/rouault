@@ -4,6 +4,8 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import '../tree-item/tree-item';
 import type { BranchNode, LeafNode, TreeNode } from '../../../../shared/navigation/tree-node';
 
+export type { TreeNode } from '../../../../shared/navigation/tree-node';
+
 export type TreeItemDensity = 'normal' | 'compact';
 export type FileTreeVariant = 'default' | 'card';
 export type FileTreeLoadingStrategy = 'retain' | 'replace';

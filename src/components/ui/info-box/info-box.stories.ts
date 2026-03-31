@@ -8,7 +8,7 @@ import {
   renderFoundationFrame,
   renderFoundationSection,
 } from '../../../stories/shared/foundation-story-helpers';
-import { IconName } from '@/icons/catalog';
+import type { IconName } from '../../../../shared/icons/icons-catalog.js';
 
 interface VariantMatrixCase {
   readonly id: string;
