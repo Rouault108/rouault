@@ -92,6 +92,25 @@ const parseHighlightLines = (value: string): Set<number> => {
   return lines;
 };
 
+const setOptionalAttribute = (element: Element, name: string, value: string): void => {
+  const normalized = value.trim();
+  if (normalized === '') {
+    element.removeAttribute(name);
+    return;
+  }
+
+  element.setAttribute(name, normalized);
+};
+
+const setBooleanAttribute = (element: Element, name: string, enabled: boolean): void => {
+  if (enabled) {
+    element.setAttribute(name, 'true');
+    return;
+  }
+
+  element.removeAttribute(name);
+};
+
 const isWhitespaceOnlyTextNode = (node: ChildNode): node is Text =>
   node.nodeType === Node.TEXT_NODE && /^[\t\r\n ]*$/.test(node.textContent ?? '');
 
@@ -710,15 +729,44 @@ export class CodeBlock extends LitElement {
     return null;
   }
 
-  private _applyPreAttributes(pre: HTMLPreElement): void {
-    pre.setAttribute('part', 'pre');
-    pre.setAttribute('aria-description', this._ariaDescription);
+private _applyPreAttributes(pre: HTMLPreElement): void {
+  const wrapEnabled = this.wrap || (!this.hasAttribute('wrap') && this._hasLegacyWrap(pre));
 
-    const code = pre.querySelector('code');
-    if (code) {
-      code.setAttribute('part', 'code');
+  pre.setAttribute('part', 'pre');
+  pre.setAttribute('aria-description', this._ariaDescription);
+  pre.setAttribute('data-code-block', '');
+
+  setOptionalAttribute(pre, 'data-code-language', this._normalizedLang);
+  setOptionalAttribute(pre, 'data-code-filename', this._resolvedFilename);
+  setOptionalAttribute(pre, 'data-code-label', this.label);
+  setOptionalAttribute(
+    pre,
+    'data-code-intent',
+    this._resolvedIntent === 'neutral' ? '' : this._resolvedIntent,
+  );
+  setBooleanAttribute(pre, 'data-code-line-numbers', this.showLineNumbers);
+  setOptionalAttribute(pre, 'data-code-copy-mode', this._resolvedCopyMode);
+  setBooleanAttribute(pre, 'data-code-wrap', wrapEnabled);
+  setOptionalAttribute(pre, 'data-code-highlight-lines', this.highlightLines);
+  setOptionalAttribute(pre, 'data-code-layout', this._resolvedLayout);
+
+  if (this.copyable) {
+    pre.removeAttribute('data-code-copyable');
+  } else {
+    pre.setAttribute('data-code-copyable', 'false');
+  }
+
+  const code = pre.querySelector('code');
+  if (code) {
+    code.setAttribute('part', 'code');
+
+    if (this._normalizedLang === '') {
+      code.removeAttribute('data-lang');
+    } else {
+      code.setAttribute('data-lang', this._normalizedLang);
     }
   }
+}
 
   private _ensureLineWrappers(pre: HTMLPreElement): void {
     const needsLineWrappers = this.showLineNumbers || this.highlightLines.trim() !== '';
