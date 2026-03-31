@@ -5,7 +5,9 @@ import { enhanceImageLightboxes } from '../../client/post-hydrate/image-lightbox
 
 const waitFrame = async (): Promise<void> =>
   new Promise((resolve) => {
-    requestAnimationFrame(() => resolve());
+    requestAnimationFrame(() => {
+      resolve();
+    });
   });
 
 const meta: Meta = {

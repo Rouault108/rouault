@@ -53,7 +53,7 @@ export const DefaultContract: Story = {
       </div>
 
       <figure data-image="true" data-image-zoomable="false">
-        <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="static image" />
+        <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="static figure placeholder" />
         <figcaption>image 本体は static figure を正本にします。</figcaption>
       </figure>
 
