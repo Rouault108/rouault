@@ -15,7 +15,7 @@ import {
   ErrorHandler,
   generateErrorHTML,
   logError,
-} from '../../src/lib/error-handler.js';
+} from '../../src/error/error-handler.js';
 import { ErrorType, RouaultError } from '../../src/types/errors.js';
 
 describe('ErrorHandler', () => {
