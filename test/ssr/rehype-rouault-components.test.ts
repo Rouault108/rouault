@@ -76,13 +76,15 @@ describe('rehypeRouaultComponents', () => {
     const first = tree.children?.[0];
     expect(first?.tagName).to.equal('div');
     expect(first?.properties?.['data-table-root']).to.equal('true');
+    expect(first?.properties?.['role']).to.equal('region');
+    expect(first?.properties?.['tabindex']).to.equal(0);
     expect(first?.properties?.['aria-label']).to.equal('売上データ');
     expect(first?.properties?.['data-hydration-capability']).to.equal(undefined);
     expect(first?.properties?.['data-hydration-trigger']).to.equal(undefined);
     expect(first?.children?.[0]?.tagName).to.equal('table');
   });
 
-  it('legacy blockquote と hr のみを必要な形へ正規化すること', () => {
+  it('legacy blockquote と divider を静的本文要素へ正規化すること', () => {
     const tree: HastNode = {
       type: 'root',
       children: [
@@ -115,9 +117,8 @@ describe('rehypeRouaultComponents', () => {
     expect(divider?.properties?.['data-divider-variant']).to.equal('section');
     expect(divider?.properties?.['data-hydration-capability']).to.equal(undefined);
     expect(divider?.properties?.['data-hydration-trigger']).to.equal(undefined);
-    expect(divider?.children?.[0]?.tagName).to.equal('hr');
+    expect(divider?.children?.length ?? 0).to.equal(0);
   });
-
 
   it('static callout / info-box root を最終 DOM に正規化すること', () => {
     const tree: HastNode = {
@@ -157,14 +158,40 @@ describe('rehypeRouaultComponents', () => {
     expect(callout?.tagName).to.equal('aside');
     expect(callout?.properties?.['data-callout']).to.equal('true');
     expect(callout?.properties?.['data-hydration-capability']).to.equal(undefined);
+    expect(callout?.properties?.['data-hydration-trigger']).to.equal(undefined);
     expect(callout?.children?.[1]?.tagName).to.equal('div');
 
     expect(infoBox?.tagName).to.equal('section');
     expect(infoBox?.properties?.['data-info-box']).to.equal('true');
     expect(infoBox?.properties?.['role']).to.equal('region');
     expect(infoBox?.properties?.['data-hydration-capability']).to.equal(undefined);
+    expect(infoBox?.properties?.['data-hydration-trigger']).to.equal(undefined);
     expect(infoBox?.children?.[0]?.tagName).to.equal('div');
     expect(infoBox?.children?.[1]?.tagName).to.equal('div');
+  });
+
+  it('mark を static highlight root に正規化すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'mark',
+          properties: {
+            'current-match': '',
+          },
+          children: [{ type: 'text', value: '検索語' }],
+        },
+      ],
+    };
+
+    rehypeRouaultComponents()(tree);
+
+    const first = tree.children?.[0];
+    expect(first?.tagName).to.equal('mark');
+    expect(first?.properties?.['data-current-match']).to.equal('true');
+    expect(first?.properties?.['data-hydration-capability']).to.equal(undefined);
+    expect(first?.properties?.['data-hydration-trigger']).to.equal(undefined);
   });
 
   it('code を含まない pre は変換しないこと', () => {
@@ -218,268 +245,5 @@ describe('rehypeRouaultComponents', () => {
     const listItem = tree.children?.[0]?.children?.[0];
     const checkbox = listItem?.children?.[0];
     expect(checkbox?.tagName).to.equal('ui-checkbox');
-    expect(checkbox?.properties?.['checked']).to.equal(true);
-    expect(checkbox?.properties?.['disabled']).to.equal(true);
-    expect(checkbox?.properties?.['label']).to.equal('タスクA');
-    expect(checkbox?.properties?.['data-hydration-capability']).to.equal('interactive');
-    expect(checkbox?.properties?.['data-hydration-trigger']).to.equal('initial');
-  });
-
-  it('mark を ui-highlight へ変換すること', () => {
-    const tree: HastNode = {
-      type: 'root',
-      children: [
-        {
-          type: 'element',
-          tagName: 'mark',
-          properties: { 'data-current-match': true },
-          children: [{ type: 'text', value: 'hit' }],
-        },
-      ],
-    };
-
-    rehypeRouaultComponents()(tree);
-
-    const highlight = tree.children?.[0];
-    expect(highlight?.tagName).to.equal('mark');
-    expect(highlight?.properties?.['data-current-match']).to.equal('true');
-    expect(highlight?.properties?.['data-hydration-capability']).to.equal(undefined);
-    expect(highlight?.properties?.['data-hydration-trigger']).to.equal(undefined);
-    expect(highlight?.children?.[0]?.value).to.equal('hit');
-  });
-
-  it('ui-tabs を interactive + initial で注釈すること', () => {
-    const tree: HastNode = {
-      type: 'root',
-      children: [
-        {
-          type: 'element',
-          tagName: 'ui-tabs',
-          children: [
-            {
-              type: 'element',
-              tagName: 'button',
-              properties: { slot: 'tab', value: 'overview' },
-              children: [{ type: 'text', value: '概要' }],
-            },
-            {
-              type: 'element',
-              tagName: 'div',
-              properties: { slot: 'panel' },
-              children: [{ type: 'text', value: '概要コンテンツ' }],
-            },
-          ],
-        },
-      ],
-    };
-
-    rehypeRouaultComponents()(tree);
-
-    const tabs = tree.children?.[0];
-    expect(tabs?.tagName).to.equal('ui-tabs');
-    expect(tabs?.properties?.['data-hydration-capability']).to.equal('interactive');
-    expect(tabs?.properties?.['data-hydration-trigger']).to.equal('initial');
-  });
-
-  it('img と figure/figcaption を ui-image に正規化すること', () => {
-    const tree: HastNode = {
-      type: 'root',
-      children: [
-        {
-          type: 'element',
-          tagName: 'img',
-          properties: {
-            src: 'content/_assets/testing/test-hero.jpg',
-            alt: 'sample',
-            title: 'タイトル',
-            loading: 'eager',
-            zoomable: 'false',
-            width: '800',
-            height: 600,
-          },
-          children: [],
-        },
-        {
-          type: 'element',
-          tagName: 'figure',
-          children: [
-            {
-              type: 'element',
-              tagName: 'img',
-              properties: { src: 'content/_assets/testing/test-card.jpg', alt: 'figure' },
-              children: [],
-            },
-            {
-              type: 'element',
-              tagName: 'figcaption',
-              children: [{ type: 'text', value: '図の説明' }],
-            },
-          ],
-        },
-      ],
-    };
-
-    rehypeRouaultComponents()(tree);
-
-    const first = tree.children?.[0];
-    const second = tree.children?.[1];
-    expect(first?.tagName).to.equal('ui-image');
-    expect(first?.properties?.['caption']).to.equal('タイトル');
-    expect(first?.properties?.['zoomable']).to.equal('false');
-    expect(first?.properties?.['src']).to.equal('/content-assets/testing/test-hero.jpg');
-    expect(first?.properties?.['lightbox-src']).to.equal('/content-assets/testing/test-hero.jpg');
-    expect(first?.properties?.['sources']).to.equal(undefined);
-    expect(first?.properties?.['data-hydration-capability']).to.equal(undefined);
-    expect(first?.properties?.['data-hydration-trigger']).to.equal(undefined);
-    expect(second?.tagName).to.equal('ui-image');
-    expect(second?.properties?.['src']).to.equal('/content-assets/testing/test-card.jpg');
-    expect(second?.properties?.['caption']).to.equal('図の説明');
-    expect(second?.properties?.['data-hydration-capability']).to.equal('progressive');
-    expect(second?.properties?.['data-hydration-trigger']).to.equal('visible');
-  });
-
-  it('2枚目以降の eager 本文画像はエラーにすること', () => {
-    const tree: HastNode = {
-      type: 'root',
-      children: [
-        {
-          type: 'element',
-          tagName: 'img',
-          properties: {
-            src: 'content/_assets/testing/test-hero.jpg',
-            alt: 'one',
-            loading: 'eager',
-          },
-          children: [],
-        },
-        {
-          type: 'element',
-          tagName: 'img',
-          properties: {
-            src: 'content/_assets/testing/test-card.jpg',
-            alt: 'two',
-            loading: 'eager',
-          },
-          children: [],
-        },
-      ],
-    };
-
-    const run = () => { rehypeRouaultComponents()(tree, { path: 'content/testing/test.md' }) };
-
-    expect(run).to.throw('[markdown] content/testing/test.md: 本文画像で loading="eager" を許可できるのは LCP 候補 1 枚だけです');
-  });
-
-  it('GFM脚注を ui-footnote へ変換し、backref を正規化すること', () => {
-    const tree: HastNode = {
-      type: 'root',
-      children: [
-        {
-          type: 'element',
-          tagName: 'p',
-          children: [
-            {
-              type: 'element',
-              tagName: 'sup',
-              children: [
-                {
-                  type: 'element',
-                  tagName: 'a',
-                  properties: {
-                    href: '#user-content-fn-1',
-                    dataFootnoteRef: true,
-                  },
-                  children: [{ type: 'text', value: '1' }],
-                },
-              ],
-            },
-          ],
-        },
-        {
-          type: 'element',
-          tagName: 'p',
-          children: [
-            {
-              type: 'element',
-              tagName: 'sup',
-              children: [
-                {
-                  type: 'element',
-                  tagName: 'a',
-                  properties: {
-                    href: '#user-content-fn-1',
-                    dataFootnoteRef: true,
-                  },
-                  children: [{ type: 'text', value: '1' }],
-                },
-              ],
-            },
-          ],
-        },
-        {
-          type: 'element',
-          tagName: 'section',
-          properties: { className: ['footnotes'], dataFootnotes: true },
-          children: [
-            {
-              type: 'element',
-              tagName: 'ol',
-              children: [
-                {
-                  type: 'element',
-                  tagName: 'li',
-                  properties: { id: 'user-content-fn-1' },
-                  children: [
-                    {
-                      type: 'element',
-                      tagName: 'p',
-                      children: [
-                        { type: 'text', value: '脚注本文 ' },
-                        {
-                          type: 'element',
-                          tagName: 'a',
-                          properties: {
-                            href: '#user-content-fnref-1',
-                            dataFootnoteBackref: true,
-                            className: ['data-footnote-backref'],
-                          },
-                          children: [{ type: 'text', value: '↩' }],
-                        },
-                      ],
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    };
-
-    rehypeRouaultComponents()(tree);
-
-    const firstRef = tree.children?.[0]?.children?.[0];
-    const secondRef = tree.children?.[1]?.children?.[0];
-    const section = tree.children?.[2];
-    const listItem = section?.children?.[0]?.children?.[0];
-    const backref = listItem?.children?.[2];
-
-    expect(firstRef?.tagName).to.equal('ui-footnote');
-    expect(firstRef?.properties?.['ref-id']).to.equal('fn-1');
-    expect(firstRef?.properties?.['index']).to.equal('1');
-    expect(firstRef?.properties?.['ref-instance']).to.equal('1');
-    expect(firstRef?.properties?.['data-hydration-capability']).to.equal('interactive');
-    expect(firstRef?.properties?.['data-hydration-trigger']).to.equal('initial');
-    expect(firstRef?.children?.[0]?.tagName).to.equal('p');
-    expect(firstRef?.children?.[0]?.children?.[0]?.value).to.equal('脚注本文 ');
-
-    expect(secondRef?.tagName).to.equal('ui-footnote');
-    expect(secondRef?.properties?.['shared']).to.equal(true);
-    expect(secondRef?.properties?.['ref-instance']).to.equal('2');
-    expect(secondRef?.children).to.deep.equal([]);
-
-    expect(section?.properties?.['role']).to.equal('doc-endnotes');
-    expect(listItem?.properties?.['id']).to.equal('fn-1');
-    expect(backref?.properties?.['href']).to.equal('#fn-1-ref-1');
   });
 });

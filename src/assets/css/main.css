@@ -320,7 +320,6 @@ hr[data-divider-variant='layout'] {
     figure,
     blockquote,
     [data-callout],
-    ui-callout,
     ui-card,
     ui-code-block,
     ui-code-group,
@@ -329,12 +328,10 @@ hr[data-divider-variant='layout'] {
     [data-code-block-root],
     ui-details,
     [data-info-box],
-    ui-info-box,
     ui-image,
     ui-video,
     ui-score,
     [data-table-root],
-    ui-table,
     ui-tabs,
     ui-translation,
     .translation-static
@@ -408,7 +405,7 @@ hr[data-divider-variant='layout'] {
   margin-inline: 0;
 }
 
-:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > :is([data-table-root], ui-table, ui-score, ui-math) {
+:is(.prose, .about-prose) > ui-tabs > [slot='panel'] > :is([data-table-root], ui-score, ui-math) {
   --ui-table-breakout-width: 100%;
   --ui-table-breakout-margin: 0;
 }
@@ -427,7 +424,6 @@ hr[data-divider-variant='layout'] {
     figure,
     blockquote,
     [data-callout],
-    ui-callout,
     ui-card,
     ui-code-block,
     ui-code-group,
@@ -436,12 +432,10 @@ hr[data-divider-variant='layout'] {
     [data-code-block-root],
     ui-details,
     [data-info-box],
-    ui-info-box,
     ui-image,
     ui-video,
     ui-score,
     [data-table-root],
-    ui-table,
     ui-tabs,
     ui-translation
   ) {
@@ -551,8 +545,7 @@ hr[data-divider-variant='layout'] {
   margin-inline: 0;
 }
 
-.prose > [data-table-root],
-.prose > ui-table {
+.prose > [data-table-root] {
   --ui-table-breakout-width: 100%;
   --ui-table-breakout-margin: 0;
 }
