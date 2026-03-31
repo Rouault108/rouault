@@ -274,7 +274,7 @@ describe('buildNotePageProjection', () => {
         content: [
           '<h2 id="sample">Sample</h2>',
           '<ui-table data-hydration-trigger="initial"></ui-table>',
-          '<pre data-hydration-trigger="post-commit" data-hydration-key="code-block-enhancer"></pre>',
+          '<div data-code-block-root="true" data-hydration-trigger="post-commit" data-hydration-key="code-block-enhancer"><pre data-code-block="true"></pre></div>',
         ].join(''),
       }),
     ).not.toThrow();
@@ -301,7 +301,7 @@ describe('buildNotePageProjection', () => {
         content: [
           '<h2 id="sample">Sample</h2>',
           '<ui-table data-hydration-trigger="initial"></ui-table>',
-          '<pre data-hydration-trigger="post-commit" data-hydration-key="code-block-enhancer"></pre>',
+          '<div data-code-block-root="true" data-hydration-trigger="post-commit" data-hydration-key="code-block-enhancer"><pre data-code-block="true"></pre></div>',
         ].join(''),
       }),
     ).toThrow(

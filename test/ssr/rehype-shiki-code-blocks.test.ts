@@ -52,7 +52,7 @@ const createCodeFence = (
 });
 
 describe('rehypeShikiCodeBlocks', () => {
-  it('fenced code を静的 code block 構造へ変換し、meta を data 属性へ保持する', async () => {
+  it('standalone fenced code を静的 code surface 構造へ変換し、meta を data 属性へ保持する', async () => {
     const tree: HastNode = {
       type: 'root',
       children: [
@@ -76,7 +76,19 @@ describe('rehypeShikiCodeBlocks', () => {
 
     await rehypeShikiCodeBlocks()(tree);
 
-    const pre = tree.children?.[0];
+    const root = tree.children?.[0];
+    expect(root?.tagName).toBe('div');
+    expect(root?.properties?.['data-code-block-root']).toBe('true');
+    expect(root?.properties?.['data-hydration-key']).toBe('code-block-enhancer');
+    expect(root?.properties?.['data-hydration-capability']).toBe('progressive');
+    expect(root?.properties?.['data-hydration-trigger']).toBe('post-commit');
+
+    const header = root?.children?.[0];
+    expect(header?.tagName).toBe('div');
+    expect(readNodeClassList(header)).toContain('code-surface-caption');
+    expect(getClassList(root?.properties?.['className'])).toContain('code-surface-root');
+
+    const pre = root?.children?.[1];
     expect(pre?.tagName).toBe('pre');
     expect(readNodeClassList(pre)).toContain('shiki');
     expect(pre?.properties?.['data-code-block']).toBe(true);
@@ -112,27 +124,37 @@ describe('rehypeShikiCodeBlocks', () => {
     expect(readNodeClassList(lines[1])).toContain('add');
   });
 
-  it('ページ内最初の code block だけに enhancer 用 hydration root を付与すること', async () => {
+  it('ページ内最初の standalone code block だけに enhancer 用 hydration root を付与すること', async () => {
     const tree: HastNode = {
       type: 'root',
       children: [
-        createCodeFence('language-ts', 'const a = 1;'),
-        createCodeFence('language-js', 'const b = 2;'),
+        createCodeFence('language-ts', 'const grouped = 1;', {
+          'group-key': 'valid',
+          'tab-label': 'TypeScript',
+        }),
+        createCodeFence('language-js', 'const standalone = 2;'),
+        createCodeFence('language-css', 'body { color: red; }'),
       ],
     };
 
     await rehypeShikiCodeBlocks()(tree);
 
-    const first = tree.children?.[0];
-    const second = tree.children?.[1];
+    const grouped = tree.children?.[0];
+    const firstStandalone = tree.children?.[1];
+    const secondStandalone = tree.children?.[2];
 
-    expect(first?.properties?.['data-hydration-key']).toBe('code-block-enhancer');
-    expect(first?.properties?.['data-hydration-capability']).toBe('progressive');
-    expect(first?.properties?.['data-hydration-trigger']).toBe('post-commit');
+    expect(grouped?.tagName).toBe('pre');
+    expect(grouped?.properties?.['data-hydration-key']).toBeUndefined();
 
-    expect(second?.properties?.['data-hydration-key']).toBeUndefined();
-    expect(second?.properties?.['data-hydration-capability']).toBeUndefined();
-    expect(second?.properties?.['data-hydration-trigger']).toBeUndefined();
+    expect(firstStandalone?.tagName).toBe('div');
+    expect(firstStandalone?.properties?.['data-hydration-key']).toBe('code-block-enhancer');
+    expect(firstStandalone?.properties?.['data-hydration-capability']).toBe('progressive');
+    expect(firstStandalone?.properties?.['data-hydration-trigger']).toBe('post-commit');
+
+    expect(secondStandalone?.tagName).toBe('div');
+    expect(secondStandalone?.properties?.['data-hydration-key']).toBeUndefined();
+    expect(secondStandalone?.properties?.['data-hydration-capability']).toBeUndefined();
+    expect(secondStandalone?.properties?.['data-hydration-trigger']).toBeUndefined();
   });
 
   it('未知言語は text へフォールバックする', async () => {
@@ -143,7 +165,9 @@ describe('rehypeShikiCodeBlocks', () => {
 
     await rehypeShikiCodeBlocks()(tree);
 
-    const pre = tree.children?.[0];
+    const root = tree.children?.[0];
+    const pre = root?.children?.find((child) => child.tagName === 'pre');
+    expect(root?.tagName).toBe('div');
     expect(pre?.tagName).toBe('pre');
     expect(readNodeClassList(pre)).toContain('shiki');
     expect(pre?.properties?.['data-code-language']).toBe('text');

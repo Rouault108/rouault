@@ -45,7 +45,7 @@ export const NOTE_HYDRATION_BUDGET_PROFILES = {
    * sandbox canary は ui-code-preview / ui-preview-sandbox 契約を監視します。
    *
    * preview-html / preview-css / preview-js の source area を含むため、
-   * 最初の code area に code-block-enhancer の post-commit hydration が 1 件入る前提です。
+   * 最初の standalone code surface に code-block-enhancer の post-commit hydration が 1 件入る前提です。
    */
   'testing-sandbox-canary': {
     name: 'testing-sandbox-canary',

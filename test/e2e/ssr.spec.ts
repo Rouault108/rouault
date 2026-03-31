@@ -55,7 +55,8 @@ test.describe('SSR Rendering', () => {
       .first()
       .evaluate((element) => element.shadowRoot !== null);
 
-    await expect(page.locator('pre[data-code-block]').first()).toBeVisible();
+    await expect(page.locator('[data-code-block-root]').first()).toBeVisible();
+    await expect(page.locator('[data-code-block-root] .code-surface-filename').first()).toBeVisible();
     expect(hasTableShadowRoot).toBe(true);
   });
 
@@ -63,6 +64,8 @@ test.describe('SSR Rendering', () => {
     await page.goto(sortingEntryPath);
 
     await expect(page.locator('section[data-code-group] pre[data-code-block]')).toHaveCount(2);
+    await expect(page.locator('section[data-code-group] .code-group-stack-label')).toHaveCount(2);
+    await expect(page.locator('section[data-code-group] .code-group-header')).toBeHidden();
     await expect(page.locator('section[data-code-group]')).toContainText('TypeScript');
     await expect(page.locator('section[data-code-group]')).toContainText('JavaScript');
   });

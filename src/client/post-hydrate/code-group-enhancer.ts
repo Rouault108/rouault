@@ -111,6 +111,36 @@ const ensureCopyButton = (group: HTMLElement): CopyButtonElement | null => {
   return button;
 };
 
+const applyTabSemantics = (state: GroupState): void => {
+  const groupId = state.group.dataset['codeGroupId'] ?? 'code-group';
+  const groupLabel = state.group.dataset['codeGroupLabel'] ?? 'コード比較';
+  const tabList = state.group.querySelector<HTMLElement>('.code-group-tablist');
+  if (tabList) {
+    tabList.setAttribute('role', 'tablist');
+    tabList.setAttribute('aria-label', groupLabel);
+  }
+
+  for (const [index, tab] of state.tabs.entries()) {
+    const key = tab.dataset['codeGroupTab'] ?? `tab-${String(index)}`;
+    const tabId = `${groupId}-tab-${key}`;
+    const panelId = `${groupId}-panel-${key}`;
+
+    tab.id = tabId;
+    tab.setAttribute('role', 'tab');
+    tab.setAttribute('aria-controls', panelId);
+  }
+
+  for (const [index, panel] of state.panels.entries()) {
+    const key = panel.dataset['codeGroupPanel'] ?? `panel-${String(index)}`;
+    const tabId = `${groupId}-tab-${key}`;
+    const panelId = `${groupId}-panel-${key}`;
+
+    panel.id = panelId;
+    panel.setAttribute('role', 'tabpanel');
+    panel.setAttribute('aria-labelledby', tabId);
+  }
+};
+
 const enhanceGroup = (group: HTMLElement): void => {
   if (group.dataset['codeGroupEnhanced'] === 'true') {
     return;
@@ -128,6 +158,8 @@ const enhanceGroup = (group: HTMLElement): void => {
     panels,
     copyButton: ensureCopyButton(group),
   };
+
+  applyTabSemantics(state);
 
   const initialKey =
     group.dataset['codeGroupSelected'] ??

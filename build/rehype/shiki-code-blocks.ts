@@ -20,6 +20,22 @@ const SHIKI_TRANSFORMERS = [
   transformerRemoveNotationEscape(),
 ];
 
+const LANGUAGE_LABEL_MAP: Record<string, string> = {
+  ts: 'TypeScript',
+  tsx: 'TypeScript',
+  js: 'JavaScript',
+  jsx: 'JavaScript',
+  css: 'CSS',
+  html: 'HTML',
+  json: 'JSON',
+  md: 'Markdown',
+  markdown: 'Markdown',
+  sh: 'Shell',
+  bash: 'Bash',
+  yml: 'YAML',
+  yaml: 'YAML',
+};
+
 const isElement = (node: HastNode, tagName?: string): boolean => {
   if (node.type !== 'element' || typeof node.tagName !== 'string') {
     return false;
@@ -163,6 +179,58 @@ const resolveLanguage = (language: string | undefined): string => {
   return 'text';
 };
 
+const resolveLanguageLabel = (value: string | undefined): string | undefined => {
+  const normalized = pickOptionalString(value)?.toLowerCase();
+  if (!normalized) {
+    return undefined;
+  }
+
+  const mapped = LANGUAGE_LABEL_MAP[normalized];
+  if (mapped) {
+    return mapped;
+  }
+
+  return normalized.slice(0, 1).toUpperCase() + normalized.slice(1);
+};
+
+const getIntentLabel = (intent: string | undefined): string | undefined => {
+  switch (pickOptionalString(intent)?.toLowerCase()) {
+    case 'valid':
+      return '正しい例';
+    case 'invalid':
+      return '誤り例';
+    default:
+      return undefined;
+  }
+};
+
+const shouldRenderCopyButton = (source: string, copyMode: string | undefined): boolean => {
+  if (copyMode === 'hidden') {
+    return false;
+  }
+
+  if (copyMode === 'always') {
+    return true;
+  }
+
+  return source.trim().length > 0;
+};
+
+const isCopyDisabled = (source: string, copyable: string | undefined): boolean =>
+  copyable === 'false' || source.trim().length === 0;
+
+const resolveStandaloneCopyButtonLabel = (
+  filename: string | undefined,
+  language: string,
+): string => {
+  const contextName = filename ?? resolveLanguageLabel(language) ?? 'コード';
+  if (contextName === 'コード') {
+    return 'コードをコピー';
+  }
+
+  return `${contextName} のコードをコピー`;
+};
+
 const readLanguageFromCodeNode = (codeNode: HastNode): string | undefined => {
   const classList = getClassList(codeNode.properties?.['className']);
   for (const className of classList) {
@@ -249,13 +317,138 @@ const deleteHostOnlyCodeProperties = (properties: Record<string, unknown>): void
   }
 };
 
+const createTextNode = (value: string): HastNode => ({
+  type: 'text',
+  value,
+});
+
+const createElement = (
+  tagName: string,
+  properties: Record<string, unknown>,
+  children: HastNode[] = [],
+): HastNode => ({
+  type: 'element',
+  tagName,
+  properties,
+  children,
+});
+
+const createStandaloneCodeSurface = (
+  preNode: HastNode,
+  options: {
+    assignHydrationRoot: boolean;
+    filename?: string;
+    intent?: string;
+    language: string;
+    source: string;
+    copyMode?: string;
+    copyable?: string;
+  },
+): HastNode => {
+  const captionChildren: HastNode[] = [];
+  const captionMainChildren: HastNode[] = [];
+  const intentLabel = getIntentLabel(options.intent);
+
+  if (options.filename) {
+    captionMainChildren.push(
+      createElement(
+        'span',
+        {
+          className: ['code-surface-filename'],
+          title: options.filename,
+        },
+        [createTextNode(options.filename)],
+      ),
+    );
+  }
+
+  if (intentLabel) {
+    captionMainChildren.push(
+      createElement(
+        'span',
+        {
+          className: ['code-surface-intent'],
+        },
+        [createTextNode(intentLabel)],
+      ),
+    );
+  }
+
+  if (captionMainChildren.length > 0) {
+    captionChildren.push(
+      createElement(
+        'div',
+        {
+          className: ['code-surface-caption-main'],
+        },
+        captionMainChildren,
+      ),
+    );
+  }
+
+  if (shouldRenderCopyButton(options.source, options.copyMode)) {
+    captionChildren.push(
+      createElement(
+        'div',
+        {
+          className: ['code-surface-copy-button-shell'],
+        },
+        [
+          createElement('ui-copy-button', {
+            size: 'sm',
+            label: resolveStandaloneCopyButtonLabel(options.filename, options.language),
+            value: options.source,
+            ...(isCopyDisabled(options.source, options.copyable) ? { disabled: true } : {}),
+          }),
+        ],
+      ),
+    );
+  }
+
+  return createElement(
+    'div',
+    {
+      className: [
+        'code-surface-root',
+        ...(captionMainChildren.length === 0 ? ['code-surface-root--overlay'] : []),
+      ],
+      'data-code-block-root': 'true',
+      ...(options.assignHydrationRoot
+        ? {
+            'data-hydration-key': 'code-block-enhancer',
+            'data-hydration-capability': 'progressive',
+            'data-hydration-trigger': 'post-commit',
+          }
+        : {}),
+    },
+    [
+      ...(captionChildren.length > 0
+        ? [
+            createElement(
+              'div',
+              {
+                className: ['code-surface-caption'],
+              },
+              captionChildren,
+            ),
+          ]
+        : []),
+      preNode,
+    ],
+  );
+};
+
+interface HighlightCodeBlockResult {
+  readonly assignedHydrationRoot: boolean;
+}
+
 const highlightCodeBlock = async (
   node: HastNode,
-  options: { assignHydrationRoot: boolean },
-): Promise<void> => {
+  options: { canAssignHydrationRoot: boolean },
+): Promise<HighlightCodeBlockResult> => {
   const codeNode = findCodeChild(node);
   if (!codeNode) {
-    return;
+    return { assignedHydrationRoot: false };
   }
 
   const source = normalizeLineEndings(getTextContent(codeNode));
@@ -269,12 +462,12 @@ const highlightCodeBlock = async (
   });
   const highlightedPre = getPreElement(shikiTree as unknown as HastNode);
   if (!highlightedPre) {
-    return;
+    return { assignedHydrationRoot: false };
   }
 
   const highlightedCode = findCodeChild(highlightedPre);
   if (!highlightedCode) {
-    return;
+    return { assignedHydrationRoot: false };
   }
 
   const mergedProperties = {
@@ -330,18 +523,34 @@ const highlightCodeBlock = async (
     ...(wrap ? { 'data-code-wrap': 'true' } : {}),
     ...(highlightLines ? { 'data-code-highlight-lines': highlightLines } : {}),
     ...(layout ? { 'data-code-layout': layout } : {}),
-    ...(options.assignHydrationRoot
-      ? {
-          'data-hydration-key': 'code-block-enhancer',
-          'data-hydration-capability': 'progressive',
-          'data-hydration-trigger': 'post-commit',
-        }
-      : {}),
   };
 
-  node.tagName = 'pre';
-  node.properties = highlightedPre.properties ?? {};
-  node.children = highlightedPre.children ?? [];
+  const isGrouped = groupKey !== undefined;
+  const assignHydrationRoot = !isGrouped && options.canAssignHydrationRoot;
+
+  const standaloneSurfaceOptions: Parameters<typeof createStandaloneCodeSurface>[1] = {
+    assignHydrationRoot,
+    language,
+    source,
+    ...(filename ? { filename } : {}),
+    ...(intent ? { intent } : {}),
+    ...(copyMode ? { copyMode } : {}),
+    ...(copyable ? { copyable } : {}),
+  };
+
+  const replacementNode = isGrouped
+    ? highlightedPre
+    : createStandaloneCodeSurface(highlightedPre, standaloneSurfaceOptions);
+
+  if (typeof replacementNode.tagName !== 'string') {
+    throw new Error('[markdown] standalone code surface replacement must be an element node');
+  }
+
+  node.tagName = replacementNode.tagName;
+  node.properties = replacementNode.properties ?? {};
+  node.children = replacementNode.children ?? [];
+
+  return { assignedHydrationRoot: assignHydrationRoot };
 };
 
 const isCodeBlockPre = (node: HastNode): boolean => {
@@ -364,9 +573,10 @@ export function rehypeShikiCodeBlocks() {
       }
 
       if (isCodeBlockPre(node)) {
-        const assignHydrationRoot = !hydrationRootAssigned;
-        await highlightCodeBlock(node, { assignHydrationRoot });
-        if (assignHydrationRoot) {
+        const result = await highlightCodeBlock(node, {
+          canAssignHydrationRoot: !hydrationRootAssigned,
+        });
+        if (result.assignedHydrationRoot) {
           hydrationRootAssigned = true;
         }
       }

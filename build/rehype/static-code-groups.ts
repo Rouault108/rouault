@@ -66,21 +66,11 @@ const readStaticCodeBlockMeta = (node: HastNode): StaticCodeBlockMeta | null => 
 
 let codeGroupCounter = 0;
 
-const createTabButton = (
-  groupId: string,
-  key: string,
-  label: string,
-  selected: boolean,
-): HastNode => ({
+const createTabButton = (key: string, label: string): HastNode => ({
   type: 'element',
   tagName: 'button',
   properties: {
     type: 'button',
-    role: 'tab',
-    id: `${groupId}-tab-${key}`,
-    'aria-controls': `${groupId}-panel-${key}`,
-    'aria-selected': selected ? 'true' : 'false',
-    tabindex: selected ? '0' : '-1',
     'data-code-group-tab': key,
   },
   children: [{ type: 'text', value: label }],
@@ -107,13 +97,10 @@ const createGroupCopyButton = (): HastNode => ({
   ],
 });
 
-const createPanel = (groupId: string, item: StaticCodeBlockMeta, selected: boolean): HastNode => ({
+const createPanel = (item: StaticCodeBlockMeta, selected: boolean): HastNode => ({
   type: 'element',
   tagName: 'section',
   properties: {
-    role: 'tabpanel',
-    id: `${groupId}-panel-${item.key}`,
-    'aria-labelledby': `${groupId}-tab-${item.key}`,
     'data-code-group-panel': item.key,
     'data-code-group-panel-label': item.tabLabel,
     ...(selected ? {} : { 'data-code-group-inactive': 'true' }),
@@ -172,6 +159,7 @@ export function rehypeStaticCodeGroups(): (tree: unknown) => void {
         'data-code-group': true,
         'data-code-group-id': groupId,
         'data-code-group-selected': selectedKey,
+        'data-code-group-label': pickOptionalString(originalProperties['aria-label']) ?? 'コード比較',
         'data-hydration-key': 'code-group-enhancer',
         'data-hydration-capability': 'interactive',
         'data-hydration-trigger': 'visible',
@@ -188,19 +176,14 @@ export function rehypeStaticCodeGroups(): (tree: unknown) => void {
               type: 'element',
               tagName: 'div',
               properties: {
-                role: 'tablist',
                 className: ['code-group-tablist'],
-                'aria-label':
-                  pickOptionalString(originalProperties['aria-label']) ?? 'コード比較',
               },
-              children: items.map((item, index) =>
-                createTabButton(groupId, item.key, item.tabLabel, index === 0),
-              ),
+              children: items.map((item) => createTabButton(item.key, item.tabLabel)),
             },
             createGroupCopyButton(),
           ],
         },
-        ...items.map((item, index) => createPanel(groupId, item, index === 0)),
+        ...items.map((item, index) => createPanel(item, index === 0)),
       ];
     };
 

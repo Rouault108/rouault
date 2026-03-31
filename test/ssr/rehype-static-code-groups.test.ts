@@ -38,7 +38,7 @@ const createStaticCodeBlock = (
 });
 
 describe('rehypeStaticCodeGroups', () => {
-  it('ui-code-group を native tab structure へ変換すること', () => {
+  it('ui-code-group を stacked baseline + enhancement 用の静的構造へ変換すること', () => {
     const tree: HastNode = {
       type: 'root',
       children: [
@@ -62,6 +62,7 @@ describe('rehypeStaticCodeGroups', () => {
     expect(group?.tagName).toBe('section');
     expect(group?.properties?.['data-code-group']).toBe(true);
     expect(group?.properties?.['aria-label']).toBe('実装比較');
+    expect(group?.properties?.['data-code-group-label']).toBe('実装比較');
     expect(group?.properties?.['data-hydration-key']).toBe('code-group-enhancer');
     expect(group?.properties?.['data-hydration-capability']).toBe('interactive');
     expect(group?.properties?.['data-hydration-trigger']).toBe('visible');
@@ -72,13 +73,15 @@ describe('rehypeStaticCodeGroups', () => {
 
     const tabList = header?.children?.[0];
     expect(tabList?.tagName).toBe('div');
-    expect(tabList?.properties?.['role']).toBe('tablist');
-    expect(tabList?.properties?.['aria-label']).toBe('実装比較');
+    expect(tabList?.properties?.['className']).toEqual(['code-group-tablist']);
+    expect(tabList?.properties?.['role']).toBeUndefined();
+    expect(tabList?.properties?.['aria-label']).toBeUndefined();
 
     const firstTab = tabList?.children?.[0];
     expect(firstTab?.tagName).toBe('button');
-    expect(firstTab?.properties?.['role']).toBe('tab');
-    expect(firstTab?.properties?.['aria-selected']).toBe('true');
+    expect(firstTab?.properties?.['data-code-group-tab']).toBe('valid');
+    expect(firstTab?.properties?.['role']).toBeUndefined();
+    expect(firstTab?.properties?.['aria-selected']).toBeUndefined();
 
     const headerTools = header?.children?.[1];
     expect(headerTools?.tagName).toBe('div');
@@ -92,14 +95,15 @@ describe('rehypeStaticCodeGroups', () => {
     const firstPanel = group?.children?.[1];
     const secondPanel = group?.children?.[2];
     expect(firstPanel?.tagName).toBe('section');
-    expect(firstPanel?.properties?.['role']).toBe('tabpanel');
     expect(firstPanel?.properties?.['data-code-group-panel']).toBe('valid');
+    expect(firstPanel?.properties?.['role']).toBeUndefined();
     expect(firstPanel?.children?.[0]?.tagName).toBe('p');
     expect(firstPanel?.children?.[1]?.tagName).toBe('pre');
 
     expect(secondPanel?.tagName).toBe('section');
     expect(secondPanel?.properties?.['data-code-group-panel']).toBe('invalid');
     expect(secondPanel?.properties?.['data-code-group-inactive']).toBe('true');
+    expect(secondPanel?.properties?.['role']).toBeUndefined();
   });
 
   it('child が 1 件だけなら code block をそのまま残すこと', () => {
