@@ -145,17 +145,41 @@ pnpm lint:fix           # ESLint + Prettier による整形
 
 ## ディレクトリ構成
 
+> 生成物・依存ディレクトリ（`dist/`、`.generated/`、`.velite/`、`node_modules/`、`playwright-report/`、`test-results/` など）は省略しています。
+
 ```text
 .
-├─ content/                  # ノート本文とコンテンツ資産
+├─ build/                    # build-time 専用処理（content / navigation / projections / search / ssr / remark / rehype）
+├─ content/                  # ノート本文、frontmatter、関連アセット
 ├─ docs/                     # 詳細仕様・設計文書
-├─ examples/                 # 記法例・補助例
-├─ lib/                      # 変換・共通ロジック
-├─ scripts/                  # ビルド補助スクリプト
+├─ examples/                 # 記法例、マニフェスト例、補助メディア
+├─ scripts/                  # 開発・ビルド補助スクリプト
+├─ shared/                   # build-time / runtime で共有するドメインロジック
 ├─ src/                      # アプリケーション本体
+│  ├─ assets/                # CSS、画像、動画、その他静的資産
+│  ├─ client/                # hydration / post-hydrate
+│  ├─ components/            # 画面・UI コンポーネント
+│  ├─ controllers/           # controller 層
+│  ├─ data/                  # page projection / data shaping
+│  ├─ icons/                 # アイコン登録
+│  ├─ layout/                # layout 補助ロジック
+│  ├─ layouts/               # Eleventy レイアウト
+│  ├─ router/                # router 本体
+│  ├─ search/                # search 本体
+│  ├─ stories/               # Storybook 用 story
+│  ├─ styles/                # スタイルと契約
+│  ├─ testing/               # テスト補助コード
+│  ├─ theme/                 # テーマ管理
+│  ├─ toc/                   # TOC 関連
+│  └─ types/                 # src 配下の型
 ├─ test/                     # unit / ssr / storybook / e2e
-├─ eleventy.config.ts
-├─ velite.config.ts
+├─ types/                    # グローバル型定義、raw module 宣言
+├─ eleventy.config.ts        # Eleventy 設定
+├─ playwright.config.ts      # Playwright 設定
+├─ velite.config.ts          # Velite 設定
+├─ vite.client.config.ts     # client bundle 設定
+├─ vitest.config.ts          # Vitest 設定
+├─ web-test-runner.config.mjs# browser test 設定
 └─ package.json
 ```
 

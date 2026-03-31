@@ -9,9 +9,9 @@
 - `package.json`、設定ファイル、テスト、実装コードは **現在の実装事実** の所在として扱います。
 - `temporary/` や `docs/old/` は、特に断りがない限り **履歴資料** であり、現行の正本として扱いません。
 
-README・AGENTS・実装の内容が衝突した場合は、次の優先順位で解釈してください。
+`README・AGENTS・実装の内容が衝突した場合は、次の優先順位で解釈してください。` の直下の番号付きリストを、次で置換してください。
 
-1. 実行可能な設定と実装（`package.json`、`*.config.*`、`src/`、`lib/`、`scripts/`）
+1. 実行可能な設定と実装（`package.json`、`*.config.*`、`build/`、`src/`、`shared/`、`content/`、`scripts/`、`types/`）
 2. テストで明示された契約（`test/ssr`、`test/storybook`、`test/e2e`、`test/unit`）
 3. `docs/` の仕様文書
 4. README
@@ -108,15 +108,23 @@ Rouault では、長期保守性のために ownership boundary を重視しま�
 
 ### 現在の主なコード配置
 
-- `src/components/` : 画面・UI コンポーネント
-- `src/lib/` : router、search、theme、toc などのロジック
-- `src/data/` : projection / data shaping
-- `src/layouts/` : Eleventy レイアウト
-- `src/client/` : hydration / post-hydrate 処理
-- `src/icons/` : アイコンカタログと登録
-- `scripts/` : ビルド補助スクリプト
-- `test/` : unit / ssr / storybook / e2e テスト
-- `docs/` : 契約・仕様・設計資料
+- `build/` : build-time 専用処理です。content / navigation / projection / search / SSR / remark / rehype を担います。
+- `content/` : ノート本文、frontmatter、関連アセットです。
+- `shared/` : note / navigation / search / link / media / icons など、build-time と runtime で共有するドメインロジックです。
+- `src/components/` : 画面・UI コンポーネントです。
+- `src/router/` : router 本体、content commit、focus / head / navigation 制御です。
+- `src/search/` : 検索の entrypoint、ranking、source adapter です。
+- `src/theme/` : テーマ切替とテーマ状態です。
+- `src/toc/` : TOC の公開入口です。
+- `src/controllers/` : UI と下位ロジックを接続する controller 層です。
+- `src/data/` : page projection / data shaping です。
+- `src/layout/` : layout レベルの補助ロジックです。
+- `src/layouts/` : Eleventy レイアウトです。
+- `src/client/` : hydration / post-hydrate 処理です。
+- `src/assets/` / `src/styles/` / `src/icons/` : 静的資産、スタイル、アイコン登録です。
+- `src/testing/` / `src/stories/` : テスト・Storybook 補助コードです。
+- `test/` : unit / ssr / storybook / e2e テストです。
+- `docs/` : 契約・仕様・設計資料です。
 
 ### ドキュメントの主な参照先
 
