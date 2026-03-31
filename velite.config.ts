@@ -5,7 +5,6 @@ import { defineCollection, defineConfig, s } from 'velite';
 
 import { rehypeAnnotateLinkKinds } from './build/rehype/annotate-link-kinds.js';
 import { rehypeDisallowDangerousProps } from './build/rehype/disallow-dangerous-props.js';
-import { rehypeDisallowStaticMark } from './build/rehype/disallow-static-mark.js';
 import { rehypeHeadingIds } from './build/rehype/rehype-heading-ids.js';
 import { rehypeInlineCodeTranslateNo } from './build/rehype/inline-code-translate-no.js';
 import { rehypeOrderedListContracts } from './build/rehype/ordered-list-contracts.js';
@@ -102,7 +101,6 @@ export default defineConfig({
       rehypeInlineCodeTranslateNo,
       rehypeOrderedListContracts,
       rehypeDisallowDangerousProps,
-      rehypeDisallowStaticMark,
     ],
   },
 });

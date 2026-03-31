@@ -105,9 +105,9 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 | `pre > code`                  | `pre[data-code-block] > code[data-lang]`          | `language-*` から `data-lang` / `data-code-language` を推論し、対象メタ属性を `pre[data-code-block]` の `data-code-*` 属性へ正規化する。note 本文では個々の code block を hydrate せず、必要な場合に限り `code-block-enhancer` 用の build-time 注釈を代表 root に付与する |
 | `blockquote`                  | `ui-blockquote`                                   | 子要素は維持する                                                                                                                                                                                                   |
 | `table`                       | `ui-table > table`                                | `caption` があればホストに `aria-label` を補完する                                                                                                                                                                 |
-| `hr`                          | `ui-divider > hr[data-divider-variant="section"]` | Markdown 由来の区切りを本文文脈の `section` として正規化する                                                                                                                                                       |
+| `hr`                       | `hr[data-divider-variant="section"]`              | note 本文では静的 `hr` を正本とする         |
 | `li` + `input[type=checkbox]` | `ui-checkbox`                                     | task list ラベルを抽出し、後続ネストリストを維持する                                                                                                                                                               |
-| `mark`                        | `ui-highlight`                                    | `current-match` / `data-current-match` を正規入力とし、旧属性を互換吸収する                                                                                                                                        |
+| `mark`                     | `mark[data-current-match]`                        | `current-match` は `data-current-match` へ正規化 |
 | `img`                         | `ui-image`                                        | `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化する。`zoomable!="false"` の note 本文では `data-hydration-capability="progressive"` / `data-hydration-trigger="visible"` を付与する |
 | `figure(img + figcaption)`    | `ui-image`                                        | `figcaption` を `caption` に統合する。`zoomable!="false"` の note 本文では `data-hydration-capability="progressive"` / `data-hydration-trigger="visible"` を付与する                                               |
 | `a[href]`（本文リンク）       | `a[data-link-kind][data-link-surface="prose"]`    | `href` から種別注釈を付与し、外部系では `data-external="true"` を付与する。`.heading-anchor` は対象外とする                                                                                                        |
@@ -184,7 +184,8 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 
 - 正規入力は `current-match` および `data-current-match` とします。
 - 旧 `current` / `data-current` / `aria-current` は互換入力として吸収してよいものとします。
-- 最終 HAST に静的 `<mark>` を残してはなりません。
+- 最終 HAST は静的 `<mark>` を正本としなければなりません。
+- `current-match` 系入力は `data-current-match="true"` へ正規化してよいものとします。
 
 ### 5.8 `img` / `figure` → `ui-image`
 

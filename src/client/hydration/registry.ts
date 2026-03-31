@@ -144,10 +144,6 @@ export const HYDRATION_REGISTRY = [
     loader: () => import('../../components/ui/details/details.js'),
   },
   {
-    tag: 'ui-divider',
-    loader: () => import('../../components/ui/divider/divider.js'),
-  },
-  {
     tag: 'ui-footnote',
     loader: () => import('../../components/ui/footnote/footnote.js'),
   },

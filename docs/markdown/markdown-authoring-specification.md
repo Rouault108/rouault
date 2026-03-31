@@ -575,7 +575,8 @@ link-card 解決後の主要属性は少なくとも次を持つものとしま�
 | `:emoji[text]{aria-label="..."}`         | `span`         | `label` または `aria-label` があれば `role="img"` を付与 |
 | `:subscript[text]` / `~text~`            | `sub`          | 属性なし                                                 |
 | `:superscript[text]` / `^text^`          | `sup`          | 属性なし                                                 |
-| `:highlight[text]{current-match="true"}` | `ui-highlight` | `current-match` のみ許可                                 |
+| `:highlight[text]{current-match="true"}` | `mark[data-current-match]` | `current-match` のみ許可 |
+| `==text==`                               | `mark`                     | 追加属性なし             |
 | `==text==`                               | `ui-highlight` | 追加属性なし                                             |
 | `:sparkles:` など                        | 絵文字文字列   | 内蔵 shortcodes のみ置換                                 |
 
@@ -599,9 +600,9 @@ link-card 解決後の主要属性は少なくとも次を持つものとしま�
 
 規則:
 
-- `:highlight[text]{current-match="true"}` は `ui-highlight` として扱います。
+- `:highlight[text]{current-match="true"}` は `mark[data-current-match]` として扱います。
 - `current-match` 以外の追加属性を許可しません。
-- `==text==` は属性なしの `ui-highlight` として扱います。
+- `==text==` は属性なしの `mark` として扱います。
 
 ### 7.5 shortcodes
 

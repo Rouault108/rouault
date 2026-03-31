@@ -245,6 +245,69 @@ ui-article-header + .prose {
   color: var(--reading-h6-color);
 }
 
+:is(.prose, .about-prose) mark {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
+  text-decoration: none;
+  box-shadow: inset 0 -0.5em 0 color-mix(in oklch, var(--bg-highlight-subtle) 88%, transparent);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+:is(.prose, .about-prose) mark[data-current-match='true'] {
+  box-shadow:
+    inset 0 -0.68em 0 color-mix(in oklch, var(--bg-highlight-current, var(--bg-highlight-subtle)) 72%, transparent),
+    inset 0 -0.32em 0 color-mix(in oklch, var(--bg-highlight-subtle) 92%, transparent);
+}
+
+:is(.prose, .about-prose) hr,
+hr[data-divider-variant='layout'] {
+  border: 0;
+  border-top: var(--border-style-subtle, 1px solid var(--border-default, oklch(20% 0 0 / 0.12)));
+  margin: var(--space-12) 0;
+  width: 100%;
+}
+
+@media (forced-colors: active) {
+  :is(.prose, .about-prose) mark {
+    background: transparent;
+    color: inherit;
+    text-decoration-line: underline;
+    text-decoration-style: solid;
+    text-decoration-thickness: from-font;
+    text-underline-offset: 0.08em;
+    box-shadow: none;
+    forced-color-adjust: auto;
+  }
+
+  :is(.prose, .about-prose) hr,
+  hr[data-divider-variant='layout'] {
+    border-top-color: var(--border-ghost);
+    forced-color-adjust: auto;
+  }
+}
+
+@media print {
+  :is(.prose, .about-prose) mark {
+    background: transparent !important;
+    color: currentColor;
+    text-decoration-line: underline;
+    text-decoration-style: solid;
+    text-decoration-thickness: from-font;
+    text-underline-offset: 0.08em;
+    box-shadow: none;
+  }
+
+  :is(.prose, .about-prose) hr,
+  hr[data-divider-variant='layout'] {
+    margin: var(--space-12) 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
 :is(.prose, .about-prose)
   > *
   + :where(

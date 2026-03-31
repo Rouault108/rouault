@@ -107,9 +107,10 @@ describe('rehypeRouaultComponents', () => {
     expect(quote?.properties?.['data-hydration-capability']).to.equal('progressive');
     expect(quote?.properties?.['data-hydration-trigger']).to.equal('initial');
 
-    expect(divider?.tagName).to.equal('ui-divider');
-    expect(divider?.properties?.['data-hydration-capability']).to.equal('progressive');
-    expect(divider?.properties?.['data-hydration-trigger']).to.equal('initial');
+    expect(divider?.tagName).to.equal('hr');
+    expect(divider?.properties?.['data-divider-variant']).to.equal('section');
+    expect(divider?.properties?.['data-hydration-capability']).to.equal(undefined);
+    expect(divider?.properties?.['data-hydration-trigger']).to.equal(undefined);
     expect(divider?.children?.[0]?.tagName).to.equal('hr');
   });
 
@@ -187,10 +188,10 @@ describe('rehypeRouaultComponents', () => {
     rehypeRouaultComponents()(tree);
 
     const highlight = tree.children?.[0];
-    expect(highlight?.tagName).to.equal('ui-highlight');
-    expect(highlight?.properties?.['current-match']).to.equal(true);
-    expect(highlight?.properties?.['data-hydration-capability']).to.equal('progressive');
-    expect(highlight?.properties?.['data-hydration-trigger']).to.equal('initial');
+    expect(highlight?.tagName).to.equal('mark');
+    expect(highlight?.properties?.['data-current-match']).to.equal('true');
+    expect(highlight?.properties?.['data-hydration-capability']).to.equal(undefined);
+    expect(highlight?.properties?.['data-hydration-trigger']).to.equal(undefined);
     expect(highlight?.children?.[0]?.value).to.equal('hit');
   });
 

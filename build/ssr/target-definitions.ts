@@ -81,12 +81,11 @@ export const SSR_COMPONENT_DEFINITIONS = [
   },
   { tag: 'ui-blockquote', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
   { tag: 'ui-details', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
-  { tag: 'ui-divider', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
   { tag: 'ui-footnote', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
   {
     tag: 'ui-highlight',
     ssr: 'shadow',
-    profiles: ['note'],
+    profiles: ['shell'],
     adapterKind: 'shadow-default',
     documentStyle: {
       id: HIGHLIGHT_DOCUMENT_STYLE_ID,

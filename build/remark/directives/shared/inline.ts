@@ -49,7 +49,7 @@ export const applyHighlightInlineAttributes = (
     'current-match',
   );
   if (current === true) {
-    result['current-match'] = true;
+    result['data-current-match'] = true;
   }
 
   return result;
@@ -90,7 +90,7 @@ export const parseInlineText = (source: string, node: MdastNode, file?: VFileLik
       } else {
         result.push(
           createInlineNode(
-            'ui-highlight',
+            'mark',
             text,
             applyHighlightInlineAttributes(attrs, node, file),
             'rouaultInlineHighlight',
@@ -117,7 +117,7 @@ export const parseInlineText = (source: string, node: MdastNode, file?: VFileLik
     const highlightMatch = INLINE_HIGHLIGHT_PATTERN.exec(rest);
     if (highlightMatch) {
       const text = highlightMatch[1] ?? '';
-      result.push(createInlineNode('ui-highlight', text, undefined, 'rouaultInlineHighlight'));
+      result.push(createInlineNode('mark', text, undefined, 'rouaultInlineHighlight'));
       cursor += highlightMatch[0].length;
       continue;
     }

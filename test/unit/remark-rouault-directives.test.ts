@@ -1718,7 +1718,7 @@ describe('remarkRouaultDirectives', () => {
     const children = paragraph?.children ?? [];
     const sub = children.find((child) => child.data?.hName === 'sub');
     const sup = children.find((child) => child.data?.hName === 'sup');
-    const highlight = children.find((child) => child.data?.hName === 'ui-highlight');
+    const highlight = children.find((child) => child.data?.hName === 'mark');
     const emoji = children.find((child) => child.type === 'rouaultInlineEmoji');
     const lastText = children[children.length - 1];
 

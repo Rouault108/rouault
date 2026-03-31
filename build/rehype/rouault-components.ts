@@ -119,8 +119,6 @@ const resolveHydrationDirective = (node: HastNode): HydrationDirective | null =>
     case 'ui-callout':
     case 'ui-card':
     case 'ui-code-block':
-    case 'ui-divider':
-    case 'ui-highlight':
     case 'ui-info-box':
     case 'ui-table':
       return { capability: 'progressive', trigger: 'initial' };
@@ -198,17 +196,16 @@ const toUiTable = (node: HastNode): void => {
   node.children = [tableChild];
 };
 
-const toUiDivider = (node: HastNode): void => {
-  node.tagName = 'ui-divider';
-  node.properties = {};
-  node.children = [
-    {
-      type: 'element',
-      tagName: 'hr',
-      properties: {},
-      children: [],
-    },
-  ];
+const normalizeDivider = (node: HastNode): void => {
+  if (!isElement(node, 'hr')) {
+    return;
+  }
+
+  const properties = node.properties ?? {};
+  if (pickOptionalString(properties['data-divider-variant']) === undefined) {
+    properties['data-divider-variant'] = 'section';
+  }
+  node.properties = properties;
 };
 
 const isCheckboxInput = (node: HastNode): boolean => {
@@ -282,25 +279,33 @@ const toUiTaskListItem = (node: HastNode): void => {
   }
 };
 
-const toUiHighlight = (node: HastNode): void => {
+const normalizeHighlightMark = (node: HastNode): void => {
   if (!isElement(node, 'mark')) {
     return;
   }
 
-  const originalProperties = node.properties ?? {};
-  const hostProperties: Record<string, unknown> = {};
+  const properties = {
+    ...(node.properties ?? {}),
+  };
   const current =
-    toBooleanAttribute(originalProperties['current-match']) ||
-    toBooleanAttribute(originalProperties['data-current-match']) ||
-    toBooleanAttribute(originalProperties['current']) ||
-    toBooleanAttribute(originalProperties['data-current']) ||
-    toBooleanAttribute(originalProperties['aria-current']);
+    toBooleanAttribute(properties['current-match']) ||
+    toBooleanAttribute(properties['data-current-match']) ||
+    toBooleanAttribute(properties['current']) ||
+    toBooleanAttribute(properties['data-current']) ||
+    toBooleanAttribute(properties['aria-current']);
+
+  delete properties['current-match'];
+  delete properties['current'];
+  delete properties['data-current'];
+  delete properties['aria-current'];
+
   if (current) {
-    hostProperties['current-match'] = true;
+    properties['data-current-match'] = 'true';
+  } else {
+    delete properties['data-current-match'];
   }
 
-  node.tagName = 'ui-highlight';
-  node.properties = hostProperties;
+  node.properties = properties;
 };
 
 const applyResolvedImageProperties = (
@@ -797,13 +802,13 @@ export function rehypeRouaultComponents() {
           } else if (current.tagName === 'img') {
             toUiImage(current, imageContext, file);
           } else if (current.tagName === 'mark') {
-            toUiHighlight(current);
+            normalizeHighlightMark(current);
           } else if (current.tagName === 'table') {
             toUiTable(current);
           } else if (current.tagName === 'blockquote') {
             current.tagName = 'ui-blockquote';
           } else if (current.tagName === 'hr') {
-            toUiDivider(current);
+            normalizeDivider(current);
           }
         }
       }
