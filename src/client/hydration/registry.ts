@@ -1,6 +1,8 @@
 import { hydrateArticleHeaderTags } from '../post-hydrate/article-header-tags.js';
 import { enhanceCodeBlocks } from '../post-hydrate/code-block-enhancer.js';
 import { enhanceCodeGroups } from '../post-hydrate/code-group-enhancer.js';
+import { enhanceFootnotePopovers } from '../post-hydrate/footnote-popover-enhancer.js';
+import { enhanceImageLightboxes } from '../post-hydrate/image-lightbox-enhancer.js';
 
 export interface HydrationActivationContext {
   readonly element: HTMLElement;
@@ -37,6 +39,14 @@ const activateCodeBlocks = ({ root }: HydrationActivationContext): void => {
 
 const activateCodeGroups = ({ root }: HydrationActivationContext): void => {
   enhanceCodeGroups(root);
+};
+
+const activateImageLightboxes = ({ root }: HydrationActivationContext): void => {
+  enhanceImageLightboxes(root);
+};
+
+const activateFootnotePopovers = ({ root }: HydrationActivationContext): void => {
+  enhanceFootnotePopovers(root);
 };
 
 export const HYDRATION_REGISTRY = [
@@ -132,16 +142,20 @@ export const HYDRATION_REGISTRY = [
     loader: () => import('../../components/ui/details/details.js'),
   },
   {
-    tag: 'ui-footnote',
-    loader: () => import('../../components/ui/footnote/footnote.js'),
+    tag: 'footnote-popover-enhancer',
+    kind: 'enhancer',
+    loader: () => Promise.resolve(undefined),
+    activate: activateFootnotePopovers,
   },
   {
     tag: 'ui-highlight',
     loader: () => import('../../components/ui/highlight/highlight.js'),
   },
   {
-    tag: 'ui-image',
-    loader: () => import('../../components/ui/image/image.js'),
+    tag: 'image-lightbox-enhancer',
+    kind: 'enhancer',
+    loader: () => Promise.resolve(undefined),
+    activate: activateImageLightboxes,
   },
   {
     tag: 'ui-score',

@@ -12,8 +12,6 @@ const REQUIRED_NOTE_CONTENT_TAGS: readonly string[] = [
   'ui-code-preview',
   'ui-preview-sandbox',
   'ui-details',
-  'ui-footnote',
-  'ui-image',
   'ui-score',
   'ui-tabs',
   'ui-translation',
@@ -38,7 +36,16 @@ describe('component manifest / ssr targets', () => {
   });
 
   it('静的 code surface 化したため ui-code-block / ui-code-group を SSR target へ含めないこと', () => {
-    const removedTags: readonly string[] = ['ui-code-block', 'ui-code-group', 'ui-callout', 'ui-table', 'ui-blockquote', 'ui-info-box'];
+    const removedTags: readonly string[] = [
+      'ui-code-block',
+      'ui-code-group',
+      'ui-callout',
+      'ui-table',
+      'ui-blockquote',
+      'ui-info-box',
+      'ui-image',
+      'ui-footnote',
+    ];
 
     expect(SSR_COMPONENT_DEFINITIONS.some((definition) => removedTags.includes(definition.tag))).toBe(
       false,

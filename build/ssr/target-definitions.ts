@@ -65,7 +65,6 @@ export const SSR_COMPONENT_DEFINITIONS = [
   { tag: 'ui-code-preview', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
   { tag: 'ui-preview-sandbox', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
   { tag: 'ui-details', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
-  { tag: 'ui-footnote', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
   {
     tag: 'ui-highlight',
     ssr: 'shadow',
@@ -76,7 +75,6 @@ export const SSR_COMPONENT_DEFINITIONS = [
       cssText: HIGHLIGHT_DOCUMENT_CSS,
     },
   },
-  { tag: 'ui-image', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-image' },
   { tag: 'ui-score', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
   { tag: 'ui-tabs', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
   { tag: 'ui-translation', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },

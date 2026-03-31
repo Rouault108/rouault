@@ -29,28 +29,11 @@ describe('server-entry', () => {
     expect(rendered).toContain('https://example.com/article');
   });
 
-  it('ui-image を picture 契約で SSR 描画できること', async () => {
-    const rendered = await renderCustomElement(
-      'ui-image',
-      [
-        { name: 'src', value: '/media/hash/reading.jpg' },
-        { name: 'sources', value: '[{"type":"image/avif","srcset":"/media/hash/reading.avif"}]' },
-        { name: 'lightbox-src', value: '/media/hash/full.jpg' },
-        {
-          name: 'lightbox-sources',
-          value: '[{"type":"image/avif","srcset":"/media/hash/full.avif"}]',
-        },
-        { name: 'alt', value: 'SSR Image' },
-        { name: 'caption', value: 'caption' },
-      ],
-      '',
-    );
+  it('note 本文 static-first 化により ui-image / ui-footnote を SSR target として要求しないこと', () => {
+    const styles = collectDocumentStylesForTags(['ui-highlight']);
 
-    expect(rendered).toContain('shadowrootmode="open"');
-    expect(rendered).toContain('<picture>');
-    expect(rendered).toContain('/media/hash/reading.avif');
-    expect(rendered).toContain('/media/hash/full.avif');
-    expect(rendered).toContain('SSR Image');
+    expect(styles.some((style) => style.id === 'ui-image-styles')).toBe(false);
+    expect(styles.some((style) => style.id === 'ui-footnote-document-styles')).toBe(false);
   });
 
   it('ui-tag を SSR 描画できること', async () => {

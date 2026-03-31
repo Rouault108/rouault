@@ -248,12 +248,13 @@ const resolveHydrationDirective = (node: HastNode): HydrationDirective | null =>
     case 'ui-checkbox':
     case 'ui-code-group':
     case 'ui-details':
-    case 'ui-footnote':
     case 'ui-tabs':
       return { capability: 'interactive', trigger: 'initial' };
+
     case 'ui-card':
     case 'ui-code-block':
       return { capability: 'progressive', trigger: 'initial' };
+
     case 'ui-code-preview': {
       const controls = pickOptionalString(node.properties?.['controls']);
       if (controls || hasToolbarSlot(node)) {
@@ -271,13 +272,20 @@ const resolveHydrationDirective = (node: HastNode): HydrationDirective | null =>
     case 'ui-score':
       return { capability: 'progressive', trigger: 'visible' };
 
-    case 'ui-image': {
-      const zoomable = node.properties?.['zoomable'];
-      if (zoomable === 'false' || zoomable === false) {
-        return null;
+    case 'figure':
+      if (
+        node.properties?.['data-image'] !== undefined &&
+        node.properties?.['data-image-zoomable'] !== 'false'
+      ) {
+        return { capability: 'progressive', trigger: 'visible' };
       }
-      return { capability: 'progressive', trigger: 'visible' };
-    }
+      return null;
+
+    case 'a':
+      if (node.properties?.['data-footnote-ref'] !== undefined) {
+        return { capability: 'progressive', trigger: 'post-commit' };
+      }
+      return null;
 
     default:
       return null;
@@ -634,7 +642,53 @@ const applyResolvedImageProperties = (
   }
 };
 
-const toUiImage = (
+const createPictureNode = (
+  asset: ResolvedImageAsset | null,
+  fallbackSrc: string | undefined,
+  alt: string,
+  loading: 'lazy' | 'eager' | undefined,
+): HastNode => {
+  const pictureChildren: HastNode[] = [];
+
+  if (asset) {
+    for (const source of asset.inline.sources) {
+      const sourceProperties: Record<string, unknown> = {
+        type: source.type,
+        srcset: source.srcset,
+      };
+      if (source.sizes) {
+        sourceProperties['sizes'] = source.sizes;
+      }
+      pictureChildren.push(createElement('source', sourceProperties, []));
+    }
+  }
+
+  const imgProperties: Record<string, unknown> = {
+    src: asset?.inline.src ?? fallbackSrc ?? '',
+    alt,
+  };
+
+  if (asset?.inline.srcset) {
+    imgProperties['srcset'] = asset.inline.srcset;
+  }
+  if (asset?.inline.sizes) {
+    imgProperties['sizes'] = asset.inline.sizes;
+  }
+  if (loading) {
+    imgProperties['loading'] = loading;
+  }
+  if (typeof asset?.width === 'number') {
+    imgProperties['width'] = asset.width;
+  }
+  if (typeof asset?.height === 'number') {
+    imgProperties['height'] = asset.height;
+  }
+
+  pictureChildren.push(createElement('img', imgProperties, []));
+  return createElement('picture', {}, pictureChildren);
+};
+
+const toStaticImage = (
   node: HastNode,
   context: ImageNormalizationContext,
   file?: VFileLike,
@@ -644,30 +698,12 @@ const toUiImage = (
   }
 
   const originalProperties = node.properties ?? {};
-  const hostProperties: Record<string, unknown> = {};
   const sourcePath = pickOptionalString(originalProperties['src']);
-  if (sourcePath) {
-    const resolvedAsset = resolveImageAsset(sourcePath, {
-      inlineVariant: 'reading',
-      lightboxVariant: 'full',
-      inlineSizes: '(min-width: 768px) min(100vw - 4rem, 1200px), 100vw',
-      lightboxSizes: '100vw',
-    });
-    applyResolvedImageProperties(hostProperties, resolvedAsset);
-  }
-
-  if (typeof originalProperties['alt'] === 'string') {
-    hostProperties['alt'] = originalProperties['alt'];
-  } else {
-    hostProperties['alt'] = '';
-  }
-
+  const alt = typeof originalProperties['alt'] === 'string' ? originalProperties['alt'] : '';
   const caption = pickOptionalString(originalProperties['title']);
-  if (caption) {
-    hostProperties['caption'] = caption;
-  }
-
   const loading = pickOptionalString(originalProperties['loading'])?.toLowerCase();
+
+  let normalizedLoading: 'lazy' | 'eager' | undefined;
   if (loading === 'lazy' || loading === 'eager') {
     if (loading === 'eager') {
       if (context.eagerImageCount >= 1) {
@@ -678,21 +714,78 @@ const toUiImage = (
       }
       context.eagerImageCount += 1;
     }
-    hostProperties['loading'] = loading;
+    normalizedLoading = loading;
   }
 
-  if (Object.hasOwn(originalProperties, 'zoomable')) {
-    hostProperties['zoomable'] = toBooleanAttribute(originalProperties['zoomable'])
-      ? 'true'
-      : 'false';
+  const zoomable = Object.hasOwn(originalProperties, 'zoomable')
+    ? toBooleanAttribute(originalProperties['zoomable'])
+    : true;
+
+  const resolvedAsset = sourcePath
+    ? resolveImageAsset(sourcePath, {
+        inlineVariant: 'reading',
+        lightboxVariant: 'full',
+        inlineSizes: '(min-width: 768px) min(100vw - 4rem, 1200px), 100vw',
+        lightboxSizes: '100vw',
+      })
+    : null;
+
+  const figureProperties: Record<string, unknown> = {
+    'data-image': 'true',
+    'data-image-zoomable': zoomable ? 'true' : 'false',
+  };
+
+  if (zoomable) {
+    figureProperties['data-hydration-key'] = 'image-lightbox-enhancer';
+    figureProperties['data-hydration-capability'] = 'progressive';
+    figureProperties['data-hydration-trigger'] = 'visible';
   }
 
-  node.tagName = 'ui-image';
-  node.properties = hostProperties;
-  node.children = [];
+  if (resolvedAsset) {
+    figureProperties['data-image-lightbox-src'] = resolvedAsset.lightbox.src;
+    if (resolvedAsset.lightbox.srcset) {
+      figureProperties['data-image-lightbox-srcset'] = resolvedAsset.lightbox.srcset;
+    }
+    if (resolvedAsset.lightbox.sizes) {
+      figureProperties['data-image-lightbox-sizes'] = resolvedAsset.lightbox.sizes;
+    }
+    if (resolvedAsset.lightbox.sources.length > 0) {
+      figureProperties['data-image-lightbox-sources'] = serializeMediaSources(
+        resolvedAsset.lightbox.sources,
+      );
+    }
+  } else if (sourcePath) {
+    figureProperties['data-image-lightbox-src'] = sourcePath;
+  }
+
+  const children: HastNode[] = [];
+
+  if (zoomable) {
+    children.push(
+      createElement(
+        'button',
+        {
+          type: 'button',
+          'data-image-zoom-trigger': 'true',
+          'aria-label': alt.trim().length > 0 ? `画像を拡大して表示: ${alt}` : '画像を拡大して表示',
+        },
+        [createElement('span', { className: 'sr-only' }, [createTextNode('画像を拡大して表示')])],
+      ),
+    );
+  }
+
+  children.push(createPictureNode(resolvedAsset, sourcePath, alt, normalizedLoading));
+
+  if (caption) {
+    children.push(createElement('figcaption', {}, [createTextNode(caption)]));
+  }
+
+  node.tagName = 'figure';
+  node.properties = figureProperties;
+  node.children = children;
 };
 
-const toUiFigureImage = (
+const toStaticFigureImage = (
   node: HastNode,
   context: ImageNormalizationContext,
   file?: VFileLike,
@@ -709,7 +802,7 @@ const toUiFigureImage = (
       continue;
     }
 
-    if (!imageNode && (isElement(child, 'ui-image') || isElement(child, 'img'))) {
+    if (!imageNode && (isElement(child, 'img') || (isElement(child, 'figure') && child.properties?.['data-image'] !== undefined))) {
       imageNode = child;
       continue;
     }
@@ -727,20 +820,26 @@ const toUiFigureImage = (
   }
 
   if (isElement(imageNode, 'img')) {
-    toUiImage(imageNode, context, file);
+    toStaticImage(imageNode, context, file);
   }
-  if (!isElement(imageNode, 'ui-image')) {
+
+  if (!isElement(imageNode, 'figure') || imageNode.properties?.['data-image'] === undefined) {
     return;
   }
 
-  const hostProperties: Record<string, unknown> = { ...(imageNode.properties ?? {}) };
-  if (captionText.length > 0 && pickOptionalString(hostProperties['caption']) === undefined) {
-    hostProperties['caption'] = captionText;
+  const nextProperties: Record<string, unknown> = { ...(imageNode.properties ?? {}) };
+  const nextChildren = Array.isArray(imageNode.children)
+    ? imageNode.children.map((child) => cloneNode(child))
+    : [];
+
+  const hasFigcaption = nextChildren.some((child) => isElement(child, 'figcaption'));
+  if (captionText.length > 0 && !hasFigcaption) {
+    nextChildren.push(createElement('figcaption', {}, [createTextNode(captionText)]));
   }
 
-  node.tagName = 'ui-image';
-  node.properties = hostProperties;
-  node.children = [];
+  node.tagName = 'figure';
+  node.properties = nextProperties;
+  node.children = nextChildren;
 };
 
 const stripHash = (value: string): string => value.replace(/^#/, '');
@@ -1007,7 +1106,7 @@ const resolveFootnoteReferenceAnchor = (node: HastNode): HastNode | null => {
   return null;
 };
 
-const toUiFootnoteReference = (
+const toStaticFootnoteReference = (
   node: HastNode,
   definitions: Map<string, FootnoteDefinition>,
   refCounters: Map<string, number>,
@@ -1030,21 +1129,24 @@ const toUiFootnoteReference = (
   const nextInstance = (refCounters.get(refId) ?? 0) + 1;
   refCounters.set(refId, nextInstance);
 
-  const hostProperties: Record<string, unknown> = {
-    'ref-id': refId,
-    index: String(resolvedIndex),
-    'ref-instance': String(nextInstance),
+  node.tagName = 'a';
+  node.properties = {
+    id: `${refId}-ref-${String(nextInstance)}`,
+    href: `#${refId}`,
+    role: 'doc-noteref',
+    'data-footnote-ref': 'true',
+    'data-footnote-id': refId,
+    'data-footnote-index': String(resolvedIndex),
+    'data-footnote-ref-instance': String(nextInstance),
+    'data-footnote-role': nextInstance === 1 ? 'primary' : 'secondary',
+    'data-hydration-key': 'footnote-popover-enhancer',
+    'data-hydration-capability': 'progressive',
+    'data-hydration-trigger': 'post-commit',
+    'aria-label': `脚注 ${String(resolvedIndex)} を開く`,
   };
-  if (nextInstance > 1) {
-    hostProperties['shared'] = true;
-  }
-
-  node.tagName = 'ui-footnote';
-  node.properties = hostProperties;
-  node.children =
-    definition && nextInstance === 1
-      ? definition.contentNodes.map((contentNode) => cloneNode(contentNode))
-      : [];
+  node.children = [
+    createElement('sup', {}, [createTextNode(String(resolvedIndex))]),
+  ];
   return true;
 };
 
@@ -1083,7 +1185,7 @@ export function rehypeRouaultComponents() {
       if (isElement(current, 'li')) {
         toUiTaskListItem(current);
       } else {
-        const footnoteTransformed = toUiFootnoteReference(
+        const footnoteTransformed = toStaticFootnoteReference(
           current,
           footnoteDefinitions,
           footnoteRefCounters,
@@ -1091,9 +1193,9 @@ export function rehypeRouaultComponents() {
 
         if (!footnoteTransformed) {
           if (current.tagName === 'figure') {
-            toUiFigureImage(current, imageContext, file);
+            toStaticFigureImage(current, imageContext, file);
           } else if (current.tagName === 'img') {
-            toUiImage(current, imageContext, file);
+            toStaticImage(current, imageContext, file);
           } else if (current.tagName === 'mark') {
             normalizeHighlightMark(current);
           } else if (current.tagName === 'table' || current.tagName === 'ui-table') {

@@ -110,10 +110,10 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 | `mark`                                               | `mark[data-current-match]`                                           | `current-match` / `data-current-match` / 旧互換入力を `data-current-match` へ正規化し、note 本文では静的 `<mark>` を正本とする                                                                                       |
 | `aside[data-callout]` / `ui-callout`                 | `aside[data-callout][data-callout-kind]`                             | heading / label / icon / heading-level を静的 DOM へ正規化し、本文と補助ラベルを保持する                                                                                                                              |
 | `section[data-info-box]` / `ui-info-box`             | `section[data-info-box][data-variant][data-density]`                 | heading / icon / heading-level / landmark / variant / density を静的 DOM へ正規化し、空内容は非描画として扱ってよい                                                                                                   |
-| `img`                                                | `ui-image`                                                           | `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化する。`zoomable!="false"` の note 本文では `data-hydration-capability="progressive"` / `data-hydration-trigger="visible"` を付与する |
-| `figure(img + figcaption)`                           | `ui-image`                                                           | `figcaption` を `caption` に統合する。`zoomable!="false"` の note 本文では `data-hydration-capability="progressive"` / `data-hydration-trigger="visible"` を付与する                                                  |
+| `img`                                                | `figure[data-image] > picture > source* + img`                            | `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化する。`zoomable!="false"` の note 本文では `figure[data-image]` に `data-hydration-key="image-lightbox-enhancer"`、`data-hydration-capability="progressive"`、`data-hydration-trigger="visible"` を付与する |
+| `figure(img + figcaption)`                           | `figure[data-image] > picture > source* + img + figcaption`               | `figcaption` を保持し、静的図版 DOM へ収束させる。`zoomable!="false"` の note 本文では `figure[data-image]` に enhancer 用 directive を付与する |
+| footnote 参照 / 定義                                 | `a[data-footnote-ref][role=doc-noteref]` + `section[role=doc-endnotes]`   | 参照 ID、backref、接頭辞、backlink を正規化する。本文 trigger は plain link を正本とし、必要な場合のみ `footnote-popover-enhancer` を付与する |
 | `a[href]`（本文リンク）                              | `a[data-link-kind][data-link-surface="prose"]`                       | `href` から種別注釈を付与し、外部系では `data-external="true"` を付与する。`.heading-anchor` は対象外とする                                                                                                           |
-| footnote 参照 / 定義                                 | `ui-footnote` + `section[role=doc-endnotes]`                         | 参照 ID、backref、接頭辞、backlink を正規化する                                                                                                                                                                       |
 
 ### 5.2 `pre > code` → `pre[data-code-block] > code[data-lang]`
 
@@ -200,18 +200,18 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 - `current-match` 系入力は `data-current-match="true"` へ正規化してよいものとします。
 - note 本文の最終 DOM に `ui-highlight` を残してはなりません。
 
-### 5.8 `img` / `figure` → `ui-image`
+### 5.8 `img` / `figure` → `figure[data-image]`
 
 規則:
 
-- `img` は `ui-image` に正規化しなければなりません。
+- `img` は note 本文の最終 DOM で `figure[data-image]` に正規化しなければなりません。
 - source path は manifest resolver を経由し、読者向け最終 HTML には remote 原本 URL を残してはなりません。
-- `src` / `srcset` / `sizes` / `sources` / `lightbox-src` / `lightbox-sources` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` / `placeholder` を正規化しなければなりません。
-- `zoomable=false` は静的モードとして引き継がなければなりません。
-- `zoomable=false` の `ui-image` に hydration directive を付与してはなりません。
-- `zoomable!=false` の note 本文画像には `data-hydration-capability="progressive"` と `data-hydration-trigger="visible"` を付与しなければなりません。
-- 最終出力は `<picture>` 相当の意味論へ収束しなければなりません。
-- `figure(img + figcaption)` は `figcaption` を `caption` に統合して `ui-image` へ収束させなければなりません。
+- 最終出力は `figure[data-image] > picture > source* + img` を正本としなければなりません。
+- `figure(img + figcaption)` は `figcaption` を保持したまま静的図版 DOM へ収束させなければなりません。
+- `zoomable=false` は完全静的として扱い、hydration directive を付与してはなりません。
+- `zoomable!=false` の note 本文画像には `data-hydration-key="image-lightbox-enhancer"`、`data-hydration-capability="progressive"`、`data-hydration-trigger="visible"` を付与しなければなりません。
+- Lightbox は静的図版本体の正本ではありません。runtime は lightbox 開閉、focus return、scroll lock に限定されます。
+- note 本文の最終 DOM に `ui-image` を残してはなりません。
 
 ### 5.9 本文リンク → 注釈付き `a`
 
@@ -268,7 +268,8 @@ note 本文の標準マッピングは次のとおりです。
 | `layout-sidebar`                         | `interactive` | `initial`     |
 | `layout-toc[runtime capability あり]`    | `interactive` | `initial`     |
 | `ui-article-header[data-tags]`           | `progressive` | `post-commit` |
-| `ui-image[zoomable!="false"]`            | `progressive` | `visible`     |
+| `figure[data-image][data-hydration-key="image-lightbox-enhancer"]` | `progressive` | `visible`     |
+| `a[data-footnote-ref][data-hydration-key="footnote-popover-enhancer"]` | `progressive` | `post-commit` |
 | `pre[data-code-block][data-hydration-key="code-block-enhancer"]` | `progressive` | `post-commit` |
 | `section[data-code-group]`                                        | `interactive` | `visible`     |
 | `ui-code-preview[controls あり]`         | `interactive` | `visible`     |
@@ -329,7 +330,7 @@ note ページの hydration budget は **profile 単位**で build-time の正�
 
 ### 6.1 構成
 
-footnote は、本文側の `ui-footnote` と endnotes 側の `section[role=doc-endnotes]` に正規化します。
+footnote は、本文側の `a[data-footnote-ref][role="doc-noteref"]` と endnotes 側の `section[role="doc-endnotes"]` に正規化します。Popover は補助表示であり、正本ではありません。
 
 ### 6.2 ID 正規化
 
@@ -344,9 +345,12 @@ footnote は、本文側の `ui-footnote` と endnotes 側の `section[role=doc-
 
 規則:
 
-- 最初の参照だけが本文ノードを内包する primary reference とします。
-- 2 回目以降の参照は `shared` と `ref-instance` だけを持つ secondary reference とします。
+- 最初の参照を primary reference、2 回目以降を secondary reference とします。
+- 公開契約上固定するのは `shared` ではなく、primary / secondary の役割モデルです。
+- 本文 trigger は常に plain link として存在しなければなりません。
 - endnotes 側の backlink 群は各 `refInstance` に対応する `#${refId}-ref-${refInstance}` を出力しなければなりません。
+- note 本文で補助表示を付与する場合は、`data-hydration-key="footnote-popover-enhancer"`、`data-hydration-capability="progressive"`、`data-hydration-trigger="post-commit"` を付与してよいものとします。
+- note 本文の最終 DOM に `ui-footnote` を残してはなりません。
 
 ---
 

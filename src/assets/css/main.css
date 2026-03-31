@@ -328,7 +328,7 @@ hr[data-divider-variant='layout'] {
     [data-code-block-root],
     ui-details,
     [data-info-box],
-    ui-image,
+    [data-image],
     ui-video,
     ui-score,
     [data-table-root],
@@ -432,7 +432,7 @@ hr[data-divider-variant='layout'] {
     [data-code-block-root],
     ui-details,
     [data-info-box],
-    ui-image,
+    [data-image],
     ui-video,
     ui-score,
     [data-table-root],
@@ -2262,17 +2262,118 @@ input:disabled,
 }
 
 /* ===========================================================================
- * Footnote (No-JS / SSR Fallback)
+ * Static Image / Footnote roots for note prose
  * =========================================================================== */
 
-ui-footnote {
-  --footnote-popover-max-width: 400px;
-  display: inline;
-  font-family: inherit;
-  line-height: inherit;
+figure[data-image] {
+  position: relative;
+  display: grid;
+  gap: var(--space-2, 8px);
+  margin: 0;
 }
 
-ui-footnote [data-part='trigger'] {
+figure[data-image] > picture {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  border: var(--border-width, 1px) solid var(--border-ghost, oklch(20% 0 0 / 0.04));
+  border-radius: var(--radius-md, 6px);
+  background: var(--bg-fill-neutral, oklch(95% 0 0));
+}
+
+figure[data-image] img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+}
+
+figure[data-image] > figcaption {
+  color: var(--fg-muted, oklch(48% 0 0));
+  font-size: var(--text-sm, 13px);
+  line-height: var(--line-height-relaxed, 1.75);
+}
+
+figure[data-image] > [data-image-zoom-trigger] {
+  position: absolute;
+  inset-block-start: var(--space-2, 8px);
+  inset-inline-end: var(--space-2, 8px);
+  z-index: 1;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  padding: 0;
+  border: var(--border-width, 1px) solid var(--border-ghost, oklch(20% 0 0 / 0.08));
+  border-radius: 999px;
+  background: oklch(100% 0 0 / 0.78);
+  color: var(--fg-muted, oklch(48% 0 0));
+  cursor: zoom-in;
+  backdrop-filter: blur(var(--blur-md, 12px));
+  -webkit-backdrop-filter: blur(var(--blur-md, 12px));
+}
+
+figure[data-image] > [data-image-zoom-trigger]:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 252));
+  outline-offset: var(--focus-ring-offset, 2px);
+}
+
+figure[data-image] dialog[data-image-lightbox-dialog] {
+  max-width: none;
+  max-height: none;
+  width: 100vw;
+  height: 100vh;
+  padding: var(--space-4, 16px);
+  border: 0;
+  background: oklch(0% 0 0 / 0.6);
+}
+
+figure[data-image] dialog[data-image-lightbox-dialog]::backdrop {
+  background: oklch(0% 0 0 / 0.6);
+  backdrop-filter: blur(var(--blur-md, 12px));
+  -webkit-backdrop-filter: blur(var(--blur-md, 12px));
+}
+
+.image-lightbox-surface {
+  position: relative;
+  display: grid;
+  gap: var(--space-3, 12px);
+  justify-items: center;
+  align-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.image-lightbox-image {
+  display: block;
+  max-width: calc(100vw - 2rem);
+  max-height: calc(100vh - 2rem);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border: var(--border-width, 1px) solid var(--border-ghost, oklch(20% 0 0 / 0.04));
+  border-radius: var(--radius-md, 6px);
+  background: var(--bg-fill-neutral, oklch(95% 0 0));
+}
+
+.image-lightbox-close {
+  position: absolute;
+  inset-block-start: var(--space-2, 8px);
+  inset-inline-end: var(--space-2, 8px);
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  border: var(--border-width, 1px) solid var(--border-ghost, oklch(20% 0 0 / 0.08));
+  border-radius: 999px;
+  background: oklch(100% 0 0 / 0.78);
+  cursor: pointer;
+}
+
+.image-lightbox-caption {
+  margin: 0;
+  color: oklch(98% 0 0);
+  font-size: var(--text-sm, 13px);
+  line-height: var(--line-height-relaxed, 1.75);
+}
+
+a[data-footnote-ref] {
   display: inline-flex;
   align-items: baseline;
   margin-inline: 0.1em;
@@ -2282,43 +2383,29 @@ ui-footnote [data-part='trigger'] {
   letter-spacing: var(--tracking-wide, 0.02em);
   line-height: var(--line-height-none, 1);
   text-decoration: none;
-  cursor: pointer;
   border-radius: var(--radius-sm, 4px);
-  transition:
-    color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-    background-color var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9));
 }
 
-ui-footnote [data-part='trigger'] > sup {
+a[data-footnote-ref] > sup {
   font-size: inherit;
   line-height: 1;
   vertical-align: super;
 }
 
-ui-footnote [data-part='trigger']:hover,
-ui-footnote [data-part='trigger']:focus-visible {
+a[data-footnote-ref]:hover,
+a[data-footnote-ref]:focus-visible {
   color: var(--primary, oklch(56% 0.16 252));
   text-decoration: underline;
 }
 
-ui-footnote [data-part='trigger']:focus-visible {
-  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, oklch(60% 0.15 252));
-  outline-offset: var(--focus-ring-offset, 2px);
-  animation: var(--animation-focus);
-}
-
-ui-footnote [data-part='trigger'].is-active-trigger {
+a[data-footnote-ref].is-active-trigger {
   background: var(--bg-active, oklch(95% 0 0));
 }
 
-ui-footnote [data-part='content'] {
-  position: fixed;
-  left: 0;
-  top: 0;
+[data-footnote-popover] {
   z-index: var(--z-popover, 400);
   box-sizing: border-box;
-  display: none;
-  max-width: min(90vw, var(--footnote-popover-max-width));
+  max-width: min(90vw, 400px);
   max-height: 60vh;
   overflow-y: auto;
   padding: var(--space-3, 12px) var(--space-4, 16px);
@@ -2327,53 +2414,25 @@ ui-footnote [data-part='content'] {
   border-radius: var(--radius-md, 6px);
   box-shadow: var(--elevation-lg, 0 8px 24px oklch(0% 0 0 / 0.12));
   color: var(--fg-default, oklch(20% 0 0));
-  font-family: var(--font-sans, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif);
   font-size: var(--text-sm, 13px);
   line-height: var(--line-height-relaxed, 1.75);
-  opacity: 0;
-  transform: translateY(4px);
-  transition:
-    opacity var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-    transform var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9)),
-    display var(--duration-fast, 70ms) var(--ease-out, cubic-bezier(0.2, 0, 0.38, 0.9))
-      allow-discrete;
 }
 
-ui-footnote [data-part='content'][popover]:popover-open {
-  display: block;
-  opacity: 1;
-  transform: translateY(0);
-}
-
-@starting-style {
-  ui-footnote [data-part='content'][popover]:popover-open {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-}
-
-ui-footnote [data-part='content'][popover]:not(:popover-open) {
-  opacity: 0;
-  transition:
-    opacity var(--duration-fast, 70ms) var(--ease-in, cubic-bezier(0.55, 0, 1, 0.45)),
-    display var(--duration-fast, 70ms) var(--ease-in, cubic-bezier(0.55, 0, 1, 0.45)) allow-discrete;
-}
-
-ui-footnote .footnote-body > :first-child {
+.footnote-popover-body > :first-child {
   margin-block-start: 0;
 }
 
-ui-footnote .footnote-body > :last-child {
+.footnote-popover-body > :last-child {
   margin-block-end: 0;
 }
 
-ui-footnote .footnote-popover-footer {
+.footnote-popover-footer {
   margin-block-start: var(--space-3, 12px);
   padding-block-start: var(--space-2, 8px);
   border-top: 1px solid var(--border-ghost, oklch(88% 0 0 / 0.5));
 }
 
-ui-footnote .footnote-list-link {
+.footnote-list-link {
   color: var(--fg-muted, oklch(48% 0 0));
   font-size: var(--text-xs, 12px);
   font-weight: var(--font-medium, 500);
@@ -2381,13 +2440,12 @@ ui-footnote .footnote-list-link {
   text-decoration: none;
 }
 
-ui-footnote .footnote-list-link:hover,
-ui-footnote .footnote-list-link:focus-visible {
+.footnote-list-link:hover,
+.footnote-list-link:focus-visible {
   color: var(--primary, oklch(56% 0.16 252));
   text-decoration: underline;
 }
 
-ui-footnote .sr-only,
 section.footnotes .sr-only {
   position: absolute;
   width: 1px;
@@ -2434,18 +2492,17 @@ section.footnotes a[data-footnote-backref]:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  ui-footnote [data-part='content'] {
-    transform: none;
+  [data-footnote-popover] {
     transition-duration: var(--duration-instant, 0ms);
   }
 }
 
 @media (forced-colors: active) {
-  ui-footnote [data-part='trigger'] {
+  a[data-footnote-ref] {
     color: LinkText;
   }
 
-  ui-footnote [data-part='content'] {
+  [data-footnote-popover] {
     border: 2px solid CanvasText;
     box-shadow: none;
   }
@@ -2456,7 +2513,9 @@ section.footnotes a[data-footnote-backref]:focus-visible {
 }
 
 @media print {
-  ui-footnote [data-part='content'] {
+  figure[data-image] > [data-image-zoom-trigger],
+  figure[data-image] dialog[data-image-lightbox-dialog],
+  [data-footnote-popover] {
     display: none !important;
   }
 }

@@ -35,7 +35,6 @@ import '../../src/components/ui/table/table.js';
 import '../../src/components/ui/blockquote/blockquote.js';
 import '../../src/components/ui/details/details.js';
 import '../../src/components/ui/divider/divider.js';
-import '../../src/components/ui/footnote/footnote.js';
 import '../../src/components/ui/highlight/highlight.js';
 import '../../src/components/ui/image/image.js';
 import '../../src/components/ui/info-box/info-box.js';
