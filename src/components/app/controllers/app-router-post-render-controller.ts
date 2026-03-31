@@ -1,6 +1,6 @@
 import type { ReactiveController, ReactiveControllerHost } from 'lit';
-import { FocusManager } from '../../../lib/router/focus-manager.js';
-import type { PostCommitController } from '../../../lib/router.js';
+import { FocusManager } from '../../../router/focus-manager.js';
+import type { PostCommitController } from '../../../router/router.js';
 import {
   dispatchPrimaryTabUrlStateChange,
   readDecodedHash,

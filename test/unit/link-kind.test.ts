@@ -1,5 +1,5 @@
 import { expect } from '@esm-bundle/chai';
-import { classifyLinkHref } from '../../lib/shared/link-kind.js';
+import { classifyLinkHref } from '../../shared/link/link-kind.js';
 
 describe('classifyLinkHref', () => {
   it('相対URLを internal-document として分類すること', () => {

@@ -7,7 +7,7 @@ import {
   normalizeThemePreference,
   readStoredThemePreference,
   resolveThemePreference,
-} from '../../src/lib/theme/theme-manager.js';
+} from '../../src/theme/theme-manager.js';
 
 class MemoryStorage implements Storage {
   get length(): number {

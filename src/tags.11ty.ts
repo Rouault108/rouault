@@ -2,7 +2,7 @@ import type { TagPageEntry } from './data/tagPages.js';
 import {
   buildStaticExploreResponse,
   buildStaticSearchState,
-} from './lib/search/build/build-static-explore-response.js';
+} from '../build/search/build-static-explore-response.js';
 
 interface TagPagesPaginationData extends TagPageTemplateData {
   tagPages?: TagPageEntry[];

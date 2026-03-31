@@ -1,9 +1,9 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import { attachStickyFooterBoundary } from '../../lib/layout/sticky-footer-boundary.js';
-import { type TocCapabilities } from '../../lib/toc/filter-visible-headings.js';
-import { TocActiveTracker } from '../../lib/toc/toc-active-tracker.js';
-import { TocMobileSummaryController } from '../../lib/toc/toc-mobile-summary-controller.js';
+import { attachStickyFooterBoundary } from '../../layout/sticky-footer-boundary.js';
+import { type TocCapabilities } from '../../toc/filter-visible-headings.js';
+import { TocActiveTracker } from '../../toc/toc-active-tracker.js';
+import { TocMobileSummaryController } from '../../toc/toc-mobile-summary-controller.js';
 import '../ui/toc/toc';
 import type { Heading, UiTocActiveChangeDetail } from '../ui/toc/toc';
 

@@ -1,6 +1,6 @@
 import { expect } from '@esm-bundle/chai';
 
-import { resolveTrailingSlashRewrite } from '../../src/lib/trailing-slash-rewrite.js';
+import { resolveTrailingSlashRewrite } from '../../shared/navigation/trailing-slash-rewrite.js';
 
 describe('resolveTrailingSlashRewrite', () => {
   it('拡張子なしの内部URLを trailing slash 付きへ rewrite すること', () => {

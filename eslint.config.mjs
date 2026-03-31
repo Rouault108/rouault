@@ -102,6 +102,16 @@ export default defineConfig(
   },
 
   {
+    files: ['build/**/*.ts', 'shared/**/*.ts', 'test/**/*.ts'],
+    extends: [tseslint.configs.disableTypeChecked],
+    languageOptions: {
+      parserOptions: {
+        project: false,
+      },
+    },
+  },
+
+  {
     files: ['lib/content/**/*.ts', 'lib/rehype/**/*.ts', 'lib/remark/**/*.ts'],
     extends: [tseslint.configs.disableTypeChecked],
     languageOptions: {

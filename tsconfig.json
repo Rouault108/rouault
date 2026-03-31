@@ -18,6 +18,8 @@
   "include": [
     "src/**/*",
     "lib/**/*",
+    "build/**/*",
+    "shared/**/*",
     ".storybook/**/*.ts",
     "eleventy.config.ts",
     "types/**/*",

@@ -5,7 +5,7 @@ import {
   RouterNotStartedError,
   RouterOwnershipError,
   type NavigationResult,
-} from '../../src/lib/router.js';
+} from '../../src/router/router.js';
 
 function simulateClick(element: HTMLElement, options: MouseEventInit = {}): void {
   let target = element;

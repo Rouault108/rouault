@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { transformHtmlWithLitSsr } from '../lib/ssr/html-transform.js';
+import { transformHtmlWithLitSsr } from '../build/ssr/html-transform.js';
 
 const require = createRequire(import.meta.url);
 const { build } = require(path.join(process.cwd(), 'node_modules/.pnpm/node_modules/esbuild')) as {

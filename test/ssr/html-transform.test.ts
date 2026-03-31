@@ -3,7 +3,7 @@ import {
   transformHtmlWithLitSsr,
   type DocumentStyleDefinition,
   type SsrAttribute,
-} from '../../lib/ssr/html-transform.js';
+} from '../../build/ssr/html-transform.js';
 
 type TestSsrAttribute = SsrAttribute;
 

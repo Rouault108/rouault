@@ -4,7 +4,7 @@ import {
   derivePathLabel,
   normalizeDocumentCanonicalUrl,
   validateResultUrl,
-} from '../../src/lib/search/document-url.js';
+} from '../../shared/search/document-url.js';
 
 describe('search-document-url', () => {
   it('DocumentCanonicalUrl を正規化すること', () => {

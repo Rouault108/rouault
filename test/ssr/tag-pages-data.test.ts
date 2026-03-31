@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildTagPageProjection } from '../../src/data/projections/tag-page-projection.js';
-import type { IntrinsicNote } from '../../src/data/notes.js';
+import { buildTagPageProjection } from '../../build/projections/tag-page-projection.js';
+import type { IntrinsicNote } from '../../build/data/notes.js';
 
 const createIntrinsicNote = (
   overrides: Partial<IntrinsicNote> & { slug: string },

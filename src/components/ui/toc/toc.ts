@@ -3,7 +3,7 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { map } from 'lit/directives/map.js';
 import { styleMap } from 'lit/directives/style-map.js';
-import { updateHashInCurrentUrl } from '../../../lib/url-hash.js';
+import { updateHashInCurrentUrl } from '../../../router/url-hash.js';
 import '../tooltip/tooltip';
 
 export interface Heading {

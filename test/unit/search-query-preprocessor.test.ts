@@ -3,8 +3,8 @@ import { expect } from '@open-wc/testing';
 import {
   normalizeSearchQuery,
   prepareSearchQuery,
-} from '../../src/lib/search/query-preprocessor.js';
-import { tokenizeSearchText } from '../../src/lib/search/indexing/tokenize-text.js';
+} from '../../shared/search/query-preprocessor.js';
+import { tokenizeSearchText } from '../../shared/search/tokenize-text.js';
 
 describe('search-query-preprocessor', () => {
   it('検索文字列を正規化すること', () => {

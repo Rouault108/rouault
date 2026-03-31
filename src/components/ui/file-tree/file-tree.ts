@@ -2,33 +2,12 @@ import { css, html, LitElement, nothing, type PropertyValues, type TemplateResul
 import { customElement, property, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import '../tree-item/tree-item';
-import type { IconName } from '../../../icons/catalog.js';
-
-export type TreeIcon = IconName;
+import type { BranchNode, LeafNode, TreeNode } from '../../../../shared/navigation/tree-node';
 
 export type TreeItemDensity = 'normal' | 'compact';
 export type FileTreeVariant = 'default' | 'card';
 export type FileTreeLoadingStrategy = 'retain' | 'replace';
 
-interface TreeNodeBase {
-  id: string;
-  label: string;
-  icon?: TreeIcon;
-}
-
-export interface BranchNode extends TreeNodeBase {
-  kind: 'branch';
-  children: readonly TreeNode[];
-  href?: never;
-}
-
-export interface LeafNode extends TreeNodeBase {
-  kind: 'leaf';
-  href: string;
-  children?: never;
-}
-
-export type TreeNode = BranchNode | LeafNode;
 
 interface FlattenedTreeNode {
   node: TreeNode;

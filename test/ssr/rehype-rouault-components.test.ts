@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { rehypeRouaultComponents } from '../../lib/rehype/rouault-components.js';
+import { rehypeRouaultComponents } from '../../build/rehype/rouault-components.js';
 
 interface HastNode {
   type: string;

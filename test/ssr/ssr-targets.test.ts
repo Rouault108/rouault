@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { SSR_COMPONENT_DEFINITIONS } from '../../src/ssr/target-definitions.js';
+import { SSR_COMPONENT_DEFINITIONS } from '../../build/ssr/target-definitions';
 import {
   SSR_NOTE_TARGET_TAGS,
   SSR_PAGE_TARGET_TAGS,
   SSR_TARGET_TAGS,
-} from '../../src/ssr/targets.js';
+} from '../../build/ssr/targets.js';
 
 const REQUIRED_NOTE_CONTENT_TAGS: readonly string[] = [
   'ui-callout',

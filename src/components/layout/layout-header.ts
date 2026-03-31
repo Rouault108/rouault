@@ -7,15 +7,15 @@ import '../ui/breadcrumbs/breadcrumbs';
 import '../ui/button/button';
 import '../ui/dropdown/dropdown';
 import type { BreadcrumbItem } from '../ui/breadcrumbs/breadcrumbs';
-import { navigateToUrl } from '../../lib/search/navigation.js';
+import { navigateToUrl } from '../../search/navigation.js';
 import {
   THEME_CHANGE_EVENT,
   applyThemePreference,
   readStoredThemePreference,
   type ThemeChangeDetail,
   type ThemePreference,
-} from '../../lib/theme/theme-manager.js';
-import type { IconName } from '../../icons/catalog.js';
+} from '../../theme/theme-manager.js';
+import type { IconName } from '../../../shared/icons/icons-catalog.js';
 
 interface CorpusNavigationItem {
   key: string;

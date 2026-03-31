@@ -1,7 +1,7 @@
 import { expect } from '@open-wc/testing';
 
-import { createFieldTokens, tokenizePath } from '../../src/lib/search/indexing/field-tokenizers.js';
-import { buildCatalogKeywords } from '../../src/lib/search/indexing/catalog-keywords.js';
+import { createFieldTokens, tokenizePath } from '../../build/search/indexing/field-tokenizers.js';
+import { buildCatalogKeywords } from '../../build/search/indexing/catalog-keywords.js';
 
 describe('search-indexing', () => {
   it('field tokenizers は title/body/path/keyword を決定的に分解すること', () => {

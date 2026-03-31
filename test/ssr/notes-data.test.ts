@@ -8,7 +8,7 @@ import {
   filterPublicNotes,
   filterReaderFacingNotes,
   type SourceNote,
-} from '../../src/data/notes.js';
+} from '../../build/data/notes.js';
 
 const tempDirs: string[] = [];
 

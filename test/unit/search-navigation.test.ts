@@ -1,6 +1,6 @@
 import { expect, fixture, html } from '@open-wc/testing';
 
-import { navigateToUrl } from '../../src/lib/search/navigation.js';
+import { navigateToUrl } from '../../src/search/navigation.js';
 
 describe('search-navigation', () => {
   it('app-router が存在する場合は SPA navigate を優先すること', async () => {

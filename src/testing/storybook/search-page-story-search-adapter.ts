@@ -1,5 +1,5 @@
-import { searchCore } from '../../lib/search/search-core.js';
-import type { ExploreSearchResponse, SearchRequest } from '../../lib/search/search-types.js';
+import { searchCore } from '../../search/search-core.js';
+import type { ExploreSearchResponse, SearchRequest } from '../../../shared/search/search-types.js';
 
 const ORIGINAL_SEARCH = searchCore.search.bind(searchCore);
 

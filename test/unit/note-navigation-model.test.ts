@@ -1,6 +1,6 @@
 import { expect } from '@open-wc/testing';
 
-import { buildNoteNavigationModel } from '../../lib/content/navigation/index.js';
+import { buildNoteNavigationModel } from '../../build/navigation/index.js';
 
 interface SidebarTreeNode {
   id: string;

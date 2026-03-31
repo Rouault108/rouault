@@ -1,7 +1,7 @@
 import {
   buildStaticExploreResponse,
   buildStaticSearchState,
-} from './lib/search/build/build-static-explore-response.js';
+} from '../build/search/build-static-explore-response.js';
 
 function escapeHtml(value: string): string {
   return value

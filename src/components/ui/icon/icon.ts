@@ -1,5 +1,5 @@
 import '../../../icons/register.js';
-import type { IconName } from '../../../icons/catalog.js';
+import type { IconName } from '../../../../shared/icons/icons-catalog.js';
 
 const NAME_ATTRIBUTE = 'name';
 const ICON_ATTRIBUTE = 'icon';

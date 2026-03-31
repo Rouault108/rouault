@@ -5,7 +5,7 @@ import type {
   CorporaOverviewCorpusItem,
   CorporaOverviewData,
 } from '../../data/corporaOverview.js';
-import { navigateToUrl } from '../../lib/search/navigation.js';
+import { navigateToUrl } from '../../search/navigation.js';
 import { pageShellStyles } from '../page/page-shell-styles.js';
 import '../ui/card/card.js';
 import '../ui/empty-state/empty-state.js';

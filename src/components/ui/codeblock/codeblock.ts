@@ -2,7 +2,7 @@ import { css, html, LitElement, nothing, type PropertyValues, type TemplateResul
 import { customElement, property, query, state } from 'lit/decorators.js';
 import '../icon/icon.js';
 import '../copy-button/copy-button';
-import type { IconName } from '../../../icons/catalog.js';
+import type { IconName } from '../../../../shared/icons/icons-catalog.js';
 
 type CodeBlockIntent = 'neutral' | 'valid' | 'invalid';
 type CodeBlockCopyMode = 'auto' | 'always' | 'hidden';

@@ -3,7 +3,7 @@ import {
   findHeadingElement,
   revealHeadingInTabs,
   resolveTabValueForDescendant,
-} from '../../../lib/toc/filter-visible-headings.js';
+} from '../../../toc/filter-visible-headings.js';
 import { getTabsUrlSyncStrategy } from './tabs-url-sync-strategy.js';
 import type { TabsUrlSource, UrlHistoryMode } from './tabs.types.js';
 

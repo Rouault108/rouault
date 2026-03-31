@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { rehypeShikiCodeBlocks } from '../../lib/rehype/shiki-code-blocks.js';
+import { rehypeShikiCodeBlocks } from '../../build/rehype/shiki-code-blocks.js';
 
 interface HastNode {
   type: string;

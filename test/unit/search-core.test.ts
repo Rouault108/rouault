@@ -1,7 +1,7 @@
 import { expect } from '@open-wc/testing';
 
-import { createSearchCore, type PagefindApi } from '../../src/lib/search/search-core.js';
-import type { SearchCatalogItem } from '../../src/lib/search/search-catalog.js';
+import { createSearchCore, type PagefindApi } from '../../src/search/search-core.js';
+import type { SearchCatalogItem } from '../../shared/search/search-catalog.js';
 
 describe('search-core', () => {
   const catalogItems: SearchCatalogItem[] = [

@@ -5,7 +5,7 @@
  * サイドバー + 本文 + TOC の3カラム構成を提供する。
  */
 
-import type { NotePageProjection } from '../data/projections/note-page-projection.js';
+import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
 
 interface NoteLayoutData {
   notePage?: NotePageProjection;

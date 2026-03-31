@@ -2,7 +2,7 @@ import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import '../icon/icon.js';
 import '../button/button';
-import type { IconName } from '../../../icons/catalog.js';
+import type { IconName } from '../../../../shared/icons/icons-catalog.js';
 
 export type BannerVariant = 'info' | 'warning' | 'error' | 'success';
 type BannerRole = 'status' | 'alert';

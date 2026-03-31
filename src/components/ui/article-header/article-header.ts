@@ -4,7 +4,7 @@ import '../tag/tag';
 import { linkTextStyles } from '../../../styles/contracts/link-styles';
 import type { ArticleStatus } from '../../../types/article-status.js';
 import { formatArticleDate } from './format-article-date.js';
-import type { IconName } from '../../../icons/catalog.js';
+import type { IconName } from '../../../../shared/icons/icons-catalog.js';
 
 export type { ArticleStatus } from '../../../types/article-status.js';
 

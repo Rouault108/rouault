@@ -2,7 +2,7 @@ import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import '../icon/icon.js';
-import type { IconName } from '../../../icons/catalog.js';
+import type { IconName } from '../../../../shared/icons/icons-catalog.js';
 
 export type CalloutKind = 'note' | 'tip' | 'success' | 'warning' | 'danger';
 

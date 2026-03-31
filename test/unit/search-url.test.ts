@@ -12,7 +12,7 @@ import {
   normalizeSearchTagMode,
   normalizeSearchTags,
   parseSearchStateFromUrl,
-} from '../../src/lib/search/search-url.js';
+} from '../../shared/search/search-url.js';
 
 describe('search-url', () => {
   it('検索クエリを NFKC + ASCII lowercase で正規化すること', () => {

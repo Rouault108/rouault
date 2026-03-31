@@ -1,4 +1,4 @@
-import type { TestingArea } from '../../src/types/testing-area.js';
+import type { TestingArea } from '../../shared/note/testing-area.js';
 
 export interface TabsExamplePanel {
   readonly value: string;

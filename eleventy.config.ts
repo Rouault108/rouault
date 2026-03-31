@@ -8,12 +8,12 @@ import { build } from 'velite';
 import { loadNotesData } from './src/data/notes.js';
 import { loadHomeData } from './src/data/home.js';
 import { loadClientBundleData } from './src/data/clientBundle.js';
-import { createStaticDirectoryMiddleware } from './src/lib/dev-static-directory.js';
+import { createStaticDirectoryMiddleware } from './build/dev/dev-static-directory.js';
 import {
   emitSearchArtifacts,
   renderSearchCatalogArtifact,
-} from './src/lib/search/build/emit-search-artifacts.js';
-import { resolveTrailingSlashRewrite } from './src/lib/trailing-slash-rewrite.js';
+} from './build/search/emit-search-artifacts.js';
+import { resolveTrailingSlashRewrite } from './shared/navigation/trailing-slash-rewrite.js';
 import { buildPagefindIndex } from './scripts/build-pagefind.js';
 
 const registerTrailingSlashRewrite = (server: ViteDevServer): void => {

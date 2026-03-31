@@ -5,9 +5,9 @@ import '../ui/sidebar/sidebar';
 import type { TreeNode } from '../ui/file-tree/file-tree';
 import type { UiSidebar, UiSidebarToggleDetail } from '../ui/sidebar/sidebar';
 import type { UiSidebarStateChangeDetail } from '../ui/sidebar-shell/sidebar-shell';
-import type { IconName } from '../../icons/catalog.js';
-import { isIconName } from '../../icons/catalog.js';
-import { attachStickyFooterBoundary } from '../../lib/layout/sticky-footer-boundary.js';
+import type { IconName } from '../../../shared/icons/icons-catalog.js';
+import { isIconName } from '../../../shared/icons/icons-catalog.js';
+import { attachStickyFooterBoundary } from '../../layout/sticky-footer-boundary.js';
 import {
   mergeLayoutSidebarTreeState,
   readLayoutSidebarTreeState,

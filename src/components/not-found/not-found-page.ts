@@ -5,7 +5,7 @@ import {
   NOT_FOUND_PAGE_DESCRIPTION,
   NOT_FOUND_PAGE_TITLE,
   SEARCH_PAGE_HREF,
-} from '../../lib/not-found-page.js';
+} from '../../not-found/not-found-page.js';
 
 @customElement('not-found-page')
 export class NotFoundPage extends LitElement {

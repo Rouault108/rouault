@@ -1,16 +1,16 @@
 import { expect } from '@open-wc/testing';
 
-import { runCandidateMergeStage } from '../../src/lib/search/core/stages/candidate-merge.js';
-import { runCandidateValidationStage } from '../../src/lib/search/core/stages/candidate-validation.js';
+import { runCandidateMergeStage } from '../../src/search/core/stages/candidate-merge.js';
+import { runCandidateValidationStage } from '../../src/search/core/stages/candidate-validation.js';
 import {
   buildEmptySearchResponse,
   runCountsAndDiagnosticsStage,
-} from '../../src/lib/search/core/stages/counts-and-diagnostics.js';
-import { runQueryPreparationStage } from '../../src/lib/search/core/stages/query-preparation.js';
-import { runRankingAndSortingStage } from '../../src/lib/search/core/stages/ranking-and-sorting.js';
-import { runSourceFederationStage } from '../../src/lib/search/core/stages/source-federation.js';
-import type { SearchCandidate, SearchSourceBatch } from '../../src/lib/search/search-types.js';
-import type { SearchSortMode, SearchTagMode } from '../../src/lib/search/search-types.js';
+} from '../../src/search/core/stages/counts-and-diagnostics.js';
+import { runQueryPreparationStage } from '../../src/search/core/stages/query-preparation.js';
+import { runRankingAndSortingStage } from '../../src/search/core/stages/ranking-and-sorting.js';
+import { runSourceFederationStage } from '../../src/search/core/stages/source-federation.js';
+import type { SearchCandidate, SearchSourceBatch } from '../../shared/search/search-types.js';
+import type { SearchSortMode, SearchTagMode } from '../../shared/search/search-types.js';
 
 function createCandidate(
   overrides: Partial<SearchCandidate> & Pick<SearchCandidate, 'canonicalUrl' | 'url' | 'title'>,

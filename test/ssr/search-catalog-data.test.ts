@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildSearchCatalog,
   serializeSearchCatalog,
-} from '../../src/lib/search/build/build-search-catalog.js';
+} from '../../build/search/build-search-catalog.js';
 
 describe('buildSearchCatalog', () => {
   it('公開ノートから検索カタログを構築すること', () => {

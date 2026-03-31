@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { collectDocumentStylesForTags, renderCustomElement } from '../../src/ssr/server-entry.js';
+import { collectDocumentStylesForTags, renderCustomElement } from '../../build/ssr/server-entry.js';
 
 describe('server-entry', () => {
   it('ui-highlight の document style を収集できること', () => {

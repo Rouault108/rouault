@@ -4,7 +4,7 @@ import type { PropertyValues } from 'lit';
 import '../icon/icon.js';
 import '../button/button';
 import '../dropdown/dropdown';
-import type { IconName } from '../../../icons/catalog.js';
+import type { IconName } from '../../../../shared/icons/icons-catalog.js';
 
 type PreviewPadding = 'normal' | 'none' | 'compact';
 type PreviewAlign = 'center' | 'start' | 'stretch';

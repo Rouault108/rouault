@@ -1,5 +1,5 @@
 import { expect } from '@open-wc/testing';
-import { extractTocFromHtml, prepareTocHtml } from '../../lib/content/extract-toc-from-html.js';
+import { extractTocFromHtml, prepareTocHtml } from '../../build/content/extract-toc-from-html.js';
 
 describe('extractTocFromHtml', () => {
   it('id付きのh2-h6見出しを抽出できること', () => {

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   computeStickyFooterOffset,
   computeStickyMaxBlockSize,
-} from '../../src/lib/layout/sticky-footer-boundary.js';
+} from '../../src/layout/sticky-footer-boundary.js';
 
 describe('computeStickyMaxBlockSize', () => {
   it('footer が見えていない間は viewport 基準の高さを返すこと', () => {

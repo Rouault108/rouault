@@ -1,9 +1,9 @@
 import type { ReactiveController, ReactiveControllerHost } from 'lit';
-import type { ContentUpdateAdapter } from '../../../lib/router.js';
+import type { ContentUpdateAdapter } from '../../../router/router.js';
 import {
   createRouterContentHtml,
   type RouterContentHtml,
-} from '../../../lib/router/router-content-html.js';
+} from '../../../router/router-content-html.js';
 
 export class AppRouterContentController implements ReactiveController {
   private didInitializeFromSsr = false;

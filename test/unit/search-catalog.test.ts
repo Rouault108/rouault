@@ -5,7 +5,7 @@ import {
   loadSearchCatalog,
   resetSearchCatalogCache,
   type SearchCatalogItem,
-} from '../../src/lib/search/search-catalog.js';
+} from '../../shared/search/search-catalog.js';
 
 describe('search-catalog', () => {
   it('検索カタログ JSON を正規化して読み込むこと', async () => {

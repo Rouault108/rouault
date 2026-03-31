@@ -1,11 +1,11 @@
 import { html, LitElement, nothing, type PropertyValues } from 'lit';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import { RouterNotStartedError, type NavigationResult } from '../../lib/router.js';
-import { RouterController } from '../../lib/controllers/router-controller.js';
+import { RouterNotStartedError, type NavigationResult } from '../../router/router.js';
+import { RouterController } from '../../controllers/router-controller.js';
 import {
   type RouterContentHtml,
   unwrapRouterContentHtml,
-} from '../../lib/router/router-content-html.js';
+} from '../../router/router-content-html.js';
 import { registerTabsUrlSyncStrategy } from '../ui/tabs/tabs-url-sync-strategy.js';
 import { AppRouterContentController } from './controllers/app-router-content-controller.js';
 import { AppRouterPostRenderController } from './controllers/app-router-post-render-controller.js';

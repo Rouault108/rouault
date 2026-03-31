@@ -5,9 +5,9 @@
  * Velite が生成した各ノートにつき1つの HTML ページを出力する。
  */
 
-import { buildPagefindDocumentData } from './lib/search/build/build-pagefind-document-data.js';
-import { buildNotePageProjection, type NotePageProjection } from './data/projections/note-page-projection.js';
-import { buildNoteNavigationModel } from '../lib/content/navigation/index.js';
+import { buildPagefindDocumentData } from '../build/search/build-pagefind-document-data.js';
+import { buildNotePageProjection, type NotePageProjection } from '../build/projections/note-page-projection.js';
+import { buildNoteNavigationModel } from '../build/navigation/index.js';
 import type { IntrinsicNote } from './data/notes.js';
 
 interface NoteEntry extends IntrinsicNote {

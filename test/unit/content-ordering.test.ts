@@ -6,7 +6,7 @@
  */
 
 import { expect } from '@open-wc/testing';
-import { applyOrdering } from '../../lib/content/ordering.js';
+import { applyOrdering } from '../../build/content/ordering.js';
 
 describe('applyOrdering', () => {
   it('order配列内のアイテムが指定順で先頭に並ぶこと', () => {

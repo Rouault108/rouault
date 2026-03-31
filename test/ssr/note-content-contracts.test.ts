@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   injectNoteContentProfiles,
   validateNoteContentContracts,
-} from '../../lib/content/note-content-contracts.js';
+} from '../../build/content/note-content-contracts.js';
 
 describe('validateNoteContentContracts', () => {
   it('reader note の preview-sandbox を build error にすること', () => {

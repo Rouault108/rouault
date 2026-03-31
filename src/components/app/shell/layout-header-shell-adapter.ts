@@ -1,4 +1,4 @@
-import type { ShellAdapter } from '../../../lib/router.js';
+import type { ShellAdapter } from '../../../router/router.js';
 
 interface BreadcrumbShellItem {
   label: string;

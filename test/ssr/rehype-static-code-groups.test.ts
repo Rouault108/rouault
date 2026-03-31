@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { rehypeStaticCodeGroups } from '../../lib/rehype/static-code-groups';
+import { rehypeStaticCodeGroups } from '../../build/rehype/static-code-groups';
 
 interface HastNode {
   type: string;

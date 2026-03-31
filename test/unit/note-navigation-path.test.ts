@@ -3,8 +3,8 @@ import { expect } from '@open-wc/testing';
 import {
   normalizeNoteNavigationUrl,
   normalizeNotePath,
-} from '../../lib/content/navigation/index.js';
-import { resolveTrailingSlashRewrite } from '../../src/lib/trailing-slash-rewrite.js';
+} from '../../build/navigation/index.js';
+import { resolveTrailingSlashRewrite } from '../../shared/navigation/trailing-slash-rewrite.js';
 
 describe('normalizeNotePath', () => {
   it('leaf note の path semantics を正規化すること', () => {

@@ -14,8 +14,8 @@ import '../../components/ui/tag/tag.js';
 import type { SelectOption } from '../../components/ui/select/select.js';
 import { HIGHLIGHT_RULE_TEMPLATE } from '../ui/highlight/highlight.js';
 import { pageShellStyles } from '../page/page-shell-styles.js';
-import { searchCore } from '../../lib/search/search-core.js';
-import { navigateToUrl } from '../../lib/search/navigation.js';
+import { searchCore } from '../../search/search-core.js';
+import { navigateToUrl } from '../../search/navigation.js';
 import {
   DEFAULT_SEARCH_SORT_MODE,
   DEFAULT_SEARCH_TAG_MODE,
@@ -26,8 +26,8 @@ import {
   type SearchState,
   type SearchTagMode,
   type SearchSortMode,
-} from '../../lib/search/search-url.js';
-import type { ExploreSearchResponse, SearchResultItem, SearchSnippet } from '../../lib/search/search-types.js';
+} from '../../../shared/search/search-url.js';
+import type { ExploreSearchResponse, SearchResultItem, SearchSnippet } from '../../../shared/search/search-types.js';
 
 const SEARCH_DEBOUNCE_MS = 150;
 const SEARCH_SORT_OPTIONS: SelectOption[] = [

@@ -8,7 +8,7 @@ import type {
   MediaManifestItem,
   MediaVariantEntry,
   MediaVariantOutput,
-} from '../lib/media/image-resolver.js';
+} from '../build/media/image-resolver.js';
 
 const CONTENT_ROOT = path.resolve(process.cwd(), 'content');
 const EXAMPLES_ROOT = path.resolve(process.cwd(), 'examples');

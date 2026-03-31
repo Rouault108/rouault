@@ -2,7 +2,7 @@ import type { ClientBundleData } from '../data/clientBundle.js';
 import {
   buildNoteNavigationModel,
   type NoteNavigationEntry,
-} from '../../lib/content/navigation/index.js';
+} from '../../build/navigation/index.js';
 import {
   buildCorpusNavigation,
   resolveCurrentCorpusKey,
@@ -12,8 +12,8 @@ import {
   THEME_ATTRIBUTE,
   THEME_STORAGE_KEY,
   RESOLVED_THEME_ATTRIBUTE,
-} from '../lib/theme/theme-manager.js';
-import { resolveNoteSurfacePolicy } from '../types/note-surface-policy.js';
+} from '../theme/theme-manager.js';
+import { resolveNoteSurfacePolicy } from '../../shared/note/note-surface-policy.js';
 
 export interface BaseLayoutData {
   title?: string;

@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   createStaticDirectoryMiddleware,
   resolveStaticFilePath,
-} from '../../src/lib/dev-static-directory.js';
+} from '../../build/dev/dev-static-directory.js';
 
 interface MockResponseState {
   statusCode: number;

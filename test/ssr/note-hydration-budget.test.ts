@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 import { NoteLayout } from '../../src/layouts/NoteLayout.11ty.js';
-import type { NotePageProjection } from '../../src/data/projections/note-page-projection.js';
+import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
 
 interface VeliteNoteFixture {
   slug: string;

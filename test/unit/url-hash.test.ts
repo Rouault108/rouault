@@ -1,6 +1,6 @@
 import { expect } from '@open-wc/testing';
 
-import { updateHashInCurrentUrl } from '../../src/lib/url-hash.js';
+import { updateHashInCurrentUrl } from '../../src/router/url-hash.js';
 
 describe('url-hash', () => {
   it('hash 更新時に既存の history.state をそのまま保持すること', () => {

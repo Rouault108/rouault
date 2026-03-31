@@ -4,12 +4,12 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { buildPagefindDocumentData } from '../../src/lib/search/build/build-pagefind-document-data.js';
+import { buildPagefindDocumentData } from '../../build/search/build-pagefind-document-data.js';
 import {
   buildStaticExploreResponse,
   buildStaticSearchState,
-} from '../../src/lib/search/build/build-static-explore-response.js';
-import { emitSearchArtifacts } from '../../src/lib/search/build/emit-search-artifacts.js';
+} from '../../build/search/build-static-explore-response.js';
+import { emitSearchArtifacts } from '../../build/search/emit-search-artifacts.js';
 
 describe('search build helpers', () => {
   it('Pagefind 補助索引用データを構築すること', () => {
