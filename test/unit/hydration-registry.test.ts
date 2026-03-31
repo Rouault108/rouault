@@ -11,4 +11,23 @@ describe('hydration registry', () => {
       expect(HYDRATION_REGISTRY_BY_TAG.has(tagName)).toBe(false);
     }
   });
+
+  it('static-first 化した note 本文 legacy ui-* は registry へ残さないこと', () => {
+    expect(HYDRATION_REGISTRY_BY_TAG.has('image-lightbox-enhancer')).toBe(true);
+    expect(HYDRATION_REGISTRY_BY_TAG.has('footnote-popover-enhancer')).toBe(true);
+
+    const removedTags: readonly string[] = [
+      'ui-callout',
+      'ui-table',
+      'ui-blockquote',
+      'ui-info-box',
+      'ui-image',
+      'ui-footnote',
+      'ui-divider',
+    ];
+
+    for (const tagName of removedTags) {
+      expect(HYDRATION_REGISTRY_BY_TAG.has(tagName)).toBe(false);
+    }
+  });
 });

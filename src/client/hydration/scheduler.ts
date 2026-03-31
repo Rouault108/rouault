@@ -4,11 +4,7 @@ import {
   finalizeHydrationDiagnostics,
   type MutableHydrationDiagnostics,
 } from './diagnostics.js';
-import {
-  HYDRATION_FALLBACK_SELECTOR,
-  HYDRATION_REGISTRY_BY_TAG,
-  type HydrationRegistryEntry,
-} from './registry.js';
+import { HYDRATION_REGISTRY_BY_TAG, type HydrationRegistryEntry } from './registry.js';
 import { planHydration } from './planner.js';
 import type {
   HydrationDiagnostics,
@@ -25,7 +21,6 @@ interface HydrationSession {
 
 interface HydrationSchedulerOptions {
   readonly dispatchTarget?: EventTarget | null;
-  readonly allowFallback?: boolean;
 }
 
 interface PreparedSession {
@@ -35,7 +30,10 @@ interface PreparedSession {
   readonly interactionItems: readonly HydrationPlanItem[];
 }
 
-const matchPlanItems = (plans: readonly HydrationScopePlan[], trigger: HydrationTrigger): HydrationPlanItem[] =>
+const matchPlanItems = (
+  plans: readonly HydrationScopePlan[],
+  trigger: HydrationTrigger,
+): HydrationPlanItem[] =>
   plans.flatMap((scope) => scope.items.filter((item) => item.trigger === trigger));
 
 const isKeyboardActivation = (event: KeyboardEvent): boolean =>
@@ -59,7 +57,6 @@ export class HydrationScheduler {
 
   constructor(
     private registry: ReadonlyMap<string, HydrationRegistryEntry> = HYDRATION_REGISTRY_BY_TAG,
-    private fallbackSelector = HYDRATION_FALLBACK_SELECTOR,
   ) {}
 
   async hydrateShell(root: ParentNode): Promise<HydrationDiagnostics> {
@@ -69,7 +66,7 @@ export class HydrationScheduler {
       controller: new AbortController(),
     } satisfies HydrationSession;
 
-    const prepared = await this.#prepareSession(session, { allowFallback: false });
+    const prepared = await this.#prepareSession(session);
     await Promise.all([
       this.#waitForVisible(prepared.visibleItems, session, prepared.diagnostics, prepared.processed),
       this.#waitForInteraction(
@@ -92,9 +89,7 @@ export class HydrationScheduler {
     } satisfies HydrationSession;
     this.activeContentSession = session;
 
-    const prepared = await this.#prepareSession(session, {
-      allowFallback: options.allowFallback ?? true,
-    });
+    const prepared = await this.#prepareSession(session);
     const activeContentSession = this.activeContentSession;
     if (activeContentSession.id !== session.id || session.controller.signal.aborted) {
       return;
@@ -142,14 +137,11 @@ export class HydrationScheduler {
     }
   }
 
-  async #prepareSession(
-    session: HydrationSession,
-    options: { allowFallback: boolean },
-  ): Promise<PreparedSession> {
+  async #prepareSession(session: HydrationSession): Promise<PreparedSession> {
     const diagnostics = createHydrationDiagnostics();
     const processed = new WeakSet<HTMLElement>();
 
-    const firstPass = this.#plan(session.root, diagnostics, options.allowFallback);
+    const firstPass = this.#plan(session.root);
     diagnostics.plannedCount += firstPass.reduce((sum, scope) => sum + scope.items.length, 0);
 
     await this.#executePhase(matchPlanItems(firstPass, 'initial'), session, diagnostics, processed);
@@ -169,7 +161,8 @@ export class HydrationScheduler {
       diagnostics,
       processed,
     );
-    const secondPass = this.#plan(session.root, diagnostics, options.allowFallback);
+
+    const secondPass = this.#plan(session.root);
     const firstPassElements = new Set(firstPass.flatMap((scope) => scope.items.map((item) => item.element)));
     const secondPassItems = secondPass
       .flatMap((scope) => scope.items)
@@ -190,34 +183,8 @@ export class HydrationScheduler {
     };
   }
 
-  #plan(
-    root: ParentNode,
-    diagnostics: MutableHydrationDiagnostics,
-    allowFallback: boolean,
-  ): HydrationScopePlan[] {
-    const plans = planHydration(root, this.fallbackSelector, { allowFallback });
-
-    for (const plan of plans) {
-      for (const item of plan.items) {
-        if (item.fallback) {
-          addHydrationIssue(diagnostics, {
-            code: 'fallback-scan-used',
-            capability: item.capability,
-            trigger: item.trigger,
-          });
-        }
-      }
-    }
-
-    if (allowFallback && plans.every((plan) => plan.items.length === 0)) {
-      addHydrationIssue(diagnostics, {
-        code: 'missing-directive',
-        capability: 'interactive',
-        trigger: 'initial',
-      });
-    }
-
-    return plans;
+  #plan(root: ParentNode): HydrationScopePlan[] {
+    return planHydration(root);
   }
 
   async #executePhase(

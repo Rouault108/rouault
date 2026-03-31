@@ -176,5 +176,3 @@ export const HYDRATION_REGISTRY = [
 export const HYDRATION_REGISTRY_BY_TAG: ReadonlyMap<string, HydrationRegistryEntry> = new Map(
   HYDRATION_REGISTRY.map((entry) => [entry.tag, entry] as const),
 );
-
-export const HYDRATION_FALLBACK_SELECTOR = HYDRATION_REGISTRY.map((entry) => entry.tag).join(',');

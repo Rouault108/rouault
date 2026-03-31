@@ -3,7 +3,9 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 import { NoteLayout } from '../../src/layouts/NoteLayout.11ty.js';
+import { NOTE_HYDRATION_BUDGET_PROFILES } from '../../build/projections/note-hydration-profile.js';
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
+import type { NoteHydrationBudgetProfileName } from '../../src/types/note-hydration-budget-profile.js';
 
 interface VeliteNoteFixture {
   slug: string;
@@ -129,52 +131,21 @@ const renderNotePage = (slug: string): CountedNotePage => {
   };
 };
 
+const CANARY_CASES: readonly {
+  slug: string;
+  profile: NoteHydrationBudgetProfileName;
+}[] = [
+  { slug: 'testing/reader-basic', profile: 'reader-shell-canary' },
+  { slug: 'testing/interactive', profile: 'testing-interactive-canary' },
+  { slug: 'testing/sandbox', profile: 'testing-sandbox-canary' },
+  { slug: 'testing/code', profile: 'testing-code-canary' },
+] as const;
+
 describe('note hydration budget', () => {
-  it('reader shell canary を budget 内に収めること', () => {
-    const result = renderNotePage('testing/reader-basic');
-
-    expect(result.counts).to.deep.equal({
-      initial: 2,
-      postCommit: 0,
-      visible: 0,
-      interaction: 0,
-      total: 2,
+  for (const testCase of CANARY_CASES) {
+    it(`${testCase.profile} を budget どおりに描画すること`, () => {
+      const result = renderNotePage(testCase.slug);
+      expect(result.counts).to.deep.equal(NOTE_HYDRATION_BUDGET_PROFILES[testCase.profile].budget);
     });
-  });
-
-  it('interactive testing canary を budget 内に収めること', () => {
-    const result = renderNotePage('testing/interactive');
-
-    expect(result.counts).to.deep.equal({
-      initial: 6,
-      postCommit: 0,
-      visible: 1,
-      interaction: 0,
-      total: 7,
-    });
-  });
-
-  it('interaction canary を budget 内に収めること', () => {
-    const result = renderNotePage('testing/sandbox');
-
-    expect(result.counts).to.deep.equal({
-      initial: 0,
-      postCommit: 0,
-      visible: 2,
-      interaction: 1,
-      total: 3,
-    });
-  });
-
-  it('sandbox canary を budget 内に収めること', () => {
-    const result = renderNotePage('testing/sandbox');
-
-    expect(result.counts).to.deep.equal({
-      initial: 0,
-      postCommit: 1,
-      visible: 2,
-      interaction: 1,
-      total: 4,
-    });
-  });
+  }
 });

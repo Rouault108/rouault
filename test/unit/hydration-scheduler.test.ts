@@ -59,7 +59,7 @@ describe('HydrationScheduler', () => {
     });
 
     const scheduler = new HydrationScheduler(registry);
-    await scheduler.hydrateContent(root, { allowFallback: false, dispatchTarget: root });
+    await scheduler.hydrateContent(root, { dispatchTarget: root });
 
     await waitUntil(() => diagnostics !== null, 'enhancer diagnostics が発火すること');
 
@@ -148,7 +148,7 @@ describe('HydrationScheduler', () => {
     });
 
     const scheduler = new HydrationScheduler(registry);
-    await scheduler.hydrateContent(root, { allowFallback: false, dispatchTarget: root });
+    await scheduler.hydrateContent(root, { dispatchTarget: root });
 
     await waitUntil(
       () =>
@@ -232,8 +232,8 @@ describe('HydrationScheduler', () => {
     });
 
     const scheduler = new HydrationScheduler(registry);
-    await scheduler.hydrateContent(firstRoot, { allowFallback: false, dispatchTarget: firstRoot });
-    await scheduler.hydrateContent(secondRoot, { allowFallback: false, dispatchTarget: secondRoot });
+    await scheduler.hydrateContent(firstRoot, { dispatchTarget: firstRoot });
+    await scheduler.hydrateContent(secondRoot, { dispatchTarget: secondRoot });
 
     await waitUntil(
       () => secondDiagnostics !== null,
@@ -296,7 +296,7 @@ describe('HydrationScheduler', () => {
     });
 
     const scheduler = new HydrationScheduler(registry);
-    await scheduler.hydrateContent(root, { allowFallback: false, dispatchTarget: root });
+    await scheduler.hydrateContent(root, { dispatchTarget: root });
 
     await waitUntil(
       () => diagnostics !== null,

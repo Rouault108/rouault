@@ -5,10 +5,6 @@ import {
   type HydrationTrigger,
 } from './types.js';
 
-export interface HydrationPlannerOptions {
-  readonly allowFallback?: boolean;
-}
-
 const SCOPE_ATTRIBUTE = 'data-hydration-scope';
 const CAPABILITY_ATTRIBUTE = 'data-hydration-capability';
 const TRIGGER_ATTRIBUTE = 'data-hydration-trigger';
@@ -54,8 +50,14 @@ const readPlanItem = (
 ): HydrationPlanItem | null => {
   const capabilityValue = element.getAttribute(CAPABILITY_ATTRIBUTE)?.trim();
   const triggerValue = element.getAttribute(TRIGGER_ATTRIBUTE)?.trim();
-  const capability = capabilityValue && capabilityValue.length > 0 ? (capabilityValue as HydrationCapability) : null;
-  const trigger = triggerValue && triggerValue.length > 0 ? (triggerValue as HydrationTrigger) : null;
+  const capability =
+    capabilityValue && capabilityValue.length > 0
+      ? (capabilityValue as HydrationCapability)
+      : null;
+  const trigger =
+    triggerValue && triggerValue.length > 0
+      ? (triggerValue as HydrationTrigger)
+      : null;
 
   if (!capability || !trigger) {
     return null;
@@ -74,7 +76,6 @@ const readPlanItem = (
     scope: scopeId,
     trigger,
     capability,
-    fallback: false,
   };
 };
 
@@ -106,53 +107,7 @@ const buildScopePlan = (scope: Element, scopeId: string): HydrationScopePlan => 
   return { scope: scopeId, items };
 };
 
-const buildFallbackPlan = (root: ParentNode, scopeId: string, selector: string): HydrationScopePlan => {
-  const items: HydrationPlanItem[] = [];
-
-  if (selector.length === 0 || !('querySelectorAll' in root)) {
-    return { scope: scopeId, items };
-  }
-
-  if (isElement(root) && root.matches(selector)) {
-    items.push({
-      tag: (() => {
-        const value = root.getAttribute(KEY_ATTRIBUTE)?.trim();
-        return value && value.length > 0 ? value : root.localName;
-      })(),
-      element: root as HTMLElement,
-      scope: scopeId,
-      trigger: 'initial',
-      capability: 'interactive',
-      fallback: true,
-    });
-  }
-
-  for (const element of root.querySelectorAll(selector)) {
-    items.push({
-      tag: (() => {
-        const value = element.getAttribute(KEY_ATTRIBUTE)?.trim();
-        return value && value.length > 0 ? value : element.localName;
-      })(),
-      element: element as HTMLElement,
-      scope: scopeId,
-      trigger: 'initial',
-      capability: 'interactive',
-      fallback: true,
-    });
-  }
-
-  return { scope: scopeId, items };
-};
-
-export const planHydration = (
-  root: ParentNode,
-  fallbackSelector: string,
-  options: HydrationPlannerOptions = {},
-): HydrationScopePlan[] => {
+export const planHydration = (root: ParentNode): HydrationScopePlan[] => {
   const scopes = findScopes(root);
-  if (scopes.length === 0 && options.allowFallback === true) {
-    return [buildFallbackPlan(root, 'fallback-root', fallbackSelector)];
-  }
-
   return scopes.map((scope, index) => buildScopePlan(scope, createScopeId(scope, index)));
 };

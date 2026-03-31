@@ -23,7 +23,7 @@ describe('planHydration', () => {
       </main>
     `);
 
-    const plans = planHydration(root, '');
+    const plans = planHydration(root);
 
     expect(plans.map((plan) => plan.scope)).to.deep.equal([
       'note-shell',
@@ -35,19 +35,15 @@ describe('planHydration', () => {
     expect(plans[2]?.items.map((item) => item.tag)).to.deep.equal(['code-block-enhancer']);
   });
 
-  it('scope がない root では fallback scan を root 限定で使うこと', async () => {
+  it('scope がない root では fallback せず空配列を返すこと', async () => {
     const root = await fixture<HTMLElement>(html`
       <main>
         <about-page></about-page>
       </main>
     `);
 
-    const plans = planHydration(root, 'about-page', { allowFallback: true });
+    const plans = planHydration(root);
 
-    expect(plans).to.have.length(1);
-    expect(plans[0]?.scope).to.equal('fallback-root');
-    expect(plans[0]?.items).to.have.length(1);
-    expect(plans[0]?.items[0]?.tag).to.equal('about-page');
-    expect(plans[0]?.items[0]?.fallback).to.equal(true);
+    expect(plans).to.deep.equal([]);
   });
 });

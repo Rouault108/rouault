@@ -25,7 +25,6 @@ const hydrateCurrentContent = async (): Promise<void> => {
   }
 
   await hydrationScheduler.hydrateContent(mainContent, {
-    allowFallback: true,
     dispatchTarget: appRouter,
   });
 };

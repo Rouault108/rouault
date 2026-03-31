@@ -16,8 +16,7 @@ export interface HydrationIssue {
     | 'module-load-failed'
     | 'upgrade-failed'
     | 'activation-failed'
-    | 'missing-directive'
-    | 'fallback-scan-used';
+    | 'missing-directive';
   trigger: HydrationTrigger;
   capability: HydrationCapability;
   count: number;
@@ -40,7 +39,6 @@ export interface HydrationPlanItem {
   readonly scope: string;
   readonly trigger: HydrationTrigger;
   readonly capability: HydrationCapability;
-  readonly fallback: boolean;
 }
 
 export interface HydrationScopePlan {

@@ -9,7 +9,7 @@ const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url))
 describe('story discovery', () => {
   const stories = collectStorySourceRecords();
 
-  it('keeps storybook taxonomy coverage non-empty', () => {
+  it('ストーリーブックの分類体系のカバレッジが空にならないようにする', () => {
     const filePaths = new Set(stories.map((story) => story.filePath));
     const interactionCount = stories.filter(
       (story) => story.resolvedContractKind === 'interaction-contract',
@@ -26,7 +26,7 @@ describe('story discovery', () => {
     expect(visualCount).toBeGreaterThan(0);
   });
 
-  it('keeps test:storybook wired to runtime and metadata validation', () => {
+  it('test:storybook が runtime と metadata validation に接続されていることを確認する', () => {
     const packageJson = JSON.parse(
       fs.readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'),
     ) as {
@@ -39,5 +39,15 @@ describe('story discovery', () => {
     expect(testStorybook).toContain('--project storybook-runtime');
     expect(vitestConfig).toContain("name: 'storybook-runtime'");
     expect(vitestConfig).not.toContain('passWithNoTests');
+  });
+
+  it('note contract stories が責任に基づいて分割されていることを確認する', () => {
+    const filePaths = new Set(stories.map((story) => story.filePath));
+
+    expect(filePaths.has('src/stories/note-contracts/static-primitives.stories.ts')).toBe(true);
+    expect(filePaths.has('src/stories/note-contracts/enhancers.stories.ts')).toBe(true);
+
+    expect(filePaths.has('src/components/ui/tabs/tabs.stories.ts')).toBe(true);
+    expect(filePaths.has('src/components/ui/details/details.stories.ts')).toBe(true);
   });
 });
