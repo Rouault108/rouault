@@ -605,43 +605,6 @@ const normalizeHighlightMark = (node: HastNode): void => {
   node.properties = properties;
 };
 
-const applyResolvedImageProperties = (
-  hostProperties: Record<string, unknown>,
-  resolvedAsset: ResolvedImageAsset,
-): void => {
-  hostProperties['src'] = resolvedAsset.inline.src;
-  if (resolvedAsset.inline.srcset) {
-    hostProperties['srcset'] = resolvedAsset.inline.srcset;
-  }
-  if (resolvedAsset.inline.sizes) {
-    hostProperties['sizes'] = resolvedAsset.inline.sizes;
-  }
-  if (resolvedAsset.inline.sources.length > 0) {
-    hostProperties['sources'] = serializeMediaSources(resolvedAsset.inline.sources);
-  }
-
-  hostProperties['lightbox-src'] = resolvedAsset.lightbox.src;
-  if (resolvedAsset.lightbox.srcset) {
-    hostProperties['lightbox-srcset'] = resolvedAsset.lightbox.srcset;
-  }
-  if (resolvedAsset.lightbox.sizes) {
-    hostProperties['lightbox-sizes'] = resolvedAsset.lightbox.sizes;
-  }
-  if (resolvedAsset.lightbox.sources.length > 0) {
-    hostProperties['lightbox-sources'] = serializeMediaSources(resolvedAsset.lightbox.sources);
-  }
-
-  if (typeof resolvedAsset.width === 'number') {
-    hostProperties['width'] = resolvedAsset.width;
-  }
-  if (typeof resolvedAsset.height === 'number') {
-    hostProperties['height'] = resolvedAsset.height;
-  }
-  if (resolvedAsset.placeholder) {
-    hostProperties['placeholder'] = resolvedAsset.placeholder;
-  }
-};
-
 const createPictureNode = (
   asset: ResolvedImageAsset | null,
   fallbackSrc: string | undefined,

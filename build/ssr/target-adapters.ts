@@ -79,6 +79,23 @@ interface SsrTargetAdapter {
 const renderTemplateResult = async (template: TemplateResult): Promise<string> =>
   collectResult(renderThunked(template));
 
+const assignDefined = <T extends object, K extends keyof T>(
+  target: T,
+  key: K,
+  value: T[K] | undefined,
+): void => {
+  if (value !== undefined) {
+    target[key] = value;
+  }
+};
+
+const createSsrTargetAdapterResult = (
+  tag: SsrTargetTag,
+  render: SsrTargetAdapter['render'],
+  documentStyle: SsrDocumentStyleDefinition | undefined,
+): SsrTargetAdapter =>
+  documentStyle === undefined ? { tag, render } : { tag, render, documentStyle };
+
 const buildShadowTemplate = (
   tagName: SsrShadowTargetTag,
   attributes: readonly SsrAttribute[],
@@ -160,62 +177,64 @@ const renderLayoutFooterLightElement = async (
 ): Promise<string> => {
   const footer = new LayoutFooter();
 
-  footer.footerId = getAttributeValue(attributes, 'footer-id');
-  footer.siteEyebrow = getAttributeValue(attributes, 'site-eyebrow');
-  footer.siteName = getAttributeValue(attributes, 'site-name');
-  footer.siteUrl = getAttributeValue(attributes, 'site-url');
-  footer.siteDescription = getAttributeValue(attributes, 'site-description');
-  footer.copyrightText = getAttributeValue(attributes, 'copyright-text');
-  footer.buildLabel = getAttributeValue(attributes, 'build-label');
-  footer.navLabel = getAttributeValue(attributes, 'nav-label');
-  footer.linksJson = getAttributeValue(attributes, 'links-json');
+  assignDefined(footer, 'footerId', getAttributeValue(attributes, 'footer-id'));
+  assignDefined(footer, 'siteEyebrow', getAttributeValue(attributes, 'site-eyebrow'));
+  assignDefined(footer, 'siteName', getAttributeValue(attributes, 'site-name'));
+  assignDefined(footer, 'siteUrl', getAttributeValue(attributes, 'site-url'));
+  assignDefined(footer, 'siteDescription', getAttributeValue(attributes, 'site-description'));
+  assignDefined(footer, 'copyrightText', getAttributeValue(attributes, 'copyright-text'));
+  assignDefined(footer, 'buildLabel', getAttributeValue(attributes, 'build-label'));
+  assignDefined(footer, 'navLabel', getAttributeValue(attributes, 'nav-label'));
+  assignDefined(footer, 'linksJson', getAttributeValue(attributes, 'links-json'));
 
   const rendered = await collectResult(renderThunked(footer.render()));
   return `<layout-footer${serializeAttributes(attributes)}>${rendered}</layout-footer>`;
 };
 
 const createSsrTargetAdapter = (definition: SsrComponentDefinition): SsrTargetAdapter | null => {
+  const tag = definition.tag as SsrTargetTag;
+
   switch (definition.adapterKind) {
     case 'none':
       return null;
 
-    case 'shadow-default':
-      return {
-        tag: definition.tag as SsrTargetTag,
-        documentStyle: definition.documentStyle,
-        render: (attributes, innerHtml) =>
-          renderTemplateResult(
-            buildShadowTemplate(definition.tag as SsrShadowTargetTag, attributes, innerHtml),
-          ),
-      };
+    case 'shadow-default': {
+      const shadowTag = definition.tag as SsrShadowTargetTag;
+      return createSsrTargetAdapterResult(
+        tag,
+        (attributes, innerHtml) =>
+          renderTemplateResult(buildShadowTemplate(shadowTag, attributes, innerHtml)),
+        definition.documentStyle,
+      );
+    }
 
     case 'shadow-article-header':
-      return {
-        tag: definition.tag as SsrTargetTag,
-        documentStyle: definition.documentStyle,
-        render: renderArticleHeaderShadowElement,
-      };
+      return createSsrTargetAdapterResult(
+        tag,
+        renderArticleHeaderShadowElement,
+        definition.documentStyle,
+      );
 
     case 'light-app-router':
-      return {
-        tag: definition.tag as SsrTargetTag,
-        documentStyle: definition.documentStyle,
-        render: renderAppRouterLightElement,
-      };
+      return createSsrTargetAdapterResult(
+        tag,
+        renderAppRouterLightElement,
+        definition.documentStyle,
+      );
 
     case 'light-about-page':
-      return {
-        tag: definition.tag as SsrTargetTag,
-        documentStyle: definition.documentStyle,
-        render: renderAboutPageLightElement,
-      };
+      return createSsrTargetAdapterResult(
+        tag,
+        renderAboutPageLightElement,
+        definition.documentStyle,
+      );
 
     case 'light-layout-footer':
-      return {
-        tag: definition.tag as SsrTargetTag,
-        documentStyle: definition.documentStyle,
-        render: renderLayoutFooterLightElement,
-      };
+      return createSsrTargetAdapterResult(
+        tag,
+        renderLayoutFooterLightElement,
+        definition.documentStyle,
+      );
   }
 };
 
