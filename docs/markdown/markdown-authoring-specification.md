@@ -646,7 +646,7 @@ link-card 解決後の主要属性は少なくとも次を持つものとしま�
 - 本文画像の `src` は `content/_assets/...` または `examples/media/...` のローカル source path のみ許可します。
 - frontmatter `cover` も `content/_assets/...` または `examples/media/...` のローカル source path のみ許可します。
 - キャプションは標準 Markdown の title 文字列を使います。
-- `zoomable` は authoring 層では `true` / `false` 文字列で受け取り、後段で `ui-image` の入力へ正規化します。
+- `zoomable` は authoring 層では `true` / `false` 文字列で受け取り、後段で **note 本文の静的図版契約**へ正規化します。すなわち、`zoomable=true` は `figure[data-image]` に対する `image-lightbox-enhancer` 付与可否を表し、`ui-image` の note 本文入力を意味しません。
 - `loading` の既定値は `lazy` とし、`eager` は本文先頭の LCP 候補 1 枚に限定します。
 - 未対応属性はエラーとします。
 

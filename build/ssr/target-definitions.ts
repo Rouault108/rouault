@@ -11,7 +11,6 @@ export type SsrAdapterKind =
   | 'none'
   | 'shadow-default'
   | 'shadow-article-header'
-  | 'shadow-image'
   | 'light-app-router'
   | 'light-about-page'
   | 'light-layout-footer';
@@ -31,10 +30,30 @@ export interface SsrComponentDefinition {
 
 export const SSR_COMPONENT_DEFINITIONS = [
   { tag: 'ui-icon', ssr: 'none', profiles: ['shell', 'note', 'page'], adapterKind: 'none' },
-  { tag: 'ui-tag', ssr: 'shadow', profiles: ['shell', 'note', 'page'], adapterKind: 'shadow-default' },
-  { tag: 'ui-skip-link', ssr: 'shadow', profiles: ['shell'], adapterKind: 'shadow-default' },
-  { tag: 'layout-header', ssr: 'shadow', profiles: ['shell'], adapterKind: 'shadow-default' },
-  { tag: 'app-router', ssr: 'light', profiles: ['shell'], adapterKind: 'light-app-router' },
+  {
+    tag: 'ui-tag',
+    ssr: 'shadow',
+    profiles: ['shell', 'note', 'page'],
+    adapterKind: 'shadow-default',
+  },
+  {
+    tag: 'ui-skip-link',
+    ssr: 'shadow',
+    profiles: ['shell'],
+    adapterKind: 'shadow-default',
+  },
+  {
+    tag: 'layout-header',
+    ssr: 'shadow',
+    profiles: ['shell'],
+    adapterKind: 'shadow-default',
+  },
+  {
+    tag: 'app-router',
+    ssr: 'light',
+    profiles: ['shell'],
+    adapterKind: 'light-app-router',
+  },
   {
     tag: 'layout-footer',
     ssr: 'light',
@@ -45,26 +64,96 @@ export const SSR_COMPONENT_DEFINITIONS = [
       cssText: FOOTER_DOCUMENT_CSS,
     },
   },
-  { tag: 'ui-search-dialog', ssr: 'shadow', profiles: ['shell'], adapterKind: 'shadow-default' },
-  { tag: 'ui-card', ssr: 'shadow', profiles: ['shell', 'page'], adapterKind: 'shadow-default' },
-  { tag: 'about-page', ssr: 'light', profiles: ['page'], adapterKind: 'light-about-page' },
-  { tag: 'search-page', ssr: 'shadow', profiles: ['page'], adapterKind: 'shadow-default' },
-  { tag: 'tag-page', ssr: 'shadow', profiles: ['page'], adapterKind: 'shadow-default' },
-  { tag: 'corpus-page', ssr: 'shadow', profiles: ['page'], adapterKind: 'shadow-default' },
-  { tag: 'corpora-overview-page', ssr: 'shadow', profiles: ['page'], adapterKind: 'shadow-default' },
-  { tag: 'not-found-page', ssr: 'shadow', profiles: ['page'], adapterKind: 'shadow-default' },
+  {
+    tag: 'ui-search-dialog',
+    ssr: 'shadow',
+    profiles: ['shell'],
+    adapterKind: 'shadow-default',
+  },
+  {
+    tag: 'ui-card',
+    ssr: 'shadow',
+    profiles: ['shell', 'page'],
+    adapterKind: 'shadow-default',
+  },
+  {
+    tag: 'about-page',
+    ssr: 'light',
+    profiles: ['page'],
+    adapterKind: 'light-about-page',
+  },
+  {
+    tag: 'search-page',
+    ssr: 'shadow',
+    profiles: ['page'],
+    adapterKind: 'shadow-default',
+  },
+  {
+    tag: 'tag-page',
+    ssr: 'shadow',
+    profiles: ['page'],
+    adapterKind: 'shadow-default',
+  },
+  {
+    tag: 'corpus-page',
+    ssr: 'shadow',
+    profiles: ['page'],
+    adapterKind: 'shadow-default',
+  },
+  {
+    tag: 'corpora-overview-page',
+    ssr: 'shadow',
+    profiles: ['page'],
+    adapterKind: 'shadow-default',
+  },
+  {
+    tag: 'not-found-page',
+    ssr: 'shadow',
+    profiles: ['page'],
+    adapterKind: 'shadow-default',
+  },
   {
     tag: 'ui-article-header',
     ssr: 'shadow',
     profiles: ['note'],
     adapterKind: 'shadow-article-header',
   },
-  { tag: 'layout-sidebar', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
-  { tag: 'layout-toc', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
-  { tag: 'ui-checkbox', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
-  { tag: 'ui-code-preview', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
-  { tag: 'ui-preview-sandbox', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
-  { tag: 'ui-details', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
+  {
+    tag: 'layout-sidebar',
+    ssr: 'shadow',
+    profiles: ['note'],
+    adapterKind: 'shadow-default',
+  },
+  {
+    tag: 'layout-toc',
+    ssr: 'shadow',
+    profiles: ['note'],
+    adapterKind: 'shadow-default',
+  },
+  {
+    tag: 'ui-checkbox',
+    ssr: 'shadow',
+    profiles: ['note'],
+    adapterKind: 'shadow-default',
+  },
+  {
+    tag: 'ui-code-preview',
+    ssr: 'shadow',
+    profiles: ['note'],
+    adapterKind: 'shadow-default',
+  },
+  {
+    tag: 'ui-preview-sandbox',
+    ssr: 'shadow',
+    profiles: ['note'],
+    adapterKind: 'shadow-default',
+  },
+  {
+    tag: 'ui-details',
+    ssr: 'shadow',
+    profiles: ['note'],
+    adapterKind: 'shadow-default',
+  },
   {
     tag: 'ui-highlight',
     ssr: 'shadow',
@@ -75,9 +164,24 @@ export const SSR_COMPONENT_DEFINITIONS = [
       cssText: HIGHLIGHT_DOCUMENT_CSS,
     },
   },
-  { tag: 'ui-score', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
-  { tag: 'ui-tabs', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
-  { tag: 'ui-translation', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
+  {
+    tag: 'ui-score',
+    ssr: 'shadow',
+    profiles: ['note'],
+    adapterKind: 'shadow-default',
+  },
+  {
+    tag: 'ui-tabs',
+    ssr: 'shadow',
+    profiles: ['note'],
+    adapterKind: 'shadow-default',
+  },
+  {
+    tag: 'ui-translation',
+    ssr: 'shadow',
+    profiles: ['note'],
+    adapterKind: 'shadow-default',
+  },
 ] as const satisfies readonly SsrComponentDefinition[];
 
 export type SsrComponentTag = (typeof SSR_COMPONENT_DEFINITIONS)[number]['tag'];

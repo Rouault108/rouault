@@ -5,11 +5,6 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import type { TemplateResult } from 'lit';
 import { html, unsafeStatic } from 'lit/static-html.js';
 
-import {
-  parseMediaSourcesAttribute,
-  type MediaSourceDescriptor,
-} from '../media/image-resolver.js';
-
 import { AppRouter } from '../../src/components/app/app-router.js';
 import { AboutPage } from '../../src/components/about/about-page.js';
 import { LayoutFooter } from '../../src/components/layout/layout-footer.js';
@@ -36,7 +31,6 @@ import '../../src/components/ui/blockquote/blockquote.js';
 import '../../src/components/ui/details/details.js';
 import '../../src/components/ui/divider/divider.js';
 import '../../src/components/ui/highlight/highlight.js';
-import '../../src/components/ui/image/image.js';
 import '../../src/components/ui/info-box/info-box.js';
 import '../../src/components/ui/score/score.js';
 import '../../src/components/ui/tabs/tabs.js';
@@ -47,13 +41,10 @@ import {
   ARTICLE_HEADER_TAGS_DATA_ATTRIBUTE,
   parseArticleHeaderTagsAdapterValue,
 } from '../../src/components/ui/article-header/article-header-tags-adapter.js';
-import { type ImageLoading } from '../../src/components/ui/image/image.js';
 import { createRouterContentHtml } from '../../src/router/router-content-html.js';
 
 import {
   getAttributeValue,
-  parseBooleanLikeAttribute,
-  parsePositiveIntegerAttribute,
   serializeAttributes,
   type SsrAttribute,
 } from './attributes.js';
@@ -106,60 +97,6 @@ const buildShadowTemplate = (
 const extractMainContent = (innerHtml: string): string => {
   const matched = /<main\b[^>]*>([\s\S]*)<\/main>/i.exec(innerHtml);
   return matched?.[1] ?? innerHtml;
-};
-
-const parseImageLoadingAttribute = (value: string | undefined): ImageLoading =>
-  value === 'eager' ? 'eager' : 'lazy';
-
-const parseMediaSourcesAttributeValue = (value: string | undefined): MediaSourceDescriptor[] =>
-  parseMediaSourcesAttribute(value ?? null);
-
-const renderImageShadowElement = async (
-  attributes: readonly SsrAttribute[],
-  innerHtml: string,
-): Promise<string> => {
-  const src = getAttributeValue(attributes, 'src') ?? '';
-  const srcset = getAttributeValue(attributes, 'srcset');
-  const sizes = getAttributeValue(attributes, 'sizes');
-  const placeholder = getAttributeValue(attributes, 'placeholder');
-  const sources = parseMediaSourcesAttributeValue(getAttributeValue(attributes, 'sources'));
-  const alt = getAttributeValue(attributes, 'alt') ?? '';
-  const caption = getAttributeValue(attributes, 'caption');
-  const loading = parseImageLoadingAttribute(getAttributeValue(attributes, 'loading'));
-  const hasZoomableAttribute = attributes.some((attribute) => attribute.name === 'zoomable');
-  const zoomable = parseBooleanLikeAttribute(getAttributeValue(attributes, 'zoomable'), true);
-  const width = parsePositiveIntegerAttribute(getAttributeValue(attributes, 'width'));
-  const height = parsePositiveIntegerAttribute(getAttributeValue(attributes, 'height'));
-  const lightboxSrc = getAttributeValue(attributes, 'lightbox-src');
-  const lightboxSrcset = getAttributeValue(attributes, 'lightbox-srcset');
-  const lightboxSizes = getAttributeValue(attributes, 'lightbox-sizes');
-  const lightboxSources = parseMediaSourcesAttributeValue(
-    getAttributeValue(attributes, 'lightbox-sources'),
-  );
-
-  return renderTemplateResult(html`
-    <ui-image
-      src=${src}
-      srcset=${ifDefined(srcset)}
-      sizes=${ifDefined(sizes)}
-      placeholder=${ifDefined(placeholder)}
-      .sources=${sources}
-      alt=${alt}
-      caption=${ifDefined(caption)}
-      loading=${loading}
-      zoomable=${ifDefined(hasZoomableAttribute ? String(zoomable) : undefined)}
-      .zoomable=${zoomable}
-      width=${ifDefined(width !== undefined ? String(width) : undefined)}
-      .width=${width}
-      height=${ifDefined(height !== undefined ? String(height) : undefined)}
-      .height=${height}
-      lightbox-src=${ifDefined(lightboxSrc)}
-      lightbox-srcset=${ifDefined(lightboxSrcset)}
-      lightbox-sizes=${ifDefined(lightboxSizes)}
-      .lightboxSources=${lightboxSources}
-      >${unsafeHTML(innerHtml)}</ui-image
-    >
-  `);
 };
 
 const renderArticleHeaderShadowElement = async (
@@ -260,13 +197,6 @@ const createSsrTargetAdapter = (definition: SsrComponentDefinition): SsrTargetAd
         tag: definition.tag as SsrTargetTag,
         documentStyle: definition.documentStyle,
         render: renderArticleHeaderShadowElement,
-      };
-
-    case 'shadow-image':
-      return {
-        tag: definition.tag as SsrTargetTag,
-        documentStyle: definition.documentStyle,
-        render: renderImageShadowElement,
       };
 
     case 'light-app-router':
