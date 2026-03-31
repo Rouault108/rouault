@@ -100,18 +100,20 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 
 ### 5.1 一覧
 
-| 入力 HAST                     | 出力                                              | 契約                                                                                                                                                                                                               |
-| ----------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pre > code`                  | `pre[data-code-block] > code[data-lang]`          | `language-*` から `data-lang` / `data-code-language` を推論し、対象メタ属性を `pre[data-code-block]` の `data-code-*` 属性へ正規化する。note 本文では個々の code block を hydrate せず、必要な場合に限り `code-block-enhancer` 用の build-time 注釈を代表 root に付与する |
-| `blockquote`                  | `ui-blockquote`                                   | 子要素は維持する                                                                                                                                                                                                   |
-| `table`                       | `ui-table > table`                                | `caption` があればホストに `aria-label` を補完する                                                                                                                                                                 |
-| `hr`                       | `hr[data-divider-variant="section"]`              | note 本文では静的 `hr` を正本とする         |
-| `li` + `input[type=checkbox]` | `ui-checkbox`                                     | task list ラベルを抽出し、後続ネストリストを維持する                                                                                                                                                               |
-| `mark`                     | `mark[data-current-match]`                        | `current-match` は `data-current-match` へ正規化 |
-| `img`                         | `ui-image`                                        | `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化する。`zoomable!="false"` の note 本文では `data-hydration-capability="progressive"` / `data-hydration-trigger="visible"` を付与する |
-| `figure(img + figcaption)`    | `ui-image`                                        | `figcaption` を `caption` に統合する。`zoomable!="false"` の note 本文では `data-hydration-capability="progressive"` / `data-hydration-trigger="visible"` を付与する                                               |
-| `a[href]`（本文リンク）       | `a[data-link-kind][data-link-surface="prose"]`    | `href` から種別注釈を付与し、外部系では `data-external="true"` を付与する。`.heading-anchor` は対象外とする                                                                                                        |
-| footnote 参照 / 定義          | `ui-footnote` + `section[role=doc-endnotes]`      | 参照 ID、backref、接頭辞、backlink を正規化する                                                                                                                                                                    |
+| 入力 HAST / 互換入力                                  | 出力                                                                 | 契約                                                                                                                                                                                                                  |
+| ---------------------------------------------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pre > code`                                         | `pre[data-code-block] > code[data-lang]`                             | `language-*` から `data-lang` / `data-code-language` を推論し、対象メタ属性を `pre[data-code-block]` の `data-code-*` 属性へ正規化する。note 本文では個々の code block を hydrate せず、必要な場合に限り `code-block-enhancer` 用の build-time 注釈を代表 root に付与する |
+| `blockquote` / `ui-blockquote`                       | `blockquote` または `figure > blockquote + figcaption > cite`        | 引用本文を保持し、source / cite / quote-lang / variant を静的 DOM へ正規化する。source がある場合のみ `figure` 化してよい                                                                                             |
+| `table` / `ui-table`                                 | `div[data-table-root][role="region"][tabindex="0"] > table`          | `caption` があれば `aria-label` を補完し、行列構造や `thead` / `tbody` / `tfoot` の意味を失ってはなりません                                                                                                            |
+| `hr`                                                 | `hr[data-divider-variant="section"]`                                 | note 本文では静的 `hr` を正本とする                                                                                                                                                                                    |
+| `li` + `input[type=checkbox]`                        | `ui-checkbox`                                                        | task list ラベルを抽出し、後続ネストリストを維持する                                                                                                                                                                  |
+| `mark`                                               | `mark[data-current-match]`                                           | `current-match` / `data-current-match` / 旧互換入力を `data-current-match` へ正規化し、note 本文では静的 `<mark>` を正本とする                                                                                       |
+| `aside[data-callout]` / `ui-callout`                 | `aside[data-callout][data-callout-kind]`                             | heading / label / icon / heading-level を静的 DOM へ正規化し、本文と補助ラベルを保持する                                                                                                                              |
+| `section[data-info-box]` / `ui-info-box`             | `section[data-info-box][data-variant][data-density]`                 | heading / icon / heading-level / landmark / variant / density を静的 DOM へ正規化し、空内容は非描画として扱ってよい                                                                                                   |
+| `img`                                                | `ui-image`                                                           | `src` / `alt` / `title` / `loading` / `zoomable` / `width` / `height` を正規化する。`zoomable!="false"` の note 本文では `data-hydration-capability="progressive"` / `data-hydration-trigger="visible"` を付与する |
+| `figure(img + figcaption)`                           | `ui-image`                                                           | `figcaption` を `caption` に統合する。`zoomable!="false"` の note 本文では `data-hydration-capability="progressive"` / `data-hydration-trigger="visible"` を付与する                                                  |
+| `a[href]`（本文リンク）                              | `a[data-link-kind][data-link-surface="prose"]`                       | `href` から種別注釈を付与し、外部系では `data-external="true"` を付与する。`.heading-anchor` は対象外とする                                                                                                           |
+| footnote 参照 / 定義                                 | `ui-footnote` + `section[role=doc-endnotes]`                         | 参照 ID、backref、接頭辞、backlink を正規化する                                                                                                                                                                       |
 
 ### 5.2 `pre > code` → `pre[data-code-block] > code[data-lang]`
 
@@ -147,26 +149,36 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 - no-JS 成立に必要な descendant styling は、静的配信 CSS に含まれなければなりません。
 - client bundle 配送失敗は no-JS の許容退行ではなく、delivery 契約違反です。
 
-### 5.3 `blockquote` → `ui-blockquote`
+### 5.3 `blockquote` / `ui-blockquote` → 静的 blockquote
 
 規則:
 
+- 最終 HAST は `blockquote` または `figure > blockquote + figcaption > cite` を正本としなければなりません。
+- `source` または `slot="source"` に相当する情報が存在する場合に限り、`figure` + `figcaption` 構造へ正規化してよいものとします。
+- `cite` が存在する場合は `blockquote[cite]` へ正規化してよいものとします。
+- `quote-lang` / `quoteLang` が存在する場合は `blockquote[lang]` へ正規化してよいものとします。
+- `variant` が `default` 以外で存在する場合は `data-blockquote-variant` を静的要素へ付与してよいものとします。
 - 子要素を維持しなければなりません。
 - 引用の文書構造を破壊してはなりません。
+- note 本文の最終 DOM に `ui-blockquote` を残してはなりません。
 
-### 5.4 `table` → `ui-table > table`
+### 5.4 `table` / `ui-table` → `div[data-table-root] > table`
 
 規則:
 
-- `table` は `ui-table` ホスト内へ保持しなければなりません。
-- `caption` が存在する場合、ホストへ `aria-label` を補完してよいものとします。
+- 最終 HAST は `div[data-table-root][role="region"][tabindex="0"] > table` を正本としなければなりません。
+- `caption` が存在する場合、wrapper root へ `aria-label` を補完してよいものとします。
+- `aria-label` は既存の明示値がある場合それを優先し、無い場合は `caption` のテキスト、さらに無い場合はフォールバック値を使用してよいものとします。
+- `density="compact"` は `data-density="compact"` として wrapper root へ正規化してよいものとします。
 - 行列構造や `thead` / `tbody` / `tfoot` の意味を失ってはなりません。
+- note 本文の最終 DOM に `ui-table` を残してはなりません。
 
-### 5.5 `hr` → `ui-divider > hr[data-divider-variant="section"]`
+### 5.5 `hr` → `hr[data-divider-variant="section"]`
 
 規則:
 
 - Markdown 由来の区切りは本文文脈として `section` 扱いへ正規化します。
+- note 本文では静的 `hr` を正本とし、`ui-divider` を経由してはなりません。
 - 見た目と意味論を混同してはなりません。
 
 ### 5.6 task list → `ui-checkbox`
@@ -178,7 +190,7 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 - 後続ネストリストは維持しなければなりません。
 - note 本文の `ui-checkbox` には `data-hydration-capability="interactive"` と `data-hydration-trigger="initial"` を付与しなければなりません。
 
-### 5.7 `mark` → `ui-highlight`
+### 5.7 `mark` → `mark[data-current-match]`
 
 規則:
 
@@ -186,6 +198,7 @@ Markdown 由来の標準 HTML は、そのまま表示都合に流さず、Rouau
 - 旧 `current` / `data-current` / `aria-current` は互換入力として吸収してよいものとします。
 - 最終 HAST は静的 `<mark>` を正本としなければなりません。
 - `current-match` 系入力は `data-current-match="true"` へ正規化してよいものとします。
+- note 本文の最終 DOM に `ui-highlight` を残してはなりません。
 
 ### 5.8 `img` / `figure` → `ui-image`
 
