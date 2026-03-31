@@ -1,9 +1,5 @@
 import { FOOTER_DOCUMENT_CSS, FOOTER_DOCUMENT_STYLE_ID } from '../../src/components/ui/footer/footer.js';
 import {
-  DOCUMENT_CSS as TABLE_DOCUMENT_CSS,
-  DOCUMENT_STYLE_ID as TABLE_DOCUMENT_STYLE_ID,
-} from '../../src/components/ui/table/table.js';
-import {
   DOCUMENT_CSS as HIGHLIGHT_DOCUMENT_CSS,
   DOCUMENT_STYLE_ID as HIGHLIGHT_DOCUMENT_STYLE_ID,
 } from '../../src/components/ui/highlight/highlight.js';
@@ -65,21 +61,9 @@ export const SSR_COMPONENT_DEFINITIONS = [
   },
   { tag: 'layout-sidebar', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
   { tag: 'layout-toc', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
-  { tag: 'ui-callout', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
   { tag: 'ui-checkbox', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
   { tag: 'ui-code-preview', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
   { tag: 'ui-preview-sandbox', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
-  {
-    tag: 'ui-table',
-    ssr: 'shadow',
-    profiles: ['note'],
-    adapterKind: 'shadow-default',
-    documentStyle: {
-      id: TABLE_DOCUMENT_STYLE_ID,
-      cssText: TABLE_DOCUMENT_CSS,
-    },
-  },
-  { tag: 'ui-blockquote', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
   { tag: 'ui-details', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
   { tag: 'ui-footnote', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
   {
@@ -93,7 +77,6 @@ export const SSR_COMPONENT_DEFINITIONS = [
     },
   },
   { tag: 'ui-image', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-image' },
-  { tag: 'ui-info-box', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
   { tag: 'ui-score', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
   { tag: 'ui-tabs', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },
   { tag: 'ui-translation', ssr: 'shadow', profiles: ['note'], adapterKind: 'shadow-default' },

@@ -49,15 +49,11 @@ test.describe('SSR Rendering', () => {
     await expect(page.locator('#main-content h1').first()).toHaveText('ソートアルゴリズム比較');
     await expect(page.locator('text=クイックソートの実装例').first()).toBeVisible();
     await expect(page.locator('code').first()).toContainText('function quickSort');
-    await expect(page.locator('table').first()).toContainText('アルゴリズム');
-    const hasTableShadowRoot = await page
-      .locator('ui-table')
-      .first()
-      .evaluate((element) => element.shadowRoot !== null);
+    await expect(page.locator('[data-table-root]').first()).toBeVisible();
+    await expect(page.locator('[data-table-root] table').first()).toContainText('アルゴリズム');
 
     await expect(page.locator('[data-code-block-root]').first()).toBeVisible();
     await expect(page.locator('[data-code-block-root] .code-surface-filename').first()).toBeVisible();
-    expect(hasTableShadowRoot).toBe(true);
   });
 
   test('code group が JavaScript 無効時に全パネル縦積みで読めること', async ({ page }) => {

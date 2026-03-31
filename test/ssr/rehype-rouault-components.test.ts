@@ -47,7 +47,7 @@ describe('rehypeRouaultComponents', () => {
     expect(first?.children?.[0]?.tagName).to.equal('code');
   });
 
-  it('table を ui-table にラップし、caption から aria-label を補完すること', () => {
+  it('table を static table root に変換し、caption から aria-label を補完すること', () => {
     const tree: HastNode = {
       type: 'root',
       children: [
@@ -74,20 +74,22 @@ describe('rehypeRouaultComponents', () => {
     rehypeRouaultComponents()(tree);
 
     const first = tree.children?.[0];
-    expect(first?.tagName).to.equal('ui-table');
+    expect(first?.tagName).to.equal('div');
+    expect(first?.properties?.['data-table-root']).to.equal('true');
     expect(first?.properties?.['aria-label']).to.equal('売上データ');
-    expect(first?.properties?.['data-hydration-capability']).to.equal('progressive');
-    expect(first?.properties?.['data-hydration-trigger']).to.equal('initial');
+    expect(first?.properties?.['data-hydration-capability']).to.equal(undefined);
+    expect(first?.properties?.['data-hydration-trigger']).to.equal(undefined);
     expect(first?.children?.[0]?.tagName).to.equal('table');
   });
 
-  it('blockquote と hr を ui コンポーネントへ変換すること', () => {
+  it('legacy blockquote と hr のみを必要な形へ正規化すること', () => {
     const tree: HastNode = {
       type: 'root',
       children: [
         {
           type: 'element',
-          tagName: 'blockquote',
+          tagName: 'ui-blockquote',
+          properties: { source: '出典', cite: 'https://example.com' },
           children: [{ type: 'element', tagName: 'p', children: [{ type: 'text', value: 'q' }] }],
         },
         {
@@ -103,15 +105,66 @@ describe('rehypeRouaultComponents', () => {
     const quote = tree.children?.[0];
     const divider = tree.children?.[1];
 
-    expect(quote?.tagName).to.equal('ui-blockquote');
-    expect(quote?.properties?.['data-hydration-capability']).to.equal('progressive');
-    expect(quote?.properties?.['data-hydration-trigger']).to.equal('initial');
+    expect(quote?.tagName).to.equal('figure');
+    expect(quote?.properties?.['data-hydration-capability']).to.equal(undefined);
+    expect(quote?.properties?.['data-hydration-trigger']).to.equal(undefined);
+    expect(quote?.children?.[0]?.tagName).to.equal('blockquote');
+    expect(quote?.children?.[1]?.tagName).to.equal('figcaption');
 
     expect(divider?.tagName).to.equal('hr');
     expect(divider?.properties?.['data-divider-variant']).to.equal('section');
     expect(divider?.properties?.['data-hydration-capability']).to.equal(undefined);
     expect(divider?.properties?.['data-hydration-trigger']).to.equal(undefined);
     expect(divider?.children?.[0]?.tagName).to.equal('hr');
+  });
+
+
+  it('static callout / info-box root を最終 DOM に正規化すること', () => {
+    const tree: HastNode = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'aside',
+          properties: {
+            'data-callout': 'true',
+            'data-callout-kind': 'warning',
+            'data-callout-heading': '注意',
+          },
+          children: [{ type: 'element', tagName: 'p', children: [{ type: 'text', value: '本文' }] }],
+        },
+        {
+          type: 'element',
+          tagName: 'section',
+          properties: {
+            'data-info-box': 'true',
+            'data-info-box-heading': '作品情報',
+            'data-info-box-heading-level': '3',
+            'data-info-box-landmark': 'true',
+            'data-variant': 'filled',
+            'data-density': 'compact',
+          },
+          children: [{ type: 'element', tagName: 'p', children: [{ type: 'text', value: '内容' }] }],
+        },
+      ],
+    };
+
+    rehypeRouaultComponents()(tree);
+
+    const callout = tree.children?.[0];
+    const infoBox = tree.children?.[1];
+
+    expect(callout?.tagName).to.equal('aside');
+    expect(callout?.properties?.['data-callout']).to.equal('true');
+    expect(callout?.properties?.['data-hydration-capability']).to.equal(undefined);
+    expect(callout?.children?.[1]?.tagName).to.equal('div');
+
+    expect(infoBox?.tagName).to.equal('section');
+    expect(infoBox?.properties?.['data-info-box']).to.equal('true');
+    expect(infoBox?.properties?.['role']).to.equal('region');
+    expect(infoBox?.properties?.['data-hydration-capability']).to.equal(undefined);
+    expect(infoBox?.children?.[0]?.tagName).to.equal('div');
+    expect(infoBox?.children?.[1]?.tagName).to.equal('div');
   });
 
   it('code を含まない pre は変換しないこと', () => {

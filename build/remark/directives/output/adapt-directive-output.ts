@@ -35,13 +35,17 @@ const createTranslationParagraph = (
 });
 
 const adaptCalloutOutput = (payload: CalloutPayload): RemarkOutputBinding => ({
-  hName: 'ui-callout',
+  hName: 'aside',
   hProperties: toOptionalProps([
-    ['kind', payload.calloutKind],
-    ['heading', payload.heading],
-    ['label', payload.label],
-    ['icon', payload.icon],
-    ['heading-level', typeof payload.headingLevel === 'number' ? String(payload.headingLevel) : undefined],
+    ['data-callout', 'true'],
+    ['data-callout-kind', payload.calloutKind],
+    ['data-callout-heading', payload.heading],
+    ['data-callout-label', payload.label],
+    ['data-callout-icon', payload.icon],
+    [
+      'data-callout-heading-level',
+      typeof payload.headingLevel === 'number' ? String(payload.headingLevel) : undefined,
+    ],
   ]),
 });
 
@@ -101,14 +105,18 @@ const adaptDetailsOutput = (payload: DetailsPayload): RemarkOutputBinding => ({
 });
 
 const adaptInfoBoxOutput = (payload: InfoBoxPayload): RemarkOutputBinding => ({
-  hName: 'ui-info-box',
+  hName: 'section',
   hProperties: toOptionalProps([
-    ['heading', payload.heading],
-    ['icon', payload.icon],
-    ['heading-level', typeof payload.headingLevel === 'number' ? String(payload.headingLevel) : undefined],
-    ['landmark', payload.landmark ? true : undefined],
-    ['variant', payload.variant],
-    ['density', payload.density],
+    ['data-info-box', 'true'],
+    ['data-info-box-heading', payload.heading],
+    ['data-info-box-icon', payload.icon],
+    [
+      'data-info-box-heading-level',
+      typeof payload.headingLevel === 'number' ? String(payload.headingLevel) : undefined,
+    ],
+    ['data-info-box-landmark', payload.landmark ? 'true' : undefined],
+    ['data-variant', payload.variant],
+    ['data-density', payload.density],
   ]),
 });
 

@@ -8,16 +8,12 @@ import {
 } from '../../build/ssr/targets.js';
 
 const REQUIRED_NOTE_CONTENT_TAGS: readonly string[] = [
-  'ui-callout',
   'ui-checkbox',
   'ui-code-preview',
   'ui-preview-sandbox',
-  'ui-table',
-  'ui-blockquote',
   'ui-details',
   'ui-footnote',
   'ui-image',
-  'ui-info-box',
   'ui-score',
   'ui-tabs',
   'ui-translation',
@@ -42,7 +38,7 @@ describe('component manifest / ssr targets', () => {
   });
 
   it('静的 code surface 化したため ui-code-block / ui-code-group を SSR target へ含めないこと', () => {
-    const removedTags: readonly string[] = ['ui-code-block', 'ui-code-group'];
+    const removedTags: readonly string[] = ['ui-code-block', 'ui-code-group', 'ui-callout', 'ui-table', 'ui-blockquote', 'ui-info-box'];
 
     expect(SSR_COMPONENT_DEFINITIONS.some((definition) => removedTags.includes(definition.tag))).toBe(
       false,

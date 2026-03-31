@@ -1,8 +1,12 @@
+import * as parse5 from 'parse5';
+import type { DefaultTreeAdapterMap } from 'parse5';
+
 import {
   resolveImageAsset,
   serializeMediaSources,
   type ResolvedImageAsset,
 } from '../media/image-resolver.js';
+import { LUCIDE_SUBSET } from '../../src/generated/lucide-subset.js';
 import { type HastNode } from './hast-utils.js';
 
 interface FootnoteDefinition {
@@ -19,6 +23,15 @@ interface VFileLike {
 interface ImageNormalizationContext {
   eagerImageCount: number;
 }
+
+interface SurfaceNormalizationContext {
+  calloutHeadingCount: number;
+  infoBoxHeadingCount: number;
+}
+
+type Parse5Node = DefaultTreeAdapterMap['node'];
+type Parse5Element = DefaultTreeAdapterMap['element'];
+type Parse5TextNode = DefaultTreeAdapterMap['textNode'];
 
 interface HydrationDirective {
   readonly capability: 'progressive' | 'interactive' | 'sandboxed';
@@ -84,6 +97,130 @@ const isWhitespaceText = (node: HastNode): boolean =>
 
 const normalizeWhitespace = (value: string): string => value.replace(/\s+/g, ' ').trim();
 
+const createTextNode = (value: string): HastNode => ({
+  type: 'text',
+  value,
+});
+
+const createElement = (
+  tagName: string,
+  properties: Record<string, unknown> = {},
+  children: HastNode[] = [],
+): HastNode => ({
+  type: 'element',
+  tagName,
+  properties,
+  children,
+});
+
+const toHeadingLevel = (value: unknown): number | null => {
+  const parsed = Number.parseInt(String(value ?? ''), 10);
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 6) {
+    return null;
+  }
+  return parsed;
+};
+
+const hasMeaningfulChildren = (children: readonly HastNode[]): boolean =>
+  children.some((child) => {
+    if (isElement(child)) {
+      return true;
+    }
+    return child.type === 'text' && typeof child.value === 'string' && child.value.trim().length > 0;
+  });
+
+const isParse5Element = (node: Parse5Node): node is Parse5Element =>
+  'tagName' in node && typeof node.tagName === 'string' && Array.isArray(node.attrs);
+
+const isParse5Text = (node: Parse5Node): node is Parse5TextNode =>
+  'nodeName' in node && node.nodeName === '#text' && 'value' in node;
+
+const parse5NodeToHast = (node: Parse5Node): HastNode | null => {
+  if (isParse5Text(node)) {
+    return createTextNode(typeof node.value === 'string' ? node.value : '');
+  }
+
+  if (!isParse5Element(node)) {
+    return null;
+  }
+
+  const properties = Object.fromEntries(node.attrs.map((attribute) => [attribute.name, attribute.value]));
+  const children = ('childNodes' in node && Array.isArray(node.childNodes)
+    ? node.childNodes.map((child) => parse5NodeToHast(child)).filter((child): child is HastNode => child !== null)
+    : []);
+
+  return createElement(node.tagName, properties, children);
+};
+
+const svgIconCache = new Map<string, HastNode | null>();
+
+const createInlineIcon = (
+  iconName: string | undefined,
+  className: string,
+  dataAttributeName: string,
+): HastNode | null => {
+  if (typeof iconName !== 'string' || iconName.trim().length === 0) {
+    return null;
+  }
+
+  const normalizedIconName = iconName.trim();
+  const cacheKey = `${className}:${dataAttributeName}:${normalizedIconName}`;
+  if (svgIconCache.has(cacheKey)) {
+    const cached = svgIconCache.get(cacheKey);
+    return cached ? cloneNode(cached) : null;
+  }
+
+  const iconDefinition = (
+    LUCIDE_SUBSET.icons as Record<string, { body?: string }>
+  )[normalizedIconName];
+  if (!iconDefinition?.body) {
+    svgIconCache.set(cacheKey, null);
+    return null;
+  }
+
+  const fragment = parse5.parseFragment(
+    `<svg class="${className}" ${dataAttributeName}="${normalizedIconName}" viewBox="0 0 ${String(LUCIDE_SUBSET.width)} ${String(LUCIDE_SUBSET.height)}" fill="none" aria-hidden="true" focusable="false">${iconDefinition.body}</svg>`,
+    {
+      sourceCodeLocationInfo: false,
+    },
+  );
+
+  const rootNode = fragment.childNodes
+    .map((child) => parse5NodeToHast(child))
+    .find((child): child is HastNode => child !== null) ?? null;
+
+  svgIconCache.set(cacheKey, rootNode);
+  return rootNode ? cloneNode(rootNode) : null;
+};
+
+const CALLOUT_KIND_CONFIG = {
+  note: { icon: 'info', fallbackLabel: '補足' },
+  tip: { icon: 'lightbulb', fallbackLabel: 'ヒント' },
+  success: { icon: 'check-circle', fallbackLabel: '成功' },
+  warning: { icon: 'alert-triangle', fallbackLabel: '警告' },
+  danger: { icon: 'alert-octagon', fallbackLabel: '危険' },
+} as const;
+
+type CalloutKind = keyof typeof CALLOUT_KIND_CONFIG;
+
+const normalizeCalloutKind = (value: unknown): CalloutKind => {
+  const normalized = String(value ?? '').trim().toLowerCase();
+  if (normalized in CALLOUT_KIND_CONFIG) {
+    return normalized as CalloutKind;
+  }
+  return 'note';
+};
+
+const normalizeInfoBoxVariant = (value: unknown): 'default' | 'filled' => {
+  const normalized = String(value ?? '').trim().toLowerCase();
+  return normalized === 'filled' ? 'filled' : 'default';
+};
+
+const normalizeInfoBoxDensity = (value: unknown): 'comfortable' | 'compact' => {
+  const normalized = String(value ?? '').trim().toLowerCase();
+  return normalized === 'compact' ? 'compact' : 'comfortable';
+};
+
 const setHydrationDirective = (node: HastNode, directive: HydrationDirective): void => {
   const properties = node.properties ?? {};
   if (properties['data-hydration-capability'] === undefined) {
@@ -114,15 +251,9 @@ const resolveHydrationDirective = (node: HastNode): HydrationDirective | null =>
     case 'ui-footnote':
     case 'ui-tabs':
       return { capability: 'interactive', trigger: 'initial' };
-
-    case 'ui-blockquote':
-    case 'ui-callout':
     case 'ui-card':
     case 'ui-code-block':
-    case 'ui-info-box':
-    case 'ui-table':
       return { capability: 'progressive', trigger: 'initial' };
-
     case 'ui-code-preview': {
       const controls = pickOptionalString(node.properties?.['controls']);
       if (controls || hasToolbarSlot(node)) {
@@ -173,26 +304,34 @@ const cloneNode = (node: HastNode): HastNode => {
   return clonedNode;
 };
 
-const toUiTable = (node: HastNode): void => {
+const toStaticTable = (node: HastNode): void => {
   const originalProperties = node.properties ?? {};
   const originalChildren = Array.isArray(node.children) ? node.children : [];
 
-  const tableChild: HastNode = {
-    type: 'element',
-    tagName: 'table',
-    properties: originalProperties,
-    children: originalChildren,
-  };
+  const density = pickOptionalString(originalProperties['density']);
+  const existingAriaLabel = pickOptionalString(originalProperties['aria-label']);
 
-  const caption = originalChildren.find((child) => isElement(child, 'caption'));
-  const captionText = caption ? getTextContent(caption).trim() : '';
-  const hostProperties: Record<string, unknown> = {};
-  if (captionText.length > 0) {
-    hostProperties['aria-label'] = captionText;
+  let tableChild: HastNode;
+  if (node.tagName === 'table') {
+    tableChild = createElement('table', originalProperties, originalChildren);
+  } else {
+    const firstTable = originalChildren.find((child) => isElement(child, 'table'));
+    tableChild = firstTable ? cloneNode(firstTable) : createElement('table', {}, []);
   }
 
-  node.tagName = 'ui-table';
-  node.properties = hostProperties;
+  const tableChildren = Array.isArray(tableChild.children) ? tableChild.children : [];
+  const caption = tableChildren.find((child) => isElement(child, 'caption'));
+  const captionText = caption ? getTextContent(caption).trim() : '';
+  const ariaLabel = existingAriaLabel ?? (captionText.length > 0 ? captionText : 'Data table');
+
+  node.tagName = 'div';
+  node.properties = {
+    'data-table-root': 'true',
+    role: 'region',
+    tabindex: '0',
+    'aria-label': ariaLabel,
+    ...(density === 'compact' ? { 'data-density': 'compact' } : {}),
+  };
   node.children = [tableChild];
 };
 
@@ -206,6 +345,156 @@ const normalizeDivider = (node: HastNode): void => {
     properties['data-divider-variant'] = 'section';
   }
   node.properties = properties;
+};
+
+const toStaticBlockquote = (node: HastNode): void => {
+  const properties = node.properties ?? {};
+  const source = pickOptionalString(properties['source']);
+  const cite = pickOptionalString(properties['cite']);
+  const quoteLang = pickOptionalString(properties['quote-lang']) ?? pickOptionalString(properties['quoteLang']);
+  const variant = pickOptionalString(properties['variant']);
+  const children = Array.isArray(node.children) ? node.children : [];
+
+  const sourceSlotNodes = children
+    .filter((child) => isElement(child) && child.properties?.['slot'] === 'source')
+    .map((child) => cloneNode(child));
+  const quoteChildren = children
+    .filter((child) => !(isElement(child) && child.properties?.['slot'] === 'source'))
+    .map((child) => cloneNode(child));
+
+  const blockquoteProperties: Record<string, unknown> = {};
+  if (variant && variant !== 'default') {
+    blockquoteProperties['data-blockquote-variant'] = variant;
+  }
+  if (cite) {
+    blockquoteProperties['cite'] = cite;
+  }
+  if (quoteLang) {
+    blockquoteProperties['lang'] = quoteLang;
+  }
+
+  const blockquoteNode = createElement('blockquote', blockquoteProperties, quoteChildren);
+  if (source || sourceSlotNodes.length > 0) {
+    const sourceChildren = sourceSlotNodes.length > 0 ? sourceSlotNodes : [createTextNode(source ?? '')];
+    node.tagName = 'figure';
+    node.properties = variant && variant !== 'default' ? { 'data-blockquote-variant': variant } : {};
+    node.children = [
+      blockquoteNode,
+      createElement('figcaption', { className: ['source'] }, [createElement('cite', {}, sourceChildren)]),
+    ];
+    return;
+  }
+
+  node.tagName = 'blockquote';
+  node.properties = blockquoteProperties;
+  node.children = quoteChildren;
+};
+
+const toStaticCallout = (node: HastNode, context: SurfaceNormalizationContext): void => {
+  const properties = node.properties ?? {};
+  const children = Array.isArray(node.children) ? node.children.map((child) => cloneNode(child)) : [];
+
+  const kind = normalizeCalloutKind(properties['data-callout-kind'] ?? properties['kind']);
+  const heading = pickOptionalString(properties['data-callout-heading'] ?? properties['heading']);
+  const headingLevel = toHeadingLevel(
+    properties['data-callout-heading-level'] ?? properties['heading-level'],
+  );
+  const label =
+    pickOptionalString(properties['data-callout-label'] ?? properties['label']) ??
+    CALLOUT_KIND_CONFIG[kind].fallbackLabel;
+  const iconName =
+    pickOptionalString(properties['data-callout-icon'] ?? properties['icon']) ??
+    CALLOUT_KIND_CONFIG[kind].icon;
+  const headingId = heading ? `callout-heading-${String(++context.calloutHeadingCount)}` : undefined;
+  const headingTagName = headingLevel ? `h${String(headingLevel)}` : 'p';
+
+  node.tagName = 'aside';
+  node.properties = {
+    'data-callout': 'true',
+    'data-callout-kind': kind,
+    ...(iconName ? { 'data-callout-icon': iconName } : {}),
+    ...(headingId ? { 'aria-labelledby': headingId } : { 'aria-label': label }),
+  };
+
+  const contentChildren: HastNode[] = [];
+  if (heading) {
+    contentChildren.push(
+      createElement(
+        headingTagName,
+        {
+          id: headingId,
+          'data-callout-heading': 'true',
+        },
+        [createTextNode(heading)],
+      ),
+    );
+  }
+
+  contentChildren.push(createElement('div', { 'data-callout-body': 'true' }, children));
+
+  const iconNode = createInlineIcon(iconName, 'callout-icon', 'data-callout-icon-svg');
+  node.children = [
+    ...(iconNode ? [iconNode] : []),
+    createElement('div', { 'data-callout-content': 'true' }, contentChildren),
+  ];
+};
+
+const toStaticInfoBox = (node: HastNode, context: SurfaceNormalizationContext): void => {
+  const properties = node.properties ?? {};
+  const children = Array.isArray(node.children) ? node.children.map((child) => cloneNode(child)) : [];
+
+  if (!hasMeaningfulChildren(children)) {
+    node.type = 'text';
+    node.value = '';
+    delete node.tagName;
+    delete node.properties;
+    node.children = [];
+    return;
+  }
+
+  const heading = pickOptionalString(properties['data-info-box-heading'] ?? properties['heading']);
+  const headingLevel = toHeadingLevel(
+    properties['data-info-box-heading-level'] ?? properties['heading-level'],
+  );
+  const landmark =
+    toBooleanAttribute(properties['data-info-box-landmark'] ?? properties['landmark']);
+  const iconName = pickOptionalString(properties['data-info-box-icon'] ?? properties['icon']);
+  const variant = normalizeInfoBoxVariant(properties['data-variant'] ?? properties['variant']);
+  const density = normalizeInfoBoxDensity(properties['data-density'] ?? properties['density']);
+  const headingId = heading ? `info-box-heading-${String(++context.infoBoxHeadingCount)}` : undefined;
+  const headingTagName = headingLevel ? `h${String(headingLevel)}` : 'p';
+
+  node.tagName = 'section';
+  node.properties = {
+    'data-info-box': 'true',
+    'data-variant': variant,
+    'data-density': density,
+    ...(iconName ? { 'data-info-box-icon': iconName } : {}),
+    ...(landmark && headingId && headingLevel ? { role: 'region', 'aria-labelledby': headingId } : {}),
+  };
+
+  const nextChildren: HastNode[] = [];
+  if (heading) {
+    const headerChildren: HastNode[] = [];
+    const iconNode = createInlineIcon(iconName, 'info-box-icon', 'data-info-box-icon-svg');
+    if (iconNode) {
+      headerChildren.push(iconNode);
+    }
+    headerChildren.push(
+      createElement(
+        headingTagName,
+        {
+          id: headingId,
+          'data-info-box-heading': 'true',
+        },
+        [createTextNode(heading)],
+      ),
+    );
+    nextChildren.push(createElement('div', { 'data-info-box-header': 'true' }, headerChildren));
+  }
+
+  nextChildren.push(createElement('div', { 'data-info-box-body': 'true' }, children));
+  node.children = nextChildren;
 };
 
 const isCheckboxInput = (node: HastNode): boolean => {
@@ -770,6 +1059,10 @@ export function rehypeRouaultComponents() {
     }
     const footnoteRefCounters = new Map<string, number>();
     const imageContext: ImageNormalizationContext = { eagerImageCount: 0 };
+    const surfaceContext: SurfaceNormalizationContext = {
+      calloutHeadingCount: 0,
+      infoBoxHeadingCount: 0,
+    };
 
     const visit = (node: unknown): void => {
       if (!node || typeof node !== 'object') {
@@ -803,10 +1096,20 @@ export function rehypeRouaultComponents() {
             toUiImage(current, imageContext, file);
           } else if (current.tagName === 'mark') {
             normalizeHighlightMark(current);
-          } else if (current.tagName === 'table') {
-            toUiTable(current);
-          } else if (current.tagName === 'blockquote') {
-            current.tagName = 'ui-blockquote';
+          } else if (current.tagName === 'table' || current.tagName === 'ui-table') {
+            toStaticTable(current);
+          } else if (current.tagName === 'ui-blockquote') {
+            toStaticBlockquote(current);
+          } else if (
+            current.tagName === 'ui-callout' ||
+            (current.tagName === 'aside' && current.properties?.['data-callout'] !== undefined)
+          ) {
+            toStaticCallout(current, surfaceContext);
+          } else if (
+            current.tagName === 'ui-info-box' ||
+            (current.tagName === 'section' && current.properties?.['data-info-box'] !== undefined)
+          ) {
+            toStaticInfoBox(current, surfaceContext);
           } else if (current.tagName === 'hr') {
             normalizeDivider(current);
           }

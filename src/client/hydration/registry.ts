@@ -115,10 +115,6 @@ export const HYDRATION_REGISTRY = [
     activate: activateCodeGroups,
   },
   {
-    tag: 'ui-callout',
-    loader: () => import('../../components/ui/callout/callout.js'),
-  },
-  {
     tag: 'ui-checkbox',
     loader: () => import('../../components/ui/checkbox/checkbox.js'),
   },
@@ -130,14 +126,6 @@ export const HYDRATION_REGISTRY = [
     tag: 'ui-preview-sandbox',
     loader: () => import('../../components/ui/preview-sandbox/preview-sandbox.js'),
     activate: activateElementMethod,
-  },
-  {
-    tag: 'ui-table',
-    loader: () => import('../../components/ui/table/table.js'),
-  },
-  {
-    tag: 'ui-blockquote',
-    loader: () => import('../../components/ui/blockquote/blockquote.js'),
   },
   {
     tag: 'ui-details',
@@ -154,10 +142,6 @@ export const HYDRATION_REGISTRY = [
   {
     tag: 'ui-image',
     loader: () => import('../../components/ui/image/image.js'),
-  },
-  {
-    tag: 'ui-info-box',
-    loader: () => import('../../components/ui/info-box/info-box.js'),
   },
   {
     tag: 'ui-score',

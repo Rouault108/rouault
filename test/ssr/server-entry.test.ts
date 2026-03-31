@@ -53,24 +53,6 @@ describe('server-entry', () => {
     expect(rendered).toContain('SSR Image');
   });
 
-  it('ui-info-box を SSR 描画できること', async () => {
-    const rendered = await renderCustomElement(
-      'ui-info-box',
-      [
-        { name: 'heading', value: '補足情報' },
-        { name: 'icon', value: 'book-open' },
-        { name: 'heading-level', value: '2' },
-        { name: 'landmark', value: '' },
-      ],
-      '<p>SSR Info Box Body</p>',
-    );
-
-    expect(rendered).toContain('shadowrootmode="open"');
-    expect(rendered).toContain('補足情報');
-    expect(rendered).toContain('SSR Info Box Body');
-    expect(rendered).toContain('heading-level="2"');
-  });
-
   it('ui-tag を SSR 描画できること', async () => {
     const rendered = await renderCustomElement(
       'ui-tag',

@@ -52,9 +52,9 @@ describe('remarkRouaultDirectives', () => {
 
     expect(tree.children).to.have.length(1);
     const callout = tree.children?.[0];
-    expect(callout?.data?.hName).to.equal('ui-callout');
-    expect(callout?.data?.hProperties?.['kind']).to.equal('warning');
-    expect(callout?.data?.hProperties?.['heading']).to.equal('注意');
+    expect(callout?.data?.hName).to.equal('aside');
+    expect(callout?.data?.hProperties?.['data-callout-kind']).to.equal('warning');
+    expect(callout?.data?.hProperties?.['data-callout-heading']).to.equal('注意');
     expect(callout?.children?.[0]?.type).to.equal('paragraph');
   });
 
@@ -78,10 +78,10 @@ describe('remarkRouaultDirectives', () => {
 
     expect(tree.children).to.have.length(1);
     const callout = tree.children?.[0];
-    expect(callout?.data?.hName).to.equal('ui-callout');
-    expect(callout?.data?.hProperties?.['kind']).to.equal('tip');
-    expect(callout?.data?.hProperties?.['label']).to.equal('補足');
-    expect(callout?.data?.hProperties?.['heading-level']).to.equal('2');
+    expect(callout?.data?.hName).to.equal('aside');
+    expect(callout?.data?.hProperties?.['data-callout-kind']).to.equal('tip');
+    expect(callout?.data?.hProperties?.['data-callout-label']).to.equal('補足');
+    expect(callout?.data?.hProperties?.['data-callout-heading-level']).to.equal('2');
     expect(callout?.children?.[0]?.type).to.equal('paragraph');
   });
 
@@ -412,13 +412,13 @@ describe('remarkRouaultDirectives', () => {
     remarkRouaultDirectives()(tree, { path: 'content/notes/sample.md' });
 
     const infoBox = tree.children?.[0];
-    expect(infoBox?.data?.hName).to.equal('ui-info-box');
-    expect(infoBox?.data?.hProperties?.['heading']).to.equal('作品情報');
-    expect(infoBox?.data?.hProperties?.['icon']).to.equal('music');
-    expect(infoBox?.data?.hProperties?.['heading-level']).to.equal('3');
-    expect(infoBox?.data?.hProperties?.['landmark']).to.equal(true);
-    expect(infoBox?.data?.hProperties?.['variant']).to.equal('filled');
-    expect(infoBox?.data?.hProperties?.['density']).to.equal('compact');
+    expect(infoBox?.data?.hName).to.equal('section');
+    expect(infoBox?.data?.hProperties?.['data-info-box-heading']).to.equal('作品情報');
+    expect(infoBox?.data?.hProperties?.['data-info-box-icon']).to.equal('music');
+    expect(infoBox?.data?.hProperties?.['data-info-box-heading-level']).to.equal('3');
+    expect(infoBox?.data?.hProperties?.['data-info-box-landmark']).to.equal('true');
+    expect(infoBox?.data?.hProperties?.['data-variant']).to.equal('filled');
+    expect(infoBox?.data?.hProperties?.['data-density']).to.equal('compact');
   });
 
   it('link-card ディレクティブを終端なしの ui-card ノードへ変換すること', () => {

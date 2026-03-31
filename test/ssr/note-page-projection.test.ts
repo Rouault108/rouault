@@ -273,7 +273,7 @@ describe('buildNotePageProjection', () => {
         genre: ['javascript', 'programming'],
         content: [
           '<h2 id="sample">Sample</h2>',
-          '<ui-table data-hydration-trigger="initial"></ui-table>',
+          '<ui-details data-hydration-trigger="initial"></ui-details>',
           '<div data-code-block-root="true" data-hydration-trigger="post-commit" data-hydration-key="code-block-enhancer"><pre data-code-block="true"></pre></div>',
         ].join(''),
       }),
@@ -300,12 +300,12 @@ describe('buildNotePageProjection', () => {
         genre: ['javascript', 'programming'],
         content: [
           '<h2 id="sample">Sample</h2>',
-          '<ui-table data-hydration-trigger="initial"></ui-table>',
+          '<ui-details data-hydration-trigger="initial"></ui-details>',
           '<div data-code-block-root="true" data-hydration-trigger="post-commit" data-hydration-key="code-block-enhancer"><pre data-code-block="true"></pre></div>',
         ].join(''),
       }),
     ).toThrow(
-      '[markdown] note hydration budget exceeded for "program/sample-javascript" profile="reader-canary-basic"',
+      '[markdown] note hydration budget exceeded for "program/sample-javascript" profile="reader-shell-canary"',
     );
   });
 });
