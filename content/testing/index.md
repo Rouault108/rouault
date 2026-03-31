@@ -11,6 +11,7 @@ status: 'wip'
 
 このディレクトリでは、Rouault の Markdown 出力契約を主題別に確認します。
 
+- [Reader Basic](/notes/testing/reader-basic/)
 - [Markdown Basic](/notes/testing/markdown-basic/)
 - [Media](/notes/testing/media/)
 - [Code](/notes/testing/code/)

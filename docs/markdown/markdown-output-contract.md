@@ -280,33 +280,33 @@ note 本文の標準マッピングは次のとおりです。
 
 ### 5.10.1 note hydration budget
 
-note ページの hydration budget は build-time の正本として固定し、`buildNotePageProjection()` が超過を拒否しなければなりません。`HydrationScheduler` の dev diagnostic は観測用であり、budget gate の代替ではありません。
+note ページの hydration budget は **profile 単位**で build-time の正本として固定し、`buildNotePageProjection()` は **`hydrationBudgetProfile` を明示した note** にのみ hard gate を適用しなければなりません。`HydrationScheduler` の dev diagnostic は観測用であり、budget gate の代替ではありません。
 
-現行の全体上限は次のとおりです。
+現行 profile は次のとおりです。
 
-| 項目           | 上限 |
-| -------------- | ---- |
-| `initial`      | 6    |
-| `post-commit`  | 1    |
-| `visible`      | 2    |
-| `interaction`  | 1    |
-| `total`        | 7    |
+| profile                       | initial | post-commit | visible | interaction | total |
+| ---------------------------- | ------- | ----------- | ------- | ----------- | ----- |
+| `reader-shell-canary`        | 2       | 0           | 0       | 0           | 2     |
+| `testing-interactive-canary` | 6       | 0           | 1       | 0           | 7     |
+| `testing-sandbox-canary`     | 0       | 1           | 2       | 1           | 4     |
+| `testing-code-canary`        | 1       | 1           | 2       | 0           | 4     |
 
-現在の代表 canary は次の 3 つです。
+現在の代表 canary は次の 4 つです。
 
-| canary note                          | initial | post-commit | visible | interaction | total |
-| ------------------------------------- | ------- | ----------- | ------- | ----------- | ----- |
-| `computer-science/algorithms/sorting` | 3       | 1           | 1       | 0           | 5     |
-| `testing/interactive`                | 6       | 0           | 1       | 0           | 7     |
-| `testing/sandbox`                    | 0       | 0           | 2       | 1           | 3     |
+| canary note                  | profile                       | initial | post-commit | visible | interaction | total |
+| --------------------------- | ----------------------------- | ------- | ----------- | ------- | ----------- | ----- |
+| `testing/reader-basic`      | `reader-shell-canary`         | 2       | 0           | 0       | 0           | 2     |
+| `testing/interactive`       | `testing-interactive-canary`  | 6       | 0           | 1       | 0           | 7     |
+| `testing/sandbox`           | `testing-sandbox-canary`      | 0       | 1           | 2       | 1           | 4     |
+| `testing/code`              | `testing-code-canary`         | 1       | 1           | 2       | 0           | 4     |
 
 規則:
 
-- 上限を 1 つでも超えた note は build-time error にしなければなりません。
+- build-time error を適用するのは **`hydrationBudgetProfile` を明示した note** のみでなければなりません。
+- profile 未指定 note は counts を観測対象として扱い、global な一律 hard fail を掛けてはなりません。
 - 代表 canary の counts は `test/ssr/note-hydration-budget.test.ts` で固定しなければなりません。
-- `testing/interactive` は interactive UI canary であり、code-block enhancer など code surface の post-commit hydration を workload へ含めてはなりません。
-- build / test / CI は同じ budget へ従わなければなりません。
-- 代表 canary が変わる場合は、本文の workload が実際に変わった根拠を伴って本節とテストを同時に改訂しなければなりません。
+- build / test / CI は同じ profile registry を参照しなければなりません。
+- 代表 canary または profile が変わる場合は、本文 workload が実際に変わった根拠を伴って本節とテストを同時に改訂しなければなりません。
 
 
 ---

@@ -24,6 +24,7 @@ import {
   type TestingArea,
   normalizeTestingArea,
 } from '../types/testing-area.js';
+import type { NoteHydrationBudgetProfileName } from '../types/note-hydration-budget-profile.js';
 
 type SidebarIconSetting = IconName | 'none';
 
@@ -49,6 +50,7 @@ export interface SourceNote {
   status?: NoteStatus;
   kind?: NoteContentKind;
   testingArea?: TestingArea;
+  hydrationBudgetProfile?: NoteHydrationBudgetProfileName;
   genre?: string[];
   sidebarIcon?: SidebarIconSetting;
   [key: string]: unknown;
@@ -73,6 +75,7 @@ export interface IntrinsicNote extends SourceNote {
   resolvedCover?: ResolvedImageAsset;
   kind: NoteContentKind;
   testingArea?: TestingArea;
+  hydrationBudgetProfile?: NoteHydrationBudgetProfileName;
 }
 
 export type IntrinsicNotesCollection = IntrinsicNote[];

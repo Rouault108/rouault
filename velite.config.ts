@@ -20,6 +20,10 @@ import { remarkDisallowRawHtml } from './lib/remark/disallow-raw-html.js';
 import { remarkLinkCards } from './lib/remark/remark-link-cards.js';
 import { remarkRouaultDirectives } from './lib/remark/rouault-directives.js';
 import { ARTICLE_STATUSES } from './src/types/article-status.js';
+import {
+  NOTE_HYDRATION_BUDGET_PROFILE_NAMES,
+  normalizeNoteHydrationBudgetProfileName,
+} from './src/types/note-hydration-budget-profile.js';
 import { NOTE_CONTENT_KINDS, normalizeNoteContentKind } from './src/types/note-kind.js';
 import { TESTING_AREAS, normalizeTestingArea } from './src/types/testing-area.js';
 
@@ -42,6 +46,7 @@ const notes = defineCollection({
       status: s.enum(ARTICLE_STATUSES).optional(),
       kind: s.enum(NOTE_CONTENT_KINDS).optional(),
       testingArea: s.enum(TESTING_AREAS).optional(),
+      hydrationBudgetProfile: s.enum(NOTE_HYDRATION_BUDGET_PROFILE_NAMES).optional(),
       content: s.markdown(),
       excerpt: s.excerpt().optional(),
       toc: s.toc().optional(),
@@ -49,6 +54,10 @@ const notes = defineCollection({
     .transform((data) => {
       const kind = normalizeNoteContentKind(data.kind);
       const testingArea = normalizeTestingArea(data.testingArea);
+      const hydrationBudgetProfile = normalizeNoteHydrationBudgetProfileName(
+        data.hydrationBudgetProfile,
+      );
+
       validateNoteMetadataContracts(kind, testingArea, data.slug);
       validateNoteContentContracts(kind, data.content, data.slug, testingArea);
 
@@ -56,6 +65,7 @@ const notes = defineCollection({
         ...data,
         kind,
         ...(testingArea !== undefined ? { testingArea } : {}),
+        ...(hydrationBudgetProfile !== undefined ? { hydrationBudgetProfile } : {}),
         status: data.status ?? '',
       };
     }),

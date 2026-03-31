@@ -253,4 +253,59 @@ describe('buildNotePageProjection', () => {
     expect(projection.sidebar).toBeUndefined();
     expect(projection.noteShellSidebarPresence).toBe('absent');
   });
+
+  it('profile 未指定 note は budget 超過相当の workload でも hard fail しないこと', () => {
+    expect(() =>
+      buildProjection({
+        rawSlug: 'program/sample-javascript',
+        slug: 'program/sample-javascript',
+        permalink: '/notes/program/sample-javascript',
+        noteKind: 'leaf',
+        sortIndex: 0,
+        tocHeadings: [{ id: 'sample', text: 'Sample', level: 2 }],
+        tocCapabilities: {
+          activeTracking: true,
+          dynamicScopes: false,
+          mobileSummary: true,
+        },
+        kind: 'reader',
+        title: 'Sample JavaScript',
+        genre: ['javascript', 'programming'],
+        content: [
+          '<h2 id="sample">Sample</h2>',
+          '<ui-table data-hydration-trigger="initial"></ui-table>',
+          '<pre data-hydration-trigger="post-commit" data-hydration-key="code-block-enhancer"></pre>',
+        ].join(''),
+      }),
+    ).not.toThrow();
+  });
+
+  it('explicit profile note は profile budget を超えた場合に hard fail すること', () => {
+    expect(() =>
+      buildProjection({
+        rawSlug: 'program/sample-javascript',
+        slug: 'program/sample-javascript',
+        permalink: '/notes/program/sample-javascript',
+        noteKind: 'leaf',
+        sortIndex: 0,
+        tocHeadings: [{ id: 'sample', text: 'Sample', level: 2 }],
+        tocCapabilities: {
+          activeTracking: true,
+          dynamicScopes: false,
+          mobileSummary: true,
+        },
+        kind: 'reader',
+        title: 'Sample JavaScript',
+        hydrationBudgetProfile: 'reader-shell-canary',
+        genre: ['javascript', 'programming'],
+        content: [
+          '<h2 id="sample">Sample</h2>',
+          '<ui-table data-hydration-trigger="initial"></ui-table>',
+          '<pre data-hydration-trigger="post-commit" data-hydration-key="code-block-enhancer"></pre>',
+        ].join(''),
+      }),
+    ).toThrow(
+      '[markdown] note hydration budget exceeded for "program/sample-javascript" profile="reader-canary-basic"',
+    );
+  });
 });

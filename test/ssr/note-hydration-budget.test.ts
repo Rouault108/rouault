@@ -130,15 +130,15 @@ const renderNotePage = (slug: string): CountedNotePage => {
 };
 
 describe('note hydration budget', () => {
-  it('reader canary を budget 内に収めること', () => {
-    const result = renderNotePage('computer-science/algorithms/sorting');
+  it('reader shell canary を budget 内に収めること', () => {
+    const result = renderNotePage('testing/reader-basic');
 
     expect(result.counts).to.deep.equal({
-      initial: 3,
-      postCommit: 1,
-      visible: 1,
+      initial: 2,
+      postCommit: 0,
+      visible: 0,
       interaction: 0,
-      total: 5,
+      total: 2,
     });
   });
 
@@ -166,14 +166,14 @@ describe('note hydration budget', () => {
     });
   });
 
-  it('code testing canary を budget 内に収めること', () => {
-    const result = renderNotePage('testing/code');
+  it('sandbox canary を budget 内に収めること', () => {
+    const result = renderNotePage('testing/sandbox');
 
     expect(result.counts).to.deep.equal({
-      initial: 1,
+      initial: 0,
       postCommit: 1,
       visible: 2,
-      interaction: 0,
+      interaction: 1,
       total: 4,
     });
   });

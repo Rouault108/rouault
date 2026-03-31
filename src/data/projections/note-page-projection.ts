@@ -5,6 +5,10 @@ import type { PagefindDocumentData } from '../../lib/search/build/build-pagefind
 import type { NoteStatus } from '../../types/article-status.js';
 import type { NoteContentKind } from '../../types/note-kind.js';
 import { resolveNoteSurfacePolicy } from '../../types/note-surface-policy.js';
+import {
+  resolveNoteHydrationBudgetProfile,
+  type NoteHydrationCounts,
+} from './note-hydration-profile.js';
 import type { IntrinsicNote } from '../notes.js';
 
 interface NotePageTocScopeSelection {
@@ -77,25 +81,6 @@ export interface NotePageProjection {
   articleHeader: NotePageArticleHeaderProjection;
   pagefind: NotePagePagefindProjection | null;
 }
-
-interface NoteHydrationCounts {
-  initial: number;
-  postCommit: number;
-  visible: number;
-  interaction: number;
-}
-
-interface NoteHydrationBudget extends NoteHydrationCounts {
-  total: number;
-}
-
-const NOTE_HYDRATION_BUDGET: NoteHydrationBudget = {
-  initial: 6,
-  postCommit: 1,
-  visible: 2,
-  interaction: 1,
-  total: 7,
-};
 
 function normalizeHeadings(
   value: IntrinsicNote['tocHeadings'],
@@ -193,6 +178,12 @@ function validateNoteHydrationBudget(
   note: IntrinsicNote,
   projection: Pick<NotePageProjection, 'contentHtml' | 'showSidebar' | 'toc' | 'articleHeader'>,
 ): void {
+  const profile = resolveNoteHydrationBudgetProfile(note);
+
+  if (profile === null) {
+    return;
+  }
+
   const contentCounts = countHydrationTriggers(projection.contentHtml);
   const shellCounts: NoteHydrationCounts = {
     initial: 0,
@@ -220,13 +211,14 @@ function validateNoteHydrationBudget(
     interaction: contentCounts.interaction + shellCounts.interaction,
   };
   const total = counts.initial + counts.postCommit + counts.visible + counts.interaction;
+  const { budget } = profile;
 
   if (
-    counts.initial <= NOTE_HYDRATION_BUDGET.initial &&
-    counts.postCommit <= NOTE_HYDRATION_BUDGET.postCommit &&
-    counts.visible <= NOTE_HYDRATION_BUDGET.visible &&
-    counts.interaction <= NOTE_HYDRATION_BUDGET.interaction &&
-    total <= NOTE_HYDRATION_BUDGET.total
+    counts.initial <= budget.initial &&
+    counts.postCommit <= budget.postCommit &&
+    counts.visible <= budget.visible &&
+    counts.interaction <= budget.interaction &&
+    total <= budget.total
   ) {
     return;
   }
@@ -234,11 +226,12 @@ function validateNoteHydrationBudget(
   throw new Error(
     [
       `[markdown] note hydration budget exceeded for "${note.slug}"`,
-      `initial=${String(counts.initial)}/${String(NOTE_HYDRATION_BUDGET.initial)}`,
-      `post-commit=${String(counts.postCommit)}/${String(NOTE_HYDRATION_BUDGET.postCommit)}`,
-      `visible=${String(counts.visible)}/${String(NOTE_HYDRATION_BUDGET.visible)}`,
-      `interaction=${String(counts.interaction)}/${String(NOTE_HYDRATION_BUDGET.interaction)}`,
-      `total=${String(total)}/${String(NOTE_HYDRATION_BUDGET.total)}`,
+      `profile="${profile.name}"`,
+      `initial=${String(counts.initial)}/${String(budget.initial)}`,
+      `post-commit=${String(counts.postCommit)}/${String(budget.postCommit)}`,
+      `visible=${String(counts.visible)}/${String(budget.visible)}`,
+      `interaction=${String(counts.interaction)}/${String(budget.interaction)}`,
+      `total=${String(total)}/${String(budget.total)}`,
     ].join(' '),
   );
 }
