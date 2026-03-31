@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildHomePageProjection,
   type HomeSourceNote,
-} from '../../src/data/projections/home-page-projection.js';
+} from '../../build/projections/home-page-projection.js';
 
 const createHomeNote = (overrides: Partial<HomeSourceNote> & { slug: string }): HomeSourceNote => {
   const { slug, ...rest } = overrides;

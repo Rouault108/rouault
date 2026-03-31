@@ -65,7 +65,6 @@ import {
   type SsrDocumentStyleDefinition,
 } from './target-definitions.js';
 import {
-  type SsrLightTargetTag,
   type SsrShadowTargetTag,
   type SsrTargetTag,
 } from './targets.js';

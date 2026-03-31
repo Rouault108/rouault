@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildCorporaOverviewProjection,
   type CorporaOverviewSourceNote,
-} from '../../src/data/projections/corpora-overview-projection.js';
+} from '../../build/projections/corpora-overview-projection.js';
 
 const createOverviewNote = (
   overrides: Partial<CorporaOverviewSourceNote> & { slug: string },

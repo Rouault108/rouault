@@ -4,7 +4,7 @@ import {
   buildCorpusNavigation,
   buildCorpusPageProjection,
   type CorpusPageSourceNote,
-} from '../../src/data/projections/corpus-page-projection.js';
+} from '../../build/projections/corpus-page-projection.js';
 
 const createCorpusNote = (
   overrides: Partial<CorpusPageSourceNote> & { slug: string },

@@ -8,10 +8,10 @@ import {
   type PagefindApi,
   type PagefindLoader,
 } from './stages/source-federation.js';
-import { runCandidateMergeStage } from './stages/candidate-merge.js';
+import { runCandidateMergeStage } from '../../../src/search/core/stages/candidate-merge.js';
 import { buildEmptySearchResponse, runCountsAndDiagnosticsStage } from './stages/counts-and-diagnostics.js';
-import { runCandidateValidationStage } from './stages/candidate-validation.js';
-import { runQueryPreparationStage } from './stages/query-preparation.js';
+import { runCandidateValidationStage } from '../../../src/search/core/stages/candidate-validation.js';
+import { runQueryPreparationStage } from '../../../src/search/core/stages/query-preparation.js';
 import { runRankingAndSortingStage } from './stages/ranking-and-sorting.js';
 
 export interface SearchCoreDependencies {
