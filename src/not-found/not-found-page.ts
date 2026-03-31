@@ -1,219 +1,83 @@
-const escapeHtml = (value: string): string =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+import { loadHomeData, type HomePageData } from '../data/home.js';
+import { escapeHtmlText, serializeHtmlAttributes } from '../layouts/html-output.js';
 
-const escapeAttr = (value: string): string =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-
-export const NOT_FOUND_PAGE_TITLE = 'このページは見つかりませんでした';
-export const NOT_FOUND_PAGE_META_DESCRIPTION =
-  'リンク先が移動したか、公開が終了したため、このページは見つかりませんでした。検索またはサイト情報から辿り直してください。';
-export const NOT_FOUND_PAGE_DESCRIPTION =
-  'リンク先が移動したか、いまは公開されていないようです。検索またはサイト情報から辿り直してください。';
-
-export const SEARCH_PAGE_HREF = '/search';
-export const ABOUT_PAGE_HREF = '/about/';
-
-export interface BuildNotFoundPageMarkupOptions {
-  requestedPath?: string;
+interface HomePageTemplateData {
+  home?: HomePageData;
 }
 
-export function buildNotFoundPageMarkup(options: BuildNotFoundPageMarkupOptions = {}): string {
-  const requestedPath =
-    typeof options.requestedPath === 'string' ? options.requestedPath.trim() : '';
+const renderTime = (value: string | null): string =>
+  value
+    ? `<time${serializeHtmlAttributes([{ name: 'datetime', value }])}>${escapeHtmlText(value)}</time>`
+    : '—';
 
-  const requestedPathAttribute =
-    requestedPath.length > 0 ? ` requested-path="${escapeAttr(requestedPath)}"` : '';
+const renderGenres = (genres: readonly string[]): string =>
+  genres.length > 0 ? genres.map((genre) => escapeHtmlText(genre)).join(' / ') : '—';
 
-  const requestedPathBlock =
-    requestedPath.length > 0
-      ? `
-        <dl class="not-found-page-fallback__meta">
-          <div class="not-found-page-fallback__meta-row">
-            <dt class="not-found-page-fallback__meta-label">要求されたパス</dt>
-            <dd class="not-found-page-fallback__meta-value">
-              <code>${escapeHtml(requestedPath)}</code>
-            </dd>
-          </div>
-        </dl>
-      `
-      : '';
+const renderHomeEntry = (entry: HomePageData['notes'][number]): string => `
+  <li class="home-feed-item">
+    <a${serializeHtmlAttributes([
+      { name: 'class', value: 'home-entry' },
+      { name: 'href', value: entry.permalink },
+    ])}>
+      <div class="home-entry__date">${renderTime(entry.date)}</div>
+      <div class="home-entry__body">
+        <p class="home-entry__path">${escapeHtmlText(entry.pathLabel)}</p>
+        <h3 class="home-entry__title">${escapeHtmlText(entry.title)}</h3>
+        ${entry.summary.length > 0 ? `<p class="home-entry__summary">${escapeHtmlText(entry.summary)}</p>` : ''}
+        <p class="home-entry__genre">${renderGenres(entry.genres)}</p>
+      </div>
+    </a>
+  </li>
+`;
 
-  return `
-<not-found-page${requestedPathAttribute}>
-  <style>
-    not-found-page {
-      display: block;
-      color: var(--fg-default);
-    }
+export class HomePageTemplate {
+  data() {
+    return {
+      layout: 'base',
+      description: 'Rouault の公開ノートを静かに読むためのトップページ。',
+      permalink: '/index.html',
+    };
+  }
 
-    .not-found-page-fallback {
-      box-sizing: border-box;
-      width: min(100%, 72rem);
-      margin: 0 auto;
-      padding:
-        clamp(var(--space-12, 48px), 12vh, 8rem)
-        var(--space-4, 16px)
-        clamp(var(--space-16, 64px), 18vh, 10rem);
-    }
+  render(data: HomePageTemplateData) {
+    const home = data.home ?? loadHomeData();
+    const noteCount = home.publicNoteCount.toLocaleString('ja-JP');
+    const latestUpdatedDate = renderTime(home.latestUpdatedDate);
 
-    .not-found-page-fallback__inner {
-      inline-size: min(100%, 42rem);
-      display: grid;
-      gap: var(--space-6, 24px);
-    }
+    return `
+      <section class="home-shell">
+        <article class="home-content">
+          <header class="home-hero">
+            <p class="home-eyebrow">Rouault</p>
+            <h1 class="home-title">静かに入り、静かに読み進める。</h1>
+            <p class="home-lead">公開している個人ノートの入口です。新しいものから辿れます。</p>
+            <p${serializeHtmlAttributes([
+              { name: 'class', value: 'home-meta' },
+              { name: 'aria-label', value: '公開ノートの概要' },
+            ])}>
+              <span class="home-meta-item">最新更新 ${latestUpdatedDate}</span>
+              <span class="home-meta-separator" aria-hidden="true">・</span>
+              <a class="home-meta-link" href="/about/">このサイトについて</a>
+            </p>
+          </header>
 
-    .not-found-page-fallback__eyebrow {
-      margin: 0;
-      color: var(--fg-muted);
-      font-family: var(--font-mono);
-      font-size: var(--text-xs, 12px);
-      letter-spacing: var(--tracking-wider, 0.03em);
-      line-height: var(--line-height-none, 1);
-      text-transform: uppercase;
-    }
-
-    .not-found-page-fallback__title {
-      margin: 0;
-      color: var(--fg-default);
-      font-family: var(--font-sans);
-      font-size: clamp(var(--text-2xl, 24px), 2.4vw, var(--text-3xl, 30px));
-      font-weight: var(--font-semibold, 600);
-      letter-spacing: var(--tracking-tight, -0.015em);
-      line-height: var(--line-height-tight, 1.25);
-      text-wrap: balance;
-    }
-
-    .not-found-page-fallback__description {
-      margin: 0;
-      max-inline-size: 40rem;
-      color: var(--fg-muted);
-      font-size: var(--text-base, 14px);
-      line-height: var(--line-height-relaxed, 1.75);
-      text-wrap: pretty;
-    }
-
-    .not-found-page-fallback__meta {
-      margin: 0;
-      padding-top: var(--space-4, 16px);
-      border-top: var(--border-width, 1px) solid var(--border-muted);
-    }
-
-    .not-found-page-fallback__meta-row {
-      display: grid;
-      gap: var(--space-2, 8px);
-      margin: 0;
-    }
-
-    .not-found-page-fallback__meta-label {
-      margin: 0;
-      color: var(--fg-muted);
-      font-size: var(--text-xs, 12px);
-      line-height: var(--line-height-normal, 1.5);
-    }
-
-    .not-found-page-fallback__meta-value {
-      margin: 0;
-      color: var(--fg-default);
-      font-family: var(--font-mono);
-      font-size: var(--text-xs, 12px);
-      line-height: var(--line-height-normal, 1.5);
-      word-break: break-all;
-    }
-
-    .not-found-page-fallback__actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--space-3, 12px);
-      align-items: center;
-    }
-
-    .not-found-page-fallback__link {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-block-size: var(--control-min-touch, 44px);
-      padding-inline: var(--space-4, 16px);
-      border: var(--border-width, 1px) solid var(--border-muted);
-      border-radius: var(--radius-full, 9999px);
-      background: transparent;
-      color: var(--fg-default);
-      font-size: var(--text-sm, 13px);
-      line-height: 1;
-      text-decoration: none;
-      transition:
-        background-color var(--duration-fast, 120ms) var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
-        border-color var(--duration-fast, 120ms) var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
-        color var(--duration-fast, 120ms) var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
-    }
-
-    .not-found-page-fallback__link:hover {
-      background: var(--bg-surface-1);
-      border-color: var(--border-default);
-    }
-
-    .not-found-page-fallback__link:focus-visible {
-      outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color);
-      outline-offset: var(--focus-ring-offset, 2px);
-    }
-
-    .not-found-page-fallback__link--primary {
-      background: var(--bg-surface-1);
-      border-color: var(--border-default);
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .not-found-page-fallback__link {
-        transition: none;
-      }
-    }
-
-    @media (forced-colors: active) {
-      .not-found-page-fallback__meta,
-      .not-found-page-fallback__link {
-        border-color: CanvasText;
-      }
-
-      .not-found-page-fallback__link:focus-visible {
-        outline-color: Highlight;
-      }
-    }
-  </style>
-
-  <section
-    data-not-found-fallback
-    class="not-found-page-fallback"
-    aria-labelledby="not-found-page-title"
-  >
-    <div class="not-found-page-fallback__inner">
-      <p class="not-found-page-fallback__eyebrow">404</p>
-      <h1 id="not-found-page-title" class="not-found-page-fallback__title">
-        ${NOT_FOUND_PAGE_TITLE}
-      </h1>
-      <p class="not-found-page-fallback__description">
-        ${NOT_FOUND_PAGE_DESCRIPTION}
-      </p>
-      ${requestedPathBlock}
-      <nav class="not-found-page-fallback__actions" aria-label="404 navigation">
-        <a
-          class="not-found-page-fallback__link not-found-page-fallback__link--primary"
-          href="${SEARCH_PAGE_HREF}"
-        >
-          検索ページへ
-        </a>
-        <a class="not-found-page-fallback__link" href="${ABOUT_PAGE_HREF}">
-          このサイトについて
-        </a>
-      </nav>
-    </div>
-  </section>
-</not-found-page>
-  `.trim();
+          <section aria-labelledby="home-feed-heading" class="home-feed-section">
+            <div class="home-feed-header">
+              <h2 id="home-feed-heading" class="home-feed-title">新着一覧</h2>
+              <p class="home-feed-meta">${escapeHtmlText(noteCount)}件</p>
+            </div>
+            ${home.notes.length > 0
+              ? `
+                <ol class="home-feed-list">
+                  ${home.notes.map((entry) => renderHomeEntry(entry)).join('')}
+                </ol>
+              `
+              : '<p class="home-empty">公開ノートはまだありません。</p>'}
+          </section>
+        </article>
+      </section>
+    `.trim();
+  }
 }
+
+export default HomePageTemplate;

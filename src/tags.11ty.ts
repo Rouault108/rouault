@@ -3,6 +3,7 @@ import {
   buildStaticExploreResponse,
   buildStaticSearchState,
 } from '../build/search/build-static-explore-response.js';
+import { serializeHtmlAttributes } from './layouts/html-output.js';
 
 interface TagPagesPaginationData extends TagPageTemplateData {
   tagPages?: TagPageEntry[];
@@ -10,14 +11,6 @@ interface TagPagesPaginationData extends TagPageTemplateData {
 
 interface TagPageTemplateData {
   tagPage?: TagPageEntry;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
 }
 
 function buildInitialSearchResponse(tagPage: TagPageEntry) {
@@ -71,11 +64,18 @@ export class TagPagesTemplate {
       return '';
     }
 
-    return `<search-page initial-search-state-json="${escapeHtml(
-      JSON.stringify(buildInitialSearchState(tagPage)),
-    )}" initial-search-response-json="${escapeHtml(
-      JSON.stringify(buildInitialSearchResponse(tagPage)),
-    )}"></search-page>`;
+    return `<search-page${serializeHtmlAttributes([
+      {
+        name: 'initial-search-state-json',
+        value: buildInitialSearchState(tagPage),
+        kind: 'json',
+      },
+      {
+        name: 'initial-search-response-json',
+        value: buildInitialSearchResponse(tagPage),
+        kind: 'json',
+      },
+    ])}></search-page>`;
   }
 }
 

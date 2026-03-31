@@ -14,6 +14,11 @@ import {
   RESOLVED_THEME_ATTRIBUTE,
 } from '../theme/theme-manager.js';
 import { resolveNoteSurfacePolicy } from '../../shared/note/note-surface-policy.js';
+import {
+  escapeHtmlText,
+  escapeInlineScriptText,
+  serializeHtmlAttributes,
+} from './html-output.js';
 
 export interface BaseLayoutData {
   title?: string;
@@ -26,48 +31,7 @@ export interface BaseLayoutData {
   clientBundle?: ClientBundleData;
 }
 
-function escapeAttribute(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
-export class BaseLayout {
-  data() {
-    return {
-      title: 'Rouault',
-    };
-  }
-
-  render(data: BaseLayoutData) {
-    const title = data.title ? `${data.title} - Rouault` : 'Rouault';
-    const description = data.description ?? '個人ノートを静かに読むためのWebアプリケーション';
-    const noteLayoutAttribute = data.note ? ' note-layout' : '';
-    const clientScriptSrc = data.clientBundle?.scriptSrc ?? '/src/client.ts';
-    const currentCorpusKey = resolveCurrentCorpusKey(data);
-    const noteSurfacePolicy = resolveNoteSurfacePolicy(data.note?.kind);
-    const pagefindIgnoreAttribute =
-      data.note && !noteSurfacePolicy.pagefind ? ' data-pagefind-ignore' : '';
-    const corporaJson = JSON.stringify(buildCorpusNavigation(data.corpusPages ?? []))
-      .replace(/&/g, '&amp;')
-      .replace(/"/g, '&quot;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-
-    const breadcrumbsJson = JSON.stringify(
-      buildNoteNavigationModel({
-        currentNote: data.note,
-        notes: data.notes ?? [],
-      }).breadcrumbs,
-    )
-      .replace(/&/g, '&amp;')
-      .replace(/"/g, '&quot;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-
-    const themeBootstrapScript = `
+const buildThemeBootstrapScript = (): string => `
 (() => {
   const root = document.documentElement;
   const storageKey = ${JSON.stringify(THEME_STORAGE_KEY)};
@@ -92,7 +56,42 @@ export class BaseLayout {
   root.setAttribute(resolvedThemeAttribute, resolvedTheme);
   root.style.colorScheme = preference === 'system' ? 'light dark' : preference;
 })();
-    `.trim();
+`.trim();
+
+export class BaseLayout {
+  data() {
+    return {
+      title: 'Rouault',
+    };
+  }
+
+  render(data: BaseLayoutData) {
+    const title = data.title ? `${data.title} - Rouault` : 'Rouault';
+    const description = data.description ?? '個人ノートを静かに読むためのWebアプリケーション';
+    const clientScriptSrc = data.clientBundle?.scriptSrc ?? '/src/client.ts';
+    const currentCorpusKey = resolveCurrentCorpusKey(data);
+    const noteSurfacePolicy = resolveNoteSurfacePolicy(data.note?.kind);
+    const corpora = buildCorpusNavigation(data.corpusPages ?? []);
+    const breadcrumbs = buildNoteNavigationModel({
+      currentNote: data.note,
+      notes: data.notes ?? [],
+    }).breadcrumbs;
+    const themeBootstrapScript = buildThemeBootstrapScript();
+    const bodyAttributes = serializeHtmlAttributes([
+      {
+        name: 'data-pagefind-ignore',
+        value: Boolean(data.note && !noteSurfacePolicy.pagefind),
+        kind: 'boolean',
+      },
+    ]);
+    const headerAttributes = serializeHtmlAttributes([
+      { name: 'note-layout', value: Boolean(data.note), kind: 'boolean' },
+      { name: 'breadcrumbs-json', value: breadcrumbs, kind: 'json' },
+      { name: 'corpora-json', value: corpora, kind: 'json' },
+      { name: 'current-corpus-key', value: currentCorpusKey },
+      { name: 'data-hydration-capability', value: 'interactive' },
+      { name: 'data-hydration-trigger', value: 'initial' },
+    ]);
 
     return `
 <!DOCTYPE html>
@@ -100,13 +99,13 @@ export class BaseLayout {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title}</title>
-  <meta name="description" content="${escapeAttribute(description)}">
-  <script>${themeBootstrapScript}</script>
+  <title>${escapeHtmlText(title)}</title>
+  <meta name="description"${serializeHtmlAttributes([{ name: 'content', value: description }])}>
+  <script>${escapeInlineScriptText(themeBootstrapScript)}</script>
   <link rel="stylesheet" href="/assets/css/main.css">
-  <script type="module" src="${escapeAttribute(clientScriptSrc)}"></script>
+  <script type="module"${serializeHtmlAttributes([{ name: 'src', value: clientScriptSrc }])}></script>
 </head>
-<body${pagefindIgnoreAttribute}>
+<body${bodyAttributes}>
   <ui-skip-link
     href="#main-content"
     label="メインコンテンツへ移動"
@@ -115,14 +114,7 @@ export class BaseLayout {
     data-hydration-trigger="initial"
   ></ui-skip-link>
   <div id="app" class="app-root" data-hydration-scope="app-shell">
-    <layout-header
-      ${noteLayoutAttribute}
-      breadcrumbs-json="${breadcrumbsJson}"
-      corpora-json="${corporaJson}"
-      current-corpus-key="${escapeAttribute(currentCorpusKey)}"
-      data-hydration-capability="interactive"
-      data-hydration-trigger="initial"
-    ></layout-header>
+    <layout-header${headerAttributes}></layout-header>
     <app-router
       data-hydration-capability="interactive"
       data-hydration-trigger="initial"

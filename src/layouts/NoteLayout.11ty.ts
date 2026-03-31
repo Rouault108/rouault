@@ -6,35 +6,124 @@
  */
 
 import type { NotePageProjection } from '../../build/projections/note-page-projection.js';
+import { ARTICLE_HEADER_TAGS_DATA_ATTRIBUTE } from '../components/ui/article-header/article-header-tags-adapter.js';
+import {
+  escapeHtmlText,
+  renderJsonScriptElement,
+  serializeHtmlAttributes,
+} from './html-output.js';
 
 interface NoteLayoutData {
   notePage?: NotePageProjection;
 }
 
-/**
- * HTML属性値のエスケープ。XSS防止のために使用。
- */
-function escapeAttr(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
+const renderPagefindGenreFilters = (genres: readonly string[]): string =>
+  genres
+    .map(
+      (genre) =>
+        `<span${serializeHtmlAttributes([{ name: 'data-pagefind-filter', value: `genre:${genre}` }])}></span>`,
+    )
+    .join('');
 
-function escapeHtml(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
+const renderPagefindMetadata = (pagefind: NonNullable<NotePageProjection['pagefind']>): string => {
+  const title = pagefind.title;
+  const description = pagefind.description;
+  const tokenizedTitle = pagefind.tokenizedTitle;
+  const tokenizedDescription = pagefind.tokenizedDescription;
+  const date = pagefind.date;
+  const genreFilters = renderPagefindGenreFilters(pagefind.tags);
 
-/**
- * script[type="application/json"] 向けにJSON文字列を安全化する。
- */
-function escapeJsonForScript(value: unknown): string {
-  return JSON.stringify(value)
-    .replace(/</g, '\\u003c')
-    .replace(/>/g, '\\u003e')
-    .replace(/&/g, '\\u0026');
-}
+  return `
+    <div class="sr-only" aria-hidden="true" data-pagefind-ignore>
+      <span data-pagefind-meta="title">${escapeHtmlText(title)}</span>
+      <span data-pagefind-meta="description">${escapeHtmlText(description)}</span>
+      <span data-pagefind-meta="date">${escapeHtmlText(date)}</span>
+      ${genreFilters}
+    </div>
+    <div class="sr-only" aria-hidden="true">
+      ${title.length > 0 ? `<span data-pagefind-weight="10">${escapeHtmlText(title)}</span>` : ''}
+      ${tokenizedTitle.length > 0 ? `<span data-pagefind-weight="8">${escapeHtmlText(tokenizedTitle)}</span>` : ''}
+      ${description.length > 0 ? `<span data-pagefind-weight="5">${escapeHtmlText(description)}</span>` : ''}
+      ${tokenizedDescription.length > 0 ? `<span data-pagefind-weight="3">${escapeHtmlText(tokenizedDescription)}</span>` : ''}
+    </div>
+  `.trim();
+};
+
+const renderSidebar = (sidebar: NonNullable<NotePageProjection['sidebar']>): string => {
+  const sidebarAttributes = serializeHtmlAttributes([
+    { name: 'source-id', value: sidebar.sourceId },
+    { name: 'selected-id', value: sidebar.selectedId },
+    { name: 'items-json', value: sidebar.items, kind: 'json' },
+    { name: 'heading', value: sidebar.heading },
+    { name: 'fixed-breakpoint', value: sidebar.fixedBreakpoint },
+    { name: 'data-hydration-capability', value: 'interactive' },
+    { name: 'data-hydration-trigger', value: 'initial' },
+  ]);
+
+  return `
+    <aside
+      class="layout-sidebar-col"
+      aria-label="ナビゲーション"
+      data-hydration-scope="note-sidebar"
+    >
+      <layout-sidebar${sidebarAttributes}></layout-sidebar>
+    </aside>
+  `.trim();
+};
+
+const renderArticleHeader = (articleHeader: NotePageProjection['articleHeader']): string => {
+  const articleHeaderAttributes = serializeHtmlAttributes([
+    { name: 'heading', value: articleHeader.heading },
+    { name: 'published', value: articleHeader.published },
+    { name: 'updated', value: articleHeader.updated },
+    { name: 'status', value: articleHeader.status },
+    { name: 'source', value: articleHeader.source },
+    { name: 'license', value: articleHeader.license },
+    {
+      name: ARTICLE_HEADER_TAGS_DATA_ATTRIBUTE,
+      value: articleHeader.genres.length > 0 ? articleHeader.genres : undefined,
+      kind: 'json',
+    },
+    {
+      name: 'data-hydration-capability',
+      value: articleHeader.shouldHydrateTags ? 'progressive' : undefined,
+    },
+    {
+      name: 'data-hydration-trigger',
+      value: articleHeader.shouldHydrateTags ? 'post-commit' : undefined,
+    },
+  ]);
+
+  return `<ui-article-header${articleHeaderAttributes}></ui-article-header>`;
+};
+
+const renderToc = (toc: NotePageProjection['toc']): string => {
+  const tocAttributes = serializeHtmlAttributes([
+    { name: 'source-id', value: toc.sourceId },
+    { name: 'headings-json', value: toc.headings, kind: 'json' },
+    { name: 'capabilities-json', value: toc.capabilities, kind: 'json' },
+    { name: 'content-root-id', value: toc.contentRootId },
+    { name: 'home-href', value: toc.homeHref },
+    {
+      name: 'data-hydration-capability',
+      value: toc.shouldHydrate ? 'interactive' : undefined,
+    },
+    {
+      name: 'data-hydration-trigger',
+      value: toc.shouldHydrate ? 'initial' : undefined,
+    },
+  ]);
+
+  return `
+    <aside
+      class="layout-toc-col"
+      aria-label="目次"
+      data-hydration-scope="note-toc"
+    >
+      <layout-toc${tocAttributes}></layout-toc>
+    </aside>
+  `.trim();
+};
 
 export class NoteLayout {
   data() {
@@ -49,124 +138,57 @@ export class NoteLayout {
       return '';
     }
 
-    const articleHeader = notePage.articleHeader;
-    const sidebar = notePage.sidebar;
-    const toc = notePage.toc;
-    const pagefind = notePage.pagefind;
-    const heading = escapeAttr(articleHeader.heading);
-    const published = articleHeader.published
-      ? ` published="${escapeAttr(articleHeader.published)}"`
-      : '';
-    const updated = articleHeader.updated
-      ? ` updated="${escapeAttr(articleHeader.updated)}"`
-      : '';
-    const status = articleHeader.status ? ` status="${escapeAttr(articleHeader.status)}"` : '';
-    const source = articleHeader.source ? ` source="${escapeAttr(articleHeader.source)}"` : '';
-    const license = articleHeader.license ? ` license="${escapeAttr(articleHeader.license)}"` : '';
-    const articleHeaderTags =
-      articleHeader.genres.length > 0
-        ? ` data-tags="${escapeAttr(JSON.stringify(articleHeader.genres))}"`
-        : '';
-    const sidebarItemsJson = escapeAttr(JSON.stringify(sidebar?.items ?? []));
-    const tocHeadingsJson = escapeAttr(JSON.stringify(toc.headings));
-    const tocCapabilitiesJson = escapeAttr(JSON.stringify(toc.capabilities));
-    const pagefindTitle = escapeHtml(pagefind?.title ?? '');
-    const pagefindDescription = escapeHtml(pagefind?.description ?? '');
-    const pagefindTokenizedTitle = escapeHtml(pagefind?.tokenizedTitle ?? '');
-    const pagefindTokenizedDescription = escapeHtml(pagefind?.tokenizedDescription ?? '');
-    const pagefindDate = pagefind?.date ? escapeHtml(pagefind.date) : '';
-    const pagefindSortDate = escapeAttr(pagefind?.sortDate ?? '0000-00-00');
-    const pagefindGenreFilters = (pagefind?.tags ?? [])
-      .map((genre) => `<span data-pagefind-filter="genre:${escapeAttr(genre)}"></span>`)
-      .join('');
+    const article = serializeHtmlAttributes([
+      { name: 'class', value: 'layout-main-col container-reading' },
+      {
+        name: 'data-pagefind-body',
+        value: Boolean(notePage.pagefind),
+        kind: 'boolean',
+      },
+      {
+        name: 'data-pagefind-ignore',
+        value: !notePage.pagefind,
+        kind: 'boolean',
+      },
+      {
+        name: 'data-pagefind-sort',
+        value: notePage.pagefind ? `date:${notePage.pagefind.sortDate}` : undefined,
+      },
+      { name: 'data-hydration-scope', value: 'note-content' },
+    ]);
+
+    const shellAttributes = serializeHtmlAttributes([
+      { name: 'class', value: 'note-shell' },
+      { name: 'data-hydration-scope', value: 'note-shell' },
+      { name: 'data-note-kind', value: notePage.noteKind },
+      { name: 'data-sidebar-presence', value: notePage.noteShellSidebarPresence },
+      {
+        name: 'data-pagefind-ignore',
+        value: !notePage.pagefind,
+        kind: 'boolean',
+      },
+    ]);
 
     return `
-      <section
-        class="note-shell"
-        data-hydration-scope="note-shell"
-        data-note-kind="${escapeAttr(notePage.noteKind)}"
-        data-sidebar-presence="${escapeAttr(notePage.noteShellSidebarPresence)}"
-        ${pagefind ? '' : 'data-pagefind-ignore'}
-      >
-        ${notePage.showSidebar && sidebar
-          ? `
-            <aside
-              class="layout-sidebar-col"
-              aria-label="ナビゲーション"
-              data-hydration-scope="note-sidebar"
-            >
-              <layout-sidebar
-                source-id="${escapeAttr(sidebar.sourceId)}"
-                selected-id="${escapeAttr(sidebar.selectedId)}"
-                items-json="${sidebarItemsJson}"
-                heading="${escapeAttr(sidebar.heading)}"
-                fixed-breakpoint="${escapeAttr(sidebar.fixedBreakpoint)}"
-                data-hydration-capability="interactive"
-                data-hydration-trigger="initial"
-              ></layout-sidebar>
-            </aside>
-          `
-          : ''}
+      <section${shellAttributes}>
+        ${notePage.showSidebar && notePage.sidebar ? renderSidebar(notePage.sidebar) : ''}
 
-        <article
-          class="layout-main-col container-reading"
-          ${pagefind ? 'data-pagefind-body' : 'data-pagefind-ignore'}
-          ${pagefind ? `data-pagefind-sort="date:${pagefindSortDate}"` : ''}
-          data-hydration-scope="note-content"
-        >
-          ${pagefind
-            ? `
-              <div class="sr-only" aria-hidden="true" data-pagefind-ignore>
-                <span data-pagefind-meta="title">${pagefindTitle}</span>
-                <span data-pagefind-meta="description">${pagefindDescription}</span>
-                <span data-pagefind-meta="date">${pagefindDate}</span>
-                ${pagefindGenreFilters}
-              </div>
-              <div class="sr-only" aria-hidden="true">
-                ${pagefindTitle.length > 0 ? `<span data-pagefind-weight="10">${pagefindTitle}</span>` : ''}
-                ${pagefindTokenizedTitle.length > 0 ? `<span data-pagefind-weight="8">${pagefindTokenizedTitle}</span>` : ''}
-                ${pagefindDescription.length > 0 ? `<span data-pagefind-weight="5">${pagefindDescription}</span>` : ''}
-                ${pagefindTokenizedDescription.length > 0 ? `<span data-pagefind-weight="3">${pagefindTokenizedDescription}</span>` : ''}
-              </div>
-            `
-            : ''}
-          <ui-article-header
-            heading="${heading}"${published}${updated}${status}${source}${license}${articleHeaderTags}
-            ${articleHeader.shouldHydrateTags ? 'data-hydration-capability="progressive" data-hydration-trigger="post-commit"' : ''}
-          ></ui-article-header>
-          <div id="${escapeAttr(toc.contentRootId)}" class="prose">
+        <article${article}>
+          ${notePage.pagefind ? renderPagefindMetadata(notePage.pagefind) : ''}
+          ${renderArticleHeader(notePage.articleHeader)}
+          <div${serializeHtmlAttributes([
+            { name: 'id', value: notePage.toc.contentRootId },
+            { name: 'class', value: 'prose' },
+          ])}>
             ${notePage.contentHtml}
           </div>
         </article>
 
-        <aside
-          class="layout-toc-col"
-          aria-label="目次"
-          data-hydration-scope="note-toc"
-        >
-          <layout-toc
-            source-id="${escapeAttr(toc.sourceId)}"
-            headings-json="${tocHeadingsJson}"
-            capabilities-json="${tocCapabilitiesJson}"
-            content-root-id="${escapeAttr(toc.contentRootId)}"
-            home-href="${escapeAttr(toc.homeHref)}"
-            ${toc.shouldHydrate
-              ? 'data-hydration-capability="interactive" data-hydration-trigger="initial"'
-              : ''}
-          ></layout-toc>
-        </aside>
+        ${renderToc(notePage.toc)}
       </section>
 
-      ${sidebar
-        ? `
-      <script type="application/json" id="${escapeAttr(sidebar.sourceId)}">
-${escapeJsonForScript(sidebar.items)}
-      </script>
-      `
-        : ''}
-      <script type="application/json" id="${escapeAttr(toc.sourceId)}">
-${escapeJsonForScript(toc.headings)}
-      </script>
+      ${notePage.sidebar ? renderJsonScriptElement(notePage.sidebar.sourceId, notePage.sidebar.items) : ''}
+      ${renderJsonScriptElement(notePage.toc.sourceId, notePage.toc.headings)}
     `.trim();
   }
 }

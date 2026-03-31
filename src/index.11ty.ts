@@ -1,26 +1,29 @@
 import { loadHomeData, type HomePageData } from './data/home.js';
+import { escapeHtmlText, serializeHtmlAttributes } from './layouts/html-output.js';
 
 interface HomePageTemplateData {
   home?: HomePageData;
 }
 
-const escapeHtml = (value: string): string =>
-  value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
 const renderTime = (value: string | null): string =>
-  value ? `<time datetime="${escapeHtml(value)}">${escapeHtml(value)}</time>` : '—';
+  value
+    ? `<time${serializeHtmlAttributes([{ name: 'datetime', value }])}>${escapeHtmlText(value)}</time>`
+    : '—';
 
 const renderGenres = (genres: readonly string[]): string =>
-  genres.length > 0 ? genres.map((genre) => escapeHtml(genre)).join(' / ') : '—';
+  genres.length > 0 ? genres.map((genre) => escapeHtmlText(genre)).join(' / ') : '—';
 
 const renderHomeEntry = (entry: HomePageData['notes'][number]): string => `
   <li class="home-feed-item">
-    <a class="home-entry" href="${escapeHtml(entry.permalink)}">
+    <a${serializeHtmlAttributes([
+      { name: 'class', value: 'home-entry' },
+      { name: 'href', value: entry.permalink },
+    ])}>
       <div class="home-entry__date">${renderTime(entry.date)}</div>
       <div class="home-entry__body">
-        <p class="home-entry__path">${escapeHtml(entry.pathLabel)}</p>
-        <h3 class="home-entry__title">${escapeHtml(entry.title)}</h3>
-        ${entry.summary.length > 0 ? `<p class="home-entry__summary">${escapeHtml(entry.summary)}</p>` : ''}
+        <p class="home-entry__path">${escapeHtmlText(entry.pathLabel)}</p>
+        <h3 class="home-entry__title">${escapeHtmlText(entry.title)}</h3>
+        ${entry.summary.length > 0 ? `<p class="home-entry__summary">${escapeHtmlText(entry.summary)}</p>` : ''}
         <p class="home-entry__genre">${renderGenres(entry.genres)}</p>
       </div>
     </a>
@@ -48,17 +51,20 @@ export class HomePageTemplate {
             <p class="home-eyebrow">Rouault</p>
             <h1 class="home-title">静かに入り、静かに読み進める。</h1>
             <p class="home-lead">公開している個人ノートの入口です。新しいものから辿れます。</p>
-            <p class="home-meta" aria-label="公開ノートの概要">
+            <p${serializeHtmlAttributes([
+              { name: 'class', value: 'home-meta' },
+              { name: 'aria-label', value: '公開ノートの概要' },
+            ])}>
               <span class="home-meta-item">最新更新 ${latestUpdatedDate}</span>
               <span class="home-meta-separator" aria-hidden="true">・</span>
               <a class="home-meta-link" href="/about/">このサイトについて</a>
             </p>
           </header>
 
-          <section class="home-feed-section" aria-labelledby="home-feed-heading">
+          <section aria-labelledby="home-feed-heading" class="home-feed-section">
             <div class="home-feed-header">
               <h2 id="home-feed-heading" class="home-feed-title">新着一覧</h2>
-              <p class="home-feed-meta">${escapeHtml(noteCount)}件</p>
+              <p class="home-feed-meta">${escapeHtmlText(noteCount)}件</p>
             </div>
             ${home.notes.length > 0
               ? `

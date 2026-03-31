@@ -1,4 +1,5 @@
 import type { CorpusPageEntry } from './data/corpusPages.js';
+import { serializeHtmlAttributes } from './layouts/html-output.js';
 
 interface CorpusPagesPaginationData {
   corpusPages?: CorpusPageEntry[];
@@ -7,14 +8,6 @@ interface CorpusPagesPaginationData {
 
 interface CorpusPageTemplateData {
   corpusPage?: CorpusPageEntry;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
 }
 
 export class CorpusPagesTemplate {
@@ -45,7 +38,9 @@ export class CorpusPagesTemplate {
       return '';
     }
 
-    return `<corpus-page corpus-page-json="${escapeHtml(JSON.stringify(data.corpusPage))}"></corpus-page>`;
+    return `<corpus-page${serializeHtmlAttributes([
+      { name: 'corpus-page-json', value: data.corpusPage, kind: 'json' },
+    ])}></corpus-page>`;
   }
 }
 

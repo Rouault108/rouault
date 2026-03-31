@@ -1,11 +1,9 @@
 import { loadCorporaOverviewData, type CorporaOverviewData } from './data/corporaOverview.js';
+import { serializeHtmlAttributes } from './layouts/html-output.js';
 
 interface CorporaOverviewTemplateData {
   corporaOverview?: CorporaOverviewData;
 }
-
-const escapeHtml = (value: string): string =>
-  value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 export class CorporaOverviewTemplate {
   data() {
@@ -21,7 +19,9 @@ export class CorporaOverviewTemplate {
   render(data: CorporaOverviewTemplateData) {
     const corporaOverview = data.corporaOverview ?? loadCorporaOverviewData();
 
-    return `<corpora-overview-page corpora-overview-json="${escapeHtml(JSON.stringify(corporaOverview))}"></corpora-overview-page>`;
+    return `<corpora-overview-page${serializeHtmlAttributes([
+      { name: 'corpora-overview-json', value: corporaOverview, kind: 'json' },
+    ])}></corpora-overview-page>`;
   }
 }
 

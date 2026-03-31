@@ -2,14 +2,7 @@ import {
   buildStaticExploreResponse,
   buildStaticSearchState,
 } from '../build/search/build-static-explore-response.js';
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
+import { serializeHtmlAttributes } from './layouts/html-output.js';
 
 export class SearchPageTemplate {
   data() {
@@ -32,11 +25,10 @@ export class SearchPageTemplate {
       <noscript>
         <p class="noscript-notice">検索・フィルタ機能にはJavaScriptが必要です。</p>
       </noscript>
-      <search-page initial-search-state-json="${escapeHtml(
-        JSON.stringify(initialState),
-      )}" initial-search-response-json="${escapeHtml(
-        JSON.stringify(initialResponse),
-      )}"></search-page>
+      <search-page${serializeHtmlAttributes([
+        { name: 'initial-search-state-json', value: initialState, kind: 'json' },
+        { name: 'initial-search-response-json', value: initialResponse, kind: 'json' },
+      ])}></search-page>
     `.trim();
   }
 }
