@@ -1,7 +1,7 @@
 import { expect, fixture, html } from '@open-wc/testing';
-import { BrowserLinkInterceptor } from '../../src/lib/router/browser-link-interceptor.js';
-import { LocationAdapter } from '../../src/lib/router/location-adapter.js';
-import type { NavigationResult } from '../../src/lib/router/router-types.js';
+import { BrowserLinkInterceptor } from '../../src/router/browser-link-interceptor.js';
+import { LocationAdapter } from '../../src/router/location-adapter.js';
+import type { NavigationResult } from '../../src/router/router-types.js';
 
 function simulateClick(element: HTMLElement, options: MouseEventInit = {}): void {
   let target = element;

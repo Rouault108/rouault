@@ -54,10 +54,10 @@ describe('velite config', () => {
     const source = readFileSync(configPath, 'utf8');
 
     expect(source).toContain(
-      "import { rehypeAnnotateLinkKinds } from './lib/rehype/annotate-link-kinds.js';",
+      "import { rehypeAnnotateLinkKinds } from './build/rehype/annotate-link-kinds.js';",
     );
     expect(source).toContain(
-      "import { rehypeStaticCodeGroups } from './lib/rehype/static-code-groups.js';",
+      "import { rehypeStaticCodeGroups } from './build/rehype/static-code-groups.js';",
     );
 
     const shikiCodeBlocksIndex = source.indexOf('rehypeShikiCodeBlocks,');

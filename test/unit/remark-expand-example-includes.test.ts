@@ -2,7 +2,7 @@ import { expect } from '@open-wc/testing';
 import remarkParse from 'remark-parse';
 import { unified } from 'unified';
 
-import { remarkExpandExampleIncludes } from '../../lib/remark/expand-example-includes.js';
+import { remarkExpandExampleIncludes } from '../../build/remark/expand-example-includes.js';
 
 describe('remarkExpandExampleIncludes', () => {
   it('registered ref を shared snippet へ展開すること', async () => {

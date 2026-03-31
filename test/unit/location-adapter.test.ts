@@ -1,5 +1,5 @@
 import { expect } from '@esm-bundle/chai';
-import { LocationAdapter } from '../../src/lib/router/location-adapter.js';
+import { LocationAdapter } from '../../src/router/location-adapter.js';
 
 describe('LocationAdapter', () => {
   it('/search は trailing slash なしへ正規化すること', () => {

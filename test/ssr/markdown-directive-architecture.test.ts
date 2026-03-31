@@ -3,7 +3,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const projectRoot = process.cwd();
-const directivesRoot = path.resolve(projectRoot, 'lib/remark/directives');
+const directivesRoot = path.resolve(projectRoot, 'build/remark/directives');
 
 const readDirectorySources = (directoryPath: string): string[] =>
   readdirSync(directoryPath)

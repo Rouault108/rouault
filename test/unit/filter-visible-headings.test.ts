@@ -6,7 +6,7 @@ import {
   readTocScopeSelectionMap,
   resolveTabValueForDescendant,
   revealHeadingInTabs,
-} from '../../src/lib/toc/filter-visible-headings.js';
+} from '../../src/toc/filter-visible-headings.js';
 
 describe('filterVisibleHeadings', () => {
   it('非アクティブな tabpanel 内の見出しを除外すること', () => {

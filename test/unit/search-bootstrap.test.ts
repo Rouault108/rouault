@@ -1,6 +1,6 @@
 import { expect } from '@open-wc/testing';
 
-import { initSearch } from '../../src/lib/search/bootstrap.js';
+import { initSearch } from '../../src/search/bootstrap.js';
 import { searchCore } from '../../src/search/search-core.js';
 
 interface TestSearchDialogElement extends HTMLElement {

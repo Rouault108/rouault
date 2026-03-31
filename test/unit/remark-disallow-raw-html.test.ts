@@ -1,5 +1,5 @@
 import { expect } from '@open-wc/testing';
-import { remarkDisallowRawHtml } from '../../lib/remark/disallow-raw-html.js';
+import { remarkDisallowRawHtml } from '../../build/remark/disallow-raw-html.js';
 
 interface MdastNode {
   type: string;

@@ -1,6 +1,6 @@
 import { expect } from '@open-wc/testing';
 import type { Heading } from '../../src/components/ui/toc/toc.js';
-import { TocActiveTracker } from '../../src/lib/toc/toc-active-tracker.js';
+import { TocActiveTracker } from '../../src/toc/toc-active-tracker.js';
 
 const waitForRefresh = async (): Promise<void> => {
   await Promise.resolve();

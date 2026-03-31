@@ -1,7 +1,7 @@
 import { expect, fixture, html, waitUntil } from '@open-wc/testing';
 import '../../src/components/app/app-router.js';
 import type { NavigationResult } from '../../src/router/router.js';
-import { createRouterContentHtml } from '../../src/lib/router/router-content-html.js';
+import { createRouterContentHtml } from '../../src/router/router-content-html.js';
 import { PRIMARY_TAB_URL_STATE_CHANGE_EVENT } from '../../src/components/app/navigation/primary-tab-url-state.js';
 
 type AppRouterElement = HTMLElement & {

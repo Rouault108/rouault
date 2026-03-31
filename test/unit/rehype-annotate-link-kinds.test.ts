@@ -1,5 +1,5 @@
 import { expect } from '@open-wc/testing';
-import { rehypeAnnotateLinkKinds } from '../../lib/rehype/annotate-link-kinds.js';
+import { rehypeAnnotateLinkKinds } from '../../build/rehype/annotate-link-kinds.js';
 
 interface HastNode {
   type: string;

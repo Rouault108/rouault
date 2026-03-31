@@ -1,5 +1,5 @@
 import { expect } from '@open-wc/testing';
-import { remarkRouaultDirectives } from '../../lib/remark/rouault-directives.js';
+import { remarkRouaultDirectives } from '../../build/remark/rouault-directives.js';
 
 interface MdastNode {
   type: string;

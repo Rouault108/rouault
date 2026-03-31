@@ -1,5 +1,5 @@
 import { expect } from '@open-wc/testing';
-import { rehypeHeadingIds } from '../../lib/rehype/rehype-heading-ids.js';
+import { rehypeHeadingIds } from '../../build/rehype/rehype-heading-ids.js';
 
 interface HastNode {
   type: string;

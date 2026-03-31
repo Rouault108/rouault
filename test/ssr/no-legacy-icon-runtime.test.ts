@@ -26,11 +26,6 @@ const walk = (dirPath: string): string[] => {
 };
 
 describe('legacy icon runtime usage', () => {
-  it('src/lib/icons.ts を完全に撤去していること', () => {
-    const files = walk(SRC_ROOT).map((filePath) => relative(process.cwd(), filePath));
-    expect(files).not.toContain('src/lib/icons.ts');
-  });
-
   it('register 層以外で ui-icon を直接 import しないこと', () => {
     const files = walk(SRC_ROOT);
 

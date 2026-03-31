@@ -1,5 +1,5 @@
 import { expect } from '@open-wc/testing';
-import { rehypeDisallowDangerousProps } from '../../lib/rehype/disallow-dangerous-props.js';
+import { rehypeDisallowDangerousProps } from '../../build/rehype/disallow-dangerous-props.js';
 
 interface HastNode {
   type: string;

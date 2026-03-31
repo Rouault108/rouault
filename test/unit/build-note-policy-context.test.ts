@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { buildNotePolicyContext } from '../../lib/remark/directives/policy/build-note-policy-context.js';
+import { buildNotePolicyContext } from '../../build/remark/directives/policy/build-note-policy-context.js';
 
 describe('buildNotePolicyContext', () => {
   it('frontmatter が取り除かれた testing note でも path から testing/sandbox を復元すること', () => {

@@ -1,6 +1,6 @@
 import { expect } from '@open-wc/testing';
 
-import { rehypePreviewSandbox } from '../../lib/rehype/preview-sandbox.js';
+import { rehypePreviewSandbox } from '../../build/rehype/preview-sandbox.js';
 
 interface HastNode {
   type: string;

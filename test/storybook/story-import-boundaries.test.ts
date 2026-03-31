@@ -9,7 +9,7 @@ function isForbiddenSpecifier(specifier: string): boolean {
 describe('story import boundaries', () => {
   const stories = collectStorySourceRecords();
 
-  it('forbids story files from depending on internal or server-side layers directly', () => {
+  it('ストーリーファイルが内部レイヤーやサーバーサイドのレイヤーに直接依存することを禁止していること', () => {
     const violations: string[] = [];
 
     for (const story of stories) {
@@ -29,7 +29,6 @@ describe('story import boundaries', () => {
         }
 
         if (
-          resolvedPath.startsWith('lib/') ||
           resolvedPath.startsWith('src/data/') ||
           resolvedPath.startsWith('scripts/') ||
           resolvedPath.startsWith('test/') ||
