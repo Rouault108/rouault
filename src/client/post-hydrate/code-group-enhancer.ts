@@ -1,12 +1,59 @@
+import '../../components/ui/copy-button/copy-button.js';
+import {
+  getCodeCopyValue,
+  isCodeCopyDisabled,
+  resolveGroupCopyButtonLabel,
+  shouldRenderCodeCopyButton,
+} from './code-surface-shared.js';
+
 const GROUP_SELECTOR = 'section[data-code-group]';
 const TAB_SELECTOR = '[data-code-group-tab]';
 const PANEL_SELECTOR = '[data-code-group-panel]';
+const CODE_BLOCK_SELECTOR = 'pre[data-code-block]';
+
+interface CopyButtonElement extends HTMLElement {
+  disabled: boolean;
+  hidden: boolean;
+  label: string;
+  size: 'sm' | 'md';
+  value: string;
+  resetState?: () => void;
+}
 
 interface GroupState {
   readonly group: HTMLElement;
   readonly tabs: HTMLButtonElement[];
   readonly panels: HTMLElement[];
+  readonly copyButton: CopyButtonElement | null;
 }
+
+const syncCopyButton = (state: GroupState, selectedKey: string): void => {
+  const button = state.copyButton;
+  if (!button) {
+    return;
+  }
+
+  const activePanel = state.panels.find((panel) => panel.dataset['codeGroupPanel'] === selectedKey) ?? null;
+  const activePre = activePanel?.querySelector<HTMLElement>(CODE_BLOCK_SELECTOR) ?? null;
+  if (!activePre || !shouldRenderCodeCopyButton(activePre)) {
+    button.hidden = true;
+    button.disabled = true;
+    button.value = '';
+    button.label = 'コードをコピー';
+    button.resetState?.();
+    return;
+  }
+
+  button.hidden = false;
+  button.size = 'sm';
+  button.label = resolveGroupCopyButtonLabel(
+    activePre,
+    activePanel?.dataset['codeGroupPanelLabel'] ?? null,
+  );
+  button.value = getCodeCopyValue(activePre) ?? '';
+  button.disabled = isCodeCopyDisabled(activePre);
+  button.resetState?.();
+};
 
 const syncSelection = (state: GroupState, nextKey: string): void => {
   state.group.dataset['codeGroupSelected'] = nextKey;
@@ -28,6 +75,8 @@ const syncSelection = (state: GroupState, nextKey: string): void => {
       panel.setAttribute('data-code-group-inactive', 'true');
     }
   }
+
+  syncCopyButton(state, nextKey);
 };
 
 const focusNextTab = (tabs: HTMLButtonElement[], currentIndex: number, delta: number): void => {
@@ -37,6 +86,29 @@ const focusNextTab = (tabs: HTMLButtonElement[], currentIndex: number, delta: nu
 
   const nextIndex = (currentIndex + delta + tabs.length) % tabs.length;
   tabs[nextIndex]?.focus();
+};
+
+const ensureCopyButton = (group: HTMLElement): CopyButtonElement | null => {
+  const header = group.querySelector<HTMLElement>('.code-group-header');
+  if (!header) {
+    return null;
+  }
+
+  let tools = header.querySelector<HTMLElement>('.code-group-header-tools');
+  if (!tools) {
+    tools = document.createElement('div');
+    tools.className = 'code-group-header-tools';
+    header.append(tools);
+  }
+
+  let button = tools.querySelector<CopyButtonElement>('ui-copy-button[data-code-group-copy]');
+  if (!button) {
+    button = document.createElement('ui-copy-button') as CopyButtonElement;
+    button.setAttribute('data-code-group-copy', 'true');
+    tools.append(button);
+  }
+
+  return button;
 };
 
 const enhanceGroup = (group: HTMLElement): void => {
@@ -54,6 +126,7 @@ const enhanceGroup = (group: HTMLElement): void => {
     group,
     tabs,
     panels,
+    copyButton: ensureCopyButton(group),
   };
 
   const initialKey =
@@ -108,7 +181,7 @@ const enhanceGroup = (group: HTMLElement): void => {
 };
 
 export const enhanceCodeGroups = (root: ParentNode): void => {
-  const groups = root.querySelectorAll<HTMLElement>(GROUP_SELECTOR);
+  const groups = Array.from(root.querySelectorAll<HTMLElement>(GROUP_SELECTOR));
   for (const group of groups) {
     enhanceGroup(group);
   }

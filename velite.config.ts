@@ -3,29 +3,29 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import { defineCollection, defineConfig, s } from 'velite';
 
-import { rehypeAnnotateLinkKinds } from './lib/rehype/annotate-link-kinds.js';
-import { rehypeDisallowDangerousProps } from './lib/rehype/disallow-dangerous-props.js';
-import { rehypeDisallowStaticMark } from './lib/rehype/disallow-static-mark.js';
-import { rehypeHeadingIds } from './lib/rehype/rehype-heading-ids.js';
-import { rehypeInlineCodeTranslateNo } from './lib/rehype/inline-code-translate-no.js';
-import { rehypeOrderedListContracts } from './lib/rehype/ordered-list-contracts.js';
-import { rehypePreviewSandbox } from './lib/rehype/preview-sandbox.js';
-import { rehypeRouaultComponents } from './lib/rehype/rouault-components.js';
-import { rehypeShikiCodeBlocks } from './lib/rehype/shiki-code-blocks.js';
-import { rehypeStaticCodeGroups } from './lib/rehype/static-code-groups.js';
-import { validateNoteContentContracts } from './lib/content/note-content-contracts.js';
-import { validateNoteMetadataContracts } from './lib/content/note-metadata-contracts.js';
-import { remarkExpandExampleIncludes } from './lib/remark/expand-example-includes.js';
-import { remarkDisallowRawHtml } from './lib/remark/disallow-raw-html.js';
-import { remarkLinkCards } from './lib/remark/remark-link-cards.js';
-import { remarkRouaultDirectives } from './lib/remark/rouault-directives.js';
+import { rehypeAnnotateLinkKinds } from './build/rehype/annotate-link-kinds.js';
+import { rehypeDisallowDangerousProps } from './build/rehype/disallow-dangerous-props.js';
+import { rehypeDisallowStaticMark } from './build/rehype/disallow-static-mark.js';
+import { rehypeHeadingIds } from './build/rehype/rehype-heading-ids.js';
+import { rehypeInlineCodeTranslateNo } from './build/rehype/inline-code-translate-no.js';
+import { rehypeOrderedListContracts } from './build/rehype/ordered-list-contracts.js';
+import { rehypePreviewSandbox } from './build/rehype/preview-sandbox.js';
+import { rehypeRouaultComponents } from './build/rehype/rouault-components.js';
+import { rehypeShikiCodeBlocks } from './build/rehype/shiki-code-blocks.js';
+import { rehypeStaticCodeGroups } from './build/rehype/static-code-groups.js';
+import { validateNoteContentContracts } from './build/content/note-content-contracts.js';
+import { validateNoteMetadataContracts } from './build/content/note-metadata-contracts.js';
+import { remarkExpandExampleIncludes } from './build/remark/expand-example-includes.js';
+import { remarkDisallowRawHtml } from './build/remark/disallow-raw-html.js';
+import { remarkLinkCards } from './build/remark/remark-link-cards.js';
+import { remarkRouaultDirectives } from './build/remark/rouault-directives.js';
 import { ARTICLE_STATUSES } from './src/types/article-status.js';
 import {
   NOTE_HYDRATION_BUDGET_PROFILE_NAMES,
   normalizeNoteHydrationBudgetProfileName,
 } from './src/types/note-hydration-budget-profile.js';
-import { NOTE_CONTENT_KINDS, normalizeNoteContentKind } from './src/types/note-kind.js';
-import { TESTING_AREAS, normalizeTestingArea } from './src/types/testing-area.js';
+import { NOTE_CONTENT_KINDS, normalizeNoteContentKind } from './shared/note/note-kind.js';
+import { TESTING_AREAS, normalizeTestingArea } from './shared/note/testing-area.js';
 
 const notes = defineCollection({
   name: 'Note',

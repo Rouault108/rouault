@@ -80,9 +80,13 @@ describe('rehypeStaticCodeGroups', () => {
     expect(firstTab?.properties?.['role']).toBe('tab');
     expect(firstTab?.properties?.['aria-selected']).toBe('true');
 
-    const copyButton = header?.children?.[1];
-    expect(copyButton?.tagName).toBe('button');
-    expect(copyButton?.properties?.['data-code-group-copy']).toBe(true);
+    const headerTools = header?.children?.[1];
+    expect(headerTools?.tagName).toBe('div');
+    expect(headerTools?.properties?.['className']).toEqual(['code-group-header-tools']);
+
+    const copyButton = headerTools?.children?.[0];
+    expect(copyButton?.tagName).toBe('ui-copy-button');
+    expect(copyButton?.properties?.['data-code-group-copy']).toBe('true');
     expect(copyButton?.properties?.['disabled']).toBe(true);
 
     const firstPanel = group?.children?.[1];

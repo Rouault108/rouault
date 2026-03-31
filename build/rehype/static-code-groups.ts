@@ -86,6 +86,27 @@ const createTabButton = (
   children: [{ type: 'text', value: label }],
 });
 
+const createGroupCopyButton = (): HastNode => ({
+  type: 'element',
+  tagName: 'div',
+  properties: {
+    className: ['code-group-header-tools'],
+  },
+  children: [
+    {
+      type: 'element',
+      tagName: 'ui-copy-button',
+      properties: {
+        size: 'sm',
+        label: 'コードをコピー',
+        disabled: true,
+        'data-code-group-copy': 'true',
+      },
+      children: [],
+    },
+  ],
+});
+
 const createPanel = (groupId: string, item: StaticCodeBlockMeta, selected: boolean): HastNode => ({
   type: 'element',
   tagName: 'section',
@@ -176,6 +197,7 @@ export function rehypeStaticCodeGroups(): (tree: unknown) => void {
                 createTabButton(groupId, item.key, item.tabLabel, index === 0),
               ),
             },
+            createGroupCopyButton(),
           ],
         },
         ...items.map((item, index) => createPanel(groupId, item, index === 0)),
