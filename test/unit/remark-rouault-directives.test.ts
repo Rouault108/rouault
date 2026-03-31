@@ -29,7 +29,7 @@ interface MdastNode {
 }
 
 describe('remarkRouaultDirectives', () => {
-  it('callout ディレクティブを ui-callout ノードへ変換すること', () => {
+  it('callout ディレクティブを aside[data-callout] ノードへ変換すること', () => {
     const tree: MdastNode = {
       type: 'root',
       children: [
@@ -384,7 +384,7 @@ describe('remarkRouaultDirectives', () => {
     );
   });
 
-  it('info-box ディレクティブを ui-info-box ノードへ変換すること', () => {
+  it('info-box ディレクティブを section[data-info-box] ノードへ変換すること', () => {
     const tree: MdastNode = {
       type: 'root',
       children: [

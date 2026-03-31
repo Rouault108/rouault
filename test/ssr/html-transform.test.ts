@@ -29,14 +29,14 @@ describe('transformHtmlWithLitSsr', () => {
         <body>
           <main id="main-content">
             <div class="prose">本文</div>
-            <ui-callout variant="info"><p>通知本文</p></ui-callout>
-            <ui-table><table><tbody><tr><th>列</th><td>値</td></tr></tbody></table></ui-table>
+            <ui-details summary="通知"><p>通知本文</p></ui-details>
+            <ui-tabs aria-label="表示切替"><div slot="tab" value="one">1つ目</div><div slot="panel">パネル本文</div></ui-tabs>
           </main>
         </body>
       </html>`;
 
     const transformed = await transformHtmlWithLitSsr(html, {
-      targetTagNames: ['ui-callout', 'ui-table'],
+      targetTagNames: ['ui-details', 'ui-tabs'],
       renderCustomElement: (
         tagName: string,
         attributes: readonly SsrAttribute[],
@@ -51,17 +51,17 @@ describe('transformHtmlWithLitSsr', () => {
         const renderedTagNames = new Set(tagNames);
         const styles: DocumentStyleDefinition[] = [];
 
-        if (renderedTagNames.has('ui-callout')) {
+        if (renderedTagNames.has('ui-details')) {
           styles.push({
-            id: 'ui-callout-document-styles',
-            cssText: '.callout{display:block;}',
+            id: 'ui-details-document-styles',
+            cssText: '.details{display:block;}',
           });
         }
 
-        if (renderedTagNames.has('ui-table')) {
+        if (renderedTagNames.has('ui-tabs')) {
           styles.push({
-            id: 'ui-table-document-styles',
-            cssText: '.table{display:block;}',
+            id: 'ui-tabs-document-styles',
+            cssText: '.tabs{display:block;}',
           });
         }
 
@@ -72,14 +72,14 @@ describe('transformHtmlWithLitSsr', () => {
     expect(transformed).toContain('class="prose">本文</div>');
     expect(transformed).toContain('type="application/json" id="sidebar-data"');
     expect(transformed).toContain('<template shadowrootmode="open">');
-    expect(transformed).toContain('id="ui-callout-document-styles"');
-    expect(transformed).toContain('id="ui-table-document-styles"');
+    expect(transformed).toContain('id="ui-details-document-styles"');
+    expect(transformed).toContain('id="ui-tabs-document-styles"');
 
     expect(renderCalls).toHaveLength(2);
-    expect(renderCalls[0]?.tagName).toBe('ui-callout');
+    expect(renderCalls[0]?.tagName).toBe('ui-details');
     expect(renderCalls[0]?.attributes).toContainEqual({
-      name: 'variant',
-      value: 'info',
+      name: 'summary',
+      value: '通知',
     });
     expect(renderCalls[0]?.attributes.find((attribute) => attribute.name === 'initial-code')).toBeUndefined();
   });
@@ -126,19 +126,18 @@ describe('transformHtmlWithLitSsr', () => {
     const html = `<!doctype html>
       <html lang="ja">
         <head>
-          <style id="ui-table-document-styles">.existing{display:block;}</style>
+          <style id="ui-details-document-styles">.existing{display:block;}</style>
         </head>
         <body>
           <main>
-            <ui-table><table><tbody><tr><td>A</td></tr></tbody></table></ui-table>
-            <ui-table><table><tbody><tr><td>B</td></tr></tbody></table>
-            </ui-table>
+            <ui-details summary="A"><p>A</p></ui-details>
+            <ui-details summary="B"><p>B</p></ui-details>
           </main>
         </body>
       </html>`;
 
     const transformed = await transformHtmlWithLitSsr(html, {
-      targetTagNames: ['ui-table'],
+      targetTagNames: ['ui-details'],
       renderCustomElement: (
         tagName: string,
         attributes: readonly SsrAttribute[],
@@ -149,13 +148,13 @@ describe('transformHtmlWithLitSsr', () => {
         ),
       collectDocumentStylesForTags: () => [
         {
-          id: 'ui-table-document-styles',
-          cssText: '.table{display:block;}',
+          id: 'ui-details-document-styles',
+          cssText: '.details{display:block;}',
         },
       ],
     });
 
-    expect(transformed.match(/id="ui-table-document-styles"/g)).toHaveLength(1);
+    expect(transformed.match(/id="ui-details-document-styles"/g)).toHaveLength(1);
     expect(transformed).toContain('.existing{display:block;}');
   });
 });

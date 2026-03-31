@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
-import '../../../components/ui/callout/callout';
 import '../../../components/ui/ul/ul';
 import {
   renderFoundationFrame,
@@ -92,9 +91,14 @@ export const Default: Story = {
                     <li>段落間は標準間隔を維持する。</li>
                     <li>節の切り替えでは少し大きく呼吸させる。</li>
                   </ul>
-                  <ui-callout id="prose-callout" kind="tip" heading="余白は構造である">
-                    境界線ではなくスペーシングで章の切り替わりを示します。
-                  </ui-callout>
+                  <aside
+                    id="prose-callout"
+                    data-callout
+                    data-callout-kind="tip"
+                    data-callout-heading="余白は構造である"
+                  >
+                    <p>境界線ではなくスペーシングで章の切り替わりを示します。</p>
+                  </aside>
                 </div>
               `,
             },
@@ -204,7 +208,7 @@ export const Default: Story = {
     }
     if (!isNearlyEqual(toPx(calloutStyle.marginTop), proseFlowSpace)) {
       throw new Error(
-        `ui-callout の margin-top は --space-4 を期待していましたが、実際には ${calloutStyle.marginTop} でした`,
+        `[data-callout] の margin-top は --space-4 を期待していましたが、実際には ${calloutStyle.marginTop} でした`,
       );
     }
     if (!isNearlyEqual(readTokenPx(prose, '--prose-flow-space'), proseFlowSpace)) {
