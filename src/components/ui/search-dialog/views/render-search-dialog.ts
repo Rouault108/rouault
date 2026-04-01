@@ -13,14 +13,14 @@ import {
   LOADING_HEADING,
   LOADING_MESSAGE,
   SEARCH_RESULTS_ARIA_LABEL,
-} from '../search-dialog.constants';
-import type { SearchDialogHighlightRenderValue } from '../internals/search-dialog-highlight';
+} from '../search-dialog.constants.js';
+import type { SearchDialogHighlightRenderValue } from '../internals/search-dialog-highlight.js';
 import type {
   UiSearchDialogItem,
   UiSearchDialogMessages,
   UiSearchDialogSearchError,
   VisibleRange,
-} from '../search-dialog.types';
+} from '../search-dialog.types.js';
 
 export interface RenderSearchDialogHost {
   query: string;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { SSR_COMPONENT_DEFINITIONS } from '../../build/ssr/target-definitions';
+import { SSR_COMPONENT_DEFINITIONS } from '../../build/ssr/target-definitions.js';
 import {
   SSR_NOTE_TARGET_TAGS,
   SSR_PAGE_TARGET_TAGS,
@@ -19,7 +19,9 @@ const REQUIRED_NOTE_CONTENT_TAGS: readonly string[] = [
 
 describe('component manifest / ssr targets', () => {
   it('component manifest の tag が重複しないこと', () => {
-    const tags = SSR_COMPONENT_DEFINITIONS.map((definition) => definition.tag);
+    const tags = SSR_COMPONENT_DEFINITIONS.map(
+      (definition: (typeof SSR_COMPONENT_DEFINITIONS)[number]) => definition.tag,
+    );
     expect(tags).toEqual([...new Set(tags)]);
   });
 
@@ -47,9 +49,12 @@ describe('component manifest / ssr targets', () => {
       'ui-footnote',
     ];
 
-    expect(SSR_COMPONENT_DEFINITIONS.some((definition) => removedTags.includes(definition.tag))).toBe(
-      false,
-    );
+    expect(
+      SSR_COMPONENT_DEFINITIONS.some(
+        (definition: (typeof SSR_COMPONENT_DEFINITIONS)[number]) =>
+          removedTags.includes(definition.tag),
+      ),
+    ).toBe(false);
 
     for (const tagName of removedTags) {
       expect(SSR_NOTE_TARGET_TAGS).not.toContain(tagName);

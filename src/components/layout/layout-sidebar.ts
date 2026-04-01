@@ -1,10 +1,10 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
-import '../ui/icon/icon';
-import '../ui/sidebar/sidebar';
-import type { TreeNode } from '../ui/file-tree/file-tree';
-import type { UiSidebar, UiSidebarToggleDetail } from '../ui/sidebar/sidebar';
-import type { UiSidebarStateChangeDetail } from '../ui/sidebar-shell/sidebar-shell';
+import '../ui/icon/icon.js';
+import '../ui/sidebar/sidebar.js';
+import type { TreeNode } from '../ui/file-tree/file-tree.js';
+import type { UiSidebar, UiSidebarToggleDetail } from '../ui/sidebar/sidebar.js';
+import type { UiSidebarStateChangeDetail } from '../ui/sidebar-shell/sidebar-shell.js';
 import type { IconName } from '../../../shared/icons/icons-catalog.js';
 import { isIconName } from '../../../shared/icons/icons-catalog.js';
 import { attachStickyFooterBoundary } from '../../layout/sticky-footer-boundary.js';

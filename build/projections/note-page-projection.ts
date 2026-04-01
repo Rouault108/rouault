@@ -1,19 +1,24 @@
 import type { TreeNode } from '../../shared/navigation/tree-node.js';
 import { injectNoteContentProfiles } from '../../build/content/note-content-contracts.js';
 import type { NoteNavigationModel } from '../../shared/navigation/navigation-types.js';
-import type { PagefindDocumentData } from '../../build/search/build-pagefind-document-data';
-import type { NoteStatus } from '../../src/types/article-status';
-import type { NoteContentKind } from '../../shared/note/note-kind';
-import { resolveNoteSurfacePolicy } from '../../shared/note/note-surface-policy';
+import type { PagefindDocumentData } from '../../build/search/build-pagefind-document-data.js';
+import type { NoteStatus } from '../../src/types/article-status.js';
+import type { NoteContentKind } from '../../shared/note/note-kind.js';
+import { resolveNoteSurfacePolicy } from '../../shared/note/note-surface-policy.js';
 import {
   resolveNoteHydrationBudgetProfile,
   type NoteHydrationCounts,
 } from './note-hydration-profile.js';
-import type { IntrinsicNote } from '../../build/data/notes';
+import type { IntrinsicNote } from '../../build/data/notes.js';
 
 interface NotePageTocScopeSelection {
   scopeId: string;
   value: string;
+}
+
+interface RawTocScopeSelection {
+  scopeId?: unknown;
+  value?: unknown;
 }
 
 export interface NotePageTocHeading {
@@ -105,7 +110,7 @@ function normalizeHeadings(
 
       const scopeSelections = Array.isArray(item.scopeSelections)
         ? item.scopeSelections
-            .map((selection) => {
+            .map((selection: RawTocScopeSelection) => {
               const scopeId =
                 typeof selection.scopeId === 'string' ? selection.scopeId.trim() : '';
               const value = typeof selection.value === 'string' ? selection.value.trim() : '';

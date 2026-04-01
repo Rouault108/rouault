@@ -1,18 +1,18 @@
 import { LitElement, type PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import '../icon/icon.js';
-import '../search-field/search-field';
-import '../spinner/spinner';
-import type { SearchField } from '../search-field/search-field';
-import { searchDialogStyles } from './search-dialog.styles';
-import { SearchDialogController } from './internals/search-dialog-controller';
+import '../search-field/search-field.js';
+import '../spinner/spinner.js';
+import type { SearchField } from '../search-field/search-field.js';
+import { searchDialogStyles } from './search-dialog.styles.js';
+import { SearchDialogController } from './internals/search-dialog-controller.js';
 import {
   renderSearchDialogHighlightedText,
   resolveSearchDialogItemPath,
-} from './internals/search-dialog-highlight';
-import { SearchDialogSearchSession } from './internals/search-dialog-search-session';
-import { SearchDialogSelectionModel } from './internals/search-dialog-selection-model';
-import { SearchDialogVirtualizer } from './internals/search-dialog-virtualizer';
+} from './internals/search-dialog-highlight.js';
+import { SearchDialogSearchSession } from './internals/search-dialog-search-session.js';
+import { SearchDialogSelectionModel } from './internals/search-dialog-selection-model.js';
+import { SearchDialogVirtualizer } from './internals/search-dialog-virtualizer.js';
 import type {
   UiSearchDialogCloseReason,
   UiSearchDialogClosedDetail,
@@ -26,8 +26,8 @@ import type {
   UiSearchDialogSearchError,
   UiSearchDialogSearcher,
   UiSearchDialogSelectedDetail,
-} from './search-dialog.types';
-import { renderSearchDialog } from './views/render-search-dialog';
+} from './search-dialog.types.js';
+import { renderSearchDialog } from './views/render-search-dialog.js';
 
 const DEFAULT_MATCH_FIELDS: readonly UiSearchDialogMatchField[] = ['title', 'path', 'keywords'];
 const DEFAULT_MESSAGES: UiSearchDialogMessages = {

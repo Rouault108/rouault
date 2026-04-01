@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 
-import lucideCollection from '@iconify-json/lucide/icons.json';
+import lucideCollection from '@iconify-json/lucide/icons.json' with { type: 'json' };
 import { ICON_NAMES } from '../shared/icons/icons-catalog.js';
 
 interface IconifyAliasDefinition {

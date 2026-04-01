@@ -4,14 +4,14 @@ import {
   LOADING_MESSAGE,
   SEARCH_DEBOUNCE_MS,
   SEARCH_WORKER_THRESHOLD,
-} from '../search-dialog.constants';
+} from '../search-dialog.constants.js';
 import type {
   UiSearchDialogItem,
   UiSearchDialogMatchField,
   UiSearchDialogSearchError,
   UiSearchDialogSearcher,
-} from '../search-dialog.types';
-import { SearchDialogSearchWorker } from './search-dialog-search-worker';
+} from '../search-dialog.types.js';
+import { SearchDialogSearchWorker } from './search-dialog-search-worker.js';
 
 export interface SearchDialogSearchSessionHost {
   getQuery(): string;

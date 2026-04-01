@@ -1,4 +1,4 @@
-import { filterNotesBySurface, type IntrinsicNote, type IntrinsicNotesCollection } from '../../build/data/notes';
+import { filterNotesBySurface, type IntrinsicNote, type IntrinsicNotesCollection } from '../../build/data/notes.js';
 
 const VALID_DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/u;
 
@@ -124,7 +124,7 @@ export const buildHomePageProjection = (
 ): HomePageData => {
   const visibleNotes = filterNotesBySurface(notes, 'home');
 
-  const indexedNotes = visibleNotes.flatMap((note, sourceIndex) => {
+  const indexedNotes = visibleNotes.flatMap((note: HomeSourceNote, sourceIndex: number) => {
     const title = normalizeText(note.title);
     const permalink = normalizeText(note.permalink);
     const slug = normalizeText(note.slug);

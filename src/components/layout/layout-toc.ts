@@ -4,8 +4,8 @@ import { attachStickyFooterBoundary } from '../../layout/sticky-footer-boundary.
 import { type TocCapabilities } from '../../toc/filter-visible-headings.js';
 import { TocActiveTracker } from '../../toc/toc-active-tracker.js';
 import { TocMobileSummaryController } from '../../toc/toc-mobile-summary-controller.js';
-import '../ui/toc/toc';
-import type { Heading, UiTocActiveChangeDetail } from '../ui/toc/toc';
+import '../ui/toc/toc.js';
+import type { Heading, UiTocActiveChangeDetail } from '../ui/toc/toc.js';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);

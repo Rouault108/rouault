@@ -5,7 +5,7 @@ import {
   renderFooter,
   type FooterLinkItem,
   type FooterRenderOptions,
-} from '../ui/footer/footer';
+} from '../ui/footer/footer.js';
 
 declare const __GIT_HASH__: string | undefined;
 

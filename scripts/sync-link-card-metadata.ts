@@ -4,10 +4,10 @@ import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { parse } from 'parse5';
 
 interface MetadataEntry {
-  readonly title?: string;
-  readonly description?: string;
-  readonly image?: string;
-  readonly siteName?: string;
+  title?: string;
+  description?: string;
+  image?: string;
+  siteName?: string;
 }
 
 interface HtmlNode {
@@ -18,21 +18,21 @@ interface HtmlNode {
 }
 
 interface HtmlMetadataPayload {
-  readonly finalUrl: string;
-  readonly ogTitle?: string;
-  readonly ogDescription?: string;
-  readonly ogImage?: string;
-  readonly ogSiteName?: string;
-  readonly twitterTitle?: string;
-  readonly twitterDescription?: string;
-  readonly twitterImage?: string;
-  readonly oembedUrl?: string;
+  finalUrl: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  ogSiteName?: string;
+  twitterTitle?: string;
+  twitterDescription?: string;
+  twitterImage?: string;
+  oembedUrl?: string;
 }
 
 interface OEmbedPayload {
-  readonly title?: string;
-  readonly thumbnail_url?: string;
-  readonly provider_name?: string;
+  title?: string;
+  thumbnail_url?: string;
+  provider_name?: string;
 }
 
 interface ThumbnailCacheEntry {
@@ -200,23 +200,41 @@ const parseHtmlMetadata = (html: string, pageUrl: string): HtmlMetadataPayload =
     }
   }
 
-  return {
-    finalUrl: pageUrl,
-    ...(metaMap.get('og:title') ? { ogTitle: metaMap.get('og:title') } : {}),
-    ...(metaMap.get('og:description') ? { ogDescription: metaMap.get('og:description') } : {}),
-    ...(resolveSafeHttpUrl(metaMap.get('og:image'), pageUrl)
-      ? { ogImage: resolveSafeHttpUrl(metaMap.get('og:image'), pageUrl) }
-      : {}),
-    ...(metaMap.get('og:site_name') ? { ogSiteName: metaMap.get('og:site_name') } : {}),
-    ...(metaMap.get('twitter:title') ? { twitterTitle: metaMap.get('twitter:title') } : {}),
-    ...(metaMap.get('twitter:description')
-      ? { twitterDescription: metaMap.get('twitter:description') }
-      : {}),
-    ...(resolveSafeHttpUrl(metaMap.get('twitter:image'), pageUrl)
-      ? { twitterImage: resolveSafeHttpUrl(metaMap.get('twitter:image'), pageUrl) }
-      : {}),
-    ...(oembedUrl ? { oembedUrl } : {}),
-  };
+  const payload: HtmlMetadataPayload = { finalUrl: pageUrl };
+  const ogTitle = metaMap.get('og:title');
+  const ogDescription = metaMap.get('og:description');
+  const ogImage = resolveSafeHttpUrl(metaMap.get('og:image'), pageUrl);
+  const ogSiteName = metaMap.get('og:site_name');
+  const twitterTitle = metaMap.get('twitter:title');
+  const twitterDescription = metaMap.get('twitter:description');
+  const twitterImage = resolveSafeHttpUrl(metaMap.get('twitter:image'), pageUrl);
+
+  if (ogTitle) {
+    payload.ogTitle = ogTitle;
+  }
+  if (ogDescription) {
+    payload.ogDescription = ogDescription;
+  }
+  if (ogImage) {
+    payload.ogImage = ogImage;
+  }
+  if (ogSiteName) {
+    payload.ogSiteName = ogSiteName;
+  }
+  if (twitterTitle) {
+    payload.twitterTitle = twitterTitle;
+  }
+  if (twitterDescription) {
+    payload.twitterDescription = twitterDescription;
+  }
+  if (twitterImage) {
+    payload.twitterImage = twitterImage;
+  }
+  if (oembedUrl) {
+    payload.oembedUrl = oembedUrl;
+  }
+
+  return payload;
 };
 
 const fetchTextWithTimeout = async (
@@ -329,42 +347,47 @@ const fetchMetadata = async (
       const payload = await fetchJsonWithTimeout(htmlPayload.oembedUrl, REQUEST_TIMEOUT_MS);
       if (payload && typeof payload === 'object') {
         const raw = payload as Record<string, unknown>;
-        oembed = {
-          ...(pickOptionalString(raw['title']) ? { title: pickOptionalString(raw['title']) } : {}),
-          ...(pickOptionalString(raw['thumbnail_url'])
-            ? { thumbnail_url: pickOptionalString(raw['thumbnail_url']) }
-            : {}),
-          ...(pickOptionalString(raw['provider_name'])
-            ? { provider_name: pickOptionalString(raw['provider_name']) }
-            : {}),
-        };
+        const title = pickOptionalString(raw['title']);
+        const thumbnailUrl = pickOptionalString(raw['thumbnail_url']);
+        const providerName = pickOptionalString(raw['provider_name']);
+
+        oembed = {};
+        if (title) {
+          oembed.title = title;
+        }
+        if (thumbnailUrl) {
+          oembed.thumbnail_url = thumbnailUrl;
+        }
+        if (providerName) {
+          oembed.provider_name = providerName;
+        }
       }
     } catch {
       // oEmbed は補助情報なので失敗しても継続する。
     }
   }
 
-  const metadata: MetadataEntry = {
-    ...(htmlPayload.ogTitle ?? htmlPayload.twitterTitle ?? oembed?.title
-      ? { title: htmlPayload.ogTitle ?? htmlPayload.twitterTitle ?? oembed?.title }
-      : {}),
-    ...(htmlPayload.ogDescription ?? htmlPayload.twitterDescription
-      ? { description: htmlPayload.ogDescription ?? htmlPayload.twitterDescription }
-      : {}),
-    ...(htmlPayload.ogImage ??
-      htmlPayload.twitterImage ??
-      resolveSafeHttpUrl(oembed?.thumbnail_url, finalUrl)
-      ? {
-        image:
-          htmlPayload.ogImage ??
-          htmlPayload.twitterImage ??
-          resolveSafeHttpUrl(oembed?.thumbnail_url, finalUrl),
-      }
-      : {}),
-    ...(htmlPayload.ogSiteName ?? oembed?.provider_name
-      ? { siteName: htmlPayload.ogSiteName ?? oembed?.provider_name }
-      : {}),
-  };
+  const title = htmlPayload.ogTitle ?? htmlPayload.twitterTitle ?? oembed?.title;
+  const description = htmlPayload.ogDescription ?? htmlPayload.twitterDescription;
+  const image =
+    htmlPayload.ogImage ??
+    htmlPayload.twitterImage ??
+    resolveSafeHttpUrl(oembed?.thumbnail_url, finalUrl);
+  const siteName = htmlPayload.ogSiteName ?? oembed?.provider_name;
+
+  const metadata: MetadataEntry = {};
+  if (title) {
+    metadata.title = title;
+  }
+  if (description) {
+    metadata.description = description;
+  }
+  if (image) {
+    metadata.image = image;
+  }
+  if (siteName) {
+    metadata.siteName = siteName;
+  }
 
   return { finalUrl, metadata };
 };

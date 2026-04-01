@@ -1,7 +1,7 @@
 import { css, html, LitElement, nothing, type PropertyValues } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
-import type { Button } from '../button/button';
-import '../button/button';
+import type { Button } from '../button/button.js';
+import '../button/button.js';
 import '../icon/icon.js';
 import {
   captureTrigger,
@@ -9,7 +9,7 @@ import {
   restoreTriggerFocus,
   showNativeDialog,
   waitForDialogAnimations,
-} from './dialog-helpers';
+} from './dialog-helpers.js';
 
 const CLOSE_BUTTON_LABEL = '閉じる';
 const BODY_DIALOG_OPEN_ATTRIBUTE = 'data-ui-dialog-open';

@@ -1,19 +1,19 @@
 import { css, html, LitElement, type PropertyValues } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
-import '../file-tree/file-tree';
+import '../file-tree/file-tree.js';
 import type {
   FileTreeVariant,
   TreeItemDensity,
   TreeNode,
-} from '../file-tree/file-tree';
-import '../sidebar-shell/sidebar-shell';
+} from '../file-tree/file-tree.js';
+import '../sidebar-shell/sidebar-shell.js';
 import type {
   SidebarMode,
   SidebarState,
   UiSidebarShell,
   UiSidebarStateChangeDetail,
-} from '../sidebar-shell/sidebar-shell';
+} from '../sidebar-shell/sidebar-shell.js';
 
 export interface UiSidebarSelectDetail {
   id: string;

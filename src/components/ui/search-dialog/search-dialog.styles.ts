@@ -1,6 +1,6 @@
 import { css, unsafeCSS } from 'lit';
-import { HIGHLIGHT_RULE_TEMPLATE } from '../highlight/highlight';
-import { SEARCH_DIALOG_HIGHLIGHT_SELECTOR } from './search-dialog.constants';
+import { HIGHLIGHT_RULE_TEMPLATE } from '../highlight/highlight.js';
+import { SEARCH_DIALOG_HIGHLIGHT_SELECTOR } from './search-dialog.constants.js';
 
 export const searchDialogStyles = css`
   :host {

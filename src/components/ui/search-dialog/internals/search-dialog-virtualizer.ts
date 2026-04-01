@@ -2,8 +2,8 @@ import {
   VIRTUALIZATION_THRESHOLD,
   VIRTUAL_OVERSCAN,
   VIRTUAL_ROW_HEIGHT_PX,
-} from '../search-dialog.constants';
-import type { VisibleRange } from '../search-dialog.types';
+} from '../search-dialog.constants.js';
+import type { VisibleRange } from '../search-dialog.types.js';
 
 export class SearchDialogVirtualizer {
   isVirtualized(total: number): boolean {

@@ -4,14 +4,14 @@ import {
   restoreTriggerFocus,
   showNativeDialog,
   waitForDialogAnimations,
-} from '../../dialog/dialog-helpers';
-import type { SearchField } from '../../search-field/search-field';
-import { BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE } from '../search-dialog.constants';
+} from '../../dialog/dialog-helpers.js';
+import type { SearchField } from '../../search-field/search-field.js';
+import { BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE } from '../search-dialog.constants.js';
 import type {
   UiSearchDialogCloseReason,
   UiSearchDialogClosedDetail,
   UiSearchDialogOpenedDetail,
-} from '../search-dialog.types';
+} from '../search-dialog.types.js';
 
 const searchDialogBodyScrollLock = createBodyScrollLock(BODY_SEARCH_DIALOG_OPEN_ATTRIBUTE);
 

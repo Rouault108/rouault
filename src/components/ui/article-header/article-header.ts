@@ -1,7 +1,7 @@
 import { css, html, LitElement, nothing, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import '../tag/tag';
-import { linkTextStyles } from '../../../styles/contracts/link-styles';
+import '../tag/tag.js';
+import { linkTextStyles } from '../../../styles/contracts/link-styles.js';
 import type { ArticleStatus } from '../../../types/article-status.js';
 import { formatArticleDate } from './format-article-date.js';
 import type { IconName } from '../../../../shared/icons/icons-catalog.js';

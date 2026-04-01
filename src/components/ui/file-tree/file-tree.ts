@@ -1,10 +1,10 @@
 import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
-import '../tree-item/tree-item';
-import type { BranchNode, LeafNode, TreeNode } from '../../../../shared/navigation/tree-node';
+import '../tree-item/tree-item.js';
+import type { BranchNode, LeafNode, TreeNode } from '../../../../shared/navigation/tree-node.js';
 
-export type { TreeNode } from '../../../../shared/navigation/tree-node';
+export type { TreeNode } from '../../../../shared/navigation/tree-node.js';
 
 export type TreeItemDensity = 'normal' | 'compact';
 export type FileTreeVariant = 'default' | 'card';

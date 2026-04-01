@@ -1,12 +1,12 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import '../ui/icon/icon';
-import '../ui/header/header';
-import '../ui/search-trigger/search-trigger';
-import '../ui/breadcrumbs/breadcrumbs';
-import '../ui/button/button';
-import '../ui/dropdown/dropdown';
-import type { BreadcrumbItem } from '../ui/breadcrumbs/breadcrumbs';
+import '../ui/icon/icon.js';
+import '../ui/header/header.js';
+import '../ui/search-trigger/search-trigger.js';
+import '../ui/breadcrumbs/breadcrumbs.js';
+import '../ui/button/button.js';
+import '../ui/dropdown/dropdown.js';
+import type { BreadcrumbItem } from '../ui/breadcrumbs/breadcrumbs.js';
 import { navigateToUrl } from '../../search/navigation.js';
 import {
   THEME_CHANGE_EVENT,

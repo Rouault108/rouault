@@ -1,10 +1,10 @@
-import type { SearchField } from '../../search-field/search-field';
+import type { SearchField } from '../../search-field/search-field.js';
 import type {
   UiSearchDialogCloseReason,
   UiSearchDialogItem,
   UiSearchDialogSelectedDetail,
-} from '../search-dialog.types';
-import { SearchDialogVirtualizer } from './search-dialog-virtualizer';
+} from '../search-dialog.types.js';
+import { SearchDialogVirtualizer } from './search-dialog-virtualizer.js';
 
 export interface SearchDialogSelectionHost {
   isLoading(): boolean;

@@ -3,7 +3,7 @@ import type {
   SearchWorkerResponse,
   UiSearchDialogItem,
   UiSearchDialogMatchField,
-} from '../search-dialog.types';
+} from '../search-dialog.types.js';
 
 export class SearchDialogSearchWorker {
   private _searchWorker: Worker | null = null;
