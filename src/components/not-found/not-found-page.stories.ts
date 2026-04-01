@@ -2,23 +2,22 @@ import { html } from 'lit';
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { expect } from 'storybook/test';
 import './not-found-page';
-import type { NotFoundPage } from './not-found-page';
 
 interface StoryArgs {
   requestedPath: string;
 }
 
-function getComponent(canvasElement: HTMLElement): NotFoundPage {
-  const element = canvasElement.querySelector<NotFoundPage>('not-found-page');
-  if (!element) {
+function getComponent(canvasElement: HTMLElement): HTMLElement {
+  const element = canvasElement.querySelector('not-found-page');
+  if (!(element instanceof HTMLElement)) {
     throw new Error('not-found-page が見つかりません');
   }
   return element;
 }
 
-function getShadowRoot(element: NotFoundPage): ShadowRoot {
+function getShadowRoot(element: HTMLElement): ShadowRoot {
   const shadowRoot = element.shadowRoot;
-  if (!shadowRoot) {
+  if (!(shadowRoot instanceof ShadowRoot)) {
     throw new Error('shadowRoot が見つかりません');
   }
   return shadowRoot;
@@ -42,7 +41,7 @@ function getStyleText(shadowRoot: ShadowRoot): string {
     .join('\n');
 
   const styleText = `${inlineStyles}\n${adoptedStyles}`.trim();
-  if (!styleText) {
+  if (styleText.length === 0) {
     throw new Error('style が見つかりません');
   }
   return styleText;
@@ -75,17 +74,18 @@ export const DefaultContract: Story = {
     const element = getComponent(canvasElement);
     const root = getShadowRoot(element);
 
-    const section = root.querySelector('section[aria-labelledby="not-found-page-title"]');
+    const section = root.querySelector<HTMLElement>('section.not-found-page');
     await expect(section).not.toBeNull();
+    await expect(section?.getAttribute('aria-labelledby')).toBe('not-found-page-title');
 
     const heading = root.querySelector<HTMLHeadingElement>('#not-found-page-title');
     await expect(heading?.textContent.trim()).toBe('このページは見つかりませんでした');
 
-    const nav = root.querySelector<HTMLElement>('nav[aria-label="404 navigation"]');
+    const nav = root.querySelector<HTMLElement>('nav.actions[aria-label="404 navigation"]');
     await expect(nav).not.toBeNull();
 
-    const links = Array.from(root.querySelectorAll<HTMLAnchorElement>('a'));
-    const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>('button'));
+    const links = Array.from(root.querySelectorAll<HTMLAnchorElement>('a.action-link'));
+    const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>('button.action-button'));
 
     await expect(links.length).toBe(2);
     await expect(buttons.length).toBe(1);
@@ -104,10 +104,10 @@ export const RequestedPathContract: Story = {
     const element = getComponent(canvasElement);
     const root = getShadowRoot(element);
 
-    const meta = root.querySelector('.meta');
-    await expect(meta).not.toBeNull();
+    const metaSection = root.querySelector<HTMLElement>('dl.meta');
+    await expect(metaSection).not.toBeNull();
 
-    const code = root.querySelector('.meta-value code');
+    const code = root.querySelector<HTMLElement>('.meta-value code');
     await expect(code?.textContent.trim()).toBe(args.requestedPath);
   },
 };

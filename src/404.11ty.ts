@@ -2,7 +2,7 @@ import {
   buildNotFoundPageMarkup,
   NOT_FOUND_PAGE_META_DESCRIPTION,
   NOT_FOUND_PAGE_TITLE,
-} from './not-found/not-found-page.js';
+} from '@/components/not-found/not-found-page';
 
 export class NotFoundPageTemplate {
   data() {

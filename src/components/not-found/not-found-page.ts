@@ -1,21 +1,53 @@
-import { css, html, LitElement, nothing } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
-import {
-  ABOUT_PAGE_HREF,
-  NOT_FOUND_PAGE_DESCRIPTION,
-  NOT_FOUND_PAGE_TITLE,
-  SEARCH_PAGE_HREF,
-} from '../../not-found/not-found-page.js';
+import { escapeHtmlText, serializeHtmlAttributes } from '../../../src/layouts/html-output.js';
 
-@customElement('not-found-page')
-export class NotFoundPage extends LitElement {
-  static override styles = css`
-    :host {
+export const SEARCH_PAGE_HREF = '/search';
+export const ABOUT_PAGE_HREF = '/about/';
+
+export const NOT_FOUND_PAGE_TITLE = 'このページは見つかりませんでした';
+export const NOT_FOUND_PAGE_DESCRIPTION =
+  'リンク先が移動したか、いまは公開されていないようです。検索またはサイト情報から辿り直してください。';
+export const NOT_FOUND_PAGE_META_DESCRIPTION =
+  'リンク先が移動したか、公開が終了したため、このページは見つかりませんでした。検索またはサイト情報から辿り直してください。';
+
+export interface BuildNotFoundPageMarkupOptions {
+  requestedPath?: string;
+}
+
+const renderRequestedPath = (requestedPath: string): string => {
+  const normalized = requestedPath.trim();
+  if (normalized.length === 0) {
+    return '';
+  }
+
+  return `
+      <dl class="not-found-page-fallback__meta">
+        <div class="not-found-page-fallback__meta-row">
+          <dt class="not-found-page-fallback__meta-label">要求されたパス</dt>
+          <dd class="not-found-page-fallback__meta-value">
+            <code>${escapeHtmlText(normalized)}</code>
+          </dd>
+        </div>
+      </dl>
+    `;
+};
+
+export const buildNotFoundPageMarkup = (
+  options: BuildNotFoundPageMarkupOptions = {},
+): string => {
+  const requestedPath = options.requestedPath?.trim() ?? '';
+  const hostAttributes = serializeHtmlAttributes([
+    { name: 'requested-path', value: requestedPath.length > 0 ? requestedPath : null },
+  ]);
+
+  return `
+<not-found-page${hostAttributes}>
+  <style>
+    not-found-page {
       display: block;
       color: var(--fg-default);
     }
 
-    .not-found-page {
+    .not-found-page-fallback {
       box-sizing: border-box;
       width: min(100%, 72rem);
       margin: 0 auto;
@@ -25,13 +57,13 @@ export class NotFoundPage extends LitElement {
         clamp(var(--space-16, 64px), 18vh, 10rem);
     }
 
-    .not-found-page__inner {
+    .not-found-page-fallback__inner {
       inline-size: min(100%, 42rem);
       display: grid;
       gap: var(--space-6, 24px);
     }
 
-    .eyebrow {
+    .not-found-page-fallback__eyebrow {
       margin: 0;
       color: var(--fg-muted);
       font-family: var(--font-mono);
@@ -41,7 +73,7 @@ export class NotFoundPage extends LitElement {
       text-transform: uppercase;
     }
 
-    .title {
+    .not-found-page-fallback__title {
       margin: 0;
       color: var(--fg-default);
       font-family: var(--font-sans);
@@ -52,7 +84,7 @@ export class NotFoundPage extends LitElement {
       text-wrap: balance;
     }
 
-    .description {
+    .not-found-page-fallback__description {
       margin: 0;
       max-inline-size: 40rem;
       color: var(--fg-muted);
@@ -61,26 +93,26 @@ export class NotFoundPage extends LitElement {
       text-wrap: pretty;
     }
 
-    .meta {
+    .not-found-page-fallback__meta {
       margin: 0;
       padding-top: var(--space-4, 16px);
       border-top: var(--border-width, 1px) solid var(--border-muted);
     }
 
-    .meta-row {
+    .not-found-page-fallback__meta-row {
       display: grid;
       gap: var(--space-2, 8px);
       margin: 0;
     }
 
-    .meta-label {
+    .not-found-page-fallback__meta-label {
       margin: 0;
       color: var(--fg-muted);
       font-size: var(--text-xs, 12px);
       line-height: var(--line-height-normal, 1.5);
     }
 
-    .meta-value {
+    .not-found-page-fallback__meta-value {
       margin: 0;
       color: var(--fg-default);
       font-family: var(--font-mono);
@@ -89,221 +121,106 @@ export class NotFoundPage extends LitElement {
       word-break: break-all;
     }
 
-    .actions {
+    .not-found-page-fallback__actions {
       display: flex;
       flex-wrap: wrap;
       gap: var(--space-3, 12px);
       align-items: center;
     }
 
-    .action-link,
-    .action-button {
+    .not-found-page-fallback__link {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       min-block-size: var(--control-min-touch, 44px);
       padding-inline: var(--space-4, 16px);
+      border: var(--border-width, 1px) solid var(--border-muted);
       border-radius: var(--radius-full, 9999px);
-      font-family: var(--font-sans);
+      background: transparent;
+      color: var(--fg-default);
       font-size: var(--text-sm, 13px);
-      font-weight: var(--font-medium, 500);
       line-height: 1;
+      text-decoration: none;
       transition:
         background-color var(--duration-fast, 120ms) var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
         border-color var(--duration-fast, 120ms) var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
         color var(--duration-fast, 120ms) var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
     }
 
-    .action-link {
-      border: var(--border-width, 1px) solid var(--border-muted);
-      background: transparent;
-      color: var(--fg-default);
-      text-decoration: none;
-    }
-
-    .action-link:hover {
+    .not-found-page-fallback__link:hover {
       background: var(--bg-surface-1);
       border-color: var(--border-default);
     }
 
-    .action-link--primary {
-      background: var(--bg-surface-1);
-      border-color: var(--border-default);
-    }
-
-    .action-button {
-      border: none;
-      background: transparent;
-      color: var(--fg-muted);
-      cursor: pointer;
-    }
-
-    .action-button:hover {
-      background: var(--bg-surface-1);
-      color: var(--fg-default);
-    }
-
-    .action-link:focus-visible,
-    .action-button:focus-visible {
+    .not-found-page-fallback__link:focus-visible {
       outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color);
       outline-offset: var(--focus-ring-offset, 2px);
     }
 
-    @keyframes not-found-page-enter {
-      from {
-        opacity: 0;
-        transform: translateY(var(--space-2, 8px));
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @media (prefers-reduced-motion: no-preference) {
-      .not-found-page__inner {
-        animation: not-found-page-enter var(--duration-normal, 180ms)
-          var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
-      }
+    .not-found-page-fallback__link--primary {
+      background: var(--bg-surface-1);
+      border-color: var(--border-default);
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .action-link,
-      .action-button,
-      .not-found-page__inner {
+      .not-found-page-fallback__link {
         transition: none;
-        animation: none;
       }
     }
 
     @media (forced-colors: active) {
-      .meta,
-      .action-link {
+      .not-found-page-fallback__meta,
+      .not-found-page-fallback__link {
         border-color: CanvasText;
       }
 
-      .action-link,
-      .action-button {
-        forced-color-adjust: auto;
-      }
-
-      .action-link:focus-visible,
-      .action-button:focus-visible {
+      .not-found-page-fallback__link:focus-visible {
         outline-color: Highlight;
       }
     }
 
     @media (max-width: 640px) {
-      .not-found-page {
+      .not-found-page-fallback {
         padding-inline: var(--space-3, 12px);
       }
 
-      .actions {
+      .not-found-page-fallback__actions {
         align-items: stretch;
       }
 
-      .action-link,
-      .action-button {
+      .not-found-page-fallback__link {
         inline-size: 100%;
       }
     }
-  `;
+  </style>
 
-  @property({ type: String, attribute: 'requested-path' })
-  requestedPath = '';
-
-  private _didClearFallback = false;
-
-  override connectedCallback(): void {
-    if (!this._didClearFallback) {
-      const fallback = this.querySelector('[data-not-found-fallback]');
-      if (fallback) {
-        this.replaceChildren();
-      }
-      this._didClearFallback = true;
-    }
-
-    super.connectedCallback();
-  }
-
-  private get _resolvedRequestedPath(): string {
-    const normalized = this.requestedPath.trim();
-    if (normalized.length > 0) {
-      return normalized;
-    }
-
-    if (typeof window === 'undefined') {
-      return '';
-    }
-
-    const currentPath =
-      `${window.location.pathname}${window.location.search}${window.location.hash}`.trim();
-
-    return currentPath === '/404.html' ? '' : currentPath;
-  }
-
-  private _handleBackClick = (): void => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    if (window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-
-    window.location.assign(SEARCH_PAGE_HREF);
-  };
-
-  override render() {
-    const requestedPath = this._resolvedRequestedPath;
-
-    return html`
-      <section class="not-found-page" aria-labelledby="not-found-page-title">
-        <div class="not-found-page__inner">
-          <p class="eyebrow">404</p>
-
-          <h1 id="not-found-page-title" class="title">
-            ${NOT_FOUND_PAGE_TITLE}
-          </h1>
-
-          <p class="description">
-            ${NOT_FOUND_PAGE_DESCRIPTION}
-          </p>
-
-          ${requestedPath.length > 0
-            ? html`
-                <dl class="meta">
-                  <div class="meta-row">
-                    <dt class="meta-label">要求されたパス</dt>
-                    <dd class="meta-value">
-                      <code>${requestedPath}</code>
-                    </dd>
-                  </div>
-                </dl>
-              `
-            : nothing}
-
-          <nav class="actions" aria-label="404 navigation">
-            <a class="action-link action-link--primary" href=${SEARCH_PAGE_HREF}>
-              検索ページへ
-            </a>
-            <a class="action-link" href=${ABOUT_PAGE_HREF}>
-              このサイトについて
-            </a>
-            <button class="action-button" type="button" @click=${this._handleBackClick}>
-              前のページへ戻る
-            </button>
-          </nav>
-        </div>
-      </section>
-    `;
-  }
-}
-
-declare global {
-  interface HTMLElementTagNameMap {
-    'not-found-page': NotFoundPage;
-  }
-}
+  <section
+    data-not-found-fallback
+    class="not-found-page-fallback"
+    aria-labelledby="not-found-page-title"
+  >
+    <div class="not-found-page-fallback__inner">
+      <p class="not-found-page-fallback__eyebrow">404</p>
+      <h1 id="not-found-page-title" class="not-found-page-fallback__title">
+        ${NOT_FOUND_PAGE_TITLE}
+      </h1>
+      <p class="not-found-page-fallback__description">
+        ${NOT_FOUND_PAGE_DESCRIPTION}
+      </p>
+      ${renderRequestedPath(requestedPath)}
+      <nav class="not-found-page-fallback__actions" aria-label="404 navigation">
+        <a
+          class="not-found-page-fallback__link not-found-page-fallback__link--primary"
+          href="${SEARCH_PAGE_HREF}"
+        >
+          検索ページへ
+        </a>
+        <a class="not-found-page-fallback__link" href="${ABOUT_PAGE_HREF}">
+          このサイトについて
+        </a>
+      </nav>
+    </div>
+  </section>
+</not-found-page>
+  `.trim();
+};

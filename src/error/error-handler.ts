@@ -3,7 +3,7 @@
  * アプリケーション全体で統一されたエラー処理を提供
  */
 import { type AppError, ErrorType, RouaultError } from '../types/errors.js';
-import { buildNotFoundPageMarkup } from '../not-found/not-found-page.js';
+import { buildNotFoundPageMarkup } from '../components/not-found/not-found-page.js';
 
 /**
  * HTTPレスポンスからエラーを分類
