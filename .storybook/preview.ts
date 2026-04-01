@@ -6,19 +6,16 @@ issuedWarnings.add('dev-mode');
   issuedWarnings;
 
 import { setCustomElementsManifest } from '@storybook/web-components-vite';
+import type { Preview } from '@storybook/web-components';
 import customElements from '../custom-elements.json';
 
-import '@fontsource-variable/noto-sans-jp';
 import '@fontsource/jetbrains-mono/400.css';
 import '@fontsource/jetbrains-mono/700.css';
 
-import '../src/assets/css/tokens.css';
 import '../src/assets/css/main.css';
 import '../src/components/ui/icon/icon';
 
 setCustomElementsManifest(customElements);
-
-import type { Preview } from '@storybook/web-components';
 
 const preview: Preview = {
   parameters: {
@@ -52,6 +49,12 @@ const preview: Preview = {
 
     docs: {
       source: { type: 'dynamic' },
+    },
+
+    options: {
+      storySort: {
+        order: ['Note Contracts', 'Foundations', 'Layouts', 'Components', 'Legacy Components'],
+      },
     },
 
     interactions: {

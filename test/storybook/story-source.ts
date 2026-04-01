@@ -12,6 +12,7 @@ export interface StorySourceRecord {
   exportName: string;
   hasPlay: boolean;
   importSpecifiers: readonly string[];
+  metaTitle: string | undefined;
   storyContractKind: RouaultContractKind | undefined;
   metaContractKind: RouaultContractKind | undefined;
   resolvedContractKind: RouaultContractKind | undefined;
@@ -122,6 +123,19 @@ function getRouaultContractKindFromParameters(
     : undefined;
 }
 
+function getMetaTitle(objectLiteral: ts.ObjectLiteralExpression | undefined): string | undefined {
+  if (!objectLiteral) {
+    return undefined;
+  }
+
+  const titleProperty = getObjectProperty(objectLiteral, 'title');
+  if (!titleProperty || !ts.isStringLiteral(titleProperty.initializer)) {
+    return undefined;
+  }
+
+  return titleProperty.initializer.text;
+}
+
 function hasPlayFunction(objectLiteral: ts.ObjectLiteralExpression): boolean {
   return objectLiteral.properties.some(
     (property) => ts.isPropertyAssignment(property) && getPropertyName(property.name) === 'play',
@@ -178,6 +192,7 @@ export function collectStorySourceRecords(): StorySourceRecord[] {
     const metaObject = collectMetaObject(sourceFile);
     const metaParameters = metaObject ? getParametersExpression(metaObject) : undefined;
     const metaContractKind = getRouaultContractKindFromParameters(metaParameters);
+    const metaTitle = getMetaTitle(metaObject);
     const importSpecifiers = sourceFile.statements
       .filter(ts.isImportDeclaration)
       .map((statement) => statement.moduleSpecifier)
@@ -213,6 +228,7 @@ export function collectStorySourceRecords(): StorySourceRecord[] {
           exportName: declaration.name.text,
           hasPlay: hasPlayFunction(objectLiteral),
           importSpecifiers,
+          metaTitle,
           storyContractKind,
           metaContractKind,
           resolvedContractKind: storyContractKind ?? metaContractKind,

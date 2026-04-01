@@ -5,6 +5,16 @@ import { describe, expect, it } from 'vitest';
 import { collectStorySourceRecords } from './story-source.js';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const legacyStaticFirstStoryFiles = [
+  'src/components/ui/blockquote/blockquote.stories.ts',
+  'src/components/ui/callout/callout.stories.ts',
+  'src/components/ui/divider/divider.stories.ts',
+  'src/components/ui/footnote/footnote.stories.ts',
+  'src/components/ui/highlight/highlight.stories.ts',
+  'src/components/ui/image/image.stories.ts',
+  'src/components/ui/info-box/info-box.stories.ts',
+  'src/components/ui/table/table.stories.ts',
+] as const;
 
 describe('story discovery', () => {
   const stories = collectStorySourceRecords();
@@ -49,5 +59,40 @@ describe('story discovery', () => {
 
     expect(filePaths.has('src/components/ui/tabs/tabs.stories.ts')).toBe(true);
     expect(filePaths.has('src/components/ui/details/details.stories.ts')).toBe(true);
+  });
+
+  it('note contracts を Storybook 先頭に並べ、legacy component stories を補助階層へ退避すること', () => {
+    const previewSource = fs.readFileSync(path.join(repositoryRoot, '.storybook/preview.ts'), 'utf8');
+    expect(previewSource).toContain(
+      "order: ['Note Contracts', 'Foundations', 'Layouts', 'Components', 'Legacy Components']",
+    );
+
+    const noteContractTitles = new Set(
+      stories
+        .filter((story) => story.filePath.startsWith('src/stories/note-contracts/'))
+        .map((story) => story.metaTitle),
+    );
+    expect(noteContractTitles).toEqual(
+      new Set(['Note Contracts/Static Primitives', 'Note Contracts/Enhancers']),
+    );
+
+    const legacyTitles = stories
+      .filter((story) =>
+        legacyStaticFirstStoryFiles.includes(
+          story.filePath as (typeof legacyStaticFirstStoryFiles)[number],
+        ),
+      )
+      .map((story) => `${story.filePath}:${story.metaTitle ?? ''}`);
+
+    expect(legacyTitles).toEqual([
+      'src/components/ui/blockquote/blockquote.stories.ts:Legacy Components/Blockquote',
+      'src/components/ui/callout/callout.stories.ts:Legacy Components/Callout',
+      'src/components/ui/divider/divider.stories.ts:Legacy Components/Divider',
+      'src/components/ui/footnote/footnote.stories.ts:Legacy Components/Footnote',
+      'src/components/ui/highlight/highlight.stories.ts:Legacy Components/Highlight',
+      'src/components/ui/image/image.stories.ts:Legacy Components/Image',
+      'src/components/ui/info-box/info-box.stories.ts:Legacy Components/InfoBox',
+      'src/components/ui/table/table.stories.ts:Legacy Components/Table',
+    ]);
   });
 });
