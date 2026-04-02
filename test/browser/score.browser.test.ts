@@ -3,12 +3,6 @@ import '../../src/components/ui/score/score.js';
 import type { UiScore } from '../../src/components/ui/score/score.js';
 import { nextAnimationFrame, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
-const RUNTIME_SVG = `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200">
-  <rect x="40" y="40" width="720" height="120" fill="black" stroke="#000000"></rect>
-</svg>
-`.trim();
-
 const MALICIOUS_SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" onload="alert(1)">
   <script>alert('xss')</script>
@@ -40,9 +34,19 @@ const installResizeObserverStub = (): (() => void) => {
   }
 
   class ResizeObserverStub {
-    observe(): void {}
-    unobserve(): void {}
-    disconnect(): void {}
+    observe(_target: Element): void {
+      void _target;
+      return;
+    }
+
+    unobserve(_target: Element): void {
+      void _target;
+      return;
+    }
+
+    disconnect(): void {
+      return;
+    }
   }
 
   globalThis.ResizeObserver = ResizeObserverStub as typeof ResizeObserver;
@@ -130,7 +134,7 @@ describe('ui-score browser contract', () => {
 
       expect(runtimeSvg.hasAttribute('onload')).to.equal(false);
       expect(host.shadowRoot?.querySelector('.score-svg-host script')).to.equal(null);
-      expect(runtimeSvg.querySelector('[href^="javascript:"], [xlink\:href^="javascript:"]')).to.equal(
+      expect(runtimeSvg.querySelector('[href^="javascript:"], [xlink\\:href^="javascript:"]')).to.equal(
         null,
       );
 

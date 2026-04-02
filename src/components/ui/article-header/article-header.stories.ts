@@ -64,7 +64,7 @@ const meta: Meta<ArticleHeader> = {
 export default meta;
 type Story = StoryObj<ArticleHeader>;
 
-type ArticleHeaderStoryArgs = {
+interface ArticleHeaderStoryArgs {
   heading?: string;
   published?: string;
   created?: string;

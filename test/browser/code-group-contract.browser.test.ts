@@ -1,134 +1,179 @@
 import { expect, fixture, html } from '@open-wc/testing';
 import '../../src/components/ui/code-group/code-group.js';
+import '../../src/components/ui/codeblock/codeblock.js';
+import type { CodeGroup } from '../../src/components/ui/code-group/code-group.js';
+import { dispatchKey, waitForLitUpdate } from './helpers/wait-for-lit.js';
 
-type LitLikeElement = HTMLElement & {
-  updateComplete?: Promise<unknown>;
+type CopyButtonElement = HTMLElement & {
+  disabled: boolean;
+  label: string;
+  value: string;
 };
 
-const waitForElement = async (element: LitLikeElement): Promise<void> => {
-  await element.updateComplete;
-  await Promise.resolve();
-  await Promise.resolve();
+interface CodeGroupChangeDetail {
+  index: number;
+  prevIndex: number;
+  prevValue: string;
+  userInitiated: boolean;
+  value: string;
+}
+
+const getTabs = (group: CodeGroup): HTMLButtonElement[] =>
+  Array.from(group.querySelectorAll<HTMLButtonElement>('button[slot="tab"]'));
+
+const getPanels = (group: CodeGroup): HTMLElement[] =>
+  Array.from(group.querySelectorAll<HTMLElement>('ui-code-block[slot="panel"]'));
+
+const getCopyButton = (group: CodeGroup): CopyButtonElement | null =>
+  group.shadowRoot?.querySelector<CopyButtonElement>('ui-copy-button') ?? null;
+
+const expectPresent = <T>(value: T | null | undefined, name: string): T => {
+  expect(value, `${name} should exist`).to.not.equal(null);
+  expect(value, `${name} should exist`).to.not.equal(undefined);
+
+  if (value === null || value === undefined) {
+    throw new Error(`${name} が見つかりません`);
+  }
+
+  return value;
 };
 
-describe('ui-code-group contract', () => {
-  it('child が 1 件だけなら比較 UI に昇格せず、stack fallback を維持すること', async () => {
-    const group = await fixture<LitLikeElement>(html`
-      <ui-code-group aria-label="single fallback">
-        <ui-code-block group-key="only" tab-label="Only" filename="only.ts">
-          <pre><code>const only = true;</code></pre>
-        </ui-code-block>
-      </ui-code-group>
-    `);
-
-    await waitForElement(group);
-
-    const shadowRoot = group.shadowRoot;
-    expect(shadowRoot).to.not.equal(null);
-
-    const header = shadowRoot?.querySelector<HTMLElement>('.code-group-header');
-    const body = shadowRoot?.querySelector<HTMLElement>('.body');
-    const stackSlot = shadowRoot?.querySelector<HTMLSlotElement>('.stack-slot');
-
-    expect(header).to.not.equal(null);
-    expect(body).to.not.equal(null);
-    expect(stackSlot).to.not.equal(null);
-
-    expect(group.hasAttribute('data-ready')).to.equal(false);
-    expect(getComputedStyle(header!).display).to.equal('none');
-    expect(getComputedStyle(body!).display).to.equal('none');
-    expect(getComputedStyle(stackSlot!).display).to.equal('block');
-
-    const codeBlock = group.querySelector<HTMLElement>('ui-code-block');
-    expect(codeBlock).to.not.equal(null);
-    expect(codeBlock?.getAttribute('slot')).to.equal(null);
-    expect(codeBlock?.hasAttribute('hidden')).to.equal(false);
-
-    const assigned = stackSlot!.assignedElements({ flatten: true });
-    expect(assigned).to.include(codeBlock!);
-
-    expect(group.querySelectorAll('button[slot="tab"]').length).to.equal(0);
+const waitForGroupChange = (group: CodeGroup): Promise<CodeGroupChangeDetail> =>
+  new Promise((resolve) => {
+    group.addEventListener(
+      'ui-code-group-change',
+      ((event: Event) => {
+        if (event instanceof CustomEvent) {
+          resolve(event.detail as CodeGroupChangeDetail);
+        }
+      }) as EventListener,
+      { once: true },
+    );
   });
 
-  it('child が 2 件以上なら tab / panel / copy button を構成し、非選択 panel を hidden にすること', async () => {
-    const group = await fixture<LitLikeElement>(html`
+describe('ui-code-group browser contract', () => {
+  it('click により選択 tab / panel / copy value を更新し、change detail を公開すること', async () => {
+    const group = await fixture<CodeGroup>(html`
       <ui-code-group aria-label="comparison group">
         <ui-code-block group-key="ts" tab-label="TypeScript" filename="sample.ts" lang="ts">
-          <pre><code>const lang = 'ts';</code></pre>
+          <pre><code>console.log('ts');</code></pre>
         </ui-code-block>
         <ui-code-block group-key="js" tab-label="JavaScript" filename="sample.js" lang="js">
-          <pre><code>const lang = 'js';</code></pre>
+          <pre><code>console.log('js');</code></pre>
         </ui-code-block>
       </ui-code-group>
     `);
 
-    await waitForElement(group);
+    await waitForLitUpdate(group);
 
-    const shadowRoot = group.shadowRoot;
-    expect(shadowRoot).to.not.equal(null);
+    const tabs = getTabs(group);
+    const panels = getPanels(group);
 
-    const header = shadowRoot?.querySelector<HTMLElement>('.code-group-header');
-    const body = shadowRoot?.querySelector<HTMLElement>('.body');
-    const stackSlot = shadowRoot?.querySelector<HTMLElement>('.stack-slot');
-    const copyButton = shadowRoot?.querySelector('ui-copy-button');
-
-    expect(header).to.not.equal(null);
-    expect(body).to.not.equal(null);
-    expect(stackSlot).to.not.equal(null);
-    expect(copyButton).to.not.equal(null);
+    const firstTab = expectPresent(tabs[0], 'tabs[0]');
+    const secondTab = expectPresent(tabs[1], 'tabs[1]');
+    const firstPanel = expectPresent(panels[0], 'panels[0]');
+    const secondPanel = expectPresent(panels[1], 'panels[1]');
 
     expect(group.getAttribute('data-ready')).to.equal('');
-    expect(getComputedStyle(header!).display).to.equal('flex');
-    expect(getComputedStyle(body!).display).to.equal('block');
-    expect(getComputedStyle(stackSlot!).display).to.equal('none');
-
-    const tabs = Array.from(group.querySelectorAll<HTMLButtonElement>('button[slot="tab"]'));
     expect(tabs).to.have.length(2);
-    expect(tabs[0]?.getAttribute('role')).to.equal('tab');
-    expect(tabs[0]?.getAttribute('aria-selected')).to.equal('true');
-    expect(tabs[1]?.getAttribute('role')).to.equal('tab');
-    expect(tabs[1]?.getAttribute('aria-selected')).to.equal('false');
-
-    const panels = Array.from(group.querySelectorAll<HTMLElement>('ui-code-block[slot="panel"]'));
     expect(panels).to.have.length(2);
+    expect(firstTab.getAttribute('aria-selected')).to.equal('true');
+    expect(secondTab.getAttribute('aria-selected')).to.equal('false');
+    expect(firstPanel.hasAttribute('hidden')).to.equal(false);
+    expect(secondPanel.hasAttribute('hidden')).to.equal(true);
 
-    expect(panels[0]?.getAttribute('role')).to.equal('tabpanel');
-    expect(panels[0]?.hasAttribute('hidden')).to.equal(false);
-    expect(panels[0]?.getAttribute('aria-hidden')).to.equal(null);
+    const detailPromise = waitForGroupChange(group);
+    secondTab.click();
+    const detail = await detailPromise;
+    await waitForLitUpdate(group);
 
-    expect(panels[1]?.getAttribute('role')).to.equal('tabpanel');
-    expect(panels[1]?.hasAttribute('hidden')).to.equal(true);
-    expect(panels[1]?.getAttribute('aria-hidden')).to.equal('true');
+    expect(detail.value).to.equal('js');
+    expect(detail.prevValue).to.equal('ts');
+    expect(detail.index).to.equal(1);
+    expect(detail.prevIndex).to.equal(0);
+    expect(detail.userInitiated).to.equal(true);
+
+    expect(firstTab.getAttribute('aria-selected')).to.equal('false');
+    expect(secondTab.getAttribute('aria-selected')).to.equal('true');
+    expect(firstPanel.hasAttribute('hidden')).to.equal(true);
+    expect(secondPanel.hasAttribute('hidden')).to.equal(false);
+
+    const copyButton = expectPresent(getCopyButton(group), 'copyButton');
+    expect(copyButton.value).to.equal("console.log('js');");
+    expect(copyButton.label).to.equal('sample.js のコードをコピー');
   });
 
-  it('比較不能時は panel slot へ移さず、fallback surface を維持すること', async () => {
-    const group = await fixture<LitLikeElement>(html`
-      <ui-code-group aria-label="mixed children boundary">
-        <ui-code-block group-key="one" tab-label="One" filename="one.ts">
-          <pre><code>const one = 1;</code></pre>
+  it('activation="manual" では矢印キーで focus のみ移動し、Enter で選択を確定すること', async () => {
+    const group = await fixture<CodeGroup>(html`
+      <ui-code-group aria-label="manual activation" activation="manual">
+        <ui-code-block group-key="react" tab-label="React" filename="app.tsx" lang="tsx">
+          <pre><code>export const framework = 'react';</code></pre>
         </ui-code-block>
-        <p id="foreign">余計な要素</p>
-        <ui-code-block group-key="two" tab-label="Two" filename="two.ts">
-          <pre><code>const two = 2;</code></pre>
+        <ui-code-block group-key="lit" tab-label="Lit" filename="app.ts" lang="ts">
+          <pre><code>export const framework = 'lit';</code></pre>
         </ui-code-block>
       </ui-code-group>
     `);
 
-    await waitForElement(group);
+    await waitForLitUpdate(group);
 
-    expect(group.hasAttribute('data-ready')).to.equal(false);
-    expect(group.querySelectorAll('button[slot="tab"]').length).to.equal(0);
+    const tabs = getTabs(group);
+    const panels = getPanels(group);
 
-    const blocks = Array.from(group.querySelectorAll<HTMLElement>('ui-code-block'));
-    expect(blocks).to.have.length(2);
+    const firstTab = expectPresent(tabs[0], 'tabs[0]');
+    const secondTab = expectPresent(tabs[1], 'tabs[1]');
+    const firstPanel = expectPresent(panels[0], 'panels[0]');
+    const secondPanel = expectPresent(panels[1], 'panels[1]');
 
-    for (const block of blocks) {
-      expect(block.getAttribute('slot')).to.equal(null);
-      expect(block.hasAttribute('hidden')).to.equal(false);
-      expect(block.getAttribute('role')).to.equal(null);
-      expect(block.getAttribute('aria-hidden')).to.equal(null);
-    }
+    firstTab.focus();
+    dispatchKey(firstTab, 'ArrowRight');
+    await waitForLitUpdate(group);
 
-    expect(group.querySelector('#foreign')).to.not.equal(null);
+    expect(firstTab.getAttribute('aria-selected')).to.equal('true');
+    expect(secondTab.getAttribute('aria-selected')).to.equal('false');
+    expect(secondTab.getAttribute('tabindex')).to.equal('0');
+    expect(firstPanel.hasAttribute('hidden')).to.equal(false);
+    expect(secondPanel.hasAttribute('hidden')).to.equal(true);
+
+    dispatchKey(secondTab, 'Enter');
+    await waitForLitUpdate(group);
+
+    expect(firstTab.getAttribute('aria-selected')).to.equal('false');
+    expect(secondTab.getAttribute('aria-selected')).to.equal('true');
+    expect(firstPanel.hasAttribute('hidden')).to.equal(true);
+    expect(secondPanel.hasAttribute('hidden')).to.equal(false);
+  });
+
+  it('copyable=false の item を選択した場合、group copy button を disabled にすること', async () => {
+    const group = await fixture<CodeGroup>(html`
+      <ui-code-group aria-label="copy disabled boundary">
+        <ui-code-block group-key="alpha" tab-label="Alpha" filename="alpha.ts" lang="ts">
+          <pre><code>export const alpha = 1;</code></pre>
+        </ui-code-block>
+        <ui-code-block
+          group-key="beta"
+          tab-label="Beta"
+          filename="beta.ts"
+          lang="ts"
+          copyable="false"
+        >
+          <pre><code>export const beta = 2;</code></pre>
+        </ui-code-block>
+      </ui-code-group>
+    `);
+
+    await waitForLitUpdate(group);
+
+    const tabs = getTabs(group);
+    const secondTab = expectPresent(tabs[1], 'tabs[1]');
+
+    const detailPromise = waitForGroupChange(group);
+    secondTab.click();
+    await detailPromise;
+    await waitForLitUpdate(group);
+
+    const copyButton = expectPresent(getCopyButton(group), 'copyButton');
+    expect(copyButton.disabled).to.equal(true);
+    expect(copyButton.label).to.equal('beta.ts のコードをコピー');
   });
 });

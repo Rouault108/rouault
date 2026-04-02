@@ -68,7 +68,7 @@ describe('ui-list browser contract', () => {
     await flush(firstRow);
     await flush(secondRow);
 
-    const currentChanges: Array<{ rowId: string; columnId: string }> = [];
+    const currentChanges: { rowId: string; columnId: string }[] = [];
     const previewRequests: UiPreviewRequestDetail[] = [];
     const contextRequests: UiContextRequestDetail[] = [];
 
@@ -141,7 +141,7 @@ describe('ui-list browser contract', () => {
     await flush(host);
     await flush(row);
 
-    const sortChanges: Array<{ key: string | null; direction: 'asc' | 'desc' | null }> = [];
+    const sortChanges: { key: string | null; direction: 'asc' | 'desc' | null }[] = [];
     host.addEventListener('ui-sort-change', (event) => {
       sortChanges.push(
         (event as CustomEvent<{ key: string | null; direction: 'asc' | 'desc' | null }>).detail,

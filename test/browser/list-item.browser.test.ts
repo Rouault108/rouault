@@ -88,7 +88,7 @@ describe('ui-list-item browser contract', () => {
     await flush(list);
     await flush(row);
 
-    const changes: Array<{ rowId: string; columnId: string }> = [];
+    const changes: { rowId: string; columnId: string }[] = [];
     row.addEventListener('ui-current-change', (event) => {
       changes.push((event as CustomEvent<{ rowId: string; columnId: string }>).detail);
     });

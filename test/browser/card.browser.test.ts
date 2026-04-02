@@ -24,9 +24,19 @@ const installResizeObserverStub = (): (() => void) => {
   }
 
   class ResizeObserverStub {
-    observe(): void {}
-    unobserve(): void {}
-    disconnect(): void {}
+    observe(_target: Element): void {
+      void _target;
+      return;
+    }
+
+    unobserve(_target: Element): void {
+      void _target;
+      return;
+    }
+
+    disconnect(): void {
+      return;
+    }
   }
 
   globalThis.ResizeObserver = ResizeObserverStub as typeof ResizeObserver;
